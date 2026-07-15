@@ -89,6 +89,7 @@ from dartlab.simulate.scenarioComposition import (
     ScenarioCompositionError,
     buildScenarioCoefficientBindingFromVerifiedMultivariableAdmission,
     compareOneCompanyTwoScenarioStrategies,
+    conditionalPlayControlSurfaceSubjectHash,
     conditionalPlayReplaySubjectHash,
     runConditionalScenarioExperiment,
     scenarioCoefficientBindingHash,
@@ -3655,8 +3656,33 @@ def testMultiProviderLaneMatrixFeedsFourQuarterConditionalExperiment(tmp_path) -
     assert report.leaderPanelHash
     assert report.fragileCasePanelHash
     assert report.blockerPanelHash
+    assert report.controlPanelHash
     assert report.provenanceIndexHash
     assert conditionalPlayReplaySubjectHash(report) == report.playReplayHash
+    controlSurface = report.controlSurface
+    expectedControlCount = (
+        len(inputs.state)
+        + sum(len(case.pathSet.factorSpecs) * case.pathSet.audit.horizon for case in cases)
+        + sum(len(row) for strategy in strategies for row in strategy.actionsByStep)
+        + sum(len(ledger.exposureLedgers) for ledger in experiment.caseLedgers)
+    )
+    assert controlSurface.schemaVersion == "conditional-play-control-surface-v1"
+    assert controlSurface.kind == "conditionalPlayControlSurface"
+    assert controlSurface.lineageMode == "conditionalWarGameControlProjection"
+    assert controlSurface.entityId == "005930"
+    assert controlSurface.scenarioCount == 4
+    assert controlSurface.strategyCount == 4
+    assert controlSurface.horizon == 4
+    assert controlSurface.frequency == "quarter"
+    assert controlSurface.controlCount == expectedControlCount
+    assert len(controlSurface.rows) == expectedControlCount
+    assert len(controlSurface.rowHashes) == expectedControlCount
+    assert len(set(controlSurface.rowHashes)) == expectedControlCount
+    assert controlSurface.controlPanelHash == report.controlPanelHash
+    assert controlSurface.surfaceHash == report.controlSurfaceHash
+    assert conditionalPlayControlSurfaceSubjectHash(controlSurface) == controlSurface.surfaceHash
+    assert controlSurface.caseLedgerHashes == experiment.caseLedgerHashes
+    assert controlSurface.providerLaneLineageHashes == experiment.providerLaneLineageHashes
     assert any(row.changed for row in report.leaderTransitions)
     assert any(
         row.scope == "experiment" and row.reason == "conditionalExperimentNotPolicyRecommendation"
@@ -3809,6 +3835,74 @@ def testMultiProviderLaneMatrixFeedsFourQuarterConditionalExperiment(tmp_path) -
     actionIds = {"priceChange", "capacityInvestment", "borrow", "repay"}
     stateIds = {"price", "demandVolume", "unitCost", "fixedCost", "capacityUnits", "cash", "debt"}
     shockIds = {"capacityChange", "debtRate", "demandChange", "fixedCostChange", "marketPriceChange", "unitCostChange"}
+    controlRows = controlSurface.rows
+    assert {row.semanticPlane for row in controlRows} == {
+        "currentState",
+        "conditionFactor",
+        "assumptionDelta",
+        "lawParameter",
+        "strategyAction",
+    }
+    currentStateControls = tuple(row for row in controlRows if row.semanticPlane == "currentState")
+    conditionFactorControls = tuple(row for row in controlRows if row.semanticPlane == "conditionFactor")
+    assumptionDeltaControls = tuple(row for row in controlRows if row.semanticPlane == "assumptionDelta")
+    lawParameterControls = tuple(row for row in controlRows if row.semanticPlane == "lawParameter")
+    strategyActionControls = tuple(row for row in controlRows if row.semanticPlane == "strategyAction")
+    assert len(currentStateControls) == len(inputs.state)
+    assert {row.targetId for row in currentStateControls} == stateIds
+    assert all(row.adjustabilityStatus == "overlayOnly" for row in currentStateControls)
+    assert all(row.targetId in set(expectedFactorIds) for row in conditionFactorControls)
+    assert all(row.targetId not in actionIds | stateIds for row in conditionFactorControls)
+    assert all(row.adjustabilityStatus == "overlayOnly" for row in conditionFactorControls)
+    assert len(assumptionDeltaControls) == len(cases) * 4
+    assert {row.targetId for row in assumptionDeltaControls} == {"manualDemandAdjustment"}
+    assert all(row.adjustabilityStatus == "editableExplicitAssumption" for row in assumptionDeltaControls)
+    assert all(row.explicitAssumptionId and row.claim and row.falsifier for row in assumptionDeltaControls)
+    allAssumptionStepHashes = {
+        stepHash for ledger in experiment.caseLedgers for stepHash in ledger.pathAssumptionStepHashes
+    }
+    assert all(row.pathAssumptionStepHash in allAssumptionStepHashes for row in assumptionDeltaControls)
+    assert all("explicitFutureAdjustmentPresent" in row.blockedReasons for row in assumptionDeltaControls)
+    assert all(row.targetId in actionIds for row in strategyActionControls)
+    assert len(strategyActionControls) == sum(len(row) for strategy in strategies for row in strategy.actionsByStep)
+    assert all(row.adjustabilityStatus == "editableStrategyAction" for row in strategyActionControls)
+    assert all("strategySetHash" in row.expectedHashImpacts for row in strategyActionControls)
+    assert all("pathAssumptionHash" in row.forbiddenHashImpacts for row in strategyActionControls)
+    assert len(lawParameterControls) == sum(len(ledger.exposureLedgers) for ledger in experiment.caseLedgers)
+    assert all(row.sourceVariableId in set(expectedFactorIds) for row in lawParameterControls)
+    assert all(row.targetVariableId in shockIds for row in lawParameterControls)
+    assert all(row.parameterHash for row in lawParameterControls)
+    assert all("parameterHash" in row.expectedHashImpacts for row in lawParameterControls)
+    assert all("strategySetHash" in row.forbiddenHashImpacts for row in lawParameterControls)
+    assert all("rawSourceRefOnly" in row.blockedReasons for row in controlRows if row.rawSourceRefs)
+    assert all("revisedHistory" in row.blockedReasons for row in controlRows if row.revisedHistoryRefs)
+    assert any(row.targetId == "equityReturnShock" and row.derivedReturnReceiptIds for row in conditionFactorControls)
+    assert any(
+        row.targetId == "edgarOperatingMarginChange" and row.providerObservationBatchReceiptIds for row in controlRows
+    )
+    assert set(controlSurface.adjustableControlIds) == {
+        row.controlId
+        for row in controlRows
+        if row.adjustabilityStatus in {"editableExplicitAssumption", "editableStrategyAction"}
+    }
+    assert set(controlSurface.overlayControlIds) == {
+        row.controlId for row in controlRows if row.adjustabilityStatus == "overlayOnly"
+    }
+    tamperedControl = replace(
+        assumptionDeltaControls[0],
+        valueSummary=tuple(
+            (key, value + (0.01 if key == "mean" else 0.0)) for key, value in assumptionDeltaControls[0].valueSummary
+        ),
+    )
+    tamperedControlSurface = replace(
+        controlSurface,
+        rows=tuple(
+            tamperedControl if row.controlId == tamperedControl.controlId else row for row in controlSurface.rows
+        ),
+    )
+    tamperedControlReport = replace(report, controlSurface=tamperedControlSurface)
+    assert conditionalPlayControlSurfaceSubjectHash(tamperedControlSurface) != controlSurface.surfaceHash
+    assert conditionalPlayReplaySubjectHash(tamperedControlReport) != report.playReplayHash
     expectedTraceRows = sum(ledger.retainedTraceCount * ledger.pathHorizon for ledger in experiment.caseLedgers)
     assert len(report.traceRows) == expectedTraceRows
     assert expectedTraceRows == sum(ledger.traceCount * ledger.pathHorizon for ledger in experiment.caseLedgers)

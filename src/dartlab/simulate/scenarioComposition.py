@@ -150,6 +150,24 @@ CONDITIONAL_PLAY_REPLAY_CONTRACT_HASH = canonicalPayloadHash(
         "recommendationStatus": "disabled",
     }
 )
+CONDITIONAL_PLAY_CONTROL_SURFACE_VERSION = "conditional-play-control-surface-v1"
+CONDITIONAL_PLAY_CONTROL_SURFACE_KIND = "conditionalPlayControlSurface"
+CONDITIONAL_PLAY_CONTROL_SURFACE_PLANES = (
+    "currentState",
+    "conditionFactor",
+    "assumptionDelta",
+    "lawParameter",
+    "strategyAction",
+)
+CONDITIONAL_PLAY_CONTROL_SURFACE_CONTRACT_HASH = canonicalPayloadHash(
+    {
+        "schemaVersion": CONDITIONAL_PLAY_CONTROL_SURFACE_VERSION,
+        "kind": CONDITIONAL_PLAY_CONTROL_SURFACE_KIND,
+        "lineageMode": "conditionalWarGameControlProjection",
+        "semanticPlanes": CONDITIONAL_PLAY_CONTROL_SURFACE_PLANES,
+        "recommendationStatus": "disabled",
+    }
+)
 SCENARIO_ASSUMPTION_SET_VERSION = "scenario-assumption-set-v1"
 SCENARIO_COEFFICIENT_BINDING_VERSION = "scenario-coefficient-binding-v1"
 SCENARIO_EXPOSURE_CONTRACT_VERSION = "scenario-coefficient-exposure-contract-v1"
@@ -1162,6 +1180,122 @@ class ConditionalPlayBlockerRow:
 
 
 @dataclass(frozen=True)
+class ConditionalPlayControlRow:
+    """One internal control knob with semantic plane and lineage boundaries."""
+
+    rowHash: str
+    controlId: str
+    semanticPlane: str
+    controlKind: str
+    adjustmentMode: str
+    adjustabilityStatus: str
+    scope: str
+    caseId: str
+    strategyId: str
+    step: int
+    targetId: str
+    sourceVariableId: str
+    targetVariableId: str
+    laneId: str
+    cardId: str
+    unit: str
+    frequency: str
+    timing: str
+    transformId: str
+    valueSummary: tuple[tuple[str, float], ...]
+    sourceRefs: tuple[str, ...]
+    semanticRefs: tuple[str, ...]
+    expectedHashImpacts: tuple[str, ...]
+    forbiddenHashImpacts: tuple[str, ...]
+    providerLaneLineageHash: str
+    providerLineageStatus: tuple[str, ...]
+    providerObservationBatchReceiptIds: tuple[str, ...]
+    providerObservationBatchSourceReceiptIds: tuple[str, ...]
+    priceSourceLegReceiptIds: tuple[str, ...]
+    derivedReturnReceiptIds: tuple[str, ...]
+    rawSourceRefs: tuple[str, ...]
+    revisedHistoryRefs: tuple[str, ...]
+    explicitAssumptionId: str
+    claim: str
+    falsifier: str
+    pathHistoryInputHash: str
+    pathAssumptionHash: str
+    pathAssumptionStepHash: str
+    assumptionSetHash: str
+    caseLedgerHash: str
+    strategyContractHash: str
+    parameterHash: str
+    blockedReasons: tuple[str, ...]
+
+    def __post_init__(self) -> None:
+        if self.semanticPlane not in CONDITIONAL_PLAY_CONTROL_SURFACE_PLANES:
+            raise ScenarioCompositionError(f"unknown control semantic plane: {self.semanticPlane}")
+        object.__setattr__(
+            self,
+            "valueSummary",
+            tuple((key, float(value)) for key, value in self.valueSummary),
+        )
+        for name in (
+            "sourceRefs",
+            "semanticRefs",
+            "expectedHashImpacts",
+            "forbiddenHashImpacts",
+            "providerLineageStatus",
+            "providerObservationBatchReceiptIds",
+            "providerObservationBatchSourceReceiptIds",
+            "priceSourceLegReceiptIds",
+            "derivedReturnReceiptIds",
+            "rawSourceRefs",
+            "revisedHistoryRefs",
+            "blockedReasons",
+        ):
+            object.__setattr__(self, name, tuple(getattr(self, name)))
+
+
+@dataclass(frozen=True)
+class ConditionalPlayControlSurface:
+    """Internal control deck for GUI knobs without creating a public API."""
+
+    surfaceHash: str
+    schemaVersion: str
+    kind: str
+    lineageMode: str
+    entityId: str
+    scenarioCount: int
+    strategyCount: int
+    horizon: int
+    frequency: str
+    controlCount: int
+    controlPanelHash: str
+    caseLedgerHashes: tuple[str, ...]
+    providerLaneLineageHashes: tuple[str, ...]
+    pathHistoryInputHashes: tuple[str, ...]
+    pathAssumptionHashes: tuple[str, ...]
+    assumptionSetHashes: tuple[str, ...]
+    rowHashes: tuple[str, ...]
+    adjustableControlIds: tuple[str, ...]
+    overlayControlIds: tuple[str, ...]
+    lockedControlIds: tuple[str, ...]
+    rows: tuple[ConditionalPlayControlRow, ...]
+    blockedReasons: tuple[str, ...]
+    warnings: tuple[str, ...]
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "caseLedgerHashes", tuple(self.caseLedgerHashes))
+        object.__setattr__(self, "providerLaneLineageHashes", tuple(self.providerLaneLineageHashes))
+        object.__setattr__(self, "pathHistoryInputHashes", tuple(self.pathHistoryInputHashes))
+        object.__setattr__(self, "pathAssumptionHashes", tuple(self.pathAssumptionHashes))
+        object.__setattr__(self, "assumptionSetHashes", tuple(self.assumptionSetHashes))
+        object.__setattr__(self, "rowHashes", tuple(self.rowHashes))
+        object.__setattr__(self, "adjustableControlIds", tuple(self.adjustableControlIds))
+        object.__setattr__(self, "overlayControlIds", tuple(self.overlayControlIds))
+        object.__setattr__(self, "lockedControlIds", tuple(self.lockedControlIds))
+        object.__setattr__(self, "rows", tuple(self.rows))
+        object.__setattr__(self, "blockedReasons", tuple(self.blockedReasons))
+        object.__setattr__(self, "warnings", tuple(self.warnings))
+
+
+@dataclass(frozen=True)
 class ConditionalPlayReplayReport:
     """GUI ready projection of a conditional experiment without policy promotion."""
 
@@ -1194,7 +1328,9 @@ class ConditionalPlayReplayReport:
     leaderPanelHash: str
     fragileCasePanelHash: str
     blockerPanelHash: str
+    controlPanelHash: str
     provenanceIndexHash: str
+    controlSurfaceHash: str
     conditionRows: tuple[ConditionalPlayConditionRow, ...]
     strategyRows: tuple[ConditionalPlayStrategyRow, ...]
     cellRows: tuple[ConditionalPlayCellRow, ...]
@@ -1202,6 +1338,7 @@ class ConditionalPlayReplayReport:
     leaderTransitions: tuple[ConditionalPlayLeaderTransition, ...]
     fragilityRows: tuple[ConditionalAssumptionFragility, ...]
     blockerRows: tuple[ConditionalPlayBlockerRow, ...]
+    controlSurface: ConditionalPlayControlSurface
     blockedReasons: tuple[str, ...]
     warnings: tuple[str, ...]
 
@@ -1215,6 +1352,8 @@ class ConditionalPlayReplayReport:
         object.__setattr__(self, "leaderTransitions", tuple(self.leaderTransitions))
         object.__setattr__(self, "fragilityRows", tuple(self.fragilityRows))
         object.__setattr__(self, "blockerRows", tuple(self.blockerRows))
+        if not isinstance(self.controlSurface, ConditionalPlayControlSurface):
+            raise TypeError("controlSurface must be a ConditionalPlayControlSurface")
         object.__setattr__(self, "blockedReasons", tuple(self.blockedReasons))
         object.__setattr__(self, "warnings", tuple(self.warnings))
 
@@ -2621,6 +2760,582 @@ def _sourceLineageKeysByFactor(ledger: OneCompanyScenarioCaseLedger) -> tuple[tu
     return tuple(pairs)
 
 
+def _valueSummary(values: tuple[float, ...]) -> tuple[tuple[str, float], ...]:
+    numbers = tuple(sorted(float(value) for value in values))
+    if not numbers:
+        raise ScenarioCompositionError("control surface value summary needs values")
+    count = len(numbers)
+    midpoint = count // 2
+    median = numbers[midpoint] if count % 2 else (numbers[midpoint - 1] + numbers[midpoint]) / 2.0
+    return (
+        ("count", float(count)),
+        ("min", numbers[0]),
+        ("median", median),
+        ("mean", sum(numbers) / count),
+        ("max", numbers[-1]),
+    )
+
+
+def _actionUnit(actionId: str) -> str:
+    return {
+        "priceChange": "ratio",
+        "capacityInvestment": "currency",
+        "borrow": "currency",
+        "repay": "currency",
+    }.get(actionId, "actionUnit")
+
+
+def _controlRowPayload(row: ConditionalPlayControlRow) -> dict:
+    return {
+        "controlId": row.controlId,
+        "semanticPlane": row.semanticPlane,
+        "controlKind": row.controlKind,
+        "adjustmentMode": row.adjustmentMode,
+        "adjustabilityStatus": row.adjustabilityStatus,
+        "scope": row.scope,
+        "caseId": row.caseId,
+        "strategyId": row.strategyId,
+        "step": row.step,
+        "targetId": row.targetId,
+        "sourceVariableId": row.sourceVariableId,
+        "targetVariableId": row.targetVariableId,
+        "laneId": row.laneId,
+        "cardId": row.cardId,
+        "unit": row.unit,
+        "frequency": row.frequency,
+        "timing": row.timing,
+        "transformId": row.transformId,
+        "valueSummary": row.valueSummary,
+        "sourceRefs": row.sourceRefs,
+        "semanticRefs": row.semanticRefs,
+        "expectedHashImpacts": row.expectedHashImpacts,
+        "forbiddenHashImpacts": row.forbiddenHashImpacts,
+        "providerLaneLineageHash": row.providerLaneLineageHash,
+        "providerLineageStatus": row.providerLineageStatus,
+        "providerObservationBatchReceiptIds": row.providerObservationBatchReceiptIds,
+        "providerObservationBatchSourceReceiptIds": row.providerObservationBatchSourceReceiptIds,
+        "priceSourceLegReceiptIds": row.priceSourceLegReceiptIds,
+        "derivedReturnReceiptIds": row.derivedReturnReceiptIds,
+        "rawSourceRefs": row.rawSourceRefs,
+        "revisedHistoryRefs": row.revisedHistoryRefs,
+        "explicitAssumptionId": row.explicitAssumptionId,
+        "claim": row.claim,
+        "falsifier": row.falsifier,
+        "pathHistoryInputHash": row.pathHistoryInputHash,
+        "pathAssumptionHash": row.pathAssumptionHash,
+        "pathAssumptionStepHash": row.pathAssumptionStepHash,
+        "assumptionSetHash": row.assumptionSetHash,
+        "caseLedgerHash": row.caseLedgerHash,
+        "strategyContractHash": row.strategyContractHash,
+        "parameterHash": row.parameterHash,
+        "blockedReasons": row.blockedReasons,
+    }
+
+
+def _controlRow(**values) -> ConditionalPlayControlRow:
+    payload = dict(values)
+    return ConditionalPlayControlRow(rowHash=_rowHash("controlRow", payload), **values)
+
+
+def _laneMetadataByFactor(ledger: OneCompanyScenarioCaseLedger) -> dict[str, tuple[str, str]]:
+    if ledger.driverRegistryLedger is None:
+        return {factorId: ("", "") for factorId in ledger.factorIds}
+    return {
+        factorId: (laneId, cardId)
+        for factorId, laneId, cardId in zip(
+            ledger.driverRegistryLedger.factorIds,
+            ledger.driverRegistryLedger.laneIds,
+            ledger.driverRegistryLedger.cardIds,
+            strict=False,
+        )
+    }
+
+
+def _assumptionDescriptorByFactor(case: OperatingScenarioCase) -> dict[str, tuple[str, str, str]]:
+    return {
+        factorId: (assumptionId, claim, falsifier)
+        for factorId, assumptionId, claim, falsifier in case.pathSet.audit.assumptionDescriptors
+    }
+
+
+def _controlLineageBlockers(ledger: OneCompanyScenarioCaseLedger) -> tuple[str, ...]:
+    return tuple(
+        reason
+        for reason in ("rawSourceRefOnly", "revisedHistory", "unverifiedProviderObservationRef")
+        if reason in ledger.providerLineageStatus
+    )
+
+
+def _currentStateControlRows(inputs: OperatingWorldInputs) -> tuple[ConditionalPlayControlRow, ...]:
+    primitiveById = {primitive.variableId: primitive for primitive in inputs.statePrimitiveContracts}
+    rows: list[ConditionalPlayControlRow] = []
+    for variableId, value in sorted(inputs.state.items(), key=lambda item: str(item[0])):
+        primitive = primitiveById.get(variableId)
+        rows.append(
+            _controlRow(
+                controlId=f"currentState:{variableId}",
+                semanticPlane="currentState",
+                controlKind="initialState",
+                adjustmentMode="initialStateOverlay",
+                adjustabilityStatus="overlayOnly",
+                scope="experiment",
+                caseId="",
+                strategyId="",
+                step=-1,
+                targetId=variableId,
+                sourceVariableId="",
+                targetVariableId=variableId,
+                laneId="",
+                cardId="",
+                unit=primitive.unit if primitive is not None else "",
+                frequency=primitive.frequency if primitive is not None else inputs.stepFrequency,
+                timing=primitive.timing if primitive is not None else "level",
+                transformId=primitive.transformId if primitive is not None else "identity-v1",
+                valueSummary=_valueSummary((float(value),)),
+                sourceRefs=inputs.refs,
+                semanticRefs=(),
+                expectedHashImpacts=(
+                    "initialState",
+                    "simulationSpecHash",
+                    "resultSetHash",
+                    "tracePanelHash",
+                    "playReplayHash",
+                ),
+                forbiddenHashImpacts=(
+                    "providerLaneLineageHash",
+                    "pathHistoryInputHash",
+                    "pathAssumptionHash",
+                    "strategySetHash",
+                ),
+                providerLaneLineageHash="",
+                providerLineageStatus=(),
+                providerObservationBatchReceiptIds=(),
+                providerObservationBatchSourceReceiptIds=(),
+                priceSourceLegReceiptIds=(),
+                derivedReturnReceiptIds=(),
+                rawSourceRefs=(),
+                revisedHistoryRefs=(),
+                explicitAssumptionId="",
+                claim="",
+                falsifier="",
+                pathHistoryInputHash="",
+                pathAssumptionHash="",
+                pathAssumptionStepHash="",
+                assumptionSetHash="",
+                caseLedgerHash="",
+                strategyContractHash="",
+                parameterHash=inputs.stateManifestHash,
+                blockedReasons=inputs.warnings,
+            )
+        )
+    return tuple(rows)
+
+
+def _conditionControlRows(
+    cases: tuple[OperatingScenarioCase, ...],
+    caseLedgers: tuple[OneCompanyScenarioCaseLedger, ...],
+    caseLedgerHashes: tuple[str, ...],
+    assumptionSetHashes: tuple[str, ...],
+) -> tuple[ConditionalPlayControlRow, ...]:
+    rows: list[ConditionalPlayControlRow] = []
+    for case, ledger, caseLedgerHash, assumptionSetHash in zip(
+        cases,
+        caseLedgers,
+        caseLedgerHashes,
+        assumptionSetHashes,
+        strict=True,
+    ):
+        laneByFactor = _laneMetadataByFactor(ledger)
+        descriptorByFactor = _assumptionDescriptorByFactor(case)
+        sourceLineageByFactor = dict(_sourceLineageKeysByFactor(ledger))
+        for factor in case.pathSet.factorSpecs:
+            laneId, cardId = laneByFactor.get(factor.variableId, ("", ""))
+            explicitAssumptionId, claim, falsifier = descriptorByFactor.get(factor.variableId, ("", "", ""))
+            isExplicit = bool(explicitAssumptionId)
+            semanticPlane = "assumptionDelta" if isExplicit else "conditionFactor"
+            adjustmentMode = "setFutureAssumptionStep" if isExplicit else "addExplicitOverlay"
+            adjustabilityStatus = "editableExplicitAssumption" if isExplicit else "overlayOnly"
+            blockers = _controlLineageBlockers(ledger)
+            if isExplicit:
+                blockers = _dedupe((*blockers, "explicitFutureAdjustmentPresent"))
+            for step in range(case.pathSet.audit.horizon):
+                values = tuple(
+                    float(path.steps[step][factor.variableId])
+                    for path in case.pathSet.paths
+                    if factor.variableId in path.steps[step]
+                )
+                if len(values) != len(case.pathSet.paths):
+                    raise ScenarioCompositionError("control surface factor coverage mismatch")
+                sourceLineageKey = sourceLineageByFactor.get(
+                    factor.variableId,
+                    f"lineage:{ledger.caseId}:{factor.variableId}",
+                )
+                pathAssumptionStepHash = (
+                    ledger.pathAssumptionStepHashes[step] if step < len(ledger.pathAssumptionStepHashes) else ""
+                )
+                semanticRefs = (
+                    f"sourceLineageKey:{sourceLineageKey}",
+                    *(ledger.driverRegistryLedger.semanticRefs if ledger.driverRegistryLedger is not None else ()),
+                )
+                rows.append(
+                    _controlRow(
+                        controlId=f"{semanticPlane}:{ledger.caseId}:{factor.variableId}:step{step}",
+                        semanticPlane=semanticPlane,
+                        controlKind="driverPathFactor",
+                        adjustmentMode=adjustmentMode,
+                        adjustabilityStatus=adjustabilityStatus,
+                        scope="caseStep",
+                        caseId=ledger.caseId,
+                        strategyId="",
+                        step=step,
+                        targetId=factor.variableId,
+                        sourceVariableId=factor.variableId,
+                        targetVariableId="",
+                        laneId=laneId,
+                        cardId=cardId,
+                        unit=factor.unit,
+                        frequency=factor.frequency,
+                        timing=factor.timing,
+                        transformId=factor.transformId,
+                        valueSummary=_valueSummary(values),
+                        sourceRefs=ledger.pathSourceRefs,
+                        semanticRefs=semanticRefs,
+                        expectedHashImpacts=(
+                            "pathAssumptionStepHash",
+                            "pathAssumptionHash",
+                            "assumptionSetHash",
+                            "caseLedgerHash",
+                            "experimentHash",
+                            "playReplayHash",
+                        ),
+                        forbiddenHashImpacts=(
+                            "providerLaneLineageHash",
+                            "pathHistoryInputHash",
+                            "strategySetHash",
+                            "rawSourceRefs",
+                            "revisedHistoryRefs",
+                        ),
+                        providerLaneLineageHash=ledger.providerLaneLineageHash,
+                        providerLineageStatus=ledger.providerLineageStatus,
+                        providerObservationBatchReceiptIds=ledger.providerObservationBatchReceiptIds,
+                        providerObservationBatchSourceReceiptIds=ledger.providerObservationBatchSourceReceiptIds,
+                        priceSourceLegReceiptIds=ledger.priceSourceLegReceiptIds,
+                        derivedReturnReceiptIds=ledger.derivedReturnReceiptIds,
+                        rawSourceRefs=ledger.rawSourceRefs,
+                        revisedHistoryRefs=ledger.revisedHistoryRefs,
+                        explicitAssumptionId=explicitAssumptionId,
+                        claim=claim,
+                        falsifier=falsifier,
+                        pathHistoryInputHash=ledger.pathHistoryInputHash,
+                        pathAssumptionHash=ledger.pathAssumptionHash,
+                        pathAssumptionStepHash=pathAssumptionStepHash,
+                        assumptionSetHash=assumptionSetHash,
+                        caseLedgerHash=caseLedgerHash,
+                        strategyContractHash="",
+                        parameterHash="",
+                        blockedReasons=blockers,
+                    )
+                )
+    return tuple(rows)
+
+
+def _strategyActionControlRows(
+    strategies: tuple[StrategySpec, ...],
+    strategyContractHashes: tuple[str, ...],
+) -> tuple[ConditionalPlayControlRow, ...]:
+    rows: list[ConditionalPlayControlRow] = []
+    for strategy, contractHash in zip(strategies, strategyContractHashes, strict=True):
+        for step, actions in enumerate(strategy.actionsByStep):
+            for actionId, value in sorted(actions.items(), key=lambda item: str(item[0])):
+                rows.append(
+                    _controlRow(
+                        controlId=f"strategyAction:{strategy.strategyId}:{actionId}:step{step}",
+                        semanticPlane="strategyAction",
+                        controlKind="strategyActionSchedule",
+                        adjustmentMode="setStrategyActionStep",
+                        adjustabilityStatus="editableStrategyAction",
+                        scope="strategyStep",
+                        caseId="",
+                        strategyId=strategy.strategyId,
+                        step=step,
+                        targetId=actionId,
+                        sourceVariableId="",
+                        targetVariableId=actionId,
+                        laneId="",
+                        cardId="",
+                        unit=_actionUnit(actionId),
+                        frequency="step",
+                        timing="action",
+                        transformId="identity-v1",
+                        valueSummary=_valueSummary((float(value),)),
+                        sourceRefs=strategy.refs,
+                        semanticRefs=(),
+                        expectedHashImpacts=(
+                            "strategySetHash",
+                            "simulationSpecHash",
+                            "resultSetHash",
+                            "tracePanelHash",
+                            "playReplayHash",
+                        ),
+                        forbiddenHashImpacts=(
+                            "providerLaneLineageHash",
+                            "pathHistoryInputHash",
+                            "pathAssumptionHash",
+                            "assumptionSetHash",
+                            "caseLedgerHash",
+                        ),
+                        providerLaneLineageHash="",
+                        providerLineageStatus=(),
+                        providerObservationBatchReceiptIds=(),
+                        providerObservationBatchSourceReceiptIds=(),
+                        priceSourceLegReceiptIds=(),
+                        derivedReturnReceiptIds=(),
+                        rawSourceRefs=(),
+                        revisedHistoryRefs=(),
+                        explicitAssumptionId="",
+                        claim="",
+                        falsifier="",
+                        pathHistoryInputHash="",
+                        pathAssumptionHash="",
+                        pathAssumptionStepHash="",
+                        assumptionSetHash="",
+                        caseLedgerHash="",
+                        strategyContractHash=contractHash,
+                        parameterHash="",
+                        blockedReasons=(),
+                    )
+                )
+    return tuple(rows)
+
+
+def _lawParameterControlRows(
+    caseLedgers: tuple[OneCompanyScenarioCaseLedger, ...],
+    caseLedgerHashes: tuple[str, ...],
+    assumptionSetHashes: tuple[str, ...],
+) -> tuple[ConditionalPlayControlRow, ...]:
+    rows: list[ConditionalPlayControlRow] = []
+    for ledger, caseLedgerHash, assumptionSetHash in zip(
+        caseLedgers,
+        caseLedgerHashes,
+        assumptionSetHashes,
+        strict=True,
+    ):
+        blockers = _controlLineageBlockers(ledger)
+        for exposure in ledger.exposureLedgers:
+            parameterHash = canonicalPayloadHash(
+                {
+                    "schemaVersion": "conditional-play-law-parameter-v1",
+                    "caseLedgerHash": caseLedgerHash,
+                    "exposure": exposure,
+                }
+            )
+            exposureBlockers = blockers
+            if not exposure.admissionReceiptId:
+                exposureBlockers = _dedupe((*exposureBlockers, "lawParameterAdmissionMissing"))
+            rows.append(
+                _controlRow(
+                    controlId=f"lawParameter:{ledger.caseId}:{exposure.exposureId}:coefficient",
+                    semanticPlane="lawParameter",
+                    controlKind="operatingTransmissionCoefficient",
+                    adjustmentMode="lawParameterOverride",
+                    adjustabilityStatus="overlayOnly",
+                    scope="caseLaw",
+                    caseId=ledger.caseId,
+                    strategyId="",
+                    step=-1,
+                    targetId=f"{exposure.sourceVariableId}->{exposure.targetShock}",
+                    sourceVariableId=exposure.sourceVariableId,
+                    targetVariableId=exposure.targetShock,
+                    laneId="",
+                    cardId="",
+                    unit=exposure.coefficientUnit,
+                    frequency=exposure.sourceFrequency,
+                    timing=exposure.sourceTiming,
+                    transformId=exposure.sourceTransformId,
+                    valueSummary=_valueSummary((exposure.coefficient,)),
+                    sourceRefs=(exposure.sourceRef,),
+                    semanticRefs=(f"factorContractHash:{exposure.sourceFactorContractHash}",),
+                    expectedHashImpacts=(
+                        "parameterHash",
+                        "simulationSpecHash",
+                        "resultSetHash",
+                        "tracePanelHash",
+                        "playReplayHash",
+                    ),
+                    forbiddenHashImpacts=(
+                        "providerLaneLineageHash",
+                        "pathHistoryInputHash",
+                        "pathAssumptionHash",
+                        "strategySetHash",
+                    ),
+                    providerLaneLineageHash=ledger.providerLaneLineageHash,
+                    providerLineageStatus=ledger.providerLineageStatus,
+                    providerObservationBatchReceiptIds=ledger.providerObservationBatchReceiptIds,
+                    providerObservationBatchSourceReceiptIds=ledger.providerObservationBatchSourceReceiptIds,
+                    priceSourceLegReceiptIds=ledger.priceSourceLegReceiptIds,
+                    derivedReturnReceiptIds=ledger.derivedReturnReceiptIds,
+                    rawSourceRefs=ledger.rawSourceRefs,
+                    revisedHistoryRefs=ledger.revisedHistoryRefs,
+                    explicitAssumptionId="",
+                    claim="",
+                    falsifier="",
+                    pathHistoryInputHash=ledger.pathHistoryInputHash,
+                    pathAssumptionHash=ledger.pathAssumptionHash,
+                    pathAssumptionStepHash="",
+                    assumptionSetHash=assumptionSetHash,
+                    caseLedgerHash=caseLedgerHash,
+                    strategyContractHash="",
+                    parameterHash=parameterHash,
+                    blockedReasons=exposureBlockers,
+                )
+            )
+    return tuple(rows)
+
+
+def _controlSortKey(row: ConditionalPlayControlRow) -> tuple:
+    return (row.semanticPlane, row.caseId, row.strategyId, row.step, row.targetId, row.controlId)
+
+
+def _validateControlRows(
+    rows: tuple[ConditionalPlayControlRow, ...],
+    *,
+    stateIds: set[str],
+    actionIds: set[str],
+    factorIds: set[str],
+) -> None:
+    if not rows:
+        raise ScenarioCompositionError("conditional play control surface needs rows")
+    controlIds = tuple(row.controlId for row in rows)
+    if len(set(controlIds)) != len(controlIds):
+        raise ScenarioCompositionError("conditional play control ids must be unique")
+    for row in rows:
+        if row.rowHash != _rowHash("controlRow", _controlRowPayload(row)):
+            raise ScenarioCompositionError("conditional play control row hash mismatch")
+        if row.semanticPlane in {"conditionFactor", "assumptionDelta"}:
+            if row.targetId in actionIds or row.targetId in stateIds or row.targetId not in factorIds:
+                raise ScenarioCompositionError("condition controls must stay in factor plane")
+        if row.semanticPlane == "strategyAction" and row.targetId not in actionIds:
+            raise ScenarioCompositionError("strategy controls must stay in action plane")
+        if row.semanticPlane == "currentState" and row.targetId not in stateIds:
+            raise ScenarioCompositionError("current state controls must stay in state plane")
+        if row.semanticPlane == "lawParameter" and (
+            row.targetId in actionIds or row.targetId in stateIds or not row.parameterHash
+        ):
+            raise ScenarioCompositionError("law controls must stay in parameter plane")
+        if row.adjustabilityStatus == "editableExplicitAssumption" and (
+            not row.explicitAssumptionId or not row.claim or not row.falsifier or not row.pathAssumptionStepHash
+        ):
+            raise ScenarioCompositionError("editable assumption controls need claim, falsifier, and step hash")
+        if row.rawSourceRefs and "rawSourceRefOnly" not in row.blockedReasons:
+            raise ScenarioCompositionError("raw source controls need raw source blocker")
+        if row.revisedHistoryRefs and "revisedHistory" not in row.blockedReasons:
+            raise ScenarioCompositionError("revised history controls need revised history blocker")
+
+
+def conditionalPlayControlSurfacePayload(surface: ConditionalPlayControlSurface) -> dict:
+    """Build canonical payload for the internal play control surface."""
+
+    return {
+        "schemaVersion": surface.schemaVersion,
+        "kind": surface.kind,
+        "lineageMode": surface.lineageMode,
+        "contractHash": CONDITIONAL_PLAY_CONTROL_SURFACE_CONTRACT_HASH,
+        "entityId": surface.entityId,
+        "shape": {
+            "scenarioCount": surface.scenarioCount,
+            "strategyCount": surface.strategyCount,
+            "horizon": surface.horizon,
+            "frequency": surface.frequency,
+            "controlCount": surface.controlCount,
+        },
+        "sourceSeals": {
+            "caseLedgerHashes": surface.caseLedgerHashes,
+            "providerLaneLineageHashes": surface.providerLaneLineageHashes,
+            "pathHistoryInputHashes": surface.pathHistoryInputHashes,
+            "pathAssumptionHashes": surface.pathAssumptionHashes,
+            "assumptionSetHashes": surface.assumptionSetHashes,
+        },
+        "rowHashes": surface.rowHashes,
+        "adjustableControlIds": surface.adjustableControlIds,
+        "overlayControlIds": surface.overlayControlIds,
+        "lockedControlIds": surface.lockedControlIds,
+        "controlPanelHash": surface.controlPanelHash,
+        "rows": surface.rows,
+        "blockedReasons": surface.blockedReasons,
+        "warnings": surface.warnings,
+    }
+
+
+def conditionalPlayControlSurfaceSubjectHash(surface: ConditionalPlayControlSurface) -> str:
+    """Return the content hash for the internal play control surface."""
+
+    return canonicalPayloadHash(conditionalPlayControlSurfacePayload(surface))
+
+
+def _buildConditionalPlayControlSurface(
+    *,
+    entityId: str,
+    inputs: OperatingWorldInputs,
+    cases: tuple[OperatingScenarioCase, ...],
+    strategies: tuple[StrategySpec, ...],
+    caseLedgers: tuple[OneCompanyScenarioCaseLedger, ...],
+    caseLedgerHashes: tuple[str, ...],
+    assumptionSetHashes: tuple[str, ...],
+    strategyContractHashes: tuple[str, ...],
+    warnings: tuple[str, ...],
+) -> ConditionalPlayControlSurface:
+    rows = tuple(
+        sorted(
+            (
+                *_currentStateControlRows(inputs),
+                *_conditionControlRows(cases, caseLedgers, caseLedgerHashes, assumptionSetHashes),
+                *_strategyActionControlRows(strategies, strategyContractHashes),
+                *_lawParameterControlRows(caseLedgers, caseLedgerHashes, assumptionSetHashes),
+            ),
+            key=_controlSortKey,
+        )
+    )
+    stateIds = {str(variableId) for variableId in inputs.state}
+    actionIds = {actionId for strategy in strategies for row in strategy.actionsByStep for actionId in row}
+    factorIds = {factor.variableId for case in cases for factor in case.pathSet.factorSpecs}
+    _validateControlRows(rows, stateIds=stateIds, actionIds=actionIds, factorIds=factorIds)
+    adjustableControlIds = tuple(
+        row.controlId
+        for row in rows
+        if row.adjustabilityStatus in {"editableExplicitAssumption", "editableStrategyAction"}
+    )
+    overlayControlIds = tuple(row.controlId for row in rows if row.adjustabilityStatus == "overlayOnly")
+    lockedControlIds = tuple(row.controlId for row in rows if row.adjustabilityStatus.startswith("locked"))
+    blockedReasons = _dedupe(tuple(reason for row in rows for reason in row.blockedReasons))
+    controlPanelHash = canonicalPayloadHash(rows)
+    draft = ConditionalPlayControlSurface(
+        surfaceHash="",
+        schemaVersion=CONDITIONAL_PLAY_CONTROL_SURFACE_VERSION,
+        kind=CONDITIONAL_PLAY_CONTROL_SURFACE_KIND,
+        lineageMode="conditionalWarGameControlProjection",
+        entityId=entityId,
+        scenarioCount=len(cases),
+        strategyCount=len(strategies),
+        horizon=caseLedgers[0].pathHorizon if caseLedgers else 0,
+        frequency=caseLedgers[0].pathFrequency if caseLedgers else "",
+        controlCount=len(rows),
+        controlPanelHash=controlPanelHash,
+        caseLedgerHashes=caseLedgerHashes,
+        providerLaneLineageHashes=_dedupe(tuple(ledger.providerLaneLineageHash for ledger in caseLedgers)),
+        pathHistoryInputHashes=_dedupe(tuple(ledger.pathHistoryInputHash for ledger in caseLedgers)),
+        pathAssumptionHashes=tuple(ledger.pathAssumptionHash for ledger in caseLedgers),
+        assumptionSetHashes=assumptionSetHashes,
+        rowHashes=tuple(row.rowHash for row in rows),
+        adjustableControlIds=adjustableControlIds,
+        overlayControlIds=overlayControlIds,
+        lockedControlIds=lockedControlIds,
+        rows=rows,
+        blockedReasons=blockedReasons,
+        warnings=warnings,
+    )
+    return replace(draft, surfaceHash=conditionalPlayControlSurfaceSubjectHash(draft))
+
+
 def _traceRows(
     comparison: OperatingScenarioComparison,
     caseLedgers: tuple[OneCompanyScenarioCaseLedger, ...],
@@ -3631,7 +4346,20 @@ def conditionalPlayReplayPayload(report: ConditionalPlayReplayReport) -> dict:
             "leaderPanelHash": report.leaderPanelHash,
             "fragileCasePanelHash": report.fragileCasePanelHash,
             "blockerPanelHash": report.blockerPanelHash,
+            "controlPanelHash": report.controlPanelHash,
             "provenanceIndexHash": report.provenanceIndexHash,
+        },
+        "controls": {
+            "schemaVersion": report.controlSurface.schemaVersion,
+            "kind": report.controlSurface.kind,
+            "controlSurfaceHash": report.controlSurfaceHash,
+            "controlPanelHash": report.controlPanelHash,
+            "rowHashes": report.controlSurface.rowHashes,
+            "adjustableControlIds": report.controlSurface.adjustableControlIds,
+            "overlayControlIds": report.controlSurface.overlayControlIds,
+            "lockedControlIds": report.controlSurface.lockedControlIds,
+            "blockedReasons": report.controlSurface.blockedReasons,
+            "surface": report.controlSurface,
         },
         "conditions": report.conditionRows,
         "strategies": report.strategyRows,
@@ -3664,6 +4392,7 @@ def _buildConditionalPlayReplayReport(
     cellRows: tuple[ConditionalPlayCellRow, ...],
     leaderTransitions: tuple[ConditionalPlayLeaderTransition, ...],
     blockerRows: tuple[ConditionalPlayBlockerRow, ...],
+    controlSurface: ConditionalPlayControlSurface,
 ) -> ConditionalPlayReplayReport:
     if experiment.decisionStatus != "conditionalOnly" or experiment.recommendation is not None:
         raise ScenarioCompositionError("conditional play replay cannot promote a policy recommendation")
@@ -3680,6 +4409,13 @@ def _buildConditionalPlayReplayReport(
     horizons = tuple(dict.fromkeys(ledger.pathHorizon for ledger in experiment.caseLedgers))
     if len(frequencies) != 1 or len(horizons) != 1:
         raise ScenarioCompositionError("conditional play replay needs one frequency and horizon")
+    if (
+        not controlSurface.rows
+        or controlSurface.caseLedgerHashes != experiment.caseLedgerHashes
+        or controlSurface.providerLaneLineageHashes != experiment.providerLaneLineageHashes
+        or controlSurface.surfaceHash != conditionalPlayControlSurfaceSubjectHash(controlSurface)
+    ):
+        raise ScenarioCompositionError("conditional play replay control surface mismatch")
     conditionPanelHash = canonicalPayloadHash(conditionRows)
     strategyPanelHash = canonicalPayloadHash(strategyRows)
     cellPanelHash = canonicalPayloadHash(cellRows)
@@ -3687,6 +4423,7 @@ def _buildConditionalPlayReplayReport(
     leaderPanelHash = canonicalPayloadHash(leaderTransitions)
     fragileCasePanelHash = canonicalPayloadHash(experiment.fragilityCells)
     blockerPanelHash = canonicalPayloadHash(blockerRows)
+    controlPanelHash = canonicalPayloadHash(controlSurface.rows)
     provenanceIndexHash = canonicalPayloadHash(_playReplayProvenanceIndex(experiment))
     draft = ConditionalPlayReplayReport(
         playReplayHash="",
@@ -3718,7 +4455,9 @@ def _buildConditionalPlayReplayReport(
         leaderPanelHash=leaderPanelHash,
         fragileCasePanelHash=fragileCasePanelHash,
         blockerPanelHash=blockerPanelHash,
+        controlPanelHash=controlPanelHash,
         provenanceIndexHash=provenanceIndexHash,
+        controlSurfaceHash=controlSurface.surfaceHash,
         conditionRows=conditionRows,
         strategyRows=strategyRows,
         cellRows=cellRows,
@@ -3726,6 +4465,7 @@ def _buildConditionalPlayReplayReport(
         leaderTransitions=leaderTransitions,
         fragilityRows=experiment.fragilityCells,
         blockerRows=blockerRows,
+        controlSurface=controlSurface,
         blockedReasons=experiment.blockedReasons,
         warnings=experiment.warnings,
     )
@@ -4709,6 +5449,17 @@ def runConditionalScenarioExperiment(
     playCellRows = _playCellRows(cells)
     leaderTransitions = _leaderTransitions(caseLedgers, assumptionSetHashes)
     playBlockerRows = _blockerRows(blockedReasons, caseLedgers)
+    controlSurface = _buildConditionalPlayControlSurface(
+        entityId=entityId,
+        inputs=inputs,
+        cases=caseTuple,
+        strategies=strategyTuple,
+        caseLedgers=caseLedgers,
+        caseLedgerHashes=caseLedgerHashes,
+        assumptionSetHashes=assumptionSetHashes,
+        strategyContractHashes=comparison.strategyContractHashes,
+        warnings=warnings,
+    )
     resultSetHash = canonicalPayloadHash(
         {
             "schemaVersion": CONDITIONAL_SCENARIO_EXPERIMENT_VERSION,
@@ -4857,6 +5608,7 @@ def runConditionalScenarioExperiment(
         playCellRows,
         leaderTransitions,
         playBlockerRows,
+        controlSurface,
     )
     return replace(experiment, playReplayReport=playReplayReport)
 

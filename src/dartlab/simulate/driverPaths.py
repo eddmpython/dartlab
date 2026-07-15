@@ -121,11 +121,23 @@ class DriverPathAudit:
     blockLength: int
     seed: int
     driverCardIds: tuple[str, ...]
+    assumptionDescriptors: tuple[tuple[str, str, str, str], ...]
     validationStatus: str
     observedHistoryStatus: str
     historyStatus: str
     sourceRefs: tuple[str, ...]
     warnings: tuple[str, ...]
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "assumptionStepHashes", tuple(self.assumptionStepHashes))
+        object.__setattr__(self, "driverCardIds", tuple(self.driverCardIds))
+        object.__setattr__(
+            self,
+            "assumptionDescriptors",
+            tuple(tuple(item) for item in self.assumptionDescriptors),
+        )
+        object.__setattr__(self, "sourceRefs", tuple(self.sourceRefs))
+        object.__setattr__(self, "warnings", tuple(self.warnings))
 
 
 @dataclass(frozen=True)
@@ -383,6 +395,14 @@ def _assumptionSteps(
         }
     )
     return tuple(steps), assumptionHash, assumptionStepHashes
+
+
+def _assumptionDescriptors(sources: tuple[DriverAssumptionSource, ...]) -> tuple[tuple[str, str, str, str], ...]:
+    return tuple(
+        (factor.variableId, source.card.assumptionId, source.card.claim, source.card.falsifier)
+        for source in sources
+        for factor in source.card.factors
+    )
 
 
 def _pathSetHash(paths: tuple[ScenarioPath, ...]) -> str:
@@ -658,6 +678,7 @@ def composeDriverPathSetWithAssumptions(
         blockLength=basePathSet.audit.blockLength,
         seed=basePathSet.audit.seed,
         driverCardIds=(*basePathSet.audit.driverCardIds, *(card.cardId for card in cards)),
+        assumptionDescriptors=(*basePathSet.audit.assumptionDescriptors, *_assumptionDescriptors(assumptionTuple)),
         validationStatus="unvalidated",
         observedHistoryStatus=basePathSet.audit.observedHistoryStatus,
         historyStatus="explicitAssumption",
@@ -879,6 +900,7 @@ def buildDriverPathSet(
         blockLength=blockLength,
         seed=int(seed),
         driverCardIds=tuple(card.cardId for card in cards),
+        assumptionDescriptors=_assumptionDescriptors(assumptions),
         validationStatus=validationStatus,
         observedHistoryStatus=observedHistoryStatus,
         historyStatus=outputHistoryStatus,
