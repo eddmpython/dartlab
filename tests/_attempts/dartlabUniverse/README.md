@@ -45,6 +45,7 @@ uv run python -X utf8 tests/_attempts/dartlabUniverse/snapshot/changeReplayProbe
 uv run python -X utf8 tests/_attempts/dartlabUniverse/policy/redistributionReceiptProbe.py
 uv run python -X utf8 tests/_attempts/dartlabUniverse/policy/lensAvailabilityProbe.py
 uv run python -X utf8 tests/_attempts/dartlabUniverse/workflow/workflowProjectionProbe.py
+uv run python -X utf8 tests/_attempts/dartlabUniverse/identity/entityIdentityProbe.py
 ```
 
 pytest는 repository test lock을 획득한 뒤 attempt test file 하나씩 실행한다.
@@ -60,6 +61,7 @@ pytest는 repository test lock을 획득한 뒤 attempt test file 하나씩 실�
 | U0-L01 LensAvailability | capability 226, Skill OS 286, 6 archetype fixture | capability lens semantic 및 runtime 선언 0, Skill OS publicBrowser 0, current public lens ready 0, synthetic 8/8 PASS | generic lens 계약 완료. explicit LensSpec registry와 receipt 전까지 public lens 0 유지 |
 | U0-W01 change replay | append-only revision 8개와 DART finance 정렬 앞 30개 | synthetic 다섯 변화 각 1, revision 8/8, look-ahead 0, evidence 100%, test 8/8. live 359,115 row에서 rcept_no 30/30, exact time, revisionId, rowKey 0/30, revision group 0 | replay 계약 완료. live exact 변화 재생은 source field와 reviewed multi-filing fixture 전까지 차단 |
 | U0-W02 workflow projection | tested recipe ID 정렬 앞 10개와 synthetic qualified fixture | procedure 80, requiredEvidence 60, negative candidate 29 전부 보존, hash 10/10, adapter 0, test 8/8. qualified falsifier 0, evidence gap 60, live conclude 0 | generic compiler 계약 완료. explicit falsifier와 execution evidence 전까지 live Kill-Chain 결론 차단 |
+| U0-I01 canonical identity | DART legal master, KRX security, SEC ticker, KR 50, US 30, filing sample | entity와 filing exact 160/160, KRX ISIN 2,872/2,872, ambiguity auto resolve 0, test 9/9. KRX issuer gap 130, alias validity KR 0 및 US 0, US local filing issuer 2 | canonical ID 계약 완료. reference issuer link, validity, reviewed special-case gold 전까지 live historical registry 차단 |
 
 ## 금지
 

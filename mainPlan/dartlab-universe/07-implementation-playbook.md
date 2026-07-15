@@ -267,6 +267,8 @@ kill: 3D 또는 canvas에서만 가능한 핵심 작업이 생기면 해당 rend
 
 실패 시: ID registry production 설계를 중단하고 reference owner의 기존 resolver 보강안을 먼저 설계한다.
 
+2026-07-15 실행 결과: KR corpCode 50/50, US CIK 30/30, DART filing 50/50, SEC accession 30/30으로 exact identifier 160/160을 canonicalize했고 KRX ISIN security 2,872/2,872를 legal entity와 분리했다. Synthetic ambiguity에서 selectedId 자동 생성은 0이었고 동일 CIK의 복수 class는 entity resolved, security ambiguous로 보존했다. Full DART master에는 exact normalized name이 둘 이상의 corpCode로 이어지는 alias 5,392개가 있고 KRX security 2,872개 중 DART issuer exact link는 2,742개, gap은 130개였다. SEC CIK 1,473개는 복수 current ticker를 가진다. KR과 US historical validity field는 모두 0이고 local US filing source는 issuer 2개뿐이다. Canonical ID 계약은 완료했지만 historical identity admission은 실패다. Reference owner의 issuer link, validity와 reviewed special-case gold 전까지 production ID registry를 만들지 않는다. 상세 evidence는 `tests/_attempts/dartlabUniverse/identity/README.md`가 소유한다.
+
 ### U0-E01 exact document evidence probe
 
 목표: current edge hint에서 DART 및 EDGAR exact filing과 section span을 요청 시점에 찾을 수 있는지 측정한다.

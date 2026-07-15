@@ -79,7 +79,7 @@ Python demo의 module docstring에는 `결과` 섹션을 둔다. 출력 파일�
 |---|---|---|---|---|---|
 | U0-T01 | 현재 graph가 fact로 입장 가능한가 | HF ecosystem | sourceRef와 availableAt coverage | 기존 edge candidate 강등 | 완료 |
 | U0-T02 | exact admission 필드가 실제 있는가 | HF ecosystem과 source candidates | span, section, direction, time, policy 분리 계수 | current edge candidate 유지 | 완료 |
-| U0-I01 | canonical legal entity ID가 복원되는가 | KR 50, US 30 | exact ID 100%, ambiguous auto resolve 0 | reference resolver 우선 보강 | 대기 |
+| U0-I01 | canonical legal entity ID가 복원되는가 | KR 50, US 30, security와 filing sample | exact ID 100%, ambiguous auto resolve 0 | reference resolver 우선 보강 | 계약 완료, historical registry 차단 |
 | U0-E01 | edge hint에서 exact source를 찾는가 | positive 100, negative 100 | resolution 95%, false accept 1% 이하 | predicate별 source lane 재설계 | 대기 |
 | U0-O01 | revision과 시간을 보존하는가 | multi-filing fixture | history 손실 0, look-ahead 0 | assertion schema 수정 | 대기 |
 | U0-P01 | bounded scene이 결정론적인가 | atlas, industry, company | bounds 100%, hash 일치 100% | priority/truncation 수정 | 대기 |
@@ -304,6 +304,37 @@ liveReady                            false
 ```
 
 판정: immutable catalog blob과 canonical recipe content hash로 recipeVersion을 재현하고 procedure, recipeSteps, requiredEvidence, sourceRefs, negative condition origin을 generic SceneBeat로 보존했다. failureMode와 forbidden은 qualified falsifier가 아니라 candidate다. VerificationRefs 없는 candidate는 conclude를 열지 않고 missing evidence 60개는 GapReceipt로 남긴다. U0-W02 compiler는 합격이지만 live Kill-Chain 결론은 `revise`로 차단한다.
+
+## 4.7 U0-I01 결과
+
+명령:
+
+```powershell
+uv run python -X utf8 tests/_attempts/dartlabUniverse/identity/entityIdentityProbe.py
+```
+
+결과:
+
+```text
+krLegalSampleCanonical              50/50
+usLegalSampleCanonical              30/30
+krFilingSampleCanonical             50/50
+usFilingSampleCanonical             30/30
+exactIdentifierCoverage              100%
+krxIsinSecurityCanonical       2,872/2,872
+ambiguousAliasAutoResolve                0
+krxSecurityIssuerLink           2,742/2,872
+krxSecurityIssuerGap                   130
+usMultiSecurityCik                   1,473
+krHistoricalValidityFields               0
+usHistoricalValidityFields               0
+usLocalFilingIssuers                     2
+syntheticRegression                    9/9 PASS
+historicalAliasReady                 false
+liveReady                            false
+```
+
+판정: exact provider identifier와 entity, security, filing kind 분리 contract는 합격이다. 그러나 security issuer link, alias validity와 special-case gold가 불완전해 current lookup을 historical identity로 승격할 수 없다. 이름과 ticker의 first-row 또는 fuzzy 해소는 금지하고 reference owner 보강 전 live registry를 차단한다.
 
 ## 5. existing attempts 재사용 지도
 
