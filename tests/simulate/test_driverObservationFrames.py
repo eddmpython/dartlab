@@ -89,6 +89,7 @@ from dartlab.simulate.scenarioComposition import (
     ScenarioCompositionError,
     buildScenarioCoefficientBindingFromVerifiedMultivariableAdmission,
     compareOneCompanyTwoScenarioStrategies,
+    conditionalPlayReplaySubjectHash,
     runConditionalScenarioExperiment,
     scenarioCoefficientBindingHash,
     scenarioCoefficientExposureContractHash,
@@ -3620,6 +3621,62 @@ def testMultiProviderLaneMatrixFeedsFourQuarterConditionalExperiment(tmp_path) -
     assert "assumptionSweepPresent" in experiment.blockedReasons
     assert "strategySweepPresent" in experiment.blockedReasons
 
+    report = experiment.playReplayReport
+    assert report is not None
+    assert report.schemaVersion == "conditional-play-replay-v1"
+    assert report.kind == "conditionalPlayReplay"
+    assert report.lineageMode == "conditionalWarGameProjection"
+    assert report.entityId == "005930"
+    assert report.decisionStatus == "conditionalOnly"
+    assert report.recommendationStatus == "disabled"
+    assert report.recommendationCeiling == "conditionalOnly"
+    assert report.recommendation is None
+    assert report.scenarioCount == 4
+    assert report.strategyCount == 4
+    assert report.cellCount == 16
+    assert report.horizon == 4
+    assert report.frequency == "quarter"
+    assert report.traceRetention == "full"
+    assert len(report.conditionRows) == 4
+    assert len(report.strategyRows) == 4
+    assert len(report.cellRows) == 16
+    assert len(report.fragilityRows) == 4
+    assert report.caseLedgerHashes == experiment.caseLedgerHashes
+    assert report.providerLaneLineageHashes == experiment.providerLaneLineageHashes
+    assert report.experimentHash == experiment.experimentHash
+    assert report.comparisonHash == experiment.comparisonHash
+    assert report.simulationSpecHash == experiment.simulationSpecHash
+    assert report.resultSetHash == experiment.resultSetHash
+    assert report.strategySetHash == experiment.strategySetHash
+    assert report.conditionPanelHash
+    assert report.strategyPanelHash
+    assert report.cellPanelHash
+    assert report.tracePanelHash
+    assert report.leaderPanelHash
+    assert report.fragileCasePanelHash
+    assert report.blockerPanelHash
+    assert report.provenanceIndexHash
+    assert conditionalPlayReplaySubjectHash(report) == report.playReplayHash
+    assert any(row.changed for row in report.leaderTransitions)
+    assert any(
+        row.scope == "experiment" and row.reason == "conditionalExperimentNotPolicyRecommendation"
+        for row in report.blockerRows
+    )
+    assert any(
+        row.scope == "experiment" and row.reason == "policyEvaluationCertificateMissing" for row in report.blockerRows
+    )
+    with pytest.raises(ScenarioCompositionError, match="conditional play replay needs retained trace rows"):
+        runConditionalScenarioExperiment(
+            "005930",
+            inputs,
+            cases,
+            strategies,
+            debtLimit=1_000.0,
+            maxFinancing=200.0,
+            maxInvestment=200.0,
+            traceLimit=0,
+        )
+
     expectedLaneIds = (
         "dart-filing-margin",
         "edgar-filing-margin",
@@ -3751,6 +3808,52 @@ def testMultiProviderLaneMatrixFeedsFourQuarterConditionalExperiment(tmp_path) -
 
     actionIds = {"priceChange", "capacityInvestment", "borrow", "repay"}
     stateIds = {"price", "demandVolume", "unitCost", "fixedCost", "capacityUnits", "cash", "debt"}
+    shockIds = {"capacityChange", "debtRate", "demandChange", "fixedCostChange", "marketPriceChange", "unitCostChange"}
+    expectedTraceRows = sum(ledger.retainedTraceCount * ledger.pathHorizon for ledger in experiment.caseLedgers)
+    assert len(report.traceRows) == expectedTraceRows
+    assert expectedTraceRows == sum(ledger.traceCount * ledger.pathHorizon for ledger in experiment.caseLedgers)
+    assert all(ledger.retainedTraceCount == ledger.traceCount for ledger in experiment.caseLedgers)
+    assert all(ledger.pathFrequency == "quarter" for ledger in experiment.caseLedgers)
+    assert all(ledger.pathHorizon == 4 for ledger in experiment.caseLedgers)
+    assert {(row.caseId, row.strategyId) for row in report.traceRows} == {
+        (cell.caseId, cell.strategyId) for cell in experiment.cells
+    }
+    assert all(0 <= row.step < 4 for row in report.traceRows)
+    assert all(set(dict(row.beforeState)).isdisjoint(actionIds) for row in report.traceRows)
+    assert all(set(dict(row.afterState)).isdisjoint(actionIds) for row in report.traceRows)
+    assert all(set(dict(row.beforeState)).isdisjoint(expectedFactorIds) for row in report.traceRows)
+    assert all(set(dict(row.afterState)).isdisjoint(expectedFactorIds) for row in report.traceRows)
+    assert all(set(dict(row.shocks)).issubset(shockIds) for row in report.traceRows)
+    assert all(set(dict(row.issuedActions)) == actionIds for row in report.traceRows)
+    assert all(set(dict(row.effectiveActions)) == actionIds for row in report.traceRows)
+    assert all(row.caseLedgerHash in experiment.caseLedgerHashes for row in report.traceRows)
+    assert all(row.runHash for row in report.traceRows)
+    assert all(row.resultHash for row in report.traceRows)
+    assert all(row.traceRoot for row in report.traceRows)
+    assert all(row.providerLaneLineageHash in experiment.providerLaneLineageHashes for row in report.traceRows)
+    assert all(row.strategyContractHash in experiment.strategyContractHashes for row in report.traceRows)
+    assert all(row.sourceLineageKeysByFactor for row in report.traceRows)
+    assert all(
+        {key for key, _value in row.sourceLineageKeysByFactor} == set(expectedFactorIds) for row in report.traceRows
+    )
+    firstTrace = report.traceRows[0]
+    assert dict(firstTrace.beforeState)
+    assert dict(firstTrace.shocks)
+    assert dict(firstTrace.issuedActions)
+    assert dict(firstTrace.effectiveActions)
+    assert firstTrace.actionCost >= 0.0
+    assert dict(firstTrace.afterState)
+    assert firstTrace.lawIds
+    assert firstTrace.lawEvidenceKinds
+    assert firstTrace.assumptionStepHash in base.pathAssumptionStepHashes
+    tamperedTrace = replace(
+        firstTrace,
+        afterState=tuple(
+            (key, value + (1.0 if index == 0 else 0.0)) for index, (key, value) in enumerate(firstTrace.afterState)
+        ),
+    )
+    tamperedReport = replace(report, traceRows=(tamperedTrace, *report.traceRows[1:]))
+    assert conditionalPlayReplaySubjectHash(tamperedReport) != report.playReplayHash
     for case in cases:
         factorIds = {factor.variableId for factor in case.pathSet.factorSpecs}
         assert factorIds == set(expectedFactorIds)
@@ -3781,6 +3884,8 @@ def testMultiProviderLaneMatrixFeedsFourQuarterConditionalExperiment(tmp_path) -
         maxInvestment=200.0,
     )
     assert repeated.experimentHash == experiment.experimentHash
+    assert repeated.playReplayReport is not None
+    assert repeated.playReplayReport.playReplayHash == report.playReplayHash
 
     changedCases = (
         _multiProviderLaneMatrixScenarioCase(
@@ -3817,6 +3922,8 @@ def testMultiProviderLaneMatrixFeedsFourQuarterConditionalExperiment(tmp_path) -
     assert changed.simulationSpecHash != experiment.simulationSpecHash
     assert changed.resultSetHash != experiment.resultSetHash
     assert changed.experimentHash != experiment.experimentHash
+    assert changed.playReplayReport is not None
+    assert changed.playReplayReport.playReplayHash != report.playReplayHash
 
     changedDataSources = (
         _multiProviderDartFilingRegistrySource(marginShift=0.02),
@@ -3866,6 +3973,8 @@ def testMultiProviderLaneMatrixFeedsFourQuarterConditionalExperiment(tmp_path) -
     assert changedData.simulationSpecHash != experiment.simulationSpecHash
     assert changedData.resultSetHash != experiment.resultSetHash
     assert changedData.experimentHash != experiment.experimentHash
+    assert changedData.playReplayReport is not None
+    assert changedData.playReplayReport.playReplayHash != report.playReplayHash
 
 
 def testMultivariableAdmissionRejectsTamperedFeatureCellRef(tmp_path) -> None:
