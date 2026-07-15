@@ -173,7 +173,7 @@ RedistributionReceipt
 | 4 | U0-L01 | LensAvailability | 6 output archetype과 환경 상태 | 해당 lens 숨김 |
 | 5 | U0-W01 | changeReplay | synthetic revision 8/8, look-ahead 0, evidence 5/5. live exact fields 0/30 | 계약 완료, live 변화 우주 차단 |
 | 6 | U0-V01 | visual grammar | 상태 판독 90% 이상 | grammar 재설계 |
-| 7 | U0-W02 | workflowProjection | 단계, 근거, 반증 유실 0 | Kill-Chain 보류 |
+| 7 | U0-W02 | workflowProjection | procedure 80/80, evidence accounting 60/60, candidate 29/29, hash 10/10. qualified falsifier 0 | 계약 완료, live Kill-Chain conclude 차단 |
 | 8 | U0-V06 | renderer bakeoff | task, frame, heap, bundle 개선 | 새 dependency 기각 |
 | 9 | U1-Y01 | information yield | baseline 대비 개선 | 기능 revise 또는 reject |
 | 10 | U4-C01 | cross-market conformance | 20쌍 identity, unit, period | Twin 자동 overlay 금지 |

@@ -27,6 +27,7 @@
 - [x] U0-P02 RedistributionReceipt와 upstream public admission guard
 - [x] U0-L01 6 output archetype과 환경별 LensAvailability guard
 - [x] U0-W01 append-only change replay 계약과 live DART readiness census
+- [x] U0-W02 generic recipe workflow projection과 live conclusion gate
 - [ ] U0 identity, evidence, assertion, projection attempts
 - [ ] U0 workflow, visual, information yield attempts
 - [ ] U1~U2 implementation
@@ -60,6 +61,7 @@
 | 2026-07-15 | U0-P02 RedistributionReceipt 실행 | live reviewed receipt 0/10으로 publicReady false. synthetic 12건에서 unknown, localOnly, blocked, expired, prohibited, metadataOnly 확대와 금지 upstream false accept 0 |
 | 2026-07-15 | U0-L01 LensAvailability 실행 | capability 226개에 runtime, archetype, unit, coverage, missing 선언 0. Skill OS 286개에 publicBrowser 선언 0. synthetic 6 archetype 및 3환경 8건 통과, current public lens ready 0 |
 | 2026-07-15 | U0-W01 change replay 실행 | synthetic revision 8/8 보존, 다섯 변화 각 1, look-ahead 0, evidence 5/5, 미래 metadata 누출 0. live DART 30개는 filing ID만 30/30이고 exact time, revisionId, rowKey 0/30이라 public exact replay 차단 |
+| 2026-07-15 | U0-W02 workflow projection 실행 | tested recipe 정렬 앞 10개의 procedure 80, requiredEvidence 60, negative candidate 29를 100% 보존, hash 10/10, adapter와 fact promotion 0. qualified falsifier 0이라 live conclude 0 유지 |
 
 ## 핵심 실측 스냅샷
 
@@ -104,6 +106,19 @@ DART revisionId coverage              0/30
 DART rowKey coverage                  0/30
 DART observed revision groups             0
 DART live exact replay ready          false
+recipes                                 156
+tested recipes                           30
+tested complete workflow contract        22
+workflow sample recipes                  10
+workflow procedure preserved          80/80
+workflow required evidence accounted  60/60
+workflow falsifier candidates         29/29
+workflow qualified falsifiers              0
+workflow evidence gaps                    60
+workflow live conclusions                  0
+workflow flight hash repeat            10/10
+workflow dedicated adapters                0
+workflow model fact promotions             0
 ```
 
 같은 날 후속 live meta 재감사:
@@ -135,9 +150,10 @@ dart dataAsOf            null
 3. source version 10개는 SourceSnapshotSet으로 묶였지만 capability catalog의 immutable manifest가 없고 panel dataAsOf가 null이다. 따라서 current public exact replay는 아직 금지한다.
 4. RedistributionReceipt와 LensAvailability admission contract는 있지만 reviewed receipt는 0/10, Skill OS publicBrowser 선언은 0/286, current public lens ready는 0이다. map field의 upstream policy lineage도 결속되지 않았다.
 5. DART finance 정렬 앞 30개, 359,115 row에 rcept_no는 있지만 sourcePublishedAt, availableAt, revisionId, rowKey가 0/30이고 observed revision group도 0이다. U0-W01 synthetic 계약은 통과했지만 live 변화 우주 exact replay는 금지한다.
-6. `scan-screener-os`의 public valuation licensing P0가 승인 대기다. Universe는 해당 필드를 사용하지 않아야 한다.
-7. workspace의 landing 및 ui 대량 삭제는 본 작업과 무관한 기존 변경이다. U1 production 착수 전에 frontend host가 정상 상태인지 재검해야 한다.
+6. Tested recipe 30개에 explicit falsifier field가 없고 selected 10개의 qualified falsifier는 0이다. U0-W02 compiler는 candidate 29개를 보존하지만 verificationRefs와 execution evidence 전까지 live Kill-Chain conclude를 만들지 않는다.
+7. `scan-screener-os`의 public valuation licensing P0가 승인 대기다. Universe는 해당 필드를 사용하지 않아야 한다.
+8. workspace의 landing 및 ui 대량 삭제는 본 작업과 무관한 기존 변경이다. U1 production 착수 전에 frontend host가 정상 상태인지 재검해야 한다.
 
 ## 다음 단일 행동
 
-`tests/_attempts/dartlabUniverse/workflow/`에서 U0-W02 workflow projection probe를 구현한다. tested recipe 10개의 procedure, requiredEvidence, falsifier를 orient, focus, evidence, falsify, conclude `SceneBeat[]`로 lossless compile한다. missing required evidence는 GapReceipt로 보존하고 open falsifier가 없는 conclude를 차단한다. same input flight hash 불일치 또는 단계, 근거, 반증 유실 1건이면 Kill-Chain production 이관을 금지한다.
+`tests/_attempts/dartlabUniverse/identity/`에서 U0-I01 canonical identity probe를 구현한다. KR legal entity는 corpCode, US legal entity는 CIK10을 canonical key로 고정하고 security와 filing identity를 분리한다. 기존 DART metadata와 SEC submissions 또는 local resolver에서 KR 50, US 30 deterministic fixture 가용성을 먼저 센서스한다. exact identifier 결정론 100%, ambiguous alias 자동 단일 해소 0, legal entity와 security 혼합 0, historical ticker validity 결손 0을 모두 충족하지 못하면 reference owner 보강 전 production ID registry를 만들지 않는다.

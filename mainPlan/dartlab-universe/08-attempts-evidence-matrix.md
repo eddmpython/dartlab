@@ -87,7 +87,7 @@ Python demo의 module docstring에는 `결과` 섹션을 둔다. 출력 파일�
 | U0-P02 | public field가 승인됐는가 | source와 field registry | public mark receipt 100%, false accept 0 | source lane 차단 | 완료, live 0/10 차단 |
 | U0-L01 | lens가 환경에서 실제 가능한가 | 6 output archetype | unavailable 오표시 0, missing 보존 | 해당 lens 숨김 | 완료, live ready 0 |
 | U0-W01 | 변화를 look-ahead 없이 재생하는가 | synthetic 8 revision과 DART 30개 deterministic schema sample | revision 100%, look-ahead 0, evidence 95% | 변화 우주 범위 축소 | 계약 완료, live source 차단 |
-| U0-W02 | recipe를 반증 workflow로 만드는가 | tested recipe 10개 | 단계, 근거, falsifier 유실 0 | Kill-Chain 보류 | 대기 |
+| U0-W02 | recipe를 반증 workflow로 만드는가 | tested recipe 정렬 앞 10개와 qualified synthetic fixture | 단계, 근거, falsifier 유실 0 | Kill-Chain 보류 | 계약 완료, live conclusion 차단 |
 | U0-V01 | evidence 상태를 읽는가 | 30 card, task participant | 판독 90% 이상 | visual grammar 재설계 | 대기 |
 | U0-V02 | layout이 재현되는가 | 3 browser, 20 replay | logical hash 일치, 같은 viewport 및 DPR anchor 1px 이하 | layout 교체 | 대기 |
 | U0-V03 | 밀도에서 생략이 정직한가 | 250, 500, 1,000 node | collision 2% 이하, receipt 100% | lower LOD | 대기 |
@@ -267,6 +267,43 @@ liveExactReplayReady            false
 ```
 
 판정: synthetic contract는 query cutoff와 assertion identity를 분리하고, 미래 revision을 diff, artifactHash, sourceRefs에서 제외하며, production VintageRef의 exact as-known 조건을 통과했다. 그러나 live DART sample은 filing ID 외 exact observation time, revision identity, row locator가 없다. 표본은 대표성을 주장하지 않는 정렬 기반 schema census다. U0-W01 계약은 완료하되 live 변화 재생은 `revise`로 차단한다. `rcept_no`에서 임의 시각을 합성하지 않고 reviewed multi-filing fixture가 확보될 때 재심사한다.
+
+## 4.6 U0-W02 결과
+
+명령:
+
+```powershell
+uv run python -X utf8 tests/_attempts/dartlabUniverse/workflow/workflowProjectionProbe.py
+```
+
+결과:
+
+```text
+recipeCount                           156
+testedRecipeCount                      30
+testedCompleteCoreContractCount        22
+selectedRecipeCount                    10
+selectedProcedureCount                 80
+selectedRecipeStepCount                25
+selectedRequiredEvidenceCount          60
+selectedSourceRefRecipeCount        10/10
+selectedFalsifierCandidateCount        29
+selectedQualifiedFalsifierCount         0
+testedExplicitVersionFieldCount      0/30
+testedExplicitFalsifierFieldCount    0/30
+procedurePreservation                100%
+requiredEvidenceAccounting           100%
+falsifierCandidatePreservation       100%
+gapReceiptCount                         60
+conclusionBeatCount                      0
+modelFactPromotionCount                  0
+dedicatedAdapterCount                    0
+repeatedFlightHashMatch              10/10
+syntheticRegression                    8/8 PASS
+liveReady                            false
+```
+
+판정: immutable catalog blob과 canonical recipe content hash로 recipeVersion을 재현하고 procedure, recipeSteps, requiredEvidence, sourceRefs, negative condition origin을 generic SceneBeat로 보존했다. failureMode와 forbidden은 qualified falsifier가 아니라 candidate다. VerificationRefs 없는 candidate는 conclude를 열지 않고 missing evidence 60개는 GapReceipt로 남긴다. U0-W02 compiler는 합격이지만 live Kill-Chain 결론은 `revise`로 차단한다.
 
 ## 5. existing attempts 재사용 지도
 

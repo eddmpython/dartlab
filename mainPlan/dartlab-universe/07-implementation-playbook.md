@@ -214,6 +214,8 @@ kill: 현재값의 과거 역주입 1건이면 변화 우주 production 이관�
 
 kill: 모델 요약이 fact로 승격된 사례 1건이면 즉시 기각한다.
 
+2026-07-15 실행 결과: 전체 recipe 156개 중 tested는 30개고 procedure, requiredEvidence, negative condition, sourceRef가 모두 있는 recipe는 22개였다. ID 정렬 앞 10개에서 procedure 80개, recipeSteps 25개, requiredEvidence 60개, sourceRef 10/10, failureMode와 forbidden candidate 29개를 generic compiler 하나로 100% 보존했다. same input flight hash는 10/10 일치했고 model fact promotion과 recipe별 adapter는 0이었다. Catalog Git blob은 U0-S01 기록과 일치하고 recipeVersion은 canonical content hash로 만들었다. 그러나 explicit falsifier field는 0/30, selected qualified falsifier는 0이라 evidence gap 60개를 GapReceipt로 남기고 live conclusion beat를 0으로 유지했다. U0-W02 compiler 계약은 완료했지만 verificationRefs를 가진 falsifier와 execution evidence 전까지 live Kill-Chain 결론은 차단한다. 상세 evidence는 `tests/_attempts/dartlabUniverse/workflow/README.md`가 소유한다.
+
 ### U0-V01~V06 visual qualification
 
 목표: 의미 좌표, 상태 문법, 밀도, 이중 시간, 접근성, renderer를 순서대로 반증한다.

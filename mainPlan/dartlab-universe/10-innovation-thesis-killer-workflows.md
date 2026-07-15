@@ -174,7 +174,7 @@ thesis
 
 ### DartLab 고유 자산
 
-Skill OS recipe 156개 중 procedure, requiredEvidence, falsifier를 가진 recipe를 장면 compiler의 입력으로 쓴다. capability 결과는 표준 `Ref`로만 받는다. recipe나 엔진을 그래프 노드로 노출하지 않는다.
+Skill OS recipe 156개 중 tested 30개를 우선 심사한다. Current schema에는 explicit falsifier field가 없으므로 failureModes와 forbidden은 origin을 보존한 candidate로만 받는다. VerificationRefs가 있는 qualified falsifier만 결론을 열 수 있다. Capability 결과는 표준 `Ref`로만 받고 recipe나 엔진을 그래프 노드로 노출하지 않는다.
 
 ### 장면 순서
 
@@ -207,6 +207,8 @@ Skill OS recipe 156개 중 procedure, requiredEvidence, falsifier를 가진 reci
 - 같은 입력의 flight hash 일치 100%
 - source 없는 요약 또는 모델 추론이 fact로 승격된 사례 1건이면 즉시 기각
 - 일반 evidence table보다 과제 완료시간 또는 정확도가 개선되지 않으면 UX 형태를 재설계
+
+2026-07-15 U0-W02 실측에서 tested 30개 중 core workflow field와 sourceRef가 완비된 recipe는 22개였다. 정렬 앞 10개의 procedure 80개, recipeSteps 25개, requiredEvidence 60개, negative candidate 29개를 100% 보존했고 flight hash 10/10, dedicated adapter 0, model fact promotion 0을 확인했다. 그러나 qualified falsifier는 0이고 execution evidence gap은 60이라 live conclude는 0이다. Generic compiler는 졸업했지만 live Thesis Kill-Chain 결론은 explicit falsifier와 verificationRefs가 생길 때까지 차단한다.
 
 ## 6. P1-A 판정 우주
 
