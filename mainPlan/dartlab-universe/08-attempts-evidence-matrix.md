@@ -91,7 +91,7 @@ Python demo의 module docstring에는 `결과` 섹션을 둔다. 출력 파일�
 | U0-V01 | evidence 상태를 읽는가 | 7 state, 30 card, task participant | 판독 90% 이상 | visual grammar 재설계 | 계약 완료, participant 0/12 차단 |
 | U0-V02 | layout이 재현되는가 | live 3 scene, 3 browser, 20 replay | logical hash 일치, 같은 viewport 및 DPR anchor 1px 이하 | layout 교체 | 완료, layout promote |
 | U0-V03 | 밀도에서 생략이 정직한가 | 250, 500, 1,000 node, desktop 및 mobile | collision 2% 이하, receipt 100% | lower LOD | 완료, density promote |
-| U0-V04 | 이중 시간을 이해하는가 | revision task 12개 | 시간 판독 90% 이상 | Time Lens 재설계 | 대기 |
+| U0-V04 | 이중 시간을 이해하는가 | revision task 12개, participant 12명 | validAt, knownAt, combined 판독 90% 이상 | Time Lens 재설계 | 계약 완료, participant 0/12 차단 |
 | U0-V05 | 접근성 표면이 동등한가 | keyboard, reader, low GPU | 핵심 task 100% | renderer 기각 | 대기 |
 | U0-V06 | 새 renderer가 필요한가 | SVG, Cosmos, DOM, 후보 | task, frame, heap, bundle 개선 | 새 dependency 기각 | 대기 |
 | U0-G01 | release gold를 통과하는가 | positive 300, negative 300 | precision 98%, false accept 1% 이하 | U1 금지 | 대기 |
@@ -528,6 +528,39 @@ densityContractReady                      true
 ```
 
 판정: 250, 500, 1,000 node fixture에 desktop 500 node, 1,000 edge, 80 label과 mobile 250 node, 500 edge, 40 label 상한을 적용했다. Stable priority와 semantic anchor로 active representation을 고르고 계산 rectangle 및 실제 1280x720, 390x844 DOM에서 label collision은 0%였다. Node, edge, label omission은 budget, omitted endpoint, collision reason으로 6/6 전부 설명했고 reverse input receipt hash도 6/6 일치했다. Aggregate receipt는 omitted member, status count, coverage, quantile, top changes를 보존한다. U0-V03 density contract는 `promote`지만 FPS, heap, hit-test, accessibility와 renderer bakeoff는 아직 미측정이다.
+
+## 4.14 U0-V04 결과
+
+명령:
+
+```powershell
+node --check tests/_attempts/dartlabUniverse/visual/bitemporalComprehensionProbe.mjs
+node --test tests/_attempts/dartlabUniverse/visual/testBitemporalComprehensionProbe.mjs
+node tests/_attempts/dartlabUniverse/visual/bitemporalComprehensionProbe.mjs
+```
+
+결과:
+
+```text
+revisionTaskCount                         12
+answerCombinationCount                  4/4
+separateControlCoverage               12/12
+combinedSliderUsageCount                   0
+ariaCoverage                          12/12
+renderedTaskCount                     12/12
+machineRegression                       9/9 PASS
+reviewedParticipantCount               0/12
+reviewedTaskResponseCount              0/144
+reviewedAxisAnswerCount                0/288
+validAtAccuracy                   unmeasured
+knownAtAccuracy                   unmeasured
+combinedAccuracy                  unmeasured
+contractReady                           true
+comprehensionReady                     false
+liveReady                              false
+```
+
+판정: 미래 효력 선공시, 과거 사건 지연 공시, open interval, inclusive boundary, sourcePublishedAt과 availableAt 차이를 포함한 12개 task에서 valid 및 known answer 네 조합을 모두 만들었다. Query validAt과 knownAt은 assertion identity에 들어가지 않고 reality와 knowledge control, DOM fieldset, aria phrase로 독립 표현된다. Synthetic perfect review는 scoring contract test에만 쓰며 live 결과가 아니다. 실제 participant와 response가 0이므로 U0-V04는 `revise`이며 두 축과 combined accuracy가 각각 90%를 넘기 전 production Time Lens admission을 차단한다.
 
 ## 5. existing attempts 재사용 지도
 

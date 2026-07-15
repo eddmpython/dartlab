@@ -206,6 +206,8 @@ UniverseRenderer
 
 2026-07-16 U0-V03 실행 결과: 250, 500, 1,000 node의 desktop 및 mobile 6 case에서 active mark와 label budget, exact omission receipt, reverse input hash가 모두 6/6 통과했다. 1,000 node는 desktop 500과 mobile 250으로 lower LOD를 적용하고 omitted 500 및 750 node를 aggregate receipt로 보존한다. 1280x720과 390x844 실제 DOM label collision은 0%였고 visible label은 desktop 최대 57/80, mobile 40/40이었다. Density contract만 promote하며 frame, heap, hit-test, accessibility 및 renderer selection은 U0-V05와 U0-V06에 남긴다.
 
+2026-07-16 U0-V04 실행 결과: 12개 revision task에서 validAt과 knownAt answer 조합 4/4, separate control과 aria 12/12, combined slider 0, machine regression 9/9을 확인했다. 미래 효력 선공시와 과거 사건 지연 공시를 포함하고 query cutoff가 assertion identity를 바꾸지 않는다. Reviewed participant는 0/12, task response는 0/144이고 validAt, knownAt, combined accuracy는 미측정이다. Time grammar contract는 완료했지만 실제 세 accuracy가 각각 90%를 넘기 전 production Time Lens admission을 차단한다.
+
 ## 12. 유지보수 규칙
 
 - visual grammar token은 renderer package가 아니라 universe contract가 소유한다.

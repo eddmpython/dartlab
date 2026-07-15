@@ -36,6 +36,7 @@
 - [x] U0-V01 non-color visual grammar와 30-card comprehension scoring contract
 - [x] U0-V02 live 3-scene deterministic logical layout와 cross-browser anchor contract
 - [x] U0-V03 desktop 및 mobile density budget과 exact omission receipt contract
+- [x] U0-V04 validAt 및 knownAt 독립 grammar와 12-task comprehension scoring contract
 - [ ] U0 workflow, visual, information yield attempts
 - [ ] U1~U2 implementation
 - [ ] U3 artifact 변경 승인 여부
@@ -76,6 +77,7 @@
 | 2026-07-15 | U0-V01 visual grammar 실행 | 7개 status의 non-color signature 7/7, evidence와 aria 30/30, confidence opacity 0, DOM card와 scoring test 8/8. 실제 participant 0/12와 response 0/360이라 comprehension 90%는 미측정, production visual admission 차단 |
 | 2026-07-16 | U0-V02 deterministic layout 실행 | Live Atlas 18, industry 26, company 50 node를 20회씩 순서 교란해 logical hash 60/60, 세 viewport anchor 180/180. Chrome, Firefox, WebKit 180회 실측 hash 180/180, 최대 drift 0px. Valid time 0/94는 합성하지 않고 unknown lane으로 보존해 layout contract promote |
 | 2026-07-16 | U0-V03 density and omission 실행 | 250, 500, 1,000 node의 desktop 및 mobile 6 case에서 mark budget, omission receipt, reverse hash 6/6. 1,000 node는 desktop 500, mobile 250으로 축소하고 생략 500/750을 aggregate receipt로 보존. 실제 DOM collision 0%, density contract promote |
+| 2026-07-16 | U0-V04 bitemporal comprehension 실행 | 12 revision task에서 valid 및 known answer 조합 4/4, separate control과 aria 12/12, combined slider 0, machine test 9/9. 실제 participant 0/12와 task response 0/144라 validAt, knownAt, combined 90%는 미측정, production Time Lens 차단 |
 
 ## 핵심 실측 스냅샷
 
@@ -209,6 +211,16 @@ density reverse receipt hash                   6/6
 density maximum calculated collision             0%
 density maximum DOM collision                    0%
 density machine regression                     8/8
+bitemporal revision tasks                    12/12
+bitemporal answer combinations                 4/4
+bitemporal separate controls                 12/12
+bitemporal combined slider usage                  0
+bitemporal machine regression                  9/9
+bitemporal reviewed participants              0/12
+bitemporal reviewed task responses           0/144
+bitemporal validAt accuracy              unmeasured
+bitemporal knownAt accuracy              unmeasured
+bitemporal combined accuracy             unmeasured
 ```
 
 같은 날 후속 live meta 재감사:
@@ -248,9 +260,10 @@ dart dataAsOf            null
 11. U0-V01 grammar machine contract는 통과했지만 reviewed participant는 0/12, reviewed response는 0/360이고 comprehension accuracy는 미측정이다. 실제 review 전 시각 문법 합격을 주장하지 않는다.
 12. U0-V02 layout contract는 통과했지만 current live node의 valid time은 0/94다. Unknown time lane을 보존하고 U0-V04 전 실제 시간 순서를 주장하지 않는다.
 13. U0-V03 density contract는 통과했지만 FPS, heap, hit-test와 accessibility 동등성은 미측정이다. U0-V05와 U0-V06 전 renderer production 입장을 열지 않는다.
-14. `scan-screener-os`의 public valuation licensing P0가 승인 대기다. Universe는 해당 필드를 사용하지 않아야 한다.
-15. workspace의 landing 및 ui 대량 삭제는 본 작업과 무관한 기존 변경이다. U1 production 착수 전에 frontend host가 정상 상태인지 재검해야 한다.
+14. U0-V04 time grammar machine contract는 통과했지만 reviewed participant는 0/12, task response는 0/144이고 validAt, knownAt, combined accuracy는 미측정이다. 실제 review 전 Time Lens 합격을 주장하지 않는다.
+15. `scan-screener-os`의 public valuation licensing P0가 승인 대기다. Universe는 해당 필드를 사용하지 않아야 한다.
+16. workspace의 landing 및 ui 대량 삭제는 본 작업과 무관한 기존 변경이다. U1 production 착수 전에 frontend host가 정상 상태인지 재검해야 한다.
 
 ## 다음 단일 행동
 
-`tests/_attempts/dartlabUniverse/visual/`에서 U0-V04 bitemporal comprehension probe를 구현한다. validAt과 knownAt이 서로 다른 12개 deterministic revision task, reviewed participant response schema, completeness gate와 scoring receipt를 만들고 두 시간을 한 slider로 섞지 않는다. 실제 participant 판독 90% 전 production Time Lens admission은 false로 유지한다.
+`tests/_attempts/dartlabUniverse/visual/`에서 U0-V05 accessibility equivalence probe를 구현한다. Keyboard only, screen reader summary, reduced motion, high contrast, 200% zoom, mobile low GPU와 relation table 동등 경로에서 핵심 task를 100% 완료해야 한다. Canvas 또는 spatial scene에서만 가능한 작업이 하나라도 있으면 해당 surface를 기각한다.

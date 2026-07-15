@@ -1,6 +1,6 @@
 # Visual attempts
 
-> 상태: U0-V01 grammar, U0-V02 layout, U0-V03 density contract 완료, reviewed comprehension 차단
+> 상태: U0-V01 및 V04 grammar, U0-V02 layout, U0-V03 density contract 완료, reviewed comprehension 차단
 > 책임: semantic LOD, 상태 문법, layout 결정론, renderer 성능, 접근성, 3D uplift를 반증한다.
 
 ## 가설
@@ -12,7 +12,7 @@
 1. U0-V01: fact, candidate, derived, disputed, retracted, scenario, unknown 문법 판독. Contract 완료, participant review 대기
 2. U0-V02: 고정 anchor와 deterministic layout. Contract 완료
 3. U0-V03: 250, 500, 1,000 node density와 omitted receipt. Contract 완료
-4. U0-V04: validAt와 knownAt 이중 시간 comprehension
+4. U0-V04: validAt와 knownAt 이중 시간 comprehension. Grammar contract 완료, participant review 대기
 5. U0-V05: keyboard, screen reader, mobile low GPU
 6. U0-V06: SVG, current Cosmos, DOM, 후보 renderer bakeoff
 7. U5-X01: 2D 대비 2.5D 또는 3D uplift
@@ -151,6 +151,56 @@ node tests/_attempts/dartlabUniverse/visual/densityOmissionProbe.mjs
 
 판정은 `promote`다. Active mark를 desktop 500 node 및 1,000 edge, mobile 250 node 및 500 edge로 제한하고 label은 80 및 40 이하에서 collision-free로 선택했다. 화면에 나오지 않은 node, edge, label은 각각 budget, omitted endpoint, label collision 또는 label budget reason으로 100% 설명한다. `기타 N개` aggregate receipt는 member와 status count, coverage, 변화 quantile, top changes를 보존한다. 이 계약은 renderer 성능 FPS나 접근성 동등성을 증명하지 않으며 U0-V05와 U0-V06을 우회하지 않는다.
 
+## U0-V04 실행
+
+```powershell
+node --check tests/_attempts/dartlabUniverse/visual/bitemporalComprehensionProbe.mjs
+node --test tests/_attempts/dartlabUniverse/visual/testBitemporalComprehensionProbe.mjs
+node tests/_attempts/dartlabUniverse/visual/bitemporalComprehensionProbe.mjs
+node tests/_attempts/dartlabUniverse/visual/bitemporalComprehensionProbe.mjs --responses C:/review/universeTimeResponses.json
+```
+
+## U0-V04 reviewed response 계약
+
+Response file은 participant 1명당 아래 record 하나를 가진 JSON array다.
+
+```json
+{
+  "participantId": "time-participant-01",
+  "reviewer": "operator-name",
+  "reviewedAt": "2026-07-16T10:00:00+09:00",
+  "origin": "humanReviewed",
+  "responses": [
+    {"taskId": "time-task-01", "selectedValid": true, "selectedKnown": true}
+  ]
+}
+```
+
+각 participant는 12개 task에 validAt과 knownAt answer를 모두 boolean으로 답해야 한다. Participant ID와 task ID는 중복될 수 없다. `origin=humanReviewed`가 아니거나 reviewer, reviewedAt이 없으면 채점하지 않는다. Synthetic perfect response는 scoring contract test에만 사용하고 live 결과로 저장하지 않는다.
+
+## U0-V04 결과
+
+| 항목 | 실측 |
+|---|---:|
+| Deterministic revision task | 12 |
+| Valid and known answer combination | 4/4 |
+| Separate validAt and knownAt control | 12/12 |
+| Combined slider usage | 0 |
+| ARIA time summary | 12/12 |
+| DOM reference task | 12/12 |
+| Machine regression | 9/9 PASS |
+| Reviewed participant | 0/12 |
+| Reviewed task response | 0/144 |
+| Reviewed axis answer | 0/288 |
+| ValidAt accuracy | 미측정 |
+| KnownAt accuracy | 미측정 |
+| Combined accuracy | 미측정 |
+| Time grammar contract ready | true |
+| Comprehension ready | false |
+| Live ready | false |
+
+판정은 `revise`다. 미래 효력 선공시, 과거 사건 지연 공시, open interval, inclusive boundary와 source publication 및 availability 차이를 포함한 네 answer 조합을 모두 만들었다. Assertion identity에서 query validAt과 knownAt을 제외하고 reality와 knowledge control 및 DOM fieldset을 분리했다. 그러나 실제 participant가 0명이므로 두 축과 combined 90% 판독을 주장하지 않는다. U0-V04 production Time Lens admission은 participant 12명과 144개 reviewed task response를 채우기 전 차단한다.
+
 ## 합격
 
 - 상태 판독 90% 이상
@@ -169,6 +219,6 @@ node tests/_attempts/dartlabUniverse/visual/densityOmissionProbe.mjs
 
 ## 다음
 
-U0-V04에서 validAt와 knownAt 이중 시간 12개 task의 scoring contract를 만들고 실제 판독 90%를 측정한다. Participant review가 필요한 U0-V01과 U0-V04를 통과하기 전 production 이관은 불가하다.
+U0-V05에서 keyboard, screen reader, reduced motion, high contrast, 200% zoom, mobile low GPU와 table 동등 경로를 검증한다. Participant review가 필요한 U0-V01과 U0-V04를 통과하기 전 production 이관은 불가하다.
 
 Production dependency는 U0-V06 결론 전에 추가하지 않는다.
