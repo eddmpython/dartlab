@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dartlab.dev/schema/universe/releaseGoldReviewDecision.v1.json",
+  "title": "Universe release gold human review decision",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "candidateId",
+    "decision",
+    "origin",
+    "reviewMethod",
+    "reviewer",
+    "reviewedAt",
+    "reviewReceiptId",
+    "reviewedSourceRef"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "releaseGoldReviewDecision.v1" },
+    "candidateId": { "type": "string", "minLength": 1 },
+    "decision": { "enum": ["acceptPositive", "confirmNegative", "defer"] },
+    "origin": { "const": "humanReviewed" },
+    "reviewMethod": { "const": "documentOpened" },
+    "reviewer": { "type": "string", "minLength": 1 },
+    "reviewedAt": { "type": "string", "format": "date-time" },
+    "reviewReceiptId": { "type": "string", "pattern": "^review:[a-z0-9][a-z0-9._-]*$" },
+    "reviewedSourceRef": { "type": "string", "minLength": 1 },
+    "subjectId": { "type": "string", "minLength": 1 },
+    "predicate": { "type": "string", "minLength": 1 },
+    "objectId": { "type": "string", "minLength": 1 },
+    "selectedLocatorId": { "type": "string", "minLength": 1 },
+    "eventAt": { "type": "string", "format": "date-time" },
+    "validFrom": { "type": "string", "format": "date-time" },
+    "validTo": { "type": ["string", "null"], "format": "date-time" },
+    "sourcePublishedAt": { "type": "string", "format": "date-time" },
+    "availableAt": { "type": "string", "format": "date-time" },
+    "evidenceClass": { "enum": ["A", "B"] },
+    "sourceKind": { "enum": ["DART", "SEC"] },
+    "negativeType": {
+      "enum": [
+        "shortEnglishCommonWord",
+        "sameNameDifferentEntity",
+        "affiliateEntityCollision",
+        "selfLoopMention",
+        "reversedDirection",
+        "industryPeerAsTradeRelation",
+        "preCorrectionConflict",
+        "privateListedAliasCollision",
+        "sectionTitleOnly",
+        "tableHeaderDrift",
+        "historicalTickerCollision",
+        "crossMarketFuzzyCollision"
+      ]
+    },
+    "reviewReason": { "type": "string", "minLength": 1 }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "decision": { "const": "acceptPositive" } }, "required": ["decision"] },
+      "then": {
+        "required": [
+          "subjectId",
+          "predicate",
+          "objectId",
+          "selectedLocatorId",
+          "eventAt",
+          "validFrom",
+          "validTo",
+          "sourcePublishedAt",
+          "availableAt",
+          "evidenceClass",
+          "sourceKind"
+        ]
+      }
+    },
+    {
+      "if": { "properties": { "decision": { "const": "confirmNegative" } }, "required": ["decision"] },
+      "then": {
+        "required": ["subjectId", "predicate", "objectId", "negativeType", "reviewReason"]
+      }
+    },
+    {
+      "if": { "properties": { "decision": { "const": "defer" } }, "required": ["decision"] },
+      "then": { "required": ["reviewReason"] }
+    }
+  ]
+}

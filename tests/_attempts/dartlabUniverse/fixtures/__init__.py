@@ -6,13 +6,18 @@ from .releaseGoldProbe import (
     inspectReleaseGoldFiles,
     loadSamplingPlan,
 )
+from .releaseGoldReviewPromotionProbe import promoteReviewedDecisions
 from .releaseGoldReviewQueueProbe import buildReviewQueues, inspectLiveReviewQueue
+from .releaseGoldSourceBindingProbe import buildOriginalSourceBindings, inspectOriginalSourceBindings
 
 __all__ = [
     "GoldAdmissionReport",
+    "buildOriginalSourceBindings",
     "buildReviewQueues",
     "evaluateReleaseGold",
     "inspectReleaseGoldFiles",
     "inspectLiveReviewQueue",
+    "inspectOriginalSourceBindings",
     "loadSamplingPlan",
+    "promoteReviewedDecisions",
 ]

@@ -1,6 +1,6 @@
 # Release gold attempts
 
-> 상태: U0-G02 exact-locator machine review queue 600행 완료, reviewed gold 0/600으로 U1 차단
+> 상태: U0-G04 human-only review promotion compiler 완료, reviewed gold 0/600으로 U1 차단
 > 책임: human-reviewed positive 300건과 hard negative 300건의 exact evidence, 균형, precision, false acceptance를 release 자산으로 고정한다.
 
 ## 실행
@@ -8,8 +8,12 @@
 ```powershell
 uv run python -X utf8 tests/_attempts/dartlabUniverse/fixtures/releaseGoldProbe.py
 uv run python -X utf8 tests/_attempts/dartlabUniverse/fixtures/releaseGoldReviewQueueProbe.py
+uv run python -X utf8 tests/_attempts/dartlabUniverse/fixtures/releaseGoldSourceBindingProbe.py
+uv run python -X utf8 tests/_attempts/dartlabUniverse/fixtures/releaseGoldReviewPromotionProbe.py
 $env:DARTLAB_TEST_LOCKED='1'; uv run python -X utf8 -m pytest tests/_attempts/dartlabUniverse/fixtures/testReleaseGoldProbe.py -q --tb=short --no-cov
 $env:DARTLAB_TEST_LOCKED='1'; uv run python -X utf8 -m pytest tests/_attempts/dartlabUniverse/fixtures/testReleaseGoldReviewQueueProbe.py -q --tb=short --no-cov
+$env:DARTLAB_TEST_LOCKED='1'; uv run python -X utf8 -m pytest tests/_attempts/dartlabUniverse/fixtures/testReleaseGoldSourceBindingProbe.py -q --tb=short --no-cov
+$env:DARTLAB_TEST_LOCKED='1'; uv run python -X utf8 -m pytest tests/_attempts/dartlabUniverse/fixtures/testReleaseGoldReviewPromotionProbe.py -q --tb=short --no-cov
 uv run python -X utf8 tests/audit/docstring4Section.py tests/_attempts/dartlabUniverse/fixtures --strict
 uv run python -X utf8 tests/audit/docstring9Section.py tests/_attempts/dartlabUniverse/fixtures --strict
 ```
@@ -22,6 +26,10 @@ uv run python -X utf8 tests/audit/docstring9Section.py tests/_attempts/dartlabUn
 - `releaseGoldSamplingPlan.json`: count와 predicate, source, market, language, evidence class, negative type quota
 - `releaseGoldReviewQueue.machine.jsonl`: exact catalog locator가 있는 미검토 positive 후보 300행과 hard-negative challenge 300행
 - `releaseGoldReviewQueueReceipt.json`: graph, catalog, queue content hash와 coverage gap receipt
+- `releaseGoldSourceBinding.machine.jsonl`: original Parquet SHA-256과 exact row 및 char locator 후보 600행
+- `releaseGoldSourceBindingReceipt.json`: source artifact 306개와 binding coverage 및 ambiguity receipt
+- `releaseGoldReviewPromotionReceipt.json`: optional human decision을 gold로 승격한 dry-run receipt
+- `releaseGoldReviewDecision.schema.json`: `acceptPositive`, `confirmNegative`, `defer` human decision JSON Schema
 
 현재 앞의 세 JSONL은 존재하지 않는다. Missing file은 빈 gold로 간주하지 않고 0건 및 release blocker로 센서스한다. Sampling plan과 test fixture는 review 자산이 아니다.
 
@@ -44,7 +52,31 @@ Machine review queue는 사람 검토의 입력 자산일 뿐 gold가 아니다.
 
 Positive는 `affiliatedWith`, `ownsStakeIn`, `suppliesTo` 각 100행이다. `sellsTo`, `classifiedIn`, `filed`는 현재 source 결합으로 채워지지 않았다. Challenge는 affiliate collision 87, reversed direction 87, self-loop 88, short English common word 35, table header drift 3행이다. 동일 회사명, industry peer, 정정 전후 충돌, 비상장 alias, section title-only, historical ticker, cross-market fuzzy 7개 유형은 별도 source와 사람이 구성해야 한다.
 
-Queue hash는 `sha256:484321d3085209aa2df6de72ea63e749baee2a2a63e38ea62e235b49e075bb12`다. Graph와 catalog snapshot hash, file size 및 행 수는 receipt가 정본이다.
+Queue hash는 `sha256:125f84fb671d4f88c4c94f4e2ab8b00c31b5656ce8d03eca0465a6e90ba4c7bc`다. Graph와 catalog snapshot hash, file size 및 행 수는 receipt가 정본이다.
+
+## U0-G03 original source binding
+
+Manifest의 `sourceVersion=v1`과 timezone 없는 `builtAt`을 immutable version이나 availability time으로 사용하지 않는다. 대신 queue가 참조한 original Parquet 306개를 직접 SHA-256으로 고정하고 receipt number와 issuer file로 재결속했다.
+
+| 항목 | 실측 |
+|---|---:|
+| Source artifact | 306 |
+| Queue binding | 600/600 |
+| Source artifact ready | 597/600 |
+| Exact original occurrence | 63,326 |
+| Unique locator | 119 |
+| Ambiguous locator | 175 |
+| Ambiguous truncated | 303 |
+| Source row missing | 3 |
+| Locator parity failure | 0 |
+
+Ambiguous candidate는 catalog context와 original context의 normalized trigram coverage로 상위 10개만 정렬해 반환하지만 자동 선택하지 않는다. Binding file hash는 `sha256:e595ffed3e47fa1dddff5fbfc294ed4a3ebbb15b0aa769378c76213cb4047a69`다. `sourcePublishedAt`, `availableAt`, event 및 validity, predicate와 direction, public document locator와 reviewer receipt는 계속 결손이다.
+
+## U0-G04 human review promotion
+
+`reviewedDecisions.jsonl`은 repository에 존재하지 않으며 decision 0건으로 센서스한다. Decision schema는 `acceptPositive`, `confirmNegative`, `defer`를 지원한다. Positive 승격은 사람이 original document를 열고 subject, predicate, object, exact locator, event 및 validity, published 및 available time, evidence class와 source kind를 모두 확인해야 한다. Negative 승격은 exact triple, negative type, review reason과 document-opened receipt를 요구한다.
+
+Machine origin, candidate triple 변경, 반환되지 않은 locator, publication 이후보다 이른 availability, timezone 없는 review 시각, duplicate reviewer receipt는 모두 ValueError로 fail closed한다. 현재 promoted positive와 negative는 각각 0건이고 prediction도 0건이다.
 
 ## Positive 필수 계약
 
@@ -90,7 +122,9 @@ Positive는 KR 및 US, ko 및 en, A 및 B, DART 및 SEC를 각 150건으로 구�
 | SourceRef coverage | 미측정 |
 | Quota violation | 30 |
 | Machine review queue | 600/600 |
-| Machine regression | 27/27 PASS |
+| Original source binding | 597/600 ready |
+| Human decision | 0/600 |
+| Machine regression | 49/49 PASS |
 | Contract ready | true |
 | Live ready | false |
 

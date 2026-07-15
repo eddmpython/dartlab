@@ -1,0 +1,2188 @@
+{
+  "schemaVersion": "releaseGoldSourceBindingReceipt.v1",
+  "queueRecordCount": 600,
+  "bindingCount": 600,
+  "sourceArtifactCount": 306,
+  "sourceArtifactReadyCount": 597,
+  "bindingStatusCounts": {
+    "exactAmbiguous": 175,
+    "exactAmbiguousTruncated": 303,
+    "exactUnique": 119,
+    "sourceRowMissing": 3
+  },
+  "readyLaneCounts": {
+    "hardNegativeChallenge": 298,
+    "positiveCandidate": 299
+  },
+  "exactLocatorCount": 63326,
+  "locatorParityFailureCount": 0,
+  "allRowsUnreviewed": true,
+  "allRowsGoldIneligible": true,
+  "goldAdmissionReady": false,
+  "blockers": [
+    "humanLocatorSelectionMissing",
+    "humanPredicateDirectionConfirmationMissing",
+    "sourcePublishedAtMissing",
+    "availableAtMissing",
+    "eventAtAndValidityMissing",
+    "reviewReceiptMissing"
+  ],
+  "expectedSourceArtifactCount": 306,
+  "missingSourceArtifacts": [],
+  "sourceArtifacts": [
+    {
+      "path": "data/dart/allFilings/20240902.parquet",
+      "size": 7467184,
+      "sha256": "sha256:af0d442484c30b1ae94c2e073a4fae6523dabbf2f74cb88f1e072e230ea058a3",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20240905.parquet",
+      "size": 7157447,
+      "sha256": "sha256:3cbaf1ec51a5d2e0ac1d2e57766cdbb58db5fd5a09baed7a4c9bc5875e18a1ca",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20240910.parquet",
+      "size": 7298014,
+      "sha256": "sha256:f1240ebc6b7a471328606ebf9c03a0ece6990fc489b544de4cd68a6544db2169",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20240911.parquet",
+      "size": 7008963,
+      "sha256": "sha256:c5129c58a5d0e8c09cf821c040233614b5522cd5cb19fc8d85142f22b59f49e9",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20240913.parquet",
+      "size": 8659239,
+      "sha256": "sha256:7dc1e83f7e1d4fbe09e72f34850c6f3259dcb7ae04068cfbad63b2a53c2a9142",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20240927.parquet",
+      "size": 5907447,
+      "sha256": "sha256:d502160507aecea25001d7436da46a46104b049581bbc5c4301a2ffb3f214355",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20240930.parquet",
+      "size": 7561572,
+      "sha256": "sha256:2a36f943bc32a0a4288fe5d06fe8c3bae04f5812ff1f78589ecb4bc0374e8b5b",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20241002.parquet",
+      "size": 9088928,
+      "sha256": "sha256:174cfe2c27d5b8c61fa239aa84e3172391571c114a91390018fe694eea0ad70a",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20241007.parquet",
+      "size": 8205242,
+      "sha256": "sha256:a35bb66f12ed43f831535ca1c179598280feb5c09c054767b6ce7371bae497ba",
+      "requestedReceiptCount": 3,
+      "matchedRowCount": 3
+    },
+    {
+      "path": "data/dart/allFilings/20241016.parquet",
+      "size": 5843612,
+      "sha256": "sha256:1fd91a4aef9c31ff0bdb03fd69f1152a94a73c7b15414dca3c0c03d04fc76453",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20241022.parquet",
+      "size": 4910489,
+      "sha256": "sha256:779839d5a421d23a51db318f900af1e802e465489d7014c7af7febaae3664a2f",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20241023.parquet",
+      "size": 5407369,
+      "sha256": "sha256:8cf62e645119d37dbe0ebf1d715b781d6e0e13e0feaa660ac246cc1924d19135",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20241028.parquet",
+      "size": 5153813,
+      "sha256": "sha256:e91240729d0a5786bfd2ec37ebbadbf96e0491437bc52d8454c6e2f7c589e674",
+      "requestedReceiptCount": 2,
+      "matchedRowCount": 2
+    },
+    {
+      "path": "data/dart/allFilings/20241111.parquet",
+      "size": 2742752,
+      "sha256": "sha256:92f3117c992476c28b0231041b4973a7609c15de6a232ba06b3b8964d0acbaaf",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20241120.parquet",
+      "size": 6535715,
+      "sha256": "sha256:da0f9cd8fb3a03faca9c76cf1c165fedd7a8ced721cbfdb298ea8b62b39eb8ad",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20241121.parquet",
+      "size": 5336992,
+      "sha256": "sha256:b752369a81d73e7ed5698b463ca701ed9cf2c0b45f5d9351043f024aca69c623",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20241127.parquet",
+      "size": 5306630,
+      "sha256": "sha256:4078252e75a11ccece21011a77c449961787f1e1cbbfb7dfbeb721fc28c966aa",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20241202.parquet",
+      "size": 5585482,
+      "sha256": "sha256:295ef9846acc70f61812893f8ba8902d998572f5e835318544fec00be8d5093b",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20241204.parquet",
+      "size": 4739105,
+      "sha256": "sha256:774fc78d964adf5a047ec2d1377fd1561a4eeb58b4c396f37b6eb273bed8dc9e",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20241211.parquet",
+      "size": 4157100,
+      "sha256": "sha256:f1c8e548cc485b63ec1fe080df631c977f0b3dc89ef336d8d4243141bbf6b2b2",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20241213.parquet",
+      "size": 5053587,
+      "sha256": "sha256:8bd0a23d02a6071915776befc7ceeb919a32609d7c9396440c36a31706c5b541",
+      "requestedReceiptCount": 2,
+      "matchedRowCount": 2
+    },
+    {
+      "path": "data/dart/allFilings/20241216.parquet",
+      "size": 3355803,
+      "sha256": "sha256:d8fe9fcd4b5c81e9c76382438a522da3935c1ac1e0675ad863e7571847f2b14e",
+      "requestedReceiptCount": 3,
+      "matchedRowCount": 3
+    },
+    {
+      "path": "data/dart/allFilings/20241219.parquet",
+      "size": 4165034,
+      "sha256": "sha256:b9029a89bf00bf460aeb21f6a79353cc0e2d876706976af5dd767d0fe69a61a1",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20241223.parquet",
+      "size": 4993164,
+      "sha256": "sha256:06566de7081eff391a696448b3295ace6b5862c9be077eb10af1a37b3db0931b",
+      "requestedReceiptCount": 2,
+      "matchedRowCount": 2
+    },
+    {
+      "path": "data/dart/allFilings/20241226.parquet",
+      "size": 3752976,
+      "sha256": "sha256:5941a333137c43159b2023bc8d083a63825dfca6fbf35d5f528e518a4aa1a42a",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20241227.parquet",
+      "size": 3322195,
+      "sha256": "sha256:fb367d1bb662cd426f7a2d72c6ddda6c7533d21ba77cf5a0da4b33c4c0f5b4d1",
+      "requestedReceiptCount": 2,
+      "matchedRowCount": 2
+    },
+    {
+      "path": "data/dart/allFilings/20250102.parquet",
+      "size": 3017925,
+      "sha256": "sha256:1adc6329d0d1a897ef6957b71a920efca6e64577e455c28a44a16ea5ce4589b0",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20250115.parquet",
+      "size": 4682930,
+      "sha256": "sha256:85299fb850b172370968af7c271a5b8c08c14500f24b544a21d93718ba5ca51a",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20250120.parquet",
+      "size": 5168405,
+      "sha256": "sha256:c366d156c6e77cc0a6066e7ff6413015dae84e1389ec92b28568f7ecb5324612",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20250203.parquet",
+      "size": 5101219,
+      "sha256": "sha256:064c3102928eadfd4ee8c46c60c327fdaf970bc368fb0b6e4205bf13ecf2997a",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20250207.parquet",
+      "size": 6322257,
+      "sha256": "sha256:71841726a145d84eaefb4323a93bc8d6ff8e669c281ea2a6b0e48c5c6050b9a7",
+      "requestedReceiptCount": 2,
+      "matchedRowCount": 2
+    },
+    {
+      "path": "data/dart/allFilings/20250211.parquet",
+      "size": 4341556,
+      "sha256": "sha256:3d49bd640e2930a55f2195440dd735e8f26a9cdab660d5c7cca3cbc95b66cc16",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20250213.parquet",
+      "size": 5086099,
+      "sha256": "sha256:dd0f90cf96957ab2a7b90fdf868d0fcfa4fa6f72139e72219764aa9df4e62946",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20250218.parquet",
+      "size": 2808759,
+      "sha256": "sha256:71dd10d4a16759546d75ad06e90ba2a6663539c693565470704bfea41bb23908",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20250221.parquet",
+      "size": 8934971,
+      "sha256": "sha256:f84f788913c8f346706ff7adfe9e2a162cab1e1f171180d50daf63035dba7a3f",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20250226.parquet",
+      "size": 6221044,
+      "sha256": "sha256:8c98985b1f5cfca90cfab4419f4e6124dcc6b39414cb742e8557e7b303cd48d0",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20250305.parquet",
+      "size": 12060150,
+      "sha256": "sha256:9a4b09f48c56dbc8b7ea031583392d10fb44c0f9d14e54094365a6f56150ad94",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20250306.parquet",
+      "size": 15047980,
+      "sha256": "sha256:8d9fb47d596298620e9919bd468149470f1f05c80ac0551afdd1050dce34a865",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20250312.parquet",
+      "size": 16559673,
+      "sha256": "sha256:cb8bc49fecaaecf1915b0f58a56e017e216a06c477b9da0739b6f0c8b8592eaa",
+      "requestedReceiptCount": 3,
+      "matchedRowCount": 3
+    },
+    {
+      "path": "data/dart/allFilings/20250313.parquet",
+      "size": 25990756,
+      "sha256": "sha256:b12623ec29d3732e9f8c50c7429c4a36546dcba62cef87c7ef5b0b0ad1ef11f8",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20250314.parquet",
+      "size": 23902438,
+      "sha256": "sha256:a814f0e44450356220d67bef26655fc2a530a6a9fe03249689605dd8118e19fe",
+      "requestedReceiptCount": 2,
+      "matchedRowCount": 2
+    },
+    {
+      "path": "data/dart/allFilings/20250317.parquet",
+      "size": 6327580,
+      "sha256": "sha256:765dae0a5abf5c7f321f92293b42b2749a4a6a65d06d1d28255db590defc0cea",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20250318.parquet",
+      "size": 6443910,
+      "sha256": "sha256:b596bf188ffb5dce2a18dc442ad33696681d6eacb88edddd4f5586df51ec1669",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20250320.parquet",
+      "size": 8449743,
+      "sha256": "sha256:83cce0d16c7fa1fa5ab9a364c0c1be353d159d42b762b1ecf3a765c7edf6c533",
+      "requestedReceiptCount": 2,
+      "matchedRowCount": 2
+    },
+    {
+      "path": "data/dart/allFilings/20250325.parquet",
+      "size": 4386948,
+      "sha256": "sha256:96a10d28058e8e16cc3b36bfba75849e10544f9a058b12f90d6d97ec09c41bc7",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20250326.parquet",
+      "size": 5916525,
+      "sha256": "sha256:5001bf72b3338d11ad701ca7138785bdbff17032c2c4098992b8deba588fc3e8",
+      "requestedReceiptCount": 3,
+      "matchedRowCount": 3
+    },
+    {
+      "path": "data/dart/allFilings/20250327.parquet",
+      "size": 6239564,
+      "sha256": "sha256:ddda2d939186bc5cbbc08eceeded75acd96533132eacfb8d3c7cfb18a5d55e3b",
+      "requestedReceiptCount": 5,
+      "matchedRowCount": 5
+    },
+    {
+      "path": "data/dart/allFilings/20250328.parquet",
+      "size": 9149354,
+      "sha256": "sha256:802e2cc018778c1fcce206bb5afe0bc1ede977f4d96421cacfcc97009fdd9e11",
+      "requestedReceiptCount": 2,
+      "matchedRowCount": 2
+    },
+    {
+      "path": "data/dart/allFilings/20250401.parquet",
+      "size": 5370668,
+      "sha256": "sha256:0e843e59ab1d1dbc86832e845d0bbe0487addf820e8e34a795567b8e5a6f7c68",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20250404.parquet",
+      "size": 7457965,
+      "sha256": "sha256:181a97701e71cfa70d8b9e71965ac079fdf98e37b7d06fef478ed7896133f214",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20250407.parquet",
+      "size": 8594081,
+      "sha256": "sha256:fba6b96e3ae0198fc6c5198ada5ec7c4ef8ce00f288c7d6cd0bfe1ded9d868e3",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20250409.parquet",
+      "size": 5531566,
+      "sha256": "sha256:f829aa5f7bff1dafeecbf86e0321aaf642ddd2a606d475d75b58f3ee5eb36064",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20250414.parquet",
+      "size": 5151671,
+      "sha256": "sha256:d7e4db10f992d67053340c8f786ef1d38f0d2aa4107ad74d41dc9880391b1df4",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20250415.parquet",
+      "size": 8721366,
+      "sha256": "sha256:2895cccf5cf380631bbbcdbccb3804d1b6231ac0b76ab91716468cf12aa0f475",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20250416.parquet",
+      "size": 8680310,
+      "sha256": "sha256:bfa87804e05652c70c0f299b3b7a7a1f9760a7607bae84f09f870275b0a50a66",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20250417.parquet",
+      "size": 8732379,
+      "sha256": "sha256:192b478184f08fd3b12e956e7c34bc14761a9babb7b1f459d58235b03b01548a",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20250425.parquet",
+      "size": 7429708,
+      "sha256": "sha256:5e4d89f7e0415e84388d8a8673744aff2f64e59e8b47ed08b9a36d1566035091",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20250428.parquet",
+      "size": 6940819,
+      "sha256": "sha256:b9ff93c582facdb4c93eb6b232f68ec8eae9e92c8430c1c6c002d1835376696a",
+      "requestedReceiptCount": 2,
+      "matchedRowCount": 2
+    },
+    {
+      "path": "data/dart/allFilings/20250430.parquet",
+      "size": 9863171,
+      "sha256": "sha256:450df3e3021717cde41f2b84021069f7d9867cc57e067e9de8c3b88e70221457",
+      "requestedReceiptCount": 4,
+      "matchedRowCount": 4
+    },
+    {
+      "path": "data/dart/allFilings/20250512.parquet",
+      "size": 3374880,
+      "sha256": "sha256:22bef4e4e14299e8b980d5a707ede9ad57abf16fdd4566eec44a2e31e19ec435",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20250513.parquet",
+      "size": 3974262,
+      "sha256": "sha256:19f55123f9efbf1e1ae5278d9cd70b2db627d7396c1c3f6aa91bd82ef7faee80",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20250521.parquet",
+      "size": 5276403,
+      "sha256": "sha256:afa9edbc2dada366f20f816bc2aa9fad6d958bbd06359d07535d3ba8a328ca55",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20250602.parquet",
+      "size": 28665082,
+      "sha256": "sha256:e1aaef248d3241e03725f65ad610d56774237b27f5b3b33fbc7d43a9e43fbe6d",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20250609.parquet",
+      "size": 3068585,
+      "sha256": "sha256:eaafdcc0e15cf4f7fffc0b0cbce08c0b4ecd23487281b6fbef4caea31e3c5292",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20250611.parquet",
+      "size": 9003079,
+      "sha256": "sha256:fbda6d23eb38a3616416a8713128a4c00f8071e2fc0d698e481f8463512d30ec",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20250626.parquet",
+      "size": 7030583,
+      "sha256": "sha256:15c1a9636257f4cc1f685030729e4ad22c74f31eb011ec2e2effff91965da6b0",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20250627.parquet",
+      "size": 8033474,
+      "sha256": "sha256:ec46d26e06793b042820973c7156aa69a56ea98c8b0244c44b23bfe4a8153179",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20250630.parquet",
+      "size": 6213271,
+      "sha256": "sha256:198b9de6371565e252fa3693aa7d3d887a6a8bd0eff225b4a336707fe203a7e2",
+      "requestedReceiptCount": 3,
+      "matchedRowCount": 3
+    },
+    {
+      "path": "data/dart/allFilings/20250718.parquet",
+      "size": 6258061,
+      "sha256": "sha256:1e087ead0c27a22781043e5d66eb8260a3d1443c4a4859bfcedf78b0b4654008",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20250722.parquet",
+      "size": 3983381,
+      "sha256": "sha256:3b5de82cad0db3902e5bf1451a6a6e0329cd753990ea02f0efe0afc16c688e9c",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20250724.parquet",
+      "size": 4143256,
+      "sha256": "sha256:94b1bb88c6d9fd4f649313a15ecd50a92ae6d74895f66242ce46b57c2f383f8d",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20250730.parquet",
+      "size": 6329353,
+      "sha256": "sha256:212f7b26f70f375b58b908708f75918c2c6d4f9587e7ff73592d1de46ea82d08",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20250731.parquet",
+      "size": 4198887,
+      "sha256": "sha256:2189f18e24da7df9d8af8969e4e09a282fc43b9fe5a35f4e601a0c7dbcad6b96",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20250805.parquet",
+      "size": 4368872,
+      "sha256": "sha256:327b47a97599237b8c6e2f6b10c615fc9f0d070f8bb355abc9e7834c57415bd1",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20250806.parquet",
+      "size": 2493598,
+      "sha256": "sha256:fc7608bc086b12e5ca61a3716041e9bbe19e3c9676a7ef7bc988370722faee8a",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20250813.parquet",
+      "size": 3591571,
+      "sha256": "sha256:2b366549e1ed48f1dd2d908998d2fa9f7c81010c0cf0569dd2790d06f5b7144f",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20250814.parquet",
+      "size": 4056710,
+      "sha256": "sha256:3f76e8f0648669c8944c16d4ed4ff31e939fefccc19c8d4599b8df4c0b900d64",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20250819.parquet",
+      "size": 2846201,
+      "sha256": "sha256:a2521e0ea56ed4244853c7fea2f53e5782b2d3f1f20a8fb4b8453ca3bb87be79",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20250820.parquet",
+      "size": 2904034,
+      "sha256": "sha256:01c367643bdeef27ffe7a164a68b809278c12f41adfaa786bec65ac5646d1f08",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20250826.parquet",
+      "size": 3791118,
+      "sha256": "sha256:bb282f40e76ca29323c7c2a8072621b32280eeddd2afa9bffa65cc97c291803c",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20250828.parquet",
+      "size": 10914298,
+      "sha256": "sha256:7cde5cdaa7748709bdd1fbb1f40cd805d98e6f45923fb1c39a1da3931ce56957",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20250829.parquet",
+      "size": 9011331,
+      "sha256": "sha256:3f4258d8910facf362dec52b73aafe965f2ef0bbe89818ecc9a16483675e9ac9",
+      "requestedReceiptCount": 2,
+      "matchedRowCount": 2
+    },
+    {
+      "path": "data/dart/allFilings/20250903.parquet",
+      "size": 7324966,
+      "sha256": "sha256:367b13b8b73aedb52cd474b1470cdeb63edd149b089b3dceea34f96cbd0edce9",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20250905.parquet",
+      "size": 4933594,
+      "sha256": "sha256:5b1ac04d8db6591213779fcf9257f4a356d18ae4f9348b2bd680c49eed7272cf",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20250911.parquet",
+      "size": 5714117,
+      "sha256": "sha256:f29d7b2f05959774fd1d9af2c7c0f329b64774d2fc189353dbf6caf0155ac6cb",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20250916.parquet",
+      "size": 5930140,
+      "sha256": "sha256:34938e2db4af4036de04933ba3c3f5e3042ece7885d1ceae46ebf5bb0b55e2fa",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20250917.parquet",
+      "size": 6241594,
+      "sha256": "sha256:555f1d79cbe8e7a0b5e0232754de70cdb3617dc0b012d7ed35fbee3ad66589ce",
+      "requestedReceiptCount": 2,
+      "matchedRowCount": 2
+    },
+    {
+      "path": "data/dart/allFilings/20250930.parquet",
+      "size": 5152822,
+      "sha256": "sha256:0d023ed9802ce4da7f4c3511928765ccf20d37b8105e7a173d85396e3dd3bd73",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20251002.parquet",
+      "size": 7892124,
+      "sha256": "sha256:de015367f1bb15ac2e05daf336610090c8f056c56230a632923068a002e9bc71",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20251015.parquet",
+      "size": 7795765,
+      "sha256": "sha256:0db51684e690beb9553afc87da154bb9b2aeccce25bf1fc6ddba74d4be4e7dc8",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20251016.parquet",
+      "size": 7691887,
+      "sha256": "sha256:b5bae57ea2917a9ef33f4c8e57657ced3887240d318e78655eedd91f43deee81",
+      "requestedReceiptCount": 2,
+      "matchedRowCount": 2
+    },
+    {
+      "path": "data/dart/allFilings/20251020.parquet",
+      "size": 7280698,
+      "sha256": "sha256:1ee42c9b00ad17912c394434f1af5dc01903188bbfbd976b356030e307e9d79e",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20251021.parquet",
+      "size": 4461055,
+      "sha256": "sha256:6c0c418be6cfc6aa19351035219d12cce2221c49908e6c5706cafcdec69634ed",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20251023.parquet",
+      "size": 6442967,
+      "sha256": "sha256:1a527d700c0c47c85cc6a80f1bba4325452f5725d2fb44dd0a981eacfee9579f",
+      "requestedReceiptCount": 2,
+      "matchedRowCount": 2
+    },
+    {
+      "path": "data/dart/allFilings/20251024.parquet",
+      "size": 9323150,
+      "sha256": "sha256:3192c484528f32d8be8bb9ad15b4f8d792d6bfc938ff663fcbbd018fa0dffeeb",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20251028.parquet",
+      "size": 8984268,
+      "sha256": "sha256:2a434e3c2f31c2c322fe8be175d02f796623d163cf0bed4ed81ddb2f83e24f24",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20251030.parquet",
+      "size": 5957344,
+      "sha256": "sha256:2d9ab66e7b4381466de8e8234dfca7a77a19b2d75aa229ef52eadd03f08d6a14",
+      "requestedReceiptCount": 2,
+      "matchedRowCount": 2
+    },
+    {
+      "path": "data/dart/allFilings/20251031.parquet",
+      "size": 7575594,
+      "sha256": "sha256:17756344dd43f14a0485a3c32092a9d3be5aa603c859f49e3fb6f98dfc9f8523",
+      "requestedReceiptCount": 3,
+      "matchedRowCount": 3
+    },
+    {
+      "path": "data/dart/allFilings/20251103.parquet",
+      "size": 6914292,
+      "sha256": "sha256:4561fa0898d9ad46f0f39b7e56793bf844d4b5d6a2cd48fdcc982ffefdb73a64",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20251106.parquet",
+      "size": 4584428,
+      "sha256": "sha256:68cb03e18f054a7be5268e5d1b19753063288a000ac54844c185fdd8c1ab52b5",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20251119.parquet",
+      "size": 3377921,
+      "sha256": "sha256:3dcbc638de2240e08c21acee757e12505fd59ac57b756a221e65867071079c4d",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20251125.parquet",
+      "size": 3393309,
+      "sha256": "sha256:3e74d1961ae99e1dba03706bb88ea573efe3223e3215112548ee6c5b20ecb030",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20251127.parquet",
+      "size": 7056901,
+      "sha256": "sha256:130ed321dd9fdcd31f54ef0c76bae08ea48404176ce08937f94c63d350048bea",
+      "requestedReceiptCount": 2,
+      "matchedRowCount": 2
+    },
+    {
+      "path": "data/dart/allFilings/20251128.parquet",
+      "size": 9288954,
+      "sha256": "sha256:3efc4c5cccfa253594f062f5b270b5d957a61f17ed05542fd41cd97b9c1154ed",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20251205.parquet",
+      "size": 8911014,
+      "sha256": "sha256:93ca73dc31930e3922d5f5f9bd458f9fa2aec0588b6c29365a160718e7691e0c",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20251212.parquet",
+      "size": 4779495,
+      "sha256": "sha256:b522a932ba2b163f561d8129e7d8fe084f202a5936e23e010b5fe43b2fa70c04",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20251215.parquet",
+      "size": 3112156,
+      "sha256": "sha256:6235da528cd1500f128348dcb15c2e5e128a7c59de2efcaf7471dc6afb36aef8",
+      "requestedReceiptCount": 2,
+      "matchedRowCount": 2
+    },
+    {
+      "path": "data/dart/allFilings/20251216.parquet",
+      "size": 5719912,
+      "sha256": "sha256:148c9b45229cc4ba04640b94cb53e6846d0bba8a9827b7255e251ac04d9d368f",
+      "requestedReceiptCount": 3,
+      "matchedRowCount": 3
+    },
+    {
+      "path": "data/dart/allFilings/20251217.parquet",
+      "size": 5598441,
+      "sha256": "sha256:d30829d7f0de3e317f11e78854618a3c5a245061bfb5234c54bc427e9c4663ac",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20251222.parquet",
+      "size": 4702465,
+      "sha256": "sha256:5eb4ee0a9013a827cc1ca3f674fc53dcd5253b43b884bace187a78e38a598295",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20251223.parquet",
+      "size": 5325566,
+      "sha256": "sha256:18e87db8494d592b1c5e2e3ee8c240988139d6d44c5d853a9c61a155366563fd",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20251224.parquet",
+      "size": 4509513,
+      "sha256": "sha256:819b2bfab366aabab9394bb00d45e4ed5433fa91749cddacf1d597a3fe1bdd4b",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20251226.parquet",
+      "size": 4064194,
+      "sha256": "sha256:a63a14ee59636797bbf4207ef04f7966a68d65a20b85ea69fc333eb6f671dcd3",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20251230.parquet",
+      "size": 3366569,
+      "sha256": "sha256:c6fdd0a0e1674219e9bc1274be2ca6a9f19be25faea24b4101ee73d3d4e04ebb",
+      "requestedReceiptCount": 2,
+      "matchedRowCount": 2
+    },
+    {
+      "path": "data/dart/allFilings/20260102.parquet",
+      "size": 3445105,
+      "sha256": "sha256:cce3bfe8452eabdea093d8400bd809669dbd35b9e0f9afbb31e18b9581e87100",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20260105.parquet",
+      "size": 5214404,
+      "sha256": "sha256:f536f77fd6bf83637bdd7146d26ce56a815349cbeafe3f68e9dc4ff822ca425f",
+      "requestedReceiptCount": 2,
+      "matchedRowCount": 2
+    },
+    {
+      "path": "data/dart/allFilings/20260113.parquet",
+      "size": 2570557,
+      "sha256": "sha256:9e1d624477e1503e5ec55655296ede9496485967e3e50f86a0e9746d3604ed2c",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20260120.parquet",
+      "size": 6346587,
+      "sha256": "sha256:34284aa711da701e6a31d1629d121eb16af4eeb51aa9af4f2391eb67129a803a",
+      "requestedReceiptCount": 2,
+      "matchedRowCount": 2
+    },
+    {
+      "path": "data/dart/allFilings/20260126.parquet",
+      "size": 4413490,
+      "sha256": "sha256:8600e7191b03eabffac1baf9fe1134a8d3627f249664fdef2a493edc1137b951",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20260127.parquet",
+      "size": 6578381,
+      "sha256": "sha256:04fba7a3d70c320f3bcd3f7e85e4b3a5fa2307b486117d0d6f47e51038617971",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20260129.parquet",
+      "size": 7395508,
+      "sha256": "sha256:f3459aaa4220c90097cd08afb9de74b514944cb5c7ade10511b010bc35c62633",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20260206.parquet",
+      "size": 7342710,
+      "sha256": "sha256:a3a5d20cc9eb77820dbadfe1eedf98b5b49307e3007233b2d76e37628e83f87e",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20260210.parquet",
+      "size": 7742297,
+      "sha256": "sha256:84b33553858bc641e5f4869d1fc55d817c30f765c8833500af43c02225d42b1f",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20260213.parquet",
+      "size": 8843353,
+      "sha256": "sha256:13f7fe0dd68369858841b55b4a5799cdc2f42c41d695727b2d5b3e25fc23b13e",
+      "requestedReceiptCount": 2,
+      "matchedRowCount": 2
+    },
+    {
+      "path": "data/dart/allFilings/20260223.parquet",
+      "size": 8901443,
+      "sha256": "sha256:c2f7769ea055c07bd3301e98463dac7b72919ae8bb29db5362ad2e3ec45ff765",
+      "requestedReceiptCount": 2,
+      "matchedRowCount": 2
+    },
+    {
+      "path": "data/dart/allFilings/20260224.parquet",
+      "size": 7333871,
+      "sha256": "sha256:9582f6097d9704e672387ac278f66386f9e7a49923b5060595bb4a3cacacbaf2",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20260225.parquet",
+      "size": 17556277,
+      "sha256": "sha256:493034de00a7531bb0b3abdef82c10522a6f508d2a2dee2fa2d42031ae515ac8",
+      "requestedReceiptCount": 2,
+      "matchedRowCount": 2
+    },
+    {
+      "path": "data/dart/allFilings/20260226.parquet",
+      "size": 13453418,
+      "sha256": "sha256:371745641f3cc428753b657c4441558fd7a921cfd006032e5eec06f486b1de02",
+      "requestedReceiptCount": 2,
+      "matchedRowCount": 2
+    },
+    {
+      "path": "data/dart/allFilings/20260227.parquet",
+      "size": 13642464,
+      "sha256": "sha256:ab8a21274832bb377bb0e3f5949e5cfade221092462d0f296bcacc6d8423c6f3",
+      "requestedReceiptCount": 2,
+      "matchedRowCount": 2
+    },
+    {
+      "path": "data/dart/allFilings/20260303.parquet",
+      "size": 5639824,
+      "sha256": "sha256:74995283bde09d2b19f6ac45635c1426caa60a9d434e8a8b8fd80f4d3fa2eeae",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20260304.parquet",
+      "size": 9382841,
+      "sha256": "sha256:85ed7626d2828f6a68e031608464c9bd67d146961c4f9f0cea725c2d1510cc2e",
+      "requestedReceiptCount": 2,
+      "matchedRowCount": 2
+    },
+    {
+      "path": "data/dart/allFilings/20260305.parquet",
+      "size": 7025663,
+      "sha256": "sha256:a5069d5fd7af1f8ff99ed9cd3c2cf6327c0ad851031c88d5d8a862e8a9431d50",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20260310.parquet",
+      "size": 8278966,
+      "sha256": "sha256:9be0bdc87d63d5bc37e5fb009c8300179c7437bdc6640b333f4020058d33c77b",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20260312.parquet",
+      "size": 5218569,
+      "sha256": "sha256:f9796101487fdb10821c2b86cd5b007b91cfb3ee9f5bf8ffbe3c010396ecba1f",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20260313.parquet",
+      "size": 4897206,
+      "sha256": "sha256:ab906f9f5a946afe0e2e9777997e18abd657ff30f8b9a2e6a7dd848b5c34ca0a",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20260316.parquet",
+      "size": 7420635,
+      "sha256": "sha256:7f84b6a2089ddeb0da5d6fb26ddc78a332c4be6ef4505020f339a2a002bc0514",
+      "requestedReceiptCount": 2,
+      "matchedRowCount": 2
+    },
+    {
+      "path": "data/dart/allFilings/20260320.parquet",
+      "size": 4447409,
+      "sha256": "sha256:b843dafcfaa64ed4bd0c3c3b93ed85723ee921c8c8ad167a7d6039d651f40383",
+      "requestedReceiptCount": 2,
+      "matchedRowCount": 2
+    },
+    {
+      "path": "data/dart/allFilings/20260326.parquet",
+      "size": 2524407,
+      "sha256": "sha256:057e764b28159d0d3e0175e3a36ed2228aa3a5d8e774f14c27caa9ef2b33b63f",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20260327.parquet",
+      "size": 2449582,
+      "sha256": "sha256:19a05ad23cd8bdb9d5c4fa4686788d46a187c1a08d9a289781429ef201ea8113",
+      "requestedReceiptCount": 2,
+      "matchedRowCount": 2
+    },
+    {
+      "path": "data/dart/allFilings/20260330.parquet",
+      "size": 5148160,
+      "sha256": "sha256:00ae64ce8fae408a4edd0103d201df59fe27da53fe0d835529baaabab2847bd7",
+      "requestedReceiptCount": 3,
+      "matchedRowCount": 3
+    },
+    {
+      "path": "data/dart/allFilings/20260331.parquet",
+      "size": 8242319,
+      "sha256": "sha256:a36245475f876ab82499af7caaf4c57addf0fc96af1b7d92b7656df3460e8b72",
+      "requestedReceiptCount": 3,
+      "matchedRowCount": 3
+    },
+    {
+      "path": "data/dart/allFilings/20260401.parquet",
+      "size": 6733741,
+      "sha256": "sha256:314943625fb46ad43776559e1e653527b6d3af54597dfe94c33722c05275905e",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20260413.parquet",
+      "size": 6872575,
+      "sha256": "sha256:edcc053b772cbfdea8d5f8ed3f8715b98533045ec22f703a8f7c50f46b23c451",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20260415.parquet",
+      "size": 6417006,
+      "sha256": "sha256:e13b135090f22ae6445ba5c98f3827ccd798ef7cbc9c67f6f5925b74fecb7d21",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20260417.parquet",
+      "size": 8642686,
+      "sha256": "sha256:ca756f9cea52bfc695b98b8512ec67668ee6d860942279274ccc57707ba955eb",
+      "requestedReceiptCount": 2,
+      "matchedRowCount": 2
+    },
+    {
+      "path": "data/dart/allFilings/20260420.parquet",
+      "size": 7164822,
+      "sha256": "sha256:1c9d2b678e2f67ccd275d5ed0c7d11704c7b2863834f5bf871305a58d4146426",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20260422.parquet",
+      "size": 8417154,
+      "sha256": "sha256:41eb318d2af8b96c7e7ff045dbee32da9496b3be608a2bd5913969a6338eb8d3",
+      "requestedReceiptCount": 2,
+      "matchedRowCount": 2
+    },
+    {
+      "path": "data/dart/allFilings/20260424.parquet",
+      "size": 10047862,
+      "sha256": "sha256:b744a0c34d3c6f810772bc3554b1cf2bd59878bb7d50a1fe5483f27c992673ca",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20260429.parquet",
+      "size": 5246796,
+      "sha256": "sha256:53dea466b8043c955c0164649fa04ec168064d8f4e8a69580adc99b2ee550d38",
+      "requestedReceiptCount": 3,
+      "matchedRowCount": 3
+    },
+    {
+      "path": "data/dart/allFilings/20260430.parquet",
+      "size": 8148512,
+      "sha256": "sha256:1874dd230c641a6acbbfbd7de8d99df5c46ad972bdf596695333128dab508685",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20260504.parquet",
+      "size": 3411003,
+      "sha256": "sha256:90d7333ea4695ec3e4b48f028909eacc8133bbbafd0943cd84438e0767774612",
+      "requestedReceiptCount": 2,
+      "matchedRowCount": 2
+    },
+    {
+      "path": "data/dart/allFilings/20260506.parquet",
+      "size": 2649056,
+      "sha256": "sha256:606d41626be5514755527cf8735fd11771c31cd38cafed2d966baaa6d6a63e99",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20260507.parquet",
+      "size": 3078573,
+      "sha256": "sha256:0b3be295c91e9e4bdf68fd2593d062712e874ef617be9c2c7714c9a81c1c3d6b",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20260508.parquet",
+      "size": 9338381,
+      "sha256": "sha256:cf88b16a7dc2252e840d75c3756356a4fe29046681f72d50ebb26a6e4e21beab",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20260511.parquet",
+      "size": 5139979,
+      "sha256": "sha256:c2349f1b16d5879ee53be737a1df5071abbf3f933870130464843ccb059c5793",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20260514.parquet",
+      "size": 10686021,
+      "sha256": "sha256:944515243069313dea6b4f353b71b23d3c2a2e006023bb0dc98a8c48e97cb699",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20260515.parquet",
+      "size": 7044730,
+      "sha256": "sha256:c002bc7524a637964fe2460ac81d72a661e799ecdc71850fb001777dc012e9b0",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20260520.parquet",
+      "size": 3294818,
+      "sha256": "sha256:59daf87e328174fa2bccde74a986353642f7dfe34fb4b0e91ab3bff2b8c142c4",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20260521.parquet",
+      "size": 11078685,
+      "sha256": "sha256:806ab60d39c661c9f16c9d9e7839a9787faab2973a2b402f389eb9cdec903823",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20260522.parquet",
+      "size": 8884643,
+      "sha256": "sha256:3f3bb8ab2eb498be6166c5d1f034235a60f4063ed993fc22b7af6e27a5b4fc16",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20260527.parquet",
+      "size": 6714001,
+      "sha256": "sha256:ef0263252653f0cb271ea60d0d6441287f6ce83ec77c1c06b1b71297c4eb4781",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 0
+    },
+    {
+      "path": "data/dart/allFilings/20260529.parquet",
+      "size": 55457199,
+      "sha256": "sha256:d11709e57cf7ae6a1ace4824a4fd6a255f521d165c281ad4dbcecac449b0d1d4",
+      "requestedReceiptCount": 2,
+      "matchedRowCount": 2
+    },
+    {
+      "path": "data/dart/allFilings/20260602.parquet",
+      "size": 6857144,
+      "sha256": "sha256:4858de5c4abe5233c8c53bea3629a9e566562d9fe28b6e82b3673b3965510ec0",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20260605.parquet",
+      "size": 8437533,
+      "sha256": "sha256:21f6236e1cffc3cf6fc8ee6f6266b655336b99c06f91d07b57407b1bd853e502",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 0
+    },
+    {
+      "path": "data/dart/allFilings/20260608.parquet",
+      "size": 6325093,
+      "sha256": "sha256:8a8b955b04c13842a0bff1873ac1cf8e5d5928e956950c9b4cffff1371f62e40",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/allFilings/20260612.parquet",
+      "size": 5241295,
+      "sha256": "sha256:22593674ec55fa95e129e2c7c34b8eb51c0a290f2e0bece1f59010805bfac5b9",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1
+    },
+    {
+      "path": "data/dart/panel/000120.parquet",
+      "size": 10922430,
+      "sha256": "sha256:1036be0fdccbf1f14e51ef096872659dd1b53de7f5f5b13642698f33e4764ff8",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 716
+    },
+    {
+      "path": "data/dart/panel/000150.parquet",
+      "size": 20814856,
+      "sha256": "sha256:dedc66c70a78ef37c07687f6e4b856d5d9a09cd44a7d8fc17b9e7357c83cd7fd",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 671
+    },
+    {
+      "path": "data/dart/panel/000500.parquet",
+      "size": 7395401,
+      "sha256": "sha256:ecd662bb4488ff98acc80e90de937e2a3d83534dc45773d272c3e722cb5de83e",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 316
+    },
+    {
+      "path": "data/dart/panel/000520.parquet",
+      "size": 4491991,
+      "sha256": "sha256:c397b9dd51ce50b75fc7f129fac23128fc04e4e238223f2c80fea7d2957ac5b2",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 584
+    },
+    {
+      "path": "data/dart/panel/000670.parquet",
+      "size": 7598446,
+      "sha256": "sha256:6c99b3a0eae0f5f84e09530fa8cec73b99799fa444e3311637b9efd756e88d41",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 631
+    },
+    {
+      "path": "data/dart/panel/001230.parquet",
+      "size": 7597684,
+      "sha256": "sha256:d3980571999ab93f16f6dc59e962a241e4ef7438fa30b9c6665fd88d7428ef8f",
+      "requestedReceiptCount": 2,
+      "matchedRowCount": 2002
+    },
+    {
+      "path": "data/dart/panel/001500.parquet",
+      "size": 12311787,
+      "sha256": "sha256:98ab8e4a4eb4fb04bda861b57f315152a56153e2d77ad1c509a220f72fa44a69",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 346
+    },
+    {
+      "path": "data/dart/panel/001820.parquet",
+      "size": 5113090,
+      "sha256": "sha256:8ec6443a0942c77a28cc5acd242ca87635cac88e293a5ddc8e325b1ed6af20bd",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 867
+    },
+    {
+      "path": "data/dart/panel/001940.parquet",
+      "size": 3684701,
+      "sha256": "sha256:d7bae241066b741822415f0c297761cf59b59069afe75dd046adabe4389d4b80",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 484
+    },
+    {
+      "path": "data/dart/panel/002310.parquet",
+      "size": 4745848,
+      "sha256": "sha256:87d4ab56b0127f368e058596856bbb7df707bea04ab3a1192d3fa30f08eab346",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 685
+    },
+    {
+      "path": "data/dart/panel/002350.parquet",
+      "size": 6425063,
+      "sha256": "sha256:4f249fd5d32144bd47c627f613fb6c55876ece4fc83b2ffed0e0c8e0ed3b14d4",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 154
+    },
+    {
+      "path": "data/dart/panel/002380.parquet",
+      "size": 17826060,
+      "sha256": "sha256:56c2b6651c49a2c0914ba2a161ebfc2961f08da89d50430dd91cae9a2250ba2d",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 2084
+    },
+    {
+      "path": "data/dart/panel/002390.parquet",
+      "size": 6010251,
+      "sha256": "sha256:3dbf847852cd6cfe2ec9d1ee51b32e4984e43ec91d8eed30b1475d27347e9681",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 676
+    },
+    {
+      "path": "data/dart/panel/002630.parquet",
+      "size": 4999733,
+      "sha256": "sha256:b6352a3a9a45db75ecf69d4243d5891bc2360cefc16e116e5910ce2041b9df46",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 131
+    },
+    {
+      "path": "data/dart/panel/002810.parquet",
+      "size": 3554775,
+      "sha256": "sha256:cb8a43f727c4f796aa8d69dbe4c5358a3a987c4d6ccfbd8691bd8bc7922bd190",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 642
+    },
+    {
+      "path": "data/dart/panel/002840.parquet",
+      "size": 5008705,
+      "sha256": "sha256:c4f457c1634a754355e420d1807a2dfefd1d1a86e7da6ee2e680faac8866e9a5",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 340
+    },
+    {
+      "path": "data/dart/panel/002900.parquet",
+      "size": 6347491,
+      "sha256": "sha256:c41a14878a96439696c30d7b9d66515db8c7b5c1bbe104eda0398c249162de89",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1687
+    },
+    {
+      "path": "data/dart/panel/002990.parquet",
+      "size": 6585866,
+      "sha256": "sha256:0b728c101c1f82f0a419906e781f8d450fe364ef23d6a4d00f8b30aa007931d8",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 950
+    },
+    {
+      "path": "data/dart/panel/003240.parquet",
+      "size": 6450267,
+      "sha256": "sha256:ca309203b129acaa7a9738f4208cfaea88d21a3f4767c89a4dd2d87f8a596946",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 614
+    },
+    {
+      "path": "data/dart/panel/004020.parquet",
+      "size": 7632995,
+      "sha256": "sha256:8acbc8101633731cad6fb8b4d2921a00394f3353ae10d49699e728bd83cf127b",
+      "requestedReceiptCount": 3,
+      "matchedRowCount": 324
+    },
+    {
+      "path": "data/dart/panel/004170.parquet",
+      "size": 12087604,
+      "sha256": "sha256:56ce4939811fe419e585c30ef5395dc4ab562c0e5807f4b019145cb7645bad37",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 952
+    },
+    {
+      "path": "data/dart/panel/004490.parquet",
+      "size": 4634370,
+      "sha256": "sha256:463d078674eb0e97a6458a44590d4ff30b3385f356a8600a0756f3eb1c421ab7",
+      "requestedReceiptCount": 2,
+      "matchedRowCount": 1447
+    },
+    {
+      "path": "data/dart/panel/004890.parquet",
+      "size": 3731261,
+      "sha256": "sha256:5fc6c8d849cb995026bba6908ff58f976184158225ba5f377772949294666e93",
+      "requestedReceiptCount": 2,
+      "matchedRowCount": 1274
+    },
+    {
+      "path": "data/dart/panel/004990.parquet",
+      "size": 18455636,
+      "sha256": "sha256:9350f943f2804cca3a75a374bfbe3abf43f7739822eedc173b41d6c14dc86f4f",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 320
+    },
+    {
+      "path": "data/dart/panel/005440.parquet",
+      "size": 8021678,
+      "sha256": "sha256:748ce98dcb83684123441e0edb84684d838c79d3f8eceec0c7dd8f954517bcff",
+      "requestedReceiptCount": 2,
+      "matchedRowCount": 1437
+    },
+    {
+      "path": "data/dart/panel/005710.parquet",
+      "size": 3029689,
+      "sha256": "sha256:4b9652742a590e2dde1c4d4889aef22d02e3c46bbb9e88ad26f59591afa20e96",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1135
+    },
+    {
+      "path": "data/dart/panel/005810.parquet",
+      "size": 4668785,
+      "sha256": "sha256:fc8b7f049c224568793d7bce2bc1377cb6950c9a28e944f27ffa2ce5b7b2bd03",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 338
+    },
+    {
+      "path": "data/dart/panel/005950.parquet",
+      "size": 11330971,
+      "sha256": "sha256:e31b5d27fce8f2ddd395e7d533674a278b6375a27b6cc235fac73acd4db51f0c",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 844
+    },
+    {
+      "path": "data/dart/panel/006280.parquet",
+      "size": 11182971,
+      "sha256": "sha256:bcfda3d35e4b500fd379939ab9ae3272e90a1f14e5369f9b19a1629612d7953c",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 744
+    },
+    {
+      "path": "data/dart/panel/006380.parquet",
+      "size": 2533361,
+      "sha256": "sha256:03e61c2bb8bcb6ec80e5587621f1018591f8ccefcfafbdfdb76988309258b106",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 105
+    },
+    {
+      "path": "data/dart/panel/007460.parquet",
+      "size": 8257461,
+      "sha256": "sha256:e9b02ca6e6f0facccd6629c4213bde6e5cfb94764afc9a3faea7add181865fc2",
+      "requestedReceiptCount": 2,
+      "matchedRowCount": 1628
+    },
+    {
+      "path": "data/dart/panel/007810.parquet",
+      "size": 5065585,
+      "sha256": "sha256:e5c6161311d1d4f0ad4860ccdde55fb0ba63c6d320c669b3ce64f1bbbc92a3d9",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 781
+    },
+    {
+      "path": "data/dart/panel/008490.parquet",
+      "size": 6126674,
+      "sha256": "sha256:8fbbd9f0d416439d181ab80da2d5add3a994ed9da76f067d42f1bdaf96e3ee84",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1201
+    },
+    {
+      "path": "data/dart/panel/008830.parquet",
+      "size": 1871919,
+      "sha256": "sha256:ad9d268b8aa82255e2cfc1bd596799e547b8dd99488cecec394f5ebb020faa57",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 373
+    },
+    {
+      "path": "data/dart/panel/008870.parquet",
+      "size": 4488259,
+      "sha256": "sha256:3f951e43f725d648b51ae2d132a2ef7bc71e767e33ed302a2e90d2feb9d197f9",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 182
+    },
+    {
+      "path": "data/dart/panel/009420.parquet",
+      "size": 4522447,
+      "sha256": "sha256:0054d11de3d97437ce25b864496098cdb5ebcc7403444ac435c9439b2473998b",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 104
+    },
+    {
+      "path": "data/dart/panel/011170.parquet",
+      "size": 14275123,
+      "sha256": "sha256:d97266de69baac5da9e05a5e9dd972ae30c5b1d021c1283136eff897959b877b",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 790
+    },
+    {
+      "path": "data/dart/panel/011230.parquet",
+      "size": 3790252,
+      "sha256": "sha256:2e11c30061fc4eaac81d51b9567e2f11b026d5e7d5016f5ee753d6f5e74de136",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 977
+    },
+    {
+      "path": "data/dart/panel/011930.parquet",
+      "size": 6095172,
+      "sha256": "sha256:46b5c96452e4198244de0cf2be1a90be77a5371bfd875e19fc1b21cc4dd0342c",
+      "requestedReceiptCount": 3,
+      "matchedRowCount": 1891
+    },
+    {
+      "path": "data/dart/panel/012200.parquet",
+      "size": 3586381,
+      "sha256": "sha256:bbe2adaf93c1daa5ed7917d57c66263d5c2a3712d68ed4ea9cb853143f3f1d02",
+      "requestedReceiptCount": 2,
+      "matchedRowCount": 818
+    },
+    {
+      "path": "data/dart/panel/012700.parquet",
+      "size": 6025633,
+      "sha256": "sha256:7fac05cc3ca580ef792c5b827f34792b7e3bb768e32b224eac9427f0448a1bf2",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 770
+    },
+    {
+      "path": "data/dart/panel/012750.parquet",
+      "size": 5317548,
+      "sha256": "sha256:2b3b55e16408be32d78be3d5e457e58f9fa17bf90c09df94899ea12ae075311b",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 457
+    },
+    {
+      "path": "data/dart/panel/014160.parquet",
+      "size": 2566624,
+      "sha256": "sha256:47777a4028e8cbaf711acc415bfc6a9bed44a4809abe2fcb5885bcb40c202145",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 572
+    },
+    {
+      "path": "data/dart/panel/015890.parquet",
+      "size": 5860057,
+      "sha256": "sha256:1ab644b45bc52836f85b708326c550cb0a9766b822a3a66c3cfec6bbd434f7b1",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 137
+    },
+    {
+      "path": "data/dart/panel/016600.parquet",
+      "size": 2650334,
+      "sha256": "sha256:d07515a0a31ebdab7487f59070362aa90c67d2bfabe808be35bd78b61957dcb1",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 440
+    },
+    {
+      "path": "data/dart/panel/016610.parquet",
+      "size": 10128784,
+      "sha256": "sha256:916d5b5e715729aaa6e33c977500e4f4568268fc7c65f60722e4d78174e63c8b",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1529
+    },
+    {
+      "path": "data/dart/panel/016670.parquet",
+      "size": 4370063,
+      "sha256": "sha256:21987a966ba861c374dcf8d0c4d7d50d97375dfc5f0eeced652bf1200564b592",
+      "requestedReceiptCount": 2,
+      "matchedRowCount": 1572
+    },
+    {
+      "path": "data/dart/panel/016710.parquet",
+      "size": 6589974,
+      "sha256": "sha256:853521dd1db54f1541015c620e003bb771ba34724d27f911dd92128606f0d7da",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 563
+    },
+    {
+      "path": "data/dart/panel/018260.parquet",
+      "size": 8111194,
+      "sha256": "sha256:86691d691206da0969f43f76c4a696b1ee03dabf4e92bfebb1d764af076648a4",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 849
+    },
+    {
+      "path": "data/dart/panel/020150.parquet",
+      "size": 5436827,
+      "sha256": "sha256:fc196a975b1f76469fc9f456efca0e0745fda811d66a91ee681f2348739ceea6",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 831
+    },
+    {
+      "path": "data/dart/panel/023590.parquet",
+      "size": 20221972,
+      "sha256": "sha256:ccf7a9b1f23f0319457340fca971e316aa9833213da77c5701a80b1e3b0e8e9a",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 102
+    },
+    {
+      "path": "data/dart/panel/024800.parquet",
+      "size": 7269910,
+      "sha256": "sha256:da0f1942f1ec8b453c98fd2aadc744f5bec18deb775d77267201afb3d2abbdd9",
+      "requestedReceiptCount": 3,
+      "matchedRowCount": 1443
+    },
+    {
+      "path": "data/dart/panel/025530.parquet",
+      "size": 5684064,
+      "sha256": "sha256:82900ed739c89cba265166f2c9fb2142c4fbd2b30aaa8c64187cfc25631a4ecf",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1041
+    },
+    {
+      "path": "data/dart/panel/026890.parquet",
+      "size": 3889284,
+      "sha256": "sha256:d0f967a81c946b8342cb566ce62fb2936dadb8b77b57256f815c0e7aba87d3a6",
+      "requestedReceiptCount": 2,
+      "matchedRowCount": 1065
+    },
+    {
+      "path": "data/dart/panel/027830.parquet",
+      "size": 2007401,
+      "sha256": "sha256:6d5068117a8b41875562551ff20a98775a2f260bba43cd5f9a798247d393be5c",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 314
+    },
+    {
+      "path": "data/dart/panel/030000.parquet",
+      "size": 7096186,
+      "sha256": "sha256:cafef8bd54f412c94b5fabeea3a630c4462d2ded8ddf3ff1ac177bdb967f1771",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 69
+    },
+    {
+      "path": "data/dart/panel/031430.parquet",
+      "size": 7019016,
+      "sha256": "sha256:3d05888eed58ccdc92c55baa53a7d4d79cfa311b299be16c5076c4d58dd985a1",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 795
+    },
+    {
+      "path": "data/dart/panel/032640.parquet",
+      "size": 8617995,
+      "sha256": "sha256:1b255b519bb094e6be4ac5695907e3c7841c103aa7260d69971460573fd5adce",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 815
+    },
+    {
+      "path": "data/dart/panel/033290.parquet",
+      "size": 6227031,
+      "sha256": "sha256:149521b0e21f2d80fd35540b3d872b15f4a662f4f16bbbc3f7cb19d725cb6afd",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1563
+    },
+    {
+      "path": "data/dart/panel/034020.parquet",
+      "size": 17832768,
+      "sha256": "sha256:957c05ca043206770995fb632f945328a60cc0c28998b7dad6d7143b3084a2b6",
+      "requestedReceiptCount": 2,
+      "matchedRowCount": 4038
+    },
+    {
+      "path": "data/dart/panel/034220.parquet",
+      "size": 7354803,
+      "sha256": "sha256:d1fb4cc1592ef25387a55d2a5da1bf5eaf52002f7444dbc13f5046a8000ee0bb",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 703
+    },
+    {
+      "path": "data/dart/panel/034310.parquet",
+      "size": 6964278,
+      "sha256": "sha256:fab44eb6c42963eb7e40592715933af70488dd597e143de0b62eef7a3e8fcb20",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 926
+    },
+    {
+      "path": "data/dart/panel/035610.parquet",
+      "size": 3866603,
+      "sha256": "sha256:1966d92c2704780e314717294441c466ba6318d75da93dfbd1dbfa1136c88f84",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 736
+    },
+    {
+      "path": "data/dart/panel/035620.parquet",
+      "size": 4150325,
+      "sha256": "sha256:ca89d4da4e992d6e16d88963501e79a7d14ff6d319c3ae4ac00620a2ade7af3e",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 32
+    },
+    {
+      "path": "data/dart/panel/035810.parquet",
+      "size": 13837273,
+      "sha256": "sha256:61a2f8045c4c62d1d925ff72325bb846890acb678ab37541b05c714d2f810d95",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 759
+    },
+    {
+      "path": "data/dart/panel/036190.parquet",
+      "size": 5241883,
+      "sha256": "sha256:c52ab46b8c2763b92e11c6eea78d73bd1a06653475458084fbde93cec18ecc4b",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 857
+    },
+    {
+      "path": "data/dart/panel/036540.parquet",
+      "size": 4105855,
+      "sha256": "sha256:01e5cb01ef1a991df590cf847fc0eba3e42955ff010abc607240a436932693e3",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 900
+    },
+    {
+      "path": "data/dart/panel/037710.parquet",
+      "size": 3061487,
+      "sha256": "sha256:a0107d76b9a08be3b64ffe43777fc9212cb8c960faff021f2e04244a996d6b84",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 382
+    },
+    {
+      "path": "data/dart/panel/039490.parquet",
+      "size": 21066831,
+      "sha256": "sha256:837eda072bd0d279a61a7192f6523b16f1143697acaea970cdc00560f1f62788",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 367
+    },
+    {
+      "path": "data/dart/panel/041590.parquet",
+      "size": 7127341,
+      "sha256": "sha256:60a19156f72a522e860bde081d12eddff95de9e9b2026217721ce6a0ad3cde1d",
+      "requestedReceiptCount": 2,
+      "matchedRowCount": 2689
+    },
+    {
+      "path": "data/dart/panel/047820.parquet",
+      "size": 5874967,
+      "sha256": "sha256:08d5bf9852e9cbf56e86da68bf3e493869d4ffcde92307b28e73ff5c0913f705",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 570
+    },
+    {
+      "path": "data/dart/panel/049070.parquet",
+      "size": 5132205,
+      "sha256": "sha256:e160efa9968ac7371615e99d23e30b200a7344d0a9363b9d2398c273fdd6ff58",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1518
+    },
+    {
+      "path": "data/dart/panel/049520.parquet",
+      "size": 3674164,
+      "sha256": "sha256:3d6e4c02b888b5e25cf765551ab4c81b4b6c861f915e546547e96ac2fa91919f",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 692
+    },
+    {
+      "path": "data/dart/panel/049950.parquet",
+      "size": 2365752,
+      "sha256": "sha256:c30d103a0d19124a780c11c49a47e9ad37f64ac8323ea7fa653ec1f97101be6a",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 599
+    },
+    {
+      "path": "data/dart/panel/050960.parquet",
+      "size": 2077795,
+      "sha256": "sha256:47dc3826ea8a1897acd7e26a4b7faa0f106507fc2ff4849cad4263e1152e5bb8",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 371
+    },
+    {
+      "path": "data/dart/panel/052330.parquet",
+      "size": 3726350,
+      "sha256": "sha256:cacd736d6e75cf2d05f144ba38622f56a04a2ac5468acc48b61f14c2409252b4",
+      "requestedReceiptCount": 2,
+      "matchedRowCount": 1164
+    },
+    {
+      "path": "data/dart/panel/053080.parquet",
+      "size": 3276245,
+      "sha256": "sha256:3763be32d14851c194db63c9176646c8bc9585119f2e3cbf85583913cef9fd88",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 602
+    },
+    {
+      "path": "data/dart/panel/053300.parquet",
+      "size": 7761393,
+      "sha256": "sha256:aced83a9b6a4b8a5662ecc23df537b6b52b909e79e30db92b37c2c1a3fd585cf",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 277
+    },
+    {
+      "path": "data/dart/panel/053580.parquet",
+      "size": 3755809,
+      "sha256": "sha256:98b5f3120098953e23515933305684748c4c27bcb274723d6e8582ce2d10a556",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 737
+    },
+    {
+      "path": "data/dart/panel/056700.parquet",
+      "size": 3503679,
+      "sha256": "sha256:9399dc0b18d971833e2e06631d0d815e2e3030addb816e199d592b8643b20bf2",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 644
+    },
+    {
+      "path": "data/dart/panel/058400.parquet",
+      "size": 3014460,
+      "sha256": "sha256:be8d70fc15987ddd6cb4dfc86c9778cd49659fb9f25120b768e2005f9a4cb34f",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 644
+    },
+    {
+      "path": "data/dart/panel/065350.parquet",
+      "size": 6507915,
+      "sha256": "sha256:f93f464188a8335bab45585635bbd3299da565b0bbf8ccdfec4df981be1708bd",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1374
+    },
+    {
+      "path": "data/dart/panel/065500.parquet",
+      "size": 4848973,
+      "sha256": "sha256:97c43c441b340f3294c9f97d18efbe5db47f3b7cb5c492f6b9e4d67e2e1b2211",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1285
+    },
+    {
+      "path": "data/dart/panel/066570.parquet",
+      "size": 17000496,
+      "sha256": "sha256:1b53bbed185b455a5a335a79832ff9f68abf1a76bc777c0bf05a86586acc44a0",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 2764
+    },
+    {
+      "path": "data/dart/panel/066980.parquet",
+      "size": 6034421,
+      "sha256": "sha256:7c264a52d8f397dc28299089b1cbab9f26af7ef2f3845cd80732792a50bc94a1",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 542
+    },
+    {
+      "path": "data/dart/panel/067280.parquet",
+      "size": 3978366,
+      "sha256": "sha256:68806ef49640d34ee4112c6491b0b783e19ae547a5b629c01a04a49e0e1da61f",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 442
+    },
+    {
+      "path": "data/dart/panel/067390.parquet",
+      "size": 6417086,
+      "sha256": "sha256:2dae1d04467d5c1ce6f37e47b9b1264c55e2a7714b30640c5c02d089da9af77a",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 615
+    },
+    {
+      "path": "data/dart/panel/067630.parquet",
+      "size": 8120033,
+      "sha256": "sha256:18d81b133ddf2f4cf94aac1361990f347356087a35f08ba003e1cd7a3106ca87",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 482
+    },
+    {
+      "path": "data/dart/panel/068050.parquet",
+      "size": 2805212,
+      "sha256": "sha256:102a5033636651f0e7ba5f8010c8a8003a9d7708edb1c679fdc2530536c36762",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 610
+    },
+    {
+      "path": "data/dart/panel/069620.parquet",
+      "size": 8672237,
+      "sha256": "sha256:e9e7c3f155ed513434edc6c77868a612d0310d19072982e79a01e2a78dfbb60d",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 258
+    },
+    {
+      "path": "data/dart/panel/075970.parquet",
+      "size": 3352822,
+      "sha256": "sha256:843c93ae6ce446e1bc7bfa5468bfae297cc013faeaf9a363f950470ae99aa4d2",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 861
+    },
+    {
+      "path": "data/dart/panel/079430.parquet",
+      "size": 5706485,
+      "sha256": "sha256:083b97149266516efb5dba12792b55d4dc37653b63d0a0766bfbcbdd767aa4ca",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 548
+    },
+    {
+      "path": "data/dart/panel/079940.parquet",
+      "size": 4825247,
+      "sha256": "sha256:54fee13f3d37457d150c9e91410451b6faf61f9c2ef15a96ca432d6b080f0d50",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 977
+    },
+    {
+      "path": "data/dart/panel/082270.parquet",
+      "size": 6889834,
+      "sha256": "sha256:337be93d0d1416a94c209e261c0577e157f58061a61f8cc8c869813d98499e40",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 416
+    },
+    {
+      "path": "data/dart/panel/082740.parquet",
+      "size": 5891246,
+      "sha256": "sha256:6ff995f03dbc74ead8ea2903e159149f87d312edd692f81c21d86b915217b681",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1024
+    },
+    {
+      "path": "data/dart/panel/083420.parquet",
+      "size": 2528292,
+      "sha256": "sha256:bd2eac6af838c493b87ddc022018052ebd8d33604caaa5f70774fa58d1d22f87",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 499
+    },
+    {
+      "path": "data/dart/panel/084110.parquet",
+      "size": 7103540,
+      "sha256": "sha256:0031cb43994456b5eeda8a556fc10de756ea3c83ca9a6f024b6b6f3cc8e66868",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 702
+    },
+    {
+      "path": "data/dart/panel/084850.parquet",
+      "size": 3654553,
+      "sha256": "sha256:8e46f898675230f66b88d39509d1c115b02222bb2eaa6f31e0dffba4090155bf",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 783
+    },
+    {
+      "path": "data/dart/panel/086280.parquet",
+      "size": 8523732,
+      "sha256": "sha256:b146bf938a904c411537543ec22353a11be7a5f451c2b0fcb039d8ec22d63650",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1405
+    },
+    {
+      "path": "data/dart/panel/089150.parquet",
+      "size": 2051821,
+      "sha256": "sha256:058add0aca52a97e280ee1fa92614d267035b0b29a34f2ae40b5678d16ed2c04",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 444
+    },
+    {
+      "path": "data/dart/panel/092220.parquet",
+      "size": 4441553,
+      "sha256": "sha256:40d25e31bbd3adf00af82eabae925f858a130d7656db92123ca55c8de8a3247c",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 674
+    },
+    {
+      "path": "data/dart/panel/092230.parquet",
+      "size": 6281317,
+      "sha256": "sha256:9a88d8bcbea4fe4eced77514045776790d736652b5b11f766b82f8c1dae7e972",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1052
+    },
+    {
+      "path": "data/dart/panel/094850.parquet",
+      "size": 1983879,
+      "sha256": "sha256:2be6c7e68cf0edcfcc57589a783464c82b6c9bbbeed203f1f031b1f59dc1832e",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 586
+    },
+    {
+      "path": "data/dart/panel/094940.parquet",
+      "size": 3513612,
+      "sha256": "sha256:d53eb3ef70be009b33645b49bd445512c8a82469d6969704c415fd8cad6206e1",
+      "requestedReceiptCount": 2,
+      "matchedRowCount": 1617
+    },
+    {
+      "path": "data/dart/panel/095720.parquet",
+      "size": 6005566,
+      "sha256": "sha256:41631bd5d8df0b727ab5359b2db1822598875a8256784ac4ef96965b829ca8e2",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 40
+    },
+    {
+      "path": "data/dart/panel/099520.parquet",
+      "size": 4081281,
+      "sha256": "sha256:e3865f9ddc5119cd1571bb8c6a828fea12175dc3c7aca5a3133b26808cabf6d7",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 919
+    },
+    {
+      "path": "data/dart/panel/100030.parquet",
+      "size": 3604430,
+      "sha256": "sha256:6875d7341d7a656c83980ad7eaa7f56f61967cad83633a6e698ec165cacc005e",
+      "requestedReceiptCount": 2,
+      "matchedRowCount": 139
+    },
+    {
+      "path": "data/dart/panel/101330.parquet",
+      "size": 4804961,
+      "sha256": "sha256:aa707c55eac8e479f7cab4603bb75967c29533778a897b6b33288028140ee262",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 829
+    },
+    {
+      "path": "data/dart/panel/108320.parquet",
+      "size": 3983073,
+      "sha256": "sha256:0cafeb9be1b845aa24aa50293c0d8d66dc5cb725aaba8c18de94b4003c9d6c87",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 663
+    },
+    {
+      "path": "data/dart/panel/109610.parquet",
+      "size": 5537251,
+      "sha256": "sha256:ba597a0b31f2d37ba80198285a21099b0059be3af5bc4547c2ed7936e9a3e38a",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1181
+    },
+    {
+      "path": "data/dart/panel/112190.parquet",
+      "size": 174663,
+      "sha256": "sha256:aa548ee4c04c66667b7f3aab199c9f1ded2e7c348e938076b25b22b58a82354b",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 694
+    },
+    {
+      "path": "data/dart/panel/119650.parquet",
+      "size": 7543102,
+      "sha256": "sha256:b057a64beece79998862dcbe958734dc289821821c76ace3fe2a9a872f77822f",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 947
+    },
+    {
+      "path": "data/dart/panel/121440.parquet",
+      "size": 6769267,
+      "sha256": "sha256:c6717ce34f1f75e128fd9b4088a9a3d98a0d12277ef9f10f631524cf06c8ca97",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1348
+    },
+    {
+      "path": "data/dart/panel/126560.parquet",
+      "size": 5940825,
+      "sha256": "sha256:25c6710d46096d1cb5c74797ebf52334f3fe372f845f906b4ea24c1d1fd7b0fe",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 66
+    },
+    {
+      "path": "data/dart/panel/126640.parquet",
+      "size": 2098448,
+      "sha256": "sha256:83bc14772356bccae4e09468c15e8f6572eadba32df5df2948364da620d3cb93",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 347
+    },
+    {
+      "path": "data/dart/panel/129260.parquet",
+      "size": 5271804,
+      "sha256": "sha256:60c8e5a328f820ebd31681218540b3d40034e39169fb2e0480b838277ffcd431",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 654
+    },
+    {
+      "path": "data/dart/panel/134380.parquet",
+      "size": 2446972,
+      "sha256": "sha256:41670691409d073c76558e542d0422f8b385165174f28c7faecdfa6e19d57ae9",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 334
+    },
+    {
+      "path": "data/dart/panel/137400.parquet",
+      "size": 5141856,
+      "sha256": "sha256:93afca97f157e300ebaaf2dcbd50fd2090d18bc10274258dbb164a4afa21c0cc",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 568
+    },
+    {
+      "path": "data/dart/panel/144510.parquet",
+      "size": 4866681,
+      "sha256": "sha256:49bb3953557cc9c3ceea9285b325b33c98c095c8127efe01b7a0411ee497e595",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 765
+    },
+    {
+      "path": "data/dart/panel/166480.parquet",
+      "size": 4337570,
+      "sha256": "sha256:201af95a145765c86375bed348b35eeea0119f425ab092bb1fbacfeb661f366e",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 610
+    },
+    {
+      "path": "data/dart/panel/177350.parquet",
+      "size": 5477132,
+      "sha256": "sha256:d38414707048b827272b40cbda115e616a0fbb5a6b693b6b6a4b8e8900962057",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 328
+    },
+    {
+      "path": "data/dart/panel/195870.parquet",
+      "size": 3538490,
+      "sha256": "sha256:dd2dc3b82e19d5bf9045bd9dd5b10effb16a17067907fdd574168958e6eaa6d7",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 588
+    },
+    {
+      "path": "data/dart/panel/196450.parquet",
+      "size": 4833826,
+      "sha256": "sha256:bae49bee078b0d80388e6f5119d44114a816bab540c8b22046e74de5af7a7626",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 861
+    },
+    {
+      "path": "data/dart/panel/214390.parquet",
+      "size": 3122009,
+      "sha256": "sha256:1363ab1777127ce609f6479e4ce2ecb74cb74f8b9e0c14d086b6e74a54d00261",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 111
+    },
+    {
+      "path": "data/dart/panel/234080.parquet",
+      "size": 4194892,
+      "sha256": "sha256:a6660c7910bf2dc2758ba6b0a21bc868dec440962b64a9e413719ac28cd0ae8b",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 586
+    },
+    {
+      "path": "data/dart/panel/237880.parquet",
+      "size": 3852935,
+      "sha256": "sha256:f4babda03b7cdd38d9fe892bb1d15f8b0e058d91271cc757d69bd44bfc7aea6e",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 64
+    },
+    {
+      "path": "data/dart/panel/243070.parquet",
+      "size": 4601727,
+      "sha256": "sha256:0ece6c08c07e9d747d4d3d855961c0475c32a1fe30afe901b0eeca6cbaa1cb9f",
+      "requestedReceiptCount": 3,
+      "matchedRowCount": 1877
+    },
+    {
+      "path": "data/dart/panel/271980.parquet",
+      "size": 3402565,
+      "sha256": "sha256:97ae4f26b7f30eca5f4373ea7adc2ac21c12875eb8865b9d712cb77aa5faca95",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 624
+    },
+    {
+      "path": "data/dart/panel/272210.parquet",
+      "size": 6880087,
+      "sha256": "sha256:63f80f94a3fe03d3a02162cf977535f76542e2af6b8b827b3833aaae37fe697f",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 3864
+    },
+    {
+      "path": "data/dart/panel/273060.parquet",
+      "size": 3502826,
+      "sha256": "sha256:7acf897fd9c035c439db2864f273802d09f9cb4c93a32cc71ab6b721b6b6a013",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 717
+    },
+    {
+      "path": "data/dart/panel/278650.parquet",
+      "size": 3775317,
+      "sha256": "sha256:038dcd2cd71860b8bd27b2977035f4abf476228a9310af8f045a196c83d69ec3",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 254
+    },
+    {
+      "path": "data/dart/panel/298000.parquet",
+      "size": 3961799,
+      "sha256": "sha256:3d286cbf549d22769e9eff96ad891140ceb930e150efee25203a9451127dd71b",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1205
+    },
+    {
+      "path": "data/dart/panel/298020.parquet",
+      "size": 4774092,
+      "sha256": "sha256:8c9ea9d9f7169ea808e325da1834055c6aef5e89aba01361b0c2d66156cdce96",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1558
+    },
+    {
+      "path": "data/dart/panel/298050.parquet",
+      "size": 4807587,
+      "sha256": "sha256:95077b28b31816e4d3b29ad265f8f7b0d1480b980fd5e7b9b58f1a18cf5754d4",
+      "requestedReceiptCount": 2,
+      "matchedRowCount": 1352
+    },
+    {
+      "path": "data/dart/panel/307870.parquet",
+      "size": 2035230,
+      "sha256": "sha256:eb61b0fb78182fc6cbfc44db64034792e5f530fc325ba38f7ce3a3c3e8427318",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 328
+    },
+    {
+      "path": "data/dart/panel/323410.parquet",
+      "size": 3420353,
+      "sha256": "sha256:883021b9d214de4cecfd57191069ac7ed4d9d346204ec30cd9e03b40605a82f5",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 400
+    },
+    {
+      "path": "data/dart/panel/336260.parquet",
+      "size": 3062368,
+      "sha256": "sha256:251e4ee7de5782b033215b17aa9cd4b8162f49c16543766b0ae0aa83868136a6",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 2873
+    },
+    {
+      "path": "data/dart/panel/365330.parquet",
+      "size": 867539,
+      "sha256": "sha256:6d7603a63f6963f2a2a13ba7df9853d61e4c2e7400b393cb7e20015da93eea26",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 711
+    },
+    {
+      "path": "data/dart/panel/377740.parquet",
+      "size": 2940543,
+      "sha256": "sha256:11ad9b6bb81bf8f756944b28c12e11fbdf07f4aa425f0dbfb62e79794e9856e4",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1292
+    },
+    {
+      "path": "data/dart/panel/489790.parquet",
+      "size": 1761954,
+      "sha256": "sha256:396d8594fc9dae52591156996ba280f15dca5bf53ca19956b8fd8cd5f8a2cb06",
+      "requestedReceiptCount": 1,
+      "matchedRowCount": 1571
+    }
+  ],
+  "queueFile": {
+    "path": "tests/_attempts/dartlabUniverse/fixtures/releaseGoldReviewQueue.machine.jsonl",
+    "size": 1412098,
+    "sha256": "sha256:125f84fb671d4f88c4c94f4e2ab8b00c31b5656ce8d03eca0465a6e90ba4c7bc",
+    "rowCount": 600
+  },
+  "bindingFile": {
+    "path": "tests/_attempts/dartlabUniverse/fixtures/releaseGoldSourceBinding.machine.jsonl",
+    "size": 4832482,
+    "sha256": "sha256:e595ffed3e47fa1dddff5fbfc294ed4a3ebbb15b0aa769378c76213cb4047a69",
+    "rowCount": 600
+  }
+}

@@ -80,8 +80,8 @@
   ],
   "queueFile": {
     "path": "tests/_attempts/dartlabUniverse/fixtures/releaseGoldReviewQueue.machine.jsonl",
-    "size": 1368116,
-    "sha256": "sha256:484321d3085209aa2df6de72ea63e749baee2a2a63e38ea62e235b49e075bb12",
+    "size": 1412098,
+    "sha256": "sha256:125f84fb671d4f88c4c94f4e2ab8b00c31b5656ce8d03eca0465a6e90ba4c7bc",
     "rowCount": 600
   }
 }

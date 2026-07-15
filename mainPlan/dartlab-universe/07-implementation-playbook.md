@@ -370,6 +370,18 @@ kill: 3D 또는 canvas에서만 가능한 핵심 작업이 생기면 해당 rend
 
 2026-07-16 실행 결과: HF ecosystem graph와 allFilings 및 DART panel catalog 296,856행을 snapshot hash로 고정하고 exact company-name mention 182,072개를 찾았다. Stable candidate hash와 predicate round-robin으로 machine positive 300행, negative type round-robin으로 challenge 300행을 만들었다. Positive는 `affiliatedWith`, `ownsStakeIn`, `suppliesTo` 각 100행이며 challenge는 affiliate collision 87, reversed direction 87, self-loop 88, short English 35, table header drift 3행이다. Queue 600행의 file hash와 source file hash는 receipt에 기록했다. Machine regression 8/8, 모든 행 `unreviewed`, `goldEligible=false`다. Predicate 3/6과 negative type 5/12만 덮고 original source version, sourcePublishedAt, availableAt, human direction 판정, US/SEC가 없어 gold graduation은 계속 차단한다.
 
+### U0-G03 original source binding
+
+목표: Catalog text locator를 immutable original source artifact와 exact row 및 char 후보로 이전한다.
+
+2026-07-16 실행 결과: Queue가 참조한 allFilings 및 DART panel original Parquet 306개를 직접 SHA-256으로 고정했다. 600 binding 중 597개에서 exact source occurrence 63,326개를 찾았고 locator parity failure는 0이다. Unique 119, ambiguous 175, 10개 초과 ambiguous 303, source row missing 3이다. Ambiguous 후보는 normalized trigram context coverage로 top 10을 정렬하지만 선택하지 않는다. 모든 binding은 `unreviewed`, `goldEligible=false`다. Source artifact version은 보강했지만 human locator 선택과 publication 및 availability time, predicate 및 direction confirmation은 계속 필요하다.
+
+### U0-G04 human-only review promotion
+
+목표: Machine candidate가 아닌 document-opened human decision만 release gold로 materialize한다.
+
+2026-07-16 실행 결과: Positive는 confirmed triple, selected original locator, event 및 validity, source publication 및 availability, evidence class, source kind, reviewer receipt를 모두 요구한다. Negative는 confirmed triple과 type, review reason 및 receipt를 요구한다. Machine origin, triple drift, unknown locator, inverted 및 naive time, duplicate receipt는 fail closed했다. Synthetic review regression은 통과했지만 live decision은 0/600, promoted positive와 negative는 각각 0건이다. Compiler만 promote하고 human review 전 gold admission은 차단한다.
+
 U0 졸업 산출:
 
 - `tests/_attempts/dartlabUniverse/README.md` 결론 원장
