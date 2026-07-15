@@ -83,7 +83,7 @@ Python demo의 module docstring에는 `결과` 섹션을 둔다. 출력 파일�
 | U0-E01 | edge hint에서 exact source를 찾는가 | positive 100, negative 100 | resolution 95%, false accept 1% 이하 | predicate별 source lane 재설계 | 대기 |
 | U0-O01 | revision과 시간을 보존하는가 | multi-filing fixture | history 손실 0, look-ahead 0 | assertion schema 수정 | 대기 |
 | U0-P01 | bounded scene이 결정론적인가 | atlas, industry, company | bounds 100%, hash 일치 100% | priority/truncation 수정 | 대기 |
-| U0-S01 | source 전체가 재현 가능한가 | map, search, panel, finance, catalog | source version 또는 unreplayable 100% | exact replay 문구 금지 | 대기 |
+| U0-S01 | source 전체가 재현 가능한가 | map, search, panel, finance, catalog | source version 또는 unreplayable 100% | exact replay 문구 금지 | 완료, capability unreplayable |
 | U0-P02 | public field가 승인됐는가 | source와 field registry | public mark receipt 100%, false accept 0 | source lane 차단 | 대기 |
 | U0-L01 | lens가 환경에서 실제 가능한가 | 6 output archetype | unavailable 오표시 0, missing 보존 | 해당 lens 숨김 | 대기 |
 | U0-W01 | 변화를 look-ahead 없이 재생하는가 | DART 30사, cutoff 2개 | revision 100%, look-ahead 0, evidence 95% | 변화 우주 범위 축소 | 대기 |
@@ -158,6 +158,32 @@ selfLoopCount                  13
 
 판정: confidence와 evidence title은 factual admission을 대체하지 못한다. current edge 전체를 candidate topology로 유지한다. U0-E01에서 exact source를 새로 해소하고 U0-O01 assertion contract를 통과하기 전 observed 승격은 0건이어야 한다.
 
+## 4.2 U0-S01 결과
+
+명령:
+
+```powershell
+uv run python -X utf8 tests/_attempts/dartlabUniverse/snapshot/sourceSnapshotSetProbe.py
+```
+
+결과:
+
+```text
+sourceCount                         10
+immutableHfSourceCount               8
+immutableGitBlobSourceCount          1
+unreplayableSourceCount              1 capabilityCatalog
+missingDataAsOfSourceCount           1 dartPanelSample
+missingRedistributionReceiptCount   10
+canonicalHashRepeat                2/2
+unitRegression                     8/8 PASS
+snapshotSetId  sha256:4a68a0c0129884bc138223ef3d31672c1e7dd5bbbdac33a4816d0f953e54f73a
+mapBuildId     20260715-084444
+hfRepoCommit   c0260a60859f0ba5a30d452a7c05791d79e9bd1d
+```
+
+판정: source version 또는 명시적 unreplayable coverage 100%, 순서와 관측시각 및 OS path 독립 hash, source version 변화 감지, legacy buildId only exact replay 차단을 검증했다. U0-S01 계약은 완료다. 다만 capability catalog는 226개 canonical output hash를 식별할 수 있을 뿐 historical payload를 복원할 immutable manifest가 없으므로 live SourceSnapshotSet의 `exactReplayReady`는 false다. 이 결손을 숨긴 public exact replay 문구는 금지한다. receipt 결손 10개는 U0-P02 입력이다.
+
 ## 5. existing attempts 재사용 지도
 
 | 기존 category | 이미 증명한 것 | Universe 사용 | 중복 금지 |
@@ -217,6 +243,7 @@ gold는 자동 생성 candidate를 그대로 승인하지 않는다. 사람이 �
 - [x] truth 책임 하위 모듈 분리
 - [x] demo 결과를 module docstring과 README에 기록
 - [x] U0-T02 factual admission 필드 전수 계수
+- [x] U0-S01 source version, canonical hash, legacy replay guard
 - [ ] identity, evidence, ontology, projection 모듈화
 - [ ] special-case와 중복 rule 제거
 - [ ] camelCase와 SSOT 검토
@@ -244,7 +271,7 @@ gold는 자동 생성 candidate를 그대로 승인하지 않는다. 사람이 �
 - `validateRedistributionReceipt`
 - `inspectLensAvailability`
 
-이 중 `inspectGraphTruth`만 현재 존재한다. 나머지는 해당 attempt가 시작될 때 이름과 책임을 확정한다. README의 예정 파일명은 production API 약속이 아니다.
+현재 `inspectGraphTruth`, `inspectFactualAdmission`, `buildSourceSnapshotSet`, `assessReplayRequest`가 attempt에 존재한다. 나머지는 해당 attempt가 시작될 때 이름과 책임을 확정한다. README의 예정 파일명은 production API 약속이 아니다.
 
 ## 테스트
 

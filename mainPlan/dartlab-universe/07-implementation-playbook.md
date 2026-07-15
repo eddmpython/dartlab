@@ -128,6 +128,8 @@ uv run python -X utf8 tests/_attempts/dartlabUniverse/truth/graphTruthProbe.py
 - source 변경 후 동일 hash 0
 - legacy share가 exact replay로 잘못 표시되는 사례 0
 
+2026-07-15 실행 결과: source 10개 중 immutable source 9개, 명시적 unreplayable 1개로 source identity coverage 100%를 달성했다. 동일 live set hash는 2/2 일치했고 source version 변경과 legacy buildId only exact replay를 unit fixture로 차단했다. capability catalog는 canonical output hash만 있고 immutable manifest가 없어 current public exact replay는 계속 금지한다. 상세 evidence는 `tests/_attempts/dartlabUniverse/snapshot/README.md`가 소유한다.
+
 ### U0-P02 public policy receipt probe
 
 목표: dataset 전체가 아니라 source와 field별로 public admission을 판정한다.

@@ -40,9 +40,10 @@
 ```powershell
 uv run python -X utf8 tests/_attempts/dartlabUniverse/truth/graphTruthProbe.py
 uv run python -X utf8 tests/_attempts/dartlabUniverse/truth/factualAdmissionProbe.py
-uv run python -X utf8 -m pytest tests/_attempts/dartlabUniverse/truth/testGraphTruthProbe.py -q
-uv run python -X utf8 -m pytest tests/_attempts/dartlabUniverse/truth/testFactualAdmissionProbe.py -q
+uv run python -X utf8 tests/_attempts/dartlabUniverse/snapshot/sourceSnapshotSetProbe.py
 ```
+
+pytest는 repository test lock을 획득한 뒤 attempt test file 하나씩 실행한다.
 
 ## 현재 결론 원장
 
@@ -50,6 +51,7 @@ uv run python -X utf8 -m pytest tests/_attempts/dartlabUniverse/truth/testFactua
 |---|---|---|---|
 | U0-T01 graph truth census | HF `landing/map/ecosystem.json`, version `2026-04-14` | node 2,664, edge 20,560, self-loop 13, exact sourceRef 0, exact availableAt 0, observed 적격 0, OCI incident 4,474 | 기존 edge는 fact가 아니라 candidate hint. assertion/evidence 계약 선행 |
 | U0-T02 factual admission | 같은 live ecosystem 20,560 edge | document ID, section, exact locator, direction, sourcePublishedAt, availableAt, validFrom, policy receipt, observed status, admitted 모두 0. self-loop 13 | current edge 전부 candidate 유지. exact evidence resolver와 assertion source가 별도로 필요 |
+| U0-S01 SourceSnapshotSet | HF 8 source, capability, recipe catalog | source 10, immutable 9, capability catalog unreplayable 1, panel dataAsOf 결손 1, receipt 결손 10, hash 반복 2/2, unit 8/8 | source identity 계약 완료. capability manifest 전까지 public exact replay 금지, U0-P02로 진행 |
 
 ## 금지
 

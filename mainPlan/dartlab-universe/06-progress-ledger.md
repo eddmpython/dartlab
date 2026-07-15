@@ -23,7 +23,8 @@
 - [x] SourceSnapshotSet, UniverseFlightPlan, UniverseFlightReceipt, SceneBeat, EvidenceReceipt, GapReceipt 계획 계약 확정
 - [x] snapshot, workflow, visual, policy attempts 하위 category 생성
 - [x] U0-T02 graph factual admission 강화
-- [ ] U0 snapshot, policy, lens, identity, evidence, assertion, projection attempts
+- [x] U0-S01 SourceSnapshotSet과 legacy replay guard
+- [ ] U0 policy, lens, identity, evidence, assertion, projection attempts
 - [ ] U0 workflow, visual, information yield attempts
 - [ ] U1~U2 implementation
 - [ ] U3 artifact 변경 승인 여부
@@ -52,6 +53,7 @@
 | 2026-07-15 | query knownAt을 assertion identity에서 제거 | 미래 효력 공시를 허용하고 같은 assertion이 query cutoff마다 다른 ID가 되는 오류 방지 |
 | 2026-07-15 | 시각은 의미 좌표와 L0~L5 representation 교체 | current map의 무작위 force와 화면 전체 복제 대신 SVG, bounded Cosmos, DOM reference surface 분리 |
 | 2026-07-15 | U0-T02 factual admission 실행 | live 20,560 edge에서 document ID, section, exact locator, direction, sourcePublishedAt, availableAt, validFrom, policy receipt, observed status와 admitted 모두 0 |
+| 2026-07-15 | U0-S01 SourceSnapshotSet 실행 | source 10개 중 HF 8개와 recipe Git blob 1개는 immutable, live capability catalog 1개는 manifest 부재로 unreplayable. 같은 set hash 2/2 일치, legacy buildId exact replay 차단 |
 
 ## 핵심 실측 스냅샷
 
@@ -72,6 +74,10 @@ panel_table edges            208
 self loops                    13
 OCI incident edges         4,474
 exact edge sourceRef            0
+snapshot sources               10
+immutable snapshot sources      9
+unreplayable sources             1 capabilityCatalog
+snapshot hash repeat           2/2
 ```
 
 같은 날 후속 live meta 재감사:
@@ -100,11 +106,11 @@ dart dataAsOf            null
 
 1. U0 gold positive 및 hard negative set이 없다.
 2. exact evidence resolver의 cold P95와 cold initialization 포함 transfer가 아직 측정되지 않았다.
-3. source별 version이 묶이지 않았고 live meta의 dart dataAsOf가 null이다.
+3. source version 10개는 SourceSnapshotSet으로 묶였지만 capability catalog의 immutable manifest가 없고 panel dataAsOf가 null이다. 따라서 current public exact replay는 아직 금지한다.
 4. source별 RedistributionReceipt와 환경별 LensAvailability가 없다.
 5. `scan-screener-os`의 public valuation licensing P0가 승인 대기다. Universe는 해당 필드를 사용하지 않아야 한다.
 6. workspace의 landing 및 ui 대량 삭제는 본 작업과 무관한 기존 변경이다. U1 production 착수 전에 frontend host가 정상 상태인지 재검해야 한다.
 
 ## 다음 단일 행동
 
-`tests/_attempts/dartlabUniverse/snapshot/`에서 U0-S01 SourceSnapshotSet probe를 구현한다. HF repository commit과 source별 ETag로 map, search, panel, finance를 결속하고 local capability 및 recipe catalog hash를 포함한다. source version이 하나라도 숨겨지면 exact replay를 금지한다. U0 품질 게이트를 통과하기 전 UI나 map artifact를 변경하지 않는다.
+`tests/_attempts/dartlabUniverse/policy/`에서 U0-P02 RedistributionReceipt probe를 구현한다. U0-S01의 sourceId 10개를 입력으로 고정하고 allowedFields, prohibitedFields, attribution, policyVersion, reviewedAt, expiry를 fail-closed로 판정한다. receipt가 없거나 만료된 source lane은 public projection admission에서 차단한다. U0 품질 게이트를 통과하기 전 UI나 map artifact를 변경하지 않는다.
