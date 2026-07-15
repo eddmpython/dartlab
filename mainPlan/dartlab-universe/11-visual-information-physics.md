@@ -202,6 +202,8 @@ UniverseRenderer
 
 2026-07-15 U0-V01 실행 결과: Fact, candidate, derived, disputed, retracted, scenario, unknown 7개 상태를 stroke, pattern, glyph, label, evidence action, aria phrase의 non-color signature로 모두 분리했다. Deterministic card 30개에서 evidence affordance와 aria coverage는 30/30, confidence opacity 사용은 0, machine regression은 8/8이다. Reviewed participant는 0/12, response는 0/360이고 comprehension accuracy는 미측정이다. Grammar contract는 완료했지만 실제 판독 90% 전 production visual admission은 차단한다. `tests/_attempts/dartlabUniverse/visual/README.md`가 response schema와 실행 명령을 소유한다.
 
+2026-07-16 U0-V02 실행 결과: Live Atlas, industry, company의 94개 node를 scene별 20회 순서 교란해 logical hash 60/60, 세 viewport anchor hash 180/180을 얻었다. Chrome, Firefox, WebKit 180회 실측에서도 logical 및 anchor hash가 180/180 일치했고 최대 drift는 0px였다. Force iteration은 0이며 industry stage, valid order 또는 unknown time lane, evidence status만 좌표 의미에 사용한다. Current artifact의 valid time 0/94는 추정하지 않고 unknown 94/94로 receipt에 남긴다. Layout contract만 promote하며 U0-V01 comprehension과 U0-V04 time comprehension은 계속 독립 gate다.
+
 ## 12. 유지보수 규칙
 
 - visual grammar token은 renderer package가 아니라 universe contract가 소유한다.

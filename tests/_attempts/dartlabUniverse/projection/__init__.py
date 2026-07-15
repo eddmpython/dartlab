@@ -11,8 +11,10 @@ from .boundedProjection import (
     adaptAtlas,
     adaptCompany,
     adaptIndustry,
+    canonicalPayloadHash,
     compileBoundedProjection,
     inspectLiveProjection,
+    loadMapArtifact,
 )
 
 __all__ = [
@@ -26,6 +28,8 @@ __all__ = [
     "adaptAtlas",
     "adaptCompany",
     "adaptIndustry",
+    "canonicalPayloadHash",
     "compileBoundedProjection",
     "inspectLiveProjection",
+    "loadMapArtifact",
 ]

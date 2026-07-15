@@ -685,7 +685,34 @@ class LiveProjectionReport:
         return asdict(self)
 
 
-def _loadJson(name: str) -> tuple[dict[str, Any], str]:
+def loadMapArtifact(name: str) -> tuple[dict[str, Any], str]:
+    """Public map JSON과 exact bytes hash를 함께 읽는다.
+
+    Capabilities
+        Bounded projection adapter가 공유할 artifact payload와 SHA-256 identity를 반환한다.
+    AIContext
+        AI 역할: JSON 재직렬화 hash가 아니라 받은 원본 bytes의 hash를 보존한다.
+    Args
+        name: BASE_URL 아래 artifact 상대 경로.
+    Returns
+        JSON object와 64자리 SHA-256 hex tuple.
+    Guide
+        Visual attempt도 별도 loader를 복제하지 않고 이 공개 seam을 사용한다.
+    When
+        Current map artifact를 live projection input으로 읽을 때 호출한다.
+    How
+        URL bytes를 한 번 읽고 같은 bytes를 decode 및 hash한다.
+    Requires
+        Public map endpoint와 network 접근이 필요하다.
+    Raises
+        OSError: Remote artifact 요청이 실패했을 때 발생한다.
+        ValueError: JSON root가 object가 아닐 때 발생한다.
+    Example
+        ``payload, artifactHash = loadMapArtifact("atlas.json")``
+    See Also
+        :func:`inspectLiveProjection`.
+    """
+
     with urlopen(BASE_URL + name, timeout=60) as response:
         raw = response.read()
     payload = json.loads(raw)
@@ -729,9 +756,9 @@ def inspectLiveProjection() -> LiveProjectionReport:
         ValueError: Artifact schema 또는 projection contract가 잘못됐을 때.
     """
 
-    atlas, atlasHash = _loadJson("atlas.json")
-    industry, industryHash = _loadJson("industries/semiconductor.json")
-    company, companyHash = _loadJson("companies/005930.json")
+    atlas, atlasHash = loadMapArtifact("atlas.json")
+    industry, industryHash = loadMapArtifact("industries/semiconductor.json")
+    company, companyHash = loadMapArtifact("companies/005930.json")
     snapshotPayload = (
         ("atlas.json", atlasHash),
         ("industries/semiconductor.json", industryHash),

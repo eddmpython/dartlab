@@ -50,6 +50,8 @@ uv run python -X utf8 tests/_attempts/dartlabUniverse/evidence/exactEvidenceProb
 uv run python -X utf8 tests/_attempts/dartlabUniverse/ontology/assertionContract.py
 uv run python -X utf8 tests/_attempts/dartlabUniverse/projection/boundedProjection.py
 node tests/_attempts/dartlabUniverse/visual/visualGrammarProbe.mjs
+node tests/_attempts/dartlabUniverse/visual/deterministicLayoutProbe.mjs --live
+tests/_attempts/dartlabUniverse/visual/browserLayoutAudit.ps1
 ```
 
 pytest는 repository test lock을 획득한 뒤 attempt test file 하나씩 실행한다.
@@ -70,6 +72,7 @@ pytest는 repository test lock을 획득한 뒤 attempt test file 하나씩 실�
 | U0-O01 assertion ontology | Public ecosystem 20,560 edge와 synthetic correction fixture | relation candidate 20,560 unique, assertion ID, evidence, source time, validity, admitted status, assertion-ready 0. self-loop 13. synthetic test 9/9, history loss와 future leak 0 | bitemporal identity 계약 완료. live edge는 전부 candidate 유지, exact assertion source 전 fact lane 차단 |
 | U0-P01 bounded projection | Current atlas, semiconductor detail, Samsung egograph와 synthetic graph | live output 18/35, 26/34, 50/60 node/edge. hash 3/3, bound, seed, lane violation 0. candidate 303, derived 50, fact 0. synthetic test 8/8 | projection 계약 promote. 새 bake 불필요. UI comprehension 전 candidate 및 derived scene만 허용 |
 | U0-V01 visual grammar | 7 state token과 deterministic 30-card DOM reference fixture | non-color signature 7/7, evidence 및 aria 30/30, confidence opacity 0, test 8/8. reviewed participant 0/12, response 0/360, accuracy 미측정 | grammar contract 완료. 실제 comprehension 90% 전 production visual admission 차단 |
+| U0-V02 deterministic layout | Live Atlas 18, industry 26, company 50 node와 3 viewport 및 3 browser | logical hash 60/60, viewport anchor 180/180, browser logical 및 anchor 180/180, max drift 0px, valid time unknown 94/94 | layout contract promote. 시간 합성 금지, U0-V01과 U0-V04 gate 유지 |
 
 ## 금지
 

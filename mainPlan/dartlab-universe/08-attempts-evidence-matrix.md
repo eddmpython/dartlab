@@ -89,7 +89,7 @@ Python demo의 module docstring에는 `결과` 섹션을 둔다. 출력 파일�
 | U0-W01 | 변화를 look-ahead 없이 재생하는가 | synthetic 8 revision과 DART 30개 deterministic schema sample | revision 100%, look-ahead 0, evidence 95% | 변화 우주 범위 축소 | 계약 완료, live source 차단 |
 | U0-W02 | recipe를 반증 workflow로 만드는가 | tested recipe 정렬 앞 10개와 qualified synthetic fixture | 단계, 근거, falsifier 유실 0 | Kill-Chain 보류 | 계약 완료, live conclusion 차단 |
 | U0-V01 | evidence 상태를 읽는가 | 7 state, 30 card, task participant | 판독 90% 이상 | visual grammar 재설계 | 계약 완료, participant 0/12 차단 |
-| U0-V02 | layout이 재현되는가 | 3 browser, 20 replay | logical hash 일치, 같은 viewport 및 DPR anchor 1px 이하 | layout 교체 | 대기 |
+| U0-V02 | layout이 재현되는가 | live 3 scene, 3 browser, 20 replay | logical hash 일치, 같은 viewport 및 DPR anchor 1px 이하 | layout 교체 | 완료, layout promote |
 | U0-V03 | 밀도에서 생략이 정직한가 | 250, 500, 1,000 node | collision 2% 이하, receipt 100% | lower LOD | 대기 |
 | U0-V04 | 이중 시간을 이해하는가 | revision task 12개 | 시간 판독 90% 이상 | Time Lens 재설계 | 대기 |
 | U0-V05 | 접근성 표면이 동등한가 | keyboard, reader, low GPU | 핵심 task 100% | renderer 기각 | 대기 |
@@ -459,6 +459,42 @@ liveReady                         false
 ```
 
 판정: Fact, candidate, derived, disputed, retracted, scenario, unknown은 color를 제외한 stroke, pattern, glyph, label, evidence action, aria phrase 조합으로 7/7 분리했다. Confidence는 opacity와 분리해 badge 및 marker로만 표현한다. Deterministic 30-card answer key, semantic DOM reference, participant별 30문항 completeness, reviewer와 reviewedAt gate를 구현했고 machine contract 8/8은 합격이다. 그러나 실제 participant와 reviewed response가 0이므로 판독 90%는 미측정이다. U0-V01은 `revise`이며 participant 12명과 360개 review 전 production visual admission을 차단한다.
+
+## 4.12 U0-V02 결과
+
+명령:
+
+```powershell
+uv run python -X utf8 -m tests._attempts.dartlabUniverse.visual.liveLayoutFixture --compact
+node --test tests/_attempts/dartlabUniverse/visual/testDeterministicLayoutProbe.mjs
+node tests/_attempts/dartlabUniverse/visual/deterministicLayoutProbe.mjs --live
+tests/_attempts/dartlabUniverse/visual/browserLayoutAudit.ps1
+```
+
+결과:
+
+```text
+liveSceneCount                         3
+atlasNodeCount                       18
+industryNodeCount                    26
+companyNodeCount                     50
+totalNodeCount                       94
+validTimeKnownCount                0/94
+validTimeUnknownCount             94/94
+logicalHashRepeat                  60/60
+threeViewportAnchorHash          180/180
+browserMeasurement               180/180
+browserLogicalHash               180/180
+browserAnchorHash                180/180
+browserViewportAndDpr            180/180
+maximumAnchorDriftPx                    0
+forceIterationCount                    0
+nodeRegression                    10/10 PASS
+pythonRegression                    2/2 PASS
+layoutContractReady                   true
+```
+
+판정: U0-P01 live bounded projection 세 장면을 renderer 독립 logical coordinate로 투영했다. Industry stage는 semantic x anchor, valid order와 time unknown은 y anchor, evidence status는 stable offset이며 force iteration은 0이다. Input 순서를 scene별 20회 교란해 logical hash 60/60과 세 viewport anchor 180/180이 같았고 Chrome, Firefox, WebKit의 180회 실측 최대 drift는 0px였다. Current artifact의 valid time은 0/94이므로 임의 순서를 합성하지 않고 94개를 unknown time lane으로 보존했다. U0-V02 layout contract는 `promote`지만 실제 시간 판독과 visual comprehension 및 production admission은 계속 차단한다.
 
 ## 5. existing attempts 재사용 지도
 
