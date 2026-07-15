@@ -3497,7 +3497,7 @@ def _validateControlPatches(
     if len(semanticPlanes) != 1:
         raise ScenarioCompositionError("mixed semantic plane control patches are not supported")
     semanticPlane = next(iter(semanticPlanes))
-    if semanticPlane not in {"assumptionDelta", "strategyAction"}:
+    if semanticPlane not in {"assumptionDelta", "currentState", "lawParameter", "strategyAction"}:
         raise ScenarioCompositionError(f"{semanticPlane} control patch requires a separate overlay route")
     return tuple(rows)
 
@@ -3550,6 +3550,122 @@ def _patchStrategyActionStrategies(
     return tuple(patchedStrategies[strategy.strategyId] for strategy in strategies)
 
 
+def _patchCurrentStateInputs(
+    inputs: OperatingWorldInputs,
+    rows: tuple[ConditionalPlayControlRow, ...],
+    patches: tuple[ConditionalPlayControlPatch, ...],
+) -> OperatingWorldInputs:
+    state = {str(key): float(value) for key, value in inputs.state.items()}
+    patchRecords = []
+    for row, patch in zip(rows, patches, strict=True):
+        if row.step != -1 or not row.targetId or row.targetId not in state:
+            raise ScenarioCompositionError("current state patch target is invalid")
+        if patch.value < 0.0:
+            raise ScenarioCompositionError("current state patch must be nonnegative")
+        patchHash = _controlPatchHash(patch)
+        state[row.targetId] = float(patch.value)
+        patchRecords.append(
+            {
+                "controlId": patch.controlId,
+                "rowHash": row.rowHash,
+                "patchHash": patchHash,
+                "patchRef": patch.patchRef,
+                "targetId": row.targetId,
+                "value": float(patch.value),
+                "reason": patch.reason,
+            }
+        )
+    stateManifestHash = canonicalPayloadHash(
+        {
+            "schemaVersion": "conditional-play-current-state-overlay-v1",
+            "baseStateManifestHash": inputs.stateManifestHash,
+            "baseInitialStateAdmissionReceiptId": inputs.initialStateAdmissionReceiptId,
+            "state": tuple(sorted(state.items())),
+            "patches": tuple(patchRecords),
+        }
+    )
+    patchedPrimitives = tuple(
+        replace(primitive, value=state[primitive.variableId]) if primitive.variableId in state else primitive
+        for primitive in inputs.statePrimitiveContracts
+    )
+    patchRefs = tuple(ref for patch in patches for ref in (patch.patchRef, f"controlPatch:{_controlPatchHash(patch)}"))
+    return replace(
+        inputs,
+        state=state,
+        refs=_dedupe((*inputs.refs, f"stateManifest:{stateManifestHash}", *patchRefs)),
+        warnings=_dedupe((*inputs.warnings, "currentStateOverlayUnadmitted")),
+        stateCompilationContractHash="",
+        stateManifestHash="",
+        stateVintage=None,
+        initialStateAdmissionReceiptId="",
+        statePrimitiveContracts=patchedPrimitives,
+    )
+
+
+def _patchLawParameterCases(
+    cases: tuple[OperatingScenarioCase, ...],
+    rows: tuple[ConditionalPlayControlRow, ...],
+    patches: tuple[ConditionalPlayControlPatch, ...],
+) -> tuple[OperatingScenarioCase, ...]:
+    caseById = {case.caseId: case for case in cases}
+    patchedCases = dict(caseById)
+    for row, patch in zip(rows, patches, strict=True):
+        case = patchedCases.get(row.caseId)
+        if case is None or row.step != -1:
+            raise ScenarioCompositionError("law parameter patch target is invalid")
+        exposureIndex = next(
+            (
+                index
+                for index, exposure in enumerate(case.exposures)
+                if f"lawParameter:{case.caseId}:{exposure.exposureId}:coefficient" == row.controlId
+            ),
+            -1,
+        )
+        if exposureIndex < 0:
+            raise ScenarioCompositionError("law parameter patch target is missing")
+        exposure = case.exposures[exposureIndex]
+        if exposure.evidenceKind == "measuredAssociation" or _driverCoefficientAdmissionReceiptId(exposure.sourceRef):
+            raise ScenarioCompositionError("admitted law parameter patch needs a separate de-admission route")
+        for binding in case.coefficientBindings:
+            if exposure.targetShock == binding.targetShock and exposure.sourceVariableId in binding.sourceVariableIds:
+                raise ScenarioCompositionError("law parameter patch cannot reuse coefficient bindings")
+        patchHash = _controlPatchHash(patch)
+        patchedExposure = replace(
+            exposure,
+            coefficient=float(patch.value),
+            evidenceKind="explicitAssumption",
+            sourceRef=f"{patch.patchRef}|controlPatch:{patchHash}",
+        )
+        exposures = tuple(
+            patchedExposure if index == exposureIndex else item for index, item in enumerate(case.exposures)
+        )
+        patchedCases[row.caseId] = replace(case, exposures=exposures)
+    return tuple(patchedCases[case.caseId] for case in cases)
+
+
+def _caseLawInputHash(ledger: OneCompanyScenarioCaseLedger) -> str:
+    return canonicalPayloadHash(
+        {
+            "schemaVersion": "conditional-scenario-law-inputs-v1",
+            "caseId": ledger.caseId,
+            "exposureLedgers": ledger.exposureLedgers,
+            "coefficientAdmissionReceiptIds": ledger.coefficientAdmissionReceiptIds,
+            "coefficientBindingHashes": ledger.coefficientBindingHashes,
+        }
+    )
+
+
+def _caseParameterBoundaryHash(ledger: OneCompanyScenarioCaseLedger) -> str:
+    return canonicalPayloadHash(
+        {
+            "schemaVersion": "conditional-scenario-parameter-boundary-v1",
+            "caseId": ledger.caseId,
+            "runParameterHash": ledger.parameterHash,
+            "lawInputHash": _caseLawInputHash(ledger),
+        }
+    )
+
+
 def _controlHashSnapshot(
     inputs: OperatingWorldInputs,
     experiment: "ConditionalScenarioExperiment",
@@ -3575,7 +3691,9 @@ def _controlHashSnapshot(
         "caseLedgerHash": canonicalPayloadHash(experiment.caseLedgerHashes),
         "strategyContractHash": canonicalPayloadHash(experiment.strategyContractHashes),
         "strategySetHash": experiment.strategySetHash,
-        "parameterHash": canonicalPayloadHash(tuple(ledger.parameterHash for ledger in experiment.caseLedgers)),
+        "parameterHash": canonicalPayloadHash(
+            tuple(_caseParameterBoundaryHash(ledger) for ledger in experiment.caseLedgers)
+        ),
         "simulationSpecHash": experiment.simulationSpecHash,
         "resultSetHash": experiment.resultSetHash,
         "experimentHash": experiment.experimentHash,
@@ -3718,6 +3836,10 @@ def executeConditionalPlayControlPatch(
     patchedStrategies = tuple(strategies)
     if semanticPlane == "assumptionDelta":
         patchedCases = _patchAssumptionDeltaCases(patchedCases, rows, patchTuple)
+    elif semanticPlane == "currentState":
+        patchedInputs = _patchCurrentStateInputs(patchedInputs, rows, patchTuple)
+    elif semanticPlane == "lawParameter":
+        patchedCases = _patchLawParameterCases(patchedCases, rows, patchTuple)
     elif semanticPlane == "strategyAction":
         patchedStrategies = _patchStrategyActionStrategies(patchedStrategies, rows, patchTuple)
     else:
@@ -5849,6 +5971,8 @@ def runConditionalScenarioExperiment(
         for case, result in zip(caseTuple, comparison.caseResults, strict=True)
     )
     caseLedgerHashes = _caseLedgerHashes(caseLedgers)
+    caseParameterHashes = tuple(_caseParameterBoundaryHash(ledger) for ledger in caseLedgers)
+    caseLawInputHashes = tuple(_caseLawInputHash(ledger) for ledger in caseLedgers)
     driverRegistryHashes = _experimentDriverRegistryHashes(caseLedgers)
     driverRegistryLaneIds = _experimentDriverRegistryLaneIds(caseLedgers)
     driverRegistrySemanticRefs = _experimentDriverRegistrySemanticRefs(caseLedgers)
@@ -5935,6 +6059,8 @@ def runConditionalScenarioExperiment(
             "pathHistoryInputHashes": pathHistoryInputHashes,
             "pathAssumptionHashes": pathAssumptionHashes,
             "pathAssumptionStepHashes": pathAssumptionStepHashes,
+            "caseParameterHashes": caseParameterHashes,
+            "caseLawInputHashes": caseLawInputHashes,
             "assumptionSetHashes": assumptionSetHashes,
             "strategySetHash": strategySetHash,
             "debtLimit": float(debtLimit),
@@ -5957,6 +6083,8 @@ def runConditionalScenarioExperiment(
         "strategyContractHashes": comparison.strategyContractHashes,
         "initialStateRefs": initialRefs,
         "caseLedgerHashes": caseLedgerHashes,
+        "caseParameterHashes": caseParameterHashes,
+        "caseLawInputHashes": caseLawInputHashes,
         "driverRegistryHashes": driverRegistryHashes,
         "driverRegistryLaneIds": driverRegistryLaneIds,
         "driverRegistrySemanticRefs": driverRegistrySemanticRefs,

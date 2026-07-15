@@ -4221,6 +4221,108 @@ def testConditionalPlayControlPatchExecutesAssumptionAndStrategyReplays(tmp_path
     assert patchedStrategyExperiment.playReplayReport.playReplayHash != experiment.playReplayReport.playReplayHash
     assert patchedStrategyExperiment.recommendation is None
 
+    currentStateControl = next(
+        row for row in controlSurface.rows if row.semanticPlane == "currentState" and row.targetId == "cash"
+    )
+    currentStatePatch = ConditionalPlayControlPatch(
+        controlId=currentStateControl.controlId,
+        baseSurfaceHash=controlSurface.surfaceHash,
+        baseRowHash=currentStateControl.rowHash,
+        value=650.0,
+        patchRef="control://state/cash-overlay",
+        reason="operator raises initial cash condition",
+    )
+    currentStateExecution = executeConditionalPlayControlPatch(
+        "005930",
+        inputs,
+        cases,
+        strategies,
+        experiment,
+        (currentStatePatch,),
+        debtLimit=1_000.0,
+        maxFinancing=200.0,
+        maxInvestment=200.0,
+    )
+    patchedCurrentStateExperiment = currentStateExecution.patchedExperiment
+    assert currentStateExecution.semanticPlane == "currentState"
+    assert currentStateExecution.impactRows[0].missingExpectedHashImpacts == ()
+    assert currentStateExecution.impactRows[0].forbiddenHashViolations == ()
+    assert "initialState" in currentStateExecution.impactRows[0].changedHashImpacts
+    assert "simulationSpecHash" in currentStateExecution.impactRows[0].changedHashImpacts
+    assert "providerLaneLineageHash" in currentStateExecution.impactRows[0].unchangedHashImpacts
+    assert "pathAssumptionHash" in currentStateExecution.impactRows[0].unchangedHashImpacts
+    assert patchedCurrentStateExperiment.providerLaneLineageHashes == experiment.providerLaneLineageHashes
+    assert patchedCurrentStateExperiment.pathHistoryInputHashes == experiment.pathHistoryInputHashes
+    assert patchedCurrentStateExperiment.pathAssumptionHashes == experiment.pathAssumptionHashes
+    assert patchedCurrentStateExperiment.strategySetHash == experiment.strategySetHash
+    assert patchedCurrentStateExperiment.simulationSpecHash != experiment.simulationSpecHash
+    assert patchedCurrentStateExperiment.resultSetHash != experiment.resultSetHash
+    assert patchedCurrentStateExperiment.playReplayReport is not None
+    assert patchedCurrentStateExperiment.playReplayReport.playReplayHash != experiment.playReplayReport.playReplayHash
+    assert all(ledger.initialStateAdmissionReceiptId for ledger in experiment.caseLedgers)
+    assert all(not ledger.initialStateAdmissionReceiptId for ledger in patchedCurrentStateExperiment.caseLedgers)
+    assert any(ref.startswith("stateManifest:") for ref in patchedCurrentStateExperiment.initialStateRefs)
+    assert not any(ref.startswith("initialStateAdmission:") for ref in patchedCurrentStateExperiment.initialStateRefs)
+    assert not any(ref.startswith("worldStateVintage:") for ref in patchedCurrentStateExperiment.initialStateRefs)
+    assert "currentStateOverlayUnadmitted" in patchedCurrentStateExperiment.warnings
+    assert patchedCurrentStateExperiment.recommendation is None
+
+    lawControl = next(
+        row
+        for row in controlSurface.rows
+        if row.semanticPlane == "lawParameter"
+        and row.caseId == "upside"
+        and row.sourceVariableId == "manualDemandAdjustment"
+        and row.targetVariableId == "demandChange"
+    )
+    lawPatch = ConditionalPlayControlPatch(
+        controlId=lawControl.controlId,
+        baseSurfaceHash=controlSurface.surfaceHash,
+        baseRowHash=lawControl.rowHash,
+        value=0.5,
+        patchRef="control://law/upside/manual-demand-coefficient",
+        reason="operator lowers explicit manual demand transmission",
+    )
+    lawExecution = executeConditionalPlayControlPatch(
+        "005930",
+        inputs,
+        cases,
+        strategies,
+        experiment,
+        (lawPatch,),
+        debtLimit=1_000.0,
+        maxFinancing=200.0,
+        maxInvestment=200.0,
+    )
+    patchedLawExperiment = lawExecution.patchedExperiment
+    assert lawExecution.semanticPlane == "lawParameter"
+    assert lawExecution.impactRows[0].missingExpectedHashImpacts == ()
+    assert lawExecution.impactRows[0].forbiddenHashViolations == ()
+    assert "parameterHash" in lawExecution.impactRows[0].changedHashImpacts
+    assert "simulationSpecHash" in lawExecution.impactRows[0].changedHashImpacts
+    assert "providerLaneLineageHash" in lawExecution.impactRows[0].unchangedHashImpacts
+    assert "pathAssumptionHash" in lawExecution.impactRows[0].unchangedHashImpacts
+    assert "strategySetHash" in lawExecution.impactRows[0].unchangedHashImpacts
+    assert patchedLawExperiment.providerLaneLineageHashes == experiment.providerLaneLineageHashes
+    assert patchedLawExperiment.pathHistoryInputHashes == experiment.pathHistoryInputHashes
+    assert patchedLawExperiment.pathAssumptionHashes == experiment.pathAssumptionHashes
+    assert patchedLawExperiment.strategySetHash == experiment.strategySetHash
+    assert patchedLawExperiment.simulationSpecHash != experiment.simulationSpecHash
+    assert patchedLawExperiment.resultSetHash != experiment.resultSetHash
+    assert patchedLawExperiment.playReplayReport is not None
+    assert patchedLawExperiment.playReplayReport.playReplayHash != experiment.playReplayReport.playReplayHash
+    upsideLedger = next(ledger for ledger in patchedLawExperiment.caseLedgers if ledger.caseId == "upside")
+    patchedExposure = next(
+        exposure
+        for exposure in upsideLedger.exposureLedgers
+        if exposure.sourceVariableId == "manualDemandAdjustment" and exposure.targetShock == "demandChange"
+    )
+    assert patchedExposure.coefficient == 0.5
+    assert patchedExposure.evidenceKind == "explicitAssumption"
+    assert patchedExposure.sourceRef.startswith("control://law/upside/manual-demand-coefficient|controlPatch:")
+    assert patchedExposure.admissionReceiptId == ""
+    assert patchedLawExperiment.recommendation is None
+
     conditionControl = next(row for row in controlSurface.rows if row.semanticPlane == "conditionFactor")
     with pytest.raises(ScenarioCompositionError, match="conditionFactor control patch requires"):
         executeConditionalPlayControlPatch(
