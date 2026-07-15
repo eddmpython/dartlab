@@ -4606,6 +4606,14 @@ def testConditionalPlayScenarioDeckExecutesMultiPlaneStages(tmp_path) -> None:
     assert deck.basePlayReplayHash == experiment.playReplayReport.playReplayHash
     assert finalExperiment.playReplayReport is not None
     assert deck.finalPlayReplayHash == finalExperiment.playReplayReport.playReplayHash
+    assert deck.baseSimulationSpecHash == experiment.simulationSpecHash
+    assert deck.finalSimulationSpecHash == finalExperiment.simulationSpecHash
+    assert deck.baseResultSetHash == experiment.resultSetHash
+    assert deck.finalResultSetHash == finalExperiment.resultSetHash
+    assert deck.baseStrategySetHash == experiment.strategySetHash
+    assert deck.finalStrategySetHash == finalExperiment.strategySetHash
+    assert deck.baseSourceSealHash == deck.finalSourceSealHash
+    assert deck.stageChainHash
     assert deck.semanticPlanes == (
         "currentState",
         "conditionFactor",
@@ -4622,6 +4630,39 @@ def testConditionalPlayScenarioDeckExecutesMultiPlaneStages(tmp_path) -> None:
     )
     assert len(deck.stageReports) == 5
     assert len(deck.rebaseRows) == 5
+    assert len(deck.strategyDeltaRows) == len(strategies)
+    assert len(deck.caseLeaderDeltaRows) == len(cases)
+    assert any(row.changed for row in deck.strategyDeltaRows)
+    assert any(row.leaderChanged or row.leaderMarginDelta != 0.0 for row in deck.caseLeaderDeltaRows)
+    assert all(row.objectiveIndex == finalExperiment.objectiveIndex for row in deck.strategyDeltaRows)
+    assert all(row.baseScenarioCount == experiment.scenarioCount for row in deck.strategyDeltaRows)
+    assert all(row.finalScenarioCount == finalExperiment.scenarioCount for row in deck.strategyDeltaRows)
+    assert all(
+        row.changed
+        == (
+            row.baseSummaryHash != row.finalSummaryHash
+            or row.baseStrategyCellsHash != row.finalStrategyCellsHash
+            or row.baseStrategyContractHash != row.finalStrategyContractHash
+        )
+        for row in deck.strategyDeltaRows
+    )
+    assert any(row.baseStrategyContractHash != row.finalStrategyContractHash for row in deck.strategyDeltaRows)
+    assert all(
+        row.changed
+        == (
+            row.baseCaseLedgerHash != row.finalCaseLedgerHash
+            or row.baseFragilityHash != row.finalFragilityHash
+            or row.baseCaseCellsHash != row.finalCaseCellsHash
+        )
+        for row in deck.caseLeaderDeltaRows
+    )
+    assert any(row.baseResultHash != row.finalResultHash for row in deck.caseLeaderDeltaRows)
+    assert any(row.baseAssumptionSetHash != row.finalAssumptionSetHash for row in deck.caseLeaderDeltaRows)
+    assert {
+        row.strategyId
+        for row in deck.strategyDeltaRows
+        if row.scoreMedianDelta or row.regretWorstDelta or row.leaderFrequencyDelta or row.breachCountDelta
+    }
     assert all(row.rebaseStatus in {"direct", "surfaceRebased", "surfaceRebased+rowRebased"} for row in deck.rebaseRows)
     for index, stage in enumerate(deck.stageReports):
         assert stage.executionHash == deck.stageExecutionHashes[index]
@@ -4661,6 +4702,8 @@ def testConditionalPlayScenarioDeckExecutesMultiPlaneStages(tmp_path) -> None:
     )
     assert repeated.deckHash == deck.deckHash
     assert repeated.finalExperimentHash == deck.finalExperimentHash
+    assert repeated.strategyDeltaRows == deck.strategyDeltaRows
+    assert repeated.caseLeaderDeltaRows == deck.caseLeaderDeltaRows
     stalePatch = replace(currentStatePatch, baseRowHash=conditionControl.rowHash)
     with pytest.raises(ScenarioCompositionError, match="stale conditional play control row hash"):
         executeConditionalPlayScenarioDeck(

@@ -1468,6 +1468,106 @@ class ConditionalPlayControlExecutionReport:
 
 
 @dataclass(frozen=True)
+class ConditionalPlayStrategyDeltaRow:
+    """Base to final strategy robustness delta inside one scenario deck."""
+
+    rowHash: str
+    strategyId: str
+    baseStrategyContractHash: str
+    finalStrategyContractHash: str
+    baseSummaryHash: str
+    finalSummaryHash: str
+    baseStrategyCellsHash: str
+    finalStrategyCellsHash: str
+    objectiveIndex: int
+    baseScenarioCount: int
+    finalScenarioCount: int
+    baseStrategyCount: int
+    finalStrategyCount: int
+    baseCellCount: int
+    finalCellCount: int
+    baseScoreMedian: float
+    finalScoreMedian: float
+    scoreMedianDelta: float
+    baseRegretWorst: float
+    finalRegretWorst: float
+    regretWorstDelta: float
+    baseLeaderFrequency: float
+    finalLeaderFrequency: float
+    leaderFrequencyDelta: float
+    baseBreachCount: int
+    finalBreachCount: int
+    breachCountDelta: int
+    changed: bool
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "baseScoreMedian", float(self.baseScoreMedian))
+        object.__setattr__(self, "finalScoreMedian", float(self.finalScoreMedian))
+        object.__setattr__(self, "scoreMedianDelta", float(self.scoreMedianDelta))
+        object.__setattr__(self, "baseRegretWorst", float(self.baseRegretWorst))
+        object.__setattr__(self, "finalRegretWorst", float(self.finalRegretWorst))
+        object.__setattr__(self, "regretWorstDelta", float(self.regretWorstDelta))
+        object.__setattr__(self, "baseLeaderFrequency", float(self.baseLeaderFrequency))
+        object.__setattr__(self, "finalLeaderFrequency", float(self.finalLeaderFrequency))
+        object.__setattr__(self, "leaderFrequencyDelta", float(self.leaderFrequencyDelta))
+
+
+@dataclass(frozen=True)
+class ConditionalPlayCaseLeaderDeltaRow:
+    """Base to final case-level strategy leader and fragility delta."""
+
+    rowHash: str
+    caseId: str
+    label: str
+    baseCaseLedgerHash: str
+    finalCaseLedgerHash: str
+    baseFragilityHash: str
+    finalFragilityHash: str
+    baseCaseCellsHash: str
+    finalCaseCellsHash: str
+    baseResultHash: str
+    finalResultHash: str
+    baseRunHash: str
+    finalRunHash: str
+    basePathSetHash: str
+    finalPathSetHash: str
+    basePathAssumptionHash: str
+    finalPathAssumptionHash: str
+    baseScenarioPathPackageHash: str
+    finalScenarioPathPackageHash: str
+    baseLeaderStrategies: tuple[str, ...]
+    finalLeaderStrategies: tuple[str, ...]
+    baseRunnerUpStrategies: tuple[str, ...]
+    finalRunnerUpStrategies: tuple[str, ...]
+    baseBreachStrategies: tuple[str, ...]
+    finalBreachStrategies: tuple[str, ...]
+    leaderChanged: bool
+    changed: bool
+    baseLeaderMargin: float
+    finalLeaderMargin: float
+    leaderMarginDelta: float
+    baseScoreSpread: float
+    finalScoreSpread: float
+    scoreSpreadDelta: float
+    baseAssumptionSetHash: str
+    finalAssumptionSetHash: str
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "baseLeaderStrategies", tuple(self.baseLeaderStrategies))
+        object.__setattr__(self, "finalLeaderStrategies", tuple(self.finalLeaderStrategies))
+        object.__setattr__(self, "baseRunnerUpStrategies", tuple(self.baseRunnerUpStrategies))
+        object.__setattr__(self, "finalRunnerUpStrategies", tuple(self.finalRunnerUpStrategies))
+        object.__setattr__(self, "baseBreachStrategies", tuple(self.baseBreachStrategies))
+        object.__setattr__(self, "finalBreachStrategies", tuple(self.finalBreachStrategies))
+        object.__setattr__(self, "baseLeaderMargin", float(self.baseLeaderMargin))
+        object.__setattr__(self, "finalLeaderMargin", float(self.finalLeaderMargin))
+        object.__setattr__(self, "leaderMarginDelta", float(self.leaderMarginDelta))
+        object.__setattr__(self, "baseScoreSpread", float(self.baseScoreSpread))
+        object.__setattr__(self, "finalScoreSpread", float(self.finalScoreSpread))
+        object.__setattr__(self, "scoreSpreadDelta", float(self.scoreSpreadDelta))
+
+
+@dataclass(frozen=True)
 class ConditionalPlayScenarioDeckReport:
     """Internal report for executing a multi-plane conditional scenario deck."""
 
@@ -1480,10 +1580,21 @@ class ConditionalPlayScenarioDeckReport:
     finalPlayReplayHash: str
     baseControlSurfaceHash: str
     finalControlSurfaceHash: str
+    baseSimulationSpecHash: str
+    finalSimulationSpecHash: str
+    baseResultSetHash: str
+    finalResultSetHash: str
+    baseStrategySetHash: str
+    finalStrategySetHash: str
+    baseSourceSealHash: str
+    finalSourceSealHash: str
+    stageChainHash: str
     changedControlIds: tuple[str, ...]
     semanticPlanes: tuple[str, ...]
     stageExecutionHashes: tuple[str, ...]
     rebaseRows: tuple[ConditionalPlayControlRebaseRow, ...]
+    strategyDeltaRows: tuple[ConditionalPlayStrategyDeltaRow, ...]
+    caseLeaderDeltaRows: tuple[ConditionalPlayCaseLeaderDeltaRow, ...]
     stageReports: tuple[ConditionalPlayControlExecutionReport, ...]
     finalExperiment: "ConditionalScenarioExperiment"
     blockedReasons: tuple[str, ...]
@@ -1494,6 +1605,8 @@ class ConditionalPlayScenarioDeckReport:
         object.__setattr__(self, "semanticPlanes", tuple(self.semanticPlanes))
         object.__setattr__(self, "stageExecutionHashes", tuple(self.stageExecutionHashes))
         object.__setattr__(self, "rebaseRows", tuple(self.rebaseRows))
+        object.__setattr__(self, "strategyDeltaRows", tuple(self.strategyDeltaRows))
+        object.__setattr__(self, "caseLeaderDeltaRows", tuple(self.caseLeaderDeltaRows))
         object.__setattr__(self, "stageReports", tuple(self.stageReports))
         object.__setattr__(self, "blockedReasons", tuple(self.blockedReasons))
         object.__setattr__(self, "warnings", tuple(self.warnings))
@@ -4299,6 +4412,225 @@ def _deckSourceSealHash(experiment: "ConditionalScenarioExperiment") -> str:
     )
 
 
+def _strategyDeltaPayload(row: ConditionalPlayStrategyDeltaRow) -> dict:
+    return {
+        "strategyId": row.strategyId,
+        "baseStrategyContractHash": row.baseStrategyContractHash,
+        "finalStrategyContractHash": row.finalStrategyContractHash,
+        "baseSummaryHash": row.baseSummaryHash,
+        "finalSummaryHash": row.finalSummaryHash,
+        "baseStrategyCellsHash": row.baseStrategyCellsHash,
+        "finalStrategyCellsHash": row.finalStrategyCellsHash,
+        "objectiveIndex": row.objectiveIndex,
+        "baseScenarioCount": row.baseScenarioCount,
+        "finalScenarioCount": row.finalScenarioCount,
+        "baseStrategyCount": row.baseStrategyCount,
+        "finalStrategyCount": row.finalStrategyCount,
+        "baseCellCount": row.baseCellCount,
+        "finalCellCount": row.finalCellCount,
+        "baseScoreMedian": row.baseScoreMedian,
+        "finalScoreMedian": row.finalScoreMedian,
+        "scoreMedianDelta": row.scoreMedianDelta,
+        "baseRegretWorst": row.baseRegretWorst,
+        "finalRegretWorst": row.finalRegretWorst,
+        "regretWorstDelta": row.regretWorstDelta,
+        "baseLeaderFrequency": row.baseLeaderFrequency,
+        "finalLeaderFrequency": row.finalLeaderFrequency,
+        "leaderFrequencyDelta": row.leaderFrequencyDelta,
+        "baseBreachCount": row.baseBreachCount,
+        "finalBreachCount": row.finalBreachCount,
+        "breachCountDelta": row.breachCountDelta,
+        "changed": row.changed,
+    }
+
+
+def _caseLeaderDeltaPayload(row: ConditionalPlayCaseLeaderDeltaRow) -> dict:
+    return {
+        "caseId": row.caseId,
+        "label": row.label,
+        "baseCaseLedgerHash": row.baseCaseLedgerHash,
+        "finalCaseLedgerHash": row.finalCaseLedgerHash,
+        "baseFragilityHash": row.baseFragilityHash,
+        "finalFragilityHash": row.finalFragilityHash,
+        "baseCaseCellsHash": row.baseCaseCellsHash,
+        "finalCaseCellsHash": row.finalCaseCellsHash,
+        "baseResultHash": row.baseResultHash,
+        "finalResultHash": row.finalResultHash,
+        "baseRunHash": row.baseRunHash,
+        "finalRunHash": row.finalRunHash,
+        "basePathSetHash": row.basePathSetHash,
+        "finalPathSetHash": row.finalPathSetHash,
+        "basePathAssumptionHash": row.basePathAssumptionHash,
+        "finalPathAssumptionHash": row.finalPathAssumptionHash,
+        "baseScenarioPathPackageHash": row.baseScenarioPathPackageHash,
+        "finalScenarioPathPackageHash": row.finalScenarioPathPackageHash,
+        "baseLeaderStrategies": row.baseLeaderStrategies,
+        "finalLeaderStrategies": row.finalLeaderStrategies,
+        "baseRunnerUpStrategies": row.baseRunnerUpStrategies,
+        "finalRunnerUpStrategies": row.finalRunnerUpStrategies,
+        "baseBreachStrategies": row.baseBreachStrategies,
+        "finalBreachStrategies": row.finalBreachStrategies,
+        "leaderChanged": row.leaderChanged,
+        "changed": row.changed,
+        "baseLeaderMargin": row.baseLeaderMargin,
+        "finalLeaderMargin": row.finalLeaderMargin,
+        "leaderMarginDelta": row.leaderMarginDelta,
+        "baseScoreSpread": row.baseScoreSpread,
+        "finalScoreSpread": row.finalScoreSpread,
+        "scoreSpreadDelta": row.scoreSpreadDelta,
+        "baseAssumptionSetHash": row.baseAssumptionSetHash,
+        "finalAssumptionSetHash": row.finalAssumptionSetHash,
+    }
+
+
+def _strategyDeltaRows(
+    baseExperiment: "ConditionalScenarioExperiment",
+    finalExperiment: "ConditionalScenarioExperiment",
+) -> tuple[ConditionalPlayStrategyDeltaRow, ...]:
+    if baseExperiment.strategyIds != finalExperiment.strategyIds:
+        raise ScenarioCompositionError("strategy delta requires stable strategy ids")
+    baseById = {summary.strategyId: summary for summary in baseExperiment.strategySummaries}
+    finalById = {summary.strategyId: summary for summary in finalExperiment.strategySummaries}
+    if set(baseById) != set(finalById) or set(baseById) != set(baseExperiment.strategyIds):
+        raise ScenarioCompositionError("strategy delta requires complete strategy summaries")
+    baseContractHashById = dict(zip(baseExperiment.strategyIds, baseExperiment.strategyContractHashes, strict=True))
+    finalContractHashById = dict(zip(finalExperiment.strategyIds, finalExperiment.strategyContractHashes, strict=True))
+    rows = []
+    for strategyId in finalExperiment.strategyIds:
+        base = baseById[strategyId]
+        final = finalById[strategyId]
+        baseSummaryHash = canonicalPayloadHash(base)
+        finalSummaryHash = canonicalPayloadHash(final)
+        baseCells = tuple(cell for cell in baseExperiment.cells if cell.strategyId == strategyId)
+        finalCells = tuple(cell for cell in finalExperiment.cells if cell.strategyId == strategyId)
+        baseStrategyCellsHash = canonicalPayloadHash(baseCells)
+        finalStrategyCellsHash = canonicalPayloadHash(finalCells)
+        baseContractHash = baseContractHashById[strategyId]
+        finalContractHash = finalContractHashById[strategyId]
+        changed = (
+            baseSummaryHash != finalSummaryHash
+            or baseStrategyCellsHash != finalStrategyCellsHash
+            or baseContractHash != finalContractHash
+        )
+        draft = ConditionalPlayStrategyDeltaRow(
+            rowHash="",
+            strategyId=strategyId,
+            baseStrategyContractHash=baseContractHash,
+            finalStrategyContractHash=finalContractHash,
+            baseSummaryHash=baseSummaryHash,
+            finalSummaryHash=finalSummaryHash,
+            baseStrategyCellsHash=baseStrategyCellsHash,
+            finalStrategyCellsHash=finalStrategyCellsHash,
+            objectiveIndex=finalExperiment.objectiveIndex,
+            baseScenarioCount=baseExperiment.scenarioCount,
+            finalScenarioCount=finalExperiment.scenarioCount,
+            baseStrategyCount=baseExperiment.strategyCount,
+            finalStrategyCount=finalExperiment.strategyCount,
+            baseCellCount=baseExperiment.cellCount,
+            finalCellCount=finalExperiment.cellCount,
+            baseScoreMedian=base.scoreMedian,
+            finalScoreMedian=final.scoreMedian,
+            scoreMedianDelta=final.scoreMedian - base.scoreMedian,
+            baseRegretWorst=base.regretWorst,
+            finalRegretWorst=final.regretWorst,
+            regretWorstDelta=final.regretWorst - base.regretWorst,
+            baseLeaderFrequency=base.leaderFrequency,
+            finalLeaderFrequency=final.leaderFrequency,
+            leaderFrequencyDelta=final.leaderFrequency - base.leaderFrequency,
+            baseBreachCount=base.breachCount,
+            finalBreachCount=final.breachCount,
+            breachCountDelta=final.breachCount - base.breachCount,
+            changed=changed,
+        )
+        rows.append(replace(draft, rowHash=_rowHash("strategyDeltaRow", _strategyDeltaPayload(draft))))
+    return tuple(rows)
+
+
+def _caseLeaderDeltaRows(
+    baseExperiment: "ConditionalScenarioExperiment",
+    finalExperiment: "ConditionalScenarioExperiment",
+) -> tuple[ConditionalPlayCaseLeaderDeltaRow, ...]:
+    if baseExperiment.assumptionSetIds != finalExperiment.assumptionSetIds:
+        raise ScenarioCompositionError("case leader delta requires stable case ids")
+    baseLedgerById = {ledger.caseId: ledger for ledger in baseExperiment.caseLedgers}
+    finalLedgerById = {ledger.caseId: ledger for ledger in finalExperiment.caseLedgers}
+    baseFragilityById = {row.caseId: row for row in baseExperiment.fragilityCells}
+    finalFragilityById = {row.caseId: row for row in finalExperiment.fragilityCells}
+    if (
+        set(baseLedgerById) != set(finalLedgerById)
+        or set(baseLedgerById) != set(baseExperiment.assumptionSetIds)
+        or set(baseFragilityById) != set(finalFragilityById)
+        or set(baseFragilityById) != set(baseExperiment.assumptionSetIds)
+    ):
+        raise ScenarioCompositionError("case leader delta requires complete case rows")
+    baseCaseLedgerHashById = dict(zip(baseExperiment.assumptionSetIds, baseExperiment.caseLedgerHashes, strict=True))
+    finalCaseLedgerHashById = dict(zip(finalExperiment.assumptionSetIds, finalExperiment.caseLedgerHashes, strict=True))
+    baseAssumptionSetHashById = dict(
+        zip(baseExperiment.assumptionSetIds, baseExperiment.assumptionSetHashes, strict=True)
+    )
+    finalAssumptionSetHashById = dict(
+        zip(finalExperiment.assumptionSetIds, finalExperiment.assumptionSetHashes, strict=True)
+    )
+    rows = []
+    for caseId in finalExperiment.assumptionSetIds:
+        baseLedger = baseLedgerById[caseId]
+        finalLedger = finalLedgerById[caseId]
+        baseFragility = baseFragilityById[caseId]
+        finalFragility = finalFragilityById[caseId]
+        baseCaseCells = tuple(cell for cell in baseExperiment.cells if cell.caseId == caseId)
+        finalCaseCells = tuple(cell for cell in finalExperiment.cells if cell.caseId == caseId)
+        baseCaseCellsHash = canonicalPayloadHash(baseCaseCells)
+        finalCaseCellsHash = canonicalPayloadHash(finalCaseCells)
+        baseFragilityHash = canonicalPayloadHash(baseFragility)
+        finalFragilityHash = canonicalPayloadHash(finalFragility)
+        baseCaseLedgerHash = baseCaseLedgerHashById[caseId]
+        finalCaseLedgerHash = finalCaseLedgerHashById[caseId]
+        changed = (
+            baseCaseLedgerHash != finalCaseLedgerHash
+            or baseFragilityHash != finalFragilityHash
+            or baseCaseCellsHash != finalCaseCellsHash
+        )
+        draft = ConditionalPlayCaseLeaderDeltaRow(
+            rowHash="",
+            caseId=caseId,
+            label=finalLedger.label,
+            baseCaseLedgerHash=baseCaseLedgerHash,
+            finalCaseLedgerHash=finalCaseLedgerHash,
+            baseFragilityHash=baseFragilityHash,
+            finalFragilityHash=finalFragilityHash,
+            baseCaseCellsHash=baseCaseCellsHash,
+            finalCaseCellsHash=finalCaseCellsHash,
+            baseResultHash=baseLedger.resultHash,
+            finalResultHash=finalLedger.resultHash,
+            baseRunHash=baseLedger.runHash,
+            finalRunHash=finalLedger.runHash,
+            basePathSetHash=baseLedger.pathSetHash,
+            finalPathSetHash=finalLedger.pathSetHash,
+            basePathAssumptionHash=baseLedger.pathAssumptionHash,
+            finalPathAssumptionHash=finalLedger.pathAssumptionHash,
+            baseScenarioPathPackageHash=baseLedger.scenarioPathPackageHash,
+            finalScenarioPathPackageHash=finalLedger.scenarioPathPackageHash,
+            baseLeaderStrategies=baseLedger.scoreLeaderStrategies,
+            finalLeaderStrategies=finalLedger.scoreLeaderStrategies,
+            baseRunnerUpStrategies=baseFragility.runnerUpStrategies,
+            finalRunnerUpStrategies=finalFragility.runnerUpStrategies,
+            baseBreachStrategies=baseFragility.breachStrategies,
+            finalBreachStrategies=finalFragility.breachStrategies,
+            leaderChanged=baseLedger.scoreLeaderStrategies != finalLedger.scoreLeaderStrategies,
+            changed=changed,
+            baseLeaderMargin=baseFragility.leaderMargin,
+            finalLeaderMargin=finalFragility.leaderMargin,
+            leaderMarginDelta=finalFragility.leaderMargin - baseFragility.leaderMargin,
+            baseScoreSpread=baseFragility.scoreSpread,
+            finalScoreSpread=finalFragility.scoreSpread,
+            scoreSpreadDelta=finalFragility.scoreSpread - baseFragility.scoreSpread,
+            baseAssumptionSetHash=baseAssumptionSetHashById[caseId],
+            finalAssumptionSetHash=finalAssumptionSetHashById[caseId],
+        )
+        rows.append(replace(draft, rowHash=_rowHash("caseLeaderDeltaRow", _caseLeaderDeltaPayload(draft))))
+    return tuple(rows)
+
+
 def conditionalPlayScenarioDeckPayload(report: ConditionalPlayScenarioDeckReport) -> dict:
     """Build canonical payload for a multi-plane conditional scenario deck."""
 
@@ -4312,6 +4644,16 @@ def conditionalPlayScenarioDeckPayload(report: ConditionalPlayScenarioDeckReport
         "finalPlayReplayHash": report.finalPlayReplayHash,
         "baseControlSurfaceHash": report.baseControlSurfaceHash,
         "finalControlSurfaceHash": report.finalControlSurfaceHash,
+        "baseSimulationSpecHash": report.baseSimulationSpecHash,
+        "finalSimulationSpecHash": report.finalSimulationSpecHash,
+        "baseResultSetHash": report.baseResultSetHash,
+        "finalResultSetHash": report.finalResultSetHash,
+        "baseStrategySetHash": report.baseStrategySetHash,
+        "finalStrategySetHash": report.finalStrategySetHash,
+        "baseSourceSealHash": report.baseSourceSealHash,
+        "finalSourceSealHash": report.finalSourceSealHash,
+        "sourceSealPreserved": report.baseSourceSealHash == report.finalSourceSealHash,
+        "stageChainHash": report.stageChainHash,
         "changedControlIds": report.changedControlIds,
         "semanticPlanes": report.semanticPlanes,
         "stageExecutionHashes": report.stageExecutionHashes,
@@ -4319,6 +4661,10 @@ def conditionalPlayScenarioDeckPayload(report: ConditionalPlayScenarioDeckReport
         "stageBaseExperimentHashes": tuple(stage.baseExperimentHash for stage in report.stageReports),
         "stagePatchedExperimentHashes": tuple(stage.patchedExperimentHash for stage in report.stageReports),
         "rebaseRows": report.rebaseRows,
+        "strategyDeltaRows": report.strategyDeltaRows,
+        "caseLeaderDeltaRows": report.caseLeaderDeltaRows,
+        "strategyDeltaHash": canonicalPayloadHash(report.strategyDeltaRows),
+        "caseLeaderDeltaHash": canonicalPayloadHash(report.caseLeaderDeltaRows),
         "blockedReasons": report.blockedReasons,
         "warnings": report.warnings,
     }
@@ -4428,6 +4774,20 @@ def executeConditionalPlayScenarioDeck(
     finalReport = stageExperiment.playReplayReport
     if finalReport is None:
         raise ScenarioCompositionError("conditional play scenario deck lost final replay")
+    strategyDeltaRows = _strategyDeltaRows(baseExperiment, stageExperiment)
+    caseLeaderDeltaRows = _caseLeaderDeltaRows(baseExperiment, stageExperiment)
+    semanticPlanes = tuple(stage.semanticPlane for stage in stageReports)
+    stageExecutionHashes = tuple(stage.executionHash for stage in stageReports)
+    stageChainHash = canonicalPayloadHash(
+        {
+            "semanticPlanes": semanticPlanes,
+            "stageExecutionHashes": stageExecutionHashes,
+            "stagePatchSetHashes": tuple(stage.patchSetHash for stage in stageReports),
+            "stageBaseExperimentHashes": tuple(stage.baseExperimentHash for stage in stageReports),
+            "stagePatchedExperimentHashes": tuple(stage.patchedExperimentHash for stage in stageReports),
+            "rebaseRowHashes": tuple(row.rowHash for row in rebaseRows),
+        }
+    )
     draft = ConditionalPlayScenarioDeckReport(
         deckHash="",
         schemaVersion=CONDITIONAL_PLAY_SCENARIO_DECK_VERSION,
@@ -4438,10 +4798,21 @@ def executeConditionalPlayScenarioDeck(
         finalPlayReplayHash=finalReport.playReplayHash,
         baseControlSurfaceHash=baseSurface.surfaceHash,
         finalControlSurfaceHash=finalReport.controlSurfaceHash,
+        baseSimulationSpecHash=baseExperiment.simulationSpecHash,
+        finalSimulationSpecHash=stageExperiment.simulationSpecHash,
+        baseResultSetHash=baseExperiment.resultSetHash,
+        finalResultSetHash=stageExperiment.resultSetHash,
+        baseStrategySetHash=baseExperiment.strategySetHash,
+        finalStrategySetHash=stageExperiment.strategySetHash,
+        baseSourceSealHash=_deckSourceSealHash(baseExperiment),
+        finalSourceSealHash=_deckSourceSealHash(stageExperiment),
+        stageChainHash=stageChainHash,
         changedControlIds=tuple(controlId for stage in stageReports for controlId in stage.changedControlIds),
-        semanticPlanes=tuple(stage.semanticPlane for stage in stageReports),
-        stageExecutionHashes=tuple(stage.executionHash for stage in stageReports),
+        semanticPlanes=semanticPlanes,
+        stageExecutionHashes=stageExecutionHashes,
         rebaseRows=tuple(rebaseRows),
+        strategyDeltaRows=strategyDeltaRows,
+        caseLeaderDeltaRows=caseLeaderDeltaRows,
         stageReports=tuple(stageReports),
         finalExperiment=stageExperiment,
         blockedReasons=stageExperiment.blockedReasons,
