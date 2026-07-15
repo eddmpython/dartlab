@@ -310,6 +310,22 @@ def testCapacityInvestmentStrategyChangesFutureSalesAndCash():
     assert set(run.paretoStrategies) <= {"hold", "invest"}
 
 
+def testOperatingPolicyAdmissionRequiresScalarObjectiveIndex():
+    inputs = _inputs()
+    path = _path("base")
+    with pytest.raises(ValueError, match="policyObjectiveIndex"):
+        runOperatingStrategies(
+            inputs,
+            (path,),
+            (_strategy("hold", isBaseline=True), _strategy("invest")),
+            debtLimit=500.0,
+            maxFinancing=300.0,
+            maxInvestment=300.0,
+            policyAdmissionEvidence=object(),
+            policyObjectiveIndex=3,
+        )
+
+
 def testPricePolicyMovesVolumeAndProfitThroughElasticity():
     rows = list(_rows())
     rows[4] = _primitive("capacityUnits", 200.0, "units", "assumption://capacity")

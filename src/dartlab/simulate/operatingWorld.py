@@ -740,6 +740,7 @@ def runOperatingStrategies(
     traceLimit: int | None = None,
     admissionVerifier: "AdmissionVerifier | None" = None,
     policyAdmissionEvidence: "PolicyAdmissionEvidence | None" = None,
+    policyObjectiveIndex: int = 0,
 ) -> SimulationRun:
     """Run operating paths and compare policy-specific PnL and solvency.
 
@@ -753,6 +754,7 @@ def runOperatingStrategies(
         traceLimit: Optional retained trace cap for large path sets.
         admissionVerifier: Optional runtime verifier for admitted initial states, paths, and policy evidence.
         policyAdmissionEvidence: Optional OOS policy certificate package.
+        policyObjectiveIndex: Objective index to use when a scalar policy certificate is supplied.
 
     Returns:
         ``SimulationRun`` containing PnL, cash, capacity, and runway traces.
@@ -776,13 +778,18 @@ def runOperatingStrategies(
         ObjectiveSpec("netCash", reducer="terminal", direction="maximize", risk="worst"),
         ObjectiveSpec("cashRunwaySteps", reducer="minimum", direction="maximize", risk="worst"),
     )
+    runObjectives = objectives
+    if policyAdmissionEvidence is not None:
+        if not isinstance(policyObjectiveIndex, int) or not 0 <= policyObjectiveIndex < len(objectives):
+            raise ValueError("policyObjectiveIndex is outside the operating objective contract")
+        runObjectives = (objectives[policyObjectiveIndex],)
     return simulateWorld(
         model,
         initial,
         paths,
         strategies,
         constraints=constraints,
-        objectives=objectives,
+        objectives=runObjectives,
         inputWarnings=inputs.warnings,
         traceLimit=traceLimit,
         admissionVerifier=admissionVerifier,

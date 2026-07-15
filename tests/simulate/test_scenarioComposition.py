@@ -1007,13 +1007,24 @@ def testAdmittedBasePathReceiptDoesNotTransferToExplicitOverlayScenario() -> Non
     assert "explicitFutureAdjustmentPresent" in base.pathAdmissionTransferBlockedBy
     assert "pathAdmissionNotTransferredFromObservedHistory" in base.pathAdmissionTransferBlockedBy
     assert base.pathAdmissionReceiptId == ""
+    assert base.pathAdmissionContentHash == ""
+    assert base.pathCertificateIds == ()
     assert base.policyEvaluationCertificateId == ""
+    assert base.policyEvaluationCertificateReceiptId == ""
+    assert base.policyEvaluationCertificateStatus == ""
+    assert base.policyEvaluationParentReceiptIds == ()
+    assert base.recommendationSource == ""
+    assert base.recommendationEvidenceKind == ""
+    assert base.recommendationEvidenceReceiptId == ""
+    assert base.conditionalReceiptIdsExcludedFromPolicy == ()
     assert "basePathAdmittedButOverlayConditional" in base.blockedReasons
     assert "basePathAdmissionScopeHistoryOnly" in base.blockedReasons
     assert "composedPathAdmissionNotGranted" in base.blockedReasons
+    assert "explicitOverlayBlocksPolicyRecommendation" in base.blockedReasons
     assert "pathAdmissionMissing" in base.blockedReasons
     assert "policyEvaluationRequiresAdmittedComposedPath" in base.blockedReasons
     assert "policyEvaluationCertificateMissing" in base.blockedReasons
+    assert "policyEvidenceMissing" in base.blockedReasons
     assert "automaticRecommendationDisabled" in loop.blockedReasons
 
     pathVintage = VintageRef(
@@ -1085,12 +1096,24 @@ def testConditionalPathPackageReceiptDocumentsOverlayWithoutRecommendation(tmp_p
     assert base.scenarioPathPackageParentReceiptIds == scenarioPathPackageParentReceiptIds(baseCase.pathSet)
     assert base.basePathAdmissionReceiptId in base.scenarioPathPackageParentReceiptIds
     assert base.pathAdmissionReceiptId == ""
+    assert base.pathAdmissionContentHash == ""
+    assert base.pathCertificateIds == ()
     assert base.policyEvaluationCertificateId == ""
+    assert base.policyEvaluationCertificateReceiptId == ""
+    assert base.policyEvaluationCertificateStatus == ""
+    assert base.policyEvaluationParentReceiptIds == ()
+    assert base.recommendationSource == ""
+    assert base.recommendationEvidenceKind == ""
+    assert base.recommendationEvidenceReceiptId == ""
+    assert base.conditionalReceiptIdsExcludedFromPolicy == (baseReceipt.receiptId,)
     assert base.composedPathAdmissionStatus == "notAdmitted"
     assert base.pathAdmissionTransferStatus == "notTransferred"
     assert "conditionalReceiptNotPathAdmission" in base.blockedReasons
+    assert "conditionalReceiptIdsExcludedFromPolicy" in base.blockedReasons
     assert "policyAdmittedRecommendationBlocked" in base.blockedReasons
+    assert "explicitOverlayBlocksPolicyRecommendation" in base.blockedReasons
     assert "policyEvaluationRequiresAdmittedComposedPath" in base.blockedReasons
+    assert "policyEvidenceMissing" in base.blockedReasons
     assert f"composedPathPackage:{baseReceipt.receiptId}" in base.conditionRefs
     assert f"composedPathSubject:{base.scenarioPathPackageSubjectHash}" in base.conditionRefs
     assert f"basePathAdmission:{base.basePathAdmissionReceiptId}" in base.conditionRefs

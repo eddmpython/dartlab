@@ -1396,3 +1396,14 @@ mainPlan UI 플랫폼 리팩토링이 **이 세션 동안** 단계-4b~5-2b로 �
 - **세탁 차단 회귀**: sealed experiment receipt 없이 evaluation을 만들면 실패한다. wrong kind `policyEvaluation`, parent 누락, `asKnown/asOfExact` vintage contract는 모두 실패한다. strategy payload가 바뀌면 evaluation subject hash가 바뀌고, strategyRows를 변조하면 hash mismatch로 receipt binding이 실패한다.
 - **검증**: scenarioComposition focused 25건 통과. `tests/simulate` 전체 430건 통과. ruff format/check, camelCase strict, docstring4 source audit 통과.
 - **남은 P0**: 다음은 Guard Index strict와 diff hygiene를 마친 뒤, provider lane breadth 또는 history-only admitted policy certificate rail을 별도 단계로 선택한다. conditional strategy evaluation은 official recommendation으로 승격되는 통로가 아니다.
+
+
+## 2026-07-15 P0 history-only policy recommendation rail boundary
+
+- **판단**: `policyEvaluation.py`에는 policyAdmitted certificate rail이 이미 있지만, `runOperatingStrategies`는 항상 3개 objective를 넘겨서 certificate 검증 조건인 단일 objective 계약을 만족할 수 없었다. 따라서 scenarioComposition은 policy evidence를 받아도 recommendation을 열 수 없는 구조였다.
+- **구현**: `runOperatingStrategies`에 `policyObjectiveIndex`를 추가했다. policy admission evidence가 있을 때는 선택 objective 하나만 `simulateWorld`에 넘기고, index가 objective 계약 밖이면 즉시 실패한다. `runConditionalScenarioExperiment`는 기존 `objectiveIndex`를 policy objective로 전달한다.
+- **ledger 보강**: `OperatingScenarioCaseResult`와 `OneCompanyScenarioCaseLedger`에 `pathAdmissionContentHash`, `pathCertificateIds`, `policyEvaluationCertificateReceiptId`, `policyEvaluationCertificateStatus`, `policyEvaluationParentReceiptIds`, `recommendationSource`, `recommendationEvidenceKind`, `recommendationEvidenceReceiptId`, `conditionalReceiptIdsExcludedFromPolicy`를 추가했다. 이 값들은 case ledger hash에 포함된다.
+- **추천 경계**: recommendation이 열리면 source는 `policyAdmitted`, evidence kind는 `policyEvaluationCertificate`여야 한다. explicit overlay와 conditional path package가 있으면 `explicitOverlayBlocksPolicyRecommendation`, `conditionalReceiptIdsExcludedFromPolicy`, `policyAdmittedRecommendationBlocked`가 남는다. policy evidence가 없으면 `policyEvidenceMissing`이 남는다.
+- **세탁 차단 회귀**: admitted base path가 있어도 explicit overlay가 붙은 composed path는 `pathAdmissionContentHash`, `pathCertificateIds`, policy certificate fields가 모두 비어 있어야 한다. conditional path package receipt는 `conditionalReceiptIdsExcludedFromPolicy`에만 남고 policy evidence로 쓰이지 않는다. `policyObjectiveIndex`가 contract 밖이면 실패한다.
+- **검증**: scenarioComposition, operatingWorld, policyEvaluation focused 45건 통과. ruff format/check, camelCase strict, docstring4 source audit 통과.
+- **남은 P0**: full OOS certificate 생성은 기존 policyEvaluation rail이 담당한다. 다음 단계는 history-only admitted path와 policy certificate를 실제 DART, EDGAR, price, macro, industry lane에서 더 많이 공급하거나, provider lane breadth를 conditional experiment 쪽에 더 넓히는 것이다.

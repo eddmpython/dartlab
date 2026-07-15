@@ -336,7 +336,16 @@ class OperatingScenarioCaseResult:
     retainedTraceCount: int
     initialStateAdmissionReceiptId: str
     pathAdmissionReceiptId: str
+    pathAdmissionContentHash: str
+    pathCertificateIds: tuple[str, ...]
     policyEvaluationCertificateId: str
+    policyEvaluationCertificateReceiptId: str
+    policyEvaluationCertificateStatus: str
+    policyEvaluationParentReceiptIds: tuple[str, ...]
+    recommendationSource: str
+    recommendationEvidenceKind: str
+    recommendationEvidenceReceiptId: str
+    conditionalReceiptIdsExcludedFromPolicy: tuple[str, ...]
     decisionStatus: str
     status: str
     weightLabel: str
@@ -351,6 +360,13 @@ class OperatingScenarioCaseResult:
         object.__setattr__(self, "pathAssumptionStepHashes", tuple(self.pathAssumptionStepHashes))
         object.__setattr__(self, "pathAdmissionTransferBlockedBy", tuple(self.pathAdmissionTransferBlockedBy))
         object.__setattr__(self, "bridgeHashes", tuple(self.bridgeHashes))
+        object.__setattr__(self, "pathCertificateIds", tuple(self.pathCertificateIds))
+        object.__setattr__(self, "policyEvaluationParentReceiptIds", tuple(self.policyEvaluationParentReceiptIds))
+        object.__setattr__(
+            self,
+            "conditionalReceiptIdsExcludedFromPolicy",
+            tuple(self.conditionalReceiptIdsExcludedFromPolicy),
+        )
         object.__setattr__(self, "paretoStrategies", tuple(self.paretoStrategies))
         object.__setattr__(self, "strategyScores", tuple(self.strategyScores))
         object.__setattr__(self, "refs", tuple(self.refs))
@@ -434,7 +450,16 @@ class OneCompanyScenarioCaseLedger:
     retainedTraceCount: int
     initialStateAdmissionReceiptId: str
     pathAdmissionReceiptId: str
+    pathAdmissionContentHash: str
+    pathCertificateIds: tuple[str, ...]
     policyEvaluationCertificateId: str
+    policyEvaluationCertificateReceiptId: str
+    policyEvaluationCertificateStatus: str
+    policyEvaluationParentReceiptIds: tuple[str, ...]
+    recommendationSource: str
+    recommendationEvidenceKind: str
+    recommendationEvidenceReceiptId: str
+    conditionalReceiptIdsExcludedFromPolicy: tuple[str, ...]
     decisionStatus: str
     status: str
     weightLabel: str
@@ -470,6 +495,13 @@ class OneCompanyScenarioCaseLedger:
         object.__setattr__(self, "coefficientBindingHashes", tuple(self.coefficientBindingHashes))
         object.__setattr__(self, "coefficientParentReceiptIds", tuple(self.coefficientParentReceiptIds))
         object.__setattr__(self, "bridgeHashes", tuple(self.bridgeHashes))
+        object.__setattr__(self, "pathCertificateIds", tuple(self.pathCertificateIds))
+        object.__setattr__(self, "policyEvaluationParentReceiptIds", tuple(self.policyEvaluationParentReceiptIds))
+        object.__setattr__(
+            self,
+            "conditionalReceiptIdsExcludedFromPolicy",
+            tuple(self.conditionalReceiptIdsExcludedFromPolicy),
+        )
         object.__setattr__(self, "paretoStrategies", tuple(self.paretoStrategies))
         object.__setattr__(self, "scoreLeaderStrategies", tuple(self.scoreLeaderStrategies))
         object.__setattr__(self, "strategyScores", tuple(self.strategyScores))
@@ -1159,6 +1191,66 @@ def _pathAdmissionTransferBlockedBy(pathSet: DriverPathSet, result: SimulationRu
 
 def _policyEvaluationEligibility(result: SimulationRun) -> str:
     return "eligible" if result.policyEvaluationCertificateId else "blocked"
+
+
+def _pathAdmissionContentHash(pathSet: DriverPathSet, result: SimulationRun) -> str:
+    if not result.pathAdmissionReceiptId:
+        return ""
+    try:
+        from dartlab.simulate.world import pathSetAdmissionSubjectHash
+
+        return pathSetAdmissionSubjectHash(pathSet.paths)
+    except (RuntimeError, ValueError) as error:
+        raise ScenarioCompositionError(f"path admission content hash failed: {error}") from error
+
+
+def _pathCertificateIds(pathSet: DriverPathSet, result: SimulationRun) -> tuple[str, ...]:
+    if not result.pathAdmissionReceiptId:
+        return ()
+    return _dedupe(tuple(path.certificateId for path in pathSet.paths))
+
+
+def _policyCertificateReceiptId(case: OperatingScenarioCase, result: SimulationRun) -> str:
+    if not result.policyEvaluationCertificateId or case.policyAdmissionEvidence is None:
+        return ""
+    return case.policyAdmissionEvidence.certificate.certificateReceiptId
+
+
+def _policyCertificateStatus(case: OperatingScenarioCase, result: SimulationRun) -> str:
+    if not result.policyEvaluationCertificateId or case.policyAdmissionEvidence is None:
+        return ""
+    return case.policyAdmissionEvidence.certificate.status
+
+
+def _policyEvaluationParentReceiptIds(case: OperatingScenarioCase, result: SimulationRun) -> tuple[str, ...]:
+    if not result.policyEvaluationCertificateId or case.policyAdmissionEvidence is None:
+        return ()
+    return (case.policyAdmissionEvidence.certificate.batchReceiptId,)
+
+
+def _recommendationSource(case: OperatingScenarioCase, result: SimulationRun) -> str:
+    if result.recommendation is None:
+        return ""
+    if not result.policyEvaluationCertificateId or case.policyAdmissionEvidence is None:
+        raise ScenarioCompositionError("scenario recommendation needs policy admission evidence")
+    return "policyAdmitted"
+
+
+def _recommendationEvidenceKind(case: OperatingScenarioCase, result: SimulationRun) -> str:
+    return "policyEvaluationCertificate" if _recommendationSource(case, result) else ""
+
+
+def _recommendationEvidenceReceiptId(case: OperatingScenarioCase, result: SimulationRun) -> str:
+    if result.recommendation is None:
+        return ""
+    return _policyCertificateReceiptId(case, result)
+
+
+def _conditionalReceiptIdsExcludedFromPolicy(case: OperatingScenarioCase) -> tuple[str, ...]:
+    receipts = []
+    if case.scenarioPathPackageReceiptId:
+        receipts.append(case.scenarioPathPackageReceiptId)
+    return _dedupe(tuple(receipts))
 
 
 def _exposureContractRows(exposures: tuple[OperatingTransmissionExposure, ...]) -> tuple[dict, ...]:
@@ -1893,6 +1985,7 @@ def _caseBlockedReasons(result: OperatingScenarioCaseResult) -> tuple[str, ...]:
         reasons.append("explicitAssumptionPresent")
     if result.pathAssumptionHash:
         reasons.append("explicitFutureAdjustmentPresent")
+        reasons.append("explicitOverlayBlocksPolicyRecommendation")
     if result.counts.unvalidatedPathCount:
         reasons.append("unvalidatedPathPresent")
     if result.counts.retrospectivePathCount:
@@ -1907,6 +2000,7 @@ def _caseBlockedReasons(result: OperatingScenarioCaseResult) -> tuple[str, ...]:
             reasons.append("basePathAdmissionScopeHistoryOnly")
     if result.scenarioPathPackageReceiptId:
         reasons.append("conditionalReceiptNotPathAdmission")
+        reasons.append("conditionalReceiptIdsExcludedFromPolicy")
         reasons.append("policyAdmittedRecommendationBlocked")
     if result.policyEvaluationEligibility == "blocked":
         reasons.append("policyEvaluationRequiresAdmittedComposedPath")
@@ -1918,6 +2012,7 @@ def _caseBlockedReasons(result: OperatingScenarioCaseResult) -> tuple[str, ...]:
         reasons.append("pathAdmissionMissing")
     if not result.policyEvaluationCertificateId:
         reasons.append("policyEvaluationCertificateMissing")
+        reasons.append("policyEvidenceMissing")
     return _dedupe(tuple(reasons))
 
 
@@ -2019,7 +2114,16 @@ def _caseLedger(
         retainedTraceCount=result.retainedTraceCount,
         initialStateAdmissionReceiptId=result.initialStateAdmissionReceiptId,
         pathAdmissionReceiptId=result.pathAdmissionReceiptId,
+        pathAdmissionContentHash=result.pathAdmissionContentHash,
+        pathCertificateIds=result.pathCertificateIds,
         policyEvaluationCertificateId=result.policyEvaluationCertificateId,
+        policyEvaluationCertificateReceiptId=result.policyEvaluationCertificateReceiptId,
+        policyEvaluationCertificateStatus=result.policyEvaluationCertificateStatus,
+        policyEvaluationParentReceiptIds=result.policyEvaluationParentReceiptIds,
+        recommendationSource=result.recommendationSource,
+        recommendationEvidenceKind=result.recommendationEvidenceKind,
+        recommendationEvidenceReceiptId=result.recommendationEvidenceReceiptId,
+        conditionalReceiptIdsExcludedFromPolicy=result.conditionalReceiptIdsExcludedFromPolicy,
         decisionStatus=result.decisionStatus,
         status=result.status,
         weightLabel=result.weightLabel,
@@ -2087,7 +2191,16 @@ def _caseLedgerHashes(caseLedgers: tuple[OneCompanyScenarioCaseLedger, ...]) -> 
                 "dataVintageHash": ledger.dataVintageHash,
                 "initialStateAdmissionReceiptId": ledger.initialStateAdmissionReceiptId,
                 "pathAdmissionReceiptId": ledger.pathAdmissionReceiptId,
+                "pathAdmissionContentHash": ledger.pathAdmissionContentHash,
+                "pathCertificateIds": ledger.pathCertificateIds,
                 "policyEvaluationCertificateId": ledger.policyEvaluationCertificateId,
+                "policyEvaluationCertificateReceiptId": ledger.policyEvaluationCertificateReceiptId,
+                "policyEvaluationCertificateStatus": ledger.policyEvaluationCertificateStatus,
+                "policyEvaluationParentReceiptIds": ledger.policyEvaluationParentReceiptIds,
+                "recommendationSource": ledger.recommendationSource,
+                "recommendationEvidenceKind": ledger.recommendationEvidenceKind,
+                "recommendationEvidenceReceiptId": ledger.recommendationEvidenceReceiptId,
+                "conditionalReceiptIdsExcludedFromPolicy": ledger.conditionalReceiptIdsExcludedFromPolicy,
                 "decisionStatus": ledger.decisionStatus,
                 "status": ledger.status,
                 "weightLabel": ledger.weightLabel,
@@ -3069,6 +3182,7 @@ def _runCase(
     maxFinancing: float,
     maxInvestment: float,
     traceLimit: int | None,
+    policyObjectiveIndex: int,
 ) -> OperatingScenarioCaseResult:
     scenarioReceipt = _verifyScenarioPathPackageReceipt(case)
     scenarioPathPackageReceiptId = scenarioReceipt.receiptId if scenarioReceipt is not None else ""
@@ -3099,6 +3213,7 @@ def _runCase(
         traceLimit=traceLimit,
         admissionVerifier=case.admissionVerifier,
         policyAdmissionEvidence=case.policyAdmissionEvidence,
+        policyObjectiveIndex=policyObjectiveIndex,
     )
     bridgeHashes = tuple(item.audit.bridgeHash for item in bridgeResults)
     bridgeWarnings = tuple(warning for item in bridgeResults for warning in item.audit.warnings)
@@ -3113,6 +3228,19 @@ def _runCase(
             f"driverPathSet:{case.pathSet.audit.pathSetHash}",
             f"scenarioPathPackage:{_scenarioPathPackageHash(case.pathSet)}",
             f"scenarioCase:{case.caseId}",
+            (f"pathAdmission:{run.pathAdmissionReceiptId}" if run.pathAdmissionReceiptId else ""),
+            (
+                f"pathAdmissionContent:{_pathAdmissionContentHash(case.pathSet, run)}"
+                if run.pathAdmissionReceiptId
+                else ""
+            ),
+            (f"policyEvaluation:{run.policyEvaluationCertificateId}" if run.policyEvaluationCertificateId else ""),
+            (
+                f"policyCertificate:{_policyCertificateReceiptId(case, run)}"
+                if _policyCertificateReceiptId(case, run)
+                else ""
+            ),
+            (f"recommendationSource:{_recommendationSource(case, run)}" if _recommendationSource(case, run) else ""),
         )
     )
     warnings = tuple(sorted(set((*case.pathSet.audit.warnings, *bridgeWarnings, *run.warnings))))
@@ -3151,7 +3279,16 @@ def _runCase(
         retainedTraceCount=run.retainedTraceCount,
         initialStateAdmissionReceiptId=run.initialStateAdmissionReceiptId,
         pathAdmissionReceiptId=run.pathAdmissionReceiptId,
+        pathAdmissionContentHash=_pathAdmissionContentHash(case.pathSet, run),
+        pathCertificateIds=_pathCertificateIds(case.pathSet, run),
         policyEvaluationCertificateId=run.policyEvaluationCertificateId,
+        policyEvaluationCertificateReceiptId=_policyCertificateReceiptId(case, run),
+        policyEvaluationCertificateStatus=_policyCertificateStatus(case, run),
+        policyEvaluationParentReceiptIds=_policyEvaluationParentReceiptIds(case, run),
+        recommendationSource=_recommendationSource(case, run),
+        recommendationEvidenceKind=_recommendationEvidenceKind(case, run),
+        recommendationEvidenceReceiptId=_recommendationEvidenceReceiptId(case, run),
+        conditionalReceiptIdsExcludedFromPolicy=_conditionalReceiptIdsExcludedFromPolicy(case),
         decisionStatus=run.decisionStatus,
         status=run.status,
         weightLabel=run.weightLabel,
@@ -3184,6 +3321,7 @@ def compareOperatingScenarioCases(
     maxFinancing: float,
     maxInvestment: float,
     traceLimit: int | None = None,
+    policyObjectiveIndex: int = 0,
 ) -> OperatingScenarioComparison:
     """Run the same operating strategies across multiple named scenario cases.
 
@@ -3196,6 +3334,7 @@ def compareOperatingScenarioCases(
         maxFinancing: Per-step borrow and repay bound.
         maxInvestment: Per-step capacity investment bound.
         traceLimit: Optional retained trace cap per case.
+        policyObjectiveIndex: Objective index used when a scalar policy certificate is supplied.
 
     Returns:
         ``OperatingScenarioComparison`` with per-case run hashes, scores, warnings, and
@@ -3221,6 +3360,7 @@ def compareOperatingScenarioCases(
             maxFinancing=maxFinancing,
             maxInvestment=maxInvestment,
             traceLimit=traceLimit,
+            policyObjectiveIndex=policyObjectiveIndex,
         )
         for case in caseTuple
     )
@@ -3308,6 +3448,7 @@ def runConditionalScenarioExperiment(
         maxFinancing=maxFinancing,
         maxInvestment=maxInvestment,
         traceLimit=traceLimit,
+        policyObjectiveIndex=objectiveIndex,
     )
     initialRefs = _initialStateRefs(inputs)
     caseLedgers = tuple(
@@ -3450,6 +3591,7 @@ def compareOneCompanyTwoScenarioStrategies(
     maxFinancing: float,
     maxInvestment: float,
     traceLimit: int | None = None,
+    policyObjectiveIndex: int = 0,
 ) -> OneCompanyScenarioLoop:
     """Run the minimal PRD vertical loop for one company.
 
@@ -3462,6 +3604,7 @@ def compareOneCompanyTwoScenarioStrategies(
         maxFinancing: Per-step borrow and repay bound.
         maxInvestment: Per-step capacity investment bound.
         traceLimit: Optional retained trace cap per case.
+        policyObjectiveIndex: Objective index used when a scalar policy certificate is supplied.
 
     Returns:
         ``OneCompanyScenarioLoop`` containing conditions, assumptions, state refs,
@@ -3486,6 +3629,7 @@ def compareOneCompanyTwoScenarioStrategies(
         maxFinancing=maxFinancing,
         maxInvestment=maxInvestment,
         traceLimit=traceLimit,
+        policyObjectiveIndex=policyObjectiveIndex,
     )
     initialRefs = _initialStateRefs(inputs)
     caseLedgers = tuple(
