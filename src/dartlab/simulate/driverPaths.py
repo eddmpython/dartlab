@@ -10,7 +10,7 @@ fed into bridge layers such as ``operatingBridge``.
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Mapping
 
 import polars as pl
@@ -430,6 +430,131 @@ def _pathSetHash(paths: tuple[ScenarioPath, ...]) -> str:
             for path in paths
         )
     )
+
+
+def replaceDriverPathAssumptionStep(
+    pathSet: DriverPathSet,
+    *,
+    factorId: str,
+    stepIndex: int,
+    value: float,
+    sourceRef: str,
+    reason: str = "",
+) -> DriverPathSet:
+    """Apply one explicit assumption control patch to an existing path set.
+
+    Args:
+        pathSet: Driver path set containing first-class explicit assumptions.
+        factorId: Explicit assumption factor to update.
+        stepIndex: Zero-based future step index to update.
+        value: New finite value applied to every retained path at the step.
+        sourceRef: User or system control patch provenance reference.
+        reason: Optional operator-readable reason for the patch.
+
+    Returns:
+        ``DriverPathSet`` with updated path, assumption, overlay, and input hashes.
+
+    Raises:
+        DriverPathError: If the patch targets observed history, misses provenance,
+        or addresses an invalid step or factor.
+
+    Example:
+        ``patched = replaceDriverPathAssumptionStep(pathSet, factorId="demand", stepIndex=2, value=0.1, sourceRef="control://q3")``
+    """
+
+    if not sourceRef:
+        raise DriverPathError("control patch needs a sourceRef")
+    horizon = pathSet.audit.horizon
+    if stepIndex < 0 or stepIndex >= horizon:
+        raise DriverPathError("control patch step is outside path horizon")
+    explicitFactorIds = tuple(item[0] for item in pathSet.audit.assumptionDescriptors)
+    if factorId not in explicitFactorIds:
+        raise DriverPathError("control patch can only update explicit assumptions")
+    newValue = _finite(value, f"controlPatch.{factorId}.{stepIndex}")
+    patchHash = canonicalPayloadHash(
+        {
+            "schemaVersion": "driver-path-control-assumption-patch-v1",
+            "basePathSetHash": pathSet.audit.pathSetHash,
+            "baseAssumptionHash": pathSet.audit.assumptionHash,
+            "factorId": factorId,
+            "stepIndex": int(stepIndex),
+            "value": newValue,
+            "sourceRef": sourceRef,
+            "reason": reason,
+        }
+    )
+    patchRef = f"controlPatch:{patchHash}"
+    paths = []
+    for path in pathSet.paths:
+        if stepIndex >= len(path.steps) or factorId not in path.steps[stepIndex]:
+            raise DriverPathError("control patch factor is missing from path step")
+        steps = [dict(step) for step in path.steps]
+        steps[stepIndex][factorId] = newValue
+        paths.append(replace(path, steps=tuple(steps), refs=_dedupe((*path.refs, sourceRef, patchRef))))
+    newPaths = tuple(paths)
+    oldStepHashes = pathSet.audit.assumptionStepHashes
+    if len(oldStepHashes) != horizon:
+        raise DriverPathError("control patch needs explicit assumption step hashes")
+    assumptionStepHashes = tuple(
+        canonicalPayloadHash(
+            {
+                "schemaVersion": "driver-path-control-assumption-step-patch-v1",
+                "baseStepHash": stepHash,
+                "patchHash": patchHash,
+            }
+        )
+        if index == stepIndex
+        else stepHash
+        for index, stepHash in enumerate(oldStepHashes)
+    )
+    assumptionHash = canonicalPayloadHash(
+        {
+            "schemaVersion": "driver-path-control-assumption-set-patch-v1",
+            "baseAssumptionHash": pathSet.audit.assumptionHash,
+            "assumptionStepHashes": assumptionStepHashes,
+            "patchHash": patchHash,
+        }
+    )
+    overlayHash = canonicalPayloadHash(
+        {
+            "schemaVersion": "driver-path-control-overlay-patch-v1",
+            "baseOverlayHash": pathSet.audit.overlayHash,
+            "assumptionHash": assumptionHash,
+            "assumptionStepHashes": assumptionStepHashes,
+            "patchHash": patchHash,
+        }
+    )
+    pathSetHash = _pathSetHash(newPaths)
+    inputHash = canonicalPayloadHash(
+        {
+            "schemaVersion": "driver-path-control-input-patch-v1",
+            "baseInputHash": pathSet.audit.inputHash,
+            "registryHash": pathSet.audit.registryHash,
+            "historyInputHash": pathSet.audit.historyInputHash,
+            "assumptionHash": assumptionHash,
+            "assumptionStepHashes": assumptionStepHashes,
+            "basePathSetHash": pathSet.audit.basePathSetHash,
+            "basePathAdmissionReceiptId": pathSet.audit.basePathAdmissionReceiptId,
+            "basePathAdmissionContentHash": pathSet.audit.basePathAdmissionContentHash,
+            "basePathAdmissionSubjectHash": pathSet.audit.basePathAdmissionSubjectHash,
+            "overlayHash": overlayHash,
+            "patchedPathSetHash": pathSetHash,
+            "patchHash": patchHash,
+        }
+    )
+    audit = replace(
+        pathSet.audit,
+        pathSetHash=pathSetHash,
+        inputHash=inputHash,
+        assumptionHash=assumptionHash,
+        assumptionStepHashes=assumptionStepHashes,
+        overlayHash=overlayHash,
+        validationStatus="unvalidated",
+        historyStatus="explicitAssumption",
+        sourceRefs=pathSet.audit.sourceRefs,
+        warnings=tuple(sorted(set((*pathSet.audit.warnings, "controlPatchApplied", patchRef)))),
+    )
+    return DriverPathSet(paths=newPaths, factorSpecs=pathSet.factorSpecs, audit=audit)
 
 
 def _basePathAdmissionFields(paths: tuple[ScenarioPath, ...]) -> tuple[str, str, str, str, int]:

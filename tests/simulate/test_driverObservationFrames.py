@@ -85,12 +85,15 @@ from dartlab.simulate.operatingWorld import (
     operatingInputsFromPrimitives,
 )
 from dartlab.simulate.scenarioComposition import (
+    ConditionalPlayControlPatch,
     OperatingScenarioCase,
     ScenarioCompositionError,
     buildScenarioCoefficientBindingFromVerifiedMultivariableAdmission,
     compareOneCompanyTwoScenarioStrategies,
+    conditionalPlayControlExecutionSubjectHash,
     conditionalPlayControlSurfaceSubjectHash,
     conditionalPlayReplaySubjectHash,
+    executeConditionalPlayControlPatch,
     runConditionalScenarioExperiment,
     scenarioCoefficientBindingHash,
     scenarioCoefficientExposureContractHash,
@@ -4069,6 +4072,208 @@ def testMultiProviderLaneMatrixFeedsFourQuarterConditionalExperiment(tmp_path) -
     assert changedData.experimentHash != experiment.experimentHash
     assert changedData.playReplayReport is not None
     assert changedData.playReplayReport.playReplayHash != report.playReplayHash
+
+
+def testConditionalPlayControlPatchExecutesAssumptionAndStrategyReplays(tmp_path) -> None:
+    context = _trust(tmp_path)
+    inputs = _admittedOperatingInputs(context)
+    sources = _multiProviderLaneMatrixSources(context)
+    cases = (
+        _multiProviderLaneMatrixScenarioCase(
+            "base",
+            (0.00, 0.00, 0.00, 0.00),
+            context[4],
+            sources,
+        ),
+        _multiProviderLaneMatrixScenarioCase(
+            "upside",
+            (0.25, 0.25, 0.20, 0.15),
+            context[4],
+            sources,
+        ),
+        _multiProviderLaneMatrixScenarioCase(
+            "stress",
+            (-0.05, -0.08, -0.08, -0.05),
+            context[4],
+            sources,
+        ),
+        _multiProviderLaneMatrixScenarioCase(
+            "shock",
+            (-0.12, -0.10, -0.08, -0.05),
+            context[4],
+            sources,
+        ),
+    )
+    strategies = _fourQuarterExperimentStrategies()
+    experiment = runConditionalScenarioExperiment(
+        "005930",
+        inputs,
+        cases,
+        strategies,
+        debtLimit=1_000.0,
+        maxFinancing=200.0,
+        maxInvestment=200.0,
+    )
+    assert experiment.playReplayReport is not None
+    controlSurface = experiment.playReplayReport.controlSurface
+    assumptionControl = next(
+        row
+        for row in controlSurface.rows
+        if row.semanticPlane == "assumptionDelta"
+        and row.caseId == "base"
+        and row.targetId == "manualDemandAdjustment"
+        and row.step == 2
+    )
+    assumptionPatch = ConditionalPlayControlPatch(
+        controlId=assumptionControl.controlId,
+        baseSurfaceHash=controlSurface.surfaceHash,
+        baseRowHash=assumptionControl.rowHash,
+        value=0.07,
+        patchRef="control://base/manual-demand/q3",
+        reason="operator raises Q3 demand assumption",
+    )
+    assumptionExecution = executeConditionalPlayControlPatch(
+        "005930",
+        inputs,
+        cases,
+        strategies,
+        experiment,
+        (assumptionPatch,),
+        debtLimit=1_000.0,
+        maxFinancing=200.0,
+        maxInvestment=200.0,
+    )
+    patchedAssumptionExperiment = assumptionExecution.patchedExperiment
+    assert conditionalPlayControlExecutionSubjectHash(assumptionExecution) == assumptionExecution.executionHash
+    assert assumptionExecution.semanticPlane == "assumptionDelta"
+    assert assumptionExecution.baseExperimentHash == experiment.experimentHash
+    assert assumptionExecution.patchedExperimentHash == patchedAssumptionExperiment.experimentHash
+    assert assumptionExecution.basePlayReplayHash == experiment.playReplayReport.playReplayHash
+    assert patchedAssumptionExperiment.playReplayReport is not None
+    assert assumptionExecution.patchedPlayReplayHash == patchedAssumptionExperiment.playReplayReport.playReplayHash
+    assert assumptionExecution.baseControlSurfaceHash == controlSurface.surfaceHash
+    assert (
+        assumptionExecution.patchedControlSurfaceHash == patchedAssumptionExperiment.playReplayReport.controlSurfaceHash
+    )
+    assert assumptionExecution.impactRows[0].missingExpectedHashImpacts == ()
+    assert assumptionExecution.impactRows[0].forbiddenHashViolations == ()
+    assert "pathAssumptionStepHash" in assumptionExecution.impactRows[0].changedHashImpacts
+    assert "providerLaneLineageHash" in assumptionExecution.impactRows[0].unchangedHashImpacts
+    assert "strategySetHash" in assumptionExecution.impactRows[0].unchangedHashImpacts
+    assert patchedAssumptionExperiment.providerLaneLineageHashes == experiment.providerLaneLineageHashes
+    assert (
+        patchedAssumptionExperiment.providerObservationBatchReceiptIds == experiment.providerObservationBatchReceiptIds
+    )
+    assert patchedAssumptionExperiment.rawSourceRefs == experiment.rawSourceRefs
+    assert patchedAssumptionExperiment.revisedHistoryRefs == experiment.revisedHistoryRefs
+    assert patchedAssumptionExperiment.pathHistoryInputHashes == experiment.pathHistoryInputHashes
+    assert patchedAssumptionExperiment.strategySetHash == experiment.strategySetHash
+    assert patchedAssumptionExperiment.pathAssumptionStepHashes[0][0] == experiment.pathAssumptionStepHashes[0][0]
+    assert patchedAssumptionExperiment.pathAssumptionStepHashes[0][1] == experiment.pathAssumptionStepHashes[0][1]
+    assert patchedAssumptionExperiment.pathAssumptionStepHashes[0][2] != experiment.pathAssumptionStepHashes[0][2]
+    assert patchedAssumptionExperiment.pathAssumptionStepHashes[0][3] == experiment.pathAssumptionStepHashes[0][3]
+    assert patchedAssumptionExperiment.pathAssumptionHashes != experiment.pathAssumptionHashes
+    assert patchedAssumptionExperiment.assumptionSetHashes != experiment.assumptionSetHashes
+    assert patchedAssumptionExperiment.experimentHash != experiment.experimentHash
+    assert patchedAssumptionExperiment.playReplayReport.playReplayHash != experiment.playReplayReport.playReplayHash
+    assert patchedAssumptionExperiment.recommendation is None
+
+    strategyControl = next(
+        row
+        for row in controlSurface.rows
+        if row.semanticPlane == "strategyAction"
+        and row.strategyId == "earlyInvest"
+        and row.targetId == "capacityInvestment"
+        and row.step == 0
+    )
+    strategyPatch = ConditionalPlayControlPatch(
+        controlId=strategyControl.controlId,
+        baseSurfaceHash=controlSurface.surfaceHash,
+        baseRowHash=strategyControl.rowHash,
+        value=60.0,
+        patchRef="control://strategy/early-invest/capacity/q1",
+        reason="operator lowers first step investment",
+    )
+    strategyExecution = executeConditionalPlayControlPatch(
+        "005930",
+        inputs,
+        cases,
+        strategies,
+        experiment,
+        (strategyPatch,),
+        debtLimit=1_000.0,
+        maxFinancing=200.0,
+        maxInvestment=200.0,
+    )
+    patchedStrategyExperiment = strategyExecution.patchedExperiment
+    assert strategyExecution.semanticPlane == "strategyAction"
+    assert strategyExecution.impactRows[0].missingExpectedHashImpacts == ()
+    assert strategyExecution.impactRows[0].forbiddenHashViolations == ()
+    assert "strategySetHash" in strategyExecution.impactRows[0].changedHashImpacts
+    assert "pathAssumptionHash" in strategyExecution.impactRows[0].unchangedHashImpacts
+    assert patchedStrategyExperiment.strategySetHash != experiment.strategySetHash
+    assert patchedStrategyExperiment.pathHistoryInputHashes == experiment.pathHistoryInputHashes
+    assert patchedStrategyExperiment.pathAssumptionHashes == experiment.pathAssumptionHashes
+    assert patchedStrategyExperiment.assumptionSetHashes == experiment.assumptionSetHashes
+    assert patchedStrategyExperiment.providerLaneLineageHashes == experiment.providerLaneLineageHashes
+    assert patchedStrategyExperiment.experimentHash != experiment.experimentHash
+    assert patchedStrategyExperiment.playReplayReport is not None
+    assert patchedStrategyExperiment.playReplayReport.playReplayHash != experiment.playReplayReport.playReplayHash
+    assert patchedStrategyExperiment.recommendation is None
+
+    conditionControl = next(row for row in controlSurface.rows if row.semanticPlane == "conditionFactor")
+    with pytest.raises(ScenarioCompositionError, match="conditionFactor control patch requires"):
+        executeConditionalPlayControlPatch(
+            "005930",
+            inputs,
+            cases,
+            strategies,
+            experiment,
+            (
+                ConditionalPlayControlPatch(
+                    controlId=conditionControl.controlId,
+                    baseSurfaceHash=controlSurface.surfaceHash,
+                    baseRowHash=conditionControl.rowHash,
+                    value=0.1,
+                    patchRef="control://condition/direct-history-mutation",
+                ),
+            ),
+            debtLimit=1_000.0,
+            maxFinancing=200.0,
+            maxInvestment=200.0,
+        )
+    with pytest.raises(ScenarioCompositionError, match="stale conditional play control row hash"):
+        executeConditionalPlayControlPatch(
+            "005930",
+            inputs,
+            cases,
+            strategies,
+            experiment,
+            (
+                ConditionalPlayControlPatch(
+                    controlId=assumptionControl.controlId,
+                    baseSurfaceHash=controlSurface.surfaceHash,
+                    baseRowHash=strategyControl.rowHash,
+                    value=0.08,
+                    patchRef="control://stale-row",
+                ),
+            ),
+            debtLimit=1_000.0,
+            maxFinancing=200.0,
+            maxInvestment=200.0,
+        )
+    with pytest.raises(ScenarioCompositionError, match="mixed semantic plane"):
+        executeConditionalPlayControlPatch(
+            "005930",
+            inputs,
+            cases,
+            strategies,
+            experiment,
+            (assumptionPatch, strategyPatch),
+            debtLimit=1_000.0,
+            maxFinancing=200.0,
+            maxInvestment=200.0,
+        )
 
 
 def testMultivariableAdmissionRejectsTamperedFeatureCellRef(tmp_path) -> None:
