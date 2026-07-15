@@ -39,7 +39,9 @@
 
 ```powershell
 uv run python -X utf8 tests/_attempts/dartlabUniverse/truth/graphTruthProbe.py
+uv run python -X utf8 tests/_attempts/dartlabUniverse/truth/factualAdmissionProbe.py
 uv run python -X utf8 -m pytest tests/_attempts/dartlabUniverse/truth/testGraphTruthProbe.py -q
+uv run python -X utf8 -m pytest tests/_attempts/dartlabUniverse/truth/testFactualAdmissionProbe.py -q
 ```
 
 ## 현재 결론 원장
@@ -47,6 +49,7 @@ uv run python -X utf8 -m pytest tests/_attempts/dartlabUniverse/truth/testGraphT
 | attempt | 입력 | 실측 | 판정 |
 |---|---|---|---|
 | U0-T01 graph truth census | HF `landing/map/ecosystem.json`, version `2026-04-14` | node 2,664, edge 20,560, self-loop 13, exact sourceRef 0, exact availableAt 0, observed 적격 0, OCI incident 4,474 | 기존 edge는 fact가 아니라 candidate hint. assertion/evidence 계약 선행 |
+| U0-T02 factual admission | 같은 live ecosystem 20,560 edge | document ID, section, exact locator, direction, sourcePublishedAt, availableAt, validFrom, policy receipt, observed status, admitted 모두 0. self-loop 13 | current edge 전부 candidate 유지. exact evidence resolver와 assertion source가 별도로 필요 |
 
 ## 금지
 

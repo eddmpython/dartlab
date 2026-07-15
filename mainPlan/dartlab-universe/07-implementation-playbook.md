@@ -88,6 +88,8 @@ uv run python -X utf8 tests/_attempts/dartlabUniverse/truth/graphTruthProbe.py
 
 ### U0-T02 graph truth admission 강화
 
+상태: 완료. 2026-07-15 live 20,560 edge에서 admission 필드와 admitted edge 0, self-loop 13을 확인했다.
+
 목표: `rceptNo` 존재만으로 exact evidence라고 판정하지 않고 span, section, entity direction, public policy까지 검증한다.
 
 실행 순서:

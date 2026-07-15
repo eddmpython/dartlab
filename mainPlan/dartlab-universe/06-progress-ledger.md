@@ -22,7 +22,7 @@
 - [x] P0 변화 우주와 Thesis Kill-Chain, P1 판정 우주와 한미 Twin 우선순위 확정
 - [x] SourceSnapshotSet, UniverseFlightPlan, UniverseFlightReceipt, SceneBeat, EvidenceReceipt, GapReceipt 계획 계약 확정
 - [x] snapshot, workflow, visual, policy attempts 하위 category 생성
-- [ ] U0-T02 graph factual admission 강화
+- [x] U0-T02 graph factual admission 강화
 - [ ] U0 snapshot, policy, lens, identity, evidence, assertion, projection attempts
 - [ ] U0 workflow, visual, information yield attempts
 - [ ] U1~U2 implementation
@@ -51,6 +51,7 @@
 | 2026-07-15 | SourceSnapshotSet 도입 | 단일 map buildId는 search, panel, finance, capability, recipe exact replay를 보장하지 못함 |
 | 2026-07-15 | query knownAt을 assertion identity에서 제거 | 미래 효력 공시를 허용하고 같은 assertion이 query cutoff마다 다른 ID가 되는 오류 방지 |
 | 2026-07-15 | 시각은 의미 좌표와 L0~L5 representation 교체 | current map의 무작위 force와 화면 전체 복제 대신 SVG, bounded Cosmos, DOM reference surface 분리 |
+| 2026-07-15 | U0-T02 factual admission 실행 | live 20,560 edge에서 document ID, section, exact locator, direction, sourcePublishedAt, availableAt, validFrom, policy receipt, observed status와 admitted 모두 0 |
 
 ## 핵심 실측 스냅샷
 
@@ -106,4 +107,4 @@ dart dataAsOf            null
 
 ## 다음 단일 행동
 
-`tests/_attempts/dartlabUniverse/truth/`에서 U0-T02 factual admission probe를 설계하고 실행한다. exact span, section, direction, sourcePublishedAt, availableAt, valid interval, policy receipt를 분리 계수한 뒤 U0-S01 SourceSnapshotSet으로 이동한다. U0 품질 게이트를 통과하기 전 UI나 map artifact를 변경하지 않는다.
+`tests/_attempts/dartlabUniverse/snapshot/`에서 U0-S01 SourceSnapshotSet probe를 구현한다. HF repository commit과 source별 ETag로 map, search, panel, finance를 결속하고 local capability 및 recipe catalog hash를 포함한다. source version이 하나라도 숨겨지면 exact replay를 금지한다. U0 품질 게이트를 통과하기 전 UI나 map artifact를 변경하지 않는다.

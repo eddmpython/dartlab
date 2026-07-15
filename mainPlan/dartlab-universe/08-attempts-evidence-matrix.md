@@ -78,7 +78,7 @@ Python demo의 module docstring에는 `결과` 섹션을 둔다. 출력 파일�
 | ID | 질문 | 입력 | 합격 | 실패 시 결정 | 상태 |
 |---|---|---|---|---|---|
 | U0-T01 | 현재 graph가 fact로 입장 가능한가 | HF ecosystem | sourceRef와 availableAt coverage | 기존 edge candidate 강등 | 완료 |
-| U0-T02 | exact admission 필드가 실제 있는가 | HF ecosystem과 source candidates | span, section, direction, time, policy 분리 계수 | current edge candidate 유지 | 대기 |
+| U0-T02 | exact admission 필드가 실제 있는가 | HF ecosystem과 source candidates | span, section, direction, time, policy 분리 계수 | current edge candidate 유지 | 완료 |
 | U0-I01 | canonical legal entity ID가 복원되는가 | KR 50, US 30 | exact ID 100%, ambiguous auto resolve 0 | reference resolver 우선 보강 | 대기 |
 | U0-E01 | edge hint에서 exact source를 찾는가 | positive 100, negative 100 | resolution 95%, false accept 1% 이하 | predicate별 source lane 재설계 | 대기 |
 | U0-O01 | revision과 시간을 보존하는가 | multi-filing fixture | history 손실 0, look-ahead 0 | assertion schema 수정 | 대기 |
@@ -129,6 +129,34 @@ OCI unique neighbor degree 2,585
 ```
 
 판정: graph artifact와 layout은 candidate topology로 재사용할 가치가 있지만, 현재 edge를 factual assertion으로 재사용할 수는 없다. U0-T01은 필드 존재 센서스다. exact span, section, direction, public policy까지 admission한 결과로 해석하지 않으며 U0-T02가 이를 강화한다.
+
+## 4.1 U0-T02 결과
+
+명령:
+
+```powershell
+uv run python -X utf8 tests/_attempts/dartlabUniverse/truth/factualAdmissionProbe.py
+```
+
+결과:
+
+```text
+edgeCount                  20,560
+stableSourceRefCount            0
+documentIdCount                 0
+sectionPathCount                0
+exactLocatorCount               0
+directionVerifiedCount          0
+sourcePublishedAtCount          0
+availableAtCount                0
+validFromCount                  0
+policyReceiptCount              0
+observedStatusCount             0
+admittedEdgeCount               0
+selfLoopCount                  13
+```
+
+판정: confidence와 evidence title은 factual admission을 대체하지 못한다. current edge 전체를 candidate topology로 유지한다. U0-E01에서 exact source를 새로 해소하고 U0-O01 assertion contract를 통과하기 전 observed 승격은 0건이어야 한다.
 
 ## 5. existing attempts 재사용 지도
 
@@ -188,6 +216,7 @@ gold는 자동 생성 candidate를 그대로 승인하지 않는다. 사람이 �
 - [x] 첫 가설과 실데이터 demo
 - [x] truth 책임 하위 모듈 분리
 - [x] demo 결과를 module docstring과 README에 기록
+- [x] U0-T02 factual admission 필드 전수 계수
 - [ ] identity, evidence, ontology, projection 모듈화
 - [ ] special-case와 중복 rule 제거
 - [ ] camelCase와 SSOT 검토
