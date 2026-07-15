@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" role="img" aria-labelledby="title desc">
+  <title id="title">CoreWeave customer concentration</title>
+  <desc id="desc">Large customers give visibility and concentration risk at the same time.</desc>
+  <rect width="960" height="540" fill="#08121f"/>
+  <rect x="36" y="36" width="888" height="468" rx="24" fill="#0f172a" stroke="#24324a"/>
+  <text x="70" y="86" fill="#f8fafc" font-family="Malgun Gothic, Arial" font-size="28" font-weight="700">큰 고객은 매출 가시성과 집중 리스크를 동시에 만든다</text>
+  <text x="70" y="120" fill="#94a3b8" font-family="Malgun Gothic, Arial" font-size="16">2025 Form 10-K와 2026Q1 발표 기준. 금액은 commitment, 매출 비중은 2025년 기준.</text>
+  <circle cx="250" cy="284" r="118" fill="#2563eb" opacity="0.92"/>
+  <circle cx="510" cy="284" r="86" fill="#7c3aed" opacity="0.92"/>
+  <circle cx="710" cy="284" r="100" fill="#e11d48" opacity="0.92"/>
+  <g font-family="Malgun Gothic, Arial" text-anchor="middle">
+    <text x="250" y="270" fill="#dbeafe" font-size="24" font-weight="700">Microsoft</text>
+    <text x="250" y="304" fill="#eff6ff" font-size="34" font-weight="700">67%</text>
+    <text x="250" y="332" fill="#dbeafe" font-size="14">2025 매출 비중</text>
+    <text x="510" y="276" fill="#ede9fe" font-size="23" font-weight="700">OpenAI</text>
+    <text x="510" y="310" fill="#f5f3ff" font-size="30" font-weight="700">6.5B</text>
+    <text x="510" y="336" fill="#ede9fe" font-size="14">through 2031</text>
+    <text x="710" y="270" fill="#ffe4e6" font-size="24" font-weight="700">Meta</text>
+    <text x="710" y="304" fill="#fff1f2" font-size="34" font-weight="700">21B</text>
+    <text x="710" y="332" fill="#ffe4e6" font-size="14">2026Q1 신규</text>
+  </g>
+  <text x="70" y="470" fill="#94a3b8" font-family="Malgun Gothic, Arial" font-size="15">읽는 법: 고객 이름이 클수록 financing story는 쉬워진다. 동시에 한 고객의 일정 변경이 회사 전체에 미치는 힘도 커진다.</text>
+</svg>

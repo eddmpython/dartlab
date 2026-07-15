@@ -1,0 +1,563 @@
+{
+  "plan": {
+    "title": "CoreWeave, 99B 백로그는 왜 빚부터 부르는가",
+    "titleContract": {
+      "workingTitle": "CoreWeave 단독 기업이야기",
+      "selectedTitle": "CoreWeave, 99B 백로그는 왜 빚부터 부르는가",
+      "hookQuestion": "AI 클라우드 회사가 99.4B 달러 revenue backlog를 쌓았는데 왜 투자자는 부채와 임대, 고객 집중을 먼저 봐야 하는가.",
+      "readerGap": "독자는 CoreWeave를 AI 인프라 성장주로 보지만, 공시 숫자는 GPU와 데이터센터를 먼저 사들이고 나중에 매출로 회수하는 자본집약 회사라는 긴장을 만든다.",
+      "promise": "2026년 1분기 매출 2.078B, revenue backlog 99.4B, 영업손실 144M, 이자비용 536M, 영업현금흐름 2.984B, 투자현금유출 7.708B, 2025년 말 총부채 21.6B를 한 구조로 연결한다.",
+      "whySelected": "CoreWeave는 2025년 3월 나스닥 상장 이후 AI 인프라 대표 IPO로 주목받았고, 2026년 1분기 99.4B backlog와 Meta 21B commitment, NVIDIA 2B 투자, DDTL 4.0 Facility가 동시에 나온 회사라 최근성과 내러티브가 강하다.",
+      "candidates": [
+        {
+          "title": "CoreWeave, 99B 백로그는 왜 빚부터 부르는가",
+          "hook": "99B라는 큰 숫자와 빚이라는 반전이 한 문장에 있다.",
+          "risk": "backlog가 GAAP 매출이 아니므로 본문 첫 부분에서 정의해야 한다."
+        },
+        {
+          "title": "CoreWeave, AI 클라우드는 왜 GPU를 빚으로 산다",
+          "hook": "초보 독자가 바로 이해할 수 있는 사업 구조 문장이다.",
+          "risk": "99.4B revenue backlog의 검색 후킹이 제목에서 약해진다."
+        },
+        {
+          "title": "CoreWeave, Microsoft 매출 67%와 Meta 21B의 사이",
+          "hook": "고객 집중과 신규 대형 계약이 동시에 보인다.",
+          "risk": "자본집약 구조보다 고객 이야기로 좁아질 수 있다."
+        }
+      ],
+      "rejectedPatterns": [
+        "CoreWeave 분석",
+        "AI 클라우드 수혜주 정리",
+        "CoreWeave는 좋은 회사일까"
+      ]
+    },
+    "description": "CoreWeave(CRWV)는 2026년 1분기 revenue backlog 99.4B를 냈다. 문제는 그 매출을 먼저 GPU, 데이터센터, 부채, 임대로 사와야 한다는 점이다.",
+    "contentEnrichmentPolicy": {
+      "imageGenerationAllowed": true,
+      "rule": "기획자는 콘텐츠 이해를 풍부하게 만들기 위해 imagePlan을 고정 수량으로 닫지 않는다. 본문 중간에서 독자의 이해가 끊기는 지점이 있으면 추가 생성 이미지를 기획하고, asset, placement, insertAfter, narrativeUse를 남긴 뒤 본문에 삽입할 수 있다.",
+      "appliedToThisPost": [
+        "데이터센터 서버랙 실사를 수급해 AI 클라우드가 실제로는 전력과 장비를 먼저 사는 사업임을 보여준다.",
+        "backlog와 capex, 현금흐름, 고객 집중을 각각 별도 차트로 기획해 숫자가 한 덩어리로 뭉치지 않게 했다."
+      ]
+    },
+    "readerQuestion": "CoreWeave는 AI 수요가 폭발하는 회사인가, 아니면 그 수요를 먼저 빚으로 사오는 회사인가.",
+    "insight": {
+      "commonBelief": "CoreWeave는 AI 모델 수요가 커질수록 바로 커지는 GPU 클라우드 성장주다.",
+      "twistFact": "CoreWeave의 핵심은 수요가 아니라 선투자 시간표다. 고객 계약은 크지만 매출을 만들려면 GPU, 서버, 네트워크, 데이터센터 전력, 임대, 차입금을 먼저 들고 있어야 한다.",
+      "whatToWatch": "다음 공시에서는 revenue backlog, customer concentration, capital expenditures, operating cash flow, total debt, lease liabilities를 같은 순서로 봐야 한다.",
+      "freshnessArgument": "기존 기업이야기에는 CRWV가 없고, NVIDIA와 Dell, GE Vernova가 AI 인프라의 다른 층을 다뤘다. 이번 글은 AI 클라우드 운영자가 수요를 어떻게 부채와 장비로 번역하는지 단독으로 판다.",
+      "evidenceRefs": [
+        "SEC CoreWeave 2025 Form 10-K",
+        "SEC CoreWeave 2026 Q1 Form 10-Q",
+        "CoreWeave Q1 2026 earnings press release",
+        "dartlab Company CRWV panel IS BS CF"
+      ]
+    },
+    "acts": [
+      {
+        "order": 1,
+        "heading": "99.4B backlog가 먼저 보인다",
+        "purpose": "궁금증심화",
+        "scene": "2026년 1분기 발표에서 revenue backlog 99.4B와 Meta 21B commitment가 같은 화면에 올라오는 장면.",
+        "keyNumbers": [
+          "2026Q1 revenue backlog 99.4B",
+          "2026Q1 RPO 98.8B",
+          "2026Q1 Meta 신규 commitment 21B"
+        ],
+        "causalBridge": "계약이 크면 다음 질문은 그 계약을 실행할 장비와 자금이 어디서 오느냐다."
+      },
+      {
+        "order": 2,
+        "heading": "제품은 클라우드지만 몸은 데이터센터다",
+        "purpose": "메커니즘공개",
+        "scene": "CoreWeave Cloud가 GPU compute, bare metal, networking, storage, managed Kubernetes로 구성되는 장면.",
+        "keyNumbers": [
+          "2026Q1 active power 1GW 이상",
+          "2030년 8GW 이상 목표",
+          "2026Q1 contracted power 3.5GW 이상"
+        ],
+        "causalBridge": "클라우드라는 단어를 실제 원가로 바꾸면 서버랙, 네트워크, 전력, 임대가 보인다."
+      },
+      {
+        "order": 3,
+        "heading": "매출은 뛰지만 손익계산서는 아직 이자를 이기지 못한다",
+        "purpose": "리스크반전",
+        "scene": "2026Q1 매출 2.078B와 영업손실 144M, 이자비용 536M, 순손실 740M이 한 손익계산서에 같이 찍힌 장면.",
+        "keyNumbers": [
+          "2026Q1 revenue 2.078B",
+          "2026Q1 operating loss 144M",
+          "2026Q1 interest expense net 536M",
+          "2026Q1 net loss 740M"
+        ],
+        "causalBridge": "이익보다 더 빨리 봐야 할 줄은 현금흐름표다."
+      },
+      {
+        "order": 4,
+        "heading": "고객 선급금이 들어와도 GPU 투자가 더 빨리 나간다",
+        "purpose": "메커니즘공개",
+        "scene": "2026Q1 영업현금흐름 2.984B와 투자현금유출 7.708B가 동시에 보이는 장면.",
+        "keyNumbers": [
+          "2026Q1 operating cash flow 2.984B",
+          "2026Q1 investing cash outflow 7.708B",
+          "2026Q1 property and equipment purchase 7.695B"
+        ],
+        "causalBridge": "현금흐름은 좋게 보이지만, 투자 규모는 더 커서 자금조달로 이어진다."
+      },
+      {
+        "order": 5,
+        "heading": "고객이 크다는 것은 장점이면서 약점이다",
+        "purpose": "리스크반전",
+        "scene": "2025년 Microsoft가 매출의 약 67%를 차지하고, OpenAI와 Meta가 미래 대형 고객으로 공시에 등장하는 장면.",
+        "keyNumbers": [
+          "2025년 top customer Microsoft revenue 67%",
+          "OpenAI committed amount up to 6.5B through 2031",
+          "Meta initial committed amount up to 14.2B through 2031",
+          "2026Q1 Meta additional commitment 21B"
+        ],
+        "causalBridge": "대형 고객은 장기 매출 가시성을 주지만, 한 고객의 일정 변경이 회사 전체를 흔들 수 있다."
+      },
+      {
+        "order": 6,
+        "heading": "NVIDIA는 공급자이면서 주주이고 기준점이다",
+        "purpose": "메커니즘공개",
+        "scene": "Q1 2026 발표에서 NVIDIA 2B Class A common stock investment와 GB200 NVL72 inference cloud milestone이 함께 나오는 장면.",
+        "keyNumbers": [
+          "2026Q1 NVIDIA 2B Class A common stock investment",
+          "NVIDIA GB200 NVL72 inference exemplar cloud",
+          "2030년 5GW 이상 AI factories build-out 협력"
+        ],
+        "causalBridge": "좋은 공급 관계는 성장의 연료지만, 특정 GPU 세대와 공급망에 묶이는 리스크도 만든다."
+      },
+      {
+        "order": 7,
+        "heading": "부채와 임대가 이 회사의 두 번째 재무제표다",
+        "purpose": "리스크반전",
+        "scene": "2025년 말 총부채 21.6B, 2026Q1 operating lease liabilities 10.1B, OEM and software financing 6.7B notional이 같이 보이는 장면.",
+        "keyNumbers": [
+          "2025년 말 total principal of debt 21.615B",
+          "2025년 말 current debt 6.708B",
+          "2026Q1 operating lease liabilities 10.1B",
+          "2026Q1 OEM and software financing arrangements 6.7B notional"
+        ],
+        "causalBridge": "이제 결론은 수요가 아니라 수요를 감당하는 자본 구조다."
+      },
+      {
+        "order": 8,
+        "heading": "다음 공시에서 볼 여섯 줄",
+        "purpose": "판단닫힘",
+        "scene": "투자자가 다음 10-Q를 열 때 볼 순서를 체크리스트로 고정하는 장면.",
+        "keyNumbers": [
+          "revenue backlog",
+          "RPO",
+          "capital expenditures",
+          "operating cash flow",
+          "debt service",
+          "customer concentration"
+        ],
+        "causalBridge": "글의 결론은 AI 수요 낙관이 아니라 선투자와 회수 속도의 비교다."
+      }
+    ],
+    "sections": [
+      {
+        "heading": "프롤로그 - AI 수요는 계약서에 찍히지만, 먼저 장비로 산다",
+        "subtitle": "CoreWeave를 성장주로만 보면 가장 중요한 줄을 놓친다.",
+        "visualAnchor": "데이터센터 서버랙 실사 이미지와 99.4B backlog 요약 박스",
+        "explanation": "처음 온 독자에게 backlog와 RPO가 매출이 아니라 미래 수행 의무라는 점을 풀어 쓴다.",
+        "example": "Q1 2026 매출 2.078B와 revenue backlog 99.4B를 나란히 보여준다.",
+        "support": "주의: CoreWeave Q1 2026 press release와 SEC 10-Q를 근거로 쓰되 backlog를 확정 매출로 오해하지 않게 한다.",
+        "transition": "그래서 다음 섹션에서는 큰 계약이 실제 장비와 자본 구조로 어떻게 넘어가는지 본다.",
+        "evaluation": "첫 화면에서 왜 지금 CoreWeave를 읽어야 하는지 보인다."
+      },
+      {
+        "heading": "막1 - 99.4B backlog가 먼저 보인다",
+        "subtitle": "큰 계약은 좋은 소식이지만 아직 현금이 아니다.",
+        "visualAnchor": "99.4B revenue backlog와 2.078B 분기 매출을 나란히 놓은 SVG 차트",
+        "explanation": "숫자로 보면 99.4B는 당장 찍힌 매출이 아니라 아직 일해야 받을 미래 매출 풀이다.",
+        "example": "RPO 98.8B와 other future revenue 0.6B가 합쳐져 99.4B가 된다.",
+        "support": "주의: Q1 2026 earnings presentation과 press release를 쓰되 backlog를 매출처럼 말하지 않는다.",
+        "transition": "그래서 다음 섹션에서는 이 계약을 수행하려면 어떤 물리 인프라가 필요한지 본다.",
+        "evaluation": "backlog를 매출로 오독하지 않게 만든다."
+      },
+      {
+        "heading": "막2 - 제품은 클라우드지만 몸은 데이터센터다",
+        "subtitle": "클라우드라는 단어 아래에 서버, 전력, 네트워크, 임대가 숨어 있다.",
+        "visualAnchor": "데이터센터 서버랙 실사 이미지와 전력 설비 이미지",
+        "explanation": "표에서 비용으로 바꾸면 GPU compute, bare metal, networking, storage는 서버, 전력, 임대, 네트워크 비용이다.",
+        "example": "GPU compute, bare metal, networking, storage, managed Kubernetes가 모두 장비와 전력 위에 올라간다.",
+        "support": "주의: CoreWeave 공식 overview와 10-Q 비용 설명을 쓰되 클라우드를 순수 소프트웨어 회사처럼 해석하지 않는다.",
+        "transition": "그래서 다음 섹션에서는 물리 인프라가 손익계산서의 감가상각, 이자비용, 순손실로 내려오는지 본다.",
+        "evaluation": "AI 클라우드를 소프트웨어 회사처럼 읽는 오해를 줄인다."
+      },
+      {
+        "heading": "막3 - 매출은 뛰지만 손익계산서는 아직 이자를 이기지 못한다",
+        "subtitle": "성장률은 높지만 순손실의 원인은 이자와 감가상각에 있다.",
+        "visualAnchor": "Q1 2026 매출, 영업손실, 이자비용, 순손실을 한 줄씩 비교한 표",
+        "explanation": "숫자로 보면 매출 2.078B가 커도 이자비용 536M과 순손실 740M이 같이 있다.",
+        "example": "Q1 2026 매출 2.078B, 이자비용 536M, 순손실 740M.",
+        "support": "주의: SEC 10-Q results of operations를 근거로 쓰고 adjusted EBITDA와 GAAP 손익을 섞지 않는다.",
+        "transition": "그래서 다음 섹션에서는 손익보다 먼저 현금이 실제로 어디서 들어오고 어디로 나가는지 본다.",
+        "evaluation": "성장과 적자가 왜 동시에 나오는지 직관적으로 읽힌다."
+      },
+      {
+        "heading": "막4 - 고객 선급금이 들어와도 GPU 투자가 더 빨리 나간다",
+        "subtitle": "영업현금흐름은 좋아도 투자현금유출이 더 크다.",
+        "visualAnchor": "영업현금흐름 2.984B, 투자현금유출 7.708B, 재무현금유입 3.914B를 비교한 SVG 차트",
+        "explanation": "숫자로 보면 고객 돈이 먼저 들어와도 GPU와 데이터센터에 더 큰 돈이 먼저 나간다.",
+        "example": "Q1 2026 OCF 2.984B, investing outflow 7.708B, financing inflow 3.914B.",
+        "support": "주의: SEC 10-Q cash flow table을 쓰되 영업현금흐름 개선만으로 free cash flow가 좋다고 단정하지 않는다.",
+        "transition": "그래서 다음 섹션에서는 이렇게 큰 투자를 뒷받침하는 고객이 누구인지, 집중 위험은 없는지 본다.",
+        "evaluation": "OCF만 보고 좋다고 결론 내리지 않게 한다."
+      },
+      {
+        "heading": "막5 - 고객이 크다는 것은 장점이면서 약점이다",
+        "subtitle": "Microsoft, OpenAI, Meta가 큰 만큼 회사의 일정도 그들에게 묶인다.",
+        "visualAnchor": "Microsoft 67%, OpenAI 6.5B, Meta 14.2B plus 21B를 연결한 고객 집중 SVG 차트",
+        "explanation": "공시에서 Microsoft 한 고객이 2025년 매출의 약 67%였다는 숫자부터 본다.",
+        "example": "2025년 Microsoft가 매출의 67%를 차지했다.",
+        "support": "주의: 2025 Form 10-K customer concentration risk factor를 쓰고 대형 고객 계약을 무조건 안정성으로만 보지 않는다.",
+        "transition": "그래서 다음 섹션에서는 그 대형 고객 수요를 실행하게 만드는 핵심 공급자 NVIDIA와의 관계를 본다.",
+        "evaluation": "대형 계약을 무조건 좋은 소식으로만 보지 않게 한다."
+      },
+      {
+        "heading": "막6 - NVIDIA는 공급자이면서 주주이고 기준점이다",
+        "subtitle": "CoreWeave의 장점은 NVIDIA 생태계와 가깝다는 점이고, 약점도 거기서 시작한다.",
+        "visualAnchor": "NVIDIA, GPU, CoreWeave, 고객 계약을 연결한 AI 인프라 층위 SVG와 서버 네트워크 이미지",
+        "explanation": "사례로 보면 NVIDIA 2B 투자는 신뢰 신호지만 동시에 GPU 세대와 공급망에 묶인다는 뜻이다.",
+        "example": "Q1 2026 발표의 NVIDIA 2B Class A common stock investment와 GB200 NVL72 inference milestone.",
+        "support": "주의: CoreWeave Q1 2026 press release를 쓰되 NVIDIA 투자를 수익성 보장으로 해석하지 않는다.",
+        "transition": "그래서 다음 섹션에서는 강한 공급 관계가 왜 부채, 임대, 장비 금융이라는 고정 의무로 바뀌는지 본다.",
+        "evaluation": "공급 관계와 재무 구조를 분리하지 않는다."
+      },
+      {
+        "heading": "막7 - 부채와 임대가 이 회사의 두 번째 재무제표다",
+        "subtitle": "AI 클라우드의 성장은 부채, 임대, 장비 금융 위에서 선다.",
+        "visualAnchor": "총부채 21.615B, operating lease liabilities 10.1B, OEM financing 6.7B를 쌓은 부채와 임대 SVG 차트",
+        "explanation": "숫자로 보면 total debt는 빌린 돈, lease liabilities는 미래 지급 약속, OEM financing은 장비 금융이다.",
+        "example": "2025년 말 total principal debt 21.615B, 2026Q1 operating lease liabilities 10.1B.",
+        "support": "주의: SEC 10-K debt note와 2026 Q1 risk factor를 같이 쓰고 debt, lease, equipment financing을 한 숫자로 뭉치지 않는다.",
+        "transition": "그래서 마지막 섹션에서는 이 구조가 좋아지는 조건과 나빠지는 조건을 다음 공시 체크리스트로 정리한다.",
+        "evaluation": "재무 위험의 모양이 단순 차입금보다 복잡하다는 점이 남는다."
+      },
+      {
+        "heading": "막8 - 다음 공시에서 볼 여섯 줄",
+        "subtitle": "좋다 나쁘다가 아니라 무엇을 먼저 봐야 하는지 남긴다.",
+        "visualAnchor": "다음 10-Q에서 볼 여섯 줄을 체크박스로 배열한 SVG와 본문 검증표",
+        "explanation": "처음 공시를 열면 순서가 필요하다. revenue backlog, capex, 영업현금흐름, debt service, customer concentration을 위에서 아래로 본다.",
+        "example": "예를 들어 Q1 2026처럼 영업현금흐름 2.984B보다 투자현금유출 7.708B가 크면 성장해도 자금조달 질문이 남는다.",
+        "support": "주의: 본문의 모든 수치를 검증표로 재배치하되 투자 결론이나 목표주가로 닫지 않는다.",
+        "transition": "그래서 에필로그에서는 CoreWeave를 AI 수혜주 한 단어가 아니라 선투자와 회수 속도의 싸움으로 다시 잡는다.",
+        "evaluation": "독자가 다음 공시를 직접 열 수 있는 렌즈가 남는다."
+      }
+    ],
+    "visuals": [
+      {
+        "actOrder": 1,
+        "kind": "bar",
+        "title": "99.4B backlog와 분기 매출",
+        "proves": "CoreWeave의 시장 관심이 당기 매출보다 미래 계약 규모에서 나온다는 점.",
+        "seriesHint": "Q1 2026 revenue 2.078B, RPO 98.8B, revenue backlog 99.4B",
+        "asset": "assets/166-backlog-capex.svg",
+        "placement": "막1 backlog 정의 직후",
+        "insertAfter": "RPO와 revenue backlog 차이를 설명한 문단 뒤",
+        "narrativeUse": "backlog를 매출로 착각하지 않게 숫자 크기와 성격을 동시에 보여준다."
+      },
+      {
+        "actOrder": 4,
+        "kind": "cashflow-bars",
+        "title": "영업현금과 투자현금의 간격",
+        "proves": "고객 선급금이 들어와도 GPU fleet 투자가 더 빨리 나간다는 점.",
+        "seriesHint": "Q1 2026 OCF 2.984B, investing cash outflow 7.708B, financing inflow 3.914B",
+        "asset": "assets/166-cash-flywheel.svg",
+        "placement": "막4 현금흐름표 설명 중간",
+        "insertAfter": "Q1 2026 cash flow table을 풀어 쓴 문단 뒤",
+        "narrativeUse": "성장 회사가 현금을 벌면서 동시에 외부 자금이 필요한 이유를 보여준다."
+      },
+      {
+        "actOrder": 5,
+        "kind": "customer-concentration",
+        "title": "대형 고객 집중과 장기 계약 지도",
+        "proves": "대형 고객 계약은 매출 가시성과 집중 리스크를 동시에 만든다는 점.",
+        "seriesHint": "2025 Microsoft 67%, OpenAI 6.5B, Meta 14.2B plus 21B",
+        "asset": "assets/166-customer-concentration.svg",
+        "placement": "막5 고객 집중 설명 직후",
+        "insertAfter": "Microsoft 67%와 OpenAI, Meta commitment를 설명한 문단 뒤",
+        "narrativeUse": "고객이 크다는 말을 좋은 소식과 위험으로 동시에 읽게 한다."
+      },
+      {
+        "actOrder": 7,
+        "kind": "debt-stack",
+        "title": "부채와 임대 고정의무 스택",
+        "proves": "CoreWeave의 두 번째 재무제표가 debt, leases, equipment financing이라는 점.",
+        "seriesHint": "2025 debt principal 21.615B, Q1 2026 lease liabilities 10.1B, OEM financing notional 6.7B",
+        "asset": "assets/166-debt-lease-stack.svg",
+        "placement": "막7 부채와 임대 설명 직후",
+        "insertAfter": "총부채와 operating lease liabilities를 설명한 문단 뒤",
+        "narrativeUse": "AI 수요가 재무제표에서 어떤 고정 의무로 바뀌는지 보여준다."
+      },
+      {
+        "actOrder": 8,
+        "kind": "checklist",
+        "title": "다음 10-Q 공시 체크리스트",
+        "proves": "독자가 다음 공시에서 무엇을 먼저 볼지 남긴다.",
+        "seriesHint": "backlog, RPO, capex, OCF, debt service, customer concentration",
+        "asset": "assets/166-next-checkpoints.svg",
+        "placement": "결론 직전 체크리스트 위치",
+        "insertAfter": "이 이야기가 틀리는 조건을 설명한 뒤",
+        "narrativeUse": "글을 요약이 아니라 다음 공시 읽기 순서로 닫는다."
+      }
+    ],
+    "imagePlan": [
+      {
+        "slot": "hero",
+        "subject": "데이터센터 서버랙과 GPU 클러스터",
+        "query": "data center server racks",
+        "keywords": [
+          "data center",
+          "server",
+          "rack",
+          "cloud"
+        ],
+        "asset": "assets/166-data-center-racks.webp",
+        "insertAfterAct": 0,
+        "placement": "본문 첫 이미지와 OG 배경",
+        "narrativeUse": "CoreWeave가 파는 것이 추상 클라우드가 아니라 장비와 전력 위의 AI 계산 시간이라는 점을 첫 화면에서 보여준다."
+      },
+      {
+        "slot": "thumbnail",
+        "subject": "AI 데이터센터 썸네일 배경",
+        "query": "server room data center racks",
+        "keywords": [
+          "server",
+          "data",
+          "rack"
+        ],
+        "asset": "assets/166-thumbnail-bg.webp",
+        "insertAfterAct": 0,
+        "placement": "OG 썸네일 합성 배경",
+        "narrativeUse": "제목의 99B backlog와 GPU 부채 기계를 한 화면으로 묶는다."
+      },
+      {
+        "slot": "inline",
+        "subject": "전력 설비와 변전소",
+        "query": "electrical substation power transformer data center",
+        "keywords": [
+          "substation",
+          "power",
+          "transformer",
+          "electric"
+        ],
+        "asset": "assets/166-substation-power.webp",
+        "insertAfterAct": 2,
+        "placement": "막2 클라우드가 데이터센터와 전력으로 내려오는 설명 뒤",
+        "narrativeUse": "AI 클라우드의 병목이 GPU뿐 아니라 전력과 임대라는 점을 보여준다."
+      },
+      {
+        "slot": "inline",
+        "subject": "서버룸 네트워크 장비",
+        "query": "server room network switches data center",
+        "keywords": [
+          "server",
+          "network",
+          "switch",
+          "data center"
+        ],
+        "asset": "assets/166-server-network.webp",
+        "insertAfterAct": 6,
+        "placement": "막6 NVIDIA 생태계와 인프라 스택 설명 뒤",
+        "narrativeUse": "GPU만이 아니라 네트워크와 운영 레이어가 CoreWeave 상품의 일부라는 점을 보강한다."
+      }
+    ],
+    "relatedPosts": {
+      "searches": [
+        "NVIDIA",
+        "Dell",
+        "GE Vernova",
+        "Micron",
+        "AI 전력",
+        "반도체 냉각",
+        "데이터센터",
+        "EDGAR"
+      ],
+      "links": [
+        {
+          "path": "/blog/NVDA-nvidia",
+          "title": "NVIDIA 기업이야기",
+          "reason": "CoreWeave가 기대는 GPU 공급망의 상단을 이해하는 선행 글이다.",
+          "placement": "막6 NVIDIA 관계를 설명하는 위치"
+        },
+        {
+          "path": "/blog/DELL-dell-technologies",
+          "title": "Dell Technologies 기업이야기",
+          "reason": "AI 서버와 인프라 조립 레이어가 CoreWeave와 어떻게 맞물리는지 비교한다.",
+          "placement": "막2 인프라 스택 설명 위치"
+        },
+        {
+          "path": "/blog/GEV-ge-vernova",
+          "title": "GE Vernova 기업이야기",
+          "reason": "데이터센터 전력 수요가 전력망과 가스터빈 backlog로 이어지는 다른 층위의 사례다.",
+          "placement": "막2 전력과 데이터센터 설명 위치"
+        },
+        {
+          "path": "/blog/MU-micron",
+          "title": "Micron 기업이야기",
+          "reason": "AI 인프라 수요가 메모리와 GPU 클라우드로 나뉘는 점을 연결한다.",
+          "placement": "에필로그 함께 읽을 글"
+        },
+        {
+          "path": "/blog/semiconductor-cooling-network",
+          "title": "반도체 냉각 기술 이야기",
+          "reason": "AI 인프라가 계산, 전력, 냉각을 동시에 요구한다는 배경을 보강한다.",
+          "placement": "프롤로그 AI 인프라 전체 그림 위치"
+        }
+      ],
+      "placementRule": "선행 글은 같은 내용을 반복하지 않고, CoreWeave가 맡은 AI 인프라 층위를 설명할 때 한 문장으로 연결한다."
+    },
+    "honestyGuards": [
+      "99.4B는 GAAP 매출이 아니라 CoreWeave가 정의한 revenue backlog다. RPO와 other estimated future revenue를 포함한다.",
+      "RPO와 revenue backlog는 실제 매출과 현금이 아니다. delivery와 availability requirements를 충족해야 한다.",
+      "영업현금흐름이 커도 투자현금유출과 debt service가 더 크면 외부 자금 의존은 계속된다.",
+      "Microsoft 67%는 2025년 매출 기준 top customer 집중도이며, OpenAI와 Meta commitment는 미래 기간에 걸친 약정이다.",
+      "NVIDIA 투자는 성장 신뢰 신호지만 공급망 독립성이나 수익성을 보장하지 않는다.",
+      "투자 권유, 목표주가, 단기 매수 매도 결론으로 닫지 않는다."
+    ],
+    "evidenceMap": [
+      {
+        "claim": "CoreWeave는 2025년 3월 Nasdaq CRWV로 public listing을 완료했다.",
+        "sourceType": "EDGAR",
+        "period": "2026",
+        "sourceRef": "CoreWeave Investor Relations overview",
+        "howUsed": "최근 EDGAR 상장주 선정 근거"
+      },
+      {
+        "claim": "2026Q1 revenue backlog 99.4B와 RPO 98.8B",
+        "sourceType": "EDGAR",
+        "period": "2026Q1",
+        "sourceRef": "CoreWeave Q1 2026 earnings press release and presentation",
+        "howUsed": "제목과 막1 핵심 수치"
+      },
+      {
+        "claim": "2026Q1 revenue 2.078B, operating loss 144M, interest expense net 536M, net loss 740M",
+        "sourceType": "EDGAR",
+        "period": "2026Q1",
+        "sourceRef": "CoreWeave 2026Q1 Form 10-Q results of operations",
+        "howUsed": "막3 손익계산서 반전"
+      },
+      {
+        "claim": "2026Q1 OCF 2.984B, investing cash outflow 7.708B, financing inflow 3.914B",
+        "sourceType": "EDGAR",
+        "period": "2026Q1",
+        "sourceRef": "CoreWeave 2026Q1 Form 10-Q cash flows",
+        "howUsed": "막4 현금흐름 설명"
+      },
+      {
+        "claim": "2025년 Microsoft가 revenue 약 67%를 차지했다.",
+        "sourceType": "EDGAR",
+        "period": "2025",
+        "sourceRef": "CoreWeave 2025 Form 10-K risk factors and customer concentration",
+        "howUsed": "막5 고객 집중"
+      },
+      {
+        "claim": "2025년 말 total principal of debt 21.615B, current debt 6.708B",
+        "sourceType": "EDGAR",
+        "period": "2025",
+        "sourceRef": "CoreWeave 2025 Form 10-K Note 10 Debt",
+        "howUsed": "막7 부채와 임대"
+      },
+      {
+        "claim": "2026Q1 operating lease liabilities 10.1B, OEM and software financing notional 6.7B",
+        "sourceType": "EDGAR",
+        "period": "2026Q1",
+        "sourceRef": "CoreWeave 2026Q1 Form 10-Q risk factors",
+        "howUsed": "막7 두 번째 재무제표"
+      },
+      {
+        "claim": "dartlab Company CRWV panel은 2026Q1 IS, BS, CF 핵심 줄을 반환한다.",
+        "sourceType": "dartlab",
+        "period": "2026Q1",
+        "sourceRef": "Company('CRWV').panel('IS'), panel('BS'), panel('CF')",
+        "howUsed": "검증표와 재현 코드"
+      },
+      {
+        "claim": "NVIDIA, Dell, GE Vernova 선행 글이 AI 인프라의 다른 층위를 다뤘다.",
+        "sourceType": "internal-blog",
+        "period": "2026",
+        "sourceRef": "/blog/NVDA-nvidia, /blog/DELL-dell-technologies, /blog/GEV-ge-vernova",
+        "howUsed": "내부 링크와 차별화"
+      }
+    ],
+    "reviewGate": {
+      "status": "passed",
+      "requiredRounds": [
+        {
+          "id": "titleHook",
+          "status": "passed"
+        },
+        {
+          "id": "writerPanel",
+          "status": "passed"
+        },
+        {
+          "id": "honestyEvidence",
+          "status": "passed"
+        },
+        {
+          "id": "visualStoryPlan",
+          "status": "passed"
+        },
+        {
+          "id": "imageFit",
+          "status": "passed"
+        },
+        {
+          "id": "readerFit",
+          "status": "passed"
+        },
+        {
+          "id": "reevaluation",
+          "status": "passed"
+        }
+      ],
+      "decisionLog": [
+        {
+          "round": "r1",
+          "decision": "revise",
+          "note": "초안은 AI 클라우드 성장과 IPO 관심을 앞세워 NVIDIA, Dell 선행 글과 겹쳤다. 99.4B backlog와 부채, 임대, GPU capex의 충돌을 첫 질문으로 바꿨다."
+        },
+        {
+          "round": "r2",
+          "decision": "passed",
+          "note": "최종안은 backlog, 물리 인프라, 손익, 현금흐름, 고객 집중, NVIDIA 관계, 부채와 임대가 하나의 관통선으로 연결된다."
+        }
+      ],
+      "loopEvidence": {
+        "workflow": "blog_plan_loop.workflow.js",
+        "rounds": [
+          {
+            "round": 1,
+            "planner": "기획작가 초안: CoreWeave를 2025년 IPO 이후 AI 클라우드 성장주로 제시하고, 매출 성장과 backlog를 중심으로 구성",
+            "evaluator": "점수 88. 최근성과 후킹은 있으나 성장주 소개에 가깝다. 손익계산서와 현금흐름표의 반전, debt service, customer concentration을 제목부터 끌어와야 한다.",
+            "skeptic": "verdict kill. AI 클라우드 수혜주라는 문장은 NVIDIA와 Dell 글의 하위 반복이다. CoreWeave만의 내러티브는 수요보다 선투자와 자금조달이다.",
+            "decision": "revise",
+            "evaluatorScore": 88,
+            "plannerRevision": "제목을 99B backlog와 빚으로 바꾸고, Q1 2026 OCF 2.984B와 investing outflow 7.708B, 2025 debt 21.615B를 기획 중심으로 올림"
+          },
+          {
+            "round": 2,
+            "planner": "기획작가 개선안: backlog, GPU fleet capex, customer concentration, NVIDIA investment, lease liabilities를 한 구조로 재작성",
+            "evaluator": "점수 94. 첫 질문이 강하고, 초보자도 backlog와 매출, 영업현금과 투자현금, 대형 고객과 집중 리스크를 구분할 수 있다.",
+            "skeptic": "verdict survive. 숫자 범위 가드가 있고, 99.4B를 매출로 과장하지 않는다. 투자 권유가 아니라 다음 공시 체크리스트로 닫는다.",
+            "decision": "passed",
+            "evaluatorScore": 94,
+            "plannerRevision": "최종 통과안"
+          }
+        ],
+        "note": "메인 스레드에서 SEC 10-K, 10-Q, CoreWeave IR, dartlab CRWV panel을 대조해 기획 루프를 수동 기록했다."
+      }
+    }
+  },
+  "passed": true,
+  "rounds": 2,
+  "corpName": "CoreWeave",
+  "stockCode": "CRWV",
+  "contentKind": "company-reports"
+}

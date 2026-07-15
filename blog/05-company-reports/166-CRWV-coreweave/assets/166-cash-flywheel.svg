@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" role="img" aria-labelledby="title desc">
+  <title id="title">CoreWeave cash flow gap</title>
+  <desc id="desc">Operating cash flow was positive in Q1 2026, but investing cash outflow was much larger.</desc>
+  <rect width="960" height="540" fill="#06131a"/>
+  <rect x="38" y="36" width="884" height="468" rx="24" fill="#0b1b24" stroke="#1e3a46"/>
+  <text x="70" y="86" fill="#f8fafc" font-family="Malgun Gothic, Arial" font-size="28" font-weight="700">고객 현금이 들어와도 GPU 투자가 더 빨리 나간다</text>
+  <text x="70" y="120" fill="#9fb3c8" font-family="Malgun Gothic, Arial" font-size="16">2026Q1 현금흐름. 파란색은 유입, 붉은색은 유출. 단위: USD 십억 달러.</text>
+  <line x1="180" y1="285" x2="840" y2="285" stroke="#355064" stroke-width="2"/>
+  <g font-family="Malgun Gothic, Arial">
+    <rect x="196" y="189" width="126" height="96" rx="12" fill="#22c55e"/>
+    <text x="259" y="176" text-anchor="middle" fill="#dcfce7" font-size="28" font-weight="700">+2.984</text>
+    <text x="259" y="324" text-anchor="middle" fill="#cbd5e1" font-size="16">영업현금</text>
+    <rect x="432" y="285" width="126" height="178" rx="12" fill="#fb7185"/>
+    <text x="495" y="482" text-anchor="middle" fill="#ffe4e6" font-size="28" font-weight="700">-7.708</text>
+    <text x="495" y="324" text-anchor="middle" fill="#cbd5e1" font-size="16">투자현금</text>
+    <rect x="668" y="160" width="126" height="125" rx="12" fill="#38bdf8"/>
+    <text x="731" y="146" text-anchor="middle" fill="#e0f2fe" font-size="28" font-weight="700">+3.914</text>
+    <text x="731" y="324" text-anchor="middle" fill="#cbd5e1" font-size="16">재무현금</text>
+  </g>
+  <path d="M322 228 C370 190 390 190 432 218" fill="none" stroke="#94a3b8" stroke-width="3" stroke-dasharray="7 7"/>
+  <path d="M558 396 C610 430 635 405 668 235" fill="none" stroke="#94a3b8" stroke-width="3" stroke-dasharray="7 7"/>
+  <text x="70" y="488" fill="#9fb3c8" font-family="Malgun Gothic, Arial" font-size="15">핵심: OCF가 좋아도 capex가 더 크면 외부 자금은 계속 필요하다.</text>
+</svg>

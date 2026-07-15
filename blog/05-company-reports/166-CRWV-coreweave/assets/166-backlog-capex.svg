@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" role="img" aria-labelledby="title desc">
+  <title id="title">CoreWeave revenue backlog and revenue comparison</title>
+  <desc id="desc">Q1 2026 revenue backlog is far larger than quarterly revenue, showing that the story is future contract conversion, not only current sales.</desc>
+  <rect width="960" height="540" fill="#07111f"/>
+  <rect x="36" y="36" width="888" height="468" rx="24" fill="#0d1728" stroke="#1f3150"/>
+  <text x="70" y="88" fill="#f8fafc" font-family="Malgun Gothic, Arial" font-size="28" font-weight="700">99.4B backlog는 매출이 아니라 미래 수행 의무다</text>
+  <text x="70" y="122" fill="#94a3b8" font-family="Malgun Gothic, Arial" font-size="16">단위: USD 십억 달러. 2026Q1 revenue는 분기 매출, RPO와 backlog는 2026-03-31 잔액.</text>
+  <line x1="180" y1="420" x2="820" y2="420" stroke="#334155" stroke-width="2"/>
+  <g font-family="Malgun Gothic, Arial" font-size="16" fill="#cbd5e1">
+    <text x="194" y="452">2026Q1 매출</text>
+    <text x="408" y="452">RPO</text>
+    <text x="626" y="452">Revenue backlog</text>
+  </g>
+  <rect x="210" y="404" width="116" height="16" rx="8" fill="#38bdf8"/>
+  <rect x="420" y="118" width="116" height="302" rx="12" fill="#a78bfa"/>
+  <rect x="650" y="116" width="116" height="304" rx="12" fill="#fb7185"/>
+  <g font-family="Malgun Gothic, Arial" text-anchor="middle">
+    <text x="268" y="386" fill="#e0f2fe" font-size="30" font-weight="700">2.078B</text>
+    <text x="478" y="100" fill="#ede9fe" font-size="30" font-weight="700">98.8B</text>
+    <text x="708" y="98" fill="#ffe4e6" font-size="30" font-weight="700">99.4B</text>
+  </g>
+  <g fill="#94a3b8" font-family="Malgun Gothic, Arial" font-size="15">
+    <text x="70" y="486">읽는 법: backlog가 커질수록 좋은 소식은 커진다. 동시에 delivery, availability, GPU 공급, 전력 연결을 통과해야 한다.</text>
+  </g>
+</svg>
