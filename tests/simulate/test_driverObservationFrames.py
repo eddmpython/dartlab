@@ -3145,6 +3145,35 @@ def testRegistryEdgarExactPriceAndMacroLanesFeedConditionalExperiment(tmp_path) 
     assert any(ref.startswith("adjustmentPolicyHash:") for ref in base.pathSourceRefs)
     assert "returnFormula:simpleReturn=currentClose/previousClose-1" in base.pathSourceRefs
     assert "macroRevisionPolicy:revised-history" in base.pathSourceRefs
+    assert base.providerLaneLineageHash
+    assert "derivedProviderObservationBatch" in base.providerLineageStatus
+    assert "revisedHistory" in base.providerLineageStatus
+    assert "rawSourceRefOnly" in base.providerLineageStatus
+    assert "explicitAssumption" in base.providerLineageStatus
+    assert base.providerObservationBatchReceiptIds
+    assert base.providerObservationBatchIds
+    assert base.providerObservationBatchSourceReceiptIds
+    assert base.priceSourceLegReceiptIds
+    assert base.derivedReturnReceiptIds
+    assert base.adjustmentPolicyHashes
+    assert base.normalizationContractHashes
+    assert base.returnTransformHash
+    assert "data/macro/quarterly-fixture" in base.rawSourceRefs
+    assert "revised-history" in base.revisedHistoryRefs
+    assert experiment.providerLaneLineageHashes == tuple(
+        dict.fromkeys(ledger.providerLaneLineageHash for ledger in experiment.caseLedgers)
+    )
+    assert experiment.providerObservationBatchReceiptIds == tuple(
+        dict.fromkeys(
+            receiptId for ledger in experiment.caseLedgers for receiptId in ledger.providerObservationBatchReceiptIds
+        )
+    )
+    assert experiment.priceSourceLegReceiptIds == tuple(
+        dict.fromkeys(receiptId for ledger in experiment.caseLedgers for receiptId in ledger.priceSourceLegReceiptIds)
+    )
+    assert experiment.derivedReturnReceiptIds == tuple(
+        dict.fromkeys(receiptId for ledger in experiment.caseLedgers for receiptId in ledger.derivedReturnReceiptIds)
+    )
     assert "assumption://base/manual-demand-adjustment-quarterly" in base.assumptionRefs
     assert base.explicitAssumptionIds == ("base-manual-demand-adjustment-quarterly",)
     assert base.pathAdmissionReceiptId == ""

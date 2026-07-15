@@ -75,6 +75,7 @@ from dartlab.simulate.scenarioComposition import (
     OperatingScenarioCase,
     ScenarioCoefficientBinding,
     ScenarioCompositionError,
+    _caseLedgerHashes,
     bindConditionalScenarioExperimentReceipt,
     bindConditionalStrategyEvaluationReceipt,
     buildConditionalStrategyEvaluation,
@@ -2080,6 +2081,41 @@ def testConditionalScenarioExperimentReceiptBindsResultAndStrategyContent(tmp_pa
     tampered = replace(changed, strategySummaries=())
     with pytest.raises(ScenarioCompositionError, match="conditional experiment receipt verification failed"):
         bindConditionalScenarioExperimentReceipt(tampered, receipt.receiptId, changedVerifier)
+
+
+def testCaseLedgerHashBindsExecutionTraceAndProviderLineage(tmp_path) -> None:
+    _, _, _, _, _, experiment = _signedConditionalExperiment(tmp_path)
+    ledger = experiment.caseLedgers[0]
+    baseline = experiment.caseLedgerHashes[0]
+
+    changes = (
+        replace(ledger, executableHash="9" * 64),
+        replace(ledger, traceRoot=canonicalPayloadHash({"tamperedTrace": ledger.caseId})),
+        replace(ledger, traceCount=ledger.traceCount + 1),
+        replace(ledger, retainedTraceCount=ledger.retainedTraceCount + 1),
+        replace(ledger, recommendationCeiling="tampered"),
+        replace(ledger, providerLaneLineageHash="8" * 64),
+        replace(ledger, providerObservationBatchReceiptIds=("7" * 64,)),
+        replace(ledger, rawSourceRefs=(*ledger.rawSourceRefs, "source:tampered")),
+    )
+
+    for changedLedger in changes:
+        assert _caseLedgerHashes((changedLedger,))[0] != baseline
+
+
+def testRawProviderObservationStringDoesNotBecomeReceiptLineage(tmp_path) -> None:
+    _, _, _, _, _, experiment = _signedConditionalExperiment(tmp_path)
+    base = experiment.caseLedgers[0]
+    payload = conditionalScenarioExperimentPayload(experiment)
+    payloadCase = payload["cases"][0]
+
+    assert "providerObservationBatch:observed-demand-history" in base.providerObservationBatchRefs
+    assert base.providerObservationBatchReceiptIds == ()
+    assert "exactProviderObservationBatch" not in base.providerLineageStatus
+    assert "unverifiedProviderObservationRef" in base.providerLineageStatus
+    assert payload["inputs"]["providerObservationBatchReceiptIds"] == ()
+    assert payloadCase["providerObservationBatchReceiptIds"] == ()
+    assert payloadCase["providerLaneLineageHash"] == base.providerLaneLineageHash
 
 
 def testConditionalScenarioExperimentReceiptRejectsWrongKindOrMissingParents(tmp_path) -> None:

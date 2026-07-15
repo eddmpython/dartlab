@@ -146,7 +146,33 @@ STRATEGY_SET_VERSION = "strategy-set-v1"
 _OPERATING_ACTION_IDS = {"priceChange", "capacityInvestment", "borrow", "repay"}
 _ASSUMPTION_REF_PREFIXES = ("assumption:", "assumption://")
 _DRIVER_COEFFICIENT_ADMISSION_REF_PREFIX = "driverCoefficientAdmission:"
-_PROVIDER_OBSERVATION_REF_PREFIXES = ("providerObservationBatch:", "providerObservationBatchId:")
+_PROVIDER_OBSERVATION_BATCH_REF_PREFIX = "providerObservationBatch:"
+_PROVIDER_OBSERVATION_BATCH_ID_REF_PREFIX = "providerObservationBatchId:"
+_PROVIDER_SOURCE_RECEIPT_REF_PREFIX = "sourceReceiptRef:"
+_PRICE_SOURCE_LEG_RECEIPT_REF_PREFIX = "priceSourceLegReceiptId:"
+_DERIVED_RETURN_RECEIPT_REF_PREFIX = "derivedReturnReceiptId:"
+_ADJUSTMENT_POLICY_HASH_REF_PREFIX = "adjustmentPolicyHash:"
+_NORMALIZATION_CONTRACT_HASH_REF_PREFIX = "normalizationContractHash:"
+_RETURN_TRANSFORM_REF_PREFIX = "returnTransform:"
+_RETURN_FORMULA_REF_PREFIX = "returnFormula:"
+_FACTOR_MAPPING_REF_PREFIX = "factorMapping:"
+_MACRO_REVISION_POLICY_REF_PREFIX = "macroRevisionPolicy:"
+_PROVIDER_OBSERVATION_REF_PREFIXES = (
+    _PROVIDER_OBSERVATION_BATCH_REF_PREFIX,
+    _PROVIDER_OBSERVATION_BATCH_ID_REF_PREFIX,
+)
+_STRUCTURED_PROVIDER_LINEAGE_REF_PREFIXES = (
+    *_PROVIDER_OBSERVATION_REF_PREFIXES,
+    _PROVIDER_SOURCE_RECEIPT_REF_PREFIX,
+    _PRICE_SOURCE_LEG_RECEIPT_REF_PREFIX,
+    _DERIVED_RETURN_RECEIPT_REF_PREFIX,
+    _ADJUSTMENT_POLICY_HASH_REF_PREFIX,
+    _NORMALIZATION_CONTRACT_HASH_REF_PREFIX,
+    _RETURN_TRANSFORM_REF_PREFIX,
+    _RETURN_FORMULA_REF_PREFIX,
+    _FACTOR_MAPPING_REF_PREFIX,
+    _MACRO_REVISION_POLICY_REF_PREFIX,
+)
 _STATE_REF_PREFIXES = (
     "compiledState:",
     "initialStateAdmission:",
@@ -313,6 +339,50 @@ class ScenarioDriverRegistryLedger:
 
 
 @dataclass(frozen=True)
+class ScenarioProviderLineageLedger:
+    """Structured provider source lineage row for one scenario case."""
+
+    providerLaneLineageHash: str
+    providerLineageStatus: tuple[str, ...]
+    providerObservationBatchReceiptIds: tuple[str, ...]
+    providerObservationBatchIds: tuple[str, ...]
+    providerObservationBatchSourceReceiptIds: tuple[str, ...]
+    priceSourceLegReceiptIds: tuple[str, ...]
+    derivedReturnReceiptIds: tuple[str, ...]
+    adjustmentPolicyHashes: tuple[str, ...]
+    normalizationContractHashes: tuple[str, ...]
+    returnTransformRefs: tuple[str, ...]
+    returnTransformHash: str
+    factorMappingRefs: tuple[str, ...]
+    rawSourceRefs: tuple[str, ...]
+    revisedHistoryRefs: tuple[str, ...]
+    explicitAssumptionIds: tuple[str, ...]
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "providerLineageStatus", tuple(self.providerLineageStatus))
+        object.__setattr__(
+            self,
+            "providerObservationBatchReceiptIds",
+            tuple(self.providerObservationBatchReceiptIds),
+        )
+        object.__setattr__(self, "providerObservationBatchIds", tuple(self.providerObservationBatchIds))
+        object.__setattr__(
+            self,
+            "providerObservationBatchSourceReceiptIds",
+            tuple(self.providerObservationBatchSourceReceiptIds),
+        )
+        object.__setattr__(self, "priceSourceLegReceiptIds", tuple(self.priceSourceLegReceiptIds))
+        object.__setattr__(self, "derivedReturnReceiptIds", tuple(self.derivedReturnReceiptIds))
+        object.__setattr__(self, "adjustmentPolicyHashes", tuple(self.adjustmentPolicyHashes))
+        object.__setattr__(self, "normalizationContractHashes", tuple(self.normalizationContractHashes))
+        object.__setattr__(self, "returnTransformRefs", tuple(self.returnTransformRefs))
+        object.__setattr__(self, "factorMappingRefs", tuple(self.factorMappingRefs))
+        object.__setattr__(self, "rawSourceRefs", tuple(self.rawSourceRefs))
+        object.__setattr__(self, "revisedHistoryRefs", tuple(self.revisedHistoryRefs))
+        object.__setattr__(self, "explicitAssumptionIds", tuple(self.explicitAssumptionIds))
+
+
+@dataclass(frozen=True)
 class OperatingScenarioCaseResult:
     """Run output and audit envelope for one scenario case."""
 
@@ -417,6 +487,21 @@ class OneCompanyScenarioCaseLedger:
     pathFactorContractHash: str
     pathSourceRefs: tuple[str, ...]
     providerObservationBatchRefs: tuple[str, ...]
+    providerLineage: ScenarioProviderLineageLedger
+    providerLaneLineageHash: str
+    providerLineageStatus: tuple[str, ...]
+    providerObservationBatchReceiptIds: tuple[str, ...]
+    providerObservationBatchIds: tuple[str, ...]
+    providerObservationBatchSourceReceiptIds: tuple[str, ...]
+    priceSourceLegReceiptIds: tuple[str, ...]
+    derivedReturnReceiptIds: tuple[str, ...]
+    adjustmentPolicyHashes: tuple[str, ...]
+    normalizationContractHashes: tuple[str, ...]
+    returnTransformRefs: tuple[str, ...]
+    returnTransformHash: str
+    factorMappingRefs: tuple[str, ...]
+    rawSourceRefs: tuple[str, ...]
+    revisedHistoryRefs: tuple[str, ...]
     explicitAssumptionIds: tuple[str, ...]
     scenarioPathPackageHash: str
     scenarioPathPackageSubjectHash: str
@@ -488,6 +573,28 @@ class OneCompanyScenarioCaseLedger:
         object.__setattr__(self, "stateRefs", tuple(self.stateRefs))
         object.__setattr__(self, "pathSourceRefs", tuple(self.pathSourceRefs))
         object.__setattr__(self, "providerObservationBatchRefs", tuple(self.providerObservationBatchRefs))
+        if not isinstance(self.providerLineage, ScenarioProviderLineageLedger):
+            raise TypeError("providerLineage must be a ScenarioProviderLineageLedger")
+        object.__setattr__(self, "providerLineageStatus", tuple(self.providerLineageStatus))
+        object.__setattr__(
+            self,
+            "providerObservationBatchReceiptIds",
+            tuple(self.providerObservationBatchReceiptIds),
+        )
+        object.__setattr__(self, "providerObservationBatchIds", tuple(self.providerObservationBatchIds))
+        object.__setattr__(
+            self,
+            "providerObservationBatchSourceReceiptIds",
+            tuple(self.providerObservationBatchSourceReceiptIds),
+        )
+        object.__setattr__(self, "priceSourceLegReceiptIds", tuple(self.priceSourceLegReceiptIds))
+        object.__setattr__(self, "derivedReturnReceiptIds", tuple(self.derivedReturnReceiptIds))
+        object.__setattr__(self, "adjustmentPolicyHashes", tuple(self.adjustmentPolicyHashes))
+        object.__setattr__(self, "normalizationContractHashes", tuple(self.normalizationContractHashes))
+        object.__setattr__(self, "returnTransformRefs", tuple(self.returnTransformRefs))
+        object.__setattr__(self, "factorMappingRefs", tuple(self.factorMappingRefs))
+        object.__setattr__(self, "rawSourceRefs", tuple(self.rawSourceRefs))
+        object.__setattr__(self, "revisedHistoryRefs", tuple(self.revisedHistoryRefs))
         object.__setattr__(self, "explicitAssumptionIds", tuple(self.explicitAssumptionIds))
         object.__setattr__(
             self,
@@ -660,6 +767,18 @@ class ConditionalScenarioExperiment:
     driverRegistrySourceRefs: tuple[str, ...]
     driverRegistryWarnings: tuple[str, ...]
     providerObservationBatchRefs: tuple[str, ...]
+    providerLaneLineageHashes: tuple[str, ...]
+    providerLineageStatuses: tuple[str, ...]
+    providerObservationBatchReceiptIds: tuple[str, ...]
+    providerObservationBatchIds: tuple[str, ...]
+    providerObservationBatchSourceReceiptIds: tuple[str, ...]
+    priceSourceLegReceiptIds: tuple[str, ...]
+    derivedReturnReceiptIds: tuple[str, ...]
+    adjustmentPolicyHashes: tuple[str, ...]
+    normalizationContractHashes: tuple[str, ...]
+    returnTransformHashes: tuple[str, ...]
+    rawSourceRefs: tuple[str, ...]
+    revisedHistoryRefs: tuple[str, ...]
     explicitAssumptionIds: tuple[str, ...]
     pathHistoryInputHashes: tuple[str, ...]
     pathAssumptionHashes: tuple[str, ...]
@@ -689,6 +808,26 @@ class ConditionalScenarioExperiment:
         object.__setattr__(self, "driverRegistrySourceRefs", tuple(self.driverRegistrySourceRefs))
         object.__setattr__(self, "driverRegistryWarnings", tuple(self.driverRegistryWarnings))
         object.__setattr__(self, "providerObservationBatchRefs", tuple(self.providerObservationBatchRefs))
+        object.__setattr__(self, "providerLaneLineageHashes", tuple(self.providerLaneLineageHashes))
+        object.__setattr__(self, "providerLineageStatuses", tuple(self.providerLineageStatuses))
+        object.__setattr__(
+            self,
+            "providerObservationBatchReceiptIds",
+            tuple(self.providerObservationBatchReceiptIds),
+        )
+        object.__setattr__(self, "providerObservationBatchIds", tuple(self.providerObservationBatchIds))
+        object.__setattr__(
+            self,
+            "providerObservationBatchSourceReceiptIds",
+            tuple(self.providerObservationBatchSourceReceiptIds),
+        )
+        object.__setattr__(self, "priceSourceLegReceiptIds", tuple(self.priceSourceLegReceiptIds))
+        object.__setattr__(self, "derivedReturnReceiptIds", tuple(self.derivedReturnReceiptIds))
+        object.__setattr__(self, "adjustmentPolicyHashes", tuple(self.adjustmentPolicyHashes))
+        object.__setattr__(self, "normalizationContractHashes", tuple(self.normalizationContractHashes))
+        object.__setattr__(self, "returnTransformHashes", tuple(self.returnTransformHashes))
+        object.__setattr__(self, "rawSourceRefs", tuple(self.rawSourceRefs))
+        object.__setattr__(self, "revisedHistoryRefs", tuple(self.revisedHistoryRefs))
         object.__setattr__(self, "explicitAssumptionIds", tuple(self.explicitAssumptionIds))
         object.__setattr__(self, "pathHistoryInputHashes", tuple(self.pathHistoryInputHashes))
         object.__setattr__(self, "pathAssumptionHashes", tuple(self.pathAssumptionHashes))
@@ -847,6 +986,152 @@ def _driverCoefficientAdmissionReceiptId(sourceRef: str) -> str:
 
 def _filterRefs(refs: tuple[str, ...], prefixes: tuple[str, ...]) -> tuple[str, ...]:
     return _dedupe(tuple(ref for ref in refs if ref.startswith(prefixes)))
+
+
+def _dedupeSorted(values: tuple[str, ...]) -> tuple[str, ...]:
+    return tuple(sorted({value for value in values if value}))
+
+
+def _refValues(
+    refs: tuple[str, ...],
+    prefix: str,
+    *,
+    requireDigest: bool = False,
+) -> tuple[str, ...]:
+    values = tuple(ref[len(prefix) :] for ref in refs if ref.startswith(prefix) and ref[len(prefix) :])
+    if requireDigest:
+        values = tuple(value for value in values if _validDigest(value))
+    return _dedupeSorted(values)
+
+
+def _rawProviderSourceRefs(pathSourceRefs: tuple[str, ...]) -> tuple[str, ...]:
+    return _dedupeSorted(
+        tuple(
+            ref
+            for ref in pathSourceRefs
+            if not ref.startswith(_STRUCTURED_PROVIDER_LINEAGE_REF_PREFIXES)
+            and not ref.startswith(_ASSUMPTION_REF_PREFIXES)
+        )
+    )
+
+
+def _providerLineageStatuses(
+    *,
+    providerObservationBatchRefs: tuple[str, ...],
+    providerObservationBatchReceiptIds: tuple[str, ...],
+    priceSourceLegReceiptIds: tuple[str, ...],
+    derivedReturnReceiptIds: tuple[str, ...],
+    rawSourceRefs: tuple[str, ...],
+    revisedHistoryRefs: tuple[str, ...],
+    explicitAssumptionIds: tuple[str, ...],
+) -> tuple[str, ...]:
+    statuses: list[str] = []
+    if providerObservationBatchReceiptIds and (priceSourceLegReceiptIds or derivedReturnReceiptIds):
+        statuses.append("derivedProviderObservationBatch")
+    elif providerObservationBatchReceiptIds:
+        statuses.append("exactProviderObservationBatch")
+    elif providerObservationBatchRefs:
+        statuses.append("unverifiedProviderObservationRef")
+    if revisedHistoryRefs:
+        statuses.append("revisedHistory")
+    if rawSourceRefs:
+        statuses.append("rawSourceRefOnly")
+    if explicitAssumptionIds:
+        statuses.append("explicitAssumption")
+    if not statuses:
+        statuses.append("noProviderLineage")
+    return tuple(statuses)
+
+
+def _providerLineageLedger(
+    *,
+    pathSourceRefs: tuple[str, ...],
+    providerObservationBatchRefs: tuple[str, ...],
+    explicitAssumptionIds: tuple[str, ...],
+) -> ScenarioProviderLineageLedger:
+    providerObservationBatchReceiptIds = _refValues(
+        pathSourceRefs,
+        _PROVIDER_OBSERVATION_BATCH_REF_PREFIX,
+        requireDigest=True,
+    )
+    providerObservationBatchIds = _refValues(pathSourceRefs, _PROVIDER_OBSERVATION_BATCH_ID_REF_PREFIX)
+    providerObservationBatchSourceReceiptIds = _refValues(
+        pathSourceRefs,
+        _PROVIDER_SOURCE_RECEIPT_REF_PREFIX,
+        requireDigest=True,
+    )
+    priceSourceLegReceiptIds = _refValues(
+        pathSourceRefs,
+        _PRICE_SOURCE_LEG_RECEIPT_REF_PREFIX,
+        requireDigest=True,
+    )
+    derivedReturnReceiptIds = _refValues(
+        pathSourceRefs,
+        _DERIVED_RETURN_RECEIPT_REF_PREFIX,
+        requireDigest=True,
+    )
+    adjustmentPolicyHashes = _refValues(pathSourceRefs, _ADJUSTMENT_POLICY_HASH_REF_PREFIX, requireDigest=True)
+    normalizationContractHashes = _refValues(
+        pathSourceRefs,
+        _NORMALIZATION_CONTRACT_HASH_REF_PREFIX,
+        requireDigest=True,
+    )
+    returnTransformRefs = _refValues(pathSourceRefs, _RETURN_TRANSFORM_REF_PREFIX)
+    returnFormulaRefs = _refValues(pathSourceRefs, _RETURN_FORMULA_REF_PREFIX)
+    factorMappingRefs = _refValues(pathSourceRefs, _FACTOR_MAPPING_REF_PREFIX)
+    revisedHistoryRefs = _refValues(pathSourceRefs, _MACRO_REVISION_POLICY_REF_PREFIX)
+    rawSourceRefs = _rawProviderSourceRefs(pathSourceRefs)
+    returnTransformHash = canonicalPayloadHash(
+        {
+            "schemaVersion": CONDITIONAL_SCENARIO_EXPERIMENT_VERSION,
+            "returnTransformRefs": returnTransformRefs,
+            "returnFormulaRefs": returnFormulaRefs,
+        }
+    )
+    providerLineageStatus = _providerLineageStatuses(
+        providerObservationBatchRefs=providerObservationBatchRefs,
+        providerObservationBatchReceiptIds=providerObservationBatchReceiptIds,
+        priceSourceLegReceiptIds=priceSourceLegReceiptIds,
+        derivedReturnReceiptIds=derivedReturnReceiptIds,
+        rawSourceRefs=rawSourceRefs,
+        revisedHistoryRefs=revisedHistoryRefs,
+        explicitAssumptionIds=explicitAssumptionIds,
+    )
+    payload = {
+        "schemaVersion": CONDITIONAL_SCENARIO_EXPERIMENT_VERSION,
+        "providerLineageStatus": providerLineageStatus,
+        "providerObservationBatchReceiptIds": providerObservationBatchReceiptIds,
+        "providerObservationBatchIds": providerObservationBatchIds,
+        "providerObservationBatchSourceReceiptIds": providerObservationBatchSourceReceiptIds,
+        "priceSourceLegReceiptIds": priceSourceLegReceiptIds,
+        "derivedReturnReceiptIds": derivedReturnReceiptIds,
+        "adjustmentPolicyHashes": adjustmentPolicyHashes,
+        "normalizationContractHashes": normalizationContractHashes,
+        "returnTransformRefs": returnTransformRefs,
+        "returnFormulaRefs": returnFormulaRefs,
+        "returnTransformHash": returnTransformHash,
+        "factorMappingRefs": factorMappingRefs,
+        "rawSourceRefs": rawSourceRefs,
+        "revisedHistoryRefs": revisedHistoryRefs,
+        "explicitAssumptionIds": explicitAssumptionIds,
+    }
+    return ScenarioProviderLineageLedger(
+        providerLaneLineageHash=canonicalPayloadHash(payload),
+        providerLineageStatus=providerLineageStatus,
+        providerObservationBatchReceiptIds=providerObservationBatchReceiptIds,
+        providerObservationBatchIds=providerObservationBatchIds,
+        providerObservationBatchSourceReceiptIds=providerObservationBatchSourceReceiptIds,
+        priceSourceLegReceiptIds=priceSourceLegReceiptIds,
+        derivedReturnReceiptIds=derivedReturnReceiptIds,
+        adjustmentPolicyHashes=adjustmentPolicyHashes,
+        normalizationContractHashes=normalizationContractHashes,
+        returnTransformRefs=returnTransformRefs,
+        returnTransformHash=returnTransformHash,
+        factorMappingRefs=factorMappingRefs,
+        rawSourceRefs=rawSourceRefs,
+        revisedHistoryRefs=revisedHistoryRefs,
+        explicitAssumptionIds=explicitAssumptionIds,
+    )
 
 
 def _explicitAssumptionIds(warnings: tuple[str, ...]) -> tuple[str, ...]:
@@ -2127,6 +2412,14 @@ def _caseLedger(
     assumptionRefs = _filterRefs(conditionRefs, _ASSUMPTION_REF_PREFIXES)
     stateRefs = _dedupe((*initialStateRefs, *_filterRefs(conditionRefs, _STATE_REF_PREFIXES)))
     basePathAdmissionReceiptId = _basePathAdmissionReceiptId(case.pathSet)
+    pathSourceRefs = case.pathSet.audit.sourceRefs
+    providerObservationBatchRefs = _filterRefs(pathSourceRefs, _PROVIDER_OBSERVATION_REF_PREFIXES)
+    explicitAssumptionIds = _explicitAssumptionIds(case.pathSet.audit.warnings)
+    providerLineage = _providerLineageLedger(
+        pathSourceRefs=pathSourceRefs,
+        providerObservationBatchRefs=providerObservationBatchRefs,
+        explicitAssumptionIds=explicitAssumptionIds,
+    )
     return OneCompanyScenarioCaseLedger(
         caseId=result.caseId,
         label=result.label,
@@ -2137,9 +2430,24 @@ def _caseLedger(
         pathSetInputHash=case.pathSet.audit.inputHash,
         pathRegistryHash=case.pathSet.audit.registryHash,
         pathFactorContractHash=case.pathSet.audit.factorContractHash,
-        pathSourceRefs=case.pathSet.audit.sourceRefs,
-        providerObservationBatchRefs=_filterRefs(case.pathSet.audit.sourceRefs, _PROVIDER_OBSERVATION_REF_PREFIXES),
-        explicitAssumptionIds=_explicitAssumptionIds(case.pathSet.audit.warnings),
+        pathSourceRefs=pathSourceRefs,
+        providerObservationBatchRefs=providerObservationBatchRefs,
+        providerLineage=providerLineage,
+        providerLaneLineageHash=providerLineage.providerLaneLineageHash,
+        providerLineageStatus=providerLineage.providerLineageStatus,
+        providerObservationBatchReceiptIds=providerLineage.providerObservationBatchReceiptIds,
+        providerObservationBatchIds=providerLineage.providerObservationBatchIds,
+        providerObservationBatchSourceReceiptIds=providerLineage.providerObservationBatchSourceReceiptIds,
+        priceSourceLegReceiptIds=providerLineage.priceSourceLegReceiptIds,
+        derivedReturnReceiptIds=providerLineage.derivedReturnReceiptIds,
+        adjustmentPolicyHashes=providerLineage.adjustmentPolicyHashes,
+        normalizationContractHashes=providerLineage.normalizationContractHashes,
+        returnTransformRefs=providerLineage.returnTransformRefs,
+        returnTransformHash=providerLineage.returnTransformHash,
+        factorMappingRefs=providerLineage.factorMappingRefs,
+        rawSourceRefs=providerLineage.rawSourceRefs,
+        revisedHistoryRefs=providerLineage.revisedHistoryRefs,
+        explicitAssumptionIds=explicitAssumptionIds,
         scenarioPathPackageHash=result.scenarioPathPackageHash,
         scenarioPathPackageSubjectHash=result.scenarioPathPackageSubjectHash,
         scenarioPathPackageReceiptId=result.scenarioPathPackageReceiptId,
@@ -2223,6 +2531,21 @@ def _caseLedgerHashes(caseLedgers: tuple[OneCompanyScenarioCaseLedger, ...]) -> 
                 "pathFactorContractHash": ledger.pathFactorContractHash,
                 "pathSourceRefs": ledger.pathSourceRefs,
                 "providerObservationBatchRefs": ledger.providerObservationBatchRefs,
+                "providerLineage": ledger.providerLineage,
+                "providerLaneLineageHash": ledger.providerLaneLineageHash,
+                "providerLineageStatus": ledger.providerLineageStatus,
+                "providerObservationBatchReceiptIds": ledger.providerObservationBatchReceiptIds,
+                "providerObservationBatchIds": ledger.providerObservationBatchIds,
+                "providerObservationBatchSourceReceiptIds": ledger.providerObservationBatchSourceReceiptIds,
+                "priceSourceLegReceiptIds": ledger.priceSourceLegReceiptIds,
+                "derivedReturnReceiptIds": ledger.derivedReturnReceiptIds,
+                "adjustmentPolicyHashes": ledger.adjustmentPolicyHashes,
+                "normalizationContractHashes": ledger.normalizationContractHashes,
+                "returnTransformRefs": ledger.returnTransformRefs,
+                "returnTransformHash": ledger.returnTransformHash,
+                "factorMappingRefs": ledger.factorMappingRefs,
+                "rawSourceRefs": ledger.rawSourceRefs,
+                "revisedHistoryRefs": ledger.revisedHistoryRefs,
                 "explicitAssumptionIds": ledger.explicitAssumptionIds,
                 "scenarioPathPackageHash": ledger.scenarioPathPackageHash,
                 "scenarioPathPackageSubjectHash": ledger.scenarioPathPackageSubjectHash,
@@ -2257,8 +2580,12 @@ def _caseLedgerHashes(caseLedgers: tuple[OneCompanyScenarioCaseLedger, ...]) -> 
                 "bridgeHashes": ledger.bridgeHashes,
                 "runHash": ledger.runHash,
                 "resultHash": ledger.resultHash,
+                "executableHash": ledger.executableHash,
                 "parameterHash": ledger.parameterHash,
                 "dataVintageHash": ledger.dataVintageHash,
+                "traceRoot": ledger.traceRoot,
+                "traceCount": ledger.traceCount,
+                "retainedTraceCount": ledger.retainedTraceCount,
                 "initialStateAdmissionReceiptId": ledger.initialStateAdmissionReceiptId,
                 "pathAdmissionReceiptId": ledger.pathAdmissionReceiptId,
                 "pathAdmissionContentHash": ledger.pathAdmissionContentHash,
@@ -2271,6 +2598,7 @@ def _caseLedgerHashes(caseLedgers: tuple[OneCompanyScenarioCaseLedger, ...]) -> 
                 "recommendationEvidenceKind": ledger.recommendationEvidenceKind,
                 "recommendationEvidenceReceiptId": ledger.recommendationEvidenceReceiptId,
                 "conditionalReceiptIdsExcludedFromPolicy": ledger.conditionalReceiptIdsExcludedFromPolicy,
+                "recommendationCeiling": ledger.recommendationCeiling,
                 "decisionStatus": ledger.decisionStatus,
                 "status": ledger.status,
                 "weightLabel": ledger.weightLabel,
@@ -2291,6 +2619,78 @@ def _experimentProviderObservationBatchRefs(
     caseLedgers: tuple[OneCompanyScenarioCaseLedger, ...],
 ) -> tuple[str, ...]:
     return _dedupe(tuple(ref for ledger in caseLedgers for ref in ledger.providerObservationBatchRefs))
+
+
+def _experimentProviderLaneLineageHashes(
+    caseLedgers: tuple[OneCompanyScenarioCaseLedger, ...],
+) -> tuple[str, ...]:
+    return _dedupe(tuple(ledger.providerLaneLineageHash for ledger in caseLedgers))
+
+
+def _experimentProviderLineageStatuses(
+    caseLedgers: tuple[OneCompanyScenarioCaseLedger, ...],
+) -> tuple[str, ...]:
+    return _dedupe(tuple(status for ledger in caseLedgers for status in ledger.providerLineageStatus))
+
+
+def _experimentProviderObservationBatchReceiptIds(
+    caseLedgers: tuple[OneCompanyScenarioCaseLedger, ...],
+) -> tuple[str, ...]:
+    return _dedupe(
+        tuple(receiptId for ledger in caseLedgers for receiptId in ledger.providerObservationBatchReceiptIds)
+    )
+
+
+def _experimentProviderObservationBatchIds(
+    caseLedgers: tuple[OneCompanyScenarioCaseLedger, ...],
+) -> tuple[str, ...]:
+    return _dedupe(tuple(batchId for ledger in caseLedgers for batchId in ledger.providerObservationBatchIds))
+
+
+def _experimentProviderObservationBatchSourceReceiptIds(
+    caseLedgers: tuple[OneCompanyScenarioCaseLedger, ...],
+) -> tuple[str, ...]:
+    return _dedupe(
+        tuple(receiptId for ledger in caseLedgers for receiptId in ledger.providerObservationBatchSourceReceiptIds)
+    )
+
+
+def _experimentPriceSourceLegReceiptIds(
+    caseLedgers: tuple[OneCompanyScenarioCaseLedger, ...],
+) -> tuple[str, ...]:
+    return _dedupe(tuple(receiptId for ledger in caseLedgers for receiptId in ledger.priceSourceLegReceiptIds))
+
+
+def _experimentDerivedReturnReceiptIds(
+    caseLedgers: tuple[OneCompanyScenarioCaseLedger, ...],
+) -> tuple[str, ...]:
+    return _dedupe(tuple(receiptId for ledger in caseLedgers for receiptId in ledger.derivedReturnReceiptIds))
+
+
+def _experimentAdjustmentPolicyHashes(
+    caseLedgers: tuple[OneCompanyScenarioCaseLedger, ...],
+) -> tuple[str, ...]:
+    return _dedupe(tuple(policyHash for ledger in caseLedgers for policyHash in ledger.adjustmentPolicyHashes))
+
+
+def _experimentNormalizationContractHashes(
+    caseLedgers: tuple[OneCompanyScenarioCaseLedger, ...],
+) -> tuple[str, ...]:
+    return _dedupe(tuple(contractHash for ledger in caseLedgers for contractHash in ledger.normalizationContractHashes))
+
+
+def _experimentReturnTransformHashes(
+    caseLedgers: tuple[OneCompanyScenarioCaseLedger, ...],
+) -> tuple[str, ...]:
+    return _dedupe(tuple(ledger.returnTransformHash for ledger in caseLedgers))
+
+
+def _experimentRawSourceRefs(caseLedgers: tuple[OneCompanyScenarioCaseLedger, ...]) -> tuple[str, ...]:
+    return _dedupe(tuple(ref for ledger in caseLedgers for ref in ledger.rawSourceRefs))
+
+
+def _experimentRevisedHistoryRefs(caseLedgers: tuple[OneCompanyScenarioCaseLedger, ...]) -> tuple[str, ...]:
+    return _dedupe(tuple(ref for ledger in caseLedgers for ref in ledger.revisedHistoryRefs))
 
 
 def _experimentDriverRegistryHashes(caseLedgers: tuple[OneCompanyScenarioCaseLedger, ...]) -> tuple[str, ...]:
@@ -2491,6 +2891,18 @@ def conditionalScenarioExperimentPayload(experiment: ConditionalScenarioExperime
             "pathHistoryInputHashes": experiment.pathHistoryInputHashes,
             "pathAssumptionHashes": experiment.pathAssumptionHashes,
             "pathAssumptionStepHashes": experiment.pathAssumptionStepHashes,
+            "providerLaneLineageHashes": experiment.providerLaneLineageHashes,
+            "providerLineageStatuses": experiment.providerLineageStatuses,
+            "providerObservationBatchReceiptIds": experiment.providerObservationBatchReceiptIds,
+            "providerObservationBatchIds": experiment.providerObservationBatchIds,
+            "providerObservationBatchSourceReceiptIds": experiment.providerObservationBatchSourceReceiptIds,
+            "priceSourceLegReceiptIds": experiment.priceSourceLegReceiptIds,
+            "derivedReturnReceiptIds": experiment.derivedReturnReceiptIds,
+            "adjustmentPolicyHashes": experiment.adjustmentPolicyHashes,
+            "normalizationContractHashes": experiment.normalizationContractHashes,
+            "returnTransformHashes": experiment.returnTransformHashes,
+            "rawSourceRefs": experiment.rawSourceRefs,
+            "revisedHistoryRefs": experiment.revisedHistoryRefs,
             "driverRegistryHashes": experiment.driverRegistryHashes,
             "driverRegistryLaneIds": experiment.driverRegistryLaneIds,
             "driverRegistrySemanticRefs": experiment.driverRegistrySemanticRefs,
@@ -2523,6 +2935,16 @@ def conditionalScenarioExperimentPayload(experiment: ConditionalScenarioExperime
                 "scoreLeaderStrategies": ledger.scoreLeaderStrategies,
                 "blockedReasons": ledger.blockedReasons,
                 "conditionRefs": ledger.conditionRefs,
+                "pathSourceRefs": ledger.pathSourceRefs,
+                "providerLaneLineageHash": ledger.providerLaneLineageHash,
+                "providerLineageStatus": ledger.providerLineageStatus,
+                "providerObservationBatchReceiptIds": ledger.providerObservationBatchReceiptIds,
+                "providerObservationBatchIds": ledger.providerObservationBatchIds,
+                "providerObservationBatchSourceReceiptIds": ledger.providerObservationBatchSourceReceiptIds,
+                "priceSourceLegReceiptIds": ledger.priceSourceLegReceiptIds,
+                "derivedReturnReceiptIds": ledger.derivedReturnReceiptIds,
+                "rawSourceRefs": ledger.rawSourceRefs,
+                "revisedHistoryRefs": ledger.revisedHistoryRefs,
             }
             for ledger, caseLedgerHash, assumptionSetId, assumptionSetHash in zip(
                 experiment.caseLedgers,
@@ -3532,6 +3954,18 @@ def runConditionalScenarioExperiment(
     driverRegistrySourceRefs = _experimentDriverRegistrySourceRefs(caseLedgers)
     driverRegistryWarnings = _experimentDriverRegistryWarnings(caseLedgers)
     providerObservationBatchRefs = _experimentProviderObservationBatchRefs(caseLedgers)
+    providerLaneLineageHashes = _experimentProviderLaneLineageHashes(caseLedgers)
+    providerLineageStatuses = _experimentProviderLineageStatuses(caseLedgers)
+    providerObservationBatchReceiptIds = _experimentProviderObservationBatchReceiptIds(caseLedgers)
+    providerObservationBatchIds = _experimentProviderObservationBatchIds(caseLedgers)
+    providerObservationBatchSourceReceiptIds = _experimentProviderObservationBatchSourceReceiptIds(caseLedgers)
+    priceSourceLegReceiptIds = _experimentPriceSourceLegReceiptIds(caseLedgers)
+    derivedReturnReceiptIds = _experimentDerivedReturnReceiptIds(caseLedgers)
+    adjustmentPolicyHashes = _experimentAdjustmentPolicyHashes(caseLedgers)
+    normalizationContractHashes = _experimentNormalizationContractHashes(caseLedgers)
+    returnTransformHashes = _experimentReturnTransformHashes(caseLedgers)
+    rawSourceRefs = _experimentRawSourceRefs(caseLedgers)
+    revisedHistoryRefs = _experimentRevisedHistoryRefs(caseLedgers)
     explicitAssumptionIds = _experimentExplicitAssumptionIds(caseLedgers)
     pathHistoryInputHashes = _experimentPathHistoryInputHashes(caseLedgers)
     pathAssumptionHashes = _experimentPathAssumptionHashes(caseLedgers)
@@ -3567,6 +4001,18 @@ def runConditionalScenarioExperiment(
             "driverRegistrySourceRefs": driverRegistrySourceRefs,
             "driverRegistryWarnings": driverRegistryWarnings,
             "providerObservationBatchRefs": providerObservationBatchRefs,
+            "providerLaneLineageHashes": providerLaneLineageHashes,
+            "providerLineageStatuses": providerLineageStatuses,
+            "providerObservationBatchReceiptIds": providerObservationBatchReceiptIds,
+            "providerObservationBatchIds": providerObservationBatchIds,
+            "providerObservationBatchSourceReceiptIds": providerObservationBatchSourceReceiptIds,
+            "priceSourceLegReceiptIds": priceSourceLegReceiptIds,
+            "derivedReturnReceiptIds": derivedReturnReceiptIds,
+            "adjustmentPolicyHashes": adjustmentPolicyHashes,
+            "normalizationContractHashes": normalizationContractHashes,
+            "returnTransformHashes": returnTransformHashes,
+            "rawSourceRefs": rawSourceRefs,
+            "revisedHistoryRefs": revisedHistoryRefs,
             "explicitAssumptionIds": explicitAssumptionIds,
             "pathHistoryInputHashes": pathHistoryInputHashes,
             "pathAssumptionHashes": pathAssumptionHashes,
@@ -3599,6 +4045,18 @@ def runConditionalScenarioExperiment(
         "driverRegistrySourceRefs": driverRegistrySourceRefs,
         "driverRegistryWarnings": driverRegistryWarnings,
         "providerObservationBatchRefs": providerObservationBatchRefs,
+        "providerLaneLineageHashes": providerLaneLineageHashes,
+        "providerLineageStatuses": providerLineageStatuses,
+        "providerObservationBatchReceiptIds": providerObservationBatchReceiptIds,
+        "providerObservationBatchIds": providerObservationBatchIds,
+        "providerObservationBatchSourceReceiptIds": providerObservationBatchSourceReceiptIds,
+        "priceSourceLegReceiptIds": priceSourceLegReceiptIds,
+        "derivedReturnReceiptIds": derivedReturnReceiptIds,
+        "adjustmentPolicyHashes": adjustmentPolicyHashes,
+        "normalizationContractHashes": normalizationContractHashes,
+        "returnTransformHashes": returnTransformHashes,
+        "rawSourceRefs": rawSourceRefs,
+        "revisedHistoryRefs": revisedHistoryRefs,
         "explicitAssumptionIds": explicitAssumptionIds,
         "pathHistoryInputHashes": pathHistoryInputHashes,
         "pathAssumptionHashes": pathAssumptionHashes,
@@ -3636,6 +4094,18 @@ def runConditionalScenarioExperiment(
         driverRegistrySourceRefs=driverRegistrySourceRefs,
         driverRegistryWarnings=driverRegistryWarnings,
         providerObservationBatchRefs=providerObservationBatchRefs,
+        providerLaneLineageHashes=providerLaneLineageHashes,
+        providerLineageStatuses=providerLineageStatuses,
+        providerObservationBatchReceiptIds=providerObservationBatchReceiptIds,
+        providerObservationBatchIds=providerObservationBatchIds,
+        providerObservationBatchSourceReceiptIds=providerObservationBatchSourceReceiptIds,
+        priceSourceLegReceiptIds=priceSourceLegReceiptIds,
+        derivedReturnReceiptIds=derivedReturnReceiptIds,
+        adjustmentPolicyHashes=adjustmentPolicyHashes,
+        normalizationContractHashes=normalizationContractHashes,
+        returnTransformHashes=returnTransformHashes,
+        rawSourceRefs=rawSourceRefs,
+        revisedHistoryRefs=revisedHistoryRefs,
         explicitAssumptionIds=explicitAssumptionIds,
         pathHistoryInputHashes=pathHistoryInputHashes,
         pathAssumptionHashes=pathAssumptionHashes,
