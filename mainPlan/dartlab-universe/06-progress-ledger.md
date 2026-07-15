@@ -88,7 +88,7 @@
 | 2026-07-16 | U0-V06 renderer bakeoff 실행 | SVG, Cosmos, DOM, Canvas 2D를 desktop 500/1,000 및 mobile 250/500에서 각 3회 측정. Task와 performance ready 각 4/4, built-in raw 17,438B 대 Cosmos 포함 328,891B, Canvas heap 개선과 external dependency 0으로 Canvas 2D promote. Cosmos Universe license admission false, 기존 map 유지 |
 | 2026-07-16 | U0-G01 release gold admission 실행 | Positive 300 및 hard negative 300 quota, 12개 negative type, human review receipt와 exact evidence, 600 prediction, precision 98% 및 false acceptance 1% gate 구현. Test 19/19, docstring 위반 0. Reviewed gold 0/600과 prediction 0/600이라 U0 graduation 및 U1 차단 |
 | 2026-07-16 | U0-G02 live review queue materialization | Graph와 DART catalog 296,856행을 결합해 exact mention 182,072개를 찾고 machine positive 300 및 challenge 300행을 content-addressed fixture로 고정. Predicate 3/6, negative type 5/12, reviewed와 goldEligible 0/600이라 human review 및 source gap 전 U0 graduation 차단 |
-| 2026-07-16 | U0-G03 original source binding | Queue source가 가리키는 original Parquet 306개를 직접 SHA-256으로 고정하고 receipt 및 issuer file로 재결속. 597/600 ready, exact occurrence 63,326, locator parity failure 0. Unique 119, ambiguous 478, source row missing 3이라 human selection과 time 전 gold 차단 |
+| 2026-07-16 | U0-G03 original source binding | Queue source가 가리키는 original Parquet 305개를 직접 SHA-256으로 고정하고 receipt, catalog publication date 및 issuer file로 재결속. 600/600 ready, exact occurrence 63,345, locator parity failure 0. Unique 119, ambiguous 481이며 human selection과 time 전 gold 차단 |
 | 2026-07-16 | U0-G04 human review promotion | Queue와 binding 600행에 optional human decision compiler 구현. Machine origin, triple drift, unknown locator, inverted 또는 naive time, duplicate receipt fail closed. Decision 및 promoted gold 0이라 U0 graduation 차단 |
 
 ## 핵심 실측 스냅샷
@@ -259,7 +259,7 @@ dart dataAsOf            null
 
 ## 구현 전 blocker
 
-1. U0-G01 admission, U0-G02 queue, U0-G03 original source binding, U0-G04 human-only promotion compiler는 있지만 reviewed positive 0/300, hard negative 0/300, prediction 0/600이다. Source binding은 597/600 ready이나 human locator 선택과 time이 없고 positive predicate coverage는 3/6, negative type coverage는 5/12다.
+1. U0-G01 admission, U0-G02 queue, U0-G03 original source binding, U0-G04 human-only promotion compiler는 있지만 reviewed positive 0/300, hard negative 0/300, prediction 0/600이다. Source binding은 600/600 ready이나 human locator 선택과 time이 없고 positive predicate coverage는 3/6, negative type coverage는 5/12다.
 2. exact evidence resolver의 cold P95와 cold initialization 포함 transfer가 아직 측정되지 않았다.
 3. source version 10개는 SourceSnapshotSet으로 묶였지만 capability catalog의 immutable manifest가 없고 panel dataAsOf가 null이다. 따라서 current public exact replay는 아직 금지한다.
 4. RedistributionReceipt와 LensAvailability admission contract는 있지만 reviewed receipt는 0/10, Skill OS publicBrowser 선언은 0/286, current public lens ready는 0이다. map field의 upstream policy lineage도 결속되지 않았다.
@@ -280,4 +280,4 @@ dart dataAsOf            null
 
 ## 다음 단일 행동
 
-운영자가 queue와 `releaseGoldSourceBinding.machine.jsonl`을 함께 열어 top-ranked original locator를 선택하고 `reviewedDecisions.jsonl`을 작성한다. Source owner는 발행 및 공개 가능 시각을 공급하고 missing source row 3개를 복구하며 US/SEC, `sellsTo`, `classifiedIn`, `filed`와 누락 negative type 7개를 별도 구성한다. Reviewed 300 대 300과 prediction 600을 채워 precision 98% 및 false acceptance 1%를 통과하기 전 U0 graduation과 U1은 금지한다.
+운영자가 queue와 `releaseGoldSourceBinding.machine.jsonl`을 함께 열어 top-ranked original locator를 선택하고 `reviewedDecisions.jsonl`을 작성한다. Source owner는 발행 및 공개 가능 시각을 공급하며 US/SEC, `sellsTo`, `classifiedIn`, `filed`와 누락 negative type 7개를 별도 구성한다. Reviewed 300 대 300과 prediction 600을 채워 precision 98% 및 false acceptance 1%를 통과하기 전 U0 graduation과 U1은 금지한다.

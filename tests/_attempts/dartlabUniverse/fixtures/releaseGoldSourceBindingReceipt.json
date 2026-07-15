@@ -2,19 +2,18 @@
   "schemaVersion": "releaseGoldSourceBindingReceipt.v1",
   "queueRecordCount": 600,
   "bindingCount": 600,
-  "sourceArtifactCount": 306,
-  "sourceArtifactReadyCount": 597,
+  "sourceArtifactCount": 305,
+  "sourceArtifactReadyCount": 600,
   "bindingStatusCounts": {
-    "exactAmbiguous": 175,
+    "exactAmbiguous": 178,
     "exactAmbiguousTruncated": 303,
-    "exactUnique": 119,
-    "sourceRowMissing": 3
+    "exactUnique": 119
   },
   "readyLaneCounts": {
-    "hardNegativeChallenge": 298,
-    "positiveCandidate": 299
+    "hardNegativeChallenge": 300,
+    "positiveCandidate": 300
   },
-  "exactLocatorCount": 63326,
+  "exactLocatorCount": 63345,
   "locatorParityFailureCount": 0,
   "allRowsUnreviewed": true,
   "allRowsGoldIneligible": true,
@@ -27,7 +26,7 @@
     "eventAtAndValidityMissing",
     "reviewReceiptMissing"
   ],
-  "expectedSourceArtifactCount": 306,
+  "expectedSourceArtifactCount": 305,
   "missingSourceArtifacts": [],
   "sourceArtifacts": [
     {
@@ -1151,11 +1150,11 @@
       "matchedRowCount": 1
     },
     {
-      "path": "data/dart/allFilings/20260527.parquet",
-      "size": 6714001,
-      "sha256": "sha256:ef0263252653f0cb271ea60d0d6441287f6ce83ec77c1c06b1b71297c4eb4781",
+      "path": "data/dart/allFilings/20260528.parquet",
+      "size": 12615097,
+      "sha256": "sha256:9da5fc5fd4189c06ab4670620ae080a35fae83f0d547db2cdd24f6ec6b5cd6a1",
       "requestedReceiptCount": 1,
-      "matchedRowCount": 0
+      "matchedRowCount": 1
     },
     {
       "path": "data/dart/allFilings/20260529.parquet",
@@ -1172,18 +1171,11 @@
       "matchedRowCount": 1
     },
     {
-      "path": "data/dart/allFilings/20260605.parquet",
-      "size": 8437533,
-      "sha256": "sha256:21f6236e1cffc3cf6fc8ee6f6266b655336b99c06f91d07b57407b1bd853e502",
-      "requestedReceiptCount": 1,
-      "matchedRowCount": 0
-    },
-    {
       "path": "data/dart/allFilings/20260608.parquet",
       "size": 6325093,
       "sha256": "sha256:8a8b955b04c13842a0bff1873ac1cf8e5d5928e956950c9b4cffff1371f62e40",
-      "requestedReceiptCount": 1,
-      "matchedRowCount": 1
+      "requestedReceiptCount": 2,
+      "matchedRowCount": 2
     },
     {
       "path": "data/dart/allFilings/20260612.parquet",
@@ -2181,8 +2173,8 @@
   },
   "bindingFile": {
     "path": "tests/_attempts/dartlabUniverse/fixtures/releaseGoldSourceBinding.machine.jsonl",
-    "size": 4832482,
-    "sha256": "sha256:e595ffed3e47fa1dddff5fbfc294ed4a3ebbb15b0aa769378c76213cb4047a69",
+    "size": 4851560,
+    "sha256": "sha256:f0c22f667f9865cfe3c240127296e23618d5ba5a2aba415d8abf7e651de3ccf8",
     "rowCount": 600
   }
 }

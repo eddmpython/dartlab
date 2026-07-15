@@ -88,7 +88,9 @@ def _receiptNo(record: Mapping[str, Any]) -> str:
 def _sourceRelativePath(record: Mapping[str, Any], receiptNo: str) -> str:
     catalogSource = str(record.get("catalogSource") or "")
     if catalogSource == "allFilings":
-        return f"data/dart/allFilings/{receiptNo[:8]}.parquet"
+        catalogDate = str(record.get("catalogDate") or "")
+        sourceDate = catalogDate if re.fullmatch(r"\d{8}", catalogDate) else receiptNo[:8]
+        return f"data/dart/allFilings/{sourceDate}.parquet"
     if catalogSource == "dartPanel":
         stockCode = str(record.get("issuerStockCode") or "").strip()
         if not stockCode:

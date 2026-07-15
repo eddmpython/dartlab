@@ -27,7 +27,8 @@ def _candidate(candidateId: str = "review:candidate:test-a") -> dict:
         "reviewState": "unreviewed",
         "goldEligible": False,
         "catalogSource": "allFilings",
-        "sourceRef": "dart:allFilings:20260102000123#section=0",
+        "catalogDate": "20260102",
+        "sourceRef": "dart:allFilings:20260101000123#section=0",
         "issuerStockCode": "000001",
         "evidenceText": "나래",
     }
@@ -49,7 +50,7 @@ def _challenge() -> dict:
 def _artifacts() -> tuple[dict, dict]:
     rows = {
         ALL_PATH: [
-            {"rcept_no": "20260102000123", "content_raw": "가람은 나래와 거래한다."},
+            {"rcept_no": "20260101000123", "content_raw": "가람은 나래와 거래한다."},
             {"rcept_no": "20260102000999", "content_raw": "무관한 행"},
         ],
         PANEL_PATH: [
@@ -105,7 +106,7 @@ def testBuildOriginalSourceBindingsPinsUniqueOriginalLocator() -> None:
     assert binding["originalSourcePath"] == ALL_PATH
     assert binding["originalSourceVersion"] == HASH_A
     assert binding["exactLocatorCount"] == 1
-    assert locator["receiptNo"] == "20260102000123"
+    assert locator["receiptNo"] == "20260101000123"
     assert locator["evidenceText"] == "나래"
     assert (
         locator["contextText"][
@@ -183,7 +184,7 @@ def testMissingSourceAndReceiptRemainDistinctFailClosedStates() -> None:
     missingFile, _ = buildOriginalSourceBindings([_candidate()], {}, {})
     missingRow, _ = buildOriginalSourceBindings(
         [_candidate()],
-        {ALL_PATH: [{"rcept_no": "20260102000999", "content_raw": "나래"}]},
+        {ALL_PATH: [{"rcept_no": "20260101000999", "content_raw": "나래"}]},
         {ALL_PATH: HASH_A},
     )
 
@@ -259,10 +260,10 @@ def testCommittedLiveBindingsMatchContentAddressedReceipt() -> None:
 
     assert f"sha256:{hashlib.sha256(bindingBytes).hexdigest()}" == receipt["bindingFile"]["sha256"]
     assert len(bindings) == receipt["bindingFile"]["rowCount"] == 600
-    assert sum(binding["sourceArtifactReady"] for binding in bindings) == 597
-    assert receipt["sourceArtifactCount"] == receipt["expectedSourceArtifactCount"] == 306
+    assert sum(binding["sourceArtifactReady"] for binding in bindings) == 600
+    assert receipt["sourceArtifactCount"] == receipt["expectedSourceArtifactCount"] == 305
     assert receipt["locatorParityFailureCount"] == 0
-    assert receipt["bindingStatusCounts"]["sourceRowMissing"] == 3
+    assert "sourceRowMissing" not in receipt["bindingStatusCounts"]
     assert all(binding["reviewState"] == "unreviewed" for binding in bindings)
     assert all(binding["goldEligible"] is False for binding in bindings)
     assert all(binding["selectedLocatorId"] is None for binding in bindings)

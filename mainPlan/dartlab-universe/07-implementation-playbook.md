@@ -374,7 +374,7 @@ kill: 3D 또는 canvas에서만 가능한 핵심 작업이 생기면 해당 rend
 
 목표: Catalog text locator를 immutable original source artifact와 exact row 및 char 후보로 이전한다.
 
-2026-07-16 실행 결과: Queue가 참조한 allFilings 및 DART panel original Parquet 306개를 직접 SHA-256으로 고정했다. 600 binding 중 597개에서 exact source occurrence 63,326개를 찾았고 locator parity failure는 0이다. Unique 119, ambiguous 175, 10개 초과 ambiguous 303, source row missing 3이다. Ambiguous 후보는 normalized trigram context coverage로 top 10을 정렬하지만 선택하지 않는다. 모든 binding은 `unreviewed`, `goldEligible=false`다. Source artifact version은 보강했지만 human locator 선택과 publication 및 availability time, predicate 및 direction confirmation은 계속 필요하다.
+2026-07-16 실행 결과: Queue가 참조한 allFilings 및 DART panel original Parquet 305개를 직접 SHA-256으로 고정했다. Receipt 번호 날짜와 실제 공개일이 다른 2건은 `catalogDate` daily file로 복구해 600/600 binding에서 exact source occurrence 63,345개를 찾았고 locator parity failure는 0이다. Unique 119, ambiguous 178, 10개 초과 ambiguous 303이다. Ambiguous 후보는 normalized trigram context coverage로 top 10을 정렬하지만 선택하지 않는다. 모든 binding은 `unreviewed`, `goldEligible=false`다. Source artifact version은 보강했지만 human locator 선택과 publication 및 availability time, predicate 및 direction confirmation은 계속 필요하다.
 
 ### U0-G04 human-only review promotion
 

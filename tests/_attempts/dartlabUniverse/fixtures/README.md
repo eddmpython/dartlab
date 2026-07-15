@@ -27,7 +27,7 @@ uv run python -X utf8 tests/audit/docstring9Section.py tests/_attempts/dartlabUn
 - `releaseGoldReviewQueue.machine.jsonl`: exact catalog locator가 있는 미검토 positive 후보 300행과 hard-negative challenge 300행
 - `releaseGoldReviewQueueReceipt.json`: graph, catalog, queue content hash와 coverage gap receipt
 - `releaseGoldSourceBinding.machine.jsonl`: original Parquet SHA-256과 exact row 및 char locator 후보 600행
-- `releaseGoldSourceBindingReceipt.json`: source artifact 306개와 binding coverage 및 ambiguity receipt
+- `releaseGoldSourceBindingReceipt.json`: source artifact 305개와 binding coverage 및 ambiguity receipt
 - `releaseGoldReviewPromotionReceipt.json`: optional human decision을 gold로 승격한 dry-run receipt
 - `releaseGoldReviewDecision.schema.json`: `acceptPositive`, `confirmNegative`, `defer` human decision JSON Schema
 
@@ -56,21 +56,21 @@ Queue hash는 `sha256:125f84fb671d4f88c4c94f4e2ab8b00c31b5656ce8d03eca0465a6e90b
 
 ## U0-G03 original source binding
 
-Manifest의 `sourceVersion=v1`과 timezone 없는 `builtAt`을 immutable version이나 availability time으로 사용하지 않는다. 대신 queue가 참조한 original Parquet 306개를 직접 SHA-256으로 고정하고 receipt number와 issuer file로 재결속했다.
+Manifest의 `sourceVersion=v1`과 timezone 없는 `builtAt`을 immutable version이나 availability time으로 사용하지 않는다. 대신 queue가 참조한 original Parquet 305개를 직접 SHA-256으로 고정하고 receipt number, catalog publication date 및 issuer file로 재결속했다. 접수번호 날짜와 실제 공개일이 다른 2개 receipt도 `catalogDate` daily file에서 복구했다.
 
 | 항목 | 실측 |
 |---|---:|
-| Source artifact | 306 |
+| Source artifact | 305 |
 | Queue binding | 600/600 |
-| Source artifact ready | 597/600 |
-| Exact original occurrence | 63,326 |
+| Source artifact ready | 600/600 |
+| Exact original occurrence | 63,345 |
 | Unique locator | 119 |
-| Ambiguous locator | 175 |
+| Ambiguous locator | 178 |
 | Ambiguous truncated | 303 |
-| Source row missing | 3 |
+| Source row missing | 0 |
 | Locator parity failure | 0 |
 
-Ambiguous candidate는 catalog context와 original context의 normalized trigram coverage로 상위 10개만 정렬해 반환하지만 자동 선택하지 않는다. Binding file hash는 `sha256:e595ffed3e47fa1dddff5fbfc294ed4a3ebbb15b0aa769378c76213cb4047a69`다. `sourcePublishedAt`, `availableAt`, event 및 validity, predicate와 direction, public document locator와 reviewer receipt는 계속 결손이다.
+Ambiguous candidate는 catalog context와 original context의 normalized trigram coverage로 상위 10개만 정렬해 반환하지만 자동 선택하지 않는다. Binding file hash는 `sha256:f0c22f667f9865cfe3c240127296e23618d5ba5a2aba415d8abf7e651de3ccf8`다. `sourcePublishedAt`, `availableAt`, event 및 validity, predicate와 direction, public document locator와 reviewer receipt는 계속 결손이다.
 
 ## U0-G04 human review promotion
 
@@ -122,7 +122,7 @@ Positive는 KR 및 US, ko 및 en, A 및 B, DART 및 SEC를 각 150건으로 구�
 | SourceRef coverage | 미측정 |
 | Quota violation | 30 |
 | Machine review queue | 600/600 |
-| Original source binding | 597/600 ready |
+| Original source binding | 600/600 ready |
 | Human decision | 0/600 |
 | Machine regression | 49/49 PASS |
 | Contract ready | true |

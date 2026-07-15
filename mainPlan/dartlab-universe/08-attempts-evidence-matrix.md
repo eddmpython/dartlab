@@ -96,7 +96,7 @@ Python demo의 module docstring에는 `결과` 섹션을 둔다. 출력 파일�
 | U0-V06 | 새 renderer가 필요한가 | SVG, Cosmos, DOM, 후보 | task, frame, heap, bundle 개선 | 새 dependency 기각 | 완료, Canvas 2D promote |
 | U0-G01 | release gold를 통과하는가 | positive 300, negative 300 | precision 98%, false accept 1% 이하 | U1 금지 | 계약 완료, reviewed 0/600 차단 |
 | U0-G02 | 사람 검토를 시작할 exact locator가 있는가 | live graph와 DART catalog 296,856행 | review queue 300+300, stale locator 0, machine gold 승격 0 | source owner 및 human review | 완료, queue 600 및 reviewed 0 차단 |
-| U0-G03 | catalog candidate를 original source에 결속하는가 | queue 600과 local original Parquet | source SHA-256 및 exact locator, ambiguity 자동 선택 0 | source row 복구 또는 human 선택 | 완료, ready 597/600 |
+| U0-G03 | catalog candidate를 original source에 결속하는가 | queue 600과 local original Parquet | source SHA-256 및 exact locator, ambiguity 자동 선택 0 | human locator 선택 | 완료, ready 600/600 |
 | U0-G04 | human decision만 gold로 승격하는가 | queue, binding, optional decision | machine promotion 0, invalid decision false accept 0 | U1 금지 | compiler 완료, decision 0 차단 |
 | U1-Y01 | workflow가 실제로 더 유용한가 | 5 task, baseline과 Universe | information yield 개선 | revise 또는 reject | 대기 |
 | U2-R01 | public runtime 예산 안에서 evidence가 열리는가 | reference browsers | cold P95 5초, first cold 4MB provisional, incremental 2MB | runtime 최적화 후 U3 토론 | 대기 |
@@ -717,19 +717,19 @@ uv run python -X utf8 tests/_attempts/dartlabUniverse/fixtures/releaseGoldSource
 결과:
 
 ```text
-sourceArtifactCount                         306
+sourceArtifactCount                         305
 bindingCount                            600/600
-sourceArtifactReadyCount                597/600
-exactLocatorCount                         63326
+sourceArtifactReadyCount                600/600
+exactLocatorCount                         63345
 exactUnique                                 119
-exactAmbiguous                              175
+exactAmbiguous                              178
 exactAmbiguousTruncated                     303
-sourceRowMissing                              3
+sourceRowMissing                              0
 locatorParityFailureCount                     0
 goldEligibleCount                          0/600
 ```
 
-판정: Search manifest의 mutable `v1`과 timezone 없는 build time을 gold field로 재사용하지 않고, original allFilings 및 DART panel Parquet 306개를 직접 SHA-256으로 고정했다. Receipt 및 issuer file 결속으로 597/600 candidate에서 exact original occurrence를 찾았다. Ambiguous locator는 catalog context similarity 상위 10개만 제공하고 자동 선택은 0이다. Original artifact provenance는 `promote`하지만 3개 source row drift, human locator 선택, publication 및 availability time, predicate와 direction, review receipt 전 gold admission은 `revise`다.
+판정: Search manifest의 mutable `v1`과 timezone 없는 build time을 gold field로 재사용하지 않고, original allFilings 및 DART panel Parquet 305개를 직접 SHA-256으로 고정했다. Receipt 번호 날짜와 실제 공개일이 다른 2건은 `catalogDate` daily file에서 복구해 600/600 candidate에서 exact original occurrence를 찾았다. Ambiguous locator는 catalog context similarity 상위 10개만 제공하고 자동 선택은 0이다. Original artifact provenance는 `promote`하지만 human locator 선택, publication 및 availability time, predicate와 direction, review receipt 전 gold admission은 `revise`다.
 
 ## 4.20 U0-G04 결과
 

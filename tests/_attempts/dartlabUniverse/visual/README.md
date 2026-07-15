@@ -297,6 +297,6 @@ Browser audit은 desktop 1280x720에서 500 node 및 1,000 edge, mobile 390x844�
 
 ## 다음
 
-U0-G04까지 exact-locator queue 600행, original source binding 597/600, human-only promotion compiler를 만들었지만 decision과 gold는 0건이다. Reviewed positive 300개와 hard negative 300개 및 prediction을 구성해 precision 98% 및 false accept 1% gate를 실행해야 한다. U0-V01과 U0-V04 participant review 및 U0-V05 named screen reader 수동 확인 전 production 이관은 불가하다.
+U0-G04까지 exact-locator queue 600행, original source binding 600/600, human-only promotion compiler를 만들었지만 decision과 gold는 0건이다. Reviewed positive 300개와 hard negative 300개 및 prediction을 구성해 precision 98% 및 false accept 1% gate를 실행해야 한다. U0-V01과 U0-V04 participant review 및 U0-V05 named screen reader 수동 확인 전 production 이관은 불가하다.
 
 Universe production renderer에는 새 외부 dependency를 추가하지 않는다.
