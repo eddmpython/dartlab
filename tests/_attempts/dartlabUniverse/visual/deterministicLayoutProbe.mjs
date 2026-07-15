@@ -71,6 +71,10 @@ function fnv1a64(value) {
 	return hash.toString(16).padStart(16, '0');
 }
 
+export function deterministicPayloadHash(value) {
+	return `fnv1a64:${fnv1a64(stableStringify(value))}`;
+}
+
 function roundLogical(value) {
 	return Math.round(value * 1_000_000) / 1_000_000;
 }
@@ -141,7 +145,7 @@ export function compileDeterministicLayout(inputNodes, options = {}) {
 	return Object.freeze({
 		coordinates: Object.freeze(coordinates),
 		receipt,
-		logicalHash: `fnv1a64:${fnv1a64(stableStringify(logicalPayload))}`
+		logicalHash: deterministicPayloadHash(logicalPayload)
 	});
 }
 
@@ -177,7 +181,7 @@ export function projectAnchors(layout, viewport) {
 	return Object.freeze({
 		anchors: Object.freeze(anchors),
 		receipt,
-		anchorHash: `fnv1a64:${fnv1a64(stableStringify({ receipt, anchors }))}`
+		anchorHash: deterministicPayloadHash({ receipt, anchors })
 	});
 }
 

@@ -1,6 +1,6 @@
 # Visual attempts
 
-> 상태: U0-V01 grammar contract와 U0-V02 deterministic layout contract 완료, reviewed comprehension 차단
+> 상태: U0-V01 grammar, U0-V02 layout, U0-V03 density contract 완료, reviewed comprehension 차단
 > 책임: semantic LOD, 상태 문법, layout 결정론, renderer 성능, 접근성, 3D uplift를 반증한다.
 
 ## 가설
@@ -11,7 +11,7 @@
 
 1. U0-V01: fact, candidate, derived, disputed, retracted, scenario, unknown 문법 판독. Contract 완료, participant review 대기
 2. U0-V02: 고정 anchor와 deterministic layout. Contract 완료
-3. U0-V03: 250, 500, 1,000 node density와 omitted receipt
+3. U0-V03: 250, 500, 1,000 node density와 omitted receipt. Contract 완료
 4. U0-V04: validAt와 knownAt 이중 시간 comprehension
 5. U0-V05: keyboard, screen reader, mobile low GPU
 6. U0-V06: SVG, current Cosmos, DOM, 후보 renderer bakeoff
@@ -118,6 +118,39 @@ Python test는 repository test lock을 획득한 뒤 `testLiveLayoutFixture.py` 
 
 판정은 `promote`다. U0-P01의 live Atlas, 반도체 산업, 삼성전자 company scene을 새 graph 사본 없이 사용했고 input 순서를 20회 교란해도 scene별 logical hash와 viewport anchor가 같았다. Current artifact에는 node valid time이 없으므로 임의 순서를 만들지 않고 94개 전부를 unknown time lane으로 보냈으며 receipt에 known 0과 unknown 94를 남겼다. 이 계약은 deterministic layout만 졸업시키며 U0-V01 comprehension과 U0-V04 validAt 및 knownAt 판독을 대신하지 않는다.
 
+## U0-V03 실행
+
+```powershell
+node --check tests/_attempts/dartlabUniverse/visual/densityOmissionProbe.mjs
+node --test tests/_attempts/dartlabUniverse/visual/testDensityOmissionProbe.mjs
+node tests/_attempts/dartlabUniverse/visual/densityOmissionProbe.mjs
+```
+
+실제 DOM audit은 `densityReference.html`을 1280x720 desktop과 390x844 mobile viewport에서 열고 250, 500, 1,000 node query를 각각 측정한다. Reference는 같은 pure projection 결과만 DOM mark와 고정 label box로 표시한다.
+
+## U0-V03 결과
+
+| 입력 | Target | Active node | Active edge | Visible label | Node omitted | Edge omitted | DOM collision |
+|---:|---|---:|---:|---:|---:|---:|---:|
+| 250 | desktop | 250/500 | 750/1,000 | 55/80 | 0 | 0 | 0% |
+| 250 | mobile | 250/250 | 500/500 | 40/40 | 0 | 250 | 0% |
+| 500 | desktop | 500/500 | 1,000/1,000 | 57/80 | 0 | 500 | 0% |
+| 500 | mobile | 250/250 | 500/500 | 40/40 | 250 | 1,000 | 0% |
+| 1,000 | desktop | 500/500 | 1,000/1,000 | 57/80 | 500 | 2,000 | 0% |
+| 1,000 | mobile | 250/250 | 500/500 | 40/40 | 750 | 2,500 | 0% |
+
+| 계약 | 실측 |
+|---|---:|
+| Exact node, edge, label omission receipt | 6/6 |
+| Reverse-input receipt hash | 6/6 |
+| Budget compliant | 6/6 |
+| Maximum calculated label collision | 0% |
+| Maximum DOM label collision | 0% |
+| Machine regression | 8/8 PASS |
+| Density contract ready | true |
+
+판정은 `promote`다. Active mark를 desktop 500 node 및 1,000 edge, mobile 250 node 및 500 edge로 제한하고 label은 80 및 40 이하에서 collision-free로 선택했다. 화면에 나오지 않은 node, edge, label은 각각 budget, omitted endpoint, label collision 또는 label budget reason으로 100% 설명한다. `기타 N개` aggregate receipt는 member와 status count, coverage, 변화 quantile, top changes를 보존한다. 이 계약은 renderer 성능 FPS나 접근성 동등성을 증명하지 않으며 U0-V05와 U0-V06을 우회하지 않는다.
+
 ## 합격
 
 - 상태 판독 90% 이상
@@ -136,6 +169,6 @@ Python test는 repository test lock을 획득한 뒤 `testLiveLayoutFixture.py` 
 
 ## 다음
 
-U0-V03에서 250, 500, 1,000 node density와 omitted receipt를 측정한다. Participant review가 필요한 U0-V01은 열어 둔 채 machine-only density work를 진행할 수 있지만 production 이관은 불가하다.
+U0-V04에서 validAt와 knownAt 이중 시간 12개 task의 scoring contract를 만들고 실제 판독 90%를 측정한다. Participant review가 필요한 U0-V01과 U0-V04를 통과하기 전 production 이관은 불가하다.
 
 Production dependency는 U0-V06 결론 전에 추가하지 않는다.

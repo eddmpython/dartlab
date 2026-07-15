@@ -1,6 +1,6 @@
 # DartLab Universe
 
-> 상태: 혁신 thesis, 시각 물리, 실행 플레이북 확정 및 U0-V02 근거 실험 완료
+> 상태: 혁신 thesis, 시각 물리, 실행 플레이북 확정 및 U0-V03 근거 실험 완료
 > 기준일: 2026-07-16 KST
 > 제품명: DartLab Universe
 > 정본 경계: HF 데이터는 진실, 온톨로지는 의미 계약, 엔진은 렌즈, Universe는 요청 시점 투영
@@ -69,7 +69,7 @@ DartLab의 데이터를 공개 웹에서 우주처럼 탐색하는 제품은 가
 
 ## 구현 순서
 
-1. U0: `tests/_attempts/dartlabUniverse/`에서 graph truth, snapshot, workflow, visual, policy 계약을 실데이터로 검증한다. Bounded projection, visual grammar, deterministic layout까지 실행했고 density와 이후 gate가 남았다.
+1. U0: `tests/_attempts/dartlabUniverse/`에서 graph truth, snapshot, workflow, visual, policy 계약을 실데이터로 검증한다. Bounded projection, visual grammar, deterministic layout, density and omission까지 실행했고 이중 시간과 이후 gate가 남았다.
 2. U1: 독립 `/universe` route에서 기존 atlas를 먼저 띄우고 34개 산업 변화 우주와 첫 3개 Kill-Chain을 연다.
 3. U2: 엣지와 claim 클릭 시 기존 브라우저 검색 sidecar와 panel range read로 exact evidence를 찾는 Evidence on Demand를 붙인다.
 4. U3: 런타임 근거 확인이 성능 예산을 넘는다는 측정이 있을 때만 기존 map artifact의 additive schema 확장을 토론한다.

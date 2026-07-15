@@ -90,7 +90,7 @@ Python demo의 module docstring에는 `결과` 섹션을 둔다. 출력 파일�
 | U0-W02 | recipe를 반증 workflow로 만드는가 | tested recipe 정렬 앞 10개와 qualified synthetic fixture | 단계, 근거, falsifier 유실 0 | Kill-Chain 보류 | 계약 완료, live conclusion 차단 |
 | U0-V01 | evidence 상태를 읽는가 | 7 state, 30 card, task participant | 판독 90% 이상 | visual grammar 재설계 | 계약 완료, participant 0/12 차단 |
 | U0-V02 | layout이 재현되는가 | live 3 scene, 3 browser, 20 replay | logical hash 일치, 같은 viewport 및 DPR anchor 1px 이하 | layout 교체 | 완료, layout promote |
-| U0-V03 | 밀도에서 생략이 정직한가 | 250, 500, 1,000 node | collision 2% 이하, receipt 100% | lower LOD | 대기 |
+| U0-V03 | 밀도에서 생략이 정직한가 | 250, 500, 1,000 node, desktop 및 mobile | collision 2% 이하, receipt 100% | lower LOD | 완료, density promote |
 | U0-V04 | 이중 시간을 이해하는가 | revision task 12개 | 시간 판독 90% 이상 | Time Lens 재설계 | 대기 |
 | U0-V05 | 접근성 표면이 동등한가 | keyboard, reader, low GPU | 핵심 task 100% | renderer 기각 | 대기 |
 | U0-V06 | 새 renderer가 필요한가 | SVG, Cosmos, DOM, 후보 | task, frame, heap, bundle 개선 | 새 dependency 기각 | 대기 |
@@ -495,6 +495,39 @@ layoutContractReady                   true
 ```
 
 판정: U0-P01 live bounded projection 세 장면을 renderer 독립 logical coordinate로 투영했다. Industry stage는 semantic x anchor, valid order와 time unknown은 y anchor, evidence status는 stable offset이며 force iteration은 0이다. Input 순서를 scene별 20회 교란해 logical hash 60/60과 세 viewport anchor 180/180이 같았고 Chrome, Firefox, WebKit의 180회 실측 최대 drift는 0px였다. Current artifact의 valid time은 0/94이므로 임의 순서를 합성하지 않고 94개를 unknown time lane으로 보존했다. U0-V02 layout contract는 `promote`지만 실제 시간 판독과 visual comprehension 및 production admission은 계속 차단한다.
+
+## 4.13 U0-V03 결과
+
+명령:
+
+```powershell
+node --check tests/_attempts/dartlabUniverse/visual/densityOmissionProbe.mjs
+node --test tests/_attempts/dartlabUniverse/visual/testDensityOmissionProbe.mjs
+node tests/_attempts/dartlabUniverse/visual/densityOmissionProbe.mjs
+```
+
+결과:
+
+```text
+densityCaseCount                         6
+budgetCompliantCases                   6/6
+exactOmissionReceiptCases              6/6
+reverseInputReceiptHash                6/6
+maximumCalculatedLabelCollision          0%
+maximumDomLabelCollision                 0%
+desktop1000ActiveNode                500/500
+desktop1000ActiveEdge              1,000/1,000
+desktop1000VisibleLabel               57/80
+desktop1000OmittedNode                  500
+mobile1000ActiveNode                 250/250
+mobile1000ActiveEdge                 500/500
+mobile1000VisibleLabel                 40/40
+mobile1000OmittedNode                    750
+machineRegression                      8/8 PASS
+densityContractReady                      true
+```
+
+판정: 250, 500, 1,000 node fixture에 desktop 500 node, 1,000 edge, 80 label과 mobile 250 node, 500 edge, 40 label 상한을 적용했다. Stable priority와 semantic anchor로 active representation을 고르고 계산 rectangle 및 실제 1280x720, 390x844 DOM에서 label collision은 0%였다. Node, edge, label omission은 budget, omitted endpoint, collision reason으로 6/6 전부 설명했고 reverse input receipt hash도 6/6 일치했다. Aggregate receipt는 omitted member, status count, coverage, quantile, top changes를 보존한다. U0-V03 density contract는 `promote`지만 FPS, heap, hit-test, accessibility와 renderer bakeoff는 아직 미측정이다.
 
 ## 5. existing attempts 재사용 지도
 

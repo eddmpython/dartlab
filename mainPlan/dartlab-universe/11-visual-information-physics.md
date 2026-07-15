@@ -204,6 +204,8 @@ UniverseRenderer
 
 2026-07-16 U0-V02 실행 결과: Live Atlas, industry, company의 94개 node를 scene별 20회 순서 교란해 logical hash 60/60, 세 viewport anchor hash 180/180을 얻었다. Chrome, Firefox, WebKit 180회 실측에서도 logical 및 anchor hash가 180/180 일치했고 최대 drift는 0px였다. Force iteration은 0이며 industry stage, valid order 또는 unknown time lane, evidence status만 좌표 의미에 사용한다. Current artifact의 valid time 0/94는 추정하지 않고 unknown 94/94로 receipt에 남긴다. Layout contract만 promote하며 U0-V01 comprehension과 U0-V04 time comprehension은 계속 독립 gate다.
 
+2026-07-16 U0-V03 실행 결과: 250, 500, 1,000 node의 desktop 및 mobile 6 case에서 active mark와 label budget, exact omission receipt, reverse input hash가 모두 6/6 통과했다. 1,000 node는 desktop 500과 mobile 250으로 lower LOD를 적용하고 omitted 500 및 750 node를 aggregate receipt로 보존한다. 1280x720과 390x844 실제 DOM label collision은 0%였고 visible label은 desktop 최대 57/80, mobile 40/40이었다. Density contract만 promote하며 frame, heap, hit-test, accessibility 및 renderer selection은 U0-V05와 U0-V06에 남긴다.
+
 ## 12. 유지보수 규칙
 
 - visual grammar token은 renderer package가 아니라 universe contract가 소유한다.
