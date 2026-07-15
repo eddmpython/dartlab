@@ -100,6 +100,7 @@ def r2_put(
         "r2",
         "object",
         "put",
+        "--remote",
         f"{bucket}/{key}",
         "--file",
         str(local_path),

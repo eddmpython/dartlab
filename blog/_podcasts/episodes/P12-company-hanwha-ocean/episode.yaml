@@ -1,0 +1,77 @@
+# 에피소드 메타데이터 (사람이 작성하는 SSOT).
+# 회사 에피소드: 소스 = 블로그 글(SSOT). 별도 script.md 없음. sourceDoc = 블로그 발행 URL.
+# 발행 시 guid/오디오크기/길이/발행일은 published.json 에 기록된다(여기 아님).
+episode:
+  version: 1
+  episodeId: P12-company-hanwha-ocean
+  episodeNo: 12
+  slug: hanwha-ocean
+  title: "한화오션: 방산 프리미엄에 가려진 13.7% 흑자 구조"
+  lane: company
+  language: ko
+  status: ready
+
+  audio:
+    generator: notebooklm
+    sourceHint: "Downloads/방산_프리미엄에_가려진_한화오션_흑자_구조.m4a"
+    sourceDoc: https://eddmpython.github.io/dartlab/blog/042660-hanwha-ocean
+
+  image:
+    source: cover.jpg
+    key: episodes/hanwha-ocean/cover-3000.jpg
+  staticImage:
+    source: static-video.jpg
+    key: episodes/hanwha-ocean/static-video.jpg
+  thumbnail:
+    source: static-video.jpg
+    key: episodes/hanwha-ocean/static-video.jpg
+  sourceAssets:
+    - source: assets/source.webp
+      name: hanwha-ocean-shipyard
+      role: reusable-original
+  visual:
+    source: assets/source.webp
+    kicker: DartLab Podcast
+    titleLines:
+      - 한화오션
+      - "방산 프리미엄 뒤"
+      - "[[13.7%]] 흑자 구조"
+    subtitle: 상선 이익률, 특수선 적자, 수주잔고를 나눠 읽기
+    footer: DART 공시 · 2026Q1 · 투자권유 아님
+  caption:
+    hook: 한화오션은 방산 기대가 큰 회사지만 2026년 1분기 흑자는 상선에서 먼저 나왔습니다.
+    body: >-
+      한화오션은 2026년 1분기 영업이익률 13.7%로 두 자릿수에 올라섰습니다. 하지만 세그먼트를
+      나누면 상선 이익률은 18.0%, 특수선 이익률은 -6.5%였습니다. 그래서 이 회사는 방산 프리미엄
+      하나로 읽기보다 상선 잔고가 매출과 이익으로 바뀌는 속도, 특수선 비용이 줄어드는 시점,
+      부채비율과 이자보상배율을 함께 봐야 합니다.
+    cta: 전체 에피소드는 DartLab 팟캐스트와 블로그 글에서 들을 수 있습니다.
+    hashtags: ["#한화오션", "#042660", "#조선", "#방산", "#DartLab"]
+
+  audienceQuestion: 한화오션의 13.7% 흑자는 방산 프리미엄이 만든 것일까, 상선 사이클이 만든 것일까?
+  oneLineMessage: >-
+    한화오션의 2026년 1분기 영업이익률 13.7%는 턴어라운드의 증거지만, 흑자의 주된 출발점은
+    방산 기대가 아니라 상선 잔고와 선가 회복이다. 특수선은 아직 비용 부담이 남아 있어 수출 수주와
+    손익 전환을 따로 확인해야 한다.
+  summary: >-
+    한화오션은 대우조선해양의 긴 표류 이후 한화그룹에 편입됐고, 2026년 1분기에는 영업이익률
+    13.7%, 수주잔고 34.5조원, 국내 수주 점유율 30.9%라는 반전을 보여 줬습니다. 하지만 매출의
+    대부분은 상선에서 나오고, 특수선은 방산 기대와 달리 1분기 적자였습니다. 이번 편은 상선 이익률
+    18.0%, 특수선 이익률 -6.5%, 부채비율 205%, 이자보상배율 1.52배를 함께 보며 한화오션을
+    방산주가 아니라 반전 중인 종합 조선소로 읽는 방법을 설명합니다.
+  whereToLook:
+    - 상선 이익률이 두 자릿수로 유지되는지
+    - 특수선 비용 부담이 줄고 손익이 흑자로 전환되는지
+    - 수주잔고 34.5조원이 실제 매출과 현금흐름으로 바뀌는지
+    - 부채비율과 이자보상배율이 턴어라운드를 따라 개선되는지
+  forbiddenAngles: [매수, 매도, 목표가, 수익 보장, 확정 전망, 방산 수주 확정 단정]
+
+  stockCode: "042660"
+  corpName: 한화오션
+  topicSlug: hanwha-ocean
+  cardType: company
+  youtubeId: ""
+  links:
+    blogSlug: "042660-hanwha-ocean"
+    cardSlug: "042660-hanwha-ocean"
+    terminalCode: "042660"
