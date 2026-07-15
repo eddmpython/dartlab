@@ -16,15 +16,18 @@ from dartlab.simulate.vintage import VintageRef, worldStatePayloadHash
 from dartlab.simulate.world import (
     ActionSpec,
     ConstraintSpec,
+    LawCertificate,
     LawSpec,
     ObjectiveSpec,
     ScenarioPath,
     SimulationBlocked,
     SimulationRun,
+    SimulationSpecError,
     StrategySpec,
     VariableSpec,
     WorldModel,
     WorldState,
+    issueLawCertificate,
     simulateWorld,
 )
 
@@ -61,6 +64,13 @@ _STATE_PRIMITIVE_INPUTS = {
 }
 _CONCRETE_CURRENCY_UNITS = {"KRW", "USD"}
 _CONCRETE_CURRENCY_PER_UNIT_UNITS = {"KRWPerUnit", "USDPerUnit"}
+_OPERATING_LAW_EVIDENCE_KINDS = {
+    "accountingIdentity",
+    "measuredAssociation",
+    "identifiedIntervention",
+    "explicitAssumption",
+}
+_OPERATING_ACTION_EVIDENCE_KINDS = {"accountingIdentity", "identifiedIntervention", "explicitAssumption"}
 _STATE_IDS = ("price", "demandVolume", "unitCost", "fixedCost", "capacityUnits", "cash", "debt")
 _METRIC_IDS = (
     "soldVolume",
@@ -129,6 +139,12 @@ class OperatingWorldInputs:
     stateVintage: VintageRef | None = None
     initialStateAdmissionReceiptId: str = ""
     statePrimitiveContracts: tuple[StatePrimitive, ...] = ()
+    operatingLawEvidenceKind: str = "explicitAssumption"
+    operatingLawCertificate: LawCertificate | None = None
+    priceChangeEvidenceKind: str = "explicitAssumption"
+    priceChangeCertificateId: str = ""
+    capacityInvestmentEvidenceKind: str = "explicitAssumption"
+    capacityInvestmentCertificateId: str = ""
 
 
 def _finite(value: float, label: str) -> float:
@@ -421,9 +437,221 @@ def operatingInputsFromCompiledState(
     )
 
 
+def _validateOperatingLawEvidence(inputs: OperatingWorldInputs) -> None:
+    if inputs.operatingLawEvidenceKind not in _OPERATING_LAW_EVIDENCE_KINDS:
+        raise ValueError(f"unsupported operating law evidence: {inputs.operatingLawEvidenceKind}")
+    if inputs.operatingLawEvidenceKind in {"measuredAssociation", "identifiedIntervention"}:
+        if inputs.operatingLawCertificate is None:
+            raise ValueError("empirical operating law evidence needs a certificate")
+    elif inputs.operatingLawCertificate is not None:
+        raise ValueError("non-empirical operating law evidence cannot carry a certificate")
+
+
+def _validateOperatingActionEvidence(evidenceKind: str, certificateId: str, actionId: str) -> None:
+    if evidenceKind not in _OPERATING_ACTION_EVIDENCE_KINDS:
+        raise ValueError(f"unsupported operating action evidence: {actionId}")
+    if evidenceKind == "identifiedIntervention" and not _validDigest(certificateId):
+        raise ValueError(f"identified operating action needs a certificate: {actionId}")
+    if evidenceKind != "identifiedIntervention" and certificateId:
+        raise ValueError(f"non-identified operating action cannot carry a certificate: {actionId}")
+
+
+def _operatingStepExecutableSignature():
+    return "operating-step-v1"
+
+
+@dataclass(frozen=True)
+class _OperatingStepFn:
+    priceElasticity: float
+    capacityUnitsPerCurrency: float
+    capacityDecayRate: float
+    taxRate: float
+
+    def __getattribute__(self, name: str):
+        if name == "__qualname__":
+            return "_OperatingStepFn.__call__"
+        return object.__getattribute__(self, name)
+
+    @property
+    def __code__(self):
+        return _operatingStepExecutableSignature.__code__
+
+    @property
+    def __globals__(self):
+        return globals()
+
+    def __call__(self, ctx):
+        """Move one period of operating variables through PnL, cash, debt, and capacity."""
+
+        priceMove = ctx.shocks["marketPriceChange"] + ctx.actions["priceChange"]
+        price = max(0.0, ctx.prior["price"] * (1.0 + priceMove))
+        demandMultiplier = 1.0 + ctx.shocks["demandChange"] - self.priceElasticity * ctx.actions["priceChange"]
+        demandVolume = max(0.0, ctx.prior["demandVolume"] * demandMultiplier)
+        unitCost = max(0.0, ctx.prior["unitCost"] * (1.0 + ctx.shocks["unitCostChange"]))
+        fixedCost = max(0.0, ctx.prior["fixedCost"] * (1.0 + ctx.shocks["fixedCostChange"]))
+        availableCapacityUnits = max(
+            0.0,
+            ctx.prior["capacityUnits"] * (1.0 - self.capacityDecayRate) * (1.0 + ctx.shocks["capacityChange"])
+            + ctx.actions["capacityInvestment"] * self.capacityUnitsPerCurrency,
+        )
+        soldVolume = min(demandVolume, availableCapacityUnits)
+        unmetVolume = max(0.0, demandVolume - soldVolume)
+        revenue = price * soldVolume
+        variableCost = unitCost * soldVolume
+        operatingProfit = revenue - variableCost - fixedCost
+        interest = ctx.prior["debt"] * ctx.shocks["debtRate"]
+        pretax = operatingProfit - interest
+        tax = max(0.0, pretax * self.taxRate)
+        netIncome = pretax - tax
+        debt = ctx.prior["debt"] + ctx.actions["borrow"] - ctx.actions["repay"]
+        if debt < -1e-9:
+            raise SimulationBlocked("operating repayment exceeds available debt")
+        debt = max(0.0, debt)
+        cashChange = netIncome - ctx.actionCost + ctx.actions["borrow"] - ctx.actions["repay"]
+        cash = ctx.prior["cash"] + cashChange
+        capacityUnits = availableCapacityUnits
+        burn = max(0.0, -cashChange)
+        cashRunwaySteps = cash / burn if burn > 1e-9 and cash > 0 else (0.0 if cash <= 0 else 1_000_000_000.0)
+        capacityUtilization = soldVolume / availableCapacityUnits if availableCapacityUnits > 1e-9 else 0.0
+        capacityBound = float(demandVolume > availableCapacityUnits + 1e-9)
+        return {
+            "price": price,
+            "demandVolume": demandVolume,
+            "unitCost": unitCost,
+            "fixedCost": fixedCost,
+            "capacityUnits": capacityUnits,
+            "cash": cash,
+            "debt": debt,
+            "soldVolume": soldVolume,
+            "unmetVolume": unmetVolume,
+            "availableCapacityUnits": availableCapacityUnits,
+            "revenue": revenue,
+            "variableCost": variableCost,
+            "operatingProfit": operatingProfit,
+            "interest": interest,
+            "tax": tax,
+            "netIncome": netIncome,
+            "cashChange": cashChange,
+            "netCash": cash - debt,
+            "cashRunwaySteps": cashRunwaySteps,
+            "capacityUtilization": capacityUtilization,
+            "capacityBound": capacityBound,
+        }
+
+
+def _operatingStepFn(
+    *,
+    priceElasticity: float,
+    capacityUnitsPerCurrency: float,
+    capacityDecayRate: float,
+    taxRate: float,
+):
+    return _OperatingStepFn(
+        priceElasticity=priceElasticity,
+        capacityUnitsPerCurrency=capacityUnitsPerCurrency,
+        capacityDecayRate=capacityDecayRate,
+        taxRate=taxRate,
+    )
+
+
+def _operatingLawSpec(
+    inputs: OperatingWorldInputs,
+    *,
+    evidenceKind: str | None = None,
+    certificate: LawCertificate | None = None,
+) -> LawSpec:
+    lawEvidenceKind = inputs.operatingLawEvidenceKind if evidenceKind is None else evidenceKind
+    lawCertificate = inputs.operatingLawCertificate if certificate is None else certificate
+    return LawSpec(
+        "operatingStep",
+        outputs=_STATE_IDS + _METRIC_IDS,
+        priorInputs=_STATE_IDS,
+        shockInputs=(
+            "marketPriceChange",
+            "demandChange",
+            "unitCostChange",
+            "fixedCostChange",
+            "capacityChange",
+            "debtRate",
+        ),
+        actionInputs=("priceChange", "capacityInvestment", "borrow", "repay"),
+        usesActionCost=True,
+        evidenceKind=lawEvidenceKind,
+        provenance="simulate.operatingWorld:operatingStep",
+        version="1",
+        certificate=lawCertificate,
+        parameters={
+            "priceElasticity": inputs.priceElasticity,
+            "capacityUnitsPerCurrency": inputs.capacityUnitsPerCurrency,
+            "capacityDecayRate": inputs.capacityDecayRate,
+            "taxRate": inputs.taxRate,
+        },
+        fn=_operatingStepFn(
+            priceElasticity=inputs.priceElasticity,
+            capacityUnitsPerCurrency=inputs.capacityUnitsPerCurrency,
+            capacityDecayRate=inputs.capacityDecayRate,
+            taxRate=inputs.taxRate,
+        ),
+    )
+
+
+def issueOperatingLawCertificate(
+    inputs: OperatingWorldInputs,
+    *,
+    evidenceRows: tuple[Mapping[str, object], ...],
+    knowledgeAsOf: str,
+    historyStatus: str = "asKnown",
+    frequency: str | None = None,
+    stepSpan: int | None = None,
+    rules: str = "operating-law-oos-evidence",
+    evidenceKind: str = "measuredAssociation",
+) -> LawCertificate:
+    """Issue a certificate for the operating transition law parameters.
+
+    Args:
+        inputs: Operating world inputs whose transition parameters are being certified.
+        evidenceRows: Rows consumed by ``issueLawCertificate``.
+        knowledgeAsOf: Evidence knowledge cutoff.
+        historyStatus: ``asKnown`` or retrospective evidence status.
+        frequency: Optional law frequency. Defaults to the input step frequency.
+        stepSpan: Optional step span. Defaults to the input step span.
+        rules: Rule label for the evidence package.
+        evidenceKind: Empirical law evidence kind to certify.
+
+    Returns:
+        ``LawCertificate`` for a measured or identified operating law.
+
+    Raises:
+        SimulationSpecError: If evidence rows cannot admit the law.
+
+    Example:
+        ``certificate = issueOperatingLawCertificate(inputs, evidenceRows=rows, knowledgeAsOf="20250101")``
+    """
+
+    if evidenceKind not in {"measuredAssociation", "identifiedIntervention"}:
+        raise SimulationSpecError("operating law certificate evidence kind is invalid")
+    law = _operatingLawSpec(inputs, evidenceKind=evidenceKind, certificate=None)
+    return issueLawCertificate(
+        law,
+        evidenceRows=evidenceRows,
+        knowledgeAsOf=knowledgeAsOf,
+        historyStatus=historyStatus,
+        frequency=frequency or inputs.stepFrequency,
+        stepSpan=inputs.stepSpan if stepSpan is None else stepSpan,
+        rules=rules,
+    )
+
+
 def _buildOperatingWorld(inputs: OperatingWorldInputs, *, maxFinancing: float, maxInvestment: float) -> WorldModel:
     if maxFinancing < 0 or maxInvestment < 0:
         raise ValueError("operating financing and investment limits must be nonnegative")
+    _validateOperatingLawEvidence(inputs)
+    _validateOperatingActionEvidence(inputs.priceChangeEvidenceKind, inputs.priceChangeCertificateId, "priceChange")
+    _validateOperatingActionEvidence(
+        inputs.capacityInvestmentEvidenceKind,
+        inputs.capacityInvestmentCertificateId,
+        "capacityInvestment",
+    )
     contracts = {item.variableId: item for item in inputs.statePrimitiveContracts}
     if len(contracts) != len(inputs.statePrimitiveContracts):
         raise ValueError("operating state primitive contracts need unique variableIds")
@@ -482,7 +710,17 @@ def _buildOperatingWorld(inputs: OperatingWorldInputs, *, maxFinancing: float, m
         + [VariableSpec(name, metricUnits.get(name, "currency"), "metric") for name in _METRIC_IDS]
     )
     actions = (
-        ActionSpec("priceChange", "ratioChangePerStep", -0.9, 10.0, 0, 0.0, "explicitAssumption", "operating:price"),
+        ActionSpec(
+            "priceChange",
+            "ratioChangePerStep",
+            -0.9,
+            10.0,
+            0,
+            0.0,
+            inputs.priceChangeEvidenceKind,
+            "operating:price",
+            certificateId=inputs.priceChangeCertificateId,
+        ),
         ActionSpec(
             "capacityInvestment",
             "currency",
@@ -490,109 +728,14 @@ def _buildOperatingWorld(inputs: OperatingWorldInputs, *, maxFinancing: float, m
             maxInvestment,
             1,
             1.0,
-            "explicitAssumption",
+            inputs.capacityInvestmentEvidenceKind,
             "operating:capacity",
+            certificateId=inputs.capacityInvestmentCertificateId,
         ),
         ActionSpec("borrow", "currency", 0.0, maxFinancing, 0, 0.0, "accountingIdentity", "operating:debt"),
         ActionSpec("repay", "currency", 0.0, maxFinancing, 0, 0.0, "accountingIdentity", "operating:debt"),
     )
-
-    def operatingStep(ctx):
-        """Move one period of operating variables through PnL, cash, debt, and capacity.
-
-        Args:
-            ctx: ``StepContext`` exposing declared prior state, shocks, and actions.
-
-        Returns:
-            Full next state and operating metrics for the current step.
-
-        Raises:
-            SimulationBlocked: If repayment exceeds debt available after borrowing.
-
-        Example:
-            ``outputs = operatingStep(ctx)``
-        """
-
-        priceMove = ctx.shocks["marketPriceChange"] + ctx.actions["priceChange"]
-        price = max(0.0, ctx.prior["price"] * (1.0 + priceMove))
-        demandMultiplier = 1.0 + ctx.shocks["demandChange"] - inputs.priceElasticity * ctx.actions["priceChange"]
-        demandVolume = max(0.0, ctx.prior["demandVolume"] * demandMultiplier)
-        unitCost = max(0.0, ctx.prior["unitCost"] * (1.0 + ctx.shocks["unitCostChange"]))
-        fixedCost = max(0.0, ctx.prior["fixedCost"] * (1.0 + ctx.shocks["fixedCostChange"]))
-        availableCapacityUnits = max(
-            0.0,
-            ctx.prior["capacityUnits"] * (1.0 - inputs.capacityDecayRate) * (1.0 + ctx.shocks["capacityChange"])
-            + ctx.actions["capacityInvestment"] * inputs.capacityUnitsPerCurrency,
-        )
-        soldVolume = min(demandVolume, availableCapacityUnits)
-        unmetVolume = max(0.0, demandVolume - soldVolume)
-        revenue = price * soldVolume
-        variableCost = unitCost * soldVolume
-        operatingProfit = revenue - variableCost - fixedCost
-        interest = ctx.prior["debt"] * ctx.shocks["debtRate"]
-        pretax = operatingProfit - interest
-        tax = max(0.0, pretax * inputs.taxRate)
-        netIncome = pretax - tax
-        debt = ctx.prior["debt"] + ctx.actions["borrow"] - ctx.actions["repay"]
-        if debt < -1e-9:
-            raise SimulationBlocked("operating repayment exceeds available debt")
-        debt = max(0.0, debt)
-        cashChange = netIncome - ctx.actionCost + ctx.actions["borrow"] - ctx.actions["repay"]
-        cash = ctx.prior["cash"] + cashChange
-        capacityUnits = availableCapacityUnits
-        burn = max(0.0, -cashChange)
-        cashRunwaySteps = cash / burn if burn > 1e-9 and cash > 0 else (0.0 if cash <= 0 else 1_000_000_000.0)
-        capacityUtilization = soldVolume / availableCapacityUnits if availableCapacityUnits > 1e-9 else 0.0
-        capacityBound = float(demandVolume > availableCapacityUnits + 1e-9)
-        return {
-            "price": price,
-            "demandVolume": demandVolume,
-            "unitCost": unitCost,
-            "fixedCost": fixedCost,
-            "capacityUnits": capacityUnits,
-            "cash": cash,
-            "debt": debt,
-            "soldVolume": soldVolume,
-            "unmetVolume": unmetVolume,
-            "availableCapacityUnits": availableCapacityUnits,
-            "revenue": revenue,
-            "variableCost": variableCost,
-            "operatingProfit": operatingProfit,
-            "interest": interest,
-            "tax": tax,
-            "netIncome": netIncome,
-            "cashChange": cashChange,
-            "netCash": cash - debt,
-            "cashRunwaySteps": cashRunwaySteps,
-            "capacityUtilization": capacityUtilization,
-            "capacityBound": capacityBound,
-        }
-
-    law = LawSpec(
-        "operatingStep",
-        outputs=_STATE_IDS + _METRIC_IDS,
-        priorInputs=_STATE_IDS,
-        shockInputs=(
-            "marketPriceChange",
-            "demandChange",
-            "unitCostChange",
-            "fixedCostChange",
-            "capacityChange",
-            "debtRate",
-        ),
-        actionInputs=("priceChange", "capacityInvestment", "borrow", "repay"),
-        usesActionCost=True,
-        evidenceKind="explicitAssumption",
-        provenance="simulate.operatingWorld:operatingStep",
-        version="1",
-        parameters={
-            "priceElasticity": inputs.priceElasticity,
-            "capacityUnitsPerCurrency": inputs.capacityUnitsPerCurrency,
-            "capacityDecayRate": inputs.capacityDecayRate,
-            "taxRate": inputs.taxRate,
-        },
-        fn=operatingStep,
-    )
+    law = _operatingLawSpec(inputs)
     return WorldModel(
         "company-operating-world",
         "1",

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from datetime import date, timedelta
 from hashlib import sha256
 
 import polars as pl
@@ -27,16 +28,36 @@ from dartlab.simulate.driverPaths import (
     DriverHistorySource,
     buildDriverPathSet,
     composeDriverPathSetWithAssumptions,
+    driverFactorsToOperatingSpecs,
 )
 from dartlab.simulate.operatingBridge import (
     OperatingShockBaseline,
     OperatingTransmissionExposure,
+    bridgeOperatingPath,
     sourceFactorContractHash,
 )
 from dartlab.simulate.operatingWorld import (
     OperatingPrimitive,
+    _buildOperatingWorld,
+    _initialStateFromInputs,
     buildOperatingStrategy,
+    issueOperatingLawCertificate,
+    operatingInputsFromCompiledState,
     operatingInputsFromPrimitives,
+    runOperatingStrategies,
+)
+from dartlab.simulate.policyEvaluation import (
+    PolicyAdmissionEvidence,
+    PolicyEvaluationSpec,
+    PolicyOosEpisode,
+    PolicyPathPrimitive,
+    admitPolicyOosEpisode,
+    appendPolicyOosEpisode,
+    initializePolicyOosLedger,
+    issuePolicyEvaluationCertificate,
+    parameterContractHashFor,
+    readPolicyOosLedger,
+    sealPolicyOosBatch,
 )
 from dartlab.simulate.scenarioComposition import (
     COMPOSED_CONDITIONAL_PATH_PACKAGE_KIND,
@@ -74,12 +95,32 @@ from dartlab.simulate.scenarioComposition import (
     scenarioPathPackageParentReceiptIds,
     scenarioPathPackageSubjectHash,
 )
-from dartlab.simulate.vintage import VintageRef
+from dartlab.simulate.stateCompiler import (
+    StateCompileSpec,
+    buildProviderObservationBatch,
+    compilePointInTimeState,
+    issuePointInTimeState,
+    issueProviderObservationBatch,
+    makeVariableObservation,
+)
+from dartlab.simulate.stateSupport import (
+    INITIAL_STATE_RULE_HASH,
+    INITIAL_STATE_RULE_ID,
+    INITIAL_STATE_RULE_VERSION,
+    stateAdmissionArtifact,
+)
+from dartlab.simulate.stateVariables import StateVariableSpec, buildStateVariableRegistry
+from dartlab.simulate.vintage import VintageRef, canonicalPayloadBytes, canonicalPayloadHash
 from dartlab.simulate.world import (
     bindAdmittedPathContent,
     bindPathAdmissionReceipt,
+    constraintContractHash,
+    initialStateAdmissionArtifact,
+    initialStateAdmissionSubjectHash,
+    objectiveContractHash,
     pathSetAdmissionArtifact,
     pathSetAdmissionSubjectHash,
+    strategyContractHash,
 )
 
 _COEFFICIENT_RECEIPT_ID = "a" * 64
@@ -102,6 +143,238 @@ def _trust(tmp_path):
     trusted = {"test-key": TrustedIssuer("test-issuer", "test-key", public)}
     verifier = AdmissionVerifier(database, artifacts, trusted)
     return database, artifacts, private.private_bytes_raw(), trusted, verifier
+
+
+def _stamp(day: date) -> str:
+    return day.strftime("%Y%m%d")
+
+
+def _issueTestReceipt(
+    context,
+    *,
+    kind,
+    content,
+    subjectHash=None,
+    status="admitted",
+    knowledgeAsOf="20191231",
+    issuedAt="20191231T000000Z",
+    ruleId=None,
+    ruleVersion="1",
+    ruleHash=None,
+    parentReceiptIds=(),
+    frequency="quarter",
+    stepSpan=1,
+    maxAdmittedStep=0,
+):
+    database, artifacts, private, trusted = context
+    artifactHash = putAdmissionArtifact(artifacts, content)
+    return issueAdmissionReceipt(
+        database,
+        artifacts,
+        privateKey=private,
+        kind=kind,
+        subjectHash=artifactHash if subjectHash is None else subjectHash,
+        artifactHash=artifactHash,
+        parentReceiptIds=parentReceiptIds,
+        ruleId=ruleId or f"test-{kind}",
+        ruleVersion=ruleVersion,
+        ruleHash=ruleHash or canonicalPayloadHash({"rule": kind}),
+        issuerId="test-issuer",
+        issuerKeyId="test-key",
+        issuerExecutableHash=sha256(b"test-scenario-issuer-v1").hexdigest(),
+        knowledgeAsOf=knowledgeAsOf,
+        revisionPolicy="asKnown",
+        coverage="asOfExact",
+        frequency=frequency,
+        stepSpan=stepSpan,
+        maxAdmittedStep=maxAdmittedStep,
+        status=status,
+        issuedAt=issuedAt,
+        trustedIssuers=trusted,
+    )
+
+
+_OPERATING_STATE_VALUES = {
+    "price": 10.0,
+    "demandVolume": 200.0,
+    "unitCost": 2.0,
+    "fixedCost": 50.0,
+    "capacityUnits": 100.0,
+    "cash": 10_000.0,
+    "debt": 20.0,
+}
+_OPERATING_STATE_UNITS = {
+    "price": "currencyPerUnit",
+    "demandVolume": "units",
+    "unitCost": "currencyPerUnit",
+    "fixedCost": "currency",
+    "capacityUnits": "units",
+    "cash": "currency",
+    "debt": "currency",
+}
+
+
+def _issueOperatingCompiledState(
+    context,
+    *,
+    decisionAsOf: str,
+    values: dict[str, float] | None = None,
+):
+    database, artifacts, private, trusted = context
+    verifier = AdmissionVerifier(database, artifacts, trusted)
+    stateValues = dict(_OPERATING_STATE_VALUES if values is None else values)
+    decision = date(int(decisionAsOf[:4]), int(decisionAsOf[4:6]), int(decisionAsOf[6:8]))
+    availableAt = _stamp(decision - timedelta(days=1))
+    sourceReceipt = _issueTestReceipt(
+        context,
+        kind="dataVintage",
+        content=canonicalPayloadBytes({"operatingState": decisionAsOf, "values": stateValues}),
+        status="verifiedVintage",
+        knowledgeAsOf=availableAt,
+        issuedAt=f"{availableAt}T000000Z",
+        frequency="mixed",
+    )
+    vintage = VintageRef(
+        artifactKind="providerObservation",
+        provider="fixture",
+        artifactId=f"operating-state-{decisionAsOf}",
+        artifactHash=sourceReceipt.artifactHash,
+        payloadHash=sourceReceipt.subjectHash,
+        knowledgeAsOf=availableAt,
+        availableAt=availableAt,
+        revisionPolicy="asKnown",
+        coverage="asOfExact",
+        fiscalThrough=availableAt,
+        receiptId=sourceReceipt.receiptId,
+    )
+    observations = tuple(
+        makeVariableObservation(
+            providerId="fixture",
+            datasetId="operating-state",
+            entityId="005930",
+            signalId=variableId,
+            value=value,
+            unit=_OPERATING_STATE_UNITS[variableId],
+            frequency="quarter",
+            timing="stock",
+            transformId="identity-v1",
+            evidenceRole="observed",
+            eventAt=availableAt,
+            availableAt=availableAt,
+            knowledgeAsOf=availableAt,
+            availabilityPrecision="date",
+            revisionId=f"r-{decisionAsOf}",
+            vintage=vintage,
+            normalizationRuleHash=sha256(b"identity-v1").hexdigest(),
+        )
+        for variableId, value in sorted(stateValues.items())
+    )
+    signalIds = tuple(sorted(stateValues))
+    batch = buildProviderObservationBatch(
+        observations,
+        providerId="fixture",
+        datasetId="operating-state",
+        entityId="005930",
+        signalIds=signalIds,
+        cutoffAsOf=decisionAsOf,
+    )
+    batch = issueProviderObservationBatch(
+        batch,
+        database,
+        artifacts,
+        privateKey=private,
+        issuerId="test-issuer",
+        issuerKeyId="test-key",
+        issuedAt=f"{decisionAsOf}T000000Z",
+        trustedIssuers=trusted,
+    )
+    registry = buildStateVariableRegistry(
+        tuple(
+            StateVariableSpec(
+                variableId=variableId,
+                signalId=variableId,
+                providerId="fixture",
+                datasetId="operating-state",
+                unit=_OPERATING_STATE_UNITS[variableId],
+                role="state",
+                evidenceRole="observed",
+                frequency="quarter",
+                timing="stock",
+                transformId="identity-v1",
+                maxStalenessDays=400,
+                lower=0.0,
+            )
+            for variableId in sorted(stateValues)
+        )
+    )
+    compiled = compilePointInTimeState(
+        registry,
+        (batch,),
+        StateCompileSpec(
+            entityId="005930",
+            market="KR",
+            decisionAsOf=decisionAsOf,
+            consumerId="operating-world",
+            consumerVersion="1",
+            variableIds=signalIds,
+            requireExact=True,
+        ),
+        admissionVerifier=verifier,
+    )
+    return issuePointInTimeState(
+        compiled,
+        database,
+        artifacts,
+        privateKey=private,
+        issuerId="test-issuer",
+        issuerKeyId="test-key",
+        issuedAt=f"{decisionAsOf}T000000Z",
+        trustedIssuers=trusted,
+    )
+
+
+def _certifiedOperatingInputs(context, *, decisionAsOf: str = "20210104"):
+    compiled = _issueOperatingCompiledState(context, decisionAsOf=decisionAsOf)
+    inputs = operatingInputsFromCompiledState(
+        compiled,
+        priceElasticity=0.0,
+        capacityUnitsPerCurrency=1.0,
+        taxRate=0.0,
+    )
+    certificate = issueOperatingLawCertificate(
+        inputs,
+        evidenceRows=(
+            {"step": 1, "metric": "operatingProfit", "estimate": 1.0, "threshold": 0.0, "operator": "ge"},
+            {"step": 2, "metric": "operatingProfit", "estimate": 1.0, "threshold": 0.0, "operator": "ge"},
+        ),
+        knowledgeAsOf="20191231",
+        evidenceKind="identifiedIntervention",
+    )
+    inputs = replace(
+        inputs,
+        operatingLawEvidenceKind="identifiedIntervention",
+        operatingLawCertificate=certificate,
+        priceChangeEvidenceKind="identifiedIntervention",
+        priceChangeCertificateId="3" * 64,
+        capacityInvestmentEvidenceKind="identifiedIntervention",
+        capacityInvestmentCertificateId="4" * 64,
+    )
+    model = _buildOperatingWorld(inputs, maxFinancing=200.0, maxInvestment=200.0)
+    initial = _initialStateFromInputs(inputs)
+    receipt = _issueTestReceipt(
+        context,
+        kind="initialState",
+        content=initialStateAdmissionArtifact(model, initial),
+        subjectHash=initialStateAdmissionSubjectHash(model, initial),
+        parentReceiptIds=(compiled.stateReceiptId,),
+        ruleId=INITIAL_STATE_RULE_ID,
+        ruleVersion=INITIAL_STATE_RULE_VERSION,
+        ruleHash=INITIAL_STATE_RULE_HASH,
+        knowledgeAsOf=inputs.knowledgeAsOf,
+        issuedAt=f"{decisionAsOf}T000000Z",
+        frequency="mixed",
+    )
+    return replace(inputs, initialStateAdmissionReceiptId=receipt.receiptId), compiled, receipt
 
 
 def _issueBasePathReceipt(database, artifacts, private, trusted, basePathSet):
@@ -610,6 +883,460 @@ def _strategies(investment: float = 25.0):
             refs=("strategy://invest",),
         ),
     )
+
+
+def _policyReadyStrategies(investment: float = 25.0):
+    hold, invest = _strategies(investment=investment)
+    return (
+        replace(hold, policyVersion="static-hold-v1", policyProvenance="fixture://hold"),
+        replace(invest, policyVersion="static-invest-v1", policyProvenance="fixture://invest"),
+    )
+
+
+def _observedBaselines():
+    return tuple(
+        OperatingShockBaseline(
+            target,
+            0.04 if target == "debtRate" else 0.0,
+            "effectiveRatePerStep" if target == "debtRate" else "ratioChangePerStep",
+            "observed",
+            f"providerObservationBatch:operating-baseline-{target}",
+        )
+        for target in (
+            "marketPriceChange",
+            "demandChange",
+            "unitCostChange",
+            "fixedCostChange",
+            "capacityChange",
+            "debtRate",
+        )
+    )
+
+
+def _admittedHistoryPathSet(context, *, pathCount: int = 125):
+    sourceReceipt = _issueTestReceipt(
+        context,
+        kind="dataVintage",
+        content=b"observed demand history known 2019-12-31",
+        status="verifiedVintage",
+        knowledgeAsOf="20191231",
+        issuedAt="20191231T000000Z",
+        frequency="quarter",
+    )
+    vintage = VintageRef(
+        artifactKind="driverPathSet",
+        provider="fixture",
+        artifactId="observed-demand-history",
+        artifactHash=sourceReceipt.artifactHash,
+        payloadHash=sourceReceipt.subjectHash,
+        knowledgeAsOf="20191231",
+        availableAt="20191231",
+        revisionPolicy="asKnown",
+        coverage="asOfExact",
+        eventThrough="20191001",
+        receiptId=sourceReceipt.receiptId,
+    )
+    card = DriverCard(
+        cardId="observed-demand-history",
+        sourceKind="history",
+        providerId="fixture",
+        datasetId="driver-history",
+        entityId="005930",
+        frequency="quarter",
+        stepSpan=1,
+        factors=(DriverFactorSpec("observedDemandShock", "simpleReturn", "quarter", "innovation", "history-v1"),),
+        historyStatus="asKnown",
+        sourceRefs=("providerObservationBatch:observed-demand-history",),
+    )
+    panel = pl.DataFrame(
+        {
+            "eventTime": [
+                "20180101",
+                "20180401",
+                "20180701",
+                "20181001",
+                "20190101",
+                "20190401",
+                "20190701",
+                "20191001",
+            ],
+            "availableAt": [
+                "20180102",
+                "20180402",
+                "20180702",
+                "20181002",
+                "20190102",
+                "20190402",
+                "20190702",
+                "20191002",
+            ],
+            "observedDemandShock": [0.02, -0.01, 0.03, 0.01, -0.02, 0.04, 0.00, 0.02],
+        }
+    )
+    pathSet = buildDriverPathSet(
+        (DriverHistorySource(card, panel),),
+        knowledgeAsOf="20191231",
+        horizon=2,
+        pathCount=pathCount,
+        blockLength=1,
+        seed=11,
+        minObservations=8,
+    )
+    admitted = bindAdmittedPathContent(
+        tuple(
+            replace(
+                path,
+                validationStatus="admitted",
+                certificateId="5" * 64,
+                maxAdmittedStep=2,
+                historyStatus="asKnown",
+                vintage=vintage,
+            )
+            for path in pathSet.paths
+        )
+    )
+    pathReceipt = _issueTestReceipt(
+        context,
+        kind="pathSet",
+        content=pathSetAdmissionArtifact(admitted),
+        subjectHash=pathSetAdmissionSubjectHash(admitted),
+        parentReceiptIds=(sourceReceipt.receiptId,),
+        ruleId="driver-history-path-admission",
+        ruleHash=sha256(b"driver-history-path-admission-v1").hexdigest(),
+        knowledgeAsOf="20191231",
+        issuedAt="20191231T000000Z",
+        frequency="quarter",
+        maxAdmittedStep=2,
+    )
+    return replace(pathSet, paths=bindPathAdmissionReceipt(admitted, pathReceipt.receiptId)), sourceReceipt, pathReceipt
+
+
+def _measuredHistoryCase(
+    context,
+    verifier,
+    *,
+    caseId: str,
+    compiledState,
+):
+    pathSet, sourceReceipt, sourcePathReceipt = _admittedHistoryPathSet(context)
+    coefficientPayload = {
+        "coefficient": "observedDemandShockToDemandChange",
+        "source": "observedDemandShock",
+        "target": "demandChange",
+    }
+    coefficientSubject = canonicalPayloadHash(coefficientPayload)
+    coefficientReceipt = _issueTestReceipt(
+        context,
+        kind="driverCoefficient",
+        content=canonicalPayloadBytes(coefficientPayload),
+        subjectHash=coefficientSubject,
+        parentReceiptIds=(sourceReceipt.receiptId,),
+        ruleId=MULTIVARIABLE_DRIVER_COEFFICIENT_RULE_ID,
+        ruleVersion=MULTIVARIABLE_DRIVER_COEFFICIENT_RULE_VERSION,
+        ruleHash=MULTIVARIABLE_DRIVER_COEFFICIENT_RULE_HASH,
+        knowledgeAsOf="20191231",
+        issuedAt="20191231T000000Z",
+        frequency="quarter",
+        maxAdmittedStep=2,
+    )
+    sourceRef = f"driverCoefficientAdmission:{coefficientReceipt.receiptId}"
+    exposure = OperatingTransmissionExposure(
+        f"{caseId}-observed-demand",
+        "observedDemandShock",
+        "demandChange",
+        1.0,
+        "ratioChangePerStep/simpleReturn",
+        "measuredAssociation",
+        sourceRef,
+        aggregationGroup="observed-demand",
+        sourceFrequency="quarter",
+        sourceTiming="innovation",
+        sourceTransformId="history-v1",
+        sourceFactorContractHash=sourceFactorContractHash(
+            variableId="observedDemandShock",
+            unit="simpleReturn",
+            frequency="quarter",
+            timing="innovation",
+            transformId="history-v1",
+        ),
+    )
+    binding = ScenarioCoefficientBinding(
+        admissionReceiptId=coefficientReceipt.receiptId,
+        subjectHash=coefficientSubject,
+        ruleHash=MULTIVARIABLE_DRIVER_COEFFICIENT_RULE_HASH,
+        ruleId=MULTIVARIABLE_DRIVER_COEFFICIENT_RULE_ID,
+        ruleVersion=MULTIVARIABLE_DRIVER_COEFFICIENT_RULE_VERSION,
+        parentReceiptIds=(sourceReceipt.receiptId,),
+        sourceVariableIds=("observedDemandShock",),
+        targetShock="demandChange",
+        frequency="quarter",
+        stepSpan=1,
+        maxAdmittedStep=2,
+        coefficientVectorHash=canonicalPayloadHash({"coefficient": 1.0}),
+        featureSpecHash=canonicalPayloadHash({"feature": "observedDemandShock"}),
+        designFrameHash=canonicalPayloadHash({"design": "observedDemandShock"}),
+        exposureContractHash=scenarioCoefficientExposureContractHash((exposure,)),
+        calibrationId="observed-demand-calibration",
+        reportId="observed-demand-oos",
+        fitDesignFrameHash=canonicalPayloadHash({"fit": "observedDemandShock"}),
+        oosDesignFrameHash=canonicalPayloadHash({"oos": "observedDemandShock"}),
+        sourceRefs=("providerObservationBatch:observed-demand-history",),
+    )
+    return (
+        OperatingScenarioCase(
+            caseId,
+            caseId.title(),
+            pathSet,
+            (exposure,),
+            _observedBaselines(),
+            refs=(f"scenario://{caseId}",),
+            compiledState=compiledState,
+            admissionVerifier=verifier,
+            coefficientBindings=(binding,),
+        ),
+        sourceReceipt,
+        sourcePathReceipt,
+        coefficientReceipt,
+    )
+
+
+def _rawOperatingPaths(case: OperatingScenarioCase):
+    factorSpecs = driverFactorsToOperatingSpecs(case.pathSet.factorSpecs)
+    return tuple(
+        bridgeOperatingPath(
+            path,
+            case.exposures,
+            factorSpecs=factorSpecs,
+            baselines=case.baselines,
+            compiledState=case.compiledState,
+            statePrimitives=case.statePrimitives,
+            stateRef=case.stateRef,
+            admissionVerifier=case.admissionVerifier,
+            pathId=f"{case.caseId}:{path.pathId}",
+        ).path
+        for path in case.pathSet.paths
+    )
+
+
+def _issueOperatingPathAdmission(context, rawPaths, parentReceiptIds):
+    certificateId = "6" * 64
+    admitted = bindAdmittedPathContent(
+        tuple(
+            replace(
+                path,
+                validationStatus="admitted",
+                certificateId=certificateId,
+                maxAdmittedStep=2,
+            )
+            for path in rawPaths
+        )
+    )
+    receipt = _issueTestReceipt(
+        context,
+        kind="pathSet",
+        content=pathSetAdmissionArtifact(admitted),
+        subjectHash=pathSetAdmissionSubjectHash(admitted),
+        parentReceiptIds=parentReceiptIds,
+        ruleId="operating-path-admission",
+        ruleHash=sha256(b"operating-path-admission-v1").hexdigest(),
+        knowledgeAsOf=admitted[0].knowledgeAsOf,
+        issuedAt="20191231T000000Z",
+        frequency=admitted[0].frequency,
+        stepSpan=admitted[0].stepSpan,
+        maxAdmittedStep=2,
+    )
+    return receipt, bindPathAdmissionReceipt(admitted, receipt.receiptId), certificateId
+
+
+def _policyEpisodePayload(episode):
+    return {
+        name: getattr(episode, name)
+        for name in episode.__dataclass_fields__
+        if name not in {"episodeId", "episodeReceiptId"}
+    }
+
+
+def _issueOperatingPolicyEvidence(
+    context,
+    ledger,
+    verifier,
+    *,
+    run,
+    paths,
+    strategies,
+    pathReceipt,
+):
+    database, artifacts, private, trusted = context
+    baseline, candidate = strategies
+    modelReceipt = _issueTestReceipt(
+        context,
+        kind="modelExecutable",
+        content=b"operating world executable",
+        subjectHash=run.executableHash,
+    )
+    baselineReceipt = _issueTestReceipt(
+        context,
+        kind="strategy",
+        content=b"hold strategy",
+        subjectHash=strategyContractHash(baseline),
+    )
+    candidateReceipt = _issueTestReceipt(
+        context,
+        kind="strategy",
+        content=b"invest strategy",
+        subjectHash=strategyContractHash(candidate),
+    )
+    outcomeReceipt = _issueTestReceipt(
+        context,
+        kind="dataVintage",
+        content=b"operating policy outcome panel known 2021-01-01",
+        status="verifiedVintage",
+        knowledgeAsOf="20210101",
+        issuedAt="20210101T000000Z",
+    )
+    objective = run.objectives[0]
+    parameterContractHash = parameterContractHashFor(paths)
+    signedEpisodes = []
+    for index in range(40):
+        origin = date(2020, 1, 3) + timedelta(days=7 * index)
+        originText = _stamp(origin)
+        compiled = _issueOperatingCompiledState(context, decisionAsOf=originText)
+        primitiveRows = []
+        for pathIndex, path in enumerate(paths):
+            baseValue = float(pathIndex)
+            primitiveRows.append(
+                PolicyPathPrimitive(
+                    pathId=path.pathId,
+                    pathOrdinal=pathIndex,
+                    pathWeight=1.0 if path.weight is None else float(path.weight),
+                    parameterDrawHash=canonicalPayloadHash(dict(path.parameterDraws)),
+                    baselineMetricByStep=(baseValue, baseValue + 0.1),
+                    candidateMetricByStep=(baseValue + 2.0, baseValue + 2.2),
+                    baselineBreachesByStep=((), ()),
+                    candidateBreachesByStep=((), ()),
+                    baselineTraceHash=canonicalPayloadHash({"origin": index, "path": pathIndex, "strategy": "hold"}),
+                    candidateTraceHash=canonicalPayloadHash({"origin": index, "path": pathIndex, "strategy": "invest"}),
+                )
+            )
+        originKey = canonicalPayloadHash(
+            {
+                "protocol": "policy-oos-episode-v1",
+                "originAsOf": originText,
+                "outcomeThrough": _stamp(origin + timedelta(days=28)),
+                "executableHash": run.executableHash,
+                "baselineContract": strategyContractHash(baseline),
+                "candidateContract": strategyContractHash(candidate),
+                "objectiveContract": objectiveContractHash(objective),
+                "constraintContract": constraintContractHash(run.constraints),
+                "pathRuleHash": pathReceipt.ruleHash,
+                "parameterContract": parameterContractHash,
+                "stateCompilationContract": compiled.stateCompilationContractHash,
+            }
+        )
+        raw = PolicyOosEpisode(
+            episodeId="",
+            originKey=originKey,
+            originOrdinal=index,
+            originAsOf=originText,
+            outcomeThrough=_stamp(origin + timedelta(days=28)),
+            outcomeAvailableAt="20210101",
+            evaluationKnowledgeAsOf="20210101",
+            evidenceKind="modelReplay",
+            runHash=canonicalPayloadHash({"run": index}),
+            resultHash=canonicalPayloadHash({"result": index}),
+            traceRoot=canonicalPayloadHash({"trace": index}),
+            executableHash=run.executableHash,
+            parameterHash=run.parameterHash,
+            dataVintageHash=run.dataVintageHash,
+            initialStateAsOf=compiled.decisionAsOf,
+            initialStateKnowledgeAsOf=compiled.knowledgeAsOf,
+            initialStateContentHash=compiled.stateId,
+            initialStateReceiptId="",
+            pointInTimeStateReceiptId=compiled.stateReceiptId,
+            stateManifestHash=compiled.manifestHash,
+            stateCompilationContractHash=compiled.stateCompilationContractHash,
+            stateContractHash=compiled.stateContractHash,
+            initialState=compiled.statePrimitives,
+            pathAdmissionReceiptId=pathReceipt.receiptId,
+            pathContentHash=pathReceipt.subjectHash,
+            pathRuleId=pathReceipt.ruleId,
+            pathRuleVersion=pathReceipt.ruleVersion,
+            pathRuleHash=pathReceipt.ruleHash,
+            parameterContractHash=parameterContractHash,
+            outcomeVintageReceiptId=outcomeReceipt.receiptId,
+            baselineStrategyId=baseline.strategyId,
+            baselinePolicyVersion=baseline.policyVersion,
+            baselineStrategyContractHash=strategyContractHash(baseline),
+            candidateStrategyId=candidate.strategyId,
+            candidatePolicyVersion=candidate.policyVersion,
+            candidateStrategyContractHash=strategyContractHash(candidate),
+            objective=objective,
+            objectiveContractHash=objectiveContractHash(objective),
+            constraintContractHash=constraintContractHash(run.constraints),
+            paths=tuple(primitiveRows),
+        )
+        raw = replace(raw, episodeId=canonicalPayloadHash(_policyEpisodePayload(raw)))
+        initialReceipt = _issueTestReceipt(
+            context,
+            kind="initialState",
+            content=stateAdmissionArtifact(
+                raw.initialState,
+                asOf=raw.initialStateAsOf,
+                knowledgeAsOf=raw.initialStateKnowledgeAsOf,
+                decisionAsOf=raw.originAsOf,
+            ),
+            subjectHash=raw.initialStateContentHash,
+            parentReceiptIds=(compiled.stateReceiptId,),
+            ruleId=INITIAL_STATE_RULE_ID,
+            ruleVersion=INITIAL_STATE_RULE_VERSION,
+            ruleHash=INITIAL_STATE_RULE_HASH,
+            knowledgeAsOf=raw.initialStateKnowledgeAsOf,
+            issuedAt=f"{originText}T000000Z",
+            frequency="mixed",
+        )
+        signed = admitPolicyOosEpisode(
+            raw,
+            database,
+            artifacts,
+            privateKey=private,
+            initialStateReceiptId=initialReceipt.receiptId,
+            modelReceiptId=modelReceipt.receiptId,
+            baselineStrategyReceiptId=baselineReceipt.receiptId,
+            candidateStrategyReceiptId=candidateReceipt.receiptId,
+            issuerId="test-issuer",
+            issuerKeyId="test-key",
+            issuerExecutableHash=sha256(b"test-policy-issuer-v1").hexdigest(),
+            issuedAt="20210101T120000Z",
+            trustedIssuers=trusted,
+        )
+        appendPolicyOosEpisode(ledger, signed, admissionVerifier=verifier)
+        signedEpisodes.append(signed)
+    snapshot = readPolicyOosLedger(ledger, admissionVerifier=verifier)
+    batch = sealPolicyOosBatch(
+        snapshot,
+        database,
+        artifacts,
+        privateKey=private,
+        issuerId="test-issuer",
+        issuerKeyId="test-key",
+        issuerExecutableHash="7" * 64,
+        issuedAt="20210102T000000Z",
+        trustedIssuers=trusted,
+    )
+    certificate = issuePolicyEvaluationCertificate(
+        snapshot,
+        batch,
+        PolicyEvaluationSpec(materialityMargin=0.5),
+        database,
+        artifacts,
+        privateKey=private,
+        issuerId="test-issuer",
+        issuerKeyId="test-key",
+        issuerExecutableHash="7" * 64,
+        issuedAt="20210103T000000Z",
+        trustedIssuers=trusted,
+    )
+    return PolicyAdmissionEvidence(snapshot, batch, certificate)
 
 
 def _threeStrategies():
@@ -1211,6 +1938,96 @@ def testConditionalPathPackageReceiptRejectsAdmissionKindOrStatus(tmp_path) -> N
             maxFinancing=200.0,
             maxInvestment=200.0,
         )
+
+
+def testHistoryOnlyOperatingPathAndPolicyCertificateOpenRecommendation(tmp_path) -> None:
+    database, artifacts, private, trusted, verifier = _trust(tmp_path)
+    context = (database, artifacts, private, trusted)
+    ledger = tmp_path / "policy-oos.sqlite"
+    initializePolicyOosLedger(ledger)
+    inputs, compiled, initialReceipt = _certifiedOperatingInputs(context)
+    strategies = _policyReadyStrategies()
+    case, sourceReceipt, sourcePathReceipt, coefficientReceipt = _measuredHistoryCase(
+        context,
+        verifier,
+        caseId="base",
+        compiledState=compiled,
+    )
+    rawPaths = _rawOperatingPaths(case)
+    operatingReceipt, admittedPaths, operatingCertificateId = _issueOperatingPathAdmission(
+        context,
+        rawPaths,
+        (
+            sourceReceipt.receiptId,
+            sourcePathReceipt.receiptId,
+            coefficientReceipt.receiptId,
+        ),
+    )
+    case = replace(
+        case,
+        operatingPathAdmissionReceiptId=operatingReceipt.receiptId,
+        operatingPathCertificateId=operatingCertificateId,
+    )
+    preliminary = runOperatingStrategies(
+        inputs,
+        admittedPaths,
+        strategies,
+        debtLimit=1_000.0,
+        maxFinancing=200.0,
+        maxInvestment=200.0,
+        admissionVerifier=verifier,
+    )
+    assert preliminary.decisionStatus == "conditionalOnly"
+    assert preliminary.recommendation is None
+
+    policyEvidence = _issueOperatingPolicyEvidence(
+        context,
+        ledger,
+        verifier,
+        run=preliminary,
+        paths=admittedPaths,
+        strategies=strategies,
+        pathReceipt=operatingReceipt,
+    )
+    comparison = compareOperatingScenarioCases(
+        inputs,
+        (replace(case, policyAdmissionEvidence=policyEvidence),),
+        strategies,
+        debtLimit=1_000.0,
+        maxFinancing=200.0,
+        maxInvestment=200.0,
+        policyObjectiveIndex=0,
+    )
+
+    result = comparison.caseResults[0]
+    assert comparison.decisionStatus == "comparable"
+    assert comparison.recommendation == "invest"
+    assert result.decisionStatus == "comparable"
+    assert result.recommendation == "invest"
+    assert result.initialStateAdmissionReceiptId == initialReceipt.receiptId
+    assert result.pathAdmissionReceiptId == operatingReceipt.receiptId
+    assert result.pathAdmissionContentHash == pathSetAdmissionSubjectHash(admittedPaths)
+    assert result.pathAdmissionContentHash == operatingReceipt.subjectHash
+    assert result.pathCertificateIds == (operatingCertificateId,)
+    assert result.policyEvaluationEligibility == "eligible"
+    assert result.policyEvaluationCertificateId == policyEvidence.certificate.certificateId
+    assert result.policyEvaluationCertificateReceiptId == policyEvidence.certificate.certificateReceiptId
+    assert result.policyEvaluationCertificateStatus == "policyAdmitted"
+    assert result.policyEvaluationParentReceiptIds == (policyEvidence.certificate.batchReceiptId,)
+    assert result.recommendationSource == "policyAdmitted"
+    assert result.recommendationEvidenceKind == "policyEvaluationCertificate"
+    assert result.recommendationEvidenceReceiptId == policyEvidence.certificate.certificateReceiptId
+    assert result.conditionalReceiptIdsExcludedFromPolicy == ()
+    assert result.composedPathAdmissionStatus == "admitted"
+    assert result.pathAdmissionTransferStatus == "composedPathAdmitted"
+    assert result.pathAdmissionTransferBlockedBy == ()
+    assert result.counts.explicitAssumptionCount == 0
+    assert result.counts.conditionalWarningCount == 0
+    assert result.counts.unvalidatedPathCount == 0
+    assert result.counts.retrospectivePathCount == 0
+    assert result.counts.admittedPathCount == result.counts.pathCount
+    assert "policyEvaluationCertificateMissing" not in result.warnings
+    assert all("automatic recommendation disabled" not in warning for warning in comparison.warnings)
 
 
 def testConditionalScenarioExperimentReceiptDocumentsResultsWithoutRecommendation(tmp_path) -> None:

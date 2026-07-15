@@ -31,7 +31,15 @@ from dartlab.simulate.operatingBridge import (
 from dartlab.simulate.operatingWorld import OperatingWorldInputs, runOperatingStrategies
 from dartlab.simulate.stateSupport import StatePrimitive
 from dartlab.simulate.vintage import canonicalPayloadBytes, canonicalPayloadHash
-from dartlab.simulate.world import SimulationRun, StrategySpec, strategyContractHash
+from dartlab.simulate.world import (
+    ScenarioPath,
+    SimulationRun,
+    StrategySpec,
+    bindAdmittedPathContent,
+    bindPathAdmissionReceipt,
+    pathSetAdmissionSubjectHash,
+    strategyContractHash,
+)
 
 if TYPE_CHECKING:
     from dartlab.simulate.admissionRegistry import AdmissionReceipt, AdmissionVerifier
@@ -176,6 +184,8 @@ class OperatingScenarioCase:
     policyAdmissionEvidence: "PolicyAdmissionEvidence | None" = None
     driverRegistryAudit: "DriverRegistryAudit | None" = None
     scenarioPathPackageReceiptId: str = ""
+    operatingPathAdmissionReceiptId: str = ""
+    operatingPathCertificateId: str = ""
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "exposures", tuple(self.exposures))
@@ -1110,6 +1120,68 @@ def validateScenarioPathPackageReceipt(
     return receipt
 
 
+def _bindOperatingPathAdmission(
+    case: OperatingScenarioCase, paths: tuple[ScenarioPath, ...]
+) -> tuple[ScenarioPath, ...]:
+    if not case.operatingPathAdmissionReceiptId:
+        return paths
+    if case.admissionVerifier is None:
+        raise ScenarioCompositionError("operating path admission receipt needs a verifier")
+    if case.pathSet.audit.assumptionHash:
+        raise ScenarioCompositionError("explicit overlay paths cannot bind official operating path admission")
+    if not _validDigest(case.operatingPathCertificateId):
+        raise ScenarioCompositionError("operating path admission needs a path certificate id")
+    if not paths:
+        raise ScenarioCompositionError("operating path admission needs executable paths")
+    try:
+        receipt = case.admissionVerifier.verify(
+            case.operatingPathAdmissionReceiptId,
+            expectedKind="pathSet",
+        )
+        parentReceipts = tuple(case.admissionVerifier.verify(parentId) for parentId in receipt.parentReceiptIds)
+        candidate = tuple(
+            replace(
+                path,
+                validationStatus="admitted",
+                maxAdmittedStep=receipt.maxAdmittedStep,
+                certificateId=case.operatingPathCertificateId,
+            )
+            for path in paths
+        )
+        candidate = bindAdmittedPathContent(candidate)
+        subjectHash = pathSetAdmissionSubjectHash(candidate)
+        receipt = case.admissionVerifier.verify(
+            case.operatingPathAdmissionReceiptId,
+            expectedSubjectHash=subjectHash,
+            expectedKind="pathSet",
+        )
+        admitted = bindPathAdmissionReceipt(candidate, receipt.receiptId)
+    except (RuntimeError, ValueError) as error:
+        raise ScenarioCompositionError(f"operating path admission verification failed: {error}") from error
+    horizon = len(paths[0].steps)
+    if (
+        receipt.status != "admitted"
+        or receipt.artifactHash != subjectHash
+        or receipt.revisionPolicy != "asKnown"
+        or receipt.coverage != "asOfExact"
+        or receipt.maxAdmittedStep < horizon
+        or receipt.frequency != paths[0].frequency
+        or receipt.stepSpan != paths[0].stepSpan
+        or any(len(path.steps) != horizon for path in paths)
+    ):
+        raise ScenarioCompositionError("operating path admission receipt contract mismatch")
+    forbiddenKinds = {
+        COMPOSED_CONDITIONAL_PATH_PACKAGE_KIND,
+        CONDITIONAL_SCENARIO_EXPERIMENT_RESULT_KIND,
+        CONDITIONAL_STRATEGY_EVALUATION_KIND,
+        "policyEvaluation",
+        "policyEpisodeBatch",
+    }
+    if any(parent.kind in forbiddenKinds for parent in parentReceipts):
+        raise ScenarioCompositionError("operating path admission cannot depend on conditional or policy receipts")
+    return admitted
+
+
 def _verifyScenarioPathPackageReceipt(case: OperatingScenarioCase) -> "AdmissionReceipt | None":
     if not case.scenarioPathPackageReceiptId:
         return None
@@ -1193,21 +1265,19 @@ def _policyEvaluationEligibility(result: SimulationRun) -> str:
     return "eligible" if result.policyEvaluationCertificateId else "blocked"
 
 
-def _pathAdmissionContentHash(pathSet: DriverPathSet, result: SimulationRun) -> str:
+def _pathAdmissionContentHash(paths: tuple[ScenarioPath, ...], result: SimulationRun) -> str:
     if not result.pathAdmissionReceiptId:
         return ""
     try:
-        from dartlab.simulate.world import pathSetAdmissionSubjectHash
-
-        return pathSetAdmissionSubjectHash(pathSet.paths)
+        return pathSetAdmissionSubjectHash(paths)
     except (RuntimeError, ValueError) as error:
         raise ScenarioCompositionError(f"path admission content hash failed: {error}") from error
 
 
-def _pathCertificateIds(pathSet: DriverPathSet, result: SimulationRun) -> tuple[str, ...]:
+def _pathCertificateIds(paths: tuple[ScenarioPath, ...], result: SimulationRun) -> tuple[str, ...]:
     if not result.pathAdmissionReceiptId:
         return ()
-    return _dedupe(tuple(path.certificateId for path in pathSet.paths))
+    return _dedupe(tuple(path.certificateId for path in paths))
 
 
 def _policyCertificateReceiptId(case: OperatingScenarioCase, result: SimulationRun) -> str:
@@ -3203,9 +3273,13 @@ def _runCase(
         )
         for path in case.pathSet.paths
     )
+    paths = _bindOperatingPathAdmission(
+        case,
+        tuple(item.path for item in bridgeResults),
+    )
     run = runOperatingStrategies(
         inputs,
-        tuple(item.path for item in bridgeResults),
+        paths,
         strategies,
         debtLimit=debtLimit,
         maxFinancing=maxFinancing,
@@ -3229,11 +3303,7 @@ def _runCase(
             f"scenarioPathPackage:{_scenarioPathPackageHash(case.pathSet)}",
             f"scenarioCase:{case.caseId}",
             (f"pathAdmission:{run.pathAdmissionReceiptId}" if run.pathAdmissionReceiptId else ""),
-            (
-                f"pathAdmissionContent:{_pathAdmissionContentHash(case.pathSet, run)}"
-                if run.pathAdmissionReceiptId
-                else ""
-            ),
+            (f"pathAdmissionContent:{_pathAdmissionContentHash(paths, run)}" if run.pathAdmissionReceiptId else ""),
             (f"policyEvaluation:{run.policyEvaluationCertificateId}" if run.policyEvaluationCertificateId else ""),
             (
                 f"policyCertificate:{_policyCertificateReceiptId(case, run)}"
@@ -3279,8 +3349,8 @@ def _runCase(
         retainedTraceCount=run.retainedTraceCount,
         initialStateAdmissionReceiptId=run.initialStateAdmissionReceiptId,
         pathAdmissionReceiptId=run.pathAdmissionReceiptId,
-        pathAdmissionContentHash=_pathAdmissionContentHash(case.pathSet, run),
-        pathCertificateIds=_pathCertificateIds(case.pathSet, run),
+        pathAdmissionContentHash=_pathAdmissionContentHash(paths, run),
+        pathCertificateIds=_pathCertificateIds(paths, run),
         policyEvaluationCertificateId=run.policyEvaluationCertificateId,
         policyEvaluationCertificateReceiptId=_policyCertificateReceiptId(case, run),
         policyEvaluationCertificateStatus=_policyCertificateStatus(case, run),
