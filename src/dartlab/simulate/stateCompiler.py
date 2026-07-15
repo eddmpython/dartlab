@@ -465,6 +465,37 @@ def _verifyBatch(
     return receipt
 
 
+def validateProviderObservationBatch(
+    batch: ProviderObservationBatch,
+    admissionVerifier: AdmissionVerifier,
+    *,
+    decisionAsOf: str | None = None,
+) -> AdmissionReceipt:
+    """Validate one signed complete provider query and all exact source parents.
+
+    Args:
+        batch: Signed provider observation batch to reproduce and verify.
+        admissionVerifier: Runtime receipt, trusted issuer, and artifact verifier.
+        decisionAsOf: Optional consumer cutoff. Defaults to the batch cutoff and cannot
+            precede it.
+
+    Returns:
+        Verified provider observation batch receipt.
+
+    Raises:
+        StateCompilerError: If content, query, source receipts, issue timing, or exact
+            as-known coverage drifts.
+
+    Example:
+        ``receipt = validateProviderObservationBatch(batch, verifier, decisionAsOf="20251231")``
+    """
+
+    decision = _dateText(decisionAsOf or batch.cutoffAsOf, "decisionAsOf")
+    if _dateText(batch.cutoffAsOf, "batch.cutoffAsOf") > decision:
+        raise StateCompilerError("provider observation batch is newer than the consumer cutoff")
+    return _verifyBatch(batch, admissionVerifier, decisionAsOf=decision)
+
+
 def _aggregateVintage(selected: tuple[VariableObservation, ...]) -> tuple[str, str]:
     policies = {item.vintage.revisionPolicy for item in selected}
     coverages = {item.vintage.coverage for item in selected}

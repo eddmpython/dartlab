@@ -11,13 +11,22 @@ Covers:
 from __future__ import annotations
 
 from dataclasses import replace
+from hashlib import sha256
 from types import SimpleNamespace
 
 import numpy as np
 import polars as pl
 import pytest
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from dartlab.simulate import hindcast as hc
+from dartlab.simulate.admissionRegistry import (
+    AdmissionVerifier,
+    TrustedIssuer,
+    initializeAdmissionRegistry,
+    issueAdmissionReceipt,
+    putAdmissionArtifact,
+)
 from dartlab.simulate.driverPaths import (
     DriverAssumptionSource,
     DriverCard,
@@ -44,7 +53,16 @@ from dartlab.simulate.scenarioComposition import (
     ScenarioCoefficientBinding,
     scenarioCoefficientExposureContractHash,
 )
-from dartlab.simulate.vintage import canonicalPayloadHash
+from dartlab.simulate.stateCompiler import (
+    StateCompileSpec,
+    buildProviderObservationBatch,
+    compilePointInTimeState,
+    issuePointInTimeState,
+    issueProviderObservationBatch,
+    makeVariableObservation,
+)
+from dartlab.simulate.stateVariables import StateVariableSpec, buildStateVariableRegistry
+from dartlab.simulate.vintage import VintageRef, canonicalPayloadHash
 from dartlab.simulate.world import (
     LawSpec,
     ScenarioPath,
@@ -785,4 +803,466 @@ def testModelUncertaintyScenarioExperimentRejectsContractDriftAndAdmissionLaunde
         _runModelUncertaintyExperiment(
             candidates,
             replace(tournament, selectionStatus="baselineBest", selectedModelId=""),
+        )
+
+
+def _providerReplayContext(tmp_path):
+    registry = tmp_path / "provider-replay.sqlite"
+    artifacts = tmp_path / "provider-replay-artifacts"
+    initializeAdmissionRegistry(registry)
+    private = Ed25519PrivateKey.generate()
+    privateBytes = private.private_bytes_raw()
+    trusted = {
+        "replay-key": TrustedIssuer(
+            issuerId="replay-issuer",
+            issuerKeyId="replay-key",
+            publicKey=private.public_key().public_bytes_raw(),
+        )
+    }
+    return registry, artifacts, privateBytes, trusted
+
+
+def _providerReplaySourceReceipt(context, label: str, knowledgeAsOf: str):
+    registry, artifacts, privateBytes, trusted = context
+    artifactHash = putAdmissionArtifact(artifacts, f"{label}:{knowledgeAsOf}".encode())
+    return issueAdmissionReceipt(
+        registry,
+        artifacts,
+        privateKey=privateBytes,
+        kind="dataVintage",
+        subjectHash=artifactHash,
+        artifactHash=artifactHash,
+        parentReceiptIds=(),
+        ruleId="provider-replay-source",
+        ruleVersion="1",
+        ruleHash=sha256(b"provider-replay-source-v1").hexdigest(),
+        issuerId="replay-issuer",
+        issuerKeyId="replay-key",
+        issuerExecutableHash=sha256(b"provider-replay-source-issuer-v1").hexdigest(),
+        knowledgeAsOf=knowledgeAsOf,
+        revisionPolicy="asKnown",
+        coverage="asOfExact",
+        frequency="quarter",
+        stepSpan=1,
+        maxAdmittedStep=0,
+        status="verifiedVintage",
+        issuedAt=f"{knowledgeAsOf}T000000Z",
+        trustedIssuers=trusted,
+    )
+
+
+def _signedProviderReplayBatch(context, datasetId: str, rows: tuple[dict, ...], *, cutoffAsOf: str):
+    registry, artifacts, privateBytes, trusted = context
+    observations = []
+    for index, row in enumerate(rows):
+        source = _providerReplaySourceReceipt(
+            context,
+            f"{datasetId}:{row['signalId']}:{row['eventAt']}:{index}",
+            row["availableAt"],
+        )
+        vintage = VintageRef(
+            artifactKind="providerObservation",
+            provider="fixture",
+            artifactId=f"{datasetId}:{row['signalId']}:{index}",
+            artifactHash=source.artifactHash,
+            payloadHash=source.subjectHash,
+            knowledgeAsOf=row["availableAt"],
+            availableAt=row["availableAt"],
+            revisionPolicy="asKnown",
+            coverage="asOfExact",
+            eventThrough=row["eventAt"],
+            receiptId=source.receiptId,
+        )
+        observations.append(
+            makeVariableObservation(
+                providerId="fixture",
+                datasetId=datasetId,
+                entityId="005930",
+                signalId=row["signalId"],
+                value=row["value"],
+                unit=row["unit"],
+                frequency="quarter",
+                timing=row["timing"],
+                transformId=row.get("transformId", "identity-v1"),
+                evidenceRole=row.get("evidenceRole", "observed"),
+                eventAt=row["eventAt"],
+                availableAt=row["availableAt"],
+                knowledgeAsOf=row["availableAt"],
+                availabilityPrecision="date",
+                revisionId=row.get("revisionId", f"revision-{index}"),
+                vintage=vintage,
+                normalizationRuleHash=sha256(f"{datasetId}:{row['signalId']}:v1".encode()).hexdigest(),
+            )
+        )
+    batch = buildProviderObservationBatch(
+        tuple(observations),
+        providerId="fixture",
+        datasetId=datasetId,
+        entityId="005930",
+        signalIds=tuple(sorted({row["signalId"] for row in rows})),
+        cutoffAsOf=cutoffAsOf,
+    )
+    return issueProviderObservationBatch(
+        batch,
+        registry,
+        artifacts,
+        privateKey=privateBytes,
+        issuerId="replay-issuer",
+        issuerKeyId="replay-key",
+        issuedAt=f"{cutoffAsOf}T000000Z",
+        trustedIssuers=trusted,
+    )
+
+
+def _providerReplayAdmittedState(context, verifier):
+    values = {
+        "price": (10.0, "currencyPerUnit"),
+        "demandVolume": (100.0, "units"),
+        "unitCost": (4.0, "currencyPerUnit"),
+        "fixedCost": (20.0, "currency"),
+        "capacityUnits": (1000.0, "units"),
+        "cash": (1000.0, "currency"),
+        "debt": (0.0, "currency"),
+    }
+    stateRows = tuple(
+        {
+            "signalId": signalId,
+            "value": value,
+            "unit": unit,
+            "timing": "stock",
+            "eventAt": "20240930",
+            "availableAt": "20241230",
+        }
+        for signalId, (value, unit) in values.items()
+    )
+    batch = _signedProviderReplayBatch(
+        context,
+        "operating-state",
+        stateRows,
+        cutoffAsOf="20250101",
+    )
+    variableSpecs = tuple(
+        StateVariableSpec(
+            variableId=signalId,
+            signalId=signalId,
+            providerId="fixture",
+            datasetId="operating-state",
+            unit=unit,
+            role="state",
+            evidenceRole="observed",
+            frequency="quarter",
+            timing="stock",
+            transformId="identity-v1",
+            maxStalenessDays=500,
+            lower=0.0,
+        )
+        for signalId, (_, unit) in values.items()
+    )
+    compiled = compilePointInTimeState(
+        buildStateVariableRegistry(variableSpecs),
+        (batch,),
+        StateCompileSpec(
+            entityId="005930",
+            market="KR",
+            decisionAsOf="20250101",
+            consumerId="operating-model-replay",
+            consumerVersion="1",
+            variableIds=tuple(values),
+            requireExact=True,
+        ),
+        admissionVerifier=verifier,
+    )
+    registry, artifacts, privateBytes, trusted = context
+    return issuePointInTimeState(
+        compiled,
+        registry,
+        artifacts,
+        privateKey=privateBytes,
+        issuerId="replay-issuer",
+        issuerKeyId="replay-key",
+        issuedAt="20250101T000000Z",
+        trustedIssuers=trusted,
+    )
+
+
+def _providerReplayCandidate(context, verifier, modelId: str, coefficient: float, label: str):
+    registry, artifacts, privateBytes, trusted = context
+    parent = _providerReplaySourceReceipt(context, f"coefficient-fit:{label}", "20241215")
+    subjectHash = putAdmissionArtifact(artifacts, f"coefficient:{modelId}:{coefficient}".encode())
+    ruleHash = sha256(b"provider-replay-coefficient-rule-v1").hexdigest()
+    receipt = issueAdmissionReceipt(
+        registry,
+        artifacts,
+        privateKey=privateBytes,
+        kind="driverCoefficient",
+        subjectHash=subjectHash,
+        artifactHash=subjectHash,
+        parentReceiptIds=(parent.receiptId,),
+        ruleId="provider-replay-coefficient",
+        ruleVersion="1",
+        ruleHash=ruleHash,
+        issuerId="replay-issuer",
+        issuerKeyId="replay-key",
+        issuerExecutableHash=sha256(b"provider-replay-coefficient-issuer-v1").hexdigest(),
+        knowledgeAsOf="20241215",
+        revisionPolicy="asKnown",
+        coverage="asOfExact",
+        frequency="quarter",
+        stepSpan=1,
+        maxAdmittedStep=2,
+        status="admitted",
+        issuedAt="20241220T000000Z",
+        trustedIssuers=trusted,
+    )
+    factorHash = sourceFactorContractHash(
+        variableId="demandFactor",
+        unit="ratioChangePerStep",
+        frequency="quarter",
+        timing="innovation",
+        transformId="simple-return-v1",
+    )
+    exposure = OperatingTransmissionExposure(
+        exposureId=f"{modelId}-demand",
+        sourceVariableId="demandFactor",
+        targetShock="demandChange",
+        coefficient=coefficient,
+        coefficientUnit="ratioChangePerStep/ratioChangePerStep",
+        evidenceKind="measuredAssociation",
+        sourceRef=f"driverCoefficientAdmission:{receipt.receiptId}",
+        sourceFrequency="quarter",
+        sourceTiming="innovation",
+        sourceTransformId="simple-return-v1",
+        sourceFactorContractHash=factorHash,
+    )
+    binding = ScenarioCoefficientBinding(
+        admissionReceiptId=receipt.receiptId,
+        subjectHash=subjectHash,
+        ruleHash=ruleHash,
+        ruleId=receipt.ruleId,
+        ruleVersion=receipt.ruleVersion,
+        parentReceiptIds=receipt.parentReceiptIds,
+        sourceVariableIds=("demandFactor",),
+        targetShock="demandChange",
+        frequency="quarter",
+        stepSpan=1,
+        maxAdmittedStep=2,
+        coefficientVectorHash=sha256(f"vector:{modelId}".encode()).hexdigest(),
+        featureSpecHash=sha256(b"provider-replay-feature-spec").hexdigest(),
+        designFrameHash=sha256(b"provider-replay-design-frame").hexdigest(),
+        exposureContractHash=scenarioCoefficientExposureContractHash((exposure,)),
+    )
+    return hc.OperatingTransmissionCandidate(
+        modelId=modelId,
+        modelVersion="1",
+        exposures=(exposure,),
+        coefficientBindings=(binding,),
+        admissionVerifier=verifier,
+        refs=(f"candidate:{modelId}",),
+    )
+
+
+def _providerReplayActionRows(events=("20250331", "20250630")):
+    available = ("20250401", "20250701")
+    return tuple(
+        {
+            "signalId": signalId,
+            "value": 0.0,
+            "unit": unit,
+            "timing": timing,
+            "eventAt": eventAt,
+            "availableAt": availableAt,
+        }
+        for eventAt, availableAt in zip(events, available, strict=True)
+        for signalId, unit, timing in (
+            ("priceChange", "ratioChangePerStep", "ratio"),
+            ("capacityInvestment", "currency", "flow"),
+            ("borrow", "currency", "flow"),
+            ("repay", "currency", "flow"),
+        )
+    )
+
+
+def _providerReplayOutcomeRows(actualByStep, *, operatingProfitTiming="flow"):
+    events = ("20250331", "20250630")
+    available = ("20250415", "20250715")
+    return tuple(
+        {
+            "signalId": metric,
+            "value": actualByStep[index][metric],
+            "unit": "currency",
+            "timing": operatingProfitTiming if metric == "operatingProfit" else "stock",
+            "eventAt": eventAt,
+            "availableAt": availableAt,
+        }
+        for index, (eventAt, availableAt) in enumerate(zip(events, available, strict=True))
+        for metric in ("operatingProfit", "cash")
+    )
+
+
+def _providerReplayFixture(tmp_path):
+    context = _providerReplayContext(tmp_path)
+    verifier = AdmissionVerifier(context[0], context[1], context[3])
+    state = _providerReplayAdmittedState(context, verifier)
+    baseline = _providerReplayCandidate(context, verifier, "baseline", 0.5, "baseline")
+    measured = _providerReplayCandidate(context, verifier, "measured", 1.5, "measured")
+    actualByStep = _operatingTournamentEpisode(1, measured).actualByStep
+    driver = _signedProviderReplayBatch(
+        context,
+        "realized-driver",
+        tuple(
+            {
+                "signalId": "demandFactor",
+                "value": value,
+                "unit": "ratioChangePerStep",
+                "timing": "ratio",
+                "transformId": "simple-return-v1",
+                "evidenceRole": "deterministicDerived",
+                "eventAt": eventAt,
+                "availableAt": availableAt,
+            }
+            for value, eventAt, availableAt in zip(
+                (0.10, -0.05),
+                ("20250331", "20250630"),
+                ("20250405", "20250705"),
+                strict=True,
+            )
+        ),
+        cutoffAsOf="20250731",
+    )
+    actions = _signedProviderReplayBatch(
+        context,
+        "observed-actions",
+        _providerReplayActionRows(),
+        cutoffAsOf="20250731",
+    )
+    outcomes = _signedProviderReplayBatch(
+        context,
+        "actual-outcomes",
+        _providerReplayOutcomeRows(actualByStep),
+        cutoffAsOf="20250731",
+    )
+    bundle = hc.OperatingReplayOriginBundle(
+        episodeId="provider-origin-20250101",
+        regime="calm",
+        compiledState=state,
+        realizedDriverBatch=driver,
+        observedActionBatch=actions,
+        actualOutcomeBatch=outcomes,
+        baselines=_operatingTournamentBaselines(),
+    )
+    return context, verifier, bundle, (baseline, measured), actualByStep
+
+
+def _assembleProviderReplay(bundle, verifier):
+    return hc.assembleOperatingModelReplayEpisodes(
+        (bundle,),
+        (
+            DriverFactorSpec(
+                "demandFactor",
+                "ratioChangePerStep",
+                "quarter",
+                "innovation",
+                "simple-return-v1",
+            ),
+        ),
+        ("operatingProfit", "cash"),
+        admissionVerifier=verifier,
+        priceElasticity=1.0,
+        capacityUnitsPerCurrency=1.0,
+    )
+
+
+def testProviderReplayEpisodeAssemblyFeedsOperatingModelTournament(tmp_path):
+    _, verifier, bundle, candidates, actualByStep = _providerReplayFixture(tmp_path)
+
+    episodes = _assembleProviderReplay(bundle, verifier)
+    repeated = _assembleProviderReplay(bundle, verifier)
+    episode = episodes[0]
+
+    assert episodes == repeated
+    assert episode.originAsOf == "20250101"
+    assert episode.outcomeAvailableAt == "20250731"
+    assert episode.lineage.eventTimes == ("20250331", "20250630")
+    assert episode.actualByStep == actualByStep
+    assert episode.realizedPathSet.paths[0].validationStatus == "retrospectiveOnly"
+    assert episode.realizedPathSet.paths[0].historyStatus == "realizedOutcome"
+    assert episode.observedPolicy.actionsByStep == tuple(
+        {"borrow": 0.0, "capacityInvestment": 0.0, "priceChange": 0.0, "repay": 0.0} for _ in range(2)
+    )
+    assert (
+        f"providerObservationBatch:{bundle.realizedDriverBatch.batchReceiptId}" in episode.realizedPathSet.paths[0].refs
+    )
+    assert f"providerObservationBatch:{bundle.observedActionBatch.batchReceiptId}" in episode.observedPolicy.refs
+    assert len(episode.lineage.assemblyHash) == 64
+
+    report = hc.runOperatingModelTournament(
+        candidates,
+        episodes,
+        hc.WorldModelTournamentSpec(
+            evaluationKnowledgeAsOf="20251231",
+            metrics=("operatingProfit", "cash"),
+            metricScales={"operatingProfit": 100.0, "cash": 1000.0},
+            baselineModelId="baseline",
+            minOrigins=1,
+        ),
+        debtLimit=5000.0,
+        maxFinancing=1000.0,
+        maxInvestment=1000.0,
+    )
+    rows = {row.modelId: row for row in report.candidates}
+    assert report.selectionStatus == "eligible"
+    assert report.selectedModelId == "measured"
+    assert rows["measured"].loss == pytest.approx(0.0)
+    assert len(report.episodeHashes) == 1 and len(report.episodeHashes[0]) == 64
+
+
+def testProviderReplayEpisodeAssemblyRejectsUnsignedMeaningGridAndLineageDrift(tmp_path):
+    context, verifier, bundle, candidates, actualByStep = _providerReplayFixture(tmp_path)
+
+    with pytest.raises(hc.WorldModelTournamentError, match="signed input verification failed"):
+        _assembleProviderReplay(
+            replace(
+                bundle,
+                realizedDriverBatch=replace(bundle.realizedDriverBatch, batchReceiptId=""),
+            ),
+            verifier,
+        )
+
+    wrongGridActions = _signedProviderReplayBatch(
+        context,
+        "observed-actions-wrong-grid",
+        _providerReplayActionRows(("20250331", "20250531")),
+        cutoffAsOf="20250731",
+    )
+    with pytest.raises(hc.WorldModelTournamentError, match="event grids differ"):
+        _assembleProviderReplay(replace(bundle, observedActionBatch=wrongGridActions), verifier)
+
+    wrongMeaningOutcomes = _signedProviderReplayBatch(
+        context,
+        "actual-outcomes-wrong-meaning",
+        _providerReplayOutcomeRows(actualByStep, operatingProfitTiming="stock"),
+        cutoffAsOf="20250731",
+    )
+    with pytest.raises(hc.WorldModelTournamentError, match="observation meaning drifted"):
+        _assembleProviderReplay(replace(bundle, actualOutcomeBatch=wrongMeaningOutcomes), verifier)
+
+    episode = _assembleProviderReplay(bundle, verifier)[0]
+    drifted = replace(
+        episode,
+        actualByStep=({**dict(episode.actualByStep[0]), "cash": 9999.0}, *episode.actualByStep[1:]),
+    )
+    with pytest.raises(hc.WorldModelTournamentError, match="assembly lineage drifted"):
+        hc.runOperatingModelTournament(
+            candidates,
+            (drifted,),
+            hc.WorldModelTournamentSpec(
+                evaluationKnowledgeAsOf="20251231",
+                metrics=("operatingProfit", "cash"),
+                metricScales={"operatingProfit": 100.0, "cash": 1000.0},
+                baselineModelId="baseline",
+                minOrigins=1,
+            ),
+            debtLimit=5000.0,
+            maxFinancing=1000.0,
+            maxInvestment=1000.0,
         )

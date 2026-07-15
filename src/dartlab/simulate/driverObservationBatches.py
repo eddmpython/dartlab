@@ -23,7 +23,7 @@ _FORBIDDEN_EVIDENCE_ROLES = {"explicitAssumption", "derivedFromAssumption"}
 _CONDITIONAL_REVISION_POLICIES = {"latestRetained", "revisedHistory"}
 _CONDITIONAL_COVERAGES = {"periodOnly", "latestOnly"}
 _FORBIDDEN_PRICE_RETURN_SIGNALS = {"marketPriceChange", "priceChange", "productPriceChange"}
-_OBSERVATION_FACTOR_TIMING_COMPATIBILITY = {
+DRIVER_OBSERVATION_FACTOR_TIMINGS = {
     "change": {"flow", "ratio"},
     "innovation": {"flow", "ratio"},
     "level": {"stock"},
@@ -1018,7 +1018,7 @@ def driverHistorySourceFromProviderObservationBatch(
         if (
             observation.unit != factor.unit
             or observation.frequency != factor.frequency
-            or observation.timing not in _OBSERVATION_FACTOR_TIMING_COMPATIBILITY.get(factor.timing, set())
+            or observation.timing not in DRIVER_OBSERVATION_FACTOR_TIMINGS.get(factor.timing, set())
             or observation.transformId != factor.transformId
         ):
             raise DriverObservationBatchError("provider observation projection meaning drift")

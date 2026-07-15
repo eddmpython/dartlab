@@ -22,6 +22,7 @@ from dartlab.simulate.stateCompiler import (
     issueProviderObservationBatch,
     makeVariableObservation,
     validateCompiledPointInTimeState,
+    validateProviderObservationBatch,
 )
 from dartlab.simulate.stateVariables import StateVariableSpec, buildStateVariableRegistry
 from dartlab.simulate.vintage import VintageRef
@@ -234,6 +235,7 @@ def testExactCompleteBatchAndStateReceiptRoundTrip(tmp_path) -> None:
         trustedIssuers=trusted,
     )
     verifier = AdmissionVerifier(registryPath, artifacts, trusted)
+    assert validateProviderObservationBatch(signedBatch, verifier).receiptId == signedBatch.batchReceiptId
     registry = buildStateVariableRegistry((_variableSpec(),))
     compiled = compilePointInTimeState(
         registry,

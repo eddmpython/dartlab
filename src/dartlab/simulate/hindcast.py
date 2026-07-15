@@ -52,7 +52,7 @@ from dartlab.synth.expectationSpec import pinballLoss
 
 if TYPE_CHECKING:
     from dartlab.simulate.admissionRegistry import AdmissionVerifier
-    from dartlab.simulate.driverPaths import DriverPathSet
+    from dartlab.simulate.driverPaths import DriverFactorSpec, DriverPathSet
     from dartlab.simulate.operatingBridge import OperatingShockBaseline, OperatingTransmissionExposure
     from dartlab.simulate.operatingWorld import OperatingWorldInputs
     from dartlab.simulate.scenarioComposition import (
@@ -60,7 +60,11 @@ if TYPE_CHECKING:
         OperatingScenarioCase,
         ScenarioCoefficientBinding,
     )
-    from dartlab.simulate.stateCompiler import CompiledPointInTimeState
+    from dartlab.simulate.stateCompiler import (
+        CompiledPointInTimeState,
+        ProviderObservationBatch,
+        VariableObservation,
+    )
     from dartlab.simulate.stateSupport import StatePrimitive
 
 H_STAR_RULES = "hstar-v1: env=|cov90-0.90|>0.10 첫 h, firm=t(IC)<2.0 첫 h. 곡선 통보고, 셀 선별 금지."
@@ -69,6 +73,37 @@ OPERATING_MODEL_TOURNAMENT_EVALUATION_MODE = "conditionalOnRealizedDriverPath"
 WORLD_TOURNAMENT_LOSS_RULE = "mean-normalized-squared-error-v1"
 WORLD_TOURNAMENT_WEIGHT_RULE = "softmax-negative-loss-v1"
 MODEL_UNCERTAINTY_SCENARIO_EXPERIMENT_VERSION = "model-uncertainty-scenario-experiment-v1"
+PROVIDER_REPLAY_EPISODE_VERSION = "provider-operating-replay-episode-v1"
+_PROVIDER_REPLAY_ACTION_CONTRACTS = {
+    "priceChange": ("ratioChangePerStep", "ratio", ("identity-v1", "simple-return-v1")),
+    "capacityInvestment": ("currency", "flow", ("identity-v1", "level-v1")),
+    "borrow": ("currency", "flow", ("identity-v1", "level-v1")),
+    "repay": ("currency", "flow", ("identity-v1", "level-v1")),
+}
+_PROVIDER_REPLAY_OUTCOME_CONTRACTS = {
+    "price": ("currencyPerUnit", "stock"),
+    "demandVolume": ("units", "stock"),
+    "unitCost": ("currencyPerUnit", "stock"),
+    "fixedCost": ("currency", "stock"),
+    "capacityUnits": ("units", "stock"),
+    "cash": ("currency", "stock"),
+    "debt": ("currency", "stock"),
+    "soldVolume": ("units", "flow"),
+    "unmetVolume": ("units", "flow"),
+    "availableCapacityUnits": ("units", "stock"),
+    "revenue": ("currency", "flow"),
+    "variableCost": ("currency", "flow"),
+    "operatingProfit": ("currency", "flow"),
+    "interest": ("currency", "flow"),
+    "tax": ("currency", "flow"),
+    "netIncome": ("currency", "flow"),
+    "cashChange": ("currency", "flow"),
+    "netCash": ("currency", "stock"),
+    "cashRunwaySteps": ("steps", "boundaryIndex"),
+    "capacityUtilization": ("ratio", "ratio"),
+    "capacityBound": ("boolean", "boundaryIndex"),
+}
+_PROVIDER_REPLAY_DIRECT_TRANSFORMS = ("identity-v1", "level-v1")
 
 
 def origins(weekEnd: pl.DataFrame, *, start: str = "20190101", gapWeeks: int = 8, steps: int = 8) -> list[str]:
@@ -396,6 +431,7 @@ class OperatingModelReplayEpisode:
     compiledState: CompiledPointInTimeState | None = None
     statePrimitives: tuple[StatePrimitive, ...] = ()
     stateRef: str = ""
+    lineage: OperatingReplayLineage | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "baselines", tuple(self.baselines))
@@ -405,6 +441,45 @@ class OperatingModelReplayEpisode:
             tuple(_freezeTournamentMapping(step) for step in self.actualByStep),
         )
         object.__setattr__(self, "statePrimitives", tuple(self.statePrimitives))
+
+
+@dataclass(frozen=True)
+class OperatingReplayLineage:
+    """Signed batch and selected observation lineage for one assembled replay origin."""
+
+    assemblyHash: str
+    eventTimes: tuple[str, ...]
+    driverBatchId: str
+    driverBatchReceiptId: str
+    actionBatchId: str
+    actionBatchReceiptId: str
+    outcomeBatchId: str
+    outcomeBatchReceiptId: str
+    driverObservationIds: tuple[str, ...]
+    actionObservationIds: tuple[str, ...]
+    outcomeObservationIds: tuple[str, ...]
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "eventTimes", tuple(self.eventTimes))
+        object.__setattr__(self, "driverObservationIds", tuple(self.driverObservationIds))
+        object.__setattr__(self, "actionObservationIds", tuple(self.actionObservationIds))
+        object.__setattr__(self, "outcomeObservationIds", tuple(self.outcomeObservationIds))
+
+
+@dataclass(frozen=True)
+class OperatingReplayOriginBundle:
+    """One admitted PIT origin and its signed realized driver, action, and outcome batches."""
+
+    episodeId: str
+    regime: str
+    compiledState: CompiledPointInTimeState
+    realizedDriverBatch: ProviderObservationBatch
+    observedActionBatch: ProviderObservationBatch
+    actualOutcomeBatch: ProviderObservationBatch
+    baselines: tuple[OperatingShockBaseline, ...]
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "baselines", tuple(self.baselines))
 
 
 @dataclass(frozen=True)
@@ -726,7 +801,522 @@ def _operatingReplayEpisodePayload(episode: OperatingModelReplayEpisode) -> dict
         ),
         "statePrimitives": episode.statePrimitives,
         "stateRef": episode.stateRef,
+        "lineage": episode.lineage,
     }
+
+
+def _providerReplayCurrencyFamily(compiledState: CompiledPointInTimeState) -> str:
+    families = set()
+    for primitive in compiledState.statePrimitives:
+        if primitive.unit in {"KRW", "USD"}:
+            families.add(primitive.unit)
+        elif primitive.unit in {"KRWPerUnit", "USDPerUnit"}:
+            families.add(primitive.unit.removesuffix("PerUnit"))
+    if len(families) > 1:
+        raise WorldModelTournamentError("provider replay state mixes currency families")
+    return next(iter(families), "")
+
+
+def _providerReplayUnitMatches(actual: str, expected: str, currencyFamily: str) -> bool:
+    if actual == expected:
+        return True
+    if expected == "currency" and actual in {"KRW", "USD"}:
+        return bool(currencyFamily) and actual == currencyFamily
+    if expected == "currencyPerUnit" and actual in {"KRWPerUnit", "USDPerUnit"}:
+        return bool(currencyFamily) and actual == f"{currencyFamily}PerUnit"
+    return False
+
+
+def _providerReplayLatestObservation(group: list[VariableObservation]) -> VariableObservation:
+    ordered = sorted(
+        group,
+        key=lambda item: (
+            item.availableAt,
+            item.knowledgeAsOf,
+            item.revisionId,
+            item.observationId,
+        ),
+    )
+    selected = ordered[-1]
+    topKey = (selected.availableAt, selected.knowledgeAsOf, selected.revisionId)
+    tied = {item.observationId for item in ordered if (item.availableAt, item.knowledgeAsOf, item.revisionId) == topKey}
+    if len(tied) != 1:
+        raise WorldModelTournamentError("provider replay observation revision is ambiguous")
+    return selected
+
+
+def _providerReplayBatchRows(
+    batch: ProviderObservationBatch,
+    *,
+    originAsOf: str,
+    frequency: str,
+    contracts: Mapping[str, tuple[str, tuple[str, ...], tuple[str, ...]]],
+    currencyFamily: str,
+    allowedEvidenceRoles: tuple[str, ...],
+) -> tuple[tuple[str, ...], tuple[Mapping[str, float], ...], tuple[str, ...]]:
+    expectedSignals = tuple(sorted(contracts))
+    if batch.signalIds != expectedSignals:
+        raise WorldModelTournamentError("provider replay batch signal scope drifted")
+    groups: dict[tuple[str, str], list[VariableObservation]] = {}
+    for observation in batch.observations:
+        if observation.signalId not in contracts:
+            raise WorldModelTournamentError("provider replay observation signal is outside its role")
+        unit, timings, transforms = contracts[observation.signalId]
+        if (
+            observation.frequency != frequency
+            or not _providerReplayUnitMatches(observation.unit, unit, currencyFamily)
+            or observation.timing not in timings
+            or observation.transformId not in transforms
+            or observation.evidenceRole not in allowedEvidenceRoles
+        ):
+            raise WorldModelTournamentError("provider replay observation meaning drifted")
+        eventAt = _tournamentDateText(observation.eventAt, "provider replay eventAt")
+        if eventAt > originAsOf:
+            groups.setdefault((eventAt, observation.signalId), []).append(observation)
+    selected = {key: _providerReplayLatestObservation(group) for key, group in groups.items()}
+    eventTimes = tuple(sorted({eventAt for eventAt, _ in selected}))
+    if not eventTimes:
+        raise WorldModelTournamentError("provider replay batch has no realized rows after origin")
+    rows = []
+    observationIds = []
+    for eventAt in eventTimes:
+        eventRows = {signalId: selected.get((eventAt, signalId)) for signalId in expectedSignals}
+        if any(observation is None for observation in eventRows.values()):
+            raise WorldModelTournamentError("provider replay event signal coverage is incomplete")
+        rows.append(
+            _freezeTournamentMapping({signalId: float(eventRows[signalId].value) for signalId in expectedSignals})
+        )
+        observationIds.extend(eventRows[signalId].observationId for signalId in expectedSignals)
+    return eventTimes, tuple(rows), tuple(observationIds)
+
+
+def _providerReplayDriverContracts(
+    factorSpecs: tuple[DriverFactorSpec, ...],
+) -> dict[str, tuple[str, tuple[str, ...], tuple[str, ...]]]:
+    from dartlab.simulate.driverObservationBatches import DRIVER_OBSERVATION_FACTOR_TIMINGS
+
+    return {
+        factor.variableId: (
+            factor.unit,
+            tuple(sorted(DRIVER_OBSERVATION_FACTOR_TIMINGS.get(factor.timing, set()))),
+            (factor.transformId,),
+        )
+        for factor in factorSpecs
+    }
+
+
+def _providerReplayActionContracts() -> dict[str, tuple[str, tuple[str, ...], tuple[str, ...]]]:
+    return {
+        signalId: (unit, (timing,), transforms)
+        for signalId, (unit, timing, transforms) in _PROVIDER_REPLAY_ACTION_CONTRACTS.items()
+    }
+
+
+def _providerReplayOutcomeContracts(
+    metrics: tuple[str, ...],
+) -> dict[str, tuple[str, tuple[str, ...], tuple[str, ...]]]:
+    unknown = tuple(sorted(set(metrics) - set(_PROVIDER_REPLAY_OUTCOME_CONTRACTS)))
+    if unknown:
+        raise WorldModelTournamentError(f"provider replay metrics are not operating outputs: {unknown}")
+    return {
+        metric: (
+            _PROVIDER_REPLAY_OUTCOME_CONTRACTS[metric][0],
+            (_PROVIDER_REPLAY_OUTCOME_CONTRACTS[metric][1],),
+            _PROVIDER_REPLAY_DIRECT_TRANSFORMS,
+        )
+        for metric in metrics
+    }
+
+
+def _providerReplayRefs(batch: ProviderObservationBatch, observationIds: tuple[str, ...]) -> tuple[str, ...]:
+    return tuple(
+        dict.fromkeys(
+            (
+                f"providerObservationBatch:{batch.batchReceiptId}",
+                f"providerObservationBatchId:{batch.batchId}",
+                *(f"sourceReceiptRef:{receiptId}" for receiptId in batch.sourceReceiptIds),
+                *(f"providerObservation:{observationId}" for observationId in observationIds),
+            )
+        )
+    )
+
+
+def _providerReplayPathSet(
+    episodeId: str,
+    batch: ProviderObservationBatch,
+    factorSpecs: tuple[DriverFactorSpec, ...],
+    eventTimes: tuple[str, ...],
+    steps: tuple[Mapping[str, float], ...],
+    observationIds: tuple[str, ...],
+    *,
+    knowledgeAsOf: str,
+) -> DriverPathSet:
+    from dartlab.simulate.driverPaths import DriverPathAudit, DriverPathSet
+
+    refs = _providerReplayRefs(batch, observationIds)
+    frequency = factorSpecs[0].frequency
+    path = ScenarioPath(
+        pathId=f"realized:{episodeId}",
+        steps=steps,
+        refs=refs,
+        frequency=frequency,
+        stepSpan=1,
+        validationStatus="retrospectiveOnly",
+        knowledgeAsOf=knowledgeAsOf,
+        historyStatus="realizedOutcome",
+    )
+    inputHash = canonicalPayloadHash(
+        {
+            "batchId": batch.batchId,
+            "batchReceiptId": batch.batchReceiptId,
+            "observationIds": observationIds,
+            "eventTimes": eventTimes,
+            "factorSpecs": factorSpecs,
+            "steps": steps,
+        }
+    )
+    pathSetHash = canonicalPayloadHash({"path": path, "factorSpecs": factorSpecs})
+    factorContractHash = canonicalPayloadHash(tuple(sorted(factorSpecs, key=lambda item: item.variableId)))
+    audit = DriverPathAudit(
+        pathSetHash=pathSetHash,
+        inputHash=inputHash,
+        historyInputHash=inputHash,
+        assumptionHash="",
+        assumptionStepHashes=(),
+        basePathSetHash=pathSetHash,
+        basePathAdmissionReceiptId="",
+        basePathAdmissionContentHash="",
+        basePathAdmissionSubjectHash="",
+        basePathValidationStatus="retrospectiveOnly",
+        basePathMaxAdmittedStep=0,
+        overlayHash="",
+        registryHash=canonicalPayloadHash(
+            {
+                "providerQueryContractHash": batch.queryContractHash,
+                "factorContractHash": factorContractHash,
+            }
+        ),
+        factorContractHash=factorContractHash,
+        generatorVersion=PROVIDER_REPLAY_EPISODE_VERSION,
+        knowledgeAsOf=knowledgeAsOf,
+        frequency=frequency,
+        stepSpan=1,
+        horizon=len(steps),
+        pathCount=1,
+        blockLength=1,
+        seed=0,
+        driverCardIds=(f"providerReplay:{batch.batchId}",),
+        assumptionDescriptors=(),
+        validationStatus="retrospectiveOnly",
+        observedHistoryStatus="realizedOutcome",
+        historyStatus="realizedOutcome",
+        sourceRefs=refs,
+        warnings=("realizedProviderObservationsUsedRetrospectively",),
+    )
+    return DriverPathSet((path,), factorSpecs, audit)
+
+
+def _operatingReplayAssemblyPayload(episode: OperatingModelReplayEpisode) -> dict:
+    lineage = episode.lineage
+    if lineage is None:
+        raise WorldModelTournamentError("provider replay episode lineage is missing")
+    payload = _operatingReplayEpisodePayload(episode)
+    payload["lineage"] = {
+        name: getattr(lineage, name) for name in lineage.__dataclass_fields__ if name != "assemblyHash"
+    }
+    return {
+        "schemaVersion": PROVIDER_REPLAY_EPISODE_VERSION,
+        "episode": payload,
+    }
+
+
+def _validateOperatingReplayLineage(episode: OperatingModelReplayEpisode, horizon: int) -> None:
+    lineage = episode.lineage
+    if lineage is None:
+        return
+    digests = (
+        lineage.assemblyHash,
+        lineage.driverBatchId,
+        lineage.driverBatchReceiptId,
+        lineage.actionBatchId,
+        lineage.actionBatchReceiptId,
+        lineage.outcomeBatchId,
+        lineage.outcomeBatchReceiptId,
+        *lineage.driverObservationIds,
+        *lineage.actionObservationIds,
+        *lineage.outcomeObservationIds,
+    )
+    if any(not _validTournamentDigest(value) for value in digests):
+        raise WorldModelTournamentError("provider replay lineage digest is invalid")
+    if (
+        len(lineage.eventTimes) != horizon
+        or tuple(sorted(set(lineage.eventTimes))) != lineage.eventTimes
+        or lineage.assemblyHash != canonicalPayloadHash(_operatingReplayAssemblyPayload(episode))
+    ):
+        raise WorldModelTournamentError("provider replay assembly lineage drifted")
+
+
+def _providerReplayLineage(
+    episode: OperatingModelReplayEpisode,
+    origin: OperatingReplayOriginBundle,
+    eventTimes: tuple[str, ...],
+    driverObservationIds: tuple[str, ...],
+    actionObservationIds: tuple[str, ...],
+    outcomeObservationIds: tuple[str, ...],
+) -> OperatingModelReplayEpisode:
+    lineage = OperatingReplayLineage(
+        assemblyHash="",
+        eventTimes=eventTimes,
+        driverBatchId=origin.realizedDriverBatch.batchId,
+        driverBatchReceiptId=origin.realizedDriverBatch.batchReceiptId,
+        actionBatchId=origin.observedActionBatch.batchId,
+        actionBatchReceiptId=origin.observedActionBatch.batchReceiptId,
+        outcomeBatchId=origin.actualOutcomeBatch.batchId,
+        outcomeBatchReceiptId=origin.actualOutcomeBatch.batchReceiptId,
+        driverObservationIds=driverObservationIds,
+        actionObservationIds=actionObservationIds,
+        outcomeObservationIds=outcomeObservationIds,
+    )
+    draft = replace(episode, lineage=lineage)
+    digest = canonicalPayloadHash(_operatingReplayAssemblyPayload(draft))
+    return replace(draft, lineage=replace(lineage, assemblyHash=digest))
+
+
+def _validateProviderReplayAssemblyContract(
+    origins: tuple[OperatingReplayOriginBundle, ...],
+    factorSpecs: tuple[DriverFactorSpec, ...],
+    metrics: tuple[str, ...],
+) -> str:
+    if not origins:
+        raise WorldModelTournamentError("provider replay assembly needs at least one origin")
+    episodeIds = tuple(origin.episodeId for origin in origins)
+    originDates = tuple(origin.compiledState.decisionAsOf for origin in origins)
+    if (
+        any(not origin.episodeId or not origin.regime or not origin.baselines for origin in origins)
+        or len(set(episodeIds)) != len(episodeIds)
+        or len(set(originDates)) != len(originDates)
+    ):
+        raise WorldModelTournamentError("provider replay origins need unique identity, date, regime, and baselines")
+    if not factorSpecs or len({factor.variableId for factor in factorSpecs}) != len(factorSpecs):
+        raise WorldModelTournamentError("provider replay needs unique driver factor contracts")
+    frequencies = {factor.frequency for factor in factorSpecs}
+    if len(frequencies) != 1:
+        raise WorldModelTournamentError("provider replay driver factors need one frequency")
+    if not metrics or len(set(metrics)) != len(metrics):
+        raise WorldModelTournamentError("provider replay needs unique actual outcome metrics")
+    _providerReplayOutcomeContracts(metrics)
+    return next(iter(frequencies))
+
+
+def _verifyProviderReplayOrigin(
+    origin: OperatingReplayOriginBundle,
+    admissionVerifier: AdmissionVerifier,
+) -> tuple[str, str]:
+    from dartlab.simulate.stateCompiler import (
+        StateCompilerError,
+        validateCompiledPointInTimeState,
+        validateProviderObservationBatch,
+    )
+
+    originAsOf = _tournamentDateText(origin.compiledState.decisionAsOf, "provider replay origin")
+    batches = (
+        origin.realizedDriverBatch,
+        origin.observedActionBatch,
+        origin.actualOutcomeBatch,
+    )
+    cutoffs = {_tournamentDateText(batch.cutoffAsOf, "provider replay batch cutoff") for batch in batches}
+    entities = {batch.entityId for batch in batches}
+    if len(cutoffs) != 1 or entities != {origin.compiledState.entityId}:
+        raise WorldModelTournamentError("provider replay batches must share state entity and outcome cutoff")
+    outcomeAsOf = next(iter(cutoffs))
+    if outcomeAsOf <= originAsOf:
+        raise WorldModelTournamentError("provider replay outcome cutoff must follow the PIT origin")
+    try:
+        validateCompiledPointInTimeState(origin.compiledState, admissionVerifier)
+        for batch in batches:
+            validateProviderObservationBatch(batch, admissionVerifier, decisionAsOf=outcomeAsOf)
+    except StateCompilerError as error:
+        raise WorldModelTournamentError(f"provider replay signed input verification failed: {error}") from error
+    return originAsOf, outcomeAsOf
+
+
+def _assembleProviderReplayOrigin(
+    origin: OperatingReplayOriginBundle,
+    factorSpecs: tuple[DriverFactorSpec, ...],
+    metrics: tuple[str, ...],
+    admissionVerifier: AdmissionVerifier,
+    *,
+    frequency: str,
+    priceElasticity: float,
+    capacityUnitsPerCurrency: float,
+    capacityDecayRate: float,
+    taxRate: float,
+) -> OperatingModelReplayEpisode:
+    from dartlab.simulate.operatingWorld import operatingInputsFromCompiledState
+
+    originAsOf, outcomeAsOf = _verifyProviderReplayOrigin(origin, admissionVerifier)
+    currencyFamily = _providerReplayCurrencyFamily(origin.compiledState)
+    driverEvents, driverRows, driverObservationIds = _providerReplayBatchRows(
+        origin.realizedDriverBatch,
+        originAsOf=originAsOf,
+        frequency=frequency,
+        contracts=_providerReplayDriverContracts(factorSpecs),
+        currencyFamily=currencyFamily,
+        allowedEvidenceRoles=("observed", "deterministicDerived"),
+    )
+    actionEvents, actionRows, actionObservationIds = _providerReplayBatchRows(
+        origin.observedActionBatch,
+        originAsOf=originAsOf,
+        frequency=frequency,
+        contracts=_providerReplayActionContracts(),
+        currencyFamily=currencyFamily,
+        allowedEvidenceRoles=("observed",),
+    )
+    outcomeEvents, outcomeRows, outcomeObservationIds = _providerReplayBatchRows(
+        origin.actualOutcomeBatch,
+        originAsOf=originAsOf,
+        frequency=frequency,
+        contracts=_providerReplayOutcomeContracts(metrics),
+        currencyFamily=currencyFamily,
+        allowedEvidenceRoles=("observed", "deterministicDerived"),
+    )
+    if driverEvents != actionEvents or driverEvents != outcomeEvents:
+        raise WorldModelTournamentError("provider replay driver, action, and outcome event grids differ")
+    pathSet = _providerReplayPathSet(
+        origin.episodeId,
+        origin.realizedDriverBatch,
+        factorSpecs,
+        driverEvents,
+        driverRows,
+        driverObservationIds,
+        knowledgeAsOf=outcomeAsOf,
+    )
+    inputs = operatingInputsFromCompiledState(
+        origin.compiledState,
+        priceElasticity=priceElasticity,
+        capacityUnitsPerCurrency=capacityUnitsPerCurrency,
+        capacityDecayRate=capacityDecayRate,
+        taxRate=taxRate,
+        warnings=("providerReplayEpisode",),
+    )
+    inputs = replace(inputs, stepFrequency=frequency, stepSpan=1)
+    policy = StrategySpec(
+        strategyId=f"observed:{origin.episodeId}",
+        actionsByStep=actionRows,
+        refs=_providerReplayRefs(origin.observedActionBatch, actionObservationIds),
+        policyVersion=PROVIDER_REPLAY_EPISODE_VERSION,
+        policyProvenance=f"providerObservationBatch:{origin.observedActionBatch.batchReceiptId}",
+    )
+    episode = OperatingModelReplayEpisode(
+        episodeId=origin.episodeId,
+        originAsOf=originAsOf,
+        outcomeAvailableAt=outcomeAsOf,
+        regime=origin.regime,
+        inputs=inputs,
+        realizedPathSet=pathSet,
+        baselines=origin.baselines,
+        observedPolicy=policy,
+        actualByStep=outcomeRows,
+        compiledState=origin.compiledState,
+    )
+    assembled = _providerReplayLineage(
+        episode,
+        origin,
+        driverEvents,
+        driverObservationIds,
+        actionObservationIds,
+        outcomeObservationIds,
+    )
+    path = _validateOperatingRealizedPath(assembled)
+    horizon = _validateOperatingReplayStepContract(assembled, path)
+    if len(assembled.actualByStep) != horizon or len(assembled.observedPolicy.actionsByStep) != horizon:
+        raise WorldModelTournamentError("provider replay assembled horizon drifted")
+    _validateOperatingReplayTiming(assembled, outcomeAsOf)
+    _validateOperatingReplayLineage(assembled, horizon)
+    return assembled
+
+
+def assembleOperatingModelReplayEpisodes(
+    origins: tuple[OperatingReplayOriginBundle, ...],
+    factorSpecs: tuple[DriverFactorSpec, ...],
+    metrics: tuple[str, ...],
+    *,
+    admissionVerifier: AdmissionVerifier,
+    priceElasticity: float,
+    capacityUnitsPerCurrency: float,
+    capacityDecayRate: float = 0.0,
+    taxRate: float = 0.0,
+) -> tuple[OperatingModelReplayEpisode, ...]:
+    """Assemble retrospective operating episodes from signed provider artifacts only.
+
+    Args:
+        origins: Admitted PIT states paired with signed driver, action, and outcome batches.
+        factorSpecs: Canonical factor meaning for the realized driver batch.
+        metrics: Canonical operating outputs required from every outcome event.
+        admissionVerifier: Runtime verifier for state, batch, and source receipt replay.
+        priceElasticity: Shared operating demand response to price actions.
+        capacityUnitsPerCurrency: Shared capacity added per investment currency unit.
+        capacityDecayRate: Shared per-step capacity decay ratio.
+        taxRate: Shared simple positive-profit tax ratio.
+
+    Returns:
+        Origin-sorted replay episodes with automatically derived origin, outcome cutoff,
+        horizon, realized path, observed policy, actual rows, and signed lineage hash.
+
+    Capabilities:
+        Replays complete provider queries into tournament-ready historical episodes without
+        caller-supplied dates, horizon, policy rows, or actual outcome rows.
+
+    AIContext:
+        Use before ``runOperatingModelTournament`` when an agent must prove every historical
+        model score came from signed as-known provider observations and a PIT state.
+
+    Guide:
+        Each bundle uses three exact batches with one entity and cutoff. Their canonical
+        signals and future event grids must match; the function derives all episode rows.
+
+    When:
+        Call after issuing the PIT state and the realized driver, observed action, and actual
+        outcome provider batches for every historical origin.
+
+    How:
+        Pass common factor and metric contracts once, assemble the origins, then feed the
+        returned tuple directly to ``runOperatingModelTournament``.
+
+    Requires:
+        Local admission registry artifacts and trusted issuer keys available through the
+        verifier. No network access or API key is used.
+
+    Raises:
+        WorldModelTournamentError: If receipts, PIT timing, entity scope, signal meaning,
+            revisions, currency, event grids, or assembly lineage drift.
+
+    Example:
+        ``episodes = assembleOperatingModelReplayEpisodes(origins, factors, ("operatingProfit", "cash"), admissionVerifier=verifier, priceElasticity=1.0, capacityUnitsPerCurrency=1.0)``
+
+    SeeAlso:
+        ``runOperatingModelTournament`` and
+        ``dartlab.simulate.stateCompiler.validateProviderObservationBatch``.
+    """
+
+    originTuple = tuple(sorted(origins, key=lambda item: (item.compiledState.decisionAsOf, item.episodeId)))
+    factorTuple = tuple(sorted(factorSpecs, key=lambda item: item.variableId))
+    metricTuple = tuple(sorted(metrics))
+    frequency = _validateProviderReplayAssemblyContract(originTuple, factorTuple, metricTuple)
+    return tuple(
+        _assembleProviderReplayOrigin(
+            origin,
+            factorTuple,
+            metricTuple,
+            admissionVerifier,
+            frequency=frequency,
+            priceElasticity=priceElasticity,
+            capacityUnitsPerCurrency=capacityUnitsPerCurrency,
+            capacityDecayRate=capacityDecayRate,
+            taxRate=taxRate,
+        )
+        for origin in originTuple
+    )
 
 
 def _worldModelSharedContractPayload(model: WorldModel) -> dict:
@@ -878,6 +1468,7 @@ def _validateOperatingReplayShape(
     path = _validateOperatingRealizedPath(episode)
     horizon = _validateOperatingReplayStepContract(episode, path)
     _validateOperatingReplayOutcomes(episode, spec, horizon)
+    _validateOperatingReplayLineage(episode, horizon)
 
 
 def _validateOperatingCoefficientCandidate(
@@ -1101,6 +1692,7 @@ def _operatingModelTournamentRawScores(
                 debtLimit=debtLimit,
                 maxFinancing=maxFinancing,
                 maxInvestment=maxInvestment,
+                admissionVerifier=candidate.admissionVerifier,
             )
             if len(run.traces) != 1:
                 raise WorldModelTournamentError("operating replay run must retain exactly one trace")
