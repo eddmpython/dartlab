@@ -81,7 +81,7 @@ Python demo의 module docstring에는 `결과` 섹션을 둔다. 출력 파일�
 | U0-T02 | exact admission 필드가 실제 있는가 | HF ecosystem과 source candidates | span, section, direction, time, policy 분리 계수 | current edge candidate 유지 | 완료 |
 | U0-I01 | canonical legal entity ID가 복원되는가 | KR 50, US 30, security와 filing sample | exact ID 100%, ambiguous auto resolve 0 | reference resolver 우선 보강 | 계약 완료, historical registry 차단 |
 | U0-E01 | edge hint에서 exact source를 찾는가 | search catalog 381,149행과 synthetic positive 및 negative | resolution 95%, false accept 1% 이하 | predicate별 source lane 재설계 | 계약 완료, live source와 reviewed gold 차단 |
-| U0-O01 | revision과 시간을 보존하는가 | multi-filing fixture | history 손실 0, look-ahead 0 | assertion schema 수정 | 대기 |
+| U0-O01 | revision과 시간을 보존하는가 | synthetic multi-filing correction과 public edge 20,560 | history 손실 0, look-ahead 0 | assertion schema 수정 | 계약 완료, live assertion source 차단 |
 | U0-P01 | bounded scene이 결정론적인가 | atlas, industry, company | bounds 100%, hash 일치 100% | priority/truncation 수정 | 대기 |
 | U0-S01 | source 전체가 재현 가능한가 | map, search, panel, finance, catalog | source version 또는 unreplayable 100% | exact replay 문구 금지 | 완료, capability unreplayable |
 | U0-P02 | public field가 승인됐는가 | source와 field registry | public mark receipt 100%, false accept 0 | source lane 차단 | 완료, live 0/10 차단 |
@@ -369,6 +369,37 @@ liveReady                                false
 ```
 
 판정: Existing search catalog는 document와 section 수준의 exact lookup 후보로는 완전하지만 assertion-grade evidence는 아니다. Whole-section sourceRef, content hash, dataAsOf, adapter version을 char span, table row/header, availability timestamp, immutable source bytes version으로 확대 해석하지 않는다. Synthetic resolver는 text와 table positive를 해소하고 wrong entity, wrong predicate, unknown direction, missing time, mutable version, altered locator, multiple exact source를 모두 fail closed했다. Resolver contract는 합격이지만 reviewed 100 및 100 gold, live exact field, public cold 및 incremental transfer가 없어 live evidence admission은 `revise`로 차단한다.
+
+## 4.9 U0-O01 결과
+
+명령:
+
+```powershell
+uv run python -X utf8 tests/_attempts/dartlabUniverse/ontology/assertionContract.py
+```
+
+결과:
+
+```text
+edgeCount                         20,560
+uniqueRelationCandidateCount      20,560
+selfLoopCount                         13
+assertionIdCount                       0
+supersedesCount                        0
+exactEvidenceCount                     0
+sourcePublishedAtCount                 0
+availableAtCount                       0
+validFromCount                         0
+validToCount                           0
+admittedStatusCount                    0
+assertionReadyCount                    0
+syntheticRegression                  9/9 PASS
+historyLossCount                       0
+futureKnowledgeLeakCount               0
+liveReady                           false
+```
+
+판정: Relation ID는 subject, predicate, object, direction의 canonical hash로 고정하고 assertion ID는 filing evidence, source snapshot, source time, validity, event, status, supersedes를 추가로 결속했다. Evidence 입력 순서와 query knownAt은 assertion identity를 바꾸지 않는다. Correction은 predecessor를 ledger에서 삭제하지 않고 같은 relation의 단방향 lineage로만 연결한다. Production `Ref` exact payload와 `VintageRef`의 asKnown 및 asOfExact를 그대로 통과했다. Synthetic contract는 합격이다. 그러나 public 20,560 edge에는 assertion source field가 모두 0이고 self-loop 13개가 남아 있어 live admission은 `revise`다. Current edge는 relation candidate lane에만 둔다.
 
 ## 5. existing attempts 재사용 지도
 

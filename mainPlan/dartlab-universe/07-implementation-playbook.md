@@ -320,6 +320,8 @@ kill: 3D 또는 canvas에서만 가능한 핵심 작업이 생기면 해당 rend
 - future knowledge leak 0
 - missing time을 오늘 또는 0으로 채운 사례 0
 
+2026-07-15 실행 결과: Relation ID와 assertion ID를 분리하고 production `Ref`, `VintageRef`, `canonicalPayloadHash`에 exact evidence와 append-only supersedes lineage를 결속했다. Synthetic 9/9에서 같은 relation의 다른 filing과 period가 다른 assertion ID를 만들고 correction 전 record 2/2를 보존했다. Evidence 입력 순서와 query knownAt은 assertion ID를 바꾸지 않았고 future effective event는 허용했으며 future knowledge leak은 0이었다. Public ecosystem 20,560 edge는 relation candidate 20,560개로 unique하지만 assertion ID, supersedes, exact evidence, sourcePublishedAt, availableAt, validFrom, admitted status, assertion-ready는 모두 0이고 self-loop은 13개다. Assertion contract는 완료했지만 live fact lane은 차단한다. 상세 evidence는 `tests/_attempts/dartlabUniverse/ontology/README.md`가 소유한다.
+
 ### U0-P01 bounded projection probe
 
 목표: 276GB truth를 복제하지 않고 질문당 50~500 node scene을 결정론적으로 만드는지 증명한다.
