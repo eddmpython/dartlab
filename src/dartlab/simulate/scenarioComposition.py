@@ -9,7 +9,7 @@ inside each named scenario case.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import TYPE_CHECKING
 
 from dartlab.simulate.driverCalibration import (
@@ -53,6 +53,43 @@ COMPOSED_CONDITIONAL_PATH_PACKAGE_RULE_HASH = canonicalPayloadHash(
         "status": "documented",
         "ruleId": COMPOSED_CONDITIONAL_PATH_PACKAGE_RULE_ID,
         "ruleVersion": COMPOSED_CONDITIONAL_PATH_PACKAGE_RULE_VERSION,
+    }
+)
+CONDITIONAL_SCENARIO_EXPERIMENT_RESULT_VERSION = "conditional-scenario-experiment-result-v1"
+CONDITIONAL_SCENARIO_EXPERIMENT_RESULT_KIND = "conditionalScenarioExperimentResult"
+CONDITIONAL_SCENARIO_EXPERIMENT_RESULT_RULE_ID = "conditional-scenario-experiment-result"
+CONDITIONAL_SCENARIO_EXPERIMENT_RESULT_RULE_VERSION = "1"
+CONDITIONAL_SCENARIO_EXPERIMENT_RESULT_RULE_HASH = canonicalPayloadHash(
+    {
+        "schemaVersion": CONDITIONAL_SCENARIO_EXPERIMENT_RESULT_VERSION,
+        "kind": CONDITIONAL_SCENARIO_EXPERIMENT_RESULT_KIND,
+        "status": "documented",
+        "ruleId": CONDITIONAL_SCENARIO_EXPERIMENT_RESULT_RULE_ID,
+        "ruleVersion": CONDITIONAL_SCENARIO_EXPERIMENT_RESULT_RULE_VERSION,
+    }
+)
+CONDITIONAL_SCENARIO_EXPERIMENT_METRIC_DEFINITION_HASH = canonicalPayloadHash(
+    {
+        "schemaVersion": CONDITIONAL_SCENARIO_EXPERIMENT_RESULT_VERSION,
+        "definition": "objective-score-cell-regret-v1",
+    }
+)
+CONDITIONAL_SCENARIO_EXPERIMENT_COMPARISON_RULE_HASH = canonicalPayloadHash(
+    {
+        "schemaVersion": CONDITIONAL_SCENARIO_EXPERIMENT_RESULT_VERSION,
+        "definition": "scenario-strategy-score-leader-v1",
+    }
+)
+CONDITIONAL_SCENARIO_EXPERIMENT_FRAGILITY_RULE_HASH = canonicalPayloadHash(
+    {
+        "schemaVersion": CONDITIONAL_SCENARIO_EXPERIMENT_RESULT_VERSION,
+        "definition": "leader-margin-fragility-v1",
+    }
+)
+CONDITIONAL_SCENARIO_EXPERIMENT_BLOCKER_RULE_HASH = canonicalPayloadHash(
+    {
+        "schemaVersion": CONDITIONAL_SCENARIO_EXPERIMENT_RESULT_VERSION,
+        "definition": "conditional-experiment-blocker-v1",
     }
 )
 SCENARIO_ASSUMPTION_SET_VERSION = "scenario-assumption-set-v1"
@@ -554,6 +591,11 @@ class ConditionalScenarioExperiment:
     fragilityCells: tuple[ConditionalAssumptionFragility, ...]
     blockedReasons: tuple[str, ...]
     warnings: tuple[str, ...]
+    experimentReceiptSubjectHash: str = ""
+    experimentReceiptId: str = ""
+    experimentReceiptKind: str = ""
+    experimentReceiptStatus: str = ""
+    experimentReceiptParentReceiptIds: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "strategyIds", tuple(self.strategyIds))
@@ -582,6 +624,7 @@ class ConditionalScenarioExperiment:
         object.__setattr__(self, "fragilityCells", tuple(self.fragilityCells))
         object.__setattr__(self, "blockedReasons", tuple(self.blockedReasons))
         object.__setattr__(self, "warnings", tuple(self.warnings))
+        object.__setattr__(self, "experimentReceiptParentReceiptIds", tuple(self.experimentReceiptParentReceiptIds))
 
 
 def _dedupe(values: tuple[str, ...]) -> tuple[str, ...]:
@@ -1972,6 +2015,338 @@ def _experimentPathAssumptionStepHashes(
     caseLedgers: tuple[OneCompanyScenarioCaseLedger, ...],
 ) -> tuple[tuple[str, ...], ...]:
     return tuple(ledger.pathAssumptionStepHashes for ledger in caseLedgers)
+
+
+def _experimentInitialStateAdmissionReceiptIds(experiment: ConditionalScenarioExperiment) -> tuple[str, ...]:
+    return _dedupe(tuple(ledger.initialStateAdmissionReceiptId for ledger in experiment.caseLedgers))
+
+
+def _experimentScenarioPathPackageReceiptIds(experiment: ConditionalScenarioExperiment) -> tuple[str, ...]:
+    return _dedupe(tuple(ledger.scenarioPathPackageReceiptId for ledger in experiment.caseLedgers))
+
+
+def _experimentCaseResultHashes(experiment: ConditionalScenarioExperiment) -> tuple[str, ...]:
+    return tuple(ledger.resultHash for ledger in experiment.caseLedgers)
+
+
+def _experimentRunHashes(experiment: ConditionalScenarioExperiment) -> tuple[str, ...]:
+    return tuple(ledger.runHash for ledger in experiment.caseLedgers)
+
+
+def _experimentLeaderStrategyIds(experiment: ConditionalScenarioExperiment) -> tuple[str, ...]:
+    if not experiment.strategySummaries:
+        return ()
+    leaderFrequency = max(summary.leaderFrequency for summary in experiment.strategySummaries)
+    return tuple(
+        sorted(
+            summary.strategyId
+            for summary in experiment.strategySummaries
+            if abs(summary.leaderFrequency - leaderFrequency) <= 1e-12
+        )
+    )
+
+
+def _conditionalExperimentComparisonReplayHash(experiment: ConditionalScenarioExperiment) -> str:
+    return canonicalPayloadHash(
+        {
+            "schemaVersion": CONDITIONAL_SCENARIO_EXPERIMENT_RESULT_VERSION,
+            "decisionStatus": experiment.decisionStatus,
+            "recommendationCeiling": experiment.recommendationCeiling,
+            "recommendation": experiment.recommendation,
+            "strategySetHash": experiment.strategySetHash,
+            "caseLedgerHashes": experiment.caseLedgerHashes,
+            "resultSetHash": experiment.resultSetHash,
+            "blockedReasons": experiment.blockedReasons,
+            "warnings": experiment.warnings,
+        }
+    )
+
+
+def conditionalScenarioExperimentParentReceiptIds(
+    experiment: ConditionalScenarioExperiment,
+) -> tuple[str, ...]:
+    """Return receipt parents required to document a conditional experiment result.
+
+    Args:
+        experiment: Conditional scenario experiment returned by the simulator.
+
+    Returns:
+        Ordered parent receipt identifiers for state, path packages, and coefficients.
+
+    Raises:
+        ScenarioCompositionError: If a case with explicit assumptions lacks a composed path package receipt.
+
+    Example:
+        ``parents = conditionalScenarioExperimentParentReceiptIds(experiment)``
+    """
+
+    missingPathPackages = tuple(
+        ledger.caseId
+        for ledger in experiment.caseLedgers
+        if ledger.pathAssumptionHash and not ledger.scenarioPathPackageReceiptId
+    )
+    if missingPathPackages:
+        raise ScenarioCompositionError("conditional experiment receipt needs scenario path package receipts")
+    pathPackageReceipts = _experimentScenarioPathPackageReceiptIds(experiment)
+    if not pathPackageReceipts:
+        raise ScenarioCompositionError("conditional experiment receipt needs composed path package parents")
+    initialStateReceipts = _experimentInitialStateAdmissionReceiptIds(experiment)
+    coefficientReceipts = _dedupe(
+        tuple(receiptId for ledger in experiment.caseLedgers for receiptId in ledger.coefficientAdmissionReceiptIds)
+    )
+    return _dedupe((*initialStateReceipts, *pathPackageReceipts, *coefficientReceipts))
+
+
+def conditionalScenarioExperimentPayload(experiment: ConditionalScenarioExperiment) -> dict:
+    """Build the canonical artifact payload for a documented experiment result.
+
+    Args:
+        experiment: Conditional scenario experiment to seal as a replayable result table.
+
+    Returns:
+        Canonical payload dictionary binding inputs, strategies, scores, blockers, and provenance.
+
+    Raises:
+        ScenarioCompositionError: If required path package parent receipts are missing.
+
+    Example:
+        ``payload = conditionalScenarioExperimentPayload(experiment)``
+    """
+
+    parentReceiptIds = conditionalScenarioExperimentParentReceiptIds(experiment)
+    leaderboardHash = canonicalPayloadHash(experiment.strategySummaries)
+    fragilitySummaryHash = canonicalPayloadHash(experiment.fragilityCells)
+    blockerSummaryHash = canonicalPayloadHash(experiment.blockedReasons)
+    return {
+        "schemaVersion": CONDITIONAL_SCENARIO_EXPERIMENT_RESULT_VERSION,
+        "kind": CONDITIONAL_SCENARIO_EXPERIMENT_RESULT_KIND,
+        "status": "documented",
+        "decisionStatus": experiment.decisionStatus,
+        "recommendationStatus": "disabled" if experiment.recommendation is None else "enabled",
+        "experiment": {
+            "experimentHash": experiment.experimentHash,
+            "schemaVersion": experiment.schemaVersion,
+            "entityId": experiment.entityId,
+            "comparisonReplayHash": _conditionalExperimentComparisonReplayHash(experiment),
+            "simulationSpecHash": experiment.simulationSpecHash,
+            "resultSetHash": experiment.resultSetHash,
+            "scenarioCount": experiment.scenarioCount,
+            "strategyCount": experiment.strategyCount,
+            "cellCount": experiment.cellCount,
+            "objectiveIndex": experiment.objectiveIndex,
+        },
+        "inputs": {
+            "initialStateAdmissionReceiptIds": _experimentInitialStateAdmissionReceiptIds(experiment),
+            "composedPathPackageReceiptIds": _experimentScenarioPathPackageReceiptIds(experiment),
+            "composedPathPackageSubjectHashes": tuple(
+                ledger.scenarioPathPackageSubjectHash for ledger in experiment.caseLedgers
+            ),
+            "providerObservationBatchRefs": experiment.providerObservationBatchRefs,
+            "explicitAssumptionIds": experiment.explicitAssumptionIds,
+            "overlayHashes": tuple(ledger.pathOverlayHash for ledger in experiment.caseLedgers),
+            "pathHistoryInputHashes": experiment.pathHistoryInputHashes,
+            "pathAssumptionHashes": experiment.pathAssumptionHashes,
+            "pathAssumptionStepHashes": experiment.pathAssumptionStepHashes,
+            "driverRegistryHashes": experiment.driverRegistryHashes,
+            "driverRegistryLaneIds": experiment.driverRegistryLaneIds,
+            "driverRegistrySemanticRefs": experiment.driverRegistrySemanticRefs,
+            "driverRegistrySourceRefs": experiment.driverRegistrySourceRefs,
+            "driverRegistryWarnings": experiment.driverRegistryWarnings,
+        },
+        "strategies": {
+            "strategySetHash": experiment.strategySetHash,
+            "strategyIds": experiment.strategyIds,
+            "strategyContractHashes": experiment.strategyContractHashes,
+        },
+        "metrics": {
+            "metricDefinitionHash": CONDITIONAL_SCENARIO_EXPERIMENT_METRIC_DEFINITION_HASH,
+            "comparisonRuleHash": CONDITIONAL_SCENARIO_EXPERIMENT_COMPARISON_RULE_HASH,
+            "fragilityDefinitionHash": CONDITIONAL_SCENARIO_EXPERIMENT_FRAGILITY_RULE_HASH,
+            "blockerRuleHash": CONDITIONAL_SCENARIO_EXPERIMENT_BLOCKER_RULE_HASH,
+        },
+        "cases": tuple(
+            {
+                "caseId": ledger.caseId,
+                "label": ledger.label,
+                "caseLedgerHash": caseLedgerHash,
+                "caseResultHash": ledger.resultHash,
+                "runHash": ledger.runHash,
+                "scenarioPathPackageHash": ledger.scenarioPathPackageHash,
+                "scenarioPathPackageReceiptId": ledger.scenarioPathPackageReceiptId,
+                "scenarioPathPackageReceiptStatus": ledger.scenarioPathPackageReceiptStatus,
+                "assumptionSetId": assumptionSetId,
+                "assumptionSetHash": assumptionSetHash,
+                "scoreLeaderStrategies": ledger.scoreLeaderStrategies,
+                "blockedReasons": ledger.blockedReasons,
+                "conditionRefs": ledger.conditionRefs,
+            }
+            for ledger, caseLedgerHash, assumptionSetId, assumptionSetHash in zip(
+                experiment.caseLedgers,
+                experiment.caseLedgerHashes,
+                experiment.assumptionSetIds,
+                experiment.assumptionSetHashes,
+                strict=True,
+            )
+        ),
+        "results": {
+            "resultSetHash": experiment.resultSetHash,
+            "caseResultHashes": _experimentCaseResultHashes(experiment),
+            "runHashes": _experimentRunHashes(experiment),
+            "leaderStrategyIds": _experimentLeaderStrategyIds(experiment),
+            "leaderboardHash": leaderboardHash,
+            "fragilitySummaryHash": fragilitySummaryHash,
+            "blockerSummaryHash": blockerSummaryHash,
+            "strategySummaries": experiment.strategySummaries,
+            "cells": experiment.cells,
+            "fragilityCells": experiment.fragilityCells,
+        },
+        "recommendationCeiling": experiment.recommendationCeiling,
+        "recommendation": experiment.recommendation,
+        "blockedReasons": experiment.blockedReasons,
+        "warnings": experiment.warnings,
+        "parentReceiptIds": parentReceiptIds,
+    }
+
+
+def conditionalScenarioExperimentArtifact(experiment: ConditionalScenarioExperiment) -> bytes:
+    """Return canonical bytes for a documented conditional experiment result.
+
+    Args:
+        experiment: Conditional scenario experiment to serialize.
+
+    Returns:
+        Canonical JSON bytes whose digest is signed by the result receipt.
+
+    Raises:
+        ScenarioCompositionError: If required path package parent receipts are missing.
+
+    Example:
+        ``artifact = conditionalScenarioExperimentArtifact(experiment)``
+    """
+
+    return canonicalPayloadBytes(conditionalScenarioExperimentPayload(experiment))
+
+
+def conditionalScenarioExperimentSubjectHash(experiment: ConditionalScenarioExperiment) -> str:
+    """Return the subject hash signed by a conditional experiment result receipt.
+
+    Args:
+        experiment: Conditional scenario experiment to bind.
+
+    Returns:
+        SHA-256 digest of the canonical experiment result artifact.
+
+    Raises:
+        ScenarioCompositionError: If required path package parent receipts are missing.
+
+    Example:
+        ``subjectHash = conditionalScenarioExperimentSubjectHash(experiment)``
+    """
+
+    return canonicalPayloadHash(conditionalScenarioExperimentPayload(experiment))
+
+
+def validateConditionalScenarioExperimentReceipt(
+    experiment: ConditionalScenarioExperiment,
+    receiptId: str,
+    admissionVerifier: AdmissionVerifier,
+) -> "AdmissionReceipt":
+    """Verify a documented conditional experiment result receipt.
+
+    Args:
+        experiment: Conditional scenario experiment whose result artifact is checked.
+        receiptId: Signed receipt identifier to verify.
+        admissionVerifier: Runtime verifier with trusted issuer keys and artifact root.
+
+    Returns:
+        Verified admission registry receipt for the documented experiment result.
+
+    Raises:
+        ScenarioCompositionError: If the receipt, artifact, parents, or recommendation boundary do not match.
+
+    Example:
+        ``receipt = validateConditionalScenarioExperimentReceipt(experiment, receiptId, verifier)``
+    """
+
+    if not _validDigest(receiptId):
+        raise ScenarioCompositionError("conditional experiment receipt identifier is invalid")
+    subjectHash = conditionalScenarioExperimentSubjectHash(experiment)
+    try:
+        from dartlab.simulate.admissionRegistry import artifactPath
+
+        receipt = admissionVerifier.verify(
+            receiptId,
+            expectedSubjectHash=subjectHash,
+            expectedKind=CONDITIONAL_SCENARIO_EXPERIMENT_RESULT_KIND,
+        )
+        parentReceipts = tuple(admissionVerifier.verify(parentId) for parentId in receipt.parentReceiptIds)
+        artifactBytes = artifactPath(admissionVerifier.artifactRoot, subjectHash).read_bytes()
+    except (OSError, RuntimeError, ValueError) as error:
+        raise ScenarioCompositionError(f"conditional experiment receipt verification failed: {error}") from error
+    if artifactBytes != conditionalScenarioExperimentArtifact(experiment):
+        raise ScenarioCompositionError("conditional experiment artifact content mismatch")
+    expectedParents = conditionalScenarioExperimentParentReceiptIds(experiment)
+    if receipt.parentReceiptIds != expectedParents:
+        raise ScenarioCompositionError("conditional experiment receipt parent mismatch")
+    if (
+        receipt.status != "documented"
+        or receipt.artifactHash != subjectHash
+        or receipt.ruleId != CONDITIONAL_SCENARIO_EXPERIMENT_RESULT_RULE_ID
+        or receipt.ruleVersion != CONDITIONAL_SCENARIO_EXPERIMENT_RESULT_RULE_VERSION
+        or receipt.ruleHash != CONDITIONAL_SCENARIO_EXPERIMENT_RESULT_RULE_HASH
+        or receipt.revisionPolicy != "explicitAssumption"
+        or receipt.coverage != "synthetic"
+        or receipt.frequency != "scenario"
+        or receipt.stepSpan != 1
+        or receipt.maxAdmittedStep != 0
+    ):
+        raise ScenarioCompositionError("conditional experiment receipt contract mismatch")
+    if any(parent.kind in {"policyEvaluation", "policyEpisodeBatch"} for parent in parentReceipts):
+        raise ScenarioCompositionError("conditional experiment cannot depend on policy evaluation receipts")
+    if any(parent.status == "policyAdmitted" for parent in parentReceipts):
+        raise ScenarioCompositionError("conditional experiment cannot inherit policy admitted parents")
+    if experiment.recommendation is not None:
+        raise ScenarioCompositionError("conditional experiment receipt cannot carry recommendation")
+    if "conditionalExperimentNotPolicyRecommendation" not in experiment.blockedReasons:
+        raise ScenarioCompositionError("conditional experiment receipt needs recommendation blocker")
+    if any(ledger.policyEvaluationCertificateId for ledger in experiment.caseLedgers):
+        raise ScenarioCompositionError("conditional experiment receipt cannot carry policy certificate ids")
+    if any(ledger.pathAdmissionReceiptId for ledger in experiment.caseLedgers):
+        raise ScenarioCompositionError("conditional experiment receipt cannot carry path admission ids")
+    return receipt
+
+
+def bindConditionalScenarioExperimentReceipt(
+    experiment: ConditionalScenarioExperiment,
+    receiptId: str,
+    admissionVerifier: AdmissionVerifier,
+) -> ConditionalScenarioExperiment:
+    """Attach a verified documented receipt to a conditional experiment ledger.
+
+    Args:
+        experiment: Conditional scenario experiment to annotate.
+        receiptId: Signed documented experiment receipt identifier.
+        admissionVerifier: Runtime verifier used to validate the receipt and artifact.
+
+    Returns:
+        Copy of the experiment carrying receipt id, kind, status, subject hash, and parents.
+
+    Raises:
+        ScenarioCompositionError: If receipt verification fails.
+
+    Example:
+        ``sealed = bindConditionalScenarioExperimentReceipt(experiment, receiptId, verifier)``
+    """
+
+    receipt = validateConditionalScenarioExperimentReceipt(experiment, receiptId, admissionVerifier)
+    return replace(
+        experiment,
+        experimentReceiptSubjectHash=conditionalScenarioExperimentSubjectHash(experiment),
+        experimentReceiptId=receipt.receiptId,
+        experimentReceiptKind=receipt.kind,
+        experimentReceiptStatus=receipt.status,
+        experimentReceiptParentReceiptIds=receipt.parentReceiptIds,
+    )
 
 
 def _validateOneCompanyLoop(

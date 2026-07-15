@@ -43,11 +43,20 @@ from dartlab.simulate.scenarioComposition import (
     COMPOSED_CONDITIONAL_PATH_PACKAGE_RULE_HASH,
     COMPOSED_CONDITIONAL_PATH_PACKAGE_RULE_ID,
     COMPOSED_CONDITIONAL_PATH_PACKAGE_RULE_VERSION,
+    CONDITIONAL_SCENARIO_EXPERIMENT_RESULT_KIND,
+    CONDITIONAL_SCENARIO_EXPERIMENT_RESULT_RULE_HASH,
+    CONDITIONAL_SCENARIO_EXPERIMENT_RESULT_RULE_ID,
+    CONDITIONAL_SCENARIO_EXPERIMENT_RESULT_RULE_VERSION,
     OperatingScenarioCase,
     ScenarioCoefficientBinding,
     ScenarioCompositionError,
+    bindConditionalScenarioExperimentReceipt,
     compareOneCompanyTwoScenarioStrategies,
     compareOperatingScenarioCases,
+    conditionalScenarioExperimentArtifact,
+    conditionalScenarioExperimentParentReceiptIds,
+    conditionalScenarioExperimentPayload,
+    conditionalScenarioExperimentSubjectHash,
     runConditionalScenarioExperiment,
     scenarioCoefficientBindingHash,
     scenarioCoefficientExposureContractHash,
@@ -139,6 +148,50 @@ def _issueScenarioPathPackageReceipt(database, artifacts, private, trusted, path
         stepSpan=pathSet.audit.stepSpan,
         maxAdmittedStep=0,
         status=status,
+        issuedAt="20250102T000000Z",
+        trustedIssuers=trusted,
+    )
+
+
+def _issueConditionalExperimentReceipt(
+    database,
+    artifacts,
+    private,
+    trusted,
+    experiment,
+    *,
+    kind=None,
+    revisionPolicy="explicitAssumption",
+    coverage="synthetic",
+    parentReceiptIds=None,
+):
+    artifactHash = putAdmissionArtifact(artifacts, conditionalScenarioExperimentArtifact(experiment))
+    assert artifactHash == conditionalScenarioExperimentSubjectHash(experiment)
+    return issueAdmissionReceipt(
+        database,
+        artifacts,
+        privateKey=private,
+        kind=kind or CONDITIONAL_SCENARIO_EXPERIMENT_RESULT_KIND,
+        subjectHash=artifactHash,
+        artifactHash=artifactHash,
+        parentReceiptIds=(
+            conditionalScenarioExperimentParentReceiptIds(experiment)
+            if parentReceiptIds is None
+            else tuple(parentReceiptIds)
+        ),
+        ruleId=CONDITIONAL_SCENARIO_EXPERIMENT_RESULT_RULE_ID,
+        ruleVersion=CONDITIONAL_SCENARIO_EXPERIMENT_RESULT_RULE_VERSION,
+        ruleHash=CONDITIONAL_SCENARIO_EXPERIMENT_RESULT_RULE_HASH,
+        issuerId="test-issuer",
+        issuerKeyId="test-key",
+        issuerExecutableHash=sha256(b"conditional-experiment-issuer-v1").hexdigest(),
+        knowledgeAsOf="20250101",
+        revisionPolicy=revisionPolicy,
+        coverage=coverage,
+        frequency="scenario",
+        stepSpan=1,
+        maxAdmittedStep=0,
+        status="documented",
         issuedAt="20250102T000000Z",
         trustedIssuers=trusted,
     )
@@ -332,6 +385,27 @@ def _conditionalOverlayCase(
         _baselines(),
         refs=(f"scenario://{caseId}",),
     )
+
+
+def _signedConditionalExperiment(tmp_path, *, stressShock=(-0.03, -0.02), investment=25.0):
+    database, artifacts, private, trusted, verifier = _trust(tmp_path)
+    basePathSet = _issueBasePathReceipt(database, artifacts, private, trusted, _admittedBasePathSet())
+    baseCase = _conditionalOverlayCase("base", (0.01, 0.02), basePathSet)
+    stressCase = _conditionalOverlayCase("stress", stressShock, basePathSet)
+    baseReceipt = _issueScenarioPathPackageReceipt(database, artifacts, private, trusted, baseCase.pathSet)
+    stressReceipt = _issueScenarioPathPackageReceipt(database, artifacts, private, trusted, stressCase.pathSet)
+    baseCase = replace(baseCase, admissionVerifier=verifier, scenarioPathPackageReceiptId=baseReceipt.receiptId)
+    stressCase = replace(stressCase, admissionVerifier=verifier, scenarioPathPackageReceiptId=stressReceipt.receiptId)
+    experiment = runConditionalScenarioExperiment(
+        "005930",
+        _inputs(),
+        (baseCase, stressCase),
+        _strategies(investment=investment),
+        debtLimit=1_000.0,
+        maxFinancing=200.0,
+        maxInvestment=200.0,
+    )
+    return database, artifacts, private, trusted, verifier, experiment
 
 
 def _measured_case(
@@ -1049,6 +1123,95 @@ def testConditionalPathPackageReceiptRejectsAdmissionKindOrStatus(tmp_path) -> N
             maxFinancing=200.0,
             maxInvestment=200.0,
         )
+
+
+def testConditionalScenarioExperimentReceiptDocumentsResultsWithoutRecommendation(tmp_path) -> None:
+    database, artifacts, private, trusted, verifier, experiment = _signedConditionalExperiment(tmp_path)
+    receipt = _issueConditionalExperimentReceipt(database, artifacts, private, trusted, experiment)
+    sealed = bindConditionalScenarioExperimentReceipt(experiment, receipt.receiptId, verifier)
+    payload = conditionalScenarioExperimentPayload(experiment)
+    parentReceiptIds = conditionalScenarioExperimentParentReceiptIds(experiment)
+
+    assert sealed.experimentReceiptSubjectHash == conditionalScenarioExperimentSubjectHash(experiment)
+    assert sealed.experimentReceiptId == receipt.receiptId
+    assert sealed.experimentReceiptKind == CONDITIONAL_SCENARIO_EXPERIMENT_RESULT_KIND
+    assert sealed.experimentReceiptStatus == "documented"
+    assert sealed.experimentReceiptParentReceiptIds == parentReceiptIds
+    assert payload["recommendationStatus"] == "disabled"
+    assert payload["recommendation"] is None
+    assert payload["experiment"]["experimentHash"] == experiment.experimentHash
+    assert payload["experiment"]["comparisonReplayHash"]
+    assert payload["experiment"]["simulationSpecHash"] == experiment.simulationSpecHash
+    assert payload["results"]["resultSetHash"] == experiment.resultSetHash
+    assert payload["results"]["strategySummaries"]
+    assert payload["results"]["fragilityCells"]
+    assert payload["metrics"]["comparisonRuleHash"]
+    assert payload["metrics"]["fragilityDefinitionHash"]
+    assert payload["metrics"]["blockerRuleHash"]
+    assert "conditionalExperimentNotPolicyRecommendation" in sealed.blockedReasons
+    assert "automaticRecommendationDisabled" in sealed.blockedReasons
+    assert sealed.recommendation is None
+    assert sealed.experimentReceiptId != sealed.caseLedgers[0].scenarioPathPackageReceiptId
+    assert all(ledger.scenarioPathPackageReceiptId in parentReceiptIds for ledger in sealed.caseLedgers)
+    assert all(ledger.policyEvaluationCertificateId == "" for ledger in sealed.caseLedgers)
+    assert all(ledger.pathAdmissionReceiptId == "" for ledger in sealed.caseLedgers)
+
+
+def testConditionalScenarioExperimentReceiptBindsResultAndStrategyContent(tmp_path) -> None:
+    _, _, _, _, _, first = _signedConditionalExperiment(tmp_path / "first")
+    _, _, _, _, _, repeat = _signedConditionalExperiment(tmp_path / "repeat")
+    changedDatabase, changedArtifacts, changedPrivate, changedTrusted, changedVerifier, changed = (
+        _signedConditionalExperiment(tmp_path / "changed", investment=80.0)
+    )
+    assert conditionalScenarioExperimentSubjectHash(first) == conditionalScenarioExperimentSubjectHash(repeat)
+    assert first.experimentHash == repeat.experimentHash
+    assert conditionalScenarioExperimentSubjectHash(first) != conditionalScenarioExperimentSubjectHash(changed)
+    assert first.strategySetHash != changed.strategySetHash
+    assert first.resultSetHash != changed.resultSetHash
+
+    receipt = _issueConditionalExperimentReceipt(
+        changedDatabase, changedArtifacts, changedPrivate, changedTrusted, changed
+    )
+    tampered = replace(changed, strategySummaries=())
+    with pytest.raises(ScenarioCompositionError, match="conditional experiment receipt verification failed"):
+        bindConditionalScenarioExperimentReceipt(tampered, receipt.receiptId, changedVerifier)
+
+
+def testConditionalScenarioExperimentReceiptRejectsWrongKindOrMissingParents(tmp_path) -> None:
+    database, artifacts, private, trusted, verifier, experiment = _signedConditionalExperiment(tmp_path)
+    wrongKind = _issueConditionalExperimentReceipt(
+        database,
+        artifacts,
+        private,
+        trusted,
+        experiment,
+        kind="policyEvaluation",
+    )
+    with pytest.raises(ScenarioCompositionError, match="conditional experiment receipt verification failed"):
+        bindConditionalScenarioExperimentReceipt(experiment, wrongKind.receiptId, verifier)
+
+    missingParents = _issueConditionalExperimentReceipt(
+        database,
+        artifacts,
+        private,
+        trusted,
+        experiment,
+        parentReceiptIds=(),
+    )
+    with pytest.raises(ScenarioCompositionError, match="conditional experiment receipt parent mismatch"):
+        bindConditionalScenarioExperimentReceipt(experiment, missingParents.receiptId, verifier)
+
+    wrongVintage = _issueConditionalExperimentReceipt(
+        database,
+        artifacts,
+        private,
+        trusted,
+        experiment,
+        revisionPolicy="asKnown",
+        coverage="asOfExact",
+    )
+    with pytest.raises(ScenarioCompositionError, match="conditional experiment receipt contract mismatch"):
+        bindConditionalScenarioExperimentReceipt(experiment, wrongVintage.receiptId, verifier)
 
 
 def testOneCompanyScenarioLoopCarriesAdmittedCoefficientBindingLedger() -> None:
