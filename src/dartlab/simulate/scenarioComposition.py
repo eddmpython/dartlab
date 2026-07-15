@@ -30,11 +30,11 @@ from dartlab.simulate.operatingBridge import (
 )
 from dartlab.simulate.operatingWorld import OperatingWorldInputs, runOperatingStrategies
 from dartlab.simulate.stateSupport import StatePrimitive
-from dartlab.simulate.vintage import canonicalPayloadHash
+from dartlab.simulate.vintage import canonicalPayloadBytes, canonicalPayloadHash
 from dartlab.simulate.world import SimulationRun, StrategySpec, strategyContractHash
 
 if TYPE_CHECKING:
-    from dartlab.simulate.admissionRegistry import AdmissionVerifier
+    from dartlab.simulate.admissionRegistry import AdmissionReceipt, AdmissionVerifier
     from dartlab.simulate.driverRegistry import DriverRegistryAudit
     from dartlab.simulate.policyEvaluation import PolicyAdmissionEvidence
     from dartlab.simulate.stateCompiler import CompiledPointInTimeState
@@ -43,6 +43,18 @@ SCENARIO_COMPOSITION_VERSION = "scenario-composition-v1"
 ONE_COMPANY_SCENARIO_LOOP_VERSION = "one-company-scenario-loop-v1"
 CONDITIONAL_SCENARIO_EXPERIMENT_VERSION = "conditional-scenario-experiment-v1"
 SCENARIO_PATH_PACKAGE_VERSION = "scenario-path-package-v1"
+COMPOSED_CONDITIONAL_PATH_PACKAGE_KIND = "composedConditionalPathPackage"
+COMPOSED_CONDITIONAL_PATH_PACKAGE_RULE_ID = "composed-conditional-path-package"
+COMPOSED_CONDITIONAL_PATH_PACKAGE_RULE_VERSION = "1"
+COMPOSED_CONDITIONAL_PATH_PACKAGE_RULE_HASH = canonicalPayloadHash(
+    {
+        "schemaVersion": SCENARIO_PATH_PACKAGE_VERSION,
+        "kind": COMPOSED_CONDITIONAL_PATH_PACKAGE_KIND,
+        "status": "documented",
+        "ruleId": COMPOSED_CONDITIONAL_PATH_PACKAGE_RULE_ID,
+        "ruleVersion": COMPOSED_CONDITIONAL_PATH_PACKAGE_RULE_VERSION,
+    }
+)
 SCENARIO_ASSUMPTION_SET_VERSION = "scenario-assumption-set-v1"
 SCENARIO_COEFFICIENT_BINDING_VERSION = "scenario-coefficient-binding-v1"
 SCENARIO_EXPOSURE_CONTRACT_VERSION = "scenario-coefficient-exposure-contract-v1"
@@ -87,6 +99,7 @@ class OperatingScenarioCase:
     admissionVerifier: AdmissionVerifier | None = None
     policyAdmissionEvidence: "PolicyAdmissionEvidence | None" = None
     driverRegistryAudit: "DriverRegistryAudit | None" = None
+    scenarioPathPackageReceiptId: str = ""
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "exposures", tuple(self.exposures))
@@ -221,6 +234,10 @@ class OperatingScenarioCaseResult:
     label: str
     pathSetHash: str
     scenarioPathPackageHash: str
+    scenarioPathPackageSubjectHash: str
+    scenarioPathPackageReceiptId: str
+    scenarioPathPackageReceiptKind: str
+    scenarioPathPackageReceiptStatus: str
     pathHistoryInputHash: str
     pathAssumptionHash: str
     pathAssumptionStepHashes: tuple[str, ...]
@@ -300,6 +317,11 @@ class OneCompanyScenarioCaseLedger:
     providerObservationBatchRefs: tuple[str, ...]
     explicitAssumptionIds: tuple[str, ...]
     scenarioPathPackageHash: str
+    scenarioPathPackageSubjectHash: str
+    scenarioPathPackageReceiptId: str
+    scenarioPathPackageReceiptKind: str
+    scenarioPathPackageReceiptStatus: str
+    scenarioPathPackageParentReceiptIds: tuple[str, ...]
     pathHistoryInputHash: str
     pathAssumptionHash: str
     pathAssumptionStepHashes: tuple[str, ...]
@@ -356,6 +378,11 @@ class OneCompanyScenarioCaseLedger:
         object.__setattr__(self, "pathSourceRefs", tuple(self.pathSourceRefs))
         object.__setattr__(self, "providerObservationBatchRefs", tuple(self.providerObservationBatchRefs))
         object.__setattr__(self, "explicitAssumptionIds", tuple(self.explicitAssumptionIds))
+        object.__setattr__(
+            self,
+            "scenarioPathPackageParentReceiptIds",
+            tuple(self.scenarioPathPackageParentReceiptIds),
+        )
         object.__setattr__(self, "pathAssumptionStepHashes", tuple(self.pathAssumptionStepHashes))
         object.__setattr__(self, "pathAdmissionTransferBlockedBy", tuple(self.pathAdmissionTransferBlockedBy))
         if self.driverRegistryLedger is not None and not isinstance(
@@ -581,41 +608,299 @@ def _explicitAssumptionIds(warnings: tuple[str, ...]) -> tuple[str, ...]:
     return _dedupe(tuple(warning[len(prefix) :] for warning in warnings if warning.startswith(prefix)))
 
 
-def _scenarioPathPackageHash(pathSet: DriverPathSet) -> str:
+def _scenarioPathRows(pathSet: DriverPathSet) -> tuple[dict, ...]:
+    return tuple(
+        {
+            "pathId": path.pathId,
+            "steps": tuple(dict(step) for step in path.steps),
+            "weight": path.weight,
+            "weightKind": path.weightKind,
+            "refs": path.refs,
+            "frequency": path.frequency,
+            "stepSpan": path.stepSpan,
+            "certificateId": path.certificateId,
+            "validationStatus": path.validationStatus,
+            "maxAdmittedStep": path.maxAdmittedStep,
+            "parameterDraws": dict(path.parameterDraws),
+            "parameterDrawReceipt": path.parameterDrawReceipt,
+            "knowledgeAsOf": path.knowledgeAsOf,
+            "historyStatus": path.historyStatus,
+            "admissionContentHash": path.admissionContentHash,
+            "admissionReceiptId": path.admissionReceiptId,
+            "vintage": path.vintage,
+        }
+        for path in pathSet.paths
+    )
+
+
+def _scenarioPathCompositionContractHash(pathSet: DriverPathSet) -> str:
     audit = pathSet.audit
     return canonicalPayloadHash(
         {
-            "schemaVersion": SCENARIO_PATH_PACKAGE_VERSION,
-            "pathSetHash": audit.pathSetHash,
-            "pathSetInputHash": audit.inputHash,
-            "pathHistoryInputHash": audit.historyInputHash,
+            "schemaVersion": "scenario-path-package-composition-contract-v1",
+            "kind": COMPOSED_CONDITIONAL_PATH_PACKAGE_KIND if audit.assumptionHash else "scenarioPathPackage",
+            "composer": "composeDriverPathSetWithAssumptions" if audit.assumptionHash else "buildDriverPathSet",
+            "pathRegistryHash": audit.registryHash,
+            "pathFactorContractHash": audit.factorContractHash,
+            "basePathSetHash": audit.basePathSetHash,
+            "basePathAdmissionReceiptId": audit.basePathAdmissionReceiptId,
+            "pathOverlayHash": audit.overlayHash,
             "pathAssumptionHash": audit.assumptionHash,
-            "pathAssumptionStepHashes": audit.assumptionStepHashes,
+            "frequency": audit.frequency,
+            "stepSpan": audit.stepSpan,
+            "horizon": audit.horizon,
+            "pathCount": audit.pathCount,
+            "seed": audit.seed,
+        }
+    )
+
+
+def scenarioPathPackageParentReceiptIds(pathSet: DriverPathSet) -> tuple[str, ...]:
+    """Return signed parents that a documented composed path package must cite.
+
+    Args:
+        pathSet: Composed driver path set whose base admission lineage should be cited.
+
+    Returns:
+        Ordered parent receipt identifiers required by the package receipt.
+
+    Raises:
+        No explicit errors are raised by this wrapper.
+
+    Example:
+        ``parents = scenarioPathPackageParentReceiptIds(pathSet)``
+    """
+
+    audit = pathSet.audit
+    parents = []
+    if audit.basePathAdmissionReceiptId:
+        parents.append(audit.basePathAdmissionReceiptId)
+    return _dedupe(tuple(parents))
+
+
+def scenarioPathPackagePayload(pathSet: DriverPathSet) -> dict:
+    """Build the replay package for a conditional composed path set.
+
+    The payload documents explicit future assumptions and their observed base
+    lineage. It is not a path admission payload and cannot open a policy
+    recommendation.
+
+    Args:
+        pathSet: Driver path set produced by a scenario composition step.
+
+    Returns:
+        Canonical payload dictionary for content binding and artifact storage.
+
+    Raises:
+        TypeError: If the path set contains values that cannot be canonicalized.
+
+    Example:
+        ``payload = scenarioPathPackagePayload(pathSet)``
+    """
+
+    audit = pathSet.audit
+    explicitAssumptionIds = _explicitAssumptionIds(audit.warnings)
+    providerRefs = _filterRefs(audit.sourceRefs, _PROVIDER_OBSERVATION_REF_PREFIXES)
+    packageKind = COMPOSED_CONDITIONAL_PATH_PACKAGE_KIND if audit.assumptionHash else "scenarioPathPackage"
+    return {
+        "schemaVersion": SCENARIO_PATH_PACKAGE_VERSION,
+        "kind": packageKind,
+        "status": "documented",
+        "validationStatus": audit.validationStatus,
+        "historyStatus": audit.historyStatus,
+        "decisionStatus": "conditionalOnly" if audit.assumptionHash else "documentedOnly",
+        "composedPathAdmissionStatus": "notAdmitted" if audit.assumptionHash else "",
+        "pathAdmissionTransferStatus": "notTransferred" if audit.assumptionHash else "notApplicable",
+        "base": {
             "basePathSetHash": audit.basePathSetHash,
             "basePathAdmissionReceiptId": audit.basePathAdmissionReceiptId,
             "basePathAdmissionContentHash": audit.basePathAdmissionContentHash,
             "basePathAdmissionSubjectHash": audit.basePathAdmissionSubjectHash,
             "basePathValidationStatus": audit.basePathValidationStatus,
             "basePathMaxAdmittedStep": audit.basePathMaxAdmittedStep,
+            "pathHistoryInputHash": audit.historyInputHash,
+            "providerObservationBatchRefs": providerRefs,
+        },
+        "overlay": {
             "pathOverlayHash": audit.overlayHash,
+            "pathAssumptionHash": audit.assumptionHash,
+            "explicitAssumptionIds": explicitAssumptionIds,
+            "explicitAssumptionStepHashes": audit.assumptionStepHashes,
+            "affectedFactorIds": tuple(factor.variableId for factor in pathSet.factorSpecs),
+        },
+        "composition": {
+            "compositionContractHash": _scenarioPathCompositionContractHash(pathSet),
+            "composedPathInputHash": audit.inputHash,
+            "composedPathSetHash": audit.pathSetHash,
+            "composedPaths": _scenarioPathRows(pathSet),
+        },
+        "contract": {
             "pathRegistryHash": audit.registryHash,
             "pathFactorContractHash": audit.factorContractHash,
-            "pathSourceRefs": audit.sourceRefs,
-            "providerObservationBatchRefs": _filterRefs(audit.sourceRefs, _PROVIDER_OBSERVATION_REF_PREFIXES),
-            "explicitAssumptionIds": _explicitAssumptionIds(audit.warnings),
-            "observedHistoryStatus": audit.observedHistoryStatus,
-            "historyStatus": audit.historyStatus,
-            "validationStatus": audit.validationStatus,
-            "knowledgeAsOf": audit.knowledgeAsOf,
+            "horizon": audit.horizon,
             "frequency": audit.frequency,
             "stepSpan": audit.stepSpan,
-            "horizon": audit.horizon,
             "pathCount": audit.pathCount,
             "blockLength": audit.blockLength,
             "seed": audit.seed,
+            "knowledgeAsOf": audit.knowledgeAsOf,
             "driverCardIds": audit.driverCardIds,
-        }
+        },
+        "parentReceiptIds": scenarioPathPackageParentReceiptIds(pathSet),
+        "pathSourceRefs": audit.sourceRefs,
+        "warnings": audit.warnings,
+    }
+
+
+def scenarioPathPackageArtifact(pathSet: DriverPathSet) -> bytes:
+    """Return canonical bytes for a documented composed path package.
+
+    Args:
+        pathSet: Driver path set to serialize as a package artifact.
+
+    Returns:
+        Canonical JSON bytes whose SHA-256 digest is the package subject hash.
+
+    Raises:
+        TypeError: If the path set contains values that cannot be canonicalized.
+
+    Example:
+        ``artifact = scenarioPathPackageArtifact(pathSet)``
+    """
+
+    return canonicalPayloadBytes(scenarioPathPackagePayload(pathSet))
+
+
+def scenarioPathPackageSubjectHash(pathSet: DriverPathSet) -> str:
+    """Return the content hash signed by a composed path package receipt.
+
+    Args:
+        pathSet: Driver path set to bind into a documented package.
+
+    Returns:
+        SHA-256 digest of the canonical package artifact.
+
+    Raises:
+        TypeError: If the path set contains values that cannot be canonicalized.
+
+    Example:
+        ``subjectHash = scenarioPathPackageSubjectHash(pathSet)``
+    """
+
+    return canonicalPayloadHash(scenarioPathPackagePayload(pathSet))
+
+
+def _scenarioPathPackageHash(pathSet: DriverPathSet) -> str:
+    return scenarioPathPackageSubjectHash(pathSet)
+
+
+def validateScenarioPathPackageReceipt(
+    pathSet: DriverPathSet,
+    receiptId: str,
+    admissionVerifier: AdmissionVerifier,
+) -> "AdmissionReceipt":
+    """Verify a documented composed path package receipt.
+
+    This receipt proves package integrity only. It is not a path-set admission
+    receipt and it does not make the scenario eligible for recommendation.
+
+    Args:
+        pathSet: Composed driver path set whose package receipt is being checked.
+        receiptId: Signed receipt identifier to verify.
+        admissionVerifier: Runtime verifier with trusted issuer keys and artifact root.
+
+    Returns:
+        Verified admission registry receipt for the documented package.
+
+    Raises:
+        ScenarioCompositionError: If kind, status, parent lineage, artifact bytes, or scenario semantics do not match.
+
+    Example:
+        ``receipt = validateScenarioPathPackageReceipt(pathSet, receiptId, verifier)``
+    """
+
+    if not _validDigest(receiptId):
+        raise ScenarioCompositionError("scenario path package receipt identifier is invalid")
+    if not pathSet.audit.assumptionHash:
+        raise ScenarioCompositionError("scenario path package receipt requires explicit future assumptions")
+    subjectHash = scenarioPathPackageSubjectHash(pathSet)
+    try:
+        from dartlab.simulate.admissionRegistry import artifactPath
+
+        receipt = admissionVerifier.verify(
+            receiptId,
+            expectedSubjectHash=subjectHash,
+            expectedKind=COMPOSED_CONDITIONAL_PATH_PACKAGE_KIND,
+        )
+        parentReceipts = tuple(admissionVerifier.verify(parentId) for parentId in receipt.parentReceiptIds)
+        artifactBytes = artifactPath(admissionVerifier.artifactRoot, subjectHash).read_bytes()
+    except (OSError, RuntimeError, ValueError) as error:
+        raise ScenarioCompositionError(f"scenario path package receipt verification failed: {error}") from error
+    if artifactBytes != scenarioPathPackageArtifact(pathSet):
+        raise ScenarioCompositionError("scenario path package artifact content mismatch")
+    if (
+        receipt.status != "documented"
+        or receipt.artifactHash != subjectHash
+        or receipt.ruleId != COMPOSED_CONDITIONAL_PATH_PACKAGE_RULE_ID
+        or receipt.ruleVersion != COMPOSED_CONDITIONAL_PATH_PACKAGE_RULE_VERSION
+        or receipt.ruleHash != COMPOSED_CONDITIONAL_PATH_PACKAGE_RULE_HASH
+        or receipt.revisionPolicy != "explicitAssumption"
+        or receipt.coverage != "synthetic"
+        or receipt.frequency != pathSet.audit.frequency
+        or receipt.stepSpan != pathSet.audit.stepSpan
+        or receipt.maxAdmittedStep != 0
+    ):
+        raise ScenarioCompositionError("scenario path package receipt contract mismatch")
+    expectedParents = scenarioPathPackageParentReceiptIds(pathSet)
+    if any(parentId not in receipt.parentReceiptIds for parentId in expectedParents):
+        raise ScenarioCompositionError("scenario path package receipt missing base admission parent")
+    if any(parent.kind in {"policyEvaluation", "policyEpisodeBatch"} for parent in parentReceipts):
+        raise ScenarioCompositionError("scenario path package cannot depend on policy evaluation receipts")
+    baseReceiptId = pathSet.audit.basePathAdmissionReceiptId
+    if baseReceiptId:
+        baseParents = tuple(parent for parent in parentReceipts if parent.receiptId == baseReceiptId)
+        if len(baseParents) != 1:
+            raise ScenarioCompositionError("scenario path package base admission parent mismatch")
+        baseParent = baseParents[0]
+        if (
+            baseParent.kind != "pathSet"
+            or baseParent.status != "admitted"
+            or baseParent.subjectHash != pathSet.audit.basePathAdmissionSubjectHash
+            or baseParent.artifactHash != pathSet.audit.basePathAdmissionSubjectHash
+            or baseParent.revisionPolicy != "asKnown"
+            or baseParent.coverage != "asOfExact"
+        ):
+            raise ScenarioCompositionError("scenario path package base admission parent is invalid")
+    return receipt
+
+
+def _verifyScenarioPathPackageReceipt(case: OperatingScenarioCase) -> "AdmissionReceipt | None":
+    if not case.scenarioPathPackageReceiptId:
+        return None
+    if case.admissionVerifier is None:
+        raise ScenarioCompositionError("scenario path package receipt needs an admission verifier")
+    return validateScenarioPathPackageReceipt(
+        case.pathSet,
+        case.scenarioPathPackageReceiptId,
+        case.admissionVerifier,
     )
+
+
+def _scenarioPathPackageRefs(pathSet: DriverPathSet, receiptId: str) -> tuple[str, ...]:
+    subjectHash = scenarioPathPackageSubjectHash(pathSet)
+    refs = [
+        f"composedPathSubject:{subjectHash}",
+        f"composedPathSet:{pathSet.audit.pathSetHash}",
+        f"compositionContract:{_scenarioPathCompositionContractHash(pathSet)}",
+    ]
+    if receiptId:
+        refs.append(f"composedPathPackage:{receiptId}")
+    if pathSet.audit.basePathAdmissionReceiptId:
+        refs.append(f"basePathAdmission:{pathSet.audit.basePathAdmissionReceiptId}")
+    if pathSet.audit.overlayHash:
+        refs.append(f"explicitOverlay:{pathSet.audit.overlayHash}")
+    refs.extend(f"explicitAssumptionStep:{stepHash}" for stepHash in pathSet.audit.assumptionStepHashes)
+    return _dedupe(tuple(refs))
 
 
 def _futureAdjustmentStatus(pathSet: DriverPathSet) -> str:
@@ -1253,6 +1538,8 @@ def _assumptionSetHash(case: OperatingScenarioCase, result: OperatingScenarioCas
             "basePathSetHash": result.basePathSetHash,
             "pathOverlayHash": result.pathOverlayHash,
             "scenarioPathPackageHash": result.scenarioPathPackageHash,
+            "scenarioPathPackageSubjectHash": result.scenarioPathPackageSubjectHash,
+            "scenarioPathPackageReceiptId": result.scenarioPathPackageReceiptId,
             "coefficientBindingHashes": tuple(
                 scenarioCoefficientBindingHash(binding) for binding in case.coefficientBindings
             ),
@@ -1414,6 +1701,9 @@ def _caseBlockedReasons(result: OperatingScenarioCaseResult) -> tuple[str, ...]:
         reasons.extend(result.pathAdmissionTransferBlockedBy)
         if result.basePathSetHash:
             reasons.append("basePathAdmissionScopeHistoryOnly")
+    if result.scenarioPathPackageReceiptId:
+        reasons.append("conditionalReceiptNotPathAdmission")
+        reasons.append("policyAdmittedRecommendationBlocked")
     if result.policyEvaluationEligibility == "blocked":
         reasons.append("policyEvaluationRequiresAdmittedComposedPath")
     if result.counts.conditionalWarningCount:
@@ -1482,6 +1772,11 @@ def _caseLedger(
         providerObservationBatchRefs=_filterRefs(case.pathSet.audit.sourceRefs, _PROVIDER_OBSERVATION_REF_PREFIXES),
         explicitAssumptionIds=_explicitAssumptionIds(case.pathSet.audit.warnings),
         scenarioPathPackageHash=result.scenarioPathPackageHash,
+        scenarioPathPackageSubjectHash=result.scenarioPathPackageSubjectHash,
+        scenarioPathPackageReceiptId=result.scenarioPathPackageReceiptId,
+        scenarioPathPackageReceiptKind=result.scenarioPathPackageReceiptKind,
+        scenarioPathPackageReceiptStatus=result.scenarioPathPackageReceiptStatus,
+        scenarioPathPackageParentReceiptIds=scenarioPathPackageParentReceiptIds(case.pathSet),
         pathHistoryInputHash=result.pathHistoryInputHash,
         pathAssumptionHash=result.pathAssumptionHash,
         pathAssumptionStepHashes=case.pathSet.audit.assumptionStepHashes,
@@ -1552,6 +1847,11 @@ def _caseLedgerHashes(caseLedgers: tuple[OneCompanyScenarioCaseLedger, ...]) -> 
                 "providerObservationBatchRefs": ledger.providerObservationBatchRefs,
                 "explicitAssumptionIds": ledger.explicitAssumptionIds,
                 "scenarioPathPackageHash": ledger.scenarioPathPackageHash,
+                "scenarioPathPackageSubjectHash": ledger.scenarioPathPackageSubjectHash,
+                "scenarioPathPackageReceiptId": ledger.scenarioPathPackageReceiptId,
+                "scenarioPathPackageReceiptKind": ledger.scenarioPathPackageReceiptKind,
+                "scenarioPathPackageReceiptStatus": ledger.scenarioPathPackageReceiptStatus,
+                "scenarioPathPackageParentReceiptIds": ledger.scenarioPathPackageParentReceiptIds,
                 "pathHistoryInputHash": ledger.pathHistoryInputHash,
                 "pathAssumptionHash": ledger.pathAssumptionHash,
                 "pathAssumptionStepHashes": ledger.pathAssumptionStepHashes,
@@ -1713,6 +2013,10 @@ def _runCase(
     maxInvestment: float,
     traceLimit: int | None,
 ) -> OperatingScenarioCaseResult:
+    scenarioReceipt = _verifyScenarioPathPackageReceipt(case)
+    scenarioPathPackageReceiptId = scenarioReceipt.receiptId if scenarioReceipt is not None else ""
+    scenarioPathPackageReceiptKind = scenarioReceipt.kind if scenarioReceipt is not None else ""
+    scenarioPathPackageReceiptStatus = scenarioReceipt.status if scenarioReceipt is not None else ""
     factorSpecs = driverFactorsToOperatingSpecs(case.pathSet.factorSpecs)
     bridgeResults = tuple(
         bridgeOperatingPath(
@@ -1747,6 +2051,7 @@ def _runCase(
             *_driverRegistryRefs(case.driverRegistryAudit),
             *_coefficientBindingRefs(case.coefficientBindings),
             *case.pathSet.audit.sourceRefs,
+            *_scenarioPathPackageRefs(case.pathSet, scenarioPathPackageReceiptId),
             *(ref for item in bridgeResults for ref in item.audit.sourceRefs),
             f"driverPathSet:{case.pathSet.audit.pathSetHash}",
             f"scenarioPathPackage:{_scenarioPathPackageHash(case.pathSet)}",
@@ -1763,6 +2068,10 @@ def _runCase(
         label=case.label,
         pathSetHash=case.pathSet.audit.pathSetHash,
         scenarioPathPackageHash=scenarioPathPackageHash,
+        scenarioPathPackageSubjectHash=scenarioPathPackageHash,
+        scenarioPathPackageReceiptId=scenarioPathPackageReceiptId,
+        scenarioPathPackageReceiptKind=scenarioPathPackageReceiptKind,
+        scenarioPathPackageReceiptStatus=scenarioPathPackageReceiptStatus,
         pathHistoryInputHash=case.pathSet.audit.historyInputHash,
         pathAssumptionHash=case.pathSet.audit.assumptionHash,
         pathAssumptionStepHashes=case.pathSet.audit.assumptionStepHashes,

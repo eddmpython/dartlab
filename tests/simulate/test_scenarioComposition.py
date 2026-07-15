@@ -1,10 +1,20 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from hashlib import sha256
 
 import polars as pl
 import pytest
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
+from dartlab.simulate.admissionRegistry import (
+    AdmissionVerifier,
+    TrustedIssuer,
+    initializeAdmissionRegistry,
+    issueAdmissionReceipt,
+    putAdmissionArtifact,
+)
 from dartlab.simulate.driverCalibration import (
     MULTIVARIABLE_DRIVER_COEFFICIENT_RULE_HASH,
     MULTIVARIABLE_DRIVER_COEFFICIENT_RULE_ID,
@@ -29,6 +39,10 @@ from dartlab.simulate.operatingWorld import (
     operatingInputsFromPrimitives,
 )
 from dartlab.simulate.scenarioComposition import (
+    COMPOSED_CONDITIONAL_PATH_PACKAGE_KIND,
+    COMPOSED_CONDITIONAL_PATH_PACKAGE_RULE_HASH,
+    COMPOSED_CONDITIONAL_PATH_PACKAGE_RULE_ID,
+    COMPOSED_CONDITIONAL_PATH_PACKAGE_RULE_VERSION,
     OperatingScenarioCase,
     ScenarioCoefficientBinding,
     ScenarioCompositionError,
@@ -37,11 +51,15 @@ from dartlab.simulate.scenarioComposition import (
     runConditionalScenarioExperiment,
     scenarioCoefficientBindingHash,
     scenarioCoefficientExposureContractHash,
+    scenarioPathPackageArtifact,
+    scenarioPathPackageParentReceiptIds,
+    scenarioPathPackageSubjectHash,
 )
 from dartlab.simulate.vintage import VintageRef
 from dartlab.simulate.world import (
     bindAdmittedPathContent,
     bindPathAdmissionReceipt,
+    pathSetAdmissionArtifact,
     pathSetAdmissionSubjectHash,
 )
 
@@ -54,6 +72,76 @@ _COEFFICIENT_DESIGN_FRAME_HASH = "f" * 64
 _COEFFICIENT_FIT_DESIGN_FRAME_HASH = "1" * 64
 _COEFFICIENT_OOS_DESIGN_FRAME_HASH = "2" * 64
 _COEFFICIENT_PARENT_RECEIPTS = ("3" * 64, "4" * 64)
+
+
+def _trust(tmp_path):
+    database = tmp_path / "admission.sqlite"
+    artifacts = tmp_path / "artifacts"
+    initializeAdmissionRegistry(database)
+    private = Ed25519PrivateKey.from_private_bytes(bytes(range(32)))
+    public = private.public_key().public_bytes(serialization.Encoding.Raw, serialization.PublicFormat.Raw)
+    trusted = {"test-key": TrustedIssuer("test-issuer", "test-key", public)}
+    verifier = AdmissionVerifier(database, artifacts, trusted)
+    return database, artifacts, private.private_bytes_raw(), trusted, verifier
+
+
+def _issueBasePathReceipt(database, artifacts, private, trusted, basePathSet):
+    artifactHash = putAdmissionArtifact(artifacts, pathSetAdmissionArtifact(basePathSet.paths))
+    assert artifactHash == pathSetAdmissionSubjectHash(basePathSet.paths)
+    receipt = issueAdmissionReceipt(
+        database,
+        artifacts,
+        privateKey=private,
+        kind="pathSet",
+        subjectHash=artifactHash,
+        artifactHash=artifactHash,
+        parentReceiptIds=(),
+        ruleId="path-admission",
+        ruleVersion="1",
+        ruleHash=sha256(b"path-admission-v1").hexdigest(),
+        issuerId="test-issuer",
+        issuerKeyId="test-key",
+        issuerExecutableHash=sha256(b"path-issuer-v1").hexdigest(),
+        knowledgeAsOf="20250101",
+        revisionPolicy="asKnown",
+        coverage="asOfExact",
+        frequency=basePathSet.audit.frequency,
+        stepSpan=basePathSet.audit.stepSpan,
+        maxAdmittedStep=2,
+        status="admitted",
+        issuedAt="20250102T000000Z",
+        trustedIssuers=trusted,
+    )
+    return replace(basePathSet, paths=bindPathAdmissionReceipt(basePathSet.paths, receipt.receiptId))
+
+
+def _issueScenarioPathPackageReceipt(database, artifacts, private, trusted, pathSet, *, kind=None, status="documented"):
+    artifactHash = putAdmissionArtifact(artifacts, scenarioPathPackageArtifact(pathSet))
+    assert artifactHash == scenarioPathPackageSubjectHash(pathSet)
+    return issueAdmissionReceipt(
+        database,
+        artifacts,
+        privateKey=private,
+        kind=kind or COMPOSED_CONDITIONAL_PATH_PACKAGE_KIND,
+        subjectHash=artifactHash,
+        artifactHash=artifactHash,
+        parentReceiptIds=scenarioPathPackageParentReceiptIds(pathSet),
+        ruleId=COMPOSED_CONDITIONAL_PATH_PACKAGE_RULE_ID,
+        ruleVersion=COMPOSED_CONDITIONAL_PATH_PACKAGE_RULE_VERSION,
+        ruleHash=COMPOSED_CONDITIONAL_PATH_PACKAGE_RULE_HASH,
+        issuerId="test-issuer",
+        issuerKeyId="test-key",
+        issuerExecutableHash=sha256(b"scenario-package-issuer-v1").hexdigest(),
+        knowledgeAsOf="20250101",
+        revisionPolicy="explicitAssumption" if status == "documented" else "asKnown",
+        coverage="synthetic" if status == "documented" else "asOfExact",
+        frequency=pathSet.audit.frequency,
+        stepSpan=pathSet.audit.stepSpan,
+        maxAdmittedStep=0,
+        status=status,
+        issuedAt="20250102T000000Z",
+        trustedIssuers=trusted,
+    )
 
 
 def _inputs():
@@ -191,7 +279,11 @@ def _admittedBasePathSet():
     return replace(base, paths=admittedPaths)
 
 
-def _conditionalOverlayCase(caseId: str, shock: tuple[float, float]) -> OperatingScenarioCase:
+def _conditionalOverlayCase(
+    caseId: str,
+    shock: tuple[float, float],
+    basePathSet=None,
+) -> OperatingScenarioCase:
     card = DriverCard(
         cardId=f"{caseId}-manual-demand-overlay",
         sourceKind="explicitAssumption",
@@ -208,7 +300,7 @@ def _conditionalOverlayCase(caseId: str, shock: tuple[float, float]) -> Operatin
         falsifier="The manual demand overlay is not the tested scenario.",
     )
     pathSet = composeDriverPathSetWithAssumptions(
-        _admittedBasePathSet(),
+        basePathSet or _admittedBasePathSet(),
         (DriverAssumptionSource(card, tuple({"manualDemandAdjustment": value} for value in shock)),),
         registryId=f"{caseId}-admitted-base-plus-overlay",
     )
@@ -817,6 +909,141 @@ def testAdmittedBasePathReceiptDoesNotTransferToExplicitOverlayScenario() -> Non
             "005930",
             _inputs(),
             (launderedCase, stressCase),
+            _strategies(),
+            debtLimit=1_000.0,
+            maxFinancing=200.0,
+            maxInvestment=200.0,
+        )
+
+
+def testConditionalPathPackageReceiptDocumentsOverlayWithoutRecommendation(tmp_path) -> None:
+    database, artifacts, private, trusted, verifier = _trust(tmp_path)
+    basePathSet = _issueBasePathReceipt(database, artifacts, private, trusted, _admittedBasePathSet())
+    baseCase = _conditionalOverlayCase("base", (0.01, 0.02), basePathSet)
+    stressCase = _conditionalOverlayCase("stress", (-0.03, -0.02), basePathSet)
+    baseReceipt = _issueScenarioPathPackageReceipt(database, artifacts, private, trusted, baseCase.pathSet)
+    stressReceipt = _issueScenarioPathPackageReceipt(database, artifacts, private, trusted, stressCase.pathSet)
+    baseCase = replace(baseCase, admissionVerifier=verifier, scenarioPathPackageReceiptId=baseReceipt.receiptId)
+    stressCase = replace(stressCase, admissionVerifier=verifier, scenarioPathPackageReceiptId=stressReceipt.receiptId)
+
+    loop = compareOneCompanyTwoScenarioStrategies(
+        "005930",
+        _inputs(),
+        (baseCase, stressCase),
+        _strategies(),
+        debtLimit=1_000.0,
+        maxFinancing=200.0,
+        maxInvestment=200.0,
+    )
+
+    base, stress = loop.caseLedgers
+    assert loop.recommendation is None
+    assert base.scenarioPathPackageHash == scenarioPathPackageSubjectHash(baseCase.pathSet)
+    assert base.scenarioPathPackageSubjectHash == base.scenarioPathPackageHash
+    assert base.scenarioPathPackageReceiptId == baseReceipt.receiptId
+    assert base.scenarioPathPackageReceiptKind == COMPOSED_CONDITIONAL_PATH_PACKAGE_KIND
+    assert base.scenarioPathPackageReceiptStatus == "documented"
+    assert base.scenarioPathPackageParentReceiptIds == scenarioPathPackageParentReceiptIds(baseCase.pathSet)
+    assert base.basePathAdmissionReceiptId in base.scenarioPathPackageParentReceiptIds
+    assert base.pathAdmissionReceiptId == ""
+    assert base.policyEvaluationCertificateId == ""
+    assert base.composedPathAdmissionStatus == "notAdmitted"
+    assert base.pathAdmissionTransferStatus == "notTransferred"
+    assert "conditionalReceiptNotPathAdmission" in base.blockedReasons
+    assert "policyAdmittedRecommendationBlocked" in base.blockedReasons
+    assert "policyEvaluationRequiresAdmittedComposedPath" in base.blockedReasons
+    assert f"composedPathPackage:{baseReceipt.receiptId}" in base.conditionRefs
+    assert f"composedPathSubject:{base.scenarioPathPackageSubjectHash}" in base.conditionRefs
+    assert f"basePathAdmission:{base.basePathAdmissionReceiptId}" in base.conditionRefs
+    assert f"explicitOverlay:{base.pathOverlayHash}" in base.conditionRefs
+    for stepHash in base.pathAssumptionStepHashes:
+        assert f"explicitAssumptionStep:{stepHash}" in base.conditionRefs
+    assert stress.scenarioPathPackageReceiptId == stressReceipt.receiptId
+    assert stress.scenarioPathPackageSubjectHash != base.scenarioPathPackageSubjectHash
+
+    repeatBase = _conditionalOverlayCase("base", (0.01, 0.02), basePathSet)
+    changedBase = _conditionalOverlayCase("base", (0.01, 0.03), basePathSet)
+    assert scenarioPathPackageSubjectHash(repeatBase.pathSet) == base.scenarioPathPackageSubjectHash
+    assert scenarioPathPackageSubjectHash(changedBase.pathSet) != base.scenarioPathPackageSubjectHash
+
+
+def testConditionalPathPackageReceiptCannotBeUsedAsPathAdmission(tmp_path) -> None:
+    database, artifacts, private, trusted, verifier = _trust(tmp_path)
+    basePathSet = _issueBasePathReceipt(database, artifacts, private, trusted, _admittedBasePathSet())
+    baseCase = _conditionalOverlayCase("base", (0.01, 0.02), basePathSet)
+    stressCase = _conditionalOverlayCase("stress", (-0.03, -0.02), basePathSet)
+    receipt = _issueScenarioPathPackageReceipt(database, artifacts, private, trusted, baseCase.pathSet)
+    baseCase = replace(baseCase, admissionVerifier=verifier, scenarioPathPackageReceiptId=receipt.receiptId)
+    stressCase = replace(stressCase, admissionVerifier=verifier)
+
+    launderedPaths = tuple(
+        replace(
+            path,
+            validationStatus="admitted",
+            certificateId="a" * 64,
+            maxAdmittedStep=2,
+            historyStatus="asKnown",
+            admissionContentHash=scenarioPathPackageSubjectHash(baseCase.pathSet),
+            admissionReceiptId=receipt.receiptId,
+        )
+        for path in baseCase.pathSet.paths
+    )
+    launderedCase = replace(baseCase, pathSet=replace(baseCase.pathSet, paths=launderedPaths))
+    with pytest.raises(ScenarioCompositionError, match="explicit overlay cannot carry path admission"):
+        compareOneCompanyTwoScenarioStrategies(
+            "005930",
+            _inputs(),
+            (launderedCase, stressCase),
+            _strategies(),
+            debtLimit=1_000.0,
+            maxFinancing=200.0,
+            maxInvestment=200.0,
+        )
+
+
+def testConditionalPathPackageReceiptRejectsAdmissionKindOrStatus(tmp_path) -> None:
+    database, artifacts, private, trusted, verifier = _trust(tmp_path)
+    basePathSet = _issueBasePathReceipt(database, artifacts, private, trusted, _admittedBasePathSet())
+    baseCase = _conditionalOverlayCase("base", (0.01, 0.02), basePathSet)
+    stressCase = _conditionalOverlayCase("stress", (-0.03, -0.02), basePathSet)
+    wrongKind = _issueScenarioPathPackageReceipt(
+        database,
+        artifacts,
+        private,
+        trusted,
+        baseCase.pathSet,
+        kind="pathSet",
+    )
+    with pytest.raises(ScenarioCompositionError, match="scenario path package receipt verification failed"):
+        compareOneCompanyTwoScenarioStrategies(
+            "005930",
+            _inputs(),
+            (
+                replace(baseCase, admissionVerifier=verifier, scenarioPathPackageReceiptId=wrongKind.receiptId),
+                stressCase,
+            ),
+            _strategies(),
+            debtLimit=1_000.0,
+            maxFinancing=200.0,
+            maxInvestment=200.0,
+        )
+
+    admittedStatus = _issueScenarioPathPackageReceipt(
+        database,
+        artifacts,
+        private,
+        trusted,
+        stressCase.pathSet,
+        status="admitted",
+    )
+    with pytest.raises(ScenarioCompositionError, match="scenario path package receipt contract mismatch"):
+        compareOneCompanyTwoScenarioStrategies(
+            "005930",
+            _inputs(),
+            (
+                baseCase,
+                replace(stressCase, admissionVerifier=verifier, scenarioPathPackageReceiptId=admittedStatus.receiptId),
+            ),
             _strategies(),
             debtLimit=1_000.0,
             maxFinancing=200.0,
