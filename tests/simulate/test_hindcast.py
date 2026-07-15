@@ -19,9 +19,12 @@ import pytest
 
 from dartlab.simulate import hindcast as hc
 from dartlab.simulate.driverPaths import (
+    DriverAssumptionSource,
+    DriverCard,
     DriverFactorSpec,
     DriverPathAudit,
     DriverPathSet,
+    buildDriverPathSet,
     driverFactorsToOperatingSpecs,
 )
 from dartlab.simulate.operatingBridge import (
@@ -36,7 +39,11 @@ from dartlab.simulate.operatingWorld import (
     operatingInputsFromPrimitives,
     runOperatingStrategies,
 )
-from dartlab.simulate.scenarioComposition import ScenarioCoefficientBinding, scenarioCoefficientExposureContractHash
+from dartlab.simulate.scenarioComposition import (
+    OperatingScenarioCase,
+    ScenarioCoefficientBinding,
+    scenarioCoefficientExposureContractHash,
+)
 from dartlab.simulate.vintage import canonicalPayloadHash
 from dartlab.simulate.world import (
     LawSpec,
@@ -282,6 +289,20 @@ def testWorldModelTournamentSelectsMeasuredLawWithoutAdmission():
     assert {row.scopeKey for row in report.slices if row.scope == "regime"} == {"calm", "stress"}
     assert "comparisonWeightsAreNotProbabilities" in report.warnings
     assert len(report.tournamentHash) == 64
+    assert len(report.comparisonHash) == 64
+    assert all(len(row.candidateHash) == 64 for row in report.candidates)
+
+    changedLaw = replace(candidates[1].laws[0], parameters={"coefficient": 2.0, "contractRevision": "2"})
+    changedCandidate = replace(candidates[1], laws=(changedLaw,))
+    changedReport = hc.runWorldModelTournament(
+        (candidates[0], changedCandidate, candidates[2]),
+        episodes,
+        _tournamentSpec(),
+    )
+    assert changedReport.tournamentHash != report.tournamentHash
+    assert {row.modelId: row.candidateHash for row in changedReport.candidates}["measured"] != rows[
+        "measured"
+    ].candidateHash
 
 
 def testWorldModelTournamentBindsOutcomesAndRejectsUnsafeReplay():
@@ -619,4 +640,149 @@ def testOperatingModelTournamentRejectsUnverifiedOrAssumptionLaunderedCandidate(
         _runOperatingTournament(
             (baseline, measured),
             (replace(episodes[0], inputs=lookaheadInputs), episodes[1]),
+        )
+
+
+def _modelUncertaintyCase(caseId: str, demandChanges: tuple[float, ...]) -> OperatingScenarioCase:
+    factor = DriverFactorSpec(
+        "demandFactor",
+        "ratioChangePerStep",
+        "quarter",
+        "innovation",
+        "simple-return-v1",
+    )
+    card = DriverCard(
+        cardId=f"{caseId}-demand",
+        sourceKind="explicitAssumption",
+        providerId="user",
+        datasetId="model-uncertainty-test",
+        entityId="005930",
+        frequency="quarter",
+        stepSpan=1,
+        factors=(factor,),
+        historyStatus="explicitAssumption",
+        sourceRefs=(f"assumption://{caseId}/demand",),
+        assumptionId=f"{caseId}-demand",
+        claim=f"Demand factor follows {demandChanges}.",
+        falsifier="Observed demand factor differs from the explicit case.",
+    )
+    pathSet = buildDriverPathSet(
+        (DriverAssumptionSource(card, tuple({"demandFactor": value} for value in demandChanges)),),
+        knowledgeAsOf="20250101",
+        horizon=len(demandChanges),
+        pathCount=1,
+        blockLength=1,
+        seed=7,
+    )
+    return OperatingScenarioCase(
+        caseId=caseId,
+        label=caseId.title(),
+        pathSet=pathSet,
+        exposures=(),
+        baselines=_operatingTournamentBaselines(),
+        refs=(f"scenario://{caseId}",),
+    )
+
+
+def _runModelUncertaintyExperiment(candidates, tournament, cases=None, strategies=None):
+    inputs = _operatingTournamentInputs("20250101", "20241231")
+    inputs = replace(inputs, state={**inputs.state, "capacityUnits": 105.0})
+    caseTuple = cases or (
+        _modelUncertaintyCase("growth", (0.10, 0.0)),
+        _modelUncertaintyCase("stress", (-0.10, 0.0)),
+    )
+    strategyTuple = strategies or (
+        buildOperatingStrategy(
+            "hold",
+            priceChange=(0.0, 0.0),
+            capacityInvestment=(0.0, 0.0),
+            borrow=(0.0, 0.0),
+            repay=(0.0, 0.0),
+            refs=("strategy://hold",),
+            isBaseline=True,
+        ),
+        buildOperatingStrategy(
+            "invest",
+            priceChange=(0.0, 0.0),
+            capacityInvestment=(20.0, 0.0),
+            borrow=(0.0, 0.0),
+            repay=(0.0, 0.0),
+            refs=("strategy://invest",),
+        ),
+    )
+    return hc.runModelUncertaintyScenarioExperiment(
+        "005930",
+        inputs,
+        caseTuple,
+        strategyTuple,
+        candidates,
+        tournament,
+        debtLimit=5000.0,
+        maxFinancing=1000.0,
+        maxInvestment=1000.0,
+        objectiveIndex=1,
+    )
+
+
+def testModelUncertaintyScenarioExperimentPreservesLeadershipReversalsAndWorstModel():
+    baseline = _operatingTournamentCandidate("baseline", 0.5, "a")
+    measured = _operatingTournamentCandidate("measured", 1.5, "d")
+    candidates = (baseline, measured)
+    episodes = (_operatingTournamentEpisode(1, measured), _operatingTournamentEpisode(2, measured))
+    tournament = _runOperatingTournament(candidates, episodes)
+
+    report = _runModelUncertaintyExperiment(candidates, tournament)
+    repeated = _runModelUncertaintyExperiment(tuple(reversed(candidates)), tournament)
+    growth = next(row for row in report.caseFragilities if row.caseId == "growth")
+
+    assert report == repeated
+    assert report.cellCount == 2 * 2 * 2
+    assert report.status == "documented"
+    assert report.admissionStatus == "notAdmitted"
+    assert report.recommendationCeiling == "conditionalOnly"
+    assert report.recommendation is None
+    assert report.tournamentComparisonHash == tournament.comparisonHash
+    assert growth.leadershipReversal is True
+    assert dict(growth.leaderByModel) == {"baseline": ("hold",), "measured": ("invest",)}
+    assert sum(weight for _, weight in growth.leaderWeightShares) == pytest.approx(1.0)
+    assert all(summary.worstModelId and summary.worstCaseId for summary in report.strategySummaries)
+    assert sum(summary.leaderWeightShare for summary in report.strategySummaries) == pytest.approx(1.0)
+    assert "modelComparisonWeightsAreNotProbabilities" in report.warnings
+    assert "conditionalModelUncertaintyNoRecommendation" in report.blockedReasons
+
+
+def testModelUncertaintyScenarioExperimentRejectsContractDriftAndAdmissionLaundering():
+    baseline = _operatingTournamentCandidate("baseline", 0.5, "a")
+    measured = _operatingTournamentCandidate("measured", 1.5, "d")
+    candidates = (baseline, measured)
+    episodes = (_operatingTournamentEpisode(1, measured), _operatingTournamentEpisode(2, measured))
+    tournament = _runOperatingTournament(candidates, episodes)
+
+    changedMeasured = _operatingTournamentCandidate("measured", 1.4, "d")
+    with pytest.raises(hc.WorldModelTournamentError, match="candidate content drifted"):
+        _runModelUncertaintyExperiment((baseline, changedMeasured), tournament)
+
+    tamperedRows = tuple(replace(row, comparisonWeight=1.0 - row.comparisonWeight) for row in tournament.candidates)
+    with pytest.raises(hc.WorldModelTournamentError, match="comparison contract drifted"):
+        _runModelUncertaintyExperiment(
+            candidates,
+            replace(tournament, candidates=tamperedRows),
+        )
+
+    embeddedLaw = replace(
+        _modelUncertaintyCase("growth", (0.10, 0.0)),
+        exposures=baseline.exposures,
+        coefficientBindings=baseline.coefficientBindings,
+    )
+    with pytest.raises(hc.WorldModelTournamentError, match="must not embed a transmission model"):
+        _runModelUncertaintyExperiment(
+            candidates,
+            tournament,
+            cases=(embeddedLaw, _modelUncertaintyCase("stress", (-0.10, 0.0))),
+        )
+
+    with pytest.raises(hc.WorldModelTournamentError, match="weights require eligible evidence"):
+        _runModelUncertaintyExperiment(
+            candidates,
+            replace(tournament, selectionStatus="baselineBest", selectedModelId=""),
         )

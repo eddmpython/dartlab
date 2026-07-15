@@ -22,7 +22,7 @@ origin 상태·실현 외생 경로·관측 행동·실제 결과를 복수 세�
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime as _dt
 from datetime import timedelta as _td
 from pathlib import Path
@@ -39,7 +39,15 @@ from dartlab.simulate import scenarioSim as _ss
 from dartlab.simulate import table as _table
 from dartlab.simulate.factors import macroFactors
 from dartlab.simulate.vintage import canonicalPayloadHash
-from dartlab.simulate.world import ObjectiveSpec, ScenarioPath, StrategySpec, WorldModel, WorldState, simulateWorld
+from dartlab.simulate.world import (
+    ObjectiveSpec,
+    ScenarioPath,
+    StrategySpec,
+    WorldModel,
+    WorldState,
+    executableHashFor,
+    simulateWorld,
+)
 from dartlab.synth.expectationSpec import pinballLoss
 
 if TYPE_CHECKING:
@@ -47,7 +55,11 @@ if TYPE_CHECKING:
     from dartlab.simulate.driverPaths import DriverPathSet
     from dartlab.simulate.operatingBridge import OperatingShockBaseline, OperatingTransmissionExposure
     from dartlab.simulate.operatingWorld import OperatingWorldInputs
-    from dartlab.simulate.scenarioComposition import ScenarioCoefficientBinding
+    from dartlab.simulate.scenarioComposition import (
+        ConditionalScenarioExperiment,
+        OperatingScenarioCase,
+        ScenarioCoefficientBinding,
+    )
     from dartlab.simulate.stateCompiler import CompiledPointInTimeState
     from dartlab.simulate.stateSupport import StatePrimitive
 
@@ -56,6 +68,7 @@ WORLD_TOURNAMENT_EVALUATION_MODE = "conditionalOnRealizedPath"
 OPERATING_MODEL_TOURNAMENT_EVALUATION_MODE = "conditionalOnRealizedDriverPath"
 WORLD_TOURNAMENT_LOSS_RULE = "mean-normalized-squared-error-v1"
 WORLD_TOURNAMENT_WEIGHT_RULE = "softmax-negative-loss-v1"
+MODEL_UNCERTAINTY_SCENARIO_EXPERIMENT_VERSION = "model-uncertainty-scenario-experiment-v1"
 
 
 def origins(weekEnd: pl.DataFrame, *, start: str = "20190101", gapWeeks: int = 8, steps: int = 8) -> list[str]:
@@ -436,6 +449,7 @@ class WorldModelTournamentCandidate:
 
     modelId: str
     modelVersion: str
+    candidateHash: str
     loss: float
     baselineLoss: float
     skillVsBaseline: float
@@ -462,6 +476,138 @@ class WorldModelTournamentReport:
     candidates: tuple[WorldModelTournamentCandidate, ...]
     slices: tuple[WorldModelSliceScore, ...]
     warnings: tuple[str, ...]
+    comparisonHash: str = ""
+
+
+@dataclass(frozen=True)
+class ModelUncertaintyCell:
+    """One model, assumption case, and strategy result without model averaging."""
+
+    modelId: str
+    modelVersion: str
+    candidateHash: str
+    comparisonWeight: float
+    caseId: str
+    label: str
+    strategyId: str
+    score: float
+    regret: float
+    feasible: bool
+    breachCount: int
+    scoreLeader: bool
+    assumptionSetHash: str
+    sourceExperimentHash: str
+    runHash: str
+    resultHash: str
+
+
+@dataclass(frozen=True)
+class ModelUncertaintyStrategySummary:
+    """Weighted strategy summary with its worst model and assumption case retained."""
+
+    strategyId: str
+    weightedMeanScore: float
+    weightedMeanRegret: float
+    worstScore: float
+    worstRegret: float
+    worstModelId: str
+    worstCaseId: str
+    leaderWeightShare: float
+    feasibleWeightShare: float
+    breachCount: int
+    cellCount: int
+
+
+@dataclass(frozen=True)
+class ModelUncertaintyCaseFragility:
+    """Case-level strategy leadership changes across transmission models."""
+
+    caseId: str
+    label: str
+    leadershipReversal: bool
+    stableLeaderStrategies: tuple[str, ...]
+    leaderByModel: tuple[tuple[str, tuple[str, ...]], ...]
+    leaderWeightShares: tuple[tuple[str, float], ...]
+    worstModelId: str
+    worstModelLeaderScore: float
+    worstLeaderMargin: float
+    maxStrategyScoreSpread: float
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "stableLeaderStrategies", tuple(self.stableLeaderStrategies))
+        object.__setattr__(
+            self,
+            "leaderByModel",
+            tuple((modelId, tuple(strategyIds)) for modelId, strategyIds in self.leaderByModel),
+        )
+        object.__setattr__(self, "leaderWeightShares", tuple(tuple(item) for item in self.leaderWeightShares))
+
+
+@dataclass(frozen=True)
+class ModelUncertaintyScenarioExperiment:
+    """Conditional model by assumption by strategy experiment and fragility ledger."""
+
+    uncertaintyHash: str
+    schemaVersion: str
+    status: str
+    admissionStatus: str
+    recommendationCeiling: str
+    recommendation: str | None
+    entityId: str
+    tournamentHash: str
+    tournamentComparisonHash: str
+    tournamentEvaluationMode: str
+    tournamentSelectionStatus: str
+    modelCount: int
+    scenarioCount: int
+    strategyCount: int
+    cellCount: int
+    modelIds: tuple[str, ...]
+    modelVersions: tuple[str, ...]
+    candidateHashes: tuple[str, ...]
+    modelComparisonWeights: tuple[tuple[str, float], ...]
+    sourceExperimentHashes: tuple[tuple[str, str], ...]
+    cells: tuple[ModelUncertaintyCell, ...]
+    strategySummaries: tuple[ModelUncertaintyStrategySummary, ...]
+    caseFragilities: tuple[ModelUncertaintyCaseFragility, ...]
+    blockedReasons: tuple[str, ...]
+    warnings: tuple[str, ...]
+
+    def __post_init__(self) -> None:
+        for fieldName in (
+            "modelIds",
+            "modelVersions",
+            "candidateHashes",
+            "modelComparisonWeights",
+            "sourceExperimentHashes",
+            "cells",
+            "strategySummaries",
+            "caseFragilities",
+            "blockedReasons",
+            "warnings",
+        ):
+            object.__setattr__(self, fieldName, tuple(getattr(self, fieldName)))
+
+
+def _worldModelTournamentComparisonHash(report: WorldModelTournamentReport) -> str:
+    return canonicalPayloadHash(
+        {
+            "schemaVersion": "world-model-tournament-comparison-v1",
+            "tournamentHash": report.tournamentHash,
+            "evaluationMode": report.evaluationMode,
+            "status": report.status,
+            "admissionStatus": report.admissionStatus,
+            "selectionStatus": report.selectionStatus,
+            "selectedModelId": report.selectedModelId,
+            "baselineModelId": report.baselineModelId,
+            "episodeCount": report.episodeCount,
+            "modelCount": report.modelCount,
+            "episodeHashes": report.episodeHashes,
+            "candidates": report.candidates,
+            "slices": report.slices,
+            "warnings": report.warnings,
+        }
+    )
 
 
 def _worldReplayEpisodePayload(episode: WorldModelReplayEpisode) -> dict:
@@ -507,6 +653,41 @@ def _operatingTransmissionCandidatePayload(candidate: OperatingTransmissionCandi
         "coefficientBindings": candidate.coefficientBindings,
         "refs": candidate.refs,
     }
+
+
+def _worldModelCandidatePayload(model: WorldModel) -> dict:
+    return {
+        "modelId": model.modelId,
+        "modelVersion": model.version,
+        "sharedContract": _worldModelSharedContractPayload(model),
+        "laws": tuple(
+            {
+                "lawId": law.lawId,
+                "outputs": law.outputs,
+                "priorInputs": law.priorInputs,
+                "currentInputs": law.currentInputs,
+                "shockInputs": law.shockInputs,
+                "actionInputs": law.actionInputs,
+                "pathParameterInputs": law.pathParameterInputs,
+                "usesActionCost": law.usesActionCost,
+                "evidenceKind": law.evidenceKind,
+                "provenance": law.provenance,
+                "version": law.version,
+                "status": law.status,
+                "certificate": law.certificate,
+                "parameters": law.parameters,
+                "pathParameterUnits": law.pathParameterUnits,
+            }
+            for law in model.laws
+        ),
+        "executableHash": executableHashFor(model, ()),
+    }
+
+
+def _tournamentCandidateHash(candidate: WorldModel | OperatingTransmissionCandidate) -> str:
+    if isinstance(candidate, WorldModel):
+        return canonicalPayloadHash(_worldModelCandidatePayload(candidate))
+    return canonicalPayloadHash(_operatingTransmissionCandidatePayload(candidate))
 
 
 def _operatingReplayEpisodePayload(episode: OperatingModelReplayEpisode) -> dict:
@@ -899,7 +1080,7 @@ def _operatingModelTournamentRawScores(
 
     raw: list[dict] = []
     for candidate in candidates:
-        candidateHash = canonicalPayloadHash(_operatingTransmissionCandidatePayload(candidate))
+        candidateHash = _tournamentCandidateHash(candidate)
         for episode in episodes:
             path = episode.realizedPathSet.paths[0]
             bridged = bridgeOperatingPath(
@@ -976,6 +1157,7 @@ def _worldModelTournamentCandidates(
             {
                 "modelId": model.modelId,
                 "modelVersion": _tournamentCandidateVersion(model),
+                "candidateHash": _tournamentCandidateHash(model),
                 "loss": loss,
                 "baselineLoss": baselineLoss,
                 "skillVsBaseline": _worldModelTournamentSkill(loss, baselineLoss),
@@ -1154,7 +1336,7 @@ def _buildWorldModelTournamentReport(
         "slices": slices,
         "warnings": warningTuple,
     }
-    return WorldModelTournamentReport(
+    report = WorldModelTournamentReport(
         tournamentHash=canonicalPayloadHash(reportPayload),
         evaluationMode=evaluationMode,
         status="documented",
@@ -1169,6 +1351,7 @@ def _buildWorldModelTournamentReport(
         slices=slices,
         warnings=warningTuple,
     )
+    return replace(report, comparisonHash=_worldModelTournamentComparisonHash(report))
 
 
 def runWorldModelTournament(
@@ -1276,4 +1459,451 @@ def runOperatingModelTournament(
             "transmissionComparisonWeightsAreNotProbabilities",
             "modelTournamentNotAdmission",
         ),
+    )
+
+
+def _validTournamentDigest(value: str) -> bool:
+    return len(value) == 64 and all(character in "0123456789abcdef" for character in value)
+
+
+def _validateModelUncertaintyTournament(
+    candidates: tuple[OperatingTransmissionCandidate, ...],
+    tournament: WorldModelTournamentReport,
+) -> dict[str, WorldModelTournamentCandidate]:
+    if tournament.evaluationMode != OPERATING_MODEL_TOURNAMENT_EVALUATION_MODE:
+        raise WorldModelTournamentError("model uncertainty needs an operating model tournament")
+    if tournament.status != "documented" or tournament.admissionStatus != "notAdmitted":
+        raise WorldModelTournamentError("model tournament must remain documented and not admitted")
+    if tournament.selectionStatus != "eligible":
+        raise WorldModelTournamentError("model tournament weights require eligible evidence")
+    if not _validTournamentDigest(tournament.tournamentHash):
+        raise WorldModelTournamentError("model tournament hash is invalid")
+    if not _validTournamentDigest(
+        tournament.comparisonHash
+    ) or tournament.comparisonHash != _worldModelTournamentComparisonHash(tournament):
+        raise WorldModelTournamentError("model tournament comparison contract drifted")
+    if tournament.modelCount != len(candidates) or len(tournament.candidates) != len(candidates):
+        raise WorldModelTournamentError("model tournament candidate count drifted")
+    rowById = {row.modelId: row for row in tournament.candidates}
+    if len(rowById) != len(tournament.candidates):
+        raise WorldModelTournamentError("model tournament candidate ids must be unique")
+    if set(rowById) != {candidate.modelId for candidate in candidates}:
+        raise WorldModelTournamentError("model tournament candidate identities drifted")
+    weightTotal = 0.0
+    for candidate in candidates:
+        _validateOperatingCandidate(candidate)
+        row = rowById[candidate.modelId]
+        if row.modelVersion != candidate.modelVersion:
+            raise WorldModelTournamentError("model tournament candidate version drifted")
+        if row.candidateHash != _tournamentCandidateHash(candidate):
+            raise WorldModelTournamentError("model tournament candidate content drifted")
+        if not _validTournamentDigest(row.candidateHash):
+            raise WorldModelTournamentError("model tournament candidate hash is invalid")
+        weight = _tournamentFinite(row.comparisonWeight, f"comparison weight {row.modelId}")
+        if weight <= 0:
+            raise WorldModelTournamentError("model comparison weights must be positive")
+        weightTotal += weight
+    if not math.isclose(weightTotal, 1.0, rel_tol=1e-12, abs_tol=1e-12):
+        raise WorldModelTournamentError("model comparison weights must sum to one")
+    return rowById
+
+
+def _validateModelUncertaintyTemplates(
+    entityId: str,
+    candidates: tuple[OperatingTransmissionCandidate, ...],
+    cases: tuple[OperatingScenarioCase, ...],
+    strategies: tuple[StrategySpec, ...],
+    objectiveIndex: int,
+) -> None:
+    if not entityId:
+        raise WorldModelTournamentError("model uncertainty entity id is required")
+    if len(candidates) < 2 or len({candidate.modelId for candidate in candidates}) != len(candidates):
+        raise WorldModelTournamentError("model uncertainty needs unique model candidates")
+    if len(cases) < 2 or len({case.caseId for case in cases}) != len(cases):
+        raise WorldModelTournamentError("model uncertainty needs unique assumption cases")
+    if len(strategies) < 2 or len({strategy.strategyId for strategy in strategies}) != len(strategies):
+        raise WorldModelTournamentError("model uncertainty needs unique strategies")
+    if objectiveIndex < 0:
+        raise WorldModelTournamentError("model uncertainty objective index must be nonnegative")
+    for case in cases:
+        if case.exposures or case.coefficientBindings:
+            raise WorldModelTournamentError("assumption case must not embed a transmission model")
+        if case.policyAdmissionEvidence is not None:
+            raise WorldModelTournamentError("model uncertainty cannot consume policy admission evidence")
+        if case.operatingPathAdmissionReceiptId or case.operatingPathCertificateId:
+            raise WorldModelTournamentError("model uncertainty cannot consume operating path admission")
+
+
+def _modelUncertaintyCandidateCases(
+    candidate: OperatingTransmissionCandidate,
+    cases: tuple[OperatingScenarioCase, ...],
+    tournamentHash: str,
+) -> tuple[OperatingScenarioCase, ...]:
+    candidateHash = _tournamentCandidateHash(candidate)
+    rows = []
+    for case in cases:
+        if case.admissionVerifier is not None and case.admissionVerifier is not candidate.admissionVerifier:
+            raise WorldModelTournamentError("assumption case and model candidate admission verifiers differ")
+        refs = tuple(
+            dict.fromkeys(
+                (
+                    *case.refs,
+                    *candidate.refs,
+                    f"modelCandidate:{candidateHash}",
+                    f"modelTournament:{tournamentHash}",
+                )
+            )
+        )
+        rows.append(
+            replace(
+                case,
+                exposures=candidate.exposures,
+                coefficientBindings=candidate.coefficientBindings,
+                admissionVerifier=candidate.admissionVerifier,
+                policyAdmissionEvidence=None,
+                operatingPathAdmissionReceiptId="",
+                operatingPathCertificateId="",
+                refs=refs,
+            )
+        )
+    return tuple(rows)
+
+
+def _runModelUncertaintyExperiments(
+    entityId: str,
+    inputs: OperatingWorldInputs,
+    candidates: tuple[OperatingTransmissionCandidate, ...],
+    rowsById: Mapping[str, WorldModelTournamentCandidate],
+    cases: tuple[OperatingScenarioCase, ...],
+    strategies: tuple[StrategySpec, ...],
+    tournamentHash: str,
+    *,
+    debtLimit: float,
+    maxFinancing: float,
+    maxInvestment: float,
+    objectiveIndex: int,
+    traceLimit: int | None,
+) -> tuple[tuple[OperatingTransmissionCandidate, WorldModelTournamentCandidate, ConditionalScenarioExperiment], ...]:
+    from dartlab.simulate.scenarioComposition import runConditionalScenarioExperiment
+
+    rows = []
+    for candidate in candidates:
+        candidateCases = _modelUncertaintyCandidateCases(candidate, cases, tournamentHash)
+        experiment = runConditionalScenarioExperiment(
+            entityId,
+            inputs,
+            candidateCases,
+            strategies,
+            debtLimit=debtLimit,
+            maxFinancing=maxFinancing,
+            maxInvestment=maxInvestment,
+            objectiveIndex=objectiveIndex,
+            traceLimit=traceLimit,
+        )
+        rows.append((candidate, rowsById[candidate.modelId], experiment))
+    return tuple(rows)
+
+
+def _modelUncertaintyCells(
+    experiments: tuple[
+        tuple[OperatingTransmissionCandidate, WorldModelTournamentCandidate, ConditionalScenarioExperiment], ...
+    ],
+) -> tuple[ModelUncertaintyCell, ...]:
+    rows = []
+    for candidate, tournamentRow, experiment in experiments:
+        for cell in experiment.cells:
+            rows.append(
+                ModelUncertaintyCell(
+                    modelId=candidate.modelId,
+                    modelVersion=candidate.modelVersion,
+                    candidateHash=tournamentRow.candidateHash,
+                    comparisonWeight=tournamentRow.comparisonWeight,
+                    caseId=cell.caseId,
+                    label=cell.label,
+                    strategyId=cell.strategyId,
+                    score=cell.score,
+                    regret=cell.regret,
+                    feasible=cell.feasible,
+                    breachCount=cell.breachCount,
+                    scoreLeader=cell.scoreLeader,
+                    assumptionSetHash=cell.assumptionSetHash,
+                    sourceExperimentHash=experiment.experimentHash,
+                    runHash=cell.runHash,
+                    resultHash=cell.resultHash,
+                )
+            )
+    rows.sort(key=lambda row: (row.caseId, row.modelId, row.strategyId))
+    return tuple(rows)
+
+
+def _modelCaseLeaderCounts(cells: tuple[ModelUncertaintyCell, ...]) -> dict[tuple[str, str], int]:
+    counts: dict[tuple[str, str], int] = {}
+    for cell in cells:
+        if cell.scoreLeader:
+            key = (cell.modelId, cell.caseId)
+            counts[key] = counts.get(key, 0) + 1
+    return counts
+
+
+def _modelUncertaintyStrategySummaries(
+    cells: tuple[ModelUncertaintyCell, ...],
+    strategyIds: tuple[str, ...],
+    scenarioCount: int,
+) -> tuple[ModelUncertaintyStrategySummary, ...]:
+    leaderCounts = _modelCaseLeaderCounts(cells)
+    summaries = []
+    for strategyId in strategyIds:
+        strategyCells = tuple(cell for cell in cells if cell.strategyId == strategyId)
+        contributions = tuple((cell, cell.comparisonWeight / scenarioCount) for cell in strategyCells)
+        worst = min(strategyCells, key=lambda cell: (cell.score, cell.modelId, cell.caseId))
+        summaries.append(
+            ModelUncertaintyStrategySummary(
+                strategyId=strategyId,
+                weightedMeanScore=sum(cell.score * weight for cell, weight in contributions),
+                weightedMeanRegret=sum(cell.regret * weight for cell, weight in contributions),
+                worstScore=worst.score,
+                worstRegret=max(cell.regret for cell in strategyCells),
+                worstModelId=worst.modelId,
+                worstCaseId=worst.caseId,
+                leaderWeightShare=sum(
+                    (
+                        weight / leaderCounts[(cell.modelId, cell.caseId)]
+                        for cell, weight in contributions
+                        if cell.scoreLeader
+                    ),
+                    0.0,
+                ),
+                feasibleWeightShare=sum((weight for cell, weight in contributions if cell.feasible), 0.0),
+                breachCount=sum(cell.breachCount for cell in strategyCells),
+                cellCount=len(strategyCells),
+            )
+        )
+    return tuple(summaries)
+
+
+def _leaderRowsByModel(
+    caseCells: tuple[ModelUncertaintyCell, ...],
+) -> tuple[tuple[str, tuple[str, ...], float, float], ...]:
+    rows = []
+    for modelId in sorted({cell.modelId for cell in caseCells}):
+        modelCells = tuple(cell for cell in caseCells if cell.modelId == modelId)
+        leaderScore = max(cell.score for cell in modelCells)
+        leaders = tuple(sorted(cell.strategyId for cell in modelCells if cell.scoreLeader))
+        distinctScores = sorted({cell.score for cell in modelCells}, reverse=True)
+        margin = leaderScore - distinctScores[1] if len(distinctScores) > 1 else 0.0
+        rows.append((modelId, leaders, leaderScore, margin))
+    return tuple(rows)
+
+
+def _modelUncertaintyCaseFragilities(
+    cells: tuple[ModelUncertaintyCell, ...],
+    caseIds: tuple[str, ...],
+    weightsById: Mapping[str, float],
+    strategyIds: tuple[str, ...],
+) -> tuple[ModelUncertaintyCaseFragility, ...]:
+    rows = []
+    for caseId in caseIds:
+        caseCells = tuple(cell for cell in cells if cell.caseId == caseId)
+        leaderRows = _leaderRowsByModel(caseCells)
+        leaderSets = tuple(set(leaders) for _, leaders, _, _ in leaderRows)
+        stableLeaders = tuple(sorted(set.intersection(*leaderSets)))
+        leaderShares = {
+            strategyId: sum(
+                (weightsById[modelId] / len(leaders) for modelId, leaders, _, _ in leaderRows if strategyId in leaders),
+                0.0,
+            )
+            for strategyId in strategyIds
+        }
+        worstModelId, _, worstLeaderScore, _ = min(leaderRows, key=lambda row: (row[2], row[0]))
+        modelSpreads = []
+        for strategyId in strategyIds:
+            scores = tuple(cell.score for cell in caseCells if cell.strategyId == strategyId)
+            modelSpreads.append(max(scores) - min(scores))
+        rows.append(
+            ModelUncertaintyCaseFragility(
+                caseId=caseId,
+                label=caseCells[0].label,
+                leadershipReversal=len({leaders for _, leaders, _, _ in leaderRows}) > 1,
+                stableLeaderStrategies=stableLeaders,
+                leaderByModel=tuple((modelId, leaders) for modelId, leaders, _, _ in leaderRows),
+                leaderWeightShares=tuple((strategyId, leaderShares[strategyId]) for strategyId in strategyIds),
+                worstModelId=worstModelId,
+                worstModelLeaderScore=worstLeaderScore,
+                worstLeaderMargin=min(margin for _, _, _, margin in leaderRows),
+                maxStrategyScoreSpread=max(modelSpreads),
+            )
+        )
+    return tuple(rows)
+
+
+def runModelUncertaintyScenarioExperiment(
+    entityId: str,
+    inputs: OperatingWorldInputs,
+    cases: tuple[OperatingScenarioCase, ...],
+    strategies: tuple[StrategySpec, ...],
+    candidates: tuple[OperatingTransmissionCandidate, ...],
+    tournament: WorldModelTournamentReport,
+    *,
+    debtLimit: float,
+    maxFinancing: float,
+    maxInvestment: float,
+    objectiveIndex: int = 0,
+    traceLimit: int | None = None,
+) -> ModelUncertaintyScenarioExperiment:
+    """Run every strategy under every assumption case and admitted transmission candidate.
+
+    Historical tournament comparison weights summarize results but remain explicitly
+    non-probabilistic. The result preserves worst-model outcomes and case-level strategy
+    leadership reversals and never emits a recommendation or admission artifact.
+
+    Args:
+        entityId: Company or security identifier for the shared operating state.
+        inputs: Point-in-time operating state used by every model and case.
+        cases: Two or more future driver assumption cases without embedded transmission laws.
+        strategies: Two or more shared action paths evaluated in every cell.
+        candidates: Signed measured-association transmission candidates from the tournament.
+        tournament: Eligible operating model tournament that exactly binds the candidates.
+        debtLimit: Hard debt constraint for every operating-world execution.
+        maxFinancing: Per-step borrow and repay bound.
+        maxInvestment: Per-step capacity investment bound.
+        objectiveIndex: Operating objective used for scalar score, regret, and leader rows.
+        traceLimit: Optional retained trace cap within each source experiment.
+
+    Returns:
+        Documented model uncertainty ledger with all cells, weighted summaries, worst-model
+        coordinates, case fragility, source experiment hashes, and recommendation blockers.
+
+    Capabilities:
+        Executes the full model by assumption by strategy matrix, retains source run
+        hashes, and reports weighted summaries, worst models, and leadership reversals.
+
+    AIContext:
+        Use after an operating model tournament when an agent must compare strategies
+        without silently treating retrospective comparison weights as probabilities.
+
+    Guide:
+        Supply law-free assumption cases. Every candidate must exactly match its
+        tournament id, version, and content hash. Cases receive candidate laws only
+        inside this execution boundary.
+
+    When:
+        Call when future strategy conclusions may change across plausible admitted
+        transmission coefficient candidates.
+
+    How:
+        Run ``runOperatingModelTournament`` first, build at least two future cases and
+        strategies, then pass the unchanged candidates and tournament report here.
+
+    Requires:
+        No network or API key. Requires admitted coefficient receipts accessible through
+        each candidate verifier and point-in-time operating inputs.
+
+    Raises:
+        WorldModelTournamentError: If identities, content hashes, comparison weights,
+            assumption boundaries, or experiment dimensions drift.
+        ScenarioCompositionError: If a candidate-specific conditional experiment violates
+            driver, bridge, strategy, or operating-world contracts.
+
+    Example:
+        ``report = runModelUncertaintyScenarioExperiment("005930", inputs, cases, strategies, candidates, tournament, debtLimit=1000, maxFinancing=100, maxInvestment=100)``
+
+    SeeAlso:
+        ``runOperatingModelTournament`` and
+        ``dartlab.simulate.scenarioComposition.runConditionalScenarioExperiment``.
+    """
+
+    candidateTuple = tuple(sorted(candidates, key=lambda candidate: candidate.modelId))
+    caseTuple = tuple(sorted(cases, key=lambda case: case.caseId))
+    strategyTuple = tuple(sorted(strategies, key=lambda strategy: strategy.strategyId))
+    _validateModelUncertaintyTemplates(entityId, candidateTuple, caseTuple, strategyTuple, objectiveIndex)
+    rowsById = _validateModelUncertaintyTournament(candidateTuple, tournament)
+    experiments = _runModelUncertaintyExperiments(
+        entityId,
+        inputs,
+        candidateTuple,
+        rowsById,
+        caseTuple,
+        strategyTuple,
+        tournament.tournamentHash,
+        debtLimit=debtLimit,
+        maxFinancing=maxFinancing,
+        maxInvestment=maxInvestment,
+        objectiveIndex=objectiveIndex,
+        traceLimit=traceLimit,
+    )
+    cells = _modelUncertaintyCells(experiments)
+    strategyIds = tuple(strategy.strategyId for strategy in strategyTuple)
+    caseIds = tuple(case.caseId for case in caseTuple)
+    weightsById = {modelId: row.comparisonWeight for modelId, row in rowsById.items()}
+    summaries = _modelUncertaintyStrategySummaries(cells, strategyIds, len(caseTuple))
+    fragilities = _modelUncertaintyCaseFragilities(cells, caseIds, weightsById, strategyIds)
+    sourceExperimentHashes = tuple(
+        (candidate.modelId, experiment.experimentHash) for candidate, _, experiment in experiments
+    )
+    blockedReasons = (
+        "conditionalModelUncertaintyNoRecommendation",
+        "modelWeightsNotProbabilities",
+        "tournamentNotAdmission",
+    )
+    warnings = (
+        "modelComparisonWeightsAreNotProbabilities",
+        "modelUncertaintyExperimentNotAdmission",
+        "retrospectiveModelWeightsAppliedToConditionalCases",
+        "scoreLeaderNotRecommendation",
+    )
+    payload = {
+        "schemaVersion": MODEL_UNCERTAINTY_SCENARIO_EXPERIMENT_VERSION,
+        "entityId": entityId,
+        "tournamentHash": tournament.tournamentHash,
+        "tournamentComparisonHash": tournament.comparisonHash,
+        "tournamentEvaluationMode": tournament.evaluationMode,
+        "tournamentSelectionStatus": tournament.selectionStatus,
+        "modelIds": tuple(candidate.modelId for candidate in candidateTuple),
+        "modelVersions": tuple(candidate.modelVersion for candidate in candidateTuple),
+        "candidateHashes": tuple(rowsById[candidate.modelId].candidateHash for candidate in candidateTuple),
+        "modelComparisonWeights": tuple(
+            (candidate.modelId, rowsById[candidate.modelId].comparisonWeight) for candidate in candidateTuple
+        ),
+        "sourceExperimentHashes": sourceExperimentHashes,
+        "limits": {
+            "debtLimit": float(debtLimit),
+            "maxFinancing": float(maxFinancing),
+            "maxInvestment": float(maxInvestment),
+            "objectiveIndex": objectiveIndex,
+            "traceLimit": traceLimit,
+        },
+        "cells": cells,
+        "strategySummaries": summaries,
+        "caseFragilities": fragilities,
+        "blockedReasons": blockedReasons,
+        "warnings": warnings,
+    }
+    return ModelUncertaintyScenarioExperiment(
+        uncertaintyHash=canonicalPayloadHash(payload),
+        schemaVersion=MODEL_UNCERTAINTY_SCENARIO_EXPERIMENT_VERSION,
+        status="documented",
+        admissionStatus="notAdmitted",
+        recommendationCeiling="conditionalOnly",
+        recommendation=None,
+        entityId=entityId,
+        tournamentHash=tournament.tournamentHash,
+        tournamentComparisonHash=tournament.comparisonHash,
+        tournamentEvaluationMode=tournament.evaluationMode,
+        tournamentSelectionStatus=tournament.selectionStatus,
+        modelCount=len(candidateTuple),
+        scenarioCount=len(caseTuple),
+        strategyCount=len(strategyTuple),
+        cellCount=len(cells),
+        modelIds=tuple(candidate.modelId for candidate in candidateTuple),
+        modelVersions=tuple(candidate.modelVersion for candidate in candidateTuple),
+        candidateHashes=tuple(rowsById[candidate.modelId].candidateHash for candidate in candidateTuple),
+        modelComparisonWeights=tuple(
+            (candidate.modelId, rowsById[candidate.modelId].comparisonWeight) for candidate in candidateTuple
+        ),
+        sourceExperimentHashes=sourceExperimentHashes,
+        cells=cells,
+        strategySummaries=summaries,
+        caseFragilities=fragilities,
+        blockedReasons=blockedReasons,
+        warnings=warnings,
     )
