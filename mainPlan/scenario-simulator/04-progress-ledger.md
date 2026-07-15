@@ -1419,3 +1419,16 @@ mainPlan UI 플랫폼 리팩토링이 **이 세션 동안** 단계-4b~5-2b로 �
 - **추천 경계**: deck는 `recommendation=None`, `decisionStatus="conditionalOnly"`, path admission id 없음, policy certificate id 없음을 요구한다. blocked reason에는 `conditionalPlayScenarioDeckDocumentedOnly`, `scenarioDeckReceiptNotPolicyCertificate`, `conditionalExperimentNotPolicyRecommendation`, `scoreLeaderNotRecommendation`이 필요하다.
 - **검증**: 5-plane deck fixture로 documented receipt 발행, bind, parent lineage 포함, order-insensitive deck hash, parent mismatch, wrong kind, admitted-like contract, strategy delta tamper reject를 고정했다. focused deck test 통과, `ruff check` 통과, `tests/simulate` 437개 통과, `dartlabGuard.py strict --scope l0-l15 --providers dart,edgar` 통과.
 - **남은 P0**: 이제 사용자가 입력한 조건 묶음이 어떤 stage 순서로 전략 지형을 바꿨는지 신뢰 가능한 backend 산출물로 닫혔다. 다음은 GUI가 이 receipt를 읽어 condition edit, stage trace, strategy delta, case fragility를 보여주는 workbench mirror이거나, 별도 단계로 admitted history-only policy certificate rail을 더 실제 source breadth에 연결하는 것이다. 공식 추천 승격은 여전히 policy rail 전용이다.
+
+
+## 2026-07-15 P0 world model tournament
+
+- **판단**: 현재 운영세계는 다기간 상태전이와 폐루프 정책을 이미 지원한다. 새 Protocol이나 새 src 폴더를 만들 병목은 없었다. 혁신 축의 첫 결손은 동일한 과거 origin, 실현 외생 경로, 관측 행동, 실제 상태에서 여러 세계모델을 공정하게 경쟁시키는 계약이었다.
+- **구현 위치**: 신규 src 모듈 없이 기존 `src/dartlab/simulate/hindcast.py`에 `runWorldModelTournament(candidates, episodes, spec)`를 추가했다. `_attempts/worldEvolve`에서 import 실패 kill-test를 먼저 확인하고 개념 회귀 5건을 통과한 뒤 본진에 흡수했다. 실험 구현 복사본은 삭제해 정본을 하나로 유지했다.
+- **호출계약**: 후보는 기존 `WorldModel`, episode는 `WorldState`, 실현 `ScenarioPath`, 관측 `StrategySpec`, step별 실제 상태를 묶는다. 후보는 변수, 행동, step frequency와 span 계약을 정확히 공유하며, 관측 정책은 모델별 상태에 반응하지 않는 고정 행동 기록만 허용한다.
+- **시간 인과**: 초기 상태 knowledge와 decision cutoff는 origin 이하여야 한다. 실현 경로는 origin 뒤, outcome available 시점 이하에서만 알려진 `retrospectiveOnly`와 `realizedOutcome` 경로여야 한다. outcome이 evaluation knowledge보다 새로우면 실행 전에 차단한다.
+- **토너먼트 출력**: 평균 정규화 제곱오차를 후보 전체, origin, horizon, regime 절편으로 산출한다. baseline 대비 skill, 순위, softmax negative loss 비교 가중치를 남긴다. 입력 후보와 episode 순서를 바꿔도 결과가 같고, 실제 결과 또는 모델 실행물이 바뀌면 origin run hash와 tournament hash가 바뀐다.
+- **정직 경계**: 평가 모드는 항상 `conditionalOnRealizedPath`다. 비교 가중치는 확률이 아니며 report는 `status="documented"`, `admissionStatus="notAdmitted"`를 유지한다. 최소 origin과 baseline skill 문턱은 모델 선택 적격성만 열며 path 또는 policy admission으로 전이되지 않는다.
+- **구조 정리**: 새 공개 verb, 새 src 폴더, 새 src 파일은 0개다. 기존 world kernel, path, strategy, objective 계약을 그대로 재사용했다. `hindcast.py`의 기존 공개 함수 4개도 4 section docstring strict를 통과하도록 같은 변경에서 정리했다.
+- **검증**: `_attempts` 5건, hindcast와 world 집중 회귀 43건, `tests/simulate` 전체 439건 통과. ruff format/check, camelCase strict, docstring4 strict, 긴 줄표 검색, Guard Index strict l0-l15도 통과했다.
+- **다음 P0**: 실제 PIT operating episode를 자동 조립하고, admitted coefficient 후보 여러 개를 operating `WorldModel` 후보군으로 컴파일해 tournament 비교 가중치가 조건부 실험의 model uncertainty 축으로 들어가게 한다. 이 연결 전까지 현재 결과는 합성 세계에서 검증된 일반 토너먼트 커널이다.

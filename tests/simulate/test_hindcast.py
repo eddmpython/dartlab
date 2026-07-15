@@ -10,10 +10,21 @@ Covers:
 
 from __future__ import annotations
 
+from dataclasses import replace
+
 import numpy as np
 import polars as pl
+import pytest
 
 from dartlab.simulate import hindcast as hc
+from dartlab.simulate.world import (
+    LawSpec,
+    ScenarioPath,
+    StrategySpec,
+    VariableSpec,
+    WorldModel,
+    WorldState,
+)
 
 
 def testOriginsNonOverlapping():
@@ -143,3 +154,152 @@ def testHStarRules():
     assert star["firm"] == 3  # t<2 첫 걸음
     assert "hstar-v1" in star["rules"]
     assert np.isfinite(star["firm"])
+
+
+def _tournamentModel(modelId: str, coefficient: float, *, unit: str = "currency") -> WorldModel:
+    variables = (
+        VariableSpec("demandShock", "units", "shock"),
+        VariableSpec("sales", unit, "state"),
+    )
+
+    def salesLaw(ctx):
+        return {"sales": ctx.prior["sales"] + coefficient * ctx.shocks["demandShock"]}
+
+    return WorldModel(
+        modelId,
+        "1",
+        variables,
+        (),
+        (
+            LawSpec(
+                "salesResponse",
+                outputs=("sales",),
+                priorInputs=("sales",),
+                shockInputs=("demandShock",),
+                evidenceKind="explicitAssumption",
+                provenance=f"test:{modelId}",
+                parameters={"coefficient": coefficient},
+                fn=salesLaw,
+            ),
+        ),
+        stepFrequency="quarter",
+    )
+
+
+def _tournamentEpisode(index: int, shocks: tuple[float, float], regime: str) -> hc.WorldModelReplayEpisode:
+    origin = f"202{index}0101"
+    outcome = f"202{index}0901"
+    actual: list[dict[str, float]] = []
+    sales = 10.0
+    for shock in shocks:
+        sales += 2.0 * shock
+        actual.append({"sales": sales})
+    return hc.WorldModelReplayEpisode(
+        episodeId=f"episode-{index}",
+        originAsOf=origin,
+        outcomeAvailableAt=outcome,
+        regime=regime,
+        initialState=WorldState(
+            {"sales": 10.0},
+            asOf=origin,
+            knowledgeAsOf=origin,
+            decisionAsOf=origin,
+        ),
+        realizedPath=ScenarioPath(
+            f"realized-{index}",
+            tuple({"demandShock": value} for value in shocks),
+            frequency="quarter",
+            validationStatus="retrospectiveOnly",
+            knowledgeAsOf=outcome,
+            historyStatus="realizedOutcome",
+        ),
+        observedPolicy=StrategySpec("observedPolicy", ({}, {}), isBaseline=True),
+        actualByStep=tuple(actual),
+    )
+
+
+def _tournamentSpec(*, minOrigins: int = 4) -> hc.WorldModelTournamentSpec:
+    return hc.WorldModelTournamentSpec(
+        evaluationKnowledgeAsOf="20250101",
+        metrics=("sales",),
+        metricScales={"sales": 5.0},
+        baselineModelId="baseline",
+        minOrigins=minOrigins,
+        weightTemperature=0.5,
+    )
+
+
+def testWorldModelTournamentSelectsMeasuredLawWithoutAdmission():
+    candidates = (
+        _tournamentModel("baseline", 1.0),
+        _tournamentModel("measured", 2.0),
+        _tournamentModel("overshoot", 3.0),
+    )
+    episodes = (
+        _tournamentEpisode(1, (1.0, 2.0), "calm"),
+        _tournamentEpisode(2, (2.0, 1.0), "calm"),
+        _tournamentEpisode(3, (3.0, 2.0), "stress"),
+        _tournamentEpisode(4, (2.0, 3.0), "stress"),
+    )
+
+    report = hc.runWorldModelTournament(candidates, episodes, _tournamentSpec())
+    repeated = hc.runWorldModelTournament(tuple(reversed(candidates)), tuple(reversed(episodes)), _tournamentSpec())
+    rows = {row.modelId: row for row in report.candidates}
+
+    assert report == repeated
+    assert report.evaluationMode == "conditionalOnRealizedPath"
+    assert report.status == "documented"
+    assert report.admissionStatus == "notAdmitted"
+    assert report.selectionStatus == "eligible"
+    assert report.selectedModelId == "measured"
+    assert rows["measured"].loss == pytest.approx(0.0)
+    assert rows["measured"].skillVsBaseline == pytest.approx(1.0)
+    assert rows["measured"].comparisonWeight > rows["baseline"].comparisonWeight
+    assert sum(row.comparisonWeight for row in report.candidates) == pytest.approx(1.0)
+    assert {row.scope for row in report.slices} == {"origin", "horizon", "regime"}
+    assert {row.scopeKey for row in report.slices if row.scope == "horizon"} == {"1", "2"}
+    assert {row.scopeKey for row in report.slices if row.scope == "regime"} == {"calm", "stress"}
+    assert "comparisonWeightsAreNotProbabilities" in report.warnings
+    assert len(report.tournamentHash) == 64
+
+
+def testWorldModelTournamentBindsOutcomesAndRejectsUnsafeReplay():
+    episodes = (
+        _tournamentEpisode(1, (1.0, 2.0), "calm"),
+        _tournamentEpisode(2, (2.0, 1.0), "stress"),
+    )
+    candidates = (
+        _tournamentModel("baseline", 1.0),
+        _tournamentModel("measured", 2.0),
+    )
+    first = hc.runWorldModelTournament(candidates, episodes, _tournamentSpec(minOrigins=2))
+    changedActual = list(episodes[-1].actualByStep)
+    changedActual[-1] = {"sales": changedActual[-1]["sales"] + 4.0}
+    changedEpisodes = (*episodes[:-1], replace(episodes[-1], actualByStep=tuple(changedActual)))
+    changed = hc.runWorldModelTournament(candidates, changedEpisodes, _tournamentSpec(minOrigins=2))
+
+    assert first.episodeHashes != changed.episodeHashes
+    assert first.tournamentHash != changed.tournamentHash
+    assert first.candidates != changed.candidates
+
+    with pytest.raises(hc.WorldModelTournamentError, match="outcome is newer"):
+        hc.runWorldModelTournament(
+            candidates,
+            episodes,
+            replace(_tournamentSpec(minOrigins=2), evaluationKnowledgeAsOf="20210901"),
+        )
+    with pytest.raises(hc.WorldModelTournamentError, match="shared variable contract"):
+        hc.runWorldModelTournament(
+            (candidates[0], _tournamentModel("measured", 2.0, unit="ratio")),
+            episodes,
+            _tournamentSpec(minOrigins=2),
+        )
+
+    insufficient = hc.runWorldModelTournament(
+        candidates,
+        episodes[:1],
+        _tournamentSpec(minOrigins=2),
+    )
+    assert insufficient.selectionStatus == "insufficientEvidence"
+    assert insufficient.selectedModelId == ""
+    assert insufficient.admissionStatus == "notAdmitted"
