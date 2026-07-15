@@ -1505,7 +1505,85 @@ def _attachExactRowReceipts(context, panel: pl.DataFrame, *, revisionColumn: str
     )
 
 
-def _exactEdgarQuarterlyMetricSource(context) -> DriverHistorySource:
+def _multiProviderDartFilingRegistrySource(*, marginShift: float = 0.0) -> DriverHistorySource:
+    factor = DriverFactorSpec(
+        "dartOperatingMarginChange",
+        "ratioChange",
+        "quarter",
+        "change",
+        "dart-operating-margin-change-v1",
+        sourceColumn="opMarginChange",
+    )
+    periods = _quarterEvidenceDates()[1:]
+    values = [0.020, -0.010, 0.030, 0.018, -0.012, 0.025 + marginShift]
+    panel = pl.DataFrame(
+        {
+            "code": ["005930"] * len(periods),
+            "period": list(periods),
+            "rceptDate": [_quarterAvailability(period) for period in periods],
+            "rceptNo": [f"2021{index:08d}" for index in range(1, len(periods) + 1)],
+            "opMarginChange": values,
+        }
+    )
+    return filingMetricDriverHistorySource(
+        panel,
+        cardId="dart-operating-margin-change-quarterly",
+        providerId="dart",
+        datasetId="dart.finance.retained",
+        entityId="005930",
+        entityIdColumn="code",
+        frequency="quarter",
+        stepSpan=1,
+        factors=(factor,),
+        sourceRefs=(
+            "data/dart/finance/005930.parquet",
+            "transform:dart-operating-margin-change",
+            "providerObservationBatch:retained-dart-not-a-receipt",
+        ),
+        knowledgeAsOf="20210715",
+        eventTimeColumn="period",
+        availableAtColumn="rceptDate",
+        filingIdColumn="rceptNo",
+    )
+
+
+def _multiProviderIndustryTimeSeriesRegistrySource(*, orderShift: float = 0.0) -> DriverHistorySource:
+    factor = DriverFactorSpec(
+        "industryOrderChange",
+        "simpleReturn",
+        "quarter",
+        "change",
+        "industry-order-change-quarterly-v1",
+        sourceColumn="orderChange",
+    )
+    periods = _quarterEvidenceDates()[1:]
+    values = [0.010, -0.030, 0.040, 0.015, -0.010, 0.030 + orderShift]
+    panel = pl.DataFrame(
+        {
+            "eventTime": list(periods),
+            "availableAt": [_quarterAvailability(period) for period in periods],
+            "orderChange": values,
+        }
+    )
+    return panelMetricDriverHistorySource(
+        panel,
+        cardId="industry-order-change-quarterly",
+        providerId="industry",
+        datasetId="industry.metric.quarterly",
+        entityId="semiconductor",
+        frequency="quarter",
+        stepSpan=1,
+        factors=(factor,),
+        sourceRefs=("data/industry/metrics/semiconductor.parquet",),
+        knowledgeAsOf="20210715",
+    )
+
+
+def _exactEdgarQuarterlyMetricSource(
+    context,
+    *,
+    factorId: str = "operatingMarginChange",
+) -> DriverHistorySource:
     events = _quarterEvidenceDates()[1:]
     accepted = tuple(_quarterAvailability(event) for event in events)
     panel = pl.DataFrame(
@@ -1517,6 +1595,7 @@ def _exactEdgarQuarterlyMetricSource(context) -> DriverHistorySource:
             "operatingMarginChange": [0.015, -0.006, 0.012, 0.021, -0.009, 0.026],
         }
     )
+    transformId = "edgar-operating-margin-change-quarterly-v1"
     panel, sourceReceipts = _attachExactRowReceipts(
         context,
         panel,
@@ -1532,7 +1611,7 @@ def _exactEdgarQuarterlyMetricSource(context) -> DriverHistorySource:
                 "datasetId": "edgar.companyfacts.metric",
                 "entityId": "0000320193",
                 "rows": panel.to_dicts(),
-                "signalId": "operatingMarginChange",
+                "signalId": factorId,
                 "normalizationHash": normalizationHash,
             }
         )
@@ -1548,16 +1627,16 @@ def _exactEdgarQuarterlyMetricSource(context) -> DriverHistorySource:
         filingIdColumn="accession",
         entityIdColumn="cik",
         sourceArtifactKind="edgarFilingMetricRows",
-        sourceArtifactId="0000320193:operatingMarginChange:quarter-grid",
+        sourceArtifactId=f"0000320193:{factorId}:quarter-grid",
         sourceArtifactHash=laneHash,
         signalSpecs=(
             DriverObservationSignalSpec(
-                "operatingMarginChange",
+                factorId,
                 "operatingMarginChange",
                 "ratioChange",
                 "quarter",
                 "ratio",
-                "edgar-operating-margin-change-quarterly-v1",
+                transformId,
                 "deterministicDerived",
                 normalizationHash,
             ),
@@ -1565,23 +1644,26 @@ def _exactEdgarQuarterlyMetricSource(context) -> DriverHistorySource:
         sourceRefs=(
             "source:edgar-companyfacts",
             "filingTrace:edgar-companyfacts-0000320193-quarter-grid",
-            "normalization:edgar-operating-margin-change-quarterly-v1",
+            f"normalization:{transformId}",
         ),
         sourceArtifactHashColumn="sourceArtifactHash",
         sourceReceipts=sourceReceipts,
         requireExact=True,
     )
     signedBatch = _signProviderDriverBatch(context, batch, cutoffAsOf="20210715")
+    cardId = "edgar-operating-margin-change-quarterly"
+    if factorId != "operatingMarginChange":
+        cardId = "edgar-operating-margin-change-matrix-quarterly"
     return driverHistorySourceFromProviderObservationBatch(
         signedBatch,
-        cardId="edgar-operating-margin-change-quarterly",
+        cardId=cardId,
         factors=(
             DriverFactorSpec(
-                "operatingMarginChange",
+                factorId,
                 "ratioChange",
                 "quarter",
                 "change",
-                "edgar-operating-margin-change-quarterly-v1",
+                transformId,
             ),
         ),
         sourceRefs=(
@@ -1590,7 +1672,7 @@ def _exactEdgarQuarterlyMetricSource(context) -> DriverHistorySource:
             "filingTrace:edgar-companyfacts-0000320193-quarter-grid",
             "filingIdColumn:accession",
             f"normalizationContractHash:{normalizationHash}",
-            "factorMapping:operatingMarginChange->operatingMarginChange",
+            f"factorMapping:operatingMarginChange->{factorId}",
         ),
     )
 
@@ -1767,6 +1849,26 @@ def _edgarPriceMacroRegistrySources(context) -> tuple[DriverHistorySource, Drive
         _exactEdgarQuarterlyMetricSource(context),
         _exactQuarterlyPriceReturnSource(context),
         _quarterlyMacroInnovationSource(),
+    )
+
+
+def _multiProviderLaneMatrixSources(
+    context,
+    *,
+    dartMarginShift: float = 0.0,
+) -> tuple[
+    DriverHistorySource,
+    DriverHistorySource,
+    DriverHistorySource,
+    DriverHistorySource,
+    DriverHistorySource,
+]:
+    return (
+        _multiProviderDartFilingRegistrySource(marginShift=dartMarginShift),
+        _exactEdgarQuarterlyMetricSource(context, factorId="edgarOperatingMarginChange"),
+        _exactQuarterlyPriceReturnSource(context),
+        _quarterlyMacroInnovationSource(),
+        _multiProviderIndustryTimeSeriesRegistrySource(),
     )
 
 
@@ -1994,6 +2096,140 @@ def _registryScenarioCaseWithEdgarPriceMacroAndAdjustmentPath(
             "ratioChangePerStep/simpleReturn",
             "explicitAssumption",
             f"assumption://{caseId}/law/oil-to-unit-cost",
+        ),
+        OperatingTransmissionExposure(
+            f"{caseId}-manual-demand-quarterly-path",
+            "manualDemandAdjustment",
+            "demandChange",
+            1.0,
+            "ratioChangePerStep/simpleReturn",
+            "explicitAssumption",
+            f"assumption://{caseId}/law/manual-demand-adjustment-quarterly-path",
+        ),
+    )
+    return OperatingScenarioCase(
+        caseId,
+        caseId.title(),
+        registry.pathSet,
+        exposures,
+        _operatingBaselines(),
+        refs=(f"scenario://{caseId}",),
+        admissionVerifier=verifier,
+        driverRegistryAudit=registry.audit,
+    )
+
+
+def _multiProviderLaneMatrixScenarioCase(
+    caseId: str,
+    shocks: tuple[float, float, float, float],
+    verifier,
+    sources: tuple[
+        DriverHistorySource,
+        DriverHistorySource,
+        DriverHistorySource,
+        DriverHistorySource,
+        DriverHistorySource,
+    ],
+) -> OperatingScenarioCase:
+    dartSource, edgarSource, priceSource, macroSource, industrySource = sources
+    registry = compileDriverRegistryPathSet(
+        (
+            DriverRegistryCandidate(
+                "dart-filing-margin",
+                "pathHistory",
+                dartSource,
+                semanticRefs=("semantics:dart-financial-filing-change-path",),
+                selectionReason="DART retained filing metric stays conditional until raw filing receipts exist.",
+            ),
+            DriverRegistryCandidate(
+                "edgar-filing-margin",
+                "pathHistory",
+                edgarSource,
+                semanticRefs=("semantics:edgar-financial-filing-change-path",),
+                selectionReason="Exact EDGAR filing metric is projected from a signed provider batch.",
+            ),
+            DriverRegistryCandidate(
+                "price-return-exact",
+                "pathHistory",
+                priceSource,
+                semanticRefs=("semantics:exact-equity-return-path",),
+                selectionReason="Exact derived equity return keeps source price legs and return receipts.",
+            ),
+            DriverRegistryCandidate(
+                "macro-oil-innovation",
+                "pathHistory",
+                macroSource,
+                semanticRefs=("semantics:macro-quarterly-innovation-path",),
+                selectionReason="Macro level history is transformed to quarterly innovation before admission.",
+            ),
+            DriverRegistryCandidate(
+                "industry-orders",
+                "pathHistory",
+                industrySource,
+                semanticRefs=("semantics:industry-time-series-path",),
+                selectionReason="Industry metric has eventTime and availableAt support on the same quarter grid.",
+            ),
+            DriverRegistryCandidate(
+                f"{caseId}-manual-demand-quarterly-path",
+                "explicitAssumption",
+                _quarterlyRegistryExplicitDemandAdjustmentPath(caseId, shocks),
+                semanticRefs=(f"semantics:{caseId}:explicit-future-demand-adjustment-quarterly-path",),
+                selectionReason="Manual future demand adjustment path for this assumption set.",
+            ),
+        ),
+        registryId=f"{caseId}-multi-provider-lane-matrix-registry",
+        knowledgeAsOf="20210715",
+        horizon=4,
+        pathCount=4,
+        blockLength=2,
+        seed=53,
+        minObservations=6,
+    )
+    exposures = (
+        OperatingTransmissionExposure(
+            f"{caseId}-dart-margin-fixed-cost",
+            "dartOperatingMarginChange",
+            "fixedCostChange",
+            -0.25,
+            "ratioChangePerStep/ratioChange",
+            "explicitAssumption",
+            f"assumption://{caseId}/law/dart-margin-to-fixed-cost",
+        ),
+        OperatingTransmissionExposure(
+            f"{caseId}-edgar-margin-unit-cost",
+            "edgarOperatingMarginChange",
+            "unitCostChange",
+            -0.4,
+            "ratioChangePerStep/ratioChange",
+            "explicitAssumption",
+            f"assumption://{caseId}/law/edgar-margin-to-unit-cost",
+        ),
+        OperatingTransmissionExposure(
+            f"{caseId}-equity-return-market-price",
+            "equityReturnShock",
+            "marketPriceChange",
+            0.35,
+            "ratioChangePerStep/simpleReturn",
+            "explicitAssumption",
+            f"assumption://{caseId}/law/equity-return-to-market-price",
+        ),
+        OperatingTransmissionExposure(
+            f"{caseId}-oil-unit-cost",
+            "oil",
+            "unitCostChange",
+            0.25,
+            "ratioChangePerStep/simpleReturn",
+            "explicitAssumption",
+            f"assumption://{caseId}/law/oil-to-unit-cost",
+        ),
+        OperatingTransmissionExposure(
+            f"{caseId}-industry-orders-demand",
+            "industryOrderChange",
+            "demandChange",
+            0.8,
+            "ratioChangePerStep/simpleReturn",
+            "explicitAssumption",
+            f"assumption://{caseId}/law/industry-orders-to-demand",
         ),
         OperatingTransmissionExposure(
             f"{caseId}-manual-demand-quarterly-path",
@@ -3329,6 +3565,307 @@ def testRegistryEdgarPriceMacroMultiStepExperimentShowsStrategyFragility(tmp_pat
     assert changed.simulationSpecHash != experiment.simulationSpecHash
     assert changed.resultSetHash != experiment.resultSetHash
     assert changed.experimentHash != experiment.experimentHash
+
+
+def testMultiProviderLaneMatrixFeedsFourQuarterConditionalExperiment(tmp_path) -> None:
+    context = _trust(tmp_path)
+    inputs = _admittedOperatingInputs(context)
+    sources = _multiProviderLaneMatrixSources(context)
+    cases = (
+        _multiProviderLaneMatrixScenarioCase(
+            "base",
+            (0.00, 0.00, 0.00, 0.00),
+            context[4],
+            sources,
+        ),
+        _multiProviderLaneMatrixScenarioCase(
+            "upside",
+            (0.25, 0.25, 0.20, 0.15),
+            context[4],
+            sources,
+        ),
+        _multiProviderLaneMatrixScenarioCase(
+            "stress",
+            (-0.05, -0.08, -0.08, -0.05),
+            context[4],
+            sources,
+        ),
+        _multiProviderLaneMatrixScenarioCase(
+            "shock",
+            (-0.12, -0.10, -0.08, -0.05),
+            context[4],
+            sources,
+        ),
+    )
+    strategies = _fourQuarterExperimentStrategies()
+    experiment = runConditionalScenarioExperiment(
+        "005930",
+        inputs,
+        cases,
+        strategies,
+        debtLimit=1_000.0,
+        maxFinancing=200.0,
+        maxInvestment=200.0,
+    )
+
+    assert experiment.scenarioCount == 4
+    assert experiment.strategyCount == 4
+    assert experiment.cellCount == 16
+    assert experiment.decisionStatus == "conditionalOnly"
+    assert experiment.recommendation is None
+    assert "automaticRecommendationDisabled" in experiment.blockedReasons
+    assert "conditionalExperimentNotPolicyRecommendation" in experiment.blockedReasons
+    assert "pathAdmissionMissing" in experiment.blockedReasons
+    assert "policyEvaluationCertificateMissing" in experiment.blockedReasons
+    assert "assumptionSweepPresent" in experiment.blockedReasons
+    assert "strategySweepPresent" in experiment.blockedReasons
+
+    expectedLaneIds = (
+        "dart-filing-margin",
+        "edgar-filing-margin",
+        "price-return-exact",
+        "macro-oil-innovation",
+        "industry-orders",
+        "base-manual-demand-quarterly-path",
+    )
+    expectedFactorIds = (
+        "dartOperatingMarginChange",
+        "edgarOperatingMarginChange",
+        "equityReturnShock",
+        "oil",
+        "industryOrderChange",
+        "manualDemandAdjustment",
+    )
+    base = experiment.caseLedgers[0]
+    assert base.driverRegistryLedger is not None
+    assert base.driverRegistryLedger.laneIds == expectedLaneIds
+    assert base.driverRegistryLedger.cardIds == (
+        "dart-operating-margin-change-quarterly",
+        "edgar-operating-margin-change-matrix-quarterly",
+        "exact-quarterly-equity-return",
+        "macro-oil-quarterly-innovation",
+        "industry-order-change-quarterly",
+        "base-manual-demand-adjustment-quarterly-path",
+    )
+    assert base.driverRegistryLedger.factorIds == expectedFactorIds
+    assert base.driverRegistryLedger.commonObservationCount == 6
+    assert base.driverRegistryLedger.sourceObservationCounts == (
+        ("dart-filing-margin", 6),
+        ("edgar-filing-margin", 6),
+        ("price-return-exact", 6),
+        ("macro-oil-innovation", 6),
+        ("industry-orders", 6),
+    )
+    assert base.driverRegistryLedger.eventStart == "20200331"
+    assert base.driverRegistryLedger.eventEnd == "20210630"
+    assert base.driverRegistryLedger.pathSetHash == base.pathSetHash
+    assert base.driverRegistryLedger.pathSetInputHash == base.pathSetInputHash
+    assert base.driverRegistryLedger.validationStatus == "unvalidated"
+    assert base.driverRegistryLedger.historyStatus == "explicitAssumption"
+
+    assert "dart-filing-margin" in experiment.driverRegistryLaneIds
+    assert "edgar-filing-margin" in experiment.driverRegistryLaneIds
+    assert "price-return-exact" in experiment.driverRegistryLaneIds
+    assert "macro-oil-innovation" in experiment.driverRegistryLaneIds
+    assert "industry-orders" in experiment.driverRegistryLaneIds
+    assert "data/dart/finance/005930.parquet" in experiment.driverRegistrySourceRefs
+    assert "source:edgar-companyfacts" in experiment.driverRegistrySourceRefs
+    assert "source:gov-price-close" in experiment.driverRegistrySourceRefs
+    assert "simulate.driverSources:macroDriverHistorySource" in experiment.driverRegistrySourceRefs
+    assert "data/industry/metrics/semiconductor.parquet" in experiment.driverRegistrySourceRefs
+    assert "driverRegistryContainsRevisedHistory" in experiment.driverRegistryWarnings
+    assert "driverRegistryContainsExplicitAssumption" in experiment.driverRegistryWarnings
+    assert "filingSourceNotExactAsKnown" in experiment.driverRegistryWarnings
+    assert "dartRetainedFinanceRowsAreConditionalUntilRawFilingReceiptsExist" in experiment.driverRegistryWarnings
+    assert "macroReleaseVintageUnavailable" in experiment.driverRegistryWarnings
+    assert "priceVintageUnavailable" not in experiment.driverRegistryWarnings
+
+    assert base.providerLaneLineageHash
+    assert experiment.providerLaneLineageHashes == tuple(
+        dict.fromkeys(ledger.providerLaneLineageHash for ledger in experiment.caseLedgers)
+    )
+    assert "derivedProviderObservationBatch" in base.providerLineageStatus
+    assert "exactProviderObservationBatch" not in base.providerLineageStatus
+    assert "revisedHistory" in base.providerLineageStatus
+    assert "rawSourceRefOnly" in base.providerLineageStatus
+    assert "explicitAssumption" in base.providerLineageStatus
+    assert set(base.providerLineageStatus).issubset(set(experiment.providerLineageStatuses))
+    assert base.providerObservationBatchReceiptIds
+    assert base.providerObservationBatchIds
+    assert base.providerObservationBatchSourceReceiptIds
+    assert base.priceSourceLegReceiptIds
+    assert base.derivedReturnReceiptIds
+    assert base.adjustmentPolicyHashes
+    assert base.normalizationContractHashes
+    assert base.returnTransformRefs == ("price-simple-return-quarter-1-v1",)
+    assert base.returnTransformHash
+    assert "operatingMarginChange->edgarOperatingMarginChange" in base.factorMappingRefs
+    assert "equityReturnShock->equityReturnShock" in base.factorMappingRefs
+    assert "data/dart/finance/005930.parquet" in base.rawSourceRefs
+    assert "data/industry/metrics/semiconductor.parquet" in base.rawSourceRefs
+    assert "data/macro/quarterly-fixture" in base.rawSourceRefs
+    assert "revised-history" in base.revisedHistoryRefs
+    assert "providerObservationBatch:retained-dart-not-a-receipt" in base.providerObservationBatchRefs
+    assert "retained-dart-not-a-receipt" not in base.providerObservationBatchReceiptIds
+    assert any(ref.startswith("sourceReceiptRef:") for ref in base.pathSourceRefs)
+    assert any(ref.startswith("normalizationContractHash:") for ref in base.pathSourceRefs)
+    assert any(ref.startswith("priceSourceLegReceiptId:") for ref in base.pathSourceRefs)
+    assert any(ref.startswith("derivedReturnReceiptId:") for ref in base.pathSourceRefs)
+    assert any(ref.startswith("adjustmentPolicyHash:") for ref in base.pathSourceRefs)
+    assert "returnFormula:simpleReturn=currentClose/previousClose-1" in base.pathSourceRefs
+    assert "macroRevisionPolicy:revised-history" in base.pathSourceRefs
+    assert base.pathAdmissionReceiptId == ""
+    assert base.policyEvaluationCertificateId == ""
+    assert "explicitFutureAdjustmentPresent" in base.blockedReasons
+    assert "scoreLeaderNotRecommendation" in base.blockedReasons
+
+    assert experiment.providerObservationBatchReceiptIds == tuple(
+        dict.fromkeys(
+            receiptId for ledger in experiment.caseLedgers for receiptId in ledger.providerObservationBatchReceiptIds
+        )
+    )
+    assert experiment.priceSourceLegReceiptIds == tuple(
+        dict.fromkeys(receiptId for ledger in experiment.caseLedgers for receiptId in ledger.priceSourceLegReceiptIds)
+    )
+    assert experiment.derivedReturnReceiptIds == tuple(
+        dict.fromkeys(receiptId for ledger in experiment.caseLedgers for receiptId in ledger.derivedReturnReceiptIds)
+    )
+    assert experiment.normalizationContractHashes == tuple(
+        dict.fromkeys(
+            contractHash for ledger in experiment.caseLedgers for contractHash in ledger.normalizationContractHashes
+        )
+    )
+    assert experiment.returnTransformHashes == tuple(
+        dict.fromkeys(ledger.returnTransformHash for ledger in experiment.caseLedgers)
+    )
+
+    assert len(experiment.caseLedgerHashes) == 4
+    assert len(set(experiment.caseLedgerHashes)) == 4
+    assert all(case.pathSet.audit.horizon == 4 for case in cases)
+    assert all(len(path.steps) == 4 for case in cases for path in case.pathSet.paths)
+    assert all(len(strategy.actionsByStep) == 4 for strategy in strategies)
+    assert all(len(ledger.pathAssumptionStepHashes) == 4 for ledger in experiment.caseLedgers)
+    assert len(set(experiment.pathHistoryInputHashes)) == 1
+    assert len(set(experiment.pathAssumptionHashes)) == 4
+    assert len(set(experiment.assumptionSetHashes)) == 4
+
+    actionIds = {"priceChange", "capacityInvestment", "borrow", "repay"}
+    stateIds = {"price", "demandVolume", "unitCost", "fixedCost", "capacityUnits", "cash", "debt"}
+    for case in cases:
+        factorIds = {factor.variableId for factor in case.pathSet.factorSpecs}
+        assert factorIds == set(expectedFactorIds)
+        assert factorIds.isdisjoint(actionIds)
+        assert factorIds.isdisjoint(stateIds)
+        assert all(actionId not in step for path in case.pathSet.paths for step in path.steps for actionId in actionIds)
+        assert all(stateId not in step for path in case.pathSet.paths for step in path.steps for stateId in stateIds)
+    assert all(set(actionRow) == actionIds for strategy in strategies for actionRow in strategy.actionsByStep)
+
+    leaderSets = {ledger.scoreLeaderStrategies for ledger in experiment.caseLedgers}
+    assert len(leaderSets) >= 2
+    assert "scenarioScoreLeadersDiverge" in experiment.blockedReasons
+    assert len(experiment.strategySummaries) == 4
+    assert any(0.0 < summary.leaderFrequency < 1.0 for summary in experiment.strategySummaries)
+    assert len(experiment.fragilityCells) == 4
+    assert any(cell.regret > 0.0 for cell in experiment.cells)
+    assert any(
+        len({score.objectiveScores[0] for score in ledger.strategyScores}) > 1 for ledger in experiment.caseLedgers
+    )
+
+    repeated = runConditionalScenarioExperiment(
+        "005930",
+        inputs,
+        cases,
+        strategies,
+        debtLimit=1_000.0,
+        maxFinancing=200.0,
+        maxInvestment=200.0,
+    )
+    assert repeated.experimentHash == experiment.experimentHash
+
+    changedCases = (
+        _multiProviderLaneMatrixScenarioCase(
+            "base",
+            (0.00, 0.00, 0.07, 0.00),
+            context[4],
+            sources,
+        ),
+        *cases[1:],
+    )
+    changed = runConditionalScenarioExperiment(
+        "005930",
+        inputs,
+        changedCases,
+        strategies,
+        debtLimit=1_000.0,
+        maxFinancing=200.0,
+        maxInvestment=200.0,
+    )
+    assert changed.providerLaneLineageHashes == experiment.providerLaneLineageHashes
+    assert changed.providerObservationBatchRefs == experiment.providerObservationBatchRefs
+    assert changed.providerObservationBatchReceiptIds == experiment.providerObservationBatchReceiptIds
+    assert changed.priceSourceLegReceiptIds == experiment.priceSourceLegReceiptIds
+    assert changed.derivedReturnReceiptIds == experiment.derivedReturnReceiptIds
+    assert changed.rawSourceRefs == experiment.rawSourceRefs
+    assert changed.revisedHistoryRefs == experiment.revisedHistoryRefs
+    assert changed.pathHistoryInputHashes == experiment.pathHistoryInputHashes
+    assert changed.pathAssumptionStepHashes[0][0] == experiment.pathAssumptionStepHashes[0][0]
+    assert changed.pathAssumptionStepHashes[0][1] == experiment.pathAssumptionStepHashes[0][1]
+    assert changed.pathAssumptionStepHashes[0][2] != experiment.pathAssumptionStepHashes[0][2]
+    assert changed.pathAssumptionStepHashes[0][3] == experiment.pathAssumptionStepHashes[0][3]
+    assert changed.pathAssumptionHashes != experiment.pathAssumptionHashes
+    assert changed.assumptionSetHashes != experiment.assumptionSetHashes
+    assert changed.simulationSpecHash != experiment.simulationSpecHash
+    assert changed.resultSetHash != experiment.resultSetHash
+    assert changed.experimentHash != experiment.experimentHash
+
+    changedDataSources = (
+        _multiProviderDartFilingRegistrySource(marginShift=0.02),
+        *sources[1:],
+    )
+    changedDataCases = (
+        _multiProviderLaneMatrixScenarioCase(
+            "base",
+            (0.00, 0.00, 0.00, 0.00),
+            context[4],
+            changedDataSources,
+        ),
+        _multiProviderLaneMatrixScenarioCase(
+            "upside",
+            (0.25, 0.25, 0.20, 0.15),
+            context[4],
+            changedDataSources,
+        ),
+        _multiProviderLaneMatrixScenarioCase(
+            "stress",
+            (-0.05, -0.08, -0.08, -0.05),
+            context[4],
+            changedDataSources,
+        ),
+        _multiProviderLaneMatrixScenarioCase(
+            "shock",
+            (-0.12, -0.10, -0.08, -0.05),
+            context[4],
+            changedDataSources,
+        ),
+    )
+    changedData = runConditionalScenarioExperiment(
+        "005930",
+        inputs,
+        changedDataCases,
+        strategies,
+        debtLimit=1_000.0,
+        maxFinancing=200.0,
+        maxInvestment=200.0,
+    )
+    assert changedData.pathAssumptionHashes == experiment.pathAssumptionHashes
+    assert changedData.pathAssumptionStepHashes == experiment.pathAssumptionStepHashes
+    assert changedData.providerObservationBatchReceiptIds == experiment.providerObservationBatchReceiptIds
+    assert changedData.pathHistoryInputHashes != experiment.pathHistoryInputHashes
+    assert changedData.providerLaneLineageHashes != experiment.providerLaneLineageHashes
+    assert changedData.caseLedgerHashes != experiment.caseLedgerHashes
+    assert changedData.simulationSpecHash != experiment.simulationSpecHash
+    assert changedData.resultSetHash != experiment.resultSetHash
+    assert changedData.experimentHash != experiment.experimentHash
 
 
 def testMultivariableAdmissionRejectsTamperedFeatureCellRef(tmp_path) -> None:
