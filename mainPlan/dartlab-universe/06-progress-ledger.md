@@ -12,8 +12,13 @@
 - [x] `OCI` hub 오탐 원인 확인
 - [x] existing search sidecar, DataCore, range runtime, entity graph sidecar 재사용 경계 확인
 - [x] product, ontology, runtime, UX, execution, 3-year maintenance 설계
-- [ ] 운영자 구현 go
-- [ ] U0 attempts
+- [x] `/universe` 독립 public route 결정
+- [x] P0~U6 work packet과 commit 및 rollback 순서 작성
+- [x] attempts evidence matrix와 기존 world/search 실험 재사용 지도 작성
+- [x] `/universe` public beta, GA, 장기 route 운영 계약 작성
+- [x] U0 attempts category 생성
+- [x] U0-T01 current graph truth census 실행
+- [ ] U0 identity, evidence, assertion, projection attempts
 - [ ] U1~U2 implementation
 - [ ] U3 artifact 변경 승인 여부
 - [ ] UI 눈검수 및 push 승인
@@ -30,8 +35,9 @@
 | 2026-07-15 | Evidence on Demand 우선 | exact BM25 range와 panel source가 이미 존재 |
 | 2026-07-15 | U3는 승인 게이트 | runtime SSOT 우선, 새 bake 무승인 금지 |
 | 2026-07-15 | 2D 기본, 3D optional | 분석, 모바일, 접근성, vendor 독립성 |
-| 2026-07-15 | `/map` 진화 | 병렬 product surface와 유지보수 중복 방지 |
+| 2026-07-15 | `/universe` 독립 route | ontology, evidence, time, lens는 시장 지도와 다른 제품 작업. runtime과 artifact를 공유해 중복 방지 |
 | 2026-07-15 | 3년 운영 모델 포함 | schema, owner, deprecation, quality, incident, cost를 제품 계약으로 승격 |
+| 2026-07-15 | U0-T01 attempt 실행 | 현재 HF graph에서 sourceRef 및 availableAt을 모두 가진 observed 적격 edge 0 |
 
 ## 핵심 실측 스냅샷
 
@@ -62,12 +68,11 @@ exact edge sourceRef            0
 
 ## 구현 전 blocker
 
-1. 운영자 go가 필요하다.
-2. U0 gold positive 및 hard negative set이 없다.
-3. exact evidence resolver의 cold P95와 transfer가 아직 측정되지 않았다.
-4. `scan-screener-os`의 public valuation licensing P0가 승인 대기다. Universe는 해당 필드를 사용하지 않아야 한다.
-5. workspace의 landing 및 ui 대량 삭제는 본 작업과 무관한 기존 변경이다. 구현 시 HEAD 복구 여부와 다른 세션 소유권을 먼저 확인해야 한다.
+1. U0 gold positive 및 hard negative set이 없다.
+2. exact evidence resolver의 cold P95와 transfer가 아직 측정되지 않았다.
+3. `scan-screener-os`의 public valuation licensing P0가 승인 대기다. Universe는 해당 필드를 사용하지 않아야 한다.
+4. workspace의 landing 및 ui 대량 삭제는 본 작업과 무관한 기존 변경이다. U1 production 착수 전에 frontend host가 정상 상태인지 재검해야 한다.
 
 ## 다음 단일 행동
 
-운영자 go 이후 `tests/_attempts/dartlabUniverse/` U0만 착수한다. U0 품질 게이트를 통과하기 전 UI나 map artifact를 변경하지 않는다.
+`tests/_attempts/dartlabUniverse/`에서 U0-I01 canonical identity probe를 실행한다. U0 품질 게이트를 통과하기 전 UI나 map artifact를 변경하지 않는다.

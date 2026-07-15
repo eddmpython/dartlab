@@ -30,9 +30,11 @@ Bottom Time and Coverage Rail
 
 모바일은 Scene, Lens, Evidence를 탭으로 분리하고 선택 상태는 유지한다.
 
+이 화면은 `/universe`에만 존재한다. `/map`은 기존 시장 지도 화면을 유지하며 두 route의 navigation link만 연결한다.
+
 ## 3. 첫 진입
 
-첫 화면은 34개 산업 atlas만 연다.
+`/universe` 첫 화면은 34개 산업 atlas만 연다.
 
 - 제목: "DartLab Universe"
 - subline: 산업 수, public entity 수, dataAsOf
@@ -179,3 +181,8 @@ share URL에는 다음만 넣는다.
 
 각 demo는 graph 조작, table 동등 경로, share URL 재현을 모두 확인한다.
 
+추가 route acceptance는 다음과 같다.
+
+6. `/map` deep link와 기존 지도 작업이 회귀하지 않음
+7. `/universe` refresh와 back/forward가 같은 ProjectionSpec을 복원
+8. `/map`과 `/universe`가 artifact를 중복 fetch하지 않고 공유 cache key 사용

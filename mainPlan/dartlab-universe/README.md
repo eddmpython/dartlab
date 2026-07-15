@@ -1,6 +1,6 @@
 # DartLab Universe
 
-> 상태: 제품 설계 완료, 구현 미착수
+> 상태: 실행 플레이북 확장 및 U0 근거 실험 착수
 > 기준일: 2026-07-15 KST
 > 제품명: DartLab Universe
 > 정본 경계: HF 데이터는 진실, 온톨로지는 의미 계약, 엔진은 렌즈, Universe는 요청 시점 투영
@@ -26,7 +26,8 @@ DartLab의 데이터를 공개 웹에서 우주처럼 탐색하는 제품은 가
 - 관계 하나와 그 관계를 뒷받침하는 여러 assertion을 분리한다.
 - 사실, 파생, 추론, 시나리오를 같은 엣지 스타일이나 같은 신뢰 등급으로 섞지 않는다.
 - 2D 분석 화면이 기본이다. 3D Galaxy는 같은 `ProjectionSpec`을 소비하는 지연 로드 렌더러일 뿐이다.
-- 기존 `/map`을 진화시킨다. 별도 `/universe` 제품을 병렬로 만들어 표면을 둘로 갈라놓지 않는다.
+- public 제품 경로는 독립 `/universe`다. 기존 `/map`은 현재 시장 지도 역할을 유지한다.
+- 라우트와 제품 상태는 분리하지만 DataCore, map artifact, renderer adapter, evidence resolver는 공유한다. route 간 코드 복사는 금지한다.
 - 공개와 로컬은 같은 HF 직독 배선을 쓴다. AI와 무거운 동적 계산만 로컬 서버 또는 기존 `/api/ask`가 담당한다.
 - 새 bake나 그래프 사본은 런타임 실측 실패와 운영자 명시 승인 전에는 만들지 않는다.
 
@@ -50,36 +51,40 @@ DartLab의 데이터를 공개 웹에서 우주처럼 탐색하는 제품은 가
 5. [04-product-ux.md](04-product-ux.md): 2D 우주, Evidence Drawer, Time Lens, Galaxy 렌즈
 6. [05-execution-validation-maintenance.md](05-execution-validation-maintenance.md): 파일과 심볼, 테스트, 단계, 3년 유지보수, 롤백
 7. [06-progress-ledger.md](06-progress-ledger.md): 결정 및 승인 대기 원장
+8. [07-implementation-playbook.md](07-implementation-playbook.md): 작업자가 순서대로 실행하는 work packet, commit, release 절차
+9. [08-attempts-evidence-matrix.md](08-attempts-evidence-matrix.md): `_attempts` 가설, 실측, falsifier, 졸업 원장
+10. [09-public-route-release-contract.md](09-public-route-release-contract.md): `/universe` 독립 라우트, `/map` 경계, public beta와 장기 운영 계약
 
 ## 구현 순서
 
-1. U0: `tests/_attempts/dartlabUniverse/`에서 현 그래프 품질과 assertion 계약을 실데이터로 검증한다.
-2. U1: 기존 atlas를 27KB로 먼저 띄우고 ecosystem, industry, company를 확대 시점에 지연 로드한다.
+1. U0: `tests/_attempts/dartlabUniverse/`에서 현 그래프 품질과 assertion 계약을 실데이터로 검증한다. 첫 truth census는 착수했다.
+2. U1: 독립 `/universe` route에서 기존 atlas를 27KB로 먼저 띄우고 ecosystem, industry, company를 확대 시점에 지연 로드한다.
 3. U2: 엣지 클릭 시 기존 브라우저 검색 sidecar와 panel range read로 exact evidence를 찾는 Evidence on Demand를 붙인다.
 4. U3: 런타임 근거 확인이 성능 예산을 넘는다는 측정이 있을 때만 기존 map artifact의 additive schema 확장을 토론한다.
 5. U4: DART와 EDGAR의 동형 16컬럼 panel과 표준 재무를 사용해 시장간 비교 장면을 연다.
 6. U5: 2D 제품과 근거 품질이 졸업한 뒤 같은 projection 계약 위에 선택적 3D Galaxy 렌즈를 얹는다.
+7. U6: 같은 `/universe` route를 local review, public beta, GA 순서로 승격하고 운영 SLO와 rollback 훈련을 통과한다.
 
 ## 승인 게이트
 
 - 본 폴더는 설계 정본이다. 코드 구현 착수는 운영자 go 이후다.
 - `buildIndustryMap.py` 또는 HF map artifact 스키마를 바꾸는 U3는 런타임 실패 실측과 별도 명시 승인이 필요하다.
-- `/map`과 UI 변경은 커밋까지 자율 가능하지만 눈검수와 명시 승인 전 push하지 않는다.
+- `/universe`와 공유 UI 변경은 커밋까지 자율 가능하지만 눈검수와 명시 승인 전 push하지 않는다.
 - `scan-screener-os`에 기록된 네이버 파생 valuation 공개 문제를 해결하기 전 Universe는 해당 필드를 확대 노출하거나 새 장면에 사용하지 않는다.
 
 ## 영향 파일
 
 상세는 `05-execution-validation-maintenance.md`가 정본이다. 핵심 영향 후보는 다음과 같다.
 
-- `tests/_attempts/dartlabUniverse/assertionContract.py`
-- `tests/_attempts/dartlabUniverse/projectionProbe.py`
+- `tests/_attempts/dartlabUniverse/ontology/assertionContract.py`
+- `tests/_attempts/dartlabUniverse/projection/boundedProjection.py`
 - `ui/packages/contracts/src/universe.ts`
 - `ui/packages/runtime/src/data/universe/projection.ts`
 - `ui/packages/runtime/src/data/universe/evidence.ts`
-- `ui/packages/surfaces/src/map/components/UniverseScene.svelte`
-- `ui/packages/surfaces/src/map/components/EvidenceDrawer.svelte`
+- `ui/packages/surfaces/src/universe/UniverseSurface.svelte`
+- `ui/packages/surfaces/src/universe/components/EvidenceDrawer.svelte`
 - `landing/src/lib/browser/dartlabBrowser.ts`
-- `landing/src/routes/map/+page.svelte`
+- `landing/src/routes/universe/+page.svelte`
 - `src/dartlab/industry/types.py`
 - `src/dartlab/industry/build/edges.py`
 - `.github/scripts/prebuild/buildIndustryMap.py`
@@ -90,7 +95,7 @@ DartLab의 데이터를 공개 웹에서 우주처럼 탐색하는 제품은 가
 
 - 신규 계약: `ProjectionSpec`, `UniverseNode`, `UniverseRelation`, `UniverseAssertion`, `EvidencePointer`
 - 신규 런타임: `compileProjection`, `loadProjectionLevel`, `resolveAssertionEvidence`, `applyKnowledgeCutoff`
-- 기존 로더 분리: `createDartlabBrowser().marketMap()`을 atlas 우선 지연 로드 계약으로 정렬
+- 기존 map artifact를 읽는 공유 로더를 atlas 우선 지연 로드 계약으로 정렬하고 `/map`과 `/universe`가 같은 구현을 소비
 - 승인 후에만 변경: `IndustryEdge`, `extractDocsEdges`, `extractRawMaterialEdges`, `buildAllEdges`, `buildCompanyEgograph`, `_buildMeta`
 
 ## 테스트
@@ -104,7 +109,7 @@ DartLab의 데이터를 공개 웹에서 우주처럼 탐색하는 제품은 가
 
 ## 롤백
 
-- U1과 U2는 새 scene과 loader 단위로 끌 수 있다. 기존 `/map` atlas와 company card를 보존한다.
+- U1과 U2는 `/universe` route와 새 scene loader 단위로 끌 수 있다. 기존 `/map`은 변경 없이 보존한다.
 - schema는 writer current, reader current 및 직전 1개 버전을 지원한다. 불일치 시 atlas-only로 fail closed한다.
 - 새 artifact를 만들지 않는 U0~U2는 HF 원격 롤백이 없다.
 - 승인된 U3는 기존 map manifest pointer와 `buildId`로 이전 세대를 복구한다. additive 필드만 허용하고 기존 필드 삭제는 별도 major migration으로 분리한다.
@@ -122,6 +127,6 @@ DartLab의 데이터를 공개 웹에서 우주처럼 탐색하는 제품은 가
 
 ### 전문 PM 평가
 
-사용자의 진짜 목표는 거대한 점구름이 아니라 DartLab만이 가능한 데이터 탐색 경험이다. 제품 서명은 "클릭하면 연결, 근거, 시간, 엔진 해석이 한 장면에서 열린다"로 명확하다. 2D를 기본으로 둔 것은 우주라는 감성을 포기한 것이 아니라 분석 가능성과 모바일 접근성을 지킨 결정이다. 3D는 증거가 있는 제품 위에만 추가한다.
+사용자의 진짜 목표는 거대한 점구름이 아니라 DartLab만이 가능한 데이터 탐색 경험이다. 제품 서명은 "클릭하면 연결, 근거, 시간, 엔진 해석이 한 장면에서 열린다"로 명확하다. `/universe`를 독립 제품 경로로 두어 브랜드와 탐색 문법을 키우고, `/map`은 현재 시장 지도 역할을 유지한다. 2D를 기본으로 둔 것은 우주라는 감성을 포기한 것이 아니라 분석 가능성과 모바일 접근성을 지킨 결정이다. 3D는 증거가 있는 제품 위에만 추가한다.
 
 발견한 갭은 사용자 수용 기준으로 반영했다. 첫 화면 속도, evidence open 시간, 공유 URL 재현, candidate와 fact의 시각 분리, 시장간 비교, 장애 시 atlas-only 동작을 제품 성공 조건으로 넣었다. "모든 데이터를 노드화"는 범위에서 제거했지만, 모든 데이터는 검색과 lens를 통해 접근 가능하게 남겨 대규모 자산의 가치를 보존했다.

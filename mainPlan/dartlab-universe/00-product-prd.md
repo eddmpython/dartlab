@@ -88,7 +88,8 @@ HF Parquet과 기존 map 및 search artifact가 데이터 정본이다. Universe
 
 ## 7. MVP 범위
 
-- 기존 `/map`의 atlas, industry, company 3단계 LOD를 지연 로드 구조로 정렬
+- public `/universe` 독립 route와 검색, lens, scene, evidence 제품 shell
+- 기존 map artifact의 atlas, industry, company 3단계 LOD를 공유 런타임에서 지연 로드
 - fact와 candidate relation의 시각 및 데이터 계약 분리
 - exact evidence를 on demand로 해소하는 Evidence Drawer
 - validAt, knowledgeAsOf, dataAsOf 표시
@@ -106,6 +107,7 @@ HF Parquet과 기존 map 및 search artifact가 데이터 정본이다. Universe
 - 현재 저신뢰 20,560개 relation을 검증 없이 사실로 공개
 - 네이버 localOnly 데이터의 public 확대 노출
 - 새 공개 Python 엔진이나 별도 public API surface 신설
+- `/map`을 `/universe`로 이름만 바꾸거나 두 route에 동일 화면을 복사
 
 ## 9. 성공 지표
 
@@ -146,4 +148,3 @@ HF Parquet과 기존 map 및 search artifact가 데이터 정본이다. Universe
 | U3 | 필요한 경우 근거 조회 가속 | 기존 map additive schema | 런타임 실패 실측과 승인 |
 | U4 | 한국과 미국 비교 | stable global IDs와 cross-market panel | 동일 질문 20개 conformance |
 | U5 | 발견과 공유의 우주 감성 | renderer adapter | 2D 졸업 후, 성능 및 접근성 동등 |
-

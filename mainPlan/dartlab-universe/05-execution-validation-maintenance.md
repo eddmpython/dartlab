@@ -6,8 +6,10 @@
 - 새 capability는 `tests/_attempts/dartlabUniverse/`에서 실데이터로 졸업한 뒤 production으로 이동한다.
 - runtime HF 직독을 먼저 소진한다.
 - U3 artifact schema 확장은 측정과 운영자 승인 전 착수하지 않는다.
-- 기존 `/map`, search, scan, industry, capability 계획과 중복 기능을 만들지 않는다.
+- `/universe`를 독립 제품 route로 만들되 `/map`, search, scan, industry, capability와 데이터 및 runtime 기능을 중복 구현하지 않는다.
 - UI는 브라우저 눈검수 전 push하지 않는다.
+
+work packet 단위 실행 순서와 commit 경계는 `07-implementation-playbook.md`, attempt 가설과 falsifier는 `08-attempts-evidence-matrix.md`, route와 release는 `09-public-route-release-contract.md`가 정본이다.
 
 ## 2. Phase U0: Truth Gate
 
@@ -38,14 +40,15 @@
 
 ### 목표
 
-기존 `/map`을 atlas-first semantic LOD로 바꾸고 scene contract를 도입한다.
+독립 `/universe` route에 atlas-first semantic LOD와 scene contract를 도입하고, 기존 `/map`은 현재 제품으로 유지한다.
 
 ### 작업
 
 - Universe contract type 추가
 - `marketMap()` 일괄 load를 meta, atlas, industry, company로 분리
 - Projection Compiler와 deterministic limit
-- existing `IndustryAtlas`, `EcosystemMap`, `CompanyCard`를 scene input으로 정렬
+- existing `IndustryAtlas`, `EcosystemMap`, `CompanyCard`의 low-level renderer와 artifact loader만 adapter로 재사용
+- `/universe` route와 독립 `UniverseSurface` 추가
 - table equivalent view
 - diagnostics와 build/dataAsOf 표시
 
@@ -137,19 +140,43 @@ DART와 EDGAR의 동형 panel 및 표준 finance로 동일 질문을 비교한�
 - peak heap 및 fps 예산 통과
 - 3D 전용 truth 또는 기능 0
 
+## 7.1 Phase U6: Public Beta and GA
+
+### 목표
+
+같은 `/universe` route를 local review, public beta, GA 순서로 승격하고 운영 계약을 실제 장애와 rollback으로 검증한다.
+
+### 작업
+
+- production build의 실제 `/universe` 눈검수
+- desktop 및 mobile network, heap, accessibility 검증
+- public beta 14일 SLO 관찰
+- relation lane, renderer, route, map buildId rollback drill
+- navigation, SEO, share URL, stale buildId 동작 확인
+
+### 종료 조건
+
+- critical incident 0
+- fact sourceRef coverage 100%
+- hard negative false accept 1% 이하
+- atlas availability 99.9%
+- rollback 15분 이내
+- 운영자 UI 눈검수와 push 승인
+
 ## 영향 파일
 
 변경 범위는 U0 attempts, U1~U2 runtime 및 surface, 승인 후 U3 builder로 분리한다. 각 phase는 아래 명시 경로 밖의 파일을 임의로 넓히지 않는다.
 
 ### U0 신규 attempts
 
-- `tests/_attempts/dartlabUniverse/assertionContract.py`: canonical payload, assertionId, admission rule
-- `tests/_attempts/dartlabUniverse/graphCensus.py`: source, type, degree, hub, self-loop, evidence coverage
-- `tests/_attempts/dartlabUniverse/evidenceResolver.py`: edge hint에서 sourceRef 찾는 실험
-- `tests/_attempts/dartlabUniverse/projectionProbe.py`: semantic LOD, deterministic truncation, time filter
-- `tests/_attempts/dartlabUniverse/goldAssertions.jsonl`: reviewed positive
-- `tests/_attempts/dartlabUniverse/hardNegativeAssertions.jsonl`: 오탐과 충돌
-- `tests/_attempts/dartlabUniverse/results.md`: Inputs, Method, Results, Limits, Decision
+- `tests/_attempts/dartlabUniverse/truth/graphTruthProbe.py`: source, type, degree, hub, self-loop, evidence coverage
+- `tests/_attempts/dartlabUniverse/identity/entityIdentityProbe.py`: corpCode, CIK, security 분리
+- `tests/_attempts/dartlabUniverse/evidence/exactEvidenceProbe.py`: edge hint에서 sourceRef 찾는 실험
+- `tests/_attempts/dartlabUniverse/ontology/assertionContract.py`: canonical payload, assertionId, admission rule
+- `tests/_attempts/dartlabUniverse/projection/boundedProjection.py`: semantic LOD, deterministic truncation, time filter
+- `tests/_attempts/dartlabUniverse/fixtures/reviewedPositive.jsonl`: reviewed positive
+- `tests/_attempts/dartlabUniverse/fixtures/hardNegative.jsonl`: 오탐과 충돌
+- `tests/_attempts/dartlabUniverse/README.md`: Inputs, Method, Results, Limits, Decision 원장
 
 ### U1 및 U2 production 후보
 
@@ -160,18 +187,19 @@ DART와 EDGAR의 동형 panel 및 표준 finance로 동일 질문을 비교한�
 - `ui/packages/runtime/src/data/universe/evidence.ts`: search 및 panel evidence resolver
 - `ui/packages/runtime/src/data/universe/time.ts`: validAt, knownAt filter
 - `ui/packages/runtime/src/data/universe/index.ts`: public runtime exports
-- `ui/packages/surfaces/src/map/components/UniverseScene.svelte`: scene orchestrator
-- `ui/packages/surfaces/src/map/components/EvidenceDrawer.svelte`: assertion and source surface
-- `ui/packages/surfaces/src/map/components/TimeLens.svelte`: bitemporal controls
-- `ui/packages/surfaces/src/map/components/LensTray.svelte`: existing capability lens selection
-- `ui/packages/surfaces/src/map/components/RelationTable.svelte`: graph-equivalent accessible view
+- `ui/packages/surfaces/src/universe/UniverseSurface.svelte`: scene orchestrator
+- `ui/packages/surfaces/src/universe/components/EvidenceDrawer.svelte`: assertion and source surface
+- `ui/packages/surfaces/src/universe/components/TimeLens.svelte`: bitemporal controls
+- `ui/packages/surfaces/src/universe/components/LensTray.svelte`: existing capability lens selection
+- `ui/packages/surfaces/src/universe/components/RelationTable.svelte`: graph-equivalent accessible view
+- `ui/packages/surfaces/src/universe/renderers/cosmosRenderer.ts`: existing cosmos adapter
 - `ui/packages/surfaces/src/map/components/EcosystemMap.svelte`: UniverseRenderer adapter
 - `ui/packages/surfaces/src/map/components/IndustryAtlas.svelte`: scene input adapter
-- `ui/packages/surfaces/src/map/index.ts`: exports
+- `ui/packages/surfaces/src/universe/index.ts`: exports
 - `landing/src/lib/browser/dartlabBrowser.ts`: atlas-first loader methods
 - `landing/src/lib/browser/types.ts`: bundle types
-- `landing/src/routes/map/+page.ts`: initial meta 및 atlas only
-- `landing/src/routes/map/+page.svelte`: Universe shell and state
+- `landing/src/routes/universe/+page.ts`: initial meta 및 atlas only
+- `landing/src/routes/universe/+page.svelte`: Universe shell and state
 
 ### U3 승인 후 후보
 
@@ -204,7 +232,7 @@ DART와 EDGAR의 동형 panel 및 표준 finance로 동일 질문을 비교한�
 | `loadCompanyProjection` | U1 | L3 lazy |
 | `resolveAssertionEvidence` | U2 | hint to exact Ref |
 | `applyKnowledgeCutoff` | U2 | availableAt and knowledgeAsOf filter |
-| `marketMap` | U1 | compatibility wrapper, eager default 금지 |
+| `marketMap` | U1 | `/map` compatibility wrapper, eager default 금지 |
 | `IndustryEdge` | U3 | additive compatibility only |
 | `extractDocsEdges` | U3 | partial substring match 금지, source row 보존 |
 | `buildAllEdges` | U3 | assertion 보존, relation grouping은 후단 |
@@ -270,7 +298,7 @@ DART와 EDGAR의 동형 panel 및 표준 finance로 동일 질문을 비교한�
 uv run python -X utf8 tests/run.py preflight
 ```
 
-추가로 영향 package의 check와 test, `/map` 실제 브라우저 눈검수, HF range 실측을 수행한다. 전체 `pytest tests/ -v`는 사용하지 않는다.
+추가로 영향 package의 check와 test, `/universe` 및 `/map` 실제 브라우저 눈검수, HF range 실측을 수행한다. 전체 `pytest tests/ -v`는 사용하지 않는다.
 
 ## 8. 3년 유지보수 모델
 
@@ -351,7 +379,7 @@ uv run python -X utf8 tests/run.py preflight
 
 ## 롤백
 
-롤백 단위는 phase와 schema version이다. 한 source나 renderer 실패가 전체 `/map`을 되돌리게 만들지 않고, 가장 작은 안전 단위만 비활성화한다.
+롤백 단위는 phase와 schema version이다. 한 source나 renderer 실패가 `/map`까지 되돌리게 만들지 않고, `/universe`의 가장 작은 안전 단위만 비활성화한다.
 
 ### U0
 
@@ -359,7 +387,7 @@ attempts와 docs만 있다. production 영향 0.
 
 ### U1
 
-compatibility wrapper로 기존 `marketMap()`을 유지한다. 새 scene flag를 끄면 기존 map component가 old bundle을 소비한다. route와 data artifact는 변하지 않는다.
+기존 `/map`과 `marketMap()`을 유지한다. `/universe` release state를 disabled로 바꾸면 기존 map과 data artifact는 변하지 않는다.
 
 ### U2
 
@@ -389,6 +417,6 @@ market filter를 KR-only로 되돌린다. KR canonical ID와 scene은 영향받�
 
 ### 전문 PM 평가
 
-제품은 "우주처럼 보인다"가 아니라 "데이터가 연결되고 근거로 돌아간다"로 성공을 정의한다. 사용자가 즉시 체감할 순서는 atlas 속도, fact와 candidate 분리, evidence drawer, time lens다. 3D를 마지막에 둔 것은 scope 축소가 아니라 거짓 relation을 화려하게 확대하는 위험을 제거한 것이다.
+제품은 "우주처럼 보인다"가 아니라 "데이터가 연결되고 근거로 돌아간다"로 성공을 정의한다. `/universe` 독립 route가 이 약속의 owner다. 사용자가 즉시 체감할 순서는 atlas 속도, fact와 candidate 분리, evidence drawer, time lens다. 3D를 마지막에 둔 것은 scope 축소가 아니라 거짓 relation을 화려하게 확대하는 위험을 제거한 것이다.
 
 MVP는 KR relation에서 시작하지만 DART와 EDGAR 동형 panel을 계약에 포함해 cross-market 천장을 열어뒀다. 모든 관측을 node로 만들지 않아도 search와 lens로 58GB active truth를 접근할 수 있으므로 "엄청난 양의 데이터"라는 목표를 잃지 않는다.

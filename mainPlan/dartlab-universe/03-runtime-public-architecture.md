@@ -20,7 +20,24 @@ flowchart LR
     G -. optional .-> R3["3D Galaxy Renderer"]
 ```
 
-public path에는 graph server가 없다. 브라우저가 기존 DataCore로 작은 map JSON과 필요한 Parquet range만 읽는다.
+public `/universe` path에는 graph server가 없다. 브라우저가 기존 DataCore로 작은 map JSON과 필요한 Parquet range만 읽는다. `/map`은 기존 시장 지도 route로 남고, 두 route는 map artifact와 loader를 공유한다.
+
+## 1.1 route 경계
+
+```text
+/map
+  현재 시장 지도 제품
+  기존 동작과 deep link 유지
+
+/universe
+  ontology, evidence, time, lens를 묶은 독립 제품
+  share URL과 scene state의 owner
+
+shared runtime
+  HF origin, cache, request dedup, map artifact loader, evidence resolver
+```
+
+`/universe`가 `/map` route component를 import하거나 반대로 import하지 않는다. 재사용 단위는 route 아래가 아니라 contracts, runtime, renderer adapter다.
 
 ## 2. semantic LOD
 
@@ -35,9 +52,9 @@ public path에는 graph server가 없다. 브라우저가 기존 DataCore로 작
 
 Zoom은 장식이 아니라 query boundary다. L0에서 ecosystem 전체를 받지 않는다.
 
-## 3. loader 분리
+## 3. 공유 loader 분리
 
-현재 `marketMap()`의 일괄 `Promise.all`을 다음 의미로 나눈다.
+현재 `marketMap()`의 일괄 `Promise.all`을 다음 의미로 나눈다. `/map` compatibility 호출과 `/universe` projection runtime이 이 함수를 함께 소비한다.
 
 ```text
 loadUniverseMeta()
@@ -186,3 +203,12 @@ renderer가 ontology type을 소유하지 않는다. package 교체는 adapter �
 
 사용자 query 원문과 투자 관심사는 기본 수집하지 않는다.
 
+## 14. public route artifact
+
+- SvelteKit route owner: `landing/src/routes/universe/`
+- surface owner: `ui/packages/surfaces/src/universe/`
+- data contract owner: `ui/packages/contracts/src/universe.ts`
+- runtime owner: `ui/packages/runtime/src/data/universe/`
+- public URL state owner: `ui/packages/surfaces/src/universe/url.ts`
+- `/map`은 Universe URL state나 Evidence Drawer를 소유하지 않는다.
+- active frontend 대량 삭제가 해소되기 전 U1 production 파일은 만들지 않는다. U0 attempts는 이 경계와 무관하게 진행한다.
