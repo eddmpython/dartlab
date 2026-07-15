@@ -80,7 +80,7 @@ Python demo의 module docstring에는 `결과` 섹션을 둔다. 출력 파일�
 | U0-T01 | 현재 graph가 fact로 입장 가능한가 | HF ecosystem | sourceRef와 availableAt coverage | 기존 edge candidate 강등 | 완료 |
 | U0-T02 | exact admission 필드가 실제 있는가 | HF ecosystem과 source candidates | span, section, direction, time, policy 분리 계수 | current edge candidate 유지 | 완료 |
 | U0-I01 | canonical legal entity ID가 복원되는가 | KR 50, US 30, security와 filing sample | exact ID 100%, ambiguous auto resolve 0 | reference resolver 우선 보강 | 계약 완료, historical registry 차단 |
-| U0-E01 | edge hint에서 exact source를 찾는가 | positive 100, negative 100 | resolution 95%, false accept 1% 이하 | predicate별 source lane 재설계 | 대기 |
+| U0-E01 | edge hint에서 exact source를 찾는가 | search catalog 381,149행과 synthetic positive 및 negative | resolution 95%, false accept 1% 이하 | predicate별 source lane 재설계 | 계약 완료, live source와 reviewed gold 차단 |
 | U0-O01 | revision과 시간을 보존하는가 | multi-filing fixture | history 손실 0, look-ahead 0 | assertion schema 수정 | 대기 |
 | U0-P01 | bounded scene이 결정론적인가 | atlas, industry, company | bounds 100%, hash 일치 100% | priority/truncation 수정 | 대기 |
 | U0-S01 | source 전체가 재현 가능한가 | map, search, panel, finance, catalog | source version 또는 unreplayable 100% | exact replay 문구 금지 | 완료, capability unreplayable |
@@ -335,6 +335,40 @@ liveReady                            false
 ```
 
 판정: exact provider identifier와 entity, security, filing kind 분리 contract는 합격이다. 그러나 security issuer link, alias validity와 special-case gold가 불완전해 current lookup을 historical identity로 승격할 수 없다. 이름과 ticker의 first-row 또는 fuzzy 해소는 금지하고 reference owner 보강 전 live registry를 차단한다.
+
+## 4.8 U0-E01 결과
+
+명령:
+
+```powershell
+uv run python -X utf8 tests/_attempts/dartlabUniverse/evidence/exactEvidenceProbe.py
+```
+
+결과:
+
+```text
+catalogFileCount                         3
+catalogRowCount                    381,149
+documentRowCount              381,149/381,149
+sectionLocatorRowCount         381,149/381,149
+sourceRefRowCount              381,149/381,149
+contentHashRowCount            381,149/381,149
+sourceDataAsOfRowCount         381,149/381,149
+adapterVersionRowCount         381,149/381,149
+exactTextLocatorRowCount                     0
+exactTableLocatorRowCount                    0
+exactTimeRowCount                            0
+immutableSourceVersionRowCount               0
+semanticDirectionRowCount                    0
+assertionEvidenceReadyRowCount               0
+reviewedPositiveCount                    0/100
+reviewedHardNegativeCount                0/100
+publicTransferMetricsReady               false
+syntheticRegression                        8/8 PASS
+liveReady                                false
+```
+
+판정: Existing search catalog는 document와 section 수준의 exact lookup 후보로는 완전하지만 assertion-grade evidence는 아니다. Whole-section sourceRef, content hash, dataAsOf, adapter version을 char span, table row/header, availability timestamp, immutable source bytes version으로 확대 해석하지 않는다. Synthetic resolver는 text와 table positive를 해소하고 wrong entity, wrong predicate, unknown direction, missing time, mutable version, altered locator, multiple exact source를 모두 fail closed했다. Resolver contract는 합격이지만 reviewed 100 및 100 gold, live exact field, public cold 및 incremental transfer가 없어 live evidence admission은 `revise`로 차단한다.
 
 ## 5. existing attempts 재사용 지도
 

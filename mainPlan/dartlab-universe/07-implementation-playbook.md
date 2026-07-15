@@ -297,6 +297,8 @@ kill: 3D 또는 canvas에서만 가능한 핵심 작업이 생기면 해당 rend
 - shared cold bootstrap과 edge incremental transfer를 분리 기록
 - provisional first cold 4MB 이하, incremental 2MB 이하 또는 U3 토론 근거로 기록
 
+2026-07-15 실행 결과: DART panel, EDGAR panel, allFilings search catalog 3개와 381,149행을 전수 센서스했다. Document, section, sourceRef, contentHash, sourceDataAsOf, adapter version은 모두 381,149/381,149였지만 exact text span, table row/header, sourcePublishedAt 및 availableAt, row-level immutable source version, predicate 및 direction은 모두 0이었다. Synthetic resolver 8/8에서 text와 table exact pointer를 해소하고 wrong entity와 predicate, unknown direction, missing time, mutable source version, locator drift, multiple exact source를 fail closed했다. Resolver contract는 완료했지만 reviewed positive 100과 hard negative 100은 0이고 public cold 및 incremental transfer도 미측정이다. Live assertion evidence admission은 차단하며 상세 evidence는 `tests/_attempts/dartlabUniverse/evidence/README.md`가 소유한다.
+
 ### U0-O01 assertion and bitemporal contract
 
 목표: 같은 relation의 여러 공시, 정정, 시점이 파괴되지 않는 assertion identity를 증명한다.
