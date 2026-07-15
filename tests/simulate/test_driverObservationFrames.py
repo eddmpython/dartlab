@@ -4324,7 +4324,78 @@ def testConditionalPlayControlPatchExecutesAssumptionAndStrategyReplays(tmp_path
     assert patchedLawExperiment.recommendation is None
 
     conditionControl = next(row for row in controlSurface.rows if row.semanticPlane == "conditionFactor")
-    with pytest.raises(ScenarioCompositionError, match="conditionFactor control patch requires"):
+    conditionPatch = ConditionalPlayControlPatch(
+        controlId=conditionControl.controlId,
+        baseSurfaceHash=controlSurface.surfaceHash,
+        baseRowHash=conditionControl.rowHash,
+        value=dict(conditionControl.valueSummary)["mean"] + 0.08,
+        patchRef="control://condition/factor-overlay",
+        reason="operator adds a future condition overlay",
+        claim="The selected future condition factor is shifted by an explicit operator overlay.",
+        falsifier="Independent future data can later reject this overlay assumption.",
+    )
+    conditionExecution = executeConditionalPlayControlPatch(
+        "005930",
+        inputs,
+        cases,
+        strategies,
+        experiment,
+        (conditionPatch,),
+        debtLimit=1_000.0,
+        maxFinancing=200.0,
+        maxInvestment=200.0,
+    )
+    patchedConditionExperiment = conditionExecution.patchedExperiment
+    assert conditionExecution.semanticPlane == "conditionFactor"
+    assert conditionExecution.impactRows[0].missingExpectedHashImpacts == ()
+    assert conditionExecution.impactRows[0].forbiddenHashViolations == ()
+    assert "pathAssumptionHash" in conditionExecution.impactRows[0].changedHashImpacts
+    assert "parameterHash" in conditionExecution.impactRows[0].changedHashImpacts
+    assert "simulationSpecHash" in conditionExecution.impactRows[0].changedHashImpacts
+    assert "resultSetHash" in conditionExecution.impactRows[0].changedHashImpacts
+    assert "tracePanelHash" in conditionExecution.impactRows[0].changedHashImpacts
+    assert "providerLaneLineageHash" in conditionExecution.impactRows[0].unchangedHashImpacts
+    assert "pathHistoryInputHash" in conditionExecution.impactRows[0].unchangedHashImpacts
+    assert "strategySetHash" in conditionExecution.impactRows[0].unchangedHashImpacts
+    assert patchedConditionExperiment.providerLaneLineageHashes == experiment.providerLaneLineageHashes
+    assert (
+        patchedConditionExperiment.providerObservationBatchReceiptIds == experiment.providerObservationBatchReceiptIds
+    )
+    assert patchedConditionExperiment.priceSourceLegReceiptIds == experiment.priceSourceLegReceiptIds
+    assert patchedConditionExperiment.derivedReturnReceiptIds == experiment.derivedReturnReceiptIds
+    assert patchedConditionExperiment.rawSourceRefs == experiment.rawSourceRefs
+    assert patchedConditionExperiment.revisedHistoryRefs == experiment.revisedHistoryRefs
+    assert patchedConditionExperiment.pathHistoryInputHashes == experiment.pathHistoryInputHashes
+    assert patchedConditionExperiment.strategySetHash == experiment.strategySetHash
+    targetIndex = next(
+        index for index, ledger in enumerate(experiment.caseLedgers) if ledger.caseId == conditionControl.caseId
+    )
+    assert patchedConditionExperiment.pathAssumptionHashes[targetIndex] != experiment.pathAssumptionHashes[targetIndex]
+    assert patchedConditionExperiment.assumptionSetHashes[targetIndex] != experiment.assumptionSetHashes[targetIndex]
+    assert patchedConditionExperiment.caseLedgerHashes[targetIndex] != experiment.caseLedgerHashes[targetIndex]
+    for index, ledger in enumerate(experiment.caseLedgers):
+        if index == targetIndex:
+            continue
+        assert patchedConditionExperiment.pathAssumptionHashes[index] == ledger.pathAssumptionHash
+        assert patchedConditionExperiment.assumptionSetHashes[index] == experiment.assumptionSetHashes[index]
+        assert patchedConditionExperiment.caseLedgerHashes[index] == experiment.caseLedgerHashes[index]
+    patchedConditionLedger = patchedConditionExperiment.caseLedgers[targetIndex]
+    overlayFactorIds = tuple(
+        factorId for factorId in patchedConditionLedger.factorIds if factorId.startswith("conditionOverlay__")
+    )
+    assert overlayFactorIds
+    overlayExposures = tuple(
+        exposure for exposure in patchedConditionLedger.exposureLedgers if exposure.sourceVariableId in overlayFactorIds
+    )
+    assert overlayExposures
+    assert all(exposure.evidenceKind == "explicitAssumption" for exposure in overlayExposures)
+    assert all(not exposure.admissionReceiptId for exposure in overlayExposures)
+    assert patchedConditionLedger.scenarioPathPackageReceiptId == ""
+    assert patchedConditionExperiment.playReplayReport is not None
+    assert patchedConditionExperiment.playReplayReport.playReplayHash != experiment.playReplayReport.playReplayHash
+    assert patchedConditionExperiment.recommendation is None
+
+    with pytest.raises(ScenarioCompositionError, match="condition factor overlay needs claim and falsifier"):
         executeConditionalPlayControlPatch(
             "005930",
             inputs,
@@ -4336,8 +4407,30 @@ def testConditionalPlayControlPatchExecutesAssumptionAndStrategyReplays(tmp_path
                     controlId=conditionControl.controlId,
                     baseSurfaceHash=controlSurface.surfaceHash,
                     baseRowHash=conditionControl.rowHash,
-                    value=0.1,
-                    patchRef="control://condition/direct-history-mutation",
+                    value=dict(conditionControl.valueSummary)["mean"] + 0.09,
+                    patchRef="control://condition/missing-claim",
+                ),
+            ),
+            debtLimit=1_000.0,
+            maxFinancing=200.0,
+            maxInvestment=200.0,
+        )
+    with pytest.raises(ScenarioCompositionError, match="condition factor patch provenance cannot mimic"):
+        executeConditionalPlayControlPatch(
+            "005930",
+            inputs,
+            cases,
+            strategies,
+            experiment,
+            (
+                ConditionalPlayControlPatch(
+                    controlId=conditionControl.controlId,
+                    baseSurfaceHash=controlSurface.surfaceHash,
+                    baseRowHash=conditionControl.rowHash,
+                    value=dict(conditionControl.valueSummary)["mean"] + 0.1,
+                    patchRef="providerObservationBatch:pretend",
+                    claim="Unsafe provider-like provenance should not be accepted.",
+                    falsifier="Provider receipt validation would reject this operator patch.",
                 ),
             ),
             debtLimit=1_000.0,

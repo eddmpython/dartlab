@@ -557,6 +557,173 @@ def replaceDriverPathAssumptionStep(
     return DriverPathSet(paths=newPaths, factorSpecs=pathSet.factorSpecs, audit=audit)
 
 
+def addDriverPathConditionFactorOverlay(
+    pathSet: DriverPathSet,
+    *,
+    baseFactorId: str,
+    overlayFactorId: str,
+    stepIndex: int,
+    deltaValue: float,
+    sourceRef: str,
+    patchRef: str,
+    assumptionId: str,
+    claim: str,
+    falsifier: str,
+    reason: str = "",
+) -> DriverPathSet:
+    """Add a first-class explicit condition overlay without mutating history."""
+
+    if not sourceRef or not patchRef or not assumptionId or not claim or not falsifier:
+        raise DriverPathError("condition overlay needs provenance, claim, and falsifier")
+    horizon = pathSet.audit.horizon
+    if stepIndex < 0 or stepIndex >= horizon:
+        raise DriverPathError("condition overlay step is outside path horizon")
+    factorById = {factor.variableId: factor for factor in pathSet.factorSpecs}
+    baseFactor = factorById.get(baseFactorId)
+    if baseFactor is None:
+        raise DriverPathError("condition overlay base factor is missing")
+    if not overlayFactorId or overlayFactorId in factorById:
+        raise DriverPathError("condition overlay factor id must be new")
+    if any(overlayFactorId in step for path in pathSet.paths for step in path.steps):
+        raise DriverPathError("condition overlay factor collides with path steps")
+    delta = _finite(deltaValue, f"conditionOverlay.{baseFactorId}.{stepIndex}")
+    patchHash = canonicalPayloadHash(
+        {
+            "schemaVersion": "driver-path-condition-factor-overlay-v1",
+            "basePathSetHash": pathSet.audit.pathSetHash,
+            "baseHistoryInputHash": pathSet.audit.historyInputHash,
+            "baseAssumptionHash": pathSet.audit.assumptionHash,
+            "baseFactorId": baseFactorId,
+            "overlayFactorId": overlayFactorId,
+            "stepIndex": int(stepIndex),
+            "deltaValue": delta,
+            "sourceRef": sourceRef,
+            "patchRef": patchRef,
+            "assumptionId": assumptionId,
+            "claim": claim,
+            "falsifier": falsifier,
+            "reason": reason,
+        }
+    )
+    controlPatchRef = f"controlPatch:{patchHash}"
+    paths = []
+    for path in pathSet.paths:
+        if stepIndex >= len(path.steps) or baseFactorId not in path.steps[stepIndex]:
+            raise DriverPathError("condition overlay base factor is missing from path step")
+        steps = []
+        for index, step in enumerate(path.steps):
+            row = dict(step)
+            row[overlayFactorId] = delta if index == stepIndex else 0.0
+            steps.append(row)
+        paths.append(
+            replace(
+                path,
+                steps=tuple(steps),
+                refs=_dedupe((*_dropAdmissionRefs(path.refs), patchRef, controlPatchRef)),
+                certificateId="",
+                validationStatus="unvalidated",
+                maxAdmittedStep=0,
+                admissionContentHash="",
+                parameterDraws={},
+                parameterDrawReceipt=None,
+                historyStatus="explicitAssumption",
+                admissionReceiptId="",
+            )
+        )
+    newPaths = tuple(paths)
+    oldStepHashes = pathSet.audit.assumptionStepHashes
+    if oldStepHashes and len(oldStepHashes) != horizon:
+        raise DriverPathError("condition overlay needs consistent assumption step hashes")
+    baseStepHashes = oldStepHashes or tuple(
+        canonicalPayloadHash(
+            {
+                "schemaVersion": "driver-path-empty-assumption-step-v1",
+                "baseHistoryInputHash": pathSet.audit.historyInputHash,
+                "stepIndex": index,
+            }
+        )
+        for index in range(horizon)
+    )
+    overlaySteps = tuple({overlayFactorId: delta if index == stepIndex else 0.0} for index in range(horizon))
+    assumptionStepHashes = tuple(
+        canonicalPayloadHash(
+            {
+                "schemaVersion": "driver-path-condition-overlay-step-v1",
+                "baseStepHash": stepHash,
+                "stepIndex": index,
+                "overlayStep": overlaySteps[index],
+                "patchHash": patchHash,
+            }
+        )
+        for index, stepHash in enumerate(baseStepHashes)
+    )
+    assumptionHash = canonicalPayloadHash(
+        {
+            "schemaVersion": "driver-path-condition-overlay-assumption-set-v1",
+            "baseAssumptionHash": pathSet.audit.assumptionHash,
+            "assumptionStepHashes": assumptionStepHashes,
+            "overlaySteps": overlaySteps,
+            "patchHash": patchHash,
+        }
+    )
+    sourceRefs = pathSet.audit.sourceRefs
+    overlayHash = canonicalPayloadHash(
+        {
+            "schemaVersion": "driver-path-condition-overlay-hash-v1",
+            "baseOverlayHash": pathSet.audit.overlayHash,
+            "assumptionHash": assumptionHash,
+            "assumptionStepHashes": assumptionStepHashes,
+            "sourceRefs": sourceRefs,
+            "patchHash": patchHash,
+        }
+    )
+    overlayFactor = replace(baseFactor, variableId=overlayFactorId, sourceColumn="")
+    factorSpecs = (*pathSet.factorSpecs, overlayFactor)
+    factorContractHash = canonicalPayloadHash(
+        tuple(
+            (factor.variableId, factor.unit, factor.frequency, factor.timing, factor.transformId)
+            for factor in sorted(factorSpecs, key=lambda item: item.variableId)
+        )
+    )
+    pathSetHash = _pathSetHash(newPaths)
+    inputHash = canonicalPayloadHash(
+        {
+            "schemaVersion": "driver-path-condition-overlay-input-v1",
+            "baseInputHash": pathSet.audit.inputHash,
+            "registryHash": pathSet.audit.registryHash,
+            "historyInputHash": pathSet.audit.historyInputHash,
+            "assumptionHash": assumptionHash,
+            "assumptionStepHashes": assumptionStepHashes,
+            "basePathSetHash": pathSet.audit.basePathSetHash,
+            "basePathAdmissionReceiptId": pathSet.audit.basePathAdmissionReceiptId,
+            "basePathAdmissionContentHash": pathSet.audit.basePathAdmissionContentHash,
+            "basePathAdmissionSubjectHash": pathSet.audit.basePathAdmissionSubjectHash,
+            "overlayHash": overlayHash,
+            "patchedPathSetHash": pathSetHash,
+            "overlayFactorId": overlayFactorId,
+            "patchHash": patchHash,
+        }
+    )
+    descriptors = pathSet.audit.assumptionDescriptors
+    if overlayFactorId not in {item[0] for item in descriptors}:
+        descriptors = (*descriptors, (overlayFactorId, assumptionId, claim, falsifier))
+    audit = replace(
+        pathSet.audit,
+        pathSetHash=pathSetHash,
+        inputHash=inputHash,
+        assumptionHash=assumptionHash,
+        assumptionStepHashes=assumptionStepHashes,
+        overlayHash=overlayHash,
+        factorContractHash=factorContractHash,
+        validationStatus="unvalidated",
+        historyStatus="explicitAssumption",
+        pathCount=len(newPaths),
+        assumptionDescriptors=descriptors,
+        warnings=tuple(sorted(set((*pathSet.audit.warnings, "conditionFactorOverlayApplied", controlPatchRef)))),
+    )
+    return DriverPathSet(paths=newPaths, factorSpecs=factorSpecs, audit=audit)
+
+
 def _basePathAdmissionFields(paths: tuple[ScenarioPath, ...]) -> tuple[str, str, str, str, int]:
     if not paths:
         return "", "", "", "", 0

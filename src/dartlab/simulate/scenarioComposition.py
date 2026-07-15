@@ -24,6 +24,7 @@ from dartlab.simulate.driverCalibration import (
 )
 from dartlab.simulate.driverPaths import (
     DriverPathSet,
+    addDriverPathConditionFactorOverlay,
     driverFactorsToOperatingSpecs,
     replaceDriverPathAssumptionStep,
 )
@@ -1374,6 +1375,8 @@ class ConditionalPlayControlPatch:
     value: float
     patchRef: str
     reason: str = ""
+    claim: str = ""
+    falsifier: str = ""
 
     def __post_init__(self) -> None:
         if (
@@ -3039,6 +3042,53 @@ def _conditionControlRows(
             blockers = _controlLineageBlockers(ledger)
             if isExplicit:
                 blockers = _dedupe((*blockers, "explicitFutureAdjustmentPresent"))
+            expectedHashImpacts = (
+                (
+                    "pathAssumptionStepHash",
+                    "pathAssumptionHash",
+                    "assumptionSetHash",
+                    "caseLedgerHash",
+                    "experimentHash",
+                    "playReplayHash",
+                )
+                if isExplicit
+                else (
+                    "pathAssumptionStepHash",
+                    "pathAssumptionHash",
+                    "assumptionSetHash",
+                    "caseLedgerHash",
+                    "parameterHash",
+                    "simulationSpecHash",
+                    "resultSetHash",
+                    "tracePanelHash",
+                    "controlPanelHash",
+                    "controlSurfaceHash",
+                    "experimentHash",
+                    "playReplayHash",
+                )
+            )
+            forbiddenHashImpacts = (
+                (
+                    "providerLaneLineageHash",
+                    "pathHistoryInputHash",
+                    "strategySetHash",
+                    "rawSourceRefs",
+                    "revisedHistoryRefs",
+                )
+                if isExplicit
+                else (
+                    "initialState",
+                    "providerLaneLineageHash",
+                    "providerObservationBatchReceiptIds",
+                    "priceSourceLegReceiptIds",
+                    "derivedReturnReceiptIds",
+                    "pathHistoryInputHash",
+                    "strategyContractHash",
+                    "strategySetHash",
+                    "rawSourceRefs",
+                    "revisedHistoryRefs",
+                )
+            )
             for step in range(case.pathSet.audit.horizon):
                 values = tuple(
                     float(path.steps[step][factor.variableId])
@@ -3081,21 +3131,8 @@ def _conditionControlRows(
                         valueSummary=_valueSummary(values),
                         sourceRefs=ledger.pathSourceRefs,
                         semanticRefs=semanticRefs,
-                        expectedHashImpacts=(
-                            "pathAssumptionStepHash",
-                            "pathAssumptionHash",
-                            "assumptionSetHash",
-                            "caseLedgerHash",
-                            "experimentHash",
-                            "playReplayHash",
-                        ),
-                        forbiddenHashImpacts=(
-                            "providerLaneLineageHash",
-                            "pathHistoryInputHash",
-                            "strategySetHash",
-                            "rawSourceRefs",
-                            "revisedHistoryRefs",
-                        ),
+                        expectedHashImpacts=expectedHashImpacts,
+                        forbiddenHashImpacts=forbiddenHashImpacts,
                         providerLaneLineageHash=ledger.providerLaneLineageHash,
                         providerLineageStatus=ledger.providerLineageStatus,
                         providerObservationBatchReceiptIds=ledger.providerObservationBatchReceiptIds,
@@ -3424,6 +3461,8 @@ def _controlPatchPayload(patch: ConditionalPlayControlPatch) -> dict:
         "value": patch.value,
         "patchRef": patch.patchRef,
         "reason": patch.reason,
+        "claim": patch.claim,
+        "falsifier": patch.falsifier,
     }
 
 
@@ -3497,9 +3536,102 @@ def _validateControlPatches(
     if len(semanticPlanes) != 1:
         raise ScenarioCompositionError("mixed semantic plane control patches are not supported")
     semanticPlane = next(iter(semanticPlanes))
-    if semanticPlane not in {"assumptionDelta", "currentState", "lawParameter", "strategyAction"}:
+    if semanticPlane not in {"assumptionDelta", "conditionFactor", "currentState", "lawParameter", "strategyAction"}:
         raise ScenarioCompositionError(f"{semanticPlane} control patch requires a separate overlay route")
     return tuple(rows)
+
+
+def _safeControlIdPart(value: str) -> str:
+    text = "".join(character if character.isalnum() else "_" for character in str(value))
+    return text.strip("_") or "control"
+
+
+def _rejectUnsafeConditionPatchRef(patchRef: str) -> None:
+    unsafePrefixes = (
+        *_STRUCTURED_PROVIDER_LINEAGE_REF_PREFIXES,
+        "pathAdmission:",
+        "pathSetAdmission:",
+        "driverCoefficientAdmission:",
+        "initialStateAdmission:",
+        "stateReceipt:",
+        "verifiedStateReceipt:",
+    )
+    if patchRef.startswith(unsafePrefixes):
+        raise ScenarioCompositionError("condition factor patch provenance cannot mimic admitted lineage")
+
+
+def _patchConditionFactorCases(
+    cases: tuple[OperatingScenarioCase, ...],
+    rows: tuple[ConditionalPlayControlRow, ...],
+    patches: tuple[ConditionalPlayControlPatch, ...],
+) -> tuple[OperatingScenarioCase, ...]:
+    caseById = {case.caseId: case for case in cases}
+    patchedCases = dict(caseById)
+    for row, patch in zip(rows, patches, strict=True):
+        case = patchedCases.get(row.caseId)
+        if case is None or row.step < 0 or not row.targetId:
+            raise ScenarioCompositionError("condition factor patch target is invalid")
+        if not patch.claim or not patch.falsifier:
+            raise ScenarioCompositionError("condition factor overlay needs claim and falsifier")
+        _rejectUnsafeConditionPatchRef(patch.patchRef)
+        factorIds = {factor.variableId for factor in case.pathSet.factorSpecs}
+        if row.targetId not in factorIds:
+            raise ScenarioCompositionError("condition factor patch target is missing")
+        matchingExposures = tuple(exposure for exposure in case.exposures if exposure.sourceVariableId == row.targetId)
+        if not matchingExposures:
+            raise ScenarioCompositionError("condition factor overlay needs a matching exposure")
+        for exposure in matchingExposures:
+            if exposure.evidenceKind == "measuredAssociation" or _driverCoefficientAdmissionReceiptId(
+                exposure.sourceRef
+            ):
+                raise ScenarioCompositionError("condition factor overlay cannot reuse admitted coefficient evidence")
+            for binding in case.coefficientBindings:
+                if (
+                    exposure.targetShock == binding.targetShock
+                    and exposure.sourceVariableId in binding.sourceVariableIds
+                ):
+                    raise ScenarioCompositionError("condition factor overlay cannot reuse coefficient bindings")
+        patchHash = _controlPatchHash(patch)
+        overlayFactorId = (
+            "conditionOverlay__"
+            f"{_safeControlIdPart(row.caseId)}__"
+            f"{_safeControlIdPart(row.targetId)}__"
+            f"step{row.step}__"
+            f"{patchHash[:12]}"
+        )
+        deltaValue = float(patch.value) - _meanControlValue(row)
+        patchedPathSet = addDriverPathConditionFactorOverlay(
+            case.pathSet,
+            baseFactorId=row.targetId,
+            overlayFactorId=overlayFactorId,
+            stepIndex=row.step,
+            deltaValue=deltaValue,
+            sourceRef=f"assumption://condition-overlay/{patchHash}",
+            patchRef=f"{patch.patchRef}|controlPatch:{patchHash}",
+            assumptionId=f"conditionOverlay:{patchHash}",
+            claim=patch.claim,
+            falsifier=patch.falsifier,
+            reason=patch.reason,
+        )
+        overlayExposures = tuple(
+            replace(
+                exposure,
+                exposureId=f"{exposure.exposureId}-condition-overlay-{patchHash[:12]}",
+                sourceVariableId=overlayFactorId,
+                evidenceKind="explicitAssumption",
+                sourceRef=f"{patch.patchRef}|controlPatch:{patchHash}",
+            )
+            for exposure in matchingExposures
+        )
+        patchedCases[row.caseId] = replace(
+            case,
+            pathSet=patchedPathSet,
+            exposures=(*case.exposures, *overlayExposures),
+            scenarioPathPackageReceiptId="",
+            operatingPathAdmissionReceiptId="",
+            operatingPathCertificateId="",
+        )
+    return tuple(patchedCases[case.caseId] for case in cases)
 
 
 def _patchAssumptionDeltaCases(
@@ -3836,6 +3968,8 @@ def executeConditionalPlayControlPatch(
     patchedStrategies = tuple(strategies)
     if semanticPlane == "assumptionDelta":
         patchedCases = _patchAssumptionDeltaCases(patchedCases, rows, patchTuple)
+    elif semanticPlane == "conditionFactor":
+        patchedCases = _patchConditionFactorCases(patchedCases, rows, patchTuple)
     elif semanticPlane == "currentState":
         patchedInputs = _patchCurrentStateInputs(patchedInputs, rows, patchTuple)
     elif semanticPlane == "lawParameter":
