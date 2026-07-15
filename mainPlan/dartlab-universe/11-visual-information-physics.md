@@ -200,6 +200,8 @@ UniverseRenderer
 | U0-V06 | renderer bakeoff가 필요한가 | SVG, Cosmos, DOM, 후보 adapter | task, frame, heap, bundle 비교 | 새 dependency가 개선 없음 |
 | U5-X01 | 2.5D 또는 3D가 나은가 | discovery와 path task | 2D 대비 성공률 또는 발견률 개선 | 3D만 가능한 기능 또는 멀미 증가 |
 
+2026-07-15 U0-V01 실행 결과: Fact, candidate, derived, disputed, retracted, scenario, unknown 7개 상태를 stroke, pattern, glyph, label, evidence action, aria phrase의 non-color signature로 모두 분리했다. Deterministic card 30개에서 evidence affordance와 aria coverage는 30/30, confidence opacity 사용은 0, machine regression은 8/8이다. Reviewed participant는 0/12, response는 0/360이고 comprehension accuracy는 미측정이다. Grammar contract는 완료했지만 실제 판독 90% 전 production visual admission은 차단한다. `tests/_attempts/dartlabUniverse/visual/README.md`가 response schema와 실행 명령을 소유한다.
+
 ## 12. 유지보수 규칙
 
 - visual grammar token은 renderer package가 아니라 universe contract가 소유한다.

@@ -88,7 +88,7 @@ Python demo의 module docstring에는 `결과` 섹션을 둔다. 출력 파일�
 | U0-L01 | lens가 환경에서 실제 가능한가 | 6 output archetype | unavailable 오표시 0, missing 보존 | 해당 lens 숨김 | 완료, live ready 0 |
 | U0-W01 | 변화를 look-ahead 없이 재생하는가 | synthetic 8 revision과 DART 30개 deterministic schema sample | revision 100%, look-ahead 0, evidence 95% | 변화 우주 범위 축소 | 계약 완료, live source 차단 |
 | U0-W02 | recipe를 반증 workflow로 만드는가 | tested recipe 정렬 앞 10개와 qualified synthetic fixture | 단계, 근거, falsifier 유실 0 | Kill-Chain 보류 | 계약 완료, live conclusion 차단 |
-| U0-V01 | evidence 상태를 읽는가 | 30 card, task participant | 판독 90% 이상 | visual grammar 재설계 | 대기 |
+| U0-V01 | evidence 상태를 읽는가 | 7 state, 30 card, task participant | 판독 90% 이상 | visual grammar 재설계 | 계약 완료, participant 0/12 차단 |
 | U0-V02 | layout이 재현되는가 | 3 browser, 20 replay | logical hash 일치, 같은 viewport 및 DPR anchor 1px 이하 | layout 교체 | 대기 |
 | U0-V03 | 밀도에서 생략이 정직한가 | 250, 500, 1,000 node | collision 2% 이하, receipt 100% | lower LOD | 대기 |
 | U0-V04 | 이중 시간을 이해하는가 | revision task 12개 | 시간 판독 90% 이상 | Time Lens 재설계 | 대기 |
@@ -429,6 +429,36 @@ boundedProjectionLiveReady      true
 ```
 
 판정: Current public artifact 3종을 bytes hash로 묶은 SourceSnapshotSet과 같은 generic compiler를 사용해 새 bake 없이 bounded logical scene을 만들었다. Depth, lane, explicit priority와 stable edge ID로 truncation하고 생략 수와 이유를 receipt에 남겼다. Reverse input에서도 scene hash 3/3이 일치했고 hard bound, seed retention, dangling edge, lane admission 위반은 0이었다. Atlas aggregate flow 50개는 derived, industry와 company relation 303개는 candidate로 유지했으며 fact는 0이다. U0-P01은 `promote`다. 이 결론은 bounded projection compiler에만 해당하며 evidence 및 visual gate를 우회하지 않는다.
+
+## 4.11 U0-V01 결과
+
+명령:
+
+```powershell
+node tests/_attempts/dartlabUniverse/visual/visualGrammarProbe.mjs
+```
+
+결과:
+
+```text
+stateCount                         7
+cardCount                         30
+uniqueNonColorSignatureCount      7/7
+colorOnlyCollisionCount             0
+evidenceAffordanceCoverage       30/30
+ariaCoverage                     30/30
+renderedCardCount                30/30
+confidenceOpacityUsageCount          0
+machineRegression                  8/8 PASS
+reviewedParticipantCount          0/12
+reviewedResponseCount            0/360
+comprehensionAccuracy       unmeasured
+contractReady                      true
+comprehensionReady                false
+liveReady                         false
+```
+
+판정: Fact, candidate, derived, disputed, retracted, scenario, unknown은 color를 제외한 stroke, pattern, glyph, label, evidence action, aria phrase 조합으로 7/7 분리했다. Confidence는 opacity와 분리해 badge 및 marker로만 표현한다. Deterministic 30-card answer key, semantic DOM reference, participant별 30문항 completeness, reviewer와 reviewedAt gate를 구현했고 machine contract 8/8은 합격이다. 그러나 실제 participant와 reviewed response가 0이므로 판독 90%는 미측정이다. U0-V01은 `revise`이며 participant 12명과 360개 review 전 production visual admission을 차단한다.
 
 ## 5. existing attempts 재사용 지도
 

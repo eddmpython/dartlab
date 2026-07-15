@@ -33,6 +33,7 @@
 - [x] U0-O01 assertion identity, append-only lineage, bitemporal query contract
 - [x] U0 identity, evidence, assertion, projection attempts
 - [x] U0-P01 bounded projection live atlas, industry, company 3-scene validation
+- [x] U0-V01 non-color visual grammar와 30-card comprehension scoring contract
 - [ ] U0 workflow, visual, information yield attempts
 - [ ] U1~U2 implementation
 - [ ] U3 artifact 변경 승인 여부
@@ -70,6 +71,7 @@
 | 2026-07-15 | U0-E01 exact evidence 실행 | Search catalog 381,149행의 document, section, sourceRef, content hash는 100%지만 exact text span, table row/header, exact time, row source version, predicate/direction은 0. Synthetic 8/8 통과, reviewed gold와 transfer 미측정으로 live assertion evidence 차단 |
 | 2026-07-15 | U0-O01 assertion ontology 실행 | Relation과 assertion ID, append-only correction, validAt과 knownAt, Ref와 VintageRef 결속을 synthetic 9/9로 확정. Public edge 20,560은 relation candidate로 unique하지만 assertion ID, evidence, source time, validity, admitted status, ready 모두 0이고 self-loop 13이라 fact lane 차단 |
 | 2026-07-15 | U0-P01 bounded projection 실행 | 새 bake 없이 atlas 18/35, 반도체 26/34, 삼성 egograph 50/60 node/edge로 bounded projection. Reverse input hash 3/3, bound, seed, lane violation 0. Candidate 303, derived 50, fact 0을 보존해 compiler는 promote |
+| 2026-07-15 | U0-V01 visual grammar 실행 | 7개 status의 non-color signature 7/7, evidence와 aria 30/30, confidence opacity 0, DOM card와 scoring test 8/8. 실제 participant 0/12와 response 0/360이라 comprehension 90%는 미측정, production visual admission 차단 |
 
 ## 핵심 실측 스냅샷
 
@@ -176,6 +178,17 @@ projection bound violations                    0
 projection seed loss                           0
 projection lane violations                     0
 synthetic projection regression              8/8
+visual grammar states                         7/7
+visual deterministic cards                  30/30
+visual non-color signatures                   7/7
+visual color-only collisions                    0
+visual evidence affordance                  30/30
+visual aria coverage                        30/30
+visual confidence opacity usage                 0
+visual machine regression                     8/8
+visual reviewed participants                  0/12
+visual reviewed responses                    0/360
+visual comprehension accuracy           unmeasured
 ```
 
 같은 날 후속 live meta 재감사:
@@ -212,9 +225,10 @@ dart dataAsOf            null
 8. Search catalog 381,149행은 section sourceRef와 content hash를 모두 갖지만 exact span, table row/header, publication 및 availability timestamp, row-level immutable source version, predicate와 direction은 0이다. U0-E01 resolver 계약은 통과했지만 reviewed positive 100, hard negative 100과 public transfer 측정 전 live assertion evidence는 금지한다.
 9. Public ecosystem 20,560 relation candidate는 unique하지만 assertion ID, supersedes, exact evidence, source time, validity와 admitted status가 전부 0이다. U0-O01 synthetic contract는 통과했지만 current edge의 fact lane 입장은 계속 0이다.
 10. U0-P01 bounded projection은 live 3-scene에서 통과했지만 fact edge는 0이다. U0-V01~V05 comprehension과 accessibility가 완료되기 전 public UI production 이관은 금지한다.
-11. `scan-screener-os`의 public valuation licensing P0가 승인 대기다. Universe는 해당 필드를 사용하지 않아야 한다.
-12. workspace의 landing 및 ui 대량 삭제는 본 작업과 무관한 기존 변경이다. U1 production 착수 전에 frontend host가 정상 상태인지 재검해야 한다.
+11. U0-V01 grammar machine contract는 통과했지만 reviewed participant는 0/12, reviewed response는 0/360이고 comprehension accuracy는 미측정이다. 실제 review 전 시각 문법 합격을 주장하지 않는다.
+12. `scan-screener-os`의 public valuation licensing P0가 승인 대기다. Universe는 해당 필드를 사용하지 않아야 한다.
+13. workspace의 landing 및 ui 대량 삭제는 본 작업과 무관한 기존 변경이다. U1 production 착수 전에 frontend host가 정상 상태인지 재검해야 한다.
 
 ## 다음 단일 행동
 
-`tests/_attempts/dartlabUniverse/visual/`에서 U0-V01 visual grammar probe를 구현한다. Fact, candidate, derived, disputed, retracted, scenario, unknown을 color 하나가 아니라 stroke, pattern, icon, label, evidence affordance의 중복 channel로 정의한다. 30개 deterministic scene card와 task answer key를 만들고 renderer dependency 없이 DOM reference surface에서 판독 오류를 기계 채점할 수 있게 한다. Reviewed participant 결과가 없으면 comprehension 90%를 주장하지 않고 visual production 이관을 금지한다.
+`tests/_attempts/dartlabUniverse/visual/`에서 U0-V02 deterministic layout probe를 구현한다. Logical coordinate를 viewport pixel과 분리하고 industry stage, valid time, evidence status의 semantic anchor를 고정한다. Atlas, industry, company 20개 replay를 세 viewport와 DPR 조합에서 반복해 logical hash 100%, 같은 viewport 및 DPR anchor 오차 1px 이하를 측정한다. Current force position을 truth로 복제하지 않고 layout receipt와 fallback reason을 남긴다.
