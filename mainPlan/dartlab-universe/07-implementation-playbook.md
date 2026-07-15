@@ -10,7 +10,7 @@
 
 1. `06-progress-ledger.md`에서 직전 packet의 종료 증거를 확인한다.
 2. 영향 경로의 현재 상태와 본 계획의 정합성 및 ROI를 재검한다.
-3. 선행 attempt의 input buildId, 실행 명령, 결과, falsifier를 확인한다.
+3. 선행 attempt의 input SourceSnapshotSet 또는 legacy buildId, 실행 명령, 결과, falsifier를 확인한다.
 4. 명시된 파일과 심볼만 변경한다.
 5. packet 전용 테스트를 실행한다.
 6. Guard quick 또는 package check를 실행한다.
@@ -86,6 +86,147 @@ uv run python -X utf8 tests/_attempts/dartlabUniverse/truth/graphTruthProbe.py
 
 결정: 기존 edge는 retrieval 및 layout candidate로만 사용한다.
 
+### U0-T02 graph truth admission 강화
+
+목표: `rceptNo` 존재만으로 exact evidence라고 판정하지 않고 span, section, entity direction, public policy까지 검증한다.
+
+실행 순서:
+
+1. current U0-T01 fixture를 보존한다.
+2. exact document ID, sectionPath, text span 또는 table row pointer를 각각 센서스한다.
+3. subject와 object의 entity boundary와 canonical direction을 검증한다.
+4. sourcePublishedAt, availableAt, valid interval 가용성을 분리 계수한다.
+5. redistribution receipt 유무를 분리 계수한다.
+6. predicate별 observed admission 가능 수를 출력한다.
+
+합격:
+
+- 누락 필드를 0으로 채운 사례 0
+- source span 없이 observed로 센 사례 0
+- 기존 20,560 edge를 candidate로 유지
+- 다음 evidence probe의 predicate별 표본을 결정할 수 있음
+
+### U0-S01 SourceSnapshotSet probe
+
+목표: map, search, panel, finance, capability, recipe를 하나의 재현 단위로 묶을 수 있는지 증명한다.
+
+실행 순서:
+
+1. source별 version, ETag, immutable path, payload hash 가용성을 센서스한다.
+2. source version과 dataAsOf를 canonical source entry로 만든다.
+3. version을 구하지 못한 source는 `unreplayable`로 표시한다.
+4. source 순서와 OS에 무관한 snapshotSetId를 계산한다.
+5. source 하나를 바꾼 fixture에서 snapshotSetId가 바뀌는지 확인한다.
+6. legacy map buildId만 있는 share를 compatibility fixture로 읽는다.
+
+합격:
+
+- exact replay를 약속한 source version 누락 0
+- canonical hash 불일치 0
+- source 변경 후 동일 hash 0
+- legacy share가 exact replay로 잘못 표시되는 사례 0
+
+### U0-P02 public policy receipt probe
+
+목표: dataset 전체가 아니라 source와 field별로 public admission을 판정한다.
+
+실행 순서:
+
+1. public scene 후보 source를 sourceId로 센서스한다.
+2. allowedFields, prohibitedFields, attribution, policyVersion, reviewedAt을 기록한다.
+3. unknown, localOnly, expired receipt fixture를 만든다.
+4. 파생값의 upstream lineage가 차단 source에 닿는 경우를 검증한다.
+
+합격:
+
+- public mark redistribution receipt coverage 100%
+- unknown 및 localOnly false accept 0
+- 금지 upstream 파생값 public 승격 0
+
+### U0-L01 LensAvailability probe
+
+목표: 기존 capability output을 public browser에서 실제로 표현 가능한지 환경별로 검증한다.
+
+실행 순서:
+
+1. scalar, series, table, ranking, distribution, scenario의 6 archetype을 만든다.
+2. archetype별 capabilityRef, evidenceRef, unit, coverage, missing policy를 센서스한다.
+3. public, local, unavailable 상태를 분리한다.
+4. public에서 unavailable인 lens를 client가 임의 실행하지 않는 fixture를 만든다.
+
+합격:
+
+- 6 archetype contract fixture green
+- missing을 0 또는 빈 성공으로 표시한 사례 0
+- 환경별 unavailable lens 노출 0
+
+### U0-W01 change replay probe
+
+목표: DART 30사의 revision과 observation을 두 cutoff에서 look-ahead 없이 재생한다.
+
+실행 순서:
+
+1. U0-S01 SourceSnapshotSet을 입력으로 고정한다.
+2. sourcePublishedAt, availableAt, validFrom, validTo, revision을 보존한다.
+3. knownAt A와 B의 visible assertion을 독립 계산한다.
+4. created, corrected, retracted, newlyKnown, stale diff를 만든다.
+5. before와 after evidenceRefs를 결속한다.
+6. 같은 input의 diff hash를 반복 비교한다.
+
+합격:
+
+- revision 보존 100%
+- look-ahead 0
+- before 및 after exact evidence 95% 이상
+- diff hash 불일치 0
+
+kill: 현재값의 과거 역주입 1건이면 변화 우주 production 이관을 금지한다.
+
+### U0-W02 workflow projection probe
+
+목표: tested recipe 10개의 procedure, requiredEvidence, falsifier를 `SceneBeat[]`로 유실 없이 컴파일한다.
+
+실행 순서:
+
+1. recipe version과 required field를 fixture로 고정한다.
+2. orient, focus, evidence, falsify, conclude beat를 만든다.
+3. claim마다 sourceRef 또는 derivationRef를 결속한다.
+4. missing required evidence는 GapReceipt로 남긴다.
+5. open falsifier가 없는 결론 beat를 차단한다.
+6. 같은 input의 flight hash를 반복 비교한다.
+
+합격:
+
+- procedure, requiredEvidence, falsifier 유실 0
+- claim receipt coverage 100%
+- 결론별 falsifier 1개 이상
+- recipe별 전용 UI adapter 0
+
+kill: 모델 요약이 fact로 승격된 사례 1건이면 즉시 기각한다.
+
+### U0-V01~V06 visual qualification
+
+목표: 의미 좌표, 상태 문법, 밀도, 이중 시간, 접근성, renderer를 순서대로 반증한다.
+
+실행 순서:
+
+1. U0-V01 상태 문법 comprehension
+2. U0-V02 anchor와 layout 결정론
+3. U0-V03 250, 500, 1,000 node density와 omitted receipt
+4. U0-V04 validAt와 knownAt comprehension
+5. U0-V05 keyboard, screen reader, mobile low GPU
+6. U0-V06 SVG, current Cosmos, DOM, 후보 adapter bakeoff
+
+합격:
+
+- 상태 판독 90% 이상
+- label collision 2% 이하
+- logical coordinate hash 일치, 같은 viewport와 DPR에서 anchor 재실행 오차 1px 이하
+- table 핵심 task 완료 100%
+- 새 dependency는 task, frame, heap, bundle 중 측정 가능한 개선
+
+kill: 3D 또는 canvas에서만 가능한 핵심 작업이 생기면 해당 renderer를 기각한다.
+
 ### U0-I01 canonical identity probe
 
 목표: stockCode와 ticker를 presentation key로 제한하고 corpCode, CIK 중심 ID가 실제 자료에서 복원되는지 증명한다.
@@ -139,7 +280,8 @@ uv run python -X utf8 tests/_attempts/dartlabUniverse/truth/graphTruthProbe.py
 - positive sourceRef resolution 95% 이상
 - hard negative false accept 1% 이하
 - sourceRef 없는 observed 0건
-- edge당 cold transfer 2MB 이하 또는 U3 토론 근거로 기록
+- shared cold bootstrap과 edge incremental transfer를 분리 기록
+- provisional first cold 4MB 이하, incremental 2MB 이하 또는 U3 토론 근거로 기록
 
 ### U0-O01 assertion and bitemporal contract
 
@@ -151,8 +293,8 @@ uv run python -X utf8 tests/_attempts/dartlabUniverse/truth/graphTruthProbe.py
 2. relationId와 assertionId를 별도 계산한다.
 3. 같은 relation의 다른 rceptNo와 period가 다른 assertionId인지 확인한다.
 4. 정정 공시가 이전 assertion을 삭제하지 않는지 확인한다.
-5. `eventAt <= availableAt <= knowledgeAsOf`를 강제한다.
-6. `validAt`과 `knownAt`을 독립 필터한다.
+5. `sourcePublishedAt <= availableAt`을 강제하고 미래 효력 event 또는 validFrom을 허용한다.
+6. `validAt`과 `knownAt`을 독립 필터하고 knownAt을 assertion identity에서 제외한다.
 7. `VintageRef`와 `Ref`로 실제 evidence hash를 묶는다.
 
 합격:
@@ -173,7 +315,7 @@ uv run python -X utf8 tests/_attempts/dartlabUniverse/truth/graphTruthProbe.py
 3. fact, candidate, derived, scenario lane을 분리한다.
 4. stable priority와 truncation을 적용한다.
 5. omitted count와 reason을 남긴다.
-6. 같은 spec과 buildId의 scene hash를 반복 비교한다.
+6. 같은 spec과 SourceSnapshotSet의 scene hash를 반복 비교한다.
 
 합격:
 
@@ -211,7 +353,9 @@ U0 졸업 산출:
 
 선행 조건:
 
-- U0-I01, U0-O01, U0-P01 합격
+- U0-I01, U0-O01, U0-P01, U0-S01, U0-P02, U0-L01 합격
+- 변화 우주를 열 경우 U0-W01 합격, Kill-Chain을 열 경우 U0-W02 합격
+- U0-V01~V05 합격, 새 renderer dependency가 있으면 U0-V06 합격
 - frontend source 대량 삭제 또는 이동이 해소됨
 - U0 production 이관 review 완료
 
@@ -228,6 +372,12 @@ U0 졸업 산출:
 - `UniverseAssertion`
 - `UniverseRelation`
 - `ProjectionSpec`
+- `SourceSnapshotSet`
+- `UniverseFlightPlan`
+- `UniverseFlightReceipt`
+- `SceneBeat`
+- `EvidenceReceipt`
+- `GapReceipt`
 - `UniverseScene`
 - `EvidencePointer`
 
@@ -276,14 +426,15 @@ U0 졸업 산출:
 
 구현 순서:
 
-1. schema/buildId 검증
+1. schema, SourceSnapshotSet, legacy buildId 검증
 2. public policy admission
 3. canonical seed resolution
 4. validAt 및 knownAt filter
 5. evidence/status filter
 6. hard bound
 7. stable sort와 truncation
-8. scene hash
+8. claim, evidence, gap receipt 결속
+9. scene hash
 
 종료 조건: attempt의 golden projection과 byte-stable 일치.
 
@@ -330,8 +481,38 @@ U0 졸업 산출:
 종료 조건:
 
 - renderer package type가 adapter 밖으로 새지 않음
+- renderer 내부 fetch 0
+- atomic scene patch와 deterministic anchor
+- interactive mark의 keyboard focus ID 100%
 - WebGL 실패 시 SVG 또는 table
 - reduced motion과 keyboard path 동작
+
+### U1-06 34개 산업 변화 우주
+
+선행 조건: U0-W01 합격. historical SourceSnapshotSet이 아직 없으면 current atlas demo로 범위를 명시한다.
+
+변경:
+
+- `ui/packages/runtime/src/data/universe/change.ts`
+- `ui/packages/surfaces/src/universe/components/ChangeUniverse.svelte`
+- `ui/packages/surfaces/src/universe/components/EvidenceRibbon.svelte`
+
+구현 순서:
+
+1. atlas industry 좌표를 deterministic anchor로 고정한다.
+2. timeline과 movers를 lazy load한다.
+3. current demo와 exact historical replay mode를 명시적으로 분리한다.
+4. created, corrected, retracted, newlyKnown, stale을 별도 glyph로 표시한다.
+5. aggregate에 memberCount, coverage, unknownCount, omittedCount를 넣는다.
+6. 변화 mark가 before 및 after EvidenceReceipt로 돌아가게 한다.
+
+종료 조건:
+
+- current demo가 relation을 fact 변화로 설명한 사례 0
+- exact replay mode look-ahead 0
+- same snapshotSet의 diff hash 일치
+- atlas first data와 frame budget 통과
+- table에서 같은 변화와 gap 확인
 
 ## 5. Phase U2: evidence, time, lens
 
@@ -348,7 +529,7 @@ U0 졸업 산출:
 
 - gold resolution 95% 이상
 - cold P95 5초 이하
-- transfer 2MB 이하
+- first cold transfer provisional 4MB 이하, 이후 incremental 2MB 이하
 - unresolved fact promotion 0
 
 ### U2-02 Evidence Drawer
@@ -362,7 +543,7 @@ U0 졸업 산출:
 
 1. relation plain language
 2. status와 evidence class
-3. validAt, availableAt, knowledgeAsOf
+3. validAt, sourcePublishedAt, availableAt, knowledgeAsOf
 4. assertion timeline
 5. filing identity와 section
 6. exact text 또는 table row
@@ -402,20 +583,48 @@ U0 졸업 산출:
 - engine output 결손을 0으로 채운 사례 0
 - capability docstring 변경 시 generic renderer만으로 표시 가능
 
+### U2-05 Thesis Kill-Chain
+
+선행 조건: U0-W02, U2-01~U2-04 합격.
+
+변경:
+
+- `ui/packages/runtime/src/data/universe/flight.ts`
+- `ui/packages/runtime/src/data/universe/workflows.ts`
+- `ui/packages/surfaces/src/universe/components/ClaimLedger.svelte`
+- `ui/packages/surfaces/src/universe/components/KillChain.svelte`
+
+구현 순서:
+
+1. 성장 지속성, 신용 취약, 공시 변화 tested recipe 3개만 registry에 연다.
+2. recipe version, procedure, requiredEvidence, falsifier를 compiler에 전달한다.
+3. claim을 fact, derived, gap, scenario lane으로 분리한다.
+4. missing required evidence는 결론을 닫지 않고 GapReceipt를 만든다.
+5. beat별 selection과 evidence를 share 가능한 flight plan으로 직렬화한다.
+6. 기존 evidence table과 task completion, accuracy, evidence open, falsifier discovery를 비교한다.
+
+종료 조건:
+
+- claim receipt coverage 100%
+- 결론별 open falsifier 1개 이상
+- recipe별 UI adapter 0
+- baseline 대비 information yield 개선
+- 모델 또는 scenario가 fact로 승격된 사례 0
+
 ## 6. Phase U3: optional artifact extension
 
 U3는 기본 실행 phase가 아니다. U2가 합격하면 건너뛴다.
 
 착수 조건:
 
-1. cold P95 5초 초과 또는 transfer 2MB 초과가 3회 이상 반복
+1. cold P95 5초 초과, first cold transfer 4MB 초과, incremental transfer 2MB 초과 중 하나가 3회 이상 반복
 2. runtime 최적화와 range projection을 먼저 소진
 3. 실패 원인과 최소 additive field를 문서화
 4. 운영자 명시 승인
 
 허용:
 
-- existing company edge의 optional `assertionRefs`, `eventAt`, `availableAt`, `status`
+- existing company edge의 optional `assertionRefs`, `eventAt`, `sourcePublishedAt`, `availableAt`, `validFrom`, `validTo`, `status`, `redistributionReceiptId`
 - meta quality summary와 schema version
 
 금지:

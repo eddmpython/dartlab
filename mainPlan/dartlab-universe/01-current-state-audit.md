@@ -8,6 +8,24 @@
 - 데이터 파일 수와 byte는 Hugging Face repository tree API의 recursive file metadata를 합산했다.
 - 라이브 dataset card: [eddmpython/dartlab-data](https://huggingface.co/datasets/eddmpython/dartlab-data)
 
+### 2026-07-15 재감사 스냅샷
+
+최초 감사 수치는 역사적 기준선으로 보존한다. 같은 날 후속 live meta에서 다음 세대가 확인되었다.
+
+| 항목 | 재감사 값 |
+|---|---:|
+| map buildId | `20260715-084444` |
+| map commitSha | `bc10468` |
+| ecosystem | 6,015,104 bytes |
+| atlas | 27,517 bytes |
+| industryStats | 244,656 bytes |
+| search index | 306,450 bytes |
+| company payload total | 79,532,356 bytes |
+| industry | 34 |
+| atlas flow | 50 |
+
+source freshness는 finance `2026-07-15T08:37:55Z`, reviews와 taxonomy `2026-07-15T08:36:58Z`였으나 dart는 null이었다. 이 상태에서 단일 map buildId만으로 공시, search, panel, finance exact replay를 주장할 수 없다. `SourceSnapshotSet`과 source별 `unreplayable` 표시가 필요하다.
+
 ## 2. HF 전수 계수
 
 전체는 68,199파일, 275,755,437,729 bytes다. dataset card의 276GB와 일치한다.
@@ -183,7 +201,7 @@ type 분포:
 
 ## 8. public 라이선스 경계
 
-HF dataset은 CC BY 4.0이고 정부 및 공공 source를 구조화한 편집물이다. 라이브러리 코드는 Apache 2.0이다. 그러나 gather의 `naverTheme`, `naverIndustry`, `naverEtf`, `naverEtn`은 registry 자체가 local personal use 및 public redistribution 위험을 명시한다.
+HF dataset card는 CC BY 4.0으로 표시되고 라이브러리 코드는 Apache 2.0이다. 그러나 dataset 단위 표시는 모든 upstream field의 재배포 허가 receipt가 아니다. gather의 `naverTheme`, `naverIndustry`, `naverEtf`, `naverEtn`은 registry 자체가 local personal use 및 public redistribution 위험을 명시한다.
 
 Universe public scene은 provenance별 `redistributionClass`를 검사해야 한다.
 
@@ -193,6 +211,8 @@ Universe public scene은 provenance별 `redistributionClass`를 검사해야 한
 - `unknown`: 기본 차단
 
 `scan-screener-os`의 valuation publish boundary P0가 해결되기 전 `per`, `pbr`, `dividendYield` public 확대는 금지한다.
+
+source별 `RedistributionReceipt`는 allowedFields, prohibitedFields, attribution, policyVersion, reviewedAt을 가져야 한다. receipt가 없거나 만료되면 `unknown`으로 fail closed한다.
 
 ## 9. 감사 판정
 
@@ -221,4 +241,3 @@ Universe public scene은 provenance별 `redistributionClass`를 검사해야 한
 ### 최종 ROI
 
 새 graph platform을 만들 이유는 없다. 현재 자산의 약 80%를 재사용할 수 있다. 제품 가치는 남은 20%인 evidence contract, quality gate, projection runtime, UX truthfulness에서 생긴다.
-

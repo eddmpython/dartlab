@@ -14,16 +14,20 @@ DartLab에는 한국과 미국 공시, 재무, 주가, 거시, 뉴스 메타, �
 
 ## 2. 제품 한 문장
 
-**DartLab Universe는 공시와 시장 데이터의 개체, 관계, 시간, 근거를 질문에 맞는 장면으로 투영하고, 기존 엔진을 렌즈로 적용하는 evidence-native 금융 우주다.**
+**DartLab Universe는 질문을 변화, 주장, 반증, 원문으로 컴파일하고, 공시와 시장 데이터 및 기존 엔진을 재현 가능한 장면으로 투영하는 evidence-native 금융 우주다.**
 
 ## 3. 제품 서명
 
-회사를 선택한 뒤 5초 안에 다음 네 질문에 답할 수 있어야 한다.
+회사를 선택한 뒤 5초 안에 다음 질문의 답 또는 답할 수 없는 이유를 열 수 있어야 한다.
 
 1. 이 회사는 산업과 밸류체인 어디에 있는가.
 2. 누구와 어떤 관계가 있는가.
 3. 그 관계를 어떤 공시의 어느 시점에서 확인했는가.
 4. analysis, credit, macro, quant, scan 렌즈로 보면 무엇이 달라지는가.
+5. 두 시점 사이에서 무엇이 생기고 정정되고 사라졌는가.
+6. 현재 thesis를 깨뜨릴 가장 가까운 falsifier는 무엇인가.
+
+대표 제품 서명은 P0 변화 우주와 Thesis Kill-Chain이다. P1은 판정 우주와 한미 Twin이다. 전량 3D와 자동 충격 전파는 대표 기능이 아니다.
 
 ## 4. 목표 사용자와 핵심 작업
 
@@ -64,37 +68,47 @@ HF Parquet과 기존 map 및 search artifact가 데이터 정본이다. Universe
 5. 엣지를 클릭하면 접수번호, 기간, sectionPath, 원문 snippet과 공개 가능 시점이 열린다.
 6. credit 렌즈를 켜면 연결사의 취약축을 색으로 덧입히되 관계 사실과 계산을 분리한다.
 
-### S2. 환율 충격 전파
+### S2. 변화 우주
 
-1. macro 렌즈에서 USD/KRW shock를 선택한다.
-2. 공급망은 사실 레이어로 유지한다.
-3. sensitivity와 scenario 결과는 별도의 scenario edge로 그린다.
-4. 사용자는 실제 관계와 가정된 전파를 혼동하지 않는다.
+1. knownAt A와 B를 선택한다.
+2. 산업 및 회사 위치는 유지하고 created, corrected, retracted, newlyKnown만 남긴다.
+3. 변화 하나를 열면 before와 after source span 또는 table cell이 열린다.
+4. 현재값이 과거 장면에 역주입되지 않았음을 SourceSnapshotSet receipt로 확인한다.
 
-### S3. DART와 EDGAR 비교
+### S3. Thesis Kill-Chain
+
+1. 회사와 성장 지속성 thesis를 선택한다.
+2. tested recipe가 assumption, fragility, trigger, tripwire, falsifier를 선언한다.
+3. 각 단계는 observed, derived, missing, scenario lane 중 하나에 놓인다.
+4. falsifier가 없는 주장은 결론으로 승격하지 않는다.
+5. 사용자는 claim에서 exact 원문과 현재 판정까지 왕복한다.
+
+### S4. DART와 EDGAR 비교
 
 1. 삼성전자와 Apple을 seed로 선택한다.
 2. 같은 `disclosureKey`, 표준 재무 account, 기간 빈도를 맞춘다.
 3. 시장별 공시 원문과 정규화 결과를 나란히 연다.
 4. 교차시장 관계를 회사명 유사도로 자동 생성하지 않는다.
 
-### S4. 질문을 카메라로 변환
+### S5. 질문을 flight plan으로 변환
 
 질문: "반도체 공급망 중 최근 2년 수익성은 좋아졌지만 신용 취약축이 있는 회사"
 
 - public deterministic 경로: 산업, 기간, metric, credit 조건을 Lens Tray에서 선택한다.
-- AI 경로: 기존 Workbench가 skill과 capability를 선택하고 `ProjectionSpec`을 만든다.
-- 두 경로는 같은 projection executor와 scene을 사용한다.
+- AI 경로: 기존 Workbench가 skill과 capability를 선택하고 `UniverseFlightPlan`과 그 안의 `ProjectionSpec`을 만든다.
+- 두 경로는 같은 projection executor, `SceneBeat[]`, EvidenceReceipt를 사용한다.
 
 ## 7. MVP 범위
 
 - public `/universe` 독립 route와 검색, lens, scene, evidence 제품 shell
+- 기존 atlas, timeline, movers를 사용한 34개 산업 변화 우주
+- 성장 지속성, 신용 취약, 공시 변화 3개 Thesis Kill-Chain
 - 기존 map artifact의 atlas, industry, company 3단계 LOD를 공유 런타임에서 지연 로드
 - fact와 candidate relation의 시각 및 데이터 계약 분리
 - exact evidence를 on demand로 해소하는 Evidence Drawer
 - validAt, knowledgeAsOf, dataAsOf 표시
 - 기존 산업, 재무, 신용, scan metric을 lens로 적용
-- share URL로 seed, filters, lens, time, buildId 재현
+- share URL로 seed, filters, lens, time, snapshotSetId, flight plan 재현
 - graph와 동등한 table/list view
 
 ## 8. 명시적 비목표
@@ -108,6 +122,9 @@ HF Parquet과 기존 map 및 search artifact가 데이터 정본이다. Universe
 - 네이버 localOnly 데이터의 public 확대 노출
 - 새 공개 Python 엔진이나 별도 public API surface 신설
 - `/map`을 `/universe`로 이름만 바꾸거나 두 route에 동일 화면을 복사
+- existing ShockSimulator의 양방향 BFS 또는 임의 감쇠 재사용
+- single score로 PASS, FAIL, MISSING 혼합
+- source snapshot 없이 exact historical replay 약속
 
 ## 9. 성공 지표
 
@@ -116,10 +133,11 @@ HF Parquet과 기존 map 및 search artifact가 데이터 정본이다. Universe
 - atlas cold first data <= 1.5초, 초기 map 데이터 <= 150KB gzip
 - industry scene cold <= 2.5초, company scene cold <= 3.5초
 - evidence drawer cold P95 <= 5초, warm P95 <= 1.5초
-- 공유 URL을 같은 buildId에서 열면 node, edge, filter, lens가 byte-stable하게 재현
+- 공유 URL을 같은 SourceSnapshotSet에서 열면 scene, claim, receipt, filter, lens가 byte-stable하게 재현
 - 기본 사실 레이어 assertion sourceRef coverage 100%
 - fact와 candidate를 구분하지 못한 usability test 0건
 - graph 비지원 환경에서도 table view로 핵심 작업 100% 수행
+- baseline 대비 검증 가능한 claim 또는 falsifier의 information yield 개선
 
 ### 품질 지표
 
@@ -144,7 +162,9 @@ HF Parquet과 기존 map 및 search artifact가 데이터 정본이다. Universe
 |---|---|---|---|
 | U0 | 거짓 관계를 사실로 보지 않음 | assertion 및 품질 계약 | gold와 hard negative 통과 |
 | U1 | 빠른 우주 탐색 | semantic LOD와 lazy load | atlas, industry, company 성능 예산 통과 |
-| U2 | 클릭하면 원문으로 돌아감 | Evidence on Demand | fact layer sourceRef 100% |
+| U1-A | 산업 변화가 보임 | SourceSnapshotSet과 change diff | look-ahead 0, before/after evidence 95% |
+| U1-B | thesis를 반증 가능하게 조사 | recipe to SceneBeat compiler | 단계, 근거, falsifier 유실 0 |
+| U2 | 클릭하면 원문으로 돌아감 | Evidence on Demand와 receipt | fact layer sourceRef 100% |
 | U3 | 필요한 경우 근거 조회 가속 | 기존 map additive schema | 런타임 실패 실측과 승인 |
 | U4 | 한국과 미국 비교 | stable global IDs와 cross-market panel | 동일 질문 20개 conformance |
 | U5 | 발견과 공유의 우주 감성 | renderer adapter | 2D 졸업 후, 성능 및 접근성 동등 |

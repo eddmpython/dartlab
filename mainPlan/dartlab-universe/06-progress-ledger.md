@@ -18,7 +18,13 @@
 - [x] `/universe` public beta, GA, 장기 route 운영 계약 작성
 - [x] U0 attempts category 생성
 - [x] U0-T01 current graph truth census 실행
-- [ ] U0 identity, evidence, assertion, projection attempts
+- [x] 제품 혁신, 시각 혁신, 기술 및 증거 관점 교차 토론
+- [x] P0 변화 우주와 Thesis Kill-Chain, P1 판정 우주와 한미 Twin 우선순위 확정
+- [x] SourceSnapshotSet, UniverseFlightPlan, UniverseFlightReceipt, SceneBeat, EvidenceReceipt, GapReceipt 계획 계약 확정
+- [x] snapshot, workflow, visual, policy attempts 하위 category 생성
+- [ ] U0-T02 graph factual admission 강화
+- [ ] U0 snapshot, policy, lens, identity, evidence, assertion, projection attempts
+- [ ] U0 workflow, visual, information yield attempts
 - [ ] U1~U2 implementation
 - [ ] U3 artifact 변경 승인 여부
 - [ ] UI 눈검수 및 push 승인
@@ -38,6 +44,13 @@
 | 2026-07-15 | `/universe` 독립 route | ontology, evidence, time, lens는 시장 지도와 다른 제품 작업. runtime과 artifact를 공유해 중복 방지 |
 | 2026-07-15 | 3년 운영 모델 포함 | schema, owner, deprecation, quality, incident, cost를 제품 계약으로 승격 |
 | 2026-07-15 | U0-T01 attempt 실행 | 현재 HF graph에서 sourceRef 및 availableAt을 모두 가진 observed 적격 edge 0 |
+| 2026-07-15 | P0는 변화 우주와 Thesis Kill-Chain | 변화는 공시 및 관측의 시간 자산, Kill-Chain은 recipe의 requiredEvidence와 falsifier를 직접 제품 가치로 전환 |
+| 2026-07-15 | P1은 판정 우주와 한미 Twin | scan의 PASS, FAIL, MISSING과 DART, EDGAR 동형 panel이 DartLab 고유 자산 |
+| 2026-07-15 | Evidence Shock Theater P0 및 P1 기각 | current edge는 factual causal path가 아니고 기존 BFS와 임의 감쇠는 evidence admission이 없음 |
+| 2026-07-15 | 전량 3D 점구름 기각 | 정보 수율, 접근성, evidence 판독, runtime ROI가 없음 |
+| 2026-07-15 | SourceSnapshotSet 도입 | 단일 map buildId는 search, panel, finance, capability, recipe exact replay를 보장하지 못함 |
+| 2026-07-15 | query knownAt을 assertion identity에서 제거 | 미래 효력 공시를 허용하고 같은 assertion이 query cutoff마다 다른 ID가 되는 오류 방지 |
+| 2026-07-15 | 시각은 의미 좌표와 L0~L5 representation 교체 | current map의 무작위 force와 화면 전체 복제 대신 SVG, bounded Cosmos, DOM reference surface 분리 |
 
 ## 핵심 실측 스냅샷
 
@@ -60,6 +73,22 @@ OCI incident edges         4,474
 exact edge sourceRef            0
 ```
 
+같은 날 후속 live meta 재감사:
+
+```text
+map buildId              20260715-084444
+map commitSha            bc10468
+ecosystem bytes          6,015,104
+atlas bytes                 27,517
+industryStats bytes        244,656
+search index bytes          306,450
+company payload bytes    79,532,356
+finance dataAsOf         2026-07-15T08:37:55Z
+dart dataAsOf            null
+```
+
+최초 감사 수치는 지우지 않는다. 후속 snapshot은 SourceSnapshotSet 필요성을 강화하는 갱신 기록이다.
+
 ## 외부 기술 사실
 
 - [HF dataset card](https://huggingface.co/datasets/eddmpython/dartlab-data): 276GB, CC BY 4.0, KR 약 2,700사와 US 약 1,000사, Parquet 직접 접근
@@ -69,10 +98,12 @@ exact edge sourceRef            0
 ## 구현 전 blocker
 
 1. U0 gold positive 및 hard negative set이 없다.
-2. exact evidence resolver의 cold P95와 transfer가 아직 측정되지 않았다.
-3. `scan-screener-os`의 public valuation licensing P0가 승인 대기다. Universe는 해당 필드를 사용하지 않아야 한다.
-4. workspace의 landing 및 ui 대량 삭제는 본 작업과 무관한 기존 변경이다. U1 production 착수 전에 frontend host가 정상 상태인지 재검해야 한다.
+2. exact evidence resolver의 cold P95와 cold initialization 포함 transfer가 아직 측정되지 않았다.
+3. source별 version이 묶이지 않았고 live meta의 dart dataAsOf가 null이다.
+4. source별 RedistributionReceipt와 환경별 LensAvailability가 없다.
+5. `scan-screener-os`의 public valuation licensing P0가 승인 대기다. Universe는 해당 필드를 사용하지 않아야 한다.
+6. workspace의 landing 및 ui 대량 삭제는 본 작업과 무관한 기존 변경이다. U1 production 착수 전에 frontend host가 정상 상태인지 재검해야 한다.
 
 ## 다음 단일 행동
 
-`tests/_attempts/dartlabUniverse/`에서 U0-I01 canonical identity probe를 실행한다. U0 품질 게이트를 통과하기 전 UI나 map artifact를 변경하지 않는다.
+`tests/_attempts/dartlabUniverse/truth/`에서 U0-T02 factual admission probe를 설계하고 실행한다. exact span, section, direction, sourcePublishedAt, availableAt, valid interval, policy receipt를 분리 계수한 뒤 U0-S01 SourceSnapshotSet으로 이동한다. U0 품질 게이트를 통과하기 전 UI나 map artifact를 변경하지 않는다.

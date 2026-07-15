@@ -5,20 +5,33 @@
 
 ## 카테고리 한 줄
 
-현재 HF truth와 기존 엔진을 이용해 entity, assertion, evidence, time, bounded projection의 제품 적격성을 순서대로 검증한다.
+현재 HF truth와 기존 엔진을 이용해 entity, assertion, evidence, time, source snapshot, workflow, visual grammar, public policy, bounded projection의 제품 적격성을 순서대로 검증한다.
+
+## 하위 책임
+
+| category | 책임 |
+|---|---|
+| `truth/` | current graph 센서스와 factual admission |
+| `snapshot/` | SourceSnapshotSet과 change replay |
+| `workflow/` | recipe, SceneBeat, falsifier, information yield |
+| `visual/` | 상태 판독, layout, density, 접근성, renderer bakeoff |
+| `policy/` | RedistributionReceipt와 LensAvailability |
+| `identity/`, `evidence/`, `ontology/`, `projection/` | canonical ID, exact source, assertion, bounded scene |
 
 ## 졸업 순서
 
 1. 카테고리와 가설 원장 확정
 2. 현재 공개 graph truth census
-3. canonical entity resolution
-4. exact evidence resolution
-5. assertion, revision, bitemporal contract
-6. bounded projection과 deterministic scene
-7. public runtime latency 및 transfer budget
-8. cross-market conformance
-9. 덕지덕지 제거와 9섹션 docstring 확정
-10. reviewed gold와 hard negative 통과 후에만 production 후보 이관
+3. graph admission 강화와 SourceSnapshotSet
+4. public policy receipt와 LensAvailability
+5. canonical entity와 exact evidence resolution
+6. assertion, revision, time contract와 change replay
+7. bounded projection과 deterministic scene
+8. recipe workflow와 visual qualification
+9. public runtime latency, transfer, information yield
+10. cross-market conformance와 optional 3D uplift
+11. 덕지덕지 제거와 9섹션 docstring 확정
+12. reviewed gold와 hard negative 통과 후에만 production 후보 이관
 
 상세 실험 순서와 판정값은 [mainPlan의 attempts matrix](../../../mainPlan/dartlab-universe/08-attempts-evidence-matrix.md)가 정본이다.
 
@@ -40,4 +53,7 @@ uv run python -X utf8 -m pytest tests/_attempts/dartlabUniverse/truth/testGraphT
 - attempt 결과를 자동으로 HF truth 또는 map artifact에 쓰지 않는다.
 - 현재 edge의 confidence 숫자만으로 observed 승격하지 않는다.
 - sourceRef와 availableAt이 없는 edge를 public fact layer에 넣지 않는다.
+- 단일 map buildId로 search, panel, finance exact replay를 주장하지 않는다.
+- `eventAt <= availableAt`을 보편 규칙으로 강제하지 않는다.
+- information yield 근거 없이 새 renderer dependency나 3D를 production에 넣지 않는다.
 - U0 졸업 전 `src/dartlab/**`에 Universe 전용 신규 능력을 배치하지 않는다.

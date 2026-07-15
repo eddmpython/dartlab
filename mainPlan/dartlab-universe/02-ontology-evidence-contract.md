@@ -63,8 +63,8 @@ UniverseAssertion
   eventAt: ISO date | null
   validFrom: ISO date | null
   validTo: ISO date | null
+  sourcePublishedAt: ISO datetime
   availableAt: ISO datetime
-  knowledgeAsOf: ISO datetime
   revisionId: string
   evidenceRefs: string[]
   provenance: string[]
@@ -75,6 +75,8 @@ UniverseAssertion
   redistributionClass: public | metadataOnly | localOnly | unknown
   schemaVersion: universeAssertion.v1
 ```
+
+`knowledgeAsOf` 또는 UI의 `knownAt`은 assertion 속성이 아니다. 동일 assertion을 어느 cutoff에서 질의했는지 나타내는 `ProjectionSpec`의 filter다. assertionId canonical payload에 query cutoff를 넣지 않는다.
 
 ### UniverseRelation
 
@@ -136,18 +138,23 @@ MVP controlled predicate는 작게 시작한다.
 
 ## 7. 시간 계약
 
-시간은 최소 세 축이다.
+시간은 source, reality, query 축으로 분리한다.
 
 - `eventAt` 또는 `validFrom/validTo`: 현실에서 관계나 관측이 유효한 시간
+- `sourcePublishedAt`: 원천이 발행한 시각
 - `availableAt`: public source에서 알 수 있게 된 시간
-- `knowledgeAsOf`: 질문 또는 decision cutoff
+- `knowledgeAsOf` 또는 `knownAt`: 질문 또는 decision cutoff이며 assertion 밖의 query state
 
-필수 인과:
+필수 규칙:
 
 ```text
-eventAt <= availableAt <= knowledgeAsOf
+sourcePublishedAt <= availableAt
 validFrom <= validTo when both exist
+assertion visible when availableAt <= knowledgeAsOf
+assertion applicable when validFrom <= validAt <= validTo, open end allowed
 ```
+
+`eventAt <= availableAt`은 강제하지 않는다. 미래 효력 계약을 오늘 공시하는 것처럼 event 또는 validFrom이 availableAt 뒤에 올 수 있다. 반대로 과거 사건을 뒤늦게 공시할 수도 있다.
 
 정정 공시는 이전 assertion을 삭제하지 않는다. 새 revision assertion을 추가하고 이전 것은 `retracted` 또는 `disputed`로 상태 이동한다. `VintageRef`의 asKnown 및 asOfExact 계약을 재사용한다.
 
@@ -161,8 +168,10 @@ Time Lens는 두 독립 필터를 제공한다.
 수치 관측은 새 graph 전용 타입을 만들지 않고 `VariableObservation` 의미를 재사용한다.
 
 - `entityId`, `signalId`, `value`, `unit`, `frequency`
-- `eventAt`, `availableAt`, `knowledgeAsOf`
+- `eventAt`, `sourcePublishedAt`, `availableAt`, `validFrom`, `validTo`
 - `revisionId`, `VintageRef`, `normalizationRuleHash`
+
+observation visibility도 query의 knowledgeAsOf로 계산한다. query cutoff를 observation identity에 넣지 않는다.
 
 Scene에는 최신값, 변화량, 분포 요약만 node attribute로 들어간다. 전체 시계열은 tableRef와 chart로 읽는다.
 
@@ -200,6 +209,8 @@ EvidencePointer
 
 public exporter는 허용 목록이 아니라 차단 목록을 쓰면 안 된다. source owner가 명시적으로 `public`을 선언한 것만 통과한다.
 
+dataset 전체 license label만으로 개별 upstream field를 승인하지 않는다. source별 `RedistributionReceipt`가 allowedFields, attribution, policyVersion을 가져야 한다. `localOnly`, `unknown`, receipt 만료는 fail closed다.
+
 ## 11. ProjectionSpec
 
 ```text
@@ -225,10 +236,59 @@ ProjectionSpec
   grouping: industry | stage | market | none
   colorBy: controlled metric id
   sizeBy: controlled metric id
-  buildId: string
+  snapshotSetId: string
+  buildId: string | null
 ```
 
-질문 원문은 필수가 아니다. ProjectionSpec은 deterministic UI와 AI 모두 만들 수 있다. 같은 spec과 buildId는 같은 scene을 반환해야 한다.
+질문 원문은 필수가 아니다. ProjectionSpec은 deterministic UI와 AI 모두 만들 수 있다. 같은 spec과 SourceSnapshotSet은 같은 scene을 반환해야 한다. `buildId`는 legacy map compatibility를 위한 선택 필드이며 exact replay identity가 아니다.
+
+### SourceSnapshotSet
+
+```text
+SourceSnapshotSet
+  schemaVersion: sourceSnapshotSet.v1
+  snapshotSetId: sha256 canonical source versions
+  sources[]:
+    sourceId
+    origin
+    path
+    versionOrEtag
+    payloadHash: optional
+    dataAsOf
+    redistributionReceiptId
+  mapBuildId
+  capabilityCatalogVersion
+  recipeCatalogVersion
+```
+
+map, search, panel, finance 중 version을 복원할 수 없는 source는 `unreplayable`로 남긴다. 현재 데이터 재실행과 역사적 exact replay를 같은 문구로 표시하지 않는다.
+
+### UniverseFlightPlan과 receipt
+
+`ProjectionSpec` 여러 개로 조사 과정을 만든다.
+
+```text
+UniverseFlightPlan
+  schemaVersion: universeFlightPlan.v1
+  flightId: sha256 canonical beats
+  objective: investigate | compare | falsify | explain
+  snapshotSetId
+  beats: SceneBeat[]
+```
+
+실행 결과는 plan과 분리한다.
+
+```text
+UniverseFlightReceipt
+  flightId
+  snapshotSetId
+  beatReceipts: EvidenceReceipt[][]
+  unresolved: GapReceipt[]
+  outputHash
+  executedAt
+```
+
+`executedAt`은 outputHash에서 제외한다. 각 `SceneBeat`는 orient, focus, compare, evidence, falsify, conclude 중 하나의 intent와 projection을 가진다. 화면에서 데이터처럼 보이는 mark는 `EvidenceReceipt` 또는 `GapReceipt`로 돌아가야 한다.
 
 ## 12. 엔진 소유권
 
@@ -259,4 +319,3 @@ L2 엔진끼리는 import하지 않는다. story, AI 또는 UI sink가 직렬화
 - major migration은 dual-read, shadow comparison, cutover, old reader 제거 순서다.
 - unknown field는 무시할 수 있지만 unknown predicate와 unknown redistributionClass는 fail closed한다.
 - assertionId는 canonical payload hash라 migration 후 의미가 달라지면 새 ID가 생겨야 한다.
-

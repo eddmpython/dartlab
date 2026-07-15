@@ -7,7 +7,7 @@ public 제품 경로는 `/universe`다.
 | route | 제품 역할 | owner state | 유지 원칙 |
 |---|---|---|---|
 | `/map` | 현재 시장 및 산업 지도 | map selection과 기존 deep link | 기존 사용자 작업 회귀 금지 |
-| `/universe` | ontology, evidence, time, engine lens 탐색 | ProjectionSpec과 selected assertion | 독립 제품으로 진화 |
+| `/universe` | 변화, thesis, evidence, time, engine lens 탐색 | UniverseFlightPlan, ProjectionSpec, selected claim | 독립 제품으로 진화 |
 
 두 route를 합치거나 하나를 다른 하나로 redirect하지 않는다. `/map`은 Universe의 축소판이 아니고 `/universe`는 map의 이름 변경이 아니다.
 
@@ -49,13 +49,16 @@ flowchart TD
 canonical URL 예:
 
 ```text
-/universe?v=1&build=20260714-195628&seed=kr:dart:corp:00126380&validAt=2025-12-31&knownAt=2026-03-31T00:00:00Z&pred=suppliesTo,classifiedIn&status=observed,corroborated&lens=engines.credit&group=industry&selected=relation:...
+/universe?v=1&snapshot=sourceSnapshotSetId&build=20260714-195628&workflow=changeUniverse.v1&beat=3&seed=kr:dart:corp:00126380&validAt=2025-12-31&knownAt=2026-03-31T00:00:00Z&pred=suppliesTo,classifiedIn&status=observed,corroborated&lens=engines.credit&group=industry&selected=claim:...
 ```
 
 허용 state:
 
 - schema version
+- snapshotSetId
 - buildId
+- workflowId와 beat index
+- flightId integrity checksum, optional
 - canonical seed IDs
 - validAt
 - knownAt
@@ -75,6 +78,8 @@ canonical URL 예:
 
 URL decode 실패, unknown predicate, unknown redistributionClass는 fail closed다. 유효한 seed만 남겨 임의로 부분 복구하지 않고 오류와 수정 가능한 필드를 표시한다.
 
+`flightId`만으로 plan을 서버에서 조회하지 않는다. MVP share는 versioned workflowId, beat index, canonical projection parameter로 flight plan을 다시 만들고 flightId는 선택적 무결성 checksum으로만 비교한다. arbitrary raw question이나 서버 저장 plan ID를 URL 계약에 넣지 않는다.
+
 ## 4. route load 계약
 
 ### server load
@@ -92,7 +97,7 @@ URL decode 실패, unknown predicate, unknown redistributionClass는 fail closed
 
 ### cache
 
-cache key는 `buildId + schemaVersion + sourcePath + byteRange + projectionId`다. `/map`과 `/universe`가 같은 source를 읽으면 같은 runtime cache namespace를 사용한다.
+cache key는 `snapshotSetId + schemaVersion + sourcePath + byteRange + projectionId`다. legacy map compatibility에서는 buildId를 하위 source version으로 포함한다. `/map`과 `/universe`가 같은 source를 읽으면 같은 runtime cache namespace를 사용한다.
 
 ## 5. navigation과 발견
 
@@ -108,7 +113,8 @@ cache key는 `buildId + schemaVersion + sourcePath + byteRange + projectionId`�
 - 기본 metadata는 제품 설명, dataAsOf, public entity count만 포함한다.
 - 사용자 선택 종목과 질문을 server log나 OG image 생성 요청으로 보내지 않는다.
 - share preview는 seed label과 public aggregate만 사용한다.
-- stale buildId URL은 현재 재실행과 원본 재현 불가를 구분한다.
+- stale buildId 또는 snapshotSetId URL은 현재 재실행과 원본 재현 불가를 구분한다.
+- source version을 복원할 수 없는 share는 exact replay로 표현하지 않는다.
 
 ## 7. release state
 
@@ -139,7 +145,7 @@ release state는 UI 복제나 별도 build를 만들지 않는다. 하나의 rou
 
 beta에서 수집 가능한 운영 지표:
 
-- buildId와 schemaVersion
+- snapshotSetId, source별 version, buildId와 schemaVersion
 - load duration과 transfer bytes
 - cache hit
 - scene node, edge, omitted count

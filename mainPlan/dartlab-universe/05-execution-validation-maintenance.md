@@ -9,13 +9,13 @@
 - `/universe`를 독립 제품 route로 만들되 `/map`, search, scan, industry, capability와 데이터 및 runtime 기능을 중복 구현하지 않는다.
 - UI는 브라우저 눈검수 전 push하지 않는다.
 
-work packet 단위 실행 순서와 commit 경계는 `07-implementation-playbook.md`, attempt 가설과 falsifier는 `08-attempts-evidence-matrix.md`, route와 release는 `09-public-route-release-contract.md`가 정본이다.
+work packet 단위 실행 순서와 commit 경계는 `07-implementation-playbook.md`, attempt 가설과 falsifier는 `08-attempts-evidence-matrix.md`, route와 release는 `09-public-route-release-contract.md`, 제품 혁신과 시각 gate는 `10-innovation-thesis-killer-workflows.md`부터 `12-innovation-validation-scorecard.md`가 정본이다.
 
 ## 2. Phase U0: Truth Gate
 
 ### 목표
 
-현재 edge를 사실, 후보, 오류로 분류하고 assertion contract를 실데이터로 검증한다.
+현재 edge를 사실, 후보, 오류로 분류하고 assertion, source snapshot, workflow, visual grammar, public policy를 실데이터로 검증한다.
 
 ### 작업
 
@@ -26,6 +26,10 @@ work packet 단위 실행 순서와 commit 경계는 `07-implementation-playbook
 - reviewed positive 300개 및 hard-negative 300개 fixture
 - `OCI`, self-loop, 동일 회사명, ticker 변경, 정정공시 회귀핀
 - redistributionClass admission test
+- SourceSnapshotSet과 change replay
+- recipe to SceneBeat 및 falsifier 보존
+- semantic LOD, 상태 판독, layout 결정론, renderer bakeoff
+- source별 RedistributionReceipt와 LensAvailability
 
 ### 종료 조건
 
@@ -35,18 +39,25 @@ work packet 단위 실행 순서와 commit 경계는 `07-implementation-playbook
 - time order 오류 0
 - observed self-loop 0
 - observed 단일 hub 5% 초과 0 또는 explicit reviewed whitelist
+- historical replay look-ahead 0
+- workflow 단계, requiredEvidence, falsifier 유실 0
+- fact, candidate, derived, scenario 판독 90% 이상
+- public mark policy receipt coverage 100%
 
 ## 3. Phase U1: Serverless Scene
 
 ### 목표
 
-독립 `/universe` route에 atlas-first semantic LOD와 scene contract를 도입하고, 기존 `/map`은 현재 제품으로 유지한다.
+독립 `/universe` route에 atlas-first semantic LOD, 34개 산업 변화 우주, 첫 3개 Thesis Kill-Chain을 도입하고, 기존 `/map`은 현재 제품으로 유지한다.
 
 ### 작업
 
 - Universe contract type 추가
 - `marketMap()` 일괄 load를 meta, atlas, industry, company로 분리
 - Projection Compiler와 deterministic limit
+- UniverseFlightPlan, SceneBeat, EvidenceReceipt, GapReceipt
+- 변화 우주 snapshot diff와 Claim Ledger
+- 성장 지속성, 신용 취약, 공시 변화 workflow registry
 - existing `IndustryAtlas`, `EcosystemMap`, `CompanyCard`의 low-level renderer와 artifact loader만 adapter로 재사용
 - `/universe` route와 독립 `UniverseSurface` 추가
 - table equivalent view
@@ -58,6 +69,7 @@ work packet 단위 실행 순서와 commit 경계는 `07-implementation-playbook
 - ecosystem은 explicit company view 전 network request 0
 - share URL deterministic scene hash 일치
 - WebGL 실패 시 table 및 SVG 동작
+- baseline 대비 information yield 개선
 
 ## 4. Phase U2: Evidence on Demand
 
@@ -78,7 +90,7 @@ work packet 단위 실행 순서와 commit 경계는 `07-implementation-playbook
 ### 종료 조건
 
 - gold 300 relation evidence resolution >= 95%
-- cold P95 <= 5초, transfer <= 2MB
+- cold P95 <= 5초, first cold transfer provisional 4MB 이하, 이후 edge incremental 2MB 이하
 - unresolved edge fact promotion 0
 - external content untrusted contract 위반 0
 
@@ -174,6 +186,10 @@ DART와 EDGAR의 동형 panel 및 표준 finance로 동일 질문을 비교한�
 - `tests/_attempts/dartlabUniverse/evidence/exactEvidenceProbe.py`: edge hint에서 sourceRef 찾는 실험
 - `tests/_attempts/dartlabUniverse/ontology/assertionContract.py`: canonical payload, assertionId, admission rule
 - `tests/_attempts/dartlabUniverse/projection/boundedProjection.py`: semantic LOD, deterministic truncation, time filter
+- `tests/_attempts/dartlabUniverse/snapshot/`: SourceSnapshotSet과 change replay
+- `tests/_attempts/dartlabUniverse/workflow/`: recipe, SceneBeat, falsifier와 information yield
+- `tests/_attempts/dartlabUniverse/visual/`: 상태 판독, layout, density, accessibility, renderer bakeoff
+- `tests/_attempts/dartlabUniverse/policy/`: RedistributionReceipt와 LensAvailability
 - `tests/_attempts/dartlabUniverse/fixtures/reviewedPositive.jsonl`: reviewed positive
 - `tests/_attempts/dartlabUniverse/fixtures/hardNegative.jsonl`: 오탐과 충돌
 - `tests/_attempts/dartlabUniverse/README.md`: Inputs, Method, Results, Limits, Decision 원장
@@ -264,8 +280,10 @@ DART와 EDGAR의 동형 panel 및 표준 finance로 동일 질문을 비교한�
 
 ### time
 
-- `eventAt <= availableAt <= knowledgeAsOf`
-- validAt과 knownAt 독립 변화
+- `sourcePublishedAt <= availableAt`
+- valid interval과 knownAt 독립 변화
+- 미래 효력 event 또는 validFrom 허용
+- query knownAt과 assertionId 독립
 - future filing look-ahead 차단
 - corrected filing as-known 재현
 - missing time은 0이나 오늘로 채우지 않고 unknown
@@ -277,7 +295,7 @@ DART와 EDGAR의 동형 panel 및 표준 finance로 동일 질문을 비교한�
 - request dedup 동일 range 1회
 - failure가 cache success로 남지 않음
 - evidence resolver byte budget
-- stale buildId와 schema mismatch fail closed
+- stale snapshotSetId, legacy buildId, schema mismatch를 구분하고 fail closed
 - WebGL context loss table fallback
 
 ### UX
@@ -336,7 +354,7 @@ uv run python -X utf8 tests/run.py preflight
 - Truth Plane current: source owner retention
 - compatibility docs: 삭제 금지, scene source에서는 제외
 - search staging: search ops가 current pointer와 rollback window 기준으로 관리
-- browser cache: buildId namespace와 bounded TTL
+- browser cache: snapshotSetId namespace와 bounded TTL, legacy map source는 buildId 포함
 - session assertion: local cache only, source truth로 자동 승격 금지
 - approved map assertion pointer: existing map lifecycle과 함께 stage/promote/rollback
 

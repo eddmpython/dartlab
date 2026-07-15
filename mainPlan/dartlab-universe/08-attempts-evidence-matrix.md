@@ -12,6 +12,22 @@ tests/_attempts/dartlabUniverse/
   truth/
     graphTruthProbe.py
     testGraphTruthProbe.py
+  snapshot/
+    README.md
+    sourceSnapshotSetProbe.py
+    changeReplayProbe.py
+  workflow/
+    README.md
+    workflowProjectionProbe.py
+    flightPlanContract.py
+  visual/
+    README.md
+    visualGrammarProbe.mjs
+    rendererBakeoff.mjs
+  policy/
+    README.md
+    redistributionReceiptProbe.py
+    lensAvailabilityProbe.py
   identity/
     entityIdentityProbe.py
     testEntityIdentityProbe.py
@@ -48,7 +64,7 @@ tests/_attempts/dartlabUniverse/
 |---|---|
 | attemptId | 변경되지 않는 ID |
 | hypothesis | 한 문장 가설 |
-| input | source path, buildId, 표본, cutoff |
+| input | source path, snapshotSetId 또는 legacy buildId, 표본, cutoff |
 | command | 재현 명령 |
 | metrics | 정량 결과 |
 | falsifier | 가설을 기각하는 조건 |
@@ -62,15 +78,28 @@ Python demo의 module docstring에는 `결과` 섹션을 둔다. 출력 파일�
 | ID | 질문 | 입력 | 합격 | 실패 시 결정 | 상태 |
 |---|---|---|---|---|---|
 | U0-T01 | 현재 graph가 fact로 입장 가능한가 | HF ecosystem | sourceRef와 availableAt coverage | 기존 edge candidate 강등 | 완료 |
+| U0-T02 | exact admission 필드가 실제 있는가 | HF ecosystem과 source candidates | span, section, direction, time, policy 분리 계수 | current edge candidate 유지 | 대기 |
 | U0-I01 | canonical legal entity ID가 복원되는가 | KR 50, US 30 | exact ID 100%, ambiguous auto resolve 0 | reference resolver 우선 보강 | 대기 |
 | U0-E01 | edge hint에서 exact source를 찾는가 | positive 100, negative 100 | resolution 95%, false accept 1% 이하 | predicate별 source lane 재설계 | 대기 |
 | U0-O01 | revision과 시간을 보존하는가 | multi-filing fixture | history 손실 0, look-ahead 0 | assertion schema 수정 | 대기 |
 | U0-P01 | bounded scene이 결정론적인가 | atlas, industry, company | bounds 100%, hash 일치 100% | priority/truncation 수정 | 대기 |
+| U0-S01 | source 전체가 재현 가능한가 | map, search, panel, finance, catalog | source version 또는 unreplayable 100% | exact replay 문구 금지 | 대기 |
+| U0-P02 | public field가 승인됐는가 | source와 field registry | public mark receipt 100%, false accept 0 | source lane 차단 | 대기 |
+| U0-L01 | lens가 환경에서 실제 가능한가 | 6 output archetype | unavailable 오표시 0, missing 보존 | 해당 lens 숨김 | 대기 |
+| U0-W01 | 변화를 look-ahead 없이 재생하는가 | DART 30사, cutoff 2개 | revision 100%, look-ahead 0, evidence 95% | 변화 우주 범위 축소 | 대기 |
+| U0-W02 | recipe를 반증 workflow로 만드는가 | tested recipe 10개 | 단계, 근거, falsifier 유실 0 | Kill-Chain 보류 | 대기 |
+| U0-V01 | evidence 상태를 읽는가 | 30 card, task participant | 판독 90% 이상 | visual grammar 재설계 | 대기 |
+| U0-V02 | layout이 재현되는가 | 3 browser, 20 replay | logical hash 일치, 같은 viewport 및 DPR anchor 1px 이하 | layout 교체 | 대기 |
+| U0-V03 | 밀도에서 생략이 정직한가 | 250, 500, 1,000 node | collision 2% 이하, receipt 100% | lower LOD | 대기 |
+| U0-V04 | 이중 시간을 이해하는가 | revision task 12개 | 시간 판독 90% 이상 | Time Lens 재설계 | 대기 |
+| U0-V05 | 접근성 표면이 동등한가 | keyboard, reader, low GPU | 핵심 task 100% | renderer 기각 | 대기 |
+| U0-V06 | 새 renderer가 필요한가 | SVG, Cosmos, DOM, 후보 | task, frame, heap, bundle 개선 | 새 dependency 기각 | 대기 |
 | U0-G01 | release gold를 통과하는가 | positive 300, negative 300 | precision 98%, false accept 1% 이하 | U1 금지 | 대기 |
-| U2-R01 | public runtime 예산 안에서 evidence가 열리는가 | reference browsers | cold P95 5초, 2MB 이하 | runtime 최적화 후 U3 토론 | 대기 |
+| U1-Y01 | workflow가 실제로 더 유용한가 | 5 task, baseline과 Universe | information yield 개선 | revise 또는 reject | 대기 |
+| U2-R01 | public runtime 예산 안에서 evidence가 열리는가 | reference browsers | cold P95 5초, first cold 4MB provisional, incremental 2MB | runtime 최적화 후 U3 토론 | 대기 |
 | U2-L01 | 엔진 output을 generic lens로 보이는가 | 6 lens fixtures | axis별 adapter 0, 결손 보존 | Ref contract 보강 | 대기 |
 | U4-C01 | KR과 US가 같은 질문을 받는가 | paired 20 | 20/20 conformance | market lane 분리 유지 | 대기 |
-| U5-V01 | 3D가 같은 scene을 소비하는가 | 3 scene sizes | extra truth request 0 | 3D 기각 또는 보류 | 대기 |
+| U5-X01 | 3D가 같은 scene에서 task를 개선하는가 | 3 scene sizes와 discovery task | extra truth request 0, 2D 대비 uplift | 3D 기각 | 대기 |
 
 ## 4. U0-T01 결과
 
@@ -99,7 +128,7 @@ OCI incidentEdgeCount      4,474
 OCI unique neighbor degree 2,585
 ```
 
-판정: graph artifact와 layout은 재사용할 가치가 있지만, 현재 edge를 factual assertion으로 재사용할 수는 없다.
+판정: graph artifact와 layout은 candidate topology로 재사용할 가치가 있지만, 현재 edge를 factual assertion으로 재사용할 수는 없다. U0-T01은 필드 존재 센서스다. exact span, section, direction, public policy까지 admission한 결과로 해석하지 않으며 U0-T02가 이를 강화한다.
 
 ## 5. existing attempts 재사용 지도
 
@@ -129,6 +158,8 @@ Universe는 위 attempts를 import해 새 의존성을 만드는 것이 아니�
 - `sectionPath`
 - `evidenceText` 또는 table row pointer
 - `eventAt`
+- `validFrom`, `validTo`
+- `sourcePublishedAt`
 - `availableAt`
 - `expectedStatus`
 - `reviewer`
@@ -177,8 +208,14 @@ gold는 자동 생성 candidate를 그대로 승인하지 않는다. 사람이 �
 - `resolveExactEvidence`
 - `canonicalAssertionId`
 - `compileBoundedProjection`
+- `buildSourceSnapshotSet`
+- `compileChangeReplay`
+- `compileWorkflowProjection`
+- `validateVisualGrammar`
+- `validateRedistributionReceipt`
+- `inspectLensAvailability`
 
-이 중 `inspectGraphTruth`만 현재 존재한다. 나머지는 해당 attempt가 시작될 때 이름과 책임을 확정한다.
+이 중 `inspectGraphTruth`만 현재 존재한다. 나머지는 해당 attempt가 시작될 때 이름과 책임을 확정한다. README의 예정 파일명은 production API 약속이 아니다.
 
 ## 테스트
 
