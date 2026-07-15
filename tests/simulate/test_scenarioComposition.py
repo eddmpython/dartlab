@@ -47,16 +47,26 @@ from dartlab.simulate.scenarioComposition import (
     CONDITIONAL_SCENARIO_EXPERIMENT_RESULT_RULE_HASH,
     CONDITIONAL_SCENARIO_EXPERIMENT_RESULT_RULE_ID,
     CONDITIONAL_SCENARIO_EXPERIMENT_RESULT_RULE_VERSION,
+    CONDITIONAL_STRATEGY_EVALUATION_KIND,
+    CONDITIONAL_STRATEGY_EVALUATION_RULE_HASH,
+    CONDITIONAL_STRATEGY_EVALUATION_RULE_ID,
+    CONDITIONAL_STRATEGY_EVALUATION_RULE_VERSION,
     OperatingScenarioCase,
     ScenarioCoefficientBinding,
     ScenarioCompositionError,
     bindConditionalScenarioExperimentReceipt,
+    bindConditionalStrategyEvaluationReceipt,
+    buildConditionalStrategyEvaluation,
     compareOneCompanyTwoScenarioStrategies,
     compareOperatingScenarioCases,
     conditionalScenarioExperimentArtifact,
     conditionalScenarioExperimentParentReceiptIds,
     conditionalScenarioExperimentPayload,
     conditionalScenarioExperimentSubjectHash,
+    conditionalStrategyEvaluationArtifact,
+    conditionalStrategyEvaluationParentReceiptIds,
+    conditionalStrategyEvaluationPayload,
+    conditionalStrategyEvaluationSubjectHash,
     runConditionalScenarioExperiment,
     scenarioCoefficientBindingHash,
     scenarioCoefficientExposureContractHash,
@@ -185,6 +195,50 @@ def _issueConditionalExperimentReceipt(
         issuerId="test-issuer",
         issuerKeyId="test-key",
         issuerExecutableHash=sha256(b"conditional-experiment-issuer-v1").hexdigest(),
+        knowledgeAsOf="20250101",
+        revisionPolicy=revisionPolicy,
+        coverage=coverage,
+        frequency="scenario",
+        stepSpan=1,
+        maxAdmittedStep=0,
+        status="documented",
+        issuedAt="20250102T000000Z",
+        trustedIssuers=trusted,
+    )
+
+
+def _issueConditionalStrategyEvaluationReceipt(
+    database,
+    artifacts,
+    private,
+    trusted,
+    evaluation,
+    *,
+    kind=None,
+    revisionPolicy="explicitAssumption",
+    coverage="synthetic",
+    parentReceiptIds=None,
+):
+    artifactHash = putAdmissionArtifact(artifacts, conditionalStrategyEvaluationArtifact(evaluation))
+    assert artifactHash == conditionalStrategyEvaluationSubjectHash(evaluation)
+    return issueAdmissionReceipt(
+        database,
+        artifacts,
+        privateKey=private,
+        kind=kind or CONDITIONAL_STRATEGY_EVALUATION_KIND,
+        subjectHash=artifactHash,
+        artifactHash=artifactHash,
+        parentReceiptIds=(
+            conditionalStrategyEvaluationParentReceiptIds(evaluation)
+            if parentReceiptIds is None
+            else tuple(parentReceiptIds)
+        ),
+        ruleId=CONDITIONAL_STRATEGY_EVALUATION_RULE_ID,
+        ruleVersion=CONDITIONAL_STRATEGY_EVALUATION_RULE_VERSION,
+        ruleHash=CONDITIONAL_STRATEGY_EVALUATION_RULE_HASH,
+        issuerId="test-issuer",
+        issuerKeyId="test-key",
+        issuerExecutableHash=sha256(b"conditional-strategy-evaluation-issuer-v1").hexdigest(),
         knowledgeAsOf="20250101",
         revisionPolicy=revisionPolicy,
         coverage=coverage,
@@ -406,6 +460,17 @@ def _signedConditionalExperiment(tmp_path, *, stressShock=(-0.03, -0.02), invest
         maxInvestment=200.0,
     )
     return database, artifacts, private, trusted, verifier, experiment
+
+
+def _signedConditionalStrategyEvaluation(tmp_path, *, investment=25.0):
+    database, artifacts, private, trusted, verifier, experiment = _signedConditionalExperiment(
+        tmp_path,
+        investment=investment,
+    )
+    experimentReceipt = _issueConditionalExperimentReceipt(database, artifacts, private, trusted, experiment)
+    sealedExperiment = bindConditionalScenarioExperimentReceipt(experiment, experimentReceipt.receiptId, verifier)
+    evaluation = buildConditionalStrategyEvaluation(sealedExperiment)
+    return database, artifacts, private, trusted, verifier, sealedExperiment, evaluation
 
 
 def _measured_case(
@@ -1212,6 +1277,111 @@ def testConditionalScenarioExperimentReceiptRejectsWrongKindOrMissingParents(tmp
     )
     with pytest.raises(ScenarioCompositionError, match="conditional experiment receipt contract mismatch"):
         bindConditionalScenarioExperimentReceipt(experiment, wrongVintage.receiptId, verifier)
+
+
+def testConditionalStrategyEvaluationReceiptDocumentsJudgementWithoutRecommendation(tmp_path) -> None:
+    database, artifacts, private, trusted, verifier, sealedExperiment, evaluation = (
+        _signedConditionalStrategyEvaluation(tmp_path)
+    )
+    receipt = _issueConditionalStrategyEvaluationReceipt(database, artifacts, private, trusted, evaluation)
+    sealedEvaluation = bindConditionalStrategyEvaluationReceipt(evaluation, receipt.receiptId, verifier)
+    payload = conditionalStrategyEvaluationPayload(evaluation)
+    parentReceiptIds = conditionalStrategyEvaluationParentReceiptIds(evaluation)
+
+    assert sealedEvaluation.evaluationReceiptSubjectHash == conditionalStrategyEvaluationSubjectHash(evaluation)
+    assert sealedEvaluation.evaluationReceiptId == receipt.receiptId
+    assert sealedEvaluation.evaluationReceiptKind == CONDITIONAL_STRATEGY_EVALUATION_KIND
+    assert sealedEvaluation.evaluationReceiptStatus == "documented"
+    assert sealedEvaluation.evaluationReceiptParentReceiptIds == parentReceiptIds
+    assert parentReceiptIds == (sealedExperiment.experimentReceiptId,)
+    assert payload["recommendationStatus"] == "disabled"
+    assert payload["recommendation"] is None
+    assert payload["experimentResult"]["experimentReceiptId"] == sealedExperiment.experimentReceiptId
+    assert payload["experimentResult"]["experimentReceiptSubjectHash"] == sealedExperiment.experimentReceiptSubjectHash
+    assert payload["strategyJudgement"]["conditionalLeaderStrategyIds"] == evaluation.conditionalLeaderStrategyIds
+    assert payload["strategyJudgement"]["strategyRows"]
+    assert payload["strategyJudgement"]["fragileCases"]
+    assert payload["hashes"]["leaderboardHash"] == evaluation.leaderboardHash
+    assert payload["hashes"]["fragilitySummaryHash"] == evaluation.fragilitySummaryHash
+    assert payload["hashes"]["blockerSummaryHash"] == evaluation.blockerSummaryHash
+    assert payload["rules"]["selectionRuleHash"] == evaluation.selectionRuleHash
+    assert payload["rules"]["robustnessRuleHash"] == evaluation.robustnessRuleHash
+    assert "conditionalStrategyEvaluationDocumentedOnly" in sealedEvaluation.blockedReasons
+    assert "strategyEvaluationReceiptNotPolicyCertificate" in sealedEvaluation.blockedReasons
+    assert "conditionalExperimentNotPolicyRecommendation" in sealedEvaluation.blockedReasons
+    assert "automaticRecommendationDisabled" in sealedEvaluation.blockedReasons
+    assert "scoreLeaderNotRecommendation" in sealedEvaluation.blockedReasons
+    assert sealedEvaluation.recommendation is None
+    assert sealedEvaluation.pathAdmissionReceiptIds == ()
+    assert sealedEvaluation.policyEvaluationCertificateIds == ()
+    assert sealedEvaluation.evaluationReceiptId != sealedExperiment.experimentReceiptId
+    assert sealedEvaluation.evaluationReceiptId not in sealedExperiment.experimentReceiptParentReceiptIds
+
+
+def testConditionalStrategyEvaluationHashBindsExperimentAndRuleContent(tmp_path) -> None:
+    _, _, _, _, _, _, first = _signedConditionalStrategyEvaluation(tmp_path / "first")
+    _, _, _, _, _, _, repeat = _signedConditionalStrategyEvaluation(tmp_path / "repeat")
+    changedDatabase, changedArtifacts, changedPrivate, changedTrusted, changedVerifier, _, changed = (
+        _signedConditionalStrategyEvaluation(tmp_path / "changed", investment=80.0)
+    )
+
+    assert conditionalStrategyEvaluationSubjectHash(first) == conditionalStrategyEvaluationSubjectHash(repeat)
+    assert first.evaluationHash == repeat.evaluationHash
+    assert conditionalStrategyEvaluationSubjectHash(first) != conditionalStrategyEvaluationSubjectHash(changed)
+    assert first.strategySetHash != changed.strategySetHash
+    assert first.evaluationHash != changed.evaluationHash
+
+    receipt = _issueConditionalStrategyEvaluationReceipt(
+        changedDatabase,
+        changedArtifacts,
+        changedPrivate,
+        changedTrusted,
+        changed,
+    )
+    tampered = replace(changed, strategyRows=())
+    with pytest.raises(ScenarioCompositionError, match="conditional strategy evaluation hash mismatch"):
+        bindConditionalStrategyEvaluationReceipt(tampered, receipt.receiptId, changedVerifier)
+
+
+def testConditionalStrategyEvaluationReceiptRejectsPolicyLaundering(tmp_path) -> None:
+    database, artifacts, private, trusted, verifier, experiment = _signedConditionalExperiment(tmp_path / "unsealed")
+    with pytest.raises(ScenarioCompositionError, match="sealed conditional experiment receipt"):
+        buildConditionalStrategyEvaluation(experiment)
+
+    database, artifacts, private, trusted, verifier, _, evaluation = _signedConditionalStrategyEvaluation(tmp_path)
+    wrongKind = _issueConditionalStrategyEvaluationReceipt(
+        database,
+        artifacts,
+        private,
+        trusted,
+        evaluation,
+        kind="policyEvaluation",
+    )
+    with pytest.raises(ScenarioCompositionError, match="conditional strategy evaluation receipt verification failed"):
+        bindConditionalStrategyEvaluationReceipt(evaluation, wrongKind.receiptId, verifier)
+
+    missingParents = _issueConditionalStrategyEvaluationReceipt(
+        database,
+        artifacts,
+        private,
+        trusted,
+        evaluation,
+        parentReceiptIds=(),
+    )
+    with pytest.raises(ScenarioCompositionError, match="conditional strategy evaluation receipt parent mismatch"):
+        bindConditionalStrategyEvaluationReceipt(evaluation, missingParents.receiptId, verifier)
+
+    wrongVintage = _issueConditionalStrategyEvaluationReceipt(
+        database,
+        artifacts,
+        private,
+        trusted,
+        evaluation,
+        revisionPolicy="asKnown",
+        coverage="asOfExact",
+    )
+    with pytest.raises(ScenarioCompositionError, match="conditional strategy evaluation receipt contract mismatch"):
+        bindConditionalStrategyEvaluationReceipt(evaluation, wrongVintage.receiptId, verifier)
 
 
 def testOneCompanyScenarioLoopCarriesAdmittedCoefficientBindingLedger() -> None:

@@ -92,6 +92,45 @@ CONDITIONAL_SCENARIO_EXPERIMENT_BLOCKER_RULE_HASH = canonicalPayloadHash(
         "definition": "conditional-experiment-blocker-v1",
     }
 )
+CONDITIONAL_STRATEGY_EVALUATION_VERSION = "conditional-strategy-evaluation-v1"
+CONDITIONAL_STRATEGY_EVALUATION_KIND = "conditionalStrategyEvaluation"
+CONDITIONAL_STRATEGY_EVALUATION_RULE_ID = "conditional-strategy-evaluation"
+CONDITIONAL_STRATEGY_EVALUATION_RULE_VERSION = "1"
+CONDITIONAL_STRATEGY_EVALUATION_SELECTION_RULE_HASH = canonicalPayloadHash(
+    {
+        "schemaVersion": CONDITIONAL_STRATEGY_EVALUATION_VERSION,
+        "definition": "leader-frequency-worst-score-regret-breach-v1",
+    }
+)
+CONDITIONAL_STRATEGY_EVALUATION_ROBUSTNESS_RULE_HASH = canonicalPayloadHash(
+    {
+        "schemaVersion": CONDITIONAL_STRATEGY_EVALUATION_VERSION,
+        "definition": "conditional-leader-classification-v1",
+    }
+)
+CONDITIONAL_STRATEGY_EVALUATION_RULE_HASH = canonicalPayloadHash(
+    {
+        "schemaVersion": CONDITIONAL_STRATEGY_EVALUATION_VERSION,
+        "kind": CONDITIONAL_STRATEGY_EVALUATION_KIND,
+        "status": "documented",
+        "ruleId": CONDITIONAL_STRATEGY_EVALUATION_RULE_ID,
+        "ruleVersion": CONDITIONAL_STRATEGY_EVALUATION_RULE_VERSION,
+        "selectionRuleHash": CONDITIONAL_STRATEGY_EVALUATION_SELECTION_RULE_HASH,
+        "robustnessRuleHash": CONDITIONAL_STRATEGY_EVALUATION_ROBUSTNESS_RULE_HASH,
+    }
+)
+CONDITIONAL_STRATEGY_EVALUATION_CONTRACT_HASH = canonicalPayloadHash(
+    {
+        "schemaVersion": CONDITIONAL_STRATEGY_EVALUATION_VERSION,
+        "kind": CONDITIONAL_STRATEGY_EVALUATION_KIND,
+        "metricDefinitionHash": CONDITIONAL_SCENARIO_EXPERIMENT_METRIC_DEFINITION_HASH,
+        "comparisonRuleHash": CONDITIONAL_SCENARIO_EXPERIMENT_COMPARISON_RULE_HASH,
+        "fragilityDefinitionHash": CONDITIONAL_SCENARIO_EXPERIMENT_FRAGILITY_RULE_HASH,
+        "blockerRuleHash": CONDITIONAL_SCENARIO_EXPERIMENT_BLOCKER_RULE_HASH,
+        "selectionRuleHash": CONDITIONAL_STRATEGY_EVALUATION_SELECTION_RULE_HASH,
+        "robustnessRuleHash": CONDITIONAL_STRATEGY_EVALUATION_ROBUSTNESS_RULE_HASH,
+    }
+)
 SCENARIO_ASSUMPTION_SET_VERSION = "scenario-assumption-set-v1"
 SCENARIO_COEFFICIENT_BINDING_VERSION = "scenario-coefficient-binding-v1"
 SCENARIO_EXPOSURE_CONTRACT_VERSION = "scenario-coefficient-exposure-contract-v1"
@@ -625,6 +664,128 @@ class ConditionalScenarioExperiment:
         object.__setattr__(self, "blockedReasons", tuple(self.blockedReasons))
         object.__setattr__(self, "warnings", tuple(self.warnings))
         object.__setattr__(self, "experimentReceiptParentReceiptIds", tuple(self.experimentReceiptParentReceiptIds))
+
+
+@dataclass(frozen=True)
+class ConditionalStrategyEvaluationRow:
+    """One strategy judgement row derived from a sealed conditional experiment."""
+
+    strategyId: str
+    conditionalLeader: bool
+    robustnessClass: str
+    leaderFrequency: float
+    leaderCellCount: int
+    totalCellCount: int
+    feasibleCellCount: int
+    breachCount: int
+    scoreMedian: float
+    scoreWorst: float
+    scoreBest: float
+    regretMedian: float
+    regretWorst: float
+    blockedReasons: tuple[str, ...]
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "leaderFrequency", float(self.leaderFrequency))
+        object.__setattr__(self, "scoreMedian", float(self.scoreMedian))
+        object.__setattr__(self, "scoreWorst", float(self.scoreWorst))
+        object.__setattr__(self, "scoreBest", float(self.scoreBest))
+        object.__setattr__(self, "regretMedian", float(self.regretMedian))
+        object.__setattr__(self, "regretWorst", float(self.regretWorst))
+        object.__setattr__(self, "blockedReasons", tuple(self.blockedReasons))
+
+
+@dataclass(frozen=True)
+class ConditionalStrategyFragileCase:
+    """Smallest leader margin case that should be surfaced before any strategy claim."""
+
+    caseId: str
+    label: str
+    assumptionSetHash: str
+    scenarioPathPackageHash: str
+    leaderStrategies: tuple[str, ...]
+    runnerUpStrategies: tuple[str, ...]
+    leaderMargin: float
+    scoreSpread: float
+    breachStrategies: tuple[str, ...]
+    blockedReasons: tuple[str, ...]
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "leaderStrategies", tuple(self.leaderStrategies))
+        object.__setattr__(self, "runnerUpStrategies", tuple(self.runnerUpStrategies))
+        object.__setattr__(self, "leaderMargin", float(self.leaderMargin))
+        object.__setattr__(self, "scoreSpread", float(self.scoreSpread))
+        object.__setattr__(self, "breachStrategies", tuple(self.breachStrategies))
+        object.__setattr__(self, "blockedReasons", tuple(self.blockedReasons))
+
+
+@dataclass(frozen=True)
+class ConditionalStrategyEvaluation:
+    """Documented strategy judgement over a sealed conditional experiment."""
+
+    evaluationHash: str
+    schemaVersion: str
+    kind: str
+    entityId: str
+    experimentReceiptId: str
+    experimentReceiptSubjectHash: str
+    experimentHash: str
+    comparisonReplayHash: str
+    simulationSpecHash: str
+    resultSetHash: str
+    strategySetHash: str
+    strategyIds: tuple[str, ...]
+    strategyContractHashes: tuple[str, ...]
+    caseLedgerHashes: tuple[str, ...]
+    caseResultHashes: tuple[str, ...]
+    objectiveIndex: int
+    decisionStatus: str
+    recommendationCeiling: str
+    recommendation: str | None
+    recommendationStatus: str
+    contractHash: str
+    metricDefinitionHash: str
+    comparisonRuleHash: str
+    fragilityDefinitionHash: str
+    blockerRuleHash: str
+    selectionRuleHash: str
+    robustnessRuleHash: str
+    evaluationTableHash: str
+    leaderboardHash: str
+    fragilitySummaryHash: str
+    blockerSummaryHash: str
+    conditionalLeaderStrategyIds: tuple[str, ...]
+    strategyRows: tuple[ConditionalStrategyEvaluationRow, ...]
+    fragileCases: tuple[ConditionalStrategyFragileCase, ...]
+    parentReceiptIds: tuple[str, ...]
+    pathAdmissionReceiptIds: tuple[str, ...]
+    policyEvaluationCertificateIds: tuple[str, ...]
+    blockedReasons: tuple[str, ...]
+    warnings: tuple[str, ...]
+    evaluationReceiptSubjectHash: str = ""
+    evaluationReceiptId: str = ""
+    evaluationReceiptKind: str = ""
+    evaluationReceiptStatus: str = ""
+    evaluationReceiptParentReceiptIds: tuple[str, ...] = ()
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "strategyIds", tuple(self.strategyIds))
+        object.__setattr__(self, "strategyContractHashes", tuple(self.strategyContractHashes))
+        object.__setattr__(self, "caseLedgerHashes", tuple(self.caseLedgerHashes))
+        object.__setattr__(self, "caseResultHashes", tuple(self.caseResultHashes))
+        object.__setattr__(self, "conditionalLeaderStrategyIds", tuple(self.conditionalLeaderStrategyIds))
+        object.__setattr__(self, "strategyRows", tuple(self.strategyRows))
+        object.__setattr__(self, "fragileCases", tuple(self.fragileCases))
+        object.__setattr__(self, "parentReceiptIds", tuple(self.parentReceiptIds))
+        object.__setattr__(self, "pathAdmissionReceiptIds", tuple(self.pathAdmissionReceiptIds))
+        object.__setattr__(self, "policyEvaluationCertificateIds", tuple(self.policyEvaluationCertificateIds))
+        object.__setattr__(self, "blockedReasons", tuple(self.blockedReasons))
+        object.__setattr__(self, "warnings", tuple(self.warnings))
+        object.__setattr__(
+            self,
+            "evaluationReceiptParentReceiptIds",
+            tuple(self.evaluationReceiptParentReceiptIds),
+        )
 
 
 def _dedupe(values: tuple[str, ...]) -> tuple[str, ...]:
@@ -2346,6 +2507,527 @@ def bindConditionalScenarioExperimentReceipt(
         experimentReceiptKind=receipt.kind,
         experimentReceiptStatus=receipt.status,
         experimentReceiptParentReceiptIds=receipt.parentReceiptIds,
+    )
+
+
+def _strategyEvaluationRobustnessClass(
+    summary: ConditionalStrategySummary,
+    conditionalLeaderIds: tuple[str, ...],
+) -> str:
+    if summary.strategyId in conditionalLeaderIds and abs(summary.leaderFrequency - 1.0) <= 1e-12:
+        return "allScenarioConditionalLeader"
+    if summary.strategyId in conditionalLeaderIds:
+        return "scenarioDependentConditionalLeader"
+    if summary.leaderCellCount:
+        return "scenarioLocalLeader"
+    return "neverLeader"
+
+
+def _strategyEvaluationRows(experiment: ConditionalScenarioExperiment) -> tuple[ConditionalStrategyEvaluationRow, ...]:
+    conditionalLeaderIds = _experimentLeaderStrategyIds(experiment)
+    rows: list[ConditionalStrategyEvaluationRow] = []
+    for summary in experiment.strategySummaries:
+        rowReasons: list[str] = []
+        if summary.feasibleCellCount < summary.totalCellCount:
+            rowReasons.append("strategyInfeasibleInSomeCases")
+        if summary.breachCount:
+            rowReasons.append("strategyConstraintBreachPresent")
+        rows.append(
+            ConditionalStrategyEvaluationRow(
+                strategyId=summary.strategyId,
+                conditionalLeader=summary.strategyId in conditionalLeaderIds,
+                robustnessClass=_strategyEvaluationRobustnessClass(summary, conditionalLeaderIds),
+                leaderFrequency=summary.leaderFrequency,
+                leaderCellCount=summary.leaderCellCount,
+                totalCellCount=summary.totalCellCount,
+                feasibleCellCount=summary.feasibleCellCount,
+                breachCount=summary.breachCount,
+                scoreMedian=summary.scoreMedian,
+                scoreWorst=summary.scoreWorst,
+                scoreBest=summary.scoreBest,
+                regretMedian=summary.regretMedian,
+                regretWorst=summary.regretWorst,
+                blockedReasons=_dedupe(tuple(rowReasons)),
+            )
+        )
+    return tuple(
+        sorted(
+            rows,
+            key=lambda row: (
+                -row.leaderFrequency,
+                -row.scoreWorst,
+                row.regretWorst,
+                row.breachCount,
+                row.strategyId,
+            ),
+        )
+    )
+
+
+def _strategyEvaluationFragileCases(
+    experiment: ConditionalScenarioExperiment,
+) -> tuple[ConditionalStrategyFragileCase, ...]:
+    if not experiment.fragilityCells:
+        return ()
+    smallestMargin = min(row.leaderMargin for row in experiment.fragilityCells)
+    return tuple(
+        ConditionalStrategyFragileCase(
+            caseId=row.caseId,
+            label=row.label,
+            assumptionSetHash=row.assumptionSetHash,
+            scenarioPathPackageHash=row.scenarioPathPackageHash,
+            leaderStrategies=row.leaderStrategies,
+            runnerUpStrategies=row.runnerUpStrategies,
+            leaderMargin=row.leaderMargin,
+            scoreSpread=row.scoreSpread,
+            breachStrategies=row.breachStrategies,
+            blockedReasons=row.blockedReasons,
+        )
+        for row in experiment.fragilityCells
+        if abs(row.leaderMargin - smallestMargin) <= 1e-12
+    )
+
+
+def _strategyEvaluationBlockedReasons(experiment: ConditionalScenarioExperiment) -> tuple[str, ...]:
+    reasons = [
+        "conditionalStrategyEvaluationDocumentedOnly",
+        "strategyEvaluationReceiptNotPolicyCertificate",
+    ]
+    reasons.extend(experiment.blockedReasons)
+    if experiment.explicitAssumptionIds or any(ledger.pathAssumptionHash for ledger in experiment.caseLedgers):
+        reasons.append("explicitFutureOverlayPresent")
+    if any(ledger.composedPathAdmissionStatus != "admitted" for ledger in experiment.caseLedgers):
+        reasons.append("composedPathNotAdmitted")
+    if any(not ledger.pathAdmissionReceiptId for ledger in experiment.caseLedgers):
+        reasons.append("pathAdmissionMissing")
+    if any(not ledger.policyEvaluationCertificateId for ledger in experiment.caseLedgers):
+        reasons.append("policyEvaluationCertificateMissing")
+    if experiment.recommendation is None:
+        reasons.append("automaticRecommendationDisabled")
+    if any(ledger.scoreLeaderStrategies for ledger in experiment.caseLedgers):
+        reasons.append("scoreLeaderNotRecommendation")
+    return _dedupe(tuple(reasons))
+
+
+def _validateSealedConditionalExperiment(experiment: ConditionalScenarioExperiment) -> None:
+    if not experiment.experimentReceiptId:
+        raise ScenarioCompositionError("conditional strategy evaluation needs sealed conditional experiment receipt")
+    if (
+        experiment.experimentReceiptKind != CONDITIONAL_SCENARIO_EXPERIMENT_RESULT_KIND
+        or experiment.experimentReceiptStatus != "documented"
+        or experiment.experimentReceiptSubjectHash != conditionalScenarioExperimentSubjectHash(experiment)
+    ):
+        raise ScenarioCompositionError("conditional experiment receipt annotation is invalid")
+    if experiment.recommendation is not None:
+        raise ScenarioCompositionError("conditional strategy evaluation cannot carry recommendation")
+    if experiment.decisionStatus != "conditionalOnly" or experiment.recommendationCeiling != "conditionalOnly":
+        raise ScenarioCompositionError("conditional strategy evaluation needs conditionalOnly experiment")
+    if any(ledger.policyEvaluationCertificateId for ledger in experiment.caseLedgers):
+        raise ScenarioCompositionError("conditional strategy evaluation cannot carry policy certificate ids")
+    if any(ledger.pathAdmissionReceiptId for ledger in experiment.caseLedgers):
+        raise ScenarioCompositionError("conditional strategy evaluation cannot carry path admission ids")
+    if "conditionalExperimentNotPolicyRecommendation" not in experiment.blockedReasons:
+        raise ScenarioCompositionError("conditional strategy evaluation needs experiment recommendation blocker")
+
+
+def _conditionalStrategyEvaluationReplayPayload(evaluation: ConditionalStrategyEvaluation) -> dict:
+    return {
+        "schemaVersion": evaluation.schemaVersion,
+        "kind": evaluation.kind,
+        "status": "documented",
+        "lineageMode": "conditionalComposedPath",
+        "decisionStatus": evaluation.decisionStatus,
+        "recommendationStatus": evaluation.recommendationStatus,
+        "recommendation": evaluation.recommendation,
+        "entityId": evaluation.entityId,
+        "experimentReceiptId": evaluation.experimentReceiptId,
+        "experimentReceiptSubjectHash": evaluation.experimentReceiptSubjectHash,
+        "experimentHash": evaluation.experimentHash,
+        "comparisonReplayHash": evaluation.comparisonReplayHash,
+        "simulationSpecHash": evaluation.simulationSpecHash,
+        "resultSetHash": evaluation.resultSetHash,
+        "strategySetHash": evaluation.strategySetHash,
+        "strategyIds": evaluation.strategyIds,
+        "strategyContractHashes": evaluation.strategyContractHashes,
+        "caseLedgerHashes": evaluation.caseLedgerHashes,
+        "caseResultHashes": evaluation.caseResultHashes,
+        "objectiveIndex": evaluation.objectiveIndex,
+        "contractHash": evaluation.contractHash,
+        "metricDefinitionHash": evaluation.metricDefinitionHash,
+        "comparisonRuleHash": evaluation.comparisonRuleHash,
+        "fragilityDefinitionHash": evaluation.fragilityDefinitionHash,
+        "blockerRuleHash": evaluation.blockerRuleHash,
+        "selectionRuleHash": evaluation.selectionRuleHash,
+        "robustnessRuleHash": evaluation.robustnessRuleHash,
+        "conditionalLeaderStrategyIds": evaluation.conditionalLeaderStrategyIds,
+        "strategyRows": evaluation.strategyRows,
+        "fragileCases": evaluation.fragileCases,
+        "pathAdmissionReceiptIds": evaluation.pathAdmissionReceiptIds,
+        "policyEvaluationCertificateIds": evaluation.policyEvaluationCertificateIds,
+        "blockedReasons": evaluation.blockedReasons,
+        "warnings": evaluation.warnings,
+        "parentReceiptIds": evaluation.parentReceiptIds,
+    }
+
+
+def buildConditionalStrategyEvaluation(experiment: ConditionalScenarioExperiment) -> ConditionalStrategyEvaluation:
+    """Build a documented conditional strategy judgement from a sealed experiment.
+
+    Args:
+        experiment: Conditional experiment already sealed by a documented experiment result receipt.
+
+    Returns:
+        ``ConditionalStrategyEvaluation`` with leader, fragility, blocker, and receipt parent hashes.
+
+    Raises:
+        ScenarioCompositionError: If the experiment is unsealed or already carries recommendation artifacts.
+
+    Example:
+        ``evaluation = buildConditionalStrategyEvaluation(sealedExperiment)``
+    """
+
+    _validateSealedConditionalExperiment(experiment)
+    strategyRows = _strategyEvaluationRows(experiment)
+    if not strategyRows:
+        raise ScenarioCompositionError("conditional strategy evaluation needs strategy rows")
+    fragileCases = _strategyEvaluationFragileCases(experiment)
+    blockedReasons = _strategyEvaluationBlockedReasons(experiment)
+    evaluationTableHash = canonicalPayloadHash(strategyRows)
+    leaderboardHash = canonicalPayloadHash(
+        {
+            "schemaVersion": CONDITIONAL_STRATEGY_EVALUATION_VERSION,
+            "selectionRuleHash": CONDITIONAL_STRATEGY_EVALUATION_SELECTION_RULE_HASH,
+            "conditionalLeaderStrategyIds": _experimentLeaderStrategyIds(experiment),
+            "strategyRows": strategyRows,
+        }
+    )
+    fragilitySummaryHash = canonicalPayloadHash(
+        {
+            "schemaVersion": CONDITIONAL_STRATEGY_EVALUATION_VERSION,
+            "fragilityDefinitionHash": CONDITIONAL_SCENARIO_EXPERIMENT_FRAGILITY_RULE_HASH,
+            "fragileCases": fragileCases,
+            "allFragilityCellsHash": canonicalPayloadHash(experiment.fragilityCells),
+        }
+    )
+    blockerSummaryHash = canonicalPayloadHash(
+        {
+            "schemaVersion": CONDITIONAL_STRATEGY_EVALUATION_VERSION,
+            "blockerRuleHash": CONDITIONAL_SCENARIO_EXPERIMENT_BLOCKER_RULE_HASH,
+            "blockedReasons": blockedReasons,
+        }
+    )
+    draft = ConditionalStrategyEvaluation(
+        evaluationHash="",
+        schemaVersion=CONDITIONAL_STRATEGY_EVALUATION_VERSION,
+        kind=CONDITIONAL_STRATEGY_EVALUATION_KIND,
+        entityId=experiment.entityId,
+        experimentReceiptId=experiment.experimentReceiptId,
+        experimentReceiptSubjectHash=experiment.experimentReceiptSubjectHash,
+        experimentHash=experiment.experimentHash,
+        comparisonReplayHash=_conditionalExperimentComparisonReplayHash(experiment),
+        simulationSpecHash=experiment.simulationSpecHash,
+        resultSetHash=experiment.resultSetHash,
+        strategySetHash=experiment.strategySetHash,
+        strategyIds=experiment.strategyIds,
+        strategyContractHashes=experiment.strategyContractHashes,
+        caseLedgerHashes=experiment.caseLedgerHashes,
+        caseResultHashes=_experimentCaseResultHashes(experiment),
+        objectiveIndex=experiment.objectiveIndex,
+        decisionStatus=experiment.decisionStatus,
+        recommendationCeiling=experiment.recommendationCeiling,
+        recommendation=None,
+        recommendationStatus="disabled",
+        contractHash=CONDITIONAL_STRATEGY_EVALUATION_CONTRACT_HASH,
+        metricDefinitionHash=CONDITIONAL_SCENARIO_EXPERIMENT_METRIC_DEFINITION_HASH,
+        comparisonRuleHash=CONDITIONAL_SCENARIO_EXPERIMENT_COMPARISON_RULE_HASH,
+        fragilityDefinitionHash=CONDITIONAL_SCENARIO_EXPERIMENT_FRAGILITY_RULE_HASH,
+        blockerRuleHash=CONDITIONAL_SCENARIO_EXPERIMENT_BLOCKER_RULE_HASH,
+        selectionRuleHash=CONDITIONAL_STRATEGY_EVALUATION_SELECTION_RULE_HASH,
+        robustnessRuleHash=CONDITIONAL_STRATEGY_EVALUATION_ROBUSTNESS_RULE_HASH,
+        evaluationTableHash=evaluationTableHash,
+        leaderboardHash=leaderboardHash,
+        fragilitySummaryHash=fragilitySummaryHash,
+        blockerSummaryHash=blockerSummaryHash,
+        conditionalLeaderStrategyIds=_experimentLeaderStrategyIds(experiment),
+        strategyRows=strategyRows,
+        fragileCases=fragileCases,
+        parentReceiptIds=(experiment.experimentReceiptId,),
+        pathAdmissionReceiptIds=_dedupe(tuple(ledger.pathAdmissionReceiptId for ledger in experiment.caseLedgers)),
+        policyEvaluationCertificateIds=_dedupe(
+            tuple(ledger.policyEvaluationCertificateId for ledger in experiment.caseLedgers)
+        ),
+        blockedReasons=blockedReasons,
+        warnings=experiment.warnings,
+    )
+    return replace(draft, evaluationHash=canonicalPayloadHash(_conditionalStrategyEvaluationReplayPayload(draft)))
+
+
+def conditionalStrategyEvaluationParentReceiptIds(
+    evaluation: ConditionalStrategyEvaluation,
+) -> tuple[str, ...]:
+    """Return receipt parents required to document conditional strategy evaluation.
+
+    Args:
+        evaluation: Conditional strategy evaluation to seal.
+
+    Returns:
+        Ordered parent receipt identifiers. The first parent is the sealed conditional experiment result.
+
+    Raises:
+        ScenarioCompositionError: If the evaluation lacks its experiment result parent.
+
+    Example:
+        ``parents = conditionalStrategyEvaluationParentReceiptIds(evaluation)``
+    """
+
+    if not evaluation.experimentReceiptId:
+        raise ScenarioCompositionError("conditional strategy evaluation needs experiment result parent")
+    return (evaluation.experimentReceiptId,)
+
+
+def conditionalStrategyEvaluationPayload(evaluation: ConditionalStrategyEvaluation) -> dict:
+    """Build the canonical artifact payload for a documented strategy evaluation.
+
+    Args:
+        evaluation: Conditional strategy evaluation returned by the simulator.
+
+    Returns:
+        Canonical payload binding the sealed experiment, strategy table, fragility, and blockers.
+
+    Raises:
+        ScenarioCompositionError: If parent receipt lineage or policy boundary fields are invalid.
+
+    Example:
+        ``payload = conditionalStrategyEvaluationPayload(evaluation)``
+    """
+
+    parentReceiptIds = conditionalStrategyEvaluationParentReceiptIds(evaluation)
+    if evaluation.parentReceiptIds != parentReceiptIds:
+        raise ScenarioCompositionError("conditional strategy evaluation parent mismatch")
+    if evaluation.evaluationHash != canonicalPayloadHash(_conditionalStrategyEvaluationReplayPayload(evaluation)):
+        raise ScenarioCompositionError("conditional strategy evaluation hash mismatch")
+    if evaluation.recommendation is not None or evaluation.recommendationStatus != "disabled":
+        raise ScenarioCompositionError("conditional strategy evaluation cannot carry recommendation")
+    return {
+        "schemaVersion": CONDITIONAL_STRATEGY_EVALUATION_VERSION,
+        "kind": CONDITIONAL_STRATEGY_EVALUATION_KIND,
+        "status": "documented",
+        "lineageMode": "conditionalComposedPath",
+        "decisionStatus": evaluation.decisionStatus,
+        "recommendationStatus": evaluation.recommendationStatus,
+        "evaluationHash": evaluation.evaluationHash,
+        "evaluation": _conditionalStrategyEvaluationReplayPayload(evaluation),
+        "hashes": {
+            "evaluationTableHash": evaluation.evaluationTableHash,
+            "leaderboardHash": evaluation.leaderboardHash,
+            "fragilitySummaryHash": evaluation.fragilitySummaryHash,
+            "blockerSummaryHash": evaluation.blockerSummaryHash,
+        },
+        "rules": {
+            "contractHash": evaluation.contractHash,
+            "metricDefinitionHash": evaluation.metricDefinitionHash,
+            "comparisonRuleHash": evaluation.comparisonRuleHash,
+            "fragilityDefinitionHash": evaluation.fragilityDefinitionHash,
+            "blockerRuleHash": evaluation.blockerRuleHash,
+            "selectionRuleHash": evaluation.selectionRuleHash,
+            "robustnessRuleHash": evaluation.robustnessRuleHash,
+        },
+        "experimentResult": {
+            "experimentReceiptId": evaluation.experimentReceiptId,
+            "experimentReceiptSubjectHash": evaluation.experimentReceiptSubjectHash,
+            "experimentHash": evaluation.experimentHash,
+            "comparisonReplayHash": evaluation.comparisonReplayHash,
+            "simulationSpecHash": evaluation.simulationSpecHash,
+            "resultSetHash": evaluation.resultSetHash,
+        },
+        "strategyJudgement": {
+            "strategySetHash": evaluation.strategySetHash,
+            "strategyIds": evaluation.strategyIds,
+            "strategyContractHashes": evaluation.strategyContractHashes,
+            "conditionalLeaderStrategyIds": evaluation.conditionalLeaderStrategyIds,
+            "strategyRows": evaluation.strategyRows,
+            "fragileCases": evaluation.fragileCases,
+        },
+        "recommendationCeiling": evaluation.recommendationCeiling,
+        "recommendation": evaluation.recommendation,
+        "blockedReasons": evaluation.blockedReasons,
+        "warnings": evaluation.warnings,
+        "refs": {
+            "conditionalExperimentResult": f"conditionalExperimentResult:{evaluation.experimentReceiptId}",
+            "conditionalExperimentResultSubject": (
+                f"conditionalExperimentResultSubject:{evaluation.experimentReceiptSubjectHash}"
+            ),
+            "conditionalStrategyEvaluationReplay": f"conditionalStrategyEvaluationReplay:{evaluation.evaluationHash}",
+            "strategySet": f"strategySet:{evaluation.strategySetHash}",
+            "strategies": tuple(f"strategy:{strategyId}" for strategyId in evaluation.strategyIds),
+            "leaderboard": f"leaderboard:{evaluation.leaderboardHash}",
+            "fragilitySummary": f"fragilitySummary:{evaluation.fragilitySummaryHash}",
+            "blockerSummary": f"blockerSummary:{evaluation.blockerSummaryHash}",
+            "caseLedgers": tuple(f"caseLedger:{ledgerHash}" for ledgerHash in evaluation.caseLedgerHashes),
+            "caseResults": tuple(f"caseResult:{resultHash}" for resultHash in evaluation.caseResultHashes),
+        },
+        "parentReceiptIds": parentReceiptIds,
+    }
+
+
+def conditionalStrategyEvaluationArtifact(evaluation: ConditionalStrategyEvaluation) -> bytes:
+    """Return canonical bytes for a documented conditional strategy evaluation.
+
+    Args:
+        evaluation: Conditional strategy evaluation to serialize.
+
+    Returns:
+        Canonical JSON bytes whose digest is signed by the strategy evaluation receipt.
+
+    Raises:
+        ScenarioCompositionError: If the evaluation payload is invalid.
+
+    Example:
+        ``artifact = conditionalStrategyEvaluationArtifact(evaluation)``
+    """
+
+    return canonicalPayloadBytes(conditionalStrategyEvaluationPayload(evaluation))
+
+
+def conditionalStrategyEvaluationSubjectHash(evaluation: ConditionalStrategyEvaluation) -> str:
+    """Return the subject hash signed by a conditional strategy evaluation receipt.
+
+    Args:
+        evaluation: Conditional strategy evaluation to bind.
+
+    Returns:
+        SHA-256 digest of the canonical evaluation artifact.
+
+    Raises:
+        ScenarioCompositionError: If the evaluation payload is invalid.
+
+    Example:
+        ``subjectHash = conditionalStrategyEvaluationSubjectHash(evaluation)``
+    """
+
+    return canonicalPayloadHash(conditionalStrategyEvaluationPayload(evaluation))
+
+
+def validateConditionalStrategyEvaluationReceipt(
+    evaluation: ConditionalStrategyEvaluation,
+    receiptId: str,
+    admissionVerifier: AdmissionVerifier,
+) -> "AdmissionReceipt":
+    """Verify a documented conditional strategy evaluation receipt.
+
+    Args:
+        evaluation: Strategy evaluation whose artifact is checked.
+        receiptId: Signed receipt identifier to verify.
+        admissionVerifier: Runtime verifier with trusted issuer keys and artifact root.
+
+    Returns:
+        Verified admission registry receipt for the documented strategy evaluation.
+
+    Raises:
+        ScenarioCompositionError: If receipt contract, parent lineage, artifact bytes, or recommendation boundary drift.
+
+    Example:
+        ``receipt = validateConditionalStrategyEvaluationReceipt(evaluation, receiptId, verifier)``
+    """
+
+    if not _validDigest(receiptId):
+        raise ScenarioCompositionError("conditional strategy evaluation receipt identifier is invalid")
+    subjectHash = conditionalStrategyEvaluationSubjectHash(evaluation)
+    try:
+        from dartlab.simulate.admissionRegistry import artifactPath
+
+        receipt = admissionVerifier.verify(
+            receiptId,
+            expectedSubjectHash=subjectHash,
+            expectedKind=CONDITIONAL_STRATEGY_EVALUATION_KIND,
+        )
+        parentReceipts = tuple(admissionVerifier.verify(parentId) for parentId in receipt.parentReceiptIds)
+        artifactBytes = artifactPath(admissionVerifier.artifactRoot, subjectHash).read_bytes()
+    except (OSError, RuntimeError, ValueError) as error:
+        raise ScenarioCompositionError(
+            f"conditional strategy evaluation receipt verification failed: {error}"
+        ) from error
+    if artifactBytes != conditionalStrategyEvaluationArtifact(evaluation):
+        raise ScenarioCompositionError("conditional strategy evaluation artifact content mismatch")
+    expectedParents = conditionalStrategyEvaluationParentReceiptIds(evaluation)
+    if receipt.parentReceiptIds != expectedParents or len(parentReceipts) != 1:
+        raise ScenarioCompositionError("conditional strategy evaluation receipt parent mismatch")
+    experimentReceipt = parentReceipts[0]
+    if (
+        experimentReceipt.kind != CONDITIONAL_SCENARIO_EXPERIMENT_RESULT_KIND
+        or experimentReceipt.status != "documented"
+        or experimentReceipt.receiptId != evaluation.experimentReceiptId
+        or experimentReceipt.subjectHash != evaluation.experimentReceiptSubjectHash
+        or experimentReceipt.artifactHash != evaluation.experimentReceiptSubjectHash
+        or experimentReceipt.revisionPolicy != "explicitAssumption"
+        or experimentReceipt.coverage != "synthetic"
+    ):
+        raise ScenarioCompositionError("conditional strategy evaluation experiment parent is invalid")
+    if (
+        receipt.status != "documented"
+        or receipt.artifactHash != subjectHash
+        or receipt.ruleId != CONDITIONAL_STRATEGY_EVALUATION_RULE_ID
+        or receipt.ruleVersion != CONDITIONAL_STRATEGY_EVALUATION_RULE_VERSION
+        or receipt.ruleHash != CONDITIONAL_STRATEGY_EVALUATION_RULE_HASH
+        or receipt.revisionPolicy != "explicitAssumption"
+        or receipt.coverage != "synthetic"
+        or receipt.frequency != "scenario"
+        or receipt.stepSpan != 1
+        or receipt.maxAdmittedStep != 0
+    ):
+        raise ScenarioCompositionError("conditional strategy evaluation receipt contract mismatch")
+    if any(parent.kind in {"policyEvaluation", "policyEpisodeBatch"} for parent in parentReceipts):
+        raise ScenarioCompositionError("conditional strategy evaluation cannot depend on policy evaluation receipts")
+    if any(parent.status == "policyAdmitted" for parent in parentReceipts):
+        raise ScenarioCompositionError("conditional strategy evaluation cannot inherit policy admitted parents")
+    requiredReasons = {
+        "conditionalStrategyEvaluationDocumentedOnly",
+        "strategyEvaluationReceiptNotPolicyCertificate",
+        "conditionalExperimentNotPolicyRecommendation",
+        "automaticRecommendationDisabled",
+        "scoreLeaderNotRecommendation",
+    }
+    if evaluation.recommendation is not None or evaluation.recommendationStatus != "disabled":
+        raise ScenarioCompositionError("conditional strategy evaluation cannot carry recommendation")
+    if evaluation.pathAdmissionReceiptIds or evaluation.policyEvaluationCertificateIds:
+        raise ScenarioCompositionError("conditional strategy evaluation cannot carry admission or policy ids")
+    if not requiredReasons.issubset(set(evaluation.blockedReasons)):
+        raise ScenarioCompositionError("conditional strategy evaluation needs recommendation blockers")
+    if evaluation.decisionStatus != "conditionalOnly" or evaluation.recommendationCeiling != "conditionalOnly":
+        raise ScenarioCompositionError("conditional strategy evaluation must stay conditionalOnly")
+    return receipt
+
+
+def bindConditionalStrategyEvaluationReceipt(
+    evaluation: ConditionalStrategyEvaluation,
+    receiptId: str,
+    admissionVerifier: AdmissionVerifier,
+) -> ConditionalStrategyEvaluation:
+    """Attach a verified documented receipt to a conditional strategy evaluation.
+
+    Args:
+        evaluation: Conditional strategy evaluation to annotate.
+        receiptId: Signed documented strategy evaluation receipt identifier.
+        admissionVerifier: Runtime verifier used to validate the receipt and artifact.
+
+    Returns:
+        Copy of the evaluation carrying receipt id, kind, status, subject hash, and parents.
+
+    Raises:
+        ScenarioCompositionError: If receipt verification fails.
+
+    Example:
+        ``sealed = bindConditionalStrategyEvaluationReceipt(evaluation, receiptId, verifier)``
+    """
+
+    receipt = validateConditionalStrategyEvaluationReceipt(evaluation, receiptId, admissionVerifier)
+    return replace(
+        evaluation,
+        evaluationReceiptSubjectHash=conditionalStrategyEvaluationSubjectHash(evaluation),
+        evaluationReceiptId=receipt.receiptId,
+        evaluationReceiptKind=receipt.kind,
+        evaluationReceiptStatus=receipt.status,
+        evaluationReceiptParentReceiptIds=receipt.parentReceiptIds,
     )
 
 
