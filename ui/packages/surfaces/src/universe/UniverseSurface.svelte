@@ -327,7 +327,7 @@
 	.hero { max-width: 1420px; margin: 0 auto 38px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 48px; align-items: end; }
 	.eyebrow { display: flex; align-items: center; gap: 9px; margin-bottom: 18px; color: #8798af; font: 600 10px/1 ui-monospace, monospace; letter-spacing: .16em; }
 	.eyebrow b { margin-left: 5px; padding: 4px 7px; border: 1px solid rgba(245,184,75,.28); border-radius: 999px; color: #e8b861; font-size: 8px; letter-spacing: .1em; }
-	.pulse { width: 7px; height: 7px; border-radius: 50%; background: #ea4647; box-shadow: 0 0 0 4px rgba(234,70,71,.13); }
+	.pulse { width: 7px; height: 7px; border-radius: 50%; background: var(--dl-red); box-shadow: 0 0 0 4px rgba(var(--dl-red-rgb), .13); }
 	h1 { max-width: 850px; margin: 0; color: #f4f7fb; font-size: clamp(34px, 5vw, 68px); line-height: 1.06; letter-spacing: -.045em; font-weight: 650; }
 	h1 em { color: #8493a8; font-style: normal; font-weight: 450; }
 	.hero p { max-width: 760px; margin: 24px 0 0; color: #8493a8; font-size: 14px; line-height: 1.75; }
