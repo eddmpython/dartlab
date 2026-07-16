@@ -1,6 +1,7 @@
 import { loadJson, prewarmJson } from '@dartlab/ui-runtime/data/dartlabData';
 import { BrowserCompany } from './company';
-import type { DartlabBrowserOptions, MarketMapBundle, ScanBundle } from './types';
+import type { DartlabBrowserOptions, MarketMapBundle, ScanBundle, UniverseBrowser } from './types';
+import { createUniverseBrowser } from './universeBrowser';
 
 export function createDartlabBrowser(options: DartlabBrowserOptions) {
 	const fetchFn = options.fetchFn;
@@ -33,6 +34,10 @@ export function createDartlabBrowser(options: DartlabBrowserOptions) {
 				meta,
 				markets: markets ?? {}
 			};
+		},
+
+		universe(): UniverseBrowser {
+			return createUniverseBrowser(options);
 		},
 
 		prewarm(paths: string[]): void {

@@ -13,6 +13,11 @@
 			"types": "./src/adapters/test/createFakeRuntime.ts",
 			"default": "./src/adapters/test/createFakeRuntime.ts"
 		},
+		"./data/universe": {
+			"types": "./src/data/universe/index.ts",
+			"default": "./src/data/universe/index.ts"
+		},
+		"./data/universe/*": "./src/data/universe/*.ts",
 		"./data/*": "./src/data/*.ts"
 	},
 	"scripts": {

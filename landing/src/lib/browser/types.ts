@@ -1,4 +1,5 @@
 import type { FetchLike } from '@dartlab/ui-runtime/data/dartlabData';
+import type { UniverseObservationPoint, UniverseObservationRange, UniverseRouteSeed } from '@dartlab/ui-contracts';
 
 export interface DartlabBrowserOptions {
 	fetchFn: FetchLike;
@@ -17,6 +18,13 @@ export interface ScanBundle {
 	ecosystem: any;
 	meta: any;
 	markets: Record<string, string>;
+}
+
+export interface UniverseBrowser {
+	seed(): Promise<UniverseRouteSeed>;
+	industry(industryId: string): Promise<unknown>;
+	company(stockCode: string): Promise<unknown>;
+	observations(entityId: string, metricId: string, range?: UniverseObservationRange): Promise<UniverseObservationPoint[]>;
 }
 
 export interface DashboardBundle {
