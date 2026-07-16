@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title id="title">배를 만드는 회사와 배가 팔린 뒤를 맡는 회사</title>
+  <desc id="desc">2025년 HD현대마린솔루션과 HD현대중공업의 매출, 영업이익률, 유형자산, 유형자산 취득 비교</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#071426"/><stop offset="1" stop-color="#163247"/></linearGradient>
+    <linearGradient id="blue" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#27a9e8"/><stop offset="1" stop-color="#56d6c9"/></linearGradient>
+    <filter id="shadow"><feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#000" flood-opacity=".3"/></filter>
+  </defs>
+  <rect width="1200" height="675" fill="url(#bg)"/>
+  <circle cx="1070" cy="84" r="180" fill="#1d5671" opacity=".18"/>
+  <text x="68" y="74" fill="#fff" font-family="Pretendard, sans-serif" font-size="34" font-weight="800">공장이 아니라 고객 접점에 자본을 둔 회사</text>
+  <text x="68" y="111" fill="#a9bdcb" font-family="Pretendard, sans-serif" font-size="18">같은 그룹, 다른 역할. 숫자는 2025년 연결 기준이다.</text>
+
+  <g filter="url(#shadow)" font-family="Pretendard, sans-serif">
+    <rect x="68" y="151" width="498" height="418" rx="28" fill="#f7fbfd"/>
+    <rect x="634" y="151" width="498" height="418" rx="28" fill="#f7fbfd"/>
+  </g>
+  <g font-family="Pretendard, sans-serif">
+    <rect x="92" y="176" width="194" height="35" rx="17.5" fill="#0b83bc"/>
+    <text x="189" y="200" text-anchor="middle" fill="#fff" font-size="17" font-weight="800">인도 뒤 30년</text>
+    <text x="92" y="252" fill="#0c2236" font-size="27" font-weight="900">HD현대마린솔루션</text>
+    <text x="92" y="283" fill="#647482" font-size="17">부품 · 정비 · 연료 · 개조 · 디지털</text>
+
+    <rect x="658" y="176" width="194" height="35" rx="17.5" fill="#526476"/>
+    <text x="755" y="200" text-anchor="middle" fill="#fff" font-size="17" font-weight="800">인도 전 생산</text>
+    <text x="658" y="252" fill="#0c2236" font-size="27" font-weight="900">HD현대중공업</text>
+    <text x="658" y="283" fill="#647482" font-size="17">도크 · 선박 · 엔진 · 공정 · 수주잔고</text>
+
+    <text x="92" y="341" fill="#6c7c89" font-size="16">매출</text><text x="526" y="341" text-anchor="end" fill="#0c2236" font-size="24" font-weight="900">1조 9,827억</text>
+    <line x1="92" y1="358" x2="526" y2="358" stroke="#dbe5ea"/>
+    <text x="92" y="399" fill="#6c7c89" font-size="16">영업이익률</text><text x="526" y="399" text-anchor="end" fill="#008d9b" font-size="26" font-weight="900">17.7%</text>
+    <line x1="92" y1="416" x2="526" y2="416" stroke="#dbe5ea"/>
+    <text x="92" y="457" fill="#6c7c89" font-size="16">유형자산</text><text x="526" y="457" text-anchor="end" fill="#0c2236" font-size="24" font-weight="900">296억</text>
+    <line x1="92" y1="474" x2="526" y2="474" stroke="#dbe5ea"/>
+    <text x="92" y="515" fill="#6c7c89" font-size="16">유형자산 취득</text><text x="526" y="515" text-anchor="end" fill="#0c2236" font-size="24" font-weight="900">172억</text>
+
+    <text x="658" y="341" fill="#6c7c89" font-size="16">매출</text><text x="1092" y="341" text-anchor="end" fill="#0c2236" font-size="24" font-weight="900">17조 5,806억</text>
+    <line x1="658" y1="358" x2="1092" y2="358" stroke="#dbe5ea"/>
+    <text x="658" y="399" fill="#6c7c89" font-size="16">영업이익률</text><text x="1092" y="399" text-anchor="end" fill="#526476" font-size="26" font-weight="900">11.6%</text>
+    <line x1="658" y1="416" x2="1092" y2="416" stroke="#dbe5ea"/>
+    <text x="658" y="457" fill="#6c7c89" font-size="16">유형자산</text><text x="1092" y="457" text-anchor="end" fill="#0c2236" font-size="24" font-weight="900">8조 7,807억</text>
+    <line x1="658" y1="474" x2="1092" y2="474" stroke="#dbe5ea"/>
+    <text x="658" y="515" fill="#6c7c89" font-size="16">유형자산 취득</text><text x="1092" y="515" text-anchor="end" fill="#0c2236" font-size="24" font-weight="900">5,119억</text>
+  </g>
+
+  <g font-family="Pretendard, sans-serif">
+    <rect x="276" y="599" width="648" height="45" rx="22.5" fill="url(#blue)"/>
+    <text x="600" y="628" text-anchor="middle" fill="#052238" font-size="19" font-weight="900">유형자산 297배 차이, 역할 분담의 결과이지 회사의 우열이 아니다</text>
+  </g>
+</svg>

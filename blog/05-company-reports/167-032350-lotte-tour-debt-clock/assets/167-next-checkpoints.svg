@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title id="title">롯데관광개발 다음 공시 체크포인트</title>
+  <desc id="desc">카지노 순매출, 영업이익률, 금융비용, 영업현금흐름, 차환 조건, 담보 변화의 여섯 단계 체크포인트</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#112039"/><stop offset="1" stop-color="#263d4d"/></linearGradient>
+    <filter id="s"><feDropShadow dx="0" dy="7" stdDeviation="10" flood-color="#000" flood-opacity=".26"/></filter>
+  </defs>
+  <rect width="1200" height="675" fill="url(#bg)"/>
+  <text x="68" y="78" fill="#fff" font-family="Pretendard, sans-serif" font-size="34" font-weight="800">두 시계가 만나는 여섯 개의 확인 지점</text>
+  <text x="68" y="115" fill="#aeb9c6" font-family="Pretendard, sans-serif" font-size="18">매출 뉴스에서 시작해 담보 조건까지 내려가야 자본구조 전환을 말할 수 있다.</text>
+
+  <g font-family="Pretendard, sans-serif" filter="url(#s)">
+    <rect x="68" y="158" width="324" height="150" rx="23" fill="#fffdf7"/>
+    <circle cx="113" cy="203" r="25" fill="#741e37"/><text x="113" y="211" text-anchor="middle" fill="#fff" font-size="22" font-weight="900">1</text>
+    <text x="153" y="205" fill="#14243b" font-size="21" font-weight="800">카지노 순매출과 드롭</text>
+    <text x="92" y="247" fill="#596273" font-size="17">월별 변동보다 누적 방향</text>
+    <text x="92" y="276" fill="#596273" font-size="17">드롭과 순매출을 분리</text>
+
+    <rect x="438" y="158" width="324" height="150" rx="23" fill="#fffdf7"/>
+    <circle cx="483" cy="203" r="25" fill="#315f6c"/><text x="483" y="211" text-anchor="middle" fill="#fff" font-size="22" font-weight="900">2</text>
+    <text x="523" y="205" fill="#14243b" font-size="21" font-weight="800">영업이익률</text>
+    <text x="462" y="247" fill="#596273" font-size="17">18%에서 20%대 유지 여부</text>
+    <text x="462" y="276" fill="#596273" font-size="17">영업 레버리지의 지속성</text>
+
+    <rect x="808" y="158" width="324" height="150" rx="23" fill="#fffdf7"/>
+    <circle cx="853" cy="203" r="25" fill="#a57c32"/><text x="853" y="211" text-anchor="middle" fill="#fff" font-size="22" font-weight="900">3</text>
+    <text x="893" y="205" fill="#14243b" font-size="21" font-weight="800">금융비용</text>
+    <text x="832" y="247" fill="#596273" font-size="17">영업이익보다 빨리 줄어드는가</text>
+    <text x="832" y="276" fill="#596273" font-size="17">이자와 평가손익을 분리</text>
+
+    <rect x="68" y="350" width="324" height="150" rx="23" fill="#fffdf7"/>
+    <circle cx="113" cy="395" r="25" fill="#315f6c"/><text x="113" y="403" text-anchor="middle" fill="#fff" font-size="22" font-weight="900">4</text>
+    <text x="153" y="397" fill="#14243b" font-size="21" font-weight="800">영업현금과 운전자본</text>
+    <text x="92" y="439" fill="#596273" font-size="17">1분기 현금 유출의 환입 여부</text>
+    <text x="92" y="468" fill="#596273" font-size="17">이자를 다시 빼지 않기</text>
+
+    <rect x="438" y="350" width="324" height="150" rx="23" fill="#fffdf7"/>
+    <circle cx="483" cy="395" r="25" fill="#a57c32"/><text x="483" y="403" text-anchor="middle" fill="#fff" font-size="22" font-weight="900">5</text>
+    <text x="523" y="397" fill="#14243b" font-size="21" font-weight="800">차환 금리와 만기</text>
+    <text x="462" y="439" fill="#596273" font-size="17">원금 감소와 금리 하락</text>
+    <text x="462" y="468" fill="#596273" font-size="17">장부금액과 원금 구분</text>
+
+    <rect x="808" y="350" width="324" height="150" rx="23" fill="#fffdf7"/>
+    <circle cx="853" cy="395" r="25" fill="#741e37"/><text x="853" y="403" text-anchor="middle" fill="#fff" font-size="22" font-weight="900">6</text>
+    <text x="893" y="397" fill="#14243b" font-size="21" font-weight="800">담보의 변화</text>
+    <text x="832" y="439" fill="#596273" font-size="17">해제와 조건 완화는 개선</text>
+    <text x="832" y="468" fill="#596273" font-size="17">추가 담보는 경계 신호</text>
+  </g>
+
+  <path d="M188 550 H1012" stroke="#d5a64a" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="188" cy="550" r="12" fill="#d5a64a"/><circle cx="1012" cy="550" r="12" fill="#d5a64a"/>
+  <text x="188" y="594" text-anchor="middle" fill="#fff" font-family="Pretendard, sans-serif" font-size="19" font-weight="800">영업의 시계</text>
+  <text x="1012" y="594" text-anchor="middle" fill="#fff" font-family="Pretendard, sans-serif" font-size="19" font-weight="800">빚의 시계</text>
+  <text x="600" y="634" text-anchor="middle" fill="#f0c96b" font-family="Pretendard, sans-serif" font-size="21" font-weight="800">여섯 칸이 함께 좋아져야 자본구조 턴어라운드다.</text>
+</svg>

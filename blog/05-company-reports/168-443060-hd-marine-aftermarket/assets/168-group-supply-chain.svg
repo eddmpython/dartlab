@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title id="title">HD현대마린솔루션 그룹 공급망</title>
+  <desc id="desc">그룹 계열사가 엔진과 연료를 만들고 마린솔루션이 고객 접점과 물류를 담당하는 거래 구조</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#071426"/><stop offset="1" stop-color="#143d4b"/></linearGradient>
+    <linearGradient id="center" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#0c82b9"/><stop offset="1" stop-color="#25b7aa"/></linearGradient>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10Z" fill="#66d5c8"/></marker>
+    <filter id="s"><feDropShadow dx="0" dy="8" stdDeviation="9" flood-color="#000" flood-opacity=".3"/></filter>
+  </defs>
+  <rect width="1200" height="675" fill="url(#bg)"/>
+  <text x="68" y="74" fill="#fff" font-family="Pretendard, sans-serif" font-size="34" font-weight="800">가벼운 장부 뒤에는 그룹의 무거운 공장이 있다</text>
+  <text x="68" y="111" fill="#abc1cc" font-family="Pretendard, sans-serif" font-size="18">해자와 의존은 같은 공급망에서 동시에 나온다.</text>
+
+  <g font-family="Pretendard, sans-serif" filter="url(#s)">
+    <rect x="68" y="162" width="310" height="94" rx="22" fill="#f7fbfd"/><text x="95" y="199" fill="#183149" font-size="21" font-weight="900">HD현대오일뱅크</text><text x="95" y="230" fill="#647886" font-size="17">선박 연료 · 약 2,847억원</text>
+    <rect x="68" y="281" width="310" height="94" rx="22" fill="#f7fbfd"/><text x="95" y="318" fill="#183149" font-size="21" font-weight="900">HD현대마린엔진</text><text x="95" y="349" fill="#647886" font-size="17">엔진 부품 · 약 1,611억원</text>
+    <rect x="68" y="400" width="310" height="94" rx="22" fill="#f7fbfd"/><text x="95" y="437" fill="#183149" font-size="21" font-weight="900">HD현대중공업 외</text><text x="95" y="468" fill="#647886" font-size="17">선박 이력 · 기술 · 공식 권한</text>
+
+    <rect x="462" y="222" width="312" height="220" rx="32" fill="url(#center)"/>
+    <text x="618" y="278" text-anchor="middle" fill="#fff" font-size="25" font-weight="900">HD현대마린솔루션</text>
+    <text x="618" y="318" text-anchor="middle" fill="#dff9f5" font-size="17">고객 데이터 · 부품 재고</text>
+    <text x="618" y="348" text-anchor="middle" fill="#dff9f5" font-size="17">글로벌 물류 · 기술서비스</text>
+    <rect x="509" y="374" width="218" height="40" rx="20" fill="#073653" opacity=".82"/>
+    <text x="618" y="400" text-anchor="middle" fill="#fff" font-size="17" font-weight="800">직접 제품 생산 없음</text>
+
+    <rect x="862" y="222" width="270" height="220" rx="32" fill="#f7fbfd"/>
+    <text x="997" y="279" text-anchor="middle" fill="#183149" font-size="24" font-weight="900">선주와 운영사</text>
+    <text x="997" y="321" text-anchor="middle" fill="#647886" font-size="17">순정부품 · 정비</text>
+    <text x="997" y="351" text-anchor="middle" fill="#647886" font-size="17">벙커링 · 개조 · 디지털</text>
+    <text x="997" y="400" text-anchor="middle" fill="#0b84b8" font-size="22" font-weight="900">서비스 1만 척</text>
+  </g>
+
+  <g fill="none" stroke="#66d5c8" stroke-width="4" marker-end="url(#arrow)">
+    <path d="M378 209 C420 209 422 272 462 282"/><path d="M378 328 H462"/><path d="M378 447 C420 447 422 391 462 382"/><path d="M774 332 H862"/>
+  </g>
+  <path d="M862 375 C820 492 430 504 378 474" fill="none" stroke="#efbd58" stroke-width="3" stroke-dasharray="9 8" marker-end="url(#arrow)"/>
+
+  <g font-family="Pretendard, sans-serif">
+    <rect x="68" y="550" width="1064" height="86" rx="23" fill="#09283b" stroke="#326478"/>
+    <text x="101" y="584" fill="#71dbcf" font-size="17" font-weight="800">2025 특수관계자 재화 매입</text><text x="101" y="615" fill="#fff" font-size="25" font-weight="900">4,749억원</text>
+    <text x="505" y="584" fill="#efc56d" font-size="17" font-weight="800">별도 원부재료 매입 대비 참고치</text><text x="505" y="615" fill="#fff" font-size="25" font-weight="900">53.7%</text>
+    <text x="1095" y="589" text-anchor="end" fill="#afc3cc" font-size="15">연결 주석과 별도 매입의 비교</text><text x="1095" y="614" text-anchor="end" fill="#afc3cc" font-size="15">연결 매출원가 비중이 아니다</text>
+  </g>
+</svg>

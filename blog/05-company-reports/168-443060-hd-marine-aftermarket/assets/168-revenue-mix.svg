@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title id="title">HD현대마린솔루션 2022년부터 2025년 사업별 매출 믹스</title>
+  <desc id="desc">AM, 벙커링, 친환경, 디지털 매출 비중의 4개년 누적 막대</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#071426"/><stop offset="1" stop-color="#173446"/></linearGradient>
+    <filter id="s"><feDropShadow dx="0" dy="7" stdDeviation="8" flood-color="#000" flood-opacity=".26"/></filter>
+  </defs>
+  <rect width="1200" height="675" fill="url(#bg)"/>
+  <text x="68" y="74" fill="#fff" font-family="Pretendard, sans-serif" font-size="34" font-weight="800">2조원은 네 종류의 돈으로 이루어졌다</text>
+  <text x="68" y="111" fill="#aac1cc" font-family="Pretendard, sans-serif" font-size="18">AM은 커졌지만 벙커링도 2025년 매출의 39%를 차지했다.</text>
+  <g font-family="Pretendard, sans-serif" font-size="16" font-weight="700">
+    <rect x="702" y="68" width="15" height="15" rx="3" fill="#28a9e0"/><text x="726" y="81" fill="#dbe9ef">AM</text>
+    <rect x="790" y="68" width="15" height="15" rx="3" fill="#617386"/><text x="814" y="81" fill="#dbe9ef">벙커링</text>
+    <rect x="913" y="68" width="15" height="15" rx="3" fill="#44c6a8"/><text x="937" y="81" fill="#dbe9ef">친환경</text>
+    <rect x="1034" y="68" width="15" height="15" rx="3" fill="#efbd58"/><text x="1058" y="81" fill="#dbe9ef">디지털</text>
+  </g>
+
+  <g filter="url(#s)" font-family="Pretendard, sans-serif">
+    <rect x="68" y="151" width="1064" height="407" rx="28" fill="#f7fbfd"/>
+    <text x="102" y="221" fill="#193146" font-size="22" font-weight="900">2022</text><text x="1116" y="221" text-anchor="end" fill="#687b89" font-size="17">1조 3,338억</text>
+    <rect x="250" y="190" width="266" height="47" rx="9" fill="#28a9e0"/><rect x="516" y="190" width="357" height="47" fill="#617386"/><rect x="873" y="190" width="111" height="47" fill="#44c6a8"/><rect x="984" y="190" width="26" height="47" rx="0 9 9 0" fill="#efbd58"/>
+    <text x="383" y="220" text-anchor="middle" fill="#fff" font-size="17" font-weight="900">35%</text><text x="694" y="220" text-anchor="middle" fill="#fff" font-size="17" font-weight="900">47%</text><text x="928" y="220" text-anchor="middle" fill="#073e39" font-size="16" font-weight="900">15%</text>
+
+    <text x="102" y="313" fill="#193146" font-size="22" font-weight="900">2023</text><text x="1116" y="313" text-anchor="end" fill="#687b89" font-size="17">1조 4,305억</text>
+    <rect x="250" y="282" width="323" height="47" rx="9" fill="#28a9e0"/><rect x="573" y="282" width="316" height="47" fill="#617386"/><rect x="889" y="282" width="90" height="47" fill="#44c6a8"/><rect x="979" y="282" width="33" height="47" rx="0 9 9 0" fill="#efbd58"/>
+    <text x="411" y="312" text-anchor="middle" fill="#fff" font-size="17" font-weight="900">42%</text><text x="731" y="312" text-anchor="middle" fill="#fff" font-size="17" font-weight="900">42%</text><text x="934" y="312" text-anchor="middle" fill="#073e39" font-size="16" font-weight="900">12%</text>
+
+    <text x="102" y="405" fill="#193146" font-size="22" font-weight="900">2024</text><text x="1116" y="405" text-anchor="end" fill="#687b89" font-size="17">1조 7,455억</text>
+    <rect x="250" y="374" width="351" height="47" rx="9" fill="#28a9e0"/><rect x="601" y="374" width="307" height="47" fill="#617386"/><rect x="908" y="374" width="71" height="47" fill="#44c6a8"/><rect x="979" y="374" width="31" height="47" rx="0 9 9 0" fill="#efbd58"/>
+    <text x="425" y="404" text-anchor="middle" fill="#fff" font-size="17" font-weight="900">46%</text><text x="754" y="404" text-anchor="middle" fill="#fff" font-size="17" font-weight="900">40%</text><text x="943" y="404" text-anchor="middle" fill="#073e39" font-size="15" font-weight="900">9%</text>
+
+    <text x="102" y="497" fill="#193146" font-size="22" font-weight="900">2025</text><text x="1116" y="497" text-anchor="end" fill="#0b83bc" font-size="18" font-weight="900">1조 9,827억</text>
+    <rect x="250" y="466" width="358" height="47" rx="9" fill="#28a9e0"/><rect x="608" y="466" width="300" height="47" fill="#617386"/><rect x="908" y="466" width="66" height="47" fill="#44c6a8"/><rect x="974" y="466" width="36" height="47" rx="0 9 9 0" fill="#efbd58"/>
+    <text x="429" y="496" text-anchor="middle" fill="#fff" font-size="17" font-weight="900">47%</text><text x="758" y="496" text-anchor="middle" fill="#fff" font-size="17" font-weight="900">39%</text><text x="941" y="496" text-anchor="middle" fill="#073e39" font-size="15" font-weight="900">9%</text>
+  </g>
+  <g font-family="Pretendard, sans-serif">
+    <rect x="230" y="591" width="740" height="47" rx="23.5" fill="#0a2639" stroke="#2f6378"/>
+    <text x="600" y="621" text-anchor="middle" fill="#eff7fa" font-size="19" font-weight="800">매출 1원도 부품 서비스와 연료 공급의 경제성은 서로 다르다</text>
+  </g>
+</svg>

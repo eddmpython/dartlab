@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title id="title">HD현대마린솔루션 다음 공시 일곱 체크포인트</title>
+  <desc id="desc">AM 성장, 벙커링 비중, 영업이익률, 관련자 매입, 현금전환, LTSA, 친환경 수주잔고 점검판</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#071426"/><stop offset="1" stop-color="#173a4a"/></linearGradient>
+    <filter id="s"><feDropShadow dx="0" dy="7" stdDeviation="9" flood-color="#000" flood-opacity=".28"/></filter>
+  </defs>
+  <rect width="1200" height="675" fill="url(#bg)"/>
+  <text x="68" y="74" fill="#fff" font-family="Pretendard, sans-serif" font-size="34" font-weight="800">다음 공시에서는 매출보다 고객 접점의 두께를 본다</text>
+  <text x="68" y="111" fill="#abc1cc" font-family="Pretendard, sans-serif" font-size="18">최신 기준선을 고정해 방향이 바뀌는 순간을 찾는다.</text>
+
+  <g font-family="Pretendard, sans-serif" filter="url(#s)">
+    <rect x="68" y="155" width="247" height="150" rx="23" fill="#f7fbfd"/><circle cx="107" cy="194" r="23" fill="#0b86bd"/><text x="107" y="202" text-anchor="middle" fill="#fff" font-size="20" font-weight="900">1</text><text x="143" y="201" fill="#173149" font-size="21" font-weight="900">AM 성장</text><text x="92" y="247" fill="#0b86bd" font-size="24" font-weight="900">21.4%</text><text x="92" y="278" fill="#6a7d89" font-size="15">2026년 1분기 전년 대비</text>
+    <rect x="340" y="155" width="247" height="150" rx="23" fill="#f7fbfd"/><circle cx="379" cy="194" r="23" fill="#607487"/><text x="379" y="202" text-anchor="middle" fill="#fff" font-size="20" font-weight="900">2</text><text x="415" y="201" fill="#173149" font-size="21" font-weight="900">벙커링</text><text x="364" y="247" fill="#526679" font-size="24" font-weight="900">비중 46%</text><text x="364" y="278" fill="#6a7d89" font-size="15">마진과 같은 방향인지 확인</text>
+    <rect x="612" y="155" width="247" height="150" rx="23" fill="#f7fbfd"/><circle cx="651" cy="194" r="23" fill="#43bfa4"/><text x="651" y="202" text-anchor="middle" fill="#fff" font-size="20" font-weight="900">3</text><text x="687" y="201" fill="#173149" font-size="21" font-weight="900">영업이익률</text><text x="636" y="247" fill="#16806c" font-size="24" font-weight="900">16.3%</text><text x="636" y="278" fill="#6a7d89" font-size="15">2025년 17.7%와 비교</text>
+    <rect x="884" y="155" width="248" height="150" rx="23" fill="#f7fbfd"/><circle cx="923" cy="194" r="23" fill="#b47c25"/><text x="923" y="202" text-anchor="middle" fill="#fff" font-size="20" font-weight="900">4</text><text x="959" y="201" fill="#173149" font-size="21" font-weight="900">그룹 매입</text><text x="908" y="247" fill="#93651d" font-size="24" font-weight="900">4,749억</text><text x="908" y="278" fill="#6a7d89" font-size="15">매입과 마진의 동행 여부</text>
+
+    <rect x="136" y="339" width="288" height="160" rx="23" fill="#f7fbfd"/><circle cx="179" cy="381" r="23" fill="#b47c25"/><text x="179" y="389" text-anchor="middle" fill="#fff" font-size="20" font-weight="900">5</text><text x="216" y="388" fill="#173149" font-size="21" font-weight="900">현금전환</text><text x="160" y="439" fill="#93651d" font-size="25" font-weight="900">46.2%</text><text x="160" y="471" fill="#6a7d89" font-size="15">채권 708억원 회수 여부</text>
+    <rect x="456" y="339" width="288" height="160" rx="23" fill="#f7fbfd"/><circle cx="499" cy="381" r="23" fill="#0b86bd"/><text x="499" y="389" text-anchor="middle" fill="#fff" font-size="20" font-weight="900">6</text><text x="536" y="388" fill="#173149" font-size="21" font-weight="900">LTSA 깊이</text><text x="480" y="439" fill="#0b86bd" font-size="25" font-weight="900">선박 450척+</text><text x="480" y="471" fill="#6a7d89" font-size="15">1만 척 중 장기계약 전환</text>
+    <rect x="776" y="339" width="288" height="160" rx="23" fill="#f7fbfd"/><circle cx="819" cy="381" r="23" fill="#43bfa4"/><text x="819" y="389" text-anchor="middle" fill="#fff" font-size="20" font-weight="900">7</text><text x="856" y="388" fill="#173149" font-size="21" font-weight="900">친환경 잔고</text><text x="800" y="439" fill="#16806c" font-size="25" font-weight="900">2,241억</text><text x="800" y="471" fill="#6a7d89" font-size="15">별도 기준, 매출 전환 확인</text>
+  </g>
+
+  <path d="M155 561 H1045" stroke="#44c6a8" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="155" cy="561" r="11" fill="#44c6a8"/><circle cx="1045" cy="561" r="11" fill="#efbd58"/>
+  <g font-family="Pretendard, sans-serif">
+    <text x="155" y="603" text-anchor="middle" fill="#dcecf1" font-size="17" font-weight="800">고객 접점</text>
+    <text x="1045" y="603" text-anchor="middle" fill="#dcecf1" font-size="17" font-weight="800">현금과 계약</text>
+    <text x="600" y="633" text-anchor="middle" fill="#f2c96f" font-size="20" font-weight="900">일곱 숫자가 함께 좋아져야 보이지 않는 공장이 넓어진다</text>
+  </g>
+</svg>
