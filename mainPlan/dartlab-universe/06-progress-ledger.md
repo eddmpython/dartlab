@@ -43,10 +43,12 @@
 - [x] U0-G02 live exact-locator positive 및 hard-negative review queue materialization
 - [x] U0-G03 original source artifact SHA-256 및 exact locator binding
 - [x] U0-G04 human-only review decision promotion compiler
+- [x] U1 localReview 계약, 지연 로더, 결정론 Canvas 2D, 관계표와 독립 `/universe` route 구현
+- [x] U1 localReview 데스크톱 및 390px 모바일 눈검수, 검색, 선택 URL, 관계표, 콘솔 검증
 - [ ] U0 workflow, visual, information yield attempts
-- [ ] U1~U2 implementation
+- [ ] U1 publicBeta 승격 및 U2 exact evidence implementation
 - [ ] U3 artifact 변경 승인 여부
-- [ ] UI 눈검수 및 push 승인
+- [x] UI 눈검수 및 운영자 push 승인
 
 ## 결정 원장
 
@@ -90,6 +92,7 @@
 | 2026-07-16 | U0-G02 live review queue materialization | Graph와 DART catalog 296,856행을 결합해 exact mention 182,072개를 찾고 machine positive 300 및 challenge 300행을 content-addressed fixture로 고정. Predicate 3/6, negative type 5/12, reviewed와 goldEligible 0/600이라 human review 및 source gap 전 U0 graduation 차단 |
 | 2026-07-16 | U0-G03 original source binding | Queue source가 가리키는 original Parquet 305개를 직접 SHA-256으로 고정하고 receipt, catalog publication date 및 issuer file로 재결속. 600/600 ready, exact occurrence 63,345, locator parity failure 0. Unique 119, ambiguous 481이며 human selection과 time 전 gold 차단 |
 | 2026-07-16 | U0-G04 human review promotion | Queue와 binding 600행에 optional human decision compiler 구현. Machine origin, triple drift, unknown locator, inverted 또는 naive time, duplicate receipt fail closed. Decision 및 promoted gold 0이라 U0 graduation 차단 |
+| 2026-07-16 | U1 localReview 독립 route 구현 | Universe 계약과 DataCore 기반 HF 지연 로더, fail-closed SourceSnapshotSet, bounded projection, 7-state non-color grammar, 결정론 Canvas 2D와 관계표를 `/universe`에 연결. 초기 meta 및 atlas만 요청하고 34개 산업과 50개 파생 흐름을 candidate/derived로 보존. Unit 8/8, 계약 및 surface check 0 error, production build 성공, 초기 의존 61,381 gzip bytes, 브라우저 console 0, keyboard node 34/34, 검색과 선택 URL 및 관계표, 390x844 mobile 눈검수 통과. `noindex,nofollow`, CURRENT ONLY, localReview를 유지하고 reviewed gold 0/600 때문에 publicBeta와 fact lane은 계속 차단 |
 
 ## 핵심 실측 스냅샷
 

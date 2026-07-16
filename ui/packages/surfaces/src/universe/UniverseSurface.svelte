@@ -1,0 +1,238 @@
+<script lang="ts">
+	import { onMount } from 'svelte';
+	import type { UniverseRouteSeed, UniverseUrlState } from '@dartlab/ui-contracts';
+	import UniverseCanvas from './components/UniverseCanvas.svelte';
+	import RelationTable from './components/RelationTable.svelte';
+	import { DEFAULT_UNIVERSE_URL_STATE, parseUniverseUrl, universeUrl } from './url';
+
+	interface Props {
+		seed: UniverseRouteSeed;
+		mapHref?: string;
+	}
+
+	let { seed, mapHref = '/map' }: Props = $props();
+	type ViewMode = 'universe' | 'table';
+	let viewMode = $state<ViewMode>('universe');
+	let query = $state('');
+	let selectedId = $state<string | null>(null);
+	let urlState = $state<UniverseUrlState>({ ...DEFAULT_UNIVERSE_URL_STATE });
+	let nodeById = $derived(new Map(seed.scene.nodes.map((node) => [node.nodeId, node])));
+	let queryMatches = $derived(query.trim()
+		? seed.scene.nodes.filter((node) => `${node.label} ${node.nodeId}`.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())).slice(0, 8)
+		: []);
+	let highlightedIds = $derived(new Set(queryMatches.map((node) => node.nodeId)));
+	let selectedNode = $derived(selectedId ? nodeById.get(selectedId) ?? null : null);
+	let connectedEdges = $derived(selectedId ? seed.scene.edges.filter((edge) => edge.sourceId === selectedId || edge.targetId === selectedId) : []);
+	let companyCount = $derived(seed.atlas.industries.reduce((total, industry) => total + industry.nodeCount, 0));
+	let totalRevenue = $derived(seed.atlas.industries.reduce((total, industry) => total + industry.revenue, 0));
+
+	function formatRevenue(value: number): string {
+		return `${(value / 10_000).toLocaleString('ko-KR', { maximumFractionDigits: 1 })}조`;
+	}
+
+	function stageLabel(stage: string | undefined): string {
+		return stage === 'upstream' ? '상류' : stage === 'midstream' ? '중류' : stage === 'downstream' ? '하류' : '미분류';
+	}
+
+	function commitUrl(push: boolean): void {
+		if (typeof window === 'undefined') return;
+		urlState = { ...urlState, selectedId, seedIds: selectedId ? [selectedId] : [] };
+		const next = universeUrl(urlState, new URL(window.location.href));
+		if (next.href === window.location.href) return;
+		const state = window.history.state;
+		window.history[push ? 'pushState' : 'replaceState'](state, '', next);
+	}
+
+	function selectNode(nodeId: string, push = true): void {
+		if (!nodeById.has(nodeId)) return;
+		selectedId = nodeId;
+		query = '';
+		commitUrl(push);
+	}
+
+	function clearSelection(): void {
+		selectedId = null;
+		commitUrl(true);
+	}
+
+	function submitSearch(event: SubmitEvent): void {
+		event.preventDefault();
+		const first = queryMatches[0];
+		if (first) selectNode(first.nodeId);
+	}
+
+	onMount(() => {
+		const restore = () => {
+			const parsed = parseUniverseUrl(new URL(window.location.href));
+			urlState = { ...parsed, snapshotSetId: parsed.snapshotSetId ?? seed.snapshot.snapshotSetId, buildId: parsed.buildId ?? seed.meta.buildId };
+			selectedId = parsed.selectedId && nodeById.has(parsed.selectedId) ? parsed.selectedId : null;
+		};
+		restore();
+		commitUrl(false);
+		window.addEventListener('popstate', restore);
+		return () => window.removeEventListener('popstate', restore);
+	});
+</script>
+
+<main class="universeShell">
+	<section class="hero">
+		<div>
+			<div class="eyebrow"><span class="pulse"></span>DARTLAB UNIVERSE <b>LOCAL REVIEW</b></div>
+			<h1>시장을 관계로 읽되,<br /><em>근거보다 먼저 확신하지 않습니다.</em></h1>
+			<p>34개 산업의 구조와 집계 흐름을 하나의 결정론적 장면으로 탐색합니다. 현재 선은 공시 원문이 결속된 사실이 아니라 <strong>파생 집계</strong>이며, 기업 관계는 검수 전까지 후보로만 표시됩니다.</p>
+		</div>
+		<div class="heroMeta">
+			<div><span>DATA AS OF</span><strong>{seed.meta.dataAsOf.finance?.slice(0, 10) ?? '결손'}</strong></div>
+			<div><span>BUILD</span><strong>{seed.meta.buildId}</strong></div>
+			<div><span>REPLAY</span><strong class:warn={!seed.snapshot.exactReplayReady}>{seed.snapshot.exactReplayReady ? 'EXACT' : 'CURRENT ONLY'}</strong></div>
+		</div>
+	</section>
+
+	<section class="metrics" aria-label="데이터 커버리지">
+		<div><span>INDUSTRIES</span><strong>{seed.atlas.industries.length}</strong><small>산업 분류</small></div>
+		<div><span>COMPANIES</span><strong>{companyCount.toLocaleString()}</strong><small>atlas 구성 종목</small></div>
+		<div><span>AGGREGATE FLOWS</span><strong>{seed.scene.edges.length}</strong><small>파생 집계선</small></div>
+		<div><span>REVENUE COVERAGE</span><strong>{formatRevenue(totalRevenue)}</strong><small>지도 단위 합계</small></div>
+	</section>
+
+	<section class="workbench">
+		<header class="toolbar">
+			<form class="search" onsubmit={submitSearch}>
+				<label for="universe-search">산업 검색</label>
+				<div><input id="universe-search" bind:value={query} autocomplete="off" placeholder="반도체, 자동차, 소프트웨어…" /><button type="submit">찾기</button></div>
+				{#if queryMatches.length > 0}
+					<ul>{#each queryMatches as node (node.nodeId)}<li><button type="button" onclick={() => selectNode(node.nodeId)}>{node.label}<span>{stageLabel(node.presentation?.stage)}</span></button></li>{/each}</ul>
+				{/if}
+			</form>
+			<div class="viewSwitch" aria-label="보기 방식">
+				<button class:active={viewMode === 'universe'} onclick={() => (viewMode = 'universe')}>우주</button>
+				<button class:active={viewMode === 'table'} onclick={() => (viewMode = 'table')}>관계표</button>
+			</div>
+		</header>
+
+		<div class="workspace">
+			<div class="scenePanel">
+				<div class="sceneHeader">
+					<div><span>SCENE 01</span><h2>한국 시장 산업 아틀라스</h2></div>
+					<div class="legend"><span class="candidate">후보 노드</span><span class="derived">파생 흐름</span></div>
+				</div>
+				{#if viewMode === 'universe'}
+					<UniverseCanvas scene={seed.scene} {selectedId} {highlightedIds} onSelect={selectNode} />
+				{:else}
+					<RelationTable scene={seed.scene} {selectedId} onSelect={selectNode} />
+				{/if}
+			</div>
+
+			<aside class="inspector">
+				{#if selectedNode}
+					<div class="inspectorHead"><span>SELECTED ENTITY</span><button aria-label="선택 해제" onclick={clearSelection}>×</button></div>
+					<h2>{selectedNode.label}</h2>
+					<p class="entityId">{selectedNode.nodeId} · {stageLabel(selectedNode.presentation?.stage)}</p>
+					<div class="entityStats">
+						<div><span>구성 종목</span><strong>{selectedNode.presentation?.memberCount?.toLocaleString() ?? '—'}</strong></div>
+						<div><span>지도 매출</span><strong>{selectedNode.presentation?.metricValue != null ? formatRevenue(selectedNode.presentation.metricValue) : '—'}</strong></div>
+						<div><span>연결 흐름</span><strong>{connectedEdges.length}</strong></div>
+					</div>
+					<div class="truthCard candidate">
+						<div><span>⌕</span><strong>근거 탐색 중</strong></div>
+						<p>이 노드는 현행 지도 분류에서 가져온 후보입니다. 사람 검수와 원문 locator가 결속되기 전에는 사실 lane으로 승격되지 않습니다.</p>
+					</div>
+					<div class="sourceRef"><span>SOURCE REF</span><code>{selectedNode.sourceRef}</code></div>
+					<button class="tableCta" onclick={() => (viewMode = 'table')}>연결 관계표 열기 →</button>
+				{:else}
+					<div class="emptyInspector">
+						<span>ORIENT</span><h2>산업을 선택하세요.</h2>
+						<p>원 하나를 선택하면 집계 규모, 가치사슬 위치, 연결 흐름과 현재 근거 상태를 함께 보여줍니다.</p>
+						<div class="workflowList">
+							<button onclick={() => selectNode(seed.scene.nodes[0]?.nodeId ?? '')}><b>01</b><span>가장 큰 산업에서 시작</span></button>
+							<button onclick={() => (viewMode = 'table')}><b>02</b><span>산업 간 집계 흐름 점검</span></button>
+							<a href={mapHref}><b>03</b><span>기존 시장 지도로 이동</span></a>
+						</div>
+					</div>
+				{/if}
+			</aside>
+		</div>
+	</section>
+
+	<section class="integrity">
+		<div><span>SCENE HASH</span><code>{seed.scene.sceneHash}</code></div>
+		<div><span>SNAPSHOT</span><code>{seed.snapshot.snapshotSetId}</code></div>
+		<p>현재 route는 meta와 atlas만 초기 로드합니다. ecosystem과 기업 JSON은 선택 전 요청하지 않습니다. 정확 재현 불가 소스 {seed.snapshot.unreplayableSourceIds.length}개를 숨기지 않았습니다.</p>
+	</section>
+</main>
+
+<style>
+	:global(body) { background: #070a11; }
+	.universeShell { min-height: 100vh; padding: 92px clamp(18px, 4vw, 64px) 56px; color: #dce5f2; background: radial-gradient(circle at 78% 6%, rgba(52,96,160,.14), transparent 28%), radial-gradient(circle at 12% 32%, rgba(234,70,71,.08), transparent 26%), #070a11; font-family: 'Pretendard Variable', Pretendard, system-ui, sans-serif; }
+	.hero { max-width: 1420px; margin: 0 auto 38px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 48px; align-items: end; }
+	.eyebrow { display: flex; align-items: center; gap: 9px; margin-bottom: 18px; color: #8798af; font: 600 10px/1 ui-monospace, monospace; letter-spacing: .16em; }
+	.eyebrow b { margin-left: 5px; padding: 4px 7px; border: 1px solid rgba(245,184,75,.28); border-radius: 999px; color: #e8b861; font-size: 8px; letter-spacing: .1em; }
+	.pulse { width: 7px; height: 7px; border-radius: 50%; background: #ea4647; box-shadow: 0 0 0 4px rgba(234,70,71,.13); }
+	h1 { max-width: 850px; margin: 0; color: #f4f7fb; font-size: clamp(34px, 5vw, 68px); line-height: 1.06; letter-spacing: -.045em; font-weight: 650; }
+	h1 em { color: #8493a8; font-style: normal; font-weight: 450; }
+	.hero p { max-width: 760px; margin: 24px 0 0; color: #8493a8; font-size: 14px; line-height: 1.75; }
+	.hero p strong { color: #78aff4; }
+	.heroMeta { min-width: 225px; border-left: 1px solid #1b2635; }
+	.heroMeta div { display: flex; justify-content: space-between; gap: 20px; padding: 11px 0 11px 18px; border-bottom: 1px solid #151f2c; }
+	.heroMeta span, .metrics span, .integrity span { color: #586980; font: 600 8px/1 ui-monospace, monospace; letter-spacing: .12em; }
+	.heroMeta strong { color: #aab8ca; font: 600 10px/1 ui-monospace, monospace; }
+	.heroMeta strong.warn { color: #e0a84c; }
+	.metrics { max-width: 1420px; margin: 0 auto 18px; display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid #172231; border-radius: 15px; overflow: hidden; background: rgba(12,17,27,.72); }
+	.metrics > div { padding: 18px 20px; border-right: 1px solid #172231; }
+	.metrics > div:last-child { border-right: 0; }
+	.metrics strong { display: block; margin: 9px 0 3px; color: #eef3f9; font: 500 clamp(22px, 2.4vw, 34px)/1 ui-monospace, monospace; letter-spacing: -.05em; }
+	.metrics small { color: #5f7086; font-size: 10px; }
+	.workbench { max-width: 1420px; margin: 0 auto; border: 1px solid #192434; border-radius: 21px; overflow: hidden; background: rgba(9,13,21,.88); box-shadow: 0 40px 100px rgba(0,0,0,.28); }
+	.toolbar { position: relative; z-index: 5; display: flex; justify-content: space-between; align-items: end; gap: 20px; padding: 15px 18px; border-bottom: 1px solid #182333; background: #0b1019; }
+	.search { position: relative; width: min(480px, 70%); }
+	.search label { display: block; margin-bottom: 7px; color: #607188; font: 600 8px/1 ui-monospace, monospace; letter-spacing: .11em; }
+	.search > div { display: flex; }
+	.search input { width: 100%; border: 1px solid #223047; border-right: 0; border-radius: 9px 0 0 9px; padding: 10px 12px; outline: none; background: #080c13; color: #e1e8f1; font-size: 12px; }
+	.search input:focus { border-color: #526c8f; }
+	.search > div button { min-width: 58px; border: 1px solid #29384e; border-radius: 0 9px 9px 0; padding: 0 15px; background: #131c2a; color: #aab7c9; white-space: nowrap; cursor: pointer; }
+	.search ul { position: absolute; top: 58px; left: 0; right: 0; margin: 0; padding: 6px; list-style: none; border: 1px solid #26344a; border-radius: 10px; background: #101722; box-shadow: 0 20px 45px rgba(0,0,0,.45); }
+	.search li button { width: 100%; display: flex; justify-content: space-between; border: 0; border-radius: 7px; padding: 9px 10px; background: transparent; color: #cad5e3; text-align: left; cursor: pointer; }
+	.search li button:hover { background: #172131; }
+	.search li span { color: #64758c; font-size: 10px; }
+	.viewSwitch { display: flex; padding: 3px; border: 1px solid #202c3f; border-radius: 9px; background: #080c13; }
+	.viewSwitch button { border: 0; border-radius: 6px; padding: 7px 12px; background: transparent; color: #66778e; font-size: 11px; cursor: pointer; }
+	.viewSwitch button.active { background: #1a2637; color: #dce5f2; }
+	.workspace { display: grid; grid-template-columns: minmax(0, 1fr) 310px; min-height: 650px; }
+	.scenePanel { min-width: 0; padding: 18px; border-right: 1px solid #172231; }
+	.sceneHeader { display: flex; justify-content: space-between; align-items: end; margin: 0 2px 13px; }
+	.sceneHeader span, .inspectorHead span, .emptyInspector > span, .sourceRef span { color: #53657d; font: 600 8px/1 ui-monospace, monospace; letter-spacing: .12em; }
+	.sceneHeader h2 { margin: 6px 0 0; font-size: 15px; font-weight: 600; }
+	.legend { display: flex; gap: 14px; }
+	.legend span { display: inline-flex; align-items: center; gap: 6px; color: #75869c; font: 500 9px/1 system-ui; letter-spacing: 0; }
+	.legend span::before { content: ''; width: 18px; border-top: 2px solid; }
+	.legend .candidate::before { border-top-style: dashed; border-color: #f5b84b; }
+	.legend .derived::before { border-color: #64a8ff; }
+	.inspector { padding: 23px 20px; background: #0a0f17; }
+	.inspectorHead { display: flex; justify-content: space-between; align-items: center; }
+	.inspectorHead button { border: 0; background: none; color: #65758c; font-size: 20px; cursor: pointer; }
+	.inspector h2 { margin: 34px 0 6px; color: #f0f4f9; font-size: 27px; letter-spacing: -.03em; }
+	.entityId { color: #65758c; font: 500 10px/1.4 ui-monospace, monospace; }
+	.entityStats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin: 22px 0; }
+	.entityStats div { padding: 10px 8px; border: 1px solid #182434; border-radius: 9px; background: #0d141f; }
+	.entityStats span { display: block; color: #5e6e84; font-size: 9px; }
+	.entityStats strong { display: block; margin-top: 6px; color: #dbe4ef; font: 600 12px/1 ui-monospace, monospace; }
+	.truthCard { margin: 20px 0; padding: 14px; border-radius: 12px; background: rgba(245,184,75,.055); border: 1px dashed rgba(245,184,75,.28); }
+	.truthCard > div { display: flex; gap: 8px; align-items: center; color: #e5b960; font-size: 12px; }
+	.truthCard p { margin: 10px 0 0; color: #75869b; font-size: 11px; line-height: 1.62; }
+	.sourceRef { margin-top: 18px; }
+	.sourceRef code { display: block; margin-top: 8px; overflow-wrap: anywhere; color: #71829a; font-size: 9px; }
+	.tableCta { width: 100%; margin-top: 22px; border: 1px solid #26364d; border-radius: 9px; padding: 10px; background: #121b28; color: #aebbd0; cursor: pointer; }
+	.emptyInspector { padding-top: 72px; }
+	.emptyInspector h2 { margin-top: 13px; font-size: 22px; }
+	.emptyInspector p { color: #718198; font-size: 12px; line-height: 1.65; }
+	.workflowList { margin-top: 26px; display: grid; gap: 7px; }
+	.workflowList button, .workflowList a { display: flex; gap: 11px; align-items: center; width: 100%; border: 1px solid #192536; border-radius: 9px; padding: 11px; background: #0d141f; color: #9aa9bd; text-decoration: none; text-align: left; cursor: pointer; }
+	.workflowList b { color: #50627a; font: 600 9px/1 ui-monospace, monospace; }
+	.workflowList span { font-size: 11px; }
+	.integrity { max-width: 1420px; margin: 14px auto 0; display: grid; grid-template-columns: 1fr 1fr; gap: 8px 24px; padding: 15px 18px; border: 1px solid #15202e; border-radius: 13px; background: rgba(10,15,23,.6); }
+	.integrity div { min-width: 0; display: flex; align-items: center; gap: 10px; }
+	.integrity code { overflow: hidden; color: #52637a; font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
+	.integrity p { grid-column: 1 / -1; margin: 2px 0 0; color: #586980; font-size: 10px; }
+	@media (max-width: 980px) { .hero { grid-template-columns: 1fr; gap: 20px; } .heroMeta { max-width: 430px; } .workspace { grid-template-columns: 1fr; } .scenePanel { border-right: 0; } .inspector { border-top: 1px solid #172231; } .metrics { grid-template-columns: repeat(2, 1fr); } .metrics > div:nth-child(2) { border-right: 0; } .metrics > div:nth-child(-n+2) { border-bottom: 1px solid #172231; } }
+	@media (max-width: 620px) { .universeShell { padding: 76px 12px 32px; } .hero { margin-bottom: 24px; } h1 { font-size: 36px; } .metrics > div { padding: 14px; } .metrics strong { font-size: 21px; } .toolbar { align-items: center; } .search { width: 100%; } .search label { display: none; } .viewSwitch { flex-shrink: 0; } .scenePanel { padding: 10px; } .sceneHeader { align-items: center; } .legend { display: none; } .integrity { grid-template-columns: 1fr; } .integrity p { grid-column: 1; } }
+</style>

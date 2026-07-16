@@ -1,6 +1,6 @@
 # DartLab Universe
 
-> 상태: U0-G04 original source binding 및 human-only promotion compiler 완료, reviewed gold 차단
+> 상태: U1 localReview 구현 및 브라우저 눈검수 완료, U0-G04 reviewed gold gate로 publicBeta 차단
 > 기준일: 2026-07-16 KST
 > 제품명: DartLab Universe
 > 정본 경계: HF 데이터는 진실, 온톨로지는 의미 계약, 엔진은 렌즈, Universe는 요청 시점 투영
@@ -70,7 +70,7 @@ DartLab의 데이터를 공개 웹에서 우주처럼 탐색하는 제품은 가
 ## 구현 순서
 
 1. U0: `tests/_attempts/dartlabUniverse/`에서 graph truth, snapshot, workflow, visual, policy 계약을 실데이터로 검증한다. Bounded projection부터 renderer bakeoff, release gold admission, queue 600행, original source binding 600/600, human-only promotion compiler까지 실행했다. Human decision과 실제 reviewed positive 및 hard negative는 아직 0건이라 U0 graduation과 U1은 차단한다.
-2. U1: 독립 `/universe` route에서 기존 atlas를 먼저 띄우고 34개 산업 변화 우주와 첫 3개 Kill-Chain을 연다.
+2. U1: 독립 `/universe` route의 localReview에서 기존 atlas 34개 산업과 50개 파생 흐름, 결정론 Canvas 2D, 관계표, 검색과 선택 URL을 구현했다. Reviewed gold gate 전에는 CURRENT ONLY와 `noindex,nofollow`를 유지하고 변화 우주 및 첫 3개 Kill-Chain의 publicBeta는 열지 않는다.
 3. U2: 엣지와 claim 클릭 시 기존 브라우저 검색 sidecar와 panel range read로 exact evidence를 찾는 Evidence on Demand를 붙인다.
 4. U3: 런타임 근거 확인이 성능 예산을 넘는다는 측정이 있을 때만 기존 map artifact의 additive schema 확장을 토론한다.
 5. U4: DART와 EDGAR의 동형 16컬럼 panel과 표준 재무를 사용해 시장간 비교 장면을 연다.
