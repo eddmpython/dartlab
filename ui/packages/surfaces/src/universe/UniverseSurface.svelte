@@ -1,17 +1,38 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import type { UniverseRouteSeed, UniverseUrlState } from '@dartlab/ui-contracts';
+	import type {
+		UniverseChangeMark,
+		UniverseChangeSet,
+		UniverseEvidenceQuery,
+		UniverseEvidenceResolution,
+		UniverseLensRef,
+		UniverseLensTray,
+		UniverseRouteSeed,
+		UniverseUrlState,
+		UniverseWorkflowCompilation,
+		UniverseWorkflowId
+	} from '@dartlab/ui-contracts';
+	import { compileLensTray, compileUniverseWorkflow, UNIVERSE_WORKFLOWS } from '@dartlab/ui-runtime/data/universe';
+	import ChangeUniverse from './components/ChangeUniverse.svelte';
+	import EvidenceDrawer from './components/EvidenceDrawer.svelte';
+	import KillChain from './components/KillChain.svelte';
+	import LensTray from './components/LensTray.svelte';
 	import UniverseCanvas from './components/UniverseCanvas.svelte';
 	import RelationTable from './components/RelationTable.svelte';
+	import TimeLens from './components/TimeLens.svelte';
 	import { DEFAULT_UNIVERSE_URL_STATE, parseUniverseUrl, universeUrl } from './url';
 
 	interface Props {
 		seed: UniverseRouteSeed;
 		mapHref?: string;
+		loadChanges?: (maxMarks?: number) => Promise<UniverseChangeSet>;
+		resolveEvidence?: (query: UniverseEvidenceQuery) => Promise<UniverseEvidenceResolution>;
 	}
 
-	let { seed, mapHref = '/map' }: Props = $props();
+	let { seed, mapHref = '/map', loadChanges, resolveEvidence }: Props = $props();
+	type PrimaryMode = 'atlas' | 'change' | 'workflow';
 	type ViewMode = 'universe' | 'table';
+	let primaryMode = $state<PrimaryMode>('atlas');
 	let viewMode = $state<ViewMode>('universe');
 	let query = $state('');
 	let selectedId = $state<string | null>(null);
@@ -25,6 +46,17 @@
 	let connectedEdges = $derived(selectedId ? seed.scene.edges.filter((edge) => edge.sourceId === selectedId || edge.targetId === selectedId) : []);
 	let companyCount = $derived(seed.atlas.industries.reduce((total, industry) => total + industry.nodeCount, 0));
 	let totalRevenue = $derived(seed.atlas.industries.reduce((total, industry) => total + industry.revenue, 0));
+	let changeSet = $state<UniverseChangeSet | null>(null);
+	let changeLoading = $state(false);
+	let changeError = $state<string | null>(null);
+	let selectedChange = $state<UniverseChangeMark | null>(null);
+	let evidenceResolution = $state<UniverseEvidenceResolution | null>(null);
+	let evidenceLoading = $state(false);
+	let selectedWorkflowId = $state<UniverseWorkflowId>('growthSustainability');
+	let workflowCompilation = $state<UniverseWorkflowCompilation | null>(null);
+	let workflowLoading = $state(false);
+	let lensTray = $state<UniverseLensTray | null>(null);
+	let lensRevision = 0;
 
 	function formatRevenue(value: number): string {
 		return `${(value / 10_000).toLocaleString('ko-KR', { maximumFractionDigits: 1 })}조`;
@@ -49,6 +81,119 @@
 		query = '';
 		commitUrl(push);
 	}
+
+	function selectPrimaryMode(mode: PrimaryMode): void {
+		primaryMode = mode;
+		selectedChange = null;
+		evidenceResolution = null;
+		if (mode === 'change' && !changeSet) void ensureChanges();
+		if (mode === 'workflow' && !workflowCompilation) void compileWorkflow();
+	}
+
+	async function ensureChanges(): Promise<void> {
+		if (!loadChanges || changeLoading || changeSet) return;
+		changeLoading = true;
+		changeError = null;
+		try {
+			changeSet = await loadChanges(160);
+		} catch (error) {
+			changeError = error instanceof Error ? error.message : '변화 원천을 불러오지 못했습니다.';
+		} finally {
+			changeLoading = false;
+		}
+	}
+
+	function selectChange(mark: UniverseChangeMark): void {
+		selectedChange = mark;
+		evidenceResolution = null;
+	}
+
+	async function searchChangeEvidence(): Promise<void> {
+		if (!selectedChange || !resolveEvidence || evidenceLoading) return;
+		evidenceLoading = true;
+		try {
+			evidenceResolution = await resolveEvidence({
+				claimId: selectedChange.changeId,
+				text: `${selectedChange.entityLabel} ${selectedChange.summary}`,
+				subjectId: selectedChange.entityId,
+				predicate: 'filed',
+				objectId: 'filing:unresolved',
+				direction: 'subjectToObject',
+				validAt: urlState.validAt ?? selectedChange.eventAt,
+				knownAt: urlState.knownAt ?? selectedChange.knownAt,
+				pointer: null
+			});
+		} finally {
+			evidenceLoading = false;
+		}
+	}
+
+	function setWorkflow(workflowId: UniverseWorkflowId): void {
+		selectedWorkflowId = workflowId;
+		workflowCompilation = null;
+		void compileWorkflow();
+	}
+
+	async function compileWorkflow(): Promise<void> {
+		if (workflowLoading) return;
+		workflowLoading = true;
+		try {
+			workflowCompilation = await compileUniverseWorkflow({
+				workflowId: selectedWorkflowId,
+				snapshotSetId: seed.snapshot.snapshotSetId,
+				seedIds: selectedId ? [selectedId] : [seed.scene.nodes[0]?.nodeId ?? 'market'],
+				validAt: urlState.validAt,
+				knownAt: urlState.knownAt,
+				generatedAt: seed.meta.buildTime
+			});
+		} finally {
+			workflowLoading = false;
+		}
+	}
+
+	function setTimeLens(validAt: string | null, knownAt: string | null): void {
+		urlState = { ...urlState, validAt, knownAt };
+		workflowCompilation = null;
+		commitUrl(true);
+		if (primaryMode === 'workflow') void compileWorkflow();
+	}
+
+	function lensRef(nodeId: string, role: 'primary' | 'comparison'): UniverseLensRef | null {
+		const node = nodeById.get(nodeId);
+		if (!node) return null;
+		const value = node.presentation?.metricValue ?? null;
+		return {
+			refId: `atlas:${role}:${node.nodeId}`,
+			kind: 'valueRef',
+			engine: 'industry',
+			axis: 'atlasRevenue',
+			label: `${node.label} 지도 매출`,
+			sourceRef: node.sourceRef,
+			dataAsOf: seed.meta.dataAsOf.finance ?? null,
+			unit: value === null ? null : '억원',
+			value,
+			columns: [],
+			rows: [],
+			executedAt: seed.meta.buildTime,
+			status: value === null ? 'missing' : 'available',
+			limitation: '현행 산업 지도 집계값입니다. 원문 assertion 또는 기업 간 사실 관계가 아닙니다.'
+		};
+	}
+
+	async function refreshLens(nodeId: string | null): Promise<void> {
+		const revision = ++lensRevision;
+		if (!nodeId) { lensTray = null; return; }
+		const primary = lensRef(nodeId, 'primary');
+		const neighborId = connectedEdges[0]
+			? (connectedEdges[0].sourceId === nodeId ? connectedEdges[0].targetId : connectedEdges[0].sourceId)
+			: null;
+		const comparison = neighborId ? lensRef(neighborId, 'comparison') : null;
+		if (!primary) { lensTray = null; return; }
+		const next = await compileLensTray(primary, comparison);
+		if (revision === lensRevision) lensTray = next;
+	}
+
+	$effect(() => { void refreshLens(selectedId); });
 
 	function clearSelection(): void {
 		selectedId = null;
@@ -97,14 +242,19 @@
 
 	<section class="workbench">
 		<header class="toolbar">
-			<form class="search" onsubmit={submitSearch}>
+			<div class="sceneSwitch" aria-label="Universe 장면">
+				<button class:active={primaryMode === 'atlas'} onclick={() => selectPrimaryMode('atlas')}>아틀라스</button>
+				<button class:active={primaryMode === 'change'} onclick={() => selectPrimaryMode('change')}>변화</button>
+				<button class:active={primaryMode === 'workflow'} onclick={() => selectPrimaryMode('workflow')}>Kill-Chain</button>
+			</div>
+			<form class="search" class:hidden={primaryMode !== 'atlas'} onsubmit={submitSearch}>
 				<label for="universe-search">산업 검색</label>
 				<div><input id="universe-search" bind:value={query} autocomplete="off" placeholder="반도체, 자동차, 소프트웨어…" /><button type="submit">찾기</button></div>
 				{#if queryMatches.length > 0}
 					<ul>{#each queryMatches as node (node.nodeId)}<li><button type="button" onclick={() => selectNode(node.nodeId)}>{node.label}<span>{stageLabel(node.presentation?.stage)}</span></button></li>{/each}</ul>
 				{/if}
 			</form>
-			<div class="viewSwitch" aria-label="보기 방식">
+			<div class="viewSwitch" class:hidden={primaryMode !== 'atlas'} aria-label="보기 방식">
 				<button class:active={viewMode === 'universe'} onclick={() => (viewMode = 'universe')}>우주</button>
 				<button class:active={viewMode === 'table'} onclick={() => (viewMode = 'table')}>관계표</button>
 			</div>
@@ -112,25 +262,33 @@
 
 		<div class="workspace">
 			<div class="scenePanel">
-				<div class="sceneHeader">
-					<div><span>SCENE 01</span><h2>한국 시장 산업 아틀라스</h2></div>
-					<div class="legend"><span class="candidate">후보 노드</span><span class="derived">파생 흐름</span></div>
-				</div>
-				{#if viewMode === 'universe'}
-					<UniverseCanvas scene={seed.scene} {selectedId} {highlightedIds} onSelect={selectNode} />
+				{#if primaryMode === 'atlas'}
+					<div class="sceneHeader">
+						<div><span>SCENE 01</span><h2>한국 시장 산업 아틀라스</h2></div>
+						<div class="legend"><span class="candidate">후보 노드</span><span class="derived">파생 흐름</span></div>
+					</div>
+					{#if viewMode === 'universe'}
+						<UniverseCanvas scene={seed.scene} {selectedId} {highlightedIds} onSelect={selectNode} />
+					{:else}
+						<RelationTable scene={seed.scene} {selectedId} onSelect={selectNode} />
+					{/if}
+				{:else if primaryMode === 'change'}
+					<ChangeUniverse data={changeSet} loading={changeLoading} error={changeError} onLoad={() => void ensureChanges()} onSelect={selectChange} />
 				{:else}
-					<RelationTable scene={seed.scene} {selectedId} onSelect={selectNode} />
+					<KillChain workflows={UNIVERSE_WORKFLOWS} {selectedWorkflowId} compilation={workflowCompilation} loading={workflowLoading} onSelectWorkflow={setWorkflow} onCompile={() => void compileWorkflow()} />
 				{/if}
 			</div>
 
-			<aside class="inspector">
-				{#if selectedNode}
+			<aside class="inspector" class:drawerOpen={selectedChange !== null}>
+				{#if selectedChange}
+					<EvidenceDrawer change={selectedChange} resolution={evidenceResolution} loading={evidenceLoading} onResolve={() => void searchChangeEvidence()} onClose={() => { selectedChange = null; evidenceResolution = null; }} />
+				{:else if selectedNode}
 					<div class="inspectorHead"><span>SELECTED ENTITY</span><button aria-label="선택 해제" onclick={clearSelection}>×</button></div>
 					<h2>{selectedNode.label}</h2>
 					<p class="entityId">{selectedNode.nodeId} · {stageLabel(selectedNode.presentation?.stage)}</p>
 					<div class="entityStats">
-						<div><span>구성 종목</span><strong>{selectedNode.presentation?.memberCount?.toLocaleString() ?? '—'}</strong></div>
-						<div><span>지도 매출</span><strong>{selectedNode.presentation?.metricValue != null ? formatRevenue(selectedNode.presentation.metricValue) : '—'}</strong></div>
+						<div><span>구성 종목</span><strong>{selectedNode.presentation?.memberCount?.toLocaleString() ?? '결손'}</strong></div>
+						<div><span>지도 매출</span><strong>{selectedNode.presentation?.metricValue != null ? formatRevenue(selectedNode.presentation.metricValue) : '결손'}</strong></div>
 						<div><span>연결 흐름</span><strong>{connectedEdges.length}</strong></div>
 					</div>
 					<div class="truthCard candidate">
@@ -139,6 +297,7 @@
 					</div>
 					<div class="sourceRef"><span>SOURCE REF</span><code>{selectedNode.sourceRef}</code></div>
 					<button class="tableCta" onclick={() => (viewMode = 'table')}>연결 관계표 열기 →</button>
+					<LensTray tray={lensTray} />
 				{:else}
 					<div class="emptyInspector">
 						<span>ORIENT</span><h2>산업을 선택하세요.</h2>
@@ -152,6 +311,7 @@
 				{/if}
 			</aside>
 		</div>
+		<TimeLens validAt={urlState.validAt} knownAt={urlState.knownAt} onChange={setTimeLens} />
 	</section>
 
 	<section class="integrity">
@@ -183,7 +343,11 @@
 	.metrics strong { display: block; margin: 9px 0 3px; color: #eef3f9; font: 500 clamp(22px, 2.4vw, 34px)/1 ui-monospace, monospace; letter-spacing: -.05em; }
 	.metrics small { color: #5f7086; font-size: 10px; }
 	.workbench { max-width: 1420px; margin: 0 auto; border: 1px solid #192434; border-radius: 21px; overflow: hidden; background: rgba(9,13,21,.88); box-shadow: 0 40px 100px rgba(0,0,0,.28); }
-	.toolbar { position: relative; z-index: 5; display: flex; justify-content: space-between; align-items: end; gap: 20px; padding: 15px 18px; border-bottom: 1px solid #182333; background: #0b1019; }
+	.toolbar { position: relative; z-index: 5; display: grid; grid-template-columns: auto minmax(260px, 480px) auto; justify-content: space-between; align-items: end; gap: 20px; padding: 15px 18px; border-bottom: 1px solid #182333; background: #0b1019; }
+	.sceneSwitch { display: flex; gap: 3px; padding: 3px; border: 1px solid #202c3f; border-radius: 9px; background: #080c13; }
+	.sceneSwitch button { border: 0; border-radius: 6px; padding: 8px 10px; background: transparent; color: #66778e; font-size: 10px; cursor: pointer; }
+	.sceneSwitch button.active { color: #dce5f2; background: #1a2637; }
+	.hidden { visibility: hidden; pointer-events: none; }
 	.search { position: relative; width: min(480px, 70%); }
 	.search label { display: block; margin-bottom: 7px; color: #607188; font: 600 8px/1 ui-monospace, monospace; letter-spacing: .11em; }
 	.search > div { display: flex; }
@@ -208,6 +372,7 @@
 	.legend .candidate::before { border-top-style: dashed; border-color: #f5b84b; }
 	.legend .derived::before { border-color: #64a8ff; }
 	.inspector { padding: 23px 20px; background: #0a0f17; }
+	.inspector.drawerOpen { padding: 0; }
 	.inspectorHead { display: flex; justify-content: space-between; align-items: center; }
 	.inspectorHead button { border: 0; background: none; color: #65758c; font-size: 20px; cursor: pointer; }
 	.inspector h2 { margin: 34px 0 6px; color: #f0f4f9; font-size: 27px; letter-spacing: -.03em; }
@@ -234,5 +399,6 @@
 	.integrity code { overflow: hidden; color: #52637a; font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
 	.integrity p { grid-column: 1 / -1; margin: 2px 0 0; color: #586980; font-size: 10px; }
 	@media (max-width: 980px) { .hero { grid-template-columns: 1fr; gap: 20px; } .heroMeta { max-width: 430px; } .workspace { grid-template-columns: 1fr; } .scenePanel { border-right: 0; } .inspector { border-top: 1px solid #172231; } .metrics { grid-template-columns: repeat(2, 1fr); } .metrics > div:nth-child(2) { border-right: 0; } .metrics > div:nth-child(-n+2) { border-bottom: 1px solid #172231; } }
-	@media (max-width: 620px) { .universeShell { padding: 76px 12px 32px; } .hero { margin-bottom: 24px; } h1 { font-size: 36px; } .metrics > div { padding: 14px; } .metrics strong { font-size: 21px; } .toolbar { align-items: center; } .search { width: 100%; } .search label { display: none; } .viewSwitch { flex-shrink: 0; } .scenePanel { padding: 10px; } .sceneHeader { align-items: center; } .legend { display: none; } .integrity { grid-template-columns: 1fr; } .integrity p { grid-column: 1; } }
+	@media (max-width: 760px) { .toolbar { grid-template-columns: 1fr auto; } .search { grid-column: 1 / -1; grid-row: 2; width: 100%; } .search.hidden { display: none; } .sceneSwitch { overflow-x: auto; } }
+	@media (max-width: 620px) { .universeShell { padding: 76px 12px 32px; } .hero { margin-bottom: 24px; } h1 { font-size: 36px; } .metrics > div { padding: 14px; } .metrics strong { font-size: 21px; } .toolbar { align-items: center; gap: 9px; padding: 10px; } .search { width: 100%; } .search label { display: none; } .viewSwitch { flex-shrink: 0; } .sceneSwitch button { padding: 7px; } .scenePanel { padding: 10px; } .sceneHeader { align-items: center; } .legend { display: none; } .integrity { grid-template-columns: 1fr; } .integrity p { grid-column: 1; } }
 </style>

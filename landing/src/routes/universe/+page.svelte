@@ -1,9 +1,11 @@
 <script lang="ts">
 	import { base } from '$app/paths';
 	import { UniverseSurface } from '@dartlab/ui-surfaces/universe';
+	import { createUniverseBrowser } from '$lib/browser/universeBrowser';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
+	const universe = createUniverseBrowser({ fetchFn: fetch });
 </script>
 
 <svelte:head>
@@ -23,7 +25,7 @@
 		<a href={`${base}/`}>Home</a>
 	</nav>
 </header>
-<UniverseSurface seed={data} mapHref={`${base}/map`} />
+<UniverseSurface seed={data} mapHref={`${base}/map`} loadChanges={universe.changes} resolveEvidence={universe.resolveEvidence} />
 
 <style>
 	.universeTopbar { position: fixed; z-index: 50; top: 0; left: 0; right: 0; height: 49px; display: flex; align-items: center; justify-content: space-between; padding: 0 clamp(18px, 4vw, 64px); border-bottom: 1px solid rgba(94,112,137,.18); background: rgba(7,10,17,.88); backdrop-filter: blur(18px); font-family: 'Pretendard Variable', Pretendard, system-ui, sans-serif; }
