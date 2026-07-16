@@ -36,6 +36,11 @@ export type UniverseGapKind = 'unavailable' | 'notPublic' | 'notApplicable' | 'u
 export type UniverseEvidenceStatus = 'supported' | 'contradicted' | 'missing' | 'scenario';
 export type UniverseLocatorKind = 'text' | 'table';
 export type UniverseRedistributionClass = 'public' | 'metadataOnly' | 'localOnly' | 'blocked' | 'unknown';
+export type UniverseChangeMode = 'currentDemo' | 'exactReplay';
+export type UniverseChangeKind = 'created' | 'corrected' | 'retracted' | 'newlyKnown' | 'stale';
+export type UniverseLensRefKind = 'valueRef' | 'tableRef' | 'dateRef' | 'executionRef';
+export type UniverseWorkflowId = 'growthSustainability' | 'creditFragility' | 'disclosureChange';
+export type UniverseClaimLane = 'fact' | 'derived' | 'gap' | 'scenario';
 export type UniversePredicate = (typeof UNIVERSE_PREDICATES)[number];
 
 export interface UniverseTextLocator {
@@ -210,6 +215,37 @@ export interface EvidenceReceipt {
 	generatedAt: string;
 }
 
+export interface UniverseEvidenceQuery {
+	claimId: string;
+	text: string;
+	subjectId: string;
+	predicate: UniversePredicate;
+	objectId: string;
+	direction: UniverseDirection;
+	validAt: string | null;
+	knownAt: string | null;
+	pointer?: EvidencePointer | null;
+}
+
+export interface UniverseEvidenceCandidate {
+	documentId: string;
+	title: string;
+	entityId: string;
+	publishedAt: string;
+	sourceRef: string;
+	snippet: string;
+	score: number;
+}
+
+export interface UniverseEvidenceResolution {
+	query: UniverseEvidenceQuery;
+	pointer: EvidencePointer | null;
+	receipt: EvidenceReceipt;
+	candidates: readonly UniverseEvidenceCandidate[];
+	gaps: readonly GapReceipt[];
+	indexBuiltAt: string | null;
+}
+
 export interface GapReceipt {
 	gapId: string;
 	kind: UniverseGapKind;
@@ -217,6 +253,53 @@ export interface GapReceipt {
 	requestedField: string;
 	reasonCode: string;
 	retryPolicy: string;
+}
+
+export interface UniverseChangeEvidence {
+	before: EvidenceReceipt;
+	after: EvidenceReceipt;
+	gaps: readonly GapReceipt[];
+}
+
+export interface UniverseChangeMark {
+	changeId: string;
+	entityId: string;
+	entityLabel: string;
+	industryId: string;
+	kind: UniverseChangeKind;
+	metricId: string;
+	beforeValue: number | null;
+	afterValue: number | null;
+	unit: string | null;
+	eventAt: string;
+	knownAt: string;
+	sourceRef: string;
+	summary: string;
+	evidence: UniverseChangeEvidence;
+}
+
+export interface UniverseChangeAggregate {
+	industryId: string;
+	industryLabel: string;
+	memberCount: number;
+	coveredCount: number;
+	unknownCount: number;
+	omittedCount: number;
+	coverage: number;
+	changeCount: number;
+}
+
+export interface UniverseChangeSet {
+	mode: UniverseChangeMode;
+	fromSnapshotSetId: string | null;
+	toSnapshotSetId: string;
+	fromPeriod: string | null;
+	toPeriod: string;
+	marks: readonly UniverseChangeMark[];
+	aggregates: readonly UniverseChangeAggregate[];
+	gaps: readonly GapReceipt[];
+	diffHash: string;
+	generatedAt: string;
 }
 
 export interface SceneBeat {
@@ -245,6 +328,105 @@ export interface UniverseFlightReceipt {
 	beatGaps: Readonly<Record<string, readonly GapReceipt[]>>;
 	outputHash: string;
 	generatedAt: string;
+}
+
+export interface UniverseLensRef {
+	refId: string;
+	kind: UniverseLensRefKind;
+	engine: string;
+	axis: string;
+	label: string;
+	sourceRef: string;
+	dataAsOf: string | null;
+	unit: string | null;
+	value: number | string | boolean | null;
+	columns: readonly string[];
+	rows: readonly (readonly (number | string | boolean | null)[])[];
+	executedAt: string | null;
+	status: 'available' | 'missing' | 'failed';
+	limitation: string;
+}
+
+export interface UniverseLensCard {
+	lensId: string;
+	role: 'primary' | 'comparison';
+	ref: UniverseLensRef;
+	gaps: readonly GapReceipt[];
+}
+
+export interface UniverseLensTray {
+	primary: UniverseLensCard;
+	comparison: UniverseLensCard | null;
+	receiptHash: string;
+}
+
+export interface UniverseWorkflowClaimSpec {
+	claimId: string;
+	label: string;
+	requiredEvidence: readonly string[];
+	falsifier: string;
+	defaultLane: UniverseClaimLane;
+}
+
+export interface UniverseWorkflowRecipe {
+	workflowId: UniverseWorkflowId;
+	version: string;
+	label: string;
+	objective: UniverseObjective;
+	procedure: readonly UniverseBeatIntent[];
+	claims: readonly UniverseWorkflowClaimSpec[];
+}
+
+export interface UniverseClaimReceipt {
+	claimId: string;
+	label: string;
+	lane: UniverseClaimLane;
+	evidence: EvidenceReceipt;
+	gaps: readonly GapReceipt[];
+	falsifier: string;
+	conclusionReady: boolean;
+}
+
+export interface UniverseWorkflowCompilation {
+	recipe: UniverseWorkflowRecipe;
+	flightPlan: UniverseFlightPlan;
+	flightReceipt: UniverseFlightReceipt;
+	claims: readonly UniverseClaimReceipt[];
+	conclusionReady: boolean;
+	compileHash: string;
+}
+
+export interface UniverseLegalEntityIdentity {
+	market: 'KR' | 'US';
+	legalEntityId: string;
+	securityId: string;
+	ticker: string;
+	validFrom: string;
+	validTo: string | null;
+	sourceRef: string;
+}
+
+export interface UniverseConformanceObservation {
+	entity: UniverseLegalEntityIdentity;
+	metricId: string;
+	value: number | null;
+	unit: string | null;
+	dataAsOf: string | null;
+	sourceRef: string;
+}
+
+export interface UniversePairedQuestion {
+	questionId: string;
+	label: string;
+	metricId: string;
+}
+
+export interface UniversePairedResult {
+	question: UniversePairedQuestion;
+	status: 'ready' | 'blocked';
+	kr: UniverseConformanceObservation | null;
+	us: UniverseConformanceObservation | null;
+	gaps: readonly GapReceipt[];
 }
 
 export interface UniverseVisualToken {
