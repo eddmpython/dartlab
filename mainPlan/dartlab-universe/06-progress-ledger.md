@@ -284,3 +284,49 @@ dart dataAsOf            null
 ## 다음 단일 행동
 
 운영자가 queue와 `releaseGoldSourceBinding.machine.jsonl`을 함께 열어 top-ranked original locator를 선택하고 `reviewedDecisions.jsonl`을 작성한다. Source owner는 발행 및 공개 가능 시각을 공급하며 US/SEC, `sellsTo`, `classifiedIn`, `filed`와 누락 negative type 7개를 별도 구성한다. Reviewed 300 대 300과 prediction 600을 채워 precision 98% 및 false acceptance 1%를 통과하기 전 U0 graduation과 U1은 금지한다.
+
+## 2026-07-17 localReview 구현 재개
+
+U0 graduation을 우회하지 않고 localReview에서 실행 가능한 U1, U2, U4 계약과 화면을 실패 폐쇄 방식으로 구현했다.
+
+```text
+U1 current signal source entries             116
+U1 current signal unique marks               108
+U1 source asOf                        2026-07-16
+U1 exact historical claims                       0
+U1 current demo exact-history gap              1/1
+U1 deterministic diff hash repeat              2/2
+U1 exact replay future knowledge leak            0
+U2 exact pointer admission test                1/1
+U2 search candidate fact promotion               0
+U2 browser search candidates observed             8
+U2 Time Lens independent URL state             2/2
+U2 generic lens engine fixtures                6/6
+U2 missing lens zero fill                        0
+U2 open workflow recipes                       3/3
+U2 claim receipt coverage                      3/3
+U2 missing scenario assumption gap             1/1
+U2 current workflow conclusions                  0
+U4 fixed paired questions                    20/20
+U4 fuzzy identity auto-link                      0
+U4 live paired questions ready                   0
+runtime Universe test files                     6/6
+runtime Universe tests                        12/12
+surface svelte-check errors                       0
+landing production build                     pass
+browser console errors                           0
+browser widths without horizontal overflow 320/390/768/1440
+```
+
+구현 범위:
+
+- 변화 우주는 timeline과 movers를 사용자 진입 뒤 지연 로드한다. 불변 before 및 after snapshot이 없으므로 `currentDemo`로 고정하고 모든 mark의 before 및 after EvidenceReceipt를 missing으로 남긴다.
+- exact replay compiler는 replayable snapshot 두 개를 요구하고 `knownAt` 이후 assertion을 입력에서 제거한다. created, corrected, retracted, newlyKnown, stale을 별도 변화 종류로 보존한다.
+- evidence resolver는 기존 filing search를 호출한다. 검색 적중은 candidate일 뿐이며 exact text 또는 table locator가 없으면 supported receipt를 만들지 않는다.
+- Evidence Drawer는 관계 설명, 상태, 시간, assertion timeline, filing 및 section, exact locator, 방법과 한계 순서를 유지한다.
+- engine lens는 valueRef, tableRef, dateRef, executionRef만 소비한다. primary 1개와 comparison 1개 상한을 지키고 결손을 0으로 채우지 않는다.
+- 성장 지속성, 신용 취약, 공시 변화 세 recipe만 연다. 필수 evidence 또는 scenario assumption이 비면 GapReceipt를 만들고 결론은 `CONCLUSION OPEN`으로 남긴다.
+- 교차시장 compiler는 정확한 KR corpCode와 US CIK, security identity, sourceRef, dataAsOf, unit이 모두 있을 때만 고정 20문항을 ready로 연다. 현재 live 입력은 없으므로 화면 게이트는 닫혀 있다.
+- U5 3D는 U0~U4 graduation 조건이 충족되지 않아 추가하지 않았다. U6는 `localReview`, `noindex,nofollow`, navigation 미노출을 유지한다.
+
+남은 승격 조건은 기존 blocker 1~17과 같다. 코드 구현 완료를 human gold, named screen reader, 14일 beta의 완료로 오인하지 않는다.
