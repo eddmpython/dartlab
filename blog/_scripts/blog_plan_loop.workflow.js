@@ -38,9 +38,10 @@ const PRINCIPLES = `블로그 심층 리포트 원칙(합격선):
 7. 참고글 연결: 선행 글에 이미 설명한 회사·기술·데이터·투자 개념이 있으면 relatedPosts 에 검색어, 링크, 배치 이유를 남긴다. 본문에서는 반복 설명을 줄이고 필요한 문단 뒤에 참고글을 연결한다.
 8. 초보자 서사: 독자는 전문가가 아니다. 기: 왜 이 글을 읽어야 하는지, 승: 숫자·표·공시·차트에서 첫 결과를 본다, 전: 그 결과를 잘못 읽기 쉬운 함정과 한계를 푼다, 결: 다음에 볼 기준·지표·공시 질문으로 닫는다.
 9. 쉬운 언어: 전문 용어는 글의 중심이 아니다. OPM, EBITDA, CAPEX, FCF, ROE, PER, PBR, 밸류에이션, 컨센서스, 레버리지 같은 말은 첫 등장 문장에서 한국어로 풀고, 바로 옆에 실제 숫자·표·공시 위치를 붙인다. "구조", "흐름", "맥락", "시사점", "메커니즘" 같은 말만으로 문단을 끝내면 실패다.
+10. 관전 시나리오: 마지막 H2는 요약이 아니라 "만약 어떤 조건이면, 어떤 경로로 무엇이 달라질까"를 2~4개로 푼다. 각 시나리오는 확인할 지표와 틀렸음을 보여 줄 조건까지 가진다. 낙관·기본·비관 이름만 바꾼 표는 실패다.
 표기: em dash(긴 줄표) 금지. 부연은 마침표·괄호, 범위는 물결(~). 문장은 다/요/까.`
 
-const IMAGE_NOTE = `이미지 기획(내용 연상 강제): hero 1장 + 본문 inline 2~3장 이상. inline 이미지는 뒤에 자동으로 붙는 장식이 아니라 어느 막의 어느 설명 뒤에 들어갈지 insertAfterAct·placement·narrativeUse 로 결정한다. 각 이미지는 무조건 이 글의 내용·회사·제품·현장을 연상시켜야 한다. 회사 로고·상징품·실제 제품도 허용(주식·재무·교육 맥락이라 저작권 무관). 범용 스카이라인·추상 배경으로 도망가면 실패. query 는 실사 CC0 수급용 영어 검색어(그 회사 제품·현장·상징을 앞에), keywords 는 제목/태그 매칭용(오매치 차단). 예(봉제완구 회사): query "plush stuffed animals teddy bear shelf", keywords ["plush","teddy","stuffed","toy"].`
+const IMAGE_NOTE = `이미지 기획(내용 연상 강제): hero 1장 + 본문 inline 2~3장 이상. 각 항목의 assetKey 는 assets/{assetKey}.webp 와 CREDITS.md 를 잇는 영문 kebab-case 키이고 sourcePolicy 는 auto 다. 파이프라인이 실제 제품·인물·현장처럼 사실성이 중요한 피사체는 공식 또는 라이선스가 확인된 실사를, 개념·원리·추상 장면은 image_gen 을 자율 선택한다. 수급 실패를 운영자 질문으로 넘기지 말고 다른 적합 소스로 전환한다. inline 이미지는 insertAfterAct·placement·narrativeUse 로 본문 위치와 역할을 정한다. 범용 스카이라인·추상 배경으로 도망가면 실패. query 는 실사 검색용 영어 검색어, keywords 는 오매치 차단용이다.`
 
 const VISUAL_NOTE = `막별 비주얼: 이야기가 요구하는 차트·표·그래프 세트를 막마다 정한다(고정 템플릿 아님). 추이=line, 비교/구성=bar, 부문믹스=도넛/스택, 두 계열 대비=grouped, 공정·회사·근거 지도=table. 한 막에 하나로 부족하면 같은 actOrder 에 2~4개를 기획한다. 시각물은 글 뒤 자동 부록이 아니라 본문 중간 설명 장치다. placement·insertAfter·narrativeUse 로 어느 문장 뒤에 왜 들어가는지 적는다. 각 차트는 그 막의 주장을 증명해야 하고, 큰 숫자를 가려도 차트만으로 같은 긴장이 남아야 한다. 손수 못생긴 차트 금지. kind·title·proves·seriesHint 를 명확히 적어 메인 스레드가 정식 렌더로 그리게 한다.`
 
@@ -74,8 +75,9 @@ const DARTLAB_BEGINNER_NOTE = `dartlab 이야기 초보자 서사 게이트:
 // 전부 실패해 루프가 어느 카테고리에서도 안 돌았다.
 const PLAN_SCHEMA = {
   type: 'object', additionalProperties: false,
-  required: ['title', 'titleContract', 'description', 'readerQuestion', 'insight', 'acts', 'sections', 'visuals', 'imagePlan', 'relatedPosts', 'honestyGuards', 'evidenceMap'],
+  required: ['contractVersion', 'title', 'titleContract', 'description', 'readerQuestion', 'insight', 'watchScenarios', 'acts', 'sections', 'visuals', 'imagePlan', 'relatedPosts', 'honestyGuards', 'evidenceMap'],
   properties: {
+    contractVersion: { type: 'integer', enum: [2] },
     title: { type: 'string' },
     titleContract: {
       type: 'object', additionalProperties: false,
@@ -124,6 +126,18 @@ const PLAN_SCHEMA = {
         },
       },
     },
+    watchScenarios: {
+      type: 'array', minItems: 2, maxItems: 4,
+      items: {
+        type: 'object', additionalProperties: false,
+        required: ['condition', 'mechanism', 'outcome', 'watchMetric', 'invalidatedBy', 'evidenceRefs'],
+        properties: {
+          condition: { type: 'string' }, mechanism: { type: 'string' }, outcome: { type: 'string' },
+          watchMetric: { type: 'string' }, invalidatedBy: { type: 'string' },
+          evidenceRefs: { type: 'array', items: { type: 'string' } },
+        },
+      },
+    },
     sections: {
       type: 'array', minItems: 6,
       items: {
@@ -161,8 +175,10 @@ const PLAN_SCHEMA = {
     imagePlan: {
       type: 'array', minItems: 3,
       items: {
-        type: 'object', additionalProperties: false, required: ['slot', 'subject', 'query', 'keywords', 'placement', 'narrativeUse'],
+        type: 'object', additionalProperties: false, required: ['assetKey', 'sourcePolicy', 'slot', 'subject', 'query', 'keywords', 'placement', 'narrativeUse'],
         properties: {
+          assetKey: { type: 'string' },
+          sourcePolicy: { type: 'string', enum: ['auto'] },
           slot: { type: 'string', enum: ['hero', 'inline'] },
           subject: { type: 'string' },
           query: { type: 'string' },
@@ -211,11 +227,13 @@ const FIELD_GUIDE = `필드 정의:
 - titleContract.selectedTitle 은 title 과 같아야 한다. hookQuestion 은 제목이 첫 1초에 만드는 독자 질문. readerGap 은 독자의 상식과 글이 갚을 사실 사이의 간격. promise 는 제목이 약속하고 결론이 갚을 내용. whySelected 는 왜 다른 후보보다 이 제목이 강한가. candidates 는 후보 3개 이상(title, hook, risk).
 - description: SEO description 80~200자. 첫 2줄이 검색 스니펫.
 - readerQuestion: 관통선 = 독자 질문 1개. 제목 없이 이 질문만으로 읽고 싶어야 한다.
-- insight: commonBelief 통념. twistFact 관통선의 답(통념과 충돌하는 사실 + 메커니즘, 제목 재진술·억지 수치 금지). whatToWatch 다음에 볼 지표. freshnessArgument 왜 재탕이 아닌가. evidenceRefs 이 인싸이트를 받치는 실측 근거(evidence 안에서).
+- contractVersion: 항상 2.
+- insight: commonBelief 통념. twistFact 관통선의 답(통념과 충돌하는 사실 + 메커니즘, 제목 재진술·억지 수치 금지). whatToWatch 는 watchScenarios 를 한 문장으로 요약한 다음 관전 기준. freshnessArgument 왜 재탕이 아닌가. evidenceRefs 이 인싸이트를 받치는 실측 근거(evidence 안에서).
+- watchScenarios: 심층 장르는 2~4개. condition 만약 어떤 조건이면, mechanism 어떤 경로로, outcome 무엇이 달라지는지, watchMetric 무엇을 확인할지, invalidatedBy 무엇이 이 시나리오를 깨는지, evidenceRefs 어떤 실측 근거를 쓰는지 적는다. 낙관·기본·비관 복제표는 금지. dartlab 이야기는 빈 배열.
 - acts: order 순으로 읽으면 한 편. heading 은 고유·궁금증형 H2. scene 은 장면(보고서톤 금지). keyNumbers 는 evidence 안의 실측 수치. causalBridge 는 다음 막으로 넘어가는 인과 다리 1문장.
 - sections: 실제 H2별 독해 설계. heading 은 섹션 타이틀. subtitle 은 한 줄 훅. visualAnchor 는 이미지·표·도식·코드 출력 중 무엇을 앞쪽에 둘지. explanation 은 쉬운 설명. example 은 실제 예시. support 는 보완 설명·오해 방지. transition 은 다음 섹션 연결문. evaluation 은 평가·개선 루프에서 확인할 기준.
 - visuals: actOrder 어느 막에 붙나. kind 는 line, bar, grouped, donut, stack, table 등. proves 는 이 시각물이 증명하는 주장. seriesHint 는 어떤 계열·기간. placement, insertAfter, narrativeUse 로 본문 어느 문장 뒤에 왜 들어가는지.
-- imagePlan: slot 은 hero 또는 inline. subject 는 무엇을 연상시키나. query 는 실사 CC0 수급용 영어 검색어. keywords 는 오매치 차단용. insertAfterAct 는 inline 이면 어느 막 뒤(hero 는 0). placement, narrativeUse 필수.
+  - imagePlan: assetKey 는 글 assets 폴더의 영문 kebab-case WebP 파일명에서 확장자를 뺀 값. sourcePolicy 는 항상 auto. 파이프라인이 사실 적합성에 따라 공식·CC0 실사 또는 image_gen 을 자율 선택한다. slot 은 hero 또는 inline. subject 는 무엇을 연상시키나. query 는 실사 검색용 영어 검색어. keywords 는 오매치 차단용. insertAfterAct 는 inline 이면 어느 막 뒤(hero 는 0). placement, narrativeUse 필수.
 - relatedPosts: searches 는 착수 전 검색할 내부 글 키워드. links 의 path 는 /blog/슬러그. reason 은 왜 연결하는가. placementRule 은 참고글을 본문 어디에 어떤 요약과 함께 놓을지.
 - honestyGuards: 이 글에 적용할 정직성 가드(영업이익 vs 순이익 분리 등).
 - evidenceMap: claim 이 받치는 주장. sourceType 은 DART, EDGAR, dartlab, scan, external, price, macro, internal-blog 중 하나. period 는 연도·분기·표본 기간(EDGAR 는 fiscal 명시). sourceRef 는 DART 보고서·EDGAR 10-K/10-Q·dartlab 호출. howUsed 는 어느 막이나 시각물에서 어떻게 쓰는지.`
@@ -299,8 +317,10 @@ PLAN_SCHEMA.properties.acts.minItems = shape.acts
 PLAN_SCHEMA.properties.sections.minItems = shape.acts
 PLAN_SCHEMA.properties.visuals.minItems = shape.visuals
 PLAN_SCHEMA.properties.imagePlan.minItems = shape.images
+PLAN_SCHEMA.properties.watchScenarios.minItems = contentKind === 'dartlab-stories' ? 0 : 2
+PLAN_SCHEMA.properties.watchScenarios.maxItems = contentKind === 'dartlab-stories' ? 0 : 4
 PLAN_SCHEMA.properties.imagePlan.description =
-  `내용 연상 이미지 기획(로고·상징품 허용). 그 편에 정말 필요한 만큼만. 최소 ${shape.images} 장(hero 포함).`
+  `내용 연상 이미지 기획. sourcePolicy=auto. 그 편에 정말 필요한 만큼만. 최소 ${shape.images} 장(hero 포함).`
 // 막의 목적도 장르를 따른다. 교육 연재의 단계는 궁금증심화·리스크반전이 아니라 학습 흐름이다.
 if (contentKind === 'dartlab-stories') {
   PLAN_SCHEMA.properties.acts.items.properties.purpose.enum = [
@@ -335,14 +355,14 @@ const NOTES =
     ? {
         principles: STORY_PRINCIPLES,
         section: `${SECTION_NOTE}\n\n${COMMON_BEGINNER_NOTE}\n\n${DARTLAB_PLAIN_NOTE}\n\n${DARTLAB_BEGINNER_NOTE}`,
-        image: `이미지 기획: 그 편에 정말 필요한 그림만 적는다. 고정 하한 없음(최소 hero 1장). 채우기용 inline 이미지는 실패다. 교육 연재의 피사체는 회사·제품이 아니라 도구·데이터·코드다(노트북, 코드 화면, 문서, 서버). 범용 스카이라인·추상 배경으로 도망가면 실패. query 는 실사 CC0 수급용 영어 검색어, keywords 는 오매치 차단용. 각 이미지에 placement·narrativeUse 를 적는다.`,
+        image: `이미지 기획: 그 편에 정말 필요한 그림만 적는다. 고정 하한 없음(최소 hero 1장). assetKey 는 영문 kebab-case, sourcePolicy 는 auto 다. 파이프라인이 라이선스가 확인된 실사와 image_gen 중 사실 적합한 쪽을 자율 선택한다. 교육 연재의 피사체는 회사·제품이 아니라 도구·데이터·코드다. 채우기용 inline 이미지와 범용 배경은 실패다. 각 이미지에 placement·narrativeUse 를 적는다.`,
         visual: `비주얼: 이 연재의 주된 시각물은 코드 실행 결과 표 그 자체다. 별도 차트를 억지로 만들지 않는다. 표를 보여 줄 때는 .shape 나 행열 크기가 아니라 실제 계정명, 기간 열, 값, 공시 문장을 시각 앵커로 삼는다. 개념을 설명하는 도해가 정말 필요할 때만 최소 1개 기획한다.`,
       }
     : { principles: PRINCIPLES, section: `${SECTION_NOTE}\n\n${COMMON_BEGINNER_NOTE}`, image: IMAGE_NOTE, visual: VISUAL_NOTE }
 
 const CONTENT_GUIDANCE = {
   'company-reports': `기업이야기: 회사 하나의 내러티브를 깊게 판다. 사업 구조, 공시 문장, 제품·고객·수주·원가·자본배치·현금흐름을 한 회사 안에서 연결한다. DART 또는 EDGAR 근거와 dartlab 실측을 분리하고, 다음 공시에서 볼 렌즈로 닫는다.`,
-  'tech-story': `기술이야기: 기술이 주어다. 기술 원리, 공정 파이프라인·네트워크망, 어느 칸에 어떤 회사가 있고 왜 그 회사가 병목·표준·원가·고객 접점을 쥐는지 설명한다. 한국사는 DART, 미국사는 EDGAR를 연결한다. 돈 이야기만 앞세우거나 "누가 돈을 버나" 템플릿이면 실패다.`,
+  'tech-story': `기술이야기: 기술이 주어다. 기술 원리, 공정 파이프라인·네트워크망, 어느 칸에 어떤 회사가 있고 왜 그 회사가 병목·표준·원가·고객 접점을 쥐는지 설명한다. 한국사는 DART, 미국사는 EDGAR를 연결한다. 돈 이야기만 앞세우거나 "누가 돈을 버나" 템플릿이면 실패다. 마지막은 조건별 변화 경로, 관찰 지표, 반증 조건을 묶은 관전 시나리오로 닫는다.`,
   'data-reports': `데이터 리포트: scan과 전종목 파서로 전체 시장의 특이점을 찾는다. 개별 회사는 대표 사례일 뿐이다. 표본·분모·제외 조건·정제 전후를 드러내고, DART·EDGAR 전체 유니버스 또는 제외 사유를 명시한다. 순위표 나열로 끝나면 실패다.`,
   'investment-stories': `투자이야기: 투자자가 시장을 읽을 때 쓰는 언어와 프레임이 주어다. 주가, 경제 변수, 증권사 표현, 투자 용어, 기술적투자 보조지표, 기술투자 관점을 설명한다. 지지선·목표가·보조지표를 매수·매도 결론으로 쓰면 실패다. 선행 회사·기술·데이터 글이 있으면 relatedPosts 로 연결하고, 독자가 다음 차트·공시·경제지표에서 무엇을 확인할지로 닫는다.`,
   'dartlab-stories': `dartlab 이야기: dartlab 자체가 주어인 교육 연재다. 독자는 아무것도 모른 채 도착한다. 한 편에 개념 하나를 가르치고, 본문 python 코드블록을 독자가 브라우저에서 그대로 실행하게 만든다. 코드는 공개 호출 계약 안의 dartlab 함수와 Company 메서드만 쓴다. 브라우저에서 안 되는 것(실시간 시세·뉴스 수집 등)은 숨기지 말고 그 자리에서 밝힌다. 6 막 인과가 아니라 3 단계 이상의 학습 단계로 짠다: 무엇을 왜 배우나, 직접 해 본다, 무엇을 얻었고 다음은 무엇인가. imagePlan 은 그 편에 정말 필요한 그림만 적는다. 채우기용 이미지, 코드 없는 설명, 실행해 보지 않은 코드는 실패다. .shape 와 행열 크기, 내부 기능 개수, 인증 개수는 독자에게 의미 있는 근거가 아니므로 금지한다. select 와 trace 는 필요할 때 쓰는 도구일 뿐 독립 주제가 아니다.`,
@@ -447,7 +467,7 @@ ${JSON.stringify(props)}
 회의론자·독자대리인 격파:
 ${JSON.stringify(critiques.filter(Boolean))}
 
-단일 관통선 1개로 좁히고(클리셰 격파 반영), 후보 제목 3개 이상을 비교해 최종 제목을 고른 뒤 titleContract 를 채운다. 핵심 인싸이트(관통선의 답)를 세우고, 막 구조(6막+, 관통선이 인싸이트에 착지)·섹션별 독해 구조(sections)·막별 비주얼·이미지 기획(내용 연상, 로고·상징품 허용)·relatedPosts(검색어·링크·배치 규칙)·DART/EDGAR/dartlab/scan/price/macro/internal-blog evidenceMap·정직성 가드를 확정한다. 비주얼과 이미지는 글 뒤 부록이 아니라 본문 중간에서 독자의 이해를 바꾸는 장치로 placement·insertAfter·narrativeUse 까지 결정한다. 통과용 안전한 관통선이 아니라 진짜 의외의 관통선을 고른다. 전체 기획안을 스키마대로 낸다.
+단일 관통선 1개로 좁히고(클리셰 격파 반영), 후보 제목 3개 이상을 비교해 최종 제목을 고른 뒤 titleContract 를 채운다. 핵심 인싸이트(관통선의 답)를 세우고, 막 구조·섹션별 독해 구조(sections)·막별 비주얼·자율 이미지 기획·마지막 관전 시나리오·relatedPosts·evidenceMap·정직성 가드를 확정한다. 심층 장르의 watchScenarios 는 서로 다른 조건 2~4개에 변화 경로, 결과, 확인 지표, 반증 조건을 담는다. dartlab 이야기는 빈 배열이다. 이미지에는 고유 assetKey 와 sourcePolicy=auto 를 넣는다. 비주얼과 이미지는 글 뒤 부록이 아니라 본문 중간에서 독자의 이해를 바꾸는 장치로 placement·insertAfter·narrativeUse 까지 결정한다. 통과용 안전한 관통선이 아니라 진짜 의외의 관통선을 고른다. 전체 기획안을 스키마대로 낸다.
 
 ${FIELD_GUIDE}`,
   { label: '편집장 수렴', phase: '경합', schema: PLAN_SCHEMA }
@@ -466,7 +486,7 @@ ${NOTES.principles}
 
 ${NOTES.section}
 
-8항목: 1.재밌나(YES/NO+이유) 2.어디서 집중 끊기나 3.독자질문(관통선)이 끝까지 살아있나 4."어?" 몇 번 5.기억에 남는 문장 6.직관적으로 읽히나 7.초보자가 따라갈 기승전결이 있나 8.점수. 특히: 제목이 첫 1초에 멈추는가, titleContract 의 후보·독자 갭·선택 이유가 살아있는가, 관통선이 끝까지 살아 인싸이트에 착지하나, 막이 궁금증심화·메커니즘공개·리스크반전·판단닫힘 중 하나를 하나, 깊이가 얕지 않나, 첫 2문단이 긴장으로 시작하나. 모든 글은 기: 왜 읽어야 하나, 승: 숫자·표·공시·차트에서 첫 결과를 본다, 전: 오해와 한계, 결: 다음에 볼 기준으로 이어지나. sections[] 가 섹션마다 타이틀, 훅, 시각 앵커, 설명, 예시, 보완, 다음 연결을 실제로 기획했나. 각 섹션이 실제 숫자·표·공시·회사·제품·기간 중 하나에서 출발하나. "구조", "흐름", "맥락", "시사점", "메커니즘", "핵심", "프레임" 같은 말이 실제 근거 없이 떠 있지 않나. OPM, EBITDA, CAPEX, FCF, ROE, PER, PBR, 밸류에이션, 컨센서스, 레버리지 같은 전문가 말투가 초보자를 밀어내지 않나. dartlab 이야기는 추가로 기: 왜 막혔나, 승: 직접 실행, 전: 오해와 한계, 결: 다음에 바꿔 볼 한 줄이 이어지나. 비주얼이 본문 중간에서 설명을 실제로 돕나, 아니면 뒤에 자동으로 붙는 부록처럼 보이나. relatedPosts 가 선행 글 검색과 자연스러운 참고글 연결을 기획했나.
+8항목: 1.재밌나(YES/NO+이유) 2.어디서 집중 끊기나 3.독자질문(관통선)이 끝까지 살아있나 4."어?" 몇 번 5.기억에 남는 문장 6.직관적으로 읽히나 7.초보자가 따라갈 기승전결이 있나 8.점수. 특히: 제목이 첫 1초에 멈추는가, titleContract 의 후보·독자 갭·선택 이유가 살아있는가, 관통선이 끝까지 살아 인싸이트에 착지하나, 막이 궁금증심화·메커니즘공개·리스크반전·판단닫힘 중 하나를 하나, 깊이가 얕지 않나, 첫 2문단이 긴장으로 시작하나. 모든 글은 기: 왜 읽어야 하나, 승: 숫자·표·공시·차트에서 첫 결과를 본다, 전: 오해와 한계, 결: 다음에 볼 기준으로 이어지나. 심층 장르의 마지막 관전 시나리오가 조건, 변화 경로, 결과, 확인 지표, 반증 조건을 실제 근거로 잇나. sections[] 가 섹션마다 타이틀, 훅, 시각 앵커, 설명, 예시, 보완, 다음 연결을 실제로 기획했나. 각 섹션이 실제 숫자·표·공시·회사·제품·기간 중 하나에서 출발하나. "구조", "흐름", "맥락", "시사점", "메커니즘", "핵심", "프레임" 같은 말이 실제 근거 없이 떠 있지 않나. OPM, EBITDA, CAPEX, FCF, ROE, PER, PBR, 밸류에이션, 컨센서스, 레버리지 같은 전문가 말투가 초보자를 밀어내지 않나. dartlab 이야기는 추가로 기: 왜 막혔나, 승: 직접 실행, 전: 오해와 한계, 결: 다음에 바꿔 볼 한 줄이 이어지나. 비주얼이 본문 중간에서 설명을 실제로 돕나, 아니면 뒤에 자동으로 붙는 부록처럼 보이나. 이미지 assetKey 가 고유하고 sourcePolicy=auto 인가. relatedPosts 가 선행 글 검색과 자연스러운 참고글 연결을 기획했나.
 
 검증 데이터(기획 수치는 이 안에 있어야):
 ${evidence}
@@ -550,6 +570,8 @@ plan.reviewGate = {
     { id: 'sectionFlow', status: passed ? 'passed' : 'todo' },
     { id: 'visualStoryPlan', status: passed ? 'passed' : 'todo' },
     { id: 'imageFit', status: passed ? 'passed' : 'todo' },
+    { id: 'assetSsot', status: passed ? 'passed' : 'todo' },
+    { id: 'scenarioWatch', status: passed ? 'passed' : 'todo' },
     { id: 'readerFit', status: passed ? 'passed' : 'todo' },
     { id: 'reevaluation', status: passed ? 'passed' : 'todo' },
   ],

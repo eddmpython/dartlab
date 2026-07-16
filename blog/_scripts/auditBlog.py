@@ -51,6 +51,7 @@ DEEP_MIN_PROSE_CHARS = GENRE_MIN_PROSE_CHARS["company-reports"]
 DEEP_TARGET_PROSE_CHARS = GENRE_TARGET_PROSE_CHARS["company-reports"]
 BLOG_REVIEW_SCORE_MIN = 92
 BLOG_LOOP_WORKFLOW_NAME = "blog_plan_loop.workflow.js"
+BLOG_PLAN_CONTRACT_VERSION = 2
 PLAN_CANDIDATE_FILES = ("brief.json", "plan.json")
 BLOG_REQUIRED_PLAN_FIELDS = (
     "titleContract",
@@ -783,6 +784,25 @@ def _validate_common_plan(
             elif _compact_len(raw.get(field)) < 8:
                 fails.append(f"{label}: imagePlan[{idx}].{field} 이 너무 약함")
 
+    contractVersion = _planContractVersion(plan)
+    if contractVersion and contractVersion != BLOG_PLAN_CONTRACT_VERSION:
+        fails.append(f"{label}: 지원하지 않는 contractVersion {contractVersion}")
+    if contractVersion == BLOG_PLAN_CONTRACT_VERSION:
+        fails.extend(_validateWatchScenarios(plan, label=label, category=category))
+        assetKeys: list[str] = []
+        for idx, raw in enumerate(image_plan, start=1):
+            if not isinstance(raw, dict):
+                continue
+            assetKey = str(raw.get("assetKey") or "").strip()
+            if not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", assetKey):
+                fails.append(f"{label}: imagePlan[{idx}].assetKey 는 영문 kebab-case 여야 함")
+            elif assetKey in assetKeys:
+                fails.append(f"{label}: imagePlan[{idx}].assetKey 중복({assetKey})")
+            else:
+                assetKeys.append(assetKey)
+            if raw.get("sourcePolicy") != "auto":
+                fails.append(f"{label}: imagePlan[{idx}].sourcePolicy 는 auto 여야 함")
+
     related = plan.get("relatedPosts") if isinstance(plan.get("relatedPosts"), dict) else {}
     searches = related.get("searches") if isinstance(related.get("searches"), list) else []
     links = related.get("links") if isinstance(related.get("links"), list) else []
@@ -816,6 +836,33 @@ def _validate_common_plan(
             fails.append(f"{label}: evidenceMap 에 DART/EDGAR/scan/dartlab/price/macro/internal-blog 근거 라벨이 없음")
 
     fails.extend(_validate_loop_evidence(plan, payload, label=label))
+    return fails
+
+
+def _planContractVersion(plan: dict[str, object] | None) -> int:
+    if not isinstance(plan, dict):
+        return 0
+    value = plan.get("contractVersion")
+    return value if isinstance(value, int) and not isinstance(value, bool) else 0
+
+
+def _validateWatchScenarios(plan: dict[str, object], *, label: str, category: str) -> list[str]:
+    if category not in DEEP_GENRE_CATEGORIES:
+        return []
+    fails: list[str] = []
+    scenarios = plan.get("watchScenarios") if isinstance(plan.get("watchScenarios"), list) else []
+    if not 2 <= len(scenarios) <= 4:
+        fails.append(f"{label}: watchScenarios 는 서로 다른 조건의 시나리오 2~4개여야 함")
+    for idx, raw in enumerate(scenarios, start=1):
+        if not isinstance(raw, dict):
+            fails.append(f"{label}: watchScenarios[{idx}] 은 객체여야 함")
+            continue
+        for field in ("condition", "mechanism", "outcome", "watchMetric", "invalidatedBy"):
+            if _compact_len(raw.get(field)) < 12:
+                fails.append(f"{label}: watchScenarios[{idx}].{field} 이 너무 약함")
+        evidenceRefs = raw.get("evidenceRefs") if isinstance(raw.get("evidenceRefs"), list) else []
+        if not evidenceRefs:
+            fails.append(f"{label}: watchScenarios[{idx}].evidenceRefs 누락")
     return fails
 
 
@@ -1029,11 +1076,56 @@ def _image_plan(plan: dict[str, object] | None) -> list[dict[str, object]]:
     return [x for x in raw if isinstance(x, dict)] if isinstance(raw, list) else []
 
 
-def publish_gate(post_dir: Path) -> list[str]:
+def _validateImageSsot(postDir: Path, body: str, plan: dict[str, object] | None) -> list[str]:
+    if _planContractVersion(plan) != BLOG_PLAN_CONTRACT_VERSION:
+        return []
+    fails: list[str] = []
+    planned = _image_plan(plan)
+    creditsPath = postDir / "assets" / "CREDITS.md"
+    credits = creditsPath.read_text(encoding="utf-8") if creditsPath.is_file() else ""
+    if not credits:
+        fails.append("contract v2 이미지는 assets/CREDITS.md 출처 기록이 필요함")
+    for idx, item in enumerate(planned, start=1):
+        assetKey = str(item.get("assetKey") or "").strip()
+        if not assetKey:
+            continue
+        assetPath = postDir / "assets" / f"{assetKey}.webp"
+        bodyRef = f"./assets/{assetKey}.webp"
+        if not assetPath.is_file():
+            fails.append(f"imagePlan[{idx}] 원본 없음: assets/{assetKey}.webp")
+        bodyRefPattern = rf"!\[[^\]]*\]\({re.escape(bodyRef)}\)"
+        if not re.search(bodyRefPattern, body):
+            fails.append(f"imagePlan[{idx}] 본문 참조 없음: {bodyRef}")
+        if credits and assetKey not in credits:
+            fails.append(f"assets/CREDITS.md 에 imagePlan[{idx}] assetKey 누락: {assetKey}")
+    return fails
+
+
+def _validateScenarioBody(body: str, plan: dict[str, object] | None, category: str) -> list[str]:
+    if category not in DEEP_GENRE_CATEGORIES or _planContractVersion(plan) != BLOG_PLAN_CONTRACT_VERSION:
+        return []
+    sections = _split_h2_sections(body)
+    if not sections:
+        return ["contract v2 심층 글은 마지막 H2에 시나리오형 관전 포인트가 필요함"]
+    heading, closing = sections[-1]
+    fails: list[str] = []
+    if not re.search(r"관전|시나리오|조건", heading):
+        fails.append("contract v2 심층 글의 마지막 H2는 시나리오형 관전 포인트여야 함")
+    conditionalCount = len(re.findall(r"만약|경우|조건|때라면|한다면|되면", closing))
+    if conditionalCount < 2:
+        fails.append("마지막 관전 포인트에는 서로 다른 '만약/조건' 시나리오가 2개 이상 필요함")
+    if not re.search(r"지표|수치|공시|확인|관찰|추적", closing):
+        fails.append("마지막 관전 포인트에는 시나리오를 확인할 지표나 공시가 필요함")
+    if not re.search(r"무효|틀리|틀린|깨지|깨진|아니|반대|재점검", closing):
+        fails.append("마지막 관전 포인트에는 시나리오가 틀렸음을 보여 줄 조건이 필요함")
+    return fails
+
+
+def publish_gate(post_dir: Path, *, requireContractV2: bool = False) -> list[str]:
     """단일 글 발행 하드 게이트. 위반 리스트 반환(비면 통과).
 
-    기업이야기·기술이야기·데이터리포트·투자이야기 기준으로 (1)실사 OG 카드 (2)실사 hero webp
-    (3)본문 실사 사진 1장 이상 (4)장르별 본문 깊이 (5)기획 루프 산출물(brief.json)을 강제한다.
+    기업이야기·기술이야기·데이터리포트·투자이야기 기준으로 (1)OG 카드 (2)hero webp
+    (3)본문 콘텐츠 이미지 1장 이상 (4)장르별 본문 깊이 (5)기획 루프 산출물(brief.json)을 강제한다.
     손수 SVG·기본 아바타·얕은 본문·루프 스킵을 걸러 "형식만 통과"를 차단한다.
 
     dartlab 이야기만 (2)(3)이 다르다. 이미지 개수를 고정 하한으로 요구하지 않고, 기획(imagePlan)이
@@ -1057,10 +1149,10 @@ def publish_gate(post_dir: Path) -> list[str]:
             asset_photos += list(assets.glob(ext))
     served_photos = [path for path in asset_photos if "thumbnail-bg" not in path.name]
 
-    # 1. 실사 OG 카드 (리스트/공유 미리보기). 기본 아바타 폴백이면 실패.
+    # 1. 콘텐츠 OG 카드 (리스트/공유 미리보기). 기본 아바타 폴백이면 실패.
     og = _clean_scalar(frontmatter_value(raw, "ogImage"))
     if not _OG_RE.match(og):
-        fails.append(f"ogImage가 /thumbnails/*.webp 실사 OG가 아님(현재 {og!r}). 기본 아바타 폴백 금지")
+        fails.append(f"ogImage가 /thumbnails/*.webp 콘텐츠 OG가 아님(현재 {og!r}). 기본 아바타 폴백 금지")
     else:
         og_file = repo_root() / "landing" / "static" / og.lstrip("/")
         if not og_file.is_file():
@@ -1068,6 +1160,9 @@ def publish_gate(post_dir: Path) -> list[str]:
 
     plan, _, plan_fails = _load_plan(post_dir)
     body_photos = re.findall(r"!\[[^\]]*\]\([^)]+\.(?:webp|jpg|jpeg|png)\)", body)
+
+    if requireContractV2 and _planContractVersion(plan) != BLOG_PLAN_CONTRACT_VERSION:
+        fails.append(f"신규 글은 brief.json contractVersion {BLOG_PLAN_CONTRACT_VERSION}가 필요함")
 
     # 0. 본문이 썸네일 합성 소스를 걸면 그 이미지는 화면에 뜨지 않는다. landing/vite.config.ts 의
     #    blogAssetsPlugin 이 `*thumbnail-bg.webp` 를 서빙 대상에서 일부러 뺀다(카테고리마다 NN 이
@@ -1077,7 +1172,7 @@ def publish_gate(post_dir: Path) -> list[str]:
             "본문이 thumbnail-bg 계열 파일을 참조함. 서빙되지 않아 이미지가 깨진다. 고유 파일명으로 사본을 두고 그것을 걸어라"
         )
 
-    # 2·3. 이미지. dartlab 이야기는 기획이 정한 만큼, 나머지 장르는 실사 사진 하한.
+    # 2·3. 이미지. dartlab 이야기는 기획이 정한 만큼, 나머지 장르는 콘텐츠 이미지 하한.
     if cat == "dartlab-stories":
         planned = _image_plan(plan)
         inline = [x for x in planned if str(x.get("slot") or "") != "hero"]
@@ -1089,9 +1184,9 @@ def publish_gate(post_dir: Path) -> list[str]:
             fails.append(f"기획 inline {len(inline)}장인데 본문 삽입 {len(body_photos)}장")
     else:
         if not served_photos:
-            fails.append("assets에 실사 사진 0장(손수 SVG는 실사 아님). gen_blog_cc0/imagePlan 수급 필요")
+            fails.append("assets에 콘텐츠 이미지 0장(손수 SVG는 이미지 계획 대체 아님). imagePlan 수급 필요")
         if not body_photos:
-            fails.append("본문 실사 사진 0장(![](*.webp) 필요). 손수 SVG만으론 시각 부실")
+            fails.append("본문 콘텐츠 이미지 0장(![](*.webp) 필요). 손수 SVG만으로는 시각 부실")
 
     # 4. 장르별 깊이 하드 블록
     pc = prose_char_count(body)
@@ -1104,6 +1199,8 @@ def publish_gate(post_dir: Path) -> list[str]:
     # 5. 기획 루프 산출물(스토리·비주얼·근거·재평가 증거)
     fails.extend(plan_fails)
     fails.extend(_validate_genre_body(raw, body, cat))
+    fails.extend(_validateImageSsot(post_dir, body, plan))
+    fails.extend(_validateScenarioBody(body, plan, cat))
 
     return fails
 

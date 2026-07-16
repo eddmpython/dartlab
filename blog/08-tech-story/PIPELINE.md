@@ -13,7 +13,7 @@
 
 ## 2. 준용 (회사편·데이터편과 동일하게 간다)
 
-Phase 0 데이터 완주 / Phase 1 적대 토론 기획 / Phase 2.5 마스터라이터 편집 게이트 / Phase 4 독자 루프 / **수치 6원칙·검증표**(모든 강한 숫자는 메인 스레드 dartlab 재계산, 검증표에 없으면 발행 차단) / SVG 스타일(다크 `#0a0e1a`, amber `#fbbf24`, 한글 타이틀) / **용어 풀어쓰기**(전문 기술 용어·재무 약어 모두 첫 등장 시 괄호 풀이) / `audit_seo.py` SEO 점수 95 이상.
+Phase 0 데이터 완주 / Phase 1 적대 토론 기획 / Phase 2.5 마스터라이터 편집 게이트 / Phase 4 독자 루프 / **수치 6원칙·검증표**(모든 강한 숫자는 메인 스레드 dartlab 재계산, 검증표에 없으면 발행 차단) / SVG 스타일(다크 `#0a0e1a`, amber `#fbbf24`, 한글 타이틀) / **용어 풀어쓰기**(전문 기술 용어·재무 약어 모두 첫 등장 시 괄호 풀이) / `publishGate.py` 단일 발행 게이트.
 
 ## 3. 델타 (기술이야기만의 단계)
 
@@ -21,27 +21,24 @@ Phase 0 데이터 완주 / Phase 1 적대 토론 기획 / Phase 2.5 마스터라
 2. **재무 착지 = dartlab 실측.** 그 기술을 쓰는 대표 기업을 실명으로 짚고, `Company.select`·`analysis`·`scan`으로 그 기술이 남긴 재무 흔적(원가 구조·마진 추이·CAPEX·투자효율)을 실측으로 붙인다. 단일 회사 종속이 아니라 여러 회사를 기술 관점으로 횡단해도 된다.
 3. **공정·회사·근거 지도(필수).** 본문 초반에 `공정/층위 | 기술 역할 | 대표 회사 | 공시 근거 | 재무로 보이는 흔적` 표를 둔다. 국내 대표사는 DART, 글로벌 대표사는 EDGAR 10-K 또는 20-F를 근거로 단다. 한쪽 시장이 빠지면 왜 빠졌는지 본문에 적는다.
 4. **회사 배치 설명(필수).** 대표 회사를 이름만 올리지 않는다. 그 회사가 왜 그 라인에서 핵심인지, 대체 가능한지, 고객 전환비용·공정 난도·인증·양산 경험·특허·CAPEX 중 무엇이 힘인지 설명한다.
-5. **서사 구조 = 6막 시간선 대신** `기술 질문 -> 원리 해부 -> 공정·회사 지도 -> 왜 이 회사가 이 칸에 있는가 -> 세대·경쟁 지형 -> 재무 흔적(대표 기업) -> 오해 바로잡기 -> 판단 한 줄`.
+5. **서사 구조 = 6막 시간선 대신** `기술 질문 -> 원리 해부 -> 공정·회사 지도 -> 왜 이 회사가 이 칸에 있는가 -> 세대·경쟁 지형 -> 재무 흔적(대표 기업) -> 오해 바로잡기 -> 관전 시나리오`.
 6. **오해 방지 단계(필수).** 기술 과대광고·세대 명칭 혼동·"차세대"라는 말의 실체 없음을 짚는다. 기술 성숙도(양산 단계인지 실험 단계인지)를 정직하게 표기한다.
 7. **템플릿 제목 금지.** 제목과 H2는 "누가 돈을 버나", "왜 못 버나", "아직 적자" 같은 금융 결론형 문구를 반복하지 않는다. 기술의 구체 메커니즘, 공정 병목, 세대 변화가 제목의 중심이어야 한다.
-8. **회사 종속 아님.** 기술이야기는 주어가 기술·테마라 subject join 키가 **topicSlug**다(`kind: tech`, `OPERATIONS.md` 5절). frontmatter 에 회사 `stockCode` 를 달면 블로그에 그 회사 단일 **터미널 버튼**과 **기업이야기 팟캐스트**가 잘못 조인된다(주어를 한 회사로 오인). 여러 회사를 기술 관점으로 횡단하는 게 기본이므로 `topicSlug` 를 쓰고 `stockCode` 는 **달지 않는다**. 예외적으로 한 회사만 다루는 글일 때만 `stockCode`. `audit_seo.py` 가 주제글의 stockCode 를 오배선으로 경고한다. 기술이야기는 `auditBlog.py --gate` 대상이다. 체크: (a) 원리 해부 섹션 1개 이상 (b) 공정·회사·근거 지도 1개 이상 (c) 왜 이 회사가 이 공정·네트워크 칸의 핵심인지 설명 (d) 재무 착지(dartlab 실측 표) 1개 이상 (e) DART·EDGAR 근거 라벨 (f) "이렇게 오해하면 안 된다" 섹션 (g) SVG 4개 이상 (h) 각 SVG·표·이미지의 본문 중간 `placement`, `insertAfter`, `narrativeUse` 기획 (i) 기술 성숙도·출처 명시 (j) 다음에 볼 기술·회사 지표 (k) `brief.json`의 작가기획·평가·재기획·재평가 92점 루프 증거 (l) `audit_seo.py` 95 이상.
-9. **길이 = 밀도 우선.** 회사편 20,000자가 아니다. 원리도해·공정 지도·재무 실측표·재현 코드로 근거를 채운 **6,000~12,000자**. 패딩 금지.
-10. **썸네일 = 통합 생성기.** `gen_blog_thumbnails.py`(SSOT, frontmatter 구동)를 쓴다. kicker 라벨은 `PREFIX["tech-story"] = "기술이야기"`. 별도 생성기를 만들지 않는다. `ogImage: /thumbnails/{slug}.webp`.
+8. **회사 종속 아님.** 기술이야기는 주어가 기술·테마라 subject join 키가 **topicSlug**다(`kind: tech`, `OPERATIONS.md` 5절). frontmatter 에 회사 `stockCode` 를 달면 블로그에 그 회사 단일 **터미널 버튼**과 **기업이야기 팟캐스트**가 잘못 조인된다. 여러 회사를 기술 관점으로 횡단하는 게 기본이므로 `topicSlug` 를 쓰고 `stockCode` 는 달지 않는다. 체크: (a) 원리 해부 (b) 공정·회사·근거 지도 (c) 회사가 그 칸의 핵심인 이유 (d) 재무 착지 (e) DART·EDGAR 근거 (f) 오해 방지 (g) 기술 성숙도·출처 (h) `brief.json` 92점 루프 (i) 마지막 시나리오형 관전 포인트 (j) `publishGate.py` 통과.
+9. **마지막 관전 포인트는 시나리오다.** `brief.json.watchScenarios[]`에 2~4개를 기획한다. 본문 마지막 H2에서 "만약 공급 병목이 풀리면 어떤 경로로 원가와 회사 위치가 달라질까", "만약 양산 전환이 늦어지면 어느 공시 숫자가 먼저 흔들릴까"처럼 조건별로 푼다. 각 시나리오는 변화 경로, 예상 결과, 확인 지표, 반증 조건을 가진다. 예측 숫자를 지어내지 않고 evidenceMap의 근거 범위에서만 쓴다.
+10. **길이 = 밀도 우선.** 회사편 20,000자가 아니다. 원리도해·공정 지도·재무 실측표·재현 코드로 근거를 채운 **6,000~12,000자**. 패딩 금지.
+11. **썸네일 = 통합 생성기.** `gen_blog_thumbnails.py`(SSOT, frontmatter 구동)를 쓴다. kicker 라벨은 `PREFIX["tech-story"] = "기술이야기"`. 별도 생성기를 만들지 않는다. `ogImage: /thumbnails/{slug}.webp`.
 
 ## 4. 이미지 수급 (기술이야기 오버라이드)
 
-**Openverse 실사 우선.** 기술 장면(웨이퍼·팹 클린룸·배터리 셀·SMR 모듈·휴머노이드 관절·감속기 등)을 Openverse에서 라이선스 깨끗한 실사로 먼저 수급한다.
+이미지는 운영자 선택을 기다리지 않고 파이프라인이 자율 수급한다. 판단 기준은 도구가 아니라 사실 적합성이다.
 
-**적합한 실사가 없으면 자동 생성으로 넘어가지 않는다.** 운영자에게 "이 글에 필요한 이미지 A·B·C, Openverse에서 적합본 없음"을 알리고 **수급 요청**한다. 수급 주체별 도구는 정해져 있다.
-
-- **Claude 세션**: Openverse(실사)만 쓴다. 적합본 없으면 pending 처리 후 운영자에게 알린다. 생성 도구(FLUX 등)를 **먼저 언급·제안하지 않는다**.
-- **GPT/Codex 세션**: gpt image_gen 을 쓴다.
-- **FLUX**: 폐기가 기본. **운영자의 명시 지시가 있을 때만** 예외적으로 사용한다(`REPLICATE_API_TOKEN` + `gen_news_flux.py` 배선 재사용). 생성 이미지는 `CREDITS.md`에 "생성 이미지(운영자 명시 지시)"로 주체 중립 기록.
-
-정본 = memory `feedback_image_sourcing_policy`.
-
-- 배경: `assets/{NN}-thumbnail-bg.webp`(`gen_blog_cc0.py` PD/CC0) + `CREDITS.md`. 정본 = `blog/OPERATIONS.md` 2절 + memory `feedback_image_sourcing_policy`.
-- 이미지 게이트: 대표 이미지와 썸네일 배경은 실제 기술 대상이나 공정을 보여야 한다. 휴머노이드 편은 산업용 로봇 팔 배경만으로 통과하지 않는다. 관절, 감속기, 액추에이터, 손·무릎·고관절 조립체처럼 글의 기술 병목이 보여야 한다. `imagePlan[]` 은 hero와 inline 이미지를 구분하고, inline 이미지는 어느 막 뒤에 들어가 어떤 기술 이해를 돕는지 적는다.
+- 실제 제품·인물·현장·장비처럼 모양이 사실과 맞아야 하는 장면은 공식 출처 또는 라이선스가 확인된 실사를 선택한다.
+- 기술 원리, 내부 작동, 아직 사진으로 존재하지 않는 개념 장면은 `image_gen`을 선택한다. 가짜 공식 로고·문서·식별 인물은 만들지 않는다.
+- 한 경로에서 적합본이 없으면 묻고 멈추지 않고 다른 검색어, 다른 공식 출처, `image_gen` 순으로 전환한다. FLUX는 운영자가 명시한 경우에만 쓴다.
+- `brief.json.imagePlan[]`은 `assetKey`, `sourcePolicy: auto`, `slot`, `subject`, `placement`, `narrativeUse`를 가진다. 파일 경로는 적지 않는다. 경로는 `assets/<assetKey>.webp`로 결정된다.
+- 저작 원본 SSOT는 글 폴더의 `assets/<assetKey>.webp`와 `assets/CREDITS.md`다. 본문은 `./assets/<assetKey>.webp`를 참조한다. 썸네일, `sns/assets`, HF는 파생 또는 서빙본이다.
+- 이미지 게이트: 휴머노이드 편은 산업용 로봇 팔만으로 통과하지 않는다. 관절, 감속기, 액추에이터, 손·무릎·고관절 조립체처럼 글의 기술 병목이 보여야 한다. 모든 계획 이미지는 눈으로 확인한다.
 
 ## 5. 자산
 
@@ -49,7 +46,7 @@ Phase 0 데이터 완주 / Phase 1 적대 토론 기획 / Phase 2.5 마스터라
 
 ## 6. 발행
 
-`audit_seo.py` 95 이상 -> `gen_blog_thumbnails.py --slugs {slug} --apply` -> 커밋. `TOPIC_ROADMAP.md` 갱신. subject `kind: tech`(topicSlug 기반, `OPERATIONS.md` 5절). 데이터·산출물은 런타임 SSOT 직독(굽지 않음).
+`gen_blog_thumbnails.py --slugs {slug} --apply` -> `publishGate.py --post blog/08-tech-story/<글폴더>` -> 커밋. `TOPIC_ROADMAP.md` 갱신. subject `kind: tech`(topicSlug 기반, `OPERATIONS.md` 5절). `audit_seo.py`와 `auditBlog.py` 단독 결과는 발행 승인으로 쓰지 않는다. 데이터는 런타임 SSOT를 직독한다.
 
 ---
-정본: 뼈대 [BLOG.md](../BLOG.md)·[PIPELINE.md](../PIPELINE.md), 마스터라이터 [_reference/BLOG_MASTER_WRITER.md](../_reference/BLOG_MASTER_WRITER.md), 운영 라우팅 [OPERATIONS.md](../OPERATIONS.md), 이미지 수급 memory `feedback_image_sourcing_policy`.
+정본: 뼈대 [BLOG.md](../BLOG.md)·[PIPELINE.md](../PIPELINE.md), 마스터라이터 [_reference/BLOG_MASTER_WRITER.md](../_reference/BLOG_MASTER_WRITER.md), 이미지 수급과 자산 경계 [OPERATIONS.md](../OPERATIONS.md) 2절.

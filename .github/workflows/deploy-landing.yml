@@ -43,6 +43,8 @@ jobs:
     if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Install uv
         uses: astral-sh/setup-uv@v7
@@ -52,6 +54,19 @@ jobs:
 
       - name: Install Python deps
         run: uv sync
+
+      - name: Test blog publish pipeline
+        run: >-
+          uv run python -X utf8 -m pytest
+          blog/_scripts/test_audit_blog_gate.py
+          blog/_scripts/test_publishGate.py -q
+
+      - name: Gate changed blog posts
+        if: ${{ github.event_name == 'push' }}
+        run: >-
+          uv run python -X utf8 blog/_scripts/publishGate.py
+          --changed-from "${{ github.event.before }}"
+          --head "${{ github.sha }}"
 
       # HF SSoT: map JSON 은 git 에 없음 (.gitignore). 빌드 전 HF 에서 내려받아
       # landing/static/map/ 에 풀어둠 → SvelteKit static adapter 가 build/ 에 복사.

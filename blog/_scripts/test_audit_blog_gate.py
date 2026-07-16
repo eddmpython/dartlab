@@ -17,6 +17,7 @@ import auditBlog as ab  # noqa: E402
 def _brief(score: int = 94) -> dict:
     title = "스텔스는 왜 기체보다 병목이 먼저 보일까"
     return {
+        "contractVersion": 2,
         "title": title,
         "titleContract": {
             "workingTitle": title,
@@ -41,6 +42,24 @@ def _brief(score: int = 94) -> dict:
             "freshnessArgument": "기술 원리와 DART·EDGAR 손익을 같은 지도에 놓아 기존 전투기 성능 서사와 다르게 읽는다.",
             "evidenceRefs": ["DART 2025Q1~Q4", "EDGAR FY2025 10-K"],
         },
+        "watchScenarios": [
+            {
+                "condition": "만약 양산 전환과 정비 계약이 같은 분기에 늘어난다면",
+                "mechanism": "생산 물량과 후속 정비 수요가 부품과 센서 회사로 함께 전달된다.",
+                "outcome": "완성기보다 병목 부품 회사의 수주잔고가 먼저 늘어날 수 있다.",
+                "watchMetric": "다음 DART 공시의 수주잔고와 양산 매출 비중을 확인한다.",
+                "invalidatedBy": "양산 물량은 늘어도 부품 수주잔고와 정비 계약이 줄면 이 경로는 틀린다.",
+                "evidenceRefs": ["DART 2025Q1~Q4"],
+            },
+            {
+                "condition": "만약 개발 일정이 늦어지고 고정가 계약 원가가 오른다면",
+                "mechanism": "재설계와 시험 비용이 계약 매출보다 먼저 손익에 반영된다.",
+                "outcome": "기술 진척 뉴스와 달리 관련 회사의 이익률은 낮아질 수 있다.",
+                "watchMetric": "EDGAR 공시의 프로그램 손실과 영업이익률을 확인한다.",
+                "invalidatedBy": "일정 지연에도 프로그램 손실이 줄고 이익률이 오르면 가정이 깨진다.",
+                "evidenceRefs": ["EDGAR FY2025 10-K"],
+            },
+        ],
         "acts": [
             {
                 "order": i,
@@ -100,6 +119,8 @@ def _brief(score: int = 94) -> dict:
         ],
         "imagePlan": [
             {
+                "assetKey": "stealth-hangar",
+                "sourcePolicy": "auto",
                 "slot": "hero",
                 "subject": "스텔스 격납고와 레이더 시험 장비",
                 "query": "stealth aircraft hangar radar test maintenance",
@@ -108,6 +129,8 @@ def _brief(score: int = 94) -> dict:
                 "narrativeUse": "글 시작에서 스텔스를 전투 장면이 아니라 시험과 정비 기술로 보이게 한다.",
             },
             {
+                "assetKey": "coating-maintenance",
+                "sourcePolicy": "auto",
                 "slot": "inline",
                 "subject": "저피탐 코팅 정비 장면",
                 "query": "aircraft stealth coating maintenance panel inspection",
@@ -117,6 +140,8 @@ def _brief(score: int = 94) -> dict:
                 "narrativeUse": "독자가 저피탐 성능이 출고 뒤 정비 품질에 계속 의존한다는 점을 본다.",
             },
             {
+                "assetKey": "aesa-test-bench",
+                "sourcePolicy": "auto",
                 "slot": "inline",
                 "subject": "AESA 레이더와 항공전자 시험 장면",
                 "query": "aesa radar avionics test bench aircraft",
@@ -205,13 +230,25 @@ def _write_tech_post(root: Path, *, brief_score: int = 94) -> Path:
     post = root / "blog" / "08-tech-story" / "01-stealth-test"
     assets = post / "assets"
     assets.mkdir(parents=True)
-    (assets / "hero.webp").write_bytes(b"fake")
+    for assetKey in ("stealth-hangar", "coating-maintenance", "aesa-test-bench"):
+        (assets / f"{assetKey}.webp").write_bytes(b"fake")
+    (assets / "CREDITS.md").write_text(
+        "\n".join(
+            [
+                "# 이미지 출처",
+                "- stealth-hangar: image_gen 생성 이미지",
+                "- coating-maintenance: 공식 보도자료 이미지",
+                "- aesa-test-bench: CC0 실사",
+            ]
+        ),
+        encoding="utf-8",
+    )
     thumb = root / "landing" / "static" / "thumbnails"
     thumb.mkdir(parents=True)
     (thumb / "tech-stealth-test.webp").write_bytes(b"fake")
     filler = "스텔스 공정 병목과 대표 회사가 왜 핵심인지 설명하는 문장입니다. " * 520
     body = f"""
-![스텔스 격납고](./assets/hero.webp)
+![스텔스 격납고](./assets/stealth-hangar.webp)
 
 ## 공정·회사·근거 지도
 
@@ -226,13 +263,21 @@ DART와 EDGAR 근거를 모두 연결하고, dartlab 실측으로 2025Q1~Q4 손�
 
 양산 단계와 실험 단계를 분리한다.
 
+![저피탐 코팅 정비](./assets/coating-maintenance.webp)
+
 ## 이렇게 오해하면 안 된다
 
 RCS 숫자 하나로 모든 각도와 주파수를 설명하면 안 된다.
 
+![AESA 시험 장비](./assets/aesa-test-bench.webp)
+
 {filler}
 
-다음 공시에서는 수주잔고, 개발비, 양산 전환, 정비 계약이 어느 회사에 붙는지 기준으로 다시 확인한다.
+## 만약 조건이 바뀐다면: 관전 시나리오
+
+만약 양산 전환과 정비 계약이 같은 분기에 늘어난다면 부품 회사의 수주잔고가 먼저 늘어날 수 있다. 다음 DART 공시의 양산 매출 비중을 확인한다. 수주잔고가 줄면 이 시나리오는 틀린다.
+
+만약 개발 일정이 늦고 고정가 계약 원가가 오른다면 기술 진척 뉴스와 달리 이익률은 낮아질 수 있다. EDGAR의 프로그램 손실을 추적한다. 손실이 줄고 이익률이 오르면 이 가정은 깨진다.
 """
     (post / "index.md").write_text(
         f"""---
@@ -255,6 +300,93 @@ def test_publish_gate_accepts_tech_story_with_92_loop(monkeypatch, tmp_path: Pat
     monkeypatch.setattr(ab, "repo_root", lambda: tmp_path)
     post = _write_tech_post(tmp_path)
     assert ab.publish_gate(post) == []
+
+
+def test_publish_gate_keeps_legacy_plan_compatible(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(ab, "repo_root", lambda: tmp_path)
+    post = _write_tech_post(tmp_path)
+    brief = _brief()
+    brief.pop("contractVersion")
+    brief.pop("watchScenarios")
+    for image in brief["imagePlan"]:
+        image.pop("assetKey")
+        image.pop("sourcePolicy")
+    (post / "brief.json").write_text(json.dumps(brief, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    assert ab.publish_gate(post) == []
+
+
+def test_publish_gate_requires_v2_for_new_post(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(ab, "repo_root", lambda: tmp_path)
+    post = _write_tech_post(tmp_path)
+    brief = _brief()
+    brief.pop("contractVersion")
+    (post / "brief.json").write_text(json.dumps(brief, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    errors = ab.publish_gate(post, requireContractV2=True)
+
+    assert any("contractVersion 2" in error for error in errors)
+
+
+def test_publish_gate_blocks_unknown_contract_version(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(ab, "repo_root", lambda: tmp_path)
+    post = _write_tech_post(tmp_path)
+    brief = _brief()
+    brief["contractVersion"] = 3
+    (post / "brief.json").write_text(json.dumps(brief, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    errors = ab.publish_gate(post, requireContractV2=True)
+
+    assert any("지원하지 않는 contractVersion 3" in error for error in errors)
+    assert any("contractVersion 2" in error for error in errors)
+
+
+def test_publish_gate_blocks_missing_watch_scenarios(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(ab, "repo_root", lambda: tmp_path)
+    post = _write_tech_post(tmp_path)
+    brief = _brief()
+    brief["watchScenarios"] = []
+    (post / "brief.json").write_text(json.dumps(brief, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    errors = ab.publish_gate(post)
+
+    assert any("watchScenarios" in error for error in errors)
+
+
+def test_publish_gate_blocks_image_ssot_drift(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(ab, "repo_root", lambda: tmp_path)
+    post = _write_tech_post(tmp_path)
+    (post / "assets" / "aesa-test-bench.webp").unlink()
+    creditsPath = post / "assets" / "CREDITS.md"
+    creditsPath.write_text(
+        creditsPath.read_text(encoding="utf-8").replace("- aesa-test-bench: CC0 실사", ""),
+        encoding="utf-8",
+    )
+    indexPath = post / "index.md"
+    indexPath.write_text(
+        indexPath.read_text(encoding="utf-8").replace("./assets/aesa-test-bench.webp", "./assets/unplanned.webp"),
+        encoding="utf-8",
+    )
+
+    errors = ab.publish_gate(post)
+
+    assert any("원본 없음" in error for error in errors)
+    assert any("본문 참조 없음" in error for error in errors)
+    assert any("CREDITS.md" in error and "assetKey 누락" in error for error in errors)
+
+
+def test_publish_gate_blocks_non_scenario_last_section(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(ab, "repo_root", lambda: tmp_path)
+    post = _write_tech_post(tmp_path)
+    indexPath = post / "index.md"
+    indexPath.write_text(
+        indexPath.read_text(encoding="utf-8") + "\n## 참고 문서\n\nDART와 EDGAR 원문 링크를 다시 확인한다.\n",
+        encoding="utf-8",
+    )
+
+    errors = ab.publish_gate(post)
+
+    assert any("마지막 H2" in error for error in errors)
 
 
 def test_publish_gate_blocks_loop_score_below_92(monkeypatch, tmp_path: Path) -> None:

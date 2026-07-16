@@ -14,20 +14,21 @@
 
 | 분류 | 대상 | 위치 |
 |---|---|---|
-| **추적 (소스)** | 마크다운(index.md·script.md), 메타(carousel.yaml·cards.plan.json·episode.yaml·channel.yaml·published.json·brief.json), SVG 차트, 포스트별 `assets/` 손작성 이미지, 운영문서 | `blog/**` (git) |
+| **추적 (저작 원본)** | 마크다운(index.md·script.md), 메타(carousel.yaml·cards.plan.json·episode.yaml·channel.yaml·published.json·brief.json), SVG 차트, 포스트별 `assets/<assetKey>.webp`, `assets/CREDITS.md`, 운영문서 | `blog/**` (git) |
 | **미추적 (파생/대용량)** | 팟캐스트 오디오(mp3/m4a/wav/aac), sns 렌더 PNG/MP4, 빌드 산출 | `blog/_podcasts/.gitignore`, `/sns/`(root .gitignore), `landing/static/carousels\|issues` |
-| **발행 = durable SSOT** | 공유 이미지 원본(회사/주제), 카드·블로그 서빙 이미지 | HF `dartlab-media` (versioned). 로컬 `sns/assets/{code}`는 재생성 staging 캐시(미추적이 정상) |
+| **재사용 staging** | 블로그 저작 원본을 카드·SNS와 나누기 위한 작업 사본 | `sns/assets/{subjectKey}`. `ingest_blog_assets.py`로만 합류 |
+| **발행 = 서빙 SSOT** | 카드·블로그 브라우저 서빙 이미지 | HF `dartlab-media` (versioned). 블로그 저작 원본은 계속 git `assets/` |
 | **발행 = durable SSOT** | 팟캐스트 오디오·커버·정적프레임·feed | R2 `dartlab-podcast` |
 
 - 커밋·푸시 규약(변경 단위·`git commit -o`·push 게이트·UI 승인)은 `CLAUDE.md` 강행규칙 + memory `git_rules` 상세가 정본.
-- (선택, 운영자 결정) 손수 만든 공유 이미지 원본을 repo git 으로도 보존하려면 추적 `blog/_assets/{code}/` 신설 후 sns 파이프라인이 그곳을 우선 읽게. 기본은 HF-as-SSOT 유지(churn 0, 이미 durable).
+- 새 `blog/_assets`, 임시 다운로드 폴더, 포스트 밖 원본 폴더를 만들지 않는다. 블로그 저작 원본은 포스트 `assets/`, 카드 전용 원본은 `blog/_issues/<slug>/assets/`에만 둔다.
 
 ## 2. 자산·소스·이미지 정책
 
-- 이미지 수급: **Openverse 실사 주력(Claude) -> GPT 세션은 image_gen 1차. FLUX(Replicate)는 운영자 명시 지시 시에만**(Claude 는 먼저 제안 안 함, 2026-07-04 갱신). 정본 = memory `feedback_image_sourcing_policy`.
-- 회사 주제 카드/이미지 배경은 그 회사 실제 로고·제품·상호(간판)를 기본값(generic 산업장면 탈출 금지, 재무·교육 카드라 저작권 무관). 정본 = `feedback_image_sourcing_policy` + memory `feedback_sns_assets`(회사 시그니처).
-- 공유 자산 풀(한 세트): `sns/assets/{code}` 에 회사당 1벌을 모아 블로그·카드·팟캐스트가 공유. 상세 = `sns/assets/README.md`. 포맷마다 재생성 금지.
-- 블로그 포스트 전용 자산은 그 포스트 `assets/` (git 추적). SVG 차트·썸네일 생성 = `blog/_scripts/`(gen_blog_thumbnails.py·gen_blog_cc0.py). 상세 = `blog/BLOG.md`.
+- 이미지 수급은 **자율**이다. 파이프라인이 실제 제품·인물·현장처럼 사실성이 중요한 피사체는 공식 출처 또는 라이선스가 확인된 실사를, 개념·원리·추상 장면은 `image_gen`을 선택한다. 적합본이 없으면 운영자 질문으로 멈추지 않고 다른 적합 경로로 전환한다. 핀터레스트·구글 이미지 무단 사용은 금지다. FLUX는 운영자의 명시 지시가 있을 때만 쓴다.
+- 이미지 의미 계약 SSOT는 블로그 `brief.json.imagePlan[]`, 카드 `cards.plan.json`이다. 블로그 신규 계약은 고유 `assetKey`와 `sourcePolicy: auto`를 요구한다.
+- 블로그 바이너리 저작 원본은 포스트 `assets/<assetKey>.webp`, 출처 원본은 `assets/CREDITS.md`다. 본문은 `./assets/<assetKey>.webp`만 참조한다. 썸네일은 합성 파생본이며 저작 원본이 아니다.
+- `sns/assets/{subjectKey}`는 공유 staging, HF는 브라우저 서빙 SSOT다. 블로그 원본을 공유할 때는 `ingest_blog_assets.py`만 사용한다. staging이나 HF 파일을 글 원본처럼 역편집하지 않는다.
 
 ## 3. HF/R2 저장 정책
 
@@ -45,7 +46,7 @@
 
 | 파이프라인 | 진입/발행 | 상세 문서 |
 |---|---|---|
-| 블로그 | 저작 -> `blog/_scripts/audit_seo.py` -> 발행 | `blog/BLOG.md` (+ `blog/PIPELINE.md`) |
+| 블로그 | 저작 -> `blog/_scripts/publishGate.py --post <글폴더>` -> 발행 | `blog/BLOG.md` (+ `blog/PIPELINE.md`) |
 | 카드뉴스 | `plan_card_news.py` -> `build_carousel_contracts.py` -> HF `carousels/index.json` | `blog/_scripts/CARDS.md` (+ `blog/_scripts/README.md`) |
 | 이미지 공유풀 | `sns/scripts/build_index.py` -> `publish_assets_hf.py` (blog 흡수 `ingest_blog_assets.py`) -> HF `companies/` | `sns/assets/README.md` |
 | 팟캐스트 | `podcast_plan_loop.workflow.js` -> `plan_episode.py` -> (NotebookLM) -> `render_episode_image.py` -> `publish_podcast.py` -> R2+HF | `blog/_podcasts/README.md` + `blog/_podcasts/GUIDE.md` |
@@ -65,4 +66,4 @@
 ## 참고 히스토리
 - 2026-07-05 데이터 유니버스 명시: DART(국내)+EDGAR(미국) 전 종목을 한 파이프라인에서 함께 근거로 사용(양시장 비교·크로스 공급망). 정본 = `operation.content` 데이터 워크벤치 절.
 - 2026-07-02 팟캐스트 트랙 blog/_podcasts 로 이관(sns 아님). 콘텐츠 운영 SSOT 이 문서 신설.
-- 정책 정본: git=`CLAUDE.md`+`git_rules`, 이미지수급=`feedback_image_sourcing_policy`, R2=`reference_cloudflare_r2_infra`, HF=`reference_hf_dataset_layout`, 공유풀=`sns/assets/README.md`, 블로그=`BLOG.md`, 카드=`CARDS.md`, 팟캐스트=`blog/_podcasts/README.md`.
+- 정책 정본: git=`CLAUDE.md`+`git_rules`, 이미지 수급과 자산 경계=이 문서 2절, R2=`reference_cloudflare_r2_infra`, HF=`reference_hf_dataset_layout`, 공유 staging=`sns/assets/README.md`, 블로그 집필=`BLOG.md`, 카드=`CARDS.md`, 팟캐스트=`blog/_podcasts/README.md`.

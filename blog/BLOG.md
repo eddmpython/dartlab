@@ -1,6 +1,6 @@
 # dartlab 블로그 단일 규칙
 
-> **이 문서 하나만 읽으면 블로그를 만들 수 있다.** 기존 BLOG_PIPELINE · BLOG_STRUCTURE · ASSET_POLICY · DARTLAB_USAGE · QUALITY_STANDARDS · SEO_PLAYBOOK 6 개 분할 문서를 흡수한 단일 SSOT.
+> **이 문서는 집필 상세 SSOT다.** 발행 진입점과 신규 계약은 [PIPELINE.md](PIPELINE.md), 자산 위치와 서빙 경계는 [OPERATIONS.md](OPERATIONS.md)가 우선한다. 아래 레거시 사례가 두 문서와 충돌하면 새 계약을 따른다.
 > 운영 데이터 (TOPIC_ROADMAP.md · `_reference/`) 와 카테고리별 자동 발간 (credit-reports publisher) 만 별도 유지.
 
 각 섹션은 **"이렇게 한다"** 명제로 열고, 반복된 실수는 섹션 하단 **"반복 실패"** 에 작게 정리한다. 나아가야 할 길이 먼저, 금지는 그 아래.
@@ -294,21 +294,16 @@ c.quant("종합"); c.quant("팩터")
 
 ⚠ 현재 `industry` 엔진은 한국 전용. EDGAR 종목 (META·TSLA 등) 은 외부 출처 + 질적 분석으로 대체.
 
-### 시나리오 분석 - 독자 질문을 더 선명하게 만들 때만 넣는다
+### 마지막 관전 포인트는 조건별 시나리오로 푼다
 
-시나리오가 이 글의 핵심 질문에 대한 답을 **직접 선명하게 만드는** 글에만 선별 허용.
+신규 `contractVersion: 2` 심층 글은 마지막 H2를 관전 시나리오로 닫는다. "만약 어떤 조건이면, 어떤 경로로 무엇이 달라질까"를 독자가 다음 데이터에 적용할 수 있게 쓴다.
 
-**넣는 기준**: "이 변수가 바뀌면 마진·매출이 구조적으로 바뀐다" 가 독자 질문의 본체일 때.
-- ✓ 오뚜기: "해외 비중 30% 가 되면 OPM 5.7%" - "내수 천장을 넘을 수 있나" 의 직접 답.
-- ✓ 에스퓨얼셀: "분기 매출 100 억이면 원가율 100% 이하" - 생존 조건 자체.
-
-**넣을 때 규칙**:
-- 독립 H2 없이 **6 막(체크포인트) 안에 H3 으로 녹인다**.
-- 본문 서술로 "이 변수가 X 가 되면 Y 가 Z 로 바뀐다" 한두 문단.
-- 시나리오 숫자도 **검증표에 "시뮬레이션" 명시** (dartlab 실측과 구분).
-- 글의 닫힘성 우선 - 시나리오가 "다음에 봐야 할 것" 으로 끝나지 않고 **판단으로 닫아야 함**.
-
-**반복 실패** - 전편에 "시나리오 분석" H2 반복 → 템플릿 복사. 추정 숫자가 검증 없이 본문에 → 수치 원칙 위반. "낙관·기본·비관" 3 열 표 → 리서치 보고서 톤. 한화오션·SK하이닉스처럼 핵심 질문과 무관한 시나리오 나열 피한다.
+**쓰는 규칙**:
+- `brief.json.watchScenarios[]`에 서로 다른 조건 2~4개를 먼저 기획한다.
+- 각 시나리오는 조건, 변화 경로, 예상 결과, 확인할 지표, 틀렸음을 보여 줄 조건, 근거를 가진다.
+- 본문 마지막 H2에서 시나리오마다 한두 문단으로 푼다. 요약 H2를 그 뒤에 다시 붙이지 않는다.
+- 시나리오 숫자를 쓰면 검증표에 "시뮬레이션"으로 표시하고 dartlab 실측과 분리한다.
+- "낙관·기본·비관" 같은 고정 3열 표, 근거 없는 추정 숫자, 주제와 무관한 경우의 수 나열은 금지한다.
 
 ### analysis 22 축 + story 11 타입 활용 - 블로그 깊이의 원천
 
@@ -354,7 +349,7 @@ c.quant("종합"); c.quant("팩터")
 
 **SVG 규칙 (최소 5개, 풍부하게)**: **5개 미만이면 발행 불가**. 다크 `#0a0e1a`, 폰트 `-apple-system, 'Segoe UI', sans-serif`, 타이틀 한국어 필수. 텍스트 `fill=#f1f5f9`, 부제 `#64748b`, 강조 `#fbbf24`. A 등급 `#22c55e`, C/D `#f59e0b/#ef4444`.
 
-**이미지 생성**: 2~3 개. **최우선은 GPT `image_gen`** 이다. `image_gen` 결과는 Codex 세션 JSONL 의 `image_generation_call.result` 에 남으므로, `sns/scripts/extractImagegenAssets.py` 로 WebP 추출 후 `blog/{category}/{folder}/assets/{nn}-{slug}.webp` 로 옮긴다. FLUX/Replicate(`black-forest-labs/flux-1.1-pro`)는 **운영자 명시 지시 때만** 보조로 쓴다(Claude 는 먼저 제안 안 함, 정본 = memory `feedback_image_sourcing_policy`). 프롬프트는 영문 + "no text", 사실적 장면을 유지한다.
+**이미지 수급**: 기획 수량만큼 자율 수급한다. `brief.json.imagePlan[]`의 고유 `assetKey`와 `sourcePolicy: auto`가 의미 계약이다. 실제 제품·인물·현장처럼 사실성이 중요한 장면은 공식 또는 라이선스가 확인된 실사를, 개념·원리·추상 장면은 `image_gen`을 선택한다. 결과는 `assets/<assetKey>.webp`, 출처는 `assets/CREDITS.md`에 저장한다. 한 경로가 실패해도 운영자 질문으로 멈추지 않고 다른 적합 경로로 전환한다. FLUX는 운영자가 명시한 경우에만 쓴다.
 
 ### 이미지는 회사를 딱 보면 알 수 있는 구체 장면으로 뽑는다
 
@@ -394,7 +389,7 @@ c.quant("종합"); c.quant("팩터")
 
 ### Phase 3 실행 순서
 
-SVG **최소 5개** Write → GPT `image_gen` 2~3 + 썸네일 배경 1개 생성 → `extractImagegenAssets.py` 로 WebP 추출 → 본문 참조 → SEO audit → **SVG 5개 미만이면 발행 불가** → **이미지 0 개면 발행 불가** → 자산 완료 후 커밋. 이미지 수급 정책(Openverse 실사 주력 후 GPT `image_gen`, FLUX 는 운영자 명시 지시 시에만)은 `blog/OPERATIONS.md` 2절이 정본이다.
+기획 비주얼 제작 → `imagePlan[]`별 자율 수급 → `assets/<assetKey>.webp` 저장 → `assets/CREDITS.md` 기록 → 본문 `./assets/<assetKey>.webp` 참조 → 썸네일 파생 생성 → 눈검수. 자산 위치와 파생·서빙 경계는 `blog/OPERATIONS.md` 2절이 정본이다.
 
 ### Phase 4: 독자 루프 (95 점까지 반복)
 
@@ -419,7 +414,7 @@ SVG **최소 5개** Write → GPT `image_gen` 2~3 + 썸네일 배경 1개 생성
 - `blog/05-company-reports/{nn}-{code}-{slug}/`
 - `ai:` 블록 필수
 - dartlab `c.panel("IS/BS/CF")` 숫자 교차검증
-- `uv run python -X utf8 blog/_scripts/audit_seo.py` - SEO **95 점 이상**
+- `uv run python -X utf8 blog/_scripts/publishGate.py --post blog/<카테고리>/<글폴더>` 통과
 - `TOPIC_ROADMAP.md` 갱신
 - 빌드 확인 + 커밋 + 푸시
 
@@ -974,13 +969,13 @@ uv run python -X utf8 sns/scripts/publish_assets_hf.py              # hfMedia �
 
 | 조건 | 기준 | 측정 |
 |---|---|---|
-| SEO | **95%+** | `uv run python -X utf8 blog/_scripts/audit_seo.py` |
+| 통합 발행 | **하드 계약 + SEO 95%+** | `uv run python -X utf8 blog/_scripts/publishGate.py --post <글폴더>` |
 | 독자 점수 | **95 점+** | opus 독자 에이전트 정식 평가 |
-| 글자수 | **20,000 자+** | SEO audit 의 chars 컬럼 |
+| 글자수 | **장르별 하한** | `publishGate.py` 안의 `auditBlog.py` 계약 |
 
 - **SEO 95% 달성**: H2 5+, 내부링크 5+, 외부출처 5+, 시각자산 5+, py 3+, tags 5+, description 80~200 자.
 - **독자 95 점**: 핵심 질문이 5 막 이상 살아 있음 + "어?" 4 회+ + 약한 막 0 개 + 마지막 판단 마무리.
-- **글자수 20,000**: 각 막 3,000~4,000 자 목표.
+- **글자수**: 회사 14,000, 기술 6,000, 데이터 4,000, 투자 5,000, dartlab 교육 3,000자 하한이다. 길이는 증거와 시나리오의 결과여야 하며 패딩은 실패다.
 
 **반복 실패** - 85~94%·점은 "거의 됐다" 아니라 "아직 안 됐다". 반복 개선.
 
@@ -1115,6 +1110,6 @@ URL : /blog/skhynix  ← 숫자와 종목코드 제거
 10. 용어는 같은 문장 안에서 한국어 + 괄호 풀이 (OPM 은 본문에 쓰지 않는다).
 11. dartlab 호출 8 패턴 · 표 헤더 단일 라벨 · 분기 vs 연간 섞지 않는다 · 수치 원칙 6 조항.
 12. 말미는 3 독립 H2 (`## 검증표` · `## 공시 / Filings` · `## 재무제표 - 최근 5 개년`) 로 닫는다.
-13. SVG 5~7 개 (역할 분명), GPT `image_gen` 이미지 2~3 개, 썸네일 풀블리드 스타일 (MNST 기준).
+13. 역할이 분명한 비주얼과 `imagePlan[]` 수량의 자율 수급 이미지, 통합 썸네일 스타일.
 14. 발행 게이트 3 조건 (SEO 95%+ · 독자 95 점+ · 20,000 자+) 동시 충족.
 15. 공식 URL 은 `eddmpython.github.io/dartlab` SSOT, `TOPIC_ROADMAP.md` 는 운영 데이터로 별도.

@@ -26,11 +26,11 @@ runtimeCompatibility:
     status: unsupported
     notes: 블로그·카드 스크립트는 네트워크·파일 IO와 HF 발행을 쓰므로 pyodide에서 실행하지 않는다.
 procedure:
-  - 인사이트 발굴 — 상식과 충돌하는 단 하나의 사실
+  - 인사이트 발굴 - 상식과 충돌하는 단 하나의 사실
   - 편집 약속 한 문장 + 직전 편과 다른 서사 구조
-  - 스파인(큰문장) 선작성 — 카드뉴스 핵심
+  - 스파인(큰문장) 선작성 - 카드뉴스 핵심
   - 카드별 비주얼 동시 구상
-  - 평가개선 루프 — 재작성 강제
+  - 평가개선 루프 - 재작성 강제
   - 카드별 이미지 수급 + 눈검수 · 숫자 dartlab 재검증
   - 발행 게이트 통과 + 운영자 시각 검수·승인
 examples:
@@ -38,9 +38,9 @@ examples:
   - "이 카드 큰글자만 읽어도 읽히게 고쳐줘"
   - "블로그 글 기획부터 발행까지"
 expectedOutputs:
-  - 카드뉴스 — carousel.yaml(또는 글 frontmatter carousel) + cards.plan.json + 카드별 이미지
-  - 블로그 — 검증된 글 + carousel + hero 이미지
-  - 발행 — hfMedia carousels/index.json(라이브 /cards)
+  - 카드뉴스 - carousel.yaml(또는 글 frontmatter carousel) + cards.plan.json + 카드별 이미지
+  - 블로그 - 검증된 글 + carousel + hero 이미지
+  - 발행 - hfMedia carousels/index.json(라이브 /cards)
 status: observed
 lastUpdated: 2026-07-05
 ---
@@ -57,9 +57,9 @@ lastUpdated: 2026-07-05
 |---|---|---|---|
 | ① 주제·각도 | 고정 주제 또는 토론(`cards_topic_debate`)으로 관통선 1개 + 뽑을 데이터 목록(dataNeeds) 확정 | 완전 공유 | subject{kind,key} + throughline + dataNeeds[] |
 | ② 데이터 직독 | 메인 스레드가 dartlab **데이터 워크벤치를 런타임 직독**(Company.panel·scan·PeerCompareN·macro·credit). 회사 동시 import 2 이하 | 완전 공유 (데이터 SSOT) | 검증 evidence[] |
-| ③ 서사 코어 | 통념·반전·렌즈(insight) + 관통선. idea 수준 beats | 코어 공유 / 서사 실현은 서피스 | insight + beats[] |
+| ③ 서사 코어 | 통념·반전·렌즈(insight) + 관통선 + 조건별 관전 시나리오 | 코어 공유 / 서사 실현은 서피스 | insight + watchScenarios[] + beats[] |
 | ④ 근거검증·정직성 | 평가자+회의자 적대 루프. 숫자 전부 메인스레드 재대조 | 완전 공유 | honesty[] + gate |
-| ⑤ 자산 수급 | 의미 장면 확보(Openverse 실사 / image_gen). 공유풀 `sns/assets/{key}` | 개념 공유 / 크롭은 서피스 | assetScenes[] |
+| ⑤ 자산 수급 | 의미 장면을 사실 적합성에 따라 공식·라이선스 실사 또는 image_gen으로 자율 확보 | 개념 공유 / 원본 위치는 서피스 | assetScenes[] |
 
 경계 한 줄: **공유는 "진실"(subject·evidence·insight·정직성)까지, 투영은 "서피스"(막·슬라이드·소스문서·릴스).**
 
@@ -76,12 +76,17 @@ lastUpdated: 2026-07-05
 | `subject{kind,key}` | 조인 키(회사=stockCode·주제=topicSlug) | (공통) |
 | `throughline{readerQuestion,oneLine}` | 관통선 + 한줄 결론 | readerQuestion / audienceQuestion |
 | `insight{commonBelief,twistFact,whatToWatch}` | 통념·반전·렌즈 | twistFact / coreAnswer, whatToWatch / whereToLook |
+| `watchScenarios[]{condition,mechanism,outcome,watchMetric,invalidatedBy,evidenceRefs}` | 조건별 변화 경로·관찰·반증 | 블로그 brief.json watchScenarios / 카드·팟캐스트는 필요 시 투영 |
 | `evidence[]` | 검증된 근거(아래 표준) | evidenceRefs / dartlab_reproducible |
 | `beats[]{role}` | hook·mechanism·reversal·judgment 골격 | acts / spine / sections |
 | `honesty[]` | 정직성 가드 | honestyGuards / forbiddenAngles / gate |
-| `assetScenes[]` | 의미 장면(피사체) | imagePlan / assetPlan |
+| `assetScenes[]{assetKey,sourcePolicy,subject,placement,narrativeUse}` | 의미 장면과 자율 수급 계약 | imagePlan / assetPlan |
 
 서피스를 추가할 때 이 어휘로 새 동의어를 만들지 않는다(스키마 드리프트 금지).
+
+블로그 신규 심층 글은 `brief.json contractVersion: 2`를 쓴다. 마지막 H2는 `watchScenarios[]`의 조건 2~4개를 "만약 어떤 조건이면 어떤 경로로 무엇이 달라질까"로 풀고, 확인 지표와 반증 조건까지 남긴다. 낙관·기본·비관 고정표는 금지한다.
+
+자산 SSOT 경계: 블로그 의미 계약은 `brief.json.imagePlan[]`, 바이너리 저작 원본은 포스트 `assets/<assetKey>.webp`, 출처 원본은 `assets/CREDITS.md`다. `sourcePolicy`는 `auto`이며 파이프라인이 사실 적합성에 따라 공식·라이선스 실사와 image_gen 중 선택한다. `sns/assets/{subjectKey}`는 재사용 staging, HF는 브라우저 서빙 SSOT다. staging이나 HF를 블로그 저작 원본으로 역으로 사용하지 않는다. 카드 전용 원본은 `blog/_issues/<slug>/assets/`다. 물리 StoryManifest 통합은 별도 승인 전까지 하지 않는다.
 
 ### evidence 표준 (편집 스냅샷, 굽기 아님)
 ②의 evidence 각 항목은 아래를 단다. 핵심은 `apiRef`(재현)·`period.basis`(달력/회계연도)·`asOf`(시점)로, 2.6절의 반복 함정(EDGAR 회계연도·누적/TTM 혼입)을 구조로 막는다.
@@ -100,7 +105,7 @@ id · claim · apiRef{apiRef,args} · value · period{label,basis,granularity} �
 | `plan(StoryCore)` | 코어를 그 서피스 서사형태로 투영(공유 루프에 rubric·planSchema·killAxes 주입) | acts(블로그)/spine(카드)/sourceDoc(팟캐) |
 | `render` | 물리 산출물 | index.md / carousels index.json / script.md |
 | `publish` | 목적지 전송 | GH Pages / HF / R2 |
-| `gate` | 발행 하드게이트(서피스별 SSOT, 통합 금지) | auditBlog / build_carousel_contracts / publish_podcast |
+| `gate` | 발행 하드게이트(서피스별 SSOT, 통합 금지) | publishGate / build_carousel_contracts / publish_podcast |
 
 미래 릴스·쇼츠·비디오 = 이 seam 을 따라 어댑터 추가(현재는 문서 규약. `sns/{track}/README.md` + `sns/assets` 공유풀이 이미 add-only 달성). 발행 경로(GH Pages·HF·R2·Remotion)는 물리적으로 공통분모가 없으니 `publish` 는 얇은 서피스별 드라이버로 두되 **시그니처만 균일**하게. 공통 추상의 실익은 transport 통합이 아니라 크로스링크 조인키(stockCode/topicSlug) + in-place 갱신 규율 + 운영자 눈검수 게이트 세 가지의 공유다.
 
@@ -128,7 +133,7 @@ id · claim · apiRef{apiRef,args} · value · period{label,basis,granularity} �
 ### 서피스별 (성격 불문 공통 규율)
 | 서피스 | 소스 SSOT | 조인 키 필드 | 발행 게이트 | 기획 개선루프 |
 |---|---|---|---|---|
-| 블로그 | `blog/{cat}/{post}/index.md` frontmatter | `stockCode` / `topicSlug` | `audit_seo.py` (+ 회사 심층 `auditBlog.py --gate`) | `blog_plan_loop.workflow.js` |
+| 블로그 | `blog/{cat}/{post}/index.md` + `brief.json` + `assets/` | `stockCode` / `topicSlug` | `publishGate.py` | `blog_plan_loop.workflow.js` |
 | 카드 | frontmatter `carousel:` · `_issues/*/carousel.yaml` | `code`(회사) · topicSlug(주제, 확장 예정) | `build_carousel_contracts.py` | `cards_plan_loop.workflow.js` |
 | 팟캐스트 | `_podcasts/episodes/*/episode.yaml` | `stockCode` / `topicSlug` | `publish_podcast.py` (status=ready) | `podcast_plan_loop.workflow.js` |
 
@@ -136,11 +141,11 @@ id · claim · apiRef{apiRef,args} · value · period{label,basis,granularity} �
 
 ### 품질 우선(quality-first). 전 서피스·전 성격 필수
 1. **기획안 개선루프 필수**: 각 서피스의 `*_plan_loop` 워크플로로 기획한다. 기획작가 초안 -> 평가자(품질 점수) + 회의자(적대 kill) 동시 심사 -> 개선 -> **통과선까지 반복**. 단독 작성(루프 스킵)은 클리셰·얕음을 부르므로 금지.
-2. **품질 미달이면 나올 때까지 재루프**: 통과선 = 평가자 원칙 각 85+ AND 회의자 survive. 미달 라운드는 발행 불가, 통과까지 다시 돈다. `passed=false` 면 발행 게이트가 막는다.
+2. **품질 미달이면 나올 때까지 재루프**: 블로그는 최종 평가 92점 이상, 카드는 평가자 원칙 각 85점 이상이며 모두 회의자 survive가 필요하다. 미달 라운드는 발행 불가, 통과까지 다시 돈다. `passed=false`면 발행 게이트가 막는다.
 3. **데이터는 메인 스레드 검증**: 모든 숫자는 dartlab 런타임 직독 + 메인 스레드 재대조(에이전트 환각 차단, 2.6 함정 규율).
-4. **subject 계약 검증**: 각 서피스 게이트가 조인 키 성격을 확인한다. 블로그 `audit_seo.py`(주제글 stockCode 오배선 경고), 팟캐스트 `plan_episode.py`(topicSlug 를 블로그 slug 로 유도), 카드 계약 검증.
+4. **subject 계약 검증**: 각 서피스 게이트가 조인 키 성격을 확인한다. 블로그 `publishGate.py`, 팟캐스트 `plan_episode.py`(topicSlug 를 블로그 slug 로 유도), 카드 계약 검증.
 
-## 북극성 — 무엇이 훌륭한가
+## 북극성 - 무엇이 훌륭한가
 - 카드뉴스: ① 각 카드의 가장 큰 글자만 위에서 아래로 훑어도 한 편의 짧은 글로 완결된다. ② 표지가 처음 본 사람을 1초에 멈춘다. ③ 카드마다 그 문장이 말하는 이미지가 붙는다. ④ 모든 숫자가 공시 실측이다. ⑤ 직전 편들과 다른 이야기다.
 - 블로그: 첫 두 문단이 비전문가를 계속 읽게 하고, 독자질문 하나로 끝까지 끌고 가며, 끝이 "다음 공시를 어떻게 볼지"를 바꾼다.
 - 둘 다 "통과했나"가 아니라 "이름 걸고 공유하겠는가"로 판정한다.
@@ -153,14 +158,14 @@ id · claim · apiRef{apiRef,args} · value · period{label,basis,granularity} �
 4. **절제와 시각의 조화**: 보기 좋은 떡이 목표가 아니다. 덕지덕지 꾸미지 말고 꼭 필요한 시각만 절제해서 글과 조화시킨다. 화려함이 아니라 읽힘이 기준이다.
 5. **관련성 있는 배경이미지 (회사 주제면 그 회사 로고·상징이 기본값)**: 카드마다 그 내용과 맞는 배경 이미지를 찾아 붙인다. 범용·장식 사진은 실패. **회사가 주인공인 슬라이드의 배경은 그 회사의 실제 로고·심볼·상호(간판)·브랜드 실물을 기본값으로 쓴다.** 주식·재무·교육용 카드에서 회사 로고·상징 사용은 저작권 문제가 되지 않는다. 일반 산업 장면(범용 공장·웨이퍼·데이터센터)으로 도망가면 차별성이 0이라 실패다. 일반 장면은 회사가 특정되지 않는 개념 슬라이드에만. 맞는 실사를 끝내 못 찾을 때만 깨끗한 다크 텍스트로 둔다.
 
-## 작가 craft — 사람이 읽히는 글
+## 작가 craft - 사람이 읽히는 글
 연결만으로는 "편한데 안 남는" 덱이 된다. 연결 위에 긴장·약속·장면·보상을 얹는다.
-- **표지 후크(호기심 갭)** — 표지는 정보가 아니라 결핍을 만든다. 충돌하는 사실의 일부만 보이고 답은 숨긴다. 과장 형용사·빈 질문·정답을 다 적어 갭을 닫는 표지·본문이 약속을 못 갚는 낚시는 금지.
-- **약속과 보상(promise·payoff)** — 0b의 편집 약속이 표지의 promise, 마지막 카드가 payoff다. 마지막은 표지로 돌아가 같은 대상으로 응답한다(렌즈와 일치). 일반론("앞으로가 기대됩니다")으로 도망가면 실패.
-- **구체 장면화** — 추상·비율을 사람이 그릴 수 있는 피사체·동작·일상 단위로 번역한다("마진 25%"보다 "100원 팔아 25원"). 비유가 사실을 왜곡하면 폐기.
-- **so what(독자 보상)** — "이 덱을 본 사람은 이제 ___를 다르게 본다"의 빈칸이 한 문장으로 채워져야 한다. 안 채워지면 0a로 되돌린다.
-- **신뢰** — 숫자는 주장 옆에 밀착할 때 설득한다. 모든 주장 카드에 분모·기간·범위를 밝힌 실측 수치를 작은 sub로 붙인다. 비교는 같은 기준끼리.
-- **정직한 의외성(heat)** — 놀라움은 표현이 아니라 숨은 사실에서 나온다. 표현을 눅였을 때 인사이트가 사라지면 과장이다. 우열·투자권유·단정 프레임 금지.
+- **표지 후크(호기심 갭)** - 표지는 정보가 아니라 결핍을 만든다. 충돌하는 사실의 일부만 보이고 답은 숨긴다. 과장 형용사·빈 질문·정답을 다 적어 갭을 닫는 표지·본문이 약속을 못 갚는 낚시는 금지.
+- **약속과 보상(promise·payoff)** - 0b의 편집 약속이 표지의 promise, 마지막 카드가 payoff다. 마지막은 표지로 돌아가 같은 대상으로 응답한다(렌즈와 일치). 일반론("앞으로가 기대됩니다")으로 도망가면 실패.
+- **구체 장면화** - 추상·비율을 사람이 그릴 수 있는 피사체·동작·일상 단위로 번역한다("마진 25%"보다 "100원 팔아 25원"). 비유가 사실을 왜곡하면 폐기.
+- **so what(독자 보상)** - "이 덱을 본 사람은 이제 ___를 다르게 본다"의 빈칸이 한 문장으로 채워져야 한다. 안 채워지면 0a로 되돌린다.
+- **신뢰** - 숫자는 주장 옆에 밀착할 때 설득한다. 모든 주장 카드에 분모·기간·범위를 밝힌 실측 수치를 작은 sub로 붙인다. 비교는 같은 기준끼리.
+- **정직한 의외성(heat)** - 놀라움은 표현이 아니라 숨은 사실에서 나온다. 표현을 눅였을 때 인사이트가 사라지면 과장이다. 우열·투자권유·단정 프레임 금지.
 
 발행 전 작가 자가점검: 표지가 갭을 1초에 여나 · 큰문장만 읽어 한 편으로 완결되나 · 순서를 바꾸면 무너지나 · 인사이트에 메커니즘과 렌즈가 둘 다 붙었나 · 마지막이 표지 약속을 갚나 · "이제 ___를 다르게 본다"가 채워지나 · 추상이 장면으로 번역됐나 · 문장 길이가 변주되나 · 이미지가 주장을 증명하나 · 숫자가 주장에 밀착하나 · 놀라움이 사실에서 오나 · 약어·군더더기 0인가.
 
@@ -170,26 +175,26 @@ id · claim · apiRef{apiRef,args} · value · period{label,basis,granularity} �
 - **타입(주제 다양화)**: `company`(회사 하나가 주인공, 그 회사 공시로 통념을 깨는 반전) / `economy`(거시·경제 흐름이 주인공, 추상 지표를 체감 단위로) / `theme`(특정 주제를 여러 회사·지표 횡단으로 증명, 회사 하나로 좁히지 않음). 타입이 스파인 결과 데이터 범위를 정하고, 1번 기획 루프의 작가·평가자 프롬프트에 주입된다. carousel.yaml/frontmatter 의 `type` 필드로 박제한다.
 - **흐름**: 주제(고정 또는 토론) 결정, 타입 결정, 메인 스레드가 dartlab 직독으로 evidence 검증, 1번 기획 루프, 저작·발행. 데이터 검증이 항상 메인 스레드인 이유는 에이전트가 숫자를 환각하기 때문이다.
 
-## 0. 기획 — 지배 단계, 공정의 절반
+## 0. 기획 - 지배 단계, 공정의 절반
 여기서 대부분이 결정된다. 빈약한 기획은 어떤 후속 손질로도 못 살린다. **기획안(cards.plan.json)은 모든 결정이 일어나는 단일 아티팩트다**: 인사이트, 큰문장 스파인, 그래프 모양(필요하면 표), 그래프를 그릴 렌더 계약까지 전부 여기서 정한다. 글·이미지·발행은 그 다음이다. 기획안을 만드는 행위 자체가 2번의 기획작가와 평가자 루프다.
-- 0a. 인사이트 — dartlab 5엔진(scan·analysis·quant·governance·credit)을 직접 돌려 "상식과 충돌하는 단 하나의 사실"을 찾는다. "회사가 잘했다"가 아니라 "이게 사실일 리 없는데 사실이다". 충돌 사실에서 멈추지 말고 *왜 가능한가(메커니즘)*와 *독자가 앞으로 무엇을 다르게 볼까(렌즈)*까지 간다(예: 라면 회사 영업이익률 25% → 원가가 아니라 수출 가격이 만든 마진 → 매출 말고 원가율을 봐라). 이 셋(통념·반전=사실+메커니즘·그래서 볼 것=렌즈)과 evidenceRefs 를 cards.plan.json 의 `insightContract` 에 박제한다. v4+ 발행 게이트가 셋이 모두 채워졌고 반전이 제목·캡션의 재진술이 아닌지 강제한다. 회사 요약·"좋은 종목"은 기각.
-- 0b. 편집 약속 한 문장 — 마지막을 덮을 때 독자가 새로 이해하거나 느낄 단 하나.
-- 0c. 서사 구조(템플릿 금지) — 역설-공개 / 모순-해소 / 카운트다운 / before-after / 통념격파 중 그 사실에 맞는 하나. 직전 3편과 표지 훅·전개·결론 패턴이 겹치면 탈락(격언 표지 "좋은 X는 A보다 B", "좋아 보이지만 진짜는 운영 X" 전개, "더 단단해집니다·실력이 된다" 결론의 반복). 섹터도 직전 편과 분리한다.
-- 0d. 스파인 선작성(카드뉴스 핵심) — 카드별 "큰문장"만 순서대로 적어 한 문단으로 읽는다. 이 문단이 흥미로운 짧은 에세이로 안 읽히면 폐기하고 0a로 돌아간다. 숫자는 맨숫자로 두지 말고 완성 문장에 녹인다("24.8%"만 던지지 말고 "라면을 팔아 100원에 25원이 남았습니다"). 중간 큰문장은 그런데·결국·그 결과·그래서·이 회사처럼 앞장과의 관계를 드러내고, 마지막은 판단으로 닫는다.
-- 0e. 카드별 비주얼 동시 구상 — 각 큰문장이 말하는 "그 장면"을 구체 피사체로 정한다. 이미지는 사후 장식이 아니라 기획의 일부다. 비교 카드는 두 피사체 대비, 추상 주장은 핵심 명사를 피사체로.
+- 0a. 인사이트 - dartlab 5엔진(scan·analysis·quant·governance·credit)을 직접 돌려 "상식과 충돌하는 단 하나의 사실"을 찾는다. "회사가 잘했다"가 아니라 "이게 사실일 리 없는데 사실이다". 충돌 사실에서 멈추지 말고 *왜 가능한가(메커니즘)*와 *독자가 앞으로 무엇을 다르게 볼까(렌즈)*까지 간다(예: 라면 회사 영업이익률 25% → 원가가 아니라 수출 가격이 만든 마진 → 매출 말고 원가율을 봐라). 이 셋(통념·반전=사실+메커니즘·그래서 볼 것=렌즈)과 evidenceRefs 를 cards.plan.json 의 `insightContract` 에 박제한다. v4+ 발행 게이트가 셋이 모두 채워졌고 반전이 제목·캡션의 재진술이 아닌지 강제한다. 회사 요약·"좋은 종목"은 기각.
+- 0b. 편집 약속 한 문장 - 마지막을 덮을 때 독자가 새로 이해하거나 느낄 단 하나.
+- 0c. 서사 구조(템플릿 금지) - 역설-공개 / 모순-해소 / 카운트다운 / before-after / 통념격파 중 그 사실에 맞는 하나. 직전 3편과 표지 훅·전개·결론 패턴이 겹치면 탈락(격언 표지 "좋은 X는 A보다 B", "좋아 보이지만 진짜는 운영 X" 전개, "더 단단해집니다·실력이 된다" 결론의 반복). 섹터도 직전 편과 분리한다.
+- 0d. 스파인 선작성(카드뉴스 핵심) - 카드별 "큰문장"만 순서대로 적어 한 문단으로 읽는다. 이 문단이 흥미로운 짧은 에세이로 안 읽히면 폐기하고 0a로 돌아간다. 숫자는 맨숫자로 두지 말고 완성 문장에 녹인다("24.8%"만 던지지 말고 "라면을 팔아 100원에 25원이 남았습니다"). 중간 큰문장은 그런데·결국·그 결과·그래서·이 회사처럼 앞장과의 관계를 드러내고, 마지막은 판단으로 닫는다.
+- 0e. 카드별 비주얼 동시 구상 - 각 큰문장이 말하는 "그 장면"을 구체 피사체로 정한다. 이미지는 사후 장식이 아니라 기획의 일부다. 비교 카드는 두 피사체 대비, 추상 주장은 핵심 명사를 피사체로.
 - 산출은 cards.plan.json(카드) / 글 frontmatter(블로그)에 박혀 후속 입력이 된다.
 
 ## 1. 초안·레이아웃
-- 카드뉴스 — 스파인을 슬라이드로. layout 3종: editorial(표지) / editorialBeat(문장 비트, 숫자를 문장에 녹임, 스캔독해 주력) / editorialStat(큰 숫자, 단 context에 완성 문장 필수). stat 남발 금지, beat 위주. 카드 수는 이야기가 필요한 만큼(7~10 권장, 상한 없음). 숫자 증거는 작은 sub에 두어 큰문장을 가리지 않는다.
-- 블로그 — 막마다 장면 → 숫자 → 반전 → 판단. 글쓰기 다듬기 규칙은 `blog/BLOG.md`.
+- 카드뉴스 - 스파인을 슬라이드로. layout 3종: editorial(표지) / editorialBeat(문장 비트, 숫자를 문장에 녹임, 스캔독해 주력) / editorialStat(큰 숫자, 단 context에 완성 문장 필수). stat 남발 금지, beat 위주. 카드 수는 이야기가 필요한 만큼(7~10 권장, 상한 없음). 숫자 증거는 작은 sub에 두어 큰문장을 가리지 않는다.
+- 블로그 - 막마다 장면 → 숫자 → 반전 → 판단. 글쓰기 다듬기 규칙은 `blog/BLOG.md`.
 
 ## 렌더링 계약 레지스트리 + 기획-구동 확장 루프
 카드를 "있는 레이아웃"에 맞추지 않는다. 기획이 필요로 하는 시각을 *선언*하면 파이프라인이 거기 맞춰 자란다. 글만 쓰지 말고, 주장에 그 주장을 증명하는 시각을 붙인다(작가 craft '신뢰'의 시각판).
-- **레지스트리(정례화)** — 카드가 쓸 수 있는 계약의 공식 카탈로그. 각 계약 = 스키마 + 렌더러 + whenToUse.
+- **레지스트리(정례화)** - 카드가 쓸 수 있는 계약의 공식 카탈로그. 각 계약 = 스키마 + 렌더러 + whenToUse.
   - 레이아웃: `editorial`(표지) · `editorialBeat`(문장 비트) · `editorialStat`(큰 숫자)
-  - 시각 슬롯(`visual`, editorialBeat에 부착) — 큰문장 아래 붙는 증거: `bars` · `line` · `table`(렌더러 구현분) · `finChart`(등록만, 렌더러는 확장 루프로)
-- **강한 기획** — beat마다 큰문장 + "이 주장을 어떤 계약으로 증명하나"를 plan에서 선언한다. "원가 마진을 많이 남긴다"면 옆에 마진 추이(line/finChart)를 붙여 글+시각으로 받친다. 설명만 하고 끝내지 않는다.
-- **확장 루프(없으면 그때그때 개선)** — 부른 계약이 레지스트리에 있고 렌더러가 있으면 bind. 없거나(미등록) 렌더러 미구현이면 `build_carousel_contracts.py` 게이트가 "계약 없음 → 추가"로 멈춘다 → 계약 추가(model 타입 + CardSlide 렌더러 + cards_plan 레지스트리 등록 + 이 표 갱신) → 재기획해 bind. **파이프라인이 가장 강한 기획에 맞춰 자란다.** (insightContract 게이트 추가가 이 루프의 첫 실례였다.)
+  - 시각 슬롯(`visual`, editorialBeat에 부착) - 큰문장 아래 붙는 증거: `bars` · `line` · `table`(렌더러 구현분) · `finChart`(등록만, 렌더러는 확장 루프로)
+- **강한 기획** - beat마다 큰문장 + "이 주장을 어떤 계약으로 증명하나"를 plan에서 선언한다. "원가 마진을 많이 남긴다"면 옆에 마진 추이(line/finChart)를 붙여 글+시각으로 받친다. 설명만 하고 끝내지 않는다.
+- **확장 루프(없으면 그때그때 개선)** - 부른 계약이 레지스트리에 있고 렌더러가 있으면 bind. 없거나(미등록) 렌더러 미구현이면 `build_carousel_contracts.py` 게이트가 "계약 없음 → 추가"로 멈춘다 → 계약 추가(model 타입 + CardSlide 렌더러 + cards_plan 레지스트리 등록 + 이 표 갱신) → 재기획해 bind. **파이프라인이 가장 강한 기획에 맞춰 자란다.** (insightContract 게이트 추가가 이 루프의 첫 실례였다.)
 - 기계 게이트 SSOT = `cards_plan.py`(`VISUAL_CONTRACTS_RENDERABLE`/`REGISTERED` + `validate_contract_visuals`). 렌더 SSOT = `landing/src/lib/cards/CardSlide.svelte`(visual 슬롯).
 
 ## 2. 기획 루프 (구조): 기획작가 ↔ (평가자 + 회의자), 둘 다 통과까지 반복
@@ -214,17 +219,17 @@ id · claim · apiRef{apiRef,args} · value · period{label,basis,granularity} �
 - **snakeId 대체 행**: `capex` 행이 비거나 옛 데이터만 있으면 `purchase_of_property_plant_and_equipment`·`productive_assets_acquisition` 등 대체 행을 확인한다(최근 분기 채워진 행을 고른다).
 - **그래프 밀도 vs 연 점수**: 연간만 쓰면 점이 적어(예 5년) 밀도 게이트(분기 6점 이상)에 걸린다. 분기로 내려 16점 안팎으로 그리되, 분기 변동이 큰 비율(OPM 등)은 서사에 연간 수치를 병기한다.
 - **Workflow args**: Workflow 는 args 를 JSON 문자열로 넘긴다. 스크립트에서 `typeof args==='string' ? JSON.parse(args) : args` 로 파싱하지 않으면 topic·evidence 가 undefined 가 돼 에이전트가 제 숫자를 지어낸다(실제로 한 번 데인 함정).
-- **CC0 이미지는 절반 이상 폐기(눈검수가 진짜 필터)**: Openverse·Commons 수급분은 키워드만 맞고 실제론 지도 인포그래픽·마네킹 쇼윈도·AI 생성 가짜차트·흰배경 제품샷이 섞인다. 한 장씩 눈으로 대조해 맞는 실사만 남긴다(못 찾으면 그 카드는 다크 텍스트).
+- **수급 결과는 눈검수가 진짜 필터**: 공식·라이선스 실사와 image_gen 모두 한 장씩 의미 장면과 대조한다. 오매치, 식별 인물 왜곡, 가짜 공식 로고·문서가 있으면 다른 적합 경로로 교체한다.
 
 ## 3. 제작
-- 이미지(카드별) — 발간 카드는 출처가 깨끗한 CC0/PD 실사로 수급(`blog/_scripts/fetch_cc0_images.py` 헬퍼, Commons·Openverse). 카드마다 그 큰문장이 말하는 피사체로 검색한 뒤 한 장씩 눈으로 그 카드와 대조한다. 키워드 문자열 매칭이 아니라 눈검수가 진짜 필터다(받은 것 절반은 폐기 — 오매치: 식별 인물·일러스트·엉뚱한 피사체). 적합 실사를 못 찾으면 범용 이미지를 억지로 붙이지 말고 이미지 없이(깨끗한 다크 텍스트 카드) 둔다. GPT image_gen은 Codex(GPT) 세션의 1차 경로. **FLUX(Replicate)는 운영자 명시 지시 시에만** 쓰고 Claude 는 먼저 제안하지 않는다(정본 = memory `feedback_image_sourcing_policy`).
-- 숫자 — 본문·캡션의 모든 수치를 메인 스레드 dartlab로 재검증한다(분기/연간·연결/그룹·일회성 분리).
+- 이미지(카드별): `assetPlan`의 의미 장면을 기준으로 사실성이 중요한 피사체는 공식·라이선스 실사, 개념 장면은 image_gen을 자율 선택한다. 한 경로에서 적합본이 없으면 다른 적합 경로로 전환한다. 범용 이미지를 억지로 붙이지 않고 이미지 없는 다크 텍스트 카드도 허용한다. FLUX는 운영자의 명시 지시가 있을 때만 쓴다.
+- 숫자 - 본문·캡션의 모든 수치를 메인 스레드 dartlab로 재검증한다(분기/연간·연결/그룹·일회성 분리).
 
 ## 4. 발행
 - 게이트는 바닥(위생)이다. 통과가 목적이 아니라 거짓말·줄깨짐·약어·맨숫자·범용표지·인사이트 부재를 막을 뿐이다. `build_carousel_contracts.py --dry-run`이 레이아웃·기획/토론·큰문장 흐름(`cards_plan.py`의 bigSentenceContract: 연결어 밀도·판단형 종결)·약어·`insightContract`(v4+: 통념·반전·렌즈·근거 + 반전≠제목 재진술)를 검사한다. reviewGate.status=passed + 라운드 passed라야 발행한다.
 - 공개 발행(hfMedia)·landing push는 운영자 시각 검수·승인 후. dev를 띄워 실물 렌더를 눈으로 본 뒤에 올린다.
 
-## 무엇을 거르나 — 각 단계의 kill
+## 무엇을 거르나 - 각 단계의 kill
 - 0 기획: 지루한·파생적 각도, 보고서처럼 읽히는 스파인, 직전 편과 같은 구조 → 0a로 되돌림.
 - 2 루프: 큰문장만으로 안 읽히는 덱, 1초에 안 멈추는 표지, 카드와 따로 노는 범용 이미지, 과장·우열 프레임 → 재작성 강제.
 - 3 제작: 오매치·일러스트·식별 인물 비주얼, 검증표 밖 숫자 → 폐기·재수급·삭제.
