@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title id="title">JYP 2025년 원가 증가의 세 축</title>
+  <desc id="desc">아티스트 수수료는 2068억원으로 72퍼센트, 콘텐츠 제작비는 1539억원으로 39.8퍼센트, 기타 원가는 1577억원으로 37.1퍼센트 늘었다.</desc>
+  <rect width="1200" height="675" rx="30" fill="#12091b"/>
+  <text x="70" y="78" fill="#fff7ed" font-family="Pretendard, sans-serif" font-size="34" font-weight="800">매출 36.6% 성장보다 원가가 더 빨랐다</text>
+  <text x="70" y="114" fill="#a78b9f" font-family="Pretendard, sans-serif" font-size="17">2025년 원가 항목과 전년 대비 증가율</text>
+  <g font-family="Pretendard, sans-serif">
+    <rect x="80" y="170" width="1040" height="112" rx="24" fill="#2a1533"/>
+    <rect x="80" y="170" width="745" height="112" rx="24" fill="#ec4899"/>
+    <text x="120" y="220" fill="#fff7ed" font-size="23" font-weight="900">아티스트 수수료 2,068억원</text>
+    <text x="1060" y="237" text-anchor="end" fill="#fbcfe8" font-size="30" font-weight="900">+72.0%</text>
+    <rect x="80" y="315" width="1040" height="112" rx="24" fill="#2a1533"/>
+    <rect x="80" y="315" width="500" height="112" rx="24" fill="#8b5cf6"/>
+    <text x="120" y="365" fill="#fff7ed" font-size="23" font-weight="900">콘텐츠 제작비 1,539억원</text>
+    <text x="1060" y="382" text-anchor="end" fill="#ddd6fe" font-size="30" font-weight="900">+39.8%</text>
+    <rect x="80" y="460" width="1040" height="112" rx="24" fill="#2a1533"/>
+    <rect x="80" y="460" width="472" height="112" rx="24" fill="#f97316"/>
+    <text x="120" y="510" fill="#fff7ed" font-size="23" font-weight="900">기타 원가 1,577억원</text>
+    <text x="1060" y="527" text-anchor="end" fill="#fed7aa" font-size="30" font-weight="900">+37.1%</text>
+    <text x="70" y="630" fill="#7c647a" font-size="15">재계약과 총액 인식 국내 공연, MD 확대가 동시에 원가를 끌어올렸다. 출처: JYP 2025년 4분기 IR</text>
+  </g>
+</svg>

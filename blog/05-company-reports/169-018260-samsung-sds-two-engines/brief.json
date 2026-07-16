@@ -1,0 +1,186 @@
+{
+  "plan": {
+    "title": "삼성SDS, 매출의 절반은 물류인데 이익의 86%는 IT가 만든다",
+    "titleContract": {
+      "workingTitle": "삼성SDS 두 엔진 기업이야기",
+      "selectedTitle": "삼성SDS, 매출의 절반은 물류인데 이익의 86%는 IT가 만든다",
+      "hookQuestion": "물류가 2025년 매출의 53%인데 영업이익의 14%만 만든다면 삼성SDS는 물류회사인가 AI회사인가.",
+      "readerGap": "연결 매출만 보면 물류가 더 크고 회사 발표만 보면 AI와 클라우드가 전면에 선다. 사업별 이익률과 2022년 운임 봉우리, 2026년 10조원 투자계획을 한 시간축에 놓아야 체질 변화가 보인다.",
+      "promise": "물류와 IT의 매출 및 이익 분리, 클라우드의 4년 성장, 6.6조원 현금성 재원, 10조원 투자계획, 2026년 1분기 이익 급감까지 연결해 두 엔진의 경제성을 밝힌다.",
+      "whySelected": "직전 조선 애프터마켓 편과 달리 이번 글은 같은 회사 안에서 저마진 물류와 고마진 기업 IT가 충돌하는 구조다. AI 투자 서사를 현금과 감가상각, 외부 고객 확장 문제로 다시 검증할 수 있다.",
+      "candidates": [
+        {"title": "삼성SDS, 매출의 절반은 물류인데 이익의 86%는 IT가 만든다", "hook": "매출과 이익의 주인이 다른 모순이 즉시 보인다.", "risk": "클라우드 단독 이익률처럼 오독하지 않도록 IT서비스 전체 범위를 표시한다."},
+        {"title": "17조원 매출이 사라지자 삼성SDS의 진짜 엔진이 보였다", "hook": "2022년 운임 봉우리와 클라우드 성장을 시간축으로 묶는다.", "risk": "물류 사업 자체가 사라졌다는 인상을 피한다."},
+        {"title": "현금 6.6조원을 AI에 거는 삼성SDS의 두 번째 창업", "hook": "큰 순현금과 10조원 투자계획의 긴장을 전면에 둔다.", "risk": "투자계획을 확정 집행이나 수익으로 표현하지 않는다."}
+      ]
+    },
+    "description": "삼성SDS는 2025년 물류에서 매출의 53%를 냈지만 영업이익의 14%만 만들었다. 클라우드 성장, 6.6조원 현금성 재원, 10조원 AI 투자, 2026년 1분기 일회성 비용을 따라 두 사업의 진짜 경제성을 해부한다.",
+    "contentEnrichmentPolicy": {
+      "imageGenerationAllowed": true,
+      "rule": "실사 이미지는 데이터센터와 항만이 한 회사에 공존하는 장면, AI 운영 인력이 실제 인프라를 관리하는 장면에만 쓴다. 모든 숫자 비교는 SVG로 분리한다.",
+      "appliedToThisPost": [
+        "도입부에 서버랙과 컨테이너항을 한 프레임에 둔 실사 장면을 배치한다.",
+        "AI 투자 막에 기업용 AI 운영실을 배치한다.",
+        "매출과 이익 분리, 물류와 클라우드 추세, 마진, 1분기 이익 급감, 10조원 투자계획은 SVG로 재현한다."
+      ]
+    },
+    "readerQuestion": "삼성SDS의 연결 매출 절반을 차지하는 물류와 이익 대부분을 만드는 IT서비스 중 어느 쪽이 미래 가치를 결정하며 10조원 투자는 그 균형을 어떻게 바꾸는가.",
+    "insight": {
+      "commonBelief": "삼성SDS는 삼성그룹의 전산을 맡는 안정적인 IT서비스 회사이거나 최근 AI와 클라우드로 재평가되는 기술회사다.",
+      "twistFact": "2025년 물류 매출은 7조3,864억원으로 연결 매출의 53%였지만 영업이익은 1,300억원으로 14%였다. 반대로 IT서비스는 매출 47%로 영업이익 86%를 만들었다.",
+      "whatToWatch": "클라우드 매출 성장률, IT서비스 영업이익률, 물류 영업이익률, 비계열 외부 고객 확대, AI 데이터센터 투자 집행, 감가상각, 현금성 자금, 배당을 같은 표에서 본다.",
+      "freshnessArgument": "2026년 1분기 클라우드가 처음으로 ITO 매출을 넘어 IT서비스 최대 항목이 됐고, 회사는 2031년까지 10조원을 AI 인프라와 서비스, 인수합병에 투자하겠다고 발표했다. 동시에 퇴직급여 기준 변경으로 영업이익이 70.8% 줄어 숫자 해석이 필요한 시점이다.",
+      "evidenceRefs": ["삼성SDS 2025년 4분기 Earnings Release", "삼성SDS 2026년 1분기 공식 실적발표", "삼성SDS 기업가치 제고계획", "DART 2025년 사업보고서와 2026년 1분기보고서", "dartlab Company 018260 IS, BS, CF"]
+    },
+    "acts": [
+      {"order": 1, "heading": "물류가 매출 53%를 차지했지만 이익은 14%만 만들었다", "purpose": "궁금증심화", "scene": "2025년 사업별 매출 막대와 영업이익 막대를 나란히 놓는다.", "keyNumbers": ["IT서비스 매출 6조5,435억원", "물류 매출 7조3,864억원", "IT서비스 영업이익 8,271억원", "물류 영업이익 1,300억원"], "causalBridge": "두 엔진이 왜 이렇게 달라졌는지 알려면 2022년 운임 봉우리부터 내려와야 한다."},
+      {"order": 2, "heading": "운임이 만든 17조원 외형이 사라지자 회사의 체질이 보였다", "purpose": "역사전환", "scene": "2022년 물류 11조원 봉우리와 2023년 연결 매출 23% 감소를 추적한다.", "keyNumbers": ["2022 매출 17조2,347억원", "2022 물류 매출 11조2,666억원", "2023 매출 13조2,768억원", "2023 영업이익 8,082억원"], "causalBridge": "외형이 줄어도 클라우드는 반대로 커졌고 이 흐름이 다음 엔진을 만들었다."},
+      {"order": 3, "heading": "클라우드는 1.16조원에서 2.68조원으로 커져 ITO를 넘었다", "purpose": "메커니즘공개", "scene": "CSP, MSP, SaaS가 서로 다른 방식으로 기업 IT 예산을 흡수한다.", "keyNumbers": ["2022 클라우드 1조1,627억원", "2025 클라우드 2조6,802억원", "2026년 1분기 6,909억원", "2026년 1분기 전년 대비 5.8% 증가"], "causalBridge": "성장률만으로는 연결 이익이 보이지 않으므로 두 사업의 마진을 분리한다."},
+      {"order": 4, "heading": "12.6%와 1.8%의 마진 차이가 연결 6.9%를 만들었다", "purpose": "재무검증", "scene": "같은 회사 안의 IT서비스와 물류 영업이익률을 비교한다.", "keyNumbers": ["IT서비스 영업이익률 12.6%", "물류 영업이익률 1.8%", "연결 영업이익률 6.9%"], "causalBridge": "고마진 엔진이 커질수록 생긴 현금은 이제 대규모 투자 선택으로 넘어간다."},
+      {"order": 5, "heading": "6.6조원 현금성 재원이 10조원 투자계획의 씨앗이 됐다", "purpose": "자본배분", "scene": "현금성 자금, KKR 협력, 배당정책과 투자계획을 한 장에 놓는다.", "keyNumbers": ["현금성 자금 6.6조원", "KKR 협력 1.2조원", "투자계획 10조원", "2025년 주당배당금 3,190원"], "causalBridge": "돈이 충분하다는 사실과 투자가 좋은 수익을 낸다는 사실은 다르므로 사용처를 분리한다."},
+      {"order": 6, "heading": "10조원 투자는 자산경량 회사를 데이터센터 사업자로 바꾼다", "purpose": "전략반전", "scene": "AI 인프라, AX와 서비스, 인수합병 세 갈래의 자본집행을 본다.", "keyNumbers": ["AI 인프라 5조원", "AX와 AI 서비스 1조원", "신사업과 인수합병 4조원", "2031년까지"], "causalBridge": "투자 서사와 별개로 2026년 첫 분기 손익은 급락했으므로 원인을 분해한다."},
+      {"order": 7, "heading": "1분기 이익 71% 급감은 AI 실패가 아니라 충당금에서 시작됐다", "purpose": "오해교정", "scene": "2025년 1분기 영업이익에서 일회성 퇴직급여 1,120억원을 빼는 브리지다.", "keyNumbers": ["2026년 1분기 매출 3조3,529억원", "영업이익 783억원", "전년 대비 70.8% 감소", "일회성 퇴직급여 1,120억원"], "causalBridge": "일회성을 제거해도 사업 변화가 남으므로 외부 고객과 그룹 울타리를 확인한다."},
+      {"order": 8, "heading": "삼성 울타리는 고객 기반이면서 외부 성장의 시험대다", "purpose": "리스크", "scene": "대주주와 그룹 고객 기반, 공공 및 금융 외부 시장 확장을 함께 본다.", "keyNumbers": ["삼성전자 지분 약 23%", "삼성물산 지분 약 17%", "중앙부처 확대 대상 57곳"], "causalBridge": "결론은 AI라는 이름보다 사업별 이익과 자본수익을 다음 공시에서 반복 검증하는 것이다."},
+      {"order": 9, "heading": "다음 공시에서는 매출보다 클라우드 비중과 현금 소진 속도를 보라", "purpose": "관찰체계", "scene": "성장, 수익성, 투자, 현금, 고객 다변화 다섯 축의 체크리스트다.", "keyNumbers": ["클라우드 성장률", "IT서비스 12.6% 기준선", "물류 1.8% 기준선", "AI 인프라 5조원 계획"], "causalBridge": "두 엔진을 하나의 연결 매출로 보지 않는 읽기법으로 닫는다."}
+    ],
+    "sections": [
+      {
+        "order": 1,
+        "heading": "물류가 매출 53%를 차지했지만 이익은 14%만 만들었다",
+        "subtitle": "2025년 사업별 표 한 장이 연결 매출의 착시를 푼다.",
+        "visualAnchor": "169-revenue-profit-split.svg의 매출과 영업이익 이중 막대",
+        "explanation": "표에서 물류와 IT서비스의 매출 비중을 먼저 나누고, 같은 기준으로 영업이익의 주인이 누구인지 쉬운 숫자로 비교한다.",
+        "example": "물류는 매출 7조3,864억원으로 53%를 차지했지만 영업이익은 1,300억원에 그쳤고, IT서비스는 8,271억원을 남겼다.",
+        "support": "오해 방지: IT서비스 영업이익을 클라우드 단독 이익으로 바꾸지 않고 회사가 공시한 사업 범위를 그대로 유지한다.",
+        "transition": "다음 막에서는 물류 외형이 왜 이렇게 커졌는지 2022년 해상운임 봉우리부터 추적한다.",
+        "evaluation": "독자가 연결 매출 규모와 사업 가치가 같은 말이 아니라는 점을 첫 장면에서 이해할 수 있다."
+      },
+      {
+        "order": 2,
+        "heading": "운임이 만든 17조원 외형이 사라지자 회사의 체질이 보였다",
+        "subtitle": "물류의 운임 사이클과 클라우드의 구조적 성장을 같은 시간축에 놓는다.",
+        "visualAnchor": "169-freight-cloud-crossing.svg의 2022년 물류 봉우리와 클라우드 상승선",
+        "explanation": "공시 표에서 2022년부터 2025년까지 물류와 클라우드 매출을 나란히 읽어 일시적인 운임 효과와 반복 성장을 분리한다.",
+        "example": "2022년 연결 매출 17조2,347억원 중 물류가 11조2,666억원이었지만 2023년 연결 매출은 13조2,768억원으로 내려왔다.",
+        "support": "한계: 물류 매출 감소를 물동량 붕괴로 단정하지 않고 운임 정상화와 사업 믹스 변화가 함께 작용했음을 표시한다.",
+        "transition": "다음 막에서는 반대로 1조1,627억원에서 2조6,802억원으로 커진 클라우드의 내부 구조를 연다.",
+        "evaluation": "외형 축소가 곧 경쟁력 악화라는 단순한 결론을 피하고 두 엔진의 속도가 달랐음을 증명한다."
+      },
+      {
+        "order": 3,
+        "heading": "클라우드는 1.16조원에서 2.68조원으로 커져 ITO를 넘었다",
+        "subtitle": "CSP와 MSP와 SaaS가 기업 고객의 서로 다른 예산을 흡수한다.",
+        "visualAnchor": "169-freight-cloud-crossing.svg와 169-ai-operations-room.webp의 성장 및 운영 장면",
+        "explanation": "공시에서 CSP와 MSP와 SaaS를 구분해 데이터센터 용량, 전환 프로젝트, 업무 소프트웨어가 어떻게 하나의 클라우드 매출로 합쳐지는지 설명한다.",
+        "example": "클라우드 매출은 2022년 1조1,627억원에서 2025년 2조6,802억원으로 늘었고 2026년 1분기에는 6,909억원으로 ITO를 넘어섰다.",
+        "support": "주의: 회사가 클라우드 단독 영업이익을 공시하지 않으므로 5.8% 성장률을 곧바로 수익성 개선으로 해석하지 않는다.",
+        "transition": "다음 막에서는 성장의 질을 확인하기 위해 IT서비스와 물류의 실제 영업이익률을 분리한다.",
+        "evaluation": "AI라는 추상어를 데이터센터 사용료와 전환 용역, 소프트웨어 구독이라는 구체적인 매출원으로 바꾼다."
+      },
+      {
+        "order": 4,
+        "heading": "12.6%와 1.8%의 마진 차이가 연결 6.9%를 만들었다",
+        "subtitle": "두 엔진의 이익률과 현금창출력이 다음 자본배분을 결정한다.",
+        "visualAnchor": "169-margin-two-engines.svg와 169-ai-investment-map.svg의 마진 및 자금 지도",
+        "explanation": "사업별 영업이익 표에서 IT서비스 12.6%와 물류 1.8%를 계산하고, 연결 영업현금흐름과 단순 잉여현금을 함께 확인한다.",
+        "example": "2025년 연결 영업이익률은 6.9%였고 영업현금흐름은 1조2,033억원, 유형자산 취득액을 뺀 단순 잉여현금은 약 8,880억원이었다.",
+        "support": "조건: 단순 잉여현금은 운전자본과 인수합병, 금융자산 이동을 모두 반영한 기업가치 잉여현금 지표가 아니라 방향 확인용 계산이다.",
+        "transition": "다음 막에서는 6.6조원으로 제시된 현금성 재원이 10조원 투자계획과 어떻게 연결되는지 본다.",
+        "evaluation": "매출 성장보다 어느 사업이 현금을 만들고 어느 사업이 자본을 요구하는지 판단할 기준을 준다."
+      },
+      {
+        "order": 5,
+        "heading": "10조원 투자는 자산경량 회사를 데이터센터 사업자로 바꾼다",
+        "subtitle": "현금이 많다는 사실과 투자가 좋은 수익을 낸다는 사실을 분리한다.",
+        "visualAnchor": "169-ai-investment-map.svg와 169-ai-datacenter-build.webp의 투자 배분 및 건설 장면",
+        "explanation": "회사 발표 표에서 AI 인프라와 AX 서비스, 신사업 및 인수합병의 배분을 나누고 실제 재무상태표의 현금 계정 범위와 대조한다.",
+        "example": "2031년까지 계획한 10조원은 AI 인프라 5조원, AX와 AI 서비스 1조원, 신사업과 인수합병 4조원으로 나뉘며 KKR 협력 재원은 1.2조원이다.",
+        "support": "오해 방지: 10조원은 확정 집행액이나 보장된 매출이 아니고, 6.6조원은 현금및현금성자산 한 계정이 아니라 단기금융상품 등을 포함한 더 넓은 재원 표현이다.",
+        "transition": "다음 막에서는 장기 투자 서사와 충돌해 보이는 2026년 1분기 영업이익 급감을 비용 브리지로 해석한다.",
+        "evaluation": "투자 규모의 화려함보다 감가상각과 가동률, 인수 가격이 향후 자본수익률을 좌우한다는 질문을 남긴다."
+      },
+      {
+        "order": 6,
+        "heading": "다음 공시에서는 클라우드 비중과 현금 소진 속도를 함께 보라",
+        "subtitle": "일회성 비용과 그룹 고객 기반을 걷어낸 뒤 반복 가능한 성장을 판정한다.",
+        "visualAnchor": "169-q1-profit-bridge.svg와 본문 말미의 다음 공시 체크리스트",
+        "explanation": "분기 실적표에서 영업이익 감소액과 퇴직급여 충당금 1,120억원을 분리하고 외부 고객 확장 및 투자 집행을 다음 관찰축에 넣는다.",
+        "example": "2026년 1분기 영업이익은 783억원으로 70.8% 감소했지만 일회성 퇴직급여가 전년 대비 감소액 전부를 설명하지는 않는다.",
+        "support": "주의: 삼성 계열 고객은 안정적인 기반이지만 외부 시장의 독점 증거가 아니며 중앙부처 확대 대상 57곳도 확정 수주가 아니다.",
+        "transition": "결론에서는 AI라는 이름 대신 사업별 마진, 투자 집행, 현금, 외부 고객이라는 반복 검증법으로 두 엔진을 다시 묶는다.",
+        "evaluation": "독자가 다음 분기 공시에서 일회성과 본업, 계획과 집행을 스스로 구분할 수 있는 관찰 체계를 완성한다."
+      }
+    ],
+    "visuals": [
+      {"actOrder": 1, "kind": "grouped-bar", "title": "매출의 주인과 이익의 주인은 다르다", "proves": "물류는 매출 53%지만 영업이익 14%이고 IT서비스가 이익 86%를 만든다.", "seriesHint": "IT서비스와 물류의 2025년 매출 및 영업이익을 억원 단위로 병렬 비교", "placement": "1막 사업별 숫자를 처음 제시한 문단 직후", "insertAfter": "연결 매출만으로 회사를 부르면 두 사업의 경제성이 섞인다는 설명", "narrativeUse": "글 전체의 모순을 한눈에 고정하고 다음 역사 장면으로 독자를 넘긴다."},
+      {"actOrder": 2, "kind": "timeline", "title": "물류 봉우리와 클라우드 상승선", "proves": "2022년 운임이 만든 물류 외형은 낮아졌지만 클라우드는 4년 연속 커졌다.", "seriesHint": "2022년부터 2025년까지 물류와 클라우드 매출의 서로 다른 축과 방향", "placement": "2막 2022년과 2023년 연결 매출을 비교한 문단 직후", "insertAfter": "17조원 외형이 영구적인 기준선이 아니었다는 설명", "narrativeUse": "순환적 외형과 구조적 성장의 시간을 분리해 클라우드 메커니즘으로 연결한다."},
+      {"actOrder": 4, "kind": "margin-bars", "title": "12.6%와 1.8%가 만든 연결 6.9%", "proves": "같은 연결 회사 안에서도 두 사업의 매출 한 원이 남기는 이익이 크게 다르다.", "seriesHint": "IT서비스, 물류, 연결 전체의 2025년 영업이익률 세 막대", "placement": "4막 사업별 영업이익 계산 직후", "insertAfter": "IT서비스와 물류의 이익률 산식을 설명한 문단", "narrativeUse": "클라우드 성장의 가치가 매출 비중보다 고마진 IT서비스 안에서 커지는 데 있음을 보여준다."},
+      {"actOrder": 7, "kind": "waterfall", "title": "1분기 영업이익 급감의 비용 브리지", "proves": "1,120억원 퇴직급여가 감소의 큰 부분이지만 전부는 아니므로 본업 변화도 남는다.", "seriesHint": "2025년 1분기 영업이익, 일회성 퇴직급여, 기타 변화, 2026년 1분기 영업이익", "placement": "7막 전년 대비 70.8% 감소를 제시한 문단 직후", "insertAfter": "일회성 비용이 감소액의 약 59%를 설명한다는 계산", "narrativeUse": "AI 실패라는 성급한 해석과 일회성 전부라는 반대 과장을 동시에 차단한다."},
+      {"actOrder": 6, "kind": "allocation-map", "title": "10조원은 어디로 가는가", "proves": "투자계획 절반은 AI 인프라이고 나머지는 서비스와 인수합병이라 위험의 성격이 다르다.", "seriesHint": "AI 인프라 5조원, AX와 AI 서비스 1조원, 신사업과 인수합병 4조원", "placement": "6막 세 투자 바구니를 설명한 문단 직후", "insertAfter": "현금성 재원과 KKR 협력을 합쳐도 계획 전체와 같지 않다는 설명", "narrativeUse": "투자 총액을 감가상각과 인수 가격, 서비스 실행력의 세 질문으로 분해한다."}
+    ],
+    "imagePlan": [
+      {"slot": "hero", "path": "assets/169-cloud-logistics-hero.webp", "subject": "데이터센터 서버랙과 컨테이너항이 한 화면에 공존하는 기업 운영 풍경", "query": "cinematic photorealistic split scene of enterprise data center server racks and container port logistics at blue hour, no text, no logos", "keywords": ["enterprise data center", "container port", "cloud infrastructure", "logistics"], "insertAfterAct": 0, "placement": "제목 아래 첫 도입 문단 직후와 대표 이미지 배경", "narrativeUse": "서로 다른 두 엔진이 한 연결 회사에 들어 있다는 모순을 숫자보다 먼저 감각적으로 제시한다."},
+      {"slot": "inline", "path": "assets/169-ai-operations-room.webp", "subject": "기업용 AI 서비스를 감시하는 차분한 운영실과 실제 인프라 담당자", "query": "photorealistic enterprise AI operations room with engineers monitoring cloud infrastructure, restrained Korean corporate atmosphere, no text, no logos", "keywords": ["AI operations", "cloud engineers", "enterprise software", "infrastructure monitoring"], "insertAfterAct": 3, "placement": "3막 CSP와 MSP와 SaaS의 역할을 설명한 문단 뒤", "narrativeUse": "AI 매출이 추상적인 유행어가 아니라 사람과 서버가 함께 수행하는 운영 사업임을 보여준다."},
+      {"slot": "inline", "path": "assets/169-ai-datacenter-build.webp", "subject": "대규모 AI 데이터센터 건설 현장과 전력 및 냉각 설비", "query": "high-end editorial photograph of large AI data center construction with power and cooling infrastructure, realistic capital intensive project, no text, no logos", "keywords": ["AI data center", "construction", "cooling infrastructure", "capital expenditure"], "insertAfterAct": 6, "placement": "6막 5조원 AI 인프라 배분과 감가상각 위험을 설명한 문단 뒤", "narrativeUse": "자산경량 IT서비스 회사가 건설 기간과 가동률, 감가상각을 떠안는 전략 전환을 실물 장면으로 바꾼다."}
+    ],
+    "visualPlan": {
+      "hero": "169-cloud-logistics-hero.webp",
+      "inline": "169-ai-operations-room.webp",
+      "svgs": ["169-revenue-profit-split.svg", "169-freight-cloud-crossing.svg", "169-margin-two-engines.svg", "169-q1-profit-bridge.svg", "169-ai-investment-map.svg"]
+    },
+    "relatedPosts": {
+      "searches": ["네이버 클라우드", "카카오 AI", "CoreWeave GPU", "HD현대마린솔루션 물류"],
+      "links": [
+        {"path": "/blog/035420-naver", "title": "네이버, 플랫폼 현금은 AI 투자비를 감당할 수 있는가", "reason": "국내 클라우드와 AI 투자 비교", "placement": "3막 클라우드 성장 메커니즘 설명 뒤"},
+        {"path": "/blog/035720-kakao", "title": "카카오, 플랫폼과 AI 자본배분의 갈림길", "reason": "플랫폼과 AI 자본배분 비교", "placement": "3막 CSP와 MSP 구분 문단 뒤"},
+        {"path": "/blog/CRWV-coreweave", "title": "CoreWeave, GPU 매출보다 먼저 도착한 부채", "reason": "GPU 인프라의 자본집약성 비교", "placement": "5막 현금과 투자 재원 설명 뒤"},
+        {"path": "/blog/443060-hd-marine-aftermarket", "title": "HD현대마린솔루션, 배를 만들지 않고 이익을 만든다", "reason": "물류와 서비스 매출의 질 비교", "placement": "결론의 두 엔진 비교 문단 뒤"}
+      ],
+      "placementRule": "관련 개념을 반복 설명하지 않고 해당 재무 숫자를 비교하는 문단 직후에 한 번만 연결한다. 결론에서는 네 편을 한 줄로만 묶는다."
+    },
+    "honestyGuards": [
+      "사업별 영업이익은 회사 실적자료의 공시값을 사용하고 클라우드 단독 이익률로 바꾸지 않는다.",
+      "현금성 자금 6.6조원은 회사의 투자재원 발표 표현이며 재무상태표 현금및현금성자산 단일 계정과 같다고 쓰지 않는다.",
+      "2026년 1분기 이익 감소 전부를 퇴직급여 1,120억원으로 설명하지 않는다. 감소액의 약 59%만 설명한다.",
+      "10조원은 2031년까지의 계획이며 확정 집행액이나 매출이 아니다.",
+      "클라우드가 ITO를 넘었다는 것은 2026년 1분기 IT서비스 매출 항목 기준이다.",
+      "그룹 고객 기반을 독점이나 부당지원으로 단정하지 않는다.",
+      "목표가와 매수 및 매도 판단을 제시하지 않는다."
+    ],
+    "evidenceMap": [
+      {"claim": "2025년 연결 매출 13조9,299억원, 영업이익 9,571억원", "sourceType": "dartlab 및 공식 IR", "period": "2025 연간", "sourceRef": "Company 018260 IS, Samsung SDS 4Q25 Earnings Release"},
+      {"claim": "IT서비스 매출 6조5,435억원과 영업이익 8,271억원", "sourceType": "공식 IR", "period": "2025 연간", "sourceRef": "Samsung SDS 4Q25 Earnings Release"},
+      {"claim": "물류 매출 7조3,864억원과 영업이익 1,300억원", "sourceType": "공식 IR", "period": "2025 연간", "sourceRef": "Samsung SDS 4Q25 Earnings Release"},
+      {"claim": "2022년 물류 11조2,666억원, 클라우드 1조1,627억원", "sourceType": "공식 발표", "period": "2022 연간", "sourceRef": "Samsung SDS 2022 Financial Results"},
+      {"claim": "2025년 클라우드 2조6,802억원", "sourceType": "공식 IR", "period": "2025 연간", "sourceRef": "Samsung SDS 4Q25 Earnings Release"},
+      {"claim": "2026년 1분기 클라우드 6,909억원과 ITO 추월", "sourceType": "공식 발표", "period": "2026 Q1", "sourceRef": "Samsung SDS First-Quarter 2026 Results"},
+      {"claim": "2026년 1분기 영업이익 783억원과 퇴직급여 1,120억원", "sourceType": "공식 발표", "period": "2026 Q1", "sourceRef": "Samsung SDS First-Quarter 2026 Results"},
+      {"claim": "2031년까지 10조원 투자와 5조, 1조, 4조 배분", "sourceType": "공식 발표", "period": "2026~2031 계획", "sourceRef": "Samsung SDS First-Quarter 2026 Results and Value-up Plan"},
+      {"claim": "현금성 재원 6.6조원과 KKR 협력 1.2조원", "sourceType": "공식 발표", "period": "2026년 4월", "sourceRef": "Samsung SDS First-Quarter 2026 Results"},
+      {"claim": "2025년 영업현금흐름 1조2,033억원", "sourceType": "dartlab", "period": "2025 연간", "sourceRef": "Company 018260 CF"}
+    ],
+    "reviewGate": {
+      "status": "passed",
+      "requiredRounds": [
+        {"id": "titleHook", "status": "passed"}, {"id": "writerPanel", "status": "passed"}, {"id": "honestyEvidence", "status": "passed"}, {"id": "sectionFlow", "status": "passed"}, {"id": "visualStoryPlan", "status": "passed"}, {"id": "imageFit", "status": "passed"}, {"id": "readerFit", "status": "passed"}, {"id": "reevaluation", "status": "passed"}
+      ],
+      "decisionLog": [
+        {"round": "r1", "decision": "revise", "note": "AI 성장만 강조하면 물류 53%와 1.8% 마진, 2022년 운임 기저, 10조원 투자의 자본집약성이 사라졌다."},
+        {"round": "r2", "decision": "passed", "note": "매출과 이익의 주인을 분리하고 운임 봉우리, 클라우드 교차, 현금, 투자, 일회성 비용을 한 인과선으로 연결했다."}
+      ],
+      "loopEvidence": {
+        "workflow": "blog_plan_loop.workflow.js",
+        "rounds": [
+          {"round": 1, "planner": "AI와 클라우드 성장 중심의 초안을 구성했다.", "evaluator": "물류 53%와 1.8% 마진, 운임 기저, 10조원 투자의 자본집약성이 약하다.", "skeptic": "현금 6.6조원을 현금 단일 계정으로 쓰거나 1분기 감소 전부를 일회성으로 돌리면 과장이다.", "decision": "revise", "evaluatorScore": 87, "plannerRevision": "매출과 이익 분리, 현금 계정 범위, 일회성 설명 비중을 전면에 추가했다."},
+          {"round": 2, "planner": "두 엔진의 역사와 마진, 현금, 투자, 1분기 비용을 한 인과선으로 재작성했다.", "evaluator": "사업별 범위와 투자계획의 불확실성이 분명하고 독자가 다음 공시를 검증할 수 있다.", "skeptic": "과도한 AI 프레임과 계획의 확정 수익화가 제거됐다.", "decision": "passed", "evaluatorScore": 97, "plannerRevision": "평가 피드백을 반영해 외부 고객과 자본수익 검증을 최종 관찰축으로 고정했다."}
+        ],
+        "note": "메인 스레드에서 공식 IR, DART, dartlab 숫자를 재검산했다."
+      }
+    }
+  },
+  "passed": true,
+  "rounds": 2,
+  "corpName": "삼성에스디에스",
+  "stockCode": "018260",
+  "contentKind": "company-reports"
+}

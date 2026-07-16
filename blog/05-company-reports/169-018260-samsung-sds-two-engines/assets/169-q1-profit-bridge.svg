@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title id="title">삼성SDS 2026년 1분기 영업이익 급감 분해</title>
+  <desc id="desc">영업이익은 2025년 1분기 2685억원에서 2026년 1분기 783억원으로 줄었고 퇴직급여 충당금 1120억원이 일회성 비용으로 반영됐다.</desc>
+  <rect width="1200" height="675" rx="30" fill="#07111f"/>
+  <text x="70" y="78" fill="#f8fafc" font-family="Pretendard, sans-serif" font-size="34" font-weight="800">이익 71% 급감, 그중 1,120억원은 일회성이었다</text>
+  <text x="70" y="114" fill="#94a3b8" font-family="Pretendard, sans-serif" font-size="17">2025년 1분기에서 2026년 1분기, 단위 억원</text>
+  <g font-family="Pretendard, sans-serif">
+    <line x1="90" y1="530" x2="1110" y2="530" stroke="#334155" stroke-width="2"/>
+    <rect x="120" y="190" width="200" height="340" rx="20" fill="#38bdf8"/>
+    <text x="220" y="170" text-anchor="middle" fill="#7dd3fc" font-size="30" font-weight="900">2,685</text>
+    <text x="220" y="570" text-anchor="middle" fill="#e2e8f0" font-size="18" font-weight="800">2025년 1분기</text>
+    <path d="M320 190 H465 V332 H590" fill="none" stroke="#fb7185" stroke-width="8"/>
+    <rect x="465" y="190" width="125" height="142" rx="14" fill="#fb7185" opacity="0.9"/>
+    <text x="527" y="250" text-anchor="middle" fill="#4c0519" font-size="24" font-weight="900">-1,120</text>
+    <text x="527" y="355" text-anchor="middle" fill="#fda4af" font-size="16">퇴직급여 기준 변경</text>
+    <path d="M590 332 H735 V431 H860" fill="none" stroke="#a78bfa" stroke-width="8"/>
+    <rect x="735" y="332" width="125" height="99" rx="14" fill="#a78bfa" opacity="0.9"/>
+    <text x="797" y="392" text-anchor="middle" fill="#2e1065" font-size="24" font-weight="900">-782</text>
+    <text x="797" y="456" text-anchor="middle" fill="#c4b5fd" font-size="16">기타 사업 변동</text>
+    <rect x="860" y="431" width="200" height="99" rx="20" fill="#22d3ee"/>
+    <text x="960" y="412" text-anchor="middle" fill="#67e8f9" font-size="30" font-weight="900">783</text>
+    <text x="960" y="570" text-anchor="middle" fill="#e2e8f0" font-size="18" font-weight="800">2026년 1분기</text>
+    <rect x="350" y="595" width="500" height="42" rx="21" fill="#132238"/>
+    <text x="600" y="622" text-anchor="middle" fill="#cbd5e1" font-size="16">일회성 비용이 감소액 1,902억원의 약 59%를 설명</text>
+  </g>
+</svg>

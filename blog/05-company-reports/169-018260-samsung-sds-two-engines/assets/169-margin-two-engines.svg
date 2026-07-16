@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title id="title">삼성SDS 두 사업의 영업이익률</title>
+  <desc id="desc">2025년 IT서비스 영업이익률은 12.6퍼센트, 물류는 1.8퍼센트, 연결은 6.9퍼센트다.</desc>
+  <rect width="1200" height="675" rx="30" fill="#07111f"/>
+  <text x="70" y="78" fill="#f8fafc" font-family="Pretendard, sans-serif" font-size="34" font-weight="800">53%의 매출이 1.8% 마진을 통과한다</text>
+  <text x="70" y="114" fill="#94a3b8" font-family="Pretendard, sans-serif" font-size="17">2025년 사업별 영업이익률</text>
+  <g font-family="Pretendard, sans-serif">
+    <line x1="220" y1="545" x2="1080" y2="545" stroke="#334155" stroke-width="2"/>
+    <rect x="280" y="177" width="180" height="368" rx="20" fill="#22d3ee"/>
+    <text x="370" y="158" text-anchor="middle" fill="#67e8f9" font-size="28" font-weight="900">12.6%</text>
+    <text x="370" y="588" text-anchor="middle" fill="#f8fafc" font-size="20" font-weight="800">IT서비스</text>
+    <rect x="570" y="344" width="180" height="201" rx="20" fill="#38bdf8"/>
+    <text x="660" y="325" text-anchor="middle" fill="#7dd3fc" font-size="28" font-weight="900">6.9%</text>
+    <text x="660" y="588" text-anchor="middle" fill="#f8fafc" font-size="20" font-weight="800">연결</text>
+    <rect x="860" y="492" width="180" height="53" rx="18" fill="#fbbf24"/>
+    <text x="950" y="473" text-anchor="middle" fill="#fde68a" font-size="28" font-weight="900">1.8%</text>
+    <text x="950" y="588" text-anchor="middle" fill="#f8fafc" font-size="20" font-weight="800">물류</text>
+    <text x="70" y="640" fill="#64748b" font-size="15">출처: 삼성SDS 2025년 4분기 실적발표</text>
+  </g>
+</svg>

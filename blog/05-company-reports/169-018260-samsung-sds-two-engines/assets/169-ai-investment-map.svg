@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title id="title">삼성SDS 2031년까지 10조원 AI 투자 계획</title>
+  <desc id="desc">AI 인프라 5조원, AX와 AI 서비스 1조원, 신사업과 인수합병 4조원으로 나뉜다.</desc>
+  <rect width="1200" height="675" rx="30" fill="#07111f"/>
+  <text x="70" y="78" fill="#f8fafc" font-family="Pretendard, sans-serif" font-size="34" font-weight="800">현금 부자가 10조원짜리 AI 건설사로 이동한다</text>
+  <text x="70" y="114" fill="#94a3b8" font-family="Pretendard, sans-serif" font-size="17">2031년까지 회사 발표 투자 계획</text>
+  <g font-family="Pretendard, sans-serif">
+    <circle cx="265" cy="352" r="142" fill="#0d1b2e" stroke="#22d3ee" stroke-width="5"/>
+    <text x="265" y="330" text-anchor="middle" fill="#67e8f9" font-size="22" font-weight="800">총 투자</text>
+    <text x="265" y="380" text-anchor="middle" fill="#f8fafc" font-size="44" font-weight="900">10조원</text>
+    <text x="265" y="414" text-anchor="middle" fill="#94a3b8" font-size="16">2026년부터 2031년</text>
+    <path d="M420 245 H555" stroke="#334155" stroke-width="4"/><path d="M420 352 H555" stroke="#334155" stroke-width="4"/><path d="M420 459 H555" stroke="#334155" stroke-width="4"/>
+    <rect x="555" y="185" width="555" height="120" rx="22" fill="#103a4a"/>
+    <text x="600" y="232" fill="#67e8f9" font-size="24" font-weight="900">5조원, AI 인프라</text>
+    <text x="600" y="270" fill="#cbd5e1" font-size="17">구미 AI 데이터센터, 국가 AI 컴퓨팅센터, 수요형 센터</text>
+    <rect x="555" y="322" width="555" height="90" rx="22" fill="#15304a"/>
+    <text x="600" y="360" fill="#7dd3fc" font-size="24" font-weight="900">1조원, AX와 AI 서비스</text>
+    <text x="600" y="392" fill="#cbd5e1" font-size="17">기업 전환, 플랫폼, 솔루션 경쟁력</text>
+    <rect x="555" y="429" width="555" height="120" rx="22" fill="#32255a"/>
+    <text x="600" y="476" fill="#c4b5fd" font-size="24" font-weight="900">4조원, 신사업과 인수합병</text>
+    <text x="600" y="514" fill="#cbd5e1" font-size="17">글로벌 거점과 새 성장축 확보</text>
+    <text x="70" y="620" fill="#64748b" font-size="15">투자 재원 발표: 현금성 자금 6.6조원, KKR 협력 1.2조원 포함</text>
+  </g>
+</svg>
