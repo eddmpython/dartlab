@@ -47,7 +47,7 @@
 			path: 'panel · allFilings',
 			cadence: { kr: '매일 동기화', en: 'daily sync' },
 			license: { kr: 'DART 이용약관', en: 'DART terms' },
-			sync: { dir: 'dart/allFilings', file: 'recent.parquet', expectDays: 1 },
+			sync: { dir: 'dart/allFilings/byCode', file: 'manifest.json', expectDays: 1 },
 			check: { workflow: 'originalSync.yml', expectDays: 1 } // panel·allFilings 매일 02:00 UTC
 		},
 		{

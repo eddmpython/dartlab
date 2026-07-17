@@ -379,6 +379,10 @@ def _writeCurrentPointerManifest(
         )
     if not isinstance(fileSources, dict):
         fileSources = {}
+    requiredFiles = payload.get("requiredFiles") if isinstance(payload.get("requiredFiles"), list) else []
+    if requiredFiles:
+        required = {str(name) for name in requiredFiles}
+        fileSources = {name: repoPath for name, repoPath in fileSources.items() if name in required}
     for name in files:
         fileSources[name] = f"{stagingPrefix}/{name}"
     payload["fileSources"] = fileSources

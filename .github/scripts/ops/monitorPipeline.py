@@ -42,7 +42,7 @@ MONITORED_WORKFLOWS = [
 ]
 
 FAILURE_LABEL = "pipeline-failure"
-RECENT_N = 3
+RECENT_N = 5
 _OK_CONCLUSIONS = ("success", "skipped")
 
 # 스케줄 누락(cron drop) 감지 — 최신 run 이 성공이어도 이 시간(h)보다 오래됐으면 stale(드랍된 cron)로 판정.
@@ -122,13 +122,38 @@ def _classifyFailure(runId: int) -> str:
         >>> _classifyFailure(0)  # doctest: +SKIP
         'unknown'
     """
-    out = _gh(["run", "view", str(runId)], check=False).lower()
+    out = _gh(["run", "view", str(runId), "--log-failed"], check=False).lower()
+    if not out:
+        out = _gh(["run", "view", str(runId)], check=False).lower()
     if not out:
         return "unknown"
     for label, sigs in _SIG.items():
         if any(s in out for s in sigs):
             return label
     return "code/기타"
+
+
+def _classifyFailureWindow(runs: list[dict]) -> dict:
+    """최근 연속 실패 전체를 분류해 최신 한 건이 이전 원인을 덮지 않게 한다."""
+    history: list[dict] = []
+    for run in runs:
+        conclusion = run.get("conclusion")
+        if conclusion in (*_OK_CONCLUSIONS, "", None):
+            break
+        runId = run.get("databaseId")
+        cause = _classifyFailure(runId) if runId else "unknown"
+        history.append({"runId": runId, "url": run.get("url", "-"), "cause": cause})
+    if not history:
+        return {"classification": "unknown", "causeHistory": []}
+    counts: dict[str, int] = {}
+    for item in history:
+        cause = item["cause"]
+        counts[cause] = counts.get(cause, 0) + 1
+    priority = {label: len(_SIG) - index for index, label in enumerate(_SIG)}
+    priority.update({"code/기타": 1, "unknown": 0})
+    dominant = max(counts, key=lambda label: (counts[label], priority.get(label, 0)))
+    classification = f"{dominant} ({counts[dominant]}/{len(history)})" if len(history) > 1 else dominant
+    return {"classification": classification, "causeHistory": history}
 
 
 def _rerunFailed(runId: int) -> bool:
@@ -242,6 +267,11 @@ def _findOpenIssue() -> int | None:
         return None
 
 
+def _updateIssue(number: int, title: str, body: str) -> None:
+    """열린 이슈의 제목과 본문을 함께 갱신해 오래된 원인이 남지 않게 한다."""
+    _gh(["issue", "edit", str(number), "--title", title, "--body", body])
+
+
 def _issueTitle(persistent: list[dict], retried: list[dict], stale: list[dict] | None = None) -> str:
     """실패 Issue 제목 — 연속 실패가 있으면 'Pipeline failure', 단발·누락뿐이면 '(자동 재실행 중)' 표기.
 
@@ -287,7 +317,7 @@ def main():
         entry = {"name": name, **triage}
 
         if triage["state"] in ("persistent", "transient"):
-            entry["classification"] = _classifyFailure(triage["runId"]) if triage["runId"] else "unknown"
+            entry.update(_classifyFailureWindow(runs))
 
         if triage["state"] == "persistent":
             persistent.append(entry)
@@ -319,13 +349,13 @@ def main():
     failing = persistent + retried + stale  # 실패(단발·연속)+스케줄 누락 모두 알린다(가시성 우선 — 조용한 갭 0)
     if failing:
         body = _buildIssueBody(statuses, persistent, retried, stale)
+        title = _issueTitle(persistent, retried, stale)
         if openIssue:
-            _gh(["issue", "comment", str(openIssue), "--body", body])
+            _updateIssue(openIssue, title, body)
             print(
                 f"[monitor] 기존 Issue #{openIssue} 갱신 (연속 {len(persistent)} · 단발 {len(retried)} · 누락 {len(stale)})"
             )
         else:
-            title = _issueTitle(persistent, retried, stale)
             out = _gh(["issue", "create", "--title", title, "--body", body, "--label", FAILURE_LABEL])
             print(f"[monitor] Issue 생성 (연속 {len(persistent)} · 단발 {len(retried)} · 누락 {len(stale)}): {out}")
     elif openIssue:
@@ -378,6 +408,14 @@ def _buildIssueBody(
         for r in retried:
             mark = "재실행됨" if r.get("reran") else "재실행 실패"
             lines.append(f"- {r['name']}: {r.get('classification', '-')} ({mark}) — [로그]({r['url']})")
+
+    histories = [item for status in (persistent + retried) for item in status.get("causeHistory", [])]
+    if histories:
+        lines.append("\n### 최근 연속 실패 원인 이력")
+        for item in histories:
+            lines.append(
+                f"- run `{item.get('runId')}`: **{item.get('cause', 'unknown')}** — [실패 로그]({item.get('url', '-')})"
+            )
 
     lines.append(
         f"\n> 자동 생성 by Pipeline Monitor ({now}). 모든 실패 알림 — 단발은 자동 재실행, 스케줄 누락(cron drop)은 "

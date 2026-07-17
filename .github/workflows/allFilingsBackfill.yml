@@ -35,7 +35,7 @@ concurrency:
 jobs:
   allfilings-backfill:
     runs-on: ubuntu-latest
-    timeout-minutes: 75
+    timeout-minutes: 120
 
     steps:
       - uses: actions/checkout@v6
@@ -53,7 +53,7 @@ jobs:
         run: uv run python -c "import dartlab"
 
       - name: allFilings 과거 백필
-        timeout-minutes: 50
+        timeout-minutes: 65
         env:
           DART_API_KEYS: ${{ secrets.DART_API_KEYS }}
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
@@ -63,8 +63,8 @@ jobs:
           DARTLAB_HF_RETRY_MAX_SINGLE_WAIT_SECONDS: '120'
         run: uv run python -X utf8 -m dartlab.pipeline allFilingsBackfill
 
-      - name: 비정기공시 통합 parquet 갱신 + HF push
-        timeout-minutes: 20
+      - name: 비정기공시 코드 버킷 증분 갱신 + HF 원자 push
+        timeout-minutes: 30
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           DARTLAB_HF_RETRY_ATTEMPTS: '3'
@@ -72,7 +72,7 @@ jobs:
         run: uv run python -X utf8 .github/scripts/sync/buildAllFilingsRecent.py
 
       - name: allFilings search source manifest + catalog
-        timeout-minutes: 15
+        timeout-minutes: 20
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           SEARCH_CATALOG_BOOTSTRAP: ${{ github.event.inputs.search_catalog_bootstrap == 'true' && '1' || '0' }}

@@ -25,6 +25,7 @@ terminal-strategy-lab 05 §3·§11(G-M1). 전종목 일별(2010~, survivorship-c
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from datetime import date, datetime, timezone
 from pathlib import Path
@@ -111,12 +112,44 @@ def _ymIdx(col: pl.Expr) -> pl.Expr:
 
 
 def _loadAllFilings() -> pl.DataFrame | None:
-    """allFilings recent.parquet (수시공시 — report_nm·rcept_dt). 로컬 우선·HF fallback.
+    """allFilings 코드 파티션(수시공시 - report_nm·rcept_dt). 로컬 우선·HF fallback.
     ⚠ 커버리지 2024-09+ → 그 이전 폐지의 합병 식별 불가(unknown 처리)."""
     cols = ["stock_code", "rcept_dt", "report_nm"]
-    local = ROOT / "data" / "dart" / "allFilings" / "recent.parquet"
-    if local.exists():
-        return pl.read_parquet(local, columns=cols)
+    localDir = ROOT / "data" / "dart" / "allFilings"
+    localPartitions = sorted((localDir / "byCode").glob("*_recent.parquet"))
+    if localPartitions:
+        return pl.concat([pl.read_parquet(path, columns=cols) for path in localPartitions], how="vertical_relaxed")
+    legacy = localDir / "recent.parquet"
+    if legacy.exists():
+        return pl.read_parquet(legacy, columns=cols)
+    try:
+        from huggingface_hub import hf_hub_download
+
+        manifestPath = retryHfCall(
+            hf_hub_download,
+            repo_id=HF_REPO,
+            repo_type="dataset",
+            filename="dart/allFilings/byCode/manifest.json",
+            token=_env("HF_TOKEN") or None,
+        )
+        manifest = json.loads(Path(manifestPath).read_text(encoding="utf-8"))
+        files = [
+            str(item["file"]) for item in manifest.get("partitions", []) if isinstance(item, dict) and item.get("file")
+        ]
+        cached = [
+            retryHfCall(
+                hf_hub_download,
+                repo_id=HF_REPO,
+                repo_type="dataset",
+                filename=f"dart/allFilings/byCode/{name}",
+                token=_env("HF_TOKEN") or None,
+            )
+            for name in files
+        ]
+        if cached:
+            return pl.concat([pl.read_parquet(path, columns=cols) for path in cached], how="vertical_relaxed")
+    except Exception as exc:  # noqa: BLE001
+        print(f"[universe] allFilings 파티션 부재 ({type(exc).__name__}), legacy fallback")
     try:
         from huggingface_hub import hf_hub_download
 

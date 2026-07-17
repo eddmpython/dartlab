@@ -1,7 +1,7 @@
-// 비정기(수시)공시 · dart/allFilings/recent.parquet (HF, 전 이력 통합 1파일) 을 stock_code
-// 필터로 단건 읽기. 일자 date-scan(휴일 404 콘솔오염) 폐기 · 통합파일은 stock_code 정렬이라
-// filter pushdown 이 회사 row-group 만 읽음. content_raw 없음(빌드시 메타만). per-code 캐시.
-// 통합파일 생성: .github/scripts/sync/buildAllFilingsRecent.py (정기보고서는 이미 제외됨).
+// 비정기(수시)공시 · dart/allFilings/byCode/{prefix}_recent.parquet (HF, 코드 앞 2자리 파티션)을
+// stock_code 필터로 읽는다. 전체 이력이 커져도 한 회사 read 크기는 해당 버킷으로 제한된다.
+// 이관 전에는 legacy recent.parquet로 자동 fallback한다. content_raw 없음(빌드시 메타만).
+// 파티션 생성: .github/scripts/sync/buildAllFilingsRecent.py (정기보고서는 이미 제외됨).
 // 타입 정본 = contracts (NonRegularFiling 승격 완료 · 중복 정의 금지).
 import type { MarketFiling, NonRegularFiling } from '@dartlab/ui-contracts';
 import { resolveMarket } from '@dartlab/ui-contracts';
@@ -18,6 +18,53 @@ interface RecentRow extends Record<string, unknown> {
 
 const COLS = ['stock_code', 'rcept_dt', 'report_nm', 'rcept_no', 'flr_nm'];
 const REGULAR = ['사업보고서', '반기보고서', '분기보고서'];
+
+function partitionPath(code: string): string {
+	return `dart/allFilings/byCode/${code.slice(0, 2)}_recent.parquet`;
+}
+
+async function loadKrRows(core: DataCore, codes: string[]): Promise<RecentRow[]> {
+	const grouped = new Map<string, string[]>();
+	for (const code of codes) {
+		const bucket = code.slice(0, 2);
+		grouped.set(bucket, [...(grouped.get(bucket) ?? []), code]);
+	}
+	const partitions = await Promise.all(
+		[...grouped.entries()].map(async ([bucket, bucketCodes]) => {
+			try {
+				const rows = await core.requestParquetRows<RecentRow>({
+					origin: 'hfRange',
+					path: partitionPath(bucketCodes[0] ?? bucket),
+					columns: COLS,
+					filter: { stock_code: { $in: bucketCodes } },
+					cacheKey: `allFilings.byCode:${bucket}:${bucketCodes.slice().sort().join(',')}`,
+					cache: { scope: 'memory', ttlMs: 10 * 60_000, maxEntries: 128 }
+				});
+				return { ok: true, rows, bucketCodes };
+			} catch {
+				return { ok: false, rows: [] as RecentRow[], bucketCodes };
+			}
+		})
+	);
+	const available = partitions.flatMap((result) => result.rows);
+	const failedCodes = partitions.filter((result) => !result.ok).flatMap((result) => result.bucketCodes);
+	if (!failedCodes.length) return available;
+
+	// 안전한 순차 이관과 부분 장애 대응: 실패한 버킷만 legacy 통합 파일에서 보충한다.
+	try {
+		const legacy = await core.requestParquetRows<RecentRow>({
+			origin: 'hfRange',
+			path: 'dart/allFilings/recent.parquet',
+			columns: COLS,
+			filter: { stock_code: { $in: failedCodes } },
+			cacheKey: `allFilings.legacy:${failedCodes.slice().sort().join(',')}`,
+			cache: { scope: 'memory', ttlMs: 10 * 60_000, maxEntries: 32 }
+		});
+		return [...available, ...legacy];
+	} catch {
+		return available;
+	}
+}
 
 function fmtDate(s: string): string {
 	const c = String(s).replace(/\D/g, '').slice(0, 8);
@@ -133,14 +180,7 @@ export async function loadCompanyNonRegularFilings(core: DataCore, stockCode: st
 	try {
 		// HF 누적(전 이력) + 라이브 당일 공시(이 종목분 필터) 동시 · 라이브가 배치 사이 갭(당일) 메움.
 		const [rows, live] = await Promise.all([
-			core.requestParquetRows<RecentRow>({
-				origin: 'hfRange',
-				path: 'dart/allFilings/recent.parquet',
-				columns: COLS,
-				filter: { stock_code: { $in: [code] } },
-				cacheKey: `allFilings.recent:one:${code}`,
-				cache: { scope: 'memory', ttlMs: 10 * 60_000, maxEntries: 256 } // 신선도 · 짧은 TTL, 자체 Map 폐기
-			}),
+			loadKrRows(core, [code]),
 			loadLiveMarketFilings(core)
 		]);
 		const seen = new Set<string>();
@@ -174,7 +214,7 @@ export async function loadCompanyNonRegularFilings(core: DataCore, stockCode: st
 	}
 }
 
-// 워치 신선도 · 여러 종목을 한 read 로 ($in:[codes]). 단일판과 동일 HF 파일·정규화, code→목록 그룹핑.
+// 워치 신선도 · 여러 종목을 코드 버킷별 병렬 read로 묶는다. 단일판과 동일 정규화, code→목록 그룹핑.
 // 공개/로컬 공통배선(둘 다 이 함수 호출 → 백엔드 0). 캐시·dedup 은 fetch 코어(data/fetch) 담당 ·
 // 신선도 데이터라 짧은 TTL(10분). 자체 batchCache Map 폐기(데이터 워크벤치 SSOT 이관 P1).
 export async function loadRecentFilingsForCodes(
@@ -184,14 +224,7 @@ export async function loadRecentFilingsForCodes(
 	const valid = [...new Set(codes.map((c) => String(c).trim()).filter((c) => /^\d{6}$/.test(c)))];
 	if (!valid.length) return {};
 	try {
-		const rows = await core.requestParquetRows<RecentRow>({
-			origin: 'hfRange',
-			path: 'dart/allFilings/recent.parquet',
-			columns: COLS,
-			filter: { stock_code: { $in: valid } },
-			cacheKey: `allFilings.recent:${valid.slice().sort().join(',')}`,
-			cache: { scope: 'memory', ttlMs: 10 * 60_000, maxEntries: 32 }
-		});
+		const rows = await loadKrRows(core, valid);
 		const wanted = new Set(valid);
 		const out: Record<string, NonRegularFiling[]> = {};
 		const seen = new Set<string>(); // code:rceptNo 중복 제거

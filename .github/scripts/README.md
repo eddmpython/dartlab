@@ -34,7 +34,7 @@ repo 의 `scripts/` (build/dev/audit 도구) 와 *별개* — `.github/scripts/`
 | [sync/buildMacroData.py](sync/buildMacroData.py) | FRED/ECOS 카탈로그 → HF macro 벌크 parquet | `macroData.yml` |
 | [sync/buildMacroCycle.py](sync/buildMacroCycle.py) | analyzeCycle → `macro/cycle/{kr,us}.json` HF push (KR/US phase 분석) | `macroData.yml` |
 | [sync/prebuildValuation.py](sync/prebuildValuation.py) | valuation snapshot parquet 빌드 + HF 업로드 (Naver API) | `valuationSnapshot.yml` |
-| [sync/buildAllFilingsRecent.py](sync/buildAllFilingsRecent.py) | 비정기(수시)공시 메타 **전역 1파일** `dart/allFilings/recent.parquet` 빌드 + HF push (전 이력·`stock_code` 정렬, trim 없음) | `originalSync.yml` (allfilings·allfilings-backfill 잡) |
+| [sync/buildAllFilingsRecent.py](sync/buildAllFilingsRecent.py) | 비정기공시 메타를 `dart/allFilings/byCode/{prefix}_recent.parquet`로 증분 빌드하고 manifest와 90일 피드를 원자 배포 | `originalSync.yml`, `allFilingsBackfill.yml` |
 | [sync/buildGovData.py](sync/buildGovData.py) | gov 주가/지수 date 샤드 + `gov/prices/recent.parquet`(스파크라인) + `company/{code}` derive | `buildGovPriceData.yml`·`buildGovIndexData.yml` |
 
 ### prebuild/ — derived artifact build (parquet → JSON / aggregate)
@@ -61,7 +61,7 @@ repo 의 `scripts/` (build/dev/audit 도구) 와 *별개* — `.github/scripts/`
 
 | 스크립트 | 역할 | 호출 workflow |
 |---|---|---|
-| [search/buildSearchMain.py](search/buildSearchMain.py) | content 인덱스 단일 빌드(compact-only) — no-change 단락/풀 compaction + per-source 가드 + clean publish + lite | `searchIndexBuild.yml` |
+| [search/buildSearchMain.py](search/buildSearchMain.py) | content 인덱스 월간 main compaction + 일간 누적 delta/tombstone + 변경 artifact 배포 + lite | `searchIndexBuild.yml` |
 | [search/buildSkillMarket.py](search/buildSkillMarket.py) | GitHub Discussion → Skill Market 정적 인덱스 | `deploy-landing.yml` |
 
 ### ops/ — operational
@@ -96,11 +96,11 @@ from _hfRetry import retryHfCall  # noqa: E402
 | `gov/prices/company/{code}.parquet` | sync/buildGovData `--derive-companies` | `govPriceSource` |
 | `landing/map/companies/{code}.json` | prebuild/buildIndustryMap | `relationsSource` |
 
-**패턴 2 — 전역 1파일 + `stock_code` 필터** (회사마다 얇은 슬라이스. parquet row-group filter pushdown = HTTP range read 로 *그 회사 row-group 만* 다운로드)
+**패턴 2 — 코드 파티션 또는 전역 파일 + `stock_code` 필터** (회사마다 얇은 슬라이스만 HTTP range read)
 
 | 아티팩트 | 빌더 | 런타임 소비자 | 갱신 |
 |---|---|---|---|
-| `dart/allFilings/recent.parquet` (비정기) | sync/buildAllFilingsRecent | `nonRegularFilingsSource` | 전 이력·매 cron 재빌드(forward+backfill 누적). ⚠ trim 되살리지 말 것 |
+| `dart/allFilings/byCode/{prefix}_recent.parquet` (비정기) | sync/buildAllFilingsRecent | `nonRegularFilingsSource` | 전 이력 유지, 변경 코드 버킷만 갱신. `byCode/manifest.json`이 레이아웃 SSOT |
 | `dart/scan/report/{employee,investedCompany,dividend,treasuryStock}.parquet` | prebuild/prebuildData | `reportSource` (좌측 회사패널) | 전 이력, scan prebuild |
 | `metadata/corpList.parquet` (KRX KIND 상장목록) | meta/updateKindList | `productIndexSource` | 일배치 |
 | `metadata/dartList.parquet` (`corp_code↔stock_code↔명`) | meta/updateDartList | gather(공시에 stock_code 부착)·검색 | 일배치 |
@@ -110,7 +110,7 @@ from _hfRetry import retryHfCall  # noqa: E402
 
 **패턴 3 — 연/날짜 샤드 + 필터**: `gov/prices/date/{year}.parquet`(`priceSource`) · `gov/indices/{index/{key}|date/{year}}.parquet`(`govIndexSource`).
 
-> **재빌드 주의(운영)**: 패턴 2 전역 파일은 빌더 재실행 → HF push 로만 갱신된다. `recent.parquet`는 백필이 깊어질수록 cron 이 자동 누적하지만, *이미 백필됐는데 옛 13개월 trim 으로 빠져 있던* 구간은 **전체 로컬 store 보유 머신(운영자)에서 `buildAllFilingsRecent.py` 1회 실행 + push** 으로 메운다.
+> **이관 주의(운영)**: `byCode/manifest.json`이 없는 첫 실행만 기존 `recent.parquet`를 읽어 코드 버킷을 만든다. 이후 cron은 이번 수집분에 등장한 버킷만 merge한다. legacy 파일은 안전한 UI 순차 배포용 fallback으로만 남고 더 이상 재생성하지 않는다.
 
 ## workflow 추가 시 (새 스크립트 정착 절차)
 

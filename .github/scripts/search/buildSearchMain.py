@@ -1,13 +1,12 @@
-"""Search content index 단일 빌드 스크립트 (compact-only) + HF 업로드.
+"""Search content index 월간 main + 일간 누적 delta 빌드와 HF 업로드.
 
-일·월 단일 워크플로(`searchIndexBuild`)에서 호출 — delta 세그먼트는 폐기되었고(PRD 기둥1·D)
-신규 공시는 매일 source catalog compaction 으로 main 에 흡수된다.
+일·월 단일 워크플로(`searchIndexBuild`)에서 호출한다. 월간에는 main을 압축하고, 일간에는
+그 main catalog와 현재 catalog의 누적 차이만 단일 delta로 교체한다. delta fan-out은 항상 1이다.
 
 흐름:
-1. previous(이전 current) + current catalog 둘 다 있고 변화 0 + 이전 manifest 가 이미 clean 이면
-   → main 재빌드 없이 manifest pointer 만 re-point(no-change 단락). 이전 manifest 에 delta 잔존 시엔
-   clean 풀 압축 재빌드로 강제(마이그레이션).
-2. 변화 有(또는 previous 부재=월간 풀빌드) → source catalog → main 세그먼트 풀 compaction.
+1. previous(이전 current) + current catalog 변화가 0이면 manifest pointer만 갱신한다.
+2. 월간 또는 main 기준 snapshot 부재면 source catalog 전체를 main으로 압축한다.
+3. 그 외에는 main 기준 누적 changed-set과 tombstone만 delta로 만든다.
 3. per-source 하한 가드(allFilings/panel/edgar/news) + 총량 가드 → partial HF pull 회귀 차단.
 4. clean publish — `indexPublishNames`(npz·delta 제외=sidecar SSOT), `previousManifestPath` seed 안 함
    → 새 fileSources 에 delta 키 자연 부재(HF pointer main-only flip).
@@ -51,38 +50,13 @@ def _catalogInputsFromEnv() -> tuple[str | None, str | None, list[str], list[str
 
 
 def _isNoChange(previousCatalog: str | None, currentCatalog: str | None) -> bool:
-    """previous+current catalog 변화 0 + 이전 current manifest 가 이미 clean(delta 없음)이면 True.
-
-    변화가 있거나, previous 가 없거나(=월간 풀빌드), 이전 manifest 에 delta 가 잔존하면 False →
-    상위가 풀 compaction 재빌드(후자는 clean publish 로 delta 키를 떨군다=마이그레이션).
-    """
+    """previous와 current catalog의 changed-set이 비어 있으면 True."""
     if not (currentCatalog and previousCatalog and Path(previousCatalog).exists()):
         return False
-    from dartlab.providers.dart.search.fieldIndex import _contentIndexDir
     from dartlab.providers.dart.search.pipeline import _loadCatalog, exportDeltaRowsForContentIndex
 
     rows = exportDeltaRowsForContentIndex(_loadCatalog(previousCatalog), _loadCatalog(currentCatalog))
-    if rows.height > 0:
-        return False  # 신규/정정 有 → 풀 compaction
-    if _previousManifestNeedsCompaction(_contentIndexDir() / "previous_manifest.json"):
-        print("[build] catalog 변화 0 이나 이전 current 에 delta 잔존 → clean 풀 압축 재빌드(마이그레이션)")
-        return False
-    return True
-
-
-def _previousManifestNeedsCompaction(path: Path) -> bool:
-    """이전 current manifest 가 delta 를 품고 있나 — hasDelta 플래그 또는 fileSources/requiredFiles 의 delta 키."""
-    try:
-        data = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return False
-    if bool(data.get("hasDelta")):
-        return True
-    fileSources = data.get("fileSources") if isinstance(data.get("fileSources"), dict) else {}
-    requiredFiles = data.get("requiredFiles") if isinstance(data.get("requiredFiles"), list) else []
-    return any(str(k).startswith("delta") for k in fileSources) or any(
-        str(n).startswith("delta") for n in requiredFiles
-    )
+    return rows.height == 0
 
 
 def _publishNoChangeManifest(hfToken: str) -> None:
@@ -226,17 +200,17 @@ def main() -> int:
         print("[main] HF_TOKEN 없음 — 업로드 스킵")
         return 0
 
-    print("[main] HF staging 업로드 후 current manifest pointer publish (full = flat, clean=delta 키 0)")
+    print("[main] 변경 artifact만 staging 업로드 후 current manifest pointer publish")
     from dartlab.providers.dart.search.fieldIndexRebuild import indexPublishNames
     from dartlab.providers.dart.search.publishIndex import publishContentIndexFiles
 
-    # clean publish — indexPublishNames(main sidecar+공용+manifest, npz·delta 제외=sidecar SSOT).
-    # previousManifestPath seed 안 함 → 새 fileSources 에 delta 키 자연 부재(HF pointer main-only flip).
+    previousManifestPath = outDir / "previous_manifest.json"
     summary = publishContentIndexFiles(
         token=hfToken,
         indexDir=outDir,
-        files=indexPublishNames(outDir),
+        files=_changedPublishNames(outDir, previousManifestPath, indexPublishNames(outDir)),
         tier="full",
+        previousManifestPath=previousManifestPath,
         promoteCurrent=_promoteCurrent(),
     )
     _printPublishSummary(summary)
@@ -261,8 +235,16 @@ def _buildMainFromCatalog(mainMode: str) -> int | None:
         print("[main] catalog inputs 없음 — legacy raw main rebuild path 사용")
         return None
     from dartlab.providers.dart.search.fieldIndex import _contentIndexDir
-    from dartlab.providers.dart.search.fieldIndexRebuild import rebuildMainFromCatalog
-    from dartlab.providers.dart.search.pipeline import _loadCatalog, runCatalogDeltaDryRun
+    from dartlab.providers.dart.search.fieldIndexRebuild import (
+        clearDeltaSegment,
+        rebuildDeltaFromCatalog,
+        rebuildMainFromCatalog,
+    )
+    from dartlab.providers.dart.search.pipeline import (
+        _loadCatalog,
+        exportDeltaRowsForContentIndex,
+        runCatalogDeltaDryRun,
+    )
 
     result = runCatalogDeltaDryRun(
         previousCatalogPath=None,
@@ -275,15 +257,42 @@ def _buildMainFromCatalog(mainMode: str) -> int | None:
         return -1
     t0 = time.perf_counter()
     catalog = _loadCatalog(currentCatalog)
-    nDocs = rebuildMainFromCatalog(catalog, tier="full", showProgress=True)
     outDir = _contentIndexDir()
     import shutil
 
+    mainCatalogPath = outDir / "main_catalog_snapshot.parquet"
+    forceFull = _envFlag("FORCE_FULL") or not mainCatalogPath.exists() or not (outDir / "main.postings.bin").exists()
+    if forceFull:
+        nDocs = rebuildMainFromCatalog(catalog, tier="full", showProgress=True)
+        clearDeltaSegment(tier="full")
+        shutil.copyfile(currentCatalog, mainCatalogPath)
+        buildKind = "mainCompaction"
+    else:
+        mainCatalog = _loadCatalog(mainCatalogPath)
+        deltaRows = exportDeltaRowsForContentIndex(mainCatalog, catalog)
+        deltaDocs = rebuildDeltaFromCatalog(deltaRows, tier="full")
+        nDocs = _activeCatalogRows(catalog)
+        buildKind = f"cumulativeDelta:{deltaDocs}"
     shutil.copyfile(currentCatalog, outDir / "catalog_snapshot.parquet")
     _copySourceManifestSet(outDir)
     elapsed = time.perf_counter() - t0
-    print(f"[main] catalog snapshot compaction {nDocs:,} 문서, {elapsed / 60:.1f}분")
+    print(f"[main] catalog {buildKind} {nDocs:,} active 문서, {elapsed / 60:.1f}분")
     return nDocs
+
+
+def _activeCatalogRows(catalog) -> int:
+    if catalog.is_empty():
+        return 0
+    if "deleted" not in catalog.columns:
+        return catalog.height
+    import polars as pl
+
+    return int(catalog.filter(~pl.col("deleted").fill_null(False)).height)
+
+
+def _envFlag(name: str) -> bool:
+    raw = os.environ.get(name, "")
+    return raw.strip().lower() in {"1", "true", "yes", "y"}
 
 
 def _buildAndUploadLite(hfToken: str) -> None:
@@ -299,7 +308,7 @@ def _buildAndUploadLite(hfToken: str) -> None:
     print(f"[lite] tier 빌드 시작 — sinceDate={sinceDate} (최근 {months}개월)")
 
     from dartlab.providers.dart.search.fieldIndex import clearCache
-    from dartlab.providers.dart.search.fieldIndexRebuild import pushContentIndex, rebuildMain, writeIndexManifest
+    from dartlab.providers.dart.search.fieldIndexRebuild import clearDeltaSegment, rebuildMain, writeIndexManifest
 
     clearCache()
     _, currentCatalog, _, _ = _catalogInputsFromEnv()
@@ -314,6 +323,7 @@ def _buildAndUploadLite(hfToken: str) -> None:
             sinceDate=sinceDate,
             showProgress=True,
         )
+        clearDeltaSegment(tier="lite")
     _buildRouterArtifact(tier="lite")  # 라우터는 코퍼스 무관 — lite 디렉터리에 동거
 
     # 산출물 실측 크기 — '사용자 첫 다운로드 경량' 가치제안을 숫자로 검증(가정 금지).
@@ -342,7 +352,18 @@ def _buildAndUploadLite(hfToken: str) -> None:
         print("[lite] HF_TOKEN 없음 — 업로드 스킵")
         return
     print(f"[lite] {nLite:,} 문서 / {liteMb:.1f} MB → HF dart/contentIndex/lite/ 업로드")
-    summary = pushContentIndex(hfToken, tier="lite", promoteCurrent=_promoteCurrent())
+    from dartlab.providers.dart.search.fieldIndexRebuild import indexPublishNames
+    from dartlab.providers.dart.search.publishIndex import publishContentIndexFiles
+
+    previousManifestPath = liteDir / "previous_manifest.json"
+    summary = publishContentIndexFiles(
+        token=hfToken,
+        indexDir=liteDir,
+        files=_changedPublishNames(liteDir, previousManifestPath, indexPublishNames(liteDir)),
+        tier="lite",
+        previousManifestPath=previousManifestPath,
+        promoteCurrent=_promoteCurrent(),
+    )
     _printPublishSummary(summary)
     _writeCandidateEnv(summary)
     print("[lite] 완료")
@@ -352,16 +373,33 @@ def _buildLiteFromCatalog(currentCatalog: str, sinceDate: str) -> int:
     import polars as pl
 
     from dartlab.providers.dart.search.fieldIndex import _contentIndexDir
-    from dartlab.providers.dart.search.fieldIndexRebuild import rebuildMainFromCatalog
-    from dartlab.providers.dart.search.pipeline import _loadCatalog
+    from dartlab.providers.dart.search.fieldIndexRebuild import (
+        clearDeltaSegment,
+        rebuildDeltaFromCatalog,
+        rebuildMainFromCatalog,
+    )
+    from dartlab.providers.dart.search.pipeline import _loadCatalog, exportDeltaRowsForContentIndex
 
     catalog = _loadCatalog(currentCatalog)
     liteCatalog = _filterLiteCatalogRows(catalog, sinceDate)
     print(f"[lite] catalog mode — {catalog.height:,} rows -> {liteCatalog.height:,} rows")
-    nLite = rebuildMainFromCatalog(liteCatalog, tier="lite", showProgress=True)
     liteDir = _contentIndexDir("lite")
+    mainCatalogPath = liteDir / "main_catalog_snapshot.parquet"
+    forceFull = _envFlag("FORCE_FULL") or not mainCatalogPath.exists() or not (liteDir / "main.postings.bin").exists()
+    if forceFull:
+        nLite = rebuildMainFromCatalog(liteCatalog, tier="lite", showProgress=True)
+        clearDeltaSegment(tier="lite")
+        liteCatalog.write_parquet(mainCatalogPath)
+        buildKind = "mainCompaction"
+    else:
+        mainCatalog = _loadCatalog(mainCatalogPath)
+        deltaRows = exportDeltaRowsForContentIndex(mainCatalog, liteCatalog)
+        deltaDocs = rebuildDeltaFromCatalog(deltaRows, tier="lite")
+        nLite = _activeCatalogRows(liteCatalog)
+        buildKind = f"cumulativeDelta:{deltaDocs}"
     if isinstance(liteCatalog, pl.DataFrame):
         liteCatalog.write_parquet(liteDir / "catalog_snapshot.parquet")
+    print(f"[lite] catalog {buildKind}, {nLite:,} active 문서")
     return nLite
 
 
@@ -400,6 +438,27 @@ def _printEntityGraphSummary(summary: dict) -> None:
 def _promoteCurrent() -> bool:
     raw = os.environ.get("DARTLAB_SEARCH_PROMOTE_CURRENT", "1")
     return raw.strip().lower() not in {"0", "false", "no", "n"}
+
+
+def _changedPublishNames(outDir: Path, previousManifestPath: Path, names: list[str]) -> list[str]:
+    """이전 pointer와 hash가 같은 artifact는 재업로드하지 않고 fileSources를 재사용한다."""
+    try:
+        current = json.loads((outDir / "manifest.json").read_text(encoding="utf-8"))
+        previous = json.loads(previousManifestPath.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return names
+    currentHashes = current.get("fileHashes") if isinstance(current.get("fileHashes"), dict) else {}
+    previousHashes = previous.get("fileHashes") if isinstance(previous.get("fileHashes"), dict) else {}
+    previousSources = previous.get("fileSources") if isinstance(previous.get("fileSources"), dict) else {}
+    changed = [
+        name
+        for name in names
+        if name == "manifest.json" or currentHashes.get(name) != previousHashes.get(name) or name not in previousSources
+    ]
+    skipped = len(names) - len(changed)
+    if skipped:
+        print(f"[publish] unchanged artifact {skipped}개 재사용, upload {len(changed) - 1}개")
+    return changed
 
 
 def _printPublishSummary(summary: dict) -> None:

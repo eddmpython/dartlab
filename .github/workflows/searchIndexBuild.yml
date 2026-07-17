@@ -1,10 +1,10 @@
 name: Search Index Build
 
 # ──────────────────────────────────────────────────────────────
-# content 인덱스 단일 빌드 (compact-only) + HF 업로드 (full + lite tier).
+# content 인덱스 월간 main + 일간 누적 delta 빌드와 HF 업로드 (full + lite tier).
 #
-# delta 세그먼트는 폐기(PRD 기둥1·D). 신규 공시는 매일 source catalog compaction 으로 main 에 흡수된다
-# (옛 searchIndexMain[월간]+searchIndexDelta[일간] 2 워크플로를 단일 searchIndexBuild 로 fold).
+# main 기준 changed-set과 tombstone을 누적 delta 하나로 교체해 fan-out을 고정한다.
+# 월간 force_full만 main을 다시 압축하고 delta를 비운다.
 #
 # 트리거:
 #   - 매일 KST 04:00 (cron 0 19)     — 증분(이전 catalog 대비 변화 0 이면 manifest pointer 만 re-point)
@@ -13,7 +13,7 @@ name: Search Index Build
 #   - 수동 (workflow_dispatch) — build_mode / force_full / gate 선택
 #
 # 흐름: current index pull(이전 catalog + manifest) → source catalog pull → catalog inputs 준비
-#   → buildSearchMain(no-change 단락 또는 풀 compaction + per-source 가드 + clean publish + lite)
+#   → buildSearchMain(no-change 또는 누적 delta, 월간 compaction + per-source 가드 + 변경 파일 publish + lite)
 #   → round-trip / result-contract / canary / (release: quality-gold) → promote → remote evidence → cutover.
 # ──────────────────────────────────────────────────────────────
 
@@ -108,7 +108,20 @@ jobs:
           --tier full
           --out-dir data/dart/contentIndex
           --previous-manifest data/dart/contentIndex/previous_manifest.json
-          --optional-file catalog_snapshot.parquet
+          --optional-file main_catalog_snapshot.parquet
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          DARTLAB_HF_RETRY_ATTEMPTS: '5'
+          DARTLAB_HF_RETRY_MAX_SINGLE_WAIT_SECONDS: '300'
+
+      - name: Pull existing lite content index from HF
+        continue-on-error: true
+        run: >
+          uv run python -X utf8 .github/scripts/search/pullSearchCurrentIndex.py
+          --tier lite
+          --out-dir data/dart/contentIndex/lite
+          --previous-manifest data/dart/contentIndex/lite/previous_manifest.json
+          --optional-file main_catalog_snapshot.parquet
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           DARTLAB_HF_RETRY_ATTEMPTS: '5'

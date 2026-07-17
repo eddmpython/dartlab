@@ -156,6 +156,8 @@ def selfcheckLocalIndex(
 
             if loadSegment("main", base) is None:  # sidecar 로드 스모크
                 errors.append("loadSmoke:main")
+            if manifest is not None and manifest.get("hasDelta") and loadSegment("delta", base) is None:
+                errors.append("loadSmoke:delta")
         except Exception:  # noqa: BLE001 — corrupt local artifact must not activate.
             errors.append("loadSmoke:main")
 
@@ -459,10 +461,9 @@ def _canaryErrors(indexDir: Path, rawQueries: Any) -> list[str]:
     try:
         from dartlab.providers.dart.search.fieldIndex import _scoreBM25, loadSegment, tokenizeContent
 
-        loaded = loadSegment("main", indexDir)
-        if loaded is None:
+        loaded = [segment for name in ("main", "delta") if (segment := loadSegment(name, indexDir)) is not None]
+        if not loaded:
             return ["canary:mainLoad"]
-        idx, _meta = loaded
     except Exception:  # noqa: BLE001 — corrupt artifacts must not activate.
         return ["canary:mainLoad"]
     errors: list[str] = []
@@ -475,8 +476,8 @@ def _canaryErrors(indexDir: Path, rawQueries: Any) -> list[str]:
         if not tokens:
             errors.append(f"canaryNoTokens:{query}")
             continue
-        scores = _scoreBM25(idx, tokens)
-        if scores.size == 0 or float(scores.max()) <= 0:
+        scores = [_scoreBM25(idx, tokens) for idx, _meta in loaded]
+        if not scores or max((float(score.max()) if score.size else 0.0 for score in scores), default=0.0) <= 0:
             errors.append(f"canaryMiss:{query}")
     return errors
 
@@ -559,37 +560,50 @@ def _sourceCanaryPackErrors(indexDir: Path, rawRows: Any) -> list[str]:
             return ["invalid:sourceCanaryPackRow"]
     try:
         from dartlab.providers.dart.search.canaryPack import evaluateCanaryPackRows
-        from dartlab.providers.dart.search.fieldIndex import _scoreBM25, loadSegment, tokenizeContent
+        from dartlab.providers.dart.search.fieldIndex import _scoreBM25, _segmentRowKey, loadSegment, tokenizeContent
+        from dartlab.providers.dart.search.fieldIndexRebuild import _effectiveSegmentMeta
 
-        loaded = loadSegment("main", indexDir)
-        if loaded is None:
+        segments = {name: segment for name in ("main", "delta") if (segment := loadSegment(name, indexDir)) is not None}
+        if "main" not in segments:
             return ["sourceCanary:mainLoad"]
-        idx, meta = loaded
     except Exception:  # noqa: BLE001 — corrupt artifacts must not activate.
         return ["sourceCanary:mainLoad"]
     # exact-ref 는 결정론 인용 무결성으로 검증(_refResolved), source-lane·answerable·no-answer trap 만
     # BM25 경로(flaky 아님). 자세한 근거는 injectSourceRefResolution docstring 참조.
-    enriched = injectSourceRefResolution(rawRows, idx, meta)
+    effectiveMeta = _effectiveSegmentMeta(
+        segments.get("main", ({}, None))[1],
+        segments.get("delta", ({}, None))[1],
+    )
+    enriched = injectSourceRefResolution(rawRows, {"docLengths": [1] * effectiveMeta.height}, effectiveMeta)
+    deltaKeys = {
+        _segmentRowKey(row) for row in (segments["delta"][1].iter_rows(named=True) if "delta" in segments else [])
+    }
     resultsByQuery: dict[str, list[dict[str, Any]]] = {}
     for row in rawRows:
         query = str(row.get("query") or row.get("q") or "")
         tokens = tokenizeContent(query)
-        scores = _scoreBM25(idx, tokens) if tokens else []
-        ranked: list[dict[str, Any]] = []
-        if len(scores):
-            order = sorted(range(len(scores)), key=lambda i: float(scores[i]), reverse=True)
-            for docId in order[: int(row.get("topK") or 10)]:
+        candidates: list[tuple[float, dict[str, Any]]] = []
+        for name in ("delta", "main"):
+            if name not in segments or not tokens:
+                continue
+            idx, meta = segments[name]
+            scores = _scoreBM25(idx, tokens)
+            for docId in sorted(range(len(scores)), key=lambda i: float(scores[i]), reverse=True):
                 score = float(scores[docId])
                 if score <= 0:
-                    continue
+                    break
                 metaRow = dict(meta.row(docId, named=True))
-                ranked.append(
-                    {
-                        "source": metaRow.get("source") or "",
-                        "sourceRef": metaRow.get("sourceRef") or metaRow.get("rcept_no") or "",
-                        "answerable": True,
-                    }
-                )
+                if bool(metaRow.get("deleted")) or (name == "main" and _segmentRowKey(metaRow) in deltaKeys):
+                    continue
+                candidates.append((score, metaRow))
+        ranked = [
+            {
+                "source": metaRow.get("source") or "",
+                "sourceRef": metaRow.get("sourceRef") or metaRow.get("rcept_no") or "",
+                "answerable": True,
+            }
+            for _, metaRow in sorted(candidates, key=lambda item: item[0], reverse=True)[: int(row.get("topK") or 10)]
+        ]
         resultsByQuery[query] = ranked
     report = evaluateCanaryPackRows(enriched, resultsByQuery)
     return [f"sourceCanary:{failure['query']}:{failure['failureType']}" for failure in report["failures"]]

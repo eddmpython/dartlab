@@ -153,9 +153,12 @@ def _auditContentIndex(
         errors.extend(
             f"missingContentFileSourceMapping:{tier}:{rel}" for rel in manifestSummary["missingFileSourceMappings"]
         )
-        # compact-only clean publish — published pointer 에 delta 키가 0 이어야 한다(PRD 기둥1·D).
-        # delta 세그먼트는 폐기됐고 clean publish(previousManifestPath seed 안 함)가 delta 키를 떨군다.
-        errors.extend(f"deltaFileSourceLeak:{tier}:{rel}" for rel in manifestSummary["deltaFileSources"])
+        hasDelta = manifestSummary.get("hasDelta") is True
+        deltaFiles = manifestSummary["deltaFileSources"]
+        if hasDelta and not deltaFiles:
+            errors.append(f"missingDeltaFiles:{tier}")
+        if not hasDelta:
+            errors.extend(f"staleDeltaFileSource:{tier}:{rel}" for rel in deltaFiles)
         manifests[tier] = {
             "manifestPath": manifestPath,
             "exists": exists,
@@ -430,8 +433,11 @@ def _blockers(*, sourceCatalog: dict[str, Any], contentIndex: dict[str, Any]) ->
         blockers.append("contentIndexManifestMissing")
     if any(str(error).startswith("missingContentFileSource") for error in contentIndex.get("errors") or []):
         blockers.append("contentIndexFileSourceMissing")
-    if any(str(error).startswith("deltaFileSourceLeak") for error in contentIndex.get("errors") or []):
-        blockers.append("contentIndexDeltaLeak")
+    if any(
+        str(error).startswith(("missingDeltaFiles", "staleDeltaFileSource"))
+        for error in contentIndex.get("errors") or []
+    ):
+        blockers.append("contentIndexDeltaInconsistent")
     return blockers
 
 

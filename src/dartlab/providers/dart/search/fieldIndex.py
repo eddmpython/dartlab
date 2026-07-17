@@ -10,11 +10,12 @@
 
 저장 구조::
 
-    data/dart/contentIndex/        # compact-only — main 단일 세그먼트, postings=STORED sidecar(npz 폐기)
+    data/dart/contentIndex/        # 월간 main + 선택적 일간 delta, postings=STORED sidecar(npz 폐기)
     ├── main.postings.bin   # content CSR (term별 docId delta-gap + tf varint) = postings SSOT
     ├── main.terms.bin · main.docLengths.bin · main.meta.bin · main.metaOffsets.bin · main.search_meta.json
     ├── main_meta.parquet   # 엔진/searchUnified 전체 스캔용 meta SSOT
-    └── main_stems.json · main_info.json   # stem→id · nDocs/avgDocLength
+    ├── main_stems.json · main_info.json   # stem→id · nDocs/avgDocLength
+    └── delta.* + delta_overrides.json     # main 기준 누적 changed-set과 tombstone
 
 병합 검색::
 
@@ -56,6 +57,7 @@ TITLE_WEIGHT_REPEAT = 4
 _HANGUL_RE = re.compile(r"[가-힣]+")
 _ASCII_RE = re.compile(r"[A-Za-z]{2,20}")
 _RUNTIME_META_COLUMNS: tuple[str, ...] = (
+    "docKey",
     "rcept_no",
     "section_order",
     "corp_code",
@@ -70,6 +72,7 @@ _RUNTIME_META_COLUMNS: tuple[str, ...] = (
     "sourceDataAsOf",
     "contentLen",
     "url",
+    "deleted",
 )
 _EVIDENCE_META_COLUMNS: tuple[str, ...] = ("evidenceText",)
 
@@ -548,7 +551,19 @@ def loadShardedSegment(name: str = "main", inDir: Path | None = None, *, include
 
 
 # meta.bin doc-카드에 담는 필드 (top-k snippet/회사점프용 — main_meta 의 부분집합, bounded).
-_SHARD_META_FIELDS = ("rcept_no", "corp_name", "stock_code", "report_nm", "rcept_dt", "source", "sourceRef", "url")
+_SHARD_META_FIELDS = (
+    "docKey",
+    "rcept_no",
+    "section_order",
+    "corp_name",
+    "stock_code",
+    "report_nm",
+    "rcept_dt",
+    "source",
+    "sourceRef",
+    "url",
+    "deleted",
+)
 _SHARD_SNIPPET_LIMIT = 400
 
 
@@ -652,6 +667,17 @@ def saveShardedSegment(idx: dict, meta: pl.DataFrame, name: str = "main", outDir
         ),
         encoding="utf-8",
     )
+    if name == "delta":
+        overrideCols = [
+            column
+            for column in ("docKey", "sourceRef", "rcept_no", "section_order", "deleted")
+            if column in meta.columns
+        ]
+        overrides = meta.select(overrideCols).to_dicts() if overrideCols else []
+        (outDir / "delta_overrides.json").write_text(
+            json.dumps(overrides, ensure_ascii=False, separators=(",", ":")),
+            encoding="utf-8",
+        )
     return {**files, "nDocs": int(idx["nDocs"]), "nTerms": nTerms}
 
 
@@ -743,7 +769,7 @@ _segments: dict[str, tuple[dict, pl.DataFrame]] | None = None
 
 
 def _getSegments() -> dict[str, tuple[dict, pl.DataFrame]]:
-    """main 세그먼트 로드 (캐시). compact-only — delta 세그먼트 폐기(PRD 기둥1·D)."""
+    """main과 선택적 누적 delta 세그먼트를 로드한다."""
     global _segments
     if _segments is not None:
         return _segments
@@ -762,9 +788,10 @@ def _getSegments() -> dict[str, tuple[dict, pl.DataFrame]]:
         )
     inDir = _activeIndexDir()  # flat(legacy/full) 우선, 없으면 tier(기본 lite)
     out = {}
-    seg = loadSegment("main", inDir)
-    if seg is not None:
-        out["main"] = seg
+    for name in ("main", "delta"):
+        seg = loadSegment(name, inDir)
+        if seg is not None:
+            out[name] = seg
     _segments = out
     return out
 
@@ -864,6 +891,14 @@ def _resolveResultUrl(df: pl.DataFrame) -> pl.DataFrame:
     return normalizeSearchResult(out)
 
 
+def _segmentRowKey(row: dict) -> tuple[str, str, str]:
+    return (
+        str(row.get("sourceRef") or row.get("source") or ""),
+        str(row.get("rcept_no") or ""),
+        str(row.get("section_order") or ""),
+    )
+
+
 def searchContent(
     query: str,
     *,
@@ -872,7 +907,7 @@ def searchContent(
     sourceKind: str | None = None,
     limit: int = 10,
 ) -> pl.DataFrame:
-    """content 전용 BM25 검색. 단일 main 세그먼트(compact-only).
+    """content 전용 BM25 검색. delta가 있으면 main보다 우선한다.
 
     Parameters
     ----------
@@ -909,18 +944,26 @@ def searchContent(
             }
         )
 
-    # 단일 main 세그먼트(compact-only) — delta 병합·dedup 폐기(PRD 기둥1·D). 신규는 매일 catalog compaction 으로 반영.
-    mIdx, mMeta = segments["main"]
-    mScores = _scoreBM25(mIdx, tokens)
-    mMask = _scopeMask(mMeta, corpCode, stockCode, sourceKind)
-    if mMask is not None:
-        mScores = np.where(mMask, mScores, 0.0)
     allHits: list[dict] = []
-    for i in np.argsort(-mScores)[:limit]:
-        if mScores[i] <= 0:
-            break
-        row = mMeta.row(int(i), named=True)
-        allHits.append({**row, "score": float(mScores[i]), "segment": "main"})
+    deltaKeys = {
+        _segmentRowKey(row) for row in (segments["delta"][1].iter_rows(named=True) if "delta" in segments else [])
+    }
+    for name in ("delta", "main"):
+        if name not in segments:
+            continue
+        idx, meta = segments[name]
+        scores = _scoreBM25(idx, tokens)
+        mask = _scopeMask(meta, corpCode, stockCode, sourceKind)
+        if mask is not None:
+            scores = np.where(mask, scores, 0.0)
+        for i in np.argsort(-scores)[: limit * 3]:
+            if scores[i] <= 0:
+                break
+            row = meta.row(int(i), named=True)
+            key = _segmentRowKey(row)
+            if bool(row.get("deleted")) or (name == "main" and key in deltaKeys):
+                continue
+            allHits.append({**row, "score": float(scores[i]), "segment": name})
 
     if not allHits:
         return pl.DataFrame()

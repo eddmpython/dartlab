@@ -309,6 +309,7 @@ def rebuildMainFromCatalog(
         source = str(row.get("source") or "")
         metaRecs.append(
             {
+                "docKey": str(row.get("docKey") or ""),
                 "rcept_no": str(row.get("rceptNo") or row.get("sourceRef") or ""),
                 "section_order": int(row.get("sectionOrder") or 0),
                 "corp_code": str(row.get("corpCode") or ""),
@@ -324,6 +325,7 @@ def rebuildMainFromCatalog(
                 "sourceDataAsOf": str(row.get("sourceDataAsOf") or row.get("date") or ""),
                 "contentLen": len(content),
                 "url": str(row.get("url") or "") if source == "newsPublic" else "",
+                "deleted": False,
             }
         )
     if not metaRecs:
@@ -337,6 +339,112 @@ def rebuildMainFromCatalog(
     del metaRecs, meta
     gc.collect()
     return idx["nDocs"]
+
+
+def rebuildDeltaFromCatalog(
+    deltaRows: pl.DataFrame,
+    *,
+    tier: str = "full",
+) -> int:
+    """main 기준 누적 변경분을 단일 delta 세그먼트로 다시 쓴다.
+
+    deltaRows는 월간 main snapshot과 현재 catalog의 차이다. 일별 delta를 계속 쌓지 않고
+    매 실행마다 작은 누적 L0 하나로 교체하므로 세그먼트 수와 검색 fan-out이 고정된다.
+    삭제 행도 빈 문서 tombstone으로 보존해 main의 이전 문서를 가린다.
+
+    Args:
+        deltaRows: main 기준 신규, 변경, 삭제 tombstone 행.
+        tier: full 또는 lite 출력 tier.
+
+    Returns:
+        작성한 delta 문서와 tombstone 수.
+
+    Raises:
+        OSError: 세그먼트 파일을 쓸 수 없을 때.
+
+    Example:
+        >>> callable(rebuildDeltaFromCatalog)
+        True
+    """
+    import gc
+
+    from dartlab.providers.dart.search.fieldIndex import (
+        CONTENT_LIMIT,
+        _contentIndexDir,
+        _IncrementalBuilder,
+        clearCache,
+    )
+
+    saveDir = _contentIndexDir() if tier == "full" else _contentIndexDir(tier)
+    _removeSegmentArtifacts(saveDir, "delta")
+    if deltaRows.is_empty():
+        clearCache()
+        return 0
+
+    builder = _IncrementalBuilder()
+    metaRecs: list[dict] = []
+    for row in deltaRows.iter_rows(named=True):
+        deleted = bool(row.get("deleted"))
+        content = "" if deleted else str(row.get("section_content") or row.get("searchText") or "")[:CONTENT_LIMIT]
+        builder.addDoc(content)
+        metaRecs.append(
+            {
+                "docKey": str(row.get("docKey") or ""),
+                "rcept_no": str(row.get("rcept_no") or row.get("rceptNo") or row.get("sourceRef") or ""),
+                "section_order": int(row.get("section_order") or row.get("sectionOrder") or 0),
+                "corp_code": str(row.get("corp_code") or row.get("corpCode") or ""),
+                "corp_name": str(row.get("corp_name") or row.get("companyName") or ""),
+                "stock_code": str(row.get("stock_code") or row.get("stockCode") or row.get("ticker") or ""),
+                "rcept_dt": str(row.get("rcept_dt") or row.get("date") or ""),
+                "report_nm": str(row.get("report_nm") or row.get("reportName") or ""),
+                "section_title": str(row.get("section_title") or row.get("title") or row.get("sectionKey") or ""),
+                "text": content[:500],
+                "evidenceText": str(row.get("section_content") or row.get("searchText") or "")[:EVIDENCE_TEXT_LIMIT],
+                "source": _runtimeSourceFromCatalog(str(row.get("source") or "")),
+                "sourceRef": str(row.get("sourceRef") or ""),
+                "sourceDataAsOf": str(row.get("sourceDataAsOf") or row.get("rcept_dt") or row.get("date") or ""),
+                "contentLen": len(content),
+                "url": str(row.get("url") or ""),
+                "deleted": deleted,
+            }
+        )
+    idx = builder.finalize()
+    meta = pl.DataFrame(metaRecs)
+    saveSegmentWithSidecar(idx, meta, "delta", saveDir)
+    clearCache()
+    del metaRecs, meta
+    gc.collect()
+    return idx["nDocs"]
+
+
+def _removeSegmentArtifacts(base: Path, segment: str) -> None:
+    for name in [*_segmentFiles(base, segment, requireExists=False), f"{segment}.npz"]:
+        path = base / name
+        if path.exists():
+            path.unlink()
+
+
+def clearDeltaSegment(*, tier: str = "full") -> None:
+    """지정 tier의 delta artifact를 제거한다.
+
+    Args:
+        tier: full 또는 lite 출력 tier.
+
+    Returns:
+        None.
+
+    Raises:
+        OSError: 기존 artifact를 제거할 수 없을 때.
+
+    Example:
+        >>> callable(clearDeltaSegment)
+        True
+    """
+    from dartlab.providers.dart.search.fieldIndex import _contentIndexDir, clearCache
+
+    base = _contentIndexDir() if tier == "full" else _contentIndexDir(tier)
+    _removeSegmentArtifacts(base, "delta")
+    clearCache()
 
 
 def _runtimeSourceFromCatalog(source: str) -> str:
@@ -645,8 +753,7 @@ def _feedNews(builder, metaRecs, newsLimit, showProgress, *, sinceDate=None) -> 
     return added
 
 
-# delta 세그먼트는 폐기됨(PRD 기둥1·D) — 신규 공시는 매일 catalog compaction(rebuildMainFromCatalog)으로
-# main 에 반영된다. 옛 rebuildDelta/_clearDelta 와 별도 delta 빌드 경로는 제거(compact-only).
+# 일간 변경은 rebuildDeltaFromCatalog가 월간 main 기준 누적 L0 하나로 쓴다.
 
 
 # ── HF 동기화 ──
@@ -784,7 +891,7 @@ def indexInfo() -> dict:
 
     model = loadRouterModel(base)
     info["hasRouter"] = bool(model and model.get("events"))
-    info["hasDelta"] = bool(info.get("hasDelta")) or (base / "delta.npz").exists()
+    info["hasDelta"] = bool(info.get("hasDelta")) or (base / "delta.postings.bin").exists()
     return info
 
 
@@ -807,6 +914,7 @@ def _searchSidecarNames(segment: str) -> list[str]:
 _INDEX_COMMON_FILES: tuple[str, ...] = (
     "router.json",
     "catalog_snapshot.parquet",
+    "main_catalog_snapshot.parquet",
     "source_manifest_set.json",
 )
 
@@ -832,6 +940,8 @@ def _segmentFiles(base: str | Path, segment: str = "main", *, requireExists: boo
         ['main_stems.json', 'main_info.json', 'main_meta.parquet']
     """
     names = [f"{segment}_stems.json", f"{segment}_info.json", f"{segment}_meta.parquet", *_searchSidecarNames(segment)]
+    if segment == "delta":
+        names.append("delta_overrides.json")
     if not requireExists:
         return names
     base = Path(base)
@@ -839,7 +949,7 @@ def _segmentFiles(base: str | Path, segment: str = "main", *, requireExists: boo
 
 
 def indexPublishNames(base: str | Path, *, requireExists: bool = True) -> list[str]:
-    """publish/pull 파일 SSOT — main 세그먼트(sidecar) + 공용 산출물 + manifest. compact-only(delta 없음).
+    """publish/pull 파일 SSOT - main, 선택적 delta, 공용 산출물, manifest.
 
     Args:
         base: 인덱스 디렉터리.
@@ -858,7 +968,10 @@ def indexPublishNames(base: str | Path, *, requireExists: bool = True) -> list[s
     from dartlab.providers.dart.search.entityGraph import ENTITY_GRAPH_CATALOG_NAME
 
     base = Path(base)
-    names = _segmentFiles(base, "main", requireExists=requireExists)
+    names = [
+        *_segmentFiles(base, "main", requireExists=requireExists),
+        *_segmentFiles(base, "delta", requireExists=requireExists),
+    ]
     extras = [*_INDEX_COMMON_FILES, ENTITY_GRAPH_CATALOG_NAME, "manifest.json"]
     if requireExists:
         extras = [n for n in extras if (base / n).exists()]
@@ -933,15 +1046,15 @@ def writeIndexManifest(indexDir: str | Path, *, tier: str = "full", buildCommand
     deltaDataAsOf = ""
     mainDocs = 0
     deltaDocs = 0
-    canaryMetaParts: list[pl.DataFrame] = []
+    segmentMeta: dict[str, pl.DataFrame] = {}
 
-    for segment in ("main",):  # compact-only — delta 세그먼트 폐기(PRD 기둥1·D)
+    for segment in ("main", "delta"):
         # meta.parquet = 세그먼트 앵커(항상 존재·canary 입력). requiredFiles 는 stems/info/parquet + sidecar(존재분, npz 제외=SSOT).
         if not (base / f"{segment}_meta.parquet").exists():
             continue
         requiredFiles.extend(_segmentFiles(base, segment))
         meta = pl.read_parquet(base / f"{segment}_meta.parquet")
-        canaryMetaParts.append(meta)
+        segmentMeta[segment] = meta
         info = json.loads((base / f"{segment}_info.json").read_text(encoding="utf-8"))
         nDocs = int(info.get("nDocs", meta.height) or 0)
         if segment == "main":
@@ -953,27 +1066,26 @@ def writeIndexManifest(indexDir: str | Path, *, tier: str = "full", buildCommand
             mainDataAsOf = segmentDataAsOf
         else:
             deltaDataAsOf = segmentDataAsOf
-        for source, count in _sourceCounts(meta).items():
-            sourceCounts[source] = sourceCounts.get(source, 0) + count
-        for source, dataAsOf in _sourceDataAsOf(meta).items():
-            if dataAsOf > sourceDataAsOf.get(source, ""):
-                sourceDataAsOf[source] = dataAsOf
     if (base / "router.json").exists():
         requiredFiles.append("router.json")
     if (base / "catalog_snapshot.parquet").exists():
         requiredFiles.append("catalog_snapshot.parquet")
+    if (base / "main_catalog_snapshot.parquet").exists():
+        requiredFiles.append("main_catalog_snapshot.parquet")
     sourceManifestSet = _loadSourceManifestSet(base / "source_manifest_set.json")
     if sourceManifestSet:
         requiredFiles.append("source_manifest_set.json")
     entityGraphCatalog = _entityGraphCatalogSummary(base / ENTITY_GRAPH_CATALOG_NAME)
     if entityGraphCatalog:
         requiredFiles.append(ENTITY_GRAPH_CATALOG_NAME)
+    effectiveMeta = _effectiveSegmentMeta(segmentMeta.get("main"), segmentMeta.get("delta"))
+    sourceCounts = _sourceCounts(effectiveMeta)
+    sourceDataAsOf = _sourceDataAsOf(effectiveMeta)
     sourceCanaryPack = []
-    if canaryMetaParts:
+    if effectiveMeta.height:
         from dartlab.providers.dart.search.artifactCanary import CANARY_PACK_VERSION, buildSourceCanaryPackFromMeta
 
-        canaryMeta = pl.concat(canaryMetaParts, how="diagonal_relaxed")
-        sourceCanaryPack = buildSourceCanaryPackFromMeta(canaryMeta)
+        sourceCanaryPack = buildSourceCanaryPackFromMeta(effectiveMeta)
         canaryPackVersion = CANARY_PACK_VERSION
     else:
         canaryPackVersion = ""
@@ -989,11 +1101,11 @@ def writeIndexManifest(indexDir: str | Path, *, tier: str = "full", buildCommand
         "deltaDataAsOf": deltaDataAsOf,
         "sourceDataAsOf": sourceDataAsOf,
         "nDocsBySource": sourceCounts,
-        "nDocsByTier": {tier: mainDocs + deltaDocs},
-        "newDocs": deltaDocs,
-        "changedDocs": deltaDocs,
-        "deletedDocs": 0,
-        "unchangedDocs": mainDocs,
+        "nDocsByTier": {tier: effectiveMeta.height},
+        "newDocs": 0,
+        "changedDocs": max(deltaDocs - _deletedCount(segmentMeta.get("delta")), 0),
+        "deletedDocs": _deletedCount(segmentMeta.get("delta")),
+        "unchangedDocs": max(effectiveMeta.height - deltaDocs, 0),
         "hasDelta": deltaDocs > 0,
         "requiredFiles": requiredFiles,
         "fileHashes": {name: _sha256File(base / name) for name in requiredFiles if (base / name).exists()},
@@ -1101,7 +1213,7 @@ def pushContentIndex(token: str | None = None, *, tier: str = "full", promoteCur
     from dartlab.providers.dart.search.publishIndex import publishContentIndexFiles
 
     outDir = _contentIndexDir() if tier == "full" else _contentIndexDir(tier)
-    # publish 파일 SSOT — main 세그먼트(sidecar)+공용+manifest, 존재분. npz·delta 제외(compact-only·sidecar SSOT).
+    # publish 파일 SSOT - main + 선택적 delta sidecar, 공용 파일, manifest.
     names = indexPublishNames(outDir)
     if promoteCurrent is None:
         promoteCurrent = _envFlag("DARTLAB_SEARCH_PROMOTE_CURRENT", default=True)
@@ -1151,9 +1263,10 @@ def pullContentIndex(tier: str = "full") -> int:
     repo = repoFor("contentIndex")
 
     # 런타임 필요분만 pull(per-file tolerant·404 무시) — segment sidecar + manifest/router/entityGraph.
-    # catalog_snapshot/source_manifest_set(빌드 provenance·대용량)은 제외. npz·delta 제외(compact-only).
+    # catalog snapshot은 빌드 provenance라 일반 runtime pull에서 제외한다.
     names = [
         *_segmentFiles(outDir, "main", requireExists=False),
+        *_segmentFiles(outDir, "delta", requireExists=False),
         "manifest.json",
         "router.json",
         ENTITY_GRAPH_CATALOG_NAME,
@@ -1178,6 +1291,46 @@ def pullContentIndex(tier: str = "full") -> int:
     clearCache()
     _log.info("[green]✓[/] contentIndex (%d/%d 파일)", ok, len(names))
     return ok
+
+
+def _shadowKeyExpr(meta: pl.DataFrame) -> pl.Expr:
+    def _value(primary: str, fallback: str = "") -> pl.Expr:
+        if primary in meta.columns:
+            return pl.col(primary).cast(pl.Utf8).fill_null("")
+        if fallback and fallback in meta.columns:
+            return pl.col(fallback).cast(pl.Utf8).fill_null("")
+        return pl.lit("")
+
+    return pl.concat_str(
+        [_value("sourceRef", "source"), _value("rcept_no"), _value("section_order")],
+        separator="\u001f",
+    )
+
+
+def _effectiveSegmentMeta(main: pl.DataFrame | None, delta: pl.DataFrame | None) -> pl.DataFrame:
+    if main is None and delta is None:
+        return pl.DataFrame()
+    if delta is None or delta.is_empty():
+        return main if main is not None else pl.DataFrame()
+    deltaWithKey = delta.with_columns(_shadowKeyExpr(delta).alias("__shadowKey"))
+    deltaKeys = deltaWithKey.select("__shadowKey").unique()
+    activeDelta = deltaWithKey
+    if "deleted" in activeDelta.columns:
+        activeDelta = activeDelta.filter(~pl.col("deleted").fill_null(False))
+    if main is None or main.is_empty():
+        return activeDelta.drop("__shadowKey")
+    activeMain = (
+        main.with_columns(_shadowKeyExpr(main).alias("__shadowKey"))
+        .join(deltaKeys, on="__shadowKey", how="anti")
+        .drop("__shadowKey")
+    )
+    return pl.concat([activeDelta.drop("__shadowKey"), activeMain], how="diagonal_relaxed")
+
+
+def _deletedCount(meta: pl.DataFrame | None) -> int:
+    if meta is None or meta.is_empty() or "deleted" not in meta.columns:
+        return 0
+    return int(meta.select(pl.col("deleted").fill_null(False).sum()).item() or 0)
 
 
 def _sourceCounts(meta: pl.DataFrame) -> dict[str, int]:

@@ -165,6 +165,42 @@ def test_classifyFailure(monkeypatch, logText, expected):
     assert mod._classifyFailure(123) == expected
 
 
+def test_classify_failure_reads_failed_log_before_summary(monkeypatch):
+    mod = _loadMonitor()
+    calls: list[list[str]] = []
+
+    def gh(args, **_kwargs):
+        calls.append(args)
+        return "timed out" if "--log-failed" in args else ""
+
+    monkeypatch.setattr(mod, "_gh", gh)
+    assert mod._classifyFailure(123) == "timeout/cancelled"
+    assert calls == [["run", "view", "123", "--log-failed"]]
+
+
+def test_classify_failure_window_preserves_consecutive_causes(monkeypatch):
+    mod = _loadMonitor()
+    causes = {3: "메모리/디스크 (runner)", 2: "timeout/cancelled"}
+    monkeypatch.setattr(mod, "_classifyFailure", lambda runId: causes[runId])
+    result = mod._classifyFailureWindow(
+        [
+            {"conclusion": "failure", "databaseId": 3, "url": "u3"},
+            {"conclusion": "failure", "databaseId": 2, "url": "u2"},
+            {"conclusion": "success", "databaseId": 1, "url": "u1"},
+        ]
+    )
+    assert result["classification"].startswith("메모리/디스크")
+    assert [item["runId"] for item in result["causeHistory"]] == [3, 2]
+
+
+def test_update_issue_refreshes_title_and_body(monkeypatch):
+    mod = _loadMonitor()
+    calls: list[list[str]] = []
+    monkeypatch.setattr(mod, "_gh", lambda args, **_kwargs: calls.append(args) or "")
+    mod._updateIssue(82, "새 원인", "새 본문")
+    assert calls == [["issue", "edit", "82", "--title", "새 원인", "--body", "새 본문"]]
+
+
 # ─── _issueTitle (연속 vs 단발 표기) ──────────────────────────────────
 
 

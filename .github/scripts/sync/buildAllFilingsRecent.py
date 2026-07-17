@@ -1,18 +1,18 @@
-"""비정기(수시)공시 최근 통합 parquet 빌드 + HF push — 랜딩 터미널 콘솔청결 전용.
+"""비정기공시 메타를 종목코드 버킷으로 증분 빌드하고 HF에 원자적으로 배포한다.
 
-allFilings 는 일자별 ``dart/allFilings/{YYYYMMDD}.parquet`` 로 샤딩돼 있어, 브라우저가
-회사별로 보려면 수십 일치 파일을 스캔해야 하고 휴일(파일 부재)마다 404 콘솔 오염이 난다.
-HF tree API 는 CORS(huggingface.co only)라 브라우저 목록조회도 불가.
+일자별 원본은 이미 증분 수집되지만, 예전 빌더는 실행할 때마다 전 이력
+``recent.parquet``를 내려받아 합치고 다시 올렸다. 이 파일은 백필이 깊어질수록 계속
+커졌고 CI 시간과 메모리가 전체 이력 크기에 비례했다.
 
-→ 운영자 머신/CI 에서 비정기공시 본문 parquet 을 **메타 컬럼만**(content_raw 제외) 모아
-``dart/allFilings/recent.parquet`` 단일 통합 파일로 push. stock_code 정렬 → 브라우저
-filter pushdown 이 회사 row-group 만 읽음 (scan/report·corpList 와 동일 "전역 1파일 +
-stock_code 필터" 패턴). HF 증식 아님(파일 1개, 매번 덮어씀).
+현재 레이아웃은 다음과 같다.
 
-⚠ 전 이력 유지 — 과거 400일 trim 은 비정기 과거 dot(예: 2015)을 통째로 가려 폐기.
-백필(allFilingsBackfill, floor 2015-01)이 깊어질수록 이 통합 파일도 깊어진다(HF baseline
-merge 라 매 run 누적). 메타 6컬럼·zstd 라 전 이력도 작고 회사별 read 는 row-group 하나.
-다시 trim 되살리지 말 것.
+* ``dart/allFilings/byCode/{prefix}_recent.parquet``: stock_code 앞 2자리 버킷
+* ``dart/allFilings/byCode/manifest.json``: 버킷 목록과 행 수, 날짜 범위
+* ``dart/allFilings/market_recent.parquet``: 전체 시장 최근 90일 피드
+
+manifest가 없는 첫 실행만 기존 ``recent.parquet``를 읽어 버킷을 만든다. 이후 실행은
+로컬 일자 파일에 등장한 버킷과 작은 시장 피드만 읽고 쓴다. 파티션과 manifest는 HF
+단일 commit으로 게시하므로 독자는 완성된 세대만 본다.
 
 Usage:
     uv run python -X utf8 .github/scripts/sync/buildAllFilingsRecent.py [--no-push]
@@ -21,10 +21,14 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import hashlib
+import json
 import os
 import sys
-from datetime import datetime, timedelta
+from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from typing import Any
 
 import polars as pl
 
@@ -32,159 +36,320 @@ import dartlab.config as _cfg
 from dartlab.core.dataConfig import DATA_RELEASES, repoFor
 from dartlab.gather.dart.allFilingsCollector import _ALLFILINGS_DIR_KEY, _META_SUFFIX, _allFilingsDir
 
-# 랜딩 로더가 쓰는 메타 컬럼 (content_raw·fetch_status 제외)
 _KEEP = ["stock_code", "corp_name", "rcept_dt", "report_nm", "rcept_no", "flr_nm"]
 _REGULAR = ("사업보고서", "반기보고서", "분기보고서")
-_RECENT_NAME = "recent.parquet"
+_LEGACY_NAME = "recent.parquet"
+_PARTITION_DIR = "byCode"
+_MANIFEST_NAME = "manifest.json"
+_MANIFEST_VERSION = 1
+_ROW_GROUP = 20_000
 
-# ── 시장 공시 피드(좌측 터미널) 전용 슬림 파일 ──
-# recent.parquet 은 stock_code 정렬 → 11 row-group 전부 rcept_dt 가 전(全) 범위라 *날짜* row-group
-# pruning 이 불가(전체시장 날짜순을 못 뽑음). 그래서 같은 out 프레임에서 rcept_dt 내림차순 + 최근
-# 윈도만 슬라이스한 별도 파일을 굽는다. 브라우저는 단일 whole-file GET 으로 읽는다(govRecent 동형).
-# ★파일명은 반드시 'recent.parquet' 로 끝나야 worker.js cacheControlFor 가 max-age=600(10분)을 준다
-#   ('market_recent'.endsWith('recent.parquet')=True. 'marketRecent'=False→1시간 stale). 바꾸지 말 것.
 _FEED_NAME = "market_recent.parquet"
-_FEED_WINDOW_DAYS = 90  # 3개월 고정 — 656KB(임계 1.5MB의 43%). 6개월은 임계 86%·가변이라 비권장.
-_FEED_ROW_GROUP = 5_000  # 38K행/~8 row-group — 상단(최신) row-group 만 range-fetch
-_FEED_MAX_BYTES = 1_536 * 1024  # hfRange WHOLE_FILE_MAX_BYTES — 초과 시 단일 GET 분기 falldown
+_FEED_WINDOW_DAYS = 90
+_FEED_ROW_GROUP = 5_000
+_FEED_MAX_BYTES = 1_536 * 1024
 
 
-def _localFrames() -> list[pl.DataFrame]:
-    """로컬 일자 parquet 의 메타 컬럼만 — 전 이력(ephemeral CI 면 forward 수집분만 존재).
+@dataclass(frozen=True)
+class BuildResult:
+    """이번 실행에서 작성한 변경 파티션과 게시 메타데이터."""
 
-    옛 ``[-days:]`` 슬라이스 제거: 운영자 머신의 백필분(2015~)까지 전부 포함해야 통합 파일이
-    전 이력을 담는다. CI 는 로컬 forward 분만 있고 과거는 HF baseline merge 가 보존한다.
+    partitions: dict[str, Path]
+    feedPath: Path
+    manifestPath: Path
+    bootstrap: bool
+
+
+def _relDir() -> str:
+    return str(DATA_RELEASES[_ALLFILINGS_DIR_KEY]["dir"]).strip("/")
+
+
+def _bucketKey(stockCode: str) -> str:
+    code = str(stockCode).strip()
+    if len(code) != 6 or not code.isdigit():
+        raise ValueError(f"유효하지 않은 stock_code: {stockCode!r}")
+    return code[:2]
+
+
+def _partitionName(bucket: str) -> str:
+    return f"{bucket}_recent.parquet"
+
+
+def _emptyFrame() -> pl.DataFrame:
+    return pl.DataFrame(schema={name: pl.Utf8 for name in _KEEP})
+
+
+def _normalize(frames: list[pl.DataFrame]) -> pl.DataFrame:
+    usable = [frame for frame in frames if frame is not None and frame.width]
+    if not usable:
+        return _emptyFrame()
+    out = pl.concat(usable, how="diagonal_relaxed")
+    missing = [name for name in _KEEP if name not in out.columns]
+    if missing:
+        out = out.with_columns(pl.lit(None, dtype=pl.Utf8).alias(name) for name in missing)
+    out = out.select(_KEEP).with_columns(pl.col(name).cast(pl.Utf8) for name in _KEEP)
+    return (
+        out.filter(
+            pl.col("stock_code").str.strip_chars().str.len_chars().eq(6)
+            & pl.col("stock_code").str.contains(r"^\d{6}$")
+            & ~pl.col("report_nm").fill_null("").str.contains("|".join(_REGULAR))
+        )
+        .unique(subset=["rcept_no"], keep="first")
+        .sort(["stock_code", "rcept_dt"], descending=[False, True])
+    )
+
+
+def _localFrame() -> pl.DataFrame:
+    """현재 실행이 수집한 일자 parquet만 합친다.
+
+    GitHub runner에는 forward 또는 이번 백필 범위만 있으므로 이 프레임은 전체 원격 이력과
+    함께 커지지 않는다. 산출 파일과 meta 파일은 입력에서 제외한다.
     """
     outDir = _allFilingsDir()
-    files = sorted(f for f in outDir.glob("*.parquet") if _META_SUFFIX not in f.stem and f.stem != "recent")
+    files = sorted(
+        path
+        for path in outDir.glob("*.parquet")
+        if _META_SUFFIX not in path.stem and path.name not in {_LEGACY_NAME, _FEED_NAME}
+    )
     frames: list[pl.DataFrame] = []
-    for f in files:
+    for path in files:
         try:
-            schema = pl.read_parquet_schema(f)
-            frames.append(pl.read_parquet(f, columns=[c for c in _KEEP if c in schema]))
-        except Exception:  # noqa: BLE001 — 손상 파일 격리
-            continue
-    return frames
+            schema = pl.read_parquet_schema(path)
+            frames.append(pl.read_parquet(path, columns=[name for name in _KEEP if name in schema]))
+        except Exception as exc:  # noqa: BLE001 - 손상된 일자 파일 하나를 격리한다.
+            print(f"[skip] {path.name}: {type(exc).__name__}", file=sys.stderr)
+    return _normalize(frames)
 
 
-def _hfBaseFrame() -> pl.DataFrame | None:
-    """기존 HF recent.parquet (있으면) — CI 증분 merge 의 baseline."""
-    relDir = DATA_RELEASES[_ALLFILINGS_DIR_KEY]["dir"]
-    url = f"https://huggingface.co/datasets/{repoFor(_ALLFILINGS_DIR_KEY)}/resolve/main/{relDir}/{_RECENT_NAME}"
-    from dartlab.core.hfRetry import retryHfCall  # HF read SSOT — transient 429/timeout 재시도(thin-publish 창 제거)
+def _download(remoteName: str) -> Path | None:
+    from huggingface_hub import hf_hub_download
+    from huggingface_hub.errors import EntryNotFoundError
+
+    from dartlab.core.hfRetry import retryHfCall
 
     try:
-        return retryHfCall(pl.read_parquet, url, columns=_KEEP)
-    except Exception:  # noqa: BLE001 — 최초 빌드(파일 부재)·영구 실패면 None(다음 cron 자가복구)
+        path = retryHfCall(
+            hf_hub_download,
+            repo_id=repoFor(_ALLFILINGS_DIR_KEY),
+            repo_type="dataset",
+            filename=f"{_relDir()}/{remoteName}",
+            token=os.environ.get("HF_TOKEN") or None,
+        )
+        return Path(path)
+    except EntryNotFoundError:  # 최초 이관이나 새 버킷이면 파일이 없다.
         return None
 
 
-def buildFeed(out: pl.DataFrame) -> Path:
-    """전체시장 시간순 피드 — recent.parquet 과 같은 out 프레임을 rcept_dt 내림차순 + 최근 90일만
-    슬라이스해 별도 슬림 파일(``market_recent.parquet``)로 굽는다. recent.parquet(stock_code 정렬)은
-    불변 — 우측 단일기업 경로(filter pushdown)가 그 정렬에 의존한다.
+def _remoteManifest() -> dict[str, Any] | None:
+    path = _download(f"{_PARTITION_DIR}/{_MANIFEST_NAME}")
+    if path is None:
+        return None
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    if payload.get("formatVersion") != _MANIFEST_VERSION or not isinstance(payload.get("partitions"), list):
+        return None
+    return payload
 
-    cutoff 는 *데이터 max - 90일* 동적 계산(절대일자 하드코딩 금지 — 데이터가 며칠 stale 일 때
-    빈 피드 방지). zstd·row_group 5000 으로 굽고, 1.5MB 임계 초과 시 SystemExit(whole-file GET
-    분기 falldown 을 조용히 겪지 않게 — 윈도 축소 가드).
-    """
+
+def _remoteFrame(remoteName: str) -> pl.DataFrame | None:
+    path = _download(remoteName)
+    if path is None:
+        return None
+    try:
+        return pl.read_parquet(path, columns=_KEEP)
+    except Exception:  # noqa: BLE001 - 손상 원격 파일은 해당 버킷 로컬분으로 복구한다.
+        return None
+
+
+def _legacyFrame() -> pl.DataFrame | None:
+    return _remoteFrame(_LEGACY_NAME)
+
+
+def _partitionFrame(bucket: str) -> pl.DataFrame | None:
+    return _remoteFrame(f"{_PARTITION_DIR}/{_partitionName(bucket)}")
+
+
+def _feedFrame() -> pl.DataFrame | None:
+    return _remoteFrame(_FEED_NAME)
+
+
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _partitionEntry(bucket: str, frame: pl.DataFrame, path: Path) -> dict[str, Any]:
+    return {
+        "bucket": bucket,
+        "file": _partitionName(bucket),
+        "rows": frame.height,
+        "minDate": str(frame["rcept_dt"].min() or ""),
+        "maxDate": str(frame["rcept_dt"].max() or ""),
+        "bytes": path.stat().st_size,
+        "sha256": _sha256(path),
+    }
+
+
+def _writeFeed(frames: list[pl.DataFrame]) -> Path:
+    out = _normalize(frames)
+    if out.is_empty():
+        raise SystemExit("[feed] 로컬과 기존 시장 피드가 모두 비어 있음")
     dataMax = out["rcept_dt"].max()
     if dataMax is None:
-        raise SystemExit("[feed] rcept_dt 전부 null — 피드 슬라이스 불가")
+        raise SystemExit("[feed] rcept_dt가 전부 null이라 피드를 만들 수 없음")
     cutoff = (datetime.strptime(str(dataMax), "%Y%m%d") - timedelta(days=_FEED_WINDOW_DAYS)).strftime("%Y%m%d")
     feed = out.filter(pl.col("rcept_dt") >= cutoff).sort("rcept_dt", descending=True)
-
     dest = _allFilingsDir() / _FEED_NAME
     feed.write_parquet(dest, compression="zstd", row_group_size=_FEED_ROW_GROUP)
     size = dest.stat().st_size
     if size > _FEED_MAX_BYTES:
         raise SystemExit(
-            f"[feed] {dest.name} {size / 1e6:.2f}MB > {_FEED_MAX_BYTES / 1e6:.2f}MB 임계 — "
-            f"whole-file GET 분기 falldown 위험. 윈도(_FEED_WINDOW_DAYS={_FEED_WINDOW_DAYS}) 축소 필요."
+            f"[feed] {dest.name} {size / 1e6:.2f}MB > {_FEED_MAX_BYTES / 1e6:.2f}MB. "
+            f"whole-file GET 임계를 넘었으므로 {_FEED_WINDOW_DAYS}일 창을 줄여야 함"
         )
-    span = f"{feed['rcept_dt'].min()}~{feed['rcept_dt'].max()}" if feed.height else "(빈 피드)"
-    print(
-        f"[feed] {feed.height:,} rows ({feed['stock_code'].n_unique():,} 종목, cutoff {cutoff}, {span}) "
-        f"→ {dest} ({size / 1e6:.2f} MB)"
-    )
+    print(f"[feed] {feed.height:,} rows, cutoff {cutoff} -> {dest} ({size / 1e6:.2f} MB)")
     return dest
 
 
-def build(*, mergeHf: bool = True) -> tuple[Path, Path]:
-    """로컬 일자분 + (옵션) 기존 HF recent.parquet 을 merge·dedup → 단일 전 이력 파일.
+def build() -> BuildResult:
+    """변경된 코드 버킷만 merge하고 새 manifest와 시장 피드를 작성한다."""
+    outDir = _allFilingsDir()
+    partitionDir = outDir / _PARTITION_DIR
+    partitionDir.mkdir(parents=True, exist_ok=True)
 
-    operator 머신(전체 로컬 store)이든 ephemeral CI(forward 7일만 로컬)든, HF baseline 과
-    합쳐 dedup 하므로 결과가 같게 수렴. trim 없음 — 백필이 깊어질수록 누적된다.
-    """
-    frames = _localFrames()
-    if mergeHf:
-        base = _hfBaseFrame()
-        if base is not None:
-            frames.append(base)
-    if not frames:
-        raise SystemExit("로컬·HF 어느쪽도 allFilings parquet 없음 — 수집/백필 먼저")
+    local = _localFrame()
+    previous = _remoteManifest()
+    bootstrap = previous is None
+    legacy = _legacyFrame() if bootstrap else None
+    if local.is_empty() and legacy is None:
+        raise SystemExit("로컬 allFilings 일자 파일과 이관할 HF recent.parquet가 모두 없음")
 
-    out = pl.concat(frames, how="diagonal_relaxed").with_columns(pl.col(c).cast(pl.Utf8) for c in _KEEP)
-    # 비정기만 — 정기보고서 명칭 제외 (수집단계서 대부분 제외돼 있으나 belt-and-suspenders)
-    out = out.filter(
-        pl.col("stock_code").str.strip_chars().str.len_chars().eq(6)
-        & ~pl.col("report_nm").fill_null("").str.contains("|".join(_REGULAR))
-    )
-    out = out.unique(subset=["rcept_no"], keep="first")
-    # trim 없음 — 전 이력 유지(과거 dot 완결성). 백필(floor 2015-01)이 깊어질수록 누적.
-    out = out.sort(["stock_code", "rcept_dt"], descending=[False, True])
+    previousEntries = {
+        str(entry.get("bucket")): dict(entry)
+        for entry in (previous or {}).get("partitions", [])
+        if isinstance(entry, dict) and str(entry.get("bucket", "")).isdigit()
+    }
+    localBuckets = set(local["stock_code"].str.slice(0, 2).unique().to_list()) if not local.is_empty() else set()
+    legacyNormalized = _normalize([legacy]) if legacy is not None else _emptyFrame()
+    if bootstrap and not legacyNormalized.is_empty():
+        localBuckets.update(legacyNormalized["stock_code"].str.slice(0, 2).unique().to_list())
 
-    dest = _allFilingsDir() / _RECENT_NAME
-    out.write_parquet(dest, compression="zstd", row_group_size=20_000)
-    span = f"{out['rcept_dt'].min()}~{out['rcept_dt'].max()}"
+    changed: dict[str, Path] = {}
+    entries = previousEntries.copy()
+    for bucket in sorted(str(value) for value in localBuckets):
+        additions = local.filter(pl.col("stock_code").str.starts_with(bucket))
+        bases: list[pl.DataFrame] = []
+        if bootstrap:
+            bases.append(legacyNormalized.filter(pl.col("stock_code").str.starts_with(bucket)))
+        else:
+            remote = _partitionFrame(bucket)
+            if bucket in previousEntries and remote is None:
+                raise SystemExit(f"[bucket {bucket}] manifest에 있는 원격 파티션을 읽지 못해 갱신 중단")
+            if remote is not None:
+                bases.append(remote)
+        frame = _normalize([additions, *bases])
+        if frame.is_empty():
+            continue
+        dest = partitionDir / _partitionName(bucket)
+        frame.write_parquet(dest, compression="zstd", row_group_size=_ROW_GROUP)
+        changed[bucket] = dest
+        entries[bucket] = _partitionEntry(bucket, frame, dest)
+        print(f"[bucket {bucket}] {frame.height:,} rows -> {dest.name} ({dest.stat().st_size / 1e6:.2f} MB)")
+
+    feedInputs = [local]
+    remoteFeed = _feedFrame()
+    if not bootstrap and remoteFeed is None:
+        raise SystemExit("[feed] 기존 market_recent.parquet를 읽지 못해 부분 데이터 덮어쓰기를 차단")
+    if remoteFeed is not None:
+        feedInputs.append(remoteFeed)
+    elif bootstrap and not legacyNormalized.is_empty():
+        feedInputs.append(legacyNormalized)
+    feedPath = _writeFeed(feedInputs)
+
+    orderedEntries = [entries[key] for key in sorted(entries)]
+    manifest = {
+        "formatVersion": _MANIFEST_VERSION,
+        "layout": "stockCodePrefix2",
+        "generatedAt": datetime.now(UTC).isoformat(),
+        "dataAsOf": max((str(entry.get("maxDate") or "") for entry in orderedEntries), default=""),
+        "partitionCount": len(orderedEntries),
+        "totalRows": sum(int(entry.get("rows") or 0) for entry in orderedEntries),
+        "partitions": orderedEntries,
+        "legacyRecentFrozen": True,
+    }
+    manifestPath = partitionDir / _MANIFEST_NAME
+    manifestPath.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(
-        f"[build] {out.height:,} rows ({out['stock_code'].n_unique():,} 종목, {span}) → {dest} ({dest.stat().st_size / 1e6:.2f} MB)"
+        f"[manifest] {len(changed)} changed / {len(orderedEntries)} total buckets, "
+        f"{manifest['totalRows']:,} rows -> {manifestPath}"
     )
-    feedDest = buildFeed(out)  # 좌측 시장 공시 피드 전용 슬림 파일(rcept_dt 정렬·최근 90일)
-    return dest, feedDest
+    return BuildResult(partitions=changed, feedPath=feedPath, manifestPath=manifestPath, bootstrap=bootstrap)
 
 
-def push(dest: Path, token: str, name: str = _RECENT_NAME) -> None:
-    from huggingface_hub import HfApi
+def push(result: BuildResult, token: str) -> None:
+    """변경 파티션, 피드, manifest를 HF 단일 commit으로 게시한다."""
+    from huggingface_hub import CommitOperationAdd, HfApi
 
     from dartlab.core.hfRetry import retryHfCall
 
-    relDir = DATA_RELEASES[_ALLFILINGS_DIR_KEY]["dir"]
+    operations = [
+        CommitOperationAdd(
+            path_in_repo=f"{_relDir()}/{_PARTITION_DIR}/{path.name}",
+            path_or_fileobj=str(path),
+        )
+        for _, path in sorted(result.partitions.items())
+    ]
+    operations.extend(
+        [
+            CommitOperationAdd(path_in_repo=f"{_relDir()}/{_FEED_NAME}", path_or_fileobj=str(result.feedPath)),
+            CommitOperationAdd(
+                path_in_repo=f"{_relDir()}/{_PARTITION_DIR}/{_MANIFEST_NAME}",
+                path_or_fileobj=str(result.manifestPath),
+            ),
+        ]
+    )
     api = HfApi(token=token)
     retryHfCall(
-        api.upload_file,
-        path_or_fileobj=str(dest),
-        path_in_repo=f"{relDir}/{name}",
+        api.create_commit,
         repo_id=repoFor(_ALLFILINGS_DIR_KEY),
         repo_type="dataset",
-        commit_message=f"allFilings {name}: 비정기공시 메타 통합 parquet",
+        operations=operations,
+        commit_message=f"allFilings 증분 파티션: {len(result.partitions)}개 버킷 갱신",
     )
-    print(f"[HF↑] pushed {relDir}/{name} → {repoFor(_ALLFILINGS_DIR_KEY)}")
+    print(f"[HF] {len(operations)} files committed atomically -> {repoFor(_ALLFILINGS_DIR_KEY)}")
+
+
+def _resolveToken() -> str:
+    token = os.environ.get("HF_TOKEN", "")
+    if token:
+        return token
+    envPath = Path(_cfg.__file__).resolve().parents[2] / ".env"
+    if envPath.exists():
+        for line in envPath.read_text(encoding="utf-8").splitlines():
+            if line.startswith("HF_TOKEN="):
+                return line.split("=", 1)[1].strip().strip('"').strip("'")
+    return ""
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--days", type=int, default=400, help="(deprecated·무시 — 전 이력 유지)")
-    ap.add_argument("--no-push", action="store_true", help="빌드만, HF push 생략")
-    args = ap.parse_args()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--days", type=int, default=400, help="deprecated, 무시됨")
+    parser.add_argument("--no-push", action="store_true", help="빌드만 하고 HF push는 생략")
+    args = parser.parse_args()
 
-    dest, feedDest = build()
+    result = build()
     if args.no_push:
         return 0
-    token = os.environ.get("HF_TOKEN", "")
+    token = _resolveToken()
     if not token:
-        # .env 로드 시도
-        envp = Path(_cfg.__file__).resolve().parents[2] / ".env"
-        if envp.exists():
-            for line in envp.read_text(encoding="utf-8").splitlines():
-                if line.startswith("HF_TOKEN="):
-                    token = line.split("=", 1)[1].strip().strip('"').strip("'")
-                    break
-    if not token:
-        print("[HF↑] HF_TOKEN 없음 — push skip (빌드만 완료)", file=sys.stderr)
+        print("[HF] HF_TOKEN 없음. 빌드만 완료", file=sys.stderr)
         return 1
-    push(dest, token, _RECENT_NAME)
-    push(feedDest, token, _FEED_NAME)
+    push(result, token)
     return 0
 
 

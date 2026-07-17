@@ -1,7 +1,7 @@
 // 시장 공시 피드 source 단위 테스트 · fake DataCore(requestParquetWholeFile 주입)로 네트워크 없이
 // 정규화 검증: dedup(rceptNo)·정기보고서 제외·필드 매핑·corpName·url·trim·bake 순서 보존.
 import { describe, it, expect } from 'vitest';
-import { loadMarketFeed } from './nonRegularFilingsSource';
+import { loadCompanyNonRegularFilings, loadMarketFeed, loadRecentFilingsForCodes } from './nonRegularFilingsSource';
 import type { DataCore } from '../../../data/fetch/request';
 
 // market_recent.parquet 한 행(메타 6컬럼) shape
@@ -58,5 +58,60 @@ describe('loadMarketFeed', () => {
 		);
 		expect(out.map((f) => f.rceptNo)).toEqual(['A', 'D']); // 입력(bake rcept_dt desc) 순서 보존, 재정렬 없음
 		expect(out[0]?.reportNm).toBe('최대주주변경'); // keep-first
+	});
+});
+
+describe('allFilings 코드 파티션', () => {
+	it('단일 종목은 앞 2자리 파티션만 읽는다', async () => {
+		const paths: string[] = [];
+		const core = {
+			requestParquetRows: async (spec: { path: string }) => {
+				paths.push(spec.path);
+				return [row({ stock_code: '005930', rcept_dt: '20260717', report_nm: '주요사항보고서', rcept_no: 'R1' })];
+			}
+		} as unknown as DataCore;
+
+		const result = await loadCompanyNonRegularFilings(core, '005930');
+
+		expect(paths).toEqual(['dart/allFilings/byCode/00_recent.parquet']);
+		expect(result.map((item) => item.rceptNo)).toEqual(['R1']);
+	});
+
+	it('여러 종목은 버킷별로 묶어 읽는다', async () => {
+		const paths: string[] = [];
+		const core = {
+			requestParquetRows: async (spec: { path: string }) => {
+				paths.push(spec.path);
+				if (spec.path.includes('/00_')) return [row({ stock_code: '005930', rcept_dt: '20260717', report_nm: '변경', rcept_no: 'R1' })];
+				return [row({ stock_code: '035420', rcept_dt: '20260716', report_nm: '변경', rcept_no: 'R2' })];
+			}
+		} as unknown as DataCore;
+
+		const result = await loadRecentFilingsForCodes(core, ['005930', '035420']);
+
+		expect(paths.sort()).toEqual([
+			'dart/allFilings/byCode/00_recent.parquet',
+			'dart/allFilings/byCode/03_recent.parquet'
+		]);
+		expect(Object.keys(result).sort()).toEqual(['005930', '035420']);
+	});
+
+	it('파티션이 아직 없으면 legacy 통합 파일로 이관 호환한다', async () => {
+		const paths: string[] = [];
+		const core = {
+			requestParquetRows: async (spec: { path: string }) => {
+				paths.push(spec.path);
+				if (spec.path.includes('/byCode/')) throw new Error('not found');
+				return [row({ stock_code: '005930', rcept_dt: '20260717', report_nm: '변경', rcept_no: 'R1' })];
+			}
+		} as unknown as DataCore;
+
+		const result = await loadRecentFilingsForCodes(core, ['005930']);
+
+		expect(paths).toEqual([
+			'dart/allFilings/byCode/00_recent.parquet',
+			'dart/allFilings/recent.parquet'
+		]);
+		expect(result['005930']?.[0]?.rceptNo).toBe('R1');
 	});
 });

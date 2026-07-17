@@ -1,4 +1,4 @@
-"""Search publish script contract tests (compact-only — delta 세그먼트 폐기).
+"""Search publish script contract tests (월간 main + 일간 누적 delta).
 
 단일 빌드 스크립트 ``buildSearchMain.py`` + 단일 워크플로 ``searchIndexBuild.yml`` 계약을 박제한다.
 """
@@ -24,8 +24,9 @@ def test_search_main_publish_includes_manifest() -> None:
     assert "source_manifest_set.json" in text
     assert "DARTLAB_SEARCH_SOURCE_MANIFEST_SET" in text
     assert "publishContentIndexFiles" in text
-    # compact-only clean publish — indexPublishNames(npz·delta 제외), obsoleteCurrentFiles 미사용.
+    # sidecar SSOT + hash 기반 변경 artifact 업로드.
     assert "indexPublishNames(outDir)" in text
+    assert "_changedPublishNames" in text
     assert "obsoleteCurrentFiles" not in text
     assert "DARTLAB_SEARCH_MAIN_MODE" in text
     assert "DARTLAB_SEARCH_MAIN_ONLY" in text
@@ -39,7 +40,8 @@ def test_search_main_publish_uses_no_change_short_circuit_and_per_source_guard()
     text = Path(".github/scripts/search/buildSearchMain.py").read_text(encoding="utf-8")
     assert "_isNoChange" in text
     assert "_publishNoChangeManifest" in text
-    assert "_previousManifestNeedsCompaction" in text
+    assert "rebuildDeltaFromCatalog" in text
+    assert "main_catalog_snapshot.parquet" in text
     assert "_perSourceGuard" in text
     assert "previous_manifest.json" in text
     assert "buildSearchMain.noChange" in text
@@ -107,12 +109,12 @@ def test_search_publish_helper_uses_staging_and_manifest_pointer() -> None:
     assert "CommitOperationAdd" in text
 
 
-def test_remote_evidence_asserts_clean_publish_no_delta_keys() -> None:
+def test_remote_evidence_asserts_delta_manifest_consistency() -> None:
     text = Path(".github/scripts/search/checkSearchRemoteEvidence.py").read_text(encoding="utf-8")
-    # clean publish 검증 — published pointer 의 fileSources/requiredFiles 에 delta 키가 0.
     assert "deltaFileSources" in text
-    assert "deltaFileSourceLeak" in text
-    assert "contentIndexDeltaLeak" in text
+    assert "missingDeltaFiles" in text
+    assert "staleDeltaFileSource" in text
+    assert "contentIndexDeltaInconsistent" in text
 
 
 def test_pull_search_current_index_script_exists() -> None:
@@ -340,8 +342,9 @@ def test_allfilings_backfill_is_decoupled_from_daily_original_sync() -> None:
     backfill = Path(".github/workflows/allFilingsBackfill.yml").read_text(encoding="utf-8")
     assert "name: AllFilings Backfill" in backfill
     assert "cron: '30 5 * * *'" in backfill
-    assert "timeout-minutes: 75" in backfill
-    assert "timeout-minutes: 50" in backfill
+    assert "timeout-minutes: 120" in backfill
+    assert "timeout-minutes: 65" in backfill
+    assert "비정기공시 코드 버킷 증분 갱신" in backfill
     assert "DARTLAB_HF_RETRY_ATTEMPTS: '3'" in original
     assert "DARTLAB_HF_RETRY_ATTEMPTS: '3'" in backfill
     assert "DARTLAB_HF_RETRY_MAX_SINGLE_WAIT_SECONDS: '120'" in original
@@ -352,7 +355,7 @@ def test_allfilings_backfill_is_decoupled_from_daily_original_sync() -> None:
 
 
 def test_search_index_build_workflow_is_single_folded_pipeline() -> None:
-    """단일 searchIndexBuild — 일간 증분 + 월간 풀 + workflow_run, compact-only(delta 산출물 없음)."""
+    """단일 searchIndexBuild - 일간 누적 delta + 월간 main + workflow_run."""
     text = Path(".github/workflows/searchIndexBuild.yml").read_text(encoding="utf-8")
     # 트리거 fold — 일간 cron + 월간 cron + 4 source workflow_run.
     assert "name: Search Index Build" in text
@@ -374,6 +377,8 @@ def test_search_index_build_workflow_is_single_folded_pipeline() -> None:
     assert "pullSearchCurrentIndex.py" in text
     assert "prepareSearchDeltaInputs.py" in text
     assert "data/dart/contentIndex/catalog_snapshot.parquet" in text
+    assert "main_catalog_snapshot.parquet" in text
+    assert "Pull existing lite content index from HF" in text
     # 단일 build 스크립트 + clean publish 게이트 + per-source 가드 동반.
     assert "buildSearchMain.py" in text
     assert "buildSearchDelta.py" not in text
@@ -400,8 +405,7 @@ def test_search_index_build_workflow_is_single_folded_pipeline() -> None:
     assert "--fail-on-release-not-ready" in text
     assert 'blockers":["missingProofBundle"]' in text
     assert "actions/upload-artifact" in text
-    # 단일 워크플로 — delta 산출물 파일명 부재.
-    assert ".delta." not in text
+    assert "buildSearchDelta.py" not in text
 
 
 def test_search_index_build_workflow_keeps_legacy_bootstrap_operator_only() -> None:

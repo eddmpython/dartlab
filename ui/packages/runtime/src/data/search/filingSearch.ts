@@ -47,7 +47,9 @@ function readVarints(bytes: Uint8Array, pos: number, count: number): number[] {
 }
 
 interface MetaCard {
+	docKey?: string;
 	rcept_no?: string;
+	section_order?: number;
 	corp_name?: string;
 	stock_code?: string;
 	report_nm?: string;
@@ -55,9 +57,11 @@ interface MetaCard {
 	source?: string;
 	sourceRef?: string;
 	snippet?: string;
+	deleted?: boolean;
 }
 
 interface SearchStats {
+	name: 'main' | 'delta';
 	stemDict: Record<string, number>;
 	terms: Uint32Array; // stemId 별 (byteStart, gapLen, tfLen, df)
 	docLengths: Uint32Array;
@@ -80,56 +84,69 @@ export function createSearchPort(core: DataCore, opts: FilingSearchOptions = {})
 	const tier = opts.tier ?? 'full';
 	const prefix = tier === 'full' ? 'dart/contentIndex' : `dart/contentIndex/${tier}`;
 	const manifestPath = `${prefix}/manifest.json`;
-	let statsP: Promise<SearchStats> | null = null;
-	let manifestP: Promise<{ resolve: (name: string) => string; builtAt: string | null }> | null = null;
+	let statsP: Promise<SearchStats[]> | null = null;
+	let manifestP: Promise<{ resolve: (name: string) => string; builtAt: string | null; hasDelta: boolean }> | null = null;
 
 	// flat `manifest.json`(pointer)을 *1회* 읽어 fileSources(파일명→staging 경로) resolve + builtAt(인덱스
 	// 빌드시점, as-of 라벨용) 캐시. 부재 시 flat fallback. core.request 가 캐시하므로 stats(~10MB)와 무관하게
 	// 경량(manifest 만)으로 builtAt 만 떼올 수 있다 · indexBuiltAt 는 콜드 stats 로드를 강제하지 않는다.
-	function loadManifest(): Promise<{ resolve: (name: string) => string; builtAt: string | null }> {
+	function loadManifest(): Promise<{ resolve: (name: string) => string; builtAt: string | null; hasDelta: boolean }> {
 		return (manifestP ??= (async () => {
 			let fileSources: Record<string, string> = {};
 			let builtAt: string | null = null;
+			let hasDelta = false;
 			try {
-				const manifest = await core.request<{ fileSources?: Record<string, string>; builtAt?: string }>({
+				const manifest = await core.request<{ fileSources?: Record<string, string>; builtAt?: string; hasDelta?: boolean }>({
 					origin: 'hf',
 					path: manifestPath,
 					parse: (r) => r.json()
 				});
 				if (manifest && typeof manifest.fileSources === 'object' && manifest.fileSources) fileSources = manifest.fileSources;
 				if (manifest && typeof manifest.builtAt === 'string') builtAt = manifest.builtAt;
+				hasDelta = manifest?.hasDelta === true;
 			} catch {
 				// manifest 부재(404)·파싱 실패 → flat fallback(전환기/직접배포 호환). 파일 fetch 가 정직히 실패한다.
 			}
-			return { resolve: (name: string) => fileSources[name] ?? `${prefix}/${name}`, builtAt };
+			return { resolve: (name: string) => fileSources[name] ?? `${prefix}/${name}`, builtAt, hasDelta };
 		})());
 	}
 
-	// 단일 main 세그먼트(compact-only · delta 폐기). stats blob = 콜드 1회 캐시. 통파일 hf(프록시), 조각 hfRange.
-	async function loadStats(): Promise<SearchStats> {
-		const { resolve } = await loadManifest();
+	async function loadSegmentStats(name: 'main' | 'delta', resolve: (name: string) => string): Promise<SearchStats> {
 		const ab = (name: string) => core.request<ArrayBuffer>({ origin: 'hf', path: resolve(name), parse: (r) => r.arrayBuffer() });
 		// metaOffsets(~3.7MB)는 hydration(최종 top-k meta fetch) 전까지 불필요 → fetch 만 킥오프하고 콜드
 		// 임계경로(scoring)서 블로킹 안 함. core 가 캐시·dedup. 결과 0(early return) 시 await 안 될 수 있어
 		// unhandledRejection 가드(실 소비처 await 는 정상 throw → queryFilings catch).
-		const metaOffsetsP = ab('main.metaOffsets.bin').then((b) => new BigUint64Array(b));
+		const metaOffsetsP = ab(`${name}.metaOffsets.bin`).then((b) => new BigUint64Array(b));
 		metaOffsetsP.catch(() => {});
 		const [stemDict, termsBuf, dlBuf, meta] = await Promise.all([
-			core.request<Record<string, number>>({ origin: 'hf', path: resolve('main_stems.json'), parse: (r) => r.json() }),
-			ab('main.terms.bin'),
-			ab('main.docLengths.bin'),
-			core.request<{ nDocs: number; avgDocLength: number }>({ origin: 'hf', path: resolve('main.search_meta.json'), parse: (r) => r.json() })
+			core.request<Record<string, number>>({ origin: 'hf', path: resolve(`${name}_stems.json`), parse: (r) => r.json() }),
+			ab(`${name}.terms.bin`),
+			ab(`${name}.docLengths.bin`),
+			core.request<{ nDocs: number; avgDocLength: number }>({ origin: 'hf', path: resolve(`${name}.search_meta.json`), parse: (r) => r.json() })
 		]);
 		return {
+			name,
 			stemDict,
 			terms: new Uint32Array(termsBuf),
 			docLengths: new Uint32Array(dlBuf),
 			metaOffsetsP,
 			nDocs: meta.nDocs,
 			avgDocLength: Math.max(meta.avgDocLength, 1),
-			postingsPath: resolve('main.postings.bin'),
-			metaPath: resolve('main.meta.bin')
+			postingsPath: resolve(`${name}.postings.bin`),
+			metaPath: resolve(`${name}.meta.bin`)
 		};
+	}
+
+	// 월간 main과 선택적 일간 누적 delta를 함께 로드한다. delta 실패 시 main으로 안전하게 낮춘다.
+	async function loadStats(): Promise<SearchStats[]> {
+		const { resolve, hasDelta } = await loadManifest();
+		const main = await loadSegmentStats('main', resolve);
+		if (!hasDelta) return [main];
+		try {
+			return [main, await loadSegmentStats('delta', resolve)];
+		} catch {
+			return [main];
+		}
 	}
 
 	async function queryFilings(input: FilingSearchQuery): Promise<FilingHit[]> {
@@ -137,68 +154,90 @@ export function createSearchPort(core: DataCore, opts: FilingSearchOptions = {})
 		if (!text) return [];
 		const tokens = tokenizeBigram(text);
 		if (!tokens.length) return [];
-		const stats = await (statsP ??= loadStats());
+		const statsList = await (statsP ??= loadStats());
 		const limit = Math.max(1, input.limit ?? 10);
 
-		const seen = new Set<string>();
-		const sids: number[] = [];
-		for (const tok of tokens) {
-			if (seen.has(tok)) continue;
-			seen.add(tok);
-			const sid = stats.stemDict[tok];
-			if (sid !== undefined) sids.push(sid);
+		async function scoreSegment(stats: SearchStats): Promise<Array<{ stats: SearchStats; docId: number; score: number }>> {
+			const seenTokens = new Set<string>();
+			const sids: number[] = [];
+			for (const tok of tokens) {
+				if (seenTokens.has(tok)) continue;
+				seenTokens.add(tok);
+				const sid = stats.stemDict[tok];
+				if (sid !== undefined) sids.push(sid);
+			}
+			const scores = new Map<number, number>();
+			await Promise.all(
+				sids.map(async (sid) => {
+					const byteStart = stats.terms[sid * 4] ?? 0;
+					const gapLen = stats.terms[sid * 4 + 1] ?? 0;
+					const tfLen = stats.terms[sid * 4 + 2] ?? 0;
+					const df = stats.terms[sid * 4 + 3] ?? 0;
+					if (!df) return;
+					const buf = await core.requestBytes({ path: stats.postingsPath, start: byteStart, len: gapLen + tfLen });
+					const u8 = new Uint8Array(buf);
+					const gaps = readVarints(u8, 0, df);
+					const tfs = readVarints(u8, gapLen, df);
+					const idf = Math.log((stats.nDocs - df + 0.5) / (df + 0.5) + 1.0);
+					let docId = 0;
+					for (let i = 0; i < df; i++) {
+						docId += gaps[i] ?? 0;
+						const tf = tfs[i] ?? 0;
+						const dl = stats.docLengths[docId] || stats.avgDocLength;
+						const norm = (tf * (K1 + 1)) / (tf + K1 * (1 - B + (B * dl) / stats.avgDocLength));
+						scores.set(docId, (scores.get(docId) ?? 0) + idf * norm);
+					}
+				})
+			);
+			return [...scores.entries()]
+				.sort((a, b) => b[1] - a[1])
+				.slice(0, limit * 5)
+				.map(([docId, score]) => ({ stats, docId, score }));
 		}
-		if (!sids.length) return [];
 
-		// 질의어 term postings 조각만 병렬 range fetch(1 RTT wave) → exact BM25 누적.
-		const scores = new Map<number, number>();
-		await Promise.all(
-			sids.map(async (sid) => {
-				const byteStart = stats.terms[sid * 4] ?? 0;
-				const gapLen = stats.terms[sid * 4 + 1] ?? 0;
-				const tfLen = stats.terms[sid * 4 + 2] ?? 0;
-				const df = stats.terms[sid * 4 + 3] ?? 0;
-				if (!df) return;
-				const buf = await core.requestBytes({ path: stats.postingsPath, start: byteStart, len: gapLen + tfLen });
-				const u8 = new Uint8Array(buf);
-				const gaps = readVarints(u8, 0, df);
-				const tfs = readVarints(u8, gapLen, df);
-				const idf = Math.log((stats.nDocs - df + 0.5) / (df + 0.5) + 1.0);
-				let docId = 0;
-				for (let i = 0; i < df; i++) {
-					docId += gaps[i] ?? 0; // 첫 gap=절대 docId, 이후 delta → cumsum
-					const tf = tfs[i] ?? 0;
-					const dl = stats.docLengths[docId] || stats.avgDocLength;
-					const norm = (tf * (K1 + 1)) / (tf + K1 * (1 - B + (B * dl) / stats.avgDocLength));
-					scores.set(docId, (scores.get(docId) ?? 0) + idf * norm);
-				}
-			})
-		);
-		if (!scores.size) return [];
-
-		const top = [...scores.entries()].sort((a, b) => b[1] - a[1]).slice(0, limit);
-
-		// hydration · metaOffsets 합류(scoring 동안 병렬 다운로드돼 보통 이미 완료). top-k doc meta 만 range fetch.
-		const metaOffsets = await stats.metaOffsetsP;
-		return Promise.all(
-			top.map(async ([docId, score]) => {
+		const candidates = (await Promise.all(statsList.map(scoreSegment))).flat();
+		if (!candidates.length) return [];
+		const { resolve, hasDelta } = await loadManifest();
+		let overrides: MetaCard[] = [];
+		if (hasDelta) {
+			try {
+				overrides = await core.request<MetaCard[]>({ origin: 'hf', path: resolve('delta_overrides.json'), parse: (r) => r.json() });
+			} catch {
+				overrides = [];
+			}
+		}
+		const cardKey = (card: MetaCard): string =>
+			card.docKey || `${card.sourceRef ?? card.source ?? ''}\u001f${card.rcept_no ?? ''}\u001f${card.section_order ?? 0}`;
+		const overrideKeys = new Set(overrides.map(cardKey));
+		const hydrated = await Promise.all(
+			candidates.map(async ({ stats, docId, score }) => {
+				const metaOffsets = await stats.metaOffsetsP;
 				const o0 = Number(metaOffsets[docId]);
 				const o1 = Number(metaOffsets[docId + 1]);
 				const buf = await core.requestBytes({ path: stats.metaPath, start: o0, len: o1 - o0 });
 				const card = JSON.parse(new TextDecoder().decode(buf)) as MetaCard;
-				return {
-					rceptNo: card.rcept_no ?? '',
-					corpName: card.corp_name ?? '',
-					stockCode: card.stock_code ?? '',
-					reportNm: (card.report_nm ?? '').trim(),
-					rceptDt: card.rcept_dt ?? '',
-					snippet: card.snippet ?? '',
-					source: card.source ?? '',
-					sourceRef: card.sourceRef ?? '',
-					score
-				} satisfies FilingHit;
+				return { stats, card, score, key: cardKey(card) };
 			})
 		);
+		const seenRows = new Set<string>();
+		const result: FilingHit[] = [];
+		for (const { stats, card, score, key } of hydrated.sort((a, b) => b.score - a.score)) {
+			if (card.deleted || (stats.name === 'main' && overrideKeys.has(key)) || seenRows.has(key)) continue;
+			seenRows.add(key);
+			result.push({
+				rceptNo: card.rcept_no ?? '',
+				corpName: card.corp_name ?? '',
+				stockCode: card.stock_code ?? '',
+				reportNm: (card.report_nm ?? '').trim(),
+				rceptDt: card.rcept_dt ?? '',
+				snippet: card.snippet ?? '',
+				source: card.source ?? '',
+				sourceRef: card.sourceRef ?? '',
+				score
+			});
+			if (result.length >= limit) break;
+		}
+		return result;
 	}
 
 	// 인덱스 빌드시점(as-of 라벨) · manifest 만 읽어 builtAt 반환(콜드 stats ~10MB 강제 안 함). 부재 시 null.

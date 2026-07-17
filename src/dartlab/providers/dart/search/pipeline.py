@@ -153,7 +153,7 @@ def exportDeltaRowsForContentIndex(
     previousRows: Iterable[dict[str, Any]] | pl.DataFrame,
     currentRows: Iterable[dict[str, Any]] | pl.DataFrame,
 ) -> pl.DataFrame:
-    """Export new/changed catalog rows as fieldIndex delta build input.
+    """Export new/changed rows and deletion tombstones as fieldIndex delta input.
 
     Args:
         previousRows: Previous catalog snapshot rows.
@@ -174,8 +174,16 @@ def exportDeltaRowsForContentIndex(
     delta = diffCatalog(previousRows, currentRows)
     rows = []
     for frame in (delta.new, delta.changed):
-        rows.extend(frame.iter_rows(named=True))
-    return exportCatalogRowsForContentIndex(rows)
+        for row in frame.iter_rows(named=True):
+            contentRow = _catalogRowToContentRow(dict(row))
+            contentRow["deleted"] = False
+            rows.append(contentRow)
+    for row in delta.deleted.iter_rows(named=True):
+        contentRow = _catalogRowToContentRow(dict(row))
+        contentRow["section_content"] = ""
+        contentRow["deleted"] = True
+        rows.append(contentRow)
+    return pl.DataFrame(rows) if rows else pl.DataFrame()
 
 
 def exportCatalogRowsForContentIndex(rows: Iterable[dict[str, Any]] | pl.DataFrame) -> pl.DataFrame:
@@ -292,6 +300,7 @@ def _fingerprint(row: dict[str, Any]) -> tuple[str, str, bool]:
 def _catalogRowToContentRow(row: dict[str, Any]) -> dict[str, Any]:
     source = str(row.get("source") or "")
     return {
+        "docKey": str(row.get("docKey") or ""),
         "rcept_no": str(row.get("rceptNo") or row.get("sourceRef") or ""),
         "section_order": int(row.get("sectionOrder") or 0),
         "corp_code": str(row.get("corpCode") or ""),
@@ -305,6 +314,7 @@ def _catalogRowToContentRow(row: dict[str, Any]) -> dict[str, Any]:
         "sourceRef": str(row.get("sourceRef") or ""),
         "sourceDataAsOf": str(row.get("sourceDataAsOf") or row.get("date") or ""),
         "url": _runtimeUrl(source, row),
+        "deleted": bool(row.get("deleted")),
     }
 
 

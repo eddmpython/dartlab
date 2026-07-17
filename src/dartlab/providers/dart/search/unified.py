@@ -240,7 +240,9 @@ def searchUnified(
         candidateLimit = limit * 3
 
     allHits: list[dict] = []
-    deltaKeys: set[tuple] = set()
+    deltaKeys: set[tuple[str, str, str]] = {
+        _rowKey(row) for row in (segments["delta"][1].iter_rows(named=True) if "delta" in segments else [])
+    }
     for name in ("delta", "main"):
         if name not in segments:
             continue
@@ -285,14 +287,13 @@ def searchUnified(
         for i, score in sorted(candidateScores.items(), key=lambda item: item[1], reverse=True):
             row = meta.row(int(i), named=True)
             rowKey = _rowKey(row)
+            if bool(row.get("deleted")):
+                continue
             if rowKey in seenSegmentKeys:
                 continue
             seenSegmentKeys.add(rowKey)
-            key = (row["rcept_no"], row["section_order"])
-            if name == "main" and key in deltaKeys:
+            if name == "main" and rowKey in deltaKeys:
                 continue
-            if name == "delta":
-                deltaKeys.add(key)
             allHits.append({**row, "score": score, "segment": name})
 
     if not allHits:

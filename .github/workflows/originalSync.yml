@@ -24,7 +24,7 @@ name: Original SSOT Sync
 #   ② 본 run 내부 dart 4-job 직렬 = needs 체인 (dart-zip → dart-reconcile → allfilings →
 #     allfilings). ⚠ 같은 group 을 *병렬* 로 4 job 이 선언하면 GitHub 동시성은
 #     "실행 1 + 대기 1" 만 허용 → 새 대기가 이전 대기를 취소 → 매 run 2~3 job 이 1 초 만에
-#     queue 축출(2026-06 allfilings recent.parquet 43h 동결 사고). needs 로 한 번에 한 job 만
+#     queue 축출(2026-06 allfilings 산출물 43h 동결 사고). needs 로 한 번에 한 job 만
 #     group 을 요청하게 해 자가 축출을 차단. 상위 실패가 하위(특히 daily allfilings)를 막지
 #     않도록 하위 if 에 !cancelled() 부여(skip 된 needs 도 통과). 백필은 별도 workflow 로 분리해
 #     긴 과거 수집/일시 장애가 daily current + Search Delta 후속 갱신을 붙잡지 않게 한다.
@@ -147,7 +147,7 @@ jobs:
         run: uv run python -X utf8 -m dartlab.pipeline panelRceptReconcile
 
   allfilings:
-    needs: dart-reconcile  # 직렬 체인 3 번째. 상위 실패해도 daily recent.parquet 갱신 위해 !cancelled()
+    needs: dart-reconcile  # 직렬 체인 3 번째. 상위 실패해도 daily 코드 파티션 갱신 위해 !cancelled()
     if: ${{ !cancelled() && (github.event_name == 'schedule' || github.event.inputs.jobs == 'all' || github.event.inputs.jobs == 'allfilings') }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
@@ -172,7 +172,7 @@ jobs:
           DARTLAB_HF_RETRY_ATTEMPTS: '3'
           DARTLAB_HF_RETRY_MAX_SINGLE_WAIT_SECONDS: '120'
         run: uv run python -X utf8 -m dartlab.pipeline allFilings
-      - name: 비정기공시 통합 parquet 갱신 + HF push (전 이력·전역 1파일, stock_code 필터)
+      - name: 비정기공시 코드 버킷 증분 갱신 + HF 원자 push
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           DARTLAB_HF_RETRY_ATTEMPTS: '3'
@@ -238,9 +238,8 @@ jobs:
           DARTLAB_HF_RETRY_ATTEMPTS: '3'
           DARTLAB_HF_RETRY_MAX_SINGLE_WAIT_SECONDS: '120'
         run: uv run python -X utf8 -m dartlab.pipeline allFilingsBackfill
-      - name: 비정기공시 통합 parquet 갱신 + HF push (백필 slab 누적 — 전 이력 심화)
-        # forward 잡과 동일 스크립트. 이 잡이 방금 collect 한 2개월 과거 slab 이 로컬에 있으므로
-        # HF baseline + 이 slab merge → 통합 파일이 백필 cadence 대로 2015-01 까지 깊어진다(운영자 수동 0).
+      - name: 비정기공시 코드 버킷 증분 갱신 + HF 원자 push (백필 slab 반영)
+        # 방금 수집한 과거 slab의 종목코드 버킷만 원격 파티션과 merge한다.
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           DARTLAB_HF_RETRY_ATTEMPTS: '3'
