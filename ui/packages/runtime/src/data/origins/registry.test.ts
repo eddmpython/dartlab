@@ -12,6 +12,12 @@ describe('origins.hfMedia', () => {
 		expect(originCache('hfApi')?.scope).toBe('memory');
 	});
 
+	it('hfRevisionRange 는 immutable revision의 exact 원본으로 해석', () => {
+		expect(originUrl('hfRevisionRange', 'abc123/dart/panel/005930.parquet')).toBe(
+			'https://huggingface.co/datasets/eddmpython/dartlab-data/resolve/abc123/dart/panel/005930.parquet'
+		);
+	});
+
 	it('hfMedia 는 dartlab-media repo 로 해석 · dartlab-data(hf) 와 다른 base', () => {
 		const objectPath = `objects/sha256/ab/${'ab'.repeat(32)}.webp`;
 		const media = originUrl('hfMedia', objectPath);

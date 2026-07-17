@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import type {
+		UniverseKnowledgeContent,
 		UniverseKnowledgeCoverage,
 		UniverseKnowledgeDomainId,
 		UniverseKnowledgeNode,
@@ -14,13 +15,18 @@
 	interface Props {
 		loadOverview: () => Promise<UniverseKnowledgeOverview>;
 		loadCoverage: () => Promise<UniverseKnowledgeCoverage>;
+		loadContent: (targetId: string) => Promise<UniverseKnowledgeContent>;
 		searchKnowledge: (request: UniverseKnowledgeSearchRequest) => Promise<UniverseKnowledgeSearchResult>;
 		openKnowledge: (targetId: string) => Promise<UniverseKnowledgeScene>;
 	}
 
-	let { loadOverview, loadCoverage, searchKnowledge, openKnowledge }: Props = $props();
+	let { loadOverview, loadCoverage, loadContent, searchKnowledge, openKnowledge }: Props = $props();
 	let overview = $state<UniverseKnowledgeOverview | null>(null);
 	let coverage = $state<UniverseKnowledgeCoverage | null>(null);
+	let content = $state<UniverseKnowledgeContent | null>(null);
+	let contentLoading = $state(false);
+	let contentError = $state<string | null>(null);
+	let contentRequest = 0;
 	let scene = $state<UniverseKnowledgeScene | null>(null);
 	let selectedId = $state<string | null>(null);
 	let focusNodeId = $state<string | null>(null);
@@ -113,6 +119,22 @@
 		filmActive = false;
 		filmPlaying = false;
 		searchResult = null;
+		content = null;
+		contentError = null;
+	}
+
+	async function hydrateContent(targetId: string): Promise<void> {
+		const request = ++contentRequest;
+		contentLoading = true;
+		contentError = null;
+		try {
+			const next = await loadContent(targetId);
+			if (request === contentRequest) content = next;
+		} catch (value) {
+			if (request === contentRequest) contentError = message(value, '원본 내용을 미리 볼 수 없습니다.');
+		} finally {
+			if (request === contentRequest) contentLoading = false;
+		}
 	}
 
 	async function openTarget(targetId: string): Promise<void> {
@@ -191,6 +213,18 @@
 			activateBeat(filmIndex + 1, true);
 		}, activeBeat.durationMs / filmSpeed);
 		return () => window.clearTimeout(timer);
+	});
+
+	$effect(() => {
+		const targetId = selectedNode?.nodeId ?? '';
+		if (targetId.startsWith('hf:')) {
+			void hydrateContent(targetId);
+			return;
+		}
+		contentRequest += 1;
+		content = null;
+		contentLoading = false;
+		contentError = null;
 	});
 
 	onMount(() => {
@@ -291,6 +325,39 @@
 					<div><span>RELATIONS</span><strong>{connectedEdges.length.toLocaleString()}</strong></div>
 					<div><span>WEIGHT</span><strong>{selectedNode.weight.toFixed(1)}</strong></div>
 				</div>
+				{#if contentLoading}
+					<div class="contentLoading"><i></i><span>원본 내용을 revision에 맞춰 읽는 중</span></div>
+				{:else if contentError}
+					<div class="contentError"><span>PREVIEW UNAVAILABLE</span><p>{contentError}</p></div>
+				{:else if content}
+					<section class="contentPreview" aria-label={`${content.title} 원본 미리보기`}>
+						<header><span>ORIGINAL CONTENT</span><b>{content.kind.toLocaleUpperCase()}</b></header>
+						{#if content.kind === 'image'}
+							<img src={content.contentRef} alt={content.title} loading="eager" />
+						{:else if content.kind === 'video'}
+							<!-- svelte-ignore a11y_media_has_caption -->
+							<video src={content.contentRef} controls preload="metadata" aria-label={content.title}></video>
+						{:else if content.kind === 'audio'}
+							<audio src={content.contentRef} controls preload="metadata" aria-label={content.title}></audio>
+						{:else if content.kind === 'table'}
+							<div class="contentTableWrap">
+								<table>
+									<thead><tr>{#each content.columns as column (column)}<th>{column}</th>{/each}</tr></thead>
+									<tbody>{#each content.rows as row, index (index)}<tr>{#each content.columns as column (column)}<td>{row[column]}</td>{/each}</tr>{/each}</tbody>
+								</table>
+							</div>
+						{:else if content.kind === 'text' || content.kind === 'json'}
+							<pre>{content.text}</pre>
+						{:else}
+							<div class="binaryPreview"><b>미리보기 미지원 형식</b><span>{content.mimeType}</span><a href={content.contentRef} target="_blank" rel="noreferrer">원본 열기</a></div>
+						{/if}
+						<footer>
+							<span>{content.mimeType}</span>
+							<code>{content.revision.slice(0, 9)}</code>
+							{#if content.receipt.truncated}<b>BOUNDED PREVIEW</b>{/if}
+						</footer>
+					</section>
+				{/if}
 				{#if selectedAttributes.length > 0}
 					<dl>{#each selectedAttributes as [key, value] (key)}<div><dt>{key}</dt><dd>{typeof value === 'number' ? value.toLocaleString() : String(value)}</dd></div>{/each}</dl>
 				{/if}
@@ -341,7 +408,7 @@
 	.catalogState div { display: grid; text-align: right; }
 	.catalogState b { color: #b8c6d8; font: 600 9px/1.2 ui-monospace, monospace; }
 	.catalogState small { margin-top: 3px; color: #4f6076; font: 500 8px/1 ui-monospace, monospace; }
-	.universeBody { position: relative; z-index: 2; min-height: 0; display: grid; grid-template-columns: 166px minmax(0, 1fr) 272px; }
+	.universeBody { position: relative; z-index: 2; min-height: 0; display: grid; grid-template-columns: 166px minmax(0, 1fr) clamp(320px, 24vw, 380px); }
 	.galaxyRail { min-height: 0; overflow-y: auto; padding: 15px 10px; border-right: 1px solid rgba(101, 124, 154, .12); background: rgba(7, 11, 17, .54); scrollbar-width: thin; }
 	.railTitle { display: flex; align-items: center; justify-content: space-between; margin: 0 7px 11px; }
 	.railTitle span, .knowledgeLens header > span, .relationList > span, .sourceAddress > span, .filmNarration > span, .filmReceipt > span, .sceneTitle > div > span, .emptyLens > span { color: #4e6077; font: 650 7px/1 ui-monospace, monospace; letter-spacing: .13em; }
@@ -389,6 +456,31 @@
 	.lensStats div { min-width: 0; padding: 8px; border-top: 1px solid #172231; border-bottom: 1px solid #172231; }
 	.lensStats span { display: block; color: #4d6077; font: 600 6px/1 ui-monospace, monospace; }
 	.lensStats strong { display: block; margin-top: 6px; overflow: hidden; color: #9cadc1; font: 600 9px/1 ui-monospace, monospace; text-overflow: ellipsis; white-space: nowrap; }
+	.contentLoading { display: flex; align-items: center; gap: 9px; margin-top: 14px; border: 1px solid rgba(96, 125, 163, .14); border-radius: 9px; padding: 11px; color: #71849c; background: rgba(14, 22, 33, .58); font-size: 8px; }
+	.contentLoading i { width: 13px; height: 13px; flex: 0 0 auto; border: 2px solid #263950; border-top-color: #79a7df; border-radius: 50%; animation: spin .9s linear infinite; }
+	.contentError { margin-top: 14px; border: 1px solid rgba(207, 105, 116, .2); border-radius: 9px; padding: 11px; background: rgba(43, 18, 24, .38); }
+	.contentError span { color: #c87782; font: 650 7px/1 ui-monospace, monospace; letter-spacing: .1em; }
+	.contentError p { margin: 7px 0 0; color: #997079; font-size: 8px; line-height: 1.45; overflow-wrap: anywhere; }
+	.contentPreview { margin-top: 14px; overflow: hidden; border: 1px solid rgba(107, 139, 181, .18); border-radius: 11px; background: rgba(5, 9, 15, .72); box-shadow: 0 16px 38px rgba(0, 0, 0, .18); }
+	.contentPreview > header { min-height: 31px; padding: 0 10px; border-bottom: 1px solid rgba(96, 124, 162, .13); background: rgba(18, 27, 40, .72); }
+	.contentPreview > header span { color: #58708d; font: 650 7px/1 ui-monospace, monospace; letter-spacing: .1em; }
+	.contentPreview > header b { border: 0; padding: 0; color: #91a9c4; background: transparent; font-size: 7px; }
+	.contentPreview img, .contentPreview video { width: 100%; max-height: 300px; display: block; object-fit: contain; background: #03060a; }
+	.contentPreview audio { width: calc(100% - 20px); height: 34px; display: block; margin: 12px 10px; }
+	.contentPreview pre { max-height: 340px; margin: 0; overflow: auto; padding: 13px; color: #aab9ca; background: #070c13; font: 500 8px/1.65 ui-monospace, SFMono-Regular, Consolas, monospace; white-space: pre-wrap; overflow-wrap: anywhere; tab-size: 2; user-select: text; scrollbar-width: thin; }
+	.contentTableWrap { max-height: 320px; overflow: auto; scrollbar-width: thin; }
+	.contentTableWrap table { width: max-content; min-width: 100%; border-collapse: collapse; color: #91a3b7; background: #070c13; font: 500 8px/1.35 ui-monospace, SFMono-Regular, Consolas, monospace; }
+	.contentTableWrap th { position: sticky; z-index: 1; top: 0; padding: 8px 10px; border-right: 1px solid #182332; border-bottom: 1px solid #243348; color: #b9c9db; background: #101824; text-align: left; white-space: nowrap; }
+	.contentTableWrap td { max-width: 220px; padding: 7px 10px; overflow: hidden; border-right: 1px solid #121c29; border-bottom: 1px solid #121c29; text-overflow: ellipsis; white-space: nowrap; }
+	.contentTableWrap tr:hover td { color: #c8d5e3; background: rgba(92, 130, 177, .08); }
+	.binaryPreview { display: grid; justify-items: start; gap: 7px; padding: 14px; }
+	.binaryPreview b { color: #a8b7c9; font-size: 9px; }
+	.binaryPreview span { color: #596d85; font: 500 8px/1 ui-monospace, monospace; }
+	.binaryPreview a { margin-top: 3px; border: 1px solid #2a435f; border-radius: 7px; padding: 7px 9px; color: #a8c7e8; background: #122238; font-size: 8px; text-decoration: none; }
+	.contentPreview > footer { min-height: 31px; display: flex; align-items: center; gap: 7px; padding: 0 10px; border-top: 1px solid rgba(96, 124, 162, .13); color: #51647b; background: rgba(13, 20, 30, .82); font: 500 7px/1 ui-monospace, monospace; }
+	.contentPreview > footer span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.contentPreview > footer code { margin-left: auto; color: #6d84a0; }
+	.contentPreview > footer b { flex: 0 0 auto; color: #bc925b; font-size: 6px; letter-spacing: .06em; }
 	dl { margin: 16px 0 0; }
 	dl div { display: grid; grid-template-columns: 74px minmax(0, 1fr); gap: 8px; padding: 7px 0; border-bottom: 1px solid rgba(85, 106, 134, .1); }
 	dt { color: #53667e; font: 600 7px/1.3 ui-monospace, monospace; overflow-wrap: anywhere; }
@@ -424,8 +516,8 @@
 	.filmReceipt b { color: #8799ae; font: 600 8px/1 ui-monospace, monospace; }
 	.filmReceipt small { grid-column: 1 / -1; color: #43546a; font: 500 7px/1 ui-monospace, monospace; }
 	@keyframes spin { to { transform: rotate(360deg); } }
-	@media (max-width: 1080px) { .universeBody { grid-template-columns: 142px minmax(0, 1fr) 240px; } .galaxyRail { padding-inline: 7px; } .knowledgeFilm { grid-template-columns: auto minmax(220px, 1fr) minmax(220px, 1fr); } .filmReceipt { display: none; } }
+	@media (max-width: 1080px) { .universeBody { grid-template-columns: 142px minmax(0, 1fr) 300px; } .galaxyRail { padding-inline: 7px; } .knowledgeFilm { grid-template-columns: auto minmax(220px, 1fr) minmax(220px, 1fr); } .filmReceipt { display: none; } }
 	@media (max-width: 820px) { .knowledgeUniverse { height: auto; min-height: calc(100vh - 96px); grid-template-rows: auto auto auto; overflow: visible; padding-bottom: 86px; } .commandBar { grid-template-columns: 1fr auto; padding: 9px 12px; } .scenePath { display: none; } .omnibox { min-width: 0; } .catalogState { grid-column: 2; grid-row: 1; } .universeBody { display: grid; grid-template-columns: 1fr; } .galaxyRail { display: flex; gap: 3px; overflow-x: auto; border-right: 0; border-bottom: 1px solid rgba(101, 124, 154, .12); padding: 7px; } .railTitle { display: none; } .galaxyRail > button { flex: 0 0 104px; } .galaxyRail button span { display: block; } .galaxyRail small { display: block; margin-top: 3px; } .sceneStage { min-height: 520px; } .knowledgeLens { max-height: 440px; border-left: 0; border-top: 1px solid rgba(101, 124, 154, .12); } .knowledgeFilm { position: fixed; z-index: 20; left: 0; right: 0; bottom: 0; grid-template-columns: auto minmax(0, 1fr); box-shadow: 0 -18px 42px rgba(0, 0, 0, .32); } .filmTimeline { grid-column: 1 / -1; } }
 	@media (max-width: 560px) { .commandBar { grid-template-columns: 1fr; } .catalogState { display: none; } .omnibox { grid-column: 1; } .sceneTitle { gap: 8px; padding: 15px 12px 8px; } .sceneTitle > div:first-child { min-width: 0; } .sceneTitle p { max-width: 270px; } .sceneStage { min-height: 470px; } .knowledgeLens { padding: 15px 12px; } .knowledgeFilm { gap: 8px; padding: 8px 10px; } .filmNarration p { display: none; } .tableRow { grid-template-columns: minmax(160px, 1fr) .7fr; } .tableRow > span:nth-child(3), .tableRow > code { display: none; } }
-	@media (prefers-reduced-motion: reduce) { .loadingScene i, .sceneLoading i { animation: none; } }
+	@media (prefers-reduced-motion: reduce) { .loadingScene i, .sceneLoading i, .contentLoading i { animation: none; } }
 </style>

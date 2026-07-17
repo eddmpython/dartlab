@@ -25,6 +25,7 @@ export function createUniverseBrowser(options: DartlabBrowserOptions): UniverseB
 		seed,
 		knowledgeOverview: knowledge.overview,
 		knowledgeCoverage: knowledge.coverage,
+		knowledgeContent: knowledge.content,
 		searchKnowledge: knowledge.search,
 		openKnowledge: knowledge.open,
 		globalCoverage: global.coverage,

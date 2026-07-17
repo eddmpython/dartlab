@@ -49,6 +49,7 @@
 		seed={data}
 		loadKnowledgeOverview={universe.knowledgeOverview}
 		loadKnowledgeCoverage={universe.knowledgeCoverage}
+		loadKnowledgeContent={universe.knowledgeContent}
 		searchKnowledge={universe.searchKnowledge}
 		openKnowledge={universe.openKnowledge}
 		mapHref={`${base}/map`}

@@ -7,6 +7,7 @@ import type {
 	UniverseEntitySearchResult,
 	UniverseEvidenceQuery,
 	UniverseEvidenceResolution,
+	UniverseKnowledgeContent,
 	UniverseKnowledgeCoverage,
 	UniverseKnowledgeOverview,
 	UniverseKnowledgeScene,
@@ -43,6 +44,7 @@ export interface UniverseBrowser {
 	seed(): Promise<UniverseRouteSeed>;
 	knowledgeOverview(): Promise<UniverseKnowledgeOverview>;
 	knowledgeCoverage(): Promise<UniverseKnowledgeCoverage>;
+	knowledgeContent(targetId: string): Promise<UniverseKnowledgeContent>;
 	searchKnowledge(request: UniverseKnowledgeSearchRequest): Promise<UniverseKnowledgeSearchResult>;
 	openKnowledge(targetId: string): Promise<UniverseKnowledgeScene>;
 	globalCoverage(): Promise<UniverseCatalogCoverage>;

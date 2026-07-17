@@ -31,7 +31,13 @@ const catalog = {
 	skills: graph.nodes.map((node) => ({ ...node, whenToUse: [node.purpose], apiRefs: [], sourceRefs: [`dartlab://skills/${node.id}`] }))
 };
 
-function fakeCore(): DataCore {
+interface ContentCallLog {
+	parquetRevision?: string;
+	byteOrigin?: string;
+	bytePath?: string;
+}
+
+function fakeCore(contentCalls?: ContentCallLog): DataCore {
 	return {
 		async request<T>(spec: RequestSpec<T>): Promise<T> {
 			if (spec.path.startsWith('tree/main')) {
@@ -45,15 +51,26 @@ function fakeCore(): DataCore {
 				...(spec.path.includes('siblings') ? { siblings } : {})
 			} as T;
 		},
-		async requestParquetRows() { return []; },
+		async requestParquetRows<T extends Record<string, unknown>>(spec: { path: string; revision?: string }) {
+			if (contentCalls) contentCalls.parquetRevision = spec.revision;
+			return (spec.path === 'dart/companyProfile.parquet'
+				? [{ stockCode: '005930', corpName: '삼성전자', listed: true }]
+				: []) as unknown as T[];
+		},
 		async requestParquetWholeFile() { return []; },
-		async requestBytes() { return new ArrayBuffer(0); },
+		async requestBytes(spec: { origin?: string; path: string }) {
+			if (contentCalls) {
+				contentCalls.byteOrigin = spec.origin;
+				contentCalls.bytePath = spec.path;
+			}
+			return new TextEncoder().encode('# DartLab\n통합 지식 원문').buffer as ArrayBuffer;
+		},
 		clear() {}
 	};
 }
 
-function runtime() {
-	return createUniverseKnowledgeRuntime(fakeCore(), {
+function runtime(contentCalls?: ContentCallLog) {
+	return createUniverseKnowledgeRuntime(fakeCore(contentCalls), {
 		loadSkillGraph: async () => graph,
 		loadSkillCatalog: async () => catalog
 	});
@@ -100,5 +117,27 @@ describe('Universe knowledge runtime', () => {
 	it('keeps an exact two-segment source as a file in its domain scene', async () => {
 		const entities = await runtime().open('domain:entities');
 		expect(entities.nodes.some((node) => node.nodeId === 'hf:dart/companyProfile.parquet' && node.kind === 'entity')).toBe(true);
+	});
+
+	it('resolves text, parquet and media content at the catalog revision', async () => {
+		const contentCalls: ContentCallLog = {};
+		const contentRuntime = runtime(contentCalls);
+		const textContent = await contentRuntime.content('hf:README.md');
+		expect(textContent.kind).toBe('text');
+		expect(textContent.text).toContain('통합 지식 원문');
+		expect(textContent.receipt.mode).toBe('byteRange');
+		expect(contentCalls.byteOrigin).toBe('hfRevisionRange');
+		expect(contentCalls.bytePath).toBe('revision-1/README.md');
+
+		const tableContent = await contentRuntime.content('hf:dart/companyProfile.parquet');
+		expect(tableContent.kind).toBe('table');
+		expect(tableContent.columns).toEqual(['stockCode', 'corpName', 'listed']);
+		expect(tableContent.rows[0]?.corpName).toBe('삼성전자');
+		expect(contentCalls.parquetRevision).toBe('revision-1');
+
+		const imageContent = await contentRuntime.content('hf:assets/avatar.png');
+		expect(imageContent.kind).toBe('image');
+		expect(imageContent.contentRef).toContain('/resolve/revision-1/assets/avatar.png');
+		expect(imageContent.receipt.mode).toBe('mediaReference');
 	});
 });

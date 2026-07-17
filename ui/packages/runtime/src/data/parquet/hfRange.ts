@@ -1,5 +1,5 @@
 import type { AsyncBuffer, FileMetaData, ParquetQueryFilter } from 'hyparquet';
-import { HF_RESOLVE, hfRangeUrl } from '../origins/hf';
+import { HF_RESOLVE, hfRangeUrl, hfRevisionUrl } from '../origins/hf';
 
 export type FetchLike = typeof fetch;
 
@@ -50,21 +50,22 @@ export function hfUrl(path: string): string {
 // 커스텀 fetchFn(측정/프록시 주입)은 캐시하지 않음.
 const refCache = new Map<string, Promise<HfObjectRef>>();
 
-export function headHfObject(path: string, fetchFn: FetchLike = fetch): Promise<HfObjectRef> {
-	if (fetchFn !== fetch) return headHfObjectFresh(path, fetchFn);
-	const hit = refCache.get(path);
+export function headHfObject(path: string, fetchFn: FetchLike = fetch, revision?: string): Promise<HfObjectRef> {
+	if (fetchFn !== fetch) return headHfObjectFresh(path, fetchFn, revision);
+	const cacheKey = `${revision ?? 'main'}:${path}`;
+	const hit = refCache.get(cacheKey);
 	if (hit) return hit;
-	const p = headHfObjectFresh(path, fetchFn).catch((e) => {
-		refCache.delete(path);
+	const p = headHfObjectFresh(path, fetchFn, revision).catch((e) => {
+		refCache.delete(cacheKey);
 		throw e;
 	});
-	refCache.set(path, p);
+	refCache.set(cacheKey, p);
 	return p;
 }
 
-async function headHfObjectFresh(path: string, fetchFn: FetchLike): Promise<HfObjectRef> {
+async function headHfObjectFresh(path: string, fetchFn: FetchLike, revision?: string): Promise<HfObjectRef> {
 	// range probe·세션은 HF 직결(hfRangeUrl) · 프록시 206 은 엣지캐시 불가라 7~9배 느림(origin.ts 참조).
-	const url = hfRangeUrl(path);
+	const url = revision ? hfRevisionUrl(revision, path) : hfRangeUrl(path);
 	const resp = await fetchResilient(fetchFn, url, { headers: { Range: 'bytes=0-0' } });
 	if (!resp.ok && resp.status !== 206) throw new Error(`${path} range probe 실패: ${resp.status}`);
 	const linkedSize = Number(resp.headers.get('x-linked-size'));
@@ -149,14 +150,15 @@ const WHOLE_FILE_MAX_BYTES = 1536 * 1024;
 
 export async function openHfParquet(
 	path: string,
-	fetchFn: FetchLike = fetch
+	fetchFn: FetchLike = fetch,
+	revision?: string
 ): Promise<ParquetRangeSession> {
-	const [{ asyncBufferFromUrl }, ref] = await Promise.all([import('hyparquet'), headHfObject(path, fetchFn)]);
+	const [{ asyncBufferFromUrl }, ref] = await Promise.all([import('hyparquet'), headHfObject(path, fetchFn, revision)]);
 	const requests: RangeRequestStat[] = [];
 	if (ref.size <= WHOLE_FILE_MAX_BYTES) {
 		// 소형 통파일(Range 없는 GET)은 프록시(hfUrl) · 엣지캐시(cross-user)·per-file cache-control(recent=600s
 		// 신선도)·403 흡수 이득이 살아있다. range(>임계)만 직결로 갔다(ref.url=hfRangeUrl). 책임경계 분리.
-		const wholeUrl = hfUrl(path);
+		const wholeUrl = revision ? hfRevisionUrl(revision, path) : hfUrl(path);
 		const t0 = performance.now();
 		const resp = await fetchResilient(fetchFn, wholeUrl);
 		if (!resp.ok && resp.status !== 206) throw new Error(`${path} 전체 읽기 실패: ${resp.status}`);
@@ -230,13 +232,14 @@ export async function readParquetRows<T extends Record<string, unknown> = Record
 		rowEnd?: number;
 		filter?: ParquetQueryFilter;
 		filterStrict?: boolean;
+		revision?: string;
 		fetchFn?: FetchLike;
 	} = {}
 ): Promise<ParquetRowsResult<T>> {
 	const [{ parquetReadObjects }, { compressors }, session] = await Promise.all([
 		import('hyparquet'),
 		import('hyparquet-compressors'),
-		openHfParquet(path, options.fetchFn ?? fetch)
+		openHfParquet(path, options.fetchFn ?? fetch, options.revision)
 	]);
 	const rows = (await parquetReadObjects({
 		file: session.file,

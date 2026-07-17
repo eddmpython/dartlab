@@ -5,7 +5,7 @@
 //   landingJson(landing JSON arm)은 origin 에서 제외 · loadJson(dartlabData)이 영속 cacheStore + 다중URL
 //   폴백(local↔HF) + base 전역에 의존하는 별도 arm 이라, 코어 단일-URL origin 추상·전역금지를 어기지 않게
 //   sibling 으로 둔다(dual-SSOT, 설계 패널 적대검증 결론. mainPlan/_done/data-workbench-ssot/07).
-import { hfUrl, hfRangeUrl, hfMediaUrl } from './hf';
+import { hfUrl, hfRangeUrl, hfMediaUrl, hfRevisionUrl } from './hf';
 
 // vite env 안전 접근 · runtime 패키지 tsc 는 vite/client 타입 없이 검사된다(origin.ts 동일 패턴, 소비 앱이 번들 시 치환).
 const viteEnv = (import.meta as { env?: Record<string, string | boolean | undefined> }).env;
@@ -32,6 +32,7 @@ const govDev = Boolean(viteEnv?.DEV);
 export type OriginId =
 	| 'hf'
 	| 'hfRange'
+	| 'hfRevisionRange'
 	| 'hfApi'
 	| 'hfMedia'
 	| 'podcastMedia'
@@ -92,6 +93,14 @@ const HF_DATASET_API = 'https://huggingface.co/api/datasets/eddmpython/dartlab-d
 const ORIGINS: Partial<Record<OriginId, OriginDef>> = {
 	hf: { resolve: hfUrl, defaultCache: { scope: 'memory', ttlMs: 60 * MIN, maxEntries: 64 } },
 	hfRange: { resolve: hfRangeUrl, defaultCache: { scope: 'memory', ttlMs: 60 * MIN, maxEntries: 128 } },
+	hfRevisionRange: {
+		resolve: (path) => {
+			const separator = path.indexOf('/');
+			if (separator <= 0) throw new Error('[origins] hfRevisionRange path는 revision/file 형식이어야 합니다.');
+			return hfRevisionUrl(path.slice(0, separator), path.slice(separator + 1));
+		},
+		defaultCache: { scope: 'memory', ttlMs: 60 * MIN, maxEntries: 64 }
+	},
 	hfApi: {
 		resolve: (path) => path.startsWith('?')
 			? `${HF_DATASET_API}${path}`

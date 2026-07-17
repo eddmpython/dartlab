@@ -167,6 +167,8 @@ HF revision의 모든 sibling path와 Skill OS의 모든 항목을 중복 없이
 - JSON, CSV, text, markdown, media preview
 - exact source locator
 - 파일명 수준에서 실제 내용 수준으로 완성도를 올리는 필수 단계
+- 상태: K1a 완료. HF catalog commit을 고정한 byte range, Parquet 12행 및 16열 bounded preview, text 및 JSON 원문, 이미지와 영상 및 오디오 reference를 Knowledge Lens에 연결했다.
+- K1b 잔여: CSV 및 TSV 구조 표, JSON tree, Parquet schema detail과 row group navigator, 파일별 크기와 수정 metadata를 추가한다.
 
 ### K2 Semantic ontology
 
@@ -215,6 +217,6 @@ HF revision의 모든 sibling path와 Skill OS의 모든 항목을 중복 없이
 
 ## 9. 현재 완성도 판정
 
-2026-07-17 현재는 K0 첫 수직 슬라이스다. 전체 HF file path와 Skill OS를 하나의 주소 공간으로 검색 및 탐색하고, 12개 은하, 시맨틱 줌, Knowledge Lens, table parity, Knowledge Film 기본 제어가 연결됐다.
+2026-07-17 현재는 K0와 K1a 수직 슬라이스다. 전체 HF file path와 Skill OS를 하나의 주소 공간으로 검색 및 탐색하고, 12개 은하, 시맨틱 줌, Knowledge Lens, table parity, Knowledge Film 기본 제어가 연결됐다. 파일을 한 번 선택하면 catalog commit에 고정된 text, JSON, Parquet, 이미지, 영상 및 오디오 원본을 형식에 맞게 지연 해소한다.
 
-아직 최종 완성이라고 부르지 않는다. K1 content adapters, K2 전체 semantic relation, K3 worker index, K4 wiki-grade rich content, K5 workflow film, K6 실브라우저와 성능 hardening이 남아 있다.
+아직 최종 완성이라고 부르지 않는다. K1b 구조화 adapter, K2 전체 semantic relation, K3 worker index, K4 wiki-grade rich content, K5 workflow film, K6 성능과 접근성 hardening 및 사용자 눈검수가 남아 있다.

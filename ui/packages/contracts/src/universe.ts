@@ -776,3 +776,28 @@ export interface UniverseKnowledgeSearchResult {
 	indexedItemCount: number;
 	scene: UniverseKnowledgeScene;
 }
+
+export type UniverseKnowledgeContentKind = 'text' | 'json' | 'table' | 'image' | 'video' | 'audio' | 'binary';
+
+export interface UniverseKnowledgeContentReceipt {
+	mode: 'byteRange' | 'parquetRows' | 'mediaReference' | 'addressOnly';
+	requestedBytes: number;
+	returnedBytes: number;
+	rowLimit: number;
+	truncated: boolean;
+}
+
+export interface UniverseKnowledgeContent {
+	targetId: string;
+	path: string;
+	title: string;
+	kind: UniverseKnowledgeContentKind;
+	mimeType: string;
+	revision: string;
+	sourceRef: string;
+	contentRef: string;
+	text: string;
+	columns: readonly string[];
+	rows: readonly Readonly<Record<string, string>>[];
+	receipt: UniverseKnowledgeContentReceipt;
+}

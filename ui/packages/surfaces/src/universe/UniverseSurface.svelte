@@ -9,6 +9,7 @@
 		UniverseEntitySearchResult,
 		UniverseEvidenceQuery,
 		UniverseEvidenceResolution,
+		UniverseKnowledgeContent,
 		UniverseKnowledgeCoverage,
 		UniverseKnowledgeOverview,
 		UniverseKnowledgeScene,
@@ -39,6 +40,7 @@
 		mapHref?: string;
 		loadKnowledgeOverview: () => Promise<UniverseKnowledgeOverview>;
 		loadKnowledgeCoverage: () => Promise<UniverseKnowledgeCoverage>;
+		loadKnowledgeContent: (targetId: string) => Promise<UniverseKnowledgeContent>;
 		searchKnowledge: (request: UniverseKnowledgeSearchRequest) => Promise<UniverseKnowledgeSearchResult>;
 		openKnowledge: (targetId: string) => Promise<UniverseKnowledgeScene>;
 		loadChanges?: (maxMarks?: number) => Promise<UniverseChangeSet>;
@@ -50,7 +52,7 @@
 		writeRouteUrl?: (next: URL, push: boolean) => void;
 	}
 
-	let { seed, mapHref = '/map', loadKnowledgeOverview, loadKnowledgeCoverage, searchKnowledge, openKnowledge, loadChanges, resolveEvidence, loadGlobalCoverage, searchEntities, loadEntityProfile, compareEntities, writeRouteUrl }: Props = $props();
+	let { seed, mapHref = '/map', loadKnowledgeOverview, loadKnowledgeCoverage, loadKnowledgeContent, searchKnowledge, openKnowledge, loadChanges, resolveEvidence, loadGlobalCoverage, searchEntities, loadEntityProfile, compareEntities, writeRouteUrl }: Props = $props();
 	type PrimaryMode = 'knowledge' | 'global' | 'atlas' | 'change' | 'workflow';
 	type ViewMode = 'universe' | 'table';
 	let primaryMode = $state<PrimaryMode>('knowledge');
@@ -298,7 +300,7 @@
 		<div class="workspace" class:globalMode={primaryMode === 'global' || primaryMode === 'knowledge'}>
 			<div class="scenePanel">
 				{#if primaryMode === 'knowledge'}
-					<KnowledgeUniverse loadOverview={loadKnowledgeOverview} loadCoverage={loadKnowledgeCoverage} {searchKnowledge} {openKnowledge} />
+					<KnowledgeUniverse loadOverview={loadKnowledgeOverview} loadCoverage={loadKnowledgeCoverage} loadContent={loadKnowledgeContent} {searchKnowledge} {openKnowledge} />
 				{:else if primaryMode === 'global'}
 					<GlobalUniverse loadCoverage={loadGlobalCoverage} {searchEntities} loadProfile={loadEntityProfile} {compareEntities} />
 				{:else if primaryMode === 'atlas'}

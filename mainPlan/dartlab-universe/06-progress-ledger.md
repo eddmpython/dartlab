@@ -348,3 +348,43 @@ browser widths without horizontal overflow 320/390/768/1440
 - U5 3D는 2D 대비 정보 수율과 라이선스 admission이 없어 추가하지 않았다. U6는 GA, index/follow, 독립 navigation과 disabled incident 격리를 사용한다.
 
 남은 blocker는 사실 relation, exact historical replay, historical identity처럼 해당 데이터 lane의 admission 조건으로 유지한다. route의 제품 완성과 증거가 아직 없는 기능의 자동 승격을 혼동하지 않는다.
+
+## 2026-07-17 통합 지식 우주 K0 및 K1a
+
+사용자가 고정한 전체 지식 우주 목표에 맞춰 기존 금융 장면과 분리된 catalog spine을 만들고, 파일 주소에서 실제 원문까지 이어지는 첫 수직 슬라이스를 구현했다. 공개 진입 버튼과 공개 내비게이션 링크는 추가하지 않았으며 독립 `/universe` 라우트만 유지한다.
+
+```text
+HF file address                              68,577
+Skill OS address                                286
+total address                                68,863
+knowledge galaxies                              12
+maximum nodes per scene                         80
+exact catalog revision                    9906570fc
+text byte preview limit                      64 KiB
+text display limit                           20 KiB
+Parquet row preview                              12
+Parquet column preview                           16
+contracts type check errors                       0
+runtime targeted tests                        13/13
+UI data wiring violations                         0
+surface svelte-check errors                        0
+browser console errors                            0
+responsive horizontal overflow at 390px            0
+responsive horizontal overflow at 320px            0
+public entry links added                           0
+```
+
+실브라우저 원문 검증:
+
+- `README.md`를 검색하고 한 번 선택해 revision `9906570fc`의 실제 YAML header와 Markdown 원문을 byte range로 열었다.
+- `edgar/tickers/tickers.parquet`에서 실제 컬럼 6개와 12행을 열고 첫 행 `NVDA`, `0001045810`, `NVIDIA CORP`를 확인했다.
+- `assets/avatar-analyze.png`를 실제 400 곱하기 400 이미지로 열고 revision 고정 resolve URL을 확인했다.
+- 390px과 320px에서 Lens와 미디어 preview의 가로 넘침이 없고 하단 Knowledge Film이 fixed 상태를 유지했다.
+
+검증상 독립 잔여 오류:
+
+- runtime 전체 type check에는 기존 `ipoReportSource.test.ts`의 undefined 가능성 오류 1건이 남아 있다.
+- landing 전체 check에는 기존 `richMarkdown.ts`의 Marked renderer type 오류 1건이 남아 있다.
+- 두 오류는 Universe 변경 파일 밖에 있으며 K1a targeted test와 surface check에는 영향을 주지 않는다.
+
+K1a는 파일명만 보이는 catalog를 실제 원문으로 연결했지만 K1 전체 종료는 아니다. K1b에서 CSV 및 TSV 구조 표, JSON tree, Parquet schema 및 row group navigator를 닫고 K2 semantic relation으로 이어간다.

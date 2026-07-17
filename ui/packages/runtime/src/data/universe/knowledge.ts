@@ -1,4 +1,5 @@
 import type {
+	UniverseKnowledgeContent,
 	UniverseKnowledgeCoverage,
 	UniverseKnowledgeDomain,
 	UniverseKnowledgeDomainId,
@@ -85,7 +86,13 @@ export interface UniverseKnowledgeRuntime {
 	coverage(): Promise<UniverseKnowledgeCoverage>;
 	search(request: UniverseKnowledgeSearchRequest): Promise<UniverseKnowledgeSearchResult>;
 	open(targetId: string): Promise<UniverseKnowledgeScene>;
+	content(targetId: string): Promise<UniverseKnowledgeContent>;
 }
+
+const CONTENT_BYTE_LIMIT = 64 * 1024;
+const CONTENT_TEXT_DISPLAY_LIMIT = 20 * 1024;
+const CONTENT_ROW_LIMIT = 12;
+const CONTENT_COLUMN_LIMIT = 16;
 
 const DOMAIN_COPY: Readonly<Record<UniverseKnowledgeDomainId, Omit<UniverseKnowledgeDomain, 'itemCount'>>> = {
 	sources: {
@@ -200,6 +207,44 @@ function kindForPath(path: string, domainId: UniverseKnowledgeDomainId): Univers
 function sourceUrl(revision: string, path: string): string {
 	const encoded = normalizedPath(path).split('/').map(encodeURIComponent).join('/');
 	return `https://huggingface.co/datasets/${HF_REPOSITORY_ID}/blob/${revision}/${encoded}`;
+}
+
+function contentUrl(revision: string, path: string): string {
+	const encoded = normalizedPath(path).split('/').map(encodeURIComponent).join('/');
+	return `https://huggingface.co/datasets/${HF_REPOSITORY_ID}/resolve/${encodeURIComponent(revision)}/${encoded}`;
+}
+
+function contentKind(path: string): UniverseKnowledgeContent['kind'] {
+	const lower = path.toLocaleLowerCase();
+	if (/\.(png|webp|jpe?g|gif|svg|avif)$/.test(lower)) return 'image';
+	if (/\.(mp4|webm|mov)$/.test(lower)) return 'video';
+	if (/\.(m4a|mp3|wav|ogg|flac)$/.test(lower)) return 'audio';
+	if (lower.endsWith('.parquet')) return 'table';
+	if (/\.(json|jsonl|ndjson)$/.test(lower)) return 'json';
+	if (/\.(md|mdx|txt|csv|tsv|xml|html?|ya?ml|toml|ini|py|ts|js|css|sql)$/.test(lower)) return 'text';
+	return 'binary';
+}
+
+function contentMime(kind: UniverseKnowledgeContent['kind'], path: string): string {
+	const extension = path.split('.').at(-1)?.toLocaleLowerCase() ?? '';
+	if (kind === 'image') return extension === 'svg' ? 'image/svg+xml' : `image/${extension === 'jpg' ? 'jpeg' : extension}`;
+	if (kind === 'video') return `video/${extension === 'mov' ? 'quicktime' : extension}`;
+	if (kind === 'audio') return `audio/${extension === 'm4a' ? 'mp4' : extension}`;
+	if (kind === 'json') return extension === 'json' ? 'application/json' : 'application/x-ndjson';
+	if (kind === 'table') return 'application/vnd.apache.parquet';
+	if (kind === 'text') return extension === 'html' || extension === 'htm' ? 'text/html' : 'text/plain';
+	return 'application/octet-stream';
+}
+
+function printableCell(value: unknown): string {
+	if (value === null || value === undefined) return '';
+	if (typeof value === 'bigint') return value.toString();
+	if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') return String(value);
+	try {
+		return JSON.stringify(value, (_, item: unknown) => typeof item === 'bigint' ? item.toString() : item);
+	} catch {
+		return String(value);
+	}
 }
 
 function parseJson<T>(response: Response): Promise<T> {
@@ -402,7 +447,7 @@ function nodesForFileGroups(groups: readonly { path: string; count: number; file
 			kind,
 			domainId,
 			6 + Math.log10(Math.max(1, group.count)) * 5,
-			!group.file,
+			true,
 			sourceUrl(revision, group.path),
 			{ path: group.path, fileCount: group.count, lifecycle: lifecycleForPath(group.path) }
 		);
@@ -441,7 +486,7 @@ function sceneForSearch(query: string, hits: readonly UniverseKnowledgeSearchHit
 	);
 	const children = hits.map((hit) => makeNode(
 		hit.targetId, hit.label, hit.summary, hit.kind, hit.domainId, 7 + hit.score / 18,
-		hit.kind === 'directory' || hit.kind === 'skill' || hit.kind === 'capability' || hit.kind === 'domain',
+		true,
 		hit.sourceRef, { score: hit.score, summary: hit.summary }
 	));
 	return compileScene({
@@ -673,5 +718,66 @@ export function createUniverseKnowledgeRuntime(core: DataCore, loaders: Universe
 		throw new Error(`Universe knowledge target is unsupported: ${targetId}`);
 	}
 
-	return { overview, coverage, search, open };
+	async function content(targetId: string): Promise<UniverseKnowledgeContent> {
+		if (!targetId.startsWith('hf:')) throw new Error(`Universe content target is unsupported: ${targetId}`);
+		const path = normalizedPath(targetId.slice('hf:'.length));
+		if (!path) throw new Error('Universe content path is empty');
+		const info = await loadMetadata();
+		const kind = contentKind(path);
+		const mimeType = contentMime(kind, path);
+		const title = path.split('/').at(-1) ?? path;
+		const sourceRef = sourceUrl(info.sha, path);
+		const rawRef = contentUrl(info.sha, path);
+		let text = '';
+		let columns: readonly string[] = [];
+		let rows: readonly Readonly<Record<string, string>>[] = [];
+		let requestedBytes = 0;
+		let returnedBytes = 0;
+		let truncated = false;
+		let mode: UniverseKnowledgeContent['receipt']['mode'] = 'addressOnly';
+
+		if (kind === 'table') {
+			const rawRows = await core.requestParquetRows<Record<string, unknown>>({
+				path,
+				revision: info.sha,
+				rowStart: 0,
+				rowEnd: CONTENT_ROW_LIMIT,
+				cacheKey: `universe:knowledge:content:${info.sha}:${path}:rows:${CONTENT_ROW_LIMIT}`
+			});
+			columns = Object.freeze([...new Set(rawRows.flatMap((row) => Object.keys(row)))].slice(0, CONTENT_COLUMN_LIMIT));
+			rows = Object.freeze(rawRows.slice(0, CONTENT_ROW_LIMIT).map((row) => Object.freeze(Object.fromEntries(columns.map((column) => [column, printableCell(row[column])])))));
+			truncated = rawRows.length >= CONTENT_ROW_LIMIT;
+			mode = 'parquetRows';
+		} else if (kind === 'text' || kind === 'json') {
+			requestedBytes = CONTENT_BYTE_LIMIT;
+			const buffer = await core.requestBytes({
+				origin: 'hfRevisionRange',
+				path: `${info.sha}/${path}`,
+				start: 0,
+				len: CONTENT_BYTE_LIMIT,
+				cacheKey: `universe:knowledge:content:${info.sha}:${path}:bytes:${CONTENT_BYTE_LIMIT}`
+			});
+			returnedBytes = buffer.byteLength;
+			truncated = returnedBytes >= CONTENT_BYTE_LIMIT;
+			text = new TextDecoder().decode(buffer).replace(/\u0000+$/g, '');
+			if (kind === 'json' && !truncated && path.toLocaleLowerCase().endsWith('.json')) {
+				try { text = JSON.stringify(JSON.parse(text), null, 2); } catch { /* 원문 미리보기를 유지한다. */ }
+			}
+			if (text.length > CONTENT_TEXT_DISPLAY_LIMIT) {
+				text = text.slice(0, CONTENT_TEXT_DISPLAY_LIMIT);
+				truncated = true;
+			}
+			mode = 'byteRange';
+		} else if (kind === 'image' || kind === 'video' || kind === 'audio') {
+			mode = 'mediaReference';
+		}
+
+		return Object.freeze({
+			targetId, path, title, kind, mimeType, revision: info.sha, sourceRef, contentRef: rawRef, text,
+			columns, rows,
+			receipt: Object.freeze({ mode, requestedBytes, returnedBytes, rowLimit: kind === 'table' ? CONTENT_ROW_LIMIT : 0, truncated })
+		});
+	}
+
+	return { overview, coverage, search, open, content };
 }

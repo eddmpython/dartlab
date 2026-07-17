@@ -28,6 +28,8 @@ export interface ParquetRowsSpec<T> {
 	/** parquet 는 hfRange 가 URL 을 만든다(hfRangeUrl) · origin 은 표기용(기본 hfRange). */
 	origin?: Extract<OriginId, 'hfRange'>;
 	path: string;
+	/** immutable HF commit. 미지정은 기존 main 최신본. */
+	revision?: string;
 	columns?: string[];
 	filter?: ParquetQueryFilter;
 	/** 행 범위 prune · [rowStart, rowEnd). hyparquet 가 겹치는 row-group 만 fetch(컬럼 전량 read 회피).
@@ -51,7 +53,7 @@ export interface ParquetWholeFileSpec<T> {
 
 export interface RequestBytesSpec {
 	/** byte-range 는 직결만(hfRange) · 프록시는 206 엣지캐시 불가(hfRange.ts 참조). */
-	origin?: Extract<OriginId, 'hfRange'>;
+	origin?: Extract<OriginId, 'hfRange' | 'hfRevisionRange'>;
 	path: string;
 	start: number;
 	len: number;
@@ -120,7 +122,7 @@ export function createDataCore(opts: DataCoreOptions = {}): DataCore {
 			if (hit !== undefined) return hit as T[];
 		}
 		const exec = async (): Promise<T[]> => {
-			const { rows } = await readParquetRows<T>(spec.path, { columns: spec.columns, filter: spec.filter, rowStart: spec.rowStart, rowEnd: spec.rowEnd, fetchFn });
+			const { rows } = await readParquetRows<T>(spec.path, { columns: spec.columns, filter: spec.filter, rowStart: spec.rowStart, rowEnd: spec.rowEnd, revision: spec.revision, fetchFn });
 			if (policy.scope === 'memory') bucket(policy).set(key, rows, now());
 			return rows;
 		};
