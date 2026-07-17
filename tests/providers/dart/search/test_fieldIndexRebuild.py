@@ -24,6 +24,30 @@ def test_write_index_manifest_callable() -> None:
     assert callable(writeIndexManifest)
 
 
+def test_manifest_meta_read_is_streamed_and_canary_text_is_bounded(tmp_path, monkeypatch) -> None:
+    import polars as pl
+
+    from dartlab.providers.dart.search.fieldIndexRebuild import _readManifestMeta
+
+    path = tmp_path / "main_meta.parquet"
+    pl.DataFrame(
+        {
+            "source": ["allFilings"],
+            "text": ["긴 본문" * 1000],
+            "evidenceText": ["더 긴 증거 본문" * 1000],
+        }
+    ).write_parquet(path)
+
+    def _eagerReadForbidden(*args, **kwargs):
+        raise AssertionError("manifest generation must not eagerly read segment metadata")
+
+    monkeypatch.setattr(pl, "read_parquet", _eagerReadForbidden)
+    meta = _readManifestMeta(path)
+
+    assert meta.columns == ["source", "text"]
+    assert len(meta.item(0, "text")) == 120
+
+
 def test_rebuild_main_from_catalog_callable() -> None:
     from dartlab.providers.dart.search.fieldIndexRebuild import rebuildMainFromCatalog
 

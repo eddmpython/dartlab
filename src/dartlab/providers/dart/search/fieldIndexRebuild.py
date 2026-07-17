@@ -1053,7 +1053,7 @@ def writeIndexManifest(indexDir: str | Path, *, tier: str = "full", buildCommand
         if not (base / f"{segment}_meta.parquet").exists():
             continue
         requiredFiles.extend(_segmentFiles(base, segment))
-        meta = pl.read_parquet(base / f"{segment}_meta.parquet")
+        meta = _readManifestMeta(base / f"{segment}_meta.parquet")
         segmentMeta[segment] = meta
         info = json.loads((base / f"{segment}_info.json").read_text(encoding="utf-8"))
         nDocs = int(info.get("nDocs", meta.height) or 0)
@@ -1122,6 +1122,34 @@ def writeIndexManifest(indexDir: str | Path, *, tier: str = "full", buildCommand
     }
     writeSearchManifest(base, manifest)
     return manifest
+
+
+_MANIFEST_META_COLUMNS: tuple[str, ...] = (
+    "sourceRef",
+    "rcept_no",
+    "section_order",
+    "source",
+    "sourceDataAsOf",
+    "rcept_dt",
+    "section_title",
+    "text",
+    "deleted",
+)
+_MANIFEST_CANARY_TEXT_LIMIT = 120
+
+
+def _readManifestMeta(path: Path) -> pl.DataFrame:
+    """Stream only manifest columns and keep a bounded canary text prefix."""
+    schema = set(pl.read_parquet_schema(path))
+    expressions = []
+    for column in _MANIFEST_META_COLUMNS:
+        if column not in schema:
+            continue
+        expression = pl.col(column)
+        if column == "text":
+            expression = expression.cast(pl.Utf8, strict=False).fill_null("").str.slice(0, _MANIFEST_CANARY_TEXT_LIMIT)
+        expressions.append(expression.alias(column))
+    return pl.scan_parquet(path).select(expressions).collect(engine="streaming")
 
 
 def _loadSourceManifestSet(path: Path) -> dict:

@@ -4,11 +4,11 @@ name: Search Index Build
 # content 인덱스 월간 main + 일간 누적 delta 빌드와 HF 업로드 (full + lite tier).
 #
 # main 기준 changed-set과 tombstone을 누적 delta 하나로 교체해 fan-out을 고정한다.
-# 월간 force_full만 main을 다시 압축하고 delta를 비운다.
+# 월간 force_full은 메모리 예산 안에서만 main을 압축하고, 대형 입력은 OOM 없이 delta 경로를 유지한다.
 #
 # 트리거:
 #   - 매일 KST 04:00 (cron 0 19)     — 증분(이전 catalog 대비 변화 0 이면 manifest pointer 만 re-point)
-#   - 매월 1일 KST 05:00 (cron 0 20 1) — 보강 풀 재빌드(force_full, no-change 단락 비활성)
+#   - 매월 1일 KST 05:00 (cron 0 20 1) — 메모리 예산형 compaction 요청(no-change 단락 비활성)
 #   - 4 source sync 완료 직후 (workflow_run) — 증분
 #   - 수동 (workflow_dispatch) — build_mode / force_full / gate 선택
 #
@@ -146,16 +146,13 @@ jobs:
         if: ${{ inputs.build_mode != 'legacy' }}
         run: |
           if [ "${FORCE_FULL}" = "true" ]; then
-            echo "force full rebuild — previous catalog 미사용(no-change 단락 비활성)"
-            uv run python -X utf8 .github/scripts/search/prepareSearchDeltaInputs.py \
-              --previous "" \
-              --out-current data/dart/searchCatalog/main.current.catalog_snapshot.parquet
+            echo "compaction requested — 기존 catalog baseline은 OOM-safe fallback을 위해 유지"
           else
             echo "incremental — 이전 current index 의 catalog_snapshot 을 previous 로 diff(변화 0 이면 re-point)"
-            uv run python -X utf8 .github/scripts/search/prepareSearchDeltaInputs.py \
-              --previous data/dart/contentIndex/catalog_snapshot.parquet \
-              --out-current data/dart/searchCatalog/main.current.catalog_snapshot.parquet
           fi
+          uv run python -X utf8 .github/scripts/search/prepareSearchDeltaInputs.py \
+            --previous data/dart/contentIndex/catalog_snapshot.parquet \
+            --out-current data/dart/searchCatalog/main.current.catalog_snapshot.parquet
         env:
           DARTLAB_SEARCH_EXPECTED_SOURCES: ${{ inputs.expected_sources || 'allFilings,dartPanel,edgarPanel,newsPublic' }}
 

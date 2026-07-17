@@ -130,10 +130,6 @@ def runCatalogDeltaDryRun(
         >>> callable(runCatalogDeltaDryRun)
         True
     """
-    previous = (
-        _loadCatalog(previousCatalogPath, columns=DELTA_CATALOG_COLUMNS) if previousCatalogPath else pl.DataFrame()
-    )
-    current = _loadCatalog(currentCatalogPath, columns=DELTA_CATALOG_COLUMNS)
     manifests = []
     for path in sourceManifestPaths:
         manifest = loadSourceManifest(path)
@@ -141,12 +137,90 @@ def runCatalogDeltaDryRun(
             manifests.append(manifest)
         else:
             manifests.append({"source": "", "files": [], "totalRows": "invalid"})
-    result = planCatalogDelta(previous, current, manifests, expectedSources=expectedSources)
+    if _isParquetPath(currentCatalogPath) and (not previousCatalogPath or _isParquetPath(previousCatalogPath)):
+        result = _planParquetCatalogDelta(
+            previousCatalogPath=previousCatalogPath,
+            currentCatalogPath=currentCatalogPath,
+            sourceManifests=manifests,
+            expectedSources=expectedSources,
+        )
+    else:
+        previous = (
+            _loadCatalog(previousCatalogPath, columns=DELTA_CATALOG_COLUMNS) if previousCatalogPath else pl.DataFrame()
+        )
+        current = _loadCatalog(currentCatalogPath, columns=DELTA_CATALOG_COLUMNS)
+        result = planCatalogDelta(previous, current, manifests, expectedSources=expectedSources)
     if reportPath is not None:
         out = Path(reportPath)
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True), encoding="utf-8")
     return result
+
+
+def _planParquetCatalogDelta(
+    *,
+    previousCatalogPath: str | Path | None,
+    currentCatalogPath: str | Path,
+    sourceManifests: list[dict[str, Any]],
+    expectedSources: Iterable[str] | None,
+    minSourceRetainedRatio: float = 0.8,
+) -> dict[str, Any]:
+    """Validate parquet catalogs with fingerprint-only, streaming operations."""
+    from dartlab.providers.dart.search.catalogDeltaIo import (
+        catalogDeltaSummaryFromPaths,
+        sourceCountsFromPath,
+    )
+
+    errors: list[str] = []
+    validSources: dict[str, dict[str, Any]] = {}
+    for manifest in sourceManifests:
+        check = validateSourceManifest(manifest)
+        if not check["valid"]:
+            errors.extend(f"sourceManifest:{error}" for error in check["errors"])
+            continue
+        if manifest.get("snapshotScope") != "full":
+            errors.append(f"sourceManifest:partialSnapshot:{manifest['source']}")
+        validSources[str(manifest["source"])] = manifest
+
+    sourceCounts = sourceCountsFromPath(currentCatalogPath)
+    for source in _normalizeSources(expectedSources):
+        manifest = validSources.get(source)
+        if manifest is None:
+            errors.append(f"sourceManifest:missingExpected:{source}")
+            continue
+        manifestRows = _int(manifest.get("totalRows"), 0)
+        if manifestRows <= 0:
+            errors.append(f"sourceManifest:emptyExpected:{source}")
+        if sourceCounts.get(source, 0) <= 0:
+            errors.append(f"catalog:emptyExpected:{source}")
+
+    for source, manifest in validSources.items():
+        totalRows = _int(manifest.get("totalRows"), 0)
+        actualRows = sourceCounts.get(source, 0)
+        if totalRows > 0 and actualRows < int(totalRows * minSourceRetainedRatio):
+            errors.append(f"catalogSourceDrop:{source}:{actualRows}/{totalRows}")
+    if not validSources:
+        errors.append("sourceManifest:noneValid")
+
+    summary = catalogDeltaSummaryFromPaths(previousCatalogPath, currentCatalogPath)
+    if summary["totalCurrentDocs"] == 0:
+        errors.append("catalog:emptyCurrent")
+    changedDocs = summary["newDocs"] + summary["changedDocs"] + summary["deletedDocs"]
+    return {
+        "valid": not errors,
+        "errors": errors,
+        "sourceDataAsOf": {source: str(manifest.get("dataAsOf") or "") for source, manifest in validSources.items()},
+        "sourceCounts": sourceCounts,
+        "delta": summary,
+        "changedDocs": changedDocs,
+        "shouldBuildDelta": changedDocs > 0,
+    }
+
+
+def _isParquetPath(path: str | Path) -> bool:
+    from dartlab.providers.dart.search.catalogDeltaIo import isCanonicalCatalogParquet
+
+    return isCanonicalCatalogParquet(path)
 
 
 def exportDeltaRowsForContentIndex(

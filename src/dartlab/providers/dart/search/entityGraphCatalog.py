@@ -188,9 +188,13 @@ def seedCodesFromSearchCatalog(path: str | Path, *, maxSeeds: int = 100) -> list
         ...
         FileNotFoundError: ...
     """
-    catalog = pl.read_parquet(path)
-    column = "stockCode" if "stockCode" in catalog.columns else "stock_code" if "stock_code" in catalog.columns else ""
-    if not column or catalog.height == 0:
+    schema = set(pl.read_parquet_schema(path))
+    column = "stockCode" if "stockCode" in schema else "stock_code" if "stock_code" in schema else ""
+    if not column:
+        return []
+    # catalog에는 수백 MB의 searchText가 있으므로 종목코드 한 열만 projection한다.
+    catalog = pl.read_parquet(path, columns=[column])
+    if catalog.height == 0:
         return []
     return [
         code

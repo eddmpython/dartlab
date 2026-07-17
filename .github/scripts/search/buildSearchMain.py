@@ -1,16 +1,19 @@
 """Search content index 월간 main + 일간 누적 delta 빌드와 HF 업로드.
 
-일·월 단일 워크플로(`searchIndexBuild`)에서 호출한다. 월간에는 main을 압축하고, 일간에는
-그 main catalog와 현재 catalog의 누적 차이만 단일 delta로 교체한다. delta fan-out은 항상 1이다.
+일·월 단일 워크플로(`searchIndexBuild`)에서 호출한다. 월간 compaction은 입력이 runner 메모리
+예산 안일 때만 수행하고, 그 외에는 main catalog와 현재 catalog의 누적 차이를 단일 delta로
+교체한다. delta fan-out은 항상 1이다.
 
 흐름:
 1. previous(이전 current) + current catalog 변화가 0이면 manifest pointer만 갱신한다.
-2. 월간 또는 main 기준 snapshot 부재면 source catalog 전체를 main으로 압축한다.
-3. 그 외에는 main 기준 누적 changed-set과 tombstone만 delta로 만든다.
-3. per-source 하한 가드(allFilings/panel/edgar/news) + 총량 가드 → partial HF pull 회귀 차단.
-4. clean publish — `indexPublishNames`(npz·delta 제외=sidecar SSOT), `previousManifestPath` seed 안 함
+2. main 기준 snapshot 부재 시 기존 no-delta current와 행 정합을 확인해 baseline으로 승격한다.
+   baseline도 없고 catalog가 메모리 예산을 넘으면 OOM 대신 fail-closed 한다.
+3. 월간 compaction 요청도 메모리 예산을 넘으면 안전하게 연기한다.
+4. 그 외에는 fingerprint-only streaming join으로 main 기준 누적 changed-set과 tombstone만 만든다.
+5. per-source 하한 가드(allFilings/panel/edgar/news) + 총량 가드 → partial HF pull 회귀 차단.
+6. clean publish — `indexPublishNames`(npz·delta 제외=sidecar SSOT), `previousManifestPath` seed 안 함
    → 새 fileSources 에 delta 키 자연 부재(HF pointer main-only flip).
-5. lite tier(최근 N개월) 동반 빌드/업로드.
+7. lite tier(최근 N개월)도 parquet streaming filter와 같은 baseline/delta 정책으로 동반 빌드한다.
 
 환경:
 - HF_TOKEN: HuggingFace 업로드용
@@ -53,6 +56,14 @@ def _isNoChange(previousCatalog: str | None, currentCatalog: str | None) -> bool
     """previous와 current catalog의 changed-set이 비어 있으면 True."""
     if not (currentCatalog and previousCatalog and Path(previousCatalog).exists()):
         return False
+    from dartlab.providers.dart.search.catalogDeltaIo import (
+        catalogDeltaSummaryFromPaths,
+        isCanonicalCatalogParquet,
+    )
+
+    if isCanonicalCatalogParquet(previousCatalog) and isCanonicalCatalogParquet(currentCatalog):
+        summary = catalogDeltaSummaryFromPaths(previousCatalog, currentCatalog)
+        return summary["newDocs"] + summary["changedDocs"] + summary["deletedDocs"] == 0
     from dartlab.providers.dart.search.pipeline import _loadCatalog, exportDeltaRowsForContentIndex
 
     rows = exportDeltaRowsForContentIndex(_loadCatalog(previousCatalog), _loadCatalog(currentCatalog))
@@ -146,7 +157,7 @@ def main() -> int:
 
     # ── no-change 단락 — previous+current catalog 변화 0 + 이전 manifest clean 이면 pointer 만 re-point ──
     previousCatalog, currentCatalog, manifestPaths, expectedSources = _catalogInputsFromEnv()
-    if mainMode != "legacy" and _isNoChange(previousCatalog, currentCatalog):
+    if mainMode != "legacy" and not _envFlag("FORCE_FULL") and _isNoChange(previousCatalog, currentCatalog):
         print("[build] catalog 변화 0 + 이전 manifest clean — main 재빌드 없이 manifest pointer 만 re-point")
         _publishNoChangeManifest(hfToken)
         print("[build] no-change 완료")
@@ -227,24 +238,25 @@ def main() -> int:
 def _buildMainFromCatalog(mainMode: str) -> int | None:
     if mainMode == "legacy":
         return None
-    _, currentCatalog, manifestPaths, expectedSources = _catalogInputsFromEnv()
+    previousCatalog, currentCatalog, manifestPaths, expectedSources = _catalogInputsFromEnv()
     if not currentCatalog:
         if mainMode == "catalog":
             print("[main] catalog mode requires DARTLAB_SEARCH_CURRENT_CATALOG")
             return -2
         print("[main] catalog inputs 없음 — legacy raw main rebuild path 사용")
         return None
+    from dartlab.providers.dart.search.catalogDeltaIo import (
+        activeCatalogRowsFromPath,
+        exportDeltaRowsForContentIndexFromPaths,
+        isCanonicalCatalogParquet,
+    )
     from dartlab.providers.dart.search.fieldIndex import _contentIndexDir
     from dartlab.providers.dart.search.fieldIndexRebuild import (
         clearDeltaSegment,
         rebuildDeltaFromCatalog,
         rebuildMainFromCatalog,
     )
-    from dartlab.providers.dart.search.pipeline import (
-        _loadCatalog,
-        exportDeltaRowsForContentIndex,
-        runCatalogDeltaDryRun,
-    )
+    from dartlab.providers.dart.search.pipeline import _loadCatalog, runCatalogDeltaDryRun
 
     result = runCatalogDeltaDryRun(
         previousCatalogPath=None,
@@ -256,28 +268,92 @@ def _buildMainFromCatalog(mainMode: str) -> int | None:
         print(f"[main] catalog main input invalid: {result.get('errors')}")
         return -1
     t0 = time.perf_counter()
-    catalog = _loadCatalog(currentCatalog)
     outDir = _contentIndexDir()
     import shutil
 
+    currentCatalogPath = Path(currentCatalog)
     mainCatalogPath = outDir / "main_catalog_snapshot.parquet"
-    forceFull = _envFlag("FORCE_FULL") or not mainCatalogPath.exists() or not (outDir / "main.postings.bin").exists()
+    _bootstrapMainCatalog(outDir, mainCatalogPath, previousCatalog)
+    needsMain = not mainCatalogPath.exists() or not (outDir / "main.postings.bin").exists()
+    requestedCompaction = _envFlag("FORCE_FULL")
+    compactionAllowed = _catalogCompactionAllowed(currentCatalogPath)
+    if requestedCompaction and not compactionAllowed and not needsMain:
+        print("[main] 월간 compaction 연기 — catalog가 메모리 예산을 초과해 누적 delta 경로 유지")
+    if needsMain and not compactionAllowed:
+        print(
+            "[main] ✗ 기존 main과 정합한 catalog baseline이 없고 catalog가 메모리 예산을 초과함 — "
+            "runner OOM 방지를 위해 legacy 스트리밍 bootstrap 필요"
+        )
+        return -3
+    forceFull = needsMain or (requestedCompaction and compactionAllowed)
     if forceFull:
+        catalog = _loadCatalog(currentCatalogPath)
         nDocs = rebuildMainFromCatalog(catalog, tier="full", showProgress=True)
         clearDeltaSegment(tier="full")
-        shutil.copyfile(currentCatalog, mainCatalogPath)
+        shutil.copyfile(currentCatalogPath, mainCatalogPath)
         buildKind = "mainCompaction"
     else:
-        mainCatalog = _loadCatalog(mainCatalogPath)
-        deltaRows = exportDeltaRowsForContentIndex(mainCatalog, catalog)
+        if isCanonicalCatalogParquet(mainCatalogPath) and isCanonicalCatalogParquet(currentCatalogPath):
+            deltaRows = exportDeltaRowsForContentIndexFromPaths(mainCatalogPath, currentCatalogPath)
+            nDocs = activeCatalogRowsFromPath(currentCatalogPath)
+        else:
+            from dartlab.providers.dart.search.pipeline import exportDeltaRowsForContentIndex
+
+            mainCatalog = _loadCatalog(mainCatalogPath)
+            catalog = _loadCatalog(currentCatalogPath)
+            deltaRows = exportDeltaRowsForContentIndex(mainCatalog, catalog)
+            nDocs = _activeCatalogRows(catalog)
         deltaDocs = rebuildDeltaFromCatalog(deltaRows, tier="full")
-        nDocs = _activeCatalogRows(catalog)
         buildKind = f"cumulativeDelta:{deltaDocs}"
-    shutil.copyfile(currentCatalog, outDir / "catalog_snapshot.parquet")
+    shutil.copyfile(currentCatalogPath, outDir / "catalog_snapshot.parquet")
     _copySourceManifestSet(outDir)
     elapsed = time.perf_counter() - t0
     print(f"[main] catalog {buildKind} {nDocs:,} active 문서, {elapsed / 60:.1f}분")
     return nDocs
+
+
+def _bootstrapMainCatalog(outDir: Path, target: Path, preferred: str | Path | None) -> bool:
+    """Reuse a proven no-delta catalog snapshot as the immutable main baseline."""
+    if target.exists() or not (outDir / "main.postings.bin").exists() or (outDir / "delta.postings.bin").exists():
+        return False
+    previousManifest = outDir / "previous_manifest.json"
+    if previousManifest.exists():
+        try:
+            if bool(json.loads(previousManifest.read_text(encoding="utf-8")).get("hasDelta")):
+                return False
+        except (OSError, json.JSONDecodeError):
+            return False
+    candidates = [Path(preferred)] if preferred else []
+    candidates.append(outDir / "catalog_snapshot.parquet")
+    infoPath = outDir / "main_info.json"
+    if not infoPath.exists():
+        return False
+    try:
+        expectedRows = int(json.loads(infoPath.read_text(encoding="utf-8")).get("nDocs") or 0)
+    except (OSError, json.JSONDecodeError, TypeError, ValueError):
+        return False
+    from dartlab.providers.dart.search.catalogDeltaIo import activeCatalogRowsFromPath
+
+    for candidate in candidates:
+        if candidate.exists() and activeCatalogRowsFromPath(candidate) == expectedRows:
+            import shutil
+
+            shutil.copyfile(candidate, target)
+            print(f"[main] 기존 no-delta current를 main baseline으로 승격: {candidate}")
+            return True
+    return False
+
+
+def _catalogCompactionAllowed(path: Path) -> bool:
+    """Bound full catalog materialization by compressed input size."""
+    if _envFlag("DARTLAB_SEARCH_ALLOW_UNBOUNDED_COMPACTION"):
+        return True
+    maxMb = float(os.environ.get("DARTLAB_SEARCH_MAX_COMPACTION_INPUT_MB", "128"))
+    sizeMb = path.stat().st_size / 1024 / 1024
+    if sizeMb <= maxMb:
+        return True
+    print(f"[main] compaction 입력 {sizeMb:.1f}MB > 예산 {maxMb:.1f}MB")
+    return False
 
 
 def _activeCatalogRows(catalog) -> int:
@@ -370,35 +446,58 @@ def _buildAndUploadLite(hfToken: str) -> None:
 
 
 def _buildLiteFromCatalog(currentCatalog: str, sinceDate: str) -> int:
-    import polars as pl
+    import shutil
 
+    from dartlab.providers.dart.search.catalogDeltaIo import (
+        activeCatalogRowsFromPath,
+        exportDeltaRowsForContentIndexFromPaths,
+        filterCatalogByDate,
+        isCanonicalCatalogParquet,
+    )
     from dartlab.providers.dart.search.fieldIndex import _contentIndexDir
     from dartlab.providers.dart.search.fieldIndexRebuild import (
         clearDeltaSegment,
         rebuildDeltaFromCatalog,
         rebuildMainFromCatalog,
     )
-    from dartlab.providers.dart.search.pipeline import _loadCatalog, exportDeltaRowsForContentIndex
+    from dartlab.providers.dart.search.pipeline import _loadCatalog
 
-    catalog = _loadCatalog(currentCatalog)
-    liteCatalog = _filterLiteCatalogRows(catalog, sinceDate)
-    print(f"[lite] catalog mode — {catalog.height:,} rows -> {liteCatalog.height:,} rows")
     liteDir = _contentIndexDir("lite")
+    nextCatalogPath = liteDir / "catalog_snapshot.next.parquet"
+    if isCanonicalCatalogParquet(currentCatalog):
+        nLite = filterCatalogByDate(currentCatalog, nextCatalogPath, sinceDate)
+    else:
+        from dartlab.providers.dart.search.catalog import normalizeCatalogRows
+
+        normalized = normalizeCatalogRows(_loadCatalog(currentCatalog))
+        filtered = _filterLiteCatalogRows(normalized, sinceDate)
+        filtered.write_parquet(nextCatalogPath)
+        nLite = _activeCatalogRows(filtered)
+    print(f"[lite] catalog mode — {nLite:,} active-window rows")
     mainCatalogPath = liteDir / "main_catalog_snapshot.parquet"
-    forceFull = _envFlag("FORCE_FULL") or not mainCatalogPath.exists() or not (liteDir / "main.postings.bin").exists()
+    _bootstrapMainCatalog(liteDir, mainCatalogPath, liteDir / "catalog_snapshot.parquet")
+    needsMain = not mainCatalogPath.exists() or not (liteDir / "main.postings.bin").exists()
+    requestedCompaction = _envFlag("FORCE_FULL")
+    compactionAllowed = _catalogCompactionAllowed(nextCatalogPath)
+    if requestedCompaction and not compactionAllowed and not needsMain:
+        print("[lite] compaction 연기 — 누적 delta 경로 유지")
+    if needsMain and not compactionAllowed:
+        nextCatalogPath.unlink(missing_ok=True)
+        raise RuntimeError("lite main baseline 부재 + catalog compaction 메모리 예산 초과")
+    forceFull = needsMain or (requestedCompaction and compactionAllowed)
     if forceFull:
+        liteCatalog = _loadCatalog(nextCatalogPath)
         nLite = rebuildMainFromCatalog(liteCatalog, tier="lite", showProgress=True)
         clearDeltaSegment(tier="lite")
-        liteCatalog.write_parquet(mainCatalogPath)
+        shutil.copyfile(nextCatalogPath, mainCatalogPath)
         buildKind = "mainCompaction"
     else:
-        mainCatalog = _loadCatalog(mainCatalogPath)
-        deltaRows = exportDeltaRowsForContentIndex(mainCatalog, liteCatalog)
+        deltaRows = exportDeltaRowsForContentIndexFromPaths(mainCatalogPath, nextCatalogPath)
         deltaDocs = rebuildDeltaFromCatalog(deltaRows, tier="lite")
-        nLite = _activeCatalogRows(liteCatalog)
+        nLite = activeCatalogRowsFromPath(nextCatalogPath)
         buildKind = f"cumulativeDelta:{deltaDocs}"
-    if isinstance(liteCatalog, pl.DataFrame):
-        liteCatalog.write_parquet(liteDir / "catalog_snapshot.parquet")
+    shutil.copyfile(nextCatalogPath, liteDir / "catalog_snapshot.parquet")
+    nextCatalogPath.unlink(missing_ok=True)
     print(f"[lite] catalog {buildKind}, {nLite:,} active 문서")
     return nLite
 
