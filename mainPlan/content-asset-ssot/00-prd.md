@@ -56,11 +56,12 @@ manifests/
 
 1. 새 객체와 새 manifest를 먼저 올린다.
 2. landing과 cardShare 소비자를 `manifests/`로 전환한다.
-3. 배포본이 새 manifest를 읽는지 확인한다.
-4. `consolidateHfMedia.py --apply --delete-legacy`로 옛 HF 폴더를 지운다.
-5. HF 최상위가 `.gitattributes`, `objects`, `manifests`만 남았는지 검사한다.
+3. 소비자를 배포한다. 로컬 소스 변경이나 HF manifest 업로드만으로 전환 완료라 부르지 않는다.
+4. `consolidateHfMedia.py --apply --delete-legacy`를 실행한다. 스크립트가 두 manifest의 모든 이미지가 정규 객체 경로이고 원격에 실재하는지 확인하고, 공개 `/cards`, `/blog`, `/terminal`의 실제 JS 번들에서 새 manifest 참조와 옛 경로 부재를 증명한 뒤에만 삭제한다.
+5. 같은 명령을 다시 실행해 canonical-only 상태에서도 성공하는지 확인한다.
+6. HF 최상위가 `.gitattributes`, `objects`, `manifests`만 남았는지 검사한다.
 
-삭제를 소비자 배포보다 먼저 하면 현재 공개 화면이 끊긴다. 이 순서는 구조적 안전장치이며 옛 폴더를 장기 호환 계층으로 인정한다는 뜻이 아니다.
+삭제를 소비자 배포보다 먼저 하면 현재 공개 화면이 끊긴다. 라이브 수집 실패, 새 경로 누락, 옛 경로 잔존, manifest 계약 위반, 원격 객체 누락 중 하나라도 있으면 스크립트는 삭제 전 실패한다. 이 순서는 구조적 안전장치이며 옛 폴더를 장기 호환 계층으로 인정한다는 뜻이 아니다. 운영 배선도와 명령 순서는 [`blog/OPERATIONS.md`](../../blog/OPERATIONS.md)의 `미디어 SSOT 배선과 레거시 폐기` 절을 따른다.
 
 ## 6. 완료 기준
 
