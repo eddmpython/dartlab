@@ -14,6 +14,8 @@ try:
 except ImportError:  # pragma: no cover
     yaml = None
 
+from blogMedia import RASTER_SUFFIXES
+
 # 순회 대상 카테고리. 08(기술이야기)·06(데이터리포트)·09(투자이야기)도 스캔한다.
 # (과거 05 만 스캔해 08 이 무검증으로 새던 회귀 가드. 부실한 글이 조용히 발간되지 못하게.)
 BLOG_DIRS = [
@@ -40,7 +42,7 @@ VISUAL_TIERS: dict[str, list[tuple[int, int]]] = {
 # 카드 캐러셀 손글 narration 1줄 권장 최대 길이(슬라이드 가독).
 CAROUSEL_NOTE_MAX = 140
 # 캐러셀 hero 로 쓸 수 있는 이미지 확장자.
-HERO_SUFFIXES = (".webp", ".png", ".jpg", ".jpeg")
+HERO_SUFFIXES = RASTER_SUFFIXES
 
 # 현재 수리 범위에서 제외한 기존 기술 글. 새 기술 글과 나머지 기술 글은 아래 계약을 적용한다.
 TECH_STORY_LEGACY_EXEMPT = {"blog/08-tech-story/01-sand-to-semiconductor"}
@@ -428,7 +430,7 @@ def score_post(folder_path: str) -> dict:
     # 6. 시각 자산 (15점)
     images = re.findall(r"!\[.+?\]\(.+?\)", body)
     svg_count = sum(1 for i in images if ".svg" in i)
-    img_count = sum(1 for i in images if ".webp" in i or ".png" in i or ".jpg" in i)
+    img_count = sum(1 for image in images if any(suffix in image.lower() for suffix in RASTER_SUFFIXES))
     vis_max = 15
     vis_total = svg_count + img_count
     for floor, pts in VISUAL_TIERS.get(_category(frontmatter), VISUAL_TIERS["_default"]):

@@ -14,7 +14,14 @@ from pathlib import Path
 from audit_seo import score_post as scorePost
 from auditBlog import BLOG_CATEGORIES, CONTENT_GENRE_CATEGORIES
 from auditBlog import publish_gate as auditPublishGate
-from blogMedia import loadMediaManifest, mediaManifestPath, mediaUrl
+from blogMedia import (
+    IMAGE_EXTENSION_RE,
+    IMAGE_SUFFIX_ORDER,
+    IMAGE_SUFFIXES,
+    loadMediaManifest,
+    mediaManifestPath,
+    mediaUrl,
+)
 from publishBlogAssets import verifyRemoteAssets
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -22,7 +29,10 @@ SEO_SCORE_MIN = 95
 EMPTY_TREE_REF = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
 HF_OBJECT_URL_PREFIX = "https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/"
 MEDIA_FRONTMATTER_RE = re.compile(r"^(?:ogImage|cardPreview|thumbnail|thumbnailBg):\s*.*(?:\r?\n|$)", re.M)
-MEDIA_LINK_RE = re.compile(r"(!\[[^\]]*\]\()[^)]*\.(?:webp|png|jpe?g|svg)(?:\s+[\"'][^\"']*[\"'])?(\))", re.I)
+MEDIA_LINK_RE = re.compile(
+    rf"(!\[[^\]]*\]\()[^)]*\.(?:{IMAGE_EXTENSION_RE})(?:\s+[\"'][^\"']*[\"'])?(\))",
+    re.I,
+)
 
 
 def _git(*args: str, check: bool = True) -> subprocess.CompletedProcess[str]:
@@ -131,10 +141,10 @@ def mediaReferenceErrors(postDir: Path) -> list[str]:
     for record in records:
         if isinstance(record, dict) and record.get("path"):
             allowedUrls.add(mediaUrl(str(record["path"])))
-    localRefs = re.findall(r"(?:\./)?assets/[^)\"' >]+\.(?:webp|png|jpe?g|svg)", raw, re.I)
+    localRefs = re.findall(rf"(?:\./)?assets/[^)\"' >]+\.(?:{IMAGE_EXTENSION_RE})", raw, re.I)
     if localRefs:
         errors.append(f"로컬 콘텐츠 미디어 참조 금지: {localRefs[0]}")
-    usedUrls = set(re.findall(rf"{re.escape(HF_OBJECT_URL_PREFIX)}[0-9a-f/]+\.(?:webp|png|jpe?g|svg)", raw, re.I))
+    usedUrls = set(re.findall(rf"{re.escape(HF_OBJECT_URL_PREFIX)}[0-9a-f/]+\.(?:{IMAGE_EXTENSION_RE})", raw, re.I))
     unexpected = sorted(usedUrls - allowedUrls)
     if unexpected:
         errors.append(f"media/catalog.json 밖 HF 객체 참조: {unexpected[0]}")
@@ -152,17 +162,51 @@ def trackedBinaryErrors(postDir: Path) -> list[str]:
         relativeAssets = (postDir / "assets").relative_to(REPO_ROOT).as_posix()
     except ValueError:
         return []
-    tracked = _git(
-        "ls-files",
-        "--",
-        f"{relativeAssets}/*.webp",
-        f"{relativeAssets}/*.jpg",
-        f"{relativeAssets}/*.jpeg",
-        f"{relativeAssets}/*.png",
-        f"{relativeAssets}/*.svg",
-    )
+    tracked = _git("ls-files", "--", *(f"{relativeAssets}/*{suffix}" for suffix in IMAGE_SUFFIX_ORDER))
     paths = [line.strip() for line in tracked.stdout.splitlines() if line.strip()]
     return [f"블로그 콘텐츠 미디어는 Git 추적 금지, HF 콘텐츠 주소 객체에만 발행: {path}" for path in paths]
+
+
+def localMediaResidueErrors(postDir: Path) -> list[str]:
+    """중앙 카탈로그가 생긴 글에는 무시된 로컬 staging도 남기지 않는다."""
+    try:
+        catalogPath = mediaManifestPath(postDir)
+    except ValueError:
+        return []
+    if not catalogPath.is_file():
+        return []
+    residue: set[Path] = set()
+    assetsDir = postDir / "assets"
+    if assetsDir.is_dir():
+        residue.update(
+            path for path in assetsDir.rglob("*") if path.is_file() and path.suffix.lower() in IMAGE_SUFFIXES
+        )
+    manifest, _ = loadMediaManifest(postDir)
+    if isinstance(manifest, dict):
+        records: list[dict[str, object]] = []
+        for role in ("og", "card"):
+            record = manifest.get(role)
+            if isinstance(record, dict):
+                records.append(record)
+        for role in ("assets", "diagrams"):
+            group = manifest.get(role)
+            if isinstance(group, dict):
+                records.extend(record for record in group.values() if isinstance(record, dict))
+        for record in records:
+            source = str(record.get("source") or "")
+            if not source:
+                continue
+            local = (REPO_ROOT / source).resolve()
+            if local.is_file() and local.suffix.lower() in IMAGE_SUFFIXES:
+                residue.add(local)
+    errors: list[str] = []
+    for path in sorted(residue):
+        try:
+            label = path.relative_to(REPO_ROOT).as_posix()
+        except ValueError:
+            label = str(path)
+        errors.append(f"HF 발행 후 로컬 미디어 staging 잔존 금지: {label}")
+    return errors
 
 
 def validatePost(postDir: Path, *, requireContractV2: bool, mediaOnly: bool = False) -> list[str]:
@@ -170,11 +214,13 @@ def validatePost(postDir: Path, *, requireContractV2: bool, mediaOnly: bool = Fa
         errors: list[str] = []
         errors.extend(mediaReferenceErrors(postDir))
         errors.extend(trackedBinaryErrors(postDir))
+        errors.extend(localMediaResidueErrors(postDir))
         errors.extend(verifyRemoteAssets(postDir))
         return errors
     errors = auditPublishGate(postDir, requireContractV2=requireContractV2)
     errors.extend(mediaReferenceErrors(postDir))
     errors.extend(trackedBinaryErrors(postDir))
+    errors.extend(localMediaResidueErrors(postDir))
     errors.extend(verifyRemoteAssets(postDir))
     score = scorePost(str(postDir))
     if score is None:

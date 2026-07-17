@@ -51,8 +51,8 @@ function collectBlogAssets(dir: string, result = new Map<string, string>()) {
 			if (entry.name === 'assets') {
 				for (const asset of fs.readdirSync(fullPath, { withFileTypes: true })) {
 					if (!asset.isFile()) continue;
-					// 게시 자산은 이미지(.webp/.svg/.png/.jpg/.gif/.avif)만. 매니페스트/문서(imagegen-extract.json·CREDITS.md
-					// 등)는 추출 로그·출처 기록이라 수집·서빙 대상이 아님 — 스킵(파일 삭제 아님). 비이미지는 전역 유일성 검사에서 제외.
+					// 임시 게시 자산은 이미지(.webp/.svg/.png/.jpg/.gif/.avif)만 수집한다.
+					// 출처·생성 메타데이터는 글 루트에 있으므로 assets 서빙 대상이 아니다.
 					if (!/\.(webp|svg|png|jpe?g|gif|avif)$/i.test(asset.name)) continue;
 					// 썸네일 합성 소스(원본 배경) — markdown 미참조, 출력은 /thumbnails/. 카테고리마다 NN 재시작이라
 					// basename(01-thumbnail-bg.webp 등)이 전역 충돌 → 서빙 대상 아니므로 스킵.

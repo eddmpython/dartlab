@@ -257,7 +257,7 @@ def fetch_bg(nn: str, slug: str, queries: list[str], keywords: list[str]) -> tup
             im.save(dest, "WEBP", quality=86, method=6)
             print(f"OK   bg {nn}-{slug} ({dest.stat().st_size // 1024}KB) ← [{q}] {item['license']}")
             # CREDITS
-            cred = dest.parent / "CREDITS.md"
+            cred = dest.parent.parent / "CREDITS.md"
             line = f"- **{nn}-thumbnail-bg.webp** — {item['title'] or '(무제)'} / {item['creator']} / {item['license']} / [{q}] / {item['src']}"
             header = "" if cred.exists() else "# 이미지 출처 (CC0 / Public Domain — Wikimedia Commons · Openverse)\n\n"
             with cred.open("a", encoding="utf-8") as fh:

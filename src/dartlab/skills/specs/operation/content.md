@@ -98,7 +98,7 @@ lastUpdated: 2026-07-17
 
 블로그 신규 심층 글은 `brief.json contractVersion: 2`를 쓴다. 마지막 H2는 `watchScenarios[]`의 조건 2~4개를 "만약 어떤 조건이면 어떤 경로로 무엇이 달라질까"로 풀고, 확인 지표와 반증 조건까지 남긴다. 낙관·기본·비관 고정표는 금지한다.
 
-자산 SSOT 경계: 블로그 의미 계약은 `brief.json.imagePlan[]`, 출처는 `assets/CREDITS.md`, staging 별칭·포스트별 본문/OG/card 역할·경로·SHA-256 대응은 중앙 `media/catalog.json` 하나다. SVG/WebP/JPG/PNG와 합성 OG/card는 포스트 `assets/`와 `landing/static/thumbnails/`에서 로컬 눈검수한 뒤 HF `dartlab-media/objects/sha256/<앞2자>/<전체해시>.<확장자>`에 발행하며 Git에 넣지 않는다. SVG는 XML 안전성·텍스트 밀도 메타데이터와 함께 `diagrams`에 등록한다. 회사·이슈·기술·팟캐스트별 HF 미디어 폴더는 만들지 않는다. 런타임 파생 뷰는 `manifests/companies.json`, `manifests/carousels.json` 두 파일뿐이고 모든 이미지가 객체 경로를 가리킨다. 같은 바이트는 한 번만 저장하고 durable 원본과 서빙 SSOT는 HF 하나다. `sourcePolicy`는 `auto`이며 파이프라인이 사실 적합성에 따라 공식·라이선스 실사와 image_gen 중 선택한다. `sns/assets/{subjectKey}`는 공유 staging일 뿐 SSOT가 아니다. 깨끗한 체크아웃의 staging 복원은 `seedBlogMedia.py`만 쓴다. StoryCore는 개념 어휘이며 새 물리 아티팩트를 만들지 않는다.
+자산 SSOT 경계: 블로그 의미 계약은 `brief.json.imagePlan[]`, 출처는 글 루트 `CREDITS.md`, staging 별칭·포스트별 본문/OG/card 역할·경로·SHA-256 대응은 중앙 `media/catalog.json` 하나다. SVG/WebP/JPG/PNG/GIF와 합성 OG/card는 포스트 `assets/`와 `landing/static/thumbnails/`에서 로컬 눈검수한 뒤 HF `dartlab-media/objects/sha256/<앞2자>/<전체해시>.<확장자>`에 발행하며 Git에 넣지 않는다. 발행기는 원격 객체 존재를 재검증한 뒤 로컬 미디어와 빈 staging 폴더를 삭제한다. SVG는 XML 안전성·텍스트 밀도 메타데이터와 함께 `diagrams`에 등록한다. 회사·이슈·기술·팟캐스트별 HF 미디어 폴더는 만들지 않는다. 런타임 파생 뷰는 `manifests/companies.json`, `manifests/carousels.json` 두 파일뿐이고 모든 이미지가 객체 경로를 가리킨다. 같은 바이트는 한 번만 저장하고 durable 원본과 서빙 SSOT는 HF 하나다. `sourcePolicy`는 `auto`이며 파이프라인이 사실 적합성에 따라 공식·라이선스 실사와 image_gen 중 선택한다. `sns/assets/{subjectKey}`는 공유 staging일 뿐 SSOT가 아니다. 깨끗한 체크아웃의 staging 복원은 재작업할 때 `seedBlogMedia.py`만 쓰며 다음 발행 성공 뒤 다시 삭제한다. StoryCore는 개념 어휘이며 새 물리 아티팩트를 만들지 않는다.
 
 ### evidence 표준 (편집 스냅샷, 굽기 아님)
 ②의 evidence 각 항목은 아래를 단다. 핵심은 `apiRef`(재현)·`period.basis`(달력/회계연도)·`asOf`(시점)로, 2.6절의 반복 함정(EDGAR 회계연도·누적/TTM 혼입)을 구조로 막는다.
@@ -145,7 +145,7 @@ id · claim · apiRef{apiRef,args} · value · period{label,basis,granularity} �
 ### 서피스별 (성격 불문 공통 규율)
 | 서피스 | 소스 SSOT | 조인 키 필드 | 발행 게이트 | 기획 개선루프 |
 |---|---|---|---|---|
-| 블로그 | `blog/{cat}/{post}/index.md` + `brief.json` + `assets/CREDITS.md` + 중앙 `media/catalog.json` | `stockCode` / `topicSlug` | `publishBlogAssets.py` -> `publishGate.py` | `blog_plan_loop.workflow.js` |
+| 블로그 | `blog/{cat}/{post}/index.md` + `brief.json` + 글 루트 `CREDITS.md` + 중앙 `media/catalog.json` | `stockCode` / `topicSlug` | `publishBlogAssets.py` -> `publishGate.py` | `blog_plan_loop.workflow.js` |
 | 카드 | frontmatter `carousel:` · `_issues/*/carousel.yaml` | `code`(회사) · topicSlug(주제, 확장 예정) | `build_carousel_contracts.py` | `cards_plan_loop.workflow.js` |
 | 팟캐스트 | `_podcasts/episodes/*/episode.yaml` | `stockCode` / `topicSlug` | `publish_podcast.py` (status=ready) | `podcast_plan_loop.workflow.js` |
 

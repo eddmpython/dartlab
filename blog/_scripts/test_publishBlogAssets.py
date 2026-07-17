@@ -15,13 +15,17 @@ import publishBlogAssets as publisher  # noqa: E402
 class FakeApi:
     def __init__(self, *, exists: bool = False) -> None:
         self.exists = exists
+        self.files: set[str] = set()
         self.commits: list[dict[str, object]] = []
 
     def file_exists(self, **kwargs: object) -> bool:
-        return self.exists
+        return self.exists or str(kwargs.get("filename") or "") in self.files
 
     def create_commit(self, **kwargs: object) -> None:
         self.commits.append(kwargs)
+        operations = kwargs.get("operations")
+        if isinstance(operations, list):
+            self.files.update(str(operation.path_in_repo) for operation in operations)
 
 
 def writePost(root: Path) -> Path:
@@ -33,7 +37,7 @@ def writePost(root: Path) -> Path:
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 40"><text x="4" y="20">원리</text></svg>',
         encoding="utf-8",
     )
-    (assetsDir / "CREDITS.md").write_text(
+    (postDir / "CREDITS.md").write_text(
         "- hero-scene: 생성 이미지\n- mechanism-map.svg: 프로젝트 제작 도해\n",
         encoding="utf-8",
     )
@@ -65,13 +69,13 @@ def test_publish_assets_uploads_hashed_media_and_rewrites_refs(monkeypatch, tmp_
     monkeypatch.setattr(publisher, "REPO_ROOT", tmp_path)
     postDir = writePost(tmp_path)
     api = FakeApi()
+    svgBytes = (postDir / "assets" / "mechanism-map.svg").read_bytes()
 
     manifest = publisher.publishAssets(postDir, api=api)
 
     heroSha = hashlib.sha256(b"hero").hexdigest()
     ogSha = hashlib.sha256(b"og").hexdigest()
     cardSha = hashlib.sha256(b"card").hexdigest()
-    svgBytes = (postDir / "assets" / "mechanism-map.svg").read_bytes()
     svgSha = hashlib.sha256(svgBytes).hexdigest()
     heroPath = f"objects/sha256/{heroSha[:2]}/{heroSha}.webp"
     ogPath = f"objects/sha256/{ogSha[:2]}/{ogSha}.webp"
@@ -93,6 +97,9 @@ def test_publish_assets_uploads_hashed_media_and_rewrites_refs(monkeypatch, tmp_
     assert f"objects/sha256/{svgSha[:2]}/{svgSha}.svg" in body
     assert f"ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/{ogPath}" in body
     assert f"objects/sha256/{cardSha[:2]}/{cardSha}.webp" in body
+    assert (postDir / "CREDITS.md").is_file()
+    assert not (postDir / "assets").exists()
+    assert not (tmp_path / "landing" / "static" / "thumbnails").exists()
 
 
 def test_dry_run_does_not_write_manifest(monkeypatch, tmp_path: Path) -> None:
@@ -105,14 +112,25 @@ def test_dry_run_does_not_write_manifest(monkeypatch, tmp_path: Path) -> None:
     assert not (tmp_path / "media" / "catalog.json").exists()
 
 
+def test_dry_run_supports_planned_gif(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(publisher, "REPO_ROOT", tmp_path)
+    postDir = writePost(tmp_path)
+    webp = postDir / "assets" / "hero-scene.webp"
+    gif = webp.with_suffix(".gif")
+    webp.rename(gif)
+    indexPath = postDir / "index.md"
+    updated = indexPath.read_text(encoding="utf-8").replace("hero-scene.webp", "hero-scene.gif")
+    indexPath.write_text(updated, encoding="utf-8")
+
+    manifest = publisher.publishAssets(postDir, dryRun=True)
+
+    assert manifest["assets"]["hero-scene"]["path"].endswith(".gif")
+
+
 def test_publish_assets_is_idempotent_without_local_staging(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(publisher, "REPO_ROOT", tmp_path)
     postDir = writePost(tmp_path)
     publisher.publishAssets(postDir, api=FakeApi())
-    (postDir / "assets" / "hero-scene.webp").unlink()
-    (postDir / "assets" / "mechanism-map.svg").unlink()
-    (tmp_path / "landing" / "static" / "thumbnails" / "tech-hf-only.webp").unlink()
-    (tmp_path / "landing" / "static" / "thumbnails" / "tech-hf-only-card.webp").unlink()
     api = FakeApi(exists=True)
 
     manifest = publisher.publishAssets(postDir, api=api)

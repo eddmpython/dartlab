@@ -8,7 +8,16 @@ from collections import Counter
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
-from blogMedia import ASSET_KEY_RE, SHA256_RE, loadMediaCatalog, loadMediaManifest, mediaPath, mediaUrl
+from blogMedia import (
+    ASSET_KEY_RE,
+    RASTER_EXTENSION_RE,
+    RASTER_SUFFIXES,
+    SHA256_RE,
+    loadMediaCatalog,
+    loadMediaManifest,
+    mediaPath,
+    mediaUrl,
+)
 
 POST_GLOB = "*/*/index.md"
 SVG_GLOB = "*/*/assets/*.svg"
@@ -1133,10 +1142,10 @@ def _validateImageSsot(postDir: Path, body: str, plan: dict[str, object] | None)
     planned = _image_plan(plan)
     manifest, manifestFails = loadMediaManifest(postDir)
     fails.extend(manifestFails)
-    creditsPath = postDir / "assets" / "CREDITS.md"
+    creditsPath = postDir / "CREDITS.md"
     credits = creditsPath.read_text(encoding="utf-8") if creditsPath.is_file() else ""
     if not credits:
-        fails.append("contract v2 이미지는 assets/CREDITS.md 출처 기록이 필요함")
+        fails.append("contract v2 이미지는 CREDITS.md 출처 기록이 필요함")
     if manifest is None:
         return fails
     manifestAssets = manifest.get("assets") if isinstance(manifest.get("assets"), dict) else {}
@@ -1149,7 +1158,7 @@ def _validateImageSsot(postDir: Path, body: str, plan: dict[str, object] | None)
         if not assetKey:
             continue
         if credits and assetKey not in credits:
-            fails.append(f"assets/CREDITS.md 에 imagePlan[{idx}] assetKey 누락: {assetKey}")
+            fails.append(f"CREDITS.md 에 imagePlan[{idx}] assetKey 누락: {assetKey}")
         record = manifestAssets.get(assetKey)
         if not isinstance(record, dict):
             fails.append(f"media/catalog.json에 imagePlan[{idx}] 누락: {assetKey}")
@@ -1159,15 +1168,18 @@ def _validateImageSsot(postDir: Path, body: str, plan: dict[str, object] | None)
         if not ASSET_KEY_RE.fullmatch(assetKey) or not SHA256_RE.fullmatch(sha256):
             fails.append(f"media/catalog.json imagePlan[{idx}] 해시 계약 위반: {assetKey}")
             continue
-        expectedPath = mediaPath(sha256)
+        sourceSuffix = Path(str(record.get("source") or remotePath)).suffix.lower()
+        expectedPath = mediaPath(sha256, sourceSuffix)
         if remotePath != expectedPath:
             fails.append(f"media/catalog.json imagePlan[{idx}] 경로 불일치: {remotePath!r} != {expectedPath!r}")
         bodyRef = mediaUrl(expectedPath)
         bodyRefPattern = rf"!\[[^\]]*\]\({re.escape(bodyRef)}\)"
         if not re.search(bodyRefPattern, body):
             fails.append(f"imagePlan[{idx}] 본문 참조 없음: {bodyRef}")
-        if f"./assets/{assetKey}.webp" in body:
-            fails.append(f"imagePlan[{idx}] 로컬 바이너리 참조 금지: ./assets/{assetKey}.webp")
+        for suffix in RASTER_SUFFIXES:
+            localRef = f"./assets/{assetKey}{suffix}"
+            if localRef in body:
+                fails.append(f"imagePlan[{idx}] 로컬 바이너리 참조 금지: {localRef}")
 
     diagrams = manifest.get("diagrams") if isinstance(manifest.get("diagrams"), dict) else {}
     for key, record in diagrams.items():
@@ -1190,7 +1202,8 @@ def _validateImageSsot(postDir: Path, body: str, plan: dict[str, object] | None)
     if isinstance(og, dict):
         ogPath = str(og.get("path") or "")
         ogSha256 = str(og.get("sha256") or "")
-        expectedOgPath = mediaPath(ogSha256)
+        ogSuffix = Path(str(og.get("source") or ogPath)).suffix.lower()
+        expectedOgPath = mediaPath(ogSha256, ogSuffix)
         if not SHA256_RE.fullmatch(ogSha256) or ogPath != expectedOgPath:
             fails.append("media/catalog.json og 해시·경로 계약 위반")
     return fails
@@ -1242,8 +1255,8 @@ def publish_gate(post_dir: Path, *, requireContractV2: bool = False) -> list[str
     assets = post_dir / "assets"
     asset_photos = []
     if assets.is_dir():
-        for ext in ("*.webp", "*.jpg", "*.jpeg", "*.png"):
-            asset_photos += list(assets.glob(ext))
+        for suffix in RASTER_SUFFIXES:
+            asset_photos += list(assets.glob(f"*{suffix}"))
     served_photos = [path for path in asset_photos if "thumbnail-bg" not in path.name]
 
     plan, _, plan_fails = _load_plan(post_dir)
@@ -1271,7 +1284,7 @@ def publish_gate(post_dir: Path, *, requireContractV2: bool = False) -> list[str
         if not og_file.is_file():
             fails.append(f"OG 파일 없음: landing/static{og} (render_og_cards 미실행)")
 
-    body_photos = re.findall(r"!\[[^\]]*\]\([^)]+\.(?:webp|jpg|jpeg|png)\)", body)
+    body_photos = re.findall(rf"!\[[^\]]*\]\([^)]+\.(?:{RASTER_EXTENSION_RE})\)", body)
 
     if requireContractV2 and _planContractVersion(plan) != BLOG_PLAN_CONTRACT_VERSION:
         fails.append(f"신규 글은 brief.json contractVersion {BLOG_PLAN_CONTRACT_VERSION}가 필요함")

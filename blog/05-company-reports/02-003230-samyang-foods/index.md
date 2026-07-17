@@ -184,7 +184,7 @@ c.panel("dividend")       # DPS 9년 시계열 (analysis 결손 우회)
 
 ---
 
-![라면 빅3 영업이익률 9년 레이스 — 삼양만 이탈한다](./assets/02-ramen-big3-opm-race.gif)
+![라면 빅3 영업이익률 9년 레이스 — 삼양만 이탈한다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e4/e40f39bc4a00cf2a32b86efb1dbf9890124757374d6bc56e8c666b61b04e5896.gif)
 
 ## 1막 — 2014년, 라면 빅3 꼴등의 위기
 

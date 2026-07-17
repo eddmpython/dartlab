@@ -122,6 +122,18 @@ def test_canonicalManifestErrorsRejectsCompanyShaMismatch() -> None:
     assert errors == [f"회사 manifest SHA-256 계약 위반: 005930 -> {canonical}"]
 
 
+def test_canonicalManifestErrorsAcceptsGifObject() -> None:
+    sha256 = "c" * 64
+    canonical = f"objects/sha256/cc/{sha256}.gif"
+    companies = {
+        "version": 3,
+        "companies": {"003230": {"assets": [{"path": canonical, "sha256": sha256}]}},
+    }
+    carousels = {"version": 3, "posts": [{"slug": "x", "slides": [{"image": canonical}]}]}
+
+    assert migration.canonicalManifestErrors(companies, carousels, {canonical}) == []
+
+
 def test_mainAcceptsIdempotentCanonicalOnlyState(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
