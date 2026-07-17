@@ -1,12 +1,13 @@
 {
   "plan": {
+    "contractVersion": 2,
     "title": "JYP, 주력 새 앨범 없이 MD 606억원을 팔았다",
     "titleContract": {
       "workingTitle": "JYP 스타디움과 MD 기업이야기",
       "selectedTitle": "JYP, 주력 새 앨범 없이 MD 606억원을 팔았다",
       "hookQuestion": "주력 아티스트의 새 앨범이 없던 2026년 1분기에 MD 매출이 606억원까지 늘어난 이유는 무엇인가.",
       "readerGap": "엔터테인먼트 회사를 앨범 판매량으로만 보면 2025년 사상 최대 매출과 마진 하락, 2026년 1분기 MD와 투어 성장을 동시에 설명할 수 없다.",
-      "promise": "스타디움 투어, 재계약 수수료, 총액 인식, Blue Garage, 도시 팝업, DearU 지분 매각을 따라 팬덤이 상품과 현금으로 바뀌는 과정과 마진의 경계를 밝힌다.",
+      "promise": "앨범 공백의 미스터리에서 출발해 스타디움의 정산표, 세 개의 계산대, Blue Garage의 상자, 도시 팝업을 따라 팬의 관심이 상품과 현금으로 바뀌는 과정을 밝힌다.",
       "whySelected": "SM과 하이브를 이미 다룬 시리즈에서 JYP는 단순 비교편이 아니라 앨범 없는 분기에도 성장한 투어 연결 MD 모델을 보여준다. 외형 성장과 마진 하락이 동시에 일어난 모순이 선명하다.",
       "candidates": [
         {"title": "JYP, 주력 새 앨범 없이 MD 606억원을 팔았다", "hook": "앨범 회사라는 고정관념과 분기 매출 구조가 충돌한다.", "risk": "분기 전체 발매가 0이라는 오해를 막는다."},
@@ -24,29 +25,27 @@
         "매출과 마진, 매출 믹스, 원가, 1분기, Blue Garage 순환은 SVG로 재현한다."
       ]
     },
-    "readerQuestion": "JYP는 왜 매출이 최고치를 경신하는 동안 영업이익률이 낮아졌고, 투어와 MD는 그 마진을 다시 높일 수 있는가.",
+    "readerQuestion": "JYP는 어떻게 앨범 공백을 MD 606억원으로 바꿨고, 그 상자는 비용을 치른 뒤에도 반복해서 이익과 현금을 남길 수 있는가.",
     "insight": {
       "commonBelief": "엔터테인먼트 회사의 실적은 주력 아티스트의 새 앨범 판매량이 결정한다.",
       "twistFact": "2026년 1분기에는 주력 아티스트의 새 앨범이 없었지만 MD 매출 606억원과 콘서트 매출 409억원이 각각 85.2%, 88.7% 늘며 연결 매출과 영업이익을 끌어올렸다.",
-      "whatToWatch": "앨범, 콘서트, MD 매출을 분리하고 아티스트 수수료, 매출총이익률, Blue Garage 이익률, 재고, 영업현금흐름, 일회성 지분매각을 같은 순서로 본다.",
+      "whatToWatch": "상품이 늘 때 남는 돈도 늘어나는지, 공연이 끝난 뒤에도 결제가 이어지는지, 한 팀이 쉬어도 세 계산대가 움직이는지를 다음 공시에서 본다.",
       "freshnessArgument": "2025년 대형 월드투어와 재계약 비용이 함께 반영된 뒤 2026년 1분기 도시 팝업과 조달 및 배송 개선으로 Blue Garage 영업이익률이 11.1%까지 올라왔다. MD가 외형만 키우는지 이익도 남기는지 처음 검증되는 시점이다.",
       "evidenceRefs": ["JYP FY25 Q4 Earnings Note와 IR PDF", "JYP FY26 Q1 Earnings Note", "JYP FY25 Q1 Earnings Note", "DART 2025년 사업보고서", "dartlab Company 035900 IS, BS, CF"]
     },
     "acts": [
-      {"order": 1, "heading": "사상 최대 매출 8,219억원 뒤에서 마진은 11%p 내려갔다", "purpose": "궁금증심화", "scene": "2023년부터 2025년 매출 막대와 영업이익률 선이 반대로 움직인다.", "keyNumbers": ["2025 매출 8,219억원", "영업이익 1,552억원", "영업이익률 18.9%", "2023 영업이익률 29.9%"], "causalBridge": "왜 더 많이 팔고 덜 남았는지 알려면 스타디움 투어의 회계와 재계약 원가를 봐야 한다."},
-      {"order": 2, "heading": "스타디움 확장은 티켓 매출과 재계약 원가를 함께 키웠다", "purpose": "메커니즘공개", "scene": "대형 투어가 콘서트 매출과 아티스트 수수료, 제작비를 동시에 끌어올린다.", "keyNumbers": ["콘서트 매출 1,889억원", "전년 대비 82.4% 증가", "아티스트 수수료 2,068억원", "전년 대비 72.0% 증가"], "causalBridge": "투어가 앨범만큼 큰 엔진이 되면서 회사의 매출 지도도 바뀌었다."},
-      {"order": 3, "heading": "앨범과 콘서트와 MD가 각각 2,000억원 엔진이 됐다", "purpose": "사업분해", "scene": "세 사업이 전체 매출의 71%를 나눠 가진다.", "keyNumbers": ["앨범 2,066억원", "콘서트 1,889억원", "MD 1,885억원", "합산 비중 약 71%"], "causalBridge": "세 엔진의 중심에는 Stray Kids라는 거대한 글로벌 IP가 있다."},
-      {"order": 4, "heading": "Stray Kids의 56회 투어는 규모의 경제와 집중 위험을 같이 만들었다", "purpose": "경쟁력과리스크", "scene": "글로벌 차트와 스타디움 투어가 앨범, 티켓, MD를 한꺼번에 움직인다.", "keyNumbers": ["2025년 투어 56회", "IFPI 글로벌 아티스트 2위", "Billboard 200 연속 1위 앨범 8개", "Billboard Top Tours 10위"], "causalBridge": "한 IP의 인기를 회사 안에 더 오래 남기려면 유통과 상품 운영을 직접 가져와야 한다."},
-      {"order": 5, "heading": "Blue Garage는 팬덤을 재고와 배송과 마진으로 번역한다", "purpose": "운영경제", "scene": "기획된 캐릭터와 의류가 자사 플랫폼, 공연장, 팝업을 오간다.", "keyNumbers": ["2025 MD 매출 1,885억원", "전년 대비 42.1% 증가", "2025 Blue Garage 영업이익률 7.9%", "전년 대비 4.5%p 개선"], "causalBridge": "이 구조가 앨범 공백에도 작동하는지는 2026년 1분기가 답한다."},
-      {"order": 6, "heading": "주력 새 앨범이 없던 분기에도 MD 606억원이 팔렸다", "purpose": "가설검증", "scene": "앨범 감소와 MD 및 콘서트 증가가 한 분기에 교차한다.", "keyNumbers": ["매출 1,860억원", "영업이익 334억원", "MD 606억원", "콘서트 409억원", "앨범 252억원"], "causalBridge": "성장의 배경은 공연장 하루를 도시 팝업과 온라인 배송으로 늘린 운영 변화다."},
-      {"order": 7, "heading": "도시 팝업은 공연 하루를 21개 도시의 소비 주간으로 늘렸다", "purpose": "확장전략", "scene": "공연장 MD, 도시 한정 상품, 온라인 배송, 현지 물류가 한 순환을 만든다.", "keyNumbers": ["TWICE 투어 연결 팝업 21개 도시", "2026년 1분기 Blue Garage 매출 409억원", "전년 대비 180.5% 증가", "영업이익률 11.1%"], "causalBridge": "운영 개선과 별개로 2025년 순이익에는 지분 매각이라는 일회성 돈이 섞였다."},
-      {"order": 8, "heading": "DearU 지분 매각은 영업이익보다 큰 순이익을 만들었다", "purpose": "회계교정", "scene": "영업이익과 순이익 사이에 관계기업 지분 처분이 끼어든다.", "keyNumbers": ["2025 영업이익 1,552억원", "순이익 1,606억원", "2025년 1분기 영업이익 196억원", "순이익 693억원"], "causalBridge": "다음 실적은 일회성 이익을 빼고 MD 마진과 현금전환으로 판정해야 한다."},
-      {"order": 9, "heading": "다음 공시에서는 판매량보다 MD 마진과 재고를 먼저 보라", "purpose": "관찰체계", "scene": "매출 믹스, 수수료, Blue Garage, 재고, 현금, IP 분산 체크리스트다.", "keyNumbers": ["영업이익률 18.9% 기준선", "Blue Garage 11.1% 기준선", "2025 재고 202억원", "2025 영업현금흐름 1,243억원"], "causalBridge": "앨범 판매량 하나가 아니라 한 팬이 여러 장면에서 결제하는 구조로 회사를 읽으며 닫는다."}
+      {"order": 1, "heading": "시간을 2년 돌리면 매출보다 먼저 무너진 숫자가 보인다", "purpose": "궁금증심화", "scene": "606억원의 상자에서 출발해 2023년부터 2025년까지 매출과 영업이익률이 반대로 움직인 시간을 되짚는다.", "keyNumbers": ["2025 매출 8,219억원", "2025 영업이익률 18.9%", "2023 영업이익률 29.9%"], "causalBridge": "더 많이 팔고도 덜 남은 원인을 찾기 위해 스타디움의 정산표로 이동한다."},
+      {"order": 2, "heading": "스타디움은 티켓과 비용을 함께 데려왔다", "purpose": "메커니즘공개", "scene": "관객석이 커지는 순간 티켓 매출과 아티스트 수수료 및 제작비가 손익계산서 양쪽에서 함께 올라간다.", "keyNumbers": ["콘서트 매출 1,889억원", "아티스트 수수료 2,068억원", "콘텐츠 제작비 1,539억원"], "causalBridge": "공연만으로 끝났다면 규모 확대의 비용만 남지만 같은 팬 앞에는 다른 계산대가 열렸다."},
+      {"order": 3, "heading": "그런데 팬은 한 번만 결제하지 않았다", "purpose": "사업구조전환", "scene": "한 팬이 앨범과 티켓과 상품이라는 세 계산대를 차례로 지나고 Stray Kids의 56회 투어가 세 매출을 함께 움직인다.", "keyNumbers": ["앨범 2,066억원", "콘서트 1,889억원", "MD 1,885억원", "합산 비중 약 71%", "Stray Kids 투어 56회"], "causalBridge": "여러 번의 결제를 회사 안에 남기려면 상품의 기획과 판매 및 배송을 직접 운영해야 한다."},
+      {"order": 4, "heading": "Blue Garage는 팬심을 상자와 배송으로 바꿨다", "purpose": "운영경제와가설검증", "scene": "캐릭터 상품이 자사 플랫폼과 공연장 및 팝업을 오가고 이전 주문이 다음 분기 배송 매출로 잡힌다.", "keyNumbers": ["2025 MD 매출 1,885억원", "2026년 1분기 MD 606억원", "Blue Garage 매출 409억원", "Blue Garage 영업이익률 11.1%"], "causalBridge": "상자의 판매 시간을 공연장 하루보다 길게 늘린 구체적인 장치가 도시 팝업이다."},
+      {"order": 5, "heading": "공연 하루가 도시의 일주일이 됐다", "purpose": "확장전략", "scene": "공연장 밖 팝업과 한정 상품 및 온라인 배송이 티켓이 없는 현지 팬까지 새로운 결제 장면으로 끌어온다.", "keyNumbers": ["2025년 4분기 실행 5개 도시", "2026년 1분기 실행 7개 도시", "2026년 2분기 계획 9개 도시"], "causalBridge": "운영의 반복성을 판단하기 전에 순이익에 섞인 본업 밖 사건을 분리한다."},
+      {"order": 6, "heading": "순이익의 반전은 본업 밖에서 왔다", "purpose": "회계교정", "scene": "영업이익과 순이익 사이에 DearU 지분 일부 매각이 들어오며 본업 개선과 일회성 이익이 다른 방향으로 움직인다.", "keyNumbers": ["2025 영업이익 1,552억원", "순이익 1,606억원", "2026년 1분기 영업이익 334억원", "순이익 319억원"], "causalBridge": "일회성 착시를 걷은 뒤 606억원이 구조인지 판정할 세 조건을 남긴다."},
+      {"order": 7, "heading": "606억원이 구조인지 이벤트인지 가르는 세 가지 조건", "purpose": "조건별관전", "scene": "상자에 남는 이익, 공연 뒤 결제의 지속성, 여러 IP의 물류망 활용을 다음 공시 질문으로 바꾼다.", "keyNumbers": ["Blue Garage 영업이익률 11.1%", "2026년 1분기 재고 184억원", "영업현금흐름 131억원"], "causalBridge": "스타디움의 불이 꺼진 뒤 남는 상자와 현금으로 회사의 변화를 판정하며 닫는다."}
     ],
     "sections": [
       {
         "order": 1,
-        "heading": "사상 최대 매출 8,219억원 뒤에서 마진은 11%p 내려갔다",
+        "heading": "시간을 2년 돌리면 매출보다 먼저 무너진 숫자가 보인다",
         "subtitle": "매출 최고치와 수익성 하락이 동시에 일어난 첫 모순을 푼다.",
         "visualAnchor": "170-margin-paradox.svg의 매출 막대와 영업이익률 하락선",
         "explanation": "표에서 2023년부터 2025년까지 매출과 영업이익률을 함께 읽어 외형 성장만으로는 설명되지 않는 비용 변화를 먼저 드러낸다.",
@@ -57,7 +56,7 @@
       },
       {
         "order": 2,
-        "heading": "스타디움 확장은 티켓 매출과 재계약 원가를 함께 키웠다",
+        "heading": "스타디움은 티켓과 비용을 함께 데려왔다",
         "subtitle": "대형 투어의 규모가 손익계산서 양쪽을 동시에 밀어 올렸다.",
         "visualAnchor": "170-cost-step-up.svg의 아티스트 수수료와 제작비 및 기타 원가 비교",
         "explanation": "공시 원가 표에서 아티스트 수수료와 콘텐츠 제작비, 기타 원가를 나눠 콘서트 매출 증가가 왜 같은 비율의 이익 증가로 이어지지 않았는지 설명한다.",
@@ -68,60 +67,71 @@
       },
       {
         "order": 3,
-        "heading": "앨범과 콘서트와 MD가 각각 2,000억원 엔진이 됐다",
+        "heading": "그런데 팬은 한 번만 결제하지 않았다",
         "subtitle": "한 번의 팬 활동이 음반과 공연과 상품의 세 결제로 번진다.",
         "visualAnchor": "170-revenue-mix.svg와 170-stadium-merch-hero.webp의 세 매출원 및 공연 뒤 상품 장면",
-        "explanation": "2025년 부문별 매출 표에서 앨범과 콘서트와 MD를 분리하고 세 항목이 연결 매출에서 차지하는 비중을 계산한다.",
-        "example": "앨범 2,066억원, 콘서트 1,889억원, MD 1,885억원을 합치면 5,840억원으로 연결 매출의 약 71%다.",
+        "explanation": "2025년 부문별 매출 표에서 앨범과 콘서트와 MD를 분리하고 Stray Kids의 56회 투어가 한 팬 앞의 세 계산대를 어떻게 함께 열었는지 연결한다.",
+        "example": "앨범 2,066억원, 콘서트 1,889억원, MD 1,885억원을 합치면 5,840억원으로 연결 매출의 약 71%이며 Stray Kids 투어는 56회였다.",
         "support": "주의: 콘서트와 MD 매출은 총액 또는 순액 인식과 지역별 계약 구조가 달라 매출액 크기만으로 각 항목의 마진 순위를 확정할 수 없다.",
-        "transition": "다음 막에서는 세 엔진을 동시에 움직인 Stray Kids의 글로벌 활동과 단일 IP 집중 위험을 함께 확인한다.",
+        "transition": "다음 막에서는 여러 번의 결제를 회사 안에 남기는 Blue Garage의 상품 운영과 단일 IP 집중 위험을 함께 확인한다.",
         "evaluation": "JYP를 앨범 판매량 하나로 읽던 관점을 팬 한 명의 여러 결제 장면으로 확장한다."
       },
       {
         "order": 4,
-        "heading": "Blue Garage는 팬덤을 재고와 배송과 마진으로 번역한다",
-        "subtitle": "글로벌 IP의 관심을 회사 안에 남기는 운영 계층을 해부한다.",
+        "heading": "Blue Garage는 팬심을 상자와 배송으로 바꿨다",
+        "subtitle": "팬의 관심이 실제 상품과 다음 분기 배송 매출로 바뀌는 운영 계층을 해부한다.",
         "visualAnchor": "170-blue-garage-flywheel.svg와 170-global-pop-up-fulfillment.webp의 상품 순환 및 배송 장면",
         "explanation": "공시에서 자회사 Blue Garage의 매출과 영업이익률, 연결 재고를 읽어 상품 기획부터 조달과 판매와 배송까지의 반복 구조를 설명한다.",
-        "example": "Blue Garage의 2025년 영업이익률은 7.9%로 전년보다 4.5%p 개선됐고 연결 재고는 2024년 143억원에서 2025년 202억원으로 늘었다.",
+        "example": "Blue Garage의 2025년 영업이익률은 7.9%였고 2026년 1분기에는 11.1%로 올라왔으며 분기 MD 매출은 606억원이었다.",
         "support": "조건: 자회사 영업이익률은 연결 MD 전체의 마진과 범위가 다르고 재고 증가는 성장 준비와 판매 둔화 중 어느 쪽인지 회전일수까지 봐야 판정할 수 있다.",
-        "transition": "다음 막에서는 이 운영 구조가 주력 팀의 새 앨범이 없던 2026년 1분기에도 매출을 만들었는지 시험한다.",
+        "transition": "다음 막에서는 이 운영 구조가 공연장 하루를 도시의 여러 날 소비로 늘린 장면을 따라간다.",
         "evaluation": "팬덤이라는 추상적인 경쟁력을 재고와 조달, 판매 채널, 배송, 이익률이라는 운영 숫자로 바꾼다."
       },
       {
         "order": 5,
-        "heading": "주력 새 앨범이 없던 분기에도 MD 606억원이 팔렸다",
-        "subtitle": "앨범 공백에 투어와 상품이 실제로 완충 장치가 됐는지 검증한다.",
+        "heading": "공연 하루가 도시의 일주일이 됐다",
+        "subtitle": "공연장 판매와 도시 팝업 및 온라인 배송이 한 팬의 결제 시간을 늘린다.",
         "visualAnchor": "170-q1-merch-engine.svg와 170-city-pop-up.webp의 분기 매출 교차 및 도시 팝업",
-        "explanation": "2026년 1분기 품목별 매출 표에서 감소한 앨범과 증가한 MD 및 콘서트를 나란히 놓고 성장의 배경을 도시 팝업과 현지 판매로 연결한다.",
-        "example": "분기 MD 매출은 606억원으로 85.2%, 콘서트는 409억원으로 88.7% 늘었지만 앨범은 252억원으로 15.1% 줄었다.",
-        "support": "오해 방지: 주력 새 앨범 부재는 핵심 팀의 신규 단체 앨범 공백을 뜻하며 분기 전체 발매가 0이었다는 의미가 아니다.",
-        "transition": "다음 막에서는 TWICE 투어 연결 팝업의 도시 수와 DearU 지분 매각을 실적과 계획, 반복 이익과 일회성 이익으로 분리한다.",
-        "evaluation": "앨범 없이도 성장했다는 주장을 품목별 숫자로 검증하면서 향후 반복 가능성을 운영 지표에 묶는다."
+        "explanation": "공식 IR 표에서 투어 연결 팝업의 실행 도시와 계획 도시를 나누고 공연장 안팎의 판매 및 다음 분기 배송을 한 시간선에 놓는다.",
+        "example": "TWICE 투어 연결 팝업은 2025년 4분기 5개와 2026년 1분기 7개 도시에서 실행됐고 2분기 9개 도시는 당시 계획이었다.",
+        "support": "오해 방지: 발표된 21개 도시는 실행과 계획을 합친 수이므로 모두 확정 매출처럼 읽지 않는다.",
+        "transition": "다음 막에서는 상품 운영의 반복성을 판단하기 전에 순이익에 섞인 DearU 지분 매각 효과를 분리한다.",
+        "evaluation": "공연 횟수보다 팬과 만나는 시간이 얼마나 길어졌는지와 실행된 매출을 구분해 읽게 만든다."
       },
       {
         "order": 6,
-        "heading": "다음 공시에서는 판매량보다 MD 마진과 재고를 먼저 보라",
-        "subtitle": "도시 확장과 지분 매각의 착시를 걷어내고 현금전환을 본다.",
-        "visualAnchor": "170-blue-garage-flywheel.svg와 본문 말미의 다음 공시 체크리스트",
-        "explanation": "분기 자료에서 팝업 실행 도시와 계획 도시를 나누고 손익계산서의 영업이익과 DearU 처분이 섞인 순이익을 분리해 반복 가능한 현금을 평가한다.",
-        "example": "TWICE 투어 연결 팝업은 2025년 4분기 5개와 2026년 1분기 7개 도시에서 열렸고 2분기 9개는 계획이며, 2025년 순이익 1,606억원에는 DearU 지분 일부 매각 효과가 포함됐다.",
-        "support": "주의: 발표된 21개 도시는 실적과 계획을 합친 수이고 2026년 공연 일정도 확정 매출이 아니며 일회성 처분이익을 본업의 마진으로 넣지 않는다.",
-        "transition": "결론에서는 앨범 판매량 대신 MD 마진, 재고 회전, 영업현금흐름, IP 분산을 반복 확인하는 읽기법으로 글을 닫는다.",
-        "evaluation": "독자가 다음 공시에서 활동량보다 상품이 실제 이익과 현금으로 전환됐는지 스스로 판정할 수 있다."
+        "heading": "순이익의 반전은 본업 밖에서 왔다",
+        "subtitle": "DearU 지분 일부 매각을 반복되는 앨범과 공연 및 상품 이익에서 분리한다.",
+        "visualAnchor": "2025년 1분기와 2026년 1분기의 영업이익 및 순이익 비교표",
+        "explanation": "두 분기 비교표에서 2025년 1분기와 2026년 1분기의 영업이익 및 순이익이 반대로 움직인 장면부터 읽고 DearU 처분 효과를 분리한다.",
+        "example": "2025년 1분기 영업이익은 196억원이고 순이익은 693억원이었지만 2026년 1분기에는 영업이익 334억원과 순이익 319억원으로 방향이 엇갈렸다.",
+        "support": "주의: 관계기업 관련 손익 전체를 DearU 처분이익 하나와 같다고 단정하지 않고 회사가 설명한 지분 매각 효과의 범위만 쓴다.",
+        "transition": "마지막 막에서는 일회성 착시를 걷어낸 뒤 606억원이 구조인지 판정할 세 조건을 제시한다.",
+        "evaluation": "독자가 순이익 증감만으로 본업의 방향을 잘못 판단하지 않게 만든다."
+      },
+      {
+        "order": 7,
+        "heading": "606억원이 구조인지 이벤트인지 가르는 세 가지 조건",
+        "subtitle": "상자에 남는 이익과 공연 뒤 결제의 지속성 및 여러 IP의 물류망 활용을 함께 본다.",
+        "visualAnchor": "본문 말미의 세 조건과 첫 증거 및 가설이 틀리는 신호를 정리한 표",
+        "explanation": "독자가 다음 공시에서 Blue Garage 이익률과 재고 및 현금흐름을 팀별 활동 일정과 연결해 직접 구조의 반복성을 판정하게 한다.",
+        "example": "Blue Garage 영업이익률 11.1%, 2026년 1분기 재고 184억원, 영업현금흐름 131억원을 현재 기준선으로 둔다.",
+        "support": "조건: 한 분기 개선만으로 구조를 확정하지 않고 투어 종료 뒤 MD 급감이나 재고 누적 및 특정 팀 동조화를 반대 증거로 둔다.",
+        "transition": "스타디움의 불이 꺼진 뒤 남는 상자와 현금이라는 도입부의 장면으로 돌아가 글을 닫는다.",
+        "evaluation": "독자가 앨범 판매량 하나 대신 세 가지 반복 조건을 다음 공시 질문으로 가져간다."
       }
     ],
     "visuals": [
       {"actOrder": 1, "kind": "combo-chart", "title": "사상 최대 매출과 11%p 낮아진 마진", "proves": "2023년 이후 매출은 커졌지만 영업이익률은 낮아져 외형과 수익성이 같은 방향이 아니었다.", "seriesHint": "2023년부터 2025년까지 매출 막대와 영업이익률 선을 결합", "placement": "1막 매출과 영업이익률 기준선을 제시한 문단 직후", "insertAfter": "2025년 8,219억원 매출과 18.9% 영업이익률을 비교한 설명", "narrativeUse": "글의 핵심 모순을 고정하고 비용이 왜 늘었는지 묻는 다음 장면을 연다."},
       {"actOrder": 3, "kind": "revenue-mix", "title": "세 개의 2,000억원 엔진", "proves": "앨범과 콘서트와 MD가 합쳐 연결 매출의 약 71%를 만들며 사업 구조가 다변화됐다.", "seriesHint": "앨범 2,066억원, 콘서트 1,889억원, MD 1,885억원과 기타 매출", "placement": "3막 세 항목 합산 비중을 계산한 문단 직후", "insertAfter": "앨범과 투어와 상품을 서로 다른 결제 장면으로 설명한 문단", "narrativeUse": "앨범 회사라는 고정관념을 깨고 한 팬의 소비가 세 매출원으로 확장됨을 보여준다."},
       {"actOrder": 2, "kind": "cost-bars", "title": "스타디움과 함께 올라간 세 가지 원가", "proves": "콘서트 외형 확대가 아티스트 수수료와 제작비 및 기타 원가를 함께 키워 마진을 눌렀다.", "seriesHint": "2024년과 2025년 아티스트 수수료, 콘텐츠 제작비, 기타 원가 비교", "placement": "2막 원가 증가율 세 항목을 설명한 문단 직후", "insertAfter": "재계약과 투어 규모가 손익계산서 양쪽을 움직였다는 설명", "narrativeUse": "매출총이익률 하락을 한 가지 비용으로 돌리지 않고 규모 확대의 복합 원가로 분해한다."},
-      {"actOrder": 6, "kind": "quarter-mix", "title": "앨범 공백을 채운 MD와 콘서트", "proves": "2026년 1분기 앨범 매출이 줄어도 MD와 콘서트의 큰 증가가 연결 성장을 이끌었다.", "seriesHint": "2025년 1분기와 2026년 1분기 앨범, 콘서트, MD 매출 비교", "placement": "6막 품목별 증감률을 제시한 문단 직후", "insertAfter": "주력 팀의 새 앨범 부재 범위를 명확히 한 설명", "narrativeUse": "글 제목의 606억원을 비교 기준과 함께 검증해 투어 연결 상품 가설을 뒷받침한다."},
-      {"actOrder": 7, "kind": "flywheel", "title": "공연 하루를 도시의 소비 주간으로 늘리는 순환", "proves": "공연과 도시 팝업, 온라인 주문, 현지 배송이 이어지며 Blue Garage의 매출과 마진을 함께 개선했다.", "seriesHint": "투어, 도시 팝업, 한정 상품, 온라인 재주문, 현지 배송의 순환과 7.9% 및 11.1% 마진", "placement": "7막 도시별 팝업 실행과 계획을 나눈 문단 직후", "insertAfter": "2025년 4분기 5개, 2026년 1분기 7개, 2분기 계획 9개 도시 설명", "narrativeUse": "공연장의 감정을 장기 운영 매출로 전환하는 메커니즘과 계획의 불확실성을 동시에 보여준다."}
+      {"actOrder": 4, "kind": "quarter-mix", "title": "앨범 공백을 채운 MD와 콘서트", "proves": "2026년 1분기 앨범 매출이 줄어도 MD와 콘서트의 큰 증가가 연결 성장을 이끌었다.", "seriesHint": "2025년 1분기와 2026년 1분기 앨범, 콘서트, MD 매출 비교", "placement": "4막에서 이야기가 2026년 1분기로 돌아온 직후", "insertAfter": "앨범 대형 컴백이 없던 분기의 연결 매출과 영업이익 설명", "narrativeUse": "도입부의 606억원 미스터리를 비교 기준과 함께 다시 열어 Blue Garage 운영 가설을 검증한다."},
+      {"actOrder": 4, "kind": "flywheel", "title": "공연 하루를 도시의 소비 주간으로 늘리는 순환", "proves": "공연과 도시 팝업, 온라인 주문, 현지 배송이 이어지며 Blue Garage의 매출과 마진을 함께 개선했다.", "seriesHint": "투어, 도시 팝업, 한정 상품, 온라인 재주문, 현지 배송의 순환과 7.9% 및 11.1% 마진", "placement": "4막 Blue Garage의 조달과 판매 및 배송 구조를 설명한 문단 직후", "insertAfter": "2026년 1분기 Blue Garage 영업이익률 11.1% 설명", "narrativeUse": "팬의 감정이 상자와 배송 및 다음 분기 매출로 바뀌는 운영 메커니즘을 한 장면으로 묶는다."}
     ],
     "imagePlan": [
-      {"slot": "hero", "path": "assets/170-stadium-merch-hero.webp", "subject": "대형 스타디움 공연 뒤편의 정돈된 MD 상자와 빛나는 관객석", "query": "cinematic photorealistic backstage merchandise operation at a huge pop stadium concert, organized product boxes and glowing audience seats, no performers, no text, no logos", "keywords": ["stadium concert", "merchandise", "backstage logistics", "fan economy"], "insertAfterAct": 0, "placement": "제목 아래 첫 도입 문단 직후와 대표 이미지 배경", "narrativeUse": "공연의 감정과 뒤편의 상품 운영이 한 사업 안에서 연결된다는 핵심 장면을 연다."},
-      {"slot": "inline", "path": "assets/170-city-pop-up.webp", "subject": "글로벌 도시 한복판의 세련된 팝업 매장과 현지 팬 동선", "query": "high-end photorealistic global pop music merchandise pop-up store in a major city, tasteful crowd flow and product displays, no celebrity faces, no text, no logos", "keywords": ["city pop-up", "music merchandise", "global fans", "retail experience"], "insertAfterAct": 7, "placement": "7막 실행 도시와 계획 도시를 구분한 문단 뒤", "narrativeUse": "공연 하루가 도시의 여러 날 소비로 늘어나는 확장 전략을 실제 공간의 장면으로 보여준다."},
-      {"slot": "inline", "path": "assets/170-global-pop-up-fulfillment.webp", "subject": "팬 상품을 검수하고 포장해 여러 국가로 보내는 글로벌 풀필먼트 현장", "query": "editorial photorealistic global merchandise fulfillment center packing colorful music fan products for international shipping, efficient premium operation, no text, no logos", "keywords": ["merch fulfillment", "global shipping", "inventory", "fan products"], "insertAfterAct": 5, "placement": "5막 Blue Garage의 재고와 배송 경제를 설명한 문단 뒤", "narrativeUse": "팬덤이라는 감정이 재고 관리와 포장, 배송, 마진으로 번역되는 운영 계층을 구체화한다."}
+      {"assetKey": "170-stadium-merch-hero", "sourcePolicy": "auto", "slot": "hero", "path": "assets/170-stadium-merch-hero.webp", "subject": "대형 스타디움 공연 뒤편의 정돈된 MD 상자와 빛나는 관객석", "query": "cinematic photorealistic backstage merchandise operation at a huge pop stadium concert, organized product boxes and glowing audience seats, no performers, no text, no logos", "keywords": ["stadium concert", "merchandise", "backstage logistics", "fan economy"], "insertAfterAct": 0, "placement": "초보자의 앨범 매출 질문 뒤 첫 장면", "narrativeUse": "공연이 끝난 뒤에도 다음 도시로 이동하는 상자를 보여 줘 글 전체의 반복 모티프를 연다."},
+      {"assetKey": "170-city-pop-up", "sourcePolicy": "auto", "slot": "inline", "path": "assets/170-city-pop-up.webp", "subject": "글로벌 도시 한복판의 세련된 팝업 매장과 현지 팬 동선", "query": "high-end photorealistic global pop music merchandise pop-up store in a major city, tasteful crowd flow and product displays, no celebrity faces, no text, no logos", "keywords": ["city pop-up", "music merchandise", "global fans", "retail experience"], "insertAfterAct": 5, "placement": "5막 실행 도시와 계획 도시를 구분한 문단 뒤", "narrativeUse": "공연장 하루가 도시의 여러 날 소비로 늘어나는 확장 전략을 실제 공간의 장면으로 보여준다."},
+      {"assetKey": "170-global-pop-up-fulfillment", "sourcePolicy": "auto", "slot": "inline", "path": "assets/170-global-pop-up-fulfillment.webp", "subject": "팬 상품을 검수하고 포장해 여러 국가로 보내는 글로벌 풀필먼트 현장", "query": "editorial photorealistic global merchandise fulfillment center packing colorful music fan products for international shipping, efficient premium operation, no text, no logos", "keywords": ["merch fulfillment", "global shipping", "inventory", "fan products"], "insertAfterAct": 5, "placement": "5막 도시 팝업에서 현지 물류와 수요예측으로 넘어가는 문단 뒤", "narrativeUse": "팬의 감정이 포장과 배송 및 재고 관리라는 물리적 사업으로 바뀌는 다음 장면을 보여준다."}
     ],
     "visualPlan": {
       "hero": "170-stadium-merch-hero.webp",
@@ -159,6 +169,32 @@
       {"claim": "Blue Garage 매출 409억원, 영업이익률 11.1%", "sourceType": "공식 IR", "period": "2026 Q1", "sourceRef": "JYP FY26 Q1 Earnings Note"},
       {"claim": "2025년 영업현금흐름 1,243억원과 재고 202억원", "sourceType": "dartlab", "period": "2025 연간", "sourceRef": "Company 035900 CF and BS"}
     ],
+    "watchScenarios": [
+      {
+        "condition": "만약 도시 팝업과 온라인 주문이 커지는 동안 상품 운영 이익률이 두 자릿수 근처를 유지한다면",
+        "mechanism": "조달 절차 단순화와 배송 계약 개선이 판매량 증가를 재고 및 물류비 부담보다 빠르게 이익으로 전환한다.",
+        "outcome": "2026년 1분기 MD 606억원은 단순한 외형 확대가 아니라 반복 가능한 운영 개선의 첫 증거가 된다.",
+        "watchMetric": "Blue Garage 영업이익률과 연결 매출총이익률 및 재고의 방향을 다음 분기마다 같은 묶음으로 확인한다.",
+        "invalidatedBy": "MD 매출 증가와 동시에 Blue Garage 이익률이 다시 낮아지고 재고가 판매보다 빠르게 누적되면 가설이 깨진다.",
+        "evidenceRefs": ["2026년 1분기 Blue Garage 영업이익률 11.1%", "2026년 1분기 재고 184억원"]
+      },
+      {
+        "condition": "만약 새 앨범이나 대형 공연이 적은 분기에도 이전 주문 배송과 캐릭터 협업 매출이 이어진다면",
+        "mechanism": "공연 전 사전 주문과 현장 판매 및 공연 뒤 온라인 배송과 도시 팝업이 한 팬의 결제 시간을 여러 분기로 늘린다.",
+        "outcome": "MD는 한 번의 투어에 붙는 부속 매출을 넘어 앨범과 공연 활동 공백을 완충하는 두 번째 시간축이 된다.",
+        "watchMetric": "실제로 문을 연 팝업 도시와 배송 완료 매출 및 영업현금흐름이 공연 종료 뒤에도 이어지는지 확인한다.",
+        "invalidatedBy": "투어가 끝나는 즉시 MD 매출과 영업현금흐름이 함께 급감하면 독립적인 반복 엔진이라는 설명은 틀린다.",
+        "evidenceRefs": ["2025년 4분기 주문의 2026년 1분기 배송 매출", "2026년 1분기 영업현금흐름 131억원"]
+      },
+      {
+        "condition": "만약 성숙 팀이 만든 상품과 물류 인프라를 초기 팀도 번갈아 활용하며 매출을 채운다면",
+        "mechanism": "여러 아티스트가 같은 FANS SHOP과 조달 및 배송망을 공유해 특정 팀의 활동 공백에도 운영 자산의 활용도를 유지한다.",
+        "outcome": "앨범과 콘서트 및 MD가 한 메가 IP의 일정에만 매달리지 않고 회사 차원의 여러 수익 장면으로 넓어진다.",
+        "watchMetric": "팀별 앨범과 공연 일정 및 공연장 규모를 MD 매출의 분기 변동과 나란히 놓고 간접적으로 추적한다.",
+        "invalidatedBy": "Stray Kids나 TWICE의 활동이 약해질 때 세 매출 항목이 동시에 줄면 IP 분산 가설을 다시 점검한다.",
+        "evidenceRefs": ["Stray Kids 2025년 투어 56회", "아티스트별 매출 기여율 미공시"]
+      }
+    ],
     "reviewGate": {
       "status": "passed",
       "requiredRounds": [
@@ -166,20 +202,24 @@
       ],
       "decisionLog": [
         {"round": "r1", "decision": "revise", "note": "초안은 굿즈 성장만 강조해 매출총이익률 하락과 재계약 수수료, DearU 일회성 이익이 뒤로 밀렸다."},
-        {"round": "r2", "decision": "passed", "note": "스타디움 규모 확대가 매출과 원가를 같이 키우고 Blue Garage 운영 개선이 2026년 1분기 마진을 되돌리는 구조로 재작성했다."}
+        {"round": "r2", "decision": "passed", "note": "스타디움 규모 확대가 매출과 원가를 같이 키우고 Blue Garage 운영 개선이 2026년 1분기 마진을 되돌리는 구조로 재작성했다."},
+        {"round": "r3", "decision": "revise", "note": "독자 재평가에서 분량은 충분하지만 9막과 7개 지표가 보고서처럼 나열돼 앨범 공백과 무대 뒤 상자의 관통선이 묻힌다고 판단했다."},
+        {"round": "r4", "decision": "passed", "note": "앨범 공백의 질문에서 시작해 스타디움 비용, 세 계산대, Blue Garage 상자, 도시 팝업, 세 조건으로 되돌아오는 7막 인과선으로 재구성했다."}
       ],
       "loopEvidence": {
         "workflow": "blog_plan_loop.workflow.js",
         "rounds": [
           {"round": 1, "planner": "주력 앨범 공백과 MD 성장 중심의 초안을 구성했다.", "evaluator": "사상 최대 매출 뒤 원가율 하락과 재계약 수수료, DearU 일회성 이익이 약하다.", "skeptic": "MD를 모두 고마진으로 부르거나 Stray Kids 매출 비중을 추정하면 과장이다.", "decision": "revise", "evaluatorScore": 86, "plannerRevision": "원가 세 항목과 자회사 범위, 일회성 이익, 아티스트별 미공시 가드를 추가했다."},
-          {"round": 2, "planner": "스타디움 규모가 매출과 원가를 같이 키우고 Blue Garage 운영 개선이 마진을 되돌리는 구조로 재작성했다.", "evaluator": "앨범 공백, 투어, MD, 재고, 현금, 지분 매각이 한 인과선으로 이어진다.", "skeptic": "계획과 실적, 연결 MD와 자회사 마진, 활동과 매출 인식 시차가 분리됐다.", "decision": "passed", "evaluatorScore": 97, "plannerRevision": "평가 피드백을 반영해 MD 마진과 재고 및 현금전환을 최종 관찰축으로 고정했다."}
+          {"round": 2, "planner": "스타디움 규모가 매출과 원가를 같이 키우고 Blue Garage 운영 개선이 마진을 되돌리는 구조로 재작성했다.", "evaluator": "앨범 공백, 투어, MD, 재고, 현금, 지분 매각이 한 인과선으로 이어진다.", "skeptic": "계획과 실적, 연결 MD와 자회사 마진, 활동과 매출 인식 시차가 분리됐다.", "decision": "passed", "evaluatorScore": 97, "plannerRevision": "평가 피드백을 반영해 MD 마진과 재고 및 현금전환을 최종 관찰축으로 고정했다."},
+          {"round": 3, "planner": "기존 9막과 말미의 지표 7개를 유지한 채 도입부 장면을 강화하는 수정안을 검토했다.", "evaluator": "정보량은 충분하지만 회사 소개와 지표 목록이 앞 장면의 결과로 읽히지 않아 핵심 문장을 되뇌기 어렵다.", "skeptic": "Stray Kids와 DearU가 별도 보고서처럼 튀고 마지막이 체크리스트로 끝나면 내러티브 집중이라는 공통 원칙을 충족하지 못한다.", "decision": "revise", "evaluatorScore": 84, "plannerRevision": "독자 질문 하나와 무대 뒤 상자 모티프를 기준으로 막을 합치고 마지막을 조건형 시나리오로 전환했다."},
+          {"round": 4, "planner": "앨범 공백에서 시작해 시간을 거슬러 비용을 찾고 세 계산대와 상자 및 도시 팝업으로 돌아오는 7막을 구성했다.", "evaluator": "각 막이 앞 막의 질문에 답하면서 다음 원인을 열고 마지막 세 조건이 도입의 606억원을 다시 판정한다.", "skeptic": "실행 도시와 계획 도시, 연결 MD와 자회사 이익률, 반복 이익과 지분 매각 효과가 분리돼 과장을 피했다.", "decision": "passed", "evaluatorScore": 96, "plannerRevision": "초보자 질문을 첫 문장으로 옮기고 장면형 제목과 반복 모티프 및 가설이 틀리는 조건까지 본문에 반영했다."}
         ],
         "note": "메인 스레드에서 공식 IR, DART, dartlab 숫자를 재검산했다."
       }
     }
   },
   "passed": true,
-  "rounds": 2,
+  "rounds": 4,
   "corpName": "JYP Ent.",
   "stockCode": "035900",
   "contentKind": "company-reports"
