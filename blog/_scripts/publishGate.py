@@ -22,6 +22,7 @@ from blogMedia import (
     mediaManifestPath,
     mediaUrl,
 )
+from companyReportPolicy import validateCompanyReportDebtRatioBan
 from publishBlogAssets import verifyRemoteAssets
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -211,7 +212,7 @@ def localMediaResidueErrors(postDir: Path) -> list[str]:
 
 def validatePost(postDir: Path, *, requireContractV2: bool, mediaOnly: bool = False) -> list[str]:
     if mediaOnly:
-        errors: list[str] = []
+        errors = validateCompanyReportDebtRatioBan(postDir)
         errors.extend(mediaReferenceErrors(postDir))
         errors.extend(trackedBinaryErrors(postDir))
         errors.extend(localMediaResidueErrors(postDir))

@@ -39,6 +39,7 @@ const PRINCIPLES = `블로그 심층 리포트 원칙(합격선):
 8. 초보자 서사: 독자는 전문가가 아니다. 기: 왜 이 글을 읽어야 하는지, 승: 숫자·표·공시·차트에서 첫 결과를 본다, 전: 그 결과를 잘못 읽기 쉬운 함정과 한계를 푼다, 결: 다음에 볼 기준·지표·공시 질문으로 닫는다.
 9. 쉬운 언어: 전문 용어는 글의 중심이 아니다. OPM, EBITDA, CAPEX, FCF, ROE, PER, PBR, 밸류에이션, 컨센서스, 레버리지 같은 말은 첫 등장 문장에서 한국어로 풀고, 바로 옆에 실제 숫자·표·공시 위치를 붙인다. "구조", "흐름", "맥락", "시사점", "메커니즘" 같은 말만으로 문단을 끝내면 실패다.
 10. 관전 시나리오: 마지막 H2는 요약이 아니라 "만약 어떤 조건이면, 어떤 경로로 무엇이 달라질까"를 2~4개로 푼다. 각 시나리오는 확인할 지표와 틀렸음을 보여 줄 조건까지 가진다. 낙관·기본·비관 이름만 바꾼 표는 실패다.
+11. 기업이야기 금지 지표: contentKind 가 company-reports 이면 부채비율, debt-to-equity, D/E ratio, 부채총계를 자본총계로 나눈 값은 제목, 본문, 표, 차트, 코드, brief.json 어디에도 쓰지 않는다. 이 지표는 인사이트 후보에서도 제외하고 honestyGuards 에 금지어를 되풀이하지 않는다. 부채 위험은 절대 차입금, 순차입금, 만기, 이자비용, 이자보상, 영업현금흐름, 유동성으로 설명한다.
 표기: em dash(긴 줄표) 금지. 부연은 마침표·괄호, 범위는 물결(~). 문장은 다/요/까.`
 
 const IMAGE_NOTE = `이미지 기획(내용 연상 강제): hero 1장 + 본문 inline 2~3장 이상. 각 항목의 assetKey 는 assets/{assetKey}.webp 와 CREDITS.md 를 잇는 영문 kebab-case 키이고 sourcePolicy 는 auto 다. 파이프라인이 실제 제품·인물·현장처럼 사실성이 중요한 피사체는 공식 또는 라이선스가 확인된 실사를, 개념·원리·추상 장면은 image_gen 을 자율 선택한다. 수급 실패를 운영자 질문으로 넘기지 말고 다른 적합 소스로 전환한다. inline 이미지는 insertAfterAct·placement·narrativeUse 로 본문 위치와 역할을 정한다. 범용 스카이라인·추상 배경으로 도망가면 실패. query 는 실사 검색용 영어 검색어, keywords 는 오매치 차단용이다.`
@@ -47,12 +48,14 @@ const VISUAL_NOTE = `막별 비주얼: 이야기가 요구하는 차트·표·�
 
 const SECTION_NOTE = `섹션별 독해 구조(강제): 모든 주요 H2 섹션은 기획에서 먼저 설계한다. 순서는 1) 섹션 타이틀 2) 한 줄 서브타이틀/훅 3) 이미지·표·도식·코드 출력 같은 시각 앵커 4) 설명적 서술 5) 실제 예시 6) 보완 설명·오해 방지 7) 다음 섹션 연결문이다. 기획안의 sections[] 에 heading, subtitle, visualAnchor, explanation, example, support, transition, evaluation 을 모두 채운다. 평가자는 섹션마다 이 흐름이 끊기면 재기획을 요구한다.`
 
-const COMMON_BEGINNER_NOTE = `블로그 전체 초보자 게이트:
-1. 독자는 전문가가 아니다. 모든 글은 기: 왜 이 글을 읽어야 하나, 승: 숫자·표·공시·차트에서 첫 결과를 본다, 전: 오해·한계·틀리는 조건을 푼다, 결: 다음에 볼 기준·지표·공시 질문으로 닫는다.
-2. 각 섹션은 실제 숫자, 회사명, 공시 문장, 표, 차트, 제품, 기간, 계정 중 하나에서 출발한다. 설명이 먼저 떠 있으면 실패다.
-3. 전문 용어는 첫 등장 문장에서 쉬운 한국어로 풀고, 바로 옆에 실제 근거를 붙인다. OPM, EBITDA, CAPEX, FCF, ROE, PER, PBR, 밸류에이션, 컨센서스, 레버리지 같은 말만 던지면 실패다.
-4. "구조", "흐름", "맥락", "시사점", "메커니즘", "핵심", "프레임" 같은 말로 문단을 끝내지 않는다. 독자가 어느 숫자나 어느 표를 보면 되는지까지 쓴다.
-5. 마지막은 요약이 아니다. 독자가 다음 공시, 다음 차트, 다음 경제지표, 다음 회사 비교에서 확인할 한 줄을 남긴다.`
+const COMMON_BEGINNER_NOTE = `블로그 전체 공통 편집 게이트:
+1. 내러티브 집중: 모든 글은 독자 질문 하나를 처음부터 끝까지 붙든다. 각 섹션은 앞의 답에서 다음 궁금증을 만들고, 빼도 관통선이 약해지지 않는 섹션은 삭제한다. 정보 목록, 보고서 목차, 체크리스트 나열로 본문을 대신하면 실패다.
+2. 쉬운 설명: 독자는 전문가가 아니다. 어려운 개념은 첫 등장 문장에서 일상어로 풀고, 실제 숫자, 회사명, 공시 문장, 표, 차트, 제품, 기간, 계정 가운데 하나를 바로 붙인다. 쉬운 말은 내용을 줄이는 일이 아니라 독자가 인과를 따라가게 만드는 일이다.
+3. 모든 글은 기: 왜 이 글을 읽어야 하나, 승: 숫자·표·공시·차트에서 첫 결과를 본다, 전: 오해·한계·틀리는 조건을 푼다, 결: 다음에 볼 기준·지표·공시 질문으로 닫는다.
+4. 각 섹션은 구체 장면에서 출발한다. 설명이 먼저 떠 있으면 실패다.
+5. 전문 용어는 첫 등장 문장에서 쉬운 한국어로 풀고 바로 옆에 실제 근거를 붙인다. OPM, EBITDA, CAPEX, FCF, ROE, PER, PBR, 밸류에이션, 컨센서스, 레버리지 같은 말만 던지면 실패다.
+6. "구조", "흐름", "맥락", "시사점", "메커니즘", "핵심", "프레임" 같은 말로 문단을 끝내지 않는다. 독자가 어느 숫자나 어느 표를 보면 되는지까지 쓴다.
+7. 마지막은 요약이 아니다. 독자가 다음 공시, 다음 차트, 다음 경제지표, 다음 회사 비교에서 확인할 한 줄을 남긴다.`
 
 const DARTLAB_PLAIN_NOTE = `dartlab 이야기 직관성 게이트:
 1. 화면 먼저, 설명 나중. 각 H2는 독자가 보는 코드, 출력 표, 계정명, 기간, 값, 공시 문장 중 하나를 앞쪽에 둔다.
@@ -288,7 +291,7 @@ const SKEPTIC_SCHEMA = {
       items: {
         type: 'object', additionalProperties: false, required: ['axis', 'why', 'fix'],
         properties: {
-          axis: { type: 'string', enum: ['weak-title', 'cliche-template', 'forced-metric', 'misleading-frame', 'shallow', 'weak-learning-arc', 'expert-jargon', 'abstract-writing', 'weak-section-flow', 'generic-image', 'appendix-visual', 'weak-reference', 'overclaim'] },
+          axis: { type: 'string', enum: ['weak-title', 'cliche-template', 'forced-metric', 'forbidden-company-metric', 'misleading-frame', 'shallow', 'weak-learning-arc', 'expert-jargon', 'abstract-writing', 'weak-section-flow', 'generic-image', 'appendix-visual', 'weak-reference', 'overclaim'] },
           why: { type: 'string' },
           fix: { type: 'string' },
         },
@@ -361,7 +364,7 @@ const NOTES =
     : { principles: PRINCIPLES, section: `${SECTION_NOTE}\n\n${COMMON_BEGINNER_NOTE}`, image: IMAGE_NOTE, visual: VISUAL_NOTE }
 
 const CONTENT_GUIDANCE = {
-  'company-reports': `기업이야기: 회사 하나의 내러티브를 깊게 판다. 사업 구조, 공시 문장, 제품·고객·수주·원가·자본배치·현금흐름을 한 회사 안에서 연결한다. DART 또는 EDGAR 근거와 dartlab 실측을 분리하고, 다음 공시에서 볼 렌즈로 닫는다.`,
+  'company-reports': `기업이야기: 회사 하나의 내러티브를 깊게 판다. 사업 구조, 공시 문장, 제품·고객·수주·원가·자본배치·현금흐름을 한 회사 안에서 연결한다. DART 또는 EDGAR 근거와 dartlab 실측을 분리하고, 다음 공시에서 볼 렌즈로 닫는다. 부채비율과 같은 자본 대비 부채 지표는 인사이트가 아니므로 기획부터 제외한다. 부채 부담을 다룰 때는 절대 차입금, 순차입금, 만기, 이자비용, 이자보상, 영업현금흐름, 유동성 가운데 서사를 실제로 설명하는 근거를 고른다.`,
   'tech-story': `기술이야기: 기술이 주어다. 기술 원리, 공정 파이프라인·네트워크망, 어느 칸에 어떤 회사가 있고 왜 그 회사가 병목·표준·원가·고객 접점을 쥐는지 설명한다. 한국사는 DART, 미국사는 EDGAR를 연결한다. 돈 이야기만 앞세우거나 "누가 돈을 버나" 템플릿이면 실패다. 마지막은 조건별 변화 경로, 관찰 지표, 반증 조건을 묶은 관전 시나리오로 닫는다.`,
   'data-reports': `데이터 리포트: scan과 전종목 파서로 전체 시장의 특이점을 찾는다. 개별 회사는 대표 사례일 뿐이다. 표본·분모·제외 조건·정제 전후를 드러내고, DART·EDGAR 전체 유니버스 또는 제외 사유를 명시한다. 순위표 나열로 끝나면 실패다.`,
   'investment-stories': `투자이야기: 투자자가 시장을 읽을 때 쓰는 언어와 프레임이 주어다. 주가, 경제 변수, 증권사 표현, 투자 용어, 기술적투자 보조지표, 기술투자 관점을 설명한다. 지지선·목표가·보조지표를 매수·매도 결론으로 쓰면 실패다. 선행 회사·기술·데이터 글이 있으면 relatedPosts 로 연결하고, 독자가 다음 차트·공시·경제지표에서 무엇을 확인할지로 닫는다.`,
@@ -501,6 +504,7 @@ ${JSON.stringify(plan)}`,
 - weak-title: 제목이 설명형·총정리형·반복 템플릿이거나, 독자가 끝까지 따라갈 질문을 만들지 못하는가.
 - cliche-template: 관통선·프레임이 템플릿 클리셰·동어반복·재탕인가.
 - forced-metric: "이런 뜻은 아니다" 변명해야 하는 억지 비율·지표가 있나.
+- forbidden-company-metric: 기업이야기에 부채비율, debt-to-equity, D/E ratio, 부채총계를 자본총계로 나눈 값이 제목·본문·표·차트·코드·brief.json 후보로 하나라도 남았나. 있으면 kill. kills[].why 와 fix 에서는 해당 표현을 복사하지 말고 "금지 지표"라고만 쓴다.
 - misleading-frame: 주인공이 제목의 실제 주어와 다른가(인프라 회사를 AI 주인공으로 둔갑 등). 영업이익과 순이익, 연결과 그룹을 뭉갰나.
 - shallow: 막이 요약 나열이라 메커니즘까지 안 파는가. 심층인 척 얕은가.
 - weak-learning-arc: 초보자용 기승전결이 없나. 왜 막혔는지, 직접 실행, 오해와 한계, 다음 행동이 순서대로 이어지지 않나.

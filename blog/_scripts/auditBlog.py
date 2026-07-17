@@ -18,6 +18,7 @@ from blogMedia import (
     mediaPath,
     mediaUrl,
 )
+from companyReportPolicy import validateCompanyReportDebtRatioBan
 
 POST_GLOB = "*/*/index.md"
 SVG_GLOB = "*/*/assets/*.svg"
@@ -1261,6 +1262,8 @@ def publish_gate(post_dir: Path, *, requireContractV2: bool = False) -> list[str
 
     plan, _, plan_fails = _load_plan(post_dir)
     contractVersion = _planContractVersion(plan)
+    fails.extend(validateCompanyReportDebtRatioBan(post_dir))
+
     # 1. 콘텐츠 OG 카드 (리스트/공유 미리보기). 중앙 카탈로그가 있으면 계약 버전과 무관하게 HF를 검증한다.
     og = _clean_scalar(frontmatter_value(raw, "ogImage"))
     manifest, manifestErrors = loadMediaManifest(post_dir)
