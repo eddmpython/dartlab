@@ -12,6 +12,7 @@
 
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -323,6 +324,31 @@ def test_series_image_upload_ops_dedupes_reused_asset(tmp_path: Path) -> None:
     assert images[0].startswith("tech-story/000000-stealth/hero.")
     assert len(image_ops) == 1
     assert image_ops[0].path_in_repo == images[0]
+
+
+def test_series_image_reuses_v2_blog_media_manifest(tmp_path: Path) -> None:
+    """v2 기술이야기 카드는 Git 바이너리 없이 HF blog 경로를 그대로 재사용한다."""
+    blog = tmp_path / "blog"
+    slides = """  name: 스텔스 기술
+  slides:
+    - layout: editorial
+      line: "스텔스는 정말 안 보일까?"
+      image: hero
+"""
+    _write_post(blog, "01-000000-stealth", code="000000", date="2026-01-01", with_carousel=True, slides_yaml=slides)
+    assets = blog / "01-000000-stealth" / "assets"
+    assets.mkdir(parents=True)
+    remote = "blog/000000-stealth/hero.01234567.webp"
+    (assets / "media.json").write_text(
+        json.dumps({"version": 1, "assets": {"hero": {"path": remote, "sha256": "0" * 64}}}),
+        encoding="utf-8",
+    )
+    imageOps: list = []
+
+    contracts = bcc.build_contracts(blog, series=True, existing_files=set(), image_ops=imageOps)
+
+    assert contracts["000000-stealth"]["slides"][0]["image"] == remote
+    assert imageOps == []
 
 
 def test_tech_story_requires_plan(tmp_path: Path) -> None:

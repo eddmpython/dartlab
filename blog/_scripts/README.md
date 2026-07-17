@@ -30,7 +30,9 @@
 ## ③ audit · insights
 | 스크립트 | 역할 |
 |---|---|
+| `publishBlogAssets.py` | **블로그 v2 미디어 발행**. 로컬 본문 이미지·OG를 HF `blog/{slug}/` 해시 경로에 올리고 `assets/media.json`과 본문 URL 반영 |
 | `publishGate.py` | **블로그 발행 단일 진입점**. `auditBlog` 하드 계약 + SEO 95 + 신규 v2 시나리오·이미지 SSOT를 함께 검사 |
+| `blogMedia.py` | `media.json`, HF 경로, URL, 콘텐츠 해시 계약 SSOT |
 | `auditBlog.py` | 글 단위 구조 audit와 `publishGate.py`의 하드 계약 엔진. 단독 결과는 발행 승인 아님 |
 | `audit_seo.py` | SEO·깊이·캐러셀 진단과 `publishGate.py`의 점수 엔진. 단독 결과는 발행 승인 아님 |
 | `auditBlogFinance.py` | 회사 글 재무 표 ↔ `dartlab.Company().select()` 실측 1:1 정합 |
@@ -44,7 +46,7 @@
 | `fetch_cc0_images.py` | `gen_blog_cc0` · `gen_news_cc0` (CC0/PD 다운로드 헬퍼 공유) |
 
 ## 관련 — `sns/scripts/` (자산 공유풀·HF 발행)
-블로그 저작 원본은 각 글의 `assets/<assetKey>.webp`와 `assets/CREDITS.md`다. `sns/assets/{subjectKey}/`는 공유 staging이고 HF `dartlab-media`는 서빙 SSOT다.
-- `ingest_blog_assets.py`: 블로그 저작 원본을 공유 staging으로 복사(멱등·손작성 자산 보호).
+신규 v2 블로그 바이너리는 HF `dartlab-media/blog/{slug}/`가 SSOT다. `sns/assets/{subjectKey}/`는 legacy 회사 공유 staging이다.
+- `ingest_blog_assets.py`: legacy 회사 블로그 자산을 공유 staging으로 복사(멱등·손작성 자산 보호). v2 블로그에는 사용하지 않는다.
 - `build_index.py` → `publish_assets_hf.py` — 인덱싱 → hfMedia 업로드.
 - `extractImagegenAssets.py` · `checkImagegenAssets.py` — GPT image_gen 산출물 추출·프레이밍 검사.

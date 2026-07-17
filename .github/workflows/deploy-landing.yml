@@ -59,6 +59,7 @@ jobs:
         run: >-
           uv run python -X utf8 -m pytest
           blog/_scripts/test_audit_blog_gate.py
+          blog/_scripts/test_publishBlogAssets.py
           blog/_scripts/test_publishGate.py -q
 
       - name: Gate changed blog posts

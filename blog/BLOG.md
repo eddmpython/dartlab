@@ -885,23 +885,23 @@ https://eddmpython.github.io/dartlab/
 
 ### 썸네일 원본 배경 보관
 
-**GPT `image_gen` 으로 생성한 썸네일 원본 배경은 항상 `blog/{category}/{folder}/assets/{NN}-thumbnail-bg.webp` 로 보관한다.** 이게 없으면 레이아웃을 바꿔야 할 때마다 이미지 재생성으로 시간·비용이 낭비된다. FLUX 원본도 보조 경로로 만든 경우 동일하게 보관한다.
+**GPT `image_gen` 으로 생성한 썸네일 원본 배경은 작업 중 `blog/{category}/{folder}/assets/{NN}-thumbnail-bg.webp` 에 둔다.** 눈검수 뒤 `publishBlogAssets.py`가 최종 OG와 본문 자산을 HF에 올리며, 로컬 WebP는 staging이므로 Git에 넣지 않는다. FLUX 원본도 보조 경로로 만든 경우 동일하다.
 
-- 최종 합성 썸네일: `landing/static/thumbnails/{code}-{slug}.webp` (덮어쓰기 OK).
-- 원본 이미지 배경: `blog/.../assets/{NN}-thumbnail-bg.webp` (덮어쓰기 없음).
+- 최종 합성 썸네일 staging: `landing/static/thumbnails/{code}-{slug}.webp` (덮어쓰기 OK, Git 추가 금지).
+- 원본 이미지 배경 staging: `blog/.../assets/{NN}-thumbnail-bg.webp` (Git 추가 금지).
 - `gen_blog_thumbnails.py` 같은 재생성 스크립트는 **반드시 assets/ 의 원본 배경을 읽어서** 합성.
 - 원본 배경 파일명은 `{NN}-thumbnail-bg.webp` 고정.
 
 **Phase 3 체크리스트 (썸네일 생성 시)**:
 1. GPT `image_gen` 으로 배경 생성 → `extractImagegenAssets.py` 로 추출 → `assets/{NN}-thumbnail-bg.webp` 로 먼저 저장.
 2. `gen_blog_thumbnails.py` 로 합성 → `landing/static/thumbnails/{code}-{slug}.webp`.
-3. 둘 다 커밋. 원본 배경 커밋 누락 시 차단.
+3. `publishBlogAssets.py --post <글폴더>`로 HF에 올리고 `media.json`·본문만 커밋. 두 WebP는 커밋하지 않는다.
 
 **반복 실패** - 2026-04-16 META·TSLA·하이브·IONQ 사고 직접 원인. MNST(36) 는 원본 남겨 재생성 가능, 37~40 은 원본 없어서 이미지 재호출 필요.
 
 ### 블로그 hero ↔ 카드 공유풀 (HF 이미지 SSOT)
 
-회사 글의 hero 사진 (`blog/05-company-reports/{NN}-{code}-{slug}/assets/{NN}-{semantic}.webp`) 과 카드 캐러셀 이미지는 **같은 공유풀 `sns/assets/{code}/` → HF `dartlab-media`** 를 SSOT 로 쓴다. 블로그 원본 이미지를 카드와 한 풀로 모으는 표준 단계:
+이 절은 `media.json` 도입 전 회사 글의 호환 경로다. legacy hero 사진과 카드 캐러셀 이미지는 `sns/assets/{code}/`를 거쳐 HF `dartlab-media`에 올린다:
 
 ```
 uv run python -X utf8 sns/scripts/ingest_blog_assets.py --dry-run   # 복사 범위 미리보기
@@ -912,16 +912,16 @@ uv run python -X utf8 sns/scripts/publish_assets_hf.py              # hfMedia �
 
 - 차트(`.svg`)·card/thumbnail 렌더는 제외, **hero 실사만** 가져온다.
 - provenance (`sns/assets/_blog_provenance.json`) 로 멱등 - 블로그 원본이 바뀐 것만 재복사. 손-작성 자산(같은 이름)은 보호(미덮어쓰기).
-- 이후 카드 슬라이드·블로그 모두 같은 풀의 이미지를 이름으로 가리킨다 (별도 배선 0).
+- 신규 v2 글은 이 복사 경로를 쓰지 않고 `publishBlogAssets.py`와 `assets/media.json`을 쓴다. 기술 카드도 같은 HF `blog/{slug}/` 경로를 재사용한다.
 
 ### 검증 체크리스트
 
-1. 본문 자산 경로가 `./assets/...` 인지.
-2. 파일명 접두사가 포스트 번호와 일치.
+1. 본문 이미지와 `ogImage`가 `assets/media.json`의 HF URL인지.
+2. WebP/JPG/PNG가 Git 추적 대상에 없는지.
 3. `uv run python -X utf8 blog/_scripts/auditBlog.py` XML·밀도 이슈 확인 (글 단위 구조 audit - 단어수·SVG·내부링크·H2 분포 + 템플릿 반복도).
 4. `uv run python -X utf8 blog/_scripts/auditBlogFinance.py` (회사 포스트 한정) - markdown finance 표 ↔ `dartlab.Company().select(..., freq="Y")` 실측 1:1 비교. 코드·표·실측 3 자 정합 강행.
-5. `npm run build` 후 `landing/build/blog/assets` 복사 확인.
-6. 자산 파일명 충돌 0.
+5. `publishGate.py`가 HF 원격 실재와 콘텐츠 해시 경로를 통과하는지.
+6. 자산 `assetKey`와 HF 경로 충돌 0.
 7. 모바일에서도 핵심 라벨 읽힘.
 
 ---

@@ -39,10 +39,10 @@ examples:
   - "블로그 글 기획부터 발행까지"
 expectedOutputs:
   - 카드뉴스 - carousel.yaml(또는 글 frontmatter carousel) + cards.plan.json + 카드별 이미지
-  - 블로그 - 검증된 글 + carousel + hero 이미지
+  - 블로그 - 검증된 글 + carousel + HF 이미지 media.json
   - 발행 - hfMedia carousels/index.json(라이브 /cards)
 status: observed
-lastUpdated: 2026-07-05
+lastUpdated: 2026-07-17
 ---
 
 # 콘텐츠 작업대. 블로그·카드뉴스·팟캐스트 공동 작업대
@@ -86,7 +86,7 @@ lastUpdated: 2026-07-05
 
 블로그 신규 심층 글은 `brief.json contractVersion: 2`를 쓴다. 마지막 H2는 `watchScenarios[]`의 조건 2~4개를 "만약 어떤 조건이면 어떤 경로로 무엇이 달라질까"로 풀고, 확인 지표와 반증 조건까지 남긴다. 낙관·기본·비관 고정표는 금지한다.
 
-자산 SSOT 경계: 블로그 의미 계약은 `brief.json.imagePlan[]`, 바이너리 저작 원본은 포스트 `assets/<assetKey>.webp`, 출처 원본은 `assets/CREDITS.md`다. `sourcePolicy`는 `auto`이며 파이프라인이 사실 적합성에 따라 공식·라이선스 실사와 image_gen 중 선택한다. `sns/assets/{subjectKey}`는 재사용 staging, HF는 브라우저 서빙 SSOT다. staging이나 HF를 블로그 저작 원본으로 역으로 사용하지 않는다. 카드 전용 원본은 `blog/_issues/<slug>/assets/`다. 물리 StoryManifest 통합은 별도 승인 전까지 하지 않는다.
+자산 SSOT 경계: 블로그 의미 계약은 `brief.json.imagePlan[]`, 출처는 `assets/CREDITS.md`, assetKey와 경로·SHA-256 대응은 `assets/media.json`이다. WebP/JPG/PNG와 합성 OG는 포스트 `assets/`와 `landing/static/thumbnails/`에서 로컬 눈검수한 뒤 `publishBlogAssets.py`가 HF `dartlab-media/blog/{slug}/` 콘텐츠 해시 경로에 발행하며 Git에 넣지 않는다. durable 바이너리 원본과 서빙 SSOT는 HF 하나다. `sourcePolicy`는 `auto`이며 파이프라인이 사실 적합성에 따라 공식·라이선스 실사와 image_gen 중 선택한다. `sns/assets/{subjectKey}`는 legacy 공유 staging일 뿐 SSOT가 아니다. SVG는 사람이 diff로 검토 가능한 텍스트 차트라 Git 추적 예외다. 물리 StoryManifest 통합은 별도 승인 전까지 하지 않는다.
 
 ### evidence 표준 (편집 스냅샷, 굽기 아님)
 ②의 evidence 각 항목은 아래를 단다. 핵심은 `apiRef`(재현)·`period.basis`(달력/회계연도)·`asOf`(시점)로, 2.6절의 반복 함정(EDGAR 회계연도·누적/TTM 혼입)을 구조로 막는다.
@@ -133,7 +133,7 @@ id · claim · apiRef{apiRef,args} · value · period{label,basis,granularity} �
 ### 서피스별 (성격 불문 공통 규율)
 | 서피스 | 소스 SSOT | 조인 키 필드 | 발행 게이트 | 기획 개선루프 |
 |---|---|---|---|---|
-| 블로그 | `blog/{cat}/{post}/index.md` + `brief.json` + `assets/` | `stockCode` / `topicSlug` | `publishGate.py` | `blog_plan_loop.workflow.js` |
+| 블로그 | `blog/{cat}/{post}/index.md` + `brief.json` + `assets/{CREDITS.md,media.json}` | `stockCode` / `topicSlug` | `publishBlogAssets.py` -> `publishGate.py` | `blog_plan_loop.workflow.js` |
 | 카드 | frontmatter `carousel:` · `_issues/*/carousel.yaml` | `code`(회사) · topicSlug(주제, 확장 예정) | `build_carousel_contracts.py` | `cards_plan_loop.workflow.js` |
 | 팟캐스트 | `_podcasts/episodes/*/episode.yaml` | `stockCode` / `topicSlug` | `publish_podcast.py` (status=ready) | `podcast_plan_loop.workflow.js` |
 

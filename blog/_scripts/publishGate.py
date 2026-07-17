@@ -13,6 +13,8 @@ from pathlib import Path
 from audit_seo import score_post as scorePost
 from auditBlog import CONTENT_GENRE_CATEGORIES
 from auditBlog import publish_gate as auditPublishGate
+from blogMedia import mediaManifestPath
+from publishBlogAssets import verifyRemoteAssets
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SEO_SCORE_MIN = 95
@@ -81,8 +83,29 @@ def existedAtRef(postDir: Path, gitRef: str) -> bool:
     return result.returncode == 0
 
 
+def trackedBinaryErrors(postDir: Path) -> list[str]:
+    if not mediaManifestPath(postDir).is_file():
+        return []
+    try:
+        relativeAssets = (postDir / "assets").relative_to(REPO_ROOT).as_posix()
+    except ValueError:
+        return []
+    tracked = _git(
+        "ls-files",
+        "--",
+        f"{relativeAssets}/*.webp",
+        f"{relativeAssets}/*.jpg",
+        f"{relativeAssets}/*.jpeg",
+        f"{relativeAssets}/*.png",
+    )
+    paths = [line.strip() for line in tracked.stdout.splitlines() if line.strip()]
+    return [f"contract v2 바이너리는 Git 추적 금지, HF에만 발행: {path}" for path in paths]
+
+
 def validatePost(postDir: Path, *, requireContractV2: bool) -> list[str]:
     errors = auditPublishGate(postDir, requireContractV2=requireContractV2)
+    errors.extend(trackedBinaryErrors(postDir))
+    errors.extend(verifyRemoteAssets(postDir))
     score = scorePost(str(postDir))
     if score is None:
         errors.append("SEO 점수를 계산할 수 없음")

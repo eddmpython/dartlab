@@ -8,6 +8,8 @@ from collections import Counter
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
+from blogMedia import ASSET_KEY_RE, MEDIA_PREFIX, SHA256_RE, loadMediaManifest, mediaSlug, mediaUrl
+
 POST_GLOB = "*/*/index.md"
 SVG_GLOB = "*/*/assets/*.svg"
 SHORT_POST_WORDS = 1200
@@ -1081,23 +1083,51 @@ def _validateImageSsot(postDir: Path, body: str, plan: dict[str, object] | None)
         return []
     fails: list[str] = []
     planned = _image_plan(plan)
+    manifest, manifestFails = loadMediaManifest(postDir)
+    fails.extend(manifestFails)
     creditsPath = postDir / "assets" / "CREDITS.md"
     credits = creditsPath.read_text(encoding="utf-8") if creditsPath.is_file() else ""
     if not credits:
         fails.append("contract v2 이미지는 assets/CREDITS.md 출처 기록이 필요함")
+    if manifest is None:
+        return fails
+    manifestAssets = manifest.get("assets") if isinstance(manifest.get("assets"), dict) else {}
+    plannedKeys = [str(item.get("assetKey") or "").strip() for item in planned]
+    extraKeys = sorted(set(manifestAssets) - set(plannedKeys))
+    if extraKeys:
+        fails.append(f"assets/media.json에 imagePlan 밖 자산이 있음: {', '.join(extraKeys)}")
     for idx, item in enumerate(planned, start=1):
         assetKey = str(item.get("assetKey") or "").strip()
         if not assetKey:
             continue
-        assetPath = postDir / "assets" / f"{assetKey}.webp"
-        bodyRef = f"./assets/{assetKey}.webp"
-        if not assetPath.is_file():
-            fails.append(f"imagePlan[{idx}] 원본 없음: assets/{assetKey}.webp")
+        if credits and assetKey not in credits:
+            fails.append(f"assets/CREDITS.md 에 imagePlan[{idx}] assetKey 누락: {assetKey}")
+        record = manifestAssets.get(assetKey)
+        if not isinstance(record, dict):
+            fails.append(f"assets/media.json에 imagePlan[{idx}] 누락: {assetKey}")
+            continue
+        remotePath = str(record.get("path") or "")
+        sha256 = str(record.get("sha256") or "")
+        if not ASSET_KEY_RE.fullmatch(assetKey) or not SHA256_RE.fullmatch(sha256):
+            fails.append(f"assets/media.json imagePlan[{idx}] 해시 계약 위반: {assetKey}")
+            continue
+        expectedPath = f"{MEDIA_PREFIX}/{mediaSlug(postDir)}/{assetKey}.{sha256[:8]}.webp"
+        if remotePath != expectedPath:
+            fails.append(f"assets/media.json imagePlan[{idx}] 경로 불일치: {remotePath!r} != {expectedPath!r}")
+        bodyRef = mediaUrl(expectedPath)
         bodyRefPattern = rf"!\[[^\]]*\]\({re.escape(bodyRef)}\)"
         if not re.search(bodyRefPattern, body):
             fails.append(f"imagePlan[{idx}] 본문 참조 없음: {bodyRef}")
-        if credits and assetKey not in credits:
-            fails.append(f"assets/CREDITS.md 에 imagePlan[{idx}] assetKey 누락: {assetKey}")
+        if f"./assets/{assetKey}.webp" in body:
+            fails.append(f"imagePlan[{idx}] 로컬 바이너리 참조 금지: ./assets/{assetKey}.webp")
+
+    og = manifest.get("og")
+    if isinstance(og, dict):
+        ogPath = str(og.get("path") or "")
+        ogSha256 = str(og.get("sha256") or "")
+        expectedOgPath = f"{MEDIA_PREFIX}/{mediaSlug(postDir)}/og.{ogSha256[:8]}.webp"
+        if not SHA256_RE.fullmatch(ogSha256) or ogPath != expectedOgPath:
+            fails.append("assets/media.json og 해시·경로 계약 위반")
     return fails
 
 
@@ -1149,16 +1179,24 @@ def publish_gate(post_dir: Path, *, requireContractV2: bool = False) -> list[str
             asset_photos += list(assets.glob(ext))
     served_photos = [path for path in asset_photos if "thumbnail-bg" not in path.name]
 
+    plan, _, plan_fails = _load_plan(post_dir)
+    contractVersion = _planContractVersion(plan)
+
     # 1. 콘텐츠 OG 카드 (리스트/공유 미리보기). 기본 아바타 폴백이면 실패.
     og = _clean_scalar(frontmatter_value(raw, "ogImage"))
-    if not _OG_RE.match(og):
+    if contractVersion == BLOG_PLAN_CONTRACT_VERSION:
+        manifest, _ = loadMediaManifest(post_dir)
+        manifestOg = manifest.get("og") if isinstance(manifest, dict) else None
+        expectedOg = mediaUrl(str(manifestOg.get("path") or "")) if isinstance(manifestOg, dict) else ""
+        if not expectedOg or og != expectedOg:
+            fails.append(f"contract v2 ogImage는 assets/media.json의 HF URL이어야 함(현재 {og!r})")
+    elif not _OG_RE.match(og):
         fails.append(f"ogImage가 /thumbnails/*.webp 콘텐츠 OG가 아님(현재 {og!r}). 기본 아바타 폴백 금지")
     else:
         og_file = repo_root() / "landing" / "static" / og.lstrip("/")
         if not og_file.is_file():
             fails.append(f"OG 파일 없음: landing/static{og} (render_og_cards 미실행)")
 
-    plan, _, plan_fails = _load_plan(post_dir)
     body_photos = re.findall(r"!\[[^\]]*\]\([^)]+\.(?:webp|jpg|jpeg|png)\)", body)
 
     if requireContractV2 and _planContractVersion(plan) != BLOG_PLAN_CONTRACT_VERSION:
@@ -1173,7 +1211,11 @@ def publish_gate(post_dir: Path, *, requireContractV2: bool = False) -> list[str
         )
 
     # 2·3. 이미지. dartlab 이야기는 기획이 정한 만큼, 나머지 장르는 콘텐츠 이미지 하한.
-    if cat == "dartlab-stories":
+    if contractVersion == BLOG_PLAN_CONTRACT_VERSION:
+        planned = _image_plan(plan)
+        if len(body_photos) < len(planned):
+            fails.append(f"기획 imagePlan {len(planned)}장인데 HF 본문 이미지 {len(body_photos)}장")
+    elif cat == "dartlab-stories":
         planned = _image_plan(plan)
         inline = [x for x in planned if str(x.get("slot") or "") != "hero"]
         if len(served_photos) < len(planned):

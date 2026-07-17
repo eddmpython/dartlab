@@ -5,7 +5,9 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -232,6 +234,18 @@ def _write_tech_post(root: Path, *, brief_score: int = 94) -> Path:
     assets.mkdir(parents=True)
     for assetKey in ("stealth-hangar", "coating-maintenance", "aesa-test-bench"):
         (assets / f"{assetKey}.webp").write_bytes(b"fake")
+    sha256 = hashlib.sha256(b"fake").hexdigest()
+    slug = "stealth-test"
+    media = {
+        "version": 1,
+        "repo": "eddmpython/dartlab-media",
+        "og": {"path": f"blog/{slug}/og.{sha256[:8]}.webp", "sha256": sha256},
+        "assets": {
+            assetKey: {"path": f"blog/{slug}/{assetKey}.{sha256[:8]}.webp", "sha256": sha256}
+            for assetKey in ("stealth-hangar", "coating-maintenance", "aesa-test-bench")
+        },
+    }
+    (assets / "media.json").write_text(json.dumps(media, ensure_ascii=False, indent=2), encoding="utf-8")
     (assets / "CREDITS.md").write_text(
         "\n".join(
             [
@@ -248,7 +262,7 @@ def _write_tech_post(root: Path, *, brief_score: int = 94) -> Path:
     (thumb / "tech-stealth-test.webp").write_bytes(b"fake")
     filler = "스텔스 공정 병목과 대표 회사가 왜 핵심인지 설명하는 문장입니다. " * 520
     body = f"""
-![스텔스 격납고](./assets/stealth-hangar.webp)
+![스텔스 격납고](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/blog/stealth-test/stealth-hangar.{sha256[:8]}.webp)
 
 ## 공정·회사·근거 지도
 
@@ -263,13 +277,13 @@ DART와 EDGAR 근거를 모두 연결하고, dartlab 실측으로 2025Q1~Q4 손�
 
 양산 단계와 실험 단계를 분리한다.
 
-![저피탐 코팅 정비](./assets/coating-maintenance.webp)
+![저피탐 코팅 정비](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/blog/stealth-test/coating-maintenance.{sha256[:8]}.webp)
 
 ## 이렇게 오해하면 안 된다
 
 RCS 숫자 하나로 모든 각도와 주파수를 설명하면 안 된다.
 
-![AESA 시험 장비](./assets/aesa-test-bench.webp)
+![AESA 시험 장비](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/blog/stealth-test/aesa-test-bench.{sha256[:8]}.webp)
 
 {filler}
 
@@ -286,7 +300,7 @@ date: "2026-07-06"
 category: tech-story
 series: tech-story
 topicSlug: "stealth-test"
-ogImage: /thumbnails/tech-stealth-test.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/blog/stealth-test/og.{sha256[:8]}.webp
 ---
 {body}
 """,
@@ -312,6 +326,16 @@ def test_publish_gate_keeps_legacy_plan_compatible(monkeypatch, tmp_path: Path) 
         image.pop("assetKey")
         image.pop("sourcePolicy")
     (post / "brief.json").write_text(json.dumps(brief, ensure_ascii=False, indent=2), encoding="utf-8")
+    indexPath = post / "index.md"
+    indexPath.write_text(
+        re.sub(
+            r"^ogImage: .+$",
+            "ogImage: /thumbnails/tech-stealth-test.webp",
+            indexPath.read_text(encoding="utf-8"),
+            flags=re.M,
+        ),
+        encoding="utf-8",
+    )
 
     assert ab.publish_gate(post) == []
 
@@ -356,7 +380,10 @@ def test_publish_gate_blocks_missing_watch_scenarios(monkeypatch, tmp_path: Path
 def test_publish_gate_blocks_image_ssot_drift(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(ab, "repo_root", lambda: tmp_path)
     post = _write_tech_post(tmp_path)
-    (post / "assets" / "aesa-test-bench.webp").unlink()
+    mediaPath = post / "assets" / "media.json"
+    media = json.loads(mediaPath.read_text(encoding="utf-8"))
+    del media["assets"]["aesa-test-bench"]
+    mediaPath.write_text(json.dumps(media, ensure_ascii=False, indent=2), encoding="utf-8")
     creditsPath = post / "assets" / "CREDITS.md"
     creditsPath.write_text(
         creditsPath.read_text(encoding="utf-8").replace("- aesa-test-bench: CC0 실사", ""),
@@ -364,14 +391,13 @@ def test_publish_gate_blocks_image_ssot_drift(monkeypatch, tmp_path: Path) -> No
     )
     indexPath = post / "index.md"
     indexPath.write_text(
-        indexPath.read_text(encoding="utf-8").replace("./assets/aesa-test-bench.webp", "./assets/unplanned.webp"),
+        indexPath.read_text(encoding="utf-8").replace("aesa-test-bench.", "unplanned."),
         encoding="utf-8",
     )
 
     errors = ab.publish_gate(post)
 
-    assert any("원본 없음" in error for error in errors)
-    assert any("본문 참조 없음" in error for error in errors)
+    assert any("assets/media.json" in error and "누락" in error for error in errors)
     assert any("CREDITS.md" in error and "assetKey 누락" in error for error in errors)
 
 

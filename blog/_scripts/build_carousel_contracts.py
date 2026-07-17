@@ -58,7 +58,7 @@ TECH_DIR = ROOT / "blog" / "08-tech-story"  # 기술이야기: frontmatter carou
 ISSUES_DIR = ROOT / "blog" / "_issues"  # standalone 이슈 캐러셀(블로그 글 없음): code 없는 경제/시국 카드
 MEDIA_PREFIX = "carousels"
 ISSUE_MEDIA_PREFIX = "issues"  # 이슈 이미지 hfMedia 네임스페이스(companies/ 와 병렬, 콘텐츠해시 파일명)
-TECH_MEDIA_PREFIX = "tech-story"  # 기술이야기(설명) 카드 이미지 hfMedia 네임스페이스. 그 글 assets/ 에서 차용
+TECH_MEDIA_PREFIX = "tech-story"  # media.json 없는 legacy 기술 카드 이미지 네임스페이스
 OG_MEDIA_PREFIX = "og"  # 브랜디드 OG 이미지 네임스페이스(og/<slug>.<hash8>.jpg)
 OG_TEMPLATE_VERSION = "3"  # 렌더 템플릿 버전. bump 하면 해시 바뀌어 전량 재렌더(v3=가로 1200x630 링크 미리보기)
 HF_MEDIA_RESOLVE = f"https://huggingface.co/datasets/{HF_MEDIA_REPO}/resolve/main"
@@ -274,12 +274,29 @@ def _attach_caption_context(contract: dict, source: dict) -> None:
 def _attach_series_images(
     slides: list[dict], assets_dir: Path, slug: str, existing_files: set[str], image_ops: list
 ) -> None:
-    """설명(기술이야기) 카드 슬라이드의 image 를 그 글 assets/<image>.webp 에서 해석해 hfMedia
-    tech-story/<slug>/<image>.<hash8>.webp 로 치환하고, 아직 안 올라간 것만 업로드 op 에 싣는다.
-    파일 없으면 image 필드를 지운다(빈 배경 폴백). 이슈 카드 이미지 배선과 동형(회사 media 풀 비의존)."""
+    """설명 카드 image를 HF 경로로 치환한다.
+
+    v2 글은 assets/media.json이 가리키는 blog/<slug>/ 경로를 그대로 재사용한다. 바이너리를 Git에서
+    다시 읽거나 중복 업로드하지 않는다. 매니페스트가 없는 legacy 글만 로컬 assets를 tech-story/
+    경로로 올린다.
+    """
+    manifestAssets: dict[str, object] = {}
+    manifestPath = assets_dir / "media.json"
+    if manifestPath.is_file():
+        try:
+            manifest = json.loads(manifestPath.read_text(encoding="utf-8"))
+            if isinstance(manifest, dict) and isinstance(manifest.get("assets"), dict):
+                manifestAssets = manifest["assets"]
+        except (json.JSONDecodeError, OSError):
+            manifestAssets = {}
     for s in slides:
         img = s.get("image")
         if not img:
+            continue
+        record = manifestAssets.get(str(img))
+        remoteFromManifest = str(record.get("path") or "") if isinstance(record, dict) else ""
+        if remoteFromManifest.startswith("blog/"):
+            s["image"] = remoteFromManifest
             continue
         local = assets_dir / f"{img}.webp"
         if local.exists():
@@ -306,8 +323,9 @@ def build_contracts(
     미첨부, 표시 이름 = 편별 주제 라벨(carousel.name, 예 '휴머노이드'·'반도체 공정'). 각 편이 자기 주제
     badge 를 갖는다. 테마/설명 글을 종목 하나로 오분류하는 것을 원천 차단(규소 글 SK하이닉스 badge 재발 방지).
 
-    series 이미지: 그 글 assets/<image>.webp 를 hfMedia tech-story/<slug>/ 로 차용한다(이슈 카드 동형). code
-    가 없어 회사 media 풀에서 못 찾으므로 여기서 배선. existing_files·image_ops 를 주면 업로드 op 를 채운다."""
+    series 이미지: v2 글은 assets/media.json의 HF blog/<slug>/ 경로를 재사용한다. legacy 글만
+    assets/<image>.webp를 hfMedia tech-story/<slug>/로 올린다. existing_files·image_ops를 주면
+    legacy 업로드 op를 채운다."""
     contracts: dict[str, dict] = {}
     for md in sorted(blog_dir.glob("*/index.md")):
         fm = _read_frontmatter(md)
@@ -331,7 +349,7 @@ def build_contracts(
         if not slides:
             sys.stderr.write(f"  skip(no slides): {md.parent.name}\n")
             continue
-        if series and image_ops is not None:  # 그 글 assets/ 의 실사를 hfMedia tech-story/<slug>/ 로 차용
+        if series and image_ops is not None:  # v2 HF 경로 재사용, legacy만 tech-story/ 업로드
             _attach_series_images(slides, md.parent / "assets", slug, existing_files or set(), image_ops)
         contract: dict = {
             "code": code,
@@ -665,8 +683,8 @@ def main() -> None:
 
     contracts = build_contracts()  # 회사 계약(블로그 frontmatter)
     issue_contracts, image_ops = build_issue_contracts(ISSUES_DIR, repo_files)  # standalone 이슈 (+ 이슈 이미지 op)
-    # 기술이야기(설명) 시리즈 카드 = 종목 정체성 없음(code="" · 배지=편별 주제 carousel.name). 글 assets 실사를
-    # hfMedia tech-story/<slug>/ 로 배선(회사 media 풀 비의존). 이미지 op 는 이슈와 같은 image_ops 에 합류.
+    # 기술이야기 시리즈 카드 = 종목 정체성 없음(code="" · 배지=편별 주제 carousel.name). v2는 media.json의
+    # HF blog/<slug>/를 재사용하고 legacy만 tech-story/<slug>/로 배선한다. 이미지 op는 이슈와 합류.
     # cards.plan 정식화(reviewGate passed) 안 된 편은 게이트가 발행 차단(기획 필수).
     for _slug, _c in build_contracts(TECH_DIR, series=True, existing_files=repo_files, image_ops=image_ops).items():
         contracts.setdefault(_slug, _c)

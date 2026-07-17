@@ -189,7 +189,10 @@
 	const pageDesc = $derived(meta?.description ?? `DartLab Blog · ${meta?.title ?? ''}`);
 	const pageUrl = $derived(`${brand.url}blog/${slug}`);
 	const pageImage = $derived(
-		postInfo?.ogImage ? `${brand.url}${postInfo.ogImage.replace(/^\//, '')}` :
+		postInfo?.ogImage ?
+			(/^https?:\/\//.test(postInfo.ogImage) ?
+				postInfo.ogImage :
+				`${brand.url}${postInfo.ogImage.replace(/^\//, '')}`) :
 		postInfo?.thumbnail ? `${brand.url}${postInfo.thumbnail.replace(/^\//, '')}` :
 		`${brand.url}og-image.png`
 	);

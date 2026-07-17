@@ -65,7 +65,7 @@
 - **인싸이트 도달 게이트 (확실히·필수)**: 독자 에이전트가 글을 덮고 **묻지 않아도** 핵심 인싸이트를 한 문장으로 되뇐다. 그게 기획의 인싸이트와 일치하고 **뻔하지 않으면**(상식·업계 상식이면 실패) 통과. 못 되뇌거나 뻔하면 = 내러티브가 인싸이트를 묻거나 애초에 인싸이트가 얕은 것 → 재작성. 재미있게 읽혔는데 남는 게 없으면(칼로리만·단백질 0) 발행 차단.
 - **적대검증**: 본문 강한 수치 전부 메인 dartlab 재계산(NPM 행 누락 · 연도 귀속 · 배율 오류 사례 다수). 검증표에 없는 숫자 = 발행 차단.
 - **정직성 가드**: 영업이익 vs 순이익 분리 · 분기/연간 라벨 명시 · 일회성 분리 · 매핑 artifact 무시 · 연결 vs 그룹 실체 구분.
-- **발행 하드 게이트(단일 진입점)**: `uv run python -X utf8 blog/_scripts/publishGate.py --post blog/<카테고리>/<폴더>`. 위반 시 exit 1. 내부에서 `auditBlog.py` 하드 계약과 `audit_seo.py` SEO 95 이상을 함께 검사한다. 신규 글은 `contractVersion: 2`, 시나리오형 마지막 H2, 이미지 `assetKey` 원본·본문 참조·CREDITS 정합까지 통과해야 한다. `audit_seo.py`나 `auditBlog.py`를 따로 실행한 결과는 발행 승인으로 쓰지 않는다. CI는 push diff에서 바뀐 글 폴더만 같은 진입점으로 검사한다.
+- **발행 하드 게이트(단일 검사 진입점)**: `uv run python -X utf8 blog/_scripts/publishGate.py --post blog/<카테고리>/<폴더>`. 위반 시 exit 1. 내부에서 `auditBlog.py` 하드 계약, `audit_seo.py` SEO 95 이상, HF 원격 실재, Git 바이너리 0건을 함께 검사한다. 신규 글은 `contractVersion: 2`, 시나리오형 마지막 H2, 이미지 `assetKey`·`media.json`·본문 HF URL·CREDITS 정합까지 통과해야 한다. `audit_seo.py`나 `auditBlog.py`를 따로 실행한 결과는 발행 승인으로 쓰지 않는다. CI는 push diff에서 바뀐 글 폴더만 같은 진입점으로 검사한다.
 - **깊이 게이트(회사 심층 리포트 한정)**: 측정은 **본문 기준**(표·SVG·코드 제외한 읽는 글자수. audit_seo·auditBlog 공통). 하한 **14,000자** 미만이면 `auditBlog.py` 가 "얕음(shallow deep report)"로 리라이트 후보 표시. 심층 완성 목표 **20,000자 이상**(현재 상위 3%만 도달, 최고작 티어), 장기 야심은 4만자. 길이는 막·증거·시나리오의 산물이지 패딩이 아니다(반복도 가드와 짝, 표 복붙·문장 늘리기 차단). 교육·소식·신용 카테고리는 구조상 단문이라 제외.
 - → BLOG.md §Phase 4
 
@@ -79,12 +79,13 @@
 ## 6. 이미지: 생성 / 수급 / 평가·개선
 - **기획**: `brief.json.imagePlan[]`이 이미지 의미 계약의 SSOT다. 각 항목은 고유 `assetKey`, `sourcePolicy: auto`, 피사체, 검색어, 본문 위치, 서사 용도를 가진다.
 - **자율 수급**: 파이프라인이 사실 적합성으로 경로를 선택한다. 실제 제품·인물·현장처럼 정확성이 중요한 피사체는 공식 출처 또는 라이선스가 확인된 실사를 쓴다. 개념·원리·추상 장면은 `image_gen`을 쓴다. 한 경로가 실패하면 묻고 멈추지 않고 다른 적합 경로로 전환한다. 핀터레스트·구글 이미지 무단 사용은 금지다. FLUX는 운영자의 명시 지시가 있을 때만 쓴다.
-- **저작 원본 SSOT**: 블로그는 `blog/<category>/<post>/assets/<assetKey>.webp`와 같은 폴더의 `CREDITS.md`다. 본문은 `./assets/<assetKey>.webp`만 참조한다. 카드 전용 이야기는 `blog/_issues/<slug>/assets/`가 원본이다.
-- **파생·서빙 경계**: `landing/static/thumbnails/`는 합성 파생본, `sns/assets/{subjectKey}/`는 재사용 staging, HF `dartlab-media`는 서빙본이다. 셋 모두 블로그 저작 원본을 대신하지 않으며 손으로 원본처럼 편집하지 않는다. 블로그 자산의 공유풀 합류는 `ingest_blog_assets.py`만 쓴다.
-- **평가·개선**: 색복잡도 감사와 눈검수를 함께 한다. 피사체 오매치, 가짜 공식 로고·문서, 식별 인물 왜곡이 있으면 다른 실사 또는 `image_gen`으로 교체한다. `publishGate.py`가 assetKey, WebP, 본문 참조, CREDITS 정합을 막는다.
+- **바이너리 SSOT**: 블로그 WebP/JPG/PNG는 Git에 넣지 않는다. 포스트 `assets/<assetKey>.webp`와 `landing/static/thumbnails/*.webp`는 로컬 검수·합성 staging이고, `publishBlogAssets.py`가 HF `dartlab-media/blog/{slug}/`의 콘텐츠 해시 경로로 올린다. durable 원본과 서빙본은 HF 하나다.
+- **Git 계약**: `brief.json.imagePlan[]`이 의미를, `assets/CREDITS.md`가 출처를, `assets/media.json`이 assetKey와 HF 경로·SHA-256 대응을 가진다. 본문과 `ogImage`는 `media.json`에서 파생한 HF URL만 쓴다. SVG는 사람이 diff로 검토 가능한 텍스트 차트라 Git 추적 예외다.
+- **공유 경계**: v2 기술 카드도 `assets/media.json`의 `blog/{slug}/` 경로를 그대로 쓴다. `sns/assets/{subjectKey}`와 `ingest_blog_assets.py`는 legacy 회사 공유풀 호환용이며 새 블로그 이미지의 SSOT가 아니다.
+- **평가·개선**: 색복잡도 감사와 눈검수를 함께 한다. 피사체 오매치, 가짜 공식 로고·문서, 식별 인물 왜곡이 있으면 다른 실사 또는 `image_gen`으로 교체한다. `publishGate.py`가 assetKey, HF 실재, 본문 URL, CREDITS, Git 바이너리 0건을 막는다.
 
 ## 7. 발행
-- **블로그**: `publishGate.py --post <글폴더>` 통과 · 빌드 확인 → 커밋. 재무는 `<CompanyFinancials code="…" />` 라이브 태그(빌드타임 데이터 SSOT 직독). → BLOG.md §Phase 5
+- **블로그**: 이미지·OG를 로컬에서 눈검수한 뒤 `publishBlogAssets.py --post <글폴더>`로 HF 발행·본문 치환 -> `publishGate.py --post <글폴더>` 통과 -> 빌드 확인 -> 커밋. 재무는 `<CompanyFinancials code="…" />` 라이브 태그(빌드타임 데이터 SSOT 직독). → BLOG.md §Phase 5
 - **카드**: `build_carousel_contracts.py` → hfMedia `carousels/index.json` 단일 파일(안 굽고 in-place 갱신). 데이터만 올림 → 사이트 재빌드 불필요.
 - **자산**: `build_index.py` → `publish_assets_hf.py` → HF `dartlab-media`.
 - **발행 후**: 월 SEO 스코어링 · 내부링크 맵 · KnowledgeDB `insights` 백필(블로그=`backfill_blog_insights.py`, 카드=향후 `source="cards"`).

@@ -27,7 +27,7 @@ Phase 0 데이터 완주 / Phase 1 적대 토론 기획 / Phase 2.5 마스터라
 8. **회사 종속 아님.** 기술이야기는 주어가 기술·테마라 subject join 키가 **topicSlug**다(`kind: tech`, `OPERATIONS.md` 5절). frontmatter 에 회사 `stockCode` 를 달면 블로그에 그 회사 단일 **터미널 버튼**과 **기업이야기 팟캐스트**가 잘못 조인된다. 여러 회사를 기술 관점으로 횡단하는 게 기본이므로 `topicSlug` 를 쓰고 `stockCode` 는 달지 않는다. 체크: (a) 원리 해부 (b) 공정·회사·근거 지도 (c) 회사가 그 칸의 핵심인 이유 (d) 재무 착지 (e) DART·EDGAR 근거 (f) 오해 방지 (g) 기술 성숙도·출처 (h) `brief.json` 92점 루프 (i) 마지막 시나리오형 관전 포인트 (j) `publishGate.py` 통과.
 9. **마지막 관전 포인트는 시나리오다.** `brief.json.watchScenarios[]`에 2~4개를 기획한다. 본문 마지막 H2에서 "만약 공급 병목이 풀리면 어떤 경로로 원가와 회사 위치가 달라질까", "만약 양산 전환이 늦어지면 어느 공시 숫자가 먼저 흔들릴까"처럼 조건별로 푼다. 각 시나리오는 변화 경로, 예상 결과, 확인 지표, 반증 조건을 가진다. 예측 숫자를 지어내지 않고 evidenceMap의 근거 범위에서만 쓴다.
 10. **길이 = 밀도 우선.** 회사편 20,000자가 아니다. 원리도해·공정 지도·재무 실측표·재현 코드로 근거를 채운 **6,000~12,000자**. 패딩 금지.
-11. **썸네일 = 통합 생성기.** `gen_blog_thumbnails.py`(SSOT, frontmatter 구동)를 쓴다. kicker 라벨은 `PREFIX["tech-story"] = "기술이야기"`. 별도 생성기를 만들지 않는다. `ogImage: /thumbnails/{slug}.webp`.
+11. **썸네일 = 통합 생성기.** `gen_blog_thumbnails.py`(레이아웃 SSOT, frontmatter 구동)를 써서 로컬 staging을 만든다. kicker 라벨은 `PREFIX["tech-story"] = "기술이야기"`. 별도 생성기를 만들지 않는다. `publishBlogAssets.py`가 최종 OG를 HF에 올리고 `ogImage`를 해시 URL로 바꾼다.
 
 ## 4. 이미지 수급 (기술이야기 오버라이드)
 
@@ -36,8 +36,8 @@ Phase 0 데이터 완주 / Phase 1 적대 토론 기획 / Phase 2.5 마스터라
 - 실제 제품·인물·현장·장비처럼 모양이 사실과 맞아야 하는 장면은 공식 출처 또는 라이선스가 확인된 실사를 선택한다.
 - 기술 원리, 내부 작동, 아직 사진으로 존재하지 않는 개념 장면은 `image_gen`을 선택한다. 가짜 공식 로고·문서·식별 인물은 만들지 않는다.
 - 한 경로에서 적합본이 없으면 묻고 멈추지 않고 다른 검색어, 다른 공식 출처, `image_gen` 순으로 전환한다. FLUX는 운영자가 명시한 경우에만 쓴다.
-- `brief.json.imagePlan[]`은 `assetKey`, `sourcePolicy: auto`, `slot`, `subject`, `placement`, `narrativeUse`를 가진다. 파일 경로는 적지 않는다. 경로는 `assets/<assetKey>.webp`로 결정된다.
-- 저작 원본 SSOT는 글 폴더의 `assets/<assetKey>.webp`와 `assets/CREDITS.md`다. 본문은 `./assets/<assetKey>.webp`를 참조한다. 썸네일, `sns/assets`, HF는 파생 또는 서빙본이다.
+- `brief.json.imagePlan[]`은 `assetKey`, `sourcePolicy: auto`, `slot`, `subject`, `placement`, `narrativeUse`를 가진다. 파일 경로는 적지 않는다. 로컬 검수 경로는 `assets/<assetKey>.webp`, durable 경로는 발행기가 정한 HF 콘텐츠 해시 경로다.
+- 바이너리 원본·서빙 SSOT는 HF `dartlab-media/blog/{slug}/` 하나다. Git에는 `brief.json`, `assets/CREDITS.md`, `assets/media.json`만 남기고 WebP/JPG/PNG를 추가하지 않는다. 본문과 `ogImage`는 `media.json`의 HF URL을 참조한다.
 - 이미지 게이트: 휴머노이드 편은 산업용 로봇 팔만으로 통과하지 않는다. 관절, 감속기, 액추에이터, 손·무릎·고관절 조립체처럼 글의 기술 병목이 보여야 한다. 모든 계획 이미지는 눈으로 확인한다.
 
 ## 5. 자산
@@ -46,7 +46,7 @@ Phase 0 데이터 완주 / Phase 1 적대 토론 기획 / Phase 2.5 마스터라
 
 ## 6. 발행
 
-`gen_blog_thumbnails.py --slugs {slug} --apply` -> `publishGate.py --post blog/08-tech-story/<글폴더>` -> 커밋. `TOPIC_ROADMAP.md` 갱신. subject `kind: tech`(topicSlug 기반, `OPERATIONS.md` 5절). `audit_seo.py`와 `auditBlog.py` 단독 결과는 발행 승인으로 쓰지 않는다. 데이터는 런타임 SSOT를 직독한다.
+`gen_blog_thumbnails.py --slugs {slug} --apply` -> `publishBlogAssets.py --post blog/08-tech-story/<글폴더>` -> `publishGate.py --post blog/08-tech-story/<글폴더>` -> 커밋. `TOPIC_ROADMAP.md` 갱신. subject `kind: tech`(topicSlug 기반, `OPERATIONS.md` 5절). `audit_seo.py`와 `auditBlog.py` 단독 결과는 발행 승인으로 쓰지 않는다. 데이터는 런타임 SSOT를 직독한다.
 
 ---
 정본: 뼈대 [BLOG.md](../BLOG.md)·[PIPELINE.md](../PIPELINE.md), 마스터라이터 [_reference/BLOG_MASTER_WRITER.md](../_reference/BLOG_MASTER_WRITER.md), 이미지 수급과 자산 경계 [OPERATIONS.md](../OPERATIONS.md) 2절.

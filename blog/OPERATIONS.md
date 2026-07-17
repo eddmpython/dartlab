@@ -14,25 +14,25 @@
 
 | 분류 | 대상 | 위치 |
 |---|---|---|
-| **추적 (저작 원본)** | 마크다운(index.md·script.md), 메타(carousel.yaml·cards.plan.json·episode.yaml·channel.yaml·published.json·brief.json), SVG 차트, 포스트별 `assets/<assetKey>.webp`, `assets/CREDITS.md`, 운영문서 | `blog/**` (git) |
-| **미추적 (파생/대용량)** | 팟캐스트 오디오(mp3/m4a/wav/aac), sns 렌더 PNG/MP4, 빌드 산출 | `blog/_podcasts/.gitignore`, `/sns/`(root .gitignore), `landing/static/carousels\|issues` |
-| **재사용 staging** | 블로그 저작 원본을 카드·SNS와 나누기 위한 작업 사본 | `sns/assets/{subjectKey}`. `ingest_blog_assets.py`로만 합류 |
-| **발행 = 서빙 SSOT** | 카드·블로그 브라우저 서빙 이미지 | HF `dartlab-media` (versioned). 블로그 저작 원본은 계속 git `assets/` |
+| **추적 (저작 원본)** | 마크다운(index.md·script.md), 메타(carousel.yaml·cards.plan.json·episode.yaml·channel.yaml·published.json·brief.json), SVG 차트, `assets/CREDITS.md`, `assets/media.json`, 운영문서 | `blog/**` (git) |
+| **미추적 (작업/파생)** | 블로그 WebP/JPG/PNG staging, 합성 썸네일, 팟캐스트 오디오, sns 렌더 PNG/MP4, 빌드 산출 | 포스트 `assets/`, `landing/static/thumbnails/`, `blog/_podcasts/.gitignore`, `/sns/` |
+| **재사용 staging** | HF 발행 전 로컬 작업본과 legacy 회사 공유 작업본 | 포스트 `assets/<assetKey>.webp`, `sns/assets/{subjectKey}`. durable 원본 아님 |
+| **발행 = 이미지 SSOT** | 블로그 본문·OG·카드·브라우저 서빙 이미지 | HF `dartlab-media`의 콘텐츠 해시 경로. 블로그 v2는 `blog/{slug}/` |
 | **발행 = durable SSOT** | 팟캐스트 오디오·커버·정적프레임·feed | R2 `dartlab-podcast` |
 
 - 커밋·푸시 규약(변경 단위·`git commit -o`·push 게이트·UI 승인)은 `CLAUDE.md` 강행규칙 + memory `git_rules` 상세가 정본.
-- 새 `blog/_assets`, 임시 다운로드 폴더, 포스트 밖 원본 폴더를 만들지 않는다. 블로그 저작 원본은 포스트 `assets/`, 카드 전용 원본은 `blog/_issues/<slug>/assets/`에만 둔다.
+- 새 `blog/_assets`, 임시 다운로드 폴더, 포스트 밖 원본 폴더를 만들지 않는다. 블로그 로컬 staging은 포스트 `assets/`, 카드 전용 staging은 `blog/_issues/<slug>/assets/`에만 두고 바이너리는 Git에 추가하지 않는다.
 
 ## 2. 자산·소스·이미지 정책
 
 - 이미지 수급은 **자율**이다. 파이프라인이 실제 제품·인물·현장처럼 사실성이 중요한 피사체는 공식 출처 또는 라이선스가 확인된 실사를, 개념·원리·추상 장면은 `image_gen`을 선택한다. 적합본이 없으면 운영자 질문으로 멈추지 않고 다른 적합 경로로 전환한다. 핀터레스트·구글 이미지 무단 사용은 금지다. FLUX는 운영자의 명시 지시가 있을 때만 쓴다.
 - 이미지 의미 계약 SSOT는 블로그 `brief.json.imagePlan[]`, 카드 `cards.plan.json`이다. 블로그 신규 계약은 고유 `assetKey`와 `sourcePolicy: auto`를 요구한다.
-- 블로그 바이너리 저작 원본은 포스트 `assets/<assetKey>.webp`, 출처 원본은 `assets/CREDITS.md`다. 본문은 `./assets/<assetKey>.webp`만 참조한다. 썸네일은 합성 파생본이며 저작 원본이 아니다.
-- `sns/assets/{subjectKey}`는 공유 staging, HF는 브라우저 서빙 SSOT다. 블로그 원본을 공유할 때는 `ingest_blog_assets.py`만 사용한다. staging이나 HF 파일을 글 원본처럼 역편집하지 않는다.
+- 블로그 바이너리는 포스트 `assets/<assetKey>.webp`에서 로컬 검수한 뒤 `publishBlogAssets.py`로 HF `blog/{slug}/{assetKey}.{hash8}.webp`에 올린다. 본문과 `ogImage`는 HF URL만 참조한다. Git에는 `assets/media.json`의 경로·해시와 `assets/CREDITS.md`의 출처만 남긴다.
+- `sns/assets/{subjectKey}`도 공유 staging일 뿐 SSOT가 아니다. v2 블로그와 기술 카드는 `assets/media.json`의 같은 HF 경로를 재사용한다. legacy 회사 공유풀만 `ingest_blog_assets.py` 경로를 유지한다.
 
 ## 3. HF/R2 저장 정책
 
-- HF 데이터셋 `eddmpython/dartlab-media` (config `src/dartlab/core/dataConfig.py`, 프록시 origin `hfMedia`, resolver `landing/src/lib/cards/media.ts`). 프리픽스: `companies/{code}/`(공유 회사 이미지)·`issues/{slug}/`(카드)·`podcasts/{slug}/`(팟캐스트 meta/topic 소스 이미지). 파일명 콘텐츠해시. 상세 = memory `reference_hf_dataset_layout` + `sns/assets/README.md`.
+- HF 데이터셋 `eddmpython/dartlab-media` (config `src/dartlab/core/dataConfig.py`, 프록시 origin `hfMedia`, resolver `landing/src/lib/cards/media.ts`). 프리픽스: `blog/{slug}/`(v2 본문·OG)·`companies/{code}/`(legacy 공유 회사 이미지)·`issues/{slug}/`(카드)·`podcasts/{slug}/`(팟캐스트 meta/topic 소스 이미지). 파일명 콘텐츠해시. 상세 = memory `reference_hf_dataset_layout` + `sns/assets/README.md`.
 - R2 버킷 `dartlab-podcast` (r2.dev 공개). 팟캐스트 오디오·커버·정적프레임·feed.xml·index.json. HF `/resolve` 302 라 팟캐스트 플랫폼 미디어는 R2. 상세 = memory `reference_cloudflare_r2_infra`.
 - 이미지 규격표:
 
@@ -46,7 +46,7 @@
 
 | 파이프라인 | 진입/발행 | 상세 문서 |
 |---|---|---|
-| 블로그 | 저작 -> `blog/_scripts/publishGate.py --post <글폴더>` -> 발행 | `blog/BLOG.md` (+ `blog/PIPELINE.md`) |
+| 블로그 | 저작 -> `publishBlogAssets.py --post <글폴더>` -> `publishGate.py --post <글폴더>` -> 발행 | `blog/BLOG.md` (+ `blog/PIPELINE.md`) |
 | 카드뉴스 | `plan_card_news.py` -> `build_carousel_contracts.py` -> HF `carousels/index.json` | `blog/_scripts/CARDS.md` (+ `blog/_scripts/README.md`) |
 | 이미지 공유풀 | `sns/scripts/build_index.py` -> `publish_assets_hf.py` (blog 흡수 `ingest_blog_assets.py`) -> HF `companies/` | `sns/assets/README.md` |
 | 팟캐스트 | `podcast_plan_loop.workflow.js` -> `plan_episode.py` -> (NotebookLM) -> `render_episode_image.py` -> `publish_podcast.py` -> R2+HF | `blog/_podcasts/README.md` + `blog/_podcasts/GUIDE.md` |

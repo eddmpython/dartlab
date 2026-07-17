@@ -7254,7 +7254,7 @@
       "requiredEvidence": [],
       "expectedOutputs": [
         "카드뉴스 - carousel.yaml(또는 글 frontmatter carousel) + cards.plan.json + 카드별 이미지",
-        "블로그 - 검증된 글 + carousel + hero 이미지",
+        "블로그 - 검증된 글 + carousel + HF 이미지 media.json",
         "발행 - hfMedia carousels/index.json(라이브 /cards)"
       ],
       "visualGuidance": [],

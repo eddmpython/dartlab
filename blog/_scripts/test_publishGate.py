@@ -52,6 +52,16 @@ def test_validate_post_passes_at_95(monkeypatch, tmp_path: Path) -> None:
     assert pg.validatePost(tmp_path, requireContractV2=False) == []
 
 
+def test_validate_post_includes_hf_remote_errors(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(pg, "auditPublishGate", lambda *args, **kwargs: [])
+    monkeypatch.setattr(pg, "scorePost", lambda _: {"pct": 95})
+    monkeypatch.setattr(pg, "verifyRemoteAssets", lambda _: ["HF 미디어 없음: blog/x/hero.12345678.webp"])
+
+    errors = pg.validatePost(tmp_path, requireContractV2=True)
+
+    assert errors == ["HF 미디어 없음: blog/x/hero.12345678.webp"]
+
+
 def test_changed_posts_include_deleted_assets(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(pg, "REPO_ROOT", tmp_path)
     monkeypatch.setattr(pg, "_normalizeBase", lambda baseRef, headRef: "base-sha")
@@ -86,3 +96,22 @@ def test_existed_at_ref_uses_index_path(monkeypatch, tmp_path: Path) -> None:
 
     assert pg.existedAtRef(postDir, "base-sha")
     assert calls == [("cat-file", "-e", "base-sha:blog/08-tech-story/14-new-tech/index.md")]
+
+
+def test_tracked_binary_errors_blocks_v2_git_images(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(pg, "REPO_ROOT", tmp_path)
+    postDir = tmp_path / "blog" / "08-tech-story" / "14-new-tech"
+    assetsDir = postDir / "assets"
+    assetsDir.mkdir(parents=True)
+    (assetsDir / "media.json").write_text("{}", encoding="utf-8")
+
+    def fakeGit(*args: str, check: bool = True):
+        return SimpleNamespace(returncode=0, stdout="blog/08-tech-story/14-new-tech/assets/hero.webp\n")
+
+    monkeypatch.setattr(pg, "_git", fakeGit)
+
+    errors = pg.trackedBinaryErrors(postDir)
+
+    assert errors == [
+        "contract v2 바이너리는 Git 추적 금지, HF에만 발행: blog/08-tech-story/14-new-tech/assets/hero.webp"
+    ]

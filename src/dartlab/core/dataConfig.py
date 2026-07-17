@@ -10,8 +10,9 @@ HF_REPO = "eddmpython/dartlab-data"
 HF_BASE_URL = f"https://huggingface.co/datasets/{HF_REPO}/resolve/main"
 
 # 회사 이미지 serve SSOT — parquet 데이터(DATA_RELEASES)와 **별도** media 바이너리 repo.
-# blog(`blog/**/assets`)·캐러셀(landing `/cards`)·SNS(`sns/assets`)가 공용하는 hero 이미지의
-# 단일 serve 출처. DATA_RELEASES 에 넣지 않는 이유: 그 레지스트리는 per-stockCode parquet 가정
+# 블로그 v2(`publishBlogAssets.py`)·캐러셀(landing `/cards`)·legacy SNS staging(`sns/assets`)이
+# 공용하는 이미지의 durable 원본이자 단일 serve 출처. DATA_RELEASES 에 넣지 않는 이유: 그 레지스트리는
+# per-stockCode parquet 가정
 # (dataLoader.download 가 전 카테고리를 `{code}.parquet` 로 순회)이라, webp 미디어를 넣으면 그
 # 가정을 깨고 특수예외를 강요한다 → HF_REPO/HF_BASE_URL 과 대칭인 전용 상수로 분리.
 # 업로드(sns/scripts/publish_assets_hf.py·로컬 전용)가 본 repo id 를, 서빙(ui hfMedia origin)이
