@@ -56,10 +56,41 @@
 	}
 
 	function keydown(event: KeyboardEvent): void {
-		if (event.key === 'Escape') onClose();
+		if (event.key === 'Escape') {
+			event.preventDefault();
+			onClose();
+			return;
+		}
+		if (event.key !== 'Tab') return;
+		const focusable = [...dialog.querySelectorAll<HTMLElement>(
+			'a[href], button:not([disabled]), audio[controls], video[controls], [tabindex]:not([tabindex="-1"])'
+		)].filter((element) => element.getClientRects().length > 0);
+		if (focusable.length === 0) {
+			event.preventDefault();
+			dialog.focus();
+			return;
+		}
+		const first = focusable[0];
+		const last = focusable.at(-1);
+		if (event.shiftKey && (document.activeElement === first || document.activeElement === dialog)) {
+			event.preventDefault();
+			last?.focus();
+		} else if (!event.shiftKey && document.activeElement === last) {
+			event.preventDefault();
+			first?.focus();
+		}
 	}
 
-	onMount(() => dialog?.focus());
+	onMount(() => {
+		const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+		const previousOverflow = document.documentElement.style.overflow;
+		document.documentElement.style.overflow = 'hidden';
+		dialog?.focus();
+		return () => {
+			document.documentElement.style.overflow = previousOverflow;
+			previousFocus?.focus();
+		};
+	});
 </script>
 
 <div class="articleBackdrop" role="presentation" onclick={(event) => { if (event.target === event.currentTarget) onClose(); }}>
@@ -162,6 +193,7 @@
 <style>
 	.articleBackdrop { position: fixed; z-index: 80; inset: 0; padding: 18px; background: rgba(2, 5, 9, .76); backdrop-filter: blur(16px); }
 	.knowledgeArticle { width: min(1480px, 100%); height: 100%; margin: 0 auto; overflow: hidden; border: 1px solid rgba(112, 137, 170, .24); border-radius: 18px; outline: none; color: #dce5f2; background: radial-gradient(circle at 48% 0, rgba(48, 79, 120, .12), transparent 32%), #080d14; box-shadow: 0 36px 120px rgba(0, 0, 0, .62); }
+	.knowledgeArticle button:focus-visible, .knowledgeArticle a:focus-visible, .knowledgeArticle audio:focus-visible, .knowledgeArticle video:focus-visible { outline: 1px solid #79afea; outline-offset: 2px; }
 	.articleTopbar { height: 52px; display: flex; align-items: center; justify-content: space-between; padding: 0 18px; border-bottom: 1px solid rgba(98, 122, 155, .15); background: rgba(8, 13, 21, .92); }
 	.articleTopbar div { display: flex; align-items: center; gap: 9px; }
 	.articleTopbar i { width: 7px; height: 7px; border-radius: 50%; background: #75b8ff; box-shadow: 0 0 14px rgba(117, 184, 255, .68); }
@@ -243,4 +275,5 @@
 	@keyframes spin { to { transform: rotate(360deg); } }
 	@media (max-width: 980px) { .articleBackdrop { padding: 0; } .knowledgeArticle { border-radius: 0; } .articleLayout { grid-template-columns: minmax(0, 1fr); } .articleToc, .articleContext { display: none; } .articleBody { padding-inline: 20px; } }
 	@media (max-width: 560px) { .articleHero { padding-top: 36px; } .articleHero h1 { font-size: 38px; } .heroReceipt, .sourceMetrics { grid-template-columns: repeat(2, 1fr); } .factGrid, .contractGrid { grid-template-columns: 1fr; } .evidenceLedger > div { grid-template-columns: 1fr; gap: 7px; } }
+	@media (prefers-reduced-motion: reduce) { .articleState i { animation: none; } }
 </style>

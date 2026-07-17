@@ -513,8 +513,9 @@
 
 <style>
 	.srOnly { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
-	.knowledgeUniverse { position: relative; min-height: 720px; height: calc(100vh - 112px); display: grid; grid-template-rows: 58px minmax(0, 1fr) 82px; overflow: hidden; color: #dce5f2; background: radial-gradient(circle at 46% 42%, rgba(38, 64, 103, .12), transparent 42%), linear-gradient(145deg, #080c13, #06090f 66%); font-family: 'Pretendard Variable', Pretendard, system-ui, sans-serif; }
+	.knowledgeUniverse { position: relative; min-height: 0; height: calc(100vh - 112px); display: grid; grid-template-rows: 58px minmax(0, 1fr) 82px; overflow: hidden; color: #dce5f2; background: radial-gradient(circle at 46% 42%, rgba(38, 64, 103, .12), transparent 42%), linear-gradient(145deg, #080c13, #06090f 66%); font-family: 'Pretendard Variable', Pretendard, system-ui, sans-serif; }
 	.knowledgeUniverse::before { content: ''; position: absolute; inset: 0; pointer-events: none; opacity: .22; background-image: linear-gradient(rgba(116, 139, 170, .025) 1px, transparent 1px), linear-gradient(90deg, rgba(116, 139, 170, .025) 1px, transparent 1px); background-size: 48px 48px; mask-image: radial-gradient(circle at 50% 50%, black, transparent 72%); }
+	.knowledgeUniverse button:focus-visible, .knowledgeUniverse a:focus-visible, .knowledgeUniverse input:focus-visible { outline: 1px solid #79afea; outline-offset: 2px; }
 	.knowledgeUniverse.filmTheater .universeBody { grid-template-columns: minmax(0, 1fr) clamp(320px, 24vw, 380px); }
 	.knowledgeUniverse.filmTheater .galaxyRail { display: none; }
 	.commandBar { position: relative; z-index: 7; display: grid; grid-template-columns: minmax(160px, .8fr) minmax(360px, 1.7fr) minmax(150px, .7fr); align-items: center; gap: 18px; padding: 0 18px; border-bottom: 1px solid rgba(102, 125, 156, .13); background: rgba(7, 11, 18, .76); backdrop-filter: blur(18px); }
@@ -523,6 +524,7 @@
 	.scenePath button:last-child { color: #c4d0df; }
 	.scenePath i { color: #334257; font-style: normal; }
 	.omnibox { height: 38px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; border: 1px solid rgba(108, 137, 177, .27); border-radius: 11px; background: rgba(11, 17, 27, .88); box-shadow: 0 10px 40px rgba(0, 0, 0, .22); }
+	.omnibox:focus-within { border-color: rgba(121, 175, 234, .62); box-shadow: 0 0 0 3px rgba(91, 145, 207, .08), 0 10px 40px rgba(0, 0, 0, .22); }
 	.omnibox > span { padding-left: 12px; color: #6783a8; font-size: 18px; }
 	.omnibox input { min-width: 0; height: 100%; border: 0; padding: 0 10px; outline: none; color: #e5ecf5; background: transparent; font-size: 11px; }
 	.omnibox input::placeholder { color: #54667e; }

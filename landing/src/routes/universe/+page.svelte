@@ -17,7 +17,7 @@
 <svelte:head>
 	<title>DartLab Universe · 데이터와 지식의 우주</title>
 	<meta name="description" content="Hugging Face의 모든 DartLab 데이터와 엔진, Skill OS, 공시, 재무, 시장, 지식 근거를 공간적으로 탐색하는 DartLab Universe" />
-	<meta name="robots" content={data.releaseState === 'ga' ? 'index,follow' : 'noindex,nofollow'} />
+	<meta name="robots" content="noindex,nofollow" />
 	<link rel="canonical" href="https://eddmpython.github.io/dartlab/universe" />
 	<meta property="og:type" content="website" />
 	<meta property="og:title" content="DartLab Universe · 데이터와 지식의 우주" />
