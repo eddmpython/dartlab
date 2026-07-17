@@ -15,7 +15,7 @@
 	interface Props {
 		loadOverview: () => Promise<UniverseKnowledgeOverview>;
 		loadCoverage: () => Promise<UniverseKnowledgeCoverage>;
-		loadContent: (targetId: string) => Promise<UniverseKnowledgeContent>;
+		loadContent: (targetId: string, rowStart?: number) => Promise<UniverseKnowledgeContent>;
 		searchKnowledge: (request: UniverseKnowledgeSearchRequest) => Promise<UniverseKnowledgeSearchResult>;
 		openKnowledge: (targetId: string) => Promise<UniverseKnowledgeScene>;
 	}
@@ -27,6 +27,7 @@
 	let contentLoading = $state(false);
 	let contentError = $state<string | null>(null);
 	let contentRequest = 0;
+	let contentTargetId = '';
 	let scene = $state<UniverseKnowledgeScene | null>(null);
 	let selectedId = $state<string | null>(null);
 	let focusNodeId = $state<string | null>(null);
@@ -123,20 +124,31 @@
 		searchResult = null;
 		content = null;
 		contentError = null;
+		contentTargetId = '';
 	}
 
-	async function hydrateContent(targetId: string): Promise<void> {
+	async function hydrateContent(targetId: string, rowStart = 0): Promise<void> {
 		const request = ++contentRequest;
 		contentLoading = true;
 		contentError = null;
 		try {
-			const next = await loadContent(targetId);
+			const next = await loadContent(targetId, rowStart);
 			if (request === contentRequest) content = next;
 		} catch (value) {
 			if (request === contentRequest) contentError = message(value, '원본 내용을 미리 볼 수 없습니다.');
 		} finally {
 			if (request === contentRequest) contentLoading = false;
 		}
+	}
+
+	function moveTableWindow(direction: -1 | 1): void {
+		if (!content || content.tableMeta.format !== 'parquet' || content.tableMeta.totalRows === null) return;
+		const lastWindowStart = Math.floor(Math.max(0, content.tableMeta.totalRows - 1) / content.receipt.rowLimit) * content.receipt.rowLimit;
+		const nextStart = Math.max(0, Math.min(
+			lastWindowStart,
+			content.tableMeta.rowStart + direction * content.receipt.rowLimit
+		));
+		void hydrateContent(content.targetId, nextStart);
 	}
 
 	async function openTarget(targetId: string): Promise<void> {
@@ -220,9 +232,13 @@
 	$effect(() => {
 		const targetId = selectedNode?.nodeId ?? '';
 		if (targetId.startsWith('hf:')) {
-			void hydrateContent(targetId);
+			if (targetId !== contentTargetId) {
+				contentTargetId = targetId;
+				void hydrateContent(targetId);
+			}
 			return;
 		}
+		contentTargetId = '';
 		contentRequest += 1;
 		content = null;
 		contentLoading = false;
@@ -348,6 +364,13 @@
 								<div><span>FILE</span><b>{content.tableMeta.fileSizeBytes !== null ? formatBytes(content.tableMeta.fileSizeBytes) : 'RANGE'}</b></div>
 								<div><span>TRANSFER</span><b>{content.tableMeta.transferredBytes !== null ? formatBytes(content.tableMeta.transferredBytes) : 'N/A'}</b></div>
 							</div>
+							{#if content.tableMeta.format === 'parquet' && content.tableMeta.totalRows !== null}
+								<div class="tableNavigator">
+									<button type="button" disabled={contentLoading || content.tableMeta.rowStart === 0} onclick={() => moveTableWindow(-1)}>이전 12행</button>
+									<span>ROWS <b>{(content.tableMeta.rowStart + 1).toLocaleString()}-{content.tableMeta.rowEnd.toLocaleString()}</b> OF {content.tableMeta.totalRows.toLocaleString()}</span>
+									<button type="button" disabled={contentLoading || content.tableMeta.rowEnd >= content.tableMeta.totalRows} onclick={() => moveTableWindow(1)}>다음 12행</button>
+								</div>
+							{/if}
 							<div class="contentTableWrap">
 								<table>
 									<thead><tr>{#each content.columns as column (column)}<th>{column}</th>{/each}</tr></thead>
@@ -498,6 +521,11 @@
 	.contentTableMeta div:last-child { border-right: 0; }
 	.contentTableMeta span { display: block; color: #50647c; font: 600 6px/1 ui-monospace, monospace; }
 	.contentTableMeta b { display: block; margin-top: 5px; overflow: hidden; color: #9aadc2; font: 600 8px/1 ui-monospace, monospace; text-overflow: ellipsis; white-space: nowrap; }
+	.tableNavigator { min-height: 34px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 0 8px; border-bottom: 1px solid #172332; background: #090f18; }
+	.tableNavigator button { border: 1px solid #23364d; border-radius: 6px; padding: 5px 7px; color: #8da7c4; background: #111e2d; font-size: 7px; cursor: pointer; }
+	.tableNavigator button:disabled { opacity: .32; cursor: default; }
+	.tableNavigator span { overflow: hidden; color: #52667e; font: 550 6px/1 ui-monospace, monospace; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
+	.tableNavigator b { color: #8da3bc; font-size: 7px; }
 	.contentTableWrap { max-height: 320px; overflow: auto; scrollbar-width: thin; }
 	.contentTableWrap table { width: max-content; min-width: 100%; border-collapse: collapse; color: #91a3b7; background: #070c13; font: 500 8px/1.35 ui-monospace, SFMono-Regular, Consolas, monospace; }
 	.contentTableWrap th { position: sticky; z-index: 1; top: 0; padding: 8px 10px; border-right: 1px solid #182332; border-bottom: 1px solid #243348; color: #b9c9db; background: #101824; text-align: left; white-space: nowrap; }

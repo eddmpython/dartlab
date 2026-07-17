@@ -44,7 +44,7 @@ export interface UniverseBrowser {
 	seed(): Promise<UniverseRouteSeed>;
 	knowledgeOverview(): Promise<UniverseKnowledgeOverview>;
 	knowledgeCoverage(): Promise<UniverseKnowledgeCoverage>;
-	knowledgeContent(targetId: string): Promise<UniverseKnowledgeContent>;
+	knowledgeContent(targetId: string, rowStart?: number): Promise<UniverseKnowledgeContent>;
 	searchKnowledge(request: UniverseKnowledgeSearchRequest): Promise<UniverseKnowledgeSearchResult>;
 	openKnowledge(targetId: string): Promise<UniverseKnowledgeScene>;
 	globalCoverage(): Promise<UniverseCatalogCoverage>;

@@ -98,7 +98,7 @@ export interface UniverseKnowledgeRuntime {
 	coverage(): Promise<UniverseKnowledgeCoverage>;
 	search(request: UniverseKnowledgeSearchRequest): Promise<UniverseKnowledgeSearchResult>;
 	open(targetId: string): Promise<UniverseKnowledgeScene>;
-	content(targetId: string): Promise<UniverseKnowledgeContent>;
+	content(targetId: string, rowStart?: number): Promise<UniverseKnowledgeContent>;
 }
 
 const DOMAIN_COPY: Readonly<Record<UniverseKnowledgeDomainId, Omit<UniverseKnowledgeDomain, 'itemCount'>>> = {
@@ -692,7 +692,7 @@ export function createUniverseKnowledgeRuntime(core: DataCore, loaders: Universe
 		throw new Error(`Universe knowledge target is unsupported: ${targetId}`);
 	}
 
-	async function content(targetId: string): Promise<UniverseKnowledgeContent> {
+	async function content(targetId: string, requestedRowStart = 0): Promise<UniverseKnowledgeContent> {
 		if (!targetId.startsWith('hf:')) throw new Error(`Universe content target is unsupported: ${targetId}`);
 		const path = normalizedPath(targetId.slice('hf:'.length));
 		if (!path) throw new Error('Universe content path is empty');
@@ -709,7 +709,8 @@ export function createUniverseKnowledgeRuntime(core: DataCore, loaders: Universe
 		let rows: readonly Readonly<Record<string, string>>[] = [];
 		let tree: UniverseKnowledgeContent['tree'] = [];
 		let tableMeta: UniverseKnowledgeContent['tableMeta'] = Object.freeze({
-			format: 'none', fileSizeBytes: null, totalRows: null, rowGroupCount: null, rangeRequestCount: null, transferredBytes: null
+			format: 'none', fileSizeBytes: null, totalRows: null, rowGroupCount: null, rangeRequestCount: null, transferredBytes: null,
+			rowStart: 0, rowEnd: 0
 		});
 		let requestedBytes = 0;
 		let returnedBytes = 0;
@@ -717,12 +718,13 @@ export function createUniverseKnowledgeRuntime(core: DataCore, loaders: Universe
 		let mode: UniverseKnowledgeContent['receipt']['mode'] = 'addressOnly';
 
 		if (kind === 'table' && extension === 'parquet') {
+			const rowStart = Math.max(0, Math.floor(requestedRowStart));
 			const preview = await core.requestParquetPreview<Record<string, unknown>>({
 				path,
 				revision: info.sha,
-				rowStart: 0,
-				rowEnd: CONTENT_ROW_LIMIT,
-				cacheKey: `universe:knowledge:content:${info.sha}:${path}:preview:${CONTENT_ROW_LIMIT}`
+				rowStart,
+				rowEnd: rowStart + CONTENT_ROW_LIMIT,
+				cacheKey: `universe:knowledge:content:${info.sha}:${path}:preview:${rowStart}:${CONTENT_ROW_LIMIT}`
 			});
 			const rawRows = preview.rows;
 			columns = Object.freeze([...new Set(rawRows.flatMap((row) => Object.keys(row)))].slice(0, CONTENT_COLUMN_LIMIT));
@@ -737,7 +739,9 @@ export function createUniverseKnowledgeRuntime(core: DataCore, loaders: Universe
 				totalRows: preview.metadata.rows,
 				rowGroupCount: preview.metadata.rowGroups,
 				rangeRequestCount: preview.requests.length,
-				transferredBytes: returnedBytes
+				transferredBytes: returnedBytes,
+				rowStart,
+				rowEnd: rowStart + rawRows.length
 			});
 			mode = 'parquetRows';
 		} else if (kind === 'text' || kind === 'json' || kind === 'table') {
@@ -764,7 +768,9 @@ export function createUniverseKnowledgeRuntime(core: DataCore, loaders: Universe
 					totalRows: null,
 					rowGroupCount: null,
 					rangeRequestCount: 1,
-					transferredBytes: returnedBytes
+					transferredBytes: returnedBytes,
+					rowStart: 0,
+					rowEnd: rows.length
 				});
 				mode = 'delimitedRows';
 			} else if (kind === 'json' && !truncated) {

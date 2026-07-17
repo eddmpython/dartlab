@@ -432,4 +432,14 @@ live regression                               1/1
 targeted regression tests                    25/25
 ```
 
-Knowledge Lens는 table 상단에 전체 row, row group, file size, transfer를 표시하고, 접을 수 있는 schema에서 logical type과 physical type을 분리해 보여준다. K1 전체 종료 전 남은 항목은 row group 및 row window 선택 UI와 file별 수정시각이다.
+Knowledge Lens는 table 상단에 전체 row, row group, file size, transfer를 표시하고, 접을 수 있는 schema에서 logical type과 physical type을 분리해 보여준다. K1 전체 종료 전 남은 항목은 row window 실브라우저 눈검수와 file별 수정시각이다.
+
+### K1d Parquet row window
+
+- `UniverseKnowledgeRuntime.content`와 browser 및 surface 경계에 optional `rowStart`를 추가했다.
+- Parquet cache key는 revision, path, rowStart, 12행 limit을 함께 묶어 서로 다른 window가 충돌하지 않는다.
+- Lens의 이전 12행 및 다음 12행 제어는 전체 row를 넘지 않고 마지막 불완전 window를 정확히 표시한다.
+- runtime 회귀에서 30행 fixture를 0에서 12, 12에서 24로 이동해 첫 row와 table receipt가 함께 바뀌는 것을 확인했다.
+- contracts check 0, targeted regression 25/25, surface svelte-check 0 errors다. landing 전체 check의 유일한 error는 기존 `richMarkdown.ts` Marked type 오류다.
+
+K1 종료 판정은 파일별 수정시각과 JSON tree, schema, row navigator의 실제 브라우저 눈검수까지 보류한다.

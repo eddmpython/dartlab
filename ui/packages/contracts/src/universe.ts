@@ -803,6 +803,8 @@ export interface UniverseKnowledgeTableMeta {
 	rowGroupCount: number | null;
 	rangeRequestCount: number | null;
 	transferredBytes: number | null;
+	rowStart: number;
+	rowEnd: number;
 }
 
 export interface UniverseKnowledgeContentReceipt {

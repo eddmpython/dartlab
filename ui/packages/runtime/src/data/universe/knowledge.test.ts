@@ -58,15 +58,16 @@ function fakeCore(contentCalls?: ContentCallLog): DataCore {
 				? [{ stockCode: '005930', corpName: '삼성전자', listed: true }]
 				: []) as unknown as T[];
 		},
-		async requestParquetPreview<T extends Record<string, unknown>>(spec: { path: string; revision?: string }) {
+		async requestParquetPreview<T extends Record<string, unknown>>(spec: { path: string; revision?: string; rowStart?: number; rowEnd?: number }) {
 			if (contentCalls) contentCalls.parquetRevision = spec.revision;
-			const rows = spec.path === 'dart/companyProfile.parquet'
-				? [{ stockCode: '005930', corpName: '삼성전자', listed: true }]
+			const allRows = spec.path === 'dart/companyProfile.parquet'
+				? Array.from({ length: 30 }, (_, index) => ({ stockCode: String(index).padStart(6, '0'), corpName: index === 0 ? '삼성전자' : `기업 ${index}`, listed: true }))
 				: [];
+			const rows = allRows.slice(spec.rowStart ?? 0, spec.rowEnd ?? 12);
 			const requests = [{ url: 'https://example.test/file.parquet', range: 'bytes=0-99', status: 206, bytes: 100, durationMs: 1 }];
 			return {
 				metadata: {
-					path: spec.path, size: 1_024, rows: rows.length, rowGroups: 1,
+					path: spec.path, size: 1_024, rows: allRows.length, rowGroups: 3,
 					columns: ['stockCode', 'corpName', 'listed'],
 					schema: [
 						{ name: 'stockCode', physicalType: 'BYTE_ARRAY', logicalType: 'STRING' },
@@ -161,8 +162,12 @@ describe('Universe knowledge runtime', () => {
 		expect(tableContent.columns).toEqual(['stockCode', 'corpName', 'listed']);
 		expect(tableContent.rows[0]?.corpName).toBe('삼성전자');
 		expect(contentCalls.parquetRevision).toBe('revision-1');
-		expect(tableContent.tableMeta).toMatchObject({ fileSizeBytes: 1_024, totalRows: 1, rowGroupCount: 1, rangeRequestCount: 1 });
+		expect(tableContent.tableMeta).toMatchObject({ fileSizeBytes: 1_024, totalRows: 30, rowGroupCount: 3, rangeRequestCount: 1, rowStart: 0, rowEnd: 12 });
 		expect(tableContent.schema[2]).toMatchObject({ name: 'listed', physicalType: 'BOOLEAN' });
+
+		const nextTableContent = await contentRuntime.content('hf:dart/companyProfile.parquet', 12);
+		expect(nextTableContent.tableMeta).toMatchObject({ rowStart: 12, rowEnd: 24, totalRows: 30 });
+		expect(nextTableContent.rows[0]?.corpName).toBe('기업 12');
 
 		const imageContent = await contentRuntime.content('hf:assets/avatar.png');
 		expect(imageContent.kind).toBe('image');
