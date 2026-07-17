@@ -75,15 +75,21 @@ def _injectRefResolution(canaries: list[dict[str, Any]], manifestPath: str | Non
         return canaries
     try:
         from dartlab.providers.dart.search.fieldIndex import loadSegment
+        from dartlab.providers.dart.search.fieldIndexRebuild import _effectiveSegmentMeta
         from dartlab.providers.dart.search.localUpdate import injectSourceRefResolution, resolveActiveIndexDir
 
         base = Path(manifestPath).resolve().parent
         indexDir = resolveActiveIndexDir(base) or base
-        loaded = loadSegment("main", indexDir)
-        if loaded is None:
+        segments = {name: segment for name in ("main", "delta") if (segment := loadSegment(name, indexDir)) is not None}
+        if "main" not in segments:
             return canaries
-        idx, meta = loaded
-        return injectSourceRefResolution(canaries, idx, meta)
+        effectiveMeta = _effectiveSegmentMeta(
+            segments["main"][1],
+            segments.get("delta", ({}, None))[1],
+        )
+        # round-trip 검사가 segment sidecar/docLengths 무결성을 먼저 보장한다. 여기서는 delta override와
+        # tombstone을 반영한 유효 meta에서 ref/source 존재를 결정론적으로 확인한다.
+        return injectSourceRefResolution(canaries, {"docLengths": [1] * effectiveMeta.height}, effectiveMeta)
     except Exception:  # noqa: BLE001 — 폴백: 결정론 주입 실패 시 기존 BM25 평가로 진행.
         return canaries
 

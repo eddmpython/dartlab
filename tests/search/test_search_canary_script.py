@@ -6,11 +6,63 @@ import json
 import os
 import subprocess
 import sys
+from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
 
 import pytest
 
 pytestmark = pytest.mark.unit
+
+
+def test_ref_resolution_uses_effective_main_and_delta_segments(tmp_path) -> None:
+    from dartlab.providers.dart.search.fieldIndex import buildContentSegment
+    from dartlab.providers.dart.search.fieldIndexRebuild import saveSegmentWithSidecar
+
+    mainIdx, mainMeta = buildContentSegment(
+        [
+            {
+                "section_content": "기존 공시",
+                "rcept_no": "OLD",
+                "source": "allFilings",
+                "sourceRef": "dart:allFilings:OLD#section=0",
+            }
+        ],
+        showProgress=False,
+    )
+    deltaIdx, deltaMeta = buildContentSegment(
+        [
+            {
+                "section_content": "새 공시",
+                "rcept_no": "NEW",
+                "source": "allFilings",
+                "sourceRef": "dart:allFilings:NEW#section=0",
+            }
+        ],
+        showProgress=False,
+    )
+    saveSegmentWithSidecar(mainIdx, mainMeta, "main", tmp_path)
+    saveSegmentWithSidecar(deltaIdx, deltaMeta, "delta", tmp_path)
+    manifest = tmp_path / "manifest.json"
+    manifest.write_text("{}", encoding="utf-8")
+
+    scriptPath = Path(".github/scripts/search/evaluateSearchCanary.py")
+    spec = spec_from_file_location("evaluateSearchCanaryDeltaTest", scriptPath)
+    assert spec and spec.loader
+    module = module_from_spec(spec)
+    spec.loader.exec_module(module)
+    rows = module._injectRefResolution(
+        [
+            {
+                "query": "새 공시",
+                "expectedSource": "allFilings",
+                "expectedSourceRef": "dart:allFilings:NEW#section=0",
+            }
+        ],
+        str(manifest),
+    )
+
+    assert rows[0]["_sourceResolved"] is True
+    assert rows[0]["_refResolved"] is True
 
 
 def test_evaluate_search_canary_script_with_precomputed_results(tmp_path) -> None:
