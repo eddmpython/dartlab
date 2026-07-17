@@ -48,16 +48,15 @@ blog/_podcasts/
         ├── episode.yaml          # 메타데이터 SSOT (사람 작성)
         ├── cover.jpg             # RSS item 정사각 커버
         ├── static-video.jpg      # 16:9 정적 영상 이미지와 썸네일 소스
-        ├── assets/
-        │   ├── source-gray.webp  # 재사용 가능한 원본 배경
-        │   └── CREDITS.md        # 이미지 출처와 역할
+        ├── CREDITS.md            # 이미지 출처와 역할
+        ├── imagegen-extract.json # 생성 이미지 추출 로그(있는 편만)
         ├── script.md             # NotebookLM 소스 문서 (우리 최종 deliverable)
         ├── brief.json            # 기획 요지 + 루프 로그
         └── published.json        # 발행 기계값 (guid mint-once, 오디오 크기/길이/발행일)
 ```
 
-오디오(m4a/mp3)는 레포에 두지 않는다. R2 런타임 산출물이라 용량을 격리한다. 레포에는 텍스트와
-작은 커버 소스만 커밋한다.
+오디오(m4a/mp3)는 레포에 두지 않는다. R2 런타임 산출물이라 용량을 격리한다. 에피소드 `assets/`는
+작업 중에만 생기는 임시 staging이며 완료 상태에는 남기지 않는다. 레포에는 텍스트와 작은 커버 소스만 커밋한다.
 
 ## 3. R2 레이아웃 (버킷 dartlab-podcast, 공개 r2.dev)
 
