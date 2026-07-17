@@ -165,6 +165,7 @@ describe('Universe knowledge runtime', () => {
 	it('searches files and skills together and keeps scenes bounded', async () => {
 		const search = await runtime().search({ query: 'profitability' });
 		expect(search.hits[0]?.targetId).toBe('skill:engines.analysis.profitability');
+		expect(search.receipt).toMatchObject({ execution: 'mainThreadFallback', sourceRevision: 'revision-1', workerElapsedMs: null });
 		expect(search.scene.nodes.length).toBeLessThanOrEqual(80);
 
 		const directory = await runtime().open('hfdir:dart/finance');

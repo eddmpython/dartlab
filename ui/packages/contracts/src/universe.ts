@@ -782,7 +782,18 @@ export interface UniverseKnowledgeSearchResult {
 	domainId: UniverseKnowledgeDomainId | null;
 	hits: readonly UniverseKnowledgeSearchHit[];
 	indexedItemCount: number;
+	receipt: UniverseKnowledgeSearchReceipt;
 	scene: UniverseKnowledgeScene;
+}
+
+export interface UniverseKnowledgeSearchReceipt {
+	execution: 'worker' | 'mainThreadFallback';
+	indexState: 'coldStart' | 'primed' | 'fallback';
+	elapsedMs: number;
+	workerElapsedMs: number | null;
+	budgetMs: number;
+	withinBudget: boolean;
+	sourceRevision: string;
 }
 
 export type UniverseKnowledgeContentKind = 'text' | 'json' | 'table' | 'image' | 'video' | 'audio' | 'binary';

@@ -6,6 +6,7 @@ export * from './flight';
 export * from './global';
 export * from './lenses';
 export * from './knowledge';
+export * from './knowledgeSearch';
 export * from './load';
 export * from './projection';
 export * from './release';

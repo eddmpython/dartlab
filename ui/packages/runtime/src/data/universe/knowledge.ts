@@ -30,7 +30,18 @@ import {
 	universeContentKind,
 	universeContentMime
 } from './contentAdapters';
+import {
+	classifyKnowledgePath,
+	knowledgeLifecycleForPath as lifecycleForPath,
+	knowledgeNodeKindForPath as kindForPath,
+	knowledgeSkillDomain as skillDomain,
+	knowledgeSourceUrl as sourceUrl,
+	normalizeKnowledgePath as normalizedPath
+} from './knowledgeCatalog';
+import { createKnowledgeSearchExecutor } from './knowledgeSearch';
 import { compileKnowledgeFileSemantics } from './semantic';
+
+export { classifyKnowledgePath } from './knowledgeCatalog';
 
 const HF_REPOSITORY_ID = 'eddmpython/dartlab-data';
 const MAX_SCENE_NODES = 80;
@@ -184,53 +195,6 @@ const DOMAIN_ORDER = Object.keys(DOMAIN_COPY) as UniverseKnowledgeDomainId[];
 
 function emptyDomainCounts(): Record<UniverseKnowledgeDomainId, number> {
 	return Object.fromEntries(DOMAIN_ORDER.map((domainId) => [domainId, 0])) as Record<UniverseKnowledgeDomainId, number>;
-}
-
-function normalizedPath(path: string): string {
-	return path.replace(/^\/+|\/+$/g, '');
-}
-
-export function classifyKnowledgePath(inputPath: string): UniverseKnowledgeDomainId {
-	const path = normalizedPath(inputPath).toLocaleLowerCase();
-	if (path.startsWith('assets/')) return 'timeMedia';
-	if (path.startsWith('news/') || path.startsWith('research/')) return 'intelligence';
-	if (path.startsWith('macro/') || path.startsWith('gov/indices') || path.startsWith('krx/indices')) return 'macro';
-	if (path.startsWith('gov/prices') || path.startsWith('krx/prices') || path.startsWith('edgar/prices') || path.startsWith('expectations/')) return 'marketData';
-	if (path.startsWith('landing/map') || path.startsWith('dart/scan') || path.startsWith('edgar/scan') || path.includes('/industry')) return 'industry';
-	if (path.startsWith('dart/finance') || path.startsWith('edgar/finance')) return 'observations';
-	if (path.startsWith('dart/panel') || path.startsWith('dart/report') || path.startsWith('dart/docs') || path.startsWith('dart/sections') || path.startsWith('dart/ipo')
-		|| path.startsWith('dart/allfilings') || path.startsWith('dart/search') || path.startsWith('dart/contentindex')
-		|| path.startsWith('edgar/panel') || path.startsWith('edgar/docs') || path.startsWith('edgar/allfilings') || path.startsWith('edgar/meta')) return 'filings';
-	if (path.startsWith('edgar/tickers') || path.startsWith('metadata/corplist') || path.startsWith('metadata/dartlist')
-		|| path.includes('corpcode') || path.includes('companyprofile') || path.includes('/profile')) return 'entities';
-	if (path.startsWith('pyodide/')) return 'capabilities';
-	if (path.startsWith('landing/') && /\.(png|webp|jpe?g|gif|svg|mp4|webm|m4a)$/i.test(path)) return 'timeMedia';
-	if (path.startsWith('gov/') || path.startsWith('krx/') || path.includes('security')) return 'securities';
-	return 'sources';
-}
-
-function skillDomain(category: string): UniverseKnowledgeDomainId {
-	return category === 'engines' ? 'capabilities' : 'skills';
-}
-
-function lifecycleForPath(path: string): string {
-	const lower = path.toLocaleLowerCase();
-	if (lower.includes('/_staging/') || lower.includes('/staging/')) return 'staging';
-	if (lower.includes('/compat') || lower.includes('/legacy')) return 'compatibility';
-	return 'active';
-}
-
-function kindForPath(path: string, domainId: UniverseKnowledgeDomainId): UniverseKnowledgeNodeKind {
-	if (/\.(png|webp|jpe?g|gif|svg|mp4|webm|m4a|mp3|wav)$/i.test(path)) return 'media';
-	if (domainId === 'entities') return 'entity';
-	if (domainId === 'observations' || domainId === 'marketData' || domainId === 'macro') return 'observation';
-	if (domainId === 'filings' || /\.(md|txt|xml|html|pdf)$/i.test(path)) return 'document';
-	return 'file';
-}
-
-function sourceUrl(revision: string, path: string): string {
-	const encoded = normalizedPath(path).split('/').map(encodeURIComponent).join('/');
-	return `https://huggingface.co/datasets/${HF_REPOSITORY_ID}/blob/${revision}/${encoded}`;
 }
 
 function contentUrl(revision: string, path: string): string {
@@ -509,20 +473,30 @@ function skillDatasetNode(datasetRef: string, sourceRef: string): UniverseKnowle
 	);
 }
 
-function scoreText(query: string, text: string, exactText: string): number {
-	const terms = query.toLocaleLowerCase().split(/\s+/).filter(Boolean);
-	const haystack = text.toLocaleLowerCase();
-	if (!terms.every((term) => haystack.includes(term))) return 0;
-	const exact = exactText.toLocaleLowerCase();
-	if (exact === query.toLocaleLowerCase()) return 120;
-	if (exact.startsWith(query.toLocaleLowerCase())) return 92;
-	return 58 + terms.length * 7 - Math.min(18, haystack.length / 160);
-}
-
-function sceneForSearch(query: string, hits: readonly UniverseKnowledgeSearchHit[], indexedItemCount: number, revision: string): UniverseKnowledgeScene {
+function sceneForSearch(
+	query: string,
+	hits: readonly UniverseKnowledgeSearchHit[],
+	indexedItemCount: number,
+	revision: string,
+	execution: string,
+	indexState: string,
+	elapsedMs: number,
+	workerElapsedMs: number | null,
+	budgetMs: number,
+	withinBudget: boolean
+): UniverseKnowledgeScene {
 	const center = makeNode(
 		`query:${query}`, query, `${hits.length.toLocaleString()} results`, 'query', null, 28, false,
-		`query://${encodeURIComponent(query)}`, { query, indexedItemCount }, { x: 0, y: 0 }, 'derived'
+		`query://${encodeURIComponent(query)}`, {
+			query,
+			indexedItemCount,
+			searchExecution: execution,
+			searchIndexState: indexState,
+			searchElapsedMs: Number(elapsedMs.toFixed(2)),
+			workerElapsedMs: workerElapsedMs === null ? null : Number(workerElapsedMs.toFixed(2)),
+			searchBudgetMs: budgetMs,
+			searchWithinBudget: withinBudget
+		}, { x: 0, y: 0 }, 'derived'
 	);
 	const children = hits.map((hit) => makeNode(
 		hit.targetId, hit.label, hit.summary, hit.kind, hit.domainId, 7 + hit.score / 18,
@@ -541,6 +515,7 @@ function sceneForSearch(query: string, hits: readonly UniverseKnowledgeSearchHit
 }
 
 export function createUniverseKnowledgeRuntime(core: DataCore, loaders: UniverseKnowledgeLoaders): UniverseKnowledgeRuntime {
+	const knowledgeSearchExecutor = createKnowledgeSearchExecutor();
 	const loadMetadata = () => core.request<HfDatasetInfo>({
 		origin: 'hfApi',
 		path: '?expand[]=sha&expand[]=lastModified&expand[]=mainSize&expand[]=usedStorage',
@@ -610,6 +585,7 @@ export function createUniverseKnowledgeRuntime(core: DataCore, loaders: Universe
 	async function coverage(): Promise<UniverseKnowledgeCoverage> {
 		const [info, catalog] = await Promise.all([loadFileIndex(), loaders.loadSkillCatalog()]);
 		const paths = (info.siblings ?? []).map((entry) => entry.rfilename);
+		void knowledgeSearchExecutor.prime({ revision: info.sha, filePaths: Object.freeze(paths), skills: catalog.skills });
 		const domainCounts = emptyDomainCounts();
 		for (const path of paths) domainCounts[classifyKnowledgePath(path)] += 1;
 		for (const skill of catalog.skills) domainCounts[skillDomain(skill.category)] += 1;
@@ -625,53 +601,40 @@ export function createUniverseKnowledgeRuntime(core: DataCore, loaders: Universe
 	async function search(request: UniverseKnowledgeSearchRequest): Promise<UniverseKnowledgeSearchResult> {
 		const query = request.query.trim();
 		if (query.length < 2) throw new Error('Universe knowledge search requires at least two characters');
-		const limit = Math.max(12, Math.min(80, request.limit ?? 48));
 		const [info, catalog] = await Promise.all([loadFileIndex(), loaders.loadSkillCatalog()]);
-		const fileHits: UniverseKnowledgeSearchHit[] = [];
-		for (const sibling of info.siblings ?? []) {
-			const domainId = classifyKnowledgePath(sibling.rfilename);
-			if (request.domainId && request.domainId !== domainId) continue;
-			const label = sibling.rfilename.split('/').at(-1) ?? sibling.rfilename;
-			let score = scoreText(query, sibling.rfilename, label);
-			if (score <= 0) continue;
-			if (lifecycleForPath(sibling.rfilename) !== 'active') score -= 16;
-			fileHits.push({
-				targetId: `hf:${sibling.rfilename}`,
-				label,
-				summary: sibling.rfilename,
-				kind: kindForPath(sibling.rfilename, domainId),
-				domainId,
-				sourceRef: sourceUrl(info.sha, sibling.rfilename),
-				score
-			});
-		}
-		const skillHits: UniverseKnowledgeSearchHit[] = [];
-		for (const skill of catalog.skills) {
-			const domainId = skillDomain(skill.category);
-			if (request.domainId && request.domainId !== domainId) continue;
-			const text = [skill.id, skill.title, skill.purpose, ...(skill.whenToUse ?? []), ...(skill.apiRefs ?? []), ...(skill.datasetRefs ?? [])].join(' ');
-			const score = scoreText(query, text, skill.title);
-			if (score <= 0) continue;
-			skillHits.push({
-				targetId: `skill:${skill.id}`,
-				label: skill.title,
-				summary: skill.purpose,
-				kind: domainId === 'capabilities' ? 'capability' : 'skill',
-				domainId,
-				sourceRef: skill.sourceRefs?.[0] ?? `dartlab://skills/${skill.id}`,
-				score: score + 8
-			});
-		}
-		const hits = [...fileHits, ...skillHits]
-			.sort((left, right) => right.score - left.score || left.targetId.localeCompare(right.targetId))
-			.slice(0, limit);
+		const execution = await knowledgeSearchExecutor.search({
+			revision: info.sha,
+			filePaths: Object.freeze((info.siblings ?? []).map((sibling) => sibling.rfilename)),
+			skills: catalog.skills
+		}, { ...request, query });
+		const hits = execution.hits;
 		const indexedItemCount = (info.siblings?.length ?? 0) + catalog.skills.length;
 		return Object.freeze({
 			query,
 			domainId: request.domainId ?? null,
-			hits: Object.freeze(hits),
+			hits,
 			indexedItemCount,
-			scene: sceneForSearch(query, hits, indexedItemCount, info.sha)
+			receipt: Object.freeze({
+				execution: execution.execution,
+				indexState: execution.indexState,
+				elapsedMs: execution.elapsedMs,
+				workerElapsedMs: execution.workerElapsedMs,
+				budgetMs: execution.budgetMs,
+				withinBudget: execution.withinBudget,
+				sourceRevision: info.sha
+			}),
+			scene: sceneForSearch(
+				query,
+				hits,
+				indexedItemCount,
+				info.sha,
+				execution.execution,
+				execution.indexState,
+				execution.elapsedMs,
+				execution.workerElapsedMs,
+				execution.budgetMs,
+				execution.withinBudget
+			)
 		});
 	}
 

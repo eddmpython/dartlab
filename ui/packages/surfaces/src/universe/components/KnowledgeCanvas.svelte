@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import type { UniverseKnowledgeNode, UniverseKnowledgeScene } from '@dartlab/ui-contracts';
+	import { knowledgeEdgeVisible, knowledgeLabelBudget, knowledgeLodLevel } from '../knowledgeLod';
 
 	interface Props {
 		scene: UniverseKnowledgeScene;
@@ -20,6 +21,7 @@
 	let height = $state(640);
 	let dpr = $state(1);
 	let camera = $state({ scale: 1, offsetX: 0, offsetY: 0 });
+	let lastFrameMs = $state(0);
 	let dragging = $state(false);
 	let dragX = 0;
 	let dragY = 0;
@@ -48,6 +50,7 @@
 	let visibleEdgeIds = $derived(filmActive && activeBeat ? new Set(activeBeat.revealEdgeIds) : new Set(scene.edges.map((edge) => edge.edgeId)));
 	let nodeById = $derived(new Map(scene.nodes.map((node) => [node.nodeId, node])));
 	let worldRadius = $derived(Math.max(138, Math.min(width, height) * 0.43));
+	let lodLevel = $derived(knowledgeLodLevel(camera.scale));
 
 	function project(node: UniverseKnowledgeNode): { x: number; y: number } {
 		return {
@@ -95,6 +98,7 @@
 
 	function draw(): void {
 		if (!context) return;
+		const drawStartedAt = performance.now();
 		canvas.width = Math.max(1, Math.round(width * dpr));
 		canvas.height = Math.max(1, Math.round(height * dpr));
 		canvas.style.width = `${width}px`;
@@ -111,6 +115,7 @@
 			const start = project(source);
 			const end = project(target);
 			const selected = selectedId === source.nodeId || selectedId === target.nodeId;
+			if (!knowledgeEdgeVisible(lodLevel, edge.lane, selected)) continue;
 			const gradient = context.createLinearGradient(start.x, start.y, end.x, end.y);
 			gradient.addColorStop(0, selected ? 'rgba(226, 235, 247, .64)' : 'rgba(116, 142, 179, .12)');
 			gradient.addColorStop(1, selected ? 'rgba(137, 188, 255, .68)' : 'rgba(116, 142, 179, .28)');
@@ -127,7 +132,7 @@
 
 		const labelAnchors: Array<{ x: number; y: number }> = [];
 		const visibleNodes = scene.nodes.filter((node) => visibleNodeIds.has(node.nodeId));
-		const labelBudget = camera.scale > 1.6 ? 32 : visibleNodes.length > 40 ? 12 : 18;
+		const labelBudget = knowledgeLabelBudget(lodLevel, visibleNodes.length);
 		const labelCandidates = visibleNodes.length > 40 && camera.scale <= 1.6
 			? visibleNodes.filter((node, index) => node.nodeId === scene.targetId || index % Math.max(1, Math.ceil(visibleNodes.length / labelBudget)) === 0).slice(0, labelBudget)
 			: [...visibleNodes].sort((left, right) => right.weight - left.weight || left.nodeId.localeCompare(right.nodeId)).slice(0, labelBudget);
@@ -191,6 +196,8 @@
 				labelAnchors.push({ x: point.x, y: labelY });
 			}
 		}
+		const elapsed = performance.now() - drawStartedAt;
+		if (Math.abs(lastFrameMs - elapsed) >= 0.2) lastFrameMs = elapsed;
 	}
 
 	function animateFocus(nodeId: string | null): void {
@@ -350,8 +357,10 @@
 	</div>
 	<div class="cameraReadout" aria-hidden="true">
 		<span>ZOOM {camera.scale.toFixed(2)}×</span>
+		<span>LOD {lodLevel}</span>
 		<span>{scene.receipt.outputNodeCount} NODES</span>
-		{#if scene.receipt.omittedNodeCount > 0}<span>LOD +{scene.receipt.omittedNodeCount}</span>{/if}
+		<span>FRAME {lastFrameMs.toFixed(1)}MS</span>
+		{#if scene.receipt.omittedNodeCount > 0}<span>OMITTED +{scene.receipt.omittedNodeCount}</span>{/if}
 	</div>
 	<button class="resetCamera" type="button" onclick={resetCamera}>전체 보기</button>
 </div>
@@ -367,5 +376,5 @@
 	.cameraReadout { position: absolute; left: 18px; bottom: 16px; display: flex; gap: 12px; color: #53637a; font: 600 8px/1 ui-monospace, monospace; letter-spacing: .08em; pointer-events: none; }
 	.resetCamera { position: absolute; right: 18px; bottom: 10px; border: 1px solid rgba(105, 124, 151, .2); border-radius: 999px; padding: 7px 10px; color: #74869d; background: rgba(8, 12, 19, .72); font-size: 9px; cursor: pointer; backdrop-filter: blur(10px); }
 	.resetCamera:hover { color: #d4deeb; border-color: rgba(142, 164, 196, .42); }
-	@media (max-width: 720px) { .knowledgeCanvas { min-height: 460px; } .cameraReadout span:nth-child(2) { display: none; } }
+	@media (max-width: 720px) { .knowledgeCanvas { min-height: 460px; } .cameraReadout span:nth-child(n+4) { display: none; } }
 </style>
