@@ -98,6 +98,8 @@ lastUpdated: 2026-07-17
 
 블로그 신규 심층 글은 `brief.json contractVersion: 2`를 쓴다. 마지막 H2는 `watchScenarios[]`의 조건 2~4개를 "만약 어떤 조건이면 어떤 경로로 무엇이 달라질까"로 풀고, 확인 지표와 반증 조건까지 남긴다. 낙관·기본·비관 고정표는 금지한다.
 
+기술이야기가 안경·로봇·스마트폰·웨어러블 같은 소비자 기기나 플랫폼을 다루면 한 부품의 최고 사양만으로 전체 제품을 설명하지 않는다. 핵심 기능에 이어 전력·열·무게·공간·지연시간, 입력·프라이버시·유통/피팅, 기기·휴대폰·클라우드 역할 분담, 제품 성숙도와 반복 사용 중 결과를 실제로 바꾸는 제약을 고른다. `brief.json.sections[]`와 `visuals[]`가 이 시스템 경로를 본문 설명과 연결해야 한다. 최고 사양과 지속 성능, 플랫폼 지원과 실제 출하, 데모와 반복 사용은 서로 다른 증거다.
+
 기업이야기에는 부채비율, debt-to-equity, D/E ratio, 부채총계를 자본총계로 나눈 값을 쓰지 않는다. 제목, 본문, 표, 차트, 코드, 기획 JSON, SVG 모두 금지 범위다. 부채 부담은 절대 차입금, 순차입금, 만기, 이자비용, 이자보상, 영업현금흐름, 유동성 가운데 실제 서사를 설명하는 근거로 다룬다. `blog_plan_loop.workflow.js`가 기획에서 제외하고 `publishGate.py`가 최종 차단한다.
 
 자산 SSOT 경계: 블로그 의미 계약은 `brief.json.imagePlan[]`, 출처는 글 루트 `CREDITS.md`, staging 별칭·포스트별 본문/OG/card 역할·경로·SHA-256 대응은 중앙 `media/catalog.json` 하나다. SVG/WebP/JPG/PNG/GIF와 합성 OG/card는 포스트 `assets/`와 `landing/static/thumbnails/`에서 로컬 눈검수한 뒤 HF `dartlab-media/objects/sha256/<앞2자>/<전체해시>.<확장자>`에 발행하며 Git에 넣지 않는다. 발행기는 HF 객체 업로드와 원격 실재 검증 뒤에만 catalog·본문·frontmatter를 갱신하고, 성공하면 로컬 미디어와 빈 staging 폴더를 삭제한다. SVG는 XML 안전성·텍스트 밀도 메타데이터와 함께 `diagrams`에 등록한다. 회사·이슈·기술·팟캐스트별 HF 미디어 폴더는 만들지 않는다. 런타임 파생 뷰는 `manifests/companies.json`, `manifests/carousels.json` 두 파일뿐이고 모든 이미지가 객체 경로를 가리킨다. 같은 바이트는 한 번만 저장한다. 블로그·카드·재사용 원본의 durable 원본과 웹 서빙 SSOT는 HF 하나다. 팟캐스트 공개 오디오·커버·정적프레임·feed는 R2가 정본이고, 에피소드 폴더의 무시된 `cover.jpg`와 `static-video.jpg`는 재발행용 로컬 작업 사본으로 남겨도 된다. 에피소드 `assets/`와 오디오 파일은 완료 상태에 남기지 않는다. `sourcePolicy`는 `auto`이며 파이프라인이 사실 적합성에 따라 공식·라이선스 실사와 image_gen 중 선택한다. `sns/assets/{subjectKey}`는 공유 staging일 뿐 SSOT가 아니다. 깨끗한 체크아웃의 블로그 staging 복원은 재작업할 때 `seedBlogMedia.py`만 쓰며 다음 발행 성공 뒤 다시 삭제한다. StoryCore는 개념 어휘이며 새 물리 아티팩트를 만들지 않는다.

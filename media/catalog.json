@@ -3771,16 +3771,17 @@
     "blog/08-tech-story/12-co-packaged-optics-silicon-photonics/assets/12-photonic-engine-lab.webp": "fb05ef2a573fd8d39f4546b82505853c395ebefe9e46dacff0e5d3e4fd765c5a",
     "blog/08-tech-story/12-co-packaged-optics-silicon-photonics/assets/12-pluggable-vs-cpo.svg": "373b2ba118f14d0ffc92943a81ce410a2df632a8641d8e92b5aa74ad318689db",
     "blog/08-tech-story/12-co-packaged-optics-silicon-photonics/assets/12-thumbnail-bg.webp": "70c0eb8249d6f66ba3d69baabea7d764c975a2e7a7386e3f2d2ccc264fa496cc",
-    "blog/08-tech-story/13-ai-glasses-display-bottleneck/assets/13-brightness-ladder.svg": "76f3457ee8674d216fc26bd8f3446a35451e1587dfdc050b1ed47bcf007369d4",
+    "blog/08-tech-story/13-ai-glasses-display-bottleneck/assets/13-business-evidence.svg": "66375d89d100703b3b01a7abc795b19b8d8cd52b2fa01b22c2cdc0171638522b",
+    "blog/08-tech-story/13-ai-glasses-display-bottleneck/assets/13-constraint-budget.svg": "546ba1a8b30ce927e59d8bb15025d1abe41582441d5d1d151ec91bca439ea3ea",
     "blog/08-tech-story/13-ai-glasses-display-bottleneck/assets/13-display-cleanroom.webp": "27075df4799e927c73e8f1a48e7acdec9bccaf3107cdb92cc121030475d47683",
+    "blog/08-tech-story/13-ai-glasses-display-bottleneck/assets/13-future-scorecard.svg": "c7900d2e7707bfd65d2594c93adad720df775a196b92f9a56026c57663c4d35a",
     "blog/08-tech-story/13-ai-glasses-display-bottleneck/assets/13-hero.webp": "0f5cf2e2201a5dea3ee38f73fdc71726f99270612f769e0a21187befd4039f91",
-    "blog/08-tech-story/13-ai-glasses-display-bottleneck/assets/13-lgd-cycle.svg": "d52c6d5c68122ea433ce12cbbe2ced6c4d6862c71d915361bf9f2b79f864abab",
-    "blog/08-tech-story/13-ai-glasses-display-bottleneck/assets/13-light-budget-tollgate.svg": "1850e171ae7da42ff4c5adc1368cb3b8abc7accc154c28982b11d442e1a297fb",
+    "blog/08-tech-story/13-ai-glasses-display-bottleneck/assets/13-interaction-stack.svg": "bea6982c89a5f2b03a31e26daf4f75a7e76bf533da3545a2ca5ee72a235ddcf4",
+    "blog/08-tech-story/13-ai-glasses-display-bottleneck/assets/13-maturity-ladder.svg": "9c6f601352a0eb87c05ae360bd9bdf7ca313f9be507a886f67cea68aafa8aad7",
     "blog/08-tech-story/13-ai-glasses-display-bottleneck/assets/13-microled-wafer.webp": "16913c28441dc0ddd87cf3fbd2f49c403fbdc7090e287285a68b08d5a1358582",
-    "blog/08-tech-story/13-ai-glasses-display-bottleneck/assets/13-presence-absence.svg": "4cc0a66dac614fbe6e1dd999a62030fb5860e4b6f34e6182c87a4a0f9d5b8696",
-    "blog/08-tech-story/13-ai-glasses-display-bottleneck/assets/13-smart-glasses.webp": "9c1be3b33cebacfe82d49aa6244c7a68af29ca76dc126d81955e1270c84b4b8d",
-    "blog/08-tech-story/13-ai-glasses-display-bottleneck/assets/13-thumbnail-bg.webp": "0f5cf2e2201a5dea3ee38f73fdc71726f99270612f769e0a21187befd4039f91",
-    "blog/08-tech-story/13-ai-glasses-display-bottleneck/assets/13-two-blocks-margin.svg": "df1f6567e46aff4ddb13545da654a45392a006516c6da83db86025e832ba21e8",
+    "blog/08-tech-story/13-ai-glasses-display-bottleneck/assets/13-optical-path.svg": "546a3dbc8400ebb3f8df86b40f99f3adb4747d02d7af8352c6402fc0b86fe0c0",
+    "blog/08-tech-story/13-ai-glasses-display-bottleneck/assets/13-system-budget.webp": "678c127e26370d3f23123e84da62fbfbe2d85e7d7e9e5257872d2fee6eea1c9d",
+    "blog/08-tech-story/13-ai-glasses-display-bottleneck/assets/13-three-stages.webp": "28e0f0abf3fedfcb604c55af462bbafcbd4a7ca520e7c2d9db3e302f05770c88",
     "blog/09-investment-stories/01-technical-investing-price-indicators/assets/01-price-indicator-workbench.webp": "486b12c36cd4319a408b1706e006e969fcd9f76a9ba13691bde49613d1caba6e",
     "blog/09-investment-stories/01-technical-investing-price-indicators/assets/01-thumbnail-bg.webp": "486b12c36cd4319a408b1706e006e969fcd9f76a9ba13691bde49613d1caba6e",
     "blog/09-investment-stories/01-technical-investing-price-indicators/assets/02-indicator-panels.webp": "f7af37afbad715ca79873cb16abc1452a0e67ea090e4b94a5999c8c8682778b5",
@@ -7280,6 +7281,10 @@
       "textNodes": 31,
       "viewBox": "0 0 1200 720"
     },
+    "28e0f0abf3fedfcb604c55af462bbafcbd4a7ca520e7c2d9db3e302f05770c88": {
+      "bytes": 81412,
+      "path": "objects/sha256/28/28e0f0abf3fedfcb604c55af462bbafcbd4a7ca520e7c2d9db3e302f05770c88.webp"
+    },
     "28ff056410941ac129fb8043f5d97c9b06bca6eec55f81fa3d894861fa643fac": {
       "bytes": 270246,
       "path": "objects/sha256/28/28ff056410941ac129fb8043f5d97c9b06bca6eec55f81fa3d894861fa643fac.webp"
@@ -10320,6 +10325,22 @@
       "textNodes": 28,
       "viewBox": "0 0 1200 720"
     },
+    "546a3dbc8400ebb3f8df86b40f99f3adb4747d02d7af8352c6402fc0b86fe0c0": {
+      "bytes": 3698,
+      "colorCount": 13,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/54/546a3dbc8400ebb3f8df86b40f99f3adb4747d02d7af8352c6402fc0b86fe0c0.svg",
+      "textNodes": 11,
+      "viewBox": "0 0 1200 675"
+    },
+    "546ba1a8b30ce927e59d8bb15025d1abe41582441d5d1d151ec91bca439ea3ea": {
+      "bytes": 3545,
+      "colorCount": 19,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/54/546ba1a8b30ce927e59d8bb15025d1abe41582441d5d1d151ec91bca439ea3ea.svg",
+      "textNodes": 16,
+      "viewBox": "0 0 1200 675"
+    },
     "547841a89c3791893c2b72e40a384169aa31820ae2c5142918fcf77952e8fff3": {
       "bytes": 5498,
       "colorCount": 10,
@@ -11592,6 +11613,14 @@
       "textNodes": 14,
       "viewBox": "0 0 1200 720"
     },
+    "66375d89d100703b3b01a7abc795b19b8d8cd52b2fa01b22c2cdc0171638522b": {
+      "bytes": 2969,
+      "colorCount": 16,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/66/66375d89d100703b3b01a7abc795b19b8d8cd52b2fa01b22c2cdc0171638522b.svg",
+      "textNodes": 16,
+      "viewBox": "0 0 1200 675"
+    },
     "667df18ff06fa8030e22457f5ce435730c3e7e6510ddb52d76b923d673ddfc8b": {
       "bytes": 2964,
       "colorCount": 9,
@@ -11671,6 +11700,10 @@
       "path": "objects/sha256/67/6759fb2d74cfd9b125b46dd7e648a04322618d0fe6344120a7fd00618cc4e0f2.svg",
       "textNodes": 32,
       "viewBox": "0 0 1200 720"
+    },
+    "678c127e26370d3f23123e84da62fbfbe2d85e7d7e9e5257872d2fee6eea1c9d": {
+      "bytes": 169088,
+      "path": "objects/sha256/67/678c127e26370d3f23123e84da62fbfbe2d85e7d7e9e5257872d2fee6eea1c9d.webp"
     },
     "67919b7d67758aa7cde55892ca55612a1a26dbcdfba9d86d9e231740f2f23528": {
       "bytes": 301720,
@@ -15192,6 +15225,14 @@
       "bytes": 53032,
       "path": "objects/sha256/9c/9c68419393aa70ef33d2f828d0f36d329317e48abb1bf9556e7d5c7628c75488.webp"
     },
+    "9c6f601352a0eb87c05ae360bd9bdf7ca313f9be507a886f67cea68aafa8aad7": {
+      "bytes": 3944,
+      "colorCount": 19,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/9c/9c6f601352a0eb87c05ae360bd9bdf7ca313f9be507a886f67cea68aafa8aad7.svg",
+      "textNodes": 21,
+      "viewBox": "0 0 1200 675"
+    },
     "9c72bd2c378c335eb05c5ec14a99e319f92f2f781efbd0f807904196f540dd8e": {
       "bytes": 5528,
       "colorCount": 8,
@@ -17636,6 +17677,14 @@
       "bytes": 160420,
       "path": "objects/sha256/be/bea5a7d0c481e79cd1e1450c12760aec916a17cbe13906c6122deedc7caba5ae.webp"
     },
+    "bea6982c89a5f2b03a31e26daf4f75a7e76bf533da3545a2ca5ee72a235ddcf4": {
+      "bytes": 3412,
+      "colorCount": 15,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/be/bea6982c89a5f2b03a31e26daf4f75a7e76bf533da3545a2ca5ee72a235ddcf4.svg",
+      "textNodes": 23,
+      "viewBox": "0 0 1200 675"
+    },
     "bef1fd364608e5a71eae512da64892ed76b75e4d9c4402987eb7c1e3791953ca": {
       "bytes": 53372,
       "path": "objects/sha256/be/bef1fd364608e5a71eae512da64892ed76b75e4d9c4402987eb7c1e3791953ca.webp"
@@ -18243,6 +18292,14 @@
     "c78a2541940299cee8e47fe091602bbda80e6ec7ff16ce3f3f5422e982594cb5": {
       "bytes": 155210,
       "path": "objects/sha256/c7/c78a2541940299cee8e47fe091602bbda80e6ec7ff16ce3f3f5422e982594cb5.webp"
+    },
+    "c7900d2e7707bfd65d2594c93adad720df775a196b92f9a56026c57663c4d35a": {
+      "bytes": 4585,
+      "colorCount": 25,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/c7/c7900d2e7707bfd65d2594c93adad720df775a196b92f9a56026c57663c4d35a.svg",
+      "textNodes": 28,
+      "viewBox": "0 0 1200 675"
     },
     "c7993586d26df9c41b4838d127b265aeb8a2809530ae775aa1305f90745ff890": {
       "bytes": 17376,
@@ -19992,6 +20049,10 @@
       "textNodes": 16,
       "viewBox": "0 0 1080 540"
     },
+    "e11404c1e1feaece4a710c24d570370840c6ec6b40bc710ed111768a59e60be2": {
+      "bytes": 118818,
+      "path": "objects/sha256/e1/e11404c1e1feaece4a710c24d570370840c6ec6b40bc710ed111768a59e60be2.webp"
+    },
     "e11a82d614ae2de6c0175b97930602c45703181814ed079c44934017fdf68744": {
       "bytes": 3111,
       "colorCount": 8,
@@ -19999,10 +20060,6 @@
       "path": "objects/sha256/e1/e11a82d614ae2de6c0175b97930602c45703181814ed079c44934017fdf68744.svg",
       "textNodes": 16,
       "viewBox": "0 0 800 400"
-    },
-    "e11404c1e1feaece4a710c24d570370840c6ec6b40bc710ed111768a59e60be2": {
-      "bytes": 118818,
-      "path": "objects/sha256/e1/e11404c1e1feaece4a710c24d570370840c6ec6b40bc710ed111768a59e60be2.webp"
     },
     "e155e1df5d3525da465a1e425a4daa3c288fed819f5f993186738aaa848b8a02": {
       "bytes": 3035,
@@ -28953,29 +29010,32 @@
         "13-display-cleanroom": "blog/08-tech-story/13-ai-glasses-display-bottleneck/assets/13-display-cleanroom.webp",
         "13-hero": "blog/08-tech-story/13-ai-glasses-display-bottleneck/assets/13-hero.webp",
         "13-microled-wafer": "blog/08-tech-story/13-ai-glasses-display-bottleneck/assets/13-microled-wafer.webp",
-        "13-smart-glasses": "blog/08-tech-story/13-ai-glasses-display-bottleneck/assets/13-smart-glasses.webp",
-        "13-thumbnail-bg": "blog/08-tech-story/13-ai-glasses-display-bottleneck/assets/13-thumbnail-bg.webp"
+        "13-system-budget": "blog/08-tech-story/13-ai-glasses-display-bottleneck/assets/13-system-budget.webp",
+        "13-three-stages": "blog/08-tech-story/13-ai-glasses-display-bottleneck/assets/13-three-stages.webp"
       },
       "card": "landing/static/thumbnails/tech-ai-glasses-display-bottleneck-card.webp",
       "diagrams": {
-        "13-brightness-ladder": "blog/08-tech-story/13-ai-glasses-display-bottleneck/assets/13-brightness-ladder.svg",
-        "13-lgd-cycle": "blog/08-tech-story/13-ai-glasses-display-bottleneck/assets/13-lgd-cycle.svg",
-        "13-light-budget-tollgate": "blog/08-tech-story/13-ai-glasses-display-bottleneck/assets/13-light-budget-tollgate.svg",
-        "13-presence-absence": "blog/08-tech-story/13-ai-glasses-display-bottleneck/assets/13-presence-absence.svg",
-        "13-two-blocks-margin": "blog/08-tech-story/13-ai-glasses-display-bottleneck/assets/13-two-blocks-margin.svg"
+        "13-business-evidence": "blog/08-tech-story/13-ai-glasses-display-bottleneck/assets/13-business-evidence.svg",
+        "13-constraint-budget": "blog/08-tech-story/13-ai-glasses-display-bottleneck/assets/13-constraint-budget.svg",
+        "13-future-scorecard": "blog/08-tech-story/13-ai-glasses-display-bottleneck/assets/13-future-scorecard.svg",
+        "13-interaction-stack": "blog/08-tech-story/13-ai-glasses-display-bottleneck/assets/13-interaction-stack.svg",
+        "13-maturity-ladder": "blog/08-tech-story/13-ai-glasses-display-bottleneck/assets/13-maturity-ladder.svg",
+        "13-optical-path": "blog/08-tech-story/13-ai-glasses-display-bottleneck/assets/13-optical-path.svg"
       },
       "og": "landing/static/thumbnails/tech-ai-glasses-display-bottleneck.webp",
       "staging": [
-        "blog/08-tech-story/13-ai-glasses-display-bottleneck/assets/13-brightness-ladder.svg",
+        "blog/08-tech-story/13-ai-glasses-display-bottleneck/assets/13-business-evidence.svg",
+        "blog/08-tech-story/13-ai-glasses-display-bottleneck/assets/13-constraint-budget.svg",
         "blog/08-tech-story/13-ai-glasses-display-bottleneck/assets/13-display-cleanroom.webp",
+        "blog/08-tech-story/13-ai-glasses-display-bottleneck/assets/13-future-scorecard.svg",
         "blog/08-tech-story/13-ai-glasses-display-bottleneck/assets/13-hero.webp",
-        "blog/08-tech-story/13-ai-glasses-display-bottleneck/assets/13-lgd-cycle.svg",
-        "blog/08-tech-story/13-ai-glasses-display-bottleneck/assets/13-light-budget-tollgate.svg",
+        "blog/08-tech-story/13-ai-glasses-display-bottleneck/assets/13-interaction-stack.svg",
+        "blog/08-tech-story/13-ai-glasses-display-bottleneck/assets/13-maturity-ladder.svg",
         "blog/08-tech-story/13-ai-glasses-display-bottleneck/assets/13-microled-wafer.webp",
-        "blog/08-tech-story/13-ai-glasses-display-bottleneck/assets/13-presence-absence.svg",
-        "blog/08-tech-story/13-ai-glasses-display-bottleneck/assets/13-smart-glasses.webp",
-        "blog/08-tech-story/13-ai-glasses-display-bottleneck/assets/13-thumbnail-bg.webp",
-        "blog/08-tech-story/13-ai-glasses-display-bottleneck/assets/13-two-blocks-margin.svg"
+        "blog/08-tech-story/13-ai-glasses-display-bottleneck/assets/13-optical-path.svg",
+        "blog/08-tech-story/13-ai-glasses-display-bottleneck/assets/13-system-budget.webp",
+        "blog/08-tech-story/13-ai-glasses-display-bottleneck/assets/13-three-stages.webp",
+        "landing/static/thumbnails/tech-ai-glasses-display-bottleneck-card.webp"
       ]
     },
     "09-investment-stories/01-technical-investing-price-indicators": {
