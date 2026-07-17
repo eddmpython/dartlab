@@ -263,7 +263,7 @@ def _write_tech_post(root: Path, *, brief_score: int = 94) -> Path:
     catalogPath = root / "media" / "catalog.json"
     catalogPath.parent.mkdir(parents=True, exist_ok=True)
     catalogPath.write_text(json.dumps(media, ensure_ascii=False, indent=2), encoding="utf-8")
-    (assets / "CREDITS.md").write_text(
+    (post / "CREDITS.md").write_text(
         "\n".join(
             [
                 "# 이미지 출처",
@@ -402,7 +402,7 @@ def test_publish_gate_blocks_image_ssot_drift(monkeypatch, tmp_path: Path) -> No
     media = json.loads(mediaPath.read_text(encoding="utf-8"))
     del media["posts"]["08-tech-story/01-stealth-test"]["assets"]["aesa-test-bench"]
     mediaPath.write_text(json.dumps(media, ensure_ascii=False, indent=2), encoding="utf-8")
-    creditsPath = post / "assets" / "CREDITS.md"
+    creditsPath = post / "CREDITS.md"
     creditsPath.write_text(
         creditsPath.read_text(encoding="utf-8").replace("- aesa-test-bench: CC0 실사", ""),
         encoding="utf-8",

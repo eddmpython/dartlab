@@ -1142,10 +1142,10 @@ def _validateImageSsot(postDir: Path, body: str, plan: dict[str, object] | None)
     planned = _image_plan(plan)
     manifest, manifestFails = loadMediaManifest(postDir)
     fails.extend(manifestFails)
-    creditsPath = postDir / "assets" / "CREDITS.md"
+    creditsPath = postDir / "CREDITS.md"
     credits = creditsPath.read_text(encoding="utf-8") if creditsPath.is_file() else ""
     if not credits:
-        fails.append("contract v2 이미지는 assets/CREDITS.md 출처 기록이 필요함")
+        fails.append("contract v2 이미지는 CREDITS.md 출처 기록이 필요함")
     if manifest is None:
         return fails
     manifestAssets = manifest.get("assets") if isinstance(manifest.get("assets"), dict) else {}
@@ -1158,7 +1158,7 @@ def _validateImageSsot(postDir: Path, body: str, plan: dict[str, object] | None)
         if not assetKey:
             continue
         if credits and assetKey not in credits:
-            fails.append(f"assets/CREDITS.md 에 imagePlan[{idx}] assetKey 누락: {assetKey}")
+            fails.append(f"CREDITS.md 에 imagePlan[{idx}] assetKey 누락: {assetKey}")
         record = manifestAssets.get(assetKey)
         if not isinstance(record, dict):
             fails.append(f"media/catalog.json에 imagePlan[{idx}] 누락: {assetKey}")

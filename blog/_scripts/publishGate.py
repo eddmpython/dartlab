@@ -14,7 +14,14 @@ from pathlib import Path
 from audit_seo import score_post as scorePost
 from auditBlog import BLOG_CATEGORIES, CONTENT_GENRE_CATEGORIES
 from auditBlog import publish_gate as auditPublishGate
-from blogMedia import IMAGE_EXTENSION_RE, IMAGE_SUFFIX_ORDER, loadMediaManifest, mediaManifestPath, mediaUrl
+from blogMedia import (
+    IMAGE_EXTENSION_RE,
+    IMAGE_SUFFIX_ORDER,
+    IMAGE_SUFFIXES,
+    loadMediaManifest,
+    mediaManifestPath,
+    mediaUrl,
+)
 from publishBlogAssets import verifyRemoteAssets
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -160,16 +167,60 @@ def trackedBinaryErrors(postDir: Path) -> list[str]:
     return [f"블로그 콘텐츠 미디어는 Git 추적 금지, HF 콘텐츠 주소 객체에만 발행: {path}" for path in paths]
 
 
+def localMediaResidueErrors(postDir: Path) -> list[str]:
+    """중앙 카탈로그가 생긴 글에는 무시된 로컬 staging도 남기지 않는다."""
+    try:
+        catalogPath = mediaManifestPath(postDir)
+    except ValueError:
+        return []
+    if not catalogPath.is_file():
+        return []
+    residue: set[Path] = set()
+    assetsDir = postDir / "assets"
+    if assetsDir.is_dir():
+        residue.update(
+            path for path in assetsDir.rglob("*") if path.is_file() and path.suffix.lower() in IMAGE_SUFFIXES
+        )
+    manifest, _ = loadMediaManifest(postDir)
+    if isinstance(manifest, dict):
+        records: list[dict[str, object]] = []
+        for role in ("og", "card"):
+            record = manifest.get(role)
+            if isinstance(record, dict):
+                records.append(record)
+        for role in ("assets", "diagrams"):
+            group = manifest.get(role)
+            if isinstance(group, dict):
+                records.extend(record for record in group.values() if isinstance(record, dict))
+        for record in records:
+            source = str(record.get("source") or "")
+            if not source:
+                continue
+            local = (REPO_ROOT / source).resolve()
+            if local.is_file() and local.suffix.lower() in IMAGE_SUFFIXES:
+                residue.add(local)
+    errors: list[str] = []
+    for path in sorted(residue):
+        try:
+            label = path.relative_to(REPO_ROOT).as_posix()
+        except ValueError:
+            label = str(path)
+        errors.append(f"HF 발행 후 로컬 미디어 staging 잔존 금지: {label}")
+    return errors
+
+
 def validatePost(postDir: Path, *, requireContractV2: bool, mediaOnly: bool = False) -> list[str]:
     if mediaOnly:
         errors: list[str] = []
         errors.extend(mediaReferenceErrors(postDir))
         errors.extend(trackedBinaryErrors(postDir))
+        errors.extend(localMediaResidueErrors(postDir))
         errors.extend(verifyRemoteAssets(postDir))
         return errors
     errors = auditPublishGate(postDir, requireContractV2=requireContractV2)
     errors.extend(mediaReferenceErrors(postDir))
     errors.extend(trackedBinaryErrors(postDir))
+    errors.extend(localMediaResidueErrors(postDir))
     errors.extend(verifyRemoteAssets(postDir))
     score = scorePost(str(postDir))
     if score is None:

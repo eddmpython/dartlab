@@ -397,7 +397,7 @@ def run(nn: str, slug_name: str, cat: str, post_dir: Path, order: int, force: bo
         USED_URLS.add(url)
         size = _save_webp(im, out)
         lic = f"{item.get('license', '')} {item.get('license_version', '')}".strip()
-        cred = post_dir / "assets" / "CREDITS.md"
+        cred = post_dir / "CREDITS.md"
         header = "" if cred.exists() else "# 썸네일 배경 출처 (CC0 / Public Domain, Wikimedia Commons · Openverse)\n\n"
         with cred.open("a", encoding="utf-8") as fh:
             fh.write(header + _credit_line("thumbnail-bg", query, item) + "\n")

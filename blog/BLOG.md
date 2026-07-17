@@ -352,7 +352,7 @@ c.quant("종합"); c.quant("팩터")
 
 **SVG 규칙 (최소 5개, 풍부하게)**: **5개 미만이면 발행 불가**. 다크 `#0a0e1a`, 폰트 `-apple-system, 'Segoe UI', sans-serif`, 타이틀 한국어 필수. 텍스트 `fill=#f1f5f9`, 부제 `#64748b`, 강조 `#fbbf24`. A 등급 `#22c55e`, C/D `#f59e0b/#ef4444`.
 
-**이미지 수급**: 기획 수량만큼 자율 수급한다. `brief.json.imagePlan[]`의 고유 `assetKey`와 `sourcePolicy: auto`가 의미 계약이다. 실제 제품·인물·현장처럼 사실성이 중요한 장면은 공식 또는 라이선스가 확인된 실사를, 개념·원리·추상 장면은 `image_gen`을 선택한다. 결과는 `assets/<assetKey>.webp`, 출처는 `assets/CREDITS.md`에 저장한다. 한 경로가 실패해도 운영자 질문으로 멈추지 않고 다른 적합 경로로 전환한다. FLUX는 운영자가 명시한 경우에만 쓴다.
+**이미지 수급**: 기획 수량만큼 자율 수급한다. `brief.json.imagePlan[]`의 고유 `assetKey`와 `sourcePolicy: auto`가 의미 계약이다. 실제 제품·인물·현장처럼 사실성이 중요한 장면은 공식 또는 라이선스가 확인된 실사를, 개념·원리·추상 장면은 `image_gen`을 선택한다. 결과는 발행 전 임시 `assets/<assetKey>.webp`, 출처는 글 루트 `CREDITS.md`에 저장한다. 한 경로가 실패해도 운영자 질문으로 멈추지 않고 다른 적합 경로로 전환한다. FLUX는 운영자가 명시한 경우에만 쓴다.
 
 ### 이미지는 회사를 딱 보면 알 수 있는 구체 장면으로 뽑는다
 
@@ -392,7 +392,7 @@ c.quant("종합"); c.quant("팩터")
 
 ### Phase 3 실행 순서
 
-기획 비주얼 제작 → `imagePlan[]`별 자율 수급 → `assets/<assetKey>.webp` 저장 → `assets/CREDITS.md` 기록 → 본문 `./assets/<assetKey>.webp` 참조 → 썸네일 파생 생성 → 눈검수. 자산 위치와 파생·서빙 경계는 `blog/OPERATIONS.md` 2절이 정본이다.
+기획 비주얼 제작 → `imagePlan[]`별 자율 수급 → 임시 `assets/<assetKey>.webp` 저장 → 글 루트 `CREDITS.md` 기록 → 본문 `./assets/<assetKey>.webp` 참조 → 썸네일 파생 생성 → 눈검수 → HF 발행·원격 검증 → 로컬 미디어 자동 삭제. 자산 위치와 파생·서빙 경계는 `blog/OPERATIONS.md` 2절이 정본이다.
 
 ### Phase 4: 독자 루프 (95 점까지 반복)
 
@@ -733,7 +733,7 @@ cr["grade"]; cr["score"]; cr["healthScore"]; cr["divergenceExplanation"]
 
 ## 6. 자산 정책 - SVG · 이미지 · 파일명
 
-자산은 각 포스트 폴더의 무시된 `assets/` 로컬 staging에서 만들고, 발행 후 HF 객체 URL로 서빙한다. 정본 매핑은 중앙 `media/catalog.json`이다.
+자산은 각 포스트 폴더의 무시된 `assets/` 임시 staging에서 만들고, 발행 성공과 HF 원격 검증 직후 로컬 파일과 빈 폴더를 자동 삭제한다. 서빙본은 HF 객체 URL, 정본 매핑은 중앙 `media/catalog.json`이다.
 
 ### 위치 · 파일명
 
@@ -852,7 +852,7 @@ https://eddmpython.github.io/dartlab/
 - `publishBlogAssets.py --post <글폴더>`가 SVG와 래스터를 `media/catalog.json`에 등록하고 HF `objects/sha256/`로 발행한다. SVG는 XML 파싱, 위험 요소, 텍스트 밀도를 함께 검사한다.
 - 발행기는 본문, `ogImage`, `cardPreview`를 HF 객체 URL로 바꾼다. 공개 문서가 로컬 staging 경로를 계속 가리키면 실패다.
 - 회사 카드 공유 staging은 `sns/assets/{code}`이고 `publish_assets_hf.py`가 같은 중앙 catalog와 객체 저장소를 쓴다. 별도 HF 회사 폴더나 블로그 복사 풀은 만들지 않는다.
-- 수급은 자율이다. 실제 제품, 인물, 현장은 공식 또는 라이선스 실사를, 원리와 개념 장면은 `image_gen`을 선택한다. 모든 실물은 눈검수하고 출처를 `assets/CREDITS.md`에 남긴다.
+- 수급은 자율이다. 실제 제품, 인물, 현장은 공식 또는 라이선스 실사를, 원리와 개념 장면은 `image_gen`을 선택한다. 모든 실물은 눈검수하고 출처를 글 루트 `CREDITS.md`에 남긴다.
 
 ### 검증 체크리스트
 

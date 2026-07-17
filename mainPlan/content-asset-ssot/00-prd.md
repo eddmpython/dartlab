@@ -35,7 +35,7 @@ manifests/
 
 | 콘텐츠 | 저작 입력 | 발행 결과 |
 |---|---|---|
-| 블로그 | `index.md`, `brief.json`, `assets/CREDITS.md`, 로컬 `assets/` staging | 본문과 OG가 HF 객체 URL을 참조 |
+| 블로그 | `index.md`, `brief.json`, 글 루트 `CREDITS.md`, 로컬 `assets/` 임시 staging | 본문과 OG가 HF 객체 URL을 참조하고 검증 뒤 staging 삭제 |
 | 회사 카드 | 글 frontmatter `carousel:` + `cards.plan.json` | `manifests/carousels.json` + 객체 |
 | 이슈 카드 | `blog/_issues/<slug>/carousel.yaml` + 로컬 assets | `manifests/carousels.json` + 객체 |
 | 회사 이미지 | `sns/assets/<subjectKey>` 로컬 staging | `manifests/companies.json` + 객체 |
@@ -49,7 +49,7 @@ manifests/
 3. 의미 키는 경로가 아니다. 발행기가 중앙 catalog에서 객체 경로로 해석한다.
 4. 런타임 소비자는 `manifests/*.json`과 `objects/sha256/`만 읽는다.
 5. 발행기는 `companies/`, `issues/`, `tech-story/`, `podcasts/`, `carousels/`를 만들 수 없다.
-6. 깨끗한 체크아웃의 블로그 staging 복원은 `seedBlogMedia.py`만 담당한다.
+6. 깨끗한 체크아웃의 블로그 staging 복원은 재작업용 `seedBlogMedia.py`만 담당하며 다음 발행 성공 뒤 다시 삭제한다.
 7. 자산 교체는 새 객체를 추가하고 catalog 별칭을 바꾼다. 기존 객체를 덮어쓰지 않는다.
 
 ## 5. 안전한 전환 순서
@@ -73,4 +73,4 @@ manifests/
 
 ## 7. 콘텐츠 품질과의 경계
 
-저장 구조는 글의 질을 대신하지 않는다. 블로그 기획은 `brief.json.imagePlan[]`, 카드 기획은 `cards.plan.json`, 출처는 `assets/CREDITS.md`가 담당한다. 이미지 수급은 사실 적합성에 따라 공식 및 라이선스 실사와 `image_gen` 중 자율 선택한다. 심층 글의 마지막은 요약표가 아니라 조건, 변화 경로, 결과, 확인 지표, 반증 조건을 갖춘 시나리오형 관전 포인트로 닫는다.
+저장 구조는 글의 질을 대신하지 않는다. 블로그 기획은 `brief.json.imagePlan[]`, 카드 기획은 `cards.plan.json`, 출처는 글 루트 `CREDITS.md`가 담당한다. 이미지 수급은 사실 적합성에 따라 공식 및 라이선스 실사와 `image_gen` 중 자율 선택한다. 심층 글의 마지막은 요약표가 아니라 조건, 변화 경로, 결과, 확인 지표, 반증 조건을 갖춘 시나리오형 관전 포인트로 닫는다.

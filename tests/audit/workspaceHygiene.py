@@ -6,6 +6,7 @@ CLAUDE.md "워크스페이스 청결" 강행규칙의 기계 게이트. 두 가�
    (2026-07-03 루트 잔재 3.1GB 사건 재발 방지).
 2) 로컬 스크래치 `.tmp/` 안에서 장수 허용 목록 밖 엔트리가 STALE_DAYS 를
    넘기면 부패 잔재로 위반 (세션 PDF·contact-sheet·pytest-basetemp 류 축적 차단).
+3) HF 발행 대상인 블로그 `assets/`와 landing 썸네일에 미디어가 남으면 위반.
 CI fresh checkout 에는 로컬 전용 엔트리가 없으므로 무해하게 통과하고,
 로컬 preflight/lint 게이트에서 실질 검출이 일어난다.
 
@@ -118,6 +119,8 @@ ALLOWED_TMP = frozenset(
     }
 )
 
+MEDIA_SUFFIXES = frozenset({".webp", ".jpg", ".jpeg", ".png", ".gif", ".svg"})
+
 
 def _rootStrays() -> list[str]:
     """루트 직속 allowlist 밖 엔트리 수집."""
@@ -150,6 +153,20 @@ def _tmpStaleEntries() -> list[str]:
         if mtime < cutoff:
             stale.append(entry.name)
     return sorted(stale)
+
+
+def _blogMediaResidue() -> list[str]:
+    """HF가 durable SSOT인 블로그 assets 폴더·썸네일 미디어 잔재를 수집."""
+    blogRoot = _REPO / "blog"
+    residue = [path.relative_to(_REPO).as_posix() for path in blogRoot.rglob("assets") if path.is_dir()]
+    thumbnailRoot = _REPO / "landing" / "static" / "thumbnails"
+    if thumbnailRoot.is_dir():
+        residue.extend(
+            path.relative_to(_REPO).as_posix()
+            for path in thumbnailRoot.rglob("*")
+            if path.is_file() and path.suffix.lower() in MEDIA_SUFFIXES
+        )
+    return sorted(residue)
 
 
 def main() -> int:
@@ -192,6 +209,20 @@ def main() -> int:
             print(f"  - .tmp/{name}", file=sys.stderr)
         print(
             "[workspaceHygiene] 스크래치는 일회용: 삭제하거나, 배선이 참조하는 장수 자산이면 ALLOWED_TMP 에 등록.",
+            file=sys.stderr,
+        )
+
+    mediaResidue = _blogMediaResidue()
+    if mediaResidue:
+        violations += len(mediaResidue)
+        print(
+            "[workspaceHygiene] FAIL: HF 발행 대상 로컬 미디어 staging 잔재.",
+            file=sys.stderr,
+        )
+        for path in mediaResidue:
+            print(f"  - {path}", file=sys.stderr)
+        print(
+            "[workspaceHygiene] publishBlogAssets.py로 HF 검증·치환·로컬 정리를 완료해야 함.",
             file=sys.stderr,
         )
 

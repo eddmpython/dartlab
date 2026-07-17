@@ -265,16 +265,16 @@ def assertSourceSnapshot(snapshot: dict[Path, str]) -> None:
 
 
 def untrack(paths: list[Path], batchSize: int = 40) -> None:
-    rasterPaths = [path.relative_to(REPO_ROOT).as_posix() for path in paths if path.suffix.lower() != ".svg"]
-    svgPaths = [path.relative_to(REPO_ROOT).as_posix() for path in paths if path.suffix.lower() == ".svg"]
-    for offset in range(0, len(rasterPaths), batchSize):
-        git("rm", "--cached", "--ignore-unmatch", "--", *rasterPaths[offset : offset + batchSize])
-    for offset in range(0, len(svgPaths), batchSize):
-        git("rm", "-f", "--ignore-unmatch", "--", *svgPaths[offset : offset + batchSize])
-    print(
-        f"Git 미디어 추적 제거: 래스터 {len(rasterPaths)}개는 로컬 staging 보존, "
-        f"SVG {len(svgPaths)}개는 HF 복원 가능 상태로 로컬 제거"
-    )
+    relativePaths = [path.relative_to(REPO_ROOT).as_posix() for path in paths]
+    for offset in range(0, len(relativePaths), batchSize):
+        git("rm", "-f", "--ignore-unmatch", "--", *relativePaths[offset : offset + batchSize])
+    for path in paths:
+        path.unlink(missing_ok=True)
+    candidateDirs = {path.parent for path in paths if path.parent.name in {"assets", "thumbnails"}}
+    for directory in sorted(candidateDirs, key=lambda path: len(path.parts), reverse=True):
+        if directory.is_dir() and not any(directory.iterdir()):
+            directory.rmdir()
+    print(f"HF 검증 완료 미디어 {len(relativePaths)}개를 Git 인덱스와 로컬 staging에서 제거")
 
 
 def parseArgs() -> argparse.Namespace:
@@ -282,7 +282,7 @@ def parseArgs() -> argparse.Namespace:
     parser.add_argument(
         "--dry-run", dest="dryRun", action="store_true", help="집계와 계약만 계산하고 업로드·수정하지 않음"
     )
-    parser.add_argument("--untrack", action="store_true", help="HF 검증 뒤 기존 바이너리를 Git 인덱스에서 제거")
+    parser.add_argument("--untrack", action="store_true", help="HF 검증 뒤 기존 바이너리를 Git과 로컬에서 제거")
     parser.add_argument("--batch-size", dest="batchSize", type=int, default=100, help="HF 커밋당 최대 객체 수")
     return parser.parse_args()
 

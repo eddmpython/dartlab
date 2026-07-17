@@ -14,7 +14,7 @@
 
 | 분류 | 대상 | 위치 |
 |---|---|---|
-| **추적 (저작 원본)** | 마크다운(index.md·script.md), 메타(carousel.yaml·cards.plan.json·episode.yaml·channel.yaml·published.json·brief.json), `assets/CREDITS.md`, 중앙 `media/catalog.json`, 운영문서 | `blog/**` (git) |
+| **추적 (저작 원본)** | 마크다운(index.md·script.md), 메타(carousel.yaml·cards.plan.json·episode.yaml·channel.yaml·published.json·brief.json), 글 루트 `CREDITS.md`, 중앙 `media/catalog.json`, 운영문서 | `blog/**` (git) |
 | **미추적 (작업/파생)** | 블로그 SVG/WebP/JPG/PNG/GIF staging, 합성 썸네일, 팟캐스트 오디오, sns 렌더 PNG/MP4, 빌드 산출 | 포스트 `assets/`, `landing/static/thumbnails/`, `blog/_podcasts/.gitignore`, `/sns/` |
 | **재사용 staging** | HF 발행 전 로컬 작업본과 회사 공유 작업본 | 포스트 `assets/<assetKey>.(svg\|webp\|jpg\|png\|gif)`, `sns/assets/{subjectKey}`. durable 원본 아님 |
 | **발행 = 이미지 SSOT** | 블로그 본문·OG·카드·브라우저 서빙 이미지 | HF `dartlab-media/objects/sha256/`의 전역 콘텐츠 주소 객체 |
@@ -27,8 +27,8 @@
 
 - 이미지 수급은 **자율**이다. 파이프라인이 실제 제품·인물·현장처럼 사실성이 중요한 피사체는 공식 출처 또는 라이선스가 확인된 실사를, 개념·원리·추상 장면은 `image_gen`을 선택한다. 적합본이 없으면 운영자 질문으로 멈추지 않고 다른 적합 경로로 전환한다. 핀터레스트·구글 이미지 무단 사용은 금지다. FLUX는 운영자의 명시 지시가 있을 때만 쓴다.
 - 이미지 의미 계약 SSOT는 블로그 `brief.json.imagePlan[]`, 카드 `cards.plan.json`이다. 블로그 신규 계약은 고유 `assetKey`와 `sourcePolicy: auto`를 요구한다.
-- 블로그 SVG와 래스터는 포스트 `assets/`에서 로컬 검수한 뒤 `publishBlogAssets.py`로 HF 전역 콘텐츠 주소 객체에 올린다. SVG는 XML·위험 요소·텍스트 밀도를 검사하고 카탈로그 `diagrams`에 등록한다. 같은 바이트는 포스트·OG·카드 구분 없이 한 번만 저장한다. 본문, `ogImage`, `cardPreview`는 HF URL만 참조하며 Git에는 중앙 `media/catalog.json`의 별칭·역할·해시와 `assets/CREDITS.md`의 출처만 남긴다.
-- `sns/assets/{subjectKey}`도 공유 staging일 뿐 SSOT가 아니다. 블로그, 기술 카드, 회사 카드, 팟캐스트 원본은 중앙 카탈로그의 같은 HF 객체를 재사용한다. 로컬 staging 복원은 `seedBlogMedia.py --post ...` 또는 `--all`로만 한다.
+- 블로그 SVG와 래스터는 포스트 `assets/`에서 로컬 검수한 뒤 `publishBlogAssets.py`로 HF 전역 콘텐츠 주소 객체에 올린다. SVG는 XML·위험 요소·텍스트 밀도를 검사하고 카탈로그 `diagrams`에 등록한다. 같은 바이트는 포스트·OG·카드 구분 없이 한 번만 저장한다. 본문, `ogImage`, `cardPreview`는 HF URL만 참조하며 Git에는 중앙 `media/catalog.json`의 별칭·역할·해시와 글 루트 `CREDITS.md`의 출처만 남긴다. 발행기는 원격 객체를 재검증한 뒤 로컬 미디어와 빈 `assets/`·썸네일 폴더를 삭제한다.
+- `sns/assets/{subjectKey}`도 공유 staging일 뿐 SSOT가 아니다. 블로그, 기술 카드, 회사 카드, 팟캐스트 원본은 중앙 카탈로그의 같은 HF 객체를 재사용한다. 로컬 staging 복원은 재작업할 때 `seedBlogMedia.py --post ...` 또는 `--all`로만 하며 다음 발행 성공 뒤 다시 삭제한다.
 
 ## 3. HF/R2 저장 정책
 

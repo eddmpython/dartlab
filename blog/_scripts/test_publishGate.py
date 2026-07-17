@@ -203,3 +203,18 @@ def test_tracked_binary_errors_blocks_gif(monkeypatch, tmp_path: Path) -> None:
         "블로그 콘텐츠 미디어는 Git 추적 금지, HF 콘텐츠 주소 객체에만 발행: "
         "blog/05-company-reports/01-company/assets/chart.gif"
     ]
+
+
+def test_local_media_residue_errors_blocks_ignored_staging(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(pg, "REPO_ROOT", tmp_path)
+    postDir = tmp_path / "blog" / "08-tech-story" / "14-new-tech"
+    assetsDir = postDir / "assets"
+    assetsDir.mkdir(parents=True)
+    (assetsDir / "hero.webp").write_bytes(b"ignored-staging")
+    catalogPath = tmp_path / "media" / "catalog.json"
+    catalogPath.parent.mkdir(parents=True)
+    catalogPath.write_text("{}", encoding="utf-8")
+
+    errors = pg.localMediaResidueErrors(postDir)
+
+    assert errors == ["HF 발행 후 로컬 미디어 staging 잔존 금지: blog/08-tech-story/14-new-tech/assets/hero.webp"]
