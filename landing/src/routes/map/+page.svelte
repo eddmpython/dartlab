@@ -899,20 +899,13 @@
 		{sidebarCollapsed ? '≫' : '≪'}
 	</button>
 	<aside class="sidebar" class:collapsed={sidebarCollapsed}>
-		<!-- 브랜드 바: 아바타 → Universe → GitHub → Coffee → 도움말 (단색 라인 아이콘 일관) -->
+		<!-- 브랜드 바: 아바타 → GitHub → Coffee → 도움말 (단색 라인 아이콘 일관) -->
 		<div class="brand-bar">
 			<a class="brand-btn avatar" href="{base}/" title="dartlab 홈으로" aria-label="홈">
 				<picture>
 					<source srcset="{base}/avatar.webp" type="image/webp" />
 					<img src="{base}/avatar.png" alt="dartlab" width="16" height="16" />
 				</picture>
-			</a>
-			<a class="brand-btn" href="{base}/universe" title="Universe에서 근거와 시간으로 탐색" aria-label="DartLab Universe">
-				<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-					<circle cx="12" cy="12" r="2.5" />
-					<ellipse cx="12" cy="12" rx="9" ry="4.5" />
-					<path d="M7.5 4.2c2.2 1.2 4.5 3.8 6.2 6.8s2.4 5.9 2.1 8.4" />
-				</svg>
 			</a>
 			<a
 				class="brand-btn"

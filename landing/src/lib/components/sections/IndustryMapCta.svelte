@@ -14,7 +14,6 @@
 				<strong>모든 연결은 근거 상태를 함께 표시합니다.</strong>
 			</p>
 			<div class="ctas">
-				<Button href="{base}/universe">Universe 열기 →</Button>
 				<Button variant="secondary" href="{base}/map">산업지도 열기</Button>
 			</div>
 			<p class="disclaimer">
