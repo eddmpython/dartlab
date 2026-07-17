@@ -10,6 +10,7 @@
 		UniverseKnowledgeSearchRequest,
 		UniverseKnowledgeSearchResult
 	} from '@dartlab/ui-contracts';
+	import KnowledgeArticle from './KnowledgeArticle.svelte';
 	import KnowledgeCanvas from './KnowledgeCanvas.svelte';
 
 	interface Props {
@@ -42,6 +43,7 @@
 	let filmPlaying = $state(false);
 	let filmSpeed = $state<0.5 | 1 | 2>(1);
 	let idleHandle: number | null = null;
+	let articleOpen = $state(false);
 
 	const domainColors: Readonly<Record<UniverseKnowledgeDomainId, string>> = {
 		sources: '#7f91aa', entities: '#76b8ff', securities: '#50d0be', filings: '#f0a66c',
@@ -177,6 +179,12 @@
 		focusNodeId = nodeId;
 		filmActive = false;
 		filmPlaying = false;
+	}
+
+	function navigateArticle(nodeId: string): void {
+		const nextNode = scene?.nodes.find((node) => node.nodeId === nodeId);
+		selectNode(nodeId);
+		if (nextNode?.expandable) void openTarget(nodeId);
 	}
 
 	async function submitSearch(event?: SubmitEvent): Promise<void> {
@@ -438,6 +446,7 @@
 				{/if}
 				<div class="sourceAddress"><span>SOURCE REF</span>{#if selectedNode.sourceRef.startsWith('https://')}<a href={selectedNode.sourceRef} target="_blank" rel="noreferrer">{selectedNode.sourceRef}</a>{:else}<code>{selectedNode.sourceRef}</code>{/if}</div>
 				{#if selectedNode.evidenceRefs.length > 0}<div class="evidenceRefs"><span>EVIDENCE REFS</span>{#each selectedNode.evidenceRefs.slice(0, 3) as evidenceRef (evidenceRef)}<code title={evidenceRef}>{evidenceRef}</code>{/each}</div>{/if}
+				<button class="openArticle" type="button" onclick={() => (articleOpen = true)}><span>WIKI LENS</span><b>지식 문서 열기</b></button>
 				{#if selectedNode.expandable}<button class="openDeeper" type="button" onclick={() => void openTarget(selectedNode.nodeId)}>이 지식으로 확대</button>{/if}
 			{:else}
 				<div class="emptyLens"><span>KNOWLEDGE LENS</span><h2>관계를 선택하세요.</h2><p>선택한 데이터, 문서, 엔진과 스킬의 주소와 연결 근거가 여기에 열립니다.</p></div>
@@ -458,6 +467,18 @@
 		</div>
 		<div class="filmReceipt"><span>SCENE</span><b>{scene?.receipt.outputNodeCount ?? 0} NODES</b><small>{(scene?.receipt.indexedItemCount ?? 0).toLocaleString()} INDEXED · {scene?.receipt.sourceRevision.slice(0, 9) ?? 'loading'}</small></div>
 	</footer>
+	{#if articleOpen && selectedNode && scene}
+		<KnowledgeArticle
+			node={selectedNode}
+			{scene}
+			{content}
+			{contentLoading}
+			{contentError}
+			domainLabel={domainLabel(selectedNode.domainId)}
+			onClose={() => (articleOpen = false)}
+			onNavigate={navigateArticle}
+		/>
+	{/if}
 </section>
 
 <style>
@@ -614,6 +635,10 @@
 	.evidenceRefs { display: grid; gap: 5px; margin-top: 12px; }
 	.evidenceRefs > span { color: #4e6077; font: 650 7px/1 ui-monospace, monospace; letter-spacing: .13em; }
 	.evidenceRefs code { min-width: 0; overflow: hidden; color: #637994; font: 500 7px/1.35 ui-monospace, monospace; text-overflow: ellipsis; white-space: nowrap; user-select: text; }
+	.openArticle { width: 100%; display: flex; align-items: center; justify-content: space-between; margin-top: 16px; border: 1px solid rgba(104, 145, 195, .28); border-radius: 9px; padding: 10px 11px; color: #b8cae0; background: linear-gradient(135deg, rgba(46, 77, 116, .34), rgba(20, 32, 49, .4)); text-align: left; cursor: pointer; }
+	.openArticle span { color: #6e91bb; font: 650 7px/1 ui-monospace, monospace; letter-spacing: .1em; }
+	.openArticle b { font-size: 9px; font-weight: 600; }
+	.openArticle:hover { border-color: rgba(119, 169, 229, .48); background: linear-gradient(135deg, rgba(56, 91, 134, .42), rgba(23, 37, 56, .5)); }
 	.sourceAddress { margin-top: 20px; padding-top: 12px; border-top: 1px solid #172230; }
 	.sourceAddress > span { display: block; }
 	.sourceAddress a, .sourceAddress code { display: block; margin-top: 8px; color: #6582a7; font: 500 8px/1.45 ui-monospace, monospace; overflow-wrap: anywhere; text-decoration: none; }

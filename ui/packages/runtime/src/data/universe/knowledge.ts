@@ -107,6 +107,14 @@ interface SkillCatalogEntry {
 	apiRefs?: readonly string[];
 	datasetRefs?: readonly string[];
 	knowledgeRefs?: readonly string[];
+	requiredEvidence?: readonly string[];
+	procedure?: readonly string[];
+	expectedOutputs?: readonly string[];
+	failureModes?: readonly string[];
+	forbidden?: readonly string[];
+	examples?: readonly string[];
+	runtimeCompatibility?: unknown;
+	bodyPreview?: string;
 	sourceRefs?: readonly string[];
 }
 
@@ -426,8 +434,9 @@ function nodesForFileGroups(groups: readonly { path: string; count: number; file
 	});
 }
 
-function skillNode(node: SkillGraphNode): UniverseKnowledgeNode {
+function skillNode(node: SkillGraphNode, catalog?: SkillCatalogEntry): UniverseKnowledgeNode {
 	const domainId = skillDomain(node.category);
+	const sourceRef = catalog?.sourceRefs?.[0] ?? `dartlab://skills/${node.id}`;
 	return makeNode(
 		`skill:${node.id}`,
 		node.title,
@@ -436,8 +445,25 @@ function skillNode(node: SkillGraphNode): UniverseKnowledgeNode {
 		domainId,
 		8 + Math.log10(Math.max(1, node.inDegree + node.outDegree)) * 6,
 		true,
-		`dartlab://skills/${node.id}`,
-		{ skillId: node.id, category: node.category, purpose: node.purpose, cluster: node.cluster }
+		sourceRef,
+		{
+			skillId: node.id,
+			category: node.category,
+			purpose: node.purpose,
+			cluster: node.cluster,
+			whenToUse: catalog?.whenToUse?.join('\n') ?? '',
+			apiRefs: catalog?.apiRefs?.join(', ') ?? '',
+			datasetRefs: catalog?.datasetRefs?.join(', ') ?? '',
+			knowledgeRefs: catalog?.knowledgeRefs?.join(', ') ?? '',
+			requiredEvidence: catalog?.requiredEvidence?.join(', ') ?? '',
+			procedure: catalog?.procedure?.join('\n') ?? '',
+			expectedOutputs: catalog?.expectedOutputs?.join('\n') ?? '',
+			failureModes: catalog?.failureModes?.join('\n') ?? '',
+			forbidden: catalog?.forbidden?.join('\n') ?? '',
+			examples: catalog?.examples?.join('\n') ?? '',
+			runtimeCompatibility: catalog?.runtimeCompatibility ? JSON.stringify(catalog.runtimeCompatibility) : '',
+			bodyPreview: catalog?.bodyPreview?.slice(0, 12_000) ?? ''
+		}
 	);
 }
 
@@ -648,7 +674,7 @@ export function createUniverseKnowledgeRuntime(core: DataCore, loaders: Universe
 			grouped.set(key, (grouped.get(key) ?? 0) + 1);
 		}
 		const fileNodes = nodesForFileGroups([...grouped.entries()].map(([path, count]) => ({ path, count, file: count === 1 && exactPaths.has(path) })), info.sha, true);
-		const graphNodes = graph.nodes.filter((node) => skillDomain(node.category) === domainId).map(skillNode);
+		const graphNodes = graph.nodes.filter((node) => skillDomain(node.category) === domainId).map((node) => skillNode(node));
 		const children = [...fileNodes, ...graphNodes].sort((left, right) => right.weight - left.weight || left.nodeId.localeCompare(right.nodeId));
 		const copy = DOMAIN_COPY[domainId];
 		const center = makeNode(`domain:${domainId}`, copy.label, copy.labelEn, 'domain', domainId, 30, false, copy.sourceRefs[0] ?? '', { description: copy.description });
@@ -740,7 +766,7 @@ export function createUniverseKnowledgeRuntime(core: DataCore, loaders: Universe
 			if (edge.src === skillId) neighborIds.add(edge.dst);
 			if (edge.dst === skillId) neighborIds.add(edge.src);
 		}
-		const neighbors = graph.nodes.filter((node) => neighborIds.has(node.id)).map(skillNode)
+		const neighbors = graph.nodes.filter((node) => neighborIds.has(node.id)).map((node) => skillNode(node))
 			.sort((left, right) => right.weight - left.weight || left.nodeId.localeCompare(right.nodeId));
 		const datasetNodes = (selectedCatalog?.datasetRefs ?? []).map((datasetRef) => skillDatasetNode(datasetRef, selectedSourceRef));
 		const graphEdges = relatedGraphEdges.map((edge): UniverseKnowledgeEdge => Object.freeze({
@@ -763,7 +789,7 @@ export function createUniverseKnowledgeRuntime(core: DataCore, loaders: Universe
 			evidenceRefs: Object.freeze([selectedSourceRef]),
 			ruleId: 'skillDataset.v1'
 		}));
-		const center = skillNode(selected);
+		const center = skillNode(selected, selectedCatalog);
 		return compileScene({
 			sceneId: `knowledge:skill:${skillId}:${info.sha}`,
 			title: selected.title,
