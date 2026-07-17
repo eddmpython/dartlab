@@ -59,6 +59,7 @@ ALLOWED_ROOT = frozenset(
         "infra",
         "landing",
         "mainPlan",
+        "media",
         "notebooks",
         "package-lock.json",
         "package.json",
@@ -100,6 +101,10 @@ ALLOWED_ROOT = frozenset(
     }
 )
 
+# `media/`는 HF 객체의 별칭·역할·해시를 잇는 카탈로그 메타만 허용한다.
+# 이미지·SVG·GIF 등 바이너리가 다시 Git으로 유입되면 이 가드가 막는다.
+ALLOWED_MEDIA = frozenset({"catalog.json"})
+
 # `.tmp/` 장수 허용 디렉토리: 배선이 참조하는 로컬 자산만.
 # dart·hf-contentIndex·search-hard-negative = search-productization 로컬 인덱스/평가,
 # remotion-props = 캐러셀 렌더 props, dartlab-product-smoke = runProductSmokeWheel venv.
@@ -117,6 +122,14 @@ ALLOWED_TMP = frozenset(
 def _rootStrays() -> list[str]:
     """루트 직속 allowlist 밖 엔트리 수집."""
     return sorted(entry.name for entry in _REPO.iterdir() if entry.name not in ALLOWED_ROOT)
+
+
+def _mediaStrays() -> list[str]:
+    """`media/` 안 중앙 카탈로그 밖 엔트리 수집."""
+    mediaDir = _REPO / "media"
+    if not mediaDir.is_dir():
+        return []
+    return sorted(entry.name for entry in mediaDir.iterdir() if entry.name not in ALLOWED_MEDIA)
 
 
 def _tmpStaleEntries() -> list[str]:
@@ -157,6 +170,16 @@ def main() -> int:
             " ALLOWED_ROOT 에 등록.",
             file=sys.stderr,
         )
+
+    mediaStrays = _mediaStrays()
+    if mediaStrays:
+        violations += len(mediaStrays)
+        print(
+            "[workspaceHygiene] FAIL: media/에는 중앙 catalog.json 메타만 허용됨.",
+            file=sys.stderr,
+        )
+        for name in mediaStrays:
+            print(f"  - media/{name}", file=sys.stderr)
 
     staleEntries = _tmpStaleEntries()
     if staleEntries:
