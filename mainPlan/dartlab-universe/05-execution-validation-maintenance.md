@@ -152,25 +152,25 @@ DART와 EDGAR의 동형 panel 및 표준 finance로 동일 질문을 비교한�
 - peak heap 및 fps 예산 통과
 - 3D 전용 truth 또는 기능 0
 
-## 7.1 Phase U6: Public Beta and GA
+## 7.1 Phase U6: GA 운영
 
 ### 목표
 
-같은 `/universe` route를 local review, public beta, GA 순서로 승격하고 운영 계약을 실제 장애와 rollback으로 검증한다.
+같은 `/universe` route를 GA와 disabled 두 상태로 운영한다. route 안정성과 사실·exact replay 같은 증거별 기능 admission을 분리하고 실제 장애와 rollback으로 검증한다.
 
 ### 작업
 
 - production build의 실제 `/universe` 눈검수
 - desktop 및 mobile network, heap, accessibility 검증
-- public beta 14일 SLO 관찰
+- GA 운영 SLO 연속 관찰
 - relation lane, renderer, route, map buildId rollback drill
 - navigation, SEO, share URL, stale buildId 동작 확인
 
 ### 종료 조건
 
 - critical incident 0
-- fact sourceRef coverage 100%
-- hard negative false accept 1% 이하
+- exact evidence 없는 fact relation 입장 0
+- guarded lane의 자동 승격 0
 - atlas availability 99.9%
 - rollback 15분 이내
 - 운영자 UI 눈검수와 push 승인

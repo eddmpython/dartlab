@@ -15,7 +15,7 @@
 - [x] `/universe` 독립 public route 결정
 - [x] P0~U6 work packet과 commit 및 rollback 순서 작성
 - [x] attempts evidence matrix와 기존 world/search 실험 재사용 지도 작성
-- [x] `/universe` public beta, GA, 장기 route 운영 계약 작성
+- [x] `/universe` GA, disabled, 기능별 admission 장기 route 운영 계약 작성
 - [x] U0 attempts category 생성
 - [x] U0-T01 current graph truth census 실행
 - [x] 제품 혁신, 시각 혁신, 기술 및 증거 관점 교차 토론
@@ -43,10 +43,10 @@
 - [x] U0-G02 live exact-locator positive 및 hard-negative review queue materialization
 - [x] U0-G03 original source artifact SHA-256 및 exact locator binding
 - [x] U0-G04 human-only review decision promotion compiler
-- [x] U1 localReview 계약, 지연 로더, 결정론 Canvas 2D, 관계표와 독립 `/universe` route 구현
-- [x] U1 localReview 데스크톱 및 390px 모바일 눈검수, 검색, 선택 URL, 관계표, 콘솔 검증
+- [x] U1 GA 계약, 지연 로더, 결정론 Canvas 2D, 관계표와 독립 `/universe` route 구현
+- [x] U1 GA 데스크톱 및 390px 모바일 눈검수, 검색, 선택 URL, 관계표, 콘솔 검증
 - [ ] U0 workflow, visual, information yield attempts
-- [ ] U1 publicBeta 승격 및 U2 exact evidence implementation
+- [x] U1 GA 승격과 U2 candidate-only evidence implementation
 - [ ] U3 artifact 변경 승인 여부
 - [x] UI 눈검수 및 운영자 push 승인
 
@@ -93,6 +93,7 @@
 | 2026-07-16 | U0-G03 original source binding | Queue source가 가리키는 original Parquet 305개를 직접 SHA-256으로 고정하고 receipt, catalog publication date 및 issuer file로 재결속. 600/600 ready, exact occurrence 63,345, locator parity failure 0. Unique 119, ambiguous 481이며 human selection과 time 전 gold 차단 |
 | 2026-07-16 | U0-G04 human review promotion | Queue와 binding 600행에 optional human decision compiler 구현. Machine origin, triple drift, unknown locator, inverted 또는 naive time, duplicate receipt fail closed. Decision 및 promoted gold 0이라 U0 graduation 차단 |
 | 2026-07-16 | U1 localReview 독립 route 구현 | Universe 계약과 DataCore 기반 HF 지연 로더, fail-closed SourceSnapshotSet, bounded projection, 7-state non-color grammar, 결정론 Canvas 2D와 관계표를 `/universe`에 연결. 초기 meta 및 atlas만 요청하고 34개 산업과 50개 파생 흐름을 candidate/derived로 보존. Unit 8/8, 계약 및 surface check 0 error, production build 성공, 초기 의존 61,381 gzip bytes, 브라우저 console 0, keyboard node 34/34, 검색과 선택 URL 및 관계표, 390x844 mobile 눈검수 통과. `noindex,nofollow`, CURRENT ONLY, localReview를 유지하고 reviewed gold 0/600 때문에 publicBeta와 fact lane은 계속 차단 |
+| 2026-07-17 | Universe GA 제품 경로 전환 | route 상태를 ga와 disabled로 단순화하고 `UniverseProductReceipt`가 빈 atlas, provenance 결손, dangling relation, exact evidence 없는 fact relation을 실패 폐쇄한다. SSR, index/follow, canonical 및 share metadata, primary navigation, map 양방향 CTA, 오류 복구, skip link를 연결했다. reviewed gold 0/600은 route가 아니라 fact relation admission만 차단한다. |
 
 ## 핵심 실측 스냅샷
 
@@ -285,16 +286,16 @@ dart dataAsOf            null
 
 운영자가 queue와 `releaseGoldSourceBinding.machine.jsonl`을 함께 열어 top-ranked original locator를 선택하고 `reviewedDecisions.jsonl`을 작성한다. Source owner는 발행 및 공개 가능 시각을 공급하며 US/SEC, `sellsTo`, `classifiedIn`, `filed`와 누락 negative type 7개를 별도 구성한다. Reviewed 300 대 300과 prediction 600을 채워 precision 98% 및 false acceptance 1%를 통과하기 전 U0 graduation과 U1은 금지한다.
 
-## 2026-07-17 localReview 구현 재개
+## 2026-07-17 제품 구현 재개
 
-U0 graduation을 우회하지 않고 localReview에서 실행 가능한 U1, U2, U4 계약과 화면을 실패 폐쇄 방식으로 구현했다.
+U0 factual admission을 우회하지 않고 GA에서 실행 가능한 U1, U2, U4 계약과 화면을 실패 폐쇄 방식으로 구현했다.
 
 ```text
 U1 current signal source entries             116
 U1 current signal unique marks               108
 U1 source asOf                        2026-07-16
 U1 exact historical claims                       0
-U1 current demo exact-history gap              1/1
+U1 current signals exact-history gap           1/1
 U1 deterministic diff hash repeat              2/2
 U1 exact replay future knowledge leak            0
 U2 exact pointer admission test                1/1
@@ -320,13 +321,13 @@ browser widths without horizontal overflow 320/390/768/1440
 
 구현 범위:
 
-- 변화 우주는 timeline과 movers를 사용자 진입 뒤 지연 로드한다. 불변 before 및 after snapshot이 없으므로 `currentDemo`로 고정하고 모든 mark의 before 및 after EvidenceReceipt를 missing으로 남긴다.
+- 변화 우주는 timeline과 movers를 사용자 진입 뒤 지연 로드한다. 불변 before 및 after snapshot이 없으므로 `currentSignals`로 고정하고 모든 mark의 before 및 after EvidenceReceipt를 missing으로 남긴다.
 - exact replay compiler는 replayable snapshot 두 개를 요구하고 `knownAt` 이후 assertion을 입력에서 제거한다. created, corrected, retracted, newlyKnown, stale을 별도 변화 종류로 보존한다.
 - evidence resolver는 기존 filing search를 호출한다. 검색 적중은 candidate일 뿐이며 exact text 또는 table locator가 없으면 supported receipt를 만들지 않는다.
 - Evidence Drawer는 관계 설명, 상태, 시간, assertion timeline, filing 및 section, exact locator, 방법과 한계 순서를 유지한다.
 - engine lens는 valueRef, tableRef, dateRef, executionRef만 소비한다. primary 1개와 comparison 1개 상한을 지키고 결손을 0으로 채우지 않는다.
 - 성장 지속성, 신용 취약, 공시 변화 세 recipe만 연다. 필수 evidence 또는 scenario assumption이 비면 GapReceipt를 만들고 결론은 `CONCLUSION OPEN`으로 남긴다.
 - 교차시장 compiler는 정확한 KR corpCode와 US CIK, security identity, sourceRef, dataAsOf, unit이 모두 있을 때만 고정 20문항을 ready로 연다. 현재 live 입력은 없으므로 화면 게이트는 닫혀 있다.
-- U5 3D는 U0~U4 graduation 조건이 충족되지 않아 추가하지 않았다. U6는 `localReview`, `noindex,nofollow`, navigation 미노출을 유지한다.
+- U5 3D는 2D 대비 정보 수율과 라이선스 admission이 없어 추가하지 않았다. U6는 GA, index/follow, 독립 navigation과 disabled incident 격리를 사용한다.
 
-남은 승격 조건은 기존 blocker 1~17과 같다. 코드 구현 완료를 human gold, named screen reader, 14일 beta의 완료로 오인하지 않는다.
+남은 blocker는 사실 relation, exact historical replay, historical identity처럼 해당 데이터 lane의 admission 조건으로 유지한다. route의 제품 완성과 증거가 아직 없는 기능의 자동 승격을 혼동하지 않는다.

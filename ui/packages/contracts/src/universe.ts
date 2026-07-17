@@ -31,12 +31,20 @@ export type UniverseEntityKind = 'industry' | 'company' | 'filing' | 'metric' | 
 export type UniverseTransition = 'replace' | 'diff' | 'overlay';
 export type UniverseBeatIntent = 'orient' | 'focus' | 'compare' | 'evidence' | 'falsify' | 'conclude';
 export type UniverseObjective = 'investigate' | 'compare' | 'falsify' | 'explain';
-export type UniverseReleaseState = 'localReview' | 'publicBeta' | 'ga' | 'disabled';
+export type UniverseReleaseState = 'ga' | 'disabled';
+export type UniverseCapabilityId =
+	| 'atlas'
+	| 'changeSignals'
+	| 'exactReplay'
+	| 'evidenceSearch'
+	| 'thesisKillChain'
+	| 'factRelations';
+export type UniverseCapabilityStatus = 'ready' | 'guarded' | 'disabled';
 export type UniverseGapKind = 'unavailable' | 'notPublic' | 'notApplicable' | 'unresolved' | 'stale' | 'omitted';
 export type UniverseEvidenceStatus = 'supported' | 'contradicted' | 'missing' | 'scenario';
 export type UniverseLocatorKind = 'text' | 'table';
 export type UniverseRedistributionClass = 'public' | 'metadataOnly' | 'localOnly' | 'blocked' | 'unknown';
-export type UniverseChangeMode = 'currentDemo' | 'exactReplay';
+export type UniverseChangeMode = 'currentSignals' | 'exactReplay';
 export type UniverseChangeKind = 'created' | 'corrected' | 'retracted' | 'newlyKnown' | 'stale';
 export type UniverseLensRefKind = 'valueRef' | 'tableRef' | 'dateRef' | 'executionRef';
 export type UniverseWorkflowId = 'growthSustainability' | 'creditFragility' | 'disclosureChange';
@@ -511,10 +519,29 @@ export interface UniverseAtlas {
 	flows: readonly UniverseAtlasFlow[];
 }
 
+export interface UniverseCapabilityReceipt {
+	capabilityId: UniverseCapabilityId;
+	status: UniverseCapabilityStatus;
+	mode: string;
+	reasonCode: string;
+}
+
+export interface UniverseProductReceipt {
+	schemaVersion: 'universeProductReceipt.v1';
+	releaseState: UniverseReleaseState;
+	routeReady: boolean;
+	generatedAt: string;
+	buildId: string;
+	sceneHash: string;
+	factRelationCount: number;
+	capabilities: readonly UniverseCapabilityReceipt[];
+}
+
 export interface UniverseRouteSeed {
 	meta: UniverseRouteMeta;
 	atlas: UniverseAtlas;
 	snapshot: SourceSnapshotSet;
 	scene: UniverseScene;
 	releaseState: UniverseReleaseState;
+	product: UniverseProductReceipt;
 }

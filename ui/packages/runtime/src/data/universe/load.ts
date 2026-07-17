@@ -11,6 +11,7 @@ import type {
 import type { DataCore } from '../fetch/request';
 import { canonicalSha256 } from './canonical';
 import { adaptAtlas, compileProjection } from './projection';
+import { compileUniverseProductReceipt } from './release';
 
 const HOUR = 60 * 60 * 1_000;
 const JSON_CACHE = { scope: 'memory', ttlMs: 6 * HOUR, maxEntries: 64 } as const;
@@ -41,6 +42,56 @@ interface LoadedArtifact<T> {
 	versionOrEtag: string | null;
 	payloadHash: string;
 	contentLength: number | null;
+}
+
+function disabledUniverseRouteSeed(): UniverseRouteSeed {
+	const input = {
+		meta: {
+			schemaVersion: 1,
+			buildId: 'disabled',
+			buildTime: '1970-01-01T00:00:00.000Z',
+			commitSha: '',
+			dataAsOf: {},
+			sizes: {},
+			counts: {}
+		},
+		atlas: { version: 'disabled', industries: [], flows: [] },
+		snapshot: {
+			schemaVersion: 'sourceSnapshotSet.v1',
+			snapshotSetId: 'disabled',
+			createdAt: '1970-01-01T00:00:00.000Z',
+			sources: [],
+			mapBuildId: null,
+			capabilityCatalogVersion: null,
+			recipeCatalogVersion: null,
+			exactReplayReady: false,
+			unreplayableSourceIds: [],
+			missingDataAsOfSourceIds: [],
+			missingRedistributionReceiptSourceIds: []
+		},
+		scene: {
+			schemaVersion: 'boundedScene.v1' as const,
+			sceneId: 'disabled',
+			nodes: [],
+			edges: [],
+			assertions: [],
+			receipt: {
+				specHash: 'disabled',
+				sourceSnapshotSetId: 'disabled',
+				inputNodeCount: 0,
+				inputEdgeCount: 0,
+				outputNodeCount: 0,
+				outputEdgeCount: 0,
+				seedCount: 0,
+				retainedSeedCount: 0,
+				maxDepthObserved: 0,
+				omission: { omittedNodeCount: 0, omittedEdgeCount: 0, nodeReasonCounts: [], edgeReasonCounts: [], omittedNodeLaneCounts: [], omittedEdgeLaneCounts: [] }
+			},
+			sceneHash: 'disabled'
+		},
+		releaseState: 'disabled' as const
+	};
+	return { ...input, product: compileUniverseProductReceipt(input) };
 }
 
 function asRecord(value: unknown): Record<string, unknown> {
@@ -231,8 +282,9 @@ export async function loadObservationSeries(
 
 export async function loadUniverseRouteSeed(
 	core: DataCore,
-	releaseState: UniverseReleaseState = 'localReview'
+	releaseState: UniverseReleaseState = 'ga'
 ): Promise<UniverseRouteSeed> {
+	if (releaseState === 'disabled') return disabledUniverseRouteSeed();
 	const [metaArtifact, atlasArtifact] = await Promise.all([
 		requestArtifact(core, 'landing/map/meta.json', validateMeta),
 		requestArtifact(core, 'landing/map/atlas.json', validateAtlas)
@@ -249,5 +301,6 @@ export async function loadUniverseRouteSeed(
 		maxNodes: seedIds.length,
 		maxEdges: 200
 	}, graph.nodes, graph.edges);
-	return { meta: metaArtifact.value, atlas: atlasArtifact.value, snapshot, scene, releaseState };
+	const input = { meta: metaArtifact.value, atlas: atlasArtifact.value, snapshot, scene, releaseState };
+	return { ...input, product: compileUniverseProductReceipt(input) };
 }

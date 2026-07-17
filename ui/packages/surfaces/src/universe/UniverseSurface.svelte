@@ -52,9 +52,11 @@
 	let selectedChange = $state<UniverseChangeMark | null>(null);
 	let evidenceResolution = $state<UniverseEvidenceResolution | null>(null);
 	let evidenceLoading = $state(false);
+	let evidenceError = $state<string | null>(null);
 	let selectedWorkflowId = $state<UniverseWorkflowId>('growthSustainability');
 	let workflowCompilation = $state<UniverseWorkflowCompilation | null>(null);
 	let workflowLoading = $state(false);
+	let workflowError = $state<string | null>(null);
 	let lensTray = $state<UniverseLensTray | null>(null);
 	let lensRevision = 0;
 
@@ -106,11 +108,13 @@
 	function selectChange(mark: UniverseChangeMark): void {
 		selectedChange = mark;
 		evidenceResolution = null;
+		evidenceError = null;
 	}
 
 	async function searchChangeEvidence(): Promise<void> {
 		if (!selectedChange || !resolveEvidence || evidenceLoading) return;
 		evidenceLoading = true;
+		evidenceError = null;
 		try {
 			evidenceResolution = await resolveEvidence({
 				claimId: selectedChange.changeId,
@@ -123,6 +127,9 @@
 				knownAt: urlState.knownAt ?? selectedChange.knownAt,
 				pointer: null
 			});
+		} catch {
+			evidenceResolution = null;
+			evidenceError = '공시 검색 원천에 연결하지 못했습니다.';
 		} finally {
 			evidenceLoading = false;
 		}
@@ -131,12 +138,14 @@
 	function setWorkflow(workflowId: UniverseWorkflowId): void {
 		selectedWorkflowId = workflowId;
 		workflowCompilation = null;
+		workflowError = null;
 		void compileWorkflow();
 	}
 
 	async function compileWorkflow(): Promise<void> {
 		if (workflowLoading) return;
 		workflowLoading = true;
+		workflowError = null;
 		try {
 			workflowCompilation = await compileUniverseWorkflow({
 				workflowId: selectedWorkflowId,
@@ -146,6 +155,9 @@
 				knownAt: urlState.knownAt,
 				generatedAt: seed.meta.buildTime
 			});
+		} catch {
+			workflowCompilation = null;
+			workflowError = '검증 워크플로를 컴파일하지 못했습니다.';
 		} finally {
 			workflowLoading = false;
 		}
@@ -219,14 +231,15 @@
 	});
 </script>
 
-<main class="universeShell">
+<main id="universe-main" class="universeShell">
 	<section class="hero">
 		<div>
-			<div class="eyebrow"><span class="pulse"></span>DARTLAB UNIVERSE <b>LOCAL REVIEW</b></div>
+			<div class="eyebrow"><span class="pulse"></span>DARTLAB UNIVERSE <b>PRODUCTION</b></div>
 			<h1>시장을 관계로 읽되,<br /><em>근거보다 먼저 확신하지 않습니다.</em></h1>
-			<p>34개 산업의 구조와 집계 흐름을 하나의 결정론적 장면으로 탐색합니다. 현재 선은 공시 원문이 결속된 사실이 아니라 <strong>파생 집계</strong>이며, 기업 관계는 검수 전까지 후보로만 표시됩니다.</p>
+			<p>{seed.atlas.industries.length}개 산업의 구조와 집계 흐름을 하나의 결정론적 장면으로 탐색합니다. 현재 선은 공시 원문이 결속된 사실이 아니라 <strong>파생 집계</strong>이며, 기업 관계는 exact evidence가 결속되기 전까지 후보로만 표시됩니다.</p>
 		</div>
 		<div class="heroMeta">
+			<div><span>STATUS</span><strong>GA</strong></div>
 			<div><span>DATA AS OF</span><strong>{seed.meta.dataAsOf.finance?.slice(0, 10) ?? '결손'}</strong></div>
 			<div><span>BUILD</span><strong>{seed.meta.buildId}</strong></div>
 			<div><span>REPLAY</span><strong class:warn={!seed.snapshot.exactReplayReady}>{seed.snapshot.exactReplayReady ? 'EXACT' : 'CURRENT ONLY'}</strong></div>
@@ -275,13 +288,13 @@
 				{:else if primaryMode === 'change'}
 					<ChangeUniverse data={changeSet} loading={changeLoading} error={changeError} onLoad={() => void ensureChanges()} onSelect={selectChange} />
 				{:else}
-					<KillChain workflows={UNIVERSE_WORKFLOWS} {selectedWorkflowId} compilation={workflowCompilation} loading={workflowLoading} onSelectWorkflow={setWorkflow} onCompile={() => void compileWorkflow()} />
+					<KillChain workflows={UNIVERSE_WORKFLOWS} {selectedWorkflowId} compilation={workflowCompilation} loading={workflowLoading} error={workflowError} onSelectWorkflow={setWorkflow} onCompile={() => void compileWorkflow()} />
 				{/if}
 			</div>
 
 			<aside class="inspector" class:drawerOpen={selectedChange !== null}>
 				{#if selectedChange}
-					<EvidenceDrawer change={selectedChange} resolution={evidenceResolution} loading={evidenceLoading} onResolve={() => void searchChangeEvidence()} onClose={() => { selectedChange = null; evidenceResolution = null; }} />
+					<EvidenceDrawer change={selectedChange} resolution={evidenceResolution} loading={evidenceLoading} error={evidenceError} onResolve={() => void searchChangeEvidence()} onClose={() => { selectedChange = null; evidenceResolution = null; evidenceError = null; }} />
 				{:else if selectedNode}
 					<div class="inspectorHead"><span>SELECTED ENTITY</span><button aria-label="선택 해제" onclick={clearSelection}>×</button></div>
 					<h2>{selectedNode.label}</h2>
@@ -311,13 +324,15 @@
 				{/if}
 			</aside>
 		</div>
-		<TimeLens validAt={urlState.validAt} knownAt={urlState.knownAt} onChange={setTimeLens} />
+		{#if primaryMode === 'workflow' || selectedChange}
+			<TimeLens validAt={urlState.validAt} knownAt={urlState.knownAt} onChange={setTimeLens} />
+		{/if}
 	</section>
 
 	<section class="integrity">
 		<div><span>SCENE HASH</span><code>{seed.scene.sceneHash}</code></div>
 		<div><span>SNAPSHOT</span><code>{seed.snapshot.snapshotSetId}</code></div>
-		<p>현재 route는 meta와 atlas만 초기 로드합니다. ecosystem과 기업 JSON은 선택 전 요청하지 않습니다. 정확 재현 불가 소스 {seed.snapshot.unreplayableSourceIds.length}개를 숨기지 않았습니다.</p>
+		<p>현재 route는 meta와 atlas만 초기 로드합니다. ecosystem과 기업 JSON은 선택 전 요청하지 않습니다. 정확 재현 불가 소스 {seed.snapshot.unreplayableSourceIds.length}개를 숨기지 않았으며, 제품 입장 검사는 {seed.product.capabilities.length}개 기능 lane을 독립적으로 보호합니다.</p>
 	</section>
 </main>
 

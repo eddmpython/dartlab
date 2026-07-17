@@ -7,11 +7,12 @@
 		selectedWorkflowId: UniverseWorkflowId;
 		compilation: UniverseWorkflowCompilation | null;
 		loading?: boolean;
+		error?: string | null;
 		onSelectWorkflow: (workflowId: UniverseWorkflowId) => void;
 		onCompile: () => void;
 	}
 
-	let { workflows, selectedWorkflowId, compilation, loading = false, onSelectWorkflow, onCompile }: Props = $props();
+	let { workflows, selectedWorkflowId, compilation, loading = false, error = null, onSelectWorkflow, onCompile }: Props = $props();
 </script>
 
 <section class="killChain" aria-label="Thesis Kill-Chain">
@@ -21,7 +22,7 @@
 		<div class="beats" aria-label="Flight Plan">{#each compilation.flightPlan.beats as beat, index (beat.beatId)}<div><b>{String(index + 1).padStart(2, '0')}</b><span>{beat.intent}</span>{#if index < compilation.flightPlan.beats.length - 1}<i></i>{/if}</div>{/each}</div>
 		<div class="body"><ClaimLedger claims={compilation.claims} /><aside><span>FLIGHT RECEIPT</span><code>{compilation.flightReceipt.outputHash}</code><span>COMPILE HASH</span><code>{compilation.compileHash}</code><p>필수 근거가 하나라도 없으면 gap lane에 남고 결론은 닫히지 않습니다. 시나리오는 사실 lane으로 승격되지 않습니다.</p></aside></div>
 	{:else}
-		<div class="empty"><h3>선택한 산업을 seed로 검증 비행을 컴파일합니다.</h3><p>recipe별 전용 화면은 만들지 않습니다. 동일한 flight, claim, receipt 계약으로 세 워크플로를 실행합니다.</p><button onclick={onCompile} disabled={loading}>{loading ? '컴파일 중' : '워크플로 컴파일'}</button></div>
+		<div class="empty"><h3>선택한 산업을 seed로 검증 비행을 컴파일합니다.</h3><p>recipe별 전용 화면은 만들지 않습니다. 동일한 flight, claim, receipt 계약으로 세 워크플로를 실행합니다.</p>{#if error}<b role="alert">{error}</b>{/if}<button onclick={onCompile} disabled={loading}>{loading ? '컴파일 중' : error ? '워크플로 다시 컴파일' : '워크플로 컴파일'}</button></div>
 	{/if}
 	<footer><strong>교차시장 게이트</strong><span>고정 질문 20개 compiler 준비. exact corpCode, CIK, sourceRef, dataAsOf, unit 없이는 paired result를 열지 않습니다.</span></footer>
 </section>
@@ -52,6 +53,7 @@
 	.empty { max-width: 480px; margin: 110px auto; text-align: center; }
 	.empty h3 { color: #dfe7f1; font-size: 18px; }
 	.empty p { color: #708198; font-size: 11px; line-height: 1.6; }
+	.empty > b { display: block; margin: 10px 0; color: #e58a8a; font-size: 9px; }
 	.empty button { margin-top: 12px; border: 1px solid #2a3a51; border-radius: 9px; padding: 10px 15px; color: #b9c7d9; background: #111a27; cursor: pointer; }
 	footer { display: flex; gap: 9px; margin-top: 15px; padding: 10px; border: 1px dashed #25344a; border-radius: 9px; color: #6b7c92; font-size: 8px; }
 	footer strong { flex: 0 0 auto; color: #88a0bd; }

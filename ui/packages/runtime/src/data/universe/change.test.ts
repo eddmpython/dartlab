@@ -33,10 +33,10 @@ function assertion(id: string, availableAt: string): UniverseAssertion {
 }
 
 describe('Universe change compiler', () => {
-	it('labels mover data as a current demo and emits exact-history gaps', async () => {
+	it('labels mover data as current signals and emits exact-history gaps', async () => {
 		const first = await loadCurrentChangeUniverse(fakeCore(), atlas, snapshot);
 		const second = await loadCurrentChangeUniverse(fakeCore(), atlas, snapshot);
-		expect(first.mode).toBe('currentDemo');
+		expect(first.mode).toBe('currentSignals');
 		expect(first.marks[0]?.kind).toBe('newlyKnown');
 		expect(first.marks[0]?.evidence.before.status).toBe('missing');
 		expect(first.aggregates[0]).toMatchObject({ coveredCount: 1, unknownCount: 1, changeCount: 1 });

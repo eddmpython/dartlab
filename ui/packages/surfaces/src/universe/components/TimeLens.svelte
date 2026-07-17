@@ -13,7 +13,7 @@
 </script>
 
 <section class="timeLens" aria-label="시간 렌즈">
-	<div class="title"><span>TIME LENS</span><p>사건의 유효 시점과 당시 알 수 있었던 시점을 독립적으로 자릅니다.</p></div>
+	<div class="title"><span>TIME LENS</span><p>근거 검색과 검증 워크플로의 유효 시점과 당시 인지 시점을 독립적으로 지정합니다.</p></div>
 	<label><span>VALID AT</span><input type="date" value={validAt ?? ''} onchange={(event) => onChange(value(event), knownAt)} /></label>
 	<label><span>KNOWN AT</span><input type="date" value={knownAt ?? ''} onchange={(event) => onChange(validAt, value(event))} /></label>
 	{#if validAt && knownAt && validAt !== knownAt}<b title="유효 시점과 인지 시점이 다릅니다">REVISION</b>{/if}

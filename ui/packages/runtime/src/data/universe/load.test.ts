@@ -48,7 +48,10 @@ describe('Universe loaders', () => {
 		expect(seed.scene.nodes).toHaveLength(2);
 		expect(seed.scene.edges).toHaveLength(1);
 		expect(seed.snapshot.exactReplayReady).toBe(false);
-		expect(seed.releaseState).toBe('localReview');
+		expect(seed.releaseState).toBe('ga');
+		expect(seed.product.routeReady).toBe(true);
+		expect(seed.product.capabilities.find((item) => item.capabilityId === 'atlas')?.status).toBe('ready');
+		expect(seed.product.capabilities.find((item) => item.capabilityId === 'factRelations')?.status).toBe('guarded');
 	});
 
 	it('loads observations lazily, preserves zero, and deduplicates an in-flight company request', async () => {
@@ -61,5 +64,13 @@ describe('Universe loaders', () => {
 		expect(fetchFn).toHaveBeenCalledTimes(1);
 		expect(first.map((point) => point.value)).toEqual([0, 12]);
 		expect(second).toEqual(first);
+	});
+
+	it('opens the disabled incident surface without touching a source', async () => {
+		const fetchFn = vi.fn(async () => { throw new Error('source must stay untouched'); });
+		const seed = await loadUniverseRouteSeed(createDataCore({ fetchFn: fetchFn as typeof fetch }), 'disabled');
+		expect(fetchFn).not.toHaveBeenCalled();
+		expect(seed.releaseState).toBe('disabled');
+		expect(seed.product.routeReady).toBe(false);
 	});
 });

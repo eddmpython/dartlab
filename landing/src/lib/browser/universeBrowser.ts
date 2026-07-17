@@ -12,7 +12,7 @@ import type { DartlabBrowserOptions, UniverseBrowser } from './types';
 export function createUniverseBrowser(options: DartlabBrowserOptions): UniverseBrowser {
 	const dataCore = createDataCore({ fetchFn: options.fetchFn });
 	let seedPromise: ReturnType<typeof loadUniverseRouteSeed> | null = null;
-	const seed = () => (seedPromise ??= loadUniverseRouteSeed(dataCore));
+	const seed = () => (seedPromise ??= loadUniverseRouteSeed(dataCore, options.universeReleaseState));
 	const resolveEvidence = createUniverseEvidenceResolver(dataCore);
 	return {
 		seed,

@@ -67,7 +67,7 @@ export async function compilePairedConformance(
 	questions: readonly UniversePairedQuestion[] = UNIVERSE_PAIRED_QUESTIONS
 ): Promise<UniversePairedResult[]> {
 	if (questions.length !== 20 || new Set(questions.map((question) => question.questionId)).size !== 20) {
-		throw new Error('Universe paired demo requires exactly 20 fixed questions');
+		throw new Error('Universe paired conformance requires exactly 20 fixed questions');
 	}
 	const krByMetric = new Map(krObservations.map((observation) => [observation.metricId, observation]));
 	const usByMetric = new Map(usObservations.map((observation) => [observation.metricId, observation]));

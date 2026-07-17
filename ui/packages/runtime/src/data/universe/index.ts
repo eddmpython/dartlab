@@ -6,5 +6,6 @@ export * from './flight';
 export * from './lenses';
 export * from './load';
 export * from './projection';
+export * from './release';
 export * from './time';
 export * from './workflows';

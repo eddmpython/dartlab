@@ -173,14 +173,14 @@ export async function loadCurrentChangeUniverse(
 	for (const { category, entry } of selected) {
 		const entityId = String(entry.stockCode ?? '');
 		const industryId = String(entry.industry ?? 'unknown');
-		const claimId = await identity('claim', { mode: 'currentDemo', category, entityId, toPeriod });
+		const claimId = await identity('claim', { mode: 'currentSignals', category, entityId, toPeriod });
 		const before = await missingReceipt(`${claimId}:before`, snapshot.snapshotSetId, fromPeriod, toPeriod);
 		const after = await missingReceipt(`${claimId}:after`, snapshot.snapshotSetId, toPeriod, toPeriod);
 		const evidenceGap = await gap('filingEvidence', `${entityId} before and after exact locator`, 'currentSignalHasNoAssertionHistory');
 		const beforeValue = fromPeriod ? finite(timeline?.data[fromPeriod]?.[entityId]?.revenue) : null;
 		const afterValue = finite(entry.revenue);
 		marks.push({
-			changeId: await identity('change', { mode: 'currentDemo', category, entityId, fromPeriod, toPeriod, beforeValue, afterValue }),
+			changeId: await identity('change', { mode: 'currentSignals', category, entityId, fromPeriod, toPeriod, beforeValue, afterValue }),
 			entityId,
 			entityLabel: displayText(entry.corpName, entityId),
 			industryId,
@@ -197,9 +197,9 @@ export async function loadCurrentChangeUniverse(
 		});
 	}
 	const aggregates = aggregateCoverage(atlas, timeline, fromPeriod, marks, omittedByIndustry);
-	const diffPayload = { mode: 'currentDemo', snapshotSetId: snapshot.snapshotSetId, fromPeriod, toPeriod, marks, aggregates, gaps };
+	const diffPayload = { mode: 'currentSignals', snapshotSetId: snapshot.snapshotSetId, fromPeriod, toPeriod, marks, aggregates, gaps };
 	return {
-		mode: 'currentDemo',
+		mode: 'currentSignals',
 		fromSnapshotSetId: null,
 		toSnapshotSetId: snapshot.snapshotSetId,
 		fromPeriod,

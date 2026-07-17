@@ -286,7 +286,7 @@ falsifierYield = 확인 가능한 반증 조건 수 / 결론 수
 gapHonesty = 명시된 missing 및 omitted 수 / 실제 missing 및 omitted 수
 ```
 
-제품 beta에서는 같은 질문을 기존 map, table, Universe로 수행해 완료시간, 정답, 근거 회수, 오판을 비교한다. Universe가 더 화려하지만 개선이 없으면 해당 장면을 기각한다.
+GA 운영에서는 같은 질문을 기존 map, table, Universe로 수행해 완료시간, 정답, 근거 회수, 오판을 비교한다. Universe가 더 화려하지만 개선이 없으면 해당 장면을 기각한다.
 
 ## 10. 구현 순서
 

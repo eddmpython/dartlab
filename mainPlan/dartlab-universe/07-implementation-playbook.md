@@ -529,7 +529,7 @@ U0 졸업 산출:
 
 ### U1-06 34개 산업 변화 우주
 
-선행 조건: U0-W01 합격. historical SourceSnapshotSet이 아직 없으면 current atlas demo로 범위를 명시한다.
+선행 조건: U0-W01 합격. historical SourceSnapshotSet이 아직 없으면 current signals로 범위를 명시한다.
 
 변경:
 
@@ -541,14 +541,14 @@ U0 졸업 산출:
 
 1. atlas industry 좌표를 deterministic anchor로 고정한다.
 2. timeline과 movers를 lazy load한다.
-3. current demo와 exact historical replay mode를 명시적으로 분리한다.
+3. current signals와 exact historical replay mode를 명시적으로 분리한다.
 4. created, corrected, retracted, newlyKnown, stale을 별도 glyph로 표시한다.
 5. aggregate에 memberCount, coverage, unknownCount, omittedCount를 넣는다.
 6. 변화 mark가 before 및 after EvidenceReceipt로 돌아가게 한다.
 
 종료 조건:
 
-- current demo가 relation을 fact 변화로 설명한 사례 0
+- current signals가 relation을 fact 변화로 설명한 사례 0
 - exact replay mode look-ahead 0
 - same snapshotSet의 diff hash 일치
 - atlas first data와 frame budget 통과
@@ -695,7 +695,7 @@ U3는 기본 실행 phase가 아니다. U2가 합격하면 건너뛴다.
 - currency와 unit은 lens에서 명시
 - name fuzzy auto-link 0
 
-### U4-03 paired product demo
+### U4-03 paired product scenario
 
 20개 KR/US paired question을 고정한다. 각 질문은 sourceRef, dataAsOf, unit, 결손을 가진다.
 
@@ -727,9 +727,9 @@ U3는 기본 실행 phase가 아니다. U2가 합격하면 건너뛴다.
 - mobile 기본 off
 - 3D 실패 시 2D 즉시 복귀
 
-## 9. Phase U6: public beta와 GA
+## 9. Phase U6: GA 운영
 
-### U6-01 local review
+### U6-01 production 검증
 
 - `/universe` 실제 production build 경로에서 검수
 - 320, 375, 768, 1440 width
@@ -737,19 +737,19 @@ U3는 기본 실행 phase가 아니다. U2가 합격하면 건너뛴다.
 - network waterfall와 heap capture
 - fact/candidate 시각 문법 눈검수
 
-### U6-02 public beta
+### U6-02 GA 공개
 
-- 같은 `/universe` route를 beta state로 공개
-- navigation에는 Beta label
+- 같은 `/universe` route를 GA state로 공개
+- navigation에는 독립 Universe 항목
 - unresolved diagnostics는 로컬 export만
 - 개인 query 원문 telemetry 0
 - rollback drill 1회
 
-### U6-03 GA
+### U6-03 기능 lane 운영
 
-- 14일 beta 동안 SLO 위반 없음
-- sourceRef coverage 100%
-- hard negative false acceptance 1% 이하
+- atlas와 current signals는 derived로 입장
+- exact pointer 없는 evidence search는 candidate-only
+- 사실 lane은 sourceRef coverage 100%와 hard negative false acceptance 1% 이하일 때만 입장
 - schema rollback과 route disable 훈련 통과
 - 운영자 UI 눈검수와 push 승인
 
@@ -827,10 +827,10 @@ UI가 포함된 C6 이후 commit은 눈검수와 운영자 명시 승인 전 pus
 
 계획은 신규 능력을 attempts에서 시작하고 production 이관 지점을 contract, runtime, surface, route로 나눴다. 가장 위험한 identity, sourceRef, bitemporal, projection 결정론을 UI보다 먼저 검증한다. `/map`과 `/universe`가 route component를 공유하지 않고 runtime만 공유하므로 제품 분리는 얻되 유지보수 복제는 피한다. U3를 optional 승인 phase로 유지해 runtime SSOT를 지킨다.
 
-발견한 핵심 갭은 active frontend 대량 삭제다. 이를 U1 entry blocker로 명시하고 U0는 계속 진행 가능하게 분리했다. 또 기존 계획에 없던 public beta, rollback drill, commit 경계를 추가해 구현 후 운영 공백을 닫았다.
+발견한 핵심 갭은 active frontend 대량 삭제다. 이를 U1 entry blocker로 명시하고 U0는 계속 진행 가능하게 분리했다. 또 기존 계획에 없던 GA admission, rollback drill, commit 경계를 추가해 구현 후 운영 공백을 닫았다.
 
 ### 전문 PM 평가
 
-사용자는 우주라는 독립 제품을 원한다. `/universe`가 명확한 브랜드와 share URL owner가 되고 `/map`은 익숙한 시장 지도를 유지하므로 두 작업이 충돌하지 않는다. 사용자가 체감하는 가치 순서는 빠른 atlas, 사실과 후보의 구분, 원문 근거, 시간, 렌즈, cross-market, 3D다. 이 순서를 work packet과 demo acceptance에 그대로 반영했다.
+사용자는 우주라는 독립 제품을 원한다. `/universe`가 명확한 브랜드와 share URL owner가 되고 `/map`은 익숙한 시장 지도를 유지하므로 두 작업이 충돌하지 않는다. 사용자가 체감하는 가치 순서는 빠른 atlas, 사실과 후보의 구분, 원문 근거, 시간, 렌즈, cross-market, 3D다. 이 순서를 work packet과 product scenario acceptance에 그대로 반영했다.
 
-기능 수보다 신뢰 가능한 연결을 먼저 release한다. beta에서 sourceRef coverage와 hard negative를 유지하지 못하면 GA하지 않는 기준이 제품 차별화를 보호한다.
+기능 수보다 신뢰 가능한 연결을 먼저 release한다. route는 GA로 운영하되 sourceRef coverage와 hard negative를 통과하지 못한 사실 lane을 열지 않는 기준이 제품 차별화를 보호한다.

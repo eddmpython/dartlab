@@ -5,11 +5,13 @@ import type {
 	UniverseEvidenceResolution,
 	UniverseObservationPoint,
 	UniverseObservationRange,
+	UniverseReleaseState,
 	UniverseRouteSeed
 } from '@dartlab/ui-contracts';
 
 export interface DartlabBrowserOptions {
 	fetchFn: FetchLike;
+	universeReleaseState?: UniverseReleaseState;
 }
 
 export interface MarketMapBundle {

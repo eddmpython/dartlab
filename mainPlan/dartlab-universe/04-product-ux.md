@@ -90,7 +90,7 @@ Time Lens는 슬라이더 하나가 아니다.
 
 ### 변화 우주
 
-산업과 회사 좌표는 고정하고 두 SourceSnapshotSet 사이의 created, corrected, retracted, newlyKnown, stale만 표시한다. 사용자가 변화 mark를 열면 before와 after evidence가 나란히 열린다. history exact replay가 불가능하면 현재 atlas demo와 exact replay를 구분한다.
+산업과 회사 좌표는 고정하고 두 SourceSnapshotSet 사이의 created, corrected, retracted, newlyKnown, stale만 표시한다. 사용자가 변화 mark를 열면 before와 after evidence가 나란히 열린다. history exact replay가 불가능하면 현재 파생 신호와 exact replay를 구분한다.
 
 ### Thesis Kill-Chain
 
@@ -191,9 +191,9 @@ share URL에는 다음만 넣는다.
 - node label 확대와 high contrast
 - WebGL context loss 시 table 및 SVG 자동 전환
 
-## 13. 제품 demo acceptance
+## 13. 제품 시나리오 acceptance
 
-다음 여섯 데모를 실제 브라우저에서 통과해야 MVP다.
+다음 여섯 시나리오를 실제 브라우저에서 통과해야 제품 입장을 허용한다.
 
 1. atlas 첫 진입 후 34개 산업 변화 우주 열기
 2. 두 knownAt 사이의 변화 하나에서 before와 after evidence 열기
@@ -202,7 +202,7 @@ share URL에는 다음만 넣는다.
 5. knownAt을 과거로 옮겨 이후 assertion 제거
 6. 삼성전자와 Apple의 같은 재무 metric, unit, source, gap 비교
 
-각 demo는 graph 조작, table 동등 경로, share URL 재현을 모두 확인한다.
+각 시나리오는 graph 조작, table 동등 경로, share URL 재현을 모두 확인한다.
 
 추가 route acceptance는 다음과 같다.
 

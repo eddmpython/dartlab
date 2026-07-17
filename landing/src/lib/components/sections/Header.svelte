@@ -35,6 +35,7 @@
 		{ label: 'Cards', href: `${base}/cards` },
 		{ label: 'Scan', href: `${base}/scan` },
 		{ label: 'Viewer', href: `${base}/viewer` },
+		{ label: 'Universe', href: `${base}/universe` },
 		{ label: 'Map', href: `${base}/map` },
 		{ label: 'Terminal', href: `${base}/terminal` }
 	];

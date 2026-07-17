@@ -1,7 +1,7 @@
 # DartLab Universe
 
-> 상태: U1 localReview 구현 및 브라우저 눈검수 완료, U0-G04 reviewed gold gate로 publicBeta 차단
-> 기준일: 2026-07-16 KST
+> 상태: `/universe` GA 제품 경로 구현, 사실·exact replay 기능은 증거별 fail-closed admission 유지
+> 기준일: 2026-07-17 KST
 > 제품명: DartLab Universe
 > 정본 경계: HF 데이터는 진실, 온톨로지는 의미 계약, 엔진은 렌즈, Universe는 요청 시점 투영
 
@@ -62,20 +62,20 @@ DartLab의 데이터를 공개 웹에서 우주처럼 탐색하는 제품은 가
 7. [06-progress-ledger.md](06-progress-ledger.md): 결정 및 승인 대기 원장
 8. [07-implementation-playbook.md](07-implementation-playbook.md): 작업자가 순서대로 실행하는 work packet, commit, release 절차
 9. [08-attempts-evidence-matrix.md](08-attempts-evidence-matrix.md): `_attempts` 가설, 실측, falsifier, 졸업 원장
-10. [09-public-route-release-contract.md](09-public-route-release-contract.md): `/universe` 독립 라우트, `/map` 경계, public beta와 장기 운영 계약
+10. [09-public-route-release-contract.md](09-public-route-release-contract.md): `/universe` 독립 라우트, `/map` 경계, GA와 장기 운영 계약
 11. [10-innovation-thesis-killer-workflows.md](10-innovation-thesis-killer-workflows.md): 제품 혁신 thesis, P0와 P1 killer workflow, 정보 수율
 12. [11-visual-information-physics.md](11-visual-information-physics.md): 의미 좌표, L0~L5 representation, renderer, 접근성
 13. [12-innovation-validation-scorecard.md](12-innovation-validation-scorecard.md): 7축 혁신 점수, readiness gate, kill condition
 
 ## 구현 순서
 
-1. U0: `tests/_attempts/dartlabUniverse/`에서 graph truth, snapshot, workflow, visual, policy 계약을 실데이터로 검증한다. Bounded projection부터 renderer bakeoff, release gold admission, queue 600행, original source binding 600/600, human-only promotion compiler까지 실행했다. Human decision과 실제 reviewed positive 및 hard negative는 아직 0건이라 U0 graduation과 U1은 차단한다.
-2. U1: 독립 `/universe` route의 localReview에서 기존 atlas 34개 산업과 50개 파생 흐름, 결정론 Canvas 2D, 관계표, 검색과 선택 URL을 구현했다. Reviewed gold gate 전에는 CURRENT ONLY와 `noindex,nofollow`를 유지하고 변화 우주 및 첫 3개 Kill-Chain의 publicBeta는 열지 않는다.
+1. U0: `tests/_attempts/dartlabUniverse/`에서 graph truth, snapshot, workflow, visual, policy 계약을 실데이터로 검증한다. Bounded projection부터 renderer bakeoff, release gold admission, queue 600행, original source binding 600/600, human-only promotion compiler까지 실행했다. Human decision과 reviewed gold가 0건인 상태는 사실 관계 admission만 차단하며 파생 아틀라스 제품 경로를 차단하지 않는다.
+2. U1: 독립 `/universe` GA route에서 기존 atlas 34개 산업과 50개 파생 흐름, 결정론 Canvas 2D, 관계표, 검색과 선택 URL을 제공한다. 제품 입장 검사에서 빈 장면, provenance 결손, exact evidence 없는 fact relation을 즉시 실패 폐쇄한다.
 3. U2: 엣지와 claim 클릭 시 기존 브라우저 검색 sidecar와 panel range read로 exact evidence를 찾는 Evidence on Demand를 붙인다.
 4. U3: 런타임 근거 확인이 성능 예산을 넘는다는 측정이 있을 때만 기존 map artifact의 additive schema 확장을 토론한다.
 5. U4: DART와 EDGAR의 동형 16컬럼 panel과 표준 재무를 사용해 시장간 비교 장면을 연다.
 6. U5: 2D 제품과 근거 품질이 졸업한 뒤 같은 projection 계약 위에 선택적 3D Galaxy 렌즈를 얹는다.
-7. U6: 같은 `/universe` route를 local review, public beta, GA 순서로 승격하고 운영 SLO와 rollback 훈련을 통과한다.
+7. U6: 같은 `/universe` route를 GA 또는 disabled 두 상태로 운영한다. 아틀라스 제품 상태와 사실, exact replay, evidence 기능 admission을 분리하고 운영 SLO 및 rollback을 지속 검증한다.
 
 ## 승인 게이트
 

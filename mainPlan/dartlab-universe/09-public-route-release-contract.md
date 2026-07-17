@@ -105,7 +105,7 @@ cache key는 `snapshotSetId + schemaVersion + sourcePath + byteRange + projectio
 - `/map`에는 `Universe에서 근거와 시간으로 탐색` CTA를 둔다.
 - `/universe`에는 `시장 지도 열기` link를 둔다.
 - 동일 기능 버튼을 두 route에 복사하지 않는다.
-- beta 기간에는 Universe label에 Beta를 표시한다.
+- GA 경로에는 `Production` 상태를 표시하고 기능별 근거 상태는 장면 내부에서 별도로 표시한다.
 
 ## 6. SEO와 share metadata
 
@@ -122,28 +122,28 @@ cache key는 `snapshotSetId + schemaVersion + sourcePath + byteRange + projectio
 
 | state | 접근 | 목적 | push 조건 |
 |---|---|---|---|
-| localReview | local production build만 | 눈검수와 performance | push 없음 |
-| publicBeta | public `/universe`, Beta 표시 | real browser SLO와 usability | 운영자 눈검수 승인 |
-| ga | public `/universe` | 정식 제품 | beta 14일 gate |
+| ga | public `/universe` | 정식 제품 | 기계 admission, 실제 브라우저 검수, 운영자 승인 |
 | disabled | 유지보수 안내 또는 nav 숨김 | incident 격리 | runtime config 또는 route rollback |
 
-release state는 UI 복제나 별도 build를 만들지 않는다. 하나의 route가 같은 contracts와 runtime을 소비한다.
+release state는 UI 복제나 별도 build를 만들지 않는다. 하나의 route가 같은 contracts와 runtime을 소비한다. 로컬 검수는 별도 제품 상태가 아니라 같은 GA build의 검증 절차다.
 
-## 8. public beta gate
+## 8. GA route admission
 
 필수:
 
-- U0 gold 통과
+- meta build identity와 scene hash 존재
+- atlas와 scene이 비어 있지 않음
+- 모든 node와 relation의 sourceRef 존재
+- dangling relation 0
+- exact evidence 없는 fact relation 0
 - atlas first data 예산 통과
-- fact sourceRef 100%
 - public localOnly leak 0
 - `/map` regression 0
 - keyboard, reduced motion, table equivalent
 - mobile heap 250MB 이하
-- rollback drill
 - 실제 화면 눈검수
 
-beta에서 수집 가능한 운영 지표:
+수집 가능한 운영 지표:
 
 - snapshotSetId, source별 version, buildId와 schemaVersion
 - load duration과 transfer bytes
@@ -160,17 +160,17 @@ beta에서 수집 가능한 운영 지표:
 - 사용자 URL 전체
 - local file path
 
-## 9. GA gate
+## 9. 기능 lane admission과 운영 목표
 
-- beta 14일 동안 critical incident 0
-- fact sourceRef coverage 100%
-- hard negative false acceptance 1% 이하
-- evidence cold P95 5초 이하
-- atlas availability 99.9%
-- schema current와 previous reader 검증
-- public policy audit
-- dependency license audit
-- rollback 15분 이내 훈련
+GA는 모든 데이터 lane을 사실로 여는 상태가 아니다. route의 제품 안정성과 각 기능의 증거 적격성을 분리한다.
+
+- atlas와 current signals는 derived lane으로 GA admission한다.
+- evidence search는 exact pointer가 없으면 candidate-only를 유지한다.
+- Thesis Kill-Chain은 required evidence가 비면 결론을 열어 둔다.
+- fact relation은 sourceRef 100%, reviewed gold, hard negative false acceptance 1% 이하일 때만 입장한다.
+- exact replay는 source set 전체가 불변일 때만 입장한다.
+- evidence cold P95 5초, atlas availability 99.9%, critical incident 0은 지속 운영 목표다.
+- schema current 및 previous reader, public policy, dependency license, rollback 15분 훈련은 정기 운영 검증으로 유지한다.
 
 ## 10. 장애와 rollback
 
@@ -246,7 +246,7 @@ active frontend refactor가 끝나기 전 exact navigation owner는 P0-01에서 
 - shared loader cache dedup
 - route load network waterfall
 - public policy leak test
-- beta/disabled state
+- ga/disabled state
 - Playwright visual and keyboard flow
 
 ## 롤백
@@ -257,8 +257,8 @@ route state를 disabled로 바꾸거나 prior UI commit으로 복귀한다. data
 
 ### 전문 개발자 평가
 
-독립 route는 제품 코드를 복제하면 유지보수 부채가 된다. 이 계약은 route state와 UX만 분리하고 loader, cache, evidence primitive를 공유한다. `/map`과 `/universe`가 서로 import하지 않아 한쪽 회귀가 다른 쪽에 전파되는 범위를 줄였다. 같은 route에서 localReview, beta, GA를 운영해 preview surface 증식을 막았다.
+독립 route는 제품 코드를 복제하면 유지보수 부채가 된다. 이 계약은 route state와 UX만 분리하고 loader, cache, evidence primitive를 공유한다. `/map`과 `/universe`가 서로 import하지 않아 한쪽 회귀가 다른 쪽에 전파되는 범위를 줄였다. 같은 route에서 GA와 disabled를 운영해 preview surface 증식을 막았다.
 
 ### 전문 PM 평가
 
-Universe는 map보다 넓은 사용자 약속을 가진다. 독립 navigation과 share URL이 있어야 대표 제품으로 성장할 수 있다. 동시에 map을 없애지 않아 기존 사용자의 익숙한 작업을 지킨다. beta 성공 기준을 방문 수보다 evidence open, task completion, fact coverage에 둔 것이 제품의 핵심 가치와 맞다.
+Universe는 map보다 넓은 사용자 약속을 가진다. 독립 navigation과 share URL이 있어야 대표 제품으로 성장할 수 있다. 동시에 map을 없애지 않아 기존 사용자의 익숙한 작업을 지킨다. 제품 성공 기준을 방문 수보다 evidence open, task completion, fact coverage에 둔 것이 제품의 핵심 가치와 맞다.

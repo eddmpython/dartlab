@@ -40,15 +40,15 @@
 	{#if !data}
 		<div class="loadState">
 			<span>LAZY SOURCE</span><h3>타임라인과 변화 신호는 요청 전까지 읽지 않습니다.</h3>
-			<p>현재 원천에는 exact historical assertion 묶음이 없습니다. 로드 후에도 사실 변화가 아닌 현재 신호 데모로 표시됩니다.</p>
+			<p>현재 원천에는 exact historical assertion 묶음이 없습니다. 로드 후에도 사실 변화가 아닌 현재 파생 신호로 표시됩니다.</p>
 			<button onclick={onLoad} disabled={loading}>{loading ? '불러오는 중' : '변화 원천 불러오기'}</button>
 			{#if error}<b role="alert">{error}</b>{/if}
 		</div>
 	{:else}
 		<div class="modeBanner" class:exact={data.mode === 'exactReplay'}>
-			<strong>{data.mode === 'exactReplay' ? 'EXACT HISTORICAL REPLAY' : 'CURRENT SIGNAL DEMO'}</strong>
+			<strong>{data.mode === 'exactReplay' ? 'EXACT HISTORICAL REPLAY' : 'CURRENT SIGNALS'}</strong>
 			<span>{data.fromPeriod ?? '이력 없음'} → {data.toPeriod}</span>
-			<p>{data.mode === 'exactReplay' ? '두 불변 snapshot 사이의 assertion 차이입니다.' : '재무 급변 신호를 배치한 데모입니다. 기업 관계 또는 공시 문구의 역사적 변화를 주장하지 않습니다.'}</p>
+			<p>{data.mode === 'exactReplay' ? '두 불변 snapshot 사이의 assertion 차이입니다.' : '재무 급변을 현재 파생 신호로 배치합니다. 기업 관계 또는 공시 문구의 역사적 변화를 주장하지 않습니다.'}</p>
 		</div>
 		<div class="glyphLegend" aria-label="변화 표식 범례">
 			{#each Object.entries(GLYPHS) as [kind, glyph]}<span class={kind}><b>{glyph}</b>{LABELS[kind as UniverseChangeKind]}</span>{/each}

@@ -7,11 +7,12 @@
 		change: UniverseChangeMark;
 		resolution?: UniverseEvidenceResolution | null;
 		loading?: boolean;
+		error?: string | null;
 		onResolve: () => void;
 		onClose: () => void;
 	}
 
-	let { change, resolution = null, loading = false, onResolve, onClose }: Props = $props();
+	let { change, resolution = null, loading = false, error = null, onResolve, onClose }: Props = $props();
 	let pointer = $derived(resolution?.pointer ?? null);
 	let gaps = $derived(resolution?.gaps ?? change.evidence.gaps);
 
@@ -60,7 +61,8 @@
 		<section class="candidates"><h3>SEARCH CANDIDATES</h3><ol>{#each resolution.candidates as candidate (candidate.documentId)}<li><strong>{candidate.title || candidate.documentId}</strong><span>{candidate.entityId} · {candidate.publishedAt} · score {candidate.score.toFixed(2)}</span><p>{candidate.snippet}</p></li>{/each}</ol></section>
 	{/if}
 	{#if gaps.length}<section class="gaps"><h3>UNRESOLVED</h3>{#each gaps as gap (gap.gapId)}<p><b>{gap.reasonCode}</b><span>{gap.requestedField}</span></p>{/each}</section>{/if}
-	<button class="resolve" onclick={onResolve} disabled={loading}>{loading ? '검색 중' : '공시 원문 후보 검색'}</button>
+	{#if error}<p class="resolveError" role="alert">근거 검색이 중단되었습니다. {error}</p>{/if}
+	<button class="resolve" onclick={onResolve} disabled={loading}>{loading ? '검색 중' : error ? '근거 검색 다시 시도' : '공시 원문 후보 검색'}</button>
 </div>
 
 <style>
@@ -92,4 +94,5 @@
 	.gaps span { color: #75869c; font-size: 8px; text-align: right; }
 	.resolve { width: 100%; margin-top: 19px; border: 1px solid #2a3a51; border-radius: 9px; padding: 10px; color: #b9c7d9; background: #111a27; cursor: pointer; }
 	.resolve:disabled { opacity: .55; cursor: wait; }
+	.resolveError { margin: 12px 0 0; color: #e58a8a; font-size: 9px; line-height: 1.5; }
 </style>
