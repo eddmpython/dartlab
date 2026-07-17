@@ -4,7 +4,6 @@ import type {
 	UniverseKnowledgeDomain,
 	UniverseKnowledgeDomainId,
 	UniverseKnowledgeEdge,
-	UniverseKnowledgeFilmBeat,
 	UniverseKnowledgeNode,
 	UniverseKnowledgeNodeKind,
 	UniverseKnowledgeOverview,
@@ -39,6 +38,7 @@ import {
 	normalizeKnowledgePath as normalizedPath
 } from './knowledgeCatalog';
 import { createKnowledgeSearchExecutor } from './knowledgeSearch';
+import { compileKnowledgeFilm } from './knowledgeFilm';
 import { compileKnowledgeFileSemantics } from './semantic';
 
 export { classifyKnowledgePath } from './knowledgeCatalog';
@@ -254,21 +254,6 @@ function makeNode(
 	});
 }
 
-function filmFor(nodes: readonly UniverseKnowledgeNode[], edges: readonly UniverseKnowledgeEdge[]): readonly UniverseKnowledgeFilmBeat[] {
-	const firstNode = nodes[0];
-	if (!firstNode) return [];
-	const focusNodes = [firstNode, ...nodes.slice(1).sort((left, right) => right.weight - left.weight || left.nodeId.localeCompare(right.nodeId)).slice(0, 5)];
-	return focusNodes.map((node, index) => Object.freeze({
-		beatId: `beat:${index}:${node.nodeId}`,
-		label: index === 0 ? '전체 조망' : node.label,
-		narration: index === 0 ? `${nodes.length.toLocaleString()}개 지식 개체의 구조를 먼저 봅니다.` : `${node.label}에서 연결된 지식과 원천을 따라갑니다.`,
-		targetNodeId: node.nodeId,
-		revealNodeIds: nodes.slice(0, Math.max(1, Math.ceil(((index + 1) / focusNodes.length) * nodes.length))).map((item) => item.nodeId),
-		revealEdgeIds: edges.slice(0, Math.ceil(((index + 1) / focusNodes.length) * edges.length)).map((edge) => edge.edgeId),
-		durationMs: index === 0 ? 2200 : 1900
-	}));
-}
-
 function compileScene(input: {
 	sceneId: string;
 	title: string;
@@ -313,7 +298,7 @@ function compileScene(input: {
 		breadcrumbs: Object.freeze([...input.breadcrumbs]),
 		nodes,
 		edges,
-		film: Object.freeze(filmFor(nodes, edges)),
+		film: compileKnowledgeFilm(nodes, edges),
 		receipt: Object.freeze({
 			indexedItemCount: input.indexedItemCount,
 			outputNodeCount: nodes.length,
@@ -378,7 +363,7 @@ function rootScene(domains: readonly UniverseKnowledgeDomain[], info: HfDatasetI
 		breadcrumbs: Object.freeze([{ targetId: center.nodeId, label: 'Universe' }]),
 		nodes: Object.freeze(nodes),
 		edges: Object.freeze(edges),
-		film: Object.freeze(filmFor(nodes, edges)),
+		film: compileKnowledgeFilm(nodes, edges),
 		receipt: Object.freeze({ indexedItemCount: domains.length, outputNodeCount: nodes.length, outputEdgeCount: edges.length, omittedNodeCount: 0, sourceRevision: info.sha })
 	});
 }

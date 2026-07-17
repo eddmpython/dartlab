@@ -42,6 +42,7 @@
 	let filmActive = $state(false);
 	let filmPlaying = $state(false);
 	let filmSpeed = $state<0.5 | 1 | 2>(1);
+	let filmTheater = $state(false);
 	let idleHandle: number | null = null;
 	let articleOpen = $state(false);
 
@@ -131,6 +132,7 @@
 		filmIndex = 0;
 		filmActive = false;
 		filmPlaying = false;
+		filmTheater = false;
 		searchResult = null;
 		content = null;
 		contentError = null;
@@ -231,6 +233,32 @@
 		filmSpeed = filmSpeed === 0.5 ? 1 : filmSpeed === 1 ? 2 : 0.5;
 	}
 
+	function exportFilmStoryboard(): void {
+		if (!scene?.film.length) return;
+		const sourceRefs = [...new Set(scene.nodes.flatMap((node) => [node.sourceRef, ...node.evidenceRefs]))];
+		const payload = {
+			schemaVersion: 'knowledgeFilm.v1',
+			sceneId: scene.sceneId,
+			targetId: scene.targetId,
+			title: scene.title,
+			subtitle: scene.subtitle,
+			sourceRevision: scene.receipt.sourceRevision,
+			receipt: scene.receipt,
+			sourceRefs,
+			beats: scene.film
+		};
+		const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+		const objectUrl = URL.createObjectURL(blob);
+		const anchor = document.createElement('a');
+		const safeTitle = scene.title.replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, '').slice(0, 60) || 'knowledge-film';
+		anchor.href = objectUrl;
+		anchor.download = `${safeTitle}.knowledge-film.json`;
+		document.body.append(anchor);
+		anchor.click();
+		anchor.remove();
+		window.setTimeout(() => URL.revokeObjectURL(objectUrl), 0);
+	}
+
 	$effect(() => {
 		if (!filmPlaying || !scene || !currentBeat) return;
 		const activeScene = scene;
@@ -272,7 +300,7 @@
 	});
 </script>
 
-<section class="knowledgeUniverse" aria-label="DartLab 통합 지식 우주">
+<section class="knowledgeUniverse" class:filmTheater aria-label="DartLab 통합 지식 우주">
 	<header class="commandBar">
 		<div class="scenePath" aria-label="현재 지식 경로">
 			{#if scene}
@@ -460,10 +488,12 @@
 			<button class="play" type="button" disabled={!scene?.film.length} onclick={toggleFilm}>{filmPlaying ? 'Ⅱ' : '▶'}</button>
 			<button type="button" aria-label="다음 장면" disabled={!scene?.film.length} onclick={() => activateBeat(filmIndex + 1)}>›</button>
 			<button class="speed" type="button" onclick={cycleSpeed}>{filmSpeed}×</button>
+			<button class="theater" class:active={filmTheater} type="button" aria-label="필름 시네마 모드" aria-pressed={filmTheater} onclick={() => (filmTheater = !filmTheater)}>▣</button>
+			<button class="export" type="button" aria-label="지식 필름 스토리보드 내보내기" disabled={!scene?.film.length} onclick={exportFilmStoryboard}>JSON</button>
 		</div>
-		<div class="filmNarration"><span>KNOWLEDGE FILM</span><strong>{currentBeat?.label ?? '장면 대기'}</strong><p>{currentBeat?.narration ?? '지식 장면이 준비되면 관계의 전개를 재생할 수 있습니다.'}</p></div>
+		<div class="filmNarration"><span>KNOWLEDGE FILM</span><em>{currentBeat ? `${currentBeat.mode.toLocaleUpperCase()}${currentBeat.lane ? ` · ${currentBeat.lane.toLocaleUpperCase()}` : ''}` : 'READY'}</em><strong>{currentBeat?.label ?? '장면 대기'}</strong><p>{currentBeat?.narration ?? '지식 장면이 준비되면 관계의 전개를 재생할 수 있습니다.'}</p></div>
 		<div class="filmTimeline" aria-label="지식 필름 장면">
-			{#each scene?.film ?? [] as beat, index (beat.beatId)}<button type="button" class:active={filmActive && filmIndex === index} aria-label={`${index + 1}장 ${beat.label}`} onclick={() => activateBeat(index)}><i></i><span>{String(index + 1).padStart(2, '0')}</span></button>{/each}
+			{#each scene?.film ?? [] as beat, index (beat.beatId)}<button type="button" class:active={filmActive && filmIndex === index} class:fact={beat.lane === 'fact'} class:derived={beat.lane === 'derived'} aria-label={`${index + 1}장 ${beat.label}`} title={`${beat.mode.toLocaleUpperCase()}${beat.lane ? ` · ${beat.lane.toLocaleUpperCase()}` : ''}`} onclick={() => activateBeat(index)}><i></i><span>{String(index + 1).padStart(2, '0')}</span></button>{/each}
 		</div>
 		<div class="filmReceipt"><span>SCENE</span><b>{scene?.receipt.outputNodeCount ?? 0} NODES</b><small>{(scene?.receipt.indexedItemCount ?? 0).toLocaleString()} INDEXED · {scene?.receipt.sourceRevision.slice(0, 9) ?? 'loading'}</small></div>
 	</footer>
@@ -485,6 +515,8 @@
 	.srOnly { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
 	.knowledgeUniverse { position: relative; min-height: 720px; height: calc(100vh - 112px); display: grid; grid-template-rows: 58px minmax(0, 1fr) 82px; overflow: hidden; color: #dce5f2; background: radial-gradient(circle at 46% 42%, rgba(38, 64, 103, .12), transparent 42%), linear-gradient(145deg, #080c13, #06090f 66%); font-family: 'Pretendard Variable', Pretendard, system-ui, sans-serif; }
 	.knowledgeUniverse::before { content: ''; position: absolute; inset: 0; pointer-events: none; opacity: .22; background-image: linear-gradient(rgba(116, 139, 170, .025) 1px, transparent 1px), linear-gradient(90deg, rgba(116, 139, 170, .025) 1px, transparent 1px); background-size: 48px 48px; mask-image: radial-gradient(circle at 50% 50%, black, transparent 72%); }
+	.knowledgeUniverse.filmTheater .universeBody { grid-template-columns: minmax(0, 1fr) clamp(320px, 24vw, 380px); }
+	.knowledgeUniverse.filmTheater .galaxyRail { display: none; }
 	.commandBar { position: relative; z-index: 7; display: grid; grid-template-columns: minmax(160px, .8fr) minmax(360px, 1.7fr) minmax(150px, .7fr); align-items: center; gap: 18px; padding: 0 18px; border-bottom: 1px solid rgba(102, 125, 156, .13); background: rgba(7, 11, 18, .76); backdrop-filter: blur(18px); }
 	.scenePath { min-width: 0; display: flex; align-items: center; gap: 6px; overflow: hidden; }
 	.scenePath button, .scenePath span { flex-shrink: 0; max-width: 110px; overflow: hidden; border: 0; padding: 0; color: #71839a; background: none; font: 600 9px/1 ui-monospace, monospace; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
@@ -651,14 +683,19 @@
 	.filmControls button { width: 29px; height: 29px; border: 1px solid #1d2a3b; border-radius: 7px; color: #74879e; background: #0b121c; cursor: pointer; }
 	.filmControls button.play { color: #d5e2f1; border-color: #314965; background: #16263a; }
 	.filmControls button.speed { width: 36px; font: 600 8px/1 ui-monospace, monospace; }
+	.filmControls button.theater.active { color: #9bc7fa; border-color: #4a78ad; background: #142842; box-shadow: 0 0 0 3px rgba(90, 147, 214, .08); }
+	.filmControls button.export { width: 42px; color: #8aa0ba; font: 700 7px/1 ui-monospace, monospace; letter-spacing: .04em; }
 	.filmControls button:disabled { opacity: .35; cursor: default; }
 	.filmNarration { min-width: 0; }
+	.filmNarration em { display: inline-block; border: 1px solid #2d3e54; border-radius: 4px; padding: 3px 5px; color: #7890ae; background: rgba(19, 29, 44, .72); font: 700 6px/1 ui-monospace, monospace; font-style: normal; letter-spacing: .08em; }
 	.filmNarration strong { display: inline-block; margin: 0 8px; color: #becbda; font-size: 9px; }
 	.filmNarration p { display: inline; margin: 0; color: #61738a; font-size: 8px; }
 	.filmTimeline { display: flex; align-items: center; }
 	.filmTimeline button { position: relative; flex: 1; height: 34px; border: 0; padding: 0; color: #42536a; background: transparent; cursor: pointer; }
 	.filmTimeline button::before { content: ''; position: absolute; top: 13px; left: 0; right: 0; height: 1px; background: #1d2a3b; }
 	.filmTimeline i { position: relative; z-index: 1; display: block; width: 7px; height: 7px; margin: 10px auto 0; border: 1px solid #41536a; border-radius: 50%; background: #0a1019; }
+	.filmTimeline button.fact i { border-color: #3d806e; }
+	.filmTimeline button.derived i { border-color: #9a6d3c; }
 	.filmTimeline button.active i { border-color: #88baf5; background: #6da8ed; box-shadow: 0 0 0 4px rgba(109, 168, 237, .1); }
 	.filmTimeline span { display: block; margin-top: 6px; font: 600 6px/1 ui-monospace, monospace; }
 	.filmReceipt { display: grid; grid-template-columns: auto auto; gap: 3px 8px; text-align: right; }
@@ -666,7 +703,7 @@
 	.filmReceipt small { grid-column: 1 / -1; color: #43546a; font: 500 7px/1 ui-monospace, monospace; }
 	@keyframes spin { to { transform: rotate(360deg); } }
 	@media (max-width: 1080px) { .universeBody { grid-template-columns: 142px minmax(0, 1fr) 300px; } .galaxyRail { padding-inline: 7px; } .knowledgeFilm { grid-template-columns: auto minmax(220px, 1fr) minmax(220px, 1fr); } .filmReceipt { display: none; } }
-	@media (max-width: 820px) { .knowledgeUniverse { height: auto; min-height: calc(100vh - 96px); grid-template-rows: auto auto auto; overflow: visible; padding-bottom: 86px; } .commandBar { grid-template-columns: 1fr auto; padding: 9px 12px; } .scenePath { display: none; } .omnibox { min-width: 0; } .catalogState { grid-column: 2; grid-row: 1; } .universeBody { display: grid; grid-template-columns: 1fr; } .galaxyRail { display: flex; gap: 3px; overflow-x: auto; border-right: 0; border-bottom: 1px solid rgba(101, 124, 154, .12); padding: 7px; } .railTitle { display: none; } .galaxyRail > button { flex: 0 0 104px; } .galaxyRail button span { display: block; } .galaxyRail small { display: block; margin-top: 3px; } .sceneStage { min-height: 520px; } .knowledgeLens { max-height: 440px; border-left: 0; border-top: 1px solid rgba(101, 124, 154, .12); } .knowledgeFilm { position: fixed; z-index: 20; left: 0; right: 0; bottom: 0; grid-template-columns: auto minmax(0, 1fr); box-shadow: 0 -18px 42px rgba(0, 0, 0, .32); } .filmTimeline { grid-column: 1 / -1; } }
+	@media (max-width: 820px) { .knowledgeUniverse { height: auto; min-height: calc(100vh - 96px); grid-template-rows: auto auto auto; overflow: visible; padding-bottom: 86px; } .commandBar { grid-template-columns: 1fr auto; padding: 9px 12px; } .scenePath { display: none; } .omnibox { min-width: 0; } .catalogState { grid-column: 2; grid-row: 1; } .universeBody, .knowledgeUniverse.filmTheater .universeBody { display: grid; grid-template-columns: 1fr; } .galaxyRail, .knowledgeUniverse.filmTheater .galaxyRail { display: flex; gap: 3px; overflow-x: auto; border-right: 0; border-bottom: 1px solid rgba(101, 124, 154, .12); padding: 7px; } .railTitle { display: none; } .galaxyRail > button { flex: 0 0 104px; } .galaxyRail button span { display: block; } .galaxyRail small { display: block; margin-top: 3px; } .sceneStage { min-height: 520px; } .knowledgeLens { max-height: 440px; border-left: 0; border-top: 1px solid rgba(101, 124, 154, .12); } .knowledgeFilm { position: fixed; z-index: 20; left: 0; right: 0; bottom: 0; grid-template-columns: auto minmax(0, 1fr); box-shadow: 0 -18px 42px rgba(0, 0, 0, .32); } .filmTimeline { grid-column: 1 / -1; } }
 	@media (max-width: 560px) { .commandBar { grid-template-columns: 1fr; } .catalogState { display: none; } .omnibox { grid-column: 1; } .sceneTitle { gap: 8px; padding: 15px 12px 8px; } .sceneTitle > div:first-child { min-width: 0; } .sceneTitle p { max-width: 270px; } .sceneStage { min-height: 470px; } .knowledgeLens { padding: 15px 12px; } .knowledgeFilm { gap: 8px; padding: 8px 10px; } .filmNarration p { display: none; } .tableRow { grid-template-columns: minmax(160px, 1fr) .7fr; } .tableRow > span:nth-child(3), .tableRow > code { display: none; } }
 	@media (prefers-reduced-motion: reduce) { .loadingScene i, .sceneLoading i, .contentLoading i { animation: none; } }
 </style>

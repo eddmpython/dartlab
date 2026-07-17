@@ -714,11 +714,15 @@ export interface UniverseKnowledgeEdge {
 
 export interface UniverseKnowledgeFilmBeat {
 	beatId: string;
+	mode: 'establish' | 'trace' | 'evidence' | 'resolve';
 	label: string;
 	narration: string;
 	targetNodeId: string;
+	focusEdgeId: string | null;
+	lane: UniverseLane | null;
 	revealNodeIds: readonly string[];
 	revealEdgeIds: readonly string[];
+	cameraScale: number;
 	durationMs: number;
 }
 

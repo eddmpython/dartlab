@@ -114,7 +114,7 @@
 			if (!source || !target || !visibleNodeIds.has(source.nodeId) || !visibleNodeIds.has(target.nodeId)) continue;
 			const start = project(source);
 			const end = project(target);
-			const selected = selectedId === source.nodeId || selectedId === target.nodeId;
+			const selected = selectedId === source.nodeId || selectedId === target.nodeId || (filmActive && activeBeat?.focusEdgeId === edge.edgeId);
 			if (!knowledgeEdgeVisible(lodLevel, edge.lane, selected)) continue;
 			const gradient = context.createLinearGradient(start.x, start.y, end.x, end.y);
 			gradient.addColorStop(0, selected ? 'rgba(226, 235, 247, .64)' : 'rgba(116, 142, 179, .12)');
@@ -206,7 +206,8 @@
 		if (!node) return;
 		if (cameraFrameId) cancelAnimationFrame(cameraFrameId);
 		const start = { ...camera };
-		const targetScale = node.kind === 'root' || node.kind === 'query' ? 1 : Math.max(1.12, Math.min(1.55, camera.scale));
+		const filmScale = filmActive && activeBeat?.targetNodeId === nodeId ? activeBeat.cameraScale : null;
+		const targetScale = filmScale ?? (node.kind === 'root' || node.kind === 'query' ? 1 : Math.max(1.12, Math.min(1.55, camera.scale)));
 		const target = { scale: targetScale, offsetX: -node.x * worldRadius, offsetY: -node.y * worldRadius };
 		if (reducedMotion) {
 			camera = target;
