@@ -1,6 +1,7 @@
 import { createDataCore } from '@dartlab/ui-runtime/data/fetch/request';
 import {
 	createUniverseGlobalRuntime,
+	createUniverseKnowledgeRuntime,
 	createUniverseEvidenceResolver,
 	loadCurrentChangeUniverse,
 	loadCompanyProjection,
@@ -16,8 +17,16 @@ export function createUniverseBrowser(options: DartlabBrowserOptions): UniverseB
 	const seed = () => (seedPromise ??= loadUniverseRouteSeed(dataCore, options.universeReleaseState));
 	const resolveEvidence = createUniverseEvidenceResolver(dataCore);
 	const global = createUniverseGlobalRuntime(dataCore);
+	const knowledge = createUniverseKnowledgeRuntime(dataCore, {
+		loadSkillGraph: async () => (await import('$skills/graph.json')).default,
+		loadSkillCatalog: async () => (await import('$skills/catalog.json')).default
+	});
 	return {
 		seed,
+		knowledgeOverview: knowledge.overview,
+		knowledgeCoverage: knowledge.coverage,
+		searchKnowledge: knowledge.search,
+		openKnowledge: knowledge.open,
 		globalCoverage: global.coverage,
 		searchEntities: global.search,
 		entityProfile: global.profile,

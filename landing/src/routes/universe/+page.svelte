@@ -1,27 +1,33 @@
 <script lang="ts">
 	import { base } from '$app/paths';
+	import { pushState, replaceState } from '$app/navigation';
 	import { UniverseSurface } from '@dartlab/ui-surfaces/universe';
 	import { createUniverseBrowser } from '$lib/browser/universeBrowser';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
 	const universe = createUniverseBrowser({ fetchFn: fetch });
+
+	function writeRouteUrl(next: URL, push: boolean): void {
+		if (push) pushState(next, {});
+		else replaceState(next, {});
+	}
 </script>
 
 <svelte:head>
-	<title>DartLab Universe · DART EDGAR 글로벌 법인 지식 우주</title>
-	<meta name="description" content="DART와 EDGAR 전체 법인 검색, 기업별 재무 관측, 한미 20문항 비교, 한국 산업 관계와 변화 근거를 탐색하는 DartLab Universe" />
+	<title>DartLab Universe · 데이터와 지식의 우주</title>
+	<meta name="description" content="Hugging Face의 모든 DartLab 데이터와 엔진, Skill OS, 공시, 재무, 시장, 지식 근거를 공간적으로 탐색하는 DartLab Universe" />
 	<meta name="robots" content={data.releaseState === 'ga' ? 'index,follow' : 'noindex,nofollow'} />
 	<link rel="canonical" href="https://eddmpython.github.io/dartlab/universe" />
 	<meta property="og:type" content="website" />
-	<meta property="og:title" content="DartLab Universe · DART EDGAR 글로벌 법인 지식 우주" />
-	<meta property="og:description" content="DART와 EDGAR 법인을 검색하고 재무 관측과 한미 20문항 비교를 근거 상태와 함께 탐색합니다." />
+	<meta property="og:title" content="DartLab Universe · 데이터와 지식의 우주" />
+	<meta property="og:description" content="DartLab의 모든 데이터와 지식, 엔진, 스킬과 근거를 하나의 공간에서 탐색합니다." />
 	<meta property="og:url" content="https://eddmpython.github.io/dartlab/universe" />
 	<meta property="og:site_name" content="DartLab" />
 	<meta property="og:image" content="https://eddmpython.github.io/dartlab/og-image.png" />
 	<meta name="twitter:card" content="summary_large_image" />
-	<meta name="twitter:title" content="DartLab Universe · DART EDGAR 글로벌 법인 지식 우주" />
-	<meta name="twitter:description" content="DART와 EDGAR 법인 검색, 재무 관측, 한미 20문항 비교를 한곳에서 탐색합니다." />
+	<meta name="twitter:title" content="DartLab Universe · 데이터와 지식의 우주" />
+	<meta name="twitter:description" content="DartLab의 데이터와 지식 관계가 연결되고 전개되는 과정을 탐색합니다." />
 	<meta name="twitter:image" content="https://eddmpython.github.io/dartlab/og-image.png" />
 </svelte:head>
 
@@ -41,6 +47,10 @@
 {#if data.product.routeReady}
 	<UniverseSurface
 		seed={data}
+		loadKnowledgeOverview={universe.knowledgeOverview}
+		loadKnowledgeCoverage={universe.knowledgeCoverage}
+		searchKnowledge={universe.searchKnowledge}
+		openKnowledge={universe.openKnowledge}
 		mapHref={`${base}/map`}
 		loadChanges={universe.changes}
 		resolveEvidence={universe.resolveEvidence}
@@ -48,6 +58,7 @@
 		searchEntities={universe.searchEntities}
 		loadEntityProfile={universe.entityProfile}
 		compareEntities={universe.compareEntities}
+		{writeRouteUrl}
 	/>
 {:else}
 	<main id="universe-main" class="maintenance">

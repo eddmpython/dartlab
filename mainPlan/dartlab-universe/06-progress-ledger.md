@@ -2,6 +2,19 @@
 
 ## 현재 상태
 
+- [x] 최종 목표를 전체 HF 데이터와 DartLab 전체 지식의 통합 지식 우주로 재고정
+- [x] 금융 중심 장면을 12개 지식 은하 중 일부로 재배치하는 제품 계약 작성
+- [x] Wikipedia, TheBrain, Obsidian, Neo4j Bloom, Mapbox, NASA Eyes, Cosmograph 벤치마크와 채택 판단 기록
+- [x] HF metadata 및 전체 sibling catalog와 Skill OS를 결속하는 `knowledgeUniverse.v1` 계약 구현
+- [x] 12개 domain, root, directory, file, skill, search bounded scene 런타임 구현
+- [x] 시맨틱 줌 Canvas 2D, 통합 omnibox, Galaxy Rail, Knowledge Lens, table parity, Knowledge Film 기본 GUI 구현
+- [x] 전체 catalog 정확 합계와 80 node bound 단위 회귀 구현
+- [ ] 형식별 실제 content adapter와 wiki-grade rich content
+- [ ] 전체 capability 및 semantic relation 결속
+- [ ] catalog 및 retrieval Web Worker와 성능 budget 실측
+- [ ] 4개 viewport 실브라우저 눈검수와 사용자 직접 검수
+- [ ] 사용자 명시 승인 후에만 공개 진입 버튼 및 push 검토
+
 - [x] 저장소 운영 규칙과 Skill OS의 architecture, API, UI, data lineage, testing 계약 재확인
 - [x] HF repository 68,199파일 전수 byte 계수
 - [x] staging, compatibility, active 수명주기 분리
@@ -54,6 +67,10 @@
 
 | 날짜 | 결정 | 근거 |
 |---|---|---|
+| 2026-07-17 | Universe 최종 목표를 전체 지식 우주로 재고정 | HF 전체 파일과 DartLab Skill OS, capability, 문서, 미디어가 제품 범위이며 법인 및 재무는 하위 은하다 |
+| 2026-07-17 | 전량 렌더가 아니라 전량 주소화와 bounded projection을 채택 | 현재 HF mainSize 약 281GB를 client에 복사할 수 없고, 모든 주소를 보존하면서 80 node scene과 omission receipt로 빠른 탐색이 가능하다 |
+| 2026-07-17 | Canvas 2D를 기본 renderer로 유지 | 현재 장면 budget에서 외부 의존 없이 결정론, 접근성 hit target, table parity와 request-driven rendering을 달성한다 |
+| 2026-07-17 | 공개 진입 버튼과 링크를 사용자 검수 전 금지 | route는 유지하지만 발견성과 배포는 사용자 승인 경계다 |
 | 2026-07-15 | 제품명은 DartLab Universe | ontology는 내부 physics, universe는 사용자 surface |
 | 2026-07-15 | 276GB 전량 graph copy 기각 | staging 153.91GB, compatibility 63.66GB, active 58.19GB |
 | 2026-07-15 | 새 public engine 기각 | 기존 226 capability와 147 core axes 재사용 |

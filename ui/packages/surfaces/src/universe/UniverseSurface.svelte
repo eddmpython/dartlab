@@ -9,6 +9,11 @@
 		UniverseEntitySearchResult,
 		UniverseEvidenceQuery,
 		UniverseEvidenceResolution,
+		UniverseKnowledgeCoverage,
+		UniverseKnowledgeOverview,
+		UniverseKnowledgeScene,
+		UniverseKnowledgeSearchRequest,
+		UniverseKnowledgeSearchResult,
 		UniverseLensRef,
 		UniverseLensTray,
 		UniversePairComparison,
@@ -22,6 +27,7 @@
 	import EvidenceDrawer from './components/EvidenceDrawer.svelte';
 	import GlobalUniverse from './components/GlobalUniverse.svelte';
 	import KillChain from './components/KillChain.svelte';
+	import KnowledgeUniverse from './components/KnowledgeUniverse.svelte';
 	import LensTray from './components/LensTray.svelte';
 	import UniverseCanvas from './components/UniverseCanvas.svelte';
 	import RelationTable from './components/RelationTable.svelte';
@@ -31,18 +37,23 @@
 	interface Props {
 		seed: UniverseRouteSeed;
 		mapHref?: string;
+		loadKnowledgeOverview: () => Promise<UniverseKnowledgeOverview>;
+		loadKnowledgeCoverage: () => Promise<UniverseKnowledgeCoverage>;
+		searchKnowledge: (request: UniverseKnowledgeSearchRequest) => Promise<UniverseKnowledgeSearchResult>;
+		openKnowledge: (targetId: string) => Promise<UniverseKnowledgeScene>;
 		loadChanges?: (maxMarks?: number) => Promise<UniverseChangeSet>;
 		resolveEvidence?: (query: UniverseEvidenceQuery) => Promise<UniverseEvidenceResolution>;
 		loadGlobalCoverage: () => Promise<UniverseCatalogCoverage>;
 		searchEntities: (request: UniverseEntitySearchRequest) => Promise<UniverseEntitySearchResult>;
 		loadEntityProfile: (entityId: string) => Promise<UniverseEntityProfile>;
 		compareEntities: (krEntityId: string, usEntityId: string) => Promise<UniversePairComparison>;
+		writeRouteUrl?: (next: URL, push: boolean) => void;
 	}
 
-	let { seed, mapHref = '/map', loadChanges, resolveEvidence, loadGlobalCoverage, searchEntities, loadEntityProfile, compareEntities }: Props = $props();
-	type PrimaryMode = 'global' | 'atlas' | 'change' | 'workflow';
+	let { seed, mapHref = '/map', loadKnowledgeOverview, loadKnowledgeCoverage, searchKnowledge, openKnowledge, loadChanges, resolveEvidence, loadGlobalCoverage, searchEntities, loadEntityProfile, compareEntities, writeRouteUrl }: Props = $props();
+	type PrimaryMode = 'knowledge' | 'global' | 'atlas' | 'change' | 'workflow';
 	type ViewMode = 'universe' | 'table';
-	let primaryMode = $state<PrimaryMode>('atlas');
+	let primaryMode = $state<PrimaryMode>('knowledge');
 	let viewMode = $state<ViewMode>('universe');
 	let query = $state('');
 	let selectedId = $state<string | null>(null);
@@ -82,8 +93,7 @@
 		urlState = { ...urlState, selectedId, seedIds: selectedId ? [selectedId] : [] };
 		const next = universeUrl(urlState, new URL(window.location.href));
 		if (next.href === window.location.href) return;
-		const state = window.history.state;
-		window.history[push ? 'pushState' : 'replaceState'](state, '', next);
+		writeRouteUrl?.(next, push);
 	}
 
 	function selectNode(nodeId: string, push = true): void {
@@ -234,13 +244,13 @@
 			selectedId = parsed.selectedId && nodeById.has(parsed.selectedId) ? parsed.selectedId : null;
 		};
 		restore();
-		commitUrl(false);
 		window.addEventListener('popstate', restore);
 		return () => window.removeEventListener('popstate', restore);
 	});
 </script>
 
-<main id="universe-main" class="universeShell">
+<main id="universe-main" class="universeShell" class:knowledgeMode={primaryMode === 'knowledge'}>
+	{#if primaryMode !== 'knowledge'}
 	<section class="hero">
 		<div>
 			<div class="eyebrow"><span class="pulse"></span>DARTLAB UNIVERSE <b>PRODUCTION</b></div>
@@ -261,10 +271,12 @@
 		<div><span>AGGREGATE FLOWS</span><strong>{seed.scene.edges.length}</strong><small>파생 집계선</small></div>
 		<div><span>GLOBAL CATALOG</span><strong>DART + EDGAR</strong><small>탭 진입 시 원본 지연 로드</small></div>
 	</section>
+	{/if}
 
-	<section class="workbench">
-		<header class="toolbar">
+	<section class="workbench" class:knowledgeWorkbench={primaryMode === 'knowledge'}>
+		<header class="toolbar" class:knowledgeToolbar={primaryMode === 'knowledge'}>
 			<div class="sceneSwitch" aria-label="Universe 장면">
+				<button class:active={primaryMode === 'knowledge'} onclick={() => selectPrimaryMode('knowledge')}>지식 우주</button>
 				<button class:active={primaryMode === 'global'} onclick={() => selectPrimaryMode('global')}>글로벌</button>
 				<button class:active={primaryMode === 'atlas'} onclick={() => selectPrimaryMode('atlas')}>아틀라스</button>
 				<button class:active={primaryMode === 'change'} onclick={() => selectPrimaryMode('change')}>변화</button>
@@ -283,9 +295,11 @@
 			</div>
 		</header>
 
-		<div class="workspace" class:globalMode={primaryMode === 'global'}>
+		<div class="workspace" class:globalMode={primaryMode === 'global' || primaryMode === 'knowledge'}>
 			<div class="scenePanel">
-				{#if primaryMode === 'global'}
+				{#if primaryMode === 'knowledge'}
+					<KnowledgeUniverse loadOverview={loadKnowledgeOverview} loadCoverage={loadKnowledgeCoverage} {searchKnowledge} {openKnowledge} />
+				{:else if primaryMode === 'global'}
 					<GlobalUniverse loadCoverage={loadGlobalCoverage} {searchEntities} loadProfile={loadEntityProfile} {compareEntities} />
 				{:else if primaryMode === 'atlas'}
 					<div class="sceneHeader">
@@ -304,7 +318,7 @@
 				{/if}
 			</div>
 
-			{#if primaryMode !== 'global'}<aside class="inspector" class:drawerOpen={selectedChange !== null}>
+			{#if primaryMode !== 'global' && primaryMode !== 'knowledge'}<aside class="inspector" class:drawerOpen={selectedChange !== null}>
 				{#if selectedChange}
 					<EvidenceDrawer change={selectedChange} resolution={evidenceResolution} loading={evidenceLoading} error={evidenceError} onResolve={() => void searchChangeEvidence()} onClose={() => { selectedChange = null; evidenceResolution = null; evidenceError = null; }} />
 				{:else if selectedNode}
@@ -341,16 +355,17 @@
 		{/if}
 	</section>
 
-	<section class="integrity">
+	{#if primaryMode !== 'knowledge'}<section class="integrity">
 		<div><span>SCENE HASH</span><code>{seed.scene.sceneHash}</code></div>
 		<div><span>SNAPSHOT</span><code>{seed.snapshot.snapshotSetId}</code></div>
 		<p>현재 route는 meta와 atlas만 초기 로드합니다. ecosystem과 기업 JSON은 선택 전 요청하지 않습니다. 정확 재현 불가 소스 {seed.snapshot.unreplayableSourceIds.length}개를 숨기지 않았으며, 제품 입장 검사는 {seed.product.capabilities.length}개 기능 lane을 독립적으로 보호합니다.</p>
-	</section>
+	</section>{/if}
 </main>
 
 <style>
 	:global(body) { background: #070a11; }
 	.universeShell { min-height: 100vh; padding: 92px clamp(18px, 4vw, 64px) 56px; color: #dce5f2; background: radial-gradient(circle at 78% 6%, rgba(52,96,160,.14), transparent 28%), radial-gradient(circle at 12% 32%, rgba(234,70,71,.08), transparent 26%), #070a11; font-family: 'Pretendard Variable', Pretendard, system-ui, sans-serif; }
+	.universeShell.knowledgeMode { padding: 49px 0 0; background: #06090f; }
 	.hero { max-width: 1420px; margin: 0 auto 38px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 48px; align-items: end; }
 	.eyebrow { display: flex; align-items: center; gap: 9px; margin-bottom: 18px; color: #8798af; font: 600 10px/1 ui-monospace, monospace; letter-spacing: .16em; }
 	.eyebrow b { margin-left: 5px; padding: 4px 7px; border: 1px solid rgba(245,184,75,.28); border-radius: 999px; color: #e8b861; font-size: 8px; letter-spacing: .1em; }
@@ -370,6 +385,12 @@
 	.metrics strong { display: block; margin: 9px 0 3px; color: #eef3f9; font: 500 clamp(22px, 2.4vw, 34px)/1 ui-monospace, monospace; letter-spacing: -.05em; }
 	.metrics small { color: #5f7086; font-size: 10px; }
 	.workbench { max-width: 1420px; margin: 0 auto; border: 1px solid #192434; border-radius: 21px; overflow: hidden; background: rgba(9,13,21,.88); box-shadow: 0 40px 100px rgba(0,0,0,.28); }
+	.workbench.knowledgeWorkbench { max-width: none; margin: 0; border: 0; border-radius: 0; box-shadow: none; }
+	.knowledgeWorkbench > .toolbar { align-items: center; min-height: 63px; padding: 10px clamp(12px, 2vw, 28px); border-color: rgba(98, 121, 151, .12); background: #080c13; }
+	.knowledgeWorkbench > .toolbar.knowledgeToolbar { grid-template-columns: 1fr; justify-items: center; }
+	.knowledgeToolbar .search, .knowledgeToolbar .viewSwitch { display: none; }
+	.knowledgeWorkbench > .workspace { min-height: 0; }
+	.knowledgeWorkbench .scenePanel { padding: 0; border-right: 0; }
 	.toolbar { position: relative; z-index: 5; display: grid; grid-template-columns: auto minmax(260px, 480px) auto; justify-content: space-between; align-items: end; gap: 20px; padding: 15px 18px; border-bottom: 1px solid #182333; background: #0b1019; }
 	.sceneSwitch { display: flex; gap: 3px; padding: 3px; border: 1px solid #202c3f; border-radius: 9px; background: #080c13; }
 	.sceneSwitch button { border: 0; border-radius: 6px; padding: 8px 10px; background: transparent; color: #66778e; font-size: 10px; cursor: pointer; }

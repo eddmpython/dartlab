@@ -7,6 +7,11 @@ import type {
 	UniverseEntitySearchResult,
 	UniverseEvidenceQuery,
 	UniverseEvidenceResolution,
+	UniverseKnowledgeCoverage,
+	UniverseKnowledgeOverview,
+	UniverseKnowledgeScene,
+	UniverseKnowledgeSearchRequest,
+	UniverseKnowledgeSearchResult,
 	UniverseObservationPoint,
 	UniverseObservationRange,
 	UniversePairComparison,
@@ -36,6 +41,10 @@ export interface ScanBundle {
 
 export interface UniverseBrowser {
 	seed(): Promise<UniverseRouteSeed>;
+	knowledgeOverview(): Promise<UniverseKnowledgeOverview>;
+	knowledgeCoverage(): Promise<UniverseKnowledgeCoverage>;
+	searchKnowledge(request: UniverseKnowledgeSearchRequest): Promise<UniverseKnowledgeSearchResult>;
+	openKnowledge(targetId: string): Promise<UniverseKnowledgeScene>;
 	globalCoverage(): Promise<UniverseCatalogCoverage>;
 	searchEntities(request: UniverseEntitySearchRequest): Promise<UniverseEntitySearchResult>;
 	entityProfile(entityId: string): Promise<UniverseEntityProfile>;

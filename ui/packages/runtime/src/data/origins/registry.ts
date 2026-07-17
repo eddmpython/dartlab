@@ -32,6 +32,7 @@ const govDev = Boolean(viteEnv?.DEV);
 export type OriginId =
 	| 'hf'
 	| 'hfRange'
+	| 'hfApi'
 	| 'hfMedia'
 	| 'podcastMedia'
 	| 'localApi'
@@ -86,10 +87,17 @@ const naverWorkerUrl = (code: string): string => {
 // newsWorker·naverWorker=언론사 저작권 archive 워커 read(라이브 표시) · 신선도형이라 짧은 TTL.
 // 팟캐스트 미디어 base(R2 dartlab-podcast, r2.dev 공개) · channel.yaml r2.baseUrl 미러. index.json(크로스링크)·feed·오디오·커버 서빙.
 const PODCAST_BASE = ((viteEnv?.VITE_DARTLAB_PODCAST_BASE as string | undefined) ?? 'https://pub-ef732bbc413941dd80734f96e0cfe95d.r2.dev').replace(/\/+$/, '');
+const HF_DATASET_API = 'https://huggingface.co/api/datasets/eddmpython/dartlab-data';
 
 const ORIGINS: Partial<Record<OriginId, OriginDef>> = {
 	hf: { resolve: hfUrl, defaultCache: { scope: 'memory', ttlMs: 60 * MIN, maxEntries: 64 } },
 	hfRange: { resolve: hfRangeUrl, defaultCache: { scope: 'memory', ttlMs: 60 * MIN, maxEntries: 128 } },
+	hfApi: {
+		resolve: (path) => path.startsWith('?')
+			? `${HF_DATASET_API}${path}`
+			: `${HF_DATASET_API}/${path.replace(/^\/+/, '')}`,
+		defaultCache: { scope: 'memory', ttlMs: 10 * MIN, maxEntries: 8 }
+	},
 	// hfMedia=중앙 media repo(HF 직결). objects는 불변이고 manifests는 런타임 파생 뷰다.
 	hfMedia: { resolve: hfMediaUrl, defaultCache: { scope: 'memory', ttlMs: 60 * MIN, maxEntries: 64 } },
 	// 팟캐스트 크로스링크 index.json · 미디어(R2 r2.dev). 비게이트(항상 설정 · 폴백 base 있음). index.json 은 호출부가 no-cache 로 읽음.

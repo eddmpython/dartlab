@@ -5,6 +5,7 @@ export const UNIVERSE_SCHEMA_VERSION = 'boundedScene.v1' as const;
 export const UNIVERSE_PROJECTION_SCHEMA_VERSION = 'projectionSpec.v1' as const;
 export const UNIVERSE_FLIGHT_SCHEMA_VERSION = 'universeFlightPlan.v1' as const;
 export const UNIVERSE_VISUAL_GRAMMAR_VERSION = 'universeVisualGrammar.v1' as const;
+export const UNIVERSE_KNOWLEDGE_SCHEMA_VERSION = 'knowledgeUniverse.v1' as const;
 export const UNIVERSE_PREDICATES = [
 	'suppliesTo',
 	'sellsTo',
@@ -34,6 +35,9 @@ export type UniverseObjective = 'investigate' | 'compare' | 'falsify' | 'explain
 export type UniverseReleaseState = 'ga' | 'disabled';
 export type UniverseCapabilityId =
 	| 'atlas'
+	| 'knowledgeCatalog'
+	| 'knowledgeSearch'
+	| 'knowledgeFilm'
 	| 'changeSignals'
 	| 'exactReplay'
 	| 'evidenceSearch'
@@ -614,4 +618,161 @@ export interface UniverseRouteSeed {
 	scene: UniverseScene;
 	releaseState: UniverseReleaseState;
 	product: UniverseProductReceipt;
+}
+
+export type UniverseKnowledgeDomainId =
+	| 'sources'
+	| 'entities'
+	| 'securities'
+	| 'filings'
+	| 'observations'
+	| 'industry'
+	| 'marketData'
+	| 'macro'
+	| 'intelligence'
+	| 'capabilities'
+	| 'skills'
+	| 'timeMedia';
+
+export type UniverseKnowledgeNodeKind =
+	| 'root'
+	| 'domain'
+	| 'directory'
+	| 'file'
+	| 'skill'
+	| 'capability'
+	| 'dataset'
+	| 'entity'
+	| 'document'
+	| 'observation'
+	| 'media'
+	| 'query';
+
+export type UniverseKnowledgeRelation =
+	| 'contains'
+	| 'describes'
+	| 'observed'
+	| 'classified'
+	| 'computed'
+	| 'used'
+	| 'supported'
+	| 'revised'
+	| 'available';
+
+export interface UniverseKnowledgeDomain {
+	domainId: UniverseKnowledgeDomainId;
+	label: string;
+	labelEn: string;
+	description: string;
+	itemCount: number | null;
+	sourceRefs: readonly string[];
+}
+
+export interface UniverseKnowledgeRepository {
+	repositoryId: string;
+	revision: string;
+	lastModified: string;
+	mainSizeBytes: number;
+	usedStorageBytes: number;
+	fileCount: number | null;
+}
+
+export interface UniverseKnowledgeBreadcrumb {
+	targetId: string;
+	label: string;
+}
+
+export interface UniverseKnowledgeNode {
+	nodeId: string;
+	label: string;
+	secondaryLabel: string;
+	kind: UniverseKnowledgeNodeKind;
+	domainId: UniverseKnowledgeDomainId | null;
+	weight: number;
+	x: number;
+	y: number;
+	expandable: boolean;
+	sourceRef: string;
+	attributes: Readonly<Record<string, string | number | boolean | null>>;
+}
+
+export interface UniverseKnowledgeEdge {
+	edgeId: string;
+	sourceId: string;
+	targetId: string;
+	relation: UniverseKnowledgeRelation;
+	sourceRef: string;
+}
+
+export interface UniverseKnowledgeFilmBeat {
+	beatId: string;
+	label: string;
+	narration: string;
+	targetNodeId: string;
+	revealNodeIds: readonly string[];
+	revealEdgeIds: readonly string[];
+	durationMs: number;
+}
+
+export interface UniverseKnowledgeSceneReceipt {
+	indexedItemCount: number;
+	outputNodeCount: number;
+	outputEdgeCount: number;
+	omittedNodeCount: number;
+	sourceRevision: string;
+}
+
+export interface UniverseKnowledgeScene {
+	schemaVersion: typeof UNIVERSE_KNOWLEDGE_SCHEMA_VERSION;
+	sceneId: string;
+	title: string;
+	subtitle: string;
+	targetId: string;
+	parentTargetId: string | null;
+	breadcrumbs: readonly UniverseKnowledgeBreadcrumb[];
+	nodes: readonly UniverseKnowledgeNode[];
+	edges: readonly UniverseKnowledgeEdge[];
+	film: readonly UniverseKnowledgeFilmBeat[];
+	receipt: UniverseKnowledgeSceneReceipt;
+}
+
+export interface UniverseKnowledgeOverview {
+	schemaVersion: typeof UNIVERSE_KNOWLEDGE_SCHEMA_VERSION;
+	repository: UniverseKnowledgeRepository;
+	skillCount: number;
+	skillRelationCount: number;
+	domains: readonly UniverseKnowledgeDomain[];
+	scene: UniverseKnowledgeScene;
+}
+
+export interface UniverseKnowledgeCoverage {
+	repository: UniverseKnowledgeRepository;
+	hfFileCount: number;
+	skillCount: number;
+	addressableItemCount: number;
+	domainCounts: Readonly<Record<UniverseKnowledgeDomainId, number>>;
+}
+
+export interface UniverseKnowledgeSearchRequest {
+	query: string;
+	domainId?: UniverseKnowledgeDomainId | null;
+	limit?: number;
+}
+
+export interface UniverseKnowledgeSearchHit {
+	targetId: string;
+	label: string;
+	summary: string;
+	kind: UniverseKnowledgeNodeKind;
+	domainId: UniverseKnowledgeDomainId;
+	sourceRef: string;
+	score: number;
+}
+
+export interface UniverseKnowledgeSearchResult {
+	query: string;
+	domainId: UniverseKnowledgeDomainId | null;
+	hits: readonly UniverseKnowledgeSearchHit[];
+	indexedItemCount: number;
+	scene: UniverseKnowledgeScene;
 }

@@ -1,24 +1,24 @@
 # DartLab Universe
 
-> 상태: `/universe` GA 제품 경로 구현, 사실·exact replay 기능은 증거별 fail-closed admission 유지
+> 상태: 전체 HF 데이터와 DartLab 지식을 결속하는 목표로 재고정, K0 catalog spine과 첫 제품 수직 슬라이스 구현, 공개 진입은 사용자 검수 대기
 > 기준일: 2026-07-17 KST
 > 제품명: DartLab Universe
 > 정본 경계: HF 데이터는 진실, 온톨로지는 의미 계약, 엔진은 렌즈, Universe는 요청 시점 투영
 
 ## 결론
 
-DartLab의 데이터를 공개 웹에서 우주처럼 탐색하는 제품은 가능하다. 다만 275.76GB를 전부 노드와 엣지로 복제하는 방식은 제품도 아니고 유지 가능한 아키텍처도 아니다.
+DartLab의 모든 데이터와 지식을 우주처럼 탐색하는 제품은 가능하다. 다만 약 281GB를 전부 노드와 엣지로 복제하는 방식은 제품도 아니고 유지 가능한 아키텍처도 아니다. 현재 목표와 구현 순서의 SSOT는 [13-unified-knowledge-universe-plan.md](13-unified-knowledge-universe-plan.md)다.
 
 정공 설계는 다음 네 평면을 분리한다.
 
 1. **Truth Plane**: `eddmpython/dartlab-data`의 DART, EDGAR, KRX, 거시, 검색 Parquet이 정본이다.
 2. **Meaning Plane**: 회사, 공시, 산업, 지표, 관측, 관계 assertion의 ID와 시간 및 근거 계약만 정의한다.
 3. **Lens Plane**: 226개 capability와 286개 Skill OS 항목, analysis 22축, scan 27축 등 기존 엔진이 질문에 맞는 투영을 만든다.
-4. **Scene Plane**: 브라우저가 질문과 확대 수준에 필요한 50~500개 노드만 HF에서 직독해 2D 또는 선택적 3D 장면으로 렌더링한다.
+4. **Scene Plane**: 브라우저가 질문과 확대 수준에 필요한 최대 80개 노드만 HF에서 직독해 결정론적 2D 장면으로 렌더링하고 생략 수를 receipt로 남긴다.
 
 제품의 혁신은 노드 개수가 아니다. 사용자가 질문을 움직였을 때 **무엇이 바뀌었는지, 어떤 논리가 어디서 깨지는지, 왜 연결됐는지, 당시 무엇을 알 수 있었는지**를 원문까지 같은 조사 흐름에서 확인하는 데 있다.
 
-최종 제품 서명은 다음 네 workflow다.
+금융 하위 우주의 대표 workflow는 다음 네 가지다. 이것이 전체 Universe의 범위와 동의어는 아니다.
 
 1. P0 변화 우주: 두 시점 사이의 생성, 정정, 소멸만 exact before/after evidence와 재생
 2. P0 Thesis Kill-Chain: assumption, fragility, trigger, tripwire, falsifier를 근거 lane으로 연결
@@ -33,7 +33,7 @@ DartLab의 데이터를 공개 웹에서 우주처럼 탐색하는 제품은 가
 - 관계 하나와 그 관계를 뒷받침하는 여러 assertion을 분리한다.
 - 사실, 파생, 추론, 시나리오를 같은 엣지 스타일이나 같은 신뢰 등급으로 섞지 않는다.
 - 2D 분석 화면과 table이 기본이다. 3D Galaxy는 같은 immutable scene을 소비하고 task uplift를 증명해야 하는 지연 로드 렌더러일 뿐이다.
-- public 제품 경로는 독립 `/universe`다. 기존 `/map`은 현재 시장 지도 역할을 유지한다.
+- 제품 경로는 독립 `/universe`다. 기존 `/map`은 현재 시장 지도 역할을 유지한다. 사용자 직접 검수와 명시 승인 전 공개 진입 버튼과 공개 내비게이션 링크는 만들지 않는다.
 - 라우트와 제품 상태는 분리하지만 DataCore, map artifact, renderer adapter, evidence resolver는 공유한다. route 간 코드 복사는 금지한다.
 - 공개와 로컬은 같은 HF 직독 배선을 쓴다. AI와 무거운 동적 계산만 로컬 서버 또는 기존 `/api/ask`가 담당한다.
 - 새 bake나 그래프 사본은 런타임 실측 실패와 운영자 명시 승인 전에는 만들지 않는다.
@@ -66,6 +66,7 @@ DartLab의 데이터를 공개 웹에서 우주처럼 탐색하는 제품은 가
 11. [10-innovation-thesis-killer-workflows.md](10-innovation-thesis-killer-workflows.md): 제품 혁신 thesis, P0와 P1 killer workflow, 정보 수율
 12. [11-visual-information-physics.md](11-visual-information-physics.md): 의미 좌표, L0~L5 representation, renderer, 접근성
 13. [12-innovation-validation-scorecard.md](12-innovation-validation-scorecard.md): 7축 혁신 점수, readiness gate, kill condition
+14. [13-unified-knowledge-universe-plan.md](13-unified-knowledge-universe-plan.md): 전체 지식 우주 목표, 벤치마크, 스택, GUI, K0부터 K6 구현 순서
 
 ## 구현 순서
 

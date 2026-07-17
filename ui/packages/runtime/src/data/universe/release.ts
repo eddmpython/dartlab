@@ -70,7 +70,7 @@ export function compileUniverseProductReceipt(input: ProductInput): UniverseProd
 			sceneHash: input.scene.sceneHash,
 			factRelationCount,
 			capabilities: [
-				'atlas', 'changeSignals', 'exactReplay', 'evidenceSearch', 'thesisKillChain', 'factRelations'
+				'knowledgeCatalog', 'knowledgeSearch', 'knowledgeFilm', 'atlas', 'changeSignals', 'exactReplay', 'evidenceSearch', 'thesisKillChain', 'factRelations'
 			].map((capabilityId) => capability(capabilityId as UniverseCapabilityId, 'disabled', 'off', 'routeDisabled'))
 		};
 	}
@@ -85,6 +85,9 @@ export function compileUniverseProductReceipt(input: ProductInput): UniverseProd
 		sceneHash: input.scene.sceneHash,
 		factRelationCount,
 		capabilities: [
+			capability('knowledgeCatalog', 'ready', 'runtimeCatalog', 'hfAndSkillOsAddressSpace'),
+			capability('knowledgeSearch', 'ready', 'lazyFullIndex', 'boundedSceneProjection'),
+			capability('knowledgeFilm', 'ready', 'deterministicSceneBeats', 'reproducibleCameraPath'),
 			capability('atlas', 'ready', 'deterministic2d', 'admitted'),
 			capability('changeSignals', 'ready', 'currentSignals', 'admittedAsDerivedSignals'),
 			capability(
