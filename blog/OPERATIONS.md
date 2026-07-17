@@ -34,6 +34,33 @@
 
 - HF 데이터셋 `eddmpython/dartlab-media` (config `src/dartlab/core/dataConfig.py`, origin `hfMedia`). 바이너리 허용 위치는 전역 `objects/sha256/` 하나다. 런타임이 읽는 파생 뷰는 `manifests/companies.json`, `manifests/carousels.json` 두 파일뿐이다. 의미 키, source, 역할, SHA-256 대응의 정본은 Git `media/catalog.json`이다. HF에 회사별, 글별, 콘텐츠 종류별 바이너리 폴더를 만들지 않는다.
 - R2 버킷 `dartlab-podcast` (r2.dev 공개). 팟캐스트 오디오·커버·정적프레임·feed.xml·index.json. HF `/resolve` 302 라 팟캐스트 플랫폼 미디어는 R2. 상세 = memory `reference_cloudflare_r2_infra`.
+
+### 미디어 SSOT 배선과 레거시 폐기
+
+```mermaid
+flowchart LR
+  A["저작 계약<br/>brief · cards.plan · CREDITS"] --> B["로컬 눈검수 staging<br/>assets · sns/assets"]
+  B --> C["서피스 발행기<br/>publishBlogAssets · build_carousel · publish_assets"]
+  C --> D["Git 의미 정본<br/>media/catalog.json"]
+  C --> E["HF 바이너리 정본<br/>objects/sha256/"]
+  D --> F["HF 런타임 파생 뷰<br/>manifests/companies.json · carousels.json"]
+  E --> F
+  E --> G["블로그 본문 · OG의 HF 객체 URL"]
+  F --> H["landing 소비자<br/>/cards · /blog · /terminal"]
+  H --> I["라이브 전환 게이트"]
+  I --> J["옛 HF 폴더 삭제"]
+```
+
+레거시 폐기는 다음 순서를 바꾸지 않는다.
+
+1. `uv run python -X utf8 blog/_scripts/consolidateHfMedia.py`로 dry-run 한다.
+2. `--apply`로 중앙 객체와 두 manifest를 먼저 올린다.
+3. landing 소비자를 배포한다. 소스가 새 경로라는 사실만으로 배포 완료로 간주하지 않는다.
+4. `--apply --delete-legacy`를 실행한다. 스크립트가 두 manifest의 모든 객체 경로와 원격 실재를 검사하고, 공개 `/cards`, `/blog`, `/terminal` 번들이 새 manifest를 참조하며 옛 index·바이너리 경로를 참조하지 않는지 확인한 뒤에만 삭제한다.
+5. 같은 명령을 다시 실행해 `레거시 0개` 정규 상태가 멱등하게 통과하는지 확인한다. HF 최상위에는 `.gitattributes`, `objects`, `manifests`만 허용한다.
+
+전환 게이트가 하나라도 실패하면 삭제는 0건이어야 한다. 구조 계약과 완료 기준은 [`mainPlan/content-asset-ssot/00-prd.md`](../mainPlan/content-asset-ssot/00-prd.md), 실행기 목록은 [`blog/_scripts/README.md`](_scripts/README.md)가 정본이다.
+
 - 이미지 규격표:
 
 | 용도 | 규격 |

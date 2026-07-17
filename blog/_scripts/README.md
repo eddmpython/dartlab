@@ -33,6 +33,7 @@
 | `publishBlogAssets.py` | **블로그 v2 미디어 발행**. 로컬 SVG·본문 이미지·OG·card를 HF 전역 콘텐츠 주소 객체에 올리고 중앙 `media/catalog.json`과 본문 URL 반영 |
 | `seedBlogMedia.py` | 중앙 카탈로그 기준으로 한 글 또는 전체 HF 객체를 무시된 로컬 staging 경로에 복원 |
 | `migrateBlogMedia.py` | 기존 Git SVG·래스터를 전역 HF 객체로 일괄 이관하고 원격 검증 뒤 추적 해제하는 마이그레이션 도구 |
+| `consolidateHfMedia.py` | HF 옛 폴더를 중앙 객체와 두 manifest로 통합한다. 레거시 삭제는 manifest 무결성과 공개 세 라우트의 소비자 전환을 자동 확인한 뒤에만 수행하며 삭제 후 재실행도 지원 |
 | `publishGate.py` | **블로그 발행 단일 진입점**. `auditBlog` 하드 계약 + SEO 95 + 신규 v2 시나리오·이미지 SSOT를 함께 검사 |
 | `blogMedia.py` | 중앙 `media/catalog.json`, HF 객체 경로, URL, 콘텐츠 해시 계약 SSOT |
 | `auditBlog.py` | 9개 카테고리의 내러티브·쉬운 설명 공통 편집 검사와 심층 글 구조 audit를 맡는 하드 계약 엔진. 단독 결과는 발행 승인 아님 |

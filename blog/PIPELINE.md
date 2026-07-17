@@ -88,6 +88,7 @@
 - **Git 계약**: `brief.json.imagePlan[]`이 래스터 의미를, `assets/CREDITS.md`가 출처를, 중앙 `media/catalog.json` 하나가 래스터 `assets`, SVG `diagrams`, OG/card 역할과 HF 객체 SHA-256 대응을 가진다. 본문과 frontmatter는 카탈로그에서 파생한 HF URL만 쓴다.
 - **공유 경계**: v2 기술 카드도 중앙 카탈로그의 같은 `objects/sha256/` 경로를 쓴다. `sns/assets/{subjectKey}`와 `ingest_blog_assets.py`는 legacy 회사 공유풀 호환용이며 새 블로그 이미지의 SSOT가 아니다. 깨끗한 체크아웃에서 재생성이 필요하면 `seedBlogMedia.py --post blog/<카테고리>/<폴더>`로 staging을 복원한다.
 - **평가·개선**: 색복잡도 감사와 눈검수를 함께 한다. 피사체 오매치, 가짜 공식 로고·문서, 식별 인물 왜곡이 있으면 다른 실사 또는 `image_gen`으로 교체한다. `publishGate.py`가 assetKey, HF 실재, 본문 URL, CREDITS, Git 바이너리 0건을 막는다.
+- **레거시 폐기 게이트**: HF 옛 폴더는 `consolidateHfMedia.py --apply --delete-legacy`로만 지운다. 이 명령은 원격 manifest·객체 무결성과 배포된 `/cards`·`/blog`·`/terminal` 번들의 새 경로 전환을 자동 검증하며, 실패 시 삭제하지 않는다. 배선도와 순서 정본은 [OPERATIONS.md](OPERATIONS.md)의 `미디어 SSOT 배선과 레거시 폐기` 절이다.
 
 ## 7. 발행
 - **블로그**: 이미지·OG를 로컬에서 눈검수한 뒤 `publishBlogAssets.py --post <글폴더>`로 HF 발행·본문 치환 -> `publishGate.py --post <글폴더>` 통과 -> 빌드 확인 -> 커밋. 재무는 `<CompanyFinancials code="…" />` 라이브 태그(빌드타임 데이터 SSOT 직독). → BLOG.md §Phase 5
