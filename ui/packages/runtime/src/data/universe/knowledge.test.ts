@@ -30,7 +30,14 @@ const graph = {
 
 const catalog = {
 	meta: { skillCount: 3 },
-	skills: graph.nodes.map((node) => ({ ...node, whenToUse: [node.purpose], apiRefs: [], sourceRefs: [`dartlab://skills/${node.id}`] }))
+	skills: graph.nodes.map((node) => ({
+		...node,
+		whenToUse: [node.purpose],
+		apiRefs: [],
+		datasetRefs: node.id === 'engines.analysis' ? ['dart.finance', 'dart.docs'] : [],
+		knowledgeRefs: [],
+		sourceRefs: [`dartlab://skills/${node.id}`]
+	}))
 };
 
 interface ContentCallLog {
@@ -127,6 +134,11 @@ describe('Universe knowledge runtime', () => {
 	it('assigns every source path to one stable knowledge domain', () => {
 		expect(classifyKnowledgePath('dart/finance/005930.parquet')).toBe('observations');
 		expect(classifyKnowledgePath('dart/panel/005930.parquet')).toBe('filings');
+		expect(classifyKnowledgePath('dart/docs/005930.parquet')).toBe('filings');
+		expect(classifyKnowledgePath('dart/sections/005930/2026Q1.parquet')).toBe('filings');
+		expect(classifyKnowledgePath('edgar/docs/AAPL.parquet')).toBe('filings');
+		expect(classifyKnowledgePath('edgar/allFilingsContent/20260717.parquet')).toBe('filings');
+		expect(classifyKnowledgePath('metadata/dartList.parquet')).toBe('entities');
 		expect(classifyKnowledgePath('edgar/prices/company/AAPL.parquet')).toBe('marketData');
 		expect(classifyKnowledgePath('news/public/20260717.parquet')).toBe('intelligence');
 		expect(classifyKnowledgePath('assets/avatar.png')).toBe('timeMedia');
@@ -164,6 +176,33 @@ describe('Universe knowledge runtime', () => {
 	it('keeps an exact two-segment source as a file in its domain scene', async () => {
 		const entities = await runtime().open('domain:entities');
 		expect(entities.nodes.some((node) => node.nodeId === 'hf:dart/companyProfile.parquet' && node.kind === 'entity')).toBe(true);
+	});
+
+	it('opens a file as an evidence-laned semantic graph instead of only a folder chain', async () => {
+		const scene = await runtime().open('hf:dart/panel/005930.parquet');
+		expect(scene.nodes).toEqual(expect.arrayContaining([
+			expect.objectContaining({ nodeId: 'repository:hf:eddmpython/dartlab-data', kind: 'repository', lane: 'fact' }),
+			expect.objectContaining({ nodeId: 'dataset:hf:dart/panel', kind: 'dataset', lane: 'fact' }),
+			expect.objectContaining({ nodeId: 'security:dart:005930', kind: 'security', lane: 'derived' }),
+			expect.objectContaining({ nodeId: 'document:file:dart/panel/005930.parquet', kind: 'document', lane: 'derived' })
+		]));
+		expect(scene.edges).toEqual(expect.arrayContaining([
+			expect.objectContaining({ sourceId: 'security:dart:005930', relation: 'available', lane: 'derived' }),
+			expect.objectContaining({ targetId: 'hf:dart/panel/005930.parquet', relation: 'supported', lane: 'derived' })
+		]));
+		expect(scene.edges.every((edge) => edge.ruleId && edge.evidenceRefs.length > 0)).toBe(true);
+	});
+
+	it('preserves Skill OS relation kinds and declared dataset references as facts', async () => {
+		const scene = await runtime().open('skill:engines.analysis');
+		expect(scene.nodes).toEqual(expect.arrayContaining([
+			expect.objectContaining({ nodeId: 'datasetref:dart.finance', kind: 'dataset', lane: 'fact' }),
+			expect.objectContaining({ nodeId: 'datasetref:dart.docs', kind: 'dataset', lane: 'fact' })
+		]));
+		expect(scene.edges).toEqual(expect.arrayContaining([
+			expect.objectContaining({ targetId: 'skill:engines.analysis.profitability', relation: 'revised', ruleId: 'skillGraph.successor.v1' }),
+			expect.objectContaining({ targetId: 'datasetref:dart.finance', relation: 'used', ruleId: 'skillDataset.v1' })
+		]));
 	});
 
 	it('resolves text, parquet and media content at the catalog revision', async () => {

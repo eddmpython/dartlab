@@ -116,11 +116,13 @@
 			gradient.addColorStop(1, selected ? 'rgba(137, 188, 255, .68)' : 'rgba(116, 142, 179, .28)');
 			context.strokeStyle = gradient;
 			context.lineWidth = selected ? 1.5 : 0.8;
+			context.setLineDash(edge.lane === 'fact' ? [] : edge.lane === 'derived' ? [5, 4] : edge.lane === 'candidate' ? [2, 4] : [9, 5]);
 			context.beginPath();
 			context.moveTo(start.x, start.y);
 			const curve = Math.min(52, Math.abs(end.x - start.x) * 0.16 + Math.abs(end.y - start.y) * 0.08);
 			context.quadraticCurveTo((start.x + end.x) / 2 + curve, (start.y + end.y) / 2 - curve, end.x, end.y);
 			context.stroke();
+			context.setLineDash([]);
 		}
 
 		const labelAnchors: Array<{ x: number; y: number }> = [];
@@ -163,6 +165,15 @@
 				context.beginPath();
 				context.arc(point.x, point.y, radius + 5, -0.75, 1.8);
 				context.stroke();
+			}
+			if (node.lane !== 'fact') {
+				context.strokeStyle = node.lane === 'derived' ? 'rgba(211, 158, 83, .48)' : 'rgba(151, 169, 194, .42)';
+				context.lineWidth = 0.8;
+				context.setLineDash(node.lane === 'derived' ? [4, 3] : [2, 3]);
+				context.beginPath();
+				context.arc(point.x, point.y, radius + 8, 0, Math.PI * 2);
+				context.stroke();
+				context.setLineDash([]);
 			}
 
 			if (selected || rankedIds.has(node.nodeId)) {

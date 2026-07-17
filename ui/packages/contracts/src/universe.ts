@@ -5,7 +5,7 @@ export const UNIVERSE_SCHEMA_VERSION = 'boundedScene.v1' as const;
 export const UNIVERSE_PROJECTION_SCHEMA_VERSION = 'projectionSpec.v1' as const;
 export const UNIVERSE_FLIGHT_SCHEMA_VERSION = 'universeFlightPlan.v1' as const;
 export const UNIVERSE_VISUAL_GRAMMAR_VERSION = 'universeVisualGrammar.v1' as const;
-export const UNIVERSE_KNOWLEDGE_SCHEMA_VERSION = 'knowledgeUniverse.v1' as const;
+export const UNIVERSE_KNOWLEDGE_SCHEMA_VERSION = 'knowledgeUniverse.v2' as const;
 export const UNIVERSE_PREDICATES = [
 	'suppliesTo',
 	'sellsTo',
@@ -636,6 +636,7 @@ export type UniverseKnowledgeDomainId =
 
 export type UniverseKnowledgeNodeKind =
 	| 'root'
+	| 'repository'
 	| 'domain'
 	| 'directory'
 	| 'file'
@@ -643,7 +644,9 @@ export type UniverseKnowledgeNodeKind =
 	| 'capability'
 	| 'dataset'
 	| 'entity'
+	| 'security'
 	| 'document'
+	| 'section'
 	| 'observation'
 	| 'media'
 	| 'query';
@@ -688,11 +691,13 @@ export interface UniverseKnowledgeNode {
 	secondaryLabel: string;
 	kind: UniverseKnowledgeNodeKind;
 	domainId: UniverseKnowledgeDomainId | null;
+	lane: UniverseLane;
 	weight: number;
 	x: number;
 	y: number;
 	expandable: boolean;
 	sourceRef: string;
+	evidenceRefs: readonly string[];
 	attributes: Readonly<Record<string, string | number | boolean | null>>;
 }
 
@@ -701,7 +706,10 @@ export interface UniverseKnowledgeEdge {
 	sourceId: string;
 	targetId: string;
 	relation: UniverseKnowledgeRelation;
+	lane: UniverseLane;
 	sourceRef: string;
+	evidenceRefs: readonly string[];
+	ruleId: string;
 }
 
 export interface UniverseKnowledgeFilmBeat {

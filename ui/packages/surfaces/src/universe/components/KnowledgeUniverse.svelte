@@ -86,8 +86,9 @@
 
 	function nodeKindLabel(node: UniverseKnowledgeNode): string {
 		const labels: Readonly<Record<string, string>> = {
-			root: '지식 루트', domain: '지식 은하', directory: '데이터 계층', file: '원본 파일', skill: 'Skill OS',
-			capability: '엔진 능력', dataset: '데이터셋', entity: '법인과 기관', document: '문서', observation: '관측', media: '미디어', query: '질문'
+			root: '지식 루트', repository: '저장소', domain: '지식 은하', directory: '데이터 계층', file: '원본 파일', skill: 'Skill OS',
+			capability: '엔진 능력', dataset: '데이터셋', entity: '법인과 기관', security: '증권 식별자', document: '문서',
+			section: '공시 섹션', observation: '관측', media: '미디어', query: '질문'
 		};
 		return labels[node.kind] ?? node.kind;
 	}
@@ -348,6 +349,7 @@
 				<div class="lensStats">
 					<div><span>DOMAIN</span><strong>{domainLabel(selectedNode.domainId)}</strong></div>
 					<div><span>RELATIONS</span><strong>{connectedEdges.length.toLocaleString()}</strong></div>
+					<div><span>LANE</span><strong>{selectedNode.lane.toLocaleUpperCase()}</strong></div>
 					<div><span>WEIGHT</span><strong>{selectedNode.weight.toFixed(1)}</strong></div>
 				</div>
 				{#if contentLoading}
@@ -432,9 +434,10 @@
 					<dl>{#each selectedAttributes as [key, value] (key)}<div><dt>{key}</dt><dd>{typeof value === 'number' ? value.toLocaleString() : String(value)}</dd></div>{/each}</dl>
 				{/if}
 				{#if connectedEdges.length > 0}
-					<div class="relationList"><span>CONNECTED KNOWLEDGE</span>{#each connectedEdges.slice(0, 6) as edge (edge.edgeId)}{@const otherId = edge.sourceId === selectedNode.nodeId ? edge.targetId : edge.sourceId}{@const other = scene?.nodes.find((node) => node.nodeId === otherId)}{#if other}<button type="button" onclick={() => selectNode(other.nodeId)}><b>{edge.relation}</b><span>{other.label}</span></button>{/if}{/each}</div>
+					<div class="relationList"><span>CONNECTED KNOWLEDGE</span>{#each connectedEdges.slice(0, 6) as edge (edge.edgeId)}{@const otherId = edge.sourceId === selectedNode.nodeId ? edge.targetId : edge.sourceId}{@const other = scene?.nodes.find((node) => node.nodeId === otherId)}{#if other}<button type="button" onclick={() => selectNode(other.nodeId)}><b>{edge.relation}</b><em class:derived={edge.lane === 'derived'}>{edge.lane}</em><span>{other.label}</span></button>{/if}{/each}</div>
 				{/if}
 				<div class="sourceAddress"><span>SOURCE REF</span>{#if selectedNode.sourceRef.startsWith('https://')}<a href={selectedNode.sourceRef} target="_blank" rel="noreferrer">{selectedNode.sourceRef}</a>{:else}<code>{selectedNode.sourceRef}</code>{/if}</div>
+				{#if selectedNode.evidenceRefs.length > 0}<div class="evidenceRefs"><span>EVIDENCE REFS</span>{#each selectedNode.evidenceRefs.slice(0, 3) as evidenceRef (evidenceRef)}<code title={evidenceRef}>{evidenceRef}</code>{/each}</div>{/if}
 				{#if selectedNode.expandable}<button class="openDeeper" type="button" onclick={() => void openTarget(selectedNode.nodeId)}>이 지식으로 확대</button>{/if}
 			{:else}
 				<div class="emptyLens"><span>KNOWLEDGE LENS</span><h2>관계를 선택하세요.</h2><p>선택한 데이터, 문서, 엔진과 스킬의 주소와 연결 근거가 여기에 열립니다.</p></div>
@@ -453,7 +456,7 @@
 		<div class="filmTimeline" aria-label="지식 필름 장면">
 			{#each scene?.film ?? [] as beat, index (beat.beatId)}<button type="button" class:active={filmActive && filmIndex === index} aria-label={`${index + 1}장 ${beat.label}`} onclick={() => activateBeat(index)}><i></i><span>{String(index + 1).padStart(2, '0')}</span></button>{/each}
 		</div>
-		<div class="filmReceipt"><span>SCENE</span><b>{scene?.receipt.outputNodeCount ?? 0} / {(scene?.receipt.indexedItemCount ?? 0).toLocaleString()}</b><small>{scene?.receipt.sourceRevision.slice(0, 9) ?? 'loading'}</small></div>
+		<div class="filmReceipt"><span>SCENE</span><b>{scene?.receipt.outputNodeCount ?? 0} NODES</b><small>{(scene?.receipt.indexedItemCount ?? 0).toLocaleString()} INDEXED · {scene?.receipt.sourceRevision.slice(0, 9) ?? 'loading'}</small></div>
 	</footer>
 </section>
 
@@ -522,7 +525,7 @@
 	.nodeIdentity > i { --domain-color: #9aa8be; width: 13px; height: 13px; margin-top: 4px; border: 2px solid var(--domain-color); border-radius: 50%; box-shadow: 0 0 0 5px color-mix(in srgb, var(--domain-color) 9%, transparent); }
 	.nodeIdentity h2 { margin: 0; color: #edf2f8; font-size: 20px; line-height: 1.12; letter-spacing: -.03em; font-weight: 560; overflow-wrap: anywhere; }
 	.nodeIdentity p { margin: 7px 0 0; color: #607289; font: 500 8px/1.45 ui-monospace, monospace; overflow-wrap: anywhere; }
-	.lensStats { display: grid; grid-template-columns: 1.3fr .8fr .7fr; gap: 4px; }
+	.lensStats { display: grid; grid-template-columns: 1.25fr .8fr .72fr .65fr; gap: 4px; }
 	.lensStats div { min-width: 0; padding: 8px; border-top: 1px solid #172231; border-bottom: 1px solid #172231; }
 	.lensStats span { display: block; color: #4d6077; font: 600 6px/1 ui-monospace, monospace; }
 	.lensStats strong { display: block; margin-top: 6px; overflow: hidden; color: #9cadc1; font: 600 9px/1 ui-monospace, monospace; text-overflow: ellipsis; white-space: nowrap; }
@@ -603,9 +606,14 @@
 	dd { margin: 0; overflow: hidden; color: #8b9db3; font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
 	.relationList { margin-top: 18px; }
 	.relationList > span { display: block; margin-bottom: 7px; }
-	.relationList button { width: 100%; display: grid; grid-template-columns: 60px minmax(0, 1fr); gap: 7px; border: 0; border-bottom: 1px solid rgba(85, 106, 134, .1); padding: 7px 0; color: #8799af; background: transparent; text-align: left; cursor: pointer; }
+	.relationList button { width: 100%; display: grid; grid-template-columns: 56px 42px minmax(0, 1fr); align-items: center; gap: 7px; border: 0; border-bottom: 1px solid rgba(85, 106, 134, .1); padding: 7px 0; color: #8799af; background: transparent; text-align: left; cursor: pointer; }
 	.relationList b { color: #51647c; font: 600 7px/1 ui-monospace, monospace; }
+	.relationList em { border: 1px solid rgba(93, 174, 139, .25); border-radius: 999px; padding: 3px 4px; color: #72b99a; font: 600 6px/1 ui-monospace, monospace; font-style: normal; text-align: center; text-transform: uppercase; }
+	.relationList em.derived { border-color: rgba(217, 165, 91, .28); color: #c4975b; }
 	.relationList span { overflow: hidden; font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
+	.evidenceRefs { display: grid; gap: 5px; margin-top: 12px; }
+	.evidenceRefs > span { color: #4e6077; font: 650 7px/1 ui-monospace, monospace; letter-spacing: .13em; }
+	.evidenceRefs code { min-width: 0; overflow: hidden; color: #637994; font: 500 7px/1.35 ui-monospace, monospace; text-overflow: ellipsis; white-space: nowrap; user-select: text; }
 	.sourceAddress { margin-top: 20px; padding-top: 12px; border-top: 1px solid #172230; }
 	.sourceAddress > span { display: block; }
 	.sourceAddress a, .sourceAddress code { display: block; margin-top: 8px; color: #6582a7; font: 500 8px/1.45 ui-monospace, monospace; overflow-wrap: anywhere; text-decoration: none; }

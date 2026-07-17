@@ -13,7 +13,8 @@ import type {
 	UniverseKnowledgeScene,
 	UniverseKnowledgeSearchHit,
 	UniverseKnowledgeSearchRequest,
-	UniverseKnowledgeSearchResult
+	UniverseKnowledgeSearchResult,
+	UniverseLane
 } from '@dartlab/ui-contracts';
 import { UNIVERSE_KNOWLEDGE_SCHEMA_VERSION } from '@dartlab/ui-contracts';
 import type { DataCore } from '../fetch/request';
@@ -29,6 +30,7 @@ import {
 	universeContentKind,
 	universeContentMime
 } from './contentAdapters';
+import { compileKnowledgeFileSemantics } from './semantic';
 
 const HF_REPOSITORY_ID = 'eddmpython/dartlab-data';
 const MAX_SCENE_NODES = 80;
@@ -194,12 +196,13 @@ export function classifyKnowledgePath(inputPath: string): UniverseKnowledgeDomai
 	if (path.startsWith('news/') || path.startsWith('research/')) return 'intelligence';
 	if (path.startsWith('macro/') || path.startsWith('gov/indices') || path.startsWith('krx/indices')) return 'macro';
 	if (path.startsWith('gov/prices') || path.startsWith('krx/prices') || path.startsWith('edgar/prices') || path.startsWith('expectations/')) return 'marketData';
-	if (path.startsWith('landing/map') || path.startsWith('dart/scan') || path.includes('/industry')) return 'industry';
+	if (path.startsWith('landing/map') || path.startsWith('dart/scan') || path.startsWith('edgar/scan') || path.includes('/industry')) return 'industry';
 	if (path.startsWith('dart/finance') || path.startsWith('edgar/finance')) return 'observations';
-	if (path.startsWith('dart/panel') || path.startsWith('dart/report') || path.startsWith('dart/ipo')
+	if (path.startsWith('dart/panel') || path.startsWith('dart/report') || path.startsWith('dart/docs') || path.startsWith('dart/sections') || path.startsWith('dart/ipo')
 		|| path.startsWith('dart/allfilings') || path.startsWith('dart/search') || path.startsWith('dart/contentindex')
-		|| path.startsWith('edgar/panel') || path.startsWith('edgar/meta')) return 'filings';
-	if (path.startsWith('edgar/tickers') || path.includes('corpcode') || path.includes('companyprofile') || path.includes('/profile')) return 'entities';
+		|| path.startsWith('edgar/panel') || path.startsWith('edgar/docs') || path.startsWith('edgar/allfilings') || path.startsWith('edgar/meta')) return 'filings';
+	if (path.startsWith('edgar/tickers') || path.startsWith('metadata/corplist') || path.startsWith('metadata/dartlist')
+		|| path.includes('corpcode') || path.includes('companyprofile') || path.includes('/profile')) return 'entities';
 	if (path.startsWith('pyodide/')) return 'capabilities';
 	if (path.startsWith('landing/') && /\.(png|webp|jpe?g|gif|svg|mp4|webm|m4a)$/i.test(path)) return 'timeMedia';
 	if (path.startsWith('gov/') || path.startsWith('krx/') || path.includes('security')) return 'securities';
@@ -269,9 +272,14 @@ function makeNode(
 	expandable: boolean,
 	sourceRef: string,
 	attributes: UniverseKnowledgeNode['attributes'],
-	position: { x: number; y: number } = { x: 0, y: 0 }
+	position: { x: number; y: number } = { x: 0, y: 0 },
+	lane: UniverseLane = 'fact',
+	evidenceRefs: readonly string[] = sourceRef ? [sourceRef] : []
 ): UniverseKnowledgeNode {
-	return Object.freeze({ nodeId, label, secondaryLabel, kind, domainId, weight, x: position.x, y: position.y, expandable, sourceRef, attributes });
+	return Object.freeze({
+		nodeId, label, secondaryLabel, kind, domainId, lane, weight, x: position.x, y: position.y, expandable, sourceRef,
+		evidenceRefs: Object.freeze([...evidenceRefs]), attributes
+	});
 }
 
 function filmFor(nodes: readonly UniverseKnowledgeNode[], edges: readonly UniverseKnowledgeEdge[]): readonly UniverseKnowledgeFilmBeat[] {
@@ -299,6 +307,9 @@ function compileScene(input: {
 	center: UniverseKnowledgeNode;
 	children: readonly UniverseKnowledgeNode[];
 	relation?: UniverseKnowledgeRelation;
+	edgeLane?: UniverseLane;
+	edgeRuleId?: string;
+	edges?: readonly UniverseKnowledgeEdge[];
 	indexedItemCount: number;
 	sourceRevision: string;
 }): UniverseKnowledgeScene {
@@ -307,13 +318,19 @@ function compileScene(input: {
 		...radialPosition(index, visible.length, node.nodeId)
 	}));
 	const nodes = Object.freeze([Object.freeze({ ...input.center, x: 0, y: 0 }), ...children]);
-	const edges = Object.freeze(children.map((node): UniverseKnowledgeEdge => Object.freeze({
-		edgeId: `edge:${input.center.nodeId}:${node.nodeId}`,
-		sourceId: input.center.nodeId,
-		targetId: node.nodeId,
-		relation: input.relation ?? 'contains',
-		sourceRef: node.sourceRef
-	})));
+	const visibleNodeIds = new Set(nodes.map((node) => node.nodeId));
+	const edges = Object.freeze(input.edges
+		? input.edges.filter((edge) => visibleNodeIds.has(edge.sourceId) && visibleNodeIds.has(edge.targetId)).map((edge) => Object.freeze({ ...edge }))
+		: children.map((node): UniverseKnowledgeEdge => Object.freeze({
+			edgeId: `edge:${input.center.nodeId}:${node.nodeId}`,
+			sourceId: input.center.nodeId,
+			targetId: node.nodeId,
+			relation: input.relation ?? 'contains',
+			lane: input.edgeLane ?? 'fact',
+			sourceRef: node.sourceRef,
+			evidenceRefs: node.evidenceRefs,
+			ruleId: input.edgeRuleId ?? 'knowledge.sceneHierarchy.v1'
+		})));
 	return Object.freeze({
 		schemaVersion: UNIVERSE_KNOWLEDGE_SCHEMA_VERSION,
 		sceneId: input.sceneId,
@@ -374,7 +391,10 @@ function rootScene(domains: readonly UniverseKnowledgeDomain[], info: HfDatasetI
 		sourceId: center.nodeId,
 		targetId: node.nodeId,
 		relation: 'contains',
-		sourceRef: node.sourceRef
+		lane: 'fact',
+		sourceRef: node.sourceRef,
+		evidenceRefs: node.evidenceRefs,
+		ruleId: 'knowledge.rootDomain.v1'
 	}));
 	return Object.freeze({
 		schemaVersion: UNIVERSE_KNOWLEDGE_SCHEMA_VERSION,
@@ -457,6 +477,38 @@ function skillNode(node: SkillGraphNode): UniverseKnowledgeNode {
 	);
 }
 
+function skillRelation(kind: string): UniverseKnowledgeRelation {
+	if (kind === 'successor' || kind === 'predecessor') return 'revised';
+	if (kind === 'knowledge' || kind === 'source') return 'supported';
+	return 'used';
+}
+
+function domainForDatasetRef(datasetRef: string): UniverseKnowledgeDomainId {
+	const value = datasetRef.toLocaleLowerCase();
+	if (value.startsWith('dart.finance')) return 'observations';
+	if (value.startsWith('dart.docs')) return 'filings';
+	if (value.startsWith('market.')) return 'marketData';
+	if (value.startsWith('macro.')) return 'macro';
+	return 'sources';
+}
+
+function skillDatasetNode(datasetRef: string, sourceRef: string): UniverseKnowledgeNode {
+	return makeNode(
+		`datasetref:${datasetRef}`,
+		datasetRef,
+		'Skill OS datasetRef',
+		'dataset',
+		domainForDatasetRef(datasetRef),
+		12,
+		false,
+		`dartlab://datasets/${datasetRef}`,
+		{ datasetRef, declaredBy: sourceRef },
+		{ x: 0, y: 0 },
+		'fact',
+		[sourceRef]
+	);
+}
+
 function scoreText(query: string, text: string, exactText: string): number {
 	const terms = query.toLocaleLowerCase().split(/\s+/).filter(Boolean);
 	const haystack = text.toLocaleLowerCase();
@@ -470,7 +522,7 @@ function scoreText(query: string, text: string, exactText: string): number {
 function sceneForSearch(query: string, hits: readonly UniverseKnowledgeSearchHit[], indexedItemCount: number, revision: string): UniverseKnowledgeScene {
 	const center = makeNode(
 		`query:${query}`, query, `${hits.length.toLocaleString()} results`, 'query', null, 28, false,
-		`query://${encodeURIComponent(query)}`, { query, indexedItemCount }
+		`query://${encodeURIComponent(query)}`, { query, indexedItemCount }, { x: 0, y: 0 }, 'derived'
 	);
 	const children = hits.map((hit) => makeNode(
 		hit.targetId, hit.label, hit.summary, hit.kind, hit.domainId, 7 + hit.score / 18,
@@ -484,7 +536,7 @@ function sceneForSearch(query: string, hits: readonly UniverseKnowledgeSearchHit
 		targetId: center.nodeId,
 		parentTargetId: 'knowledge:root',
 		breadcrumbs: [{ targetId: 'knowledge:root', label: 'Universe' }, { targetId: center.nodeId, label: query }],
-		center, children, relation: 'describes', indexedItemCount, sourceRevision: revision
+		center, children, relation: 'describes', edgeLane: 'derived', edgeRuleId: 'knowledge.searchMatch.v1', indexedItemCount, sourceRevision: revision
 	});
 }
 
@@ -687,28 +739,67 @@ export function createUniverseKnowledgeRuntime(core: DataCore, loaders: Universe
 			const ancestorPath = parts.slice(0, index + 1).join('/');
 			return makeNode(`hfdir:${ancestorPath}`, segment, ancestorPath, 'directory', classifyKnowledgePath(ancestorPath), 10 + index, true, sourceUrl(info.sha, ancestorPath), { path: ancestorPath });
 		}).reverse();
+		const semantics = compileKnowledgeFileSemantics({ path, revision: info.sha, domainId, sourceRef: center.sourceRef });
+		const hierarchyEdges = ancestors.map((node): UniverseKnowledgeEdge => Object.freeze({
+			edgeId: `edge:knowledge.fileHierarchy.v1:${center.nodeId}:${node.nodeId}`,
+			sourceId: center.nodeId,
+			targetId: node.nodeId,
+			relation: 'available',
+			lane: 'fact',
+			sourceRef: node.sourceRef,
+			evidenceRefs: node.evidenceRefs,
+			ruleId: 'knowledge.fileHierarchy.v1'
+		}));
 		return compileScene({
 			sceneId: `knowledge:file:${path}:${info.sha}`,
 			title: label,
-			subtitle: '원본 파일의 주소, 수명주기와 상위 데이터 계층을 함께 표시합니다.',
+			subtitle: '원본 파일을 저장소, 데이터셋, 법인과 증권, 공시와 관측 근거에 연결합니다.',
 			targetId: center.nodeId,
 			parentTargetId: parentPath ? `hfdir:${parentPath}` : `domain:${domainId}`,
 			breadcrumbs: [{ targetId: 'knowledge:root', label: 'Universe' }, { targetId: `domain:${domainId}`, label: DOMAIN_COPY[domainId].label }, { targetId: center.nodeId, label }],
-			center, children: ancestors, relation: 'available', indexedItemCount: 1, sourceRevision: info.sha
+			center,
+			children: [...semantics.nodes, ...ancestors],
+			edges: [...semantics.edges, ...hierarchyEdges],
+			indexedItemCount: 1,
+			sourceRevision: info.sha
 		});
 	}
 
 	async function openSkill(skillId: string): Promise<UniverseKnowledgeScene> {
-		const [info, graph] = await Promise.all([loadMetadata(), loaders.loadSkillGraph()]);
+		const [info, graph, catalog] = await Promise.all([loadMetadata(), loaders.loadSkillGraph(), loaders.loadSkillCatalog()]);
 		const selected = graph.nodes.find((node) => node.id === skillId);
 		if (!selected) throw new Error(`Universe skill not found: ${skillId}`);
+		const selectedCatalog = catalog.skills.find((skill) => skill.id === skillId);
+		const selectedSourceRef = selectedCatalog?.sourceRefs?.[0] ?? `dartlab://skills/${skillId}`;
 		const neighborIds = new Set<string>();
-		for (const edge of graph.edges) {
+		const relatedGraphEdges = graph.edges.filter((edge) => edge.src === skillId || edge.dst === skillId);
+		for (const edge of relatedGraphEdges) {
 			if (edge.src === skillId) neighborIds.add(edge.dst);
 			if (edge.dst === skillId) neighborIds.add(edge.src);
 		}
 		const neighbors = graph.nodes.filter((node) => neighborIds.has(node.id)).map(skillNode)
 			.sort((left, right) => right.weight - left.weight || left.nodeId.localeCompare(right.nodeId));
+		const datasetNodes = (selectedCatalog?.datasetRefs ?? []).map((datasetRef) => skillDatasetNode(datasetRef, selectedSourceRef));
+		const graphEdges = relatedGraphEdges.map((edge): UniverseKnowledgeEdge => Object.freeze({
+			edgeId: `edge:skillGraph.${edge.kind}.v1:skill:${edge.src}:skill:${edge.dst}`,
+			sourceId: `skill:${edge.src}`,
+			targetId: `skill:${edge.dst}`,
+			relation: skillRelation(edge.kind),
+			lane: 'fact',
+			sourceRef: selectedSourceRef,
+			evidenceRefs: Object.freeze([selectedSourceRef]),
+			ruleId: `skillGraph.${edge.kind}.v1`
+		}));
+		const datasetEdges = datasetNodes.map((node): UniverseKnowledgeEdge => Object.freeze({
+			edgeId: `edge:skillDataset.v1:skill:${skillId}:${node.nodeId}`,
+			sourceId: `skill:${skillId}`,
+			targetId: node.nodeId,
+			relation: 'used',
+			lane: 'fact',
+			sourceRef: selectedSourceRef,
+			evidenceRefs: Object.freeze([selectedSourceRef]),
+			ruleId: 'skillDataset.v1'
+		}));
 		const center = skillNode(selected);
 		return compileScene({
 			sceneId: `knowledge:skill:${skillId}:${info.sha}`,
@@ -721,13 +812,19 @@ export function createUniverseKnowledgeRuntime(core: DataCore, loaders: Universe
 				{ targetId: `domain:${skillDomain(selected.category)}`, label: DOMAIN_COPY[skillDomain(selected.category)].label },
 				{ targetId: center.nodeId, label: selected.title }
 			],
-			center, children: neighbors, relation: 'used', indexedItemCount: neighborIds.size + 1, sourceRevision: info.sha
+			center,
+			children: [...datasetNodes, ...neighbors],
+			edges: [...datasetEdges, ...graphEdges],
+			indexedItemCount: relatedGraphEdges.length + datasetNodes.length + 1,
+			sourceRevision: info.sha
 		});
 	}
 
 	async function open(targetId: string): Promise<UniverseKnowledgeScene> {
 		if (targetId === 'knowledge:root') return (await overview()).scene;
+		if (targetId === 'repository:hf:eddmpython/dartlab-data') return (await overview()).scene;
 		if (targetId.startsWith('domain:')) return openDomain(targetId.slice('domain:'.length) as UniverseKnowledgeDomainId);
+		if (targetId.startsWith('dataset:hf:')) return openDirectory(targetId.slice('dataset:hf:'.length));
 		if (targetId.startsWith('hfdir:')) return openDirectory(targetId.slice('hfdir:'.length));
 		if (targetId.startsWith('hf:')) return openFile(targetId.slice('hf:'.length));
 		if (targetId.startsWith('skill:')) return openSkill(targetId.slice('skill:'.length));

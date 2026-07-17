@@ -9,5 +9,6 @@ export * from './knowledge';
 export * from './load';
 export * from './projection';
 export * from './release';
+export * from './semantic';
 export * from './time';
 export * from './workflows';
