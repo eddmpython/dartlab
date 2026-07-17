@@ -1620,6 +1620,11 @@
       }
     },
     "podcasts": {
+      "coreweave": {
+        "assets": {
+          "coreweave-server-room": "ecfe45969855a726cff7f99a1ba4527dae52ae22e3d291c4455d2f9005c5dec1"
+        }
+      },
       "dartlab-2700-filings": {
         "assets": {
           "source-gray": "a67d22aaada36d67f1373d4b0e8c800813bd7b51455a046772c618c0d7a02e4c"
@@ -3938,6 +3943,7 @@
     "blog/_podcasts/episodes/P12-company-hanwha-ocean/assets/source.webp": "16ab194b315afa945bd7dbb2e04a8e871ffcb5d3900a6d1ad0711b7386fe10e6",
     "blog/_podcasts/episodes/P12-company-hanwha-ocean/cover.jpg": "c85cc38ad149e471c47cf8c07b9aab246d8fa47b265b8be25a17ed1656982f24",
     "blog/_podcasts/episodes/P12-company-hanwha-ocean/static-video.jpg": "bff70e77dd17943ab553239d18de2cab4d9af177539ffe24b0a97508db07ce27",
+    "blog/_podcasts/episodes/P13-company-coreweave/assets/source.webp": "ecfe45969855a726cff7f99a1ba4527dae52ae22e3d291c4455d2f9005c5dec1",
     "landing/static/thumbnails/000080-hite-jinro-card.webp": "1d4b735b387762b3655aa5d99962f24b24ecc7f44a940c944321629a21961d00",
     "landing/static/thumbnails/000080-hite-jinro.webp": "b314abd6187ed91429c6556809d6900c148fcec446e817f589c57fe0516c8af5",
     "landing/static/thumbnails/000100-yuhan-card.webp": "9caf7e63bd6ee96dca6550f1cf2bd791a53c833a441e00855bdb9d81072dee09",

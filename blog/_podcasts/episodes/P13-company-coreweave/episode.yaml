@@ -1,0 +1,75 @@
+# 에피소드 메타데이터. 회사 에피소드의 소스는 발행된 블로그 글이다.
+# 발행 시 guid, 오디오 크기, 길이, 발행일은 published.json에 기록한다.
+episode:
+  version: 1
+  episodeId: P13-company-coreweave
+  episodeNo: 13
+  slug: coreweave
+  title: "코어위브: 130조원 예약 매출은 왜 빚부터 부를까"
+  lane: company
+  language: ko
+  status: ready
+
+  audio:
+    generator: notebooklm
+    sourceHint: "Downloads/130조원_예약_뒤에_숨은_코어위브의_빚더미.m4a"
+    sourceDoc: https://eddmpython.github.io/dartlab/blog/CRWV-coreweave
+
+  image:
+    source: cover.jpg
+    key: episodes/coreweave/cover-3000.jpg
+  staticImage:
+    source: static-video.jpg
+    key: episodes/coreweave/static-video.jpg
+  thumbnail:
+    source: static-video.jpg
+    key: episodes/coreweave/static-video.jpg
+  sourceAssets:
+    - source: assets/source.webp
+      name: coreweave-server-room
+      role: reusable-original
+  visual:
+    source: assets/source.webp
+    kicker: DartLab Podcast
+    titleLines:
+      - 코어위브
+      - "[[130조원]] 예약 매출"
+      - 왜 빚부터 부를까
+    subtitle: GPU, 전력, 데이터센터 선투자와 99.4B 백로그를 함께 읽기
+    footer: EDGAR 공시 · 2026Q1 · 투자권유 아님
+  caption:
+    hook: 코어위브의 99.4B revenue backlog는 매출이 아니라 장비와 전력을 준비해야 풀리는 계약 약속입니다.
+    body: >-
+      2026년 1분기 매출은 2.078B로 전년보다 112% 늘었고 영업현금흐름은 2.984B였습니다.
+      하지만 같은 분기 투자현금유출은 7.708B였고, 2025년 말 총부채 원금은 21.615B였습니다.
+      고객 예약이 커질수록 GPU, 데이터센터, 전력, 임대, 장비 금융을 먼저 확보해야 하는 구조를
+      공시 숫자로 나눠 봅니다.
+    cta: 전체 에피소드는 DartLab 팟캐스트와 블로그 글에서 들을 수 있습니다.
+    hashtags: ["#코어위브", "#CoreWeave", "#CRWV", "#AI클라우드", "#DartLab"]
+
+  audienceQuestion: 코어위브의 99.4B revenue backlog는 실제 매출과 현금으로 바뀌기 전에 왜 더 큰 투자와 부채를 부를까?
+  oneLineMessage: >-
+    코어위브의 AI 수요는 대형 계약으로 확인되지만, 그 계약을 매출로 바꾸려면 GPU, 전력,
+    데이터센터를 먼저 확보해야 한다. 따라서 backlog의 크기보다 매출 전환 속도와 투자현금유출,
+    이자비용, 고객 집중도를 함께 봐야 한다.
+  summary: >-
+    코어위브는 2026년 1분기 revenue backlog 99.4B와 매출 성장률 112%를 기록했습니다.
+    그러나 같은 분기 영업현금흐름 2.984B보다 투자현금유출 7.708B가 더 컸고, 2025년 말
+    총부채 원금은 21.615B였습니다. 이번 편은 AI 클라우드 수요가 GPU, 전력, 데이터센터,
+    부채와 임대를 먼저 요구하는 이유를 공시로 설명합니다.
+  whereToLook:
+    - 99.4B revenue backlog가 다음 분기 매출과 현금으로 내려오는 속도
+    - 영업현금흐름과 GPU, 데이터센터 투자현금유출 사이의 간격
+    - 총부채 원금, 이자비용, 임대 의무, 장비 금융 부담의 변화
+    - 대형 고객 집중도가 계약 가시성과 실행 위험에 미치는 영향
+  forbiddenAngles: [매수, 매도, 목표가, 수익 보장, 확정 전망, backlog를 확정 매출로 단정]
+
+  stockCode: "CRWV"
+  corpName: CoreWeave
+  topicSlug: coreweave
+  cardType: company
+  youtubeId: ""
+  links:
+    blogSlug: "CRWV-coreweave"
+    cardSlug: "CRWV-coreweave"
+    terminalCode: "CRWV"
