@@ -3802,6 +3802,14 @@
     "blog/09-investment-stories/04-investor-flow-retail-institution-foreign/assets/04-flow-workbench.webp": "e2daafc1632352f48d25274f32e73a9ec1db35c1d529fb3ae914f6944625e873",
     "blog/09-investment-stories/04-investor-flow-retail-institution-foreign/assets/05-flow-footprint-desk.webp": "26f9a3f44342b627be48e37659d9bea74419c808394b1148cc9f5216632da95d",
     "blog/09-investment-stories/04-investor-flow-retail-institution-foreign/assets/06-flow-checklist.svg": "1640de5e6f29b7858ff12cef00114304677766876b3df7f36050c940f357914b",
+    "blog/09-investment-stories/05-overseas-stock-return-exchange-rate/assets/00-thumbnail-bg.webp": "e11404c1e1feaece4a710c24d570370840c6ec6b40bc710ed111768a59e60be2",
+    "blog/09-investment-stories/05-overseas-stock-return-exchange-rate/assets/01-two-price-formula.svg": "e45464515cb395b0509593fb6f2ca6b17ad92c932c6f6cee202cb09d10e0ff6e",
+    "blog/09-investment-stories/05-overseas-stock-return-exchange-rate/assets/02-four-scenarios.svg": "1bb638efcce457982475a365ebd737ea65c66d6ea19b06bff9c7c3b0202da216",
+    "blog/09-investment-stories/05-overseas-stock-return-exchange-rate/assets/03-return-layers.svg": "0daaa208675f6fd35e6d5b12f973b6ead9c5a2d54222f43a1079c2c7f821dbca",
+    "blog/09-investment-stories/05-overseas-stock-return-exchange-rate/assets/04-three-ledgers.svg": "c4deee0bd90602a812171049ff2e3c8e8db49986767ef68c7b85879cfba59797",
+    "blog/09-investment-stories/05-overseas-stock-return-exchange-rate/assets/exchange-counter-spread.webp": "303be96aa34903ca6bfc5c3eed6848d3618b36179e409582213672c37fa6d33c",
+    "blog/09-investment-stories/05-overseas-stock-return-exchange-rate/assets/overseas-return-two-prices.webp": "129b68b9453ef1494e7f7f6cd0bc900f74804f629e04c9818a71ec2664ad2fd4",
+    "blog/09-investment-stories/05-overseas-stock-return-exchange-rate/assets/same-stock-two-exits.webp": "f21d7b43bc369cee0e975a5c68e125719f2231514dbbed5f49c7e599ddeceee5",
     "blog/_issues/2026-06-korea-macro/assets/closing.webp": "b21be12d1e03cb97810fc7ed3e885076026eb08bd85211b71f679587320a2847",
     "blog/_issues/2026-06-korea-macro/assets/cover.webp": "d2538a4d77bc08326cd836f0981d320dacd4da39e8e8b3a721aafe84aceba6a3",
     "blog/_issues/2026-06-korea-macro/assets/fx.webp": "c05d1c9455e9881c744274ce7e3e0b26699a715b35b729dcfb570c35c3b4b613",
@@ -4449,6 +4457,8 @@
     "landing/static/thumbnails/news-terminal-one-screen-card.webp": "bba6953c8e59ac7fad78c18382aef529dbc4ac9dfb277f0299ca458367b4a39a",
     "landing/static/thumbnails/news-terminal-one-screen.webp": "9571c0cb4e73baeff271cb84b1d85f8a26005c1d5172f32f4ca7d43c36cc69d0",
     "landing/static/thumbnails/news-vscode-extension-install.webp": "4dc81c5b6175275bd6e0963c4a7ce40ec38c5136f5dc424ef5f5967beeaa41e9",
+    "landing/static/thumbnails/overseas-stock-return-exchange-rate-card.webp": "5a9f3710a03160f88fdd3fa2ec795f8a09fe2e20b65e151495bdbd694f5f00c6",
+    "landing/static/thumbnails/overseas-stock-return-exchange-rate.webp": "598a9258184ad5b7a58d42a3b913ca758aa96ca599e349e1544bfdff44abcfd8",
     "landing/static/thumbnails/power-equipment-supercycle-card.webp": "a2458f20b293911db36a89d1b7487c8fcc80ed1d022fbcaaba08229da212645d",
     "landing/static/thumbnails/power-equipment-supercycle.webp": "cfc8b05f8eb0bd157b8c1d22d54af355b8f3120fbf99a04dc9f9289c0aed0240",
     "landing/static/thumbnails/tech-ai-glasses-display-bottleneck-card.webp": "2fe6a5a02ae264d2307107563e79738fef77d5943812e8fd3f929f91cd92aa45",
@@ -5404,6 +5414,14 @@
       "textNodes": 17,
       "viewBox": "0 0 1080 400"
     },
+    "0daaa208675f6fd35e6d5b12f973b6ead9c5a2d54222f43a1079c2c7f821dbca": {
+      "bytes": 5050,
+      "colorCount": 24,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/0d/0daaa208675f6fd35e6d5b12f973b6ead9c5a2d54222f43a1079c2c7f821dbca.svg",
+      "textNodes": 19,
+      "viewBox": "0 0 1200 675"
+    },
     "0dad0ac967325fd45ec0b289da6c649ab0c77fafe181d39423ae644b88568585": {
       "bytes": 264144,
       "path": "objects/sha256/0d/0dad0ac967325fd45ec0b289da6c649ab0c77fafe181d39423ae644b88568585.webp"
@@ -5707,6 +5725,10 @@
       "path": "objects/sha256/12/129aed1c2ad5f091c98172aa1e01720947c152a24ad9507e71c3189f94a26242.svg",
       "textNodes": 33,
       "viewBox": "0 0 1200 820"
+    },
+    "129b68b9453ef1494e7f7f6cd0bc900f74804f629e04c9818a71ec2664ad2fd4": {
+      "bytes": 128630,
+      "path": "objects/sha256/12/129b68b9453ef1494e7f7f6cd0bc900f74804f629e04c9818a71ec2664ad2fd4.webp"
     },
     "12a5570b3c7f2bb465da65a86bf9139ed7d96cf4aa349c6fba69b96dce152a7a": {
       "bytes": 3051,
@@ -6275,6 +6297,14 @@
       "path": "objects/sha256/1b/1bac6a98948c6b4895976573393d8bdf3537145b2665803f20a0779d57e9048a.svg",
       "textNodes": 46,
       "viewBox": "0 0 1200 720"
+    },
+    "1bb638efcce457982475a365ebd737ea65c66d6ea19b06bff9c7c3b0202da216": {
+      "bytes": 4911,
+      "colorCount": 25,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/1b/1bb638efcce457982475a365ebd737ea65c66d6ea19b06bff9c7c3b0202da216.svg",
+      "textNodes": 19,
+      "viewBox": "0 0 1200 675"
     },
     "1bbe32e2ae63bf43962ddfd6785fe06569cbbfa6122f0268aec2caa61c595d91": {
       "bytes": 41464,
@@ -7691,6 +7721,10 @@
     "303bb4df3b2af58c891b896a2c0a0a25e3c70f00b0998597f2d0038b3199afac": {
       "bytes": 237700,
       "path": "objects/sha256/30/303bb4df3b2af58c891b896a2c0a0a25e3c70f00b0998597f2d0038b3199afac.webp"
+    },
+    "303be96aa34903ca6bfc5c3eed6848d3618b36179e409582213672c37fa6d33c": {
+      "bytes": 152570,
+      "path": "objects/sha256/30/303be96aa34903ca6bfc5c3eed6848d3618b36179e409582213672c37fa6d33c.webp"
     },
     "304696974ce8cf390fbcc37437f8ab7e5d490bf218412024ee0953bc0bef80cf": {
       "bytes": 3133,
@@ -10664,6 +10698,10 @@
       "bytes": 261020,
       "path": "objects/sha256/59/5986aca705299ba0433543542ed3cf96e4c55d8732619aad796410ace159d7a7.webp"
     },
+    "598a9258184ad5b7a58d42a3b913ca758aa96ca599e349e1544bfdff44abcfd8": {
+      "bytes": 41814,
+      "path": "objects/sha256/59/598a9258184ad5b7a58d42a3b913ca758aa96ca599e349e1544bfdff44abcfd8.webp"
+    },
     "59a58bd5f0b665caf01970d62bea7e0e6a832872dd31b379cb9c76441726c702": {
       "bytes": 70302,
       "path": "objects/sha256/59/59a58bd5f0b665caf01970d62bea7e0e6a832872dd31b379cb9c76441726c702.webp"
@@ -10747,6 +10785,10 @@
     "5a9a612433120f9cbfca8874ec95b9d4732ccf5d503350bccdbc74cb0e56d740": {
       "bytes": 72572,
       "path": "objects/sha256/5a/5a9a612433120f9cbfca8874ec95b9d4732ccf5d503350bccdbc74cb0e56d740.webp"
+    },
+    "5a9f3710a03160f88fdd3fa2ec795f8a09fe2e20b65e151495bdbd694f5f00c6": {
+      "bytes": 47300,
+      "path": "objects/sha256/5a/5a9f3710a03160f88fdd3fa2ec795f8a09fe2e20b65e151495bdbd694f5f00c6.webp"
     },
     "5aacfb34d275fac389728a8d80a71d96c1da135f0dc283a755383b96827f497b": {
       "bytes": 285158,
@@ -18028,6 +18070,14 @@
       "bytes": 126992,
       "path": "objects/sha256/c4/c4cc3023c386e273af786ba92ad2cf2e5701f8a8cee1774db2176ea22bf1846c.webp"
     },
+    "c4deee0bd90602a812171049ff2e3c8e8db49986767ef68c7b85879cfba59797": {
+      "bytes": 5629,
+      "colorCount": 26,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/c4/c4deee0bd90602a812171049ff2e3c8e8db49986767ef68c7b85879cfba59797.svg",
+      "textNodes": 25,
+      "viewBox": "0 0 1200 675"
+    },
     "c4f03b0c08b955a1a39ec5a9badeccb47036d8e3702df7292ffa75e15d3c385c": {
       "bytes": 65596,
       "path": "objects/sha256/c4/c4f03b0c08b955a1a39ec5a9badeccb47036d8e3702df7292ffa75e15d3c385c.webp"
@@ -19944,6 +19994,10 @@
       "textNodes": 16,
       "viewBox": "0 0 800 400"
     },
+    "e11404c1e1feaece4a710c24d570370840c6ec6b40bc710ed111768a59e60be2": {
+      "bytes": 118818,
+      "path": "objects/sha256/e1/e11404c1e1feaece4a710c24d570370840c6ec6b40bc710ed111768a59e60be2.webp"
+    },
     "e155e1df5d3525da465a1e425a4daa3c288fed819f5f993186738aaa848b8a02": {
       "bytes": 3035,
       "colorCount": 5,
@@ -20131,6 +20185,14 @@
     "e4475e4f7a362f7b18c3aa0019504f555cfbea8035a2f759f9e75ed23eadec3b": {
       "bytes": 302220,
       "path": "objects/sha256/e4/e4475e4f7a362f7b18c3aa0019504f555cfbea8035a2f759f9e75ed23eadec3b.webp"
+    },
+    "e45464515cb395b0509593fb6f2ca6b17ad92c932c6f6cee202cb09d10e0ff6e": {
+      "bytes": 4792,
+      "colorCount": 20,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/e4/e45464515cb395b0509593fb6f2ca6b17ad92c932c6f6cee202cb09d10e0ff6e.svg",
+      "textNodes": 17,
+      "viewBox": "0 0 1200 675"
     },
     "e462dc4897d42cb3cf2e946cc0768bcbf1e0c8fd5111bdcc86700d8931c9b53d": {
       "bytes": 89486,
@@ -21051,6 +21113,10 @@
     "f1d78b3d69c5f964e23912ecf290225637c60f1b683ba760a8e4778651a1bd20": {
       "bytes": 178780,
       "path": "objects/sha256/f1/f1d78b3d69c5f964e23912ecf290225637c60f1b683ba760a8e4778651a1bd20.webp"
+    },
+    "f21d7b43bc369cee0e975a5c68e125719f2231514dbbed5f49c7e599ddeceee5": {
+      "bytes": 179534,
+      "path": "objects/sha256/f2/f21d7b43bc369cee0e975a5c68e125719f2231514dbbed5f49c7e599ddeceee5.webp"
     },
     "f230afe57045a1112132796e65c9989ebc0954dcea50f1da23e6cc820cbdcdb7": {
       "bytes": 6542,
@@ -28996,6 +29062,32 @@
         "blog/09-investment-stories/04-investor-flow-retail-institution-foreign/assets/04-flow-workbench.webp",
         "blog/09-investment-stories/04-investor-flow-retail-institution-foreign/assets/05-flow-footprint-desk.webp",
         "blog/09-investment-stories/04-investor-flow-retail-institution-foreign/assets/06-flow-checklist.svg"
+      ]
+    },
+    "09-investment-stories/05-overseas-stock-return-exchange-rate": {
+      "assets": {
+        "exchange-counter-spread": "blog/09-investment-stories/05-overseas-stock-return-exchange-rate/assets/exchange-counter-spread.webp",
+        "overseas-return-two-prices": "blog/09-investment-stories/05-overseas-stock-return-exchange-rate/assets/overseas-return-two-prices.webp",
+        "same-stock-two-exits": "blog/09-investment-stories/05-overseas-stock-return-exchange-rate/assets/same-stock-two-exits.webp"
+      },
+      "card": "landing/static/thumbnails/overseas-stock-return-exchange-rate-card.webp",
+      "diagrams": {
+        "01-two-price-formula": "blog/09-investment-stories/05-overseas-stock-return-exchange-rate/assets/01-two-price-formula.svg",
+        "02-four-scenarios": "blog/09-investment-stories/05-overseas-stock-return-exchange-rate/assets/02-four-scenarios.svg",
+        "03-return-layers": "blog/09-investment-stories/05-overseas-stock-return-exchange-rate/assets/03-return-layers.svg",
+        "04-three-ledgers": "blog/09-investment-stories/05-overseas-stock-return-exchange-rate/assets/04-three-ledgers.svg"
+      },
+      "og": "landing/static/thumbnails/overseas-stock-return-exchange-rate.webp",
+      "staging": [
+        "blog/09-investment-stories/05-overseas-stock-return-exchange-rate/assets/00-thumbnail-bg.webp",
+        "blog/09-investment-stories/05-overseas-stock-return-exchange-rate/assets/01-two-price-formula.svg",
+        "blog/09-investment-stories/05-overseas-stock-return-exchange-rate/assets/02-four-scenarios.svg",
+        "blog/09-investment-stories/05-overseas-stock-return-exchange-rate/assets/03-return-layers.svg",
+        "blog/09-investment-stories/05-overseas-stock-return-exchange-rate/assets/04-three-ledgers.svg",
+        "blog/09-investment-stories/05-overseas-stock-return-exchange-rate/assets/exchange-counter-spread.webp",
+        "blog/09-investment-stories/05-overseas-stock-return-exchange-rate/assets/overseas-return-two-prices.webp",
+        "blog/09-investment-stories/05-overseas-stock-return-exchange-rate/assets/same-stock-two-exits.webp",
+        "landing/static/thumbnails/overseas-stock-return-exchange-rate-card.webp"
       ]
     }
   },
