@@ -40,7 +40,7 @@ manifests/
 | 이슈 카드 | `blog/_issues/<slug>/carousel.yaml` + 로컬 assets | `manifests/carousels.json` + 객체 |
 | 회사 이미지 | `sns/assets/<subjectKey>` 로컬 staging | `manifests/companies.json` + 객체 |
 | 팟캐스트 원본 이미지 | `episode.yaml sourceAssets` + 로컬 assets | 중앙 catalog + 객체 |
-| 팟캐스트 오디오와 공개 커버 | episode 저작 원본 | R2 `dartlab-podcast` |
+| 팟캐스트 오디오와 공개 커버 | 무시된 로컬 `cover.jpg`·`static-video.jpg`와 episode 저작 원본 | R2 `dartlab-podcast`. 로컬 이미지는 재발행용 작업 사본 |
 
 ## 4. 발행 불변식
 
@@ -51,6 +51,7 @@ manifests/
 5. 발행기는 `companies/`, `issues/`, `tech-story/`, `podcasts/`, `carousels/`를 만들 수 없다.
 6. 깨끗한 체크아웃의 블로그 staging 복원은 재작업용 `seedBlogMedia.py`만 담당하며 다음 발행 성공 뒤 다시 삭제한다.
 7. 자산 교체는 새 객체를 추가하고 catalog 별칭을 바꾼다. 기존 객체를 덮어쓰지 않는다.
+8. 팟캐스트 공개 오디오·커버·정적프레임·feed는 R2가 정본이다. 에피소드 폴더의 무시된 `cover.jpg`와 `static-video.jpg`는 남겨도 되지만 Git에 추적하지 않고, 에피소드 `assets/`는 완료 상태에 남기지 않는다.
 
 ## 5. 안전한 전환 순서
 
@@ -65,11 +66,12 @@ manifests/
 
 ## 6. 완료 기준
 
-- Git 추적 블로그 SVG·래스터 0건, 로컬 `blog/**/assets/` 폴더 0건.
+- Git 추적 블로그 SVG·래스터 0건, 일반 블로그 글의 로컬 `assets/` 폴더 0건. 무시된 팟캐스트 `cover.jpg`·`static-video.jpg` 작업 사본은 예외다.
 - `media/catalog.json`의 모든 객체가 정규 콘텐츠 주소 경로를 가진다.
 - 회사와 캐러셀 manifest의 모든 이미지가 실제 HF 객체를 가리킨다.
 - 저장소와 운영 문서에 옛 HF 소비 경로가 없다. 이관 도구의 입력 경로와 회귀 테스트 fixture만 예외다.
 - landing, cardShare, 블로그 발행, 회사 자산 발행, 카드 발행, 팟캐스트 원본 발행이 같은 계약을 쓴다.
+- 운영 문서가 모두 `blog/OPERATIONS.md`의 HF/R2 경계, 원자적 발행 순서, 팟캐스트 예외를 가리키며 서로 다른 정본을 선언하지 않는다.
 
 ## 7. 콘텐츠 품질과의 경계
 

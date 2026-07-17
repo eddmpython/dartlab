@@ -15,7 +15,7 @@
 
 ## 2. 준용 (회사편과 동일하게 간다)
 
-Phase 0 데이터 완주 / Phase 2.5 마스터라이터 편집 게이트 / Phase 4 독자 루프 / **수치 6원칙·검증표**(모든 강한 숫자는 메인 스레드 dartlab 재계산, 검증표에 없으면 발행 차단) / SVG 스타일(다크 `#0a0e1a`, amber `#fbbf24`, 한글 타이틀) / **용어 풀어쓰기**(첫 등장 시 괄호 풀이) / `audit_seo.py` SEO ≥ 95.
+Phase 0 데이터 완주 / Phase 2.5 마스터라이터 편집 게이트 / Phase 4 독자 루프 / **수치 6원칙·검증표**(모든 강한 숫자는 메인 스레드 dartlab 재계산, 검증표에 없으면 발행 차단) / SVG 스타일(다크 `#0a0e1a`, amber `#fbbf24`, 한글 타이틀) / **용어 풀어쓰기**(첫 등장 시 괄호 풀이) / `publishGate.py` 단일 발행 게이트.
 
 ## 3. 델타 (데이터 리포트만의 단계)
 
@@ -26,18 +26,22 @@ Phase 0 데이터 완주 / Phase 2.5 마스터라이터 편집 게이트 / Phase
 5. **대표 예시 회사는 실명으로.** 익명 회피 대신 **다년 경로 + 업종 사이클 맥락**을 붙여 이름을 짚는다. 단 한 해 단면으로 개별 기업을 단정하지 않는다(3년 경로·업종 구조로만 말한다).
 6. **템플릿 스캔 금지.** 매번 같은 랭킹표와 상위 10개로 끝내지 않는다. 전수 분포, 꼬리값, 제거 전후, 업종별 분해, 대표 회사의 다년 경로 중 이 주제에서 필요한 것만 기획한다.
 7. **깊이 있는 대표 사례.** 대표 회사는 장식이 아니다. 왜 그 회사가 전수 분포의 꼬리, 중앙값, 전환점, 오독 사례를 보여주는지 DART·EDGAR 공시 문장과 다년 숫자로 설명한다.
-8. **발행 게이트 = 데이터 리포트도 하드게이트 대상.** `auditBlog.py --gate`는 `data-reports`에도 적용된다. 데이터 리포트 체크: (a) 재현 코드블록 1개 이상 (b) 정제 방법론 박스 (c) "이렇게 읽으면 안 된다" 섹션 (d) SVG 4개 이상 (e) 표본·분모·기준시점 명시 (f) DART·EDGAR 유니버스 범위 또는 제외 사유 (g) visualPlan·imagePlan 과 각 시각물의 본문 중간 배치 계획 (h) 마지막 렌즈, 즉 다음 데이터에서 무엇을 확인할지 (i) `brief.json`의 작가기획·평가·재기획·재평가 92점 루프 증거 (j) `audit_seo.py` 95 이상.
+8. **발행 게이트 = 데이터 리포트도 하드게이트 대상.** `publishGate.py`가 구조 audit, SEO 95, 미디어 SSOT를 함께 검사한다. 데이터 리포트 체크: (a) 재현 코드블록 1개 이상 (b) 정제 방법론 박스 (c) "이렇게 읽으면 안 된다" 섹션 (d) SVG 4개 이상 (e) 표본·분모·기준시점 명시 (f) DART·EDGAR 유니버스 범위 또는 제외 사유 (g) visualPlan·imagePlan 과 각 시각물의 본문 중간 배치 계획 (h) 조건별 관전 시나리오 (i) `brief.json`의 작가기획·평가·재기획·재평가 92점 루프 증거.
 9. **길이 = 주장 밀도 우선.** 회사편 20,000자가 아니다. 표·SVG·재현 코드로 근거를 채운 **4,000~9,000자**. 패딩 금지.
 10. **썸네일 = 데이터 전용 생성기.** `gen_data_thumbnails.py`가 로컬 staging을 만들고 `publishBlogAssets.py`가 중앙 HF 객체로 발행해 `ogImage`를 객체 URL로 바꾼다.
 
 ## 4. 자산
 
 - **SVG ≥ 4** (저작 staging `assets/{NN}-*.svg`, 발행 후 catalog `diagrams`): funnel(전수 → 정제 → 결론) · 분포/추이 · 대표 사례 비교 · 업종/시장 지형. 다크 배경, 한글 타이틀, amber 강조. SVG 개수만 채우면 실패다. 각 SVG는 어떤 주장 뒤에서 어떤 오독을 막는지 `brief.json` 에 남긴다.
-- 배경: `assets/{NN}-thumbnail-bg.webp`(`gen_blog_cc0.py` PD/CC0) + `CREDITS.md`.
+- 배경은 저작 중 `assets/{NN}-thumbnail-bg.webp`(`gen_blog_cc0.py` PD/CC0)와 글 루트 `CREDITS.md`로 관리한다. 발행 뒤 파일은 삭제되고 catalog 객체와 HF URL만 남는다.
 
-## 5. 발행
+## 5. 마지막 관전 포인트
 
-`audit_seo.py` 95 이상 -> `gen_data_thumbnails.py` -> `publishBlogAssets.py --post <글폴더>` -> `publishGate.py --post <글폴더>` -> 커밋. `TOPIC_ROADMAP.md`를 갱신한다. 데이터는 런타임 SSOT를 직독하고 래스터는 HF 중앙 객체만 참조한다.
+마지막 H2는 순위 요약이 아니라 데이터 조건별 시나리오다. "만약 분모를 전체 상장사에서 실제 비교 가능 기업으로 바꾸면", "만약 기준시점을 한 분기 뒤로 옮기면", "만약 금융업을 제외하거나 포함하면", "만약 꼬리값 제거 기준을 바꾸면"처럼 2~4개를 고른다. 각 시나리오는 조건, 집계가 바뀌는 경로, 예상되는 결과 방향, 다시 확인할 표본·분모·지표, 기존 결론이 무효가 되는 조건을 가진다.
+
+## 6. 발행
+
+`gen_data_thumbnails.py -> publishBlogAssets.py --post <글폴더> -> publishGate.py --post <글폴더> -> 커밋` 순서다. `TOPIC_ROADMAP.md`를 갱신한다. 성공 뒤 로컬 `assets/`는 0건이며 데이터는 런타임 SSOT, SVG·래스터는 중앙 catalog의 HF 객체만 참조한다. `auditBlog.py`와 `audit_seo.py` 단독 결과는 발행 승인으로 쓰지 않는다.
 
 ---
 정본: 뼈대 [BLOG.md](../BLOG.md)·[PIPELINE.md](../PIPELINE.md), 마스터라이터 [_reference/BLOG_MASTER_WRITER.md](../_reference/BLOG_MASTER_WRITER.md), 운영 라우팅 [OPERATIONS.md](../OPERATIONS.md).

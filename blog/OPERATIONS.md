@@ -10,12 +10,12 @@
 
 ## 1. Git·추적 정책
 
-한 줄 규칙: **손으로 쓴 텍스트·메타는 repo git 추적. SVG를 포함한 공유/서빙 미디어는 HF, 팟캐스트 오디오는 R2가 durable SSOT다.**
+한 줄 규칙: **손으로 쓴 텍스트·메타는 repo git 추적. SVG를 포함한 재사용·웹 서빙 미디어는 HF, 팟캐스트 공개 오디오·커버·정적프레임·feed는 R2가 durable SSOT다.**
 
 | 분류 | 대상 | 위치 |
 |---|---|---|
 | **추적 (저작 원본)** | 마크다운(index.md·script.md), 메타(carousel.yaml·cards.plan.json·episode.yaml·channel.yaml·published.json·brief.json), 글 루트 `CREDITS.md`, 중앙 `media/catalog.json`, 운영문서 | `blog/**` (git) |
-| **미추적 (작업/파생)** | 블로그 SVG/WebP/JPG/PNG/GIF staging, 합성 썸네일, 팟캐스트 오디오, sns 렌더 PNG/MP4, 빌드 산출 | 포스트 `assets/`, `landing/static/thumbnails/`, `blog/_podcasts/.gitignore`, `/sns/` |
+| **미추적 (작업/파생)** | 블로그 SVG/WebP/JPG/PNG/GIF staging, 합성 썸네일, 팟캐스트 오디오·로컬 커버·정적프레임, sns 렌더 PNG/MP4, 빌드 산출 | 포스트 `assets/`, `landing/static/thumbnails/`, `blog/_podcasts/.gitignore`, `/sns/` |
 | **재사용 staging** | HF 발행 전 로컬 작업본과 회사 공유 작업본 | 포스트 `assets/<assetKey>.(svg\|webp\|jpg\|png\|gif)`, `sns/assets/{subjectKey}`. durable 원본 아님 |
 | **발행 = 이미지 SSOT** | 블로그 본문·OG·카드·브라우저 서빙 이미지 | HF `dartlab-media/objects/sha256/`의 전역 콘텐츠 주소 객체 |
 | **발행 = durable SSOT** | 팟캐스트 오디오·커버·정적프레임·feed | R2 `dartlab-podcast` |
@@ -23,12 +23,28 @@
 - 커밋·푸시 규약(변경 단위·`git commit -o`·push 게이트·UI 승인)은 `CLAUDE.md` 강행규칙 + memory `git_rules` 상세가 정본.
 - 새 `blog/_assets`, 임시 다운로드 폴더, 포스트 밖 원본 폴더를 만들지 않는다. 블로그 로컬 staging은 포스트 `assets/`, 카드 전용 staging은 `blog/_issues/<slug>/assets/`에만 두고 바이너리는 Git에 추가하지 않는다.
 
+### 정상 완료 상태
+
+- 일반 블로그 글 폴더의 `assets/`와 `landing/static/thumbnails/` 미디어는 발행 성공 뒤 0건이다. Git 추적 SVG/WebP/JPG/PNG/GIF도 0건이다.
+- 본문과 frontmatter는 중앙 `media/catalog.json`이 가리키는 HF 객체 URL만 참조한다. HF 최상위는 `.gitattributes`, `objects`, `manifests`만 허용한다.
+- 예외는 팟캐스트다. 에피소드 폴더의 무시된 `cover.jpg`와 `static-video.jpg`는 재발행용 로컬 작업 사본으로 남겨도 된다. 공개본은 R2이며 Git 추적 대상이 아니다. 에피소드 `assets/`와 오디오 파일은 완료 상태에 남기지 않는다.
+
 ## 2. 자산·소스·이미지 정책
 
 - 이미지 수급은 **자율**이다. 파이프라인이 실제 제품·인물·현장처럼 사실성이 중요한 피사체는 공식 출처 또는 라이선스가 확인된 실사를, 개념·원리·추상 장면은 `image_gen`을 선택한다. 적합본이 없으면 운영자 질문으로 멈추지 않고 다른 적합 경로로 전환한다. 핀터레스트·구글 이미지 무단 사용은 금지다. FLUX는 운영자의 명시 지시가 있을 때만 쓴다.
 - 이미지 의미 계약 SSOT는 블로그 `brief.json.imagePlan[]`, 카드 `cards.plan.json`이다. 블로그 신규 계약은 고유 `assetKey`와 `sourcePolicy: auto`를 요구한다.
 - 블로그 SVG와 래스터는 포스트 `assets/`에서 로컬 검수한 뒤 `publishBlogAssets.py`로 HF 전역 콘텐츠 주소 객체에 올린다. SVG는 XML·위험 요소·텍스트 밀도를 검사하고 카탈로그 `diagrams`에 등록한다. 같은 바이트는 포스트·OG·카드 구분 없이 한 번만 저장한다. 본문, `ogImage`, `cardPreview`는 HF URL만 참조하며 Git에는 중앙 `media/catalog.json`의 별칭·역할·해시와 글 루트 `CREDITS.md`의 출처만 남긴다. 발행기는 원격 객체를 재검증한 뒤 로컬 미디어와 빈 `assets/`·썸네일 폴더를 삭제한다.
 - `sns/assets/{subjectKey}`도 공유 staging일 뿐 SSOT가 아니다. 블로그, 기술 카드, 회사 카드, 팟캐스트 원본은 중앙 카탈로그의 같은 HF 객체를 재사용한다. 로컬 staging 복원은 재작업할 때 `seedBlogMedia.py --post ...` 또는 `--all`로만 하며 다음 발행 성공 뒤 다시 삭제한다.
+
+### 블로그 미디어 원자적 발행 순서
+
+1. `assets/`와 썸네일 staging에서 눈검수를 끝낸다.
+2. `publishBlogAssets.py --post <글폴더>`가 콘텐츠 해시 객체를 HF에 올린다.
+3. 모든 원격 객체의 실재를 확인한 뒤에만 중앙 catalog와 본문·frontmatter를 갱신한다.
+4. 갱신이 끝나면 로컬 미디어와 빈 staging 폴더를 삭제한다.
+5. `publishGate.py --post <글폴더>`로 HF 실재, 해시 경로, URL, CREDITS, Git 바이너리 0건을 한 번에 검사한다.
+
+원격 검증 전에 catalog나 공개 참조를 먼저 바꾸지 않는다. 어느 단계에서 실패하든 미완성 상태를 발행 완료로 기록하지 않는다.
 
 ## 3. HF/R2 저장 정책
 
@@ -76,7 +92,7 @@ flowchart LR
 | 블로그 | 저작 -> `publishBlogAssets.py --post <글폴더>` -> `publishGate.py --post <글폴더>` -> 발행 | `blog/BLOG.md` (+ `blog/PIPELINE.md`) |
 | 카드뉴스 | `plan_card_news.py` -> `build_carousel_contracts.py` -> HF `manifests/carousels.json` + 객체 | `blog/_scripts/CARDS.md` (+ `blog/_scripts/README.md`) |
 | 이미지 공유 staging | `sns/scripts/build_index.py` -> `publish_assets_hf.py` -> 중앙 catalog + HF `manifests/companies.json` + 객체 | `sns/assets/README.md` |
-| 팟캐스트 | `podcast_plan_loop.workflow.js` -> `plan_episode.py` -> (NotebookLM) -> `render_episode_image.py` -> `publish_podcast.py` -> R2+HF | `blog/_podcasts/README.md` + `blog/_podcasts/GUIDE.md` |
+| 팟캐스트 | `podcast_plan_loop.workflow.js` -> `plan_episode.py` -> (NotebookLM) -> `render_episode_image.py` -> `publish_podcast.py` -> 공개본 R2 + 재사용 원본 HF | `blog/_podcasts/README.md` + `blog/_podcasts/GUIDE.md` |
 | SNS 트랙(쇼츠·릴스 등) | 트랙별 | `sns/README.md` + `sns/{track}/README.md` |
 
 각 파이프라인의 dev(테스트)는 소스 옆(`test_carousel_contracts.py` 등), ops(발행)는 위 문서. 중복 지시는 위 정본으로 수렴.

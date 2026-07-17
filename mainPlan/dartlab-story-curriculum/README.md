@@ -314,8 +314,10 @@ frontmatter `seriesOrder` 는 화면에 보이는 순서다. `landing/src/lib/bl
       정적 소스에서 뽑은 인자 문자열은 근거가 아니다.
 - [ ] `gen_blog_thumbnails.py --slugs <slug> --apply`
 - [ ] `uv run python -X utf8 tests/audit/notebookContract.py` (본문 코드가 공개 계약 안인가)
-- [ ] `uv run python -X utf8 blog/_scripts/auditBlog.py --gate blog/03-dartlab-stories/<폴더>`
-- [ ] `uv run python -X utf8 blog/_scripts/audit_seo.py` (95 이상)
+- [ ] `node blog/_scripts/runCells.mjs --post blog/03-dartlab-stories/<폴더>`
+- [ ] `uv run python -X utf8 blog/_scripts/publishBlogAssets.py --post blog/03-dartlab-stories/<폴더>`
+- [ ] `uv run python -X utf8 blog/_scripts/publishGate.py --post blog/03-dartlab-stories/<폴더>`
+- [ ] 발행 뒤 글 `assets/` 0건, 본문·OG의 중앙 catalog HF URL 정합을 확인한다.
 - [ ] 브라우저 눈검수. 다크·라이트 둘 다.
 - [ ] 이 문서의 체크박스를 닫고, 편 번호와 `seriesOrder` 가 어긋나지 않았는지 본다.
 - [ ] 중간 삽입이면 4절 정책에 따라 필수 선행편인지 보충편인지 먼저 판정한다.

@@ -84,11 +84,15 @@
 ## 6. 이미지: 생성 / 수급 / 평가·개선
 - **기획**: `brief.json.imagePlan[]`이 이미지 의미 계약의 SSOT다. 각 항목은 고유 `assetKey`, `sourcePolicy: auto`, 피사체, 검색어, 본문 위치, 서사 용도를 가진다.
 - **자율 수급**: 파이프라인이 사실 적합성으로 경로를 선택한다. 실제 제품·인물·현장처럼 정확성이 중요한 피사체는 공식 출처 또는 라이선스가 확인된 실사를 쓴다. 개념·원리·추상 장면은 `image_gen`을 쓴다. 한 경로가 실패하면 묻고 멈추지 않고 다른 적합 경로로 전환한다. 핀터레스트·구글 이미지 무단 사용은 금지다. FLUX는 운영자의 명시 지시가 있을 때만 쓴다.
-- **미디어 SSOT**: 블로그 SVG/WebP/JPG/PNG/GIF는 Git에 넣지 않는다. 포스트 `assets/`, 팟캐스트 커버, `landing/static/thumbnails/`는 발행 전 로컬 검수·합성용 임시 staging이다. HF `dartlab-media/objects/sha256/<앞2자>/<전체해시>.<확장자>`에 같은 바이트를 한 번만 두고, 발행기가 원격 존재를 검증한 뒤 로컬 미디어와 빈 폴더를 자동 삭제한다. durable 원본과 서빙본은 HF 하나다.
+- **미디어 SSOT**: 블로그 SVG/WebP/JPG/PNG/GIF는 Git에 넣지 않는다. 포스트 `assets/`와 `landing/static/thumbnails/`는 발행 전 로컬 검수·합성용 임시 staging이다. HF `dartlab-media/objects/sha256/<앞2자>/<전체해시>.<확장자>`에 같은 바이트를 한 번만 두고, 발행기가 원격 존재를 검증한 뒤 로컬 미디어와 빈 폴더를 자동 삭제한다. 블로그와 카드의 durable 원본·서빙본은 HF 하나다. 팟캐스트 공개 오디오·커버·정적프레임·feed는 R2이며, 에피소드의 무시된 `cover.jpg`와 `static-video.jpg`는 재발행용 로컬 작업 사본으로 남겨도 된다.
 - **Git 계약**: `brief.json.imagePlan[]`이 래스터 의미를, 글 루트 `CREDITS.md`가 출처를, 중앙 `media/catalog.json` 하나가 래스터 `assets`, SVG `diagrams`, OG/card 역할과 HF 객체 SHA-256 대응을 가진다. 본문과 frontmatter는 카탈로그에서 파생한 HF URL만 쓴다.
 - **공유 경계**: v2 기술 카드도 중앙 카탈로그의 같은 `objects/sha256/` 경로를 쓴다. `sns/assets/{subjectKey}`와 `ingest_blog_assets.py`는 legacy 회사 공유풀 호환용이며 새 블로그 이미지의 SSOT가 아니다. 깨끗한 체크아웃에서 재작업이 꼭 필요할 때만 `seedBlogMedia.py --post blog/<카테고리>/<폴더>`로 staging을 임시 복원하며, 다음 `publishBlogAssets.py` 성공 시 다시 삭제한다.
 - **평가·개선**: 색복잡도 감사와 눈검수를 함께 한다. 피사체 오매치, 가짜 공식 로고·문서, 식별 인물 왜곡이 있으면 다른 실사 또는 `image_gen`으로 교체한다. `publishGate.py`가 assetKey, HF 실재, 본문 URL, CREDITS, Git 바이너리 0건을 막는다.
 - **레거시 폐기 게이트**: HF 옛 폴더는 `consolidateHfMedia.py --apply --delete-legacy`로만 지운다. 이 명령은 원격 manifest·객체 무결성과 배포된 `/cards`·`/blog`·`/terminal` 번들의 새 경로 전환을 자동 검증하며, 실패 시 삭제하지 않는다. 배선도와 순서 정본은 [OPERATIONS.md](OPERATIONS.md)의 `미디어 SSOT 배선과 레거시 폐기` 절이다.
+
+### 미디어 발행 트랜잭션
+
+`로컬 눈검수 -> HF 객체 업로드 -> 원격 실재 검증 -> catalog·본문·frontmatter 갱신 -> 로컬 staging 삭제 -> publishGate` 순서를 고정한다. 원격 검증 전에 공개 참조를 바꾸지 않고, catalog 갱신 전에 로컬 원본을 지우지 않는다. 성공 상태는 일반 블로그 `assets/` 0건, Git 추적 미디어 0건, 본문·OG·card의 HF URL 정합, `publishGate.py` 통과가 모두 성립한 때뿐이다.
 
 ## 7. 발행
 - **블로그**: 이미지·OG를 로컬에서 눈검수한 뒤 `publishBlogAssets.py --post <글폴더>`로 HF 발행·본문 치환 -> `publishGate.py --post <글폴더>` 통과 -> 빌드 확인 -> 커밋. 재무는 `<CompanyFinancials code="…" />` 라이브 태그(빌드타임 데이터 SSOT 직독). → BLOG.md §Phase 5

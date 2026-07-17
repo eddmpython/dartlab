@@ -47,7 +47,7 @@ Phase 0 데이터 완주 / Phase 1 적대 토론 기획 / Phase 2.5 마스터라
 
 ## 6. 발행
 
-`gen_blog_thumbnails.py --slugs {slug} --apply` -> `publishBlogAssets.py --post blog/08-tech-story/<글폴더>` -> `publishGate.py --post blog/08-tech-story/<글폴더>` -> 커밋. `TOPIC_ROADMAP.md` 갱신. subject `kind: tech`(topicSlug 기반, `OPERATIONS.md` 5절). `audit_seo.py`와 `auditBlog.py` 단독 결과는 발행 승인으로 쓰지 않는다. 데이터는 런타임 SSOT를 직독한다.
+`gen_blog_thumbnails.py --slugs {slug} --apply` -> `publishBlogAssets.py --post blog/08-tech-story/<글폴더>` -> `publishGate.py --post blog/08-tech-story/<글폴더>` -> 커밋. 성공 뒤 로컬 `assets/`는 0건이고 본문·`ogImage`·`cardPreview`는 중앙 catalog의 HF 객체 URL만 참조해야 한다. `TOPIC_ROADMAP.md` 갱신. subject `kind: tech`(topicSlug 기반, `OPERATIONS.md` 5절). `audit_seo.py`와 `auditBlog.py` 단독 결과는 발행 승인으로 쓰지 않는다. 데이터는 런타임 SSOT를 직독한다.
 
 ---
 정본: 뼈대 [BLOG.md](../BLOG.md)·[PIPELINE.md](../PIPELINE.md), 마스터라이터 [_reference/BLOG_MASTER_WRITER.md](../_reference/BLOG_MASTER_WRITER.md), 이미지 수급과 자산 경계 [OPERATIONS.md](../OPERATIONS.md) 2절.

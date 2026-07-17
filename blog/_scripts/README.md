@@ -30,8 +30,8 @@
 ## ③ audit · insights
 | 스크립트 | 역할 |
 |---|---|
-| `publishBlogAssets.py` | **블로그 v2 미디어 발행**. 로컬 SVG·본문 이미지·OG·card를 HF 전역 콘텐츠 주소 객체에 올리고 중앙 `media/catalog.json`과 본문 URL 반영 |
-| `seedBlogMedia.py` | 중앙 카탈로그 기준으로 한 글 또는 전체 HF 객체를 무시된 로컬 staging 경로에 복원 |
+| `publishBlogAssets.py` | **블로그 v2 미디어 발행**. HF 객체 업로드와 원격 검증 뒤에만 중앙 `media/catalog.json`·본문 URL을 반영하고, 성공 후 로컬 미디어와 빈 staging을 삭제 |
+| `seedBlogMedia.py` | 중앙 카탈로그 기준으로 한 글 또는 전체 HF 객체를 무시된 로컬 staging에 임시 복원. 다음 `publishBlogAssets.py` 성공 시 다시 삭제 |
 | `migrateBlogMedia.py` | 기존 Git SVG·래스터를 전역 HF 객체로 일괄 이관하고 원격 검증 뒤 추적 해제하는 마이그레이션 도구 |
 | `consolidateHfMedia.py` | HF 옛 폴더를 중앙 객체와 두 manifest로 통합한다. 레거시 삭제는 manifest 무결성과 공개 세 라우트의 소비자 전환을 자동 확인한 뒤에만 수행하며 삭제 후 재실행도 지원 |
 | `publishGate.py` | **블로그 발행 단일 진입점**. `auditBlog` 하드 계약 + SEO 95 + 신규 v2 시나리오·이미지 SSOT를 함께 검사 |
@@ -39,8 +39,10 @@
 | `auditBlog.py` | 9개 카테고리의 내러티브·쉬운 설명 공통 편집 검사와 심층 글 구조 audit를 맡는 하드 계약 엔진. 단독 결과는 발행 승인 아님 |
 | `audit_seo.py` | SEO·깊이·캐러셀 진단과 `publishGate.py`의 점수 엔진. 단독 결과는 발행 승인 아님 |
 | `auditBlogFinance.py` | 회사 글 재무 표 ↔ `dartlab.Company().select()` 실측 1:1 정합 |
+| `companyReportPolicy.py` | 기업이야기 금지 지표와 문서·기획·SVG 정책을 공통 검사 |
 | `backfill_blog_insights.py` | 글 `ai:` 블록 → `dartlab.knowledge.insights(source="blog")` 백필 (AI retrieve 인용) |
 | `runCells.mjs` | **브라우저 실행셀 발행 게이트** (dartlab-stories 전용). `auditBlog.py` 가 문자를 본다면 이건 실제 chromium 에서 본문 코드가 도는지 본다. ok / empty(조용히 삼킴) / error 를 가른다. `node blog/_scripts/runCells.mjs --post <폴더>` (dev 5173 전제). playwright 는 repo 설치본을 빌려 쓴다 |
+| `test_companyReportPolicy.py` | 기업이야기 금지 지표 정책 회귀 테스트 |
 
 ## ④ 공유 lib (flat 형제 import — **이동 금지**)
 | 스크립트 | import 하는 곳 |
@@ -49,7 +51,7 @@
 | `fetch_cc0_images.py` | `gen_blog_cc0` · `gen_news_cc0` (CC0/PD 다운로드 헬퍼 공유) |
 
 ## 관련 — `sns/scripts/` (자산 공유풀·HF 발행)
-신규 v2 블로그 SVG·래스터는 HF `dartlab-media/objects/sha256/`가 SSOT다. `sns/assets/{subjectKey}/`는 legacy 회사 공유 staging이다.
+신규 v2 블로그 SVG·래스터는 HF `dartlab-media/objects/sha256/`가 SSOT다. `sns/assets/{subjectKey}/`는 회사·SNS 작업용 로컬 staging이며 SSOT가 아니다.
 - `ingest_blog_assets.py`: legacy 회사 블로그 자산을 공유 staging으로 복사(멱등·손작성 자산 보호). v2 블로그에는 사용하지 않는다.
 - `build_index.py` → `publish_assets_hf.py` — 인덱싱 → hfMedia 업로드.
 - `extractImagegenAssets.py` · `checkImagegenAssets.py` — GPT image_gen 산출물 추출·프레이밍 검사.

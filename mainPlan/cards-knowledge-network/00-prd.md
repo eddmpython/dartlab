@@ -57,8 +57,8 @@
 - 카드는 짧은 결론체라 insight 1~2개/카드. no-new-number 게이트 통과분만(이미 audit_seo 검증).
 
 ### ⑤ 이미지 SSOT (토대 — 트랙 A 에서 1차 표준화 완료)
-- `sns/scripts/ingest_blog_assets.py` 로 블로그 hero ↔ 카드 공유풀(`sns/assets/{code}/`) 통합(멱등·손작성 보호).
-- content-asset-ssot 의 story `assets/` 로 수렴하는 게 종착(본 PRD 는 그 풀을 망의 시각 자산으로 소비).
+- 의미·해시 정본은 Git `media/catalog.json`, durable 바이너리는 HF `objects/sha256/`다. 카드와 블로그는 같은 객체를 재사용한다.
+- `sns/assets/{code}/`는 로컬 staging/cache일 뿐 정본이 아니다. `ingest_blog_assets.py`는 이관 전 레거시 글에만 쓰고 신규 v2 글에는 사용하지 않는다.
 
 ## 5. 단계 (ROI 순)
 

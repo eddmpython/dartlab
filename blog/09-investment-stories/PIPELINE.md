@@ -14,7 +14,7 @@
 
 ## 2. 준용
 
-Phase 0 데이터 완주 / Phase 1 적대 토론 기획 / Phase 2.5 마스터라이터 편집 게이트 / Phase 4 독자 루프 / 수치 6원칙·검증표 / 이미지·비주얼 기획 / `audit_seo.py` SEO 점수 95 이상 / `auditBlog.py --gate` 발행 하드 게이트를 그대로 따른다.
+Phase 0 데이터 완주 / Phase 1 적대 토론 기획 / Phase 2.5 마스터라이터 편집 게이트 / Phase 4 독자 루프 / 수치 6원칙·검증표 / 이미지·비주얼 기획 / `publishGate.py` 단일 발행 게이트를 그대로 따른다.
 
 공통 프레임은 같다. 투자이야기도 기획 단계에서 관통선, 핵심 인싸이트, 막 구조, 이야기 깊이, 참고글 연결, 차트·표·이미지, 오독 방지를 모두 정한다. `brief.json` 없이 글을 먼저 쓰지 않는다.
 
@@ -66,7 +66,7 @@ Phase 0 데이터 완주 / Phase 1 적대 토론 기획 / Phase 2.5 마스터라
 4. 비주얼 해부: 차트·표·계산식을 본문 중간에 넣고, 어떤 판단을 돕는지 설명한다.
 5. 참고글 연결: 회사·기술·데이터 사례가 필요한 순간에 내부 글을 붙인다.
 6. 틀리는 조건: 보조지표가 깨지는 국면, 뉴스·공시·유동성 변화, 기준선 재설정 조건을 쓴다.
-7. 다음에 볼 것: 독자가 다음 차트·공시·경제지표에서 확인할 체크리스트로 닫는다.
+7. 조건별 관전 시나리오: 독자가 다음 차트·공시·경제지표에서 확인할 조건과 변화 경로로 닫는다.
 
 ## 6. 비주얼
 
@@ -80,7 +80,11 @@ Phase 0 데이터 완주 / Phase 1 적대 토론 기획 / Phase 2.5 마스터라
 
 차트는 결론을 대신하지 않는다. "이 선을 깨면 무조건 하락"이 아니라 "이 기준이 깨지면 기존 시나리오를 다시 점검한다"로 쓴다.
 
-## 7. 발행 계약
+## 7. 마지막 관전 포인트
+
+마지막 H2는 매수·매도 결론이나 일반 체크리스트가 아니라 조건별 시나리오다. "만약 금리와 이익 추정치가 반대로 움직이면", "만약 거래량 없이 기준선을 통과하면", "만약 공시가 시장 기대의 전제를 깨면"처럼 서로 다른 조건 2~4개를 고른다. 각 시나리오는 `조건 -> 시장 언어나 지표가 바뀌는 경로 -> 예상 결과 -> 다음에 확인할 차트·공시·경제지표 -> 기존 해석이 틀렸음을 보여 줄 조건`을 가진다. 예측 숫자를 지어내거나 주가 방향을 단정하지 않는다.
+
+## 8. 발행 계약
 
 - 폴더: `blog/09-investment-stories/{NN}-{slug}/index.md`
 - frontmatter: `category: investment-stories`, `series: investment-stories`, `topicSlug` 필수.
@@ -89,7 +93,8 @@ Phase 0 데이터 완주 / Phase 1 적대 토론 기획 / Phase 2.5 마스터라
 - 내부 참고글 2개 이상. 선행 글이 없으면 `brief.json` 에 검색어와 부재 사유를 남기고, 본문에는 억지 링크를 넣지 않는다.
 - 기술적투자·보조지표 글은 기간, 봉 단위 또는 데이터 기준, 거래량 또는 기준선 설명을 포함한다.
 - "투자권유가 아니다" 수준의 면책 문구만으로 통과하지 않는다. 왜 틀릴 수 있는지, 어느 조건에서 기준이 바뀌는지를 본문에서 설명해야 한다.
-- `auditBlog.py --gate` 대상이다. 실사 OG, assets 사진, 본문 이미지, `brief.json`, `visuals[]`, `imagePlan[]`, `relatedPosts`, `evidenceMap`, 92점 루프 증거가 있어야 한다.
+- `publishGate.py` 대상이다. 중앙 catalog에 등록된 OG·본문 이미지, `brief.json`, `visuals[]`, `imagePlan[]`, `watchScenarios[]`, `relatedPosts`, `evidenceMap`, 92점 루프 증거가 있어야 한다.
+- 발행 순서는 `gen_blog_thumbnails.py --slugs <slug> --apply -> publishBlogAssets.py --post blog/09-investment-stories/<글폴더> -> publishGate.py --post blog/09-investment-stories/<글폴더> -> 커밋`이다. 성공 뒤 로컬 `assets/`는 0건이고 본문·`ogImage`·`cardPreview`는 중앙 catalog의 HF 객체 URL만 참조해야 한다. `auditBlog.py`와 `audit_seo.py` 단독 결과는 발행 승인으로 쓰지 않는다.
 
 ---
 정본: 뼈대 [BLOG.md](../BLOG.md)·[PIPELINE.md](../PIPELINE.md), 마스터라이터 [_reference/BLOG_MASTER_WRITER.md](../_reference/BLOG_MASTER_WRITER.md), 운영 라우팅 [OPERATIONS.md](../OPERATIONS.md).

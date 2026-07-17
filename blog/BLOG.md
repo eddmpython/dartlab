@@ -809,7 +809,7 @@ import YouTube from '$lib/components/YouTube.svelte';
 
 - `title` = 블로그 제목과 동일 한 줄.
 - 영상 없는 글은 `youtubeId: ""` 유지, `<YouTube>` 삽입 생략.
-- 레퍼런스: [SK하이닉스](blog/05-company-reports/01-000660-skhynix/index.md).
+- 레퍼런스: [SK하이닉스](05-company-reports/01-000660-skhynix/index.md).
 
 ### 유튜브 설명란 - 영상 있는 글 전체
 
@@ -858,9 +858,9 @@ https://eddmpython.github.io/dartlab/
 
 1. 본문 이미지, `ogImage`, `cardPreview`가 중앙 `media/catalog.json`의 HF 객체 URL인지.
 2. SVG/WebP/JPG/PNG/GIF가 Git 추적 대상에 없고 발행 뒤 로컬 `assets/` 폴더도 남지 않았는지.
-3. `uv run python -X utf8 blog/_scripts/auditBlog.py` XML·밀도 이슈 확인 (글 단위 구조 audit - 단어수·SVG·내부링크·H2 분포 + 템플릿 반복도).
+3. 필요하면 `uv run python -X utf8 blog/_scripts/auditBlog.py`로 XML·밀도 이슈를 진단한다. 단독 결과는 발행 승인이 아니다.
 4. `uv run python -X utf8 blog/_scripts/auditBlogFinance.py` (회사 포스트 한정) - markdown finance 표 ↔ `dartlab.Company().select(..., freq="Y")` 실측 1:1 비교. 코드·표·실측 3 자 정합 강행.
-5. `publishGate.py`가 HF 원격 실재와 콘텐츠 해시 경로를 통과하는지.
+5. 최종 승인은 `uv run python -X utf8 blog/_scripts/publishGate.py --post <글폴더>` 하나로 한다. HF 원격 실재와 콘텐츠 해시 경로까지 통과해야 한다.
 6. 자산 `assetKey`와 HF 경로 충돌 0.
 7. 모바일에서도 핵심 라벨 읽힘.
 

@@ -56,7 +56,8 @@ blog/_podcasts/
 ```
 
 오디오(m4a/mp3)는 레포에 두지 않는다. R2 런타임 산출물이라 용량을 격리한다. 에피소드 `assets/`는
-작업 중에만 생기는 임시 staging이며 완료 상태에는 남기지 않는다. 레포에는 텍스트와 작은 커버 소스만 커밋한다.
+작업 중에만 생기는 임시 staging이며 완료 상태에는 남기지 않는다. `cover.jpg`와 `static-video.jpg`는
+재발행 편의를 위한 무시된 로컬 작업 사본으로 남겨도 되지만 Git에는 커밋하지 않는다. 공개 정본은 R2다.
 
 ## 3. R2 레이아웃 (버킷 dartlab-podcast, 공개 r2.dev)
 
@@ -75,6 +76,10 @@ dartlab-podcast/                                  baseUrl = https://pub-...r2.de
 
 최종 RSS 산출물은 R2에 둔다. 재사용 가능한 원본 배경은 중앙 catalog에 등록하고 HF 콘텐츠 주소 객체로 둔다.
 이 원본으로 `cover.jpg` 와 `static-video.jpg` 를 언제든 다시 만들 수 있다.
+
+이 예외는 일반 블로그 미디어 정책을 바꾸지 않는다. 일반 글의 `assets/`는 발행 뒤 0건이어야 하며,
+팟캐스트에서도 완료 상태의 에피소드 `assets/`는 금지다. 남길 수 있는 것은 무시된 회차별
+`cover.jpg`와 `static-video.jpg` 작업 사본뿐이다.
 
 ```
 eddmpython/dartlab-media/

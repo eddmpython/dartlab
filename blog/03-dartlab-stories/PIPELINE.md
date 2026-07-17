@@ -27,7 +27,7 @@ dartlab 이야기의 제목은 내부 커리큘럼 라벨이 아니라 외부 �
 ## 3. 준용
 
 Phase 1 적대 토론 기획 92점 루프 / Phase 2.5 마스터라이터 편집 게이트 / Phase 4 독자 루프 /
-수치 6원칙·검증표 / 용어 풀어쓰기 / `audit_seo.py` 95 이상 / `auditBlog.py --gate` 통과.
+수치 6원칙·검증표 / 용어 풀어쓰기 / `publishGate.py` 단일 발행 게이트 통과.
 
 ## 4. 델타
 
@@ -75,15 +75,17 @@ Phase 1 적대 토론 기획 92점 루프 / Phase 2.5 마스터라이터 편집 
    어디를 보면 되는지 붙인다. 전문가처럼 보이는 문장보다 초보자가 같은 화면을 다시 따라 할 수 있는
    문장이 우선이다.
 11. **이미지 = 기획이 정한 만큼.** 고정 하한을 두지 않는다. Phase 1 기획 루프가 `imagePlan` 에 그 편에
-   **정말 필요한 그림만** 적고, **그 자리에서 수급·생성한다**(Phase 3 로 미루지 않는다). 발행 게이트는
-   개수 하한이 아니라 **기획과 실물의 정합**을 본다. `assets` 이미지 수가 `imagePlan` 길이 이상, 본문
-   삽입 이미지 수가 `inline` 슬롯 수 이상. 채우기용 이미지는 실패다. 본문 설명용 도식과 썸네일 배경은
-   역할이 다르다. 썸네일용 장면 이미지가 필요하면 `*thumbnail-bg*.webp` 로 따로 만든다.
+   **정말 필요한 그림만** 적고, **그 자리에서 수급·생성한다**(Phase 3 로 미루지 않는다). 저작 중에는
+   포스트 `assets/`의 실물이 `imagePlan`과 맞는지 검사하고, 발행 뒤에는 중앙 `media/catalog.json`의
+   역할·해시와 본문 HF URL이 계획과 맞는지 검사한다. 성공한 발행 뒤 로컬 `assets/`는 0건이어야 한다.
+   채우기용 이미지는 실패다. 본문 설명용 도식과 썸네일 배경은 역할이 다르다. 썸네일용 장면 이미지가
+   필요하면 `*thumbnail-bg*.webp` 로 따로 만든다.
 12. **길이 = 밀도 우선.** 하한 3,000자, 목표 5,000자. 코드·표·SVG 를 뺀 읽는 글자수 기준이다.
    설명이 코드보다 길 필요는 없지만, 코드만 던지고 왜를 안 적으면 그건 문서지 이야기가 아니다.
 13. **주어가 회사가 아니다.** `topicSlug` 를 쓰고 `stockCode` 는 달지 않는다. 예제 회사는 예제일 뿐이다.
 14. **썸네일.** `gen_blog_thumbnails.py`(레이아웃 SSOT)가 로컬 staging을 만들고 `publishBlogAssets.py`가 중앙 HF 객체로 발행한다. kicker 라벨 = `PREFIX["dartlab-stories"] = "dartlab 이야기"`. 본문용 이미지를 썸네일 배경으로도 쓰려면 frontmatter 에
-   `thumbnailBg: ./assets/<본문용-이미지>.webp` 를 명시한다. 본문에는 `*thumbnail-bg*.webp` 를 직접
+   저작 중에만 `thumbnailBg: ./assets/<본문용-이미지>.webp` 를 명시한다. `publishBlogAssets.py`가 이를
+   중앙 catalog의 HF 객체 URL로 바꾼다. 본문에는 `*thumbnail-bg*.webp` 를 직접
    걸지 않는다. 그 파일은 OG 합성용 소스라 실제 사이트 본문에서 깨질 수 있다. 연속 편의 `thumbnailBg`
    는 같은 UI 카드, 같은 노트북 화면, 같은 도식 구도를 반복하지 않는다. 앞 두 편과 비교해 시점, 물성,
    주 피사체 중 적어도 하나가 달라야 한다.
@@ -91,6 +93,10 @@ Phase 1 적대 토론 기획 92점 루프 / Phase 2.5 마스터라이터 편집 
    넣을 때는 비공개 설계문서의 중간 삽입 정책을 먼저 따른다. 필수 선행편이면 번호와 `seriesOrder` 를
    함께 옮기고, 보충편이면 뒤에 붙인 뒤 내부 링크로 해당 지점에 건다. 전체 지도는 비공개 설계문서
    `mainPlan/dartlab-story-curriculum/` 이 정본이다.
+16. **마지막 관전 포인트는 실행 시나리오다.** 마지막 H2는 요약 체크리스트가 아니라 "만약 데이터가
+   비어 있으면", "만약 DART와 EDGAR의 기간 기준이 다르면", "만약 브라우저에서 지원하지 않는 호출이면"
+   같은 조건 2~4개를 푼다. 각 시나리오는 화면에 나타날 변화, 원인, 독자가 확인할 값이나 메시지,
+   기존 설명을 폐기할 조건을 가진다.
 
 ## 5. 기획 (Phase 1)
 
@@ -107,11 +113,15 @@ Workflow({
 
 ## 6. 발행 게이트
 
+브라우저 검증 전에는 별도 터미널에서 `cd landing && npm run dev`로 개발 서버를 띄운다.
+
 ```bash
 uv run python -X utf8 tests/audit/notebookContract.py             # 본문 코드가 공개 계약 안인가
-uv run python -X utf8 blog/_scripts/auditBlog.py --gate blog/03-dartlab-stories/<폴더>
-uv run python -X utf8 blog/_scripts/audit_seo.py                  # 95 이상
+node blog/_scripts/runCells.mjs --post blog/03-dartlab-stories/<폴더>
+uv run python -X utf8 blog/_scripts/publishBlogAssets.py --post blog/03-dartlab-stories/<폴더>
+uv run python -X utf8 blog/_scripts/publishGate.py --post blog/03-dartlab-stories/<폴더>
 ```
 
-그리고 **브라우저에서 눈으로 확인한다.** `cd landing && npm run dev` 후 그 글을 열어 모든 실행
-막대를 눌러 본다. 결과가 안 나오는 코드는 글에서 뺀다.
+`auditBlog.py`와 `audit_seo.py` 단독 결과는 진단일 뿐 발행 승인이 아니다. 마지막으로 브라우저에서
+다크·라이트 화면과 모든 실행 막대를 눈으로 확인한다. 결과가 안 나오는 코드는 글에서 뺀다. 검수가
+끝나면 개발 서버를 종료한다.

@@ -100,7 +100,7 @@ lastUpdated: 2026-07-17
 
 기업이야기에는 부채비율, debt-to-equity, D/E ratio, 부채총계를 자본총계로 나눈 값을 쓰지 않는다. 제목, 본문, 표, 차트, 코드, 기획 JSON, SVG 모두 금지 범위다. 부채 부담은 절대 차입금, 순차입금, 만기, 이자비용, 이자보상, 영업현금흐름, 유동성 가운데 실제 서사를 설명하는 근거로 다룬다. `blog_plan_loop.workflow.js`가 기획에서 제외하고 `publishGate.py`가 최종 차단한다.
 
-자산 SSOT 경계: 블로그 의미 계약은 `brief.json.imagePlan[]`, 출처는 글 루트 `CREDITS.md`, staging 별칭·포스트별 본문/OG/card 역할·경로·SHA-256 대응은 중앙 `media/catalog.json` 하나다. SVG/WebP/JPG/PNG/GIF와 합성 OG/card는 포스트 `assets/`와 `landing/static/thumbnails/`에서 로컬 눈검수한 뒤 HF `dartlab-media/objects/sha256/<앞2자>/<전체해시>.<확장자>`에 발행하며 Git에 넣지 않는다. 발행기는 원격 객체 존재를 재검증한 뒤 로컬 미디어와 빈 staging 폴더를 삭제한다. SVG는 XML 안전성·텍스트 밀도 메타데이터와 함께 `diagrams`에 등록한다. 회사·이슈·기술·팟캐스트별 HF 미디어 폴더는 만들지 않는다. 런타임 파생 뷰는 `manifests/companies.json`, `manifests/carousels.json` 두 파일뿐이고 모든 이미지가 객체 경로를 가리킨다. 같은 바이트는 한 번만 저장하고 durable 원본과 서빙 SSOT는 HF 하나다. `sourcePolicy`는 `auto`이며 파이프라인이 사실 적합성에 따라 공식·라이선스 실사와 image_gen 중 선택한다. `sns/assets/{subjectKey}`는 공유 staging일 뿐 SSOT가 아니다. 깨끗한 체크아웃의 staging 복원은 재작업할 때 `seedBlogMedia.py`만 쓰며 다음 발행 성공 뒤 다시 삭제한다. StoryCore는 개념 어휘이며 새 물리 아티팩트를 만들지 않는다.
+자산 SSOT 경계: 블로그 의미 계약은 `brief.json.imagePlan[]`, 출처는 글 루트 `CREDITS.md`, staging 별칭·포스트별 본문/OG/card 역할·경로·SHA-256 대응은 중앙 `media/catalog.json` 하나다. SVG/WebP/JPG/PNG/GIF와 합성 OG/card는 포스트 `assets/`와 `landing/static/thumbnails/`에서 로컬 눈검수한 뒤 HF `dartlab-media/objects/sha256/<앞2자>/<전체해시>.<확장자>`에 발행하며 Git에 넣지 않는다. 발행기는 HF 객체 업로드와 원격 실재 검증 뒤에만 catalog·본문·frontmatter를 갱신하고, 성공하면 로컬 미디어와 빈 staging 폴더를 삭제한다. SVG는 XML 안전성·텍스트 밀도 메타데이터와 함께 `diagrams`에 등록한다. 회사·이슈·기술·팟캐스트별 HF 미디어 폴더는 만들지 않는다. 런타임 파생 뷰는 `manifests/companies.json`, `manifests/carousels.json` 두 파일뿐이고 모든 이미지가 객체 경로를 가리킨다. 같은 바이트는 한 번만 저장한다. 블로그·카드·재사용 원본의 durable 원본과 웹 서빙 SSOT는 HF 하나다. 팟캐스트 공개 오디오·커버·정적프레임·feed는 R2가 정본이고, 에피소드 폴더의 무시된 `cover.jpg`와 `static-video.jpg`는 재발행용 로컬 작업 사본으로 남겨도 된다. 에피소드 `assets/`와 오디오 파일은 완료 상태에 남기지 않는다. `sourcePolicy`는 `auto`이며 파이프라인이 사실 적합성에 따라 공식·라이선스 실사와 image_gen 중 선택한다. `sns/assets/{subjectKey}`는 공유 staging일 뿐 SSOT가 아니다. 깨끗한 체크아웃의 블로그 staging 복원은 재작업할 때 `seedBlogMedia.py`만 쓰며 다음 발행 성공 뒤 다시 삭제한다. StoryCore는 개념 어휘이며 새 물리 아티팩트를 만들지 않는다.
 
 ### evidence 표준 (편집 스냅샷, 굽기 아님)
 ②의 evidence 각 항목은 아래를 단다. 핵심은 `apiRef`(재현)·`period.basis`(달력/회계연도)·`asOf`(시점)로, 2.6절의 반복 함정(EDGAR 회계연도·누적/TTM 혼입)을 구조로 막는다.
@@ -251,7 +251,7 @@ id · claim · apiRef{apiRef,args} · value · period{label,basis,granularity} �
 
 ## 도구·포맷
 - 기획: `blog/_scripts/plan_card_news.py --issue <slug> --write`(이슈) 또는 `--post <글폴더>`(회사) → cards.plan.json.
-- 이미지: `blog/_scripts/fetch_cc0_images.py`(CC0 헬퍼) → 카드별 눈검수. 자산 공유풀·HF는 `sns/scripts/`(build_index·publish_assets_hf).
+- 이미지: 블로그는 포스트 staging에서 눈검수한 뒤 `publishBlogAssets.py`로 HF에 발행한다. 회사·SNS 로컬 staging은 `sns/scripts/build_index.py`와 `publish_assets_hf.py`가 중앙 catalog·회사 manifest·HF 객체로 투영한다. 어느 로컬 staging도 SSOT로 부르지 않는다.
 - 발행: `blog/_scripts/build_carousel_contracts.py [--dry-run]` -> hfMedia `manifests/carousels.json`과 중앙 객체. 데이터만 올리면 /cards 라이브.
 - 저작(손글): 회사는 블로그 frontmatter `carousel:`, 이슈(블로그 글 없음)는 `blog/_issues/<slug>/carousel.yaml`. 슬라이드 image는 저작 의미 키이며 발행기가 중앙 catalog의 객체 경로로 확정한다. 카드 수·layout·키 형식·이미지 정책 상세는 `blog/_scripts/CARDS.md`.
 - 검증 코드(위생 게이트 SSOT): `blog/_scripts/cards_plan.py`(bigSentenceContract·약어·reviewGate) + `build_carousel_contracts.py`. 스크립트 인덱스 `blog/_scripts/README.md`.

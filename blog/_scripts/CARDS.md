@@ -225,7 +225,7 @@ Openverse/Commons 검색도 범용 업종어만 넣지 않는다. `queries` 는 
 | `blog/_scripts/fetch_cc0_images.py` | 무료(PD/CC0) 이미지 수급 - Commons·Openverse |
 | `sns/scripts/extractImagegenAssets.py` | GPT `image_gen` 세션 결과 → `sns/assets/{code}/{asset}.webp` 추출 |
 | `sns/scripts/checkImagegenAssets.py` | image_gen 산출물 4:5·밝기·프레이밍 1차 검사 |
-| `sns/scripts/ingest_blog_assets.py` | **블로그 hero ↔ 카드 공유풀 SSOT** - 블로그 회사글 hero → `sns/assets/{code}/`(멱등·손작성 보호) |
+| `sns/scripts/ingest_blog_assets.py` | 이관 전 블로그 hero를 `sns/assets/{code}/` staging으로 복사하는 레거시 호환 도구. 신규 v2 글에는 사용하지 않음 |
 | `blog/_scripts/gen_company_flux.py` | 생성형 hero(4:5). 운영자 명시 지시 시에만(신규 `/cards` 기본 경로 아님) |
 | `blog/_scripts/audit_seo.py` | carousel 형식·숫자 검사 |
 | `blog/_scripts/migrate_carousels_to_blog.py` | 1회성 이관(sns/carousels → blog frontmatter, **완료**). 이후 sns 는 **유물**·재동기화 안 함 |
