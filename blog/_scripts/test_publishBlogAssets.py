@@ -105,6 +105,21 @@ def test_dry_run_does_not_write_manifest(monkeypatch, tmp_path: Path) -> None:
     assert not (tmp_path / "media" / "catalog.json").exists()
 
 
+def test_dry_run_supports_planned_gif(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(publisher, "REPO_ROOT", tmp_path)
+    postDir = writePost(tmp_path)
+    webp = postDir / "assets" / "hero-scene.webp"
+    gif = webp.with_suffix(".gif")
+    webp.rename(gif)
+    indexPath = postDir / "index.md"
+    updated = indexPath.read_text(encoding="utf-8").replace("hero-scene.webp", "hero-scene.gif")
+    indexPath.write_text(updated, encoding="utf-8")
+
+    manifest = publisher.publishAssets(postDir, dryRun=True)
+
+    assert manifest["assets"]["hero-scene"]["path"].endswith(".gif")
+
+
 def test_publish_assets_is_idempotent_without_local_staging(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(publisher, "REPO_ROOT", tmp_path)
     postDir = writePost(tmp_path)

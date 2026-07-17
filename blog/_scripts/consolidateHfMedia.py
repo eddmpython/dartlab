@@ -23,7 +23,7 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urljoin, urlparse
 from urllib.request import Request, urlopen
 
-from blogMedia import IMAGE_SUFFIXES, loadMediaCatalog, mediaPath, saveMediaCatalog
+from blogMedia import IMAGE_EXTENSION_RE, IMAGE_SUFFIXES, loadMediaCatalog, mediaPath, saveMediaCatalog
 from huggingface_hub import CommitOperationAdd, CommitOperationDelete, HfApi, hf_hub_download
 from huggingface_hub.hf_api import RepoFile
 
@@ -40,7 +40,7 @@ LEGACY_PREFIXES = ("companies/", "issues/", "podcasts/", "tech-story/", "carouse
 HASHED_STEM_RE = re.compile(r"^(?P<key>.+)\.(?P<hash>[0-9a-f]{8})$")
 OBJECT_PATH_RE = re.compile(
     r"^objects/sha256/(?P<prefix>[0-9a-f]{2})/(?P<sha256>[0-9a-f]{64})"
-    r"\.(?:svg|webp|png|jpe?g)$"
+    rf"\.(?:{IMAGE_EXTENSION_RE})$"
 )
 JS_REFERENCE_RE = re.compile(r"""(?:from\s*|import\s*(?:\(\s*|\s+))["'`]([^"'`]+\.js(?:\?[^"'`]*)?)["'`]""")
 STATIC_JS_REFERENCE_RE = re.compile(r"""(?:from\s*|import\s+)["'`]([^"'`]+\.js(?:\?[^"'`]*)?)["'`]""")

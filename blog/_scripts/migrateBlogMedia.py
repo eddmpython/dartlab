@@ -10,6 +10,7 @@ from pathlib import Path
 
 from blogMedia import (
     IMAGE_SUFFIXES,
+    RASTER_SUFFIXES,
     contentSha256,
     emptyMediaCatalog,
     loadMediaCatalog,
@@ -27,15 +28,9 @@ from dartlab.pipeline.hfUpload import _resolveHfToken as resolveHfToken
 REPO_ROOT = Path(__file__).resolve().parents[2]
 CATALOG_PATH = REPO_ROOT / "media" / "catalog.json"
 TRACKED_PATHSPECS = (
-    ":(glob)blog/**/*.webp",
-    ":(glob)blog/**/*.png",
-    ":(glob)blog/**/*.jpg",
-    ":(glob)blog/**/*.jpeg",
+    *(f":(glob)blog/**/*{suffix}" for suffix in RASTER_SUFFIXES),
     ":(glob)blog/**/assets/*.svg",
-    ":(glob)landing/static/thumbnails/**/*.webp",
-    ":(glob)landing/static/thumbnails/**/*.png",
-    ":(glob)landing/static/thumbnails/**/*.jpg",
-    ":(glob)landing/static/thumbnails/**/*.jpeg",
+    *(f":(glob)landing/static/thumbnails/**/*{suffix}" for suffix in RASTER_SUFFIXES),
 )
 PLAN_FILES = ("brief.json", "plan.json")
 

@@ -13,7 +13,11 @@ from dartlab.core.dataConfig import HF_MEDIA_BASE_URL, HF_MEDIA_REPO
 MEDIA_CATALOG_VERSION = 4
 MEDIA_CATALOG_RELATIVE = Path("media") / "catalog.json"
 OBJECT_PREFIX = "objects/sha256"
-IMAGE_SUFFIXES = {".webp", ".jpg", ".jpeg", ".png", ".svg"}
+RASTER_SUFFIXES = (".webp", ".jpg", ".jpeg", ".png", ".gif")
+IMAGE_SUFFIX_ORDER = (*RASTER_SUFFIXES, ".svg")
+IMAGE_SUFFIXES = frozenset(IMAGE_SUFFIX_ORDER)
+RASTER_EXTENSION_RE = "|".join(re.escape(suffix.lstrip(".")) for suffix in RASTER_SUFFIXES)
+IMAGE_EXTENSION_RE = "|".join(re.escape(suffix.lstrip(".")) for suffix in IMAGE_SUFFIX_ORDER)
 ASSET_KEY_RE = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*")
 SHA256_RE = re.compile(r"[0-9a-f]{64}")
 SVG_FORBIDDEN_TAGS = {"foreignobject", "script"}

@@ -38,7 +38,7 @@ Phase 0 데이터 완주 / Phase 1 적대 토론 기획 / Phase 2.5 마스터라
 - 기술 원리, 내부 작동, 아직 사진으로 존재하지 않는 개념 장면은 `image_gen`을 선택한다. 가짜 공식 로고·문서·식별 인물은 만들지 않는다.
 - 한 경로에서 적합본이 없으면 묻고 멈추지 않고 다른 검색어, 다른 공식 출처, `image_gen` 순으로 전환한다. FLUX는 운영자가 명시한 경우에만 쓴다.
 - `brief.json.imagePlan[]`은 `assetKey`, `sourcePolicy: auto`, `slot`, `subject`, `placement`, `narrativeUse`를 가진다. 파일 경로는 적지 않는다. 로컬 검수 경로는 `assets/<assetKey>.webp`, durable 경로는 발행기가 정한 HF 콘텐츠 해시 경로다.
-- 미디어 원본·서빙 SSOT는 HF `dartlab-media/objects/sha256/` 하나다. Git에는 `brief.json`, `assets/CREDITS.md`, 중앙 `media/catalog.json`만 남기고 SVG/WebP/JPG/PNG를 추가하지 않는다. 본문, `ogImage`, `cardPreview`는 중앙 카탈로그의 HF URL을 참조한다.
+- 미디어 원본·서빙 SSOT는 HF `dartlab-media/objects/sha256/` 하나다. Git에는 `brief.json`, `assets/CREDITS.md`, 중앙 `media/catalog.json`만 남기고 SVG/WebP/JPG/PNG/GIF를 추가하지 않는다. 본문, `ogImage`, `cardPreview`는 중앙 카탈로그의 HF URL을 참조한다.
 - 이미지 게이트: 휴머노이드 편은 산업용 로봇 팔만으로 통과하지 않는다. 관절, 감속기, 액추에이터, 손·무릎·고관절 조립체처럼 글의 기술 병목이 보여야 한다. 모든 계획 이미지는 눈으로 확인한다.
 
 ## 5. 자산

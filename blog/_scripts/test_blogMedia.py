@@ -118,3 +118,12 @@ def test_registerMediaFileRejectsExecutableSvg(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="SVG 금지 요소"):
         registerMediaFile(emptyMediaCatalog(), "blog/x/assets/unsafe.svg", svg)
+
+
+def test_registerMediaFileSupportsGifObject(tmp_path: Path) -> None:
+    gif = tmp_path / "animation.gif"
+    gif.write_bytes(b"GIF89a")
+
+    record = registerMediaFile(emptyMediaCatalog(), "blog/x/assets/animation.gif", gif)
+
+    assert record["path"].endswith(f"/{record['sha256']}.gif")

@@ -15,8 +15,8 @@
 | 분류 | 대상 | 위치 |
 |---|---|---|
 | **추적 (저작 원본)** | 마크다운(index.md·script.md), 메타(carousel.yaml·cards.plan.json·episode.yaml·channel.yaml·published.json·brief.json), `assets/CREDITS.md`, 중앙 `media/catalog.json`, 운영문서 | `blog/**` (git) |
-| **미추적 (작업/파생)** | 블로그 SVG/WebP/JPG/PNG staging, 합성 썸네일, 팟캐스트 오디오, sns 렌더 PNG/MP4, 빌드 산출 | 포스트 `assets/`, `landing/static/thumbnails/`, `blog/_podcasts/.gitignore`, `/sns/` |
-| **재사용 staging** | HF 발행 전 로컬 작업본과 회사 공유 작업본 | 포스트 `assets/<assetKey>.(svg\|webp)`, `sns/assets/{subjectKey}`. durable 원본 아님 |
+| **미추적 (작업/파생)** | 블로그 SVG/WebP/JPG/PNG/GIF staging, 합성 썸네일, 팟캐스트 오디오, sns 렌더 PNG/MP4, 빌드 산출 | 포스트 `assets/`, `landing/static/thumbnails/`, `blog/_podcasts/.gitignore`, `/sns/` |
+| **재사용 staging** | HF 발행 전 로컬 작업본과 회사 공유 작업본 | 포스트 `assets/<assetKey>.(svg\|webp\|jpg\|png\|gif)`, `sns/assets/{subjectKey}`. durable 원본 아님 |
 | **발행 = 이미지 SSOT** | 블로그 본문·OG·카드·브라우저 서빙 이미지 | HF `dartlab-media/objects/sha256/`의 전역 콘텐츠 주소 객체 |
 | **발행 = durable SSOT** | 팟캐스트 오디오·커버·정적프레임·feed | R2 `dartlab-podcast` |
 

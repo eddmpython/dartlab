@@ -10,6 +10,7 @@ from pathlib import Path
 from blogMedia import (
     ASSET_KEY_RE,
     MEDIA_CATALOG_VERSION,
+    RASTER_SUFFIXES,
     emptyMediaCatalog,
     loadMediaCatalog,
     loadMediaManifest,
@@ -78,6 +79,15 @@ def sourcePath(localPath: Path) -> str:
         raise ValueError(f"저장소 밖 미디어는 발행할 수 없음: {localPath}") from exc
 
 
+def localPlannedAsset(postDir: Path, key: str) -> Path | None:
+    matches = [postDir / "assets" / f"{key}{suffix}" for suffix in RASTER_SUFFIXES]
+    existing = [path for path in matches if path.is_file()]
+    if len(existing) > 1:
+        names = ", ".join(path.name for path in existing)
+        raise ValueError(f"같은 assetKey의 staging 이미지가 여러 개임: {names}")
+    return existing[0] if existing else None
+
+
 def loadCatalog(postDir: Path) -> dict[str, object]:
     catalogPath = mediaCatalogPath(postDir)
     catalog, errors = loadMediaCatalog(catalogPath)
@@ -111,15 +121,16 @@ def buildManifest(
     for key in keys:
         if key not in credits:
             raise ValueError(f"assets/CREDITS.md에 assetKey 누락: {key}")
-        local = postDir / "assets" / f"{key}.webp"
-        if local.is_file():
+        local = localPlannedAsset(postDir, key)
+        if local is not None:
             source = sourcePath(local)
             record = registerMediaFile(nextCatalog, source, local)
             localByRemote[record["path"]] = local
         else:
             oldRecord = existingAssets.get(key)
             if not isinstance(oldRecord, dict) or not oldRecord.get("path") or not oldRecord.get("sha256"):
-                raise ValueError(f"로컬 staging 이미지와 기존 HF 카탈로그 모두 없음: assets/{key}.webp")
+                suffixes = ", ".join(RASTER_SUFFIXES)
+                raise ValueError(f"로컬 staging 이미지와 기존 HF 카탈로그 모두 없음: assets/{key} ({suffixes})")
             record = {
                 "path": str(oldRecord["path"]),
                 "sha256": str(oldRecord["sha256"]),

@@ -46,6 +46,16 @@ thumbnail: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main
     assert pg.normalizeMediaOnlyDiff(before) != pg.normalizeMediaOnlyDiff(after.replace("본문입니다", "본문 변경"))
 
 
+def test_normalize_media_only_diff_supports_gif() -> None:
+    before = "![애니메이션](./assets/chart.gif)"
+    after = (
+        "![애니메이션](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/"
+        "objects/sha256/aa/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.gif)"
+    )
+
+    assert pg.normalizeMediaOnlyDiff(before) == pg.normalizeMediaOnlyDiff(after)
+
+
 def test_post_dirs_from_paths_keeps_only_content_posts(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(pg, "REPO_ROOT", tmp_path)
     postDir = tmp_path / "blog" / "08-tech-story" / "14-new-tech"
@@ -168,4 +178,28 @@ def test_tracked_binary_errors_blocks_v2_git_images(monkeypatch, tmp_path: Path)
     assert errors == [
         "블로그 콘텐츠 미디어는 Git 추적 금지, HF 콘텐츠 주소 객체에만 발행: "
         "blog/08-tech-story/14-new-tech/assets/hero.webp"
+    ]
+
+
+def test_tracked_binary_errors_blocks_gif(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(pg, "REPO_ROOT", tmp_path)
+    postDir = tmp_path / "blog" / "05-company-reports" / "01-company"
+    (postDir / "assets").mkdir(parents=True)
+    catalogPath = tmp_path / "media" / "catalog.json"
+    catalogPath.parent.mkdir(parents=True)
+    catalogPath.write_text("{}", encoding="utf-8")
+    calls: list[tuple[str, ...]] = []
+
+    def fakeGit(*args: str, check: bool = True):
+        calls.append(args)
+        return SimpleNamespace(returncode=0, stdout="blog/05-company-reports/01-company/assets/chart.gif\n")
+
+    monkeypatch.setattr(pg, "_git", fakeGit)
+
+    errors = pg.trackedBinaryErrors(postDir)
+
+    assert "blog/05-company-reports/01-company/assets/*.gif" in calls[0]
+    assert errors == [
+        "블로그 콘텐츠 미디어는 Git 추적 금지, HF 콘텐츠 주소 객체에만 발행: "
+        "blog/05-company-reports/01-company/assets/chart.gif"
     ]

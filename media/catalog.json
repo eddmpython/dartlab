@@ -2112,6 +2112,7 @@
     "blog/05-company-reports/02-003230-samyang-foods/assets/02-dps-32x.svg": "186247a3f6456eedc49429653dbc9a96a82528b1236fe64feb20e6d9515c26e7",
     "blog/05-company-reports/02-003230-samyang-foods/assets/02-fixed-cost-leverage.svg": "f531b80b8a3ba2ba5a7cf69a6629942645451547dff65d33ade41a588cbcac22",
     "blog/05-company-reports/02-003230-samyang-foods/assets/02-margin-explosion.svg": "b1c352ef9b39ee7b4ad36212cd05d198164f18fcffb6fc96b6a5163334f6f78e",
+    "blog/05-company-reports/02-003230-samyang-foods/assets/02-ramen-big3-opm-race.gif": "e40f39bc4a00cf2a32b86efb1dbf9890124757374d6bc56e8c666b61b04e5896",
     "blog/05-company-reports/02-003230-samyang-foods/assets/02-revenue-yoy.svg": "b61d21ddfba12437ca9b55c605b38b1254393a6f736eaadb28216022095e2a67",
     "blog/05-company-reports/02-003230-samyang-foods/assets/02-samyang-classic.webp": "2e27bb4203c3e064d20afa16552cb1e44df0bc2bc904c6d76e7df6874b703e79",
     "blog/05-company-reports/02-003230-samyang-foods/assets/02-thumbnail-bg.webp": "2f3e335326606c995af61d5ada028a3f06d7417c54e168c750c1c69cca874bc3",
@@ -20115,6 +20116,10 @@
       "bytes": 75108,
       "path": "objects/sha256/e3/e3e4d1483d3fa46e8ef8765fd9a217678e79682aaed57156fe89b818b84e9244.webp"
     },
+    "e40f39bc4a00cf2a32b86efb1dbf9890124757374d6bc56e8c666b61b04e5896": {
+      "bytes": 147799,
+      "path": "objects/sha256/e4/e40f39bc4a00cf2a32b86efb1dbf9890124757374d6bc56e8c666b61b04e5896.gif"
+    },
     "e41a7246b9ea466a913007a9dc8172805a91d483796b051f33aeef72eac3e6f3": {
       "bytes": 191514,
       "path": "objects/sha256/e4/e41a7246b9ea466a913007a9dc8172805a91d483796b051f33aeef72eac3e6f3.webp"
@@ -23706,6 +23711,7 @@
         "02-buldak-multiple": "blog/05-company-reports/02-003230-samyang-foods/assets/02-buldak-multiple.webp",
         "02-buldak-package": "blog/05-company-reports/02-003230-samyang-foods/assets/02-buldak-package.webp",
         "02-card": "blog/05-company-reports/02-003230-samyang-foods/assets/02-card.webp",
+        "02-ramen-big3-opm-race": "blog/05-company-reports/02-003230-samyang-foods/assets/02-ramen-big3-opm-race.gif",
         "02-samyang-classic": "blog/05-company-reports/02-003230-samyang-foods/assets/02-samyang-classic.webp",
         "02-thumbnail": "blog/05-company-reports/02-003230-samyang-foods/assets/02-thumbnail.webp",
         "02-thumbnail-bg": "blog/05-company-reports/02-003230-samyang-foods/assets/02-thumbnail-bg.webp"
@@ -23728,6 +23734,7 @@
         "blog/05-company-reports/02-003230-samyang-foods/assets/02-dps-32x.svg",
         "blog/05-company-reports/02-003230-samyang-foods/assets/02-fixed-cost-leverage.svg",
         "blog/05-company-reports/02-003230-samyang-foods/assets/02-margin-explosion.svg",
+        "blog/05-company-reports/02-003230-samyang-foods/assets/02-ramen-big3-opm-race.gif",
         "blog/05-company-reports/02-003230-samyang-foods/assets/02-revenue-yoy.svg",
         "blog/05-company-reports/02-003230-samyang-foods/assets/02-samyang-classic.webp",
         "blog/05-company-reports/02-003230-samyang-foods/assets/02-thumbnail-bg.webp",

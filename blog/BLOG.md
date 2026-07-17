@@ -857,7 +857,7 @@ https://eddmpython.github.io/dartlab/
 ### 검증 체크리스트
 
 1. 본문 이미지, `ogImage`, `cardPreview`가 중앙 `media/catalog.json`의 HF 객체 URL인지.
-2. SVG/WebP/JPG/PNG가 Git 추적 대상에 없는지.
+2. SVG/WebP/JPG/PNG/GIF가 Git 추적 대상에 없는지.
 3. `uv run python -X utf8 blog/_scripts/auditBlog.py` XML·밀도 이슈 확인 (글 단위 구조 audit - 단어수·SVG·내부링크·H2 분포 + 템플릿 반복도).
 4. `uv run python -X utf8 blog/_scripts/auditBlogFinance.py` (회사 포스트 한정) - markdown finance 표 ↔ `dartlab.Company().select(..., freq="Y")` 실측 1:1 비교. 코드·표·실측 3 자 정합 강행.
 5. `publishGate.py`가 HF 원격 실재와 콘텐츠 해시 경로를 통과하는지.
