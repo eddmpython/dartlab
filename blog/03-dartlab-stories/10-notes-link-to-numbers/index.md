@@ -6,9 +6,10 @@ category: dartlab-stories
 series: dartlab-stories
 seriesOrder: 10
 topicSlug: "notes-link-to-numbers"
-ogImage: /thumbnails/dartlab-notes-link-to-numbers.webp
-thumbnail: /thumbnails/dartlab-notes-link-to-numbers.webp
-thumbnailBg: ./assets/dartlab-story-10-thumbnail-bg-v1.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/9c/9cff0e61d316bf9aa22d693f26df1c0e8f04e45be56b7e3bbd053f06f60e681b.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/78/78f56ec8eb46e98e862bc3fb799bff2f5b62d3ff5f6ee7deab7e4b262a7778d4.webp
+thumbnail: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/9c/9cff0e61d316bf9aa22d693f26df1c0e8f04e45be56b7e3bbd053f06f60e681b.webp
+thumbnailBg: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/9c/9c68419393aa70ef33d2f828d0f36d329317e48abb1bf9556e7d5c7628c75488.webp
 tags:
   - dartlab
   - DART
@@ -98,7 +99,7 @@ noteRows(notesMap, 3)
 
 주석은 교과서처럼 친절한 순서로 쓰인 글이 아니다. 회계 기준, 회사 범위, 표, 설명이 한 덩어리로 붙어 있어서 처음부터 통째로 읽으면 길을 잃는다. 순서를 뒤집는 게 요령이다. 먼저 BS에서 알고 싶은 숫자 하나를 고르고, 그 이름으로 주석을 좁혀 들어간다.
 
-![BS 숫자에서 주석 표로 넘어가는 흐름](./assets/dartlab-story-10-bs-note-bridge.webp)
+![BS 숫자에서 주석 표로 넘어가는 흐름](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/9d/9df2af4ded6dd9ff109d28e102146224488b35ed2131b4abc3283dbb0a80b296.webp)
 
 ## BS에서 재고자산을 먼저 본다
 
@@ -159,7 +160,7 @@ noteRows(borrowingsNote, 4)
 
 별도 재무제표 주석 쪽에는 장기차입금 표도 보인다. 거기에는 리스 부채, 은행차입금, 거래상대방, 만기일, 연이자율 같은 말이 같이 나온다. 그래서 차입금은 한 줄 금액만 보면 부족하다. 금액, 기간, 상대방, 이자율, 담보 설명을 함께 봐야 한다.
 
-![재고와 차입 주석이 BS 숫자의 속을 보여 주는 흐름](./assets/dartlab-story-10-inventory-borrowing-notes.webp)
+![재고와 차입 주석이 BS 숫자의 속을 보여 주는 흐름](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/95/956c7efeebe9a18469df9886d08988469f1509ab3437360b162a060055c510b1.webp)
 
 ## 숫자가 안 맞아 보이면 세 가지를 본다
 

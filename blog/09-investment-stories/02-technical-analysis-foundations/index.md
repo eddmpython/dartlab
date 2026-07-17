@@ -6,8 +6,9 @@ category: investment-stories
 series: investment-stories
 seriesOrder: 2
 topicSlug: "technical-analysis-foundations"
-ogImage: /thumbnails/investment-technical-analysis-foundations.webp
-thumbnail: /thumbnails/investment-technical-analysis-foundations.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/0f/0f96f377ed83b63b161b47c30338abbd309aacb175bc86001ff1f033483d8140.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/88/881827823f7b4fe4d491fefec9d4c6407783a78f38513f86b439b660764be43d.webp
+thumbnail: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/0f/0f96f377ed83b63b161b47c30338abbd309aacb175bc86001ff1f033483d8140.webp
 tags:
   - 기술적 분석
   - 주가
@@ -25,7 +26,7 @@ tags:
 
 그런데 기술적 분석을 그렇게 시작하면 첫 단추가 틀어진다. 기술적 분석은 차트가 미래를 알려준다는 믿음에서 출발하지 않는다. 더 정확히 말하면 **가격과 거래량에 남은 행동 흔적을 일정한 기준으로 다시 묻는 방법**이다. 미래를 맞히는 도구가 아니라, 지금 시장이 무엇을 이미 가격에 반영했고 무엇을 아직 확인하지 않았는지 정리하는 언어다.
 
-![기술적 분석은 예언이 아니라 데이터 작업대에서 반복하는 확인 절차다](./assets/02-analysis-workbench.webp)
+![기술적 분석은 예언이 아니라 데이터 작업대에서 반복하는 확인 절차다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/96/966543937364157d0b3931e248ec73daffa8e57ba5556d9136657cd303386e5e.webp)
 
 여기서 "언어"라는 표현이 중요하다. 언어는 문장을 만들 수 있지만 거짓말도 만들 수 있다. 차트도 같다. 같은 차트를 보고 한 사람은 반등 후보라고 말하고, 다른 사람은 추세 이탈이라고 말한다. 둘 중 하나가 반드시 무식해서가 아니다. 기간, 기준 가격, 거래량, 뉴스, 변동성, 보유자의 손익분기점이 다르면 같은 선도 다른 뜻을 갖는다.
 
@@ -115,7 +116,7 @@ DartLab에서도 이 기준은 중요하다. price 데이터를 불러와도 그
 
 반대로 차트가 좋아 보여도 재무 체력이 약하면 반등은 짧을 수 있다. 가격이 저점에서 반등하고 RSI가 회복되어도 회사가 현금흐름을 만들지 못하거나 이자비용을 감당하지 못하면 가격 신호는 쉽게 무너진다. 이런 재점검은 [순현금이 시가총액보다 큰 회사](/blog/net-cash-above-market-cap)나 [이자보상배율로 보는 좀비기업](/blog/interest-coverage-zombie-firms) 같은 데이터 글과 같이 읽어야 한다. 기술적 분석은 재무분석의 대체물이 아니라 질문 목록의 앞부분이다.
 
-![여러 지표를 동시에 보면 결론이 늘어나는 것이 아니라 확인할 질문이 늘어난다](./assets/02-indicator-conflict-desk.webp)
+![여러 지표를 동시에 보면 결론이 늘어나는 것이 아니라 확인할 질문이 늘어난다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/9d/9d1b5e7acf7592bad03a6265ffeec4e8d025fe5a193bb63fe54fcf32c6059925.webp)
 
 차트에서 가장 위험한 순간은 마음에 드는 지표만 고를 때다. 가격은 약한데 RSI가 낮다는 이유로 반등만 보고 싶을 수 있다. 거래량이 없는데 MACD가 개선된다는 이유로 추세 전환을 말하고 싶을 수 있다. 반대로 가격은 강한데 "너무 올랐다"는 느낌 때문에 볼린저 상단만 보고 싶을 수도 있다. 기술적 분석의 핵심은 마음에 드는 신호를 찾는 것이 아니라, 서로 다른 신호를 한 문장 안에서 정직하게 배열하는 것이다.
 

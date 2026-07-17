@@ -4,10 +4,11 @@ date: 2026-04-05
 description: "삼성에스디에스 독립 신용등급 dCR-AAA (투자적격 최상위). 공시 데이터 기반 정량 분석 등급 근거, 재무 하이라이트, 등급 전망."
 category: credit-reports
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/credit-15-018260-credit.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/65/6562a3435099bcba95ebf272106dc1481603355f0241b95ada590812451123aa.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d4/d4d57a07b88ab59c9db0b07d730f858e5766f3be335d07fc2d98f38d7cece521.webp
 ---
 
-![삼성에스디에스 (018260) 신용분석 보고서 ?? ???](./assets/15-credit-dashboard.webp)
+![삼성에스디에스 (018260) 신용분석 보고서 ?? ???](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/5d/5d8eaa82f1852912563624a8910abd87b4e30a6e8aba31a704c32dcbb721a67b.webp)
 > ⚠️ **면책**: 본 보고서는 dartlab dCR v4.0 방법론에 따라 공시 데이터만으로 작성되었습니다. 제도권 신용등급과 다를 수 있으며, 투자 권유가 아닙니다. [방법론](https://github.com/eddmpython/dartlab/blob/master/src/dartlab/analysis/CREDIT.md)
 
 > **dCR-AAA** | 투자적격 최상위 | 2026-04-05 | 방법론 v4.0

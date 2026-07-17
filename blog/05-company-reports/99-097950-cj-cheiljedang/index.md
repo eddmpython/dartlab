@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 99
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/097950-cj-cheiljedang.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/15/155ad1ed8fd94bdf8b144d82e9a1be0bfec92640ea38e96bbef01d560628cd23.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f1/f1087281b780d54fa78166d4c804e7e8e8fe7ecfcef8e370002a19ee755a2357.webp
 tags: ["CJ제일제당", "097950", "발효", "그린바이오", "라이신", "비비고", "Schwans", "결산손상", "영업현금흐름", "CJ"]
 stockCode: "097950"
 corpName: "CJ제일제당"
@@ -171,7 +172,7 @@ CJ제일제당을 읽을 때 가장 먼저 해야 할 일은 덩치를 걷어내
 
 이 구분을 놓치면 글이 흔한 소비재 실적 요약으로 내려앉는다. "비비고가 잘 팔리나", "햇반이 어떠냐", "미국 냉동식품이 성장하나"는 모두 필요한 질문이지만, 이 글의 중심 질문은 아니다. 중심 질문은 더 좁다. 이렇게 큰 연결 장부 안에서 왜 맨 밑줄만 4분기에 한 번씩 무너지는가. 매출 착시를 걷어내야 그 질문이 보인다.
 
-![연결매출 30조의 절반은 식품이 아니라 물류(택배)다](./assets/099-logistics.webp)
+![연결매출 30조의 절반은 식품이 아니라 물류(택배)다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/0a/0a8e5d2db0d86b2f3c2d62d7c051ed8f64f20fd29fd1b2e5e4f8e8f8ce283227.webp)
 
 ---
 
@@ -237,7 +238,7 @@ c.select("IS", ["영업이익", "당기순이익"], freq="Q")
 
 결정적인 건 이게 일회성이 아니라는 점이다. 2024년 4분기에도 영업이익 +3,773억에 순이익 -1,528억으로 *똑같은 일*이 일어났다. 두 해 연속, 4분기에만 맨 밑줄의 부호가 갈린다 — 일종의 **결산 손상의 계절성**이다.
 
-![매년 12월 결산, 영업이익 아래에서 일어나는 손상](./assets/099-year-end-audit.webp)
+![매년 12월 결산, 영업이익 아래에서 일어나는 손상](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/66/66eb140c5894f5f17dce3fa479f8782a0c2ca2672e62ed0916f649589b172a45.webp)
 
 회사는 이를 '현금 유출이 없는 회계상 손실'로 설명한다(외부 인용). 영업현금흐름이 멀쩡한 것(3막)이 그 설명과 맞물린다. 다만 '회계상 손실이라 괜찮다'는 안도는 *2년 연속 반복* 앞에서는 재검증 대상으로 남겨둔다 — 이것이 한 해 사고인지, 자산을 매년 조금씩 털어내는 구조인지는 더 지켜봐야 한다. (분기 순이익은 dartlab 실측값이며, 손상의 구체 대상 자산은 회사 공시로 확인해야 한다.) 그렇다면 이 손상은 *무엇*에 대한 손상인가?
 
@@ -289,7 +290,7 @@ CJ제일제당의 경우 위험한 오해가 두 개 있다. 첫째, "현금 유
 
 진짜 위험은 사양 산업이라서가 아니다. 두 가지다. ① 영업이익(본업)이 24→25년 -20% 둔화한 흐름이 이어지면 '현금 찍는 공장'이라는 전제 자체가 흔들린다. ② 4분기 손상이 한 해 사고가 아니라 매년 반복되면, '회계상 손실이라 괜찮다'는 말의 무게가 달라진다. 정점에서 사업을 통째로 판 [더존비즈온](/blog/012510-douzone)이나 직판 베팅으로 손익의 부호를 바꾼 [SK바이오팜](/blog/326030-sk-biopharm)과 달리, CJ제일제당은 *쥔 것을 지키며 매년 장부를 청소하는* 쪽이다. 같은 식품 계열 [농심](/blog/004370-nongshim)·[오뚜기](/blog/007310-ottogi)가 라면이라는 단일 본업으로 읽히는 것과도 결이 다르다.
 
-![영업으로 번 현금으로 매년 자기 장부를 청소하는 회사](./assets/099-engine.webp)
+![영업으로 번 현금으로 매년 자기 장부를 청소하는 회사](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e4/e41a7246b9ea466a913007a9dc8172805a91d483796b051f33aeef72eac3e6f3.webp)
 
 이 회사를 계속 볼 사람은 매출이 아니라 — 매년 4분기에 영업이익 *아래*가 또 터지는지, 발효 엔진의 업황이 도는지, 부채비율 157%와 영업현금 2조+의 균형이 유지되는지를 봐야 한다. (위 위험은 조건부 시나리오이지 예측이 아니다.)
 

@@ -4,10 +4,11 @@ date: 2026-04-05
 description: "LG 독립 신용등급 dCR-AA+ (투자적격 상위+). 공시 데이터 기반 정량 분석 등급 근거, 재무 하이라이트, 등급 전망."
 category: credit-reports
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/credit-04-003550-lg.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/24/24ce72c86fc97db9de9b7828d775d976d6a78ebd4102aabbef812a8f75930852.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/4f/4f94867fa22a41f5c6d6dada04ad55d522d5dcc1e146a8b5b910319b057fd6db.webp
 ---
 
-![LG (003550) 신용분석 보고서 ?? ???](./assets/04-credit-dashboard.webp)
+![LG (003550) 신용분석 보고서 ?? ???](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a8/a8ebe388b63cb85d9858366a828a8b1e5fe3db24eb7aab5124b1c39a43a01d5a.webp)
 > ⚠️ **면책**: 본 보고서는 dartlab dCR v4.0 방법론에 따라 공시 데이터만으로 작성되었습니다. 제도권 신용등급과 다를 수 있으며, 투자 권유가 아닙니다. [방법론](https://github.com/eddmpython/dartlab/blob/master/src/dartlab/analysis/CREDIT.md)
 
 > **dCR-AA+** | 투자적격 상위+ | 2026-04-05 | 방법론 v4.0

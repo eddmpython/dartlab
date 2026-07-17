@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 90
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/051900-lg-h-and-h.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/aa/aa1eb5fee44a7930a24614112c42f4bc9c2c7b7b57f106e59204d727c82e929b.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/eb/ebd7f1027ab6aef31fd2440090778e13c80b936d5b29402287bca7517d2f5fd4.webp
 tags: ["LG생활건강", "051900", "차석용", "이정애", "후", "더히스토리오브후", "코카콜라음료", "K뷰티", "면세점", "사드"]
 stockCode: "051900"
 corpName: "LG생활건강"
@@ -262,7 +263,7 @@ seg["growthContribution"]["contributions"][0]
 
 차석용 시대의 손익계산서를 위쪽에 올린 것은 럭셔리 화장품이었다. 1996년 출시된 **"더히스토리오브후"** 는 2010년대 중반 중국 본토와 한국 면세점에서 K-뷰티 럭셔리의 대표 브랜드로 올라섰다.
 
-![한방 컨셉 럭셔리 화장품 디스플레이 — 자주색·금색 패키지의 한국 전통 한방 코스메틱 라인업. 더히스토리오브후·오휘·숨37° 같은 LG생활건강 럭셔리 라인의 대표 미학.](./assets/90-luxury-hanbang-cosmetics.webp) 후·오휘·숨37° 3대 럭셔리 라인이 LG생활건강 본체 화장품의 약 70%를 차지한다고 알려져 있다.
+![한방 컨셉 럭셔리 화장품 디스플레이 — 자주색·금색 패키지의 한국 전통 한방 코스메틱 라인업. 더히스토리오브후·오휘·숨37° 같은 LG생활건강 럭셔리 라인의 대표 미학.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d3/d3de19a5fb0b3d72f0eb9437eb64f4ed9e39d9af710d57fb288f2695ed85bb76.webp) 후·오휘·숨37° 3대 럭셔리 라인이 LG생활건강 본체 화장품의 약 70%를 차지한다고 알려져 있다.
 
 럭셔리 화장품의 매출총이익률(GPM)은 일반 화장품·생활용품의 1.5~2배다. dartlab 실측으로 본 LG생활건강의 9년 GPM 시계열은 다음과 같다.
 
@@ -544,7 +545,7 @@ dartlab `select` API로 사업부별 매출을 직접 뽑을 수는 없다. 그�
 
 ### 따이공 → 면세점 → 중국 로컬 화장품의 부상
 
-![인천공항 면세점 화장품 매대 — 럭셔리 스킨케어가 늘어선 글래스 진열대의 야경. 차분한 LED 백라이트, 따이공 의존 5년이 끝난 후 비어 있는 복도의 표정.](./assets/90-duty-free-cosmetics-aisle.webp)
+![인천공항 면세점 화장품 매대 — 럭셔리 스킨케어가 늘어선 글래스 진열대의 야경. 차분한 LED 백라이트, 따이공 의존 5년이 끝난 후 비어 있는 복도의 표정.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/1d/1d5d1bca805858e05f347d3f19b0812bd780a166dbae4b65d09163c01143d145.webp)
 
 2017년 사드 배치는 한국 화장품 회사의 중국 본토 매장 매출을 직격했다. 그러나 한국 면세점에 따이공(중국 보따리상) 이 들어오면서 매출은 2018~2021년 사이에 오히려 회복·확대됐다. 후(后) 단일 브랜드의 한국 면세점 매출이 2019~2020년 기준 약 1.5~2조원으로 추정됐다는 보도가 다수 있다.
 

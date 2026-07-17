@@ -6,9 +6,10 @@ category: dartlab-stories
 series: dartlab-stories
 seriesOrder: 5
 topicSlug: "the-grid"
-ogImage: /thumbnails/dartlab-the-grid.webp
-thumbnail: /thumbnails/dartlab-the-grid.webp
-thumbnailBg: ./assets/dartlab-story-05-thumbnail-bg-v2.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e3/e361402da222453a07772594b2c9fcd680c352a63b6fcb79e27b23cc48807321.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c0/c039074a71e15a334759b5f263e15fd78209e895c7c2737f0dbc7d99f094ba92.webp
+thumbnail: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e3/e361402da222453a07772594b2c9fcd680c352a63b6fcb79e27b23cc48807321.webp
+thumbnailBg: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/98/9884a5da21e11317aa72709f019f09ca93d6a17b938446d0e91f45fba579f6d3.webp
 tags:
   - dartlab
   - 재무제표
@@ -25,7 +26,7 @@ tags:
 
 그래서 `freq="Y"`와 `freq="Q"`는 표의 모양만 바꾸는 스위치가 아니다. 던지는 질문 자체를 바꾼다. 연간은 큰 방향을 묻고, 분기는 변곡 지점을 묻는다. 초보자는 이 둘을 단순 옵션으로 보다가, 연간 흐름을 봐야 할 자리에 분기 숫자를 들이대거나 그 반대로 하면서 엉뚱한 결론을 낸다. 이 편은 그 두 질문을 손에 익히는 편이다.
 
-![연간과 분기로 갈라지는 재무제표 기간 격자](./assets/dartlab-story-05-period-grid.webp)
+![연간과 분기로 갈라지는 재무제표 기간 격자](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d4/d4cedfe43dc7ef94dcffa1891ff3fd321ccaa4a7efff80ca8ba19ae142a4ef7f.webp)
 
 [재무제표, 파이썬 한 줄](/blog/call-financial-statements)에서 손익계산서, 재무상태표, 현금흐름표를 처음 열었다. 이번 편은 그 표에서 기간만 바꾸는 감각을 익힌다. 코드는 짧지만, 이 감각이 없으면 나중에 성장률, 마진, 현금흐름을 읽을 때 기준이 흔들린다.
 

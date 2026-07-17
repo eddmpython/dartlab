@@ -7,7 +7,8 @@ series: data-reports
 seriesOrder: 5
 topicSlug: "same-profit-different-tax"
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/data-same-profit-different-tax.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/cf/cfc41bff01214dc9abf372620eec3bc3b510f76913757bc10a87907a261bc32f.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/67/670f008eeedc72135fc56c97af9a4e1c70574b15c066ff91259e7bbebf1f7f72.webp
 tags: [법인세, 실효세율, 이월결손금, 세액공제, 이연법인세]
 keywords:
   - 법인세

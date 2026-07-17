@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 103
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/AMZN-amazon.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/50/506391e2049cbf4c1a9c4961092b3a1179d33cef14d59453fd4b1810ecd8d27a.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/51/519973775a232694018d6910922718f060ef2e964e365cddd2d21baadffc94ed.webp
 tags: ["아마존", "AMZN", "AWS", "클라우드", "이커머스", "세그먼트", "영업이익률", "광고", "빅테크", "미국주식"]
 stockCode: "AMZN"
 corpName: "Amazon"
@@ -49,7 +50,7 @@ import StackBar from '$lib/components/blog/StackBar.svelte';
 
 물건을 12% 더 판 게 영업이익을 3배로 만들 수는 없다. 그렇다면 이익은 어디서 왔나. **연결 손익계산서 어디를 봐도 그 답은 안 적혀 있다.** 안 보이는 곳에서 누군가 이익을 떠받치고 있다는 뜻이다.
 
-![소매라는 수면 위 간판 아래, 안 보이는 이익 엔진이 떠받친다](./assets/103-iceberg.webp)
+![소매라는 수면 위 간판 아래, 안 보이는 이익 엔진이 떠받친다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/20/20d8c99518563d3e0ed4534696b1b0ea557b5fb46603bd0b63dd28f7d36b0540.webp)
 
 관통선은 하나다. **"세계 최대 소매라는 간판의 회사에서, 왜 이익이 매출과 따로 움직이고, 그 엔진은 왜 연결 재무에 안 보이는가?"** 답을 먼저 쓴다. 진짜 이익 엔진(AWS·광고)이 매출 비중은 작아 소매 간판에 가려지고, 연결 손익 한 줄에는 안 나온다 — *세그먼트 은닉*이다.
 
@@ -107,7 +108,7 @@ c.select("IS", ["매출액", "영업이익", "당기순이익"], freq="Q")
 
 2022년 아마존은 영업이익 12.2B(OPM 2.4%), 순이익 **-2.7B 적자**였다. 그런데 그해 매출은 469.8(2021)에서 514.0으로 **9.4% 늘었다.** 매출이 느는데 영업이익은 24.9에서 12.2로 *반토막* 났다.
 
-![소매 껍데기가 이익을 못 내던 해 — 매출 9.4% 느는데 영업이익 반토막](./assets/103-warehouse.webp)
+![소매 껍데기가 이익을 못 내던 해 — 매출 9.4% 느는데 영업이익 반토막](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/dd/dd543c968c3e4addf5dc7e998a40776e05365e460786f5be1d33036d9f06738f.webp)
 
 매출이 줄어서가 아니라, *소매·물류 과잉투자* 비용이 마진을 거의 0까지 깎은 것이다. 코로나 기간(2020~2021) 아마존은 폭증한 주문을 감당하려 2년 만에 물류망과 인력을 거의 두 배로 늘렸다. 그런데 2022년 수요가 정상으로 돌아오자, 그렇게 깔아 둔 창고·배송 *고정비*는 그대로 남았다. 절반쯤 비어 가는 창고의 임차료와 인건비가 마진을 짓눌렀고, 여기에 인플레이션과 연료비까지 겹쳤다. 같은 해 취임한 CEO 앤디 재시가 곧장 비용 구조조정에 들어간 배경이다.
 
@@ -151,7 +152,7 @@ c.select("IS", ["매출액", "영업이익", "당기순이익"], freq="Q")
 
 ![안 보이는 엔진 — 매출 1/6의 AWS가 영업이익 대부분 (10-K 세그먼트, 외부)](./assets/103-hidden-engine.svg)
 
-![안 보이는 엔진 — 매출 1/6의 클라우드가 이익의 척추](./assets/103-datacenter.webp)
+![안 보이는 엔진 — 매출 1/6의 클라우드가 이익의 척추](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ac/acf4f252d3d194cb06645d3a4cd1cea4f56a368d9c7e78a1f95235d61362fd9a.webp)
 
 **왜 매출 비중이 작은데 이익은 대부분인가.** 클라우드의 마진 구조가 소매와 정반대이기 때문이다. AWS의 2025년 영업이익률은 **35.4%**($45.6B ÷ $128.7B)다. 연결 OPM 11.2%의 세 배가 넘는다. 반대로 북미는 약 **6.9%**, 해외는 약 **2.9%** 수준이다. 같은 1달러 매출이라도 클라우드 1달러와 소매 1달러가 손익에 남기는 무게가 전혀 다르다.
 

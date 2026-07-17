@@ -6,9 +6,10 @@ category: dartlab-stories
 series: dartlab-stories
 seriesOrder: 13
 topicSlug: "table-to-sentence"
-ogImage: /thumbnails/dartlab-table-to-sentence.webp
-thumbnail: /thumbnails/dartlab-table-to-sentence.webp
-thumbnailBg: ./assets/dartlab-story-13-thumbnail-bg-v1.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/68/68affa84980458f2d7c3218061057ceed9ab382fe56f6e97258f1031b2fb1c27.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c7/c7b011d6a6be37a98bff09c9b80fc248b5ebdcda2e93c5b1eb8b5835ef205791.webp
+thumbnail: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/68/68affa84980458f2d7c3218061057ceed9ab382fe56f6e97258f1031b2fb1c27.webp
+thumbnailBg: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a0/a0a0152e46d85332688abf2f67a13c85aeff35bd51fc496a486e4edf0bfb86c9.webp
 tags:
   - dartlab
   - DART
@@ -98,7 +99,7 @@ sentenceInputs
 
 여기서 중요한 것은 순서다. 숫자를 먼저 외우는 것이 아니라 문장 재료를 먼저 만든다. 기간이 빠지면 전년 동기와 직전 분기가 섞인다. 표 이름이 빠지면 손익계산서인지 현금흐름표인지 흐려진다. 분자가 빠지면 영업이익인지 순이익인지 알 수 없다. 분모가 빠지면 매출액으로 나눈 것인지 자산으로 나눈 것인지 알 수 없다.
 
-![표 한 줄에서 문장 재료 다섯 칸으로 넘어가는 흐름](./assets/dartlab-story-13-table-to-sentence-flow.webp)
+![표 한 줄에서 문장 재료 다섯 칸으로 넘어가는 흐름](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/8a/8a06278484f2f0d09017f7e252583b93251ec741cfeba4c17d58715a95fb895a.webp)
 
 ## 문장 재료를 다섯 칸으로 나눈다
 
@@ -219,7 +220,7 @@ badAndGood
 
 여기까지 붙이면 문장은 이렇게 읽힌다. "2026Q1 손익계산서 기준, 영업이익 57.233조원을 매출액 133.873조원으로 나누면 영업이익률은 약 42.75%다. 2025Q1 8.45%와 비교하면 차이는 34.30%p다. 다만 이 숫자만으로 투자 판단을 끝내면 안 되고, 사업 본문과 주석을 더 봐야 한다." 길지만 길어서 어려운 문장이 아니다. 독자가 따라 확인할 수 있어서 안전한 문장이다.
 
-![재무 문장에 들어가야 할 확인 항목](./assets/dartlab-story-13-sentence-checklist.webp)
+![재무 문장에 들어가야 할 확인 항목](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c6/c60c3f6a0db39031fea79d8401ca7fedb8aef815820cc62895df545cdeb01469.webp)
 
 ## 문장 체크리스트를 코드로 확인한다
 

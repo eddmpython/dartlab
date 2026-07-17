@@ -6,7 +6,8 @@ category: dartlab-news
 series: dartlab-news
 seriesOrder: 5
 thumbnail: /avatar-study.png
-ogImage: /thumbnails/news-search-without-embeddings.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a7/a7b54885677b9eb17a950b293f6a37134c2c1f877d8c8b68587d2d03dbc828d1.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/0f/0f634f7db0e73e3338c53a3758f0c7d4e81878b9fdc14a6c079d81d4675e2c83.webp
 keywords:
   - 전자공시 검색
   - DART 공시 검색

@@ -9,7 +9,8 @@ corpName: "Oklo Inc."
 exchange: "NYSE"
 storyTemplate: "성장"
 thumbnail: /avatar-chart.png
-ogImage: "/thumbnails/OKLO-oklo.webp"
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/af/af38fc2122e93fd579b60f84f212b15872615ef4c3d56d11468faa8f70bbfa68.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/4e/4e295d6261d4e3ff8a00c77d1181c7aaf1bad24fbbaeb83b74f236d4c01dd73b.webp
 description: "매출 $0. 직원 120명. 시총 $13B. 계약 14GW, 가동 원자로 0기. Sam Altman이 SPAC으로 상장시킨 원자력 스타트업. NRC 인허가 거절 이력. 연료 공장도 없다. 그런데 Meta가 고객이다."
 tags:
   - Oklo
@@ -146,7 +147,7 @@ import HFDataLink from '$lib/components/blog/HFDataLink.svelte';
 
 > **매출 $0. 직원 120명. 시총 $13B(약 18조원). 1인당 시총 $108M. 계약서에 적힌 전력은 14GW. 가동 중인 원자로는 0기. PER(주가수익비율)을 계산하려면 분모가 필요한데, 이 회사에는 분모가 없다.**
 
-![Oklo Aurora 원자로 렌더링](./assets/31-oklo-aurora.webp)
+![Oklo Aurora 원자로 렌더링](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/da/dace151e9709548cef190aad443f7096fe27a751371e68f2beb2ac63b65ea329.webp)
 
 ---
 

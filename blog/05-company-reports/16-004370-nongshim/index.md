@@ -19,7 +19,8 @@ tags:
   - 신라면툼바
   - 전자공시
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/004370-nongshim.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e5/e5f776812c40ed2ef0602188691f3deeba068fb00af7ec12171ab7cb1fc81e14.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/38/3878ae47cbafcf23e1a8815adba2093fa09fda4fa7aad676969b91d651d37e6a.webp
 youtubeId: ""
 ai:
   verdict: "라면 1위(55%) 맞는데 마진 5%. 삼양이 2배 마진으로 역전."
@@ -181,7 +182,7 @@ s.analysis("financial", "수익성")
 
 ## 1막 — 라면 1위의 저주: 정부가 가격을 내리라고 했다
 
-![신라면 봉지](./assets/16-shin-ramyun.webp)
+![신라면 봉지](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/24/24508a90ad26c65998bb316e58d95839d1344e09ad9e208a76e4d554920c63c3.webp)
 
 ### 40년 1위의 무게
 
@@ -325,7 +326,7 @@ c.analysis("financial", "비용구조")
 
 ### 농심의 문화 자본
 
-![융프라우 정상의 신라면](./assets/16-jungfrau.webp)
+![융프라우 정상의 신라면](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/17/1777539cad12df4deaac0412ca86ee6355a0d3bb94d93f9510a1bb093c076265.webp)
 
 농심의 브랜드 파워를 보여주는 장면들은 압도적이다. 봉준호 기생충(2020)의 짜파구리 — 미국 짜파게티 매출 **61% 급등**. NYT 와이어커터(2022) "세계 최고 라면" **1위** = 신라면블랙. 융프라우 해발 3,454m에서 1컵 **9,000원**에 팔리는 유일한 라면. SNS 언급 **23.3만건**(식품 1위, 삼양 11.8만건의 2배).
 
@@ -353,7 +354,7 @@ c.analysis("financial", "비용구조")
 
 ### 모디슈머에서 정식 제품으로
 
-![신라면 툼바 제품](./assets/16-toomba-product.webp)
+![신라면 툼바 제품](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f4/f4b3fdbf97f0f6cd84bc02b9ccde2f3f53494fa15855d7d80b8d69d48e733c7f.webp)
 
 신라면 툼바의 탄생은 SNS에서 시작됐다. 한국 소비자들이 신라면에 크림, 치즈, 우유를 넣어 만드는 "모디슈머 레시피"(modify + consumer)가 유행했다. 농심은 이 레시피를 정식 제품으로 만들었다. 2024년 6월 출시.
 

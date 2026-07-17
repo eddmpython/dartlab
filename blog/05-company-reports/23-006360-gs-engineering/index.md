@@ -19,7 +19,8 @@ tags:
   - 턴어라운드
   - 전자공시
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/006360-gs-engineering.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/1e/1eef81a4ebaa6aba0ae0ba45bca15a7adfb9b2b46a1cf451546f1dc77fed83c8.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/97/97b26d582b28e4ce22495f3c8c706d7600dae77cab6d38ac9958bb7a21bc9ca2.webp
 youtubeId: ""
 ai:
   verdict: "검단 붕괴 5524억을 Q4에 한꺼번에(빅배스). 2024년 2860억 흑전, 2025년 4378억 영업이익."
@@ -196,7 +197,7 @@ c.panel("IS", period=["2022", "2023", "2024"])
 
 설계를 한 회사, 시공을 한 회사, 감리를 한 회사가 모두 **GS건설 또는 그 관련사**였다. 책임을 다른 곳으로 돌릴 수 없는 구조였다.
 
-![검단 자이 붕괴 현장](./assets/23-geomdan.webp)
+![검단 자이 붕괴 현장](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c7/c7428314024c0b36513874fffab2f2fac7de3a39c97f6c74cb080b70cecbdf69.webp)
 
 ### "어?" 포인트 ①: 17개 동 전면 재시공
 
@@ -378,7 +379,7 @@ HDC의 전략은 단기 회복은 느리지만, 브랜드 리셋을 통해 "화�
 
 ## 제4막: 시평 6위에서 5위로 — 수주가 다시 들어오기 시작했다
 
-![재건](./assets/23-recovery.webp)
+![재건](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e6/e60c61ece8b43ad4e8886c16b991acdbc89276f9e7db527feeaae96bf34e4a11.webp)
 
 ![분기별 V자 회복](./assets/23-quarterly-recovery.svg)
 

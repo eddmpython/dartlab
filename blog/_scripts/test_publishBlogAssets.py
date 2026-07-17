@@ -49,6 +49,7 @@ def writePost(root: Path) -> Path:
     thumbDir = root / "landing" / "static" / "thumbnails"
     thumbDir.mkdir(parents=True)
     (thumbDir / "tech-hf-only.webp").write_bytes(b"og")
+    (thumbDir / "tech-hf-only-card.webp").write_bytes(b"card")
     return postDir
 
 
@@ -61,19 +62,22 @@ def test_publish_assets_uploads_hashed_media_and_rewrites_refs(monkeypatch, tmp_
 
     heroSha = hashlib.sha256(b"hero").hexdigest()
     ogSha = hashlib.sha256(b"og").hexdigest()
-    assert manifest["assets"]["hero-scene"]["path"] == f"blog/hf-only/hero-scene.{heroSha[:8]}.webp"
-    assert manifest["og"]["path"] == f"blog/hf-only/og.{ogSha[:8]}.webp"
+    cardSha = hashlib.sha256(b"card").hexdigest()
+    heroPath = f"objects/sha256/{heroSha[:2]}/{heroSha}.webp"
+    ogPath = f"objects/sha256/{ogSha[:2]}/{ogSha}.webp"
+    assert manifest["assets"]["hero-scene"]["path"] == heroPath
+    assert manifest["og"]["path"] == ogPath
+    assert manifest["card"]["path"] == f"objects/sha256/{cardSha[:2]}/{cardSha}.webp"
     assert len(api.commits) == 1
-    assert len(api.commits[0]["operations"]) == 2
-    saved = json.loads((postDir / "assets" / "media.json").read_text(encoding="utf-8"))
-    assert saved == manifest
+    assert len(api.commits[0]["operations"]) == 3
+    saved = json.loads((tmp_path / "blog" / "media.json").read_text(encoding="utf-8"))
+    assert saved["posts"]["08-tech-story/01-hf-only"]["assets"]["hero-scene"].endswith("hero-scene.webp")
+    assert set(saved["objects"]) == {heroSha, ogSha, cardSha}
     body = (postDir / "index.md").read_text(encoding="utf-8")
     assert "./assets/hero-scene.webp" not in body
-    assert f"blog/hf-only/hero-scene.{heroSha[:8]}.webp" in body
-    assert (
-        f"ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/blog/hf-only/og.{ogSha[:8]}.webp"
-        in body
-    )
+    assert heroPath in body
+    assert f"ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/{ogPath}" in body
+    assert f"objects/sha256/{cardSha[:2]}/{cardSha}.webp" in body
 
 
 def test_dry_run_does_not_write_manifest(monkeypatch, tmp_path: Path) -> None:
@@ -83,7 +87,7 @@ def test_dry_run_does_not_write_manifest(monkeypatch, tmp_path: Path) -> None:
     manifest = publisher.publishAssets(postDir, dryRun=True)
 
     assert manifest["assets"]
-    assert not (postDir / "assets" / "media.json").exists()
+    assert not (tmp_path / "blog" / "media.json").exists()
 
 
 def test_publish_assets_is_idempotent_without_local_staging(monkeypatch, tmp_path: Path) -> None:
@@ -92,11 +96,12 @@ def test_publish_assets_is_idempotent_without_local_staging(monkeypatch, tmp_pat
     publisher.publishAssets(postDir, api=FakeApi())
     (postDir / "assets" / "hero-scene.webp").unlink()
     (tmp_path / "landing" / "static" / "thumbnails" / "tech-hf-only.webp").unlink()
+    (tmp_path / "landing" / "static" / "thumbnails" / "tech-hf-only-card.webp").unlink()
     api = FakeApi(exists=True)
 
     manifest = publisher.publishAssets(postDir, api=api)
 
-    assert manifest["assets"]["hero-scene"]["path"].startswith("blog/hf-only/hero-scene.")
+    assert manifest["assets"]["hero-scene"]["path"].startswith("objects/sha256/")
     assert api.commits == []
 
 
@@ -107,5 +112,5 @@ def test_verify_remote_assets_fails_closed(monkeypatch, tmp_path: Path) -> None:
 
     errors = publisher.verifyRemoteAssets(postDir, api=FakeApi(exists=False))
 
-    assert len(errors) == 2
+    assert len(errors) == 3
     assert all("HF 미디어 없음" in error for error in errors)

@@ -6,7 +6,8 @@ category: reading-disclosures
 series: audit-and-governance
 seriesOrder: 2
 thumbnail: /avatar-study.png
-ogImage: /thumbnails/08-clean-audit-opinion-but-still-risky.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/82/8272276533b4af081648d5f6257be794de6a2e62339d124bb4c4db8a5b723507.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/7c/7c8aca705d1661c0c35754929586ca93f51e1e135360eb0852df9016da7c086a.webp
 ---
 
 # 감사의견이 적정이어도 불안한 회사는 어떤 패턴을 보이나

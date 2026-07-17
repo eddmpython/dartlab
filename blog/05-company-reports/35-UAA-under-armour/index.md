@@ -9,7 +9,8 @@ corpName: "Under Armour, Inc."
 exchange: "NYSE"
 storyTemplate: "턴어라운드"
 thumbnail: /avatar-chart.png
-ogImage: "/thumbnails/UAA-under-armour.webp"
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/7d/7d23fdb2a02cd382f94ba981f031c7a80869e06378b7a6e3b9b925b1b9a8beac.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/4a/4ab01962223450f419ff86da59a33c4959aca4e1cd03aeb2d468932ceb0b85cc.webp
 description: "매출 $5.7B에서 $4.9B. CEO가 3명 바뀌는 동안 줄었다. 매출총이익률 47%로 Nike(41%)보다 높다. 하지만 판관비가 이익을 먹는다. 의결권 66.5%의 창업자 왕국. Steph Curry가 떠난다."
 tags:
   - Under Armour
@@ -138,7 +139,7 @@ import HFDataLink from '$lib/components/blog/HFDataLink.svelte';
 
 > **1996년. 메릴랜드대 풋볼 선수 Kevin Plank이 할머니 지하실에서 땀에 젖지 않는 셔츠를 만들었다. 첫 해 매출 $17,000. 차 트렁크에 싣고 대학 운동부를 돌며 팔았다. 그 회사가 Under Armour다. 2025년, 매출 $5.7B. CEO가 3명 바뀌는 동안 줄었다. 시가총액 $20B에서 $2.5B로 87% 증발. 그런데 할머니 지하실의 그 남자가 다시 돌아왔다.**
 
-![Under Armour 본사](./assets/35-ua-athlete.webp)
+![Under Armour 본사](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f8/f887ac8a805a22aee1b905655837e620fe78026803605b41dee2be6ea78bca30.webp)
 
 ---
 
@@ -192,7 +193,7 @@ Frisk는 코로나 이후 반등을 올렸지만 자신의 성과가 아니었�
 
 # 제2막: "할머니 지하실에서 시작" — Kevin Plank과 Under Armour의 DNA
 
-![Under Armour 창업기](./assets/35-ua-athlete.webp)
+![Under Armour 창업기](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f8/f887ac8a805a22aee1b905655837e620fe78026803605b41dee2be6ea78bca30.webp)
 
 ### 1996년, 땀에 젖지 않는 셔츠
 

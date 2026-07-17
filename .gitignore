@@ -85,12 +85,12 @@ ui/.svelte-kit/
 landing/build/
 landing/.svelte-kit/
 landing/static/blog/assets/
-# 신규 블로그 v2 바이너리는 로컬 staging 뒤 HF dartlab-media에만 발행한다.
-# 기존 추적 파일은 별도 마이그레이션 전까지 유지되지만 새 WebP/JPG/PNG는 Git에 추가하지 않는다.
-/blog/**/assets/*.webp
-/blog/**/assets/*.jpg
-/blog/**/assets/*.jpeg
-/blog/**/assets/*.png
+# 블로그 래스터는 위치와 역할에 관계없이 로컬 staging 뒤 HF 콘텐츠 주소 객체에만 발행한다.
+# 본문, 썸네일 배경, 팟캐스트 커버까지 중앙 blog/media.json이 매핑하며 Git에는 넣지 않는다.
+/blog/**/*.webp
+/blog/**/*.jpg
+/blog/**/*.jpeg
+/blog/**/*.png
 /landing/static/thumbnails/*.webp
 # Industry map generated artifacts — HF SSoT. 빌드/로컬 dev 시 seedFromHf.py --category industryMap 로 내려받음.
 landing/static/map/

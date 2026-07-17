@@ -21,7 +21,8 @@ tags:
   - 엔터테인먼트
   - 인수합병
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/041510-sm-entertainment.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ce/ce7e9a6eab6ad590595ba28c49d9e2dfcf6093868b534fe061c3e3cb927d05fe.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/1b/1b66c5fba8cdf42b6f5aa16f4b0e733ed397144085c3307f9120323ed4325e85.webp
 youtubeId: ""
 ai:
   verdict: "카카오 인수 후 SM OPM 15.6% 역대 최고 — 인수한 쪽이 -1.82조, 인수당한 쪽이 번 아이러니"
@@ -167,7 +168,7 @@ c.select("IS", ["매출액","영업이익","당기순이익"])
 
 ### 에스파·NCT·라이즈 — 영업이익률 회복의 엔진
 
-![K-Pop 무대 — SM의 아티스트가 만드는 매출의 원천](./assets/53-kpop-stage.webp)
+![K-Pop 무대 — SM의 아티스트가 만드는 매출의 원천](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b8/b8a9e5a78e6669a18c3a2fbd2d184447a2c6bc5b99894d972fcb0b697c9967ca.webp)
 
 SM의 영업이익률 회복은 **멀티 아티스트 전략**의 성과다. 에스파(2020 데뷔), NCT(2016 데뷔, 2020년대 본격 확장), 라이즈(2023 데뷔) — 여러 그룹이 동시에 활동하면서 매출이 분산됐고, 특정 그룹의 공백이 전체 매출을 끌어내리지 않는 구조가 만들어졌다.
 
@@ -222,7 +223,7 @@ SM의 2024년 순이익은 **8억원**이다. 영업이익이 873억인데 순�
 
 2025년에 관계기업손익 2,262억이 들어오면서 자기자본수익률가 26.5%로 급등했다. **자기자본수익률 +76%p의 실체는 "2024년이 비정상적으로 낮았고, 2025년에 일회성이 더해진 것"**이다. 영업 기준 수익성 개선은 영업이익률 8.8% → 15.6%로 약 7%p. 견실하지만 76%p는 아니다.
 
-![음악 녹음 스튜디오 — K-Pop 콘텐츠 제작의 현장](./assets/53-recording-studio.webp)
+![음악 녹음 스튜디오 — K-Pop 콘텐츠 제작의 현장](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d5/d5712ae8447ebaf083711ea993a3fa0a5b9d48107e595e7abfd79d56ab6160a2.webp)
 
 *원가율은 같은데 판관비가 다르다. SM의 단일 레이블이 HYBE의 멀티레이블보다 마진에 유리하다.*
 

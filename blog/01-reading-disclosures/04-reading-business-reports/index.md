@@ -6,7 +6,8 @@ category: reading-disclosures
 series: report-reading-foundations
 seriesOrder: 1
 thumbnail: /avatar-curious.png
-ogImage: /thumbnails/04-reading-business-reports.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d0/d01cb0a7c762f60488e5b66105a006868221b9417423cd0874705a13114448ba.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e6/e67140b27c3c117ba730e55a1de15f667bb704b3a09bc0d80a004fe59230cfbe.webp
 ---
 
 # 사업보고서 텍스트, 이렇게 읽는다

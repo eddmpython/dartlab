@@ -19,7 +19,8 @@ tags:
   - 영풍
   - 전자공시
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/010130-korea-zinc.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/50/50125de86c4b71b53953be884f43c2cee8c17766c0f69b47fabee483dadcb1dd.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/9f/9fbb1753a713c80019160f70cc84b62d86d8457350754a215562a89018663542.webp
 youtubeId: "n9QhLmlvun8"
 ai:
   verdict: "경영권 전쟁으로 부채비율 25%→94.7%. 순손실 2457억이나 영업이익은 사상최대 1.2조."
@@ -167,7 +168,7 @@ c = dartlab.Company("010130")
 
 ### 온산 제련소 — 회수율 99%, 국가핵심기술
 
-![온산 제련소](./assets/09-smelter.webp)
+![온산 제련소](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/fa/fa7a49b08bc8000bc8f2092ce93a2465639f05fbd786e552792c8e64dae9a989.webp)
 
 먼저 이 회사가 뭘 하는 회사인지부터. 고려아연은 세계 최대 **단일 비철금속 제련소**를 운영한다. 울산 온산. 연간 100만 톤 이상. 아연, 연, 동, 금, 은, 인듐, 안티모니, 비스무스, 갈륨 — **22종**의 금속을 한 공장에서 뽑아낸다.
 
@@ -189,7 +190,7 @@ c.analysis("financial", "수익구조")
 | 연 | 14.0% |
 | 기타(인듐, 안티모니 등) | 11.6% |
 
-![귀금속 — 금과 은](./assets/09-precious-metals.webp)
+![귀금속 — 금과 은](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/6c/6cbe8c15529eb1661f76cff2f2faab4d6ef4df01a9fad782954ce4ed09fe82be.webp)
 
 ![매출 구성 — 아연 vs 은 역전](./assets/09-revenue-mix.svg)
 
@@ -229,7 +230,7 @@ TC 추이:
 
 ### 중국 수출통제 → 가격 4배 — 국내 유일 생산 기업
 
-![안티모니 — 전략광물](./assets/09-antimony.webp)
+![안티모니 — 전략광물](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/89/89174a9b4f6857c5d89fc8ada792f5850f27439b0fbb26060e57779bcdee67e1.webp)
 
 부산물 중 하나가 터졌다. **안티모니.**
 

@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 104
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/COST-costco.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/48/48c33ec0a6177c49e9990ff7ed68a969a68d560108c3220da71b489e62adc9cc.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/95/9517c572c02429f968d975182f36c6a0d522c1db82b1476e866deef1e5d34a6d.webp
 tags: ["코스트코", "COST", "멤버십", "창고형마트", "영업이익률", "회비", "구독모델", "유통", "미국주식", "해자"]
 stockCode: "COST"
 corpName: "Costco"
@@ -41,7 +42,7 @@ import StackBar from '$lib/components/blog/StackBar.svelte';
 
 간판은 물건 파는 회사다. 매출 **$275.2B**(약 380조 원), 미국을 대표하는 창고형 마트. 그런데 연결 재무제표를 열면 이상한 게 보인다.
 
-![천장까지 쌓아 올린 창고형 마트의 진열대](./assets/104-warehouse.webp)
+![천장까지 쌓아 올린 창고형 마트의 진열대](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/8b/8bfd04d9d93bf96bc7f620e33bbe993f26c2623e0e5147c2562da64d671fbd4a.webp)
 
 매출은 FY20 **166.8**에서 FY25 **275.2**로 **65%** 불었다. 100B 넘는 매출이 더 들어왔다. 그런데 같은 기간 영업이익률은 FY20 3.26%, FY25 3.77% — **6년 내내 3%대를 못 벗어났고, 단 한 번도 4%를 넘지 않았다.**
 
@@ -109,7 +110,7 @@ c.select("IS", ["매출액", "영업이익", "당기순이익"], freq="Q")
 
 산수를 한 발 더 밀어 보자. 영업이익 $10.4B에서 SEC가 공시한 회비 $5.323B를 빼면, $270B어치 상품을 팔아 남긴 영업이익은 대략 $5B 안팎이다 — 상품 사업의 영업마진이 약 **2%**라는 뜻이다(회비를 영업이익에서 단순 차감한 거친 역산이므로 정밀한 세그먼트 마진은 아니다). 일반 대형마트의 절반에도 못 미치는 이 초박리가 우연이 아니라 *설계*라는 게 이 글의 핵심 가설이다. 상품에서 거의 안 남기고, 그 '거의 안 남김'을 입장료로 정산받는 구조 — 그래서 코스트코의 손익을 '마트 손익'으로 읽으면 절반을 놓친다. 절반은 진열대(2% 박리), 절반은 입구(거의 순수익 회비)다.
 
-![입구의 회원 카드 — 이익은 진열대가 아니라 여기서 시작된다](./assets/104-membership-card.webp)
+![입구의 회원 카드 — 이익은 진열대가 아니라 여기서 시작된다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b5/b553c3fa9835468ec5b5b79fc89355f09573a1d003530ea2dc4d639db3224ba9.webp)
 
 ★여기가 이 글의 핵심 가드다 — **dartlab 연결 손익계산서에는 '회비'라는 별도 라인이 없다.** '회비 = 영업이익 절반에 가까움'은 10-K/10-Q의 membership fee revenue를 연결 영업이익과 나란히 놓은 해석이고, 연결만으로 단정할 수 있는 건 '상품 마진을 3%대에 묶은 회사가 그래도 $10.4B을 번다'는 모순까지다. 회비가 정확히 얼마인지, 영업이익의 몇 %인지는 SEC 공시로 따로 확인해야 한다. 그래도 이 모순 자체가 화살표를 입구 쪽으로 분명히 돌린다. '길목에서 통행료를 걷는' 같은 결의 회사로는 국세청 의무 장부의 [더존비즈온](/blog/012510-douzone)이 있다 — 둘 다 *본업의 마진이 아니라 길목의 입장료*가 이익을 떠받친다.
 
@@ -139,7 +140,7 @@ FY25 영업현금흐름은 **$13.3B**로 순이익 $8.1B를 **$5.2B**나 웃돈�
 
 ![마진을 0으로 묶는 미끼가 회비라는 통행료를 정당화한다 — 낮은 마진이 곧 해자](./assets/104-moat.svg)
 
-![낮은 마진이라는 이름의 성벽 — 거꾸로 된 해자](./assets/104-moat-castle.webp)
+![낮은 마진이라는 이름의 성벽 — 거꾸로 된 해자](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/4f/4f6c57a4d04b4f6599dc60b8e3964ea772de6a45f6e3d06e3953d2aca85bc7b0.webp)
 
 이건 보통의 해자와 방향이 반대다. 대부분의 회사는 *높은 마진*을 지키는 게 해자다. 코스트코는 *낮은 마진*을 지키는 게 해자다 — 가격이 오르는 순간 "여기서 사면 남는다"가 깨지고, 회원이 입장료를 낼 이유가 사라지기 때문이다. 그래서 이 회사는 마진을 끌어올릴 여지가 보여도 *일부러 봉인*한다. 규제나 브랜드로 진입을 막는 [KT&G](/blog/033780-ktng)식 해자와도, 간판 뒤에 다른 엔진을 숨긴 [아마존](/blog/AMZN-amazon)·[CJ제일제당](/blog/097950-cj-cheiljedang)과도 다른, *자기 마진을 인질로 잡는* 해자다.
 

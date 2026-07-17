@@ -19,7 +19,8 @@ tags:
   - 박순재
   - 전자공시
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/196170-alteogen.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d1/d1b3f7a7daa0eee14e6e091879996b96290340182008d0a7a92ad60da7dd4c89.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/81/81fd6a3fb047f620ce07618c78ee97a4f82f036a25e78c83a58f31f1654aed2b.webp
 youtubeId: ""
 ai:
   verdict: "9년 적자 바이오텍이 라이선스 한 건으로 OPM 49.5%. R&D 회수 시작."
@@ -221,7 +222,7 @@ c.select("IS", ["매출액","매출원가","매출총이익","판매비와관리
 
 그러나 2020년 시점에서는 시장이 이 그림을 못 봤다. 머크 1차 계약은 일회성으로 받아들여졌다.
 
-![머크 본사 — 알테오젠과 키트루다 SC 라이선스 파트너](./assets/04-merck-office.webp)
+![머크 본사 — 알테오젠과 키트루다 SC 라이선스 파트너](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/77/771bd1744147394eebb629a48c28dc66a6e87e18c61aeb833b5788e10739a544.webp)
 *머크(MSD) 미국 본사. 2020년 6월 17일, 머크는 알테오젠과 ALT-B4 라이선스 계약을 체결했다 — 적용 대상은 비공개였지만, 5년 뒤 그 적용 대상이 글로벌 톱5 의약품 키트루다였다는 사실이 드러난다. (출처: Wikimedia Commons, CC BY-SA)*
 
 ---
@@ -240,7 +241,7 @@ c.select("IS", ["매출액","매출원가","매출총이익","판매비와관리
 
 이 프로젝트의 핵심 효소가 ALT-B4였다. 알테오젠이 만든 그 효소. 2020년 비공개로 계약했던 적용 대상이 사실은 키트루다였다.
 
-![Pembrolizumab 분자 구조 — 머크 키트루다의 본체](./assets/04-pembrolizumab-structure.webp)
+![Pembrolizumab 분자 구조 — 머크 키트루다의 본체](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/6c/6cd2d1e313b713d28fd3311f02cffe35b1e0d1f0ce291846108f03e4a5ea23a7.webp)
 *Pembrolizumab(키트루다) 분자 구조 모델. 2024년 머크 매출의 약 40%, 글로벌 톱 매출 의약품. 2028년 IV 특허 만료를 앞두고 머크는 SC 제형 변환에 회사 매출의 40%를 걸었고, 그 핵심 효소가 알테오젠 ALT-B4였다. (출처: Wikimedia Commons, public domain)*
 
 2022년 12월~2023년, 머크는 키트루다 SC의 글로벌 임상 3상을 본격 가동했다. 시장은 이 임상이 알테오젠 ALT-B4를 쓰고 있다는 사실을 추정만 할 수 있었다. 알테오젠도 머크도 명시적으로 인정하지 않았다. 머크가 명시적으로 발표한 건 한 줄이었다. "키트루다 SC 임상에 사용 중인 히알루로니다제는 한 회사의 기술이다."
@@ -279,7 +280,7 @@ dartlab으로 본 2024년 손익. 매출 1,029억(전년 +6.6%), 영업이익 **
 
 마지막 행 로열티 2%가 2025년 1월 시장에서 작은 논란이 됐다. 머크가 SEC 분기 공시(10-Q)에 "all sales milestones를 달성하면 로열티 2%를 지급한다"는 문구를 올렸고, 시장은 4~5%를 기대했었다. 알테오젠 주가는 발표 당일 약 -20% 급락. 알테오젠은 즉각 입장문을 내고 "로열티율은 단계별 차등 구조이며 최종 비율은 공개 불가"라고 해명했지만 시장은 이미 당황했다. 그러나 본질은 다르지 않았다 — 로열티 2%라도 키트루다 SC 매출이 100억 달러를 넘으면 알테오젠 입장에서 연간 2,000억원이 들어온다. 그리고 마일스톤 10억 달러(1.5조원)는 그 전에 분기마다 들어온다. 시장이 잠시 패닉했을 뿐 구조 자체는 그대로였다.
 
-![머크 R&D 연구소 — 키트루다 SC의 임상 본거지](./assets/04-merck-research.webp)
+![머크 R&D 연구소 — 키트루다 SC의 임상 본거지](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/21/21eb9974a65896fc369358d89b99fe08c2675e4c240c92cf55e2412e2a7c95be.webp)
 *머크 R&D 연구소. 머크가 2022년부터 2024년까지 키트루다 SC 글로벌 임상 3상을 진행한 곳. 알테오젠 ALT-B4는 그 임상의 모든 환자에게 사용됐다. (출처: Wikimedia Commons, CC BY-SA)*
 
 ---

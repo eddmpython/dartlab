@@ -9,7 +9,8 @@ corpName: "Intel Corporation"
 exchange: "NASDAQ"
 storyTemplate: "턴어라운드"
 thumbnail: /avatar-chart.png
-ogImage: "/thumbnails/INTC-intel.webp"
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/97/974d741c4ca114a7a2d04a00eeac78f005ea9d3a9dbfbe37f44524996e046191.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/be/be04db4c10c9a782ef58ce46de91624f9deb8b0452a390d7cf63a03629ecc293.webp
 description: "매출 $79B에서 $53B로 33% 급락. 순손실 $18.8B 역대 최대. 파운드리 적자 $10B. 배당 92% 삭감 후 중단. 그런데 NVIDIA가 $5B를 넣었고, 주가는 213% 올랐다. 반도체를 발명한 회사의 재무제표를 뜯어본다."
 tags:
   - Intel
@@ -145,7 +146,7 @@ import HFDataLink from '$lib/components/blog/HFDataLink.svelte';
 
 > **1968년. 고든 무어와 로버트 노이스가 차고에서 회사를 만들었다. 집적회로(IC)를 발명한 사람들이었다. 그 회사가 반도체 산업을 만들었고, "무어의 법칙"으로 50년간 업계를 지배했다. 2024년. 그 회사의 순손실이 $18.8B(약 25조원). 역사상 최대 적자. 같은 해 배당을 중단했다. 36년 연속 배당의 역사가 끊겼다. 그런데 2025년, 주가가 213% 올랐다.**
 
-![Intel Fab](./assets/33-intel-fab.webp)
+![Intel Fab](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/64/648805c70f6a86583ae9e65bc51bfccaa74be62eb87b100cb22c6c5657355425.webp)
 
 ---
 

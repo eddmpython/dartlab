@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 147
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/001680-daesang.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c1/c1f3b159f054eb6fb44ed14b12086824ec53baedefa6a61773d02e03c4916c9c.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ee/ee96491ef2c45433d6bbf2ea782469fdb027500d5e1eed8e175530c6d5d5313b.webp
 tags: ["대상", "미원", "청정원", "종가", "알룰로스", "라이신", "발효", "가격수용자", "한국주식", "식품"]
 stockCode: "001680"
 corpName: "대상"

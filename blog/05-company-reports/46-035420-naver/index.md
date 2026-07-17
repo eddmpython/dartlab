@@ -21,7 +21,8 @@ tags:
   - 자회사
   - 지주구조
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/035420-naver.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/6e/6eaaea8538e62b6c0863cbff4c989c214128d2dee8ae158900f4e2b59212c793.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e5/e5bdd5f027c097eb845fd167ae6032b72886c348ad34538f175b96e4dfa44c3b.webp
 youtubeId: ""
 ai:
   verdict: "별도 OPM 75%의 검색 플랫폼이 연결 시 18%로 떨어지는 구조 — 57%p는 자회사·투자가 흡수"
@@ -227,7 +228,7 @@ c.select("ratios", ["영업이익률 (%)"])
 
 2019년 10.8% 바닥의 원인은 라인(LINE) 사업의 적자 확대와 커머스·핀테크 등 신사업 투자비 급증이었다. 그 뒤 LINE을 Z Holdings로 합쳤고, 커머스 사업을 정리하면서 마진이 돌아왔다. 핵심 검색 광고 엔진은 한 번도 약해진 적이 없다.
 
-![서울 테크 디스트릭트의 네이버 — 검색 광고라는 현금 인쇄기가 모든 투자의 원천이다](./assets/46-naver-hq.webp)
+![서울 테크 디스트릭트의 네이버 — 검색 광고라는 현금 인쇄기가 모든 투자의 원천이다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f9/f966edaad3eb3a8bdacf7e4aadbba8c560a43549e8cfbb4d08ffe7295c4e5e16.webp)
 
 ### 별도 영업이익률 75.7% — "검색창" 하나의 위력
 
@@ -302,7 +303,7 @@ dartlab의 자산구조 분석이 네이버에 붙인 플래그는 **"비영업�
 
 이 인수들이 무형자산 3.42조원에 쌓여있다. 포시마크 인수는 당시 "비싸게 산 것 아니냐"는 논란이 있었고, 실제로 2022~2023년 영업이익률이 15%대로 떨어진 원인 중 하나였다.
 
-![네이버의 데이터센터 — AI 인프라와 클라우드 확장에 설비투자 1.32조를 쏟는다](./assets/46-datacenter.webp)
+![네이버의 데이터센터 — AI 인프라와 클라우드 확장에 설비투자 1.32조를 쏟는다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/9c/9ca7c7961354ceb8c74d2de8eb4529db0e70c623e90f577aca31dd67eb1d8f06.webp)
 
 ### 2025년 감가상각 대비 설비투자 3.66배 — "더 짓겠다"
 
@@ -340,7 +341,7 @@ c.select("IS", ["당기순이익"])
 
 **표시: 2021Q1 영업이익 0.29조인데 순이익 15.31조. 15.02조원의 영업 외 이익이 한 분기에 잡혔다.**
 
-![도쿄 시부야 — LINE과 Yahoo Japan이 만나 Z Holdings가 된 곳](./assets/46-tokyo-line.webp)
+![도쿄 시부야 — LINE과 Yahoo Japan이 만나 Z Holdings가 된 곳](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/36/3665538d62bdff3e48d8fd6010d7189d421ca25d85c39165006e4ea79a615c9c.webp)
 
 ### Z Holdings = LINE + Yahoo Japan — 네이버의 역대급 딜
 

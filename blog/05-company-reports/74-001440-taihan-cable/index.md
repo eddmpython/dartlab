@@ -7,7 +7,8 @@ series: company-reports
 seriesOrder: 74
 thumbnail: /avatar-chart.png
 ofImage: /thumbnails/001440-taihan-cable.webp
-ogImage: /thumbnails/001440-taihan-cable.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/17/1731097ca3f9ec88de7643c2e8206d90e96975ec491b4ec9ef3b3b3a2a93c869.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/bf/bf9f091ebd6596b677cb24dba276c0eddab5779f7f9f2d12347b48f039996e5e.webp
 tags: ["대한전선", "001440", "해저케이블", "HVDC", "케이블", "전력기기", "AI전력", "재생에너지", "호반그룹", "해상풍력"]
 stockCode: "001440"
 corpName: "대한전선"
@@ -364,7 +365,7 @@ OCF가 음수로 떨어지면 **부족한 현금은 차입으로 메우는 게 �
 
 ![부채 +7,143억의 사용처 — 총부채 2024 11,466억 → 2025 18,609억 (+62%). 차입금 +5,000억 3갈래: ① 당진 해저케이블 공장 2차 증설 2,500~3,000억 ② 운전자본(재고+매출채권) 1,500~2,000억 ③ 해외 자회사 운영자금 500~1,000억. 5조원 수주잔고 회수로 2026~2027 정상화 예상.](./assets/74-debt-stack.svg)
 
-![해저케이블 부설선 — 푸른 바다 위 대형 케이블 부설 선박. 갑판에 해저 전력 케이블이 감긴 거대한 산업용 스풀과 크레인·케이블 부설 장비. 황혼빛이 바다에 반사되며 극적 분위기 연출.](./assets/74-submarine-cable-laying.webp)
+![해저케이블 부설선 — 푸른 바다 위 대형 케이블 부설 선박. 갑판에 해저 전력 케이블이 감긴 거대한 산업용 스풀과 크레인·케이블 부설 장비. 황혼빛이 바다에 반사되며 극적 분위기 연출.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/61/618cb563bc43a6a23369748dab48ed7576f90f82535bd4aca3cd3ec54c28c1f7.webp)
 
 ---
 
@@ -530,7 +531,7 @@ dartlab `roicTree` 실측.
 
 ![전력 3사 비교 — HD현대일렉트릭 OPM 24.4%·A+(변압기) vs LS ELECTRIC 8.6%·A-(배전) vs 대한전선 3.54%·BBB+(케이블). 같은 AI 전력 수요지만 부품 위치에 따라 마진 7배 차이. 대한전선은 해저케이블로 마진 15~25% 시장 이동 경로.](./assets/74-cable-3firms.svg)
 
-![산업용 케이블 스풀 — 두꺼운 고압 전력 케이블이 감긴 거대한 스풀들. 케이블 끝에 반짝이는 구리 도체가 보이고, 다크 우드 스풀 플랫폼이 산업 창고에 쌓여있다.](./assets/74-cable-spool.webp)
+![산업용 케이블 스풀 — 두꺼운 고압 전력 케이블이 감긴 거대한 스풀들. 케이블 끝에 반짝이는 구리 도체가 보이고, 다크 우드 스풀 플랫폼이 산업 창고에 쌓여있다.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/8b/8b035ab7d1f4d946a718c004fb8ed4626fa2b45dd449721016cc50abddaebbd0.webp)
 
 ---
 

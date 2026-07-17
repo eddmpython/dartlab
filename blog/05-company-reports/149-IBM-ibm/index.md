@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 149
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/IBM-ibm.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/28/28c95a8af8e4df0c0e2bc7bf608d9c368c9d2fb9cb9d8db5b1d8a73e7384f6fd.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ac/ac437c25e9fe09cbdb37225de16f1d49d0b628b8b60cdaf847164ea43647636d.webp
 tags: ["IBM", "아이비엠", "Kyndryl", "RedHat", "watsonx", "포트폴리오재편", "순마진", "배당", "미국주식", "엔터프라이즈IT"]
 stockCode: "IBM"
 corpName: "International Business Machines"
@@ -43,7 +44,7 @@ import StackBar from '$lib/components/blog/StackBar.svelte';
 
 ![IBM 매출: 2011년 106.92B에서 2021년 57.35B로 약 46% 축소, 이후 67.53B](./assets/149-revenue-cliff.svg)
 
-![IBM은 오래된 하드웨어 회사처럼 보이지만, 2026년 공시는 소프트웨어와 현금흐름을 먼저 보게 만든다](./assets/149-ibm-software-cash-workbench.webp)
+![IBM은 오래된 하드웨어 회사처럼 보이지만, 2026년 공시는 소프트웨어와 현금흐름을 먼저 보게 만든다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d0/d042ad98125800ba04a13789f8ae9360b4b142d2a3d0031d8f5081801acbc557.webp)
 
 관통선은 하나다. **"매출이 반토막인데 회사가 안 무너졌다면, 그 매출은 빼앗긴 것인가 - 아니면 스스로 깎아낸 것인가?"** 이 한 문장 이후로는 '재편' 같은 라벨 대신 매출 곡선과 순마진으로만 말한다. 미리 못을 박는다 - IBM은 dartlab 격자에 영업이익 라인이 없다. 그래서 마진은 *순마진(순이익/매출)* 한 가지로만 본다.
 

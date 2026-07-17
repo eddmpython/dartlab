@@ -4,10 +4,11 @@ date: 2026-04-05
 description: "삼성전기 독립 신용등급 dCR-AA- (투자적격 상위-). 공시 데이터 기반 정량 분석 등급 근거, 재무 하이라이트, 등급 전망."
 category: credit-reports
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/credit-14-009150-credit.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/11/119153a482768a190711fcb09a504850aebf500ace48753446c0f09b973626cc.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/5d/5db8737519200ccebc1d00172983bf0009e36c3bc7e0ae36d21432ed14ab9864.webp
 ---
 
-![삼성전기 (009150) 신용분석 보고서 ?? ???](./assets/14-credit-dashboard.webp)
+![삼성전기 (009150) 신용분석 보고서 ?? ???](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c6/c6603c59ef3914922feccf607ce5db17671b148938fb2ff440338a41dc4dcd53.webp)
 > ⚠️ **면책**: 본 보고서는 dartlab dCR v4.0 방법론에 따라 공시 데이터만으로 작성되었습니다. 제도권 신용등급과 다를 수 있으며, 투자 권유가 아닙니다. [방법론](https://github.com/eddmpython/dartlab/blob/master/src/dartlab/analysis/CREDIT.md)
 
 > **dCR-AA-** | 투자적격 상위- | 2026-04-05 | 방법론 v4.0

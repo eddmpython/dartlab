@@ -20,7 +20,8 @@ tags:
   - 통신
   - 전자공시
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/017670-skt.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/6c/6c8c00c1e58721a53a180cab551eacb734beb9b2c6eb5e82c5eaadb50d31a2ed.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/60/605f29ecd22e224de679f40ea7a0f9770e86eddcabb676efadcefa1987bd6909.webp
 youtubeId: ""
 ai:
   verdict: "OPM 10% 공식 8년 유지→6.3% 붕괴. 유심 해킹 2500만명."
@@ -244,7 +245,7 @@ SKT는 2018년부터 분기배당을 시작했다. 그리고 배당성향을 공
 
 ## 2막: 2025년 4월 22일, 2,500만 명의 USIM
 
-![해킹](./assets/22-hacking.webp)
+![해킹](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/be/be3b6ecebb77cb2501be336b87764685a3f3bfb5ed1ee28b9602d77a70cd582e.webp)
 
 ![해킹 피해 규모](./assets/22-hacking-cost.svg)
 
@@ -385,7 +386,7 @@ c.analysis("financial", "이익품질")
 
 ## 4막: 에이닷(A.) — AI로 전환할 수 있는가
 
-![AI 전환](./assets/22-ai-pivot.webp)
+![AI 전환](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e2/e252e74bfe6ee680d65ea17321ac5098b72366b06055ba41a1c054413867482c.webp)
 
 ### 에이닷은 무엇인가
 

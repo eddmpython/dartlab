@@ -53,11 +53,12 @@ content/stories/{storyId}/
   cards.plan.json         # image_gen 기획·토론·검수 게이트
   assets/
     CREDITS.md
-    media.json            # assetKey -> HF path + sha256
   sources.yaml            # 공식 출처, 수치 근거, 조회일
+
+blog/media.json           # 전 글 staging 별칭·역할 -> 전역 HF 객체 SHA-256
 ```
 
-이미지는 같은 포스트 `assets/{assetKey}.webp`에서 로컬 눈검수한 뒤 HF에 발행하고 Git에는 추가하지 않는다. 현행 v2는 `blog/{slug}/{assetKey}.{hash8}.webp`를 쓰며, P2가 승인되면 이 경로를 `stories/{storyId}/assets/` 호환 레이어로 확장한다.
+이미지는 같은 포스트 `assets/{assetKey}.webp`에서 로컬 눈검수한 뒤 HF에 발행하고 Git에는 추가하지 않는다. 현행 v2는 중앙 `blog/media.json`이 `objects/sha256/<앞2자>/<전체해시>.<확장자>`를 가리킨다. 물리 StoryManifest P2가 승인되어도 바이너리 객체는 복제하지 않고 이 경로를 그대로 참조한다.
 
 `story.yaml` 핵심 필드:
 
@@ -152,6 +153,6 @@ companies/index.json       # 회사 hero 호환 산출물
 
 ## 9. 진행 원장
 
-- 2026-07-17 **블로그 발행 계약 v2와 HF 바이너리 경계 안정화 완료.** 물리 StoryManifest 이관 없이 현재 글 폴더를 기준으로 의미 계약 `brief.json.imagePlan[]`, 출처 `assets/CREDITS.md`, HF 경로·해시 `assets/media.json`을 고정했다. WebP/JPG/PNG와 합성 OG는 로컬 staging 뒤 `publishBlogAssets.py`가 HF `blog/{slug}/`에 발행하며 Git에 넣지 않는다. 신규 심층 글은 `watchScenarios[]`와 마지막 시나리오형 관전 포인트를 요구하고, `publishGate.py`가 하드 계약·SEO·HF 실재·Git 바이너리 0건을 함께 검사한다.
+- 2026-07-17 **블로그 발행 계약 v2와 HF 바이너리 경계 안정화 완료.** 물리 StoryManifest 이관 없이 현재 글 폴더를 기준으로 의미 계약 `brief.json.imagePlan[]`, 출처 `assets/CREDITS.md`, HF 경로·해시·역할의 중앙 `blog/media.json`을 고정했다. 기존 273편의 WebP/JPG/PNG 1,478개를 고유 SHA-256 객체 1,330개로 HF `objects/sha256/`에 이관하고 Git 추적을 제거했다. 본문·OG·card는 같은 카탈로그를 참조하며, `seedBlogMedia.py`가 깨끗한 체크아웃의 로컬 staging을 복원한다. 신규 심층 글은 `watchScenarios[]`와 마지막 시나리오형 관전 포인트를 요구하고, `publishGate.py`가 하드 계약·SEO·HF 실재·Git 바이너리 0건을 함께 검사한다.
 - 2026-07-06 **개념 토대(subject 조인 키 모델) 표준화·강제 완료.** 이 PRD 의 1절(회사·이슈 카드가 `code` 유무로만 갈림)과 3절(subject 단위 추적)을 실현하는 조인 키를 전 서피스에서 통일했다: 회사=`stockCode`, 주제=`topicSlug`(= 블로그 URL slug, 전 서피스 공유). `operation.content` "서피스 x 콘텐츠 성격 매트릭스"로 명문화하고 블로그·팟캐스트·카드 게이트로 강제(상세 = `blog-enrichment` 진행 원장 2026-07-06). 즉 **subject 조인 키 계약은 물리 SSOT 로 살아있고**, 남은 것은 물리 통합뿐이다.
 - **미착수·승인 게이트 유지**: 물리 `StoryManifest` 마이그레이션(P1 manifest 생성기, P2 HF `stories/` 병행 발행, P3 `/cards` 소비자 전환, P4 원본 폴더 통합)은 대형 저장구조 변경 + 랜딩 소비자 전환이라 런타임-SSOT 규율상 사전토론·명시 승인 후에만 착수한다. 현행 `carousels/index.json` 단일 소비가 안정적이라 급하지 않다. 착수 트리거는 운영자 결정.

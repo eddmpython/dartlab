@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 163
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/000480-cr-holdings.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/90/90134e889d4c2cc1a0af9e0863b85ee1beeca7c50b861bbd7bbd904711049b38.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/50/50c4200642b3ef37a11930edc0972de2b8083ebb5db171bb773c325af4a8935a.webp
 tags:
   - 시알홀딩스
   - CR홀딩스
@@ -51,7 +52,7 @@ ai:
 
 이 글의 관점은 약간 긍정형이다. 하지만 결론을 먼저 정하지 않는다. 시알홀딩스를 "숨은 현금 박스"라고 부르지 않는다. "지주회사 재평가가 명확하다"라고도 쓰지 않는다. 대신 이렇게 묻는다. **조선내화가 갈라진 뒤 남은 이 지주회사는 반복 수요를 가진 산업 장부 위에서 자본을 제대로 배치할 수 있는가.**
 
-![고온 공정 안쪽의 내화물 벽돌과 보수 장면](./assets/163-refractory-furnace.webp)
+![고온 공정 안쪽의 내화물 벽돌과 보수 장면](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a9/a914a1570a23acb2ad67459c0ff2bf96f2e21f2d7bdf46184a039e23fea03507.webp)
 
 사진처럼 보이는 건 공장 안쪽의 내화벽이다. 내화물은 화려하지 않다. 소비자가 제품명을 외우지도 않는다. 하지만 제철, 제강, 시멘트, 유리 같은 고온 공정에서는 이런 재료가 멈추면 설비가 멈춘다. 기업 이야기에 좋은 소재는 꼭 신기술일 필요가 없다. 오히려 너무 평범해서 사람들이 지나치는 소재가 더 깊은 질문을 만든다.
 
@@ -143,7 +144,7 @@ DART 주요 제품 및 서비스 표를 보면 2026년 1분기 시알홀딩스 �
 
 셋째는 투자와 지분이다. 2026년 1분기 관계기업등지분관련투자자산은 868.7억 원이다. 2025년은 831.1억 원, 2024년은 1,397.1억 원이었다. 지분법 손익과 투자 처분, 추가 취득은 지주회사 성격을 강하게 만든다. 이 영역은 긍정과 위험이 동시에 있다. 잘하면 자본배치 능력이고, 못하면 복잡한 투자자산이다.
 
-![산업 자산과 재무 판단이 만나는 자본배치 책상](./assets/163-capital-desk.webp)
+![산업 자산과 재무 판단이 만나는 자본배치 책상](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/fe/fecf9ceebede008d8c6d7ed123e07a14e52a9bae82b063b2124b0735ee0a4c47.webp)
 
 이 이미지는 일부러 공장과 책상을 같이 놓았다. 시알홀딩스를 단순 산업회사로 보면 자본배치를 놓치고, 단순 지주회사로 보면 산업 기반을 놓친다. 이 회사는 둘 사이에 있다. 고온 공정의 소재와 금융자산의 숫자가 한 장부에서 만난다.
 

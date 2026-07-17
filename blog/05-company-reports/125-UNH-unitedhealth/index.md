@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 125
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/UNH-unitedhealth.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/4b/4b7dcd7fba1abd2f432edbaac332963fa1062bc3f291ec075093f4c4e2a6405d.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c0/c0b7fc580aaa547a0de53b80ec7c7909ea1a7b42e719d73b922932882a76d395.webp
 tags: ["유나이티드헬스", "UNH", "의료보험", "옵텀", "Optum", "의료손해율", "MLR", "영업이익률", "순이익률", "미국주식", "헬스케어", "수직통합"]
 stockCode: "UNH"
 corpName: "UnitedHealth Group"
@@ -47,7 +48,7 @@ import StackBar from '$lib/components/blog/StackBar.svelte';
 
 관통선은 둘이다. 하나, 외형이 두 배가 돼도 마진 띠는 8%대에 잠겨 있었다(연결이 증명). 둘, 그 띠가 깨질 때조차 *어느 층에서 깨졌는지*가 두 해 달랐고, 현금의 흔적마저 정반대였다. 이 글은 손익계산서를 위에서 아래로 흐르는 한 줄이 아니라 **'층(layer)'**으로 읽는다.
 
-![남의 의료비를 대신 굴리는 회사 — 받은 보험료의 대부분은 자기 돈이 아니다](./assets/125-passthrough.webp)
+![남의 의료비를 대신 굴리는 회사 — 받은 보험료의 대부분은 자기 돈이 아니다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/77/7734b0ed1a35a527431ee02d6b51d5a88a6610fcd78acd686b79fa1d255b1613.webp)
 
 ---
 
@@ -107,7 +108,7 @@ c.select("IS", ["영업이익", "당기순이익"], freq="Q")  # 2024: OI 평탄
 
 ![두 번째 골절(2025)은 영업선 자체 — OPM이 6년 박스를 처음 뚫고 반토막](./assets/125-fracture-2025.svg)
 
-![얇은 띠가 줄어든 게 아니라 증발했다 — 2025년의 두 번째 골절](./assets/125-collapse.webp)
+![얇은 띠가 줄어든 게 아니라 증발했다 — 2025년의 두 번째 골절](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/8f/8f85af3bcc151730bc79f6c720208c29ee9153c61398a3c959979f10e90b4b64.webp)
 
 같은 '추락'이 아니라 서로 다른 골절선이라는 게 이 막의 핵심이며, 이 위치 구분은 외부 인과를 빌리지 않고 OPM·NPM의 내부 수치 위치만으로 성립한다. 그리고 그 붕괴는 한 번에 온 게 아니다 — 2025년 분기 영업이익은 9.12 → 5.15 → 4.32 → **0.38**B로, 해를 따라 점진적으로 식어 4분기엔 사실상 손익분기까지 내려갔다(분기 실측).
 
@@ -139,7 +140,7 @@ c.select("CF", ["영업활동현금흐름"], freq="Q")  # 두 해의 현금 서�
 
 2024는 영업선 *아래*(비현금성, OCF/순이익↑), 2025는 영업선 *자체*(현금 동반, OPM 반토막) — 같은 회사가 2년 연속 다른 층에서, 다른 현금 흔적을 남기며 부러졌다. **[외부 인용]** 회사가 Optum(의료서비스·약국·데이터)으로 '지불자이자 공급자'가 되는 수직통합을 택한 것이 이 충격을 흡수할지 증폭할지는(Health Affairs) 내부 연결 손익만으로는 세그먼트가 분해되지 않아 답할 수 없다 — 모르는 것을 아는 척하지 않는다.
 
-![지불자이자 공급자 — 받은 돈으로 자기 의료망을 사들이는 수직통합의 두 얼굴](./assets/125-optum.webp)
+![지불자이자 공급자 — 받은 돈으로 자기 의료망을 사들이는 수직통합의 두 얼굴](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/49/49a87b285a19e09e67892cac76e314764e4772e084357e3e4864a8b6137aa0ec.webp)
 
 **[외부 인용]** 회사는 2026년 조정 MLR을 88.8%로 가이던스해 2025년(88.9%) 대비 단 10bp 개선에 그쳐, 마진 회복이 매우 점진적임을 시사한다(UnitedHealth 2026 Outlook). 이건 예측도 목표가도 아니다.
 

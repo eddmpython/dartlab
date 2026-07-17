@@ -22,7 +22,8 @@ tags:
   - 수주잔고
   - 턴어라운드
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/042660-hanwha-ocean.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f6/f69c01dd35651463233997506938f4661ae91cb5231f38d038caa8a84c3bbb8e.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/69/69e987269ad6a8ab85b7b8b57318e0077cc5bf1b697e9d7ffd5ea81515c00718.webp
 youtubeId: ""
 ai:
   verdict: "저가 수주 탈출로 영업이익률 13.7%, 수주 국내 1위로 반전. 하지만 그 반전은 상선 잔고가 만들었고 방산 프리미엄은 아직 수출로 증명되지 않았다"
@@ -396,7 +397,7 @@ rev = c.analysis("financial", "수익구조")
 
 왜 중국이 값을 깎아도 한국 3사는 LNG선을 놓지 않는가. 그리고 이 마진은 사이클인가 해자인가.
 
-![대형 선박 건조 현장, 조선소 도크](./assets/48-shipyard.webp)
+![대형 선박 건조 현장, 조선소 도크](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/16/16ab194b315afa945bd7dbb2e04a8e871ffcb5d3900a6d1ad0711b7386fe10e6.webp)
 
 ### 신조선가는 사상 최고, 발주는 급감이라는 역설
 

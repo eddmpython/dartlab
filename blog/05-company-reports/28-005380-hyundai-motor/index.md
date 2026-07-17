@@ -9,7 +9,8 @@ corpName: "현대자동차"
 exchange: "KRX"
 storyTemplate: "사이클"
 thumbnail: /avatar-chart.png
-ogImage: "/thumbnails/005380-hyundai-motor.webp"
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/2a/2af1085b552c8d7f37534cf4ede3093443cafd16edb23d0d730a96ee65efd8f4.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/6a/6adae249052337581cfeaac913e1b57f79b05e54074fd459e07eeab72a6e936c.webp
 description: "연결 영업이익 11.5조인데 영업현금은 마이너스 6조. 현대캐피탈이 삼킨 34조. 주가는 20만원에서 78만원 찍고 50만원으로. 관세 25%에서 15%로, 밸류업 자사주, 보스턴다이내믹스라는 미검증 로봇 옵션. 세계 판매 3위 현대차의 재무 기계장치."
 tags:
   - 현대자동차
@@ -219,7 +220,7 @@ import HFDataLink from '$lib/components/blog/HFDataLink.svelte';
 
 울산 바닷가의 공장에서는 지금도 쉬지 않고 완성차가 조립 라인 끝을 빠져나온다. 2025년 한 해 현대차그룹이 세계에 판 차는 727만대. 이 숫자만 보면 현금이 강물처럼 쌓여야 할 것 같다. 그런데 장부는 정반대의 말을 한다.
 
-![현대차 울산공장](./assets/28-hyundai-factory.webp)
+![현대차 울산공장](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c8/c8933e237d5bc19ce402f32a52f8a273fa68418b2e744d02769ff4bfda56c984.webp)
 
 2026년 7월 3일, 현대차의 지난해 성적표를 펼치면 두 숫자가 서로를 노려본다. 하나는 2025년 연결 영업이익 11.47조원. 자동차를 팔아 벌었다고 장부에 적힌 돈이다. 다른 하나는 같은 해 연결 영업활동현금흐름 마이너스 5.99조원. 영업을 거쳐 실제로는 현금이 들어온 게 아니라 나갔다는 뜻이다. 벌었다는데 빠졌다. 오타가 아니라 둘 다 사실이다. 이 막은 그 역설을 닫지 않고 활짝 열어두는 데서 시작한다.
 
@@ -396,7 +397,7 @@ for code in ["005380", "000270", "012330"]:   # 현대차, 기아, 현대모비�
 
 한때 이 회사는 미국에서 싸구려의 대명사였다. 1986년 엑셀로 미국에 상륙했지만 1980년대 말과 90년대 내내 품질이 낮다는 조롱을 들었다. 그 낙인을 지운 자리에 지금은 제네시스라는 고급 브랜드가 서 있다.
 
-![제네시스 럭셔리](./assets/28-genesis-luxury.webp)
+![제네시스 럭셔리](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/4b/4bc1ebaa9c1b30d905a617b8e57c3bbc1471368a2577f3ad8dfd9fee3ad78566.webp)
 
 그런데 싸구려에서 럭셔리로 건너오는 다리는 공짜가 아니었다.
 

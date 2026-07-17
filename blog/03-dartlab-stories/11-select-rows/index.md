@@ -6,9 +6,10 @@ category: dartlab-stories
 series: dartlab-stories
 seriesOrder: 11
 topicSlug: "select-rows"
-ogImage: /thumbnails/dartlab-select-rows.webp
-thumbnail: /thumbnails/dartlab-select-rows.webp
-thumbnailBg: ./assets/dartlab-story-11-thumbnail-bg-v1.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/3d/3d4ce8b5491e0fea212a1bd33510d385a2c8750618fa26377060121674fda51c.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/5b/5bd35dda568801a8f6d16007383a486621eb09d304a364ec1cb1caec96510454.webp
+thumbnail: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/3d/3d4ce8b5491e0fea212a1bd33510d385a2c8750618fa26377060121674fda51c.webp
+thumbnailBg: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a5/a5e5db7b5045ea352ab8fb0da9d8196df454c44488832bfaa85869051ecf475d.webp
 tags:
   - dartlab
   - DART
@@ -86,7 +87,7 @@ findRows(isPanel, "매출")
 
 반대로 매출원가를 보고 "비용"이라고만 쓰는 것도 약하다. 매출원가는 매출과 직접 연결된 비용이다. 판매비와관리비, 기타비용, 금융비용과는 다른 줄이다. 계정 찾기에서 첫 번째 실수는 못 찾는 것이 아니라, 비슷한 이름을 찾고 나서 같은 뜻으로 읽어 버리는 것이다.
 
-![IS에서 매출 계정 후보를 찾는 흐름](./assets/dartlab-story-11-account-search-flow.webp)
+![IS에서 매출 계정 후보를 찾는 흐름](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/72/7212f42a831219ceda64921e9216a314bc76580e3eb654bef1a5ad0e485a3ba6.webp)
 
 ## 영업이익은 매출 옆 질문이다
 
@@ -127,7 +128,7 @@ findRows(bsPanel, "매출")
 
 이 예시는 아주 중요하다. "매출액이 안 보인다"는 말은 두 가지일 수 있다. 첫째, 정말 단어를 잘못 찾았을 수 있다. 둘째, 보고 있는 표가 다를 수 있다. 매출액을 찾고 싶으면 먼저 IS를 열어야 한다.
 
-![같은 단어라도 IS, BS, CF에서 뜻이 달라지는 흐름](./assets/dartlab-story-11-surface-choice.webp)
+![같은 단어라도 IS, BS, CF에서 뜻이 달라지는 흐름](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/89/89899ef56af2aff1ff1d714b04c253605268ed6f55cc7db0759788ce091557ea.webp)
 
 ## 현금은 CF에서 넓게 나온다
 

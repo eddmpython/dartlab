@@ -6,7 +6,8 @@ category: reading-disclosures
 series: financial-context
 seriesOrder: 8
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/30-segment-reporting-interpretation.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/7d/7d33d387270839db1ed47b3065a5ea00e7831ff82397d3e4b7023cab7c316f5a.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/6b/6b6070f5072a0964dbd1a9b535cbb00e313803bd7d1cd4baa2c7c6103bae8e69.webp
 ---
 
 # 세그먼트 공시는 어디서 읽고 무엇을 비교해야 하나

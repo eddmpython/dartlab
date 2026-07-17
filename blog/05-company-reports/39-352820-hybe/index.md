@@ -22,7 +22,8 @@ tags:
   - 멀티레이블
   - 전자공시
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/352820-hybe.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c8/c8b969d008a561cef0303f0b88e47a09fd4949e8484eec5b19c256589e3e3473.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/1f/1f46c3c48c46d2dbfd815843b8e69374b8727ff6a13c9ac5fea3ce67415cc184.webp
 ai:
   verdict: "BTS 공백 2년을 공연·레이블 다각화로 매출 사상 최대까지 끌어올렸지만, 북미 매니지먼트 손상차손 2,000억과 영업레버리지 붕괴가 이익을 지웠다. 2026 BTS 복귀가 구조적 이익 회복을 증명하는 해."
   direction: 악화
@@ -274,7 +275,7 @@ dartlab 종합평가는 6개의 경고 플래그를 붙인다. **매출은 늘�
 
 2023~2024년에 르세라핌, 뉴진스, ENHYPEN, 투어스, 아일릿이 차례로 데뷔했다. 세븐틴과 엔하이픈은 대형 투어를 돌렸다. 2025년 상반기까지 투어 규모는 음반 회사 중 세계 최상위권에 도달했다.
 
-![대형 K-pop 콘서트 — 2025년 공연 관객 1,500만명+](./assets/39-kpop-concert-stage.webp)
+![대형 K-pop 콘서트 — 2025년 공연 관객 1,500만명+](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/8c/8cfdf2c49be0032e7861bfeddec1985674958126e7c90609ec6cb92a928ce5a7.webp)
 
 ### 매출 구성이 바뀌었다 — 공연 +69%
 
@@ -432,7 +433,7 @@ eq["earningsQualityFlags"]
 
 영업외손실 3,400억의 대부분은 **무형자산 손상차손**이다. 하이브 4분기 실적 발표에 따르면 "북미 매니지먼트 비즈니스 구조 전환에 따른 자산 가치 재점검" 결과 약 **2,000억원 규모의 손상차손**을 인식했다([SPOTV NEWS](https://www.spotvnews.co.kr/news/articleView.html?idxno=798317)). 추가로 ADOR 관련 영업권/무형자산 평가손실, 지분법 투자 평가손실, 풋옵션 관련 평가손실 등이 합산됐다.
 
-![경영진 교체와 레이블 구조 재편 — 무형자산 재평가의 무대](./assets/39-executive-boardroom-tension.webp)
+![경영진 교체와 레이블 구조 재편 — 무형자산 재평가의 무대](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/bd/bd3b3cf5919bf76ed55be4486bba861838cbdbd58f8c1ac726d3a0fc60471056.webp)
 
 ### 손상차손의 정체
 
@@ -541,7 +542,7 @@ K-Pop 레이블 비즈니스는 **"한 그룹의 성공 → 전성기 5~7년 →
 2. **풋옵션 255억 확정** — 하이브가 민희진에게 지급해야 할 금액이 확정됐다. 이미 2025 충당금에 반영된 것으로 보인다.
 3. **경영권 소송 재발 가능성 제거** — 2024년부터 지속된 리스크 프리미엄이 가라앉는다.
 
-![BTS 없는 2년의 녹음실 — 2026 복귀가 매출 베이스를 복구하는가](./assets/39-empty-recording-studio.webp)
+![BTS 없는 2년의 녹음실 — 2026 복귀가 매출 베이스를 복구하는가](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/60/604afa70ea5a7c36f64564209f89c811de9123cae364496634e1bab2d441225e.webp)
 
 ### 2026년의 두 변수
 

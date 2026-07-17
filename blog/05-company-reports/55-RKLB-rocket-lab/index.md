@@ -21,7 +21,8 @@ tags:
   - EDGAR
   - 항공우주
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/RKLB-rocket-lab.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/76/762e012e81b45b1eb77f0832e78d585746b3ddd9f3bec96036712d7f03a82b17.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/eb/eb54da2a971aa8aa66a0f6b69b09678049a30df8fd814e94d81667155c8aa108.webp
 youtubeId: ""
 ai:
   verdict: "매출 2.8배, 매출총이익률 34%까지 개선됐지만 Neutron 대형 로켓 개발비가 영업손실을 더 키움 — 현금 $1B가 버틸 시간이 결정"
@@ -98,7 +99,7 @@ c.select("IS", ["revenue","gross_profit","operating_income","net_income"])
 
 셋째, **규모의 경제**. 매출이 2.8배 늘면서 고정비가 희석됐다. 공장 임차료, 품질 관리 팀, 엔진 테스트 설비 — 이런 비용은 발사 횟수가 늘어도 비슷하게 유지된다. 매출이 늘면 이 비용의 상대적 비중이 떨어진다.
 
-![로켓랩 Electron 발사 — 마히아 반도에서 날아오르는 소형 로켓](./assets/55-electron-launch.webp)
+![로켓랩 Electron 발사 — 마히아 반도에서 날아오르는 소형 로켓](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/2f/2f83cb12c6107723596e6ba7cc91a1e2656fce09b622f14044fba5570b7fc7f5.webp)
 
 ### 그런데 영업손실은 왜 더 커졌는가
 
@@ -191,7 +192,7 @@ c.select("CF", ["stock_based_compensation"])
 
 장부 손실 -$198M과 현금 손실 -$166M의 차이 $32M이 주식 희석으로 나갔다. **기존 주주의 파이가 그만큼 줄어든다** — 현금이 안 나간다고 공짜가 아니라, 주주 지분이 희석되는 대가다.
 
-![로켓랩 공장 — 탄소섬유 로켓 제조 현장](./assets/55-rocket-factory.webp)
+![로켓랩 공장 — 탄소섬유 로켓 제조 현장](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/da/dabfa524ddd6da2c9f9f550a0f5f941a363adb884129025650ed611b63d41a18.webp)
 
 ### 주식보상이 주주 지분을 얼마나 희석했는가
 
@@ -306,7 +307,7 @@ c.select("CF", ["proceeds_from_issuance_of_common_stock"])
 
 ## 6막: Neutron이 날아오르는 날까지
 
-![로켓랩 공장 — 탄소섬유 로켓 제조 현장](./assets/55-rocket-factory.webp)
+![로켓랩 공장 — 탄소섬유 로켓 제조 현장](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/da/dabfa524ddd6da2c9f9f550a0f5f941a363adb884129025650ed611b63d41a18.webp)
 
 ### 피터 벡의 뉴질랜드 기원 — 차고에서 나스닥까지
 

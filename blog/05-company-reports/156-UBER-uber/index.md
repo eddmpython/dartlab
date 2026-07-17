@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 156
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/UBER-uber.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d0/d0d4dbe5701c8224dfbdb2332cb9f9c0a857bd0fb6dc62b1a28de0562ee2be14.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/5c/5cc046130545c47b404d7789cb0e959402392db03a3fda1b850a7b1e76f64427.webp
 tags:
   - "UBER"
   - "Uber"
@@ -49,7 +50,7 @@ ai:
 
 그런데 2023년에 부호가 바뀐다. 영업이익 1.11B. 2024년 2.80B. 2025년 5.57B. 6년 전 -8.60B였던 영업이익이 2025년에는 +5.57B다. 더 놀라운 줄은 현금흐름표다. 2025년 영업현금흐름은 10.10B, 자유현금흐름은 9.76B다. 공장을 지은 것도 아니고, 차를 직접 대량 보유한 것도 아닌 플랫폼이 10B 현금을 만들기 시작했다.
 
-![도심 픽업 장면은 우버가 무엇을 파는 회사인지 보여준다. 차가 아니라 매칭 빈도와 경로 밀도다](./assets/156-uber-city-map.webp)
+![도심 픽업 장면은 우버가 무엇을 파는 회사인지 보여준다. 차가 아니라 매칭 빈도와 경로 밀도다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/82/82373ffbdc134318011c4aa4b7df8d9d9205a44310cce68f126071c41376d275.webp)
 
 사람들이 우버에서 정말 궁금해할 질문은 이것이다. **왜 적자 플랫폼의 상징이던 회사가 갑자기 현금흐름 회사가 됐나.** 단순히 매출이 커져서가 아니다. 2020년 이후 우버는 Trips와 Gross Bookings를 늘리면서, CAPEX는 매출의 1% 아래로 눌렀고, 영업손실을 이익으로 돌렸고, 2025년에는 자사주까지 6.5B 매입했다. 성장주 문법에서 현금성 플랫폼 문법으로 넘어간 것이다.
 
@@ -126,7 +127,7 @@ dartlab의 이익품질도 2025년을 긍정적으로 본다. 2025년 OCF/NI는 
 
 Delivery는 우버의 두 번째 엔진이다. Mobility는 수익성이 더 선명하지만, Delivery는 빈도와 생활 밀착도를 만든다. 사용자가 일주일에 차를 몇 번 부르지 않아도 음식을 더 자주 시킬 수 있다. 플랫폼 입장에서는 앱을 여는 횟수가 늘고, 결제 데이터와 고객 습관이 쌓인다. 우버가 단순 택시 호출 앱이 아니라 도시 생활의 거래망으로 읽히는 이유다.
 
-![배달은 우버 앱의 빈도를 만든다. 승차보다 마진은 복잡하지만, 고객 접점을 늘리는 두 번째 엔진이다](./assets/156-uber-delivery.webp)
+![배달은 우버 앱의 빈도를 만든다. 승차보다 마진은 복잡하지만, 고객 접점을 늘리는 두 번째 엔진이다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/59/5986aca705299ba0433543542ed3cf96e4c55d8732619aad796410ace159d7a7.webp)
 
 하지만 Delivery도 공짜가 아니다. 2025년 10-K는 Delivery Adjusted EBITDA가 늘어난 이유와 동시에 비용 압박도 보여준다. Delivery Gross Bookings는 Trip volume 증가로 늘었고, 광고 매출도 증가했다. 하지만 Courier payments and incentives, 직원 인건비, 결제 처리 비용, 광고·마케팅 비용도 같이 늘었다. 배달은 네트워크를 키우지만, 음식점·배달원·소비자 사이에서 인센티브를 조절해야 하는 사업이다.
 
@@ -183,7 +184,7 @@ summary["summaryFlags"]
 
 2026년 1분기 공식 발표에서 CFO는 AV에 대해 "capital-efficient approach"를 말한다. 핵심은 우버가 직접 대규모 차량을 사서 로보택시 사업자가 되는 것이 아니라, 파트너십을 통해 수요와 운영을 연결하려는 방향이다. 이 전략은 우버의 강점과 맞다. 우버의 장점은 차량 소유가 아니라 수요, 배차, 가격, 결제, 지역별 네트워크다.
 
-![자율주행은 우버의 위협이면서 동시에 플랫폼 지위를 시험하는 다음 장면이다](./assets/156-uber-autonomous.webp)
+![자율주행은 우버의 위협이면서 동시에 플랫폼 지위를 시험하는 다음 장면이다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/14/14a89388d7e7442caf58f56b3964330a7fc8461a92650717934f76d2cb2fb309.webp)
 
 하지만 AV를 너무 낙관적으로 쓰면 위험하다. 자율주행 회사가 직접 소비자 앱을 키우고, 도시별로 독점적 위치를 잡고, 우버 없이도 충분한 수요를 확보하면 우버의 take rate는 눌릴 수 있다. 반대로 여러 AV 운영자가 도시별로 흩어져 있고, 고객 수요를 모으는 앱이 필요하다면 우버의 플랫폼 가치는 유지된다. 이 싸움은 기술 경쟁이면서 유통 경쟁이다.
 

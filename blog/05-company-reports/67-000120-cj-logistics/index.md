@@ -21,7 +21,8 @@ tags:
   - 한진
   - 전자공시
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/000120-cj-logistics.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/3f/3f4394f40f443780ed2da134c6b7d41f9f3f676909bbfd2eaf66748049ac3bd9.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/40/401b30267d9d2e056c2d876917b37df8d959bc327c63ce61770c651f6c0ca979.webp
 youtubeId: ""
 ai:
   verdict: "매출 12조 3년 정체 — 쿠팡·네이버 C커머스 잠식. 영업이익 +23% 개선은 판관비 통제·자동화·글로벌에서 온 구조 개선"
@@ -313,7 +314,7 @@ CJ그룹은 대한통운을 "2020년까지 세계 5위 물류회사"로 만들�
 
 ---
 
-![CJ대한통운 주요 거점 — 곤지암 메가허브, 광양·부산 항만, 해외 물류센터](./assets/067-gonjiam-hub.webp)
+![CJ대한통운 주요 거점 — 곤지암 메가허브, 광양·부산 항만, 해외 물류센터](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/20/20d3561b8257fddd4b59d450b9e51553a8d24b677b7c882a9ec5eb23f01eac05.webp)
 
 ## 4막: OPM 4% 천장 — 6개 사업부문의 마진 분해
 

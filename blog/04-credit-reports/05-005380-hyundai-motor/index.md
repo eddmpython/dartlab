@@ -4,10 +4,11 @@ date: 2026-04-05
 description: "현대자동차 독립 신용등급 dCR-AA+ (최우량 (notch 조정)). 공시 데이터 기반 정량 분석 등급 근거, 재무 하이라이트, 등급 전망."
 category: credit-reports
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/credit-05-005380-hyundai-motor.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/3f/3f811ec0229352fdd9e94437fdc5a1d92e5f1d70b134eb549e8cf64bc7781ccb.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/8a/8a95482d15dfb3dd78cd526e416d624600e12912286068f97c82f13a80e0089c.webp
 ---
 
-![현대자동차 (005380) 신용분석 보고서 ?? ???](./assets/05-credit-dashboard.webp)
+![현대자동차 (005380) 신용분석 보고서 ?? ???](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e2/e2987c1e779843561841a9a437fb2fa1fc9d1014941ccb6416180a3e0e6dc8ff.webp)
 > ⚠️ **면책**: 본 보고서는 dartlab dCR v4.0 방법론에 따라 공시 데이터만으로 작성되었습니다. 제도권 신용등급과 다를 수 있으며, 투자 권유가 아닙니다. [방법론](https://github.com/eddmpython/dartlab/blob/master/src/dartlab/analysis/CREDIT.md)
 
 > **dCR-AA+** | 최우량 (notch 조정) | 2026-04-05 | 방법론 v4.0

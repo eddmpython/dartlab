@@ -193,7 +193,10 @@
 			(/^https?:\/\//.test(postInfo.ogImage) ?
 				postInfo.ogImage :
 				`${brand.url}${postInfo.ogImage.replace(/^\//, '')}`) :
-		postInfo?.thumbnail ? `${brand.url}${postInfo.thumbnail.replace(/^\//, '')}` :
+		postInfo?.thumbnail ?
+			(/^https?:\/\//.test(postInfo.thumbnail) ?
+				postInfo.thumbnail :
+				`${brand.url}${postInfo.thumbnail.replace(/^\//, '')}`) :
 		`${brand.url}og-image.png`
 	);
 	const faqItems = $derived(parseFaqFromMarkdown(data.rawMarkdown ?? ''));

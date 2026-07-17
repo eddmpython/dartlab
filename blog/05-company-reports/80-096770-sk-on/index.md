@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 80
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/096770-sk-on.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/93/93a5c08a7e3b64cd695c5743498fbc059815002cecb34fb0de912ce6b6c949b9.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ef/efe77c258cc331940f621b9aec868de026cd80c1bfe97a35d0c603cc18683776.webp
 tags: ["SK온", "SK이노베이션", "096770", "BlueOval SK", "Ford", "이차전지", "EV캐즘", "ESS", "배터리", "구조조정"]
 stockCode: "096770"
 corpName: "SK온"
@@ -204,7 +205,7 @@ c.analysis("financial", "수익성")["marginWaterfall"]["history"][0]
 
 BlueOval SK가 바로 그 구조였다.
 
-![SK온 배터리 생산라인을 상징하는 장면 — 북미 생산능력은 남았지만, 가동률과 고객 물량이 손익을 결정한다.](./assets/80-battery-line.webp)
+![SK온 배터리 생산라인을 상징하는 장면 — 북미 생산능력은 남았지만, 가동률과 고객 물량이 손익을 결정한다.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/4e/4eedea52870719b4a198a89755284d4c5453c016ec0ca7bc89592508783dfa60.webp)
 
 ![BlueOval SK 구조 — Ford 수요 약속, SK온 북미 생산능력, Kentucky 2개 공장과 Tennessee 1개 공장이 하나의 합작법인으로 묶였다.](./assets/80-blueoval-structure.svg)
 
@@ -311,7 +312,7 @@ BlueOval SK 해체 이후 보도에서 반복되는 단어는 ESS다. Energy Sto
 
 왜 ESS인가.
 
-![EV에서 ESS로 이동하는 배터리 수요 — 전기차 판매량 대신 데이터센터 전력 수요와 장기 전력계약이 핵심 변수가 된다.](./assets/80-ess-containers.webp)
+![EV에서 ESS로 이동하는 배터리 수요 — 전기차 판매량 대신 데이터센터 전력 수요와 장기 전력계약이 핵심 변수가 된다.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/11/11d0119bb6d6d0070c67a03708d84398274e3109ae09a8b779a8f021c795d3a0.webp)
 
 첫째, AI 데이터센터 전력 수요가 폭증하고 있다. 전력망은 피크 부하를 견뎌야 하고, ESS는 전력 공급의 완충 장치가 된다. 둘째, EV는 소비자 구매 사이클과 보조금에 민감하지만, ESS는 전력망 투자와 장기 계약에 더 가깝다. 셋째, LFP 배터리와 궁합이 좋다. 에너지 밀도보다 가격·안전성·수명이 중요하기 때문이다.
 

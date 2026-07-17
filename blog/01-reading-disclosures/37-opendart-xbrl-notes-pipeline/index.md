@@ -6,7 +6,8 @@ category: reading-disclosures
 series: data-pipeline
 seriesOrder: 2
 thumbnail: /avatar-code.png
-ogImage: /thumbnails/37-opendart-xbrl-notes-pipeline.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/6c/6c96559ecc7f20740abcb575449881438d53dd8f805e346f0c55a0f286e93993.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/52/52e3c316b6f1ff776455b786a145302f96a16a74ebef3d38b4271964796e2f5f.webp
 ---
 
 # XBRL 재무제표 원문과 주석 다운로드 파이프라인

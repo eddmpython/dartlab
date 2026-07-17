@@ -7,18 +7,22 @@
 from __future__ import annotations
 
 import argparse
+import re
 import subprocess
 from pathlib import Path
 
 from audit_seo import score_post as scorePost
 from auditBlog import CONTENT_GENRE_CATEGORIES
 from auditBlog import publish_gate as auditPublishGate
-from blogMedia import mediaManifestPath
+from blogMedia import loadMediaManifest, mediaManifestPath, mediaUrl
 from publishBlogAssets import verifyRemoteAssets
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SEO_SCORE_MIN = 95
 EMPTY_TREE_REF = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
+HF_OBJECT_URL_PREFIX = "https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/"
+MEDIA_FRONTMATTER_RE = re.compile(r"^(?:ogImage|cardPreview|thumbnail|thumbnailBg):\s*.*(?:\r?\n|$)", re.M)
+MEDIA_LINK_RE = re.compile(r"(!\[[^\]]*\]\()[^)]*\.(?:webp|png|jpe?g)(?:\s+[\"'][^\"']*[\"'])?(\))", re.I)
 
 
 def _git(*args: str, check: bool = True) -> subprocess.CompletedProcess[str]:
@@ -83,8 +87,63 @@ def existedAtRef(postDir: Path, gitRef: str) -> bool:
     return result.returncode == 0
 
 
+def normalizeMediaOnlyDiff(raw: str) -> str:
+    normalized = MEDIA_FRONTMATTER_RE.sub("", raw)
+    return MEDIA_LINK_RE.sub(r"\1<media>\2", normalized)
+
+
+def mediaOnlyAtRefs(postDir: Path, baseRef: str, headRef: str) -> bool:
+    try:
+        relativeIndex = (postDir / "index.md").relative_to(REPO_ROOT).as_posix()
+    except ValueError:
+        return False
+    before = _git("show", f"{baseRef}:{relativeIndex}", check=False)
+    after = _git("show", f"{headRef}:{relativeIndex}", check=False)
+    if before.returncode != 0 or after.returncode != 0:
+        return False
+    return normalizeMediaOnlyDiff(before.stdout) == normalizeMediaOnlyDiff(after.stdout)
+
+
+def mediaReferenceErrors(postDir: Path) -> list[str]:
+    manifest, loadErrors = loadMediaManifest(postDir)
+    if manifest is None:
+        return loadErrors
+    if loadErrors:
+        return loadErrors
+    raw = postDir.joinpath("index.md").read_text(encoding="utf-8")
+    errors: list[str] = []
+    allowedUrls: set[str] = set()
+    assets = manifest.get("assets")
+    records = list(assets.values()) if isinstance(assets, dict) else []
+    for role in ("og", "card"):
+        record = manifest.get(role)
+        if isinstance(record, dict):
+            records.append(record)
+            expectedUrl = mediaUrl(str(record.get("path") or ""))
+            allowedUrls.add(expectedUrl)
+            field = "ogImage" if role == "og" else "cardPreview"
+            match = re.search(rf"^{field}:\s*(\S+)", raw, re.M)
+            if not match or match.group(1) != expectedUrl:
+                errors.append(f"{field}가 blog/media.json {role} 객체와 다름")
+    for record in records:
+        if isinstance(record, dict) and record.get("path"):
+            allowedUrls.add(mediaUrl(str(record["path"])))
+    localRefs = re.findall(r"(?:\./)?assets/[^)\"' >]+\.(?:webp|png|jpe?g)", raw, re.I)
+    if localRefs:
+        errors.append(f"로컬 래스터 참조 금지: {localRefs[0]}")
+    usedUrls = set(re.findall(rf"{re.escape(HF_OBJECT_URL_PREFIX)}[0-9a-f/]+\.(?:webp|png|jpe?g)", raw, re.I))
+    unexpected = sorted(usedUrls - allowedUrls)
+    if unexpected:
+        errors.append(f"blog/media.json 밖 HF 객체 참조: {unexpected[0]}")
+    return errors
+
+
 def trackedBinaryErrors(postDir: Path) -> list[str]:
-    if not mediaManifestPath(postDir).is_file():
+    try:
+        catalogPath = mediaManifestPath(postDir)
+    except ValueError:
+        return []
+    if not catalogPath.is_file():
         return []
     try:
         relativeAssets = (postDir / "assets").relative_to(REPO_ROOT).as_posix()
@@ -99,10 +158,16 @@ def trackedBinaryErrors(postDir: Path) -> list[str]:
         f"{relativeAssets}/*.png",
     )
     paths = [line.strip() for line in tracked.stdout.splitlines() if line.strip()]
-    return [f"contract v2 바이너리는 Git 추적 금지, HF에만 발행: {path}" for path in paths]
+    return [f"블로그 래스터는 Git 추적 금지, HF 콘텐츠 주소 객체에만 발행: {path}" for path in paths]
 
 
-def validatePost(postDir: Path, *, requireContractV2: bool) -> list[str]:
+def validatePost(postDir: Path, *, requireContractV2: bool, mediaOnly: bool = False) -> list[str]:
+    if mediaOnly:
+        errors: list[str] = []
+        errors.extend(mediaReferenceErrors(postDir))
+        errors.extend(trackedBinaryErrors(postDir))
+        errors.extend(verifyRemoteAssets(postDir))
+        return errors
     errors = auditPublishGate(postDir, requireContractV2=requireContractV2)
     errors.extend(trackedBinaryErrors(postDir))
     errors.extend(verifyRemoteAssets(postDir))
@@ -124,19 +189,20 @@ def parseArgs() -> argparse.Namespace:
 
 def main() -> None:
     args = parseArgs()
-    targets: dict[Path, bool] = {}
+    targets: dict[Path, tuple[bool, bool]] = {}
 
     if args.changedFrom:
         baseRef, changed = changedPostDirs(args.changedFrom, args.head)
         for postDir in changed:
-            targets[postDir] = not existedAtRef(postDir, baseRef)
+            isNew = not existedAtRef(postDir, baseRef)
+            targets[postDir] = (isNew, False if isNew else mediaOnlyAtRefs(postDir, baseRef, args.head))
 
     for rawPost in args.post:
         postDir = Path(rawPost)
         if not postDir.is_absolute():
             postDir = REPO_ROOT / postDir
         postDir = postDir.resolve()
-        targets[postDir] = not existedAtRef(postDir, "HEAD")
+        targets[postDir] = (not existedAtRef(postDir, "HEAD"), False)
 
     if not args.changedFrom and not args.post:
         raise SystemExit("--post 또는 --changed-from 중 하나가 필요함")
@@ -145,15 +211,15 @@ def main() -> None:
         return
 
     failed = False
-    for postDir, requireContractV2 in sorted(targets.items()):
-        errors = validatePost(postDir, requireContractV2=requireContractV2)
+    for postDir, (requireContractV2, mediaOnly) in sorted(targets.items()):
+        errors = validatePost(postDir, requireContractV2=requireContractV2, mediaOnly=mediaOnly)
         if errors:
             failed = True
             print(f"발행 게이트 실패: {postDir.relative_to(REPO_ROOT)}")
             for error in errors:
                 print(f"  - {error}")
         else:
-            contractLabel = "v2" if requireContractV2 else "legacy-compatible"
+            contractLabel = "media-only" if mediaOnly else "v2" if requireContractV2 else "legacy-compatible"
             print(f"발행 게이트 통과: {postDir.relative_to(REPO_ROOT)} ({contractLabel})")
     if failed:
         raise SystemExit(1)

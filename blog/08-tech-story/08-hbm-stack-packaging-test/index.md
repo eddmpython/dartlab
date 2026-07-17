@@ -16,7 +16,8 @@ tags:
   - DART
   - EDGAR
   - 기술이야기
-ogImage: /thumbnails/tech-hbm-stack-packaging-test.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/89/890a0b0312bd60c73c84b1878030ac01171a24f3bed6e095444a43dcddd6812a.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/9f/9fce0a008176e332e0b1203a2847616f4527077553281a0cb43217c02594d2a9.webp
 ai:
   verdict: "HBM은 비싼 DRAM이 아니라 AI 칩 옆에서 데이터를 굶기지 않기 위해 여러 DRAM 다이를 수직으로 쌓는 패키징 시스템이다. DART 2025년 합산으로 SK하이닉스 영업이익률은 48.6%, 한미반도체는 43.6%, 리노공업은 47.5%였고, EDGAR 최신 4개 분기에서 NVIDIA와 Micron은 각각 64.0%, 48.3% 영업이익률을 보였다. 다만 이 숫자는 모두 회사 전체 수치라 HBM 단독 수익성이 아니며, EDGAR는 회사마다 회계연도와 분기 끝일이 다르다."
   direction: 관망
@@ -29,7 +30,7 @@ HBM(High Bandwidth Memory, 고대역폭 메모리)은 이름만 보면 메모리
 
 질문은 단순하다. 메모리는 왜 옆으로 넓히지 않고 위로 쌓을까. 답은 배선 길이와 전력, 공간, 대역폭 때문이다. 평면으로 메모리를 늘리면 배선이 길어지고, 신호가 오가는 시간이 늘고, 전력도 올라간다. HBM은 여러 DRAM 다이를 수직으로 쌓고, TSV(Through Silicon Via, 실리콘을 수직으로 관통하는 전극)로 다이 사이를 연결한다. 그리고 마이크로범프(매우 작은 금속 접점)와 로직 베이스 다이를 통해 GPU 또는 AI ASIC(주문형 반도체) 옆에 붙는다. 이 구조가 짧고 넓은 데이터 고속도로를 만든다.
 
-![HBM 스택과 AI accelerator 패키지를 엔지니어가 검사하는 고급 반도체 패키징 클린룸. HBM은 가격표보다 실제 적층과 패키징 장면으로 이해해야 한다](./assets/01-hbm-cleanroom.webp)
+![HBM 스택과 AI accelerator 패키지를 엔지니어가 검사하는 고급 반도체 패키징 클린룸. HBM은 가격표보다 실제 적층과 패키징 장면으로 이해해야 한다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/8b/8be6cfd1931c5cef9d98f03d522c9374709568c2013bbc671a2c0ac3733f7005.webp)
 
 이 글의 관통선은 하나다. **HBM은 제품명이 아니라 공정 네트워크다.** 그래서 회사도 한 줄로 세우면 안 된다. 메모리를 만드는 SK하이닉스, 삼성전자, Micron이 있고, GPU 수요를 만드는 NVIDIA, AMD, Broadcom이 있고, 본딩 장비를 공급하는 한미반도체가 있고, CoWoS 같은 고급 패키징을 잡은 TSMC와 OSAT(외주 조립 테스트 업체)인 Amkor가 있고, 프로브 핀과 테스트 소켓을 담당하는 리노공업과 ISC, 자동 테스트 장비의 Teradyne가 있다. DART와 EDGAR를 읽을 때도 이 순서가 먼저다. 어느 회사가 어느 칸의 병목을 잡는지부터 정해야 숫자가 말이 된다.
 
@@ -70,7 +71,7 @@ HBM을 회사 지도로 바꾸면 첫 번째 칸은 메모리 제조다. SK하�
 
 HBM 스택을 만들 때 다이는 얇고, 접점은 작고, 정렬 오차 허용 범위는 좁다. 열압착 본딩은 말 그대로 열과 압력으로 미세 범프를 맞춰 붙인다. 여기서 문제는 "붙는다"가 아니라 "대량으로, 같은 품질로, 고객이 요구하는 속도로 붙는다"다. 실험실에서 되는 것과 양산에서 되는 것은 다르다. 다이 하나를 정렬하고 누르는 시간, 접합 후 변형, 언더필(칩 사이를 채워 보호하는 재료), 열 스트레스, 장비의 반복 정밀도가 모두 수율에 반영된다.
 
-![HBM 열압착 본딩 장비가 적층 다이를 기판 위에 정렬하는 장면. 본딩은 후공정 부속품이 아니라 수율과 인증 속도의 병목이다](./assets/02-tc-bonding.webp)
+![HBM 열압착 본딩 장비가 적층 다이를 기판 위에 정렬하는 장면. 본딩은 후공정 부속품이 아니라 수율과 인증 속도의 병목이다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/2e/2ee941116d1b60f98288889dd82e09033bcc3cd399f3a7fc3efe9357bce8e42d.webp)
 
 한미반도체가 이 지점에서 중요해지는 이유가 여기에 있다. DART 2025년 합산 기준 한미반도체의 매출은 5,767억원, 매출총이익률은 57.6%, 영업이익률은 43.6%였다. 장비 회사가 이 정도 마진을 낸다는 것은 고객이 특정 장비와 공정 안정성에 값을 지불하고 있음을 보여준다. 다만 이것을 "HBM 단독 마진"으로 쓰면 과장이다. 회사 전체 장비 믹스와 고객 집중, 장비 출하 시점이 섞여 있다. 정확한 해석은 이렇게 해야 한다. **HBM 본딩 병목이 장비 회사의 가격력으로 일부 남았지만, 그 숫자는 회사 전체 손익이며 고객과 제품 믹스의 영향을 받는다.**
 
@@ -84,7 +85,7 @@ HBM 스택을 만들 때 다이는 얇고, 접점은 작고, 정렬 오차 허�
 
 리노공업과 ISC를 이 맥락에서 봐야 한다. 리노공업의 2025년 DART 합산 매출은 3,725억원, 매출총이익률은 52.2%, 영업이익률은 47.5%였다. ISC의 2025년 매출은 2,202억원, 매출총이익률은 44.4%, 영업이익률은 27.3%였다. 두 회사 모두 HBM 전용 숫자로 공시되는 것은 아니지만, 테스트 핀과 소켓이 고성능 반도체 검증에서 왜 중요한지 보여주는 자리다. 적층 수가 늘고 고객 인증이 까다로워질수록, 테스트 접점의 정밀도와 반복 내구성은 단순 소모품이 아니라 양산 리듬을 지키는 부품이 된다.
 
-![HBM 프로브 카드와 테스트 소켓이 패키지와 웨이퍼를 검사하는 테스트 랩. 테스트는 마지막 확인이 아니라 양산 속도와 고객 인증의 병목이다](./assets/03-hbm-probe-test.webp)
+![HBM 프로브 카드와 테스트 소켓이 패키지와 웨이퍼를 검사하는 테스트 랩. 테스트는 마지막 확인이 아니라 양산 속도와 고객 인증의 병목이다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/4d/4d8171924d63f48075ddc2a4e99d294a38ff2e7dfdb7f4403ec1fae070051aeb.webp)
 
 미국에서는 Teradyne와 Advantest 같은 자동 테스트 장비사가 이 칸에 들어온다. Teradyne는 EDGAR 최신 4개 분기 기준 매출 37.9억 달러, 영업이익률 26.5%였다. 이 숫자도 HBM만의 매출이 아니다. 하지만 HBM과 AI 가속기가 더 복잡해질수록 테스트 장비 수요가 왜 같이 움직일 수 있는지는 설명한다. GPU와 HBM이 한 패키지 안에서 더 촘촘하게 붙으면, 테스트는 단순히 칩을 통과시키는 절차가 아니라 고장 가능성을 미리 찾아내는 시스템 품질 관리가 된다.
 
@@ -157,13 +158,13 @@ HBM 세대가 올라갈수록 헤드라인은 보통 용량과 속도다. 몇 GB
 
 둘째, 베이스 다이다. HBM4부터는 베이스 다이의 역할과 제조 공정이 더 중요해질 수 있다. 베이스 다이는 스택 아래에서 신호를 모으고 제어한다. 이것이 어떤 로직 공정으로 만들어지는지, 메모리 회사가 자체로 할지, 파운드리와 협업할지, 고객별로 어떻게 커스텀할지가 가치사슬을 바꾼다. 이 부분은 기사마다 추정이 많으므로 공시와 공식 발표에서 확인되는 범위만 써야 한다.
 
-![HBM4 베이스 다이와 HBM 스택을 비교하는 설계·패키징 랩. 베이스 다이는 단순 받침대가 아니라 인터페이스와 전력과 테스트 경로를 모으는 로직 다이다](./assets/05-hbm4-base-die.webp)
+![HBM4 베이스 다이와 HBM 스택을 비교하는 설계·패키징 랩. 베이스 다이는 단순 받침대가 아니라 인터페이스와 전력과 테스트 경로를 모으는 로직 다이다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/52/523834a9ba5fe71f5be2f2e387f9c9063d842b67d42eb3b55ba590d1abc0d29f.webp)
 
 ![HBM4의 베이스 다이는 I/O, 전력, 열, 고객별 인터페이스가 모이는 결정 지점이다](./assets/05-base-die-decision-map.svg)
 
 셋째, 패키징 용량이다. HBM과 GPU 다이가 있어도 CoWoS 또는 동급 패키징 용량이 부족하면 최종 제품은 나오지 않는다. TSMC가 CoWoS 세대를 키우고 더 많은 HBM 스택을 넣는 방향을 공개하는 이유도 여기에 있다. 여기서 Amkor나 ASE 같은 OSAT가 일부 칸을 맡을 수 있지만, 마진 구조는 NVIDIA나 메모리 회사와 다르다. "패키징이 병목"이라는 말과 "패키징 업체가 고마진"이라는 말은 같은 말이 아니다.
 
-![큰 인터포저 위에 로직 다이와 HBM 스택을 배치하는 고급 패키징 조립 장면. HBM 공급이 충분해도 CoWoS 용량이 막히면 최종 AI 칩 출하가 막힌다](./assets/06-cowos-interposer.webp)
+![큰 인터포저 위에 로직 다이와 HBM 스택을 배치하는 고급 패키징 조립 장면. HBM 공급이 충분해도 CoWoS 용량이 막히면 최종 AI 칩 출하가 막힌다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/15/15c4eca13435b5ba759486a5d75874364710f011b46dc18d761e40a6b06ac53e.webp)
 
 ![CoWoS는 로직 다이, HBM 스택, 인터포저, 기판, 테스트를 한 패키지로 묶는 최종 병목이다](./assets/06-cowos-bottleneck-map.svg)
 

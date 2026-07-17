@@ -6,9 +6,10 @@ category: dartlab-stories
 series: dartlab-stories
 seriesOrder: 4
 topicSlug: "pick-company-by-code"
-ogImage: /thumbnails/dartlab-pick-company-by-code.webp
-thumbnail: /thumbnails/dartlab-pick-company-by-code.webp
-thumbnailBg: ./assets/dartlab-story-04-thumbnail-bg-v2.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/4a/4a319346d89c5f6ef6970a8acc865833c41a077f019d18bd7e055046af26f562.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/82/82b172b0be3850b7b9b16102685c938e97cd4ee1c37df08598df89f289f40472.webp
+thumbnail: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/4a/4a319346d89c5f6ef6970a8acc865833c41a077f019d18bd7e055046af26f562.webp
+thumbnailBg: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e9/e9f6cf3014e165acc0d41a378afa73af6f54ecc7ec0164f0903f71c4e2a30797.webp
 tags:
   - dartlab
   - DART
@@ -34,7 +35,7 @@ c.market
 
 `KR`이 나오면 국내 공시 경로가 열린 것이다. 지난 편 [공시 코드셀, 실행 순서](/blog/how-notebook-runs)에서 배운 것처럼, 이제 `c`라는 이름은 아래 셀들이 계속 쓸 수 있다.
 
-![회사명에서 코드로, 코드에서 Company로 이어지는 길](./assets/dartlab-story-04-code-route.webp)
+![회사명에서 코드로, 코드에서 Company로 이어지는 길](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/8f/8f65b0207a2ee2125d8a0f70ff11e9f8667cbd3b7157d530ccb96cda4eb7c0a6.webp)
 
 여기서 중요한 것은 `Company`가 투자 의견을 내는 버튼이 아니라는 점이다. `Company`는 분석 대상의 주소를 잡는 첫 손잡이다. 이 손잡이를 잘못 잡으면 뒤에서 아무리 멋진 표를 열어도 다른 회사를 보고 있게 된다.
 

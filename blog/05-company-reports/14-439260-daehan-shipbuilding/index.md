@@ -19,7 +19,8 @@ tags:
   - IPO
   - 전자공시
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/439260-daehan-shipbuilding.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/22/2290daaa24abb00041d22dd35ad069de72c4a2ec95d031c26e21cce5098e878c.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d1/d10c2ec37c354caa9672f3a2e322ac2141c45f830c6b4f31c606c29aad453696.webp
 youtubeId: "WzBUtnbe_x0"
 ai:
   verdict: "3번 죽은 조선소가 수에즈막스 올인 OPM 24%. 조선업 최고 이익률."
@@ -186,7 +187,7 @@ c.analysis("financial", "종합평가")
 
 ### 1997 IMF → 2009 금융위기 → 2014 법정관리 — 37년 중 정상 가동 절반
 
-![조선소 전경](./assets/14-shipyard.webp)
+![조선소 전경](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/00/008a5feb07235d2894feb5c523c4de357b702fb9f68f793696b947982687d8ab.webp)
 
 1987년, 전라남도 해남. 한반도 최남단 땅끝마을에서 차로 30분 거리. **신영조선공업**이라는 이름의 조선소가 문을 열었다. 서울에서 6시간 걸리는 이 외진 곳에 조선소를 세운 이유는 단순했다 — 땅값이 쌌고, 해안선이 길었다.
 
@@ -247,7 +248,7 @@ c.select("IS", ["매출액", "영업이익"], freq="Y")
 
 ### 수에즈 운하 통과 = 항해일수 2주 절약 — 선주가 프리미엄을 지불하는 이유
 
-![수에즈막스](./assets/14-suezmax.webp)
+![수에즈막스](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/8a/8a15ef5b39d1a841ce7d143a412716a043c61f45d8dd15cfab54d349d1cdb5e3.webp)
 
 2막에서 "가장 잘 짓는 배만 짓자"는 방향이 정해졌다. 그 배는 **수에즈막스 탱커**다.
 
@@ -311,7 +312,7 @@ c.analysis("financial", "비용구조")
 
 ### 영업이익률 24%인데 수익성 D, 현금흐름 D — Piotroski 1/9의 정체
 
-![셔틀탱커](./assets/14-shuttle-tanker.webp)
+![셔틀탱커](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/85/85f2f29c7fe2d03e067cfb3bd521351d1d9f18cd1da1075038f14c13316ce1a5.webp)
 
 여기까지 읽으면 대한조선이 완벽한 회사처럼 보인다. 영업이익률 24%, 판관비 2%, 턴어라운드 성공. 그러나 재무제표를 한 꺼풀 더 벗기면 **불편한 숫자들**이 나온다.
 

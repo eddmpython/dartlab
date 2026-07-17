@@ -6,7 +6,8 @@ category: dartlab-news
 series: dartlab-news
 seriesOrder: 4
 thumbnail: /avatar-study.png
-ogImage: /thumbnails/news-company-one-stock-code.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b3/b3952ffeb42738e217a38aa5604422ecde6ac9b5b40abbc5cad5e511547de06f.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/8b/8b52853b23d3d726b985b10c302c6de735a1b2fb2806a66de3df568ee7919624.webp
 keywords:
   - dartlab Company
   - 종목코드

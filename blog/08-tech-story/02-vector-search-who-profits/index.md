@@ -15,7 +15,8 @@ tags:
   - 솔트룩스
   - 네이버
   - 기술이야기
-ogImage: /thumbnails/tech-vector-search-who-profits.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c0/c0354bb50c661f28f0607cdd6d624f34c9e06f29adcfd7e42f11242064d3c468.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/5e/5e4fee929c3f5149c03c3e8f4929e439b0dbb2a303ad11a5a4a0a0dda8d5f22a.webp
 ai:
   verdict: "벡터·LLM 기술 자체는 오픈소스로 상품화돼 해자가 되지 못한다. 이익은 기술을 가진 자가 아니라 임베딩할 독점 데이터, 그것을 쓸 유통, 그것을 돌릴 반도체를 가진 자에게 간다."
   direction: 유지
@@ -220,7 +221,7 @@ c.select("IS", ["매출액", "영업이익"])
 
 그리고 이 사슬을 한 칸 더 내려가면, AI 골드러시에서 가장 확실하게 번 곳이 나온다. 그 많은 임베딩과 추론을 실제로 돌리는 반도체다. [모래가 반도체가 되기까지](/blog/sand-to-semiconductor)에서 봤듯, [SK하이닉스](/blog/000660-skhynix)는 AI 메모리 호황에 2025년 영업이익률 48.6%를 찍었다. AI 소프트웨어 회사 대부분이 적자일 때, 그들이 쓰는 칩을 만드는 회사가 사슬에서 가장 많이 벌었다.
 
-![AI의 임베딩과 추론이 실제로 돌아가는 데이터센터. 그 연산 수요가 그대로 반도체 주문이 된다](./assets/01-datacenter.webp)
+![AI의 임베딩과 추론이 실제로 돌아가는 데이터센터. 그 연산 수요가 그대로 반도체 주문이 된다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e8/e8611a41eba41e9c97077a89a5720d2bb2944f8a2bc48d6f14900a55dbb9dab5.webp)
 
 ## 8. 기술이 재무를 설명한다: 해자는 어디에 있나
 

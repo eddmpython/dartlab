@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 96
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/021240-coway.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/57/577227f555ba7ffbb57851f0620776feaafe19c30852234bc4b985cc33db3378.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/51/5193c7fc1487ec6f849778fa58213152034231e3a099ca3e8787acb67f85ebcb.webp
 tags: ["코웨이", "021240", "렌탈", "구독경제", "정수기", "코디", "넷마블", "MBK", "웅진", "사모펀드"]
 stockCode: "021240"
 corpName: "코웨이"
@@ -151,7 +152,7 @@ carousel:
 
 **왜 빌려주는 모델이 위기에서 태어났나.** 코웨이의 뿌리는 1989년 한국 최초의 정수기 사업이지만, 진짜 모델 혁신은 1998년 IMF 외환위기에서 나왔다. 목돈이 마른 가정에 정수기를 *팔* 수가 없자, 회사는 발상을 뒤집었다 — 팔지 말고 매달 사용료를 받고 빌려주자. 위기가 만든 모델이었다.
 
-![정수기를 파는 대신 빌려주고 매달 사용료를 받는 렌탈 모델](./assets/096-water-purifier.webp)
+![정수기를 파는 대신 빌려주고 매달 사용료를 받는 렌탈 모델](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/2b/2be229b60aaba80c507b8bd7214e05f85dbd0a521a76707554d4fffbc5e4a561.webp)
 
 빌려주기만 했다면 평범했을 것이다. 핵심은 2001년 도입한 **코디**(방문관리)였다. 한 달에 한 번 사람이 직접 가정을 찾아 필터를 갈고 기계를 점검한다. 이 방문이 단순 A/S가 아니라 *해약을 막는 끈*이자 *추가 판매의 접점*이 됐다. 기계가 아니라 관계를 파는 사업. 남이 안 하던 방식으로 자기 시장을 만든 회사로는 연어 분자로 미용 카테고리를 연 [파마리서치](/blog/214450-pharmaresearch)도 있다. 창업주가 아니라 *모델을 발명한 사람*으로 불려야 할 윤석금의 웅진이 이 구조를 키웠다.
 
@@ -207,7 +208,7 @@ c.select("IS", ["매출액", "영업이익", "당기순이익"], freq="Y")
 
 **무슨 일이 있었나.** 같은 9년 동안, 회사의 *소유권*은 세 번 거래됐다. 2013년 웅진그룹이 유동성 위기(극동건설 등)로 코웨이를 사모펀드 **MBK파트너스에 약 1.09조 원**에 팔았다. 2019년 3월 웅진이 다시 사들였다가, 같은 해 12월 빚을 감당 못 하고 게임회사 **넷마블**에 매각 계약을 맺었다(이듬해 거래 완료).
 
-![회사를 사고파는 자본시장 — 9년간 주인이 세 번 거래됐다](./assets/096-ownership.webp) 9년 새 사모펀드 → 옛 모회사 → 게임회사로 주인이 세 번 바뀐 것이다.
+![회사를 사고파는 자본시장 — 9년간 주인이 세 번 거래됐다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c0/c0991dff0f3b4aa19d4f78f6ef59d90c3929d14c2913802439663f3f76babf35.webp) 9년 새 사모펀드 → 옛 모회사 → 게임회사로 주인이 세 번 바뀐 것이다.
 
 ![코웨이 소유권 3번의 손바뀜 — 웅진→MBK→웅진→넷마블](./assets/096-three-owners.svg)
 
@@ -265,7 +266,7 @@ c.select("IS", ["영업이익"])   # 분기, 2019년
 
 **현금은 무엇에 묶여 있었나.** 답은 렌탈 약정과 코디다. 정수기를 한 번 빌려준 가정은 매달 사용료를 낸다. 그 약정이 수백만 건 쌓여 있으면, 회사의 현금은 *이번 분기 영업을 얼마나 잘했느냐*보다 *이미 깔려 있는 약정의 합*에 따라 들어온다. 소유주가 바뀌어도 우리 집 코디 선생님도, 매달 빠지는 렌탈료도 그대로였다 — 현금은 '주식'이 아니라 '계약'에 묶여 있었다.
 
-![매달 가정을 찾는 코디 — 현금을 주인이 아니라 약정에 묶어 둔 해자](./assets/096-coordi.webp)
+![매달 가정을 찾는 코디 — 현금을 주인이 아니라 약정에 묶어 둔 해자](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/5b/5bbfb4c122038ca8094ac039b1914e158d37e8f9ccd44777bf3490a1cdb75b4d.webp)
 
 여기서 흔한 과장 하나를 막아야 한다. "이익이 매출보다 빨리 늘었다(2.6배 vs 2.1배)"는 구독 모델의 *마진 레버리지*인데, 이건 코웨이만의 특별함이 아니라 고정 비용(코디망) 위에 약정이 누적되는 **모든 흑자 구독사의 공통 증상**이다(넷플릭스도 통신사도 그렇다). 코웨이의 진짜 특이점은 그 안정성이 *소유권 격변과 무관하게* 유지됐다는 데 있다.
 

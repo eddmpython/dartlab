@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 133
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/PM-philip-morris.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/6b/6b3e6a9295416e4c3e6f2bba0edf693d3c63297e34bcbcef4d61b9a4564a0742.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/38/3878ae47cbafcf23e1a8815adba2093fa09fda4fa7aad676969b91d651d37e6a.webp
 tags: ["필립모리스", "PM", "IQOS", "ZYN", "스웨디시매치", "무연담배", "영업이익률", "매출총이익률", "미국주식", "담배"]
 stockCode: "PM"
 corpName: "Philip Morris International"

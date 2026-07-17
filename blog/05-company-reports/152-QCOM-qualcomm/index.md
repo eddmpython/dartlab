@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 152
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/QCOM-qualcomm.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c6/c6e6a45f2ab9b4341c770ecbc35cd4f9969b27c5f860f6aabbda4ca689b5264f.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/fc/fc65e78b33d14cf265e59fb99d59a0d99ffbf436fdd303ed962d35730540fe1e.webp
 tags:
   - "퀄컴"
   - "QCOM"
@@ -65,7 +66,7 @@ is_q = c.select("IS", freq="Q")   # 분기 손익계산서
 
 다만 '로열티는 가만히 앉아서 버는 공짜돈'이라는 통념은 경계해야 한다. 라이선스 모델은 협상과 소송, 재계약 비용을 동반한다. 통행료를 받는 자리에 있다는 것이 곧 무비용을 뜻하지는 않는다. 표준특허의 가치는 분쟁을 통해 끊임없이 재확인되며, 그 분쟁이 어떤 해에는 최종선에 큰 흔적을 남긴다. 뒤에서 보겠지만 퀄컴의 역사는 바로 그 흔적의 기록이기도 하다.
 
-![칩(QCT)과 라이선스(QTL), 두 엔진으로 도는 퀄컴의 수익 구조 — 라이선스의 높은 마진이 전체 영업이익률을 떠받친다.](./assets/152-royalty-stream.webp)
+![칩(QCT)과 라이선스(QTL), 두 엔진으로 도는 퀄컴의 수익 구조 — 라이선스의 높은 마진이 전체 영업이익률을 떠받친다.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/0e/0ea3a60afcdd97c775dcafdfb71e87f2a6ffa359578e93c59af2b769c5afacf3.webp)
 
 ## 2막 — 영업선은 멀쩡하다: 2019~2025 영업이익률의 궤적
 
@@ -126,7 +127,7 @@ is_q = c.select("IS", freq="Q")
 
 다만 이 분기 한 컷의 관계가 2025년 연간 전체의 below-line 구조를 그대로 설명한다고 단정해서는 안 된다. 분기와 연간은 단위가 다르고, 일회성 항목은 특정 분기에 몰릴 수 있다. 정확히 어느 항목에서 얼마가 빠졌는지(유효세율 변동인지, 일회성 세무항목인지, 법률 합의인지)는 10-K(연차보고서)와 IR 자료로만 확정된다. 이 글은 항목을 단일 원인으로 지목하지 않는다. 손익계산서의 구조상 '영업 밖에서 왔다'까지가 데이터로 말할 수 있는 선이고, '어떤 항목인지'는 외부 출처로 이월한다. 이 경계를 지키는 것이 이 글의 핵심 원칙이다.
 
-![영업이익에서 순이익으로 내려오는 폭포 — 영업외 단계까지는 이익이 유지되고, 최종선의 구멍은 그 아래 칸에서 생겼다.](./assets/152-operating-vs-net.webp)
+![영업이익에서 순이익으로 내려오는 폭포 — 영업외 단계까지는 이익이 유지되고, 최종선의 구멍은 그 아래 칸에서 생겼다.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/86/86e66a705338ce0a4a9e3956e453a574f8c49a84b5059d803d522f3e3b6c513a.webp)
 
 ## 5막 — 현금은 거짓말을 덜 한다: 영업현금흐름 14.01B 사상 최고
 
@@ -206,7 +207,7 @@ dartlab 분기 데이터로 봐도 그 시기의 영업선은 최종선만큼 �
 
 매출에서 영업이익, 영업이익에서 순이익으로 이어지는 흐름은 위에서 아래로 떨어지는 폭포다. 각 칸 사이에서 회사의 진짜 이야기가 갈린다. 위 두 줄(매출·영업이익)은 본업이 부르는 노래고, 아래 칸(영업외·세금)은 본업 바깥의 사정이다. 퀄컴 2025는 '영업은 멀쩡, 최종선만 샘'의 교과서적 사례였다. 영업선은 27.9%로 버텼고, 최종선은 12.5%로 꺾였으며, 현금선은 14.01B로 오히려 사상 최고였다.
 
-![핸드셋 칩과 표준특허 로열티 — 본업의 현금 창출력은 강해졌고, 최종선의 구멍은 영업 밖에서 왔다.](./assets/152-handset-chips.webp)
+![핸드셋 칩과 표준특허 로열티 — 본업의 현금 창출력은 강해졌고, 최종선의 구멍은 영업 밖에서 왔다.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e8/e8641c8db11bec72f3b369bc7354f496617e1d1b416c5318f906691d8d197eb5.webp)
 
 세 줄을 따로, 그리고 같이 읽는 독법을 남긴다. 영업선으로 본업의 체력을, 최종선으로 그해 영업 밖에서 무슨 일이 있었는지를, 현금선으로 그 일이 정말 현금을 들고 나갔는지를 본다. 어느 한 줄도 혼자서는 회사를 다 말하지 못한다. 퀄컴이 가르쳐 준 것은 이것 하나다. 맨 아랫줄 숫자가 절반으로 줄었다고 회사가 절반이 된 건 아니다. 그 숫자가 어디서 줄었는지를 읽어야 한다.
 

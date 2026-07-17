@@ -11,7 +11,8 @@ storyTemplate: "성장"
 grade: "dCR-AA"
 tags: [NVIDIA, NVDA, 엔비디아, AI반도체, 팹리스, GPU, 데이터센터, EDGAR]
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/NVDA-nvidia.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/85/85df4af937e309800e94499d5bc58d5a85bc1a7cb49eb37ac3608b5aaf9519ec.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/9d/9d0c83e4791a02db84ee8695ef2863108aec970d821c997b99ea802e67740cdb.webp
 youtubeId: ""
 ai:
   verdict: "팹리스 + AI 수요 독점 = OPM 62%. 역사상 가장 빠른 대형주 성장."
@@ -188,7 +189,7 @@ c.analysis("financial", "수익성")
 
 NVIDIA는 공장이 없으니 유형자산이 인텔의 18분의 1이다. 감가상각(과거에 산 설비 값을 매년 조금씩 비용으로 깎는 것)이 적다. 매출이 5배 뛰어도 고정비가 거의 안 늘어난다. 이것이 팹리스의 **한계비용 구조**다.
 
-![엔비디아 H100 GPU 클로즈업 — TSMC 4nm 공정으로 제조되는 AI 훈련용 가속기, 장당 $25,000~40,000](./assets/50-gpu-closeup.webp)
+![엔비디아 H100 GPU 클로즈업 — TSMC 4nm 공정으로 제조되는 AI 훈련용 가속기, 장당 $25,000~40,000](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/31/316f48cab2968e7ce6204529d8c0d0aba29e8023b060c647409f6d21d7d0ddb0.webp)
 
 ### TSMC라는 파트너 — 설계와 제조의 분리
 
@@ -280,7 +281,7 @@ NVIDIA의 매출 구조를 보면 변화가 명확하다.
 
 2023년 매출총이익률이 57%로 떨어진 것은 수요가 부족했기 때문이다. 재고가 쌓이면 할인 판매를 해야 하고, 마진이 줄어든다. 2024~2025년에 AI 수요가 폭발하면서 할인 없이 전량 판매가 가능해졌고, 신제품(H100→H200→Blackwell)은 더 높은 가격에 팔렸다. **수요 독점 + 팹리스 = 마진 폭발**. 이것이 영업이익률 62%의 정체다.
 
-![AI 데이터센터 내부 — Microsoft·Google·Meta가 쏟아붓는 AI 설비투자가 NVIDIA 데이터센터 매출 88%의 원천](./assets/50-datacenter.webp)
+![AI 데이터센터 내부 — Microsoft·Google·Meta가 쏟아붓는 AI 설비투자가 NVIDIA 데이터센터 매출 88%의 원천](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e5/e5be38cf75a8c2cae15dd823763f7b013b5656f795cada3c420f0a9cd04ad6d4.webp)
 
 ### 영업이익률 62%의 분해 — R&D $12.9B는 적은가
 

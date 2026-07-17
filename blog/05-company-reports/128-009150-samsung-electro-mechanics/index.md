@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 128
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/009150-samsung-electro-mechanics.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ec/ec8d640b057c28093b73c03e6ad08bdee1a29e6376b36497067136e03f1d808c.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/40/4038a8e20a097355a3afd76ba2a304e3c545774e8a5897e1a114dd84526f63a6.webp
 tags: ["삼성전기", "009150", "MLCC", "부품사", "가격수용자", "사이클", "영업이익률", "FC-BGA", "전장", "AI서버", "한국주식"]
 stockCode: "009150"
 corpName: "삼성전기"
@@ -134,7 +135,7 @@ import StackBar from '$lib/components/blog/StackBar.svelte';
 
 관통선은 둘이다. 하나, 이 회사 손익을 흔드는 변수는 외형(매출)이 아니라 그 한 칸 위 — 단가와 수급이다(연결이 관찰을 증명). 둘, 그 단가를 *누가 정하는지* — MLCC 수급, 전방 수요, 무라타와의 경쟁 — 는 연결 손익이 답하지 못한다(외부 인용·봉인). 부품사는 가격수용자다.
 
-![자기 손에 가격표가 없는 부품 — 빈 가격 칸은 외부의 손이 채운다](./assets/128-price-taker.webp)
+![자기 손에 가격표가 없는 부품 — 빈 가격 칸은 외부의 손이 채운다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/64/6482bb8ebcbdc77d326f2bc74af0a3bab493ff68f2894c0e515ad8c5308c8fc0.webp)
 
 ---
 
@@ -200,7 +201,7 @@ c.select("IS", ["영업이익"], freq="Q")  # 2023 분기 영업이익률이 해
 
 2024년 매출 10.31조, 2025년 11.31조로 외형은 연속 사상 최대다. 그런데 영업이익은 0.73조·0.91조로, **2021년 정점(1.49조)은 물론 2018년(1.02조)도 넘지 못했다.** 외형은 사상 최대인데 이익은 7년 전 자리다.
 
-![가장 높은 새 능선에 올랐는데, 그 봉우리가 옛 봉우리보다 낮다](./assets/128-peak-below.webp)
+![가장 높은 새 능선에 올랐는데, 그 봉우리가 옛 봉우리보다 낮다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/57/57dab20c8d27d0eeff2293b4cec455e2489d1af07c021b7e67dd716049fb6355.webp)
 
 숫자로 그 간극의 크기를 재면 이렇다 — 2025년 매출(11.31조)은 2021년(9.68조)보다 +17% 큰데, 영업이익(0.91조)은 2021년(1.49조)의 61% 수준에 그친다. 매출이 17% 더 큰데 이익은 39% 더 작다. 같은 회사가 더 많이 팔고 더 적게 버는 이 역설이, 단가를 자기가 못 정하는 부품사의 손익을 한 줄로 요약한다.
 
@@ -216,7 +217,7 @@ c.select("IS", ["영업이익"], freq="Q")  # 2023 분기 영업이익률이 해
 
 여섯 해를 한 장으로 겹쳐 보면 결론은 하나다. 매출은 완만히 +38% 늘었지만 OPM은 7~15% 두 배폭으로 진동했고, 절대 영업이익은 2021년(1.49조)을 정점으로 사상 최대 매출의 해에도 못 넘었다. 삼성전기의 손익은 '얼마나 파느냐'보다 *전방이 정하는 단가*가 정한다.
 
-![두 톱니가 맞물리려다 빗나가 헛돈다 — 외형과 이익이 다른 리듬으로](./assets/128-gears.webp)
+![두 톱니가 맞물리려다 빗나가 헛돈다 — 외형과 이익이 다른 리듬으로](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/07/07f893b46ef857219145dbc49d920445b25cadcf9b028f798af53f2d775cc6a5.webp)
 
 **[외부 인용]** 그 운명에서 벗어나려는 베팅도 외부에 있다 — 회사는 서버용 FC-BGA(반도체기판)에 베트남 누적 약 3조원을 투입 중이고, 유리기판을 2027년 양산 목표로 추진한다. 다만 업계는 한국 대기업 동시 진입을 두고 '과잉투자'(수율·고객수요 불확실) 위험을 경고한다(digitimes·TrendForce). 신사업 역시 전방 수요와 사이클에 묶인다는 점은 변하지 않는다.
 

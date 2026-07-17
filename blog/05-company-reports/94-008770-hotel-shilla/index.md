@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 94
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/008770-hotel-shilla.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/74/742d1b1104a1074278767284c1914eb3bbc219d1462ebacf62a04555fae90f7e.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/df/df5ea3c947a295f002f8c7c1b1295013cada3976eeabaffe6d30e073c68db0bc.webp
 tags: ["호텔신라", "008770", "면세점", "신라면세점", "따이공", "송객수수료", "이부진", "영빈관", "인천공항", "중국"]
 stockCode: "008770"
 corpName: "호텔신라"
@@ -161,7 +162,7 @@ carousel:
 
 1979년 3월, 창업주 이병철의 지시로 서울신라호텔이 문을 열었다. 손님을 맞이하는 것 — 그것이 이 회사의 본업이자 DNA였다. 1973년에 인수한 한옥 영빈관은 지금도 호텔의 연회장으로 남아 있다(이부진 대표의 취임식도 이 영빈관 에메랄드홀에서 열렸다).
 
-![국가가 손님을 맞으려 지은 영빈관에서 출발한 신라호텔 — 환대로 태어난 회사](./assets/094-shilla-hotel.webp)
+![국가가 손님을 맞으려 지은 영빈관에서 출발한 신라호텔 — 환대로 태어난 회사](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e4/e4475e4f7a362f7b18c3aa0019504f555cfbea8035a2f759f9e75ed23eadec3b.webp)
 
 이 막의 끝에서 다음 막의 씨앗이 심긴다. 손님을 맞이하던 호텔 안에, 작은 카운터 하나가 생긴다.
 
@@ -215,7 +216,7 @@ carousel:
 
 비밀은 따이공이었다. 단체관광객(사람)이 사라진 자리를, 한국 면세점에서 물건을 대량으로 사 중국에 되파는 **전문 보따리상(따이공)**이 메웠다.
 
-![단체관광객이 사라진 자리를 채운 따이공 — 손님을 직접 맞는 대신 물량을 사 가는 중간상](./assets/094-dutyfree-counter.webp) 위기처럼 보였던 사드는, 사실 더 위험한 모델로의 전환을 가린 장막이었다. 회사는 *손님을 맞이하는* 사업에서 *물량을 사 가는 중간상에 의존하는* 사업으로 조용히 옮겨갔다.
+![단체관광객이 사라진 자리를 채운 따이공 — 손님을 직접 맞는 대신 물량을 사 가는 중간상](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/55/55fc45955d9337ada9d4f7d7a94b6aa130d1dc6ceab65afdcdcdca65606ccc81.webp) 위기처럼 보였던 사드는, 사실 더 위험한 모델로의 전환을 가린 장막이었다. 회사는 *손님을 맞이하는* 사업에서 *물량을 사 가는 중간상에 의존하는* 사업으로 조용히 옮겨갔다.
 
 이 막의 끝에서 다음 막으로 넘어간다. 그 중간상에게, 회사는 얼마를 내야 했나?
 
@@ -305,7 +306,7 @@ c.select("IS", ["매출액", "영업이익", "당기순이익"], freq="Y")
 
 전략은 더 극단으로 간다. 2025년 호텔신라는 인천공항 면세 사업장(DF1) 자리를 지키기 위해 냈던 **보증금 약 1,900억 원을 포기**하고 철수를 택했다. 공항의 고정 임대료(MAG)가 그 자리에서 나올 매출의 가치보다 컸기 때문이다.
 
-![매출은 찍히지만 고정 임대료가 이익을 가져가는 공항 면세 — 신라는 그 자리를 돈 버리며 떠났다](./assets/094-airport-dutyfree.webp) 매출이 찍히는 자리를, *돈을 버리면서까지* 떠난 것이다 — 매출을 늘리는 게 아니라 *줄이는* 게 생존이 된 회사.
+![매출은 찍히지만 고정 임대료가 이익을 가져가는 공항 면세 — 신라는 그 자리를 돈 버리며 떠났다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/80/807e9d37c307643fee46102c82b41ae65e0adaa6eae9d88578737f2eb89d784c.webp) 매출이 찍히는 자리를, *돈을 버리면서까지* 떠난 것이다 — 매출을 늘리는 게 아니라 *줄이는* 게 생존이 된 회사.
 
 이 막의 끝에서 산업 전체로 시야를 넓힌다.
 

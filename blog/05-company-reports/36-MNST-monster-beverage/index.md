@@ -9,7 +9,8 @@ corpName: "Monster Beverage Corporation"
 exchange: "NASDAQ"
 storyTemplate: "현금부자"
 thumbnail: /avatar-chart.png
-ogImage: "/thumbnails/MNST-monster-beverage.webp"
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/66/660309293cac48c2c84f8f3235fb7922fb93b458c920600082bbb50390accdf1.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b7/b7bac4e3d88b0e2d1b792e97efa284c5f98de161074ed65c274baa9e7e199391.webp
 youtubeId: "JRcq9GXfifg"
 description: "1992년 남아공 변호사 두 명이 $14.6M에 인수한 파산 주스 회사. 30년 뒤 매출 $7.5B, 자사주 매입 $8.3B, 배당은 0원. 그런데도 공장 설비 투자는 매출의 2~3%에 묶여있다. 코카콜라가 $2.15B에 지분 16.7%를 사고 자사 에너지 브랜드를 넘긴 이유를 재무제표에서 찾았다."
 tags:
@@ -70,7 +71,7 @@ import HFDataLink from '$lib/components/blog/HFDataLink.svelte';
 
 1992년 7월, 남아공에서 건너온 두 명의 변호사가 캘리포니아의 파산 음료 회사를 인수한다. Rodney Sacks와 Hilton Schlosberg. 둘 다 케이프타운 출신의 기업 인수합병 전문 변호사였다. 인수 대금은 $14.6M. 회사 이름은 Hansen Natural Corporation — 1930년대 Hollywood 과일주스로 시작해 1980년대 건강주스·천연소다수로 확장하다 자금난에 빠진 작은 음료 회사였다.
 
-![Monster 16oz 캔](./assets/36-monster-can.webp)
+![Monster 16oz 캔](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/5a/5a9a612433120f9cbfca8874ec95b9d4732ccf5d503350bccdbc74cb0e56d740.webp)
 
 두 사람은 변호사답게 기업구조부터 정리했다. 인수와 동시에 나스닥에 상장시키고, 자신들은 CEO·COO로 들어간다. 첫 10년 동안은 평범한 건강 음료 회사였다. Hansen's Natural Soda, Apple Juice, Smoothie. 1997년 매출 $60M 수준. 미국 서부 해안에 국한된 지역 브랜드였다.
 
@@ -276,7 +277,7 @@ c.analysis('financial','수익성')['returnTrend']['history']
 
 2015년 6월 12일, 조지아주 애틀랜타의 Coca-Cola 본사에서 두 회사의 공동 발표가 나왔다. Coca-Cola Company는 Monster Beverage에 $2.15B을 내고 지분 16.7%를 취득한다. 그 대가로 Coca-Cola는 자사가 소유한 에너지 드링크 브랜드 10여 개 — NOS, Full Throttle, Burn, Mother, Relentless, Ultra Energy, Nalu, BPM, Play, Gladiator 등 — 를 모두 Monster에 넘긴다. 동시에 Monster가 보유하던 논에너지 브랜드(Hansen's Natural Soda, Blue Sky, Peace Tea, Hubert's Lemonade 등)를 Coca-Cola가 인수한다.
 
-![Atlanta 코카콜라 딜](./assets/36-atlanta-deal.webp)
+![Atlanta 코카콜라 딜](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/6b/6bf453505b0b2987e141de74657780afc2c800ccf6a55054fae644edf30edfbb.webp)
 
 "이것은 단순한 지분 투자가 아니다. 우리는 글로벌 에너지 드링크 시장을 Monster와 함께 만들기로 결정했다." — Muhtar Kent 당시 Coca-Cola CEO, 2015년 6월 12일 공동 보도자료.
 

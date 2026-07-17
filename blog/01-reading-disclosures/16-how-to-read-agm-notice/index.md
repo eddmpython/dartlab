@@ -6,7 +6,8 @@ category: reading-disclosures
 series: ownership-and-governance
 seriesOrder: 5
 thumbnail: /avatar-curious.png
-ogImage: /thumbnails/16-how-to-read-agm-notice.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/95/9513fd1e2a0c7a8510d6d4feef65969eac6a4e9766aa8225f2e1cb09d34a7774.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b2/b2aa32a0fc9fb970da6a48777627d41bd493b525273b3d6bb48bda2697e7a362.webp
 ---
 
 # 주주총회소집공고에서 꼭 봐야 할 것은 무엇인가

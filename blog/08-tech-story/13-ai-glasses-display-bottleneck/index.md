@@ -17,7 +17,8 @@ tags:
   - DART
   - EDGAR
   - 기술이야기
-ogImage: /thumbnails/tech-ai-glasses-display-bottleneck.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/4f/4f372d16d649316ed7ae6d8a4d1a751ec8aaa27d3563a65c9c926d4241ae7a82.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/2f/2fe6a5a02ae264d2307107563e79738fef77d5943812e8fd3f929f91cd92aa45.webp
 ai:
   verdict: "AI 안경 승부의 병목은 AI 비서가 아니라 렌즈에 상을 켜는 물리다. 도파관은 아이박스 확산과 격자 회절로 광원 빛의 대부분을 흘려, 손전등급 5,000 nit LCoS를 써도 눈에 남는 건 실내에서 겨우 읽히는 글자 한 줄이다. 한낮 야외 풀컬러는 손실이 아니라 밝기의 절대 천장(수천~수백만 nit) 문제라 마이크로LED가 필요한데, 밝기와 색과 전사 수율을 동시에 못 잡아 아직 양산 전이다. 그래서 이 병목층은 팔 물건이 없고, 어느 손익계산서에도 라인이 없다. 삼성전자 2025 손익계산서(매출 333.6조, 영업이익 43.6조, KRW)를 끝까지 내려도 안경이라는 글자가 없고, 실제 공급자 삼성디스플레이·소니·OmniVision은 별도 라인이 없거나 dartlab 유니버스 밖이다. 반대편 메타는 같은 야망을 Reality Labs 세그먼트로 떼어 2025년 영업손실 약 -19.2B달러(USD)를 공시한다. 물리도 승패도 아니라 팔 물건의 유무와 사업을 나눠 보는 방식의 차이다. 모든 수치는 안경 전용이 아니라 회사 전체 기준이며, nit·부품 구성은 외부 보도(untrusted)이고 dartlab이 검증한 것은 각 사 손익계산서(IS)뿐이다."
   direction: 관망
@@ -30,7 +31,7 @@ ai:
 
 본론에 들어가기 전에 독자에게 미리 허락 하나를 준다. 이 글에서 끝까지 외울 회사는 딱 셋이다. 메타, 삼성전자, 삼성디스플레이. 앞으로 OmniVision, Lumus, Goertek, SCHOTT 같은 낯선 이름이 표에 줄줄이 나오지만 그건 외울 명단이 아니라 병목의 어느 칸을 누가 쥐었는지 보여주는 지도이니, 훑고 지나가면 된다.
 
-![빛이 렌즈 안에 켜지는 AR 스마트 안경 클로즈업. 이 글의 병목은 AI가 아니라 이 빛이다](./assets/13-hero.webp)
+![빛이 렌즈 안에 켜지는 AR 스마트 안경 클로즈업. 이 글의 병목은 AI가 아니라 이 빛이다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/0f/0f5cf2e2201a5dea3ee38f73fdc71726f99270612f769e0a21187befd4039f91.webp)
 
 이 글의 관통선은 하나다. **AI 안경의 진짜 승부처는 코드가 아니라 렌즈에 켜지는 빛이고, 밝기를 못 잡으니 팔 물건이 없고, 팔 물건이 없으니 그 병목층은 어느 회사 손익계산서에도 매출 한 줄로 안 잡힌다.** AI 대결이라는 헤드라인 뒤에서 승부처는 빛이고, 그 빛은 장부에 없다. 밝기라는 물리가 왜 장부의 공백이 되는지, 그 다리를 이제부터 놓는다.
 
@@ -74,7 +75,7 @@ ai:
 
 그런데 사다리 꼭대기엔 함정이 있다. 마이크로LED 풀컬러 양산은 밝기와 색과 수율을 동시에 못 잡는다. 밝기를 올리면 색이 어긋나고, 색을 잡으면 미세한 LED 칩을 옮겨 붙이는 전사 수율이 떨어지고, 수율을 올리면 원가가 뛴다. 세 꼭짓점을 동시에 붙잡을 수 없는 이 벽을 밝기·색·수율 트릴레마라 부르겠다. 미세 소자를 옮겨 붙이고 그 수율이 왜 돈을 잡아먹는지는 [HBM은 왜 쌓을까](/blog/hbm-stack-packaging-test)에서 반도체 적층으로 이미 봤다. 마이크로LED 전사도 같은 종류의 수율 싸움이다.
 
-![현미경 아래 마이크로LED 마이크로디스플레이 웨이퍼. 밝기 궁극해 소자의 실물 난도가 곧 색·전사 수율 트릴레마의 벽이다](./assets/13-microled-wafer.webp)
+![현미경 아래 마이크로LED 마이크로디스플레이 웨이퍼. 밝기 궁극해 소자의 실물 난도가 곧 색·전사 수율 트릴레마의 벽이다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/16/16913c28441dc0ddd87cf3fbd2f49c403fbdc7090e287285a68b08d5a1358582.webp)
 
 그래서 이 층은 한 회사가 다 못 만들고, 에피부터 제조까지 여러 회사가 릴레이로 이어 붙는다. 그 실명 명단은 표로 넘긴다. 외울 대상이 아니라 훑을 지도다.
 
@@ -92,7 +93,7 @@ ai:
 
 이 병목 소자를 지금 누가 쥐고 있는지는 799달러 완제품을 실제로 뜯어봐야 보인다. Meta Ray-Ban Display 한 대를 뜯어 칸을 채워보면 예상 밖의 장면이 나온다. 메타의 이름이 딱 두 칸에만 있다.
 
-![레이밴 형태의 스마트 안경 실제 제품. 뜯어보면 화면을 켜는 핵심 하드웨어는 메타 손이 아니다](./assets/13-smart-glasses.webp)
+![레이밴 형태의 스마트 안경 실제 제품. 뜯어보면 화면을 켜는 핵심 하드웨어는 메타 손이 아니다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/9c/9c1be3b33cebacfe82d49aa6244c7a68af29ca76dc126d81955e1270c84b4b8d.webp)
 
 산문에서는 앵커 셋만 잡으면 된다. 디스플레이 패널은 OmniVision(LCoS), 도파관은 Lumus 설계, 광엔진과 조립은 Goertek이다. 나머지 칸은 표로 넘긴다.
 
@@ -114,7 +115,7 @@ ai:
 
 앞 막에서 삼성디스플레이가 병목 소자를 내부에 두고 사다리 위쪽을 두드렸다고 했다. 그 빛이 지금 재무제표 어디에 잡히는지 직접 찾아보자. 삼성전자 2025년 사업보고서 손익계산서를 첫 줄부터 끝 줄까지 손가락으로 내려도, 안경이라는 글자는 단 한 번도 안 나온다. 매출 333.6조, 영업이익 43.6조(영업이익률 13.07%, KRW)가 찍힌 그 표 어디에도 Jinju도 Haean도 없다.
 
-![디스플레이 패널 클린룸. 팔 물건이 아직 없어 장부에 안 잡히는 층의 실제 생산 현장이다](./assets/13-display-cleanroom.webp)
+![디스플레이 패널 클린룸. 팔 물건이 아직 없어 장부에 안 잡히는 층의 실제 생산 현장이다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/27/27075df4799e927c73e8f1a48e7acdec9bccaf3107cdb92cc121030475d47683.webp)
 
 이제 앞 막에서 미뤄둔 두 수치를 여기서 한 번에 푼다. 삼성디스플레이는 2023년 미국 마이크로디스플레이 회사 eMagin을 약 218M달러(USD)에 인수해 마이크로OLED를 내재화했고, AWE 2026에서 1.3인치 RGB OLEDoS로 40,000 nit를 시연했다. 애플 Vision Pro 패널의 약 8배 밝기다. 그런데 이 40,000 nit는 무대에서 켠 시연이지, 2026년 중반까지 상용 출하가 0이다. 밝기를 못 잡으니 팔 물건이 없고, 팔 물건이 없으니 장부에 라인이 없다.
 

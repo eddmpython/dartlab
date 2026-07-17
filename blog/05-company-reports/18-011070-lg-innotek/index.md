@@ -19,7 +19,8 @@ tags:
   - 아이폰
   - 전자공시
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/011070-lg-innotek.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/28/28c81229667a4e7861bd7407786b2137698a90904d3d94d267509c4f8eeb27b4.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/95/956000be6510f85f10cecf7f4a1a0095610f503c33f1363899268d6067888995.webp
 youtubeId: ""
 ai:
   verdict: "애플 카메라 독점(70%)인데 마진 3%. 독점의 역설."
@@ -224,7 +225,7 @@ c.analysis("financial", "수익구조")
 
 ## 2막 — 독점인데 왜 을인가: 영업이익률 3%의 정체
 
-![카메라 모듈](./assets/18-camera-module.webp)
+![카메라 모듈](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/24/24bc6e00585ce89c2648df13788bfcdfbb13b2741cf132626961c91876873906.webp)
 
 ### 카메라 모듈의 원가 구조 — 가치의 40%가 소니 것
 
@@ -278,7 +279,7 @@ LG이노텍은 외부 고객(애플)에 대한 순수 조립업체다. **독점�
 
 ## 3막 — 그래도 대체 불가능한 이유: 세 겹의 기술 해자
 
-![잠망경 카메라](./assets/18-periscope.webp)
+![잠망경 카메라](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e7/e714b8d02ff12f6f14540d024b2cbe35ef6302e4dc7ce3da6a4b5eb72c6526f7.webp)
 
 ### 첫 번째 해자: 테트라프리즘 잠망경 카메라
 
@@ -320,7 +321,7 @@ V3 공장(베트남 하이퐁)에 **1.3조원** 투자. 기존 V1/V2에 더해 �
 
 ## 4막 — 아이폰 사이클이라는 운명: Q3에 모든 것이 걸린다
 
-![조립 라인](./assets/18-assembly-line.webp)
+![조립 라인](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c4/c4cc3023c386e273af786ba92ad2cf2e5701f8a8cee1774db2176ea22bf1846c.webp)
 
 ### 분기별 패턴: 3분기에 모든 것이 결정된다
 

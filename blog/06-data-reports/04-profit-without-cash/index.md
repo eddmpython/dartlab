@@ -7,7 +7,8 @@ series: data-reports
 seriesOrder: 4
 topicSlug: "profit-without-cash"
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/data-profit-without-cash.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e5/e58ee8348df31ad40564f30e82a4ce11abb8a5d3409a1d502a07ea51e153e26b.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/97/9766bb78e4aa9eecaee2593e32082369040a3b1801d8f0d6b3bc683f833ebc96.webp
 tags: [이익의 질, 영업활동현금흐름, 발생액, 흑자도산, 현금흐름표]
 keywords:
   - 이익의 질

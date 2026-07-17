@@ -6,7 +6,8 @@ category: company-reports
 series: 기업이야기
 seriesOrder: 88
 thumbnail: /avatar-default.png
-ogImage: /thumbnails/003410-ssangyong-lbo-exit.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/0e/0ebd744e02df1dc89cd7dea8b5d15045316518b863ad6747f65efbfb48c65745.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/0f/0f1ef7cf4b77db84604c634b5aee87c06110c5293326e42be8346e2b002afc40.webp
 tags:
   - 쌍용씨앤이
   - 003410
@@ -149,7 +150,7 @@ carousel:
 
 ## 1 막 — 2025 년 10 월 27 일, 자회사가 모회사를 거꾸로 삼킨 날
 
-![시멘트 사일로 — 자본집약 산업의 시각적 상징](./assets/88-cement-silos.webp)
+![시멘트 사일로 — 자본집약 산업의 시각적 상징](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/44/44de5551873809e5b8232e5c769e5861020afe53f7cd77008e5e0fd274115ced.webp)
 
 2025 년 10 월 27 일 오후, 한국거래소 전자공시 시스템에 한 장의 문서가 올라왔다. 제출자는 쌍용씨앤이 (003410), 제목은 "주요사항보고서 (회사합병결정)". rcept_no 20251027000344. 합병 상대방은 자기 자신의 100% 모회사인 한앤코시멘트홀딩스. 즉 자회사가 모회사를 흡수합병한다는 결정이었다. 합병기일은 2026 년 1 월 1 일. 합병비율은 쌍용씨앤이 1 주당 한앤코시멘트홀딩스 0.0260909 주. 잔여주주 매수청구 가격은 7,000 원/주.
 
@@ -316,7 +317,7 @@ LP 가 회수를 재촉하는데 본업 사이클이 응답하지 않으면, 운
 
 ## 5 막 — 시멘트 사이클 추락 (2023~2025)
 
-![시멘트 회전 가마 (rotary kiln) — 자본집약 가동률의 핵심 설비](./assets/88-rotary-kiln.webp)
+![시멘트 회전 가마 (rotary kiln) — 자본집약 가동률의 핵심 설비](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/4d/4d0054278077e271dfdde5ee1471e15c42902b076e6447ee774e3591b973b3bc.webp)
 
 2023 년의 매출 1 조 8,694 억 원이 2025 년 1 조 4,886 억 원으로 줄었다. 2 년 만에 -20.4%. 한 해 평균 -10% 가 두 번 겹친 셈이지만, 그 안을 사업부별로 펼치면 모양은 더 가파르다. 시멘트 매출 1 조 4,890 억 원 → 1 조 2,464 억 원으로 -16.3%, 그중 내수만 따로 보면 1 조 3,887 억 원 → 1 조 1,108 억 원으로 **-20.0%** 빠졌다. 같은 기간 시멘트 수출은 1,003 억 원 → 1,355 억 원으로 **+35.2%** 늘었다. 한 회사 안에서 같은 제품을 내수와 수출로 나눠 적은 줄 두 개가 정반대 방향으로 움직였다는 뜻이다.
 
@@ -463,7 +464,7 @@ Piotroski F-Score 1/9 는 회계 신호 9 개 중 8 개가 부정적 방향이�
 
 ## 7 막 — 산업 지형 재편: 1 위 박탈과 환경자회사 매각 추진
 
-![시멘트 운반선 — 내수 -20% 의 자리에서 수출 +35% 가 나온 이유](./assets/88-cement-bulk-carrier.webp)
+![시멘트 운반선 — 내수 -20% 의 자리에서 수출 +35% 가 나온 이유](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e2/e2534937054e40671f50e07813d70f8108b8e8adf1822a1262480f9265c77f0a.webp)
 
 ### 왜 한일 합병으로 1 위 자리가 박탈됐나
 

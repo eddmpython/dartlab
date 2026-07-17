@@ -6,8 +6,9 @@ category: company-reports
 series: company-reports
 seriesOrder: 168
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/443060-hd-marine-aftermarket.webp
-thumbnailBg: "./assets/168-engine-room-aftermarket-hero.webp"
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d3/d3596a6c622d3e0d9e088abe1aed922c4a8add4cfbcab49a3664ddc6c8658a66.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a5/a5a768c8f4810d766bca2260942e1e97271be81f0a49a34f88b0844bcd4f6507.webp
+thumbnailBg: "https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/1b/1b9d730708ebc0f298a8ae90b03adac84abe5d2fb5620eeb60a2a12c59a9c6af.webp"
 tags:
   - "443060"
   - "HD현대마린솔루션"
@@ -49,7 +50,7 @@ ai:
 
 조선소에서 새 배가 인도되는 날, 조선회사의 매출은 큰 고비를 넘긴다. 계약금을 받고 공정률에 따라 매출을 쌓은 뒤 선주에게 배를 넘긴다. 거대한 도크와 크레인이 맡은 일은 여기서 일단 끝난다. 그러나 그 배의 엔진룸에서는 다른 회사의 시간이 시작된다.
 
-![조선소를 떠난 선박의 엔진룸에서 애프터마켓의 시간이 시작된다](./assets/168-engine-room-aftermarket-hero.webp)
+![조선소를 떠난 선박의 엔진룸에서 애프터마켓의 시간이 시작된다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/1b/1b9d730708ebc0f298a8ae90b03adac84abe5d2fb5620eeb60a2a12c59a9c6af.webp)
 
 선박은 보통 25~30년을 쓴다. 항해하는 동안 엔진 부품이 닳고, 고장이 생기며, 보증 서비스와 정기 정비가 필요하다. 환경 규제가 바뀌면 기존 선박을 개조하고, 연료 효율을 높이며, 운항 데이터를 육상에서 감시해야 한다. 새 배 한 척을 파는 사건은 한 번이지만, 그 배가 운항하는 동안 생기는 서비스 기회는 수십 년간 반복된다.
 
@@ -106,7 +107,7 @@ HD현대마린솔루션은 2016년 11월 HD현대중공업의 선박, 엔진, �
 
 이 순서는 하나의 고객 깔때기다. 보증 서비스를 통해 배와 장비를 알고, 순정부품으로 반복 접촉하며, 신뢰가 쌓이면 장기 정비와 개조, 디지털로 관계를 넓힌다. 배 한 척이 25~30년 운항한다면 신규 선박 인도는 앞으로 수십 년간 서비스할 고객 명단을 추가하는 사건이다. 조선업 호황이 당장 AM 매출로 전부 잡히지는 않아도 미래 설치 기반을 늘리는 이유다.
 
-![항만의 부품 재고와 배송망이 1만 척 고객 접점을 실제 서비스로 바꾼다](./assets/168-port-parts-service.webp)
+![항만의 부품 재고와 배송망이 1만 척 고객 접점을 실제 서비스로 바꾼다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ba/bae83d5e563f072a9673392c173e044e67c5874dfdbffce819dfa3461aa7c556.webp)
 
 글로벌 물류는 이 깔때기를 현실로 만든다. 배는 특정 공장 옆에 머물지 않고 세계 항만을 이동한다. 부품이 늦으면 선주는 운항 일정과 용선료를 잃는다. 회사는 한국, 유럽, 미국, 싱가포르, 두바이 등에 물류 거점을 두고 있다. 2026년 가동한 싱가포르 물류 허브는 1만개 이상의 핵심 부품을 보관하고 200개 선사와 600개 항만을 연결하는 구조다. 회사는 배송 기간을 최대 16일, 비용을 최대 38% 줄일 수 있다고 기대한다. 이는 회사의 목표치이므로 실제 효과는 이후 재고회전과 마진, 고객 반응으로 검증해야 한다.
 
@@ -247,7 +248,7 @@ HD현대마린솔루션의 가장 강한 권한은 그룹의 생산 역사에서
 
 2026년 5월에는 미국 AEG와 데이터센터 전력용 힘센엔진의 장기 유지보수와 운영 협력을 위한 업무협약을 맺었다. 배경에는 684MW급 발전설비에 들어갈 힘센엔진 33기가 있다. 데이터센터는 가동 중단 비용이 크므로 장기 유지보수와 예비부품, 운영 신뢰성이 중요하다. 선박 엔진에서 쌓은 서비스 역량이 맞닿는 지점이다.
 
-![선박 엔진의 부품과 정비 데이터가 육상 발전과 디지털 관제로 확장될 수 있다](./assets/168-maritime-control-room.webp)
+![선박 엔진의 부품과 정비 데이터가 육상 발전과 디지털 관제로 확장될 수 있다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/3b/3b9729a84bbf17ad316365181a3274ed11825d905f42aa39483c4a6d1e327f43.webp)
 
 두 발표는 단계가 다르다. 에콰도르는 금액과 납품 범위가 있는 계약이다. 미국 데이터센터는 장기계약을 추진하기 위한 업무협약이다. 업무협약을 33기 전체의 확정 유지보수 매출로 계산하면 안 된다. 계약으로 전환되는지, 기간과 서비스 범위, 매출 인식 시점이 어떻게 정해지는지를 이후 공시에서 확인해야 한다.
 

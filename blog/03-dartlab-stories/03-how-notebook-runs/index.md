@@ -6,9 +6,10 @@ category: dartlab-stories
 series: dartlab-stories
 seriesOrder: 3
 topicSlug: "how-notebook-runs"
-ogImage: /thumbnails/dartlab-how-notebook-runs.webp
-thumbnail: /thumbnails/dartlab-how-notebook-runs.webp
-thumbnailBg: ./assets/dartlab-story-03-thumbnail-bg-v2.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/42/4246be9f686297f188ff7bd84db4e03bef8a385fa5138b1702983cb733bdba9e.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/98/98dceb6bf76e488530d4861b05716eaae0efd25c3c2e1106d0d449c0075d1dda.webp
+thumbnail: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/42/4246be9f686297f188ff7bd84db4e03bef8a385fa5138b1702983cb733bdba9e.webp
+thumbnailBg: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a6/a69e30d3898332168e63224ecadcb7335f051eed5db6c9573ac15b3cd9fbd10b.webp
 tags:
   - dartlab
   - 공시
@@ -25,7 +26,7 @@ tags:
 
 코드셀은 따로 도는 계산기가 아니다. 위 셀이 만든 이름(`c`, `is_`)을 아래 셀이 그대로 받아 쓴다. 그래서 순서가 하나뿐이다. 위에서 아래로 실행하고, 뭔가 바꿨으면 바꾼 곳부터 다시. 이번 편은 그 한 문장이 노트북 안에서 어떻게 작동하는지 손으로 확인하는 편이다.
 
-![브라우저 안에서 이어지는 코드셀 작업대](./assets/dartlab-story-03-codecell.webp)
+![브라우저 안에서 이어지는 코드셀 작업대](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/1e/1e65d7b7da41ac2dc79e6ea5b7a68f0cd8322fe7686f3e79d5781208b671c66c.webp)
 
 앞의 두 편은 "누르면 표가 나온다"는 경험이었다. [DART 공시분석, 설치 없이](/blog/what-is-dartlab)에서 브라우저에서 `dartlab.Company("005930")`로 첫 표를 열었고, [재무제표, 파이썬 한 줄](/blog/call-financial-statements)에서 손익계산서, 재무상태표, 현금흐름표를 같은 방식으로 불러왔다. 이번 편은 그 표들이 왜 순서를 타는지를 본다.
 

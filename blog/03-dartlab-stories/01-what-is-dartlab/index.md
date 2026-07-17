@@ -6,9 +6,10 @@ category: dartlab-stories
 series: dartlab-stories
 seriesOrder: 1
 topicSlug: "what-is-dartlab"
-ogImage: /thumbnails/dartlab-what-is-dartlab.webp
-thumbnail: /thumbnails/dartlab-what-is-dartlab.webp
-thumbnailBg: ./assets/dartlab-story-01-workbench-v2.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/18/181bd11eaba86d1b1fd32f875d3d811d2b0ebbb43bfdb0e2d56e4095a11dd9be.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/fa/faedea5abeb273c391c4e118e9201dc6ef9e91d6fd430a45ee547332ef071f70.webp
+thumbnail: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/18/181bd11eaba86d1b1fd32f875d3d811d2b0ebbb43bfdb0e2d56e4095a11dd9be.webp
+thumbnailBg: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/1f/1fe0a85b6b2fc8b28e527ee26a2b48f0b2ea74874dcfa63bf25392ed2045b864.webp
 tags:
   - dartlab
   - 전자공시
@@ -29,7 +30,7 @@ tags:
 
 문제는 공시가 부실해서가 아니다. 공시는 충분히 자세하다. 문제는 **공시가 사람이 한 번 읽으라고 만든 문서**라는 데 있다. 비교하고, 잇고, 계산하려면 그 문서를 표로 바꿔야 한다. 그 변환을 매번 손으로 하면 분석은 시작도 못 한다.
 
-![코드로 공시를 다루는 작업대](./assets/dartlab-story-01-workbench-v2.webp)
+![코드로 공시를 다루는 작업대](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/1f/1fe0a85b6b2fc8b28e527ee26a2b48f0b2ea74874dcfa63bf25392ed2045b864.webp)
 
 dartlab은 그 표 만들기를 대신 해 두는 도구다. 한국의 [DART](/blog/everything-about-dart)와 미국의 [EDGAR](/blog/everything-about-edgar)에 올라온 공시를 미리 읽어서, 회사별 재무제표를 큰 표로 만들어 둔다. 왼쪽에는 계정 이름이 있고, 오른쪽에는 기간별 숫자가 있다. 그래서 "작년보다 매출이 늘었나", "5년 동안 영업이익이 좋아졌나"를 손으로 옮겨 적지 않고 바로 볼 수 있다.
 

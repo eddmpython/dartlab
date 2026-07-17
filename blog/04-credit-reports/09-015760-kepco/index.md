@@ -4,10 +4,11 @@ date: 2026-04-05
 description: "한국전력공사 독립 신용등급 dCR-AA+ (최우량 (notch 조정)). 공시 데이터 기반 정량 분석 등급 근거, 재무 하이라이트, 등급 전망."
 category: credit-reports
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/credit-09-015760-kepco.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f8/f8ad8e300ab2af12c11dee83ef9ea332ad33e7405c797b32894ce3ae042c6dde.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/76/768bea71f9b1bfb5a3cf4ce7bf347ee17d2abecc4152f341299627c76dea7b1a.webp
 ---
 
-![한국전력공사 (015760) 신용분석 보고서 ?? ???](./assets/09-credit-dashboard.webp)
+![한국전력공사 (015760) 신용분석 보고서 ?? ???](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e6/e6ba9c3c4c0cd17313fd7371712bf7cfe386a3c902263baf0ba45da3769217e3.webp)
 > ⚠️ **면책**: 본 보고서는 dartlab dCR v4.0 방법론에 따라 공시 데이터만으로 작성되었습니다. 제도권 신용등급과 다를 수 있으며, 투자 권유가 아닙니다. [방법론](https://github.com/eddmpython/dartlab/blob/master/src/dartlab/analysis/CREDIT.md)
 
 > **dCR-AA+** | 최우량 (notch 조정) | 2026-04-05 | 방법론 v4.0

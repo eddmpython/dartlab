@@ -18,7 +18,8 @@ tags:
   - 체코 두코바니
   - 전자공시
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/034020-doosan-enerbility.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/5e/5e3fb300311b32d7e7ec979322ce48082c11959b2f03ef9d54dbc0e69325705c.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/30/3055d84ac562d22ee506a202598aa88a0e8aac13fcbacea55248f21fe6463ced.webp
 youtubeId: ""
 ai:
   verdict: "부채비율 305%→129%. 체코 5.6조 수주 전환점이나 이자가 이익을 먹는 구조."
@@ -205,7 +206,7 @@ c.analysis("자금조달")   # 부채 9년 감축
 
 총 약 3조원 이상. 그룹의 절반을 토막 내서 팔았다. 2022년 2월, 두산은 23개월 만에 채권단 관리 체제를 벗어났다. 박정원 회장은 그해 4월에 두산중공업의 사명을 **두산에너빌리티**로 바꿨다 — "에너지" + "지속가능성(sustainability)"의 합성어. 회사가 새로 시작한다는 신호였다.
 
-![멀리서 본 두코바니 발전소](./assets/03-dukovany-distant.webp)
+![멀리서 본 두코바니 발전소](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a5/a5d39a12fcbf6d7cd5207b2d545c0b58c3ea36b19946440cc2d27163827b3410.webp)
 *체코 즈노이모(Znojmo) 시내 시계탑에서 본 두코바니 발전소. 2022년 사명을 바꾼 이 회사가 4년 뒤 정확히 이 발전소의 5·6호기 주기기 공급 계약을 따낸다 — 이 사진의 거리(약 30km)에서 본 작은 점이 5조 6천억 잭팟의 풍경이다. (출처: Wikimedia Commons, CC BY-SA)*
 
 이 시점에 대부분의 사람들은 두산에너빌리티가 살아남기는 했지만 옛날의 영광은 끝났다고 봤다. 매출은 14~17조원 사이로 평탄했고, 영업이익은 매년 흑자였지만 그 흑자가 주주에게 닿지 못하고 있었다. 9년 (2016~2024) 동안 (지배주주)순이익은 단 한 해(2021)를 제외하면 매년 적자였고, 그 한 번의 흑자조차 다음 해에 -7,725억의 큰 손실로 돌아갔다. 회사의 진짜 문제가 사업이 아니라는 신호가 그 9년 사이에 계속 깜빡이고 있었다.
@@ -348,7 +349,7 @@ c.analysis("financial", "자금조달")
 
 ### 두코바니 5·6호기 5조 6천억 — 한국 원자력 사상 최대 단일 수주
 
-![두산이 주기기를 공급하는 체코 두코바니 원전](./assets/03-dukovany-aerial.webp)
+![두산이 주기기를 공급하는 체코 두코바니 원전](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ba/ba08e32577de236e74b1c2e220ce31bce6c96f75c36a492aef36fcd5758b1e5d.webp)
 *체코 두코바니 원자력 발전소 항공샷 — 2025년 12월 두산에너빌리티가 5·6호기 주기기 공급 5조 6천억 계약을 체결한 곳. (출처: Wikimedia Commons, CC BY-SA)*
 
 2025년 12월 16일. 박정원 회장은 체코 프라하에 있었다. 그날 두산에너빌리티는 한국수력원자력과 함께 체코전력공사 (ČEZ) 와 두코바니 원전 5·6호기 주기기 공급 계약을 체결했다.
@@ -361,7 +362,7 @@ c.analysis("financial", "자금조달")
 | 터빈·발전기 공급 | 7,111억원 |
 | **합계** | **5조 6천억원** |
 
-![두코바니 8개 냉각탑](./assets/03-dukovany-cooling-towers.webp)
+![두코바니 8개 냉각탑](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f6/f654956044c752330003845d9514164c971533becfc9e684bba3430ad3dd93a5.webp)
 *두코바니 발전소의 8개 냉각탑(각 125m). 1985~87년 가동된 1~4호기 옆에 두산이 만들 5·6호기가 들어선다. (출처: Wikimedia Commons, CC BY-SA)*
 
 5.6조원. 두산에너빌리티 1년 매출(17.06조)의 약 3분의 1을 한 계약으로 따낸 셈이다. 한국 원자력 사업 역사상 가장 큰 단일 수주였다.
@@ -374,7 +375,7 @@ c.analysis("financial", "자금조달")
 
 2025년 한 해 동안 두산에너빌리티의 연간 수주 규모는 약 14조원으로 추정됐다 ([파이낸셜뉴스](https://www.fnnews.com/news/202512281814117544)). 매출 17.06조 회사가 14조 수주를 받았다. 매출의 약 80% 규모의 수주잔고가 한 해에 쌓인 것이다.
 
-![두코바니 1호기 건물](./assets/03-dukovany-overview.webp)
+![두코바니 1호기 건물](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/8e/8e99ac067be90725c42c12af9ff8c7507a2a2e258f911945e3eaf04465793d79.webp)
 *두코바니 1호기 건물(1985년 가동). 두산이 만들 5·6호기는 이 1~4호기 옆에 들어선다. 6년에 걸쳐 5조 6천억의 매출이 두산의 손익에 들어오면서, 9년 다이어트로 만들어진 12조 자본 위에 외부 잭팟이 얹어진다. (출처: Wikimedia Commons, CC BY-SA)*
 
 9년간의 부채 다이어트가 없었다면 체코 입찰에 참여할 체력 자체가 없었다 — 3막의 결과가 4막을 가능하게 한 것이다. 부채비율 305%인 회사에 5조 6천억 규모의 장기 프로젝트를 맡기는 발주처는 없다.

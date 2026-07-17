@@ -6,7 +6,8 @@ category: reading-disclosures
 series: data-pipeline
 seriesOrder: 4
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/39-data-quality-validation.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ff/ffa98176f8f11234bc27644880d1149b9b5fb0b12b38ec8e3158becb7b503203.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ee/ee6daa6dc7cef15e3b1e1b5444a69071e7370c7d42908a065fa38757e900c739.webp
 ---
 
 # 수집한 재무 데이터를 어떻게 자동으로 검증하나

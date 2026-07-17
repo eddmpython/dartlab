@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 63
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/042700-hanmi-semi.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b1/b12f32baffb0988ad2ecd90c4f916b9c5eeb0f8174816c54c61977f461832d26.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/2c/2c83ad75280ae8585b2a92e6896f81e1ed1c9b665b96f049a709e6cd31dd523c.webp
 tags: ["한미반도체", "042700", "HBM", "TC본딩", "반도체장비", "곽동신", "SK하이닉스", "AI공급망", "메모리사이클", "ASMPT"]
 stockCode: "042700"
 corpName: "한미반도체"
@@ -202,7 +203,7 @@ carousel:
 
 ![한미반도체 43년 타임라인 — 1980 창업 → 2017 TC본더 납품 → 2024 시총 30조](./assets/063-timeline.svg)
 
-![인천 본사 공장 — 한미반도체 생산 거점](./assets/063-incheon-factory.webp)
+![인천 본사 공장 — 한미반도체 생산 거점](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/04/040ad2384e7c17535db2360d52dffc1e833bfe275e754565a824d0eaa584babb.webp)
 
 ---
 
@@ -247,7 +248,7 @@ carousel:
 
 ![TC 본딩 장비 — HBM 생산라인의 병목 지점](./assets/063-tc-bonding.svg)
 
-![TC 본더 장비 근접 — 세라믹 툴팁이 실리콘 웨이퍼 적층을 열압착하는 순간](./assets/063-tc-bonder-equipment.webp)
+![TC 본더 장비 근접 — 세라믹 툴팁이 실리콘 웨이퍼 적층을 열압착하는 순간](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/bc/bcfab32d25ee915145ebabe26517c7347660d3200785d01b7aa5fcc769b17bb9.webp)
 
 ---
 

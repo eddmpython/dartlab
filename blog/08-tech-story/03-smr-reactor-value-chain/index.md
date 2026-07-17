@@ -16,7 +16,8 @@ tags:
   - 한전KPS
   - 밸류체인
   - 기술이야기
-ogImage: /thumbnails/tech-smr-reactor-value-chain.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/5a/5a1baa4c96414ee17db1585db558f6cd6e351b12cdfe61f3a4cdf30e69ed66d2.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f0/f04342d529de061319c812f028a124366a36f9fc75ccdedb0c91e251f99c9350.webp
 ai:
   verdict: "원전 밸류체인에서 이익률은 설비 크기가 아니라 대체 불가능성과 서비스 지속성이 정한다. 매출이 가장 큰 주기기 제작사의 영업이익률이 사슬에서 가장 낮았고, 계측과 정비를 대는 조연들이 두 자릿수로 더 벌었다. 다만 이 이익은 아직 SMR이 아니라 기존 원전과 발전 설비에서 나온다."
   direction: 유지
@@ -74,7 +75,7 @@ carousel:
       sub: "원자로는 두산이 벼리지만, 그 눈과 정비는 조연이 수십 년 쥡니다"
 ---
 
-![원자력 발전소의 냉각탑과 격납건물. 소형모듈원자로는 이 거대한 설비를 공장에서 찍어낼 크기로 잘게 나눈다](./assets/01-nuclear-plant.webp)
+![원자력 발전소의 냉각탑과 격납건물. 소형모듈원자로는 이 거대한 설비를 공장에서 찍어낼 크기로 잘게 나눈다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/22/223741e80d01f06b40ce7fd298a968be6fb9e8f1504b56745adc38e46eaefbbb.webp)
 
 2026년 들어 세계에서 가장 전기를 많이 먹는 손님은 공장도, 도시도 아닌 데이터센터가 됐다. 인공지능 모델 하나를 학습시키고 서비스하는 데 도시 하나만큼의 전력이 들고, 그 수요는 해마다 가파르게 늘어난다. 빅테크들이 앞다투어 원자력으로 눈을 돌린 이유가 여기 있다. 바람과 햇빛은 끊기지만, 원자로는 24시간 멈추지 않고 탄소도 거의 없이 전기를 뽑아낸다.
 

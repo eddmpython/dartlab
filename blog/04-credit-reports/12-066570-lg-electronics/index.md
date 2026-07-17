@@ -4,10 +4,11 @@ date: 2026-04-05
 description: "LG전자 독립 신용등급 dCR-AAA (최우량 (notch 조정)). 공시 데이터 기반 정량 분석 등급 근거, 재무 하이라이트, 등급 전망."
 category: credit-reports
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/credit-12-066570-lg-electronics.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ce/ce667eda5dd69962ef168121fb3b6a14bc07a9d144db50216f73149d60064097.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/59/5948e6d1b5e90fcd26906d237dae6fa686ddd566082b449903fb1bdcabae298c.webp
 ---
 
-![LG전자 (066570) 신용분석 보고서 ?? ???](./assets/12-credit-dashboard.webp)
+![LG전자 (066570) 신용분석 보고서 ?? ???](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e3/e35557d84ea4d935ab7cbb7f3513006d11a77cc798a634411604b1812a84a046.webp)
 > ⚠️ **면책**: 본 보고서는 dartlab dCR v4.0 방법론에 따라 공시 데이터만으로 작성되었습니다. 제도권 신용등급과 다를 수 있으며, 투자 권유가 아닙니다. [방법론](https://github.com/eddmpython/dartlab/blob/master/src/dartlab/analysis/CREDIT.md)
 
 > **dCR-AAA** | 최우량 (notch 조정) | 2026-04-05 | 방법론 v4.0

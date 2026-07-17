@@ -235,17 +235,27 @@ def _write_tech_post(root: Path, *, brief_score: int = 94) -> Path:
     for assetKey in ("stealth-hangar", "coating-maintenance", "aesa-test-bench"):
         (assets / f"{assetKey}.webp").write_bytes(b"fake")
     sha256 = hashlib.sha256(b"fake").hexdigest()
-    slug = "stealth-test"
+    objectPath = f"objects/sha256/{sha256[:2]}/{sha256}.webp"
+    assetKeys = ("stealth-hangar", "coating-maintenance", "aesa-test-bench")
+    files = {f"blog/08-tech-story/01-stealth-test/assets/{assetKey}.webp": sha256 for assetKey in assetKeys}
+    files["landing/static/thumbnails/tech-stealth-test.webp"] = sha256
     media = {
-        "version": 1,
+        "version": 2,
         "repo": "eddmpython/dartlab-media",
-        "og": {"path": f"blog/{slug}/og.{sha256[:8]}.webp", "sha256": sha256},
-        "assets": {
-            assetKey: {"path": f"blog/{slug}/{assetKey}.{sha256[:8]}.webp", "sha256": sha256}
-            for assetKey in ("stealth-hangar", "coating-maintenance", "aesa-test-bench")
+        "objectPrefix": "objects/sha256",
+        "objects": {sha256: {"bytes": 4, "path": objectPath}},
+        "files": files,
+        "posts": {
+            "08-tech-story/01-stealth-test": {
+                "assets": {
+                    assetKey: f"blog/08-tech-story/01-stealth-test/assets/{assetKey}.webp" for assetKey in assetKeys
+                },
+                "og": "landing/static/thumbnails/tech-stealth-test.webp",
+                "staging": sorted(files),
+            }
         },
     }
-    (assets / "media.json").write_text(json.dumps(media, ensure_ascii=False, indent=2), encoding="utf-8")
+    (root / "blog" / "media.json").write_text(json.dumps(media, ensure_ascii=False, indent=2), encoding="utf-8")
     (assets / "CREDITS.md").write_text(
         "\n".join(
             [
@@ -262,7 +272,7 @@ def _write_tech_post(root: Path, *, brief_score: int = 94) -> Path:
     (thumb / "tech-stealth-test.webp").write_bytes(b"fake")
     filler = "스텔스 공정 병목과 대표 회사가 왜 핵심인지 설명하는 문장입니다. " * 520
     body = f"""
-![스텔스 격납고](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/blog/stealth-test/stealth-hangar.{sha256[:8]}.webp)
+![스텔스 격납고](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/{objectPath})
 
 ## 공정·회사·근거 지도
 
@@ -277,13 +287,13 @@ DART와 EDGAR 근거를 모두 연결하고, dartlab 실측으로 2025Q1~Q4 손�
 
 양산 단계와 실험 단계를 분리한다.
 
-![저피탐 코팅 정비](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/blog/stealth-test/coating-maintenance.{sha256[:8]}.webp)
+![저피탐 코팅 정비](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/{objectPath})
 
 ## 이렇게 오해하면 안 된다
 
 RCS 숫자 하나로 모든 각도와 주파수를 설명하면 안 된다.
 
-![AESA 시험 장비](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/blog/stealth-test/aesa-test-bench.{sha256[:8]}.webp)
+![AESA 시험 장비](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/{objectPath})
 
 {filler}
 
@@ -300,7 +310,7 @@ date: "2026-07-06"
 category: tech-story
 series: tech-story
 topicSlug: "stealth-test"
-ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/blog/stealth-test/og.{sha256[:8]}.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/{objectPath}
 ---
 {body}
 """,
@@ -316,6 +326,17 @@ def test_publish_gate_accepts_tech_story_with_92_loop(monkeypatch, tmp_path: Pat
     assert ab.publish_gate(post) == []
 
 
+def test_publish_gate_accepts_hf_catalog_without_local_raster_staging(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(ab, "repo_root", lambda: tmp_path)
+    post = _write_tech_post(tmp_path)
+    for raster in post.joinpath("assets").glob("*.webp"):
+        raster.unlink()
+    for raster in tmp_path.joinpath("landing", "static", "thumbnails").glob("*.webp"):
+        raster.unlink()
+
+    assert ab.publish_gate(post) == []
+
+
 def test_publish_gate_keeps_legacy_plan_compatible(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(ab, "repo_root", lambda: tmp_path)
     post = _write_tech_post(tmp_path)
@@ -326,16 +347,6 @@ def test_publish_gate_keeps_legacy_plan_compatible(monkeypatch, tmp_path: Path) 
         image.pop("assetKey")
         image.pop("sourcePolicy")
     (post / "brief.json").write_text(json.dumps(brief, ensure_ascii=False, indent=2), encoding="utf-8")
-    indexPath = post / "index.md"
-    indexPath.write_text(
-        re.sub(
-            r"^ogImage: .+$",
-            "ogImage: /thumbnails/tech-stealth-test.webp",
-            indexPath.read_text(encoding="utf-8"),
-            flags=re.M,
-        ),
-        encoding="utf-8",
-    )
 
     assert ab.publish_gate(post) == []
 
@@ -380,9 +391,9 @@ def test_publish_gate_blocks_missing_watch_scenarios(monkeypatch, tmp_path: Path
 def test_publish_gate_blocks_image_ssot_drift(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(ab, "repo_root", lambda: tmp_path)
     post = _write_tech_post(tmp_path)
-    mediaPath = post / "assets" / "media.json"
+    mediaPath = tmp_path / "blog" / "media.json"
     media = json.loads(mediaPath.read_text(encoding="utf-8"))
-    del media["assets"]["aesa-test-bench"]
+    del media["posts"]["08-tech-story/01-stealth-test"]["assets"]["aesa-test-bench"]
     mediaPath.write_text(json.dumps(media, ensure_ascii=False, indent=2), encoding="utf-8")
     creditsPath = post / "assets" / "CREDITS.md"
     creditsPath.write_text(
@@ -391,13 +402,13 @@ def test_publish_gate_blocks_image_ssot_drift(monkeypatch, tmp_path: Path) -> No
     )
     indexPath = post / "index.md"
     indexPath.write_text(
-        indexPath.read_text(encoding="utf-8").replace("aesa-test-bench.", "unplanned."),
+        indexPath.read_text(encoding="utf-8").replace("AESA 시험 장비", "계약에서 빠진 시험 장비"),
         encoding="utf-8",
     )
 
     errors = ab.publish_gate(post)
 
-    assert any("assets/media.json" in error and "누락" in error for error in errors)
+    assert any("blog/media.json" in error and "누락" in error for error in errors)
     assert any("CREDITS.md" in error and "assetKey 누락" in error for error in errors)
 
 

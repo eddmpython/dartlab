@@ -6,7 +6,8 @@ category: reading-disclosures
 series: industry-reading
 seriesOrder: 1
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/17-construction-company-filings.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/6a/6ad768153e7cfc8c04f70af43bf4d2a40f230b7f7bc1fa54df5c8af1e04b396e.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/8b/8b9e814b32d226060306fbca5b9b6f0fc08b979ad3ecfed738ebedd4e1830e61.webp
 ---
 
 # 건설업 사업보고서는 어디부터 읽어야 하나

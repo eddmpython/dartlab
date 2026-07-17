@@ -21,7 +21,8 @@ tags:
   - 러시아
   - 전자공시
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/271560-orion.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/8f/8f5bb875bc3022d0c25fd2225874e25c5e364ebfab568a2f1ac577810438f4aa.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/fb/fbd139214d5693b6ae7d00ee11453e4fff19144b99866e32b5fd24213db66664.webp
 youtubeId: ""
 ai:
   verdict: "오리온은 내수 제과회사가 아니라 해외 현지 생산망을 가진 글로벌 스낵 회사다. 2025년 매출 3.33조·영업이익 5,582억·OPM 16.75%, 연간 해외 비중 65%대 구조가 내수형 식품의 5% 마진 천장을 깼다."
@@ -167,7 +168,7 @@ import HFDataLink from '$lib/components/blog/HFDataLink.svelte';
 
 답은 "해외 수출"보다 한 단계 더 깊다. 오리온은 한국에서 만든 과자를 외국에 보내는 회사가 아니다. 중국, 베트남, 러시아에 공장을 깔고 현지 유통망 안으로 들어간 회사다. 초코파이는 한국 제품이지만, 중국 소비자에게는 중국 슈퍼마켓에서 사는 현지 간식이다. 베트남 소비자에게는 명절 선물이고, 러시아 소비자에게는 부족해서 공장 가동률이 140%를 넘는 제품이다.
 
-![오리온 초코파이 패키지 — 이 글의 핵심은 제품보다 이 제품이 각국 현지 진열대에 올라가는 방식이다](./assets/78-orion-chocopie.webp)
+![오리온 초코파이 패키지 — 이 글의 핵심은 제품보다 이 제품이 각국 현지 진열대에 올라가는 방식이다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e2/e284742b0966b37944ddaf11537a43f8d2b6a7327be679ecd9e3188ca4bf3a37.webp)
 *오리온 초코파이 패키지. 이 글의 핵심은 제품 자체보다 이 제품이 한국 수출품을 넘어 중국·베트남·러시아 현지 진열대에 올라가는 방식이다. (출처: Wikimedia Commons, CC BY-SA 계열 라이선스)*
 
 ![오리온 마진 지도 — 내수 식품의 5% 천장을 해외 현지화가 깼다](./assets/78-hero-map.svg)
@@ -226,7 +227,7 @@ o.select("CF", ["영업활동현금흐름", "투자활동현금흐름"], freq="Y
 
 오리온의 역사는 이 차이를 보여준다. 1990년대 초코파이가 중국에서 팔리기 시작했고, 1997년 중국 현지 법인이 세워졌다. 이후 베이징·상하이·광저우·선양 등 중국 주요 거점에 생산과 판매망을 깔았다. 베트남도 2000년대 중반부터 현지 생산을 시작했고, 러시아는 초코파이와 비스킷 수요를 기반으로 공장을 증설했다.
 
-![중국판 오리온 초코파이 — 초코파이는 한국 수출품이 아니라 중국 현지 소비자가 마트에서 고르는 대중 간식이 됐다](./assets/78-china-chocopie.webp)
+![중국판 오리온 초코파이 — 초코파이는 한국 수출품이 아니라 중국 현지 소비자가 마트에서 고르는 대중 간식이 됐다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/00/002d75498e027d3e6f7c83f8830701adc55998ca9bdd19cce6d8a774a8b6ef3d.webp)
 *중국판 오리온 초코파이. 초코파이는 한국 수출품이 아니라 중국 현지 소비자가 마트에서 고르는 대중 간식이 됐다. (출처: Wikimedia Commons, Dinkun Chen, CC BY-SA 4.0)*
 
 식품 수출은 보통 세 가지 한계에 걸린다.

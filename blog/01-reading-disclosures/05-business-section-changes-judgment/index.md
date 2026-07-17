@@ -6,7 +6,8 @@ category: reading-disclosures
 series: report-reading-foundations
 seriesOrder: 2
 thumbnail: /avatar-curious.png
-ogImage: /thumbnails/05-business-section-changes-judgment.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c6/c6bd38acbe62ecab29a7553f3a409c40416e4e4dd910f8d09e5c225dbd4d2e54.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/7c/7cba6eb8e44ec5d2352dbca544cb9b2bc3bf83eb461f445d4b21e9c36fda78b1.webp
 ---
 
 # 사업보고서 II. 사업의 내용, 이 섹션이 투자 판단을 바꾼다

@@ -9,7 +9,8 @@ corpName: "한국전력공사"
 exchange: "KRX"
 storyTemplate: "자본집약"
 thumbnail: /avatar-chart.png
-ogImage: "/thumbnails/015760-kepco.webp"
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/2a/2acec789bd35bca591a78433aff08c79efd84d026987d527607993b23ff87b60.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/fd/fd041a2d2f20916e7e2535ae68eea6579f4b27ce1725e927cd8220c6f7e748ad.webp
 description: "매출 93조인데 영업적자 32조. 전기요금 11분기 동결. 부채 206조인데 신용등급 AA+. 이자 하루 249억(2024). 한국전력의 재무제표는 CEO가 아니라 정부가 쓴다."
 tags:
   - 한국전력
@@ -126,7 +127,7 @@ import HFDataLink from '$lib/components/blog/HFDataLink.svelte';
 
 > **전기요금 1원이 5,600억을 만든다 — 정부가 재무제표를 쓰는 회사.**
 
-![한국전력 송전탑](./assets/25-kepco-power-tower.webp)
+![한국전력 송전탑](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/74/745ba4e5f7a189df5d72f42c510f73111b9947e2d2fe0ab073e9596a6bb232e7.webp)
 
 
 <HFDataLink code="015760" />
@@ -214,7 +215,7 @@ c.analysis("비용구조")
 
 ---
 
-![한전채 채권시장](./assets/25-kepco-bond-market.webp)
+![한전채 채권시장](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c0/c0d293625e69501fb18bc3decfa4291fa64b652a5aae12092d4929724b0ed861.webp)
 
 # 제2막: "130조를 빌려 전기를 파는 법" — 한전채 블랙홀
 

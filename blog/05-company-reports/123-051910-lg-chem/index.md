@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 123
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/051910-lg-chem.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/40/40fb7229ccff25681cb35cab22814948611b7a07bdc018037721fee3b565f70d.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e6/e624c8eb8cfa9fedc142b2d282be68b86f0cae5629a2167d39ad040058c9fb17.webp
 tags: ["LG화학", "051910", "LG에너지솔루션", "연결회계", "비지배지분", "지배주주순익", "물적분할", "NAV디스카운트", "석유화학", "양극재"]
 stockCode: "051910"
 corpName: "LG화학"
@@ -119,7 +120,7 @@ carousel:
 
 LG화학의 2025년 연결 영업이익은 1.19조, 전년(0.92조)보다 **올랐다.** 보통은 좋은 신호다. 그런데 같은 해 회사가 주주에게 귀속시킨 순이익은 **-1.82조**, 전년(-0.69조)보다 적자가 약 2.6배 깊어졌다.
 
-![한 손익표 안에 두 회사가 담겨 있다 — 영업이익과 주인 몫이 갈라진다](./assets/123-two-companies.webp)
+![한 손익표 안에 두 회사가 담겨 있다 — 영업이익과 주인 몫이 갈라진다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/36/36b5663a734f8f7eaf3cfb3b5624ddad2e21ecae80f7616b06829a5bb3afc2d0.webp)
 
 영업이익은 위로, 주인 몫은 아래로 — 한 회사의 한 해에 두 화살표가 정반대로 갈라진다.
 
@@ -182,7 +183,7 @@ c.select("IS", ["영업이익", "당기순이익"], freq="Y")  # 총순익
 
 **왜 숫자를 다 떼어낸 뒤에야 '왜 이런 손익표가 됐나'를 묻나.** 차액의 정체(비지배지분)를 확정하기 전에 형태를 말하면 인과가 거꾸로 흐른다. 정량 코어를 손에 쥔 다음에야 형태를 외부 사실로 입힐 수 있다.
 
-![석유화학과 배터리, 두 사이클이 한 솥에 — 형태는 괴리를 드러냈을 뿐 적자를 만들진 않았다](./assets/123-petrochem-battery.webp)
+![석유화학과 배터리, 두 사이클이 한 솥에 — 형태는 괴리를 드러냈을 뿐 적자를 만들진 않았다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d0/d0f0d984239e9a134203b3c7f2b7e6e2cd27b6b11cc5cdd93e23415171613e9f.webp)
 
 외부 인용에 따르면 LG화학은 2020년 말 배터리 사업을 물적분할하고 2022년 1월 LG에너지솔루션을 상장시켰다. 모회사는 자회사 지분 약 **81.84%**를 보유한다(외부 인용). 회계상 81.84% 보유 자회사는 연결 손익에 100% 잡히고, 나머지 약 18.2%가 비지배지분으로 분리된다 — 3막의 차액이 양(+)으로 나오는 회계적 자리가 바로 여기다(단, 그것이 차액이 생기는 한 자리일 뿐 유일한 자리는 아니다).
 
@@ -212,7 +213,7 @@ c.select("CF", ["영업활동현금흐름"], freq="Y")
 
 **왜 마지막에 시장 평가를 두나.** 내부 숫자가 증명할 수 있는 건 '연결-지배 괴리'까지이고, 그 너머 '그래서 회사 가치는 얼마인가'는 전적으로 외부의 영역이라 글의 가장 끝, 경계 밖에 둬야 하기 때문이다.
 
-![자회사 그림자가 모회사를 덮는다 — 자회사 시총이 모회사 본체를 웃도는 구간](./assets/123-nav-discount.webp)
+![자회사 그림자가 모회사를 덮는다 — 자회사 시총이 모회사 본체를 웃도는 구간](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c1/c160ca27bf752deab224c92fb445d0e186b6005bac5986340c4e4ea1742f6037.webp)
 
 일부 투자자와 보도는 LG화학을 '석화회사'가 아니라 *'자회사 지분가치 + 본업'의 합*으로 평가하는 시각을 갖는다(외부 인용). 보유한 자회사 지분가치만으로 모회사 본체 시총을 웃도는 구간이 관측됐고(외부 인용: 2025년 11월 보도 기준), 이것이 흔히 말하는 NAV(지주) 디스카운트다. 회사는 주가수익스왑(PRS)을 통한 지분 일부 처분·보유율 인하를 추진·검토하는 *단계*다(외부 인용, 완결이 아닌 시도). 같은 NAV 디스카운트에 갇힌 [SK스퀘어](/blog/402340-sk-square)가 그 거울이다.
 

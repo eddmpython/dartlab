@@ -16,7 +16,8 @@ tags:
   - 레인보우로보틱스
   - 액추에이터
   - 기술이야기
-ogImage: /thumbnails/tech-humanoid-robot-actuator.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/7c/7cc7362fc38e76355fbd49d2be936bf75cc9ad7dad558990a99ec103b901bae3.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/db/db6e8a6a496d8e6e7e76161ae2c61fb6a4c676216ae54c956991bcf26478fd99.webp
 ai:
   verdict: "휴머노이드 밸류체인은 관절 감속기와 액추에이터가 핵심 병목인 초기 시장이다. 완성 로봇과 부품사 다수는 아직 양산 규모를 만들지 못했고, 흑자인 에스피지의 이익도 휴머노이드보다 기존 산업용 감속기에서 나온다. 진짜 관찰 지점은 감속기 국산화와 양산 채택률이 손익계산서에 언제 나타나는가다."
   direction: 관망
@@ -75,7 +76,7 @@ carousel:
       sub: "원자로 편은 곧 오고, 변압기 편은 지금 터졌고, 이 로봇 편은 아직 멀었습니다"
 ---
 
-![휴머노이드 관절 액추에이터와 감속기 조립체. 사람의 무릎과 팔꿈치처럼 정밀하게 움직이려면 각 관절에 모터, 감속기, 센서가 한 덩어리로 들어간다](./assets/01-humanoid-actuator.webp)
+![휴머노이드 관절 액추에이터와 감속기 조립체. 사람의 무릎과 팔꿈치처럼 정밀하게 움직이려면 각 관절에 모터, 감속기, 센서가 한 덩어리로 들어간다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/bc/bcc6aa52424843b59f5ddd27e862c25bf3982f5800706c26adf9f61edb95ad8a.webp)
 
 로봇 이야기는 늘 완성된 모습으로 온다. 테슬라의 옵티머스가 계단을 오르고, 삼성이 인수한 회사의 로봇이 두 발로 걷는 장면. 그런데 그 로봇이 실제로 팔을 뻗고 손가락을 접으려면, 겉으로 보이지 않는 부품들이 몸속에서 정확히 맞물려야 한다. 사람으로 치면 관절과 근육과 감각이다.
 

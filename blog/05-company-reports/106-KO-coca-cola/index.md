@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 106
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/KO-coca-cola.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/fd/fde9aa28a1caf6aa02317de4749ae3df9960284ee19d52a3407ae16585e2b527.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/6c/6cb8842a04ce8e8b633fb38185e46a07c29fe6d0e92b8530d7af1b704d0aefdd.webp
 tags: ["코카콜라", "KO", "원액", "라이선스", "자산경량", "CapEx", "병입", "리프랜차이즈", "미국주식", "배당"]
 stockCode: "KO"
 corpName: "Coca-Cola"
@@ -41,7 +42,7 @@ import StackBar from '$lib/components/blog/StackBar.svelte';
 
 코카콜라를 떠올리면 빨간 캔과 거대한 공장, 전 세계를 도는 배송 트럭이 그려진다. 그런데 KO의 연결 재무제표를 펼치면 정반대 그림이 나온다.
 
-![빨간 캔 — 누구나 떠올리는 간판](./assets/106-red-cans.webp)
+![빨간 캔 — 누구나 떠올리는 간판](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/04/0454a3414abc5b354f68937c8fdf1fc28c93e06edfc580f7eeb346faecaf7534.webp)
 
 2025년 매출 **$47.94B**(약 660조 원)를 벌면서, 유형자산 취득(CapEx)에 쓴 돈은 **$2.11B** — 매출의 약 **4.4%**다. 매출 $48B짜리 제조업처럼 보이는 회사가, 자본은 거의 깔지 않고 번다.
 
@@ -128,7 +129,7 @@ CapEx/매출 비율은 6년 내내 **약 4% 안팎**(3%대 중반~4%대)에 머�
 
 그래서 KO를 읽는 문장은 두 겹이어야 한다. 첫 겹은 좋다 — 본체가 공장·트럭 대부분을 들고 있지 않기 때문에 CapEx가 낮고, 원액 사업은 높은 마진을 만든다. 둘째 겹은 냉정해야 한다 — 그 원액이 팔리려면 병입사가 계속 투자하고, 소매점에서 진열을 확보하고, 지역별 가격을 방어해야 한다. KO는 병입사의 위에 떠 있는 상표권자가 아니라, 병입 시스템을 설계하고 조율하며 일부 지분으로 같이 묶인 중앙 노드다.
 
-![공장·트럭은 외부 병입 파트너의 몫 — 본체 장부 밖](./assets/106-bottling.webp) 이 뉘앙스가 중요한 이유 — 2막의 깔끔한 외부화 서사를 과장하면, 바로 다음 막에서 만나는 현금흐름 숫자를 또 오독하게 된다. 그래서 다음 막은 이 회사 숫자에서 가장 함정인 구간으로 간다.
+![공장·트럭은 외부 병입 파트너의 몫 — 본체 장부 밖](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/5a/5a86b037544513190fb9429cd66c2ba60d34603683c948f1efce3ab8e410be98.webp) 이 뉘앙스가 중요한 이유 — 2막의 깔끔한 외부화 서사를 과장하면, 바로 다음 막에서 만나는 현금흐름 숫자를 또 오독하게 된다. 그래서 다음 막은 이 회사 숫자에서 가장 함정인 구간으로 간다.
 
 ---
 
@@ -180,7 +181,7 @@ OPM은 2019년 27.1%, 2024년 **21.2%(딥)**, 2025년 **28.7%**로 약 **21~29% 
 
 **닻(연결 검증)**: KO는 매출 $48B를 벌며 CapEx에 매출의 약 4%만 쓴다. **이유(외부 인용)**: 2025 10-K의 원액 59%·완제품 41%, 원액 물량 85%·완제품 물량 15%, 그리고 병입 재프랜차이즈 구조가 그 낮은 자본집약도와 정합한다. 그리고 정확한 그림 — 매출은 '6년 제자리'가 아니라 2019→2025 **+28.6%**의 느린 성장이고, 영업CF 급감은 IRS 예치·fairlife earnout이라는 별개 1회성이며, OPM은 안정 29%가 아니라 21~29% 밴드다. 폄하도 미화도 아니다.
 
-![간판은 빨간 캔, 진짜 돈줄은 자본을 거의 안 깔고 도는 원액과 라이선스](./assets/106-syrup.webp)
+![간판은 빨간 캔, 진짜 돈줄은 자본을 거의 안 깔고 도는 원액과 라이선스](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/58/5834e75675d35e5edefa98d6d01eb5574f40fd8d041c0b78574619585eccf1ce.webp)
 
 시리즈의 결('간판 ≠ 진짜 돈줄')에 대한 KO의 답 — 간판은 빨간 캔이지만, 진짜 돈줄은 *자본을 거의 안 깔고 도는 원액과 브랜드 라이선스*다. 단 이것은 'KO가 그러려고 의도했다'가 아니라, *'연결 숫자와 외부 구조가 그렇게 정합한다'*는 진술이다. 같은 '간판 뒤의 엔진' 계열로 안 보이는 클라우드를 쥔 [아마존](/blog/AMZN-amazon), 햄버거 간판 뒤 임대료를 걷는 [맥도날드](/blog/MCD-mcdonalds)가 있고, 같은 음료 진열대의 [몬스터 베버리지](/blog/MNST-monster-beverage)는 전혀 다른 길(고성장 브랜드)을 간다. 그리고 다음 편의 [비자](/blog/V-visa)는 '무엇을 안 지는가'로 마진을 만든다 — KO와 또 다른 거울이다.
 

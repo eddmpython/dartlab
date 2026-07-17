@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 153
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/AMAT-applied-materials.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/91/91fe3278f36504c69694f0e485a949cd5cf3019719da45e70482cab5389d9187.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c9/c9c668076ada24f7fb1a622f468e41edcb813f671312e34945bd1a2fa66b7d57.webp
 tags:
   - "어플라이드머티리얼즈"
   - "AMAT"
@@ -67,7 +68,7 @@ income = amat.select("IS", freq="Q")
 # 회계연도가 10월말 결산이라 FY가 아니라 역년 기준으로 재조립한 값
 ```
 
-![반도체 칩을 깎고 쌓는 제조 장비 — 어플라이드가 파는 것은 칩이 아니라 이 장비다](./assets/153-equipment.webp)
+![반도체 칩을 깎고 쌓는 제조 장비 — 어플라이드가 파는 것은 칩이 아니라 이 장비다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/12/12dc4ee2801f64bcc869bbae7a4ebdf8c2e5083204e2211e7f0e545743f7274f.webp)
 
 ---
 
@@ -152,7 +153,7 @@ print("OPM 밴드 폭(%p):", round(opm_band, 1))  # 1.4
 
 그렇다면 이 양보는 글을 약하게 만드는가. 다음 막에서 보겠지만, 오히려 반대다. 양보를 인정하고 나면 *진짜* 분기점이 더 또렷해진다.
 
-![흔들림 없이 같은 위치를 유지하는 손 — 마진의 밴드가 좁다는 것의 시각적 은유](./assets/153-steady-hand.webp)
+![흔들림 없이 같은 위치를 유지하는 손 — 마진의 밴드가 좁다는 것의 시각적 은유](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d1/d1ad163e0240c0b207586a3f3360b046376bcaac7bff13a6d6d1bbb4f27e2371.webp)
 
 ---
 
@@ -168,7 +169,7 @@ print("OPM 밴드 폭(%p):", round(opm_band, 1))  # 1.4
 
 이 한 해가 3막에서 받은 반론에 대한 데이터의 응답이다. '진짜 다운사이클을 29%로 통과한다'는 미래 약속은 증명할 수 없지만, '같은 외부 사이클의 고비를 두 회사가 정반대 손익으로 통과한 실측 한 해'는 표 안에 분명히 있다. 마이크론이 영업적자를 찍은 바로 그 구간에, 어플라이드는 매출을 늘리며 영업이익률을 지켰다. 무엇을 파느냐가 마진의 변동성을 가른다는 관통선의, 가장 단단한 실측 증거다.
 
-![반도체 팹의 클린룸 — 메모리 라인이 식어도 파운드리·로직 팹의 신규 라인은 장비를 부른다](./assets/153-fab-cleanroom.webp)
+![반도체 팹의 클린룸 — 메모리 라인이 식어도 파운드리·로직 팹의 신규 라인은 장비를 부른다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/63/638337c86aa64bece42a68f5bfe008c796759a42ed4d438142dd877d323364b6.webp)
 
 다만 여기서도 한 줄을 명확히 덧붙여야 한다. 메모리 업계가 추운데 어플라이드의 매출이 오히려 늘어난 이유는, 메모리 약세를 파운드리·로직 쪽 capex와 서비스 매출이 상쇄한 *믹스 효과*로 보인다. 즉 메모리 장비가 식어도, 인공지능·고성능 로직 칩을 만드는 파운드리의 설비투자와 이미 깔린 장비의 서비스 매출이 빈자리를 메웠을 가능성이 크다. 하지만 이 분해는 세그먼트 명세(10-K 외부)에 있는 이야기이지 손익 요약으로 증명되는 것이 아니다. 그러니 '믹스가 상쇄했다'까지는 *보이며*, 그 비중과 인과는 손익으로 단정하지 않는다.
 

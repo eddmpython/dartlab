@@ -19,7 +19,8 @@ tags:
   - 박찬구
   - 전자공시
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/011780-kumho-petrochemical.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/47/479628738480effa61a9ea080b08cfafe47e4f96cc89468fec454a588c76f019.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/bd/bd05397196f4dc56702ec9db4f52b1c1109bcdf2f563a8365828fbd2f8ea7928.webp
 youtubeId: ""
 ai:
   verdict: "빅4 석유화학 유일 흑자. NCC 없어서 에틸렌 붕괴 회피."
@@ -151,7 +152,7 @@ LG화학은 석유화학 부문에서 수천억대 영업적자를 냈다. 배�
 
 ## 1막: NCC 없는 구조가 방패가 됐다
 
-![석유화학 플랜트](./assets/19-petrochemical-plant.webp)
+![석유화학 플랜트](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b9/b91ee1e6367182acf5174d606053622bf26e2243c31e65a66d35d9951b13a5af.webp)
 
 ### 에틸렌 스프레드 붕괴 — 심장을 가진 회사가 죽었다
 
@@ -279,7 +280,7 @@ NB라텍스는 니트릴 고무를 물에 분산시킨 액체 상태의 합성 �
 
 **금호석유화학의 NB라텍스 글로벌 점유율은 25~30%, 생산능력은 94.6만 톤으로 세계 1위**다. LG화학이나 다른 한국 대기업이 만들지 못해서가 아니다. 금호석유화학이 이 틈새시장에 일찍 들어가서 규모의 경제를 먼저 확보했기 때문이다. NB라텍스는 거대한 NCC를 깔아야 하는 기초 화학이 아니라, 특수 고무 제조 노하우가 핵심인 제품이다. 박찬구가 "가진 것을 지키자"라고 결정했을 때 지킨 대상이 바로 이것이었다.
 
-![NB라텍스](./assets/19-nb-latex.webp)
+![NB라텍스](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/dd/dd50ca1c9a505c277dcdaee860a463bce9e795983bfd49dcc04713aac0018458.webp)
 
 ### 2021년 영업이익 2.4조 — 코로나가 증명한 가치
 
@@ -388,7 +389,7 @@ c.analysis("financial", "자본배분")
 
 ## 5막: 중국 346만 톤 vs EV 타이어 — 사이클의 다음 파도
 
-![EV 타이어](./assets/19-ev-tire.webp)
+![EV 타이어](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/94/949e46e606fc1c36dfebedb7f7947ad2b6dad400b698ae6412bcd43adf3d85ed.webp)
 
 ### 리스크 vs 기회 — 두 힘의 대결
 

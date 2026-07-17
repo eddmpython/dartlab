@@ -6,7 +6,8 @@ category: reading-disclosures
 series: ownership-and-governance
 seriesOrder: 2
 thumbnail: /avatar-curious.png
-ogImage: /thumbnails/13-executive-pay-disclosure.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f4/f4410fb578b524a1d74bddc0e37c3ffcc7e7548def988f033d75d67055278adc.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c6/c642bf3fb008148d1c43a68434dd05c84cfed8ab695b9e54f7f6ab4be75c3c36.webp
 ---
 
 # 임원 보수 공시는 무엇을 말해주나

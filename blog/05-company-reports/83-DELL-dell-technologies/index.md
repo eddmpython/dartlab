@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 83
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/DELL-dell-technologies.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/6b/6bdd3d59b07433a3d3b47d5001a31f106360ec17e19a6aed416e75cfef50f4f1.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/bd/bdc4612a85aa0a584a74e40245a278086a26cf77da1f83340ccf179b0d6ad6a5.webp
 tags: ["Dell", "DELL", "Dell Technologies", "AI 서버", "EDGAR", "10-K", "ISG", "CSG", "운전자본", "gross margin"]
 stockCode: "DELL"
 corpName: "Dell Technologies Inc."
@@ -161,7 +162,7 @@ AI 서버 주문은 보도자료에서는 한 줄이다. "$64B+ orders". 하지�
 
 ## 3막 — AI 서버가 주인공이 됐다
 
-![Dell AI 서버 랙 이미지 — FY2026 Dell의 성장 중심은 PC가 아니라 AI 최적화 서버와 인프라 솔루션으로 이동했다.](./assets/83-ai-server-rack.webp)
+![Dell AI 서버 랙 이미지 — FY2026 Dell의 성장 중심은 PC가 아니라 AI 최적화 서버와 인프라 솔루션으로 이동했다.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/69/690d9d645bb4f52732624a6b6c651545a700ad752b7caa0c5d503836357f333b.webp)
 
 FY2026 10-K에서 Dell은 ISG의 서버·네트워킹 매출을 더 세분화했다. 이유는 분명하다. AI-optimized servers 규모가 너무 커졌기 때문이다. 회사는 2026년 10-K에서 "Given the scale and growth" 때문에 서버와 네트워킹 안의 AI 서버를 별도 카테고리로 나눴다고 설명한다.
 
@@ -260,7 +261,7 @@ AI 서버가 앞으로 $50B 매출로 커진다면, 질문은 더 날카로워�
 
 ![Dell 운전자본 루프 — AI 서버 주문은 GPU·메모리·네트워킹 부품 선확보와 재고, 매출채권, 매입채무 타이밍을 같이 키운다.](./assets/83-working-capital-loop.svg)
 
-![Dell 공급망 이미지 — AI 서버 주문은 GPU, 메모리, 서버 제조, 고객 수금이 한 사이클로 묶인 운전자본 사업이다.](./assets/83-supply-chain.webp)
+![Dell 공급망 이미지 — AI 서버 주문은 GPU, 메모리, 서버 제조, 고객 수금이 한 사이클로 묶인 운전자본 사업이다.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/6f/6ff001c31d88a7f745a9866998978fdac45424a5cb994a6e1e93175d0867dce2.webp)
 
 마진만 보면 Dell에 조심스러워진다. 그런데 현금흐름표를 보면 이야기가 다시 좋아진다. FY2026 영업현금흐름은 **$11.19B**. FCF는 dartlab 기준 **$8.55B**. FY2025 영업현금흐름 $4.52B 대비 크게 개선됐다.
 

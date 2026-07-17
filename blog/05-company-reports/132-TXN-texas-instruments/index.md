@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 132
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/TXN-texas-instruments.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b7/b753232caac12b2ef23af37acaf4986d44723f614409d1535bfc8ca94f543e6e.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/70/7001501db2cf8675ebfa22bd8ba0d6ea7fdec5bb6a09dc5184609f556224e7da.webp
 tags: ["텍사스인스트루먼트", "TXN", "아날로그반도체", "설비투자", "잉여현금흐름", "FCF", "300mm", "CHIPS법", "미국주식", "영업이익률"]
 stockCode: "TXN"
 corpName: "Texas Instruments"
@@ -47,7 +48,7 @@ import StackBar from '$lib/components/blog/StackBar.svelte';
 
 사라진 약 4B는 어디로 갔을까. 답은 단순하다 — 전부 공장을 짓는 데(capex) 들어갔다. capex가 0.65B에서 5.07B로 늘었고, FCF가 빠진 만큼이 거의 그대로 그 자리에 있었다.
 
-![300mm 웨이퍼 클린룸 — 사라진 현금은 손실이 아니라 미래의 생산능력이 됐다](./assets/132-fab.webp)
+![300mm 웨이퍼 클린룸 — 사라진 현금은 손실이 아니라 미래의 생산능력이 됐다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/39/3993aa56ee5933e10a4b921e6d0ac7a5006c582f79f21b5d379c4c5860d538c1.webp)
 
 같은 매출 구간, 같은 현금 창출력인데 '남는 돈'만 증발한 이 장면이 이야기의 입구다. 단, 미리 못 박아 둘 게 있다 — *'엔진은 멀쩡한데 FCF만'이라는 깔끔한 대조는 절반만 참이다.*
 

@@ -19,7 +19,8 @@ tags:
   - 사모펀드
   - 전자공시
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/018880-hanon-systems.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c7/c72bdb76d8e0a5b49fd0f5c8703bab8efdd2fd20d5223ff786a3ab0f299c221c.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a6/a6cd603a911ce9ed0e9d145962275c8547108bca77eabe54bbba3e26789f5e35.webp
 youtubeId: "_rnjdNcCZgw"
 ai:
   verdict: "사모펀드가 순이익 7배 배당. 차입금 11배. 이자가 이익을 먹는 구조."
@@ -181,9 +182,9 @@ c.analysis("financial", "자본배분")
 
 ## 1막 — 사모펀드가 10년간 쥐어짠 것: 1.6조
 
-![HVAC 컴프레서](./assets/17-hvac-system.webp)
+![HVAC 컴프레서](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ed/edbc640f4f125ebec139cce930a12e491a003bc8a569374904f9049d7e4b68ca.webp)
 
-![자동차 공조 공장](./assets/17-ev-heatpump.webp)
+![자동차 공조 공장](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f5/f54e2b4b31c8a5793e8521885d0d909ac4dda0fca94387c30ad125ae151f5673.webp)
 
 ### 40년간 4번 바뀐 주인
 
@@ -300,7 +301,7 @@ c.panel("BS", freq="Y")
 
 ### 영업이익률 0.9% → 2.5% — 방향은 확인됐다
 
-![조립 라인](./assets/17-assembly-line.webp)
+![조립 라인](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f9/f9f67b31f793b7b5ec7b23dfe774c7cd64d3744b0098f7b201cfbf229eae8766.webp)
 
 2025년 한온시스템의 실적이 나왔다. 매출 **10.88조원**(+8.9%), 영업이익 **2,704억원**(+191%). 영업이익률 **2.5%**. 2024년의 0.9%에서 2.5%로 반등했다.
 

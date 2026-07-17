@@ -6,7 +6,8 @@ category: dartlab-news
 series: dartlab-news
 seriesOrder: 7
 thumbnail: /avatar-study.png
-ogImage: /thumbnails/news-dataset-auto-sync.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d4/d4bad7ce903f60ba702efcf07827153b73d6150c51cf56da1872c86833ef5701.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/83/839e11afb9d1c9da3618c9bd72ebcde1e277e1a76a84f6fe7458616a9607a0b1.webp
 keywords:
   - DART 데이터셋
   - 전자공시 데이터

@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 120
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/PG-procter-gamble.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/7e/7ee3f0dfbcc8ab0906459b2fbee33398c0c1c0927281145e5a40f2449ef9a16a.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/0e/0e6b6ce6cdefba07729e1c350f5e42109605923370077628ab581bd16d5abef2.webp
 tags: ["P&G", "프록터앤드갬블", "PG", "가격결정력", "브랜드해자", "영업이익률", "매출총이익률", "소비재", "미국주식", "질레트"]
 stockCode: "PG"
 corpName: "Procter & Gamble"
@@ -120,7 +121,7 @@ import StackBar from '$lib/components/blog/StackBar.svelte';
 
 대부분의 성장 스토리는 "매출이 얼마나 늘었나"로 시작한다. P&G는 그 질문이 **틀린** 회사다.
 
-![선반 위의 가격표가 해자다 — 가격을 올려도 장바구니에 남는 브랜드](./assets/120-shelf.webp)
+![선반 위의 가격표가 해자다 — 가격을 올려도 장바구니에 남는 브랜드](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/63/63ebf84f33e992ad4cbcbd2cb69266d12ab1bc067125dfda6cc5a19839333085.webp)
 
 FY20부터 FY25까지 매출은 **18.8%** 늘었다. 그런데 영업이익은 **30.2%** 늘었다. 이익이 매출보다 **약 1.6배 빨리** 자란 것이다. 이게 P&G를 보는 올바른 입구다 — 외형이 아니라, 외형과 이익 사이에 벌어진 **속도 차이**.
 
@@ -185,7 +186,7 @@ FY22에 47.4%까지 눌렸다가 FY24·FY25에 51%대로 복원됐다. 원자재
 
 **왜 여기서 '브랜드 해자'를 추상명사로 말하지 않고 한 숫자로 치환하나.** 형용사는 증명 회피로 읽히고, 외부 한 줄이 그것을 검증 가능하게 만들기 때문이다.
 
-![더 싼 PB를 지나쳐 익숙한 브랜드를 집는 손 — 그게 가격결정력의 정체](./assets/120-price-loyalty.webp)
+![더 싼 PB를 지나쳐 익숙한 브랜드를 집는 손 — 그게 가격결정력의 정체](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ca/caf53c6cc9d86922df3762ae2c18ed8a07ebfddedc3bda1c7fb316b8bda6138f.webp)
 
 외부 인용에 따르면 P&G의 **FY2024 organic 매출 +4%는 전량 가격(price)에서 나왔다 — 물량·믹스 기여는 0이었다**(us.pg.com FY24 연차보고서). 즉 그 해 P&G는 더 많이 판 게 아니라 *더 비싸게 팔았고*, 그런데도 외형이 줄지 않았다. 가격을 올려도 장바구니에서 빠지지 않은 것이다.
 
@@ -219,7 +220,7 @@ c.select("IS", ["매출액","영업이익","당기순이익"], freq="Q")  # FY24
 c.select("CF", ["영업활동현금흐름"], freq="Q")  # 이익의 질(현금 전환) 확인
 ```
 
-![가격을 올리는 손과 비용을 깎는 손 — FY25 마진은 두 저울 위에 있다](./assets/120-cost-scale.webp)
+![가격을 올리는 손과 비용을 깎는 손 — FY25 마진은 두 저울 위에 있다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/06/067541fbe1d75be74da20f3cb45154998ec72826eeccf74616fd4f99ad9aad8d.webp)
 
 먼저 이익의 질을 확인한다. 순이익은 FY20 13.10B에서 FY25 **16.07B**(+22.7%)로 늘었고, 영업현금흐름은 FY25 **17.82B**로 순이익을 웃돈다 — 이익이 회계 장부에만 머물지 않고 현금으로 돈다(단 FY24 19.85B보다는 낮다, 둘 다 본다). 가격을 올릴 수 있는 회사인 동시에, 가격이 멈추면 **물량과 비용으로 갈아타는** 회사라는 게 FY25의 두 접점(GPM 저점에서도 OPM 방어, 감원과 동시에 마진 최고)에서 드러난다.
 

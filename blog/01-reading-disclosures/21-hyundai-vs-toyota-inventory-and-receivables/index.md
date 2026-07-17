@@ -6,7 +6,8 @@ category: reading-disclosures
 series: global-comparison
 seriesOrder: 2
 thumbnail: /avatar-study.png
-ogImage: /thumbnails/21-hyundai-vs-toyota-inventory-and-receivables.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/92/927b2615a6517987b6f9fa62d587b1023c3ee283d85805dc0ae9d441920667ec.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f1/f1087281b780d54fa78166d4c804e7e8e8fe7ecfcef8e370002a19ee755a2357.webp
 ---
 
 현대차와 Toyota는 둘 다 연간 수백만 대를 파는 완성차 기업이다. 그런데 재무제표를 나란히 놓으면 재고 구성이 다르고, 매출채권 안에 금융채권이 섞여 있고, 대손충당금 산출 방식도 다르다. 같은 산업이니까 비교하면 된다고 생각하면 함정에 빠진다. **회계 기준, 금융 자회사 포함 여부, 공시 구조가 다르기 때문에** 숫자를 맞춰 놓는 작업이 먼저다.

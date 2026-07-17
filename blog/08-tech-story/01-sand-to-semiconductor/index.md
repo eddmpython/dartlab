@@ -15,7 +15,8 @@ tags:
   - 한미반도체
   - 소재장비
   - 기술이야기
-ogImage: /thumbnails/tech-sand-to-semiconductor.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/5f/5f3de78afab3723711bbee94bf03cb49df3a35011c6b1cae443b80df9f7280e9.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/8a/8a983cf1aa1dc1fe441a041ae003a2e3368c09b3f84f11f0f18c6b4bf56e5b6f.webp
 ai:
   verdict: "반도체 부가가치는 공정 난도가 아니라 대체 불가능성과 사이클 위치, 자본 회수력이 결정한다. 모래를 순도 11N 실리콘으로 바꾸는 가장 어려운 맨 앞 공정의 영업이익률이 사슬에서 가장 낮았다."
   direction: 유지
@@ -97,7 +98,7 @@ carousel:
 
 우리 데이터로 8단계 사슬의 상장사 이익률을 직접 재봤더니, 정반대였다.
 
-![모래에서 출발한 실리콘 위에 수십억 개의 회로가 새겨진 반도체 칩의 다이. 이 한 조각이 같은 무게의 금보다 비싸다](./assets/01-silicon-wafer.webp)
+![모래에서 출발한 실리콘 위에 수십억 개의 회로가 새겨진 반도체 칩의 다이. 이 한 조각이 같은 무게의 금보다 비싸다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/91/9108596ba8bcaa7c5287b76cb9a4bc5b8aff2339f2c7623b5c7610a911f1e4f4.webp)
 
 ## 1. 모래 한 줌의 여정, 그리고 이상한 이익률 지도
 
@@ -125,7 +126,7 @@ prof.filter(pl.col("종목코드").is_in(chain)).select("종목명", "영업이�
 
 ## 2. 첫째 공정, 모래를 11N 실리콘으로: 가장 어려운데 가장 못 번다
 
-![순백의 규사(석영 모래) 알갱이. 사슬의 출발점이자, 반도체 실리콘의 원재료다](./assets/01-quartz-sand.webp)
+![순백의 규사(석영 모래) 알갱이. 사슬의 출발점이자, 반도체 실리콘의 원재료다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/27/279887f8297ab7f263376b325ea71ca8756f8610ac502c5e9efcefc82fa955df.webp)
 
 규사는 이산화규소(SiO2)다. 실리콘과 산소가 붙어 있어 전기가 통하지 않는 부도체다. 반도체가 되려면 이 산소를 떼어내고, 실리콘만 극한까지 순수하게 뽑아야 한다.
 

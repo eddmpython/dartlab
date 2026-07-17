@@ -7,7 +7,8 @@ series: data-reports
 seriesOrder: 3
 topicSlug: "net-cash-above-market-cap"
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/data-net-cash-above-market-cap.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/76/764744df656435cba690517db63413f926b6db4258809564946982a096d89018.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/4e/4ed66048eff7835168df9b4c47765f41b46e40f030d55899efc043d33d957142.webp
 tags: [순현금, 코리아 디스카운트, 밸류업, 저평가, 현금부자]
 keywords:
   - 순현금
@@ -39,7 +40,7 @@ keywords:
 
 이 순현금이 **시가총액**(주식 전부의 시장 가격)보다 크다는 건 이런 뜻이다. 회사를 통째로 인수하는 데 드는 돈(시가총액)보다, 인수 직후 회사 금고에서 빼올 수 있는 순현금이 더 많다. 사자마자 본전을 뽑고, 사업은 공짜로 딸려온다.
 
-![현금이 시가총액보다 많다는 것의 의미](./assets/03-cash.webp)
+![현금이 시가총액보다 많다는 것의 의미](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c4/c4141793b4164ac7b43681c3b0ef0eaf35ddb39c598d7d7dab2fc56d1108084f.webp)
 
 > **이 리포트가 숫자를 만든 방법 (읽고 넘어가도 되는 방법론)**
 >
@@ -156,7 +157,7 @@ print(round(nn["순현금"].sum()   / 1e12, 2))   # 2.29 (조원)
 
 현금이 시총보다 많은데도 주가가 안 오르는 것, 이게 코리아 디스카운트의 핵심이다. [OECD는 한국의 저평가 기업(주가순자산비율 1배 미만이면서 수익성·배당 여력이 있는 곳)을 193곳으로 집계](https://www.nvp.co.kr/news/articleView.html?idxno=318538)했다. 홍콩 108곳, 일본 78곳을 크게 웃돈다. 밸류업 프로그램 2년 차에 [주주환원 규모가 92조원을 넘고 공시 참여가 718개사로 늘었지만](https://www.fnnews.com/news/202605271152562236), 이 19곳 같은 현금부자 저평가주는 여전히 [밸류업의 사각지대](https://www.newspim.com/news/view/20260630001084)에 남아 있다.
 
-![시장은 이 회사들을 순현금보다도 싸게 매긴다](./assets/03-sale.webp)
+![시장은 이 회사들을 순현금보다도 싸게 매긴다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/61/610f1366f559d3afd3a124eec6c761f29d9adc592728292bfe641f173e2899d0.webp)
 
 이유는 분명하다. 밸류업이 상장사에 배당과 자사주 소각을 요구하고, 2026년 개정 상법이 자사주를 1년 안에 소각하라고 압박해도, 정작 **현금을 쥐고도 안 나눠주는 회사는 그 압박의 바깥에 있다.** OECD도 배당·자사주만으로는 부족하고 지배구조 개선과 자본 배분이 함께 가야 한다고 지적했다. 이 19곳이 쌓아둔 현금이 주주에게 흐르기 시작하느냐가, 코리아 디스카운트가 진짜 풀리는지의 시금석이다.
 

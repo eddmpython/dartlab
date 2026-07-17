@@ -18,7 +18,8 @@ tags:
   - 자원개발
   - 전자공시
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/011760-hyundai-corp.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/26/263f4dc0df66f999ed0025bca949cc520ba0e62e54bfd588f9e257f333819943.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/9f/9fbb1753a713c80019160f70cc84b62d86d8457350754a215562a89018663542.webp
 youtubeId: ""
 ai:
   verdict: "상사 매출 7.5조 OPM 1.85%. 순이익 868억인데 영업CF -2947억."
@@ -165,7 +166,7 @@ c.select("CF", ["영업활동현금흐름"], freq="Y")
 
 ## 제1막: 현대종합상사 47년 — 죽음의 비즈니스
 
-![국제 무역항](./assets/24-trade-port.webp)
+![국제 무역항](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f4/f41b87ad66f090effea0b854364bb702f3128dc0ea2c45bb5c584b137816fde2.webp)
 
 ### 1976년 종합상사 제도 — 수출 대행의 황금기
 
@@ -203,7 +204,7 @@ c.select("CF", ["영업활동현금흐름"], freq="Y")
 
 ## 제2막: 상사가 아니라 자원 + 지주 — 이익의 진짜 출처
 
-![자원 개발 현장](./assets/24-resources.webp)
+![자원 개발 현장](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/9c/9c16b97528fa138cd08ec4a9c7858fb3872f21cdd65a19983bea256327676e2a.webp)
 
 ![사업 구조 — 2025 연결 매출 구성](./assets/24-business-mix.svg)
 

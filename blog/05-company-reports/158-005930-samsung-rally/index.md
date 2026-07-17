@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 158
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/005930-samsung-rally.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/10/1017c410334554d5b9f0e0a2990b882da606522c657200fe82d06dd717a9e913.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f4/f48e0031004cf0aa7be3c1cf393b1d2636f5e9229bbd475925c10bf9c38fcfd3.webp
 tags:
   - "005930"
   - "삼성전자"
@@ -53,7 +54,7 @@ ai:
 
 이 질문에 날짜로 답하면 거의 틀린다. "7월까지", "연말까지", "40만원까지" 같은 문장은 듣기에는 좋지만 검증하기 어렵다. 삼성전자 같은 메모리 사이클 주식은 달력보다 조건으로 움직인다. DRAM과 HBM 가격이 유지되는가. 고객 승인이 늦어지지 않는가. DS 영업이익률이 유지되는가. 파운드리 손실이 줄어드는가. CAPEX가 다음 다운사이클의 감가상각 부담으로 돌아오지 않는가.
 
-![AI 메모리 생산 장면은 삼성전자 랠리가 스마트폰보다 반도체 이익에 기대고 있음을 보여준다](./assets/158-samsung-memory-rally.webp)
+![AI 메모리 생산 장면은 삼성전자 랠리가 스마트폰보다 반도체 이익에 기대고 있음을 보여준다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/2f/2f9c4de1276576c6f7c639d70dadf0cb7e9242e9b2ec4f59913446e5b83e45b7.webp)
 
 이번 삼성전자 랠리를 가장 잘 설명하는 숫자는 2026년 1분기다. 매출 133.9조원, 영업이익 57.2조원, 영업이익률 42.8%. 분기 기준으로는 믿기 어려운 수치다. DS, 즉 반도체 부문만 보면 더 강하다. DS 매출은 81.7조원, 영업이익은 53.7조원, 영업이익률은 66%다. 2025년 연간 삼성전자 전체 영업이익이 43.6조원이었는데, 2026년 1분기 DS가 혼자 53.7조원을 벌었다.
 
@@ -81,7 +82,7 @@ price / (q1_eps * 4)
 
 그래서 현재 가격이 믿는 것은 세 가지다. 첫째, DS의 초고마진이 적어도 몇 분기 유지된다. 둘째, HBM과 서버 DRAM의 mix 개선이 conventional memory 가격 둔화를 덮는다. 셋째, 파운드리와 모바일이 이익을 크게 갉아먹지 않는다. 이 세 가지가 맞으면 상승은 더 갈 수 있다. 하나가 틀리면 주가는 먼저 멈춘다.
 
-![고점 근처의 삼성전자 주가는 실적보다 먼저 기대와 밸류에이션을 반영한다](./assets/158-samsung-trading-floor.webp)
+![고점 근처의 삼성전자 주가는 실적보다 먼저 기대와 밸류에이션을 반영한다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d4/d4fc1ee6fd453f4fd560270a92389434aae40e2a3cf9c0623d85f3c8732f46bd.webp)
 
 ![후행 P/E와 Q1 연환산 P/E의 괴리는 시장이 이익 peak를 어떻게 보느냐에 달려 있다](./assets/158-valuation-gap.svg)
 
@@ -130,7 +131,7 @@ c.analysis("수익성")["marginTrend"]["history"]
 
 파운드리는 삼성전자에게 선택지가 아니라 전략이다. TSMC와의 격차를 줄여야 하고, AI 가속기와 advanced node 수요를 잡아야 하며, 고객 신뢰를 쌓아야 한다. 하지만 파운드리는 돈이 많이 든다. EUV 장비, 선단 공정, 수율 안정화, 고객 설계 지원, 장기 CAPEX가 모두 필요하다. 이 사업이 좋아지면 삼성전자의 multiple은 바뀐다. 이 사업이 계속 손실이면 메모리 이익의 일부를 먹는 비용으로 남는다.
 
-![파운드리와 CAPEX는 삼성전자 랠리의 옵션이면서 동시에 감가상각 부담이다](./assets/158-samsung-foundry-risk.webp)
+![파운드리와 CAPEX는 삼성전자 랠리의 옵션이면서 동시에 감가상각 부담이다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/21/21f5366cae7d5c63e9a6cec1958bdbccbefb25946d13dcf417876a1a0a18cbde.webp)
 
 지금 주가는 파운드리의 완전한 회복을 이미 반영했다기보다는, 메모리 이익 폭발을 먼저 반영하고 있다. 그래서 파운드리 뉴스가 주가를 더 밀어올릴 수는 있지만, 랠리를 유지하는 데 필요한 최소 조건은 파운드리가 더 악화되지 않는 것이다. 메모리 이익이 계속 늘어도 파운드리 적자가 커지면 DS margin은 내려간다.
 

@@ -21,7 +21,8 @@ tags:
   - 여천NCC
   - 구조조정
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/011170-lotte-chemical.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a3/a3744848ae1824fd2f5d3d9bff10ab97def6cf25668d6f7d31a84615e3cb73fc.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ad/ada3144c0e661d4720368006d10cc5b0eba2d25ca7f1fb6efead2a78812aaf07.webp
 youtubeId: ""
 ai:
   verdict: "롯데케미칼의 적자는 일시 부진이 아니라 범용 석유화학 스프레드가 사라진 결과다. 2025년 매출 18.6조·영업손실 9,375억·지배주주순손실 2.04조, 기초화학 손실 8,577억이 대산·여수 구조조정을 강제했다."

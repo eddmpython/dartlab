@@ -21,7 +21,8 @@ tags:
   - 프랜차이즈
   - 내수식품
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/007310-ottogi.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/85/85549505e6e233e9e0c46de6d4ad1daf4caaedbac4dc1a2d0a1404d9a83ce540.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/7b/7b85b7db8017f32cb6c928c5f6c626f6eca9670d4673f443a723ca8476292035.webp
 youtubeId: ""
 ai:
   verdict: "내수 식품의 OPM 천장은 5% — 해외 비중 15%인 오뚜기는 삼양의 구조를 따라갈 수 없다"
@@ -173,7 +174,7 @@ c.select("IS", ["매출액","영업이익","당기순이익"])
 
 삼양식품이 같은 기간 매출을 **5.1배** 키운 것과 비교하면, 오뚜기의 1.7배는 **인플레이션만큼만 자란 것**에 가깝다. 농심도 같은 기간 2.7조→3.5조로 1.3배. 내수 식품 3사 모두 매출 성장이 느리지만, 삼양만 해외에서 5배를 만들었다. 이게 핵심이다.
 
-![오뚜기 라면 생산 공장 — 원재료비 84%의 고원가율 구조 속에서 진라면·참깨라면을 찍어내는 국내 식품 제조 현장](./assets/49-ramen-factory.webp)
+![오뚜기 라면 생산 공장 — 원재료비 84%의 고원가율 구조 속에서 진라면·참깨라면을 찍어내는 국내 식품 제조 현장](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/91/9149b6b78c01780ed08e0cc3bd2ebe9df009d54ba278094376f645e9280f27bc.webp)
 
 ### 영업이익 302억→193억 — 매출이 늘었는데 이익이 줄었다 (별도 기준)
 
@@ -272,7 +273,7 @@ prof = c.analysis("financial", "수익성")
 | 해외 가격 프리미엄 | 국내 대비 2~4배 | 국내 대비 1.5~2배 | 한정적 |
 | 해외 성장률 | 연 30%+ | 연 10~15% | 연 5% 미만 |
 
-![마트 라면 진열대 — 대형마트 40% 특약점 39%가 채널의 80%를 차지하는 오뚜기의 유통 구조](./assets/49-grocery-shelf.webp)
+![마트 라면 진열대 — 대형마트 40% 특약점 39%가 채널의 80%를 차지하는 오뚜기의 유통 구조](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/83/83b1d6186b053d32662a8ac69261068ab2916638e220e28779e7589d4722a3a7.webp)
 
 ### 농심의 교훈 — 해외 66%인데 왜 영업이익률이 5%인가
 

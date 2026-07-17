@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 85
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/402340-sk-square.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a0/a022e6b4c817619af2f90a6148857af0d1e049a0c534e55cfecf1e20cad7cded.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/7d/7df5db4e8365617d49829c85d17a496f8aa3e9e81e2ba6bb5666042a3449849d.webp
 tags: ["SK스퀘어", "402340", "SK Square", "SK하이닉스", "지분법이익", "HBM", "지주회사", "NAV", "자사주", "포트폴리오"]
 stockCode: "402340"
 corpName: "SK스퀘어"
@@ -130,7 +131,7 @@ import HFDataLink from '$lib/components/blog/HFDataLink.svelte';
 
 <HFDataLink code="402340" />
 
-![SK스퀘어 2025 관통선 — 매출 1.41조, 지분법이익 8.93조, 영업이익 8.80조. 매출보다 큰 이익은 SK하이닉스에서 왔다.](./assets/85-hero-equity-method.png)
+![SK스퀘어 2025 관통선 — 매출 1.41조, 지분법이익 8.93조, 영업이익 8.80조. 매출보다 큰 이익은 SK하이닉스에서 왔다.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/50/50d61faeadf29b0043b404a68bbe01e5a5f12244d0927ee20d0dc395f2560ce3.png)
 
 SK스퀘어(402340)를 일반 사업회사처럼 읽으면 첫 줄부터 막힌다.
 
@@ -340,7 +341,7 @@ SK플래닛은 결제·마케팅·데이터·커머스 인프라 성격이 강�
 
 예시로 계산해보자. 2026년 3월 31일 한 증권사 리포트는 SK스퀘어의 상장자산 가치를 약 **88조원**, 비상장자산을 약 **3.4조원**, 현금을 약 **1.2조원**으로 추정했다. 합치면 NAV는 약 **93.3조원**이다. 같은 리포트의 당시 시가총액은 약 **61.6조원**이었다. 단순 계산하면 시장은 SK스퀘어 자산을 장부와 추정가치 그대로 100% 인정하지 않고, 약 3분의 1을 깎아 가격을 매긴 셈이다.
 
-![SK스퀘어 NAV 할인 예시 — 상장자산 88조, 비상장자산 3.4조, 현금 1.2조, 시가총액 61.6조를 비교하면 할인율이 보인다.](./assets/85-nav-discount.png)
+![SK스퀘어 NAV 할인 예시 — 상장자산 88조, 비상장자산 3.4조, 현금 1.2조, 시가총액 61.6조를 비교하면 할인율이 보인다.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a8/a81e444e9e1b71f2ae9a81848564af095524926ab143c6380b8fe9002560839e.png)
 
 이 예시는 실시간 주가에 따라 달라진다. 하이닉스 주가가 움직이면 상장자산 가치가 바뀌고, SK스퀘어 주가가 움직이면 할인율도 바뀐다. 중요한 건 숫자 하나가 아니라 계산의 방향이다. 투자자는 SK스퀘어를 볼 때 "올해 순이익 몇 조"보다 먼저 "보유자산 대비 얼마나 할인되어 있고, 그 할인이 줄어들 이유가 있나"를 물어야 한다.
 

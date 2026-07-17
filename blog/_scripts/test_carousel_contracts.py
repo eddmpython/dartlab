@@ -172,7 +172,7 @@ slides:
     assert len(c["slides"]) == 2
     # 첫 슬라이드 image → hfMedia 상대경로(issues/<slug>/cover.<hash8>.webp)
     img = c["slides"][0]["image"]
-    assert img.startswith(f"issues/{slug}/cover.") and img.endswith(".webp")
+    assert img.startswith("objects/sha256/") and img.endswith(".webp")
     assert len(ops) == 1 and ops[0].path_in_repo == img  # 새 해시 → 업로드 1건
 
 
@@ -226,7 +226,7 @@ slides:
             "track": "naver",
         }
     ]
-    assert c["slides"][0]["image"].startswith(f"issues/{slug}/cover.")
+    assert c["slides"][0]["image"].startswith("objects/sha256/")
     assert len(ops) == 1
 
 
@@ -321,14 +321,14 @@ def test_series_image_upload_ops_dedupes_reused_asset(tmp_path: Path) -> None:
     contracts = bcc.build_contracts(blog, series=True, existing_files=set(), image_ops=image_ops)
     images = [slide["image"] for slide in contracts["000000-stealth"]["slides"]]
     assert images[0] == images[1]
-    assert images[0].startswith("tech-story/000000-stealth/hero.")
+    assert images[0].startswith("objects/sha256/")
     assert len(image_ops) == 1
     assert image_ops[0].path_in_repo == images[0]
 
 
 def test_series_image_reuses_v2_blog_media_manifest(tmp_path: Path) -> None:
-    """v2 기술이야기 카드는 Git 바이너리 없이 HF blog 경로를 그대로 재사용한다."""
-    blog = tmp_path / "blog"
+    """v2 기술이야기 카드는 Git 바이너리 없이 중앙 HF 객체를 그대로 재사용한다."""
+    blog = tmp_path / "blog" / "08-tech-story"
     slides = """  name: 스텔스 기술
   slides:
     - layout: editorial
@@ -338,9 +338,26 @@ def test_series_image_reuses_v2_blog_media_manifest(tmp_path: Path) -> None:
     _write_post(blog, "01-000000-stealth", code="000000", date="2026-01-01", with_carousel=True, slides_yaml=slides)
     assets = blog / "01-000000-stealth" / "assets"
     assets.mkdir(parents=True)
-    remote = "blog/000000-stealth/hero.01234567.webp"
-    (assets / "media.json").write_text(
-        json.dumps({"version": 1, "assets": {"hero": {"path": remote, "sha256": "0" * 64}}}),
+    sha256 = "0" * 64
+    remote = f"objects/sha256/00/{sha256}.webp"
+    source = "blog/08-tech-story/01-000000-stealth/assets/hero.webp"
+    (tmp_path / "blog" / "media.json").write_text(
+        json.dumps(
+            {
+                "version": 2,
+                "repo": "eddmpython/dartlab-media",
+                "objectPrefix": "objects/sha256",
+                "objects": {sha256: {"bytes": 8, "path": remote}},
+                "files": {source: sha256},
+                "posts": {
+                    "08-tech-story/01-000000-stealth": {
+                        "assets": {"hero": source},
+                        "og": source,
+                        "staging": [source],
+                    }
+                },
+            }
+        ),
         encoding="utf-8",
     )
     imageOps: list = []

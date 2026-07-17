@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 137
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/MDLZ-mondelez.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/cd/cd1dbf2ce0e88f9e7196032bbd46aeb3b43b29256d51beabf1209d628d109f22.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a0/a07e064d7949a312c3fda0f93787386f09edd679675d53053cf7adf88ae71b5a.webp
 tags:
   - "몬델리즈"
   - "MDLZ"
@@ -52,7 +53,7 @@ ai:
 
 왜 이 격차가 중요한가. 투자자가 회사를 잘못 읽는 가장 흔한 방식 두 가지가 바로 여기서 충돌하기 때문이다. 첫째는 매출선 한 줄만 보고 '계속 성장하니 안전하다'고 믿는 오독이고, 둘째는 순이익 한 줄만 보고 '반토막 났으니 망했다'고 단정하는 오독이다. 몬델리즈의 2025년은 이 두 오독을 동시에 유발하는 함정이다 — 매출만 보면 잘나가고, 순이익만 보면 무너졌다. 진실은 그 둘 사이 어딘가에 있고, 거기에 도달하려면 한 장의 재무제표가 아니라 세 장(손익·현금흐름·그 비율)을 겹쳐 봐야 한다. 그 겹쳐 보기의 절차를 한 회사 안에서 연습하는 것이 이 글의 실용적 목표다.
 
-![위로만 가는 매출선과 절벽처럼 떨어지는 이익률선 — 한 회사의 같은 해를 두 지표가 다르게 그린다](./assets/137-margin-squeeze.webp)
+![위로만 가는 매출선과 절벽처럼 떨어지는 이익률선 — 한 회사의 같은 해를 두 지표가 다르게 그린다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/83/83bb5255c05aaa5c49c6c1cf5430ff0e25c31b1c06f0f8b1f80b05acf2776de8.webp)
 
 먼저 경계를 분명히 한다. 이 글에서 다룰 수치는 전부 dartlab 미국 연결(USD) 기준이고, 분기를 역년으로 합산한 값이다. 몬델리즈 자체 회계연도·세그먼트 공시와는 절단 기준이 다를 수 있다. 그리고 뒤에서 자주 등장할 '코코아'는 손익계산서 안의 라인이 아니라 바깥의 맥락이다 — 우리 데이터는 마진이 눌렸다는 사실을 보여주지, 그 범인이 누구인지를 증명하지 않는다. 이 경계를 흐리지 않는 것이 이 글의 규율이다.
 
@@ -159,7 +160,7 @@ ocf = c.select("CF", ["영업활동현금흐름"], freq="Q")   # 2025 4.51
 
 이게 왜 결정적인 반론인가. 만약 코코아가 정말로 마진을 1대1로 현금까지 먹어치웠다면, 현금흐름도 이익과 함께 무너졌어야 한다. 비싼 코코아를 사느라 실제 현금이 그만큼 빠져나갔다면, OCF가 -8%로 버틸 수 없다. 그런데 현금은 버텼다. 이 격차는 2025년 보고이익 붕괴의 *상당 부분이 비현금성·시점성 항목으로 증폭됐을 가능성*을 가리킨다 — 감액(자산가치 손상 차감), 헤지회계 처리, 운전자본의 일시적 변동 같은, 장부 이익은 깎지만 그 해에 현금이 실제로 나가지는 않는 항목들이다.
 
-![네 배로 뛴 원자재 가격은 장부 이익을 강타했지만, 현금이 같은 비율로 빠져나갔는지는 또 다른 질문이다](./assets/137-cocoa-cost.webp)
+![네 배로 뛴 원자재 가격은 장부 이익을 강타했지만, 현금이 같은 비율로 빠져나갔는지는 또 다른 질문이다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/6b/6b391eb57eb873f3f43b1fabdb1a94f730504e19dd4dd7c121e85dc9da4d197e.webp)
 
 여기서도 한계를 분명히 한다. 우리 데이터에는 감액·헤지·운전자본의 명세가 없다. 그래서 'OI -44% vs OCF -8%'라는 격차가 비현금성 항목을 *강하게 시사한다*고는 말할 수 있어도, 그 격차의 구체적 *구성*이 무엇인지는 미상이다. 감액이 얼마, 헤지가 얼마, 운전자본이 얼마인지는 10-K를 펼쳐야 나온다.
 
@@ -199,7 +200,7 @@ ocf = c.select("CF", ["영업활동현금흐름"], freq="Q")   # 2025 4.51
 
 세 번째 교훈: 같은 회사의 두 골을 비교하면 충격의 결이 분해된다. 2022년(OI/OCF 0.90)과 2025년(0.79)은 둘 다 마진의 골이었지만, 후자가 이익과 현금의 괴리가 더 컸다. '나쁜 해'를 한 덩어리로 보지 않고 OI/OCF라는 같은 자로 재면, 매크로 충격과 단일 원자재 충격이 장부에 남긴 다른 지문이 보인다. 이 자는 몬델리즈에만 쓰는 도구가 아니다 — 같은 비율을 어느 회사에든 들이대면, 그 회사의 보고이익이 현금과 얼마나 붙어 있는지 한 줄로 진단할 수 있다. 다른 산업의 사례가 궁금하면 [코카콜라](/blog/KO-coca-cola)·[펩시코](/blog/PEP-pepsico)의 음료 듀오를 같은 자로 나란히 재 보는 것이 이 시리즈가 권하는 다음 연습이다.
 
-![7년 내내 우상향한 매출선 위에서, 2025년 한 해의 이익률 골을 어떻게 읽느냐가 투자자의 규율을 가른다](./assets/137-global-scale.webp)
+![7년 내내 우상향한 매출선 위에서, 2025년 한 해의 이익률 골을 어떻게 읽느냐가 투자자의 규율을 가른다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c9/c9d2d57ef2600f890cd27df06090861cf588323c988c0a6f3ec97909a43285f6.webp)
 
 ```python
 # 독자가 직접 검증하는 이중 렌즈 — 한 회사를 두 표로 읽기

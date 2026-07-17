@@ -9,7 +9,8 @@ corpName: "Coupang, Inc."
 exchange: "NYSE"
 storyTemplate: "성장"
 thumbnail: /avatar-chart.png
-ogImage: "/thumbnails/CPNG-coupang.webp"
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/1c/1c7ad07e6eb096d24536c8fd34ae12ba49c71f561641f904a51a7e4eab42a5db.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/7a/7ab19c5923b2fe7ab6accef7f261a0aacaad17f89800a19d062e914f98e1126d.webp
 description: "매출 49조 순이익 $208M. 마진 0.6%. 3,370만명 개인정보 유출. 자본잠식에서 흑자 전환. 현금 8조로 적자 사업에 1.4조씩. CCC -55일. 쿠팡의 재무제표를 dartlab EDGAR로 뜯어본다."
 tags:
   - 쿠팡
@@ -175,7 +176,7 @@ import HFDataLink from '$lib/components/blog/HFDataLink.svelte';
 
 > **매출 49조인데 이익 $208M — 마진 0.6%의 회사가 3,370만명 유출 후에도 살아남은 이유.**
 
-![쿠팡 물류센터](./assets/27-coupang-fulfillment.webp)
+![쿠팡 물류센터](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/4e/4ed5212a2ddc5d3adb189723dc6baa29630eac7f370a4720d589be43dd84bc3a.webp)
 
 
 <HFDataLink code="CPNG" kind="edgar" />
@@ -462,7 +463,7 @@ c.panel("segments")
 
 # 제5막: "현금 $5.8B로 적자 $1B를 태운다" — AWS 없는 아마존의 선택
 
-![쿠팡 로켓배송 트럭](./assets/27-coupang-rocket-delivery.webp)
+![쿠팡 로켓배송 트럭](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/78/782c23135b958a40920d51e31ade4ccff9af0b23b6575204230689a7ddbf0d32.webp)
 
 ### Product Commerce vs Developing Offerings — 두 개의 쿠팡
 

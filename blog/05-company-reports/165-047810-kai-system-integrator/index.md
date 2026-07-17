@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 165
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/047810-kai-system-integrator.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/1a/1a50a6708cd5e1fbea621f183a9fa89f895888d1a19fcf39044075ab468ec8bf.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/6f/6f4aa856add68fd6f28cac0eca46e74662112cb583f9e8f882b311ffa420c175.webp
 tags:
   - "047810"
   - "한국항공우주"
@@ -51,7 +52,7 @@ ai:
 
 수주잔고는 미래 매출의 가능성이다. 영업현금흐름은 오늘 회사 안팎을 지나간 돈이다. 두 숫자가 반대 방향으로 움직이면 질문이 생긴다. 왜 일감은 이렇게 큰데 현금은 먼저 빠져나가는가. 왜 2025년 매출총이익률은 16.5%로 올라왔는데 재고자산은 3.64조원까지 불어났는가. 왜 방산 회사의 부채비율은 446.6%처럼 높게 보이는가.
 
-![한국항공우주의 수주잔고는 전투기 한 대가 아니라 설계, 조립, 시험, 검수의 시간표로 내려온다](./assets/165-aircraft-hangar.webp)
+![한국항공우주의 수주잔고는 전투기 한 대가 아니라 설계, 조립, 시험, 검수의 시간표로 내려온다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a4/a4ea4867fdc2cf2aaf0c4df38f72dc6a6f57affdb51abbbc8328e3f9fca1db6b.webp)
 
 이 글의 질문은 하나다. **KAI는 KF-21, FA-50, LAH, 위성까지 수주를 쌓는데 왜 현금흐름표는 먼저 막히는가.** 답은 단순한 악재가 아니다. 항공 방산은 주문을 받으면 끝나는 사업이 아니다. 설계, 부품 조달, 조립, 비행시험, 고객 검수, 후속지원, 대금 회수까지 시간이 길다. 그 시간은 재무제표에서 재고, 계약자산, 매출채권, 계약부채, 영업현금흐름으로 나타난다.
 
@@ -185,7 +186,7 @@ KAI의 고객 믹스는 이 회사가 왜 복잡한지 다시 보여준다. 2025
 
 Boeing과 Airbus 기체부품은 또 다른 얼굴이다. 이 영역은 군용기보다 민항기 생산 사이클과 글로벌 항공사슬에 가깝다. 민항기 생산이 늘면 부품 수요가 좋아질 수 있지만, 글로벌 항공사슬은 납기와 품질 요구가 빡빡하고 고객 협상력도 강하다. 이 사업은 KAI가 방산 전용 회사가 아니라 항공우주 제조사라는 점을 보여준다.
 
-![KAI의 수주잔고는 국내방산, 완제기 수출, 기체부품, 위성사업이 서로 다른 고객 시간표로 연결된 네트워크다](./assets/165-system-network.webp)
+![KAI의 수주잔고는 국내방산, 완제기 수출, 기체부품, 위성사업이 서로 다른 고객 시간표로 연결된 네트워크다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/92/92996dfe7bf6c949746a2ea32d67773455132cab233340f2d1932b5cfa69c798.webp)
 
 그래서 KAI의 고객 믹스를 읽는 순서는 이렇다. 첫째, 내수 방산이 매출의 바닥을 만든다. 둘째, 완제기 수출이 성장성과 정치적 내러티브를 만든다. 셋째, Boeing과 Airbus 기체부품이 글로벌 민항기 사이클을 붙인다. 넷째, 위성사업과 발사체, UAV가 미래 옵션처럼 붙는다. 이 네 줄이 동시에 있으면 회사는 풍부해진다. 동시에 재무제표는 복잡해진다.
 

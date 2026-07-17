@@ -6,7 +6,8 @@ category: reading-disclosures
 series: financial-context
 seriesOrder: 6
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/28-foreign-exchange-gains-and-derivatives.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/32/32f659aa85f8fe55b8016ffd6a36c1d677386583f27e499e1e899e566352b737.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a6/a6cd603a911ce9ed0e9d145962275c8547108bca77eabe54bbba3e26789f5e35.webp
 ---
 
 # 환율 손익과 파생상품은 본업을 어떻게 왜곡하나

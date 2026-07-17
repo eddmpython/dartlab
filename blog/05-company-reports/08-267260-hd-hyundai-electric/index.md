@@ -18,7 +18,8 @@ tags:
   - 전력망
   - 전자공시
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/267260-hd-hyundai-electric.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c3/c3cd462cab10e58bc9ad6216e132adc69b23fb1902753540464af2e6af19b821.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/cb/cb6de6a7e75c4ee9b4ff14af5bae819951f542ed16c51667d79f6d2d037ff51b.webp
 youtubeId: "A0DO22IvgB0"
 ai:
   verdict: "765kV 변압기 독점. 적자 1,006억→이익 9,953억. OPM 24.4%."
@@ -219,7 +220,7 @@ c.analysis("financial", "성장성")
 
 ### 765kV — 전 세계 5~6곳만 만들 수 있는 이유
 
-![변압기 제조 공장](./assets/08-transformer-factory.webp)
+![변압기 제조 공장](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f9/f96d1dd0df2625d4778f8125d7a997c7be3d3a9e7c2163002d381c2f451bcc4c.webp)
 
 발전소에서 만든 전기를 수백 킬로미터 떨어진 도시로 보내려면 전압을 높여야 한다. 765,000볼트. 그 전압을 다루는 변압기를 만들 수 있는 기업이 전 세계에 **5~6곳**이다. Hitachi Energy(일본/스위스), Siemens Energy(독일), GE Vernova(미국, 공장은 멕시코), 효성중공업(한국), HD현대일렉트릭(한국). **미국 땅 위에서** 765kV를 생산할 수 있는 곳은 효성과 HD현대일렉트릭, **2곳뿐이다.**
 
@@ -263,11 +264,11 @@ c.analysis("financial", "성장성")
 
 ### AI 데이터센터 100MW+ — 구글 검색의 10배 전력
 
-![데이터센터](./assets/08-data-center.webp)
+![데이터센터](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/3f/3fb73396430d9aaa07afd499f6cb87ab9b7df7b2fdac9a1c7078c060eda951f1.webp)
 
 **두 번째 수요 충격**은 전혀 다른 곳에서 왔다. ChatGPT 질의 한 번에 소비되는 전력: **2.9Wh**. 구글 검색 한 번(0.3Wh)의 10배. 전통 데이터센터가 10~25MW를 소비했다면, AI 하이퍼스케일 데이터센터는 **100MW 이상**. IEA 전망: 미국 데이터센터 전력 소비 2024년 183TWh → 2030년 **426TWh**(+133%). 2030년에는 미국 전체 전력의 10% 이상을 데이터 처리가 삼킨다. 1GW 데이터센터 캠퍼스 하나에 대형 변압기가 수십 대 필요하다.
 
-![미국 전력망](./assets/08-power-grid.webp)
+![미국 전력망](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/83/836cc5331ffb380db15f387bc7cad519ffee952d890cbe78fc49e207859d8459.webp)
 
 ### 미국 변압기 55%가 수명 33년+ — 3중 수요가 한꺼번에 터졌다
 

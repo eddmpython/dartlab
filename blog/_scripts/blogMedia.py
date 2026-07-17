@@ -1,4 +1,4 @@
-"""블로그 HF 미디어 경로와 매니페스트 계약의 단일 정의."""
+"""블로그 HF 객체 저장소와 중앙 미디어 카탈로그의 단일 계약."""
 
 from __future__ import annotations
 
@@ -9,56 +9,183 @@ from pathlib import Path
 
 from dartlab.core.dataConfig import HF_MEDIA_BASE_URL, HF_MEDIA_REPO
 
-MEDIA_MANIFEST_VERSION = 1
-MEDIA_PREFIX = "blog"
-MEDIA_MANIFEST_NAME = "media.json"
-IMAGE_SUFFIX = ".webp"
+MEDIA_CATALOG_VERSION = 2
+MEDIA_CATALOG_NAME = "media.json"
+OBJECT_PREFIX = "objects/sha256"
+IMAGE_SUFFIXES = {".webp", ".jpg", ".jpeg", ".png"}
 ASSET_KEY_RE = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*")
 SHA256_RE = re.compile(r"[0-9a-f]{64}")
 
 
+def blogRoot(postDir: Path) -> Path:
+    """`blog/<category>/<post>`에서 blog 루트를 반환한다."""
+    if postDir.parent.parent.name != "blog":
+        raise ValueError(f"블로그 글 폴더가 아님: {postDir}")
+    return postDir.parent.parent
+
+
+def mediaCatalogPath(postDir: Path) -> Path:
+    return blogRoot(postDir) / MEDIA_CATALOG_NAME
+
+
 def mediaManifestPath(postDir: Path) -> Path:
-    return postDir / "assets" / MEDIA_MANIFEST_NAME
+    """이전 호출부 호환용 이름. 실제 SSOT는 blog/media.json 하나다."""
+    return mediaCatalogPath(postDir)
 
 
-def mediaSlug(postDir: Path) -> str:
-    return re.sub(r"^\d+-", "", postDir.name)
+def mediaPostKey(postDir: Path) -> str:
+    return postDir.relative_to(blogRoot(postDir)).as_posix()
 
 
 def contentSha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def mediaPath(postDir: Path, assetKey: str, sha256: str) -> str:
-    return f"{MEDIA_PREFIX}/{mediaSlug(postDir)}/{assetKey}.{sha256[:8]}{IMAGE_SUFFIX}"
+def canonicalSuffix(path: Path) -> str:
+    suffix = path.suffix.lower()
+    if suffix == ".jpeg":
+        return ".jpg"
+    if suffix not in IMAGE_SUFFIXES:
+        raise ValueError(f"지원하지 않는 블로그 이미지 확장자: {path}")
+    return suffix
+
+
+def mediaPath(sha256: str, suffix: str = ".webp") -> str:
+    normalizedSuffix = ".jpg" if suffix.lower() == ".jpeg" else suffix.lower()
+    if not SHA256_RE.fullmatch(sha256):
+        raise ValueError(f"올바르지 않은 SHA-256: {sha256!r}")
+    if normalizedSuffix not in IMAGE_SUFFIXES - {".jpeg"}:
+        raise ValueError(f"지원하지 않는 이미지 확장자: {suffix}")
+    return f"{OBJECT_PREFIX}/{sha256[:2]}/{sha256}{normalizedSuffix}"
 
 
 def mediaUrl(path: str) -> str:
     return f"{HF_MEDIA_BASE_URL}/{path}"
 
 
-def loadMediaManifest(postDir: Path) -> tuple[dict[str, object] | None, list[str]]:
-    path = mediaManifestPath(postDir)
+def emptyMediaCatalog() -> dict[str, object]:
+    return {
+        "version": MEDIA_CATALOG_VERSION,
+        "repo": HF_MEDIA_REPO,
+        "objectPrefix": OBJECT_PREFIX,
+        "objects": {},
+        "files": {},
+        "posts": {},
+    }
+
+
+def loadMediaCatalog(path: Path) -> tuple[dict[str, object] | None, list[str]]:
     if not path.is_file():
-        return None, ["contract v2 이미지는 assets/media.json HF 매니페스트가 필요함"]
+        return None, ["blog/media.json 중앙 HF 카탈로그가 필요함"]
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
     except (json.JSONDecodeError, OSError) as exc:
-        return None, [f"assets/media.json 읽기 실패: {exc}"]
+        return None, [f"blog/media.json 읽기 실패: {exc}"]
     if not isinstance(payload, dict):
-        return None, ["assets/media.json 최상위 값은 객체여야 함"]
+        return None, ["blog/media.json 최상위 값은 객체여야 함"]
     errors: list[str] = []
-    if payload.get("version") != MEDIA_MANIFEST_VERSION:
-        errors.append(f"assets/media.json version은 {MEDIA_MANIFEST_VERSION}이어야 함")
+    if payload.get("version") != MEDIA_CATALOG_VERSION:
+        errors.append(f"blog/media.json version은 {MEDIA_CATALOG_VERSION}이어야 함")
     if payload.get("repo") != HF_MEDIA_REPO:
-        errors.append(f"assets/media.json repo는 {HF_MEDIA_REPO}여야 함")
-    if not isinstance(payload.get("assets"), dict):
-        errors.append("assets/media.json assets는 객체여야 함")
-    if not isinstance(payload.get("og"), dict):
-        errors.append("assets/media.json og는 객체여야 함")
+        errors.append(f"blog/media.json repo는 {HF_MEDIA_REPO}여야 함")
+    if payload.get("objectPrefix") != OBJECT_PREFIX:
+        errors.append(f"blog/media.json objectPrefix는 {OBJECT_PREFIX}여야 함")
+    for key in ("objects", "files", "posts"):
+        if not isinstance(payload.get(key), dict):
+            errors.append(f"blog/media.json {key}는 객체여야 함")
     return payload, errors
 
 
-def buildMediaRecord(postDir: Path, assetKey: str, localPath: Path) -> dict[str, str]:
+def saveMediaCatalog(path: Path, catalog: dict[str, object]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(catalog, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def registerMediaFile(catalog: dict[str, object], source: str, localPath: Path) -> dict[str, str]:
     sha256 = contentSha256(localPath)
-    return {"path": mediaPath(postDir, assetKey, sha256), "sha256": sha256}
+    objects = catalog.setdefault("objects", {})
+    files = catalog.setdefault("files", {})
+    if not isinstance(objects, dict) or not isinstance(files, dict):
+        raise ValueError("blog/media.json objects/files 계약 위반")
+    existingObject = objects.get(sha256)
+    if isinstance(existingObject, dict) and existingObject.get("path"):
+        remotePath = str(existingObject["path"])
+    else:
+        remotePath = mediaPath(sha256, canonicalSuffix(localPath))
+        objects[sha256] = {
+            "bytes": localPath.stat().st_size,
+            "path": remotePath,
+        }
+    files[source] = sha256
+    return {"path": remotePath, "sha256": sha256, "source": source}
+
+
+def mediaRecord(catalog: dict[str, object], source: str) -> dict[str, str] | None:
+    files = catalog.get("files")
+    objects = catalog.get("objects")
+    if not isinstance(files, dict) or not isinstance(objects, dict):
+        return None
+    sha256 = str(files.get(source) or "")
+    obj = objects.get(sha256)
+    if not SHA256_RE.fullmatch(sha256) or not isinstance(obj, dict) or not obj.get("path"):
+        return None
+    remotePath = str(obj["path"])
+    try:
+        expectedPath = mediaPath(sha256, Path(remotePath).suffix)
+    except ValueError:
+        return None
+    if remotePath != expectedPath:
+        return None
+    return {"path": remotePath, "sha256": sha256, "source": source}
+
+
+def loadMediaManifest(postDir: Path) -> tuple[dict[str, object] | None, list[str]]:
+    """중앙 카탈로그에서 한 글이 쓰는 역할별 뷰를 만든다."""
+    try:
+        catalogPath = mediaCatalogPath(postDir)
+        postKey = mediaPostKey(postDir)
+    except ValueError as exc:
+        return None, [str(exc)]
+    catalog, errors = loadMediaCatalog(catalogPath)
+    if catalog is None or errors:
+        return None, errors
+    posts = catalog.get("posts")
+    post = posts.get(postKey) if isinstance(posts, dict) else None
+    if not isinstance(post, dict):
+        return None, [f"blog/media.json에 글 매핑 없음: {postKey}"]
+    assetSources = post.get("assets")
+    if not isinstance(assetSources, dict):
+        return None, [f"blog/media.json 글 assets 계약 위반: {postKey}"]
+    assets: dict[str, dict[str, str]] = {}
+    for key, source in assetSources.items():
+        record = mediaRecord(catalog, str(source))
+        if record is None:
+            errors.append(f"blog/media.json 파일 매핑 없음: {source}")
+        else:
+            assets[str(key)] = record
+    ogSource = str(post.get("og") or "")
+    og = mediaRecord(catalog, ogSource)
+    if og is None:
+        errors.append(f"blog/media.json OG 매핑 없음: {postKey}")
+        return None, errors
+    manifest = {
+        "version": MEDIA_CATALOG_VERSION,
+        "repo": HF_MEDIA_REPO,
+        "og": og,
+        "assets": assets,
+    }
+    cardSource = str(post.get("card") or "")
+    card = mediaRecord(catalog, cardSource) if cardSource else None
+    if card is not None:
+        manifest["card"] = card
+    return manifest, errors
+
+
+def buildMediaRecord(localPath: Path, source: str | None = None) -> dict[str, str]:
+    """독립 경로 계산 헬퍼. 중앙 카탈로그 등록은 `registerMediaFile`을 쓴다."""
+    sha256 = contentSha256(localPath)
+    return {
+        "path": mediaPath(sha256, canonicalSuffix(localPath)),
+        "sha256": sha256,
+        "source": source or localPath.as_posix(),
+    }

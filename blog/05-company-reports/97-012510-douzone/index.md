@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 97
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/012510-douzone.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/55/5574e1e3c518c9289b85a8a7f4868976174d600695012c7299675a0649048689.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f0/f0b50ba75d0891c1f83a5bf671c70e80d1abca0a32972da9dafac066949fa0dc.webp
 tags: ["더존비즈온", "012510", "ERP", "SaaS", "위하고", "클라우드", "세무회계", "EQT", "상장폐지", "김택진"]
 stockCode: "012510"
 corpName: "더존비즈온"
@@ -135,7 +136,7 @@ carousel:
 
 **왜 회계 장부는 다른가.** 세상 대부분의 소프트웨어는 '안 써도 사는' 것이다. PDF 편집기도, 문서 작성기도, 그래픽 툴도 결국 대안이 있거나 안 쓰면 그만이다. 그런데 한국 기업의 세무·회계 장부는 예외다 — 국세청에 신고할 의무가 법으로 정해져 있어, 그 장부는 *반드시 존재해야 한다.* 좋아서 쓰는 게 아니라 안 쓰면 안 되는 것이다.
 
-![세무사 책상의 회계 장부 — 국세청 신고 의무가 강제하는 '반드시 존재해야 하는' 단말](./assets/097-tax-office.webp)
+![세무사 책상의 회계 장부 — 국세청 신고 의무가 강제하는 '반드시 존재해야 하는' 단말](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/dc/dc5c74a3a758c8c41854b1975920e586906301dc2742861b5e55e245b7fa429c.webp)
 
 더존이 올라탄 자리가 바로 그 의무의 길목이었다. 흥미로운 사실 하나 — 회사의 모태인 더존소프컴(1991년 설립)의 원조 설립자는 훗날 [엔씨소프트](/blog/036570-ncsoft)를 세운 김택진이다. 지금의 더존비즈온을 ERP·클라우드 기업으로 키운 사실상의 창업주는 2003년 이후 회사를 이끈 김용우 회장이다. 게임으로 간 사람과 회계 장부에 남은 사람 — 같은 뿌리에서 갈라진 두 길이다.
 
@@ -202,7 +203,7 @@ c.select("IS", ["매출액", "매출총이익", "영업이익", "당기순이익
 
 **왜 클라우드 붐 전에 데이터센터를 지었나.** 2011년, 클라우드가 유행하기 한참 전에 더존은 강원도 춘천에 자체 데이터센터(D-클라우드)를 구축했다. 의무 단말이 모으는 장부 데이터가 매일 *한 곳을 거쳐 가게* 만든 물리적 토대였다.
 
-![2011년 춘천 자체 데이터센터 — 의무 데이터가 한 곳을 거쳐 가게 만든 토대](./assets/097-datacenter.webp)
+![2011년 춘천 자체 데이터센터 — 의무 데이터가 한 곳을 거쳐 가게 만든 토대](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/0f/0fecc40df8dcee00fc0c13a9f2819c7a80bd097a057d07f4bd34cd54230e2799.webp)
 
 이 고정 인프라 위에 구독을 얹은 것이 이후 마진의 한 요인일 수 있다. 다만 여기서 단정은 보류한다 — dartlab 실측에는 매출원가·구독 비중의 세부가 없어 "클라우드라 한계비용이 0이다" 같은 SaaS 교과서식 인과를 증명할 수 없다. 확실한 건 *의무 데이터가 한 곳에 모이는 구조*를 일찍 만들었다는 사실까지다.
 
@@ -222,7 +223,7 @@ c.select("IS", ["매출액", "매출총이익", "영업이익", "당기순이익
 
 핵심은 길목은 그대로 둔 채 *과금 방식만 바꿨다*는 데 있다. 한 번 사고 끝나는 단발 판매 단말을, 매달 구독료가 걷히는 반복 단말로 교체했다.
 
-![설치형 스마트A를 클라우드 구독 위하고로 — 길목은 그대로, 과금만 구독으로](./assets/097-cloud-saas.webp) 의무의 길목(회계 장부)은 손대지 않았다 — 그 위를 흐르는 돈의 형태만 일회성에서 반복으로 바꿨다. '도구를 데이터로 바꿨다'는 흔한 IT 수사보다, '의무 단말의 과금을 구독으로 전환했다'가 정확하다.
+![설치형 스마트A를 클라우드 구독 위하고로 — 길목은 그대로, 과금만 구독으로](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ad/ad334e082b95aea380d1ffef82a530337ffb133ff5404ce0709d31fe907d28b8.webp) 의무의 길목(회계 장부)은 손대지 않았다 — 그 위를 흐르는 돈의 형태만 일회성에서 반복으로 바꿨다. '도구를 데이터로 바꿨다'는 흔한 IT 수사보다, '의무 단말의 과금을 구독으로 전환했다'가 정확하다.
 
 이 결정은 겉으로 보면 위험하다. 고객이 잘 쓰던 설치형 제품을 없애면 반발이 생긴다. 특히 회계 프로그램은 바꾸기 싫어하는 고객이 많다. 그런데 더존 입장에서는 설치형을 계속 살려 두면 클라우드 전환이 느려진다. 고객은 익숙한 프로그램에 남고, 회사는 유지보수 비용을 계속 부담하며, 반복 과금의 속도는 늦어진다. 그래서 단종은 제품 종료가 아니라 가격 체계 전환을 강제하는 사건이다.
 

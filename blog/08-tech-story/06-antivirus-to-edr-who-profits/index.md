@@ -16,7 +16,8 @@ tags:
   - 안랩
   - 주식보상
   - 기술이야기
-ogImage: /thumbnails/tech-antivirus-to-edr-who-profits.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/3a/3a624ca58ef195353ac57d11033a513482e2f2d8004715c4a45623ec1dd6f724.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/67/67b7b92aa142f6b6104a7d2b5e6543ab9e3022fe15f7f47c4c13cbfaf799cac9.webp
 ai:
   verdict: "보안 기술은 시그니처 백신에서 커널 기반 EDR과 제로트러스트로 올라갔다. 크라우드스트라이크는 매출총이익률 75%에도 성장 비용과 주식보상 때문에 회계상 영업적자이고, 포티넷은 방화벽 ASIC과 성숙한 구독 구조로 30.7%를 남긴다. 한국 보안사는 DART에서 흑자를 보이지만 규모가 작다. 보안주는 기술 세대와 자본 모델을 함께 읽어야 한다."
   direction: 관망
@@ -80,7 +81,7 @@ carousel:
 
 이 사고는 이상한 질문을 남긴다. 백신 프로그램이 왜 그렇게 깊은 곳까지 들어가 있어서, 그게 넘어지자 컴퓨터 전체가 부팅조차 못 했을까? 그리고 더 이상한 사실이 하나 더 있다. 이렇게 세상을 좌우할 만큼 중요해진 최전선 보안 회사 크라우드스트라이크는, 매출총이익률이 75%나 되는데도 **회계상 영업적자**다. 반대로 아무도 첨단이라 부르지 않는 옛날 방화벽 회사 포티넷은 영업이익률 30.7%로 조용히 남긴다. 이 글은 그 두 가지 이상함을 하나로 잇는다. 답은 "백신이 어떻게 진화했는가"에 있고, 착지점은 DART와 EDGAR로 확인한 보안 회사 아홉 곳의 손익계산서다.
 
-![커널 계층까지 내려간 EDR 센서와 클라우드 보안 관제의 연결. 행동탐지는 단말의 깊은 이벤트를 봐야 하지만, 그 깊이가 장애의 위험도 함께 키운다](./assets/01-kernel-edr.webp)
+![커널 계층까지 내려간 EDR 센서와 클라우드 보안 관제의 연결. 행동탐지는 단말의 깊은 이벤트를 봐야 하지만, 그 깊이가 장애의 위험도 함께 키운다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f0/f07cc461db41fd644e8a4b6700689b8e857063b64d3dd318198b84860d3a03cd.webp)
 
 ## 1. 백신은 어떻게 악성코드를 잡나: 지명수배 전단의 한계
 

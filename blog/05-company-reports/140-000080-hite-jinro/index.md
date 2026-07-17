@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 140
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/000080-hite-jinro.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b3/b314abd6187ed91429c6556809d6900c148fcec446e817f589c57fe0516c8af5.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/1d/1d4b735b387762b3655aa5d99962f24b24ecc7f44a940c944321629a21961d00.webp
 tags: ["하이트진로", "000080", "소주", "맥주", "영업이익률", "영업현금흐름", "주류", "종량세", "가격결정력", "한국주식"]
 stockCode: "000080"
 corpName: "하이트진로"
@@ -131,7 +132,7 @@ import ComboChart from '$lib/components/blog/ComboChart.svelte';
 
 8년치 네 줄(매출 → 영업이익 → 순이익 → 영업현금흐름)을 위에서 아래로 한 칸씩 내려가며, '절반을 쥔 지위'가 어느 줄에 찍히고 어느 줄에서 증발하는지를 따라간다. 용어는 그때그때 일상어로 풀고, 외부 사실은 [외부 인용]으로 분명히 떼어 둔다.
 
-![왕좌인데 얇다 — 깡통을 쌓아 만든 자리는 지위를 떠받치되 그 자체가 얇다](./assets/140-thin-throne.webp)
+![왕좌인데 얇다 — 깡통을 쌓아 만든 자리는 지위를 떠받치되 그 자체가 얇다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f0/f0def35a9fef4fce3cc50e503c23ee5bb7e3933a0f991af172b547c6f6493299.webp)
 
 ---
 
@@ -217,7 +218,7 @@ c.select("CF", ["영업활동현금흐름"], freq="Q")  # 손익과 다른 박�
 
 외부의 점유율·맥주전쟁·세제·원가는 이 패턴과 시점이 겹칠 뿐(정합)이고, 연결 손익 한 덩어리에는 소주·맥주를 가르는 줄도 점유율 줄도 없다 — 그래서 '두 게임을 한 지갑으로'는 매력적이되 내부로는 증명 불가능한 외부 가설이다. 내부 시계열이 증명하는 결론은 하나다. **안정성은 매출 줄에만 머물고, 그 아래로 내려갈수록 구조가 샌다.** 지배적 점유율로 가격을 굳히지 못한다는 점에선, 가격을 끝내 못 정하는 [코스맥스](/blog/192820-cosmax)나 규제 해자 위에서도 마진을 못 지킨 [KT&G](/blog/033780-ktng)와 결이 닿고, 같은 식음료 박리 구조는 [농심](/blog/004370-nongshim)에서도 보인다.
 
-![비계에 덮인 미완 — 비싼 마케팅 위에 쌓은 도전자의 자리](./assets/140-beer-war.webp)
+![비계에 덮인 미완 — 비싼 마케팅 위에 쌓은 도전자의 자리](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/4f/4f8bd189ee7bbd2ea1e21b6391f234e671a3bdf198d2b8f91fc2aba3488bd5c9.webp)
 
 **[외부 인용]** 해외 매출 비중은 약 8.5%로 낮지만 소주 수출이 5년 연평균 약 26% 늘었고, 베트남 공장을 2025년 말 완공해 2030년 해외 소주 5,000억 원을 목표한다는 전망([businesspost](https://www.businesspost.co.kr/BP?command=article_view&num=394831))과, 맥주 출고가 평균 2.7% 인상 같은 가격 정책은 전부 외부 영역이며, 그것이 위 세 줄의 진동을 좁힐지 넓힐지는 내부 수치가 답하지 않는다.
 

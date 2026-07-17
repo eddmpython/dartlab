@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 84
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/003670-posco-future-m.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/2a/2a3024de705ea267f231609507e4e664c4a75809e5710d9c8a976e757262bfa0.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/3d/3d4ccc836c2d0471d319ab46179e48068fbfa8d54f4a6d5bec65f4d284c26cf4.webp
 tags: ["포스코퓨처엠", "003670", "POSCO Future M", "양극재", "음극재", "배터리소재", "EV캐즘", "CAPEX", "FCF", "POSCO홀딩스"]
 stockCode: "003670"
 corpName: "포스코퓨처엠"

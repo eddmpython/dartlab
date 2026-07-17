@@ -11,7 +11,8 @@ storyTemplate: "성장"
 grade: "dCR-A"
 tags: [NuScale Power, SMR, 소형모듈원전, 원자력, NRC, AI전력수요, EDGAR, 재무분석]
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/SMR-nuscale-power.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/5c/5c224dc1a4a3f1ca77ca2b0487dc5a0b7339e66f24b54ca578f351ccc22d988f.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/18/18c0d8c6fc2756b1fb0aaa6d8aaa84ed3c214d7efccc34e1de00c556074aa05d.webp
 youtubeId: ""
 ai:
   verdict: "NRC 인증은 있으나 경제성 미검증. 현금 $1.25B로 시간을 샀다."
@@ -101,7 +102,7 @@ NRC(Nuclear Regulatory Commission, 미국 원자력규제위원회)의 설계인
 
 뉴스케일파워의 VOYGR 원자로는 2020년 8월 NRC 설계인증을 획득했다([NRC Design Certification, 10 CFR Part 52](https://www.nrc.gov/reactors/new-reactors/smr/nuscale.html)). **SMR 분야에서 NRC 설계인증을 받은 기업은 세계에서 뉴스케일파워가 유일하다.** 2007년 설립부터 13년이 걸렸다.
 
-![NuScale VOYGR 소형모듈원전 설계 모델 — NRC 설계인증을 받은 세계 유일의 SMR, 77MWe 경수로 모듈](./assets/44-reactor-model.webp)
+![NuScale VOYGR 소형모듈원전 설계 모델 — NRC 설계인증을 받은 세계 유일의 SMR, 77MWe 경수로 모듈](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/41/41e4d67992d6514037ee9cd9e33dec1b4d3a0419e143a27c3d76ae48fad54f41.webp)
 
 ### SMR이란 무엇이고 왜 주목받는가
 
@@ -171,7 +172,7 @@ c.select("IS", ["매출액"])
 
 AI 데이터센터의 전력 수요 폭발이 그 답이다. [Meta(#37)](/blog/META-meta-platforms)는 2024년 말 원전 기반 전력 공급 계약을 모색한다고 발표했다. Microsoft는 Three Mile Island(1979년 사고로 유명한 원전) 재가동 계약을 체결했다. Amazon은 Talen Energy와 $650M 규모의 원전 전력 공급 계약을 맺었다. Google도 원전 전력 조달에 나섰다.
 
-![데이터센터 전력 공급을 위한 원자력 발전소 — AI 연산 수요가 불러온 24시간 무탄소 기저 전력의 필요성](./assets/44-power-plant.webp)
+![데이터센터 전력 공급을 위한 원자력 발전소 — AI 연산 수요가 불러온 24시간 무탄소 기저 전력의 필요성](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/0e/0e7f1e4b227af0f290017dcd8b02bd7d82367c02fc2741b16b53d03efe1a3981.webp)
 
 ### 빅테크가 원전을 찾는 이유
 

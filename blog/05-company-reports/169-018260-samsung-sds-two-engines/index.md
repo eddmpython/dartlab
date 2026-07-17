@@ -6,8 +6,9 @@ category: company-reports
 series: company-reports
 seriesOrder: 169
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/018260-samsung-sds-two-engines.webp
-thumbnailBg: "./assets/169-cloud-logistics-hero.webp"
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/6e/6eb7a6bd6c18dfeab03c9d13d7d3059571fe8216f502f9a2beefcfb47defb044.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/fc/fc3f0bb42e4a4cb5102427ba138cbb2c837ed64c81d9a8e4291e456a04fc6757.webp
+thumbnailBg: "https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a5/a5811a6556be7ddac189e16e3240cce438cb2d7ecab4bb5488c1c199e79ab448.webp"
 tags:
   - "018260"
   - "삼성SDS"
@@ -49,7 +50,7 @@ ai:
 
 밤의 컨테이너항은 거대한 계산기처럼 움직인다. 어느 배가 몇 시에 들어오고, 컨테이너가 어느 창고로 옮겨지며, 항공 화물이 어떤 노선을 타는지 수천 개의 사건이 동시에 발생한다. 항만에서 멀리 떨어진 데이터센터도 비슷하다. 서버랙마다 작업이 쌓이고, GPU가 모델을 학습하며, 기업의 주문과 재고와 회계 데이터가 초 단위로 지나간다.
 
-![서버랙과 컨테이너항은 삼성SDS 안에서 서로 다른 두 매출 엔진으로 움직인다](./assets/169-cloud-logistics-hero.webp)
+![서버랙과 컨테이너항은 삼성SDS 안에서 서로 다른 두 매출 엔진으로 움직인다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a5/a5811a6556be7ddac189e16e3240cce438cb2d7ecab4bb5488c1c199e79ab448.webp)
 
 삼성SDS는 이 두 장면을 한 연결재무제표에 담는다. 한쪽은 기업의 시스템을 구축하고 운영하는 IT서비스다. 다른 한쪽은 화주를 대신해 항공과 해상 운송, 내륙 운송, 창고를 연결하는 물류다. 회사 이름과 최근 발표를 보면 클라우드와 생성형 AI가 먼저 떠오르지만, 2025년 매출표에서 더 큰 쪽은 여전히 물류였다.
 
@@ -206,13 +207,13 @@ IT서비스의 12.6%도 하나의 고정된 소프트웨어 마진이 아니다.
 
 데이터센터는 서버를 놓는 건물만이 아니다. 토지와 건물, 전력 인입, 냉각, 네트워크, GPU와 서버, 보안, 운영 인력이 결합된다. 공사 기간에는 현금이 나가지만 매출은 아직 없다. 가동 뒤에는 감가상각과 전력비가 매 분기 발생한다. 고객 계약이 늦어지거나 GPU 세대가 빠르게 바뀌면 장비의 경제적 수명이 예상보다 짧아질 수 있다.
 
-![AI 인프라 5조원 계획은 서버 구매뿐 아니라 건설과 전력, 냉각의 긴 자산 시간을 시작한다](./assets/169-ai-datacenter-build.webp)
+![AI 인프라 5조원 계획은 서버 구매뿐 아니라 건설과 전력, 냉각의 긴 자산 시간을 시작한다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/06/0619bfedf4a5fc3dd383fd9481a4708ffcbacbb64ef772e4c420fc7b1aa21c7d.webp)
 
 삼성SDS는 전통적으로 기업 시스템의 설계와 운영에 강했다. 데이터센터 DBO는 설계, 건설, 운영을 묶어 고객 대신 인프라의 생애주기를 책임지는 모델이다. 회사는 2025년 실적 발표에서 국내 대형 자산운용사의 데이터센터 사업 개념설계를 수행 중이라고 밝혔다. 이 모델이 커지면 단순 클라우드 사용료뿐 아니라 시설 기획과 운영 계약을 얻을 수 있다. 반대로 공정과 자본 관리 능력도 요구된다.
 
 국가 AI 컴퓨팅센터와 공공 AI 사업은 기회와 제약을 함께 가진다. 국내 데이터 주권과 보안 요건은 삼성SDS 같은 사업자에게 진입장벽이 될 수 있다. 정부 예산과 장기계약은 수요 가시성을 높일 수 있다. 하지만 입찰가격과 정책 일정, 공공조달 조건에 따라 수익성이 제한될 수도 있다. 수주했다는 사실과 좋은 자본수익을 얻는다는 사실은 같지 않다.
 
-![기업용 AI 운영은 화려한 모델보다 서버 가동률과 고객 업무의 반복 사용에서 돈을 만든다](./assets/169-ai-operations-room.webp)
+![기업용 AI 운영은 화려한 모델보다 서버 가동률과 고객 업무의 반복 사용에서 돈을 만든다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c5/c5da3a57eabc7a4b1354fe073be551e50c20cb25fb41540c03e3f9e66ee34cfb.webp)
 
 AI 풀스택이라는 표현도 층별로 읽어야 한다. 아래에는 데이터센터와 GPU가 있다. 중간에는 Samsung Cloud Platform과 FabriX 같은 플랫폼이 있다. 위에는 Brity Copilot과 산업별 업무 서비스가 있다. 아래층은 많은 자본이 필요하고 위층은 고객의 반복 사용과 소프트웨어 확장이 중요하다. 삼성SDS가 5조원을 인프라, 1조원을 서비스에 배정한 것은 당분간 아래층에 훨씬 많은 돈이 들어간다는 뜻이다.
 

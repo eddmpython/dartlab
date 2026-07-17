@@ -6,7 +6,8 @@ category: dartlab-news
 series: dartlab-news
 seriesOrder: 9
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/news-terminal-one-screen.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/95/9571c0cb4e73baeff271cb84b1d85f8a26005c1d5172f32f4ca7d43c36cc69d0.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/bb/bba6953c8e59ac7fad78c18382aef529dbc4ac9dfb277f0299ca458367b4a39a.webp
 keywords:
   - dartlab 터미널
   - 전 종목 재무 한눈에

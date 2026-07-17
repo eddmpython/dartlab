@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 82
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/MSTR-strategy.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/7d/7dbd4a8b1e6632323d778a8eeaf739818c7d927d96cdb0efa014a03d2e7e0c4b.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/44/44c9ac7fa5315a50eb6c268c89213131de28657445f4b9b5bde12a882dd1ffe6.webp
 tags: ["Strategy", "MSTR", "MicroStrategy", "Bitcoin", "비트코인", "EDGAR", "10-K", "ASU 2023-08", "공정가치", "전환사채"]
 stockCode: "MSTR"
 corpName: "Strategy Inc"
@@ -207,7 +208,7 @@ Strategy의 CAPEX는 2025년 **$8.2M** 수준이다. 유형자산 투자가 큰 
 
 ## 5막 — 672,500 BTC라는 숫자의 안쪽
 
-![Strategy 비트코인 재무부 이미지 — 공정가치 회계가 붙은 비트코인 보유 장부는 MSTR 재무제표의 중심이다.](./assets/82-bitcoin-treasury.webp)
+![Strategy 비트코인 재무부 이미지 — 공정가치 회계가 붙은 비트코인 보유 장부는 MSTR 재무제표의 중심이다.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/cf/cf252dde8b6ddd08504db1473be3eca02a07b0867cb922f55badee9bda2daa9e.webp)
 
 2025년 10-K의 디지털자산 표는 이 글의 중심 증거다.
 
@@ -289,7 +290,7 @@ BTC가 20% 늘어도 주식 수와 우선주·전환권 부담이 더 빠르게 
 
 ## 8막 — 2026년 1분기는 2025년 서사를 되감았다
 
-![SEC EDGAR 공시 이미지 — MSTR은 2025년 10-K와 2026년 8-K를 함께 읽어야 손익과 자본의 방향이 보인다.](./assets/82-edgar-filing.webp)
+![SEC EDGAR 공시 이미지 — MSTR은 2025년 10-K와 2026년 8-K를 함께 읽어야 손익과 자본의 방향이 보인다.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/0e/0e68286841a998bba9d537db70393342ebe68151c2910ae7a5a2bc403bfaa434.webp)
 
 2025년 10-K만 보면 Strategy의 장부는 강해 보인다. 자산 616억 달러, 자본 510억 달러, 현금 23억 달러, BTC 672,500개. 공정가치 회계 도입으로 과거 손상도 되돌아왔다.
 

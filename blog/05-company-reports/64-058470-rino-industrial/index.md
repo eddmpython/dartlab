@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 64
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/058470-rino-industrial.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d9/d967a1963619c2f07687f6d9c1e66c06ac53fe12b460754f65dddddd95cfc265.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/57/57935fdf617ed254ec00e8ab338637215a8d1db4b3b992e2624c80135d6d8339.webp
 tags: ["리노공업", "058470", "포고핀", "반도체테스트", "이채윤", "부산반도체", "AI칩테스트", "HBM", "프랜차이즈", "독점"]
 stockCode: "058470"
 corpName: "리노공업"
@@ -248,7 +249,7 @@ c.select("ratios", ["영업이익률 (%)"], freq="Q")
 
 ![포고핀 1개의 해부 — 길이 5mm · 지름 0.1mm · 스프링 + 금도금 팁](./assets/064-pogopin-anatomy.svg)
 
-![포고핀 매크로 — 금도금 팁과 내부 스프링의 미시 구조](./assets/064-pogopin-macro.webp)
+![포고핀 매크로 — 금도금 팁과 내부 스프링의 미시 구조](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/fb/fb4d185271e2090774b7d238b3609332c1b620af60249904ed93d575c7e6d0c3.webp)
 
 ---
 
@@ -292,7 +293,7 @@ c.select("ratios", ["영업이익률 (%)"], freq="Q")
 
 ![1978 창업 → 2001 KOSDAQ 상장 → 2025 시총 4조 — 리노공업 48년 타임라인](./assets/064-timeline.svg)
 
-![부산 강서구 본사 공장 — 48년간 본사 이전 없이 한 자리](./assets/064-busan-factory.webp)
+![부산 강서구 본사 공장 — 48년간 본사 이전 없이 한 자리](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d8/d88d11f35cccb744fe0c2246c7207899cda6c0b04068118e5df78937e953c784.webp)
 
 ---
 

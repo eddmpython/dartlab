@@ -6,8 +6,9 @@ category: investment-stories
 series: investment-stories
 seriesOrder: 1
 topicSlug: "technical-investing-price-indicators"
-ogImage: /thumbnails/investment-technical-investing-price-indicators.webp
-thumbnail: /thumbnails/investment-technical-investing-price-indicators.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/8a/8a47404646fbff433236e0329133e9b0f58fe658b7f8d4f952b6d4a9140c5598.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/04/040c5079b73ef4af864262ae7d8806288bc462cc681f8ac8b43ae5431573d88e.webp
+thumbnail: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/8a/8a47404646fbff433236e0329133e9b0f58fe658b7f8d4f952b6d4a9140c5598.webp
 tags:
   - 기술적 투자
   - 주가
@@ -25,7 +26,7 @@ tags:
 
 기술적 투자의 출발점은 훨씬 단순하다. **주가와 거래량은 시장 참여자가 실제로 거래한 흔적**이다. 그 흔적을 기간, 일봉, 주봉, 거래량, 이동평균, 변동성 같은 기준선으로 다시 정리하는 방식이 기술적 투자다. 가격이 왜 그 자리에서 멈췄는지, 어느 구간에서 매수와 매도가 부딪혔는지, 상승이 거래량을 동반했는지, 하락이 단기 흔들림인지 추세 변화인지 묻는 언어라고 보는 편이 맞다.
 
-![가격 데이터와 보조지표를 함께 보는 작업대](./assets/01-price-indicator-workbench.webp)
+![가격 데이터와 보조지표를 함께 보는 작업대](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/48/486b12c36cd4319a408b1706e006e969fcd9f76a9ba13691bde49613d1caba6e.webp)
 
 이 글은 특정 종목을 사거나 팔라는 글이 아니다. 샘플 종목 코드는 `dartlab`에서 price 데이터를 호출하는 방법을 보여주기 위한 재현 예시다. 핵심은 "어떤 지표가 몇이면 매수"가 아니라 **데이터를 부르는 법, 터미널에서 보는 법, 지표가 무엇을 요약하는지, 언제 틀리는지**를 초보자가 같은 순서로 따라갈 수 있게 만드는 것이다.
 
@@ -87,7 +88,7 @@ DartLab의 Terminal 화면은 시세, 재무, 공시 데이터를 한 화면에�
 
 Terminal의 주가 차트 패널은 기본적으로 가격을 위에 놓고, 거래량과 RSI 같은 하단 보조지표를 함께 볼 수 있게 설계되어 있다. `chartState` 기준 기본 overlay는 이동평균 계열이고, 기본 sub indicator에는 거래량과 RSI가 들어간다. 메뉴에서는 MA, EMA, SMA, Bollinger, SAR 같은 주가 overlay와 MACD, RSI, KDJ, OBV, CCI, Williams %R, DMI, ROC 같은 하단 지표를 켜고 끌 수 있다.
 
-![보조지표 패널을 겹쳐 보는 화면](./assets/02-indicator-panels.webp)
+![보조지표 패널을 겹쳐 보는 화면](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f7/f7af37afbad715ca79873cb16abc1452a0e67ea090e4b94a5999c8c8682778b5.webp)
 
 초보자에게 Terminal이 좋은 이유는 한 가지다. 한 표의 숫자만 볼 때보다 **지표가 가격을 얼마나 늦게 따라오는지** 보기 쉽다. RSI가 낮아졌다고 해서 바로 반등하는 것이 아니고, MACD가 돌아섰다고 해서 바로 추세가 바뀌는 것도 아니다. 차트 위에서 보면 지표는 대개 가격 움직임을 요약해서 늦게 보여준다. 그래서 기술적 투자에서 지표는 신호등이 아니라 계기판에 가깝다. 속도를 보여주지만 목적지를 대신 정하지 않는다.
 

@@ -6,7 +6,8 @@ category: reading-disclosures
 series: global-comparison
 seriesOrder: 1
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/20-samsung-vs-tsmc-capex-and-depreciation.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/52/5290295a5602ee20c6ec761d80148f30e6d5dd48f8fa48df4d933bedbea18ef5.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/61/61da8dfc9eb33687294308cea96fc54f8219c7dec7113eb8dfa7d238bf06e3c2.webp
 ---
 
 반도체는 장치산업이다. 공장 하나에 수십조 원이 들어가고, 그 설비가 3~5년 안에 구식이 된다. 그래서 반도체 회사의 재무제표에서 가장 먼저 봐야 할 숫자는 매출이 아니라 **설비투자(설비투자)와 감가상각비**다. 이 두 숫자의 크기와 비율이 마진 구조, 현금흐름, 기술 경쟁력까지 좌우한다.

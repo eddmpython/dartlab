@@ -6,7 +6,8 @@ category: company-reports
 series: 기업이야기
 seriesOrder: 87
 thumbnail: /avatar-default.png
-ogImage: /thumbnails/ON-onsemi-sic-cycle-bill.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/0b/0ba5f696a49c831276075c831ec278582f92eec0009df82c9b894ed366c8392d.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b9/b9f3de311870c79b8c5fe4de4d894822e3a6459769d70ec6c79fd7feaa89b327.webp
 tags:
   - onsemi
   - 온세미컨덕터
@@ -57,7 +58,7 @@ ai:
 
 ## 1 막 — 2025 년 1 월 14 일, 두 통의 발표
 
-![200mm SiC 웨이퍼 — ON 의 정체성을 한 장에](./assets/87-sic-wafer.webp)
+![200mm SiC 웨이퍼 — ON 의 정체성을 한 장에](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/41/413133060782bdafb234ba86c77e44cf353f7f0d382d6cbedf103afca6dbf7c9.webp)
 
 2025 년 1 월 14 일 화요일, 애리조나 피닉스. 글로벌 22,600 명의 직원을 33 개국에 둔 한 반도체 회사가 같은 날 두 통의 발표를 냈다. 한 통은 인수 — Qorvo US 로부터 SiC JFET (Silicon Carbide Junction Field-Effect Transistor) 기술 사업을 현금 1억 1,880만 달러에 사들였다는 소식. 다른 한 통은 해고 — 글로벌 인력의 9% 에 해당하는 약 2,400 명을 줄이는 구조조정안. 인수와 해고가 같은 날에 발표되는 일은 흔치 않다. 인수는 보통 "우리는 더 키울 자리가 있다" 는 신호고, 해고는 "우리는 더 줄일 자리가 있다" 는 신호다. 이 둘이 한 분기 안에 함께 나왔다면, 회사는 자기 사업의 어느 한쪽을 잘라내면서 다른 한쪽을 보강하고 있었다는 뜻이다.
 
@@ -162,7 +163,7 @@ PEAK 의 모양이 가장 위험한 모양이다. 다음 해부터 매출이 빠
 
 ## 4 막 — 첫 균열 (2024)
 
-![EV 트랙션 인버터 모듈 — SiC MOSFET 다이가 박힌 PSG 의 핵심 시장](./assets/87-ev-inverter-module.webp)
+![EV 트랙션 인버터 모듈 — SiC MOSFET 다이가 박힌 PSG 의 핵심 시장](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/56/56df66b8a2d64532d1e608a552efdce30ef708c3416583a90fcb4b6a789e4c28.webp)
 
 2024 년의 손익계산서를 펼치면, 매출 70억 8,000만 달러가 적혀 있다. 전년 대비 -14.2%. 검증식 — ($7.08B - $8.25B) / $8.25B = -14.2%. 그러나 같은 해 현금흐름표에는 자사주 매입 6억 5,400만 달러, 전년 대비 +16.0% 가 적혀 있었다. 매출이 빠지는 해에 자사주 매입을 늘렸다는 — 이 두 사실의 공존이 4 막의 모든 모순을 압축한다.
 
@@ -342,7 +343,7 @@ CEO Hassane El-Khoury 는 2020 년 12 월부터 ON 을 이끌고 있다. 직전 
 
 ## 7 막 — SiC 의 한국 거점, 그리고 Wolfspeed 라는 거울
 
-![반도체 fab 클린룸 — 캐파가 굳어 있는 콘크리트의 모양](./assets/87-fab-cleanroom.webp)
+![반도체 fab 클린룸 — 캐파가 굳어 있는 콘크리트의 모양](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/9a/9a0ce4c27641ff2c58de8b83a234ef6aec01b819be3de78c5d0c0b7bae0f385c.webp)
 
 ### 왜 SiC 시장은 4 강 구도로 굳어졌는가
 

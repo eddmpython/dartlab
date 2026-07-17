@@ -19,7 +19,8 @@ tags:
   - inZOI
   - 전자공시
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/259960-krafton.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/29/29832aaceed39525be16e981719e0ef9dad374d1b3e6fb92afc9e2193b98ce9a.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b3/b36c09d4bcda2b810cf88d4d2e9bdf75523ea490d7c0d1b9f6915f8970fa3272.webp
 youtubeId: ""
 ai:
   verdict: "PUBG 5년 FCF 2.9조인데 현금 3조→6천억. 배당 0원. 금융자산에 분산."
@@ -202,7 +203,7 @@ c = dartlab.Company("259960")
 
 ## 1막 — 이메일 한 통, 13주 만에 1억 달러
 
-![크래프톤 — 게임과 자본](./assets/11-esports.webp)
+![크래프톤 — 게임과 자본](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f4/f476c089d1ee618c9c5adf49876d9a2ba7448632c7531a6d8ba9bda7615a5298.webp)
 
 ### 스팀 출시 13주, 역대 최다 판매 PC게임
 
@@ -244,7 +245,7 @@ c.select("IS", ["매출액", "영업이익"], freq="Y")
 
 ## 2막 — 현금 3조를 손에 쥔 날, 그리고 쇼핑이 시작됐다
 
-![크래프톤의 글로벌 M&A](./assets/11-global-shopping.webp)
+![크래프톤의 글로벌 M&A](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/15/158318263c729b29e9536f73904a465e65cfeeef9f3ebb0c9f6b1f81836acf09.webp)
 
 ### IPO 4.3조 — 시초가는 공모가 아래였다
 
@@ -464,7 +465,7 @@ A가 5개. 다만 성장C, 효율C. *"매출 성장 23%에도 이익 감소 -11%
 
 현금 3조가 금융자산(2.6조)과 인수(1조)와 부동산(3천억)에 흘러갔다. 인수한 회사 중 언노운 월즈는 42% 손상. ADK는 아직 성과 미확인. 그러면 **이 돈이 매출로 돌아올 수 있는가?** PUBG가 매출의 80%+인 상태에서, "PUBG 다음"이 나와야 인수의 의미가 생긴다.
 
-![inZOI — PUBG 다음의 베팅](./assets/11-inzoi-world.webp)
+![inZOI — PUBG 다음의 베팅](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/9d/9d8566b2ba026e69949822977193a8e53c083b12d1fda99494dccc19e659e920.webp)
 
 ### inZOI 1주 100만장 — PUBG 다음의 첫 번째 신호
 

@@ -2,7 +2,7 @@
 	import { base } from '$app/paths';
 	import { brand } from '$lib/brand';
 	import { ArrowRight, Calendar } from 'lucide-svelte';
-	import { getSeries, getSeriesPosts } from '$lib/blog/posts';
+	import { blogAssetUrl, getSeries, getSeriesPosts } from '$lib/blog/posts';
 	import CardThumb from '$lib/blog/CardThumb.svelte';
 
 	let { data } = $props();
@@ -74,8 +74,8 @@
 						<div class="series-step-shell">
 							<div class="series-step-main">
 								<picture>
-									<source srcset="{base}{post.thumbnail.replace('.png', '.webp')}" type="image/webp" />
-									<img src="{base}{post.thumbnail}" alt={post.title} class="series-step-avatar" width="52" height="52" loading="lazy" />
+									<source srcset={blogAssetUrl(post.thumbnail.replace('.png', '.webp'), base)} type="image/webp" />
+									<img src={blogAssetUrl(post.thumbnail, base)} alt={post.title} class="series-step-avatar" width="52" height="52" loading="lazy" />
 								</picture>
 								<div class="series-step-body">
 									<div class="series-step-meta">
@@ -89,8 +89,8 @@
 								</div>
 							</div>
 							<CardThumb
-								image="{base}{post.cardPreview}"
-								imageWebp={post.cardPreviewWebp ? `${base}${post.cardPreviewWebp}` : undefined}
+								image={blogAssetUrl(post.cardPreview, base)}
+								imageWebp={post.cardPreviewWebp ? blogAssetUrl(post.cardPreviewWebp, base) : undefined}
 								keyword={post.cardKeyword}
 								kicker={post.categoryLabel}
 								alt={post.title}

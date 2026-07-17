@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 113
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/MA-mastercard.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f1/f1a88cc0fc7cc2814c5979beb691118960919c7f4aae42ab084496de30bffe66.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/36/36e806359344b59309fcffd06223458f96b832496382dea3373203a0acb819f0.webp
 tags: ["마스터카드", "MA", "비자", "영업이익률", "통행료망", "결제", "네트워크", "미국주식", "순이익률", "interchange"]
 stockCode: "MA"
 corpName: "Mastercard"
@@ -47,7 +48,7 @@ import StackBar from '$lib/components/blog/StackBar.svelte';
 
 무엇이 꺾였다 돌아왔는지는 숫자가 말한다. 왜 그랬는지는 회사의 자기기술이 말한다. 이 글은 그 둘을 끝까지 갈라 적는다. 이미 [비자(V)](/blog/V-visa)에서 본 '리스크를 안 지는 통행료망'의 형제편이되, 마스터카드의 마진은 비자보다 한 칸 낮은 자리에 있다.
 
-![거래가 망을 통과할 때 수수료를 받는 구조 — 카드를 발급하는 회사가 아니다](./assets/113-network.webp)
+![거래가 망을 통과할 때 수수료를 받는 구조 — 카드를 발급하는 회사가 아니다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/32/32d11a899e652e69bfcfa4cba7d25f7c10420f571f78072393074c86585db666.webp)
 
 ---
 
@@ -117,7 +118,7 @@ c.select("IS", ["당기순이익"], freq="Q")
 
 **외부 인용**: 미 interchange 집단소송(MDL 1720)에서 2024년 3월 약 300억$ 합의안이 나왔으나 2024년 6월 Brodie 판사가 기각(인하 미미·Honor All Cards 규칙 유지)했고, 2025년 11월 수정안(신용 interchange 합산 평균 약 10bp 인하)이 제출됐다. NRF 등 가맹점 단체는 '실질 없음'이라며 반대한다. 이건 신용손실 리스크가 아니라 **가격결정력(요율)에 대한 법적 압박**이다.
 
-![정하지만 직접 받지는 않는 요율 권한이 법정의 표적 — interchange는 발급은행 수취분이라 MA 매출이 아니다](./assets/113-courthouse.webp)
+![정하지만 직접 받지는 않는 요율 권한이 법정의 표적 — interchange는 발급은행 수취분이라 MA 매출이 아니다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/0a/0a32aefbf11b040aa9027d87f6cc80525927344342b73d92b1e200b2415474f8.webp)
 
 두 가지를 헷갈리면 안 된다 — (1) interchange는 발급은행 수취분이라 마스터카드 매출이 아니다('합의 규모 = 매출 타격'으로 읽으면 오독), (2) 이 소송을 2025 OPM 57.6%와 인과로 잇는 순간 거짓이 된다(요율-OPM 연결 자체가 데이터 밖이므로, 손익 영향은 외부 추정으로만 둔다).
 

@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 130
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/AMD-amd.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/97/97d312728cc71c7957363047ab3937833f27809e63e461fa221b57a10a321c1c.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/8b/8b9e814b32d226060306fbca5b9b6f0fc08b979ad3ecfed738ebedd4e1830e61.webp
 tags: ["AMD", "에이엠디", "자일링스", "Xilinx", "무형자산상각", "영업이익률", "매출총이익률", "GAAP", "반도체", "미국주식"]
 stockCode: "AMD"
 corpName: "Advanced Micro Devices"
@@ -47,7 +48,7 @@ import StackBar from '$lib/components/blog/StackBar.svelte';
 
 한 회사의 한 해를 두고, 어느 줄을 짚느냐에 따라 '거의 못 벌었다'와 '절반 가까이 남겼다'가 동시에 참이 된다. 두 줄 사이에서 사라진 44원은 어디로 갔는가. 그 답의 절반은 1년 전, AMD가 자기보다 큰 회사를 자사 주식으로 사들이며 장부에 올린 약 350억 달러의 무형자산에 적혀 있다 — 회사는 그 인수 대금을 이미 2022년에 결제했지만, **회계 청구서는 매 분기 손익계산서로 나뉘어 도착하는 중이다.** 나머지 절반은, 그냥 안 좋았던 해였다는 더 단순한 사실에 있다.
 
-![진짜 엔진은 전력을 다해 돌아가는데, 회계의 서리 낀 유리가 그 밝기를 가린다](./assets/130-veil.webp)
+![진짜 엔진은 전력을 다해 돌아가는데, 회계의 서리 낀 유리가 그 밝기를 가린다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/27/272a2b6713daa3de202f98c64bf55b7418ac2fb45eebb27d8d81b0b56021e445.webp)
 
 이 글은 그 두 줄의 간극을, 연결 손익이 증명할 수 있는 선까지만 따라간다.
 
@@ -85,7 +86,7 @@ c.select("IS", ["매출액", "매출총이익", "영업이익"], freq="Q")  # �
 
 이 인수로 AMD는 약 350억 달러의 무형자산을 장부에 올렸고, 그것이 매년 비용으로 상각되어 손익을 눌렀다. AMD의 10-K는 2022 회계연도 인수 관련 무형자산 상각을 **매출원가에 약 14.48억 달러, 영업비용에 약 21.00억 달러, 합계 약 35억 달러**로 분해한다 [외부 인용·[AMD 10-Q (SEC)](https://www.sec.gov/Archives/edgar/data/2488/000000248823000139/amd-20230701.htm)]. 회사가 상각·주식보상·인수통합비를 빼고 따로 제시하는 non-GAAP 영업이익은 2022년 약 $6.3B인데, GAAP은 약 $1.3B이었다 — 그 약 $5B 격차의 대부분이 이 비현금 항목들이다 [외부 인용].
 
-![488억 달러짜리 인수 — 장부에 올린 무형자산이 매 분기 손익으로 도착한다](./assets/130-merger.webp)
+![488억 달러짜리 인수 — 장부에 올린 무형자산이 매 분기 손익으로 도착한다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/36/361fd3591fd4e3810072ce5af378870cafb6e5c11963030cdcf1eb08ae8d7e54.webp)
 
 핵심은 이거다 — 영업의 실수가 아니라, *과거에 결제한 인수대금의 청구서가 매 분기 손익계산서로 도착하는 구조*다. 다만 이 상각 분해는 연결 손익엔 한 줄로 합쳐져 보이지 않으므로, 본문은 '영업이익이 무너진 이유는 상각이다'를 단정하지 않고 '10-K가 그렇게 적는다'는 인용으로만 둔다.
 
@@ -159,7 +160,7 @@ c.select("IS", ["매출액", "매출총이익", "영업이익"], freq="Q")  # 20
 
 이 회복은 두 힘이 겹친 결과로 *양립*한다 — 수요가 살아난 것, 그리고 인수 후 시간이 지나며 상각 청구서가 상대적으로 얇아진 것. 그 사이 AMD는 2022년 2분기부터 Data Center·Client·Gaming·Embedded 4개 세그먼트로 재편하며, 인수한 FPGA(Embedded)와 같은 해 흡수한 Pensando DPU(약 19억 달러)를 Data Center에 합류시켰다 [외부 인용]. 정체성이 'CPU 사이클에 묶인 부품업체'에서 '적응형 컴퓨팅 복합체'로 바뀐 것이다.
 
-![AI 가속기 서버 랙 — 인수가 합류시킨 FPGA·DPU가 Data Center로 모인다](./assets/130-datacenter.webp)
+![AI 가속기 서버 랙 — 인수가 합류시킨 FPGA·DPU가 Data Center로 모인다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/be/be3e93453e3c0a57e7d6cc74b77da3eda04c038b23d458012052c7bf10ae8585.webp)
 
 다만 여기서 단정의 선을 지킨다 — '2025년 매출의 몇 %가 Data Center'라는 구체 비중은 연결 검증수치에 없고 10-K 세그먼트 주석[외부 인용]에만 있다. 비중 한 숫자로 'Xilinx 베팅 성공'을 판정하면, 서버 CPU·GPU의 자력 성장과 인수 효과를 분리하지 못한다. 그래서 이 글은 '세그먼트 재편이 일어났다'는 사실까지만 단정한다.
 

@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 146
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/282330-bgf-retail.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b0/b04890f95f0d38f71b111ea1a329461771adc4e727140fc4e0570b41422e6fef.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/91/91e9e3f39624ee169965a43b8f0202e5a6bca009e3147f1af9dcbbb805019949.webp
 tags: ["BGF리테일", "CU", "편의점", "프랜차이즈", "가맹본부", "principal gross", "IFRS16", "점포포화", "한국주식", "유통"]
 stockCode: "282330"
 corpName: "BGF리테일"
@@ -44,7 +45,7 @@ BGF리테일이 운영하는 편의점 CU는 2025년 **9조612억** 어치를 �
 
 ![매출은 +57%인데 영업이익은 2022년 이후 4년째 2,500억대에 멈춰 있다](./assets/146-two-curves.svg)
 
-![9조 매출이 지나가는 편의점 매대. 본부의 몫은 총액이 아니라 얇은 배분 마진이다](./assets/146-bgf-retail-shelf.webp)
+![9조 매출이 지나가는 편의점 매대. 본부의 몫은 총액이 아니라 얇은 배분 마진이다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/26/26af11aafb75550c95e48384df6c84150918592584a609c946a68850af31d739.webp)
 
 관통선은 하나다. **"한 손익계산서 안에서 매출선과 영업이익선이 왜 다른 속도로 움직이고, 그 격차는 무엇과 양립하는가?"** 이 한 문장 이후로는 '성장의 함정' 같은 수사 대신 두 선의 측정값으로만 말한다.
 

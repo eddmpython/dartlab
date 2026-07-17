@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 109
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/SBUX-starbucks.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/11/115bbf5347d2a20732ed348a73f9e5bf34c2bfb3c217170b8fa2f532e7eaf5b1.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/09/090a6c105f236795ec79edd5f8e1934b96f80f9a736ffc78bc606da07b1a86ce.webp
 tags: ["스타벅스", "SBUX", "영업이익률", "마진", "선불충전", "float", "턴어라운드", "구조조정", "미국주식", "커피"]
 stockCode: "SBUX"
 corpName: "Starbucks"
@@ -127,7 +128,7 @@ import StackBar from '$lib/components/blog/StackBar.svelte';
 
 관통선을 먼저 쓴다 — 연결은 *결과*(2025에 성장과 수익성이 찢어졌다)를 증명하고, *원인*은 다른 평면(BS·세그먼트·회사 발표)에 있다. 그 평면을 끝까지 분리하는 것이 이 글이다.
 
-![초록 간판의 카페 — 사상 최대로 팔았다](./assets/109-storefront.webp)
+![초록 간판의 카페 — 사상 최대로 팔았다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/fd/fd4f15d84717dab102c3acdc5df555b2ec90f533aa70bf62b592f2e3aff20b6c.webp)
 
 ---
 
@@ -178,7 +179,7 @@ FY2025 발표(외부 인용)에서 스타벅스는 OPM 하락을 직접 항목�
 
 그러나 이 숫자는 단 한 줄도 dartlab 연결 손익에 없다. 세그먼트 합이 연결과 어떻게 이어지는지도 검증 수치에 없다. 그래서 이 막부터의 모든 항목은 *'외부 인용'* 박스 안에 두고, 내부가 증명한 1막과 같은 톤에 섞지 않는다. 결정적으로 — 회사가 보고한 북미 약세를 연결 OPM 7.9% 붕괴의 '원인'으로 곧장 이어 쓰지 않는다. '연결 붕괴와 회사가 보고한 북미 약세는 *양립한다*'까지만이다(세그먼트→연결 연결 관계가 검증 수치 밖이므로). 거래건수 감소도 그 자체로는 거래건수라는 사실이지, '경험 가치가 떨어졌다' 같은 정성 서사로 번역하지 않는다.
 
-![한산한 매장 — 거래건수 감소는 사실, 그 해석은 회사 바깥의 이야기다](./assets/109-empty-cafe.webp)
+![한산한 매장 — 거래건수 감소는 사실, 그 해석은 회사 바깥의 이야기다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/05/058abcd490a1eead1e484a88a92daf71ee530bd8d7195a649033d96670a1ee55.webp)
 
 ---
 
@@ -200,7 +201,7 @@ FY2025 발표(외부 인용)에서 스타벅스는 OPM 하락을 직접 항목�
 
 ![float는 BS·이연수익 평면 — 손익(2025 마진 붕괴)과 다른 면에 있다](./assets/109-float-plane.svg)
 
-![미리 충전된 카드 잔액 — 무이자로 굴리는 예수금(float), 단 손익이 아니다](./assets/109-giftcard.webp)
+![미리 충전된 카드 잔액 — 무이자로 굴리는 예수금(float), 단 손익이 아니다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a1/a1fd7e2a3ba3b9ca55d8562152490b1afa5fe09317d24f46e28518b291d63374.webp)
 
 그러나 float는 *BS·운전자본 항목이지 손익이 아니다.* 충전 시점엔 수익이 아니고, 사용(redemption)·breakage·이자수익으로만 손익에 흘러간다. 2025년 OPM 붕괴(손익)와는 *다른 회계 평면*에 있어 인과로 이어지지 않는다. 그래서 float를 'dartlab로 증명한 척'하지 않는다 — 검증 수치에 단 한 줄도 없다(이자수익 규모 등은 공시 표에서 직접 분리되지 않는다). 한 가지 더 — BS에 보이는 거대한 *장기* 이연수익(약 $6~7B대)은 이 단기 float가 아니라 네슬레와의 글로벌 커피 제휴 선수 로열티($7.15B를 약 40년에 걸쳐 인식)다. 둘을 합쳐 '숨은 자금'으로 과장하면 사실 오류다. 그래서 float는 글의 중심이 아니라 *열린 곁가지 각주*로 둔다. 결제망의 통행료를 떼는 [비자](/blog/V-visa)가 '무엇을 안 지는가'로 마진을 만든다면, 스타벅스의 float는 '무엇을 미리 받는가'의 이야기다 — 흥미롭지만, 2025년에 무너진 건 그게 아니다.
 

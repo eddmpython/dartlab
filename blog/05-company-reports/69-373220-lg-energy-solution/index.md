@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 69
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/373220-lg-energy-solution.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/04/0469e8a02e4101f7db956beab8afe2d44c37ced82e3f1acfd0b8b074b3a36a12.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/2a/2af6f03a671d9db4b6aab46540272fbdcbae1cc6824133d8ffde21b4209a8572.webp
 tags: ["LG에너지솔루션", "373220", "LG엔솔", "이차전지", "EV배터리", "CAPEX", "IRA AMPC", "EV 캐즘", "자본집약", "공장"]
 stockCode: "373220"
 corpName: "LG에너지솔루션"
@@ -245,7 +246,7 @@ print(prof["marginWaterfall"]["history"][0])
 
 ### 왜 매출이 30% 빠졌는가
 
-![파우치형 리튬이온 배터리 셀 클로즈업 — 은색 알루미늄 케이스의 사각형 셀이 상단 전극 탭과 함께 가지런히 쌓인 모습. 청색 LED 림라이팅이 금속 표면에 반사된다.](./assets/69-pouch-cells.webp)
+![파우치형 리튬이온 배터리 셀 클로즈업 — 은색 알루미늄 케이스의 사각형 셀이 상단 전극 탭과 함께 가지런히 쌓인 모습. 청색 LED 림라이팅이 금속 표면에 반사된다.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/95/959b95e8383e9b9e267f21a7c2aabb3fae8440e208f3f714bc290ab1bb47145a.webp)
 
 매출 33.75조에서 23.67조로. 2년에 **10.08조가 사라졌다**. 이 크기를 체감하려면 한국 상장사 매출 순위로 돌려봐야 한다. 10조는 현대글로비스 2025년 매출 28.5조의 **3분의 1**, 대한조선(#14) 2025 매출 3.3조의 **3배**다. 회사 하나가 매출 10조가 빠지는 건 "사업이 축소됐다" 수준이 아니라 "구조가 흔들렸다"에 가깝다.
 
@@ -489,7 +490,7 @@ CAPEX 연도별 추이 (dartlab CF 원본 절대값 기준, 회사 IR 공시와 
 
 표시: **2022~2023년이 CAPEX 정점**. 두 해 합쳐서 **약 41조**가 공장·설비·무형자산에 들어갔다. 그 결과가 **유형자산 11.05조 → 40.79조 (+29.74조, 3.7배)**로 찍혀있다.
 
-![배터리 기가팩토리 조립 라인 — 자동화 로봇 팔이 대형 EV 배터리 모듈을 스테인리스 팩 인클로저에 삽입하는 와이드 샷. 흰 클린룸 복장의 작업자들이 배경에서 모니터를 보고 있다.](./assets/69-factory-assembly.webp)
+![배터리 기가팩토리 조립 라인 — 자동화 로봇 팔이 대형 EV 배터리 모듈을 스테인리스 팩 인클로저에 삽입하는 와이드 샷. 흰 클린룸 복장의 작업자들이 배경에서 모니터를 보고 있다.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e7/e74e5fca7637a06f1ea58b420242306fb4a9f5684e322ddd44dabcca0382d817.webp)
 
 ### 어디에 투자됐는가 — 대륙별 공장 지형
 

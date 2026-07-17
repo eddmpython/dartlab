@@ -6,7 +6,8 @@ category: reading-disclosures
 series: ownership-and-governance
 seriesOrder: 3
 thumbnail: /avatar-curious.png
-ogImage: /thumbnails/14-shareholder-return-what-matters.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d2/d2d0466efc287ac7a289bddbeafd1d4bdd96df4ed63bdc81624d89d72ce4ce3f.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/08/084fddd8f768e802d0907ce002160855bcfdbaf276015273cdf69d7b8af8ced0.webp
 ---
 
 # 주주환원 정책은 말과 숫자 중 무엇을 봐야 하나

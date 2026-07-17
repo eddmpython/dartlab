@@ -21,7 +21,8 @@ tags:
   - 투자사이클
   - 삼성바이오로직스
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/302440-sk-bioscience.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e7/e7ee01b46b3723043602e3470ede98ee9168c745103a1a467fa0b473c7fa925f.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/50/501339f8ec0da18e44a8ef33167016c5cb9bead81e946e944ce7b3dfe29767ea.webp
 youtubeId: ""
 ai:
   verdict: "매출은 돌아왔다, 마진은 안 돌아왔다 — CAPEX 2,604억 투자 사이클이 끝나야 답이 나온다"
@@ -267,7 +268,7 @@ rev = c.analysis("financial", "수익구조")
 
 2021년에는 AZ 코로나 백신 위탁생산(용역 29%)이 매출의 핵심이었다. 코로나 백신 CMO 계약이 종료되면서 이 항목이 사라졌다. 자체 백신(제품)이 95%(2022)까지 올라갔지만 자체 백신만으로는 매출 9,000억을 채울 수 없었고, 이후 **CDO/CDMO 계약**이 늘면서 상품 비중이 35%까지 올랐다.
 
-![백신 연구소 — 코로나 CMO 이후 자체 백신과 CDMO 투 트랙으로 전환하는 SK바이오사이언스의 핵심 역량](./assets/51-vaccine-lab.webp)
+![백신 연구소 — 코로나 CMO 이후 자체 백신과 CDMO 투 트랙으로 전환하는 SK바이오사이언스의 핵심 역량](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ec/ec324e3df7f0b2bc367ac9de1ab55bfd6710caf56e394cb4e90ba3485b176c92.webp)
 
 ### 왜 CDMO인가 — 삼성바이오로직스가 증명한 모델
 
@@ -293,7 +294,7 @@ SK바이오사이언스의 자체 백신 포트폴리오는 독감 백신(스카
 
 ![SK바이오사이언스 투자 사이클 대시보드](./assets/51-investment-phase.svg)
 
-![SK바이오사이언스 안동 공장 외관 — 설비투자 2,604억을 쏟아붓는 CDMO 전환 투자의 실체](./assets/51-factory-exterior.webp)
+![SK바이오사이언스 안동 공장 외관 — 설비투자 2,604억을 쏟아붓는 CDMO 전환 투자의 실체](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ca/ca3a4fbfeaf695fd0f376ad36a2253d897cdaf6285d5eef40a47160c9aa076f0.webp)
 
 ### 설비투자 역대 최고 — 428억(2021) → 2,604억(2025)
 

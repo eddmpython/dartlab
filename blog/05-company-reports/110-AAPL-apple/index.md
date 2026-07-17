@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 110
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/AAPL-apple.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/63/6392aa161c3469984092c387befad1df7c38f65781f9d9e95a0245881ce398ea.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/85/857d73744c7b7566fde97095657777dd61165622349a31cc28d265127a301643.webp
 tags: ["애플", "AAPL", "서비스", "영업이익률", "디커플링", "세그먼트", "자사주", "빅테크", "미국주식", "아이폰"]
 stockCode: "AAPL"
 corpName: "Apple"
@@ -47,7 +48,7 @@ import StackBar from '$lib/components/blog/StackBar.svelte';
 
 관통선은 둘이다. 하나, 애플은 규모와 수익성 비율을 *동시에* 올린 드문 케이스다(연결이 증명). 둘, 그 *이유*는 연결 손익이 답하지 못한다(외부 인용·봉인). 이 글은 '확정된 관찰 → 봉인된 질문'의 2단으로 간다.
 
-![누구나 아는 간판은 하드웨어다 — 그러나 마진의 '왜'는 여기 안 적혀 있다](./assets/110-devices.webp)
+![누구나 아는 간판은 하드웨어다 — 그러나 마진의 '왜'는 여기 안 적혀 있다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f7/f7eee2da45f9661a8628b7b3d9d241337def47e0e767401cf17a4e2f2a3cd27c.webp)
 
 ---
 
@@ -107,7 +108,7 @@ c.select("CF", ["영업활동현금흐름"], freq="Q")
 
 ![서비스는 매출의 1/4인데 매출총이익 비중은 더 크다 — 단 GPM≠OPM, 전부 외부 인용](./assets/110-external-gpm.svg)
 
-![앱스토어·구독 같은 서비스 — 외부 인용은 여기를 가리키지만, 연결 손익엔 안 보인다](./assets/110-services.webp)
+![앱스토어·구독 같은 서비스 — 외부 인용은 여기를 가리키지만, 연결 손익엔 안 보인다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/81/8100eaf0e8980b13552e989a57d4d45eae1e659bda97f5132ea667d6dbe9dc6a.webp)
 
 여기서 *두 개의 경계*를 동시에 그어야 한다. 첫째, 이 수치는 전부 **[외부 인용 — dartlab 연결 증명 0]**이다. 둘째, **GPM(매출총이익률)과 OPM(영업이익률)은 별개 비율**이다 — GPM에서 OPM으로 가려면 R&D·판관비 배분을 건너뛰어야 하는데, 그 다리는 dartlab에도 10-K에도 없다. 그래서 '서비스가 진짜 돈줄이다'라고 단언하지 않는다. *'외부 인용 기준으로는 간판이 하드웨어(매출 75.4%·매출총이익 60.7%는 여전히 본업)이고, 매출총이익의 결정적 몫에서 서비스 비중이 매출 비중보다 높게 보인다'*까지다. 이 GPM 구조를 2막의 OPM 확대와 한 문장으로 잇는 순간 세 규율(내부↔외부 혼합·GPM↔OPM 혼동·관찰→인과)을 동시에 어긴다. 그래서 다음 막에서 그 금지선 자체를 글의 골격으로 박는다.
 
@@ -121,7 +122,7 @@ c.select("CF", ["영업활동현금흐름"], freq="Q")
 
 ![세그먼트 OPM은 공시조차 안 된다 — 믹스↔마진은 영원히 '정합/양립'까지만 (봉인)](./assets/110-sealed.svg)
 
-![답이 봉인된 금고 — 데이터가 없는 자리에서 답하는 척하지 않는다](./assets/110-vault.webp)
+![답이 봉인된 금고 — 데이터가 없는 자리에서 답하는 척하지 않는다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/41/417cefd5910a09a4bad1fe2f491ee60af9d800dd695c0b47a87f5bbddb240e58.webp)
 
 그러므로 4막의 구조(외부 GPM)와 2막의 OPM 확대(내부)는 *'시간상 같이 일어난 두 관찰'*로 나란히 놓을 뿐, 한 문장으로 봉합하지 않는다. '서비스 믹스가 OPM 확대를 견인했다' — 이 한 문장이 가장 위험한 클리셰이고, 이 글은 그걸 쓰지 않는다. 그리고 이 *봉인*은 약점이 아니다. 데이터가 답할 수 없는 자리에서 답하는 척하지 않는 것 — 그게 이 글의 페이오프다. 같은 '간판 뒤 엔진' 의심이 외부 인용으로만 닿는 [코카콜라](/blog/KO-coca-cola)·[펩시코](/blog/PEP-pepsico)처럼, 애플의 진짜 엔진도 연결 손익 바깥에 있다.
 

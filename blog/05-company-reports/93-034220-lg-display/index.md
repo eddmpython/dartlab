@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 93
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/034220-lg-display.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/66/6610815ac5d2fc5a0a2cde61782a4a8d188df98c5fe43608ab3481bd287ba312.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d9/d90c112e21dca4b729d5b29b18bde767f393f7b2e819df128c0f8b5b405d4b63.webp
 tags: ["LG디스플레이", "034220", "디스플레이", "OLED", "LCD", "치킨게임", "BOE", "애플", "삼성디스플레이", "패널"]
 stockCode: "034220"
 corpName: "LG디스플레이"
@@ -146,7 +147,7 @@ carousel:
 
 **왜 1999년부터 시작하는가.** LG디스플레이는 자기 돈만으로 태어난 회사가 아니다. 1999년, LG전자의 LCD 사업은 네덜란드 필립스와 50:50 합작회사 **LG.Philips LCD**로 출범했다. 필립스가 약 16억 달러를 댔다. 패널 공장은 한 번 지을 때 조 단위가 드는 장치산업이라, 외부 파트너의 자본 없이는 판을 키울 수 없었다.
 
-![조 단위가 드는 패널 공장 — 그 거대한 설비가 곧 매년 손익을 누르는 감가상각이 된다](./assets/093-lcd-fab.webp)
+![조 단위가 드는 패널 공장 — 그 거대한 설비가 곧 매년 손익을 누르는 감가상각이 된다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e3/e357476461618e2808bd3afaf221c0817a381b24bb07cf99aba3714c416fcfbd.webp)
 
 초대 사령탑 구본준은 사내 인사말을 **"일등합시다"**로 바꿨다. 1등을 향한 의지는 분명했다. 그런데 질문이 남는다 — 남의 돈으로 시작한 회사가 '일등'을 외칠 때, 그 일등은 어디서부터가 자기 것인가? 이 물음이 이 회사 30년을 따라다닌다.
 
@@ -184,7 +185,7 @@ LG디스플레이의 장기 리스크는 여기서 시작됐다. 한 번 공장�
 
 기술 자존심도 세웠다. 2013년 세계 최초 55인치 OLED TV 패널 양산. 대형 OLED는 지금도 LG디스플레이가 세계에서 거의 유일하게 양산하는 영역이다.
 
-![세계 최초로 양산한 대형 OLED TV 패널 — 기술은 1등이었다](./assets/093-oled-tv.webp) 당시 한상범 사장은 **"UHD OLED에 올인하겠다. 시점의 문제이지 반드시 시장이 열리고 우리가 1등을 할 것"**이라고 공언했다.
+![세계 최초로 양산한 대형 OLED TV 패널 — 기술은 1등이었다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/8d/8d147168fb86bc91125de429d32658223305748d749bd97e854404820450d848.webp) 당시 한상범 사장은 **"UHD OLED에 올인하겠다. 시점의 문제이지 반드시 시장이 열리고 우리가 1등을 할 것"**이라고 공언했다.
 
 호황의 정점은 두 번 찍혔다. 2017년 영업이익 **2조 4,616억**, 그리고 2021년 — 코로나로 집에서 일하고 공부하는 비대면 수요가 폭발하면서 매출 **29조 8천억**, 영업이익 **2조 2,306억**. 외부 수요가 밀려들 때 이 회사는 분명 거대한 이익을 냈다.
 
@@ -292,7 +293,7 @@ c.select("BS", ["자산총계", "부채총계", "자본총계"], freq="Y")
 
 **왜 같은 나라 회사는 살았나.** "중국에 밀려서 졌다"는 서사에는 결정적 반례가 있다. 같은 한국, 같은 시기에 삼성은 살아남았다. [삼성전자](/blog/005930-samsung)는 메모리 반도체에서 중국을 따돌렸고, 삼성디스플레이는 스마트폰용 중소형 OLED로 무게중심을 옮겨 그 시장을 장악했다. 2019년 기준 스마트폰 OLED 점유율은 **삼성 82% vs LG 2%**였다.
 
-![돈이 되는 스마트폰 OLED 좌표 — 여기서 LG디스플레이는 후발에 밀렸다](./assets/093-smartphone-oled.webp)
+![돈이 되는 스마트폰 OLED 좌표 — 여기서 LG디스플레이는 후발에 밀렸다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/92/921962937ec365d2b5a848c6f5aa2a4a1048d77acf8926200f5f511d91791df0.webp)
 
 이 비대칭이 중요한 이유는, 그것이 "외부 탓"이라는 변명을 깨기 때문이다. 중국 공급과잉이라는 같은 환경에서 한 회사(삼성)는 다른 좌표(메모리·모바일 OLED)로 갈아타 살아남았고, LG디스플레이는 '대형 패널'이라는 좌표에 공장을 박은 채 남았다. **무너진 진짜 원인은 환경이 아니라, 회사가 어떤 좌표에 몸을 실었느냐였다.** LG디스플레이는 대형 OLED TV를 세계 최초로 만든 1등이었지만, 정작 돈이 되는(차별화가 유지되는) 중소형 OLED 좌표에서는 후발에 밀렸다.
 

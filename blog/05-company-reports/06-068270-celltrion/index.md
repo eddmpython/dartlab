@@ -19,7 +19,8 @@ tags:
   - 합병
   - 전자공시
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/068270-celltrion.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/30/30862532121ec9e616c9745fc48e05b182c4b4ec452ed8bc136574b20271acaf.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/90/9040b68fd9356a9f94651935f8235fef65446e876884ad1944d164fc38cd09e8.webp
 youtubeId: "d7RUQIlimVM"
 ai:
   verdict: "IMF 5천만원 → 시총 수십조. 바이오시밀러 글로벌 리더. 무형자산 13.78조."
@@ -260,7 +261,7 @@ dartlab의 셀트리온 매출 시계열에서 가장 오래된 데이터인 **2
 
 2007년, 그가 셀트리온을 세운 지 5년이 지난 시점에, 그는 한 가지 약을 정해서 임상을 시작했다. 그 약은 **레미케이드(Remicade)**, 미국 얀센이 만든 항체 의약품이었다. 류마티스 관절염, 크론병, 강직성 척추염, 궤양성 대장염에 듣는 약. 글로벌 매출 약 100억 달러. 환자 한 명이 1년에 약 2,000만원을 써야 하는 약. 특허 만료 예정 시점은 2014년 전후.
 
-![인플릭시맙(Infliximab) — 레미케이드의 활성 성분 분자 구조](./assets/06-infliximab-structure.webp)
+![인플릭시맙(Infliximab) — 레미케이드의 활성 성분 분자 구조](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ed/ed49011f734a13f0c45ab3d05364b0221ae919d794ae0e0ff95e4f1fd67bf6b7.webp)
 *Infliximab(인플릭시맙), 미국 얀센이 만든 류마티스 관절염·크론병 항체. 글로벌 매출 약 100억 달러의 항체 의약품. 셀트리온이 2007년 임상을 시작해 2012년 8월 한국에서 세계 최초의 항체 바이오시밀러로 출시했다. (출처: Wikimedia Commons, public domain)*
 
 서정진의 임상은 작은 임상이 아니었다. 류마티스 관절염 환자 606명, 강직성 척추염 환자 250명, 19개국 100여 개 병원이 참여한 다국가 임상 3상이었다. 한국 회사가 이 규모의 다국가 임상을 단독으로 진행한 것은 그 시점까지 거의 없었다. 임상 비용만 수천억원 단위였다. 그 돈은 어디서 왔는가 — 일부는 셀트리온의 영업, 일부는 셀트리온헬스케어(2008년 별도 설립한 판매 회사)의 IR로 모은 자금, 그리고 산업은행 등의 정책 자금이었다.
@@ -369,7 +370,7 @@ dartlab이 본 2025년의 이 회사는 다음과 같다 — 매출 4조 1,625�
 
 이게 한 결정이 만든 회사의 모습이다. 2023년 12월 28일이 셀트리온의 본질을 바꾼 날이다.
 
-![송도 — 셀트리온 본사가 있는 도시](./assets/06-songdo-skyline.webp)
+![송도 — 셀트리온 본사가 있는 도시](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/0e/0e153ce65dc943479b79ccf9644c423cbb1a0c0a3cd2f85deeb0c74183e0d677.webp)
 *인천 송도 국제도시. 셀트리온 본사·공장이 있는 곳. 이 작은 인공섬에서 글로벌 항체 바이오시밀러 1위 회사가 만들어졌다. 같은 도시에 삼성바이오로직스, 삼성바이오에피스도 있다. 송도는 세계 최대 바이오의약품 생산 단지가 됐다. (출처: Wikimedia Commons, CC BY-SA)*
 
 ---

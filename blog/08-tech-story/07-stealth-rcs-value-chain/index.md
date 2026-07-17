@@ -16,7 +16,8 @@ tags:
   - AESA
   - 방산
   - 기술이야기
-ogImage: /thumbnails/tech-stealth-rcs-value-chain.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/8c/8c8b1d147afa88e986a04f108a8bee8dde1a0ac0363d6580adfccf28b75c2b95.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c0/c0445e06636b2d9a2b2181947920c93e4995a076bceb728d7c4fb352681fa0eb.webp
 ai:
   verdict: "스텔스는 보이지 않는 마술이 아니라 레이더에 작게, 늦게, 헷갈리게 보이도록 만드는 시스템 공학이다. 형상과 흡수재가 신호를 낮추고, 센서융합과 전자전이 먼저 보는 시간을 벌며, 정비가 실제 저피탐 성능을 유지한다. EDGAR와 DART 실측상 미국 스텔스 주계약사들은 2025년 영업이익률 10% 안팎에 모이고, 한국 KF-21 라인은 KAI 7.3%, 한화시스템 3.3%, 한화에어로 11.6%, LIG넥스원 7.4%처럼 역할별 편차가 크다."
   direction: 관망
@@ -134,7 +135,7 @@ carousel:
 
 그리고 이 시스템은 재무제표에도 흔적을 남긴다. 미국 방산 주계약사들은 스텔스 플랫폼을 만들지만 2025년 영업이익률은 대체로 10% 안팎에 모인다. 한국의 KF-21 라인은 KAI, 한화시스템, 한화에어로스페이스, LIG넥스원이 서로 다른 층위에 배치되고, 각자의 손익이 다르게 찍힌다. 이 글은 RCS(레이더 반사면적)라는 물리 개념에서 시작해 DART와 EDGAR의 손익계산서까지 내려간다.
 
-![저피탐 형상, 레이더 시험 장비, 코팅 점검이 함께 보이는 항공우주 통합 격납고. 스텔스는 전투 장면보다 조립과 시험, 정비의 기술로 먼저 이해해야 한다](./assets/01-stealth-hangar.webp)
+![저피탐 형상, 레이더 시험 장비, 코팅 점검이 함께 보이는 항공우주 통합 격납고. 스텔스는 전투 장면보다 조립과 시험, 정비의 기술로 먼저 이해해야 한다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b0/b0ae07ccfc4d0f95f5d7f2dc4c889e494c18e8b34ed8e6f41ac0e4c9fccc03cb.webp)
 
 ## 1. 스텔스는 무엇을 숨기나: RCS라는 작은 숫자의 의미
 
@@ -174,7 +175,7 @@ F-117은 이 원리를 극단적으로 드러낸 초창기 사례였다. 계산 
 
 정비 부담은 재무제표에도 간접적으로 남는다. 완성기 주계약사는 항공기 판매뿐 아니라 장기 군수지원, 소프트웨어 업그레이드, 예비부품, 정비 체계를 같이 판다. 기체를 한 번 팔고 끝나는 제조업보다, 30년 운용 주기 전체가 계약의 일부가 된다. 스텔스의 진짜 시장은 기체 출고일이 아니라 운용 수명 전체에 걸쳐 열린다.
 
-![스텔스 코팅과 패널 경계를 점검하는 정비 장면. 저피탐 성능은 설계뿐 아니라 정비 품질이 계속 유지해야 한다](./assets/02-stealth-maintenance.webp)
+![스텔스 코팅과 패널 경계를 점검하는 정비 장면. 저피탐 성능은 설계뿐 아니라 정비 품질이 계속 유지해야 한다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/55/558e5ffde6c1d831ed71a19cd41dc3287e931dbf4b9043fc4b5186c688b30b81.webp)
 
 ## 4. 센서융합과 전자전: 작게 보이는 것만으로는 부족하다
 

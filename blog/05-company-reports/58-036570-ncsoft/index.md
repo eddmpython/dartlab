@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 58
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/036570-ncsoft.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/52/522c00df61054ba3113b19fa5e48ca39329dbaefcbe28fee5804b5fb79df0494.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b3/b36c09d4bcda2b810cf88d4d2e9bdf75523ea490d7c0d1b9f6915f8970fa3272.webp
 tags: ["엔씨소프트", "036570", "NC", "게임", "리니지", "MMORPG", "김택진", "TL", "쓰론앤리버티", "주식투자"]
 stockCode: "036570"
 corpName: "NC"
@@ -181,7 +182,7 @@ carousel:
 
 ![엔씨소프트 리니지 시리즈 연대기 1998~2025 — 게임 하나가 만든 28년](./assets/058-lineage-timeline.svg)
 
-![한밤 PC방에서 리니지류 MMORPG를 플레이하는 한국 게이머의 화면 — 28년 지속된 유저 시나리오](./assets/058-lineage-scene.webp)
+![한밤 PC방에서 리니지류 MMORPG를 플레이하는 한국 게이머의 화면 — 28년 지속된 유저 시나리오](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/db/dba5203a269910fde52fb227391fbb0a81db990cd490c06e6b25097e46fbf5c4.webp)
 
 ---
 
@@ -295,7 +296,7 @@ c.select("CF", ["영업활동현금흐름","유형자산의 취득","자기주�
 
 ![2020~2022 판교 R&D 센터 5조 + 자사주 2,700억 + 현금 축적 1.26조의 3년](./assets/058-cash-accumulation.svg)
 
-![경기도 성남시 판교테크노밸리의 엔씨소프트 R&D 센터 — 5조 사옥 프로젝트 2020~2024](./assets/058-ncsoft-pangyo-rd.webp)
+![경기도 성남시 판교테크노밸리의 엔씨소프트 R&D 센터 — 5조 사옥 프로젝트 2020~2024](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/06/06022ff7172a73eb5257a645e495452042d3e559aef56dc2c4b949dd8a0085d7.webp)
 
 ---
 

@@ -4,10 +4,11 @@ date: 2026-04-05
 description: "삼성전자 독립 신용등급 dCR-AA+ (투자적격 상위+). 공시 데이터 기반 정량 분석 등급 근거, 재무 하이라이트, 등급 전망."
 category: credit-reports
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/credit-01-005930-samsung.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/70/7030a3db92a782fbb96770ad9328562792cdd5b932c06f2866fbc1b4b6d5f04a.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/7c/7cba6eb8e44ec5d2352dbca544cb9b2bc3bf83eb461f445d4b21e9c36fda78b1.webp
 ---
 
-![삼성전자 (005930) 신용분석 보고서 ?? ???](./assets/01-credit-dashboard.webp)
+![삼성전자 (005930) 신용분석 보고서 ?? ???](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f4/f42bed7394262fad951a368fa47ae882d1e3a08c557d0f4a2243f0645ef159db.webp)
 > ⚠️ **면책**: 본 보고서는 dartlab dCR v4.0 방법론에 따라 공시 데이터만으로 작성되었습니다. 제도권 신용등급과 다를 수 있으며, 투자 권유가 아닙니다. [방법론](https://github.com/eddmpython/dartlab/blob/master/src/dartlab/analysis/CREDIT.md)
 
 > **dCR-AA+** | 투자적격 상위+ | 2026-04-05 | 방법론 v4.0

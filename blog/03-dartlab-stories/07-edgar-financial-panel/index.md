@@ -6,9 +6,10 @@ category: dartlab-stories
 series: dartlab-stories
 seriesOrder: 7
 topicSlug: "edgar-financial-panel"
-ogImage: /thumbnails/dartlab-edgar-financial-panel.webp
-thumbnail: /thumbnails/dartlab-edgar-financial-panel.webp
-thumbnailBg: ./assets/dartlab-story-07-thumbnail-bg-v1.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/68/685fd731eef9dea7054fe147f4c1a87dccf77e518d0c59176e1eb49fedb461f0.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e0/e0989b009d4ac81a60a3f8b5eeb90554158e847dbab4f5a3db7e6374836f26c3.webp
+thumbnail: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/68/685fd731eef9dea7054fe147f4c1a87dccf77e518d0c59176e1eb49fedb461f0.webp
+thumbnailBg: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/59/591eabf2c50da1eca8236d979b79d08005c2aa42a5ed797baecdcbdfe14607d8.webp
 tags:
   - dartlab
   - EDGAR
@@ -38,7 +39,7 @@ aapl.market
 
 결과가 `US`면 출발은 맞다. 미국 회사로 열렸다는 표시다. 다만 여기까지가 "미국 회사가 열렸다"이지 "한국 회사와 비교할 준비가 끝났다"는 아니다. 비교하려면 통화, 기간, 회계연도 기준을 더 맞춰야 한다. 지금은 세 표를 같은 표면으로 여는 데까지만 간다.
 
-![EDGAR 재무제표 세 장을 같은 panel로 여는 흐름](./assets/dartlab-story-07-edgar-financial-panel.webp)
+![EDGAR 재무제표 세 장을 같은 panel로 여는 흐름](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/6b/6b9b2dd2b691a5a3a34d6d6e11623676f4249f2b00acd3587b22d1684c197a26.webp)
 
 ## 손익계산서는 매출에서 시작한다
 
@@ -100,7 +101,7 @@ Apple 표의 기간 열은 그냥 달력 열이 아니다. 미국 회사는 EDGA
 
 10-K와 10-Q의 기간 기준은 회사의 회계연도와 연결된다. Apple의 최근 분기 열을 볼 때도 "몇 년 몇 분기"라는 이름만 보지 말고, 그 회사가 어떤 fiscal period로 공시했는지 의식해야 한다.
 
-![EDGAR 재무제표의 공시 리듬과 브라우저 경계](./assets/dartlab-story-07-edgar-rhythm-boundary.webp)
+![EDGAR 재무제표의 공시 리듬과 브라우저 경계](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b9/b9463a3da04faf88c0f9f65400f53b4988e32c8161bd9e66f5dc6e54342ab811.webp)
 
 [재무제표 기간, Y와 Q 조회](/blog/the-grid)에서 배운 기간 감각이 여기서 다시 필요하다. DART 회사의 분기와 EDGAR 회사의 분기를 같은 달력 기간이라고 단정하면 안 된다. `panel`은 표를 열어 주지만, 표의 기간 의미까지 자동으로 투자 문장으로 바꿔 주지는 않는다.
 

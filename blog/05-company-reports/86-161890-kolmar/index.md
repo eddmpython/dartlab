@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 86
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/161890-kolmar.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/eb/eb2eac6750b82c46c9a9ac9fa01a2f11ae7b24ac35bcef3fb8755d7fd7c4f4e2.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d7/d7e0f6da68bb6b4674c083ecfed2dbc6ae6b76054075d48f4a3587f77d2c52d6.webp
 tags: ["한국콜마", "161890", "Kolmar", "K뷰티", "ODM", "화장품", "영업외손익", "인수차입", "HK이노엔", "코스맥스"]
 stockCode: "161890"
 corpName: "한국콜마"
@@ -131,7 +132,7 @@ import HFDataLink from '$lib/components/blog/HFDataLink.svelte';
 
 ![한국콜마 2025 관통선 — 영업이익 2,396억, 영업외 -279억, 순이익 1,682억. 영업외 흡수율 12%로 9년 최저. 본업 V자가 처음 영업외를 이겼다.](./assets/86-hero-operating-vs-nonop.svg)
 
-![K-뷰티 앰플 매크로 — 인디 브랜드 800+의 처방·생산을 받아 글로벌로 나가는 ODM 라인의 진짜 모습.](./assets/86-k-beauty-ampoule.webp)
+![K-뷰티 앰플 매크로 — 인디 브랜드 800+의 처방·생산을 받아 글로벌로 나가는 ODM 라인의 진짜 모습.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d4/d4a8be487ad1495495fc3e06c0370b65cb1bc3a1df2910a73b9e8d91dfcae6df.webp)
 
 한국콜마(161890)를 K-뷰티 폭발의 단순 수혜주로 읽으면 8년의 핵심을 놓친다.
 
@@ -274,7 +275,7 @@ df = c.select("IS", ["매출액", "매출원가", "매출총이익", "판매비�
 
 ### 화장품 ODM 회사가 제약회사를 산다
 
-![제약 정제 생산 라인 — 2018년 인수한 CJ헬스케어(현 HK이노엔)가 만든 케이캡·콘디션·헛개수 같은 일반의약품과 신약의 회계가 같은 손익계산서로 들어왔다.](./assets/86-pharma-production.webp)
+![제약 정제 생산 라인 — 2018년 인수한 CJ헬스케어(현 HK이노엔)가 만든 케이캡·콘디션·헛개수 같은 일반의약품과 신약의 회계가 같은 손익계산서로 들어왔다.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/2c/2ca4ea0e0314c8e98df3103f1533f63b3df0faaafd36ea39699383801841ac2a.webp)
 
 2018년 4월 4일, 한국콜마는 CJ헬스케어 지분 100%를 1조 3,100억원에 인수했다. 한국콜마는 그 해 매출 1조 3,579억원의 회사였다. **자기 1년 매출에 가까운 금액으로 다른 회사를 통째로 샀다.**
 
@@ -524,7 +525,7 @@ DOL(Degree of Operating Leverage, 영업레버리지)은 매출 1% 변화에 영
 
 K-뷰티 인디 브랜드 800+ 고객사 — 달바글로벌, 메디큐브(에이피알), 라네즈(아모레퍼시픽), 닥터지(고운세상), CNP(LG생활건강 자회사), 토니모리, 클리오, 셀퓨전씨 — 이들은 모두 한국콜마 또는 코스맥스의 ODM 라인을 쓴다. 글로벌 매출이 폭증하면서 한국콜마의 가동률은 80%대 후반에서 90%대 초반으로 올라간 것으로 추정된다(공시 미공개). 가동률 +5~10%p는 매출원가율 -1.5~3%p 개선과 직결된다.
 
-![ODM 공장 내부 — 스테인리스 반응탱크와 자동 충진 라인. 인디 브랜드 800+ 주문이 같은 공장에서 다른 처방으로 동시에 나간다.](./assets/86-odm-factory-floor.webp)
+![ODM 공장 내부 — 스테인리스 반응탱크와 자동 충진 라인. 인디 브랜드 800+ 주문이 같은 공장에서 다른 처방으로 동시에 나간다.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/51/5145979e1baca8def5211f1c2e1810d17ee441be79beb8713a2692dfc279d43b.webp)
 
 
 **판관비율 9년 시계열**도 같은 방향으로 움직였다.

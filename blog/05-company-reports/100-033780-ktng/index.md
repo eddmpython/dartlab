@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 100
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/033780-ktng.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/6b/6b599542b0a8494a9468303e3f25fa074073c2d671851bc09d161ba484cb5fda.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/6a/6adae249052337581cfeaac913e1b57f79b05e54074fd459e07eeab72a6e936c.webp
 tags: ["KT&G", "033780", "담배", "정관장", "인삼", "주주환원", "자사주소각", "규제산업", "행동주의", "니코틴파우치"]
 stockCode: "033780"
 corpName: "KT&G"
@@ -157,7 +158,7 @@ c.select("IS", ["매출액", "영업이익"], freq="Y")
 
 여기서 한 가지 주의. 담뱃값의 큰 부분은 세금이라, 담배회사의 매출은 '실력'으로 곧장 읽으면 안 된다. 그러니 매출 +47%를 성공으로 박수칠 일이 아니다. 진짜 질문은 따로 있다 — *무엇이 마진을 깎았나?*
 
-![담배와 인삼 — 1899년 국가 전매에서 함께 흘러나온 두 유산](./assets/100-cigarette-ginseng.webp)
+![담배와 인삼 — 1899년 국가 전매에서 함께 흘러나온 두 유산](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/db/db8ace70454b23e1e4fc85b064ad1f14284b676588a6696b914b98aa10c7dc29.webp)
 
 ---
 
@@ -293,7 +294,7 @@ c.select("CF", ["영업활동현금흐름"], freq="Y")
 
 영업현금흐름 5,829억은 영업이익 1조3,437억의 절반에도 못 미친다. 1차적으로는 운전자본·세금의 타이밍 차이로 설명된다(재고·매출채권 변동, 세금 납부 시점 등) — 이것만으로 '부실'이라 단정하진 않는다.
 
-![두꺼운 환원의 재원 일부는 비핵심 자산 매각에서 나온다](./assets/100-asset-drain.webp)
+![두꺼운 환원의 재원 일부는 비핵심 자산 매각에서 나온다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/0c/0c80fc836beb22a052dbe2827ef8d80152fbcee68ae32efbe8c6166e51b5839d.webp)
 
 다만 여기에 외부에서 확인되는 사실 하나를 더한다. 회사는 두꺼운 환원을 떠받치기 위해 비핵심 부동산·금융자산을 2027년까지 1조 원 규모로 매각하는 계획을 밝혀 왔다(외부 인용). 즉 두꺼운 환원의 재원이 *순수 영업현금만이 아니라* 대차대조표를 천천히 비우는 데서도 일부 나온다. '현금기계'라는 말을 무비판적으로 쓰지 않는 이유다 — 환원의 동력 일부는 자산 매각이라는 *일회성*에 기대고 있어, 영구 동력은 아니다. 그렇게 짜낸 돈으로 회사는 왕관(정관장)을 지킬 수 있나?
 
@@ -402,7 +403,7 @@ KT&G의 강점은 아직 분명하다. 영업이익 3,645억을 한 분기에 �
 
 같은 '간판과 진짜 돈줄이 다른' 계열이지만, 결은 제각각이다. 규제가 강제한 의무 길목을 쥐고 정점에서 회사를 통째로 판 [더존비즈온](/blog/012510-douzone), 렌탈 현금엔진의 소유권이 세 번 바뀐 [코웨이](/blog/021240-coway), 안 보이는 발효 엔진을 6조 매각설 끝에 끌어안은 [CJ제일제당](/blog/097950-cj-cheiljedang) — KT&G는 그중에서도 *분리를 거부하고 왕관을 안에 가둔* 쪽이다. 코웨이가 현금엔진의 소유권을 떼어냈다면, KT&G는 정반대로 떼라는 요구를 거부했다. 주주환원으로는 [메리츠금융](/blog/138040-meritz-financial)과 한 계열이되, 그쪽이 '쌓은 뒤 환원'이라면 KT&G는 '안 쌓고 토해내는' 쪽이다.
 
-![토해내되 왕관은 가둔 회사 — 환원기계이자 왕관 금고](./assets/100-vault-crown.webp)
+![토해내되 왕관은 가둔 회사 — 환원기계이자 왕관 금고](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/bd/bd146866253a7bd054dd42d84480dc02afa25c0823d488b2f8b642b983b7cd1f.webp)
 
 이 회사를 볼 사람은 매출이 아니라 — 영업이익률의 바닥, 영업현금흐름과 영업이익의 갭, 그리고 정관장을 계속 안에 둘 것인가를 봐야 한다.
 

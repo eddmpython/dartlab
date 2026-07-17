@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 164
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/298040-hyosung-heavy-electric.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/6a/6adfb8155f7d8a8aad65480db0cebfd319b34799e6e22eede558cbe2e1ae9f4d.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/dd/dd1623094824f76177728dffaa2e07cc26be2a70deab6417aad20e86358ed928.webp
 tags:
   - "298040"
   - "효성중공업"
@@ -49,7 +50,7 @@ AI가 전기를 먹는다는 말은 너무 많이 쓰여서 이제 거의 배경
 
 이 숫자는 2025년 효성중공업 연결 매출 5.97조원의 3배가 넘는다. 단순히 "전력기기 수혜"라고 부르기에는 크기가 다르다. 하지만 동시에 조심해야 한다. 20.2조원은 연결 전체 매출이 아니고, 당장 손익계산서에 들어온 돈도 아니다. DART 2026년 1분기보고서의 "4. 매출 및 수주상황"에 있는 중공업 부문 당기말 수주잔고다. 즉 이미 계약된 일감이지만 앞으로 납품, 검수, 원가, 환율, 운전자본을 거쳐야 매출과 현금이 된다.
 
-![AI 데이터센터가 전기를 요구할수록 효성중공업의 변압기 수주잔고가 먼저 움직인다](./assets/164-transformer-grid.webp)
+![AI 데이터센터가 전기를 요구할수록 효성중공업의 변압기 수주잔고가 먼저 움직인다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/17/17391f11fc428b3ae4091bfe8586327587169c8e889a5727324e6a4b332765d5.webp)
 
 그래서 이 글의 질문은 하나다. **AI 전력난이 효성중공업의 20조 수주잔고와 현금흐름에는 어떻게 찍히는가.** 답은 단순하지 않다. 효성중공업은 변압기 회사이지만, 순수 변압기 회사는 아니다. 2025년 연결 매출에서 중공업은 69.5%, 건설은 29.9%다. 변압기와 차단기와 전동기가 좋아져도 건설이 섞인다. 수주잔고가 커져도 구리와 전기강판 가격을 지나야 한다. 영업이익이 늘어도 재고와 매출채권을 통과해야 현금이 된다.
 
@@ -88,7 +89,7 @@ AI가 전기를 먹는다는 말은 너무 많이 쓰여서 이제 거의 배경
 
 이 고객 이름들은 이야기의 결을 바꾼다. 전력기기 수요는 단순히 반도체 기업이 데이터센터를 더 짓는다는 뉴스 하나로 움직이지 않는다. 유틸리티는 노후 송배전망을 바꾸고, 데이터센터 개발사는 전력 인입을 확보해야 하며, 재생에너지 프로젝트는 계통 접속을 기다린다. Intersect Power처럼 전력 프로젝트 개발과 맞닿은 고객이 보이고, Eversource나 American Electric Power 같은 유틸리티 이름이 보이면 효성중공업의 수주는 AI 테마와 전력망 보강이 겹치는 곳에 놓인다. 이 겹침이 수주잔고의 내러티브를 만든다.
 
-![효성중공업의 창원, Nantong, Pune, Memphis 생산 거점은 20.2조원 수주잔고를 매출로 바꾸는 실행 지도다](./assets/164-global-footprint.webp)
+![효성중공업의 창원, Nantong, Pune, Memphis 생산 거점은 20.2조원 수주잔고를 매출로 바꾸는 실행 지도다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/55/5531d5784e4410b2f543d6ad604f689a41b98d5c9a1dc599e57a85c50cf92589.webp)
 
 이 지도처럼 보면 20조 수주잔고는 단순히 큰 숫자가 아니라 생산 거점의 시간표가 된다. 창원은 국내 핵심 생산 기반이고, Nantong과 Pune은 아시아 생산 축이며, Memphis의 HICO는 미국 고객 대응의 상징이다. 수주잔고가 커질수록 중요한 것은 "어디서 만들고, 누가 검수하고, 어느 고객에게 언제 납품하는가"다. 효성중공업의 내러티브가 괜찮은 이유도 여기에 있다. AI 전력난이라는 큰 말이 공장 위치, 고객 이름, 수주잔고, 가동률로 내려오기 때문이다.
 
@@ -225,7 +226,7 @@ c.credit("등급")
 
 여기서 글의 핵심 인사이트가 나온다. 효성중공업은 "수주잔고가 많다"로 끝나는 회사가 아니다. **좋은 수주가 구리, 재고, 매출채권, 부채비율을 지나 현금으로 바뀌는 속도를 봐야 하는 회사**다. 수주잔고 20조원은 강한 출발점이지만, 투자자가 실제로 받는 것은 수주잔고가 아니라 현금흐름과 자기자본 증가다.
 
-![효성중공업의 수주잔고는 설계, 원재료, 생산, 매출, 현금 회수를 통과해야 한다](./assets/164-order-to-cash.webp)
+![효성중공업의 수주잔고는 설계, 원재료, 생산, 매출, 현금 회수를 통과해야 한다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/02/02a1ce7dbf9eb45c2a54025f63790f8583efa61ef793b68506957b07a21debc3.webp)
 
 이 그림이 이 글의 내러티브를 가장 짧게 보여준다. 수주는 출발점이고, 설계와 원재료와 생산은 병목이며, 매출과 현금 회수는 검증이다. 그래서 효성중공업을 볼 때는 수주잔고 하나만 외우면 안 된다. 수주잔고가 늘어도 구리 가격이 급등하고, 재고가 더 빠르게 쌓이고, 매출채권 회수가 늦어지면 시장은 "좋은 수주인가"를 다시 묻는다. 반대로 매출총이익률과 영업현금흐름과 부채비율이 함께 좋아지면, 20조 수주잔고는 단순 테마가 아니라 재무제표를 바꾸는 힘이 된다.
 

@@ -411,6 +411,10 @@ function toWebpAsset(path: string): string | undefined {
 	return undefined;
 }
 
+export function blogAssetUrl(path: string, basePath: string): string {
+	return /^https?:\/\//i.test(path) ? path : `${basePath}${path}`;
+}
+
 function findPreviewAsset(postPath: string, rawMarkdown: string): string | undefined {
 	const firstSvgInBody = rawMarkdown.match(/!\[[^\]]*\]\(\.\/assets\/([^)]+\.svg)\)/i);
 	if (firstSvgInBody) return `/blog/assets/${firstSvgInBody[1]}`;

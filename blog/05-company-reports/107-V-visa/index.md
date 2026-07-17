@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 107
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/V-visa.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/5b/5b605d6c560e310c2caba6f2ad16497a3483c2a2ff8f257bb2abfd3096fb8fc6.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/52/5283158a21dfd58c3a8829ffaff0750559cc9fcc07613ec7469b55ebf5a7f88f.webp
 tags: ["비자", "Visa", "결제망", "통행료", "인터체인지", "영업이익률", "발급은행", "리스크", "미국주식", "복점"]
 stockCode: "V"
 corpName: "Visa"
@@ -41,7 +42,7 @@ import StackBar from '$lib/components/blog/StackBar.svelte';
 
 비자카드는 비자(Visa)가 만들지 않는다. 카드를 찍어 당신 손에 쥐여준 건 발급은행이고, 못 갚으면 떼이는 손실도 그 은행 몫이다. 비자는 'Visa'라는 간판을 빌려주고, 거래가 그 망(VisaNet)을 통과할 때 통행료를 받는다.
 
-![손에 쥔 카드 — 그러나 이걸 만든 건 비자가 아니다](./assets/107-card.webp)
+![손에 쥔 카드 — 그러나 이걸 만든 건 비자가 아니다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/12/127c6e92c7360f04eb1544425322e58d154cddfa3ee98ab9e8741e4400d5542f.webp)
 
 그래서 비자의 손익계산서를 보면 이상한 일이 벌어진다. 6년 동안 매출이 **$22.98B에서 $40.00B로 +74%** 불었는데, 영업이익률은 **60%대를 단 한 번도 벗어나지 않았다.** 외형이 1.7배가 되는 동안 마진이 안 깎인 것이다.
 
@@ -105,7 +106,7 @@ OPM이 60~66%라는 건 역으로 **영업비용이 매출의 약 34~40% 실재�
 
 외부 인용에 따르면 비자의 매출은 네 종류 — service / data processing / international transaction / other — 이고, 금융기관·가맹점에 주는 **client incentives**는 매출에서 *차감*(contra-revenue)해 순매출로 보고된다.
 
-![거래가 단말기를 스칠 때마다 통행료가 발생한다](./assets/107-terminal.webp) 결정적인 분리 하나 — 가맹점이 무는 **interchange(스왑피)는 카드 *발급은행*이 수취**하고 비자가 직접 매출로 잡지 않는다. 그러나 그 *기본 interchange 요율표는 비자가 설정*하며, 가맹점엔 협상 불가한 고정값이다.
+![거래가 단말기를 스칠 때마다 통행료가 발생한다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b3/b3fd9d8840a8c40cd39686ca2032b49bf217d348b027d27ac1c2497e9b547423.webp) 결정적인 분리 하나 — 가맹점이 무는 **interchange(스왑피)는 카드 *발급은행*이 수취**하고 비자가 직접 매출로 잡지 않는다. 그러나 그 *기본 interchange 요율표는 비자가 설정*하며, 가맹점엔 협상 불가한 고정값이다.
 
 ![비자가 '버는 돈'(망 수수료)과 '정하지만 안 받는 돈'(interchange)은 다른 층 (외부)](./assets/107-tollgate.svg)
 
@@ -119,7 +120,7 @@ OPM이 60~66%라는 건 역으로 **영업비용이 매출의 약 34~40% 실재�
 
 외부 인용에 따르면, 미국 interchange 집단소송(MDL 1720)에서 2024년 6월의 약 **300억 달러** 안은 인하 폭이 미미하다는 이유로 기각됐고, 2025년 11월의 약 **380억 달러** 수정합의가 2026년 6월 *잠정* 승인됐다 — 게시 신용 interchange율 인하·표준 소비자 카드율 상한·가맹점의 고비용 카드 거절/추가요금(surcharge) 권한 등을 담았으나, 가맹점 단체 반대·항소 여지로 *종결이 아니다.* 또 영국 경쟁항소심판소(UK CAT)는 2025년 6월 비자·마스터카드의 기본 interchange 구조를 경쟁법 위반으로 판결했고, 비자는 항소 의사를 밝혔다(외부 인용).
 
-![진짜 돈줄(요율 설정 권한)이 지금 법정에 서 있다](./assets/107-courthouse.webp)
+![진짜 돈줄(요율 설정 권한)이 지금 법정에 서 있다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/51/51ad89333f30bf5d497f70e0f76c26f102c10b480f28875effc5c22b9d493103.webp)
 
 ![요율 설정 권한이 미 합의(잠정)·UK 판결의 정조준 대상 — 현재 사실, 영향은 조건부 미래 (외부)](./assets/107-courtroom.svg)
 

@@ -6,7 +6,8 @@ category: company-reports
 series: interesting-story
 seriesOrder: 77
 thumbnail: /avatar-curious.png
-ogImage: /thumbnails/power-equipment-supercycle.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/cf/cfc8b05f8eb0bd157b8c1d22d54af355b8f3120fbf99a04dc9f9289c0aed0240.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a2/a2458f20b293911db36a89d1b7487c8fcc80ed1d022fbcaaba08229da212645d.webp
 tags: ["전력기기", "AI데이터센터", "변압기", "배전반", "HD현대일렉트릭", "LS전기", "효성중공업", "일진전기", "슈퍼사이클", "OPM비교"]
 ai:
   verdict: "2025년 전력기기 4사 모두 AI 데이터센터와 전력망 투자 수요를 받았지만 같은 수요가 같은 마진을 만들지는 않았다. HD현대일렉트릭은 초고압 변압기 병목이 매출총이익률 34.1%, 영업이익률 24.4%로 번졌고, LS ELECTRIC은 매출 4.97조원으로 더 크지만 영업이익률 8.6%에 머문다. 차이는 수요가 아니라 제품 위치, 가격결정력, 사업 믹스다."
@@ -29,7 +30,7 @@ ai:
 import ComboChart from '$lib/components/blog/ComboChart.svelte';
 </script>
 
-![AI 전력 슈퍼사이클과 데이터센터, 전력기기의 연결](./assets/077-power-equipment-cycle.webp)
+![AI 전력 슈퍼사이클과 데이터센터, 전력기기의 연결](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/82/82788caf44b0e6592e7c0ff6514152e564f0e8fbefc01f3f9338c4d196ab483d.webp)
 
 매출 1위가 이익 1위가 아니다. 2025년 효성중공업은 전력기기 4사 비교 안에서 매출 5.97조원으로 가장 컸고, LS ELECTRIC도 4.97조원을 벌었다. HD현대일렉트릭은 4.08조원으로 둘보다 작다. 그런데 영업이익은 HD현대일렉트릭이 9,953억원으로 가장 크다. 영업이익률은 24.4%다. LS ELECTRIC은 8.6%, 일진전기는 7.4%다. 같은 AI 전력 슈퍼사이클 안에서 이익률이 3배 이상 갈라진다.
 

@@ -2,7 +2,7 @@
 	import { base } from '$app/paths';
 	import { brand } from '$lib/brand';
 	import { ArrowRight, Calendar } from 'lucide-svelte';
-	import { getCategory, getDistinctSeriesLabel, getPostsByCategory, getSeriesGroupsByCategory, getSeriesPath } from '$lib/blog/posts';
+	import { blogAssetUrl, getCategory, getDistinctSeriesLabel, getPostsByCategory, getSeriesGroupsByCategory, getSeriesPath } from '$lib/blog/posts';
 	import CardThumb from '$lib/blog/CardThumb.svelte';
 
 	let { data } = $props();
@@ -87,8 +87,8 @@
 						<div class="category-post-body">
 							<div class="category-post-top">
 								<picture>
-									<source srcset="{base}{post.thumbnail.replace('.png', '.webp')}" type="image/webp" />
-									<img src="{base}{post.thumbnail}" alt={post.title} class="category-post-avatar" width="52" height="52" loading="lazy" />
+									<source srcset={blogAssetUrl(post.thumbnail.replace('.png', '.webp'), base)} type="image/webp" />
+									<img src={blogAssetUrl(post.thumbnail, base)} alt={post.title} class="category-post-avatar" width="52" height="52" loading="lazy" />
 								</picture>
 								<div class="category-post-meta">
 									{#if getDistinctSeriesLabel(post)}
@@ -109,8 +109,8 @@
 							</span>
 						</div>
 						<CardThumb
-							image="{base}{post.cardPreview}"
-							imageWebp={post.cardPreviewWebp ? `${base}${post.cardPreviewWebp}` : undefined}
+							image={blogAssetUrl(post.cardPreview, base)}
+							imageWebp={post.cardPreviewWebp ? blogAssetUrl(post.cardPreviewWebp, base) : undefined}
 							keyword={post.cardKeyword}
 							kicker={post.categoryLabel}
 							alt={post.title}

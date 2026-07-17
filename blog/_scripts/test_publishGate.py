@@ -11,6 +11,41 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import publishGate as pg  # noqa: E402
 
 
+def test_validate_post_media_only_initializes_errors(monkeypatch, tmp_path: Path) -> None:
+    if hasattr(pg, "validateCompanyReportDebtRatioBan"):
+        monkeypatch.setattr(pg, "validateCompanyReportDebtRatioBan", lambda _: [])
+    monkeypatch.setattr(pg, "mediaReferenceErrors", lambda _: [])
+    monkeypatch.setattr(pg, "trackedBinaryErrors", lambda _: [])
+    monkeypatch.setattr(pg, "verifyRemoteAssets", lambda _: [])
+
+    assert pg.validatePost(tmp_path, requireContractV2=False, mediaOnly=True) == []
+
+
+def test_normalize_media_only_diff_ignores_hf_migration_but_not_content() -> None:
+    before = """---
+ogImage: /thumbnails/test.webp
+thumbnail: /thumbnails/test.webp
+---
+
+본문입니다.
+
+![장면](./assets/hero.webp)
+"""
+    after = """---
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/aa/aaa.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/bb/bbb.webp
+thumbnail: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/aa/aaa.webp
+---
+
+본문입니다.
+
+![장면](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/cc/ccc.webp)
+"""
+
+    assert pg.normalizeMediaOnlyDiff(before) == pg.normalizeMediaOnlyDiff(after)
+    assert pg.normalizeMediaOnlyDiff(before) != pg.normalizeMediaOnlyDiff(after.replace("본문입니다", "본문 변경"))
+
+
 def test_post_dirs_from_paths_keeps_only_content_posts(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(pg, "REPO_ROOT", tmp_path)
     postDir = tmp_path / "blog" / "08-tech-story" / "14-new-tech"
@@ -38,6 +73,7 @@ def test_validate_post_combines_hard_gate_and_seo(monkeypatch, tmp_path: Path) -
 
     monkeypatch.setattr(pg, "auditPublishGate", fakeAudit)
     monkeypatch.setattr(pg, "scorePost", lambda _: {"pct": 94})
+    monkeypatch.setattr(pg, "verifyRemoteAssets", lambda _: [])
 
     errors = pg.validatePost(tmp_path, requireContractV2=True)
 
@@ -48,6 +84,7 @@ def test_validate_post_combines_hard_gate_and_seo(monkeypatch, tmp_path: Path) -
 def test_validate_post_passes_at_95(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(pg, "auditPublishGate", lambda *args, **kwargs: [])
     monkeypatch.setattr(pg, "scorePost", lambda _: {"pct": 95})
+    monkeypatch.setattr(pg, "verifyRemoteAssets", lambda _: [])
 
     assert pg.validatePost(tmp_path, requireContractV2=False) == []
 
@@ -55,11 +92,11 @@ def test_validate_post_passes_at_95(monkeypatch, tmp_path: Path) -> None:
 def test_validate_post_includes_hf_remote_errors(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(pg, "auditPublishGate", lambda *args, **kwargs: [])
     monkeypatch.setattr(pg, "scorePost", lambda _: {"pct": 95})
-    monkeypatch.setattr(pg, "verifyRemoteAssets", lambda _: ["HF 미디어 없음: blog/x/hero.12345678.webp"])
+    monkeypatch.setattr(pg, "verifyRemoteAssets", lambda _: ["HF 미디어 없음: objects/sha256/ab/abc.webp"])
 
     errors = pg.validatePost(tmp_path, requireContractV2=True)
 
-    assert errors == ["HF 미디어 없음: blog/x/hero.12345678.webp"]
+    assert errors == ["HF 미디어 없음: objects/sha256/ab/abc.webp"]
 
 
 def test_changed_posts_include_deleted_assets(monkeypatch, tmp_path: Path) -> None:
@@ -103,7 +140,7 @@ def test_tracked_binary_errors_blocks_v2_git_images(monkeypatch, tmp_path: Path)
     postDir = tmp_path / "blog" / "08-tech-story" / "14-new-tech"
     assetsDir = postDir / "assets"
     assetsDir.mkdir(parents=True)
-    (assetsDir / "media.json").write_text("{}", encoding="utf-8")
+    (tmp_path / "blog" / "media.json").write_text("{}", encoding="utf-8")
 
     def fakeGit(*args: str, check: bool = True):
         return SimpleNamespace(returncode=0, stdout="blog/08-tech-story/14-new-tech/assets/hero.webp\n")
@@ -113,5 +150,5 @@ def test_tracked_binary_errors_blocks_v2_git_images(monkeypatch, tmp_path: Path)
     errors = pg.trackedBinaryErrors(postDir)
 
     assert errors == [
-        "contract v2 바이너리는 Git 추적 금지, HF에만 발행: blog/08-tech-story/14-new-tech/assets/hero.webp"
+        "블로그 래스터는 Git 추적 금지, HF 콘텐츠 주소 객체에만 발행: blog/08-tech-story/14-new-tech/assets/hero.webp"
     ]

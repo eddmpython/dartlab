@@ -6,7 +6,8 @@ category: company-reports
 series: 기업이야기
 seriesOrder: 91
 thumbnail: /avatar-default.png
-ogImage: /thumbnails/247540-ecopro-bm.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/78/78c3097db30bf92b6a8cc187c1c5190a4469e46cf9e89a42a7c868d852b9a0ed.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/7c/7c43a360f299dadaea99e261da98bfadac484d9b93ab9458cf7b168ed0cf2cc6.webp
 tags:
   - 에코프로비엠
   - 247540
@@ -182,7 +183,7 @@ carousel:
 
 ## 1 막 — 2024, 매출 -60% 와 CAPEX 1 조의 모순
 
-![검은 양극재 분말 — 양극재 산업의 시각적 정체](./assets/91-cathode-powder.webp)
+![검은 양극재 분말 — 양극재 산업의 시각적 정체](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/38/386cc18fc0be4f714dd6bc746e70941c5d5f18580bafd461ba13203f139b2d8b.webp)
 
 2024 년 12 월 31 일, 에코프로비엠의 한 해가 닫혔다. 매출 2 조 7,668 억. 1 년 전 6 조 9,521 억의 39.8%. 하락폭 -60.2%. 한국 코스닥에서 시가총액 상위에 드는 양극재 1 위 회사가, 1 년 만에 매출의 60% 를 잃었다. 영업이익은 -341 억 (보도 기준 -402 억) 으로 적자전환했다. 같은 해 CAPEX 1 조 238 억. 매출 대비 37.0%. 한국 화학·소재 업종 중앙값 5~8% 의 약 5 배.
 
@@ -279,7 +280,7 @@ LG·SK 와의 NCM 공급 계약이 다중 고객 구조를 형성하는 듯 보�
 
 ## 3 막 — 슈퍼사이클의 손바닥 (2020~2022, +708%)
 
-![850°C 회전 소성로 (rotary calciner) — 양극재 자본집약 공정의 핵심](./assets/91-rotary-calciner.webp)
+![850°C 회전 소성로 (rotary calciner) — 양극재 자본집약 공정의 핵심](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/76/766f2fb2b8b310f37f977a3b16ce0666cf7e0c1d98f389057f1836c28a685f99.webp)
 
 > 매출 8,547 억이 5.36 조로 6.27 배 — 그 절반은 출하가 아니라 단가였다.
 
@@ -528,7 +529,7 @@ BM 의 2025Q4 dCR 는 투자적격 (BBB-) 의 경계다. 한 칸 더 빠지면 �
 
 ## 7 막 — 양극재 4 사가 같이 깨졌다, 그리고 OBBBA 가 그 위에 떨어졌다
 
-![EV 배터리 팩 모듈 — 셀 BOM 의 40% 가 양극재](./assets/91-ev-battery-pack.webp)
+![EV 배터리 팩 모듈 — 셀 BOM 의 40% 가 양극재](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/98/98e44cbb99eb5b54cceca3cf9d5586cb4a5c05c3aad3904891c40145b026b6b1.webp)
 
 ### 왜 양극재 4 사 (BM·포스코퓨처엠·엘앤에프·LG화학 배터리소재) 가 모두 -50~-60% 동조했나
 

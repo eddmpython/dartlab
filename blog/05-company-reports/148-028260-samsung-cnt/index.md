@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 148
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/028260-samsung-cnt.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/24/244781bfcd3d26349af047099940fd41846dc5f06bc004e6eafd32ca999b13a8.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/9a/9ad6d84ce65a6a69b8b6887b6287827edab3bf17913211accc4178022a52fd94.webp
 tags: ["삼성물산", "지주회사", "NAV할인", "삼성바이오로직스", "삼성전자", "연결종속", "지배구조", "주주환원", "한국주식", "지주"]
 stockCode: "028260"
 corpName: "삼성물산"

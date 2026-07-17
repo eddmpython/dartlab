@@ -18,7 +18,8 @@ tags:
   - 미국 수출
   - 전자공시
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/003230-samyang-foods.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f6/f661177426d7748f1642bfd1bdd340b2ac377a0401617ea196831a2dceb99874.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d4/d4d69553e7281c3c00643f4b4d0834b5f48dd2c6aa41c9635e814a22974b81e6.webp
 youtubeId: ""
 ai:
   verdict: "라면 꼴등이 불닭 베팅으로 OPM 21.8% 달성. FCF -1,397억 공격투자 사이클."
@@ -191,7 +192,7 @@ c.panel("dividend")       # DPS 9년 시계열 (analysis 결손 우회)
 
 2014년 한국 라면 시장은 농심이 압도적 1위였다. 매출 점유율 약 60%. 오뚜기가 2위로 빠르게 따라잡고 있었고, 삼양식품은 시장 점유율 11% 안팎으로 3위였다. "빅3" 라고 부르기도 민망한 격차였다.
 
-![삼양라면 클래식 봉지 — 1963년 한국 최초의 인스턴트 라면](./assets/02-samyang-classic.webp)
+![삼양라면 클래식 봉지 — 1963년 한국 최초의 인스턴트 라면](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/2e/2e27bb4203c3e064d20afa16552cb1e44df0bc2bc904c6d76e7df6874b703e79.webp)
 *삼양라면 클래식. 1963년 9월 15일 출시된 한국 최초의 인스턴트 라면이며, 한 세대 동안 한국인의 끼니였다. 1989년 우지 파동으로 8년간 시장에서 사실상 퇴출됐고, 그 이후 30년 동안 삼양은 한국 라면 시장에서 영원한 3위였다. 이 클래식 봉지가 회사의 50년 이력이고, 그 위에 2012년 분홍 봉지(불닭)가 새로 올라간다. (출처: Wikimedia Commons, CC BY-SA)*
 
 삼양식품은 1961년 설립된 한국 라면의 원조였다. 한국 최초의 인스턴트 라면 "삼양라면"을 1963년에 출시했고, 한 세대 동안 한국인의 끼니를 책임졌다. 그러나 1989년 우지 파동(공업용 우지를 라면에 썼다는 검찰 발표 — 무죄로 결론났지만 회사는 8년간 시장에서 사실상 퇴출)을 겪으면서 시장의 주도권을 농심에게 빼앗겼다. 그 이후 30년 동안 삼양식품은 한국 라면 시장에서 영원한 3위였다.
@@ -223,7 +224,7 @@ dartlab 으로 2016년 분기 데이터를 보면 그 시절의 모습이 그대
 
 R&D 팀은 약 1년 반 동안 200여 종의 시제품을 만들었다. 김정수 부회장은 직접 매운 시제품을 먹으면서 "더 맵게" 를 반복했다. 어느 시점에서는 R&D 팀이 한 번에 4kg 분량의 매운 양념을 만들어서 부회장에게 가져왔는데, 김정수는 그 자리에서 4kg 중 상당량을 직접 맛보면서 매운맛 강도를 조정했다고 한다 ([businesspost](https://www.businesspost.co.kr/BP?command=article_view&num=355931)).
 
-![분홍색 불닭볶음면 봉지](./assets/02-buldak-package.webp)
+![분홍색 불닭볶음면 봉지](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/cf/cff19d8dfd2889258049fa0bb3f5a2a4975338b51b11c4ed06e1190c9ce1ed34.webp)
 *2012년 4월 출시된 분홍색 불닭볶음면. 4,404 SHU의 매운맛, 9년 후 회사 매출의 절대 다수가 이 봉지 하나에서 나오게 된다. (출처: Wikimedia Commons, CC BY-SA)*
 
 ### 2012년 출시, 2014년 유튜브 챌린지 — 매운맛이 K-콘텐츠가 되다
@@ -236,7 +237,7 @@ R&D 팀은 약 1년 반 동안 200여 종의 시제품을 만들었다. 김정�
 
 매운맛이 K-콘텐츠가 됐다. 그리고 그 K-콘텐츠의 정중앙에 삼양식품의 분홍색 봉지가 있었다.
 
-![조리한 불닭볶음면](./assets/02-buldak-bowl.webp)
+![조리한 불닭볶음면](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e2/e29ca443dada97bb068defd96841a6d0649a1869b3dd7f2ca8c2d76e31e3475d.webp)
 *조리 후 강렬한 빨간색이 그대로 드러나는 불닭볶음면. 미국·동남아·유럽 학생들이 틱톡에서 도전한 바로 그 비주얼이다. (출처: Wikimedia Commons, CC BY-SA)*
 
 ---
@@ -263,7 +264,7 @@ dartlab 으로 2016년부터 2025년까지의 분기 영업이익률을 그어�
 
 2024년 1분기에 무슨 일이 있었나. 답은 미국이다.
 
-![불닭볶음면 다섯 봉지 묶음](./assets/02-buldak-multiple.webp)
+![불닭볶음면 다섯 봉지 묶음](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/bd/bdc35d6af85d1b5667ea33953570bb9bc325d22cbc13326643787b8535e925f5.webp)
 *불닭볶음면 다섯 봉지 묶음. 2024년 1월부터 미국 코스트코에서 정확히 이 묶음 단위로 팔리기 시작했고, 한 달 만에 "Buldak Ramen" 검색량이 10배가 됐다. 그 한 달이 회사의 분기 영업이익률을 11%에서 20%로 점프시킨 정확한 트리거다. (출처: Wikimedia Commons, CC BY-SA)*
 
 ### 2024년 1월 코스트코 — 미국 매출 전년 동기 대비 4배
@@ -334,7 +335,7 @@ c.analysis("financial", "수익성")["marginWaterfall"]
 
 이게 1년 동안 6억 봉지에 적용됐다. 그래서 한 분기에 영업이익률이 11%에서 21%로 뛴 것이다.
 
-![조리한 후의 불닭볶음면](./assets/02-buldak-cooked.webp)
+![조리한 후의 불닭볶음면](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/88/883244de3ca61a462de09e825c66c215f4319ab10dcb6d270f5be0524dad5d81.webp)
 *조리 후 불닭볶음면. 한 봉지를 더 만드는 한계비용 200~300원이 미국 가격 1,500원과 만나는 자리에서 차익 1,200원이 그대로 영업이익에 떨어진다. 이 그릇 하나가 회사 마진의 정량적 단위다. (출처: Wikimedia Commons, CC BY-SA)*
 
 ---

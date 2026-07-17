@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 154
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/CSCO-cisco.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/fc/fc8328724c89f77b00ae35102d0870994b8e020069db9b120944ffa5b8ce88eb.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/38/38c3403dc53f96157e21c444bd40b761f3edccddb98eeacbc168a2ade5ec02bc.webp
 tags:
   - "CSCO"
   - "시스코"
@@ -46,7 +47,7 @@ ai:
 
 시스코 이야기에는 절벽이 없다. 영업이익률은 2019년 27.4%에서 2025년 20.8%로 6.6%포인트 내려왔지만, 어느 한 해에 한 번도 무너진 적이 없다. 같은 7년 동안 매출은 51.9B에서 56.7B로 거의 제자리였다. 숫자만 늘어놓으면 따분하다 — 큰 폭의 추락도, 분기 쇼크도, 적자 전환도 없다. 그래서 이 글은 멈춘 매출 위에서 마진이 조용히 한 점씩 깎이는 회계장부를, 과장 없이 그대로 따라간다.
 
-![라우터와 스위치로 인터넷의 배관을 깔아온 회사 — 시스코는 네트워킹 하드웨어의 등뼈다](./assets/154-network-backbone.webp)
+![라우터와 스위치로 인터넷의 배관을 깔아온 회사 — 시스코는 네트워킹 하드웨어의 등뼈다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/2a/2a3ebdd19265a999c970fcd0796619b2285dceba5f2060e606397921521585a3.webp)
 
 관통선은 하나다. 시스코의 영업이익률은 2023년까지 26%대에서 높고 단단하게 버티다가, 소프트웨어로 갈아타는 바로 그 2년(2024~2025)에 20.8%로 두 계단 내려앉는다. 매출이 자라지 않는 성숙한 하드웨어 제국이 구독 매출을 사는 값을, 무너지지 않은 마진을 한 점씩 떼어 치르는 중이다. 형태부터 정확히 못 박는다 — 검증된 데이터는 2019~2025 7년이고, 그중 5년은 거의 변하지 않았으며, 침식의 본체는 끝의 2년에 몰려 있다. '오래 안정, 그다음 짧은 두 계단'이 사실에 맞는 모양이다. 길게 흘러내린 곡선이 아니다.
 
@@ -123,7 +124,7 @@ c.select("CF", ["영업활동현금흐름"], freq="Q")
 
 검증 재무로 2025년 매출은 56.65B로 다시 올라왔고, 영업현금흐름도 10.88B에서 14.19B로 회복됐다. 그런데 OPM은 22.6%에서 20.8%로 또 한 계단 내려앉았고, 순마진(NPM)도 18.0%다. 매출과 현금은 돌아왔는데 마진은 더 깎인, 어긋난 회복이다. 흥미로운 건 트로프였던 2024년이다 — 그해 영업현금흐름 10.88B가 순이익 10.32B를 넘겼다. 마진이 가장 아팠던 해에도 이익의 현금화는 깨지지 않았다는 뜻이다.
 
-![썰물처럼 천천히 빠지는 마진 — 절벽이 아니라 더 낮은 고도로 내려앉는 조수](./assets/154-slow-tide.webp)
+![썰물처럼 천천히 빠지는 마진 — 절벽이 아니라 더 낮은 고도로 내려앉는 조수](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/15/151076e31bf14585f1eea6b78b0ddbf993485093deaeff9260ed8e5b9e26cc03.webp)
 
 ```python
 # 트로프 2024년: OCF가 순이익을 넘기는지 확인
@@ -148,7 +149,7 @@ c.select("IS", freq="Q")   # 매출 56.65B(2025) 위에서 플러스 성장하�
 # OPM 20.8%가 더 깎이는가, 여기서 침식이 멈추는가
 ```
 
-![구독·ARR로 갈아타는 전환 — 깎인 영업이익률을 소프트웨어 마진이 다시 채울지는 손익계산서 밖의 베팅이다](./assets/154-software-pivot.webp)
+![구독·ARR로 갈아타는 전환 — 깎인 영업이익률을 소프트웨어 마진이 다시 채울지는 손익계산서 밖의 베팅이다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/be/bea5a7d0c481e79cd1e1450c12760aec916a17cbe13906c6122deedc7caba5ae.webp)
 
 여기서부터는 베팅이다. 구독·ARR 비중이 높아지며 깎인 영업이익률을 소프트웨어 마진이 다시 채울지, 아니면 더 낮은 고도에서 침식을 멈추는 데 그칠지는 손익계산서 밖의 영역이다 — 구독·ARR 비중은 10-K/IR 외부 인용이고, 검증된 손익 7개 항목으로는 입증되지 않는다. 회계연도가 7월 말에 끝나는 회사를 역년으로 재구성한 수치라, 분기 단위 타이밍은 외부 10-K와 미세하게 다를 수 있다. 목표주가도, 매수의견도 여기에 없다 — 이 글은 '마진이 무너지지 않은 채 깎였다'까지만 말한다.
 

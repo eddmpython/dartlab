@@ -11,7 +11,8 @@ storyTemplate: "지주"
 grade: "dCR-AA"
 tags: [카카오, "035720", 카카오톡, 플랫폼, 자회사, SM엔터테인먼트, 네이버, 전자공시]
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/035720-kakao.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/07/0756a9f18ec2add76545c48c6a2e1835d7823d2cfa9d36970c90bb56647d6138.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/86/86f5b4ef0a651e46cec9993858405e444a5a3c612bcaa65e66689f4fdb07e8a0.webp
 youtubeId: ""
 ai:
   verdict: "3,000만 DAU를 자회사 수십 개로 수익화한 구조가 OPM 한 자릿수의 원인"
@@ -185,7 +186,7 @@ c.select("IS", ["매출액","매출원가","매출총이익","판매비와관리
 
 **표시: 매출 3.3배 성장, 그러나 영업이익은 저마진에서 시작해 지금도 한 자릿수.**
 
-![스마트폰 화면에 빼곡한 카카오 앱 — 카카오톡을 중심으로 뻗어나간 100개 이상의 자회사 생태계](./assets/43-smartphone-apps.webp)
+![스마트폰 화면에 빼곡한 카카오 앱 — 카카오톡을 중심으로 뻗어나간 100개 이상의 자회사 생태계](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/53/5336c887ed3656cd6c85fa3b8d875f9b025e88a0dc0def78a629ea02c01c7eae.webp)
 
 ### 영업이익률 3.0% → 11.1% → 5.8% → 9.0% — 롤러코스터
 
@@ -282,7 +283,7 @@ c.select("ratios", ["영업이익률 (%)"])
 
 왜 영업이익은 0.46조 흑자인데 순손실이 -1.82조일까. 2023년 카카오의 손익계산서에는 영업 외 손실이 대규모로 찍혀 있다. [SM엔터테인먼트 인수 관련 공시](https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20230228800842)를 추적하면 그 정체가 드러난다.
 
-![판교 카카오 본사 — SM 인수 후유증과 김범수 구속으로 경영 불확실성이 극대화된 2023~2024년의 현장](./assets/43-pangyo-office.webp)
+![판교 카카오 본사 — SM 인수 후유증과 김범수 구속으로 경영 불확실성이 극대화된 2023~2024년의 현장](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/6c/6cce058bb6899ddde33b85d7f03b46c077497c353c7bdf377eccacc8954c7ef4.webp)
 
 ### SM엔터 인수가 — 약 4조원
 

@@ -6,7 +6,8 @@ category: reading-disclosures
 series: capital-and-earnings
 seriesOrder: 4
 thumbnail: /avatar-study.png
-ogImage: /thumbnails/35-treasury-stock-third-party-allotment-and-major-shareholder-change.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/3a/3ad624ab195ac6bfd5e012dcd820e3d56a211791f88df7b732a684434d534cde.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/60/605f29ecd22e224de679f40ea7a0f9770e86eddcabb676efadcefa1987bd6909.webp
 ---
 
 # 자기주식·제3자배정·최대주주 변경은 누구에게 유리한가

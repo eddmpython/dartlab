@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 124
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/329180-hd-hyundai-heavy.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/df/dfa74af512d5700718aec98e442ca3fdacb8feec92c347148c318c3052949de8.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/9b/9b12f012abdb74b562d43144bdcdf0e50735e1076e43c1adb3581fdb9447867d.webp
 tags: ["HD현대중공업", "329180", "조선", "헤비테일", "진행기준", "영업이익률", "수주잔고", "LNG선", "힘센엔진", "조선슈퍼사이클"]
 stockCode: "329180"
 corpName: "HD현대중공업"
@@ -168,7 +169,7 @@ import StackBar from '$lib/components/blog/StackBar.svelte';
 
 조선업의 장부에는 시계가 두 개 돈다. 하나는 회계가 매출과 이익을 인식하는 시각, 다른 하나는 2~3년 전 어떤 배를 얼마에 따냈고 그새 후판값이 어떻게 변했는지가 *지금* 매출로 도착하는 시각.
 
-![울산 조선소 — 지금 짓는 배는 2~3년 전에 결정된 것이다](./assets/124-shipyard.webp)
+![울산 조선소 — 지금 짓는 배는 2~3년 전에 결정된 것이다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d0/d019704f495819ddaeddcef43d4f8453a8c14db7dafe4845eb83b8cfcdf31dc8.webp)
 
 이 글은 외부 산업 서사로 결론을 끌어오지 않는다. 대신 HD현대중공업의 연결 실측 5줄(매출·영업이익·OPM·당기순이익·영업CF, 2021~2025)만으로 한 가지를 보인다 — *이 회사 장부는 지금이 아니라 시차(時差)를 찍는다.* 비유는 여기 한 번만 쓰고, 이후로는 숫자와 부호로만 말한다.
 
@@ -205,7 +206,7 @@ c.select("IS", ["매출액", "영업이익"], freq="Q")  # 분기→연간 합�
 c.select("CF", ["영업활동현금흐름"], freq="Q")  # 2021 손익 vs 현금
 ```
 
-![2~3년 전 수주가 지금 매출로 도착한다 — 손익과 현금이 서로 다른 시각을 가리킨다](./assets/124-time-lag.webp)
+![2~3년 전 수주가 지금 매출로 도착한다 — 손익과 현금이 서로 다른 시각을 가리킨다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f4/f42b8874dde115aa87d7167bbd878050c0bf0e86d1ed01344bbeb5d8c99958e7.webp)
 
 적자 정점 2021년, 영업이익은 **-0.80조**인데 영업현금흐름은 **+0.76조**다. 부호가 어긋난다. 장부가 손실을 인식하는 동안 현금은 들어왔다.
 

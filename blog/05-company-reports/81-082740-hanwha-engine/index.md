@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 81
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/082740-hanwha-engine.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/79/795f2b3d82a735ea5787de3c181aa19450c1d956b0ed8e2b06be45f2c42b6796.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/bd/bd32be43b8771c1b1cfe94caf97fa3da1e5ff69b36426e049dbc94928f5337af.webp
 tags: ["한화엔진", "082740", "선박엔진", "DF엔진", "HiMSEN", "AI데이터센터", "발전엔진", "한화오션", "HD현대중공업", "조선기자재"]
 stockCode: "082740"
 corpName: "한화엔진"
@@ -293,13 +294,13 @@ c.story(
 
 둘째, **DF엔진 비중**이다. 2025년 1분기 신규수주 DF엔진 88%는 좋은 숫자다. 이 비중이 유지되면 선박엔진 본업의 마진 방어력이 커진다. 반대로 저가 물량이 다시 늘면 2025년 영업이익률 9.5%를 그대로 연장하기 어렵다.
 
-![선박엔진 공장 장면 — 한화엔진의 현재 실적은 데이터센터가 아니라 고부가 선박엔진 수주와 원가율 개선에서 먼저 나온다.](./assets/81-engine-room.webp)
+![선박엔진 공장 장면 — 한화엔진의 현재 실적은 데이터센터가 아니라 고부가 선박엔진 수주와 원가율 개선에서 먼저 나온다.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d8/d8d17da542f77e11ff85e6dbb670020545bc722d03b8f79e6e6899ff9a29308a.webp)
 
 셋째, **원가율 86%대 유지**다. 2025년 턴어라운드의 거의 전부가 원가율 개선에서 나왔다. 다음 분기와 다음 연도에 원가율이 다시 90%대로 올라가면 “수주잔고는 좋은데 마진이 안 남는” 장부가 된다.
 
 넷째, **영업현금흐름**이다. 2025년 영업현금흐름 3,303억원은 강하다. 하지만 수주가 늘수록 재고와 매출채권도 먼저 움직인다. 현금흐름이 이익보다 뒤처지기 시작하면 성장의 질을 다시 봐야 한다.
 
-![데이터센터 발전설비 장면 — 데이터센터 전력망 접속이 늦어질수록 현장 발전과 엔진 발전기라는 선택지가 계약 언어로 등장한다.](./assets/81-datacenter-genset.webp)
+![데이터센터 발전설비 장면 — 데이터센터 전력망 접속이 늦어질수록 현장 발전과 엔진 발전기라는 선택지가 계약 언어로 등장한다.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/75/75363be8a94de6f847fc3d1c4500f6cb3e9b7610612dbad45dbd8529c3e11c9b.webp)
 
 다섯째, **고객 확장**이다. 조선소와 선주 중심의 고객 구조가 에너지 인프라 개발사, EPC, 데이터센터 운영자 쪽으로 넓어지는가. 이 지점이 확인되어야 데이터센터 옵션이 숫자가 된다.
 

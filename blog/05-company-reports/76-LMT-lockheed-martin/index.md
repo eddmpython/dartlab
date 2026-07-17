@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 76
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/LMT-lockheed-martin.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/62/621b73316948597381d5dc030b43dcceaa2dfe79ecde70f82ea34e8bf6eee4d9.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b8/b8f951946130207b6f0fc198303cb13ea459fbd689f061b81eb60ef526341ce3.webp
 tags: ["록히드마틴", "LMT", "방산", "F-35", "HIMARS", "THAAD", "Sentinel", "Lockheed Martin", "한화에어로", "글로벌방산"]
 stockCode: "LMT"
 corpName: "Lockheed Martin Corporation"
@@ -166,7 +167,7 @@ c.panel("10-K::item7Mdna", period="2024")  # 부문별 매출·영업이익 추�
 
 ![4개 사업부 매출 비중·OPM — Aeronautics 40%·9~10% (F-35) / MFC 18%·14~16% (HIMARS·PAC-3 글로벌 수출) / RMS 25%·8~10% (Sikorsky·Aegis) / Space 17%·7~9% (Orion·GPS). MFC가 OPM 최고, Aero가 매출 비중 큼.](./assets/76-segments-4.svg)
 
-![5세대 스텔스 전투기 활주로 클로즈업 — 황혼녘 활주로에 정렬된 각진 동체와 큰 캐노피의 스텔스 전투기. 폴리시드 메탈릭 표면에 따뜻한 노을빛 반사. 지상 승무원이 배경에 보인다.](./assets/76-f35-cockpit.webp)
+![5세대 스텔스 전투기 활주로 클로즈업 — 황혼녘 활주로에 정렬된 각진 동체와 큰 캐노피의 스텔스 전투기. 폴리시드 메탈릭 표면에 따뜻한 노을빛 반사. 지상 승무원이 배경에 보인다.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/49/4927d21d5f0f0f65779acac8c7786d941ed2c05e49ae07ac823b1641f1b2c9f1.webp)
 
 ---
 
@@ -251,7 +252,7 @@ Cost-Plus 계약 구조는 마진 상한이고, Sentinel 같은 일회성 손실
 
 ![록히드마틴 vs 한국 방산 3사 — LMT 매출 100조·OPM 10.30%·BBB+ vs 한화에어로 12조·17~24%·A vs 현대로템 5조·17%(방산)·A- vs 한화오션 11조·9.1%·A-. 미국 cost-plus 50~60% vs 한국 fixed-price 글로벌 수출 차이.](./assets/76-defense-vs-korea.svg)
 
-![모바일 미사일 방어 발사 차량 — 사막 풍경에서 황금시간대 촬영. 거대한 직사각형 발사 튜브를 탑재한 중형 군용 트럭, 전술 장비 착용 군인 배경. 따뜻한 앰버 노을과 모래 안개.](./assets/76-missile-defense.webp)
+![모바일 미사일 방어 발사 차량 — 사막 풍경에서 황금시간대 촬영. 거대한 직사각형 발사 튜브를 탑재한 중형 군용 트럭, 전술 장비 착용 군인 배경. 따뜻한 앰버 노을과 모래 안개.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/27/271433119bce5aed777b84532e618c2a9f694b7deb3dc7a1f155310b298e9e9d.webp)
 
 ---
 

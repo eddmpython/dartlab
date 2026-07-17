@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 122
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/AXP-american-express.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/cf/cf69c3a6ccc0b2379fa7ca3abcfa91987766738e5267dc527b5d0e7b255721f0.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a6/a6cd603a911ce9ed0e9d145962275c8547108bca77eabe54bbba3e26789f5e35.webp
 tags: ["아메리칸익스프레스", "American Express", "AXP", "closed-loop", "순이자이익", "대손충당금", "신용리스크", "결제망", "미국주식", "비자거울"]
 stockCode: "AXP"
 corpName: "American Express"
@@ -41,7 +42,7 @@ import StackBar from '$lib/components/blog/StackBar.svelte';
 
 비자([이미 발간](/blog/V-visa))의 손익을 dartlab으로 열면, 두 줄이 *없다* — 순이자이익도, 대손충당금도. 비자는 간판을 빌려주고 신용리스크는 발급은행에 넘기기 때문이다. 아메리칸 익스프레스의 손익을 같은 도구로 열면, 그 두 줄이 *있다.*
 
-![한 회사가 발급·정산·신용리스크를 다 쥔다 — closed-loop의 카드](./assets/122-charge-card.webp)
+![한 회사가 발급·정산·신용리스크를 다 쥔다 — closed-loop의 카드](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/91/91275b5b7935c8c3a5f95532a7df65443da77cd9460e5680e40932efac1269ac.webp)
 
 직접 빌려주니 **이자(순이자이익)**가 수익 라인이 되고, 직접 떼이니 **못 받은 손실(대손충당금)**이 비용 라인이 된다. 이 '두 줄의 실재'가 이 글의 전부다.
 
@@ -71,7 +72,7 @@ dartlab 손익 격자를 열면 AXP에는 영업이익(OPM) 라인이 안 잡힌
 
 **왜 부재 다음에 곧장 존재를 가리키나.** 비자에 없는 라인을 AXP 손익에서 직접 짚는 것이 관통선의 본체이기 때문이다.
 
-![직접 빌려주니 이자가, 직접 떼이니 손실이 — 손익에 새 두 줄이 생긴다](./assets/122-lend-and-lose.webp)
+![직접 빌려주니 이자가, 직접 떼이니 손실이 — 손익에 새 두 줄이 생긴다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b2/b29ee773be5344bf2eba6d00ad2ca228f7e0c96ec8732ce32424a35a5cfeefff.webp)
 
 AXP 손익에는 비자에 없는 두 줄이 있다 — **순이자이익**(직접 대출 이자, 2018 7.66B)과 **대손충당금**(직접 떼임, 2018 3.35B). 두 줄이 '있다'는 사실 자체가 핵심이다. 비자는 카드를 찍어준 발급은행이 신용·대손을 지고, 자신은 망 수수료만 번다(외부 자기기술, [비자 글](/blog/V-visa) 참조). AXP는 closed-loop라 발급·정산·신용리스크를 한 회사가 쥐므로, 빌려준 돈의 이자도 자기 수익이고 못 받은 손실도 자기 비용이다. 같은 '직접 리스크를 떠안는' 손익 구조는 보험·증권 리스크를 자기 장부에 지는 [메리츠금융지주](/blog/138040-meritz-financial)에서도 보인다 — 통행료만 떼는 망과는 다른 계열이다. 창업사(1850 운송 → 1891 여행자수표 → 1958 charge card)는 '돈·가치의 이동을 다뤄온 업력'이라는 사실 한 줄로만 둔다(외부 인용) — '리스크 떠안는 기질이라 은행이 될 운명'이라는 봉합은 하지 않는다.
 
@@ -118,7 +119,7 @@ c.select("IS", ["매출액","비이자수익","대손충당금","당기순이익
 
 순이자이익이 왜 비이자수익보다 빨리 컸는지 — 카드회원 대출잔액(외부 인용: 2025년 약 $136.5B), 금리 상승, 리볼빙 잔액, 회원 증가 — 는 전부 외부 사실이고 내부 8라인으로 증명되지 않는다. 내부 수치가 단단하게 말하는 건 '순이자이익 절대액이 2.27배 컸다'까지다. 순이자이익이나 대손을 총수익으로 나눈 비율(예: 대손/총수익 11%→22%)은 *분모 정의가 불명*(2018년 비이자수익이 총수익보다 큼)이라 보조 참고로만 두고, 절대 성장이 본 증거다.
 
-![무거운 길목 — 통행료에 은행 손익을 얹은 대신 리스크도 직접 진다](./assets/122-heavy-tollgate.webp)
+![무거운 길목 — 통행료에 은행 손익을 얹은 대신 리스크도 직접 진다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c0/c06a24822f531932a24b9c8df9ddf132f53d8fe04ff5e7d9dfbc43373ff75c10.webp)
 
 균형추도 외부로 단다 — AXP의 미국 구매액 점유율은 약 **10%**로, 비자(약 60%)·마스터카드(약 27%)에 비하면 절대 규모는 작다(외부 인용).
 

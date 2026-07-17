@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 166
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/CRWV-coreweave.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/2e/2eab3258d2d29bc78221da7cfe5597c1c41f7a7ed244273873d4f2c42dfeb15b.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/bc/bc3599755a4eee94373234a73236a029ac4702433c72f53cf69c28bf4771325f.webp
 tags:
   - "CRWV"
   - "CoreWeave"
@@ -48,7 +49,7 @@ CoreWeave는 지금 가장 읽기 좋은 EDGAR 종목 중 하나다. 이유는 �
 
 그런데 CoreWeave를 그렇게만 읽으면 가장 중요한 줄을 놓친다. 이 회사는 소프트웨어처럼 보이지만 몸은 데이터센터다. 고객이 AI 모델을 돌리려면 GPU 서버, 네트워크 장비, 스토리지, 전력, 냉각, 데이터센터 임대, 운영팀이 먼저 있어야 한다. 주문이 들어오면 매출이 바로 찍히는 구조가 아니다. CoreWeave가 먼저 장비와 전력을 확보하고, 그 장비를 고객이 쓰는 기간 동안 매출로 회수한다.
 
-![데이터센터 서버랙은 CoreWeave가 파는 것이 추상 클라우드가 아니라 GPU와 전력 위의 계산 시간임을 보여준다](./assets/166-data-center-racks.webp)
+![데이터센터 서버랙은 CoreWeave가 파는 것이 추상 클라우드가 아니라 GPU와 전력 위의 계산 시간임을 보여준다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/30/30acdafd3592cfa298aa4da774a88a84c9c379301b5746befb6f5ecc61a8dbdf.webp)
 
 그래서 이 글의 질문은 하나다. **CoreWeave는 AI 수요가 폭발하는 회사인가, 아니면 그 수요를 먼저 빚으로 사오는 회사인가.** 둘 다 맞다. 수요는 크다. 하지만 그 수요를 매출로 바꾸려면 GPU와 데이터센터를 먼저 확보해야 한다. 그 과정에서 부채, 임대, 장비 금융, 고객 선급금, 대형 고객 집중이 한꺼번에 따라온다.
 
@@ -82,7 +83,7 @@ CoreWeave 홈페이지를 보면 GPU compute, NVIDIA Blackwell, Hopper, bare met
 
 하지만 투자자가 재무제표를 읽을 때는 이 단어들을 원가 항목으로 번역해야 한다. GPU compute는 GPU 서버다. Networking은 스위치와 광케이블과 데이터센터 네트워크다. Storage는 장비와 소프트웨어 라이선스다. Managed Kubernetes와 observability도 결국 운영 인력과 소프트웨어 투자 위에서 돌아간다. 그리고 이 모든 것은 전력과 냉각 없이는 아무 의미가 없다.
 
-![전력 설비와 변전소는 AI 클라우드가 GPU만으로 돌아가지 않는다는 점을 보여준다](./assets/166-substation-power.webp)
+![전력 설비와 변전소는 AI 클라우드가 GPU만으로 돌아가지 않는다는 점을 보여준다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/6b/6b81d5289cc5bb783619307a2656fe43a271a6585e8807afc66758cee78cc0ea.webp)
 
 2026년 1분기 발표에서 회사는 active power가 1GW를 넘었고, 2030년에는 8GW 이상으로 가는 길 위에 있다고 말했다. total contracted power도 3.5GW 이상으로 늘었다. GW라는 단위가 중요하다. 소프트웨어 회사는 보통 데이터 전송량이나 가입자 수를 말한다. CoreWeave는 전력을 말한다. 이 회사의 성장은 전기와 부동산과 장비 조달 위에서 선다.
 
@@ -163,7 +164,7 @@ CoreWeave 이야기에 NVIDIA를 빼면 안 된다. 이 회사가 파는 것은 
 
 이것은 강한 장점이다. AI 인프라에서 GPU 공급 접근성은 제품 경쟁력이다. 고객은 최신 GPU를 빨리 쓰고 싶어 한다. CoreWeave가 NVIDIA 생태계와 가깝다는 것은 장비 조달, 성능 검증, 고객 신뢰 측면에서 유리하게 작동할 수 있다. 그래서 CoreWeave는 단순 호스팅 회사가 아니라 AI-native cloud라고 자신을 설명한다.
 
-![서버룸 네트워크 장비는 GPU만이 아니라 네트워크와 운영 레이어까지 CoreWeave 상품의 일부임을 보여준다](./assets/166-server-network.webp)
+![서버룸 네트워크 장비는 GPU만이 아니라 네트워크와 운영 레이어까지 CoreWeave 상품의 일부임을 보여준다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d1/d1acd4183eff3b0776b3d99b62c77b4f6efcbbf194ac09d1df94e29f8116552f.webp)
 
 하지만 이 관계도 한쪽으로만 읽으면 안 된다. NVIDIA와 가까운 것은 강점이지만, 동시에 특정 GPU 세대와 공급망에 묶이는 일이다. 고객이 원하는 칩 세대가 바뀌면 CoreWeave는 장비를 계속 갱신해야 한다. 10-K는 infrastructure components의 useful life estimate와 redeployment 리스크를 언급한다. GPU는 영원히 같은 가격으로 같은 성능을 내는 자산이 아니다.
 

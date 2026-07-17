@@ -4,10 +4,11 @@ date: 2026-04-05
 description: "SK이노베이션 독립 신용등급 dCR-AA (최우량 (notch 조정)). 공시 데이터 기반 정량 분석 등급 근거, 재무 하이라이트, 등급 전망."
 category: credit-reports
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/credit-16-096770-credit.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f4/f459e5d7e70a4dfe45601e2067a48a56c706510f7612e71bb0337bae6d80328a.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/9e/9eb477cdfb40fbb4e20623634a505cf426d007d4135c12277d31098ab8516360.webp
 ---
 
-![SK이노베이션 (096770) 신용분석 보고서 ?? ???](./assets/16-credit-dashboard.webp)
+![SK이노베이션 (096770) 신용분석 보고서 ?? ???](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/30/304edba72a312a42223a3b221113c2c40c9b807fabe057d523e57e200917069e.webp)
 > ⚠️ **면책**: 본 보고서는 dartlab dCR v4.0 방법론에 따라 공시 데이터만으로 작성되었습니다. 제도권 신용등급과 다를 수 있으며, 투자 권유가 아닙니다. [방법론](https://github.com/eddmpython/dartlab/blob/master/src/dartlab/analysis/CREDIT.md)
 
 > **dCR-AA** | 최우량 (notch 조정) | 2026-04-05 | 방법론 v4.0

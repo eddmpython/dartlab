@@ -6,7 +6,8 @@ category: reading-disclosures
 series: report-reading-foundations
 seriesOrder: 3
 thumbnail: /avatar-study.png
-ogImage: /thumbnails/06-how-far-to-trust-new-business-plans.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/06/0651753757d4c065f57aac0b6c73244d6b1d399893e70cec8e1e6dc7cab0cdd7.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/8a/8a2da917f9d8461530f05bdf2c2803159bb4d0d8e17669d7cabe537fec70fa85.webp
 ---
 
 # 공시에서 신규사업 계획은 어디까지 믿어야 하나

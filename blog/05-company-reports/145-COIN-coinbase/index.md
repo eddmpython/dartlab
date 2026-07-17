@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 145
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/COIN-coinbase.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f2/f2d34328db5f12154b03424bb9e693092d7e0c850ce69710ecc86741605a1a4f.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e9/e9c1ba254dfb595805f1f0d56eb9b852dc6ef98b06201540e6cdb7ed95e0b7b8.webp
 tags: ["코인베이스", "Coinbase", "COIN", "암호화폐거래소", "거래수수료", "USDC", "스테이블코인", "operating leverage", "미국주식", "사이클"]
 stockCode: "COIN"
 corpName: "Coinbase Global"

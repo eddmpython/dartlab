@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 105
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/MCD-mcdonalds.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c4/c418e2618d84749c27a9ba69e934ab66e4f839ecd15b3f82ed8a93bdd5a2e79f.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/43/43c71761b3be018db141de7801f08fa7f9039bad8b63ba12492d92de882f329d.webp
 tags: ["맥도날드", "MCD", "프랜차이즈", "부동산", "임대료", "로열티", "영업이익률", "외식", "미국주식", "가맹"]
 stockCode: "MCD"
 corpName: "McDonald's"
@@ -41,7 +42,7 @@ import StackBar from '$lib/components/blog/StackBar.svelte';
 
 간판은 햄버거다. 빅맥, 감자튀김, 드라이브스루. 그런데 연결 손익계산서를 열면 식당이 보이지 않는다.
 
-![드라이브스루와 노란 간판 — 보이는 것은 햄버거 가게다](./assets/105-storefront.webp)
+![드라이브스루와 노란 간판 — 보이는 것은 햄버거 가게다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d2/d2fe0a17f06c84ea09bf7aa772ee03f8624d7ed473f6216356c5901f69b6087e.webp)
 
 2025년 이 회사의 매출은 **$26.9B**, 영업이익은 **$12.4B**. 영업이익률 **약 46%**다. 패티를 굽고 감자를 튀겨 파는 회사가 낼 수 있는 숫자가 아니다. 외식업의 영업이익률은 잘해야 한 자릿수, 아주 잘 굴러가도 10%대다. 46%는 다른 종류의 사업에서 나오는 숫자다.
 
@@ -83,7 +84,7 @@ c.select("IS", ["매출액", "영업이익"], freq="Q")  # 분기→연간 합�
 
 ![가맹 95% + 임대료(10.0B) > 로열티(5.6B) — 더 큰 다리는 부동산 (10-K 외부)](./assets/105-landlord.svg)
 
-![간판 아래의 진짜 자산 — 길목의 땅과 건물](./assets/105-real-estate.webp)
+![간판 아래의 진짜 자산 — 길목의 땅과 건물](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/af/af956d5f29b0f44e145dd2b748c09520fefc36f45f4785de3b837fb432b994a0.webp)
 
 이 분해는 전부 dartlab 검증 재무 *밖*이다 — 연결 IS는 'franchised vs company-operated'를 직접 보여주지 못한다. 그래서 가맹 비중도, 임대료/로열티 분해도 10-K 외부 인용으로만 표기한다.
 
@@ -123,7 +124,7 @@ c.select("IS", ["매출액", "영업이익", "당기순이익"], freq="Q")
 
 ![V자 회복 — 2020 골에서 2021 사상 최고 영업이익(10.36B)으로](./assets/105-v-recovery.svg)
 
-![건물 열쇠를 쥔 손 — 임대인의 회복력](./assets/105-keys.webp)
+![건물 열쇠를 쥔 손 — 임대인의 회복력](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/83/8340ee84cd7acef52505f051560b5b288a1fe36db7c3be96a0a28a87475fa39a.webp)
 
 세입자(가맹점)가 살아남자 임대료·로열티 줄기가 즉시 복원됐고, 본사는 직영 식당의 변동비·재고 부담을 지지 않으니 매출이 정상으로 돌아오는 속도보다 이익이 빠르게 회복됐다. 진짜 회복력은 '안 빠지는 것'이 아니라 *'빠진 뒤 빠르게, 더 높이 돌아오는 것'*이었고, 그건 마진 구조(임대인) 위에서만 가능하다. 이후 OPM은 2023년 45.7%, 2025년 46.1%로 다시 40%대 중반에 안착했다 — 같은 +27% 매출 성장이라도, 한 자릿수 마진 식당의 성장과 임대인의 성장은 떨어지는 이익의 무게가 다르다. 간판 뒤에 다른 엔진을 숨긴 [아마존](/blog/AMZN-amazon)·[CJ제일제당](/blog/097950-cj-cheiljedang)처럼, 맥도날드도 *간판(햄버거)과 엔진(임대)이 따로* 움직인다.
 

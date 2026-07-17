@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 56
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/298000-hyosung-chemical.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ff/ff687cbe4b7f87e3b56a908a1dd98b52fde7c0da9772d5ce4ac2ea31db30cdd6.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/7d/7dd92bca435d2181241d2847cf08a1a779ba02f0ca116098425265128b4144cf.webp
 tags: ["효성화학", "298000", "NCC", "석유화학", "나프타분해설비", "화학업종", "사업부매각", "자본잠식", "effiHyosung"]
 stockCode: "298000"
 corpName: "효성화학"
@@ -188,7 +189,7 @@ prof["marginWaterfall"]["history"][0]  # 2025년
 
 ---
 
-![베트남 나프타분해설비 공장 — 효성 Vina Chemicals 2020년 4월 가동](./assets/056-vina-ncc-plant.webp)
+![베트남 나프타분해설비 공장 — 효성 Vina Chemicals 2020년 4월 가동](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/30/303bb4df3b2af58c891b896a2c0a0a25e3c70f00b0998597f2d0038b3199afac.webp)
 
 ## 2막. 베트남 공장 하나에 걸린 2.6조 — 2020년 4월이라는 타이밍
 
@@ -460,7 +461,7 @@ dartlab.scan("profitability")  # 전종목 동종사 비교
 
 ![한국 NCC 5사 영업이익률 5년 비교 — 효성화학이 가장 깊은 골](./assets/056-ncc-heatmap.svg)
 
-![화학 업종 빙하기 — 중국 공급 과잉이 만든 구조적 스프레드 붕괴](./assets/056-glacial-chemistry.webp)
+![화학 업종 빙하기 — 중국 공급 과잉이 만든 구조적 스프레드 붕괴](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d0/d072caf151046e82e6215c9ec43c119ce8469a0d9a5aa1a73c81d81ba222f476.webp)
 
 ---
 

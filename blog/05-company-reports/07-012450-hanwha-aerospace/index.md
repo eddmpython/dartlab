@@ -19,7 +19,8 @@ tags:
   - 누리호
   - 전자공시
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/012450-hanwha-aerospace.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/7a/7a8f1c655376b08d78cf65b5941ab34a0df04f27d3a7cec0a827ed64f340a0e3.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/cf/cf214871df1eb243ff90f56271ed651fa300d2756bf1cdbe5984bb6f80a50488.webp
 youtubeId: "NvVg08Dzogk"
 ai:
   verdict: "K9 세계 52% 점유. 수주잔고 37조. 삼성이 8400억에 버린 무기가 37조."
@@ -232,7 +233,7 @@ c.select("IS", ["매출액", "영업이익"], freq="Y")
 
 그런데 이 회사가 만드는 K9 자주포는 세계 155mm 자주포 시장의 **52%**를 차지하고 있었다. SIPRI 기준 2023년. 독일 PzH 2000이 약 120문, 프랑스 CAESAR가 약 300문 수출하는 동안 K9은 600문 이상. 세계에서 가장 많이 팔린 자주포.
 
-![K9 자주포](./assets/07-k9-thunder.webp)
+![K9 자주포](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a4/a43308f4e47c72c7910da1ff669079827836a8646c7ff4074fb7fda2e80eb7fb.webp)
 
 시장의 절반을 먹고 있는데 왜 매출이 고작 1.6조인가? 뜯어보면 답이 나온다. K9 한 문 가격이 50~80억원이다. 터키가 350문(면허생산), 인도가 100문, 노르웨이가 28문, 핀란드가 48문을 샀다. 문제는 한 나라당 수십~100문 단위라는 것. 연간 수출 매출이 수천억에 머물렀다. **시장은 지배하는데 시장 자체가 작았다.**
 
@@ -297,7 +298,7 @@ K9 자주포, 항공기 엔진, 레이더, 항공전자. 한화는 한 번의 �
 
 유럽이 뒤집혔다. NATO 동쪽 최전선 폴란드가 보유한 소련제 무기를 우크라이나에 보내고, 빈자리를 채울 무기를 찾았다. 그해 5월, 브와슈차크(Blaszczak) 폴란드 부총리 겸 국방장관이 대규모 협력단을 이끌고 직접 한국에 왔다. 계약 틀이 잡힌 날 만찬에서 그가 말했다 — "이번 기회에 한국산 폭탄주도 수입하겠다." 무기 계약 자리에서 러브샷.
 
-![한화에어로스페이스 방산 생산라인](./assets/07-defense-factory.webp)
+![한화에어로스페이스 방산 생산라인](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d7/d737190dc1c56a60fdf96ac9098986c7d068c14bd8440c663ea3cc872e2bcf45.webp)
 
 2022년 7월 27일, 폴란드 국방부에서 서명이 이뤄졌다:
 
@@ -433,7 +434,7 @@ c.analysis("financial", "현금흐름")
 
 항공우주 부문 2025년 영업이익: **23억원.**
 
-![누리호 발사](./assets/07-nuri-launch.webp)
+![누리호 발사](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e6/e659f4864761290c50a04fad01c990e7af0fee63b9467e8af7eff312f10db897.webp)
 
 23억. 방산 영업이익 2조 옆에 23억. 웃길 수 있는 숫자다. 그런데 이게 뉴스가 됐다 — **흑자전환**이었기 때문이다. 이 부문이 적자를 벗어난 게 2025년이 처음이다.
 

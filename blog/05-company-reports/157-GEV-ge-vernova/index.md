@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 157
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/GEV-ge-vernova.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/55/55404ccd1beb61652bd38411db4a26f4f2dc41f8a884f21a47b788842d00246a.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/13/13d018f9e4cb08d609f509ddc4fb676916b3384932615f6ae6012ad2c68573a0.webp
 tags:
   - "GEV"
   - "GE Vernova"
@@ -49,7 +50,7 @@ AI 데이터센터 이야기는 보통 GPU에서 시작한다. 칩을 누가 만
 
 GE Vernova는 이 질문의 가운데 있다. 이 회사는 2024년 4월 GE에서 분리 상장된 전력 인프라 회사다. 사업은 Power, Wind, Electrification으로 나뉜다. Power는 가스터빈과 전력 서비스, Electrification은 변압기·switchgear·HVDC·grid solutions, Wind는 육상·해상 풍력이다. 이름은 에너지 전환 회사처럼 들리지만, 2025년과 2026년 숫자를 보면 더 직접적인 문장이 나온다. **GE Vernova는 AI 전력 수요가 가스터빈 예약과 전력망 장비 주문으로 바뀌는 장부다.**
 
-![전력망 관제실과 변전 설비는 GEV가 실제로 파는 것이 데이터센터 자체가 아니라 전력 안정성임을 보여준다](./assets/157-gev-grid-control.webp)
+![전력망 관제실과 변전 설비는 GEV가 실제로 파는 것이 데이터센터 자체가 아니라 전력 안정성임을 보여준다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d6/d68b7319cb8e9b67ed7cb8431bf7e799886b3b03c05110d3556f051bf9f047d2.webp)
 
 2025년 회사 전체 매출은 38.1B였다. 영업이익은 1.39B, 영업이익률은 3.6%다. 이익률만 보면 아직 고마진 회사는 아니다. 하지만 같은 해 조정 EBITDA는 3.20B, 자유현금흐름은 3.71B였다. 그리고 백로그는 150.2B까지 커졌다. 매출의 4배에 가까운 잔여 수행 의무가 쌓인 셈이다. 전력 장비 회사에서 백로그는 단순한 인기투표가 아니다. 공장 슬롯, 공급망, 가격, 고객 선급금, 장기 서비스 매출의 출발점이다.
 
@@ -93,7 +94,7 @@ Power는 GEV의 가장 큰 사업이다. 2025년 Power 매출은 19.8B로 전체
 
 Power의 질은 두 가지에서 나온다. 첫째는 Gas Power 장비 수요다. 2025년 gas turbine orders는 173대, 29.8GW였다. 2024년 112대, 20.2GW보다 크다. heavy-duty gas turbine 주문도 68대에서 110대로 늘었다. 둘째는 설치된 장비에서 나오는 서비스다. Power services 매출은 2025년 13.1B로 equipment 6.7B보다 크다. 전력 장비의 강점은 판매 이후 서비스 기간이 길다는 데 있다.
 
-![대형 가스터빈 장비는 GEV Power 사업이 왜 단순 제조가 아니라 장기 서비스 사업인지 보여준다](./assets/157-gev-gas-turbine.webp)
+![대형 가스터빈 장비는 GEV Power 사업이 왜 단순 제조가 아니라 장기 서비스 사업인지 보여준다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/40/40a5034a11333e0ad8a86a06f07d1f6158ffe934b9b9f61087da6c51c28a10c1.webp)
 
 Q1 2026 Power 숫자도 강하다. 주문은 10.0B, 매출은 5.0B, segment EBITDA는 0.81B, EBITDA margin은 16.3%였다. 전년 동기 11.6%에서 470bp 상승했다. 회사는 Gas Power의 가격과 물량이 이익을 밀었다고 설명한다. 여기서 가격이 중요하다. 전력 장비 공급이 부족할 때 좋은 회사는 단순히 더 많이 파는 것이 아니라, 더 좋은 조건으로 슬롯을 판다.
 
@@ -111,7 +112,7 @@ GEV에서 가장 재미있는 사업은 Electrification이다. 2025년 매출은
 
 Electrification은 전력망의 병목을 판다. 변압기, switchgear, substation solutions, HVDC, power conversion, storage, software. 데이터센터가 늘면 서버만 필요한 것이 아니다. 대규모 전력을 안정적으로 받기 위해 grid connection, 전압 변환, protection, monitoring, 전력 품질 관리가 필요하다. 바로 이 지점에서 GEV의 Electrification 사업이 숫자로 움직인다.
 
-![변압기와 switchgear는 AI 데이터센터 전력 수요가 실제 장비 주문으로 바뀌는 지점이다](./assets/157-gev-transformer-yard.webp)
+![변압기와 switchgear는 AI 데이터센터 전력 수요가 실제 장비 주문으로 바뀌는 지점이다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/24/24831fa243effb7218440b7d8cb7619ca84d7ac02400f79defaebeb42186909e.webp)
 
 2025년 Electrification RPO는 34.7B였다. 2024년 23.5B에서 11.2B 늘었다. 회사는 demand for AC substation solutions, switchgear, transformers, synchronous condensers, energy storage를 증가 원인으로 설명한다. 이 문장은 중요하다. AI 전력 수요는 하나의 제품으로 끝나지 않는다. 송전망, 변전소, 전력품질, 저장, 제어가 묶여 들어온다.
 

@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 141
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/010950-s-oil.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/95/9553a58d81bf1beca4a6168d00f72a7b853ac3f6cc6d355f09720bebb6d71dc4.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/53/533e2354a1c6cbae49fde77be9672cdc2531de90dd315901392705efcd5b082f.webp
 tags: ["S-Oil", "010950", "정유", "정제마진", "영업현금흐름", "재고평가손익", "아람코", "샤힌프로젝트", "사이클", "한국주식"]
 stockCode: "010950"
 corpName: "S-Oil"
@@ -129,7 +130,7 @@ import ComboChart from '$lib/components/blog/ComboChart.svelte';
 
 왜 정유사에서 두 시계가 어긋나는지, 그 출발점은 '이 회사는 사는 가격도 파는 가격도 자기가 못 정한다'는 한 가지 사실이다. 모든 진폭·격차 수치는 내부 4개 시계열로만 박고, 그 원인 후보(유가·정제마진·재고법·아람코·샤힌)는 전부 [외부 인용]으로 분리하며, 관찰과 인과 사이는 '정합'까지만 둔다.
 
-![두 거대한 배관 사이에 낀 좁은 통로 — 회사는 두 가격 사이의 얇은 띠에 산다](./assets/141-caught-between.webp)
+![두 거대한 배관 사이에 낀 좁은 통로 — 회사는 두 가격 사이의 얇은 띠에 산다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e0/e09d7d706eda6750dc56e2b6b501b1984144a16609db92d64c917905d0c04ff2.webp)
 
 ---
 
@@ -207,7 +208,7 @@ c.select("CF", ["영업활동현금흐름"], freq="Q")  # 손익과 다른 박�
 
 변동성 층위가 종착점이다. 부호 전환 횟수를 세면, 순이익 2회(2020·2024) > 영업이익 1회(2020) > 영업CF 1회(2018, 단발)다. **영업CF는 2019~2025년 7년 연속 양(+0.497~+3.942조)으로 가장 둔감하다.** 손익은 못 정하는 두 가격 사이 얇은 띠라 부호까지 출렁이지만, 현금 층은 한 단계 더 평탄하게 양을 유지한다 — 이것이 두 시계 중 더 느린 박자다.
 
-![비계에 덮인 미완 — 정제마진에 덜 의존하는 사업으로 박자를 바꾸려는 시도](./assets/141-cash-shadow.webp)
+![비계에 덮인 미완 — 정제마진에 덜 의존하는 사업으로 박자를 바꾸려는 시도](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/78/78a44d0271129f9f7a2f615a6a427246f0e111af377d76ee6dd3c6563f4b685f.webp)
 
 이 흔들림에 회사가 어떻게 대응하는지는 [외부]로만 둔다 — 정제마진을 더 잘 받자가 아니라 정제마진에 덜 의존하는 사업을 짓는 방향이다. **[외부 인용]** 사우디 아람코가 약 63.4% 최대주주이고 20년 장기 원유공급 계약으로 투입 원유 대부분을 조달하며([Wikipedia](https://en.wikipedia.org/wiki/S-Oil)), 약 9.258조원 규모 샤힌 프로젝트로 원유를 화학원료로 직접 전환해 2026년 상반기 기계적 준공을 목표한다는 것([아람코 코리아](https://korea.aramco.com/ko-kr/news-media/news/2022/aramco-affiliate-s-oil-to-build-one-of-the-worlds-largest-petrochemical-crackers-in-south-korea)), 그리고 윤활(기유) 부문이 2025년 4분기 5,821억원 흑자로 같은 분기 정유·석유화학 적자를 상쇄했다는 것([이지경제](https://www.ezyeconomy.com/news/articleView.html?idxno=231149))은 전부 외부 사실이다. 최근 두 해 OPM(1.2%·0.7%)이 8년 흑자 구간 최저점이라는 내부 사실과 다각화 투자 시점은 정합하나, '가격에 덜 휘둘리려는 의도'는 경영 판단이라 인과는 보류한다. 같은 '얇은 마진 위의 변동성'은 [하이트진로](/blog/000080-hite-jinro)가 훨씬 작은 진폭으로 보여준 것과 같은 종류의 독법이다.
 

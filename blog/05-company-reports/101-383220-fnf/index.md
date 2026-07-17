@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 101
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/383220-fnf.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/71/713eb0066e7d889da6422e5b6f1e9d89e87c583075ad63814f671243ecb72651.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/9c/9c649c3c34cfba847e213843ac1efe9c086558d46cbaed5de223099f16e9ae2d.webp
 tags: ["F&F", "383220", "MLB", "디스커버리", "라이선스", "운영권", "중국", "패션", "김창수", "브랜드"]
 stockCode: "383220"
 corpName: "F&F"
@@ -168,7 +169,7 @@ c.select("IS", ["sales", "gross_profit", "operating_profit"], freq="Y")
 
 공식 연혁도 바로잡아야 한다. 사업보고서는 분할 전 패션사업부문이 1997년 6월 라이선스 브랜드 MLB를 런칭했고, 2010년 2월 MLB KIDS를 런칭했으며, 2012년 8월 DISCOVERY를 런칭했다고 설명한다. 기존 초안의 "2011년 MLB 라이선스"는 이 공식 문서와 맞지 않는다. 2019년부터는 MLB 글로벌 비즈니스가 중국까지 확장됐다.
 
-![남의 미국 브랜드(MLB·디스커버리)를 빌려 굴리는 운영권](./assets/101-mlb-brand.webp)
+![남의 미국 브랜드(MLB·디스커버리)를 빌려 굴리는 운영권](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/db/dbe592fc91320b6771c1c4fe257f368c9a1fb5d28e58d17ee618c241ebebe130.webp)
 
 이 차이가 중요하다. MLB와 DISCOVERY는 F&F가 처음부터 만든 상표가 아니다. 그러나 F&F는 그 브랜드를 한국과 아시아 시장의 의류 사업으로 번역했다. 모자, 신발, 의류, 키즈 라인, 온라인·오프라인 유통망, 면세점·백화점·대리점·직영점·자사몰을 묶어 하나의 사업으로 굴렸다. 브랜드 원천과 운영 능력은 다르다. F&F의 강점은 전자보다 후자다.
 
@@ -212,7 +213,7 @@ c.select(
 | 판매비와관리비 | 7,513 | 7,947 | 7,963 | 8,232 |
 | 영업이익 | 5,249 | 5,515 | 4,507 | 4,686 |
 
-![중국 MLB 성장과 DISCOVERY 초기 비용이 같은 손익계산서 안에서 만난다](./assets/101-china-store.webp)
+![중국 MLB 성장과 DISCOVERY 초기 비용이 같은 손익계산서 안에서 만난다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/1f/1f87b08c57ff59ca1fdefba68daacb9f65aa54034cb65739a41faebd6714b3ed.webp)
 
 2023년에서 2024년으로 넘어갈 때 매출총이익은 992억 줄고, 판매비와관리비는 15억 늘었다. 그러면 영업이익은 1,008억 줄어든다. 이 숫자는 기존 제목의 "1,000억"과 정확히 만난다. 하지만 그 원인을 중국 둔화 하나로 쓰면 과하다. dartlab 재무제표는 브랜드별·지역별 이익률을 분해해주지 않는다. F&F 공시도 단일 영업부문이라 브랜드별 손익을 직접 보여주지 않는다.
 
@@ -286,7 +287,7 @@ c.select("CF", ["operating_cashflow", "investing_cashflow", "financing_cashflow"
 
 **그래서 이 회사는 남의 브랜드 하나에 서 있나.** 절반만 맞다. MLB와 DISCOVERY가 핵심인 것은 맞다. 그러나 2025년 공시는 DUVETICA, SUPRA, SERGIO TACCHINI까지 같은 브랜드 목록에 올린다. 특히 SERGIO TACCHINI는 IP 보유 법인과 운영 법인을 100% 취득한 케이스다. F&F가 라이선스 의존을 낮추려는 움직임을 이미 하고 있다는 뜻이다.
 
-![모든 숫자가 남의 서명 한 장 위에 서 있다](./assets/101-signature.webp)
+![모든 숫자가 남의 서명 한 장 위에 서 있다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f1/f15b36d3e02a8508ccd692ca28d38a2d497ad62868f00c6192349039a1ec1029.webp)
 
 SERGIO TACCHINI는 아직 전사 규모를 바꿀 만큼 크지 않다. 2025년 IP HOLDINGS 매출은 1.2억 원이고, OPERATIONS 매출은 486억 원이다. 연결 매출 1조9,340억에 비하면 작다. 그렇지만 의미는 있다. 이 회사가 "라이선스 운영만 잘하는 회사"에서 "라이선스와 자체 IP를 같이 굴리는 회사"로 이동하려는 시도이기 때문이다.
 

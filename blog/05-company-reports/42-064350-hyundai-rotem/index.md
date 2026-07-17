@@ -19,7 +19,8 @@ tags:
   - 턴어라운드
   - 전자공시
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/064350-hyundai-rotem.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/13/13781f1bb5a6b4f79b9625ecd81214ef53c3f3b44ee268be73e774e5dadb82f5.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/16/161d57b9500f8bc7312cdcb9d2c19ec684523bf52790c2efebeee039f5da5ab6.webp
 youtubeId: ""
 ai:
   verdict: "국내 전용 적자 방산 → K2 수출 변곡점 → 자본 경량 구조에서 OPM 17% 폭발."
@@ -183,7 +184,7 @@ import HFDataLink from '$lib/components/blog/HFDataLink.svelte';
 
 현대로템의 2025년 [사업보고서](https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20250401003177)를 처음 열면 부채비율 206%가 눈에 들어온다. 보통이라면 "위험한 회사"로 넘기겠지만, 한 줄만 더 내려가면 숫자가 뒤집힌다.
 
-![폴란드에 수출된 K2 전차 — 한국 방산 사상 최대 규모의 단일 수출 계약이 현대로템의 재무 구조를 바꿨다](./assets/42-k2-tank.webp)
+![폴란드에 수출된 K2 전차 — 한국 방산 사상 최대 규모의 단일 수출 계약이 현대로템의 재무 구조를 바꿨다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/78/78dd035e6161e5a2cbac09df77a2106fe55aa74bdb50a7349aba62cc3f9bd1d6.webp)
 
 ### 부채 6.28조, 차입금 608억 — 나머지 6.22조의 정체
 
@@ -324,7 +325,7 @@ c.select("BS", ["자산총계", "유형자산"])
 
 왜 차입금 608억밖에 없는 회사에서 투하자본수익률(투자한 자본 대비 영업이익 비율)이 35%인가. [HD현대일렉트릭](/blog/267260-hd-hyundai-electric)(적자→흑자 전환)과 비교하면, 현대로템의 턴어라운드 속도가 더 가파르다.
 
-![현대로템 의왕 제조 공장 — 저마진 철도에서 고마진 방산 수출로 수주 믹스가 전환되는 현장](./assets/42-train-factory.webp)
+![현대로템 의왕 제조 공장 — 저마진 철도에서 고마진 방산 수출로 수주 믹스가 전환되는 현장](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/3a/3aeb15e08eeb5ae602829aa486f4d4ca39d5c7da739a04434feddb080d9d0f2c.webp)
 
 ### 영업현금흐름 9,043억 — 이익의 156%가 현금으로 들어왔다
 

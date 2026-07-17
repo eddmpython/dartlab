@@ -16,7 +16,8 @@ tags:
   - DART
   - EDGAR
   - 기술이야기
-ogImage: /thumbnails/tech-hypertube-vacuum-maglev-network.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/75/75daf3fc8f360c6120cc0445b4c52e515f5d3a3d21053e339cd716b1c58a0944.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/18/18dbf07394474e2e00bac588293bf62488153d69a77dbeaf33a4127607035921.webp
 ai:
   verdict: "하이퍼튜브는 빠른 캡슐 열차가 아니라 아진공 튜브, 초전도 부상, 선형추진, 전력 제어, 토목, 안전 인증이 동시에 맞아야 하는 인프라 시스템이다. 현대로템, 서남, LS ELECTRIC, HD현대일렉트릭, 효성중공업, POSCO홀딩스, 현대제철, GS건설과 AMSC, Wabtec, AECOM, Jacobs, Quanta Services, Fluor는 각각 다른 기술 칸에 걸릴 뿐 순수 하이퍼튜브 매출을 가진 회사로 읽으면 안 된다."
   direction: 관망
@@ -29,7 +30,7 @@ ai:
 
 하이퍼튜브는 빠른 열차라기보다 압력 설비 위에 놓인 철도다. [한국철도기술연구원](https://www.krri.re.kr/web/contents/krri010101.do?id=5825&page=1&schBdcode=&schGroupCode=&schM=view&viewCount=8)은 하이퍼튜브를 1,200km/h 속도로 아진공 튜브 가이드웨이를 주행하는 신개념 육상 교통으로 설명하고, 축소모델 아진공 1/1000기압 튜브에서 1,019km/h 주행 실험을 성과로 제시했다. [국토교통부 2025년 4월 9일 보도자료](https://www.molit.go.kr/USR/NEWS/m_71/dtl.jsp?id=95090845&lcmspage=1)는 하이퍼튜브 핵심기술 개발을 2025년부터 2027년까지 총사업비 127억원으로 시작한다고 밝혔다. 여기서 중요한 말은 "상용 노선 착공"이 아니라 "핵심기술 개발과 검증"이다.
 
-![아진공 하이퍼튜브 테스트 설비와 캡슐, 진공 튜브, 연구자 계측 장면. 하이퍼튜브는 속도보다 튜브와 계측 장비가 먼저 보이는 인프라 기술이다](./assets/01-hypertube-test-facility.webp)
+![아진공 하이퍼튜브 테스트 설비와 캡슐, 진공 튜브, 연구자 계측 장면. 하이퍼튜브는 속도보다 튜브와 계측 장비가 먼저 보이는 인프라 기술이다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b7/b7af53240466205259e29942fd17847c047213d09f7cc0cab782d30d5948ac44.webp)
 
 이 글의 관통선은 하나다. **하이퍼튜브는 캡슐이 아니라 공정 네트워크다.** 차량을 만드는 회사만 보면 틀린다. 아진공 튜브를 만드는 토목, 초전도 전자석과 냉각, 선형추진 전력 제어, 차체와 대차, 통신과 센서, 안전 인증, 비상 대피까지 모두 붙어야 한다. 그래서 상장사도 "하이퍼튜브 보유"가 아니라 어느 칸에 걸리는지로 읽어야 한다.
 
@@ -51,7 +52,7 @@ ai:
 
 바퀴를 없앤 대가는 전력 제어다. 기존 철도에서 레일은 바퀴가 구르는 물리적 경로다. 하이퍼튜브의 가이드웨이는 물리적 경로이면서 전자석 배열이고, 전력 변환 장치이고, 센서 네트워크다. 초전도 전자석은 냉각이 필요하고, 선형추진은 전력 변환과 정밀 제어가 필요하다. 바퀴와 모터가 차량 안에 있던 철도보다, 선로 자체가 더 비싼 전기 설비가 될 수 있다.
 
-![초전도 전자석과 선형추진 가이드웨이 실험실. 바퀴를 없애면 냉각, 전력, 센서, 제어가 선로의 일부가 된다](./assets/02-maglev-propulsion-lab.webp)
+![초전도 전자석과 선형추진 가이드웨이 실험실. 바퀴를 없애면 냉각, 전력, 센서, 제어가 선로의 일부가 된다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/95/95a8b0a2a8d385fd91a6674a8b48cba865817adcdf87dacecd4f7bc0defeb3e8.webp)
 
 여기서 서남 같은 고온 초전도 선재 회사가 관심을 받는다. 하지만 조심해야 한다. 초전도 선재는 하이퍼튜브의 한 칸에 걸릴 수 있지만, 곧바로 상용 하이퍼튜브 매출이라는 뜻은 아니다. 서남의 2025년 DART 합산 매출은 34억원, 영업이익률은 -113.9%였다. 이 숫자는 오히려 경고다. 초전도 소재가 기술적으로 흥미롭다는 사실과, 상장사가 지금 큰 매출을 갖고 있다는 사실은 다르다.
 
@@ -92,11 +93,11 @@ ai:
 
 하이퍼튜브를 상상할 때 사람은 캡슐을 본다. 실제 자본은 튜브와 전력에 먼저 묶인다. 긴 노선을 밀폐하고 압력을 낮게 유지하려면 튜브 자체가 거대한 설비다. 펌프 스테이션, 차단 밸브, 유지보수 접근구, 진동과 열팽창을 흡수하는 구조, 교각과 기초, 지진과 침하 대응이 필요하다. 이것은 철도이면서 플랜트다.
 
-![대형 아진공 튜브를 교각 위에 올리고 펌프 스테이션을 설치하는 토목 현장. 상용 노선의 큰 비용은 차량보다 튜브 구조물과 유지 설비에 쌓인다](./assets/03-vacuum-tube-construction.webp)
+![대형 아진공 튜브를 교각 위에 올리고 펌프 스테이션을 설치하는 토목 현장. 상용 노선의 큰 비용은 차량보다 튜브 구조물과 유지 설비에 쌓인다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/02/024194f213fcd06c44b528668d9dcc1b10bba4f6b1946cbe51c438a41ec77a32.webp)
 
 전력도 별도 문제다. 선형추진은 가이드웨이 전자석을 순서대로 켜고 끄며 차량을 민다. 그러면 전력 변환 장치, 냉각, 제어 캐비닛, 센서, 통신망이 선로 옆에 깔린다. 순간 전력, 회생제동, 고장 구간 격리, 전자기 간섭, 안전 정지까지 계산해야 한다. 전력 설비가 한 번 고장 나면 차량 하나가 멈추는 게 아니라 노선 구간이 멈춘다.
 
-![선형추진 전력 변환 캐비닛과 제어실. 전력 변환, 냉각, 제어 캐비닛, 센서 네트워크가 하이퍼튜브의 숨은 운영 원가가 된다](./assets/04-power-electronics-room.webp)
+![선형추진 전력 변환 캐비닛과 제어실. 전력 변환, 냉각, 제어 캐비닛, 센서 네트워크가 하이퍼튜브의 숨은 운영 원가가 된다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/6e/6e8516f29dadcd8e6948f0e8a1b95cf173612be712f91bc46d8ae9664c5cdf04.webp)
 
 그래서 LS ELECTRIC, HD현대일렉트릭, 효성중공업 같은 전력 회사가 인접 칸에 놓인다. LS ELECTRIC은 배전과 자동화, HD현대일렉트릭과 효성중공업은 변압기와 중전기 영역에서 이미 돈을 번다. 하지만 이 글에서는 이들을 하이퍼튜브 수혜주로 부르지 않는다. 이유는 명확하다. 2025년 손익은 하이퍼튜브가 아니라 전력 인프라 사이클이 만든 숫자다. [HD현대일렉트릭 AI 전력 후속](/blog/267260-hd-hyundai-electric-ai-power)과 [LS ELECTRIC 기업이야기](/blog/010120-ls-electric)를 함께 읽으면, 전력기기 회사의 마진은 하이퍼튜브보다 데이터센터, 송배전 투자, 미국 전력망 병목에서 먼저 설명된다.
 

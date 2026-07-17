@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 131
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/UBER-uber.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d0/d0d4dbe5701c8224dfbdb2332cb9f9c0a857bd0fb6dc62b1a28de0562ee2be14.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/5c/5cc046130545c47b404d7789cb0e959402392db03a3fda1b850a7b1e76f64427.webp
 tags: ["우버", "UBER", "흑자전환", "영업이익", "순이익", "지분투자", "이연법인세", "플랫폼", "미국주식", "현금흐름"]
 stockCode: "UBER"
 corpName: "Uber Technologies"
@@ -45,7 +46,7 @@ import StackBar from '$lib/components/blog/StackBar.svelte';
 
 한 회사의 한 해 성적표인데, 위쪽 줄과 아래쪽 줄이 7B 넘게 벌어져 있다. 그 7B는 우버가 차를 굴리고 음식을 배달해서 까먹은 돈이 아니라, 우버가 *들고 있던 주식*(디디·그랩·오로라 등) 지분의 그해 시세가 빠진 평가손실이었다 [외부 인용].
 
-![두 개의 장부 — 왼쪽은 잔잔하고 오른쪽만 위아래로 출렁인다](./assets/131-two-ledgers.webp)
+![두 개의 장부 — 왼쪽은 잔잔하고 오른쪽만 위아래로 출렁인다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/1e/1e2789c8b24559b79b15b0cef56ffb69c917f408fa5710e71d0066d3fec3f0d1.webp)
 
 영업으로 번 돈과 들고 있는 자산의 시세를 한 줄에 합쳐 적는 회계의 장면. **이 글은 그 한 줄(순이익)을 믿지 않는 법에서 출발한다.**
 
@@ -112,7 +113,7 @@ c.select("IS", ["영업이익", "당기순이익"], freq="Q")  # 2022 비교
 - **약 64억 달러 이연법인세 환입** — '앞으로 충분히 벌어 과거 결손의 세무가치를 쓸 수 있겠다'는 재평가(valuation allowance 환입)에서 나온 비영업 세무이익.
 - **분기 지분 평가이익** — 예: 2024년 3분기 약 +17억 달러(세전). 2022년에 빠졌던 같은 디디·오로라·그랩 포트폴리오의 시가가 이번엔 +로 돈 것이다.
 
-![보유 지분 포트폴리오 — 시세가 거꾸로 돌면 순이익도 거꾸로 출렁인다](./assets/131-paper-gain.webp)
+![보유 지분 포트폴리오 — 시세가 거꾸로 돌면 순이익도 거꾸로 출렁인다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/90/906c5666633eef8c84437b5e565f56df9d9ee354f561f4d978169e34eb571a8b.webp)
 
 ![2022 -70억과 2024 +64억 세무·평가이익 — 같은 통장이 거꾸로 출렁였다](./assets/131-tax-swing.svg)
 
@@ -146,7 +147,7 @@ c.select("IS", ["매출액"], freq="Q")  # 분기→역년 합산
 
 매출은 2019년 $14.15B에서 2025년 $52.02B로, **6년 만에 약 3.7배** 커졌다. 그 거대한 외형 확장 구간과 영업흑자 전환(2023)이 같은 시기에 맞물린 건 사실이다.
 
-![도시의 운행 네트워크 — 매출 6년 만에 약 3.7배, 그 사이 영업이익이 0을 통과했다](./assets/131-city-night.webp)
+![도시의 운행 네트워크 — 매출 6년 만에 약 3.7배, 그 사이 영업이익이 0을 통과했다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b5/b51a6569a38230809e8486805b952bb3aa570defde5b755d72d6247db1e12e5b.webp)
 
 하지만 '규모가 흑자를 만들었다'로 인과화하지 않는다. 검증수치로는 규모 확대와 흑자전환의 *동시성*만 확인되고, 2021년 매출 반등(코로나 회복, 17.46B)·믹스 변화 같은 교란을 배제할 수 없다. 또 Take Rate(테이크레이트)·Gross Bookings(총거래대금) 같은 지표로 규모를 보강 입증하지도 않는다 — 그건 GAAP 연결재무 밖의 비-GAAP 운영지표라, 검증된 매출·영업이익·순이익과 한 줄에 합산하면 출처가 다른 수치를 섞는 셈이다 [외부 인용].
 

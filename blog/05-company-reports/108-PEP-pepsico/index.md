@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 108
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/PEP-pepsico.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b2/b2a8522614baf1357d84a164749a799cb341a50b6971474006fa438bee87feb2.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/4a/4ab01962223450f419ff86da59a33c4959aca4e1cd03aeb2d468932ceb0b85cc.webp
 tags: ["펩시코", "PEP", "프리토레이", "스낵", "음료", "영업이익률", "디커플링", "코카콜라", "미국주식", "통합형"]
 stockCode: "PEP"
 corpName: "PepsiCo"
@@ -47,7 +48,7 @@ import StackBar from '$lib/components/blog/StackBar.svelte';
 
 다만 이 표는 거기서 정확히 멈춘다. **'왜 안 번역되는가'는 한 줄도 말해주지 않는다.** 그래서 이 글은 펩시코에 대한 글이 아니라, 연결 숫자가 어디까지 증명하고 어디서부터 입을 닫는지 — *그 경계선*에 대한 글이다. 관통선을 먼저 쓴다: 연결은 *결과*(디커플링)를 못 박고, *원인*엔 침묵한다.
 
-![음료와 스낵이 가득한 마트 통로 — 간판은 어디에나 있다](./assets/108-aisle.webp)
+![음료와 스낵이 가득한 마트 통로 — 간판은 어디에나 있다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/81/81a8c315516c8d7dc64965f761e993713a16c9c2e882fbcb3b396d9234d99908.webp)
 
 ---
 
@@ -63,7 +64,7 @@ c.select("IS", ["매출액", "영업이익"], freq="Q")  # 분기→연간 합�
 
 매출은 2019년 $67.16B에서 2025년 $93.92B로 6년간 **+40%** 성장했다. 2021년 79.47, 2022년 86.39, 2023년 91.47, 2024년 91.85로 꾸준히 우상향이다. 영업현금흐름도 2019년 $9.65B에서 2023년 $13.44B까지 늘어, 외형 성장이 *현금 측면에서도* 실재했음을 같은 표가 받친다.
 
-![병입·유통·스낵을 직접 소유한 통합형 — 무거운 설비가 본체 장부에 있다](./assets/108-factory.webp)
+![병입·유통·스낵을 직접 소유한 통합형 — 무거운 설비가 본체 장부에 있다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/4f/4f1f3b8f74cf716274c9639d4656001d9532fe478f980a96e2f63d1e865f6100.webp)
 
 그러니 분명히 하자 — '매출이 작아서 문제'는 아니다. 여기서 규모를 *이익의 증명*으로 읽지 않는다. 매출이 크다고 더 좋은 회사인 것도 아니다. +40%는 외형이 커졌다는 사실까지만 증명하고, 그게 좋은 일인지 나쁜 일인지는 다음 줄을 봐야 안다.
 
@@ -110,7 +111,7 @@ c.select("CF", ["영업활동현금흐름"], freq="Q")
 
 ![간판은 음료, 이익의 큰 몫은 스낵 — 단 이건 연결로 증명 0, 외부 인용 가설](./assets/108-snack-engine.svg)
 
-![감자칩 한 봉지 — 외부 인용은 여기를 이익 엔진으로 가리킨다(가설)](./assets/108-chips.webp)
+![감자칩 한 봉지 — 외부 인용은 여기를 이익 엔진으로 가리킨다(가설)](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/cc/cc79f4bf08a90ddad965499216685b3e6aa99053574bcc4afa36c785218147fd.webp)
 
 그러나 이건 연결이 못 본 사각을 메우는 *가설*이지 검증된 결론이 아니다. 두 가지 절제가 필요하다. 첫째, '스낵이 진짜 돈줄'을 dartlab 연결로 증명한 척하지 않는다 — 펩시코는 7개 세그먼트로 보고하므로 '스낵 vs 음료' 2분할 자체가 단순화다. 둘째, [코카콜라](/blog/KO-coca-cola)와의 거울은 *비율 대비*로만 정당하다 — PEP는 매출이 KO의 약 2배인데 OPM은 KO의 약 절반 수준(최근 ~13% 기준 약 0.45~0.55배)이다. KO는 공장·병입을 외부에 넘긴 자산경량 라이선서, PEP는 병입·유통·스낵을 *직접 소유한* 통합형 — 이 구조 차이와 'OPM 격차'는 서로 *양립*하지만, '통합형이라서 OPM이 절반'이라고 인과로 봉합하지 않는다(KO 절대치 25~29%는 외부 라벨). 그러면 시리즈 결('간판과 진짜 돈줄')에 끼우고 싶은 유혹이 오는데, 다음 막에서 그 유혹과 회사 고유의 결을 구분해야 한다.
 

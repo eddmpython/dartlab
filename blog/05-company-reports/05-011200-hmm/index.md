@@ -19,7 +19,8 @@ tags:
   - dartlab quant
   - 전자공시
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/011200-hmm.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/58/5859eca6e2b280e8d163339edcedea46aacd1ce1cd5382f10bccac29ac537135.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/3d/3dad579d088022df4f54283b1563187d9e5ea64927c41b9fe8bfe966120ea0bf.webp
 youtubeId: "4hXqiwIEh1E"
 ai:
   verdict: "운임 사이클이 주가 90% 결정. 베타 0.37 R² 10%. OPM -18%~53%."
@@ -252,7 +253,7 @@ dartlab IS에 그대로 찍힌 결과: 2023년 매출 8.40조 (2022 18.58조 대
 
 2024년 매출 11.70조 (+39%), 영업이익 **+3조 5,100억** (+498%). 2025년 매출 10.89조 (-7%), 영업이익 **+1조 4,600억** (-58%). 미니 회전 한 번이 다시 일어났다가 정상화로 돌아오는 중이다.
 
-![HMM Algeciras — 세계 최대 컨테이너선](./assets/05-hmm-algeciras.webp)
+![HMM Algeciras — 세계 최대 컨테이너선](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/48/48a566dbc3d16ec3935c4a37249246e931176a0dac06d3a657521f36bb7538c5.webp)
 *HMM Algeciras (2020년 4월 명명). 23,964 TEU 적재량으로 명명 당시 세계 최대 컨테이너선이었다. 이 배가 만든 운임이 2021~2022년 회사 영업이익 17조원의 절반 이상을 만들었다. (출처: Wikimedia Commons, CC BY-SA)*
 
 ---
@@ -308,7 +309,7 @@ c.credit("등급")
 
 **dCR-AA-**, 한국 산업재 회사 중 상위권. 지난 4년의 폭락(2023)과 회복(2024)을 모두 거쳤음에도 등급이 유지되는 이유는 단순하다 — 자본 27조의 곳간이 부채 7조의 4배라서, 한 번 더 -90% 사이클이 와도 회사 자체는 안 무너진다. 한진해운과 가장 큰 차이가 여기다.
 
-![HMM Algeciras 측면 — 399m × 61m × 23,964 TEU](./assets/05-hmm-algeciras-side.webp)
+![HMM Algeciras 측면 — 399m × 61m × 23,964 TEU](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/4b/4b354165222967bd7be5dcc53de0142206629c4e81aaa67d7a0e53a01dfa3f17.webp)
 *HMM Algeciras 측면. 길이 399m, 폭 61m, 적재 23,964 TEU. 명명식이 2020년 4월 23일 — 정확히 회사가 사명을 HMM으로 바꾸고 9년 적자에서 첫 흑자전환한 그달이었다. (출처: Wikimedia Commons, CC BY-SA)*
 
 ---
@@ -335,7 +336,7 @@ c.credit("등급")
 
 2026~2027년에 매각이 다시 시도될 가능성이 높다. 누가 인수하든 27조의 곳간을 어떻게 쓸 것인지가 회사의 본질을 바꿀 것이다 — 신조선 추가 발주? 자사주 매입? 배당 확대? LNG 선사 인수? 매각 결과가 다음 사이클의 모양을 결정한다.
 
-![HMM Algeciras 로테르담 입항 — 글로벌 빅3와 같은 항로](./assets/05-hmm-rotterdam.webp)
+![HMM Algeciras 로테르담 입항 — 글로벌 빅3와 같은 항로](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ec/ec0d1984485f4332afae32adf4ec1da35e5b7a2f26045741b0d0f0dcc8901575.webp)
 *로테르담 항구에 입항하는 HMM Algeciras (2020년 6월). 같은 항로에서 MSC, Maersk, CMA-CGM, 에버그린과 운임을 공유한다. 운임 사이클은 한국이 아니라 글로벌 컨테이너 선복 합산이 결정한다. (출처: Wikimedia Commons, CC BY-SA)*
 
 ---

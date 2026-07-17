@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 59
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/003490-korean-air.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/bd/bd58d7f4643b672d38a238c048830c2fac164801f0664be90654bfac481e3dfd.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c8/c8f99a77b1880cea72190f0571c5069c7895725b91c4edecc069a82a684492b5.webp
 tags: ["대한항공", "003490", "항공", "아시아나", "조원태", "인수합병", "M&A", "한진그룹", "여객", "화물"]
 stockCode: "003490"
 corpName: "대한항공"
@@ -133,7 +134,7 @@ carousel:
 
 ![대한항공 아시아나 합병 11년 타임라인 — 2013 통합 논의 → 2024.12.11 완료](./assets/059-ma-timeline.svg)
 
-![활주로 항공뷰 — 아시아나를 흡수한 통합 대한항공이 출발선에 선 한국 FSC 단독 체제 (CC0 실사)](./assets/059-kal-boeing-takeoff.webp)
+![활주로 항공뷰 — 아시아나를 흡수한 통합 대한항공이 출발선에 선 한국 FSC 단독 체제 (CC0 실사)](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/55/55bbcc938f8e2552e09e2351388d1b93fc1802193229a8ed0769db350631212c.webp)
 
 ---
 
@@ -237,7 +238,7 @@ c.select("BS", ["자산총계","부채총계","자본총계","현금및현금성
 
 ![대한항공 아시아나 합병 규제 심사 4년 — 13개국 경쟁당국 일지](./assets/059-regulatory-timeline.svg)
 
-![인천공항 제2여객터미널 야경 — 대한항공·아시아나 통합 후 한국 FSC 단일 체제의 중심](./assets/059-incheon-terminal.webp)
+![인천공항 제2여객터미널 야경 — 대한항공·아시아나 통합 후 한국 FSC 단일 체제의 중심](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/cd/cd817dce0d95c3a8c80d56fba0e06d38d1b7e8f86482686160aa25ce25411b15.webp)
 
 ---
 

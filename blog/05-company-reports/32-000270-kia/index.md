@@ -9,7 +9,8 @@ corpName: "기아"
 exchange: "KRX"
 storyTemplate: "프랜차이즈"
 thumbnail: /avatar-chart.png
-ogImage: "/thumbnails/000270-kia.webp"
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/3b/3b90516617262c71beb39b28f45a3ca6a06cbc79aa9808f3ccd53e6b64826ec5.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/76/76d727eb307428e5b4043064899510b2bc9e2006c24e614a0faf4cc590e2c547.webp
 youtubeId: "Q6y_k0UdZ_s"
 description: "매출 114조, 형(현대차) 175조의 60%. 그런데 영업이익은 12.7조 vs 14.2조로 89%. 같은 플랫폼, 같은 연구소인데 영업이익률이 3.7%포인트 높다. 디자인 혁신, 판관비 4배 폭증, 순현금 12조, 시총 역전."
 tags:
@@ -166,7 +167,7 @@ import YouTube from '$lib/components/YouTube.svelte';
 
 > **2024년 1월. 기아 시가총액 41.4조원. 현대자동차 41.2조원. 사상 최초로 동생이 형을 넘었다.**
 
-![기아 EV9](./assets/32-kia-ev9.webp)
+![기아 EV9](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b8/b83b1c529d3b26f9a0eb417066a7217cc69dde881da81f417fe4606d8863c0ff.webp)
 
 ---
 

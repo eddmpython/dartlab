@@ -22,7 +22,8 @@ tags:
   - 전자공시
   - DCF
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/TSLA-tesla.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/9e/9e66949457c328d06bc9c4a28a901359bde4dfecf65fdaa942c99c550ca13dbb.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ce/ce2ccb1d05d76df4a74a433302922d1c6c11ff20984343e5b591428f747de1f2.webp
 ai:
   verdict: "자동차 사업은 Decline 진입. EVA 마이너스 $4.2B. 시총 $1T는 자동차가 아니라 로보택시/FSD/Optimus 내러티브의 가격."
   direction: 악화
@@ -185,7 +186,7 @@ c.analysis("가치평가")["dcfValuation"]
 
 <ComboChart data={[{year:"2021",매출액:53.82,영업이익:6.52,당기순이익:5.64},{year:"2022",매출액:81.46,영업이익:13.66,당기순이익:12.59},{year:"2023",매출액:96.77,영업이익:8.89,당기순이익:14.97},{year:"2024",매출액:97.69,영업이익:7.08,당기순이익:7.15},{year:"2025",매출액:94.83,영업이익:4.36,당기순이익:3.85}]} lineKeys={["매출액"]} barKeys={["영업이익","당기순이익"]} lineColors={["#22c55e"]} barColors={["#3b82f6","#f59e0b"]} title="매출(라인) vs 영업이익·당기순이익(막대)" unit="$B" />
 
-![텅 빈 Tesla 쇼룸 — 수요 둔화의 상징](./assets/38-tesla-factory-showroom.webp)
+![텅 빈 Tesla 쇼룸 — 수요 둔화의 상징](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/3b/3bf4145b7f23a946d0cfa6929c558852c5136d4e32dbc022764452000b8e33df.webp)
 
 ### 세 가지 동시 충격
 
@@ -398,7 +399,7 @@ st["leverageTrend"]["history"][0]
 
 **둘째, 대규모 주식 발행.** 2025년 Tesla는 여러 차례 주식 발행을 했다. 공식적으로 밝힌 건은 Musk의 2018년 성과보수 패키지 재승인 관련 약 $29B 규모의 주식 부여다([Tesla Proxy Statement, 2025](https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001318605&type=DEF+14A)). 이 스톡옵션이 행사되면서 자본이 크게 늘었다.
 
-![Optimus + Dojo — 내러티브의 물리적 실체](./assets/38-tesla-optimus-ai.webp)
+![Optimus + Dojo — 내러티브의 물리적 실체](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/82/82c0d037fe60a4841c3f1c4d3e51322d00696f8d80db9b95c2bc24f8074c01f9.webp)
 
 **셋째, AI 관련 증자.** 2025년 하반기 Tesla는 xAI 지분 교환을 포함한 여러 자본 조달을 발표했다([Tesla 8-K Filings, 2025](https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001318605&type=8-K)). Dojo 슈퍼컴퓨터 확장과 Optimus 양산 준비 명목이었다. 시장은 희석을 받아들였다.
 
@@ -465,7 +466,7 @@ val["priceTarget"]
 
 **시나리오 중앙값 $321B.** 현재 시총 약 $1T의 **1/3 수준**이다. 90% 확률 상단도 $519B로 시총의 **절반**에 그친다.
 
-![로보택시 — 자율주행이 매출로 전환되는 순간](./assets/38-tesla-robotaxi-future.webp)
+![로보택시 — 자율주행이 매출로 전환되는 순간](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/03/03700eae0f83905809ebc9ccf4ac8793522484f5b71f447dda13004c5ba29e94.webp)
 
 ### 시장은 무엇을 보고 있는가
 

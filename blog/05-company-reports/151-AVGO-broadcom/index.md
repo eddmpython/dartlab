@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 151
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/AVGO-broadcom.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/7a/7a1c15e3972633f4d4264f4fd17ed16729638b07fa48f4a4daa51af57ab722c7.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/9a/9a4c0078d1ddd53bbf5a62d70c2358525785e481ad571ac3165ba42b88f7dc43.webp
 tags:
   - "브로드컴"
   - "AVGO"
@@ -140,7 +141,7 @@ dartlab 분기 실측으로 판관비를 따라가면, 2023년 4분기 4.18억 �
 
 그러나 이 정황은 강력하다. 핵심 증거는 영업현금흐름이다. 만약 2024년 마진 하락이 사업의 진짜 악화 — 가격 하락, 비용 폭등, 수요 붕괴 — 였다면 영업현금흐름도 같이 빠졌어야 한다. 그런데 영업현금흐름은 199.6억 달러($19.96B)로, 2023년 180.9억 달러($18.09B)보다 오히려 늘었다. 순이익을 깎은 비용 대부분이 현금이 나가지 않는 비현금 항목, 즉 무형자산 상각이었기 때문이다. 회계이익은 인수의 비용을 앞당겨 한꺼번에 보여주었고, 현금은 그 비용을 실제로 지불하지 않았다.
 
-![상각의 장막 개념도 — 인수로 생긴 무형자산이 회계 비용으로 순이익만 가리지만, 그 아래 영업현금흐름은 손상 없이 흐른다.](./assets/151-amortization-veil.webp)
+![상각의 장막 개념도 — 인수로 생긴 무형자산이 회계 비용으로 순이익만 가리지만, 그 아래 영업현금흐름은 손상 없이 흐른다.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/60/607c49e865271e6b0cc2b4e68c248938e1d35779a8f9ec0a703551cfb1122913.webp)
 
 이 대목에서 회의론자의 가장 강한 반론을 마주해야 한다. "인수 상각이 순이익을 가렸을 뿐 진짜 수익력은 멀쩡했다"는 프레임은, 부진한 롤업(roll-up, 인수로 외형을 키우는) 회사가 분기마다 꺼내는 단골 변명 아니냐는 것이다. 무형자산 상각을 '비현금이니 무시하라'고 말하는 순간, 690억 달러를 실제로 현금 지불(또는 차입)한 인수의 비용을 통째로 지워 버리는 회계 마사지가 된다는 지적이다.
 
@@ -189,13 +190,13 @@ is_q = c.select("IS", freq="Q")
 
 이 비대칭이 인수 회계의 본질을 드러낸다. 매출이 +24% 늘 때 순이익이 +24%만 늘면 그것은 비용 구조가 그대로인 정상 성장이다. 그러나 순이익이 4배 가까이 뛰었다는 것은 매출 증가분이 거의 그대로 이익으로 떨어졌다는 뜻 — 즉 추가 매출에 붙는 한계 비용이 매우 낮았다는 뜻이다. 인수한 사업의 무거운 초기 비용이 이미 2024년에 한 번 털렸기 때문에, 2025년의 같은 매출은 훨씬 가벼운 비용 구조 위에서 만들어졌다. 한 번 무겁게 치른 비용이 다음 해의 레버리지로 돌아온 것이다. 이것이 인수 회계가 시간에 걸쳐 만들어내는 'J 커브'의 후반부다 — 첫해에 깊게 파이고, 이듬해에 가파르게 솟는다.
 
-![인수의 계단 개념도 — 반도체 본체 위에 CA·시만텍·VMware를 M&A로 얹어 외형을 점프시키는 롤업 모델. 2025년 폭발은 그중 가장 큰 인수가 정상 마진으로 합류한 결과다.](./assets/151-acquisition.webp)
+![인수의 계단 개념도 — 반도체 본체 위에 CA·시만텍·VMware를 M&A로 얹어 외형을 점프시키는 롤업 모델. 2025년 폭발은 그중 가장 큰 인수가 정상 마진으로 합류한 결과다.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b5/b556cdc024d6e0865ffb66263e277430ed7358a9c85216d0feeb375fb8f33a7a.webp)
 
 2025년 폭발에는 두 동력이 겹쳤다. 첫째, 통합비용과 초기 상각이 빠지면서 VMware가 정상 마진으로 기여하기 시작했다. 인수 첫해의 무거운 비용이 소진되자, 인수한 사업이 본체의 고마진 구조에 합류한 것이다. 둘째, AI 데이터센터용 맞춤형 칩(ASIC) 수요가 본체 반도체를 밀어 올렸다.
 
 여기서 다시 한계를 명확히 그어야 한다. 이 두 동력 — 'VMware 정상화'와 'AI 맞춤칩' — 각각이 2025년 폭발에 몇 퍼센트씩 기여했는지는 제공된 손익 데이터로 분해되지 않는다. 두 힘이 같은 해에 겹쳤다고 말할 수 있을 뿐, 'AI가 매출의 X%를 끌어올렸다'고 단언하면 그것은 과장이다. ASIC과 AI 데이터센터 수요는 손익 데이터 밖의 외부 서사이며, Broadcom IR과 SEC filings로만 그 맥락을 확인할 수 있다. 본 글의 손익·현금 데이터가 확실히 말하는 것은 '2025년에 두 마진이 회복했다'는 결과뿐이고, 그 원인 분해는 공식 세그먼트 공시에 의존한다.
 
-![AI 데이터센터용 맞춤형 칩(ASIC) 이미지 — 2025년 본체 반도체를 밀어 올린 외부 동력. 단, 손익 데이터로 기여 비중은 분해되지 않는다.](./assets/151-ai-surge.webp)
+![AI 데이터센터용 맞춤형 칩(ASIC) 이미지 — 2025년 본체 반도체를 밀어 올린 외부 동력. 단, 손익 데이터로 기여 비중은 분해되지 않는다.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/0a/0aa313cff91c99a9bc5292d1f069010f1e748b993327c09d8f1c7675acbf1aaa.webp)
 
 dartlab으로 2025년 회복을 재현하면 다음과 같다.
 

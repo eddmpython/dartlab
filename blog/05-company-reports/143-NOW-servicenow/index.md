@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 143
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/NOW-servicenow.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d1/d145b455548c62a10ee6d58642e0a36c3f274c0a6d085e3c6a8e8d51a3962817.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a4/a42181af368a4975b5719c784d54c67558d97d89ebf1eabe7b3337143722b95c.webp
 tags: ["ServiceNow", "서비스나우", "NOW", "SaaS", "영업현금흐름", "운영레버리지", "주식보상비", "구독", "미국주식", "클라우드"]
 stockCode: "NOW"
 corpName: "ServiceNow"
@@ -44,7 +45,7 @@ import ComboChart from '$lib/components/blog/ComboChart.svelte';
 
 이 글은 그 비대칭에서 시작해 '현금이 왜 매년 먼저 닿는가'를 묻고, 6년 시계열이 단독으로 증명하는 두 사건 — 현금과 이익의 수렴(배수 9→3), 그리고 약 4년 늦게 켜진 운영 레버리지 — 을 추적한다. 선납·구독·SBC 같은 메커니즘은 외부 공시로만 다루고, 내부 숫자는 '정합'까지만 둔다. 인과로 비약하지 않고, 시계열이 침묵하는 곳에서 멈춘다.
 
-![수면 위 작은 빙산, 아래 거대한 덩어리 — 작은 장부이익과 큰 현금](./assets/143-iceberg-cash.webp)
+![수면 위 작은 빙산, 아래 거대한 덩어리 — 작은 장부이익과 큰 현금](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/3e/3e6a3615cca055c2acc5b3d29af47a15f7e54e0c3818e941768eb46e8cc7a8e8.webp)
 
 ---
 
@@ -123,7 +124,7 @@ c.select("IS", freq="Q")  # 영업이익 증가율 vs 매출 증가율
 
 9배에서 출발한 OCF/영업이익 배수가 3배까지 단조로 좁혀졌다(31배는 분모 노이즈라 폐기, 실측 궤적은 9→3). 격차가 사라진 게 아니라 두 숫자가 서로를 향해 움직였다 — 장부이익은 레버리지로 위로(OPM 1.2→13.7%), 현금배수는 9→3으로 아래로. **'발생주의 이익이 현금 현실을 향해 따라잡아 왔다'**가 데이터가 말하는 표현이다.
 
-![연결된 워크플로 망 — 선납 구독이 현금을 먼저 끌어온 플랫폼](./assets/143-platform-grid.webp)
+![연결된 워크플로 망 — 선납 구독이 현금을 먼저 끌어온 플랫폼](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c4/c4fd809f955a4cdaf00d8287a84054181513443da587b6174e9b8ac86ea2efa1.webp)
 
 동시에 미해결 긴장이 남는다. 매출이 약 3.84배 느는 동안 OPM은 여전히 13.7% — 10%대 중반에 머문다. 잔여 3배 간극이 선납 float인지 SBC 비현금 가산인지는 내부 시계열로 닫히지 않고, 2026Q1의 RPO **$27.7B**, 유동 계약부채 **$8.03B**, SBC **$558M**으로만 정합을 확인한다. 두 청구서 — GAAP 이익률과 주주 지분 희석 — 를 어떻게 정산하느냐가 다음 챕터의 미결 질문이다.
 

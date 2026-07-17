@@ -6,7 +6,8 @@ category: reading-disclosures
 series: audit-and-governance
 seriesOrder: 1
 thumbnail: /avatar-curious.png
-ogImage: /thumbnails/07-audit-report-and-kam.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/35/358e13085408edc6c49d25f32228a1941ed1a8a3edec7492e0efe118a10bb366.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/76/768bea71f9b1bfb5a3cf4ce7bf347ee17d2abecc4152f341299627c76dea7b1a.webp
 ---
 
 # 사업보고서에서 감사보고서와 KAM 읽는 법

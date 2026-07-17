@@ -484,11 +484,11 @@ c.quant("종합"); c.quant("팩터")
 | 주제 | 이렇게 한다 |
 |---|---|
 | 숫자 자랑 대신 효용 | "수익성·안정성·현금흐름 등 시장 전체를 읽는다" |
-| 부채비율 중립 | ICR<1·유동비율 급락 같은 진짜 위험만 위험으로 |
+| 기업이야기 부채비율 금지 | 제목·본문·표·차트·코드에서 쓰지 않고 차입금·순차입금·만기·이자비용·현금흐름으로 설명 |
 | 가격 표현 0 건 | provider·API 가격 언급 자체를 하지 않는다 |
 | 이 글에서 끝낸다 | "다음 글에서" 식 예고로 미래 글에 의존하지 않는다 |
 
-**반복 실패** - "14 축 체계" · "19 개 분석" · "6 막 구조" 같은 내부 스펙 나열 → 광고처럼 보임. 부채비율을 무조건 위험으로 포장. "무료" 표현 · provider 가격 언급. "다음 글에서 다룬다" - 존재 안 하는 글 링크는 신뢰 깎음.
+**반복 실패** - "14 축 체계" · "19 개 분석" · "6 막 구조" 같은 내부 스펙 나열 → 광고처럼 보임. 기업이야기에서 부채비율을 위험 신호나 관통선으로 사용. "무료" 표현 · provider 가격 언급. "다음 글에서 다룬다" - 존재 안 하는 글 링크는 신뢰 깎음.
 
 ### 각 막 - 왜?로 시작해 판단으로 끝난다
 
@@ -561,7 +561,7 @@ c.select("CF", ["영업활동현금흐름","유형자산의 취득","배당금�
 ### 4) 비율 분기 시계열
 
 ```python
-c.select("ratios", ["영업이익률 (%)","매출총이익률 (%)","부채비율 (%)"])
+c.select("ratios", ["영업이익률 (%)","매출총이익률 (%)"])
 ```
 
 ⚠ `c.analysis("financial","수익성")["marginWaterfall"]` 는 1 년치. 섞지 않는다.
@@ -895,13 +895,13 @@ https://eddmpython.github.io/dartlab/
 **Phase 3 체크리스트 (썸네일 생성 시)**:
 1. GPT `image_gen` 으로 배경 생성 → `extractImagegenAssets.py` 로 추출 → `assets/{NN}-thumbnail-bg.webp` 로 먼저 저장.
 2. `gen_blog_thumbnails.py` 로 합성 → `landing/static/thumbnails/{code}-{slug}.webp`.
-3. `publishBlogAssets.py --post <글폴더>`로 HF에 올리고 `media.json`·본문만 커밋. 두 WebP는 커밋하지 않는다.
+3. `publishBlogAssets.py --post <글폴더>`로 HF에 올리고 중앙 `blog/media.json`·본문만 커밋. 두 WebP는 커밋하지 않는다.
 
 **반복 실패** - 2026-04-16 META·TSLA·하이브·IONQ 사고 직접 원인. MNST(36) 는 원본 남겨 재생성 가능, 37~40 은 원본 없어서 이미지 재호출 필요.
 
 ### 블로그 hero ↔ 카드 공유풀 (HF 이미지 SSOT)
 
-이 절은 `media.json` 도입 전 회사 글의 호환 경로다. legacy hero 사진과 카드 캐러셀 이미지는 `sns/assets/{code}/`를 거쳐 HF `dartlab-media`에 올린다:
+이 절은 중앙 `blog/media.json` 도입 전 회사 글의 호환 경로다. legacy hero 사진과 카드 캐러셀 이미지는 `sns/assets/{code}/`를 거쳐 HF `dartlab-media`에 올린다:
 
 ```
 uv run python -X utf8 sns/scripts/ingest_blog_assets.py --dry-run   # 복사 범위 미리보기
@@ -912,11 +912,11 @@ uv run python -X utf8 sns/scripts/publish_assets_hf.py              # hfMedia �
 
 - 차트(`.svg`)·card/thumbnail 렌더는 제외, **hero 실사만** 가져온다.
 - provenance (`sns/assets/_blog_provenance.json`) 로 멱등 - 블로그 원본이 바뀐 것만 재복사. 손-작성 자산(같은 이름)은 보호(미덮어쓰기).
-- 신규 v2 글은 이 복사 경로를 쓰지 않고 `publishBlogAssets.py`와 `assets/media.json`을 쓴다. 기술 카드도 같은 HF `blog/{slug}/` 경로를 재사용한다.
+- 신규 v2 글은 이 복사 경로를 쓰지 않고 `publishBlogAssets.py`와 중앙 `blog/media.json`을 쓴다. 기술 카드도 같은 HF `objects/sha256/` 객체를 재사용한다.
 
 ### 검증 체크리스트
 
-1. 본문 이미지와 `ogImage`가 `assets/media.json`의 HF URL인지.
+1. 본문 이미지, `ogImage`, `cardPreview`가 중앙 `blog/media.json`의 HF 객체 URL인지.
 2. WebP/JPG/PNG가 Git 추적 대상에 없는지.
 3. `uv run python -X utf8 blog/_scripts/auditBlog.py` XML·밀도 이슈 확인 (글 단위 구조 audit - 단어수·SVG·내부링크·H2 분포 + 템플릿 반복도).
 4. `uv run python -X utf8 blog/_scripts/auditBlogFinance.py` (회사 포스트 한정) - markdown finance 표 ↔ `dartlab.Company().select(..., freq="Y")` 실측 1:1 비교. 코드·표·실측 3 자 정합 강행.
@@ -946,7 +946,7 @@ uv run python -X utf8 sns/scripts/publish_assets_hf.py              # hfMedia �
 ### GEO · SGE · LLM 친화 조치
 
 - **한 단락에 한 사실** (LLM 단락 단위 인용).
-- **표 헤더 = 검색 가능한 한국어 명사** (Sales·OP·NI·D·E ❌ → 매출액·영업이익·당기순이익·부채비율 ✓).
+- **표 헤더 = 검색 가능한 한국어 명사** (Sales·OP·NI ❌ → 매출액·영업이익·당기순이익·영업이익률 ✓).
 - **dartlab 자체 출력은 코드블록으로 명시** - LLM 이 코드블록을 "출처" 로 인식.
 - **시간 표기**: "YYYY 년 Q 분기" 또는 "YYYY-MM-DD". "작년·지난주" 같은 상대 표현 쓰지 않음.
 

@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 70
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/336260-doosan-fuel-cell.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e8/e87fc117c95887db72dd0e93b6f56059310b913ed5540b7dfc1f3f8f7c2df487.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e8/e8a6e58293f7a59a8f40ec15105c903b5be498c22d70eed39b78c8c4dae086a6.webp
 tags: ["두산퓨얼셀", "336260", "수소연료전지", "PAFC", "수소발전", "HPS", "RPS", "두산그룹", "발전소", "원자력"]
 stockCode: "336260"
 corpName: "두산퓨얼셀"
@@ -295,7 +296,7 @@ c.select("IS", ["매출액","영업이익","당기순이익"])
 
 표시: 매출 증가는 **2025Q1~Q3에 분산** (2024 동기 대비 각각 +20%, +24%, +32%) → **2025Q4에 1,450억으로 큰 분기**. 그런데 **영업이익은 2025Q4에 -980억 대규모 적자**. 한 분기에 연간 영업적자의 93%가 집중됐다.
 
-![PAFC (Phosphoric Acid Fuel Cell) 스택 모듈 클로즈업 — 수평으로 정밀하게 적층된 얇은 금속 바이폴라 플레이트와 냉각 매니폴드. 산업 회색·스틸블루 톤, 클린룸 환경에서 촬영된 세부 텍스처가 보인다.](./assets/70-pafc-stack.webp)
+![PAFC (Phosphoric Acid Fuel Cell) 스택 모듈 클로즈업 — 수평으로 정밀하게 적층된 얇은 금속 바이폴라 플레이트와 냉각 매니폴드. 산업 회색·스틸블루 톤, 클린룸 환경에서 촬영된 세부 텍스처가 보인다.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/1a/1a85cdc2efe21334c5bd2c4688b4f7e0d8da382801d2d09ab3c0aeba6b8eed07.webp)
 
 ### 제품·고객 믹스 — PAFC 발전용 440kW 중심
 
@@ -558,7 +559,7 @@ dartlab `notesDetail.borrowings` 기준 2025년 말 차입금 구성 (실측, �
 
 **SOFC 경쟁사의 등장**도 무시할 수 없다. SK에코플랜트가 Bloom Energy와 합작해 SOFC 기반 수소발전을 2024년부터 본격 입찰에 참여하기 시작했고, 2025년 3차 HPS 입찰에서 **SOFC 낙찰 비중이 약 20%**까지 올라왔다. PAFC 대비 효율이 높은 SOFC가 경쟁 차원을 추가했다.
 
-![도심 수소연료전지 발전소 — 콘크리트 야드에 늘어선 컨테이너 형태의 대형 연료전지 발전 유닛들. 상부에 냉각 배관과 고압 송전 케이블이 지나고, 원경에는 따뜻한 앰버색 도시 불빛이 안개 속에 퍼져있다.](./assets/70-hydrogen-power-plant.webp)
+![도심 수소연료전지 발전소 — 콘크리트 야드에 늘어선 컨테이너 형태의 대형 연료전지 발전 유닛들. 상부에 냉각 배관과 고압 송전 케이블이 지나고, 원경에는 따뜻한 앰버색 도시 불빛이 안개 속에 퍼져있다.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c3/c3e3569b2d1a52b2efa60e09ae3131b3cff52cbe54fe9d93096ab22fd1d5ec28.webp)
 
 ### 7막의 끝
 

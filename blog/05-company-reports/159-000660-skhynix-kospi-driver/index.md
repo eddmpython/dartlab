@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 159
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/000660-skhynix-kospi-driver.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/bd/bd6fb48bafc1bf22e164f266fe5e5c8562bd8eacabec2b9d9fb21cafb4738241.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/96/966ad016f3a3aad0edc7266f4fc9d2f8f880d88567b481dc118e51520f68ebc7.webp
 tags:
   - "000660"
   - "SK하이닉스"
@@ -182,7 +183,7 @@ carousel:
 
 KOSPI도 같은 날 9,000선을 넘어섰다. Google Finance의 KOSPI 화면은 9,063.84, +2.25%를 보여준다. 지수가 여기까지 왔는데 질문이 "한국 경기가 좋아졌나"로만 흐르면 반쪽이다. 지금의 더 정확한 질문은 이쪽이다. **한국장이 오른 것인가, 아니면 SK하이닉스와 삼성전자가 한국장처럼 보이게 만든 것인가.**
 
-![한국 주식시장 랠리는 이제 AI 메모리와 지수 수급이 겹친 장면으로 읽힌다](./assets/159-korea-market-screens.webp)
+![한국 주식시장 랠리는 이제 AI 메모리와 지수 수급이 겹친 장면으로 읽힌다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a3/a33080ffd01b082d35af5561fdea10baaa042c477a206542fcc46b1139fe762a.webp)
 
 이 질문은 단순한 종목 이야기가 아니다. 한국 주식시장 전체를 보는 방법의 문제다. 지수는 시가총액 가중 방식이다. 큰 회사가 더 많이 오르면 지수도 더 많이 움직인다. 그래서 SK하이닉스가 1,900조원대 시총으로 뛰면, 하이닉스 한 종목의 실적 서사가 시장 전체의 색을 바꾼다. AI 메모리, HBM, 서버 DRAM, eSSD, 외국인 수급, ETF 리밸런싱이 한 줄로 붙는다. 개별 기업 이익이 지수의 언어로 번역되는 순간이다.
 
@@ -231,7 +232,7 @@ profit["marginTrend"]["history"][0]
 
 물론 이것이 영구적이라는 뜻은 아니다. 메모리는 여전히 메모리다. 공급이 늘고 가격이 꺾이면 이익률은 빠르게 내려간다. 하지만 지수는 영구성을 기다리지 않는다. 지금 이익이 크고, 다음 몇 분기 이익 전망이 올라가면 지수는 먼저 반응한다. 그래서 하이닉스의 한국장 견인력은 현재형이다. 영원히 견인한다는 뜻이 아니라, **지금의 이익률이 너무 커서 시장 전체의 방향을 설명할 만큼 커졌다는 뜻**이다.
 
-![AI 서버 메모리 병목은 하이닉스 이익률을 지수 언어로 바꾼다](./assets/159-hynix-ai-server-memory.webp)
+![AI 서버 메모리 병목은 하이닉스 이익률을 지수 언어로 바꾼다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d4/d4806c33a9acc3cd6e4f2f7cfcab1a443297895d97b3547200b939f9cc34c0a8.webp)
 
 ---
 
@@ -353,7 +354,7 @@ CAPEX도 양면적이다. 2025년 CAPEX는 28.58조원이고, 매출 대비 CAPE
 
 내 결론은 이렇다. **SK하이닉스는 지금 대한민국 주식시장을 끌고 간다. 그러나 그 힘은 한국 경제 전체의 넓은 회복이 아니라 HBM 병목과 AI 메모리 이익률에서 나온다. 다음 장은 주가 차트가 아니라 2분기 공시의 매출채권, 재고, CAPEX, 영업이익률이 쓴다.**
 
-![HBM 클린룸과 서버 인프라는 하이닉스가 주식시장 밖 실제 설비 사이클에도 묶여 있음을 보여준다](./assets/159-hynix-hbm-cleanroom.webp)
+![HBM 클린룸과 서버 인프라는 하이닉스가 주식시장 밖 실제 설비 사이클에도 묶여 있음을 보여준다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c0/c041cc7bb9bbe19513923070180f3d7df42fbbb0a73b95c3b6a3f75561bb9cd5.webp)
 
 ---
 

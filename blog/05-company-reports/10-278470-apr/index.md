@@ -19,7 +19,8 @@ tags:
   - TikTok
   - 전자공시
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/278470-apr.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/db/dbcca3b02dfa4ac27e944e29c67ec170660bd364d427890f80711dcc23ec0d24.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/32/32d7f13e69bd67474ebc52750d9a10fe14769427f96972ded653c5dbd6ef8e8f.webp
 youtubeId: ""
 ai:
   verdict: "화장품+디바이스 OPM 24%. 매출 7배. 해외 80% 환율 리스크."
@@ -183,7 +184,7 @@ c = dartlab.Company("278470")
 
 ### 매출 5년 만에 7배, 영업이익률 6.6% → 23.9%
 
-![뷰티 디바이스](./assets/10-beauty-device.webp)
+![뷰티 디바이스](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/4f/4f0049db316aa12fca5396edbbc270007ce66adc8d31d6b6f083522a8fae528f.webp)
 
 ```python
 c.select("IS", ["매출액", "영업이익"], freq="Y")
@@ -273,7 +274,7 @@ c.analysis("financial", "비용구조")
 
 ### 미국 +261%, 일본 +262% — 국내는 오히려 -9%
 
-![K-뷰티 제품 라인업](./assets/10-kbeauty-lineup.webp)
+![K-뷰티 제품 라인업](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c9/c9f165767bb0c7c0ff6401492d3edb3ff2422d00478e0b9c573b93262e1f68d3.webp)
 
 ![해외 매출 폭발](./assets/10-overseas-explosion.svg)
 
@@ -412,7 +413,7 @@ c.analysis("financial", "비용구조")
 
 ### 화장품 원가 23% — 관세 25%가 부과돼도 영향 5.75%뿐
 
-![에이피알 글로벌 확장](./assets/10-global-expansion.webp)
+![에이피알 글로벌 확장](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/70/70bc081a51ab91666898f004732c49033f3bc0d6f40f75fc64dae1842c16bdec.webp)
 
 마진을 만드는 구조를 봤으니, 이제 **마진을 깎는 요인**을 봐야 한다.
 

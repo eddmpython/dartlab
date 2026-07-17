@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 71
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/000100-yuhan.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ea/ea8fe110208645766c40b0ef3c2f2e15abd4882ee2cefa62f22502f80eab37af.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/9c/9caf7e63bd6ee96dca6550f1cf2bd791a53c833a441e00855bdb9d81072dee09.webp
 tags: ["유한양행", "000100", "렉라자", "레이저티닙", "얀센", "J&J", "유한킴벌리", "제약", "바이오", "한미약품", "셀트리온"]
 stockCode: "000100"
 corpName: "유한양행"
@@ -206,7 +207,7 @@ print(prof["marginWaterfall"]["history"][0])
 
 표시: **매출은 9년 동안 +49.5% 꾸준히 증가** (CAGR 5.2%). 영업이익은 **125~1,044억 사이에서 요동**. 순이익/영업이익 배수 평균 **1.92배** — 9년 중 1을 넘은 해가 8번. **유한양행은 구조적으로 "영업 밖에서 절반을 버는" 회사**. 이 구조를 이해하는 게 이 글의 절반이다.
 
-![제약 실험실에서 정밀하게 정렬된 흰 타원형 알약 — 금속 디스펜서 트레이 위에 가지런히 놓였고, 배경의 유리 비커와 분석 기기가 소프트 포커스. 따뜻한 실험실 조명에 청색이 살짝 비친다.](./assets/71-lab-pills.webp)
+![제약 실험실에서 정밀하게 정렬된 흰 타원형 알약 — 금속 디스펜서 트레이 위에 가지런히 놓였고, 배경의 유리 비커와 분석 기기가 소프트 포커스. 따뜻한 실험실 조명에 청색이 살짝 비친다.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f5/f5b542195d19658ff60ff7d309b62cc6c2af9e65d22e9612e19d6c8d8643a49e.webp)
 
 ### 자본 구성의 안정성
 
@@ -436,7 +437,7 @@ dartlab `이익품질.nonOperatingBreakdown` 실측.
 
 **유한양행 시총의 3분의 1이 유한킴벌리 지분이라는 해석**이 가능. 본업 가치보다 관계사 가치의 비중이 크다는 특이 구조.
 
-![유한양행 본사 건물 황혼녘 — 미드센추리 모던 건축의 한국 기업 본사 와이드 샷. 대형 창문에서 따뜻한 조명이 흘러나오고, 앞 광장을 커다란 나무들이 감싼다. 멀리 도시의 앰버색 불빛이 흐릿한 대기에 퍼져있다.](./assets/71-office-legacy.webp)
+![유한양행 본사 건물 황혼녘 — 미드센추리 모던 건축의 한국 기업 본사 와이드 샷. 대형 창문에서 따뜻한 조명이 흘러나오고, 앞 광장을 커다란 나무들이 감싼다. 멀리 도시의 앰버색 불빛이 흐릿한 대기에 퍼져있다.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/4a/4a890ba2f279e36ce0afd871bfa910b0bbcfe2b71ccd3ea37a23f40ee7b706ba.webp)
 
 ### 4막의 끝
 

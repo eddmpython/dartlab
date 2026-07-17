@@ -4,10 +4,11 @@ date: 2026-04-05
 description: "기아 독립 신용등급 dCR-AA (투자적격 상위). 공시 데이터 기반 정량 분석 등급 근거, 재무 하이라이트, 등급 전망."
 category: credit-reports
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/credit-06-000270-kia.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/aa/aa1f6eb57aa3dd74f900df1d03f68654431e805f5b3d473cbf8d541dbc1886fa.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e6/e67140b27c3c117ba730e55a1de15f667bb704b3a09bc0d80a004fe59230cfbe.webp
 ---
 
-![기아 (000270) 신용분석 보고서 ?? ???](./assets/06-credit-dashboard.webp)
+![기아 (000270) 신용분석 보고서 ?? ???](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/2a/2ab2b373f080705722c669dd704d46a9b7410ceadb08907fc8287cdcdeec9d94.webp)
 > ⚠️ **면책**: 본 보고서는 dartlab dCR v4.0 방법론에 따라 공시 데이터만으로 작성되었습니다. 제도권 신용등급과 다를 수 있으며, 투자 권유가 아닙니다. [방법론](https://github.com/eddmpython/dartlab/blob/master/src/dartlab/analysis/CREDIT.md)
 
 > **dCR-AA** | 투자적격 상위 | 2026-04-05 | 방법론 v4.0

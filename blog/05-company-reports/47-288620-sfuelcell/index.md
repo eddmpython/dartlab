@@ -21,7 +21,8 @@ tags:
   - 매출원가율
   - 에너지전환
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/288620-sfuelcell.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/44/4464b48a0d223a916ee7297a6a9e389f9eb274544457504f6126f33f565a3031.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/9c/9c649c3c34cfba847e213843ac1efe9c086558d46cbaed5de223099f16e9ae2d.webp
 youtubeId: ""
 ai:
   verdict: "매출원가율 127%의 구조적 역마진 — 인증 없는 탈탄소 적자는 소멸로 향한다"
@@ -159,7 +160,7 @@ c.select("IS", ["매출액","영업이익","당기순이익"])
 
 **표시: 매출 470억(2020) → 158억(2025). 4년간 312억 증발. 같은 기간 영업이익 +21억 → -150억.**
 
-![에스퓨얼셀의 연료전지 시설 — 수소로 전기를 만드는 공장이 매출 부족으로 고정비에 잠겼다](./assets/47-fuelcell-plant.webp)
+![에스퓨얼셀의 연료전지 시설 — 수소로 전기를 만드는 공장이 매출 부족으로 고정비에 잠겼다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/4d/4dfda81ca8f47b41a431fff7a8b546141aecc07ec8ef17b81c06d35cee7aaa37.webp)
 
 ### 매출원가율 127% — "팔수록 적자"의 메커니즘
 
@@ -295,7 +296,7 @@ fund = c.analysis("financial", "자금조달")
 
 ### 인증이 만드는 시간의 차이
 
-![뉴스케일의 소형원자로 — 인증이 있으면 시장은 기다린다](./assets/47-smr-contrast.webp)
+![뉴스케일의 소형원자로 — 인증이 있으면 시장은 기다린다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/7d/7d6d487953fd94dd228429ee7fa4d958c466397e27ecbac17023d4bf41195598.webp)
 
 뉴스케일파워는 2020년 미국 원자력규제위원회(NRC)의 설계인증을 받았다. 13년, 수십억 달러를 투자해서 얻은 인증이다. 이 인증 없이는 미국에서 원전 건설 허가 신청 자체가 불가능하다. **"졸업장"이 있다** — 그래서 시장은 현재 적자에도 불구하고 현금 1.8조원을 맡겼다. "졸업장이 있으니 취업할 수 있을 것이다"라는 판단이다.
 

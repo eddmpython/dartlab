@@ -6,9 +6,10 @@ category: dartlab-stories
 series: dartlab-stories
 seriesOrder: 2
 topicSlug: "call-financial-statements"
-ogImage: /thumbnails/dartlab-call-financial-statements.webp
-thumbnail: /thumbnails/dartlab-call-financial-statements.webp
-thumbnailBg: ./assets/dartlab-story-02-thumbnail-bg-v2.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/37/37456917af6fd4bf54a7307c84fc7df1cd8270de99534788d10fd0305a408504.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d7/d702de4e2aafde17d9a64ae01b14ee29348a4d44dd9054883af0cc767c3874b2.webp
+thumbnail: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/37/37456917af6fd4bf54a7307c84fc7df1cd8270de99534788d10fd0305a408504.webp
+thumbnailBg: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a5/a50eba29fd8ac3de500cd5bccc57e268224f574b11b784a12675a09616832a73.webp
 tags:
   - dartlab
   - 재무제표
@@ -29,7 +30,7 @@ tags:
 
 게다가 세 장은 각각 한 시점의 사진이다. 사업보고서 하나를 열면 올해와 작년, 두 해치만 나란히 있다. 5년을 보려면 보고서 다섯 개를 열어야 하고, 그 순간 표는 사람 손을 떠난다. dartlab은 이 문제를 다르게 푼다. 회사 하나의 공시를 미리 읽어서, 왼쪽에는 계정 이름, 오른쪽에는 기간별 숫자가 붙은 큰 표 한 장으로 만들어 둔다. 손익계산서를 부르면 그 표의 손익 부분이 나온다. 두 해치가 아니라 저장된 기간을 한 번에 본다. 그래서 재무제표는 세 장이 아니라, 부르는 각도만 다른 한 장이다.
 
-![계정과 기간이 만나는 격자](./assets/dartlab-story-02-grid-v2.webp)
+![계정과 기간이 만나는 격자](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/18/183bc0748489ff8d5d6ed48c51869c0ca5d0bc6de2311868043e288915e50410.webp)
 
 [지난 편, DART 공시분석, 설치 없이](/blog/what-is-dartlab)에서 이 표를 한 번 열어 봤다. 이번 편은 그 표를 손익계산서, 재무상태표, 현금흐름표로 나눠 직접 열어 보고, 화면에서 어디를 봐야 하는지 익히는 편이다.
 

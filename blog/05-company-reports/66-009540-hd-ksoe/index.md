@@ -21,7 +21,8 @@ tags:
   - 수주잔고
   - 전자공시
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/009540-hd-ksoe.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/90/903217a5ee1645f369268c478bcf0573f4505d75f41438f488431a6960b00c3c.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/4b/4b38c78f0d1f0da01dd08d6244e3ef4222ff4b9791ecc5352b5544864eb601e7.webp
 youtubeId: ""
 ai:
   verdict: "세계 1위 조선 지주가 2021~22 2조 적자에서 2025 영업이익 3.9조 사상 최대. 이익은 비상장 HD현대삼호에서 만들어져 HD현대 35%를 거쳐 정몽준가로 흐른다"
@@ -457,7 +458,7 @@ HD현대삼호중공업은 전남 영암군 삼호읍에 위치한 조선소로 
 
 **HD현대삼호는 해양플랜트를 짓지 않고, 방산도 하지 않는다.** 2014~2016년 해양플랜트 저가수주 → 2020~2022 원가 초과로 HD현대중공업 단독이 수조 원의 손실을 떠안을 때, 삼호는 이 타격을 전혀 받지 않았다. 수주 포트폴리오가 오로지 "이익이 좋은 고부가 상선"에만 집중돼 있다는 뜻이다.
 
-![전남 영암 HD현대삼호 조선소 — VLCC(초대형 유조선) 건조 장면](./assets/066-yeongam-vlcc.webp)
+![전남 영암 HD현대삼호 조선소 — VLCC(초대형 유조선) 건조 장면](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/0b/0b982fa04f3bc663dbbcdd511bcced9c39c43a61e4a73f63b95f8ca2666c2c9a.webp)
 
 2021년 HD현대중공업이 대형 해양플랜트 마무리 손실을 떠안던 해에도, HD현대삼호는 **흑자**였다(2021년 매출 4.3조, 영업이익 약 800억 수준으로 업계 추정). 2025년 LNG선 수주가 매출화되는 과정에서 삼호의 이익률은 극적으로 올랐다. 시장 애널리스트 리포트들은 **HD현대삼호의 2025년 영업이익률을 18~22% 수준**으로 추정한다. 매출 약 8조 × OPM 20% ≈ 영업이익 1.6조. 지주 연결 영업이익 3.9조 중 **약 41%**가 삼호 몫이라는 계산이 나온다.
 
@@ -687,7 +688,7 @@ dartlab 지배구조 엔진이 경고를 두 개 띄운다.
 
 수주잔고 2.8년치라는 건 조선업 기준으로 **상당히 안정적**이다. 일반 제조업에서 수주잔고 1년치는 "계약 확보가 잘 됐다"의 의미인데, 조선업은 건조 기간 자체가 2~3년이라 잔고 2.5~3년이 정상이다. 2020년 말 잔고가 **약 32조 (매출 2.1년치)** 수준이었으므로, 현재 잔고는 **약 2.6배** 커진 상태다.
 
-![울산 HD현대중공업 조선소 — LNG선 건조 장면. 구형 LNG 저장탱크가 갑판 위에 올라 있다](./assets/066-ulsan-lng-carrier.webp)
+![울산 HD현대중공업 조선소 — LNG선 건조 장면. 구형 LNG 저장탱크가 갑판 위에 올라 있다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/bf/bf1930586b706f8a3f79b5224ce720d30d279047b388b7ffaaaab26c826c45b6.webp)
 
 이 잔고의 **선종 구성**이 이익률의 미래를 결정한다. 공시 기반으로 대략 분해하면:
 

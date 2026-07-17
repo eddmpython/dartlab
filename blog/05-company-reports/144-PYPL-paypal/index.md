@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 144
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/PYPL-paypal.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/77/77f8bcad275c031dbc5fee7c8b838803aec6bda310d18b65611b623b210744ac.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b8/b837c3c8e1d82934353abf692abb01d6209f19a9d5e9aa9c694d580042dbff4c.webp
 tags: ["PayPal", "페이팔", "PYPL", "영업현금흐름", "현금전환", "테이크레이트", "브랜디드체크아웃", "결제", "미국주식", "핀테크"]
 stockCode: "PYPL"
 corpName: "PayPal"
@@ -44,7 +45,7 @@ import ComboChart from '$lib/components/blog/ComboChart.svelte';
 
 이 글은 주가가 왜 80% 빠졌나(시장 서사)를 묻지 않는다. 대신 '영업이익 1달러가 데려오는 영업현금이 몇 달러인가'라는 단 하나의 비율을 8년간 따라가, 그 숫자가 2.50에서 1.06으로 줄어드는 과정을 내부 연결 4줄로만 추궁한다. 왜 줄었는지의 원인은 미리 약속한다 — 내부 수치로는 끝내 증명되지 않으며, 그건 '모른다'로 닫을 것이다.
 
-![맑은 깊은 강이 얕고 넓은 삼각주로 퍼진다 — 성장의 질이 묽어지는 형태](./assets/144-braided-delta.webp)
+![맑은 깊은 강이 얕고 넓은 삼각주로 퍼진다 — 성장의 질이 묽어지는 형태](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/6f/6f2b7d33a98affbd43c6f3e95fe7f44faba36c78b028b944963044433626d73d.webp)
 
 ---
 
@@ -112,7 +113,7 @@ OCF/영업이익 배율은 2.50 → 1.68 → 1.78 → 1.49 → 1.51 → **0.96**
 
 여기서 역사가 각도를 한 겹 빌린다 — 시장은 같은 시기 정반대로 움직였다. **[외부 인용]** 주가는 2021년 중반 사상최고 약 $310에서 이후 최대 −81% 빠지며 약 3년간 시총 80%가 증발했고(같은 기간 S&P500 +16%, [Nasdaq](https://www.nasdaq.com/articles/paypal-stock-is-down-80-from-highs:-buying-opportunity)), 이는 외부 영역이다. 즉 내부 펀더멘털(매출·영업이익·OPM)은 역성장 없이 좋아지는데 시장은 디레이팅했다 — 내부 '이익↔현금' 모순 위에 외부 '시장↔펀더멘털' 모순이 한 겹 더 얹힌다. 단 디레이팅과 펀더멘털 개선이 '동시에 존재했다'는 관찰까지만이고, 어느 쪽이 원인이라 말하지 않는다.
 
-![떨어지는 혜성의 긴 자취 — 고공의 성장주가 지상으로 돌아온 시기](./assets/144-fallen-comet.webp)
+![떨어지는 혜성의 긴 자취 — 고공의 성장주가 지상으로 돌아온 시기](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/7a/7a46240840fa0b0632cc28f856473e1c090b5bc4cb82c4b353fb3c9b410b48f5.webp)
 
 ---
 

@@ -2,7 +2,7 @@
 	import { base } from '$app/paths';
 	import { brand } from '$lib/brand';
 	import { ArrowRight, Calendar } from 'lucide-svelte';
-	import { getCategoryGroups, getCategoryPath, getDistinctSeriesLabel, getLatestPosts, getSeriesGroups, getSeriesPath } from '$lib/blog/posts';
+	import { blogAssetUrl, getCategoryGroups, getCategoryPath, getDistinctSeriesLabel, getLatestPosts, getSeriesGroups, getSeriesPath } from '$lib/blog/posts';
 	import CardThumb from '$lib/blog/CardThumb.svelte';
 
 	const categoryGroups = getCategoryGroups();
@@ -117,8 +117,8 @@
 							<p class="latest-desc">{post.description}</p>
 						</div>
 						<CardThumb
-							image="{base}{post.cardPreview}"
-							imageWebp={post.cardPreviewWebp ? `${base}${post.cardPreviewWebp}` : undefined}
+							image={blogAssetUrl(post.cardPreview, base)}
+							imageWebp={post.cardPreviewWebp ? blogAssetUrl(post.cardPreviewWebp, base) : undefined}
 							keyword={post.cardKeyword}
 							kicker={post.categoryLabel}
 							alt={post.title}

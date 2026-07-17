@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 98
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/326030-sk-biopharm.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/33/33c48b74b343a520daaf7c1d82a594d4ffe63538aaf1acbb122af56b825f4dc2.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/21/2156d4e794462024ae66a6671ef341f8fd4ef85ca66f517044d8c798c2c5a84f.webp
 tags: ["SK바이오팜", "326030", "세노바메이트", "엑스코프리", "뇌전증신약", "직판", "SK Life Science", "영업레버리지", "신약", "SK그룹"]
 stockCode: "326030"
 corpName: "SK바이오팜"
@@ -147,7 +148,7 @@ SK바이오팜은 미국에서 그 정석을 거부했다. 미국에 직판 자�
 
 [SK Life Science의 회사 소개와 연혁](https://www.sklifescienceinc.com/about-us/)은 이 대목을 매우 직접적으로 보여준다. 회사는 자신을 SK바이오팜의 미국 자회사로 설명하고, 세노바메이트가 2019년 FDA 승인을 받고 2020년 미국에서 판매 가능해진 흐름을 적고 있다. 또 SK바이오팜을 "후보물질 발굴부터 FDA 승인과 상업화까지 파트너링이나 라이선스아웃 없이 진행한 첫 한국 기반 회사"라는 취지로 소개한다. 이 표현은 투자자에게 중요하다. 단순히 신약을 만든 회사가 아니라, 미국에서 처방을 만들어내는 상업화 기능까지 손익계산서 안에 들고 들어온 회사라는 뜻이기 때문이다.
 
-![미국에 직접 약을 판다 — 한국 신약사의 정석을 거부한 선택](./assets/098-direct-sales.webp)
+![미국에 직접 약을 판다 — 한국 신약사의 정석을 거부한 선택](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/2a/2a74b824bb16245a82bf49a13029f8e9808a6078d75082add2217b700e2e0cf9.webp)
 
 여기서 정확히 한정한다. SK바이오팜은 '혼자 다 직판'한 게 아니다. 유럽은 아벨 테라퓨틱스에 라이선스아웃했다. 즉 *가장 큰 시장 미국만* 가치사슬 끝까지 소유하기로 한 선택이다. 이 한정이 중요하다 — 직판은 모든 시장에서 한 게 아니라, 가장 크고 가장 비싼 시장 하나에 집중한 베팅이었다.
 
@@ -183,7 +184,7 @@ c.select("IS", ["매출액", "판매비와관리비", "영업이익"], freq="Y")
 
 표시: 2022년 판관비 3,395억은 그해 매출 2,462억보다 약 933억 크다. 이건 '망해서 난 적자'가 아니라 *매출이 따라오기 전에 비용을 먼저 깔아둔* 적자다. 직판 조직은 약이 본격적으로 팔리기 전부터 영업사원·마케팅·유통 비용이 든다. 미래의 매출을 위해 현재의 비용을 먼저 쓴 구간이었다.
 
-![선투자 — 매출이 따라오기 전에 미국 영업망을 먼저 깔았다](./assets/098-buildout.webp)
+![선투자 — 매출이 따라오기 전에 미국 영업망을 먼저 깔았다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/75/75d271aa289eef5c1775819557bb574294cb6ce6893f10bc2ad922d7539681d5.webp)
 
 여기서 중요한 건 판관비가 단순히 "낭비"라는 한 단어로 처리되지 않는다는 점이다. 미국 직판망은 제품이 팔리는 순간에만 발생하는 비용과, 매출이 아직 작아도 먼저 깔아야 하는 비용이 섞여 있다. 영업 인력, 본사 조직, 환자 지원 시스템, 마케팅, 유통 채널, 보험 대응은 매출 2,000억대에도 필요하고 매출 7,000억대에도 필요하다. 그래서 초기에는 이 비용이 매출보다 커 보인다. 하지만 제품 처방이 누적되고 같은 조직이 더 많은 처방을 감당하면, 매출은 비용선을 넘기 시작한다.
 
@@ -300,7 +301,7 @@ c.select("CF", ["영업활동현금흐름"], freq="Y")
 
 한쪽 면은 자산이다. 직판 조직은 한 번 깔아두면 *다시 쓸 수 있는 인프라*에 가깝다. 미국 의사·병원과 연결된 영업망은 세노바메이트 하나만 실어 나르는 길이 아니라, 이론적으로는 다음 제품도 같은 길로 흐를 수 있다. 다만 이건 *가설*로만 적는다 — SK바이오팜의 다음 상업화 제품이 무엇이 될지는 아직 확정되지 않았고, '채널이 다음 약을 실어 나른다'는 명제는 별도 검증이 필요하다.
 
-![직판이라는 선택의 양면 — 다시 쓸 인프라이자, 먼저 떠안는 출혈](./assets/098-infrastructure.webp)
+![직판이라는 선택의 양면 — 다시 쓸 인프라이자, 먼저 떠안는 출혈](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a6/a650a23e012045d41b516f4c74270a9eda41e3caeedc3a2410f0d6a899bdc12d.webp)
 
 다른 한쪽 면은 비용과 위험이다. 그 인프라가 매출에 추월당하기 전까지, 회사는 수년간의 적자와 음(-)의 현금흐름을 자기 돈으로 떠안아야 했다. 2022년 한 해만 봐도 영업이익 -1,311억, 영업현금흐름 -1,599억의 현금 출혈이다. 만약 약이 시장에서 충분히 팔리지 않았다면, 이 선투자는 회수되지 못한 채 회사를 짓눌렀을 것이다. 이 베팅을 버틸 수 있었던 건 부채비율 **45%**라는 재무 체력, 그리고 SK그룹 계열·2020년 상장으로 확보한 자본이 받쳐 줬기 때문이다.
 

@@ -16,7 +16,8 @@ tags:
   - DART
   - EDGAR
   - 기술이야기
-ogImage: /thumbnails/tech-semiconductor-cooling-network.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/3e/3e1c73b6d5d26fd9ec9ecc5be24e5adb9788d90cb7fa2f1e754be9c368ab54d3.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ad/add0c3ee4a58dd2f3a53990031c50cecf63d0b985475e3507c915039a033511f.webp
 ai:
   verdict: "AI 칩의 다음 병목은 계산이 아니라 열 제거다. HBM과 GPU가 더 촘촘히 붙고, 랙 하나에 더 많은 가속기가 들어가면서 냉각은 서버실 에어컨이 아니라 칩 패키지, cold plate, manifold, CDU, chiller, 전력과 물이 연결된 거래망이 된다. DART 2026Q1에서 GST는 Scrubber 69.0%, Chiller 12.8%, 유니셈은 Scrubber 27.3%, Chiller Unit 40.0%를 공시했고, LG전자는 ES 부문에서 AI 데이터센터용 칠러와 CDU 확대를 명시했다. EDGAR 전사 숫자로는 Vertiv 2025 매출 102.3억 달러, 영업이익률 17.9%, Supermicro 2025 매출 219.7억 달러, 영업이익률 5.7%, Dell FY2026 매출 1,135.4억 달러, 영업이익률 7.2%, Modine FY2026 매출 31.8억 달러, 영업이익률 10.8%가 확인된다. 단, 이 숫자는 모두 냉각 전용 매출이 아니라 회사 전체 숫자다."
   direction: 관망
@@ -31,7 +32,7 @@ AI 반도체가 빨라질수록 이상한 일이 생긴다. 더 좋은 칩을 �
 
 [HBM은 왜 쌓을까](/blog/hbm-stack-packaging-test)에서 봤듯이 AI 칩은 메모리를 옆으로 늘리는 대신 위로 쌓고, GPU 가까이에 붙인다. 데이터 길이는 짧아지지만 열은 더 어려워진다. HBM 스택, GPU 다이, 인터포저, 기판, 전원부가 좁은 공간에 모인다. 칩 안의 문제처럼 보이지만 실제 거래망은 더 넓다. 패키지에서 서버 보드로, 서버 보드에서 랙으로, 랙에서 CDU(Coolant Distribution Unit, 냉각액 분배 장치)로, CDU에서 칠러와 냉각탑, 전력과 물로 넘어간다.
 
-![액체냉각 AI GPU 서버 랙. 냉각은 데이터센터 바깥 에어컨이 아니라 랙 안의 cold plate와 배관으로 들어왔다](./assets/11-liquid-cooling-rack.webp)
+![액체냉각 AI GPU 서버 랙. 냉각은 데이터센터 바깥 에어컨이 아니라 랙 안의 cold plate와 배관으로 들어왔다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/7f/7f89a5fade7be25c4d2e50b464b86c093469d6ca91179c07aca8d175c6b3a531.webp)
 
 이 글의 관통선은 하나다. **반도체 냉각은 부품 하나가 아니라 열이 이동하는 거래망이다.** 초보자는 열이 왜 병목인지 이해하면 되고, 깊게 볼 사람은 어느 회사가 어느 공정 칸에 있는지 보면 된다. 냉각을 수혜주 목록으로 보면 금방 얕아진다. 냉각을 열의 이동 경로로 보면 칩, 패키지, 서버, CDU, 칠러, 전력, 물, 유지보수 계약이 한 줄로 이어진다.
 
@@ -90,7 +91,7 @@ GST의 2026년 1분기 제품 매출 비중은 Scrubber 69.0%, Chiller 12.8%, �
 
 유니셈도 비슷하지만 매출 구성이 다르다. 2026년 1분기 DART에서 유니셈은 반도체와 디스플레이 제조 공정에서 발생하는 유해가스 정화장치 Scrubber, 반도체 Main 공정상 안정적인 온도 유지를 제공하는 Chiller를 주요 사업으로 설명한다. 제품 표에서 Gas Scrubber는 27.3%, Chiller Unit은 40.0%, 유지보수 외 기타는 30.9%다. 유니셈의 경우 Chiller 비중이 더 크게 보인다.
 
-![반도체 팹의 공정용 칠러와 배관. DART에서 말하는 Chiller는 데이터센터 에어컨이 아니라 공정 온도 안정화 장비다](./assets/01-fab-process-chiller.webp)
+![반도체 팹의 공정용 칠러와 배관. DART에서 말하는 Chiller는 데이터센터 에어컨이 아니라 공정 온도 안정화 장비다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/46/461133b8134c7f9e12f012f62c097a134c62a53d0e5976df725119d796587e6f.webp)
 
 이 대목은 아주 쉽다. 팹은 요리보다 더 민감한 공장이다. 웨이퍼 위에 아주 얇은 막을 입히고, 깎고, 씻고, 다시 쌓는다. 그 과정에서 온도가 흔들리면 같은 레시피를 써도 결과가 달라질 수 있다. Chiller는 이 레시피의 온도 조건을 잡아 주는 장비다. 그래서 반도체 경기가 좋아지고 신규 라인이 들어서면 이런 장비도 같이 움직일 수 있다.
 
@@ -106,7 +107,7 @@ AI 데이터센터 냉각은 미국 공시와 글로벌 공식 자료를 같이 
 
 dartlab EDGAR 패널 기준 Vertiv의 2025년 매출은 102.3억 달러, 매출총이익률은 36.3%, 영업이익률은 17.9%였다. Supermicro의 2025년 매출은 219.7억 달러, 매출총이익률은 11.1%, 영업이익률은 5.7%였다. Dell은 FY2026 매출 1,135.4억 달러, 매출총이익률 20.0%, 영업이익률 7.2%였다. Modine은 FY2026 매출 31.8억 달러, 매출총이익률 23.0%, 영업이익률 10.8%였다.
 
-![cold plate와 CDU 실험실 장면. 칩 패키지 열은 랙과 시설 냉각의 접점에서 시스템 문제가 된다](./assets/02-cold-plate-cdu-lab.webp)
+![cold plate와 CDU 실험실 장면. 칩 패키지 열은 랙과 시설 냉각의 접점에서 시스템 문제가 된다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/02/0274b451c66cbcb692bc01e2c4e45f115828603975411be04a91de7ff543c405.webp)
 
 Supermicro의 [liquid cooling 솔루션](https://www.supermicro.com/en/solutions/liquid-cooling), Dell의 [direct liquid cooling](https://www.dell.com/en-us/dt/solutions/data-center-solutions/direct-liquid-cooling.htm), Vertiv의 [liquid cooling 자료](https://www.vertiv.com/en-us/solutions/liquid-cooling/)는 모두 같은 방향을 가리킨다. 고밀도 AI 랙에서는 서버와 냉각을 따로 설계하기 어렵다. 호스 연결, leak detection, 서비스성, 랙 배치, 시설수 조건이 서버 판매와 같이 움직인다.
 

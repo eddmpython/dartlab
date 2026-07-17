@@ -7,7 +7,8 @@ series: data-reports
 seriesOrder: 6
 topicSlug: "capex-beyond-operating-cashflow"
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/data-capex-beyond-operating-cashflow.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/8b/8b4f5a386b4aff64f7b0bf0370ed12a7208cc77b27757498724d2d666cce66bc.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/1f/1f1ecd3e6308d18028e02f33bd00d4ba9a115dd37679ef632daa54b47f3df9d4.webp
 tags: [설비투자, CAPEX, 잉여현금흐름, 영업활동현금흐름, 사이클]
 keywords:
   - 설비투자

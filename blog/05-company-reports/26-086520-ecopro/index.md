@@ -9,7 +9,8 @@ corpName: "에코프로"
 exchange: "KRX"
 storyTemplate: "사이클"
 thumbnail: /avatar-chart.png
-ogImage: "/thumbnails/086520-ecopro.webp"
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e7/e7fe8ea3f338209b00234a8c0a5a81ab252972dfc1db217b38e6866c15855fc0.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b5/b5efe0d73fa58b2277d112414112bdc9455729294dded29c940ed5b26d0079b0.webp
 description: "시총 78조, 창업주는 감옥, 매출 반토막, 매출원가율 102%. 2차전지 대장주 에코프로의 재무제표를 뜯어보면 — 시장이 산 건 숫자가 아니라 서사였다."
 tags:
   - 에코프로
@@ -126,7 +127,7 @@ import HFDataLink from '$lib/components/blog/HFDataLink.svelte';
 
 > **시총 78조를 찍은 회사의 영업이익은 864억이었다 — 숫자가 아니라 서사를 산 시장.**
 
-![에코프로 양극재 공장](./assets/26-ecopro-battery-factory.webp)
+![에코프로 양극재 공장](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c6/c6189fd1c500da44404c022f74a0465dc65aef06b4a4ea9a42c7948974580253.webp)
 
 
 <HFDataLink code="086520" />
@@ -431,7 +432,7 @@ c.analysis("현금흐름")
 
 ---
 
-![에코프로 주가 폭락](./assets/26-ecopro-stock-crash.webp)
+![에코프로 주가 폭락](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/0a/0ae89c16a5677d6a3750bdbc5ab25be98d360b71b19c66024e9a18c6144cc657.webp)
 
 # 제4막: "시총 78조, 창업주는 감옥" — 서사가 만든 주가
 

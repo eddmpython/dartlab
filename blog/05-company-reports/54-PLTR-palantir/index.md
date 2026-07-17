@@ -21,7 +21,8 @@ tags:
   - 전자공시
   - EDGAR
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/PLTR-palantir.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ff/ff43e81924fbcde41a8e21adfde9c36949d4cebe1a28b009d26691660261cc1b.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/fb/fb02939e3678d4bcdc9872105c2ddaffb125ff1a9f2d2ccbe6e89a619b3b0a6d.webp
 youtubeId: ""
 ai:
   verdict: "영업이익률 31.6%이지만 이익의 48%가 주식보상비용 — 현금 이익과 장부 이익의 괴리가 팔란티어의 본질"
@@ -144,7 +145,7 @@ overall = c.analysis("financial", "종합평가")
 
 2021년에는 주식보상비용이 매출의 **절반**(50.4%)이었다. 매출 $1.54B인 회사가 직원에게 $778M어치 주식을 줬다. 이건 정상이 아니다. 다행히 2025년에는 매출 대비 15.3%로 떨어졌다. 하지만 절대 금액은 $684M으로 여전히 크다.
 
-![팔란티어가 만드는 AI 대시보드 — 군사·정보기관용 데이터 분석의 현장](./assets/54-ai-dashboard.webp)
+![팔란티어가 만드는 AI 대시보드 — 군사·정보기관용 데이터 분석의 현장](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/59/5954cfae3df5e8c318b75c31f1666626be65af6dcfa86454087274983dc3c3d4.webp)
 
 ### 왜 주식으로 주는가 — 스타트업이 구글·메타와 싸우는 법
 
@@ -179,7 +180,7 @@ overall = c.analysis("financial", "종합평가")
 
 왜 매출 $4.48B 회사의 설비투자가 $34M인가. 팔란티어의 사업 구조를 이해하면 이 숫자가 보인다.
 
-![펜타곤 — 팔란티어의 첫 고객은 미국 정보기관이었다](./assets/54-pentagon.webp)
+![펜타곤 — 팔란티어의 첫 고객은 미국 정보기관이었다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e0/e042e415356db411ea89f5f4fc0a2ce93faf0ac0fa4a602928cfd6ee6e93a224.webp)
 
 ### 매출총이익률 82.4% — 소프트웨어의 극단적 마진
 

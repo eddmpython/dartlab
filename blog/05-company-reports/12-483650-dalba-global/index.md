@@ -19,7 +19,8 @@ tags:
   - 에셋라이트
   - 전자공시
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/483650-dalba-global.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/80/807ee36b15a043198de88ba71c36e3eb6a0824767a865622da663983826de7e2.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/70/7001501db2cf8675ebfa22bd8ba0d6ea7fdec5bb6a09dc5184609f556224e7da.webp
 youtubeId: ""
 ai:
   verdict: "화장품 경험 0에서 공장 없이 미스트 5000만병. OPM 19.5%. 차입금 0."
@@ -168,7 +169,7 @@ c.analysis("financial", "종합평가")
 
 ## 1막 — 매출 3배, 1년 만에. 공장은 없다
 
-![승무원 미스트](./assets/12-mist-product.webp)
+![승무원 미스트](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/17/17e4ddac295b1768cee3d9f05b72aa714cd3244c642535d420159f42f5ab92cf.webp)
 
 ### 매출 1,690억 → 5,197억 — 1년 만에 3배
 
@@ -225,7 +226,7 @@ c.analysis("financial", "자금조달")
 
 ## 2막 — 화장품 경험 0, 컨설턴트가 만든 브랜드
 
-![승무원이 기내에서 뿌린 미스트](./assets/12-flight-attendant.webp)
+![승무원이 기내에서 뿌린 미스트](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/4d/4d95c4edb3b23510b85df98055ffb2cec63f4b19d7b7c80642d11f9acec03652.webp)
 
 ### NHN 개발자 → 전략 컨설턴트 → 화장품 창업
 
@@ -271,7 +272,7 @@ c.analysis("financial", "자금조달")
 
 ## 3막 — 러시아에서 먼저 뜬 K-뷰티
 
-![러시아 뷰티 스토어](./assets/12-russia-beauty.webp)
+![러시아 뷰티 스토어](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/25/25c6a650555d523455997f259e8b070aaeef574e2d9e7b593c2f060e4e30144d.webp)
 
 ### 해외 비중 7% → 63% — 4년 만에 뒤집힌 매출 구조
 

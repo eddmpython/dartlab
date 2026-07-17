@@ -16,7 +16,8 @@ tags:
   - DART
   - EDGAR
   - 기술이야기
-ogImage: /thumbnails/tech-ammonia-ships-floating-power-plant.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/71/719b87be7f73665af863794dac901aaad88e72cac70ce81d0e79b7554a9821e8.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/9e/9ee3a83b23d08298c498e9a87b11d6a7b0f55fabc46b791362539eacb614d3a0.webp
 ai:
   verdict: "암모니아 선박은 한화오션 하나의 이야기가 아니라 조선 통합, 선사 운항 데이터, 엔진, 암모니아 연료, 연료전지, 가스장비, 선급 인증이 묶인 선박 에너지 시스템이다. DART에서는 한화오션, HD현대중공업, 한화엔진, HMM, 롯데정밀화학, 두산퓨얼셀을 보고 EDGAR에서는 CF Industries, Bloom Energy, Chart Industries, Cummins, Caterpillar를 봐야 하지만, 이 숫자는 모두 전사 손익이지 순수 암모니아선 매출이 아니다."
   direction: 관망
@@ -29,7 +30,7 @@ ai:
 
 그러면 회사 지도도 달라진다. DART에서는 한화오션, HD현대중공업, 한화엔진, HMM, 롯데정밀화학, 두산퓨얼셀을 본다. EDGAR에서는 CF Industries, Bloom Energy, Chart Industries, Cummins, Caterpillar를 본다. 어떤 회사는 조선 통합 칸에 있고, 어떤 회사는 연료 공급 칸에 있고, 어떤 회사는 연료전지와 전력 모듈 칸에 있다. 이 글의 질문은 "한화오션이 수혜인가"가 아니다. **암모니아라는 특정 기술이 어떤 공정으로 쪼개지고, 그 공정이 어느 회사의 공시 숫자와 연결되는가**다.
 
-![현대식 조선소에 정박한 암모니아 연료 선박. 갑판 위 탱크와 녹색 안전 배관이 선박 내부 에너지 시스템을 보여준다](./assets/01-ammonia-ship-shipyard.webp)
+![현대식 조선소에 정박한 암모니아 연료 선박. 갑판 위 탱크와 녹색 안전 배관이 선박 내부 에너지 시스템을 보여준다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/2c/2c84c8889a1df5fffa26f5296ba34a38e7c9741bf0c43b1c67581c5b143a4c02.webp)
 
 [IMO](https://www.imo.org/en/mediacentre/hottopics/pages/cutting-ghg-emissions.aspx)는 2030년까지 국제해운 에너지 사용에서 zero or near-zero GHG 연료 비중을 최소 5%, 가능하면 10%까지 끌어올리는 목표를 제시했다. [DNV의 IMO 규제 해설](https://www.dnv.com/maritime/hub/decarbonize-shipping/key-drivers/regulations/imo-regulations/ghg-vision/)도 2030년 탄소집약도 40% 감축과 2050년 무렵 net zero 목표를 정리한다. 이 규제 배경이 메탄올, LNG, 수소, 암모니아 같은 대체연료 선박 논의를 밀어 올린다.
 
@@ -83,7 +84,7 @@ ai:
 
 다른 하나는 전기 방식이다. 암모니아를 직접 태우지 않고, 크래킹 장치에서 수소로 분해한 뒤 연료전지로 전기를 만든다. 배터리와 결합하면 추진 전력과 호텔로드를 나눌 수 있다. [Amogy와 Hanwha Ocean, Hanwha Aerospace의 협력 발표](https://amogy.co/news/hanwha-ocean-amogy-and-hanwha-aerospace-forge-partnership-to-decarbonize-maritime-sector-with-ammonia-as-a-zero-emission-fuel)는 이 방향을 보여준다. Amogy는 암모니아를 수소로 분해하고 연료전지로 전력을 만드는 시스템을 제시한다.
 
-![암모니아 크래킹 장치, 수소 연료전지 캐비닛, 배터리 랙이 한 선박 전력 모듈 안에 들어간다](./assets/03-ammonia-power-module.webp)
+![암모니아 크래킹 장치, 수소 연료전지 캐비닛, 배터리 랙이 한 선박 전력 모듈 안에 들어간다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/63/6320af44464d1a7dabae00c4e8c26a9faecba584b5cdd2f1afe22887a66c7b8a.webp)
 
 두 방식은 같은 암모니아를 쓰지만 회사 지도가 다르다. 직접 연소 방식에서는 엔진 회사와 배기가스 처리, 연료공급장치가 중요해진다. 전기 방식에서는 크래킹 장치, 연료전지, 전력변환, 배터리, 열관리 회사가 붙는다. [두산퓨얼셀 기업이야기](/blog/336260-doosan-fuel-cell)를 이미 읽었다면 이 차이가 더 선명하다. 연료전지 회사는 정책 기대와 기술 가능성만으로 움직이지 않는다. 원가, 수주 단가, 스택 수명, 연료 가격, 유지보수 비용이 손익을 결정한다.
 
@@ -93,7 +94,7 @@ EDGAR에서도 마찬가지다. [Bloom Energy의 2025 Form 10-K](https://www.sec
 
 암모니아 선박을 쉽게 오해하는 지점은 여기다. 사람들은 엔진이 개발되면 상용화가 끝났다고 생각한다. 하지만 암모니아 선박에서 엔진은 필요조건이지 충분조건이 아니다. 엔진이 돌더라도 사람이 탈 수 없고, 항만에서 연료를 넣을 수 없고, 누출 시나리오가 인증되지 않으면 배는 상업 운항을 할 수 없다.
 
-![선박 내부 암모니아 연료 취급 모듈. 이중 배관, 가스 감지기, 환기, 비상 차단 밸브가 안전 병목의 실체다](./assets/02-ammonia-fuel-handling-module.webp)
+![선박 내부 암모니아 연료 취급 모듈. 이중 배관, 가스 감지기, 환기, 비상 차단 밸브가 안전 병목의 실체다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/27/27627ebd255bfa2807785218beb1acfbc2da779e295c682ce99d65879d202054.webp)
 
 안전 병목은 여섯 가지로 나눌 수 있다. 첫째, 독성이다. 암모니아는 낮은 농도에서도 인체에 영향을 줄 수 있어 감지와 환기가 필수다. 둘째, 부식과 재료 선택이다. 어떤 금속과 고무, 실링 재료를 쓸 것인지가 설계 문제로 올라온다. 셋째, 누출 감지와 격리다. 센서가 늦으면 안전 문제가 커지고, 센서가 과민하면 운항 안정성이 흔들린다.
 

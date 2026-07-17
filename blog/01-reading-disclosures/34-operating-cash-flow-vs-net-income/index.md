@@ -6,7 +6,8 @@ category: reading-disclosures
 series: capital-and-earnings
 seriesOrder: 3
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/34-operating-cash-flow-vs-net-income.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/be/be80159e98fb5dc7ce5d1ff8b7bc63be2b7916c831049817b837637459212c84.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/3d/3db6bbc71a9e0d3db3382de870fb78e6eacb46324334006fdc11e7e880ab5b5c.webp
 ---
 
 # 영업현금흐름이 순이익을 부정할 때

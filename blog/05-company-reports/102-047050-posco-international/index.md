@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 102
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/047050-posco-international.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e3/e3e4d1483d3fa46e8ef8765fd9a217678e79682aaed57156fe89b818b84e9244.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/6e/6e278d950f8352a34f38e15c5eb43131deb4dffc9471e9116b69df0341c2d387.webp
 tags: ["포스코인터내셔널", "047050", "미얀마가스전", "포스코에너지", "LNG", "종합상사", "감가상각", "현금흐름", "대우인터내셔널", "자원개발"]
 stockCode: "047050"
 corpName: "포스코인터내셔널"
@@ -153,7 +154,7 @@ c.select("IS", ["매출액", "영업이익"], freq="Y")
 
 다만 거짓 프레임은 피한다. '매출 정체(38조→32조)'라고 쓰면 안 된다 — 그건 기준연도를 바꿔치기한 착시다(2016년 기준으로 보면 매출은 25년까지 *2배 가까이* 늘었다). 제대로 된 그림은 *매출은 늘었지만 노이즈가 크다*는 것이다. 진짜 신호는 매출이 아니라 이익에 있다.
 
-![매출 32조는 원자재 가격과 거래량의 그림자 — 크기는 노이즈다](./assets/102-trading-noise.webp)
+![매출 32조는 원자재 가격과 거래량의 그림자 — 크기는 노이즈다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/da/da6201cf97c56c1fe5e989fd64d71ee3b5a29276b7a12a23d87018373d927044.webp)
 
 ---
 
@@ -189,7 +190,7 @@ c.select("BS", ["자산총계"], freq="Y")
 
 자산총계가 2022년 12.5조에서 2023년 16.6조로, 한 해에 **+4.1조**가 통째로 붙었다. 트레이딩 회사의 자산은 이렇게 한 번에 붙지 않는다 — 매출채권·재고는 점진적으로 늘 뿐이다. 한 해에 4조가 붙었다는 건 *고정 설비*가 통째로 들어왔다는 흔적이다.
 
-![2023년 한 해에 붙은 자산 4.1조의 정체 — LNG 발전소 합병](./assets/102-power-plant.webp)
+![2023년 한 해에 붙은 자산 4.1조의 정체 — LNG 발전소 합병](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/0d/0dad0ac967325fd45ec0b289da6c649ab0c77fafe181d39423ae644b88568585.webp)
 
 그 흔적의 이름은 **2023년 1월 포스코에너지(LNG 발전) 흡수합병**이다. 발전소라는 자본집약 설비가 연결로 들어오면서, 그 사업의 이익이 *본업 영업이익*으로 합산됐다 — 그게 2막에서 본 '계단 한 칸'이다. 이익이 성장 모멘텀으로 오른 게 아니라, *자산을 통째로 사 와서(볼트온)* 구조적으로 재평가된 것이다.
 
@@ -281,7 +282,7 @@ LNG 발전 쪽은 더 직접적이다. 회사 공식 발전사업 페이지는 �
 | 영업CF / 순이익 | +3.05배 | -3.40배 |
 | 영업이익률 | 3.6% | 1.85% |
 
-![같은 상사 간판, 반대 현금 지문 — 자산을 들고 있느냐의 차이](./assets/102-two-ships.webp)
+![같은 상사 간판, 반대 현금 지문 — 자산을 들고 있느냐의 차이](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/0c/0caf1d55b1dadaf1a80b1b591e7378d389a35a7ee220ea92621e82fe7f6dbd56.webp)
 
 같은 종합상사 간판인데, 한쪽은 현금이 *넘치고*(순이익의 3배) 다른 쪽은 *마른다*(마이너스). 차이는 *자산을 들고 있느냐*다. 포스코인터는 발전소·가스전이라는 고정 설비가 연결돼 감가상각이 현금으로 환류하고, 현대코퍼레이션은 매출만 키워 운전자본이 현금을 삼킨다. (단년 비교이고 단일 연도 OCF는 변동이 크다 — 두 회사의 우열을 가리는 게 아니라, '상사라고 다 같은 게 아니다'를 보여주는 거울이다.)
 

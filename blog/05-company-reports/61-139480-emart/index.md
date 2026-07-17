@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 61
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/139480-emart.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b3/b3f17a0fdae3497b72d13916c5c94a08212f71c79720bc6b25db57d80f537bb8.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ae/ae924eeb81eabc93b5e2831aff07dd1b9a3c1be5953264ee59e90b9eae9eeaa4.webp
 tags: ["이마트", "139480", "대형마트", "스타필드", "트레이더스", "SSG닷컴", "이베이코리아", "정용진", "유통", "오프라인"]
 stockCode: "139480"
 corpName: "이마트"
@@ -166,7 +167,7 @@ carousel:
 
 ![이마트 32년 타임라인 — 1993 창동점 → 2025 28.97조](./assets/061-emart-timeline.svg)
 
-![이마트 대형마트 내부 — 32년간 한국 오프라인 유통의 원형](./assets/061-emart-store-interior.webp)
+![이마트 대형마트 내부 — 32년간 한국 오프라인 유통의 원형](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/2f/2ff89b3f89643f3d8a713e75169bf6e8b0c517cf2511d6baf7f86397bf968f59.webp)
 
 ---
 
@@ -508,7 +509,7 @@ Costco Wholesale Korea는 1994년 한국 진출, 2024년 매출 약 **6.5조**. 
 
 ![4개 전선 — 쿠팡·컬리·네이버·코스트코 vs 이마트 사업부](./assets/061-competition.svg)
 
-![스타필드 복합몰 아트리움 — 이마트 연결 내 고마진 사업부의 상징](./assets/061-starfield-mall.webp)
+![스타필드 복합몰 아트리움 — 이마트 연결 내 고마진 사업부의 상징](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/9e/9e8543878b58f43b7678d08bb5f02cd7efdc2a7a37dc866910448da5b67689eb.webp)
 
 ---
 

@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 57
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/128940-hanmi-pharm.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/96/96630f279d0dd30c48ae077c090bc4891b2fed3d97bbeeff7b5b12fe1e6fba8a.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/1b/1bbe32e2ae63bf43962ddfd6785fe06569cbbfa6122f0268aec2caa61c595d91.webp
 tags: ["한미약품", "128940", "제약", "신약개발", "라이선스아웃", "기술수출", "바이오", "임현준", "롤론티스", "오블루민"]
 stockCode: "128940"
 corpName: "한미약품"
@@ -122,7 +123,7 @@ carousel:
 
 답은 세 갈래로 수렴한다. **첫째**, 자체 출시 신약(롤론티스·오블루민·롤베돈)이 글로벌 판권 계약으로 돌아와 **로열티와 마일스톤 인식**이 시작됐다. **둘째**, 제품 포트폴리오의 원가율(매출원가율)이 43%대를 10년 가까이 유지한다 — 이건 제네릭(복제약) 회사가 아니라 **자체 브랜드 중심 제약회사**의 마진 구조. **셋째**, 2020~2022년 R&D 피크 지출(누적 약 1조)이 2023년부터 기술수출 계약·임상 진입·라이선스 리로딩으로 돌아오기 시작했다. 이 글은 그 3개의 바퀴가 어떻게 맞물려 영업이익 2,578억을 만들었는지 숫자와 인물 서사로 해부한다.
 
-![한미약품 경기도 팔탄 제약 제조 단지 — 1.5조 매출의 물리적 기반](./assets/057-hanmi-factory-palm.webp)
+![한미약품 경기도 팔탄 제약 제조 단지 — 1.5조 매출의 물리적 기반](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ae/ae21e6322c92aa1fe70021ccc5e007eb45f1880aaf64872c483afa1da3be6338.webp)
 
 ![한미약품 2017~2025 R&D 투자와 영업이익의 9년 파동](./assets/057-rd-vs-opm-9years.svg)
 
@@ -177,7 +178,7 @@ c.select("IS", ["매출액","매출원가","매출총이익","판매비와관리
 
 **왜 글로벌 대형 제약사들이 한미약품과 계약을 맺었다가 연이어 반환했는가?** 제약 업계에서 라이선스 계약의 반환은 드문 일이 아니다. 임상 실패, 시장 우선순위 변경, 경쟁 약품 등장 — 어느 계약도 절대 안전하지 않다. 한미약품은 2015년부터 2024년까지 **한국 제약사 중 가장 활발하게 기술수출 계약을 맺어왔고, 그만큼 반환도 많았다**.
 
-![한미약품 제약 생산라인 — 정제 블리스터 포장 클린룸](./assets/057-hanmi-drug-capsules.webp)
+![한미약품 제약 생산라인 — 정제 블리스터 포장 클린룸](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/5e/5edf5865cae50ce425456cc06b6daf8fa5600312faffc0fa9d4d9da340c60568.webp)
 
 ![한미약품 4번의 라이선스 반환 타임라인 — 사노피·베링거·얀센·GSK](./assets/057-returns-timeline.svg)
 

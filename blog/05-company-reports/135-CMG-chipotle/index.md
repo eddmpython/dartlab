@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 135
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/CMG-chipotle.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/0f/0f40fa859b2be9ae69cffb9d6da6592f832acb435796c78e2464e9b56ef6a870.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e0/e0366f2702bf19934cbdb70e2ab53dfed8674af62c31785fa06a8ef982a42fa7.webp
 tags:
   - "치폴레"
   - "CMG"
@@ -44,7 +45,7 @@ ai:
 
 한 회사의 영업이익률이 **0.8%**까지 내려간 해가 있다. 2016년 치폴레다. 매출 **3.90B**, 영업이익 **0.03B**. 100원을 팔아 영업이익으로 80전이 남았다는 뜻이다.
 
-![한 줄의 비율이 그린 위기와 회복의 곡선](./assets/135-recovery-arc.webp)
+![한 줄의 비율이 그린 위기와 회복의 곡선](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c3/c38c2a5bb955aa23028fb458ecfb1c99e90d876f34613def9255dc1f6ba78ecd.webp)
 
 이 숫자가 충격적인 이유는 한 해 전과 한 해 뒤를 같이 놓을 때다. 바로 직전 2015년의 영업이익률은 **16.9%**였고, 8년 뒤 2024년에는 **17.0%**로 돌아왔다. 정상적으로 17%를 내던 회사가 단 한 해 거의 0에 닿았다가, 다시 17%로 채워졌다. 위기의 깊이와 회복의 길이가 영업이익률(매출 대비 영업이익 비율)이라는 단 한 줄에 동시에 적혀 있다.
 
@@ -95,7 +96,7 @@ oi_drop  = (oi_2016  - oi_2015)  / oi_2015     # -0.961 → -96.1%
 
 2016년 0.8% 다음 해인 2017년 영업이익률은 **6.0%**였다. 0.8%에서 분명히 올라왔다. 그러나 위기 전 17% 수준과 비교하면 그 **3분의 1**에 불과하다. 영업이익도 2017년 **0.27B**으로, 2015년 0.76B의 절반에도 못 미친다. 한 번 무너진 회사가 곧장 제자리로 튀어오른 것이 아니라, 바닥에서 한 발 떼고 여전히 깊은 골짜기 안에 있었다.
 
-![한 끼씩 다시 쌓는 운영 — 회복은 한 줄의 결정이 아니라 매장의 반복이었다](./assets/135-assembly-line.webp)
+![한 끼씩 다시 쌓는 운영 — 회복은 한 줄의 결정이 아니라 매장의 반복이었다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d7/d7883457e7fc9f9dbb260205572a315f7f774a00ae5d47d69b28be0667a8622f.webp)
 
 즉 바닥은 한 점(2016)이 아니라 **2016~2017에 걸친 골짜기**였다. 이 구분이 중요한 이유는, '한 번의 충격 → 즉각 V자 반등'이라는 흔한 그림이 여기서 깨지기 때문이다. 위기는 한 분기에 왔지만, 그 바닥에서 빠져나오는 데만도 두 해가 걸렸고 그조차 위기 전의 3분의 1 수준이었다.
 
@@ -226,7 +227,7 @@ ocf = {2023: 1.78, 2024: 2.11, 2025: 2.11}   # 영업활동현금흐름(B)
 
 손익이 증명하는 것과 증명하지 못하는 것을 마지막으로 갈라둔다. 손익이 증명하는 것은 영업레버리지의 붕괴, 다년에 걸친 마진 누적, 현금의 뒷받침까지다. 손익이 증명하지 못하는 것은 '식중독 → 마진'의 직선 인과와 '니콜·디지털 → 회복'의 귀속이다. 후자는 [SEC 10-K(EDGAR)](https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=CMG&type=10-K)와 [치폴레 IR](https://ir.chipotle.com)이 채우는 공시 맥락이다. 회계 연도와 역년의 경계 차이로 소수점 단위의 차이는 있을 수 있다. 한 가지 덧붙이면, 표 안에서 가장 높은 영업이익률은 위기 이전인 2014년의 17.3%다. 2024년 17.0%는 사상 최고가 아니라 위기 전 수준으로의 복원에 가깝다는 점을 분명히 해둔다. 참고로 2024년 6월의 50:1 주식분할은 주가 사건이지 매출·이익·현금흐름과 무관하므로 이 재무 서사에서 제외했다.
 
-![신선식품 공급망 — 회복의 자산이자, 한때 위기의 통로였던 양면](./assets/135-fresh-ingredients.webp)
+![신선식품 공급망 — 회복의 자산이자, 한때 위기의 통로였던 양면](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/5b/5b4dfc022a7268544732633d7fba7096dfb988281c24f1e05876f2ea1fbc9570.webp)
 
 판단으로 끝낸다. 목표주가도 매수의견도 없다. 2026년에 영업이익률 한 줄을 따라가며 볼 것은 넷이다.
 

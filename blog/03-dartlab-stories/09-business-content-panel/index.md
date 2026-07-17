@@ -6,9 +6,10 @@ category: dartlab-stories
 series: dartlab-stories
 seriesOrder: 9
 topicSlug: "business-content-panel"
-ogImage: /thumbnails/dartlab-business-content-panel.webp
-thumbnail: /thumbnails/dartlab-business-content-panel.webp
-thumbnailBg: ./assets/dartlab-story-09-thumbnail-bg-v1.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/de/dead7b41b03a699e1b27adbc9c9e913c7c97c8d988b321caa6f4181c2506d01c.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/05/0575985d039f54703d26d9c7b69d1c44155f7cfc43bc4c4b7459c8d9077a685d.webp
+thumbnail: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/de/dead7b41b03a699e1b27adbc9c9e913c7c97c8d988b321caa6f4181c2506d01c.webp
+thumbnailBg: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c4/c410f5f642f171b9b2b403464e7152b5b7234d240cd1b4ca3b26031355df3b7d.webp
 tags:
   - dartlab
   - DART
@@ -63,7 +64,7 @@ shortRows(business, 3)
 
 여기서 중요한 습관은 "숫자처럼 보이는 것만 근거"라고 생각하지 않는 것이다. 사업보고서 본문은 회사가 어떤 사업을 하고, 어떤 제품을 팔고, 어떤 원재료를 사며, 생산능력을 어떻게 설명하는지 알려 준다. 이 근거는 손익계산서 숫자와 다른 종류의 근거다.
 
-![사업보고서 사업 본문을 공시 근거 문장으로 바꾸는 흐름](./assets/dartlab-story-09-business-reading-flow.webp)
+![사업보고서 사업 본문을 공시 근거 문장으로 바꾸는 흐름](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/79/793365f563e27ea5482bdc3588f95ad2484efa79df67b0b95063005b416eb1be.webp)
 
 ## 사업의 개요에서 주어를 찾는다
 
@@ -118,7 +119,7 @@ shortRows(materials, 5)
 
 이 정도가 공시 문장 근거에 맞다. 어느 회사가 얼마나 중요한 공급처인지, 가격 협상력이 누구에게 있는지, 공급 병목이 어디인지까지 말하려면 더 많은 자료가 필요하다. 이 편은 거래망의 힌트를 찾는 데서 멈춘다.
 
-![제품과 원재료 표에서 사업 거래망 힌트를 찾는 흐름](./assets/dartlab-story-09-product-material-network.webp)
+![제품과 원재료 표에서 사업 거래망 힌트를 찾는 흐름](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/47/47c22d1813c6e2e97393b8665a42c42204fa106c68a2d2f4af90a25af2fa5469.webp)
 
 ## 생산설비는 숫자보다 기준을 본다
 

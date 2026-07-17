@@ -1,4 +1,4 @@
-"""새 블로그 바이너리를 HF에 올리고 Git에는 경로 매니페스트만 남긴다."""
+"""블로그 바이너리를 HF 콘텐츠 주소 객체로 발행하고 중앙 카탈로그만 Git에 남긴다."""
 
 from __future__ import annotations
 
@@ -7,7 +7,17 @@ import json
 import re
 from pathlib import Path
 
-from blogMedia import ASSET_KEY_RE, buildMediaRecord, loadMediaManifest, mediaManifestPath, mediaUrl
+from blogMedia import (
+    ASSET_KEY_RE,
+    emptyMediaCatalog,
+    loadMediaCatalog,
+    loadMediaManifest,
+    mediaCatalogPath,
+    mediaPostKey,
+    mediaUrl,
+    registerMediaFile,
+    saveMediaCatalog,
+)
 from huggingface_hub import CommitOperationAdd, HfApi
 
 from dartlab.core.dataConfig import HF_MEDIA_REPO
@@ -16,6 +26,7 @@ from dartlab.pipeline.hfUpload import _resolveHfToken as resolveHfToken
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 PLAN_FILES = ("brief.json", "plan.json")
+_remoteFilesCache: set[str] | None = None
 
 
 def loadPlan(postDir: Path) -> dict[str, object]:
@@ -59,19 +70,40 @@ def localOgPath(raw: str) -> Path | None:
     return REPO_ROOT / "landing" / "static" / value.lstrip("/")
 
 
+def sourcePath(localPath: Path) -> str:
+    try:
+        return localPath.relative_to(REPO_ROOT).as_posix()
+    except ValueError as exc:
+        raise ValueError(f"저장소 밖 미디어는 발행할 수 없음: {localPath}") from exc
+
+
+def loadCatalog(postDir: Path) -> dict[str, object]:
+    catalogPath = mediaCatalogPath(postDir)
+    catalog, errors = loadMediaCatalog(catalogPath)
+    if catalog is None and not catalogPath.exists():
+        return emptyMediaCatalog()
+    if catalog is None or errors:
+        raise ValueError("; ".join(errors))
+    return catalog
+
+
 def buildManifest(
     postDir: Path,
     keys: list[str],
     raw: str,
     existing: dict[str, object] | None = None,
-) -> tuple[dict[str, object], dict[str, Path]]:
+    catalog: dict[str, object] | None = None,
+) -> tuple[dict[str, object], dict[str, Path], dict[str, object]]:
     creditsPath = postDir / "assets" / "CREDITS.md"
     credits = creditsPath.read_text(encoding="utf-8") if creditsPath.is_file() else ""
     if not credits:
         raise ValueError("assets/CREDITS.md 출처 기록이 없음")
 
+    nextCatalog = catalog or loadCatalog(postDir)
     localByRemote: dict[str, Path] = {}
     assets: dict[str, dict[str, str]] = {}
+    assetSources: dict[str, str] = {}
+    stagingSources: set[str] = set()
     existingAssets = (
         existing.get("assets") if isinstance(existing, dict) and isinstance(existing.get("assets"), dict) else {}
     )
@@ -80,31 +112,83 @@ def buildManifest(
             raise ValueError(f"assets/CREDITS.md에 assetKey 누락: {key}")
         local = postDir / "assets" / f"{key}.webp"
         if local.is_file():
-            record = buildMediaRecord(postDir, key, local)
+            source = sourcePath(local)
+            record = registerMediaFile(nextCatalog, source, local)
             localByRemote[record["path"]] = local
         else:
             oldRecord = existingAssets.get(key)
             if not isinstance(oldRecord, dict) or not oldRecord.get("path") or not oldRecord.get("sha256"):
-                raise ValueError(f"로컬 staging 이미지와 기존 HF 매니페스트 모두 없음: assets/{key}.webp")
-            record = {"path": str(oldRecord["path"]), "sha256": str(oldRecord["sha256"])}
+                raise ValueError(f"로컬 staging 이미지와 기존 HF 카탈로그 모두 없음: assets/{key}.webp")
+            record = {
+                "path": str(oldRecord["path"]),
+                "sha256": str(oldRecord["sha256"]),
+                "source": str(oldRecord.get("source") or ""),
+            }
+        if not record["source"]:
+            raise ValueError(f"중앙 카탈로그 source 누락: {key}")
         assets[key] = record
+        assetSources[key] = record["source"]
+        stagingSources.add(record["source"])
 
     ogLocal = localOgPath(raw)
     if ogLocal is not None and ogLocal.is_file():
-        ogRecord = buildMediaRecord(postDir, "og", ogLocal)
+        ogSource = sourcePath(ogLocal)
+        ogRecord = registerMediaFile(nextCatalog, ogSource, ogLocal)
         localByRemote[ogRecord["path"]] = ogLocal
     else:
         oldOg = existing.get("og") if isinstance(existing, dict) else None
         if not isinstance(oldOg, dict) or not oldOg.get("path") or not oldOg.get("sha256"):
-            raise ValueError("로컬 OG staging 이미지와 기존 HF 매니페스트 모두 없음")
-        ogRecord = {"path": str(oldOg["path"]), "sha256": str(oldOg["sha256"])}
-    return {"version": 1, "repo": HF_MEDIA_REPO, "og": ogRecord, "assets": assets}, localByRemote
+            raise ValueError("로컬 OG staging 이미지와 기존 HF 카탈로그 모두 없음")
+        ogRecord = {
+            "path": str(oldOg["path"]),
+            "sha256": str(oldOg["sha256"]),
+            "source": str(oldOg.get("source") or ""),
+        }
+    if not ogRecord["source"]:
+        raise ValueError("중앙 카탈로그 OG source 누락")
+
+    cardRecord: dict[str, str] | None = None
+    cardLocal = ogLocal.with_name(f"{ogLocal.stem}-card{ogLocal.suffix}") if ogLocal is not None else None
+    if cardLocal is not None and cardLocal.is_file():
+        cardSource = sourcePath(cardLocal)
+        cardRecord = registerMediaFile(nextCatalog, cardSource, cardLocal)
+        localByRemote[cardRecord["path"]] = cardLocal
+    else:
+        oldCard = existing.get("card") if isinstance(existing, dict) else None
+        if isinstance(oldCard, dict) and oldCard.get("path") and oldCard.get("sha256") and oldCard.get("source"):
+            cardRecord = {
+                "path": str(oldCard["path"]),
+                "sha256": str(oldCard["sha256"]),
+                "source": str(oldCard["source"]),
+            }
+
+    posts = nextCatalog.setdefault("posts", {})
+    if not isinstance(posts, dict):
+        raise ValueError("blog/media.json posts 계약 위반")
+    oldPost = posts.get(mediaPostKey(postDir))
+    if isinstance(oldPost, dict) and isinstance(oldPost.get("staging"), list):
+        stagingSources.update(str(source) for source in oldPost["staging"])
+    postEntry: dict[str, object] = {
+        "assets": assetSources,
+        "og": ogRecord["source"],
+        "staging": sorted(stagingSources),
+    }
+    if cardRecord is not None:
+        postEntry["card"] = cardRecord["source"]
+        stagingSources.add(cardRecord["source"])
+        postEntry["staging"] = sorted(stagingSources)
+    posts[mediaPostKey(postDir)] = postEntry
+    manifest: dict[str, object] = {"version": 2, "repo": HF_MEDIA_REPO, "og": ogRecord, "assets": assets}
+    if cardRecord is not None:
+        manifest["card"] = cardRecord
+    return manifest, localByRemote, nextCatalog
 
 
 def applyManifest(
     postDir: Path,
     manifest: dict[str, object],
     raw: str,
+    catalog: dict[str, object],
     existing: dict[str, object] | None = None,
 ) -> None:
     assets = manifest["assets"]
@@ -116,17 +200,24 @@ def applyManifest(
     for key, record in assets.items():
         assert isinstance(record, dict)
         nextUrl = mediaUrl(str(record["path"]))
-        updated = updated.replace(f"./assets/{key}.webp", nextUrl)
+        filename = Path(str(record.get("source") or f"{key}.webp")).name
+        updated = updated.replace(f"./assets/{filename}", nextUrl)
+        updated = updated.replace(f"assets/{filename}", nextUrl)
         oldRecord = oldAssets.get(key)
         if isinstance(oldRecord, dict) and oldRecord.get("path"):
             updated = updated.replace(mediaUrl(str(oldRecord["path"])), nextUrl)
     og = manifest["og"]
     assert isinstance(og, dict)
     updated = re.sub(r"^ogImage:\s*.+$", f"ogImage: {mediaUrl(str(og['path']))}", updated, count=1, flags=re.M)
-    (postDir / "index.md").write_text(updated, encoding="utf-8")
-    manifestPath = mediaManifestPath(postDir)
-    manifestPath.parent.mkdir(parents=True, exist_ok=True)
-    manifestPath.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    card = manifest.get("card")
+    if isinstance(card, dict) and card.get("path"):
+        cardLine = f"cardPreview: {mediaUrl(str(card['path']))}"
+        if re.search(r"^cardPreview:\s*.+$", updated, re.M):
+            updated = re.sub(r"^cardPreview:\s*.+$", cardLine, updated, count=1, flags=re.M)
+        else:
+            updated = re.sub(r"^(ogImage:\s*.+)$", rf"\1\n{cardLine}", updated, count=1, flags=re.M)
+    postDir.joinpath("index.md").write_text(updated, encoding="utf-8")
+    saveMediaCatalog(mediaCatalogPath(postDir), catalog)
 
 
 def publishAssets(postDir: Path, *, dryRun: bool = False, api: HfApi | None = None) -> dict[str, object]:
@@ -139,7 +230,8 @@ def publishAssets(postDir: Path, *, dryRun: bool = False, api: HfApi | None = No
     existing, existingErrors = loadMediaManifest(postDir)
     if existingErrors:
         existing = None
-    manifest, localByRemote = buildManifest(postDir, keys, raw, existing)
+    catalog = loadCatalog(postDir)
+    manifest, localByRemote, nextCatalog = buildManifest(postDir, keys, raw, existing, catalog)
     if dryRun:
         return manifest
 
@@ -155,33 +247,51 @@ def publishAssets(postDir: Path, *, dryRun: bool = False, api: HfApi | None = No
             repo_id=HF_MEDIA_REPO,
             repo_type="dataset",
             operations=operations,
-            commit_message=f"블로그 미디어: {postDir.name} {len(operations)}개",
+            commit_message=f"블로그 미디어 객체: {postDir.name} {len(operations)}개",
         )
-    applyManifest(postDir, manifest, raw, existing)
+    applyManifest(postDir, manifest, raw, nextCatalog, existing)
     return manifest
 
 
 def verifyRemoteAssets(postDir: Path, api: HfApi | None = None) -> list[str]:
     manifest, loadErrors = loadMediaManifest(postDir)
     if manifest is None:
-        return []
+        return loadErrors
     if loadErrors:
         return loadErrors
     records: list[dict[str, object]] = []
     og = manifest.get("og")
     if isinstance(og, dict):
         records.append(og)
+    card = manifest.get("card")
+    if isinstance(card, dict):
+        records.append(card)
     assets = manifest.get("assets")
     if isinstance(assets, dict):
         records.extend(record for record in assets.values() if isinstance(record, dict))
     client = api or HfApi()
+    remoteFiles: set[str] | None = None
+    global _remoteFilesCache
+    if api is None:
+        try:
+            if _remoteFilesCache is None:
+                _remoteFilesCache = set(retryHfCall(client.list_repo_files, repo_id=HF_MEDIA_REPO, repo_type="dataset"))
+            remoteFiles = _remoteFilesCache
+        except Exception as exc:
+            return [f"HF 원격 목록 확인 실패: {exc}"]
     errors: list[str] = []
+    checked: set[str] = set()
     for record in records:
         remote = str(record.get("path") or "")
-        if not remote:
+        if not remote or remote in checked:
             continue
+        checked.add(remote)
         try:
-            exists = retryHfCall(client.file_exists, repo_id=HF_MEDIA_REPO, filename=remote, repo_type="dataset")
+            exists = (
+                remote in remoteFiles
+                if remoteFiles is not None
+                else retryHfCall(client.file_exists, repo_id=HF_MEDIA_REPO, filename=remote, repo_type="dataset")
+            )
         except Exception as exc:
             errors.append(f"HF 원격 확인 실패({remote}): {exc}")
             continue
@@ -191,9 +301,14 @@ def verifyRemoteAssets(postDir: Path, api: HfApi | None = None) -> list[str]:
 
 
 def parseArgs() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="블로그 이미지와 OG를 HF 미디어 저장소에 발행한다.")
+    parser = argparse.ArgumentParser(description="블로그 이미지와 OG를 HF 콘텐츠 주소 객체로 발행한다.")
     parser.add_argument("--post", required=True, help="발행할 글 폴더")
-    parser.add_argument("--dry-run", action="store_true", help="경로와 계약만 계산하고 업로드·파일 수정은 하지 않음")
+    parser.add_argument(
+        "--dry-run",
+        dest="dryRun",
+        action="store_true",
+        help="경로와 계약만 계산하고 업로드·파일 수정은 하지 않음",
+    )
     return parser.parse_args()
 
 
@@ -208,7 +323,7 @@ def main() -> None:
         raise SystemExit(f"블로그 미디어 발행 실패: {exc}") from exc
     assets = manifest.get("assets")
     count = len(assets) if isinstance(assets, dict) else 0
-    suffix = "계획만 확인" if args.dryRun else "HF 업로드와 매니페스트 반영 완료"
+    suffix = "계획만 확인" if args.dryRun else "HF 업로드와 중앙 카탈로그 반영 완료"
     print(f"{postDir.name}: 본문 {count}장 + OG 1장 {suffix}")
 
 

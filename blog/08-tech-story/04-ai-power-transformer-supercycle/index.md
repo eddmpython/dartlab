@@ -16,7 +16,8 @@ tags:
   - 산일전기
   - 슈퍼사이클
   - 기술이야기
-ogImage: /thumbnails/tech-ai-power-transformer-supercycle.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/56/564d474c88c9119e56f6889a1e3820968e56d8e8b5ef9f0437f913f2adf90624.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/6b/6b6d299dee8192ffc85f4d083874e781b07b165d22e7ac6565bf0c1653bca202.webp
 ai:
   verdict: "AI 전력난이 부른 변압기 슈퍼사이클에서, 이익률은 매출 크기가 아니라 대체 불가능성이 정했다. 미국이 스스로 못 만드는 초고압 변압기를 만드는 HD현대일렉트릭이 영업이익률 24.4%로 대형사 중 최고였고, 좁은 특수 변압기 틈새의 산일전기는 35.6%였다. 상품에 가까운 전선(일진전기)만 한 자릿수에 머물렀다. 다만 슈퍼사이클은 사이클이다."
   direction: 유지
@@ -79,7 +80,7 @@ carousel:
       sub: "원자로 편이 전기를 만들면, 이 변압기가 그 전기를 실어나릅니다"
 ---
 
-![초고압 송전선과 변전소. 발전소에서 만든 전기는 이 길을 지나 데이터센터의 서버에 닿는다](./assets/01-power-grid.webp)
+![초고압 송전선과 변전소. 발전소에서 만든 전기는 이 길을 지나 데이터센터의 서버에 닿는다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/16/16c5b62f1db14a25ca5a7ff9aeef4e5fce4e3cb13f42295a49008f5959df7ed2.webp)
 
 AI를 이야기할 때 우리는 늘 GPU와 모델을 말한다. 엔비디아의 칩이 몇 개 필요하고, 모델의 파라미터가 몇 조 개인지. 그런데 그 칩들이 실제로 돌아가려면 앞서 풀어야 할 더 물리적인 문제가 있다. **전기다.** 데이터센터 하나가 도시 하나만큼의 전력을 먹고, 그 수요는 해마다 26%씩 늘어난다. 가트너는 2026년 세계 데이터센터 전력 소비가 565테라와트시(TWh)에 이를 것으로 봤다.
 

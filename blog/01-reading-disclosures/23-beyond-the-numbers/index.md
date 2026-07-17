@@ -6,7 +6,8 @@ category: reading-disclosures
 series: financial-context
 seriesOrder: 1
 thumbnail: /avatar-celebrate.png
-ogImage: /thumbnails/23-beyond-the-numbers.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/bd/bd38ecec0970abe42816ff3a8ee0f51bf76f814e8304856232e52619430b075c.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ae/ae924eeb81eabc93b5e2831aff07dd1b9a3c1be5953264ee59e90b9eae9eeaa4.webp
 ---
 
 # 재무제표, 숫자만 보면 안 되는 이유

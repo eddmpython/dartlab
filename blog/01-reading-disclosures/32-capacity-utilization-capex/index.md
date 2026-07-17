@@ -6,7 +6,8 @@ category: reading-disclosures
 series: capital-and-earnings
 seriesOrder: 1
 thumbnail: /avatar-curious.png
-ogImage: /thumbnails/32-capacity-utilization-capex.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/49/4931851153258c0056805f06b23f5c68e6d466de7570c57581e7a35e6ef741cc.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d4/d4d57a07b88ab59c9db0b07d730f858e5766f3be335d07fc2d98f38d7cece521.webp
 ---
 
 # 사업보고서에서 생산능력·가동률·설비투자 읽는 법

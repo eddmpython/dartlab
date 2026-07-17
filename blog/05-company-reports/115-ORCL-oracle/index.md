@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 115
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/ORCL-oracle.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/aa/aa8a0b9f85ac08e41aa86c40aa84608b945465fff201349dce397e0e5719a8b7.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/0b/0bc515aef3629a5c90833c94d0bef57c0850d2290acf7bb6a54aceb37db2af14.webp
 tags: ["오라클", "ORCL", "영업이익률", "클라우드", "OCI", "전환", "미국주식", "순이익률", "영업현금흐름", "Cerner"]
 stockCode: "ORCL"
 corpName: "Oracle"
@@ -174,7 +175,7 @@ import StackBar from '$lib/components/blog/StackBar.svelte';
 
 이 글은 그 차이를 단정하지 않고, 연결 손익계산서 안에서만 추적한다. 전환이 마진을 *올린* [마이크로소프트](/blog/MSFT-microsoft), 전환을 *끝내* 마진이 고원에 머문 [어도비](/blog/ADBE-adobe)와 나란히 놓으면, 오라클은 '전환이 진행 중이라 비용이 먼저 나가는' 세 번째 자리에 선다.
 
-![고마진 소프트웨어 위에 저마진 인프라를 쌓는 전환 — 비용이 먼저 나가는 국면](./assets/115-datacenter.webp)
+![고마진 소프트웨어 위에 저마진 인프라를 쌓는 전환 — 비용이 먼저 나가는 국면](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/80/809e0b9fae154c3a3672e87068a103b41f19e1c036fc1d5dd81e6b63844ba8b7.webp)
 
 ---
 
@@ -197,7 +198,7 @@ c.select("IS", ["매출액", "영업이익", "당기순이익"], freq="Q")  # �
 | 연결 OPM | 34.3% | 37.6% | 25.8% | **30.8%** |
 | 당기순이익 | 11.08 | 13.75 | 6.72 | **12.44** |
 
-![레거시 DB의 고마진 위에 저마진 클라우드 인프라를 쌓는 전환 — 비용이 먼저 나간다](./assets/115-legacy.webp)
+![레거시 DB의 고마진 위에 저마진 클라우드 인프라를 쌓는 전환 — 비용이 먼저 나간다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a1/a164fea541b5ff8f7a8ce97ccc527a0c043902b6086d7042b2a74c1c4ed60c5a.webp)
 
 절대 이익으로 보아도 비대칭이 드러난다 — 영업이익($17.68B)은 6년 최고지만 순이익($12.44B)은 2019년($11.08B)은 넘되 2021년 고점($13.75B)에 1.31B$ 모자란다. 외형은 커졌는데 매출 1달러가 남기는 영업이익은 줄었다 — 비율과 절대 이익 모두에서 귀환은 아직 미완이다. 원인(믹스·비용)은 뒤 막에서 데이터가 허락하는 범위까지만 다루고, 이 막은 '비율과 절대액 모두에서 귀환이 미완'이라는 관찰까지만 단정한다.
 

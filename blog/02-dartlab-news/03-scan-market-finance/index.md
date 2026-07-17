@@ -6,7 +6,8 @@ category: dartlab-news
 series: dartlab-news
 seriesOrder: 3
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/news-scan-market-finance.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/06/0638c66c72a03c78f459b77653c1f3ee5fb28a9b7fc0bcc49af8faa851760d9d.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d2/d2732baf82a209250fc59c52e25b725432ad28eed5ef3e96a65be319c8c25c0e.webp
 keywords:
   - dartlab scan
   - 전종목 재무분석

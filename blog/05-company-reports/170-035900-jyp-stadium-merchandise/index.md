@@ -6,8 +6,9 @@ category: company-reports
 series: company-reports
 seriesOrder: 170
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/035900-jyp-stadium-merchandise.webp
-thumbnailBg: "./assets/170-stadium-merch-hero.webp"
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d9/d98a1a0dc82c812b53d111804a205caf8eb2600d6690fe7b911aaffa57334a9e.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/55/556cce6d78a52711f184b3383924e825789dc993b81b5d37477ceef88b5cf21d.webp
+thumbnailBg: "https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/6d/6d9a088e35f460f94900ac50a556e85d5a10b6016d4f4d664c94146601064b29.webp"
 tags:
   - "035900"
   - "JYP"
@@ -49,7 +50,7 @@ ai:
 
 스타디움 공연이 끝나면 관객은 빠져나가고 조명은 꺼진다. 무대 위에서는 한밤의 사건이 끝났지만, 무대 뒤에는 다음 도시로 갈 상자가 남는다. 캐릭터 인형과 티셔츠, 응원 도구, 도시 한정 상품이 포장되고 배송된다. 공연 하루의 감정이 상품 주문과 온라인 결제, 다음 팝업의 재고로 바뀌는 시간이다.
 
-![스타디움의 관객석과 무대 뒤 MD 상자는 한 팬덤에서 나온 서로 다른 매출이다](./assets/170-stadium-merch-hero.webp)
+![스타디움의 관객석과 무대 뒤 MD 상자는 한 팬덤에서 나온 서로 다른 매출이다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/6d/6d9a088e35f460f94900ac50a556e85d5a10b6016d4f4d664c94146601064b29.webp)
 
 2026년 1분기 JYP에는 Stray Kids와 TWICE 같은 핵심 팀의 새 앨범이 없었다. ITZY 유나와 DAY6 원필의 솔로 앨범, TWICE MISAMO의 일본 앨범 등 발매는 있었지만, 회사 전체를 끌어올리는 대형 컴백이 집중된 분기는 아니었다. 그런데 연결 매출은 1,860억원으로 전년 동기보다 32.1% 늘었고 영업이익은 334억원으로 70.0% 증가했다.
 
@@ -244,11 +245,11 @@ Blue Garage 매출은 409억원으로 180.5% 증가했다. Stray Kids 2025년 10
 
 2025년 4분기 아시아와 호주의 5개 도시에서 시작했고, 2026년 1분기 북미와 대만의 7개 도시에서 팝업을 열었다. 2분기에는 북미와 일본, 유럽 9개 도시를 계획했다. 합계 21개 도시다. 계획된 일정은 실제 운영과 매출이 확정된 숫자가 아니므로 분기별로 검증해야 한다.
 
-![투어 연결 팝업은 공연장 밖의 팬과 도시 한정 상품을 새로운 결제 장면으로 묶는다](./assets/170-city-pop-up.webp)
+![투어 연결 팝업은 공연장 밖의 팬과 도시 한정 상품을 새로운 결제 장면으로 묶는다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d7/d7481ee3c469c852984386175a7756555fb2fcb60c1855e68b7bf328ff59a2d8.webp)
 
 팝업의 핵심은 공연장과 다른 상품을 파는 데 있다. 도시의 특징을 반영한 한정 제품과 다양한 카테고리를 만들면 공연 티켓이 없는 팬도 방문할 수 있다. 공연 하루 전후로 판매 기간을 늘리고, 도시의 쇼핑 동선 안에 팬덤을 놓는다. 티켓 고객이라는 좁은 표본을 지역 팬 전체로 넓힌다.
 
-![글로벌 팝업과 온라인 주문은 캐릭터 MD를 포장과 배송의 사업으로 바꾼다](./assets/170-global-pop-up-fulfillment.webp)
+![글로벌 팝업과 온라인 주문은 캐릭터 MD를 포장과 배송의 사업으로 바꾼다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/14/145175dc3a45b3546958cc4dc8d5d0ee87f5a70853cfb77c5ab08b7e06ac11d5.webp)
 
 캐릭터 IP는 이 모델의 반복성을 높인다. Stray Kids의 SKZOO와 TWICE의 Lovely 같은 캐릭터는 아티스트 얼굴을 직접 사용한 제품보다 카테고리 확장이 쉽다. 인형과 문구, 의류, 캡슐토이, 현지 협업으로 넓힐 수 있다. JYP는 2026년 서울을 시작으로 SKZOO 글로벌 팝업을 주요 도시에서 순차적으로 열고, 일본 Bandai 협업 같은 라이선스를 확대하겠다고 밝혔다.
 

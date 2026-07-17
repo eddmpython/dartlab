@@ -6,9 +6,10 @@ category: dartlab-stories
 series: dartlab-stories
 seriesOrder: 8
 topicSlug: "business-report-panel"
-ogImage: /thumbnails/dartlab-business-report-panel.webp
-thumbnail: /thumbnails/dartlab-business-report-panel.webp
-thumbnailBg: ./assets/dartlab-story-08-thumbnail-bg-v1.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c8/c8b994b7c9d06ebe0aeaa01333b40aabc7182ce81b22394d308c3a3999b0e721.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c3/c3c8db90aaa461bcf8c89c0a9d989d397da3a8c107c9c33aef48b8a1a7d62b06.webp
+thumbnail: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c8/c8b994b7c9d06ebe0aeaa01333b40aabc7182ce81b22394d308c3a3999b0e721.webp
+thumbnailBg: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/60/60560a85e8e8a4a4775f878172ccf6e68b3f7e52c1e4b277175c21e408d062c9.webp
 tags:
   - dartlab
   - DART
@@ -43,7 +44,7 @@ report.head(5)
 
 앞줄에는 큰 목차 칸, 작은 절 칸, 세부 블록 칸, 글과 표 종류 칸이 먼저 보인다. 실제 컬럼 이름으로는 `chapter`, `sectionLeaf`, `blockLeaf`, `leafType`이다. 그 오른쪽으로 `2026Q1`, `2025Q4`, `2025Q3` 같은 기간 열이 이어진다. 이 표는 재무제표처럼 숫자만 깔끔하게 놓인 표가 아니다. 사업보고서의 제목, 표, 문단 조각이 기간별로 놓이는 지도에 가깝다.
 
-![사업보고서 전체를 panel 위치 지도로 여는 흐름](./assets/dartlab-story-08-report-panel-map.webp)
+![사업보고서 전체를 panel 위치 지도로 여는 흐름](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/dc/dce4aa43a35e776f857dd24802f9990e6cb235eade680dffd4a8b9ca5ea32ba5.webp)
 
 첫 번째 목표는 해석이 아니다. 어디에 있는지 찾는 것이다. 큰 목차 칸은 문서의 큰 장을 알려 준다. 작은 절 칸은 그 장 안의 더 작은 위치다. 세부 블록 칸은 더 안쪽 이름이고, 글과 표 종류 칸은 그 조각이 문단인지 표인지 알려 준다.
 
@@ -88,7 +89,7 @@ business.head(5)
 
 이것이 8편의 핵심이다. 사업보고서 panel은 예쁘게 다듬은 글이 아니다. 위치를 잃지 않게 해 주는 지도다. 좋은 독자는 지도를 먼저 보고, 그다음 필요한 구역으로 들어간다.
 
-![사업, 주석, 임원, 직원 topic이 같은 report panel을 좁히는 흐름](./assets/dartlab-story-08-topic-panels.webp)
+![사업, 주석, 임원, 직원 topic이 같은 report panel을 좁히는 흐름](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f5/f5c3aaa62153452b3b47666f8a1f2d814e0a1219ceb853022b7d743b0dbfa44f.webp)
 
 ## 주석은 재무제표 옆 설명이다
 

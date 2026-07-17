@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 65
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/010120-ls-electric.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/92/92a938857db7d1654a835bb5d6e41a638e6537deb11ee784952e6d0af818e4e5.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ec/ec9480b3bbcc60265edd9d7e7edbd135d99eb2319bff6afef891b550130d63c2.webp
 tags: ["LSELECTRIC", "010120", "LS산전", "변압기", "배전반", "자동화", "AI데이터센터", "구자은", "전력기기", "HVDC"]
 stockCode: "010120"
 corpName: "LS ELECTRIC"
@@ -292,7 +293,7 @@ LS ELECTRIC은:
 
 ![LS ELECTRIC 4대 사업부 매출 믹스 — HD현대일렉트릭 단일 제품 집중과 대조](./assets/065-segments.svg)
 
-![AI 데이터센터 배전실 — LS ELECTRIC 스위치기어·UPS·차단기가 공급되는 공간](./assets/065-switchgear-room.webp)
+![AI 데이터센터 배전실 — LS ELECTRIC 스위치기어·UPS·차단기가 공급되는 공간](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/56/5665fb78dc5d39967f12a11aecce66ca6ddfbe4a2f3b14d1bca7d6586a0a85a4.webp)
 
 ---
 
@@ -402,7 +403,7 @@ LS ELECTRIC 수주잔고는 2022년 말 약 2.5조 → 2024년 말 **약 4.5조*
 
 ![영업이익률 5.6% → 8.6% 개선 분해 — 매출총이익률 +3.5%p가 원천](./assets/065-opm-decomposition.svg)
 
-![LS ELECTRIC 텍사스 공장 — 2023 완공, IRA 30% 세액공제 수혜 거점](./assets/065-texas-factory.webp)
+![LS ELECTRIC 텍사스 공장 — 2023 완공, IRA 30% 세액공제 수혜 거점](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/bc/bc74387b8c3a433346e2a2ae464ca31d29ac533713cd32400a58c9ba740302d2.webp)
 
 ---
 

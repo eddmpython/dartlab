@@ -6,7 +6,8 @@ category: dartlab-news
 series: dartlab-news
 seriesOrder: 1
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/news-dartlab-easy-start.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/3f/3ff17a6c1262f45b7b40616b5a793b961c10c9d7cf57a6bbe70539f37c23702f.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/86/86834e05baee4628ca30d8e3e1122b5dce8eedd0fe0b5eb9cd7f7026800b4184.webp
 keywords:
   - dartlab 설치
   - uv 설치

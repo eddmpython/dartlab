@@ -6,9 +6,10 @@ category: dartlab-stories
 series: dartlab-stories
 seriesOrder: 6
 topicSlug: "dart-edgar-company"
-ogImage: /thumbnails/dartlab-dart-edgar-company.webp
-thumbnail: /thumbnails/dartlab-dart-edgar-company.webp
-thumbnailBg: ./assets/dartlab-story-06-thumbnail-bg-v2.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d0/d0f326e2c72fe630cf5f3ab323debb6560db00f97389fd278056af3eb42873bf.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/89/89312fef9780cd42d35fd32bf7b841be638eb0f3d91093a7b5d16208174bfe9d.webp
+thumbnail: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d0/d0f326e2c72fe630cf5f3ab323debb6560db00f97389fd278056af3eb42873bf.webp
+thumbnailBg: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/0c/0c0220855a4a26e6cbdc99378c8e5376ef97b4aa2bf1dd9d7bfe8a4501a5a1be.webp
 tags:
   - dartlab
   - DART
@@ -38,7 +39,7 @@ kr.market, us.market
 
 결과는 `KR`과 `US`로 갈라진다. 같은 `Company`로 시작했지만 dartlab은 안쪽에서 한국 회사와 미국 회사를 구분한다. 여섯 자리 숫자는 국내 종목코드로, 알파벳 ticker는 미국 종목으로 알아서 갈래를 탄다. 국내 회사는 DART 공시 데이터로 가고, 미국 회사는 EDGAR 데이터로 간다. 여는 코드는 하나인데 원천은 둘이다. 이 한 줄이 나머지 편 전체의 밑바탕이다.
 
-![DART와 EDGAR를 같은 Company로 여는 흐름](./assets/dartlab-story-06-company-bridge.webp)
+![DART와 EDGAR를 같은 Company로 여는 흐름](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c2/c2ca478b4d64353e9f3147c254ac4188a5100729893bf37fc8efd71c63809fe3.webp)
 
 ## 같은 표를 열어 본다
 
@@ -69,7 +70,7 @@ us_is.head(5)
 
 [재무제표 기간, Y와 Q 조회](/blog/the-grid)에서 배운 기간 감각이 여기서 다시 필요하다. 국내 회사의 `2025Q4`와 미국 회사의 `2025Q4`가 항상 같은 달력 기간을 뜻하지는 않는다. 통화도 마찬가지다. 삼성전자 매출액은 조 단위 원화로 찍히고, 애플 매출액은 십억 단위 달러로 찍힌다. 환율을 곱하기 전에는 두 숫자의 자릿수 자체가 다른 언어다.
 
-![같은 panel 호출과 다른 기준을 나누는 비교 순서](./assets/dartlab-story-06-provider-boundary.webp)
+![같은 panel 호출과 다른 기준을 나누는 비교 순서](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/7a/7a52630dd3c431a749836783b968a0c560cc735bf1f12e73c0b8a36403ffef0d.webp)
 
 그래서 화면을 볼 때 세 가지를 따로 적는다. 계정명, 기간 열, 돈 단위. 표 옆에 "원화", "DART", "국내 분기"라고 적고, 다른 표 옆에 "달러", "EDGAR", "미국 fiscal period"라고 적는다. 이 메모가 나중에 자동 분석 문장을 그대로 믿지 않고 원 표로 돌아오게 하는 안전선이다.
 

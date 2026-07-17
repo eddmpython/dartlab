@@ -6,7 +6,8 @@ category: dartlab-news
 series: dartlab-news
 seriesOrder: 6
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/news-magic-formula-korea.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/9c/9c5c48ea9b0636bf9e3f2b2eb3d65a56e499805e396f6c38943e8878bb16af9a.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/66/66a373e00b7d840c724bdedb00cb323a3fb065f3d7bb7fbf3ed902a1f781ba1c.webp
 keywords:
   - 마법공식
   - 그린블라트

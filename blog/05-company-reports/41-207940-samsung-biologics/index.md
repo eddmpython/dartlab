@@ -19,7 +19,8 @@ tags:
   - 매출총이익률
   - 재무제표
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/207940-samsung-biologics.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a7/a791ad56b61cb43af335e6c134c70dd1e554c611a7bd505cc408c99de0c9d204.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/76/76ce75c0434011cb21349612efb393c1b91a78cbc0c0d1f8206c9419f048d2bf.webp
 youtubeId: ""
 ai:
   verdict: "공장 자체가 제품인 CMO. 규모의 경제가 제조업 상식을 뒤집어 OPM 45%를 찍는다."
@@ -224,7 +225,7 @@ CMO(Contract Manufacturing Organization)는 제약사가 개발한 약을 대신
 
 2011년, 인천 송도 갯벌 매립지. [삼성그룹이 바이오 진출을 결정](https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20110629000276)하고 1공장 착공을 발표했다. 반도체와 가전으로 세계 1위를 한 그룹이 바이오의약품 위탁생산이라는, 해본 적 없는 사업에 수조원을 걸었다.
 
-![송도 바이오 공장 내부 — 3층 높이 항체 배양기가 늘어선 CMO 생산 현장](./assets/41-bioreactor.webp)
+![송도 바이오 공장 내부 — 3층 높이 항체 배양기가 늘어선 CMO 생산 현장](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c0/c030d5bf5c4a8012f0be3575c76c6eb1595c9cb4d5cbe1865719f752ffe0b1ee.webp)
 
 ### 2017년 매출 0.46조원 — 삼성이라는 이름도 소용없었다
 
@@ -321,7 +322,7 @@ cost["breakevenEstimate"]
 
 왜 17조원을 투자하고도 부채비율이 58%에 불과한가. 돈은 어디서 왔는가.
 
-![인천 송도 삼성바이오로직스 공장 전경 — 4공장까지 총 62만 리터 배양 용량을 갖춘 세계 최대 단일 바이오 생산 단지](./assets/41-factory-aerial.webp)
+![인천 송도 삼성바이오로직스 공장 전경 — 4공장까지 총 62만 리터 배양 용량을 갖춘 세계 최대 단일 바이오 생산 단지](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f7/f706d0a3f26802cec448770f119cf76309f8be050310fe801eece9256f1cee22.webp)
 
 ### 자산총계 6.4→17.3조원 — 8년간 10.9조원이 쌓였다
 

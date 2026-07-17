@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 114
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/NFLX-netflix.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/92/922bf0908390ef13f543b2664dd20097b81780177d32a484b4eacd8a4a812cd3.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/76/76d727eb307428e5b4043064899510b2bc9e2006c24e614a0faf4cc590e2c547.webp
 tags: ["넷플릭스", "NFLX", "영업이익률", "영업현금흐름", "콘텐츠 자본화", "스트리밍", "구독", "미국주식", "순이익률", "회계"]
 stockCode: "NFLX"
 corpName: "Netflix"
@@ -47,7 +48,7 @@ import StackBar from '$lib/components/blog/StackBar.svelte';
 
 '이익이 늘었다'와 '현금을 벌기 시작했다'는 같은 말이 아니다. 이 글은 그 둘이 왜, 언제 어긋났는지를 손익이 증명하는 범위 안에서만 따라간다. [마이크로소프트](/blog/MSFT-microsoft)에서 영업현금흐름이 순이익을 웃돈 것이 '이익품질'의 충분조건이 아니었듯, 넷플릭스에선 마진과 현금이 아예 다른 해에 움직인다.
 
-![드라마 한 편의 제작비는 만드는 해에 현금으로 다 나간다 — 장부엔 여러 해로 나눠 들어온다](./assets/114-content.webp)
+![드라마 한 편의 제작비는 만드는 해에 현금으로 다 나간다 — 장부엔 여러 해로 나눠 들어온다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/41/41e84586862158236fe509a62a85bd223e9aaca1e5f2cae16cbaf126fbfdfa21.webp)
 
 ---
 
@@ -94,7 +95,7 @@ c.select("CF", ["영업활동현금흐름"], freq="Q")
 
 **마진과 현금은 왜 갈라지나.** 제작비는 현금으로 먼저, 비용은 장부에 나중에.
 
-![드라마 한 편의 제작비는 만드는 해에 현금으로 다 나간다 — 비용은 장부에서 여러 해로 쪼개진다](./assets/114-production.webp)
+![드라마 한 편의 제작비는 만드는 해에 현금으로 다 나간다 — 비용은 장부에서 여러 해로 쪼개진다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/31/31524c9858354ded1eaf7a018dbd6c535053f19b79dfd1d10d628eab1a651d85.webp)
 
 이 어긋남은 콘텐츠 자본화 회계 구조에서 나온다. 드라마 제작비는 만드는 해에 한꺼번에 현금으로 빠져나간다. 그러나 회계상 콘텐츠는 자산으로 잡혀 여러 기간에 걸쳐 상각되고(쉽게 말해 한 번 쓴 큰돈을 장부에는 여러 해로 나눠 비용 처리한다), 손익계산서에는 그해 몫의 상각액만 비용으로 들어간다.
 

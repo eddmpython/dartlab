@@ -6,7 +6,8 @@ category: reading-disclosures
 series: financial-context
 seriesOrder: 4
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/26-lease-liabilities-and-debt-maturity.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d9/d922d04cecb20cfb748b1d86b14a033a074a23b2295cf62b107140be3fea6a7d.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/1d/1d351d0b479bcad359f549431338d7b8f8926e4c047b5523efef40b2fd66c52a.webp
 ---
 
 # 리스부채와 차입 만기 구조는 어디서 먼저 터지나

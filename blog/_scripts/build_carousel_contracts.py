@@ -45,6 +45,14 @@ import tempfile
 from pathlib import Path
 
 import yaml
+from blogMedia import (
+    loadMediaCatalog,
+    loadMediaManifest,
+    mediaPath,
+    mediaRecord,
+    registerMediaFile,
+    saveMediaCatalog,
+)
 from cards_plan import validate_contract_plan_gate
 from huggingface_hub import CommitOperationAdd, CommitOperationDelete, HfApi
 
@@ -57,13 +65,12 @@ BLOG_DIR = ROOT / "blog" / "05-company-reports"
 TECH_DIR = ROOT / "blog" / "08-tech-story"  # 기술이야기: frontmatter carousel 블록 있는 글도 카드로 발행
 ISSUES_DIR = ROOT / "blog" / "_issues"  # standalone 이슈 캐러셀(블로그 글 없음): code 없는 경제/시국 카드
 MEDIA_PREFIX = "carousels"
-ISSUE_MEDIA_PREFIX = "issues"  # 이슈 이미지 hfMedia 네임스페이스(companies/ 와 병렬, 콘텐츠해시 파일명)
-TECH_MEDIA_PREFIX = "tech-story"  # media.json 없는 legacy 기술 카드 이미지 네임스페이스
 OG_MEDIA_PREFIX = "og"  # 브랜디드 OG 이미지 네임스페이스(og/<slug>.<hash8>.jpg)
 OG_TEMPLATE_VERSION = "3"  # 렌더 템플릿 버전. bump 하면 해시 바뀌어 전량 재렌더(v3=가로 1200x630 링크 미리보기)
 HF_MEDIA_RESOLVE = f"https://huggingface.co/datasets/{HF_MEDIA_REPO}/resolve/main"
 AVATAR_PATH = ROOT / "landing" / "static" / "avatar.png"  # OG 좌상단 아바타
 OG_RENDERER = ROOT / "blog" / "_scripts" / "render_og_cards.mjs"  # Node 배치 렌더러
+MEDIA_CATALOG_PATH = ROOT / "blog" / "media.json"
 
 _SLIDE_LAYOUTS = ("editorial", "editorialBeat", "editorialStat")
 # 슬라이드가 채택하는 필드(나머지 키는 무시). image=semantic 파일명(해시 없음).
@@ -272,35 +279,42 @@ def _attach_caption_context(contract: dict, source: dict) -> None:
 
 
 def _attach_series_images(
-    slides: list[dict], assets_dir: Path, slug: str, existing_files: set[str], image_ops: list
+    slides: list[dict],
+    assets_dir: Path,
+    slug: str,
+    existing_files: set[str],
+    image_ops: list,
+    mediaCatalog: dict[str, object] | None = None,
 ) -> None:
     """설명 카드 image를 HF 경로로 치환한다.
 
-    v2 글은 assets/media.json이 가리키는 blog/<slug>/ 경로를 그대로 재사용한다. 바이너리를 Git에서
-    다시 읽거나 중복 업로드하지 않는다. 매니페스트가 없는 legacy 글만 로컬 assets를 tech-story/
-    경로로 올린다.
+    중앙 blog/media.json이 가리키는 콘텐츠 주소 객체를 그대로 재사용한다. 바이너리를 Git에서
+    다시 읽거나 포스트별 경로로 중복 업로드하지 않는다.
     """
     manifestAssets: dict[str, object] = {}
-    manifestPath = assets_dir / "media.json"
-    if manifestPath.is_file():
-        try:
-            manifest = json.loads(manifestPath.read_text(encoding="utf-8"))
-            if isinstance(manifest, dict) and isinstance(manifest.get("assets"), dict):
-                manifestAssets = manifest["assets"]
-        except (json.JSONDecodeError, OSError):
-            manifestAssets = {}
+    manifest, manifestErrors = loadMediaManifest(assets_dir.parent)
+    if not manifestErrors and isinstance(manifest, dict) and isinstance(manifest.get("assets"), dict):
+        manifestAssets = manifest["assets"]
     for s in slides:
         img = s.get("image")
         if not img:
             continue
         record = manifestAssets.get(str(img))
         remoteFromManifest = str(record.get("path") or "") if isinstance(record, dict) else ""
-        if remoteFromManifest.startswith("blog/"):
+        if remoteFromManifest.startswith("objects/sha256/"):
             s["image"] = remoteFromManifest
             continue
         local = assets_dir / f"{img}.webp"
         if local.exists():
-            remote = f"{TECH_MEDIA_PREFIX}/{slug}/{img}.{_content_hash(local)}.webp"
+            source = local.relative_to(ROOT).as_posix() if local.is_relative_to(ROOT) else local.as_posix()
+            record = mediaRecord(mediaCatalog, source) if mediaCatalog is not None else None
+            if record is None and mediaCatalog is not None and local.is_relative_to(ROOT):
+                record = registerMediaFile(mediaCatalog, source, local)
+            remote = (
+                record["path"]
+                if record is not None
+                else mediaPath(hashlib.sha256(local.read_bytes()).hexdigest(), local.suffix)
+            )
             s["image"] = remote  # 슬래시 포함 → 렌더가 hfMedia 경로로 직접 해석
             queued = {op.path_in_repo for op in image_ops}
             if remote not in existing_files and remote not in queued:
@@ -316,6 +330,7 @@ def build_contracts(
     series: bool = False,
     existing_files: set[str] | None = None,
     image_ops: list | None = None,
+    mediaCatalog: dict[str, object] | None = None,
 ) -> dict[str, dict]:
     """블로그 글 → 슬러그별 계약(`carousel:` 블록 있는 글만). 같은 회사 다른 슬러그 = 각자 계약(1:N).
 
@@ -323,9 +338,8 @@ def build_contracts(
     미첨부, 표시 이름 = 편별 주제 라벨(carousel.name, 예 '휴머노이드'·'반도체 공정'). 각 편이 자기 주제
     badge 를 갖는다. 테마/설명 글을 종목 하나로 오분류하는 것을 원천 차단(규소 글 SK하이닉스 badge 재발 방지).
 
-    series 이미지: v2 글은 assets/media.json의 HF blog/<slug>/ 경로를 재사용한다. legacy 글만
-    assets/<image>.webp를 hfMedia tech-story/<slug>/로 올린다. existing_files·image_ops를 주면
-    legacy 업로드 op를 채운다."""
+    series 이미지는 중앙 blog/media.json의 HF 콘텐츠 주소 객체를 재사용한다. 아직 카탈로그에 없는
+    로컬 staging만 같은 객체 경로로 올린다. existing_files·image_ops를 주면 업로드 op를 채운다."""
     contracts: dict[str, dict] = {}
     for md in sorted(blog_dir.glob("*/index.md")):
         fm = _read_frontmatter(md)
@@ -350,7 +364,14 @@ def build_contracts(
             sys.stderr.write(f"  skip(no slides): {md.parent.name}\n")
             continue
         if series and image_ops is not None:  # v2 HF 경로 재사용, legacy만 tech-story/ 업로드
-            _attach_series_images(slides, md.parent / "assets", slug, existing_files or set(), image_ops)
+            _attach_series_images(
+                slides,
+                md.parent / "assets",
+                slug,
+                existing_files or set(),
+                image_ops,
+                mediaCatalog,
+            )
         contract: dict = {
             "code": code,
             "slug": slug,
@@ -392,7 +413,7 @@ def _content_hash(path: Path) -> str:
 
 # 브랜디드 OG 이미지.
 # 카드 첫 슬라이드를 dartlab 에디토리얼 카드(그레이톤+아바타/dartlab+헤드라인) 1080x1350 JPEG 로 렌더해
-# HF og/<slug>.<hash>.jpg 로 올리고, 계약에 ogImage 를 실어 공유 워커 og:image 가 그걸 가리키게 한다.
+# 렌더 결과도 HF 콘텐츠 주소 객체로 올리고, 계약의 ogImage가 같은 객체를 가리키게 한다.
 # 텍스트·로고 합성은 URL 필터로 불가, 엣지 런타임 생성은 무료 워커 용량 한계라 발행 시점 렌더가 정공.
 
 
@@ -481,21 +502,25 @@ def render_og_images(jobs: list[dict], out_dir: Path, contracts: dict[str, dict]
     for j in jobs:
         out = Path(j["out"])
         if out.exists() and out.stat().st_size > 0:
-            ops.append(CommitOperationAdd(path_in_repo=j["og_path"], path_or_fileobj=str(out)))
+            objectPath = mediaPath(hashlib.sha256(out.read_bytes()).hexdigest(), out.suffix)
+            contracts[j["slug"]]["ogImage"] = objectPath
+            ops.append(CommitOperationAdd(path_in_repo=objectPath, path_or_fileobj=str(out)))
         else:
             contracts[j["slug"]].pop("ogImage", None)  # 산출 실패분은 폴백
     return ops
 
 
 def build_issue_contracts(
-    issues_dir: Path, existing_files: set[str]
+    issues_dir: Path,
+    existing_files: set[str],
+    mediaCatalog: dict[str, object] | None = None,
 ) -> tuple[dict[str, dict], list[CommitOperationAdd]]:
     """blog/_issues/<slug>/carousel.yaml → standalone 이슈 계약. 블로그 글 없이 카드만.
 
     회사 계약과 동일 슬라이드 스키마(editorial 3종)지만 키 = 폴더 슬러그. stockCode 가 있으면
     회사 report 카드가 뒤에 붙고, stockCode 가 없으면 손글 editorial 슬라이드만 렌더한다.
-    슬라이드 image(semantic 'cover') → 로컬 `assets/<image>.webp` 콘텐츠해시해서 hfMedia
-    `issues/<slug>/<image>.<hash8>.webp` 경로로 치환(렌더가 originUrl('hfMedia', path) 로 해석).
+    슬라이드 image(semantic 'cover') → 로컬 `assets/<image>.webp`를 hfMedia 전역
+    `objects/sha256/` 경로로 치환한다(렌더가 originUrl('hfMedia', path) 로 해석).
     반환: (슬러그별 계약, 업로드할 이미지 CommitOperationAdd 리스트. 이미 올라간 해시는 스킵).
     """
     contracts: dict[str, dict] = {}
@@ -521,7 +546,15 @@ def build_issue_contracts(
             if img:
                 local = assets_dir / f"{img}.webp"
                 if local.exists():
-                    remote = f"{ISSUE_MEDIA_PREFIX}/{slug}/{img}.{_content_hash(local)}.webp"
+                    source = local.relative_to(ROOT).as_posix() if local.is_relative_to(ROOT) else local.as_posix()
+                    record = mediaRecord(mediaCatalog, source) if mediaCatalog is not None else None
+                    if record is None and mediaCatalog is not None and local.is_relative_to(ROOT):
+                        record = registerMediaFile(mediaCatalog, source, local)
+                    remote = (
+                        record["path"]
+                        if record is not None
+                        else mediaPath(hashlib.sha256(local.read_bytes()).hexdigest(), local.suffix)
+                    )
                     s["image"] = remote  # hfMedia 상대경로(슬래시 포함 → 렌더가 직접 해석)
                     queued = {op.path_in_repo for op in ops}
                     if remote not in existing_files and remote not in queued:
@@ -680,13 +713,25 @@ def main() -> None:
 
     # 발간 전 repo 파일 목록 1회(옛 json 삭제 + 이미 올라간 이슈 이미지 해시 스킵 양쪽에 씀).
     repo_files = _list_repo_files(HfApi(), args.repo)
+    mediaCatalog, mediaCatalogErrors = loadMediaCatalog(MEDIA_CATALOG_PATH)
+    if mediaCatalog is None or mediaCatalogErrors:
+        raise SystemExit("블로그 중앙 미디어 카탈로그 오류: " + "; ".join(mediaCatalogErrors))
+    mediaCatalogBefore = json.dumps(mediaCatalog, ensure_ascii=False, sort_keys=True)
 
     contracts = build_contracts()  # 회사 계약(블로그 frontmatter)
-    issue_contracts, image_ops = build_issue_contracts(ISSUES_DIR, repo_files)  # standalone 이슈 (+ 이슈 이미지 op)
-    # 기술이야기 시리즈 카드 = 종목 정체성 없음(code="" · 배지=편별 주제 carousel.name). v2는 media.json의
-    # HF blog/<slug>/를 재사용하고 legacy만 tech-story/<slug>/로 배선한다. 이미지 op는 이슈와 합류.
+    issue_contracts, image_ops = build_issue_contracts(
+        ISSUES_DIR, repo_files, mediaCatalog
+    )  # standalone 이슈 (+ 이슈 이미지 op)
+    # 기술이야기 시리즈 카드 = 종목 정체성 없음(code="" · 배지=편별 주제 carousel.name).
+    # 중앙 blog/media.json의 HF 콘텐츠 주소 객체를 재사용하고, 미등록 staging도 같은 경로로 올린다.
     # cards.plan 정식화(reviewGate passed) 안 된 편은 게이트가 발행 차단(기획 필수).
-    for _slug, _c in build_contracts(TECH_DIR, series=True, existing_files=repo_files, image_ops=image_ops).items():
+    for _slug, _c in build_contracts(
+        TECH_DIR,
+        series=True,
+        existing_files=repo_files,
+        image_ops=image_ops,
+        mediaCatalog=mediaCatalog,
+    ).items():
         contracts.setdefault(_slug, _c)
     for slug, c in issue_contracts.items():
         if slug in contracts:
@@ -807,6 +852,8 @@ def main() -> None:
                 f"+{len(image_ops)} issue imgs, +{len(og_ops)} og imgs, -{len(stale)} stale"
             ),
         )
+    if json.dumps(mediaCatalog, ensure_ascii=False, sort_keys=True) != mediaCatalogBefore:
+        saveMediaCatalog(MEDIA_CATALOG_PATH, mediaCatalog)
     print(
         f"완료. {args.repo} carousels/index.json 게시({len(contracts)}편, 이슈 {n_issues} · "
         f"이미지 +{len(image_ops)} · OG +{len(og_ops)} · 옛 {len(stale)}개 삭제)."

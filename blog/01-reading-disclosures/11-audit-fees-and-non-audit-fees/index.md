@@ -6,7 +6,8 @@ category: reading-disclosures
 series: audit-and-governance
 seriesOrder: 5
 thumbnail: /avatar-study.png
-ogImage: /thumbnails/11-audit-fees-and-non-audit-fees.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/bd/bd9d9b7b12ed669c263ca36bb9982c26e140b9580db06eff963dc2fd05bddc8b.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/0e/0e6b6ce6cdefba07729e1c350f5e42109605923370077628ab581bd16d5abef2.webp
 ---
 
 # 감사보수와 비감사보수는 어디가 신호인가

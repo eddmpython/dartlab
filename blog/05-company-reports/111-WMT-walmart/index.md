@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 111
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/WMT-walmart.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/44/44e74c5cb5c9fdd9cbd9425a9b71b7462acfcaf689f373d2f57045271d9f5619.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/7a/7ab19c5923b2fe7ab6accef7f261a0aacaad17f89800a19d062e914f98e1126d.webp
 tags: ["월마트", "WMT", "영업이익률", "초박리", "유통", "광고", "멤버십", "코스트코", "미국주식", "순이익률"]
 stockCode: "WMT"
 corpName: "Walmart"
@@ -47,7 +48,7 @@ import StackBar from '$lib/components/blog/StackBar.svelte';
 
 영업단은 못 박힌 듯 고정인데, 순이익만 따로 움직였다. **이 분리가 이 회사의 진짜 골격이다.** 관통선을 먼저 쓴다 — 간판(초박리 영업)은 변하지 않은 *상수*이고, 손익을 움직인 줄기는 거의 전부 영업선 *아래*에 있었다. '다른 사업이 돈을 번다'가 아니라, *간판 사업의 마진이 충격적으로 얇고 안 변한다*는 게 이 글의 핵심이다.
 
-![세계 최대 소매기업 — 6,810억 달러가 이 매대를 지나간다](./assets/111-store.webp)
+![세계 최대 소매기업 — 6,810억 달러가 이 매대를 지나간다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/db/db9a17fed0c6bd32f8e66dc1a20706ea2fac8c93b10ebd3a4f48469b1e7966e7.webp)
 
 ---
 
@@ -71,7 +72,7 @@ c.select("IS", ["매출액", "영업이익"], freq="Q")  # 분기→회계연도
 
 여기서 방향을 분명히 하자. '거인이라서 4%로도 버틴다'는 *규모=해자* 봉합이 아니다 — 오히려 그 반대다. **규모는 OPM이 낮은 쪽 원인이다.** 세계 곳곳의 매대에 식료품·생필품을 깔아 박리로 파는 일은, 아무리 크게 해도 한 자릿수 마진의 고된 사업이다. '거인인데도 4% 초박리'가 정확한 읽기다.
 
-![계산대를 지나는 박리의 행렬 — 아무리 크게 해도 한 자릿수 마진](./assets/111-checkout.webp)
+![계산대를 지나는 박리의 행렬 — 아무리 크게 해도 한 자릿수 마진](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d0/d0f3c063f34f14b0c6b7c38b5d07855aabfc2cb0878ae91e9b1cf5cd19805bea.webp)
 
 그렇다면 이 밴드의 바닥은 어디까지 눌렸나?
 
@@ -127,7 +128,7 @@ OPM이 6년 밴드 안에 거의 고정(4.3%→4.3%)인 동안, NPM은 2019년 1
 
 ![광고 매출은 전사의 약 0.65% — '영업이익 1/5' framing과 산술 모순(출처별 정의 상이, 합산 불가)](./assets/111-ad-contradiction.svg)
 
-![매장 안의 광고 화면 — 빠르게 크지만 아직 전사의 0.65%인 작은 부가 채널](./assets/111-ad-screen.webp)
+![매장 안의 광고 화면 — 빠르게 크지만 아직 전사의 0.65%인 작은 부가 채널](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/71/71242d6ec727d7dbcd75c9738f380ba0f42c0f2b6a4dc74d9ef43cff2e492952.webp)
 
 그래서 광고·멤버십 수치는 *외부 인용 한 막으로 격리*하고, 연결로 증명된 척하지 않는다. 그러면 이 작은 부가 채널을 회사가 그토록 강조하는 건 무슨 뜻인가?
 

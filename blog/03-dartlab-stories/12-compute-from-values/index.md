@@ -6,9 +6,10 @@ category: dartlab-stories
 series: dartlab-stories
 seriesOrder: 12
 topicSlug: "compute-from-values"
-ogImage: /thumbnails/dartlab-compute-from-values.webp
-thumbnail: /thumbnails/dartlab-compute-from-values.webp
-thumbnailBg: ./assets/dartlab-story-12-thumbnail-bg-v1.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/21/21700d6d779a8fa569e0cd32b94e36ef2ad94741421b9dd11da956c647f7163e.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/47/47ae4395cbaf84c429d46f4e37f44e819fe9b703035759fd076a41799fff13fb.webp
+thumbnail: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/21/21700d6d779a8fa569e0cd32b94e36ef2ad94741421b9dd11da956c647f7163e.webp
+thumbnailBg: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/01/0167a7818ee55dea4ae6bb02557b5d4fb73c2e96ed68bd9813f467b68a30ef0d.webp
 tags:
   - dartlab
   - DART
@@ -80,7 +81,7 @@ marginInputs
 
 여기서 바로 계산하지 않고 계정 이름을 같이 본 이유가 있다. 숫자만 보면 나중에 헷갈린다. 133.873조원이 매출액인지 매출총이익인지, 57.233조원이 영업이익인지 당기순이익인지 잊기 쉽다. 그래서 계산 전에는 항상 계정 이름과 기간을 숫자 옆에 둔다. 이 습관 하나가 다음 편에서 근거 문장을 쓸 때 그대로 재료가 된다.
 
-![매출액과 영업이익에서 영업이익률을 계산하는 흐름](./assets/dartlab-story-12-margin-formula.webp)
+![매출액과 영업이익에서 영업이익률을 계산하는 흐름](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/92/92e390c5807d8613838a600f97c150c0faa2a1f672e66007cafb64f6c079cf64.webp)
 
 ## 영업이익률을 계산한다
 
@@ -170,7 +171,7 @@ safeMarginRows
 
 국내 공시 원천은 [DART 전자공시시스템](https://dart.fss.or.kr/)이다. 회사 공시는 [DART 회사별 검색](https://dart.fss.or.kr/dsab001/main.do)에서 확인할 수 있고, API와 원천 파일 흐름은 [OpenDART 공시정보 개발가이드](https://opendart.fss.or.kr/guide/main.do?apiGrpCd=DS001)에서 확인한다. 미국 공시는 [SEC Search Filings](https://www.sec.gov/search-filings)와 [EDGAR Full Text Search](https://www.sec.gov/edgar/search/)에서 찾는다.
 
-![영업이익률 두 기간을 비교하고 퍼센트포인트 차이를 읽는 흐름](./assets/dartlab-story-12-margin-compare.webp)
+![영업이익률 두 기간을 비교하고 퍼센트포인트 차이를 읽는 흐름](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/20/204bcf7279615ae60ce40ece9d3659b072abc922452a1fe5e4c94a6bfb5250f9.webp)
 
 ## 자주 걸리는 함정 셋
 

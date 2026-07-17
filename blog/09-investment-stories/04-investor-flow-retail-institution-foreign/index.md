@@ -6,8 +6,9 @@ category: investment-stories
 series: investment-stories
 seriesOrder: 4
 topicSlug: "investor-flow-retail-institution-foreign"
-ogImage: /thumbnails/investment-investor-flow-retail-institution-foreign.webp
-thumbnail: /thumbnails/investment-investor-flow-retail-institution-foreign.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/63/63fd70387e29ff062e664ffbb5d3163ba37856fbf9651d80925f9e2198572c52.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/08/081103c7f22bb3e399c8d823a18fe6171eddacf85df323ec6c27d319ba2f6096.webp
+thumbnail: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/63/63fd70387e29ff062e664ffbb5d3163ba37856fbf9651d80925f9e2198572c52.webp
 tags:
   - 수급
   - 개인투자자
@@ -25,7 +26,7 @@ tags:
 
 하지만 수급은 예언이 아니다. 수급은 이미 체결된 거래의 흔적이다. 누군가 샀다는 말은 반드시 누군가 팔았다는 말과 같이 존재한다. 외국인이 순매수했다면 반대편에는 개인, 기관, 기타법인, 기타외국인 중 누군가의 순매도가 있다. 시장은 한쪽의 의지만으로 움직이는 곳이 아니라, 서로 다른 가격 판단이 만나는 곳이다.
 
-![개인, 기관, 외국인 세 흐름이 중앙 주문장에 들어가 체결되는 투자 교육용 데스크](./assets/04-flow-workbench.webp)
+![개인, 기관, 외국인 세 흐름이 중앙 주문장에 들어가 체결되는 투자 교육용 데스크](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e2/e2daafc1632352f48d25274f32e73a9ec1db35c1d529fb3ae914f6944625e873.webp)
 
 그래서 수급을 읽는 첫 문장은 "누가 샀나"가 아니다. 첫 문장은 "누가 누구에게 넘겼나"다. 두 번째 문장은 "그 과정에서 가격이 올랐나, 내렸나"다. 세 번째 문장은 "그 거래가 시가총액과 거래대금에 비해 의미 있는 크기였나"다. 이 세 문장이 없으면 수급은 투자 언어가 아니라 소문에 가까워진다.
 
@@ -255,7 +256,7 @@ def flow_question(net_buy, market_cap, trading_value, price_change_pct):
 
 다섯 번째는 원인 확정이다. 주가가 올랐고 외국인이 샀다고 해서 주가 상승의 원인이 외국인이라고 확정할 수는 없다. 실적 기대가 먼저였을 수 있고, 환율이 먼저였을 수 있고, 반도체 업황이 먼저였을 수 있고, 지수 편입이 먼저였을 수 있다. 수급은 원인을 말해 주는 판결문이 아니라 원인을 찾게 하는 발자국이다.
 
-![수급은 다음 가격을 맞히는 점괘가 아니라 이미 지나간 거래의 발자국이라는 점을 장면화한다](./assets/05-flow-footprint-desk.webp)
+![수급은 다음 가격을 맞히는 점괘가 아니라 이미 지나간 거래의 발자국이라는 점을 장면화한다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/26/26f9a3f44342b627be48e37659d9bea74419c808394b1148cc9f5216632da95d.webp)
 
 이 한계를 알면 문장이 달라진다. "외국인이 샀으니 오른다"가 아니라 "외국인이 최근 20거래일 누적으로 샀고, 같은 기간 거래대금이 늘었으며, 주가는 저항선을 넘었는지 확인해야 한다"가 된다. "개인이 받았으니 위험하다"가 아니라 "개인 순매수가 하락 구간에서 이어졌고, 반대편 외국인 매도가 지속되는지 확인해야 한다"가 된다. 문장이 길어질수록 더 정직해진다.
 

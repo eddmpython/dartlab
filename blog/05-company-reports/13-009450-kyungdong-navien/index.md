@@ -19,7 +19,8 @@ tags:
   - 북미
   - 전자공시
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/009450-kyungdong-navien.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/90/900fe5da3305faeddbf6d3ee65373562e1357817293cda02fad8a0241d8c054c.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b2/b2aa32a0fc9fb970da6a48777627d41bd493b525273b3d6bb48bda2697e7a362.webp
 youtubeId: ""
 ai:
   verdict: "연탄회사→미국 온수기 1위. 매총이익률 42%인데 CAPEX 2.5배로 현금 없다."
@@ -154,7 +155,7 @@ A와 C가 동시에 존재한다. 이건 뭘 의미하는가? 잘 벌고 있는�
 
 ## 1막 — 1951년, 민둥산에서 시작된 여정
 
-![나비엔 탱크리스 온수기](./assets/13-navien-product.webp)
+![나비엔 탱크리스 온수기](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/23/23f437e0e709c64190986134f488c19d290ea176273d3dd8be69f44248061762.webp)
 
 ### 연탄 → 보일러 → 온수기 — 에너지원이 바뀔 때마다 진화
 
@@ -226,7 +227,7 @@ c.analysis("financial", "비용구조")
 
 ## 3막 — 미국인의 샤워를 바꾼 PVC 파이프
 
-![미국 plumber의 나비엔 설치](./assets/13-plumber.webp)
+![미국 plumber의 나비엔 설치](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a9/a98a00d7227f91ac83f8bee79d63ca38e41617c29ced9c27bac354ea338bb865.webp)
 
 ### 연 2만 대 → 60만 대 — 16년 만에 30배
 
@@ -315,7 +316,7 @@ c.panel("CF", freq="Y")
 
 ## 5막 — 온수기 다음은 퍼네스, 5배 큰 시장에 베팅했다
 
-![하이드로 퍼네스](./assets/13-furnace.webp)
+![하이드로 퍼네스](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/9f/9f2267928bee28678905ce3010c8d2802fcb2a3376d589cb1dc791aeb44bbf77.webp)
 
 ### 탱크리스 100만 대 vs 퍼네스 470만 대 — 5배 시장
 

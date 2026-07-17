@@ -6,7 +6,8 @@ category: reading-disclosures
 series: global-comparison
 seriesOrder: 3
 thumbnail: /avatar-celebrate.png
-ogImage: /thumbnails/22-celltrion-vs-amgen-rnd-and-intangibles.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/47/47bde1ffc76664a72dbca94df81343e6ca527bd440446300317f33268d36c239.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/bf/bfea32f49e5dc566377a2c75fcde1acd827de965aba8e950a4454762658e73c9.webp
 ---
 
 바이오 기업의 가치는 결국 파이프라인에서 나온다. 그런데 그 파이프라인 투자가 재무제표에 찍히는 방식은 한국과 미국이 완전히 다르다. 셀트리온은 바이오시밀러 개발비를 **무형자산으로 쌓아올리고**, Amgen은 수십억 달러의 R&D를 **전액 비용으로 태운다**. 같은 바이오 업종인데 재무제표 구조가 달라지는 이유, 그리고 투자자가 이 차이를 어떻게 읽어야 하는지를 DART와 EDGAR 공시를 나란히 놓고 뜯어본다.

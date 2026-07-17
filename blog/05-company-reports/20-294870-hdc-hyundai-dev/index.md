@@ -19,7 +19,8 @@ tags:
   - 건설
   - 전자공시
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/294870-hdc-hyundai-dev.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/72/72c065d57f1d3e2d1286c0652c1f258a630d97c637e6e87de4caa09e47155c59.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/83/8336e334806e43f830296e0eb93d60d437b1288f57844278ad926e1bfa9caf92.webp
 youtubeId: ""
 ai:
   verdict: "계약금 2500억 날리고 6명 죽인 사고. 그런데 2년 뒤 2486억 흑자."
@@ -257,7 +258,7 @@ HDC의 입장이 바뀌었다. 2020년 4월부터 HDC는 **"재무상태가 바�
 
 2023년은 더 어려웠다. 영업이익률이 회복되지 못한 채 매출도 줄었다. 영업이익 1,953억, 영업이익률 4.7% 수준. 2024년 1,846억(영업이익률 4.3%)으로 소폭 뒷걸음, 그리고 **2025년 들어 2,486억(+34.7%, 영업이익률 6.0%)으로 비로소 회복 추세가 뚜렷해졌다.**
 
-![화정 붕괴](./assets/20-hwajeong-collapse.webp)
+![화정 붕괴](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ea/ea60bd55cb8a02f5154b23707465d508f14be94b846b62cf5e96f79147b47c1e.webp)
 
 ### 두 번째 "어?"
 
@@ -273,7 +274,7 @@ HDC의 입장이 바뀌었다. 2020년 4월부터 HDC는 **"재무상태가 바�
 
 ## 3막: 브랜드를 버리고 살았다 — 센테니얼 아이파크
 
-![아이파크 재건](./assets/20-iparkrebuild.webp)
+![아이파크 재건](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/eb/ebddb9da97d0c68b45410fcefbfd32d1aa8f31ebba7c6860bd8b11dab245efbb.webp)
 
 ### "화정아이파크"를 "센테니얼 아이파크"로
 

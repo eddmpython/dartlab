@@ -7,7 +7,8 @@ series: data-reports
 seriesOrder: 1
 topicSlug: "treasury-stock-not-cancelled"
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/data-treasury-stock-not-cancelled.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/0a/0a9e31bd737777c0814b7b488b5b2ae952671833c7efe51e956ebc3bf257c005.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/4c/4c6df298e1ad9655026059f83ae0015ee99ade031be6538cfc58311d15c0a57a.webp
 keywords:
   - 자사주
   - 자사주 소각

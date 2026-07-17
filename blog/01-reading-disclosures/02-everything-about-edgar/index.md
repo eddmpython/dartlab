@@ -6,7 +6,8 @@ category: reading-disclosures
 series: edgar-reading
 seriesOrder: 1
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/02-everything-about-edgar.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/0d/0d30aa53bcc8972a85d162742ea48eb6da44aa4f7bac3951565814bc86134f39.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/76/76b325916a29f826c070cdbdf2979406658f80a8a3e2c6522795ae6a678ea211.webp
 ---
 
 # EDGAR의 모든 것

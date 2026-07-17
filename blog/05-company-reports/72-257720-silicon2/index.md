@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 72
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/257720-silicon2.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/21/2157b6bb86f2ad2eb2ce2d99d3dff49e4b6e8250a34026c0bbea9d64dd896d98.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/79/797625de8b018fe9ef84cef2203a1b17a484c2e09b6f00d52e89f899d74527e6.webp
 tags: ["실리콘투", "257720", "K-뷰티", "화장품수출", "STYLEKOREAN", "유통플랫폼", "달바글로벌", "뷰티", "수출"]
 stockCode: "257720"
 corpName: "실리콘투"
@@ -434,7 +435,7 @@ GPM 하락 2.61%p는 2024~2025 첫 경고 신호. 이 마진 감속 속에서 �
 
 ![재고 3,001억의 의미 — 2021 218억 → 2025 3,001억 (13.77배 증가). 2024→2025 한 해에 +1,542억 순증. 재고회전일수 116일 → 142일 (+26일). 재고/매출 비율 21.10% → 26.88% (+5.78%p 악화). 같은 기간 매출 16.97배 증가.](./assets/72-inventory-trap.svg)
 
-![K-뷰티 글로벌 유통 실제 장면 — 현대적 뷰티 스토어 선반에 늘어선 한국 스킨케어 제품들. 핑크 쿠션·세럼·시트마스크·제이드그린 병들이 정렬된 오솔길 같은 디스플레이. 부드러운 따뜻한 부티크 조명에 핑크·골드 포인트.](./assets/72-kbeauty-shelf.webp)
+![K-뷰티 글로벌 유통 실제 장면 — 현대적 뷰티 스토어 선반에 늘어선 한국 스킨케어 제품들. 핑크 쿠션·세럼·시트마스크·제이드그린 병들이 정렬된 오솔길 같은 디스플레이. 부드러운 따뜻한 부티크 조명에 핑크·골드 포인트.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/20/2013d5de4623a5e69139d4d1641ec062f549d48868053ef87043e4a53f5258ec.webp)
 
 ### 4막의 끝
 
@@ -630,7 +631,7 @@ B2B 유통만 하는 경쟁사 (한미글로벌·엑스피아 등)와 달리 **B
 
 ![다음 12~24개월 추적 5개 — ① 분기 매출 YoY 30% 유지(재고 정당화) ② 재고회전일수 120일 복귀(운전자본 정상화) ③ 영업현금흐름 연 800억+ 복귀(성장형 왜곡 확인) ④ GPM 30% 유지(마진 방어) ⑤ 해외 시장 확장(분산). 1·2·3이 현금 축, 4가 마진, 5가 성장 지속.](./assets/72-checklist-5signals.svg)
 
-![자동화 물류 창고 — 핑크·화이트 화장품 박스로 가득 찬 높은 선반들. 중앙 컨베이어 벨트, 오렌지 조끼 직원들이 카트를 미는 모습. LED 조명에 움직이는 패키지의 약한 모션 블러. K-뷰티 글로벌 유통의 물리적 인프라.](./assets/72-warehouse-logistics.webp)
+![자동화 물류 창고 — 핑크·화이트 화장품 박스로 가득 찬 높은 선반들. 중앙 컨베이어 벨트, 오렌지 조끼 직원들이 카트를 미는 모습. LED 조명에 움직이는 패키지의 약한 모션 블러. K-뷰티 글로벌 유통의 물리적 인프라.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/88/88935fd7a7784b7b606d236510c88a7d92fbeef242233eeb67c98e300aa89ed3.webp)
 
 ### 8막의 끝
 

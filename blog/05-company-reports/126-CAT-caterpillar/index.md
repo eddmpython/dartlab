@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 126
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/CAT-caterpillar.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/60/6004a276c65aa9d8bcdf568bdc27e2d1beebbab3350c99359138197474b49141.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c8/c8f99a77b1880cea72190f0571c5069c7895725b91c4edecc069a82a684492b5.webp
 tags: ["캐터필러", "CAT", "중장비", "사이클", "영업레버리지", "딜러재고", "캡티브금융", "영업이익률", "데이터센터", "미국주식"]
 stockCode: "CAT"
 corpName: "Caterpillar"
@@ -47,7 +48,7 @@ import StackBar from '$lib/components/blog/StackBar.svelte';
 
 관통선은 둘이다. 하나, 캐터필러의 손익은 '얼마나 파느냐(매출)'보다 *마진의 방향과 현금전환*이 정한다(연결이 증명). 둘, 그 비대칭이 *왜* 생기는지 — 딜러 재고, 캡티브 금융, 가격, 관세 — 는 연결 손익이 답하지 못한다(외부 인용·봉인). 이 글은 매출 성장률을 자랑하는 대신, 매출이 아닌 두 내부 지표(마진 방향·현금전환)로 같은 고정비 레버가 올라갈 때와 내려갈 때 왜 다르게 도는지를 심문한다.
 
-![쇠를 사면 회사를 얻는다 — 직접 팔지 않고 딜러망과 자기 금융으로 굴러가는 기계](./assets/126-machine.webp)
+![쇠를 사면 회사를 얻는다 — 직접 팔지 않고 딜러망과 자기 금융으로 굴러가는 기계](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/64/64592f425f027c621db128aafa2200e61df76ec359725a95a763aecdc3c6122c.webp)
 
 ---
 
@@ -103,7 +104,7 @@ c.select("IS", ["매출액", "영업이익"], freq="Q")  # 2024 매출↓·이�
 
 2025 매출은 64.81B에서 67.59B로 **+4.3%**, 신고점이다. 그런데 영업이익은 13.07B에서 11.15B로 **−14.7%**, OPM은 20.2%에서 16.5%로 내려앉는다. 매출이 늘었는데 이익이 빠지는 이 역설이 핵심이다 — 고정비 레버는 올릴 때 이익을 증폭시키지만, 작은 매출 변동에도 마진 방향이 뒤집히면 2년치 마진 상승분을 도로 깎는다.
 
-![같은 레버가 거꾸로 — 2025 매출 +4.3%인데 영업이익 −14.7%](./assets/126-seesaw.webp)
+![같은 레버가 거꾸로 — 2025 매출 +4.3%인데 영업이익 −14.7%](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/24/24130779f0a3af8877af2b60028f92cf7fd84b09d39b18c1dd4ff60d7155495c.webp)
 
 하강이 상승보다 가파르게 *보인다*는 게 한 쌍의 숫자로 관찰된다(단, 두 해의 매출 변동폭이 달라 '증명'이라 부르지는 않는다). **[외부 인용]** 회사는 2025 둔화 배경으로 약 15~18억 달러 규모의 신규 관세, 불리해진 가격, 불리한 제조원가를 제시했다(4Q25 발표). 내부 비대칭과 이 외부 요인은 정합하나 인과는 단정하지 않는다. 매출이 늘어도 이익이 빠진다면, 그 줄어든 이익이라도 진짜 현금인지부터 의심해야 한다.
 
@@ -137,7 +138,7 @@ c.select("CF", ["영업활동현금흐름"], freq="Q")  # OCF/영업이익 = 정
 
 여섯 해를 한 장으로 겹쳐 보면 결론은 하나다. 2020→2025 매출 +62%에 영업이익 +145%로 이익 증가율이 매출의 2.34배였지만, 매출 신고점(2025)은 이익 정점(2024)과 어긋났고, 현금전환은 정점에서 가장 약했다. 그러니 핵심 질문은 매출 성장률이 아니라 — *지금 OPM이 어느 방향이고, OCF/OP가 1.0 위인가*다.
 
-![매출이 가득 찬 정점인데 배수구는 이미 열려 있다 — 신고점에서 꺾인 이익과 약해진 현금](./assets/126-reservoir.webp)
+![매출이 가득 찬 정점인데 배수구는 이미 열려 있다 — 신고점에서 꺾인 이익과 약해진 현금](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/03/03f513aa6a7995e077e2303c5bea4524eda5310622838f70eb8a266cb5ce4430.webp)
 
 **[외부 인용]** 그 방향을 미리 흔드는 외부 변수 — 딜러 재고 위상, 세그먼트별 가격·물량, 2026 관세 가이던스 약 26억$, 광산·데이터센터 capex(2025말 수주잔고 약 51.2B, 발전 매출 10B 초과·+30%) — 는 전부 10-K·IR 영역이며, 연결 수치는 그것이 이익에 도달한 결과를 사후 검증할 뿐이다. 1925년 합병에서 비롯된 독립 딜러망과 그 재고를 받치는 캡티브 금융(Cat Financial)이라는 구조도 외부다.
 

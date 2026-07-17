@@ -19,7 +19,8 @@ tags:
   - 덴소
   - 전자공시
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/012330-hyundai-mobis.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f6/f6e3bd7946449e4e013071b4b4e83e96442991380f21272aaa2ec34d4afb158b.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/1d/1d351d0b479bcad359f549431338d7b8f8926e4c047b5523efef40b2fd66c52a.webp
 youtubeId: ""
 ai:
   verdict: "연결 OPM 5.5%, 별도 21%. 15.5%p 갭은 AS 부품 독점."
@@ -152,7 +153,7 @@ import HFDataLink from '$lib/components/blog/HFDataLink.svelte';
 
 ## 제1막: 별도 영업이익률 21%의 정체 — AS 부품이라는 10년짜리 현금기계
 
-![자동차 부품](./assets/21-auto-parts.webp)
+![자동차 부품](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d2/d2b2c0ec764f3ab321c74afec89b625939cfa4605948e8fbcccb68aefd47f906.webp)
 
 ### 모듈 3~5% vs AS 20~25% — 이익의 60~70%는 AS에서
 
@@ -328,7 +329,7 @@ c.analysis("valuation", "밸류에이션밴드")
 
 ## 제4막: 전동화 모듈이라는 탈출구, 그리고 그 역설
 
-![EV 모듈](./assets/21-ev-module.webp)
+![EV 모듈](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/44/44301671648cdfac2a2e02a88290fd909c9b6e852175735c7f6205142fdfab1b.webp)
 
 ### 비계열 수주 17억→88억 달러 — 5년간 5배
 

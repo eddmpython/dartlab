@@ -6,7 +6,8 @@ category: dartlab-news
 series: dartlab-news
 seriesOrder: 10
 thumbnail: /avatar-celebrate.png
-ogImage: /thumbnails/news-cards-publish.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/90/90d8b542068f42343365c151d4be0bab47fb69991d6c7649168984a77a9a4974.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ca/ca2c26702049f1623f11785b7e2719166ec45485d98c5a1b7fc5d94f2e39b809.webp
 keywords:
   - 재무 카드뉴스
   - 기업분석 인스타

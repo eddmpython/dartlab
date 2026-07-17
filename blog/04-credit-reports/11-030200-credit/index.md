@@ -4,10 +4,11 @@ date: 2026-04-05
 description: "케이티 독립 신용등급 dCR-AA (투자적격 상위). 공시 데이터 기반 정량 분석 등급 근거, 재무 하이라이트, 등급 전망."
 category: credit-reports
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/credit-11-030200-credit.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/37/37d253ceeec9ea3b4644bb6306559d54d14b4c691d8d3ab3e4998ed36341d1b7.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d0/d0918a29ab515bdcea15332c7b0d41dcf004655835d15ef87d6646ce37906b43.webp
 ---
 
-![케이티 (030200) 신용분석 보고서 ?? ???](./assets/11-credit-dashboard.webp)
+![케이티 (030200) 신용분석 보고서 ?? ???](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/1b/1be4f4466f2fd23ea21b4f154ce7e462a2591015fc6da953b16f9f7791291389.webp)
 > ⚠️ **면책**: 본 보고서는 dartlab dCR v4.0 방법론에 따라 공시 데이터만으로 작성되었습니다. 제도권 신용등급과 다를 수 있으며, 투자 권유가 아닙니다. [방법론](https://github.com/eddmpython/dartlab/blob/master/src/dartlab/analysis/CREDIT.md)
 
 > **dCR-AA** | 투자적격 상위 | 2026-04-05 | 방법론 v4.0

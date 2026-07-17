@@ -11,7 +11,8 @@ storyTemplate: "턴어라운드"
 grade: "dCR-BB"
 tags: [CG인바이츠, "083790", 크리스탈지노믹스, 신약개발, 바이오, 아셀렉스, 췌장암, 유전체, 디지털헬스케어, 턴어라운드, 적자, 유상증자, 연결편입, 전자공시]
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/083790-cg-invites.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/bd/bdf961dc588b985512eff6be4ad94ff12264e1b4d6d882348020d9423f69af8e.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c1/c1faf592dc7819be5567049cfeef0e0d350f69f25df3363d63deb8ff3f34048b.webp
 youtubeId: ""
 ai:
   verdict: "한국 1호 바이오벤처 신약(아셀렉스)을 만들고도 7년 적자를 유상증자로 메운 신약개발사. 2025년 매출 3.8배 반등은 디지털 헬스케어 자회사 연결편입 효과가 크고, 본업 신약은 부진. OPM -87%, 자본잠식 경계선 위에 서 있다."
@@ -251,7 +252,7 @@ c.select("BS", ["자산총계","부채총계","자본총계","현금및현금성
 
 자본이 2021년 2,146억에서 2025년 1,187억으로 4년간 959억 감소했다. 연평균 240억씩 줄어드는 셈이다. 이 속도가 유지되면 약 5년 뒤인 2030년 전후에 자본잠식에 진입한다. 다만 2025년의 자본 감소폭은 21억으로 크게 줄었는데, 이는 매출 반등과 적자 폭 축소의 효과다.
 
-![텅 빈 사무실 — 매출이 추락해도 신약 R&D 고정비를 견뎌야 하는 신약개발 바이오벤처의 현실](./assets/45-empty-office.webp)
+![텅 빈 사무실 — 매출이 추락해도 신약 R&D 고정비를 견뎌야 하는 신약개발 바이오벤처의 현실](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/97/9760fbb1888b3a7eeedb19fbb4547fd37e8f6dddf86e7125c558a52f264ffe57.webp)
 
 ### 유상증자 — 적자를 외부 자본으로 메우는 구조
 

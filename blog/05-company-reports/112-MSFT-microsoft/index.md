@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 112
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/MSFT-microsoft.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/36/36680d9dc2a3ecffbafa8229571713b6fc75c26f2c02009fb2b62995e53c5121.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/fd/fd041a2d2f20916e7e2535ae68eea6579f4b27ce1725e927cd8220c6f7e748ad.webp
 tags: ["마이크로소프트", "MSFT", "영업이익률", "영업레버리지", "마진", "클라우드", "Azure", "미국주식", "순이익률", "영업현금흐름"]
 stockCode: "MSFT"
 corpName: "Microsoft"
@@ -47,7 +48,7 @@ import StackBar from '$lib/components/blog/StackBar.svelte';
 
 이건 통념('클라우드로 외형이 컸다')을 절반짜리 이야기로 만든다. 나머지 절반 — 같은 매출에서 더 많이 남기게 된 구조 — 을 손익이 어디까지 증명하고, 어디서부터 침묵하는지를 한 줄씩 분리해 읽는다. 외형을 키울수록 마진율을 *올린* 동행은 이미 [애플](/blog/AAPL-apple)에서 본 적이 있다. 마이크로소프트는 그 동행이 더 가파르고, 더 높은 자리에서 일어난다.
 
-![구름 너머의 연산 — 외형이 아니라 그 위에서 남는 마진이 이 글의 주제다](./assets/112-cloud.webp)
+![구름 너머의 연산 — 외형이 아니라 그 위에서 남는 마진이 이 글의 주제다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/75/7530ce806a08d24fbfddae38bfba6592d511be9d993d6d30b6d9159cacc67d55.webp)
 
 ---
 
@@ -83,7 +84,7 @@ c.select("IS", ["매출액", "영업이익"], freq="Q")  # FY 기준 연간 합�
 
 이 55센트는 7년 평균 OPM(단순 약 41.0%, 가중 약 41.9%)보다도, 가장 높았던 2025년 종점 OPM(45.6%)보다도 높다. 어느 기준과 비교해도 추가 매출은 회사 평균보다 높은 마진으로 영업이익에 떨어졌다 — 영업레버리지(규모와 함께 마진이 오르는 현상)와 정합하는 관찰이다.
 
-![한 번 만든 코드를 한계비용 거의 없이 복제·구독하는 구조 — 영업레버리지가 작동할 토양](./assets/112-software.webp)
+![한 번 만든 코드를 한계비용 거의 없이 복제·구독하는 구조 — 영업레버리지가 작동할 토양](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/11/11981c9428f5b0c88eb2c4a526c6693e7d29c1439ac8f6d577f2fcb71b0f35d7.webp)
 
 다만 여기서 한 발을 멈춰야 한다. 그것이 *'추가 매출 자체가 고마진'*이어서인지, *'규모가 커지며 고정비가 희석'*돼서인지는 연결 손익이 가르지 못한다. 연결 손익은 매출·비용·이익의 총계만 보여줄 뿐, 이 둘을 분해하지 않는다. 한계비용이 낮은 소프트웨어·구독 구조와는 둘 다 정합한다 — 제품별 마진의 출처는 세그먼트(10-K)의 영역이다.
 
@@ -158,7 +159,7 @@ OCF가 순이익을 매년 웃돈다는 것은 손익상 이익이 종이 위 �
 
 그 다음 질문 — 지금의 AI capex가 향후 감가상각(D&A)으로 영업비용에 들어오면 그 마진이 유지되는가 — 은 과거 7년 손익에 답이 없다. 자본지출은 집행되는 해엔 영업활동이 아닌 투자활동으로 빠져 영업이익·OPM을 즉시 깎지 않는다. 그러나 자산화된 설비는 이후 수년에 걸쳐 감가상각으로 영업비용에 분할 반영된다. **오늘의 capex는 미래 OPM의 분자(영업이익)를 깎는, 예약된 비용이다.** 매출(분모)이 그만큼 더 빨리 늘면 OPM은 버티고, 아니면 눌린다.
 
-![짓는 동안엔 투자활동으로 빠지고, 다 지으면 감가상각으로 손익에 들어온다 — capex는 미래 영업이익에 예약된 비용](./assets/112-capex.webp)
+![짓는 동안엔 투자활동으로 빠지고, 다 지으면 감가상각으로 손익에 들어온다 — capex는 미래 영업이익에 예약된 비용](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/0e/0e552fedc4a17b1e254236d008e7b621bf2e07fc822bfbe3d6b3426fc1788f8d.webp)
 
 AI 인프라 투자는 FY2025 PP&E additions **$64.6B**로 확대됐다. 전년 $44.5B 대비 $20.1B 증가다. 그리고 5막에서 본 OCF-순이익 격차 급확대($30B대)는 바로 이 자산화·감가상각의 손익 쪽 그림자다. 공식 현금흐름표의 depreciation, amortization, and other는 FY2025 **$34.2B**로, 2024년 $22.3B에서 크게 늘었다.
 

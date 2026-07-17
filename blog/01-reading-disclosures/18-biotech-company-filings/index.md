@@ -6,7 +6,8 @@ category: reading-disclosures
 series: industry-reading
 seriesOrder: 2
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/18-biotech-company-filings.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/03/03c1f0564108ca387234b577ff1fec16640a6dc53b2c3313fb44199c82f10558.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/24/24db45d9c8157bd368e759d1ed2025787157de922d9c47b1ebbf6fa564377760.webp
 ---
 
 # 바이오·제약 공시는 어디가 과열 신호인가

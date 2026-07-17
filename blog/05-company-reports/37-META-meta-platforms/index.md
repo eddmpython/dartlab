@@ -22,7 +22,8 @@ tags:
   - EDGAR
   - 전자공시
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/META-meta-platforms.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/4e/4eac7f953b14dd314cac8d780d91cd32f3a490b5d0e956e4181731c9afa14742.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ae/aeee6e6abe007b84ba7424d5354144d01f6000ec9d0f55268bc4248fd54d354e.webp
 ai:
   verdict: "광고 플랫폼의 구조적 82% 마진이 AI CAPEX $70B와 Reality Labs 적자를 동시에 감내하는 투자 여력을 만든다."
   direction: 개선
@@ -167,7 +168,7 @@ c.analysis("financial", "수익성")
 
 ## 제1막: 매출원가 18% — 광고 플랫폼이란 무엇인가
 
-![Meta의 글로벌 광고 네트워크 — 39억 명의 사용자가 만드는 82% 마진의 원천](./assets/37-meta-advertising-network.webp)
+![Meta의 글로벌 광고 네트워크 — 39억 명의 사용자가 만드는 82% 마진의 원천](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/75/757c66c803d063309a62e712dd84c6625e3b2aeea573a04bbe7a909ead309689.webp)
 
 ### 왜 이 회사의 매출총이익률은 82%인가
 
@@ -245,7 +246,7 @@ Meta의 광고는 정밀 타겟팅이 핵심이다. 사용자의 검색, 클릭,
 
 ### Year of Efficiency — 21,000명 해고
 
-![Year of Efficiency — 빈 의자가 남은 회의실](./assets/37-meta-zuckerberg-efficiency.webp)
+![Year of Efficiency — 빈 의자가 남은 회의실](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/28/289cf46db11a6df23e89968f59961ba412b35edb3fa8b0075766583e37d65e24.webp)
 
 2023년 3월, 저커버그는 "Year of Efficiency"를 선언했다. 2022년 11월 11,000명, 2023년 3월 10,000명, 총 21,000명을 해고했다. 직원 수는 86,482명에서 67,317명으로 줄었다.
 
@@ -298,7 +299,7 @@ inv["investmentIntensity"]["history"][0]
 
 ### 돈은 어디로 갔나
 
-![130만 GPU가 돌아가는 Meta AI 데이터센터](./assets/37-meta-ai-datacenter.webp)
+![130만 GPU가 돌아가는 Meta AI 데이터센터](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/fd/fd84408bf891521fbee6d232e92ab9ecd65e0fed63c356ddd29490b3cbca412a.webp)
 
 2025년 1월 실적 컨퍼런스콜. 저커버그가 슬라이드를 넘기며 말했다. "우리는 올해 말까지 130만 GPU 이상을 운영할 것이다." 회의실은 잠시 조용해졌다. 130만 대의 GPU. NVIDIA H100 한 대 가격이 $25,000~$40,000이다. GPU만으로 수백억 달러다.
 

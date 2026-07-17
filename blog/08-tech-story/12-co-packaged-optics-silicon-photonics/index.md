@@ -16,7 +16,8 @@ tags:
   - DART
   - EDGAR
   - 기술이야기
-ogImage: /thumbnails/tech-co-packaged-optics-silicon-photonics.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/01/01df56e0b3d925c10bfb384ac757a5ae067ecada8b0bdcca7a3ce62d5c391086.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/37/373d73204b12f7ddaca0281807ec943f864ef663d74278fc4ed3119e7b665b39.webp
 ai:
   verdict: "CPO는 더 빠른 광트랜시버 하나가 아니라 스위치 ASIC 가까이 광엔진을 당겨 전기 배선의 손실을 줄이는 패키징 구조다. Broadcom은 2025년 102.4Tbps CPO 스위치와 광 인터커넥트 전력 70% 절감을 발표했고, Marvell은 1.6T 실리콘 포토닉스 라이트 엔진과 6.4T CPO 기반을 공개했다. dartlab 전사 실측으로는 Broadcom 2025 영업이익률 39.9%, Arista 42.8%, Cisco 20.8%처럼 ASIC과 시스템 쪽 마진이 높았고, Coherent, Lumentum, Fabrinet, 오이솔루션 같은 광부품과 조립 쪽은 훨씬 다른 회계 구조를 보였다. 단, 모든 수치는 CPO 전용이 아니라 회사 전체 기준이다."
   direction: 관망
@@ -31,7 +32,7 @@ AI 서버를 많이 붙이면 계산은 빨라진다. 그런데 계산기가 늘
 
 여기서 CPO(Co-Packaged Optics, 공동 패키지 광학)와 실리콘 포토닉스가 등장한다. CPO는 광모듈을 스위치 앞단에 꽂는 방식에서 한 걸음 더 들어가, 광엔진을 스위치 ASIC 바로 옆 패키지로 끌어오는 구조다. 실리콘 포토닉스는 빛을 실리콘 기반 칩 위에서 나누고, 변조하고, 검출하게 해 주는 기술 묶음이다. 둘은 같은 말이 아니다. 실리콘 포토닉스는 플러그형 광모듈에도 쓰이고, CPO는 광엔진의 위치를 바꾸는 패키징 구조다.
 
-![CPO 스위치 패키지와 짧은 광섬유 리본. AI 클러스터의 다음 병목은 칩 밖 전기 배선의 길이다](./assets/12-cpo-switch-lab.webp)
+![CPO 스위치 패키지와 짧은 광섬유 리본. AI 클러스터의 다음 병목은 칩 밖 전기 배선의 길이다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/70/70c0eb8249d6f66ba3d69baabea7d764c975a2e7a7386e3f2d2ccc264fa496cc.webp)
 
 이 글의 관통선은 하나다. **CPO는 빛을 더 멋있게 쓰는 기술이 아니라, 전기 신호가 멀리 가며 잃는 전력과 열을 줄이기 위해 광엔진을 칩 옆으로 당기는 공정 변화다.** 그래서 수혜주 목록으로 보면 금방 얕아진다. 공정 지도로 보면 스위치 ASIC, 패키지 기판, 실리콘 포토닉스 PIC, 외부 레이저, 광섬유 조립, 테스트, 네트워크 시스템 회사가 서로 다른 칸에 놓인다.
 
@@ -84,7 +85,7 @@ CPO와 실리콘 포토닉스를 회사 목록으로 보면 Broadcom, Marvell, C
 
 실리콘 포토닉스는 이름 때문에 반도체와 광학이 한 번에 해결되는 기술처럼 들린다. 실제로는 더 구체적이다. 전기 신호를 빛으로 바꾸고, 빛의 세기와 위상을 조절하고, 여러 파장을 다루고, 다시 전기 신호로 읽는 소자들을 실리콘 공정 기반 위에 만든다. 핵심은 빛을 다루는 기능을 반도체 제조와 더 가까운 방식으로 대량 생산하려는 것이다.
 
-![실리콘 포토닉스 광엔진. PIC, fiber array, 전기 인터페이스가 한 모듈 안에서 만난다](./assets/12-photonic-engine-lab.webp)
+![실리콘 포토닉스 광엔진. PIC, fiber array, 전기 인터페이스가 한 모듈 안에서 만난다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/fb/fb05ef2a573fd8d39f4546b82505853c395ebefe9e46dacff0e5d3e4fd765c5a.webp)
 
 Marvell은 [custom AI accelerator용 CPO 아키텍처](https://www.marvell.com/company/newsroom/marvell-co-packaged-optics-architecture-custom-ai-accelerators.html)에서 silicon photonics, DSP, 고속 SerDes, 패키징 경험을 묶어 설명한다. Coherent는 2026 OFC 투자자 자료에서 CPO와 near package optics를 pluggable optics 이후의 흐름으로 놓고, InP CW laser, silicon photonics PIC, FAU, external laser source 같은 부품을 한 지도에 배치했다. 이 자료가 중요한 이유는 CPO가 하나의 칩이 아니라 여러 부품이 결합된 광 I/O 스택이라는 점을 보여주기 때문이다.
 
@@ -98,7 +99,7 @@ CPO를 처음 들으면 모든 광부품이 ASIC 옆에 들어가는 그림을 �
 
 오이솔루션은 2026년 [23dBm ELSFP 샘플링 발표](https://oesolutions.com/blog/oe-solutions-announces-23dbm-ultra-high-power-cooled-elsfp-sampling-begins-q3-2026/)에서 external pluggable format과 switch faceplate 위치, 열에 민감한 레이저를 hot ASIC에서 분리하는 장점을 설명했다. 이것은 곧바로 CPO 매출을 의미하지 않는다. 하지만 CPO 생태계에서 외부 광원이 왜 따로 논의되는지 보여주는 좋은 공식 자료다.
 
-![외부 레이저와 광섬유 접속 실험실. 광엔진을 칩 가까이 당길수록 광원과 접속의 서비스성이 중요해진다](./assets/12-external-laser-fiber-lab.webp)
+![외부 레이저와 광섬유 접속 실험실. 광엔진을 칩 가까이 당길수록 광원과 접속의 서비스성이 중요해진다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/eb/eb7331853e380dfd99573b5ab64b9c199752251b3da72de7511e3c241103d2d1.webp)
 
 이 대목은 기술적으로도, 투자적으로도 중요하다. CPO는 전기 경로를 줄이고 싶다. 그러나 모든 것을 ASIC 옆에 붙이면 열, 수율, 고장 대응이 어려워진다. 그래서 광엔진, 레이저, fiber attach, connector, 테스트의 위치를 나눠야 한다. 어떤 구조가 표준이 되느냐에 따라 돈이 남는 칸도 달라진다. 광엔진을 잘 만드는 회사, 레이저를 잘 만드는 회사, 조립과 테스트를 잘하는 회사, 시스템 검증을 잡는 회사가 다르기 때문이다.
 

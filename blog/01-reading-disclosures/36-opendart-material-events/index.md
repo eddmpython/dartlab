@@ -6,7 +6,8 @@ category: reading-disclosures
 series: data-pipeline
 seriesOrder: 1
 thumbnail: /avatar-code.png
-ogImage: /thumbnails/36-opendart-material-events.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/dd/dd250b1aaeefc4bd270f7b0febec6c0948dd80a61119956b7dd524732a065929.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c7/c7a41a1fa8d445656594231747c8458b8c07dbbdb36d1e1105b7abb43fab5a88.webp
 ---
 
 # OpenDART로 주요사항보고서 읽는 법

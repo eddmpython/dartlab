@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 155
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/CRM-salesforce.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f5/f54ccb2a00a22a13f4ebb5b4227016b32b9c6a8b689d773cbcdd0f5db4ae4d0d.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/14/143eddb1877a2fc030f8b6757c31bccf0a7046ed8d931e2861a759bca5124812.webp
 tags:
   - "CRM"
   - "Salesforce"
@@ -131,7 +132,7 @@ Salesforce를 그냥 "AI CRM 회사"라고 부르면 너무 쉽다. 지금 투�
 
 2019년 영업이익률은 4.0%였다. 2020년과 2021년은 2.1%, 2022년은 2.1%, 2023년은 3.3%다. 매출이 13B에서 31B까지 커지는 동안, 손익계산서 아래쪽은 여전히 2~4%대에 갇혀 있었다. SaaS라면 매출총이익률이 높고, 규모가 커질수록 영업이익률이 올라가야 한다. 그런데 Salesforce의 장부는 오랫동안 그 교과서와 반대로 보였다. 클라우드 회사인데 왜 이렇게 안 남겼나.
 
-![Salesforce Tower는 회사가 얼마나 커졌는지 보여주는 물리적 신호다. 하지만 손익의 반전은 건물이 아니라 비용 비율에서 왔다](./assets/155-salesforce-tower.webp)
+![Salesforce Tower는 회사가 얼마나 커졌는지 보여주는 물리적 신호다. 하지만 손익의 반전은 건물이 아니라 비용 비율에서 왔다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/6f/6fb715a63aa8b35663234851413bf37861e8552508f7be3d0f6da8fe7ad57c74.webp)
 
 사람들이 Salesforce에서 정말 궁금해할 장면은 여기다. **이 회사는 매출이 커져서 이익이 난 회사가 아니라, 매출이 커진 뒤 비용을 접어서 이익이 난 회사다.** 2024년부터 판관비율이 내려가고, 2025년에 영업이익률이 20.1%까지 오른다. 그래서 이 글은 AI 제품 발표가 아니라 손익계산서의 모양을 본다. 매출 3배 뒤에, 왜 하필 지금 마진이 열렸는가.
 
@@ -170,7 +171,7 @@ cost = c.analysis("비용구조")["costBreakdown"]["history"]
 
 이 숫자가 Salesforce의 회계적 인물 소개다. 회사는 제품을 싸게 만들지 못해서 낮은 마진을 낸 것이 아니다. 고객을 얻고, 조직을 유지하고, 인수한 회사를 붙이고, 글로벌 엔터프라이즈 영업망을 돌리는 비용이 컸다. 매출총이익률 73%대 회사가 영업이익률 3%대에 머문 이유는, 총이익 아래에서 비용이 너무 컸기 때문이다.
 
-![Salesforce의 제품은 고객 파이프라인과 영업 워크플로를 잡는 소프트웨어다. 낮은 마진의 원인은 제품 원가보다 이 워크플로를 팔고 유지하는 비용이었다](./assets/155-crm-workflow.webp)
+![Salesforce의 제품은 고객 파이프라인과 영업 워크플로를 잡는 소프트웨어다. 낮은 마진의 원인은 제품 원가보다 이 워크플로를 팔고 유지하는 비용이었다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ac/ac18f0c07e9aaee004a753073580264cd236c2bb642125e2c3d329acbf75c6e4.webp)
 
 ![2023년과 2025년의 비용 구조를 비교하면, 이익률 반전의 본체가 원가가 아니라 판관비율 개선임이 드러난다](./assets/155-cost-leverage.svg)
 
@@ -239,7 +240,7 @@ dartlab도 같은 쪽을 찌른다. 2025년에는 매출 성장률 19.1%보다 �
 
 이제 투자자가 보고 싶은 AI 이야기가 나온다. Salesforce는 Data Cloud, Einstein, Agentforce를 전면에 세운다. 고객 데이터 통합, 영업 자동화, 서비스 자동화, 마케팅 자동화는 모두 Salesforce가 이미 가진 고객 기반 위에 올라간다. 논리는 매력적이다. 기존 고객에게 더 많은 모듈을 팔고, AI 기능으로 seat당 매출을 높이고, workflow 자동화로 이탈을 줄인다.
 
-![Salesforce의 다음 서사는 Data Cloud와 AI 자동화다. 다만 손익계산서에서 먼저 확인할 것은 새 기능의 이름이 아니라 비용 기준선이다](./assets/155-data-cloud.webp)
+![Salesforce의 다음 서사는 Data Cloud와 AI 자동화다. 다만 손익계산서에서 먼저 확인할 것은 새 기능의 이름이 아니라 비용 기준선이다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/0f/0f093f386465c347a1f141fd6dad196939cfc42c65b961d0e4950315d81c22ce.webp)
 
 FY27 1분기 발표는 이 서사를 꽤 세게 밀어준다. Salesforce는 분기 매출 11.1B, 전년 대비 13% 성장을 발표했다. current RPO는 33.6B로 14% 증가했고, 총 RPO는 67.9B로 11% 증가했다. Agentforce ARR은 1.2B, Agentforce와 Data 360을 합친 ARR은 거의 3.4B라고 밝혔다. "AI가 돈이 되느냐"는 질문에 대해, 최소한 회사 발표 숫자는 "이미 별도 라인이 생겼다"고 말한다.
 

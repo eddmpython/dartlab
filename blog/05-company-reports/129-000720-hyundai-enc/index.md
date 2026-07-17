@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 129
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/000720-hyundai-enc.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/7b/7b0f06829897139e4640af44de3e63ea4a79ffd3d8a011d577fc3f9f4c35f088.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/8a/8a95482d15dfb3dd78cd526e416d624600e12912286068f97c82f13a80e0089c.webp
 tags: ["현대건설", "000720", "진행기준", "건설", "영업현금흐름", "어닝쇼크", "미청구공사", "영업이익률", "수주잔고", "한국주식"]
 stockCode: "000720"
 corpName: "현대건설"
@@ -138,7 +139,7 @@ import StackBar from '$lib/components/blog/StackBar.svelte';
 
 이 글은 '왜 원가가 터졌나'(외부)를 설명하지 않는다. 내부 세 재무제표가 서로 어긋나는 산술적 지점만 읽어, 이 회사를 읽는 순서가 OPM 라인이 아니라 영업CF 라인이어야 하는 이유를 보인다. 관통선은 둘이다. 하나, 손익과 현금이 2022년부터 부호가 어긋났다(연결이 증명). 둘, 그 어긋남을 *무엇이* 만들었는지 — 진행기준 회계, 미청구공사 — 는 연결 손익이 답하지 못한다(외부 인용·봉인).
 
-![같은 발원지에서 갈라지는 두 물길 — 한 강은 수면에서 반짝이고(장부), 한 강은 지하로 마른다(현금)](./assets/129-two-rivers.webp)
+![같은 발원지에서 갈라지는 두 물길 — 한 강은 수면에서 반짝이고(장부), 한 강은 지하로 마른다(현금)](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/5d/5d282508c187a81511bb47d4141dd4b4f41a83e4cdb7d5057778d62bd47c85a1.webp)
 
 ---
 
@@ -195,7 +196,7 @@ c.select("IS", ["영업이익"], freq="Q")  # 2024 손실은 4분기 단일 분�
 
 ![2024 분기 — 1~3분기는 정상(+), 4분기 단일 분기에 −1.776조](./assets/129-2024-q4.svg)
 
-![모래시계 윗칸은 가득 찬 듯한데 좁은 목에서 모래가 역류한다 — 진행률로 미리 인식한 이익의 정정](./assets/129-hourglass.webp)
+![모래시계 윗칸은 가득 찬 듯한데 좁은 목에서 모래가 역류한다 — 진행률로 미리 인식한 이익의 정정](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/5c/5c7a30321f00430f85f3a9db5745008e8b53892f3861583ee0145664e1778edc.webp)
 
 손실이 4분기에 몰린 것 자체가 진행기준 회계의 지문이다. 1~3분기 내내 진행률로 이익을 정상 인식하다가, 연말 결산·외부감사 시점에 총공사예정원가를 다시 추정하면 그동안 미리 잡아 둔 이익이 한 분기에 정정된다. **[외부 인용]** 무엇이 그 재추정을 연말에 촉발했는지(현장별 원가 재산정 시점·감사 보수주의)는 외부지만, '손익이 4분기에 몰려 꺾인다'는 분기 형태 자체는 내부 수치로 직접 관찰된다.
 
@@ -221,7 +222,7 @@ c.select("IS", ["영업이익"], freq="Q")  # 2024 손실은 4분기 단일 분�
 
 핵심 비동기성 한 줄 — 회계 손실 최대의 해 2024년 영업CF는 −0.119조로 네 음수 연도 중 **가장 덜 음수**이고, '좋아 보인' 2023·2025년이 −0.715·−0.748조로 더 많이 샜다. '손실=현금유출'이라는 직관이 깨지는 이 비동기성이 이 회사를 읽는 열쇠다.
 
-![비계에 덮인 채 그림자만 길게 드리운 미완 — 진행률로 미리 그려 넣은 현재](./assets/129-scaffold.webp)
+![비계에 덮인 채 그림자만 길게 드리운 미완 — 진행률로 미리 그려 넣은 현재](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/59/59a8120975d9fcfb465325c4fdf70dc774ba34d6c0139a7bad5b60df1cbff250.webp)
 
 결론: 손익은 추정으로 출렁였지만 현금흐름표는 2022년부터 같은 방향(음)을 가리켰다. 이 글의 독자가 가져갈 단 하나의 습관은 OPM 라인보다 영업CF 라인을 먼저 보는 것이다. 손익이 아니라 현금이 진짜를 말한다는 점에선 [애브비](/blog/ABBV-abbvie)와 같은 계열이고, 매출 최고의 해에 빅배스를 낸 점에선 [GS건설](/blog/006360-gs-engineering)·[HDC현대산업개발](/blog/294870-hdc-hyundai-dev)의 형제이며, 진행기준 회계라는 같은 문법을 쓴다는 점에선 [한화오션](/blog/042660-hanwha-ocean)과 나란히 읽힌다. **[외부 인용]** 진행기준이 '완공 전 미래를 진행률로 미리 기재하는' 회계라는 해석, 그리고 향후 수주잔고·원전(불가리아 코즐로두이 등) 프로젝트의 질이 이 어긋남을 좁힐지 넓힐지는 전부 외부 전망이며, 내부 수치는 거기까지 답하지 않는다.
 

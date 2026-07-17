@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 160
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/267260-hd-hyundai-electric-ai-power.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/2d/2d2523e522ae6d89254608c11c8823b25358f8fb8be84ec96938b1b9e62b1104.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/8c/8c503da336d36c60d98157b0b1416444f9082bef20840600ab70d44ae42fc66f.webp
 tags:
   - "267260"
   - "HD현대일렉트릭"
@@ -136,7 +137,7 @@ SK하이닉스와 삼성전자를 보고 나면 자연스럽게 이런 질문이
 
 그래서 이번 글은 기존 [HD현대일렉트릭 턴어라운드 글](/blog/267260-hd-hyundai-electric)을 다시 쓰는 글이 아니다. 그 글의 핵심은 적자 회사가 어떻게 변압기 병목주가 되었는가였다. 이번 질문은 다르다. **이미 좋은 회사라는 사실이 시장 가격에 꽤 많이 반영된 지금, 앞으로도 AI 전력난이 이 회사를 두 번째 주도주로 만들 수 있는가.**
 
-![변압기 공장은 AI 서버가 전기를 받기 전에 반드시 지나야 하는 물리적 병목이다](./assets/160-transformer-factory.webp)
+![변압기 공장은 AI 서버가 전기를 받기 전에 반드시 지나야 하는 물리적 병목이다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/74/74f7f51718a2033ecb8edee67d663518a2a34a274fddcb755557df0ed0734380.webp)
 
 2026년 6월 18일 [Google Finance](https://www.google.com/finance/beta/quote/267260%3AKRX)는 HD현대일렉트릭을 1,087,000원, 시가총액 39.18조원, PER 49.74배로 보여준다. 52주 저점은 418,000원, 52주 고점은 1,430,000원이다. 이 정도면 "AI 전력 수혜"라는 말만으로는 부족하다. 시장은 이미 전력난을 알고 있다. 문제는 전력난이 아니라 **전력난이 숫자로 얼마나 오래 남느냐**다.
 
@@ -382,7 +383,7 @@ dartlab의 신용 스코어는 HD현대일렉트릭에 dCR-AA 등급을 매긴�
 
 세 번째 착각은 "좋은 회사면 가격은 중요하지 않다"는 생각이다. 좋은 회사도 너무 비싸게 사면 수익률이 낮아질 수 있다. 특히 이미 시장이 구조적 성장을 알고 있는 종목은 실적이 좋아도 주가가 쉬는 구간이 생긴다. 2026년 6월의 HD현대일렉트릭은 바로 그 지점에 있다. 회사의 질보다 시장의 기대가 더 빠르게 움직였는지 확인해야 하는 구간이다.
 
-![데이터센터가 전기를 요구하는 순간, 병목은 칩에서 변전 설비로 넘어간다](./assets/160-ai-data-center-substation.webp)
+![데이터센터가 전기를 요구하는 순간, 병목은 칩에서 변전 설비로 넘어간다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/2d/2d769fd030469ff134ac7d46eae185b428c713757187ba3eb53925eda4e04a3a.webp)
 
 이 세 가지 착각을 제거하면 결론이 더 선명해진다. HD현대일렉트릭은 전력기기 테마의 상징이 아니라, **전력망 병목이 실제 이익률로 전환된 사례**다. 그래서 강하다. 동시에 이미 그 강함을 시장이 알고 있기 때문에, 앞으로는 좋은 이야기보다 숫자의 지속성이 더 중요하다.
 
@@ -400,7 +401,7 @@ dartlab의 신용 스코어는 HD현대일렉트릭에 dCR-AA 등급을 매긴�
 
 다섯 번째는 증설이다. The Elec 보도에 따르면 회사는 울산과 북미 생산능력 확대를 차질 없이 마무리해 성장세를 유지하겠다는 입장이다. 증설은 성장의 조건이지만 동시에 실행 리스크다. 변압기는 숙련공, 시험 설비, 인증, 운송까지 맞아야 한다. 공장만 늘어난다고 바로 매출이 두 배가 되지 않는다.
 
-![전력망 병목은 결국 공장, 납기, 현금흐름의 문제로 돌아온다](./assets/160-grid-bottleneck.webp)
+![전력망 병목은 결국 공장, 납기, 현금흐름의 문제로 돌아온다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/fa/fa182cee35f9a573f42b04f4045462ad432a5c46f41ac8fc31333f164d26bc6c.webp)
 
 ### 다음 실적 발표를 읽는 순서
 

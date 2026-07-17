@@ -21,7 +21,8 @@ tags:
   - 통신장비
   - 분기변동성
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/189300-intellian.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/6a/6a5579e1c09da6ab0675b4a9a8969c332a3ee49ff5614dd7b56c9fc9d389539b.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/35/3559d0d1d20e34fafdb924d668f892d27f943aa7644357f4120ed1fae8414b68.webp
 youtubeId: ""
 ai:
   verdict: "위성 안테나 세계 1위인데 분기 OPM -28%~+16% — 고정비 구조가 대형 수주 집중에 흔들린다"
@@ -140,7 +141,7 @@ import HFDataLink from '$lib/components/blog/HFDataLink.svelte';
 
 인텔리안테크(189300)의 2025년 재무제표를 열면 이상한 게 보인다. 연간 영업이익률 3.7%. 나쁘지 않다. 그런데 분기별로 쪼개면 풍경이 완전히 달라진다 — **Q1 -27.8%, Q2 +2.4%, Q3 +3.1%, Q4 +16.0%.** 같은 회사의 같은 해에 마이너스 28%와 플러스 16%가 공존한다.
 
-![선박 갑판 위의 위성 안테나 — 인텔리안테크가 만드는 제품이다](./assets/52-satellite-antenna.webp)
+![선박 갑판 위의 위성 안테나 — 인텔리안테크가 만드는 제품이다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e8/e8ae1c3333fb7c91e4dd25cb6f4d4a9611414219cc42b184cb3c79fca593af7e.webp)
 
 이 회사는 **해상 위성통신 안테나(VSAT) 세계 1위권**이다. 원양 화물선, 크루즈, 해군 함정에 탑재되는 위성 안테나를 만든다. 스타링크(SpaceX)의 저궤도(LEO) 위성 시대가 열리면서 핵심 부품사로 떠올랐다. 매출은 9년간 837억에서 3,196억으로 3.8배 성장했다.
 
@@ -264,7 +265,7 @@ Q4에 매출 1,243억이면: 원가 758억(61%) + 판관비 280억 = 1,038억. *
 
 **LEO(저궤도, 고도 550km)**는 다르다. 스타링크가 6,000기+ 위성을 쏘아올린 이유다. 고도가 낮아서 지연이 20~40ms로 빠르다. 대신 위성 하나의 커버리지가 좁아서 수천 기가 필요하고, 이 위성들과 통신할 **지상·해상 안테나**도 수천 대가 필요하다.
 
-![LEO 위성 컨스텔레이션 — 수천 기의 위성이 지구를 감싸고 각각 안테나가 필요하다](./assets/52-starlink-constellation.webp)
+![LEO 위성 컨스텔레이션 — 수천 기의 위성이 지구를 감싸고 각각 안테나가 필요하다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ab/ab4ebade21c998ca5b31c2fbf2dbf6059b94edca2357b55fc020acc0e9038437.webp)
 
 인텔리안테크의 기회가 여기에 있다. GEO 시대에는 안테나 수요가 제한적이었다. LEO 시대에는 안테나 수요가 **수십 배** 늘어난다. 선박 한 척당 GEO 안테나 1대면 충분했지만, LEO는 위성이 빠르게 지나가므로 추적 기능이 있는 **phased array 안테나**가 필요하다. 인텔리안테크가 개발하고 있는 차세대 제품이 바로 이것이다.
 

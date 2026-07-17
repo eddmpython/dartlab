@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 162
 thumbnail: /avatar-chart.png
-ogImage: "/thumbnails/079550-lig-nexone-cash-clock.webp"
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/55/556ca5afacdd56b77f2ced1623cbd3c66ba0e5b0d7a80c9fa460b578eb468736.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/72/72f2d24b67ae5079fe1b36253f30e627044f6ddf26a5a92d1c6e3143b7ed0580.webp
 tags:
   - "079550"
   - "LIG넥스원"
@@ -41,7 +42,7 @@ ai:
 	import CompanyFinancials from '$lib/components/blog/CompanyFinancials.svelte';
 </script>
 
-![지대공 유도무기가 화염을 뿜으며 발사되는 장면](./assets/162-hero-missile-launch.webp)
+![지대공 유도무기가 화염을 뿜으며 발사되는 장면](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e2/e204280d863a2b2e28aa973dc40eadd85ffcf02e18b53a8d09cae16145864198.webp)
 
 LIG넥스원의 2025년 손익계산서는 흠잡을 데가 없다. 매출 4조 3,069억원, 영업이익 3,194억원. 둘 다 회사 역사상 가장 큰 숫자다. 순이익도 2,375억원으로 사상 최대였다. 미사일을 만드는 회사가 방산 호황을 그대로 실적으로 받아낸, 교과서 같은 한 해로 보인다.
 
@@ -93,7 +94,7 @@ LIG넥스원은 2026년 3월 사명을 LIG디펜스앤에어로스페이스로 �
 
 그런데 2025년에는 정반대가 벌어진다. 회사는 그 받아둔 돈으로 본격적으로 미사일을 만들기 시작한다. 원자재를 사고, 부품을 쌓고, 생산 라인을 돌린다. 이 과정에서 재고와 미청구 자산이 불어나며 운전자본이 현금을 1조 1,054억원이나 빨아들였고, 영업활동현금흐름은 -5,843억원으로 뒤집혔다. 2024년에 현금을 6,054억원 보태주던 운전자본이 2025년에는 1조 1,054억원을 도로 가져간 것이다. 한 해 사이에 운전자본이 현금에 미친 영향만 1조 7,000억원 넘게 방향을 튼 셈이다. 이 거대한 반전이 바로 이익과 현금이 갈라진 정확한 지점이다.
 
-![군 지휘통제실에서 다중 모니터를 보며 작전을 관제하는 장면](./assets/162-control-room.webp)
+![군 지휘통제실에서 다중 모니터를 보며 작전을 관제하는 장면](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/7c/7c105fb499e10b6b201c315d702255170a04d4c43b41074f9a26ccee3a8e1ddf.webp)
 
 만든 만큼 다 청구하지도 못했다. 진행 중인 계약에서 일은 했지만 아직 대금을 청구하지 못한 몫을 '미청구 계약자산'이라 하는데, 이 금액이 2024년 4,590억원에서 2025년 1조 707억원, 2026년 1분기 1조 5,637억원으로 계단처럼 뛰었다. 만드는 속도가 청구하는 속도를 앞지른 것이다.
 
@@ -152,7 +153,7 @@ c.select("BS", ["계약부채"], freq="Y")                # 선수금이 먼저 
 
 무엇이 마진을 끌어올렸나. 사업부별 매출 비중을 보면 답이 나온다. 정밀유도무기(PGM), 즉 천궁·현궁·해성 같은 미사일의 매출 비중이 2024년 39.2%에서 2025년 47.2%, 2026년 1분기 59.0%로 올라갔다. 부가가치가 높은 미사일이 매출의 절반을 넘어 다수가 된 것이다. 반대로 지휘통제통신(C4I)은 같은 기간 29.6%에서 24.7%, 13.4%로 절반 넘게 줄었다. 감시정찰(ISR)도 16.4%에서 9.3%로 내려왔다. 회사의 무게중심이 지휘통제나 정찰 장비에서 미사일 그 자체로 옮겨간 것이다. 제품 믹스가 고마진 미사일 쪽으로 이동하면서 회사 전체의 마진이 따라 올라간 구조다. 같은 매출이라도 무엇을 파느냐가 바뀌면 남는 것이 달라지는데, LIG넥스원은 지금 가장 남는 것을 파는 비중을 빠르게 키우고 있다.
 
-![정밀 유도무기의 두뇌에 해당하는 회로 기판을 가까이서 본 모습](./assets/162-circuit-board.webp)
+![정밀 유도무기의 두뇌에 해당하는 회로 기판을 가까이서 본 모습](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e7/e78495fc015a1f18a4a7d9f79796b7ba2f6490e1f352531fe054384126a01949.webp)
 
 이 믹스 이동은 영업이익률뿐 아니라 그 위 단계인 매출총이익률에서도 확인된다. 매출에서 원가만 뺀 매출총이익률은 2024년 13.8%에서 2025년 15.4%, 2026년 1분기 21.7%로 올라왔다. 원가를 빼고 남는 몫 자체가 커졌다는 것은, 회사가 더 비싸게 팔거나 더 싸게 만들거나, 아니면 더 남는 제품을 팔고 있다는 뜻이다. LIG넥스원의 경우 답은 세 번째, 더 남는 제품인 미사일의 비중이 커진 것이다. 마진 개선이 영업이익률이라는 한 줄에서만 나타났다면 일회성 비용 절감을 의심할 수 있지만, 매출총이익률부터 계단을 밟고 있다는 것은 제품 믹스라는 더 구조적인 곳에서 변화가 일어나고 있다는 신호다.
 

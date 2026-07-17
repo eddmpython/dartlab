@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 62
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/138040-meritz-financial.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/25/251abaef8d95f0e5b67679caf5f34cbf912ea105cc27ec0cab0a752017f438d4.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/58/589b7ab4a9e643945f2248f496184f3fed7a0f142a50b442e72451961e95fb37.webp
 tags: ["메리츠금융지주", "138040", "금융지주", "주주환원", "자사주소각", "조정호", "김용범", "PBR", "코리아디스카운트", "보험증권통합"]
 stockCode: "138040"
 corpName: "메리츠금융지주"
@@ -175,7 +176,7 @@ carousel:
 
 ![메리츠금융지주 17년 타임라인 — 2005 창업 → 2022.11.15 오너 결단](./assets/062-timeline.svg)
 
-![한국 금융지주 본사 타워 — 한 공시가 PBR 0.5를 1.8로 바꾼 건물들의 배경](./assets/062-financial-tower.webp)
+![한국 금융지주 본사 타워 — 한 공시가 PBR 0.5를 1.8로 바꾼 건물들의 배경](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/24/2461e52d18bbce5fc2b69c477e581ffbe0867eeafd74aaa43f07ca8e106523f8.webp)
 
 ---
 
@@ -328,7 +329,7 @@ carousel:
 
 ![3년간 주주환원 2.9조 추적 — 자사주 매입 2.0조 + 소각 1.9조 + 배당 1.2조](./assets/062-shareholder-return.svg)
 
-![자사주 매입·소각의 서명 순간 — 장부가 vs 주가의 프리미엄을 결정하는 펜](./assets/062-stock-certificate-buyback.webp)
+![자사주 매입·소각의 서명 순간 — 장부가 vs 주가의 프리미엄을 결정하는 펜](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/1d/1d6b1852c45845ac92dfb23fa79928cd738f6726eb91252e85fb13bab4d945a5.webp)
 
 ---
 

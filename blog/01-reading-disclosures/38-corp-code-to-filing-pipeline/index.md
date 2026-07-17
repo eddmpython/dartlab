@@ -6,7 +6,8 @@ category: reading-disclosures
 series: data-pipeline
 seriesOrder: 3
 thumbnail: /avatar-code.png
-ogImage: /thumbnails/38-corp-code-to-filing-pipeline.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c2/c2b8b9cda3cb4ac667fa1a7916e36b488d26569c4dec0d9cd5d632814db1509e.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/bf/bfea32f49e5dc566377a2c75fcde1acd827de965aba8e950a4454762658e73c9.webp
 ---
 
 # corp_code부터 filing 원문까지 DART 수집 파이프라인 설계

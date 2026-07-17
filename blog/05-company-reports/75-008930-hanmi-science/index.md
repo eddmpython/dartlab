@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 75
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/008930-hanmi-science.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b4/b433814d3e03a6b5dbac4a07b6262df1076e3891292cb4b7cb6d1bd60a3bdfbf.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/99/99783dc38586052d938e1bfa345c05e6de40a41357592638350755f93240a076.webp
 tags: ["한미사이언스", "008930", "한미약품", "한미그룹", "송영숙", "임종윤", "상속세", "OCI", "지주회사", "지분법"]
 stockCode: "008930"
 corpName: "한미사이언스"
@@ -236,7 +237,7 @@ print(prof["marginWaterfall"]["history"][0])
 
 ![지주 구조 — 임성기 창업주 유족 34% → 한미사이언스 → 한미약품 41% + Health Science 자체 사업. 한미약품 연결 매출 약 80% + 자체 사업 (건기식·헬스케어기기·유통) 약 20% 복합.](./assets/75-holding-structure.svg)
 
-![제약 실험실 정밀 타블렛 제조 라인 — 현대 클린룸에서 스테인리스 컨베이어 위로 흰 타원형 알약들이 정렬된 모습. 흰 보호복·헤어넷 착용한 기술자들이 모니터링하는 산업 클린룸.](./assets/75-pharmaceutical-tablets.webp)
+![제약 실험실 정밀 타블렛 제조 라인 — 현대 클린룸에서 스테인리스 컨베이어 위로 흰 타원형 알약들이 정렬된 모습. 흰 보호복·헤어넷 착용한 기술자들이 모니터링하는 산업 클린룸.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f7/f71b2b6e192f8bbcd4047895f549bbd5cb07d7e7f48bf71bac5726369dc33068.webp)
 
 ---
 
@@ -519,7 +520,7 @@ dartlab `credit("등급") = dCR-A, 건강 약 80점`. 제약 지주회사 평균
 
 ![제약 지주 4사 비교 — 한미사이언스 OPM 10.22%·한미약품 16.6% vs 녹십자홀딩스 5%·GC녹십자 5% vs 종근당홀딩스 6%·종근당 7% vs JW중외제약 7%·8%. 한미가 OPM 최고인 이유는 자회사 한미약품의 고마진 구조.](./assets/75-pharma-3holdings.svg)
 
-![약국 제약 제품 진열 — 질서 있게 정리된 흰색 플라스틱 약병들. 깨끗한 의약품 포장, 현대 약국의 밝은 LED 조명, 미니멀리스트 의료 소매 환경.](./assets/75-probiotic-bottles.webp)
+![약국 제약 제품 진열 — 질서 있게 정리된 흰색 플라스틱 약병들. 깨끗한 의약품 포장, 현대 약국의 밝은 LED 조명, 미니멀리스트 의료 소매 환경.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/3a/3a2907ce738fd067dc63e0044054da4d6c02452fe42077c9ff6a4bfece3ca829.webp)
 
 ---
 

@@ -6,7 +6,8 @@ category: reading-disclosures
 series: financial-context
 seriesOrder: 3
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/25-development-costs-and-intangibles.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/cc/cc1748e1e41c5869e06e3917a7dea081e019ad78f220f3be625ea66f48f33604.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/3d/3d4ccc836c2d0471d319ab46179e48068fbfa8d54f4a6d5bec65f4d284c26cf4.webp
 ---
 
 # 개발비·무형자산은 어디서 과열 신호가 보이나

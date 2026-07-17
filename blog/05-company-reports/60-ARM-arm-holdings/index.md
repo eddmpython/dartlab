@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 60
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/ARM-arm-holdings.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/cf/cfe761c71a25b534d6415fb842a29f90c111cc8e8d4b43853369dd18742f0f7a.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c0/c0b7fc580aaa547a0de53b80ec7c7909ea1a7b42e719d73b922932882a76d395.webp
 tags: ["ARM", "ARM Holdings", "반도체", "IP 라이선스", "소프트뱅크", "Rene Haas", "엔비디아", "RISC", "스마트폰", "AI 칩"]
 stockCode: "ARM"
 corpName: "ARM Holdings"
@@ -54,7 +55,7 @@ import StackBar from '$lib/components/blog/StackBar.svelte';
 
 ![ARM 매출 $4B vs 시가총액 $150B — 플랫폼 평가의 37배 간극](./assets/060-valuation-gap.svg)
 
-![실리콘 웨이퍼 위의 ARM CPU 코어 수백 개 — 설계만 팔고 제조는 안 한다](./assets/060-chip-wafer-closeup.webp)
+![실리콘 웨이퍼 위의 ARM CPU 코어 수백 개 — 설계만 팔고 제조는 안 한다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f8/f8551b75f33d3e10d48031aa92d13b26f4203f4e6afb9e73c0d51f3b69d7467c.webp)
 
 ---
 
@@ -304,7 +305,7 @@ Apple·Nvidia·Google·AMD·Intel·Samsung·TSMC — **ARM의 고객사들이 IP
 
 5막의 IPO는 소프트뱅크의 출구 전략이었다. 6막은 IPO 이후 2023~2025 3년간 **AI 붐이 ARM 매출에 실제로 얼마를 보탰는지**를 본다.
 
-![2023년 9월 14일 나스닥 상장 — ARM IPO 당일 타임스스퀘어](./assets/060-nasdaq-ipo-floor.webp)
+![2023년 9월 14일 나스닥 상장 — ARM IPO 당일 타임스스퀘어](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/1a/1afee4096430f97c9912afd0c294b0e74dcb711e54adba40cb3326b2f3e63a52.webp)
 
 ---
 

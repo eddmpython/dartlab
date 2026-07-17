@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 116
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/ADBE-adobe.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/14/140493a9f48578ed44cfbbe63ef6ca2b16f35cfb99f288516cc3f431a6c17eb1.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/87/879051ca74f9902a2955b2ed7cabe52b0d6b490139ef0ad2ef2f0aab3d4b3aa2.webp
 tags: ["어도비", "ADBE", "영업이익률", "구독", "SaaS", "고원", "Figma", "생성형 AI", "미국주식", "순이익률"]
 stockCode: "ADBE"
 corpName: "Adobe"
@@ -47,7 +48,7 @@ import StackBar from '$lib/components/blog/StackBar.svelte';
 
 평평한 비율 한 줄이 출렁이는 절대액을 덮고 있는 것이다. 이 글은 OPM 한 줄로 어도비를 읽는 습관을 의심하는 데서 시작한다 — 비율과 절대액은 다른 곡선이고, 둘을 분리할 때 비로소 일회성과 추세, 손익 안과 밖이 갈린다. 같은 소프트웨어 전환이라도 [마이크로소프트](/blog/MSFT-microsoft)는 마진이 *오르고*, [오라클](/blog/ORCL-oracle)은 마진이 *빠지는* 가운데 컸다면, 어도비는 이미 도달한 자리에서 *평탄*하다.
 
-![이미 도착한 고원 — 오르지도 무너지지도 않는 좁은 띠](./assets/116-plateau.webp)
+![이미 도착한 고원 — 오르지도 무너지지도 않는 좁은 띠](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/47/474190f13140db4e7cf8e5244b43af082be2bdda69479cdcbee2c8bead891bd9.webp)
 
 ---
 
@@ -143,7 +144,7 @@ c.select("CF", ["영업활동현금흐름"], freq="Q")
 
 **(위협 서사)** 생성형 도구 확산은 Adobe의 risk factor와 제품 전략 설명에서 계속 다뤄지는 경쟁 변수다. 다만 이 인과가 연결 손익의 특정 매출 감소나 OPM 하락으로 분리되어 보인 것은 아니다. **(기회 서사)** 동시에 Adobe는 2026 Q2 공식자료에서 AI-first ARR가 전년 대비 3배 이상 커져 5억 달러를 넘었다고 밝혔다. 이것은 기회 서사가 처음으로 별도 수치 라벨을 얻은 사건이지만, 여전히 전사 매출·OPM에 독립 라인으로 분리된 것은 아니다.
 
-![생성형 AI는 위협이자 기회로 동시에 거론되지만, 둘 다 아직 연결 손익에 분리되어 들어오지 않았다](./assets/116-ai.webp)
+![생성형 AI는 위협이자 기회로 동시에 거론되지만, 둘 다 아직 연결 손익에 분리되어 들어오지 않았다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/8e/8e53ff22550762dfc6a13e6d52a143332315819efd5bc268f816ce6e4ec4847b.webp)
 
 두 서사를 나란히 놓는 것은 '검증된 두 힘의 길항'을 보여주려는 게 아니다 — 오히려 어느 쪽도 손익이 증명하지 않았음을 못박기 위해서다. 양쪽 단정을 모두 피하는 게 맞다: 'AI로 끝났다'도 'AI로 더 큰다'도 현재 연결 손익으로는 증명되지 않는다. 이 고원이 흔들릴지 평탄을 이어갈지는, 손익 밖 변수가 손익 안(OPM·매출 성장률)으로 들어오는 분기를 기다려야만 알 수 있다. 좁은 띠 안에서 마진이 안 흔들린다는 점은 [마스터카드](/blog/MA-mastercard)의 통행료 밴드(57%대)와 결이 같고(자리만 다를 뿐), 외형과 마진이 함께 *오른* [애플](/blog/AAPL-apple)·[마이크로소프트](/blog/MSFT-microsoft)와는 정반대로 — 어도비는 '이미 도달한 고원'에 서 있다. 목표주가·매수의견은 이 글의 몫이 아니다.
 

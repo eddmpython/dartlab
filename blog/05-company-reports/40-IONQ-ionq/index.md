@@ -23,7 +23,8 @@ tags:
   - EDGAR
   - 전자공시
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/IONQ-ionq.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/4a/4a789c3e9f5da6f047c58dc4889eda317cf1dfcb4cdb31f752b33fbdf8c45949.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/05/052c4cfad6d5f6685eb846da8dd4846719996bf44323f1d0fd5243365ae1052b.webp
 ai:
   verdict: "매출 4년 565배 폭발과 영업손실 매출 대비 4.87배가 병존. 기술 로드맵과 IR 서사가 재무제표를 흔들지만 OCF는 5년 연속 음수. 2026년 Tempo 출하가 내러티브를 숫자로 전환하는 해."
   direction: 악화
@@ -90,7 +91,7 @@ c.analysis("financial", "수익성")["marginWaterfall"]["history"][0]
 
 ![매출 첫 $100M 돌파 vs 영업손실 $634M — 양자 회사의 역설](./assets/40-hero-revenue-vs-loss.svg)
 
-![이온트랩 실험실 — IonQ 기술의 물리적 실체](./assets/40-ionq-ion-trap-lab.webp)
+![이온트랩 실험실 — IonQ 기술의 물리적 실체](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b8/b882e36c50c275934bfc54e46d5234399b6c43572e50b812d851f001d5bf9860.webp)
 
 ---
 
@@ -242,7 +243,7 @@ SG&A $375M(매출 대비 289%)도 기형적으로 크다. 이 중 큰 항목:
 
 ![자산 12배 + Heights Capital $3B 베팅](./assets/40-3b-capital-raise.svg)
 
-![Tempo 양자 컴퓨터 시스템 — 자본이 만든 물리적 실체](./assets/40-ionq-tempo-system.webp)
+![Tempo 양자 컴퓨터 시스템 — 자본이 만든 물리적 실체](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e7/e74a65d23ca15b715215955ef6aea960f641abc426404fd4f9c7756c0cb3fad5.webp)
 
 ### 1년 만에 자산이 12배가 된 회사
 

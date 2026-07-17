@@ -9,7 +9,8 @@ corpName: "삼성전자"
 exchange: "KRX"
 storyTemplate: "사이클"
 thumbnail: /avatar-chart.png
-ogImage: "/thumbnails/005930-samsung.webp"
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c1/c1e2eba805c43b08704ae61c1baa19f7b754fcc9f019c8a8e95eeb64fe04c948.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/87/879051ca74f9902a2955b2ed7cabe52b0d6b490139ef0ad2ef2f0aab3d4b3aa2.webp
 description: "1983년 도쿄에서 시작해 33년간 메모리 세계 1위였던 회사가, AI 시대의 메모리 HBM에서 만년 2위 SK하이닉스에게 처음으로 추월당했다. 파운드리는 TSMC에 10배 격차로 밀린다. 그런데도 여전히 가장 크다. 매출 334조, 현금 110조, 이재용 지분 1.63%. 세계 최대 메모리 회사의 역설을 dartlab으로 뜯어본다."
 tags:
   - 삼성전자
@@ -185,7 +186,7 @@ import HFDataLink from '$lib/components/blog/HFDataLink.svelte';
 
 > **33년간 세계에서 메모리를 가장 많이 팔던 회사가, AI 시대의 메모리에서 만년 2위에게 처음 추월당했다. 그런데도 여전히 세계에서 가장 크다. 이 두 문장이 동시에 참인 회사가 삼성전자다.**
 
-![삼성전자 반도체 팹](./assets/30-samsung-semiconductor.webp)
+![삼성전자 반도체 팹](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e5/e5b41f6ea182c523b084101c5b49ed8afbfddfd3e1e4f7c6ee42dae44b293684.webp)
 
 ---
 
@@ -495,7 +496,7 @@ c.analysis("현금흐름")
 
 ## 7막. 110조 현금과 텅장: 해외에 묶인 돈, 빚내서 한 배당
 
-![삼성전자 본사 전경](./assets/30-samsung-galaxy.webp)
+![삼성전자 본사 전경](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/48/4836ec0b6c52b1664e2eba1e03386d8463690593f8e7a2024365bd743836b858.webp)
 
 ![현금 분포 구조](./assets/30-cash-trapped.svg)
 

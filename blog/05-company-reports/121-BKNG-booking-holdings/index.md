@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 121
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/BKNG-booking-holdings.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/83/83e40d98b48816681d325e6c59903a0ced91f541ef89888573fddf23adc21572.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/4f/4f94867fa22a41f5c6d6dada04ad55d522d5dcc1e146a8b5b910319b057fd6db.webp
 tags: ["부킹홀딩스", "Booking", "BKNG", "여행예약", "마케팅비", "영업레버리지", "OTA", "검색광고", "미국주식", "플랫폼"]
 stockCode: "BKNG"
 corpName: "Booking Holdings"
@@ -41,7 +42,7 @@ import StackBar from '$lib/components/blog/StackBar.svelte';
 
 한 회사의 가장 큰 비용이 호텔도, 직원도, 서버도 아니라 **'광고비'**라면, 그 회사의 손익은 광고비가 어떻게 움직이느냐를 먼저 봐야 읽힌다.
 
-![호텔도 항공기도 아닌, 검색창이 부킹홀딩스의 가장 큰 비용이다](./assets/121-search-toll.webp)
+![호텔도 항공기도 아닌, 검색창이 부킹홀딩스의 가장 큰 비용이다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/20/20c1cd918fd7c372fac2de04cf9126c4114dbd0490684ca47dfd3126ae5cb667.webp)
 
 부킹홀딩스의 마케팅비는 2020년 **21.8억 달러(2.18B)**에서 2025년 **81.9억 달러(8.19B)**로 6년간 **3.76배** 늘었다(내부 실측). 그런데 같은 기간 매출 대비 비율은 32.1%에서 30.4%로 오히려 **약 1.6%p 내려갔다.** 절대액은 폭증했는데 비율은 줄었다 — 이 모순처럼 보이는 한 줄이 이 글의 입구다.
 
@@ -106,7 +107,7 @@ c.select("IS", ["매출액", "영업이익"], freq="Q")  # 2020 충격 확인
 c.select("IS", ["매출액", "영업이익"], freq="Q")  # 회복기 배수 비교
 ```
 
-![재개된 여행 — 회복기엔 같은 지렛대가 반대로 작동했다](./assets/121-travel-recovery.webp)
+![재개된 여행 — 회복기엔 같은 지렛대가 반대로 작동했다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/27/27cb9e06921823be8e3b856c5c36de24d87ca27585fa29ec930060bcd997fcd5.webp)
 
 2021→2025 회복기에 매출은 10.96→26.92B로 **2.46배** 늘었다. 같은 기간 영업이익은 2.50→8.82B로 **3.53배** 늘어 매출 배수를 앞질렀고, OPM은 22.8%→**32.8%**로 올라섰다.
 
@@ -137,7 +138,7 @@ c.select("IS", ["당기순이익"], freq="Q")  # NPM 계산
 
 **왜 광고비의 행방을 끝까지 파고들지 않나.** 마케팅비 총액(내부)과 그 안의 검색 플랫폼 통행료(외부)는 서로 다른 정보 층이라, 인과로 잇는 순간 검증선을 넘기 때문이다.
 
-![여행예약 길목을 쥔 회사가, 검색이라는 또 다른 길목에 통행료를 낸다](./assets/121-tollgate-irony.webp)
+![여행예약 길목을 쥔 회사가, 검색이라는 또 다른 길목에 통행료를 낸다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d1/d1d8a172d29671e379c5756640c61910b5b487a11b44496c8bf8dfa19d5b1373.webp)
 
 마케팅비 81.9억 달러(2025, 내부)가 *어디로* 갔는지 — 성과형 대 브랜드 구성, 구글·메타에 내는 통행료 비중, GMV 대비 수수료율, 브랜드별 구성 — 은 전부 10-K·IR **외부 영역**이다. 외부 인용에 따르면 부킹홀딩스는 2023년 구글 광고에만 추정 **약 $3.2B**를 지출했다고 알려져 있다(외부 인용, 2023년·구글 단일 추정치라 2025년 내부 마케팅 총액 8.19B와 *직접 차감 관계가 아니다*). 비율이 30~35%에 머문다는 내부 관찰과 '검색 플랫폼 의존 때문'이라는 외부 서술은 **'정합/양립'일 뿐 인과 증명이 아니다.**
 

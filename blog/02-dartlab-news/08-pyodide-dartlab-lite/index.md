@@ -6,7 +6,8 @@ category: dartlab-news
 series: dartlab-news
 seriesOrder: 8
 thumbnail: /avatar-code.png
-ogImage: /thumbnails/news-pyodide-dartlab-lite.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e6/e64b9a491cc758b2087785fa7dd619eba23809c9463eff0e0594bd92e991529a.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/35/35a3fb5c6fcd4ede966f81e37227ef6a7df7557c64cde84f96f700b25f454946.webp
 youtubeId: "epzGLIOWLR0"
 keywords:
   - Pyodide
@@ -92,7 +93,7 @@ c.story("수익성").toMarkdown()
 
 `@script`는 엑셀 사이드바에 **버튼**을 만든다. 사용자가 버튼을 누르면 파이썬 함수가 실행되고, 시트를 직접 조작한다. "이 데이터를 저 셀부터 채워라"라는 **명령형** 스타일이다.
 
-![xlwings Lite — @script 모드, dartlab으로 삼성SDI IS를 A3 셀부터 채운다](./assets/145-xlwings-lite-script.webp)
+![xlwings Lite — @script 모드, dartlab으로 삼성SDI IS를 A3 셀부터 채운다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/7f/7f6a2360cb3cd1a504aa7c6ada333e5f3ad88284d668d31740f73bf5b0a306c8.webp)
 
 ```python
 import dartlab
@@ -119,7 +120,7 @@ def finance(book: xw.Book):
 
 `@func`는 완전히 다르다. 파이썬 함수가 **엑셀 사용자 정의 함수(UDF)**로 등록된다. 그래서 사용자는 셀에 `=GETFINANCE("005930")`처럼 **수식**을 입력하면 되고, 결과가 스필(spill) 배열로 주변 셀까지 자동으로 채워진다.
 
-![xlwings Lite func 모드, 셀에 GETFINANCE 수식 입력 즉시 SK하이닉스 IS가 5분기 분량 자동 스필](./assets/145-xlwings-lite-func.webp)
+![xlwings Lite func 모드, 셀에 GETFINANCE 수식 입력 즉시 SK하이닉스 IS가 5분기 분량 자동 스필](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b0/b0e0b8a141f1e954822c1c145f39be4a8e01c9ea0acf58f7af1d6fda91f99277.webp)
 
 ```python
 @func
@@ -148,25 +149,25 @@ def getFinance(code: str):
 
 구글에서 **"엑셀"**을 검색하고 맨 위 [**excel.cloud.microsoft**](https://excel.cloud.microsoft/) 링크를 클릭한다. Microsoft 계정(outlook·hotmail·라이브·학교/회사 계정 다 됨)으로 로그인하면 브라우저 엑셀이 바로 열린다. 로컬 설치 0줄.
 
-![엑셀 웹 버전 검색 — 구글에서 '엑셀' 첫 결과가 excel.cloud.microsoft](./assets/145-install-1-search-excel.webp)
+![엑셀 웹 버전 검색 — 구글에서 '엑셀' 첫 결과가 excel.cloud.microsoft](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f3/f3678eb678d50bec8a3eb6079ce5587b4df412063a3457a26656d19963d1dbec.webp)
 
 ### 2단계. 빈 통합 문서 만들기
 
 로그인 후 "빈 통합 문서 만들기"를 누르거나 기존 Book을 연다. 새 워크북이 열리면 화면 상단 메뉴가 뜬다.
 
-![Excel Web — '빈 통합 문서 만들기' 버튼으로 새 워크북 시작](./assets/145-install-2-new-workbook.webp)
+![Excel Web — '빈 통합 문서 만들기' 버튼으로 새 워크북 시작](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/2c/2c06274c72583c93b0719d989c11a71abe93cb7a0425ba9c822c36a5a9516cf7.webp)
 
 ### 3단계. xlwings Lite 추가 기능 설치
 
 엑셀 상단 리본의 **추가 기능(홈 > 추가 기능)** 아이콘을 누르고 검색창에 **"xlwings"**를 입력한다. 검색 결과의 **xlwings Lite** 항목에서 "추가"를 누른다. 처음 한 번만 하면 된다. 계정에 종속되므로 다른 워크북을 열어도 따라온다.
 
-![xlwings Lite 추가 기능 — 엑셀 추가기능 검색창에서 'xlwings' 검색 후 추가 버튼](./assets/145-install-3-add-xlwings-lite.webp)
+![xlwings Lite 추가 기능 — 엑셀 추가기능 검색창에서 'xlwings' 검색 후 추가 버튼](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d2/d2100f10ddca94e665ad8b3309f931993c651eaa084706707bc46af489070346.webp)
 
 ### 4단계. requirements.txt에 dartlab 한 줄 추가
 
 화면 오른쪽에 **xlwings Lite 사이드바**가 뜬다. 사이드바 상단 탭에서 `requirements.txt`를 클릭하고 맨 아래 줄에 **`dartlab`**이라고만 쓴다. 줄바꿈 후 저장(Ctrl+S). 이게 xlwings Lite에게 "이 워크북에서 dartlab 패키지를 쓰겠다"고 알리는 방법이다. 재시작이 필요하다 — 사이드바 메뉴 버튼에서 "Python 커널 재시작"을 누르면 Pyodide가 dartlab을 자동으로 받아 올린다.
 
-![xlwings Lite requirements.txt — 맨 아래 줄에 `dartlab` 한 줄만 추가](./assets/145-install-4-requirements-dartlab.webp)
+![xlwings Lite requirements.txt — 맨 아래 줄에 `dartlab` 한 줄만 추가](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b6/b61c1dc7751f3a0479db06dc1c0687c9ffc97f68c293870e9a1bdac7cc7a8e9c.webp)
 
 ### 5단계. main.py에 코드 쓰고 실행
 
@@ -187,7 +188,7 @@ def finance(book: xw.Book):
     sheet["A3"].value = data
 ```
 
-![xlwings Lite main.py — @script 작성 후 버튼에 'is'가 떠 있으면 성공](./assets/145-install-5-run-script.webp)
+![xlwings Lite main.py — @script 작성 후 버튼에 'is'가 떠 있으면 성공](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/5c/5cf5976ee70d2c1f5c25bc86c5238388e4270def2f3cc18f2a89dd903f814411.webp)
 
 여기까지 5단계. **로컬 파이썬 0줄, uv 0줄, venv 0줄.** 브라우저 한 탭으로 dartlab 풀 스택이 돈다.
 

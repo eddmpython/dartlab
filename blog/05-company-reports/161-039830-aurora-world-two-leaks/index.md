@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 161
 thumbnail: /avatar-chart.png
-ogImage: "/thumbnails/039830-aurora-world-two-leaks.webp"
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ac/ac0452abe59a24390b3cf7aa263378c94c3b4e8c56db6fd42699b0c6f91c797b.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/71/71fb563eff1428b9b64ee9d9177c01c677a4e21b7ae9289372c110337968f2c8.webp
 tags:
   - "039830"
   - "오로라월드"
@@ -40,7 +41,7 @@ ai:
 	import CompanyFinancials from '$lib/components/blog/CompanyFinancials.svelte';
 </script>
 
-![봉제 인형이 진열된 매장 선반](./assets/161-hero-plush-shelf.webp)
+![봉제 인형이 진열된 매장 선반](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b4/b43e4e398d4528e693c1402a81295250765cb3be6985f815358577c3e792cd7d.webp)
 
 봉제완구 오로라월드의 재무상태표에는 이상한 줄이 하나 있다. '투자부동산 1,274억원'. 임대료나 시세차익을 노리고 들고 있는 부동산이라는 뜻이다. 이 한 줄이, 이 회사 시가총액(약 2,300억원)의 절반을 넘는다. 인형을 파는 회사가, 인형과 무관한 부동산을 시가총액의 절반만큼 깔고 앉아 있는 것이다.
 
@@ -72,7 +73,7 @@ ai:
 
 이 둘의 성격은 다르다. 유형자산은 인형을 만들고 유통하는 데 실제로 쓰는 시설이다. 회사가 돌아가려면 필요한 몸이다. 반면 투자부동산은 회계에서 특별한 지위를 가진다. 영업에 직접 쓰지 않고, 임대수익이나 시세차익을 노리고 보유하는 부동산이 여기로 분류된다. 즉 오로라는 인형을 파는 데 꼭 필요하지 않은 부동산을, 자산으로 굴리기 위해 따로 들고 있는 것이다. 장난감을 팔아 번 돈의 상당 부분을 이렇게 부동산으로 바꿔 쌓아왔다.
 
-![투자부동산을 떠올리게 하는 상업용 건물](./assets/161-commercial-building.webp)
+![투자부동산을 떠올리게 하는 상업용 건물](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ec/ecac5c66938f0fb7a459649975a5a732abc06acea49a608f81c7fccc14ed94f3.webp)
 
 이 구분이 중요한 이유가 있다. 회사가 공장을 하나 더 지으면 그것은 인형을 더 만들기 위한 유형자산이고, 언젠가 매출로 돌아온다. 그러나 임대용 건물을 사면 그것은 인형 사업과 직접 연결되지 않는 별도의 자산 운용이다. 봉제완구 회사가 이런 임대 부동산을 시가총액의 절반만큼 들고 있다는 것은, 이 회사가 순수한 장난감 회사라기보다 장난감 사업과 부동산 보유를 겸한 두 겹의 회사에 가깝다는 뜻이다. 투자자가 오로라 주식을 하나 살 때, 그 값의 절반 이상은 인형이 아니라 이 부동산 운용에 매겨진 값인 셈이다. 회사를 캐릭터 성장주로만 보고 사면, 정작 자기가 산 것의 절반을 못 보고 사는 것이다.
 
@@ -172,7 +173,7 @@ c.select("IS", ["영업이익", "법인세비용차감전순이익", "법인세�
 
 문제는 이 부담이 성장할수록 커진다는 것이다. 더 많이 팔려면 더 많이 미리 만들어야 하고, 더 많이 외상으로 넘겨야 한다. 매출이 뛰는 분기일수록 재고와 매출채권이 함께 부풀고, 그만큼 현금이 그 안으로 빨려 들어간다. 실제로 2026년 1분기 재고자산은 927억원으로 1년 전보다 233억이 늘었고, 매출채권도 580억원까지 불었다. 매출이 사상 최대였던 바로 그 분기에 현금이 0이었던 것은 우연이 아니라, 가장 많이 팔기 위해 가장 많이 미리 쓰고 가장 많이 외상으로 넘긴 결과다. 이익은 손익계산서에 찍히지만, 그 돈은 창고의 인형과 거래처의 외상에 묶여 통장에는 없다.
 
-![재고와 운전자본 부담을 떠올리게 하는 물류 창고 선반](./assets/161-warehouse-inventory.webp)
+![재고와 운전자본 부담을 떠올리게 하는 물류 창고 선반](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/42/42f32d6da8f62910a3bd38e78175193d9429335a1fb104ab400a68d7060a0ce2.webp)
 
 이 패턴은 최근만의 일이 아니다. 오로라의 영업현금흐름은 성장과 반대로 움직여 왔다. 매출이 가장 빠르게 뛰던 2021~2022년, 영업현금흐름은 2021년 34억으로 쪼그라들었다가 2022년에는 마이너스 19억으로 돌아섰다. 회사가 가장 빠르게 클 때 현금이 가장 말랐다. 2022년을 분기로 쪼개보면 상반기에 현금이 집중적으로 빠졌는데, 그 시기가 바로 재고를 공격적으로 채우던 국면이다. 반대로 성장이 잠시 안정된 해에는 영업현금흐름이 회복됐다. 성장할 때 마르고 숨 고를 때 채워지는, 톱니 같은 현금이다.
 

@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 127
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/ABBV-abbvie.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/de/dea1810524a4dae3d67364f0324cbfab9744b06da0de49a845ae00abe826f18b.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/cb/cbb95295cea849153fc461db1bdeed481d1a0cf5cb51ea2364cb6979c0518fdb.webp
 tags: ["애브비", "ABBV", "휴미라", "특허절벽", "스카이리치", "린버크", "Allergan", "무형자산상각", "영업이익률", "순이익률", "제약", "미국주식"]
 stockCode: "ABBV"
 corpName: "AbbVie"
@@ -47,7 +48,7 @@ import StackBar from '$lib/components/blog/StackBar.svelte';
 
 관통선은 둘이다. 하나, 회복은 영업이익 줄에서 멈췄고 — 사라진 이익은 전부 *영업이익 아래*에서 일어난 일이다(연결이 증명). 둘, 그 아래에서 *무엇이* 이익을 갉아먹었는지 — IPR&D·상각·세금 — 는 연결 손익이 답하지 못한다(외부 인용·봉인). 이 글은 손익계산서를 한 줄이 아니라 *층*으로 읽는다.
 
-![위는 풍부, 아래는 증발 — 영업이익 라인에서 갈라지는 폭포](./assets/127-mist.webp)
+![위는 풍부, 아래는 증발 — 영업이익 라인에서 갈라지는 폭포](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/4c/4c4eb714d7acf43f4c893489eeb86adfd606bcde43e698b76ead6d4eceb8a00d.webp)
 
 ---
 
@@ -115,7 +116,7 @@ c.select("CF", ["영업활동현금흐름"], freq="Q")  # OCF는 순이익의 �
 
 ![순이익은 4B대인데 영업CF는 그 약 4.5배 — 별개의 두 번째 괴리](./assets/127-cash-vs-ni.svg)
 
-![두 겹의 지층 — 위층은 회복된 능선, 아래층은 굳어버린 비현금의 침전](./assets/127-strata.webp)
+![두 겹의 지층 — 위층은 회복된 능선, 아래층은 굳어버린 비현금의 침전](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e2/e28dce8009726e2a1d8cdbd3b30a9ca8044e9d1fd6bb3a457ecffc5905869406.webp)
 
 주의 — 이 괴리는 4막의 'OpInc→NI 증발'과는 **다른 두 번째 괴리**다. 이건 순이익에서 영업CF로 *올라가는* 비현금 가산(상각 등)이고, OpInc→NI 증발은 영업이익에서 *내려가는* 부담이다. 둘을 한 덩어리 '비현금 무게'로 뭉치면 안 된다. 이 4~5배 괴리의 크기 자체가 '순이익이 영업 실체를 대표하지 못한다'는 정합적 증거다. **[공식 공시]** 이 가산의 대종인 취득 무형자산 상각은 2023년 $7.9B, 2024년 $7.6B, 2025년 $7.4B로, 같은 기간 순이익보다 크거나 그에 맞먹었다. 이 상각은 Allergan 이후 누적된 인수 자산의 비용화이지, 연결 손익만으로 개별 인수별 기여를 분해할 수 있는 항목이 아니다.
 
@@ -127,7 +128,7 @@ c.select("CF", ["영업활동현금흐름"], freq="Q")  # OCF는 순이익의 �
 
 2020~2025 6년 결산: 매출은 45.80B에서 61.16B로 절벽을 건너 더 높아졌고, OPM은 24.8%에서 24.6%로 원위치, 그러나 NPM은 10.1%에서 6.9%로 낮아진 채 고착, OCF는 17.59B에서 19.03B로 든든하다. 같은 2025년을 세 렌즈로 보면 매출은 '회복했다', 순이익은 '무너졌다', 영업CF는 '멀쩡하다'고 말한다.
 
-![한 산을 세 도구로 잰다 — 줄자는 높다, 저울은 가볍다, 수위계는 깊다](./assets/127-gauges.webp)
+![한 산을 세 도구로 잰다 — 줄자는 높다, 저울은 가볍다, 수위계는 깊다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/9c/9cd6b157711c19dc6bf9bf0a29f40e3f9e8fc0ea9346fbfadbba18eda20ccb65.webp)
 
 재무 렌즈의 판정: **가장 눈에 띄는 줄(순이익)이 가장 덜 믿을 줄이다** — 영업 라인 아래에서 구조적으로 눌려 있기 때문. P/E만 보면 이 회사를 오독한다. 애브비의 항해는 '매출과 영업 수익성'에서는 성공한 드문 절벽 통과지만, GAAP 순이익에서는 회복이 영업 라인 아래로 내려가지 못해 여전히 눌려 있다.
 

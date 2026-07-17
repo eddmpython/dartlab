@@ -7,7 +7,8 @@ series: data-reports
 seriesOrder: 7
 topicSlug: "single-segment-concentration"
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/data-single-segment-concentration.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c3/c3d8d4ac69ece5ec42afcffc23d9e336ce7f6b8d233d86ab1627455eb3db5922.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/45/45a21ff42248c59f97a4795c457af9b08bf94c232007ccc74d1e4faf00c627bf.webp
 tags: [사업 집중도, 단일제품, 다각화, 지주 디스카운트, PBR]
 keywords:
   - 사업 집중도

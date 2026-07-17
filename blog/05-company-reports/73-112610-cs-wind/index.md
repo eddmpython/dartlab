@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 73
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/112610-cs-wind.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/bb/bb35f01d13e8904b847d3a56d70fdffb7dd00df1eec049c338f2312a01ce0c51.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/aa/aae557a57406f2e469b76e1b23fcc439d2218f54f0aa048d1f570c2d64b1e7cb.webp
 tags: ["씨에스윈드", "112610", "풍력", "풍력타워", "Vestas", "CSWind", "해상풍력", "IRA", "재생에너지", "글로벌공장"]
 stockCode: "112610"
 corpName: "씨에스윈드"
@@ -393,7 +394,7 @@ Vestas 인수 영업권(goodwill) 일부 상각 또는 인수 후 우발부채 �
 
 ![글로벌 공장 8개국 — 기존 6개국(한국 군산·베트남 붕따우·터키·말레이시아·대만·포르투갈) + Vestas 인수 2개국(미국 콜로라도 푸에블로·덴마크 바레). 인수 금액 $1.2억으로 매출 +102%·점유율 30%+ 확보, 부채비율 92→201% 악화.](./assets/73-factories-8countries.svg)
 
-![해상풍력 단지 — 황혼의 바다에 솟은 흰 풍력 발전기들. 블레이드 회전체가 따뜻한 노을빛을 받고 있고 멀리 작업선이 베이스에 보인다. 씨에스윈드 타워 40%가 이런 해상풍력 프로젝트로 향한다.](./assets/73-offshore-windfarm.webp)
+![해상풍력 단지 — 황혼의 바다에 솟은 흰 풍력 발전기들. 블레이드 회전체가 따뜻한 노을빛을 받고 있고 멀리 작업선이 베이스에 보인다. 씨에스윈드 타워 40%가 이런 해상풍력 프로젝트로 향한다.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a2/a23f2f56b17e13454912cb23d287e4199da2146419792005aaa936fd7ec10921.webp)
 
 ### 4막의 끝
 
@@ -484,7 +485,7 @@ IEA 글로벌 풍력 설치 용량 전망 (Global Wind Report 2024 기준).
 
 ![에너지 전환 4사 비교 — 씨에스윈드 OPM +10.93%·부채비율 168%·dCR-A- vs LG엔솔 +5.69%·129%·A- vs 삼성SDI -12.98%·81%·A vs 두산퓨얼셀 -23.24%·226%·BB. 씨에스윈드만 OPM 10%대 회복, 그러나 영업외 비중 83%로 가장 높음.](./assets/73-energy-4firms.svg)
 
-![풍력 타워 공장 내부 — 거대한 흰 원통형 풍력 발전기 타워 섹션이 공장 바닥에 수평으로 놓인 와이드 샷. 오렌지 조끼와 헬멧을 쓴 작업자들이 옆에 서 있어 규모 비교 가능. 강철 빔이 노출된 산업 창고에 밝은 LED 조명.](./assets/73-wind-tower.webp)
+![풍력 타워 공장 내부 — 거대한 흰 원통형 풍력 발전기 타워 섹션이 공장 바닥에 수평으로 놓인 와이드 샷. 오렌지 조끼와 헬멧을 쓴 작업자들이 옆에 서 있어 규모 비교 가능. 강철 빔이 노출된 산업 창고에 밝은 LED 조명.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/9c/9c360ade09f6be0e45a69727c791c6827c36d20874dd3d09cafbaa5df602f08a.webp)
 
 ### 6막의 끝
 

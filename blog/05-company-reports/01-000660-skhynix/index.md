@@ -18,7 +18,8 @@ tags:
   - 가격결정력
   - 전자공시
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/000660-skhynix.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/5f/5f574adaf7581659dceb83e1fab4a50b919a01fd2c10f32262fb96d678289f29.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/6c/6cb8842a04ce8e8b633fb38185e46a07c29fe6d0e92b8530d7af1b704d0aefdd.webp
 youtubeId: "x9z7646-QbY"
 ai:
   verdict: "5번 죽을 뻔한 회사가 HBM ��점으로 메모리 30년 최강 사이클 진입. OPM 58%는 구조적 가격결정력."
@@ -224,7 +225,7 @@ c.analysis("financial", "수익성")
 
 ### 자본금 70억 — "자살에 가깝다"는 평가를 거스른 결정
 
-![정주영 현대그룹 명예회장 1998](./assets/01-chung-ju-yung.webp)
+![정주영 현대그룹 명예회장 1998](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/7b/7bd19ee7b386238843a9351ac7d1c43a1547b8b92b005b33d41230b5a960155b.webp)
 *정주영 현대그룹 명예회장(1998). 1983년 2월 24일, 그는 70억의 자본금으로 메모리 반도체 회사 현대전자를 세웠다 — "자살에 가깝다"는 시장 평가를 정면으로 거스른 결정이었다. 그 결정이 42년 후 분기 영업이익 19조의 SK하이닉스로 이어진다. (출처: Wikimedia Commons, public domain/CC)*
 
 1983년 어느 날, 현대그룹 정주영 회장은 새 사업을 시작하기로 했다. 메모리 반도체였다. 당시 한국은 반도체 산업이 거의 없었다. 정부가 5년 전 1978년에 한국전자기술연구소 (KIET) 를 세웠지만 실제 양산 능력은 없었다. 글로벌 시장은 미국, 일본, 그리고 1980년대 후반부터 합류한 한국 삼성전자가 작은 자리를 차지하고 있었다.
@@ -347,7 +348,7 @@ c.analysis("financial", "수익성")["marginWaterfall"]
 
 ![분기 매출 vs 영업이익 1년 변화](./assets/01-revenue-op-bars.svg)
 
-![SK하이닉스 DRAM 칩 클로즈업](./assets/01-skhynix-dram-chip.webp)
+![SK하이닉스 DRAM 칩 클로즈업](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a1/a1735ee05fbc2bdc65c3003f19baf84acffb517f266dc0c682afaca08f716172.webp)
 *SK하이닉스 H5TC2G83CFR DRAM 패키지 클로즈업. 일반 DRAM 한 개의 매출총이익률은 정점기에도 50%를 넘기 어렵다. (출처: Wikimedia Commons, CC BY-SA)*
 
 ### 매출총이익률 60% — 메모리 30년 만에 처음 쓰이는 "가격결정력"
@@ -427,7 +428,7 @@ c.select("IS", ["매출액","매출원가","매출총이익","판매비와관리
 - **24Q3**: DRAM 일반 가격도 회복. HBM 비중 30% 돌파
 - **24Q4**: 분기 영업이익 8조 돌파
 
-![SK하이닉스 H5TC 시리즈 DRAM 칩 패키지](./assets/01-skhynix-h5tc-chip.webp)
+![SK하이닉스 H5TC 시리즈 DRAM 칩 패키지](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/13/1365db8a9097bc8f277aef34f71c917548d1b089f80fc7772e294159c40e613f.webp)
 *SK하이닉스 H5TC4G83MFR DRAM 패키지. 8개 분기 동안 매출 5.09조 → 19.77조로 4배가 되는 사이, 같은 회사가 만드는 칩 한 개의 단가도 5~7배 뛰었다. 그 두 배수가 같이 떨어진 자리에 영업이익률 +108%포인트가 있다. (출처: Wikimedia Commons, CC BY-SA)*
 
 ### 매출 3.9배, 매출원가 그대로 — 이것이 사이클이 아니라 구조 변화인 이유
@@ -546,7 +547,7 @@ c.select("CF", ["영업활동현금흐름","유형자산의 취득"], freq="Y")
 
 2023년 적자기에 8.33조까지 줄였던 회사가 2년 만에 27.52조를 쓴다. **27.52조는 현대자동차 1년 영업이익(14.9조)의 거의 2배다.** 한국 2위 제조사가 1년에 버는 돈보다, SK하이닉스가 1년에 공장에 쏟는 돈이 크다. 매출의 약 28%를 다시 공장에 박았다.
 
-![SK하이닉스 DDR5 MRDIMM 차세대 메모리 모듈](./assets/01-skhynix-ddr5-mrdimm.webp)
+![SK하이닉스 DDR5 MRDIMM 차세대 메모리 모듈](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/0d/0d9d40a1f570d8b45bb2b8239d644c0508bbcbc1c058919a07e5fe8dc5c2bc9b.webp)
 *SK하이닉스 DDR5 Tall MRDIMM. 일반 메모리 1세대 위에 차세대(HBM/MRDIMM/HBM4) 매출 비중이 27조 설비투자의 정확한 베팅 대상이다. (출처: Wikimedia Commons, CC BY-SA)*
 
 ### 청주 M15X + 인디애나 — 2027년 분량 70% 선판매 완료

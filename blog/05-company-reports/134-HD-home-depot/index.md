@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 134
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/HD-home-depot.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/50/505cc3d3e05fa4cf19b56329b6f08d5d461525388487207db2d76837c61273f1.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/6b/6b6070f5072a0964dbd1a9b535cbb00e313803bd7d1cd4baa2c7c6103bae8e69.webp
 tags: ["홈디포", "HD", "고마진소매", "영업이익률", "SRS", "프로고객", "주택개량", "월마트", "코스트코", "미국주식"]
 stockCode: "HD"
 corpName: "The Home Depot"

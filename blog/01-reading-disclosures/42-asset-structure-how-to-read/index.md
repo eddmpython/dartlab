@@ -6,7 +6,8 @@ category: reading-disclosures
 series: financial-context
 seriesOrder: 11
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/42-asset-structure-how-to-read.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/87/87f3b5128fc9f81bfa6d3bd36de86dfdc3f5db233a86c22fda8627270ba11097.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/65/6505fcbb2fdbafb7a47684b66611ec0205694b3a147515ec439aec5e5c15e86b.webp
 ---
 
 # 자산 구조 분석 — BS를 영업/비영업으로 재분류하면 보이는 것들

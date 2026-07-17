@@ -6,7 +6,8 @@ category: reading-disclosures
 series: dart-foundations
 seriesOrder: 1
 thumbnail: /avatar-study.png
-ogImage: /thumbnails/01-everything-about-dart.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f1/f1a82c97b7ed08fd395c534019153ed184db99a33ab420f2b9b02d3a75aea66a.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/3b/3b4a4546c5c41625491a3939362f6d46ba726563cda38b5d712f4429505a4670.webp
 youtubeId: "-Y3kY1zs62I"
 ---
 

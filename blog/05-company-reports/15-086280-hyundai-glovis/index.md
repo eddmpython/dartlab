@@ -19,7 +19,8 @@ tags:
   - 보스턴다이내믹스
   - 전자공시
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/086280-hyundai-glovis.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/6e/6e1d6ed9012501fbc10effd30c3575ae474e665801297cc1564f9fb244ba1132.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/85/857d73744c7b7566fde97095657777dd61165622349a31cc28d265127a301643.webp
 youtubeId: ""
 ai:
   verdict: "물류가 아니라 배 회사. PCC선 98척. 해운이 영업이익 36%."
@@ -163,7 +164,7 @@ c.analysis("financial", "수익성")
 
 ## 1막 — 현대차가 만든 수요, 캡티브라는 이름의 독점
 
-![PCC선](./assets/15-pcc-ship.webp)
+![PCC선](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f7/f7c8f73efd0740d9e243b609dbad8fc7f8404a567edbdd6ce5b1e2f10cf9d69c.webp)
 
 ### 2001년 한국로지텍 — "울산에서 평택까지 차를 실어 나르라"
 
@@ -201,7 +202,7 @@ c.select("IS", ["매출액", "영업이익"]).chart()
 
 ## 2막 — 배가 터졌다, PCC선 운임 3배 급등
 
-![자동차운반선](./assets/15-car-carrier.webp)
+![자동차운반선](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/35/3507d1d1bb1cbdb783dd4a735283a37a48cc578f499186379dccab36f2e27c7e.webp)
 
 ### 해운 영업이익률 13.8% — 매출 18%인데 이익의 36%를 만든다
 
@@ -321,7 +322,7 @@ c.analysis("financial", "수익구조")
 
 ## 4막 — 물류회사 장부에 숨은 3.3조, 보스턴다이내믹스
 
-![로봇](./assets/15-boston-dynamics.webp)
+![로봇](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a6/a6d47706f9f182307f893c1f10f632db82d62217e7032c18eb7c8ff4ce8218e3.webp)
 
 ### 장부가 1,350억 vs 시장가치 3.3조 — 24배의 숨은 가치
 

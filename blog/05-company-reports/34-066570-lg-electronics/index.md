@@ -9,7 +9,8 @@ corpName: "LG전자"
 exchange: "KRX"
 storyTemplate: "턴어라운드"
 thumbnail: /avatar-chart.png
-ogImage: "/thumbnails/066570-lg-electronics.webp"
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e1/e1705286cfaadfffd53408453eeacf8f0b55cd3de8cdbd8294188571cf6b4885.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c7/c7a41a1fa8d445656594231747c8458b8c07dbbdb36d1e1105b7abb43fab5a88.webp
 description: "매출 89조인데 영업이익률 2.8%. 스마트폰 5조 적자를 끊고 전장 5,590억 흑자를 얻었다. 그런데 TV가 7,509억 적자로 회사를 깎아먹는다. 구독가전 2.5조가 미래를 바꿀 수 있을까."
 tags:
   - LG전자
@@ -147,7 +148,7 @@ import HFDataLink from '$lib/components/blog/HFDataLink.svelte';
 
 > **2021년 4월 5일. LG전자가 스마트폰 사업을 접었다. 23분기 연속 적자, 누적 약 5조원. "더 이상 미래가 없다"는 이사회 결정이었다.**
 
-![LG전자 생산라인](./assets/34-lg-factory.webp)
+![LG전자 생산라인](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/cc/cce0f020a2a88c7703baffc16f944a44e2902017f59d4664c8768d610f12ff8a.webp)
 
 ---
 

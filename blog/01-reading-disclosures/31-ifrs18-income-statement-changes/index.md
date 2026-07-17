@@ -6,7 +6,8 @@ category: reading-disclosures
 series: financial-context
 seriesOrder: 9
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/31-ifrs18-income-statement-changes.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a2/a2c208187cacfc9e7785776ea45b55436c2333b2be84970a6159407c05d2fa68.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/cb/cbb95295cea849153fc461db1bdeed481d1a0cf5cb51ea2364cb6979c0518fdb.webp
 ---
 
 # IFRS 18로 손익계산서가 바뀌면 투자자는 무엇을 다시 봐야 하나

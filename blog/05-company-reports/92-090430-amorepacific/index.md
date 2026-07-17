@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 92
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/090430-amorepacific.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/04/04f3511054e208bb6c7a22599f0e0985798999b695cdc167bbc1fa61705acd0a.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/2e/2ece3311d01a82a8ae2f2ec30588416bbecf07e652b7b8ae96e368770c0a50bf.webp
 tags: ["아모레퍼시픽", "090430", "화장품", "설화수", "라네즈", "이니스프리", "쿠션", "따이공", "서경배", "K뷰티", "중국"]
 stockCode: "090430"
 corpName: "아모레퍼시픽"
@@ -171,7 +172,7 @@ carousel:
 
 1964년, 서성환은 연구진에게 한마디를 던진다. **"한국인 몸에 맞는 원료는 역시 한방 원료입니다. 인삼 화장품을 만들어 봅시다."** 당시 세계 어느 화장품 회사도 인삼을 화장품에 쓰지 않았다. 2년 뒤인 1966년, 태평양화학은 **ABC 인삼크림** — 세계 최초의 한방(인삼) 화장품을 내놓는다. 훗날 설화수로 이어지는 효시다.
 
-![세계 최초 한방 화장품 — 원가는 싸고 값은 비싼 브랜드의 힘이 높은 매출총이익률의 뿌리가 됐다](./assets/092-sulwhasoo-counter.webp)
+![세계 최초 한방 화장품 — 원가는 싸고 값은 비싼 브랜드의 힘이 높은 매출총이익률의 뿌리가 됐다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/6c/6c03a83f492ecd04244d86d7d176fd6642d2a2cb6a05fece5f09be06b9ac75dc.webp)
 
 이 결정이 중요한 이유는 단순히 '최초'여서가 아니다. **한방이라는 콘셉트는 남이 쉽게 베낄 수 없는 가격 결정력을 만든다.** 똑같은 보습 크림이라도 "인삼·한방"이라는 이야기가 붙으면 더 비싸게 팔 수 있다. 원가는 비슷한데 가격은 높다 — 이것이 70% 안팎의 높은 매출총이익률을 설명하는 뿌리다. 1973년 인터뷰에서 서성환은 그 비결을 이렇게 설명했다. **"판매보다 기술 개발에 더 힘을 쏟아 소비자가 제품을 신뢰하고 있기 때문인 것 같습니다."**
 
@@ -207,7 +208,7 @@ carousel:
 
 그 수요가 들어오는 통로는 더 위태로웠다. **따이공(보따리상)**이었다. 한국 면세점에서 화장품을 박스째 사 중국에 되파는 보따리상이, 한국 면세 매출의 약 **44%(2019년)**, 코로나 이후엔 **80%대**를 차지하게 된다. 성장 엔진이 자국 소비자도, 자사 직영 채널도 아닌 *회색 중간상*이었던 셈이다. 2012~2016년 한국의 대(對)중국 화장품 수출은 연평균 **+63%**로 불었다 — 산업 전체를 들어 올린 거대한 바깥 파도였다.
 
-![중국이 열어 준 문 — 성장 엔진은 면세점 매대를 박스째 비우던 따이공(보따리상)이었다](./assets/092-dutyfree-counter.webp)
+![중국이 열어 준 문 — 성장 엔진은 면세점 매대를 박스째 비우던 따이공(보따리상)이었다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/5f/5ffd5c12d451dfb3b001a8ecaccb95de0a75bff321884fbd5fd0c1e5a31bca49.webp)
 
 ### 정점의 숫자들
 
@@ -372,7 +373,7 @@ c.select("CF", ["영업활동현금흐름", "유형자산의 취득"], freq="Y")
 
 **왜 미국인가.** 중국이라는 단 하나의 문에 운명을 걸었던 회사가, 2024년부터 다른 벽에 문을 내기 시작했다. 라네즈는 미국 세포라 등 핵심 뷰티 채널에서 접점을 넓혔고, 아마존 연말 대목(블랙프라이데이~사이버먼데이) 매출이 전년 대비 **+127%** 뛰었다. 북미에서 K뷰티 브랜드들을 실어 나르는 유통 플랫폼 [실리콘투](/blog/257720-silicon2)의 부상도 같은 흐름의 다른 얼굴이다.
 
-![새 문, 북미 — 라네즈가 미국 핵심 뷰티 채널에서 접점을 넓히고 있다](./assets/092-sephora-shelf.webp) 2021년부터 단계적으로 사들인 미국 스킨케어 브랜드 **코스알엑스(COSRX)**는 2023년 누적 약 9,350억 원을 들여 지분 93.2%로 자회사에 편입됐다 — 본체(090430) 연결 실적에 미국 매출이 본격적으로 더해지기 시작한 것이다.
+![새 문, 북미 — 라네즈가 미국 핵심 뷰티 채널에서 접점을 넓히고 있다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ee/ee016ec99c129fc25085339dd499ae71ac94f28d100f5e815fd5522f58664f6d.webp) 2021년부터 단계적으로 사들인 미국 스킨케어 브랜드 **코스알엑스(COSRX)**는 2023년 누적 약 9,350억 원을 들여 지분 93.2%로 자회사에 편입됐다 — 본체(090430) 연결 실적에 미국 매출이 본격적으로 더해지기 시작한 것이다.
 
 ### 북미는 중국의 반복인가, 아니면 구조 변화인가
 

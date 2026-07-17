@@ -6,7 +6,8 @@ category: company-reports
 series: 기업이야기
 seriesOrder: 89
 thumbnail: /avatar-default.png
-ogImage: /thumbnails/263750-pearlabyss-two-ips-meet.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/5e/5ee29db97a97eb1f968ebd9395499b861376ca7842eaeb0802c0d576393f98d7.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/63/63e5f87661e93f3a40171ed0707d543b6eedb5d3a88fa6da7127e83b6a2fc6fe.webp
 tags:
   - 펄어비스
   - 263750
@@ -157,7 +158,7 @@ carousel:
 
 ## 1 막 — 2026 년 3 월 19 일, 안양에서 한 분기에 만난 두 사건
 
-![붉은사막의 검사 — 6 년 개발한 자체 IP 의 첫 달 500 만장](./assets/89-fantasy-warrior-cinematic.webp)
+![붉은사막의 검사 — 6 년 개발한 자체 IP 의 첫 달 500 만장](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/25/25669e802539b8927d05e87ad96e2e221087b457d6845b0c10ca4271cd1c658f.webp)
 
 2026 년 3 월 19 일. 안양 본사의 한 회의실에서, 한 회사의 6 년이 출시 버튼 하나로 시장에 풀렸다. 같은 분기, 그 회사가 8 년 들고 있던 또 다른 IP 는 인수가의 절반 가격에 다른 회사로 넘어갔다. 2026 년 1 분기 펄어비스의 분기보고서에 두 사건이 함께 실렸다 — 하나는 첫 달 500 만 장의 신작 출시, 다른 하나는 -46% 자본손실로 정리한 외부 IP 매각.
 
@@ -209,7 +210,7 @@ carousel:
 
 ## 2 막 — 2010, 김대일과 검은사막의 출발
 
-![검은사막 풍 판타지 도시 풍경 — MMORPG 의 광역 오픈월드](./assets/89-mmorpg-cityscape.webp)
+![검은사막 풍 판타지 도시 풍경 — MMORPG 의 광역 오픈월드](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/6e/6e3729376215a8d7f55c6b3860e0110028b7e30a685326b31c14d0c4943a77ba.webp)
 
 2010 년 9 월. 30 세의 김대일은 NHN 을 나왔다. 그 해 그는 *R2*·*C9* 를 거치며 한국 MMORPG 개발자로서 이름을 쌓은 직후였고, 회사를 직접 세우기로 했다. 사명은 펄어비스. 본사는 판교가 아닌 경기도 안양.
 
@@ -576,7 +577,7 @@ K-게임 빅 5 를 흑자 (넥슨·크래프톤) 와 적자·미달 (엔씨·펄
 
 ## 8 막 — 두 IP 의 만남 (2026-03-19) — 글의 닫힘
 
-![EVE Online 풍 우주 함대 전투 — 8 년 보유한 외부 IP 의 결말](./assets/89-spaceship-cluster-eve.webp)
+![EVE Online 풍 우주 함대 전투 — 8 년 보유한 외부 IP 의 결말](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/2b/2baf6a1b737954a2738dde99107f6734e5ec01a5c71e8b4a514022ff33fb0c05.webp)
 
 2026-03-19. 안양 본사 회의실. 1 막에서 시작한 그 시점, 그 장소로 글은 회귀한다. 6 년 개발한 붉은사막이 출시 카운트다운에 들어가고, 8 년 보유한 CCP 의 매각 협상은 마무리 단계다.
 

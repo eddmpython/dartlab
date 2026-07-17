@@ -6,7 +6,8 @@ category: dartlab-news
 series: dartlab-news
 seriesOrder: 11
 thumbnail: /avatar-study.png
-ogImage: /thumbnails/news-dart-libraries-compared.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a1/a1bdfca032ce147dbda1a869b7fd03d968537799f897922705f677608a49d5d2.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ef/ef63d9720782d88191fa2ddad5505b16d1deb4cffb1d603047ba8316d59bb3a5.webp
 keywords:
   - dartlab
   - OpenDartReader

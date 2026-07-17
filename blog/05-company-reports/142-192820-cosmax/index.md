@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 142
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/192820-cosmax.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/fd/fdcc58c006f29883f42355ad41d16020c00c75bf6ba7c7af986eb189f06a750b.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/19/19b0e82f113a16ba7b39785cc3538c28a8dc98e6beba83641fec76ec4cc65094.webp
 tags: ["코스맥스", "192820", "화장품", "ODM", "영업이익률", "K뷰티", "한국콜마", "제조마진", "영업선아래", "한국주식"]
 stockCode: "192820"
 corpName: "코스맥스"
@@ -128,7 +129,7 @@ import ComboChart from '$lib/components/blog/ComboChart.svelte';
 
 핵심 질문은 하나다. 매출이 거의 두 배가 되는 내내, 회사에는 무엇이 남았고 무엇이 새어나갔나. 세 숫자는 같은 8년을 두고 서로 다른 박자로 움직였다.
 
-![라벨 없는 흰 용기들 — 브랜드가 지워진 자리에 제조사가 있다](./assets/142-behind-the-label.webp)
+![라벨 없는 흰 용기들 — 브랜드가 지워진 자리에 제조사가 있다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/51/51f70e2b79f04bb71423b9edfd5818b4565a9a3b0b857bfbab9d59684e634694.webp)
 
 ---
 
@@ -198,7 +199,7 @@ c.select("IS", ["영업이익", "당기순이익"], freq="Q")  # 영업선 아�
 
 출발점 2018년 영업CF가 −0.055조 음수였던 것까지 합치면, '이익=현금이 아니다'가 내부 수치만으로 증명된다(운전자본·재고 변동이 원인이라는 해석은 분해 없이는 단정 불가 — 어긋남의 사실까지만). 여기에 한 각도를 외부 인용으로 얹는다: 4~8% 마진을 '낮다'가 아니라 '브랜드 칸이 아닌 제조 칸을 점유한 자리의 값'으로 읽을 수도 있다는 산업 관점이다 — 단 이는 내부 수치가 증명하는 사실이 아니라 외부 보도의 프레이밍이다.
 
-![깨끗한 제조 라인 — 가치사슬에서 제조 칸을 점유한 자리](./assets/142-the-factory.webp)
+![깨끗한 제조 라인 — 가치사슬에서 제조 칸을 점유한 자리](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b1/b1f72c3550d38f62f2be36b9ccd726688e94b99629fdb31cbd9b703bbeaa8380.webp)
 
 8년의 끝에서 이 구조는 풀렸나, 더 높은 자리에서 반복되나 — 6막.
 

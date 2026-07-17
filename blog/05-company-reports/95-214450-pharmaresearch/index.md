@@ -6,7 +6,8 @@ category: company-reports
 series: company-reports
 seriesOrder: 95
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/214450-pharmaresearch.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/96/96321c04ee5be9c79e841c8a0bbb01fa36825b1da43e88724a5a2782279b44a1.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/6a/6a93d9fb5cb2ddddbe610ac9d6f67a1fefef725d6121524827f8063a60b305cc.webp
 tags: ["파마리서치", "214450", "PDRN", "리쥬란", "콘쥬란", "미용의료", "재생의학", "정상수", "휴메딕스", "메디톡스"]
 stockCode: "214450"
 corpName: "파마리서치"
@@ -156,7 +157,7 @@ carousel:
 
 그 머리가 2000년대에 한 생선 부산물에 닿는다. 이탈리아 회사 마스텔리(Mastelli)가 송어에서 뽑은 조직재생 물질(PDRN)을 보고, 정상수는 "우리 연어로 만들자"고 착안한다. 발명의 0번지는 거대한 R&D가 아니라, *남이 송어로 한 걸 우리 자원으로 옮기자*는 한 줄의 생각이었다.
 
-![연어 정소에서 국산화한 한 분자(PDRN) — 발명의 0번지](./assets/095-salmon.webp)
+![연어 정소에서 국산화한 한 분자(PDRN) — 발명의 0번지](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/71/71ea99b076d6ac7ad6b7fe1fe7229503184797d72f08b9a820bfea1f9c496a55.webp)
 
 이 장면을 창업 미담으로만 읽으면 약하다. 더 중요한 것은 정상수가 처음부터 공장을 가진 사람이 아니라 허가의 길을 아는 사람이었다는 점이다. 미용·의료기기·의약품은 좋은 원료만으로 팔리지 않는다. 병원에서 쓰려면 허가가 필요하고, 원료를 등록해야 하며, 품목을 나누고, 사용처를 설계해야 한다. 파마리서치의 초기 능력은 "무엇을 만들까"보다 "무엇을 어떤 허가 경로로 시장에 올릴까"에 가까웠다.
 
@@ -174,7 +175,7 @@ carousel:
 
 그런데 같은 해, 회사는 **KIST와 함께 연어 기반 PDRN을 국산화하는 연구**에 착수한다. 2009년 국내 최초로 해양자원 기반 PDRN 제조기술을 완성하고, 2013년 강릉에 GMP 공장을 지어 제조업 허가를 받았으며, 2014년 원료(DMF)를 등록했다.
 
-![강릉 GMP 공장 — 빌리지 않고 직접 만들기 위한 제조 기반](./assets/095-gmp-factory.webp) "도입"에서 "내가 만든다"로의 전환이다.
+![강릉 GMP 공장 — 빌리지 않고 직접 만들기 위한 제조 기반](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/1a/1ab932d1f8d50368312a15ceb9277bf639acd7d2d41eb6b0ad0e007f8e4c84fb.webp) "도입"에서 "내가 만든다"로의 전환이다.
 
 이 결정이 왜 중요한가. 미용·바이오 업계에서 *소재를 쥔다*는 것 자체는 드물지 않다 — 휴메딕스는 히알루론산(HA)을, 메디톡스는 보툴리눔 독소를 쥐었다. 자체 기술 플랫폼을 쥐고 큰 K-bio로는 [알테오젠](/blog/196170-alteogen)·[셀트리온](/blog/068270-celltrion)도 있다. 파마리서치의 차이는 그 소재를 **국산화로 새로 쥐었다**는 것, 그래서 그 위에 무엇을 올릴지를 스스로 정할 수 있었다는 데 있다. 빌린 원료로는 갈아끼우기를 할 수 없다.
 
@@ -226,7 +227,7 @@ carousel:
 
 **왜 마진이 안 깎였나(가설).** 파마리서치는 하나의 PDRN/PN 위에서 제품을 *갈아끼웠다*. 2014년 **리쥬란**(피부에 주사하는 스킨부스터, 미용) → 2017년 **콘쥬란**(무릎 관절강에 주사하는 골관절 치료, 정형, 2019년 신의료기술 인정). 제품 라인업이 늘어난 게 아니라, **한 소재가 미용에서 정형으로 가지를 친** 구조다.
 
-![리쥬란 — 피부에 주사하는 스킨부스터(미용)](./assets/095-rejuran-clinic.webp)
+![리쥬란 — 피부에 주사하는 스킨부스터(미용)](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/1e/1e80e422c7113c17a1bbb0a54610db909887b4a45adc39af0916edca7d65cbfb.webp)
 
 이 적층이 마진 방어와 어떻게 연결되는가 — 여기서는 *가설*로만 말한다(재무제표는 "원가가 낮다"까지만 보여줄 뿐, "한 분자를 복제해 비용을 면제받았다"는 인과를 증명하지 못한다). 가설은 이렇다: 한 시장(예: 미용 스킨부스터)이 후발 경쟁으로 가격경쟁에 들어가기 전에, 인접한 진료실(정형 관절)로 매출 무게중심을 옮길 수 있으면, 단일 제품 회사처럼 "가격을 깎아 점유율을 방어해야 하는" 압력에 덜 노출된다. 같은 공장, 같은 원료, 다른 진료실.
 

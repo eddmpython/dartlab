@@ -3,7 +3,7 @@
 	// 글이 SSOT 이고 여기선 posts.ts 색인을 읽기만 한다(사본·별도 색인 없음).
 	import { base } from '$app/paths';
 	import { Search, ExternalLink } from 'lucide-svelte';
-	import { getPostsByCategory } from '$lib/blog/posts';
+	import { blogAssetUrl, getPostsByCategory } from '$lib/blog/posts';
 
 	const stories = getPostsByCategory('dartlab-stories');
 
@@ -35,7 +35,7 @@
 						{#if post.cardPreviewWebp || post.cardPreview}
 							<img
 								class="sp-thumb"
-								src={`${base}${post.cardPreviewWebp ?? post.cardPreview}`}
+								src={blogAssetUrl(post.cardPreviewWebp ?? post.cardPreview, base)}
 								alt=""
 								loading="lazy"
 							/>

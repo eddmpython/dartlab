@@ -21,7 +21,8 @@ tags:
   - CAPEX
   - 전자공시
 thumbnail: /avatar-chart.png
-ogImage: /thumbnails/006400-samsung-sdi.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/21/2107806e8d91e4d663099f3c0db667dc81a1d1fe4621168331cc33daf85256b7.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/95/95d09da450ddb567bbac7ac88edebe4392d1587aba9f61bd8df1bc3c4da34f7d.webp
 youtubeId: ""
 ai:
   verdict: "2022 영업이익 1.81조 사상 최대 → 2025 -1.72조 대규모 적자. EV 캐즘과 CAPEX 6.27조 피크의 타이밍 미스 — LG엔솔은 OPM +5.69% 방어, 삼성SDI만 -12.98%"
@@ -321,7 +322,7 @@ for code in ["373220", "006400", "247540", "003670", "051910"]:
 
 이 급성장의 배경에는 **고객 포트폴리오 확대**가 있었다. BMW·포드·스텔란티스에 더해 2022년 **폴스타·리비안**, 2023년 **Rivian·Amazon 상용밴**까지 공급 시작. 특히 BMW는 삼성SDI의 초기·핵심 고객으로 2020년대 내내 가장 안정적인 매출원 역할을 했다.
 
-![프리즘형 리튬이온 배터리 셀 — 삼성SDI의 각형(Prismatic) 제품 구조 매크로](./assets/068-battery-cells.webp)
+![프리즘형 리튬이온 배터리 셀 — 삼성SDI의 각형(Prismatic) 제품 구조 매크로](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/aa/aac7389e759241ba82b479e4460dc6d27630d5cb1a27da53387784ea5e8f226b.webp)
 
 ### 요소 2 — 원가·가동률 호조
 
@@ -518,7 +519,7 @@ IS상의 "금융비용 1.05조"는 이자지급 3,499억 외에도 외환평가�
 
 5막까지가 "영업 손실의 정체"였다면 6막은 "그 손실을 만들 씨앗이 언제 뿌려졌는가"다. 답은 2022~2024년 CAPEX 결정. 이 3년의 투자 결정이 2025년 감가상각·고정비 부담으로 바로 내려왔다.
 
-![삼성SDI 배터리 공장 자동화 생산라인 — 각형 셀 조립 공정](./assets/068-factory-line.webp)
+![삼성SDI 배터리 공장 자동화 생산라인 — 각형 셀 조립 공정](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/78/78714c7574b6aa0ae7a105f182e2fb134904ba1561a59f1ceff471c035421fec.webp)
 
 ### CAPEX 시계열 — 3년 만에 3배
 

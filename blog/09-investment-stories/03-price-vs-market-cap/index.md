@@ -6,8 +6,9 @@ category: investment-stories
 series: investment-stories
 seriesOrder: 3
 topicSlug: "price-vs-market-cap"
-ogImage: /thumbnails/investment-price-vs-market-cap.webp
-thumbnail: /thumbnails/investment-price-vs-market-cap.webp
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/73/73c98f6fc3640e83f156ac28f1a59307ca6fe1e4b56ff48890fe8e488a7f06e5.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/67/672cb690d520b1908dad93fbf82df5b04db2ee8d9ff90e1c0d2897161ac6f391.webp
+thumbnail: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/73/73c98f6fc3640e83f156ac28f1a59307ca6fe1e4b56ff48890fe8e488a7f06e5.webp
 tags:
   - 주가
   - 시가총액
@@ -27,7 +28,7 @@ tags:
 
 시가총액은 이 조각의 문제를 해결하는 숫자다. 시가총액은 주가에 발행주식수를 곱한 값이다. 다시 말해 시장이 지금 그 회사 전체에 붙인 가격표다. 그래서 주가가 낮아도 발행주식수가 많으면 큰 회사가 되고, 주가가 높아도 발행주식수가 적으면 작은 회사가 될 수 있다.
 
-![한 주식 조각에서 발행주식수 묶음을 지나 회사 전체 모형으로 확장되는 투자 작업대](./assets/03-market-cap-workbench.webp)
+![한 주식 조각에서 발행주식수 묶음을 지나 회사 전체 모형으로 확장되는 투자 작업대](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/0a/0a6033c5c4d9cf851bba62bce4dd584bccbf40a75b3790168b2e1b6b5ff97f3e.webp)
 
 이 글은 투자권유가 아니다. 특정 종목의 매수, 매도, 목표주가를 말하지 않는다. 오히려 그 반대다. 주가 숫자 하나를 보고 빠르게 결론 내리려는 마음을 늦추기 위한 글이다. 이미 [기술적 분석이란 무엇인가](/blog/technical-analysis-foundations)에서 차트를 행동 흔적으로 보는 법을 다뤘고, [기술적 투자란 무엇을 보는가](/blog/technical-investing-price-indicators)에서는 DartLab price 데이터와 보조지표를 확인하는 흐름을 봤다. 이번 글은 그보다 더 앞단이다. 차트 선을 보기 전에, 화면 맨 앞의 주가가 무엇을 뜻하는지부터 다시 묻는다.
 
@@ -132,7 +133,7 @@ print(after_cap)   # 10,000,000.0
 
 여기서 구분이 필요하다. **기계적 가치 변화**와 **시장 행동 변화**는 다르다. 분할의 기계적 효과는 주가를 낮추고 주식 수를 늘려 전체 시가총액을 이론적으로 그대로 두는 것이다. 하지만 시장 참여자의 행동은 달라질 수 있다. 더 많은 사람이 살 수 있게 되었다고 느끼면 수요가 늘 수 있고, 반대로 이미 기대가 주가에 반영됐다면 이벤트 뒤에 식을 수도 있다.
 
-![적은 큰 조각과 많은 작은 조각이 같은 총가치를 나타내는 분할 전후 균형 저울](./assets/05-split-balance-desk.webp)
+![적은 큰 조각과 많은 작은 조각이 같은 총가치를 나타내는 분할 전후 균형 저울](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/22/22a0387607d09f85bc7e09304d23b068fcbd26da763ab10c10fe561a29823292.webp)
 
 [Investor.gov의 stock split 설명](https://www.investor.gov/introduction-investing/investing-basics/glossary/stock-split)은 분할이 주식 수와 주당 가격을 바꾸는 이벤트라는 점을 교육용으로 다룬다. [FINRA의 주식 투자 기본 설명](https://www.finra.org/investors/investing/investment-products/stocks)도 주식이 회사 소유권의 지분이라는 점에서 출발한다. 이 두 설명을 합치면 핵심은 간단하다. 주식은 조각이고, 분할은 조각의 개수를 바꾸는 일이다. 조각 수가 바뀌었다고 피자 전체가 자동으로 커지는 것은 아니다.
 

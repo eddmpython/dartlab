@@ -9,7 +9,8 @@ corpName: "NIKE, Inc."
 exchange: "NYSE"
 storyTemplate: "턴어라운드"
 thumbnail: /avatar-chart.png
-ogImage: "/thumbnails/NKE-nike.webp"
+ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/4a/4aafc35de8c90f70d181b39240c66da31ed07dc44782114b9dc8ac795a5a3929.webp
+cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d5/d5f7016cfb6410483d63d543b764e78dad04ce9f34f0440cd68cd747022c6551.webp
 description: "매출 $51B→$46B. 주가 $170→$44. 자사주 $11.8B 태웠는데 반토막. 직접판매 올인으로 도매 파트너 50%를 잘랐더니 빈 선반을 On/Hoka/NB가 차지했다. 32년 Nike맨이 돌아왔다."
 tags:
   - Nike
@@ -145,7 +146,7 @@ import HFDataLink from '$lib/components/blog/HFDataLink.svelte';
 
 > **세계 1위 스포츠웨어. 매출 $51B. 그런데 FY2025 $46B. -10%. CEO가 도매를 잘랐더니 빈 선반을 경쟁사가 주웠다.**
 
-![Nike 매장](./assets/29-nike-store.webp)
+![Nike 매장](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/2e/2e4cfedfdae9955491d4f362ea1555dacbd3936a7e9157fc98ba5cabed7624a1.webp)
 
 ---
 
@@ -208,7 +209,7 @@ FY2020 매출 $37.4B(-4.4%). 코로나로 매장이 닫힌 결과다. 외부 충
 
 ### 2020년, 도매를 끊기로 한 CEO
 
-![DTC 전략](./assets/29-nike-competitors.webp)
+![DTC 전략](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e7/e79bbfbd155b9097cdc379bf8e9a90e3e46b9f5658b768c07b33f0f4a03fd0db.webp)
 
 John Donahoe. eBay CEO 출신. 2020년 1월 Nike CEO 취임. 그의 전략은 명확했다. **"중간상을 없애고 소비자에게 직접 판다."** 직접판매(DTC, 자사 온라인몰+직영매장). Nike.com + Nike 직영 매장을 중심축으로 만든다.
 
