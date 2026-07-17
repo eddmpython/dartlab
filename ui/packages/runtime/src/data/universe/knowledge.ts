@@ -50,6 +50,20 @@ interface HfTreeEntry {
 	path: string;
 }
 
+interface HfPathInfo {
+	type: 'file';
+	oid?: string;
+	size?: number;
+	path: string;
+	lfs?: { oid?: string; size?: number } | null;
+	xetHash?: string | null;
+	lastCommit?: { id?: string; title?: string; date?: string } | null;
+	securityFileStatus?: {
+		status?: string;
+		avScan?: { status?: string } | null;
+	} | null;
+}
+
 interface SkillGraphNode {
 	id: string;
 	title: string;
@@ -496,6 +510,34 @@ export function createUniverseKnowledgeRuntime(core: DataCore, loaders: Universe
 		parse: parseJson
 	});
 
+	const loadFileMeta = (revision: string, path: string) => core.request<UniverseKnowledgeContent['fileMeta']>({
+		origin: 'hfApi',
+		path: `paths-info/${encodeURIComponent(revision)}`,
+		cacheKey: `universe:knowledge:fileMeta:${revision}:${path}`,
+		init: {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+			body: new URLSearchParams({ paths: path, expand: 'true' })
+		},
+		parse: async (response) => {
+			const entries = await parseJson<readonly HfPathInfo[]>(response);
+			const entry = entries.find((candidate) => candidate.type === 'file' && candidate.path === path);
+			if (!entry) throw new Error(`Universe knowledge file metadata missing: ${path}`);
+			return Object.freeze({
+				sizeBytes: typeof entry.size === 'number' ? entry.size : null,
+				blobId: entry.oid ?? '',
+				lfsOid: entry.lfs?.oid ?? null,
+				lfsSizeBytes: typeof entry.lfs?.size === 'number' ? entry.lfs.size : null,
+				xetHash: entry.xetHash ?? null,
+				lastCommitId: entry.lastCommit?.id ?? null,
+				lastCommitTitle: entry.lastCommit?.title ?? null,
+				lastCommitAt: entry.lastCommit?.date ?? null,
+				securityStatus: entry.securityFileStatus?.status ?? null,
+				antivirusStatus: entry.securityFileStatus?.avScan?.status ?? null
+			});
+		}
+	});
+
 	async function overview(): Promise<UniverseKnowledgeOverview> {
 		const [info, rootEntries, graph] = await Promise.all([loadMetadata(), loadRoot(), loaders.loadSkillGraph()]);
 		const engineSkillCount = graph.nodes.filter((node) => node.category === 'engines').length;
@@ -697,6 +739,7 @@ export function createUniverseKnowledgeRuntime(core: DataCore, loaders: Universe
 		const path = normalizedPath(targetId.slice('hf:'.length));
 		if (!path) throw new Error('Universe content path is empty');
 		const info = await loadMetadata();
+		const fileMetaPromise = loadFileMeta(info.sha, path);
 		const kind = universeContentKind(path);
 		const mimeType = universeContentMime(kind, path);
 		const extension = path.split('.').at(-1)?.toLocaleLowerCase() ?? '';
@@ -791,9 +834,10 @@ export function createUniverseKnowledgeRuntime(core: DataCore, loaders: Universe
 			mode = 'mediaReference';
 		}
 
+		const fileMeta = await fileMetaPromise;
 		return Object.freeze({
 			targetId, path, title, kind, mimeType, revision: info.sha, sourceRef, contentRef: rawRef, text,
-			columns, schema, rows, tree, tableMeta,
+			columns, schema, rows, tree, tableMeta, fileMeta,
 			receipt: Object.freeze({
 				mode,
 				requestedBytes,

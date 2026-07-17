@@ -37,6 +37,9 @@ interface ContentCallLog {
 	parquetRevision?: string;
 	byteOrigin?: string;
 	bytePath?: string;
+	metadataPath?: string;
+	metadataMethod?: string;
+	metadataBody?: string;
 }
 
 function fakeCore(contentCalls?: ContentCallLog): DataCore {
@@ -44,6 +47,22 @@ function fakeCore(contentCalls?: ContentCallLog): DataCore {
 		async request<T>(spec: RequestSpec<T>): Promise<T> {
 			if (spec.path.startsWith('tree/main')) {
 				return [{ type: 'directory', path: 'dart' }, { type: 'directory', path: 'edgar' }] as T;
+			}
+			if (spec.path.startsWith('paths-info/')) {
+				if (contentCalls) {
+					contentCalls.metadataPath = spec.path;
+					contentCalls.metadataMethod = spec.init?.method;
+					contentCalls.metadataBody = String(spec.init?.body ?? '');
+				}
+				const path = new URLSearchParams(String(spec.init?.body ?? '')).get('paths') ?? '';
+				const payload = [{
+					type: 'file', path, oid: 'blob-123', size: path.endsWith('.parquet') ? 1_024 : 81,
+					lfs: path.endsWith('.parquet') ? { oid: 'lfs-456', size: 1_024 } : null,
+					xetHash: 'xet-789',
+					lastCommit: { id: 'commit-abc', title: '데이터 갱신', date: '2026-07-16T03:00:00.000Z' },
+					securityFileStatus: { status: 'queued', avScan: { status: 'queued' } }
+				}];
+				return spec.parse(new Response(JSON.stringify(payload), { status: 200 })) as Promise<T>;
 			}
 			return {
 				sha: 'revision-1',
@@ -156,6 +175,18 @@ describe('Universe knowledge runtime', () => {
 		expect(textContent.receipt.mode).toBe('byteRange');
 		expect(contentCalls.byteOrigin).toBe('hfRevisionRange');
 		expect(contentCalls.bytePath).toBe('revision-1/README.md');
+		expect(contentCalls.metadataPath).toBe('paths-info/revision-1');
+		expect(contentCalls.metadataMethod).toBe('POST');
+		expect(contentCalls.metadataBody).toContain('paths=README.md');
+		expect(contentCalls.metadataBody).toContain('expand=true');
+		expect(textContent.fileMeta).toMatchObject({
+			sizeBytes: 81,
+			blobId: 'blob-123',
+			xetHash: 'xet-789',
+			lastCommitId: 'commit-abc',
+			securityStatus: 'queued',
+			antivirusStatus: 'queued'
+		});
 
 		const tableContent = await contentRuntime.content('hf:dart/companyProfile.parquet');
 		expect(tableContent.kind).toBe('table');
@@ -164,6 +195,7 @@ describe('Universe knowledge runtime', () => {
 		expect(contentCalls.parquetRevision).toBe('revision-1');
 		expect(tableContent.tableMeta).toMatchObject({ fileSizeBytes: 1_024, totalRows: 30, rowGroupCount: 3, rangeRequestCount: 1, rowStart: 0, rowEnd: 12 });
 		expect(tableContent.schema[2]).toMatchObject({ name: 'listed', physicalType: 'BOOLEAN' });
+		expect(tableContent.fileMeta).toMatchObject({ sizeBytes: 1_024, lfsOid: 'lfs-456', lfsSizeBytes: 1_024 });
 
 		const nextTableContent = await contentRuntime.content('hf:dart/companyProfile.parquet', 12);
 		expect(nextTableContent.tableMeta).toMatchObject({ rowStart: 12, rowEnd: 24, totalRows: 30 });

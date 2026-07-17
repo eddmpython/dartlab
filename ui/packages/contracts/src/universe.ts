@@ -816,6 +816,19 @@ export interface UniverseKnowledgeContentReceipt {
 	truncated: boolean;
 }
 
+export interface UniverseKnowledgeFileMeta {
+	sizeBytes: number | null;
+	blobId: string;
+	lfsOid: string | null;
+	lfsSizeBytes: number | null;
+	xetHash: string | null;
+	lastCommitId: string | null;
+	lastCommitTitle: string | null;
+	lastCommitAt: string | null;
+	securityStatus: string | null;
+	antivirusStatus: string | null;
+}
+
 export interface UniverseKnowledgeContent {
 	targetId: string;
 	path: string;
@@ -831,5 +844,6 @@ export interface UniverseKnowledgeContent {
 	rows: readonly Readonly<Record<string, string>>[];
 	tree: readonly UniverseKnowledgeTreeNode[];
 	tableMeta: UniverseKnowledgeTableMeta;
+	fileMeta: UniverseKnowledgeFileMeta;
 	receipt: UniverseKnowledgeContentReceipt;
 }

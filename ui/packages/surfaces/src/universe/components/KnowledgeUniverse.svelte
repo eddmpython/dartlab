@@ -67,6 +67,13 @@
 		return `${value.toLocaleString()} B`;
 	}
 
+	function formatDate(value: string | null): string {
+		if (!value) return '기록 없음';
+		const date = new Date(value);
+		if (Number.isNaN(date.getTime())) return value;
+		return new Intl.DateTimeFormat('ko-KR', { dateStyle: 'medium', timeStyle: 'short' }).format(date);
+	}
+
 	function domainCount(domainId: UniverseKnowledgeDomainId): number | null {
 		return coverage?.domainCounts[domainId]
 			?? overview?.domains.find((domain) => domain.domainId === domainId)?.itemCount
@@ -405,6 +412,21 @@
 							{#if content.receipt.truncated}<b>BOUNDED PREVIEW</b>{/if}
 						</footer>
 					</section>
+					<section class="fileProvenance" aria-label={`${content.title} 파일 계보`}>
+						<header><span>FILE PROVENANCE</span><b>{content.fileMeta.securityStatus ?? 'UNKNOWN'}</b></header>
+						<div class="provenanceFacts">
+							<div><span>FILE SIZE</span><strong>{content.fileMeta.sizeBytes !== null ? formatBytes(content.fileMeta.sizeBytes) : '기록 없음'}</strong></div>
+							<div><span>LAST COMMIT</span><strong>{formatDate(content.fileMeta.lastCommitAt)}</strong></div>
+							<div><span>AV SCAN</span><strong>{content.fileMeta.antivirusStatus ?? '기록 없음'}</strong></div>
+						</div>
+						{#if content.fileMeta.lastCommitTitle}<p>{content.fileMeta.lastCommitTitle}</p>{/if}
+						<div class="provenanceHashes">
+							{#if content.fileMeta.lastCommitId}<div><span>COMMIT</span><code title={content.fileMeta.lastCommitId}>{content.fileMeta.lastCommitId}</code></div>{/if}
+							{#if content.fileMeta.blobId}<div><span>BLOB</span><code title={content.fileMeta.blobId}>{content.fileMeta.blobId}</code></div>{/if}
+							{#if content.fileMeta.lfsOid}<div><span>LFS</span><code title={content.fileMeta.lfsOid}>{content.fileMeta.lfsOid}</code></div>{/if}
+							{#if content.fileMeta.xetHash}<div><span>XET</span><code title={content.fileMeta.xetHash}>{content.fileMeta.xetHash}</code></div>{/if}
+						</div>
+					</section>
 				{/if}
 				{#if selectedAttributes.length > 0}
 					<dl>{#each selectedAttributes as [key, value] (key)}<div><dt>{key}</dt><dd>{typeof value === 'number' ? value.toLocaleString() : String(value)}</dd></div>{/each}</dl>
@@ -562,6 +584,19 @@
 	.contentPreview > footer span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.contentPreview > footer code { margin-left: auto; color: #6d84a0; }
 	.contentPreview > footer b { flex: 0 0 auto; color: #bc925b; font-size: 6px; letter-spacing: .06em; }
+	.fileProvenance { margin-top: 8px; overflow: hidden; border: 1px solid rgba(93, 119, 152, .14); border-radius: 9px; background: rgba(8, 13, 21, .66); }
+	.fileProvenance > header { min-height: 29px; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; border-bottom: 1px solid rgba(84, 108, 139, .11); }
+	.fileProvenance > header span { color: #58708d; font: 650 7px/1 ui-monospace, monospace; letter-spacing: .1em; }
+	.fileProvenance > header b { border-radius: 999px; padding: 3px 5px; color: #b29362; background: rgba(178, 147, 98, .1); font: 650 6px/1 ui-monospace, monospace; letter-spacing: .06em; }
+	.provenanceFacts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+	.provenanceFacts div { min-width: 0; padding: 9px; border-right: 1px solid rgba(84, 108, 139, .1); }
+	.provenanceFacts div:last-child { border-right: 0; }
+	.provenanceFacts span, .provenanceHashes span { display: block; color: #4f6279; font: 600 6px/1 ui-monospace, monospace; }
+	.provenanceFacts strong { display: block; margin-top: 5px; overflow: hidden; color: #91a3b8; font: 550 7px/1.2 ui-monospace, monospace; text-overflow: ellipsis; white-space: nowrap; }
+	.fileProvenance > p { margin: 0; padding: 9px 10px; border-top: 1px solid rgba(84, 108, 139, .08); color: #8395aa; font-size: 8px; line-height: 1.45; overflow-wrap: anywhere; }
+	.provenanceHashes { border-top: 1px solid rgba(84, 108, 139, .08); padding: 5px 10px; }
+	.provenanceHashes div { min-width: 0; display: grid; grid-template-columns: 48px minmax(0, 1fr); align-items: center; gap: 7px; padding: 4px 0; }
+	.provenanceHashes code { min-width: 0; overflow: hidden; color: #677f9b; font: 500 7px/1 ui-monospace, monospace; text-overflow: ellipsis; white-space: nowrap; user-select: text; }
 	dl { margin: 16px 0 0; }
 	dl div { display: grid; grid-template-columns: 74px minmax(0, 1fr); gap: 8px; padding: 7px 0; border-bottom: 1px solid rgba(85, 106, 134, .1); }
 	dt { color: #53667e; font: 600 7px/1.3 ui-monospace, monospace; overflow-wrap: anywhere; }
