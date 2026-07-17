@@ -1,5 +1,6 @@
 import { createDataCore } from '@dartlab/ui-runtime/data/fetch/request';
 import {
+	createUniverseGlobalRuntime,
 	createUniverseEvidenceResolver,
 	loadCurrentChangeUniverse,
 	loadCompanyProjection,
@@ -14,8 +15,13 @@ export function createUniverseBrowser(options: DartlabBrowserOptions): UniverseB
 	let seedPromise: ReturnType<typeof loadUniverseRouteSeed> | null = null;
 	const seed = () => (seedPromise ??= loadUniverseRouteSeed(dataCore, options.universeReleaseState));
 	const resolveEvidence = createUniverseEvidenceResolver(dataCore);
+	const global = createUniverseGlobalRuntime(dataCore);
 	return {
 		seed,
+		globalCoverage: global.coverage,
+		searchEntities: global.search,
+		entityProfile: global.profile,
+		compareEntities: global.compare,
 		industry: (industryId) => loadIndustryProjection(dataCore, industryId),
 		company: (stockCode) => loadCompanyProjection(dataCore, stockCode),
 		observations: (entityId, metricId, range) => loadObservationSeries(dataCore, entityId, metricId, range),

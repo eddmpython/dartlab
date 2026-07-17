@@ -40,9 +40,14 @@ async function identity(prefix: string, payload: unknown): Promise<string> {
 }
 
 function validIdentity(entity: UniverseLegalEntityIdentity): boolean {
-	if (!entity.sourceRef || !entity.validFrom || !entity.securityId || !entity.ticker) return false;
-	if (entity.market === 'KR') return KR_CORP_CODE.test(entity.legalEntityId) && KR_SECURITY.test(entity.securityId);
-	return US_CIK.test(entity.legalEntityId) && US_TICKER.test(entity.ticker);
+	if (!entity.sourceRef) return false;
+	if (entity.market === 'KR') {
+		return KR_CORP_CODE.test(entity.legalEntityId)
+			&& (entity.securityId === null || KR_SECURITY.test(entity.securityId))
+			&& (entity.ticker === null || KR_SECURITY.test(entity.ticker));
+	}
+	return US_CIK.test(entity.legalEntityId)
+		&& (entity.ticker === null || US_TICKER.test(entity.ticker));
 }
 
 async function conformanceGap(questionId: string, market: 'KR' | 'US' | 'PAIR', reasonCode: string): Promise<GapReceipt> {

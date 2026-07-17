@@ -1,12 +1,17 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import type {
+		UniverseCatalogCoverage,
 		UniverseChangeMark,
 		UniverseChangeSet,
+		UniverseEntityProfile,
+		UniverseEntitySearchRequest,
+		UniverseEntitySearchResult,
 		UniverseEvidenceQuery,
 		UniverseEvidenceResolution,
 		UniverseLensRef,
 		UniverseLensTray,
+		UniversePairComparison,
 		UniverseRouteSeed,
 		UniverseUrlState,
 		UniverseWorkflowCompilation,
@@ -15,6 +20,7 @@
 	import { compileLensTray, compileUniverseWorkflow, UNIVERSE_WORKFLOWS } from '@dartlab/ui-runtime/data/universe';
 	import ChangeUniverse from './components/ChangeUniverse.svelte';
 	import EvidenceDrawer from './components/EvidenceDrawer.svelte';
+	import GlobalUniverse from './components/GlobalUniverse.svelte';
 	import KillChain from './components/KillChain.svelte';
 	import LensTray from './components/LensTray.svelte';
 	import UniverseCanvas from './components/UniverseCanvas.svelte';
@@ -27,10 +33,14 @@
 		mapHref?: string;
 		loadChanges?: (maxMarks?: number) => Promise<UniverseChangeSet>;
 		resolveEvidence?: (query: UniverseEvidenceQuery) => Promise<UniverseEvidenceResolution>;
+		loadGlobalCoverage: () => Promise<UniverseCatalogCoverage>;
+		searchEntities: (request: UniverseEntitySearchRequest) => Promise<UniverseEntitySearchResult>;
+		loadEntityProfile: (entityId: string) => Promise<UniverseEntityProfile>;
+		compareEntities: (krEntityId: string, usEntityId: string) => Promise<UniversePairComparison>;
 	}
 
-	let { seed, mapHref = '/map', loadChanges, resolveEvidence }: Props = $props();
-	type PrimaryMode = 'atlas' | 'change' | 'workflow';
+	let { seed, mapHref = '/map', loadChanges, resolveEvidence, loadGlobalCoverage, searchEntities, loadEntityProfile, compareEntities }: Props = $props();
+	type PrimaryMode = 'global' | 'atlas' | 'change' | 'workflow';
 	type ViewMode = 'universe' | 'table';
 	let primaryMode = $state<PrimaryMode>('atlas');
 	let viewMode = $state<ViewMode>('universe');
@@ -44,8 +54,7 @@
 	let highlightedIds = $derived(new Set(queryMatches.map((node) => node.nodeId)));
 	let selectedNode = $derived(selectedId ? nodeById.get(selectedId) ?? null : null);
 	let connectedEdges = $derived(selectedId ? seed.scene.edges.filter((edge) => edge.sourceId === selectedId || edge.targetId === selectedId) : []);
-	let companyCount = $derived(seed.atlas.industries.reduce((total, industry) => total + industry.nodeCount, 0));
-	let totalRevenue = $derived(seed.atlas.industries.reduce((total, industry) => total + industry.revenue, 0));
+	let atlasNodeCount = $derived(seed.atlas.industries.reduce((total, industry) => total + industry.nodeCount, 0));
 	let changeSet = $state<UniverseChangeSet | null>(null);
 	let changeLoading = $state(false);
 	let changeError = $state<string | null>(null);
@@ -235,8 +244,8 @@
 	<section class="hero">
 		<div>
 			<div class="eyebrow"><span class="pulse"></span>DARTLAB UNIVERSE <b>PRODUCTION</b></div>
-			<h1>시장을 관계로 읽되,<br /><em>근거보다 먼저 확신하지 않습니다.</em></h1>
-			<p>{seed.atlas.industries.length}개 산업의 구조와 집계 흐름을 하나의 결정론적 장면으로 탐색합니다. 현재 선은 공시 원문이 결속된 사실이 아니라 <strong>파생 집계</strong>이며, 기업 관계는 exact evidence가 결속되기 전까지 후보로만 표시됩니다.</p>
+			<h1>DART와 EDGAR를 연결하되,<br /><em>근거보다 먼저 확신하지 않습니다.</em></h1>
+			<p>글로벌 법인 검색, 기업별 재무 관측, 한미 20문항 비교와 한국 산업 관계 장면을 한곳에서 탐색합니다. 대규모 카탈로그는 필요한 순간에만 원본 Parquet에서 읽고, 직접 비교가 불가능한 값은 <strong>BLOCKED</strong>로 남깁니다.</p>
 		</div>
 		<div class="heroMeta">
 			<div><span>STATUS</span><strong>GA</strong></div>
@@ -247,15 +256,16 @@
 	</section>
 
 	<section class="metrics" aria-label="데이터 커버리지">
-		<div><span>INDUSTRIES</span><strong>{seed.atlas.industries.length}</strong><small>산업 분류</small></div>
-		<div><span>COMPANIES</span><strong>{companyCount.toLocaleString()}</strong><small>atlas 구성 종목</small></div>
+		<div><span>ATLAS INDUSTRIES</span><strong>{seed.atlas.industries.length}</strong><small>한국 산업 분류</small></div>
+		<div><span>KR ATLAS NODES</span><strong>{atlasNodeCount.toLocaleString()}</strong><small>전체 법인 수가 아닌 지도 배치 노드</small></div>
 		<div><span>AGGREGATE FLOWS</span><strong>{seed.scene.edges.length}</strong><small>파생 집계선</small></div>
-		<div><span>REVENUE COVERAGE</span><strong>{formatRevenue(totalRevenue)}</strong><small>지도 단위 합계</small></div>
+		<div><span>GLOBAL CATALOG</span><strong>DART + EDGAR</strong><small>탭 진입 시 원본 지연 로드</small></div>
 	</section>
 
 	<section class="workbench">
 		<header class="toolbar">
 			<div class="sceneSwitch" aria-label="Universe 장면">
+				<button class:active={primaryMode === 'global'} onclick={() => selectPrimaryMode('global')}>글로벌</button>
 				<button class:active={primaryMode === 'atlas'} onclick={() => selectPrimaryMode('atlas')}>아틀라스</button>
 				<button class:active={primaryMode === 'change'} onclick={() => selectPrimaryMode('change')}>변화</button>
 				<button class:active={primaryMode === 'workflow'} onclick={() => selectPrimaryMode('workflow')}>Kill-Chain</button>
@@ -273,9 +283,11 @@
 			</div>
 		</header>
 
-		<div class="workspace">
+		<div class="workspace" class:globalMode={primaryMode === 'global'}>
 			<div class="scenePanel">
-				{#if primaryMode === 'atlas'}
+				{#if primaryMode === 'global'}
+					<GlobalUniverse loadCoverage={loadGlobalCoverage} {searchEntities} loadProfile={loadEntityProfile} {compareEntities} />
+				{:else if primaryMode === 'atlas'}
 					<div class="sceneHeader">
 						<div><span>SCENE 01</span><h2>한국 시장 산업 아틀라스</h2></div>
 						<div class="legend"><span class="candidate">후보 노드</span><span class="derived">파생 흐름</span></div>
@@ -292,7 +304,7 @@
 				{/if}
 			</div>
 
-			<aside class="inspector" class:drawerOpen={selectedChange !== null}>
+			{#if primaryMode !== 'global'}<aside class="inspector" class:drawerOpen={selectedChange !== null}>
 				{#if selectedChange}
 					<EvidenceDrawer change={selectedChange} resolution={evidenceResolution} loading={evidenceLoading} error={evidenceError} onResolve={() => void searchChangeEvidence()} onClose={() => { selectedChange = null; evidenceResolution = null; evidenceError = null; }} />
 				{:else if selectedNode}
@@ -322,7 +334,7 @@
 						</div>
 					</div>
 				{/if}
-			</aside>
+			</aside>{/if}
 		</div>
 		{#if primaryMode === 'workflow' || selectedChange}
 			<TimeLens validAt={urlState.validAt} knownAt={urlState.knownAt} onChange={setTimeLens} />
@@ -377,6 +389,7 @@
 	.viewSwitch button { border: 0; border-radius: 6px; padding: 7px 12px; background: transparent; color: #66778e; font-size: 11px; cursor: pointer; }
 	.viewSwitch button.active { background: #1a2637; color: #dce5f2; }
 	.workspace { display: grid; grid-template-columns: minmax(0, 1fr) 310px; min-height: 650px; }
+	.workspace.globalMode { grid-template-columns: minmax(0, 1fr); }
 	.scenePanel { min-width: 0; padding: 18px; border-right: 1px solid #172231; }
 	.sceneHeader { display: flex; justify-content: space-between; align-items: end; margin: 0 2px 13px; }
 	.sceneHeader span, .inspectorHead span, .emptyInspector > span, .sourceRef span { color: #53657d; font: 600 8px/1 ui-monospace, monospace; letter-spacing: .12em; }

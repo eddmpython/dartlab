@@ -1,10 +1,15 @@
 import type { FetchLike } from '@dartlab/ui-runtime/data/dartlabData';
 import type {
 	UniverseChangeSet,
+	UniverseCatalogCoverage,
+	UniverseEntityProfile,
+	UniverseEntitySearchRequest,
+	UniverseEntitySearchResult,
 	UniverseEvidenceQuery,
 	UniverseEvidenceResolution,
 	UniverseObservationPoint,
 	UniverseObservationRange,
+	UniversePairComparison,
 	UniverseReleaseState,
 	UniverseRouteSeed
 } from '@dartlab/ui-contracts';
@@ -31,6 +36,10 @@ export interface ScanBundle {
 
 export interface UniverseBrowser {
 	seed(): Promise<UniverseRouteSeed>;
+	globalCoverage(): Promise<UniverseCatalogCoverage>;
+	searchEntities(request: UniverseEntitySearchRequest): Promise<UniverseEntitySearchResult>;
+	entityProfile(entityId: string): Promise<UniverseEntityProfile>;
+	compareEntities(krEntityId: string, usEntityId: string): Promise<UniversePairComparison>;
 	industry(industryId: string): Promise<unknown>;
 	company(stockCode: string): Promise<unknown>;
 	observations(entityId: string, metricId: string, range?: UniverseObservationRange): Promise<UniverseObservationPoint[]>;

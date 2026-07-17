@@ -9,19 +9,19 @@
 </script>
 
 <svelte:head>
-	<title>DartLab Universe · 시장 관계와 변화 근거 탐색</title>
-	<meta name="description" content="한국 시장의 산업 구조, 집계 흐름, 변화 신호와 반증 워크플로를 근거 상태와 함께 탐색하는 DartLab Universe" />
+	<title>DartLab Universe · DART EDGAR 글로벌 법인 지식 우주</title>
+	<meta name="description" content="DART와 EDGAR 전체 법인 검색, 기업별 재무 관측, 한미 20문항 비교, 한국 산업 관계와 변화 근거를 탐색하는 DartLab Universe" />
 	<meta name="robots" content={data.releaseState === 'ga' ? 'index,follow' : 'noindex,nofollow'} />
 	<link rel="canonical" href="https://eddmpython.github.io/dartlab/universe" />
 	<meta property="og:type" content="website" />
-	<meta property="og:title" content="DartLab Universe · 시장 관계와 변화 근거 탐색" />
-	<meta property="og:description" content="산업 구조, 변화 신호, 근거 상태와 반증 워크플로를 하나의 결정론적 장면에서 탐색합니다." />
+	<meta property="og:title" content="DartLab Universe · DART EDGAR 글로벌 법인 지식 우주" />
+	<meta property="og:description" content="DART와 EDGAR 법인을 검색하고 재무 관측과 한미 20문항 비교를 근거 상태와 함께 탐색합니다." />
 	<meta property="og:url" content="https://eddmpython.github.io/dartlab/universe" />
 	<meta property="og:site_name" content="DartLab" />
 	<meta property="og:image" content="https://eddmpython.github.io/dartlab/og-image.png" />
 	<meta name="twitter:card" content="summary_large_image" />
-	<meta name="twitter:title" content="DartLab Universe · 시장 관계와 변화 근거 탐색" />
-	<meta name="twitter:description" content="산업 구조와 변화 신호를 근거 상태와 함께 탐색합니다." />
+	<meta name="twitter:title" content="DartLab Universe · DART EDGAR 글로벌 법인 지식 우주" />
+	<meta name="twitter:description" content="DART와 EDGAR 법인 검색, 재무 관측, 한미 20문항 비교를 한곳에서 탐색합니다." />
 	<meta name="twitter:image" content="https://eddmpython.github.io/dartlab/og-image.png" />
 </svelte:head>
 
@@ -39,7 +39,16 @@
 	</nav>
 </header>
 {#if data.product.routeReady}
-	<UniverseSurface seed={data} mapHref={`${base}/map`} loadChanges={universe.changes} resolveEvidence={universe.resolveEvidence} />
+	<UniverseSurface
+		seed={data}
+		mapHref={`${base}/map`}
+		loadChanges={universe.changes}
+		resolveEvidence={universe.resolveEvidence}
+		loadGlobalCoverage={universe.globalCoverage}
+		searchEntities={universe.searchEntities}
+		loadEntityProfile={universe.entityProfile}
+		compareEntities={universe.compareEntities}
+	/>
 {:else}
 	<main id="universe-main" class="maintenance">
 		<span>UNIVERSE MAINTENANCE</span>

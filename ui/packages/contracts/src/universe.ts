@@ -407,9 +407,9 @@ export interface UniverseWorkflowCompilation {
 export interface UniverseLegalEntityIdentity {
 	market: 'KR' | 'US';
 	legalEntityId: string;
-	securityId: string;
-	ticker: string;
-	validFrom: string;
+	securityId: string | null;
+	ticker: string | null;
+	validFrom: string | null;
 	validTo: string | null;
 	sourceRef: string;
 }
@@ -435,6 +435,76 @@ export interface UniversePairedResult {
 	kr: UniverseConformanceObservation | null;
 	us: UniverseConformanceObservation | null;
 	gaps: readonly GapReceipt[];
+}
+
+export type UniverseCatalogMarket = 'ALL' | 'KR' | 'US';
+
+export interface UniverseCatalogSourceCoverage {
+	sourceId: 'dartRegistry' | 'dartCompanyProfile' | 'secTickers' | 'edgarFinance';
+	path: string;
+	rowCount: number;
+	dataAsOf: string | null;
+}
+
+export interface UniverseCatalogCoverage {
+	schemaVersion: 'universeCatalog.v1';
+	entityCount: number;
+	krLegalEntityCount: number;
+	krSecurityCount: number;
+	usLegalEntityCount: number;
+	usTickerCount: number;
+	usFinanceEntityCount: number;
+	sources: readonly UniverseCatalogSourceCoverage[];
+}
+
+export interface UniverseGlobalEntity {
+	entityId: string;
+	market: 'KR' | 'US';
+	legalEntityId: string;
+	securityId: string | null;
+	ticker: string | null;
+	aliases: readonly string[];
+	label: string;
+	labelEn: string | null;
+	listed: boolean;
+	exchange: string | null;
+	industryName: string | null;
+	industryScheme: 'KSIC' | 'SIC' | null;
+	validFrom: string | null;
+	latestFiscalYear: string | null;
+	financialCoverage: 'indexed' | 'onDemand' | 'identityOnly';
+	sourceRefs: readonly string[];
+}
+
+export interface UniverseEntitySearchRequest {
+	query: string;
+	market?: UniverseCatalogMarket;
+	limit?: number;
+}
+
+export interface UniverseEntitySearchResult {
+	query: string;
+	market: UniverseCatalogMarket;
+	matches: readonly UniverseGlobalEntity[];
+	coverage: UniverseCatalogCoverage;
+}
+
+export interface UniverseEntityProfile {
+	entity: UniverseGlobalEntity;
+	identity: UniverseLegalEntityIdentity;
+	observations: readonly UniverseConformanceObservation[];
+	answeredQuestionCount: number;
+	questionCount: number;
+	status: 'ready' | 'partial' | 'identityOnly';
+	gaps: readonly string[];
+}
+
+export interface UniversePairComparison {
+	kr: UniverseEntityProfile;
+	us: UniverseEntityProfile;
+	results: readonly UniversePairedResult[];
+	readyCount: number;
+	blockedCount: number;
 }
 
 export interface UniverseVisualToken {

@@ -3,6 +3,7 @@ export * from './change';
 export * from './conformance';
 export * from './evidence';
 export * from './flight';
+export * from './global';
 export * from './lenses';
 export * from './load';
 export * from './projection';
