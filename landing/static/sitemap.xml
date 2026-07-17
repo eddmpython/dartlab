@@ -1451,6 +1451,11 @@
     <priority>0.95</priority>
   </url>
   <url>
+    <loc>https://eddmpython.github.io/dartlab/universe</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.94</priority>
+  </url>
+  <url>
     <loc>https://eddmpython.github.io/dartlab/map</loc>
     <changefreq>daily</changefreq>
     <priority>0.92</priority>
@@ -1955,6 +1960,36 @@
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
     <lastmod>2026-07-11</lastmod>
+  </url>
+  <url>
+    <loc>https://eddmpython.github.io/dartlab/blog/business-content-panel</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2026-07-11</lastmod>
+  </url>
+  <url>
+    <loc>https://eddmpython.github.io/dartlab/blog/notes-link-to-numbers</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2026-07-11</lastmod>
+  </url>
+  <url>
+    <loc>https://eddmpython.github.io/dartlab/blog/select-rows</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2026-07-11</lastmod>
+  </url>
+  <url>
+    <loc>https://eddmpython.github.io/dartlab/blog/compute-from-values</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2026-07-11</lastmod>
+  </url>
+  <url>
+    <loc>https://eddmpython.github.io/dartlab/blog/table-to-sentence</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2026-07-12</lastmod>
   </url>
   <url>
     <loc>https://eddmpython.github.io/dartlab/blog/005930-samsung</loc>
@@ -2527,6 +2562,12 @@
     <lastmod>2026-07-10</lastmod>
   </url>
   <url>
+    <loc>https://eddmpython.github.io/dartlab/blog/CRWV-coreweave</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2026-07-15</lastmod>
+  </url>
+  <url>
     <loc>https://eddmpython.github.io/dartlab/blog/032350-lotte-tour-debt-clock</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
@@ -2740,7 +2781,7 @@
     <loc>https://eddmpython.github.io/dartlab/blog/042660-hanwha-ocean</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <lastmod>2026-04-18</lastmod>
+    <lastmod>2026-07-13</lastmod>
   </url>
   <url>
     <loc>https://eddmpython.github.io/dartlab/blog/007310-ottogi</loc>
@@ -3157,6 +3198,18 @@
     <lastmod>2026-07-09</lastmod>
   </url>
   <url>
+    <loc>https://eddmpython.github.io/dartlab/blog/co-packaged-optics-silicon-photonics</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2026-07-12</lastmod>
+  </url>
+  <url>
+    <loc>https://eddmpython.github.io/dartlab/blog/ai-glasses-display-bottleneck</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2026-07-14</lastmod>
+  </url>
+  <url>
     <loc>https://eddmpython.github.io/dartlab/blog/technical-investing-price-indicators</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
@@ -3179,5 +3232,11 @@
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
     <lastmod>2026-07-10</lastmod>
+  </url>
+  <url>
+    <loc>https://eddmpython.github.io/dartlab/blog/overseas-stock-return-exchange-rate</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2026-07-17</lastmod>
   </url>
 </urlset>

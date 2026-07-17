@@ -3,7 +3,7 @@
     "scenario": "public.access.all",
     "ok": true,
     "package": {
-      "version": "0.10.7",
+      "version": "0.10.9",
       "file": "C:\\Users\\MSI\\OneDrive\\Desktop\\sideProject\\dartlab\\src\\dartlab\\__init__.py"
     },
     "details": {
@@ -22,11 +22,11 @@
         "dartlab.capabilities"
       ]
     },
-    "elapsedSec": 0.703,
-    "rssBeforeMb": 23.1,
-    "rssAfterMb": 93.2,
-    "rssDeltaMb": 70.1,
-    "rssPeakMb": 93.2,
+    "elapsedSec": 1.437,
+    "rssBeforeMb": 23.0,
+    "rssAfterMb": 95.0,
+    "rssDeltaMb": 71.9,
+    "rssPeakMb": 95.0,
     "returnCode": 0,
     "budget": {
       "maxElapsedSec": 20.0,
@@ -41,20 +41,20 @@
     "scenario": "capabilities.index",
     "ok": true,
     "package": {
-      "version": "0.10.7",
+      "version": "0.10.9",
       "file": "C:\\Users\\MSI\\OneDrive\\Desktop\\sideProject\\dartlab\\src\\dartlab\\__init__.py"
     },
     "details": {
       "type": "dict",
-      "height": 222,
+      "height": 226,
       "width": null,
       "columns": []
     },
-    "elapsedSec": 0.735,
+    "elapsedSec": 2.157,
     "rssBeforeMb": 23.0,
-    "rssAfterMb": 94.0,
-    "rssDeltaMb": 71.0,
-    "rssPeakMb": 94.0,
+    "rssAfterMb": 95.8,
+    "rssDeltaMb": 72.8,
+    "rssPeakMb": 95.8,
     "returnCode": 0,
     "budget": {
       "maxElapsedSec": 20.0,
@@ -69,12 +69,12 @@
     "scenario": "scan.guide",
     "ok": true,
     "package": {
-      "version": "0.10.7",
+      "version": "0.10.9",
       "file": "C:\\Users\\MSI\\OneDrive\\Desktop\\sideProject\\dartlab\\src\\dartlab\\__init__.py"
     },
     "details": {
       "type": "DataFrame",
-      "height": 23,
+      "height": 27,
       "width": 6,
       "columns": [
         "axis",
@@ -85,11 +85,11 @@
         "apiKey"
       ]
     },
-    "elapsedSec": 0.61,
-    "rssBeforeMb": 22.9,
-    "rssAfterMb": 80.2,
-    "rssDeltaMb": 57.2,
-    "rssPeakMb": 80.2,
+    "elapsedSec": 1.375,
+    "rssBeforeMb": 23.1,
+    "rssAfterMb": 94.5,
+    "rssDeltaMb": 71.4,
+    "rssPeakMb": 94.6,
     "returnCode": 0,
     "budget": {
       "maxElapsedSec": 20.0,
@@ -104,18 +104,18 @@
     "scenario": "company.create",
     "ok": true,
     "package": {
-      "version": "0.10.7",
+      "version": "0.10.9",
       "file": "C:\\Users\\MSI\\OneDrive\\Desktop\\sideProject\\dartlab\\src\\dartlab\\__init__.py"
     },
     "details": {
       "type": "Company",
       "height": 1
     },
-    "elapsedSec": 0.687,
-    "rssBeforeMb": 22.9,
-    "rssAfterMb": 99.6,
-    "rssDeltaMb": 76.7,
-    "rssPeakMb": 99.6,
+    "elapsedSec": 1.515,
+    "rssBeforeMb": 23.1,
+    "rssAfterMb": 101.8,
+    "rssDeltaMb": 78.7,
+    "rssPeakMb": 101.8,
     "returnCode": 0,
     "budget": {
       "maxElapsedSec": 30.0,
