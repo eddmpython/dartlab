@@ -180,7 +180,7 @@ import HFDataLink from '$lib/components/blog/HFDataLink.svelte';
 
 ---
 
-![HD현대일렉트릭 턴어라운드](./assets/08-turnaround-chart.svg)
+![HD현대일렉트릭 턴어라운드](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/16/16a196979a8ee570440f887c297c06ee833c82e6ab3adefd71e440838e5eee38.svg)
 
 ## 적자 사업부의 재무제표
 
@@ -260,7 +260,7 @@ c.analysis("financial", "성장성")
 
 ## 3막 — ChatGPT 한 번에 2.9Wh, 미국 변압기 55%가 수명 한계
 
-![3중 수요 구조 — 중국 퇴출 + AI 데이터센터 + 노후 교체](./assets/08-triple-demand.svg)
+![3중 수요 구조 — 중국 퇴출 + AI 데이터센터 + 노후 교체](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/31/31706d82c499d7f7bf734f95e7c7f1c8f76d63dcabb70b9fba25e4a696965e80.svg)
 
 ### AI 데이터센터 100MW+ — 구글 검색의 10배 전력
 
@@ -280,7 +280,7 @@ c.analysis("financial", "성장성")
 
 ## 4막 — 매출이 16% 늘었는데 영업이익이 1,266% 뛴다. 왜?
 
-![영업 레버리지 76.6x — 고정비가 이익 증폭기로](./assets/08-operating-leverage.svg)
+![영업 레버리지 76.6x — 고정비가 이익 증폭기로](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/85/856d5b3e390090a690c84556260ed5422fdeef98ebff42a8753800bda6b51261.svg)
 
 ### 영업 레버리지 76.6배 — 4년 적자의 고정비가 이익 증폭기로
 
@@ -305,7 +305,7 @@ c.analysis("financial", "성장성")
 
 그런데 마진이 이렇게 높을 수 있나? 비교해보자:
 
-![경쟁사 마진 비교](./assets/08-competitor-margin.svg)
+![경쟁사 마진 비교](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/45/4504d45c5fac0774035a5ee962606f0c4f22e6adcc06f6906a73fb653406223e.svg)
 
 | 기업 | 부문 | 영업이익률 |
 |------|------|-----------|
@@ -325,7 +325,7 @@ c.analysis("financial", "성장성")
 
 ## 5막 — 자기자본수익률 36%인데 배당성향 11%. 나머지 89%는 어디로 가는가?
 
-![자금조달 구조 — 금융차입 0%, 영업조달 43%](./assets/08-funding-structure.svg)
+![자금조달 구조 — 금융차입 0%, 영업조달 43%](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/8c/8c25eec456855e18ec2b41daa95fb366e01dff795475d5049449cf9236180e51.svg)
 
 ### 금융차입 8년간 0% — 고객의 돈으로 공장을 돌린다
 

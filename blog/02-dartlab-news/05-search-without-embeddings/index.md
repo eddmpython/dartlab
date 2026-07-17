@@ -19,7 +19,7 @@ keywords:
 
 **`dartlab.search("유상증자")` 한 줄이면 한국 전자공시 400만 문서에서 결과 10건이 나온다.** 모델 다운로드 0초. PyTorch 설치 0. GPU 불필요. 인덱스 320MB를 메모리에 한 번 올리고 나면 warm 검색은 평균 165ms다. ko-sroberta 임베딩보다 12%p 정확하다.
 
-![dartlab.search 파이프라인 — 쿼리가 ngram → stem ID → CSR → bincount → BM25F를 거쳐 결과로](./assets/140-search-pipeline.svg)
+![dartlab.search 파이프라인 — 쿼리가 ngram → stem ID → CSR → bincount → BM25F를 거쳐 결과로](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d7/d7c9d1fca473787a748ca3ce55506c87e3af6483da7fadf60d26fab4124b5169.svg)
 
 ---
 
@@ -50,7 +50,7 @@ dartlab.search("횡령", start="20240101") # 기간 필터
 
 같은 의미를 다른 단어로 쓸 일이 없다면, 의미 공간을 학습할 필요도 없다. **정확 매칭이 곧 의미 매칭**이 된다.
 
-![검색 방법별 precision@5 — ngram 95%, trigram 88%, ko-sroberta 83%, BM25 71%](./assets/140-precision-bars.svg)
+![검색 방법별 precision@5 — ngram 95%, trigram 88%, ko-sroberta 83%, BM25 71%](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/73/7363f2ac987a50220c9dc7d2a572d2995875713fec1b8178e65e449e27062741.svg)
 
 ko-sroberta(420MB 모델, PyTorch 2GB)는 12.7초의 cold start 끝에 83%를 낸다. dartlab.search는 의존성 0, cold start 0ms(인덱스 mmap 별도)로 95%를 낸다.
 
@@ -68,7 +68,7 @@ dartlab은 텍스트를 작은 토큰(bigram, trigram)으로 분해하고, **각
 
 이 ID들을 가지고 **CSR(Compressed Sparse Row) 역인덱스**를 만든다. scipy CSR과 같은 구조지만, scipy 의존성 없이 numpy 배열 두 개로 끝낸다.
 
-![CSR 역인덱스 — offsets 배열과 docIds 배열, scipy 없이 numpy로](./assets/140-csr-structure.svg)
+![CSR 역인덱스 — offsets 배열과 docIds 배열, scipy 없이 numpy로](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/89/896669d826a4397d48af20adac0d52988ae82b382ee16025d2dbb79007afe6cb.svg)
 
 ```
 offsets[stemId]   →  docIds 배열에서 시작 위치
@@ -103,7 +103,7 @@ ngram 매칭만으로는 한 가지 문제가 남는다. "대표이사 변경"�
 
 dartlab은 검색 후처리 단계에서 매칭이 일어난 **필드**를 본다. `report_nm`(공시 제목)에서 매칭됐으면 점수에 ×5, `section_title`에서 매칭됐으면 ×2, 본문이면 ×1. 이게 BM25F 필드 가중치다.
 
-![BM25F 리랭킹 — '대표이사 변경' 쿼리에서 변경공시가 5위에서 1위로](./assets/140-bm25f-rerank.svg)
+![BM25F 리랭킹 — '대표이사 변경' 쿼리에서 변경공시가 5위에서 1위로](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/34/34dfa303c367e0a9f6bd556e23b625bb6f4f8818731ba9a5e92a307564db8dc4.svg)
 
 인덱스를 다시 빌드할 필요도 없고, 모델을 학습할 필요도 없다. 검색 후처리만으로 끝난다. Elasticsearch BM25F와 동일한 원리다.
 
@@ -135,7 +135,7 @@ L2 BM25F 리랭킹: 필드 가중치 적용
 
 말로만 빠르다고 하면 안 된다. 2026-04-06 기준 실제 측정값:
 
-![실측 latency — cold 4.0s 1회, warm 평균 165ms](./assets/140-latency-table.svg)
+![실측 latency — cold 4.0s 1회, warm 평균 165ms](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a4/a459eed1252e508db6d7743a8ece0cbb09c41318084a2f4e293bd5b5e202928d.svg)
 
 | 쿼리 | latency | 결과 수 | 상위 매칭 |
 |------|---------|---------|-----------|

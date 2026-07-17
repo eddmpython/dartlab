@@ -66,7 +66,7 @@ is_.head(5)
 
 노트북은 페이지를 읽었다고 해서 코드를 자동으로 실행하지 않는다. 사용자가 누른 셀만 기억한다. 순서는 다음처럼 잡으면 된다.
 
-![코드셀이 같은 실행 상태를 공유하는 흐름](./assets/dartlab-story-03-state-flow.svg)
+![코드셀이 같은 실행 상태를 공유하는 흐름](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/4b/4b8420dc867d2fb992a529aac5d688e8668dd968081d9a5979329b3a80cf7180.svg)
 
 첫째, `import dartlab`과 `Company`를 실행한다. 둘째, 그 회사로 `panel`을 실행한다. 셋째, 만들어진 표를 `head`나 `null_count` 같은 표 조작으로 실제 값을 본다.
 

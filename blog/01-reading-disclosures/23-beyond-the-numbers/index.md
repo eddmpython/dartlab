@@ -18,7 +18,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 문제는 **숫자가 말해주는 건 "무엇이 일어났는가"뿐**이라는 것이다. "왜 일어났는가", "이 숫자를 신뢰할 수 있는가", "앞으로도 이어질 것인가"는 숫자 안에 없다.
 
-![재무 숫자만 볼 때와 전체 공시 맥락까지 볼 때의 차이](./assets/003-beyond-numbers-hero.svg)
+![재무 숫자만 볼 때와 전체 공시 맥락까지 볼 때의 차이](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/83/830f7b20bd2ed3ac59f7c378c2962ecef8259b6c668e076b3200e2e8a8df0af1.svg)
 
 ---
 
@@ -43,11 +43,11 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 ## 같은 숫자, 다른 이야기
 
-![Same Numbers, Different Stories](./assets/003-same-numbers-different-stories.svg)
+![Same Numbers, Different Stories](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/28/28c4ecea5011fda547204daf2db348414aa7d6cd435f1fb35a905449cac89898.svg)
 
 구체적인 상황으로 보자.
 
-![함정 패턴 — 숫자만 보면 놓치는 위험 신호](./assets/003-trap-patterns.svg)
+![함정 패턴 — 숫자만 보면 놓치는 위험 신호](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/18/18f9e90b81354a1109ee49dae1e934671d44887c70e27894f5ef5195c678e8b9.svg)
 
 ### 영업이익 급증 — 그런데 일회성이다
 
@@ -177,7 +177,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 주석은 재무제표 각 계정의 상세 내역이다. 재무상태표에 "재고자산 1조 원"이라는 한 줄이 있다면, 주석에는 그 1조 원이 원재료/재공품/제품/상품/미착품 중 어떤 구성인지, 평가손실은 얼마인지가 나온다.
 
-![Footnote Risk Signals](./assets/003-footnote-risk-signals.svg)
+![Footnote Risk Signals](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/4a/4a55a57759ed2623d87c53a33616363019f060dfda6696a6665eb290efc3b7a5.svg)
 
 주석은 분량이 방대해서 많은 사람이 넘기지만, **재무제표의 진짜 디테일은 주석에 있다.**
 
@@ -299,7 +299,7 @@ c.panel("사업의 내용")     # 사업의 내용 — 시장 환경, 경쟁, �
 
 ## 정리
 
-![Depth of Analysis](./assets/003-analysis-depth-pyramid.svg)
+![Depth of Analysis](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/74/74d06e91d45261e9ce0b3094d8c0689cf9e61e0a8bcdb9c3936ca569be0a824a.svg)
 
 재무제표는 시작이다. 끝이 아니다.
 

@@ -16,7 +16,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 바뀌는 것은 숫자가 아니다. 같은 숫자를 다르게 분류하는 것이다. 그래서 실적이 좋아졌는지 나빠졌는지가 아니라, 분류 기준이 바뀌었다는 사실을 먼저 인식하고 읽어야 한다. 이 글은 IFRS 18이 손익계산서를 어떻게 재배치하는지, 그로 인해 어떤 투자 판단 도구가 영향을 받는지, 그리고 전환기에 투자자가 구체적으로 무엇을 확인해야 하는지를 정리한다. 영업외손익이 본업을 가리는 구조는 [영업외손익이 본업을 가릴 때 무엇을 분리해서 봐야 하나](/blog/why-rising-sales-can-still-be-risky)에서 이미 다뤘고, 이번 글은 그 분리가 제도적으로 강제되는 상황에서 무엇이 달라지는지에 집중한다.
 
-![IFRS 18 손익계산서 새 구조: 영업, 투자, 재무 3분류를 보여주는 도식](./assets/115-ifrs18-structure.svg)
+![IFRS 18 손익계산서 새 구조: 영업, 투자, 재무 3분류를 보여주는 도식](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d7/d7ce5141a950a6947bc2d2b8f9bbbfedab6649dcc4798564bb869c3a3984ad19.svg)
 
 ---
 
@@ -58,7 +58,7 @@ IFRS 18에서 손익계산서의 수익과 비용은 세 범주로 분류된다.
 
 셋째, **환율손익과 파생상품 손익**의 분류가 달라진다. IFRS 18은 이 항목들을 실질에 따라 영업/투자/재무에 배분하도록 한다. 영업 활동에서 발생한 외화 매출채권 환산손익은 영업에 남을 수 있지만, 외화차입금 관련 환산손익은 재무 범주로 간다. 이 부분은 [환율 손익과 파생상품은 본업을 어떻게 왜곡하나](/blog/foreign-exchange-gains-and-derivatives)에서 다룬 왜곡 구조가 제도적으로 분리되는 것이다.
 
-![같은 회사의 IAS 1 vs IFRS 18 손익계산서 비교 도식](./assets/115-before-after.svg)
+![같은 회사의 IAS 1 vs IFRS 18 손익계산서 비교 도식](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b5/b58f1da21eb900f5fff16d6ec6e13a43c503d93cf046d281819b8c743b3044fa.svg)
 
 ### 안 바뀌는 것
 
@@ -82,7 +82,7 @@ IFRS 18 의무 적용 첫해(12월 결산 기준 2027년)에 회사는 비교 �
 
 이것이 투자자에게 의미하는 바는 크다. 2026년 사업보고서에서 본 영업이익과 2027년 사업보고서에 비교로 실린 2026년 영업이익이 다를 수 있다. 숫자가 바뀐 것이 아니라 분류가 바뀐 것인데, 시계열로 보면 단절처럼 보인다.
 
-![K-IFRS IFRS 18 도입 타임라인 도식](./assets/115-timeline.svg)
+![K-IFRS IFRS 18 도입 타임라인 도식](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/34/34c93f5586dcec19a6cb9d8a74a8cbd63a295bb185a4c758c31e4af558f1226e.svg)
 
 ### PER과 영업이익률이 깨지는 이유
 
@@ -92,7 +92,7 @@ IFRS 18 의무 적용 첫해(12월 결산 기준 2027년)에 회사는 비교 �
 
 이 문제는 [판관비가 매출보다 빨리 불어날 때 무엇을 먼저 봐야 하나](/blog/sga-growth-vs-sales)에서 다룬 마진 해석과도 연결된다. 마진이 변했을 때 비용이 늘어난 것인지 기준이 바뀐 것인지를 구분하지 않으면 오판한다.
 
-![영업이익 정의 변화가 PER과 마진에 미치는 영향 흐름도](./assets/115-operating-profit-change.svg)
+![영업이익 정의 변화가 PER과 마진에 미치는 영향 흐름도](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/de/ded659a660390cb3278db45d494d47e268c6d0dba2d646d4a40b68500f65de43.svg)
 
 ### 업종별 영향 차이
 
@@ -157,7 +157,7 @@ IFRS 18은 법인세비용의 표시 방식에도 영향을 줄 수 있다. 영�
 
 ## 추적 체크리스트
 
-![IFRS 18 전환기 투자자 점검 체크리스트 도식](./assets/115-investor-checklist.svg)
+![IFRS 18 전환기 투자자 점검 체크리스트 도식](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ef/efaba1c61499d98b84813210c9c1679542890680628a2bcf19ba4b558f1b5bbc.svg)
 
 | 확인 시점 | 확인 항목 | 구체적 행동 |
 | --- | --- | --- |

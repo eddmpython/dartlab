@@ -146,7 +146,7 @@ import HFDataLink from '$lib/components/blog/HFDataLink.svelte';
 
 ---
 
-![영업이익률 비교 — 농심 vs 삼양식품](./assets/16-opm-comparison.svg)
+![영업이익률 비교 — 농심 vs 삼양식품](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/2a/2a493db889e40a17a0466b34c51eccb9d816314d8333643188dfa80f4efe7afb.svg)
 
 ## 핵심 한 줄
 
@@ -174,7 +174,7 @@ s.analysis("financial", "수익성")
 
 매출은 농심이 1조 이상 더 크다. 그런데 영업이익은 삼양이 거의 3배다. 영업이익률은 4배 차이다. 그리고 2024년, 한국 증시에서 작은 사건이 일어났다. **삼양식품 시총이 농심을 추월**한 것이다. 매출 2.35조짜리 회사가 매출 3.51조짜리 회사보다 비싸졌다. 40년간 라면 1위였던 회사가, 불닭 하나로 10년 만에 뒤집혔다. 시장은 "규모"가 아니라 "마진"에 값을 매긴다.
 
-![매출 vs 이익 — 규모의 착각](./assets/16-revenue-vs-profit.svg)
+![매출 vs 이익 — 규모의 착각](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f7/f73c29531fde327fb18b13a7c6e2995eea36f03d7314e2569a61bd86cc0410d3.svg)
 
 이 글은 이 4배 격차가 어디서 시작되고, 어떤 구조로 고착되었으며, 바뀔 가능성이 있는지를 7막에 걸쳐 추적한다. 모든 막은 하나의 질문을 향해 흐른다 — **같은 라면인데 왜 4배인가.**
 
@@ -250,13 +250,13 @@ c.select("IS", ["매출액", "영업이익"], freq="Y")
 | 중국 | **~17% (1,727억)** | 5% 미만 |
 | 일본/동남아/유럽 | 나머지 | **~60%+ (고가 시장 집중)** |
 
-![해외 매출의 질적 차이](./assets/16-overseas-quality.svg)
+![해외 매출의 질적 차이](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d7/d75e89924509ac4e9f806303c616ac4a0e93091747637ff061b5b4d35dbf11b1.svg)
 
 중국이 문제다. 농심 해외 매출의 17%, 약 1,727억원이 중국에서 나온다. 중국 라면 시장은 세계 최대이지만 동시에 세계에서 가장 가격 경쟁이 치열한 시장이다. 중국 로컬 브랜드(캉스푸, 퉁이)의 봉지면 가격은 2~3위안(400~600원)이다. 농심 신라면은 중국에서 4~5위안(800~1,000원)에 팔리는데, 이미 로컬 대비 2배 비싸다. 더 올릴 수 없다. 중국에서는 한국보다 약간 높은 가격을 받지만 마진은 거의 남지 않는다. 물류비, 현지 마케팅비, 관세를 빼면 손익분기점 부근이다.
 
 삼양식품은 중국 비중이 5% 미만이다. 대신 미국, 일본, 유럽, 동남아 고가 시장에 집중한다. 특히 일본에서 불닭볶음면은 "한류 프리미엄"으로 팔린다. 일본 편의점에서 불닭 한 봉지는 250~300엔(2,500~3,000원)이다. 한국 가격의 2배 이상을 받는다. 유럽에서도 마찬가지다 — 영국 테스코에서 불닭 5봉지 묶음은 5파운드(약 9,000원), 봉지당 1,800원이다.
 
-![가격대 비교 — 지역별](./assets/16-price-comparison.svg)
+![가격대 비교 — 지역별](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/cf/cfe4ba9519147d8d02e4056a6d16400b0a819a9638b61c98736ee70677647ca5.svg)
 
 ### 매출총이익률이 갈리는 지점
 
@@ -296,7 +296,7 @@ c.analysis("financial", "수익성")
 
 **둘째, 마케팅 집중 효과.** 삼양은 글로벌 마케팅 예산을 "불닭" 하나에 쏟는다. 한 번의 글로벌 캠페인으로 전 제품 라인이 혜택을 받는다. 농심은 신라면 마케팅, 너구리 마케팅, 새우깡 마케팅을 각각 해야 한다. 같은 마케팅 예산이라도 100개로 나누면 개별 효과가 작아진다.
 
-![멀티 SKU vs 싱글 IP 집중](./assets/16-multi-vs-single.svg)
+![멀티 SKU vs 싱글 IP 집중](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/51/5184ceca3c333e003e09881447d581bfe49de278550d3750edc9e0c3c3b5c7e6.svg)
 
 ### 비용구조 분해
 
@@ -342,7 +342,7 @@ c.analysis("financial", "비용구조")
 
 이 차이가 가격 결정력의 차이로 직결된다. 삼양은 불닭 가격을 올릴 수 있다. 실제로 2024년에 미국에서 불닭 5봉지 묶음 가격을 $6.99에서 $7.49로 올렸다 — 아무도 불평하지 않았다. 농심이 신라면 가격을 1,000원에서 1,050원으로 올리면 국회 국정감사에서 질의가 나온다.
 
-![브랜드 성격과 마진의 관계](./assets/16-brand-vs-margin.svg)
+![브랜드 성격과 마진의 관계](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c1/c1b79c15318f67f75a5ebee278f6d1275f025d195c5a59b61478178b3da57a81.svg)
 
 이 차이가 매출원가율에 그대로 찍힌다. 농심의 매출원가율은 4년간 거의 변하지 않았다(76~77%). 삼양은 같은 기간 73%에서 **55%로 18%p 떨어졌다**. 원재료는 같은 가격인데 판가가 다르니 원가율이 갈리는 것이다. **브랜드가 강해도 마진으로 전환되지 않는 구조 — 이것이 1위의 두 번째 저주다.** 융프라우에서 9,000원에 팔려도, 한국 편의점에서 950원에 팔리는 한 회사의 평균 마진은 올라가지 않는다.
 
@@ -368,7 +368,7 @@ c.analysis("financial", "비용구조")
 
 **셋째, 해외에서 더 비싸게 팔 수 있다.** 미국 LA 공장에서 생산을 시작했다. 미국에서 툼바의 가격은 $1.69~$1.99, 약 2,500~2,900원이다. 한국 가격의 2배다. 일본에서는 300~350엔(3,000~3,500원)이다. 한국 가격의 2.5배다. 해외에서 프리미엄 가격을 받을 수 있는 제품이 생긴 것이다.
 
-![신라면 툼바 — 프리미엄 전환 시나리오](./assets/16-toomba.svg)
+![신라면 툼바 — 프리미엄 전환 시나리오](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/66/667df18ff06fa8030e22457f5ce435730c3e7e6510ddb52d76b923d673ddfc8b.svg)
 
 ### 2025년 3월 — 17개 브랜드 7.2% 가격 인상
 

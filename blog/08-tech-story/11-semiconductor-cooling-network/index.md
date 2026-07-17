@@ -46,7 +46,7 @@ AI 반도체가 빨라질수록 이상한 일이 생긴다. 더 좋은 칩을 �
 
 NVIDIA는 [GB200 NVL72](https://www.nvidia.com/en-us/data-center/gb200-nvl72/)를 랙 스케일 시스템으로 설명하고, OCP 공개 자료에서도 GB200 NVL72 관련 [liquid-cooled design](https://developer.nvidia.com/blog/nvidia-contributes-nvidia-gb200-nvl72-designs-to-open-compute-project/)을 다룬다. 이 문장이 중요한 이유는 냉각이 옵션 액세서리가 아니라 AI 랙 설계 안으로 들어왔음을 보여주기 때문이다. GPU가 빠를수록 냉각은 더 뒤가 아니라 더 앞에 온다.
 
-![AI 칩에서 나온 열은 cold plate, manifold, CDU, chiller, 전력과 물 제약으로 이동한다](./assets/01-heat-path-map.svg)
+![AI 칩에서 나온 열은 cold plate, manifold, CDU, chiller, 전력과 물 제약으로 이동한다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/86/86a4b6959b8ff8b094c9e59a839420823816650e256410105e5ab653dc552a90.svg)
 
 여기서 이미 거래망이 보인다. 칩 설계사는 열을 줄이려 한다. 패키징 회사는 열을 빼기 쉬운 구조를 고민한다. 서버 회사는 cold plate와 호스, quick disconnect, leak detection을 랙 안에 넣는다. Vertiv, LG전자, Schneider Electric 같은 인프라 회사는 CDU와 칠러, 열교환 설비를 판다. Modine, Carrier, Johnson Controls 같은 열관리와 HVAC 회사는 건물 쪽 열을 맡는다. 전력 회사와 물 인프라도 뒤에 붙는다.
 
@@ -68,7 +68,7 @@ NVIDIA는 [GB200 NVL72](https://www.nvidia.com/en-us/data-center/gb200-nvl72/)�
 
 거래망을 공정 지도로 나누면 회사가 달라진다. 칩과 패키지 열원은 NVIDIA, AMD, TSMC, SK하이닉스, 삼성전자, Micron이 만든다. 서버와 랙은 Supermicro, Dell, HPE, Quanta, Foxconn 같은 회사가 설계한다. CDU와 열 인프라는 Vertiv, LG전자, Schneider Electric, nVent가 들어온다. Chiller와 HVAC는 LG전자, Modine, Carrier, Johnson Controls가 들어온다. 팹 공정용 칠러는 GST와 유니셈이 들어온다.
 
-![반도체 냉각은 한 시장이 아니라 팹, 칩, 서버, CDU, chiller, 운영 서비스가 연결된 거래망이다](./assets/02-process-company-evidence-map.svg)
+![반도체 냉각은 한 시장이 아니라 팹, 칩, 서버, CDU, chiller, 운영 서비스가 연결된 거래망이다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ad/ad8c22c22bcda9f533e33e76168acbb447a817c91addfc331a461db22332927a.svg)
 
 | 공정/층위 | 기술 역할 | 대표 회사 | 공시 근거 | 왜 이 회사가 핵심인가 |
 |---|---|---|---|---|
@@ -117,7 +117,7 @@ LG전자도 공식적으로 [데이터센터 냉각 솔루션](https://www.lg.co
 
 아래 표는 냉각 전용 매출표가 아니다. 회사 전체 손익이다. 이 단서를 먼저 걸어야 한다. 전사 매출과 마진은 냉각 거래망의 어느 칸이 어떤 회계 구조를 갖는지 보는 참고값이다. 팹 장비사는 제품 믹스와 수주에 따라 마진이 크게 달라질 수 있다. 서버 회사는 매출이 크지만 gross margin이 낮을 수 있다. 열 인프라 회사는 장비와 서비스가 섞이면서 서버 조립사와 다른 마진을 보일 수 있다.
 
-![DART와 EDGAR 전사 숫자로 본 냉각 거래망의 재무 착지](./assets/03-financial-landing.svg)
+![DART와 EDGAR 전사 숫자로 본 냉각 거래망의 재무 착지](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d5/d572459b3387defab6446a065110e56d1bad4c103e31ab54b8dd7a94a222b715.svg)
 
 | 회사 | 거래망 칸 | 기준 | 매출 | 매출총이익률 | 영업이익률 | 읽는 법 |
 |---|---|---:|---:|---:|---:|---|
@@ -137,7 +137,7 @@ LG전자도 공식적으로 [데이터센터 냉각 솔루션](https://www.lg.co
 
 냉각 기술은 단계가 다르다. 공랭은 가장 익숙하고 성숙했다. 다만 고밀도 AI 랙에서는 한계가 보인다. rear-door heat exchanger는 기존 랙 뒤에 열교환 장치를 붙여 보강하는 방식이다. direct-to-chip은 cold plate를 칩 위에 붙이고 냉각수를 흘려 열을 직접 가져간다. 현재 AI 서버 고밀도화에서 가장 중요한 확산 단계다. immersion cooling은 서버를 절연 냉각액에 담그는 방식인데, 유지보수와 소재 호환, 운영 표준화 문제가 있어 모든 데이터센터의 즉시 표준으로 보긴 어렵다.
 
-![공랭, rear-door, direct-to-chip, immersion, direct-to-silicon은 기술 성숙도와 검증 조건이 다르다](./assets/04-maturity-ladder.svg)
+![공랭, rear-door, direct-to-chip, immersion, direct-to-silicon은 기술 성숙도와 검증 조건이 다르다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a9/a991dc4c1df559af755accd6073ac259936979bccce8dfbdd725f62e40f56223.svg)
 
 첫 번째 오해는 "액체냉각이면 다 같다"는 것이다. 물이 흐른다고 다 같은 시스템이 아니다. cold plate 안을 흐르는 1차 냉각수, CDU의 열교환, 시설수, chiller, 냉각탑, 수질 관리, 누수 센서가 모두 다르다. 어느 부품을 누가 설계하고 누가 유지보수하는지에 따라 거래망이 갈린다.
 

@@ -57,7 +57,7 @@ import HFDataLink from '$lib/components/blog/HFDataLink.svelte';
 > 30년이 지난 2024년, 이 회사는 CNBC가 집계한 지난 30년 S&P 500 누적 수익률 1위에 올랐다. 사명은 Monster Beverage로 바뀌었고, 매출은 $8.29B, 9년간 자사주로만 $8.3B를 쓰고 배당은 단 한 푼도 하지 않았다. 그런데도 공장 설비투자는 매년 매출의 2~3%에 묶여 있다. 세계 최대 음료 회사 코카콜라가 2015년에 $2.15B를 내고 지분 16.7%를 사고, 자사가 소유한 에너지 드링크 브랜드들을 통째로 넘긴 이유가 이 숫자 안에 있다. 이 글은 그 구조를 재무제표로 해부한다.
 
 <!-- SVG: 1992 Hansen 인수 → 2012 Monster 사명 변경 → 2015 KO 파트너십 → 2025 시총 $130B 이정표 타임라인 -->
-![36 Monster 타임라인](./assets/36-timeline.svg)
+![36 Monster 타임라인](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/10/10fdec241b35e64a21247941322e67abb38fd192bace9c2ff7a0c2e8d74bf5b3.svg)
 
 
 <HFDataLink code="MNST" kind="edgar" />
@@ -67,7 +67,7 @@ import HFDataLink from '$lib/components/blog/HFDataLink.svelte';
 # 제1막: 남아공 변호사 두 명이 소다수 파산기업을 인수한 1992년
 
 <!-- SVG: Rodney Sacks · Hilton Schlosberg 두 인물 위에 Hansen→Monster 사명 전환 -->
-![36 Act1 Founders](./assets/36-act1-founders.svg)
+![36 Act1 Founders](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a1/a1d066a9efe2cd7325f0af4b27f036370be0cd8806eae099033869659c7bab3b.svg)
 
 1992년 7월, 남아공에서 건너온 두 명의 변호사가 캘리포니아의 파산 음료 회사를 인수한다. Rodney Sacks와 Hilton Schlosberg. 둘 다 케이프타운 출신의 기업 인수합병 전문 변호사였다. 인수 대금은 $14.6M. 회사 이름은 Hansen Natural Corporation — 1930년대 Hollywood 과일주스로 시작해 1980년대 건강주스·천연소다수로 확장하다 자금난에 빠진 작은 음료 회사였다.
 
@@ -120,7 +120,7 @@ SEC EDGAR의 XBRL companyfacts에는 부문별 매출 브레이크다운이 구�
 # 제2막: 매출원가율 44%와 영업이익률 29% — 팔수록 남는 구조
 
 <!-- SVG: 9년 매출·영업이익률 이중축 라인 차트, 2022년 영업이익률 저점 강조 -->
-![36 Act2 Margins](./assets/36-act2-margins.svg)
+![36 Act2 Margins](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/3e/3e5e204f58147a3dbbe03e77a963e59bff75be0dfced6468242354367e1cd3b9.svg)
 
 > "우리는 음료 회사가 아니다. 우리는 브랜드 회사다. 공장은 파트너가 돌린다." — Rodney Sacks, 2016년 CAGNY(Consumer Analyst Group of New York, 소비재 애널리스트 연례 컨퍼런스) 발언 요지
 
@@ -189,7 +189,7 @@ Bang 인수의 회계 여파가 3막과 5막에 남아 있다. 매출채권이 �
 # 제3막: 공장이 없으니 운전자본만 남았다 — 현금전환주기 105일의 역설
 
 <!-- SVG: 현금전환주기 9년 추이, 2023 피크 강조 + 매출채권회전일수/DIO/DPO 분해 -->
-![36 Act3 현금전환주기](./assets/36-act3-ccc.svg)
+![36 Act3 현금전환주기](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/cc/cc0b656e8da2f05b8a68a60f56b2ee17fff7d44e975669d273c77bc063a15d78.svg)
 
 이익이 얼마나 빠르게 현금으로 바뀌는가. 이것이 3막의 질문이다. Monster의 영업이익률(영업이익률, 영업이익률)은 29%로 최상위다. 그런데 영업이익률이 높다고 현금이 잘 도는 것은 아니다. 재고와 매출채권이 묶이면 영업이익은 장부상 숫자에 머물고 통장은 비어 간다. 2022~23년 Monster에 바로 그런 일이 있었다.
 
@@ -220,7 +220,7 @@ c.analysis("financial", "이익품질")["accrualAnalysis"]
 
 공장 없는 회사조차 운전자본에서 현금이 묶일 수 있다. 이것이 asset-light 관통선의 그림자다. 2025년 영업활동현금흐름 $2.10B은 운전자본이 풀려서 나온 숫자고, 2026년에 매출채권이 다시 빠르게 늘면 영업활동현금흐름는 재차 흔들린다.
 
-![현금전환주기 분해 — 매출채권회전일수·DIO·DPO 스택](./assets/36-act3-ccc-stack.svg)
+![현금전환주기 분해 — 매출채권회전일수·DIO·DPO 스택](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b0/b0069967ba8abf9437e49335c68ccad303e2018f644572ff61b8f115945d9a84.svg)
 
 ### "현금전환주기 74→105→95일, Bang이 만든 재고 터널"
 
@@ -254,7 +254,7 @@ dartlab의 analysis 종합평가 summaryFlags를 그대로 인용한다.
 
 ### "DuPont 역설 — 자기자본수익률 23%인데 영업이익률은 회복 중인 이유"
 
-![DuPont 역설 — 자기자본수익률/영업이익률/Leverage 분기](./assets/36-act3-dupont.svg)
+![DuPont 역설 — 자기자본수익률/영업이익률/Leverage 분기](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/28/28d2b0c04b7a9450d00c5651404c15f569eca286f90a1068221e58e2ff94e5f1.svg)
 
 2021 자기자본수익률 38% → 2025 자기자본수익률 23%. 마진은 오히려 회복 중인데 자기자본수익률는 떨어진다. 이유는 분모다. 자기자본이 5년간 2.3배 팽창했다 ($36.1억 → $82.5억). 순이익은 38% 늘었는데 자본은 129%. 재투자처 부재의 결과다. 설비투자 2%, 배당 0%, 자사주도 2024 한 해만 폭탄. 그 동안 돈이 쌓이고 쌓였다.
 
@@ -273,7 +273,7 @@ c.analysis('financial','수익성')['returnTrend']['history']
 # 제4막: 설비투자 매출의 2% — 코카콜라 보틀링 네트워크
 
 <!-- SVG: 2015.06.12 KO-MNST 교환 다이어그램 + 9년 설비투자/매출 밴드 2~3% -->
-![36 Act4 설비투자](./assets/36-act4-capex.svg)
+![36 Act4 설비투자](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e1/e19ae466241f3c2b8bf155005a05ae2c7ba97bf0a45e7c2cb0ea2328da127f3f.svg)
 
 2015년 6월 12일, 조지아주 애틀랜타의 Coca-Cola 본사에서 두 회사의 공동 발표가 나왔다. Coca-Cola Company는 Monster Beverage에 $2.15B을 내고 지분 16.7%를 취득한다. 그 대가로 Coca-Cola는 자사가 소유한 에너지 드링크 브랜드 10여 개 — NOS, Full Throttle, Burn, Mother, Relentless, Ultra Energy, Nalu, BPM, Play, Gladiator 등 — 를 모두 Monster에 넘긴다. 동시에 Monster가 보유하던 논에너지 브랜드(Hansen's Natural Soda, Blue Sky, Peace Tea, Hubert's Lemonade 등)를 Coca-Cola가 인수한다.
 
@@ -285,7 +285,7 @@ c.analysis('financial','수익성')['returnTrend']['history']
 
 ### "투하자본수익률 워터폴 — 마진 +3.75pp, 회전 -7.25pp"
 
-![투하자본수익률 워터폴 — Margin vs Turnover](./assets/36-act4-roic-waterfall.svg)
+![투하자본수익률 워터폴 — Margin vs Turnover](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e3/e3322fe5a4ed8cc4f012a911928a15e4bdb33c29fcbe14398344372a24507593.svg)
 
 투하자본수익률(투하자본수익률) 2023 40.0% → 2025 28.4%. 3년 연속 하락이다. dartlab 투자효율 엔진이 원인을 분해한다 — 마진 효과 +3.75pp 기여, 자산회전 효과 **-7.25pp** (63.8% 설명력). 마진은 회복하는데 자본이 2배 빠르게 부풀어 회전율이 1.85 → 1.27로 무너졌다.
 
@@ -373,7 +373,7 @@ $12.3B 누적 영업활동현금흐름의 회계적 파급력:
 # 제5막: 자사주 $8.3B, 배당 $0, 2024년 첫 차입 $374M
 
 <!-- SVG: 9년 자사주매입 연도별 막대 + 2024 $3.77B 피크 + 장기차입 첫 등장 표시 -->
-![36 Act5 Buyback](./assets/36-act5-buyback.svg)
+![36 Act5 Buyback](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/bb/bbcefce6c045875a1664f40ec25598b2f29b1dfb0653289bab0cae5cc3bac421.svg)
 
 Monster가 9년간 주주환원으로 쓴 금액은 정확히 $8.326B이다. 이 중 배당은 **$0**. 전액 자사주 매입이다. S&P 500 기업 중 배당을 한 번도 하지 않은 회사는 드물지 않다(Alphabet이 2024년 첫 배당 전까지 그랬다). 그러나 시가총액 $50B 이상 기업이 **상장 33년 내내 배당 제로**를 유지하면서 자사주로만 $8B를 쓴 사례는 매우 드물다.
 
@@ -410,7 +410,7 @@ Sacks와 Schlosberg의 주주환원 철학은 연례보고서(proxy statement)�
 
 2024년 자사주 매입의 회계 처리도 주목할 만하다. BS의 Treasury Stock 계정이 $9.17B에서 $5.14B로 약 $4B 감소했고, Retained Earnings가 $9.00B에서 $5.94B로 약 $3B 감소했다. 이는 **자사주 소각(retirement 분개: treasury 차감 + retained 차감)** 이다. 매입한 자사주를 창고에 쌓아두는 대신 소각해 주식 수를 영구적으로 줄였다. 발행주식수는 약 10억 5천만주에서 약 9억 7천만주로 감소했다.
 
-![Z″-Score 8년 + 2024 딥](./assets/36-act5-zscore.svg)
+![Z″-Score 8년 + 2024 딥](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/66/6685d72c1c7b70758c8400e041fad52f8cd7d9e5940161d4c0f54fd46e1ffd4b.svg)
 
 ### "dartlab 이 'high' 등급 경고를 띄운 이유"
 
@@ -465,13 +465,13 @@ Monster의 진짜 수익성을 보려면 현금과 단기투자를 차감한 "�
 # 제6막: DCF가 경고하는 mid-cycle — Monster는 지금 어느 국면인가
 
 <!-- SVG: dartlab DCF mid-cycle warning + Celsius 점유율 급상승 + 신용등급 카드 -->
-![36 Act6 Verdict](./assets/36-act6-verdict.svg)
+![36 Act6 Verdict](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/1e/1e4ddfa6cde367e7998f8d01d43d6988fb78995b7fc20768e71bb66e9cbbb427.svg)
 
 앞선 다섯 막을 관통한 질문은 하나다. "자본집약(설비투자 2%) 구조가 앞으로도 유지되는가?" 이 질문에 답하려면 세 가지를 봐야 한다 — 재무구조의 건전성(신용), 가치평가의 국면(DCF), 경쟁 지형의 변화(Celsius).
 
 ### "신용 dCR-AA+ 96.28점 — 재무구조는 최상위"
 
-![dCR 7축 레이더](./assets/36-act6-credit-radar.svg)
+![dCR 7축 레이더](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/cd/cd540fbe0817f6105d4618beaff489827097b54500cd18386bf87ce9894c9c22.svg)
 
 Monster는 회사채를 발행한 적이 없다. 그래서 Moody's·S&P·Fitch 어디에도 공식 신용등급이 없다. 굳이 빌릴 필요가 없었기 때문이다. 이자보상배율 161배 — 이자 1달러를 갚기 위해 영업이익 161달러가 들어온다는 뜻. 이런 회사가 외부 등급을 받기 위해 굳이 회사채 시장에 발 들일 이유가 없다. dartlab 자체 신용 모델 dCR은 그래서 외부 검증 없이 산출된 점수다 — **dCR-AA+, 96.28/100**. 20단계 중 AAA 바로 아래.
 

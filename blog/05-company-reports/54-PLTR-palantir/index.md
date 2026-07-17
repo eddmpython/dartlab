@@ -54,7 +54,7 @@ import HFDataLink from '$lib/components/blog/HFDataLink.svelte';
 
 ---
 
-![팔란티어 — 영업이익률 31%인데 이익의 절반이 현금이 아닌 구조](./assets/54-hero-map.svg)
+![팔란티어 — 영업이익률 31%인데 이익의 절반이 현금이 아닌 구조](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/19/198fdbc543a4b2b527bf449ed97921603bf6a19303ab5dc24c774ae5bef611c4.svg)
 
 ## 1막: 적자인데 돈이 쌓인다 — 잉여현금흐름의 역설
 
@@ -94,7 +94,7 @@ c.select("CF", ["operating_cash_flow","purchase_of_property_plant_and_equipment"
 
 **표시: 2021년 순이익 -$520M인데 잉여현금흐름 +$321M. 차이 $841M. 이 $841M은 어디서 왔는가.**
 
-![팔란티어 주식보상비용 패러독스 — 순이익은 적자인데 잉여현금흐름은 항상 플러스](./assets/54-sbc-paradox.svg)
+![팔란티어 주식보상비용 패러독스 — 순이익은 적자인데 잉여현금흐름은 항상 플러스](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/46/46cca96af11709703693e31fae2ceb5dda38f395f57e51d3f9c5ea150043b87e.svg)
 
 답은 **주식보상비용(SBC, Stock-Based Compensation)**이다. 팔란티어는 직원들에게 급여의 상당 부분을 현금이 아니라 **자사 주식**으로 지급한다. 이 주식보상비용은 손익계산서에서 비용으로 잡혀서 순이익을 깎는다. 하지만 **현금이 나가지 않는다**. 주식을 발행하는 것이지 현금을 쓰는 게 아니기 때문이다.
 
@@ -203,7 +203,7 @@ prof = c.analysis("financial", "수익성")
 
 ### 설비투자 $34M = 매출의 0.7%
 
-![팔란티어 자산경량화 — 공장 없는 회사의 자산 구조](./assets/54-asset-light.svg)
+![팔란티어 자산경량화 — 공장 없는 회사의 자산 구조](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/92/92593ce25520d7aa5599bb0b3d15193fd8f7577cd3be5cdda37a7813678c0208.svg)
 
 팔란티어의 2025년 설비투자는 **$34M**이다. 매출 $4.48B의 **0.7%**에 불과하다. [한화오션](/blog/042660-hanwha-ocean)의 설비투자 7,166억원(매출의 5.6%), [SK바이오사이언스](/blog/302440-sk-bioscience)의 2,604억원(매출의 40%)과 비교하면 차원이 다르다.
 
@@ -247,7 +247,7 @@ c.select("BS", ["total_assets","stockholders_equity"])
 | 자기자본 | **7,488** | 2,291 | 1,522 | 2,642 | **-1,751** |
 | 현금+단기투자 | **7,177** | 5,441 | 2,326 | 2,245 | 1,313 |
 
-![팔란티어 자본 부활 — 자본잠식에서 +$7.5B로](./assets/54-capital-resurrection.svg)
+![팔란티어 자본 부활 — 자본잠식에서 +$7.5B로](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/94/94fa8ea5244c20dc26b5fbaeaf6805a3fa5c7788d394094cd8365d09a1b84af0.svg)
 
 **2021년 자기자본 -$1.75B.** 부채가 자산보다 $1.75B 많았다. 보통 자기자본이 마이너스인 회사는 파산 직전이거나 상장폐지 대상이다. 그런데 팔란티어의 시가총액은 2021년에 $40B이었다. 장부상 -$1.75B인 회사에 시장이 $40B의 가치를 매긴 것이다. **장부가치와 시장가치의 괴리가 40배.** 이것은 팔란티어의 진짜 자산(데이터·알고리즘·정부 관계·엔지니어)이 재무상태표에 안 찍힌다는 뜻이다.
 
@@ -283,7 +283,7 @@ c.select("BS", ["total_assets","stockholders_equity"])
 
 ### 매출 2.9배, 비용 1.1배 — 레버리지의 극단
 
-![팔란티어 영업이익률 5년 스윙 — -27%에서 +32%로](./assets/54-margin-swing.svg)
+![팔란티어 영업이익률 5년 스윙 — -27%에서 +32%로](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/81/81545d88c1796f210b107d92b8301834452a66cd87cd9e5405b749926b8675bd.svg)
 
 팔란티어의 영업이익률 스윙의 메커니즘은 단순하다. 매출이 $1.54B → $4.48B로 **2.9배** 늘었는데, 영업비용은 $1.95B → $3.06B로 **1.6배**만 늘었다. 매출이 비용보다 훨씬 빠르게 늘었다.
 
@@ -324,7 +324,7 @@ dartlab 종합평가에서 상반된 두 신호가 동시에 나온다. **Beneis
 
 ## 6막: 현금 $7.2B, 빚 0 — 팔란티어를 판단하는 법
 
-![팔란티어 투자 체크포인트](./assets/54-checklist.svg)
+![팔란티어 투자 체크포인트](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/9e/9e2943298bbd52875b07aeb0d54872a9e6ac1ec770ef9bfa7cae608574d9c952.svg)
 
 ### 19년 적자의 정체 — 장부의 적자, 현금의 흑자
 

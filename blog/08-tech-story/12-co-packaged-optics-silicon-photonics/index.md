@@ -46,7 +46,7 @@ AI 서버를 많이 붙이면 계산은 빨라진다. 그런데 계산기가 늘
 
 CPO는 이 전기 구간을 줄인다. 광엔진을 ASIC 옆으로 끌어와서 전기 신호가 가야 하는 거리를 짧게 만들고, 더 빨리 빛으로 바꾼다. Broadcom은 2025년 [Tomahawk 6 Davisson CPO 발표](https://investors.broadcom.com/news-releases/news-release-details/broadcom-announces-tomahawkr-6-davisson-industrys-first-1024)에서 102.4Tbps Ethernet switch와 optical interconnect 전력 70% 절감을 제시했다. 이 수치는 회사 발표 기준이다. 중요한 것은 절감률 하나보다 방향이다. 전기 경로가 길어질수록 광엔진은 ASIC 가까이 이동한다.
 
-![전기 경로가 길수록 보정과 전력이 늘고, CPO는 광 변환 위치를 ASIC 쪽으로 당긴다](./assets/12-electric-vs-optical-path.svg)
+![전기 경로가 길수록 보정과 전력이 늘고, CPO는 광 변환 위치를 ASIC 쪽으로 당긴다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/46/46521dca8698d51d3916f62794fb761a1b343dcec18392d8616b25b89ab338cc.svg)
 
 여기서 투자자가 먼저 걸어야 할 단서는 간단하다. CPO는 광모듈 회사만의 이야기가 아니다. 스위치 ASIC 회사가 패키지 구조를 바꾸고, 광부품 회사가 더 가까운 광엔진을 만들고, 패키징과 테스트 회사가 새로운 조립과 검증을 맡고, 시스템 회사가 서비스성을 다시 설계해야 한다. 같은 AI 네트워크라도 돈이 남는 위치는 다르다.
 
@@ -58,7 +58,7 @@ CPO는 이 구조를 바꾼다. 광엔진이 ASIC 패키지 가까이 들어오�
 
 Broadcom은 2025년 [3세대 CPO 발표](https://investors.broadcom.com/news-releases/news-release-details/broadcom-announces-third-generation-co-packaged-optics-cpo)에서 200G/lane 기반, 100G/lane 볼륨 생산, 생태계 협력을 강조했다. Marvell은 [1.6T silicon photonics light engine](https://www.marvell.com/company/newsroom/marvell-demonstrates-silicon-photonics-light-engine-for-low-power-rack-scale-interconnect-in-ai-networks.html)에서 200Gbps/lane, LPO와 CPO 기반, 레이저 전력을 포함한 5pJ/bit 미만을 제시했다. 역시 회사 발표 기준이다. 다만 두 발표가 가리키는 방향은 같다. 네트워크 ASIC의 주변 광 I/O는 더 촘촘하고, 더 낮은 전력으로, 더 가까운 위치로 이동한다.
 
-![플러그형 광모듈은 교체성이 좋고, CPO는 전기 구간을 줄이지만 패키지와 서비스 난도를 올린다](./assets/12-pluggable-vs-cpo.svg)
+![플러그형 광모듈은 교체성이 좋고, CPO는 전기 구간을 줄이지만 패키지와 서비스 난도를 올린다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/37/373b2ba118f14d0ffc92943a81ce410a2df632a8641d8e92b5aa74ad318689db.svg)
 
 이 변화는 [모래가 반도체가 되기까지](/blog/sand-to-semiconductor)에서 본 반도체 공정 지도와도 닮았다. 기술이 한 단계 더 성숙하면 부품 하나가 아니라 공정 칸이 바뀐다. CPO는 광트랜시버가 더 빨라지는 사건이 아니라, 전기와 광의 경계선이 스위치 패키지 안쪽으로 이동하는 사건이다.
 
@@ -66,7 +66,7 @@ Broadcom은 2025년 [3세대 CPO 발표](https://investors.broadcom.com/news-rel
 
 CPO와 실리콘 포토닉스를 회사 목록으로 보면 Broadcom, Marvell, Cisco, NVIDIA, Intel, Coherent, Lumentum, Corning, Fabrinet, 오이솔루션 같은 이름이 한 줄에 섞인다. 하지만 같은 줄에 놓으면 오독이 생긴다. 어떤 회사는 ASIC을 판다. 어떤 회사는 광엔진을 판다. 어떤 회사는 레이저와 광부품을 판다. 어떤 회사는 조립과 테스트를 한다. 어떤 회사는 완성 스위치와 네트워크 운영을 판다.
 
-![CPO 공정 지도는 스위치 ASIC, 패키지, 광엔진, 레이저, 광섬유 조립, 시스템 검증으로 나뉜다](./assets/12-company-evidence-map.svg)
+![CPO 공정 지도는 스위치 ASIC, 패키지, 광엔진, 레이저, 광섬유 조립, 시스템 검증으로 나뉜다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ea/ea69eca20f03f2b1f09f3dc4fcd5340fadea29c518e5ebce93fdbddc788da9c0.svg)
 
 | 공정/층위 | 기술 역할 | 대표 회사 | 공시 근거 | 왜 이 회사가 핵심인가 |
 |---|---|---|---|---|
@@ -107,7 +107,7 @@ CPO를 처음 들으면 모든 광부품이 ASIC 옆에 들어가는 그림을 �
 
 아래 표는 CPO 전용 매출표가 아니다. 이 단서를 먼저 걸어야 한다. 대부분 회사는 CPO 매출을 별도로 공시하지 않는다. EDGAR와 DART에서 확인할 수 있는 것은 전사 매출, 매출총이익률, 영업이익률, 연구개발비, 세그먼트 설명, 제품 로드맵이다. 그래서 숫자는 기술 수혜의 확정값이 아니라 "이 회사가 어느 회계 구조를 가진 회사인가"를 보는 참고값이다.
 
-![DART와 EDGAR 전사 숫자로 본 CPO 거래망의 재무 착지. ASIC과 시스템, 광부품, 조립은 서로 다른 손익 구조를 가진다](./assets/12-financial-landing.svg)
+![DART와 EDGAR 전사 숫자로 본 CPO 거래망의 재무 착지. ASIC과 시스템, 광부품, 조립은 서로 다른 손익 구조를 가진다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e9/e952be6633a494ac9e105e852ce282713165270f13f8859051e8d3ee01393c88.svg)
 
 | 회사 | 지도에서의 칸 | 기준 | 매출 | 매출총이익률 | 영업이익률 또는 순이익률 | 읽는 법 |
 |---|---|---:|---:|---:|---:|---|
@@ -130,7 +130,7 @@ CPO를 처음 들으면 모든 광부품이 ASIC 옆에 들어가는 그림을 �
 
 CPO의 기술 성숙도는 한 줄로 말하기 어렵다. 800G와 1.6T pluggable optics는 이미 데이터센터에서 확산되고 있다. LPO(linear pluggable optics)는 전력 절감을 위해 모듈 안의 DSP를 줄이려는 흐름이다. Near package optics는 광엔진을 ASIC 근처로 가져가지만 완전한 CPO보다 서비스성과 패키지 부담을 조정하려는 중간지대다. CPO는 전기 경로를 더 줄이지만 패키지, 열, 수율, 교체성 문제가 더 어렵다. Optical I/O가 GPU와 XPU 안으로 더 깊이 들어가는 단계는 더 장기적인 문제다.
 
-![pluggable, LPO, near package optics, CPO, optical I/O는 같은 단계가 아니다. 성숙도와 검증 조건이 다르다](./assets/12-maturity-ladder.svg)
+![pluggable, LPO, near package optics, CPO, optical I/O는 같은 단계가 아니다. 성숙도와 검증 조건이 다르다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/12/129a1243c6777466f6c80aca2074ae744d2d66ac7dba4bd985c2d695f4ddb008.svg)
 
 첫 번째 오해는 "CPO와 실리콘 포토닉스가 같은 말"이라는 것이다. 아니다. 실리콘 포토닉스는 빛을 다루는 칩 기술이고, CPO는 그 광엔진을 어디에 배치하느냐의 패키징 구조다. 실리콘 포토닉스는 pluggable optics에도 들어갈 수 있고, CPO도 실리콘 포토닉스 외의 레이저와 조립 기술을 함께 필요로 한다.
 

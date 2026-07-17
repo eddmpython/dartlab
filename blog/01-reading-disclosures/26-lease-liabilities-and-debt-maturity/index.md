@@ -18,7 +18,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 이 글은 리스부채와 차입 만기 구조를 `부채 총액 -> 만기 분포 -> 영업현금흐름 -> 차환 가능성 -> 다음 보고서 추적` 순서로 읽는 방법을 정리한다. 현금 검증은 [영업현금흐름이 순이익을 부정할 때](/blog/operating-cash-flow-vs-net-income), 숫자 해석의 기본은 [숫자만 보면 왜 자주 틀리나](/blog/beyond-the-numbers), 고정비 압박은 [설비투자 뒤 감가상각은 언제 보이나](/blog/capacity-utilization-capex), 구조 재편 이벤트는 감자와 주식병합 공시는 무엇을 먼저 봐야 하나와 같이 보면 더 잘 맞물린다.
 
-![리스부채와 차입 만기 구조를 어떤 순서로 읽어야 하는지 정리한 구조도](./assets/047-reading-flow.svg)
+![리스부채와 차입 만기 구조를 어떤 순서로 읽어야 하는지 정리한 구조도](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/0d/0d45f76e02d44698bb06ec43677e5dd96d78d59b9ddf4084df10b256b11c7c81.svg)
 
 ---
 
@@ -47,7 +47,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 또 하나 중요한 것은 리스부채를 별개로 떼어 보지 않는 것이다. 리스는 종종 차입보다 덜 위험해 보이지만, 실제 현금 유출은 매우 꾸준하고 경기 둔화기에 줄이기 쉽지 않은 경우가 많다. 특히 오프라인 유통, 물류, 항공, 운송, 장비 집약 업종은 리스가 사실상 고정비 구조와 겹친다. 이 점은 [생산능력·가동률·설비투자 읽는 법](/blog/capacity-utilization-capex), [건설중인자산은 왜 중요한가](/blog/capacity-utilization-capex)와 같이 보면 더 잘 보인다.
 
-![리스부채와 차입 구조를 읽을 때 같이 확인해야 할 레이어를 정리한 도식](./assets/047-evidence-layer.svg)
+![리스부채와 차입 구조를 읽을 때 같이 확인해야 할 레이어를 정리한 도식](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/36/36eec8d968565cd584e3f1af2f4c46f364be65b5e58de409b82212cbb4a66b91.svg)
 
 ---
 
@@ -55,7 +55,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 가장 실용적인 질문은 이것이다. `이 회사는 부채 총액이 큰가보다, 가까운 만기를 감당할 수 있는가`.
 
-![리스부채와 차입 구조를 안정적 만기 분산, 민감 구간, 압박 구간으로 가르는 구조도](./assets/047-decision-tree.svg)
+![리스부채와 차입 구조를 안정적 만기 분산, 민감 구간, 압박 구간으로 가르는 구조도](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/24/24cf635af12c40fa461ee4f1322239f7b4ea44fce9050bf576575c36710f4ca6.svg)
 
 보통 아래 세 갈래로 나누면 읽기가 쉬워진다.
 
@@ -71,7 +71,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 ## 위험도를 나누는 기준
 
-![리스부채와 차입 만기 구조에서 상대적으로 건강한 경우와 더 조심해야 하는 경우를 비교한 매트릭스](./assets/047-good-vs-risky-matrix.svg)
+![리스부채와 차입 만기 구조에서 상대적으로 건강한 경우와 더 조심해야 하는 경우를 비교한 매트릭스](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/dd/dd004a927171427c68f94eaa3315110fbea67d5aca06a518d5bc93c5d1d34cb0.svg)
 
 | 관찰 포인트 | 상대적으로 건강한 경우 | 더 조심해야 하는 경우 |
 | --- | --- | --- |
@@ -131,7 +131,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 ## 다음 분기에 다시 확인할 숫자
 
-![리스부채와 차입 구조를 읽은 뒤 후속 문서에서 다시 봐야 할 질문을 정리한 보드](./assets/047-watchboard.svg)
+![리스부채와 차입 구조를 읽은 뒤 후속 문서에서 다시 봐야 할 질문을 정리한 보드](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/83/83c5edd0fdd9ace1b78e53cd9c568d9e3fff23c911de791009fe630884c2b24c.svg)
 
 | 이번에 본 것 | 다음에 다시 볼 것 |
 | --- | --- |

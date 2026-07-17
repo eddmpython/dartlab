@@ -18,7 +18,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 이 글은 감사보고서를 적정의견 유무만 보는 방식에서 벗어나, KAM, 계속기업, 회계추정, 내부통제 신호를 실전적으로 읽는 방법을 정리한다. 사업보고서 전체를 어떤 순서로 읽어야 할지 먼저 잡고 싶다면 [`사업보고서에서 꼭 봐야 할 5가지는 무엇인가`](/blog/reading-business-reports)와 같이 보면 좋다.
 
-![감사의견 유형과 핵심감사사항의 읽기 흐름을 정리한 분기 구조도](./assets/014-audit-opinion-branch.svg)
+![감사의견 유형과 핵심감사사항의 읽기 흐름을 정리한 분기 구조도](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/46/464f3c97aafaabb52906dfa38845ac713212069d6762360571a545bd0b86c709.svg)
 
 ---
 
@@ -61,7 +61,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 중요한 점은 KAM이 곧 부정의 의미는 아니라는 점이다. 다만 **판단이 복잡하고 민감한 영역**이라는 뜻이다.
 
-![핵심감사사항의 구성요소와 해석 순서를 설명하는 구조도](./assets/014-kam-anatomy-map.svg)
+![핵심감사사항의 구성요소와 해석 순서를 설명하는 구조도](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ce/ce4f4674ba4b651c61cbd30391e31e4b87db1b9676fbe571495313e2a78c23af.svg)
 
 KAM을 읽을 때는 아래 3단계를 따르면 된다.
 
@@ -82,7 +82,7 @@ KAM을 읽을 때는 아래 3단계를 따르면 된다.
 
 KAM이 있다고 해서 무조건 위험한 것은 아니다. 하지만 반복되는 패턴과 문구 강도는 중요하다.
 
-![회계추정 민감도와 KAM 반복 패턴을 히트맵으로 보여주는 도식](./assets/014-estimate-sensitivity-heatmap.svg)
+![회계추정 민감도와 KAM 반복 패턴을 히트맵으로 보여주는 도식](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e4/e49333e98f0b7b37a3729aca44c910bed1dbe4e8f2b443e2b8e8541285a93f5a.svg)
 
 | 구분 | 상대적으로 건강한 경우 | 경계해야 하는 경우 |
 | --- | --- | --- |
@@ -121,7 +121,7 @@ KAM이 있다고 해서 무조건 위험한 것은 아니다. 하지만 반복�
 | 매출인식 | 계약 조건과 인식 시점 차이 | 사업보고서, MD&A, 매출채권 |
 | 대손충당금 | 회수 가능성 추정에 따라 이익이 달라짐 | 매출채권 aging, CFO |
 
-![경고 신호가 강한 감사보고서 패턴을 정리한 카드](./assets/014-audit-red-flag-card.svg)
+![경고 신호가 강한 감사보고서 패턴을 정리한 카드](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/17/1738ec26ba41a84f8db3a0a51cb677a1d7836bdd0e9010b9987b3df8d5c5365c.svg)
 
 좋은 질문은 "이 추정이 복잡한가"가 아니라 "이 추정이 틀리면 숫자가 얼마나 크게 흔들리는가"다.
 
@@ -207,7 +207,7 @@ KAM은 관련 계정 주석과 함께 읽을 때 의미가 생긴다.
 
 ## 10분 실전 체크리스트
 
-![감사보고서를 10분 안에 읽기 위한 실전 체크리스트](./assets/014-audit-reading-checklist.svg)
+![감사보고서를 10분 안에 읽기 위한 실전 체크리스트](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/52/5207b5cec64c98fa74d03b684f3003faf34744a4305b0998009267ca20c0604a.svg)
 
 - 감사의견 유형은 무엇인가
 - KAM은 몇 개인가

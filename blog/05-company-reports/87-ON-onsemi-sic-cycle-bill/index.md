@@ -117,7 +117,7 @@ EliteSiC 는 ON 의 SiC MOSFET 제품 브랜드다. 2022Q3 매출은 분기 기�
 
 2022 의 28% OPM 은 끝이 아니었다 — 2023 에 한 번 더 뚫었다.
 
-![ON 9년 매출과 OPM 사이클](./assets/01-revenue-opm-cycle.svg)
+![ON 9년 매출과 OPM 사이클](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/25/25a239f2edefe232cf4343b149ce43011f9cce8dc2d7c20e3fcf8f899901a997.svg)
 
 ---
 
@@ -220,7 +220,7 @@ Roznov 디바이스 라인은 2023 CAPEX 의 핵심 수혜 대상이었고, 2024
 
 ### 왜 단일 분기에 영업적자 5억 7,370만 달러가 났나
 
-![2025Q1 영업적자 -$573.7M 분해 — 자산손상이 75%](./assets/02-q1-2025-collapse.svg)
+![2025Q1 영업적자 -$573.7M 분해 — 자산손상이 75%](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a2/a2197ec72d26206a56337a65c93ce03838f7cce6f4cd4d21346f1123835906cd.svg)
 
 표면 숫자만 보면 매출 -22% 가 영업이익을 음으로 끌고 내린 것처럼 읽힌다. 그러나 손익계산서 한 줄 아래로 내려가면 다른 항목이 등장한다. 자산손상 (impairment) 4억 3,150만 달러. 이 한 줄이 영업적자 -5억 7,370만 달러의 75% 를 차지했다. 즉 1 분기 영업적자의 4 분의 3 은 "이번 분기 영업이 부진해서" 가 아니라 "과거 투자한 자산이 회수 가능 가치보다 작아졌다고 회사가 인정해서" 발생한 비현금 회계 처리였다.
 
@@ -266,7 +266,7 @@ Roznov 디바이스 라인은 2023 CAPEX 의 핵심 수혜 대상이었고, 2024
 
 ### 왜 부실 4 신호가 동시에 점등했나
 
-![2025 부실 4 신호 — Altman Z 1.98 / Springate 0.65 / 이자보상 1.1× / 금융부채 62%](./assets/05-distress-4-signals.svg)
+![2025 부실 4 신호 — Altman Z 1.98 / Springate 0.65 / 이자보상 1.1× / 금융부채 62%](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ca/cae1be271c039b3dce1c01f6f143b9ec72fbbaf941d7719b611a45f6de6ec60e.svg)
 
 연간 재무제표 기준 부실 지표는 다음과 같이 정렬됐다.
 
@@ -296,7 +296,7 @@ Altman Z 1.98 은 안전지대 (&gt;2.99) 와 부실지대 (&lt;1.81) 사이의 
 
 ### 왜 영업적자 분기에 자사주를 더 샀나, 3 억 달러에서 4억 5,000만 달러로
 
-![PEAK 캐파에서 자사주로 — 2018~2025 두 PEAK 의 다른 방향](./assets/03-capex-share-buyback-divergence.svg)
+![PEAK 캐파에서 자사주로 — 2018~2025 두 PEAK 의 다른 방향](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/1c/1c299119dc581626367a37cbca60beedf36c9502d3e2167c89620a83cdc08289.svg)
 
 분기별 2025 자사주 매입은 Q1 3억 달러, Q2 3억 200만 달러, Q3 3억 2,500만 달러, Q4 4억 5,000만 달러였다. Q1 은 5 막에서 본 영업적자 -5억 7,370만 달러 분기다. 그 분기에 회사는 자사주에 3 억 달러를 썼다. 영업적자가 -4억 8,500만 달러 순손실로 마감된 분기, 회사 통장 한쪽에서는 5 억 달러에 가까운 적자가 찍히고, 다른 쪽에서는 3 억 달러 어치 자사주가 시장에서 매입됐다. 분기가 진행될수록 매입 금액은 줄지 않고 오히려 늘었다. Q4 4억 5,000만 달러는 분기 PEAK 였고, 이 한 분기 매입액이 2024 년 연간 매입액 6억 5,400만 달러의 69% 에 해당한다.
 
@@ -313,7 +313,7 @@ Altman Z 1.98 은 안전지대 (&gt;2.99) 와 부실지대 (&lt;1.81) 사이의 
 
 ### 왜 FCF 97% 환원이라는 분모·분자 구조가 의미를 바꾸나
 
-![2025 FCF $1,418M 의 97.2% 가 자사주로](./assets/04-fcf-allocation-2025.svg)
+![2025 FCF $1,418M 의 97.2% 가 자사주로](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e7/e7fb5723cebbd0472bca8a267664aea4b3ee90f864a28bca6364a3b81b57cc7c.svg)
 
 2025 년 FCF 환원율 — $1,378M / $1,418M = 97.2%. 한 해 동안 회사가 만들어낸 잉여현금 14억 1,800만 달러 중 13억 7,800만 달러를 자사주로 돌려보냈다는 산수다. 그러나 이 97% 라는 비율의 의미는 분자만이 아니라 분모도 같이 봐야 한다.
 

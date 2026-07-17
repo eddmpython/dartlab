@@ -42,7 +42,7 @@ import StackBar from '$lib/components/blog/StackBar.svelte';
 
 보통 "매출이 두 배가 되면 이익도 그만큼 커진다"고 믿는다. 그런데 유나이티드헬스는 6년간 매출이 242.2B에서 447.6B로 **+84.8%**, 거의 두 배가 됐는데도 영업이익률은 8.13 → 8.72 → 8.34 → 8.77 → 8.71 → 8.07%, 단 한 번도 9%를 넘지 못하고 8%대 좁은 박스 안에서만 움직였다.
 
-![매출은 거의 두 배가 됐는데 영업이익률 띠는 8%대에서 두꺼워지지 않았다](./assets/125-flat-band.svg)
+![매출은 거의 두 배가 됐는데 영업이익률 띠는 8%대에서 두꺼워지지 않았다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/62/628cea20efeb53d7e49b18ae4f0af0783b04afe576f350ec5c12696b46524e20.svg)
 
 마진 띠가 두꺼워지지 않았다는 건, 늘어난 매출이 자기 몫이 아니라 거의 그대로 통과하는 비용이었다는 관찰과 정합한다. 더 흥미로운 건 그 평평한 띠가 무너진 방식이다 — 2024년과 2025년, 같은 회사가 손익계산서의 **서로 다른 '층'**에서 부러졌다.
 
@@ -76,7 +76,7 @@ c.select("IS", ["매출액", "영업이익"], freq="Q")  # 분기→역년 합�
 
 **[외부 인용]** 미국 ACA(건강보험개혁법)는 보험사가 받은 보험료의 80~85%를 의료비로 쓰도록 *법으로* 강제하고, 미달 시 가입자에게 리베이트를 환급하게 한다(KFF·NAIC). 행정비와 이익을 합쳐 15~20% 안에서만 움직이도록 천장이 씌워져 있는 셈이다. **[외부 인용]** 이 천장의 이름이 의료손해율(MLR)이며, UNH 전사 MLR은 2023년 83.2%였다(UnitedHealth IR).
 
-![받은 보험료의 8할 이상은 의료비로 통과한다 — 남는 영업 마진은 처음부터 얇게 그어져 있다](./assets/125-mlr-ceiling.svg)
+![받은 보험료의 8할 이상은 의료비로 통과한다 — 남는 영업 마진은 처음부터 얇게 그어져 있다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/59/59e062e56b7fd47959ce5369766bc3853442bad2f7a693fdd2ae4cfb5b288124.svg)
 
 여기서 경계를 그어야 한다. 내부의 'OPM 8%대 고정'과 외부의 'MLR 규제 천장'은 분모·분자가 다른 **별개 비율**이고, 둘은 정합/양립할 뿐이다 — 외부가 내부 박스의 원인이라고 단정하지 않는다. 연결 손익이 증명하는 건 '띠가 얇고 평평하다'는 결과까지다. 그러면 이제 진짜 질문 — 그 평평한 띠가 *어떻게* 깨졌나.
 
@@ -94,7 +94,7 @@ c.select("IS", ["영업이익", "당기순이익"], freq="Q")  # 2024: OI 평탄
 
 이건 OI–NI 간극이 9.22B에서 **17.05B**로 벌어진 내부 산술에서 직접 도출된다. 영업이익에서 순이익으로 내려오는 길에 평소의 두 배 가까운 돈이 빠졌다 — 첫 균열은 영업선 위가 아니라 그 *아래*에서 났다.
 
-![첫 골절(2024)은 영업선 아래 — 영업이익은 평탄한데 순이익만 급락](./assets/125-fracture-2024.svg)
+![첫 골절(2024)은 영업선 아래 — 영업이익은 평탄한데 순이익만 급락](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ee/eec459e61d3261f6497ce077e6c675da55cd7c9da55df949a02d87fce3b579cb.svg)
 
 **[외부 인용]** 그 간극을 키운 외부 항목은 브라질 Amil 매각 손실 약 71억 달러(대부분 비현금 외화환산)와 Change Healthcare 사이버공격 비용 약 23~24.5억 달러다(Healthcare Dive·Cybersecurity Dive). 이는 영업선 *아래*의 비영업·일회성 성격이라, '영업이익 평탄·순이익만 급락'이라는 내부 관찰과 정합한다. 실제로 2024년 1분기는 순손실 −1.41B였다(분기 실측). 단, 그 구체 항목들은 전부 외부 인용이고 연결 손익으로는 '간극이 영업선 아래에서 벌어졌다'는 위치까지만 단언한다.
 
@@ -106,7 +106,7 @@ c.select("IS", ["영업이익", "당기순이익"], freq="Q")  # 2024: OI 평탄
 
 2025년엔 영업이익이 32.29B에서 18.96B로 **−41.3%** 무너지며 OPM이 8.07%에서 4.24%로, 6년 박스를 처음으로 뚫고 정확히 반토막(×0.525) 났다. 2023년 정점(32.36B) 대비로도 −41.4%다. 2024가 '영업선 아래'였다면 2025는 '영업선 자체'다 — 통과하는 돈 대비 자기 몫의 폭이 처음으로 깨졌고, NPM도 3.81%에서 2.86%로 따라 내려갔다.
 
-![두 번째 골절(2025)은 영업선 자체 — OPM이 6년 박스를 처음 뚫고 반토막](./assets/125-fracture-2025.svg)
+![두 번째 골절(2025)은 영업선 자체 — OPM이 6년 박스를 처음 뚫고 반토막](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ae/ae7c9e01668a7681549363c9de209c4b35ab982b087d5338b1bf02ac426e364e.svg)
 
 ![얇은 띠가 줄어든 게 아니라 증발했다 — 2025년의 두 번째 골절](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/8f/8f85af3bcc151730bc79f6c720208c29ee9153c61398a3c959979f10e90b4b64.webp)
 
@@ -128,7 +128,7 @@ c.select("CF", ["영업활동현금흐름"], freq="Q")  # 두 해의 현금 서�
 
 **2025년**: 영업CF가 −18.6%로 영업이익(−41.3%)과 *함께* 빠졌고, OCF/영업이익은 1.04로 회복됐다(영업이익이 더 깊이 빠진 탓의 비율 효과다 — 현금이 좋아진 게 아니다).
 
-![같은 회사가 2년 연속 다른 층에서, 다른 현금 서명을 남기며 부러졌다](./assets/125-cash-signature.svg)
+![같은 회사가 2년 연속 다른 층에서, 다른 현금 서명을 남기며 부러졌다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a4/a4ef72f715124ac89fca83bac3997a5067afae08dd36c78d57ed06ad2dab4ef7.svg)
 
 회계 균열의 층이 달랐듯, 현금이 그 균열을 따라갔는지도 두 해가 달랐다. 여기까지는 '현금과 회계이익의 분기'라는 관찰이고, 어느 해가 더 우량한지 판정은 하지 않는다(영업CF가 영업이익보다 작은 건 발생주의와 현금주의의 정상적 차이일 수 있다).
 
@@ -220,7 +220,7 @@ receivables financing은 영업현금흐름의 timing을 건드릴 수 있다. �
 4. **MA 가입자 축소가 margin 회복을 동반하는가** — 가입자 감소 자체보다 수익성 낮은 book을 줄였는지가 중요하다. 매출 둔화와 margin 회복을 같이 본다.
 5. **OCF와 receivables financing의 관계** — Q1 OCF 8.9B$와 receivables financing facility를 같이 봐야 현금 서명의 질을 읽을 수 있다.
 
-![유나이티드헬스 — 2026년에 봐야 할 다섯 가지](./assets/125-checkpoints.svg)
+![유나이티드헬스 — 2026년에 봐야 할 다섯 가지](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/12/1285877b9936ba6fe121ebc63cf1e0a363517c715c9997788106f880987822c5.svg)
 
 ---
 

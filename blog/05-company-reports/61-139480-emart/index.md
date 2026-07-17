@@ -132,7 +132,7 @@ carousel:
 
 이 글은 그 세 축을 **오프라인 유통 다큐 + 구조 해부** 10막 구조로 추적한다. 이전 60편에서 본 "성장 서사"나 "적자 반등 서사"와 다르다. 이마트는 **성장도 몰락도 아닌, 매출 기계는 돌아가는데 이익 기계가 멈춘** 가장 해석이 어려운 패턴이다.
 
-![이마트 매출 2배 성장 vs 영업이익 반토막 — 8년의 역행](./assets/061-headline-paradox.svg)
+![이마트 매출 2배 성장 vs 영업이익 반토막 — 8년의 역행](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/45/45f7b195c607ef47782f2fc08c3e025383c6446daaaf1b91f19b27046dfd9097.svg)
 
 ---
 
@@ -165,7 +165,7 @@ carousel:
 
 1막은 이마트 32년의 성장사를 봤다. 2막은 그 매출 성장의 내부를 해부한다 — 어느 사업부가 매출을 올렸고, 어느 쪽이 수익을 갉아먹었는지.
 
-![이마트 32년 타임라인 — 1993 창동점 → 2025 28.97조](./assets/061-emart-timeline.svg)
+![이마트 32년 타임라인 — 1993 창동점 → 2025 28.97조](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/4a/4ae0d34c11fa1189e3ad1fb2be363ef4d82e7ad171186af30817d8f832784fa3.svg)
 
 ![이마트 대형마트 내부 — 32년간 한국 오프라인 유통의 원형](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/2f/2ff89b3f89643f3d8a713e75169bf6e8b0c517cf2511d6baf7f86397bf968f59.webp)
 
@@ -265,7 +265,7 @@ c.select("ratios", ["영업이익률 (%)"])
 
 3막의 판관비 3요인 중 **가장 큰 분기점은 2021년 3월 이베이코리아 3.4조 인수**다. 4막은 그 한 건의 M&A가 이마트에 무엇을 남겼는지, 그리고 2024년 순손실 5,734억의 회계 연결고리를 본다.
 
-![이마트 매출총이익률 +2.9%p vs 판관비율 +5.4%p — 8년의 수익 삼김](./assets/061-margin-waterfall.svg)
+![이마트 매출총이익률 +2.9%p vs 판관비율 +5.4%p — 8년의 수익 삼김](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/5b/5b94623381786f36bd9859fbdf5cce607c9e74e9571cd6d4a0ac31896165e519.svg)
 
 ---
 
@@ -328,7 +328,7 @@ G마켓 거래액 감소가 영업권 회수가능액을 깎자, 이마트는 **
 
 4막은 한 건의 M&A가 남긴 상처를 봤다. 5막은 그 상처가 **2023년 창사 첫 영업적자**로 수면 위로 올라온 순간을 본다.
 
-![2021.3 이베이코리아 3.4조 인수 → 2023~2024 영업권 손상 6,500억](./assets/061-ebay-ma.svg)
+![2021.3 이베이코리아 3.4조 인수 → 2023~2024 영업권 손상 6,500억](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a6/a6c977e2e1524647e7601ff754c98734708689cfc685bf515fcad55b17d67b68.svg)
 
 ---
 
@@ -421,7 +421,7 @@ G마켓 거래액 감소가 영업권 회수가능액을 깎자, 이마트는 **
 
 6막은 2024년 숫자의 회계 해부였다. 7막은 업종 전체 관점 — **오프라인 대형마트 산업 자체가 왜 위축**되고 있는지, 규제·인구·온라인의 3축 압력을 본다.
 
-![2024 순이익 -5,734억 해부 — 영업권 손상 2,500억 + 금융비용 3,800억](./assets/061-2024-loss.svg)
+![2024 순이익 -5,734억 해부 — 영업권 손상 2,500억 + 금융비용 3,800억](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ad/ad124bc7eda0a9e1bf8118c8bb7201147835235d36da292162d5c2ea5eaead32.svg)
 
 ---
 
@@ -507,7 +507,7 @@ Costco Wholesale Korea는 1994년 한국 진출, 2024년 매출 약 **6.5조**. 
 
 8막은 경쟁사 지도를 봤다. 9막은 2024년 이 모든 위기를 정면으로 맞은 **정용진 회장과 한채양 대표** 두 사람의 리더십 전환 이야기.
 
-![4개 전선 — 쿠팡·컬리·네이버·코스트코 vs 이마트 사업부](./assets/061-competition.svg)
+![4개 전선 — 쿠팡·컬리·네이버·코스트코 vs 이마트 사업부](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e0/e062dc8a4dd2c7264df18c4fe5c11fa7d3906f09274b2fdc1d827b27967b1b06.svg)
 
 ![스타필드 복합몰 아트리움 — 이마트 연결 내 고마진 사업부의 상징](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/9e/9e8543878b58f43b7678d08bb5f02cd7efdc2a7a37dc866910448da5b67689eb.webp)
 
@@ -571,7 +571,7 @@ Costco Wholesale Korea는 1994년 한국 진출, 2024년 매출 약 **6.5조**. 
 
 **한국 오프라인 유통 1위의 위치는 유지될 것이다. 다만 그 의미가 작아질 뿐이다.** 이게 2026년 이마트를 읽는 한 문장.
 
-![2026~2028 이마트 관찰 4가지 — 영업이익률·영업권·SSG·신용등급](./assets/061-checkpoints.svg)
+![2026~2028 이마트 관찰 4가지 — 영업이익률·영업권·SSG·신용등급](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a1/a1c6ece5aae5a78ad300dac790039a02b4452c509fff230628ea3fa648905e1b.svg)
 
 ---
 

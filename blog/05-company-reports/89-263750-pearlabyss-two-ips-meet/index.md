@@ -148,7 +148,7 @@ carousel:
 
 이 글은 이 질문을 8 막으로 따라간다. 1 막 2026-03-19 두 사건의 만남 → 2 막 2010 김대일 창업과 단일 IP 의 출발 → 3 막 2017 IPO 와 2018 CCP 인수 → 4 막 분기 spike 6 년 (2018Q4~2023Q4) → 5 막 2024 spike 소실 → 6 막 부실 4 신호와 순현금의 모순 → 7 막 K-게임 빅 5 비교 좌표 → 8 막 다시 2026-03-19 로 회귀.
 
-![분기 매출 9 년 시계열 — Q4 spike 6 년과 2024 소실](./assets/01-quarterly-spike-9year.svg)
+![분기 매출 9 년 시계열 — Q4 spike 6 년과 2024 소실](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f5/f538ed2bc920b3523d90b5990bfd2e001de1651ca6835d41654a838fb7aa9a36.svg)
 
 > **dartlab AI 종합의견**
 >
@@ -202,7 +202,7 @@ carousel:
 
 펄어비스의 한 분기에 두 IP 의 운명이 동시에 결정됐다. 6 년 개발한 자체 IP 는 첫 달 500 만장으로 회사 1 년 매출을 26 일에 넘었고, 8 년 보유한 외부 IP 는 인수가 절반 이하로 정리됐다. 이 두 사건은 따로 해석하면 각각 흥행 / 손실이지만, 함께 놓으면 하나의 결정이다 — 자체 IP 두 편으로 가는 회사로의 전환.
 
-![두 IP 의 운명 — 2018 CCP 인수에서 2026 만남까지](./assets/02-two-ips-timeline.svg)
+![두 IP 의 운명 — 2018 CCP 인수에서 2026 만남까지](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/8f/8f81f3612526257b40ed79930b2f2100424df181fd9a2d31d29ebf57f3cd20b4.svg)
 
 이 두 사건의 의미를 이해하려면 13 년 전 김대일이 왜 회사를 차렸는지부터 봐야 한다.
 
@@ -387,7 +387,7 @@ dartlab 의 잉여현금 정의 — "영업해서 들어온 현금에서 설비�
 
 ## 5 막 — 2024, 사라진 4 분기와 -41% 폭락
 
-![매출 사이클 — 2020 PEAK 8,285 억에서 2024 -41% 폭락까지](./assets/03-revenue-cycle-fy.svg)
+![매출 사이클 — 2020 PEAK 8,285 억에서 2024 -41% 폭락까지](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/01/018de21a93365055104220c14ba27b818b519241ed98aefd80953f429a23e7cc.svg)
 
 2024 년 1 월 1 일이 됐을 때, 펄어비스의 분기 매출 시계열에서 사라진 것이 하나 있었다.
 
@@ -464,7 +464,7 @@ trigger 소진은 회계로 잡히지 않는다. 매출이 박스권에 들어�
 
 Altman Z 1.83 은 부실 임계 1.81 을 0.02 만 넘긴 회색지대다. Springate 0.32 는 부실 임계 0.862 의 37% 수준 — 이미 부실권 안에 깊숙이 들어와 있다. Piotroski F 는 9 점 만점에 4 점, 양호 기준 (7) 의 절반 수준. 이자보상배수 -0.6 배는 영업이익 자체가 음수라는 산술적 결과다 (영업적자 -148 억 / 이자비용).
 
-![부실 4 신호 + 순현금 모순 (2025Q4)](./assets/04-distress-vs-netcash.svg)
+![부실 4 신호 + 순현금 모순 (2025Q4)](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/09/0989b816ba3918660a5f624251ca5f2e8128b1840046ca20c3ade449ac872c45.svg)
 
 이 네 지표가 동시에 점등했는데도 — 단 하나, Ohlson 부실확률은 0.7% 로 낮게 나온다. Ohlson 모형은 자본구조 (특히 부채비율과 운전자본) 에 큰 가중치를 주는데, 펄어비스는 이 부분이 깨끗했다.
 
@@ -541,7 +541,7 @@ Altman Z 1.83 은 부실 임계 1.81 을 0.02 만 넘긴 회색지대다. Spring
 
 K-게임 빅 5 를 흑자 (넥슨·크래프톤) 와 적자·미달 (엔씨·펄어비스·카겜) 로 가른 한 줄의 변수는 **신작·재흥 사이클의 도래 여부**다. 사이클이 도래한 회사의 손익은 위로, 도래하지 않은 회사의 손익은 아래로 정렬됐다.
 
-![K-게임 빅 5 OPM 분포 — 같은 해 둘로 갈라짐 (2024)](./assets/05-kgame-big5-comparison.svg)
+![K-게임 빅 5 OPM 분포 — 같은 해 둘로 갈라짐 (2024)](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b7/b7d0751b33ee938da62f793758a2d517fc0cf44376e8f636255db4576cfe091b.svg)
 
 ### 왜 넥슨·크래프톤은 흑자고 엔씨·펄어비스는 적자인가
 

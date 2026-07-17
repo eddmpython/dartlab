@@ -38,7 +38,7 @@ import ComboChart from '$lib/components/blog/ComboChart.svelte';
 
 그래서 이 글의 질문은 하나다. **왜 같은 AI 전력 수요를 받는데 어떤 회사는 20%대 영업이익률을 만들고, 어떤 회사는 7~9%에 머무는가.** 답은 "AI 수요가 강하다"가 아니라 "그 수요의 병목이 어느 제품과 어느 기업의 손익계산서에 꽂혔는가"다. 전력은 모두에게 필요하지만, 가장 비싸게 팔리는 것은 전기 자체가 아니라 전기가 지나가야 하는 좁은 문이다.
 
-![전력기기 4사 포지셔닝](./assets/077-hero-map.svg)
+![전력기기 4사 포지셔닝](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/5a/5a88e6fd08503218383c233c0e277c4cbdff5732d2433c42de279b9c98919ccf.svg)
 
 ## 같은 수요, 다른 손익계산서
 
@@ -106,7 +106,7 @@ for name, code in codes.items():
 
 마진 격차를 판가와 원가의 문제로 보면 답이 빨라진다. 영업이익률은 판관비의 영향을 받지만, 네 회사의 차이는 이미 매출총이익률에서 크게 벌어진다. 2025년 HD현대일렉트릭의 매출총이익률은 34.1%다. 효성중공업은 21.0%, LS ELECTRIC은 21.2%, 일진전기는 13.7%다. 영업이익률 차이가 판매관리비만으로 만들어졌다면 매출총이익률은 비슷해야 한다. 실제로는 아니다.
 
-![OPM 궤적 - 7년간 무슨 일이 일어났나](./assets/077-opm-trajectory.svg)
+![OPM 궤적 - 7년간 무슨 일이 일어났나](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/33/33b56490b85c0440fea0eeaa6aebd3d93a38b1acb3628b5c99dc7027cd59309a.svg)
 
 HD현대일렉트릭의 2019년 매출총이익률은 8.7%였다. 2025년에는 34.1%다. 같은 회사가 같은 업종 안에서 25%p 넘게 개선됐다. 이는 단순 비용 절감으로 설명하기 어렵다. 전력 변압기, 특히 초고압 변압기의 공급 부족이 수주 단가와 납품 조건을 바꿨고, 고정비 레버리지가 붙으면서 영업이익률까지 동시에 올라간 결과로 보는 편이 자연스럽다.
 
@@ -207,7 +207,7 @@ LS ELECTRIC의 강점은 한 고객, 한 제품, 한 사이클에 덜 갇힌다�
 
 전력기기를 하나의 테마로 묶으면 쉬워 보인다. 하지만 손익계산서는 제품 구조를 그대로 드러낸다.
 
-![제품 구조별 마진 차이](./assets/077-product-structure.svg)
+![제품 구조별 마진 차이](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f5/f575dcfc39ba351188480d7155fb95d56352acf35adf2aba7bdbb6c24abf1d5b.svg)
 
 초고압 변압기는 프로젝트당 금액이 크고, 납품 리드타임이 길고, 인증 장벽이 높다. 공급자가 제한되어 있으면 가격결정력이 생긴다. 배전반과 전력기기는 수요가 넓고 반복적이지만 경쟁 강도와 제품 범위가 넓다. 전선·권선 계열은 성장률이 크더라도 원재료와 공정비, 고객 협상력의 영향을 많이 받는다. 이 차이가 매출총이익률 차이로 나타난다.
 
@@ -232,7 +232,7 @@ LS ELECTRIC의 강점은 한 고객, 한 제품, 한 사이클에 덜 갇힌다�
 
 매출 성장률만 보면 일진전기가 가장 강하고, 효성중공업도 크다. 하지만 주식시장이 실제로 프리미엄을 붙이는 곳은 보통 이익률이 동시에 올라가는 곳이다. 매출이 커져도 매출총이익률이 낮으면 원가와 운전자본이 같이 커진다. 반대로 같은 매출 증가라도 매출총이익률이 크게 올라가면 영업이익이 더 빠르게 늘어난다.
 
-![매출 성장과 이익률 변화](./assets/077-revenue-growth.svg)
+![매출 성장과 이익률 변화](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/56/56d4c536c29982b5c87d1150f13b9e9b78ef74d3fea9a21d2aef757766d88a2c.svg)
 
 2019년부터 2025년까지 매출 변화와 영업이익률 변화를 같이 보면 다음과 같다.
 
@@ -345,7 +345,7 @@ HD현대일렉트릭은 초고압 변압기 병목을 가장 직접적으로 수
 
 다음 공시에서 확인할 첫 줄도 정해졌다. 매출보다 먼저 매출총이익률을 본다. 영업이익보다 먼저 영업현금흐름을 본다. 수주 잔고보다 먼저 신규 수주 단가와 납기 변화를 본다. 그리고 전력기기라는 테마 이름보다 각 회사가 병목의 어느 위치에 서 있는지 본다. 이 순서를 지키면 "AI 전력"이라는 큰 말에 가려진 4개의 다른 손익계산서가 보인다.
 
-![전력기기 투자 체크리스트](./assets/077-investment-checklist.svg)
+![전력기기 투자 체크리스트](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/1e/1e0a6f1675fefca62b3f08b951a1d96bc03ccff9cbb62b19734a112b8fb2875f.svg)
 
 ## 검증표
 

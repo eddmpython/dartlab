@@ -160,7 +160,7 @@ c = dartlab.Company("010130")
 
 **"경영권을 지키는 비용은 재무제표의 어디에 찍히는가?"** 이 질문으로 고려아연의 7년을 추적한다.
 
-![공개매수 32일 타임라인](./assets/09-takeover-timeline.svg)
+![공개매수 32일 타임라인](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/87/871a8382c8ed49d667e645c2d036f4cfbefc9879a42e4c957efede9cb25766cb.svg)
 
 ---
 
@@ -192,7 +192,7 @@ c.analysis("financial", "수익구조")
 
 ![귀금속 — 금과 은](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/6c/6cbe8c15529eb1661f76cff2f2faab4d6ef4df01a9fad782954ce4ed09fe82be.webp)
 
-![매출 구성 — 아연 vs 은 역전](./assets/09-revenue-mix.svg)
+![매출 구성 — 아연 vs 은 역전](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/2c/2c0d98dfa0affbd11ee3a2066ecb15d65c0834178ad2f611ea52f0da3df5b22e.svg)
 
 ### 은 31.5% > 아연 25.2% — "아연 회사"가 아니라 "귀금속 플랫폼"
 
@@ -275,7 +275,7 @@ TC 추이:
 
 ### 판관비 4배 — 트로이카 + 분쟁 비용이 찍힌 곳
 
-![경영권 방어 비용](./assets/09-defense-cost.svg)
+![경영권 방어 비용](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/1a/1af2faf9de8c9a61dfe9c874b1a47ec7d7a1f4f488dfc95a7ddc1fd1d9665363.svg)
 
 재무제표에 이 갈등이 보이는가?
 
@@ -344,7 +344,7 @@ c.analysis("financial", "자본배분")
 
 ### 단기차입금 5.4배 — 50년 무차입 전통 1년 만에 붕괴
 
-![부채비율 급변](./assets/09-debt-explosion.svg)
+![부채비율 급변](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ab/ab3b4da4acf9abcc491398f537dbdee45be8747207c2076df25dd443c960f8fa.svg)
 
 ```python
 c.analysis("financial", "자금조달")
@@ -370,7 +370,7 @@ c.analysis("financial", "자금조달")
 
 ### 영업이익 +10%인데 순이익 -63% — 이자·수수료가 잡아먹은 것
 
-![영업이익 vs 순이익 역설](./assets/09-profit-paradox.svg)
+![영업이익 vs 순이익 역설](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c4/c424d3bd6ce5437f521d9e0c1de816cedace7cee659f9f3ba1a6ff6a0c8dd645.svg)
 
 **IS에 찍힌 흔적:**
 

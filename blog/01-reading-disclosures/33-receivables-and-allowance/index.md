@@ -18,7 +18,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 이 글은 매출채권과 대손충당금을 통해 **이익의 질**을 읽는 방법을 정리한다. 손익계산서의 매출 성장, 재무상태표의 채권 증가, 현금흐름표의 괴리, 충당금 가정이 어떻게 연결되는지 실전적으로 설명한다. 운전자본 전체 감각이 필요하면 `재고자산과 평가손실 읽는 법`, 숫자와 본문 연결 감각이 필요하면 [`사업보고서에서 CEO 말보다 숫자가 중요한 순간`](/blog/reading-business-reports)을 같이 보면 좋다.
 
-![매출에서 현금으로 이어지는 흐름과 매출채권의 위치를 보여주는 브리지](./assets/015-revenue-to-cash-bridge.svg)
+![매출에서 현금으로 이어지는 흐름과 매출채권의 위치를 보여주는 브리지](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/8e/8e0e5cdcab7d42ede1c711fe5e02a90e717629822760ef7196ffe11aac626a99.svg)
 
 ---
 
@@ -68,7 +68,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 좋은 증가와 위험한 증가는 `증가 자체`보다 `같이 움직이는 숫자`에서 갈린다. 매출도 늘고, 영업현금흐름도 같이 따라오며, aging 구조가 크게 무너지지 않으면 상대적으로 건강한 증가일 수 있다. 반대로 매출보다 채권이 먼저 앞서가고, CFO는 약하고, 특정 장기구간이 두드러지기 시작하면 위험 신호 쪽으로 기울기 쉽다.
 
-![매출채권 aging과 회전기간을 단계별로 보여주는 지도](./assets/015-receivable-aging-map.svg)
+![매출채권 aging과 회전기간을 단계별로 보여주는 지도](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/bf/bfbc1f3739b6c664146fb14c5c4456c99fb795ada8df9ef2a5fedcd950e387ad.svg)
 
 ---
 
@@ -99,7 +99,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 매출채권은 "못 받았을 수 있는 금액"까지 포함한다. 대손충당금은 그중 얼마나 손실 가능성을 반영했는지 보여준다.
 
-![충당금 가정이 낙관적일수록 생기는 압력을 보여주는 곡선](./assets/015-allowance-pressure-curve.svg)
+![충당금 가정이 낙관적일수록 생기는 압력을 보여주는 곡선](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/33/33dda4ed288c3bb792f635b53247eba9ed058ee9c153080f2b6e00059ca6c1ac.svg)
 
 핵심 질문은 이거다.
 
@@ -135,7 +135,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 ## 좋은 증가와 위험한 증가를 구분하는 기준
 
-![상대적으로 건강한 매출채권 증가와 위험한 증가를 비교한 카드](./assets/015-good-vs-bad-receivable-growth.svg)
+![상대적으로 건강한 매출채권 증가와 위험한 증가를 비교한 카드](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/7a/7a0608f710eb97052788a70543f300735b3933299f11221cc8202924de3ec26e.svg)
 
 | 구분 | 상대적으로 건강한 경우 | 위험한 경우 |
 | --- | --- | --- |
@@ -216,7 +216,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 ## 10분 실전 체크리스트
 
-![매출채권과 충당금을 빠르게 점검하는 체크리스트](./assets/015-earnings-quality-checklist.svg)
+![매출채권과 충당금을 빠르게 점검하는 체크리스트](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/4d/4dda1a1ff08ffb5c4296eb4bc322bcc009fa6065fa775ca2815acc9b556979e7.svg)
 
 - 매출채권 증가율이 매출 증가율보다 빠른가
 - aging 장기 구간 비중이 커졌는가

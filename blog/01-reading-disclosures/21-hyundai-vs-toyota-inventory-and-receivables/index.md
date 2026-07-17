@@ -18,7 +18,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 ---
 
-![현대차와 Toyota의 재고자산 구성 비교 — 항목 세분화 차이](./assets/111-inventory-breakdown.svg)
+![현대차와 Toyota의 재고자산 구성 비교 — 항목 세분화 차이](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/54/5460f2f673ca1011e74ae8994d67a3f7b2a4ed318f828411b57fbaa71c8a55d6.svg)
 
 ## 같은 완성차인데 재고 구성이 이렇게 다른 이유
 
@@ -56,7 +56,7 @@ Toyota의 10-K에서 같은 항목을 찾으면 구분이 세 줄이다. **Finis
 
 ## 매출채권 안에 금융채권이 섞여 있다
 
-![현대차와 Toyota의 매출채권 구조 — 금융채권 포함 여부 비교](./assets/111-receivables-structure.svg)
+![현대차와 Toyota의 매출채권 구조 — 금융채권 포함 여부 비교](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/26/2657665037ad5f906c734d846389abc95e491ef1960f8a1c841626181e86ab1b.svg)
 
 현대차의 재무상태표에서 매출채권 및 기타채권 항목을 보면 숫자가 비정상적으로 크다. 2024년 연결 기준 약 60조 원이 넘는다. 일반 제조업의 매출 대비 매출채권 비율과는 차원이 다르다.
 
@@ -93,7 +93,7 @@ Toyota의 10-K에서 같은 항목을 찾으면 구분이 세 줄이다. **Finis
 
 ## 운전자본 사이클: 재고일수 + 매출채권일수 - 매입채무일수
 
-![현대차와 Toyota의 Cash Conversion Cycle 비교 다이어그램](./assets/111-working-capital-cycle.svg)
+![현대차와 Toyota의 Cash Conversion Cycle 비교 다이어그램](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/df/df42ccae67bbd02486def957b84948aa96f7d849afdcf4743dd42548c893c2ed.svg)
 
 운전자본 사이클(Cash Conversion Cycle)은 기업이 현금을 투입한 뒤 다시 현금으로 회수하기까지 걸리는 일수다. 공식은 간단하다.
 
@@ -120,7 +120,7 @@ Toyota의 현금전환주기가 짧은 이유는 두 가지다. **재고일수�
 
 ## 공시에서 이 정보를 찾는 위치가 다르다
 
-![DART 사업보고서와 EDGAR 10-K의 운전자본 정보 위치 매핑](./assets/111-disclosure-mapping.svg)
+![DART 사업보고서와 EDGAR 10-K의 운전자본 정보 위치 매핑](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e1/e18453152a353b9f24385fb43758af4fe50f4dac66f0061adf6eb307711fc061.svg)
 
 현대차의 운전자본 관련 정보를 DART에서 찾으려면 여러 곳을 뒤져야 한다.
 
@@ -146,7 +146,7 @@ Toyota의 현금전환주기가 짧은 이유는 두 가지다. **재고일수�
 
 ## 한미 완성차 운전자본 비교 체크리스트
 
-![한미 완성차 운전자본 비교 7개 체크포인트 대시보드](./assets/111-checklist-comparison.svg)
+![한미 완성차 운전자본 비교 7개 체크포인트 대시보드](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/9a/9a9ca56592e38ac30c4b4f4351f42d603763a2f0ba0bb5ac479e110aa42c4704.svg)
 
 현대차와 Toyota, 또는 한국 완성차와 미국(일본) 완성차를 비교할 때 반드시 확인해야 할 7개 항목이다.
 

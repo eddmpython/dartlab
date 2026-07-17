@@ -18,7 +18,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 이 글은 주주환원 정책을 기사 제목이 아니라 공시와 숫자로 읽는 기준을 정리한다. 지배력과 보수 구조를 이미 보고 왔다면 [`최대주주와 특수관계인은 어떻게 읽어야 하나`](/blog/major-shareholder-and-related-parties), [`임원 보수 공시는 무엇을 말해주나`](/blog/executive-pay-disclosure) 다음 단계라고 생각하면 된다.
 
-![주주환원이 현금과 자사주를 통해 실제 주주에게 도달하는 과정을 보여주는 흐름도](./assets/024-shareholder-return-flow.svg)
+![주주환원이 현금과 자사주를 통해 실제 주주에게 도달하는 과정을 보여주는 흐름도](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e0/e0205d1f7126d6f961c905e876a91a82a2ead9e9cf7d81c01d7fa9c50701d1fb.svg)
 
 ---
 
@@ -71,7 +71,7 @@ DART에서 어느 문서부터 열어야 할지 익숙하지 않다면 [`공시�
 | 자사주 매입 | 회사가 자기 주식을 사들임 | 실제 매입 규모와 시점 |
 | 자사주 소각 | 발행주식 수를 줄임 | 매입이 소각까지 이어지는가 |
 
-![배당, 자사주 매입, 자사주 소각을 비교하는 보드](./assets/024-dividend-vs-buyback-vs-cancellation-board.svg)
+![배당, 자사주 매입, 자사주 소각을 비교하는 보드](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/9b/9bf064e656390d3a7c1435610619ea5573b55403e2120f75efceae0c164df074.svg)
 
 특히 초보자가 자주 오해하는 지점은 `자사주 매입 = 자동으로 주주 친화적`이라는 생각이다. 하지만 매입만 하고 장기간 보유하면 의미가 달라질 수 있다. 그래서 자사주 공시는 `매입했는가`에서 끝내지 말고 `그다음에 어떻게 처리했는가`까지 봐야 한다.
 
@@ -90,7 +90,7 @@ DART에서 어느 문서부터 열어야 할지 익숙하지 않다면 [`공시�
 
 이 네 가지를 보면 발표 문구를 대부분 걸러낼 수 있다.
 
-![약속과 실행의 차이를 구분하는 실행 매트릭스](./assets/024-promise-vs-execution-matrix.svg)
+![약속과 실행의 차이를 구분하는 실행 매트릭스](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/1d/1d868dc3a96e87c5a2ec327061809738d8efb48b538f85e2900191ad3c0fa3ec.svg)
 
 예를 들어 "주주가치 제고"라는 표현이 나왔을 때:
 
@@ -120,7 +120,7 @@ DART에서 어느 문서부터 열어야 할지 익숙하지 않다면 [`공시�
 
 주주환원은 회사가 가진 잉여 현금의 분배 문제이기 때문에, 결국 `얼마나 오래 버틸 수 있는가`를 봐야 한다. 여기서 가장 중요한 연결 고리는 현금흐름, 차입, 투자 부담이다.
 
-![환원 정책의 지속 가능성을 판단하는 카드](./assets/024-payout-sustainability-card.svg)
+![환원 정책의 지속 가능성을 판단하는 카드](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ff/ff93681515228e9200c7d48282bba7eb74634304cb3ab249af3cd229d5cdc73a.svg)
 
 아래 세 질문이 실전에서 특히 유용하다.
 
@@ -173,7 +173,7 @@ DART에서 어느 문서부터 열어야 할지 익숙하지 않다면 [`공시�
 
 ## 10분 체크리스트
 
-![주주환원을 빠르게 읽기 위한 체크리스트](./assets/024-quick-checklist.svg)
+![주주환원을 빠르게 읽기 위한 체크리스트](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e0/e0614dc801b44d927bf3f2caed8154a72a179f54435904e4619cc3f4463c0f67.svg)
 
 - 최근 3년간 배당이 꾸준했는가
 - 배당총액과 배당성향이 설명과 맞는가

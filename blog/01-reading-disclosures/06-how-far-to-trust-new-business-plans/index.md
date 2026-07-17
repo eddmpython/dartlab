@@ -18,7 +18,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 이 글은 신규사업 계획을 `문장 -> 실행 자원 -> 고객·계약 -> 자금조달 -> 후속 공시와 숫자` 순서로 읽는 방법을 정리한다. 사업의 내용 텍스트는 [사업보고서 II. 사업의 내용, 이 섹션이 투자 판단을 바꾼다](/blog/business-section-changes-judgment), 말과 숫자의 충돌은 [사업보고서에서 CEO 말보다 숫자가 중요한 순간](/blog/reading-business-reports), 자금 뒷받침은 유상증자 공시 읽는 법이나 전환사채와 BW 공시 읽는 법과 같이 보면 더 현실적으로 읽힌다.
 
-![신규사업 계획을 어떤 순서로 검증해야 하는지 정리한 구조도](./assets/042-reading-flow.svg)
+![신규사업 계획을 어떤 순서로 검증해야 하는지 정리한 구조도](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/74/74165cab7ac680245f1ff7d9c206076f9c8996631812e1e55455a26c613b60de.svg)
 
 ---
 
@@ -53,7 +53,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 특히 자금조달은 매우 중요하다. 신사업은 보통 돈이 먼저 든다. 그런데 자금 계획이 빈약하거나, 조달 구조는 공격적인데 실행 흔적은 약하면 해석이 달라진다. 이때는 계획을 사업보다 스토리로 봐야 할 수 있다.
 
-![신규사업 계획을 검증할 때 같이 붙여 볼 레이어를 정리한 도식](./assets/042-evidence-layer.svg)
+![신규사업 계획을 검증할 때 같이 붙여 볼 레이어를 정리한 도식](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/1d/1dd19ee1c5efafcb36f2463b66185274996d1ba860fc4453e76ce2d7ed79d0af.svg)
 
 ---
 
@@ -61,7 +61,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 가장 실용적인 질문은 이것이다. `이 계획은 문장 단계인가, 투자 단계인가, 실제 사업화 단계인가`.
 
-![신규사업 계획을 문장 단계, 투자 단계, 사업화 단계로 가르는 구조도](./assets/042-decision-tree.svg)
+![신규사업 계획을 문장 단계, 투자 단계, 사업화 단계로 가르는 구조도](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b1/b1ead4224cd7e170818c9e9b295a3dcce652e11dc18442090c18bd96202968b4.svg)
 
 문장 단계라면 방향 설명은 있지만 실행 자원이 거의 없다. 투자 단계라면 설비, 개발, 인력, 조직, 자금조달이 조금씩 따라붙는다. 사업화 단계라면 고객, 계약, 생산, 매출, 세그먼트 변화가 보이기 시작한다.
 
@@ -73,7 +73,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 ## 기간 비교에서 놓치기 쉬운 변화
 
-![신규사업 계획이 상대적으로 건강한 경우와 더 조심해야 하는 경우를 비교한 매트릭스](./assets/042-good-vs-risky-matrix.svg)
+![신규사업 계획이 상대적으로 건강한 경우와 더 조심해야 하는 경우를 비교한 매트릭스](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f6/f60ea32708b088f1a15f35f2a258ca5b4cc7bf1bd6c720d93ad62b8e14d63380.svg)
 
 | 관찰 포인트 | 상대적으로 건강한 경우 | 더 조심해야 하는 경우 |
 | --- | --- | --- |
@@ -131,7 +131,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 ## 후속 보고서에서 반드시 재확인할 항목
 
-![신규사업 계획을 읽은 뒤 후속 공시와 숫자에서 다시 봐야 할 질문을 정리한 보드](./assets/042-watchboard.svg)
+![신규사업 계획을 읽은 뒤 후속 공시와 숫자에서 다시 봐야 할 질문을 정리한 보드](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/34/3441edca724fb0ff5b9979cdd4fd58529e4253390754abca9a961f4e8947703f.svg)
 
 | 이번에 본 것 | 다음에 다시 볼 것 |
 | --- | --- |

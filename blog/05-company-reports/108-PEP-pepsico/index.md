@@ -42,7 +42,7 @@ import StackBar from '$lib/components/blog/StackBar.svelte';
 
 매출이 6년 만에 40% 불어 **$93.92B**(약 1,290조 원)가 됐다. 보통 이쯤이면 '잘나가는 회사'로 글을 시작한다. 그런데 같은 표의 다음 줄을 보면 영업이익률은 15.3%(2019)에서 **12.2%(2025)**로 내려앉았고, 2025년엔 영업이익 *절대 금액*마저 $12.89B에서 $11.50B로 꺾였다.
 
-![매출은 +40% 솟는데 영업이익률은 12%대로 — 외형이 수익으로 번역되지 않는다](./assets/108-decoupling.svg)
+![매출은 +40% 솟는데 영업이익률은 12%대로 — 외형이 수익으로 번역되지 않는다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/0d/0df72b44dd201cbfd20308e2531952e1111693815214af12eaa23c505a5cc449.svg)
 
 단조 하락은 아니다 — 2024년엔 OPM이 14.0%로 잠깐 반등했다가 2025년 다시 12.2%로 꺾였다. 그래도 큰 그림은 분명하다. 외형은 분명히 커졌는데 그 외형이 수익으로 *번역되지 않는다.* 이건 연결 손익 한 장이 단독으로 증명하는 사실이다.
 
@@ -82,7 +82,7 @@ c.select("IS", ["매출액", "영업이익"], freq="Q")  # 분기→연간 합�
 
 OPM은 2019년 15.3%에서 2025년 12.2%로, 외형 +40%와 *무관하게* 오히려 내려왔다(비단조 — 2024 14.0% 반등 포함). 결정적인 건 2025년이다. 이건 비율 착시가 아니다 — *영업이익 절대액*이 같은 표 안에서 $12.89B에서 $11.50B로 줄었다.
 
-![외형(매출)과 수익성(OPM) 두 곡선이 따로 논다 — 디커플링](./assets/108-two-curves.svg)
+![외형(매출)과 수익성(OPM) 두 곡선이 따로 논다 — 디커플링](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ae/ae07a9860ea177c381cb733c61571ce84739de3eef6a89ee72bf0343d2245480.svg)
 
 이게 이 글의 척추다 — **디커플링.** 외형 성장과 수익성이 분리돼 따로 움직인다는 사실이 연결 숫자만으로 증명된다. 여기까지가 연결의 증명 한계다. 이 딥이 *일시적인지 추세인지*는 이 표 밖이다 — 그건 다음 막에서 경계를 넘어야 만난다. 그렇다면 자연히 묻게 된다 — 왜 안 번역되는가?
 
@@ -109,7 +109,7 @@ c.select("CF", ["영업활동현금흐름"], freq="Q")
 
 '왜 OPM이 낮고 둔화하는가'에 대한 모든 설명은 dartlab 연결로는 증명이 **0**이다. 외부 인용에 따르면, 최근 회계연도 기준 북미 매출 간판은 음료지만 *전사 영업이익 비중*은 스낵(Frito-Lay)이 음료를 크게 앞서고(스낵이 음료의 약 3배 수준), 세그먼트 영업이익률도 스낵이 음료보다 훨씬 높은 것으로 알려져 있다(10-K 세그먼트, 외부 인용·정밀 자릿수 미확정).
 
-![간판은 음료, 이익의 큰 몫은 스낵 — 단 이건 연결로 증명 0, 외부 인용 가설](./assets/108-snack-engine.svg)
+![간판은 음료, 이익의 큰 몫은 스낵 — 단 이건 연결로 증명 0, 외부 인용 가설](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/bf/bfdb0eb4198df245612c01dfa072d36cb5d2b8935cd632b728eec21a67351289.svg)
 
 ![감자칩 한 봉지 — 외부 인용은 여기를 이익 엔진으로 가리킨다(가설)](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/cc/cc79f4bf08a90ddad965499216685b3e6aa99053574bcc4afa36c785218147fd.webp)
 
@@ -123,7 +123,7 @@ c.select("CF", ["영업활동현금흐름"], freq="Q")
 
 연결 표는 '딥이 실재한다($12.89B→$11.50B)'까지만 답하고 성격엔 침묵한다. 외부 인용에 따르면 — 2025년 *회계상(reported) 희석 EPS*는 $6.00로 전년 $6.95 대비 −14%였지만, 같은 해 *회사 조정(core) 영업이익*은 약 +1.5%, *core EPS*는 $8.14로 전년 $8.16과 사실상 보합이었다.
 
-![reported는 딥, core는 보합 — 정의 차이가 일회성 충격의 크기를 드러낸다 (외부 인용)](./assets/108-reported-vs-core.svg)
+![reported는 딥, core는 보합 — 정의 차이가 일회성 충격의 크기를 드러낸다 (외부 인용)](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/bb/bbc5d6d9a4e968c1af9b1753106750420ff495c68d381de9604cb0943c3865ac.svg)
 
 여기서 두 EPS 정의를 못박자 — *reported(회계상)*는 일회성 비용을 모두 반영한 GAAP 숫자이고, *core*는 회사가 일회성을 걷어낸 비-GAAP 자체 정의다. 둘의 큰 괴리(−14% vs 보합)는 2025 reported 딥의 *상당 부분이 일회성 비용*(브랜드 감액·공장 폐쇄 등)에서 비롯됐음을 *시사한다*(외부 인용). 동시에, 그게 전부는 아니다 — organic(유기적) 매출 성장은 +1.7%로 2018년 현 CEO 취임 이래 최저였다(외부 인용). 즉 일회성만으로도, 추세 둔화만으로도 환원되지 않는다. (한 행동주의 펀드가 약 40억 달러 지분을 들고 등장했다는 보도도 있으나, 펀드 포지션은 시장 해석이지 '그러므로 추세가 나쁘다'의 증거가 아니다.) 그래서 마지막 막은 회사 고유의 결을 시리즈 틀과 분리해야 한다.
 
@@ -262,7 +262,7 @@ Q1 2026은 그래서 투자자에게 두 가지 체크포인트를 준다. 첫�
 4. **core와 GAAP의 괴리가 줄어드는가** — Q1 2026은 GAAP operating profit +24%와 core +9%가 다르다. 조정 항목이 줄어야 운영 개선의 가독성이 높아진다.
 5. **세그먼트 비중을 1차 10-K로 계속 확정** — PFNA·PBNA·International·corporate unallocated expenses를 한 표로 묶어, 스낵 vs 음료 단순화가 과해지지 않게 한다.
 
-![펩시코 — 2026년에 봐야 할 다섯 가지](./assets/108-checkpoints.svg)
+![펩시코 — 2026년에 봐야 할 다섯 가지](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/fa/fa59395311abf84c01bfe2bbd839ee0b1935897471b21a5fb2316bf9a1760cd0.svg)
 
 ---
 

@@ -1,4 +1,4 @@
-"""기존 블로그 래스터를 HF 콘텐츠 주소 SSOT로 일괄 이관한다."""
+"""기존 블로그 래스터와 콘텐츠 SVG를 HF 콘텐츠 주소 SSOT로 일괄 이관한다."""
 
 from __future__ import annotations
 
@@ -10,6 +10,7 @@ from pathlib import Path
 
 from blogMedia import (
     IMAGE_SUFFIXES,
+    contentSha256,
     emptyMediaCatalog,
     loadMediaCatalog,
     mediaRecord,
@@ -30,6 +31,7 @@ TRACKED_PATHSPECS = (
     ":(glob)blog/**/*.png",
     ":(glob)blog/**/*.jpg",
     ":(glob)blog/**/*.jpeg",
+    ":(glob)blog/**/assets/*.svg",
     ":(glob)landing/static/thumbnails/**/*.webp",
     ":(glob)landing/static/thumbnails/**/*.png",
     ":(glob)landing/static/thumbnails/**/*.jpg",
@@ -50,7 +52,7 @@ def git(*args: str) -> str:
     return result.stdout
 
 
-def trackedRasterPaths() -> list[Path]:
+def trackedMediaPaths() -> list[Path]:
     raw = git("ls-files", "-z", "--", *TRACKED_PATHSPECS)
     paths: list[Path] = []
     for relative in raw.split("\0"):
@@ -66,6 +68,24 @@ def trackedRasterPaths() -> list[Path]:
         if path.suffix.lower() in IMAGE_SUFFIXES and path.is_file():
             paths.append(path)
     return sorted(paths)
+
+
+def referencedMediaPaths(paths: list[Path]) -> tuple[list[Path], list[Path]]:
+    """본문에서 쓰는 SVG만 이관하고 끊긴 SVG는 dead asset으로 분리한다."""
+    referenced: list[Path] = []
+    deadSvg: list[Path] = []
+    for path in paths:
+        if path.suffix.lower() != ".svg":
+            referenced.append(path)
+            continue
+        indexPath = path.parent.parent / "index.md"
+        raw = indexPath.read_text(encoding="utf-8") if indexPath.is_file() else ""
+        localRefs = (f"./assets/{path.name}", f"assets/{path.name}")
+        if any(ref in raw for ref in localRefs):
+            referenced.append(path)
+        else:
+            deadSvg.append(path)
+    return referenced, deadSvg
 
 
 def plannedKeys(postDir: Path) -> set[str] | None:
@@ -147,6 +167,7 @@ def buildCatalog(paths: list[Path]) -> tuple[dict[str, object], dict[str, Path],
         sources = sorted(sourcesByPost.get(postDir, []))
         contractKeys = plannedKeys(postDir)
         assets: dict[str, str] = {}
+        diagrams: dict[str, str] = {}
         updated = raw
         for source in sources:
             filename = Path(source).name
@@ -155,7 +176,13 @@ def buildCatalog(paths: list[Path]) -> tuple[dict[str, object], dict[str, Path],
             if record is None:
                 raise ValueError(f"중앙 카탈로그 파일 매핑 실패: {source}")
             hasLocalReference = f"./assets/{filename}" in raw or f"assets/{filename}" in raw
-            if contractKeys is None or key in contractKeys or hasLocalReference:
+            hasPublishedReference = mediaUrl(record["path"]) in raw
+            if Path(filename).suffix.lower() == ".svg":
+                if hasLocalReference or hasPublishedReference:
+                    if key in diagrams and diagrams[key] != source:
+                        raise ValueError(f"글 안의 SVG key 충돌: {postKey}/{key}")
+                    diagrams[key] = source
+            elif contractKeys is None or key in contractKeys or hasLocalReference:
                 if key in assets and assets[key] != source:
                     raise ValueError(f"글 안의 assetKey 충돌: {postKey}/{key}")
                 assets[key] = source
@@ -190,6 +217,7 @@ def buildCatalog(paths: list[Path]) -> tuple[dict[str, object], dict[str, Path],
                 updated = re.sub(r"^(ogImage:\s*.+)$", rf"\1\n{cardLine}", updated, count=1, flags=re.M)
         postEntry: dict[str, object] = {
             "assets": assets,
+            "diagrams": diagrams,
             "og": ogSource,
             "staging": sources,
         }
@@ -229,15 +257,33 @@ def writeMigration(catalog: dict[str, object], rewritten: dict[Path, str]) -> No
     saveMediaCatalog(CATALOG_PATH, catalog)
 
 
-def untrack(paths: list[Path], batchSize: int = 100) -> None:
-    relatives = [path.relative_to(REPO_ROOT).as_posix() for path in paths]
-    for offset in range(0, len(relatives), batchSize):
-        git("rm", "--cached", "--ignore-unmatch", "--", *relatives[offset : offset + batchSize])
-    print(f"Git 바이너리 추적 제거: {len(relatives)}개, 로컬 staging 파일은 보존")
+def sourceSnapshot() -> dict[Path, str]:
+    paths = [CATALOG_PATH, *sorted((REPO_ROOT / "blog").glob("*/*/index.md"))]
+    return {path: contentSha256(path) for path in paths if path.is_file()}
+
+
+def assertSourceSnapshot(snapshot: dict[Path, str]) -> None:
+    changed = [path for path, sha256 in snapshot.items() if not path.is_file() or contentSha256(path) != sha256]
+    if changed:
+        preview = ", ".join(path.relative_to(REPO_ROOT).as_posix() for path in changed[:3])
+        raise RuntimeError(f"이관 중 저작 원본이 바뀜. 로컬 치환·삭제를 중단함: {preview}")
+
+
+def untrack(paths: list[Path], batchSize: int = 40) -> None:
+    rasterPaths = [path.relative_to(REPO_ROOT).as_posix() for path in paths if path.suffix.lower() != ".svg"]
+    svgPaths = [path.relative_to(REPO_ROOT).as_posix() for path in paths if path.suffix.lower() == ".svg"]
+    for offset in range(0, len(rasterPaths), batchSize):
+        git("rm", "--cached", "--ignore-unmatch", "--", *rasterPaths[offset : offset + batchSize])
+    for offset in range(0, len(svgPaths), batchSize):
+        git("rm", "-f", "--ignore-unmatch", "--", *svgPaths[offset : offset + batchSize])
+    print(
+        f"Git 미디어 추적 제거: 래스터 {len(rasterPaths)}개는 로컬 staging 보존, "
+        f"SVG {len(svgPaths)}개는 HF 복원 가능 상태로 로컬 제거"
+    )
 
 
 def parseArgs() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="기존 블로그 래스터를 HF 콘텐츠 주소 SSOT로 이관한다.")
+    parser = argparse.ArgumentParser(description="기존 블로그 래스터와 콘텐츠 SVG를 HF 콘텐츠 주소 SSOT로 이관한다.")
     parser.add_argument(
         "--dry-run", dest="dryRun", action="store_true", help="집계와 계약만 계산하고 업로드·수정하지 않음"
     )
@@ -250,19 +296,22 @@ def main() -> None:
     args = parseArgs()
     if args.batchSize < 1 or args.batchSize > 200:
         raise SystemExit("--batch-size는 1 이상 200 이하여야 함")
-    paths = trackedRasterPaths()
+    snapshot = sourceSnapshot()
+    trackedPaths = trackedMediaPaths()
+    paths, deadSvg = referencedMediaPaths(trackedPaths)
     catalog, localByRemote, rewritten = buildCatalog(paths)
     objects = catalog.get("objects")
     print(
-        f"이관 계획: 추적 파일 {len(paths)}개 -> 고유 HF 객체 "
+        f"이관 계획: 사용 파일 {len(paths)}개, dead SVG {len(deadSvg)}개 -> 고유 HF 객체 "
         f"{len(objects) if isinstance(objects, dict) else 0}개, 글 {len(rewritten)}편"
     )
     if args.dryRun:
         return
     uploadObjects(localByRemote, args.batchSize)
+    assertSourceSnapshot(snapshot)
     writeMigration(catalog, rewritten)
     if args.untrack:
-        untrack(paths)
+        untrack(trackedPaths)
 
 
 if __name__ == "__main__":

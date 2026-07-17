@@ -89,7 +89,7 @@ c.analysis("financial", "수익성")["marginWaterfall"]["history"][0]
 
 ---
 
-![매출 첫 $100M 돌파 vs 영업손실 $634M — 양자 회사의 역설](./assets/40-hero-revenue-vs-loss.svg)
+![매출 첫 $100M 돌파 vs 영업손실 $634M — 양자 회사의 역설](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/9d/9d1b89ac636bb524a8c64d06672f54ecd34c521499fcb91b9361c403d025827e.svg)
 
 ![이온트랩 실험실 — IonQ 기술의 물리적 실체](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b8/b882e36c50c275934bfc54e46d5234399b6c43572e50b812d851f001d5bf9860.webp)
 
@@ -141,7 +141,7 @@ gr["growthQuality"]
 
 ## 제2막: 4년 565배 — 매출 성장의 해부
 
-![매출 4년 565배 성장 — 3축 성장](./assets/40-revenue-565x-growth.svg)
+![매출 4년 565배 성장 — 3축 성장](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f6/f628e6b2a15d165bd2a45715c4519d770dcd27e229c47af1183e7df2600a382b.svg)
 
 ### 무엇이 4년에 565배 성장했는가
 
@@ -191,7 +191,7 @@ eq["earningsQualityFlags"]
 
 ## 제3막: 영업손실이 매출의 4.87배 — 비용 구조의 해부
 
-![$725M 고정비의 정체](./assets/40-cost-structure.svg)
+![$725M 고정비의 정체](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/68/6814e5cba2641f9d016cfe4462c6d56412d184664e8c2462195b7ec2ee11cc06.svg)
 
 ### $130M의 매출을 만들기 위해 쓴 비용
 
@@ -241,7 +241,7 @@ SG&A $375M(매출 대비 289%)도 기형적으로 크다. 이 중 큰 항목:
 
 ## 제4막: 자산 12배 + 부채 39배 — $3B 자본 조달의 전말
 
-![자산 12배 + Heights Capital $3B 베팅](./assets/40-3b-capital-raise.svg)
+![자산 12배 + Heights Capital $3B 베팅](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/eb/eb4a4fdd986fb4555fa3435e3c8c26118a35f75fc777b2edb134e62ff71557a0.svg)
 
 ![Tempo 양자 컴퓨터 시스템 — 자본이 만든 물리적 실체](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e7/e74a65d23ca15b715215955ef6aea960f641abc426404fd4f9c7756c0cb3fad5.webp)
 
@@ -311,7 +311,7 @@ st["stabilityFlags"]
 
 ## 제5막: Warrant $949.6M 평가이익 — 분기 순이익이 ±10억 달러 요동하는 회계
 
-![분기 순이익 롤러코스터](./assets/40-warrant-rollercoaster.svg)
+![분기 순이익 롤러코스터](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/89/896c9c0528a26ddf26eee51f2b3b6c837f9cfa2c5357c74ab4178d8ccc5a1afe.svg)
 
 ### 2025 4분기 순이익 +$753M의 정체
 
@@ -381,7 +381,7 @@ IonQ의 분기 순이익은 경영 성과를 반영하지 않는다. 주가 등�
 
 ## 제6막: M&A 6건 + CEO 교체 — 2025년 IonQ가 바꾼 것
 
-![2025년 M&A 6건 — 양자 스택 수직계열화](./assets/40-ma-rush.svg)
+![2025년 M&A 6건 — 양자 스택 수직계열화](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/0f/0fe099dd36d2d039927f4c8ee07fb8c14584ed8b7e7f62e93790284121e234ca.svg)
 
 ### 1년 사이에 6개 회사를 샀다
 
@@ -429,7 +429,7 @@ de Masi가 취임한 2025년 2월 이후 9개월 동안 $3B 자본 조달, 6건 
 
 ## 제7막: 과거-현재 패턴 + 양자 컴퓨팅 산업 구조
 
-![양자 컴퓨팅 4대 기술 + 상장사 매출 비교](./assets/40-industry-4-approaches.svg)
+![양자 컴퓨팅 4대 기술 + 상장사 매출 비교](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/1c/1c5f17416757ff34f3fbcb23f5c9b6a9d2e3c63d18a1e206da1f9a678556cff7.svg)
 
 ### IonQ 5년의 궤적
 
@@ -551,7 +551,7 @@ IonQ가 **상대적으로** 덜 나쁜 구조. 매출 규모가 크니 손실률
 
 ## 제9막: 2026년에 봐야 할 투자 포인트 5가지
 
-![2026 체크포인트 5 + 시나리오 3단](./assets/40-2026-checkpoints.svg)
+![2026 체크포인트 5 + 시나리오 3단](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c4/c4ba51f47f33ffa009e5804c2dafb4d589c10981de5194d35010759bcffc7b40.svg)
 
 ### 체크포인트 1: Tempo 시스템 실제 출하 시점
 

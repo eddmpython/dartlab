@@ -25,7 +25,7 @@ import YouTube from '$lib/components/YouTube.svelte';
 
 **이 글을 끝까지 따라하면**, 삼성전자의 재무제표가 내 컴퓨터 화면에 출력된다. 프로그래밍 경험이 전혀 없어도 된다. 총 3단계, 5분이면 끝난다.
 
-![dartlab 설치 3단계 — uv 설치부터 첫 실행까지](./assets/123-install-flow.svg)
+![dartlab 설치 3단계 — uv 설치부터 첫 실행까지](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/8b/8bda78f002353c2b4086bbd4b1c206bc6929a90008575ccbaa6a01616608da47.svg)
 
 ---
 
@@ -41,7 +41,7 @@ import YouTube from '$lib/components/YouTube.svelte';
 
 > 앞으로 이 글에 나오는 회색 박스 안의 글자를 **그대로 복사해서 터미널에 붙여넣고 Enter**를 누르면 된다. 외울 필요 없다. 그냥 복사-붙여넣기다.
 
-![왜 pip 대신 uv인가 — 같은 일을 더 빠르고 안전하게](./assets/123-uv-why.svg)
+![왜 pip 대신 uv인가 — 같은 일을 더 빠르고 안전하게](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/fb/fbcec9b5afa9fb8ab1289d71f15605883cc63e3947a21d6ae158cd990d696aa2.svg)
 
 ### uv가 뭔가, 왜 pip 대신 쓰나
 
@@ -141,7 +141,7 @@ uv add dartlab
 
 패키지 이름이 주르륵 나오다가 멈추면 2단계 완료다.
 
-![uv init 후에 만들어지는 것들 — main.py 하나만 직접 만들면 된다](./assets/123-folder-structure.svg)
+![uv init 후에 만들어지는 것들 — main.py 하나만 직접 만들면 된다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/5e/5e632e7f7a6e830e118d9bd8f2f29d926bf28bd5c0e07a014661ac9cb5737a30.svg)
 
 ---
 
@@ -212,7 +212,7 @@ uv run python main.py
 
 ## 더 해보고 싶다면
 
-![설치 끝 — 이제 뭘 할 수 있나](./assets/123-what-you-can-do.svg)
+![설치 끝 — 이제 뭘 할 수 있나](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/80/805421961ddc456a748534b22ab0a8a294b80842d4ed9a5ef0690430ea488ed9.svg)
 
 위 3단계에서 만든 `main.py`의 코드를 바꿔가며 다양한 분석을 해볼 수 있다. 코드를 바꿔 넣고 `uv run python main.py`를 다시 실행하면 된다.
 
@@ -274,7 +274,7 @@ dartlab 인사이트, dartlab ask 글에서 자세히 다룬다.
 
 ## 자주 만나는 문제
 
-![막히면 여기를 본다 — 설치 중 자주 만나는 에러 4가지](./assets/123-troubleshooting.svg)
+![막히면 여기를 본다 — 설치 중 자주 만나는 에러 4가지](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/22/22f68d51a6986d2717ef790f393a11f123ccfed20ca0d69f56c5934cf8e0a4bb.svg)
 
 ### "uv: 명령을 찾을 수 없습니다" (또는 "is not recognized")
 

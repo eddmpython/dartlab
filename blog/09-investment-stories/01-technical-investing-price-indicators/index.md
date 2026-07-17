@@ -70,7 +70,7 @@ print(verdict)
 
 여기서 중요한 점은 price 호출이 종가만 주는 함수가 아니라는 것이다. 로컬에서 확인한 `dartlab.gather("price", "005930")` 결과는 `date`, `open`, `high`, `low`, `close`, `volume` 같은 OHLCV 기본 데이터와 함께 `sma5`, `sma20`, `sma60`, `ema12`, `ema26`, `rsi14`, `macd`, `atr14`, `obv`를 같이 반환한다. 즉 가격 데이터는 "오늘 얼마에 끝났나"만 보는 표가 아니라, 초보자가 첫 번째 보조지표 묶음을 함께 확인하는 표다.
 
-![price 호출에서 Terminal 주가 차트까지](./assets/03-price-data-flow.svg)
+![price 호출에서 Terminal 주가 차트까지](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ca/caf6c7eab391cc91f2788a703d355d1c0aa9c3e9b36ae3f3e4b301e55793e29d.svg)
 
 2026년 7월 8일 로컬 호출 기준으로 샘플 종목의 최근 3개 행을 좁혀 보면 이런 식으로 읽을 수 있다.
 
@@ -107,7 +107,7 @@ Terminal에서 초보자가 먼저 볼 순서는 이렇게 단순하게 잡으�
 
 보조지표는 모두 같은 말을 하지 않는다. 어떤 지표는 추세를 묻고, 어떤 지표는 속도를 묻고, 어떤 지표는 변동성을 묻고, 어떤 지표는 거래량의 힘을 묻는다. 이 차이를 모르면 "RSI는 괜찮은데 MACD는 나쁘다" 같은 문장이 혼란스럽게 들린다. 사실 두 지표가 충돌하는 것이 아니라 서로 다른 질문에 답하는 경우가 많다.
 
-![초보자를 위한 보조지표 지도](./assets/04-indicator-map.svg)
+![초보자를 위한 보조지표 지도](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f3/f31be21fc90e2e20b004aa6fd0e4e3367b28e885713dc75bdaccdb972f20d67d.svg)
 
 초보자를 위한 번역표는 이렇게 잡을 수 있다.
 
@@ -196,7 +196,7 @@ print(watch.tail(5))
 
 이 지표들이 많아 보이지만 분류하면 단순하다. 추세 지표는 가격이 어느 방향으로 움직이는지 묻는다. 모멘텀 지표는 그 움직임의 속도가 강한지 약한지 묻는다. 변동성 지표는 가격의 흔들림이 커졌는지 묻는다. 거래량 지표는 그 움직임에 실제 거래가 붙었는지 묻는다. 초보자는 모든 지표를 외우기보다 이 네 칸 중 어디에 속하는지만 먼저 구분하면 된다.
 
-![차트 읽는 순서](./assets/05-reading-order.svg)
+![차트 읽는 순서](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a6/a6092e4ba9409ed238f7dfd984a141a98f50eff91de89684a3da987368d6b503.svg)
 
 `Company.quant("판단")`은 더 요약된 판단을 돌려준다. 예를 들어 verdict, score, rsi, adx, aboveSma20, aboveSma60, bbPosition, signals 같은 정보를 묶는다. 이 결과를 볼 때도 "약세니까 판다"가 아니라 "왜 약세로 분류되었나"를 역추적해야 한다. 종가가 20일선과 60일선 아래인지, RSI가 50 아래인지, MACD signal이 나빠졌는지, ADX가 추세 강도를 얼마나 보여주는지 확인하는 식이다.
 

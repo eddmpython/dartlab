@@ -206,7 +206,7 @@ c.panel("segments")           # 부문별 실적
 
 ## 1막. 1969년, TV를 만들던 회사가 반도체를 하겠다고 했다
 
-![삼성전자 영업이익률 진동](./assets/30-opm-swing.svg)
+![삼성전자 영업이익률 진동](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/bd/bd869e6da1ef00e67d1c3b7c7b67c3ede99c65e89d69ded861c408332ee0f810.svg)
 
 ### 시작은 반도체가 아니었다
 
@@ -234,7 +234,7 @@ c.panel("segments")           # 부문별 실적
 
 ## 2막. 33년 1위: 일본과 독일을 무너뜨린 치킨게임
 
-![삼성전자 부문 매출 구성](./assets/30-segment-breakdown.svg)
+![삼성전자 부문 매출 구성](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/77/77eabf132869d8a546db6181af406640ec7410746e071365d6bb203516de75b9.svg)
 
 ### 1992년, 세계 1위에 오르다
 
@@ -291,7 +291,7 @@ c.select("IS", ["매출액", "영업이익", "당기순이익"], freq="Y")
 
 ### 삼성전자는 4개의 회사다
 
-![삼성전자 부문 매출 구성](./assets/30-segment-breakdown.svg)
+![삼성전자 부문 매출 구성](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/77/77eabf132869d8a546db6181af406640ec7410746e071365d6bb203516de75b9.svg)
 
 삼성전자의 사업보고서를 열면 부문이 4개 나온다. 각각이 독립된 대기업 규모다.
 
@@ -337,7 +337,7 @@ SDC(디스플레이)는 매출 35조에 영업이익률이 약 20%다. 삼성전
 
 ## 4막. 처음 당한 추월: HBM, 엔비디아, 그리고 만년 2위
 
-![메모리 영업이익률 비교](./assets/30-hynix-vs-samsung.svg)
+![메모리 영업이익률 비교](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e5/e5fbe81eea6510aee3715c971dda256a0b3165a5e135fb1cac90750c1cbfdcbb.svg)
 
 ### 같은 메모리인데 마진이 절반
 
@@ -395,7 +395,7 @@ HBM은 고대역폭 메모리(High Bandwidth Memory)로, AI 가속기에 붙는 
 
 ## 5막. TSMC라는 벽: 파운드리 적자 7조, 그래도 멈출 수 없는 이유
 
-![파운드리 점유율](./assets/30-foundry-gap.svg)
+![파운드리 점유율](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d7/d70a5b5b4d4b5578396d4adfca567b36eb796dd14c2d45dac79c5f6037796c9c.svg)
 
 ### 10배 격차
 
@@ -442,7 +442,7 @@ c.analysis("수익구조")
 
 ## 6막. 50조 스윙: 2023 적자에서 2026 57조로
 
-![이익 사이클 그래프](./assets/30-opm-swing.svg)
+![이익 사이클 그래프](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/bd/bd869e6da1ef00e67d1c3b7c7b67c3ede99c65e89d69ded861c408332ee0f810.svg)
 
 ### 2023년 바닥, 그리고 반등
 
@@ -498,7 +498,7 @@ c.analysis("현금흐름")
 
 ![삼성전자 본사 전경](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/48/4836ec0b6c52b1664e2eba1e03386d8463690593f8e7a2024365bd743836b858.webp)
 
-![현금 분포 구조](./assets/30-cash-trapped.svg)
+![현금 분포 구조](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/51/51caaad975c1b8e2b6a1cc0e05d780bcb1e320232c39e4b6608dc2b78f40a1b7.svg)
 
 ### 현금 113조, 한국 기업 1위
 
@@ -545,7 +545,7 @@ c.select("BS", ["현금및현금성자산", "단기금융상품", "재고자산"
 
 ## 8막. 1.63%로 500조: 지배구조와 이중 디스카운트
 
-![삼성그룹 지배구조](./assets/30-segment-breakdown.svg)
+![삼성그룹 지배구조](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/77/77eabf132869d8a546db6181af406640ec7410746e071365d6bb203516de75b9.svg)
 
 ### 1.63%로 500조를 지배한다
 

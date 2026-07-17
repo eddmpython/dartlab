@@ -18,7 +18,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 한국 전자공시 시스템인 DART에 대해서는 [DART의 모든 것](/blog/everything-about-dart)에서 정리했다. 이 글은 미국 쪽인 EDGAR를, 처음 접하는 사람부터 이미 쓰고 있는 사람까지 전체 구조를 한 번에 잡을 수 있도록 정리한 가이드다.
 
-![EDGAR Structure Map](./assets/006-edgar-structure-map.svg)
+![EDGAR Structure Map](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/3f/3f77d48b38398c42335d7be950ee6201af57fa54d473ff0e0193e1e8d6eea629.svg)
 
 ---
 
@@ -193,9 +193,9 @@ EDGAR는 하루아침에 만들어진 시스템이 아니다.
 
 제출기한은 단순 규정 암기용 정보가 아니다. 실제 분석에서는 "정보의 신선도"와 "리스크 탐지 속도"를 결정한다.
 
-![EDGAR Deadline Matrix](./assets/006-edgar-deadline-matrix.svg)
+![EDGAR Deadline Matrix](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/21/210d2f20960a729e484d32e8acd69d8e2a4d3d5bbc3b823894a317491ad85539.svg)
 
-![Filing Calendar Rhythm](./assets/006-filing-calendar-rhythm.svg)
+![Filing Calendar Rhythm](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a3/a3a6bed5c111419a76291ef7873ae6b3fabe8ac80e7b3f5360517dab5f21093c.svg)
 
 | form | 일반적 제출 기준 | 실무에서 의미 |
 |------|-------------------|----------------|
@@ -222,7 +222,7 @@ EDGAR는 하루아침에 만들어진 시스템이 아니다.
 
 EDGAR와 DART는 "둘 다 전자공시"라는 공통점만 보면 비슷해 보이지만, 분석자의 작업 방식에는 큰 차이가 난다.
 
-![DART vs EDGAR Deep Comparison](./assets/006-dart-vs-edgar-deep.svg)
+![DART vs EDGAR Deep Comparison](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d0/d0fb4698a5efe05e1a5d86b2f2143e6be42cf24764ac1ed2f69638778ca49e81.svg)
 
 ### 1) 문서 체계의 차이
 
@@ -289,7 +289,7 @@ SEC는 `data.sec.gov` 도메인 기반으로 제출 이력 및 XBRL 관련 JSON 
 
 많은 분석이 실패하는 이유는 "숫자"와 "이벤트"를 따로 보기 때문이다.
 
-![Filing Lifecycle](./assets/006-filing-lifecycle.svg)
+![Filing Lifecycle](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/1e/1eba587effdfcd1886a76e1cca350806c784698d173b5ffb93679fda99500f34.svg)
 
 권장 방식은 아래와 같다.
 
@@ -326,7 +326,7 @@ SEC는 `data.sec.gov` 도메인 기반으로 제출 이력 및 XBRL 관련 JSON 
 
 아래 프레임으로 읽으면 문서가 많아도 길을 잃지 않는다.
 
-![EDGAR Reading Workflow](./assets/006-edgar-reading-workflow.svg)
+![EDGAR Reading Workflow](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/91/91839e61ef3d62ba2ef577d9dd30345852f20604963239f535e5cf3c68432142.svg)
 
 ### 1단계: 기준선 설정 (10-K/20-F)
 
@@ -383,7 +383,7 @@ SEC는 `data.sec.gov` 도메인 기반으로 제출 이력 및 XBRL 관련 JSON 
 
 미국 기업 하나를 볼 때 아래 항목에 답할 수 있으면, 기본적인 EDGAR 리딩 품질은 확보된다.
 
-![Korean Investor Checklist](./assets/006-korean-investor-checklist.svg)
+![Korean Investor Checklist](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/73/73d0bfed3b4fba35bc74f7563f5fecc505fbc1a5681f7f2a432d305295eee779.svg)
 
 ### 문서 구조
 

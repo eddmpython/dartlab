@@ -18,7 +18,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 이 글은 "사업보고서 전체를 열심히 읽는 법"이 아니라, **어디부터 읽어야 시간을 아끼고 실수를 줄일 수 있는가**를 기준으로 정리한다. DART 화면에서 어디부터 눌러야 할지가 먼저 필요하면 [`공시를 처음 볼 때 DART에서 어디부터 눌러야 하나`](/blog/everything-about-dart)를 먼저 보고, 이 글은 그다음 단계라고 생각하면 된다.
 
-![처음 10분 안에 어디부터 읽어야 하는지 보여주는 사업보고서 첫 확인 흐름도](./assets/004-first-ten-minute-route.svg)
+![처음 10분 안에 어디부터 읽어야 하는지 보여주는 사업보고서 첫 확인 흐름도](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/67/6759fb2d74cfd9b125b46dd7e648a04322618d0fe6344120a7fd00618cc4e0f2.svg)
 
 ---
 
@@ -57,7 +57,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 즉 재무제표만 보면 "무슨 일이 벌어졌는지"는 보여도, **왜 벌어졌고 다음에 무엇을 더 봐야 하는지**는 놓치기 쉽다. 이 지점은 `사업보고서에서 꼭 봐야 할 5가지`와도 연결되지만, 이번 글은 그 다섯 가지를 실제 읽기 순서로 풀어놓는 글이다.
 
-![리스크부터 확인하고 그다음에 사업과 숫자를 연결하는 읽기 전략 구조도](./assets/004-reading-strategy.svg)
+![리스크부터 확인하고 그다음에 사업과 숫자를 연결하는 읽기 전략 구조도](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/37/37620f318dd67b1241b9d8b2127385a53c6cd03d28882109b9bdc41a7dba6a4f.svg)
 
 ## 시간별로 읽기 모드를 나누면 훨씬 쉽다
 
@@ -180,9 +180,9 @@ MD&A를 읽을 때는 세 줄만 체크해도 도움이 된다.
 
 모든 회사에 같은 질문을 던지면 사업보고서가 지루해진다. 업종마다 가장 먼저 봐야 하는 축이 다르기 때문이다.
 
-![업종별로 어떤 섹션을 먼저 봐야 하는지 정리한 우선순위 매트릭스](./assets/004-industry-priority-matrix.svg)
+![업종별로 어떤 섹션을 먼저 봐야 하는지 정리한 우선순위 매트릭스](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/31/3121bb854cac0cae08a7124c51e67a41657c7394d3fb07043e4be249dd32de61.svg)
 
-![제조업, 건설, 금융, IT, 바이오, 유통업에서 먼저 봐야 할 포인트를 정리한 업종별 포커스 맵](./assets/004-industry-reading-focus.svg)
+![제조업, 건설, 금융, IT, 바이오, 유통업에서 먼저 봐야 할 포인트를 정리한 업종별 포커스 맵](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/4b/4b3fa7952bff474716abf259c60a3aeb894cd46b0211a468d6b1dba8ff2390fa.svg)
 
 짧게 정리하면 아래처럼 볼 수 있다.
 
@@ -201,7 +201,7 @@ MD&A를 읽을 때는 세 줄만 체크해도 도움이 된다.
 
 사업보고서를 읽는 목적은 사람마다 다르다. 어떤 사람은 사기 냄새를 빨리 맡고 싶고, 어떤 사람은 성장 스토리를 검증하고 싶고, 어떤 사람은 지배구조를 먼저 보고 싶다.
 
-![읽는 목적별로 어떤 섹션부터 볼지 한 화면에 정리한 섹션 우선순위 히트맵](./assets/004-section-priority-heatmap.svg)
+![읽는 목적별로 어떤 섹션부터 볼지 한 화면에 정리한 섹션 우선순위 히트맵](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/da/da1424f18d6586f4baec387509400b0b970885f22af46817285c7a9931317842.svg)
 
 | 읽는 목적 | 가장 먼저 볼 섹션 | 바로 이어서 볼 섹션 |
 | --- | --- | --- |

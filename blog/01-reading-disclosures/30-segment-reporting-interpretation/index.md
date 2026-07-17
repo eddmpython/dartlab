@@ -18,7 +18,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 서술형 공시 읽기의 기본은 [사업보고서 텍스트, 이렇게 읽는다](/blog/reading-business-reports)에서 다루고, 부문 공시가 연결-별도 관계에서 어떤 의미를 갖는지는 [지주사 공시는 연결과 별도 중 무엇을 먼저 봐야 하나](/blog/financial-company-filings)와 같이 보면 좋다.
 
-![IFRS 8 영업부문 결정 구조를 경영진 의사결정에서 공시까지 정리한 도식](./assets/114-segment-structure.svg)
+![IFRS 8 영업부문 결정 구조를 경영진 의사결정에서 공시까지 정리한 도식](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/db/dbd55e244432488c3c721edd151084d01142d86db3c13cf4f9fd9963817f670d.svg)
 
 ---
 
@@ -38,7 +38,7 @@ IFRS 8 "영업부문"의 가장 중요한 특징은 `관리 접근법(management
 
 사업보고서에서 부문 정보는 주로 두 군데에 나온다.
 
-![사업보고서에서 부문 정보를 찾는 위치를 정리한 맵](./assets/114-segment-finding-map.svg)
+![사업보고서에서 부문 정보를 찾는 위치를 정리한 맵](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ad/adf6d0c7707967b15f79352a4225abf0b1e85eafad990e132c3b5e7e40fd291a.svg)
 
 ### "사업의 내용" — 서술형 맥락
 
@@ -70,7 +70,7 @@ K-IFRS 주석의 부문정보 항목이 정량 분석의 핵심이다. 여기에
 
 실전에서는 각 부문의 영업이익률을 뽑아서 어느 부문이 연결 이익을 주도하는지 확인한다. 주도 부문이 경기 사이클에 민감하면(반도체, 화학, 철강 등) 연결 이익의 변동성도 그 부문을 따라간다.
 
-![삼성전자 부문별 매출과 영업이익을 비교한 예시 차트](./assets/114-segment-comparison.svg)
+![삼성전자 부문별 매출과 영업이익을 비교한 예시 차트](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/5b/5b949fabc2ec98b263ffaf2a2f95cb21de806cb18d22c1058a1b9cf04fb5d50e.svg)
 
 ### 부문별 자산 대비 이익 기여
 
@@ -96,7 +96,7 @@ IFRS 8은 부문 구조가 바뀌면 비교 기간도 새 기준으로 재작성
 
 부문 공시는 경영진 재량이 크기 때문에 의도적 또는 비의도적 왜곡이 생길 수 있다. 실전에서 가장 자주 보이는 경로는 세 가지다.
 
-![부문 공시에서 왜곡이 생기는 세 가지 경로를 정리한 도식](./assets/114-segment-red-flags.svg)
+![부문 공시에서 왜곡이 생기는 세 가지 경로를 정리한 도식](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/55/55fd7b10f1148cd75f4fd546e3d6376713d4dd568065bbc3fcaefd08d60f8604.svg)
 
 ### 부문 통합으로 적자 숨기기
 
@@ -154,7 +154,7 @@ LG전자는 부문 구조를 비교적 자주 바꿔 온 회사다. H&A(가전),
 
 부문 공시를 읽을 때 빠뜨리기 쉬운 항목을 순서대로 정리하면 아래와 같다.
 
-![부문 공시 점검 체크리스트를 4단계로 정리한 도식](./assets/114-segment-checklist.svg)
+![부문 공시 점검 체크리스트를 4단계로 정리한 도식](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/94/94e86fac293782fb30bc68ca9a3a8c27527de2bc04798def9470e82b29fbb91d.svg)
 
 1. **구조 확인**: 부문이 몇 개인가, 전기와 같은가, 변경이 있었으면 사유는 무엇인가
 2. **수익성 비교**: 부문별 영업이익률을 뽑아서 어느 부문이 연결 이익을 주도하는가

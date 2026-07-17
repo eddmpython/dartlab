@@ -21,7 +21,7 @@ keywords:
 
 이 공식을 한국 시장에 dartlab으로 5분 만에 돌려봤다. **그리고 1위가 함정이었다.** 그 함정을 발견하는 데 또 5분 걸렸다 — 그게 dartlab의 진짜 효용이다.
 
-![마법공식 — 두 랭크의 합으로 줄세운다](./assets/142-magic-formula-concept.svg)
+![마법공식 — 두 랭크의 합으로 줄세운다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/51/518bc5b7c12cc7200019d9e6e7fb0ba0cdc2fd9b16edec1ba51c70d3bf43874d.svg)
 
 ---
 
@@ -63,7 +63,7 @@ val  = dartlab.scan("valuation")     # 종목코드·시가총액·PER·PBR·배
 prof = dartlab.scan("profitability") # 영업이익률·순이익률·ROE·ROA
 ```
 
-![dartlab.scan 두 호출 — valuation + profitability join](./assets/142-scan-pipeline.svg)
+![dartlab.scan 두 호출 — valuation + profitability join](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/df/df963e6d4e2b7da8b49a1a75abee7ee1fb379b2954de50542dce311477ddbcff.svg)
 
 ---
 
@@ -139,7 +139,7 @@ c.panel("IS")
 
 문제는 PER 2.64배가 **이 일회성 이익**으로 만들어졌다는 것이다. 시장이 KCC를 싸게 평가한 게 아니라, 분모(주가)는 그대로인데 분자(주당순이익)에 한 분기짜리 비경상 이익이 박혀서 **PER이 인위적으로 낮아 보인 것**이다. 마법공식은 그걸 알 수 없다 — PER 숫자만 보니까.
 
-![KCC 함정 — 영업이익 1,404억 vs 당기순이익 8,933억](./assets/142-kcc-trap.svg)
+![KCC 함정 — 영업이익 1,404억 vs 당기순이익 8,933억](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/0e/0e3767d25359b77f675ef96988ebdadc2e9562ff32c1fbf18d775d4e2b264d1f.svg)
 
 ---
 
@@ -169,7 +169,7 @@ cleaner = df.filter(
 
 LX홀딩스 영업이익률 709% 같은 숫자는 **지주회사 특유**(매출 대비 지분법손익이 거대)로, 보정 필터를 통과한다. 이건 별도 흐름으로 봐야 하는 케이스 — 지주회사는 마법공식 대상이 아닐 수 있다는 신호다.
 
-![보정 전후 TOP 5 — KCC가 빠지고 선진이 올라온다](./assets/142-corrected-ranking.svg)
+![보정 전후 TOP 5 — KCC가 빠지고 선진이 올라온다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/26/269387e79fa8b3e9c64f10a129f24d7135fd59c40b01b41d2c91b411300b4857.svg)
 
 ---
 

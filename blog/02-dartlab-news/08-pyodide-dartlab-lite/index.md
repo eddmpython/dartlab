@@ -39,7 +39,7 @@ keywords:
 
 **Pyodide는 CPython을 WebAssembly(WASM)로 컴파일한 런타임이다.** 모질라가 2018년에 시작해 지금은 독립 프로젝트로 운영 중이다. 핵심 한 줄:
 
-![일반 Python vs Pyodide — 같은 CPython, 런타임이 내 컴퓨터냐 브라우저 탭이냐 하나의 차이](./assets/145-pyodide-vs-python.svg)
+![일반 Python vs Pyodide — 같은 CPython, 런타임이 내 컴퓨터냐 브라우저 탭이냐 하나의 차이](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/81/81870f17dba90592326db964b0db6bdb95dd7a087f11a975696ebc39aeb68470.svg)
 
 > **브라우저 탭 하나 안에서 진짜 CPython이 돈다.** `numpy`·`pandas`·`scipy`·`polars` 같은 네이티브 확장까지 포함해서.
 
@@ -49,7 +49,7 @@ keywords:
 
 덕분에 **"파이썬이 설치된 런타임"이라는 전제가 브라우저에 딸려 온다.** Pyodide가 이 전제를 만들어 놓자, 이를 재료로 삼아 "브라우저 안의 Python IDE"를 만드는 도구들이 최근 2년 사이 쏟아졌다. xlwings Lite는 그 도구들 중 **엑셀에 꽂는 플러그인**이다.
 
-![일반 Python 5단계 vs Pyodide 1단계 — 중간 4단계가 증발하는 이유](./assets/145-install-flow-compare.svg)
+![일반 Python 5단계 vs Pyodide 1단계 — 중간 4단계가 증발하는 이유](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a3/a3753bb552a5c8ebfe7d539f270b276540f2dc3db67dfcbb1b3afb7ffdca7056.svg)
 
 | 제품 | 무엇 | 어떻게 쓰나 |
 |---|---|---|
@@ -270,7 +270,7 @@ Pyodide의 파일시스템은 **MEMFS**다. 탭을 닫으면 사라진다. 그�
 
 그래서 Naver·Yahoo·Google News처럼 일반 웹 서비스용으로 만든 데이터 소스는 `allow origin` 도장을 외부에 안 찍어 주고, 브라우저에서 직접 부를 수 없다. 반면 HuggingFace parquet, Gemini·OpenAI REST API는 CORS를 허용해 놨다. dartlab의 엔진도 이 경계선을 따라 갈린다.
 
-![CORS — 허락 도장이 있으면 데이터가 흐르고, 없으면 브라우저가 요청을 차단한다](./assets/145-cors-permission.svg)
+![CORS — 허락 도장이 있으면 데이터가 흐르고, 없으면 브라우저가 요청을 차단한다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/61/610350d1e34241bff9a0925c75c9958287b41a558c97da80e8b1e538a1e2c97d.svg)
 
 | 엔진 | Pyodide에서 | 이유 |
 |---|:---:|---|

@@ -126,7 +126,7 @@ import HFDataLink from '$lib/components/blog/HFDataLink.svelte';
 
 <HFDataLink code="096770" />
 
-![SK온 2025년의 한 줄 — 배터리 매출 6.98조와 영업손실 9,319억, 모회사 SK이노베이션 순손실 5.54조, BlueOval SK 구조조정이 한 화면에 연결된다.](./assets/80-hero-blueoval-loss.svg)
+![SK온 2025년의 한 줄 — 배터리 매출 6.98조와 영업손실 9,319억, 모회사 SK이노베이션 순손실 5.54조, BlueOval SK 구조조정이 한 화면에 연결된다.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d4/d464b5c0aaa9bcea58e2f5841fe023db274498734eb16b55a4c89b68367c80a8.svg)
 
 SK온은 상장사가 아니다. 그래서 `dartlab.Company("SK온")`으로 별도 손익계산서를 열 수 없다. 공시는 모회사 **SK이노베이션(096770)** 연결 재무제표와 사업부 설명 안에 들어 있다. 이 글은 그 한계를 명시하고 시작한다. SK온 단독 수치는 회사 실적 발표와 보도자료, 모회사 연결 수치는 dartlab 실측으로 구분한다.
 
@@ -178,7 +178,7 @@ c.analysis("financial", "수익성")["marginWaterfall"]["history"][0]
 
 매출 100원을 팔아 영업단에서 0.56원이 남았다. 그다음 금융비용 7.92원이 빠졌다. 그리고 BlueOval SK 구조조정 관련 손상이 포함된 기타비용이 손익계산서 아래층을 무너뜨렸다. 결과는 순이익률 -6.90%. **80조 매출 회사가 5.54조 순손실**을 냈다.
 
-![SK이노베이션 2025 손익 폭포 — 매출 80.30조에서 영업이익 0.45조까지는 버텼지만, 금융비용 6.36조와 기타비용 5.64조가 순손실 5.54조를 만든다.](./assets/80-waterfall-2025.svg)
+![SK이노베이션 2025 손익 폭포 — 매출 80.30조에서 영업이익 0.45조까지는 버텼지만, 금융비용 6.36조와 기타비용 5.64조가 순손실 5.54조를 만든다.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/3e/3ec1fb41b44bec2da82ca86929237a8bb7b9b714501728188b1d50e6ec13a6db.svg)
 
 여기서 SK온 단독 숫자를 겹친다. 2025년 SK온 매출은 **6.98조**, 영업손실은 **9,319억원**으로 보도됐다. 모회사 전체 매출 80.30조의 8.7% 수준이지만, 손실의 방향은 훨씬 크다. 석유·화학·LNG가 벌어도 배터리와 합작공장 구조조정이 밑에서 끌어내리는 구조다.
 
@@ -207,7 +207,7 @@ BlueOval SK가 바로 그 구조였다.
 
 ![SK온 배터리 생산라인을 상징하는 장면 — 북미 생산능력은 남았지만, 가동률과 고객 물량이 손익을 결정한다.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/4e/4eedea52870719b4a198a89755284d4c5453c016ec0ca7bc89592508783dfa60.webp)
 
-![BlueOval SK 구조 — Ford 수요 약속, SK온 북미 생산능력, Kentucky 2개 공장과 Tennessee 1개 공장이 하나의 합작법인으로 묶였다.](./assets/80-blueoval-structure.svg)
+![BlueOval SK 구조 — Ford 수요 약속, SK온 북미 생산능력, Kentucky 2개 공장과 Tennessee 1개 공장이 하나의 합작법인으로 묶였다.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ce/ce5fb844e9afc7289c20aec1be71173403791d8efd488ef21ae7457a3f506b0e.svg)
 
 문제는 2024~2025년에 전제 자체가 바뀐 것이다. Ford는 전기 픽업과 EV 전환 속도를 낮췄다. EV 부문 손실은 커졌고, F-150 Lightning 수요는 기대보다 약했다. AP는 2026년 3월 SK Battery America 조지아 공장에서 **958명 감원**, 전체의 37% 수준의 인력 축소가 있었다고 보도했다. 전기차 수요 둔화가 공장 인력으로 바로 내려온 장면이다.
 
@@ -254,7 +254,7 @@ c.select("IS", ["영업이익", "*기타비용", "법인세차감전순이익", 
 
 넷째, 신용 부담 단계다. 손상차손 자체는 현금 유출이 아닐 수 있다. 하지만 손상이 나왔다는 것은 기존 투자 판단이 틀렸고, 차입으로 세운 자산의 수익성이 낮아졌다는 뜻이다. 그래서 신용평가와 자금조달 비용은 손익계산서 숫자보다 더 민감하게 반응한다.
 
-![공장 투자에서 손상까지 — 수요 약속, 선투자, 가동률 하락, 현금흐름 재추정, 손상차손 인식의 5단계.](./assets/80-impairment-flow.svg)
+![공장 투자에서 손상까지 — 수요 약속, 선투자, 가동률 하락, 현금흐름 재추정, 손상차손 인식의 5단계.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/3a/3a493ee3bc56f3fdafaf002719be2f7ccb0e61192850b4da5c5e02bf4fefc36a.svg)
 
 이 막의 답은 이렇다. **SK온은 영업손실만 낸 것이 아니라, 미래 수요를 믿고 먼저 세운 공장의 장부가를 다시 써야 하는 국면에 들어갔다.**
 
@@ -280,7 +280,7 @@ SK온의 두 번째 차이는 모회사 구조다. LG에너지솔루션은 독�
 
 그래서 SK온을 볼 때 LG엔솔의 흑자 여부만 가져와 비교하면 안 된다. SK온은 손익계산서의 사업부이고, 동시에 모회사 신용의 변수이며, 동시에 Ford 합작공장 재편의 당사자다. 세 층이 한꺼번에 움직인다. 이 구조 때문에 SK온의 회복 신호도 단일 지표로 나오지 않는다. 영업손실 축소, 모회사 기타비용 정상화, 공장 가동률, 신규 수주, 신용지표가 같이 움직여야 한다.
 
-![배터리 3사 위치 — LG엔솔은 흑자 방어, 삼성SDI는 영업적자, SK온은 비상장 자회사라 모회사 기타비용과 순손실로 충격이 나타난다.](./assets/80-battery-peer-map.svg)
+![배터리 3사 위치 — LG엔솔은 흑자 방어, 삼성SDI는 영업적자, SK온은 비상장 자회사라 모회사 기타비용과 순손실로 충격이 나타난다.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/53/5369b6e063fabe2fed3521e7fc592681e1715c88a9edd1373d1020b0bf8a4847.svg)
 
 이 막의 답은 이렇다. **SK온은 배터리 3사 중 가장 늦게 독립했고, 가장 공격적으로 북미 JV에 얹혔고, 가장 모회사 손익에 묻혀 보이는 회사다.**
 
@@ -324,7 +324,7 @@ ESS 전환에서 또 하나 봐야 할 것은 배터리 화학 체계다. EV용 
 
 또 ESS 고객은 완성차 고객과 구매 방식이 다르다. 자동차 회사는 플랫폼별로 몇 년 단위 물량을 잡고, 셀 인증과 품질 기준을 깊게 본다. 전력망·데이터센터 고객은 프로젝트 금융, 전력계약, 설치 후 운영 안정성을 본다. 판매 조직, 보증 리스크, 서비스 구조가 달라진다. SK온이 EV에서 ESS로 간다는 말은 시장 이름만 바꾸는 것이 아니라, 영업과 리스크 관리 방식 전체를 바꾸는 일이다.
 
-![EV에서 ESS로 바뀌는 질문 — 전기차 판매량, Ford 생산계획, 공장 가동률 중심에서 데이터센터 전력수요, LFP 원가, 장기 전력계약 중심으로 관찰 포인트가 이동한다.](./assets/80-ev-to-ess.svg)
+![EV에서 ESS로 바뀌는 질문 — 전기차 판매량, Ford 생산계획, 공장 가동률 중심에서 데이터센터 전력수요, LFP 원가, 장기 전력계약 중심으로 관찰 포인트가 이동한다.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e0/e03f86b3d488d98e5e265cd54dfba642c0e8ab7d21ac2293547aadcf075274bf.svg)
 
 이 막의 답은 이렇다. **ESS는 SK온의 탈출구가 될 수 있지만, EV보다 쉬운 시장이 아니라 다른 방식으로 어려운 시장이다.**
 
@@ -369,7 +369,7 @@ c.credit("등급")
 
 SK온 단독편의 마지막은 체크리스트다. 이 회사는 비상장이라 주가보다 공시와 보도자료를 먼저 봐야 한다.
 
-![SK온 체크리스트 — 영업손실 5천억 이하, Tennessee 가동률, ESS 수주, SK Enmove EBITDA, 모회사 기타비용 정상화의 5개 신호.](./assets/80-checklist.svg)
+![SK온 체크리스트 — 영업손실 5천억 이하, Tennessee 가동률, ESS 수주, SK Enmove EBITDA, 모회사 기타비용 정상화의 5개 신호.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e7/e75d92bed79eaac0344045e4cab1811ac41333efd318bd997e75bf9c309f76ca.svg)
 
 **1. SK온 연간 영업손실 5,000억원 이하.**  
 2025년 영업손실 9,319억원이 기준선이다. 2026년에 절반 이하로 줄어야 턴어라운드 이야기 시작이다.

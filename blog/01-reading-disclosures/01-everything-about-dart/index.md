@@ -21,7 +21,7 @@ youtubeId: "-Y3kY1zs62I"
 
 DART를 처음 접하는 사람에게도, 이미 쓰고 있지만 전체 그림을 한 번에 보고 싶은 사람에게도 이 글이 도움이 되길 바란다.
 
-![Electronic Disclosure Flow](./assets/001-disclosure-flow.svg)
+![Electronic Disclosure Flow](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/60/604f70ff2955521761374de98ba322e782f12514c0a227e8d2f083d36f0a2d8e.svg)
 
 ---
 
@@ -47,7 +47,7 @@ DART가 존재하기 전에는 공시 서류를 직접 금융감독원이나 거
 
 ## 무엇이 공시되는가
 
-![Filing Types](./assets/001-filing-types.svg)
+![Filing Types](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/4c/4c186243378c1a67f4555b74ea69fe981da4a932076ec1866d7f2d2112857011.svg)
 
 공시 유형은 크게 세 가지로 나뉜다.
 
@@ -108,7 +108,7 @@ XII. 상세표
 
 각 섹션이 무엇을 담고 있고, 거기서 무엇을 알 수 있는지 하나씩 깊이 들어가 보겠다.
 
-![Annual Report Structure](./assets/001-annual-report-structure.svg)
+![Annual Report Structure](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/5e/5e15f4cba5736a088abe630aee4985ac7b08c0be7130bb1e83577025ea24f057.svg)
 
 ---
 
@@ -534,9 +534,9 @@ MD&A는 **경영진의 시각**이 반영된 유일한 섹션이다. 재무제�
 
 주석은 재무제표 각 계정의 **상세 내역**이다. 재무상태표에 "재고자산 1조 원"이라고만 적혀 있다면, 주석에는 그 1조 원이 원재료/재공품/제품/상품/미착품 중 어떤 구성인지가 나온다.
 
-![Notes Category Map](./assets/001-notes-category-map.svg)
+![Notes Category Map](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f7/f7c6616035d0affaa3f653c3bff6ab9017b77053f4dd02e953aff74d27aa94d4.svg)
 
-![Financial Statement Notes](./assets/001-notes-deep-dive.svg)
+![Financial Statement Notes](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/5c/5cb4c3496c92d24279792ca385a8ca95d28e0779dc3d84cec449b1cc522155be.svg)
 
 K-IFRS는 주석 공시 항목을 상세하게 규정하고 있다. 기업 규모와 업종에 따라 30~45개 항목이 포함된다.
 

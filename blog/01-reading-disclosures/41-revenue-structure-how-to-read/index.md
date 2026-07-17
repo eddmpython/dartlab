@@ -16,7 +16,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 수익 구조는 재무제표 이전에 사업을 이해하는 과정이다. 이 글은 "무엇으로 돈을 버는가"라는 질문에만 집중한다. 비용 구조, 현금흐름, 이익의 질은 별도 섹션에서 다룬다. 여기서는 부문별 매출·이익 구성 → 매출 성장 추이 → 매출 집중도를 순서대로 읽는 프레임워크를 정리한다.
 
-![수익 구조 분석의 세 축: 부문 구성, 매출 성장, 매출 집중도를 한 화면에 압축한 도식](./assets/124-hero-map.svg)
+![수익 구조 분석의 세 축: 부문 구성, 매출 성장, 매출 집중도를 한 화면에 압축한 도식](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/5e/5e302eedbebc9b3be08469620b4b21021e1692bfe2226b9393940f573315eb05.svg)
 
 ---
 
@@ -32,7 +32,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 기업 분석의 전체 흐름은 이렇다: `무엇으로 버는가(수익)` → `어떻게 자금을 조달하는가(자금)` → `얼마를 남기는가(이익)` → `투자 효율은 어떤가(ROIC)`. 이 글은 첫 번째 단계다.
 
-![수익 구조 분석 판단 분기: segments 유무에 따라 부문 분석 또는 매출 성장 분석으로 나뉘는 흐름](./assets/124-decision-tree.svg)
+![수익 구조 분석 판단 분기: segments 유무에 따라 부문 분석 또는 매출 성장 분석으로 나뉘는 흐름](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/dc/dc329a31415d91ee2a916510be359ac07f56b3f3371563ef0250ec67166726f7.svg)
 
 ---
 
@@ -75,7 +75,7 @@ HHI 외에 `상위 1개 부문 비중`도 함께 본다. HHI가 3,000이더라�
 
 부문 공시가 없는 회사도 많다. 금융업은 부문 대신 이자수익·수수료수익으로 구분하고, 중소형 기업은 단일 부문인 경우가 흔하다.
 
-![좋은 수익 구조와 위험한 수익 구조의 비교: 분산된 매출 vs 집중 매출, 성장 부문 유무](./assets/124-comparison-matrix.svg)
+![좋은 수익 구조와 위험한 수익 구조의 비교: 분산된 매출 vs 집중 매출, 성장 부문 유무](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/0a/0aff4838bc4154c531787c0acd9c18b00de3a12a264886453388fc2427de58f2.svg)
 
 ---
 
@@ -113,7 +113,7 @@ HHI 외에 `상위 1개 부문 비중`도 함께 본다. HHI가 3,000이더라�
 
 은행·보험사는 매출액이라는 일반 계정이 없다. 이자수익, 수수료수익이 매출 역할을 한다. 부문(세그먼트) 공시도 없는 경우가 많다. 이런 회사에서는 부문 구성 분석을 건너뛰고, 매출 성장 분석으로 바로 간다. dartlab의 `c.story()`는 이런 경우를 자동으로 감지하여 해당 섹션을 생략한다.
 
-![수익 구조 분석 순서: 프로필 → 부문 구성 → 부문 추이 → 지역·제품 → 매출 성장 → 집중도 → 플래그](./assets/124-timeline-flow.svg)
+![수익 구조 분석 순서: 프로필 → 부문 구성 → 부문 추이 → 지역·제품 → 매출 성장 → 집중도 → 플래그](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/40/40c54c05f1b97390778beb978f3e7fd841f27c365890b0c4803a0bb2b438dde0.svg)
 
 ---
 
@@ -139,7 +139,7 @@ HHI 외에 `상위 1개 부문 비중`도 함께 본다. HHI가 3,000이더라�
 - HHI 5,000 초과이면 단일 부문 의존 — 해당 부문의 산업 사이클 리스크를 확인한다
 - 내수/수출 비중이 한쪽으로 70% 이상 쏠려 있으면, 환율·지역 리스크를 점검한다
 
-![수익 구조의 경고 신호 카드: HHI 고집중, 매출 역성장, 부문 재편, 지역 편중](./assets/124-signal-card.svg)
+![수익 구조의 경고 신호 카드: HHI 고집중, 매출 역성장, 부문 재편, 지역 편중](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/dd/ddd154b41dbc57856a7513a790e095df4e38fb617a5c954b8332a9c99dbeab4d.svg)
 
 ---
 

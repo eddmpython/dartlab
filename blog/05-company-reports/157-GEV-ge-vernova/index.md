@@ -56,7 +56,7 @@ GE Vernova는 이 질문의 가운데 있다. 이 회사는 2024년 4월 GE에�
 
 더 강한 신호는 2026년 1분기다. 주문은 18.3B로 전년 대비 71% 유기 성장했다. 백로그는 분기 중 13.0B 늘어 163B가 됐다. Gas Power의 장비 백로그와 slot reservation agreements는 83GW에서 100GW로 늘었고, 회사는 2026년 말 110GW 이상을 예상한다고 밝혔다. Electrification은 1분기에 데이터센터 지원 장비 주문만 2.4B를 받았는데, 회사 설명으로는 이것이 2025년 전체 데이터센터 관련 장비 주문보다 컸다.
 
-![AI 전력 수요는 GEV에서 주문, 백로그, 장기 서비스, 현금흐름으로 번역된다](./assets/157-backlog-stack.svg)
+![AI 전력 수요는 GEV에서 주문, 백로그, 장기 서비스, 현금흐름으로 번역된다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/cb/cb17a2bdb5dfa0ef298039aa3e2d719bfc9f687ffa41dc82ede749ca323fc68f.svg)
 
 그래서 이 글의 질문은 단순하다. **GE Vernova는 AI 전력 붐의 진짜 수혜자인가, 아니면 한 번에 너무 많은 기대가 장부보다 먼저 달린 회사인가.** 답은 두 줄로 나뉜다. Power와 Electrification은 분명히 좋아지고 있다. Wind는 아직 손실이다. 순이익은 회계 이벤트가 섞여 과장될 수 있다. 그래서 GEV를 볼 때는 순이익보다 주문, 백로그, segment EBITDA, 자유현금흐름, Wind 손실을 먼저 봐야 한다.
 
@@ -82,7 +82,7 @@ Electrification의 RPO도 빠르게 늘었다. 2025년 말 Electrification RPO�
 
 2026년 1분기에는 이 흐름이 더 선명해졌다. Q1 주문 18.3B, 백로그 163B. 특히 Electrification orders는 7.1B였고, book-to-bill ratio는 약 2.5였다. 매출 1달러를 올리는 동안 주문이 2.5달러 들어왔다는 뜻이다. 이 비율은 강하다. 하지만 동시에 위험도 말한다. 주문이 매출보다 빠르게 쌓이면 공장 capacity, 공급망, 납기, 원가 관리가 모두 중요해진다.
 
-![2025년과 Q1 2026에서 GEV의 핵심은 매출보다 주문과 백로그가 먼저 움직였다는 점이다](./assets/157-orders-backlog.svg)
+![2025년과 Q1 2026에서 GEV의 핵심은 매출보다 주문과 백로그가 먼저 움직였다는 점이다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/7a/7ad2109013ab0c596ff8ad04af887a16b85cebd3b99c79d6022ef6617da420c1.svg)
 
 GEV는 2025년과 2026년에 AI 전력 수요를 숫자로 보여준 드문 회사다. 다만 백로그는 현금이 아니다. 백로그는 약속이다. 이 약속은 공장 슬롯, 원재료, 품질, 고객의 프로젝트 일정, 규제 승인, 납기 리스크를 통과해야 매출과 현금이 된다. 그래서 투자자는 "백로그가 얼마냐"에서 멈추면 안 된다. "그 백로그의 margin이 좋아지고 있는가"까지 봐야 한다.
 
@@ -129,7 +129,7 @@ profit["marginTrend"]["history"]
 
 따라서 Electrification의 다음 체크포인트는 세 가지다. 첫째, book-to-bill이 1을 훨씬 넘는 흐름이 지속되는가. 둘째, Prolec GE 효과를 제외한 organic revenue와 margin이 유지되는가. 셋째, 장비 백로그가 매출로 바뀔 때 margin이 희석되지 않는가. 이 세 줄이 살아 있으면 Electrification은 GEV의 두 번째 엔진이 아니라 가장 중요한 엔진이 될 수 있다.
 
-![Power와 Electrification이 이익을 만들고 Wind가 손실을 남기는 GEV의 2025년 세그먼트 구조](./assets/157-segment-split.svg)
+![Power와 Electrification이 이익을 만들고 Wind가 손실을 남기는 GEV의 2025년 세그먼트 구조](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/17/1791dd49a4e231434d13f800e307fc70c0b7ebb1bc9bb415b316c327566f4f2e.svg)
 
 ---
 
@@ -168,7 +168,7 @@ dartlab flag도 같은 경고를 잡는다. 2025년 순이익률 12.8%가 영업
 
 2025년 영업현금흐름은 4.99B였고, 회사가 제시한 자유현금흐름은 3.71B였다. 2024년 FCF 1.70B에서 두 배 이상 늘었다. 여기에는 영업이익 개선과 working capital 효과가 같이 있다. 특히 2025년 OCF 증가에는 Power의 down payments와 slot reservation agreements, Electrification의 down payments와 collections가 크게 기여했다. 고객이 먼저 현금을 내고 공장 슬롯을 잡는 구조가 현금흐름을 밀었다.
 
-![GEV는 순이익보다 조정 EBITDA와 자유현금흐름을 먼저 봐야 한다](./assets/157-profit-quality.svg)
+![GEV는 순이익보다 조정 EBITDA와 자유현금흐름을 먼저 봐야 한다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/60/602bd67880a2c74bc5339cc50cbedd4df939dd0dc5085aa1fb1bb3596f4b10e3.svg)
 
 이 현금흐름도 완전히 반복적이라고 단정하면 안 된다. 선급금과 contract liabilities는 강한 수요의 증거이지만, 동시에 미래 납품 의무다. 오늘 받은 현금은 내일 장비를 만들어 넘겨야 하는 약속이다. 그래서 GEV의 FCF는 좋은 신호이되, backlog conversion과 프로젝트 실행을 같이 봐야 한다. 현금이 쌓인 이유가 좋은 주문 때문인지, 납품 지연 때문인지 구분해야 한다.
 
@@ -220,7 +220,7 @@ Q1 2026 발표는 GEV 이야기를 더 크게 만들었다. 주문 18.3B, 유기
 
 Q1 2026 순이익 4.75B는 다시 조심해야 한다. 이 안에는 Prolec GE 관련 pre-tax M&A net gains 4.5B가 있다. 그래서 분기 EPS가 아무리 크게 보여도 그걸 반복 이익으로 쓰면 안 된다. 진짜 줄은 주문, backlog, adjusted EBITDA, FCF다. 이 네 줄은 매우 강했다.
 
-![GEV의 2026년 논리는 Power와 Electrification margin 상승이 Wind 손실을 덮는지에 달려 있다](./assets/157-next-checkpoints.svg)
+![GEV의 2026년 논리는 Power와 Electrification margin 상승이 Wind 손실을 덮는지에 달려 있다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e4/e472c9cf7721d5fa705a1156718490ecdd4b78393d3dfaabae1699dcd0fce36f.svg)
 
 ---
 

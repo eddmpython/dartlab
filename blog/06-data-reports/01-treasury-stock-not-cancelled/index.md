@@ -31,7 +31,7 @@ keywords:
 
 답은 분명했다. **자사주를 보유한 798곳 중 742곳(93%)이 최근 1년간 단 한 주도 소각하지 않았다.**
 
-![자사주 매입·소각·처분은 발행주식수에 전혀 다른 일을 한다](./assets/01-buyback-vs-cancel.svg)
+![자사주 매입·소각·처분은 발행주식수에 전혀 다른 일을 한다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ad/ade3fb21fc097402466b5c90f2e3115196d90fa46ef1ce8ac3abe9111cd3d7f1.svg)
 
 ---
 
@@ -69,7 +69,7 @@ print(held, held_noburn, round(100 * held_noburn / held, 1))   # 798 742 93.0
 
 최신 정기보고서(당기) 기준 결과를 그림 하나로 줄이면 이렇다.
 
-![전상장사 2,933곳 → 자사주 보유 798곳 → 최근 1년 소각 0: 742곳(93%)](./assets/01-funnel.svg)
+![전상장사 2,933곳 → 자사주 보유 798곳 → 최근 1년 소각 0: 742곳(93%)](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/24/24513db12575538f9097c86226688f9149fb03e8cde69b32638a952bb3296e8c.svg)
 
 | 구분 | 회사 수 | 비고 |
 |---|---:|---|
@@ -104,7 +104,7 @@ print(held, held_noburn, round(100 * held_noburn / held, 1))   # 798 742 93.0
 
 dartlab은 같은 데이터로 각 회사의 **순주주환원 방향**도 분류한다. 배당(+1) · 자사주 매입(+1) · 최근 증자(-1) 점수의 합으로 나눈다.
 
-![순환원 분류: 희석형 1,363곳 vs 적극환원 7곳](./assets/01-distribution.svg)
+![순환원 분류: 희석형 1,363곳 vs 적극환원 7곳](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/11/11d7b2791af664c7f5dbfd1c3850b8890f4cc1f9ad5aac001d5e46001553c05d.svg)
 
 | 분류 | 회사 수 |
 |---|---:|

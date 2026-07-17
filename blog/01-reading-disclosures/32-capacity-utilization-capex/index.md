@@ -18,7 +18,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 그래서 사업보고서에서 생산능력, 가동률, 설비투자를 같이 읽을 수 있으면 단순한 실적 확인을 넘어선다. 지금 성장이 어디서 오는지, 병목이 이미 시작됐는지, 설비투자가 정상적인 대응인지 무리한 베팅인지 판단할 수 있다.
 
-![생산능력, 가동률, 설비투자, 매출, 마진의 선후 관계를 보여주는 신호 지도](./assets/010-capacity-signal-map.svg)
+![생산능력, 가동률, 설비투자, 매출, 마진의 선후 관계를 보여주는 신호 지도](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/9c/9ca9f71d3428794acedf4a21b77897e6341ad098fc304ebdf2ab0f43569d7574.svg)
 
 이 글은 `사업보고서의 생산능력 표를 어떻게 읽는가`, `가동률 90%는 좋은 신호인가`, `CAPEX가 늘면 왜 항상 호재가 아닌가`, `건설중인자산과 현금흐름표를 왜 같이 봐야 하는가`를 하나의 프레임으로 정리한 실전 가이드다.
 
@@ -160,7 +160,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 | 85~90% | 병목 전 단계 | 증설 여부 점검 필요 |
 | 90% 이상 | 강한 압력 | 외주, 납기, 품질, 정비 이슈 확인 |
 
-![가동률 구간별 압력과 병목 신호를 보여주는 게이지](./assets/010-utilization-pressure-gauge.svg)
+![가동률 구간별 압력과 병목 신호를 보여주는 게이지](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/7e/7eba15fcea7fbfe58aa06b5c6ca2c74fad06d455f7ffb00f3a910c464538c753.svg)
 
 다만 "가동률 95% = 무조건 좋은 신호"는 아니다.
 
@@ -207,7 +207,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 | 증설 | 생산능력 확대 | 성장형 | 수요 둔화 시 과잉설비 위험 |
 | 신사업 | 신공장, 신제품 | 옵션형 투자 | 회수 불확실성 큼 |
 
-![유지보수, 효율화, 증설, 신사업 설비투자를 비교한 매트릭스](./assets/010-capex-type-matrix.svg)
+![유지보수, 효율화, 증설, 신사업 설비투자를 비교한 매트릭스](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/23/231245d82f09b9c05e8081ae5126626819ba82ea10bd54d7c288d06b3235a5af.svg)
 
 같은 1,000억 원 설비투자라도 해석은 전혀 다르다.
 
@@ -229,7 +229,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 ## 건설중인자산과 현금흐름표를 왜 같이 봐야 하나
 
-![설비투자 생애주기](./assets/010-lifecycle-map.svg)
+![설비투자 생애주기](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/01/012831ead6a66ae340abc7da1d896d9a6c9aa27e35e393fb01427a2602182078.svg)
 
 이 부분이 가장 자주 빠진다.
 
@@ -284,7 +284,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 | 자금 구조 | 감내 가능한 수준 | 차입 의존 높음 |
 | 투자 후 설명 | 마진 방어 논리 존재 | "성장 준비" 수준의 추상적 설명 |
 
-![좋은 증설과 위험한 증설을 가르는 체크리스트](./assets/010-expansion-risk-checklist.svg)
+![좋은 증설과 위험한 증설을 가르는 체크리스트](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/38/38f6c854aff5c5c6c7f47318a41313a5ef6d12607b0d7d76e007b30f294a7066.svg)
 
 핵심은 이것이다.
 

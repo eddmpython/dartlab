@@ -153,7 +153,7 @@ c.analysis("financial", "종합평가")
 c.analysis("financial", "수익성")
 ```
 
-![타임라인 요약](./assets/20-timeline.svg)
+![타임라인 요약](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/98/986ac7c1af3acd5b305580eaacb11a36fc6eb86f7f1c0b3dd6ac8b92121f51a5.svg)
 
 먼저 2020년, 2,500억이 증발한 날부터 시작하자.
 
@@ -194,7 +194,7 @@ HDC의 입장이 바뀌었다. 2020년 4월부터 HDC는 **"재무상태가 바�
 
 5년이 걸렸다. 그사이 HDC는 이자 수익도 못 올리고, 다른 투자에도 쓰지 못하고, 소송 비용까지 쓰면서 이 돈을 "잠긴 채" 들고 있었다.
 
-![아시아나 타임라인](./assets/20-asiana-failure.svg)
+![아시아나 타임라인](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/19/19ce1a6df00ceb0df8e4409e9ce759b83ae635f29175eeaf07773fdca89049a0.svg)
 
 ### 첫 번째 "어?"
 
@@ -321,9 +321,9 @@ HDC의 입장이 바뀌었다. 2020년 4월부터 HDC는 **"재무상태가 바�
 
 서울·경기·거점도시 대형 단지라 미분양 리스크가 상대적으로 적었다. 그리고 자체개발이라 PF 리스크도 HDC현산 내부에서 관리할 수 있었다. 분양 매출이 본격적으로 회계에 반영되기 시작한 게 2024~2025년이었다.
 
-![턴어라운드](./assets/20-turnaround.svg)
+![턴어라운드](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d7/d7f7efcb3819c850b6a789eab36e9c16fe9990f9846437b0514738ad2cf019a2.svg)
 
-![브랜드 평판 vs 수주 역설](./assets/20-brand-vs-orders.svg)
+![브랜드 평판 vs 수주 역설](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/eb/eb42312c991d0268d2b21cabc6b299fb15687de526417190e5468b0368f493fc.svg)
 
 ### 세 번째 "어?"
 
@@ -370,7 +370,7 @@ HDC의 입장이 바뀌었다. 2020년 4월부터 HDC는 **"재무상태가 바�
 
 HDC현산만 유일하게 의미 있는 영업이익률(6%+)과 이익 성장(+34.7%)을 냈다. 이유는 3막에서 설명한 자체개발 전략이다. **수도권·거점도시 자체개발 단지의 분양 매출이 본격적으로 인식되기 시작했다.**
 
-![건설 빅4 비교](./assets/20-construction-big4.svg)
+![건설 빅4 비교](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f2/f240f4ff520e028ab321139f05e58bd5696dbb716a225f400f12bde5ab220493.svg)
 
 숫자만 보면 이상하다. 사고를 낸 회사가 사고 안 낸 회사보다 마진이 좋다. **영업이익률 1위가 HDC현산이라는 것** — 이건 도급 사업을 줄이고 자체개발 사이클에 의존하는 구조가 만든 결과다. PF 사태로 도급이 흔들릴 때, 자체분양 이익이 들어오는 회사만 살았다. 위기가 전략을 검증한 것이다.
 

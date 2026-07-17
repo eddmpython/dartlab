@@ -50,7 +50,7 @@ ai:
 
 기존 선박을 떠올려 보자. 연료를 탱크에 넣고, 엔진으로 보내고, 엔진이 프로펠러를 돌린다. 물론 기존 선박도 복잡하지만 연료 자체를 "누출되면 작업자가 위험한 독성 물질"로 보는 정도는 아니다. 암모니아가 들어오면 선박 설계의 중심이 바뀐다. 연료 라인은 단순한 배관이 아니라 누출을 감지하고 격리해야 하는 안전 구역이 된다. 엔진룸은 출력만 내는 곳이 아니라 독성 농도와 환기를 관리하는 공간이 된다.
 
-![암모니아 선박은 NH3 탱크, 연료공급장치, 엔진, SCR, 크래킹, 연료전지, 배터리, 추진기가 함께 움직이는 시스템이다](./assets/ammonia-01-system.svg)
+![암모니아 선박은 NH3 탱크, 연료공급장치, 엔진, SCR, 크래킹, 연료전지, 배터리, 추진기가 함께 움직이는 시스템이다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/46/46730bc1a48eb1a0a183aa6b595401014e07f2abb8d7916e6829e6e917f48e49.svg)
 
 [Hanwha Group, HMM, KR의 MOU](https://www.hanwha.com/newsroom/news/press-releases/hanwha-group-hmm-and-kr-sign-mou-to-develop-next-generation-carbon-free-ship-propulsion-systems.do)는 이 구조를 잘 보여준다. 이 협력은 7,000~8,000TEU급 컨테이너선에 암모니아 가스터빈과 연료전지를 결합하는 개념 설계, 그리고 2,000TEU급 피더 컨테이너선에 연료전지와 배터리 하이브리드를 결합하는 방식을 다룬다. 한화오션만의 과제가 아니라 선사 HMM의 운항 데이터와 한국선급의 안전 검토가 같이 붙는다.
 
@@ -62,7 +62,7 @@ ai:
 
 암모니아 선박을 기술 투자 이야기로 쓰려면 "관련 회사"가 아니라 "공정"을 먼저 그려야 한다. 공정 지도가 있어야 한화오션과 HD현대중공업, HMM과 CF Industries, Bloom Energy와 Chart Industries가 왜 같은 글에 들어오는지 설명된다.
 
-![DART와 EDGAR 회사는 조선 통합, 선사 수요, 엔진, 연료, 연료전지, 가스장비, 인증 칸에 나뉘어 배치된다](./assets/ammonia-02-company-map.svg)
+![DART와 EDGAR 회사는 조선 통합, 선사 수요, 엔진, 연료, 연료전지, 가스장비, 인증 칸에 나뉘어 배치된다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/8c/8cb223a5d48241781e0faa0005d09a6fa1728bc3130a5be0d30de41a8b935957.svg)
 
 | 공정/층위 | 기술 역할 | 대표 회사 | 공시 근거 | 재무로 보이는 흔적 |
 |---|---|---|---|---|
@@ -100,7 +100,7 @@ EDGAR에서도 마찬가지다. [Bloom Energy의 2025 Form 10-K](https://www.sec
 
 넷째, 연소 배출이다. CO2 직접 배출이 줄어도 NOx와 N2O, 암모니아 슬립이 남으면 규제와 실제 환경성에서 문제가 생긴다. 다섯째, 벙커링이다. 배가 항만에서 암모니아를 공급받으려면 저장 탱크, 연결 장치, 안전 거리, 비상 대응 체계가 필요하다. 여섯째, 승무원 훈련과 비상 대피다. 선박은 공장과 다르다. 바다 위에서 문제가 생기면 바로 밖으로 대피하기 어렵다.
 
-![암모니아 선박의 안전 병목은 독성, 부식, 누출, NOx, 암모니아 슬립, 벙커링, 크루 훈련이 동시에 쌓인다](./assets/ammonia-03-safety-bottlenecks.svg)
+![암모니아 선박의 안전 병목은 독성, 부식, 누출, NOx, 암모니아 슬립, 벙커링, 크루 훈련이 동시에 쌓인다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ef/efd551ee9213a86d33743aabee56c3c133b174984d6f63ecc31a0d10fcaae2e8.svg)
 
 [ABS 자료](https://ww2.eagle.org/content/dam/eagle/publications/ammonia-safety-advisory.pdf)가 HAZID와 CFD 독성 구역, 누출 감지, 비상 대응을 강조하는 이유가 여기에 있다. [EMSA 연구](https://emsa.europa.eu/publications/reports/item/5264-study-investigating-the-safety-of-ammonia-as-fuel-on-ships.html)가 노출 한계와 훈련을 다루는 것도 같은 이유다. 암모니아 선박의 핵심은 친환경 마케팅이 아니라 안전 공학이다.
 
@@ -196,7 +196,7 @@ for ticker, role in us_tickers.items():
 | Cummins CMI | 엔진과 파워 | 2025 | 33.67B달러 | 4.03B달러 | 11.95% | 엔진과 전력 장비 규모를 보는 비교군이다 |
 | Caterpillar CAT | 엔진과 파워 | 2025 | 67.59B달러 | 11.15B달러 | 16.50% | 선박 암모니아 전용이 아니라 대형 엔진, 파워 장비 규모의 기준점이다 |
 
-![암모니아 선박 관련 기술 칸에 놓인 회사들의 DART와 EDGAR 영업이익률은 순수 암모니아선 매출이 아니라 기존 사업 손익이다](./assets/ammonia-04-financial-landing.svg)
+![암모니아 선박 관련 기술 칸에 놓인 회사들의 DART와 EDGAR 영업이익률은 순수 암모니아선 매출이 아니라 기존 사업 손익이다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d1/d12aaf239e7ee142c7012e3ede0c7a9e8719c5a07daa25ad8aae3fe958bf2d8e.svg)
 
 이 표를 읽는 핵심은 순위가 아니다. CF의 OPM이 높다고 암모니아 선박 수혜가 바로 CF 이익으로 폭발한다는 뜻이 아니다. CF는 암모니아를 주요 제품으로 가진 질소 비료와 암모니아 회사이고, 암모니아선은 그 제품의 잠재 수요처 중 하나다. Bloom Energy는 연료전지 회사지만 암모니아 선박 전용 회사가 아니다. Chart Industries는 가스 장비 회사지만 전사 손익에는 여러 산업이 섞인다.
 
@@ -208,7 +208,7 @@ for ticker, role in us_tickers.items():
 
 하지만 첫 선박은 대량 보급과 다르다. 기술 성숙도는 단계로 나눠 봐야 한다.
 
-![암모니아 선박의 기술 성숙도는 화물 취급 경험, 엔진 승인, 첫 선박, 선대 발주, 항만 벙커링, 연료 스프레드로 나뉜다](./assets/ammonia-05-maturity-ladder.svg)
+![암모니아 선박의 기술 성숙도는 화물 취급 경험, 엔진 승인, 첫 선박, 선대 발주, 항만 벙커링, 연료 스프레드로 나뉜다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/77/77158cce51ef01935d74008ba7af7b79a7611c6a684b5c11817c8172db7c8754.svg)
 
 첫 단계는 암모니아를 화물이나 냉매로 다룬 경험이다. 해운과 화학 산업에는 이 경험이 있다. 둘째는 선박 연료로 쓰기 위한 엔진과 연료공급장치 승인이다. 셋째는 실제 선박이다. 넷째는 여러 선사가 선대 발주로 들어오는 단계다. 다섯째는 항만 벙커링이다. 여섯째는 연료 가격과 규제가 맞아 선주가 경제성을 계산할 수 있는 단계다.
 

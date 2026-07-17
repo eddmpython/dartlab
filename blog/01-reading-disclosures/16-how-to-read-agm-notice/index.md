@@ -18,7 +18,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 이 글은 주주총회소집공고를 일정표가 아니라 `결정표`로 읽는 법을 정리한다. 오너십, 보수, 주주환원 글을 읽고 왔다면 이 글이 그 시리즈의 실행 단계다. 아직 DART 화면이 익숙하지 않다면 [`공시를 처음 볼 때 DART에서 어디부터 눌러야 하나`](/blog/everything-about-dart)를 먼저 보고 돌아와도 좋다.
 
-![주주총회소집공고를 읽을 때의 기본 흐름을 보여주는 도식](./assets/026-agm-reading-flow.svg)
+![주주총회소집공고를 읽을 때의 기본 흐름을 보여주는 도식](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e0/e09953d353360b07b38afe8844d0fc5beeb439e3447cd82d328cc70a44b7f2bd.svg)
 
 ---
 
@@ -63,7 +63,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 모든 안건을 같은 무게로 볼 필요는 없다. 초보자에게는 아래 우선순위가 실용적이다.
 
-![안건별 우선순위를 쉽게 보여주는 보드](./assets/026-proposal-priority-board.svg)
+![안건별 우선순위를 쉽게 보여주는 보드](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c9/c9bf19c7071b7b8f0bb9a0900f598bfd625d2cc23100c866859ba05de4556a1b.svg)
 
 1. 이사 선임 또는 재선임
 2. 보수한도
@@ -83,7 +83,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 - 재선임이라면 어떤 역할을 반복해서 맡는가
 - 최대주주와 어떤 연결고리가 있는가
 
-![이사 선임 안건에서 체크할 포인트를 정리한 카드](./assets/026-director-election-card.svg)
+![이사 선임 안건에서 체크할 포인트를 정리한 카드](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/3a/3a59a34f15999004d3e25fe32a8aa027446b4655a0affc94b2cb0de75eb5e326.svg)
 
 이 안건이 중요한 이유는 단순히 자리 하나가 바뀌는 것이 아니라, 회사가 앞으로 누구에게 판단 권한을 더 싣는지를 보여주기 때문이다. 특히 최대주주 관련 표에서 보던 이름이 주총 안건에도 반복되면, 지배력 구조가 이사회 운영까지 연결되고 있다는 뜻이다.
 
@@ -101,7 +101,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 - 그 증가 이유가 설득력 있게 설명되는가
 - 주식기준보상이나 스톡옵션 도입이 함께 붙어 있는가
 
-![보수한도 안건에서 경계할 신호를 보여주는 지도](./assets/026-compensation-cap-signal-map.svg)
+![보수한도 안건에서 경계할 신호를 보여주는 지도](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d6/d614c17621914da3617f4cc64c70ed96af78f27513a67a8658116ae1b7e1e845.svg)
 
 보수한도와 주식보상 안건은 [`임원 보수 공시는 무엇을 말해주나`](/blog/executive-pay-disclosure)와 같이 읽어야 정확하다. 사업보고서에서 현재 보수 구조를 보고, 주총공고에서 앞으로 허용될 범위를 보면 비로소 방향이 보인다.
 
@@ -185,7 +185,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 ## 10분 체크리스트
 
-![주주총회소집공고를 빠르게 읽는 체크리스트](./assets/026-checklist.svg)
+![주주총회소집공고를 빠르게 읽는 체크리스트](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/85/854cb31ec0b41c8f932b9aaea34c553b0c1591ba385dca4337647c983e57dec2.svg)
 
 - 어떤 안건이 올라왔는가
 - 그중 우선순위가 높은 안건은 무엇인가

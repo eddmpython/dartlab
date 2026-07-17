@@ -146,7 +146,7 @@ CJ대한통운(000120)은 한국에서 배송 박스에 도장 찍히는 이름 
 
 ---
 
-![CJ대한통운 10년 재무 — 매출 정체, 영업이익 증가, 순이익 급증](./assets/67-hero-map.svg)
+![CJ대한통운 10년 재무 — 매출 정체, 영업이익 증가, 순이익 급증](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ac/acb1bc0cd0a545e946715dfb1a6054f0be22c9d4bf11e1ac48bbfd157eba7bdb.svg)
 
 ## 1막: 매출 3년 정체, 그런데 영업이익은 23% 증가
 
@@ -230,7 +230,7 @@ c.analysis("financial", "수익성")
 
 ---
 
-![대한통운 110년 연혁 타임라인 — 1930 창업부터 2013 CJ 편입, 2016~2025 글로벌 확장까지](./assets/67-history-timeline.svg)
+![대한통운 110년 연혁 타임라인 — 1930 창업부터 2013 CJ 편입, 2016~2025 글로벌 확장까지](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/79/79c44cdfd74c7ba4ba54fe4e9c1850f0044c261a732814d57947255765aaa21c.svg)
 
 ## 2막: CJ 편입 이전 — 대한통운 110년의 인수 릴레이
 
@@ -274,7 +274,7 @@ c.select("BS", ["자산총계","부채총계","자본총계","현금및현금성
 
 ---
 
-![OPM 10년 궤적 + 부문별 마진 추정](./assets/67-opm-10y.svg)
+![OPM 10년 궤적 + 부문별 마진 추정](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/55/554610aeb700533222033b3ea333fc16b8986d63793a7d1486be0faf7b68ce00.svg)
 
 ## 3막: 2013~2018 외형 폭풍 성장 — 인수의 진짜 비용
 
@@ -360,7 +360,7 @@ CL 부문은 **기업 고객의 창고·배송·재고관리를 장기 계약으
 
 ---
 
-![쿠팡·네이버 C커머스 잠식 개념도](./assets/67-cpng-naver-threat.svg)
+![쿠팡·네이버 C커머스 잠식 개념도](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a2/a26e2f29a0b6156eaf20be00db6f0a1fcff4d11dc51231f0df526771ab20eb46.svg)
 
 ## 5막: 매출 정체의 정체 — 쿠팡·네이버가 바꾼 택배 시장
 
@@ -394,7 +394,7 @@ CL 부문은 **기업 고객의 창고·배송·재고관리를 장기 계약으
 
 ---
 
-![이익 개선 4엔진 — 판관비 통제·자동화 CAPEX·글로벌 효율·이연법인세 해소](./assets/67-margin-levers.svg)
+![이익 개선 4엔진 — 판관비 통제·자동화 CAPEX·글로벌 효율·이연법인세 해소](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/89/897555886607542aad2163b8eae24bf819b16882d07ef2dbfbbc91ace04604ef.svg)
 
 ## 6막: 매출이 멈춰도 이익은 늘어난 메커니즘
 
@@ -470,7 +470,7 @@ c.analysis("financial", "재무정합성")
 
 ---
 
-![순차입금 1.6조 + 금융비용 2,617억 연쇄도](./assets/67-debt-interest.svg)
+![순차입금 1.6조 + 금융비용 2,617억 연쇄도](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/37/373e52590c19aeb87dc0caeef2a4c506a706cc14e022a97f0e4490328abf25d5.svg)
 
 ## 7막: 금융비용 2,617억의 그림자 — 순차입금 1.6조의 뿌리
 
@@ -552,7 +552,7 @@ c.analysis("financial", "자금조달")
 
 ---
 
-![CJ그룹 지배구조 — 이재현 → CJ주식회사 → CJ제일제당 → CJ대한통운](./assets/67-ownership-cj-group.svg)
+![CJ그룹 지배구조 — 이재현 → CJ주식회사 → CJ제일제당 → CJ대한통운](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/bb/bbcb38740e4083454e7e3ab77720d53e81d3dd296fefce449015c2bf7b2467ba.svg)
 
 ## 8막: 지배구조 — CJ제일제당 40% + 이재현의 그룹 포트폴리오
 
@@ -618,7 +618,7 @@ CJ그룹 내부 매출 비중(공시 기준 추정)은 2025년 매출 12.28조 �
 
 ---
 
-![물류 3사 비교 — CJ대한통운·현대글로비스·한진 OPM·매출·순차입금](./assets/67-3peer-comparison.svg)
+![물류 3사 비교 — CJ대한통운·현대글로비스·한진 OPM·매출·순차입금](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/95/95455c9e25a957224b879a8e4cd964d4eaee4b76e73e079b477815e43a069e99.svg)
 
 ## 9막: 물류 3사 비교 + 2026 체크포인트 + 닫힘
 

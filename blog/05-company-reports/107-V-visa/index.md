@@ -46,7 +46,7 @@ import StackBar from '$lib/components/blog/StackBar.svelte';
 
 그래서 비자의 손익계산서를 보면 이상한 일이 벌어진다. 6년 동안 매출이 **$22.98B에서 $40.00B로 +74%** 불었는데, 영업이익률은 **60%대를 단 한 번도 벗어나지 않았다.** 외형이 1.7배가 되는 동안 마진이 안 깎인 것이다.
 
-![매출 +74% 6년간 영업이익률이 60%대 밴드를 안 벗어났다 — 우리가 증명할 수 있는 한 줄](./assets/107-one-line.svg)
+![매출 +74% 6년간 영업이익률이 60%대 밴드를 안 벗어났다 — 우리가 증명할 수 있는 한 줄](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/da/dad52dfc476602b54d4734e77fe5b19c905ff9874e3a2af88e6caa53d910bfca.svg)
 
 우리는 딱 이 한 줄까지만 숫자로 증명할 수 있다. 그 '이상함'의 *원인*은 숫자가 말하지 못한다 — 회사가 스스로 적어둔 문장과, 지금 법정에서 벌어지는 일이 그 빈칸 옆에 나란히 놓일 뿐이다.
 
@@ -82,7 +82,7 @@ c.select("IS", ["매출액", "영업이익"], freq="Q")  # 분기→연간 합�
 
 OPM이 60~66%라는 건 역으로 **영업비용이 매출의 약 34~40% 실재한다**는 뜻이다 — 비용 0이 아니다. 그런데도 매출이 +74% 커지는 동안 그 비용 비율이 마진을 끌어올리지 못했다(밴드 유지). 이건 매출을 따라 늘어나는 *변동원가*(원가·대손 같은)의 비중이 작은 사업과 *정합한다*.
 
-![OPM 60~66%는 영업비용 34~40%가 실재한다는 뜻 — '비용 0'이 아니라 변동원가가 안 따라온다](./assets/107-not-zero-cost.svg)
+![OPM 60~66%는 영업비용 34~40%가 실재한다는 뜻 — '비용 0'이 아니라 변동원가가 안 따라온다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/84/84ab6576a9d6cb44140db2b65386d30d492257e6618accaf3f7a6d49dc2d2d73.svg)
 
 비교하자면, 매출이 늘 때 원가나 대손이 같이 늘어 갉아먹는 사업이라면 외형 1.7배에서 60%대 밴드를 지키기 어렵다. 단 이건 '불가능'이라는 절대 단정이 아니라, *'희석되지 않았다는 사실 자체가 변동원가 비중이 작은 사업과 정합한다'*는 격하된 진술이다(밴드 유지는 환율·고객 인센티브·믹스 등 다요인과도 양립한다). 그렇다면 자연히 다음 질문 — 매출과 함께 늘어났어야 할 그 변동원가, 원가·대손은 대체 누가 지고 있는가?
 
@@ -94,7 +94,7 @@ OPM이 60~66%라는 건 역으로 **영업비용이 매출의 약 34~40% 실재�
 
 외부 인용에 따르면 비자는 10-K에 반복해서 이렇게 적는다 — *"Visa is not a financial institution, does not issue cards, extend credit or set rates and fees for consumers… nor does it earn revenue from or bear credit risk with respect to any of these activities."* (비자는 금융기관이 아니며, 카드를 발급하거나 신용을 제공하거나 소비자 요율을 정하지 않고, 그로부터 매출을 얻거나 신용 리스크를 지지 않는다.)
 
-![발급은행이 신용·대손을 지고 비자는 망 수수료만 — four-party 모델 (10-K 자기기술, 외부)](./assets/107-four-party.svg)
+![발급은행이 신용·대손을 지고 비자는 망 수수료만 — four-party 모델 (10-K 자기기술, 외부)](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a7/a7f2431fdfd0dc364bd64981a84fac9d61dfa8c20ae2eaa4d4706bd190ca738b.svg)
 
 구조로는 **four-party(open-loop) 모델**이다(외부 인용) — 발급은행(issuer)이 카드 발급과 신용·대손 리스크를 지고, 비자는 그 위에서 망(VisaNet)이 승인·정산을 처리해 거래·네트워크 수수료를 번다. 즉 2막에서 '안 늘어난 변동원가'의 자리에, 회사는 *'우리는 대손·여신을 안 진다'*는 문장을 놓는다. 이 자기기술(외부)과 내부의 OPM 밴드 유지가 *서로 정합한다* — 여기까지가 한계다. '리스크를 안 져서 마진이 높다'로 한 발만 더 가면 검증 범위 밖이다(상관을 인과로 봉합). 그래서 다음 막 — 비자가 진짜로 파는 '통행료'의 정체는 무엇인가?
 
@@ -108,7 +108,7 @@ OPM이 60~66%라는 건 역으로 **영업비용이 매출의 약 34~40% 실재�
 
 ![거래가 단말기를 스칠 때마다 통행료가 발생한다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b3/b3fd9d8840a8c40cd39686ca2032b49bf217d348b027d27ac1c2497e9b547423.webp) 결정적인 분리 하나 — 가맹점이 무는 **interchange(스왑피)는 카드 *발급은행*이 수취**하고 비자가 직접 매출로 잡지 않는다. 그러나 그 *기본 interchange 요율표는 비자가 설정*하며, 가맹점엔 협상 불가한 고정값이다.
 
-![비자가 '버는 돈'(망 수수료)과 '정하지만 안 받는 돈'(interchange)은 다른 층 (외부)](./assets/107-tollgate.svg)
+![비자가 '버는 돈'(망 수수료)과 '정하지만 안 받는 돈'(interchange)은 다른 층 (외부)](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/cb/cbf91d4ef087dbf06650abb569c6fe491635fb4ff1cd73f0e3071b0ff38ced4e.svg)
 
 시장 색채로만 덧붙이면 — 비자·마스터카드가 중국 외 결제처리의 *대략* 90%를 차지하는 복점이고, 비자 단독 글로벌 구매거래 점유는 *대략* 39%(2022, UnionPay 포함)로 알려져 있다(외부 인용, 2차 자료라 '대략'으로만). 정리하면 비자가 *버는 돈*(네트워크 수수료)과 비자가 *정하지만 안 받는 돈*(interchange)은 다른 층이다. 그런데 바로 이 '정하지만 안 받는' 요율 설정 권한이 — 다음 막에서 — 법정의 표적이 된다. 거래가 반드시 지나야 하는 길목을 쥐고 통행료를 매긴다는 점에서, 땅으로 길목을 쥔 [맥도날드](/blog/MCD-mcdonalds), 의무 장부의 길목을 쥔 [더존비즈온](/blog/012510-douzone)과 같은 계열이다.
 
@@ -122,7 +122,7 @@ OPM이 60~66%라는 건 역으로 **영업비용이 매출의 약 34~40% 실재�
 
 ![진짜 돈줄(요율 설정 권한)이 지금 법정에 서 있다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/51/51ad89333f30bf5d497f70e0f76c26f102c10b480f28875effc5c22b9d493103.webp)
 
-![요율 설정 권한이 미 합의(잠정)·UK 판결의 정조준 대상 — 현재 사실, 영향은 조건부 미래 (외부)](./assets/107-courtroom.svg)
+![요율 설정 권한이 미 합의(잠정)·UK 판결의 정조준 대상 — 현재 사실, 영향은 조건부 미래 (외부)](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/70/70575c0b519c33eb2c29f126a64752766f127d694bb15077b40ffaa41dd1cd73.svg)
 
 이 사실들은 1막에서 본 '안 깎인 밴드'의 *원천*(요율 설정 권한·카드 수용 규칙)을 직접 겨눈다. 두 가지를 헷갈리면 안 된다 — '약 380억 달러'는 *일시 현금 합의금이 아니라* 수년에 걸친 인하 추정치이고, interchange는 *발급은행 수취분*이라 '380억 = 비자 매출 타격'이 아니다. 그리고 결정적으로 — 이 소송을 2025년 OPM 60.0%와 *인과로 잇는 순간 거짓이 된다.* 그래서 마지막 막이 필요하다.
 
@@ -153,7 +153,7 @@ c.select("CF", ["영업활동현금흐름"], freq="Q")  # 영업CF
 4. **data processing 매출이 service 매출을 넘는지** — '간판보다 결제망 처리가 진짜 돈줄' 프레이밍의 근거(현재 2차 자료라 보류, IR 원문 확인 대상).
 5. **client incentives(매출 차감) 비중 추이** — 이 항목이 커지면 OPM 밴드 하락의 '규제 아닌' 대안 설명이 된다 — 규제 탓 봉합을 막는 대조 변수(외부).
 
-![비자 — 2026년에 봐야 할 다섯 가지](./assets/107-checkpoints.svg)
+![비자 — 2026년에 봐야 할 다섯 가지](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/35/3585df9b680d1ec4b9b37ecc3fab238b21eabe19d50f94aff5c19b458024cb1b.svg)
 
 ---
 

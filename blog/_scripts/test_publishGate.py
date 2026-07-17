@@ -84,6 +84,7 @@ def test_validate_post_combines_hard_gate_and_seo(monkeypatch, tmp_path: Path) -
 
     monkeypatch.setattr(pg, "auditPublishGate", fakeAudit)
     monkeypatch.setattr(pg, "scorePost", lambda _: {"pct": 94})
+    monkeypatch.setattr(pg, "mediaReferenceErrors", lambda _: [])
     monkeypatch.setattr(pg, "verifyRemoteAssets", lambda _: [])
 
     errors = pg.validatePost(tmp_path, requireContractV2=True)
@@ -95,6 +96,7 @@ def test_validate_post_combines_hard_gate_and_seo(monkeypatch, tmp_path: Path) -
 def test_validate_post_passes_at_95(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(pg, "auditPublishGate", lambda *args, **kwargs: [])
     monkeypatch.setattr(pg, "scorePost", lambda _: {"pct": 95})
+    monkeypatch.setattr(pg, "mediaReferenceErrors", lambda _: [])
     monkeypatch.setattr(pg, "verifyRemoteAssets", lambda _: [])
 
     assert pg.validatePost(tmp_path, requireContractV2=False) == []
@@ -103,6 +105,7 @@ def test_validate_post_passes_at_95(monkeypatch, tmp_path: Path) -> None:
 def test_validate_post_includes_hf_remote_errors(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(pg, "auditPublishGate", lambda *args, **kwargs: [])
     monkeypatch.setattr(pg, "scorePost", lambda _: {"pct": 95})
+    monkeypatch.setattr(pg, "mediaReferenceErrors", lambda _: [])
     monkeypatch.setattr(pg, "verifyRemoteAssets", lambda _: ["HF 미디어 없음: objects/sha256/ab/abc.webp"])
 
     errors = pg.validatePost(tmp_path, requireContractV2=True)
@@ -163,5 +166,6 @@ def test_tracked_binary_errors_blocks_v2_git_images(monkeypatch, tmp_path: Path)
     errors = pg.trackedBinaryErrors(postDir)
 
     assert errors == [
-        "블로그 래스터는 Git 추적 금지, HF 콘텐츠 주소 객체에만 발행: blog/08-tech-story/14-new-tech/assets/hero.webp"
+        "블로그 콘텐츠 미디어는 Git 추적 금지, HF 콘텐츠 주소 객체에만 발행: "
+        "blog/08-tech-story/14-new-tech/assets/hero.webp"
     ]

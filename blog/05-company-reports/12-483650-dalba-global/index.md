@@ -150,7 +150,7 @@ c = dartlab.Company("483650")
 c.analysis("financial", "종합평가")
 ```
 
-![스코어카드 모순](./assets/12-scorecard-paradox.svg)
+![스코어카드 모순](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d7/d75b754048b145a9280054a7c343fd6ad1d33ef43f59a09f66af14b70203c806.svg)
 
 | 영역 | 등급 |
 |------|------|
@@ -205,7 +205,7 @@ c.analysis("financial", "자금조달")
 
 **금융차입 0%.** 은행 빚 없다. 부채비율 **29%**. 이 회사는 이익만으로 자본을 쌓고 있다. 내부유보가 1년 만에 19%에서 40%로 뛰었다 — 이익이 빠르게 쌓이고 있다는 뜻.
 
-![달바 vs 에이피알](./assets/12-vs-apr.svg)
+![달바 vs 에이피알](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/19/1929501043662815141476572159f74f8bd93f267b70417a620b3540eb6603b8.svg)
 
 에이피알과 나란히 놓으면:
 
@@ -222,7 +222,7 @@ c.analysis("financial", "자금조달")
 
 ---
 
-![매출 289억→5,197억 — 4년간 18배 성장 궤적](./assets/12-revenue-trajectory.svg)
+![매출 289억→5,197억 — 4년간 18배 성장 궤적](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ef/efdc3540332893637cd5a62f13b6e49c06c16dfcd4f3c5f2855a0c924858cf6b.svg)
 
 ## 2막 — 화장품 경험 0, 컨설턴트가 만든 브랜드
 
@@ -268,7 +268,7 @@ c.analysis("financial", "자금조달")
 
 ---
 
-![해외 시장별 매출 비중 — 러시아 1위, 일본·미국 추격](./assets/12-overseas-mix.svg)
+![해외 시장별 매출 비중 — 러시아 1위, 일본·미국 추격](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c3/c3f4d034e704d7a6fb7fa5b8d42938ce84a49b934b788256a347a26c321716f6.svg)
 
 ## 3막 — 러시아에서 먼저 뜬 K-뷰티
 
@@ -324,7 +324,7 @@ c.analysis("financial", "비용구조")
 
 ---
 
-![에셋라이트 모델 — 공장 없이 5,197억](./assets/12-asset-light.svg)
+![에셋라이트 모델 — 공장 없이 5,197억](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b0/b0f410e0b4d28701d25840284868c90759e74075fef0510ab1009eeb225f93c3.svg)
 
 ## 4막 — 5A인데 수익성D, 현금흐름D. 이 모순의 정체
 

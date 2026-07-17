@@ -164,13 +164,13 @@ c.analysis("가치평가")["dcfValuation"]
 
 ---
 
-![DCF 마이너스 vs 시총 $1T — 내러티브의 가격](./assets/38-hero-dcf-minus-vs-market-cap.svg)
+![DCF 마이너스 vs 시총 $1T — 내러티브의 가격](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/cd/cd6f0a9e49d91cde3edcacd5ebb2e17f85adc28bf707aa85919cfba31b371f83.svg)
 
 ---
 
 ## 제1막: 매출 성장이 멈췄다 — 10년 만의 역성장
 
-![매출 10년 만의 역성장](./assets/38-revenue-peak-out.svg)
+![매출 10년 만의 역성장](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/36/36c5ee90d167d49380bfbeb5e1dc95b085ec2cd6325c8c327fe6d2c12d4241bd.svg)
 
 ### 왜 자동차가 안 팔리기 시작했나
 
@@ -213,7 +213,7 @@ gr["growthQuality"]
 
 ## 제2막: 영업이익률 16.8% → 4.6% — 마진 붕괴의 해부
 
-![영업이익률 붕괴의 해부](./assets/38-margin-collapse.svg)
+![영업이익률 붕괴의 해부](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/71/71bf23cd201879ea254c15a71912404e2ccf492899505d8a197a891669ae178a.svg)
 
 ### 왜 자동차 회사의 이익이 가장 먼저 무너지는가
 
@@ -259,7 +259,7 @@ gr["growthQuality"]["leverageEffect"][0]
 
 ## 제3막: EVA -$4.2B — 자본비용 미달, 가치 파괴의 시작
 
-![EVA 가치 창출에서 파괴로](./assets/38-eva-value-destruction.svg)
+![EVA 가치 창출에서 파괴로](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/55/55d35508d2237b4aa53680d40fe969d2099241afe4808bf0738548be39de5574.svg)
 
 ### 왜 이익을 내는데도 가치를 파괴하는가
 
@@ -306,7 +306,7 @@ EVA -$4.2B은 **연간 $4.2B의 가치를 파괴하고 있다**는 뜻이다. �
 
 ## 제4막: 영업활동현금흐름 $14.75B vs NI $3.8B — 이익이 아닌 현금의 구조
 
-![현금흐름 현재와 전망](./assets/38-cashflow-projection.svg)
+![현금흐름 현재와 전망](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/98/98666881151715b9efecbad8741a73ab8a3b9a4a055514130c90062be0e1882c.svg)
 
 ### 왜 순이익 $3.8B인 회사가 현금 $14.75B를 벌었나
 
@@ -372,7 +372,7 @@ val["dcfValuation"]["fcfProjections"]
 
 ## 제5막: 자본 +165% — 희석을 받아주는 주주들
 
-![자본 확대의 세 경로](./assets/38-equity-dilution.svg)
+![자본 확대의 세 경로](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/8c/8c19072e8325584723764ab491e6ded82c231e5b6380a5bfeaf4677c74db9429.svg)
 
 ### 왜 자본총계가 1년에 2.6배가 됐나
 
@@ -421,7 +421,7 @@ st["leverageTrend"]["history"][0]
 
 ## 제6막: DCF 마이너스인데 시총 $1T — 내러티브의 가격
 
-![내러티브 vs 숫자](./assets/38-narrative-vs-numbers.svg)
+![내러티브 vs 숫자](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b6/b61079abb9245805754acb5e9b0af1173da7b8cf7d3248023e67ccc8921036cd.svg)
 
 ### 왜 가치평가 모델이 마이너스를 찍었나
 

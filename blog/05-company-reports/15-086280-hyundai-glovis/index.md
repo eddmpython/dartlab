@@ -146,7 +146,7 @@ c.analysis("financial", "수익성")
 
 영업이익률(영업이익률)로 비교하면 더 선명하다.
 
-![영업이익률 비교](./assets/15-opm-comparison.svg)
+![영업이익률 비교](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/79/7975eed7984ee60d642df96b3bc017ccdb57c007b90d0417a9b9d5ecf87874ff.svg)
 
 | 회사 | 매출(2024~2025) | 영업이익 | 영업이익률 |
 |------|:---:|:---:|:---:|
@@ -248,7 +248,7 @@ PCC선 안을 본 적 있는가? 13층짜리 주차장이 바다 위에 떠 있�
 
 PCC선 운임 시장의 구조를 이해하면 왜 이 호황이 컨테이너선보다 오래갈 수 있는지 보인다. 컨테이너선은 세계적으로 약 5,600척이 운항한다. 발주만 하면 2년 안에 100척 이상이 쏟아져 나올 수 있다. 하지만 PCC선은 전 세계 750척뿐이다. 선박 수 자체가 적다. 건조 슬롯도 한정돼 있다. PCC선을 만들 수 있는 조선소가 현대미포, 현대삼호, 중국 CSSC 계열 몇 곳뿐이다. 2024년 발주된 PCC선이 실제로 바다에 나오는 것은 2027년 이후다. 그 사이 3년간은 공급 부족이 구조적으로 지속된다.
 
-![해운 이익 폭증](./assets/15-shipping-boom.svg)
+![해운 이익 폭증](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/cc/cc2eaea5bf6217738cf449e535008d21c150ab20d9e9ea9c5c26f392583e1f64.svg)
 
 ### 용선료 $35,000 → $110,000 — 98척 전부의 수입이 3배
 
@@ -294,7 +294,7 @@ PCC선 운임 시장의 구조를 이해하면 왜 이 호황이 컨테이너선
 
 그 외부 고객 중 가장 눈에 띄는 이름이 **BYD**다. 세계 최대 전기차 제조사. 현대차의 가장 무서운 경쟁자. 현대글로비스는 2024년 BYD와 해상운송 MOU를 체결했다. BYD가 만든 전기차를 현대차 그룹의 물류 자회사가 배에 싣고 전 세계로 나른다. 경쟁사의 차를 실어 나르는 것이다.
 
-![비계열 확대](./assets/15-non-captive.svg)
+![비계열 확대](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/20/2086022dee07ff8cc8cc7e130eff4d9df26d2320411079d101602f95c307395c.svg)
 
 ### BYD가 현대 배를 타는 이유 — 중국에 PCC선이 없다
 

@@ -220,13 +220,13 @@ c.select("IS", ["매출액", "영업이익"], freq="Y")
 
 ---
 
-![디바이스+세럼 플라이휠 — 1회 구매가 반복 구매로](./assets/10-device-flywheel.svg)
+![디바이스+세럼 플라이휠 — 1회 구매가 반복 구매로](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/81/81b12c2e6bd227fa70cd4cd802916ef614bab282d82ecb6fd0bd70793d8bb25c.svg)
 
 ## 2막 — 직접 만들지 않는데 마진 24%. 어떻게?
 
 ### 백화점 수수료 24% vs 자사몰 3~5% — 그 차이가 마진에 쌓인다
 
-![DTC 마진 구조](./assets/10-dtc-margin.svg)
+![DTC 마진 구조](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b3/b3a6a71f63c8dae0982c3e281e0528e132bd4928cb6e9c6478d8cc02b783e92e.svg)
 
 이 회사의 화장품은 **코스맥스**가 만든다. ODM(위탁개발생산). 에이피알은 기획과 마케팅과 판매를 한다. 제조는 안 한다.
 
@@ -276,7 +276,7 @@ c.analysis("financial", "비용구조")
 
 ![K-뷰티 제품 라인업](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c9/c9f165767bb0c7c0ff6401492d3edb3ff2422d00478e0b9c573b93262e1f68d3.webp)
 
-![해외 매출 폭발](./assets/10-overseas-explosion.svg)
+![해외 매출 폭발](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e3/e3294300622e2481bc2a9ae875ccaf0c3e772804aeb1a2341c1a930fb88bf12e.svg)
 
 마진 24%의 세 번째 엔진: **해외 판가가 국내보다 높다.**
 
@@ -344,7 +344,7 @@ c.select("CF", ["영업활동현금흐름"], freq="Y")
 
 ---
 
-![판관비율 66.8%→52.7% — 비용 구조 진화](./assets/10-cost-evolution.svg)
+![판관비율 66.8%→52.7% — 비용 구조 진화](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b1/b13c7efeec23d263efc959db84f0bb0e7039e3ec3a0e32cd4b0040b160e3fbf9.svg)
 
 ## 4막 — 8,051억을 쓰고도 마진 24%인 이유
 
@@ -369,7 +369,7 @@ c.analysis("financial", "비용구조")
 
 ---
 
-![K-뷰티 3사 비교 — 에이피알 vs 아모레 vs LG생건](./assets/10-kbeauty-comparison.svg)
+![K-뷰티 3사 비교 — 에이피알 vs 아모레 vs LG생건](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/29/291eb3aebeb80b414cfcffb5dc5096564a3f33d8ba4d13985b7ff6785a7d6103.svg)
 
 ## 5막 — 아모레의 1/3 매출로 동일 영업이익. 왜?
 

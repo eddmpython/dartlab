@@ -346,7 +346,7 @@ def test_series_image_reuses_blog_media_catalog(tmp_path: Path) -> None:
     catalogPath.write_text(
         json.dumps(
             {
-                "version": 3,
+                "version": 4,
                 "repo": "eddmpython/dartlab-media",
                 "objectPrefix": "objects/sha256",
                 "collections": {},

@@ -15,7 +15,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 결론부터 말하면, 셀트리온의 영업이익률이 Amgen보다 높아 보여도 그 숫자를 곧이곧대로 비교하면 안 된다. 개발비 자산화 여부 하나가 이익과 자산 양쪽을 동시에 움직이기 때문이다.
 
 
-![K-IFRS IAS 38 개발비 자산화 vs US-GAAP ASC 730 전액 비용 처리 흐름](./assets/112-rnd-accounting.svg)
+![K-IFRS IAS 38 개발비 자산화 vs US-GAAP ASC 730 전액 비용 처리 흐름](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/57/57d1bacc1e3c04aa89d159f4f5b1156514d9118b0e8a181885e8fd95ed1c4c0f.svg)
 
 ## 같은 R&D인데 회계 처리가 갈리는 근본 이유
 
@@ -93,7 +93,7 @@ IPR&D는 인수 후 프로젝트가 승인되면 확정 내용연수 무형자�
 
 ## 무형자산 구성의 결정적 차이
 
-![셀트리온과 Amgen의 무형자산 구성 비교 — 자체 개발 vs 인수 중심](./assets/112-intangible-composition.svg)
+![셀트리온과 Amgen의 무형자산 구성 비교 — 자체 개발 vs 인수 중심](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/fa/fa07f342fec0a655d40fa21469a307d08d303770b301ba07b24f6110a80d3b56.svg)
 
 두 회사의 무형자산을 나란히 놓으면 구조가 완전히 다르다.
 
@@ -125,7 +125,7 @@ IPR&D는 인수 후 프로젝트가 승인되면 확정 내용연수 무형자�
 
 ## 파이프라인 공시 방식 — 어디에 무엇이 적혀 있나
 
-![셀트리온과 Amgen의 파이프라인 공시 위치 및 방식 비교](./assets/112-pipeline-disclosure.svg)
+![셀트리온과 Amgen의 파이프라인 공시 위치 및 방식 비교](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/49/493e67a48f7ca48ccf4e2e42d11e39a0bd32c1987632c118fb3acf0e16508544.svg)
 
 바이오 기업을 분석할 때 재무제표만큼 중요한 것이 **파이프라인 현황 공시**다. 어떤 약물이 어느 단계에 있는지, 승인 일정은 언제인지, 이 정보가 투자 판단의 핵심이다. DART와 EDGAR에서 이 정보가 공시되는 위치와 방식이 다르다.
 
@@ -146,7 +146,7 @@ IPR&D는 인수 후 프로젝트가 승인되면 확정 내용연수 무형자�
 
 ## R&D 투자 효율성을 비교하려면
 
-![셀트리온과 Amgen의 R&D/매출 비율 추이 비교](./assets/112-rnd-ratio-trend.svg)
+![셀트리온과 Amgen의 R&D/매출 비율 추이 비교](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/37/370b2d9f3f044b41f405ca063046c88340e6022bca65a4c4a8410d4e16739d07.svg)
 
 단순히 R&D/매출 비율만 비교하면 함정에 빠진다. 셀트리온의 경상연구개발비만 보면 매출 대비 5~10% 수준이고, 개발비 자산화분까지 합쳐야 실질 R&D 투자를 알 수 있다. Amgen은 R&D expense가 곧 실질 투자다.
 
@@ -183,7 +183,7 @@ IPR&D는 인수 후 프로젝트가 승인되면 확정 내용연수 무형자�
 
 ## 한미 바이오 기업 R&D 비교 체크리스트
 
-![한미 바이오 기업 R&D 비교 7개 체크포인트 대시보드](./assets/112-checklist-comparison.svg)
+![한미 바이오 기업 R&D 비교 7개 체크포인트 대시보드](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b9/b9684825085c3c6faaf2fd9a2cd81b42b74a043a8e527513d7bd6aa05ca3e041.svg)
 
 한국 바이오 기업과 미국 바이오 기업의 R&D 투자를 비교할 때, 다음 7개 항목을 순서대로 점검한다.
 

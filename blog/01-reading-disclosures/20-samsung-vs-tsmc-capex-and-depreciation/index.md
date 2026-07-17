@@ -18,7 +18,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 ---
 
-![삼성전자와 TSMC의 연간 설비투자 규모 및 매출 대비 비율 비교](./assets/110-capex-comparison.svg)
+![삼성전자와 TSMC의 연간 설비투자 규모 및 매출 대비 비율 비교](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/fc/fc245c535c60a37d6099a8b69dd90b69572256f68c38bcb0ce4e60af6a570354.svg)
 
 ## 설비투자 규모 — 절대 금액과 매출 대비 비율
 
@@ -39,7 +39,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 ## 감가상각 내용연수 — 같은 장비, 다른 속도
 
-![K-IFRS 5년 vs US-GAAP 5~7년 감가상각 내용연수 비교](./assets/110-depreciation-policy.svg)
+![K-IFRS 5년 vs US-GAAP 5~7년 감가상각 내용연수 비교](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/0b/0b82c4c205700e956b296fee30bf24e0ef5d03b04f3d5072120f0a89e5906377.svg)
 
 반도체 제조 장비의 감가상각 내용연수가 삼성전자와 TSMC에서 다르다. 이 차이가 손익계산서 숫자에 직접 영향을 준다.
 
@@ -54,7 +54,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 ## 감가상각비/매출 비율 — 마진 구조를 결정짓는 비율
 
-![삼성전자와 TSMC의 감가상각비가 마진 구조에 미치는 영향](./assets/110-margin-structure.svg)
+![삼성전자와 TSMC의 감가상각비가 마진 구조에 미치는 영향](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e0/e05127b2580814e3ffe645b71b1eb33d3241698c5008d3ddf0bd0b8d5bd416ad.svg)
 
 감가상각비가 매출에서 얼마를 차지하느냐가 반도체 회사의 원가 구조를 결정한다. 이 비율이 높을수록 고정비 레버리지가 크다는 뜻이다. 매출이 늘면 이익이 빠르게 늘고, 매출이 줄면 이익이 빠르게 줄어든다.
 
@@ -102,7 +102,7 @@ TSMC의 20-F에서는 PP&E(Property, Plant and Equipment) 주석에 같은 정�
 
 ## 공시 구조 차이 — 같은 정보를 어디서 찾는가
 
-![DART 사업보고서와 EDGAR 20-F의 설비투자 정보 위치 매핑](./assets/110-disclosure-mapping.svg)
+![DART 사업보고서와 EDGAR 20-F의 설비투자 정보 위치 매핑](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/62/625078ad691bd57dd36264dfb438137f283e4af5bfb3ebbefd34c73ba136b0c9.svg)
 
 삼성전자와 TSMC의 설비투자 관련 정보가 공시 문서 어디에 있는지를 정리하면 이렇다.
 
@@ -137,7 +137,7 @@ US-GAAP는 유형자산에 대해 **원가모형만** 허용한다. 재평가모
 
 ## 한미 반도체 설비투자 비교 체크리스트
 
-![한미 반도체 기업 설비투자 비교 7개 체크포인트 대시보드](./assets/110-checklist-comparison.svg)
+![한미 반도체 기업 설비투자 비교 7개 체크포인트 대시보드](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/aa/aaf0988096727b0f2d4a062a0f6440d06ed7dbded45019f0ccbbb602775ab647.svg)
 
 삼성전자와 TSMC 같은 한미 반도체 기업을 비교할 때, 아래 7개 항목을 순서대로 확인하면 빠짐없이 볼 수 있다.
 

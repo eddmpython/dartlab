@@ -18,7 +18,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 이 글은 건설업 사업보고서를 `수주잔고 확인 → 진행률과 매출 인식 → 미청구공사와 선수금 균형 → 원가 압박과 충당부채 → 영업현금흐름 검증` 순서로 읽는 방법을 정리한다. 기존 글에서 항목별로 깊게 다룬 내용을 건설업이라는 하나의 업종 맥락으로 묶어서, 어디서 시작해서 어디까지 확인해야 하는지를 보여준다.
 
-![건설업 사업보고서를 읽는 순서를 한 루프로 정리한 구조도](./assets/101-reading-loop.svg)
+![건설업 사업보고서를 읽는 순서를 한 루프로 정리한 구조도](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d7/d7bfe662957e82a3dc1317930e827cb94f8d7e89128f6fe7f8b171a4d1614403.svg)
 
 ---
 
@@ -32,7 +32,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 **부채의 성격이 다르다.** 건설업에서 가장 중요한 부채는 은행 차입이 아니라 **공사손실충당부채**와 **선수금(계약부채)**이다. 공사손실충당부채는 이미 적자가 확정된 프로젝트의 미래 손실을 미리 잡은 것이고, 선수금은 아직 일하지 않은 부분에 대해 먼저 받은 돈이다. 이 두 숫자의 방향이 회사의 체력을 말해준다.
 
-![같은 BS·IS 항목이 제조업과 건설업에서 다르게 읽히는 이유를 비교한 표](./assets/101-manufacturing-vs-construction.svg)
+![같은 BS·IS 항목이 제조업과 건설업에서 다르게 읽히는 이유를 비교한 표](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/99/997e0918624e80cf2bc2f5765c886177bbdf8e440039f4c02a3e51cbfa591a08.svg)
 
 ---
 
@@ -88,7 +88,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 - 미청구공사 증가, 선수금 감소, 재고·외주비 선지급이 전부 영업현금흐름에서 드러난다.
 - [영업현금흐름이 순이익을 부정할 때](/blog/operating-cash-flow-vs-net-income)의 기본 프레임이 건설업에서 가장 강하게 작동한다.
 
-![건설업에서 먼저 봐야 할 5가지 숫자와 각각의 위험 신호를 정리한 체크보드](./assets/101-five-numbers-checklist.svg)
+![건설업에서 먼저 봐야 할 5가지 숫자와 각각의 위험 신호를 정리한 체크보드](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/fe/feed7331deceafa05d7d994c07be52e53b0070ee3ba986c9953e24f09e026ca3.svg)
 
 ---
 
@@ -113,7 +113,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 - 영업현금흐름이 순이익보다 훨씬 작거나 마이너스다. 장부상 이익은 있지만 현금이 안 도는 상태다.
 - 팩토링이나 유동화로 채권을 매각해서 현금흐름을 보정하고 있다. 매출채권 팩토링과 유동화에서 이 패턴을 상세하게 다뤘다.
 
-![건강한 건설사와 위험한 건설사의 핵심 지표 비교표](./assets/101-healthy-vs-risky-matrix.svg)
+![건강한 건설사와 위험한 건설사의 핵심 지표 비교표](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a3/a37447247c88d4b81e96bbb7042548af4870f5c3825ea64f9699166bd656cb2d.svg)
 
 ---
 
@@ -160,7 +160,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 **6단계 — PF 보증과 우발부채 (5분)**
 주석에서 지급보증, PF 보증 잔액을 확인한다. 감사보고서의 핵심감사사항(KAM)에 건설계약이나 PF가 언급되는지 본다.
 
-![건설업 30분 읽기 루프를 단계별로 정리한 순서도](./assets/101-thirty-minute-loop.svg)
+![건설업 30분 읽기 루프를 단계별로 정리한 순서도](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/7b/7b9c9722e0f2323e5a313b56be5e4011b6b0a3277ff09b9709b89886b710d3d5.svg)
 
 ---
 

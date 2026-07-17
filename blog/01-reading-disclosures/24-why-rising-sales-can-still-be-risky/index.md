@@ -18,7 +18,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 이 글은 초보자도 바로 써먹을 수 있도록, 매출을 볼 때 반드시 같이 확인해야 하는 네 가지 축을 정리한다. 매출채권, 재고, 마진, 영업현금흐름을 함께 보면 성장의 질이 훨씬 더 분명해진다.
 
-![매출 성장 뒤에 숨어 있는 경고 신호를 연결한 브리지 도식](./assets/018-revenue-warning-bridge.svg)
+![매출 성장 뒤에 숨어 있는 경고 신호를 연결한 브리지 도식](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/14/146a97617d63ec7ce7d04a13ba5abd8be694271ec24f52b93f466c4bed84518f.svg)
 
 ---
 
@@ -49,7 +49,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 - 고객에게 판매를 밀어 넣고 있다
 - 인식은 빨랐지만 현금 회수는 약하다
 
-![성장과 현금 회수의 차이를 비교하는 매트릭스](./assets/018-growth-vs-cash-matrix.svg)
+![성장과 현금 회수의 차이를 비교하는 매트릭스](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d9/d97b8cd9baac19382d7570c0ea5ab8f904cb6f888148b1bb59c5a724aae6efdc.svg)
 
 | 패턴 | 해석 |
 | --- | --- |
@@ -65,7 +65,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 초보자가 자주 놓치는 점은 이거다. 재고 증가는 단순히 "앞으로 더 팔려고 준비한 것"일 수도 있지만, 반대로 "지금 잘 안 나가고 있다"는 뜻일 수도 있다.
 
-![매출, 재고, 채권이 동시에 압력을 만드는 구조를 정리한 지도](./assets/018-receivable-inventory-pressure-map.svg)
+![매출, 재고, 채권이 동시에 압력을 만드는 구조를 정리한 지도](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/fb/fbad48c5cee51824c80d451606d653532eed3746e96ebb366b93c7ac445f2c4c.svg)
 
 좋은 경우와 위험한 경우를 나눠 보면 쉽다.
 
@@ -89,7 +89,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 | 매출 증가 + 마진 하락 | 가격/원가/믹스 압력 |
 | 매출 증가 + 영업이익 정체 | 비용 구조 악화 가능성 |
 
-![외형 성장과 마진 압박이 동시에 생기는 상황을 정리한 카드](./assets/018-margin-squeeze-card.svg)
+![외형 성장과 마진 압박이 동시에 생기는 상황을 정리한 카드](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/21/217b914d0246e75fb7b90d08c67706c4d2294e04dbfc4f069522aeb887baea28.svg)
 
 ---
 
@@ -223,7 +223,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 ## 10분 체크리스트
 
-![매출 성장의 질을 빠르게 점검하는 경고 신호 체크리스트](./assets/018-warning-checklist.svg)
+![매출 성장의 질을 빠르게 점검하는 경고 신호 체크리스트](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/44/44f56db39e52976c09c3556e127290205494aaad34ba7d2f490c4de5586c87cc.svg)
 
 - 매출보다 채권이 더 빠르게 늘지 않는가
 - 재고가 같이 쌓이고 있지 않은가

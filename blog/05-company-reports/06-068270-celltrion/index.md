@@ -171,7 +171,7 @@ import HFDataLink from '$lib/components/blog/HFDataLink.svelte';
 <iframe src="https://www.youtube.com/embed/d7RUQIlimVM" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 </div>
 
-![서정진의 25년 시간선](./assets/06-seo-25year-timeline.svg)
+![서정진의 25년 시간선](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/92/923191ea51f0a55272b2221ff62de73c27c1eabbb6cf0cecc65df51865e6ecd8.svg)
 
 ## 핵심 한 줄
 
@@ -183,7 +183,7 @@ import HFDataLink from '$lib/components/blog/HFDataLink.svelte';
 
 ### 택시 운전 알바로 학비를 벌던 건국대생
 
-![1999년 넥솔 — 자본금 5천만원, 직원 6명, 인천 연수구청 7층](./assets/06-nexol-1999.svg)
+![1999년 넥솔 — 자본금 5천만원, 직원 6명, 인천 연수구청 7층](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f4/f4a7a315d02f0941883dbbf417453cbc83f96ebb26010d9372bcdeddb447aa55.svg)
 
 서정진은 1957년 10월 23일 충청북도 청주에서 태어났다. 가난한 집이었다. 흙수저라는 단어가 인터뷰에서 본인 입으로 자주 등장한다. 건국대학교 산업공학과에 진학했고, 학비를 벌기 위해 대학교 3학년 때부터 택시 운전 알바를 했다. 결혼은 그 시절에 했다. 부인은 지방 초등학교 교사였다. 매일 아침 부인을 학교까지 택시로 데려다주고, 돌아오는 길에 합승 손님을 받아 서울로 돌아왔다. 그 다음에 학교로 가서 친구들에게 운전 교습을 했다. 강사료는 시내 운전학원의 절반만 받았다. 본인 표현으로는 "가능한 모든 시간에 돈을 벌어야 했다."
 
@@ -205,7 +205,7 @@ import HFDataLink from '$lib/components/blog/HFDataLink.svelte';
 
 ### 1,500원 김밥으로 점심 — 직원 6명 월급을 위해
 
-![1999~2002 — 명동 사채, 신체포기각서, 자살 시도, 그리고 셀트리온 설립](./assets/06-myeongdong-3years.svg)
+![1999~2002 — 명동 사채, 신체포기각서, 자살 시도, 그리고 셀트리온 설립](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/de/dee1261a4bd337aa3596ca378cb11c84514ecd736d4314db5a0525763184369a.svg)
 
 회사를 세운 지 한 해도 안 돼서 돈이 떨어졌다. 5천만원 자본금은 사무실 임대료, 직원 6명 월급, 출장비로 거의 다 나갔다. 매출은 거의 없었다. IMF 직후의 한국이라서 컨설팅 일감 자체가 줄었다.
 
@@ -235,7 +235,7 @@ import HFDataLink from '$lib/components/blog/HFDataLink.svelte';
 
 이 부분은 본인이 인터뷰에서 잘 말하지 않는다. 그러나 셀트리온의 25년 중 가장 위험했고, 가장 결정적이었던 5년이다. 만약 이 5년이 다르게 끝났다면, 오늘 dartlab이 보는 매출 4조원의 회사는 존재하지 않는다.
 
-![2002 백신 → 2003 임상 실패 → 2005 BMS → 2007 바이오시밀러 — 셀트리온의 5년 피벗](./assets/06-vaxgen-bms-pivot.svg)
+![2002 백신 → 2003 임상 실패 → 2005 BMS → 2007 바이오시밀러 — 셀트리온의 5년 피벗](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/9d/9dd65d95986ef3ff8f3e8632bb034caef8c0cf5201cd0bc8ecab39936c7877f8.svg)
 
 **2002년 6월** — 서정진이 셀트리온을 세운 정확한 이유는 "바이오시밀러"가 아니었다. 그가 처음 본 사업은 **미국 백스젠(VaxGen)이 개발 중이던 에이즈 백신 '에이즈백스(AIDSVAX)'의 위탁생산(CMO)** 이었다. 셀트리온은 백스젠과 합작으로 **VCI(VaxGen-Celltrion Incorporation)** 라는 회사를 미국 샌프란시스코에 세웠고, 인천 송도에는 **5만 리터 규모의 1공장**을 짓기 시작했다. 총 투입 자금이 **2,400억원**. 5천만원으로 시작한 회사가 3년 만에 2,400억원을 동원해 공장을 짓고 있었다. 그 돈은 어디서 왔는가 — 산업은행 정책 자금, JP모간을 통한 글로벌 투자자, 그리고 한국 대기업 몇 곳의 지분 투자였다. 서정진의 베팅은 단순했다 — *"백스젠이 미국 FDA 승인을 받으면, 우리가 그 약 전 세계 물량의 위탁생산을 한다."*
 
@@ -291,7 +291,7 @@ dartlab의 셀트리온 매출 시계열에서 가장 오래된 데이터인 **2
 
 ### 공매도 잔고 206억 → 7,312억 — 1년 만에 36배
 
-![공매도 잔고 1년 만에 36배 — 206억 → 7,312억](./assets/06-shortselling-36x.svg)
+![공매도 잔고 1년 만에 36배 — 206억 → 7,312억](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ce/ce71c894ed5bf4c34489f4f505bae3659c7953c698e96b81811e2925544d4c2b.svg)
 
 램시마가 글로벌 시장에 자리잡기 시작한 2017년, 셀트리온에 다른 종류의 사건이 일어났다. **공매도 전쟁**.
 
@@ -325,7 +325,7 @@ dartlab의 셀트리온 매출 시계열에서 가장 오래된 데이터인 **2
 
 이 결정의 의미가 무엇이었는가.
 
-![내부거래 매출 1조 7,319억 → 95,856원 — 사실상 0](./assets/06-internal-revenue-zero.svg)
+![내부거래 매출 1조 7,319억 → 95,856원 — 사실상 0](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/47/477d9e8c03928ff45fcf5d309282b2e760725e377d6be3557866c854fe5105a5.svg)
 
 **첫째, 내부거래 매출이 사라졌다.** 합병 직전 2022년의 셀트리온 특수관계자 대상 내부거래 매출은 약 1조 7,319억원이었다. 셀트리온의 같은 해 매출 2조 3,000억원의 약 75%였다. 합병 직후 2023년의 같은 내부거래 매출은 **95,856원**이었다. 만원이 아니라 원이다. 1조 7,319억원이 95,856원이 됐다. 그룹 내 거래가 거의 사라졌다는 뜻이다. 이 한 줄이 5년 동안 공매도 세력이 비판해 온 회사 구조의 본질을 한 번에 해소시켰다.
 
@@ -343,7 +343,7 @@ c.select("BS", ["무형자산"], freq="Y")
 
 2022년 1.62조 → 2023년 13.34조. 한 분기 만에 11.72조원의 무형자산이 셀트리온의 BS에 들어왔다. 이게 합병의 정량적 본질이다 — 셀트리온헬스케어가 보유하던 글로벌 판권, 라이선스, 영업권, 특허권, 브랜드 가치가 회계상 셀트리온의 BS로 이동한 것이다.
 
-![셀트리온 무형자산 8.5배 — 한 결정이 만든 13.78조](./assets/06-intangible-8x.svg)
+![셀트리온 무형자산 8.5배 — 한 결정이 만든 13.78조](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b3/b36e2e3410db6a014bdd58c1adb0737e1bc47c6631731d1cadb7e4073251bfd8.svg)
 
 이게 한국 상장사 중 단일 분기 무형자산 절대값 폭증으로 가장 큰 사례 중 하나다. 같은 13.78조는 2025년 기준 셀트리온의 자산총계(22.33조)의 약 62%다. **셀트리온 자산의 절반 이상이 무형자산이라는 것**, 즉 회사의 본질이 공장과 설비가 아니라 약품 특허와 글로벌 판권이라는 것을 dartlab의 BS가 한 줄로 보여준다.
 
@@ -360,7 +360,7 @@ c.select("IS", ["매출액","영업이익"], freq="Y")
 | 매출액 | **4.16** | 3.56 | 2.18 | 2.30 | 1.91 | 1.85 |
 | 영업이익 | +1.17 | +0.49 | +0.65 | +0.66 | +0.76 | +0.72 |
 
-![셀트리온 매출 10년](./assets/06-revenue-9year.svg)
+![셀트리온 매출 10년](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/0e/0e639c7b3edae99d9b86350399c27645f596ed2d5b25fbe1405536c440d6a972.svg)
 
 표가 보여주는 가장 흥미로운 행은 매출의 2022 → 2023 변화다. **2022년 2.30조 → 2023년 2.18조 (-5%)**. 합병 직후 매출이 일시적으로 빠졌다. 이건 회사의 사업이 나빠진 게 아니다. 합병 전에 셀트리온이 셀트리온헬스케어에 약을 팔고 매출로 인식했던 부분(연간 약 1조 7천억원)이 합병 후에는 그룹 내부 거래가 되어 회계상 매출에서 제거되고, 셀트리온헬스케어가 외부 글로벌 거래처에 판 진짜 외부 매출만 셀트리온의 IS에 들어오기 때문이다. 즉 **이 -5%가 5년 공매도 전쟁의 정량적 답이었다** — 이게 회사의 진짜 외부 매출 규모였다.
 

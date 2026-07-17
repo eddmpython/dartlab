@@ -18,7 +18,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 이 글은 환율 손익과 파생상품을 `노출 통화 확인 -> 헤지 목적 확인 -> 손익 반영 위치 확인 -> 현금 여부 확인 -> 다음 기수 반복성 확인` 순서로 읽는 방법을 정리한다. 큰 그림은 [영업외손익이 본업을 가릴 때 무엇을 분리해서 봐야 하나](/blog/why-rising-sales-can-still-be-risky), 현금 검증은 [영업현금흐름이 순이익을 부정할 때](/blog/operating-cash-flow-vs-net-income), 차입과 만기 구조는 [리스부채와 차입 만기 구조는 어디서 먼저 터지나](/blog/lease-liabilities-and-debt-maturity), 숫자 전반의 착시는 [숫자만 보면 왜 자주 틀리나](/blog/beyond-the-numbers)와 같이 보면 더 선명하다.
 
-![환율 손익과 파생상품을 어떤 순서로 분리해 읽어야 하는지 정리한 구조도](./assets/051-reading-flow.svg)
+![환율 손익과 파생상품을 어떤 순서로 분리해 읽어야 하는지 정리한 구조도](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d5/d5f5ab5d40e1cc29280bbdcdd0a837b08dd059a293406c2662dfcac7c96e45a7.svg)
 
 ---
 
@@ -49,7 +49,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 세 번째는 현금이다. 파생상품 평가이익은 순이익을 좋게 만들 수 있지만 영업현금흐름을 같이 올려주지 않을 수 있다. 따라서 [영업현금흐름이 순이익을 부정할 때](/blog/operating-cash-flow-vs-net-income)와 반드시 같이 봐야 한다.
 
-![환율 손익과 파생상품 해석에 필요한 증거 레이어를 정리한 도식](./assets/051-evidence-layer.svg)
+![환율 손익과 파생상품 해석에 필요한 증거 레이어를 정리한 도식](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/5f/5f09178f7270b105a288c231a7bdc9e8e34dfb77b18b74255dd87492cdec6e8d.svg)
 
 ---
 
@@ -57,7 +57,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 가장 실용적인 질문은 이것이다. `이 손익은 자연 헤지의 결과인가, 회계상 평가 변동인가, 외화 부채 노출이 만든 부담인가`.
 
-![환율 손익과 파생상품 손익을 자연 헤지, 회계 변동, 부채 부담으로 가르는 구조도](./assets/051-decision-tree.svg)
+![환율 손익과 파생상품 손익을 자연 헤지, 회계 변동, 부채 부담으로 가르는 구조도](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c3/c3dbf683846b384dbfc10139ff2fd744a701aa4bb8f99ea949c32781f32271d7.svg)
 
 자연 헤지의 결과라면 매출 통화와 원가 통화, 외화 유입과 유출이 어느 정도 맞물려 있는지 보면 된다. 이 경우 환율이 흔들려도 구조는 상대적으로 읽기 쉽다. 회계상 평가 변동이 중심이라면 손익이 컸더라도 현금과 분리해 봐야 한다. 외화 부채 부담이 중심이면 [리스부채와 차입 만기 구조는 어디서 먼저 터지나](/blog/lease-liabilities-and-debt-maturity)와 함께 만기와 차환 능력까지 같이 읽어야 한다.
 
@@ -67,7 +67,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 ## 왜곡을 걸러내는 숫자 조합
 
-![환율 손익과 파생상품 해석에서 상대적으로 건강한 경우와 더 조심해야 하는 경우를 비교한 매트릭스](./assets/051-good-vs-risky-matrix.svg)
+![환율 손익과 파생상품 해석에서 상대적으로 건강한 경우와 더 조심해야 하는 경우를 비교한 매트릭스](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/96/9649c78d213709ca9c09262c41d61809e030963eecd1f5f7ba3c5f981f149b74.svg)
 
 | 관찰 포인트 | 상대적으로 건강한 경우 | 더 조심해야 하는 경우 |
 | --- | --- | --- |
@@ -121,7 +121,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 ## 놓치기 쉬운 예외
 
-![환율 손익과 파생상품을 읽은 뒤 다음 보고서에서 다시 봐야 할 질문을 정리한 보드](./assets/051-watchboard.svg)
+![환율 손익과 파생상품을 읽은 뒤 다음 보고서에서 다시 봐야 할 질문을 정리한 보드](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/44/44bc59cc2c3ebcc4e3b23233a7845f5c5c103415f7803003c9e810f8de2045ae.svg)
 
 | 이번에 본 것 | 다음에 다시 볼 것 |
 | --- | --- |

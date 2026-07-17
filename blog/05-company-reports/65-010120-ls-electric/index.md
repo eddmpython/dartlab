@@ -189,7 +189,7 @@ carousel:
 
 이 글은 그 구조를 **10막 전력기기 2사 대조 다큐**로 풀어낸다. HD현대일렉트릭(#08)이 "단일 제품 몰입의 자본배분"이었다면, LS ELECTRIC은 **"다품종 포트폴리오의 재평가"** — 같은 업종 두 회사의 정반대 전략.
 
-![LS ELECTRIC 10년 매출·영업이익·영업이익률 궤적 — HD현대일렉트릭(#08)과의 대조](./assets/065-opm-vs-hdelec.svg)
+![LS ELECTRIC 10년 매출·영업이익·영업이익률 궤적 — HD현대일렉트릭(#08)과의 대조](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/43/4332ff1416877f61c075179a8ac1db6d8ef755b32ad967600dd619b481ad656f.svg)
 
 ---
 
@@ -291,7 +291,7 @@ LS ELECTRIC은:
 
 2막은 사업부 구성을 보았다. 3막은 **AI 데이터센터 전력 수요**가 LS ELECTRIC의 각 사업부에 어떻게 분산 유입되는지를 본다.
 
-![LS ELECTRIC 4대 사업부 매출 믹스 — HD현대일렉트릭 단일 제품 집중과 대조](./assets/065-segments.svg)
+![LS ELECTRIC 4대 사업부 매출 믹스 — HD현대일렉트릭 단일 제품 집중과 대조](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b9/b92394b164432bb11a84748ad3c11c6b4ff26007075de027add5a2f5271b5965.svg)
 
 ![AI 데이터센터 배전실 — LS ELECTRIC 스위치기어·UPS·차단기가 공급되는 공간](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/56/5665fb78dc5d39967f12a11aecce66ca6ddfbe4a2f3b14d1bca7d6586a0a85a4.webp)
 
@@ -401,7 +401,7 @@ LS ELECTRIC 수주잔고는 2022년 말 약 2.5조 → 2024년 말 **약 4.5조*
 
 4막은 영업이익률 개선을 보았다. 5막은 **부채비율 131%**의 정체 — 왜 이렇게 높은지, 리스크인지 아닌지를 본다.
 
-![영업이익률 5.6% → 8.6% 개선 분해 — 매출총이익률 +3.5%p가 원천](./assets/065-opm-decomposition.svg)
+![영업이익률 5.6% → 8.6% 개선 분해 — 매출총이익률 +3.5%p가 원천](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/86/86ee64c5246c889ab1ce1410fe3cf58315d41e0d7724ad28a9dff5431710cc05.svg)
 
 ![LS ELECTRIC 텍사스 공장 — 2023 완공, IRA 30% 세액공제 수혜 거점](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/bc/bc74387b8c3a433346e2a2ae464ca31d29ac533713cd32400a58c9ba740302d2.webp)
 
@@ -472,7 +472,7 @@ c.select("BS", ["자산총계","유동자산","부채총계","유동부채","비
 
 5막은 부채 구조를 보았다. 6막은 **글로벌 전력기기 경쟁** — 슈나이더·ABB·지멘스와 LS의 비교를 본다.
 
-![부채 28,154억의 구성 — 선수금·매입채무 73%, 실제 차입금 18%](./assets/065-debt-structure.svg)
+![부채 28,154억의 구성 — 선수금·매입채무 73%, 실제 차입금 18%](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ee/ee8304f543bfb55cd0c4464e06a97c83eaa8b3c978f53156b033445a055899bb.svg)
 
 ---
 
@@ -521,7 +521,7 @@ LS ELECTRIC은 **LS그룹 구자은 회장 체제 하에서 비매각 방침**�
 
 6막은 글로벌 비교를 보았다. 7막은 **LS그룹 지주 구조·구자은 회장 체제**를 보고, 이 구조가 **자본배분에 어떻게 영향**을 주는지 본다.
 
-![글로벌 전력기기 5사 매출·마진 — LS ELECTRIC 위치](./assets/065-global-peers.svg)
+![글로벌 전력기기 5사 매출·마진 — LS ELECTRIC 위치](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/87/877ac9051b749b23f639c9333915598550a655e1c73d96db54c57f1ef66994fd.svg)
 
 ---
 
@@ -642,7 +642,7 @@ LS ELECTRIC은 지주사 LS의 주요 현금흐름원이라, **승계 과정에�
 
 8막은 2025 결산의 의미를 보았다. 9막은 **2026~2028 5가지 관찰 신호**로 글을 닫는다.
 
-![LS ELECTRIC 분기별 영업이익률 8~9% 안정 구간 정착](./assets/065-quarterly-opm.svg)
+![LS ELECTRIC 분기별 영업이익률 8~9% 안정 구간 정착](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/0f/0f8a4925c1e2d04a1229ab9c00baf7dd2a8b7b4864bd555da50fef69032d2c0e.svg)
 
 ---
 
@@ -678,7 +678,7 @@ LS ELECTRIC은 **"저마진 다품종 B2B 구조가 멀티테마 수혜로 재�
 
 매출 5조·영업이익 4천억·영업이익률 8.6%·부채비율 131%·순이익 2천억·시총 7조. 이 모든 숫자가 **"다품종 저마진 B2B의 멀티테마 수혜"**라는 하나의 문장으로 묶인다. 2020년 LS산전에서 LS ELECTRIC으로 사명을 바꾸며 시작된 재편이 2025~2028년 **글로벌 3사 추격**의 경로에 올랐다. 추격에 성공하면 영업이익률 두 자릿수. 실패하면 8% 고착. 그 분기점이 2026년에 있다.
 
-![2026~2028 LS ELECTRIC 관찰 5가지](./assets/065-checkpoints.svg)
+![2026~2028 LS ELECTRIC 관찰 5가지](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/62/6221c8c9846f8c75a239533ef5eaad0291b071a0336bc12047981c81b74e5b71.svg)
 
 ---
 

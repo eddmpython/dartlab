@@ -169,11 +169,11 @@ import HFDataLink from '$lib/components/blog/HFDataLink.svelte';
 
 이 글은 **"자본잠식 직전의 대우조선을 삼킨 한화오션이 3년 만에 어떻게 수주 1위로 돌아왔고, 그 흑자를 만든 것이 왜 방산이 아니라 상선이었는가"**를 9개의 장면으로 추적한다. 결론을 먼저 말하면, 한화오션은 '반전한 회사'가 아니라 '반전 중인 회사'다.
 
-![한화오션 3년의 반전 요약, 대우조선 2022에서 한화오션 2026Q1로](./assets/48-hero-map.svg)
+![한화오션 3년의 반전 요약, 대우조선 2022에서 한화오션 2026Q1로](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/fa/fa806c6e6ee835df439feb4bc2c010f0014e86464da1c56c8bda22dfd151ac07.svg)
 
 ---
 
-![한화오션 영업이익률 턴어라운드 궤적, 2021 -39%에서 2026Q1 +13.7%](./assets/48-turnaround-timeline.svg)
+![한화오션 영업이익률 턴어라운드 궤적, 2021 -39%에서 2026Q1 +13.7%](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/70/7066b2f59393a03021286618c65d546880a1841dd575962e1b813ce8980997e6.svg)
 
 ## 1막: 영업이익률 -39%에서 +13.7%로, 두 자릿수에 올라선 순간
 
@@ -261,7 +261,7 @@ c.select("ratios", ["매출원가율 (%)"])
 
 ---
 
-![한화오션 자본잠식 직전에서 결손 해소까지, 자본총계와 이익잉여금](./assets/48-capital-recovery.svg)
+![한화오션 자본잠식 직전에서 결손 해소까지, 자본총계와 이익잉여금](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/31/31574f4806535ad30419bf67fcc05a1649d00420e42d13d0b611f4ab896ee55e.svg)
 
 ## 3막: 유상증자가 아니라 무엇이 흑자를 만들었나
 
@@ -301,7 +301,7 @@ c.select("BS", ["자산총계","부채총계","자본총계","현금및현금성
 
 ---
 
-![한화오션 수주 점유율 반전, 2023년 5.2%에서 2025년 30.9%로 국내 1위](./assets/48-orderbook-share.svg)
+![한화오션 수주 점유율 반전, 2023년 5.2%에서 2025년 30.9%로 국내 1위](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b0/b0c31cf65da7af4d0e3efe483d2ae73f462997d0962b41bdfbf7c2c374c1812c.svg)
 
 ## 4막: 꼴찌에서 국내 1위로, 3년 만에 점유율 6배
 
@@ -339,7 +339,7 @@ c.select("BS", ["자산총계","부채총계","자본총계","현금및현금성
 
 ---
 
-![조선 4사 2026Q1 비교, 영업이익률과 재무 체력](./assets/48-peer-compare.svg)
+![조선 4사 2026Q1 비교, 영업이익률과 재무 체력](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c1/c1f7cd42240c9785c5847f76ef99b70148eb588b5e4b4db6012eebfe899d4523.svg)
 
 ## 5막: 조선 빅3와 대한조선, 같은 사이클 다른 체질
 
@@ -378,7 +378,7 @@ rev = c.analysis("financial", "수익구조")
 # 2025 사업보고서 세그먼트: 상선 82.3%, 해양·특수선 15.9%, E&I 6.4%
 ```
 
-![한화오션 매출 구조, 상선 82%와 방산(해양·특수선) 16%](./assets/48-segment-split.svg)
+![한화오션 매출 구조, 상선 82%와 방산(해양·특수선) 16%](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b6/b62014bab22b5ae0fbe5b768f6ab2d04bb62d949e94a1e1cb67fd33ef22988f9.svg)
 
 | 사업부문 (2025, 조원) | 매출 | 비중 | 특징 |
 |:---|---:|---:|:---|
@@ -469,7 +469,7 @@ rev = c.analysis("financial", "수익구조")
 
 ---
 
-![한화오션 재무 회복 대시보드, 부채와 상환 능력](./assets/48-debt-recovery.svg)
+![한화오션 재무 회복 대시보드, 부채와 상환 능력](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/49/49461f8fcc88c3c6de44c0b7ee4d7f38c953552797504f2f5ebe96d5e26a2e77.svg)
 
 ## 9막: 이 반전이 무너지려면 무엇이 필요한가
 
@@ -505,7 +505,7 @@ dartlab 종합평가는 몇 가지 회계 신호도 켠다. 매출채권 증가 
 
 ### 2026~2027년에 봐야 할 네 줄
 
-![한화오션 투자 체크포인트](./assets/48-checklist.svg)
+![한화오션 투자 체크포인트](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ca/ca9b42a0d0e2d9d60ed90abc3aaae8c74877cb54f8f1c435421501521f1e822a.svg)
 
 1. **상선 잔고의 이익 착지** ~ 매출원가율 80% 초반이 유지되며 잔고 26조가 이익으로 바뀌는지. 이것이 반전의 지속성.
 2. **특수선 손익 전환** ~ 내수 저마진 특수선이 흑자로 돌아서는 시점. KDDX 공정이 본격화되는 2028년 전까지는 고정비 부담이 크다.

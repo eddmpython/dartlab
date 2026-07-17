@@ -162,7 +162,7 @@ import HFDataLink from '$lib/components/blog/HFDataLink.svelte';
 
 ---
 
-![카카오 핵심 구조 — 3,000만 DAU를 자회사 수십 개로 수익화한 구조가 영업이익률 한 자릿수의 원인](./assets/43-hero-map.svg)
+![카카오 핵심 구조 — 3,000만 DAU를 자회사 수십 개로 수익화한 구조가 영업이익률 한 자릿수의 원인](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/65/650091d8ffb4ffb9192f0f4ffea20979da87336c6ad86a2847677e5d709d462f.svg)
 
 ## 1막: 매일 3,000만 명이 여는 앱 — 매출 2.4조에서 8.1조
 
@@ -208,7 +208,7 @@ c.select("IS", ["매출액","매출원가","매출총이익","판매비와관리
 
 왜 카카오는 네이버처럼 하나의 플랫폼 안에서 수익화하지 않고 자회사를 만들었을까. [카카오 사업보고서](https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20250318000747)를 열면 연결대상 종속회사 목록이 100개를 넘긴다.
 
-![카카오 자회사 확장 구조 — 트래픽 독점, 마진 분산](./assets/43-subsidiary-structure.svg)
+![카카오 자회사 확장 구조 — 트래픽 독점, 마진 분산](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/3a/3ad1cc0e1a799fe39224a349cf3b306729fc9bf0c6b7e0c400fa287c5f5f6ded.svg)
 
 ### 연결자회사 100개 이상 — "카카오" 이름이 붙은 회사만 수십 개
 
@@ -243,7 +243,7 @@ prof["marginWaterfall"]["history"][0]
 
 왜 정점이었던 2020년 이후 영업이익률이 반토막 났을까. 매출은 계속 늘었는데 마진만 줄어든 4년을 분기별로 쪼개 보면 원인이 명확하다.
 
-![영업이익률 8년 시계열 — 영업이익률 11.1% 정점에서 5.8% 바닥까지](./assets/43-opm-timeline.svg)
+![영업이익률 8년 시계열 — 영업이익률 11.1% 정점에서 5.8% 바닥까지](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/38/38bbba3a7fab158c8e6a536aceffd5ed1cbd6ddfca3157c510922fcae2b5b604.svg)
 
 ### 2020년 영업이익률 11.1% — 코로나가 만든 착시 정점
 
@@ -389,7 +389,7 @@ dartlab 신용등급 dCR-AA, 건강점수 84. [삼성바이오로직스](/blog/2
 
 왜 3,000만 DAU를 독점한 회사의 영업이익률이 네이버의 절반에 머무는가. 이것이 구조적 한계인지, 아니면 자회사 정리 후 개선 가능한 것인지 판단해야 한다.
 
-![네이버 vs 카카오 비교 매트릭스 — 같은 플랫폼인데 영업이익률이 2배 차이](./assets/43-naver-comparison.svg)
+![네이버 vs 카카오 비교 매트릭스 — 같은 플랫폼인데 영업이익률이 2배 차이](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/5c/5cef27d7c7be39cd6982c6f42711005954bd7cc2d7cb72d33752c11598113f9a.svg)
 
 ### 자기자본수익률 3.4% — 자본 대비 수익률이 은행 예금 수준
 
@@ -416,7 +416,7 @@ prof["penmanDecomposition"]["history"]
 
 2025년 영업이익률 9.0%는 "회복"이라 부르기 어렵다. 2020년 정점(11.1%)에서 2024년 바닥(5.8%)까지 떨어진 후 반등한 것이지, 장기 추세선에서 보면 2021년(9.9%)과 비슷한 수준이다. 매출이 5.91조에서 8.10조로 37% 성장하는 동안 영업이익률은 거의 같다.
 
-![2026년 체크포인트 — 영업이익률 10% 돌파 여부를 판단하는 5가지 지표](./assets/43-checkpoint.svg)
+![2026년 체크포인트 — 영업이익률 10% 돌파 여부를 판단하는 5가지 지표](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/3d/3d6a76fe443ebe8d98d2bd757aea543b20fa11925a206c625777cede37387999.svg)
 
 ### 판단 — 트래픽은 독점이지만 마진은 독점이 아니다
 

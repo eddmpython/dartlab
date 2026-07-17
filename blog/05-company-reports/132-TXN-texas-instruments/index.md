@@ -44,7 +44,7 @@ import StackBar from '$lib/components/blog/StackBar.svelte';
 
 그런데 같은 두 해, 회사가 빚을 갚고 배당을 주고 자사주를 사는 데 자유롭게 쓸 수 있는 현금(잉여현금흐름)은 **5.49B에서 1.35B로 4분의 1 수준으로 쪼그라들었다.** 약 75%가 증발했다.
 
-![영업현금흐름은 거의 같은데 잉여현금흐름만 4분의 1로 — 사라진 약 4B는 어디로 갔나](./assets/132-ocf-vs-fcf.svg)
+![영업현금흐름은 거의 같은데 잉여현금흐름만 4분의 1로 — 사라진 약 4B는 어디로 갔나](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ef/efd6dc7f48643b741d7b89435cae28a41b73d04969cdc73abcc4348e0472a938.svg)
 
 사라진 약 4B는 어디로 갔을까. 답은 단순하다 — 전부 공장을 짓는 데(capex) 들어갔다. capex가 0.65B에서 5.07B로 늘었고, FCF가 빠진 만큼이 거의 그대로 그 자리에 있었다.
 
@@ -109,7 +109,7 @@ c.select("IS", ["매출액"], freq="Q")  # capex/매출 계산용
 
 2020년만 해도 TI는 매출의 **4.5%**만 설비에 썼다. 2023년엔 그 비율이 **약 29%**로, 2020년 기준 6배가 넘게 뛰었다. 반도체 회사가 한 해 버는 돈의 3분의 1 가까이를 땅 파고 클린룸 짓는 데 쏟아붓는다는 뜻이다.
 
-![매출의 4.5%였던 설비투자가 2023년 약 29%로 — 2020년 기준 6배 넘게 뛰었다](./assets/132-capex-surge.svg)
+![매출의 4.5%였던 설비투자가 2023년 약 29%로 — 2020년 기준 6배 넘게 뛰었다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ac/ac412d31c7934bd42d48d0d33be96f0a13fa61f47891a2180aabab40bb45772a.svg)
 
 FCF 감소분(약 4.14B)이 capex 증가분(약 4.42B)과 거의 일치하는 건 우연이 아니라 *정의상의 분해*다(FCF = OCF − capex). 그래서 'capex가 FCF를 끌어내렸다'는 기계적 인과로 단정해도 안전하다. 다만 그 capex 결정이 *옳았는지*는 수치 밖의 판단이다 — '의도된 선충전'이라는 형용사는 붙이지 않고, 그 돈이 어디로 향하는지만 다음 막에서 외부 자료로 본다.
 
@@ -121,7 +121,7 @@ FCF 감소분(약 4.14B)이 capex 증가분(약 4.42B)과 거의 일치하는 �
 
 TI의 IR·10-K는 이 capex가 향하는 곳을 밝힌다 — 텍사스 셔먼(SM1~SM4, 최대 4개 연결형 300mm 팹, 잠재투자 약 400억 달러), 유타 리하이(LFAB, 마이크론에서 인수)·리처드슨(RFAB2) [외부 인용·[TI 60억 달러 미국 투자](https://www.ti.com/about-ti/newsroom/news-releases/2025/texas-instruments-plans-to-invest-more-than--60-billion-to-manufacture-billions-of-foundational-semiconductors-in-the-us.html)]. 2030년까지 웨이퍼의 95% 이상을 사내에서, 그중 80% 이상을 300mm로 만든다는 목표다. 2024년 12월엔 CHIPS법에 따라 최대 16억 달러 직접 보조금 계약을 맺었고, 25% 투자세액공제(ITC)로 약 60~80억 달러를 추정한다 [외부 인용·[TI CHIPS법 보조금](https://www.ti.com/about-ti/newsroom/news-releases/2024/2024-12-20-texas-instruments-announces-award-agreement-for-chips-and-science-act-funding.html)].
 
-![영업현금흐름은 빚·배당이 아니라 신규 팹(capex)으로 흘러 잉여현금을 비웠다](./assets/132-cash-flow-map.svg)
+![영업현금흐름은 빚·배당이 아니라 신규 팹(capex)으로 흘러 잉여현금을 비웠다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/cd/cd1ba83a63db3cc53f80f63197cea9ebeb9760eac77b7777b981b011a1af508e.svg)
 
 여기서 단정의 선을 지킨다. 검증수치(회사 전체 capex)는 개별 팹 투자로 분해되지 않으므로, 'capex의 몇 %가 외주 회수이고 몇 %가 신규 수요 대응 증설인가'를 구분할 수 없다. '공격(신수요)이냐 회귀(수직통합)냐'는 둘 다 섞여 있을 개연성이 높아 단정하지 않는다. 또 외부 IR의 '600억 달러·400억 달러'는 *장기 잠재치*이지, 2021~2025년 실제 capex 누계(약 19.7B = 약 197억 달러)와 같은 줄에 더하거나 비교하지 않는다 — 단위($B vs 억 달러)도 기간(확정 실적 vs 장기 발표)도 다르다. CHIPS 보조금도 2024년 12월 계약된 미래 현금이라 2025년 FCF(2.60B)엔 거의 반영되지 않았다 — '잠재 완충'으로만 둔다.
 
@@ -143,7 +143,7 @@ c.select("IS", ["매출액", "영업이익", "당기순이익"], freq="Q")
 
 2022년 TI는 매출 100원당 영업이익 50.6원을 남겼다 — 제조업에서 보기 드문 황금기였다. 그런데 2024~2025년엔 34원대로 약 16%포인트 주저앉았고, 순이익은 8.71B에서 4.97B로 약 43% 줄었다. **'엔진은 멀쩡한데 FCF만'이라는 깔끔한 대조는, 영업이익·순이익이 함께 깎였다는 이 사실을 가린다.**
 
-![영업이익률 50.6%(2022)→34.1%(2025), 순이익 약 43% 감소 — 현금은 버텨도 이익은 빠졌다](./assets/132-margin-ceiling.svg)
+![영업이익률 50.6%(2022)→34.1%(2025), 순이익 약 43% 감소 — 현금은 버텨도 이익은 빠졌다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f0/f0b1b7247d955c161aebc3791d7290d811f836ebc648e69c33cb6312b35b5bb7.svg)
 
 여기서 인과를 단정하지 않는다. 2020년(매출 14.46B, OPM 40.8%)과 2024년(매출 15.64B, OPM 34.9%)을 비교하면 *매출은 더 큰데 OPM은 더 낮다.* 단순 매출 사이클만으로는 이 추가 하락이 설명되지 않아 '신규 팹 감가상각 부담' 가설이 매력적이다. 하지만 그게 감가상각인지·사이클 디레버리지인지·믹스 악화인지는 데이터로 구분할 수 없다 — '~로 보인다/정합한다'까지만 쓴다. 또 아날로그 78%·임베디드 16%라는 세그먼트 구성비(10-K)는 매출 비중일 뿐, 세그먼트 영업이익은 안 나오므로 'OPM 하락이 어느 세그먼트에서 왔다'고 귀속하지 않는다.
 
@@ -159,7 +159,7 @@ c.select("IS", ["매출액"], freq="Q")  # 2024~2025 재레버리지
 
 매출은 2024년 15.64B에서 2025년 17.68B로 재레버리지됐다. '매출이 회복되면 capex가 정상화되고 FCF가 돌아온다'는 시나리오대로라면, 이쯤에서 capex/매출이 평상(10% 미만)으로 내려오고 FCF가 추세(5B+)로 복원돼야 한다.
 
-![매출은 재레버리지됐는데 capex/매출은 25.7%·FCF는 2.60B — 복원은 미실현](./assets/132-checkpoints.svg)
+![매출은 재레버리지됐는데 capex/매출은 25.7%·FCF는 2.60B — 복원은 미실현](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e1/e196141743cbe2ab829efd2f4205ffa6fdd244a8ab77a476db03cbcb454c298f.svg)
 
 그런데 2025년 capex/매출은 **25.7%**로 여전히 평상의 3배 가까이, FCF는 **2.60B**로 5B+ 추세에 한참 못 미친다. 2019~2025년 어느 해도 capex/매출이 10% 미만으로 복귀하지 않았다(2021년 이후 13.4→14.0→28.9→30.8→25.7%). 즉 '선투자가 끝나고 정상화된다'는 약속은 *2025년 데이터로 아직 실현되지 않았다.* 이 관통선의 승부는 2026년 이후 capex/매출이 정말 내려오는지로 미뤄진 미결 상태다.
 

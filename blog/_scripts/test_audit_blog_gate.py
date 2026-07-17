@@ -240,7 +240,7 @@ def _write_tech_post(root: Path, *, brief_score: int = 94) -> Path:
     files = {f"blog/08-tech-story/01-stealth-test/assets/{assetKey}.webp": sha256 for assetKey in assetKeys}
     files["landing/static/thumbnails/tech-stealth-test.webp"] = sha256
     media = {
-        "version": 3,
+        "version": 4,
         "repo": "eddmpython/dartlab-media",
         "objectPrefix": "objects/sha256",
         "collections": {},

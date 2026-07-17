@@ -152,7 +152,7 @@ import HFDataLink from '$lib/components/blog/HFDataLink.svelte';
 
 # 제1막: "매출 $79B에서 $53B" — 반도체 왕좌에서 떨어지다
 
-![매출 추이](./assets/33-revenue-decline.svg)
+![매출 추이](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/44/44c99a5cfeacb76ba9c319cacae2c641cb28035ff391b7d9135990a8b2d99b73.svg)
 
 ### 반도체를 발명한 회사
 
@@ -255,7 +255,7 @@ c.select("IS", ["income_tax_expense"])
 
 # 제3막: "연구비가 이익을 다 먹는다" — R&D $16.5B의 무게
 
-![R&D vs 매출총이익](./assets/33-rd-vs-gp.svg)
+![R&D vs 매출총이익](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/3c/3c5b6779670df6247870c2daf72301f9d3ebb1a4839feb2179c05d3359534125.svg)
 
 ### 매출총이익 $17.3B vs R&D $16.5B
 
@@ -356,7 +356,7 @@ Intel이 파운드리에서 승부를 걸 수 있는 유일한 카드가 **18A(1
 
 # 제5막: "배당 92% 삭감 후 중단" — 현금이 마른다
 
-![배당 삭감 궤적](./assets/33-dividend-cut.svg)
+![배당 삭감 궤적](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/3a/3a2da83a6bfab38980db52180fd1b9ec06a2b6ac75dc9c632123cda0dd2a01db.svg)
 
 ### 잉여현금흐름(잉여현금흐름) — 3년 연속 마이너스
 
@@ -501,7 +501,7 @@ Fab 34를 되산 것은, 수율 개선에 자신이 붙었다는 의미일 수 �
 
 ### 시총 $313B — 어디에 위치하는가
 
-![시총 비교](./assets/33-market-cap-comparison.svg)
+![시총 비교](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/eb/eb82d8547a5b8938d1f157297ce493462e5fe2f8284446b534198b93cf38a52e.svg)
 
 2026년 4월 기준 Intel 시가총액 약 $313B(약 420조원). 거대한 금액이다. 그런데 반도체 동종사와 비교하면 작다.
 
@@ -564,7 +564,7 @@ c.panel("IS")  # 가장 최근 실적 확인
 
 ### "포기하지 않겠다"의 비용
 
-![Intel 전략 요약](./assets/33-intel-strategy-summary.svg)
+![Intel 전략 요약](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/10/10adccb309ccc96cacc19f15d5a381c6dcd2a27d064ddcaf33ea3dedec673f4f.svg)
 
 Intel의 재무제표를 8막에 걸쳐 뜯어봤다. 정리하면 이렇다.
 

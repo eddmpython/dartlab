@@ -122,7 +122,7 @@ import StackBar from '$lib/components/blog/StackBar.svelte';
 
 2020년 스타벅스는 매장 문을 닫아서 영업이익이 **$1.56B**까지 주저앉았다. 그건 누구나 아는 위기다. 그런데 5년 뒤, 매장은 그 어느 때보다 많이 팔았고 매출은 사상 최대 **$37.18B**에 닿았는데 — 영업이익은 다시 **$2.94B**로, 그 코로나 해의 *두 배가 채 안 되는* 자리(1.88배)에 떨어졌다.
 
-![문 닫아 무너진 해(2020)보다 가장 많이 팔고 무너진 해(2025)가 더 이상하다](./assets/109-torn-year.svg)
+![문 닫아 무너진 해(2020)보다 가장 많이 팔고 무너진 해(2025)가 더 이상하다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/50/507398da4192b6f565dbdcf9cbf13d303d13bf60aa8ab9b6ab5ba9b016e20d73.svg)
 
 문을 닫아서 무너진 해와, 가장 많이 팔고도 무너진 해. dartlab 연결 손익이 단독으로 증명하는 것은 *후자가 더 이상한 사건*이라는 사실 하나다. 나머지 '왜'는 전부 회사 바깥의 이야기이고, 이 글은 그 경계를 섞지 않는다.
 
@@ -175,7 +175,7 @@ c.select("CF", ["영업활동현금흐름"], freq="Q")
 
 FY2025 발표(외부 인용)에서 스타벅스는 OPM 하락을 직접 항목별로 분해해 제시했다 — 매출 디레버리지, 구조조정 비용, 'Back to Starbucks' 노동 투자, 인플레이션. 북미 세그먼트는 영업이익이 크게 줄고 OPM이 수백 bp 빠진 *진앙*으로 지목됐다(외부 인용).
 
-![연결이 증명하는 평면(손익)과 회사가 설명하는 평면(세그먼트·bp)은 다른 면이다](./assets/109-two-planes.svg)
+![연결이 증명하는 평면(손익)과 회사가 설명하는 평면(세그먼트·bp)은 다른 면이다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/01/0114fc26ba0116fe2230b479a5b31a314818d2d9402b38d6cf227c3c706d2433.svg)
 
 그러나 이 숫자는 단 한 줄도 dartlab 연결 손익에 없다. 세그먼트 합이 연결과 어떻게 이어지는지도 검증 수치에 없다. 그래서 이 막부터의 모든 항목은 *'외부 인용'* 박스 안에 두고, 내부가 증명한 1막과 같은 톤에 섞지 않는다. 결정적으로 — 회사가 보고한 북미 약세를 연결 OPM 7.9% 붕괴의 '원인'으로 곧장 이어 쓰지 않는다. '연결 붕괴와 회사가 보고한 북미 약세는 *양립한다*'까지만이다(세그먼트→연결 연결 관계가 검증 수치 밖이므로). 거래건수 감소도 그 자체로는 거래건수라는 사실이지, '경험 가치가 떨어졌다' 같은 정성 서사로 번역하지 않는다.
 
@@ -199,7 +199,7 @@ FY2025 발표(외부 인용)에서 스타벅스는 OPM 하락을 직접 항목�
 
 고객이 기프트카드·앱에 미리 충전한 금액과 로열티 잔액은 무이자 부채(이연수익)다 — 외부 인용 기준 FY2024 약 **$1,718.7M**, FY2023 약 $1,567.5M이다. 회사가 돈을 받아 두고 나중에 커피로 갚는, 사실상 무이자로 굴리는 '예수금'이라 *'커피 파는 은행'*이라는 비유가 붙는다(언론의 2차 해석).
 
-![float는 BS·이연수익 평면 — 손익(2025 마진 붕괴)과 다른 면에 있다](./assets/109-float-plane.svg)
+![float는 BS·이연수익 평면 — 손익(2025 마진 붕괴)과 다른 면에 있다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/43/4345261416409ad2ac937d37663fdb5c7c0673f3931e63392680517b596f1e0a.svg)
 
 ![미리 충전된 카드 잔액 — 무이자로 굴리는 예수금(float), 단 손익이 아니다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a1/a1fd7e2a3ba3b9ca55d8562152490b1afa5fe09317d24f46e28518b291d63374.webp)
 
@@ -225,7 +225,7 @@ FY2025 발표(외부 인용)에서 스타벅스는 OPM 하락을 직접 항목�
 4. **중국 사업 지분 매각 종결 후 연결 변화** — 매각(외부 인용)이 연결 매출·영업이익 라인에 어떻게 반영되는지.
 5. **영업현금흐름의 방향** — 2025년 $4.75B(−22%)가 마진 회복 없이도 반등하는지, 손익 약세가 현금 평면에서 지속되는지.
 
-![스타벅스 — 2026년에 봐야 할 다섯 가지](./assets/109-checkpoints.svg)
+![스타벅스 — 2026년에 봐야 할 다섯 가지](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d4/d4b3c59c1daacdc913e17fe5930bc0364f964c78edba6fe763a6e96d1bdfc7fd.svg)
 
 ---
 

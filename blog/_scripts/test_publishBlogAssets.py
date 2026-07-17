@@ -29,7 +29,14 @@ def writePost(root: Path) -> Path:
     assetsDir = postDir / "assets"
     assetsDir.mkdir(parents=True)
     (assetsDir / "hero-scene.webp").write_bytes(b"hero")
-    (assetsDir / "CREDITS.md").write_text("- hero-scene: 생성 이미지\n", encoding="utf-8")
+    (assetsDir / "mechanism-map.svg").write_text(
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 40"><text x="4" y="20">원리</text></svg>',
+        encoding="utf-8",
+    )
+    (assetsDir / "CREDITS.md").write_text(
+        "- hero-scene: 생성 이미지\n- mechanism-map.svg: 프로젝트 제작 도해\n",
+        encoding="utf-8",
+    )
     (postDir / "brief.json").write_text(
         json.dumps(
             {
@@ -43,7 +50,8 @@ def writePost(root: Path) -> Path:
         encoding="utf-8",
     )
     (postDir / "index.md").write_text(
-        "---\nogImage: /thumbnails/tech-hf-only.webp\n---\n\n![hero](./assets/hero-scene.webp)\n",
+        "---\nogImage: /thumbnails/tech-hf-only.webp\n---\n\n"
+        "![hero](./assets/hero-scene.webp)\n\n![원리](./assets/mechanism-map.svg)\n",
         encoding="utf-8",
     )
     thumbDir = root / "landing" / "static" / "thumbnails"
@@ -63,19 +71,26 @@ def test_publish_assets_uploads_hashed_media_and_rewrites_refs(monkeypatch, tmp_
     heroSha = hashlib.sha256(b"hero").hexdigest()
     ogSha = hashlib.sha256(b"og").hexdigest()
     cardSha = hashlib.sha256(b"card").hexdigest()
+    svgBytes = (postDir / "assets" / "mechanism-map.svg").read_bytes()
+    svgSha = hashlib.sha256(svgBytes).hexdigest()
     heroPath = f"objects/sha256/{heroSha[:2]}/{heroSha}.webp"
     ogPath = f"objects/sha256/{ogSha[:2]}/{ogSha}.webp"
     assert manifest["assets"]["hero-scene"]["path"] == heroPath
     assert manifest["og"]["path"] == ogPath
     assert manifest["card"]["path"] == f"objects/sha256/{cardSha[:2]}/{cardSha}.webp"
+    assert manifest["diagrams"]["mechanism-map"]["path"] == f"objects/sha256/{svgSha[:2]}/{svgSha}.svg"
     assert len(api.commits) == 1
-    assert len(api.commits[0]["operations"]) == 3
+    assert len(api.commits[0]["operations"]) == 4
     saved = json.loads((tmp_path / "media" / "catalog.json").read_text(encoding="utf-8"))
     assert saved["posts"]["08-tech-story/01-hf-only"]["assets"]["hero-scene"].endswith("hero-scene.webp")
-    assert set(saved["objects"]) == {heroSha, ogSha, cardSha}
+    assert saved["posts"]["08-tech-story/01-hf-only"]["diagrams"]["mechanism-map"].endswith("mechanism-map.svg")
+    assert saved["objects"][svgSha]["mediaType"] == "image/svg+xml"
+    assert saved["objects"][svgSha]["textNodes"] == 1
+    assert set(saved["objects"]) == {heroSha, ogSha, cardSha, svgSha}
     body = (postDir / "index.md").read_text(encoding="utf-8")
     assert "./assets/hero-scene.webp" not in body
     assert heroPath in body
+    assert f"objects/sha256/{svgSha[:2]}/{svgSha}.svg" in body
     assert f"ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/{ogPath}" in body
     assert f"objects/sha256/{cardSha[:2]}/{cardSha}.webp" in body
 
@@ -95,6 +110,7 @@ def test_publish_assets_is_idempotent_without_local_staging(monkeypatch, tmp_pat
     postDir = writePost(tmp_path)
     publisher.publishAssets(postDir, api=FakeApi())
     (postDir / "assets" / "hero-scene.webp").unlink()
+    (postDir / "assets" / "mechanism-map.svg").unlink()
     (tmp_path / "landing" / "static" / "thumbnails" / "tech-hf-only.webp").unlink()
     (tmp_path / "landing" / "static" / "thumbnails" / "tech-hf-only-card.webp").unlink()
     api = FakeApi(exists=True)
@@ -112,5 +128,5 @@ def test_verify_remote_assets_fails_closed(monkeypatch, tmp_path: Path) -> None:
 
     errors = publisher.verifyRemoteAssets(postDir, api=FakeApi(exists=False))
 
-    assert len(errors) == 3
+    assert len(errors) == 4
     assert all("HF 미디어 없음" in error for error in errors)

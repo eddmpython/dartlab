@@ -158,7 +158,7 @@ c.select("CF", ["영업활동현금흐름"], freq="Y")
 
 답의 실마리는 이 회사가 무엇으로 돈을 버는지에 있다. 제조도, 소매도 아닌 **중개(trading)**다. 상품을 사서 더 비싸게 파는 전형적 상사 비즈니스. 이 구조에서는 매출이 커도 마진은 작고, 운전자본(매출채권·재고)이 커질수록 현금이 빠진다. 현대코퍼레이션의 2025년 재무제표는 그 구조의 교과서적 모습이다.
 
-![영업이익률 비교 — 상사업 4사](./assets/24-opm-vs-peers.svg)
+![영업이익률 비교 — 상사업 4사](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/76/766eba8d7905d8003804bb663ff421b29585af0f83d138603f722003f1c7ffb1.svg)
 
 그러면 왜 이 회사는 이 구조에 갇혀 있는가? 답은 정몽혁 회장의 조용한 선택에 있다.
 
@@ -206,7 +206,7 @@ c.select("CF", ["영업활동현금흐름"], freq="Y")
 
 ![자원 개발 현장](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/9c/9c16b97528fa138cd08ec4a9c7858fb3872f21cdd65a19983bea256327676e2a.webp)
 
-![사업 구조 — 2025 연결 매출 구성](./assets/24-business-mix.svg)
+![사업 구조 — 2025 연결 매출 구성](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c9/c921d26c49e679121a142fb5cf19a0ee835a8f2f82fa5979abf7aac363271402.svg)
 
 ### 무역 매출 40% vs 자원 영업이익 50%+ — 이익의 진짜 출처
 
@@ -326,9 +326,9 @@ c.panel("ratios")
 
 ## 제4막: 영업이익률 1.85%의 해부 — 영업CF -2,947억의 진짜 의미
 
-![이익 구성 — 무역 vs 자원](./assets/24-profit-mix.svg)
+![이익 구성 — 무역 vs 자원](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/96/96dabffcb2d08d4645b2bbd791b206bf9f016e7e89854717dc22f8d13365b1a6.svg)
 
-![현금흐름 역설 — 이익은 있는데 현금은 없다](./assets/24-cash-flow-paradox.svg)
+![현금흐름 역설 — 이익은 있는데 현금은 없다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f7/f7ca9c1468158a1c281b3c597761ed77bf8a817e807d78810701222b785dcda0.svg)
 
 ### 상사 4사 영업이익률 비교 — 매출은 중위인데 마진은 최하위
 
@@ -383,7 +383,7 @@ c.analysis("financial", "안정성")
 
 ---
 
-![현대코퍼레이션 47년 전환 로드맵](./assets/24-transition-roadmap.svg)
+![현대코퍼레이션 47년 전환 로드맵](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/26/2613b30bba293ab73692e1f49225db32cb225796e182c8541b331a6a71ecf01d.svg)
 
 ## 제5막: 자원 사이클의 다음 파동 — 작가 판단
 

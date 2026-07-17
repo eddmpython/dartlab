@@ -161,7 +161,7 @@ c.analysis("financial", "수익성")
 
 아니다. **답은 2025년 4월 22일에 있다. 유심(USIM) 해킹.** 전 국민의 절반인 2,500만 명의 유심 정보가 유출됐다. 그리고 그 사건 하나가, 8년간 지켜져 온 10% 영업이익률 공식을 한 해 만에 무너뜨렸다.
 
-![영업이익률 붕괴](./assets/22-opm-fall.svg)
+![영업이익률 붕괴](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/7c/7c17b0522d38ea195b6ac507103c048b3841028c810c48475eb47e3ae74cb0c4.svg)
 
 이 글은 세 가지를 추적한다. 첫째, SKT는 어떻게 8년간 영업이익률 10%를 지켰는가(1막). 둘째, 해킹 한 번이 재무제표에 어떻게 찍혔는가(2~3막). 셋째, 이 회사는 고배당주인가, AI 전환주인가 — 정체성의 갈림길(4~5막).
 
@@ -225,7 +225,7 @@ SKT는 2018년부터 분기배당을 시작했다. 그리고 배당성향을 공
 | KT | 6% 내외 | 통신 + BC카드·부동산·유선 등 다각화 |
 | LGU+ | 6% 내외 | 통신 + 알뜰폰·IDC |
 
-![통신 3사 영업이익률 비교](./assets/22-telco-compare.svg)
+![통신 3사 영업이익률 비교](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/84/84cbce614013b41cc04253d378052ed1ad32c9c07cdfbc80e5203b0815173c21.svg)
 
 왜 SKT가 높을까? 크게 세 가지 이유다.
 
@@ -247,7 +247,7 @@ SKT는 2018년부터 분기배당을 시작했다. 그리고 배당성향을 공
 
 ![해킹](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/be/be3b6ecebb77cb2501be336b87764685a3f3bfb5ed1ee28b9602d77a70cd582e.webp)
 
-![해킹 피해 규모](./assets/22-hacking-cost.svg)
+![해킹 피해 규모](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ea/ea0d9fcb12ca444ddcfc76c38073a78ec1a942e4e707ddc33964c24088d0fc72.svg)
 
 2025년 4월 22일 화요일 저녁, SK텔레콤이 긴급 보도자료를 냈다.
 
@@ -310,7 +310,7 @@ c.panel("IS", period=["2023", "2024", "2025"])
 
 ## 3막: ROCE 10%→4%, 배당 143%→0% — 8년 구조가 무너지는 소리
 
-![배당 붕괴](./assets/22-dividend.svg)
+![배당 붕괴](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/fd/fd885b8627f85980fd27a7af1aa4d59cbd5271f601a511079a181ecf10b643c0.svg)
 
 ### 배당성향 143% → 사실상 0%
 
@@ -420,7 +420,7 @@ SKT의 전략은 다르다. **로컬라이제이션 + B2B + 통신 결합**이�
 
 ### 문제: 배당과 설비투자의 구조적 충돌
 
-![설비투자 사이클의 함정](./assets/22-capex-cycle.svg)
+![설비투자 사이클의 함정](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d4/d464c319a0d26328a56aaed2f61b4f2b9d8b45b6fec7eae5e7f6962e5d2f80b8.svg)
 
 여기서 결정적 모순이 발생한다. **AI로 전환하려면 설비투자가 다시 늘어야 한다. 그런데 설비투자가 늘면 배당이 줄어든다.** 
 

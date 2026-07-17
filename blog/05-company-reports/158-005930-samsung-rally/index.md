@@ -60,7 +60,7 @@ ai:
 
 이 한 문장이 랠리의 본체다. 시장은 삼성전자를 스마트폰 회사로 사는 것이 아니다. 2026년 6월 현재 시장은 삼성전자를 AI 메모리 사이클의 후발 회복주이자, HBM/서버 DRAM 가격 상승을 이익으로 바꾸는 회사로 사고 있다. 이익이 너무 빨리 좋아졌기 때문에 주가도 너무 빨리 올랐다. 그래서 지금은 "더 오를까"보다 "무엇이 꺾이면 끝나는가"가 더 좋은 질문이다.
 
-![주가가 52주 고점 근처에 있을 때 필요한 질문은 추가 상승폭이 아니라 랠리의 조건이다](./assets/158-price-position.svg)
+![주가가 52주 고점 근처에 있을 때 필요한 질문은 추가 상승폭이 아니라 랠리의 조건이다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/23/2393c28c3d9ef64d7e1e38a4f30097fd1fceebb820892386db48adac289b3907.svg)
 
 ---
 
@@ -84,7 +84,7 @@ price / (q1_eps * 4)
 
 ![고점 근처의 삼성전자 주가는 실적보다 먼저 기대와 밸류에이션을 반영한다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d4/d4fc1ee6fd453f4fd560270a92389434aae40e2a3cf9c0623d85f3c8732f46bd.webp)
 
-![후행 P/E와 Q1 연환산 P/E의 괴리는 시장이 이익 peak를 어떻게 보느냐에 달려 있다](./assets/158-valuation-gap.svg)
+![후행 P/E와 Q1 연환산 P/E의 괴리는 시장이 이익 peak를 어떻게 보느냐에 달려 있다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/87/87069398401ae96e12033e33b9211f61500de02542e494f513077a9e0c9f3b7e.svg)
 
 ---
 
@@ -107,7 +107,7 @@ c.analysis("수익성")["marginTrend"]["history"]
 
 반대로 DS margin이 66%에서 40%, 30%로 빠르게 내려가면 이야기는 끝난다. 주가는 Q1을 연환산해서 오른 것이 아니라, Q1이 반복될 수 있다고 믿고 오른 것이다. 반복 가능성이 깨지면 valuation은 다시 후행 이익 기준으로 돌아간다. 그때 2,300조원 시가총액은 부담이 된다.
 
-![삼성전자 2026년 1분기 영업이익은 대부분 DS에서 나왔다](./assets/158-segment-profit.svg)
+![삼성전자 2026년 1분기 영업이익은 대부분 DS에서 나왔다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/cf/cf944a58eb4834c6eb1e71c9ba0aa13087a430091908d90a186ba504e37a4097.svg)
 
 ---
 
@@ -160,7 +160,7 @@ summary["summaryFlags"]
 
 따라서 삼성전자 랠리의 종료 조건 중 하나는 현금흐름이 아니라 working capital에서 온다. 영업이익은 여전히 높게 나오는데 재고와 매출채권이 더 빨리 늘고, OCF/NI가 내려가면 시장은 먼저 의심한다. 2025년에는 OCF/NI가 188.7%로 매우 좋았다. 이 비율이 떨어지는지가 다음 체크포인트다.
 
-![삼성전자의 현금흐름은 강하지만, 랠리의 조기 경보는 재고와 매출채권에서 나올 수 있다](./assets/158-cash-working-capital.svg)
+![삼성전자의 현금흐름은 강하지만, 랠리의 조기 경보는 재고와 매출채권에서 나올 수 있다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/06/0608d97fd4a864091be8c45da226a067ceeb74eacc4df7692f18274a60dea823.svg)
 
 ---
 
@@ -206,7 +206,7 @@ SDC와 Harman도 마찬가지다. Q1 2026 SDC 영업이익은 0.4조원, Harman�
 
 다섯째, 주가가 이익 revision보다 먼저 달리는 경우다. 주가가 52주 고점 근처에 있고 시가총액이 2,300조원을 넘으면, 좋은 뉴스가 나와도 이미 반영됐다는 말이 나오기 쉽다. 앞으로는 실적 beat보다 이익 전망치의 추가 상향이 필요하다. 숫자가 좋아도 기대보다 덜 좋으면 주가는 쉬어간다.
 
-![삼성전자 랠리를 다음 실적에서 볼 때는 DS margin, HBM, 가격, CAPEX, valuation을 같이 봐야 한다](./assets/158-rally-checkpoints.svg)
+![삼성전자 랠리를 다음 실적에서 볼 때는 DS margin, HBM, 가격, CAPEX, valuation을 같이 봐야 한다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/5d/5d17f15f53f4d2d09412cf9a6572f5fa10d6de45c5238d361d70f82a0d4fbc21.svg)
 
 ---
 

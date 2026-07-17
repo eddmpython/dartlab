@@ -123,7 +123,7 @@ CG인바이츠(083790)의 2024년 연간 매출은 73억원이다. 신약개발 
 
 ---
 
-![CG인바이츠 핵심 구조 — 7년 연속 적자인데 자본잠식 없이 살아있는 이유](./assets/45-hero-map.svg)
+![CG인바이츠 핵심 구조 — 7년 연속 적자인데 자본잠식 없이 살아있는 이유](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/dc/dc6993c340c6600ddd9c0a26b794b4c89d92fc179c6bfa94fc613b6af054b4ba.svg)
 
 ## 1막: 한국 1호 바이오벤처 신약 — 그리고 적자의 시작
 
@@ -175,7 +175,7 @@ CG인바이츠의 9년 실적을 연간 기준으로 정리하면 이렇다.
 
 왜 매출이 3배로 뛰었다가 82% 추락했을까. 이 궤적을 이해하려면 신약개발사의 매출이 어디서 오는지를 알아야 한다.
 
-![CG인바이츠 매출 궤적 — 424억 정점에서 73억 바닥, 274억 반등까지](./assets/45-revenue-collapse-timeline.svg)
+![CG인바이츠 매출 궤적 — 424억 정점에서 73억 바닥, 274억 반등까지](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f4/f4d374974861da1768e13a94af1dde042f5fc9cd5dd876ba8700ef7b0c60bcbc.svg)
 
 ### 2020~2021년 매출 3배 — 코로나치료제 기대와 수출·기술료
 
@@ -232,7 +232,7 @@ c.select("ratios", ["영업이익률 (%)"])
 
 왜 누적 순손실 2,000억 이상인 회사가 자본잠식에 빠지지 않았을까. 답은 재무상태표에 있다.
 
-![CG인바이츠 적자 생존 메커니즘 — 유상증자가 적자를 메우는 구조](./assets/45-survival-mechanism.svg)
+![CG인바이츠 적자 생존 메커니즘 — 유상증자가 적자를 메우는 구조](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b6/b6011f0adf8bf432ae7ad5efcd1a2c0de124b9106155c3be7d1c5298194a7be6.svg)
 
 ### 재무상태표 — 자본이 녹고 있다
 
@@ -293,7 +293,7 @@ BB등급의 핵심 의미는 "영업으로 이자를 갚을 수 없는 상태"�
 
 왜 매출 274억인 회사의 자산이 2,241억일까. 자산회전율(매출 ÷ 총자산)은 0.12회다. 자산 1원이 1년에 0.12원의 매출밖에 못 만든다. 제조업 평균 1.0~1.5회는커녕, 일반적인 산업 평균에도 한참 못 미친다.
 
-![CG인바이츠 자산 구조 — 자산 2,241억인데 매출 274억, 자산의 정체는](./assets/45-asset-structure.svg)
+![CG인바이츠 자산 구조 — 자산 2,241억인데 매출 274억, 자산의 정체는](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/28/2874c861d0948b8a94e395425e6ec99fed1e7d7448616fe208aea406e41a1555.svg)
 
 ### 자산회전율 0.12회 — 자산이 거의 놀고 있다
 
@@ -390,7 +390,7 @@ c.select("CF", ["영업활동현금흐름","투자활동현금흐름","재무활
 
 ## 6막: 자본잠식 경계에 선 턴어라운드 — 판단
 
-![CG인바이츠 턴어라운드 판단 트리 — 매출 반등이 진짜인지 판별하는 3가지 조건](./assets/45-turnaround-decision.svg)
+![CG인바이츠 턴어라운드 판단 트리 — 매출 반등이 진짜인지 판별하는 3가지 조건](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/9e/9ed74fccde2b71e65f629e9b740beefe770c4c68b186561302c3e4de01ac7483.svg)
 
 ### 신약개발 바이오벤처의 본질 — "하나의 약"이 전부를 결정한다
 
@@ -408,7 +408,7 @@ c.select("CF", ["영업활동현금흐름","투자활동현금흐름","재무활
 
 ### 2026년에 봐야 할 5가지
 
-![CG인바이츠 자본잠식 경고 신호 카드 — 2026년에 봐야 할 5가지 지표](./assets/45-capital-erosion-signal.svg)
+![CG인바이츠 자본잠식 경고 신호 카드 — 2026년에 봐야 할 5가지 지표](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c6/c63aa343010157eeba6959e2b30a9b98bd55a97457bfb6a6ab674140dfef70b8.svg)
 
 이 회사의 미래는 다음 5가지 지표의 방향에 달려 있다.
 

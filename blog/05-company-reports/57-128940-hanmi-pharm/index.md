@@ -125,7 +125,7 @@ carousel:
 
 ![한미약품 경기도 팔탄 제약 제조 단지 — 1.5조 매출의 물리적 기반](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ae/ae21e6322c92aa1fe70021ccc5e007eb45f1880aaf64872c483afa1da3be6338.webp)
 
-![한미약품 2017~2025 R&D 투자와 영업이익의 9년 파동](./assets/057-rd-vs-opm-9years.svg)
+![한미약품 2017~2025 R&D 투자와 영업이익의 9년 파동](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ed/ed428d61edde9f1d6bec9c9fd2ee5724b3aa54fbdefb3c0dfa699d54dc709a75.svg)
 
 ---
 
@@ -180,7 +180,7 @@ c.select("IS", ["매출액","매출원가","매출총이익","판매비와관리
 
 ![한미약품 제약 생산라인 — 정제 블리스터 포장 클린룸](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/5e/5edf5865cae50ce425456cc06b6daf8fa5600312faffc0fa9d4d9da340c60568.webp)
 
-![한미약품 4번의 라이선스 반환 타임라인 — 사노피·베링거·얀센·GSK](./assets/057-returns-timeline.svg)
+![한미약품 4번의 라이선스 반환 타임라인 — 사노피·베링거·얀센·GSK](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/6e/6ee30295397f0b0e8895b51295739a4be30d853b2c0d81eda8eff209a807becd.svg)
 
 ### 4개의 반환 — 계약 금액과 반환 경위
 
@@ -275,7 +275,7 @@ c.select("ratios", ["매출총이익률 (%)","영업이익률 (%)"])
 
 **개량신약 포트폴리오가 10년간 매출총이익률 57%를 지켰기 때문에, R&D를 매출의 30%까지 태워도 회사가 망하지 않았다.** 다음 막은 그 "태운 R&D"가 2020~2022년 피크 이후 어떻게 회수 국면으로 전환됐는지, 대차대조표와 현금흐름으로 본다.
 
-![한미약품의 주요 개량신약 에소메졸·아모잘탄·한미탐스 포트폴리오](./assets/057-products-grid.svg)
+![한미약품의 주요 개량신약 에소메졸·아모잘탄·한미탐스 포트폴리오](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e4/e482fd2380a5982b6a9f2d94d4f02b972db5ce2001cf431d0aead49a01f3f3db.svg)
 
 ---
 
@@ -394,7 +394,7 @@ dartlab 설명: "유동성 축이 37점으로 등급 하방 압력. dartlab dCR�
 
 **부채비율 132% → 50%의 6년 다이어트가 현재 자본 1.42조와 영업이익 2,578억의 기반을 만들었다.** 다음 막은 이 자본체력을 가지고 한미약품이 한국 제약 10대사와 비교해 어디에 서 있는지, 그리고 앞으로 2~3년에 무엇을 봐야 하는지를 정리한다.
 
-![한미약품 재무 건전성 카드 — dCR-A+, 부채비율 50%, 이자보상배율 7.4배](./assets/057-credit-card.svg)
+![한미약품 재무 건전성 카드 — dCR-A+, 부채비율 50%, 이자보상배율 7.4배](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b5/b53f027e628d90b7b331bb9ac8e0fc6ef6cf8691b0e0ed5db45f5a2413b0d893.svg)
 
 ---
 
@@ -457,7 +457,7 @@ dartlab.scan("profitability")  # 전종목 비교 (제약 섹터)
 
 2025년 영업이익 2,578억은 "한 번의 수확"이 아니라, **9년 사이에 태운 R&D 2.5조가 일부 돌아온 결과**다. 남은 R&D 지출 중 몇 번이 더 돌아올 것인가가 다음 10년의 질문이다.
 
-![2026년 한미약품에서 볼 3가지 체크포인트](./assets/057-checkpoints.svg)
+![2026년 한미약품에서 볼 3가지 체크포인트](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/51/517c4af6299eaf68d9087bfd5e9a52361360fa0916e8ddc5c7f0c1298ae95c01.svg)
 
 ---
 

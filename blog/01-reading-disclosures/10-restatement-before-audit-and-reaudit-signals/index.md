@@ -20,7 +20,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 읽는 순서는 `정정 사유 확인 → 정정 전후 숫자 비교 → 감사보고서와 문구 변화 확인 → 내부회계와 감독 구조 확인 → 후속 정정·재감사 반복 여부 확인`이다. 기본 토대는 [DART 정정공시를 파이프라인에서 다루는 법](/blog/corp-code-to-filing-pipeline), 감사 프레임은 [사업보고서에서 감사보고서와 KAM 읽는 법](/blog/audit-report-and-kam), 통제 축은 [내부회계관리제도와 감사위원회 활동은 어디서 위험 신호가 보이나](/blog/internal-controls-and-audit-committee)와 같이 보면 좋다.
 
-![감사 전 재무제표 정정과 재감사를 어떤 순서로 읽어야 하는지 정리한 구조도](./assets/060-reading-flow.svg)
+![감사 전 재무제표 정정과 재감사를 어떤 순서로 읽어야 하는지 정리한 구조도](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/15/154ef90bbc461e6243afd9523a919d145af8c282a057b8b83caed1a6300331b9.svg)
 
 ---
 
@@ -51,7 +51,7 @@ DART에서 해당 회사를 검색하면 공시 목록이 날짜 역순으로 �
 
 내부회계(내부회계관리제도 — 재무보고 오류를 사전에 막는 통제 체계)와 감사위원회 정보도 같이 봐야 한다. [감사의견이 적정이어도 불안한 회사는 어떤 패턴을 보이나](/blog/clean-audit-opinion-but-still-risky), [계속기업 관련 불확실성 문구는 어디서 강해지나](/blog/clean-audit-opinion-but-still-risky), [차입 약정 위반과 기한이익상실 위험은 어디서 먼저 드러나나](/blog/clean-audit-opinion-but-still-risky)와 겹치면 정정은 숫자 문제가 아니라 신뢰와 유동성 문제로 번질 수 있다. 숫자만 보고 끝내면 안 되는 이유가 여기 있다. 그다음에는 그 정정이 `일회성인지 반복 패턴인지`를 판단해야 한다.
 
-![감사 전 정정과 재감사 해석에 필요한 증거 레이어를 정리한 도식](./assets/060-evidence-layer.svg)
+![감사 전 정정과 재감사 해석에 필요한 증거 레이어를 정리한 도식](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/91/91c815769554bf5e32e3271c2ddf49e2e90bb96d94faab46fcfd0b6fcf2195c1.svg)
 
 ---
 
@@ -59,7 +59,7 @@ DART에서 해당 회사를 검색하면 공시 목록이 날짜 역순으로 �
 
 가장 실용적인 질문은 이것이다. `이번 정정은 제한적 보완인가, 회계 판단 수정인가, 통제 실패와 재감사 신호인가`.
 
-![감사 전 정정과 재감사 흐름을 제한적 보완, 회계 판단 수정, 통제 실패 신호로 가르는 구조도](./assets/060-decision-tree.svg)
+![감사 전 정정과 재감사 흐름을 제한적 보완, 회계 판단 수정, 통제 실패 신호로 가르는 구조도](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/57/5740a3367aca9ead8ac7424041aa25f7b3ef3a364e95e482cfc8ae86eb417142.svg)
 
 제한적 보완이라면 정정 사유와 영향 범위가 분명하고 이후 후속 정정이 거의 없을 가능성이 크다. 회계 판단 수정이라면 손익, 자산, 충당금, 연결 범위 같은 핵심 항목이 바뀌며 해석이 무거워진다. 통제 실패 신호라면 정정이 반복되고, 내부회계와 감사 문구, 후속 조달 이야기까지 함께 흔들릴 수 있다.
 
@@ -71,7 +71,7 @@ DART에서 해당 회사를 검색하면 공시 목록이 날짜 역순으로 �
 
 ## 여러 기간을 비교할 때 놓치기 쉬운 패턴
 
-![감사 전 정정과 재감사 흐름에서 상대적으로 관리 가능한 경우와 더 조심해야 하는 경우를 비교한 매트릭스](./assets/060-good-vs-risky-matrix.svg)
+![감사 전 정정과 재감사 흐름에서 상대적으로 관리 가능한 경우와 더 조심해야 하는 경우를 비교한 매트릭스](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/88/88b21fdb6eb6e97cdbc5b85995a09a7fb1b46b359921d5fd05e9706c6caf123e.svg)
 
 | 관찰 포인트 | 상대적으로 관리 가능한 경우 | 더 조심해야 하는 경우 |
 | --- | --- | --- |
@@ -121,7 +121,7 @@ DART에서 해당 회사를 검색하면 공시 목록이 날짜 역순으로 �
 
 ## 다음 보고서에서 반드시 다시 확인할 항목
 
-![감사 전 정정과 재감사 신호를 읽은 뒤 다음 보고서에서 다시 봐야 할 질문을 정리한 보드](./assets/060-watchboard.svg)
+![감사 전 정정과 재감사 신호를 읽은 뒤 다음 보고서에서 다시 봐야 할 질문을 정리한 보드](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/83/83f179cfb841f489f22e861a8bd1a5f6bd450ce17f64a7738e0b2219b36ab5fc.svg)
 
 | 이번에 본 것 | 다음에 다시 볼 것 |
 | --- | --- |

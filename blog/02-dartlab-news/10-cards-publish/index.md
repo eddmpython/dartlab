@@ -29,7 +29,7 @@ keywords:
 
 긴 분석은 끝까지 읽는 사람이 드물지만, 카드는 다르다. 우리가 인스타에서 늘 하는 그 손동작이라, 사람들은 마지막 장까지 넘긴다.
 
-![긴 2만 자 분석은 안 읽히지만, 같은 발견을 카드 한 묶음으로 만들면 표지 → 큰 숫자 → 왜, 세 박자로 끝까지 넘겨 본다](./assets/10-cards-hero-map.svg)
+![긴 2만 자 분석은 안 읽히지만, 같은 발견을 카드 한 묶음으로 만들면 표지 → 큰 숫자 → 왜, 세 박자로 끝까지 넘겨 본다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ce/cec6471575a5ad983bb4420d460dfbd4be9f902b78a7b749bc5296d95bbbcafd.svg)
 
 ## 요약이 아니다 — 한 가지를 끝까지 본다
 
@@ -43,7 +43,7 @@ keywords:
 
 그리고 카드를 열 때마다 그 회사의 **가장 최근 숫자**로 채워진다. 지난달에 찍어 둔 화면이 아니라, 지금 펼친 그 순간의 숫자다. 끌리게 만들되 사실에서 도망가지 않는 것 — 그게 이 카드의 규칙이다.
 
-![카드 규칙 네 가지 — 숫자는 공시 근거만, 해석은 사람이, 이미지는 저작권 없는 실사만, 발행 전 한 번 더 검토. 그리고 열 때마다 지금 숫자](./assets/10-honest-policy.svg)
+![카드 규칙 네 가지 — 숫자는 공시 근거만, 해석은 사람이, 이미지는 저작권 없는 실사만, 발행 전 한 번 더 검토. 그리고 열 때마다 지금 숫자](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/90/90c9f041bc371ab4c7219bdc1c8602877e8f7cbbd56e744b9e2b43cc2c871d87.svg)
 
 ## 두 가지 — 회사, 그리고 오늘의 이슈
 
@@ -53,7 +53,7 @@ keywords:
 
 **오늘의 이슈.** 모든 카드가 회사에서 나오는 건 아니다. "지금 한국 경제 전망"처럼 그때그때 짚어야 하는 주제는, 긴 글을 쓸 새도 없이 **카드만** 바로 낸다. 그 주제에 맞는 숫자와 문구를 새로 뽑아 한 묶음으로 만든다.
 
-![회사 카드는 종목 하나를 골라 손익·현금·효율·체력을 차례로 넘겨 보고, 이슈 카드는 종목도 본문도 없이 오늘의 주제를 카드만으로 낸다](./assets/10-two-kinds.svg)
+![회사 카드는 종목 하나를 골라 손익·현금·효율·체력을 차례로 넘겨 보고, 이슈 카드는 종목도 본문도 없이 오늘의 주제를 카드만으로 낸다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/56/56f845af4ac6235ba6e58e4408dbb892d227174fcd1da3d6b5a692b3d6b6c7f1.svg)
 
 ## 넘기고, 찾고, 보낸다
 
@@ -61,7 +61,7 @@ keywords:
 
 그리고 그 링크를 친구에게 보내면 — 메신저든 스레드든 인스타든 — **첫 장이 미리보기 그림으로** 펼쳐진다. 받은 사람이 누르면 곧장 그 카드로 들어온다. 좋은 발견이 밋밋한 링크 한 줄에 묻히지 않고 진짜로 퍼지는 건, 결국 이 마지막 한 걸음에서 갈린다.
 
-![/cards 피드에서 검색하고 좌우로 스와이프한다. 링크를 보내면 첫 장이 미리보기로 펼쳐지고, 받은 사람이 누르면 그 카드로 직행한다](./assets/10-feed-flow.svg)
+![/cards 피드에서 검색하고 좌우로 스와이프한다. 링크를 보내면 첫 장이 미리보기로 펼쳐지고, 받은 사람이 누르면 그 카드로 직행한다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c2/c2a0d4241a2ee268077c1c9bf79fdeedcf28c75dcf53cc2ad5b2aaace2f3e896.svg)
 
 ## 보고, 보내고, 다시 본다
 
@@ -69,4 +69,4 @@ keywords:
 
 보고 → 보내고 → 다시 본다. 깊게 보는 화면과 빠르게 퍼지는 카드가 결국 같은 회사, 같은 숫자에서 나온다.
 
-![터미널에서 발견하고(본다), 카드로 묶어 보내고(발행한다), 받은 사람은 그 회사를 다시 터미널에서 연다(다시 본다) — 깊이와 전파가 같은 데이터의 양 끝](./assets/10-loop.svg)
+![터미널에서 발견하고(본다), 카드로 묶어 보내고(발행한다), 받은 사람은 그 회사를 다시 터미널에서 연다(다시 본다) — 깊이와 전파가 같은 데이터의 양 끝](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/85/852db8e6e8f8f7a558e3414d87a768fcdd792c7d87a742a30c24fdb338912377.svg)

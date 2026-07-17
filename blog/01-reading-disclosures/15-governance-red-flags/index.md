@@ -18,7 +18,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 이 글은 초보자 기준으로 `위험한 지배구조가 대체 어떤 모습으로 나타나는가`를 정리한다. 이론보다 패턴, 정의보다 질문, 한 문서보다 연결 읽기에 초점을 맞춘다. 대주주 구조를 먼저 보고 왔다면 [`최대주주와 특수관계인은 어떻게 읽어야 하나`](/blog/major-shareholder-and-related-parties) 다음 단계로 읽으면 된다.
 
-![위험한 지배구조에서 반복되는 신호를 정리한 지도](./assets/025-governance-red-flag-map.svg)
+![위험한 지배구조에서 반복되는 신호를 정리한 지도](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e8/e81389ebb0d8a83fe89c4eca8fa8f5e973f3ad572221bcb0c8e17e4e63e87397.svg)
 
 ---
 
@@ -90,7 +90,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 - 외부 거래보다 그룹 안 거래가 훨씬 더 중요한 구조인가
 - 그 구조가 몇 년째 반복되는가
 
-![내부거래 의존을 경계해야 하는 이유를 정리한 보드](./assets/025-internal-transaction-warning-board.svg)
+![내부거래 의존을 경계해야 하는 이유를 정리한 보드](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/bf/bf6b9a2ec93c879ecaf54bc212a7b120b65c2c1e64ae034b8732ab87717f9fde.svg)
 
 예를 들어 매출이 좋아 보이는데 주요 고객이 대부분 계열사라면, 외부 경쟁력이 생각보다 약할 수 있다. 반대로 내부거래 비중이 높아도 그룹 구조상 불가피하고 설명이 충분하면 해석이 훨씬 안정된다. 결국 숫자 자체보다 `왜 그런 구조인지 설명이 되는가`가 중요하다.
 
@@ -109,7 +109,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 - 오너나 최고경영진 영향력이 너무 강해 보인다
 - 보수, 자본정책, 내부거래 같은 민감 안건에서도 긴장감이 잘 안 보인다
 
-![이사회 독립성과 형식적 운영의 차이를 보여주는 카드](./assets/025-board-independence-card.svg)
+![이사회 독립성과 형식적 운영의 차이를 보여주는 카드](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/5d/5d03c580b9850e200a2582f7a7eb8eb12972e51ae31f499eaf68bbb0285ae7cd.svg)
 
 초보자가 여기서 꼭 알아야 할 점은 `이사회가 갈등적일수록 좋다`는 뜻이 아니라는 점이다. 중요한 것은 **견제가 가능해 보이느냐**다. 구조상 견제가 아예 불가능해 보이는 회사와, 최종 결론은 같아도 과정에서 검토와 설명이 느껴지는 회사는 전혀 다르게 읽힌다.
 
@@ -128,7 +128,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 - 오너 개인 이슈가 회사의 신뢰도 이슈로 바로 연결된다
 - 설명보다 충성 구조가 더 강해 보인다
 
-![오너 의존이 강한 경우와 상대적으로 균형 잡힌 경우를 비교한 매트릭스](./assets/025-owner-dependence-matrix.svg)
+![오너 의존이 강한 경우와 상대적으로 균형 잡힌 경우를 비교한 매트릭스](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d3/d3802747815a95897554bc0ed2c8de5338ed5e6dd7018a5f6c2947d35f07056f.svg)
 
 초보자에게 좋은 질문은 이것이다. `이 사람의 힘이 회사 경쟁력에서 나오는가, 아니면 구조적 견제 부재에서 나오는가?` 같은 강한 오너십이라도 둘은 완전히 다르다.
 
@@ -185,7 +185,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 ## 10분 체크리스트
 
-![지배구조 위험 신호를 빠르게 점검하는 체크리스트](./assets/025-checklist.svg)
+![지배구조 위험 신호를 빠르게 점검하는 체크리스트](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/42/42950f9e193b569374e718fef32461f5fcc55d703d543928ece1c5f27e3cc8a2.svg)
 
 - 최대주주 구조를 한 문장으로 설명할 수 있는가
 - 내부거래 비중과 이유가 자연스럽게 설명되는가

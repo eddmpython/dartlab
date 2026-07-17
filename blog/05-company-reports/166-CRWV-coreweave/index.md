@@ -65,7 +65,7 @@ CoreWeave를 읽을 때 가장 먼저 보이는 숫자는 revenue backlog 99.4B�
 
 이 숫자가 큰 이유는 고객 계약이 길고 크기 때문이다. CoreWeave는 2026년 1분기 Meta와 여러 신규 계약을 맺었고, 그중 March에 체결한 신규 commitment가 21B라고 밝혔다. Anthropic과도 multi-year agreement를 맺었다. 기존 고객과 AI native, enterprise 고객 확장도 같이 언급됐다. AI 수요가 공시 숫자로 보이는 장면이다.
 
-![CoreWeave의 2026년 1분기는 분기 매출 2.078B보다 revenue backlog 99.4B가 먼저 시장의 관심을 끌었다](./assets/166-backlog-capex.svg)
+![CoreWeave의 2026년 1분기는 분기 매출 2.078B보다 revenue backlog 99.4B가 먼저 시장의 관심을 끌었다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/17/1748cc3cbb1e400947e9f5e53c52c3e126bc35554ca101a7e017eb83ed33f694.svg)
 
 하지만 여기서 바로 멈추면 안 된다. backlog는 매출이 아니다. 고객이 계약했다고 해서 바로 손익계산서에 매출로 들어오지 않는다. CoreWeave는 capacity를 제공해야 하고, 고객이 쓸 수 있는 상태를 만들어야 한다. delivery와 availability 조건을 충족해야 한다. 데이터센터가 늦어지거나 GPU 공급이 늦어지거나 전력 연결이 늦어지면, backlog는 숫자로 남아 있어도 매출 인식은 밀릴 수 있다.
 
@@ -126,7 +126,7 @@ CoreWeave의 손익계산서는 성장과 부담을 동시에 말한다. 매출 
 
 하지만 현금흐름표는 여기서 끝나지 않는다. 같은 분기 투자현금유출은 7.708B였다. 회사는 이 증가가 GPU fleet, networking equipment, servers, switches, infrastructure asset security 등 higher capital investments 때문이라고 설명했다. 즉 고객에게서 현금이 들어왔지만, 그보다 더 큰 돈이 장비와 데이터센터 인프라로 나갔다.
 
-![CoreWeave는 고객 현금이 들어와도 GPU fleet과 데이터센터 투자가 더 빨리 커지는 회사다](./assets/166-cash-flywheel.svg)
+![CoreWeave는 고객 현금이 들어와도 GPU fleet과 데이터센터 투자가 더 빨리 커지는 회사다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c4/c45e922e906591b03e201a95db200df2c91109a891812d9611a6bceb9ab62734.svg)
 
 이 구조를 쉽게 말하면 이렇다. 고객이 앞으로 AI workload를 돌리겠다고 큰 계약을 한다. CoreWeave는 그 고객을 위해 capacity를 확보해야 한다. capacity는 말로 생기지 않는다. GPU 서버를 사고, 데이터센터 공간을 확보하고, 전력 연결과 네트워크를 깔아야 한다. 그래서 고객 계약이 커질수록 투자현금유출도 커진다.
 
@@ -146,7 +146,7 @@ CoreWeave의 고객은 작지 않다. 2026년 1분기 발표에는 Meta 21B 신�
 
 하지만 EDGAR 공시는 이 장점을 바로 위험으로 바꿔 적는다. 2025년 Form 10-K에 따르면 2025년 매출의 약 67%가 top customer인 Microsoft에서 나왔다. 2024년에는 top two customers가 매출의 약 77%를 차지했고, 2023년에는 top three customers가 약 73%를 차지했다. 이 회사의 매출은 대형 고객에게 크게 기대고 있다.
 
-![대형 고객 계약은 CoreWeave에 매출 가시성을 주지만, 고객 집중 리스크도 같이 만든다](./assets/166-customer-concentration.svg)
+![대형 고객 계약은 CoreWeave에 매출 가시성을 주지만, 고객 집중 리스크도 같이 만든다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/8d/8d7ebbb484299f6c98c4c9d04e0e7add2603658a53365b7d391a72d936f736a3.svg)
 
 이것은 무조건 나쁜 일이 아니다. AI 인프라 시장에서 가장 큰 고객은 당연히 AI labs와 hyperscalers다. 그들이 장기 계약을 맺고 capacity를 예약하면 CoreWeave는 은행과 장비 공급자에게 더 설득력 있게 말할 수 있다. "우리는 고객이 있다. 이 capacity를 만들면 쓸 사람이 있다." 이 문장이 부채 조달과 장비 금융의 근거가 된다.
 
@@ -182,7 +182,7 @@ CoreWeave의 진짜 긴장은 여기서 나온다. 2025년 말 total principal o
 
 2026년 1분기 공시는 더 직접적인 문장을 준다. 회사는 DDTL 4.0 Facility, 2030 Senior Notes, 2031 Senior Notes, 2031 Convertible Notes, April 2026 Additional 2031 Senior Notes와 2032 Convertible Notes를 설명한다. 그리고 debt 외에도 operating lease liabilities가 10.1B라고 적는다. 데이터센터를 임대해서 쓰는 회사라면 임대 의무도 사업의 일부다.
 
-![CoreWeave의 AI 클라우드 성장은 부채, 임대, 장비 금융이라는 고정 의무 위에서 선다](./assets/166-debt-lease-stack.svg)
+![CoreWeave의 AI 클라우드 성장은 부채, 임대, 장비 금융이라는 고정 의무 위에서 선다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/9a/9af200544aa5fc5a4df299631974d50d61e4430a371efa337df4593734f378c2.svg)
 
 OEM and Software License Financing Arrangements도 있다. 2025년 말 aggregate notional balance는 5.2B였고, 2026년 1분기에는 6.7B로 늘었다. 이 이름이 어려우면 이렇게 보면 된다. 장비와 소프트웨어 라이선스를 사기 위해 별도 금융 arrangements를 쓴다는 뜻이다. GPU 클라우드는 제품이 빠르게 낡기 때문에 장비 금융 구조도 중요해진다.
 
@@ -226,7 +226,7 @@ CoreWeave의 다음 10-Q가 나오면 모든 줄을 다 볼 필요는 없다. �
 
 여섯 번째는 고객 집중이다. Microsoft, OpenAI, Meta 같은 큰 고객의 약정이 늘면 좋다. 동시에 한 고객이 매출에서 차지하는 비중이 너무 높게 유지되면 위험도 같이 남는다. 고객이 많아지는지, 아니면 더 큰 몇 개 이름으로 더 좁아지는지 확인해야 한다.
 
-![CoreWeave를 다음 공시에서 업데이트할 때는 AI 수요보다 미래 계약, 설비투자, 원리금 상환, 고객 집중을 먼저 본다](./assets/166-next-checkpoints.svg)
+![CoreWeave를 다음 공시에서 업데이트할 때는 AI 수요보다 미래 계약, 설비투자, 원리금 상환, 고객 집중을 먼저 본다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/11/1122f9a2da72518556dfba60dfb8ba598c706874aebc9d1b566d8b1680926070.svg)
 
 | 확인 순서 | 봐야 할 줄 | 좋은 신호 | 나쁜 신호 |
 |---|---|---|---|

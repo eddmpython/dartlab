@@ -146,7 +146,7 @@ import HFDataLink from '$lib/components/blog/HFDataLink.svelte';
 
 ---
 
-![라면 빅3 — 삼양·농심·오뚜기 삼각 비교](./assets/49-hero-map.svg)
+![라면 빅3 — 삼양·농심·오뚜기 삼각 비교](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/95/952048f25b28eb1603bc19d883b72a14caa2fa072b60c7fa2b1629cf30f7b451.svg)
 
 ## 1막: 영업이익률 4.8% — "안정적이지만 성장하지 않는" 프랜차이즈
 
@@ -207,7 +207,7 @@ Q4마다 영업이익률이 급락한다. 2024Q4 2.7%, 2025Q4 2.2%. 연말 프�
 
 ---
 
-![라면 빅3 영업이익률 9년 추이 — 삼양만 이탈, 농심·오뚜기는 같은 범위](./assets/49-opm-comparison.svg)
+![라면 빅3 영업이익률 9년 추이 — 삼양만 이탈, 농심·오뚜기는 같은 범위](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/95/952a011f3dc54e4839e8effc73210529ea4d2f67c81869714ae5145629585e0b.svg)
 
 ## 2막: 매출원가율 84% — 100원 팔면 5원 남는 구조
 
@@ -220,7 +220,7 @@ prof = c.analysis("financial", "수익성")
 # marginWaterfall 2025: 매출원가율 83.9%, OPM 4.8%
 ```
 
-![라면 빅3 비용 구조 비교 — 삼양 원가 55%, 농심 76%, 오뚜기 84%](./assets/49-cost-structure.svg)
+![라면 빅3 비용 구조 비교 — 삼양 원가 55%, 농심 76%, 오뚜기 84%](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e8/e89fda1af10c50fb35d8cc2324dd96699def21e5e0979d8303aa637435484b90.svg)
 
 | 항목 (2025, %) | 삼양식품 | 농심 | 오뚜기 |
 |:---|---:|---:|---:|
@@ -302,7 +302,7 @@ rev = c.analysis("financial", "수익구조")
 
 왜 영업이익률이 5%인데 위험하지 않은가. 오뚜기의 재무 체력을 보면 답이 나온다.
 
-![오뚜기 프랜차이즈 프로필 — 안정적이지만 성장하지 않는 구조](./assets/49-franchise-profile.svg)
+![오뚜기 프랜차이즈 프로필 — 안정적이지만 성장하지 않는 구조](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/93/9331a157a839ef12fa9eae96253c3b90f366f007847c6927470b816f09da8800.svg)
 
 ### dartlab 종합평가 — B등급 다수, 위험 없음
 
@@ -410,7 +410,7 @@ dartlab summaryFlags가 잡아낸 경고: **"영업외손실 비중 37%"**. 별�
 
 ## 6막: 오뚜기의 다음 — 진라면은 세계로 나갈 수 있는가
 
-![오뚜기 투자 체크포인트 5가지](./assets/49-checklist.svg)
+![오뚜기 투자 체크포인트 5가지](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/34/34eb5991b301f2d5a2222eb727fd9b48436558c0f968cbfb9a6cf164473d2a10.svg)
 
 ### 투자자가 봐야 할 체크포인트 5가지
 

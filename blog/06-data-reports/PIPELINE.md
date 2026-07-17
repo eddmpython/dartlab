@@ -32,7 +32,7 @@ Phase 0 데이터 완주 / Phase 2.5 마스터라이터 편집 게이트 / Phase
 
 ## 4. 자산
 
-- **SVG ≥ 4** (`assets/{NN}-*.svg`): funnel(전수 → 정제 → 결론) · 분포/추이 · 대표 사례 비교 · 업종/시장 지형. 다크 배경, 한글 타이틀, amber 강조. SVG 개수만 채우면 실패다. 각 SVG는 어떤 주장 뒤에서 어떤 오독을 막는지 `brief.json` 에 남긴다.
+- **SVG ≥ 4** (저작 staging `assets/{NN}-*.svg`, 발행 후 catalog `diagrams`): funnel(전수 → 정제 → 결론) · 분포/추이 · 대표 사례 비교 · 업종/시장 지형. 다크 배경, 한글 타이틀, amber 강조. SVG 개수만 채우면 실패다. 각 SVG는 어떤 주장 뒤에서 어떤 오독을 막는지 `brief.json` 에 남긴다.
 - 배경: `assets/{NN}-thumbnail-bg.webp`(`gen_blog_cc0.py` PD/CC0) + `CREDITS.md`.
 
 ## 5. 발행

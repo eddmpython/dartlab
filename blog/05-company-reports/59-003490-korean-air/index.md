@@ -132,7 +132,7 @@ carousel:
 
 이 글은 이 합병의 11년 여정과 통합 첫 해 결산을 **인수합병 다큐 + 통합 해부** 9막 구조로 추적한다. 6막 템플릿은 이번에도 안 맞다 — 한 회사의 이야기가 아니라 **두 회사가 하나가 된 10년의 기록**이라 시간을 따라가야 한다.
 
-![대한항공 아시아나 합병 11년 타임라인 — 2013 통합 논의 → 2024.12.11 완료](./assets/059-ma-timeline.svg)
+![대한항공 아시아나 합병 11년 타임라인 — 2013 통합 논의 → 2024.12.11 완료](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/67/67b29d694cfcb4b827a8c3f62c02b9f646e7e640c4d9474f70912dedffaf4f37.svg)
 
 ![활주로 항공뷰 — 아시아나를 흡수한 통합 대한항공이 출발선에 선 한국 FSC 단독 체제 (CC0 실사)](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/55/55bbcc938f8e2552e09e2351388d1b93fc1802193229a8ed0769db350631212c.webp)
 
@@ -236,7 +236,7 @@ c.select("BS", ["자산총계","부채총계","자본총계","현금및현금성
 
 3막은 **"왜 4년이 걸렸는가"** 에 대한 답이다. 13개국 심사 + 미국의 하와이안 인수 조건 + EU의 4개 노선 양도 조건 = 대한항공이 아시아나를 완전히 흡수하기 위해 **지급한 규제 비용**. 4막은 이 모든 조건이 충족된 2024년 12월 11일 합병 완료 직전·직후의 회계 처리를 본다.
 
-![대한항공 아시아나 합병 규제 심사 4년 — 13개국 경쟁당국 일지](./assets/059-regulatory-timeline.svg)
+![대한항공 아시아나 합병 규제 심사 4년 — 13개국 경쟁당국 일지](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/5e/5ea77a29895f8a8271ae8bacccd138a3e2c83151d312fdf6d41c664852de5f61.svg)
 
 ![인천공항 제2여객터미널 야경 — 대한항공·아시아나 통합 후 한국 FSC 단일 체제의 중심](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/cd/cd817dce0d95c3a8c80d56fba0e06d38d1b7e8f86482686160aa25ce25411b15.webp)
 
@@ -296,7 +296,7 @@ c.select("BS", ["자산총계","부채총계","자본총계","현금및현금성
 
 4막은 합병이 회계적으로 어떻게 찍혔는지를 봤다. 5막은 2025년 통합 첫 해 실적의 구체 숫자 — 매출 +41%, 영업이익 -47%의 해부.
 
-![2024.12 합병으로 자산 +16.6조·부채 +15.5조·자본 +1.14조 흡수](./assets/059-bs-jump.svg)
+![2024.12 합병으로 자산 +16.6조·부채 +15.5조·자본 +1.14조 흡수](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/33/339aedeb4d0492de1e2696bc7aef7028a18dbcf483428ceabcdcd389c8ec9963.svg)
 
 ---
 
@@ -345,7 +345,7 @@ c.select("IS", ["매출액","매출원가","매출총이익","영업이익","당
 
 5막의 구조 해부 뒤에 6막은 **분기별 영업이익 트렌드** — 합병이 어느 분기에 가장 크게 찍혔고, 2025Q4는 어떤 방향으로 움직이는지를 본다.
 
-![2024→2025 영업이익 -9,966억 분해 — 화물 정상화 + 아시아나 희석 + 통합 비용](./assets/059-opinc-decomp.svg)
+![2024→2025 영업이익 -9,966억 분해 — 화물 정상화 + 아시아나 희석 + 통합 비용](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/93/935ffc9adb0bc9082f683f4e6869fbfb511441959fc43d2c3b6104edd2a70d94.svg)
 
 ---
 
@@ -442,7 +442,7 @@ FSC 단독 지위가 된 대한항공은 **LCC가 건드리기 어려운 장거�
 
 합병의 마지막 축은 **LCC 생태계 재편**. 8막은 슬롯 양도로 장거리 노선에 진출한 티웨이·에어프레미아, 그리고 아시아나 합병에서 떨어져 나간 에어부산의 운명을 본다.
 
-![대한항공 사업부별 매출 구성 — 여객 17조 · 화물 5조 · 기타 3.3조](./assets/059-segment-pie.svg)
+![대한항공 사업부별 매출 구성 — 여객 17조 · 화물 5조 · 기타 3.3조](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/26/264ec750088624c465a5372947ad9b5e990f0f9a8c180cf82ab8aab65ab2672e.svg)
 
 ---
 
@@ -510,7 +510,7 @@ FSC 단독 지위가 된 대한항공은 **LCC가 건드리기 어려운 장거�
 
 매출 25조 × 영업이익률 7% = 1.75조. 합병 전 2023년 매출 16.1조 × 영업이익률 11% = 1.77조. **이 두 숫자가 2026~2027년에 수렴할 때 합병의 값이 최종 확정된다.**
 
-![2026~2028 대한항공 관찰 4가지 — 영업이익률 · 시너지 · 유가 방어 · 주주환원](./assets/059-checkpoints.svg)
+![2026~2028 대한항공 관찰 4가지 — 영업이익률 · 시너지 · 유가 방어 · 주주환원](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/3a/3af508e42deb82bf198f61daab57428244a8e5e769ff97f2bb2a78308e8aeaf6.svg)
 
 ---
 

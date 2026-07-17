@@ -155,7 +155,7 @@ carousel:
 
 그래서 스텔스의 경제적 가치는 "사라지는 능력"이 아니라 **상대의 의사결정 시간을 깎는 능력**이다. 탐지가 늦어지면 미사일 발사 거리, 회피 기동, 전자전 대응, 아군 네트워크의 정보 우위가 모두 달라진다. 기술이야기에서 RCS를 먼저 보는 이유는 여기에 있다.
 
-![RCS는 실제 크기가 아니라 되돌아오는 전파의 크기다](./assets/01-rcs-principle.svg)
+![RCS는 실제 크기가 아니라 되돌아오는 전파의 크기다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c0/c02cc6199fe0cc3b59a05080211fdf0f251f8b568a0faa59d9fcfe0f255019f2.svg)
 
 ## 2. 전투기는 왜 각지게 생겼나: 형상이 먼저 숨긴다
 
@@ -199,7 +199,7 @@ AESA 레이더(능동 전자주사식 레이더)는 이 중심에 있다. 작은
 
 이 표가 중요한 이유는 회사 지도를 바꾸기 때문이다. 완성기 업체만 보는 순간 스텔스의 절반을 놓친다. 레이더 모듈, 전자전 수신기, 미사일 시커, 데이터링크, 임무컴퓨터, 코팅 정비까지 모두 교전 사슬의 병목이다. 기술의 깊이는 전투기 사진이 아니라 이 사슬에서 보인다.
 
-![저피탐 스택은 형상, 소재, 센서, 전자전, 정비가 겹친 시스템이다](./assets/02-low-observable-stack.svg)
+![저피탐 스택은 형상, 소재, 센서, 전자전, 정비가 겹친 시스템이다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/1f/1f421bf2ca210670f7f5a80ae88024b42ac02dcf24d846e117ba867d6fa4a5bf.svg)
 
 ## 5. 공정·회사·근거 지도: 어느 회사가 어느 칸을 쥐나
 
@@ -229,7 +229,7 @@ AESA 레이더(능동 전자주사식 레이더)는 이 중심에 있다. 작은
 
 따라서 기술이야기의 질문은 "스텔스 전투기를 누가 만드나"에서 멈추면 안 된다. 더 좋은 질문은 "어느 회사가 이 작은 기술 칸 중 하나를 반복 가능한 품질과 계약으로 묶고 있나"다. 그때부터 KAI는 단순 조립사가 아니라 체계통합·시험의 병목으로 보이고, 한화시스템은 레이더 부품사가 아니라 센서융합의 관문으로 보이며, LIG넥스원은 주변 무장사가 아니라 짧아진 교전 창을 실제 타격으로 바꾸는 회사로 보인다.
 
-![스텔스 밸류체인 회사 배치](./assets/03-company-map.svg)
+![스텔스 밸류체인 회사 배치](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/86/86e12fc2fcf1705db75401cfc5b522b25c5d1feab6e189c6e7afa0fcf7ee5103.svg)
 
 ## 6. 미국 라인: F-35와 B-21은 왜 10%대 사업인가
 
@@ -260,7 +260,7 @@ is_df = c.select("IS")
 
 이 점은 [록히드마틴 기업이야기](/blog/LMT-lockheed-martin)에서 이미 본 그림과 이어진다. 매출 100조원급 방산 1위라도 미국 정부 조달 구조 안에서는 영업이익률이 10%대에 묶인다. 스텔스는 비싸지만, 주계약사의 남는 몫은 계약서와 원가정산 구조가 정한다.
 
-![스텔스 관련 방산 대표사의 2025년 영업이익률](./assets/04-opm-comparison.svg)
+![스텔스 관련 방산 대표사의 2025년 영업이익률](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/23/23e3bc07921d1ebf1183f300fe65992df35ec67c10319361fbe733a51c2bd57c.svg)
 
 ## 7. 한국 라인: KF-21은 완전 스텔스가 아니라 저피탐 학습장이다
 
@@ -351,7 +351,7 @@ for c in [kai, hs, lig]:
 
 넷째, EDGAR 수치를 읽을 때는 결산월과 분기 라벨을 반드시 봐야 한다. dartlab의 분기 컬럼이 `2025Q1`처럼 보이더라도 회사가 1월 결산인지, 7월 결산인지, 12월 결산인지에 따라 그 네 분기의 합이 달력연도와 다를 수 있다. 이 글의 미국 방산 5사(LMT, NOC, RTX, GD, BA)는 12월 결산이라 2025Q1~2025Q4 합산을 FY2025로 썼다. 하지만 EDGAR 전체로 확장할 때는 10-K와 10-Q의 period를 원문으로 확인해야 한다. 크라우드스트라이크나 팔로알토처럼 결산월이 다른 회사에서는 이 절차를 건너뛰면 바로 틀린다.
 
-![스텔스와 탐지 기술의 맞물림](./assets/05-detect-counterdetect.svg)
+![스텔스와 탐지 기술의 맞물림](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b7/b7fa1ac1b9e470f489d961e5aaab4eef96ceeb20985670b031af8c52b9a2478a.svg)
 
 ## 11. 판단: 스텔스는 플랫폼보다 병목을 봐야 한다
 

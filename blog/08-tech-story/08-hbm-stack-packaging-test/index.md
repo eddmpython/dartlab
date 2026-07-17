@@ -40,7 +40,7 @@ HBM(High Bandwidth Memory, 고대역폭 메모리)은 이름만 보면 메모리
 
 HBM은 발상을 바꾼다. 메모리 칩을 납작하게 여러 개 만들고, 그것을 한 위로 쌓은 뒤, 칩 안을 수직으로 뚫어 통로를 만든다. 이 수직 통로가 TSV다. 칩 사이에는 마이크로범프가 붙고, 아래에는 로직 베이스 다이가 있어 명령과 신호를 정리한다. 이 스택이 GPU 옆의 인터포저(칩들을 매우 촘촘히 이어 주는 중간 기판) 위에 올라간다. 그래서 HBM은 DRAM 제조와 후공정 패키징이 분리된 부품이 아니라, 처음부터 GPU와 같이 쓰이도록 설계된 시스템 부품에 가깝다.
 
-![HBM은 여러 DRAM 다이를 TSV와 마이크로범프로 세로 연결해 GPU 옆의 짧은 데이터 고속도로를 만든다](./assets/01-hbm-stack-principle.svg)
+![HBM은 여러 DRAM 다이를 TSV와 마이크로범프로 세로 연결해 GPU 옆의 짧은 데이터 고속도로를 만든다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/6a/6acb30a34fadb14c06679b6e117f59e311e6d373abef266641c43e2291c65b51.svg)
 
 여기서 독자가 놓치기 쉬운 점이 있다. HBM은 "더 빠른 메모리"라는 한 문장으로 끝나지 않는다. 스택이 높아질수록 다이를 얇게 갈아야 하고, 휘어짐을 제어해야 하고, 다이 사이 간격을 균일하게 맞춰야 하고, 열을 위아래로 빼야 한다. 하나의 다이가 불량이면 스택 전체 가치가 흔들린다. 그래서 HBM에서 수율(yield, 투입한 웨이퍼나 칩 중 정상 제품이 나오는 비율)은 단순 제조 지표가 아니라 고객 인증과 공급 가능 물량을 좌우하는 핵심 변수다.
 
@@ -54,7 +54,7 @@ HBM을 회사 지도로 바꾸면 첫 번째 칸은 메모리 제조다. SK하�
 
 세 번째 칸은 테스트다. HBM은 다 쌓고 나서 "잘 되나 확인"하는 정도가 아니다. 적층 내부 어딘가의 접점이 약하거나 열 스트레스에서 문제가 생기면, 완성 패키지 단계에서 불량 원인을 찾기 어렵다. 프로브 카드, 테스트 소켓, 자동 테스트 장비, burn-in(열과 전압 조건에서 신뢰성을 확인하는 시험)이 중요해진다. 리노공업은 정밀 테스트 핀과 소켓 계열로, ISC는 테스트 소켓 계열로, Teradyne는 자동 테스트 장비 쪽으로 연결된다. HBM 적층 수가 늘수록 테스트는 뒤쪽 절차가 아니라 앞쪽 수율 설계의 일부가 된다.
 
-![HBM은 GPU 설계, 메모리 제조, 본딩, 패키징, 테스트, 고객 수요가 함께 움직이는 공정 네트워크다](./assets/02-process-company-map.svg)
+![HBM은 GPU 설계, 메모리 제조, 본딩, 패키징, 테스트, 고객 수요가 함께 움직이는 공정 네트워크다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/fc/fc7502f3fdafcd7022323494c782f72810f0631288ccb661ad8907e5cd622c7c.svg)
 
 | 공정/층위 | 기술 역할 | 대표 회사 | 공시 근거 | 왜 이 회사가 이 칸의 핵심인가 |
 |---|---|---|---|---|
@@ -142,7 +142,7 @@ for ticker in tickers:
 | Amkor | OSAT 패키징 | 2026Q1, 2025Q4, 2025Q3, 2025Q2 | 7.1B 달러 | 14.4% | 7.6% | 패키징 서비스는 HBM 병목이어도 마진이 낮게 남을 수 있음 |
 | Teradyne | 자동 테스트 장비 | 2026Q1, 2025Q4, 2025Q3, 2025Q2 | 3.8B 달러 | 58.7% | 26.5% | 테스트 장비는 제품 믹스와 반도체 CAPEX 사이클이 중요 |
 
-![DART 2025년과 EDGAR 최신 4개 분기의 회사별 재무 착지. 같은 HBM 공급망이어도 마진 구조는 칸마다 다르다](./assets/04-financial-landing.svg)
+![DART 2025년과 EDGAR 최신 4개 분기의 회사별 재무 착지. 같은 HBM 공급망이어도 마진 구조는 칸마다 다르다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e5/e54a049dc8954de4b700be937ce7dc4de454aac2b2455f8e541f58e9edd25a03.svg)
 
 NVIDIA 공식 Blackwell Ultra 자료는 Blackwell 계열에서 HBM3E 용량과 대역폭이 얼마나 커졌는지 보여준다. [NVIDIA 개발자 블로그](https://developer.nvidia.com/blog/inside-nvidia-blackwell-ultra-the-chip-powering-the-ai-factory-era/)의 표는 H100, H200, Blackwell, Blackwell Ultra를 비교하며 HBM 용량과 대역폭을 핵심 스펙으로 놓는다. 이것은 HBM이 부품 하나가 아니라 GPU 세대의 제품 정의에 들어갔다는 뜻이다. 동시에 [NVIDIA FY2026 10-K](https://www.sec.gov/Archives/edgar/data/1045810/000104581026000021/nvda-20260125.htm)는 회사가 제조, 조립, 테스트, 패키징을 외부에 의존한다고 반복적으로 경고한다. 수요 최상단의 고마진과 공급망 병목은 같은 회사 안에서 동시에 존재한다.
 
@@ -152,7 +152,7 @@ SK하이닉스 쪽 공식 설명도 같은 방향이다. [SK hynix HBM4 개발 �
 
 HBM 세대가 올라갈수록 헤드라인은 보통 용량과 속도다. 몇 GB, 몇 TB/s, 몇 Gbps 같은 숫자가 먼저 보인다. 하지만 공정 관점에서 더 중요한 것은 그 숫자를 양산에서 유지하는 일이다. HBM3E에서 이미 12단 적층과 고성능 GPU 패키지가 병목이 됐다면, HBM4에서는 I/O 폭, 베이스 다이, 패키지 크기, 열, 고객별 커스텀이 더 커진다. 즉 "더 빠른 HBM"은 "더 어려운 패키징"이라는 뜻이다.
 
-![HBM 세대가 올라갈수록 병목은 DRAM 셀 하나보다 본딩, 열, 패키징, 테스트, 고객 검증으로 이동한다](./assets/03-generation-bottlenecks.svg)
+![HBM 세대가 올라갈수록 병목은 DRAM 셀 하나보다 본딩, 열, 패키징, 테스트, 고객 검증으로 이동한다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ba/ba47edcd25408c6aa0cef7c6104bbe993e3e0a53c96d8d2afa49babfdb8bc067.svg)
 
 첫째, 열이다. HBM은 GPU 옆에 붙어 있고, GPU 자체도 엄청난 전력을 먹는다. HBM 스택은 높아질수록 내부 열을 빼기 어렵다. 다이를 얇게 만들면 열 확산과 기계적 안정성의 균형이 필요하다. 이때 언더필과 몰딩 재료, 방열 구조, 패키지 레벨 열 설계가 같이 움직인다. SK하이닉스가 MR-MUF와 Advanced MR-MUF를 강조하는 이유도 단순 제조 자랑이 아니라 열과 뒤틀림을 관리해야 하기 때문이다.
 
@@ -160,13 +160,13 @@ HBM 세대가 올라갈수록 헤드라인은 보통 용량과 속도다. 몇 GB
 
 ![HBM4 베이스 다이와 HBM 스택을 비교하는 설계·패키징 랩. 베이스 다이는 단순 받침대가 아니라 인터페이스와 전력과 테스트 경로를 모으는 로직 다이다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/52/523834a9ba5fe71f5be2f2e387f9c9063d842b67d42eb3b55ba590d1abc0d29f.webp)
 
-![HBM4의 베이스 다이는 I/O, 전력, 열, 고객별 인터페이스가 모이는 결정 지점이다](./assets/05-base-die-decision-map.svg)
+![HBM4의 베이스 다이는 I/O, 전력, 열, 고객별 인터페이스가 모이는 결정 지점이다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/cd/cd26ad346107f314a958224e9f5b6e97b6a7468f1d34711b64fe24eb54823909.svg)
 
 셋째, 패키징 용량이다. HBM과 GPU 다이가 있어도 CoWoS 또는 동급 패키징 용량이 부족하면 최종 제품은 나오지 않는다. TSMC가 CoWoS 세대를 키우고 더 많은 HBM 스택을 넣는 방향을 공개하는 이유도 여기에 있다. 여기서 Amkor나 ASE 같은 OSAT가 일부 칸을 맡을 수 있지만, 마진 구조는 NVIDIA나 메모리 회사와 다르다. "패키징이 병목"이라는 말과 "패키징 업체가 고마진"이라는 말은 같은 말이 아니다.
 
 ![큰 인터포저 위에 로직 다이와 HBM 스택을 배치하는 고급 패키징 조립 장면. HBM 공급이 충분해도 CoWoS 용량이 막히면 최종 AI 칩 출하가 막힌다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/15/15c4eca13435b5ba759486a5d75874364710f011b46dc18d761e40a6b06ac53e.webp)
 
-![CoWoS는 로직 다이, HBM 스택, 인터포저, 기판, 테스트를 한 패키지로 묶는 최종 병목이다](./assets/06-cowos-bottleneck-map.svg)
+![CoWoS는 로직 다이, HBM 스택, 인터포저, 기판, 테스트를 한 패키지로 묶는 최종 병목이다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b9/b9c454f842c00f01a5f5e784c9d875e3c91d8b2bd7923828079ad13c4dbf14dc.svg)
 
 넷째, 테스트 시간이다. 적층 수와 패키지 복잡도가 늘면 불량을 찾는 시간이 길어진다. 테스트 병렬화가 안 되면 생산량이 막힌다. 테스트 소켓은 더 높은 전류와 열 조건, 더 많은 접점, 더 짧은 교체 주기를 견뎌야 한다. 그래서 리노공업, ISC, Teradyne 같은 회사는 HBM이라는 단어가 직접 매출 항목에 크지 않게 보여도, 테스트 조건 변화의 수혜와 리스크를 같이 받는다.
 

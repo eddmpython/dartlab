@@ -142,7 +142,7 @@ c.analysis("financial", "수익성")
 
 ---
 
-![엔비디아 핵심 구조 — 팹리스 + AI 수요 독점 = 영업이익률 62%](./assets/50-hero-map.svg)
+![엔비디아 핵심 구조 — 팹리스 + AI 수요 독점 = 영업이익률 62%](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/74/7458dcd98afafb9b1e240c4f24c10789354c640fa995de4c27af32cfdc979d27.svg)
 
 ---
 
@@ -170,7 +170,7 @@ c.analysis("financial", "수익성")
 
 ## 제2막: 팹리스 — 공장 없는 반도체 회사의 원가 구조
 
-![팹리스 vs IDM — NVIDIA와 Intel의 원가 구조 비교](./assets/50-fabless-vs-idm.svg)
+![팹리스 vs IDM — NVIDIA와 Intel의 원가 구조 비교](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d7/d7e287a586ffbf20cdd0813ee563f4ab42a9d7390fbd0d01dca9c9806243620d.svg)
 
 ### 왜 반도체 회사가 공장을 갖지 않는가
 
@@ -217,7 +217,7 @@ NVIDIA 10-K에는 이렇게 적혀 있다: *"We do not directly manufacture the 
 
 ## 제3막: ChatGPT 이후 — AI가 만든 수요 독점
 
-![매출 6년 — $10B에서 $131B, 데이터센터가 88%](./assets/50-revenue-explosion.svg)
+![매출 6년 — $10B에서 $131B, 데이터센터가 88%](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/12/12d0885b5ff731bf84a003289b72c29d9f41ed25494e52bdd0d9587c8c7f53c0.svg)
 
 ### 왜 2023년이 바닥이었는가
 
@@ -259,7 +259,7 @@ NVIDIA의 매출 구조를 보면 변화가 명확하다.
 
 ## 제4막: 마진 해부 — 매출총이익률 75%, 영업이익률 62%의 해체
 
-![마진 6년 시계열 — 2023년 바닥에서 2025년 역대 최고](./assets/50-margin-timeline.svg)
+![마진 6년 시계열 — 2023년 바닥에서 2025년 역대 최고](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/2f/2fad081eef09413c83b3d41b815806d214f1287b9efe7be98e9046c001711843.svg)
 
 ### 왜 반도체 회사의 마진이 소프트웨어 수준인가
 
@@ -365,7 +365,7 @@ NVIDIA의 설비투자/매출은 2.5%. 매출이 5배 뛰어도 설비투자는 
 
 ## 제6막: 리스크 — TSMC 의존과 AI 사이클
 
-![NVIDIA 공급망 — 설계에서 전력까지](./assets/50-supply-chain.svg)
+![NVIDIA 공급망 — 설계에서 전력까지](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c7/c7bed5dd1fa474ed16dc36a1087206b40257c8482268afb87e3acb2c6fce2d12.svg)
 
 ### TSMC 단일 의존 — 공장이 없는 것은 리스크이기도 하다
 
@@ -393,7 +393,7 @@ NVIDIA [2025 10-K Risk Factors](https://www.sec.gov/cgi-bin/browse-edgar?action=
 
 ## 제7막: 산업 패턴과 투자 포인트 — 다음 분기에 봐야 할 것
 
-![투자 포인트 — 다음 4분기에 봐야 할 5가지](./assets/50-checkpoint.svg)
+![투자 포인트 — 다음 4분기에 봐야 할 5가지](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e9/e91217b4e460508f493e75b50440015a6148ebaa261561da73cc8cf9065ca41f.svg)
 
 ### 반도체 산업의 사이클 — NVIDIA는 예외인가
 

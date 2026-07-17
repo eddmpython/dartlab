@@ -182,7 +182,7 @@ c.analysis("비용구조")
 
 한전의 비용구조에서 핵심은 **연료믹스가 곧 리스크 프로파일**이라는 점이다. 원전 비중을 높이면 원가 안정성이 올라가지만, 건설비(기당 5~7조)와 해체비(기당 1조+)가 장기 부채로 쌓인다. 석탄을 줄이면 탄소배출권 비용이 줄지만 LNG 의존도가 올라가서 가격 변동성이 커진다. 어느 쪽을 골라도 리스크가 따라온다.
 
-![매출원가율 5년 추이](./assets/25-cost-ratio-swing.svg)
+![매출원가율 5년 추이](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/74/743c1b26e2f66dc0a4e56bcb29186cdb7ab91d069c6b11a211735c53bf4e2504.svg)
 
 ### 전기요금 동결의 정치학 — 문재인 정부에서 윤석열 정부까지
 
@@ -287,7 +287,7 @@ c.select("BS", ["사채", "장기차입금", "단기차입금"], freq="Y")
 
 2024년 이자비용 9.1조원. 하루 249억원. **분당 1,700만원이 이자로 나간다.** 이자보상배율 0.92x — 번 돈으로 이자도 못 갚는 상태였다.
 
-![금융부채 적층 차트](./assets/25-debt-stack.svg)
+![금융부채 적층 차트](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f5/f548cb8bff8edbbb7e0a6dbe08a300355ac1dbefcf53d4a8e84d8793f1e7a510.svg)
 
 그런데 이상한 게 있다. 금융부채 130조, 총부채 206조. 부채비율 497%(2024). 이런 회사의 신용등급은?
 
@@ -345,7 +345,7 @@ c.analysis("현금흐름")
 | 2024 | 3.6 | 15.9 | 11.8 | 16.5 | +1.8 |
 | 2025 | 8.7 | 20.9 | 12.1 | 17.0 | +2.4 |
 
-![영업활동현금흐름 vs 잉여현금흐름 괴리 차트](./assets/25-ocf-fcf-gap.svg)
+![영업활동현금흐름 vs 잉여현금흐름 괴리 차트](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/84/848a7fe7a98c7a797916c38253ddaa9205f6b9435f86a087d9ee04aa56fe1ded.svg)
 
 **감가상각**이 구조의 핵심이다. 한전은 발전소·송전탑·변전소 — 유형자산 172조원어치를 깔고 앉아 있다. 이걸 매년 10~12조원씩 감가상각으로 비용 처리한다. 그런데 이 "비용"은 진짜 돈이 나가지 않는다. 20년 전에 지은 발전소 값을 지금 장부에서 깎는 것뿐이니까. 2022년은 에너지 위기가 워낙 심각해 영업CF도 -23.5조로 꺼졌지만, 평년(2021·2023~2025)에는 감가상각 10~12조가 현금 손실을 흡수해 영업CF를 양(+)으로 유지한다 — 172조짜리 인프라가 만들어 내는 구조적 완충장치다.
 
@@ -450,7 +450,7 @@ c.analysis("안정성")
 | PER | 8x | 상폐 | 18x |
 | 결말 | ? | 완전 국유화(2023) | 안정 배당 |
 
-![EDF vs 한전 비교 구조도](./assets/25-edf-vs-kepco.svg)
+![EDF vs 한전 비교 구조도](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ad/adf7c92cb9b5a6c6c0ea4fcaa3c22dc3ab583aa5fb93fb972ff324f79b3a57b3.svg)
 
 표에서 한전(497%)과 EDF(550%)의 간격이 눈에 들어온다. **50%p.** 다음 에너지 위기 한 번이면 메워진다.
 
@@ -485,7 +485,7 @@ c.analysis("수익성")
 
 **영업이익률 스윙 총 진폭: 59.6%p (2022 저점 → 2025 고점).** 이런 스윙은 한전에서만 가능하다. 원가가 떨어지고 요금이 올라가면 — 그 차이가 고스란히 이익이 된다.
 
-![영업이익률 스윙 59.6%p 차트](./assets/25-opm-swing.svg)
+![영업이익률 스윙 59.6%p 차트](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/79/7913f24356fdd219beb26d6df3e9765fdef0a1716614e75553ff4540e57b17b1.svg)
 
 ### 4년 무배당 → 214원 재개 — 은행 예금보다 낮은 배당수익률
 
@@ -573,7 +573,7 @@ kWh당 10원 인상이 가져올 변화를 시뮬레이션하면:
 
 **이 딜레마가 한전 재무제표의 본질이다.** 전기요금 1원 = 5,600억. 올리면 한전이 살고, 안 올리면 한전이 죽는다. 그리고 그 결정을 내리는 건 시장이 아니라 정치다.
 
-![한전의 미래 설비투자 부담](./assets/25-future-capex.svg)
+![한전의 미래 설비투자 부담](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/fe/feaa235f652cf3eef4ca7b995173821bfc652bd218bf280fcb101e839dd7158b.svg)
 
 ---
 

@@ -44,7 +44,7 @@ import StackBar from '$lib/components/blog/StackBar.svelte';
 
 같은 해, 같은 손익계산서의 위쪽 줄 — 매출총이익률은 **46%**였다. 100원을 팔아 46원이 남았다는 뜻이다.
 
-![매출은 5배, GAAP 영업이익률은 1.8%까지 붕괴 — 같은 해 두 줄이 정반대를 말한다](./assets/130-rev-vs-gaap-opm.svg)
+![매출은 5배, GAAP 영업이익률은 1.8%까지 붕괴 — 같은 해 두 줄이 정반대를 말한다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b9/b9125dc8c879e8d5f09596034a59bab94e704f64952691cbce1fb4c13e1f3535.svg)
 
 한 회사의 한 해를 두고, 어느 줄을 짚느냐에 따라 '거의 못 벌었다'와 '절반 가까이 남겼다'가 동시에 참이 된다. 두 줄 사이에서 사라진 44원은 어디로 갔는가. 그 답의 절반은 1년 전, AMD가 자기보다 큰 회사를 자사 주식으로 사들이며 장부에 올린 약 350억 달러의 무형자산에 적혀 있다 — 회사는 그 인수 대금을 이미 2022년에 결제했지만, **회계 청구서는 매 분기 손익계산서로 나뉘어 도착하는 중이다.** 나머지 절반은, 그냥 안 좋았던 해였다는 더 단순한 사실에 있다.
 
@@ -98,7 +98,7 @@ c.select("IS", ["매출액", "매출총이익", "영업이익"], freq="Q")  # �
 
 2023년 GAAP 영업이익은 $0.40B(10-K 기준 약 4.01억 달러), OPM 1.8%로 한 칸 더 주저앉았다. 같은 붕괴처럼 보이니 '또 Xilinx 상각 탓'으로 묶고 싶어진다. **그런데 10-K MD&A는 이 해의 하락을 명시적으로 다르게 설명한다 — 약한 Client(PC용 칩) 실적과 높아진 R&D 때문이고, 인수 관련 상각은 오히려 줄어 일부 상쇄했다** [공식 공시·[AMD 2023 Form 10-K](https://www.sec.gov/Archives/edgar/data/2488/000000248824000012/amd-20231230.htm)].
 
-![2022는 상각이 눌렀고, 2023은 약한 Client·높은 R&D가 눌렀다 — 같은 붕괴, 다른 원인](./assets/130-two-causes.svg)
+![2022는 상각이 눌렀고, 2023은 약한 Client·높은 R&D가 눌렀다 — 같은 붕괴, 다른 원인](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/11/11cf08e62f01252ac413e3b30a1f11fbbd3eecfa6648cb3b33ccd1febd6b20b8.svg)
 
 그래서 두 해를 갈라 읽어야 한다.
 
@@ -156,7 +156,7 @@ c.select("IS", ["매출액", "매출총이익", "영업이익"], freq="Q")  # 20
 
 2024~2025년 GAAP 영업이익은 $0.40B→$1.90B→$3.69B로 회복했고, 매출총이익률은 46.1%→49.3%→49.5%로 다시 올라왔다. 매출은 2025년 $34.64B로 2021년($16.43B)의 2.1배가 됐다.
 
-![AMD — 매출총이익률 49% 위 유지와 상각 청구서가 얇아지는지가 베팅의 시험대](./assets/130-recovery.svg)
+![AMD — 매출총이익률 49% 위 유지와 상각 청구서가 얇아지는지가 베팅의 시험대](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e0/e05a52be3fb9fcbcfa0bc2c7b80b4d4c004f0126191143dca52d5b2afab39440.svg)
 
 이 회복은 두 힘이 겹친 결과로 *양립*한다 — 수요가 살아난 것, 그리고 인수 후 시간이 지나며 상각 청구서가 상대적으로 얇아진 것. 그 사이 AMD는 2022년 2분기부터 Data Center·Client·Gaming·Embedded 4개 세그먼트로 재편하며, 인수한 FPGA(Embedded)와 같은 해 흡수한 Pensando DPU(약 19억 달러)를 Data Center에 합류시켰다 [외부 인용]. 정체성이 'CPU 사이클에 묶인 부품업체'에서 '적응형 컴퓨팅 복합체'로 바뀐 것이다.
 
@@ -174,7 +174,7 @@ c.select("IS", ["매출액", "매출총이익", "영업이익"], freq="Q")  # 20
 
 그런데 연결 GAAP 영업이익은 $3.694B다. 사라진 것은 사업부가 아니라 **All Other**다. 10-K는 All Other 영업손실 $4.007B의 주된 구성으로 acquisition-related intangibles amortization 약 $2.3B와 stock-based compensation 약 $1.6B를 든다. 즉 2025년 AMD는 “본업이 3.7B밖에 못 번 회사”가 아니라, “세 사업부가 7.7B를 벌었고, 본사·회계·보상성 비용이 4.0B를 지워 연결 GAAP 3.7B가 된 회사”에 가깝다.
 
-![AMD 2025 — 세 사업부가 번 돈을 All Other가 지운다](./assets/130-gaap-bridge.svg)
+![AMD 2025 — 세 사업부가 번 돈을 All Other가 지운다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/18/18636dc50cfb8506dee6cf8bf1190071192ed6c6c0831802fdcd46de55d56f1e.svg)
 
 이 구분은 사소하지 않다. Data Center 매출만 보면서 “AI 수혜가 확인됐다”고 말하면 너무 빠르고, 연결 영업이익만 보면서 “아직 별로 못 번다”고 말하면 너무 느리다. 2025년의 정답은 둘 사이에 있다. Data Center는 이미 가장 큰 매출 축이 되었고 영업이익도 냈다. Client and Gaming도 회복했다. Embedded는 작지만 여전히 높은 절대 영업이익을 냈다. 그러나 Xilinx 인수의 회계 청구서와 보상성 비용이 연결 손익을 크게 눌렀다.
 
@@ -278,7 +278,7 @@ AMD Q1 2026 IR은 매출 $10.253B, GAAP gross margin 53%, GAAP operating income 
 
 그래서 AMD의 다음 업데이트는 한 줄 뉴스가 아니라 표의 순서로 읽어야 한다. 매출, GPM, segment OI, All Other, GAAP OI, OCF가 같은 방향이면 이 글의 해석은 강해지고, 한 줄이라도 반대로 움직이면 원인을 다시 열어야 한다.
 
-![AMD — 2026년에 봐야 할 세 가지](./assets/130-checkpoints.svg)
+![AMD — 2026년에 봐야 할 세 가지](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/30/304696974ce8cf390fbcc37437f8ab7e5d490bf218412024ee0953bc0bef80cf.svg)
 
 ---
 

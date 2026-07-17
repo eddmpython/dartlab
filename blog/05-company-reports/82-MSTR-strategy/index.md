@@ -47,7 +47,7 @@ import HFDataLink from '$lib/components/blog/HFDataLink.svelte';
 
 > **자본집약** | 미국 Bitcoin Treasury · NASDAQ | 2026-04-29 dartlab 실측 + SEC EDGAR 원문
 
-![Strategy MSTR 공정가치 회계 지도 — 소프트웨어 매출 $477M 회사가 비트코인 장부 $58.85B를 들고 있어 손익과 자본이 BTC 종가에 따라 움직인다.](./assets/82-hero-fair-value.svg)
+![Strategy MSTR 공정가치 회계 지도 — 소프트웨어 매출 $477M 회사가 비트코인 장부 $58.85B를 들고 있어 손익과 자본이 BTC 종가에 따라 움직인다.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/27/27713b5dcec473d066bbd270464cfd7a97e5d90bc426dff746d0cf0999224d86.svg)
 
 Strategy Inc, 예전 이름 MicroStrategy. 티커는 **MSTR**. 겉으로 보면 기업용 분석 소프트웨어 회사다. 2025년 매출은 **$477.2M**. 매출총이익률은 **68.7%**. 구독 매출은 빠르게 자라고, 제품 지원 매출은 줄고, 라이선스 회사에서 클라우드 구독 회사로 넘어가는 전형적인 소프트웨어 전환 그림이 있다.
 
@@ -67,7 +67,7 @@ Strategy Inc, 예전 이름 MicroStrategy. 티커는 **MSTR**. 겉으로 보면 
 
 ## 1막 — 2025년 1월 1일, 손익계산서의 문법이 바뀌었다
 
-![ASU 2023-08 전후 — 2024년까지는 비트코인 가격 하락만 손상차손으로 들어왔지만 2025년부터는 상승과 하락이 모두 순손익으로 들어온다.](./assets/82-accounting-before-after.svg)
+![ASU 2023-08 전후 — 2024년까지는 비트코인 가격 하락만 손상차손으로 들어왔지만 2025년부터는 상승과 하락이 모두 순손익으로 들어온다.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/dc/dc167c8a46537d6d31c0763e9ec53d6094add728d4875fce069c596ad75d669b.svg)
 
 2024년까지 Strategy의 비트코인은 회계적으로 이상한 자산이었다. 가격이 떨어지면 손상차손을 잡았다. 그런데 가격이 다시 올라가도 팔기 전까지는 이익을 잡지 못했다. 손익계산서가 아래쪽으로만 열려 있었다. 그래서 비트코인이 장기적으로 올라도 장부에는 과거 저점의 상처가 오래 남았다.
 
@@ -134,7 +134,7 @@ dartlab 수익성 분석은 이 간극을 숫자로 보여준다.
 
 ## 3막 — 대차대조표가 1년 만에 다른 회사가 됐다
 
-![Strategy 대차대조표 폭발 — 2024년 총자산 $4.76B에서 2025년 $61.64B, 자본 $0.98B에서 $51.04B로 커졌다.](./assets/82-balance-sheet-explosion.svg)
+![Strategy 대차대조표 폭발 — 2024년 총자산 $4.76B에서 2025년 $61.64B, 자본 $0.98B에서 $51.04B로 커졌다.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e0/e083b958f2507c4c656b21b2ccb4fa688207e1e373dc7b9286254869791fc3b7.svg)
 
 2024년 말 Strategy의 총자산은 **$4.76B**였다. 자기자본은 **$979M**. 부채비율은 **265%**. 이때도 이미 비트코인 회사였지만, 장부는 아직 과거 회계의 흔적을 갖고 있었다.
 
@@ -172,7 +172,7 @@ dartlab 안정성 분석은 이 변화를 이렇게 잡는다.
 
 ## 4막 — 현금흐름표는 더 솔직하다
 
-![Strategy 현금흐름표 — 2025년 영업현금흐름 -$67M, 투자현금흐름 -$22.5B, 재무현금흐름 +$24.8B로 자본시장 조달이 비트코인 매입을 먹여 살린다.](./assets/82-cashflow-machine.svg)
+![Strategy 현금흐름표 — 2025년 영업현금흐름 -$67M, 투자현금흐름 -$22.5B, 재무현금흐름 +$24.8B로 자본시장 조달이 비트코인 매입을 먹여 살린다.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/62/62cff8f67a2469341f9734b3a09d86d6db5ddb5bd12c165de8dcb1d8530af1c5.svg)
 
 손익계산서는 공정가치 때문에 흔들리고, 대차대조표는 공정가치 때문에 커진다. 그럼 실제 현금은 어디서 왔나. 답은 현금흐름표다.
 
@@ -396,7 +396,7 @@ MSTR은 이들과 다르다. 소프트웨어 매출 $477M 회사인데, 손익�
 
 ## 12막 — 그래서 MSTR은 어떻게 읽어야 하나
 
-![MSTR 투자 체크리스트 — BTC 보유량, 평균 취득원가, 공정가치 손익, 희석, 고정비, 세금과 valuation allowance를 함께 봐야 한다.](./assets/82-investor-checklist.svg)
+![MSTR 투자 체크리스트 — BTC 보유량, 평균 취득원가, 공정가치 손익, 희석, 고정비, 세금과 valuation allowance를 함께 봐야 한다.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a3/a361f902f86b12aab69c68ddbd528292d56d4f32804422c12cab67f9f7979983.svg)
 
 MSTR은 단순한 소프트웨어 회사가 아니다. 그렇다고 단순한 비트코인 ETF도 아니다. ETF는 비트코인을 들고 있을 뿐이다. MSTR은 비트코인을 들고, 자본시장에서 조달하고, 우선주와 전환사채를 설계하고, 소프트웨어 사업과 현금 준비금을 붙여 복합 자본구조를 만든다.
 

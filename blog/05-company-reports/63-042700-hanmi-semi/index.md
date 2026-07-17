@@ -165,7 +165,7 @@ carousel:
 
 이 글은 그 구조를 **AI 공급망 추적 다큐** 10막 구조로 풀어간다. 반도체 대기업(삼성·SK하이닉스·엔비디아·TSMC) 편을 이미 쓴 뒤에 마지막으로 빠져 있던 **상류 장비사**가 한미반도체다. [SK하이닉스 (000660)](/blog/000660-skhynix)가 HBM을 만들고, [엔비디아 (NVDA)](/blog/NVDA-nvidia) 가 H100에 HBM을 얹고, [ARM](/blog/ARM-arm-holdings) 이 CPU 설계를 내놓는 동안 — 그 흐름의 **진짜 시작점**에 한미반도체가 있다.
 
-![한미반도체 2023 바닥 → 2024 매출 3.5배·영업이익 7.4배 급반등](./assets/063-headline-turnaround.svg)
+![한미반도체 2023 바닥 → 2024 매출 3.5배·영업이익 7.4배 급반등](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/90/9057ac570f5cb6109cfef2765535d8739a111b21334ca289fe59e3d359733ed7.svg)
 
 ---
 
@@ -201,7 +201,7 @@ carousel:
 
 1막은 43년 역사의 배경이다. 2막은 TC 본더의 기술 원리를 해부 — **왜 ASMPT·Besi가 있어도 한미만 쓸 수 있는지**를.
 
-![한미반도체 43년 타임라인 — 1980 창업 → 2017 TC본더 납품 → 2024 시총 30조](./assets/063-timeline.svg)
+![한미반도체 43년 타임라인 — 1980 창업 → 2017 TC본더 납품 → 2024 시총 30조](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c3/c32cd88578749dc7de25856f84b5a2bfb3d72d62c72891f61c24a0480f5c813f.svg)
 
 ![인천 본사 공장 — 한미반도체 생산 거점](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/04/040ad2384e7c17535db2360d52dffc1e833bfe275e754565a824d0eaa584babb.webp)
 
@@ -246,7 +246,7 @@ carousel:
 
 2막은 기술적 해자를 봤다. 3막은 그 해자가 **2023년에는 왜 안 먹혔는지** — 사이클 바닥 구간을 본다.
 
-![TC 본딩 장비 — HBM 생산라인의 병목 지점](./assets/063-tc-bonding.svg)
+![TC 본딩 장비 — HBM 생산라인의 병목 지점](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/80/8033126938f618ad1f9d3ee0f4df74aa49de771787adf9a1c6ab29c9d5c7ced7.svg)
 
 ![TC 본더 장비 근접 — 세라믹 툴팁이 실리콘 웨이퍼 적층을 열압착하는 순간](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/bc/bcfab32d25ee915145ebabe26517c7347660d3200785d01b7aa5fcc769b17bb9.webp)
 
@@ -358,7 +358,7 @@ SK하이닉스는 2024년 **HBM 매출 $16B** (전년 대비 +300%), 전체 매�
 
 4막은 2024년 급반등의 매커니즘을 봤다. 5막은 그 영업이익률 45.7%가 반도체 장비 업계에서 어떤 위치인지, 왜 지속 가능한지를 본다.
 
-![2023 바닥 → 2024 매출 3.5배·영업이익 7.4배의 분해](./assets/063-2024-surge.svg)
+![2023 바닥 → 2024 매출 3.5배·영업이익 7.4배의 분해](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/2c/2ca966056619844cfabe1c078f36c34d859021f3f7b2fefb5efa167e4e677013.svg)
 
 ---
 
@@ -452,7 +452,7 @@ SK하이닉스는 2024년 **HBM 매출 $16B** (전년 대비 +300%), 전체 매�
 
 6막은 회계 구조를 봤다. 7막은 **사람** — 곽동신 부회장의 2세 승계와 45세 오너 경영 서사를 본다.
 
-![2023 순이익 2,672억 해부 — 영업 346억 + 영업외 2,300억](./assets/063-2023-gains.svg)
+![2023 순이익 2,672억 해부 — 영업 346억 + 영업외 2,300억](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f9/f9c7c087e78b135db7cd2a4208adeb001d9ff1bb2e8579b11b97056502c7a0ea.svg)
 
 ---
 
@@ -541,7 +541,7 @@ SK하이닉스는 HBM 독점 공급 지위를 유지하기 위해 **2025~2027년
 
 8막은 고객 관계를 봤다. 9막은 **경쟁자** — ASMPT·Besi·Applied Materials와 AI 사이클 시나리오를 본다.
 
-![3대 고객 집중도 — SK하이닉스 60% + 마이크론 18% + 삼성 10%](./assets/063-customer-mix.svg)
+![3대 고객 집중도 — SK하이닉스 60% + 마이크론 18% + 삼성 10%](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/39/39cde9f5ed751393203801fb29c2a5656a0f09f3fc043bd65947e38a04d2bca6.svg)
 
 ---
 
@@ -621,7 +621,7 @@ SK하이닉스는 HBM 독점 공급 지위를 유지하기 위해 **2025~2027년
 
 매출 5,700억 회사의 시가총액 18조, 영업이익률 45%, 이 모든 숫자가 "독점"이라는 단 한 단어에 걸려 있다. 43년 쌓아 올린 기술이 그 독점의 기반이고, 2026~2028년 하이브리드 본딩이 그 독점의 다음 시험대다.
 
-![2026~2028 한미반도체 관찰 4가지 — 하이브리드·고객·마진·주주환원](./assets/063-checkpoints.svg)
+![2026~2028 한미반도체 관찰 4가지 — 하이브리드·고객·마진·주주환원](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b8/b8a3778604de0df7665a02e52fbeac601d5f74a5a2d8f3cbb521f3ad8d85c73c.svg)
 
 ---
 

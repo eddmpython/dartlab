@@ -16,7 +16,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 이 세 공시는 제목은 달라도 움직이는 것은 같다. `주식 수`, `지배력`, `이해관계`다. 그래서 읽는 순서도 같다. 상대방 → 가격 → 소각/희석 → 지배력 변화 → 후속 실행. 주주환원 관점은 [주주환원 정책은 말과 숫자 중 무엇을 봐야 하나](/blog/shareholder-return-what-matters), 일반 유상증자는 유상증자 공시 읽는 법, 희석형 조달은 전환사채와 BW 공시 읽는 법과 같이 보면 더 잘 이어진다.
 
-![자기주식, 제3자배정, 최대주주 변경을 어떤 순서로 해석해야 하는지 정리한 구조도](./assets/037-reading-flow.svg)
+![자기주식, 제3자배정, 최대주주 변경을 어떤 순서로 해석해야 하는지 정리한 구조도](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b2/b2fbef3eea0ba23835a1963b7a4db8ff4bbdf5e540fbcde97ccdda7ae059cf53.svg)
 
 ---
 
@@ -38,13 +38,13 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 다섯 항목을 확인했으면, 다음 질문은 하나다. 이 사건이 주주환원인가, 구조 재편인가, 지배력 이동인가.
 
-![이 세 공시를 읽을 때 함께 붙여 볼 레이어를 정리한 도식](./assets/037-evidence-layer.svg)
+![이 세 공시를 읽을 때 함께 붙여 볼 레이어를 정리한 도식](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d9/d9b1872df24230939bbf003eba5ba14e3e0825c80f550759300fd6415f4cf1f5.svg)
 
 ---
 
 ## 주주환원인가, 지배력 이동인가
 
-![이 세 공시를 주주환원, 구조 재편, 지배력 이동으로 나누는 분기 구조도](./assets/037-decision-tree.svg)
+![이 세 공시를 주주환원, 구조 재편, 지배력 이동으로 나누는 분기 구조도](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/1f/1f96d52cac84f56b0753233e540feaed1e223ea77ada89fe3695b90e5112f57a.svg)
 
 자기주식은 소각 중심이면 주주환원 해석이 더 강해진다. 제3자배정은 특정 상대방이 어떤 가격에 들어오는지가 핵심이다. 최대주주 변경은 지분 이전 구조와 자금 출처, 후속 이사회 변화가 더 중요하다.
 
@@ -56,7 +56,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 ## 건강한 공시와 조심해야 할 공시의 차이
 
-![이 세 공시에서 상대적으로 건강한 경우와 더 조심해야 하는 경우를 비교한 매트릭스](./assets/037-good-vs-risky-matrix.svg)
+![이 세 공시에서 상대적으로 건강한 경우와 더 조심해야 하는 경우를 비교한 매트릭스](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/67/67a7f07069c24360bf705c291d05713ea143f5eed489ac7d262df400090762eb.svg)
 
 | 관찰 포인트 | 상대적으로 건강한 경우 | 더 조심해야 하는 경우 |
 | --- | --- | --- |
@@ -116,7 +116,7 @@ DART 전자공시에서 이 세 공시를 읽을 때는 `시간 순서`를 꼭 �
 
 ## 발표 이후 — 실전 체크리스트와 후속 공시
 
-![이 세 공시를 읽은 뒤 후속 공시에서 다시 봐야 할 질문을 정리한 보드](./assets/037-watchboard.svg)
+![이 세 공시를 읽은 뒤 후속 공시에서 다시 봐야 할 질문을 정리한 보드](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/75/75d63bf54f84dc9de5850f2d58de661aceb2811de748f7b3a1696dcbfabb73a8.svg)
 
 이벤트 발표 순간보다 후속 실행이 더 중요하다. 공시를 읽은 직후에는 아래 항목을 확인한다.
 

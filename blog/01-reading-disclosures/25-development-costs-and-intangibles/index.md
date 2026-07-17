@@ -20,7 +20,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 아래는 `자산화 정책 → 상각·손상 인식 → 매출과 현금흐름 연결 → 후속 보고서 추적` 순서로 읽는 법이다. 숫자 해석의 기본 프레임은 [숫자만 보면 왜 자주 틀리나](/blog/beyond-the-numbers), 현금 검증은 [영업현금흐름이 순이익을 부정할 때](/blog/operating-cash-flow-vs-net-income), 투자 집행의 앞단은 [건설중인자산은 왜 중요한가](/blog/capacity-utilization-capex)와 같이 보면 더 잘 이어진다.
 
-![개발비와 무형자산을 어떤 순서로 읽어야 하는지 정리한 구조도](./assets/045-reading-flow.svg)
+![개발비와 무형자산을 어떤 순서로 읽어야 하는지 정리한 구조도](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/6e/6e834c7e2e02acc89e7e8d6d7a39d9a9c77bdf94ff7f635532d92f5bfc400dff.svg)
 
 ---
 
@@ -57,7 +57,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 마지막으로 꼭 붙여야 하는 것은 현금과 자금조달이다. 개발비는 손익에서 비용이 덜 보이게 만들 수 있어도 현금지출 자체를 없애지 못한다. 그래서 자산은 늘고 손익은 덜 나빠 보이는데 영업현금흐름은 약하고, 뒤이어 증자나 CB/BW가 붙는 구조라면 조심해서 봐야 한다. 이 부분은 유상증자 공시 읽는 법, 전환사채와 BW 공시 읽는 법과 함께 보면 훨씬 또렷하다.
 
-![개발비와 무형자산을 읽을 때 같이 확인해야 할 레이어를 정리한 도식](./assets/045-evidence-layer.svg)
+![개발비와 무형자산을 읽을 때 같이 확인해야 할 레이어를 정리한 도식](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/9e/9eef374c57b84f23fdc880021f7a768a03508093a3a4a367c995be6f8124af34.svg)
 
 ---
 
@@ -65,7 +65,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 가장 실용적인 질문은 이것이다. `이 자산화가 실제 제품화와 수익화의 전단계인가, 아니면 비용 인식을 늦추는 완충 장치인가`.
 
-![개발비와 무형자산을 건강한 제품화 투자와 과열된 스토리 자산화로 가르는 구조도](./assets/045-decision-tree.svg)
+![개발비와 무형자산을 건강한 제품화 투자와 과열된 스토리 자산화로 가르는 구조도](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/cc/cc45489cd82d31eefb604482c8a95b074b88361ea0bcd260b6e0c5707242b5a5.svg)
 
 보통 아래 세 갈래로 나누면 읽기가 쉬워진다.
 
@@ -83,7 +83,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 ## 위험도를 나누는 기준
 
-![개발비와 무형자산에서 상대적으로 건강한 경우와 더 조심해야 하는 경우를 비교한 매트릭스](./assets/045-good-vs-risky-matrix.svg)
+![개발비와 무형자산에서 상대적으로 건강한 경우와 더 조심해야 하는 경우를 비교한 매트릭스](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/84/84116b5a8b170c5c5865c73b95bae7943713241df297b905e0c46d60aad4fd3e.svg)
 
 | 관찰 포인트 | 상대적으로 건강한 경우 | 더 조심해야 하는 경우 |
 | --- | --- | --- |
@@ -125,7 +125,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 ## 다음 분기에 다시 확인할 숫자
 
-![개발비와 무형자산을 읽은 뒤 후속 보고서에서 다시 봐야 할 질문을 정리한 보드](./assets/045-watchboard.svg)
+![개발비와 무형자산을 읽은 뒤 후속 보고서에서 다시 봐야 할 질문을 정리한 보드](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ed/ed60fa4b7cd615dd3883bf6e2470370a63c3754675bda25d037677d3740f277e.svg)
 
 | 이번에 본 것 | 다음에 다시 볼 것 |
 | --- | --- |

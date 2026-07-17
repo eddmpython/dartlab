@@ -16,7 +16,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 자산을 **용도** 기준으로 다시 나누면 다른 질문이 가능해진다. 이 글은 [수익 구조 읽기](/blog/revenue-structure-how-to-read)에서 시작한 기업 분석의 세 번째 축이다. 수익 구조에서 "무엇으로 버는가"를, 자금 구조에서 "돈을 어디서 가져오는가"를 봤다면, 여기서는 "가져온 돈이 어디에 묶여 있는가"를 본다.
 
-![자산 구조 분석의 네 축: 영업/비영업 재분류, 운전자본, 설비투자, 자산회전율을 한 화면에 압축한 도식](./assets/hero-asset-structure.svg)
+![자산 구조 분석의 네 축: 영업/비영업 재분류, 운전자본, 설비투자, 자산회전율을 한 화면에 압축한 도식](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/60/607b115283a855edd5e89569ea9f6123a3b7f158b4aa527448a6cf4d18778393.svg)
 
 ---
 
@@ -54,7 +54,7 @@ c.story("자산구조")
 
 한 시점의 비중만 보면 "영업자산 60%"라는 사실만 확인된다. 5년 추이를 보면 방향이 보인다.
 
-![영업자산과 비영업자산 비중의 5년 변화 — 세 가지 전형적 패턴: 확장형, 안정형, 축소형](./assets/asset-reclassification.svg)
+![영업자산과 비영업자산 비중의 5년 변화 — 세 가지 전형적 패턴: 확장형, 안정형, 축소형](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b0/b0cfeca8066b78ca0912317d4c524d6967d597883e4f6fe407e705f920d13b21.svg)
 
 **확장형**: 영업자산 비중이 올라간다. 유형자산, 건설중인자산이 빠르게 늘어나는 회사다. 배터리, 반도체처럼 대규모 설비 투자가 필요한 산업에서 흔하다. 비영업자산(현금, 투자자산)은 상대적으로 줄어든다. 투자에 현금을 쏟아붓고 있다는 뜻이다.
 
@@ -95,7 +95,7 @@ c.story("자산구조")
 CCC = 재고회전일수 + 매출채권회전일수 - 매입채무회전일수
 ```
 
-![현금전환주기 구성 요소와 해석 — 재고회전일수, 매출채권회전일수, 매입채무회전일수의 조합이 현금 순환 속도를 결정](./assets/ccc-trend.svg)
+![현금전환주기 구성 요소와 해석 — 재고회전일수, 매출채권회전일수, 매입채무회전일수의 조합이 현금 순환 속도를 결정](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ec/ecb3952a53d446573c2f33a6e73438c7346ab0dc5e553e63acf98210f6116000.svg)
 
 현금전환주기가 길면 현금이 오래 묶인다. 짧으면 현금이 빨리 돌아온다.
 
@@ -123,7 +123,7 @@ CCC = 재고회전일수 + 매출채권회전일수 - 매입채무회전일수
 | **1.0~1.5** | 적정 수준. 기존 자산을 유지하면서 점진적 확장 |
 | **1.0 미만** | 유지 투자. 기존 자산이 노후화되는 속도를 투자가 따라가지 못한다 |
 
-![설비투자 패턴 해석 — 투자 확대기, 유지기, 축소기의 특징과 설비투자/감가상각비 비율](./assets/ppe-growth.svg)
+![설비투자 패턴 해석 — 투자 확대기, 유지기, 축소기의 특징과 설비투자/감가상각비 비율](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/af/af8011ef862767a46d031d6ac4f9fcb0bb67960bc52d6cb8c03373e0b72151f1.svg)
 
 설비투자 추이도 시계열로 봐야 한다. 3년간 설비투자가 급증했다가 올해 급감했다면, 대형 프로젝트가 일단락된 것인지 투자 여력이 없어진 것인지를 구분해야 한다. 건설중인자산(CIP)이 함께 줄면 프로젝트 완료 가능성이 높고, CIP는 그대로인데 설비투자만 줄면 프로젝트가 지연된 것일 수 있다.
 
@@ -140,7 +140,7 @@ CCC = 재고회전일수 + 매출채권회전일수 - 매입채무회전일수
 유형자산회전율 = 매출 / 유형자산
 ```
 
-![자산회전율 하락의 두 가지 원인 — 자산 팽창(투자 확대기) vs 매출 둔화(효율 악화)](./assets/turnover-decline.svg)
+![자산회전율 하락의 두 가지 원인 — 자산 팽창(투자 확대기) vs 매출 둔화(효율 악화)](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/29/29d8b726b8ec7659a56ac5abaea7696614591c1c602e3532d186e091be7db4eb.svg)
 
 회전율이 내려가는 데는 두 가지 이유가 있다.
 

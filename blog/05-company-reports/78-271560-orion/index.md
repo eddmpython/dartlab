@@ -171,7 +171,7 @@ import HFDataLink from '$lib/components/blog/HFDataLink.svelte';
 ![오리온 초코파이 패키지 — 이 글의 핵심은 제품보다 이 제품이 각국 현지 진열대에 올라가는 방식이다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e2/e284742b0966b37944ddaf11537a43f8d2b6a7327be679ecd9e3188ca4bf3a37.webp)
 *오리온 초코파이 패키지. 이 글의 핵심은 제품 자체보다 이 제품이 한국 수출품을 넘어 중국·베트남·러시아 현지 진열대에 올라가는 방식이다. (출처: Wikimedia Commons, CC BY-SA 계열 라이선스)*
 
-![오리온 마진 지도 — 내수 식품의 5% 천장을 해외 현지화가 깼다](./assets/78-hero-map.svg)
+![오리온 마진 지도 — 내수 식품의 5% 천장을 해외 현지화가 깼다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/02/02eef44bbaf224d2d8a9de8f449b8d66c8f7204bf0a324d2c711d3b739cb49ce.svg)
 
 ```python
 import dartlab
@@ -213,7 +213,7 @@ o.select("CF", ["영업활동현금흐름", "투자활동현금흐름"], freq="Y
 
 이 지점이 글의 관통선이다. **오리온은 왜 식품회사인데 식품회사 마진을 벗어났는가.**
 
-![식품 4사 영업이익률 비교 — 오리온은 내수 5% 천장 위에 있다](./assets/78-food-margin-comparison.svg)
+![식품 4사 영업이익률 비교 — 오리온은 내수 5% 천장 위에 있다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/39/395d6a09c0e4946bf8417393d97c662388a6137d23a4250f9f7e98b668246657.svg)
 
 오리온의 숫자는 삼양식품과도 다르다. 삼양식품은 불닭이라는 단일 브랜드가 글로벌 밈이 되면서 2024~2025년에 마진이 급등했다. 오리온은 그런 갑작스러운 폭발이 아니다. 오리온은 2018년에도 14.64%, 2019년에도 16.19%, 2020년에도 16.87%였다. 즉 오리온의 16% 마진은 유행이 아니라 구조다.
 
@@ -244,7 +244,7 @@ o.select("CF", ["영업활동현금흐름", "투자활동현금흐름"], freq="Y
 
 오리온이 강한 이유는 이 두 번째 쪽에 있다. 초코파이·스낵의 레시피와 브랜드는 한국에서 출발했지만, 매출을 만드는 실무는 현지 공장과 현지 영업망이 맡는다. 그래서 오리온의 해외 매출은 "한국 과자가 외국에서 인기"라는 기사식 문장보다 더 무겁다. 재무제표 관점에서는 현지 고정비를 깔고 그 위에 물량을 얹는 구조다.
 
-![오리온 해외 현지화 구조 — 한국 브랜드가 중국·베트남·러시아 현지 제품이 되는 흐름](./assets/78-global-localization-flow.svg)
+![오리온 해외 현지화 구조 — 한국 브랜드가 중국·베트남·러시아 현지 제품이 되는 흐름](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/77/77d877839f0ef41039dd00841688d5c04b0c33342c52669d003ff4921eda009a.svg)
 
 2025년 1분기 오리온은 연결 매출 8,018억원, 영업이익 1,314억원을 기록했고, 중국·베트남·러시아 주요 해외 법인과 한국 법인의 수출 증가가 실적을 견인했다고 밝혔다. 2025년 연간으로도 매출 3.33조원, 영업이익 5,582억원을 냈다. 외부 보도에서는 러시아가 47.2%, 인도가 30.3% 성장했고, 러시아 법인은 초코파이 5개 생산라인 가동률이 140%를 넘는 등 공급 부족 상황이라고 전했다.
 
@@ -277,7 +277,7 @@ o.select("CF", ["영업활동현금흐름", "투자활동현금흐름"], freq="Y
 
 삼양식품은 불닭 하나가 너무 강해서 마진이 폭발했다. 오리온은 반대로 제품 포트폴리오가 넓고, 해외 법인 채널이 이미 깔려 있어 마진이 안정적이다. 어느 쪽이 더 좋은지는 투자자 성향에 따라 다르다. 폭발력은 삼양이 강하고, 방어력은 오리온이 강하다.
 
-![매출총이익률은 낮아졌지만 판관비 레버리지로 영업이익률을 지킨 구조](./assets/78-margin-bridge.svg)
+![매출총이익률은 낮아졌지만 판관비 레버리지로 영업이익률을 지킨 구조](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/69/698e327642fa3ba07955a8fdc692c7828ce06a40248a584e39736a81ae1566ef.svg)
 
 ## 4막: 현금흐름은 좋다 — 그런데 2025년 단순 OCF+ICF는 마이너스다
 
@@ -300,7 +300,7 @@ o.select("CF", ["영업활동현금흐름", "투자활동현금흐름"], freq="Y
 
 하지만 CAPEX는 항상 양면이다. 수요가 유지되면 성장 투자이고, 수요가 꺾이면 고정비가 된다. 오리온 글에서 2026년에 봐야 할 첫 지표는 매출 성장률이 아니라 **투자한 공장이 얼마나 빨리 매출로 돌아오는가**다.
 
-![오리온 현금흐름 — 영업현금은 강하지만 CAPEX가 단순 OCF+ICF를 누른다](./assets/78-cashflow-capex.svg)
+![오리온 현금흐름 — 영업현금은 강하지만 CAPEX가 단순 OCF+ICF를 누른다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/62/6256b87afc2222e57c8912164f1b5b6a85e116cd3245e388df91bb9db9dee5b0.svg)
 
 ## 5막: 순이익 -26.8% — 영업은 멀쩡한데 headline이 흔들렸다
 
@@ -349,7 +349,7 @@ o.select("CF", ["영업활동현금흐름", "투자활동현금흐름"], freq="Y
 
 표시: 러시아와 인도는 성장률이 높지만 성격이 다르다. 러시아는 이미 의미 있는 규모가 된 생산·판매 법인이고, 인도는 아직 작지만 새 지역 확장성의 증거다. 중국은 성장률보다 채널 믹스와 수익성 회복이 중요하고, 베트남은 명절 수요와 내수 소비를 같이 봐야 한다.
 
-![오리온 해외 4축 — 중국은 기반, 베트남은 선물, 러시아는 공급 부족, 인도는 옵션](./assets/78-country-roles.svg)
+![오리온 해외 4축 — 중국은 기반, 베트남은 선물, 러시아는 공급 부족, 인도는 옵션](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/8e/8e5eab782ea25a3ab88f18915d19bcfe182f81d5d092cde30ea084add11a0481.svg)
 
 내수형 식품주 비교와 여기서 갈린다. 농심과 삼양도 해외에서 잘 판다. 하지만 오리온의 강점은 개별 제품 유행보다 지역 포트폴리오다. 한 나라가 둔화해도 다른 나라가 보완한다. 2025년에도 중국과 베트남의 명절 효과가 약했지만 러시아·인도·수출이 전체 성장을 보완했다.
 
@@ -367,7 +367,7 @@ o.select("CF", ["영업활동현금흐름", "투자활동현금흐름"], freq="Y
 
 다섯째, 라면·제과 식품 클러스터 안에서의 상대 위치다. 삼양식품은 폭발형, 농심·오뚜기는 내수 천장형, 오리온은 글로벌 현지화형이다. 식품 업종을 한 묶음으로 보면 이 차이를 놓친다.
 
-![오리온 2026 체크포인트 — 해외 비중, OPM, CAPEX 회수, 현금흐름](./assets/78-checkpoints.svg)
+![오리온 2026 체크포인트 — 해외 비중, OPM, CAPEX 회수, 현금흐름](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/35/35ba6f68d1dc3b7b8644384d59948026a688817727458331b287471a6742a465.svg)
 
 ## 8막: 담철곤·이화경 체제 — 브랜드보다 오래 남은 것은 해외 법인이다
 

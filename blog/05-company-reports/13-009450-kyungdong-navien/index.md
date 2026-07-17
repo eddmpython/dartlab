@@ -141,7 +141,7 @@ c = dartlab.Company("009450")
 c.analysis("financial", "종합평가")
 ```
 
-![스코어카드](./assets/13-scorecard.svg)
+![스코어카드](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/fd/fd27545c8da73f4e20a9fe3e91b144832ba824523aa146aa79ef728e84ee12a9.svg)
 
 종합평가 스코어카드가 묘한 그림을 그린다. 수익성 **A**, 이익품질 **A**, 재무정합성 **A**. 그런데 안정성 **C**, 성장 **C**, 효율성 **C**. Piotroski **4/9**.
 
@@ -191,7 +191,7 @@ c.select("IS", ["매출액", "영업이익"], freq="Y")
 c.analysis("financial", "비용구조")
 ```
 
-![마진 폭포](./assets/13-margin-waterfall.svg)
+![마진 폭포](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/7a/7ad0277611657abe6edc12bf6416f3bb2d55579a8dc3e37df71e9acb8982e0aa.svg)
 
 답은 **해외 영업**이다. 미국·캐나다에 법인을 두고, 현지 영업망을 운영하고, plumber(설치업자) 네트워크를 관리하는 비용이 판관비의 상당 부분을 차지한다. 국내 보일러만 팔았다면 이 비용이 없다. 하지만 이 비용 때문에 미국 시장 1위가 되었다. 비용이 아니라 **투자**다.
 
@@ -245,7 +245,7 @@ c.analysis("financial", "비용구조")
 
 미국 plumber는 PVC를 매일 다룬다. 배관 공사의 기본 소재다. 금속 배관 용접 없이, **기존 도구만으로 설치**할 수 있다는 것. 이게 전부다. 기술을 만든 게 아니라, **설치하는 사람의 편의를 설계**한 것이다.
 
-![미국 시장](./assets/13-us-market.svg)
+![미국 시장](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/4d/4d2d309ee138fe3091f9e3fe50115c30525541fd099183e025b193d578cb5c4f.svg)
 
 이 설계 철학이 입소문을 만들었다. plumber가 다른 plumber에게 추천하고, 배관 용품점에서 추천하고, YouTube에 설치 영상이 올라오기 시작했다. 미국 소비자 리뷰 사이트에는 "Thank you Navien — 따뜻한 물이 끊기지 않는다"라는 후기가 쌓여 있다. 경동나비엔은 미국에서 광고비를 쏟아붓지 않았다. **채널의 채널**(plumber → 소비자)을 설계한 것이다.
 
@@ -257,7 +257,7 @@ c.analysis("financial", "비용구조")
 c.analysis("financial", "성장성")
 ```
 
-![매출 믹스](./assets/13-revenue-mix.svg)
+![매출 믹스](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/1b/1bf5307634b9c405ddaf4e3b6a31528aa976cbd0d2478d167d0253d89abae4ec.svg)
 
 ### 북미 57% — 한국 보일러 회사가 아니라 미국 온수기 회사
 
@@ -304,7 +304,7 @@ c.analysis("financial", "자금조달")
 c.panel("CF", freq="Y")
 ```
 
-![설비투자 vs 잉여현금흐름](./assets/13-capex-fcf.svg)
+![설비투자 vs 잉여현금흐름](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/0d/0da5375992cd633aff6675129909c0a9df65d0e3a96b37e421a2cb9ebad336ec.svg)
 
 부채비율 61% → 97%. 하지만 97%는 제조업 평균(100~150%)에서 **정상 범위**다. 문제는 부채비율이 아니라 **현금 흐름의 방향**이다. 이익이 나는데 현금이 줄고 빚이 느는 구조 — 무너지는 신호일 수도, **다음 카테고리에 올인하는 신호**일 수도 있다.
 
@@ -352,7 +352,7 @@ c.panel("CF", freq="Y")
 
 2023년 첫 출하. 4개월 만에 **245% 성장**. 2025년 퍼네스 매출 추정 **300~400억원**(전체 2~3%). 아직 초기지만 온수기 NPE 출시 초기보다 반응이 빠르다.
 
-![퍼네스 기회](./assets/13-furnace-opportunity.svg)
+![퍼네스 기회](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/34/340d0dd7e7a390888b408267922140fc296b4c0b5fd3baf45760b7f3563f612e.svg)
 
 ### 텍사스 공장 — 관세 25% → 0%의 방어막
 
@@ -364,7 +364,7 @@ c.panel("CF", freq="Y")
 
 이것이 설비투자 1,622억의 행선지다. 퍼네스 생산 확대 + 텍사스 공장 건설 + 미국 영업망 확충. "이익이 나는데 현금이 없는" 이유는 **회사가 무너지기 때문이 아니라, 70년 역사에서 가장 큰 카테고리로 점프하고 있기 때문**이다.
 
-![타임라인](./assets/13-timeline.svg)
+![타임라인](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/68/6893e14e6bc4d807ef44d35c03cf4dce61b07c4370660d75040e7543fe93c106.svg)
 
 **연탄 → 보일러 → 온수기 → 퍼네스.** 매번 다음 카테고리로 점프할 때마다, 설비투자가 먼저 올라가고, 잉여현금흐름가 마이너스로 갔다가, 새 카테고리의 매출이 들어오면서 회복되는 패턴이 반복되었다. 지금은 그 사이클의 **투자 구간**에 있다.
 

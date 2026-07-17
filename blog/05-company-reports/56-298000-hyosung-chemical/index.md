@@ -123,7 +123,7 @@ carousel:
 
 답은 단락마다 달라지지만, 6막이 끝나면 하나로 수렴한다. 매각으로 산 24개월의 시간. 그 시간 안에 중국 나프타분해설비 공급이 줄거나, 효성화학이 베트남 공장을 닫거나, 둘 중 하나가 와야 한다.
 
-![2025 손익계산서 두 얼굴 — 영업 -7%, 금융 -11%, 순이익 +13.68%](./assets/056-hero-two-faces.svg)
+![2025 손익계산서 두 얼굴 — 영업 -7%, 금융 -11%, 순이익 +13.68%](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a2/a22edbc959abe527c78e4630ec9aa278204cd7630bd14acb00caec4677b396da.svg)
 
 ---
 
@@ -248,7 +248,7 @@ c.select("IS", ["매출액","매출원가","영업이익"])
 
 그런데 본업 적자만으로 매년 1,700억 손실이 나는 회사가 어떻게 **이자로 2,650억을 더 잃고도** 2022~2024년을 버텼을까. 답은 차입이다. 3막에서 자산총계의 61%가 빌린 돈이라는 의미, 그리고 단기차입금을 매 분기 롤오버해온 4년의 기록을 본다.
 
-![베트남 공장 타임라인 — 2018 분할설립 → 2020.04 가동 → 2022 스프레드 붕괴 → 2025 매각](./assets/056-vina-timeline.svg)
+![베트남 공장 타임라인 — 2018 분할설립 → 2020.04 가동 → 2022 스프레드 붕괴 → 2025 매각](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/bb/bb28eadd545a17407ce065937745cda3713c37b0d6b0bfa2eaaa0c8acfaafc7e.svg)
 
 ---
 
@@ -325,7 +325,7 @@ c.select("ratios", ["부채비율 (%)","유동비율 (%)","이자보상배율 (�
 
 2막에서 본업의 적자 기원을, 3막에서 이자의 기원을 해부했다. 둘이 합쳐진 결과가 2024년 말 자본잠식 -680억. 여기서 이야기는 한 번 꺾인다. 2025년 효성화학은 **특수가스사업부 매각**이라는 카드를 꺼냈다. 4막은 그 한 번의 매각이 어떻게 회사의 재무상태표를 다시 짜맞췄는지, 그리고 그게 어느 정도의 **시간**을 사 준 것인지 숫자로 본다.
 
-![효성화학 신용등급 카드 — dCR-B (57.48점), D/EBITDA 10.6배](./assets/056-credit-card.svg)
+![효성화학 신용등급 카드 — dCR-B (57.48점), D/EBITDA 10.6배](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/04/045965cdbf72e7e824fffdfa32df4046d526e0bd9bdd62e262af654f7d2ca0e7.svg)
 
 ---
 
@@ -395,7 +395,7 @@ dartlab 지분·지배구조 스캔이 효성화학의 **governance 점수 92점
 
 4막의 답: 9,200억의 매각 대금이 **대부분 부채 상환에 쓰였고**, 회사가 산 시간은 **대략 24개월**. 2026~2027년 안에 본업(나프타분해설비)이 흑자로 돌아서거나, 추가 자산 매각/그룹 지원이 들어오지 않으면 **동일한 자본잠식 문제가 재발한다**. 5막은 그 시간 안에 무엇이 바뀔 수 있는지 — **한국 나프타분해설비 4사(LG화학·롯데케미칼·한화솔루션·GS칼텍스)의 동반 위기**와 중국 공급 축소 가능성을 본다.
 
-![매각이 만든 재무상태표 재구성 — 자산 -6,779 + 자본 +7,011 = 부채 -13,790](./assets/056-debt-balance-flow.svg)
+![매각이 만든 재무상태표 재구성 — 자산 -6,779 + 자본 +7,011 = 부채 -13,790](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/06/06b0e15f4ccfb1b0037b28e431b9548684f68385a1f4245f0db703c26a54e297.svg)
 
 ---
 
@@ -459,7 +459,7 @@ dartlab.scan("profitability")  # 전종목 동종사 비교
 
 5막에서 업종 전체의 빙하기를 읽었다. 효성화학은 그 빙하기의 가장 작은 빙산이다. 녹거나, 더 얼거나 둘 중 하나. 6막은 그걸 판단하기 위해 **2026년 분기 공시부터 체크할 3가지 신호**를 정리한다.
 
-![한국 NCC 5사 영업이익률 5년 비교 — 효성화학이 가장 깊은 골](./assets/056-ncc-heatmap.svg)
+![한국 NCC 5사 영업이익률 5년 비교 — 효성화학이 가장 깊은 골](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/85/8582946a62016c7f6f69e297feddca9f51280c9e081f1fea57b73d687b82820e.svg)
 
 ![화학 업종 빙하기 — 중국 공급 과잉이 만든 구조적 스프레드 붕괴](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d0/d072caf151046e82e6215c9ec43c119ce8469a0d9a5aa1a73c81d81ba222f476.webp)
 
@@ -534,7 +534,7 @@ c.select("CF", ["영업활동현금흐름","유형자산의 취득"])
 
 2025년 효성화학의 손익계산서는 두 얼굴을 가졌지만, 2026년의 손익계산서는 얼굴이 하나다. 매각 카드는 한 번 쓴 카드다. 다시 쓸 수 없다. **본업이 돌아오느냐, 다음 매각이 있느냐, 그룹 지원이 들어오느냐.** 세 갈래 중 하나로 수렴한다.
 
-![2026년 체크포인트 3가지 — 매출원가율, 단기차입금, 그룹 지원](./assets/056-checkpoints-2026.svg)
+![2026년 체크포인트 3가지 — 매출원가율, 단기차입금, 그룹 지원](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/9b/9ba239befdd37591205d66ba21bfa5503d2e29920e865f81fdf359b0099547ad.svg)
 
 ---
 

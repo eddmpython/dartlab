@@ -190,7 +190,7 @@ import HFDataLink from '$lib/components/blog/HFDataLink.svelte';
 
 ---
 
-![네이버 핵심 구조 — 별도 영업이익률 75%가 연결 18%로 떨어지는 경로](./assets/46-hero-map.svg)
+![네이버 핵심 구조 — 별도 영업이익률 75%가 연결 18%로 떨어지는 경로](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/44/44f2e6bada76f46b9e32a5c6e8080b16d966d780bd719323cfb98a2e3cf10171.svg)
 
 ## 1막: 검색 광고라는 현금 인쇄기 — 별도 영업이익률 75.7%
 
@@ -248,13 +248,13 @@ dartlab scan에서 네이버의 별도 기준 영업이익률은 75.7%다. 연�
 
 ---
 
-![네이버 vs 카카오 영업이익률 9년 추이 — 한 번도 역전되지 않은 마진 격차](./assets/46-opm-timeline.svg)
+![네이버 vs 카카오 영업이익률 9년 추이 — 한 번도 역전되지 않은 마진 격차](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/84/848d817fb4bc3b9010a3158632a50426f43183f5919087bffd66dd8d6a491447.svg)
 
 ## 2막: 연결하면 18% — 사라진 57%포인트의 행방
 
 왜 별도 75%인 회사가 연결하면 18%가 되는가. 자회사와 투자 자산의 구조를 분해하면 보인다.
 
-![네이버 자산 41조 구성 — 투자 41%, 영업 21%, 현금 15%](./assets/46-asset-breakdown.svg)
+![네이버 자산 41조 구성 — 투자 41%, 영업 21%, 현금 15%](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/3b/3b4c713234c34d83f631a0cdd51be093a1909316390730ed11ff4d793a78ca85.svg)
 
 ### 비영업자산 55% — 41조 중 22.6조가 "투자"
 
@@ -319,7 +319,7 @@ dartlab이 잡아낸 또 하나의 플래그: **"설비투자/감가상각 3.7�
 
 ## 3막: LINE이라는 15조짜리 한 줄 — 2021Q1의 미스터리
 
-![2021Q1 순이익 15.31조 — LINE과 Z Holdings 합병의 재무제표 흔적](./assets/46-2021-anomaly.svg)
+![2021Q1 순이익 15.31조 — LINE과 Z Holdings 합병의 재무제표 흔적](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/bb/bbb3e4e75bba6d43cbbba1f5a293b2e4dea7dc642576a7955d15fc8d04120daa.svg)
 
 왜 2021년 당기순이익이 16.48조원인가. 영업이익 1.33조짜리 회사에서 순이익이 12배. 답은 LINE에 있다.
 
@@ -384,7 +384,7 @@ dartlab의 이익품질 분석에서 Beneish M-Score가 2024년 0.47을 기록�
 
 ## 4막: 그래도 현금은 쌓인다 — 영업활동현금흐름 3.1조, 현금 6조
 
-![네이버 영업활동현금흐름 9년 추이 — 0.74조에서 3.10조, 4.2배 성장](./assets/46-cashflow-fortress.svg)
+![네이버 영업활동현금흐름 9년 추이 — 0.74조에서 3.10조, 4.2배 성장](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/6d/6dfe289b7d70d6e3131fb2d19793f65018371f817092fe52e14a4cff522959b1.svg)
 
 왜 투자를 이렇게 쏟아붓는데도 현금이 늘어나는가. 영업활동현금흐름(실제 장사해서 들어온 현금)을 보면 답이 나온다.
 
@@ -549,7 +549,7 @@ Z Holdings는 2023년 LY Corporation으로 재편됐다. 일본 인터넷 시장
 
 이것이 중요한 이유: 네이버의 비영업자산 22.6조원은 대부분 "장부가액"이다. 시장 가치와 다를 수 있다. 웹툰 상장처럼 자회사가 하나씩 시장에서 평가받으면, 네이버의 "숨겨진 가치"가 드러나거나 반대로 "과대 계상"이 드러날 수도 있다.
 
-![네이버 투자 체크포인트 5가지](./assets/46-checklist.svg)
+![네이버 투자 체크포인트 5가지](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f0/f07c7a6f47c3800ba3cdb6dba6611cce89319ba95895f001b823fc2927265304.svg)
 
 ### 투자자가 봐야 할 체크포인트 5가지
 
