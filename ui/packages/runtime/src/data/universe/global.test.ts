@@ -73,6 +73,7 @@ function fakeCore(): DataCore & { wholeCalls: string[]; rowCalls: string[] } {
 		rowCalls,
 		request: async () => { throw new Error('unexpected request'); },
 		requestBytes: async () => { throw new Error('unexpected bytes request'); },
+		requestParquetPreview: async () => { throw new Error('unexpected preview request'); },
 		requestParquetWholeFile: async (spec) => {
 			wholeCalls.push(spec.path);
 			return (whole.get(spec.path) ?? null) as never;

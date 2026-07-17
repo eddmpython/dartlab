@@ -790,6 +790,21 @@ export interface UniverseKnowledgeTreeNode {
 	childCount: number;
 }
 
+export interface UniverseKnowledgeColumn {
+	name: string;
+	physicalType: string;
+	logicalType: string;
+}
+
+export interface UniverseKnowledgeTableMeta {
+	format: 'parquet' | 'csv' | 'tsv' | 'none';
+	fileSizeBytes: number | null;
+	totalRows: number | null;
+	rowGroupCount: number | null;
+	rangeRequestCount: number | null;
+	transferredBytes: number | null;
+}
+
 export interface UniverseKnowledgeContentReceipt {
 	mode: 'byteRange' | 'parquetRows' | 'delimitedRows' | 'jsonTree' | 'mediaReference' | 'addressOnly';
 	requestedBytes: number;
@@ -810,7 +825,9 @@ export interface UniverseKnowledgeContent {
 	contentRef: string;
 	text: string;
 	columns: readonly string[];
+	schema: readonly UniverseKnowledgeColumn[];
 	rows: readonly Readonly<Record<string, string>>[];
 	tree: readonly UniverseKnowledgeTreeNode[];
+	tableMeta: UniverseKnowledgeTableMeta;
 	receipt: UniverseKnowledgeContentReceipt;
 }

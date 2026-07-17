@@ -54,10 +54,30 @@ function fakeCore(contentCalls?: ContentCallLog): DataCore {
 			} as T;
 		},
 		async requestParquetRows<T extends Record<string, unknown>>(spec: { path: string; revision?: string }) {
-			if (contentCalls) contentCalls.parquetRevision = spec.revision;
 			return (spec.path === 'dart/companyProfile.parquet'
 				? [{ stockCode: '005930', corpName: '삼성전자', listed: true }]
 				: []) as unknown as T[];
+		},
+		async requestParquetPreview<T extends Record<string, unknown>>(spec: { path: string; revision?: string }) {
+			if (contentCalls) contentCalls.parquetRevision = spec.revision;
+			const rows = spec.path === 'dart/companyProfile.parquet'
+				? [{ stockCode: '005930', corpName: '삼성전자', listed: true }]
+				: [];
+			const requests = [{ url: 'https://example.test/file.parquet', range: 'bytes=0-99', status: 206, bytes: 100, durationMs: 1 }];
+			return {
+				metadata: {
+					path: spec.path, size: 1_024, rows: rows.length, rowGroups: 1,
+					columns: ['stockCode', 'corpName', 'listed'],
+					schema: [
+						{ name: 'stockCode', physicalType: 'BYTE_ARRAY', logicalType: 'STRING' },
+						{ name: 'corpName', physicalType: 'BYTE_ARRAY', logicalType: 'STRING' },
+						{ name: 'listed', physicalType: 'BOOLEAN', logicalType: '' }
+					],
+					requests
+				},
+				rows,
+				requests
+			} as never;
 		},
 		async requestParquetWholeFile() { return []; },
 		async requestBytes(spec: { origin?: string; path: string }) {
@@ -141,6 +161,8 @@ describe('Universe knowledge runtime', () => {
 		expect(tableContent.columns).toEqual(['stockCode', 'corpName', 'listed']);
 		expect(tableContent.rows[0]?.corpName).toBe('삼성전자');
 		expect(contentCalls.parquetRevision).toBe('revision-1');
+		expect(tableContent.tableMeta).toMatchObject({ fileSizeBytes: 1_024, totalRows: 1, rowGroupCount: 1, rangeRequestCount: 1 });
+		expect(tableContent.schema[2]).toMatchObject({ name: 'listed', physicalType: 'BOOLEAN' });
 
 		const imageContent = await contentRuntime.content('hf:assets/avatar.png');
 		expect(imageContent.kind).toBe('image');

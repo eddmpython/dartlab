@@ -1,6 +1,6 @@
 # DartLab Universe
 
-> 상태: 전체 HF 데이터와 DartLab 지식을 결속하는 목표로 재고정, K0 catalog spine과 K1a 원문 및 K1b 구조화 preview 구현, 공개 진입은 사용자 검수 대기
+> 상태: 전체 HF 데이터와 DartLab 지식을 결속하는 목표로 재고정, K0 catalog spine과 K1a 원문, K1b 구조화 preview, K1c Parquet metadata 구현, 공개 진입은 사용자 검수 대기
 > 기준일: 2026-07-17 KST
 > 제품명: DartLab Universe
 > 정본 경계: HF 데이터는 진실, 온톨로지는 의미 계약, 엔진은 렌즈, Universe는 요청 시점 투영

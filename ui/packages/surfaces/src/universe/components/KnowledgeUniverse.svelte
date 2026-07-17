@@ -61,7 +61,9 @@
 	function formatBytes(value: number): string {
 		if (value >= 1e12) return `${(value / 1e12).toLocaleString('ko-KR', { maximumFractionDigits: 2 })} TB`;
 		if (value >= 1e9) return `${(value / 1e9).toLocaleString('ko-KR', { maximumFractionDigits: 1 })} GB`;
-		return `${(value / 1e6).toLocaleString('ko-KR', { maximumFractionDigits: 1 })} MB`;
+		if (value >= 1e6) return `${(value / 1e6).toLocaleString('ko-KR', { maximumFractionDigits: 1 })} MB`;
+		if (value >= 1e3) return `${(value / 1e3).toLocaleString('ko-KR', { maximumFractionDigits: 1 })} KB`;
+		return `${value.toLocaleString()} B`;
 	}
 
 	function domainCount(domainId: UniverseKnowledgeDomainId): number | null {
@@ -340,12 +342,24 @@
 						{:else if content.kind === 'audio'}
 							<audio src={content.contentRef} controls preload="metadata" aria-label={content.title}></audio>
 						{:else if content.kind === 'table'}
+							<div class="contentTableMeta">
+								<div><span>ROWS</span><b>{content.tableMeta.totalRows?.toLocaleString() ?? `${content.rows.length} preview`}</b></div>
+								<div><span>GROUPS</span><b>{content.tableMeta.rowGroupCount?.toLocaleString() ?? 'N/A'}</b></div>
+								<div><span>FILE</span><b>{content.tableMeta.fileSizeBytes !== null ? formatBytes(content.tableMeta.fileSizeBytes) : 'RANGE'}</b></div>
+								<div><span>TRANSFER</span><b>{content.tableMeta.transferredBytes !== null ? formatBytes(content.tableMeta.transferredBytes) : 'N/A'}</b></div>
+							</div>
 							<div class="contentTableWrap">
 								<table>
 									<thead><tr>{#each content.columns as column (column)}<th>{column}</th>{/each}</tr></thead>
 									<tbody>{#each content.rows as row, index (index)}<tr>{#each content.columns as column (column)}<td>{row[column]}</td>{/each}</tr>{/each}</tbody>
 								</table>
 							</div>
+							{#if content.schema.length > 0}
+								<details class="schemaDetails">
+									<summary>SCHEMA <b>{content.schema.length} COLUMNS</b></summary>
+									<div>{#each content.schema as column (column.name)}<p><b>{column.name}</b><span>{column.logicalType || column.physicalType}</span><small>{column.physicalType}</small></p>{/each}</div>
+								</details>
+							{/if}
 						{:else if content.kind === 'json' && content.tree.length > 0}
 							<div class="contentTree" aria-label="JSON 구조">
 								{#each content.tree as node (node.nodeId)}
@@ -479,11 +493,24 @@
 	.contentPreview img, .contentPreview video { width: 100%; max-height: 300px; display: block; object-fit: contain; background: #03060a; }
 	.contentPreview audio { width: calc(100% - 20px); height: 34px; display: block; margin: 12px 10px; }
 	.contentPreview pre { max-height: 340px; margin: 0; overflow: auto; padding: 13px; color: #aab9ca; background: #070c13; font: 500 8px/1.65 ui-monospace, SFMono-Regular, Consolas, monospace; white-space: pre-wrap; overflow-wrap: anywhere; tab-size: 2; user-select: text; scrollbar-width: thin; }
+	.contentTableMeta { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-bottom: 1px solid #172332; background: #0c131d; }
+	.contentTableMeta div { min-width: 0; padding: 8px; border-right: 1px solid #172332; }
+	.contentTableMeta div:last-child { border-right: 0; }
+	.contentTableMeta span { display: block; color: #50647c; font: 600 6px/1 ui-monospace, monospace; }
+	.contentTableMeta b { display: block; margin-top: 5px; overflow: hidden; color: #9aadc2; font: 600 8px/1 ui-monospace, monospace; text-overflow: ellipsis; white-space: nowrap; }
 	.contentTableWrap { max-height: 320px; overflow: auto; scrollbar-width: thin; }
 	.contentTableWrap table { width: max-content; min-width: 100%; border-collapse: collapse; color: #91a3b7; background: #070c13; font: 500 8px/1.35 ui-monospace, SFMono-Regular, Consolas, monospace; }
 	.contentTableWrap th { position: sticky; z-index: 1; top: 0; padding: 8px 10px; border-right: 1px solid #182332; border-bottom: 1px solid #243348; color: #b9c9db; background: #101824; text-align: left; white-space: nowrap; }
 	.contentTableWrap td { max-width: 220px; padding: 7px 10px; overflow: hidden; border-right: 1px solid #121c29; border-bottom: 1px solid #121c29; text-overflow: ellipsis; white-space: nowrap; }
 	.contentTableWrap tr:hover td { color: #c8d5e3; background: rgba(92, 130, 177, .08); }
+	.schemaDetails { border-top: 1px solid #172332; background: #080e16; }
+	.schemaDetails summary { display: flex; justify-content: space-between; padding: 9px 11px; color: #60758f; font: 600 7px/1 ui-monospace, monospace; letter-spacing: .08em; cursor: pointer; }
+	.schemaDetails summary b { color: #7e92aa; font-size: 7px; }
+	.schemaDetails > div { max-height: 230px; overflow: auto; scrollbar-width: thin; }
+	.schemaDetails p { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 8px; margin: 0; padding: 7px 11px; border-top: 1px solid rgba(79, 102, 132, .08); }
+	.schemaDetails p b { min-width: 0; overflow: hidden; color: #9bacc0; font: 550 8px/1.2 ui-monospace, monospace; text-overflow: ellipsis; white-space: nowrap; }
+	.schemaDetails p span { color: #7796bb; font: 550 7px/1.2 ui-monospace, monospace; }
+	.schemaDetails p small { grid-column: 1 / -1; color: #4d6077; font: 500 6px/1 ui-monospace, monospace; }
 	.contentTree { max-height: 340px; overflow: auto; padding: 7px 0; background: #070c13; scrollbar-width: thin; }
 	.treeRow { --tree-depth: 0; min-height: 27px; display: grid; grid-template-columns: 15px minmax(48px, auto) minmax(0, 1fr); align-items: center; gap: 6px; padding: 3px 10px 3px calc(10px + var(--tree-depth) * 13px); border-bottom: 1px solid rgba(80, 104, 135, .07); }
 	.treeRow:hover { background: rgba(94, 129, 173, .07); }

@@ -409,4 +409,27 @@ surface svelte-check errors                       0
 - JSON은 object와 array의 hierarchy, scalar type, child count를 최대 96개 node로 투영하고 접힌 raw 원문을 같은 Lens에 유지한다.
 - CSV 및 TSV는 현재 HF에 파일이 없지만 quote, escaped quote, 중복 header, cell 내부 newline과 byte range에서 잘린 마지막 행을 처리하는 adapter 및 회귀 test를 갖춘다.
 - 모든 구조 preview는 원본 전체를 브라우저에 적재하지 않고 64 KiB byte range와 20 KiB raw display 한도를 지킨다.
-- Parquet schema detail과 row group navigator는 현재 rows 호출과 metadata 호출의 중복 range를 제거하는 전용 preview API를 설계한 뒤 추가한다. 이 항목 전까지 K1 전체 종료를 주장하지 않는다.
+- Parquet schema detail은 K1c 전용 preview session으로 이어가고 row group navigator는 그 다음 UI 단계에서 추가한다. 이 항목 전까지 K1 전체 종료를 주장하지 않는다.
+
+### K1c Parquet metadata preview
+
+기존 `requestParquetRows`와 별도로 metadata와 rows를 한 session에서 읽는 `requestParquetPreview`를 DataCore에 추가했다. hyparquet의 parsed metadata를 `parquetReadObjects`에 다시 주입해 footer를 중복 parse하지 않는다.
+
+revision `9906570fc`의 `edgar/tickers/tickers.parquet` live 결과:
+
+```text
+file bytes                                  176,891
+total rows                                   10,436
+row groups                                        1
+schema columns                                    6
+preview rows                                     12
+network requests                                  1
+transferred bytes                           176,891
+first ticker                                   NVDA
+first CIK                                0001045810
+first title                             NVIDIA CORP
+live regression                               1/1
+targeted regression tests                    25/25
+```
+
+Knowledge Lens는 table 상단에 전체 row, row group, file size, transfer를 표시하고, 접을 수 있는 schema에서 logical type과 physical type을 분리해 보여준다. K1 전체 종료 전 남은 항목은 row group 및 row window 선택 UI와 file별 수정시각이다.

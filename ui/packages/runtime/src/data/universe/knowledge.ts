@@ -705,24 +705,40 @@ export function createUniverseKnowledgeRuntime(core: DataCore, loaders: Universe
 		const rawRef = contentUrl(info.sha, path);
 		let text = '';
 		let columns: readonly string[] = [];
+		let schema: UniverseKnowledgeContent['schema'] = [];
 		let rows: readonly Readonly<Record<string, string>>[] = [];
 		let tree: UniverseKnowledgeContent['tree'] = [];
+		let tableMeta: UniverseKnowledgeContent['tableMeta'] = Object.freeze({
+			format: 'none', fileSizeBytes: null, totalRows: null, rowGroupCount: null, rangeRequestCount: null, transferredBytes: null
+		});
 		let requestedBytes = 0;
 		let returnedBytes = 0;
 		let truncated = false;
 		let mode: UniverseKnowledgeContent['receipt']['mode'] = 'addressOnly';
 
 		if (kind === 'table' && extension === 'parquet') {
-			const rawRows = await core.requestParquetRows<Record<string, unknown>>({
+			const preview = await core.requestParquetPreview<Record<string, unknown>>({
 				path,
 				revision: info.sha,
 				rowStart: 0,
 				rowEnd: CONTENT_ROW_LIMIT,
-				cacheKey: `universe:knowledge:content:${info.sha}:${path}:rows:${CONTENT_ROW_LIMIT}`
+				cacheKey: `universe:knowledge:content:${info.sha}:${path}:preview:${CONTENT_ROW_LIMIT}`
 			});
+			const rawRows = preview.rows;
 			columns = Object.freeze([...new Set(rawRows.flatMap((row) => Object.keys(row)))].slice(0, CONTENT_COLUMN_LIMIT));
+			schema = Object.freeze(preview.metadata.schema.slice(0, CONTENT_COLUMN_LIMIT).map((column) => Object.freeze(column)));
 			rows = Object.freeze(rawRows.slice(0, CONTENT_ROW_LIMIT).map((row) => Object.freeze(Object.fromEntries(columns.map((column) => [column, printableCell(row[column])])))));
-			truncated = rawRows.length >= CONTENT_ROW_LIMIT;
+			returnedBytes = preview.requests.reduce((total, request) => total + request.bytes, 0);
+			requestedBytes = returnedBytes;
+			truncated = preview.metadata.rows > rawRows.length;
+			tableMeta = Object.freeze({
+				format: 'parquet',
+				fileSizeBytes: preview.metadata.size,
+				totalRows: preview.metadata.rows,
+				rowGroupCount: preview.metadata.rowGroups,
+				rangeRequestCount: preview.requests.length,
+				transferredBytes: returnedBytes
+			});
 			mode = 'parquetRows';
 		} else if (kind === 'text' || kind === 'json' || kind === 'table') {
 			requestedBytes = CONTENT_BYTE_LIMIT;
@@ -739,8 +755,17 @@ export function createUniverseKnowledgeRuntime(core: DataCore, loaders: Universe
 			if (kind === 'table') {
 				const preview = parseDelimitedPreview(text, extension === 'tsv' ? '\t' : ',', truncated);
 				columns = preview.columns;
+				schema = Object.freeze(columns.map((column) => Object.freeze({ name: column, physicalType: 'BYTE_ARRAY', logicalType: 'STRING' })));
 				rows = preview.rows;
 				truncated ||= preview.truncated;
+				tableMeta = Object.freeze({
+					format: extension === 'tsv' ? 'tsv' : 'csv',
+					fileSizeBytes: null,
+					totalRows: null,
+					rowGroupCount: null,
+					rangeRequestCount: 1,
+					transferredBytes: returnedBytes
+				});
 				mode = 'delimitedRows';
 			} else if (kind === 'json' && !truncated) {
 				const preview = parseJsonTreePreview(text, path);
@@ -762,7 +787,7 @@ export function createUniverseKnowledgeRuntime(core: DataCore, loaders: Universe
 
 		return Object.freeze({
 			targetId, path, title, kind, mimeType, revision: info.sha, sourceRef, contentRef: rawRef, text,
-			columns, rows, tree,
+			columns, schema, rows, tree, tableMeta,
 			receipt: Object.freeze({
 				mode,
 				requestedBytes,

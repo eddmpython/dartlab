@@ -4,7 +4,14 @@
 // 어댑터당 1 인스턴스(createDataCore) · 전역 싱글턴 금지(04 KILL: 테스트 격리·soft-swap 오염 방지).
 import { RuntimeCache } from '../cache/runtimeCache';
 import { RequestDedup } from '../cache/requestDedup';
-import { fetchResilient, readParquetRows, readParquetWholeFile, type FetchLike } from '../parquet/hfRange';
+import {
+	fetchResilient,
+	readParquetPreview,
+	readParquetRows,
+	readParquetWholeFile,
+	type FetchLike,
+	type ParquetPreviewResult
+} from '../parquet/hfRange';
 import type { ParquetQueryFilter } from 'hyparquet';
 import { originUrl, originCache, type CachePolicy, type OriginId } from '../origins/registry';
 
@@ -51,6 +58,17 @@ export interface ParquetWholeFileSpec<T> {
 	dedup?: boolean;
 }
 
+export interface ParquetPreviewSpec<T> {
+	path: string;
+	revision?: string;
+	columns?: string[];
+	rowStart?: number;
+	rowEnd?: number;
+	cache?: CachePolicy;
+	cacheKey: string;
+	dedup?: boolean;
+}
+
 export interface RequestBytesSpec {
 	/** byte-range 는 직결만(hfRange) · 프록시는 206 엣지캐시 불가(hfRange.ts 참조). */
 	origin?: Extract<OriginId, 'hfRange' | 'hfRevisionRange'>;
@@ -66,6 +84,8 @@ export interface RequestBytesSpec {
 export interface DataCore {
 	request<T>(spec: RequestSpec<T>): Promise<T>;
 	requestParquetRows<T extends Record<string, unknown>>(spec: ParquetRowsSpec<T>): Promise<T[]>;
+	/** metadata, schema와 bounded rows를 같은 parquet session 및 parsed footer로 읽는다. */
+	requestParquetPreview<T extends Record<string, unknown>>(spec: ParquetPreviewSpec<T>): Promise<ParquetPreviewResult<T>>;
 	/** 소형 단일 parquet 통파일 직독(HEAD probe 생략, GET 1회). 미존재(404)는 null · read 레벨 캐시·dedup 공유. */
 	requestParquetWholeFile<T extends Record<string, unknown>>(spec: ParquetWholeFileSpec<T>): Promise<T[] | null>;
 	/** byte-range 직독(HF 직결, Range GET) → ArrayBuffer. 검색 sidecar(postings/meta.bin) 질의어·top-k 조각 fetch 전용.
@@ -129,6 +149,27 @@ export function createDataCore(opts: DataCoreOptions = {}): DataCore {
 		return spec.dedup === false ? exec() : (dedup.run(key, exec) as Promise<T[]>);
 	}
 
+	async function requestParquetPreview<T extends Record<string, unknown>>(spec: ParquetPreviewSpec<T>): Promise<ParquetPreviewResult<T>> {
+		const policy = spec.cache ?? DEFAULT_PARQUET_CACHE;
+		const key = spec.cacheKey;
+		if (policy.scope === 'memory') {
+			const hit = bucket(policy).get(key, now());
+			if (hit !== undefined) return hit as ParquetPreviewResult<T>;
+		}
+		const exec = async (): Promise<ParquetPreviewResult<T>> => {
+			const result = await readParquetPreview<T>(spec.path, {
+				columns: spec.columns,
+				rowStart: spec.rowStart,
+				rowEnd: spec.rowEnd,
+				revision: spec.revision,
+				fetchFn
+			});
+			if (policy.scope === 'memory') bucket(policy).set(key, result, now());
+			return result;
+		};
+		return spec.dedup === false ? exec() : dedup.run(key, exec) as Promise<ParquetPreviewResult<T>>;
+	}
+
 	async function requestParquetWholeFile<T extends Record<string, unknown>>(spec: ParquetWholeFileSpec<T>): Promise<T[] | null> {
 		const policy = spec.cache ?? DEFAULT_PARQUET_CACHE;
 		const key = spec.cacheKey;
@@ -170,7 +211,7 @@ export function createDataCore(opts: DataCoreOptions = {}): DataCore {
 		bytesCache.clear();
 	}
 
-	return { request, requestParquetRows, requestParquetWholeFile, requestBytes, clear };
+	return { request, requestParquetRows, requestParquetPreview, requestParquetWholeFile, requestBytes, clear };
 }
 
 /**

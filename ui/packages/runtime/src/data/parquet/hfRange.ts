@@ -33,10 +33,23 @@ export interface ParquetMetadataSummary {
 	rows: number;
 	rowGroups: number;
 	columns: string[];
+	schema: ParquetColumnSummary[];
 	requests: RangeRequestStat[];
 }
 
+export interface ParquetColumnSummary {
+	name: string;
+	physicalType: string;
+	logicalType: string;
+}
+
 export interface ParquetRowsResult<T extends Record<string, unknown> = Record<string, unknown>> {
+	rows: T[];
+	requests: RangeRequestStat[];
+}
+
+export interface ParquetPreviewResult<T extends Record<string, unknown> = Record<string, unknown>> {
+	metadata: ParquetMetadataSummary;
 	rows: T[];
 	requests: RangeRequestStat[];
 }
@@ -187,11 +200,12 @@ export async function openHfParquet(
 
 export async function readParquetMetadata(
 	path: string,
-	fetchFn: FetchLike = fetch
+	fetchFn: FetchLike = fetch,
+	revision?: string
 ): Promise<ParquetMetadataSummary> {
 	const [{ parquetMetadataAsync, parquetSchema }, session] = await Promise.all([
 		import('hyparquet'),
-		openHfParquet(path, fetchFn)
+		openHfParquet(path, fetchFn, revision)
 	]);
 	const metadata = (await parquetMetadataAsync(session.file)) as FileMetaData;
 	const schema = parquetSchema(metadata);
@@ -201,8 +215,63 @@ export async function readParquetMetadata(
 		rows: Number(metadata.num_rows),
 		rowGroups: metadata.row_groups?.length ?? 0,
 		columns: schema.children.map((child) => child.element.name),
+		schema: schema.children.map((child) => ({
+			name: child.element.name,
+			physicalType: String(child.element.type ?? ''),
+			logicalType: logicalTypeName(child.element.logical_type, child.element.converted_type)
+		})),
 		requests: session.requests
 	};
+}
+
+function logicalTypeName(logicalType: unknown, convertedType: unknown): string {
+	if (logicalType && typeof logicalType === 'object') {
+		const record = logicalType as Record<string, unknown>;
+		if (typeof record.type === 'string') return record.type;
+		return Object.keys(record)[0] ?? '';
+	}
+	return convertedType === undefined || convertedType === null ? '' : String(convertedType);
+}
+
+export async function readParquetPreview<T extends Record<string, unknown> = Record<string, unknown>>(
+	path: string,
+	options: {
+		columns?: string[];
+		rowStart?: number;
+		rowEnd?: number;
+		revision?: string;
+		fetchFn?: FetchLike;
+	} = {}
+): Promise<ParquetPreviewResult<T>> {
+	const [{ parquetMetadataAsync, parquetReadObjects, parquetSchema }, { compressors }, session] = await Promise.all([
+		import('hyparquet'),
+		import('hyparquet-compressors'),
+		openHfParquet(path, options.fetchFn ?? fetch, options.revision)
+	]);
+	const metadata = (await parquetMetadataAsync(session.file)) as FileMetaData;
+	const schema = parquetSchema(metadata);
+	const rows = (await parquetReadObjects({
+		file: session.file,
+		metadata,
+		compressors,
+		columns: options.columns,
+		rowStart: options.rowStart,
+		rowEnd: options.rowEnd
+	})) as T[];
+	const summary: ParquetMetadataSummary = {
+		path,
+		size: session.ref.size,
+		rows: Number(metadata.num_rows),
+		rowGroups: metadata.row_groups?.length ?? 0,
+		columns: schema.children.map((child) => child.element.name),
+		schema: schema.children.map((child) => ({
+			name: child.element.name,
+			physicalType: String(child.element.type ?? ''),
+			logicalType: logicalTypeName(child.element.logical_type, child.element.converted_type)
+		})),
+		requests: session.requests
+	};
+	return { metadata: summary, rows, requests: session.requests };
 }
 
 // 소형 단일 파일 직독 · HEAD probe 생략, GET 1 회로 전체 버퍼 → 파싱. 미존재(404)는 null.
