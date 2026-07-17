@@ -779,11 +779,23 @@ export interface UniverseKnowledgeSearchResult {
 
 export type UniverseKnowledgeContentKind = 'text' | 'json' | 'table' | 'image' | 'video' | 'audio' | 'binary';
 
+export type UniverseKnowledgeTreeValueKind = 'object' | 'array' | 'string' | 'number' | 'boolean' | 'null';
+
+export interface UniverseKnowledgeTreeNode {
+	nodeId: string;
+	key: string;
+	value: string;
+	valueKind: UniverseKnowledgeTreeValueKind;
+	depth: number;
+	childCount: number;
+}
+
 export interface UniverseKnowledgeContentReceipt {
-	mode: 'byteRange' | 'parquetRows' | 'mediaReference' | 'addressOnly';
+	mode: 'byteRange' | 'parquetRows' | 'delimitedRows' | 'jsonTree' | 'mediaReference' | 'addressOnly';
 	requestedBytes: number;
 	returnedBytes: number;
 	rowLimit: number;
+	treeNodeLimit: number;
 	truncated: boolean;
 }
 
@@ -799,5 +811,6 @@ export interface UniverseKnowledgeContent {
 	text: string;
 	columns: readonly string[];
 	rows: readonly Readonly<Record<string, string>>[];
+	tree: readonly UniverseKnowledgeTreeNode[];
 	receipt: UniverseKnowledgeContentReceipt;
 }

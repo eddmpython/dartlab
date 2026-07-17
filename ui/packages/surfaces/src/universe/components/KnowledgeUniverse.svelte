@@ -346,6 +346,17 @@
 									<tbody>{#each content.rows as row, index (index)}<tr>{#each content.columns as column (column)}<td>{row[column]}</td>{/each}</tr>{/each}</tbody>
 								</table>
 							</div>
+						{:else if content.kind === 'json' && content.tree.length > 0}
+							<div class="contentTree" aria-label="JSON 구조">
+								{#each content.tree as node (node.nodeId)}
+									<div class="treeRow" style:--tree-depth={node.depth}>
+										<i>{node.valueKind === 'object' ? '{}' : node.valueKind === 'array' ? '[]' : '·'}</i>
+										<b>{node.key}</b>
+										{#if node.childCount > 0}<span class="treeCount">{node.childCount}</span>{:else}<span class={`treeValue ${node.valueKind}`}>{node.value}</span>{/if}
+									</div>
+								{/each}
+							</div>
+							<details class="rawDetails"><summary>RAW JSON</summary><pre>{content.text}</pre></details>
 						{:else if content.kind === 'text' || content.kind === 'json'}
 							<pre>{content.text}</pre>
 						{:else}
@@ -473,6 +484,21 @@
 	.contentTableWrap th { position: sticky; z-index: 1; top: 0; padding: 8px 10px; border-right: 1px solid #182332; border-bottom: 1px solid #243348; color: #b9c9db; background: #101824; text-align: left; white-space: nowrap; }
 	.contentTableWrap td { max-width: 220px; padding: 7px 10px; overflow: hidden; border-right: 1px solid #121c29; border-bottom: 1px solid #121c29; text-overflow: ellipsis; white-space: nowrap; }
 	.contentTableWrap tr:hover td { color: #c8d5e3; background: rgba(92, 130, 177, .08); }
+	.contentTree { max-height: 340px; overflow: auto; padding: 7px 0; background: #070c13; scrollbar-width: thin; }
+	.treeRow { --tree-depth: 0; min-height: 27px; display: grid; grid-template-columns: 15px minmax(48px, auto) minmax(0, 1fr); align-items: center; gap: 6px; padding: 3px 10px 3px calc(10px + var(--tree-depth) * 13px); border-bottom: 1px solid rgba(80, 104, 135, .07); }
+	.treeRow:hover { background: rgba(94, 129, 173, .07); }
+	.treeRow i { color: #58718f; font: 600 7px/1 ui-monospace, monospace; font-style: normal; }
+	.treeRow b { overflow: hidden; color: #91a6be; font: 550 8px/1.25 ui-monospace, monospace; text-overflow: ellipsis; white-space: nowrap; }
+	.treeRow span { min-width: 0; overflow: hidden; font: 500 8px/1.25 ui-monospace, monospace; text-overflow: ellipsis; white-space: nowrap; }
+	.treeCount { justify-self: start; border-radius: 999px; padding: 2px 5px; color: #617894; background: #101b29; }
+	.treeValue { color: #8294aa; }
+	.treeValue.string { color: #95b98f; }
+	.treeValue.number { color: #d2a974; }
+	.treeValue.boolean { color: #8aaee0; }
+	.treeValue.null { color: #65758a; font-style: italic; }
+	.rawDetails { border-top: 1px solid #172332; background: #080d15; }
+	.rawDetails summary { padding: 9px 11px; color: #60758f; font: 600 7px/1 ui-monospace, monospace; letter-spacing: .08em; cursor: pointer; }
+	.rawDetails pre { border-top: 1px solid #172332; }
 	.binaryPreview { display: grid; justify-items: start; gap: 7px; padding: 14px; }
 	.binaryPreview b { color: #a8b7c9; font-size: 9px; }
 	.binaryPreview span { color: #596d85; font: 500 8px/1 ui-monospace, monospace; }

@@ -10,6 +10,8 @@ const siblings = [
 	{ rfilename: 'edgar/prices/company/AAPL.parquet' },
 	{ rfilename: 'macro/fred/GDP.parquet' },
 	{ rfilename: 'news/public/20260717.parquet' },
+	{ rfilename: 'catalog/companies.json' },
+	{ rfilename: 'catalog/companies.csv' },
 	{ rfilename: 'assets/avatar.png' },
 	{ rfilename: 'pyodide/dartlab.whl' }
 ];
@@ -63,7 +65,12 @@ function fakeCore(contentCalls?: ContentCallLog): DataCore {
 				contentCalls.byteOrigin = spec.origin;
 				contentCalls.bytePath = spec.path;
 			}
-			return new TextEncoder().encode('# DartLab\n통합 지식 원문').buffer as ArrayBuffer;
+			const value = spec.path.endsWith('catalog/companies.json')
+				? JSON.stringify({ companies: [{ code: '005930', name: '삼성전자' }] })
+				: spec.path.endsWith('catalog/companies.csv')
+					? 'code,name\n005930,삼성전자\n000660,SK하이닉스\n'
+					: '# DartLab\n통합 지식 원문';
+			return new TextEncoder().encode(value).buffer as ArrayBuffer;
 		},
 		clear() {}
 	};
@@ -139,5 +146,14 @@ describe('Universe knowledge runtime', () => {
 		expect(imageContent.kind).toBe('image');
 		expect(imageContent.contentRef).toContain('/resolve/revision-1/assets/avatar.png');
 		expect(imageContent.receipt.mode).toBe('mediaReference');
+
+		const jsonContent = await contentRuntime.content('hf:catalog/companies.json');
+		expect(jsonContent.receipt.mode).toBe('jsonTree');
+		expect(jsonContent.tree.some((node) => node.key === 'name' && node.value === '삼성전자')).toBe(true);
+
+		const csvContent = await contentRuntime.content('hf:catalog/companies.csv');
+		expect(csvContent.receipt.mode).toBe('delimitedRows');
+		expect(csvContent.columns).toEqual(['code', 'name']);
+		expect(csvContent.rows[1]?.name).toBe('SK하이닉스');
 	});
 });

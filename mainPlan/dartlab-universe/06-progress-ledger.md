@@ -387,4 +387,26 @@ public entry links added                           0
 - landing 전체 check에는 기존 `richMarkdown.ts`의 Marked renderer type 오류 1건이 남아 있다.
 - 두 오류는 Universe 변경 파일 밖에 있으며 K1a targeted test와 surface check에는 영향을 주지 않는다.
 
-K1a는 파일명만 보이는 catalog를 실제 원문으로 연결했지만 K1 전체 종료는 아니다. K1b에서 CSV 및 TSV 구조 표, JSON tree, Parquet schema 및 row group navigator를 닫고 K2 semantic relation으로 이어간다.
+K1a는 파일명만 보이는 catalog를 실제 원문으로 연결했지만 K1 전체 종료는 아니다. K1b 구조화 preview 뒤 Parquet schema 및 row group navigator를 닫고 K2 semantic relation으로 이어간다.
+
+### K1b 구조화 preview
+
+revision `9906570fc`의 전체 sibling catalog를 형식별로 다시 확인했다.
+
+```text
+JSON files                                    3,859
+JSONL files                                       0
+NDJSON files                                      0
+CSV files                                         0
+TSV files                                         0
+JSON tree node limit                             96
+delimited row limit                              12
+delimited column limit                           16
+runtime targeted tests                        16/16
+surface svelte-check errors                       0
+```
+
+- JSON은 object와 array의 hierarchy, scalar type, child count를 최대 96개 node로 투영하고 접힌 raw 원문을 같은 Lens에 유지한다.
+- CSV 및 TSV는 현재 HF에 파일이 없지만 quote, escaped quote, 중복 header, cell 내부 newline과 byte range에서 잘린 마지막 행을 처리하는 adapter 및 회귀 test를 갖춘다.
+- 모든 구조 preview는 원본 전체를 브라우저에 적재하지 않고 64 KiB byte range와 20 KiB raw display 한도를 지킨다.
+- Parquet schema detail과 row group navigator는 현재 rows 호출과 metadata 호출의 중복 range를 제거하는 전용 preview API를 설계한 뒤 추가한다. 이 항목 전까지 K1 전체 종료를 주장하지 않는다.
