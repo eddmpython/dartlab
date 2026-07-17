@@ -169,7 +169,7 @@ import HFDataLink from '$lib/components/blog/HFDataLink.svelte';
 
 ---
 
-![삼성바이오로직스 핵심 구조 — 남의 약 만드는 공장이 제약사보다 마진이 높은 이유를 6막으로 분해한다](./assets/41-hero-map.svg)
+![삼성바이오로직스 핵심 구조 — 남의 약 만드는 공장이 제약사보다 마진이 높은 이유를 6막으로 분해한다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/58/5857b19b7af506103aed3c0a75c679f0d0ad565e77958e47d81268b9a079e583.svg)
 
 ## 1막: 제조업 매출총이익률 55% — 숫자가 이상하다
 
@@ -271,7 +271,7 @@ c.select("IS", ["당기순이익"])
 
 2023년, 송도 4공장 가동 개시. 세계 최대 단일 바이오 생산시설, 배양 용량 25.6만 리터. 공장이 하나 더 돌기 시작하면 보통 비용이 늘고 마진이 줄어든다 — 건설비 감가상각, 신규 인력, 시운전 비용. 그런데 삼성바이오로직스는 4공장을 올리면서 영업이익률이 오히려 올라갔다.
 
-![매출원가율 72%에서 45%로 — 고정비 레버리지가 만든 마진 상승](./assets/41-margin-waterfall.svg)
+![매출원가율 72%에서 45%로 — 고정비 레버리지가 만든 마진 상승](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/90/90759301facb1b73531c4d0f14f3d1dda2451a897c9be65606a97e0e1b9fab77.svg)
 
 ### 영업이익률 13%→45% — 3.5배, 같은 회사 맞는가
 
@@ -399,7 +399,7 @@ c.select("CF", ["영업활동현금흐름"])
 
 2018년, 삼성바이오로직스가 2공장 배양기를 설치했다. 수백억원짜리 스테인리스 배양기 한 기의 내용연수는 20년 이상이다. 올해 장부에 찍히는 감가상각비 3,597억원은 과거에 이미 지불한 공장 건설비를 매년 나누어 비용으로 인식하는 것이다. **현금은 이미 나갔고, 올해 추가로 나가는 돈이 아니다.** 순이익을 계산할 때는 비용으로 빠지지만, 현금흐름을 계산할 때는 다시 더해진다. 공장이 클수록 감가상각비가 크고, 감가상각비가 클수록 영업활동현금흐름와 NI의 격차가 벌어진다. 이것이 영업활동현금흐름 > NI의 핵심 원인이다.
 
-![현금흐름 진화 — 2023년 전환점에서 성숙형으로](./assets/41-cashflow-timeline.svg)
+![현금흐름 진화 — 2023년 전환점에서 성숙형으로](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/7e/7e83a12a03f6bd7272451f2db38cf5c223335f813c560fdf33e582b18486c02b.svg)
 
 ### 잉여현금흐름 — 투자를 빼고 진짜 남는 돈
 
@@ -427,7 +427,7 @@ q = c.analysis("financial", "이익품질")
 | Beneish M-Score(분식 가능성 지표) | -3.85 | -1.78 미만이면 안전 — **안전** |
 | Piotroski F-Score(재무 건전성) | 7/9 | 7 이상이면 건전 — **건전** |
 
-![바이오에서 돈 버는 세 가지 방법 — 삼성바이오 vs 셀트리온 vs 알테오젠](./assets/41-comparison-matrix.svg)
+![바이오에서 돈 버는 세 가지 방법 — 삼성바이오 vs 셀트리온 vs 알테오젠](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/27/27f1616c82dc7f6ab31ce54753d1d72bfb06a21a9826e17baab9c28842153aab.svg)
 
 *현금이 이익보다 많다는 것은 공장이 돌아가고 있다는 뜻이다. 그러면 이 구조는 어디까지 갈 수 있는가.*
 
@@ -437,7 +437,7 @@ q = c.analysis("financial", "이익품질")
 
 2025년 말, 송도 4공장 옆 빈 부지. 삼성바이오로직스가 5공장 착공을 검토 중이라는 보도가 나왔다. 1공장부터 4공장까지 "투자→가동→마진 상승" 사이클이 세 번 반복됐다. 네 번째도 같을 것인가.
 
-![투자→가동→마진 상승→현금 축적→재투자 선순환 사이클](./assets/41-factory-cycle.svg)
+![투자→가동→마진 상승→현금 축적→재투자 선순환 사이클](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/71/71f37a882bb35d04baebdc337f4f517220c2c9728ddd2b99aa0219c6622234d8.svg)
 
 ### 과거~현재 패턴 — 1공장부터 4공장까지, 같은 사이클의 반복
 
@@ -469,7 +469,7 @@ q = c.analysis("financial", "이익품질")
 
 순수 CMO로서의 2025년 숫자: 매출 4.56조, 영업이익률 45%, 자산 11.1조, 부채비율 48%. 이것이 에피스 없이 CMO만으로 달성한 실적이라면, 이 사업 모델의 수익성이 더욱 선명해진다.
 
-![2026년에 봐야 할 5가지 체크포인트](./assets/41-signal-card.svg)
+![2026년에 봐야 할 5가지 체크포인트](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/67/670a2ac9f9817087e0f2e5b41887d122de7093262f4119a49eac1031287aebc6.svg)
 
 ### 2026년에 봐야 할 것 — 가동률, 수주잔고, 가격결정력
 

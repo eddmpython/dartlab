@@ -100,7 +100,7 @@ bs_q.head(5)
 
 이 차이는 [사업보고서 읽는 법](/blog/reading-business-reports)을 보면 더 분명해진다. 사업보고서 안에서도 손익계산서와 재무상태표는 같은 회사의 다른 질문에 답한다. dartlab은 이 둘을 같은 표 조작법으로 열어 주지만, 회계 의미까지 같게 만들지는 않는다.
 
-![Y와 Q가 질문을 바꾸는 방식](./assets/dartlab-story-05-y-q-grid.svg)
+![Y와 Q가 질문을 바꾸는 방식](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b9/b967ee5e1563388e39d9076374afa98ecdafe09a678262e129220742022a9935.svg)
 
 ## `freq="year"`가 아니라 `freq="Y"`다
 

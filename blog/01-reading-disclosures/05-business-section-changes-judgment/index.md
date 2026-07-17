@@ -20,7 +20,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 그 원인을 가장 먼저 구조적으로 보여주는 곳이 사업보고서 **II. 사업의 내용**이다 (사업보고서 텍스트를 읽는 기본 방법은 [사업보고서 텍스트, 이렇게 읽는다](/blog/reading-business-reports) 참고).
 
-![Business Section Map](./assets/008-business-section-map.svg)
+![Business Section Map](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/70/704591b0ee6ede211a20e579d3fb63817a94af1840b71f735eecd5133b70a06b.svg)
 
 ---
 
@@ -42,7 +42,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 즉, 재무제표가 "무엇"이라면 II 섹션은 "왜"와 "얼마나 오래"다.
 
-![Market Competition Lens](./assets/008-market-competition-lens.svg)
+![Market Competition Lens](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b6/b65e972bb14802fa478ba1ece4570a34d02a2bf49a5ff462407962d841ef87b3.svg)
 
 ---
 
@@ -78,7 +78,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 고객 집중은 평소엔 효율이지만, 충격 구간에서는 취약점으로 바뀐다.
 
-![Customer Concentration Risk](./assets/008-customer-concentration-risk.svg)
+![Customer Concentration Risk](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/eb/eba52683d3c4cddbe20fb8b0f1d7b72c7523a93d39d2d662787a19281f686fd6.svg)
 
 ### 4) 원가 구조와 공급망 리스크
 
@@ -90,7 +90,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 영업이익률 숫자 하나보다 원가 구조 문장이 미래를 더 잘 말해준다.
 
-![Cost Pass Through Grid](./assets/008-cost-pass-through-grid.svg)
+![Cost Pass Through Grid](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/3f/3f45839647b1ffd2537ab533d72e8ac90a2d08f0a6989f909729b72e04ef0bb6.svg)
 
 ### 5) 신사업/중단사업의 실제 진행률
 
@@ -108,7 +108,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 매출 성장률 20%는 숫자만 보면 동일하다. 그런데 투자 판단은 전혀 달라질 수 있다.
 
-![Same Growth Different Quality](./assets/008-same-growth-different-quality.svg)
+![Same Growth Different Quality](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/5d/5dab04cee23ecb18bbdc1344232b7edab06da39682321dbdc8661d0060e63bed.svg)
 
 ### 케이스 A: 구조적 성장
 
@@ -159,7 +159,7 @@ II. 사업의 내용을 따로 읽으면 통찰이 절반이다. 반드시 재�
 
 이렇게 보면 "좋아 보이는 문장"이 "검증된 주장"으로 바뀐다.
 
-![Cross Validation Loop](./assets/008-cross-validation-loop.svg)
+![Cross Validation Loop](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/02/0277a6f26b457437816fddaf65821bcc68ca99d5e6fa61b2f3b2c7ed98c8a04f.svg)
 
 ---
 
@@ -242,7 +242,7 @@ II. 사업의 내용은 길어서 어렵다기보다, 읽고 나서 질문으로
 
 시간이 없을 때는 아래 순서만으로도 품질이 크게 올라간다.
 
-![10-Minute Business Section Checklist](./assets/008-ten-minute-checklist.svg)
+![10-Minute Business Section Checklist](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/bc/bcb4b2e8e535b0472ad36e534aa47cbe450a6c4d9f03feb7118ddbb859f521cc.svg)
 
 ### 0~2분: 시장/경쟁 문장 스캔
 
@@ -268,7 +268,7 @@ II. 사업의 내용은 길어서 어렵다기보다, 읽고 나서 질문으로
 
 ## 자주 하는 실수 5가지
 
-![Common Mistakes Heatmap](./assets/008-common-mistakes-heatmap.svg)
+![Common Mistakes Heatmap](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b5/b5f40a4465724cf1487894dff1b332c2e53d1e31f34058781004e46a9b025104.svg)
 
 1. II 섹션을 PR 문서로 취급하고 건너뛴다
 2. 매출 성장률만 보고 성장의 질을 검증하지 않는다

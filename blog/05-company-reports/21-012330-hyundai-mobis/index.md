@@ -145,7 +145,7 @@ import HFDataLink from '$lib/components/blog/HFDataLink.svelte';
 
 이 글은 연결 영업이익률 5.5%라는 평범한 숫자 뒤에 숨은 별도 영업이익률 21%의 정체를 추적한다. 그 정체는 AS 부품 독점이다. 그리고 그 독점이 만든 현금이 왜 주가로 반영되지 못하는지, 2018년 무슨 일이 있었는지, 정의선이 다음에 어떤 카드를 꺼낼 것인지까지 하나의 관통선으로 이어진다.
 
-![연결 vs 별도 영업이익률 갭](./assets/21-opm-gap.svg)
+![연결 vs 별도 영업이익률 갭](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/2f/2f390a410d4c6e5842b2fea783bb875921b3989785657a51a779706b9284ae4f.svg)
 
 *dartlab 실측: 연결 영업이익률 5.5%, 별도 영업이익률 ~21%. 이 15%p 갭이 이 글의 출발점.*
 
@@ -175,7 +175,7 @@ import HFDataLink from '$lib/components/blog/HFDataLink.svelte';
 
 그리고 차 한 대가 팔리면 AS 수요는 **10~15년** 지속된다. 2024년에 판 차가 2039년까지 부품 수요를 만든다. 글로벌 도로 위에 굴러다니는 현대/기아 차가 1억 대가 넘는다. 이 1억 대가 **10년짜리 복리 마진 기계**로 작동한다.
 
-![별도 vs 연결 — 15%p 갭의 구조](./assets/21-separate-vs-consolidated.svg)
+![별도 vs 연결 — 15%p 갭의 구조](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a8/a895e372ce70966f6cce5560953bd5f1cd7318e5bb4ed85357cb675a13f27256.svg)
 
 ### 별도 영업이익률 11%→21% — 5년간 10%p 상승의 네 가지 이유
 
@@ -224,7 +224,7 @@ AS 부품은 한국에서 압도적이다. 그런데 해외에서는? 해외 시
 - 현대차가 보유한 기아 지분: **약 34%** (최대주주)
 - 기아가 보유한 현대모비스 지분: **약 17%** (2대 주주)
 
-![현대차그룹 순환출자 고리](./assets/21-circular-ownership.svg)
+![현대차그룹 순환출자 고리](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c0/c0ea51ebbac4c5a74586e2183c144d53a24251f68ee9fd4b4ce7467eb80e18d1.svg)
 
 *모비스가 현대차를 지배 → 현대차가 기아를 지배 → 기아가 다시 모비스를 지배. 순환출자 고리의 정점이 모비스다.*
 
@@ -290,7 +290,7 @@ AS 부품은 한국에서 압도적이다. 그런데 해외에서는? 해외 시
 | 2024 | 0.65 |
 | 2025 | **0.67** |
 
-![PBR 디스카운트](./assets/21-pbr-discount.svg)
+![PBR 디스카운트](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/bf/bf54e78556826edca3e5efc6994b1fe2216acfe0adc599046423bfdcfa89ac3d.svg)
 
 *2017년 PBR 0.9배 → 2019년 0.6배. 8년이 지나도 회복 안 됨. 지배구조 불확실성이 주가에 영구 반영.*
 
@@ -347,7 +347,7 @@ c.analysis("valuation", "밸류에이션밴드")
 
 주요 고객사가 발표됐다. 폭스바겐(배터리 시스템), GM(전동화 모듈), 스텔란티스, 메르세데스벤츠 일부 모델. 이는 역사적으로 의미가 크다. 모비스가 그룹 외 고객에게 **공식 공급 승인**을 받기 시작했다는 뜻이다. 10년 전만 해도 불가능했던 일이다.
 
-![수주 믹스 변화](./assets/21-order-mix.svg)
+![수주 믹스 변화](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/5e/5ec08dd486807e9e042f1d7b600e3b59688817d7420a0d07ece4d2e821f7c492.svg)
 
 *2020년 해외 비계열 수주 17억 달러 → 2024년 88억 달러. 5년간 5배. 그런데 이 성장이 영업이익률을 낮추고 있다.*
 

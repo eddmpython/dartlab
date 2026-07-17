@@ -18,7 +18,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 이 글은 내부회계관리제도와 감사위원회 활동을 `감독 구조 -> 출석과 안건 -> 내부회계 운영실태 -> 외부감사 연결 -> 후속 정정공시와 숫자` 순서로 읽는 방법을 정리한다. 기본 감사 프레임은 [감사의견이 적정이어도 불안한 회사는 어떤 패턴을 보이나](/blog/clean-audit-opinion-but-still-risky), KAM 읽기는 [사업보고서에서 감사보고서와 KAM 읽는 법](/blog/audit-report-and-kam), 보증·약정 구조는 지급보증·담보·약정 공시는 어디가 위험 신호인가와 같이 보면 좋다.
 
-![내부회계관리제도와 감사위원회 활동을 어떤 순서로 읽어야 하는지 정리한 구조도](./assets/044-reading-flow.svg)
+![내부회계관리제도와 감사위원회 활동을 어떤 순서로 읽어야 하는지 정리한 구조도](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/7b/7b414031489d2576adf15e2c9b0b78ef8a610d3315d6107ba3589101457fffc8.svg)
 
 ---
 
@@ -60,7 +60,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 실전에서는 이 문서를 혼자 읽기보다 [사업보고서에서 감사보고서와 KAM 읽는 법](/blog/audit-report-and-kam), 우발부채와 소송 공시 읽는 법, 지급보증·담보·약정 공시는 어디가 위험 신호인가와 묶어 보면 좋다. 같은 회사가 통제, 리스크, 주석, 감사 문구에서 어떤 패턴을 반복하는지가 더 중요하기 때문이다.
 
-![내부회계관리제도와 감사위원회 활동을 읽을 때 같이 붙여야 할 레이어를 정리한 도식](./assets/044-evidence-layer.svg)
+![내부회계관리제도와 감사위원회 활동을 읽을 때 같이 붙여야 할 레이어를 정리한 도식](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/0f/0f25a43e237fe1dd6a538fe4f97ead50dee41a9b0097b6896349653c0baeb72e.svg)
 
 ---
 
@@ -68,7 +68,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 가장 실용적인 질문은 이것이다. `이 문구가 실제 통제 작동을 보여주는가, 아니면 형식적 보고에 가깝나`.
 
-![내부회계와 감사위원회 문구를 실질 통제와 형식 보고로 가르는 구조도](./assets/044-decision-tree.svg)
+![내부회계와 감사위원회 문구를 실질 통제와 형식 보고로 가르는 구조도](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/6e/6e255b05c930bd6eceda59e65031dec26ff2471003fa93dff8f27beaca0660b5.svg)
 
 실질 통제라면 핵심 안건, 반복 리스크, 개선 조치가 비교적 구체적으로 보인다. 형식 보고라면 출석과 절차는 있는데 실제 어떤 문제를 다루는지 잘 보이지 않는다. 위험 신호는 이 두 구조가 외부감사와 숫자 쪽에서 엇갈릴 때 강해진다.
 
@@ -80,7 +80,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 ## 위험도를 나누는 기준
 
-![내부회계와 감사위원회 활동에서 상대적으로 건강한 경우와 더 조심해야 하는 경우를 비교한 매트릭스](./assets/044-good-vs-risky-matrix.svg)
+![내부회계와 감사위원회 활동에서 상대적으로 건강한 경우와 더 조심해야 하는 경우를 비교한 매트릭스](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/26/26bb2576f04b1aa4df72c84e8e5105925b785ff88893527e434ed1b09385f454.svg)
 
 | 관찰 포인트 | 상대적으로 건강한 경우 | 더 조심해야 하는 경우 |
 | --- | --- | --- |
@@ -120,7 +120,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 ## 다음 분기에 다시 확인할 숫자
 
-![내부회계와 감사위원회 활동을 읽은 뒤 후속 문서에서 다시 봐야 할 질문을 정리한 보드](./assets/044-watchboard.svg)
+![내부회계와 감사위원회 활동을 읽은 뒤 후속 문서에서 다시 봐야 할 질문을 정리한 보드](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/53/53e4a9cde17f89ab423a7d98f3e5e51cd068af6a2fef90c5a403296f0274c63c.svg)
 
 | 이번에 본 것 | 다음에 다시 볼 것 |
 | --- | --- |

@@ -214,7 +214,7 @@ c.select("IS", ["revenue", "gross_profit", "operating_income", "net_income"])
 | **GP Margin** | **29.2%** | **25.4%** | **22.9%** | **16.0%** |
 | **OP Margin** | **1.4%** | **1.9%** | **-0.5%** | **-8.1%** |
 
-![GP 마진 vs OP 마진 추이](./assets/27-margin-gap.svg)
+![GP 마진 vs OP 마진 추이](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/02/0270b54b4fe46ddc0a50af5da385a8e677870c41c8584409f5c35447168fffd3.svg)
 
 ### 판매관리비(SGA) $8.4B — 판관비가 매출총이익의 95%를 먹는다
 
@@ -277,7 +277,7 @@ c.select("BS", ["total_assets", "total_liabilities", "stockholders_equity"])
 
 자본총계 -$3.5B. 마이너스다. 부채가 자산보다 $3.5B 많다. 보통 이 상태의 회사는 파산 직전이거나 상장폐지 대상이다. 그런데 쿠팡은 상장폐지되지 않았다.
 
-![자본총계 4년 추이](./assets/27-equity-swing.svg)
+![자본총계 4년 추이](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/87/874caa7843e68bf82cacd2d46fa6482d1aaf26eec4708089102ff2ad1dc09448.svg)
 
 ### NYSE 상장 요건 — 자본잠식이어도 시총이면 된다
 
@@ -517,7 +517,7 @@ c.select("CF", ["operating_cash_flow", "investing_cash_flow", "financing_cash_fl
 | Investing CF | -1,880 | -1,016 | -1,506 | -1,076 |
 | Financing CF | -87 | -1,154 | 3,183 | 808 |
 
-![현금흐름 패턴 4년](./assets/27-cashflow-pattern.svg)
+![현금흐름 패턴 4년](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ac/ace957477df5344dc8cacee077d154741a010560f6ba0a48d6602bd1c741a564.svg)
 
 ### DO 적자 $1B/yr — 언제까지 태울 수 있나
 
@@ -636,7 +636,7 @@ c.analysis("효율성")
 
 2024년 순이익 $154M. 영업현금흐름 $1,886M. **이익의 12배가 넘는 현금이 영업에서 들어왔다.** 이유는 단순하다: 감가상각비(비현금비용)가 큰 것도 있지만, 매입채무 증가(운전자본, 즉 영업에 묶여있는 돈의 유입)가 핵심이다. 매출이 늘면 공급업체에게 줄 돈이 쌓이고, 87일의 지급 유예 덕에 그 돈이 현금으로 잡힌다.
 
-![현금전환주기 -55일 구조](./assets/27-ccc-negative-structure.svg)
+![현금전환주기 -55일 구조](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/0d/0d3393f655e078e497ccf6dcdedbdc4dff83799b144eff776ee392a8c4e65eef.svg)
 
 ### 아마존도 현금전환주기 마이너스 — 이커머스의 본질
 
@@ -684,7 +684,7 @@ c.analysis("효율성")
 
 ### 최종 판단 — 마진 0.6%는 전략이다
 
-![쿠팡 재무 구조 요약](./assets/27-coupang-structure-summary.svg)
+![쿠팡 재무 구조 요약](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/9c/9cf45fe43e345435308035b17a53ab0ea902f2fbbb419be37443701fe332ac0a.svg)
 
 마진 0.6%(2025)는 유출 바우처라는 일회성을 빼면 마진 4%다. 그 4%도 DO 적자를 빼면 PC는 5%+다. 이커머스에서 5%는 나쁘지 않다.
 

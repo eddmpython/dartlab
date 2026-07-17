@@ -25,7 +25,7 @@ OpenDART를 처음 쓰면 대개 `단일회사 주요계정`이나 `단일회사
 
 이 글은 `무슨 API가 있나`를 나열하지 않는다. 대신 **정기보고서 재무 수집기를 실제로 설계할 때 어떤 소스를 어떤 순서로 붙여야 하는가**를 중심으로 정리한다.
 
-![OpenDART 재무 수집의 전체 흐름을 보여주는 pipeline overview](./assets/028-pipeline-overview.svg)
+![OpenDART 재무 수집의 전체 흐름을 보여주는 pipeline overview](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/77/77307ac258415b1418bff4b5d151cc224bd79b724a33799bf7c57d417d6c4212.svg)
 
 ---
 
@@ -81,7 +81,7 @@ corp_code가 회사 식별자라면, **rcept_no는 문서 식별자**다.
 
 OpenDART 재무 수집을 잘하는 사람은 "무슨 API를 써야 하지"라고 묻지 않는다. 대신 **지금 필요한 정보가 어느 층에 있는가**를 먼저 묻는다.
 
-![JSON, raw filing, XBRL, notes를 역할별로 나눈 source selection map](./assets/028-source-selection-map.svg)
+![JSON, raw filing, XBRL, notes를 역할별로 나눈 source selection map](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/32/324d1bda36d34c71d8e7e7eb2fd1bb0acf21400c64c1151cbba5e50a6be379e6.svg)
 
 아래처럼 보면 빠르다.
 
@@ -101,7 +101,7 @@ OpenDART 재무 수집을 잘하는 사람은 "무슨 API를 써야 하지"라�
 
 이 질문을 분리하지 못하면 수집기가 불필요하게 무거워진다.
 
-![JSON API, raw filing, XBRL 원문, notes download의 역할 차이를 비교한 matrix](./assets/028-xbrl-vs-json-vs-raw-filing.svg)
+![JSON API, raw filing, XBRL 원문, notes download의 역할 차이를 비교한 matrix](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a4/a4f14f2c57bb109b1f1682b0fcd8c0177b5b21f06446604f70025dcad689e7cb.svg)
 
 실전 기준은 이렇다.
 
@@ -154,7 +154,7 @@ OpenDART 재무 수집을 잘하는 사람은 "무슨 API를 써야 하지"라�
 
 즉 처음부터 모든 회사를 무겁게 처리하지 말고, **가벼운 레이어에서 무거운 레이어로 단계적으로 내려가는 구조**가 좋다.
 
-![주석 다운로드를 파이프라인 뒤쪽에서 붙이는 note extraction flow](./assets/028-note-extraction-flow.svg)
+![주석 다운로드를 파이프라인 뒤쪽에서 붙이는 note extraction flow](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/42/425600ec90241f12c51d669c7169573029c13f6dbcdc53b980a6cb083c94339f.svg)
 
 ---
 
@@ -227,7 +227,7 @@ OpenDART 재무 수집을 잘하는 사람은 "무슨 API를 써야 하지"라�
 
 숫자만 갱신하면 왜 바뀌었는지 설명이 사라진다.
 
-![실패하는 파이프라인의 병목을 정리한 failure recovery checklist](./assets/028-failure-recovery-checklist.svg)
+![실패하는 파이프라인의 병목을 정리한 failure recovery checklist](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/8f/8f520e92da5018741351c9d53dd1ee588e5296bf8f063c32f9fc15df9e7d13df.svg)
 
 ---
 

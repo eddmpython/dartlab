@@ -138,7 +138,7 @@ SK바이오사이언스(302440)의 2021년 재무제표는 놀랍다. 매출 9,2
 
 ---
 
-![SK바이오사이언스 — 매출은 돌아왔다, 마진은 안 돌아왔다](./assets/51-hero-map.svg)
+![SK바이오사이언스 — 매출은 돌아왔다, 마진은 안 돌아왔다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a4/a4179caf16125ec1be2321805fe0dba5e096d7e88439316760aa7340e6efafbc.svg)
 
 ## 1막: 영업이익률 51% → -19% — 코로나 마진의 소멸
 
@@ -167,7 +167,7 @@ prof = c.analysis("financial", "수익성")
 # marginWaterfall: GPM 2021=61.4%, 2025=11.7%
 ```
 
-![SK바이오사이언스 매출총이익률/영업이익률 5년 추이 — 초고마진 소멸](./assets/51-margin-collapse.svg)
+![SK바이오사이언스 매출총이익률/영업이익률 5년 추이 — 초고마진 소멸](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/5a/5ab09fa7c999cfabc643bf1ec80e7e4f1a33ad3eb929dee5337089a5bb4098c0.svg)
 
 | 연도 | 매출원가율 (%) | 매출총이익률 (%) | 영업이익률 (%) |
 |:---|---:|---:|---:|
@@ -248,7 +248,7 @@ overall = c.analysis("financial", "종합평가")
 
 왜 SK바이오사이언스는 "자기 백신"이 아니라 "남의 약 만들기(CDMO)"에 미래를 걸었는가.
 
-![SK바이오사이언스 매출 구성 변화 — 자체 제품에서 CDMO로 전환](./assets/51-revenue-cycle.svg)
+![SK바이오사이언스 매출 구성 변화 — 자체 제품에서 CDMO로 전환](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/26/263ceffb46c15bdd297ef22e8da230d7aa53955da32d3ffac59abe6dbba77798.svg)
 
 ### 세그먼트 변화 — 상품 비중 2% → 35%
 
@@ -292,7 +292,7 @@ SK바이오사이언스의 자체 백신 포트폴리오는 독감 백신(스카
 
 왜 적자인 회사가 역대 최대 투자를 하고 있는가. 이것이 "포기"가 아니라 "베팅"이라는 증거를 재무제표에서 찾는다.
 
-![SK바이오사이언스 투자 사이클 대시보드](./assets/51-investment-phase.svg)
+![SK바이오사이언스 투자 사이클 대시보드](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ad/ad8939a0155c890b6d28562ecb28b673633f954f37540d943f192c035236c1be.svg)
 
 ![SK바이오사이언스 안동 공장 외관 — 설비투자 2,604억을 쏟아붓는 CDMO 전환 투자의 실체](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ca/ca3a4fbfeaf695fd0f376ad36a2253d897cdaf6285d5eef40a47160c9aa076f0.webp)
 
@@ -386,7 +386,7 @@ SK바이오사이언스는 바이오 4사 중 유일하게 **"아직 투자기"*
 
 ## 6막: SK바이오사이언스의 다음 — CDMO 수주가 운명을 결정한다
 
-![SK바이오사이언스 투자 체크포인트 5가지](./assets/51-checklist.svg)
+![SK바이오사이언스 투자 체크포인트 5가지](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/7a/7a20246519b39d632f3e3c8217cdea41681a0073698e181935516786a127830a.svg)
 
 ### 투자자가 봐야 할 체크포인트 5가지
 

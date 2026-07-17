@@ -18,7 +18,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 이 글은 감사의견 적정이라는 한 줄에서 멈추지 않고 `KAM -> 계속기업 관련 문구 -> 우발부채·소송 -> 정정공시 반복 -> 현금흐름·지배구조 확인` 순서로 읽는 방법을 정리한다. 기본 구조는 [감사보고서와 KAM은 어디까지 믿어야 하나](/blog/audit-report-and-kam), 우발 위험은 우발부채와 소송 공시 읽는 법, 현금 신호는 [영업현금흐름이 순이익을 부정할 때](/blog/operating-cash-flow-vs-net-income)와 같이 보면 더 선명해진다.
 
-![감사의견 적정 아래에서 무엇을 추가로 확인해야 하는지 정리한 구조도](./assets/040-reading-flow.svg)
+![감사의견 적정 아래에서 무엇을 추가로 확인해야 하는지 정리한 구조도](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a3/a3c4b5e70cec893e293bbc7cb74530b9d9b89e19c3b6bcca8b6ce8c568f7323f.svg)
 
 ---
 
@@ -51,7 +51,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 이 항목들을 같이 붙여 보면 감사의견 적정이 더 이상 결론처럼 보이지 않는다. 오히려 `어디를 더 봐야 하는지 알려주는 출발점`으로 바뀐다. 예를 들어 KAM이 재고나 매출 인식에 집중되어 있으면 재고자산과 평가손실 읽는 법이나 [매출채권과 대손충당금 읽는 법](/blog/receivables-and-allowance)으로 내려가서 숫자를 다시 붙여 보는 편이 훨씬 유용하다.
 
-![감사의견 적정 아래에서 같이 확인해야 할 레이어를 정리한 도식](./assets/040-evidence-layer.svg)
+![감사의견 적정 아래에서 같이 확인해야 할 레이어를 정리한 도식](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/77/7779e9cf428648c868ab068f57e5be71c82d22e6701f962f31407467f89ca851.svg)
 
 ---
 
@@ -59,7 +59,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 가장 실용적인 질문은 이것이다. `이 회사의 위험은 회계 쟁점인가, 유동성 압박인가, 통제와 지배구조 문제인가`.
 
-![적정 의견 아래 위험의 결을 회계 쟁점, 유동성 압박, 통제 문제로 가르는 구조도](./assets/040-decision-tree.svg)
+![적정 의견 아래 위험의 결을 회계 쟁점, 유동성 압박, 통제 문제로 가르는 구조도](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/3a/3aeef5823d6f18741ec9412c8a40b3be515d184c515ce947837d6700cde7f098.svg)
 
 회계 쟁점이 중심이면 KAM과 관련 주석, 해당 계정의 후속 숫자를 보면 된다. 유동성 압박이 중심이면 계속기업 관련 문구, 차입 구조, 보증·담보, 현금흐름을 묶어야 한다. 통제와 지배구조 문제가 중심이면 정정공시 반복, 특수관계인 거래, 최대주주 관련 구조를 같이 봐야 한다.
 
@@ -69,7 +69,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 ## 위험도를 나누는 기준
 
-![상대적으로 건강한 적정 의견과 더 불안한 적정 의견을 비교한 매트릭스](./assets/040-good-vs-risky-matrix.svg)
+![상대적으로 건강한 적정 의견과 더 불안한 적정 의견을 비교한 매트릭스](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/4c/4c669b50b6e9425fe2fecbcb967cde570c0c67554c2f67ccfd12ea01779315e9.svg)
 
 | 관찰 포인트 | 상대적으로 건강한 경우 | 더 조심해야 하는 경우 |
 | --- | --- | --- |
@@ -125,7 +125,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 ## 다음 분기에 다시 확인할 숫자
 
-![적정 의견 아래 남아 있는 위험 신호를 다음 보고서에서 어떻게 추적할지 정리한 보드](./assets/040-watchboard.svg)
+![적정 의견 아래 남아 있는 위험 신호를 다음 보고서에서 어떻게 추적할지 정리한 보드](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ea/eaf204baedd4aec4955a27d24c533529470f7d65e32b22de7c6a5ce456e9131e.svg)
 
 | 이번에 본 것 | 다음에 다시 볼 것 |
 | --- | --- |

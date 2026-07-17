@@ -18,7 +18,7 @@ OpenDART를 처음 쓰면 대개 정기보고서나 재무제표부터 본다 (O
 
 이 글은 OpenDART 주요사항보고서 API를 이용해 어떤 사건을 구조적으로 추적할 수 있는지, 어떤 영역은 API만으로 충분하고 어떤 영역은 원문 공시까지 내려가야 하는지 실전 기준으로 정리한다.
 
-![주요사항보고서 이벤트를 카테고리별로 나눈 분류도](./assets/016-event-taxonomy.svg)
+![주요사항보고서 이벤트를 카테고리별로 나눈 분류도](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/82/821ec9725343944b4aa5b47cb33f18b181b917f4a40cf7f35e6fc5f33330e706.svg)
 
 ---
 
@@ -50,7 +50,7 @@ OpenDART를 처음 쓰면 대개 정기보고서나 재무제표부터 본다 (O
 
 OpenDART 개발가이드에는 주요사항보고서 주요정보 관련 API 묶음이 정리되어 있다. 이 영역의 장점은 사건별로 구조화된 필드를 받을 수 있다는 점이다.
 
-![API 호출에서 원문 공시까지 이어지는 흐름도](./assets/016-api-to-filing-flow.svg)
+![API 호출에서 원문 공시까지 이어지는 흐름도](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/3b/3b9849e39e0e62ddbb62f4bfec87e13916444cd80a57172def0661fc5c2b5e5d.svg)
 
 대표적으로 잡기 좋은 사건은 다음과 같다.
 
@@ -87,7 +87,7 @@ OpenDART 개발가이드에는 주요사항보고서 주요정보 관련 API 묶
 
 기업 이벤트를 실전적으로 보려면 개별 조회보다 watch 구조가 필요하다.
 
-![이벤트 강도를 단계별로 구분하는 사다리형 시각화](./assets/016-severity-ladder.svg)
+![이벤트 강도를 단계별로 구분하는 사다리형 시각화](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/58/584c8334f111d29cfc09b7a28096e148847e5fe7c06f173b554a2ea08499dcf4.svg)
 
 기본 구조는 아래와 같다.
 
@@ -112,7 +112,7 @@ OpenDART 개발가이드에는 주요사항보고서 주요정보 관련 API 묶
 
 모든 주요사항보고서를 다 같은 무게로 볼 필요는 없다. 아래는 우선순위 기준이다.
 
-![모니터링 대시보드 개념으로 정리한 이벤트 우선순위 보드](./assets/016-monitoring-dashboard.svg)
+![모니터링 대시보드 개념으로 정리한 이벤트 우선순위 보드](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/9c/9cc0cbbe9eb74ef938c6de50379ee0552cdf296a992caca0a8990018b775dbbb.svg)
 
 | 우선순위 | 이벤트 | 이유 |
 | --- | --- | --- |
@@ -230,7 +230,7 @@ API는 탐지에 강하고, 원문은 해석에 강하다. 이 차이를 분리�
 
 한 번 검색하고 끝내면 지속 추적이 안 된다.
 
-![실패하는 이벤트 파이프라인의 병목을 정리한 맵](./assets/016-pipeline-failure-map.svg)
+![실패하는 이벤트 파이프라인의 병목을 정리한 맵](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/71/71b08a0b7ef425a3081e8071059578357f5a119017b321a86fc5198a2646ea83.svg)
 
 ---
 

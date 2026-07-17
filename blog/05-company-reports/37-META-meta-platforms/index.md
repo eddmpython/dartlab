@@ -162,7 +162,7 @@ c.analysis("financial", "수익성")
 
 ---
 
-![설비투자 $70B를 쏟아부으면서 영업이익률 41%를 유지하는 구조](./assets/37-hero-capex-vs-margin.svg)
+![설비투자 $70B를 쏟아부으면서 영업이익률 41%를 유지하는 구조](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/33/33483b0ba0240fcbf9ee9459850b2445b6c7e8aae3a9024bde0f315dc15df48c.svg)
 
 ---
 
@@ -201,7 +201,7 @@ prof["marginWaterfall"]["history"][0]
 #   {"label": "매출원가", "pct": -18.0}, {"label": "매출총이익", "pct": 82.0}, ...]}
 ```
 
-![매출총이익률 비교](./assets/37-gp-margin-comparison.svg)
+![매출총이익률 비교](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/55/556bb66778196da19a70e54bab6adc77c5dbfa49d2860ac8fbce1d762121d610.svg)
 
 ### 비교: 제조업과 소프트웨어 사이
 
@@ -220,7 +220,7 @@ Meta의 82%는 순수 소프트웨어 회사에 가깝다. 그런데 이 회사�
 
 ## 제2막: 2022년 추락 — 영업이익률 25%에서 무슨 일이 있었나
 
-![영업이익률 추락과 복귀](./assets/37-opm-timeline-crash-recovery.svg)
+![영업이익률 추락과 복귀](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/46/46850d24b934f6dacd521249cb0c5ed68725534df0fcad651c57bbcbdd7f3e56.svg)
 
 ### 왜 82%의 마진을 가진 회사가 추락했는가
 
@@ -321,7 +321,7 @@ $69.7B는 원화로 약 102조원이다. 삼성전자의 2025년 설비투자가
 
 ## 제4막: 현금흐름의 이중 구조 — 이익보다 현금이 2배인 회사
 
-![현금흐름의 이중 구조](./assets/37-cashflow-dual-structure.svg)
+![현금흐름의 이중 구조](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/0c/0c562fc2d8e1237b14dece48c9858052066a95787560c52a741e0e6bdfb3728b.svg)
 
 ### 왜 순이익 $60B인 회사가 현금 $116B를 벌었나
 
@@ -372,7 +372,7 @@ R&D 비용 증가도 있지만 부차적이다. AI 모델 학습에 투입되는
 
 ## 제5막: 첫 배당 + 부채 2배 — 자본배분의 모순
 
-![자본배분의 모순](./assets/37-capital-allocation-paradox.svg)
+![자본배분의 모순](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/76/76d520570ab4963f0951036e74df445af61d9f363dbf8aad277509ad6c87e132.svg)
 
 ### 왜 배당을 시작하면서 동시에 부채를 두 배로 늘렸나
 
@@ -440,7 +440,7 @@ st["interestBurden"]
 
 ## 제6막: dCR-AA인데 Piotroski 4점 — 다음에 봐야 할 것
 
-![경고 신호 카드](./assets/37-piotroski-signal-card.svg)
+![경고 신호 카드](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c5/c52a924edd6a5f139af458f1c2def9a9e82c505ad9998fe6d83a2aa669e0cf47.svg)
 
 ### 왜 최우량 등급인데 경고 신호가 나오는가
 

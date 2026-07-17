@@ -18,7 +18,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 이 글은 [자산 구조 분석](/blog/asset-structure-how-to-read)의 후속이다. 자산 구조에서 "조달한 돈이 어디에 묶여 있는가"를 봤다면, 여기서는 "그래서 실제로 현금은 얼마나 남았는가"를 본다.
 
-![현금흐름 분석의 세 축: CF 3구간, 잉여현금흐름, 이익의 현금 뒷받침을 한 화면에 압축한 도식](./assets/hero-cashflow.svg)
+![현금흐름 분석의 세 축: CF 3구간, 잉여현금흐름, 이익의 현금 뒷받침을 한 화면에 압축한 도식](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/6c/6c74bd65dca6ca755fd37f7bb1ec2f65b37efedac4ab6bcf858458288a58abdb.svg)
 
 ---
 
@@ -50,7 +50,7 @@ c.story("현금흐름")
 
 세 구간의 부호(+/-)를 조합하면 여섯 가지 패턴이 나온다. Subramanyam의 *Financial Statement Analysis*에서 제시하는 분류법이다. 어떤 패턴이 좋고 나쁜 것이 아니라, 회사가 지금 어떤 단계에 있는지를 보여주는 지표다.
 
-![CF 6패턴 분류표 — 영업/투자/재무 부호 조합에 따른 패턴과 해석](./assets/cf-pattern-history.svg)
+![CF 6패턴 분류표 — 영업/투자/재무 부호 조합에 따른 패턴과 해석](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/76/7673f66d095ce80f0a927961769035a239630296bb579531b123d4507614cf0f.svg)
 
 | 패턴 | 영업 | 투자 | 재무 | 의미 |
 |------|------|------|------|------|
@@ -75,7 +75,7 @@ FCF = 영업CF - CAPEX
 
 본업에서 번 현금으로 필수 투자(설비 유지/확장)까지 감당하고 남는 돈이다. 이것이 양수여야 배당, 부채 상환, 추가 투자 여력이 생긴다.
 
-![잉여현금흐름의 의미와 해석 — 영업CF에서 설비투자를 빼고 남는 진짜 여유 현금](./assets/fcf-deficit.svg)
+![잉여현금흐름의 의미와 해석 — 영업CF에서 설비투자를 빼고 남는 진짜 여유 현금](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/2b/2bf58e6dfa0730d09889128b62ec3b63d977049551e6ca7da200469f9e773af5.svg)
 
 - **잉여현금흐름 양수**: 본업으로 투자를 감당하고도 돈이 남는다. 이 돈으로 배당, 자사주 매입, 부채 상환이 가능하다
 - **잉여현금흐름 음수**: 본업 현금으로 투자를 감당하지 못한다. 차입이나 유상증자로 부족분을 메워야 한다
@@ -91,7 +91,7 @@ FCF = 영업CF - CAPEX
 
 영업CF/순이익 비율은 손익계산서의 이익이 실제 현금으로 얼마나 전환되는지를 보여준다.
 
-![영업CF/순이익 비율의 해석 기준 — 100% 이상이면 이익 이상의 현금 유입, 40% 미만이면 이익의 질 의문](./assets/cash-quality.svg)
+![영업CF/순이익 비율의 해석 기준 — 100% 이상이면 이익 이상의 현금 유입, 40% 미만이면 이익의 질 의문](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/de/de815ca811234fb29bc2ff284704688705fd4c3e343b6d2d2a251eb82b211cf6.svg)
 
 | 비율 | 해석 |
 |------|------|
@@ -115,7 +115,7 @@ FCF = 영업CF - CAPEX
 영업CF 마진 = 영업CF / 매출 * 100
 ```
 
-![영업CF 마진의 해석과 업종별 기준 — 매출 대비 현금 창출력의 직접 지표](./assets/cf-margin.svg)
+![영업CF 마진의 해석과 업종별 기준 — 매출 대비 현금 창출력의 직접 지표](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/fc/fc7e9f3d1ba00b4fca4111c342eabae34a3c449e938ea2f8d7e7458da67b2e7f.svg)
 
 영업이익률과 영업CF 마진의 차이가 크다면, 이익의 상당 부분이 현금으로 전환되지 않고 있다는 뜻이다. 매출채권, 재고, 선급금 등 운전자본에 현금이 묶이고 있을 가능성이 높다.
 

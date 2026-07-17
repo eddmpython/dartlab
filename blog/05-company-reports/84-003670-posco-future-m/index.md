@@ -173,7 +173,7 @@ import HFDataLink from '$lib/components/blog/HFDataLink.svelte';
 
 <HFDataLink code="003670" />
 
-![포스코퓨처엠 2025 관통선 — 영업이익 328억, CAPEX 1.50조, FCF -1.53조. 양극재·음극재 선투자가 EV 캐즘을 만났다.](./assets/84-hero-capex-gap.svg)
+![포스코퓨처엠 2025 관통선 — 영업이익 328억, CAPEX 1.50조, FCF -1.53조. 양극재·음극재 선투자가 EV 캐즘을 만났다.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c3/c3bbe5c71796f63b35596c2dda0e4accddbfe2ace1acbe5bdf266ec79724c44f.svg)
 
 포스코퓨처엠(003670)을 배터리 소재 성장주라고 부르는 건 틀리지 않다. 회사의 미래 질문은 양극재와 음극재에서 나온다. 전기차 배터리 한 셀 안에서 양극재는 원가의 큰 부분을 차지하고, 음극재는 중국 의존도를 낮춰야 하는 전략 품목이다. 포스코 그룹이 리튬·니켈·양극재·음극재를 한 묶음으로 키우려는 이유도 여기에 있다.
 
@@ -255,7 +255,7 @@ assets = c.analysis("financial", "자산구조")
 
 하지만 2025년에는 그 미래 사업이 회사의 이익을 충분히 지켜주지 못했다. 에너지소재 매출은 2023~2024년의 기대보다 낮아졌고, 가격 하락과 가동률 부담이 마진을 눌렀다. 반대로 전통 사업인 내화물과 라임화성은 성장 스토리는 덜 화려하지만 포스코 그룹 철강 공정과 붙어 있어 손익 방어선 역할을 한다.
 
-![포스코퓨처엠 3개 사업부 — 에너지소재가 매출 절반 이상이지만, 내화물과 라임화성이 2025년 손익 방어선을 만든다.](./assets/84-segment-map.svg)
+![포스코퓨처엠 3개 사업부 — 에너지소재가 매출 절반 이상이지만, 내화물과 라임화성이 2025년 손익 방어선을 만든다.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e6/e619ed065c92a1587cc445bb009463d685123b2d1047c26d1ba22c2e5941c130.svg)
 
 이 구조는 LG에너지솔루션, 삼성SDI, SK온과 다르다. [LG에너지솔루션](/blog/373220-lg-energy-solution)은 배터리 셀 자체가 중심이고, [삼성SDI](/blog/006400-samsung-sdi)는 EV 배터리 적자가 회사 전체를 크게 흔들었다. [SK온](/blog/096770-sk-on)은 비상장 자회사라 모회사 SK이노베이션의 손익과 신용에 충격이 섞여 들어간다.
 
@@ -279,7 +279,7 @@ assets = c.analysis("financial", "자산구조")
 
 문제는 시간차다. 공장은 먼저 장부에 올라오고, 매출은 나중에 붙는다. EV 수요가 계획대로 커지면 선투자는 선점이 된다. EV 캐즘이 오면 선투자는 부담이 된다. 2025년 포스코퓨처엠은 이 시간차의 한가운데 있다.
 
-![CAPEX와 FCF의 시간차 — 2021~2025년 CAPEX는 누적 6조원대, FCF는 계속 음수다. 배터리 소재 공장은 매출보다 먼저 온다.](./assets/84-capex-fcf.svg)
+![CAPEX와 FCF의 시간차 — 2021~2025년 CAPEX는 누적 6조원대, FCF는 계속 음수다. 배터리 소재 공장은 매출보다 먼저 온다.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f7/f76c95150a55ce21155aa1be09a045e6097daf129d8ae633040baeacf2290c5a.svg)
 
 이 대목에서 POSCO홀딩스의 역할이 나온다. 2025년 POSCO홀딩스는 포스코퓨처엠 등 이차전지 소재 자회사 유상증자에 약 1조원을 투입하겠다고 밝혔다. 회사는 이 자금을 양극재·음극재 생산능력 확대와 캐나다 합작 양극재 공장, 포항·광양 양극재 공장 확장 등에 쓰겠다고 설명했다. 이건 단순 자금 보충이 아니다. 그룹이 "EV 캐즘에도 이 소재 투자를 접지 않겠다"고 말한 사건이다. [POSCO Group Newsroom](https://newsroom.posco.com/en/posco-holdings-commits-krw-1-trillion-to-capital-increase-in-rechargeable-battery-material-subsidiaries-to-reinforce-responsible-management-of-core-businesses/)
 
@@ -303,7 +303,7 @@ assets = c.analysis("financial", "자산구조")
 
 자산회전율이 낮아진다는 말은 공장과 장비가 매출을 충분히 만들기 전에 장부에 먼저 쌓였다는 뜻이다. 배터리 소재 회사는 이 구간을 반드시 지나간다. 하지만 지나가는 속도가 중요하다. 2026~2027년에 에너지소재 매출이 회복되고 가동률이 올라오면 이 자산은 성장 기반이 된다. 그렇지 않으면 감가상각, 금융비용, 재고평가손실의 부담이 된다.
 
-![자산 구조 변화 — 2021년 이후 유형자산이 빠르게 늘었고, 2025년 총자산 9.14조 중 영업자산 비중이 84.8%다.](./assets/84-asset-buildout.svg)
+![자산 구조 변화 — 2021년 이후 유형자산이 빠르게 늘었고, 2025년 총자산 9.14조 중 영업자산 비중이 84.8%다.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b6/b6a1f8baf3d8a778c26a51b63231dfec4e19a898a78e44ececc55aa86cc024f9.svg)
 
 여기서 포스코퓨처엠과 [한미반도체](/blog/042700-hanmi-semi), [리노공업](/blog/058470-rino-industrial)의 차이가 나온다. 한미반도체와 리노공업은 AI 공급망의 장비·소모품 회사다. 수요가 터지면 마진이 빠르게 올라갈 수 있고, 상대적으로 자산이 가볍다. 포스코퓨처엠은 다르다. 양극재·음극재는 화학 공장과 대량 생산 설비가 필요하다. 성장의 방향은 비슷해 보여도 재무제표의 무게가 다르다.
 
@@ -337,7 +337,7 @@ dartlab 자금조달 분석은 이를 "외부 조달 우위 — 금융차입이 
 
 [삼성SDI](/blog/006400-samsung-sdi)는 이 구간에서 영업적자로 밀렸다. [LG에너지솔루션](/blog/373220-lg-energy-solution)은 AMPC와 고객 포트폴리오로 흑자를 지켰지만 금융비용 부담이 컸다. [SK온](/blog/096770-sk-on)은 Ford JV 재편과 손상 이슈가 모회사 손익에 크게 나타났다. 포스코퓨처엠은 셀 업체보다 앞단에 있는 소재 회사로서 가격과 가동률의 충격을 받았다.
 
-![EV 캐즘이 소재 회사에 전달되는 순서 — EV 수요 둔화, 금속 가격 하락, 양극재 판가 하락, 재고평가, 가동률 하락, 현금흐름 악화가 순서대로 이어진다.](./assets/84-ev-chasm-chain.svg)
+![EV 캐즘이 소재 회사에 전달되는 순서 — EV 수요 둔화, 금속 가격 하락, 양극재 판가 하락, 재고평가, 가동률 하락, 현금흐름 악화가 순서대로 이어진다.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/09/09226100abbe63d7042c235a2a4399b37f28e3b489c32486097c0378d3301676.svg)
 
 그래서 2026년 포스코퓨처엠의 회복을 보려면 전기차 판매량 headline만 보면 안 된다. 봐야 할 것은 양극재 판가, 출하량, 공장 가동률, 재고평가손실, 에너지소재 부문 손익이다. 특히 음극재는 비중국 공급망이라는 전략성이 있지만, 실제 손익 개선은 고객 인증과 물량이 따라와야 가능하다.
 
@@ -403,7 +403,7 @@ dartlab 자금조달 분석은 이를 "외부 조달 우위 — 금융차입이 
 
 따라서 체크리스트는 다음 순서가 맞다.
 
-![포스코퓨처엠 체크리스트 — 에너지소재 매출, 영업이익률, CAPEX, FCF, 음극재 출하, 그룹 지원을 같이 봐야 한다.](./assets/84-checklist.svg)
+![포스코퓨처엠 체크리스트 — 에너지소재 매출, 영업이익률, CAPEX, FCF, 음극재 출하, 그룹 지원을 같이 봐야 한다.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/05/05c9e3cea8caf154b9a18edb9003025ecfa2f3ab90852e3f7d0ab76a55d350f6.svg)
 
 **첫째, 에너지소재 매출이 다시 2조원대로 올라오는가.**
 

@@ -18,7 +18,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 이 글은 바이오·제약 사업보고서를 `파이프라인 확인 → 개발비 자산화 정책 → 마일스톤과 기술이전 → 임상 실패와 손상 → 현금 소진 속도` 순서로 읽는 방법을 정리한다. 기존 글에서 항목별로 깊게 다룬 내용을 바이오·제약이라는 하나의 업종 맥락으로 묶어서, 어디서 시작해서 어디까지 확인해야 하는지를 보여준다.
 
-![바이오·제약 사업보고서를 읽는 순서를 한 루프로 정리한 구조도](./assets/102-reading-loop.svg)
+![바이오·제약 사업보고서를 읽는 순서를 한 루프로 정리한 구조도](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ef/efe6493cbc95e5150ab9c454242278993f1d63f354ee95bf72bda46ee9335a50.svg)
 
 ---
 
@@ -32,7 +32,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 **자산의 성격이 다르다.** 제조업의 핵심 자산은 유형자산(공장, 설비)이다. 바이오의 핵심 자산은 **개발비(무형자산)**와 **현금성자산**이다. 개발비는 임상이 실패하면 하루아침에 전액 손상될 수 있고, 현금은 매달 줄어든다. 그래서 바이오에서 재무상태표를 읽을 때는 유형자산보다 `개발비 잔액 + 현금성자산 + 자본잠식 여부`를 먼저 본다.
 
-![같은 BS·IS 항목이 제조업과 바이오에서 다르게 읽히는 이유를 비교한 표](./assets/102-manufacturing-vs-biotech.svg)
+![같은 BS·IS 항목이 제조업과 바이오에서 다르게 읽히는 이유를 비교한 표](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/92/9239c250e73af82c3dfd9dff79bc8b5a101b16ce02d2e99ae24461da39367902.svg)
 
 ---
 
@@ -90,7 +90,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 [영업현금흐름이 순이익을 부정할 때](/blog/operating-cash-flow-vs-net-income)의 기본 프레임이 바이오에서도 그대로 작동한다. 전환사채·신주인수권부사채 공시에서 CB/BW 구조의 주주 희석 효과를 상세하게 다뤘다.
 
-![바이오에서 먼저 봐야 할 5가지 숫자와 각각의 과열 신호를 정리한 체크보드](./assets/102-five-numbers-checklist.svg)
+![바이오에서 먼저 봐야 할 5가지 숫자와 각각의 과열 신호를 정리한 체크보드](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/53/533e0d184e3e478cfba790cd03bd30841d4cc1cbf1722ad0f5a08cf69af14eae.svg)
 
 ---
 
@@ -115,7 +115,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 - 임상 실패 후에도 개발비를 **손상 처리하지 않고** "적응증 변경" 또는 "추가 연구"로 이월한다.
 - 계속기업 불확실성이 감사보고서에 **기재**되어 있거나, 자본잠식 상태에 진입했다.
 
-![건강한 바이오와 과열된 바이오의 핵심 지표 비교표](./assets/102-healthy-vs-overheated-matrix.svg)
+![건강한 바이오와 과열된 바이오의 핵심 지표 비교표](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/5c/5c99ca8ff399825cc156da3997e07e23d36af0b116dd4e7f84805c1eaf9b76c7.svg)
 
 ---
 
@@ -164,7 +164,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 **6단계 — 자본 구조와 계속기업 (5분)**
 자본잠식 여부를 확인한다. 감사보고서에 계속기업 불확실성이 기재되어 있는지 본다. 전환사채·신주인수권 행사 시 최대 주식 수를 계산해서 희석 규모를 추정한다.
 
-![바이오 30분 읽기 루프를 단계별로 정리한 순서도](./assets/102-thirty-minute-loop.svg)
+![바이오 30분 읽기 루프를 단계별로 정리한 순서도](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/94/9442d06135096cb555495510e3e965e3137fc6b9c07bb8e6e576889fb6cb509c.svg)
 
 ---
 

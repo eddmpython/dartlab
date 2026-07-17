@@ -130,7 +130,7 @@ bs_separate.head(5)
 
 어느 쪽이 맞느냐는 질문은 틀렸다. **무엇을 묻고 있느냐**가 답을 정한다. 그룹 전체의 체력을 보고 싶으면 연결, 그 법인 자체의 재무 상태를 보고 싶으면 별도다. 그리고 검색으로 찾은 숫자와 내가 뽑은 숫자가 어긋날 때 가장 먼저 의심할 것도 이 한 칸, `scope`다.
 
-![연결과 별도의 차이](./assets/dartlab-story-02-consolidated-vs-separate.svg)
+![연결과 별도의 차이](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/99/996790917fd2b2f7e83bb89308f9a5a5282b289b6e83f3b7917daf61e411b307.svg)
 
 ## 빈칸은 빈칸이다
 

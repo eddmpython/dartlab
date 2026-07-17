@@ -18,7 +18,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 이 글은 `순이익 -> 영업현금흐름 -> 운전자본 -> 비현금 이익 -> 다음 보고서 추적` 순서로 읽는 법을 정리한다. 채권과 대손충당금은 [매출채권과 대손충당금 읽는 법](/blog/receivables-and-allowance), 재고 쪽은 재고자산과 평가손실 읽는 법, 성장의 질 전체는 [매출은 느는데 왜 위험할 수 있나](/blog/why-rising-sales-can-still-be-risky)와 같이 보면 더 잘 맞물린다.
 
-![영업현금흐름과 순이익의 관계를 어떤 순서로 읽어야 하는지 정리한 구조도](./assets/035-reading-flow.svg)
+![영업현금흐름과 순이익의 관계를 어떤 순서로 읽어야 하는지 정리한 구조도](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/58/582fa06a490326ecdf4a537fd2df82865b56968fc74774a0d218e05df47f9e23.svg)
 
 ---
 
@@ -51,7 +51,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 예를 들어 채권이 급격히 늘면 회수 지연 문제일 수 있고, 재고가 같이 늘면 수요보다 생산이 앞섰을 가능성이 있다. 선수금과 계약부채가 줄면 과거 선지급 버퍼가 약해지는 중일 수 있다. 반대로 현금은 약하지만 비현금 이익이 크다면 손익이 과하게 좋아 보이는 상황일 수 있다.
 
-![영업현금흐름과 순이익을 해석할 때 같이 붙여 볼 숫자 레이어를 정리한 도식](./assets/035-evidence-layer.svg)
+![영업현금흐름과 순이익을 해석할 때 같이 붙여 볼 숫자 레이어를 정리한 도식](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/11/1144e5740225460a62125e1e829fc411eac00992490d4ba5c6477c70ace5869e.svg)
 
 ---
 
@@ -59,7 +59,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 가장 실용적인 질문은 이것이다. `현금이 왜 약한가`. 이 질문에 답하려면 아래 세 갈래로 먼저 나누면 좋다.
 
-![영업현금흐름과 순이익이 어긋날 때 원인을 분기하는 구조도](./assets/035-decision-tree.svg)
+![영업현금흐름과 순이익이 어긋날 때 원인을 분기하는 구조도](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f9/f97a08097d0110bf95dda1ebe4079e22fd34c7d246c2d852f407e46018e8a7d3.svg)
 
 1. 운전자본 악화
 2. 비현금 이익 증가
@@ -75,7 +75,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 ## 위험도를 나누는 기준
 
-![영업현금흐름과 순이익이 건강하게 같이 움직이는 경우와 위험하게 어긋나는 경우를 비교한 매트릭스](./assets/035-good-vs-risky-matrix.svg)
+![영업현금흐름과 순이익이 건강하게 같이 움직이는 경우와 위험하게 어긋나는 경우를 비교한 매트릭스](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/eb/ebc954648af4d84d148d67efa0a1fa552d17592f854b037926ae0fe0872734dc.svg)
 
 | 관찰 포인트 | 상대적으로 건강한 경우 | 더 조심해야 하는 경우 |
 | --- | --- | --- |
@@ -139,7 +139,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 ## 다음 분기에 다시 확인할 숫자
 
-![영업현금흐름과 순이익 괴리를 다음 보고서에서 어떻게 추적할지 정리한 보드](./assets/035-watchboard.svg)
+![영업현금흐름과 순이익 괴리를 다음 보고서에서 어떻게 추적할지 정리한 보드](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/5a/5a189ab79beba4fac53a9007e057068238e0a2dec31869a05a8a956be104bdbf.svg)
 
 | 이번에 본 것 | 다음에 다시 볼 것 |
 | --- | --- |

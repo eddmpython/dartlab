@@ -136,7 +136,7 @@ dartlab으로 에스퓨얼셀의 7년치 재무제표를 추적하고, 뉴스케
 
 ---
 
-![에스퓨얼셀 vs 뉴스케일 — 같은 적자, 다른 운명](./assets/47-hero-map.svg)
+![에스퓨얼셀 vs 뉴스케일 — 같은 적자, 다른 운명](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/42/4223243c1e81af8c8dfebb5a4f0b6fc1923317c5a5d133846ee58ed23729a0b0.svg)
 
 ## 1막: 매출 470억 → 158억 — 수소연료전지의 겨울
 
@@ -199,7 +199,7 @@ prof = c.analysis("financial", "수익성")
 
 ---
 
-![에스퓨얼셀 매출·영업이익률 추이 — 470억 정점에서 158억으로 66% 폭락](./assets/47-revenue-collapse.svg)
+![에스퓨얼셀 매출·영업이익률 추이 — 470억 정점에서 158억으로 66% 폭락](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/41/41397efe0bef48edea0040cee3aa1c2a666d2ea1cfd8ba297019ba86ce4b2528.svg)
 
 ## 2막: 부실의 6가지 경고등 — Altman Z 0.20
 
@@ -234,7 +234,7 @@ stab = c.analysis("financial", "안정성")
 
 Altman Z-Score는 기업의 부도 확률을 측정하는 지표다. 1.81 이상이면 안전, 1.81 미만이면 회색지대, **0.20은 부실 구간 한가운데**다. 뉴스케일파워도 적자지만, 현금 $1.25B 덕분에 Altman Z는 에스퓨얼셀과 비교할 수 없을 만큼 높다.
 
-![에스퓨얼셀 부실 위험 대시보드 — 6개 지표 중 4개 부실](./assets/47-distress-dashboard.svg)
+![에스퓨얼셀 부실 위험 대시보드 — 6개 지표 중 4개 부실](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/fd/fdc27c1d84974bf99a403d408b5c009f6eb5ed40e4886563bb33c2babe9bc1bd.svg)
 
 ### 이자보상배율 -3.86배 — 번 돈으로 이자도 못 갚는다
 
@@ -278,7 +278,7 @@ fund = c.analysis("financial", "자금조달")
 
 왜 같은 적자인데 하나는 현금 6억이고 하나는 1.8조인가. 답은 **시장이 적자를 바라보는 방식**에 있다.
 
-![에스퓨얼셀 vs 뉴스케일 상세 비교](./assets/47-comparison-matrix.svg)
+![에스퓨얼셀 vs 뉴스케일 상세 비교](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/68/68d6bfd968645e6be01e9a0229134ece2a61236480d5b2df46b150ca8baf21a3.svg)
 
 ### 같은 적자, 다른 구조
 
@@ -384,7 +384,7 @@ dartlab 신용등급 dCR-BB-. "투기등급"이다. [네이버](/blog/035420-nav
 
 ## 6막: 투자자가 봐야 할 것 — 생존과 소멸의 갈림길
 
-![에스퓨얼셀 생존 체크포인트 5가지](./assets/47-checklist.svg)
+![에스퓨얼셀 생존 체크포인트 5가지](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/80/807c01ac690315f3a338b087fe4141ce988af13c943686126c1acc696ed658f1.svg)
 
 ### 과거 패턴 — 2020년 유상증자로 살아남은 전례
 

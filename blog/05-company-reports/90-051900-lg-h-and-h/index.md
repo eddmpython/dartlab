@@ -133,7 +133,7 @@ import HFDataLink from '$lib/components/blog/HFDataLink.svelte';
 
 <HFDataLink code="051900" />
 
-![LG생활건강 2025 관통선 — 영업이익 1.29조(2021) → 1,707억(2025), 8분의 1 추락. 2025Q4 -727억 첫 분기 영업적자, 2025 연간 -858억 첫 연간 순손실, 같은 해 동시 도래.](./assets/90-hero-operating-collapse.svg)
+![LG생활건강 2025 관통선 — 영업이익 1.29조(2021) → 1,707억(2025), 8분의 1 추락. 2025Q4 -727억 첫 분기 영업적자, 2025 연간 -858억 첫 연간 순손실, 같은 해 동시 도래.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/de/de9a91d883dad412082b6ae833198cd37f807eabd750a52d987c70d93f0814c2.svg)
 
 LG생활건강(051900)을 "후(后) 사드 후폭풍의 화장품 회사"로 읽으면 21년의 핵심을 놓친다.
 
@@ -147,7 +147,7 @@ LG생활건강(051900)을 "후(后) 사드 후폭풍의 화장품 회사"로 읽
 
 답은 2005년 1월에 부임한 한 CEO와, 그가 사임한 2024년 3월 사이에 있다.
 
-![차석용 21년 황금기 시간선 — 2005.1 부임 → 2017 사드 → 2021 정점 8.09조 → 2022 매출 -11% → 2024.3 사임 → 2025Q4 사상 첫 분기 영업적자.](./assets/90-cha-suk-yong-21years.svg)
+![차석용 21년 황금기 시간선 — 2005.1 부임 → 2017 사드 → 2021 정점 8.09조 → 2022 매출 -11% → 2024.3 사임 → 2025Q4 사상 첫 분기 영업적자.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/03/03003b73a07f92c469a4a800f9830ce022afffc18be36158585f93cb51cefe66.svg)
 
 ---
 
@@ -407,7 +407,7 @@ OPM은 2021Q1 18.2% 정점에서 4년 만에 -4.94%까지 떨어졌다. 단발 �
 
 3막에서는 이 매출총이익률이 왜 무너졌는지 — 비용의 성격별 분해로 들어간다.
 
-![분기 OPM·GPM 16분기 시계열 — 2022Q1 OPM 10.67% / GPM 55.30%에서 2025Q4 OPM -4.94% / GPM 48.29%로 단조 함몰. 14분기 단조 감소, 2025Q1만 일시 반등 후 다시 추락.](./assets/90-quarterly-margin-erosion.svg)
+![분기 OPM·GPM 16분기 시계열 — 2022Q1 OPM 10.67% / GPM 55.30%에서 2025Q4 OPM -4.94% / GPM 48.29%로 단조 함몰. 14분기 단조 감소, 2025Q1만 일시 반등 후 다시 추락.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ef/efe978da1a48514fcbb4b1cd7aaa78f07e12a24c158c65f84361e6123d432329.svg)
 
 ---
 
@@ -480,7 +480,7 @@ dartlab `analysis.financial.비용구조`의 `costByNature` 출력은 매출원�
 
 이 메커니즘은 한 사업부의 변화 — 화장품 본체 — 에서 거의 전부 일어났다. 그 분해는 4막의 주제다.
 
-![비용 성격별 5년 분해 — 7개 항목 중 지급수수료 -44.4%(광고·면세점 수수료·로열티)와 종업원급여 +10.4%(임직원 인건비) 두 줄이 매출원가율 +13%p의 거의 전부.](./assets/90-cost-decomposition.svg)
+![비용 성격별 5년 분해 — 7개 항목 중 지급수수료 -44.4%(광고·면세점 수수료·로열티)와 종업원급여 +10.4%(임직원 인건비) 두 줄이 매출원가율 +13%p의 거의 전부.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/55/5549cbaecab957e0ee3b8068ec3ce0c2c3a401d6b6c0e2ff63e912b30df2b155.svg)
 
 ---
 
@@ -561,7 +561,7 @@ dartlab `select` API로 사업부별 매출을 직접 뽑을 수는 없다. 그�
 
 5막은 이 추락 구간에서 일어난 인물 교체와 거버넌스 변화 — 차석용 사임과 배당 단절 — 를 다룬다.
 
-![4사업부 매출 변동 기여 — 화장품 본체 -158%(전체 감소의 158% 한 사업부 기여) vs 음료 자회사 2곳(코카콜라음료·해태HTB) +138% 상쇄. HHI 2,519 중간 집중도 다각화 포트폴리오.](./assets/90-segment-divergence.svg)
+![4사업부 매출 변동 기여 — 화장품 본체 -158%(전체 감소의 158% 한 사업부 기여) vs 음료 자회사 2곳(코카콜라음료·해태HTB) +138% 상쇄. HHI 2,519 중간 집중도 다각화 포트폴리오.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/06/06852e01ed414ff036abb4970af84b4107bab49ae8d74b623726fa831fd3a363.svg)
 
 ---
 
@@ -810,7 +810,7 @@ dartlab `divergenceExplanation` 이 자동 출력한 한 줄은 다음과 같다
 
 8막에서는 이 모델이 회복하는지 — 2026 추적해야 할 5가지 신호 — 를 정리한다.
 
-![두 부실 모델의 분기 — Altman Z 3.66 안전 vs Springate S 0.66 부실 위험. BS 중심 모델은 자본 5.57조의 두께를 보고, IS·CF 중심 모델은 영업이익률 2.69% 추락을 본다. 자본 위기가 아니라 이익 위기.](./assets/90-distress-signals-divergence.svg)
+![두 부실 모델의 분기 — Altman Z 3.66 안전 vs Springate S 0.66 부실 위험. BS 중심 모델은 자본 5.57조의 두께를 보고, IS·CF 중심 모델은 영업이익률 2.69% 추락을 본다. 자본 위기가 아니라 이익 위기.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/84/8424fd0e1806fea8d5d04577a303faf6a9225199c6c9bc5a77466b35ed6769d5.svg)
 
 ---
 

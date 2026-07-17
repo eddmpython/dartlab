@@ -44,7 +44,7 @@ import StackBar from '$lib/components/blog/StackBar.svelte';
 
 팬데믹, 인플레이션, 이커머스 전환을 다 통과하고도 영업마진은 6년째 약 1.2%p 밴드(3.3~4.5%) 안에서 거의 움직이지 않았다. 보통 '안 변했다'는 지루한 사실이다. 그런데 같은 회사의 순이익률(NPM)은 같은 기간 1.3%에서 2.85%로 두 배 넘게 벌어졌다.
 
-![매출 $681B 거인의 영업마진은 6년째 4.3% — 영업단은 고정, 순이익만 따로 움직였다](./assets/111-flat-opm.svg)
+![매출 $681B 거인의 영업마진은 6년째 4.3% — 영업단은 고정, 순이익만 따로 움직였다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/1e/1ed5d9dd12539190b665ab241a487056885d1a85a5d4d1d4b8f95a0669c30a4d.svg)
 
 영업단은 못 박힌 듯 고정인데, 순이익만 따로 움직였다. **이 분리가 이 회사의 진짜 골격이다.** 관통선을 먼저 쓴다 — 간판(초박리 영업)은 변하지 않은 *상수*이고, 손익을 움직인 줄기는 거의 전부 영업선 *아래*에 있었다. '다른 사업이 돈을 번다'가 아니라, *간판 사업의 마진이 충격적으로 얇고 안 변한다*는 게 이 글의 핵심이다.
 
@@ -98,7 +98,7 @@ c.select("IS", ["당기순이익"], freq="Q")
 
 OPM이 6년 밴드 안에 거의 고정(4.3%→4.3%)인 동안, NPM은 2019년 1.3%에서 2025년 2.85%로 **+1.55%p**(두 배 초과) 올랐다.
 
-![OPM은 6년째 4.3% 상수, NPM만 1.3%→2.85%로 — 변동은 영업선 아래에서 왔다](./assets/111-opm-vs-npm.svg)
+![OPM은 6년째 4.3% 상수, NPM만 1.3%→2.85%로 — 변동은 영업선 아래에서 왔다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/7d/7dbe550992d595c2d118df880fbe606cdcc96786167b02a0df9de54599077632.svg)
 
 이건 인과 주장이 아니라 *항등식*이다 — 영업이익률이 거의 안 변했는데 순이익률만 움직였다면, 그 변동분은 정의상 *영업선 아래*(이자·세금·해외손익 등)에서 온 것이다. OPM과 NPM은 별개 비율이고, 둘 사이 괴리는 2019년 약 3.0%p에서 2025년 약 1.4%p로 좁혀졌다.
 
@@ -112,7 +112,7 @@ OPM이 6년 밴드 안에 거의 고정(4.3%→4.3%)인 동안, NPM은 2019년 1
 
 2019년 월마트는 영업이익 $22.0B, OPM 4.3%로 *정상권*이었다. 그런데 당기순이익은 **$6.7B**, NPM 1.3%로 무너졌다. 영업과 순이익의 괴리가 연결 손익 *안에서* 직접 드러난다.
 
-![2019년 — 영업이익 OPM 4.3%(정상)인데 순이익만 6.7B 저점으로 무너졌다](./assets/111-2019-trap.svg)
+![2019년 — 영업이익 OPM 4.3%(정상)인데 순이익만 6.7B 저점으로 무너졌다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/16/164b134fb091bca1c85b2b06d3b1874067c09dad04c965a543eb9385ac2dddcf.svg)
 
 이 막은 연결 손익 안의 사실만 쓴다 — OPM은 정상인데 NPM은 붕괴했다는 *공존*. 그 저점의 구체 원인(해외 사업·투자손실·세금 등)은 외부 인용 영역이라 단정하지 않는다. 핵심은 이거다 — 2019년이 *일회성으로 눌린 base*라면, 거기서 출발한 성장률은 부풀려 보일 수밖에 없다. 그래서 다음 막은 그 착시와, 거기에 얹힌 외부 서사를 함께 본다.
 
@@ -126,7 +126,7 @@ OPM이 6년 밴드 안에 거의 고정(4.3%→4.3%)인 동안, NPM은 2019년 1
 
 한편 '광고가 진짜 돈줄'이라는 외부 서사는 그 자체로 산술 모순을 안고 있다. 외부 인용 기준 월마트의 광고(Walmart Connect) 매출은 FY2025 약 $4.4B다 — 이는 전사 매출 $681B(연결 실측)의 약 **0.65%**에 불과하다(외부 광고매출 ÷ 내부 매출로 도출). 그런데 일부 보도는 광고·멤버십을 '영업이익의 1/5 초과'로 묘사한다 — 영업이익 $29.3B의 1/5이면 약 $5.9B인데, 광고 매출 자체가 $4.4B이라 *매출보다 큰 영업이익*은 불가능하다(마진 133%). 출처별로 정의·기간·집계 범위(VIZIO 포함 여부 등)가 달라 합산·교차검증이 안 된다.
 
-![광고 매출은 전사의 약 0.65% — '영업이익 1/5' framing과 산술 모순(출처별 정의 상이, 합산 불가)](./assets/111-ad-contradiction.svg)
+![광고 매출은 전사의 약 0.65% — '영업이익 1/5' framing과 산술 모순(출처별 정의 상이, 합산 불가)](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b1/b1b91fb186848d3aca940cd1f768da98ea005ccdc521119e1c8a7543f9bc8a8b.svg)
 
 ![매장 안의 광고 화면 — 빠르게 크지만 아직 전사의 0.65%인 작은 부가 채널](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/71/71242d6ec727d7dbcd75c9738f380ba0f42c0f2b6a4dc74d9ef43cff2e492952.webp)
 
@@ -261,7 +261,7 @@ Q1 FY2027을 기존 6년 표와 연결하면 결론은 이렇게 정리된다. 2
 4. **부문 마진 공식 공시 여부** — 광고·멤버십 마진을 회사가 공시하기 시작하는가(공시 전 70~90% framing은 공시 밖 가정).
 5. **Q1 FY2027의 비용 압박이 완화되는가** — fuel·depreciation·healthcare costs가 gross profit mix 개선을 얼마나 흡수하는지. 플랫폼 성장률보다 전사 OPM 레벨이 우선이다.
 
-![월마트 — 2026년에 봐야 할 다섯 가지](./assets/111-checkpoints.svg)
+![월마트 — 2026년에 봐야 할 다섯 가지](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/07/0718cc88bed6668a40379611b78db7a1592b28e7ceec7cfb98e2344ffe842934.svg)
 
 ---
 

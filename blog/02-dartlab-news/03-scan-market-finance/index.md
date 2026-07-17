@@ -18,7 +18,7 @@ keywords:
 
 **삼성전자 매출액은 네이버에서 30초면 본다.** 그런데 전 상장사 2,700개 종목의 매출액을 한 화면에 보려면? 지금까지 방법이 없었다. dartlab.scan은 이 문제를 해결한다. Python 한 줄이면 시장 전체의 재무 데이터가 테이블 하나로 펼쳐진다.
 
-![종목 하나씩 vs 시장 전체 — dartlab.scan이 바꾸는 것](./assets/129-scan-hero-map.svg)
+![종목 하나씩 vs 시장 전체 — dartlab.scan이 바꾸는 것](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/63/63768f6f9fd34c2a5a51a283e2056b5b9af32763e0bef1f67a761a830a630a28.svg)
 
 ---
 
@@ -34,7 +34,7 @@ keywords:
 
 핵심은 이것이다: **시장 전체를 한 장의 테이블로 펼치는 도구가 없었다.**
 
-![기존 방식과 dartlab.scan 비교 — 소요시간, 종목수, 시계열 깊이](./assets/129-before-after-comparison.svg)
+![기존 방식과 dartlab.scan 비교 — 소요시간, 종목수, 시계열 깊이](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/aa/aaa34ccc2a8c4d6b7ae279978561380f59b82776c4829e03cb411ed4d3ea8f85.svg)
 
 ---
 
@@ -92,7 +92,7 @@ dartlab.scan("ratio")
 
 scan은 단순히 계정 하나를 뽑는 기능이 아니다. 수익성, 성장성, 부채, 거버넌스, 현금흐름, 공시 리스크까지 시장 전체를 읽는다.
 
-![scan이 다루는 것 — 재무 수치, 비재무 구조, 시장 관계](./assets/129-axes-overview.svg)
+![scan이 다루는 것 — 재무 수치, 비재무 구조, 시장 관계](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/82/82bce2c4ce5024baf4179a703b78804d5b4904f942be2a27e8fc5ffdc952ee0c.svg)
 
 ### 재무 수치
 
@@ -150,7 +150,7 @@ dartlab.scan("macroBeta")             # GDP/금리/환율 민감도 횡단면
 
 "2,700개 종목을 1초에 어떻게?" 비밀은 세 가지다.
 
-![데이터 흐름 — DART XBRL에서 사용자 DataFrame까지](./assets/129-prebuild-pipeline.svg)
+![데이터 흐름 — DART XBRL에서 사용자 DataFrame까지](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/04/04b90c725fc9ad12a7f5265af1a545d4e3c5b30919abde9526bc76ad2eed340b.svg)
 
 ### 1. 프리빌드 parquet — 2,744개 종목을 한 파일로
 

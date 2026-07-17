@@ -168,7 +168,7 @@ import HFDataLink from '$lib/components/blog/HFDataLink.svelte';
 
 ---
 
-![영업이익률 9년 폭발](./assets/02-margin-explosion.svg)
+![영업이익률 9년 폭발](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b1/b1c352ef9b39ee7b4ad36212cd05d198164f18fcffb6fc96b6a5163334f6f78e.svg)
 
 ## 핵심 한 줄
 
@@ -282,7 +282,7 @@ dartlab 으로 매출의 1년 단위 변화를 보면 그 폭발이 얼마나 �
 
 2024년 매출 +45%, 영업이익률 +7%포인트. 이런 동시 증가는 식품 산업에서 거의 본 적이 없는 숫자다.
 
-![매출 4년 폭발](./assets/02-revenue-yoy.svg)
+![매출 4년 폭발](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b6/b61d21ddfba12437ca9b55c605b38b1254393a6f736eaadb28216022095e2a67.svg)
 
 ---
 
@@ -290,7 +290,7 @@ dartlab 으로 매출의 1년 단위 변화를 보면 그 폭발이 얼마나 �
 
 ### 매출 5.1배, 영업이익 12.1배 — 원가는 3.8배만
 
-![고정비 레버리지](./assets/02-fixed-cost-leverage.svg)
+![고정비 레버리지](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f5/f531b80b8a3ba2ba5a7cf69a6629942645451547dff65d33ade41a588cbcac22.svg)
 
 먼저 삼양식품 9년 손익계산서를 한 화면에 펼쳐 보자. 매출이 4,585억에서 23,518억으로 5.1배 늘었다. 그런데 매출원가는 3,405억에서 12,988억으로 3.8배만 늘었다. 매출이 5배가 되는 동안 원가는 4배에만 머물렀다 — 그 차이가 그대로 매출총이익에 떨어졌다. 매출총이익은 1,179억에서 10,530억으로 **8.9배**다. 그리고 판관비는 746억에서 5,288억으로 7.1배 — 판관비가 매출보다 빠르게 늘어나는 흔한 현상이 여기서는 일어나지 않았다. 결과: 영업이익이 433억에서 5,242억으로 **12.1배**.
 
@@ -356,7 +356,7 @@ c.panel("dividend").dps
 
 (2019 결손기 무배당)
 
-![주당배당금 9년 32배](./assets/02-dps-32x.svg)
+![주당배당금 9년 32배](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/18/186247a3f6456eedc49429653dbc9a96a82528b1236fe64feb20e6d9515c26e7.svg)
 
 2016년에 150원이었던 주당 배당금이 2025년에 4,800원이 됐다. **32배.** 9년 동안 한 해도 빼지 않고 (단 2019년 결손기만 제외) 매년 늘었다. 마진 폭발과 정확히 같은 추세로 배당도 폭발했다.
 
@@ -474,7 +474,7 @@ dartlab 의 forecast 모델은 base 시나리오로 매출 +10%, 마진 약 19%�
 
 매 분기 dartlab 으로 첫 두 개를 자동 검증할 수 있다. 나머지 두 개는 외부 데이터다.
 
-![4가지 결정 신호](./assets/02-watch-signals.svg)
+![4가지 결정 신호](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/fb/fba7d1525e7110ab1033e73c41b50975bea1102de4d7fd848eaa5d9eb8d87d4d.svg)
 
 ---
 

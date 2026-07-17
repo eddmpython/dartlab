@@ -733,19 +733,19 @@ cr["grade"]; cr["score"]; cr["healthScore"]; cr["divergenceExplanation"]
 
 ## 6. 자산 정책 - SVG · 이미지 · 파일명
 
-자산은 각 포스트 폴더의 `assets/` 에서 관리. 빌드 시 `/blog/assets/*` URL 로 평탄 복사.
+자산은 각 포스트 폴더의 무시된 `assets/` 로컬 staging에서 만들고, 발행 후 HF 객체 URL로 서빙한다. 정본 매핑은 중앙 `media/catalog.json`이다.
 
 ### 위치 · 파일명
 
-- 자산은 반드시 `assets/` 안에. 루트 `blog/assets/` 쓰지 않음.
-- 본문 참조는 항상 `./assets/...` 상대경로.
+- 저작 중 자산은 반드시 포스트 `assets/` 안에 둔다. 루트 `blog/assets/`는 쓰지 않는다.
+- 저작 중에는 `./assets/...` 상대경로를 쓰고, `publishBlogAssets.py`가 발행 시 HF 객체 URL로 바꾼다.
 - 모든 자산 파일명은 **포스트 번호 접두사**: `012-depreciation-flow-map.svg`.
 
 **반복 실패** - 다른 포스트와 같은 파일명 = 빌드 실패.
 
 ### SVG 시스템 - 최소 5개 필수, 역할이 분명하게
 
-> **⛔ 하드 게이트: SVG 5개 미만 = 발행 불가.** 인라인 차트(`ComboChart`, `BarChart`)는 SVG 카운트에 포함하지 않는다. `assets/` 폴더의 `.svg` 파일이 5개 이상이어야 한다.
+> **⛔ 하드 게이트: SVG 5개 미만 = 발행 불가.** 인라인 차트(`ComboChart`, `BarChart`)는 SVG 카운트에 포함하지 않는다. 저작 중에는 `assets/*.svg`, 발행 후에는 `media/catalog.json`의 포스트 `diagrams`를 센다.
 
 | 역할 | 설명 |
 |---|---|
@@ -845,11 +845,11 @@ https://eddmpython.github.io/dartlab/
 
 **반복 실패** - 단순 나열 ("매출 97 조, 적자 32 조, 부채 130 조") 금지. 숫자가 왜 그렇게 됐는지 인과를 한 줄씩 풀어야 한다.
 
-### 래스터 자산 발행
+### 콘텐츠 미디어 발행
 
 - `gen_blog_thumbnails.py`와 카테고리별 생성기는 로컬 눈검수용 staging만 만든다.
-- 배경과 본문 래스터는 글 폴더 `assets/`, 합성 OG는 `landing/static/thumbnails/`에 잠시 둘 수 있지만 Git에 추가하지 않는다.
-- `publishBlogAssets.py --post <글폴더>`가 모든 래스터를 `media/catalog.json`에 등록하고 HF `objects/sha256/`로 발행한다.
+- SVG와 본문 래스터는 글 폴더 `assets/`, 합성 OG는 `landing/static/thumbnails/`에 잠시 둘 수 있지만 Git에 추가하지 않는다.
+- `publishBlogAssets.py --post <글폴더>`가 SVG와 래스터를 `media/catalog.json`에 등록하고 HF `objects/sha256/`로 발행한다. SVG는 XML 파싱, 위험 요소, 텍스트 밀도를 함께 검사한다.
 - 발행기는 본문, `ogImage`, `cardPreview`를 HF 객체 URL로 바꾼다. 공개 문서가 로컬 staging 경로를 계속 가리키면 실패다.
 - 회사 카드 공유 staging은 `sns/assets/{code}`이고 `publish_assets_hf.py`가 같은 중앙 catalog와 객체 저장소를 쓴다. 별도 HF 회사 폴더나 블로그 복사 풀은 만들지 않는다.
 - 수급은 자율이다. 실제 제품, 인물, 현장은 공식 또는 라이선스 실사를, 원리와 개념 장면은 `image_gen`을 선택한다. 모든 실물은 눈검수하고 출처를 `assets/CREDITS.md`에 남긴다.
@@ -857,7 +857,7 @@ https://eddmpython.github.io/dartlab/
 ### 검증 체크리스트
 
 1. 본문 이미지, `ogImage`, `cardPreview`가 중앙 `media/catalog.json`의 HF 객체 URL인지.
-2. WebP/JPG/PNG가 Git 추적 대상에 없는지.
+2. SVG/WebP/JPG/PNG가 Git 추적 대상에 없는지.
 3. `uv run python -X utf8 blog/_scripts/auditBlog.py` XML·밀도 이슈 확인 (글 단위 구조 audit - 단어수·SVG·내부링크·H2 분포 + 템플릿 반복도).
 4. `uv run python -X utf8 blog/_scripts/auditBlogFinance.py` (회사 포스트 한정) - markdown finance 표 ↔ `dartlab.Company().select(..., freq="Y")` 실측 1:1 비교. 코드·표·실측 3 자 정합 강행.
 5. `publishGate.py`가 HF 원격 실재와 콘텐츠 해시 경로를 통과하는지.

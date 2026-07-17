@@ -128,7 +128,7 @@ carousel:
 
 > **지주** | 건강관리/제약과바이오 | 2026-04-23 dartlab 실측
 
-![2025 V자 반등 — 영업이익 989→1,387억 +40%, 순이익 567→1,177억 +108%. 지분법이익 2024 0 → 2025 818억 복귀가 순이익 두 배 증가의 직접 원인. OPM 10.22% 사상 최대.](./assets/75-hero-dividend.svg)
+![2025 V자 반등 — 영업이익 989→1,387억 +40%, 순이익 567→1,177억 +108%. 지분법이익 2024 0 → 2025 818억 복귀가 순이익 두 배 증가의 직접 원인. OPM 10.22% 사상 최대.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/4d/4d0804b78fd50edc928ba32af6fde5d8828cafe7a81fc27c6c19867c3923f878.svg)
 
 2025년 한미사이언스 매출 **1조 3,570억**, 영업이익 **1,387억**, 영업이익률 **10.22%**. 회사가 만들어진 이래 **사상 최대 OPM**. 1년 전 영업이익 989억·OPM 7.7%에서 +40% 반등. 순이익은 **567억 → 1,177억, +108% V자**.
 
@@ -235,7 +235,7 @@ print(prof["marginWaterfall"]["history"][0])
 
 한미사이언스 매출의 80%는 한미약품에서 온다. 나머지 20%의 자체 사업은 유통·건강기능식품 중심. 이 복합 구조가 **OPM 10.22% 사상 최대**를 만들었다. 다음 막에서 **지분법이익 818억의 정체**를 해부한다.
 
-![지주 구조 — 임성기 창업주 유족 34% → 한미사이언스 → 한미약품 41% + Health Science 자체 사업. 한미약품 연결 매출 약 80% + 자체 사업 (건기식·헬스케어기기·유통) 약 20% 복합.](./assets/75-holding-structure.svg)
+![지주 구조 — 임성기 창업주 유족 34% → 한미사이언스 → 한미약품 41% + Health Science 자체 사업. 한미약품 연결 매출 약 80% + 자체 사업 (건기식·헬스케어기기·유통) 약 20% 복합.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/33/334edd2e8a775d05226fbb3d12e8ae1d3747c0c9fbe00f85a55db95e72d90fac.svg)
 
 ![제약 실험실 정밀 타블렛 제조 라인 — 현대 클린룸에서 스테인리스 컨베이어 위로 흰 타원형 알약들이 정렬된 모습. 흰 보호복·헤어넷 착용한 기술자들이 모니터링하는 산업 클린룸.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f7/f71b2b6e192f8bbcd4047895f549bbd5cb07d7e7f48bf71bac5726369dc33068.webp)
 
@@ -347,7 +347,7 @@ print(prof["marginWaterfall"]["history"][0])
 
 한미사이언스의 5년은 상속 → 상속세 → 합병 시도 → 분쟁 → 안착의 전형적 한국 재벌 승계 다큐다. 경제적 결과는 **2025년 OPM 사상 최대**로 돌아왔다. 다음 막에서 재무 구조의 변화를 본다.
 
-![5년 경영권 다큐 타임라인 — 2020.08 임성기 창업주 별세 → 상속세 5,400억 → 2024.01.12 OCI 합병 공시 → 2024.02.22 주총 부결 → 2024.03~09 송영숙 vs 임종윤 분쟁 → 2025 안착 + OPM 10.22% 기록.](./assets/75-timeline-5year.svg)
+![5년 경영권 다큐 타임라인 — 2020.08 임성기 창업주 별세 → 상속세 5,400억 → 2024.01.12 OCI 합병 공시 → 2024.02.22 주총 부결 → 2024.03~09 송영숙 vs 임종윤 분쟁 → 2025 안착 + OPM 10.22% 기록.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/40/40474cde87318c1e83437789b94727fab73b52da735e499facaad7ef34015880.svg)
 
 ---
 
@@ -518,7 +518,7 @@ dartlab `credit("등급") = dCR-A, 건강 약 80점`. 제약 지주회사 평균
 
 제약 지주 3사 중 한미사이언스만 OPM 10%대. 이는 **한미약품이라는 고마진 제약사를 41% 지분**했기 때문. 다음 막에서 과거 패턴과 앞으로의 추적 포인트.
 
-![제약 지주 4사 비교 — 한미사이언스 OPM 10.22%·한미약품 16.6% vs 녹십자홀딩스 5%·GC녹십자 5% vs 종근당홀딩스 6%·종근당 7% vs JW중외제약 7%·8%. 한미가 OPM 최고인 이유는 자회사 한미약품의 고마진 구조.](./assets/75-pharma-3holdings.svg)
+![제약 지주 4사 비교 — 한미사이언스 OPM 10.22%·한미약품 16.6% vs 녹십자홀딩스 5%·GC녹십자 5% vs 종근당홀딩스 6%·종근당 7% vs JW중외제약 7%·8%. 한미가 OPM 최고인 이유는 자회사 한미약품의 고마진 구조.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c2/c2040d0f9224101b6b110aaed812a717cd517e69e37bed8f74e7159201a8540d.svg)
 
 ![약국 제약 제품 진열 — 질서 있게 정리된 흰색 플라스틱 약병들. 깨끗한 의약품 포장, 현대 약국의 밝은 LED 조명, 미니멀리스트 의료 소매 환경.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/3a/3a2907ce738fd067dc63e0044054da4d6c02452fe42077c9ff6a4bfece3ca829.webp)
 
@@ -567,7 +567,7 @@ dartlab `credit("등급") = dCR-A, 건강 약 80점`. 제약 지주회사 평균
 
 **5. 상속세 최종 납부 완료** — 5년 연부연납 기간 2025년 종료 예정. **납부 완료 공시**가 5년 불확실성 해소의 마지막 신호.
 
-![다음 12~24개월 추적 5개 — ① 한미약품 OPM 16%+ 유지 ② 지분법이익 800억+ 복원 지속 ③ Health Science 매출 연 10%+ 성장 ④ 경영권 정착 공시 ⑤ 상속세 최종 납부 완료. 1·2가 실적 축, 3이 자체 사업, 4·5가 경영권.](./assets/75-checklist-5signals.svg)
+![다음 12~24개월 추적 5개 — ① 한미약품 OPM 16%+ 유지 ② 지분법이익 800억+ 복원 지속 ③ Health Science 매출 연 10%+ 성장 ④ 경영권 정착 공시 ⑤ 상속세 최종 납부 완료. 1·2가 실적 축, 3이 자체 사업, 4·5가 경영권.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ec/ec73e9bd008863f004f8ab7fc45842a6500202c0b6bd8024bd91341304903067.svg)
 
 ### 8막의 끝
 

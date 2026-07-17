@@ -178,7 +178,7 @@ import HFDataLink from '$lib/components/blog/HFDataLink.svelte';
 
 ---
 
-![현대로템 핵심 구조 — 원가율 104%에서 영업이익률 17%로, 부채비율 206%인데 차입금 608억인 전차 공장의 비밀](./assets/42-hero-map.svg)
+![현대로템 핵심 구조 — 원가율 104%에서 영업이익률 17%로, 부채비율 206%인데 차입금 608억인 전차 공장의 비밀](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/3d/3df30aa5cc01d1f53ea7804a475f888f222c289e338c900dce77579dea2764e4.svg)
 
 ## 1막: 부채비율 206%인데 빚이 0원인 회사
 
@@ -235,7 +235,7 @@ dartlab 신용등급 dCR-AA, 건강점수 88. 부채비율 206%에도 불구하�
 
 2018~2019년, 매출원가율 100~104%. 물건을 팔면 팔수록 돈이 나갔다. 2025년, 같은 공장에서 원가율 76%. 감가상각비는 395억으로 매출의 0.68%에 불과하다. 공장을 새로 짓지 않았는데 원가가 28pp 빠졌다.
 
-![원가율 104%에서 76%로 — 8년간 설비 투자 없이 28pp 개선한 시계열](./assets/42-cost-waterfall.svg)
+![원가율 104%에서 76%로 — 8년간 설비 투자 없이 28pp 개선한 시계열](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/3b/3b40379cdc2ff593cbd46d38fab96c2469b81a98c64bbc4ef630e58d3e101437.svg)
 
 ### 매출원가율 104% → 76% — 설비 투자 없이 28pp 개선
 
@@ -282,7 +282,7 @@ cost["costBreakdown"]
 
 2022년, [폴란드와 K2 전차 수출 계약](https://www.dapa.go.kr/dapa/na/ntt/selectNttInfo.do?bbsId=326&nttSn=37866)이 체결됐다. 한국 방산 사상 최대 규모의 단일 수출 계약. 2017~2021년 매출이 2.4~2.9조원에서 정체하던 회사가, 이 주문 하나로 성장 궤도에 올라섰다.
 
-![계약부채 0.45조에서 3.97조로 폭증, 차입금 4013억에서 608억으로 감소 — 주문이 늘면 빚이 준다](./assets/42-contract-debt.svg)
+![계약부채 0.45조에서 3.97조로 폭증, 차입금 4013억에서 608억으로 감소 — 주문이 늘면 빚이 준다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/40/40761835375aa917349afb19df9679ae01c4958063f112ca449e4968c254f8c3.svg)
 
 ### 총자산 +4.03조 — 유형자산은 고작 +0.13조
 
@@ -372,7 +372,7 @@ c.select("CF", ["영업활동현금흐름"])
 
 재무 건전성 지표 Piotroski F-Score 6/9점. 순이익·영업활동현금흐름·매출총이익률·유동비율은 통과했지만, 장기부채 감소와 총자산수익률 개선이 탈락했다. 부채비율 206%가 숫자상 높아 보이지만, 실체는 고객 선수금이므로 이 지표만으로 "위험하다"고 판단하면 본질을 놓친다.
 
-![K-방산 비교 매트릭스 — 현대로템 vs 한화에어로 vs HD현대일렉트릭](./assets/42-kdefense-comparison.svg)
+![K-방산 비교 매트릭스 — 현대로템 vs 한화에어로 vs HD현대일렉트릭](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/da/da13619c040339df3fbe22841a6e4170db2f86afff4bd76384ced145be7c8de1.svg)
 
 ### K-방산 클러스터 — 같은 방산, 다른 구조
 
@@ -392,7 +392,7 @@ c.select("CF", ["영업활동현금흐름"])
 
 현대로템의 성적표는 특이하다. 성장 A, 수익 A, 현금 A — 그런데 안정성만 F. 부채비율 206% 때문이다. 하지만 앞서 본 대로 부채의 실체는 고객 선수금이다. 진짜 리스크는 다른 곳에 있다.
 
-![2026년 체크포인트 — 수주잔고, 영업이익률 유지, 매출채권 매출채권회전일수](./assets/42-checkpoint.svg)
+![2026년 체크포인트 — 수주잔고, 영업이익률 유지, 매출채권 매출채권회전일수](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ba/ba0d2c24b1633942391b545e0a1fdca0a0e356770e20b3c1ba7483f8581b1049.svg)
 
 ### 매출채권 3.39조의 회수 속도 — 분기별 매출채권회전일수 추적 필수
 

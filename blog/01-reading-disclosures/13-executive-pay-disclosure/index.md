@@ -18,7 +18,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 이 글은 임원 보수 공시를 가십이 아니라 `회사 운영 방식의 힌트`로 읽는 법을 정리한다. 최대주주와 지배력 구조를 먼저 보고 왔다면 [`최대주주와 특수관계인은 어떻게 읽어야 하나`](/blog/major-shareholder-and-related-parties)에서 이어지는 다음 단계라고 생각하면 된다.
 
-![임원 보수가 급여, 상여, 주식보상, 기타 보상으로 어떻게 나뉘는지 보여주는 구조 지도](./assets/023-compensation-structure-map.svg)
+![임원 보수가 급여, 상여, 주식보상, 기타 보상으로 어떻게 나뉘는지 보여주는 구조 지도](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/55/55e0f73d03cecc64a3f68b03743f56624d456a478f7e7fb80dd142135cfc9781.svg)
 
 ---
 
@@ -69,7 +69,7 @@ DART 화면이 아직 익숙하지 않다면 [`공시를 처음 볼 때 DART에�
 | 주식기준보상 | 장기 정렬 | 장기적으로 주주와 묶이나 |
 | 기타/퇴직 | 일회성 요인 | 올해 숫자를 왜곡하나 |
 
-![고정급, 성과급, 주식보상을 비교하는 매트릭스](./assets/023-salary-vs-incentive-matrix.svg)
+![고정급, 성과급, 주식보상을 비교하는 매트릭스](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ca/ca4fcae52660a4aebba5682db565784c55db633533b18fb401637764c27fc593.svg)
 
 여기서 가장 실용적인 포인트는 `설명과 실제 구조가 일치하는가`다. 회사가 "성과 중심 보수"를 말하는데 실제 표를 보면 고정급 비중이 너무 높을 수 있다. 반대로 겉보기 총액은 커 보여도, 장기 성과와 연결된 주식보상이 포함돼 있으면 해석이 달라진다.
 
@@ -94,7 +94,7 @@ DART 화면이 아직 익숙하지 않다면 [`공시를 처음 볼 때 DART에�
 
 한도는 실제 지급액이 아니다. 하지만 "앞으로 어느 정도까지 보상 구조를 넓히려 하는가"를 보여준다. 그래서 실적이 부진한데 한도만 크게 늘어나거나, 주주환원은 약한데 보수 구조만 공격적으로 바뀌면 질문을 더 해야 한다.
 
-![보수 구조가 주주와 얼마나 정렬되는지 보는 카드](./assets/023-pay-alignment-card.svg)
+![보수 구조가 주주와 얼마나 정렬되는지 보는 카드](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/dc/dc38fd44a5d494652d8fc73eb1afd54a72674131a6cb4877f8275a7e2866af08.svg)
 
 이 부분은 최대주주 구조와도 바로 이어진다. 지배력이 강한 회사에서 보수한도 변화가 설명 없이 커지면, 오너십과 보상 구조를 함께 봐야 한다. 그래서 [`최대주주와 특수관계인은 어떻게 읽어야 하나`](/blog/major-shareholder-and-related-parties)와 [`지배구조에서 무엇을 경계해야 하나`](/blog/governance-red-flags)를 같이 보는 편이 좋다.
 
@@ -145,7 +145,7 @@ DART 화면이 아직 익숙하지 않다면 [`공시를 처음 볼 때 DART에�
 
 ## 초보자가 자주 놓치는 경고 신호
 
-![경계해야 할 임원 보수 신호를 정리한 보드](./assets/023-red-flag-compensation-signals.svg)
+![경계해야 할 임원 보수 신호를 정리한 보드](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b6/b69be4118e2600c6970fb42fefa556e9ccfac71fdfc755e497ab6e2e9f878f04.svg)
 
 아래 다섯 가지는 초보자도 비교적 쉽게 확인할 수 있는 패턴이다.
 
@@ -161,7 +161,7 @@ DART 화면이 아직 익숙하지 않다면 [`공시를 처음 볼 때 DART에�
 
 ## 10분 체크리스트
 
-![임원 보수를 빠르게 읽는 체크리스트](./assets/023-checklist.svg)
+![임원 보수를 빠르게 읽는 체크리스트](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/70/70e120a8ed38cf18b554d41e71e1e1da7067732cf575df1b99ce8e3f3424ecc4.svg)
 
 - 급여, 상여, 주식보상 중 무엇이 중심인가
 - 성과 기준이 구체적으로 설명되는가

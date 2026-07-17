@@ -145,7 +145,7 @@ import HFDataLink from '$lib/components/blog/HFDataLink.svelte';
 
 ---
 
-![스코어카드](./assets/18-scorecard.svg)
+![스코어카드](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ac/aca54e6bb910ceb3b10085dae64222abe0b5d9bd24077a931a0a5977ffafffea.svg)
 
 ## 핵심 한 줄
 
@@ -181,7 +181,7 @@ LG이노텍의 5년 손익을 펼쳐보면, 매출은 꾸준히 성장했지만 
 
 ## 1막 — 경쟁사가 알아서 무너졌다
 
-![애플 의존도](./assets/18-apple-dependency.svg)
+![애플 의존도](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/06/06d61bafca5e2d68d7deee033f59772e24de26d034fe3522357062352a7d27cc.svg)
 
 ### 싸워서 이긴 게 아니다 — 두 번의 행운
 
@@ -221,7 +221,7 @@ c.analysis("financial", "수익구조")
 
 ---
 
-![매출원가율 5년 추이](./assets/18-cost-ratio-trend.svg)
+![매출원가율 5년 추이](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/1f/1fce5274cdc170a9aee6845ff7e25b8d98aceb17d1a017af59d4f6b66434643d.svg)
 
 ## 2막 — 독점인데 왜 을인가: 영업이익률 3%의 정체
 
@@ -239,7 +239,7 @@ LG이노텍이 하는 일은 무엇인가. **조립**이다. 소니 센서, 라�
 
 ### 애플이 가격을 정한다 — BOM 구조
 
-![마진 구조](./assets/18-margin-structure.svg)
+![마진 구조](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/69/693d5111c6f9732a41437dea1e78d4432afc39281ffe5e95fe704a62955df2bf.svg)
 
 일반적인 B2B 거래에서는, 공급업체가 원가에 마진을 얹어 납품가를 제시한다. "우리가 만드는 데 100원이 들고, 마진 20원을 붙여 120원에 납품합니다."
 
@@ -388,7 +388,7 @@ Q1이 최저, Q3가 최고. Q3 매출이 Q1의 **1.58배**다. 같은 회사인�
 
 **LG이노텍의 독점이 영원하지 않을 수 있다.** 다만, 테트라프리즘과 3D 센싱 같은 최고난도 모듈에서는 수년간 단독 공급이 유지될 가능성이 높다. 위협은 일반 광각 모듈(상대적으로 기술 난도가 낮은)에서부터 시작될 것이다.
 
-![독점의 역설 — 3가지 탈출구](./assets/18-escape-routes.svg)
+![독점의 역설 — 3가지 탈출구](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/cf/cf3e27436b6da4a8713a538ed78a779099b14c2cffd4a6530c9e774c3fe7a571.svg)
 
 ### 탈출구 1: FC-BGA — 아직은 작지만
 

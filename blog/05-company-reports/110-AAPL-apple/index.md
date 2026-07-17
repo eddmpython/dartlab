@@ -42,7 +42,7 @@ import StackBar from '$lib/components/blog/StackBar.svelte';
 
 규모를 키우면 마진율은 깎인다. 이 시리즈에서 본 [코스트코](/blog/COST-costco)도, [펩시코](/blog/PEP-pepsico)도, [스타벅스](/blog/SBUX-starbucks)도 외형이 커질수록 영업이익률은 얇아지거나 무너졌다 — 흔한 방향이다. 그런데 애플은 6년간 매출을 60% 불리는 동안, 영업이익률을 24.6%에서 **32.0%**로 7.4%p 끌어올렸다.
 
-![보통은 규모↑→마진율 희석인데, 애플은 외형과 마진율이 같은 방향으로 갔다](./assets/110-inverse-decoupling.svg)
+![보통은 규모↑→마진율 희석인데, 애플은 외형과 마진율이 같은 방향으로 갔다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/01/01507d2e2e38789d11a3fb1382b86604fe0a50ed2253f139af3047f75f7ac032.svg)
 
 외형과 마진율이 같은 방향으로 갔다. 이 문장은 제공된 dartlab 연결 손익으로 반박하기 어렵다. 문제는 그다음 한 글자 — **'왜'**다. 거기서부터 dartlab은 손을 벌려 외부 자료를 빌려야 한다.
 
@@ -94,7 +94,7 @@ c.select("CF", ["영업활동현금흐름"], freq="Q")
 
 2023년 매출은 $394.3B에서 $383.3B로 **-2.8% 역성장**했다. 영업현금흐름도 2022년 $122.2B가 peak였고, 2025년 $111.5B는 그 아래다 — 현금 창출이 매년 늘기만 한 게 아니다.
 
-![+60% 곡선은 매끈하지 않다 — 2023 역성장, 영업CF peak는 2022](./assets/110-opm-expansion.svg)
+![+60% 곡선은 매끈하지 않다 — 2023 역성장, 영업CF peak는 2022](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/09/092a3d9cb4eff17bc5368f704eaccd8e974d6b3b428c869097abe78f5c708a18.svg)
 
 그런데 흥미로운 건, 그 역성장 해(2023)에도 OPM은 **29.8%**로 방어됐다는 점이다. 외형이 꺾여도 마진율은 버텼다 — 이 사실이 2막의 강사실을 오히려 단단하게 만든다. ('무한 성장'이나 '꺾이지 않는 신기록' 같은 서사는 여기서 사살된다. 또 영업CF가 영업이익보다 작은 건 발생주의 이익과 현금주의의 정상적 차이일 수 있어, 이상신호로 과대해석하지 않는다.) 그러면 이제 진짜 질문 — 마진은 *왜* 올랐나?
 
@@ -106,7 +106,7 @@ c.select("CF", ["영업활동현금흐름"], freq="Q")
 
 마진이 왜 올랐는가에 대한 설명은 dartlab 연결로는 증명이 **0**이다. 외부 인용(FY2024 10-K)에 손을 벌리면 이렇다 — 매출 비중은 Services 24.6% / Products 75.4%인데, 매출총이익률(GPM)은 Services 73.9% vs Products 37.2%로 격차가 크고, 전사 매출총이익에서 Services가 차지하는 비중은 39.3%로 매출 비중(24.6%)보다 14.7%p 높다(전부 외부 인용).
 
-![서비스는 매출의 1/4인데 매출총이익 비중은 더 크다 — 단 GPM≠OPM, 전부 외부 인용](./assets/110-external-gpm.svg)
+![서비스는 매출의 1/4인데 매출총이익 비중은 더 크다 — 단 GPM≠OPM, 전부 외부 인용](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a0/a00b4c021f5d9c8795b05c75820e1fec6a4948b6996acf609ff5d4a9b523bcba.svg)
 
 ![앱스토어·구독 같은 서비스 — 외부 인용은 여기를 가리키지만, 연결 손익엔 안 보인다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/81/8100eaf0e8980b13552e989a57d4d45eae1e659bda97f5132ea667d6dbe9dc6a.webp)
 
@@ -120,7 +120,7 @@ c.select("CF", ["영업활동현금흐름"], freq="Q")
 
 애플은 *지역* 세그먼트(미주·유럽·중국 등)로 보고한다. 그래서 'Services 세그먼트의 영업이익률(OPM)'은 10-K에 *존재조차 하지 않는다.* 매출총이익률(GPM)은 공시되지만, 거기서 R&D·판관비를 서비스와 제품에 어떻게 나눠 OPM을 만들지는 회사도 공시하지 않는다 — dartlab에도 10-K에도 그 분해가 없다.
 
-![세그먼트 OPM은 공시조차 안 된다 — 믹스↔마진은 영원히 '정합/양립'까지만 (봉인)](./assets/110-sealed.svg)
+![세그먼트 OPM은 공시조차 안 된다 — 믹스↔마진은 영원히 '정합/양립'까지만 (봉인)](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/96/960b7daa07ca9cc952d39d8571f70c7337d053606f2a073b987f127bbf438c99.svg)
 
 ![답이 봉인된 금고 — 데이터가 없는 자리에서 답하는 척하지 않는다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/41/417cefd5910a09a4bad1fe2f491ee60af9d800dd695c0b47a87f5bbddb240e58.webp)
 
@@ -260,7 +260,7 @@ c.select("CF", ["영업활동현금흐름"], freq="Q")
 4. **자본환원과 그해 EPS 방향** — 'FY2024처럼 순이익↓인데 EPS는 완충'이 반복인지 반전인지(외부, financing 축).
 5. **세그먼트 보고 구조 변경 여부** — 지역→사업/제품 세그먼트로 바뀌어 'Services 세그먼트 OPM'이 처음 공시되면, 5막 봉인의 전제 자체가 갱신된다(외부).
 
-![애플 — 2026년에 봐야 할 다섯 가지](./assets/110-checkpoints.svg)
+![애플 — 2026년에 봐야 할 다섯 가지](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/41/4138b3580443171b6353161a0f5bd2414c6e2e06a001484dd419ca1a9684f4f4.svg)
 
 ---
 

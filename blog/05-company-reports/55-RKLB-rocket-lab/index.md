@@ -54,7 +54,7 @@ import HFDataLink from '$lib/components/blog/HFDataLink.svelte';
 
 ---
 
-![로켓랩 — 매출 2.8배·마진 25%p 개선 vs 영업손실 70% 확대의 역설](./assets/55-hero-map.svg)
+![로켓랩 — 매출 2.8배·마진 25%p 개선 vs 영업손실 70% 확대의 역설](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/5e/5e6b4f863cac8a7c9cfb1a54085bb98200b7ef874cf7ebbc1b374658f3c37d20.svg)
 
 ## 1막: 좋아 보이는 숫자들 — 매출 2.8배, 매출총이익률 34%
 
@@ -111,7 +111,7 @@ c.select("IS", ["revenue","gross_profit","operating_income","net_income"])
 
 ---
 
-![매출총이익률 개선과 영업손실 확대의 역설 — 2022~2025](./assets/55-margin-paradox.svg)
+![매출총이익률 개선과 영업손실 확대의 역설 — 2022~2025](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/57/57145d60af75acdbb14f8dfb11f90f16011e2f4e1490b43c479450bc1d389876.svg)
 
 ## 2막: 개선된 마진을 다 삼킨 것 — 연구개발비 $272M
 
@@ -133,7 +133,7 @@ prof = c.analysis("financial", "수익성")
 | (−) 연구개발비 | **-272** | **45%** |
 | = 영업이익 | **-229** | **-38%** |
 
-![매출 $602M에서 영업손실 -$229M까지 — 폭포 차트](./assets/55-cost-structure.svg)
+![매출 $602M에서 영업손실 -$229M까지 — 폭포 차트](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/46/469c790214aca3809aea28f8e975f405239694f2a36a4eb9c88fdbea2c99552b.svg)
 
 **매출총이익 $207M. 연구개발비 $272M.** 매출총이익 전체를 연구개발비 하나가 삼키고 있고, 오히려 $65M이 부족하다. 여기에 판관비 $164M을 더하면 영업손실이 -$229M이 된다.
 
@@ -255,7 +255,7 @@ c.select("CF", ["operating_cash_flow","purchase_of_property_plant_and_equipment"
 
 ---
 
-![로켓랩 자본 변동 — 자본잠식에서 +$1.7B까지, 주식 발행의 구조](./assets/55-capital-rescue.svg)
+![로켓랩 자본 변동 — 자본잠식에서 +$1.7B까지, 주식 발행의 구조](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/78/780776b6411353616594a9225715401847deb0c76a6eb1c7718341ec19b6f2fd.svg)
 
 ## 5막: 자본잠식에서 +$1.7B로 — 주식 발행이 산 시간
 
@@ -321,7 +321,7 @@ c.select("CF", ["proceeds_from_issuance_of_common_stock"])
 
 ### Electron vs Neutron — 로켓랩의 두 세계
 
-![로켓랩의 두 로켓 — Electron(현재 매출)과 Neutron(미래 베팅)](./assets/55-electron-vs-neutron.svg)
+![로켓랩의 두 로켓 — Electron(현재 매출)과 Neutron(미래 베팅)](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/81/812b3261000525e2116bbc404506dbade1b4d5033b1956f857e4ac1a717c6fab.svg)
 
 로켓랩의 사업은 두 개의 로켓으로 나뉜다.
 
@@ -343,7 +343,7 @@ Electron은 소형 위성 발사 시장(~$10B 규모)에서 돈을 번다. Neutr
 
 ### 투자자가 봐야 할 체크포인트 5가지
 
-![로켓랩 투자 체크포인트](./assets/55-checklist.svg)
+![로켓랩 투자 체크포인트](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f0/f01eb007f32163bea02db2ad9805544b33008442597f4cf9f6a6ee78da83b509.svg)
 
 1. **Neutron 첫 발사 성공** — 2024년→2025년→2026년으로 계속 밀렸다. 2026년 내 실제 발사가 나오는지가 모든 것의 시작. 실패하면 연구개발비가 또 늘어나고 현금 소진이 가속된다. 심지어 첫 발사가 성공해도 1~2년간 시험 발사로 매출은 제한적이다 — 본격 상업 매출은 2027~2028년부터.
 

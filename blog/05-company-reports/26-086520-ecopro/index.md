@@ -180,7 +180,7 @@ c.select("IS", ["매출액", "매출원가"], freq="Y")
 | 2023 | 72,602 | 67,580 | 93.1% | 4.1% |
 | 2024 | 31,279 | 32,062 | 102.5% | -9.4% |
 
-![매출원가율 5년 추이](./assets/26-cost-ratio-reversal.svg)
+![매출원가율 5년 추이](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/36/3636febff05e83b7dc8a518d11d9009ccc89178c16afac071609214a9b9b8e89.svg)
 
 ### 매출원가율 102.5% — 팔수록 적자
 
@@ -356,7 +356,7 @@ c.analysis("이익품질")
 | 2023 | 1,353 | 809 | 60% | 불량 |
 | 2024 | -2,954 | 4,888 | — | 적자인데 현금 유입 |
 
-![영업활동현금흐름 vs 순이익 괴리](./assets/26-ocf-ni-disconnect.svg)
+![영업활동현금흐름 vs 순이익 괴리](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/80/801065475c16d83023416107e7a725aa1028a45cd03cc8d0fbed796068a1e08c.svg)
 
 ### 재고자산 폭증 — 리튬 가격이 재고를 팽창시켰다
 
@@ -555,7 +555,7 @@ c.select("IS", ["영업이익", "당기순이익"], freq="Y")
 | 2024 | -2,930 | **-5,912** | -9.4% |
 | 2025 | 2,138 | **+5,068** | 6.3% |
 
-![영업이익 스윙 차트](./assets/26-market-cap-vs-oi.svg)
+![영업이익 스윙 차트](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/26/261f7b8a53d97c32135552a1a62a895de76bf14fc1748b1df8a82189d572ca03.svg)
 
 에코프로의 영업이익은 5년간 +6,132(최대) ~ -2,930(최소). **진폭 9,062억.** 연간 매출 대비 진폭이 이 정도인 기업은 흔하지 않다. 이것은 경영의 문제가 아니라 **사이클의 숙명**이다. 리튬 가격이 오르면 이익이 폭등하고, 떨어지면 적자로 전환한다.
 
@@ -655,7 +655,7 @@ c.analysis("수익성")
 
 *2021년 순이익에는 중단사업이익 8,520억 포함
 
-![에코프로 5년 사이클 종합](./assets/26-lithium-price-vs-revenue.svg)
+![에코프로 5년 사이클 종합](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/29/29a621c9d346af19b6d35d78a46c443c5443765f34e8fc2d39671d6b455cca40.svg)
 
 이 표에서 보이는 패턴은 단순하다:
 - **리튬 상승기**: 매출 급등, 영업이익률(영업이익률) 확대, 영업활동현금흐름 마이너스(재고 팽창)

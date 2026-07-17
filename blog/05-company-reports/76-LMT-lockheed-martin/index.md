@@ -46,7 +46,7 @@ import StackBar from '$lib/components/blog/StackBar.svelte';
 
 > **프랜차이즈** | 미국 방산 (Aerospace & Defense) · NYSE | 2026-04-23 dartlab 실측 (EDGAR companyfacts)
 
-![록히드마틴 OPM 9년 — 매출 $43.9B → $75.0B (+71%, CAGR 6.9%) 안정 성장. OPM은 2019 14.29% 정점 → 2023 12.59% → 2024 9.87% 사상 최저급 (Sentinel ICBM 손실 $1.7B) → 2025 10.30% 부분 회복. 2018 ASC 606 회계 변경 노이즈.](./assets/76-hero-margin.svg)
+![록히드마틴 OPM 9년 — 매출 $43.9B → $75.0B (+71%, CAGR 6.9%) 안정 성장. OPM은 2019 14.29% 정점 → 2023 12.59% → 2024 9.87% 사상 최저급 (Sentinel ICBM 손실 $1.7B) → 2025 10.30% 부분 회복. 2018 ASC 606 회계 변경 노이즈.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ac/acee49aef10c51815cde588d1fa0199a27c1ed591229ef911156b854de01886d.svg)
 
 2025년 록히드마틴의 매출은 **$75.05B (약 100조원)**. 9년 전 2017년 $43.9B의 1.71배, **사상 최대**. 같은 해 영업이익은 **$7.73B**, 영업이익률 **10.30%**. 글로벌 방산 1위·미국 정부 최대 단일 공급사·F-35 글로벌 천 대급 인도사로서 더할 나위 없는 표면 지표.
 
@@ -165,7 +165,7 @@ c.panel("10-K::item7Mdna", period="2024")  # 부문별 매출·영업이익 추�
 
 4개 사업부 OPM이 7~16% 사이에서 가중평균돼 전체 OPM 10.3%가 만들어진다. 그 가중평균이 한국 방산 24% 수준에 못 미치는 이유 — **계약 구조**가 다음 막의 주제.
 
-![4개 사업부 매출 비중·OPM — Aeronautics 40%·9~10% (F-35) / MFC 18%·14~16% (HIMARS·PAC-3 글로벌 수출) / RMS 25%·8~10% (Sikorsky·Aegis) / Space 17%·7~9% (Orion·GPS). MFC가 OPM 최고, Aero가 매출 비중 큼.](./assets/76-segments-4.svg)
+![4개 사업부 매출 비중·OPM — Aeronautics 40%·9~10% (F-35) / MFC 18%·14~16% (HIMARS·PAC-3 글로벌 수출) / RMS 25%·8~10% (Sikorsky·Aegis) / Space 17%·7~9% (Orion·GPS). MFC가 OPM 최고, Aero가 매출 비중 큼.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ff/fffc3fea379a4b7dc43ceb90f1d982ba7d9d08fd6ff088582e152fd0833e0d71.svg)
 
 ![5세대 스텔스 전투기 활주로 클로즈업 — 황혼녘 활주로에 정렬된 각진 동체와 큰 캐노피의 스텔스 전투기. 폴리시드 메탈릭 표면에 따뜻한 노을빛 반사. 지상 승무원이 배경에 보인다.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/49/4927d21d5f0f0f65779acac8c7786d941ed2c05e49ae07ac823b1641f1b2c9f1.webp)
 
@@ -250,7 +250,7 @@ Cost-Plus 계약 구조는 마진 상한이고, Sentinel 같은 일회성 손실
 
 한국 방산 3사가 OPM 17~24%로 LMT를 앞서는 건 **글로벌 수출 + Fixed-Price 구조**의 결과. 다만 LMT는 **매출 8배·수주잔고 $176B**라는 절대 규모와 안정성으로 다른 차원에서 작동. 다음 막에서 자본·부채 구조의 특이성.
 
-![록히드마틴 vs 한국 방산 3사 — LMT 매출 100조·OPM 10.30%·BBB+ vs 한화에어로 12조·17~24%·A vs 현대로템 5조·17%(방산)·A- vs 한화오션 11조·9.1%·A-. 미국 cost-plus 50~60% vs 한국 fixed-price 글로벌 수출 차이.](./assets/76-defense-vs-korea.svg)
+![록히드마틴 vs 한국 방산 3사 — LMT 매출 100조·OPM 10.30%·BBB+ vs 한화에어로 12조·17~24%·A vs 현대로템 5조·17%(방산)·A- vs 한화오션 11조·9.1%·A-. 미국 cost-plus 50~60% vs 한국 fixed-price 글로벌 수출 차이.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/cf/cf653bb39b709958005c51aa672352f79f30822ca00590f27632d3e556b048d3.svg)
 
 ![모바일 미사일 방어 발사 차량 — 사막 풍경에서 황금시간대 촬영. 거대한 직사각형 발사 튜브를 탑재한 중형 군용 트럭, 전술 장비 착용 군인 배경. 따뜻한 앰버 노을과 모래 안개.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/27/271433119bce5aed777b84532e618c2a9f694b7deb3dc7a1f155310b298e9e9d.webp)
 
@@ -307,7 +307,7 @@ dartlab `credit("등급") = dCR-BBB+, score 24.24, health 75.76`. 무디스·S&P
 
 자본 구조는 미국 대형주의 정형. 자사주 매입으로 ROE·EPS를 끌어올리고 부채로 운영. 이 모델이 작동하려면 **현금흐름 안정**이 핵심. 다음 막에서 그 현금흐름의 안정성을 본다.
 
-![자사주 매입 누적 $30B의 회계학 — 2010~2024 누적 자사주 $32B + 배당 $20B = 주주환원 $52B (순이익의 95%+). 결과: 자기자본 $6.7B만 남고 매출/자본 11.2배. 작동 조건 3개 (이자보상 8.4배·매출 안정·OCF/NI 1배+).](./assets/76-buyback-cycle.svg)
+![자사주 매입 누적 $30B의 회계학 — 2010~2024 누적 자사주 $32B + 배당 $20B = 주주환원 $52B (순이익의 95%+). 결과: 자기자본 $6.7B만 남고 매출/자본 11.2배. 작동 조건 3개 (이자보상 8.4배·매출 안정·OCF/NI 1배+).](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/22/22fc7e6694ef35a54800e256a87c2eb9e9cf6f9a01d8d3b166c6b942fe9025f3.svg)
 
 ---
 
@@ -436,7 +436,7 @@ Sikorsky는 LMT가 2015년 인수. 주력:
 
 **5. 신용등급 하방 리스크** — dCR-BBB+ → 무디스/S&P A-에서 BBB+ 강등 시 차입 비용 상승. 자본 $6.7B 더 줄어들면 압력 가중.
 
-![다음 12~24개월 추적 5개 — ① OPM 12% 회복 ② MFC 글로벌 수주 $5B+ ③ F-35 인도 130대+ ④ 자사주 매입 $6B+ ⑤ 신용등급 하방 리스크. 1·2·3이 사업 회복, 4가 주주환원, 5가 재무 리스크. 2026~2027 OPM 12%+ 안착이 핵심 분기점.](./assets/76-checklist-5signals.svg)
+![다음 12~24개월 추적 5개 — ① OPM 12% 회복 ② MFC 글로벌 수주 $5B+ ③ F-35 인도 130대+ ④ 자사주 매입 $6B+ ⑤ 신용등급 하방 리스크. 1·2·3이 사업 회복, 4가 주주환원, 5가 재무 리스크. 2026~2027 OPM 12%+ 안착이 핵심 분기점.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/03/03c32a21e1c9aebd77bae9520cf488fd32a1bc8babc34706f16e56fe8356db4d.svg)
 
 ### 7막의 끝
 

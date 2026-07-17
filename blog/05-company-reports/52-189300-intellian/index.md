@@ -149,7 +149,7 @@ import HFDataLink from '$lib/components/blog/HFDataLink.svelte';
 
 ---
 
-![인텔리안테크 — 연간 영업이익률 3.7%인데 Q4 혼자 16%](./assets/52-hero-map.svg)
+![인텔리안테크 — 연간 영업이익률 3.7%인데 Q4 혼자 16%](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/45/459995fb951259aff5f2f4b61476649175a2f32993bdb458d227af2454939e65.svg)
 
 ## 1막: 매출 3.8배 — 위성 안테나 세계 1위의 성장
 
@@ -181,7 +181,7 @@ c.select("IS", ["매출액","영업이익","당기순이익"])
 
 2022년 매출이 74% 뛴 이유는 **글로벌 위성통신 인프라 투자 붐**이다. 스타링크(SpaceX), OneWeb, Amazon Kuiper 등이 저궤도(LEO) 위성 수천 기를 발사하기 시작했고, 이 위성과 통신할 **지상·해상 안테나** 수요가 폭발했다. 인텔리안테크의 안테나는 이 위성들과 통신하는 핵심 부품이다.
 
-![인텔리안테크 매출 9년 추이 — 837억에서 3,196억으로 3.8배](./assets/52-revenue-growth.svg)
+![인텔리안테크 매출 9년 추이 — 837억에서 3,196억으로 3.8배](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/9c/9cb7d7d2cb13bbf247bedd2146d14df53de1df3ee3800d02eb34e05c0383b2d3.svg)
 
 ### 영업이익률 추이 — 3~9%에서 벗어나지 못한다
 
@@ -212,7 +212,7 @@ c.select("ratios", ["영업이익률 (%)"])
 
 패턴이 명확하다. **Q1은 매출이 가장 낮고(434~644억), Q4는 가장 높다(770~1,243억).** 2025Q4 매출 1,243억은 Q1(434억)의 **2.9배**다. 같은 회사의 같은 해에 분기 매출이 3배 차이난다.
 
-![인텔리안테크 비용 구조 — 2024년 판관비 46%가 적자의 원인](./assets/52-cost-structure.svg)
+![인텔리안테크 비용 구조 — 2024년 판관비 46%가 적자의 원인](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d2/d2c2d7ba36247f4f44a5c36ca8a341d41615d304c94912be6efec0609ac64103.svg)
 
 ### 왜 Q4에 매출이 집중되는가 — 대형 수주의 납기 구조
 
@@ -257,7 +257,7 @@ Q4에 매출 1,243억이면: 원가 758억(61%) + 판관비 280억 = 1,038억. *
 
 왜 인텔리안테크에 주목해야 하는가. 위성통신 시장 자체가 **구조적 전환**을 겪고 있기 때문이다.
 
-![위성 안테나 시장 — GEO에서 LEO로의 전환](./assets/52-satellite-market.svg)
+![위성 안테나 시장 — GEO에서 LEO로의 전환](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/42/421c3c84bdcd3c3aff4d33b7c1bcee6dc639ce08a0edd8b2db00b4c667dff299.svg)
 
 ### GEO(정지궤도) → LEO(저궤도) — 위성통신의 세대 교체
 
@@ -396,7 +396,7 @@ LEO 위성통신 시장이 커지면 인텔리안테크는 최대 수혜자다. 
 
 ## 6막: 인텔리안테크 다음 — LEO가 열쇠다
 
-![인텔리안테크 투자 체크포인트 5가지](./assets/52-checklist.svg)
+![인텔리안테크 투자 체크포인트 5가지](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ba/ba2cf3f6262f7f018fddfe76bcd368cbd500f3885266ed6810f8c96f9fc8a249.svg)
 
 ### 투자자가 봐야 할 체크포인트 5가지
 

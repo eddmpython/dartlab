@@ -53,7 +53,7 @@ import StackBar from '$lib/components/blog/StackBar.svelte';
 
 이 글은 그 간극을 **BM 해부 + 지배력 추적** 9막 구조로 풀어간다. 6막 템플릿은 이번에도 안 맞는다 — **제조를 안 하는 회사의 재무제표**는 일반 제조업 분석 프레임으로 읽으면 거의 모든 숫자가 이상하게 보이기 때문이다. 매출원가 3%? 매출총이익률 97%? 이런 숫자들의 의미가 독자에게 전달되려면 **비즈니스 모델 자체를 먼저 분해**해야 한다.
 
-![ARM 매출 $4B vs 시가총액 $150B — 플랫폼 평가의 37배 간극](./assets/060-valuation-gap.svg)
+![ARM 매출 $4B vs 시가총액 $150B — 플랫폼 평가의 37배 간극](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/04/049f703597b3257e06c2198755b90897d59835a47adf548a263044011b6550bf.svg)
 
 ![실리콘 웨이퍼 위의 ARM CPU 코어 수백 개 — 설계만 팔고 제조는 안 한다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f8/f8551b75f33d3e10d48031aa92d13b26f4203f4e6afb9e73c0d51f3b69d7467c.webp)
 
@@ -100,7 +100,7 @@ ARM은 1998년 런던+나스닥 양대 상장 후 20년간 독립 기업으로 �
 
 1막은 ARM이 왜 제조를 안 하는지의 역사적 배경이다. 다음 막은 그 "제조 없는" 구조가 재무제표에 어떻게 찍히는지를 본다.
 
-![ARM 34년 타임라인 — 1990 설립 → 2016 소프트뱅크 인수 → 2023 IPO](./assets/060-timeline.svg)
+![ARM 34년 타임라인 — 1990 설립 → 2016 소프트뱅크 인수 → 2023 IPO](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/34/34831138281a1ffacfc24a89dd3a1cfeed39a1465f57780127e82f5bd0da0514.svg)
 
 ---
 
@@ -218,7 +218,7 @@ c.select("BS", ["Assets", "StockholdersEquity"])
 
 3막은 ARM의 수익 구조. 4막은 2020년 9월 엔비디아가 왜 이 회사를 $40B에 사려 했는지, 그리고 왜 그 시도가 무산됐는지 본다.
 
-![ARM FY2025 매출 $4.01B 4축 해부 — 모바일·데이터센터·자동차·IoT](./assets/060-revenue-mix.svg)
+![ARM FY2025 매출 $4.01B 4축 해부 — 모바일·데이터센터·자동차·IoT](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ee/eec864992f6c2273b43a519dfaadc8174084a06f3d84bcb4dae6aa47ef183804.svg)
 
 ---
 
@@ -256,7 +256,7 @@ c.select("BS", ["Assets", "StockholdersEquity"])
 
 4막의 엔비디아 인수 시도가 무산된 뒤, 소프트뱅크는 두 가지 선택지를 가졌다. **(A) 더 오래 보유하며 기다리기**, 또는 **(B) 공개 시장에 다시 상장해 가격을 확정하기**. 소프트뱅크는 (B)를 선택했다. 5막에서 2023년 IPO의 셈법과 결과를 본다.
 
-![2020.9 엔비디아 $40B 인수 발표 → 2022.2 무산 → 2023.9 IPO로 선회](./assets/060-ipo-path.svg)
+![2020.9 엔비디아 $40B 인수 발표 → 2022.2 무산 → 2023.9 IPO로 선회](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/37/374e4534f0f441ac06075de71cbe8bb06b82cd6601f7293f7279b3967f2693e3.svg)
 
 ---
 
@@ -379,7 +379,7 @@ ARM의 상위 5개 라이선시(Apple·Qualcomm·Samsung·MediaTek·Nvidia) 가 
 
 7막의 경쟁 지형이 ARM의 지배력의 **진짜 한계**를 보여준다. 8막은 그 지배력을 **시장이 얼마로 평가하는지** — 매출 $4B vs 시가총액 $150B의 37배 간극을 해부한다.
 
-![CPU 아키텍처 점유율 3축 경쟁 — ARM · x86 · RISC-V 2024~2030](./assets/060-arch-competition.svg)
+![CPU 아키텍처 점유율 3축 경쟁 — ARM · x86 · RISC-V 2024~2030](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/8c/8c681abe5b4fb37cef429012b79ff2c3bf586047d406f1421b326b48090516e7.svg)
 
 ---
 
@@ -473,7 +473,7 @@ ARM은 **"반도체를 직접 만들지 않는다"는 단 하나의 선택이 34
 
 스마트폰 한 대가 만들어질 때, AI 서버 한 대가 돌아갈 때, 자동차 한 대가 출고될 때, 이 모든 순간에 ARM에 **칩당 $0.05~$2**가 들어간다. 세계가 전자제품을 쓰는 한 이 회사의 로열티는 쌓인다. 이게 **"제조하지 않는 반도체 회사"**가 만든 30년의 결과다.
 
-![2026~2028 ARM 관찰 4가지 — 데이터센터·소프트뱅크·고객 다변화·RISC-V](./assets/060-checkpoints.svg)
+![2026~2028 ARM 관찰 4가지 — 데이터센터·소프트뱅크·고객 다변화·RISC-V](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/af/af4b42ca8845325d9ecc3b82e76b6a7f7471ecd78befd4b41dea55edd262df08.svg)
 
 ---
 

@@ -301,6 +301,13 @@ def main() -> None:
         if target not in repoFiles:
             missingObjects[sha256] = (target, row)
     legacyPaths = plannedLegacyPaths(rows)
+    missingCatalogObjects = [
+        str(record.get("path"))
+        for record in objects.values()
+        if isinstance(record, dict) and str(record.get("path")) not in repoFiles
+    ]
+    if missingCatalogObjects and not args.apply:
+        raise SystemExit(f"원격 객체 누락 {len(missingCatalogObjects)}개: {missingCatalogObjects[:3]}")
     print(
         f"원격 {len(rows)}개, 레거시 {len(legacyPaths)}개, "
         f"중앙 객체 {len(objects)}개, 신규 객체 {len(missingObjects)}개"

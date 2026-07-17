@@ -18,7 +18,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 이 글은 판관비를 `매출 성장률 비교 -> 비용 항목 분해 -> 고정비와 선행 투자 구분 -> 현금과 본업 마진 확인 -> 다음 분기 운영 레버리지 확인` 순서로 읽는 방법을 정리한다. 숫자 착시의 출발점은 [숫자만 보면 왜 자주 틀리나](/blog/beyond-the-numbers), 성장의 질은 [매출이 늘어도 위험할 수 있는 이유는 무엇인가](/blog/why-rising-sales-can-still-be-risky), 현금 검증은 [영업현금흐름이 순이익을 부정할 때](/blog/operating-cash-flow-vs-net-income), 기대 자산의 과열은 [개발비·무형자산은 어디서 과열 신호가 보이나](/blog/development-costs-and-intangibles)와 같이 보면 좋다.
 
-![판관비 증가를 어떤 순서로 분리해 읽어야 하는지 정리한 구조도](./assets/054-reading-flow.svg)
+![판관비 증가를 어떤 순서로 분리해 읽어야 하는지 정리한 구조도](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/77/774a47b9778de84953009cad484ac67a2fd164399f4e6c26f8450abb4908fbca.svg)
 
 ---
 
@@ -47,7 +47,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 또 하나 중요한 것은 비용이 자산화로 일부 가려지지 않았는지 확인하는 것이다. 비용 부담이 큰데 개발비와 무형자산으로 넘기는 구간이 많다면 [개발비·무형자산은 어디서 과열 신호가 보이나](/blog/development-costs-and-intangibles)와 같이 봐야 한다. 비용 구조 해석이 달라질 수 있기 때문이다.
 
-![판관비 증가 해석에 필요한 증거 레이어를 정리한 도식](./assets/054-evidence-layer.svg)
+![판관비 증가 해석에 필요한 증거 레이어를 정리한 도식](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/95/95f20b8c0f1179cf18618ed412d553691629cfb8c508a3e8cafe63ff4a0c1be8.svg)
 
 ---
 
@@ -55,7 +55,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 가장 실용적인 질문은 이것이다. `이 판관비 증가는 성장 선행 투자인가, 고정비 체질 악화인가, 비효율 누적의 시작인가`.
 
-![판관비 증가를 선행 투자, 고정비 악화, 비효율 누적으로 가르는 구조도](./assets/054-decision-tree.svg)
+![판관비 증가를 선행 투자, 고정비 악화, 비효율 누적으로 가르는 구조도](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e1/e1b22ab2e68c59540cc35391bb27004156c51300674dba24116ad5d696143ab0.svg)
 
 성장 선행 투자라면 다음 분기 이후 매출총이익률, 고객 유지, 영업현금흐름 개선으로 회수 흔적이 보여야 한다. 고정비 체질 악화라면 인건비와 조직 비용이 구조적으로 올라가면서 매출이 조금만 둔화돼도 마진이 급격히 나빠질 수 있다. 비효율 누적이라면 광고비와 수수료, 판촉이 커지는데도 매출의 질이 좋아지지 않는다.
 
@@ -65,7 +65,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 ## 업종과 맥락에 따라 달라지는 기준
 
-![판관비 증가 해석에서 상대적으로 건강한 경우와 더 조심해야 하는 경우를 비교한 매트릭스](./assets/054-good-vs-risky-matrix.svg)
+![판관비 증가 해석에서 상대적으로 건강한 경우와 더 조심해야 하는 경우를 비교한 매트릭스](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ed/ed53594f67bce90a68755941be50f2496c5730c6fa8a26b1c2401b415da9be3a.svg)
 
 | 관찰 포인트 | 상대적으로 건강한 경우 | 더 조심해야 하는 경우 |
 | --- | --- | --- |
@@ -117,7 +117,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 ## 다음 분기 비교에서 다시 확인할 것
 
-![판관비 증가를 읽은 뒤 다음 보고서에서 다시 봐야 할 질문을 정리한 보드](./assets/054-watchboard.svg)
+![판관비 증가를 읽은 뒤 다음 보고서에서 다시 봐야 할 질문을 정리한 보드](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/71/7108b1781d950a910ce1bdb20d39f6a3accfcd05f616236c37f7d794205daf74.svg)
 
 | 이번에 본 것 | 다음에 다시 볼 것 |
 | --- | --- |

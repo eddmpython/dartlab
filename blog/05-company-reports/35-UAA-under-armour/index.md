@@ -145,7 +145,7 @@ import HFDataLink from '$lib/components/blog/HFDataLink.svelte';
 
 # 제1막: "CEO 3명이 바뀌는 동안" — 매출 $5.7B에서 $4.9B
 
-![매출 추이](./assets/35-revenue-trend.svg)
+![매출 추이](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/20/20ace2b56e8930de928aca7a4054449c2f37409a0cf6099cd2649a52fc4b99df.svg)
 
 ### Under Armour를 처음 들었던 순간
 
@@ -294,7 +294,7 @@ c.select("IS", ["revenue", "operating_income"])
 
 # 제4막: "매출총이익률 47%" — Nike보다 높은 제품 마진
 
-![마진 비교](./assets/35-gpm-comparison.svg)
+![마진 비교](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f7/f7d4aaace2d3f7d328da9a8ed401b35daa7b815e7ff0f3d75c26f3d5366ecafa.svg)
 
 ### 매출총이익률(매출총이익률)이란 무엇인가
 
@@ -353,7 +353,7 @@ FY2023의 44.9%는 **재고 문제**의 결과다. FY2023 재고 $824M이 FY2024
 
 # 제5막: "판관비가 이익을 먹는다" — SGA 구조
 
-![마진 폭포 차트](./assets/35-margin-gap.svg)
+![마진 폭포 차트](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/9d/9d2d558e3e3ba071a64b0cde72a86f4c5edfddfc4de19dfeb1120b80f1d021b5.svg)
 
 ### 매출 100% → 영업이익 4% — 어디서 새는가
 
@@ -423,7 +423,7 @@ FY2025 가이던스에서 Plank은 **영업이익 $110M 상향**(연간 기준)�
 
 # 제6막: "의결권 66.5%의 왕국" — Class B 차등의결권
 
-![차등의결권 구조](./assets/35-nike-vs-ua.svg)
+![차등의결권 구조](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c3/c32757cb73e66fbc171b85efa3a0f6e2026bfc659985c4f47fd3f537d444461c.svg)
 
 ### 차등의결권이란 무엇인가
 

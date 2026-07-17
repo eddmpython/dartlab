@@ -18,7 +18,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 이 글은 금융업 사업보고서를 `이자마진과 수익 구조 → 대손충당금과 자산 건전성 → 자기자본비율과 규제 → 유가증권 포트폴리오 → 유동성과 자금조달` 순서로 읽는 방법을 정리한다. 은행, 증권, 보험, 카드·캐피탈이라는 네 하위 업종의 차이까지 포함해서, 금융업 공시를 처음 읽는 사람이 어디서 시작해서 어디까지 확인해야 하는지를 보여준다.
 
-![금융업 사업보고서를 읽는 순서를 한 루프로 정리한 구조도](./assets/103-reading-loop.svg)
+![금융업 사업보고서를 읽는 순서를 한 루프로 정리한 구조도](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/66/66b095b445cfaa8abed720bf471ed3a7452ff1c7ae2e44ef23319577c2bfd4e9.svg)
 
 ---
 
@@ -36,7 +36,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 **규제가 재무제표에 직접 반영된다.** 제조업은 회계 기준만 지키면 된다. 금융업은 금융감독당국의 건전성 규제가 재무구조를 직접 제약한다. BIS 자기자본비율, 유동성커버리지비율(LCR), 지급여력비율(RBC/K-ICS) 같은 규제 비율이 떨어지면 배당을 못 하고, 더 떨어지면 영업이 제한되며, 최악의 경우 적기시정조치를 받는다. 이 규제 비율이 금융업 사업보고서의 가장 중요한 숫자 중 하나다.
 
-![같은 BS·IS 항목이 제조업과 금융업에서 어떻게 달라지는지 비교한 표](./assets/103-manufacturing-vs-financial.svg)
+![같은 BS·IS 항목이 제조업과 금융업에서 어떻게 달라지는지 비교한 표](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/fb/fb780aab0b851056b98e9727c1de57413bb0afc25d5e6cdd7521b84443d2ec1f.svg)
 
 ---
 
@@ -104,7 +104,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 금융업에서 유동성 위기는 수익성 악화보다 빠르게 회사를 무너뜨린다. 2023년 미국 실리콘밸리은행(SVB) 사태가 보여준 것처럼, 자산 건전성이 괜찮아도 예금 이탈이 한꺼번에 일어나면 3일 만에 파산할 수 있다.
 
-![금융업에서 먼저 봐야 할 5가지 숫자와 각각의 위험 신호를 정리한 체크보드](./assets/103-five-numbers-checklist.svg)
+![금융업에서 먼저 봐야 할 5가지 숫자와 각각의 위험 신호를 정리한 체크보드](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/10/10edc5a04938c396d5f15bf799db13944ca6d4d31fb96599527ecf8cb6f22fb0.svg)
 
 ---
 
@@ -129,7 +129,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 - LCR이 **100%에 근접**하거나 예대율이 **100%를 상회**한다. 단기 자금조달에 의존하고 있다.
 - 특정 업종(부동산 PF, 자영업 등)에 대출이 **편중**되어 있고, 해당 업종 경기가 악화되고 있다.
 
-![건강한 금융사와 위험한 금융사의 핵심 지표 비교표](./assets/103-healthy-vs-risky-matrix.svg)
+![건강한 금융사와 위험한 금융사의 핵심 지표 비교표](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/4d/4d36ee678e2c8838161bf729f32b2c74bb7e1ce644145e9d41c7649668533de5.svg)
 
 ---
 
@@ -210,7 +210,7 @@ BIS 비율(은행), NCR(증권), K-ICS(보험)를 확인한다. 규제 하한 �
 **6단계 — 유동성과 자금조달 (5분)**
 LCR, NSFR(은행), 예대율을 확인한다. 자금조달 구성(예금 vs 시장 조달)과 만기 분포를 본다. 카드·캐피탈은 차입 만기 집중 여부를 특히 주의한다.
 
-![금융업 30분 읽기 루프를 단계별로 정리한 순서도](./assets/103-thirty-minute-loop.svg)
+![금융업 30분 읽기 루프를 단계별로 정리한 순서도](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ef/efb4e8d35b2d97b1cedd4fea3518e15bd844bfca21524260b05eda3b73d9df28.svg)
 
 ---
 

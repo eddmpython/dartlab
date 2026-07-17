@@ -8,7 +8,7 @@ from collections import Counter
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
-from blogMedia import ASSET_KEY_RE, SHA256_RE, loadMediaManifest, mediaPath, mediaUrl
+from blogMedia import ASSET_KEY_RE, SHA256_RE, loadMediaCatalog, loadMediaManifest, mediaPath, mediaUrl
 
 POST_GLOB = "*/*/index.md"
 SVG_GLOB = "*/*/assets/*.svg"
@@ -264,7 +264,7 @@ def audit_posts(blog_root: Path) -> list[PostAudit]:
                 series=frontmatter_value(raw, "series"),
                 word_count=plain_word_count(body),
                 prose_chars=prose_char_count(body),
-                svg_count=len(re.findall(r"!\[[^\]]*\]\(\./assets/[^)]+\.svg\)", body)),
+                svg_count=len(re.findall(r"!\[[^\]]*\]\([^)]+\.svg(?:\s+[\"'][^\"']*[\"'])?\)", body, re.I)),
                 faq=any(heading.lower() in {"faq", "자주 묻는 질문"} for heading in headings),
                 checklist_heading=any(
                     "체크리스트" in heading or "checklist" in heading.lower() for heading in headings
@@ -279,6 +279,39 @@ def audit_posts(blog_root: Path) -> list[PostAudit]:
 
 
 def audit_svgs(blog_root: Path) -> list[SvgAudit]:
+    catalog, errors = loadMediaCatalog(blog_root.parent / "media" / "catalog.json")
+    if catalog is not None and not errors:
+        files = catalog.get("files")
+        objects = catalog.get("objects")
+        posts = catalog.get("posts")
+        if isinstance(files, dict) and isinstance(objects, dict) and isinstance(posts, dict):
+            rows: list[SvgAudit] = []
+            seenSources: set[str] = set()
+            for post in posts.values():
+                diagrams = post.get("diagrams") if isinstance(post, dict) else None
+                if not isinstance(diagrams, dict):
+                    continue
+                for source in diagrams.values():
+                    normalizedSource = str(source)
+                    if normalizedSource in seenSources:
+                        continue
+                    seenSources.add(normalizedSource)
+                    sha256 = str(files.get(normalizedSource) or "")
+                    record = objects.get(sha256)
+                    if not isinstance(record, dict):
+                        continue
+                    rows.append(
+                        SvgAudit(
+                            path=normalizedSource.removeprefix("blog/"),
+                            size_bytes=int(record.get("bytes") or 0),
+                            view_box=str(record.get("viewBox") or ""),
+                            text_nodes=int(record.get("textNodes") or 0),
+                            color_count=int(record.get("colorCount") or 0),
+                            parse_error=None,
+                        )
+                    )
+            return sorted(rows, key=lambda row: row.path)
+
     rows: list[SvgAudit] = []
     for file in sorted(blog_root.glob(SVG_GLOB)):
         raw = file.read_text(encoding="utf-8")
@@ -1136,6 +1169,23 @@ def _validateImageSsot(postDir: Path, body: str, plan: dict[str, object] | None)
         if f"./assets/{assetKey}.webp" in body:
             fails.append(f"imagePlan[{idx}] 로컬 바이너리 참조 금지: ./assets/{assetKey}.webp")
 
+    diagrams = manifest.get("diagrams") if isinstance(manifest.get("diagrams"), dict) else {}
+    for key, record in diagrams.items():
+        if not isinstance(record, dict):
+            fails.append(f"media/catalog.json SVG 계약 위반: {key}")
+            continue
+        remotePath = str(record.get("path") or "")
+        sha256 = str(record.get("sha256") or "")
+        expectedPath = mediaPath(sha256, ".svg") if SHA256_RE.fullmatch(sha256) else ""
+        if not expectedPath or remotePath != expectedPath:
+            fails.append(f"media/catalog.json SVG 해시·경로 계약 위반: {key}")
+            continue
+        bodyRef = mediaUrl(expectedPath)
+        if not re.search(rf"!\[[^\]]*\]\({re.escape(bodyRef)}\)", body):
+            fails.append(f"SVG 본문 참조 없음: {bodyRef}")
+        if f"./assets/{key}.svg" in body:
+            fails.append(f"SVG 로컬 참조 금지: ./assets/{key}.svg")
+
     og = manifest.get("og")
     if isinstance(og, dict):
         ogPath = str(og.get("path") or "")
@@ -1198,7 +1248,6 @@ def publish_gate(post_dir: Path, *, requireContractV2: bool = False) -> list[str
 
     plan, _, plan_fails = _load_plan(post_dir)
     contractVersion = _planContractVersion(plan)
-
     # 1. 콘텐츠 OG 카드 (리스트/공유 미리보기). 중앙 카탈로그가 있으면 계약 버전과 무관하게 HF를 검증한다.
     og = _clean_scalar(frontmatter_value(raw, "ogImage"))
     manifest, manifestErrors = loadMediaManifest(post_dir)

@@ -148,7 +148,7 @@ carousel:
 
 이 글은 그 구조를 **11막 제품 해부 다큐** 형식으로 풀어낸다. 한미(#63)가 "공급망 추적"이었다면, 리노는 "제품 해부" — 포고핀 1개에서 시작해 10년 재무제표까지.
 
-![리노공업 10년 영업이익률 궤적 — 한미반도체(#63) 사이클 폭주와의 대조](./assets/064-opm-10y.svg)
+![리노공업 10년 영업이익률 궤적 — 한미반도체(#63) 사이클 폭주와의 대조](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/de/de3b182192881874cecc56ba2051e83089cbf6944344f0c4fb45d840eb7c7638.svg)
 
 ---
 
@@ -247,7 +247,7 @@ c.select("ratios", ["영업이익률 (%)"], freq="Q")
 
 2막은 포고핀이 왜 정밀 부품인지를 보았다. 3막은 그 기술이 어떻게 **부산 강서구 작은 공장**에서 쌓였는지 — 창업자 이채윤 회장 48년 서사를 본다.
 
-![포고핀 1개의 해부 — 길이 5mm · 지름 0.1mm · 스프링 + 금도금 팁](./assets/064-pogopin-anatomy.svg)
+![포고핀 1개의 해부 — 길이 5mm · 지름 0.1mm · 스프링 + 금도금 팁](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/21/21065d6316bdb787545b3aaf60cf4365235b9d2f995d4a8c3504cd7ec243a7ee.svg)
 
 ![포고핀 매크로 — 금도금 팁과 내부 스프링의 미시 구조](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/fb/fb4d185271e2090774b7d238b3609332c1b620af60249904ed93d575c7e6d0c3.webp)
 
@@ -291,7 +291,7 @@ c.select("ratios", ["영업이익률 (%)"], freq="Q")
 
 3막은 창업자 48년을 보았다. 4막은 리노의 매출이 **어떤 제품 조합으로 만들어지는지** — 포고핀과 IC 테스트 소켓의 비중 해부를 본다.
 
-![1978 창업 → 2001 KOSDAQ 상장 → 2025 시총 4조 — 리노공업 48년 타임라인](./assets/064-timeline.svg)
+![1978 창업 → 2001 KOSDAQ 상장 → 2025 시총 4조 — 리노공업 48년 타임라인](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/77/77e3d7ab485b0d8d9588c5b3b76757a58e6e72ea13cd6d7560e88dcd6ed2da04.svg)
 
 ![부산 강서구 본사 공장 — 48년간 본사 이전 없이 한 자리](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d8/d88d11f35cccb744fe0c2246c7207899cda6c0b04068118e5df78937e953c784.webp)
 
@@ -361,7 +361,7 @@ IC 테스트 소켓 단가:
 
 4막은 매출 구성과 원가를 보았다. 5막은 리노를 **글로벌 경쟁자 3사와 비교** — Smiths Interconnect · Yokowo · Feinmetall.
 
-![2025 매출 3,725억 구성 — 포고핀 60% + IC 소켓 35% + 기타 5%](./assets/064-revenue-mix.svg)
+![2025 매출 3,725억 구성 — 포고핀 60% + IC 소켓 35% + 기타 5%](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e8/e8ef99b083549aac640d968a62419cff439d9991d225f53620489c35355b84cb.svg)
 
 ---
 
@@ -405,7 +405,7 @@ IC 테스트 소켓 단가:
 
 5막은 글로벌 비교를 보았다. 6막은 리노의 **수익성 본질** — 10년간 영업이익률 40%+를 지킨 **4가지 구조적 조건**을 분석한다.
 
-![글로벌 포고핀·IC 테스트 소켓 4사 매출·마진 비교 — 리노공업 48.3%가 최고](./assets/064-global-peers.svg)
+![글로벌 포고핀·IC 테스트 소켓 4사 매출·마진 비교 — 리노공업 48.3%가 최고](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/35/359851f08e35fd1f2060eb4f70a361d8b01b78cc298a7eab56da9cb0d6e92715.svg)
 
 ---
 
@@ -460,7 +460,7 @@ IC 테스트 소켓 단가:
 
 6막은 마진의 원천을 보았다. 7막은 그 마진이 **재무제표 어느 칸에 쌓였는지** — 자본총계와 현금 축적을 본다.
 
-![10년 영업이익률 40%+를 지탱한 4가지 구조 조건](./assets/064-moat-4conditions.svg)
+![10년 영업이익률 40%+를 지탱한 4가지 구조 조건](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/30/3057f215cd3379e2edc16c78a1d183260fcd7790d9795d28ba5cec766f086617.svg)
 
 ---
 
@@ -531,7 +531,7 @@ c.select("BS", ["자산총계","부채총계","자본총계"], freq="Y")
 
 7막은 BS를 보았다. 8막은 **CF와 FCF**, 운전자본 회수 속도를 본다.
 
-![2016→2025 자본 +5,303억 축적 경로 — 배당 34% + 내부유보 66%](./assets/064-capital-accumulation.svg)
+![2016→2025 자본 +5,303억 축적 경로 — 배당 34% + 내부유보 66%](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/0a/0a7e297e38125b8b64a06f7d9da2ada52496f67fe4e641f6821601ca7488e239.svg)
 
 ---
 
@@ -647,7 +647,7 @@ c.select("CF", ["영업활동현금흐름","투자활동현금흐름","재무활
 
 9막은 성장 드라이버와 위협을 봤다. 10막은 2026~2028 **관찰 5가지**로 글을 닫는다.
 
-![AI 칩 테스트 수요 폭증 — 2024 vs 2028 포고핀 수요 5배 예상](./assets/064-ai-demand.svg)
+![AI 칩 테스트 수요 폭증 — 2024 vs 2028 포고핀 수요 5배 예상](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/fc/fc3fb19dae9565cbf7b6b8f3b90b36507b7f72ae3270972587b7dbef77439314.svg)
 
 ---
 
@@ -683,7 +683,7 @@ c.select("CF", ["영업활동현금흐름","투자활동현금흐름","재무활
 
 매출 3,725억 회사의 시가총액 4조, 영업이익률 48%, 10년 연속 40%+ 마진, 부채비율 8% — 이 모든 숫자가 "소모품 독점"이라는 **2개 단어**에 걸려 있다. 48년간 쌓아 올린 기술과 공정 노하우가 그 독점의 기반이고, 2026~2028년 AI 칩 테스트 수요 폭증이 그 독점을 시험하는 다음 관문이다.
 
-![2026~2028 리노공업 관찰 5가지 — 마진·AI·경쟁·승계·중국](./assets/064-checkpoints.svg)
+![2026~2028 리노공업 관찰 5가지 — 마진·AI·경쟁·승계·중국](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/48/4822d0d7f94d6a17f28b31aafc643f9bc53e7c0956cd65ea9bcccc5501425f8b.svg)
 
 ---
 

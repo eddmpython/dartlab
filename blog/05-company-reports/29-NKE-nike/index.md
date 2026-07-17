@@ -152,7 +152,7 @@ import HFDataLink from '$lib/components/blog/HFDataLink.svelte';
 
 # 제1막: "매출 $51B → $46B" — 세계 1위인데 줄고 있다
 
-![Nike 매출 추이](./assets/29-revenue-decline.svg)
+![Nike 매출 추이](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/6e/6ec6c95c885803f00de5b50c233b970c6b8c76fad9d279c923a80646c1395f62.svg)
 
 ### Nike를 모르는 사람은 없다
 
@@ -187,7 +187,7 @@ Operating Margin. FY2022에 14.3%를 찍고 하강한다. FY2024 12.3%. FY2025 �
 | Operating Margin | 12.3% | 11.5% | 14.3% | 15.6% | 8.3% |
 | Net Margin | 11.1% | 9.9% | 12.9% | 12.9% | 6.8% |
 
-![마진 5년 추이](./assets/29-margin-erosion.svg)
+![마진 5년 추이](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f2/f230afe57045a1112132796e65c9989ebc0954dcea50f1da23e6cc820cbdcdb7.svg)
 
 ### 매출총이익률(GP 마진, 물건 팔고 원가 빼면 남는 비율) 44%는 무엇을 의미하는가
 
@@ -205,7 +205,7 @@ FY2020 매출 $37.4B(-4.4%). 코로나로 매장이 닫힌 결과다. 외부 충
 
 # 제2막: "직접판매 올인의 대가" — CEO가 버린 선반
 
-![DTC vs Wholesale 변화](./assets/29-dtc-wholesale-shift.svg)
+![DTC vs Wholesale 변화](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f0/f0539cdc6a3078ed76da6061fb02a79012b93a81c67a3212af1538913b3e6e41.svg)
 
 ### 2020년, 도매를 끊기로 한 CEO
 
@@ -359,7 +359,7 @@ Nike 중국 매출의 디지털 비중이 40% 이상이었다. 대부분 Tmall(�
 
 # 제5막: "자사주 $11.8B인데 주가 -55%" — 바이백의 역설
 
-![바이백 vs 주가](./assets/29-buyback-vs-price.svg)
+![바이백 vs 주가](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/7b/7b80e72065739e4c4772b963ed9b5b20ac83632fef0c31f94dc65b1157e2fad1.svg)
 
 ### $18B 프로그램 — 2022년 주총 승인
 
@@ -484,7 +484,7 @@ Hill은 아마도 FY2026에 배당 인상폭을 최소화(1~2%)할 것이다. �
 
 ### 경쟁 지형이 바뀌었다
 
-![경쟁사 비교](./assets/29-competitor-growth.svg)
+![경쟁사 비교](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/9e/9ecb2ab11474d1ddf30aea0eba062b510f7ce22d6382d18903d972d46f454e2f.svg)
 
 Nike가 Foot Locker에서 빠질 때, 빈 선반에 누가 들어왔는지 보면 된다.
 

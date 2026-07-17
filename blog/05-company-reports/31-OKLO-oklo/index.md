@@ -153,7 +153,7 @@ import HFDataLink from '$lib/components/blog/HFDataLink.svelte';
 
 # 제1막: "매출 $0, 시총 $13B" — 재무제표에 뭐가 있는가
 
-![시총 vs 매출](./assets/31-market-cap-vs-zero.svg)
+![시총 vs 매출](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/8d/8dc876f0d7e1b2d588148065a92ef56615e5c63bd8fcc8f5cf63a7ade2faa993.svg)
 
 ### 재무제표를 열면 빈칸이다
 
@@ -257,7 +257,7 @@ Altman은 이사회에서 빠졌지만 지분은 유지했다. Oklo 주식 약 9
 
 # 제3막: "자산이 83배 폭증한 이유" — SPAC 구조의 재무제표
 
-![자산 83배 폭증](./assets/31-asset-explosion.svg)
+![자산 83배 폭증](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c9/c9701fa800c7683adf345c42961ae5468408b87a35f262a97bc63cd8d30a6eb7.svg)
 
 ### 대차대조표 — 1년 만에 자산 83배
 
@@ -384,7 +384,7 @@ NRC 정식 인허가까지는 아직 갈 길이 멀다. NRC의 평균 인허가 
 
 # 제5막: "계약 14GW, 가동 0기" — 계약서만으로 시총을 만든 구조
 
-![계약 파이프라인](./assets/31-contract-pipeline.svg)
+![계약 파이프라인](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/56/56654bb4f78012e54e8bb1e3869f4516e8e67c695e98c38be224053ccc512fd1.svg)
 
 ### 계약 목록 — 종이 위의 14GW
 
@@ -485,7 +485,7 @@ Oklo Aurora의 연료는 **HALEU**(High-Assay Low-Enriched Uranium, 고농축 �
 
 # 제7막: "현금 $2.5B, 연소 $138M" — 몇 년 버틸 수 있는가
 
-![현금 소진 시나리오](./assets/31-cash-burn.svg)
+![현금 소진 시나리오](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f5/f58c9809988a621dab934f4b200332e2c3b165604a24f7611743e145acf64707.svg)
 
 ### 현금 포지션 — 겉으로는 넉넉하다
 
@@ -558,7 +558,7 @@ Oklo의 1인당 시총은 NuScale의 12배, Constellation의 20배, 삼성전자
 
 # 제8막: "원자력 유니콘의 운명" — 재무제표가 증명할 날은 언제인가
 
-![원자력 3사 비교](./assets/31-nuclear-comparison.svg)
+![원자력 3사 비교](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/0d/0d22e0eb69389e2a325aec3b08692f1ec655fa29a56c09497d86f867586876fe.svg)
 
 ### 경쟁사 비교 — 3개의 원자력 회사
 

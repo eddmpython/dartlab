@@ -25,7 +25,7 @@ OpenDART를 처음 붙일 때 많은 사람이 같은 실수를 한다. 필요�
 
 이 글은 바로 그 바깥 프레임을 정리한다. 이벤트 감시는 [OpenDART로 주요사항보고서 읽는 법](/blog/opendart-material-events), 재무/XBRL/주석 쪽 깊은 레이어는 [XBRL 재무제표 원문과 주석 다운로드 파이프라인](/blog/opendart-xbrl-notes-pipeline)에서 다뤘다. 이번 글은 그 둘을 묶는 **수집기 설계의 중심 축**에 집중한다.
 
-![corp_code부터 검색, 접수번호, 원문, 정정 추적까지 이어지는 DART collection pipeline overview](./assets/031-pipeline-overview.svg)
+![corp_code부터 검색, 접수번호, 원문, 정정 추적까지 이어지는 DART collection pipeline overview](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/fd/fd47c8318472d0392f3e132eaec31d06e7233b198ccbb95e2254bfed7208f09c.svg)
 
 ---
 
@@ -35,7 +35,7 @@ OpenDART를 처음 붙일 때 많은 사람이 같은 실수를 한다. 필요�
 
 문제는 많은 수집기가 이 단계를 너무 가볍게 본다는 점이다. 종목코드만 저장해도 당장은 검색이 된다. 하지만 회사 메타데이터를 안정적으로 관리하려면 결국 corp_code가 필요해진다.
 
-![종목코드, corp_code, 회사명, 접수번호의 역할을 분리한 corp code map](./assets/031-corp-code-map.svg)
+![종목코드, corp_code, 회사명, 접수번호의 역할을 분리한 corp code map](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/4b/4b82fe626e33e58bb184146a1390e550cf8f9a8590ecb9b1fcdcdfe0d86d8c0a.svg)
 
 실전에서는 네 축을 분리해서 들고 가는 편이 가장 안전하다.
 
@@ -64,7 +64,7 @@ OpenDART를 처음 붙일 때 많은 사람이 같은 실수를 한다. 필요�
 
 초보 수집기는 보통 최신 문서 한 건만 잡는다. 하지만 실전에서는 "최신"보다 **질문에 맞는 기준 문서**가 더 중요하다. 연간 재무 구조를 보고 싶으면 사업보고서, 분기 추적이 목적이면 분기보고서, 사건 탐지가 목적이면 주요사항보고서를 먼저 잡아야 한다.
 
-![공시검색 결과에서 기준 문서를 고르고 rcept_no로 넘어가는 search to filing bridge](./assets/031-search-to-filing-bridge.svg)
+![공시검색 결과에서 기준 문서를 고르고 rcept_no로 넘어가는 search to filing bridge](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/0a/0a390ba2c9e5fcee2cf3204efdede7e3d3bf15888a32d8316df6abbf9174fd16.svg)
 
 가장 단순한 기준표는 아래처럼 잡을 수 있다.
 
@@ -119,7 +119,7 @@ corp_code가 회사 식별자라면, **rcept_no는 문서 식별자**다. 수집
 
 정정공시는 수집기를 가장 쉽게 망가뜨리는 영역이다. 같은 회사, 같은 회계연도, 비슷한 보고서명이 반복되기 때문에 단순 overwrite 방식으로는 거의 항상 문제가 생긴다.
 
-![최초 공시와 정정 공시를 version chain으로 묶는 amendment tracking flow](./assets/031-amendment-tracking-flow.svg)
+![최초 공시와 정정 공시를 version chain으로 묶는 amendment tracking flow](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/2e/2ea77ff1f45193cf9ab1ac4e7b59917c65de8542d11d0f0a5b42a62f6457106c.svg)
 
 실전에서는 아래 세 가지를 같이 저장하는 편이 안전하다.
 
@@ -172,7 +172,7 @@ corp_code가 회사 식별자라면, **rcept_no는 문서 식별자**다. 수집
 
 대부분의 실패는 고급 알고리즘이 아니라 기본 키 설계에서 나온다.
 
-![수집기가 자주 망가지는 패턴과 회복 규칙을 정리한 failure recovery checklist](./assets/031-failure-recovery-checklist.svg)
+![수집기가 자주 망가지는 패턴과 회복 규칙을 정리한 failure recovery checklist](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/78/787a5531efdb5a3f8e5e65e39b5ac055a377901fb835083af65a682d8036a2a0.svg)
 
 ### 1. corp_code를 별도 마스터로 관리하지 않는다
 

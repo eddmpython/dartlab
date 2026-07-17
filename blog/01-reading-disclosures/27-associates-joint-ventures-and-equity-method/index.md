@@ -18,7 +18,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 이 글은 관계기업·공동기업투자를 `왜 들고 있는가 -> 장부가와 지분법손익 -> 배당과 현금 유입 -> 본업과의 분리 -> 다음 보고서 추적` 순서로 읽는 방법을 정리한다. 숫자 해석의 기본은 [숫자만 보면 왜 자주 틀리나](/blog/beyond-the-numbers), 현금 검증은 [영업현금흐름이 순이익을 부정할 때](/blog/operating-cash-flow-vs-net-income), 영업외 착시는 [영업외손익이 본업을 가릴 때 무엇을 분리해서 봐야 하나](/blog/why-rising-sales-can-still-be-risky)와 같이 보면 더 잘 이어진다.
 
-![관계기업·공동기업투자를 어떤 순서로 읽어야 하는지 정리한 구조도](./assets/048-reading-flow.svg)
+![관계기업·공동기업투자를 어떤 순서로 읽어야 하는지 정리한 구조도](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/3e/3e857310f714ff295fe9142b7b9d34991029fb2102f0d15987956476a89dae2a.svg)
 
 ---
 
@@ -51,7 +51,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 또한 투자 목적 설명이 중요하다. 단순 재무투자인지, 공급망·기술·유통망과 연결된 전략투자인지에 따라 읽기가 달라진다. 설명이 구체적이고 실제 사업 연결이 보이면 더 건강하게 읽을 수 있다. 반대로 장부가는 크고 손익 영향도 큰데, 사업보고서에서 왜 중요한지 잘 안 보이면 더 조심해야 한다.
 
-![관계기업·공동기업투자를 읽을 때 같이 확인해야 할 레이어를 정리한 도식](./assets/048-evidence-layer.svg)
+![관계기업·공동기업투자를 읽을 때 같이 확인해야 할 레이어를 정리한 도식](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/99/99c8f81145839af5d714bdbe70f99089e076f34afc13a2ab6ab4787f3ace48eb.svg)
 
 ---
 
@@ -59,7 +59,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 가장 실용적인 질문은 이것이다. `이 투자 이익이 본업을 보강하는가, 아니면 본업 약화를 가리고 있는가`.
 
-![관계기업·공동기업투자를 전략 투자, 혼합 구조, 본업 흐림 구조로 가르는 구조도](./assets/048-decision-tree.svg)
+![관계기업·공동기업투자를 전략 투자, 혼합 구조, 본업 흐림 구조로 가르는 구조도](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/fa/fad79289e648ad49ed86855dd0b7d62a774dfe34fa0c5a517384e46208f214d6.svg)
 
 보통 아래 세 갈래로 나누면 좋다.
 
@@ -75,7 +75,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 ## 왜곡을 걸러내는 숫자 조합
 
-![관계기업·공동기업투자에서 상대적으로 건강한 경우와 더 조심해야 하는 경우를 비교한 매트릭스](./assets/048-good-vs-risky-matrix.svg)
+![관계기업·공동기업투자에서 상대적으로 건강한 경우와 더 조심해야 하는 경우를 비교한 매트릭스](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/1e/1ed67f9aef226ad9d2d64ca894a8025713ccb9b6e475ace14f1d9d7937c4c5f8.svg)
 
 | 관찰 포인트 | 상대적으로 건강한 경우 | 더 조심해야 하는 경우 |
 | --- | --- | --- |
@@ -143,7 +143,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 ## 놓치기 쉬운 예외
 
-![관계기업·공동기업투자를 읽은 뒤 후속 보고서에서 다시 봐야 할 질문을 정리한 보드](./assets/048-watchboard.svg)
+![관계기업·공동기업투자를 읽은 뒤 후속 보고서에서 다시 봐야 할 질문을 정리한 보드](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/10/1071830ddecfa248438bee1e4abc71985a3e7e936d345cb6e50e400ad76f0bcf.svg)
 
 | 이번에 본 것 | 다음에 다시 볼 것 |
 | --- | --- |

@@ -18,7 +18,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 이 글은 지분율 암기용 글이 아니다. 초보자가 DART에서 최대주주 표를 열었을 때, 무엇을 먼저 보고 어떤 공시와 연결해야 하는지 정리한 실전 가이드다. DART 화면에서 어디부터 눌러야 할지 아직 익숙하지 않으면 [`공시를 처음 볼 때 DART에서 어디부터 눌러야 하나`](/blog/everything-about-dart)를 먼저 보고 돌아와도 좋다.
 
-![최대주주와 특수관계인이 어떻게 묶여 실제 지배력으로 이어지는지 보여주는 오너십 지도](./assets/022-ownership-map.svg)
+![최대주주와 특수관계인이 어떻게 묶여 실제 지배력으로 이어지는지 보여주는 오너십 지도](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/5d/5d21877aaffbe27516cd56909d5a6ccd673a7296febafe47a10db82337321acf.svg)
 
 ---
 
@@ -63,7 +63,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 - 개인 지분은 22%지만 특수관계인 합계가 거의 늘지 않아 주총에서 안정감이 약하다
 - 개인 지분은 작아도 나머지 지분이 넓게 분산돼 있어 사실상 영향력이 강하다
 
-![개인지분과 실제 통제력 사이의 차이를 보여주는 지배력 사다리](./assets/022-control-vs-ownership-ladder.svg)
+![개인지분과 실제 통제력 사이의 차이를 보여주는 지배력 사다리](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/2f/2fc187c41a27d3525d30359e75b67ae69f77cc29953f85240d9be977b4923825.svg)
 
 그래서 이 표를 읽을 때는 아래 순서가 좋다.
 
@@ -80,7 +80,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 특수관계인은 단순히 "가족"을 뜻하지 않는다. 실제로는 같은 방향으로 의결권을 행사할 가능성이 높은 주체들의 묶음에 가깝다.
 
-![특수관계인을 가족, 계열사, 임원, 기타 우호 주체로 나눈 클러스터](./assets/022-related-party-cluster.svg)
+![특수관계인을 가족, 계열사, 임원, 기타 우호 주체로 나눈 클러스터](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b3/b374487266ef0a9c226bdd2b40b508aaca2906369cbd054a1e34383237ee2059.svg)
 
 초보자가 보기 쉽게 나누면 대체로 아래 네 갈래다.
 
@@ -108,7 +108,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 - 개인에서 법인으로, 법인에서 가족으로 축이 이동했는가
 - 변동 이유가 자연스럽게 설명되는가
 
-![지분 변동에서 의미를 읽어내기 위한 신호 카드](./assets/022-stake-change-signal-card.svg)
+![지분 변동에서 의미를 읽어내기 위한 신호 카드](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ee/eecf605b977e872bdd6cf1520de84495af539df3b42e89ad7a933b2d19adf205.svg)
 
 변동이 있다고 해서 무조건 위험한 것은 아니다. 오히려 정리 과정일 수 있고, 단순한 증여나 합병 반영일 수도 있다. 중요한 것은 `숫자 변화`보다 `이유 설명`이다.
 
@@ -169,7 +169,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 ## 10분 체크리스트
 
-![최대주주와 특수관계인 표를 빠르게 읽기 위한 초보자 체크리스트](./assets/022-beginner-checklist-board.svg)
+![최대주주와 특수관계인 표를 빠르게 읽기 위한 초보자 체크리스트](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/5b/5b98ab2263d1b17c309d08fd5d847c8ffcd3dff00ea16077708dc0d461c313fb.svg)
 
 - 최대주주 개인 지분은 몇 퍼센트인가
 - 특수관계인 합계는 얼마나 되는가

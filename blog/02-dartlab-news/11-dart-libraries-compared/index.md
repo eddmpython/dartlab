@@ -19,7 +19,7 @@ keywords:
 
 **삼성전자 매출액을 파이썬으로 꺼내는 방법은 이미 여러 개다.** [OpenDartReader](https://github.com/FinanceData/OpenDartReader)나 [dart-fss](https://github.com/josw123/dart-fss)로 한 줄이면 재무제표가 손에 들어온다. 잘 만든 라이브러리들이다. 그런데 그 매출액을 LG전자, SK하이닉스와 나란히 놓으려는 순간 막힌다. 회사마다 계정 이름이 다르기 때문이다. 데이터를 가져오는 일은 끝났는데, 진짜 일은 바로 거기서 시작한다.
 
-![기존 라이브러리는 원문을 가져오는 층에서 완성되고, dartlab은 그 위의 정규화, 비교, 분석 층을 맡는다](./assets/11-layers-hero.svg)
+![기존 라이브러리는 원문을 가져오는 층에서 완성되고, dartlab은 그 위의 정규화, 비교, 분석 층을 맡는다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/1b/1b9b05f5163d2f844917d911645691d6063cc6cf61da97907b187033e1205e2c.svg)
 
 ## 기존 라이브러리는 이미 훌륭하다
 
@@ -53,7 +53,7 @@ fs = corp.extract_fs(bgn_de="20200101")  # BS, IS, CF 추출
 
 시계열도 마찬가지다. 어떤 회사는 분기 누적으로, 어떤 회사는 단일 분기로 숫자를 낸다. 5년치를 비교 가능한 격자로 펴려면 이 규칙 차이를 일일이 정리해야 한다. 데이터를 손에 넣은 뒤에도 진짜 일이 한참 남는 이유다.
 
-![기존 방식은 회사마다 다른 계정명을 받아 손으로 매핑해야 하지만, dartlab은 표준 계정으로 정규화된 격자를 돌려준다](./assets/11-account-normalize.svg)
+![기존 방식은 회사마다 다른 계정명을 받아 손으로 매핑해야 하지만, dartlab은 표준 계정으로 정규화된 격자를 돌려준다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/1f/1f7c153eea722419d93470bbab132d9d74c2fe62b882f32a4b90cdb5ed455bd1.svg)
 
 ## dartlab은 여기서 시작한다
 
@@ -90,7 +90,7 @@ c.select("IS", ["매출액"])     # 한국 기업과 똑같은 호출
 
 기존 DART 라이브러리는 이름 그대로 DART 전용이다. 미국 전자공시(EDGAR)를 보려면 또 다른 라이브러리를 배워야 한다. dartlab은 한국과 미국을 같은 진입점, 같은 계정 이름으로 다룬다.
 
-![기존 방식은 회사별 반복문에 DART 전용이지만, dartlab은 전 종목을 한 줄로 훑고 DART와 EDGAR를 같은 문법으로 다룬다](./assets/11-scan-vs-loop.svg)
+![기존 방식은 회사별 반복문에 DART 전용이지만, dartlab은 전 종목을 한 줄로 훑고 DART와 EDGAR를 같은 문법으로 다룬다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f4/f45ec18a51e5f4227c049c95bbe42366017aec11dc46a4bb7fe245d9e4b090fb.svg)
 
 ## 가져오기 위에 분석이 얹힌다
 
@@ -110,7 +110,7 @@ uv run dartlab ask "삼성전자 재무건전성 분석해줘"
 
 질문을 받으면 dartlab이 뒤에서 `Company`를 열고, 재무제표와 비율과 주석을 꺼내 종합해 답한다. 가져오기, 정규화, 비교, 분석, 질문이 한 도구 안에서 이어진다.
 
-![가져오기 층 위에 정규화, 비교, 분석, 질문이 차례로 쌓인다. 기존 라이브러리는 첫 층, dartlab은 그 위 전체를 맡는다](./assets/11-engine-stack.svg)
+![가져오기 층 위에 정규화, 비교, 분석, 질문이 차례로 쌓인다. 기존 라이브러리는 첫 층, dartlab은 그 위 전체를 맡는다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a4/a4a8599fb0a32d8a496bc347a8ddaa0cd4baa39cdee5047980d3648c3f725302.svg)
 
 ## 그래서 언제 무엇을 쓰나
 
@@ -122,4 +122,4 @@ uv run dartlab ask "삼성전자 재무건전성 분석해줘"
 
 가져오는 층 위에 정규화, 비교, 분석 층이 있다. 기존 라이브러리가 첫 층을 튼튼하게 받치고, dartlab은 그 위층을 맡는다. 설치는 [정말 쉬운 dartlab 사용법](/blog/dartlab-easy-start)에서 5분이면 끝난다.
 
-![원문 그대로가 목적이면 기존 라이브러리, 비교와 분석까지 가려면 dartlab. 층이 다른 두 도구](./assets/11-when-to-use.svg)
+![원문 그대로가 목적이면 기존 라이브러리, 비교와 분석까지 가려면 dartlab. 층이 다른 두 도구](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ba/ba4018a11d225a6a2fd44f3b63a96b022ececf03c3774a1ea952c76debc0d6d8.svg)

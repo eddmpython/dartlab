@@ -189,7 +189,7 @@ KOSPI도 같은 날 9,000선을 넘어섰다. Google Finance의 KOSPI 화면은 
 
 그렇다고 결론이 "무조건 견인한다"로 끝나지는 않는다. 하이닉스가 한국장을 끌어올린다는 말은 동시에 한국장이 하이닉스의 HBM 사이클에 의존한다는 말이다. 의존은 랠리일 때는 힘이지만, 꺾일 때는 약점이다. 그래서 이 글의 결론은 날짜도 목표가도 아니다. **SK하이닉스는 지금 대한민국 주식시장을 견인하고 있다. 다만 그 견인력은 넓은 경기 회복보다 HBM 이익률, 외국인 수급, 시가총액 가중 효과에 기대고 있다.**
 
-![한국장을 끌어올리는 두 개의 축](./assets/159-market-weight.svg)
+![한국장을 끌어올리는 두 개의 축](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a0/a0a81a49fb246b67208bb7bff82e58a1576b463500f2220aaf27d6e7b85ee65f.svg)
 
 ---
 
@@ -211,7 +211,7 @@ c.select("IS", ["sales", "operating_profit", "net_profit"], freq="Y")
 
 하이닉스의 랠리가 흥미로운 이유도 여기 있다. 좋은 회사가 오른 것이 아니다. **좋아진 회사가 너무 커져서, 그 회사의 실적 서사가 국가 지수의 서사로 번졌다.** 한국장을 설명하는 문장에서 "수출 회복", "밸류업", "환율", "금리"보다 HBM과 서버 메모리가 앞에 나오는 순간, 하이닉스는 이미 지수의 중심에 들어와 있다.
 
-![지수를 움직인 것은 이야기보다 이익이었다](./assets/159-earnings-engine.svg)
+![지수를 움직인 것은 이야기보다 이익이었다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/70/70a6b1385fa9b8050d61110faa5fec99fa185c58bd7bae8393bc90d279e5a71a.svg)
 
 ---
 
@@ -244,7 +244,7 @@ profit["marginTrend"]["history"][0]
 
 Google Finance의 000660 화면도 비슷한 그림을 보여준다. 52주 저점 242,000원, 52주 고점 2,738,000원, 2026년 6월 18일 장중 고점권. 가격만 보면 이미 한 번의 기업 재평가가 아니라 시장 구조 변경처럼 보인다. 주가가 10배 넘게 오른 회사가 지수 2위급 시총을 갖고 있다면, 그 회사의 상승은 더 이상 한 종목의 일이 아니다.
 
-![저점 24.2만원에서 268.5만원까지](./assets/159-price-rally.svg)
+![저점 24.2만원에서 268.5만원까지](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/9c/9ca58afea19b2eff4a96c9d7abf7559f5dba578a7c2b3aa0fc80df6175082669.svg)
 
 이 장면은 [삼성전자 랠리 후속 글](/blog/005930-samsung-rally)과 나란히 읽어야 한다. 삼성전자는 후발 회복과 DS 이익률 회복이 랠리의 본체였다. SK하이닉스는 한발 더 나가 있다. 삼성전자가 "다시 강해지는가"의 질문이라면, 하이닉스는 "너무 강해진 이익이 지수까지 끌고 가는가"의 질문이다.
 
@@ -275,7 +275,7 @@ cash["cashFlowOverview"]["history"][:3]
 
 그래서 외국인이 이해하기 쉬운 이야기는 강점이면서 약점이다. 쉬운 이야기는 돈을 빨리 모은다. 돈이 빨리 모이면 가격이 빨리 오른다. 가격이 빨리 오르면 같은 이야기가 조금만 흔들려도 빠져나가는 돈도 빨라진다. 하이닉스가 한국장을 견인하는 정도가 커질수록, 한국장은 외국인의 AI 메모리 해석 변화에 더 민감해진다.
 
-![하이닉스 이익은 어떻게 KOSPI로 번역되나](./assets/159-index-mechanism.svg)
+![하이닉스 이익은 어떻게 KOSPI로 번역되나](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/68/687a27e7ed4dc0cd4c4ae0861722da32b51a063f8c0957be8ac52ae3f17e2d80.svg)
 
 ---
 
@@ -312,7 +312,7 @@ CAPEX도 양면적이다. 2025년 CAPEX는 28.58조원이고, 매출 대비 CAPE
 
 마지막은 가격 그 자체다. 네이버증권 기준 2026년 6월 18일 현재가 2,685,000원, Google Finance 기준 52주 저점 242,000원. 이 정도 상승 뒤에는 좋은 뉴스가 상당 부분 가격에 들어갔다고 봐야 한다. 좋은 회사가 비싸질 수 있고, 비싼 회사가 더 오를 수도 있다. 하지만 높은 가격에서는 작은 실망도 크게 보인다. 특히 이익률이 70%대일 때는 더 그렇다. 시장은 이미 기적 같은 분기 실적을 봤고, 다음 분기에도 비슷한 수준을 기대하기 시작한다.
 
-![한국장을 계속 끌려면 깨지면 안 되는 5개 조건](./assets/159-risk-checkpoints.svg)
+![한국장을 계속 끌려면 깨지면 안 되는 5개 조건](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b3/b3d27667cd157e7809efafb2fa5a4aa124d63d885a194bbfdc3019a65f664416.svg)
 
 ---
 

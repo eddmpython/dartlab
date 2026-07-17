@@ -18,7 +18,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 이 글은 `리스크 문구 -> MD&A 설명 -> 다음 숫자 -> 다음 보고서 추적` 흐름으로 읽는 방법을 정리한다. 전체 사업보고서 흐름이 먼저 필요하면 [`사업보고서에서 꼭 봐야 할 5가지는 무엇인가`](/blog/reading-business-reports), 말과 숫자 충돌 판단이 필요하면 [`사업보고서에서 CEO 말보다 숫자가 중요한 순간`](/blog/reading-business-reports)을 같이 보면 좋다.
 
-![리스크 문구와 경영진 설명, 다음 숫자를 하나의 흐름으로 연결한 구조도](./assets/029-risk-to-mdna-bridge.svg)
+![리스크 문구와 경영진 설명, 다음 숫자를 하나의 흐름으로 연결한 구조도](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/9a/9a52538e3ea6febf9e9435b9afa8c3707286e50f66ae5557cdf5b08cc13a75b6.svg)
 
 ---
 
@@ -43,7 +43,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 `MD&A`는 결과와 변화를 말한다. 매출, 마진, 수주, 비용, 환율, 규제 같은 요인이 실제 실적에 어떻게 반영됐는지를 설명한다.
 
-![일반적 리스크 문구와 구체적 리스크 신호를 구분하는 비교 카드](./assets/029-generic-vs-specific-risk.svg)
+![일반적 리스크 문구와 구체적 리스크 신호를 구분하는 비교 카드](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/34/34dc3f6d0233b65e24ccc1b985f9adcc4e3cdf6dab5bb7512323f5601cec56b0.svg)
 
 | 읽는 포인트 | Risk Factors | MD&A |
 | --- | --- | --- |
@@ -98,7 +98,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 3. 설명이 숫자 변화와 연결되는지 본다
 4. 설명이 충분하지 않으면 주석이나 다음 분기 보고서까지 보수적으로 추적한다
 
-![경영진 설명이 충분한지 판단할 때 봐야 할 항목을 정리한 구조도](./assets/029-management-explanation-map.svg)
+![경영진 설명이 충분한지 판단할 때 봐야 할 항목을 정리한 구조도](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b5/b5c46e22cd09364efa5e7af86893073e200430b5378026c2b277bcfaade0298e.svg)
 
 좋은 MD&A는 보통 이렇게 보인다.
 
@@ -140,7 +140,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 가장 중요한 것은 `같은 이슈가 어떻게 이동하는가`다.
 
-![리스크가 다음 숫자와 다음 보고서 추적으로 이어지는 단계를 보여주는 사다리](./assets/029-issue-escalation-ladder.svg)
+![리스크가 다음 숫자와 다음 보고서 추적으로 이어지는 단계를 보여주는 사다리](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/54/54876080e56b2a2b7389970caa3be4905a9681b86c0921b3e97ded9f40fb490a.svg)
 
 | 이번 보고서에서 본 것 | 다음 보고서에서 다시 볼 것 |
 | --- | --- |
@@ -193,7 +193,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 ## 10분 체크리스트
 
-![Risk Factors와 MD&A를 같이 읽을 때 바로 점검할 질문을 모은 체크리스트](./assets/029-reading-checklist.svg)
+![Risk Factors와 MD&A를 같이 읽을 때 바로 점검할 질문을 모은 체크리스트](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/10/10f26adcdff23fe6ba60594aab8d0d42bbdc087ff0082e744d6ab4c5baabe42e.svg)
 
 - 올해 새로 등장한 리스크가 있는가
 - 기존 리스크 문구가 더 구체적으로 바뀌었는가

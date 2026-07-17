@@ -30,9 +30,9 @@
 ## ③ audit · insights
 | 스크립트 | 역할 |
 |---|---|
-| `publishBlogAssets.py` | **블로그 v2 미디어 발행**. 로컬 본문·OG·card 이미지를 HF 전역 콘텐츠 주소 객체에 올리고 중앙 `media/catalog.json`과 본문 URL 반영 |
+| `publishBlogAssets.py` | **블로그 v2 미디어 발행**. 로컬 SVG·본문 이미지·OG·card를 HF 전역 콘텐츠 주소 객체에 올리고 중앙 `media/catalog.json`과 본문 URL 반영 |
 | `seedBlogMedia.py` | 중앙 카탈로그 기준으로 한 글 또는 전체 HF 객체를 무시된 로컬 staging 경로에 복원 |
-| `migrateBlogMedia.py` | 기존 Git 래스터를 전역 HF 객체로 일괄 이관하고 원격 검증 뒤 추적 해제하는 마이그레이션 도구 |
+| `migrateBlogMedia.py` | 기존 Git SVG·래스터를 전역 HF 객체로 일괄 이관하고 원격 검증 뒤 추적 해제하는 마이그레이션 도구 |
 | `publishGate.py` | **블로그 발행 단일 진입점**. `auditBlog` 하드 계약 + SEO 95 + 신규 v2 시나리오·이미지 SSOT를 함께 검사 |
 | `blogMedia.py` | 중앙 `media/catalog.json`, HF 객체 경로, URL, 콘텐츠 해시 계약 SSOT |
 | `auditBlog.py` | 9개 카테고리의 내러티브·쉬운 설명 공통 편집 검사와 심층 글 구조 audit를 맡는 하드 계약 엔진. 단독 결과는 발행 승인 아님 |
@@ -48,7 +48,7 @@
 | `fetch_cc0_images.py` | `gen_blog_cc0` · `gen_news_cc0` (CC0/PD 다운로드 헬퍼 공유) |
 
 ## 관련 — `sns/scripts/` (자산 공유풀·HF 발행)
-신규 v2 블로그 바이너리는 HF `dartlab-media/objects/sha256/`가 SSOT다. `sns/assets/{subjectKey}/`는 legacy 회사 공유 staging이다.
+신규 v2 블로그 SVG·래스터는 HF `dartlab-media/objects/sha256/`가 SSOT다. `sns/assets/{subjectKey}/`는 legacy 회사 공유 staging이다.
 - `ingest_blog_assets.py`: legacy 회사 블로그 자산을 공유 staging으로 복사(멱등·손작성 자산 보호). v2 블로그에는 사용하지 않는다.
 - `build_index.py` → `publish_assets_hf.py` — 인덱싱 → hfMedia 업로드.
 - `extractImagegenAssets.py` · `checkImagegenAssets.py` — GPT image_gen 산출물 추출·프레이밍 검사.

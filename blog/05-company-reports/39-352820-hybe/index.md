@@ -221,7 +221,7 @@ c.analysis("financial", "수익성")["marginWaterfall"]["history"][0]
 
 ---
 
-![매출 사상 최대 vs 당기순손실 -2,566억 — 괴리의 해부](./assets/39-hero-revenue-vs-loss.svg)
+![매출 사상 최대 vs 당기순손실 -2,566억 — 괴리의 해부](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/73/73c40f2f5ad2a90240c49c2faa91fa85734d9013ffbd689490bfa661928ac1c8.svg)
 
 ---
 
@@ -265,7 +265,7 @@ dartlab 종합평가는 6개의 경고 플래그를 붙인다. **매출은 늘�
 
 ## 제2막: BTS 공백을 메운 것 — 공연 매출 +69%, 멀티 레이블 전략
 
-![매출 구성 이동 — 공연 비중 20%→38%](./assets/39-revenue-mix-shift.svg)
+![매출 구성 이동 — 공연 비중 20%→38%](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/37/37e2d55578a2b50ef193244ddbde033fd2a6d7f6f7db8fb2e8d4e53f6a62c90c.svg)
 
 ### BTS가 없는 2년 동안 무슨 일이 벌어졌나
 
@@ -312,7 +312,7 @@ cost["costBreakdown"]["history"][0]
 
 ## 제3막: 매출원가율 53.7%→64.7% — 공연 비중이 깎은 마진
 
-![매출 2.65조 → 영업이익 493억 해부](./assets/39-margin-waterfall.svg)
+![매출 2.65조 → 영업이익 493억 해부](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e6/e6644e06c2a54611aa48e12af45ea19d5280bb667af3e4faa00d7079a0fe0750.svg)
 
 ### 한 단계씩 분해 — 9,359억에서 493억으로
 
@@ -363,7 +363,7 @@ prof["marginWaterfall"]["history"][0]
 
 ## 제4막: 영업레버리지 -4.19 — 매출 +17%가 영업이익 -73%로 증폭된 이유
 
-![영업레버리지 -4.19 음의 영업레버리지](./assets/39-dol-breakdown.svg)
+![영업레버리지 -4.19 음의 영업레버리지](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/4c/4cba357f7cdd921894cf4c7c347e085c6a2d22f15e4d9779f29b1d3b10fd2fee.svg)
 
 ### 음의 영업레버리지가 의미하는 것
 
@@ -409,7 +409,7 @@ gr["growthQuality"]["leverageEffect"][0]
 
 ## 제5막: 4Q 손상차손 2,000억 — ADOR/북미 매니지먼트의 붕괴
 
-![영업이익 493억 → 당기순손실 -2,566억](./assets/39-impairment-nonoperating.svg)
+![영업이익 493억 → 당기순손실 -2,566억](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/9a/9a4bfdfc8120b4bb37b5bba2cb75808416e2d1b1d1c4d5e9d2e0882e4fbe62e4.svg)
 
 ### 영업외손실 100%가 말하는 것
 
@@ -465,9 +465,9 @@ ADOR 관련 비용도 2025년 손익에 영향을 줬다. 2024년 4월 민희진
 
 ## 제6막: 과거-현재 패턴 + K-Pop 산업 구조 — 왜 이런 일이 반복되는가
 
-![하이브 5년의 궤적](./assets/39-historical-pattern.svg)
+![하이브 5년의 궤적](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/fd/fdd5c1e8c4e525f2cb3d5fb25cc195c4cc2217839975e17b9443f2059cb06740.svg)
 
-![K-Pop 빅4 영업이익률 + 산업 구조 4가지](./assets/39-industry-peer-opm.svg)
+![K-Pop 빅4 영업이익률 + 산업 구조 4가지](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/78/78498aca26473b6ff570a8f9e45cfcc2b7710e9232f110cdda83dd109ec62d5d.svg)
 
 ### industry 엔진이 본 하이브의 자리
 
@@ -575,7 +575,7 @@ fs = c.analysis("forecast", "예측신호")
 
 ## 제8막: 2026년에 봐야 할 투자 포인트 5가지
 
-![2026 체크포인트 5 + 시나리오 3단](./assets/39-2026-checkpoints.svg)
+![2026 체크포인트 5 + 시나리오 3단](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a7/a73d5705fefd5f253216e0e7654f09b76cfac8460055a0e3b5a90baa19353459.svg)
 
 ### 체크포인트 1: BTS 첫 컴백 앨범의 초동 판매량
 

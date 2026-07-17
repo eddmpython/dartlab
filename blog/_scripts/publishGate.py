@@ -22,7 +22,7 @@ SEO_SCORE_MIN = 95
 EMPTY_TREE_REF = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
 HF_OBJECT_URL_PREFIX = "https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/"
 MEDIA_FRONTMATTER_RE = re.compile(r"^(?:ogImage|cardPreview|thumbnail|thumbnailBg):\s*.*(?:\r?\n|$)", re.M)
-MEDIA_LINK_RE = re.compile(r"(!\[[^\]]*\]\()[^)]*\.(?:webp|png|jpe?g)(?:\s+[\"'][^\"']*[\"'])?(\))", re.I)
+MEDIA_LINK_RE = re.compile(r"(!\[[^\]]*\]\()[^)]*\.(?:webp|png|jpe?g|svg)(?:\s+[\"'][^\"']*[\"'])?(\))", re.I)
 
 
 def _git(*args: str, check: bool = True) -> subprocess.CompletedProcess[str]:
@@ -115,6 +115,9 @@ def mediaReferenceErrors(postDir: Path) -> list[str]:
     allowedUrls: set[str] = set()
     assets = manifest.get("assets")
     records = list(assets.values()) if isinstance(assets, dict) else []
+    diagrams = manifest.get("diagrams")
+    if isinstance(diagrams, dict):
+        records.extend(diagrams.values())
     for role in ("og", "card"):
         record = manifest.get(role)
         if isinstance(record, dict):
@@ -128,10 +131,10 @@ def mediaReferenceErrors(postDir: Path) -> list[str]:
     for record in records:
         if isinstance(record, dict) and record.get("path"):
             allowedUrls.add(mediaUrl(str(record["path"])))
-    localRefs = re.findall(r"(?:\./)?assets/[^)\"' >]+\.(?:webp|png|jpe?g)", raw, re.I)
+    localRefs = re.findall(r"(?:\./)?assets/[^)\"' >]+\.(?:webp|png|jpe?g|svg)", raw, re.I)
     if localRefs:
-        errors.append(f"로컬 래스터 참조 금지: {localRefs[0]}")
-    usedUrls = set(re.findall(rf"{re.escape(HF_OBJECT_URL_PREFIX)}[0-9a-f/]+\.(?:webp|png|jpe?g)", raw, re.I))
+        errors.append(f"로컬 콘텐츠 미디어 참조 금지: {localRefs[0]}")
+    usedUrls = set(re.findall(rf"{re.escape(HF_OBJECT_URL_PREFIX)}[0-9a-f/]+\.(?:webp|png|jpe?g|svg)", raw, re.I))
     unexpected = sorted(usedUrls - allowedUrls)
     if unexpected:
         errors.append(f"media/catalog.json 밖 HF 객체 참조: {unexpected[0]}")
@@ -156,9 +159,10 @@ def trackedBinaryErrors(postDir: Path) -> list[str]:
         f"{relativeAssets}/*.jpg",
         f"{relativeAssets}/*.jpeg",
         f"{relativeAssets}/*.png",
+        f"{relativeAssets}/*.svg",
     )
     paths = [line.strip() for line in tracked.stdout.splitlines() if line.strip()]
-    return [f"블로그 래스터는 Git 추적 금지, HF 콘텐츠 주소 객체에만 발행: {path}" for path in paths]
+    return [f"블로그 콘텐츠 미디어는 Git 추적 금지, HF 콘텐츠 주소 객체에만 발행: {path}" for path in paths]
 
 
 def validatePost(postDir: Path, *, requireContractV2: bool, mediaOnly: bool = False) -> list[str]:
@@ -169,6 +173,7 @@ def validatePost(postDir: Path, *, requireContractV2: bool, mediaOnly: bool = Fa
         errors.extend(verifyRemoteAssets(postDir))
         return errors
     errors = auditPublishGate(postDir, requireContractV2=requireContractV2)
+    errors.extend(mediaReferenceErrors(postDir))
     errors.extend(trackedBinaryErrors(postDir))
     errors.extend(verifyRemoteAssets(postDir))
     score = scorePost(str(postDir))

@@ -5,11 +5,13 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+import pytest
+
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import migrateBlogMedia as migration  # noqa: E402
 import seedBlogMedia as seeder  # noqa: E402
-from blogMedia import loadMediaManifest, mediaUrl, saveMediaCatalog  # noqa: E402
+from blogMedia import emptyMediaCatalog, loadMediaManifest, mediaUrl, registerMediaFile, saveMediaCatalog  # noqa: E402
 
 
 def writeLegacyPost(root: Path, category: str, name: str, payload: bytes) -> tuple[Path, Path, Path, Path]:
@@ -36,16 +38,27 @@ def test_migration_deduplicates_bytes_and_builds_central_views(monkeypatch, tmp_
     secondPost, secondAsset, secondThumb, secondCard = writeLegacyPost(
         tmp_path, "05-company-reports", "01-second", b"same"
     )
+    svgPayload = '<svg xmlns="http://www.w3.org/2000/svg"><text>같은 도해</text></svg>'
+    firstSvg = firstPost / "assets" / "mechanism.svg"
+    secondSvg = secondPost / "assets" / "mechanism.svg"
+    firstSvg.write_text(svgPayload, encoding="utf-8")
+    secondSvg.write_text(svgPayload, encoding="utf-8")
+    for post in (firstPost, secondPost):
+        indexPath = post / "index.md"
+        indexPath.write_text(
+            indexPath.read_text(encoding="utf-8") + "\n![도해](./assets/mechanism.svg)\n",
+            encoding="utf-8",
+        )
     monkeypatch.setattr(migration, "REPO_ROOT", tmp_path)
     monkeypatch.setattr(migration, "CATALOG_PATH", tmp_path / "media" / "catalog.json")
 
     catalog, localByRemote, rewritten = migration.buildCatalog(
-        [firstAsset, firstThumb, firstCard, secondAsset, secondThumb, secondCard]
+        [firstAsset, firstThumb, firstCard, firstSvg, secondAsset, secondThumb, secondCard, secondSvg]
     )
 
-    assert len(catalog["objects"]) == 1
-    assert len(catalog["files"]) == 6
-    assert len(localByRemote) == 1
+    assert len(catalog["objects"]) == 2
+    assert len(catalog["files"]) == 8
+    assert len(localByRemote) == 2
     saveMediaCatalog(tmp_path / "media" / "catalog.json", catalog)
     firstManifest, errors = loadMediaManifest(firstPost)
     assert errors == []
@@ -53,6 +66,8 @@ def test_migration_deduplicates_bytes_and_builds_central_views(monkeypatch, tmp_
     objectUrl = mediaUrl(firstManifest["assets"]["hero"]["path"])
     assert objectUrl in rewritten[firstPost / "index.md"]
     assert objectUrl in rewritten[secondPost / "index.md"]
+    assert firstManifest["diagrams"]["mechanism"]["path"].endswith(".svg")
+    assert firstManifest["diagrams"]["mechanism"]["path"] in rewritten[firstPost / "index.md"]
     assert "/thumbnails/" not in rewritten[firstPost / "index.md"]
     assert "cardPreview: https://" in rewritten[firstPost / "index.md"]
     assert catalog["posts"]["08-tech-story/01-first"]["card"].endswith("-card.webp")
@@ -92,3 +107,14 @@ def test_seed_restores_post_staging_from_catalog(monkeypatch, tmp_path: Path) ->
     assert copied == 1
     assert assetPath.read_bytes() == b"image"
     assert postDir.is_dir()
+
+
+def test_registerMediaFileRejectsExecutableSvg(tmp_path: Path) -> None:
+    svg = tmp_path / "unsafe.svg"
+    svg.write_text(
+        '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>',
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="SVG 금지 요소"):
+        registerMediaFile(emptyMediaCatalog(), "blog/x/assets/unsafe.svg", svg)

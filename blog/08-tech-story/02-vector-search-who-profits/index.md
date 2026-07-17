@@ -93,7 +93,7 @@ ai = ["304100", "377480", "012510", "035420"]  # 솔트룩스·마음AI·더존�
 prof.filter(pl.col("종목코드").is_in(ai)).select("종목명", "영업이익률", "등급")
 ```
 
-![AI 상장사 적자 지형과 돈 버는 소수](./assets/01-ai-profit-landscape.svg)
+![AI 상장사 적자 지형과 돈 버는 소수](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/26/265b98d50ab184447db269d3dcf5f6a462e5bd8db8d8a6310e2fd20da6ca7778.svg)
 
 한눈에 두 무리로 갈린다. 'AI·LLM'을 직접 만든다고 내세우는 순수 회사들은 매출이 수십에서 수백억에 그치고 대부분 적자다. 반면 뚜렷한 흑자는 소수, 그것도 AI를 새로 만든 회사가 아니라 원래 하던 사업(검색, 커머스, 기업용 소프트웨어)에 AI를 얹은 회사들이다.
 
@@ -105,7 +105,7 @@ prof.filter(pl.col("종목코드").is_in(ai)).select("종목명", "영업이익�
 
 핵심은 비슷한 것끼리 가까이 놓인다는 점이다. '강아지'와 '고양이'의 좌표는 가깝고, '강아지'와 '자동차'는 멀다. 유명한 예로, 이 좌표들끼리 덧셈과 뺄셈이 되기도 한다. '왕'에서 '남자'를 빼고 '여자'를 더하면 '여왕' 근처가 나온다. 단어의 의미가 공간 위의 방향과 거리로 표현되는 것이다([임베딩 모델 가이드](https://www.youngju.dev/blog/llm/2026-03-13-embedding-model-vector-search-rag-sentence-transformers)).
 
-![임베딩: 의미를 좌표로 바꾼다](./assets/03-embedding-space.svg)
+![임베딩: 의미를 좌표로 바꾼다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/55/55e7dd452c478a6ca44181fcc72a06503aee80cff883f92caeb753b2786b46bc.svg)
 
 이게 왜 대단한가. 기존 검색은 글자가 똑같아야 찾았다. '자동차 고장'으로 검색하면 그 단어가 든 문서만 나왔다. 임베딩으로 검색하면 '차가 시동이 안 걸려요'처럼 글자는 하나도 안 겹쳐도 의미가 가까우면 찾아준다. 이것이 시맨틱 검색(의미 기반 검색)이다.
 
@@ -131,7 +131,7 @@ dartlab의 AI 엔진도 이 방식을 쓴다. 수십만 건의 공시 문장을 
 질문 -> 임베딩 -> 벡터 DB에서 근거 검색 -> LLM이 근거 보고 생성 -> 답변
 ```
 
-![RAG 파이프라인: 부품이 대부분 오픈소스이거나 빌려 쓰는 API다](./assets/04-rag-pipeline.svg)
+![RAG 파이프라인: 부품이 대부분 오픈소스이거나 빌려 쓰는 API다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/3d/3d2a51eee2928cc95d811dfa311480038a2c05a23845e820ce60d28c8ea0bfd9.svg)
 
 그런데 이 파이프라인의 부품을 하나씩 뜯어보면, 임베딩 모델은 API로 빌려 쓰고, 벡터 데이터베이스는 오픈소스이고, LLM도 API로 부른다. 조립은 놀랄 만큼 쉽고, 독점할 조각이 마땅치 않다. 기술은 대단한데 남이 못 따라 할 부분이 적다. 그래서 재무제표로 내려가기 전에, 이 스택이 어떤 회사 층위로 나뉘는지 먼저 지도를 그려야 한다.
 
@@ -213,7 +213,7 @@ c.select("IS", ["매출액", "영업이익"])
 | 더존비즈온 (AI + 기업 SW) | 4,463억 | **28.6** |
 | 네이버 (AI + 검색·커머스) | 12조 350억 | **18.3** |
 
-![기술을 만드는 자는 5년째 적자, 얹은 자는 5년 내내 흑자](./assets/05-pureplay-vs-incumbent.svg)
+![기술을 만드는 자는 5년째 적자, 얹은 자는 5년 내내 흑자](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c4/c4c772ea48334bb5caa80e5141ff64045acdadb9a04b7811b58714d9cb3e0f5c.svg)
 
 순수 AI 회사가 매출 100~400억에 적자를 내는 5년 동안, AI를 얹은 강자는 조 단위 또는 수천억으로 벌며 20% 안팎을 남겼다. 같은 기간 같은 기술을 두고 갈린 정반대의 궤적이다.
 
@@ -227,7 +227,7 @@ c.select("IS", ["매출액", "영업이익"])
 
 왜 이렇게 갈릴까. 답은 3막과 4막에 이미 나왔다. 벡터 검색도, RAG도, 부품이 대부분 오픈소스이거나 빌려 쓰는 API다. 기술 자체는 남이 못 따라 할 해자(경쟁자가 넘지 못하는 방어벽)가 되지 못한다. 그렇다면 해자는 어디에 있나. 세 곳이다.
 
-![기술은 상품, 이익은 데이터·유통·컴퓨트로](./assets/02-moat-map.svg)
+![기술은 상품, 이익은 데이터·유통·컴퓨트로](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/be/be08be044d392c6245fbf131172d0b3f0bdb5ecea21f90b5e77502ee64340382.svg)
 
 1. **임베딩할 독점 데이터.** 벡터 검색은 데이터가 있어야 쓸모가 있다. 네이버는 수십 년치 검색·쇼핑·지도 데이터를, 더존은 수십만 기업의 회계·업무 데이터를 쥐고 있다. 남이 못 가진 데이터가 진짜 자산이다.
 2. **그 기술을 쓸 유통과 사용자.** 아무리 좋은 AI도 쓸 사람이 있어야 돈이 된다. 네이버는 이미 전 국민이 매일 쓰는 창을 갖고 있고, 더존은 이미 그 소프트웨어를 쓰는 기업 고객을 갖고 있다. 순수 AI 회사는 좋은 기술을 만들고도 그걸 팔 창구가 없다.

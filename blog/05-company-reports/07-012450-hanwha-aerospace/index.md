@@ -195,7 +195,7 @@ import HFDataLink from '$lib/components/blog/HFDataLink.svelte';
 <iframe src="https://www.youtube.com/embed/NvVg08Dzogk" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 </div>
 
-![한화에어로스페이스 72년 타임라인](./assets/07-70year-timeline.svg)
+![한화에어로스페이스 72년 타임라인](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f4/f4a3db6a849cfb8de24d73d9fba838469d0b8cb56b3e19c591642dd58bb262a3.svg)
 
 ## 2014년, 삼성이 무기를 버렸다
 
@@ -237,7 +237,7 @@ c.select("IS", ["매출액", "영업이익"], freq="Y")
 
 시장의 절반을 먹고 있는데 왜 매출이 고작 1.6조인가? 뜯어보면 답이 나온다. K9 한 문 가격이 50~80억원이다. 터키가 350문(면허생산), 인도가 100문, 노르웨이가 28문, 핀란드가 48문을 샀다. 문제는 한 나라당 수십~100문 단위라는 것. 연간 수출 매출이 수천억에 머물렀다. **시장은 지배하는데 시장 자체가 작았다.**
 
-![K9 자주포 세계 수출 현황](./assets/07-k9-export-map.svg)
+![K9 자주포 세계 수출 현황](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/52/524d7be7b878032f5982f9e7425141b812093d2dd7c1e20e5a0d7a521625d3b1.svg)
 
 ### 독일이 거절한 무기를 한국이 팔았다 — K방산 수출의 시작
 
@@ -257,7 +257,7 @@ c.select("IS", ["매출액", "영업이익"], freq="Y")
 
 ### 총자산 7.4조 → 54조 — 7년 만에 7.3배
 
-![삼성테크윈 인수 전후 비교](./assets/07-samsung-acquisition.svg)
+![삼성테크윈 인수 전후 비교](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c4/c40fc4c9ac12b8195397d94a438e6c535aa91afa50bdb8b0edfa5f3f33b029cd.svg)
 
 재무제표를 2018년과 2025년 나란히 놓으면 이상한 점이 보인다.
 
@@ -311,7 +311,7 @@ K9 자주포, 항공기 엔진, 레이더, 항공전자. 한화는 한 번의 �
 
 K9 672문. 1막에서 봤던 "한 나라당 수십 문" 스케일이 아니다. 단일 계약 세계 최대 규모 자주포 주문. 폴란드 누적 계약액 **34조원+**. 1막의 모순 — "시장은 지배하는데 시장이 작았다" — 이 깨진 순간이다.
 
-![매출 폭발](./assets/07-revenue-explosion.svg)
+![매출 폭발](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/27/27e28a8d62a262751933e154c2bebacfb989044bf9e3e1e75d62966993060b24.svg)
 
 ```python
 c.analysis("financial", "성장성")
@@ -352,7 +352,7 @@ c.analysis("financial", "성장성")
 
 ### 금융차입 12% → 0%, 영업조달 2% → 30% — 고객이 먼저 돈을 보낸다
 
-![수주잔고 → 매출 전환 파이프라인](./assets/07-backlog-pipeline.svg)
+![수주잔고 → 매출 전환 파이프라인](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/9b/9b7bcb76dce0256e757114e212b75e67fb317ca6625bcc0d7acea57b2e71f4d4.svg)
 
 글 처음에 던진 질문으로 돌아온다. 부채 37조인데 은행 빚 0원. 이게 뭔가.
 
@@ -380,7 +380,7 @@ c.analysis("financial", "자금조달")
 
 **수주가 들어올수록 3~4번에 있는 시간이 길어지고, 그동안 부채비율은 높아진다.** 납품이 완료되면 부채가 줄고 현금이 들어온다. 즉 부채비율 221%는 "위험하다"가 아니라 **"납품할 게 많다"**는 뜻이다.
 
-![성장성 A vs 안정성 F](./assets/07-growth-vs-stability.svg)
+![성장성 A vs 안정성 F](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/39/391c5f524387f44a2f8bb132000768650be2706d21c83ce5ab3acb789c373fa3.svg)
 
 dartlab 스코어카드를 보면:
 
@@ -442,7 +442,7 @@ c.analysis("financial", "현금흐름")
 
 창원1사업장, KSLV 조립동 1,818㎡. 직원들 사이에서도 일부만 출입하는 보안 구역이다. 75톤급 액체엔진 하나에 부품 2,400개, 공정 458개. 연료관과 배선이 얽힌 은빛 금속 사이에서 엔지니어들이 손으로 조립한다. 1초도 안 되는 시간에 연료와 산화제를 공급하는 밸브들이 정해진 순서대로 정확히 작동해야만 점화된다.
 
-![우주사업](./assets/07-space-bet.svg)
+![우주사업](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/cc/ccec42e9798334f1e2ea82d94b6b4b3da3ebb1f399048e184c8fa81d5d5938e8.svg)
 
 **누리호.** 한화에어로스페이스는 KSLV-II 엔진 총조립을 담당하는 국내 유일 기업이다. 75톤급 39기, 7톤급 13기 — 총 52기 엔진 제작. 2025년 11월 27일 새벽 1시 13분, 고흥 나로우주센터에서 4차 발사. 한화에어로스페이스가 민간 프라임으로서 참여한 첫 발사. 엔진 성능이 추정치보다 높게 나왔다.
 

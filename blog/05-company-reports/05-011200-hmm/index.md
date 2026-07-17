@@ -149,7 +149,7 @@ import YouTube from '$lib/components/YouTube.svelte';
 
 ---
 
-![HMM 영업이익 10년 사이클](./assets/05-op-9year-cycle.svg)
+![HMM 영업이익 10년 사이클](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ab/aba2d2ea414c6de6442b77bc695c63334fcc28f8e687aaa1494f87bc57983135.svg)
 
 ## 핵심 한 줄
 
@@ -214,7 +214,7 @@ c.select("IS", ["매출액","매출원가","매출총이익","판매비와관리
 
 영업이익만 보면: 2020년 +9,800억, 2021년 **+7조 3,800억**, 2022년 **+9조 9,500억**. 2년에 영업이익 약 17.3조원을 벌었다 — 그 직전 4년 누적 영업손실(-2.1조)의 약 8배.
 
-![HMM 자본총계 9년 — 사이클 한 번이 만든 곳간](./assets/05-equity-29x.svg)
+![HMM 자본총계 9년 — 사이클 한 번이 만든 곳간](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e7/e723cb40bfed663e6f4f295ad84717bf97ff23b52dbb74ee87c4327efd46f6f1.svg)
 
 ### 자본총계 0.9조→27.8조 — 사이클 한 번이 만든 곳간
 
@@ -287,13 +287,13 @@ dartlab quant 세 호출의 결과를 한 표로 정리하면 다음과 같다.
 
 이 한 표가 보여주는 것은 명확하다. **베타 0.37, R² 10%** — 시장이 HMM 주가의 10%만 설명하고, 나머지 90%는 시장과 무관한 자기 변동이다. 즉 베타 0.374는 "HMM이 시장을 따라 움직이는 약한 신호"가 아니라, **"HMM은 시장과 거의 안 움직인다"**는 뜻이다. 그런데 **60일 실현 변동성이 59%** — 시장 변동성의 4배다. 시장과 무관하게 움직이면서 자기 변동성이 4배라면, 그 변동성의 원천은 하나다 — 외부 운임 사이클이다.
 
-![HMM quant 베타 + R² + 변동성 4가지 지표](./assets/05-quant-beta-decoupled.svg)
+![HMM quant 베타 + R² + 변동성 4가지 지표](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/7d/7d93d908749be034ce93c0d82f06f7301b6722ec30e08b6049b24db8d79f056f.svg)
 
 ### GARCH 장기변동성 38% + contango — 다음 사이클을 기다리는 가격
 
 dartlab의 GARCH 모델은 이 변동성이 단발성이 아님을 보여준다. 장기 변동성 38%, regime "high", 곡선 "contango" — 먼 미래의 변동성이 단기보다 더 크다. **시장은 HMM의 미래 변동성이 지금보다 더 클 거라고 가격에 반영하고 있다.** 다음 사이클 정점·바닥 한 번을 더 기다리는 가격이다.
 
-![HMM 모멘텀 + 변동성 기간구조](./assets/05-quant-momentum-vol.svg)
+![HMM 모멘텀 + 변동성 기간구조](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/85/85bee58879171538b6222fc9b72ef2efb63759052537fd6b3ffaf44047d0209e.svg)
 
 모멘텀도 같은 그림이다 — 1개월 -1.2%(단기 약세), 3개월 +3.7%(중기 강세), 6개월 +0.24%(간신히 강세). verdict "mixed". **사이클 회사가 정점-바닥 사이의 중간에서 어디로 갈지 결정 못 한 상태.** 이게 quant 엔진이 본 2026년 4월 초 HMM의 정량적 모습이다.
 
@@ -355,7 +355,7 @@ dartlab이 답할 수 없는 것: 글로벌 컨테이너 운임의 다음 분기
 
 그래서 본 글의 결론은 다음 4가지 신호를 매 분기 직접 검증해야 한다는 것이다.
 
-![HMM 2026년 4가지 결정 신호](./assets/05-watch-signals.svg)
+![HMM 2026년 4가지 결정 신호](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/77/7747ac4fe584f3850b550bda600728f29133975a936d0e4cfe793c204fe7aff3.svg)
 
 | 신호 | 임계 | 검증 |
 |---|---|---|

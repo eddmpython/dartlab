@@ -130,7 +130,7 @@ import HFDataLink from '$lib/components/blog/HFDataLink.svelte';
 
 <HFDataLink code="161890" />
 
-![한국콜마 2025 관통선 — 영업이익 2,396억, 영업외 -279억, 순이익 1,682억. 영업외 흡수율 12%로 9년 최저. 본업 V자가 처음 영업외를 이겼다.](./assets/86-hero-operating-vs-nonop.svg)
+![한국콜마 2025 관통선 — 영업이익 2,396억, 영업외 -279억, 순이익 1,682억. 영업외 흡수율 12%로 9년 최저. 본업 V자가 처음 영업외를 이겼다.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/1b/1bac6a98948c6b4895976573393d8bdf3537145b2665803f20a0779d57e9048a.svg)
 
 ![K-뷰티 앰플 매크로 — 인디 브랜드 800+의 처방·생산을 받아 글로벌로 나가는 ODM 라인의 진짜 모습.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d4/d4a8be487ad1495495fc3e06c0370b65cb1bc3a1df2910a73b9e8d91dfcae6df.webp)
 
@@ -271,7 +271,7 @@ df = c.select("IS", ["매출액", "매출원가", "매출총이익", "판매비�
 
 ## 2막 — 2018년 4월: 1조 3,100억의 인수가 자산을 3.3배로 부풀린 날
 
-![2018.4 인수 BS 변화 — 자산 6,685 → 21,864억, 부채 3,359 → 13,765억, 무형자산 580 → 11,507억, 비지배지분 275 → 3,715억.](./assets/86-acquisition-bs-flip.svg)
+![2018.4 인수 BS 변화 — 자산 6,685 → 21,864억, 부채 3,359 → 13,765억, 무형자산 580 → 11,507억, 비지배지분 275 → 3,715억.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/37/37eefb91020d43dfcc781f047b2a65c739908e10b60f8db4c822046ec8499a6e.svg)
 
 ### 화장품 ODM 회사가 제약회사를 산다
 
@@ -407,7 +407,7 @@ credit 등급 dCR-BBB+ 적격 (notch +1 보정 — 8기 연속 영업흑자) 이
 
 ## 4막 — 2022년: 영업이익 흑자 733억이 어떻게 순이익 -41억 적자가 되는가
 
-![2022 영업이익 733억 → 순이익 -41억의 5단계 분해. 금융비용 595 + 기타비용 396 + 공정가치 290 + 법인세 211 = 영업외와 세금이 영업이익을 통째로 삼킨 해.](./assets/86-nonop-decomposition.svg)
+![2022 영업이익 733억 → 순이익 -41억의 5단계 분해. 금융비용 595 + 기타비용 396 + 공정가치 290 + 법인세 211 = 영업외와 세금이 영업이익을 통째로 삼킨 해.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/4e/4e6ecb1b0aeaf9aeb03877f2ea5f4483dd4cc8e39c6951f6c96cdb8d25221539.svg)
 
 ### 한 해의 영업이익 733억이 어디로 갔는가
 
@@ -476,7 +476,7 @@ dartlab quant 분석 기준 2026년 5월 시점 한국콜마 주가는 SMA 60일
 
 ## 5막 — K-뷰티 인디 폭발의 ODM 본업 영업레버리지 5.52배
 
-![DOL(영업레버리지) 9년 시계열 + 매출원가율 4년 연속 개선. 2022 DOL -0.74 바닥 → 2023 +5.52 V자 → 2025 +2.14 정상화.](./assets/86-dol-recovery.svg)
+![DOL(영업레버리지) 9년 시계열 + 매출원가율 4년 연속 개선. 2022 DOL -0.74 바닥 → 2023 +5.52 V자 → 2025 +2.14 정상화.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ab/abfafe4d873762622ca212c490baa6ae91befa7c25dd8a72c2844bb5022f187c.svg)
 
 ### DOL(영업레버리지)이 무엇을 말하는가
 
@@ -574,7 +574,7 @@ ROIC(투하자본수익률)는 본업이 자본을 얼마나 효율적으로 쓰
 
 ## 6막 — 2024년 5월: HK이노엔 매각이 6년 인수 사이클을 닫다
 
-![한국콜마 8년 사이클 7단계 — 2018 인수 → 2022~2023 두 회계 동시 악화 → 2024 매각 → 2025 본업 압도.](./assets/86-acquisition-timeline.svg)
+![한국콜마 8년 사이클 7단계 — 2018 인수 → 2022~2023 두 회계 동시 악화 → 2024 매각 → 2025 본업 압도.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/7e/7e92d01e232cef964331c9217b105cd3465aba24ebadc706730fe81be0f974c6.svg)
 
 ### 한국콜마 → 한국콜마홀딩스 → HK이노엔의 보유 구조
 
@@ -659,7 +659,7 @@ HK이노엔은 2021년 8월 코스닥에 분할상장(IPO)했다. 한국콜마�
 
 ## 7막 — K-뷰티 ODM 빅2 비교: 한국콜마 vs 코스맥스, 같은 마진의 정반대 회계
 
-![한국콜마 vs 코스맥스 비교 매트릭스 — 같은 OPM 8%대인데 인수형(한국콜마)·자체진출형(코스맥스)의 영업외 부담이 정반대.](./assets/86-vs-cosmax.svg)
+![한국콜마 vs 코스맥스 비교 매트릭스 — 같은 OPM 8%대인데 인수형(한국콜마)·자체진출형(코스맥스)의 영업외 부담이 정반대.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/24/2464992e30b0c69dd985300649fb127c7aedf093fd65e04b689cccc143890dc1.svg)
 
 ### 매출과 마진은 비슷한데 손익계산서 아래쪽이 다르다
 
@@ -755,7 +755,7 @@ dCR 등급은 한국콜마 BBB+(적격, 긍정적 outlook), 코스맥스는 별�
 
 ## 8막 — 2026년에 봐야 할 다섯 가지
 
-![2026 추적 5개 — 영업외 흡수율 10% 이하 / 차입 540 → 400 / 매출원가율 70% 아래 / 비지배 6,000~6,500 / 코스맥스 청산 속도.](./assets/86-checklist.svg)
+![2026 추적 5개 — 영업외 흡수율 10% 이하 / 차입 540 → 400 / 매출원가율 70% 아래 / 비지배 6,000~6,500 / 코스맥스 청산 속도.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/79/7930e37f27c0fa230d25b12250293846a3a94d7723ef17d7beb7e774765df4ed.svg)
 
 ### 한국콜마의 다음 12개월 — 가장 먼저 볼 한 줄
 

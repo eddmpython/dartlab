@@ -83,7 +83,7 @@ g.head(5)
 
 <LiveData spec="scan/growth" caption="전상장사 성장 지표 (지금, 브라우저 계산)" />
 
-![dartlab 데이터 세 덩어리](./assets/dartlab-story-01-data-shapes.svg)
+![dartlab 데이터 세 덩어리](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c2/c2943d0959e66989c9fa36d4d17c6d7a69ac1a096aea0b3bbd5642824cccd1e9.svg)
 
 **셋째, 공시 밖 데이터.** 주가, 수급, 뉴스, 지수 같은 것들이다. 재무제표는 회사가 낸 공시에서 오고, 주가는 거래소나 데이터 업체에서 온다. 나오는 곳도 다르고 바뀌는 속도도 다르다. 처음에는 재무제표부터 보는 것이 안전하다.
 

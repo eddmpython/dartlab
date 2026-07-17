@@ -61,7 +61,7 @@ c.market
 
 이 결과에는 삼성전자만 나오지 않는다. 삼성SDI, 삼성전기, 삼성물산처럼 비슷한 이름의 회사도 같이 보일 수 있다. 그래서 검색 결과에서 눈으로 회사를 고른 뒤 코드를 확정한다.
 
-![종목코드가 공시와 재무제표를 잇는 흐름](./assets/dartlab-story-04-code-route.svg)
+![종목코드가 공시와 재무제표를 잇는 흐름](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a0/a0ead35ff601f091fe2aac36e215ef4ba61e5767cf6f6fe549570b757922668f.svg)
 
 dartlab 밖에서 확인할 수도 있다. [OpenDART](https://opendart.fss.or.kr/)에서 회사명을 검색하거나, [KRX 정보데이터시스템](https://data.krx.co.kr/contents/MDC/MAIN/main/index.cmd)에서 종목코드를 확인한다. 헷갈리면 둘 다 본다. 회사명이 비슷한 경우에는 한 곳만 보고 넘기지 않는다.
 

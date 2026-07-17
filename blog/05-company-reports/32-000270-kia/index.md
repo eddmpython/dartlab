@@ -202,7 +202,7 @@ c.select("IS", ["매출액", "매출원가", "매출총이익", "판매비와관
 
 ### 영업이익률 추이 — 7.3% → 11.8% → 8.0%, 산을 넘었다 내려온다
 
-![영업이익률 5년 추이](./assets/32-opm-trend.svg)
+![영업이익률 5년 추이](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/aa/aa6e57da058201a378a3bc1d77a12c0cec5411e49fd8167333763bac45212000.svg)
 
 영업이익률 7.3%(2021) → 8.4%(2022) → 11.6%(2023) → **11.8%(2024)** → 8.0%(2025). 2024년까지 꾸준히 올라갔다. 형(현대차)은 같은 기간 5.7% → 6.9% → 9.3% → 8.1% → 6.2%였다. **기아가 매년 현대차보다 높았다.** 그런데 2025년에 둘 다 꺾였다. 기아는 더 급격하게.
 
@@ -335,7 +335,7 @@ c.analysis("수익성")
 
 기아의 판관비 5년 추이를 보면 숨이 멎는다.
 
-![판관비 폭증](./assets/32-sga-explosion.svg)
+![판관비 폭증](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a3/a318db4f26cb2f117039e7e08cf8f215079fad88072a64466692b35c4ce66e57.svg)
 
 | 연도 | 판관비 (조원) | 판관비율 | 전년비 증감 |
 |------|----------:|-------:|--------:|
@@ -381,7 +381,7 @@ c.analysis("비용구조")
 
 ### "디자인이 올린 마진을, 품질 비용이 까먹고 있다"
 
-![마진 폭포](./assets/32-margin-waterfall.svg)
+![마진 폭포](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/80/8051d2baa85b8452ef8a6b6d12fb6d7fb1a61cb996d1a1a62233ecdf12524db9.svg)
 
 이것이 기아의 딜레마다. 2021~2024년 디자인 혁신으로 매출총이익률을 18.5% → 23.1%로 끌어올렸다. 4.6%포인트. 그런데 같은 기간 품질보증비가 포함된 판관비율이 4.7% → 11.3%로 올라갔다. 6.6%포인트. **디자인이 올린 것보다 품질이 까먹은 게 더 크다.**
 
@@ -447,7 +447,7 @@ c.analysis("성장성")
 
 기아의 영업활동현금흐름(영업활동현금흐름, 실제 장사해서 들어온 현금)은 5년 연속 양수다.
 
-![영업CF 비교](./assets/32-cf-comparison.svg)
+![영업CF 비교](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f2/f2d8d25d2448379bccc92667b33a0bc087fa1790ed3fcc34f57f5d8f8acdb0b0.svg)
 
 ```python
 c.select("CF", ["영업활동현금흐름", "투자활동현금흐름", "재무활동현금흐름"], freq="Y")
@@ -608,7 +608,7 @@ c.analysis("종합평가")
 
 ### 기아가 현대차의 "효율적 버전"인 이유
 
-![강점약점 요약](./assets/32-strength-weakness.svg)
+![강점약점 요약](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/4f/4f5afe02d4213b648ccc9773c37ce6fae9d35a62c977725dfc0025ee05d8dd31.svg)
 
 같은 플랫폼(현대차 공유 E-GMP, 스마트스트림), 같은 연구소(현대차그룹 R&D), 부품 90% 공유. 그런데 마진이 다르다. 기아는 현대차의 **"동생"이 아니라 "더 효율적인 버전"**이다.
 

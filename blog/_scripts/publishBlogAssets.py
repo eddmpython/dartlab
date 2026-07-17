@@ -9,6 +9,7 @@ from pathlib import Path
 
 from blogMedia import (
     ASSET_KEY_RE,
+    MEDIA_CATALOG_VERSION,
     emptyMediaCatalog,
     loadMediaCatalog,
     loadMediaManifest,
@@ -130,6 +131,33 @@ def buildManifest(
         assetSources[key] = record["source"]
         stagingSources.add(record["source"])
 
+    existingDiagrams = (
+        existing.get("diagrams") if isinstance(existing, dict) and isinstance(existing.get("diagrams"), dict) else {}
+    )
+    diagrams: dict[str, dict[str, str]] = {}
+    diagramSources: dict[str, str] = {}
+    for key, oldRecord in existingDiagrams.items():
+        if not isinstance(oldRecord, dict) or not oldRecord.get("source"):
+            continue
+        record = {
+            "path": str(oldRecord.get("path") or ""),
+            "sha256": str(oldRecord.get("sha256") or ""),
+            "source": str(oldRecord["source"]),
+        }
+        diagrams[str(key)] = record
+        diagramSources[str(key)] = record["source"]
+        stagingSources.add(record["source"])
+    for local in sorted(postDir.joinpath("assets").glob("*.svg")):
+        key = local.stem
+        if not ASSET_KEY_RE.fullmatch(key):
+            raise ValueError(f"SVG 파일명이 영문 kebab-case가 아님: {local.name}")
+        source = sourcePath(local)
+        record = registerMediaFile(nextCatalog, source, local)
+        localByRemote[record["path"]] = local
+        diagrams[key] = record
+        diagramSources[key] = source
+        stagingSources.add(source)
+
     ogLocal = localOgPath(raw)
     if ogLocal is not None and ogLocal.is_file():
         ogSource = sourcePath(ogLocal)
@@ -170,6 +198,7 @@ def buildManifest(
         stagingSources.update(str(source) for source in oldPost["staging"])
     postEntry: dict[str, object] = {
         "assets": assetSources,
+        "diagrams": diagramSources,
         "og": ogRecord["source"],
         "staging": sorted(stagingSources),
     }
@@ -178,7 +207,13 @@ def buildManifest(
         stagingSources.add(cardRecord["source"])
         postEntry["staging"] = sorted(stagingSources)
     posts[mediaPostKey(postDir)] = postEntry
-    manifest: dict[str, object] = {"version": 2, "repo": HF_MEDIA_REPO, "og": ogRecord, "assets": assets}
+    manifest: dict[str, object] = {
+        "version": MEDIA_CATALOG_VERSION,
+        "repo": HF_MEDIA_REPO,
+        "og": ogRecord,
+        "assets": assets,
+        "diagrams": diagrams,
+    }
     if cardRecord is not None:
         manifest["card"] = cardRecord
     return manifest, localByRemote, nextCatalog
@@ -206,6 +241,21 @@ def applyManifest(
         oldRecord = oldAssets.get(key)
         if isinstance(oldRecord, dict) and oldRecord.get("path"):
             updated = updated.replace(mediaUrl(str(oldRecord["path"])), nextUrl)
+    diagrams = manifest.get("diagrams")
+    oldDiagrams = (
+        existing.get("diagrams") if isinstance(existing, dict) and isinstance(existing.get("diagrams"), dict) else {}
+    )
+    if isinstance(diagrams, dict):
+        for key, record in diagrams.items():
+            if not isinstance(record, dict):
+                continue
+            nextUrl = mediaUrl(str(record.get("path") or ""))
+            filename = Path(str(record.get("source") or f"{key}.svg")).name
+            updated = updated.replace(f"./assets/{filename}", nextUrl)
+            updated = updated.replace(f"assets/{filename}", nextUrl)
+            oldRecord = oldDiagrams.get(key)
+            if isinstance(oldRecord, dict) and oldRecord.get("path"):
+                updated = updated.replace(mediaUrl(str(oldRecord["path"])), nextUrl)
     og = manifest["og"]
     assert isinstance(og, dict)
     updated = re.sub(r"^ogImage:\s*.+$", f"ogImage: {mediaUrl(str(og['path']))}", updated, count=1, flags=re.M)
@@ -269,6 +319,9 @@ def verifyRemoteAssets(postDir: Path, api: HfApi | None = None) -> list[str]:
     assets = manifest.get("assets")
     if isinstance(assets, dict):
         records.extend(record for record in assets.values() if isinstance(record, dict))
+    diagrams = manifest.get("diagrams")
+    if isinstance(diagrams, dict):
+        records.extend(record for record in diagrams.values() if isinstance(record, dict))
     client = api or HfApi()
     remoteFiles: set[str] | None = None
     global _remoteFilesCache
@@ -301,7 +354,7 @@ def verifyRemoteAssets(postDir: Path, api: HfApi | None = None) -> list[str]:
 
 
 def parseArgs() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="블로그 이미지와 OG를 HF 콘텐츠 주소 객체로 발행한다.")
+    parser = argparse.ArgumentParser(description="블로그 이미지·SVG·OG를 HF 콘텐츠 주소 객체로 발행한다.")
     parser.add_argument("--post", required=True, help="발행할 글 폴더")
     parser.add_argument(
         "--dry-run",
@@ -323,8 +376,10 @@ def main() -> None:
         raise SystemExit(f"블로그 미디어 발행 실패: {exc}") from exc
     assets = manifest.get("assets")
     count = len(assets) if isinstance(assets, dict) else 0
+    diagrams = manifest.get("diagrams")
+    diagramCount = len(diagrams) if isinstance(diagrams, dict) else 0
     suffix = "계획만 확인" if args.dryRun else "HF 업로드와 중앙 카탈로그 반영 완료"
-    print(f"{postDir.name}: 본문 {count}장 + OG 1장 {suffix}")
+    print(f"{postDir.name}: 본문 이미지 {count}장 + SVG {diagramCount}개 + OG 1장 {suffix}")
 
 
 if __name__ == "__main__":

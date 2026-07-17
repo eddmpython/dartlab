@@ -179,7 +179,7 @@ HD한국조선해양(009540)은 세계에서 배를 가장 많이 만드는 회�
 
 ---
 
-![HD한국조선해양 — 세 개의 조선소가 한 지주 아래](./assets/66-hero-map.svg)
+![HD한국조선해양 — 세 개의 조선소가 한 지주 아래](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/6e/6e883ddc9127e95e56562063baa0bc0ebb79214155db295e8f293b7ca5ac39fb.svg)
 
 ## 1막: 영업이익 3.9조 사상 최대, 그런데 이익의 주인은 상장 자회사가 아니다
 
@@ -264,7 +264,7 @@ c.analysis("governance", "지배구조")
 
 ---
 
-![2017년 인적분할 타임라인 — 현대중공업이 지주·조선·중공업·전기·건설기계·로보틱스로 갈라진 날](./assets/66-split-timeline.svg)
+![2017년 인적분할 타임라인 — 현대중공업이 지주·조선·중공업·전기·건설기계·로보틱스로 갈라진 날](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ab/ab12ea0a5195dc80a9ca7e8f4891e7f3b957b537b3a8455070ebf6a1ba98aa8b.svg)
 
 ## 2막: 009540이라는 종목의 정체가 뒤바뀐 날 — 2017년 인적분할
 
@@ -336,7 +336,7 @@ c.select("BS", ["자산총계","자본총계","현금및현금성자산"])
 
 ---
 
-![매출원가율 9년 시계열 — 2021년 103.3% 정점에서 2025년 82.2%로 21%p 회복](./assets/66-cogs-ratio.svg)
+![매출원가율 9년 시계열 — 2021년 103.3% 정점에서 2025년 82.2%로 21%p 회복](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d2/d27515b3ae5ef236d68e825c8ac19667cf38e30c5a5f18fc02436faa6530f8c0.svg)
 
 ## 3막: 2021~22년 2조 적자의 정체 — 저가 수주와 강재, 그리고 환율 함정
 
@@ -423,7 +423,7 @@ c.analysis("financial", "수익성")
 
 ---
 
-![자회사 3사 매출·이익 기여도 — HD현대중공업·HD현대미포·HD현대삼호](./assets/66-subsidiary-mix.svg)
+![자회사 3사 매출·이익 기여도 — HD현대중공업·HD현대미포·HD현대삼호](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/85/851d4a48c10690255fbd73c06c7d48dc5a25623eb674047b9295724d1db18944.svg)
 
 ## 4막: 이익의 진짜 주인 — 비상장 HD현대삼호
 
@@ -492,7 +492,7 @@ c.analysis("financial", "수익성")
 
 ---
 
-![2024 금융비용 6.49조 → 세전이익 +1.82조 역전 폭포 차트](./assets/66-financial-cost-mystery.svg)
+![2024 금융비용 6.49조 → 세전이익 +1.82조 역전 폭포 차트](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/9c/9c5b951c23f4dec62624286ce85146568d19e23bf375a16ed35546e64012ee03.svg)
 
 ## 5막: 금융비용 6.49조 수수께끼 — 환율 파생이 영업이익을 삼킨 해
 
@@ -572,7 +572,7 @@ c.analysis("financial", "재무정합성")
 
 ---
 
-![지분 캐스케이드 — HD현대 35% → 지주 → 자회사 3사 → 비지배주주](./assets/66-ownership-cascade.svg)
+![지분 캐스케이드 — HD현대 35% → 지주 → 자회사 3사 → 비지배주주](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/12/129aed1c2ad5f091c98172aa1e01720947c152a24ad9507e71c3189f94a26242.svg)
 
 ## 6막: 지분 캐스케이드 — 이익이 흘러가는 4단계
 
@@ -662,7 +662,7 @@ dartlab 지배구조 엔진이 경고를 두 개 띄운다.
 
 ---
 
-![신조선가 지수 2020~2025 + HD한국조선해양 수주잔고·매출 시계열](./assets/66-backlog-cycle.svg)
+![신조선가 지수 2020~2025 + HD한국조선해양 수주잔고·매출 시계열](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/09/09c248adc5b4e16a34dfa11f06b08bb4a2193810c2b2d4c975a8744292bc5889.svg)
 
 ## 7막: 수주잔고 83조와 2026 — 세계 1위가 보는 다음 사이클
 
@@ -733,7 +733,7 @@ Clarksons Research의 신조선가 지수(2010=100 기준)는 2020년 130pt → 
 
 ---
 
-![조선 4사 2025 영업이익률·수주잔고·전략 비교](./assets/66-4peer-comparison.svg)
+![조선 4사 2025 영업이익률·수주잔고·전략 비교](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/16/16ed55c172f615027fa818234903c35c29d52792274bab12de6296d060d92cb2.svg)
 
 ## 8막: 조선 4사 — 네 가지 모양의 조선업
 
@@ -788,7 +788,7 @@ for code in ["009540","042660","010140","439260"]:
 
 ---
 
-![이 글의 판단 요약 — 이익의 주인은 네 갈래로 흐른다](./assets/66-verdict-map.svg)
+![이 글의 판단 요약 — 이익의 주인은 네 갈래로 흐른다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/31/31f6b90458ef4ab5069301d85f16e881edbe52be42ac4496afad9d18d30e857c.svg)
 
 ## 9막: 이익의 주인이 바뀌는 신호 — 2026년에 봐야 할 한 줄
 

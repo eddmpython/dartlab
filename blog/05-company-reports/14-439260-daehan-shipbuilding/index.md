@@ -162,7 +162,7 @@ c = dartlab.Company("439260")
 c.analysis("financial", "종합평가")
 ```
 
-![영업이익률 비교](./assets/14-opm-comparison.svg)
+![영업이익률 비교](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ad/ad328c7ebf9840edc9b03612adf21c62ae6210180939129bcee68aebd7dbe4f0.svg)
 
 한화오션은 잠수함을 짓는다. 군함 프리미엄이 붙는다. 그래서 영업이익률 9%. HD한국조선해양은 LNG선, VLCC, 컨테이너선까지 전 선종을 섭렵하는 세계 1위 조선소다. 영업이익률 10%. 삼성중공업은 드릴십과 FLNG에서 기술 독점에 가까운 포지션이다. 영업이익률 7%.
 
@@ -220,7 +220,7 @@ c.select("IS", ["매출액", "영업이익"], freq="Y")
 | 2024 | 10,746억 | 1,582억 | 14.72% |
 | 2025 | 12,281억 | 2,941억 | 23.95% |
 
-![턴어라운드](./assets/14-turnaround.svg)
+![턴어라운드](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/2b/2bff363d3872523869c401cb41245adcc4b8014cfbffea0de269c9d7d4a174bc.svg)
 
 영업이익 33억이라는 숫자가 의미하는 것은 명확하다. 2022년, 이 조선소는 배를 짓긴 지었지만 **남는 게 없었다**. 철판 사고, 용접공 월급 주고, 크레인 돌리면 끝이었다. 그런데 같은 조선소가, 같은 해남 땅에서, 같은 바다를 바라보면서, 3년 뒤 영업이익률 24%를 찍었다. 이건 조선소가 바뀐 게 아니다. 조선소를 **운영하는 사람**이 바뀐 것이다.
 
@@ -264,7 +264,7 @@ c.select("IS", ["매출액", "영업이익"], freq="Y")
 
 여기에 **셔틀탱커**가 추가된다. 셔틀탱커는 해양 유전(FPSO)에서 원유를 직접 받아서 육상 터미널로 운반하는 특수선이다. 주당배당금(Dynamic Positioning System, 자동위치유지장치)가 장착되어 파도 속에서도 FPSO에 접안할 수 있어야 한다. 수에즈막스보다 한 단계 더 복잡하다. 전 세계에서 셔틀탱커를 건조하는 조선소는 삼성중공업과 대한조선 정도다. 이 시장에서 대한조선은 주요 플레이어다.
 
-![수에즈막스 점유](./assets/14-suezmax-share.svg)
+![수에즈막스 점유](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ea/ea40ba0cd8211b84e25eb44fade26c2b402cdc95848b5d148e7b8c05d47bb630.svg)
 
 ### 선가 프리미엄 척당 1,000만 달러 — 글로벌 발주 5척 중 4척 수주
 
@@ -294,7 +294,7 @@ c.select("IS", ["매출액", "영업이익"], freq="Y")
 c.analysis("financial", "비용구조")
 ```
 
-![비용구조](./assets/14-cost-structure.svg)
+![비용구조](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a8/a81ba35a441f0bbf00331977f9b81e829a367cc018bc762645a8ae4a185d24fc.svg)
 
 ### 판관비율 2.26% + 1인당 매출 19억 — 업종 평균의 1/3, HD중공업의 2.4배
 
@@ -342,7 +342,7 @@ c.panel("BS", freq="Y")
 
 수출 비중도 주목할 만하다.
 
-![수출비중](./assets/14-revenue-export.svg)
+![수출비중](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c8/c89b5b9625614a23c559c98be58caf22d46f2bb52fbf51b4dde1d0aa8a88cbb1.svg)
 
 수출 **99.3%**, 내수 **0.7%**. 이 회사는 한국에 있지만 한국 시장에서 돈을 벌지 않는다. 노르웨이, 그리스, 사우디 선주들이 해남까지 와서 배를 주문한다. 수출 99%라는 건 환율에 극도로 민감하다는 뜻이기도 하지만, 동시에 **글로벌 시장에서 대체 불가능한 포지션**을 확보하고 있다는 뜻이기도 하다. 내수에 의존하지 않으니 한국 경기 침체의 영향을 거의 받지 않는다.
 
@@ -356,11 +356,11 @@ c.panel("BS", freq="Y")
 
 투자 2,000억 → 시총 3.3조. **3년 만에 16.5배.** 케이조선은 적자로 매각하면서 동시에 대한조선에서 16.5배를 만들었다. 김광호는 같은 산업에서 동시에 실패와 성공을 경험한 드문 케이스다.
 
-![IPO 가치](./assets/14-ipo-value.svg)
+![IPO 가치](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ba/ba72bd95a3ac0e9db67fdd45c53146c9b48df8dce62e42b0cc91b9ebf3276ea8.svg)
 
 수주잔고도 탄탄하다. 수에즈막스·셔틀탱커 26~30척, **약 3년치 일감**이 쌓여 있다. 조선업에서 수주잔고 3년은 "당분간 굶을 일은 없다"는 뜻이다. 여기에 2025년 **8,800TEU급 컨테이너선 2척**을 수주했다. 수에즈막스·셔틀탱커 전문이던 대한조선이 컨테이너선까지 영역을 넓히기 시작한 것이다. "탱커 명가"에서 "글로벌 중형 조선소"로의 전환을 선언한 셈이다.
 
-![타임라인](./assets/14-timeline.svg)
+![타임라인](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/3c/3ccebf5ff63e64a4fe20f9b0b038fbed5deb07fbe3d1504a78fdbfb636a961f1.svg)
 
 ### 고객 집중 85.8% + 사이클 레버리지 — 영업이익률 24%의 어두운 면
 

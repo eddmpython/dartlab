@@ -136,7 +136,7 @@ import HFDataLink from '$lib/components/blog/HFDataLink.svelte';
 
 ---
 
-![SM vs HYBE vs 카카오 — 인수한 쪽이 망하고 인수당한 쪽이 번 아이러니](./assets/53-hero-map.svg)
+![SM vs HYBE vs 카카오 — 인수한 쪽이 망하고 인수당한 쪽이 번 아이러니](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/9c/9c78810506f8c3c743a1614d52e407879ccd7d7a502ad76926bfcc600456a143.svg)
 
 ## 1막: 영업이익률 1.1% → 15.6% — SM의 5년 턴어라운드
 
@@ -158,7 +158,7 @@ c.select("IS", ["매출액","영업이익","당기순이익"])
 
 **표시: 2020년 영업이익 65억(영업이익률 1.1%). 2025년 1,830억(영업이익률 15.6%). 5년 만에 28배.**
 
-![SM 영업이익률 9년 추이 — 코로나 1.1%에서 역대 최고 15.6%](./assets/53-opm-turnaround.svg)
+![SM 영업이익률 9년 추이 — 코로나 1.1%에서 역대 최고 15.6%](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/63/63741e36fa1d80f41aa5ae306a16142a36dae9c723e6a980d1e785cd69e5fe85.svg)
 
 ### 2025년 순이익 3,594억 — 영업이익의 2배인 이유
 
@@ -190,7 +190,7 @@ SM의 영업이익률 회복은 **멀티 아티스트 전략**의 성과다. 에
 
 왜 같은 K-Pop 기획사인데 영업이익률이 8배 차이 나는가. 비용 구조를 분해하면 답이 보인다.
 
-![SM vs HYBE 비용 구조 비교 — 원가는 비슷, 판관비가 다르다](./assets/53-cost-compare.svg)
+![SM vs HYBE 비용 구조 비교 — 원가는 비슷, 판관비가 다르다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a6/a6746e0d0886acfeebe01158995669b265bb2199c39078a2c3088a4d898ed55a.svg)
 
 ### 원가율은 비슷하다 — 63% vs 65%
 
@@ -233,7 +233,7 @@ SM의 2024년 순이익은 **8억원**이다. 영업이익이 873억인데 순�
 
 왜 카카오는 SM을 사고 -1.82조를 찍었는데, SM 자체는 역대 최고인가.
 
-![카카오의 SM 인수 타임라인 — 인수한 쪽의 손실, 인수당한 쪽의 성장](./assets/53-kakao-irony.svg)
+![카카오의 SM 인수 타임라인 — 인수한 쪽의 손실, 인수당한 쪽의 성장](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/61/6128bd284df8e2c6e4004d15b15c4d6c80f8212c9086c9bc2e1a2faec29c6e7a.svg)
 
 ### 2023년 2월 — 카카오 vs HYBE 경쟁 입찰
 
@@ -374,7 +374,7 @@ SM이 매출은 가장 작지만, 영업이익률과 재무 건전성에서는 �
 
 ## 6막: SM의 다음 — 카카오 지분 재편과 아티스트 경쟁
 
-![SM엔터 투자 체크포인트 5가지](./assets/53-checklist.svg)
+![SM엔터 투자 체크포인트 5가지](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/0c/0c0ca864308cf92f788d6532acbaf4d84e5a957e4289f91d098748f89cd5f7a3.svg)
 
 ### 투자자가 봐야 할 체크포인트 5가지
 

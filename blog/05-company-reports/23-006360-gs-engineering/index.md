@@ -144,7 +144,7 @@ import HFDataLink from '$lib/components/blog/HFDataLink.svelte';
 
 그런데 GS건설은 2023년 4분기에 "한 번에" 털었다.
 
-![빅배스: 2023 Q4 일회성 비용 5,524억 집중 반영](./assets/23-bigbath.svg)
+![빅배스: 2023 Q4 일회성 비용 5,524억 집중 반영](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/43/43f4f97b2f64109f8514d6c95b73d6f89da920aa78e24b71d4812be14c078fe1.svg)
 
 "무슨 일이 있었길래 5,500억 원을 단 한 분기에 몰아넣었는가?"
 
@@ -293,7 +293,7 @@ GS건설은 이 단점을 감수하고 빅배스를 선택했다. 왜?
 
 세 번째 이유는 **비교 대상이 있었다**는 점이다. 2022년 1월 발생한 HDC현대산업개발의 화정아이파크 붕괴 이후, HDC현산은 분산 반영 전략을 택했고 3년째 완만한 회복 궤적을 그리고 있었다. GS는 그 모습을 보며 다른 카드를 선택한 것이다.
 
-![빅배스 vs 분산 반영: 3년 누적 손실은 비슷하지만 회복 속도가 다르다](./assets/23-bigbath-vs-spread.svg)
+![빅배스 vs 분산 반영: 3년 누적 손실은 비슷하지만 회복 속도가 다르다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/17/17b603babeb3a592e5226ab331292063cda87f9be223bd91ab83d5665eb1239c.svg)
 
 ### "어?" 포인트 ③: 인명피해 0인데 전면 재시공 + 빅배스?
 
@@ -331,7 +331,7 @@ GS건설은 이 단점을 감수하고 빅배스를 선택했다. 왜?
 
 인명피해의 유무가 역설적으로 위기 대응 전략의 선택지를 결정했다. 이것은 건설사 재무 분석에서 드물지만 중요한 지점이다.
 
-![HDC(분산) vs GS(집중): 회복 궤적의 차이](./assets/23-hdc-vs-gs.svg)
+![HDC(분산) vs GS(집중): 회복 궤적의 차이](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f2/f2ad14c6756805053bebe8a48eba13dd3351b581a9b0e3ef0d3d17566b9d4d73.svg)
 
 ### 수익성 회복 속도 비교
 
@@ -381,7 +381,7 @@ HDC의 전략은 단기 회복은 느리지만, 브랜드 리셋을 통해 "화�
 
 ![재건](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/e6/e60c61ece8b43ad4e8886c16b991acdbc89276f9e7db527feeaae96bf34e4a11.webp)
 
-![분기별 V자 회복](./assets/23-quarterly-recovery.svg)
+![분기별 V자 회복](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d1/d127d564fbe167620b4c64a675d32a2030c2ce6659aafb597b0c2159c821b9b5.svg)
 
 ### 2024~2025년 회복 궤적
 
@@ -402,7 +402,7 @@ HDC의 전략은 단기 회복은 느리지만, 브랜드 리셋을 통해 "화�
 
 매출 규모는 빅배스 전과 크게 다르지 않다. 영업이익률이 예전의 5~6% 수준을 완전히 회복한 것도 아니다. 그러나 **-2.9%(2023) → +2.2%(2024) → +5.0%(2025 3Q 누적)**이라는 기울기 자체가 시장에 신호를 줬다.
 
-![건설사 4사 비교](./assets/23-construction-comparison.svg)
+![건설사 4사 비교](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/9a/9a3efd47f10ba2bb2210435df79dc366c68d3edf5af434d2288168163fdef93a.svg)
 
 ### 경쟁사 상황이 회복을 도왔다
 

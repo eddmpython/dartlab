@@ -136,7 +136,7 @@ Salesforce를 그냥 "AI CRM 회사"라고 부르면 너무 쉽다. 지금 투�
 
 사람들이 Salesforce에서 정말 궁금해할 장면은 여기다. **이 회사는 매출이 커져서 이익이 난 회사가 아니라, 매출이 커진 뒤 비용을 접어서 이익이 난 회사다.** 2024년부터 판관비율이 내려가고, 2025년에 영업이익률이 20.1%까지 오른다. 그래서 이 글은 AI 제품 발표가 아니라 손익계산서의 모양을 본다. 매출 3배 뒤에, 왜 하필 지금 마진이 열렸는가.
 
-![2019~2023년 낮은 마진 성장기와 2024~2025년 이익률 리프트를 한 화면에 압축한 Salesforce 손익 지도](./assets/155-profit-lift-map.svg)
+![2019~2023년 낮은 마진 성장기와 2024~2025년 이익률 리프트를 한 화면에 압축한 Salesforce 손익 지도](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/2c/2c0549950e5553aafc922d9bede011104714e94622e154c90f285da280bff6d6.svg)
 
 ---
 
@@ -173,7 +173,7 @@ cost = c.analysis("비용구조")["costBreakdown"]["history"]
 
 ![Salesforce의 제품은 고객 파이프라인과 영업 워크플로를 잡는 소프트웨어다. 낮은 마진의 원인은 제품 원가보다 이 워크플로를 팔고 유지하는 비용이었다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ac/ac18f0c07e9aaee004a753073580264cd236c2bb642125e2c3d329acbf75c6e4.webp)
 
-![2023년과 2025년의 비용 구조를 비교하면, 이익률 반전의 본체가 원가가 아니라 판관비율 개선임이 드러난다](./assets/155-cost-leverage.svg)
+![2023년과 2025년의 비용 구조를 비교하면, 이익률 반전의 본체가 원가가 아니라 판관비율 개선임이 드러난다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f0/f024f9a14c28810def02c32b09db6b6ddd552630025493c524492caec639d2a4.svg)
 
 2025년에는 모양이 달라진다. 매출원가율은 22.3%로 내려가고, 판관비율은 34.6%로 내려간다. 영업비용률은 2023년 69.8%에서 2025년 56.9%로 12.9%포인트 낮아졌다. 영업이익률은 3.3%에서 20.1%로 올라왔다. 이건 제품이 갑자기 완전히 달라졌다기보다, 조직 비용과 영업 비용의 기준선이 내려간 사건이다.
 
@@ -189,7 +189,7 @@ dartlab의 수익성 분해도 같은 결론을 낸다. 2024년 영업이익률 
 
 이 장면에서 조심해야 할 것이 있다. Salesforce는 2020~2021년 Tableau와 Slack 같은 대형 인수를 거쳤고, Slack 인수는 2021년 7월 완료됐다. Salesforce가 2020년 발표한 조건 기준 Slack의 기업가치는 약 27.7B였다. 하지만 이 글은 Slack을 영업이익률 반전의 단일 원인으로 쓰지 않는다. 인수는 몸집과 비용 구조를 바꾼 외부 맥락이고, dartlab이 검증하는 것은 손익계산서에 찍힌 결과다.
 
-![Slack 인수 이후 커진 몸집은 2022~2023년 낮은 마진 구간을 거쳤고, 2024~2025년 손익에서 비용 소화가 보이기 시작했다](./assets/155-acquisition-digestion.svg)
+![Slack 인수 이후 커진 몸집은 2022~2023년 낮은 마진 구간을 거쳤고, 2024~2025년 손익에서 비용 소화가 보이기 시작했다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ed/ed306bea90b59ebe5f16aba3327d164b71d67da23e5b176e824633966945474a.svg)
 
 2023년의 낮은 영업이익률을 "나쁜 회사"로 읽는 것도 틀리고, 2025년의 20% 영업이익률을 "완성"으로 읽는 것도 빠르다. 정확한 표현은 이렇다. **Salesforce는 대형 인수와 성장 비용을 지나, 2024년부터 비용 기준선을 낮추는 국면에 들어갔다.** 지금의 질문은 성장률이 몇 %냐보다 이 비용 기준선이 유지되느냐다.
 
@@ -207,7 +207,7 @@ quality = c.analysis("이익품질")["accrualAnalysis"]["history"]
 
 이건 SaaS 모델의 중요한 장점이다. 고객 계약과 청구 구조 때문에 회계상 이익보다 현금이 먼저 들어오는 구간이 생긴다. 물론 모든 OCF 초과가 무조건 좋은 것은 아니다. 선수금, 청구 타이밍, 매출채권 변화, 계약 구조를 같이 봐야 한다. 그래도 Salesforce의 최근 전환이 단순 회계상 이익 부풀리기가 아니라 현금으로도 따라오고 있다는 점은 강하다.
 
-![2024년과 2025년 모두 영업현금흐름이 순이익을 크게 웃돌며, 낮은 CAPEX 비율까지 더해 현금화 구조가 선명하다](./assets/155-cash-conversion.svg)
+![2024년과 2025년 모두 영업현금흐름이 순이익을 크게 웃돌며, 낮은 CAPEX 비율까지 더해 현금화 구조가 선명하다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/89/8912e5fe82a019b0491f3b67ebb0b8725e6148324e0ce2044e78197136463c7b.svg)
 
 자유현금흐름도 같은 말을 한다. 2025년 영업현금흐름 15.00B에서 CAPEX 0.59B를 빼면 자유현금흐름은 14.40B다. CAPEX/매출은 1.43%다. 제조업이나 데이터센터 운영 기업처럼 대규모 물리 투자가 매출을 따라붙는 구조가 아니다. 매출이 커지고 비용 비율이 낮아지면 현금이 빠르게 쌓이는 구조다.
 
@@ -290,7 +290,7 @@ capital["fcfUsage"]["history"][1]
 
 Salesforce가 예전과 달라진 것은 맞다. 2023년까지의 회사는 "나중에 벌겠다"는 성장주에 가까웠다. 지금은 "벌고, 사고, 배당한다"는 품질주 문법을 쓴다. 하지만 품질주는 한 해의 현금으로 완성되지 않는다. 품질주는 반복성이다. 20% GAAP 마진, 14B 이상의 자유현금흐름, SBC를 감당한 뒤에도 줄어드는 주식 수, RPO가 매출로 번역되는 흐름이 2~3년 이어져야 한다.
 
-![다음 분기부터 Salesforce를 볼 때는 AI 발표보다 영업이익률, 판관비율, OCF 전환율, RPO, 매출채권, 주주환원을 함께 봐야 한다](./assets/155-checkpoints.svg)
+![다음 분기부터 Salesforce를 볼 때는 AI 발표보다 영업이익률, 판관비율, OCF 전환율, RPO, 매출채권, 주주환원을 함께 봐야 한다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/05/05ff22c6f5677104ef93a71efa11a0a3c767d2693e42bebfb4f8aeffffa471db.svg)
 
 ---
 

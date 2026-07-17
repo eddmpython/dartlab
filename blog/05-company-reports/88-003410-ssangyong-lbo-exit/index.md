@@ -140,7 +140,7 @@ carousel:
 
 이 글은 8 막으로 그 답을 따라간다 — 역합병 결정 (2025-10-27) → 한앤컴퍼니 입성 (2016-04) → 9 년 사이클의 모양 → 자진상폐 1 단계 (2024-02~07) → 시멘트 사이클 추락 (2023~2025) → 부실 4 신호 + 자본 재구성 → 산업 지형 재편 (한일 합병 + ESG 후퇴) → 역합병의 의미. 본문 시작은 1 막부터.
 
-![한앤컴퍼니 9 년 사이클 — 4 단 출구의 시간표](./assets/01-9year-pe-timeline.svg)
+![한앤컴퍼니 9 년 사이클 — 4 단 출구의 시간표](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/8d/8d6d1abc760bf0f6c2d7e9286315fe0fe4553fc17a58e26fd6fb9a027c87e31a.svg)
 
 > **dartlab AI 종합의견**
 >
@@ -323,7 +323,7 @@ LP 가 회수를 재촉하는데 본업 사이클이 응답하지 않으면, 운
 
 ### 왜 내수 -20% / 수출 +35% 의 비대칭이 발생했나
 
-![매출 -20% 의 4 갈래 — 시멘트 내수 -20% / 수출 +35% / 환경 +5% / 기타 -56%](./assets/02-revenue-decomposition.svg)
+![매출 -20% 의 4 갈래 — 시멘트 내수 -20% / 수출 +35% / 환경 +5% / 기타 -56%](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/96/960bc96b688e1993451588fe5ed5deae59cadb9f9046c028d90e9e78d9cdcaed.svg)
 
 | 사업부 매출 | 2023 | 2024 | 2025 | 변화 (2 년) |
 |---|---|---|---|---|
@@ -339,7 +339,7 @@ LP 가 회수를 재촉하는데 본업 사이클이 응답하지 않으면, 운
 
 ### 왜 한국 시멘트 출하량은 1991 년 이래 최저인가
 
-![한국 시멘트 출하량 — 1991 년 이래 34 년 최저](./assets/05-cement-cycle-34year-low.svg)
+![한국 시멘트 출하량 — 1991 년 이래 34 년 최저](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/57/578fea4182b7eb23e5730c788cf6fa7df4861cc1566d4998cf4c631749fb1207.svg)
 
 3,650 만 톤이라는 2025 년 출하량은 한국 시멘트 산업의 시계를 34 년 되감은 자리다. 1991 년은 1 기 신도시 (분당·일산·평촌·산본·중동) 건설이 한창이던 해다. 그 이후 한국 건설 사이클은 IMF (1998), 글로벌 금융위기 (2008), 코로나 (2020) 같은 굴곡을 거치면서도 시멘트 출하량을 4,000~5,500 만 톤대에 유지해 왔다. 2025 년 3,650 만 톤은 그 하단도 깬 숫자다.
 
@@ -379,7 +379,7 @@ PF (Project Financing) 위기의 골자는 토지 매입 → 인허가 → 시�
 
 ### 왜 Altman Z 0.64 와 부채비율 102% 가 동시에 나오나
 
-![2025 부실 4 신호 동시 점등](./assets/03-distress-4-signals.svg)
+![2025 부실 4 신호 동시 점등](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b9/b950cffb48b71f73d99bb978c6e756f974b83ab02397e39713b9fbd440ce29f9.svg)
 
 | 부실 지표 (2025 FY) | 값 | 임계 | 판정 |
 |---|---|---|---|
@@ -400,7 +400,7 @@ Springate S 가 -0.18 로 음수까지 내려간 이유는 비슷하다. EBIT / 
 
 ### 왜 1 년 만에 부채비율을 641% 에서 102% 로 줄였나
 
-![부채비율 641% → 102% — 1 년 만의 합병 회계 충격](./assets/04-balance-sheet-restructure.svg)
+![부채비율 641% → 102% — 1 년 만의 합병 회계 충격](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ea/ea0727eb2d6a09e4f7aaef749394b7eaf5c28b5a9260f565c4efec60a96d5723.svg)
 
 | 자본·BS 항목 (억원) | 2023 말 | 2024 말 | 2025 말 |
 |---|---|---|---|

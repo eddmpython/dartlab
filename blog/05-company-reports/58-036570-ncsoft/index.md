@@ -141,7 +141,7 @@ carousel:
 
 이 글은 그 이동의 흔적을 **시간선 다큐** + **해부** 구조로 추적한다. 8막 + 프롤로그. 6막 템플릿은 이번엔 안 맞는다 — 회사가 28년 걸쳐 변해온 이야기라서 시간을 따라가야 한다.
 
-![엔씨소프트 2024년 첫 적자의 장면 — 창사 28년 기록이 깨진 날](./assets/058-first-loss-scene.svg)
+![엔씨소프트 2024년 첫 적자의 장면 — 창사 28년 기록이 깨진 날](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/7d/7ddb9e1dcc4b1abc71a402a301816ff716839668b7b03480f72601b2d222dc06.svg)
 
 ---
 
@@ -180,7 +180,7 @@ carousel:
 
 28년간 한 IP에 의존한 회사의 장점과 단점이 동시에 드러난다. 장점은 현금 기계. 단점은 **신작 실패 시 대체할 게 없다**는 것. 2023년 말 출시한 TL(쓰론앤리버티)이 그 약점을 처음으로 노출시켰다. 다음 막은 리니지라는 게임의 경제학을 해부한다 — 왜 이 한 게임이 28년간 그렇게 많은 돈을 만들었는가.
 
-![엔씨소프트 리니지 시리즈 연대기 1998~2025 — 게임 하나가 만든 28년](./assets/058-lineage-timeline.svg)
+![엔씨소프트 리니지 시리즈 연대기 1998~2025 — 게임 하나가 만든 28년](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/09/09bde3a69492203096796f0c77cc34b4bf8021af5f0b6ee41bb7dd81368bd08d.svg)
 
 ![한밤 PC방에서 리니지류 MMORPG를 플레이하는 한국 게이머의 화면 — 28년 지속된 유저 시나리오](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/db/dba5203a269910fde52fb227391fbb0a81db990cd490c06e6b25097e46fbf5c4.webp)
 
@@ -294,7 +294,7 @@ c.select("CF", ["영업활동현금흐름","유형자산의 취득","자기주�
 
 2020~2022년 엔씨는 **판교 사옥 + 자사주 + 현금 축적**에 7조 이상을 썼다. 같은 시기에 TL(쓰론앤리버티)이라는 차세대 대작도 개발 중이었다. 5년 개발, 누적 개발비 약 2,000억+ 추정. 4막은 그 신작이 2023년 12월에 출시되고 어떤 일이 벌어졌는지를 본다.
 
-![2020~2022 판교 R&D 센터 5조 + 자사주 2,700억 + 현금 축적 1.26조의 3년](./assets/058-cash-accumulation.svg)
+![2020~2022 판교 R&D 센터 5조 + 자사주 2,700억 + 현금 축적 1.26조의 3년](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d0/d064eb4ed8a7577fd3ec8cdb434bbaaff1296f2fe34fc8402105c356b99c7f01.svg)
 
 ![경기도 성남시 판교테크노밸리의 엔씨소프트 R&D 센터 — 5조 사옥 프로젝트 2020~2024](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/06/06022ff7172a73eb5257a645e495452042d3e559aef56dc2c4b949dd8a0085d7.webp)
 
@@ -386,7 +386,7 @@ c.select("ratios", ["영업이익률 (%)"])
 
 5막은 본업(영업)의 이야기였다. 본업만 보면 엔씨는 **매출 41% 하락 + 첫 적자를 구조조정으로 간신히 흑자 복귀**한 회사다. 하지만 순이익은 전혀 다른 그림이다. **2025 순이익 3,474억**은 영업이익 161억의 21배. 이 21배의 정체를 6막에서 해부한다.
 
-![2024년 적자 -1,092억 → 2025년 흑자 +161억 — 판관비 1,965억 절감이 만든 차이](./assets/058-opex-cut.svg)
+![2024년 적자 -1,092억 → 2025년 흑자 +161억 — 판관비 1,965억 절감이 만든 차이](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/20/20a35f1e479a5d6baffeb9355e53fea2f3243179f5bf3d5c92f3fe4cb4caa3c1.svg)
 
 ---
 
@@ -438,7 +438,7 @@ prof["marginWaterfall"]["history"][0]  # 2025년
 
 엔씨의 "본업 약화 + 이자수익 의존" 구조는 **한국 게임 빅4 공통 현상**의 일부다. 넥슨·넷마블·[크래프톤 (#11)](/blog/259960-krafton)도 각자의 방식으로 현금 의존도가 높아지고 있다. 같은 "IP 기반 사업이 현금 기계로 전환되는" 구조를 [SM엔터 (#53)](/blog/041510-sm-entertainment)·[하이브 (#39)](/blog/352820-hybe) 엔터 3사 대조에서도 볼 수 있다. 7막에서 그 비교를 본다.
 
-![2025년 영업이익 161억 → 순이익 3,474억 재구성 — 쌓아둔 현금이 이자로 돌아오는 흐름](./assets/058-earnings-waterfall.svg)
+![2025년 영업이익 161억 → 순이익 3,474억 재구성 — 쌓아둔 현금이 이자로 돌아오는 흐름](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/db/db9942d50521740351b28cc0ce19641478649b6f97c10dee5bd2426c46cc6f2b.svg)
 
 ---
 
@@ -483,7 +483,7 @@ dartlab.scan("profitability")
 
 7막까지의 모든 숫자가 하나의 질문으로 수렴한다. **엔씨소프트는 아직 게임회사인가, 아니면 금융투자회사가 되어가고 있는가?** 8막은 이 질문에 답한다.
 
-![한국 게임 빅4 영업이익률 5년 비교 — 엔씨가 1위에서 3위로 내려온 경로](./assets/058-gaming-big4.svg)
+![한국 게임 빅4 영업이익률 5년 비교 — 엔씨가 1위에서 3위로 내려온 경로](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/01/016ceeb6ec71e76037cd4e6e2bb61eeaa1f2d39c7751651c41338cf9c8b02b9d.svg)
 
 ---
 
@@ -519,7 +519,7 @@ dartlab.scan("profitability")
 
 다음 리니지가 나올 수도 있다. 혹은 안 나올 수도 있다. 2026~2028년의 관찰 포인트 4가지가 그 답을 알려줄 것이다. 지금까지 확정된 건 **엔씨가 28년간 게임 하나를 지켰고, 그 대가로 3조를 쌓았다**는 두 문장이다.
 
-![2026~2028 엔씨 관찰 4가지 — 신작·주주환원·M&A·구조조정](./assets/058-checkpoints.svg)
+![2026~2028 엔씨 관찰 4가지 — 신작·주주환원·M&A·구조조정](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/5c/5c75a2728f0bedc9548770f7976bd911f8933c0cc886a26df883f0d8727ccdc6.svg)
 
 ---
 

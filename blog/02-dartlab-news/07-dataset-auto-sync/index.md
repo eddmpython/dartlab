@@ -22,7 +22,7 @@ keywords:
 
 사용자 입장에서 이 모든 게 **`c.panel("IS")` 한 줄 뒤에 숨어 있다.** 호출하는 순간 dartlab이 로컬 캐시를 확인하고, 없으면 HF에서 해당 종목 parquet 2MB만 선별적으로 끌어온다. 12시간 지났으면 백그라운드에서 새 버전을 비교하고, 변경된 종목만 교체한다.
 
-![dartlab 데이터 흐름 — DART/EDGAR에서 Actions를 거쳐 HuggingFace, 사용자 컴퓨터까지](./assets/144-dataset-flow.svg)
+![dartlab 데이터 흐름 — DART/EDGAR에서 Actions를 거쳐 HuggingFace, 사용자 컴퓨터까지](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/6f/6ff0127b191ddd8a2b2f3b3441c66fa8ab52408a482914e78763700c61ace2e8.svg)
 
 ---
 
@@ -35,7 +35,7 @@ keywords:
 - **KST 03:00** — 전날 저녁까지 올라온 공시를 캡처한다. DART 공시는 장 마감 후에 몰리므로 새벽 수집이 가장 촘촘하다.
 - **KST 15:00** — 당일 오전 올라온 공시를 반영한다. 오후에 분석을 시작하는 사용자도 당일 공시를 놓치지 않는다.
 
-![매일 · 매월 갱신 타임라인 — 03시 Data Sync, 04시 Search Delta, 06시 EDGAR, 15시 Data Sync, 매월 1일 Search Index Main](./assets/144-daily-timeline.svg)
+![매일 · 매월 갱신 타임라인 — 03시 Data Sync, 04시 Search Delta, 06시 EDGAR, 15시 Data Sync, 매월 1일 Search Index Main](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/37/374bf9192faa468ff4be5f9226ea9e42318cafcddba04416fcf9c63941d9264c.svg)
 
 이 워크플로우는 `dataSync.yml`이라는 한 파일에서 관리된다. 핵심은 **88분기 차집합을 매번 하지 않는다**는 것. list.json으로 "최근 60일 동안 새로 올라온 공시"만 조회하고, 그중 로컬에 없는 종목·분기만 수집한다. 지난 실행이 API 한도에 걸려 잘린 요청은 `pending.txt`에 남겨두고 다음 실행에서 우선 회수한다. 실패 없이 복구되는 구조다.
 
@@ -45,7 +45,7 @@ keywords:
 
 모든 데이터는 [HuggingFace `eddmpython/dartlab-data`](https://huggingface.co/datasets/eddmpython/dartlab-data) 한 곳에 있다. GitHub Releases 업로드는 2026-04-08에 폐지됐다. **HF 단일 소스**가 더 단순하고, 부분 다운로드가 가능하기 때문이다.
 
-![카테고리별 내용과 갱신 주기 — docs · finance · report · scan · edgar · stemIndex](./assets/144-categories.svg)
+![카테고리별 내용과 갱신 주기 — docs · finance · report · scan · edgar · stemIndex](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/2e/2e144b8506c4931f8139955a70b516af2e74491d9fa76536c390ddf0ccd431af.svg)
 
 각 카테고리는 **사용자가 부르는 함수**와 1:1로 매핑돼 있다. 사용자는 카테고리 이름을 외울 필요가 없다.
 
@@ -61,7 +61,7 @@ keywords:
 
 DART API는 누구에게나 열려 있다. 키를 발급받고 requests를 몇 줄 쓰면 list.json을 긁어 올 수 있다. 그런데 그 한 줄이 분석의 시작이 아니라 **분석 전의 선행 비용**으로 부풀어 오르는 것이 함정이다.
 
-![직접 수집했을 때 vs dartlab을 쓸 때 — 선행 비용의 차이](./assets/144-before-after.svg)
+![직접 수집했을 때 vs dartlab을 쓸 때 — 선행 비용의 차이](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d3/d396f9275a8d0ad89be1f2ba1fb2b1f98343875151f8ecaa0b139a7138356b9b.svg)
 
 직접 한다면 — API 키 발급, 레이트 리밋 튕김 처리, 2,700 종목 × 88 분기 × 여러 apiType을 빠짐없이 회수, 사업보고서 HTML을 topic별로 쪼개는 파서, 회사마다 다르게 쓰는 "매출액 / 영업수익 / 매출" 을 하나의 계정으로 매핑하는 사전, 이걸 매일 돌리는 cron, 에러 알림, 스토리지 —. 각 단계가 분석이 아니라 인프라다.
 
@@ -79,7 +79,7 @@ dartlab은 그 인프라를 깃허브 리포에 공개된 워크플로우로 옮
 
 **③ 12시간 지난 캐시면 백그라운드 비교.** 오래된 파일이면 HF의 파일 해시와 비교해서 변경이 있을 때만 다시 받는다. 7일 이상 stale이면 `data:stale_warning` 이벤트가 한 번 뜨고, 분석은 그대로 진행된다. "오래됐다는 사실을 알고 쓰는 것"과 "오래된 줄 모르고 쓰는 것"을 구분한다.
 
-![사용자가 실제로 해야 하는 세 단계 — 설치 · 함수 호출 · (선택) 로컬 수집](./assets/144-user-checklist.svg)
+![사용자가 실제로 해야 하는 세 단계 — 설치 · 함수 호출 · (선택) 로컬 수집](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/3f/3f56b7d7234fdda9c76fe6d81c27aa62e6ffdda6e51373f0aef8a7a2797eecf8.svg)
 
 종목 하나를 분석하는 사용자는 별도 준비가 필요 없다. 전종목 프리빌드나 대량 갱신은 `dartlab collect --scan all`, `dartlab sync --all --no-upload` 같은 운영/로컬 수집 명령이 맡고, 일반 분석 경로는 필요한 parquet만 자동으로 당겨온다.
 

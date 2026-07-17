@@ -18,7 +18,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 이 글은 감사보수와 비감사보수를 `감사 범위와 복잡도 확인 -> 전년 대비 변화 확인 -> 비감사보수 성격 분해 -> 감사위원회·정정공시와 연결 -> 같은 감사인이 너무 많은 역할을 동시에 맡는지 점검` 순서로 읽는 방법을 정리한다. 기본 해석은 [감사보고서와 KAM, 무엇을 먼저 봐야 하나](/blog/audit-report-and-kam), 통제 구조는 [내부회계관리제도와 감사위원회 활동은 어디서 위험 신호가 보이나](/blog/internal-controls-and-audit-committee), 신뢰도 훼손은 [감사 전 재무제표 정정과 재감사는 어디서 위험 신호가 보이나](/blog/restatement-before-audit-and-reaudit-signals)와 같이 보면 좋다.
 
-![감사보수와 비감사보수를 어떤 순서로 읽어야 하는지 정리한 구조도](./assets/064-reading-flow.svg)
+![감사보수와 비감사보수를 어떤 순서로 읽어야 하는지 정리한 구조도](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/23/2360642d7af58e42813fa4064b4f62d75dd8a5cc38b62b442154cfb8fcabf75d.svg)
 
 ---
 
@@ -50,7 +50,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 비감사보수는 반드시 성격을 적어야 한다. 세무 신고 지원, 내부통제 자문, 가치평가, M&A 관련 자문은 의미가 다르다. 특히 회사가 동시에 자금조달, 구조조정, 감자, 합병, 자산 매각 같은 큰 이벤트를 진행 중이라면 감사인과 비감사 용역의 관계는 더 민감하게 읽어야 한다. 이때 감자와 주식병합 공시는 무엇을 먼저 봐야 하나, 합병·분할 공시는 어디를 먼저 봐야 하나 같은 글과의 연결이 생긴다.
 
-![감사보수와 비감사보수 해석에 필요한 증거 레이어를 정리한 도식](./assets/064-evidence-layer.svg)
+![감사보수와 비감사보수 해석에 필요한 증거 레이어를 정리한 도식](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/1e/1e586b0bc84f868fa386d5ae7bbf61faba2f0bf50be26a94e53a81f6f848183c.svg)
 
 ---
 
@@ -58,7 +58,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 가장 실용적인 질문은 이것이다. `이 보수 구조는 감사 품질을 뒷받침하는가, 아니면 독립성과 긴장감을 약하게 만드는가`.
 
-![감사보수와 비감사보수를 감사 품질 보강, 단순 운영, 독립성 경계 신호로 가르는 구조도](./assets/064-decision-tree.svg)
+![감사보수와 비감사보수를 감사 품질 보강, 단순 운영, 독립성 경계 신호로 가르는 구조도](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/90/9087706edc41f538277c451a132ae2b286af531a05a9651860c230c1e2054f59.svg)
 
 감사 품질 보강에 가까운 경우는 회사가 복잡해진 이유와 감사보수 증가가 연결되고, 감사시간 증가나 감사 범위 확대가 같이 읽힌다. 이때 비감사보수는 상대적으로 작거나 성격이 제한적이다. 단순 운영에 가까운 경우는 감사보수와 시간이 안정적이고 비감사보수도 보조적이다.
 
@@ -68,7 +68,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 ## 업종과 맥락에 따라 달라지는 기준
 
-![감사보수와 비감사보수에서 상대적으로 건강한 경우와 더 조심해야 하는 경우를 비교한 매트릭스](./assets/064-good-vs-risky-matrix.svg)
+![감사보수와 비감사보수에서 상대적으로 건강한 경우와 더 조심해야 하는 경우를 비교한 매트릭스](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/0b/0b79759906890a32171879dc01d511ed04340dd1a85415328a8a21fba50e4ebc.svg)
 
 | 관찰 포인트 | 상대적으로 건강한 경우 | 더 조심해야 하는 경우 |
 | --- | --- | --- |
@@ -121,7 +121,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 ## 다음 분기 비교에서 다시 확인할 것
 
-![감사보수와 비감사보수를 읽은 뒤 다음 보고서에서 다시 봐야 할 질문을 정리한 보드](./assets/064-watchboard.svg)
+![감사보수와 비감사보수를 읽은 뒤 다음 보고서에서 다시 봐야 할 질문을 정리한 보드](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/8e/8e1d8e41d611d0c45a181ac72d6452d7788ede6b65da07c14d64b1d5b4cfe502.svg)
 
 | 이번에 본 것 | 다음에 다시 볼 것 |
 | --- | --- |

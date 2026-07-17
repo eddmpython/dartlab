@@ -18,7 +18,7 @@ keywords:
 
 **삼성전자의 종목코드는 005930이다.** 이 여섯 자리를 dartlab에 넣으면 재무제표, 사업보고서 원문, 비율 50개, K-IFRS 주석, 기간간 변경 이력까지 전부 꺼낼 수 있다. 추가 import 없다. API 키 없다. 종목코드 하나면 끝이다.
 
-![종목코드 하나로 열리는 것들 — 재무제표, 비율, 공시 원문, 주석, 변경 이력](./assets/130-company-hero-map.svg)
+![종목코드 하나로 열리는 것들 — 재무제표, 비율, 공시 원문, 주석, 변경 이력](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/cc/cc0e1c4ef3a15b68817e3137236baef588401f785d4b92c4a738a080761b9345.svg)
 
 ---
 
@@ -64,7 +64,7 @@ c.panel("CF")   # 현금흐름표 — 영업/투자/재무 현금흐름
 
 포괄손익계산서(`c.panel("CIS")`)와 자본변동표(`c.panel("SCE")`)도 같은 방식으로 접근한다.
 
-![재무제표 3줄 — IS, BS, CF가 각각 계정 × 기간 테이블로](./assets/130-financial-statements.svg)
+![재무제표 3줄 — IS, BS, CF가 각각 계정 × 기간 테이블로](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/71/71802375319865df750a1a7580ec98f1ca0193d2db5564274838e5aa6e66d9b9.svg)
 
 ---
 
@@ -124,7 +124,7 @@ c.select("BS", ["자산총계", "부채총계"])          # 자산과 부채만
 c.select("IS", ["매출액"]).chart()               # 매출 추이 차트
 ```
 
-![show와 select — 전체를 보거나, 원하는 행만 뽑거나](./assets/130-show-select-flow.svg)
+![show와 select — 전체를 보거나, 원하는 행만 뽑거나](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/43/4341a64278f07c1f38fcd2672e0970dbb49869a189ec5257c04c7ec358e944bc.svg)
 
 한글과 영문 모두 된다. `select("IS", ["매출액"])`과 `select("IS", ["sales"])`는 같은 결과다. 미국 기업에서 `select("IS", ["매출액"])`을 쓰면 자동으로 해당 영문 계정을 찾는다.
 
@@ -179,7 +179,7 @@ c.trace("businessOverview") # → docs (사업보고서 원문)
 
 숫자가 이상할 때, 출처를 확인하면 원인을 찾기 쉽다.
 
-![Company 데이터 소스 — finance, docs, report 우선순위](./assets/130-source-priority.svg)
+![Company 데이터 소스 — finance, docs, report 우선순위](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d4/d46ebc843e8a99ff7a088e801c5a70b63bee21ca9412d7fb93a4740abc83a663.svg)
 
 ---
 

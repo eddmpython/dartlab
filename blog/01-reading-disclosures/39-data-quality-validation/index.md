@@ -25,7 +25,7 @@ XBRL을 파싱하고, 계정을 매핑하고, 분기별로 정규화해서 parqu
 
 이 글은 재무 데이터 검증 파이프라인의 설계 원칙과 실전 전략을 다룬다. dartlab이 2,700개 종목의 재무제표를 수집하면서 실제로 적용하는 검증 체계를 바탕으로, 어디서 무엇을 어떻게 검사해야 데이터를 믿고 쓸 수 있는지를 정리한다.
 
-![데이터 품질 검증 3계층 구조](./assets/108-three-layer-validation.svg)
+![데이터 품질 검증 3계층 구조](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d3/d3769b746921368333d30c43b176d51c3365ac49acd9ab957b5bb634ea530143.svg)
 
 ---
 
@@ -107,7 +107,7 @@ if total_assets and total_liabilities and total_equity:
 
 이 레이어가 강력한 이유는, **잘못된 매핑이 우연히 항등식을 만족시킬 확률이 거의 0**이기 때문이다. 자산총계가 10조인 회사에서 부채와 자본의 합이 정확히 10조가 되려면 매핑이 올바르거나, 아니면 기적적으로 우연이 맞아야 한다.
 
-![BS 항등식 검증이 오매핑을 잡아내는 과정](./assets/108-bs-identity-check.svg)
+![BS 항등식 검증이 오매핑을 잡아내는 과정](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/92/9277ff2341d562b5cd43da0fb1039458a77e99ba462e7eefdf2841bbdf8f1b5a.svg)
 
 ### Layer 3: 통계/비즈니스 로직 검증 (Statistical & Business Logic Checks)
 
@@ -210,7 +210,7 @@ for account in key_accounts:
 | 영업활동현금흐름 | 허용 | 유출 전환 가능 |
 | 부채총계 | 불가 | 항상 양수 (0 가능) |
 
-![시계열 연속성 검증 — 정상 vs 이상 패턴](./assets/108-timeseries-continuity.svg)
+![시계열 연속성 검증 — 정상 vs 이상 패턴](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/03/03e02786a25f48d37f2e4693523a5ce7366111322c474e45d9551ea556d5a9b2.svg)
 
 ---
 
@@ -292,7 +292,7 @@ if industry == "bank":
 
 R&D 단계 회사는 매출이 0이거나 극히 적을 수 있다. 판관비 중 연구개발비 비중이 매우 높다. 이 회사에 "매출 대비 판관비 비율이 비정상"이라고 플래그를 달면 오탐이다.
 
-![업종별 검증 규칙이 달라지는 이유](./assets/108-industry-specific-rules.svg)
+![업종별 검증 규칙이 달라지는 이유](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/88/8884672df096be678d556c7219cde2d1946a4916fdbd0ada5130f2d742ec9a91.svg)
 
 ### 업종별 검증 비교 체크리스트
 
@@ -385,7 +385,7 @@ Z-Score는 정규분포를 가정하지만 재무 지표는 대부분 비대칭 
 - 심각도별 분류: ERROR / WARNING / INFO
 - 종목별, 계정별, 기간별 피벗 테이블 생성
 
-![검증 파이프라인 전체 흐름과 의사결정 분기](./assets/108-validation-pipeline-flow.svg)
+![검증 파이프라인 전체 흐름과 의사결정 분기](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/9e/9e70d4ce0fda9406c94ac39792e87e0c4007c8de079efea9088039dad5ba5680.svg)
 
 ### 파이프라인 의사결정: Flag vs Reject vs Auto-Correct
 

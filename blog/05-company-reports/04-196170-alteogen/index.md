@@ -151,7 +151,7 @@ import HFDataLink from '$lib/components/blog/HFDataLink.svelte';
 
 ---
 
-![알테오젠 영업이익 9년 — 8년 적자에서 +1,069억까지](./assets/04-op-9year-line.svg)
+![알테오젠 영업이익 9년 — 8년 적자에서 +1,069억까지](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/aa/aa8b0a525649e9cccd676483fa0aade913be2d805f10f17f77e97fac57e35fef.svg)
 
 ## 핵심 한 줄
 
@@ -187,7 +187,7 @@ c.analysis("financial", "수익성")             # marginWaterfall, roicTree
 
 2008년부터 2019년까지 11년 동안 알테오젠은 매년 영업적자였다. 매출은 2016년 68억, 2017년 125억, 2018년 137억, 2019년 292억. 회사는 R&D 회사였고, 매출이라곤 라이선스 계약금 일부와 소규모 위탁개발 정도뿐이었다. 손익만 보면 평범한 한국 바이오텍 한 곳이었다.
 
-![박순재의 17년 시간선](./assets/04-park-17year-timeline.svg)
+![박순재의 17년 시간선](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c9/c967ddf74fef82539fbc794f50a96cbc05899a381dfa8cfa552937c39b947c6f.svg)
 
 ---
 
@@ -246,7 +246,7 @@ c.select("IS", ["매출액","매출원가","매출총이익","판매비와관리
 
 2022년 12월~2023년, 머크는 키트루다 SC의 글로벌 임상 3상을 본격 가동했다. 시장은 이 임상이 알테오젠 ALT-B4를 쓰고 있다는 사실을 추정만 할 수 있었다. 알테오젠도 머크도 명시적으로 인정하지 않았다. 머크가 명시적으로 발표한 건 한 줄이었다. "키트루다 SC 임상에 사용 중인 히알루로니다제는 한 회사의 기술이다."
 
-![키트루다 IV vs SC — 알테오젠 ALT-B4가 만든 차이](./assets/04-iv-vs-sc.svg)
+![키트루다 IV vs SC — 알테오젠 ALT-B4가 만든 차이](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ea/ea9e1bb684792126b9a96dab05cb6ef1871121914d9999b24f7fff8ffa754a72.svg)
 
 ---
 
@@ -267,7 +267,7 @@ c.select("IS", ["매출액","매출원가","매출총이익","판매비와관리
 
 dartlab으로 본 2024년 손익. 매출 1,029억(전년 +6.6%), 영업이익 **+254억** — 9년 만에 의미 있는 흑자. 영업이익률 24.7%. 2024년 매출의 약 26%가 머크 추가 계약금이고, 나머지가 기존 라이선스 마일스톤·기타 매출. 이 흑자는 2020년 +1억 BEP와는 차원이 다르다 — 2020년은 1,600만 달러가 들어와도 R&D 비용에 다 쓰여서 영업이익이 거의 0이었지만, 2024년은 같은 R&D 비용을 쓰고도 254억이 남는 구조가 됐다. 회사가 비용 베이스 위에 안정적인 매출 베이스를 쌓기 시작한 것이다.
 
-![머크 라이선스 4단계 구조 — 1,600만 달러에서 10억 달러까지](./assets/04-merck-deal-stack.svg)
+![머크 라이선스 4단계 구조 — 1,600만 달러에서 10억 달러까지](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/75/75f7f08dfe5f2691b191dde4c3140a0c471f9977c4012b350b40402c33b21f59.svg)
 
 머크 갱신 후의 알테오젠 라이선스 구조는 4단으로 이루어진다.
 
@@ -297,7 +297,7 @@ dartlab의 마진 분해를 보면 이 회사가 어떤 종류의 회사가 됐�
 c.analysis("financial", "수익성")["marginWaterfall"]["history"][0]
 ```
 
-![알테오젠 2025 마진 분해 — 매출총이익률 76.73% / 영업이익률 49.52%](./assets/04-margin-explosion.svg)
+![알테오젠 2025 마진 분해 — 매출총이익률 76.73% / 영업이익률 49.52%](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/8d/8d82fb283eb124057841cff98e38c7bcc59d28668cf5e8ccfd467ddcdf5787b3.svg)
 
 매출 100원에서 매출원가가 23원, 매출총이익이 77원. 거기서 판관비(R&D 포함)가 27원을 가져가고 영업이익이 49원 50전 남는다. 그 다음 금융수익(현금성자산 4,300억의 운용 수익)과 법인세(R&D 세제혜택으로 실효세율 약 11%)를 거쳐 순이익이 67원으로 더 늘어난다.
 
@@ -312,7 +312,7 @@ c.analysis("financial", "수익성")["roicTree"]["history"][0]
 
 `marginDriver: '높은 가격결정력 (매출총이익률 > 40%)'` — 이 분류를 받은 한국 회사는 SK하이닉스, 셀트리온, 일부 게임사 정도다. 알테오젠이 그 카테고리에 들어왔다. **바이오텍 입장에서 매출총이익률 76%는 글로벌 빅파마 기준이다.** 한국 바이오에서는 처음 본다.
 
-![8년 누적 영업손실 회수 폭포 — 한 해에 다 회수](./assets/04-cumulative-recovery.svg)
+![8년 누적 영업손실 회수 폭포 — 한 해에 다 회수](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/fd/fdb780eb140a306b85aaaf5d31231e99bf3bae4aa4cbcc822061a3aa85be2793.svg)
 
 ### 8년 누적 적자 -730억 → 한 해에 전부 회수
 
@@ -320,7 +320,7 @@ c.analysis("financial", "수익성")["roicTree"]["history"][0]
 
 박순재의 17년이 한 해에 회수된 것이다.
 
-![매출 31배 + 영업이익률 -65% → +49.5%](./assets/04-revenue-31x.svg)
+![매출 31배 + 영업이익률 -65% → +49.5%](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/84/84198592441ad5fa47728e739d5cc266c394de0ca25d6ae65211409d4af6b295.svg)
 
 ### 현금 4,300억 + 무차입 — R&D를 받치는 곳간
 
@@ -370,7 +370,7 @@ c.credit("등급")
 
 2025년 +1,069억은 일회성인가, 새 시대의 시작인가. dartlab이 답할 수 있는 것은 한계가 있다 — dartlab은 한국 공시 데이터 엔진이고, 머크 키트루다 SC의 글로벌 매출 진행이나 다이이찌산쿄/산도즈/인타스 같은 다른 빅파마와의 추가 라이선스 가능성은 직접 보지 못한다. 그래서 여기서 내릴 수 있는 결론은 정량 모델의 답이 아니라, 투자자 본인이 매 분기 직접 4가지 신호를 검증해야 한다는 것이다.
 
-![알테오젠 2026년 4가지 결정 신호](./assets/04-watch-signals.svg)
+![알테오젠 2026년 4가지 결정 신호](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/45/45b5b88a5af0f81b16dd0f097d8b81b1b766a572d08cc1d869d9568e62cd21fa.svg)
 
 ### ① 키트루다 SC 분기 매출 인식
 

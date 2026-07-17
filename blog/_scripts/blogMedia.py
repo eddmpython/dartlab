@@ -5,16 +5,19 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 from dartlab.core.dataConfig import HF_MEDIA_BASE_URL, HF_MEDIA_REPO
 
-MEDIA_CATALOG_VERSION = 3
+MEDIA_CATALOG_VERSION = 4
 MEDIA_CATALOG_RELATIVE = Path("media") / "catalog.json"
 OBJECT_PREFIX = "objects/sha256"
-IMAGE_SUFFIXES = {".webp", ".jpg", ".jpeg", ".png"}
+IMAGE_SUFFIXES = {".webp", ".jpg", ".jpeg", ".png", ".svg"}
 ASSET_KEY_RE = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*")
 SHA256_RE = re.compile(r"[0-9a-f]{64}")
+SVG_FORBIDDEN_TAGS = {"foreignobject", "script"}
+SVG_DANGEROUS_PREFIXES = ("javascript:", "data:text/html")
 
 
 def blogRoot(postDir: Path) -> Path:
@@ -63,6 +66,37 @@ def mediaUrl(path: str) -> str:
     return f"{HF_MEDIA_BASE_URL}/{path}"
 
 
+def svgObjectMetadata(path: Path) -> dict[str, object]:
+    """SVG를 이미지로 안전하게 서빙하기 위한 최소 계약과 감사 메타데이터."""
+    try:
+        root = ET.fromstring(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, ET.ParseError) as exc:
+        raise ValueError(f"SVG XML 파싱 실패: {path}: {exc}") from exc
+    if root.tag.split("}")[-1].lower() != "svg":
+        raise ValueError(f"SVG 루트 요소가 아님: {path}")
+    textNodes = 0
+    for element in root.iter():
+        tag = element.tag.split("}")[-1].lower()
+        if tag in SVG_FORBIDDEN_TAGS:
+            raise ValueError(f"SVG 금지 요소 <{tag}>: {path}")
+        if tag == "text":
+            textNodes += 1
+        for rawName, rawValue in element.attrib.items():
+            name = rawName.split("}")[-1].lower()
+            value = str(rawValue).strip().lower()
+            if name.startswith("on"):
+                raise ValueError(f"SVG 이벤트 속성 금지: {path} ({name})")
+            if name in {"href", "src"} and value.startswith(SVG_DANGEROUS_PREFIXES):
+                raise ValueError(f"SVG 위험 링크 금지: {path} ({rawValue})")
+    raw = path.read_text(encoding="utf-8")
+    return {
+        "colorCount": len(set(re.findall(r"#[0-9A-Fa-f]{6}", raw))),
+        "mediaType": "image/svg+xml",
+        "textNodes": textNodes,
+        "viewBox": str(root.attrib.get("viewBox") or ""),
+    }
+
+
 def emptyMediaCatalog() -> dict[str, object]:
     return {
         "version": MEDIA_CATALOG_VERSION,
@@ -89,8 +123,11 @@ def loadMediaCatalog(path: Path) -> tuple[dict[str, object] | None, list[str]]:
     if not isinstance(payload, dict):
         return None, ["media/catalog.json 최상위 값은 객체여야 함"]
     errors: list[str] = []
-    if payload.get("version") != MEDIA_CATALOG_VERSION:
+    version = payload.get("version")
+    if version not in {3, MEDIA_CATALOG_VERSION}:
         errors.append(f"media/catalog.json version은 {MEDIA_CATALOG_VERSION}이어야 함")
+    elif version == 3:
+        payload["version"] = MEDIA_CATALOG_VERSION
     if payload.get("repo") != HF_MEDIA_REPO:
         errors.append(f"media/catalog.json repo는 {HF_MEDIA_REPO}여야 함")
     if payload.get("objectPrefix") != OBJECT_PREFIX:
@@ -108,6 +145,7 @@ def saveMediaCatalog(path: Path, catalog: dict[str, object]) -> None:
 
 def registerMediaFile(catalog: dict[str, object], source: str, localPath: Path) -> dict[str, str]:
     sha256 = contentSha256(localPath)
+    suffix = canonicalSuffix(localPath)
     objects = catalog.setdefault("objects", {})
     files = catalog.setdefault("files", {})
     if not isinstance(objects, dict) or not isinstance(files, dict):
@@ -116,11 +154,16 @@ def registerMediaFile(catalog: dict[str, object], source: str, localPath: Path) 
     if isinstance(existingObject, dict) and existingObject.get("path"):
         remotePath = str(existingObject["path"])
     else:
-        remotePath = mediaPath(sha256, canonicalSuffix(localPath))
+        remotePath = mediaPath(sha256, suffix)
         objects[sha256] = {
             "bytes": localPath.stat().st_size,
             "path": remotePath,
         }
+    if suffix == ".svg":
+        objectRecord = objects.get(sha256)
+        if not isinstance(objectRecord, dict):
+            raise ValueError(f"media/catalog.json SVG 객체 계약 위반: {source}")
+        objectRecord.update(svgObjectMetadata(localPath))
     files[source] = sha256
     return {"path": remotePath, "sha256": sha256, "source": source}
 
@@ -168,6 +211,15 @@ def loadMediaManifest(postDir: Path) -> tuple[dict[str, object] | None, list[str
             errors.append(f"media/catalog.json 파일 매핑 없음: {source}")
         else:
             assets[str(key)] = record
+    diagramSources = post.get("diagrams")
+    diagrams: dict[str, dict[str, str]] = {}
+    if isinstance(diagramSources, dict):
+        for key, source in diagramSources.items():
+            record = mediaRecord(catalog, str(source))
+            if record is None:
+                errors.append(f"media/catalog.json SVG 파일 매핑 없음: {source}")
+            else:
+                diagrams[str(key)] = record
     ogSource = str(post.get("og") or "")
     og = mediaRecord(catalog, ogSource)
     if og is None:
@@ -178,6 +230,7 @@ def loadMediaManifest(postDir: Path) -> tuple[dict[str, object] | None, list[str
         "repo": HF_MEDIA_REPO,
         "og": og,
         "assets": assets,
+        "diagrams": diagrams,
     }
     cardSource = str(post.get("card") or "")
     card = mediaRecord(catalog, cardSource) if cardSource else None

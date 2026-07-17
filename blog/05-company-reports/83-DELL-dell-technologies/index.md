@@ -47,7 +47,7 @@ import HFDataLink from '$lib/components/blog/HFDataLink.svelte';
 
 > **자본집약** | AI 인프라 · 서버 · PC · NYSE | 2026-04-29 dartlab 실측 + SEC EDGAR 원문
 
-![Dell AI 서버와 마진 지도 — FY2026 AI 서버 주문 $64B+, 백로그 $43B, 전사 매출 $113.5B인데 gross margin은 22.2%에서 20.0%로 내려갔다.](./assets/83-hero-ai-margin.svg)
+![Dell AI 서버와 마진 지도 — FY2026 AI 서버 주문 $64B+, 백로그 $43B, 전사 매출 $113.5B인데 gross margin은 22.2%에서 20.0%로 내려갔다.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/7e/7e8616643b97f06932c606e0e79792978214794404f4b216206c709526f4557b.svg)
 
 Dell Technologies, 티커 **DELL**. 한때 투자자가 이 회사를 보면 PC를 먼저 떠올렸다. 노트북, 데스크톱, 모니터, 기업용 PC. 그런데 FY2026 10-K를 열면 중심 단어가 바뀐다. **AI-optimized servers**. Dell은 FY2026에 AI 최적화 서버 주문 **$64B+**, 출하 **$25B+**, FY2027 진입 백로그 **$43B**를 발표했다.
 
@@ -177,7 +177,7 @@ FY2026 10-K에서 Dell은 ISG의 서버·네트워킹 매출을 더 세분화했
 
 AI 서버는 FY2024 $1.87B에서 FY2026 $24.68B로 13배가 됐다. FY2026 ISG 매출 증가분의 대부분이 여기서 나온다. 전통 서버와 스토리지도 나쁘지 않지만, 성장 엔진은 AI 서버다.
 
-![Dell ISG와 CSG 지도 — ISG 매출 $60.8B, 영업이익 $7.1B로 Dell의 성장 중심이 AI 인프라 쪽으로 이동했다.](./assets/83-isg-csg-map.svg)
+![Dell ISG와 CSG 지도 — ISG 매출 $60.8B, 영업이익 $7.1B로 Dell의 성장 중심이 AI 인프라 쪽으로 이동했다.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ce/ce58d3cd4751a1ad9beeb05e0bcf8e737ebcc98ea3d483c184e68c6ea48ac69c.svg)
 
 2026년 2월 26일 8-K Exhibit 99.1은 더 공격적인 숫자를 준다. AI 최적화 서버 주문 **$64B+**, 연간 출하 **$25B+**, FY2027 진입 백로그 **$43B**. FY2027 AI 서버 매출 가이던스는 약 **$50B**다. FY2026 실제 AI 서버 매출 $24.68B의 두 배 수준이다.
 
@@ -195,7 +195,7 @@ AI 서버는 FY2024 $1.87B에서 FY2026 $24.68B로 13배가 됐다. FY2026 ISG �
 
 ## 4막 — 제품과 서비스가 갈라졌다
 
-![Dell 제품과 서비스 마진 분리 — FY2026 제품 매출 비중은 79.6%, gross margin은 13.7%; 서비스 매출 비중은 20.4%, gross margin은 44.8%다.](./assets/83-product-service-split.svg)
+![Dell 제품과 서비스 마진 분리 — FY2026 제품 매출 비중은 79.6%, gross margin은 13.7%; 서비스 매출 비중은 20.4%, gross margin은 44.8%다.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ae/ae26fee017f82d4e2fadc9889cb0c3dbe04868d3cd4508ece8c1c5eb8e778f29.svg)
 
 Dell의 gross margin 하락은 제품·서비스 분해를 보면 바로 이해된다.
 
@@ -259,7 +259,7 @@ AI 서버가 앞으로 $50B 매출로 커진다면, 질문은 더 날카로워�
 
 ## 6막 — 현금흐름은 강하다, 그래서 이야기가 복잡해진다
 
-![Dell 운전자본 루프 — AI 서버 주문은 GPU·메모리·네트워킹 부품 선확보와 재고, 매출채권, 매입채무 타이밍을 같이 키운다.](./assets/83-working-capital-loop.svg)
+![Dell 운전자본 루프 — AI 서버 주문은 GPU·메모리·네트워킹 부품 선확보와 재고, 매출채권, 매입채무 타이밍을 같이 키운다.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/2e/2e15c00515cce091d04c99293a564264145567cffb6ad76eee94ea01d7e881d5.svg)
 
 ![Dell 공급망 이미지 — AI 서버 주문은 GPU, 메모리, 서버 제조, 고객 수금이 한 사이클로 묶인 운전자본 사업이다.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/6f/6ff001c31d88a7f745a9866998978fdac45424a5cb994a6e1e93175d0867dce2.webp)
 
@@ -453,7 +453,7 @@ Dell이 낙관적일 수 있는 근거는 있다.
 
 ## 13막 — Dell을 읽는 체크리스트
 
-![Dell 투자 체크리스트 — AI 서버 매출, 제품 gross margin, ISG 영업마진, 운전자본, FCF와 환원, 부채와 DFS를 같이 봐야 한다.](./assets/83-checklist.svg)
+![Dell 투자 체크리스트 — AI 서버 매출, 제품 gross margin, ISG 영업마진, 운전자본, FCF와 환원, 부채와 DFS를 같이 봐야 한다.](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/dd/ddb0c02fc3036fc38967ebeff45afa5979efc6b3ee88da74deaa0167a08197ba.svg)
 
 Dell은 좋아진 회사다. FY2026 매출과 현금흐름은 강했고, AI 서버 주문과 백로그는 실제다. 하지만 AI 서버 붐을 소프트웨어 붐처럼 읽으면 안 된다. Dell은 주문을 서버로 바꾸는 회사다. 서버는 부품과 운전자본을 먹는다.
 

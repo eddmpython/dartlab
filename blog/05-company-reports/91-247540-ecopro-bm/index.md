@@ -173,7 +173,7 @@ carousel:
 
 이 글은 그 동시성을 8 막으로 분해한다. 1 막 매출 +708% → -60% 의 비대칭 사이클, 2 막 그 폭증의 절반이 단가였던 회계, 3 막 2023Q4 단일 분기 -2,364 억 (영업적자 + 재고평가손실) 의 산식, 4 막 매출이 빠지는 동안 1 조를 묻은 CAPEX, 5 막 부실 4 신호 동시 점등의 의미, 6 막 삼성SDI 단일 고객 약 64% 라는 구조, 7 막 흑자전환 +1,428 억의 30% 가 인도네시아였던 회계, 8 막 데이터센터 ESS +103% 가 다음 사이클의 첫 신호인지의 판단. 숫자는 검증표에 고정한다.
 
-![매출 +708% (3년) → -60% (1년) — 양극재 슈퍼사이클](./assets/01-revenue-cycle.svg)
+![매출 +708% (3년) → -60% (1년) — 양극재 슈퍼사이클](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/4a/4a9c069b8d603d0180cfdf64192d293a265a80c977c5abb78876d25488743671.svg)
 
 > **dartlab AI 종합의견**
 >
@@ -340,7 +340,7 @@ LG·SK 와의 NCM 공급 계약이 다중 고객 구조를 형성하는 듯 보�
 
 > 분기 매출 2.01 조 — 양극재 회사 단일 분기 사상 최대. 같은 분기 OPM 은 4% 안팎.
 
-![분기 매출 36 분기 — 2023Q1 PEAK 2.01 조 → 2024Q4 4,649 억 (-77%)](./assets/02-quarterly-spike-collapse.svg)
+![분기 매출 36 분기 — 2023Q1 PEAK 2.01 조 → 2024Q4 4,649 억 (-77%)](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/1d/1dc3115ac48f77a13017f7d21592a824ccad276ebbfd27503b0748532edbb748.svg)
 
 | FY 2023 지표 | 값 |
 |---|---|
@@ -463,7 +463,7 @@ EV 캐즘 도착 순서는 OEM → 셀 → 양극재 → 메탈/광물 순이다
 
 ### 왜 Altman Z 0.88 / Springate 0.21 / Piotroski 3·9 / 이자보상 1.0× 가 동시에 점등했나
 
-![부실 4 신호 동시 점등 (2025Q4)](./assets/04-distress-4-signals.svg)
+![부실 4 신호 동시 점등 (2025Q4)](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/6d/6da122c0a4cbd5f8d2f94dcbce841bec65f0aa403f1fc07d775446da464fee08.svg)
 
 | 부실 지표 (2025Q4) | 값 | 임계 | 판정 |
 |---|---|---|---|
@@ -497,7 +497,7 @@ Springate S 0.21 (변형 모델), Piotroski F 3/9 (9 항목 중 6 개 빨간불)
 
 ### 왜 매출 -60% 빠진 해에 CAPEX 1 조 (37%) 를 박았나
 
-![매출 -60% 의 해에 CAPEX 1 조 — 자본집약의 모순](./assets/03-capex-paradox.svg)
+![매출 -60% 의 해에 CAPEX 1 조 — 자본집약의 모순](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/4b/4b7a8b58c66c1b50430c9c4ff08338338b4451616e843c2ac93d77edee9d2905.svg)
 
 | CAPEX/매출 (FY) | **2024** | 2025 |
 |---|---|---|
@@ -556,7 +556,7 @@ BM 의 2025Q4 dCR 는 투자적격 (BBB-) 의 경계다. 한 칸 더 빠지면 �
 
 ### 왜 셀 -24% vs 소재 -60% 의 충격 차이가 났나 — 가격 전가력 단방향
 
-![셀 -24% vs 양극재 -60% — 가격 전가력 단방향](./assets/05-cell-vs-cathode.svg)
+![셀 -24% vs 양극재 -60% — 가격 전가력 단방향](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/39/396cca5ee4ced934983be00c0a1f9d68c59ac53436b03e224e1c005b36237e89.svg)
 
 같은 산업 충격에서 셀과 소재가 받은 충격의 크기는 달랐다.
 

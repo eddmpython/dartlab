@@ -46,7 +46,7 @@ import StackBar from '$lib/components/blog/StackBar.svelte';
 
 더 멈칫하는 건 한 칸 옆 숫자다. 2022년에서 2023년, 매출은 514.0에서 574.8로 **11.8%**밖에 안 늘었는데 영업이익은 12.2에서 36.9로 **정확히 3배** 뛰었다.
 
-![아마존 — 물건을 12% 더 판 게 영업이익을 3배로 만들 수는 없다](./assets/103-12pct-3x.svg)
+![아마존 — 물건을 12% 더 판 게 영업이익을 3배로 만들 수는 없다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/bf/bfeeb4c76298c64b18305578ea2c9ecaf5d9bdc113c815c7bd52d84f56d83325.svg)
 
 물건을 12% 더 판 게 영업이익을 3배로 만들 수는 없다. 그렇다면 이익은 어디서 왔나. **연결 손익계산서 어디를 봐도 그 답은 안 적혀 있다.** 안 보이는 곳에서 누군가 이익을 떠받치고 있다는 뜻이다.
 
@@ -78,7 +78,7 @@ c.select("IS", ["매출액", "영업이익"], freq="Q")  # 분기→연간 합�
 
 여기서는 규모(매출 1위)를 *이익의 증명*으로 읽지 않는다. 매출 크기는 간판일 뿐이다. 1차 증거는 OPM 곡선이고, 그 곡선이 "이 회사는 소매로만 설명되지 않는다"고 말한다.
 
-![매출 곡선과 이익률 곡선이 따로 논다 — 규모와 마진의 분리](./assets/103-margin-separation.svg)
+![매출 곡선과 이익률 곡선이 따로 논다 — 규모와 마진의 분리](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/da/dad6ed484880b4c0262e53180db9528c752c4111cd089cde72b2141dd8f20a3c.svg)
 
 그렇다면 제대로 된 기준점은 어디인가?
 
@@ -92,7 +92,7 @@ c.select("IS", ["매출액", "영업이익"], freq="Q")  # 분기→연간 합�
 
 왜곡 없는 기저는 2019년 5.2%, 2021년 5.3%다. 거기서 2025년 11.2%는 약 **2.1배**다. 이 회사는 '망했다가 부활'한 게 아니라, *정상 5%대 마진에서 11%대로 구조를 한 단계 올린* 것이다.
 
-![제대로 된 기준선 — 6.6배는 붕괴저점 cherry-pick, 왜곡 없이 보면 약 2.1배](./assets/103-honest-baseline.svg)
+![제대로 된 기준선 — 6.6배는 붕괴저점 cherry-pick, 왜곡 없이 보면 약 2.1배](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b3/b3f01dcf81049ec3041c6c6a1ebe914d34c1504d8e581240d4595603815d1d0c.svg)
 
 이 구분이 중요하다. 6.6배는 드라마를 위해 골을 출발선으로 바꿔치기한 숫자이고, 2.1배는 정상 마진 대비 진짜 상향폭이다. 그렇다면 그 '2.4% 붕괴'는 왜 일어났나?
 
@@ -150,7 +150,7 @@ c.select("IS", ["매출액", "영업이익", "당기순이익"], freq="Q")
 
 이 표가 이 글의 공시상 핵심이다. 매출 82%를 차지하는 북미+해외 소매·마켓플레이스·구독·광고 묶음이 전사 영업이익의 43%를 만들고, 매출 18%짜리 AWS가 57%를 만든다. "아마존은 소매 회사인가 클라우드 회사인가"라는 질문에 답하려면 매출 비중이 아니라 이익 비중을 봐야 한다.
 
-![안 보이는 엔진 — 매출 1/6의 AWS가 영업이익 대부분 (10-K 세그먼트, 외부)](./assets/103-hidden-engine.svg)
+![안 보이는 엔진 — 매출 1/6의 AWS가 영업이익 대부분 (10-K 세그먼트, 외부)](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ec/ec88bc55a7e8fe719439210fd9a62c7abe6fd179db559c9aa3de2aa8b5e4cee5.svg)
 
 ![안 보이는 엔진 — 매출 1/6의 클라우드가 이익의 척추](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ac/acf4f252d3d194cb06645d3a4cd1cea4f56a368d9c7e78a1f95235d61362fd9a.webp)
 
@@ -318,7 +318,7 @@ AMZN을 틀리게 읽는 가장 흔한 방식은 매출 크기 순서로 중요�
 4. **OCF와 FCF의 간격** — 2025년 OCF $139.5B vs FCF $11.2B. AI CapEx가 현금 회수를 얼마나 늦추는지.
 5. **연결 OPM의 다음 한 칸** — 5%대→11%대로 올라온 마진이 더 오르는지, 11%대에서 CapEx 부담에 막히는지.
 
-![아마존 — 2026년에 봐야 할 다섯 가지](./assets/103-checkpoints.svg)
+![아마존 — 2026년에 봐야 할 다섯 가지](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/83/8300788c75c1cb3b4f0b397a1a03d31354ac1f31a8e378bef0461a38c80ab27a.svg)
 
 ---
 

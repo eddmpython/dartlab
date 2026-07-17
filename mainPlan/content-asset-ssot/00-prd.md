@@ -8,7 +8,7 @@
 |---|---|---|
 | 저작 | 기존 `blog/**` 글, 기획, 출처 문서 | 사람이 고치는 이야기와 의미 계약 |
 | 자산 카탈로그 | Git `media/catalog.json` | source, 의미 키, 역할, SHA-256, 포스트 매핑 |
-| 바이너리 | HF `objects/sha256/<앞2자>/<전체해시>.<확장자>` | 모든 WebP/JPG/PNG의 durable 원본과 서빙본 |
+| 미디어 | HF `objects/sha256/<앞2자>/<전체해시>.<확장자>` | 모든 SVG/WebP/JPG/PNG의 durable 원본과 서빙본 |
 
 새 `content/stories/`, 포스트별 자산 manifest, 회사별 HF 바이너리 폴더를 추가하지 않는다. StoryCore는 공동 기획 어휘일 뿐 새 물리 파일이 아니다. 현재 글, 카드, 팟캐스트 저작 위치를 유지하면서 자산만 중앙 카탈로그와 콘텐츠 주소 객체로 모은다.
 
@@ -45,7 +45,7 @@ manifests/
 ## 4. 발행 불변식
 
 1. 같은 바이트는 SHA-256 하나로 한 번만 저장한다.
-2. 로컬 WebP/JPG/PNG staging은 Git에 넣지 않는다.
+2. 로컬 SVG/WebP/JPG/PNG staging은 Git에 넣지 않는다.
 3. 의미 키는 경로가 아니다. 발행기가 중앙 catalog에서 객체 경로로 해석한다.
 4. 런타임 소비자는 `manifests/*.json`과 `objects/sha256/`만 읽는다.
 5. 발행기는 `companies/`, `issues/`, `tech-story/`, `podcasts/`, `carousels/`를 만들 수 없다.
@@ -64,7 +64,7 @@ manifests/
 
 ## 6. 완료 기준
 
-- Git 추적 래스터 0건.
+- Git 추적 블로그 SVG·래스터 0건.
 - `media/catalog.json`의 모든 객체가 정규 콘텐츠 주소 경로를 가진다.
 - 회사와 캐러셀 manifest의 모든 이미지가 실제 HF 객체를 가리킨다.
 - 저장소와 운영 문서에 옛 HF 소비 경로가 없다. 이관 도구의 입력 경로와 회귀 테스트 fixture만 예외다.

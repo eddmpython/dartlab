@@ -52,7 +52,7 @@ c.panel("IS")
 
 ---
 
-![뉴스케일파워 핵심 구조 — 매출 $31M, 현금 $1.25B, 원전 0기](./assets/44-hero-map.svg)
+![뉴스케일파워 핵심 구조 — 매출 $31M, 현금 $1.25B, 원전 0기](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/b1/b1754253419e9b74184201021ceac27922905b1ee98246913329964feadc7788.svg)
 
 ---
 
@@ -240,7 +240,7 @@ c.select("BS", ["자산총계", "현금및현금성자산", "부채총계", "자
 
 ### 현금 소진 시나리오 — 시간은 얼마나 남았는가
 
-![현금 소진 시나리오](./assets/44-burn-rate.svg)
+![현금 소진 시나리오](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/91/913fa96f36449a128149c2bbe8c0a37caeec45f1ef72f8046e87e4a6ba976e56.svg)
 
 2025년 영업활동현금흐름 -$348M 속도로 태우면 $1.25B는 **3.6년**, 2028~2029년에 고갈된다. 하지만 2025년 영업활동현금흐름가 비정상적으로 높은 이유가 있다. 투자활동의 단기투자 매입(-$768M)이 포함돼 있기 때문이다. 순수 영업 소진분만 보면 연간 약 $150~200M 수준이고, 이 경우 6~8년의 런웨이(runway — 현재 현금으로 버틸 수 있는 기간)가 확보된다.
 
@@ -262,7 +262,7 @@ cr = c.credit("등급")
 
 ### 왜 인증 없는 OKLO의 시총이 3배 더 큰가
 
-![OKLO vs NuScale 비교](./assets/44-oklo-comparison.svg)
+![OKLO vs NuScale 비교](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/7c/7c4ad047e1d0d021b4a824b1309bec17206ce3336c4c9b90d1ff532a52001d4b.svg)
 
 [Oklo(#31)](/blog/OKLO-oklo)의 시총은 약 $13B(약 18조원). 매출 $0, 가동 원자로 0기, NRC 인증 거절 이력이 있는 회사다. 뉴스케일의 시총은 약 $4B(약 5.5조원). 매출 $31.5M, NRC 인증 보유, 직원 450명. 상식적으로 뉴스케일이 더 높아야 한다. 하지만 시장은 그 반대를 말한다.
 
@@ -304,7 +304,7 @@ SMR 산업 전체의 패턴이 보인다. **모든 SMR 기업의 재무구조가
 
 ---
 
-![NRC 인증 타임라인](./assets/44-nrc-timeline.svg)
+![NRC 인증 타임라인](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/d9/d9419918f35631806604ce1e360b23caf5fce3d1ab5f98484d7eb437809cd795.svg)
 
 ---
 
@@ -312,7 +312,7 @@ SMR 산업 전체의 패턴이 보인다. **모든 SMR 기업의 재무구조가
 
 ### 이 회사의 본질은 무엇인가
 
-![2026~2028 체크포인트](./assets/44-checkpoint.svg)
+![2026~2028 체크포인트](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/74/74334f8025dcfa3feeeb38182973403719c0e5ff9318282ef875b6da8ff6c883.svg)
 
 뉴스케일파워는 졸업장을 가진 취업 준비생이다. NRC 설계인증이라는, 세계에서 유일한 졸업장을 받았다. 13년이 걸렸고, 수십억 달러를 태웠다. 그 졸업장으로 첫 취업(아이다호 프로젝트)에 지원했지만 면접에서 떨어졌다. 비용이 너무 높았기 때문이다.
 

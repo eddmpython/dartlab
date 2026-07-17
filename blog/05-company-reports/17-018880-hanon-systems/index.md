@@ -148,7 +148,7 @@ import HFDataLink from '$lib/components/blog/HFDataLink.svelte';
 
 ---
 
-![스코어카드](./assets/17-scorecard.svg)
+![스코어카드](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/1f/1f81d5091509196945447f8fbcd4878e860565ecd09f24aa7b30ea3db288d687.svg)
 
 ## 핵심 한 줄
 
@@ -214,7 +214,7 @@ c.analysis("financial", "자본배분")
 
 인수 전(비스테온 시절) 연평균 배당은 약 **755억원**이었다. 인수 후(한앤컴퍼니 시절) 연평균 배당은 약 **1,555억원**이다. **2배로 뛰었다.** 그리고 2022년에 극단에 달한다.
 
-![순이익의 7배를 배당](./assets/17-dividend-squeeze.svg)
+![순이익의 7배를 배당](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f2/f25ec1f4bae748eced232de785122f06075524c9c538b978050eb72900c6e064.svg)
 
 2022년 한온시스템의 순이익은 **267억원**이었다. 그런데 배당금은 **1,850억원**을 지급했다. 순이익 대비 배당성향 **693%**. 이익의 7배를 배당으로 쥐어짠 것이다. 벌어서 준 게 아니다. 벌지 못한 돈을 빌려서 줬다.
 
@@ -239,7 +239,7 @@ c.analysis("financial", "자금조달")
 c.analysis("financial", "안정성")
 ```
 
-![부채 폭증](./assets/17-debt-explosion.svg)
+![부채 폭증](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/47/473edd845f2b7de9be700d281480b3a89865c7038245e9d4419d0eec535b818d.svg)
 
 인수 직전인 2013년, 한온시스템의 총차입금은 약 **4,000억원**이었다. 10년 후인 2024년, 총차입금은 **4.5조원**이다. **11배**가 됐다.
 
@@ -297,7 +297,7 @@ c.panel("BS", freq="Y")
 
 ## 4막 — 2025년, 구조조정이 숫자로 찍혔다
 
-![영업이익률 5년 추이](./assets/17-opm-recovery.svg)
+![영업이익률 5년 추이](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/dd/ddabaf0ea38408181e8fff2824359d24e57e7e50eb5a9fdc21c6b3cf6f8783bc.svg)
 
 ### 영업이익률 0.9% → 2.5% — 방향은 확인됐다
 
@@ -341,7 +341,7 @@ c.panel("IS")   # 분기별 손익
 
 그런데 여기서 질문이 생긴다. **이자비용만 연 2,646억인 회사가, EV 열관리에 투자할 돈이 있는가?** 영업이익 2,704억에서 이자를 빼면 **58억밖에 안 남는다.** 이 회사는 이자를 겨우 갚고 있다. 그런데도 EV는 가야 한다 — 가지 않으면 죽기 때문이다.
 
-![EV 부품 단가 2.5배](./assets/17-ev-opportunity.svg)
+![EV 부품 단가 2.5배](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ae/aec4a8436bc8eec23fd20c2cd35059c7f6c641f56f39c2c28de07741bf55521a.svg)
 
 숫자 하나만 기억하면 된다. 내연기관 공조 = 차량당 30~50만원. EV 열관리 = **80~150만원**. 부품값이 **2~3배**로 뛴다. 한온시스템은 이 기회에 **4세대 히트펌프**(기아 EV3 탑재, 세계 최초)로 답을 냈다. 겨울 주행거리 감소를 30~40%에서 10% 이내로 줄이는 기술이다.
 

@@ -165,7 +165,7 @@ import HFDataLink from '$lib/components/blog/HFDataLink.svelte';
 
 ---
 
-![지배주주 순이익 9년 추이](./assets/03-net-income-9year.svg)
+![지배주주 순이익 9년 추이](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/de/de07b0584b82956699d7a73042fa11ff7cefc2ac662a38fe88284e12f6483b32.svg)
 
 ## 핵심 한 줄
 
@@ -284,7 +284,7 @@ c.analysis("financial", "이익품질")["earningsQualityFlags"]
 
 ## 3막 — 9년 다이어트: 부채 305%에서 129%로
 
-![이자보상배율 9년 추이 — 4년 연속 위험에서 안전권 진입](./assets/03-interest-coverage.svg)
+![이자보상배율 9년 추이 — 4년 연속 위험에서 안전권 진입](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/c7/c719342cc14356588a425e4415cc47eedba1b3a6d5bfd0d7f436c9d95a8ae334.svg)
 
 ### 부채비율 305% → 129% — 4년 만에 -177pp
 
@@ -300,7 +300,7 @@ c.select("ratios", ["부채비율 (%)"])
 
 표시: **305.27** = 정점 (2018)
 
-![부채비율 9년 감축](./assets/03-debt-decline.svg)
+![부채비율 9년 감축](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/91/91dd644bbc5b6e1f877cb969451493225672d9d30239731de3f3f332449c6399.svg)
 
 2018~2019년 사이 부채비율 305%, 거의 자기자본의 3배가 빚이었다. 그러던 회사가 2022년에 128%까지 떨어졌다. 4년 만에 -177%포인트. 이건 단순히 매출이 늘어서가 아니라 진짜 빚을 갚은 것이다.
 
@@ -345,7 +345,7 @@ c.analysis("financial", "자금조달")
 
 ## 4막 — 2025년 12월 16일, 체코에서 잭팟
 
-![체코 두코바니 5.6조 — 다이어트가 끝났다는 외부 인증](./assets/03-czech-jackpot.svg)
+![체코 두코바니 5.6조 — 다이어트가 끝났다는 외부 인증](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ba/ba28ff5a1a10f542f39b4ca4befa1e7eab5d865b1fef0f04dee34bda641fb23b.svg)
 
 ### 두코바니 5·6호기 5조 6천억 — 한국 원자력 사상 최대 단일 수주
 
@@ -448,7 +448,7 @@ c.analysis("financial", "자금조달")["distressIndicators"]
 | Piotroski F | 7/9 | 재무 건전 |
 | Springate S | 0.38 | **부실 위험** (0.862 미만) |
 
-![4 부실지표 충돌](./assets/03-distress-conflict.svg)
+![4 부실지표 충돌](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/22/2294c7474bd402376142e67fae6ec49f4511d41dda2e16b5d4b43ece3462cf1a.svg)
 
 4개 지표 중 2개는 부실 위험, 2개는 안전이다. 정확히 절반씩 갈렸다.
 

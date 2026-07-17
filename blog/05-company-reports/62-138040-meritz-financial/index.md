@@ -140,7 +140,7 @@ carousel:
 
 이 글은 그 변화를 **오너 결단 다큐** 10막 구조로 추적한다. 이전 61편의 어떤 회사와도 다른 결이다. 이마트·엔씨·한미약품이 "재무제표를 해독하는 글"이었다면, 메리츠는 **"한 사람의 의사결정 하나가 재무제표를 바꾼 과정을 시간 순서대로 따라가는 글"**이다. 숫자보다 **사람과 결정**이 앞선다.
 
-![2022.11.15 공시 이후 메리츠금융지주 PBR 0.5→1.8배·주가 3.5배 궤적](./assets/062-headline-rerating.svg)
+![2022.11.15 공시 이후 메리츠금융지주 PBR 0.5→1.8배·주가 3.5배 궤적](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ae/ae167f0c2936c965f58c753dfc2e9145fcaac2f6f6defaaa110951bda1d17bc2.svg)
 
 ---
 
@@ -174,7 +174,7 @@ carousel:
 
 17년간 PBR 0.5배 감옥에 갇혀 있던 회사가 한 주에 3건의 공시를 동시에 낸 것은 **축적된 불만의 폭발**이었다. 조 회장은 2022년 1~10월 사이에 이 계획을 내부에서 설계했을 것으로 추정된다. 실제 실행 트리거는 2022년 **LDC·KG ETS의 행동주의 펀드 접근** + **금융감독원의 금융지주 자본관리 규제 강화** + **조 회장 본인의 인식 전환**이 겹친 결과로 알려져 있다. 2막은 그 11월 15일 3건의 공시가 어떻게 짜여 있었는지 해부한다.
 
-![메리츠금융지주 17년 타임라인 — 2005 창업 → 2022.11.15 오너 결단](./assets/062-timeline.svg)
+![메리츠금융지주 17년 타임라인 — 2005 창업 → 2022.11.15 오너 결단](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ca/ca4daa72cac2155c3520ed934aae36d7b117843f3f5fb8a0e860cfa49a24c2d3.svg)
 
 ![한국 금융지주 본사 타워 — 한 공시가 PBR 0.5를 1.8로 바꾼 건물들의 배경](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/24/2461e52d18bbce5fc2b69c477e581ffbe0867eeafd74aaa43f07ca8e106523f8.webp)
 
@@ -226,7 +226,7 @@ carousel:
 
 2막은 2022년 11월의 선언을 봤다. 3막은 그 선언이 **2023년 4월에 실제로 어떻게 실행**됐는지를 본다. 완전자회사화의 회계 처리가 시장의 기대와 맞았는지.
 
-![2022.11.15 3건 공시 구조 — 완전자회사화 + 주주환원 50% + 자사주 매입](./assets/062-three-disclosures.svg)
+![2022.11.15 3건 공시 구조 — 완전자회사화 + 주주환원 50% + 자사주 매입](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/40/4017b833fa16c2c2ff5cc741773cc466f7b258e60535ff73e691f7bc8a27540a.svg)
 
 ---
 
@@ -327,7 +327,7 @@ carousel:
 
 4막은 주주환원 약속의 실행을 봤다. 5막은 그 약속을 가능하게 만든 **본업 실적**을 본다. 메리츠화재·증권·자산운용이 실제로 얼마나 벌고 있는지.
 
-![3년간 주주환원 2.9조 추적 — 자사주 매입 2.0조 + 소각 1.9조 + 배당 1.2조](./assets/062-shareholder-return.svg)
+![3년간 주주환원 2.9조 추적 — 자사주 매입 2.0조 + 소각 1.9조 + 배당 1.2조](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/5d/5de453c91e19f8eed6c7d8c0f303922d0b86849891f9d036beb8a8ebb7f8b767.svg)
 
 ![자사주 매입·소각의 서명 순간 — 장부가 vs 주가의 프리미엄을 결정하는 펜](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/1d/1d6b1852c45845ac92dfb23fa79928cd738f6726eb91252e85fb13bab4d945a5.webp)
 
@@ -415,7 +415,7 @@ c.select("IS", ["매출액","영업이익","당기순이익"])
 
 또한 **연결 순이익 기준 주주환원율**과 **실제 현금 유출**은 다르다. 자사주 매입은 현금이지만, **자사주 소각**은 이미 매입한 자사주를 회계상 없애는 것이라 추가 현금 유출 없음. 2023년 환원 8,900억 중 배당 2,400억만 현금 유출, 나머지 6,500억은 이미 사둔 자사주 소각. 이 구조가 "극단적 환원율"을 가능하게 만든 숨은 메커니즘.
 
-![2024 순이익 2.33조의 3축 구성 — 메리츠화재 73% + 증권 24% + 자산운용 3%](./assets/062-segment-pie.svg)
+![2024 순이익 2.33조의 3축 구성 — 메리츠화재 73% + 증권 24% + 자산운용 3%](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ae/ae4f117dbf65d4c7daea09490ba1ac073f5aea0cfab919407349e0f387653107.svg)
 
 ---
 
@@ -496,7 +496,7 @@ c.select("ratios", ["영업이익률 (%)"])
 
 7막은 업종 비교를 봤다. 8막은 이 모든 결정을 주도한 **조정호 회장과 김용범 부회장** 두 사람의 서사.
 
-![한국 5대 금융지주 2025 비교 — PBR·자기자본수익률·주주환원율 3축](./assets/062-big5-comparison.svg)
+![한국 5대 금융지주 2025 비교 — PBR·자기자본수익률·주주환원율 3축](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/6a/6ae5552eda84a89a0dd7a948404e30a2571ac8d6718b25f0cebf06ce24dec4c3.svg)
 
 ---
 
@@ -587,7 +587,7 @@ c.select("ratios", ["영업이익률 (%)"])
 
 남은 질문은 단순하다. **이 혁명이 10년 지속될 것인가.** 실적이 받쳐주고, 오너 승계가 매끄럽고, 다른 금융지주가 따라하는 동안 메리츠가 한 발 앞서 있을 수 있으면, PBR 1.8배는 2030년에도 유효한 평가일 것이다. 세 조건 중 하나라도 무너지면 메리츠도 다시 PBR 1.0배 수준으로 내려앉을 수 있다. 2026~2028 관찰 4가지가 그 조건의 현재 상태를 매 분기 알려줄 것이다.
 
-![2026~2028 메리츠 관찰 4가지 — 순이익·자사주·자기자본수익률·오너 승계](./assets/062-checkpoints.svg)
+![2026~2028 메리츠 관찰 4가지 — 순이익·자사주·자기자본수익률·오너 승계](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/04/0445400602a6de44a9571e9e299eda9f23331dd0deaa43946d331ba35155a34d.svg)
 
 ---
 

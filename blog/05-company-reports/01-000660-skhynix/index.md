@@ -205,7 +205,7 @@ import HFDataLink from '$lib/components/blog/HFDataLink.svelte';
 
 ---
 
-![영업이익률 9년 5번 사이클](./assets/01-margin-cycle-9year.svg)
+![영업이익률 9년 5번 사이클](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/51/510e58938c4cc9a6c7dd0a815921295f8ae5050431238f15af9cd7d2f17f2a83.svg)
 
 ## 핵심 한 줄
 
@@ -346,7 +346,7 @@ c.analysis("financial", "수익성")["marginWaterfall"]
 | 법인세 | -7.74% |
 | 순이익 | 44.21% |
 
-![분기 매출 vs 영업이익 1년 변화](./assets/01-revenue-op-bars.svg)
+![분기 매출 vs 영업이익 1년 변화](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f7/f72f82fb30d7bba63a743f74dd044e323399a862fdcb53716e69623ff95e2971.svg)
 
 ![SK하이닉스 DRAM 칩 클로즈업](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a1/a1735ee05fbc2bdc65c3003f19baf84acffb517f266dc0c682afaca08f716172.webp)
 *SK하이닉스 H5TC2G83CFR DRAM 패키지 클로즈업. 일반 DRAM 한 개의 매출총이익률은 정점기에도 50%를 넘기 어렵다. (출처: Wikimedia Commons, CC BY-SA)*
@@ -384,7 +384,7 @@ dartlab 이 SK하이닉스를 "가격결정력이 높은 회사" 로 분류한 �
 | NBC | **-48.69%** |
 | Spread (Penman) | **+84.82%** |
 
-![투하자본수익률 vs WACC spread](./assets/01-roic-spread.svg)
+![투하자본수익률 vs WACC spread](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/cf/cfc574ae7cb604533f51f353a0d96bc3327de6b2867e745b6c5a8fd6a001a8ae.svg)
 
 FLEV = -0.06. 음의 재무 레버리지. 회사가 이자가 발생하는 부채보다 현금성 자산을 더 많이 들고 있다는 뜻이다. 자본집약 메모리 회사가 순현금 상태로 영업이익률 48%를 찍는 것은 교과서적으로 비정상이다. 정상적인 자본집약 회사는 차입을 통해 자기자본수익률를 증폭시킨다. SK하이닉스는 그럴 필요가 없다 — 영업으로 너무 많이 번다. 그리고 같은 분해를 한 해 전(2024)으로 돌려보면 RNOA 22.04%, spread +10.16%였다. 1년 만에 spread가 +10에서 +85로 8배가 됐다. 이 점프가 3차 사이클의 본질이다.
 
@@ -543,7 +543,7 @@ c.select("CF", ["영업활동현금흐름","유형자산의 취득"], freq="Y")
 
 표시: **27.52** = 사상 최대(+73% YoY) / **19.01** = 2차 사이클 정점기 / 8.33 = 적자기(줄임) / **16.04** = 1차 사이클 정점기
 
-![설비투자 9년 베팅](./assets/01-capex-bet.svg)
+![설비투자 9년 베팅](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/0c/0ce1d8606aae943061fdf3514bbc117f402f6f87983a2d756013958be4312b1b.svg)
 
 2023년 적자기에 8.33조까지 줄였던 회사가 2년 만에 27.52조를 쓴다. **27.52조는 현대자동차 1년 영업이익(14.9조)의 거의 2배다.** 한국 2위 제조사가 1년에 버는 돈보다, SK하이닉스가 1년에 공장에 쏟는 돈이 크다. 매출의 약 28%를 다시 공장에 박았다.
 
@@ -562,7 +562,7 @@ c.select("CF", ["영업활동현금흐름","유형자산의 취득"], freq="Y")
 
 dartlab 의 forecast 모델은 base 시나리오로 1년 후 매출 둔화를 50%로 본다. bull은 25%, bear는 25%. 즉 dartlab 도 다음 1~2년이 분기점이라고 본다.
 
-![forecast fan chart](./assets/01-forecast-fan.svg)
+![forecast fan chart](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/4d/4dc152100301dfa19c69e54b9cc97654dcfc857a0ac52f9ee63515ca479695cf.svg)
 
 ---
 
@@ -593,7 +593,7 @@ dartlab 의 forecast 모델은 base 시나리오로 1년 후 매출 둔화를 50
 
 3개는 dartlab 으로 자동 검증, 1개는 외부 데이터.
 
-![4가지 결정 신호](./assets/01-watch-signals.svg)
+![4가지 결정 신호](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/59/596a54f7b533a1778f1fb6eb2d9ecc2ff45f6975591db01d9f1d0495f7e3c106.svg)
 
 ---
 

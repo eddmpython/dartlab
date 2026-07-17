@@ -178,7 +178,7 @@ import HFDataLink from '$lib/components/blog/HFDataLink.svelte';
 
 ---
 
-![삼성SDI 9년 — 매출·영업이익·ROIC의 3.3조 반전 타임라인](./assets/68-hero-map.svg)
+![삼성SDI 9년 — 매출·영업이익·ROIC의 3.3조 반전 타임라인](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/fc/fca1d45fc06d51047af23b2a0b99d6a1b2a2572f8e322514292cee8f103902eb.svg)
 
 ## 1막: 2년 만에 이익이 3.3조 반전됐다
 
@@ -257,7 +257,7 @@ for code in ["373220", "006400", "247540", "003670", "051910"]:
 
 ---
 
-![삼성SDI 55년 연혁 — 진공관에서 EV 배터리까지](./assets/68-history-timeline.svg)
+![삼성SDI 55년 연혁 — 진공관에서 EV 배터리까지](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f3/f3364b228e7ffb671f3355c2345e2f1db422b8a3a2a2d7f19fb44e5c82895824.svg)
 
 ## 2막: 삼성SDI 55년 — 진공관에서 배터리까지의 네 번 변신
 
@@ -297,7 +297,7 @@ for code in ["373220", "006400", "247540", "003670", "051910"]:
 
 ---
 
-![2024→2025 4분기 시계열 — 매출·영업이익 급전직하](./assets/68-quarterly-fall.svg)
+![2024→2025 4분기 시계열 — 매출·영업이익 급전직하](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/89/89bc1cc71367ee03abe3200447a9650700e0256cef8982536b3c753c4398b00c.svg)
 
 ## 3막: 2020~2023 황금기 — 4년 만에 매출 2배, 이익 2.4배
 
@@ -344,7 +344,7 @@ CAPEX 결정은 통상 3~5년 앞의 수요를 예측해서 내린다. 2022년 �
 
 ---
 
-![EV 판매 둔화 + 고객사별 매출 변화](./assets/68-ev-slowdown.svg)
+![EV 판매 둔화 + 고객사별 매출 변화](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/71/717071f41044b0462d61275727691bdde64f16255e688c627ff179db846fe41c.svg)
 
 ## 4막: 2024 전환점 — EV 캐즘(Chasm)이 찍힌 재무제표
 
@@ -427,7 +427,7 @@ c.select("BS", ["재고자산"])
 
 ---
 
-![2025 손익 폭포 — 영업손실 -1.7조에서 순손실 -0.58조까지](./assets/68-2025-waterfall.svg)
+![2025 손익 폭포 — 영업손실 -1.7조에서 순손실 -0.58조까지](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ee/ee9a8c57e5a7a760bf83c549ac6e5e7d0f21ae010fedb2b8ae27c4167bad8fc9.svg)
 
 ## 5막: 2025 적자의 정체 — GPM 11%, 판관비 26%, 금융비용 1.05조
 
@@ -511,7 +511,7 @@ IS상의 "금융비용 1.05조"는 이자지급 3,499억 외에도 외환평가�
 
 ---
 
-![CAPEX 6.27조 피크 + EV 수요 둔화 타이밍 충돌](./assets/68-capex-timing.svg)
+![CAPEX 6.27조 피크 + EV 수요 둔화 타이밍 충돌](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/aa/aaa5f2b4581745e80c0cae78157d18a56630beaebffc90025e3958921a2dbe3c.svg)
 
 ## 6막: CAPEX 6.27조 피크 — 헝가리·말레이시아·애리조나의 타이밍 미스
 
@@ -583,7 +583,7 @@ LG에너지솔루션도 비슷한 시기 CAPEX를 크게 늘렸다. 하지만 20
 
 ---
 
-![같은 산업 다른 결과 — LG엔솔 vs 삼성SDI 2025 재무 비교](./assets/68-lgensol-vs-sdi.svg)
+![같은 산업 다른 결과 — LG엔솔 vs 삼성SDI 2025 재무 비교](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/20/20b9891e774ee182bc5a3e1d98afc57cb7a625cda4d955b0d5c5bb0f8f837def.svg)
 
 ## 7막: LG엔솔 +5.69% vs 삼성SDI -12.98% — 같은 산업 갈라진 길
 
@@ -650,7 +650,7 @@ for code in ["373220", "006400"]:
 
 ---
 
-![삼성그룹 지배구조와 credit dCR-A (부정적) 종합도](./assets/68-governance-credit.svg)
+![삼성그룹 지배구조와 credit dCR-A (부정적) 종합도](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/f6/f65b39acd4370e56e231b74dd36cb3b3a0d6934e30858365eab1bb56fdf41a7f.svg)
 
 ## 8막: credit dCR-A (부정적) — 이자비용 6배 증가의 그림자
 
@@ -729,7 +729,7 @@ outlook "부정적"은 **향후 12~18개월 내 등급이 한 단계 더 내려�
 
 ---
 
-![2026 바닥 확인 4대 신호 + 투자 포인트](./assets/68-2026-signals.svg)
+![2026 바닥 확인 4대 신호 + 투자 포인트](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/db/dbfb396cee373c3dbf7e5b2bcdf506e1fa0a24215b39b551536e20d68706e667.svg)
 
 ## 9막: 2026 바닥 확인 4대 신호 + 닫힘
 

@@ -56,7 +56,7 @@ ai:
 
 하지만 이 이야기는 조심해서 써야 한다. 우버의 순이익에는 투자 재평가와 세금 효과가 섞인다. 2024년 순이익 9.85B는 영업이익 2.80B보다 훨씬 컸고, 2025년 순이익 10.09B도 세금 효과가 크게 보인다. 그래서 이 글은 순이익보다 영업이익과 영업현금흐름을 먼저 본다. 우버가 진짜 바뀌었는지는 앱의 유명세가 아니라, Gross Bookings가 현금으로 남는 비율에서 드러난다.
 
-![2019년 적자 플랫폼에서 2025년 현금흐름 플랫폼으로 바뀐 우버의 손익 전환 지도](./assets/156-loss-to-cash.svg)
+![2019년 적자 플랫폼에서 2025년 현금흐름 플랫폼으로 바뀐 우버의 손익 전환 지도](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/bc/bc18d5cb93dbee6fbbbfe01a9d7b4cb015d7a4f0c60a922e4ff4ca30954aa6b4.svg)
 
 ---
 
@@ -96,7 +96,7 @@ profit["marginTrend"]["history"]
 
 전환은 2023년에 온다. 영업이익 1.11B, 영업이익률 3.0%. 크지 않지만 부호가 바뀌었다. 2024년 6.4%, 2025년 10.7%로 올라간다. 이 숫자가 중요한 이유는 손익계산서가 처음으로 플랫폼의 규모를 인정하기 시작했기 때문이다. 우버는 더 이상 "언젠가 흑자"라고 말하는 회사가 아니라, 실제로 영업이익을 내는 회사가 됐다.
 
-![매출 성장보다 더 빠르게 영업이익이 움직인 구간이 우버 전환의 본체다](./assets/156-operating-leverage.svg)
+![매출 성장보다 더 빠르게 영업이익이 움직인 구간이 우버 전환의 본체다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/7a/7a72f190f12dcdec50a7beead2ff71da797b44a594c45fc4049c5d5f7824e233.svg)
 
 ---
 
@@ -113,7 +113,7 @@ cash["cashFlowOverview"]["history"]
 
 제조업이라면 매출을 키우기 위해 공장, 설비, 재고, 물류망에 큰돈을 넣어야 한다. 우버도 데이터센터, 기술, 보험, 결제, 운영비가 필요하지만, 차량을 직접 대량 보유하는 모델은 아니다. 그래서 플랫폼이 한 번 흑자로 돌아서면 현금흐름이 빠르게 두꺼워질 수 있다. 2025년 우버의 영업현금흐름 10.10B와 CAPEX 0.34B의 차이가 바로 그 장면이다.
 
-![영업현금흐름은 2020년 적자에서 2025년 10B로 바뀌었고, CAPEX는 매출 대비 1% 아래에 남았다](./assets/156-fcf-capex.svg)
+![영업현금흐름은 2020년 적자에서 2025년 10B로 바뀌었고, CAPEX는 매출 대비 1% 아래에 남았다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/fc/fc31e2af93dc9fa195d0227babad4f411ebaf70ca85d63dc58f959ecf3edd6d2.svg)
 
 다만 영업현금흐름을 무조건 깨끗하다고 쓰면 안 된다. 우버의 순이익에는 투자 재평가와 세금 효과가 섞인다. 2024년 순이익은 9.85B였지만, 영업현금흐름은 7.14B였다. 2025년 순이익은 10.09B, 영업현금흐름은 10.10B로 거의 같다. 그래서 2025년은 더 좋아 보인다. 순이익과 현금흐름이 드디어 비슷한 수준에서 만났기 때문이다.
 
@@ -135,7 +135,7 @@ Mobility도 마찬가지다. 2025년 Mobility Adjusted EBITDA는 좋아졌지만
 
 그래서 우버의 좋은 숫자는 Mobility와 Delivery가 같이 버텨야 한다. Mobility만 좋고 Delivery가 다시 보조금 경쟁으로 들어가면 앱 빈도는 유지돼도 마진이 흔들린다. Delivery만 성장하고 Mobility가 규제와 보험비에 눌리면 영업이익률 10%대가 유지되기 어렵다. 우버는 두 개의 엔진을 가진 회사이고, 두 엔진이 모두 "거래액 증가 → 현금흐름 증가"로 번역되어야 한다.
 
-![Gross Bookings, Trips, Mobility, Delivery가 현금흐름으로 이어지는 우버의 플랫폼 플라이휠](./assets/156-gross-bookings-flywheel.svg)
+![Gross Bookings, Trips, Mobility, Delivery가 현금흐름으로 이어지는 우버의 플랫폼 플라이휠](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/30/3097294a1771c923a704897d1e0e19d86e1a44b0d6bf16bae8ccc371a334c4e0.svg)
 
 ---
 
@@ -220,7 +220,7 @@ summary["summaryFlags"]
 
 다섯째, AV가 우버의 수요 지위를 약하게 만드는 경우다. 자율주행 공급자가 우버 플랫폼을 필요로 하면 우버에 좋다. 공급자가 직접 고객을 잡고, 우버를 낮은 수수료 채널로만 쓰면 좋지 않다. 이 차이는 언론 기사보다 도시별 계약과 마진에서 확인된다.
 
-![우버를 다음 실적에서 볼 때는 Gross Bookings, 영업이익률, FCF, 자사주, AV 파트너십을 같이 봐야 한다](./assets/156-risk-checkpoints.svg)
+![우버를 다음 실적에서 볼 때는 Gross Bookings, 영업이익률, FCF, 자사주, AV 파트너십을 같이 봐야 한다](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/31/312b261c118d28eaa0fb4c429ea02dd9d58a207b814da153c90d93d0cb7d9c55.svg)
 
 ---
 

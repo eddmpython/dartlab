@@ -14,7 +14,7 @@ cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/ma
 
 DartLab은 이 두 시스템을 **하나의 Company 인터페이스**로 합친다. `dartlab.Company("005930")`과 `dartlab.Company("AAPL")`이 같은 메서드를 쓰고, 같은 형태의 DataFrame을 돌려준다. 이 글에서는 그 통합이 실제로 어떤 설계 위에서 작동하는지, 어디서 타협이 필요한지, 어디까지 가능한지를 정리한다.
 
-![K-IFRS와 US-GAAP의 핵심 차이점 비교](./assets/109-ifrs-vs-gaap.svg)
+![K-IFRS와 US-GAAP의 핵심 차이점 비교](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/dd/dd3e975313feb889694baf6cc5ee6e2a26146625d25bd2c799d7b875714f067e.svg)
 
 ## 왜 국경을 넘는 데이터 통합이 필요한가
 
@@ -73,7 +73,7 @@ DART 쪽은 K-IFRS XBRL 택소노미에서 출발한다. `ifrs-full_Revenue`, `d
 
 EDGAR 쪽은 US-GAAP XBRL 택소노미에서 출발한다. `us-gaap_Revenues`, `us-gaap_OperatingIncomeLoss` 같은 태그를 같은 방식으로 정규화한다. 매핑 데이터는 11,660개다.
 
-![DART-EDGAR 계정 매핑 브릿지 구조](./assets/109-account-bridge.svg)
+![DART-EDGAR 계정 매핑 브릿지 구조](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/31/31e48b7a607c0d37a52ab0f9e5766554e35f3175e6c346239a801b70337403df.svg)
 
 ### EDGAR_TO_DART_ALIASES — 37개 브릿지
 
@@ -144,7 +144,7 @@ us.currency  # 'USD'
 
 재무 숫자만큼이나 중요한 것이 **서술형 문서 구조의 통합**이다. DART 사업보고서는 12개 장(chapter)으로 구성되고, EDGAR 10-K는 Part I ~ Part IV로 구성된다. 겉보기에는 완전히 다르지만, 내용상 대응 관계가 분명한 영역이 있다.
 
-![sections 수평화 — DART 12장 vs EDGAR Part I/II 매핑](./assets/109-sections-mapping.svg)
+![sections 수평화 — DART 12장 vs EDGAR Part I/II 매핑](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/89/89003a7652ca45141ce9385e699ef40db1a1e06650c5b2a1fa5c3ab09e09bab2.svg)
 
 ### 의미적 대응 6쌍
 
@@ -193,7 +193,7 @@ DART의 가장 큰 특이점은 **반기보고서**의 존재다. 2분기(Q2) �
 
 DartLab의 `Company`는 DART든 EDGAR든 같은 인터페이스를 쓴다. 이것이 가능한 이유는 **엔진별 백엔드가 분리되어 있고, 루트 facade가 프로토콜을 강제**하기 때문이다.
 
-![통합 Company 프로토콜 설계](./assets/109-company-protocol.svg)
+![통합 Company 프로토콜 설계](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/24/24fc5f697a8f47d47b206345252b7b637a4c8aff4975e6f2c281e56edd1c5663.svg)
 
 ### 공통 인터페이스
 
@@ -247,7 +247,7 @@ EDGAR는 report 레이어가 없으므로 docs + finance 대체만으로 완성�
 
 이론적으로 통합 구조를 설계하는 것과 실제로 동작하게 만드는 것 사이에는 간극이 있다. DartLab이 실제로 마주한 주요 문제들을 정리한다.
 
-![실전 통합 시 부딪히는 6가지 벽과 해결 방향](./assets/109-practical-challenges.svg)
+![실전 통합 시 부딪히는 6가지 벽과 해결 방향](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ab/ab6fe76d5c4bb122b5b7c7866730f34fc008ef78353d598e99e4e3f6aadf347e.svg)
 
 ### 1. 회계연도 불일치
 

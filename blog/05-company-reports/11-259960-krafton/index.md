@@ -197,7 +197,7 @@ c = dartlab.Company("259960")
 
 **"PUBG가 번 돈은 어디로 갔는가?"** — 현금 추적이 이 글의 이야기다.
 
-![현금 3조 추적](./assets/11-cash-tracking.svg)
+![현금 3조 추적](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/89/894cdd4eee3d447713e05f5187a484fd65720b017450ac9b9bf11583f825fa39.svg)
 
 ---
 
@@ -292,7 +292,7 @@ c.select("BS", ["현금및현금성자산"], freq="Y")
 
 ## 3막 — 무형자산이 1년에 11,000억 뛰었다. 뭘 산 거지?
 
-![무형자산 급등](./assets/11-intangible-explosion.svg)
+![무형자산 급등](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/ee/ee1acb0b6679253e28d5ff03a5082724d4d4c1401d5a135edeca08c397708abc.svg)
 
 ### 6,562억 → 18,042억 — 1년에 +11,480억
 
@@ -373,7 +373,7 @@ c.analysis("financial", "비용구조")
 
 여기에 **4분기의 비밀**이 있다.
 
-![4분기 영업이익 24억](./assets/11-q4-breakdown.svg)
+![4분기 영업이익 24억](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/a2/a20c945a41bad07c60ac457f592a6ea5df04bf31017c16f46b79060ce0006263.svg)
 
 | 분기 | 영업이익 |
 |------|---------|
@@ -413,7 +413,7 @@ c.analysis("financial", "비용구조")
 
 ## 6막 — 잉여현금흐름 29,352억, 배당 0원. 그리고 드디어
 
-![잉여현금흐름 vs 배당](./assets/11-fcf-dividend.svg)
+![잉여현금흐름 vs 배당](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/aa/aa5bf88b6dff128a14dcb2d09231ff2c486ca8ad24b9b39f9139009cd7134152.svg)
 
 ### 5년 누적 잉여현금흐름 29,352억 — 주주에게 돌아간 건 0원
 
@@ -431,7 +431,7 @@ c.analysis("financial", "자본배분")
 
 5년 누적 잉여현금흐름 **29,352억**. 배당 **0원**. 전부 잔여(retained)로 남았다. 이 돈이 인수(언노운 월즈, ADK 등)와 금융상품 투자로 빠져나갔다.
 
-![자본 배분 — PUBG가 번 돈은 어디로 갔는가](./assets/11-capital-allocation.svg)
+![자본 배분 — PUBG가 번 돈은 어디로 갔는가](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/7e/7e80aecd188a58f1c2a16434a87a7f1d10085c1430b0b54dec8cee510d0e404c.svg)
 
 ### 3년 1조 주주환원 — 창사 이래 첫 현금배당
 
