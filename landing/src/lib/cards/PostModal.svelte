@@ -106,7 +106,7 @@
 <div class="post" role="dialog" aria-modal="true" aria-label="{corpName} 포스트" onclick={onClose}>
 	<div class="postInner" role="document" onclick={(e) => e.stopPropagation()}>
 		<div class="postLeft">
-			<Deck bind:this={deckRef} {rt} sym={code} {slug} {corpName} heroUrls={heroUrls(media, code)} leadCards={contract ? contractToCards(contract, media) : []} onSections={(a) => (anchors = a)} />
+			<Deck bind:this={deckRef} {rt} sym={code} {slug} {corpName} heroUrls={heroUrls(media, code)} leadCards={contract ? contractToCards(contract) : []} onSections={(a) => (anchors = a)} />
 		</div>
 		<aside class="postRight">
 			<header class="prHead">

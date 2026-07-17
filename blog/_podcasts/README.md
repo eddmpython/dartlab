@@ -74,13 +74,12 @@ dartlab-podcast/                                  baseUrl = https://pub-...r2.de
 
 ## 3-1. HF media 원본 레이아웃
 
-최종 RSS 산출물은 R2 에 둔다. 재사용 가능한 원본 배경은 HF media repo 에 콘텐츠 해시 파일명으로 둔다.
+최종 RSS 산출물은 R2에 둔다. 재사용 가능한 원본 배경은 중앙 catalog에 등록하고 HF 콘텐츠 주소 객체로 둔다.
 이 원본으로 `cover.jpg` 와 `static-video.jpg` 를 언제든 다시 만들 수 있다.
 
 ```
 eddmpython/dartlab-media/
-└── podcasts/<slug>/
-    └── source-gray.<hash>.webp
+└── objects/sha256/<앞2자>/<전체해시>.webp
 ```
 
 R2 를 쓰는 이유: egress 무료(청취자 스트리밍 트래픽 부담 0), 200 직응답(HF `/resolve` 는 302
@@ -178,7 +177,7 @@ RSS item link 는 회사 에피소드면 터미널 딥링크로 역방향 연결
 
 - `image`: RSS item 용 정사각 커버. 발행 시 1400~3000 정사각 RGB JPEG, 500KB 미만으로 정규화한다.
 - `staticImage`: 유튜브 정적 영상 이미지와 썸네일용 16:9 이미지. 발행 시 1280x720 RGB JPEG, 500KB 미만으로 정규화한다.
-- `sourceAssets`: 재사용 가능한 원본 배경. 발행 시 HF media repo 의 `podcasts/<slug>/` 아래에 콘텐츠 해시 파일명으로 올린다.
+- `sourceAssets`: 재사용 가능한 원본 배경. 발행 시 `media/catalog.json`의 podcasts 컬렉션에 의미 키를 등록하고 HF `objects/sha256/`로 올린다. 회사 자산은 companies 컬렉션의 같은 객체를 재사용한다.
 
 `thumbnail` 은 호환 필드다. `staticImage` 와 같은 파일이면 같은 source/key 를 지정한다. 프론트
 `index.json` 에는 `imageUrl`, `staticImageUrl`, `thumbnailUrl`, `sourceAssets`, `caption` 이 함께 실린다.

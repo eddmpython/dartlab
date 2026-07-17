@@ -19,9 +19,12 @@ dartlab 블로그는 재무제표의 **"왜?"** 를 풀어내는 엔진이다.
 - 숫자는 **검증 가능성 최우선**
 - 독자가 "나도 재무제표 열어보고 싶다" 고 느끼면 성공
 
-### 독자는 전문가가 아니다
+### 모든 카테고리 공통 대원칙
 
-모든 글은 처음 온 독자가 읽는다. 기업이야기, 기술이야기, 데이터 리포트, 투자이야기, dartlab 이야기가 모두 같은 기준을 따른다.
+공시 읽기, dartlab 소식, dartlab 이야기, 신용분석 보고서, 기업이야기, 데이터 리포트, 산업 지도, 기술이야기, 투자이야기까지 9개 카테고리 모두 같은 기준을 따른다.
+
+- **내러티브에 집중한다.** 독자 질문 하나를 처음부터 끝까지 붙든다. 각 섹션은 앞의 답에서 다음 궁금증을 만들고, 빼도 글의 관통선이 약해지지 않는 섹션은 삭제한다. 정보 목록, 보고서 목차, 체크리스트 나열로 본문을 대신하지 않는다.
+- **쉽게 설명한다.** 어려운 개념은 첫 등장 문장에서 일상어로 풀고, 실제 숫자, 회사, 공시 문장, 표, 차트, 제품, 기간, 계정 중 하나를 바로 붙인다. 쉬운 설명은 내용을 얕게 줄이는 일이 아니라 독자가 원인과 결과를 따라가게 만드는 일이다.
 
 - **기**: 왜 이 글을 읽어야 하는지 첫 화면에서 잡는다.
 - **승**: 숫자, 표, 공시 문장, 차트, 코드 출력 중 하나로 첫 결과를 보여 준다.
@@ -383,9 +386,9 @@ c.quant("종합"); c.quant("팩터")
 > - 서명: 좌하단 `avatar.webp`(원형) + **dartlab** - `CoverThumb .brand` 와 동일 위치
 > - 색 = 카드 팔레트 `CARD`(accent `#ff3f6f` = `--dl-accent` 테마 스왑색). `[[구절]]` 강조를 숫자 자동강조로 근사
 > - 배경 수급: 이미지 없는 글은 `blog/_scripts/gen_blog_cc0.py` (Commons + Openverse, PD/CC0 만 · 업종 추론 쿼리) 로 `assets/{NN}-thumbnail-bg.webp` 채움 - 생성형(FLUX) 안 씀
-> - frontmatter `title`·`description`·`category` 만으로 생성. 전체 적용: `uv run python -X utf8 blog/_scripts/gen_blog_thumbnails.py --all --apply` (ogImage 경로 덮어쓰기, 없으면 frontmatter 에 `ogImage: /thumbnails/...webp` 먼저 추가)
+> - frontmatter `title`·`description`·`category`만으로 생성한다. `gen_blog_thumbnails.py --all --apply`가 로컬 staging을 만들고 `publishBlogAssets.py`가 HF 객체 URL로 치환한다.
 
-(legacy · 폐기) 좌측 다크 그라데이션 + 회사명 + 제목 2 줄, 우측 GPT `image_gen` 배경, `malgunbd.ttf`. 저장: `/thumbnails/{stockCode}-{slug}.webp`. 아래 dartlab-news·회사보고서 풀블리드 사진 스펙도 모두 legacy - 참고 보존.
+로컬 합성물은 검수용 staging일 뿐 공개 경로가 아니다. 최종 `ogImage`와 `cardPreview`는 항상 중앙 catalog의 HF 객체 URL이다.
 
 ### Phase 3 실행 순서
 
@@ -842,81 +845,18 @@ https://eddmpython.github.io/dartlab/
 
 **반복 실패** - 단순 나열 ("매출 97 조, 적자 32 조, 부채 130 조") 금지. 숫자가 왜 그렇게 됐는지 인과를 한 줄씩 풀어야 한다.
 
-### 썸네일 (og:image) - dartlab-news 카테고리 (2026-04-21 확장)
+### 래스터 자산 발행
 
-`02-dartlab-news` 8 편도 회사분석보고서와 **동일 MNST 풀블리드 스펙** 을 따른다.
-
-- **좌상단** (회사명 자리): `DartLab 소식 · {주제}` malgun.ttf 24px `#94a3b8`.
-- **저장 경로**: `landing/static/thumbnails/news-{slug}.webp`.
-- **원본 배경**: `blog/02-dartlab-news/{NN}-{slug}/assets/{NN}-thumbnail-bg.webp` (덮어쓰기 없음).
-- **frontmatter**:
-  - `thumbnail: /avatar-*.png` (리스트 아바타, 기존 유지).
-  - `ogImage: /thumbnails/news-{slug}.webp` (신규 추가).
-- **GPT `image_gen` 프롬프트 원칙**:
-  - dartlab 기능·제품을 **딱 보면 알 수 있는 구체 장면**.
-  - 예: #08 Pyodide → "Excel web interface with Python sidebar panel, spreadsheet cells glowing".
-  - 예: #07 dataset-auto-sync → "cloud data pipeline flowing into a laptop terminal, dark theme".
-  - `no text, no logos, no watermark, no brand marks` 유지.
-- **생성 절차**: GPT `image_gen` 으로 배경 생성 → `sns/scripts/extractImagegenAssets.py` 로 WebP 추출 → `blog/02-dartlab-news/{NN}-{slug}/assets/{NN}-thumbnail-bg.webp` 로 보관 → [blog/_scripts/gen_news_thumbnails.py](_scripts/gen_news_thumbnails.py) 로 합성. 레거시 [blog/_scripts/gen_news_flux.py](_scripts/gen_news_flux.py)는 보조 경로다.
-
-### 썸네일 (og:image) - 회사분석보고서 (MNST 풀블리드 스타일)
-
-**풀블리드 이미지 + 좌측 그라데이션 + 흰 제목 오버레이**. 모든 썸네일은 이미지가 캔버스 전체(1200×630) 를 덮고, 그 위에 어두운 그라데이션 + 흰 제목 텍스트가 **오버레이**된다.
-
-- 배경: GPT `image_gen` 이미지가 캔버스 전체 채움 (비율 유지 crop, 좌우 텍스트 박스 없음).
-- 전체 어두운 필터 `(10,14,26,70)` + 좌측 가로 그라데이션 `alpha = 200*(1-x/900)`.
-- 합성: Pillow. 썸네일 생성 SSOT [gen_blog_thumbnails.py](_scripts/gen_blog_thumbnails.py).
-- 사이즈: 1200×630, WebP (quality 90).
-- 텍스트 레이어:
-  - 좌상단 `{회사명 (종목코드)}` malgun.ttf 24px `#94a3b8`
-  - 우상단 `dartlab` malgunbd.ttf 22px `#f1f5f9`
-  - 중앙 좌측 제목 2 줄 malgunbd.ttf 58px 흰색, y=190 부터 80px 간격
-  - 제목 아래 부제 1 줄 malgun.ttf 22px `#94a3b8`
-  - 우하단 `avatar-chart.png` 160×160
-- 저장 경로: `landing/static/thumbnails/{code}-{slug}.webp` 1 곳만.
-- frontmatter: `thumbnail: /avatar-chart.png` (리스트 아바타), `ogImage: /thumbnails/{code}-{slug}.webp`.
-
-**참조 기준작**: MNST (36).
-
-**반복 실패** -
-- 좌측 반 = 텍스트 박스 / 우측 반 = 이미지 의 2 분할 레이아웃 (META·TSLA·하이브·IONQ 4 건 재발).
-- 이미지가 캔버스 일부만 차지하고 여백에 단색 박스 깔린 형태.
-- 제목 텍스트가 별도의 반투명 박스·카드에 들어간 형태.
-
-### 썸네일 원본 배경 보관
-
-**GPT `image_gen` 으로 생성한 썸네일 원본 배경은 작업 중 `blog/{category}/{folder}/assets/{NN}-thumbnail-bg.webp` 에 둔다.** 눈검수 뒤 `publishBlogAssets.py`가 최종 OG와 본문 자산을 HF에 올리며, 로컬 WebP는 staging이므로 Git에 넣지 않는다. FLUX 원본도 보조 경로로 만든 경우 동일하다.
-
-- 최종 합성 썸네일 staging: `landing/static/thumbnails/{code}-{slug}.webp` (덮어쓰기 OK, Git 추가 금지).
-- 원본 이미지 배경 staging: `blog/.../assets/{NN}-thumbnail-bg.webp` (Git 추가 금지).
-- `gen_blog_thumbnails.py` 같은 재생성 스크립트는 **반드시 assets/ 의 원본 배경을 읽어서** 합성.
-- 원본 배경 파일명은 `{NN}-thumbnail-bg.webp` 고정.
-
-**Phase 3 체크리스트 (썸네일 생성 시)**:
-1. GPT `image_gen` 으로 배경 생성 → `extractImagegenAssets.py` 로 추출 → `assets/{NN}-thumbnail-bg.webp` 로 먼저 저장.
-2. `gen_blog_thumbnails.py` 로 합성 → `landing/static/thumbnails/{code}-{slug}.webp`.
-3. `publishBlogAssets.py --post <글폴더>`로 HF에 올리고 중앙 `blog/media.json`·본문만 커밋. 두 WebP는 커밋하지 않는다.
-
-**반복 실패** - 2026-04-16 META·TSLA·하이브·IONQ 사고 직접 원인. MNST(36) 는 원본 남겨 재생성 가능, 37~40 은 원본 없어서 이미지 재호출 필요.
-
-### 블로그 hero ↔ 카드 공유풀 (HF 이미지 SSOT)
-
-이 절은 중앙 `blog/media.json` 도입 전 회사 글의 호환 경로다. legacy hero 사진과 카드 캐러셀 이미지는 `sns/assets/{code}/`를 거쳐 HF `dartlab-media`에 올린다:
-
-```
-uv run python -X utf8 sns/scripts/ingest_blog_assets.py --dry-run   # 복사 범위 미리보기
-uv run python -X utf8 sns/scripts/ingest_blog_assets.py             # 블로그 hero → sns/assets 공유풀(멱등)
-uv run python -X utf8 sns/scripts/build_index.py                    # 인덱스 갱신
-uv run python -X utf8 sns/scripts/publish_assets_hf.py              # hfMedia 업로드
-```
-
-- 차트(`.svg`)·card/thumbnail 렌더는 제외, **hero 실사만** 가져온다.
-- provenance (`sns/assets/_blog_provenance.json`) 로 멱등 - 블로그 원본이 바뀐 것만 재복사. 손-작성 자산(같은 이름)은 보호(미덮어쓰기).
-- 신규 v2 글은 이 복사 경로를 쓰지 않고 `publishBlogAssets.py`와 중앙 `blog/media.json`을 쓴다. 기술 카드도 같은 HF `objects/sha256/` 객체를 재사용한다.
+- `gen_blog_thumbnails.py`와 카테고리별 생성기는 로컬 눈검수용 staging만 만든다.
+- 배경과 본문 래스터는 글 폴더 `assets/`, 합성 OG는 `landing/static/thumbnails/`에 잠시 둘 수 있지만 Git에 추가하지 않는다.
+- `publishBlogAssets.py --post <글폴더>`가 모든 래스터를 `media/catalog.json`에 등록하고 HF `objects/sha256/`로 발행한다.
+- 발행기는 본문, `ogImage`, `cardPreview`를 HF 객체 URL로 바꾼다. 공개 문서가 로컬 staging 경로를 계속 가리키면 실패다.
+- 회사 카드 공유 staging은 `sns/assets/{code}`이고 `publish_assets_hf.py`가 같은 중앙 catalog와 객체 저장소를 쓴다. 별도 HF 회사 폴더나 블로그 복사 풀은 만들지 않는다.
+- 수급은 자율이다. 실제 제품, 인물, 현장은 공식 또는 라이선스 실사를, 원리와 개념 장면은 `image_gen`을 선택한다. 모든 실물은 눈검수하고 출처를 `assets/CREDITS.md`에 남긴다.
 
 ### 검증 체크리스트
 
-1. 본문 이미지, `ogImage`, `cardPreview`가 중앙 `blog/media.json`의 HF 객체 URL인지.
+1. 본문 이미지, `ogImage`, `cardPreview`가 중앙 `media/catalog.json`의 HF 객체 URL인지.
 2. WebP/JPG/PNG가 Git 추적 대상에 없는지.
 3. `uv run python -X utf8 blog/_scripts/auditBlog.py` XML·밀도 이슈 확인 (글 단위 구조 audit - 단어수·SVG·내부링크·H2 분포 + 템플릿 반복도).
 4. `uv run python -X utf8 blog/_scripts/auditBlogFinance.py` (회사 포스트 한정) - markdown finance 표 ↔ `dartlab.Company().select(..., freq="Y")` 실측 1:1 비교. 코드·표·실측 3 자 정합 강행.
@@ -979,15 +919,15 @@ uv run python -X utf8 sns/scripts/publish_assets_hf.py              # hfMedia �
 
 **반복 실패** - 85~94%·점은 "거의 됐다" 아니라 "아직 안 됐다". 반복 개선.
 
-### 발행 전 자기 검토 체크리스트 13 개
+### 발행 전 자기 검토 체크리스트 15 개
 
 발행 직전 한 번에. 하나라도 No 면 차단.
 
 - [ ] 제목 검색형 질문 또는 판단 문장이고 60 자 이하
 - [ ] 첫 2 문단에 글 핵심 답변
 - [ ] 단일 핵심 질문 - 두 질문 안 섞임
-- [ ] 마스터라이터 편집 통과 - 첫 화면 후킹, 장면화, 내부 제작어 제거
-- [ ] H2 구조 이 글 전용, 다른 글과 다름
+- [ ] 마스터라이터 편집 통과 - 단일 내러티브, 쉬운 풀이, 첫 화면 후킹, 장면화, 내부 제작어 제거
+- [ ] 모든 H2가 앞의 답에서 다음 궁금증을 만들고, 이 글에서만 필요한 순서로 이어짐
 - [ ] "다음 글" 류 마무리 없음
 - [ ] 본문 모든 수치가 검증표에 등록
 - [ ] 검증표 모든 행에 dartlab 호출 키 + 분기·연간 라벨

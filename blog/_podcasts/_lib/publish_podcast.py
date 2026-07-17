@@ -27,7 +27,6 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import shutil
 import subprocess
@@ -46,6 +45,11 @@ from dartlab.core.dataConfig import HF_MEDIA_BASE_URL, HF_MEDIA_REPO
 LIB_DIR = Path(__file__).resolve().parent
 PODCAST_DIR = LIB_DIR.parent
 ROOT = PODCAST_DIR.parents[1]
+BLOG_SCRIPTS = ROOT / "blog" / "_scripts"
+sys.path.insert(0, str(BLOG_SCRIPTS))
+
+from blogMedia import loadMediaCatalog, mediaPath, registerMediaFile, saveMediaCatalog  # noqa: E402
+
 EPISODES_DIR = PODCAST_DIR / "episodes"
 CHANNEL_YAML = PODCAST_DIR / "channel.yaml"
 UPLOADS_DIR = PODCAST_DIR / "_uploads"
@@ -59,7 +63,7 @@ NODE = shutil.which("node")
 FFMPEG = shutil.which("ffmpeg")
 FFPROBE = shutil.which("ffprobe")
 WRANGLER_JS = ROOT / "infra" / "workers" / "pushHub" / "node_modules" / "wrangler" / "bin" / "wrangler.js"
-SOURCE_ASSET_PREFIX = "podcasts"
+MEDIA_CATALOG_PATH = ROOT / "media" / "catalog.json"
 
 
 # --- 환경 ---
@@ -174,6 +178,8 @@ def fmt_hhmmss(sec: int) -> str:
 
 def sha8(path: Path) -> str:
     """파일 SHA256 앞 8 hex."""
+    import hashlib
+
     h = hashlib.sha256()
     with path.open("rb") as f:
         for chunk in iter(lambda: f.read(1 << 20), b""):
@@ -291,13 +297,37 @@ def resolve_audio_source(raw: str) -> Path:
 
 def source_asset_key(meta: dict, source_path: Path) -> str:
     """HF media repo 에 올릴 원본 이미지 콘텐츠해시 경로."""
-    suffix = source_path.suffix.lower() or ".bin"
-    stem = source_path.stem.replace(" ", "-")
-    return f"{SOURCE_ASSET_PREFIX}/{meta['slug']}/{stem}.{sha8(source_path)}{suffix}"
+    import hashlib
+
+    sha256 = hashlib.sha256(source_path.read_bytes()).hexdigest()
+    return mediaPath(sha256, source_path.suffix)
+
+
+def loadCentralMediaCatalog() -> dict[str, object]:
+    catalog, errors = loadMediaCatalog(MEDIA_CATALOG_PATH)
+    if catalog is None or errors:
+        raise SystemExit("[hf-source] 중앙 미디어 카탈로그 오류: " + "; ".join(errors))
+    return catalog
+
+
+def companyAssetRecord(catalog: dict[str, object], code: str, name: str) -> dict[str, str] | None:
+    """회사 의미 키를 중앙 컬렉션의 객체 레코드로 해석한다."""
+    collections = catalog.get("collections")
+    objects = catalog.get("objects")
+    companies = collections.get("companies") if isinstance(collections, dict) else None
+    company = companies.get(code) if isinstance(companies, dict) else None
+    assets = company.get("assets") if isinstance(company, dict) else None
+    sha256 = str(assets.get(name) or "") if isinstance(assets, dict) else ""
+    obj = objects.get(sha256) if isinstance(objects, dict) else None
+    path = str(obj.get("path") or "") if isinstance(obj, dict) else ""
+    if not path.startswith("objects/sha256/"):
+        return None
+    return {"path": path, "sha256": sha256}
 
 
 def source_asset_fields(ep_dir: Path, meta: dict) -> tuple[list[dict], list[dict]]:
     """재사용 원본 이미지 공개 필드와 내부 업로드 필드."""
+    mediaCatalog = loadCentralMediaCatalog()
     raw_assets = meta.get("sourceAssets") or []
     if isinstance(raw_assets, dict):
         raw_assets = [raw_assets]
@@ -307,32 +337,38 @@ def source_asset_fields(ep_dir: Path, meta: dict) -> tuple[list[dict], list[dict
     for raw in raw_assets:
         if not isinstance(raw, dict):
             continue
-        # 공유 풀 참조(한 세트): 회사 에피소드는 companies/{code} 풀 자산을 재사용한다. 재업로드하지 않고 이름으로 기록(프론트가 companies/index.json 으로 해석). 명시 key 있으면 URL 도 기록.
+        # 회사 공유 자산은 중앙 companies 컬렉션에서 객체를 해석하고 재업로드하지 않는다.
         if str(raw.get("pool") or "").strip() == "companyAsset" and code:
             pool_name = str(raw.get("name") or Path(str(raw.get("source") or "")).stem).strip()
             if not pool_name:
                 continue
+            record = companyAssetRecord(mediaCatalog, code, pool_name)
+            if record is None:
+                raise SystemExit(f"[hf-source] 회사 이미지 의미 키 미등록: {code}/{pool_name}")
             entry = {
                 "name": pool_name,
                 "role": str(raw.get("role") or "source").strip(),
                 "pool": "companyAsset",
                 "code": code,
+                "key": record["path"],
+                "sha256": record["sha256"],
+                "url": f"{HF_MEDIA_BASE_URL.rstrip('/')}/{record['path']}",
             }
-            explicit_key = str(raw.get("key") or "").strip()
-            if explicit_key:
-                entry["key"] = explicit_key
-                entry["url"] = f"{HF_MEDIA_BASE_URL.rstrip('/')}/{explicit_key}"
             public_assets.append(entry)
             continue
         source = str(raw.get("source") or "").strip()
         if not source:
             continue
         src = resolve_episode_image_source(ep_dir, source)
-        key = str(raw.get("key") or "").strip()
-        if not key and src.exists():
-            key = source_asset_key(meta, src)
-        elif not key:
-            key = f"{SOURCE_ASSET_PREFIX}/{meta['slug']}/{src.name}"
+        if not src.exists():
+            print(f"[hf-source] 소스 없음, 공개 목록에서 제외: {src}")
+            continue
+        source = src.relative_to(ROOT).as_posix() if src.is_relative_to(ROOT) else src.as_posix()
+        record = registerMediaFile(mediaCatalog, source, src)
+        explicitKey = str(raw.get("key") or "").strip()
+        if explicitKey and explicitKey != record["path"]:
+            raise SystemExit(f"[hf-source] 레거시/불일치 key 금지: {explicitKey} != {record['path']}")
+        key = record["path"]
         role = str(raw.get("role") or "source").strip()
         name = str(raw.get("name") or src.stem).strip()
         public_assets.append(
@@ -340,10 +376,20 @@ def source_asset_fields(ep_dir: Path, meta: dict) -> tuple[list[dict], list[dict
                 "name": name,
                 "role": role,
                 "key": key,
+                "sha256": record["sha256"],
                 "url": f"{HF_MEDIA_BASE_URL.rstrip('/')}/{key}",
             }
         )
-        upload_assets.append({"sourcePath": str(src), "key": key, "name": name, "role": role})
+        upload_assets.append(
+            {
+                "sourcePath": str(src),
+                "source": source,
+                "key": key,
+                "sha256": record["sha256"],
+                "name": name,
+                "role": role,
+            }
+        )
     return public_assets, upload_assets
 
 
@@ -694,17 +740,36 @@ def upload_episode_images(env: dict, channel: dict, records: list[dict], dry_run
 
 
 def upload_hf_source_assets(records: list[dict], dry_run: bool, repo: str = HF_MEDIA_REPO) -> None:
-    """에피소드 원본 이미지를 HF media repo 에 업로드."""
+    """에피소드 원본을 중앙 catalog에 등록하고 HF 콘텐츠 주소 객체로 업로드한다."""
+    mediaCatalog = loadCentralMediaCatalog()
+    collections = mediaCatalog.setdefault("collections", {})
+    if not isinstance(collections, dict):
+        raise SystemExit("[hf-source] media/catalog.json collections 계약 위반")
+    podcastCollection = collections.setdefault("podcasts", {})
+    if not isinstance(podcastCollection, dict):
+        raise SystemExit("[hf-source] media/catalog.json podcasts 컬렉션 계약 위반")
     planned: dict[str, Path] = {}
     for r in records:
+        episodeAssets = podcastCollection.setdefault(str(r["slug"]), {"assets": {}})
+        semanticAssets = episodeAssets.setdefault("assets", {}) if isinstance(episodeAssets, dict) else None
+        if not isinstance(semanticAssets, dict):
+            raise SystemExit(f"[hf-source] 팟캐스트 컬렉션 계약 위반: {r['slug']}")
         for asset in r.get("_sourceAssetUploads") or []:
-            key = str(asset.get("key") or "").strip()
             src = Path(str(asset.get("sourcePath") or ""))
-            if not key:
-                continue
             if not src.exists():
                 print(f"[hf-source] 소스 없음, 건너뜀: {src}")
                 continue
+            source = src.relative_to(ROOT).as_posix() if src.is_relative_to(ROOT) else src.as_posix()
+            record = registerMediaFile(mediaCatalog, source, src)
+            key = record["path"]
+            expectedKey = str(asset.get("key") or "").strip()
+            if expectedKey and expectedKey != key:
+                raise SystemExit(f"[hf-source] 객체 경로 불일치: {expectedKey} != {key}")
+            semantic = str(asset.get("name") or src.stem).strip()
+            previous = semanticAssets.get(semantic)
+            if previous and previous != record["sha256"]:
+                raise SystemExit(f"[hf-source] 팟캐스트 의미 키 충돌: {r['slug']}/{semantic}")
+            semanticAssets[semantic] = record["sha256"]
             planned.setdefault(key, src)
 
     if not planned:
@@ -713,7 +778,7 @@ def upload_hf_source_assets(records: list[dict], dry_run: bool, repo: str = HF_M
     for key, src in sorted(planned.items()):
         print(f"  HF put  {key}  ({src.stat().st_size:,} B)")
     if dry_run:
-        print("[hf-source] dry-run: 실제 업로드 안 함")
+        print("[hf-source] dry-run: 실제 업로드와 catalog 저장 안 함")
         return
 
     from huggingface_hub import CommitOperationAdd, HfApi
@@ -721,15 +786,23 @@ def upload_hf_source_assets(records: list[dict], dry_run: bool, repo: str = HF_M
     from dartlab.core.hfRetry import retryHfCall
     from dartlab.pipeline.hfUpload import _resolveHfToken
 
-    ops = [CommitOperationAdd(path_in_repo=key, path_or_fileobj=str(src)) for key, src in sorted(planned.items())]
-    retryHfCall(
-        HfApi(token=_resolveHfToken()).create_commit,
-        repo_id=repo,
-        repo_type="dataset",
-        operations=ops,
-        commit_message=f"팟캐스트: 원본 이미지 {len(ops)}개 업로드",
-    )
-    print(f"[hf-source] {repo} 원본 이미지 {len(ops)}개 업로드 완료")
+    api = HfApi(token=_resolveHfToken())
+    existing = set(retryHfCall(api.list_repo_files, repo_id=repo, repo_type="dataset"))
+    ops = [
+        CommitOperationAdd(path_in_repo=key, path_or_fileobj=str(src))
+        for key, src in sorted(planned.items())
+        if key not in existing
+    ]
+    if ops:
+        retryHfCall(
+            api.create_commit,
+            repo_id=repo,
+            repo_type="dataset",
+            operations=ops,
+            commit_message=f"팟캐스트: 중앙 원본 객체 {len(ops)}개 업로드",
+        )
+    saveMediaCatalog(MEDIA_CATALOG_PATH, mediaCatalog)
+    print(f"[hf-source] {repo} 신규 원본 객체 {len(ops)}개 업로드 완료")
 
 
 def archive_manual_upload_pair(ep_dir: Path, audio_override: str | None, dry_run: bool) -> None:

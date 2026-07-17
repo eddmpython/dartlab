@@ -240,9 +240,14 @@ def _write_tech_post(root: Path, *, brief_score: int = 94) -> Path:
     files = {f"blog/08-tech-story/01-stealth-test/assets/{assetKey}.webp": sha256 for assetKey in assetKeys}
     files["landing/static/thumbnails/tech-stealth-test.webp"] = sha256
     media = {
-        "version": 2,
+        "version": 3,
         "repo": "eddmpython/dartlab-media",
         "objectPrefix": "objects/sha256",
+        "collections": {},
+        "manifests": {
+            "carousels": "manifests/carousels.json",
+            "companies": "manifests/companies.json",
+        },
         "objects": {sha256: {"bytes": 4, "path": objectPath}},
         "files": files,
         "posts": {
@@ -255,7 +260,9 @@ def _write_tech_post(root: Path, *, brief_score: int = 94) -> Path:
             }
         },
     }
-    (root / "blog" / "media.json").write_text(json.dumps(media, ensure_ascii=False, indent=2), encoding="utf-8")
+    catalogPath = root / "media" / "catalog.json"
+    catalogPath.parent.mkdir(parents=True, exist_ok=True)
+    catalogPath.write_text(json.dumps(media, ensure_ascii=False, indent=2), encoding="utf-8")
     (assets / "CREDITS.md").write_text(
         "\n".join(
             [
@@ -391,7 +398,7 @@ def test_publish_gate_blocks_missing_watch_scenarios(monkeypatch, tmp_path: Path
 def test_publish_gate_blocks_image_ssot_drift(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(ab, "repo_root", lambda: tmp_path)
     post = _write_tech_post(tmp_path)
-    mediaPath = tmp_path / "blog" / "media.json"
+    mediaPath = tmp_path / "media" / "catalog.json"
     media = json.loads(mediaPath.read_text(encoding="utf-8"))
     del media["posts"]["08-tech-story/01-stealth-test"]["assets"]["aesa-test-bench"]
     mediaPath.write_text(json.dumps(media, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -408,7 +415,7 @@ def test_publish_gate_blocks_image_ssot_drift(monkeypatch, tmp_path: Path) -> No
 
     errors = ab.publish_gate(post)
 
-    assert any("blog/media.json" in error and "누락" in error for error in errors)
+    assert any("media/catalog.json" in error and "누락" in error for error in errors)
     assert any("CREDITS.md" in error and "assetKey 누락" in error for error in errors)
 
 
@@ -483,6 +490,67 @@ ROE와 PER은 리레이팅을 설명하는 KPI다.
 
     assert any("추상 문장" in err for err in errors)
     assert any("전문가 말투" in err for err in errors)
+
+
+def test_common_body_gate_applies_to_every_blog_category() -> None:
+    body = """
+## 설명
+
+이 구조는 시장의 흐름과 맥락을 관통하는 핵심 프레임이다.
+이 메커니즘은 판단의 시사점과 방향성을 제공한다.
+서사의 모멘텀과 레버리지는 전체 내러티브의 의미를 만든다.
+이 관점은 기업 체력과 퀄리티의 연결을 보여 준다.
+전체 스토리의 관통선과 함의는 추상적인 방향성과 감각을 강화한다.
+이 서사는 핵심 관점과 맥락의 연결을 통해 새로운 의미를 제시한다.
+OPM과 EBITDA는 밸류에이션 프레임워크의 핵심이다.
+CAPEX와 FCF는 컨센서스와 멀티플에 영향을 준다.
+ROE와 PER은 리레이팅을 설명하는 KPI다.
+"""
+
+    for category in ab.BLOG_CATEGORIES:
+        errors = ab._validate_common_body_plainness(body, category)
+
+        assert any("추상 문장" in err for err in errors), category
+        assert any("전문가 말투" in err for err in errors), category
+
+
+def test_short_category_publish_gate_requires_reader_narrative(tmp_path: Path) -> None:
+    postDir = tmp_path / "blog" / "02-dartlab-news" / "01-update"
+    postDir.mkdir(parents=True)
+    body = "\n\n".join(
+        [
+            "새 기능과 변경 내용을 안내합니다. 기능 목록과 제공 범위를 차례로 적습니다."
+            " 화면 구성과 처리 항목을 설명하고 지원 대상을 소개합니다."
+        ]
+        * 10
+    )
+    (postDir / "index.md").write_text(
+        f"---\ncategory: dartlab-news\n---\n\n{body}\n",
+        encoding="utf-8",
+    )
+
+    errors = ab.publish_gate(postDir)
+
+    assert any("왜 이 글을 읽어야" in err for err in errors)
+    assert any("오해·한계·주의" in err for err in errors)
+    assert any("다음에 볼 기준" in err for err in errors)
+
+
+def test_short_category_common_gate_allows_easy_connected_story() -> None:
+    body = """
+왜 이번 변경을 알아야 할까요? 처음 온 독자에게는 메뉴 이름보다 무엇을 할 수 있는지가 먼저입니다.
+실제 화면에서 회사 코드를 넣고 결과 표를 확인하면 첫 번째 값이 바로 보입니다. 표의 날짜와 금액을 함께 읽으면 어떤 자료인지도 알 수 있습니다.
+여기서 바로 결론을 내리면 안 됩니다. 같은 값처럼 보여도 기간이 다르면 결과가 달라지므로 날짜 열을 다시 확인해야 합니다.
+예를 들어 연간 값과 분기 값을 나란히 두면 합계와 한 시점 숫자를 섞는 오해를 피할 수 있습니다. 빈칸도 0으로 바꾸지 않고 원문을 다시 봅니다.
+첫 결과 표에서는 회사 이름, 날짜, 금액을 한 줄씩 읽습니다. 같은 회사라도 날짜가 바뀌면 금액이 달라질 수 있으므로 어느 기간의 값인지 먼저 확인합니다.
+두 번째 표에서는 앞에서 본 값과 새 값을 비교합니다. 차이가 생긴 칸을 찾고 공시 문장을 함께 읽으면 숫자가 바뀐 이유를 쉬운 말로 설명할 수 있습니다.
+주의할 점도 있습니다. 화면에 값이 없다고 회사에 실적이 없다는 뜻은 아닙니다. 원문에 항목이 없는지, 기간이 다른지, 아직 공시되지 않았는지 차례로 확인합니다.
+그래서 기능 이름을 외우는 대신 입력, 결과, 주의할 점을 한 번에 연결해 봅니다. 독자가 직접 같은 화면을 열어 값이 어디에서 달라지는지 확인할 수 있습니다.
+다음에는 다른 회사를 넣고 같은 날짜 기준이 유지되는지 확인하면 됩니다. 결과가 다르면 원문과 기간을 다시 보는 것이 다음 질문입니다.
+"""
+
+    assert ab.prose_char_count(body) >= 500
+    assert ab._validate_common_body_plainness(body, "dartlab-news") == []
 
 
 def test_common_plan_gate_blocks_missing_reader_arc() -> None:

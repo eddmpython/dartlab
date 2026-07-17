@@ -18,11 +18,11 @@
 1. **진입점화** — 카드 → 해당 종목의 터미널 종목검토(전문 분석 계기판)로 한 번에 진입.
 2. **회사 간 카드망** — 카드가 언급한 다른 회사를 그 회사 카드/리포트로 점프하는 망.
 3. **지식화** — 카드 결론도 KnowledgeDB 에 들어가 블로그와 함께 AI retrieve 인용 자산이 됨.
-4. 데이터·소비 SSOT 불가침 — `carousels/index.json` 단일 파일, 공유 `PostModal` 한 곳만 늘린다(분기 신설 금지).
+4. 데이터·소비 SSOT 불가침 - `manifests/carousels.json` 단일 파일, 공유 `PostModal` 한 곳만 늘린다(분기 신설 금지).
 
 ## 3. 비목표
 
-- 새 그래프 DB·별도 인덱스 파일 신설 금지(KnowledgeDB·carousels/index.json 재사용).
+- 새 그래프 DB·별도 인덱스 파일 신설 금지(KnowledgeDB와 `manifests/carousels.json` 재사용).
 - 카드 산문/디자인 갈아엎기 금지 — 연결 요소만 얹는다.
 - 자동 회사 추출(NER) 금지 1차 — 회사망 엣지는 **손글 큐레이션**(frontmatter)로 시작(정직·오매치 0).
 
@@ -49,7 +49,7 @@
 - **검증**: `blog/_scripts/cards_plan.py::validate_contract_plan_gate` + `blog/_scripts/audit_seo.py` —
   `code` 6자리·중복 자기참조 금지·`reason` 필수.
 - **소비**: `PostModal.svelte` 에 `relatedCompanies` chips → 클릭 시 그 회사 카드(같은 code 의 첫 slug) 또는
-  터미널 진입. carousels/index.json 한 파일 안에 이미 전 카드가 있어 **추가 fetch 0**(클라 lookup).
+  터미널 진입. `manifests/carousels.json` 한 파일 안에 이미 전 카드가 있어 **추가 fetch 0**(클라 lookup).
 
 ### ④ 블로그 + 카드 지식화
 - **확장**: `blog/_scripts/backfill_blog_insights.py` — 카드 계약(`title`·`caption`·`pinnedComment`·cover `conclusion`)
@@ -77,7 +77,7 @@
 
 데이터 백본(`code`·공유 `PostModal`)이 이미 있어 **①은 거의 CTA 한 줄**, ③은 손글 필드+chips 로 저비용.
 NER 자동추출 대신 손글 큐레이션으로 시작해 오매치 0·정직 유지. 저장 SSOT(story manifest)는 content-asset-ssot 가
-키우고, 본 PRD 는 그 위 **연결망**만 얹는다 — "굽지 않고 carousels/index.json·KnowledgeDB 재사용" 원칙 준수.
+키우고, 본 PRD는 그 위 **연결망**만 얹는다. "굽지 않고 manifests/carousels.json과 KnowledgeDB 재사용" 원칙을 준수한다.
 UI 빌드는 푸시 게이트라 운영자 승인 후 한 편씩 완성한다.
 
 ## 8. 카드 필터·크로스검색 (scan식 — 데이터 토대 착수, UI 향후)
@@ -88,9 +88,9 @@ UI 빌드는 푸시 게이트라 운영자 승인 후 한 편씩 완성한다.
 - `code`(종목코드) · `name`(회사명) · `sector` — 이미 존재.
 - **`cardType`** — `company`(기업이야기) | `event`(기업 이벤트) | `economy`(경제이야기). 2026-06-28 데이터 토대 착수:
   `build_carousel_contracts.py` 가 company-reports→`company`, `_issues`→yaml `type:`(기본: code 있으면 `event`·없으면 `economy`) 로 emit.
-  build 가 `carousels/index.json` 에 emit(런타임 데이터에 박힘). `model.ts` 인터페이스 타입은 필터 UI 빌드 때 반영(현재 소비처 없음). 3 이슈 카드(`samsung-biologics`=event·`buyback`=event·`korea-macro`=economy) type 박음.
+  build가 `manifests/carousels.json`에 emit한다. `model.ts` 인터페이스 타입은 필터 UI 빌드 때 반영한다. 3 이슈 카드(`samsung-biologics`=event·`buyback`=event·`korea-macro`=economy)에 type을 기록한다.
 - **popularity(인기순 슬라이딩)** — 자주 찾고 자주 열어본 카드. 현재 view 데이터 없음 → 향후 조회/오픈 카운트 적재 후 `popularity` 필드. 데이터 생기기 전 보류(날조 금지).
 
-**소비 (UI·향후·푸시 게이트)**: `/cards` 피드에 필터 chip(타입·섹터) + 검색(code/name) + 정렬(date/popularity) — scan 처럼 한 화면 횡단. `carousels/index.json` 단일 파일이라 클라 필터(추가 fetch 0).
+**소비 (UI·향후·푸시 게이트)**: `/cards` 피드에 필터 chip(타입·섹터) + 검색(code/name) + 정렬(date/popularity). `manifests/carousels.json` 단일 파일이라 클라이언트 필터에 추가 fetch가 없다.
 
 **백필 정합**: 카드 근거 백필([[project_card_evidence_backfill]]) 시 code/name/cardType 정확히 박혔는지 함께 점검 → 필터 준비.

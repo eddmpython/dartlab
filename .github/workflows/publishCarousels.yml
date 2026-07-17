@@ -1,6 +1,6 @@
 name: Publish Carousels
 
-# 블로그 글 frontmatter 의 `carousel:` 블록(손글 SSOT)이 바뀌면 hfMedia `carousels/index.json`(단일 파일)을
+# 블로그 글 frontmatter 의 `carousel:` 블록(손글 SSOT)이 바뀌면 hfMedia `manifests/carousels.json`을
 # 자동 재발행한다. 발행은 dartlab-media 데이터셋 *HF push* 이지 GitHub 커밋이 아니다 — 깃 이력은 안 늘고,
 # 운영자가 매번 `build_carousel_contracts.py` 를 수동 실행할 필요가 없어진다.
 #   트리거 정밀화: 회사 글 index.md · cards.plan.json · standalone 이슈 · 빌드/기획 스크립트 변경만.

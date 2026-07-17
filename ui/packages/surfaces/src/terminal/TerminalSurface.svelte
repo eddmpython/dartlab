@@ -39,7 +39,7 @@
 		hosts: TerminalHosts;
 		/** 헤더 SNS·외부 링크 · 셸이 자기 brand 에서 주입 (surface 가 brand 소유 안 함, 4b). */
 		links: TerminalBrandLinks;
-		/** 카드뉴스(편집 캐러셀) 보유 종목코드 집합 · 셸(landing /terminal)이 carousels/index.json 로드해 주입.
+		/** 카드뉴스(편집 캐러셀) 보유 종목코드 집합 · 셸(landing /terminal)이 manifests/carousels.json을 로드해 주입.
 		 *  회사명 옆 링크 줄에 *해당 종목에 한해* 「카드뉴스」를 노출(개별). 미주입 시 링크 없음(standalone 무해). */
 		cardsCodes?: Set<string>;
 		/** 카드뉴스 클릭 핸들러 · 셸이 인스타식 포스트 다이얼로그(Deck+캡션)를 오버레이로 띄운다. Deck=landing 의존이라

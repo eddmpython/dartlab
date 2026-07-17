@@ -17,7 +17,7 @@
 ## 흐름 (회사 hero 이미지 파이프라인에 그대로 합류)
 1. 이 도구가 `sns/assets/{code}/cc0-{name}.webp` 로 저장 (긴 변 1400·webp q82).
 2. `sns/scripts/build_index.py` 가 자동으로 인덱싱(파일명에 card/thumbnail/og 토큰 없으면 hero 로 채택).
-3. `sns/scripts/publish_assets_hf.py` 가 hfMedia `companies/{code}/cc0-{name}.{hash8}.webp` 로 업로드.
+3. `sns/scripts/publish_assets_hf.py`가 중앙 catalog에 등록하고 hfMedia 객체와 companies manifest를 발행.
 4. 블로그 frontmatter 슬라이드에서 `image: cc0-{name}` 로 가리킨다(resolveSlideImage prefix 매칭).
 
 즉 **별도 배선 없음** — 기존 회사 이미지와 똑같은 길로 서빙된다. 차이는 출처(생성형 대신 CC0 스톡)뿐.

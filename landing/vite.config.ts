@@ -45,8 +45,8 @@ function collectBlogAssets(dir: string, result = new Map<string, string>()) {
 		const fullPath = path.resolve(dir, entry.name);
 		if (entry.isDirectory()) {
 			// underscore 특수폴더(_issues 캐러셀·_reference·_scripts)는 평면 /blog/assets/ 서빙 대상이 아니다.
-			// 특히 _issues 캐러셀 자산은 build_carousel_contracts.py 가 HF media `issues/<slug>/<name>.<hash>` 로
-			// slug-네임스페이스 서빙 → 캐러셀마다 scene-NN 재시작이 정상(평면 basename 충돌로 dev 부팅을 깨면 안 됨).
+			// 특히 _issues 캐러셀 자산은 build_carousel_contracts.py 가 HF 콘텐츠 주소 객체로 발행하므로
+			// 캐러셀마다 scene-NN 재시작이 정상이다(평면 basename 충돌로 dev 부팅을 깨면 안 됨).
 			if (entry.name.startsWith('_')) continue;
 			if (entry.name === 'assets') {
 				for (const asset of fs.readdirSync(fullPath, { withFileTypes: true })) {
@@ -280,13 +280,13 @@ function newsDevPlugin() {
 }
 
 // 로컬 카드 프리뷰 전용 HF 미디어 폴백. VITE_DARTLAB_HF_MEDIA_RESOLVE='' 로 미디어 base 를 로컬로 돌려
-// 미발행 carousels/index.json 을 끼워 보는 동안에도, 실제 이미지(companies·issues·docs)는 HF 에서 그대로
+// 미발행 manifests/carousels.json 을 끼워 보는 동안에도, 실제 콘텐츠 주소 객체는 HF 에서 그대로
 // 보이게 한다. 로컬 static 에 있는 파일(새 카드의 신규 이미지)은 정적 서빙이 우선, 없으면 HF 로 302.
 // 정상 dev(base=HF 기본)에서는 이미지가 huggingface.co 절대 URL 로 직접 가므로 이 미들웨어는 발동하지 않는다(무영향).
 function hfMediaFallbackPlugin() {
 	const HF = 'https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main';
 	const staticDir = path.resolve(__dirname, 'static');
-	const MEDIA_RE = /^\/(companies|issues|docs)\/.+\.(webp|svg|png|jpe?g|avif|gif)$/i;
+	const MEDIA_RE = /^\/objects\/sha256\/[0-9a-f]{2}\/[0-9a-f]{64}\.(webp|png|jpe?g)$/i;
 	return {
 		name: 'hf-media-fallback',
 		configureServer(server: ViteDevServer) {

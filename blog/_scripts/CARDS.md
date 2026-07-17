@@ -13,7 +13,7 @@
 
 ## 카드는 어디서 오나
 - **손글 SSOT = 블로그 글 frontmatter 의 `carousel:` 블록.** (`blog/05-company-reports/{글}/index.md`)
-- 화면은 hfMedia `carousels/index.json` **한 파일**을 읽어 그때그때 그린다(**안 굽는다**·디자인은 코드가 정함).
+- 화면은 hfMedia `manifests/carousels.json` 한 파일을 읽어 그때그때 그린다(안 굽고 디자인은 코드가 정함).
 - 같은 회사 다른 주제 글이면 각자 `carousel:` → **자동으로 여러 편**(1:N).
 
 > **정본은 /cards(이 파이프라인) 하나다.** 옛 `sns/carousels/`(hook.json→PNG·reel) 는 **유물**이다 -
@@ -38,8 +38,8 @@
    - `imagePlan[]` 은 신규 기획 기준 **7장 이상**이어야 한다. 고정 템플릿이 아니라 카드 흐름에서 의미가 다른 장면만 기획한다.
    - 이미지는 그 글의 회사·사건·장소·시설·제품·운영 질문을 상징하는 **실제 사용용 장면**이어야 한다. 범용 금융 배경은 탈락.
    - 상호/회사명은 프롬프트와 검색 키워드에 써도 된다. 다만 생성형 이미지가 공식 로고·공식 문서·실제 내부시설을 사실처럼 꾸며내면 안 된다.
-   - 각 항목의 `prompt` 를 GPT `image_gen` 으로 한 장씩 생성한다.
-   - 생성 뒤 `imagegen.extractCommand` 로 `sns/assets/{code}/{assetKey}.webp` 에 저장하고 `imagegen.checkCommand` 로 프레이밍을 본다.
+   - 각 항목은 `sourcePolicy: auto`로 둔다. 실제 제품, 인물, 현장은 공식 또는 라이선스 실사를, 원리와 개념 장면은 `image_gen`을 자율 선택한다.
+   - 로컬 staging은 `sns/assets/{code}/{assetKey}.webp`에 두고 `imagegen.checkCommand`와 사람의 눈으로 프레이밍과 사실 적합성을 확인한다.
 3. 작가 패널 토론·평가를 `cards.plan.json` 의 `reviewGate` 에 기록하고 `status: "passed"` 로 닫는다. 작가기획 → 평가 피드백 → 작가 재기획 → 재평가를 최소 2라운드 실행하고, 마지막 `evaluatorScore` 가 92점 이상이어야 한다.
    - `titleHook` 라운드: 제목 후보 3개 이상을 비교하고 선택 제목이 독자의 상식과 글이 갚을 질문 사이에 호기심 갭을 만드는지 본다. 표지와 마지막 카드가 제목의 약속을 갚지 못하면 실패다.
    - `planning.insightContract` (v4+ 강행): **통념(commonBelief)·반전(twistFact=충돌 사실+메커니즘)·그래서 볼 것(whatToWatch=렌즈)·evidenceRefs** 를 적는다. 충돌 사실만 던지고 끝나면 인사이트가 아니다. 발행 게이트가 셋이 채워졌고 반전이 제목·캡션의 재진술이 아닌지 검사한다.
@@ -47,7 +47,7 @@
    - 카드뉴스 5대 원칙(맥락·인사이트·이미지 정합·쉬움·재미/호기심)과 작가 craft(표지 후크·promise/payoff·구체 장면화·so what·신뢰·정직한 의외성)는 `operation.content` 가 정본이다.
 4. (선택) 검사: `uv run python -X utf8 blog/_scripts/audit_seo.py`  ← 형식·숫자 점검
 5. 발행: `uv run python -X utf8 blog/_scripts/build_carousel_contracts.py`
-   - hfMedia 에 `carousels/index.json` **한 파일** 올림(옛 파일 자동 삭제).
+   - hfMedia에 `manifests/carousels.json`과 새 콘텐츠 주소 객체만 올린다.
    - `/cards` 새로고침하면 뜬다. **사이트 재빌드 불필요**(데이터만 올림).
    - `--dry-run` 붙이면 *올릴 것·지울 것*만 미리 본다.
 
@@ -81,7 +81,7 @@ carousel:
     - layout: editorial         # 표지
       line: "큰 글씨 한 줄"
       sub: "받침 문장"
-      image: imagegen-xxx       # 이미지 '이름'만(hfMedia 에서 실제 파일 찾음)
+      image: scene-cover        # 저작 의미 키. 발행기가 중앙 catalog의 객체 경로로 확정
     - layout: editorialBeat
       kicker: "돈의 흐름"
       line: "앞장의 질문은 여기서 숫자로 이어집니다"
@@ -127,12 +127,9 @@ carousel:
 - 읽기측 코드/디자인을 바꿈 → **landing push 로 사이트 배포**(공개 화면이라 운영자 눈검수 후).
 
 ## 이미지
-- 슬라이드는 이미지를 **이름**으로만 가리킴 → 실제 파일은 hfMedia `companies/{code}/` 에서 찾음.
-- 이미지 마음에 안 들면 **계약 안 건드리고 hfMedia 이미지만 교체**하면 됨.
-- 로컬 원본 = `sns/assets/{code}/{name}.webp` → `build_index.py` 인덱싱 → `publish_assets_hf.py` 가 hfMedia 업로드.
-  파일명에 `card`/`thumbnail`/`og-` 토큰만 없으면 hero 로 자동 채택(별도 등록 불필요).
-- **블로그 hero 공유 (SSOT)**: 블로그 회사 글 hero 사진은 `sns/scripts/ingest_blog_assets.py` 로 같은
-  `sns/assets/{code}/` 공유풀에 합류한다 (블로그·카드 이미지 한 풀). 멱등·손작성 자산 보호 - 절차는 `blog/BLOG.md` "블로그 hero ↔ 카드 공유풀".
+- 저작 단계 슬라이드는 이미지 의미 키만 쓴다. `build_carousel_contracts.py`가 `media/catalog.json`의 회사 컬렉션에서 객체 경로를 확정한다.
+- 로컬 원본은 `sns/assets/{code}/{name}.webp` staging에 두고 `build_index.py` -> `publish_assets_hf.py`로 중앙 catalog, `manifests/companies.json`, HF 객체를 함께 갱신한다.
+- 이미지 교체는 같은 의미 키에 새 SHA-256을 연결하는 일이다. HF 객체를 덮어쓰거나 회사별 폴더에 사본을 만들지 않는다.
 
 ### 이미지 점검 - 쓰레기(평면 벡터·도식·인포그래픽) 먼저 잡기
 생성형 hero 중 일부가 실사가 아니라 **평면 도식·막대그래프·텍스트 카드**로 나와 흑백 풀블리드 배경으로 깨진다.
@@ -143,13 +140,10 @@ uv run python -X utf8 blog/_scripts/audit_carousel_images.py            # 색<60
 uv run python -X utf8 blog/_scripts/audit_carousel_images.py --max 250  # 평면 벡터/도식에 집중
 ```
 
-### 이미지 가져오는 곳 - GPT image_gen 1차, CC0/PD 보강
-> **카드 캐러셀 발간 규칙(강행)**: 랜딩 `/cards` 이미지는 블로그·카드 공동 기획의 `cards.plan.json`
-> 에서 먼저 정한다. 기본 경로는 GPT `image_gen` 이고, 실제 장소·공공 사진이 더 적합한 경우만
-> `fetch_cc0_images.py` 로 PD/CC0 스톡을 보강한다. FLUX 스크립트는 운영자 명시 지시 시에만 쓰는 예외 경로다(정본 = memory `feedback_image_sourcing_policy`).
+### 이미지 가져오는 곳 - 사실 적합성에 따른 자율 선택
+> 랜딩 `/cards` 이미지는 `cards.plan.json`에서 의미 장면과 용도를 먼저 정한다. 실제 장소, 제품, 인물, 장비는 공식 또는 라이선스 실사를 우선하고, 촬영할 수 없는 원리와 개념 장면은 `image_gen`을 쓴다. 한 경로가 부적합하면 다른 적합 경로로 전환한다. FLUX는 운영자가 명시한 경우만 쓴다.
 
-GPT image_gen 산출물은 `sns/assets/{code}/{assetKey}.webp` 공유자산으로 저장한다. 포스트 폴더에 직접
-넣지 않는다. `cards.plan.json` 의 `imagegen.extractCommand` 가 이 저장 경로를 고정한다.
+수급 산출물은 `sns/assets/{code}/{assetKey}.webp` 로컬 staging에 저장한다. 이 경로는 SSOT가 아니며 발행 뒤 정본은 중앙 catalog와 HF 객체다.
 
 image_gen 프롬프트는 “그 회사/그 사건/그 장소/그 운영 질문”에 맞춘 상징 장면을 요구한다. 예를 들어
 공장 램프업 글이면 막연한 금융 차트가 아니라 클린룸, 바이오리액터, 물류, 검수 서류, 고객사 미팅처럼
@@ -159,8 +153,8 @@ image_gen 프롬프트는 “그 회사/그 사건/그 장소/그 운영 질문�
 기본 생성 절차:
 ```
 uv run python -X utf8 blog/_scripts/plan_card_news.py --post blog/05-company-reports/{글폴더} --write
-# imagePlan[].prompt 를 GPT image_gen 으로 카드 수만큼 생성
-# cards.plan.json 의 imagegen.extractCommand 실행
+# imagePlan[]의 장면별로 공식·라이선스 실사 또는 image_gen을 자율 선택해 수급
+# image_gen을 썼다면 cards.plan.json 의 imagegen.extractCommand 실행
 # cards.plan.json 의 imagegen.checkCommand 실행
 uv run python -X utf8 sns/scripts/build_index.py
 uv run python -X utf8 sns/scripts/publish_assets_hf.py
@@ -170,8 +164,8 @@ uv run python -X utf8 blog/_scripts/build_carousel_contracts.py
 이슈 카드(`blog/_issues/{slug}/carousel.yaml`)는:
 ```
 uv run python -X utf8 blog/_scripts/plan_card_news.py --issue {slug} --write
-# imagePlan[].prompt 를 GPT image_gen 으로 카드 수만큼 생성
-# cards.plan.json 의 imagegen.extractCommand 실행
+# imagePlan[]의 장면별로 적합한 실사 또는 image_gen으로 수급
+# image_gen을 썼다면 cards.plan.json 의 imagegen.extractCommand 실행
 uv run python -X utf8 blog/_scripts/build_carousel_contracts.py
 ```
 - 순수 매크로/제도 이슈는 `stockCode` 없이 둔다 → 손글 카드만 렌더.

@@ -24,7 +24,7 @@ from dartlab.core.hfRetry import retryHfCall
 from dartlab.pipeline.hfUpload import _resolveHfToken as resolveHfToken
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-CATALOG_PATH = REPO_ROOT / "blog" / "media.json"
+CATALOG_PATH = REPO_ROOT / "media" / "catalog.json"
 TRACKED_PATHSPECS = (
     ":(glob)blog/**/*.webp",
     ":(glob)blog/**/*.png",
@@ -127,7 +127,7 @@ def buildCatalog(paths: list[Path]) -> tuple[dict[str, object], dict[str, Path],
 
     files = catalog.get("files")
     if not isinstance(files, dict):
-        raise ValueError("blog/media.json files 계약 위반")
+        raise ValueError("media/catalog.json files 계약 위반")
     sourcesByPost: dict[Path, list[str]] = {}
     for source in files:
         parts = Path(source).parts
@@ -138,7 +138,7 @@ def buildCatalog(paths: list[Path]) -> tuple[dict[str, object], dict[str, Path],
 
     posts = catalog.setdefault("posts", {})
     if not isinstance(posts, dict):
-        raise ValueError("blog/media.json posts 계약 위반")
+        raise ValueError("media/catalog.json posts 계약 위반")
     rewritten: dict[Path, str] = {}
     for indexPath in sorted((REPO_ROOT / "blog").glob("*/*/index.md")):
         postDir = indexPath.parent

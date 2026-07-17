@@ -1,6 +1,6 @@
 <script lang="ts">
 	// 블로그 상단 액션바 · 이 글에서 바로 갈 수 있는 표면(팟캐스트·카드뉴스·터미널)과 공유 버튼.
-	// 모두 기존 조인키·헬퍼 재사용(신규 데이터 0): 카드=carousels/index.json(code 조인), 팟캐스트=R2 index.json
+	// 모두 기존 조인키·헬퍼 재사용(신규 데이터 0): 카드=manifests/carousels.json(code 조인), 팟캐스트=R2 index.json
 	// (stockCode/topicSlug 조인), 터미널=?sym= 딥링크, 공유=navigator.share→클립보드 폴백.
 	// 발행된 슬롯만 렌더(없으면 숨김) · 카드/팟캐스트는 라이브 fetch 라 mount 후 채워진다(점진 노출).
 	import { base } from '$app/paths';

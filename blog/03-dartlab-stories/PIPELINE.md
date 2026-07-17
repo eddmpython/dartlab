@@ -1,6 +1,7 @@
 # dartlab 이야기 파이프라인 (03-dartlab-stories)
 
 > **뼈대는 [blog/PIPELINE.md](../PIPELINE.md)·[BLOG.md](../BLOG.md)를 그대로 준용한다.** 이 문서는 다른 카테고리와 다른 **델타만** 적는다(중복 금지). 강행규칙은 `CLAUDE.md`.
+> **공통 대원칙은 델타로 바꿀 수 없다.** 모든 편은 독자 질문 하나를 끝까지 잇는 내러티브와 처음 온 독자도 이해하는 쉬운 설명을 갖춘다.
 
 ## 1. 정체성
 
@@ -81,8 +82,7 @@ Phase 1 적대 토론 기획 92점 루프 / Phase 2.5 마스터라이터 편집 
 12. **길이 = 밀도 우선.** 하한 3,000자, 목표 5,000자. 코드·표·SVG 를 뺀 읽는 글자수 기준이다.
    설명이 코드보다 길 필요는 없지만, 코드만 던지고 왜를 안 적으면 그건 문서지 이야기가 아니다.
 13. **주어가 회사가 아니다.** `topicSlug` 를 쓰고 `stockCode` 는 달지 않는다. 예제 회사는 예제일 뿐이다.
-14. **썸네일.** `gen_blog_thumbnails.py`(SSOT). kicker 라벨 = `PREFIX["dartlab-stories"] = "dartlab 이야기"`.
-   `ogImage: /thumbnails/{slug}.webp`. 본문용 이미지를 썸네일 배경으로도 쓰려면 frontmatter 에
+14. **썸네일.** `gen_blog_thumbnails.py`(레이아웃 SSOT)가 로컬 staging을 만들고 `publishBlogAssets.py`가 중앙 HF 객체로 발행한다. kicker 라벨 = `PREFIX["dartlab-stories"] = "dartlab 이야기"`. 본문용 이미지를 썸네일 배경으로도 쓰려면 frontmatter 에
    `thumbnailBg: ./assets/<본문용-이미지>.webp` 를 명시한다. 본문에는 `*thumbnail-bg*.webp` 를 직접
    걸지 않는다. 그 파일은 OG 합성용 소스라 실제 사이트 본문에서 깨질 수 있다. 연속 편의 `thumbnailBg`
    는 같은 UI 카드, 같은 노트북 화면, 같은 도식 구도를 반복하지 않는다. 앞 두 편과 비교해 시점, 물성,

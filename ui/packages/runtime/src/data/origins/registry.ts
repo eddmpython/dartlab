@@ -90,8 +90,7 @@ const PODCAST_BASE = ((viteEnv?.VITE_DARTLAB_PODCAST_BASE as string | undefined)
 const ORIGINS: Partial<Record<OriginId, OriginDef>> = {
 	hf: { resolve: hfUrl, defaultCache: { scope: 'memory', ttlMs: 60 * MIN, maxEntries: 64 } },
 	hfRange: { resolve: hfRangeUrl, defaultCache: { scope: 'memory', ttlMs: 60 * MIN, maxEntries: 128 } },
-	// hfMedia=회사 hero 이미지·companies/index.json(전용 media repo, HF 직결). 이미지는 <img src> 로
-	// 브라우저가 직접 로드(콘텐츠해시 파일명=불변)·index.json 은 loadJson 으로 읽어 캐시. 비게이트(항상 설정).
+	// hfMedia=중앙 media repo(HF 직결). objects는 불변이고 manifests는 런타임 파생 뷰다.
 	hfMedia: { resolve: hfMediaUrl, defaultCache: { scope: 'memory', ttlMs: 60 * MIN, maxEntries: 64 } },
 	// 팟캐스트 크로스링크 index.json · 미디어(R2 r2.dev). 비게이트(항상 설정 · 폴백 base 있음). index.json 은 호출부가 no-cache 로 읽음.
 	podcastMedia: {

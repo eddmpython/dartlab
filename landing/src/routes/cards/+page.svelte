@@ -60,7 +60,7 @@
 			caption: p.caption ?? '',
 			pinnedComment: p.pinnedComment ?? '',
 			standalone: !!p.standalone,
-			leadCards: contractToCards(p, media), // 계약 lead 슬라이드 미리 투영 · 미리보기 표지 깜빡임 제거
+			leadCards: contractToCards(p), // 계약 lead 슬라이드 미리 투영 · 미리보기 표지 깜빡임 제거
 			corpName: p.name || media?.companies[p.code]?.displayName || p.code
 		}));
 		const q = query.trim().toLowerCase();

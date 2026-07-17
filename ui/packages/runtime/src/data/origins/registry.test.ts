@@ -7,8 +7,9 @@ import { HF_MEDIA_RESOLVE, HF_RESOLVE } from './hf';
 
 describe('origins.hfMedia', () => {
 	it('hfMedia 는 dartlab-media repo 로 해석 · dartlab-data(hf) 와 다른 base', () => {
-		const media = originUrl('hfMedia', 'companies/005930/dram-chip.ab12cd34.webp');
-		expect(media).toBe(`${HF_MEDIA_RESOLVE}/companies/005930/dram-chip.ab12cd34.webp`);
+		const objectPath = `objects/sha256/ab/${'ab'.repeat(32)}.webp`;
+		const media = originUrl('hfMedia', objectPath);
+		expect(media).toBe(`${HF_MEDIA_RESOLVE}/${objectPath}`);
 		expect(media).toContain('dartlab-media');
 		// hf(데이터)와 분리됐는지 · 같은 path 가 다른 base 를 받는다.
 		expect(HF_MEDIA_RESOLVE).not.toBe(HF_RESOLVE);
@@ -16,7 +17,7 @@ describe('origins.hfMedia', () => {
 	});
 
 	it('선행 슬래시 정규화 · 중복 슬래시 없는 절대 URL', () => {
-		expect(originUrl('hfMedia', '/companies/index.json')).toBe(`${HF_MEDIA_RESOLVE}/companies/index.json`);
+		expect(originUrl('hfMedia', '/manifests/companies.json')).toBe(`${HF_MEDIA_RESOLVE}/manifests/companies.json`);
 	});
 
 	it('hfMedia 는 비게이트 origin · 항상 configured', () => {

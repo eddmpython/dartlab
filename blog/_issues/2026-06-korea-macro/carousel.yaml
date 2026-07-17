@@ -1,5 +1,5 @@
 # 이슈 캐러셀 (standalone) — 블로그 글 없이 카드만 발간.
-# build_carousel_contracts.py 가 회사 캐러셀과 합쳐 단일 carousels/index.json 으로 발행한다.
+# build_carousel_contracts.py가 회사 캐러셀과 합쳐 단일 manifests/carousels.json으로 발행한다.
 # code 없음(경제 이슈) · 슬라이드 image = blog/_issues/<slug>/assets/<name>.webp → hfMedia issues/<slug>/ 업로드.
 # 모든 숫자는 1차 출처(기관·발표시점) 명시. 검색요약 숫자 금지. 새 숫자 금지(본문/검증된 것만).
 

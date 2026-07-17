@@ -164,7 +164,7 @@ def buildManifest(
 
     posts = nextCatalog.setdefault("posts", {})
     if not isinstance(posts, dict):
-        raise ValueError("blog/media.json posts 계약 위반")
+        raise ValueError("media/catalog.json posts 계약 위반")
     oldPost = posts.get(mediaPostKey(postDir))
     if isinstance(oldPost, dict) and isinstance(oldPost.get("staging"), list):
         stagingSources.update(str(source) for source in oldPost["staging"])

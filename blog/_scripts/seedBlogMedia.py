@@ -12,14 +12,14 @@ from huggingface_hub import hf_hub_download
 from dartlab.core.dataConfig import HF_MEDIA_REPO
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-CATALOG_PATH = REPO_ROOT / "blog" / "media.json"
+CATALOG_PATH = REPO_ROOT / "media" / "catalog.json"
 
 
 def selectedSources(catalog: dict[str, object], post: str | None) -> list[str]:
     files = catalog.get("files")
     posts = catalog.get("posts")
     if not isinstance(files, dict) or not isinstance(posts, dict):
-        raise ValueError("blog/media.json files/posts 계약 위반")
+        raise ValueError("media/catalog.json files/posts 계약 위반")
     if post is None:
         return sorted(str(source) for source in files)
     normalized = post.replace("\\", "/").strip("/")
@@ -27,7 +27,7 @@ def selectedSources(catalog: dict[str, object], post: str | None) -> list[str]:
         normalized = normalized.removeprefix("blog/")
     entry = posts.get(normalized)
     if not isinstance(entry, dict):
-        raise ValueError(f"blog/media.json에 글 매핑 없음: {normalized}")
+        raise ValueError(f"media/catalog.json에 글 매핑 없음: {normalized}")
     sources = set(str(source) for source in entry.get("staging", []) if source)
     if entry.get("og"):
         sources.add(str(entry["og"]))
@@ -46,7 +46,7 @@ def seed(catalog: dict[str, object], sources: list[str], *, force: bool = False)
             raise ValueError(f"저장소 밖 staging 경로: {source}") from exc
         record = mediaRecord(catalog, source)
         if record is None:
-            raise ValueError(f"blog/media.json 객체 매핑 없음: {source}")
+            raise ValueError(f"media/catalog.json 객체 매핑 없음: {source}")
         if target.is_file() and not force:
             continue
         cached = hf_hub_download(repo_id=HF_MEDIA_REPO, repo_type="dataset", filename=record["path"])

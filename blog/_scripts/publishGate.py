@@ -12,7 +12,7 @@ import subprocess
 from pathlib import Path
 
 from audit_seo import score_post as scorePost
-from auditBlog import CONTENT_GENRE_CATEGORIES
+from auditBlog import BLOG_CATEGORIES, CONTENT_GENRE_CATEGORIES
 from auditBlog import publish_gate as auditPublishGate
 from blogMedia import loadMediaManifest, mediaManifestPath, mediaUrl
 from publishBlogAssets import verifyRemoteAssets
@@ -55,7 +55,7 @@ def postDirsFromPaths(paths: list[str]) -> list[Path]:
         categoryDir = parts[1]
         prefix, separator, category = categoryDir.partition("-")
         normalizedCategory = category if separator and prefix.isdigit() else categoryDir
-        if normalizedCategory not in CONTENT_GENRE_CATEGORIES:
+        if normalizedCategory not in BLOG_CATEGORIES:
             continue
         postDir = REPO_ROOT.joinpath(*parts[:3])
         if (postDir / "index.md").is_file():
@@ -124,7 +124,7 @@ def mediaReferenceErrors(postDir: Path) -> list[str]:
             field = "ogImage" if role == "og" else "cardPreview"
             match = re.search(rf"^{field}:\s*(\S+)", raw, re.M)
             if not match or match.group(1) != expectedUrl:
-                errors.append(f"{field}가 blog/media.json {role} 객체와 다름")
+                errors.append(f"{field}가 media/catalog.json {role} 객체와 다름")
     for record in records:
         if isinstance(record, dict) and record.get("path"):
             allowedUrls.add(mediaUrl(str(record["path"])))
@@ -134,7 +134,7 @@ def mediaReferenceErrors(postDir: Path) -> list[str]:
     usedUrls = set(re.findall(rf"{re.escape(HF_OBJECT_URL_PREFIX)}[0-9a-f/]+\.(?:webp|png|jpe?g)", raw, re.I))
     unexpected = sorted(usedUrls - allowedUrls)
     if unexpected:
-        errors.append(f"blog/media.json 밖 HF 객체 참조: {unexpected[0]}")
+        errors.append(f"media/catalog.json 밖 HF 객체 참조: {unexpected[0]}")
     return errors
 
 

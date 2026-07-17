@@ -1,6 +1,7 @@
 # 기술이야기 파이프라인 (08-tech-story)
 
 > **뼈대는 [blog/PIPELINE.md](../PIPELINE.md)·[BLOG.md](../BLOG.md)를 그대로 준용한다.** 이 문서는 회사 심층편·데이터 리포트와 다른 **델타(기술이야기 특화)만** 적는다(중복 금지). 강행규칙은 `CLAUDE.md`.
+> **공통 대원칙은 델타로 바꿀 수 없다.** 모든 편은 독자 질문 하나를 끝까지 잇는 내러티브와 처음 온 독자도 이해하는 쉬운 설명을 갖춘다.
 
 ## 1. 정체성 (회사편·데이터편과 다른 점)
 
@@ -37,7 +38,7 @@ Phase 0 데이터 완주 / Phase 1 적대 토론 기획 / Phase 2.5 마스터라
 - 기술 원리, 내부 작동, 아직 사진으로 존재하지 않는 개념 장면은 `image_gen`을 선택한다. 가짜 공식 로고·문서·식별 인물은 만들지 않는다.
 - 한 경로에서 적합본이 없으면 묻고 멈추지 않고 다른 검색어, 다른 공식 출처, `image_gen` 순으로 전환한다. FLUX는 운영자가 명시한 경우에만 쓴다.
 - `brief.json.imagePlan[]`은 `assetKey`, `sourcePolicy: auto`, `slot`, `subject`, `placement`, `narrativeUse`를 가진다. 파일 경로는 적지 않는다. 로컬 검수 경로는 `assets/<assetKey>.webp`, durable 경로는 발행기가 정한 HF 콘텐츠 해시 경로다.
-- 바이너리 원본·서빙 SSOT는 HF `dartlab-media/objects/sha256/` 하나다. Git에는 `brief.json`, `assets/CREDITS.md`, 중앙 `blog/media.json`만 남기고 WebP/JPG/PNG를 추가하지 않는다. 본문, `ogImage`, `cardPreview`는 중앙 카탈로그의 HF URL을 참조한다.
+- 바이너리 원본·서빙 SSOT는 HF `dartlab-media/objects/sha256/` 하나다. Git에는 `brief.json`, `assets/CREDITS.md`, 중앙 `media/catalog.json`만 남기고 WebP/JPG/PNG를 추가하지 않는다. 본문, `ogImage`, `cardPreview`는 중앙 카탈로그의 HF URL을 참조한다.
 - 이미지 게이트: 휴머노이드 편은 산업용 로봇 팔만으로 통과하지 않는다. 관절, 감속기, 액추에이터, 손·무릎·고관절 조립체처럼 글의 기술 병목이 보여야 한다. 모든 계획 이미지는 눈으로 확인한다.
 
 ## 5. 자산

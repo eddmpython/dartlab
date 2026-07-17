@@ -6,7 +6,7 @@
 // 한다. hfProxy·news 워커가 "정적 사이트가 못 하는 라이브 HF 브리지"를 하는 것과 같은 패턴.
 //
 // 라우트: GET /c/<slug>
-//   1. carousels/index.json 라이브 read(엣지 캐시 10분, index 는 가변).
+//   1. manifests/carousels.json 라이브 read(엣지 캐시 10분, manifest는 가변).
 //   2. slug 로 캐러셀 → og:title(제목) · og:description(캡션 첫 문단) · og:image(첫 슬라이드).
 //   3. 크롤러는 메타만 읽고 워커 페이지에 머문다(canonical=self). 사람은 JS(location.replace)로만
 //      LANDING_BASE/cards?post=<slug> 로 이동. 없는 slug 는 그 딥링크로 302.
@@ -20,7 +20,7 @@
 //       baseline JPEG 로 변환해 안정 200 image/jpeg 로 서빙한다. 크롤러(Meta 등)는 wsrv 에서 바로 받는다.
 //       (워커가 직접 프록시하려 했으나 Cloudflare Worker → wsrv 아웃바운드가 막혀 폴백만 돼 제거함.)
 //
-// 새 캐러셀을 데이터로만 올려도(carousels/index.json 재게시) 그 공유 링크가 즉시 작동. 워커·landing 재배포 0.
+// 새 캐러셀을 데이터로만 올려도(manifests/carousels.json 재게시) 그 공유 링크가 즉시 작동. 워커·landing 재배포 0.
 //
 // 무료 티어: 순수 fetch, nodejs_compat 불필요. 배포·도메인은 README.md.
 
@@ -36,27 +36,16 @@ function esc(s) {
 		.replace(/'/g, '&#39;');
 }
 
-// sym(6자리 코드 또는 티커) → canonical media key (landing media.ts mediaKey 와 동일 규칙).
-function mediaKey(sym) {
-	return /^\d{6}$/.test(sym) ? sym : String(sym || '').toUpperCase();
-}
-
 // 슬러그 위생. 경로 주입 방지, 한글·영숫자·-_. 만.
 function cleanSlug(raw) {
 	return decodeURIComponent(raw).replace(/[^0-9a-zA-Z가-힣\-_.]/g, '').slice(0, 80);
 }
 
-// 캐러셀 첫 슬라이드 이미지 → 절대 hfMedia URL. 이슈(image 에 '/' 포함)는 hfMedia 상대경로 직접,
-// 회사(semantic 파일명)는 companies/index.json 으로 해석. 못 풀면 null(브랜드 폴백).
-async function resolveOgImage(post, companiesIndex) {
+// 캐러셀 첫 슬라이드의 콘텐츠 주소 객체 → 절대 hfMedia URL. 그 외 경로는 브랜드 폴백.
+function resolveOgImage(post) {
 	const slide = (post.slides || []).find((s) => s && s.image);
 	const image = slide && slide.image;
-	if (!image) return null;
-	if (image.includes('/')) return `${MEDIA_BASE}/${image.replace(/^\/+/, '')}`; // 이슈: issues/<slug>/cover.<hash>.webp
-	const key = mediaKey(post.code || '');
-	const company = companiesIndex && companiesIndex.companies && companiesIndex.companies[key];
-	const asset = company && (company.assets || []).find((a) => a.name === image || a.name.startsWith(image + '.'));
-	return asset ? `${MEDIA_BASE}/companies/${key}/${asset.name}` : null;
+	return typeof image === 'string' && image.startsWith('objects/sha256/') ? `${MEDIA_BASE}/${image}` : null;
 }
 
 // hfMedia URL → og:image 용 wsrv.nl JPEG 링크(1200x630 1.91:1, baseline). 링크 미리보기(스레드·카톡·
@@ -90,7 +79,7 @@ async function cachedJson(url, ttl, ctx) {
 
 // slug → 캐러셀 post(SSOT 라이브). 없으면 null.
 async function loadPost(slug, ctx) {
-	const index = await cachedJson(`${MEDIA_BASE}/carousels/index.json`, 600, ctx);
+	const index = await cachedJson(`${MEDIA_BASE}/manifests/carousels.json`, 600, ctx);
 	return (index && Array.isArray(index.posts) && index.posts.find((p) => p.slug === slug)) || null;
 }
 
@@ -108,15 +97,14 @@ export default {
 		const post = await loadPost(slug, ctx);
 		if (!post) return Response.redirect(target, 302); // 없는 슬러그 → 그냥 피드/딥링크로
 
-		// og:image 우선순위: (1) 발행 시 구운 브랜디드 OG(og/<slug>.<hash>.jpg, 그레이톤+아바타/dartlab+헤드라인)
+		// og:image 우선순위: (1) 발행 시 구운 브랜디드 OG 객체(그레이톤+아바타/dartlab+헤드라인)
 		// → (2) 없으면 첫 슬라이드 평사진(그레이톤 필터). 둘 다 wsrv.nl JPEG 링크(위 ⚠ B, HF resolve 직접 금지).
 		let ogImage = null;
 		const ogPath = typeof post.ogImage === 'string' && post.ogImage ? post.ogImage : null;
 		if (ogPath) {
 			ogImage = ogImageUrl(`${MEDIA_BASE}/${ogPath}`, false); // 구운 OG 는 이미 그레이톤
 		} else {
-			const companies = post.code ? await cachedJson(`${MEDIA_BASE}/companies/index.json`, 600, ctx) : null;
-			const ogSrc = await resolveOgImage(post, companies);
+			const ogSrc = resolveOgImage(post);
 			ogImage = ogSrc ? ogImageUrl(ogSrc, true) : null;
 		}
 		const title = String(post.title || post.name || 'DartLab 카드').trim();

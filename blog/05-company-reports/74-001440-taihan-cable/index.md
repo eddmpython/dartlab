@@ -6,7 +6,6 @@ category: company-reports
 series: company-reports
 seriesOrder: 74
 thumbnail: /avatar-chart.png
-ofImage: /thumbnails/001440-taihan-cable.webp
 ogImage: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/17/1731097ca3f9ec88de7643c2e8206d90e96975ec491b4ec9ef3b3b3a2a93c869.webp
 cardPreview: https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/bf/bf9f091ebd6596b677cb24dba276c0eddab5779f7f9f2d12347b48f039996e5e.webp
 tags: ["대한전선", "001440", "해저케이블", "HVDC", "케이블", "전력기기", "AI전력", "재생에너지", "호반그룹", "해상풍력"]
@@ -115,7 +114,7 @@ carousel:
     sub: |-
       ① 분기 영업현금흐름 +로 복귀 ② 이자보상배율 1.5배+ ③ 해저케이블 매출 비중 확대.
       이 셋이 동시에 와야 신사업 베팅의 정상화가 확인됩니다.
-    image: cable-spool-warehouse
+    image: bg-cable-spool-warehouse
 ---
 
 <script>

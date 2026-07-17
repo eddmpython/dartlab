@@ -170,7 +170,7 @@ slides:
     assert c["name"] == "2026 한국 경제"
     assert c["sector"] == "macro"
     assert len(c["slides"]) == 2
-    # 첫 슬라이드 image → hfMedia 상대경로(issues/<slug>/cover.<hash8>.webp)
+    # 첫 슬라이드 image는 중앙 콘텐츠 주소 객체 경로다.
     img = c["slides"][0]["image"]
     assert img.startswith("objects/sha256/") and img.endswith(".webp")
     assert len(ops) == 1 and ops[0].path_in_repo == img  # 새 해시 → 업로드 1건
@@ -326,8 +326,8 @@ def test_series_image_upload_ops_dedupes_reused_asset(tmp_path: Path) -> None:
     assert image_ops[0].path_in_repo == images[0]
 
 
-def test_series_image_reuses_v2_blog_media_manifest(tmp_path: Path) -> None:
-    """v2 기술이야기 카드는 Git 바이너리 없이 중앙 HF 객체를 그대로 재사용한다."""
+def test_series_image_reuses_blog_media_catalog(tmp_path: Path) -> None:
+    """기술이야기 카드는 Git 바이너리 없이 중앙 HF 객체를 그대로 재사용한다."""
     blog = tmp_path / "blog" / "08-tech-story"
     slides = """  name: 스텔스 기술
   slides:
@@ -341,12 +341,19 @@ def test_series_image_reuses_v2_blog_media_manifest(tmp_path: Path) -> None:
     sha256 = "0" * 64
     remote = f"objects/sha256/00/{sha256}.webp"
     source = "blog/08-tech-story/01-000000-stealth/assets/hero.webp"
-    (tmp_path / "blog" / "media.json").write_text(
+    catalogPath = tmp_path / "media" / "catalog.json"
+    catalogPath.parent.mkdir(parents=True, exist_ok=True)
+    catalogPath.write_text(
         json.dumps(
             {
-                "version": 2,
+                "version": 3,
                 "repo": "eddmpython/dartlab-media",
                 "objectPrefix": "objects/sha256",
+                "collections": {},
+                "manifests": {
+                    "carousels": "manifests/carousels.json",
+                    "companies": "manifests/companies.json",
+                },
                 "objects": {sha256: {"bytes": 8, "path": remote}},
                 "files": {source: sha256},
                 "posts": {
@@ -366,6 +373,41 @@ def test_series_image_reuses_v2_blog_media_manifest(tmp_path: Path) -> None:
 
     assert contracts["000000-stealth"]["slides"][0]["image"] == remote
     assert imageOps == []
+
+
+def test_company_semantic_images_resolve_to_catalog_objects() -> None:
+    """회사 의미 키는 발행 직전에 중앙 컬렉션의 객체 경로로 확정된다."""
+    sha256 = "a" * 64
+    objectPath = f"objects/sha256/aa/{sha256}.webp"
+    contracts = {
+        "005930-samsung": {
+            "code": "005930",
+            "cardType": "company",
+            "slides": [{"layout": "editorial", "image": "semiconductor-fab"}],
+        }
+    }
+    catalog = {
+        "collections": {"companies": {"005930": {"assets": {"semiconductor-fab": sha256}}}},
+        "objects": {sha256: {"path": objectPath}},
+    }
+
+    assert bcc.resolveCompanySlideImages(contracts, catalog) == []
+    assert contracts["005930-samsung"]["slides"][0]["image"] == objectPath
+    assert bcc.validateObjectPaths(contracts) == []
+
+
+def test_non_object_slide_path_is_rejected() -> None:
+    """레거시 HF 폴더와 해석되지 않은 의미 키는 런타임 manifest에 들어갈 수 없다."""
+    contracts = {
+        "x": {
+            "code": "",
+            "slides": [
+                {"layout": "editorial", "image": "issues/x/cover.webp"},
+                {"layout": "editorialBeat", "image": "semantic-key"},
+            ],
+        }
+    }
+    assert len(bcc.validateObjectPaths(contracts)) == 2
 
 
 def test_tech_story_requires_plan(tmp_path: Path) -> None:

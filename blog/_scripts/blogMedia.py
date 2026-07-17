@@ -9,8 +9,8 @@ from pathlib import Path
 
 from dartlab.core.dataConfig import HF_MEDIA_BASE_URL, HF_MEDIA_REPO
 
-MEDIA_CATALOG_VERSION = 2
-MEDIA_CATALOG_NAME = "media.json"
+MEDIA_CATALOG_VERSION = 3
+MEDIA_CATALOG_RELATIVE = Path("media") / "catalog.json"
 OBJECT_PREFIX = "objects/sha256"
 IMAGE_SUFFIXES = {".webp", ".jpg", ".jpeg", ".png"}
 ASSET_KEY_RE = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*")
@@ -25,11 +25,11 @@ def blogRoot(postDir: Path) -> Path:
 
 
 def mediaCatalogPath(postDir: Path) -> Path:
-    return blogRoot(postDir) / MEDIA_CATALOG_NAME
+    return blogRoot(postDir).parent / MEDIA_CATALOG_RELATIVE
 
 
 def mediaManifestPath(postDir: Path) -> Path:
-    """이전 호출부 호환용 이름. 실제 SSOT는 blog/media.json 하나다."""
+    """이전 호출부 호환용 이름. 실제 SSOT는 media/catalog.json 하나다."""
     return mediaCatalogPath(postDir)
 
 
@@ -68,6 +68,11 @@ def emptyMediaCatalog() -> dict[str, object]:
         "version": MEDIA_CATALOG_VERSION,
         "repo": HF_MEDIA_REPO,
         "objectPrefix": OBJECT_PREFIX,
+        "collections": {},
+        "manifests": {
+            "carousels": "manifests/carousels.json",
+            "companies": "manifests/companies.json",
+        },
         "objects": {},
         "files": {},
         "posts": {},
@@ -76,23 +81,23 @@ def emptyMediaCatalog() -> dict[str, object]:
 
 def loadMediaCatalog(path: Path) -> tuple[dict[str, object] | None, list[str]]:
     if not path.is_file():
-        return None, ["blog/media.json 중앙 HF 카탈로그가 필요함"]
+        return None, ["media/catalog.json 중앙 HF 카탈로그가 필요함"]
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
     except (json.JSONDecodeError, OSError) as exc:
-        return None, [f"blog/media.json 읽기 실패: {exc}"]
+        return None, [f"media/catalog.json 읽기 실패: {exc}"]
     if not isinstance(payload, dict):
-        return None, ["blog/media.json 최상위 값은 객체여야 함"]
+        return None, ["media/catalog.json 최상위 값은 객체여야 함"]
     errors: list[str] = []
     if payload.get("version") != MEDIA_CATALOG_VERSION:
-        errors.append(f"blog/media.json version은 {MEDIA_CATALOG_VERSION}이어야 함")
+        errors.append(f"media/catalog.json version은 {MEDIA_CATALOG_VERSION}이어야 함")
     if payload.get("repo") != HF_MEDIA_REPO:
-        errors.append(f"blog/media.json repo는 {HF_MEDIA_REPO}여야 함")
+        errors.append(f"media/catalog.json repo는 {HF_MEDIA_REPO}여야 함")
     if payload.get("objectPrefix") != OBJECT_PREFIX:
-        errors.append(f"blog/media.json objectPrefix는 {OBJECT_PREFIX}여야 함")
-    for key in ("objects", "files", "posts"):
+        errors.append(f"media/catalog.json objectPrefix는 {OBJECT_PREFIX}여야 함")
+    for key in ("collections", "manifests", "objects", "files", "posts"):
         if not isinstance(payload.get(key), dict):
-            errors.append(f"blog/media.json {key}는 객체여야 함")
+            errors.append(f"media/catalog.json {key}는 객체여야 함")
     return payload, errors
 
 
@@ -106,7 +111,7 @@ def registerMediaFile(catalog: dict[str, object], source: str, localPath: Path) 
     objects = catalog.setdefault("objects", {})
     files = catalog.setdefault("files", {})
     if not isinstance(objects, dict) or not isinstance(files, dict):
-        raise ValueError("blog/media.json objects/files 계약 위반")
+        raise ValueError("media/catalog.json objects/files 계약 위반")
     existingObject = objects.get(sha256)
     if isinstance(existingObject, dict) and existingObject.get("path"):
         remotePath = str(existingObject["path"])
@@ -152,21 +157,21 @@ def loadMediaManifest(postDir: Path) -> tuple[dict[str, object] | None, list[str
     posts = catalog.get("posts")
     post = posts.get(postKey) if isinstance(posts, dict) else None
     if not isinstance(post, dict):
-        return None, [f"blog/media.json에 글 매핑 없음: {postKey}"]
+        return None, [f"media/catalog.json에 글 매핑 없음: {postKey}"]
     assetSources = post.get("assets")
     if not isinstance(assetSources, dict):
-        return None, [f"blog/media.json 글 assets 계약 위반: {postKey}"]
+        return None, [f"media/catalog.json 글 assets 계약 위반: {postKey}"]
     assets: dict[str, dict[str, str]] = {}
     for key, source in assetSources.items():
         record = mediaRecord(catalog, str(source))
         if record is None:
-            errors.append(f"blog/media.json 파일 매핑 없음: {source}")
+            errors.append(f"media/catalog.json 파일 매핑 없음: {source}")
         else:
             assets[str(key)] = record
     ogSource = str(post.get("og") or "")
     og = mediaRecord(catalog, ogSource)
     if og is None:
-        errors.append(f"blog/media.json OG 매핑 없음: {postKey}")
+        errors.append(f"media/catalog.json OG 매핑 없음: {postKey}")
         return None, errors
     manifest = {
         "version": MEDIA_CATALOG_VERSION,

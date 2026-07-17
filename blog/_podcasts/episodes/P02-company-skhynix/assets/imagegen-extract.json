@@ -8,7 +8,7 @@
     {
       "file": "source.webp",
       "role": "reusable-source",
-      "poolOrigin": "companies/000660/hynix-hbm-cleanroom",
+      "poolOrigin": "media/catalog.json#collections/companies/000660/hynix-hbm-cleanroom",
       "promptSummary": "SK Hynix HBM cleanroom, gray-tone editorial podcast background reused from the shared company image pool."
     }
   ]

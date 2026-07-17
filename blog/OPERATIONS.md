@@ -14,9 +14,9 @@
 
 | 분류 | 대상 | 위치 |
 |---|---|---|
-| **추적 (저작 원본)** | 마크다운(index.md·script.md), 메타(carousel.yaml·cards.plan.json·episode.yaml·channel.yaml·published.json·brief.json), SVG 차트, `assets/CREDITS.md`, 중앙 `blog/media.json`, 운영문서 | `blog/**` (git) |
+| **추적 (저작 원본)** | 마크다운(index.md·script.md), 메타(carousel.yaml·cards.plan.json·episode.yaml·channel.yaml·published.json·brief.json), SVG 차트, `assets/CREDITS.md`, 중앙 `media/catalog.json`, 운영문서 | `blog/**` (git) |
 | **미추적 (작업/파생)** | 블로그 WebP/JPG/PNG staging, 합성 썸네일, 팟캐스트 오디오, sns 렌더 PNG/MP4, 빌드 산출 | 포스트 `assets/`, `landing/static/thumbnails/`, `blog/_podcasts/.gitignore`, `/sns/` |
-| **재사용 staging** | HF 발행 전 로컬 작업본과 legacy 회사 공유 작업본 | 포스트 `assets/<assetKey>.webp`, `sns/assets/{subjectKey}`. durable 원본 아님 |
+| **재사용 staging** | HF 발행 전 로컬 작업본과 회사 공유 작업본 | 포스트 `assets/<assetKey>.webp`, `sns/assets/{subjectKey}`. durable 원본 아님 |
 | **발행 = 이미지 SSOT** | 블로그 본문·OG·카드·브라우저 서빙 이미지 | HF `dartlab-media/objects/sha256/`의 전역 콘텐츠 주소 객체 |
 | **발행 = durable SSOT** | 팟캐스트 오디오·커버·정적프레임·feed | R2 `dartlab-podcast` |
 
@@ -27,18 +27,18 @@
 
 - 이미지 수급은 **자율**이다. 파이프라인이 실제 제품·인물·현장처럼 사실성이 중요한 피사체는 공식 출처 또는 라이선스가 확인된 실사를, 개념·원리·추상 장면은 `image_gen`을 선택한다. 적합본이 없으면 운영자 질문으로 멈추지 않고 다른 적합 경로로 전환한다. 핀터레스트·구글 이미지 무단 사용은 금지다. FLUX는 운영자의 명시 지시가 있을 때만 쓴다.
 - 이미지 의미 계약 SSOT는 블로그 `brief.json.imagePlan[]`, 카드 `cards.plan.json`이다. 블로그 신규 계약은 고유 `assetKey`와 `sourcePolicy: auto`를 요구한다.
-- 블로그 바이너리는 포스트 `assets/<assetKey>.webp`에서 로컬 검수한 뒤 `publishBlogAssets.py`로 HF 전역 콘텐츠 주소 객체에 올린다. 같은 바이트는 포스트·OG·카드 구분 없이 한 번만 저장한다. 본문, `ogImage`, `cardPreview`는 HF URL만 참조하며 Git에는 중앙 `blog/media.json`의 별칭·역할·해시와 `assets/CREDITS.md`의 출처만 남긴다.
-- `sns/assets/{subjectKey}`도 공유 staging일 뿐 SSOT가 아니다. v2 블로그와 기술 카드는 중앙 카탈로그의 같은 HF 객체를 재사용한다. legacy 회사 공유풀만 `ingest_blog_assets.py` 경로를 유지한다. 로컬 staging 복원은 `seedBlogMedia.py --post ...` 또는 `--all`로만 한다.
+- 블로그 바이너리는 포스트 `assets/<assetKey>.webp`에서 로컬 검수한 뒤 `publishBlogAssets.py`로 HF 전역 콘텐츠 주소 객체에 올린다. 같은 바이트는 포스트·OG·카드 구분 없이 한 번만 저장한다. 본문, `ogImage`, `cardPreview`는 HF URL만 참조하며 Git에는 중앙 `media/catalog.json`의 별칭·역할·해시와 `assets/CREDITS.md`의 출처만 남긴다.
+- `sns/assets/{subjectKey}`도 공유 staging일 뿐 SSOT가 아니다. 블로그, 기술 카드, 회사 카드, 팟캐스트 원본은 중앙 카탈로그의 같은 HF 객체를 재사용한다. 로컬 staging 복원은 `seedBlogMedia.py --post ...` 또는 `--all`로만 한다.
 
 ## 3. HF/R2 저장 정책
 
-- HF 데이터셋 `eddmpython/dartlab-media` (config `src/dartlab/core/dataConfig.py`, 프록시 origin `hfMedia`, resolver `landing/src/lib/cards/media.ts`). 신규 블로그 본문·OG·카드·이슈 이미지는 전역 `objects/sha256/`만 쓴다. `companies/`, `issues/`, `tech-story/`는 기존 카드 소비자를 위한 legacy 호환 경로이며 신규 블로그 자산을 추가하지 않는다. 상세 매핑 SSOT는 `blog/media.json`이다.
+- HF 데이터셋 `eddmpython/dartlab-media` (config `src/dartlab/core/dataConfig.py`, origin `hfMedia`). 바이너리 허용 위치는 전역 `objects/sha256/` 하나다. 런타임이 읽는 파생 뷰는 `manifests/companies.json`, `manifests/carousels.json` 두 파일뿐이다. 의미 키, source, 역할, SHA-256 대응의 정본은 Git `media/catalog.json`이다. HF에 회사별, 글별, 콘텐츠 종류별 바이너리 폴더를 만들지 않는다.
 - R2 버킷 `dartlab-podcast` (r2.dev 공개). 팟캐스트 오디오·커버·정적프레임·feed.xml·index.json. HF `/resolve` 302 라 팟캐스트 플랫폼 미디어는 R2. 상세 = memory `reference_cloudflare_r2_infra`.
 - 이미지 규격표:
 
 | 용도 | 규격 |
 |---|---|
-| 카드/블로그 이미지 | 포맷별(카드 4:5 등), HF companies/issues |
+| 카드/블로그 이미지 | 포맷별(카드 4:5 등), HF `objects/sha256/` |
 | 팟캐스트 채널·에피소드 커버 | 정사각 RGB 1400~3000, <500KB, R2 |
 | 팟캐스트 정적프레임·썸네일 | 16:9 1280x720, <500KB, R2 |
 
@@ -47,8 +47,8 @@
 | 파이프라인 | 진입/발행 | 상세 문서 |
 |---|---|---|
 | 블로그 | 저작 -> `publishBlogAssets.py --post <글폴더>` -> `publishGate.py --post <글폴더>` -> 발행 | `blog/BLOG.md` (+ `blog/PIPELINE.md`) |
-| 카드뉴스 | `plan_card_news.py` -> `build_carousel_contracts.py` -> HF `carousels/index.json` | `blog/_scripts/CARDS.md` (+ `blog/_scripts/README.md`) |
-| 이미지 공유풀 | `sns/scripts/build_index.py` -> `publish_assets_hf.py` (blog 흡수 `ingest_blog_assets.py`) -> HF `companies/` | `sns/assets/README.md` |
+| 카드뉴스 | `plan_card_news.py` -> `build_carousel_contracts.py` -> HF `manifests/carousels.json` + 객체 | `blog/_scripts/CARDS.md` (+ `blog/_scripts/README.md`) |
+| 이미지 공유 staging | `sns/scripts/build_index.py` -> `publish_assets_hf.py` -> 중앙 catalog + HF `manifests/companies.json` + 객체 | `sns/assets/README.md` |
 | 팟캐스트 | `podcast_plan_loop.workflow.js` -> `plan_episode.py` -> (NotebookLM) -> `render_episode_image.py` -> `publish_podcast.py` -> R2+HF | `blog/_podcasts/README.md` + `blog/_podcasts/GUIDE.md` |
 | SNS 트랙(쇼츠·릴스 등) | 트랙별 | `sns/README.md` + `sns/{track}/README.md` |
 
@@ -59,7 +59,7 @@
 - `subjectKey` = stockCode(회사) 또는 topicSlug(경제·기술·분석 주제). **주제 topicSlug = 블로그 URL slug** 로 통일한다(전 서피스 공유 조인 키). 회사 하나가 주인공일 때만 stockCode, 기술·데이터·이슈처럼 여러 회사를 다루면 topicSlug. **조인 키 계약 SSOT = Skill OS `operation.content` "서피스 x 콘텐츠 성격 매트릭스".**
 - 각 subject 는 blog/cards/podcast 슬롯을 갖고 시간이 지나며 채워진다(빈 슬롯 = 자리표시자).
 - 개별 발행: 블로그·카드·팟캐스트 각 파이프라인이 독립 발행. 집계(프론트 SubjectHub)는 발행을 막지 않고 현재 상태를 조인해 "이 주제의 블로그/카드/팟캐스트"를 보여준다.
-- 조인 키 = stockCode/topicSlug. 1차는 프론트 클라이언트 조인(`carousels/index.json` + `dartlab-podcast/index.json` + `companies/index.json`), 승격 시 파생 `subjects/index.json`.
+- 조인 키 = stockCode/topicSlug. 1차는 프론트 클라이언트 조인(`manifests/carousels.json` + `dartlab-podcast/index.json` + `manifests/companies.json`), 승격 시 파생 `subjects/index.json`.
 
 ---
 

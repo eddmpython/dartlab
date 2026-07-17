@@ -17,7 +17,7 @@ episode:
     sourceHint: "Downloads/하이닉스에_추월당한_삼성전자_33년의_왕좌.m4a"   # 발행 시 --audio 로 지정
     sourceDoc: https://eddmpython.github.io/dartlab/blog/005930-samsung   # 소스 = 블로그 URL
 
-  # 이미지: source.webp(companies/005930 풀 재사용) 에서 카드풍 스틸을 렌더한다(그레이톤 + 로즈 강조).
+  # 이미지: 중앙 companies 컬렉션의 005930 자산을 재사용해 카드풍 스틸을 렌더한다.
   image:
     source: cover.jpg
     key: episodes/samsung/cover-3000.jpg
@@ -27,12 +27,12 @@ episode:
   thumbnail:
     source: static-video.jpg
     key: episodes/samsung/static-video.jpg
-  # 재사용 원본(한 세트) · companies/005930 공유 풀을 이름으로 참조(재업로드 없음). blog/OPERATIONS.md 2절.
+  # 재사용 원본 · 중앙 companies 컬렉션 의미 키를 참조하며 재업로드하지 않는다.
   sourceAssets:
     - name: samsung-semiconductor
       role: reusable-original
       pool: companyAsset
-    - name: samsung-pyeongtaek
+    - name: bg-samsung-pyeongtaek
       role: source
       pool: companyAsset
   visual:

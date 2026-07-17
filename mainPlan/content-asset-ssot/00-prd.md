@@ -1,158 +1,75 @@
-# 콘텐츠 자산 SSOT 구조화 PRD
+# 콘텐츠 자산 SSOT 구조
 
-> **위치.** 이 PRD 는 Skill OS `operation.content` 가 정의한 **공동 작업대 SSOT** 를 물리로 실현하는 실행 로드맵이다(StoryCore 개념 계약 -> StoryManifest 물리 통합). 설계 정본은 operation.content, 본 PRD 는 P0~P4 마이그레이션 집행. 조인 키 어휘는 `blog/OPERATIONS.md` §5 와 통일한다: **subject**(조인 키, 회사=stockCode·주제=topicSlug) 아래 여러 **story**(관통선 1개 = 생산 단위, `storyId`)가 달린다.
+> 상태: 2026-07-17 기준 적용 완료. 이 문서는 새 저장 구조 제안이 아니라 현재 운영 계약을 설명한다.
 
-## 1. 문제
+## 1. 정본은 세 층뿐이다
 
-현재 블로그, 랜딩 카드뉴스, 이미지 자산은 같은 콘텐츠를 만들지만 저장 위치와 발행 경로가 나뉘어 있다.
-
-| 영역 | 현재 원본 | 현재 HF 서빙 |
+| 층 | 정본 | 책임 |
 |---|---|---|
-| 회사 장문 글 | `blog/05-company-reports/{post}/index.md` | 랜딩 빌드 산출물 |
-| 회사 카드뉴스 | 글 frontmatter `carousel:` | `carousels/index.json` |
-| 이슈 카드뉴스 | `blog/_issues/{slug}/carousel.yaml` | `carousels/index.json` |
-| 회사 이미지 | `sns/assets/{code}/` | `companies/{code}/...` |
-| 이슈 이미지 | `blog/_issues/{slug}/assets/` | `issues/{slug}/...` |
-| image_gen 기획·검수 | 각 글/이슈의 `cards.plan.json` | 일부만 `carousels/index.json`에 반영 |
+| 저작 | 기존 `blog/**` 글, 기획, 출처 문서 | 사람이 고치는 이야기와 의미 계약 |
+| 자산 카탈로그 | Git `media/catalog.json` | source, 의미 키, 역할, SHA-256, 포스트 매핑 |
+| 바이너리 | HF `objects/sha256/<앞2자>/<전체해시>.<확장자>` | 모든 WebP/JPG/PNG의 durable 원본과 서빙본 |
 
-이 구조는 동작은 하지만 장기 자산화에는 약하다.
+새 `content/stories/`, 포스트별 자산 manifest, 회사별 HF 바이너리 폴더를 추가하지 않는다. StoryCore는 공동 기획 어휘일 뿐 새 물리 파일이 아니다. 현재 글, 카드, 팟캐스트 저작 위치를 유지하면서 자산만 중앙 카탈로그와 콘텐츠 주소 객체로 모은다.
 
-- 같은 story의 글, 카드, 이미지, 출처, 검수 기록이 한 폴더/manifest로 모이지 않는다.
-- 회사 카드와 이슈 카드가 `code` 유무만으로 라이브 report 첨부 여부가 갈린다.
-- HF에는 서빙 파일이 흩어져 있고, Git에는 편집 원본이 흩어져 있어 추적 단위가 story가 아니다.
-- SNS 재활용, 카드 개선, 이미지 교체, 출처 감사가 매번 경로별 규칙을 다시 알아야 한다.
-
-## 2. 목표
-
-콘텐츠의 기본 단위를 `story`로 올린다.
-
-1. 블로그 글, 카드뉴스, 이미지, 출처, image_gen 기획, 리뷰 게이트를 story 단위로 묶는다.
-2. Git은 사람이 편집하는 글·계획·출처·경로 매니페스트 SSOT로 유지한다. WebP/JPG/PNG는 넣지 않는다.
-3. HF `dartlab-media`는 durable 바이너리 원본과 브라우저 서빙 자산 SSOT로 유지한다.
-4. `/cards`, `/blog`, SNS 재활용은 같은 story manifest를 소비한다.
-5. 기존 `carousels/index.json`, `companies/{code}`, `issues/{slug}`는 깨지지 않게 호환 레이어로 유지한다.
-
-## 3. 비목표
-
-- 블로그 글 전체를 즉시 HF로 이관하지 않는다.
-- 랜딩 화면을 먼저 갈아엎지 않는다.
-- 기존 발행물 URL과 카드 슬러그를 깨지 않는다.
-- 로컬 staging 이미지와 HF 콘텐츠 해시 원본을 같은 의미로 섞지 않는다.
-
-## 4. 제안 구조
-
-### Git 원본
-
-신규 story 단위 원본 폴더를 둔다.
+## 2. HF 허용 구조
 
 ```text
-content/stories/{storyId}/
-  story.yaml
-  article.md              # 있으면 블로그 장문 원본
-  cards.yaml              # 랜딩 카드 손글 계약
-  cards.plan.json         # image_gen 기획·토론·검수 게이트
-  assets/
-    CREDITS.md
-  sources.yaml            # 공식 출처, 수치 근거, 조회일
-
-blog/media.json           # 전 글 staging 별칭·역할 -> 전역 HF 객체 SHA-256
+.gitattributes
+objects/
+  sha256/
+    <앞2자>/
+      <전체해시>.<확장자>
+manifests/
+  companies.json
+  carousels.json
 ```
 
-이미지는 같은 포스트 `assets/{assetKey}.webp`에서 로컬 눈검수한 뒤 HF에 발행하고 Git에는 추가하지 않는다. 현행 v2는 중앙 `blog/media.json`이 `objects/sha256/<앞2자>/<전체해시>.<확장자>`를 가리킨다. 물리 StoryManifest P2가 승인되어도 바이너리 객체는 복제하지 않고 이 경로를 그대로 참조한다.
+- 바이너리는 `objects/sha256/` 밖에 둘 수 없다.
+- `manifests/companies.json`은 회사 의미 키를 객체 경로로 연결하는 런타임 뷰다.
+- `manifests/carousels.json`은 모든 카드 계약을 담는 런타임 뷰다. 각 `slides[].image`와 `ogImage`는 객체 경로다.
+- 두 manifest는 파생물이다. 재생성 기준은 Git `media/catalog.json`과 기존 저작 원본이다.
+- 회사, 이슈, 기술, 팟캐스트별 HF 폴더를 만들지 않는다.
 
-`story.yaml` 핵심 필드:
+## 3. 경로별 책임
 
-```yaml
-storyId: samsung-biologics-rockville-rampup
-kind: companyStory        # companyStory | issueStory | macroStory | productStory
-stockCode: "207940"       # 있으면 회사 report 덱 첨부 가능
-corpName: 삼성바이오로직스
-title: 삼성바이오로직스는 좋은 숫자보다 공장 가동을 봅니다
-date: 2026-06-28
-surfaces:
-  blog: false
-  cards: true
-  snsReuse: true
-```
+| 콘텐츠 | 저작 입력 | 발행 결과 |
+|---|---|---|
+| 블로그 | `index.md`, `brief.json`, `assets/CREDITS.md`, 로컬 `assets/` staging | 본문과 OG가 HF 객체 URL을 참조 |
+| 회사 카드 | 글 frontmatter `carousel:` + `cards.plan.json` | `manifests/carousels.json` + 객체 |
+| 이슈 카드 | `blog/_issues/<slug>/carousel.yaml` + 로컬 assets | `manifests/carousels.json` + 객체 |
+| 회사 이미지 | `sns/assets/<subjectKey>` 로컬 staging | `manifests/companies.json` + 객체 |
+| 팟캐스트 원본 이미지 | `episode.yaml sourceAssets` + 로컬 assets | 중앙 catalog + 객체 |
+| 팟캐스트 오디오와 공개 커버 | episode 저작 원본 | R2 `dartlab-podcast` |
 
-### HF 서빙
+## 4. 발행 불변식
 
-HF는 브라우저 소비 기준으로 story 네임스페이스를 둔다.
+1. 같은 바이트는 SHA-256 하나로 한 번만 저장한다.
+2. 로컬 WebP/JPG/PNG staging은 Git에 넣지 않는다.
+3. 의미 키는 경로가 아니다. 발행기가 중앙 catalog에서 객체 경로로 해석한다.
+4. 런타임 소비자는 `manifests/*.json`과 `objects/sha256/`만 읽는다.
+5. 발행기는 `companies/`, `issues/`, `tech-story/`, `podcasts/`, `carousels/`를 만들 수 없다.
+6. 깨끗한 체크아웃의 블로그 staging 복원은 `seedBlogMedia.py`만 담당한다.
+7. 자산 교체는 새 객체를 추가하고 catalog 별칭을 바꾼다. 기존 객체를 덮어쓰지 않는다.
 
-```text
-stories/{storyId}/manifest.json
-stories/{storyId}/assets/{assetKey}.{hash8}.webp
-stories/index.json
-carousels/index.json       # 호환 산출물, stories에서 생성
-companies/index.json       # 회사 hero 호환 산출물
-```
+## 5. 안전한 전환 순서
 
-`manifest.json`은 카드 계약, 이미지 해시 경로, 출처 요약, company code를 함께 갖는다.
+1. 새 객체와 새 manifest를 먼저 올린다.
+2. landing과 cardShare 소비자를 `manifests/`로 전환한다.
+3. 배포본이 새 manifest를 읽는지 확인한다.
+4. `consolidateHfMedia.py --apply --delete-legacy`로 옛 HF 폴더를 지운다.
+5. HF 최상위가 `.gitattributes`, `objects`, `manifests`만 남았는지 검사한다.
 
-```json
-{
-  "storyId": "samsung-biologics-rockville-rampup",
-  "kind": "companyStory",
-  "stockCode": "207940",
-  "corpName": "삼성바이오로직스",
-  "date": "2026-06-28",
-  "cards": { "slides": [] },
-  "assets": {
-    "scene-01-cover-hook": "stories/samsung-biologics-rockville-rampup/assets/scene-01-cover-hook.7b725aa9.webp"
-  },
-  "sources": [],
-  "reviewGate": { "status": "passed" }
-}
-```
+삭제를 소비자 배포보다 먼저 하면 현재 공개 화면이 끊긴다. 이 순서는 구조적 안전장치이며 옛 폴더를 장기 호환 계층으로 인정한다는 뜻이 아니다.
 
-## 5. 동작 원칙
+## 6. 완료 기준
 
-- `stockCode`가 있으면 카드 뒤에 회사 report 기반 KPI·그래프·테이블을 붙인다.
-- `article.md`가 없으면 블로그 CTA는 숨긴다.
-- `stockCode`와 `article` 존재 여부를 분리한다. 이슈 카드라도 기업 코드가 있으면 회사 덱을 붙일 수 있다.
-- 카드 이미지 참조는 `assetKey`만 쓴다. 서빙 경로와 해시는 manifest 생성기가 채운다.
-- 출처 수치가 없는 숫자는 카드 슬라이드에 쓰지 않는다.
-- `cards.plan.json`이 있으면 `reviewGate.status=passed` 전에는 발행하지 않는다.
+- Git 추적 래스터 0건.
+- `media/catalog.json`의 모든 객체가 정규 콘텐츠 주소 경로를 가진다.
+- 회사와 캐러셀 manifest의 모든 이미지가 실제 HF 객체를 가리킨다.
+- 저장소와 운영 문서에 옛 HF 소비 경로가 없다. 이관 도구의 입력 경로와 회귀 테스트 fixture만 예외다.
+- landing, cardShare, 블로그 발행, 회사 자산 발행, 카드 발행, 팟캐스트 원본 발행이 같은 계약을 쓴다.
 
-## 6. 마이그레이션
+## 7. 콘텐츠 품질과의 경계
 
-1. **P0 — 현재 버그 정정**
-   - `blog/_issues/*/carousel.yaml`에서 `stockCode`를 읽어 카드 계약 `code`에 싣는다.
-   - `stockCode`가 있는 이슈 카드는 블로그 CTA는 숨기되 회사 report 덱은 붙인다.
-
-2. **P1 — story manifest 생성기 추가**
-   - 기존 `blog/05-company-reports`와 `blog/_issues`를 읽어 내부 `StoryManifest`로 정규화한다.
-   - 기존 `carousels/index.json`은 `StoryManifest`에서 생성한다.
-   - 기존 URL과 HF 경로는 그대로 유지한다.
-
-3. **P2 — HF `stories/` 병행 발행**
-   - `stories/index.json`과 `stories/{storyId}/manifest.json`을 추가 발행한다.
-   - `/cards`는 아직 `carousels/index.json`을 읽는다.
-   - 검증은 두 산출물이 같은 카드 수와 슬라이드 수를 갖는지 비교한다.
-
-4. **P3 — `/cards` 소비자 전환**
-   - `/cards`가 `stories/index.json`을 읽고, 호환 경로가 필요한 곳만 어댑터를 탄다.
-   - `carousels/index.json`은 레거시 호환 파일로 남긴다.
-
-5. **P4 — 원본 폴더 통합**
-   - 신규 콘텐츠는 `content/stories/{storyId}`에서만 작성한다.
-   - 기존 `blog/_issues`와 frontmatter carousel은 읽기 호환만 유지한다.
-
-## 7. 검증 게이트
-
-- story manifest 스키마 검사.
-- 카드 계약 수, 슬라이드 수, image asset key 매칭 검사.
-- `stockCode` 있는 story는 `/cards` 덱에 report 카드가 붙는지 Playwright로 확인.
-- `article.md` 없는 story는 블로그 CTA가 숨는지 확인.
-- HF 발행 dry-run에서 신규/삭제 파일 목록 확인.
-- 기존 `carousels/index.json` 소비 테스트 유지.
-
-## 8. 판단
-
-바로 전체 이관하지 말고, 먼저 `StoryManifest` 내부 모델을 세운 뒤 HF `stories/`를 병행 발행하는 순서가 맞다. 현재 운영 중인 `/cards`는 단일 `carousels/index.json` 덕분에 안정적이므로, 그 파일을 깨지 않고 뒤에서 story SSOT를 키워야 한다.
-
-## 9. 진행 원장
-
-- 2026-07-17 **블로그 발행 계약 v2와 HF 바이너리 경계 안정화 완료.** 물리 StoryManifest 이관 없이 현재 글 폴더를 기준으로 의미 계약 `brief.json.imagePlan[]`, 출처 `assets/CREDITS.md`, HF 경로·해시·역할의 중앙 `blog/media.json`을 고정했다. 기존 273편의 WebP/JPG/PNG 1,478개를 고유 SHA-256 객체 1,330개로 HF `objects/sha256/`에 이관하고 Git 추적을 제거했다. 본문·OG·card는 같은 카탈로그를 참조하며, `seedBlogMedia.py`가 깨끗한 체크아웃의 로컬 staging을 복원한다. 신규 심층 글은 `watchScenarios[]`와 마지막 시나리오형 관전 포인트를 요구하고, `publishGate.py`가 하드 계약·SEO·HF 실재·Git 바이너리 0건을 함께 검사한다.
-- 2026-07-06 **개념 토대(subject 조인 키 모델) 표준화·강제 완료.** 이 PRD 의 1절(회사·이슈 카드가 `code` 유무로만 갈림)과 3절(subject 단위 추적)을 실현하는 조인 키를 전 서피스에서 통일했다: 회사=`stockCode`, 주제=`topicSlug`(= 블로그 URL slug, 전 서피스 공유). `operation.content` "서피스 x 콘텐츠 성격 매트릭스"로 명문화하고 블로그·팟캐스트·카드 게이트로 강제(상세 = `blog-enrichment` 진행 원장 2026-07-06). 즉 **subject 조인 키 계약은 물리 SSOT 로 살아있고**, 남은 것은 물리 통합뿐이다.
-- **미착수·승인 게이트 유지**: 물리 `StoryManifest` 마이그레이션(P1 manifest 생성기, P2 HF `stories/` 병행 발행, P3 `/cards` 소비자 전환, P4 원본 폴더 통합)은 대형 저장구조 변경 + 랜딩 소비자 전환이라 런타임-SSOT 규율상 사전토론·명시 승인 후에만 착수한다. 현행 `carousels/index.json` 단일 소비가 안정적이라 급하지 않다. 착수 트리거는 운영자 결정.
+저장 구조는 글의 질을 대신하지 않는다. 블로그 기획은 `brief.json.imagePlan[]`, 카드 기획은 `cards.plan.json`, 출처는 `assets/CREDITS.md`가 담당한다. 이미지 수급은 사실 적합성에 따라 공식 및 라이선스 실사와 `image_gen` 중 자율 선택한다. 심층 글의 마지막은 요약표가 아니라 조건, 변화 경로, 결과, 확인 지표, 반증 조건을 갖춘 시나리오형 관전 포인트로 닫는다.

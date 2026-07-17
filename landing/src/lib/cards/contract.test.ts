@@ -22,8 +22,8 @@ const POSTS = [
 describe('단일 파일 캐러셀 계약', () => {
 	beforeEach(() => vi.resetModules()); // 모듈 캐시(_all) 리셋
 
-	it('loadCarousels 는 index.json posts[](전체 계약)를 1회 fetch·캐시', async () => {
-		const f = mockFetch({ 'carousels/index.json': { posts: POSTS } });
+	it('loadCarousels 는 manifests/carousels.json posts[](전체 계약)를 1회 fetch·캐시', async () => {
+		const f = mockFetch({ 'manifests/carousels.json': { posts: POSTS } });
 		vi.stubGlobal('fetch', f);
 		const { loadCarousels } = await import('./contract');
 		const all = await loadCarousels();
@@ -33,13 +33,13 @@ describe('단일 파일 캐러셀 계약', () => {
 	});
 
 	it('loadContract 는 추가 fetch 없이 캐시된 전체에서 슬러그로 찾는다', async () => {
-		const f = mockFetch({ 'carousels/index.json': { posts: POSTS } });
+		const f = mockFetch({ 'manifests/carousels.json': { posts: POSTS } });
 		vi.stubGlobal('fetch', f);
 		const { loadContract } = await import('./contract');
 		const c = await loadContract('000660-skhynix');
 		expect(c?.code).toBe('000660');
 		expect(f).toHaveBeenCalledTimes(1); // per-slug round-trip 없음 · 단일 파일에서 찾기
-		expect(String(f.mock.calls[0][0])).toContain('carousels/index.json');
+		expect(String(f.mock.calls[0][0])).toContain('manifests/carousels.json');
 		expect(await loadContract('nope')).toBeNull();
 	});
 
@@ -50,13 +50,14 @@ describe('단일 파일 캐러셀 계약', () => {
 		expect(await loadContract('x')).toBeNull();
 	});
 
-	it('resolveSlideImage: 이슈 슬라이드(hfMedia 상대경로)는 회사 매니페스트 조회 없이 직접 해석', async () => {
+	it('resolveSlideImage 는 콘텐츠 주소 객체 경로만 직접 해석한다', async () => {
 		const { resolveSlideImage } = await import('./contract');
-		// 슬래시 포함(issues/<slug>/...) = 이슈 → originUrl 로 그대로. media=null 이어도 해석됨.
-		expect(resolveSlideImage(null, '', 'issues/2026-06-korea-macro/cover.ab12cd34.webp')).toBe(
-			'https://media.test/issues/2026-06-korea-macro/cover.ab12cd34.webp'
+		const objectPath = `objects/sha256/ab/${'ab'.repeat(32)}.webp`;
+		expect(resolveSlideImage(objectPath)).toBe(
+			`https://media.test/${objectPath}`
 		);
-		// image 없으면 undefined.
-		expect(resolveSlideImage(null, '', undefined)).toBeUndefined();
+		expect(resolveSlideImage('issues/legacy/cover.webp')).toBeUndefined();
+		expect(resolveSlideImage('semantic-key')).toBeUndefined();
+		expect(resolveSlideImage()).toBeUndefined();
 	});
 });

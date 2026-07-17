@@ -8,6 +8,7 @@ whenToUse:
   - 읽히는 카드
   - 캐러셀 발행
   - 블로그 글 기획
+  - 블로그 공통 편집 규칙
   - 콘텐츠 파이프라인
   - 팟캐스트 기획
   - 공동 작업대
@@ -26,6 +27,8 @@ runtimeCompatibility:
     status: unsupported
     notes: 블로그·카드 스크립트는 네트워크·파일 IO와 HF 발행을 쓰므로 pyodide에서 실행하지 않는다.
 procedure:
+  - 블로그 공통 계약 - 독자 질문 하나를 끝까지 잇는 내러티브
+  - 블로그 공통 계약 - 비전문가도 인과를 따라가는 쉬운 설명
   - 인사이트 발굴 - 상식과 충돌하는 단 하나의 사실
   - 편집 약속 한 문장 + 직전 편과 다른 서사 구조
   - 스파인(큰문장) 선작성 - 카드뉴스 핵심
@@ -39,8 +42,8 @@ examples:
   - "블로그 글 기획부터 발행까지"
 expectedOutputs:
   - 카드뉴스 - carousel.yaml(또는 글 frontmatter carousel) + cards.plan.json + 카드별 이미지
-  - 블로그 - 검증된 글 + carousel + HF 이미지 media.json
-  - 발행 - hfMedia carousels/index.json(라이브 /cards)
+  - 블로그 - 검증된 글 + carousel + HF 이미지 media/catalog.json
+  - 발행 - hfMedia manifests/carousels.json(라이브 /cards)
 status: observed
 lastUpdated: 2026-07-17
 ---
@@ -48,6 +51,15 @@ lastUpdated: 2026-07-17
 # 콘텐츠 작업대. 블로그·카드뉴스·팟캐스트 공동 작업대
 
 콘텐츠는 게이트 통과물이 아니라 편집물이다. 기계 검사는 바닥(위생)일 뿐, 기획과 반복 개선이 본체다. 이 문서는 그 본체를 잡는다.
+
+## 블로그 전 카테고리 공통 편집 계약
+
+공시 읽기, dartlab 소식, dartlab 이야기, 신용분석 보고서, 기업이야기, 데이터 리포트, 산업 지도, 기술이야기, 투자이야기까지 모든 블로그가 아래 두 원칙을 공유한다. 장르별 규칙은 주어, 근거, 분량, 시각물을 바꿀 수 있지만 이 계약은 덮어쓸 수 없다.
+
+1. **내러티브 집중**: 독자 질문 하나를 처음부터 끝까지 붙든다. 각 섹션은 앞의 답에서 다음 궁금증을 만들고, 빼도 관통선이 약해지지 않는 섹션은 삭제한다. 정보 목록, 보고서 목차, 체크리스트 나열은 본문을 대신할 수 없다.
+2. **쉬운 설명**: 처음 온 비전문가를 기준으로 어려운 개념을 첫 등장 문장에서 일상어로 풀고, 실제 숫자, 회사, 공시 문장, 표, 차트, 제품, 기간, 계정 중 하나를 바로 붙인다. 쉬운 말은 깊이를 버리는 일이 아니라 인과를 보이게 만드는 일이다.
+
+기획 루프는 관통선, 섹션 간 인과, 쉬운 풀이를 함께 평가한다. `auditBlog.py`의 공통 편집 게이트는 9개 카테고리 모두에서 추상어와 설명 없는 전문 용어를 막고, 실질 본문은 읽을 이유, 구체 장면, 오해와 한계, 다음 확인 기준의 흐름을 갖추도록 검사한다.
 
 ## 공동 작업대 (Content Workbench). 세 서피스가 무조건 거치는 공유 front
 블로그·카드뉴스·팟캐스트는 발행 형식만 다를 뿐 **같은 작업대를 거친다**. 블로그만 발행하든 카드만 발행하든, 아래 5단계 공유 front 를 반드시 통과해 하나의 서사 코어(StoryCore)를 만들고, 서피스 어댑터가 그것을 각 형식으로 투영한다. 릴스·쇼츠·비디오는 나중에 **서피스 어댑터만 추가**하면 붙는다(공유 front 재사용).
@@ -86,9 +98,7 @@ lastUpdated: 2026-07-17
 
 블로그 신규 심층 글은 `brief.json contractVersion: 2`를 쓴다. 마지막 H2는 `watchScenarios[]`의 조건 2~4개를 "만약 어떤 조건이면 어떤 경로로 무엇이 달라질까"로 풀고, 확인 지표와 반증 조건까지 남긴다. 낙관·기본·비관 고정표는 금지한다.
 
-기업이야기에는 부채비율, debt-to-equity, D/E ratio, 부채총계를 자본총계로 나눈 값을 쓰지 않는다. 제목, 본문, 표, 차트, 코드, 기획 JSON, SVG 모두 금지 범위다. 부채 부담은 절대 차입금, 순차입금, 만기, 이자비용, 이자보상, 영업현금흐름, 유동성 가운데 실제 서사를 설명하는 근거로 다룬다. `blog_plan_loop.workflow.js`가 기획에서 제외하고 `publishGate.py`가 최종 차단한다.
-
-자산 SSOT 경계: 블로그 의미 계약은 `brief.json.imagePlan[]`, 출처는 `assets/CREDITS.md`, staging 별칭·포스트별 본문/OG/card 역할·경로·SHA-256 대응은 중앙 `blog/media.json` 하나다. WebP/JPG/PNG와 합성 OG/card는 포스트 `assets/`와 `landing/static/thumbnails/`에서 로컬 눈검수한 뒤 `publishBlogAssets.py`가 HF `dartlab-media/objects/sha256/<앞2자>/<전체해시>.<확장자>`에 발행하며 Git에 넣지 않는다. 같은 바이트는 한 번만 저장하고 durable 바이너리 원본과 서빙 SSOT는 HF 하나다. `sourcePolicy`는 `auto`이며 파이프라인이 사실 적합성에 따라 공식·라이선스 실사와 image_gen 중 선택한다. `sns/assets/{subjectKey}`는 legacy 공유 staging일 뿐 SSOT가 아니다. 깨끗한 체크아웃의 staging 복원은 `seedBlogMedia.py`만 쓴다. SVG는 사람이 diff로 검토 가능한 텍스트 차트라 Git 추적 예외다. 물리 StoryManifest 통합은 별도 승인 전까지 하지 않는다.
+자산 SSOT 경계: 블로그 의미 계약은 `brief.json.imagePlan[]`, 출처는 `assets/CREDITS.md`, staging 별칭·포스트별 본문/OG/card 역할·경로·SHA-256 대응은 중앙 `media/catalog.json` 하나다. WebP/JPG/PNG와 합성 OG/card는 포스트 `assets/`와 `landing/static/thumbnails/`에서 로컬 눈검수한 뒤 HF `dartlab-media/objects/sha256/<앞2자>/<전체해시>.<확장자>`에 발행하며 Git에 넣지 않는다. 회사·이슈·기술·팟캐스트별 HF 바이너리 폴더는 만들지 않는다. 런타임 파생 뷰는 `manifests/companies.json`, `manifests/carousels.json` 두 파일뿐이고 모든 이미지가 객체 경로를 가리킨다. 같은 바이트는 한 번만 저장하고 durable 바이너리 원본과 서빙 SSOT는 HF 하나다. `sourcePolicy`는 `auto`이며 파이프라인이 사실 적합성에 따라 공식·라이선스 실사와 image_gen 중 선택한다. `sns/assets/{subjectKey}`는 공유 staging일 뿐 SSOT가 아니다. 깨끗한 체크아웃의 staging 복원은 `seedBlogMedia.py`만 쓴다. SVG는 사람이 diff로 검토 가능한 텍스트 차트라 Git 추적 예외다. StoryCore는 개념 어휘이며 새 물리 아티팩트를 만들지 않는다.
 
 ### evidence 표준 (편집 스냅샷, 굽기 아님)
 ②의 evidence 각 항목은 아래를 단다. 핵심은 `apiRef`(재현)·`period.basis`(달력/회계연도)·`asOf`(시점)로, 2.6절의 반복 함정(EDGAR 회계연도·누적/TTM 혼입)을 구조로 막는다.
@@ -97,7 +107,7 @@ lastUpdated: 2026-07-17
 id · claim · apiRef{apiRef,args} · value · period{label,basis,granularity} · unit · tableRef · asOf · origin(mainThread-verified|external-unverified)
 ```
 
-런타임-SSOT 경계: evidence 는 "이 시점에 SSOT 가 이렇게 나왔다"는 **편집 스냅샷**이지 데이터 캐시가 아니다. 화면·발행은 여전히 panel/scan 을 **런타임 직독**한다(블로그 `<CompanyFinancials>` 빌드타임 직독, 카드 finChart, /cards `carousels/index.json`). 어떤 화면도 evidence 의 value 를 데이터 소스로 읽지 않는다. 읽는 순간 굽기가 되어 금지.
+런타임-SSOT 경계: evidence 는 "이 시점에 SSOT 가 이렇게 나왔다"는 **편집 스냅샷**이지 데이터 캐시가 아니다. 화면·발행은 여전히 panel/scan 을 **런타임 직독**한다(블로그 `<CompanyFinancials>` 빌드타임 직독, 카드 finChart, /cards `manifests/carousels.json`). 어떤 화면도 evidence 의 value 를 데이터 소스로 읽지 않는다. 읽는 순간 굽기가 되어 금지.
 
 ### 서피스 어댑터 seam (추가만 하면 되게)
 한 서피스가 공동 작업대에 붙으려면 4가지만 구현한다. 공유 적대 루프·데이터·정직성은 재사용한다.
@@ -105,7 +115,7 @@ id · claim · apiRef{apiRef,args} · value · period{label,basis,granularity} �
 | 메서드 | 책임 | 현행 대응 |
 |---|---|---|
 | `plan(StoryCore)` | 코어를 그 서피스 서사형태로 투영(공유 루프에 rubric·planSchema·killAxes 주입) | acts(블로그)/spine(카드)/sourceDoc(팟캐) |
-| `render` | 물리 산출물 | index.md / carousels index.json / script.md |
+| `render` | 물리 산출물 | index.md / manifests/carousels.json / script.md |
 | `publish` | 목적지 전송 | GH Pages / HF / R2 |
 | `gate` | 발행 하드게이트(서피스별 SSOT, 통합 금지) | publishGate / build_carousel_contracts / publish_podcast |
 
@@ -135,7 +145,7 @@ id · claim · apiRef{apiRef,args} · value · period{label,basis,granularity} �
 ### 서피스별 (성격 불문 공통 규율)
 | 서피스 | 소스 SSOT | 조인 키 필드 | 발행 게이트 | 기획 개선루프 |
 |---|---|---|---|---|
-| 블로그 | `blog/{cat}/{post}/index.md` + `brief.json` + `assets/CREDITS.md` + 중앙 `blog/media.json` | `stockCode` / `topicSlug` | `publishBlogAssets.py` -> `publishGate.py` | `blog_plan_loop.workflow.js` |
+| 블로그 | `blog/{cat}/{post}/index.md` + `brief.json` + `assets/CREDITS.md` + 중앙 `media/catalog.json` | `stockCode` / `topicSlug` | `publishBlogAssets.py` -> `publishGate.py` | `blog_plan_loop.workflow.js` |
 | 카드 | frontmatter `carousel:` · `_issues/*/carousel.yaml` | `code`(회사) · topicSlug(주제, 확장 예정) | `build_carousel_contracts.py` | `cards_plan_loop.workflow.js` |
 | 팟캐스트 | `_podcasts/episodes/*/episode.yaml` | `stockCode` / `topicSlug` | `publish_podcast.py` (status=ready) | `podcast_plan_loop.workflow.js` |
 
@@ -240,6 +250,6 @@ id · claim · apiRef{apiRef,args} · value · period{label,basis,granularity} �
 ## 도구·포맷
 - 기획: `blog/_scripts/plan_card_news.py --issue <slug> --write`(이슈) 또는 `--post <글폴더>`(회사) → cards.plan.json.
 - 이미지: `blog/_scripts/fetch_cc0_images.py`(CC0 헬퍼) → 카드별 눈검수. 자산 공유풀·HF는 `sns/scripts/`(build_index·publish_assets_hf).
-- 발행: `blog/_scripts/build_carousel_contracts.py [--dry-run]` → hfMedia carousels/index.json 단일 파일(안 굽고 in-place). 데이터만 올리면 /cards 라이브.
-- 저작(손글): 회사는 블로그 frontmatter `carousel:`, 이슈(블로그 글 없음)는 `blog/_issues/<slug>/carousel.yaml`. 슬라이드 image는 의미 파일명만(렌더가 hfMedia 해석). 카드 수·layout·키 형식·이미지 정책 상세는 `blog/_scripts/CARDS.md`.
+- 발행: `blog/_scripts/build_carousel_contracts.py [--dry-run]` -> hfMedia `manifests/carousels.json`과 중앙 객체. 데이터만 올리면 /cards 라이브.
+- 저작(손글): 회사는 블로그 frontmatter `carousel:`, 이슈(블로그 글 없음)는 `blog/_issues/<slug>/carousel.yaml`. 슬라이드 image는 저작 의미 키이며 발행기가 중앙 catalog의 객체 경로로 확정한다. 카드 수·layout·키 형식·이미지 정책 상세는 `blog/_scripts/CARDS.md`.
 - 검증 코드(위생 게이트 SSOT): `blog/_scripts/cards_plan.py`(bigSentenceContract·약어·reviewGate) + `build_carousel_contracts.py`. 스크립트 인덱스 `blog/_scripts/README.md`.

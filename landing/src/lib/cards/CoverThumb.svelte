@@ -33,7 +33,7 @@
 		loadContract(slug).then((c) => {
 			contract = c;
 			if (!c) return;
-			const cov = contractToCards(c, m)[0] ?? null;
+			const cov = contractToCards(c)[0] ?? null;
 			// 표지 이미지가 안 풀리면(이름 불일치 등) 회사 hero 로 폴백 · 검정 카드 방지.
 			if (cov && !cov.bg) cov.bg = heroUrl(m, code);
 			cover = cov;

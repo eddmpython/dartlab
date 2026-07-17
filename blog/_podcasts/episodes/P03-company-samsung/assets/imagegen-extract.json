@@ -8,7 +8,7 @@
     {
       "file": "source.webp",
       "role": "reusable-source",
-      "poolOrigin": "companies/005930/samsung-semiconductor",
+      "poolOrigin": "media/catalog.json#collections/companies/005930/samsung-semiconductor",
       "promptSummary": "Samsung semiconductor fab, gray-tone editorial podcast background reused from the shared company image pool."
     }
   ]

@@ -37,7 +37,7 @@ def test_migration_deduplicates_bytes_and_builds_central_views(monkeypatch, tmp_
         tmp_path, "05-company-reports", "01-second", b"same"
     )
     monkeypatch.setattr(migration, "REPO_ROOT", tmp_path)
-    monkeypatch.setattr(migration, "CATALOG_PATH", tmp_path / "blog" / "media.json")
+    monkeypatch.setattr(migration, "CATALOG_PATH", tmp_path / "media" / "catalog.json")
 
     catalog, localByRemote, rewritten = migration.buildCatalog(
         [firstAsset, firstThumb, firstCard, secondAsset, secondThumb, secondCard]
@@ -46,7 +46,7 @@ def test_migration_deduplicates_bytes_and_builds_central_views(monkeypatch, tmp_
     assert len(catalog["objects"]) == 1
     assert len(catalog["files"]) == 6
     assert len(localByRemote) == 1
-    saveMediaCatalog(tmp_path / "blog" / "media.json", catalog)
+    saveMediaCatalog(tmp_path / "media" / "catalog.json", catalog)
     firstManifest, errors = loadMediaManifest(firstPost)
     assert errors == []
     assert firstManifest is not None
@@ -68,7 +68,7 @@ def test_migration_keeps_avatar_thumbnail_local(monkeypatch, tmp_path: Path) -> 
         encoding="utf-8",
     )
     monkeypatch.setattr(migration, "REPO_ROOT", tmp_path)
-    monkeypatch.setattr(migration, "CATALOG_PATH", tmp_path / "blog" / "media.json")
+    monkeypatch.setattr(migration, "CATALOG_PATH", tmp_path / "media" / "catalog.json")
 
     _, _, rewritten = migration.buildCatalog([assetPath, thumbPath, cardPath])
 
@@ -78,7 +78,7 @@ def test_migration_keeps_avatar_thumbnail_local(monkeypatch, tmp_path: Path) -> 
 def test_seed_restores_post_staging_from_catalog(monkeypatch, tmp_path: Path) -> None:
     postDir, assetPath, thumbPath, cardPath = writeLegacyPost(tmp_path, "08-tech-story", "01-first", b"image")
     monkeypatch.setattr(migration, "REPO_ROOT", tmp_path)
-    monkeypatch.setattr(migration, "CATALOG_PATH", tmp_path / "blog" / "media.json")
+    monkeypatch.setattr(migration, "CATALOG_PATH", tmp_path / "media" / "catalog.json")
     catalog, _, _ = migration.buildCatalog([assetPath, thumbPath, cardPath])
     source = assetPath.relative_to(tmp_path).as_posix()
     cached = tmp_path / "cache.webp"

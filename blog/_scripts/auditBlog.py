@@ -20,6 +20,17 @@ HIGH_TEMPLATE_REPETITION = 0.5
 
 # 심층 콘텐츠 깊이 게이트 (본문 기준: 표·SVG·코드 제외한 읽는 글자수).
 # 길이는 막·증거·시나리오의 산물이지 패딩이 아니다 (반복도 가드와 짝).
+BLOG_CATEGORIES = {
+    "reading-disclosures",
+    "dartlab-news",
+    "dartlab-stories",
+    "credit-reports",
+    "company-reports",
+    "data-reports",
+    "industry-map",
+    "tech-story",
+    "investment-stories",
+}
 CONTENT_GENRE_CATEGORIES = {
     "company-reports",
     "tech-story",
@@ -909,12 +920,13 @@ def _validate_dartlab_body_plainness(body: str) -> list[str]:
 
 
 def _validate_common_body_plainness(body: str, category: str) -> list[str]:
-    if category not in CONTENT_GENRE_CATEGORIES:
+    if category not in BLOG_CATEGORIES:
         return []
 
     fails: list[str] = []
     abstract_only_sentences: list[str] = []
     jargon_sentences: list[str] = []
+    isDeepEditorial = category in CONTENT_GENRE_CATEGORIES
     for _, section in _split_h2_sections(body):
         for sentence in _plain_sentences(section):
             compact = _compact_len(sentence)
@@ -931,14 +943,17 @@ def _validate_common_body_plainness(body: str, category: str) -> list[str]:
             ):
                 jargon_sentences.append(sentence[:90])
 
-    if len(abstract_only_sentences) >= 4:
+    abstractLimit = 4 if isDeepEditorial else 2
+    jargonLimit = 3 if isDeepEditorial else 2
+    if len(abstract_only_sentences) >= abstractLimit:
         sample = " / ".join(abstract_only_sentences[:3])
         fails.append(f"본문에 실제 숫자·공시·사례 없이 떠 있는 추상 문장이 많음. 예: {sample}")
-    if len(jargon_sentences) >= 3:
+    if len(jargon_sentences) >= jargonLimit:
         sample = " / ".join(jargon_sentences[:3])
         fails.append(f"본문이 전문가 말투로 흐름. 쉬운 풀이와 실제 근거가 필요함. 예: {sample}")
 
-    if prose_char_count(body) >= 2500:
+    narrativeMinChars = 2500 if isDeepEditorial else 500
+    if prose_char_count(body) >= narrativeMinChars:
         opening = body[:1600]
         closing = body[-1800:]
         if not COMMON_OPENING_ARC_RE.search(opening):
@@ -1095,7 +1110,7 @@ def _validateImageSsot(postDir: Path, body: str, plan: dict[str, object] | None)
     plannedKeys = [str(item.get("assetKey") or "").strip() for item in planned]
     extraKeys = sorted(set(manifestAssets) - set(plannedKeys))
     if extraKeys:
-        fails.append(f"blog/media.json에 imagePlan 밖 자산이 있음: {', '.join(extraKeys)}")
+        fails.append(f"media/catalog.json에 imagePlan 밖 자산이 있음: {', '.join(extraKeys)}")
     for idx, item in enumerate(planned, start=1):
         assetKey = str(item.get("assetKey") or "").strip()
         if not assetKey:
@@ -1104,16 +1119,16 @@ def _validateImageSsot(postDir: Path, body: str, plan: dict[str, object] | None)
             fails.append(f"assets/CREDITS.md 에 imagePlan[{idx}] assetKey 누락: {assetKey}")
         record = manifestAssets.get(assetKey)
         if not isinstance(record, dict):
-            fails.append(f"blog/media.json에 imagePlan[{idx}] 누락: {assetKey}")
+            fails.append(f"media/catalog.json에 imagePlan[{idx}] 누락: {assetKey}")
             continue
         remotePath = str(record.get("path") or "")
         sha256 = str(record.get("sha256") or "")
         if not ASSET_KEY_RE.fullmatch(assetKey) or not SHA256_RE.fullmatch(sha256):
-            fails.append(f"blog/media.json imagePlan[{idx}] 해시 계약 위반: {assetKey}")
+            fails.append(f"media/catalog.json imagePlan[{idx}] 해시 계약 위반: {assetKey}")
             continue
         expectedPath = mediaPath(sha256)
         if remotePath != expectedPath:
-            fails.append(f"blog/media.json imagePlan[{idx}] 경로 불일치: {remotePath!r} != {expectedPath!r}")
+            fails.append(f"media/catalog.json imagePlan[{idx}] 경로 불일치: {remotePath!r} != {expectedPath!r}")
         bodyRef = mediaUrl(expectedPath)
         bodyRefPattern = rf"!\[[^\]]*\]\({re.escape(bodyRef)}\)"
         if not re.search(bodyRefPattern, body):
@@ -1127,7 +1142,7 @@ def _validateImageSsot(postDir: Path, body: str, plan: dict[str, object] | None)
         ogSha256 = str(og.get("sha256") or "")
         expectedOgPath = mediaPath(ogSha256)
         if not SHA256_RE.fullmatch(ogSha256) or ogPath != expectedOgPath:
-            fails.append("blog/media.json og 해시·경로 계약 위반")
+            fails.append("media/catalog.json og 해시·경로 계약 위반")
     return fails
 
 
@@ -1154,6 +1169,7 @@ def _validateScenarioBody(body: str, plan: dict[str, object] | None, category: s
 def publish_gate(post_dir: Path, *, requireContractV2: bool = False) -> list[str]:
     """단일 글 발행 하드 게이트. 위반 리스트 반환(비면 통과).
 
+    9개 블로그 카테고리 모두에 내러티브와 쉬운 설명의 공통 편집 계약을 적용한다.
     기업이야기·기술이야기·데이터리포트·투자이야기 기준으로 (1)OG 카드 (2)hero webp
     (3)본문 콘텐츠 이미지 1장 이상 (4)장르별 본문 깊이 (5)기획 루프 산출물(brief.json)을 강제한다.
     손수 SVG·기본 아바타·얕은 본문·루프 스킵을 걸러 "형식만 통과"를 차단한다.
@@ -1169,7 +1185,8 @@ def publish_gate(post_dir: Path, *, requireContractV2: bool = False) -> list[str
     cat = _clean_scalar(frontmatter_value(raw, "category"))
     fails: list[str] = []
     if cat not in CONTENT_GENRE_CATEGORIES:
-        return fails  # 교육·소식 등 단문 카테고리는 여기서 제외
+        fails.extend(_validate_common_body_plainness(body, cat))
+        return fails  # 단문 카테고리는 공통 편집 계약만 검사하고 심층 계약은 제외
 
     slug = re.sub(r"^\d+-", "", post_dir.name)
     assets = post_dir / "assets"
@@ -1189,13 +1206,13 @@ def publish_gate(post_dir: Path, *, requireContractV2: bool = False) -> list[str
         manifestOg = manifest.get("og") if isinstance(manifest, dict) else None
         expectedOg = mediaUrl(str(manifestOg.get("path") or "")) if isinstance(manifestOg, dict) else ""
         if not expectedOg or og != expectedOg:
-            fails.append(f"ogImage는 blog/media.json의 HF URL이어야 함(현재 {og!r})")
+            fails.append(f"ogImage는 media/catalog.json의 HF URL이어야 함(현재 {og!r})")
         manifestCard = manifest.get("card")
         if isinstance(manifestCard, dict):
             cardPreview = _clean_scalar(frontmatter_value(raw, "cardPreview"))
             expectedCard = mediaUrl(str(manifestCard.get("path") or ""))
             if cardPreview != expectedCard:
-                fails.append(f"cardPreview는 blog/media.json의 card HF URL이어야 함(현재 {cardPreview!r})")
+                fails.append(f"cardPreview는 media/catalog.json의 card HF URL이어야 함(현재 {cardPreview!r})")
     elif contractVersion == BLOG_PLAN_CONTRACT_VERSION:
         fails.extend(manifestErrors)
     elif not _OG_RE.match(og):

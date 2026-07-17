@@ -8,7 +8,7 @@
     {
       "file": "source.webp",
       "role": "reusable-source",
-      "poolOrigin": "companies/005380/hm-assembly-line",
+      "poolOrigin": "media/catalog.json#collections/companies/005380/hm-assembly-line",
       "promptSummary": "Hyundai Motor assembly line, gray-tone editorial podcast background reused from the shared company image pool."
     }
   ]

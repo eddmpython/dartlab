@@ -70,7 +70,7 @@ def test_publish_assets_uploads_hashed_media_and_rewrites_refs(monkeypatch, tmp_
     assert manifest["card"]["path"] == f"objects/sha256/{cardSha[:2]}/{cardSha}.webp"
     assert len(api.commits) == 1
     assert len(api.commits[0]["operations"]) == 3
-    saved = json.loads((tmp_path / "blog" / "media.json").read_text(encoding="utf-8"))
+    saved = json.loads((tmp_path / "media" / "catalog.json").read_text(encoding="utf-8"))
     assert saved["posts"]["08-tech-story/01-hf-only"]["assets"]["hero-scene"].endswith("hero-scene.webp")
     assert set(saved["objects"]) == {heroSha, ogSha, cardSha}
     body = (postDir / "index.md").read_text(encoding="utf-8")
@@ -87,7 +87,7 @@ def test_dry_run_does_not_write_manifest(monkeypatch, tmp_path: Path) -> None:
     manifest = publisher.publishAssets(postDir, dryRun=True)
 
     assert manifest["assets"]
-    assert not (tmp_path / "blog" / "media.json").exists()
+    assert not (tmp_path / "media" / "catalog.json").exists()
 
 
 def test_publish_assets_is_idempotent_without_local_staging(monkeypatch, tmp_path: Path) -> None:

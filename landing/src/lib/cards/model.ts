@@ -3,11 +3,13 @@
 // klinecharts 0 의존(백본). 손글 narration·hero 이미지는 큐레이션 오버레이(P5)·hfMedia(P0)에서 합류.
 import type { ReportSourceEngine } from '$lib/report/model';
 
-/** hfMedia(companies/index.json)의 회사별 항목 · 서빙용(name=콘텐츠해시 삽입된 served 파일명). */
+/** hfMedia(manifests/companies.json)의 회사별 항목 · 바이너리는 콘텐츠 주소 객체 경로만 가리킨다. */
 export interface MediaAsset {
-	/** 콘텐츠해시 삽입 served 파일명 (`dram-chip.ab12cd34.webp`). */
-	name: string;
-	hash: string;
+	/** 편집자가 사용하는 회사 내부 의미 키. */
+	key: string;
+	/** `objects/sha256/<앞2자>/<전체해시>.<확장자>` */
+	path: string;
+	sha256: string;
 }
 export interface MediaCompany {
 	displayName: string;
@@ -112,7 +114,7 @@ export interface CarouselDeck {
 	cards: CarouselCard[];
 }
 
-// ── 편집 카드 캐러셀 계약(carousels/{code}.json) · 기존 SNS 캐러셀 손글 카피 SSOT. ──
+// ── 편집 카드 캐러셀 계약(manifests/carousels.json) · 기존 SNS 캐러셀 손글 카피 SSOT. ──
 export interface ContractSlide {
 	layout: 'editorial' | 'editorialBeat' | 'editorialStat';
 	date?: string;
@@ -122,7 +124,7 @@ export interface ContractSlide {
 	bigNumber?: string;
 	unit?: string;
 	context?: string;
-	image?: string; // semantic 파일명(해시 없음) · 렌더가 hfMedia 매니페스트로 해석
+	image?: string; // HF 콘텐츠 주소 객체 경로(`objects/sha256/...`)
 	visual?: SlideVisual; // 하이브리드 · 큰문장 아래 붙는 시각 증거(렌더링 계약)
 	visuals?: SlideVisual[]; // 하이브리드 복수 시각 증거 · 표+그래프 등 최대 4개
 }
@@ -173,7 +175,7 @@ export interface CarouselContract {
 	/** 자동 덱 오버레이(blog frontmatter `carousel:` hero/order/notes) · 계약에 실어 /cards 가 라이브(blog 번들 비의존). */
 	spec?: CarouselSpec;
 }
-/** 단일 파일 carousels/index.json · 전 캐러셀 계약(슬라이드까지) 배열. date 내림차순 발간 순서.
+/** 단일 파일 manifests/carousels.json · 전 캐러셀 계약(슬라이드까지) 배열. date 내림차순 발간 순서.
  *  피드·상세 모두 이 한 번 fetch 로(별도 인덱스 파일·카드별 round-trip 0). 회사당 N편=같은 code 다른 slug. */
 export interface ContractIndex {
 	posts: CarouselContract[];

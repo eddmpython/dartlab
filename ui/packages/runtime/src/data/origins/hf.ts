@@ -43,5 +43,5 @@ export const HF_MEDIA_RESOLVE = (viteEnv?.VITE_DARTLAB_HF_MEDIA_RESOLVE ?? DEFAU
 	''
 );
 
-/** 회사 미디어(hero 이미지·companies/index.json) 상대경로 → 절대 resolve URL. (선행 슬래시 정규화) */
+/** 중앙 미디어 객체와 manifests 상대경로를 절대 resolve URL로 바꾼다. */
 export const hfMediaUrl = (path: string): string => `${HF_MEDIA_RESOLVE}/${String(path).replace(/^\/+/, '')}`;

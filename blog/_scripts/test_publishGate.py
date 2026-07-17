@@ -64,6 +64,17 @@ def test_post_dirs_from_paths_keeps_only_content_posts(monkeypatch, tmp_path: Pa
     assert posts == [postDir]
 
 
+def test_post_dirs_from_paths_includes_short_blog_categories(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(pg, "REPO_ROOT", tmp_path)
+    postDir = tmp_path / "blog" / "02-dartlab-news" / "12-new-release"
+    postDir.mkdir(parents=True)
+    (postDir / "index.md").write_text("---\ncategory: dartlab-news\n---\n", encoding="utf-8")
+
+    posts = pg.postDirsFromPaths(["blog/02-dartlab-news/12-new-release/index.md"])
+
+    assert posts == [postDir]
+
+
 def test_validate_post_combines_hard_gate_and_seo(monkeypatch, tmp_path: Path) -> None:
     captured: list[bool] = []
 
@@ -140,7 +151,9 @@ def test_tracked_binary_errors_blocks_v2_git_images(monkeypatch, tmp_path: Path)
     postDir = tmp_path / "blog" / "08-tech-story" / "14-new-tech"
     assetsDir = postDir / "assets"
     assetsDir.mkdir(parents=True)
-    (tmp_path / "blog" / "media.json").write_text("{}", encoding="utf-8")
+    catalogPath = tmp_path / "media" / "catalog.json"
+    catalogPath.parent.mkdir(parents=True, exist_ok=True)
+    catalogPath.write_text("{}", encoding="utf-8")
 
     def fakeGit(*args: str, check: bool = True):
         return SimpleNamespace(returncode=0, stdout="blog/08-tech-story/14-new-tech/assets/hero.webp\n")

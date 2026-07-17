@@ -10,7 +10,7 @@
 ## 흐름 (회사 hero 이미지 파이프라인에 그대로 합류 — 별도 배선 없음)
 1. 이 도구가 `sns/assets/{code}/{name}.webp` 로 저장 (4:5 portrait·webp q90).
 2. `sns/scripts/build_index.py` 가 자동 인덱싱(hero).
-3. `sns/scripts/publish_assets_hf.py` 가 hfMedia `companies/{code}/{name}.{hash8}.webp` 업로드.
+3. `sns/scripts/publish_assets_hf.py`가 중앙 catalog에 등록하고 hfMedia 객체와 companies manifest를 발행.
 4. 슬라이드에서 `image: {name}` 로 가리킨다.
 
 ## 사용
