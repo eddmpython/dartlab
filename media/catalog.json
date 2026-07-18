@@ -3782,6 +3782,15 @@
     "blog/08-tech-story/13-ai-glasses-display-bottleneck/assets/13-optical-path.svg": "546a3dbc8400ebb3f8df86b40f99f3adb4747d02d7af8352c6402fc0b86fe0c0",
     "blog/08-tech-story/13-ai-glasses-display-bottleneck/assets/13-system-budget.webp": "678c127e26370d3f23123e84da62fbfbe2d85e7d7e9e5257872d2fee6eea1c9d",
     "blog/08-tech-story/13-ai-glasses-display-bottleneck/assets/13-three-stages.webp": "28e0f0abf3fedfcb604c55af462bbafcbd4a7ca520e7c2d9db3e302f05770c88",
+    "blog/08-tech-story/14-800vdc-ai-data-center-power/assets/14-board-conversion.webp": "fe6659681b12eb75da498ef7a82ed03c26574c68e85a542bba2b03838cf97c01",
+    "blog/08-tech-story/14-800vdc-ai-data-center-power/assets/14-company-responsibility-map.svg": "64ad0987cb740d0153ebda99974193b4417ce40bdb2a20f67e3295a8152f0450",
+    "blog/08-tech-story/14-800vdc-ai-data-center-power/assets/14-conversion-boundary.svg": "dc89cb8aaa83a0f137d4a414d048b54d27d9bef2db8d788c1d18d07dd7d391dd",
+    "blog/08-tech-story/14-800vdc-ai-data-center-power/assets/14-current-comparison.svg": "2259d3125f9f98bfed6997d13009d0c25f8e2666eab7da0469b2f2dc6fc2cbc7",
+    "blog/08-tech-story/14-800vdc-ai-data-center-power/assets/14-dc-protection-chain.svg": "8a368678fe0a52b46de169a6b83807fe51872a8b6db6a3425992d95927a214f3",
+    "blog/08-tech-story/14-800vdc-ai-data-center-power/assets/14-evidence-ladder.svg": "e4e49a6fa70aa102eed1eb730b2b6583a8d7cda6e9621a29d440e4c1fe8618b2",
+    "blog/08-tech-story/14-800vdc-ai-data-center-power/assets/14-hero.webp": "640d86d69c04a78c782eb6e25e6f7f54fa570b845bc5a5db12fb59e0ab53b39b",
+    "blog/08-tech-story/14-800vdc-ai-data-center-power/assets/14-load-timescale.svg": "18d3d84615382b4a4cd20825b42bdaaebfacbfeb9881c8d01447e548e6edf67b",
+    "blog/08-tech-story/14-800vdc-ai-data-center-power/assets/14-protection.webp": "eea2b1e8cd455ccde05b7d70678464937903fc147571a8a71b681a49a78e9f7e",
     "blog/09-investment-stories/01-technical-investing-price-indicators/assets/01-price-indicator-workbench.webp": "486b12c36cd4319a408b1706e006e969fcd9f76a9ba13691bde49613d1caba6e",
     "blog/09-investment-stories/01-technical-investing-price-indicators/assets/01-thumbnail-bg.webp": "486b12c36cd4319a408b1706e006e969fcd9f76a9ba13691bde49613d1caba6e",
     "blog/09-investment-stories/01-technical-investing-price-indicators/assets/02-indicator-panels.webp": "f7af37afbad715ca79873cb16abc1452a0e67ea090e4b94a5999c8c8682778b5",
@@ -4468,6 +4477,8 @@
     "landing/static/thumbnails/overseas-stock-return-exchange-rate.webp": "598a9258184ad5b7a58d42a3b913ca758aa96ca599e349e1544bfdff44abcfd8",
     "landing/static/thumbnails/power-equipment-supercycle-card.webp": "a2458f20b293911db36a89d1b7487c8fcc80ed1d022fbcaaba08229da212645d",
     "landing/static/thumbnails/power-equipment-supercycle.webp": "cfc8b05f8eb0bd157b8c1d22d54af355b8f3120fbf99a04dc9f9289c0aed0240",
+    "landing/static/thumbnails/tech-800vdc-ai-data-center-power-card.webp": "8aad897316ff58f39818f7a116ee805e9efff53243c6f8eb0eff432ca0872402",
+    "landing/static/thumbnails/tech-800vdc-ai-data-center-power.webp": "4138a987795001db089aeadcffa4c98d0f5e4bd886e4d0afa8e9d90898d4f31a",
     "landing/static/thumbnails/tech-ai-glasses-display-bottleneck-card.webp": "2fe6a5a02ae264d2307107563e79738fef77d5943812e8fd3f929f91cd92aa45",
     "landing/static/thumbnails/tech-ai-glasses-display-bottleneck.webp": "4f372d16d649316ed7ae6d8a4d1a751ec8aaa27d3563a65c9c926d4241ae7a82",
     "landing/static/thumbnails/tech-ai-power-transformer-supercycle-card.webp": "6b6d299dee8192ffc85f4d083874e781b07b165d22e7ac6565bf0c1653bca202",
@@ -6145,6 +6156,14 @@
       "bytes": 102530,
       "path": "objects/sha256/18/18c0d8c6fc2756b1fb0aaa6d8aaa84ed3c214d7efccc34e1de00c556074aa05d.webp"
     },
+    "18d3d84615382b4a4cd20825b42bdaaebfacbfeb9881c8d01447e548e6edf67b": {
+      "bytes": 3362,
+      "colorCount": 10,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/18/18d3d84615382b4a4cd20825b42bdaaebfacbfeb9881c8d01447e548e6edf67b.svg",
+      "textNodes": 16,
+      "viewBox": "0 0 1200 675"
+    },
     "18dbf07394474e2e00bac588293bf62488153d69a77dbeaf33a4127607035921": {
       "bytes": 116418,
       "path": "objects/sha256/18/18dbf07394474e2e00bac588293bf62488153d69a77dbeaf33a4127607035921.webp"
@@ -6784,6 +6803,14 @@
       "path": "objects/sha256/22/2256b134af629706dd48d99b52f7e7870a7c10da182885f05dd82eef6ac7c3cf.svg",
       "textNodes": 15,
       "viewBox": "0 0 1080 540"
+    },
+    "2259d3125f9f98bfed6997d13009d0c25f8e2666eab7da0469b2f2dc6fc2cbc7": {
+      "bytes": 2434,
+      "colorCount": 15,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/22/2259d3125f9f98bfed6997d13009d0c25f8e2666eab7da0469b2f2dc6fc2cbc7.svg",
+      "textNodes": 9,
+      "viewBox": "0 0 1200 675"
     },
     "226c17d58e6a09b3e9ea633d5faf71aa6c528707069b7b4522ddc4d2c21e4c3a": {
       "bytes": 202736,
@@ -9064,6 +9091,10 @@
     "413133060782bdafb234ba86c77e44cf353f7f0d382d6cbedf103afca6dbf7c9": {
       "bytes": 115814,
       "path": "objects/sha256/41/413133060782bdafb234ba86c77e44cf353f7f0d382d6cbedf103afca6dbf7c9.webp"
+    },
+    "4138a987795001db089aeadcffa4c98d0f5e4bd886e4d0afa8e9d90898d4f31a": {
+      "bytes": 81312,
+      "path": "objects/sha256/41/4138a987795001db089aeadcffa4c98d0f5e4bd886e4d0afa8e9d90898d4f31a.webp"
     },
     "4138b3580443171b6353161a0f5bd2414c6e2e06a001484dd419ca1a9684f4f4": {
       "bytes": 3816,
@@ -11525,6 +11556,10 @@
       "bytes": 63342,
       "path": "objects/sha256/63/63fd70387e29ff062e664ffbb5d3163ba37856fbf9651d80925f9e2198572c52.webp"
     },
+    "640d86d69c04a78c782eb6e25e6f7f54fa570b845bc5a5db12fb59e0ab53b39b": {
+      "bytes": 221776,
+      "path": "objects/sha256/64/640d86d69c04a78c782eb6e25e6f7f54fa570b845bc5a5db12fb59e0ab53b39b.webp"
+    },
     "64548a02857a5eb803615c2270d38ffc93413bf22d00dea95025d98bad40f431": {
       "bytes": 3306,
       "colorCount": 8,
@@ -11552,6 +11587,14 @@
       "path": "objects/sha256/64/649531d30e67efc109d846a245c8155a8dbd072f028ed9d766c6e16cd0c71afb.svg",
       "textNodes": 19,
       "viewBox": "0 0 1080 715"
+    },
+    "64ad0987cb740d0153ebda99974193b4417ce40bdb2a20f67e3295a8152f0450": {
+      "bytes": 3983,
+      "colorCount": 12,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/64/64ad0987cb740d0153ebda99974193b4417ce40bdb2a20f67e3295a8152f0450.svg",
+      "textNodes": 21,
+      "viewBox": "0 0 1200 675"
     },
     "650091d8ffb4ffb9192f0f4ffea20979da87336c6ad86a2847677e5d709d462f": {
       "bytes": 9992,
@@ -14057,6 +14100,14 @@
       "bytes": 36858,
       "path": "objects/sha256/8a/8a2da917f9d8461530f05bdf2c2803159bb4d0d8e17669d7cabe537fec70fa85.webp"
     },
+    "8a368678fe0a52b46de169a6b83807fe51872a8b6db6a3425992d95927a214f3": {
+      "bytes": 4264,
+      "colorCount": 18,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/8a/8a368678fe0a52b46de169a6b83807fe51872a8b6db6a3425992d95927a214f3.svg",
+      "textNodes": 25,
+      "viewBox": "0 0 1200 675"
+    },
     "8a47404646fbff433236e0329133e9b0f58fe658b7f8d4f952b6d4a9140c5598": {
       "bytes": 43116,
       "path": "objects/sha256/8a/8a47404646fbff433236e0329133e9b0f58fe658b7f8d4f952b6d4a9140c5598.webp"
@@ -14076,6 +14127,10 @@
     "8a983cf1aa1dc1fe441a041ae003a2e3368c09b3f84f11f0f18c6b4bf56e5b6f": {
       "bytes": 83436,
       "path": "objects/sha256/8a/8a983cf1aa1dc1fe441a041ae003a2e3368c09b3f84f11f0f18c6b4bf56e5b6f.webp"
+    },
+    "8aad897316ff58f39818f7a116ee805e9efff53243c6f8eb0eff432ca0872402": {
+      "bytes": 96512,
+      "path": "objects/sha256/8a/8aad897316ff58f39818f7a116ee805e9efff53243c6f8eb0eff432ca0872402.webp"
     },
     "8ad60eca05024f98cc60ba5f5f9b7e68100f10b8fb0026094f8b1e643314b88e": {
       "bytes": 1644,
@@ -19681,6 +19736,14 @@
       "textNodes": 74,
       "viewBox": "0 0 1200 720"
     },
+    "dc89cb8aaa83a0f137d4a414d048b54d27d9bef2db8d788c1d18d07dd7d391dd": {
+      "bytes": 4684,
+      "colorCount": 16,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/dc/dc89cb8aaa83a0f137d4a414d048b54d27d9bef2db8d788c1d18d07dd7d391dd.svg",
+      "textNodes": 21,
+      "viewBox": "0 0 1200 675"
+    },
     "dc8e7f25a1e347fd47221d29c275bce50a1f8371f247258a3639aaa09c40a0fc": {
       "bytes": 55386,
       "path": "objects/sha256/dc/dc8e7f25a1e347fd47221d29c275bce50a1f8371f247258a3639aaa09c40a0fc.webp"
@@ -20296,6 +20359,14 @@
       "path": "objects/sha256/e4/e49333e98f0b7b37a3729aca44c910bed1dbe4e8f2b443e2b8e8541285a93f5a.svg",
       "textNodes": 8,
       "viewBox": "0 0 800 430"
+    },
+    "e4e49a6fa70aa102eed1eb730b2b6583a8d7cda6e9621a29d440e4c1fe8618b2": {
+      "bytes": 3309,
+      "colorCount": 20,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/e4/e4e49a6fa70aa102eed1eb730b2b6583a8d7cda6e9621a29d440e4c1fe8618b2.svg",
+      "textNodes": 17,
+      "viewBox": "0 0 1200 675"
     },
     "e504933c0f647e871f62773f1dbebf03070c069e2e7aec9105c7a44d1ab9d15b": {
       "bytes": 230026,
@@ -20944,6 +21015,10 @@
       "path": "objects/sha256/ee/ee9a8c57e5a7a760bf83c549ac6e5e7d0f21ae010fedb2b8ae27c4167bad8fc9.svg",
       "textNodes": 29,
       "viewBox": "0 0 1200 720"
+    },
+    "eea2b1e8cd455ccde05b7d70678464937903fc147571a8a71b681a49a78e9f7e": {
+      "bytes": 178738,
+      "path": "objects/sha256/ee/eea2b1e8cd455ccde05b7d70678464937903fc147571a8a71b681a49a78e9f7e.webp"
     },
     "eea6bafad3b4aff3187d1c650aa466f8016aeb51c2d19726acf9d688917cf0a8": {
       "bytes": 2937,
@@ -22096,6 +22171,10 @@
     "fe58d1b42e7db7422b08ea0f4f455278a8e33c98b61da0aa56cf39316a621574": {
       "bytes": 128480,
       "path": "objects/sha256/fe/fe58d1b42e7db7422b08ea0f4f455278a8e33c98b61da0aa56cf39316a621574.webp"
+    },
+    "fe6659681b12eb75da498ef7a82ed03c26574c68e85a542bba2b03838cf97c01": {
+      "bytes": 190058,
+      "path": "objects/sha256/fe/fe6659681b12eb75da498ef7a82ed03c26574c68e85a542bba2b03838cf97c01.webp"
     },
     "fe71f12e9956a28df5a1c7fae7c8a7d2f878e1404babad9fde47aa4347bf8943": {
       "bytes": 191674,
@@ -29036,6 +29115,35 @@
         "blog/08-tech-story/13-ai-glasses-display-bottleneck/assets/13-system-budget.webp",
         "blog/08-tech-story/13-ai-glasses-display-bottleneck/assets/13-three-stages.webp",
         "landing/static/thumbnails/tech-ai-glasses-display-bottleneck-card.webp"
+      ]
+    },
+    "08-tech-story/14-800vdc-ai-data-center-power": {
+      "assets": {
+        "14-board-conversion": "blog/08-tech-story/14-800vdc-ai-data-center-power/assets/14-board-conversion.webp",
+        "14-hero": "blog/08-tech-story/14-800vdc-ai-data-center-power/assets/14-hero.webp",
+        "14-protection": "blog/08-tech-story/14-800vdc-ai-data-center-power/assets/14-protection.webp"
+      },
+      "card": "landing/static/thumbnails/tech-800vdc-ai-data-center-power-card.webp",
+      "diagrams": {
+        "14-company-responsibility-map": "blog/08-tech-story/14-800vdc-ai-data-center-power/assets/14-company-responsibility-map.svg",
+        "14-conversion-boundary": "blog/08-tech-story/14-800vdc-ai-data-center-power/assets/14-conversion-boundary.svg",
+        "14-current-comparison": "blog/08-tech-story/14-800vdc-ai-data-center-power/assets/14-current-comparison.svg",
+        "14-dc-protection-chain": "blog/08-tech-story/14-800vdc-ai-data-center-power/assets/14-dc-protection-chain.svg",
+        "14-evidence-ladder": "blog/08-tech-story/14-800vdc-ai-data-center-power/assets/14-evidence-ladder.svg",
+        "14-load-timescale": "blog/08-tech-story/14-800vdc-ai-data-center-power/assets/14-load-timescale.svg"
+      },
+      "og": "landing/static/thumbnails/tech-800vdc-ai-data-center-power.webp",
+      "staging": [
+        "blog/08-tech-story/14-800vdc-ai-data-center-power/assets/14-board-conversion.webp",
+        "blog/08-tech-story/14-800vdc-ai-data-center-power/assets/14-company-responsibility-map.svg",
+        "blog/08-tech-story/14-800vdc-ai-data-center-power/assets/14-conversion-boundary.svg",
+        "blog/08-tech-story/14-800vdc-ai-data-center-power/assets/14-current-comparison.svg",
+        "blog/08-tech-story/14-800vdc-ai-data-center-power/assets/14-dc-protection-chain.svg",
+        "blog/08-tech-story/14-800vdc-ai-data-center-power/assets/14-evidence-ladder.svg",
+        "blog/08-tech-story/14-800vdc-ai-data-center-power/assets/14-hero.webp",
+        "blog/08-tech-story/14-800vdc-ai-data-center-power/assets/14-load-timescale.svg",
+        "blog/08-tech-story/14-800vdc-ai-data-center-power/assets/14-protection.webp",
+        "landing/static/thumbnails/tech-800vdc-ai-data-center-power-card.webp"
       ]
     },
     "09-investment-stories/01-technical-investing-price-indicators": {

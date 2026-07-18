@@ -1,0 +1,544 @@
+{
+  "contractVersion": 2,
+  "passed": true,
+  "topicSlug": "800vdc-ai-data-center-power",
+  "seriesOrder": 14,
+  "title": "GPU 코어는 1V 미만인데, 왜 데이터센터는 800V로 가나",
+  "description": "1MW AI 랙의 전기를 데이터센터 입구부터 GPU 코어까지 따라가며 54V와 800V, ±400V 사이드카, 직류 보호, 회사별 책임과 조건형 시나리오를 쉽게 해부한다.",
+  "readerQuestion": "GPU 코어는 1V 미만인데 왜 랙에는 800V 직류가 필요하고, 이 전환이 실제로 어느 부품을 늘리거나 없애며 어떤 회사의 책임과 경제적 위치를 바꾸는지 초보자도 판단할 수 있을까?",
+  "titleContract": {
+    "selectedTitle": "GPU 코어는 1V 미만인데, 왜 데이터센터는 800V로 가나",
+    "hookQuestion": "1V 미만을 쓰는 GPU 코어 앞에 왜 800V라는 높은 전압을 가져오며, 54V와 비교했을 때 진짜 달라지는 것은 무엇인가?",
+    "readerGap": "독자는 800V를 GPU가 직접 쓰는 전압이나 교류보다 무조건 효율적인 확정 표준으로 생각하기 쉽고, 파트너 명단을 실제 수주와 매출로 오해하기 쉽다.",
+    "promise": "1MW 전류 계산, 세 전력 경로, 사이드카와 ±400V, 직류 보호, 회사 책임 지도, DartLab 재무·뉴스 신호, 반증 가능한 네 시나리오를 한 전력선으로 연결한다.",
+    "whySelected": "GPU 코어의 낮은 전압과 시설의 높은 전압을 한 문장에 맞붙여 기술적 역설을 만들고, 특정 회사 수혜보다 전력 변환 경계라는 글의 핵심 질문을 드러낸다.",
+    "candidates": [
+      {
+        "title": "GPU 코어는 1V 미만인데, 왜 데이터센터는 800V로 가나",
+        "strength": "낮은 코어 전압과 높은 배전 전압의 역설이 쉬운 질문을 만들고 원리 해부를 예고한다."
+      },
+      {
+        "title": "1MW 랙은 왜 전원부터 밖으로 내보내나: 800V와 사이드카의 기술",
+        "strength": "전력 장치가 계산 랙 밖으로 이동하는 구조 변화와 사이드카를 구체적으로 보여 준다."
+      },
+      {
+        "title": "AI 데이터센터의 다음 병목은 브레이크다: 800V 직류를 안전하게 끊는 법",
+        "strength": "효율보다 직류 보호와 고장 책임이 중요하다는 차별화된 통찰을 전면에 둔다."
+      }
+    ]
+  },
+  "insight": {
+    "commonBelief": "AI 랙 전력이 커지니 800V를 쓰면 전류와 손실이 줄고 NVIDIA 파트너로 발표된 전력·반도체 회사가 모두 수혜를 얻는다고 생각한다.",
+    "twistFact": "800VDC와 기존 415·480VAC는 1MW에서 같은 kA 질서이며 진짜 변화는 54V 구간을 GPU 가까이 밀고 변환·저장·보호를 랙 밖으로 옮기는 데 있다. 이 과정은 새 부품을 만들면서 기존 중간 전원 선반을 없앨 수 있다.",
+    "whatToWatch": "전압 이름보다 AC/DC 변환 위치, 단일 800V와 ±400V의 보호 방식, 50·12·6V 중간 단계, 안전 인증, 고객 설계 채택, 설치 MW, 현장 고장률, 반복 주문, 독립 매출을 순서대로 본다.",
+    "freshnessArgument": "2026년 3월 OCP Diablo 400과 LVDC 백서, 2026년 5월 IEC 반도체 차단기 표준, 2026년 6월 NVIDIA MGX 교량 구조, 2026년 7월 LS ELECTRIC·Infineon MOU와 DartLab 최신 뉴스 신호를 반영한다.",
+    "evidenceRefs": ["E1", "E2", "E3", "E4", "E5", "E6", "E7", "E9", "E10"]
+  },
+  "acts": [
+    {
+      "order": 1,
+      "heading": "1V 미만 코어와 800V 랙의 모순에서 전력 여행을 시작한다",
+      "purpose": "통념 전복과 쉬운 물리 설명",
+      "scene": "1MW를 54V와 800V로 나눠 각각 약 18,519A와 1,250A를 계산하고 NVIDIA의 200kg·64U 가정을 회사 추정으로 제한한다.",
+      "causalBridge": "전류가 줄어도 GPU는 낮은 전압을 쓰므로 다음 막에서 전압이 어디서 어떻게 계단식으로 내려가는지 본다."
+    },
+    {
+      "order": 2,
+      "heading": "현재·사이드카·중앙 직류의 세 경로에서 변환 경계를 찾는다",
+      "purpose": "800V 원리와 경쟁 구조 해부",
+      "scene": "현재 54V 랙, 기존 AC와 사이드카, 신축 중앙 직류를 나란히 놓고 단일 800V와 ±400V, 50·12·6V 경로를 구분한다.",
+      "causalBridge": "여러 경로가 공존한다면 가장 먼저 현실화될 구조가 무엇인지 기존 데이터센터의 제약으로 넘어간다."
+    },
+    {
+      "order": 3,
+      "heading": "기존 교류 설비를 보존하는 사이드카가 왜 먼저 보이는지 확인한다",
+      "purpose": "과도기 상용화 경로 설명",
+      "scene": "OCP Diablo 400의 800kW에서 1MW 이상 전력 랙과 NVIDIA·Schneider의 2026년 교량 설명을 비교하고 과도기에는 변환 단계가 늘 수도 있음을 밝힌다.",
+      "causalBridge": "사이드카가 변환·저장·보호를 맡으면 그 경계에서 누가 현장 책임을 지는지 회사 네트워크로 이어진다."
+    },
+    {
+      "order": 4,
+      "heading": "회사 이름을 전기가 지나가는 순서와 고장 책임으로 재배치한다",
+      "purpose": "공정·회사·근거 지도와 경제성 가설",
+      "scene": "NVIDIA·하이퍼스케일러, Schneider·Eaton·Vertiv, Flex·Delta·LiteOn, Infineon·ST·TI, LS ELECTRIC을 규격·통합·양산·소자·직접 인접 층으로 나눈다.",
+      "causalBridge": "현장 책임의 핵심이 효율보다 고장을 끊는 능력일 수 있으므로 다음 막에서 직류 보호를 해부한다."
+    },
+    {
+      "order": 5,
+      "heading": "구리가 하던 일을 반도체와 직류 브레이크가 떠안는 과정을 본다",
+      "purpose": "전력반도체와 안전 병목 설명",
+      "scene": "SiC·GaN·실리콘의 역할, 800V에서 50·12·6V 변환, 감지·핫스왑·반도체 차단·물리 격리·접지 감시를 IEC 60947-10:2026과 연결한다.",
+      "causalBridge": "전압과 보호를 풀어도 GPU 부하 급변과 열은 남으므로 저장장치와 냉각의 별도 시간축으로 간다."
+    },
+    {
+      "order": 6,
+      "heading": "800V가 해결하지 못하는 순간 부하와 열을 분리해 본다",
+      "purpose": "저장·냉각 연결과 오해 방지",
+      "scene": "밀리초 커패시터부터 수시간 BESS까지 역할을 나누고 1MW에서 효율 1%p가 약 10kW를 줄여도 GPU 본체 열은 남는다고 계산한다.",
+      "causalBridge": "기술 층이 많아도 실제 사업 증거는 서로 다른 단계에 있으므로 다음 막에서 공시와 DartLab 숫자를 연다."
+    },
+    {
+      "order": 7,
+      "heading": "DartLab 재무·뉴스 신호를 상용화 증거 사다리 위에 놓는다",
+      "purpose": "재무 착지와 증거 범위 검증",
+      "scene": "NVIDIA·Vertiv·Eaton·Navitas·LS ELECTRIC의 회사 전체 매출·이익·현금흐름을 비교하고 파트너에서 독립 매출까지 일곱 단계를 구분한다.",
+      "causalBridge": "현재 증거가 대부분 중간 단계에 있음을 확인했으므로 마지막 막에서 조건별로 어떤 칸이 강해질지 반증 가능한 시나리오로 닫는다."
+    },
+    {
+      "order": 8,
+      "heading": "사이드카·중앙 직류·직접 변환·지연의 네 시나리오를 비교한다",
+      "purpose": "시나리오형 관전 포인트",
+      "scene": "기존 AC 보존, 중앙 800V 표준화, 800V에서 6·12V 직접 변환, 안전·부하·계통 지연의 네 조건에서 강해질 회사 층과 약해질 부품을 나눈다.",
+      "causalBridge": "독자는 전압 이름보다 변환 위치, 고장 책임, 인증·출하·매출이 움직이는 순서를 계속 추적하게 된다."
+    }
+  ],
+  "sections": [
+    {
+      "order": 1,
+      "heading": "54V는 왜 갑자기 200kg의 구리가 되는가",
+      "subtitle": "1MW에서 전압·전류·전력의 관계를 쉬운 숫자로 푼다",
+      "visualAnchor": "14-current-comparison SVG에서 54V 약 18,519A와 800V 1,250A를 같은 1MW 기준으로 비교한다.",
+      "explanation": "전압은 압력, 전류는 지나가는 양, 전력은 일하는 속도로 풀고 P=VI 계산에서 시작해 415·480VAC와 800VDC가 같은 kA 질서라는 반전까지 설명한다.",
+      "example": "1,000,000W를 54V로 나누면 약 18,519A, 800V로 나누면 1,250A이며 NVIDIA는 54V 확장 시 최대 200kg 구리와 64U 전원 선반을 가정한다.",
+      "support": "주의할 점은 200kg·64U가 회사 설계 추정이고 I²R 단순 비율을 실제 시스템 손실 감소로 일반화할 수 없다는 것이다.",
+      "transition": "전류가 줄어도 GPU 코어에는 낮은 전압이 필요하므로 다음에는 전압을 어디서 내리는지 세 경로로 넘어간다.",
+      "evaluation": "초보자가 800V의 핵심을 교류 대비 마법 같은 효율이 아니라 54V 구간의 전류와 공간 문제로 설명할 수 있어야 한다."
+    },
+    {
+      "order": 2,
+      "heading": "800V는 종착지가 아니라 전압 계단의 맨 위다",
+      "subtitle": "현재 랙·사이드카·중앙 직류와 ±400V를 구분한다",
+      "visualAnchor": "14-conversion-boundary SVG와 14-board-conversion 이미지로 변환 경계와 GPU 근접 저전압 경로를 보여 준다.",
+      "explanation": "현재 54V 랙, 기존 AC와 사이드카, 신축 중앙 직류 경로를 코드블록으로 나누고 단일 800V와 ±400V가 같은 배선 구조가 아님을 쉽게 푼다.",
+      "example": "NVIDIA는 64대 1 변환으로 약 12V, TI는 800V에서 6V와 1V 미만 두 단계, ST는 50V·12V·6V 공존 구조를 제시한다.",
+      "support": "오해하면 안 되는 점은 참조 설계와 프로토타입이 모든 운영사의 확정 표준이나 양산 출하를 뜻하지 않는다는 것이다.",
+      "transition": "여러 구조가 가능하므로 다음에는 기존 건물을 뜯지 않고 어떤 경로가 먼저 적용될 수 있는지 사이드카로 이어간다.",
+      "evaluation": "독자가 800V가 GPU 입력 전압이 아니며 중간 50·12·6V가 늘거나 사라질 수 있다는 경쟁 관계를 설명해야 한다."
+    },
+    {
+      "order": 3,
+      "heading": "중앙 전력실보다 사이드카가 먼저 보이는 이유",
+      "subtitle": "기존 415·480V 교류 투자를 보존하는 과도기 구조",
+      "visualAnchor": "14-hero 이미지와 OCP Diablo 400 숫자로 계산 랙 옆 별도 전력 랙의 위치와 역할을 보여 준다.",
+      "explanation": "OCP 표의 800kW에서 1MW 이상 숫자와 기존 데이터센터의 교류 UPS·버스웨이 제약에서 출발해 사이드카가 변환·저장·보호를 랙 밖으로 옮기는 이유를 설명한다.",
+      "example": "OCP Diablo 400 v0.7은 사이드카를 800kW에서 1MW 이상으로 확장하고 NVIDIA·Schneider는 2026년에 기존 AC 시설의 교량으로 설명한다.",
+      "support": "한계는 사이드카가 기존 AC UPS 뒤에 붙을 때 변환 단계가 오히려 늘 수 있고 제품 발표가 현장 MW 출하를 증명하지 않는다는 것이다.",
+      "transition": "전력 장치가 별도 랙으로 모이면 누가 변환과 고장 책임을 지는지가 중요해지므로 회사 지도로 넘어간다.",
+      "evaluation": "독자가 사이드카를 확정 승자가 아니라 기존 교류 설비를 보존할 때 유력한 상용화 교량으로 이해해야 한다."
+    },
+    {
+      "order": 4,
+      "heading": "회사 이름보다 누가 어느 고장에 책임지는가",
+      "subtitle": "규격·통합·전력 랙·소자·제어·직접 인접의 산업 네트워크",
+      "visualAnchor": "필수 공정·회사·근거 표와 14-company-responsibility-map SVG로 책임 경계와 대표 회사를 나란히 배치한다.",
+      "explanation": "필수 회사 표에서 NVIDIA와 하이퍼스케일러의 규격, Schneider·Eaton·Vertiv의 현장 통합, Flex·Delta·LiteOn의 전력 랙, 반도체 회사와 LS ELECTRIC의 위치를 구분한다.",
+      "example": "LS ELECTRIC은 북미 38kV 데이터센터 배전 수주와 Infineon SST·SSCB MOU가 있지만 NVIDIA 인증과 800V 매출은 아직 확인되지 않았다.",
+      "support": "주의할 점은 파트너 명단과 설계 중요도가 수주·마진을 보장하지 않고 상류 변압기 회사를 랙 내부 800V 직접 수혜로 부르면 안 된다는 것이다.",
+      "transition": "현장 책임에서 가장 어려운 지점이 직류 고장 격리이므로 다음에는 반도체와 보호 체인을 해부한다.",
+      "evaluation": "독자가 회사 이름을 공급망 바구니로 묶지 않고 각 회사의 역할·대체 가능성·증거 단계를 말할 수 있어야 한다."
+    },
+    {
+      "order": 5,
+      "heading": "구리가 하던 일을 반도체와 브레이크가 맡는다",
+      "subtitle": "SiC·GaN·실리콘과 직류 차단·접지·핫스왑의 역할",
+      "visualAnchor": "14-dc-protection-chain SVG와 14-protection 이미지로 한 고장 구역만 끊고 정상 랙은 계속 운전하는 흐름을 보여 준다.",
+      "explanation": "IEC 60947-10:2026 표준과 보호 이미지에서 전력반도체를 빠른 스위치로 풀고, 직류는 자연적 전류 영점이 없어 감지·핫스왑·반도체 차단·물리 격리·접지 감시가 필요하다고 설명한다.",
+      "example": "IEC 60947-10:2026은 1,500VDC 이하 반도체·하이브리드 차단기 표준을 발행했지만 1MW 다중 공급 현장 검증까지 끝났다는 뜻은 아니다.",
+      "support": "오해 방지는 TI의 97.6% 피크 효율을 회사 참조 설계 조건으로 제한하고 보호 책임이 높은 회사가 반드시 높은 마진을 얻는다고 단정하지 않는 것이다.",
+      "transition": "전압과 차단을 해결해도 순간 부하와 열이 남으므로 다음에는 저장과 냉각의 다른 시간축으로 간다.",
+      "evaluation": "초보자가 800V의 진짜 병목이 효율뿐 아니라 고장 구역을 빠르고 선택적으로 끊는 브레이크라고 설명할 수 있어야 한다."
+    },
+    {
+      "order": 6,
+      "heading": "전압을 높여도 GPU의 갑작스러운 식욕과 열은 남는다",
+      "subtitle": "밀리초 저장부터 시설 BESS와 직접 수랭까지의 별도 축",
+      "visualAnchor": "14-load-timescale SVG에서 밀리초·수초·수분·수시간 저장과 계속되는 냉각을 시간축으로 비교한다.",
+      "explanation": "800V는 큰 전력을 나르는 도로, 저장장치는 부하 충격을 받는 서스펜션으로 풀고 변환 효율 1%p가 1MW에서 약 10kW를 줄이는 계산을 제시한다.",
+      "example": "1MW에서 변환 효율 1%p는 약 10kW를 줄이며, Eaton은 슈퍼커패시터를 참조 구조에 넣고 Flex·Delta는 BBU·CBU를 제시한다.",
+      "support": "주의할 점은 800V가 GPU 본체 열을 없애지 않으며 전기차 800V 부품도 24시간 무중단·선택 차단 조건을 다시 인증해야 한다는 것이다.",
+      "transition": "필요한 기술 층은 확인했지만 실제 상용화는 다른 속도로 움직이므로 다음에는 DartLab 숫자와 증거 사다리로 이어간다.",
+      "evaluation": "독자가 배전·저장·냉각을 하나의 수혜로 뭉치지 않고 같은 고밀도 랙이 만든 서로 다른 문제로 구분해야 한다."
+    },
+    {
+      "order": 7,
+      "heading": "공시에서는 800V라는 단어보다 증거의 단계를 본다",
+      "subtitle": "DartLab 재무 패널과 뉴스 신호를 발표·인증·출하·매출로 분리한다",
+      "visualAnchor": "회사 전체 재무 표와 14-evidence-ladder SVG에서 파트너 명단부터 독립 매출까지 일곱 단계를 보여 준다.",
+      "explanation": "NVIDIA·Vertiv·Eaton·Navitas·LS ELECTRIC의 실제 매출·영업이익·현금흐름을 보여 주되 통화·회계연도·회사 범위를 분리한다.",
+      "example": "DartLab에서 Vertiv 2025 매출 102.3억달러와 영업이익 18.3억달러, Navitas 매출 4,592만달러와 영업손실 1억778만달러를 확인했다.",
+      "support": "한계는 회사 전체 실적을 800V 매출로 바꿀 수 없고 뉴스의 Kyber 일정 논쟁과 기사 개수를 출하 증거로 쓸 수 없다는 것이다.",
+      "transition": "현재 많은 회사가 증거 사다리 중간에 있으므로 마지막에는 조건이 달라질 때 어느 칸이 강해지는지 시나리오로 넘어간다.",
+      "evaluation": "독자가 기술 발표·제품 계획·인증·고객 채택·현장 출하·독립 매출을 서로 다른 증거로 읽어야 한다."
+    },
+    {
+      "order": 8,
+      "heading": "관전 포인트는 어떤 조건에서 어느 칸이 강해지는가다",
+      "subtitle": "사이드카·중앙 직류·직접 변환·지연의 네 경로",
+      "visualAnchor": "앞선 전류·경계·책임·보호·증거 도식을 다시 호출하고 별도 장식 없이 조건·지표·반증을 본문 시나리오로 비교한다.",
+      "explanation": "기존 AC 보존, 중앙 800V 표준화, 800V에서 6·12V 직접 변환, 안전·부하·계통 지연을 각각 회사 층과 약해질 부품에 연결한다.",
+      "example": "4개 시나리오 중 사이드카는 실제 설치 MW와 반복 주문, 직접 변환은 정격 효율·수율·고장률, 지연은 공식 랙 일정과 저장장치 부착률을 본다.",
+      "support": "각 시나리오는 안전 인증 지연, 비용, 구조 파편화, 소프트웨어 부하 평탄화 같은 반대 증거가 나오면 즉시 약해지는 조건부 관점이다.",
+      "transition": "마지막 질문은 800V 회사가 누구인지가 아니라 변환 위치와 고장 책임이 인증·출하·매출로 이동하는지를 보는 것으로 닫는다.",
+      "evaluation": "네 시나리오마다 조건·변화 경로·상대적으로 강해질 칸·확인 지표·반증 조건이 모두 보일 때만 발행한다."
+    }
+  ],
+  "visuals": [
+    {
+      "title": "사이드카와 계산 랙의 변환 경계",
+      "kind": "raster",
+      "proves": "전력 변환·저장·보호가 계산 랙에서 별도 전력 랙으로 이동한다는 글의 관통선을 보여 준다.",
+      "placement": "frontmatter 다음 첫 장면과 3절 사이드카 설명 뒤",
+      "insertAfter": "제목과 첫 질문 직후, OCP Diablo 설명 직후",
+      "narrativeUse": "낯선 사이드카 구조를 실제 공간 관계로 바꿔 이후 회사 책임 지도의 기준점을 만든다."
+    },
+    {
+      "title": "1MW 전압별 전류·구리 비교 도식",
+      "kind": "svg",
+      "proves": "54V 약 18,519A와 800V 1,250A의 차이가 구리와 랙 공간 문제를 만드는 이유를 보여 준다.",
+      "placement": "1절 P=VI 계산과 손실 주의 문단 뒤",
+      "insertAfter": "I²R 단순 비율을 실제 손실로 쓰면 안 된다는 문단",
+      "narrativeUse": "800V 필요성을 회사 홍보보다 초보자가 재현할 수 있는 물리 계산으로 고정한다."
+    },
+    {
+      "title": "세 구조의 변환 경계",
+      "kind": "svg",
+      "proves": "현재 랙·사이드카·중앙 직류에서 변환기가 사라지는 것이 아니라 위치가 달라짐을 보여 준다.",
+      "placement": "2절 두 전력 경로 코드블록 뒤",
+      "insertAfter": "현재와 차세대 경로 비교",
+      "narrativeUse": "과도기에는 변환 단계가 늘 수도 있다는 정직한 조건을 시각으로 설명한다."
+    },
+    {
+      "title": "GPU 보드 근접 변환 장면",
+      "kind": "raster",
+      "proves": "한 고전압 경로가 보드 가장자리에서 여러 저전압 경로로 나뉘며 800V가 GPU 코어의 직접 전압이 아님을 보여 준다.",
+      "placement": "2절 50·12·6V 경쟁 설명 뒤",
+      "insertAfter": "800V가 기존 중간 선반을 삭제할 수 있다는 문단",
+      "narrativeUse": "추상적인 고비율 변환을 실제 계산 보드의 공간 문제로 바꾼다."
+    },
+    {
+      "title": "800V 전력 경계의 회사 책임 네트워크",
+      "kind": "svg",
+      "proves": "규격·통합·양산·소자·보드가 서로 다른 책임과 증거 수준을 가진다는 점을 보여 준다.",
+      "placement": "4절 필수 공정·회사·근거 표 뒤",
+      "insertAfter": "공정·층위별 회사 역할과 공시 근거 표",
+      "narrativeUse": "긴 회사 목록을 전력 이동 순서와 고장 책임으로 다시 읽게 한다."
+    },
+    {
+      "title": "800V 직류 고장 감지·격리 보호 체인",
+      "kind": "svg",
+      "proves": "감지·핫스왑·빠른 차단·물리 격리·계속 운전이 하나의 보호 체인임을 보여 준다.",
+      "placement": "5절 직류 아크와 저장장치 고장 설명 뒤",
+      "insertAfter": "직류는 자연적인 전류 영점이 없다는 문단",
+      "narrativeUse": "효율보다 브레이크가 어려울 수 있다는 통찰을 장치 순서로 가르친다."
+    },
+    {
+      "title": "선택 차단 개념 장면",
+      "kind": "raster",
+      "proves": "한 고장 분기만 격리하고 나머지 랙을 계속 운영하는 것이 통합·서비스 가치의 핵심임을 보여 준다.",
+      "placement": "5절 IEC 표준 설명 뒤",
+      "insertAfter": "표준 발행이 현장 검증의 끝이 아니라는 문단",
+      "narrativeUse": "보호 기술을 사고 장면이 아니라 정상 운전을 지키는 책임으로 이해하게 한다."
+    },
+    {
+      "title": "GPU 부하 변동과 저장장치 역할 시간축",
+      "kind": "svg",
+      "proves": "밀리초부터 수시간까지 저장장치가 역할을 나누고 냉각은 별도로 계속된다는 점을 보여 준다.",
+      "placement": "6절 저장장치 역할 설명 뒤",
+      "insertAfter": "저장장치도 고장 전류를 보탠다는 문단",
+      "narrativeUse": "800V·저장·냉각을 하나의 기술로 뭉치지 않고 시간축과 역할로 분리한다."
+    },
+    {
+      "title": "상용화 증거 사다리",
+      "kind": "svg",
+      "proves": "파트너·시연·제품·인증·채택·가동·독립 매출이 서로 다른 증거임을 보여 준다.",
+      "placement": "7절 DartLab 뉴스 신호 설명 뒤",
+      "insertAfter": "기사 개수는 수요가 아니라는 문단",
+      "narrativeUse": "독자가 다음 회사 발표를 스스로 걸러 볼 수 있는 반복 가능한 판단 도구를 남긴다."
+    }
+  ],
+  "imagePlan": [
+    {
+      "assetKey": "14-hero",
+      "sourcePolicy": "auto",
+      "slot": "hero",
+      "subject": "별도 전력 사이드카가 기존 교류 인입을 받아 고전압 직류를 계산 랙으로 보내는 브랜드 없는 데이터홀 개념 장면",
+      "query": "AI data center power sidecar high voltage DC compute racks editorial no logo",
+      "keywords": ["power sidecar", "800VDC", "compute rack"],
+      "placement": "frontmatter 다음 첫 장면과 3절 사이드카 설명 뒤",
+      "narrativeUse": "전력 장치가 계산 랙 밖으로 이동한다는 글의 관통선을 공간 관계로 먼저 보여 준다."
+    },
+    {
+      "assetKey": "14-board-conversion",
+      "sourcePolicy": "auto",
+      "slot": "inline",
+      "subject": "고전압 직류 한 줄이 계산 보드 가장자리의 변환 모듈을 지나 GPU 주변 저전압 경로로 나뉘는 개념 장면",
+      "query": "AI compute tray high voltage DC converter low voltage GPU editorial no logo",
+      "keywords": ["compute tray", "DC DC conversion", "GPU power"],
+      "placement": "2절 50·12·6V 경로 경쟁 설명 뒤",
+      "narrativeUse": "800V가 GPU 코어의 직접 전압이 아니며 변환 위치가 산업 가치를 바꾼다는 점을 보여 준다."
+    },
+    {
+      "assetKey": "14-protection",
+      "sourcePolicy": "auto",
+      "slot": "inline",
+      "subject": "직류 보호 캐비닛이 한 고장 분기만 격리하고 정상 계산 랙에는 전력을 계속 보내는 개념 장면",
+      "query": "DC protection selective fault isolation AI data center editorial no logo",
+      "keywords": ["DC protection", "fault isolation", "data center"],
+      "placement": "5절 IEC 반도체 차단기 표준 설명 뒤",
+      "narrativeUse": "800V에서 오래 남을 가치가 효율뿐 아니라 고장과 정비 책임에 붙을 수 있음을 이해시킨다."
+    }
+  ],
+  "relatedPosts": {
+    "searches": ["AI 데이터센터 변압기 전력망", "AI 반도체 냉각", "CPO 실리콘 포토닉스", "반도체 공정 가치", "LS ELECTRIC 전력 제어"],
+    "placementRule": "같은 원리를 반복하지 않고 데이터센터 입구 전력, 랙 냉각, 랙 간 통신, 반도체 가치 포착을 더 깊게 볼 문단 끝에 실제 존재하는 글만 연결한다.",
+    "links": [
+      {
+        "path": "/blog/ai-power-transformer-supercycle",
+        "title": "AI 전력망은 어디서 막히나",
+        "reason": "발전소부터 데이터센터 입구까지의 변압기·전선·차단기 병목을 새 글의 상류 경계로 연결한다.",
+        "placement": "도입과 4절 국내 상류 회사 경계 설명"
+      },
+      {
+        "path": "/blog/semiconductor-cooling-network",
+        "title": "AI 칩의 다음 병목은 열이다",
+        "reason": "800V가 줄이지 못하는 GPU 본체 열과 직접 수랭·CDU 네트워크를 이어 본다.",
+        "placement": "6절 냉각 설명 뒤"
+      },
+      {
+        "path": "/blog/co-packaged-optics-silicon-photonics",
+        "title": "AI 클러스터는 왜 빛을 칩 옆으로 끌어오나",
+        "reason": "랙 사이 데이터 이동이 전력과 열을 키우고 광 I/O가 이를 줄이는 다른 경계를 비교한다.",
+        "placement": "6절 냉각과 네트워크 설명 뒤"
+      },
+      {
+        "path": "/blog/sand-to-semiconductor",
+        "title": "모래가 반도체가 되기까지",
+        "reason": "어려운 소자 공정과 산업의 경제적 가치 포착이 항상 같은 회사에 남지 않는 구조를 비교한다.",
+        "placement": "7절 증거 사다리 설명 뒤"
+      },
+      {
+        "path": "/blog/hbm-stack-packaging-test",
+        "title": "HBM은 왜 쌓을까",
+        "reason": "GPU 보드 가까이의 전력·열·패키징 제약과 고객 인증의 중요성을 다른 공정에서 비교한다.",
+        "placement": "2절 GPU 근접 변환 또는 5절 전력반도체 설명 뒤"
+      }
+    ]
+  },
+  "honestyGuards": [
+    "1MW·200kg 구리·64U 전원 선반은 NVIDIA의 차세대 아키텍처 가정이며 현재 모든 랙의 실측 일반값으로 쓰지 않는다.",
+    "54V와 800V의 I²R 단순 비율을 실제 시스템 손실이 219배 줄어든다는 주장으로 확대하지 않는다.",
+    "800VDC와 415·480VAC 전류는 도체 수와 열 조건이 달라 같다고 쓰지 않고 같은 kA 질서라고만 설명한다.",
+    "단일 +800V 2선식과 ±400V 3선식은 선간 전압 폭이 같아도 접지·균형·절연 구조가 다르다고 구분한다.",
+    "사이드카는 유력한 과도기 경로이지 대규모 출하가 증명된 확정 승자라고 부르지 않는다.",
+    "파트너 명단·MOU·참조 설계·제품 발표를 고객 채택·현장 출하·독립 매출로 해석하지 않는다.",
+    "회사 전체 매출·영업이익·수주잔고를 800V 전용 실적이라고 부르지 않는다.",
+    "TI·ST·NVIDIA·Schneider의 효율·구리·면적 수치는 회사 설계 조건으로 제한하고 독립 현장값으로 일반화하지 않는다.",
+    "HD현대일렉트릭·효성중공업·GE Vernova·Siemens Energy는 계통·상류 시나리오에만 두고 랙 내부 800V 직접 공급사로 부르지 않는다.",
+    "image_gen 자산은 변환 경계와 선택 차단을 설명하는 개념 장면이며 실제 특정 제품·보드·현장 사진이라고 주장하지 않는다."
+  ],
+  "evidenceMap": [
+    {
+      "id": "E1",
+      "claim": "NVIDIA는 1MW 이상 랙을 위해 2027년부터 800VDC 전환을 제시하고 54V 확장 시 최대 200kg 구리와 64U 전원 선반을 가정했다.",
+      "sourceType": "OFFICIAL-TECHNICAL",
+      "sourceRef": "NVIDIA 800 VDC Architecture technical blog",
+      "period": "2025-05, current roadmap checked 2026-07",
+      "unit": "MW, kg, rack U, year",
+      "scope": "NVIDIA architecture assumption and roadmap, not independent field measurement",
+      "url": "https://developer.nvidia.com/blog/nvidia-800-v-hvdc-architecture-will-power-the-next-generation-of-ai-factories/"
+    },
+    {
+      "id": "E2",
+      "claim": "OCP Diablo 400 v0.7은 분리형 전력 랙을 800kW에서 1MW 이상으로 확장하고 ±400VDC 경로를 정의한다.",
+      "sourceType": "OFFICIAL-STANDARD",
+      "sourceRef": "OCP Diablo 400 v0.7.0",
+      "period": "2026-03-01",
+      "unit": "kW, MW, volts",
+      "scope": "specification requirements, not shipment volume",
+      "url": "https://www.opencompute.org/documents/ocp-specification-diablo-400-v0-7-0-final-pdf"
+    },
+    {
+      "id": "E3",
+      "claim": "NVIDIA는 2026년 MGX 발표에서 기존 AC 시설과 미래 800V 랙을 잇는 MGX 호환 전력 랙을 실용적 업그레이드 경로로 설명했다.",
+      "sourceType": "OFFICIAL-PLATFORM",
+      "sourceRef": "NVIDIA GTC Taipei at COMPUTEX 2026",
+      "period": "2026-06",
+      "unit": "architecture path",
+      "scope": "official platform roadmap, customer deployment not proven",
+      "url": "https://blogs.nvidia.com/blog/nvidia-gtc-taipei-computex-2026-news/"
+    },
+    {
+      "id": "E4",
+      "claim": "Schneider Electric은 800V 전력 랙·사이드카를 즉시 가능한 구조로, 중앙 집중형을 이후 단계로 설명한다.",
+      "sourceType": "OFFICIAL-WHITEPAPER",
+      "sourceRef": "Schneider Electric WP213",
+      "period": "2026-03",
+      "unit": "architecture sequence",
+      "scope": "company engineering view, not industry-wide adoption proof",
+      "url": "https://www.se.com/us/en/download/document/SPD_WP213_EN/"
+    },
+    {
+      "id": "E5",
+      "claim": "OCP LVDC 백서는 800V 계열에서 여러 접지·양극성 구조를 다루며 최적 전압과 토폴로지가 논의 중임을 보여 준다.",
+      "sourceType": "OFFICIAL-STANDARD-WHITEPAPER",
+      "sourceRef": "OCP DCF Power Distribution LVDC white paper v1.0",
+      "period": "2026-03-30",
+      "unit": "voltage and topology",
+      "scope": "architecture options and tradeoffs",
+      "url": "https://www.opencompute.org/documents/dcf-power-distribution-lvdc-white-paper-version-1-0-final-pdf-1"
+    },
+    {
+      "id": "E6",
+      "claim": "TI는 800V→6V→1V 미만 두 단계와 97.6% 피크 효율 참조 설계를, ST는 50V·12V·6V 공존 경로를 발표했다.",
+      "sourceType": "OFFICIAL-REFERENCE-DESIGN",
+      "sourceRef": "TI and ST GTC 2026 announcements",
+      "period": "2026-03",
+      "unit": "volts, percent peak efficiency",
+      "scope": "prototype and reference design claims, not fleet field efficiency",
+      "url": "https://www.ti.com/about-ti/newsroom/news-releases/2026/2026-03-16-ti-unveils-complete-800-vdc-power-architecture-for-future-generation-ai-data-centers-with-nvidia.html"
+    },
+    {
+      "id": "E7",
+      "claim": "IEC 60947-10:2026은 1,500VDC 이하 반도체·하이브리드 차단기 특성과 시험을 규정한다.",
+      "sourceType": "OFFICIAL-STANDARD",
+      "sourceRef": "IEC 60947-10:2026",
+      "period": "2026-05-12",
+      "unit": "volts DC",
+      "scope": "published component standard, not full 1MW system field validation",
+      "url": "https://webstore.iec.ch/en/publication/67514"
+    },
+    {
+      "id": "E8",
+      "claim": "Eaton은 슈퍼커패시터·버스바·DC 커넥터를 포함한 800V 참조 구조를 공개했고 Vertiv는 2026년 하반기 포트폴리오 출시 계획을 밝혔다.",
+      "sourceType": "OFFICIAL-COMPANY",
+      "sourceRef": "Eaton and Vertiv 800 VDC announcements",
+      "period": "2025-10 to 2026-H2 plan",
+      "unit": "commercialization stage",
+      "scope": "reference architecture and release plan, shipment revenue not disclosed",
+      "url": "https://www.eaton.com/kr/ko-kr/company/news-insights/news-releases/2025/eaton-next-generation-ai-factories.html"
+    },
+    {
+      "id": "E9",
+      "claim": "DartLab 연간 패널에서 NVIDIA FY2026, Vertiv·Eaton·Navitas·LS ELECTRIC 2025 회사 전체 매출·이익·현금흐름을 재계산했다.",
+      "sourceType": "DARTLAB-EDGAR-DART",
+      "sourceRef": "dartlab.Company().panel('IS'/'CF', freq='Y') main-thread rerun",
+      "period": "FY2026 and CY2025",
+      "unit": "USD and KRW",
+      "scope": "company-wide financials, not 800V standalone revenue",
+      "url": "https://dartlab.ai"
+    },
+    {
+      "id": "E10",
+      "claim": "LS ELECTRIC은 2026년 7월 Infineon과 AI 데이터센터용 SST·SSCB 공동개발 MOU를 발표했다.",
+      "sourceType": "OFFICIAL-COMPANY",
+      "sourceRef": "LS Group press release",
+      "period": "2026-07-13",
+      "unit": "MOU and technology scope",
+      "scope": "direct-adjacent development evidence, not NVIDIA certification or sales",
+      "url": "https://www.lsholdings.com/ko/media/news/58326b775043577a337953564477785a30536b4e74486d50576e646f34736a76"
+    },
+    {
+      "id": "E11",
+      "claim": "2021년 NREL의 특정 장비 시험에서 380VDC 컨버터 피크 효율 93.4%, 208VAC 컨버터 92.6%로 DC 자체가 우월성을 보장하지 않았다.",
+      "sourceType": "PRIMARY-RESEARCH",
+      "sourceRef": "NREL data center power distribution study",
+      "period": "2021",
+      "unit": "percent peak efficiency",
+      "scope": "specific legacy equipment test, not 2026 800V architecture benchmark",
+      "url": "https://www.nrel.gov/docs/fy21osti/79596.pdf"
+    },
+    {
+      "id": "E12",
+      "claim": "Flex는 2026년 3월 800V Power Rack을 공개했으며 현재 시설에서 차세대 고밀도 랙을 지원하는 분리형 구조라고 설명했다.",
+      "sourceType": "OFFICIAL-PRODUCT-ANNOUNCEMENT",
+      "sourceRef": "Flex 800 VDC Power Rack release",
+      "period": "2026-03-16",
+      "unit": "product and rack power",
+      "scope": "product announcement, mass deployment and repeat orders not proven",
+      "url": "https://investors.flex.com/news/news-details/2026/Flex-Launches-800-VDC-Power-Rack-for-Next-Generation-NVIDIA-AI-Infrastructure/default.aspx"
+    }
+  ],
+  "watchScenarios": [
+    {
+      "id": "ac-sidecar-first",
+      "condition": "2027년 이후 고밀도 GPU 랙은 나오지만 운영사가 기존 415·480V 교류 배전과 UPS를 전면 교체하지 않는다면",
+      "mechanism": "기존 교류는 데이터홀까지 유지되고 랙 옆 사이드카가 800V 계열 직류를 만들어 변환·저장·보호를 계산 랙 밖으로 옮긴다.",
+      "outcome": "Flex·Delta·LiteOn의 전력 랙, Schneider·Eaton·Vertiv의 통합·서비스, 변환·제어 반도체 층이 먼저 상용화 기회를 얻는다.",
+      "watchMetric": "안전 인증, 고객명, 설치 MW, 현장 가동률, 반복 주문, 서비스 계약, 800V 수주 분리 공시를 확인한다.",
+      "invalidatedBy": "중앙 직류로 바로 가거나 54V·다른 구조가 공간과 비용을 감당하거나 사이드카가 예비계통 때문에 이점을 잃으면 약해진다.",
+      "evidenceRefs": ["E2", "E3", "E4", "E12"]
+    },
+    {
+      "id": "central-dc-standardizes",
+      "condition": "단일 800V 또는 ±400V의 접지·차단·커넥터 규격이 정리되고 관할 당국이 다중 공급사 선택 차단을 받아들인다면",
+      "mechanism": "AC/DC 변환이 전력실이나 데이터홀 단위로 모이고 직류 버스웨이가 계산 랙까지 가며 보호 책임과 고장 범위가 시설 쪽으로 올라간다.",
+      "outcome": "시설 통합·직류 보호와 고전압 변환 층이 강해지고 기존 랙 AC 전원공급장치와 중복 변환은 약해질 수 있다.",
+      "watchMetric": "OCP·IEC·UL 상호운용, 중앙 AC/DC 실제 발주, 현장 고장 격리, N+N 비용, 서비스 인증, 독립 매출을 확인한다.",
+      "invalidatedBy": "전압·접지 방식이 파편화되거나 중앙화의 장애 범위·개조·교육·보험 비용이 효율 이득보다 크면 분산 구조가 유지된다.",
+      "evidenceRefs": ["E4", "E5", "E7", "E10"]
+    },
+    {
+      "id": "direct-conversion-wins",
+      "condition": "800V에서 6V·12V로 가는 고비율 변환이 전체 부하 효율·고온 수명·수율·전자파·고장률을 실제 랙에서 통과한다면",
+      "mechanism": "50V·12V 중간 계단 일부가 사라지고 낮은 전압이 GPU 가까이 가며 부품 수는 줄고 남은 변환기의 설계 난도는 커진다.",
+      "outcome": "TI·ST·Infineon과 검증된 고비율 모듈이 강해지고 기존 중간 전원 선반 일부는 약해질 수 있다.",
+      "watchMetric": "승인 부품목록, 고객 채택, 정격 효율, W당 원가, 양산 수율, 고장률, 다중 공급, 독립 매출을 확인한다.",
+      "invalidatedBy": "50·12·6V 구조가 파편화되거나 고객이 쉽게 소자를 교체하거나 고비율 변환의 수명과 비용이 다단 구조를 못 이기면 약해진다.",
+      "evidenceRefs": ["E1", "E6", "E9"]
+    },
+    {
+      "id": "safety-load-grid-delay",
+      "condition": "직류 보호 표준과 차세대 랙 출하가 늦어지거나 부하 급변과 전력망 접속이 건물 내부 효율보다 큰 비용을 만든다면",
+      "mechanism": "중앙 800V 전환보다 BBU·CBU·슈퍼커패시터, 부하 제어, 혼합 AC·DC 운영과 상류 변압기·배전에 투자가 먼저 간다.",
+      "outcome": "Eaton·Delta·Flex의 저장, Schneider·Vertiv의 혼합 운영, LS ELECTRIC의 배전·보호 인접 기술이 상대적으로 강하고 소형 800V 집중 업체는 일정 위험이 커진다.",
+      "watchMetric": "저장장치 부착률, 부하변동 계약, 직류 인증·사고 데이터, 공식 GPU 랙 일정, 데이터센터 전용 변압기·배전 수주와 납기를 확인한다.",
+      "invalidatedBy": "소프트웨어만으로 부하가 평탄해지고 직류 보호가 빠르게 표준화되며 800V 랙 출하가 계획대로 늘면 주변 층 우위는 약해진다.",
+      "evidenceRefs": ["E1", "E7", "E8", "E9", "E10"]
+    }
+  ],
+  "reviewGate": {
+    "status": "passed",
+    "requiredRounds": [
+      {"id": "titleHook", "status": "passed"},
+      {"id": "writerPanel", "status": "passed"},
+      {"id": "honestyEvidence", "status": "passed"},
+      {"id": "sectionFlow", "status": "passed"},
+      {"id": "visualStoryPlan", "status": "passed"},
+      {"id": "imageFit", "status": "passed"},
+      {"id": "readerFit", "status": "passed"},
+      {"id": "reevaluation", "status": "passed"}
+    ],
+    "loopEvidence": {
+      "workflow": "blog_plan_loop.workflow.js",
+      "rounds": [
+        {
+          "round": "expert-research-r1",
+          "planner": "전력 물리·안전, 회사 네트워크·공시, 편집·과장 검증을 세 전문 조사로 나누고 OCP·NVIDIA·IEC·기업 원문과 기존 글 중복 경계를 확인했다.",
+          "evaluator": "세 조사 모두 800V 자체보다 54V 경계 이동과 사이드카, 직류 보호가 중심이어야 하며 파트너 명단을 수주로 읽으면 안 된다고 평가했다.",
+          "skeptic": "415·480VAC와 800VDC 전류가 같은 kA 질서이고 ±400V가 살아 있으며 과도기 사이드카가 변환 단계를 추가할 수 있다는 반례를 제시했다.",
+          "decision": "revise",
+          "evaluatorScore": 84
+        },
+        {
+          "round": "cross-debate-r2",
+          "planner": "세 조사 결과를 서로에게 보내 2차 적대 검토하고 회사 직접·간접·관찰, 보호 책임, 직접 변환의 기존 부품 삭제 효과를 다시 분류했다.",
+          "evaluator": "LS ELECTRIC을 직접 인접으로 제한하고 상류 회사를 핵심 지도에서 빼며 설계 권한과 경제적 지배력을 분리하라고 평가했다.",
+          "skeptic": "사이드카를 초기 승자, 보호를 고마진 확정 영역으로 쓰지 말고 인증·고객 채택·현장 가동·서비스 계약·독립 매출로 반증하라고 요구했다.",
+          "plannerRevision": "1MW 전력 한 줄을 따라가는 서사와 일곱 단계 증거 사다리, 네 조건형 시나리오로 기획을 재작성했다.",
+          "decision": "revise",
+          "evaluatorScore": 91
+        },
+        {
+          "round": "main-thread-verification-r3",
+          "planner": "메인 스레드가 DartLab로 NVDA·VRT·ETN·NVTS·LS ELECTRIC 패널과 뉴스 신호를 재실행하고 공식 2026년 OCP·NVIDIA·IEC·LS 원문을 재검증했다.",
+          "evaluator": "쉬운 1MW 계산에서 전압 계단, 사이드카, 회사 책임, 보호, 저장·냉각, 재무 증거, 시나리오로 인과가 이어지고 모든 강한 숫자에 범위 한계가 붙었다고 평가했다.",
+          "skeptic": "회사 전체 실적을 800V 매출로 읽지 않고 뉴스 일정 논쟁을 감시 트리거로만 쓰며 생성 이미지를 개념 장면으로 제한했는지 최종 확인했다.",
+          "plannerRevision": "SVG 6개와 생성 래스터 3개를 각 설명 직후 배치하고 직접 변환이 기존 중간 선반을 약화할 수 있다는 반대 효과를 본문과 시나리오에 반영했다.",
+          "decision": "passed",
+          "evaluatorScore": 96
+        }
+      ]
+    }
+  },
+  "_editorNote": "전문 조사 3개와 2차 교차 반박을 거쳐 800V 수혜 회사 나열을 버리고 전력 변환 경계·고장 책임·증거 단계 중심으로 재구성했다. 생성형 이미지는 실제 제품·회로가 아닌 개념 설명에만 사용했다."
+}
