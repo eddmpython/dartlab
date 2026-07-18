@@ -4,6 +4,17 @@
 > 끝난 PRD 는 `_done/` 로 격리한다(삭제 아님, 규약 = [_done/README.md](_done/README.md)).
 > 상태 범례: 🟢 활성 진행 · 🟡 부분완료·정체 · ⚪ 미착수 설계(운영자 go 대기) · 📎 참조·운영 문서
 
+## ★ 완료의 정의 (mainPlan 세션 강행)
+
+**mainPlan 을 수행하는 세션은 "완료 = `_done` 처리까지"다.** 코드가 green 이고 배포됐어도, 문서가 `mainPlan/` 루트에 그대로 있으면 그 작업은 미완이다. 완료를 선언하기 전에 4매듭을 전부 짓는다.
+
+1. `git mv mainPlan/<plan> mainPlan/_done/<plan>` (rename, 내용 무손실. 파일명 프리픽스 금지).
+2. [_done/README.md](_done/README.md) 보관 목록에 한 줄(완료일 + as-built. 현역 런북 섞였으면 명시).
+3. 본 인덱스에서 해당 항목을 활성 카테고리에서 빼고 하단 "완료·격리"로 이동.
+4. `project_*` 메모리 + `MEMORY.md` §6.2 포인터를 ✅ 완료 + `_done/` 경로로 갱신.
+
+이유: 완료를 `_done` 으로 매듭짓지 않으면 다음 세션이 끝난 PRD 를 활성으로 착각해 재착수하고, 활성 목록이 부풀어 진짜 남은 일이 안 보인다. 규약 SSOT = memory `feedback_mainplan_operation`.
+
 ## 1. 분석 리포트 · 서사 엔진
 
 회사 단위 전문 리포트와 서사 조립.
