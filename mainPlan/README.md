@@ -45,6 +45,7 @@
 
 | 폴더 | 상태 | 한 줄 |
 |---|---|---|
+| [dartlab-universe](dartlab-universe/) | ⚪ | HF 전체·실존 엔진 전체·블로그·미디어를 하나의 근거 추적 지식 공간으로 묶는 전용 데이터 엔진. 기존 시스템 무변경·data-engine-first PRD, 공개 연결은 운영자 검수 후 별도 승인. |
 | [dartlab-story-curriculum](dartlab-story-curriculum/) | 🟢 | 교육 SSOT = 블로그 연재 `dartlab 이야기`. 노트북 허브는 실습장. 편성지도·체크리스트(비공개). |
 | [web-notebook-runtime](web-notebook-runtime/) | 🟡 | 설치 없는 브라우저 노트북(Pyodide 워커·OPFS·체크포인트). 다수 제품 적용 완료, TODO SSOT 잔여(wheel OPFS 캐시 등). ⚠ 커널 공유런타임 이관은 `_done/pyproc-runtime-ssot`(완료)가 승계. |
 
