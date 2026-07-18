@@ -197,6 +197,18 @@ describe('Universe knowledge runtime', () => {
 		expect(scene.edges.every((edge) => edge.ruleId && edge.evidenceRefs.length > 0)).toBe(true);
 	});
 
+	it('roundtrips twenty representative HF addresses through exact file scenes', async () => {
+		const samples = siblings.slice(0, 20).map((entry) => entry.rfilename);
+		expect(samples).toHaveLength(20);
+		for (const path of samples) {
+			const scene = await runtime().open(`hf:${path}`);
+			const target = scene.nodes.find((node) => node.nodeId === `hf:${path}`);
+			expect(scene.targetId).toBe(`hf:${path}`);
+			expect(target?.sourceRef).toContain(`/blob/revision-1/${path}`);
+			expect(target?.evidenceRefs).toContain(target?.sourceRef);
+		}
+	});
+
 	it('preserves Skill OS relation kinds and declared dataset references as facts', async () => {
 		const scene = await runtime().open('skill:engines.analysis');
 		expect(scene.nodes).toEqual(expect.arrayContaining([

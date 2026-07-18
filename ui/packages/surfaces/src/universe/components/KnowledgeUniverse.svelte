@@ -176,6 +176,15 @@
 		void hydrateContent(content.targetId, content.tableMeta.rowStart, nextStart);
 	}
 
+	function openContentRowInSpace(index: number): void {
+		if (!content || !activeScene) return;
+		const absoluteRow = content.tableMeta.rowStart + index;
+		const rowNode = activeScene.nodes.find((node) => node.kind === 'record' && node.attributes.rowIndex === absoluteRow);
+		if (!rowNode) return;
+		viewMode = 'space';
+		selectNode(rowNode.nodeId);
+	}
+
 	async function openTarget(targetId: string): Promise<void> {
 		if (!targetId || loading) return;
 		loading = true;
@@ -439,8 +448,8 @@
 							{/if}
 							<div class="contentTableWrap">
 								<table>
-									<thead><tr>{#each content.columns as column (column)}<th>{column}</th>{/each}</tr></thead>
-									<tbody>{#each content.rows as row, index (index)}<tr>{#each content.columns as column (column)}<td>{row[column]}</td>{/each}</tr>{/each}</tbody>
+									<thead><tr><th class="l5Column">L5</th>{#each content.columns as column (column)}<th>{column}</th>{/each}</tr></thead>
+									<tbody>{#each content.rows as row, index (index)}<tr><td class="l5Cell"><button type="button" aria-label={`행 ${content.tableMeta.rowStart + index + 1} 셀을 공간에서 펼치기`} onclick={() => openContentRowInSpace(index)}>{content.tableMeta.rowStart + index + 1}</button></td>{#each content.columns as column (column)}<td>{row[column]}</td>{/each}</tr>{/each}</tbody>
 								</table>
 							</div>
 							{#if content.schema.length > 0}
@@ -632,6 +641,10 @@
 	.contentTableWrap table { width: max-content; min-width: 100%; border-collapse: collapse; color: #91a3b7; background: #070c13; font: 500 8px/1.35 ui-monospace, SFMono-Regular, Consolas, monospace; }
 	.contentTableWrap th { position: sticky; z-index: 1; top: 0; padding: 8px 10px; border-right: 1px solid #182332; border-bottom: 1px solid #243348; color: #b9c9db; background: #101824; text-align: left; white-space: nowrap; }
 	.contentTableWrap td { max-width: 220px; padding: 7px 10px; overflow: hidden; border-right: 1px solid #121c29; border-bottom: 1px solid #121c29; text-overflow: ellipsis; white-space: nowrap; }
+	.contentTableWrap .l5Column { left: 0; z-index: 2; color: #6d8db2; text-align: center; }
+	.contentTableWrap .l5Cell { position: sticky; left: 0; z-index: 1; padding: 3px 5px; background: #0a111b; }
+	.l5Cell button { min-width: 32px; border: 1px solid #29415e; border-radius: 6px; padding: 5px 6px; color: #94b8df; background: #122238; font: 650 7px/1 ui-monospace, monospace; cursor: pointer; }
+	.l5Cell button:hover, .l5Cell button:focus-visible { border-color: #5685b8; color: #d8e9fb; background: #19314e; outline: none; }
 	.contentTableWrap tr:hover td { color: #c8d5e3; background: rgba(92, 130, 177, .08); }
 	.schemaDetails { border-top: 1px solid #172332; background: #080e16; }
 	.schemaDetails summary { display: flex; justify-content: space-between; padding: 9px 11px; color: #60758f; font: 600 7px/1 ui-monospace, monospace; letter-spacing: .08em; cursor: pointer; }
