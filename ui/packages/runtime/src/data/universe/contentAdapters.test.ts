@@ -39,8 +39,25 @@ describe('Universe content adapters', () => {
 		const json = JSON.stringify({ companies: Array.from({ length: 120 }, (_, index) => ({ id: index, active: index % 2 === 0 })) });
 		const tree = parseJsonTreePreview(json, 'companies.json');
 		expect(tree).not.toBeNull();
-		expect(tree?.tree[0]).toMatchObject({ key: '$', valueKind: 'object', childCount: 1 });
+		expect(tree?.tree[0]).toMatchObject({ key: '$', valueKind: 'object', childCount: 1, pointer: '' });
 		expect(tree?.tree.length).toBeLessThanOrEqual(CONTENT_TREE_NODE_LIMIT);
 		expect(tree?.truncated).toBe(true);
+	});
+
+	it('keeps complete JSONL records when a byte range ends inside a line', () => {
+		const preview = parseJsonTreePreview('{"id":1}\n{"id":2}\n{"id":', 'events.jsonl', true);
+		expect(preview?.tree.filter((node) => node.key === 'id').map((node) => node.value)).toEqual(['1', '2']);
+		expect(preview?.tree.find((node) => node.key === 'id')?.pointer).toBe('/0/id');
+		expect(preview?.truncated).toBe(true);
+	});
+
+	it('pages wide delimited columns without changing row identity', () => {
+		const header = Array.from({ length: 20 }, (_, index) => `c${index + 1}`).join(',');
+		const row = Array.from({ length: 20 }, (_, index) => `v${index + 1}`).join(',');
+		const preview = parseDelimitedPreview(`${header}\n${row}\n`, ',', false, 16);
+		expect(preview.totalColumns).toBe(20);
+		expect(preview.columnStart).toBe(16);
+		expect(preview.columns).toEqual(['c17', 'c18', 'c19', 'c20']);
+		expect(preview.rows[0]?.c20).toBe('v20');
 	});
 });

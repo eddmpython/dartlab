@@ -10,13 +10,14 @@
 		UniverseKnowledgeSearchRequest,
 		UniverseKnowledgeSearchResult
 	} from '@dartlab/ui-contracts';
+	import { compileKnowledgeContentScene } from '@dartlab/ui-runtime/data/universe';
 	import KnowledgeArticle from './KnowledgeArticle.svelte';
 	import KnowledgeCanvas from './KnowledgeCanvas.svelte';
 
 	interface Props {
 		loadOverview: () => Promise<UniverseKnowledgeOverview>;
 		loadCoverage: () => Promise<UniverseKnowledgeCoverage>;
-		loadContent: (targetId: string, rowStart?: number) => Promise<UniverseKnowledgeContent>;
+		loadContent: (targetId: string, rowStart?: number, columnStart?: number) => Promise<UniverseKnowledgeContent>;
 		searchKnowledge: (request: UniverseKnowledgeSearchRequest) => Promise<UniverseKnowledgeSearchResult>;
 		openKnowledge: (targetId: string) => Promise<UniverseKnowledgeScene>;
 	}
@@ -52,11 +53,12 @@
 		intelligence: '#e187b3', capabilities: '#ff786d', skills: '#b59cff', timeMedia: '#9aa8be'
 	};
 
-	let selectedNode = $derived(scene && selectedId ? scene.nodes.find((node) => node.nodeId === selectedId) ?? null : null);
-	let connectedEdges = $derived(scene && selectedId ? scene.edges.filter((edge) => edge.sourceId === selectedId || edge.targetId === selectedId) : []);
-	let currentBeat = $derived(scene?.film[Math.max(0, Math.min((scene?.film.length ?? 1) - 1, filmIndex))] ?? null);
+	let activeScene = $derived(scene && content ? compileKnowledgeContentScene(scene, content, selectedId) : scene);
+	let selectedNode = $derived(activeScene && selectedId ? activeScene.nodes.find((node) => node.nodeId === selectedId) ?? null : null);
+	let connectedEdges = $derived(activeScene && selectedId ? activeScene.edges.filter((edge) => edge.sourceId === selectedId || edge.targetId === selectedId) : []);
+	let currentBeat = $derived(activeScene?.film[Math.max(0, Math.min((activeScene?.film.length ?? 1) - 1, filmIndex))] ?? null);
 	let selectedAttributes = $derived(selectedNode ? Object.entries(selectedNode.attributes).filter(([, value]) => value !== '' && value !== null).slice(0, 8) : []);
-	let activeDomainId = $derived((scene?.targetId.startsWith('domain:') ? scene.targetId.slice('domain:'.length) : selectedNode?.domainId) as UniverseKnowledgeDomainId | null);
+	let activeDomainId = $derived((activeScene?.targetId.startsWith('domain:') ? activeScene.targetId.slice('domain:'.length) : selectedNode?.domainId) as UniverseKnowledgeDomainId | null);
 
 	function message(value: unknown, fallback: string): string {
 		return value instanceof Error && value.message ? value.message : fallback;
@@ -91,7 +93,7 @@
 		const labels: Readonly<Record<string, string>> = {
 			root: '지식 루트', repository: '저장소', domain: '지식 은하', directory: '데이터 계층', file: '원본 파일', skill: 'Skill OS',
 			capability: '엔진 능력', dataset: '데이터셋', entity: '법인과 기관', security: '증권 식별자', document: '문서',
-			section: '공시 섹션', observation: '관측', media: '미디어', query: '질문'
+			section: '원문 구간', record: '원본 행', field: '원본 필드', revision: '수정 이력', observation: '관측', media: '미디어', query: '질문'
 		};
 		return labels[node.kind] ?? node.kind;
 	}
@@ -139,12 +141,12 @@
 		contentTargetId = '';
 	}
 
-	async function hydrateContent(targetId: string, rowStart = 0): Promise<void> {
+	async function hydrateContent(targetId: string, rowStart = 0, columnStart = 0): Promise<void> {
 		const request = ++contentRequest;
 		contentLoading = true;
 		contentError = null;
 		try {
-			const next = await loadContent(targetId, rowStart);
+			const next = await loadContent(targetId, rowStart, columnStart);
 			if (request === contentRequest) content = next;
 		} catch (value) {
 			if (request === contentRequest) contentError = message(value, '원본 내용을 미리 볼 수 없습니다.');
@@ -160,7 +162,18 @@
 			lastWindowStart,
 			content.tableMeta.rowStart + direction * content.receipt.rowLimit
 		));
-		void hydrateContent(content.targetId, nextStart);
+		void hydrateContent(content.targetId, nextStart, content.tableMeta.columnStart);
+	}
+
+	function moveTableColumns(direction: -1 | 1): void {
+		if (!content || content.tableMeta.totalColumns === null) return;
+		const windowSize = Math.max(1, content.receipt.columnLimit);
+		const lastWindowStart = Math.floor(Math.max(0, content.tableMeta.totalColumns - 1) / windowSize) * windowSize;
+		const nextStart = Math.max(0, Math.min(
+			lastWindowStart,
+			content.tableMeta.columnStart + direction * windowSize
+		));
+		void hydrateContent(content.targetId, content.tableMeta.rowStart, nextStart);
 	}
 
 	async function openTarget(targetId: string): Promise<void> {
@@ -184,7 +197,7 @@
 	}
 
 	function navigateArticle(nodeId: string): void {
-		const nextNode = scene?.nodes.find((node) => node.nodeId === nodeId);
+		const nextNode = activeScene?.nodes.find((node) => node.nodeId === nodeId);
 		selectNode(nodeId);
 		if (nextNode?.expandable) void openTarget(nodeId);
 	}
@@ -211,22 +224,22 @@
 	}
 
 	function activateBeat(index: number, play = false): void {
-		if (!scene?.film.length) return;
-		filmIndex = Math.max(0, Math.min(scene.film.length - 1, index));
+		if (!activeScene?.film.length) return;
+		filmIndex = Math.max(0, Math.min(activeScene.film.length - 1, index));
 		filmActive = true;
 		filmPlaying = play;
-		const beat = scene.film[filmIndex];
+		const beat = activeScene.film[filmIndex];
 		selectedId = beat.targetNodeId;
 		focusNodeId = beat.targetNodeId;
 	}
 
 	function toggleFilm(): void {
-		if (!scene?.film.length) return;
+		if (!activeScene?.film.length) return;
 		if (filmPlaying) {
 			filmPlaying = false;
 			return;
 		}
-		activateBeat(filmIndex >= scene.film.length - 1 ? 0 : filmIndex, true);
+		activateBeat(filmIndex >= activeScene.film.length - 1 ? 0 : filmIndex, true);
 	}
 
 	function cycleSpeed(): void {
@@ -234,23 +247,23 @@
 	}
 
 	function exportFilmStoryboard(): void {
-		if (!scene?.film.length) return;
-		const sourceRefs = [...new Set(scene.nodes.flatMap((node) => [node.sourceRef, ...node.evidenceRefs]))];
+		if (!activeScene?.film.length) return;
+		const sourceRefs = [...new Set(activeScene.nodes.flatMap((node) => [node.sourceRef, ...node.evidenceRefs]))];
 		const payload = {
 			schemaVersion: 'knowledgeFilm.v1',
-			sceneId: scene.sceneId,
-			targetId: scene.targetId,
-			title: scene.title,
-			subtitle: scene.subtitle,
-			sourceRevision: scene.receipt.sourceRevision,
-			receipt: scene.receipt,
+			sceneId: activeScene.sceneId,
+			targetId: activeScene.targetId,
+			title: activeScene.title,
+			subtitle: activeScene.subtitle,
+			sourceRevision: activeScene.receipt.sourceRevision,
+			receipt: activeScene.receipt,
 			sourceRefs,
-			beats: scene.film
+			beats: activeScene.film
 		};
 		const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
 		const objectUrl = URL.createObjectURL(blob);
 		const anchor = document.createElement('a');
-		const safeTitle = scene.title.replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, '').slice(0, 60) || 'knowledge-film';
+		const safeTitle = activeScene.title.replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, '').slice(0, 60) || 'knowledge-film';
 		anchor.href = objectUrl;
 		anchor.download = `${safeTitle}.knowledge-film.json`;
 		document.body.append(anchor);
@@ -260,11 +273,11 @@
 	}
 
 	$effect(() => {
-		if (!filmPlaying || !scene || !currentBeat) return;
-		const activeScene = scene;
+		if (!filmPlaying || !activeScene || !currentBeat) return;
+		const playingScene = activeScene;
 		const activeBeat = currentBeat;
 		const timer = window.setTimeout(() => {
-			if (filmIndex >= activeScene.film.length - 1) {
+			if (filmIndex >= playingScene.film.length - 1) {
 				filmPlaying = false;
 				return;
 			}
@@ -274,7 +287,8 @@
 	});
 
 	$effect(() => {
-		const targetId = selectedNode?.nodeId ?? '';
+		const selectedTargetId = selectedNode?.nodeId ?? '';
+		const targetId = selectedTargetId.startsWith('hf:') ? selectedTargetId : scene?.targetId.startsWith('hf:') ? scene.targetId : '';
 		if (targetId.startsWith('hf:')) {
 			if (targetId !== contentTargetId) {
 				contentTargetId = targetId;
@@ -357,12 +371,12 @@
 				<div class="errorNotice"><span>연결 실패</span><p>{error}</p><button type="button" onclick={() => void hydrateOverview()}>다시 연결</button></div>
 		{:else if !scene}
 				<div class="loadingScene"><i></i><span>Hugging Face와 Skill OS 주소 공간을 결속하는 중</span></div>
-			{:else if viewMode === 'space'}
-				<KnowledgeCanvas {scene} {selectedId} {focusNodeId} {filmActive} filmBeatIndex={filmIndex} onSelect={selectNode} onOpen={(nodeId) => void openTarget(nodeId)} />
+			{:else if viewMode === 'space' && activeScene}
+				<KnowledgeCanvas scene={activeScene} {selectedId} {focusNodeId} {filmActive} filmBeatIndex={filmIndex} onSelect={selectNode} onOpen={(nodeId) => void openTarget(nodeId)} />
 			{:else}
-				<div class="knowledgeTable" role="table" aria-label={`${scene.title} 지식 개체 표`}>
+				<div class="knowledgeTable" role="table" aria-label={`${activeScene?.title ?? scene.title} 지식 개체 표`}>
 					<div class="tableRow tableHead" role="row"><span>지식 개체</span><span>유형</span><span>은하</span><span>근거 주소</span></div>
-					{#each scene.nodes as node (node.nodeId)}
+					{#each activeScene?.nodes ?? scene.nodes as node (node.nodeId)}
 						<button class="tableRow" class:selected={selectedId === node.nodeId} role="row" onclick={() => selectNode(node.nodeId)} ondblclick={() => { if (node.expandable) void openTarget(node.nodeId); }}>
 							<span><b>{node.label}</b><small>{node.secondaryLabel}</small></span>
 							<span>{nodeKindLabel(node)}</span>
@@ -404,16 +418,23 @@
 							<audio src={content.contentRef} controls preload="metadata" aria-label={content.title}></audio>
 						{:else if content.kind === 'table'}
 							<div class="contentTableMeta">
-								<div><span>ROWS</span><b>{content.tableMeta.totalRows?.toLocaleString() ?? `${content.rows.length} preview`}</b></div>
-								<div><span>GROUPS</span><b>{content.tableMeta.rowGroupCount?.toLocaleString() ?? 'N/A'}</b></div>
+							<div><span>ROWS</span><b>{content.tableMeta.totalRows?.toLocaleString() ?? `${content.rows.length} preview`}</b></div>
+								<div><span>COLUMNS</span><b>{content.tableMeta.totalColumns?.toLocaleString() ?? content.columns.length}</b></div>
 								<div><span>FILE</span><b>{content.tableMeta.fileSizeBytes !== null ? formatBytes(content.tableMeta.fileSizeBytes) : 'RANGE'}</b></div>
 								<div><span>TRANSFER</span><b>{content.tableMeta.transferredBytes !== null ? formatBytes(content.tableMeta.transferredBytes) : 'N/A'}</b></div>
 							</div>
 							{#if content.tableMeta.format === 'parquet' && content.tableMeta.totalRows !== null}
 								<div class="tableNavigator">
-									<button type="button" disabled={contentLoading || content.tableMeta.rowStart === 0} onclick={() => moveTableWindow(-1)}>이전 12행</button>
+									<button type="button" disabled={contentLoading || content.tableMeta.rowStart === 0} onclick={() => moveTableWindow(-1)}>이전 행</button>
 									<span>ROWS <b>{(content.tableMeta.rowStart + 1).toLocaleString()}-{content.tableMeta.rowEnd.toLocaleString()}</b> OF {content.tableMeta.totalRows.toLocaleString()}</span>
-									<button type="button" disabled={contentLoading || content.tableMeta.rowEnd >= content.tableMeta.totalRows} onclick={() => moveTableWindow(1)}>다음 12행</button>
+									<button type="button" disabled={contentLoading || content.tableMeta.rowEnd >= content.tableMeta.totalRows} onclick={() => moveTableWindow(1)}>다음 행</button>
+								</div>
+							{/if}
+							{#if content.tableMeta.totalColumns !== null && content.tableMeta.totalColumns > content.columns.length}
+								<div class="tableNavigator columns">
+									<button type="button" disabled={contentLoading || content.tableMeta.columnStart === 0} onclick={() => moveTableColumns(-1)}>이전 열</button>
+									<span>COLUMNS <b>{(content.tableMeta.columnStart + 1).toLocaleString()}-{content.tableMeta.columnEnd.toLocaleString()}</b> OF {content.tableMeta.totalColumns.toLocaleString()}</span>
+									<button type="button" disabled={contentLoading || content.tableMeta.columnEnd >= content.tableMeta.totalColumns} onclick={() => moveTableColumns(1)}>다음 열</button>
 								</div>
 							{/if}
 							<div class="contentTableWrap">
@@ -459,6 +480,7 @@
 						</div>
 						{#if content.fileMeta.lastCommitTitle}<p>{content.fileMeta.lastCommitTitle}</p>{/if}
 						<div class="provenanceHashes">
+							<div><span>HISTORY</span><a href={content.fileMeta.historyRef} target="_blank" rel="noreferrer">파일 수정 이력</a></div>
 							{#if content.fileMeta.lastCommitId}<div><span>COMMIT</span><code title={content.fileMeta.lastCommitId}>{content.fileMeta.lastCommitId}</code></div>{/if}
 							{#if content.fileMeta.blobId}<div><span>BLOB</span><code title={content.fileMeta.blobId}>{content.fileMeta.blobId}</code></div>{/if}
 							{#if content.fileMeta.lfsOid}<div><span>LFS</span><code title={content.fileMeta.lfsOid}>{content.fileMeta.lfsOid}</code></div>{/if}
@@ -470,7 +492,7 @@
 					<dl>{#each selectedAttributes as [key, value] (key)}<div><dt>{key}</dt><dd>{typeof value === 'number' ? value.toLocaleString() : String(value)}</dd></div>{/each}</dl>
 				{/if}
 				{#if connectedEdges.length > 0}
-					<div class="relationList"><span>CONNECTED KNOWLEDGE</span>{#each connectedEdges.slice(0, 6) as edge (edge.edgeId)}{@const otherId = edge.sourceId === selectedNode.nodeId ? edge.targetId : edge.sourceId}{@const other = scene?.nodes.find((node) => node.nodeId === otherId)}{#if other}<button type="button" onclick={() => selectNode(other.nodeId)}><b>{edge.relation}</b><em class:derived={edge.lane === 'derived'}>{edge.lane}</em><span>{other.label}</span></button>{/if}{/each}</div>
+					<div class="relationList"><span>CONNECTED KNOWLEDGE</span>{#each connectedEdges.slice(0, 6) as edge (edge.edgeId)}{@const otherId = edge.sourceId === selectedNode.nodeId ? edge.targetId : edge.sourceId}{@const other = activeScene?.nodes.find((node) => node.nodeId === otherId)}{#if other}<button type="button" onclick={() => selectNode(other.nodeId)}><b>{edge.relation}</b><em class:derived={edge.lane === 'derived'}>{edge.lane}</em><span>{other.label}</span></button>{/if}{/each}</div>
 				{/if}
 				<div class="sourceAddress"><span>SOURCE REF</span>{#if selectedNode.sourceRef.startsWith('https://')}<a href={selectedNode.sourceRef} target="_blank" rel="noreferrer">{selectedNode.sourceRef}</a>{:else}<code>{selectedNode.sourceRef}</code>{/if}</div>
 				{#if selectedNode.evidenceRefs.length > 0}<div class="evidenceRefs"><span>EVIDENCE REFS</span>{#each selectedNode.evidenceRefs.slice(0, 3) as evidenceRef (evidenceRef)}<code title={evidenceRef}>{evidenceRef}</code>{/each}</div>{/if}
@@ -484,23 +506,23 @@
 
 	<footer class="knowledgeFilm">
 		<div class="filmControls">
-			<button type="button" aria-label="이전 장면" disabled={!scene?.film.length} onclick={() => activateBeat(filmIndex - 1)}>‹</button>
-			<button class="play" type="button" disabled={!scene?.film.length} onclick={toggleFilm}>{filmPlaying ? 'Ⅱ' : '▶'}</button>
-			<button type="button" aria-label="다음 장면" disabled={!scene?.film.length} onclick={() => activateBeat(filmIndex + 1)}>›</button>
+			<button type="button" aria-label="이전 장면" disabled={!activeScene?.film.length} onclick={() => activateBeat(filmIndex - 1)}>‹</button>
+			<button class="play" type="button" disabled={!activeScene?.film.length} onclick={toggleFilm}>{filmPlaying ? 'Ⅱ' : '▶'}</button>
+			<button type="button" aria-label="다음 장면" disabled={!activeScene?.film.length} onclick={() => activateBeat(filmIndex + 1)}>›</button>
 			<button class="speed" type="button" onclick={cycleSpeed}>{filmSpeed}×</button>
 			<button class="theater" class:active={filmTheater} type="button" aria-label="필름 시네마 모드" aria-pressed={filmTheater} onclick={() => (filmTheater = !filmTheater)}>▣</button>
-			<button class="export" type="button" aria-label="지식 필름 스토리보드 내보내기" disabled={!scene?.film.length} onclick={exportFilmStoryboard}>JSON</button>
+			<button class="export" type="button" aria-label="지식 필름 스토리보드 내보내기" disabled={!activeScene?.film.length} onclick={exportFilmStoryboard}>JSON</button>
 		</div>
 		<div class="filmNarration"><span>KNOWLEDGE FILM</span><em>{currentBeat ? `${currentBeat.mode.toLocaleUpperCase()}${currentBeat.lane ? ` · ${currentBeat.lane.toLocaleUpperCase()}` : ''}` : 'READY'}</em><strong>{currentBeat?.label ?? '장면 대기'}</strong><p>{currentBeat?.narration ?? '지식 장면이 준비되면 관계의 전개를 재생할 수 있습니다.'}</p></div>
 		<div class="filmTimeline" aria-label="지식 필름 장면">
-			{#each scene?.film ?? [] as beat, index (beat.beatId)}<button type="button" class:active={filmActive && filmIndex === index} class:fact={beat.lane === 'fact'} class:derived={beat.lane === 'derived'} aria-label={`${index + 1}장 ${beat.label}`} title={`${beat.mode.toLocaleUpperCase()}${beat.lane ? ` · ${beat.lane.toLocaleUpperCase()}` : ''}`} onclick={() => activateBeat(index)}><i></i><span>{String(index + 1).padStart(2, '0')}</span></button>{/each}
+			{#each activeScene?.film ?? [] as beat, index (beat.beatId)}<button type="button" class:active={filmActive && filmIndex === index} class:fact={beat.lane === 'fact'} class:derived={beat.lane === 'derived'} aria-label={`${index + 1}장 ${beat.label}`} title={`${beat.mode.toLocaleUpperCase()}${beat.lane ? ` · ${beat.lane.toLocaleUpperCase()}` : ''}`} onclick={() => activateBeat(index)}><i></i><span>{String(index + 1).padStart(2, '0')}</span></button>{/each}
 		</div>
-		<div class="filmReceipt"><span>SCENE</span><b>{scene?.receipt.outputNodeCount ?? 0} NODES</b><small>{(scene?.receipt.indexedItemCount ?? 0).toLocaleString()} INDEXED · {scene?.receipt.sourceRevision.slice(0, 9) ?? 'loading'}</small></div>
+		<div class="filmReceipt"><span>SCENE</span><b>{activeScene?.receipt.outputNodeCount ?? 0} NODES</b><small>{(activeScene?.receipt.indexedItemCount ?? 0).toLocaleString()} INDEXED · {activeScene?.receipt.sourceRevision.slice(0, 9) ?? 'loading'}</small></div>
 	</footer>
-	{#if articleOpen && selectedNode && scene}
+	{#if articleOpen && selectedNode && activeScene}
 		<KnowledgeArticle
 			node={selectedNode}
-			{scene}
+			scene={activeScene}
 			{content}
 			{contentLoading}
 			{contentError}
@@ -655,6 +677,7 @@
 	.provenanceHashes { border-top: 1px solid rgba(84, 108, 139, .08); padding: 5px 10px; }
 	.provenanceHashes div { min-width: 0; display: grid; grid-template-columns: 48px minmax(0, 1fr); align-items: center; gap: 7px; padding: 4px 0; }
 	.provenanceHashes code { min-width: 0; overflow: hidden; color: #677f9b; font: 500 7px/1 ui-monospace, monospace; text-overflow: ellipsis; white-space: nowrap; user-select: text; }
+	.provenanceHashes a { min-width: 0; overflow: hidden; color: #7898bd; font: 550 7px/1 ui-monospace, monospace; text-decoration: none; text-overflow: ellipsis; white-space: nowrap; }
 	dl { margin: 16px 0 0; }
 	dl div { display: grid; grid-template-columns: 74px minmax(0, 1fr); gap: 8px; padding: 7px 0; border-bottom: 1px solid rgba(85, 106, 134, .1); }
 	dt { color: #53667e; font: 600 7px/1.3 ui-monospace, monospace; overflow-wrap: anywhere; }

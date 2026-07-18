@@ -133,7 +133,7 @@ export interface UniverseKnowledgeRuntime {
 	coverage(): Promise<UniverseKnowledgeCoverage>;
 	search(request: UniverseKnowledgeSearchRequest): Promise<UniverseKnowledgeSearchResult>;
 	open(targetId: string): Promise<UniverseKnowledgeScene>;
-	content(targetId: string, rowStart?: number): Promise<UniverseKnowledgeContent>;
+	content(targetId: string, rowStart?: number, columnStart?: number): Promise<UniverseKnowledgeContent>;
 }
 
 const DOMAIN_COPY: Readonly<Record<UniverseKnowledgeDomainId, Omit<UniverseKnowledgeDomain, 'itemCount'>>> = {
@@ -570,6 +570,7 @@ export function createUniverseKnowledgeRuntime(core: DataCore, loaders: Universe
 				lastCommitId: entry.lastCommit?.id ?? null,
 				lastCommitTitle: entry.lastCommit?.title ?? null,
 				lastCommitAt: entry.lastCommit?.date ?? null,
+				historyRef: `https://huggingface.co/datasets/${HF_REPOSITORY_ID}/commits/${encodeURIComponent(revision)}/${path.split('/').map(encodeURIComponent).join('/')}`,
 				securityStatus: entry.securityFileStatus?.status ?? null,
 				antivirusStatus: entry.securityFileStatus?.avScan?.status ?? null
 			});
@@ -805,7 +806,7 @@ export function createUniverseKnowledgeRuntime(core: DataCore, loaders: Universe
 		throw new Error(`Universe knowledge target is unsupported: ${targetId}`);
 	}
 
-	async function content(targetId: string, requestedRowStart = 0): Promise<UniverseKnowledgeContent> {
+	async function content(targetId: string, requestedRowStart = 0, requestedColumnStart = 0): Promise<UniverseKnowledgeContent> {
 		if (!targetId.startsWith('hf:')) throw new Error(`Universe content target is unsupported: ${targetId}`);
 		const path = normalizedPath(targetId.slice('hf:'.length));
 		if (!path) throw new Error('Universe content path is empty');
@@ -824,7 +825,7 @@ export function createUniverseKnowledgeRuntime(core: DataCore, loaders: Universe
 		let tree: UniverseKnowledgeContent['tree'] = [];
 		let tableMeta: UniverseKnowledgeContent['tableMeta'] = Object.freeze({
 			format: 'none', fileSizeBytes: null, totalRows: null, rowGroupCount: null, rangeRequestCount: null, transferredBytes: null,
-			rowStart: 0, rowEnd: 0
+			rowStart: 0, rowEnd: 0, totalColumns: null, columnStart: 0, columnEnd: 0
 		});
 		let requestedBytes = 0;
 		let returnedBytes = 0;
@@ -833,6 +834,7 @@ export function createUniverseKnowledgeRuntime(core: DataCore, loaders: Universe
 
 		if (kind === 'table' && extension === 'parquet') {
 			const rowStart = Math.max(0, Math.floor(requestedRowStart));
+			const requestedColumn = Math.max(0, Math.floor(requestedColumnStart));
 			const preview = await core.requestParquetPreview<Record<string, unknown>>({
 				path,
 				revision: info.sha,
@@ -841,8 +843,11 @@ export function createUniverseKnowledgeRuntime(core: DataCore, loaders: Universe
 				cacheKey: `universe:knowledge:content:${info.sha}:${path}:preview:${rowStart}:${CONTENT_ROW_LIMIT}`
 			});
 			const rawRows = preview.rows;
-			columns = Object.freeze([...new Set(rawRows.flatMap((row) => Object.keys(row)))].slice(0, CONTENT_COLUMN_LIMIT));
-			schema = Object.freeze(preview.metadata.schema.slice(0, CONTENT_COLUMN_LIMIT).map((column) => Object.freeze(column)));
+			const schemaColumns = preview.metadata.schema.map((column) => column.name);
+			const allColumns = schemaColumns.length > 0 ? schemaColumns : [...new Set(rawRows.flatMap((row) => Object.keys(row)))];
+			const columnStart = Math.max(0, Math.min(requestedColumn, Math.max(0, allColumns.length - 1)));
+			columns = Object.freeze(allColumns.slice(columnStart, columnStart + CONTENT_COLUMN_LIMIT));
+			schema = Object.freeze(preview.metadata.schema.slice(columnStart, columnStart + CONTENT_COLUMN_LIMIT).map((column) => Object.freeze(column)));
 			rows = Object.freeze(rawRows.slice(0, CONTENT_ROW_LIMIT).map((row) => Object.freeze(Object.fromEntries(columns.map((column) => [column, printableCell(row[column])])))));
 			returnedBytes = preview.requests.reduce((total, request) => total + request.bytes, 0);
 			requestedBytes = returnedBytes;
@@ -855,7 +860,10 @@ export function createUniverseKnowledgeRuntime(core: DataCore, loaders: Universe
 				rangeRequestCount: preview.requests.length,
 				transferredBytes: returnedBytes,
 				rowStart,
-				rowEnd: rowStart + rawRows.length
+				rowEnd: rowStart + rawRows.length,
+				totalColumns: allColumns.length,
+				columnStart,
+				columnEnd: columnStart + columns.length
 			});
 			mode = 'parquetRows';
 		} else if (kind === 'text' || kind === 'json' || kind === 'table') {
@@ -871,7 +879,7 @@ export function createUniverseKnowledgeRuntime(core: DataCore, loaders: Universe
 			truncated = returnedBytes >= CONTENT_BYTE_LIMIT;
 			text = new TextDecoder().decode(buffer).replace(/\u0000+$/g, '');
 			if (kind === 'table') {
-				const preview = parseDelimitedPreview(text, extension === 'tsv' ? '\t' : ',', truncated);
+				const preview = parseDelimitedPreview(text, extension === 'tsv' ? '\t' : ',', truncated, requestedColumnStart);
 				columns = preview.columns;
 				schema = Object.freeze(columns.map((column) => Object.freeze({ name: column, physicalType: 'BYTE_ARRAY', logicalType: 'STRING' })));
 				rows = preview.rows;
@@ -884,11 +892,14 @@ export function createUniverseKnowledgeRuntime(core: DataCore, loaders: Universe
 					rangeRequestCount: 1,
 					transferredBytes: returnedBytes,
 					rowStart: 0,
-					rowEnd: rows.length
+					rowEnd: rows.length,
+					totalColumns: preview.totalColumns,
+					columnStart: preview.columnStart,
+					columnEnd: preview.columnStart + columns.length
 				});
 				mode = 'delimitedRows';
-			} else if (kind === 'json' && !truncated) {
-				const preview = parseJsonTreePreview(text, path);
+			} else if (kind === 'json') {
+				const preview = parseJsonTreePreview(text, path, truncated);
 				if (preview) {
 					text = preview.formattedText;
 					tree = preview.tree;
@@ -914,6 +925,7 @@ export function createUniverseKnowledgeRuntime(core: DataCore, loaders: Universe
 				requestedBytes,
 				returnedBytes,
 				rowLimit: kind === 'table' ? CONTENT_ROW_LIMIT : 0,
+				columnLimit: kind === 'table' ? CONTENT_COLUMN_LIMIT : 0,
 				treeNodeLimit: kind === 'json' ? CONTENT_TREE_NODE_LIMIT : 0,
 				truncated
 			})

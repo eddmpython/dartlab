@@ -647,6 +647,9 @@ export type UniverseKnowledgeNodeKind =
 	| 'security'
 	| 'document'
 	| 'section'
+	| 'record'
+	| 'field'
+	| 'revision'
 	| 'observation'
 	| 'media'
 	| 'query';
@@ -811,6 +814,7 @@ export interface UniverseKnowledgeTreeNode {
 	valueKind: UniverseKnowledgeTreeValueKind;
 	depth: number;
 	childCount: number;
+	pointer: string;
 }
 
 export interface UniverseKnowledgeColumn {
@@ -828,6 +832,9 @@ export interface UniverseKnowledgeTableMeta {
 	transferredBytes: number | null;
 	rowStart: number;
 	rowEnd: number;
+	totalColumns: number | null;
+	columnStart: number;
+	columnEnd: number;
 }
 
 export interface UniverseKnowledgeContentReceipt {
@@ -835,6 +842,7 @@ export interface UniverseKnowledgeContentReceipt {
 	requestedBytes: number;
 	returnedBytes: number;
 	rowLimit: number;
+	columnLimit: number;
 	treeNodeLimit: number;
 	truncated: boolean;
 }
@@ -848,6 +856,7 @@ export interface UniverseKnowledgeFileMeta {
 	lastCommitId: string | null;
 	lastCommitTitle: string | null;
 	lastCommitAt: string | null;
+	historyRef: string;
 	securityStatus: string | null;
 	antivirusStatus: string | null;
 }

@@ -176,7 +176,7 @@
 					<div class="evidenceLedger">
 						<div><span>PRIMARY SOURCE</span>{#if node.sourceRef.startsWith('https://')}<a href={node.sourceRef} target="_blank" rel="noreferrer">{node.sourceRef}</a>{:else}<code>{node.sourceRef}</code>{/if}</div>
 						{#each node.evidenceRefs as evidenceRef (evidenceRef)}<div><span>EVIDENCE</span><code>{evidenceRef}</code></div>{/each}
-						{#if content}<div><span>FILE COMMIT</span><code>{content.fileMeta.lastCommitId ?? '기록 없음'}</code></div><div><span>BLOB</span><code>{content.fileMeta.blobId || '기록 없음'}</code></div>{/if}
+						{#if content}<div><span>FILE HISTORY</span><a href={content.fileMeta.historyRef} target="_blank" rel="noreferrer">수정 이력 열기</a></div><div><span>FILE COMMIT</span><code>{content.fileMeta.lastCommitId ?? '기록 없음'}</code></div><div><span>BLOB</span><code>{content.fileMeta.blobId || '기록 없음'}</code></div>{/if}
 					</div>
 				</section>
 			</article>

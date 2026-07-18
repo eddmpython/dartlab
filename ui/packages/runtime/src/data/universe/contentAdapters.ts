@@ -48,7 +48,7 @@ export function printableCell(value: unknown): string {
 
 function uniqueColumns(header: readonly string[]): string[] {
 	const seen = new Map<string, number>();
-	return header.slice(0, CONTENT_COLUMN_LIMIT).map((raw, index) => {
+	return header.map((raw, index) => {
 		const base = raw.trim() || `column_${index + 1}`;
 		const occurrence = (seen.get(base) ?? 0) + 1;
 		seen.set(base, occurrence);
@@ -97,16 +97,20 @@ function scanDelimited(text: string, delimiter: ',' | '\t', rowLimit: number): s
 export interface DelimitedPreview {
 	columns: readonly string[];
 	rows: readonly Readonly<Record<string, string>>[];
+	totalColumns: number;
+	columnStart: number;
 	truncated: boolean;
 }
 
-export function parseDelimitedPreview(text: string, delimiter: ',' | '\t', sourceTruncated = false): DelimitedPreview {
+export function parseDelimitedPreview(text: string, delimiter: ',' | '\t', sourceTruncated = false, requestedColumnStart = 0): DelimitedPreview {
 	const scanned = scanDelimited(text, delimiter, CONTENT_ROW_LIMIT + 2);
 	if (sourceTruncated && !/[\r\n]$/.test(text)) scanned.pop();
-	const columns = Object.freeze(uniqueColumns(scanned[0] ?? []));
+	const allColumns = uniqueColumns(scanned[0] ?? []);
+	const columnStart = Math.max(0, Math.min(Math.floor(requestedColumnStart), Math.max(0, allColumns.length - 1)));
+	const columns = Object.freeze(allColumns.slice(columnStart, columnStart + CONTENT_COLUMN_LIMIT));
 	const body = scanned.slice(1, CONTENT_ROW_LIMIT + 1);
-	const rows = Object.freeze(body.map((values) => Object.freeze(Object.fromEntries(columns.map((column, index) => [column, values[index] ?? ''])))));
-	return Object.freeze({ columns, rows, truncated: sourceTruncated || scanned.length > CONTENT_ROW_LIMIT + 1 });
+	const rows = Object.freeze(body.map((values) => Object.freeze(Object.fromEntries(columns.map((column, index) => [column, values[columnStart + index] ?? ''])))));
+	return Object.freeze({ columns, rows, totalColumns: allColumns.length, columnStart, truncated: sourceTruncated || scanned.length > CONTENT_ROW_LIMIT + 1 });
 }
 
 function treeValueKind(value: unknown): UniverseKnowledgeTreeValueKind {
@@ -137,13 +141,19 @@ export interface JsonTreePreview {
 	truncated: boolean;
 }
 
-export function parseJsonTreePreview(text: string, path: string): JsonTreePreview | null {
+function jsonPointerSegment(value: string): string {
+	return value.replace(/~/g, '~0').replace(/\//g, '~1');
+}
+
+export function parseJsonTreePreview(text: string, path: string, sourceTruncated = false): JsonTreePreview | null {
 	let root: unknown;
-	let projectionTruncated = false;
+	let projectionTruncated = sourceTruncated;
 	try {
 		if (/\.(jsonl|ndjson)$/i.test(path)) {
-			const lines = text.split(/\r?\n/).filter((line) => line.trim());
-			projectionTruncated = lines.length > CONTENT_ROW_LIMIT;
+			const sourceLines = text.split(/\r?\n/);
+			if (sourceTruncated && !/[\r\n]$/.test(text)) sourceLines.pop();
+			const lines = sourceLines.filter((line) => line.trim());
+			projectionTruncated ||= lines.length > CONTENT_ROW_LIMIT;
 			root = lines.slice(0, CONTENT_ROW_LIMIT).map((line) => JSON.parse(line));
 		} else {
 			root = JSON.parse(text);
@@ -152,7 +162,7 @@ export function parseJsonTreePreview(text: string, path: string): JsonTreePrevie
 		return null;
 	}
 	const nodes: UniverseKnowledgeTreeNode[] = [];
-	const visit = (key: string, value: unknown, depth: number, lineage: string): void => {
+	const visit = (key: string, value: unknown, depth: number, lineage: string, pointer: string): void => {
 		if (nodes.length >= CONTENT_TREE_NODE_LIMIT) {
 			projectionTruncated = true;
 			return;
@@ -164,7 +174,8 @@ export function parseJsonTreePreview(text: string, path: string): JsonTreePrevie
 			value: treeScalar(value),
 			valueKind: treeValueKind(value),
 			depth,
-			childCount: children.length
+			childCount: children.length,
+			pointer
 		}));
 		if (depth >= CONTENT_TREE_DEPTH_LIMIT) {
 			if (children.length > 0) projectionTruncated = true;
@@ -172,10 +183,10 @@ export function parseJsonTreePreview(text: string, path: string): JsonTreePrevie
 		}
 		for (const [childKey, childValue] of children) {
 			if (nodes.length >= CONTENT_TREE_NODE_LIMIT) break;
-			visit(childKey, childValue, depth + 1, `${lineage}/${childKey}`);
+			visit(childKey, childValue, depth + 1, `${lineage}/${childKey}`, `${pointer}/${jsonPointerSegment(childKey)}`);
 		}
 	};
-	visit('$', root, 0, '$');
+	visit('$', root, 0, '$', '');
 	const formattedText = JSON.stringify(root, null, 2);
 	return Object.freeze({
 		formattedText,

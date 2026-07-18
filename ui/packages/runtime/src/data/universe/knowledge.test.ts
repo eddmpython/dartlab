@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { DataCore, RequestSpec } from '../fetch/request';
+import { compileKnowledgeContentScene } from './contentProjection';
 import { classifyKnowledgePath, createUniverseKnowledgeRuntime } from './knowledge';
 
 const siblings = [
@@ -114,6 +115,8 @@ function fakeCore(contentCalls?: ContentCallLog): DataCore {
 			}
 			const value = spec.path.endsWith('catalog/companies.json')
 				? JSON.stringify({ companies: [{ code: '005930', name: '삼성전자' }] })
+				: spec.path.endsWith('catalog/wide.csv')
+					? `${Array.from({ length: 20 }, (_, index) => `c${index + 1}`).join(',')}\n${Array.from({ length: 20 }, (_, index) => `v${index + 1}`).join(',')}\n`
 				: spec.path.endsWith('catalog/companies.csv')
 					? 'code,name\n005930,삼성전자\n000660,SK하이닉스\n'
 					: '# DartLab\n통합 지식 원문';
@@ -227,6 +230,7 @@ describe('Universe knowledge runtime', () => {
 			securityStatus: 'queued',
 			antivirusStatus: 'queued'
 		});
+		expect(textContent.fileMeta.historyRef).toBe('https://huggingface.co/datasets/eddmpython/dartlab-data/commits/revision-1/README.md');
 
 		const tableContent = await contentRuntime.content('hf:dart/companyProfile.parquet');
 		expect(tableContent.kind).toBe('table');
@@ -254,5 +258,61 @@ describe('Universe knowledge runtime', () => {
 		expect(csvContent.receipt.mode).toBe('delimitedRows');
 		expect(csvContent.columns).toEqual(['code', 'name']);
 		expect(csvContent.rows[1]?.name).toBe('SK하이닉스');
+
+		const wideContent = await contentRuntime.content('hf:catalog/wide.csv', 0, 16);
+		expect(wideContent.columns).toEqual(['c17', 'c18', 'c19', 'c20']);
+		expect(wideContent.rows[0]?.c20).toBe('v20');
+		expect(wideContent.tableMeta).toMatchObject({ totalColumns: 20, columnStart: 16, columnEnd: 20 });
+	});
+
+	it('projects exact rows, fields, JSON pointers, line spans and revision history into bounded scenes', async () => {
+		const contentRuntime = runtime();
+		const tableScene = await contentRuntime.open('hf:dart/companyProfile.parquet');
+		const tableContent = await contentRuntime.content('hf:dart/companyProfile.parquet');
+		const tableProjection = compileKnowledgeContentScene(tableScene, tableContent, tableScene.targetId);
+		const secondRow = tableProjection.nodes.find((node) => node.kind === 'record' && node.attributes.rowIndex === 1);
+		expect(tableProjection.nodes.length).toBeLessThanOrEqual(80);
+		expect(tableProjection.nodes).toEqual(expect.arrayContaining([
+			expect.objectContaining({ kind: 'revision', sourceRef: tableContent.fileMeta.historyRef }),
+			expect.objectContaining({ kind: 'record', sourceRef: expect.stringContaining('#row=1') })
+		]));
+		expect(tableProjection.nodes.some((node) => node.kind === 'field')).toBe(false);
+		expect(tableProjection.receipt.outputNodeCount).toBe(tableProjection.nodes.length);
+		expect(tableProjection.receipt.outputEdgeCount).toBe(tableProjection.edges.length);
+		expect(tableProjection.receipt.omittedNodeCount).toBeGreaterThan(0);
+		expect(secondRow).toBeTruthy();
+
+		const focusedProjection = compileKnowledgeContentScene(tableScene, tableContent, secondRow?.nodeId ?? null);
+		expect(focusedProjection.nodes).toEqual(expect.arrayContaining([
+			expect.objectContaining({ kind: 'field', sourceRef: expect.stringContaining('#row=2&column=corpName') })
+		]));
+		const focusedFields = focusedProjection.nodes.filter((node) => node.kind === 'field');
+		expect(focusedFields).toHaveLength(tableContent.columns.length);
+		for (let left = 0; left < focusedFields.length; left += 1) {
+			for (let right = left + 1; right < focusedFields.length; right += 1) {
+				const deltaX = Math.abs((focusedFields[left]?.x ?? 0) - (focusedFields[right]?.x ?? 0));
+				const deltaY = Math.abs((focusedFields[left]?.y ?? 0) - (focusedFields[right]?.y ?? 0));
+				expect(Math.max(deltaX, deltaY)).toBeGreaterThanOrEqual(0.35);
+			}
+		}
+
+		const jsonScene = await contentRuntime.open('hf:catalog/companies.json');
+		const jsonContent = await contentRuntime.content('hf:catalog/companies.json');
+		const jsonProjection = compileKnowledgeContentScene(jsonScene, jsonContent);
+		expect(jsonProjection.nodes).toEqual(expect.arrayContaining([
+			expect.objectContaining({
+				kind: 'field',
+				attributes: expect.objectContaining({ pointer: '/companies/0/name' }),
+				sourceRef: expect.stringContaining('json-pointer=%2Fcompanies%2F0%2Fname')
+			})
+		]));
+
+		const textScene = await contentRuntime.open('hf:README.md');
+		const textContent = await contentRuntime.content('hf:README.md');
+		const textProjection = compileKnowledgeContentScene(textScene, textContent);
+		expect(textProjection.nodes).toEqual(expect.arrayContaining([
+			expect.objectContaining({ kind: 'section', sourceRef: expect.stringContaining('#L1-L1') })
+		]));
+		expect(textProjection.film).toEqual(compileKnowledgeContentScene(textScene, textContent).film);
 	});
 });

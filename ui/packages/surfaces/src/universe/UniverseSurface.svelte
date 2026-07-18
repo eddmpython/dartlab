@@ -40,7 +40,7 @@
 		mapHref?: string;
 		loadKnowledgeOverview: () => Promise<UniverseKnowledgeOverview>;
 		loadKnowledgeCoverage: () => Promise<UniverseKnowledgeCoverage>;
-		loadKnowledgeContent: (targetId: string, rowStart?: number) => Promise<UniverseKnowledgeContent>;
+		loadKnowledgeContent: (targetId: string, rowStart?: number, columnStart?: number) => Promise<UniverseKnowledgeContent>;
 		searchKnowledge: (request: UniverseKnowledgeSearchRequest) => Promise<UniverseKnowledgeSearchResult>;
 		openKnowledge: (targetId: string) => Promise<UniverseKnowledgeScene>;
 		loadChanges?: (maxMarks?: number) => Promise<UniverseChangeSet>;

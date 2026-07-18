@@ -1,6 +1,7 @@
 export * from './canonical';
 export * from './change';
 export * from './conformance';
+export * from './contentProjection';
 export * from './evidence';
 export * from './flight';
 export * from './global';
