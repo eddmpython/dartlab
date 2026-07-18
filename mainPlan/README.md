@@ -45,7 +45,6 @@
 
 | 폴더 | 상태 | 한 줄 |
 |---|---|---|
-| [dartlab-universe](dartlab-universe/) | 🟢 | 전체 HF 데이터를 지식과 결속(K0 spine~K1d row window 구현). 공개 진입은 사용자 검수 대기. |
 | [dartlab-story-curriculum](dartlab-story-curriculum/) | 🟢 | 교육 SSOT = 블로그 연재 `dartlab 이야기`. 노트북 허브는 실습장. 편성지도·체크리스트(비공개). |
 | [web-notebook-runtime](web-notebook-runtime/) | 🟡 | 설치 없는 브라우저 노트북(Pyodide 워커·OPFS·체크포인트). 다수 제품 적용 완료, TODO SSOT 잔여(wheel OPFS 캐시 등). ⚠ 커널 공유런타임 이관은 `_done/pyproc-runtime-ssot`(완료)가 승계. |
 

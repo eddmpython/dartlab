@@ -5,7 +5,7 @@
 //   landingJson(landing JSON arm)은 origin 에서 제외 · loadJson(dartlabData)이 영속 cacheStore + 다중URL
 //   폴백(local↔HF) + base 전역에 의존하는 별도 arm 이라, 코어 단일-URL origin 추상·전역금지를 어기지 않게
 //   sibling 으로 둔다(dual-SSOT, 설계 패널 적대검증 결론. mainPlan/_done/data-workbench-ssot/07).
-import { hfUrl, hfRangeUrl, hfMediaUrl, hfRevisionUrl } from './hf';
+import { hfUrl, hfRangeUrl, hfMediaUrl } from './hf';
 
 // vite env 안전 접근 · runtime 패키지 tsc 는 vite/client 타입 없이 검사된다(origin.ts 동일 패턴, 소비 앱이 번들 시 치환).
 const viteEnv = (import.meta as { env?: Record<string, string | boolean | undefined> }).env;
@@ -32,8 +32,6 @@ const govDev = Boolean(viteEnv?.DEV);
 export type OriginId =
 	| 'hf'
 	| 'hfRange'
-	| 'hfRevisionRange'
-	| 'hfApi'
 	| 'hfMedia'
 	| 'podcastMedia'
 	| 'localApi'
@@ -88,25 +86,9 @@ const naverWorkerUrl = (code: string): string => {
 // newsWorker·naverWorker=언론사 저작권 archive 워커 read(라이브 표시) · 신선도형이라 짧은 TTL.
 // 팟캐스트 미디어 base(R2 dartlab-podcast, r2.dev 공개) · channel.yaml r2.baseUrl 미러. index.json(크로스링크)·feed·오디오·커버 서빙.
 const PODCAST_BASE = ((viteEnv?.VITE_DARTLAB_PODCAST_BASE as string | undefined) ?? 'https://pub-ef732bbc413941dd80734f96e0cfe95d.r2.dev').replace(/\/+$/, '');
-const HF_DATASET_API = 'https://huggingface.co/api/datasets/eddmpython/dartlab-data';
-
 const ORIGINS: Partial<Record<OriginId, OriginDef>> = {
 	hf: { resolve: hfUrl, defaultCache: { scope: 'memory', ttlMs: 60 * MIN, maxEntries: 64 } },
 	hfRange: { resolve: hfRangeUrl, defaultCache: { scope: 'memory', ttlMs: 60 * MIN, maxEntries: 128 } },
-	hfRevisionRange: {
-		resolve: (path) => {
-			const separator = path.indexOf('/');
-			if (separator <= 0) throw new Error('[origins] hfRevisionRange path는 revision/file 형식이어야 합니다.');
-			return hfRevisionUrl(path.slice(0, separator), path.slice(separator + 1));
-		},
-		defaultCache: { scope: 'memory', ttlMs: 60 * MIN, maxEntries: 64 }
-	},
-	hfApi: {
-		resolve: (path) => path.startsWith('?')
-			? `${HF_DATASET_API}${path}`
-			: `${HF_DATASET_API}/${path.replace(/^\/+/, '')}`,
-		defaultCache: { scope: 'memory', ttlMs: 10 * MIN, maxEntries: 8 }
-	},
 	// hfMedia=중앙 media repo(HF 직결). objects는 불변이고 manifests는 런타임 파생 뷰다.
 	hfMedia: { resolve: hfMediaUrl, defaultCache: { scope: 'memory', ttlMs: 60 * MIN, maxEntries: 64 } },
 	// 팟캐스트 크로스링크 index.json · 미디어(R2 r2.dev). 비게이트(항상 설정 · 폴백 base 있음). index.json 은 호출부가 no-cache 로 읽음.

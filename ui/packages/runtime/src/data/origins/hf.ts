@@ -6,8 +6,7 @@
 // 전환(가역, 한 줄): 빌드 env 에 VITE_DARTLAB_HF_RESOLVE 지정 시 전체 로더가 그 base 로 전환.
 //   예) Cloudflare hfProxy 워커: VITE_DARTLAB_HF_RESOLVE=https://dartlab-hf-proxy.<sub>.workers.dev/hf
 //       (infra/workers/hfProxy · 콜드 HF CDN 403 흡수 + range 보존). 비우면 HF 직결로 즉시 롤백.
-const DEFAULT_HF_DATASET_RESOLVE = 'https://huggingface.co/datasets/eddmpython/dartlab-data/resolve';
-const DEFAULT_HF_RESOLVE = `${DEFAULT_HF_DATASET_RESOLVE}/main`;
+const DEFAULT_HF_RESOLVE = 'https://huggingface.co/datasets/eddmpython/dartlab-data/resolve/main';
 
 // vite env 안전 접근 · runtime 패키지 tsc 는 vite/client 타입 없이 검사된다 (소비 앱이 번들 시 치환).
 const viteEnv = (import.meta as { env?: Record<string, string | undefined> }).env;
@@ -29,10 +28,6 @@ export const HF_RANGE_RESOLVE = (viteEnv?.VITE_DARTLAB_HF_RANGE_RESOLVE ?? DEFAU
 
 /** range 읽기 전용 절대 URL · HF 직결(엣지캐시 불가능한 206 을 프록시에 보내 7~9배 느려지는 것 차단). */
 export const hfRangeUrl = (path: string): string => `${HF_RANGE_RESOLVE}/${String(path).replace(/^\/+/, '')}`;
-
-/** immutable HF revision의 원본을 해소한다. Knowledge Universe의 exact content preview 전용. */
-export const hfRevisionUrl = (revision: string, path: string): string =>
-	`${DEFAULT_HF_DATASET_RESOLVE}/${encodeURIComponent(revision)}/${String(path).replace(/^\/+/, '')}`;
 
 // 회사 hero 이미지 serve SSOT · 전용 media 데이터셋 HF 직결. blog·캐러셀(/cards)·SNS 공용 자산.
 // dartlab-data(hf origin)와 **별개 repo**(eddmpython/dartlab-media)라 base 가 다르다 → 평행 resolver.

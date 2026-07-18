@@ -6,15 +6,17 @@
 <section class="dl-map-cta" aria-labelledby="map-cta-title">
 	<div class="inner">
 		<div class="left">
-			<div class="kicker">시장 관계 분석</div>
-			<h2 id="map-cta-title">산업 구조와 변화 근거를<br />한 화면에서</h2>
+			<div class="kicker">실시간 시각화</div>
+			<h2 id="map-cta-title">전 상장사가 어떻게 <br />연결되는지 · 10초 안에</h2>
 			<p class="lead">
-				34개 산업의 구조와 파생 집계 흐름, 재무 변화 신호를 하나의 결정론적 장면에서 탐색합니다.
-				후보와 사실을 섞지 않고, 근거가 비면 결론을 닫지 않는 Thesis Kill-Chain으로 가설을 검증합니다.
-				<strong>모든 연결은 근거 상태를 함께 표시합니다.</strong>
+				전 상장사 · 모든 산업 · 모든 공급망 관계를 한 화면에.
+				버블을 클릭해 산업으로 드릴다운, 종목을 선택해 5년 재무 ·
+				공급망 HHI · AI 분석 · 심층 보고서까지 카드 하나로.
+				<strong>이번 회계연도 급변동 자동 감지.</strong>
 			</p>
 			<div class="ctas">
-				<Button variant="secondary" href="{base}/map">산업지도 열기</Button>
+				<Button href="{base}/map">산업지도 열기 →</Button>
+				<Button variant="secondary" href="{base}/changes">최근 변화 보기</Button>
 			</div>
 			<p class="disclaimer">
 				dartlab 은 공시·재무 데이터를 시각화한다. 투자 자문 아님.
@@ -46,9 +48,9 @@
 						</svg>
 					</div>
 					<div class="preview-chips">
-						<span class="chip g">● CURRENT DATA</span>
-						<span class="chip n">파생 집계</span>
-						<span class="chip w">근거 상태 표시</span>
+						<span class="chip g">● 3시간 전 갱신</span>
+						<span class="chip n">반도체 · 348</span>
+						<span class="chip w">⚠ 급변동 12건</span>
 					</div>
 				</div>
 			</div>

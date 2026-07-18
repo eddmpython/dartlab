@@ -30,11 +30,6 @@
 			"svelte": "./src/map/index.ts",
 			"default": "./src/map/index.ts"
 		},
-		"./universe": {
-			"types": "./src/universe/index.ts",
-			"svelte": "./src/universe/index.ts",
-			"default": "./src/universe/index.ts"
-		},
 		"./scan": {
 			"types": "./src/scan/index.ts",
 			"svelte": "./src/scan/index.ts",

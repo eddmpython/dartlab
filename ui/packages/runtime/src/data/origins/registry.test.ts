@@ -6,18 +6,6 @@ import { originUrl, originConfigured, originCache } from './registry';
 import { HF_MEDIA_RESOLVE, HF_RESOLVE } from './hf';
 
 describe('origins.hfMedia', () => {
-	it('hfApi 는 데이터셋 메타와 파일 트리를 같은 등록 오리진으로 해석', () => {
-		expect(originUrl('hfApi', '?expand[]=sha')).toBe('https://huggingface.co/api/datasets/eddmpython/dartlab-data?expand[]=sha');
-		expect(originUrl('hfApi', 'tree/main/dart?limit=100')).toBe('https://huggingface.co/api/datasets/eddmpython/dartlab-data/tree/main/dart?limit=100');
-		expect(originCache('hfApi')?.scope).toBe('memory');
-	});
-
-	it('hfRevisionRange 는 immutable revision의 exact 원본으로 해석', () => {
-		expect(originUrl('hfRevisionRange', 'abc123/dart/panel/005930.parquet')).toBe(
-			'https://huggingface.co/datasets/eddmpython/dartlab-data/resolve/abc123/dart/panel/005930.parquet'
-		);
-	});
-
 	it('hfMedia 는 dartlab-media repo 로 해석 · dartlab-data(hf) 와 다른 base', () => {
 		const objectPath = `objects/sha256/ab/${'ab'.repeat(32)}.webp`;
 		const media = originUrl('hfMedia', objectPath);

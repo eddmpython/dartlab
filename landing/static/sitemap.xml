@@ -1451,11 +1451,6 @@
     <priority>0.95</priority>
   </url>
   <url>
-    <loc>https://eddmpython.github.io/dartlab/universe</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.94</priority>
-  </url>
-  <url>
     <loc>https://eddmpython.github.io/dartlab/map</loc>
     <changefreq>daily</changefreq>
     <priority>0.92</priority>
