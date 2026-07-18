@@ -5,9 +5,11 @@ from __future__ import annotations
 import dataclasses
 import hashlib
 import json
+import math
+import unicodedata
 from collections.abc import Mapping
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from enum import Enum
 from pathlib import Path
 from typing import Any
@@ -19,18 +21,34 @@ def _canonicalValue(value: Any) -> Any:
     if isinstance(value, Enum):
         return value.value
     if isinstance(value, Mapping):
-        return {str(key): _canonicalValue(item) for key, item in sorted(value.items(), key=lambda pair: str(pair[0]))}
+        normalized = {}
+        for key, item in value.items():
+            normalizedKey = unicodedata.normalize("NFC", str(key))
+            if normalizedKey in normalized:
+                raise ValueError(f"canonical key collision: {normalizedKey}")
+            normalized[normalizedKey] = _canonicalValue(item)
+        return dict(sorted(normalized.items()))
     if isinstance(value, (tuple, list)):
         return [_canonicalValue(item) for item in value]
     if isinstance(value, (set, frozenset)):
         normalized = [_canonicalValue(item) for item in value]
         return sorted(normalized, key=lambda item: json.dumps(item, ensure_ascii=False, sort_keys=True))
-    if isinstance(value, (datetime, date)):
+    if isinstance(value, datetime):
+        if value.tzinfo is None or value.utcoffset() is None:
+            raise ValueError("naive datetime은 canonical JSON에서 금지")
+        return value.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+    if isinstance(value, date):
         return value.isoformat()
     if isinstance(value, Path):
-        return value.as_posix()
+        return unicodedata.normalize("NFC", value.as_posix())
     if isinstance(value, bytes):
         return {"sha256": hashlib.sha256(value).hexdigest(), "bytes": len(value)}
+    if isinstance(value, str):
+        return unicodedata.normalize("NFC", value)
+    if isinstance(value, float):
+        if not math.isfinite(value):
+            raise ValueError("NaN과 Infinity는 canonical JSON에서 금지")
+        return 0.0 if value == 0.0 else value
     return value
 
 
@@ -54,6 +72,7 @@ def canonicalJson(value: Any) -> bytes:
         ensure_ascii=False,
         sort_keys=True,
         separators=(",", ":"),
+        allow_nan=False,
     ).encode("utf-8")
 
 
