@@ -3800,6 +3800,16 @@
     "blog/08-tech-story/15-backside-power-delivery-network/assets/15-hero.webp": "586004cd278d4f98ee4ce0f5a32e852a530a3c6d3ac1e4d7de97c005a0ffd0eb",
     "blog/08-tech-story/15-backside-power-delivery-network/assets/15-overlay.webp": "bf5839b3958c10acb72f5a4cac7864d53cd5e88639fa842abbffc442352d15f9",
     "blog/08-tech-story/15-backside-power-delivery-network/assets/15-yield-failure-map.svg": "a822ecbfc54881aa55569fbb5ef20622c2938344039f4047b672483cd179c79f",
+    "blog/08-tech-story/16-tesla-ac-grid-dc-return/assets/16-ac-dc-voltage-ladder.svg": "6f97fb77577c42f7e4709cf650ac6c035fc6b3e90c4aa295c78068ba3e14f7e1",
+    "blog/08-tech-story/16-tesla-ac-grid-dc-return/assets/16-company-boundary-map.svg": "6abbd105d45fc67231f92da183720fb3307c4f647afafac7fa06db3428b7a14b",
+    "blog/08-tech-story/16-tesla-ac-grid-dc-return/assets/16-converter-border.webp": "c5ddbe08bb29ac878e80706522b0f44f120f888c9989ddaa5a231ef98fd6b1b6",
+    "blog/08-tech-story/16-tesla-ac-grid-dc-return/assets/16-hero.webp": "f676f1a735b077330ab7466a30cc56b6cdadbb65fbff1b157f7d40808dfae1ff",
+    "blog/08-tech-story/16-tesla-ac-grid-dc-return/assets/16-hvdc-cable-capacitance.svg": "b20f90fb22a16f24281773f5c6b8c1a971187c40aefa0a4323608b2f7dd20377",
+    "blog/08-tech-story/16-tesla-ac-grid-dc-return/assets/16-modern-conversion-chain.svg": "1f146e1d450c0b6458a9a53fc49d4a994e8fb5f467053f19bd6d57f31838c676",
+    "blog/08-tech-story/16-tesla-ac-grid-dc-return/assets/16-one-frequency-network.svg": "1c7964429b91b639ddf00afe87cbe3da1fc48ffadaa7d4e36b122047112043d9",
+    "blog/08-tech-story/16-tesla-ac-grid-dc-return/assets/16-rotating-field-sequence.svg": "b29009c428da4c05a781644940e995c94449eed1dacf6ac0d1ef30c2e105ee24",
+    "blog/08-tech-story/16-tesla-ac-grid-dc-return/assets/16-rotating-field.webp": "0c9c25ead2e6c48b441add3afa8c0acbefccd0f68426a6b367b69da3f07efe10",
+    "blog/08-tech-story/16-tesla-ac-grid-dc-return/assets/16-scenario-boundary-shift.svg": "7ff39a6fd494043a707eda4e6d209dd87ec8c39fd3797bcc5cd1bde1c002b961",
     "blog/09-investment-stories/01-technical-investing-price-indicators/assets/01-price-indicator-workbench.webp": "486b12c36cd4319a408b1706e006e969fcd9f76a9ba13691bde49613d1caba6e",
     "blog/09-investment-stories/01-technical-investing-price-indicators/assets/01-thumbnail-bg.webp": "486b12c36cd4319a408b1706e006e969fcd9f76a9ba13691bde49613d1caba6e",
     "blog/09-investment-stories/01-technical-investing-price-indicators/assets/02-indicator-panels.webp": "f7af37afbad715ca79873cb16abc1452a0e67ea090e4b94a5999c8c8682778b5",
@@ -4515,7 +4525,9 @@
     "landing/static/thumbnails/tech-stealth-rcs-value-chain-card.webp": "c0445e06636b2d9a2b2181947920c93e4995a076bceb728d7c4fb352681fa0eb",
     "landing/static/thumbnails/tech-stealth-rcs-value-chain.webp": "8c8b1d147afa88e986a04f108a8bee8dde1a0ac0363d6580adfccf28b75c2b95",
     "landing/static/thumbnails/tech-vector-search-who-profits-card.webp": "5e4fee929c3f5149c03c3e8f4929e439b0dbb2a303ad11a5a4a0a0dda8d5f22a",
-    "landing/static/thumbnails/tech-vector-search-who-profits.webp": "c0354bb50c661f28f0607cdd6d624f34c9e06f29adcfd7e42f11242064d3c468"
+    "landing/static/thumbnails/tech-vector-search-who-profits.webp": "c0354bb50c661f28f0607cdd6d624f34c9e06f29adcfd7e42f11242064d3c468",
+    "landing/static/thumbnails/tesla-ac-grid-dc-return-card.webp": "03b47cd2ca748b2c448db5896a22a7a9270d673d58a507f5df995f998940cc7f",
+    "landing/static/thumbnails/tesla-ac-grid-dc-return.webp": "5f4b36968917a2b857c76c7d419b6114f28cece97b38e6a92ad29a17e889d1c1"
   },
   "manifests": {
     "carousels": "manifests/carousels.json",
@@ -4742,6 +4754,10 @@
     "03a4efa4617c45b681c013745338751bf84b131451c486a3245a0a5c436c7957": {
       "bytes": 17940,
       "path": "objects/sha256/03/03a4efa4617c45b681c013745338751bf84b131451c486a3245a0a5c436c7957.webp"
+    },
+    "03b47cd2ca748b2c448db5896a22a7a9270d673d58a507f5df995f998940cc7f": {
+      "bytes": 136074,
+      "path": "objects/sha256/03/03b47cd2ca748b2c448db5896a22a7a9270d673d58a507f5df995f998940cc7f.webp"
     },
     "03c1f0564108ca387234b577ff1fec16640a6dc53b2c3313fb44199c82f10558": {
       "bytes": 56868,
@@ -5346,6 +5362,10 @@
     "0c80fc836beb22a052dbe2827ef8d80152fbcee68ae32efbe8c6166e51b5839d": {
       "bytes": 163452,
       "path": "objects/sha256/0c/0c80fc836beb22a052dbe2827ef8d80152fbcee68ae32efbe8c6166e51b5839d.webp"
+    },
+    "0c9c25ead2e6c48b441add3afa8c0acbefccd0f68426a6b367b69da3f07efe10": {
+      "bytes": 194284,
+      "path": "objects/sha256/0c/0c9c25ead2e6c48b441add3afa8c0acbefccd0f68426a6b367b69da3f07efe10.webp"
     },
     "0ca9413f7d27fc9a1cb602473f382ce2d6a31955fd77d5d7aa6ef27a54f5a354": {
       "bytes": 2856,
@@ -6387,6 +6407,14 @@
       "textNodes": 63,
       "viewBox": "0 0 1200 820"
     },
+    "1c7964429b91b639ddf00afe87cbe3da1fc48ffadaa7d4e36b122047112043d9": {
+      "bytes": 3668,
+      "colorCount": 10,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/1c/1c7964429b91b639ddf00afe87cbe3da1fc48ffadaa7d4e36b122047112043d9.svg",
+      "textNodes": 15,
+      "viewBox": "0 0 1200 675"
+    },
     "1c7ad07e6eb096d24536c8fd34ae12ba49c71f561641f904a51a7e4eab42a5db": {
       "bytes": 88796,
       "path": "objects/sha256/1c/1c7ad07e6eb096d24536c8fd34ae12ba49c71f561641f904a51a7e4eab42a5db.webp"
@@ -6550,6 +6578,14 @@
     "1eef81a4ebaa6aba0ae0ba45bca15a7adfb9b2b46a1cf451546f1dc77fed83c8": {
       "bytes": 93742,
       "path": "objects/sha256/1e/1eef81a4ebaa6aba0ae0ba45bca15a7adfb9b2b46a1cf451546f1dc77fed83c8.webp"
+    },
+    "1f146e1d450c0b6458a9a53fc49d4a994e8fb5f467053f19bd6d57f31838c676": {
+      "bytes": 5023,
+      "colorCount": 12,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/1f/1f146e1d450c0b6458a9a53fc49d4a994e8fb5f467053f19bd6d57f31838c676.svg",
+      "textNodes": 24,
+      "viewBox": "0 0 1200 675"
     },
     "1f1ecd3e6308d18028e02f33bd00d4ba9a115dd37679ef632daa54b47f3df9d4": {
       "bytes": 171256,
@@ -11251,6 +11287,10 @@
       "bytes": 68816,
       "path": "objects/sha256/5f/5f3de78afab3723711bbee94bf03cb49df3a35011c6b1cae443b80df9f7280e9.webp"
     },
+    "5f4b36968917a2b857c76c7d419b6114f28cece97b38e6a92ad29a17e889d1c1": {
+      "bytes": 97636,
+      "path": "objects/sha256/5f/5f4b36968917a2b857c76c7d419b6114f28cece97b38e6a92ad29a17e889d1c1.webp"
+    },
     "5f574adaf7581659dceb83e1fab4a50b919a01fd2c10f32262fb96d678289f29": {
       "bytes": 106768,
       "path": "objects/sha256/5f/5f574adaf7581659dceb83e1fab4a50b919a01fd2c10f32262fb96d678289f29.webp"
@@ -11935,6 +11975,14 @@
       "bytes": 100522,
       "path": "objects/sha256/6a/6a93d9fb5cb2ddddbe610ac9d6f67a1fefef725d6121524827f8063a60b305cc.webp"
     },
+    "6abbd105d45fc67231f92da183720fb3307c4f647afafac7fa06db3428b7a14b": {
+      "bytes": 4609,
+      "colorCount": 11,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/6a/6abbd105d45fc67231f92da183720fb3307c4f647afafac7fa06db3428b7a14b.svg",
+      "textNodes": 26,
+      "viewBox": "0 0 1200 820"
+    },
     "6acb30a34fadb14c06679b6e117f59e311e6d373abef266641c43e2291c65b51": {
       "bytes": 4719,
       "colorCount": 15,
@@ -12214,6 +12262,14 @@
       "path": "objects/sha256/6f/6f74ce5abc29ddc7a7a6224256f23a5ec3e7a431e09ea31e64616ab3ba4a140c.svg",
       "textNodes": 9,
       "viewBox": "0 0 780 450"
+    },
+    "6f97fb77577c42f7e4709cf650ac6c035fc6b3e90c4aa295c78068ba3e14f7e1": {
+      "bytes": 4585,
+      "colorCount": 14,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/6f/6f97fb77577c42f7e4709cf650ac6c035fc6b3e90c4aa295c78068ba3e14f7e1.svg",
+      "textNodes": 19,
+      "viewBox": "0 0 1200 675"
     },
     "6fb715a63aa8b35663234851413bf37861e8552508f7be3d0f6da8fe7ad57c74": {
       "bytes": 276666,
@@ -13386,6 +13442,14 @@
     "7fd3f2284ae4e194b8915f54c37591303bc84f5d1a311e1e4a1448e635aa25e6": {
       "bytes": 158866,
       "path": "objects/sha256/7f/7fd3f2284ae4e194b8915f54c37591303bc84f5d1a311e1e4a1448e635aa25e6.webp"
+    },
+    "7ff39a6fd494043a707eda4e6d209dd87ec8c39fd3797bcc5cd1bde1c002b961": {
+      "bytes": 6850,
+      "colorCount": 13,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/7f/7ff39a6fd494043a707eda4e6d209dd87ec8c39fd3797bcc5cd1bde1c002b961.svg",
+      "textNodes": 43,
+      "viewBox": "0 0 1200 820"
     },
     "80007b7b55cb28561fe025f1f9392e2698736d11a61bafd4b0b40e0f556e3b56": {
       "bytes": 36356,
@@ -16911,6 +16975,14 @@
       "bytes": 54044,
       "path": "objects/sha256/b2/b202da17c6c95a559af9f2c41a0463c022db05612f995bf47ec0322199cfe601.webp"
     },
+    "b20f90fb22a16f24281773f5c6b8c1a971187c40aefa0a4323608b2f7dd20377": {
+      "bytes": 4191,
+      "colorCount": 15,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/b2/b20f90fb22a16f24281773f5c6b8c1a971187c40aefa0a4323608b2f7dd20377.svg",
+      "textNodes": 11,
+      "viewBox": "0 0 1200 675"
+    },
     "b21be12d1e03cb97810fc7ed3e885076026eb08bd85211b71f679587320a2847": {
       "bytes": 140724,
       "path": "objects/sha256/b2/b21be12d1e03cb97810fc7ed3e885076026eb08bd85211b71f679587320a2847.webp"
@@ -16934,6 +17006,14 @@
       "path": "objects/sha256/b2/b285387adfbe25528a5f664d0bba8ad1192df0e02ac8c787efa1a9aa0d0289e3.svg",
       "textNodes": 19,
       "viewBox": "0 0 780 450"
+    },
+    "b29009c428da4c05a781644940e995c94449eed1dacf6ac0d1ef30c2e105ee24": {
+      "bytes": 4007,
+      "colorCount": 12,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/b2/b29009c428da4c05a781644940e995c94449eed1dacf6ac0d1ef30c2e105ee24.svg",
+      "textNodes": 8,
+      "viewBox": "0 0 1200 675"
     },
     "b29028ca8f25be3d494ac3838d65051133e9b0545a60ad03fed3db29d4cf4df3": {
       "bytes": 5231,
@@ -18294,6 +18374,10 @@
     "c5da3a57eabc7a4b1354fe073be551e50c20cb25fb41540c03e3f9e66ee34cfb": {
       "bytes": 156388,
       "path": "objects/sha256/c5/c5da3a57eabc7a4b1354fe073be551e50c20cb25fb41540c03e3f9e66ee34cfb.webp"
+    },
+    "c5ddbe08bb29ac878e80706522b0f44f120f888c9989ddaa5a231ef98fd6b1b6": {
+      "bytes": 239486,
+      "path": "objects/sha256/c5/c5ddbe08bb29ac878e80706522b0f44f120f888c9989ddaa5a231ef98fd6b1b6.webp"
     },
     "c60c3f6a0db39031fea79d8401ca7fedb8aef815820cc62895df545cdeb01469": {
       "bytes": 54198,
@@ -21690,6 +21774,10 @@
     "f66b56d5a3eed163355e9dbe3e18a51c086f7bd7855213578d80d6607caab72d": {
       "bytes": 67778,
       "path": "objects/sha256/f6/f66b56d5a3eed163355e9dbe3e18a51c086f7bd7855213578d80d6607caab72d.webp"
+    },
+    "f676f1a735b077330ab7466a30cc56b6cdadbb65fbff1b157f7d40808dfae1ff": {
+      "bytes": 350170,
+      "path": "objects/sha256/f6/f676f1a735b077330ab7466a30cc56b6cdadbb65fbff1b157f7d40808dfae1ff.webp"
     },
     "f69c01dd35651463233997506938f4661ae91cb5231f38d038caa8a84c3bbb8e": {
       "bytes": 76174,
@@ -29252,6 +29340,37 @@
         "blog/08-tech-story/15-backside-power-delivery-network/assets/15-overlay.webp",
         "blog/08-tech-story/15-backside-power-delivery-network/assets/15-yield-failure-map.svg",
         "landing/static/thumbnails/backside-power-delivery-network-card.webp"
+      ]
+    },
+    "08-tech-story/16-tesla-ac-grid-dc-return": {
+      "assets": {
+        "16-converter-border": "blog/08-tech-story/16-tesla-ac-grid-dc-return/assets/16-converter-border.webp",
+        "16-hero": "blog/08-tech-story/16-tesla-ac-grid-dc-return/assets/16-hero.webp",
+        "16-rotating-field": "blog/08-tech-story/16-tesla-ac-grid-dc-return/assets/16-rotating-field.webp"
+      },
+      "card": "landing/static/thumbnails/tesla-ac-grid-dc-return-card.webp",
+      "diagrams": {
+        "16-ac-dc-voltage-ladder": "blog/08-tech-story/16-tesla-ac-grid-dc-return/assets/16-ac-dc-voltage-ladder.svg",
+        "16-company-boundary-map": "blog/08-tech-story/16-tesla-ac-grid-dc-return/assets/16-company-boundary-map.svg",
+        "16-hvdc-cable-capacitance": "blog/08-tech-story/16-tesla-ac-grid-dc-return/assets/16-hvdc-cable-capacitance.svg",
+        "16-modern-conversion-chain": "blog/08-tech-story/16-tesla-ac-grid-dc-return/assets/16-modern-conversion-chain.svg",
+        "16-one-frequency-network": "blog/08-tech-story/16-tesla-ac-grid-dc-return/assets/16-one-frequency-network.svg",
+        "16-rotating-field-sequence": "blog/08-tech-story/16-tesla-ac-grid-dc-return/assets/16-rotating-field-sequence.svg",
+        "16-scenario-boundary-shift": "blog/08-tech-story/16-tesla-ac-grid-dc-return/assets/16-scenario-boundary-shift.svg"
+      },
+      "og": "landing/static/thumbnails/tesla-ac-grid-dc-return.webp",
+      "staging": [
+        "blog/08-tech-story/16-tesla-ac-grid-dc-return/assets/16-ac-dc-voltage-ladder.svg",
+        "blog/08-tech-story/16-tesla-ac-grid-dc-return/assets/16-company-boundary-map.svg",
+        "blog/08-tech-story/16-tesla-ac-grid-dc-return/assets/16-converter-border.webp",
+        "blog/08-tech-story/16-tesla-ac-grid-dc-return/assets/16-hero.webp",
+        "blog/08-tech-story/16-tesla-ac-grid-dc-return/assets/16-hvdc-cable-capacitance.svg",
+        "blog/08-tech-story/16-tesla-ac-grid-dc-return/assets/16-modern-conversion-chain.svg",
+        "blog/08-tech-story/16-tesla-ac-grid-dc-return/assets/16-one-frequency-network.svg",
+        "blog/08-tech-story/16-tesla-ac-grid-dc-return/assets/16-rotating-field-sequence.svg",
+        "blog/08-tech-story/16-tesla-ac-grid-dc-return/assets/16-rotating-field.webp",
+        "blog/08-tech-story/16-tesla-ac-grid-dc-return/assets/16-scenario-boundary-shift.svg",
+        "landing/static/thumbnails/tesla-ac-grid-dc-return-card.webp"
       ]
     },
     "09-investment-stories/01-technical-investing-price-indicators": {

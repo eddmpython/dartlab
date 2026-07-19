@@ -1,0 +1,405 @@
+{
+  "contractVersion": 2,
+  "passed": true,
+  "topicSlug": "tesla-ac-grid-dc-return",
+  "seriesOrder": 16,
+  "title": "테슬라가 이긴 교류는 왜 다시 직류를 부르나",
+  "description": "테슬라의 회전자계에서 현대 HVDC까지 전기가 변환되는 경계를 따라간다. 교류와 직류의 역할, 상장사 네트워크, 재무 흔적과 네 가지 미래 시나리오를 쉽게 풀었다.",
+  "readerQuestion": "교류가 장거리 송전과 산업용 모터의 표준이 되었는데 왜 해저 케이블, 배터리, 데이터센터와 전력반도체는 다시 직류 구간을 늘리며, 그 경계에서 어느 상장사가 무엇을 실제로 보증하는가?",
+  "titleContract": {
+    "selectedTitle": "테슬라가 이긴 교류는 왜 다시 직류를 부르나",
+    "hookQuestion": "교류가 전류 전쟁에서 이겼다면 현대 전력망은 왜 비싼 변환소를 세워 직류로 바꾸는가?",
+    "readerGap": "독자는 교류와 직류를 한 번 승패가 끝난 경쟁으로 기억하기 쉽고, 모터·변압기·케이블·반도체 회사를 모두 같은 전력망 수혜로 묶기 쉽다.",
+    "promise": "전압 변환과 회전자계, 50·60Hz 동기화, 전력전자, 해저 HVDC, 회사 책임, 재무 범위, 조건별 미래를 전기가 국경을 통과하는 한 여행으로 잇는다.",
+    "whySelected": "역사적 승리와 현대의 직류 확대가 충돌해 호기심을 만들고, 인물전이 아니라 전기 변환 경계와 회사 보증 능력을 중심에 둔다.",
+    "candidates": [
+      {
+        "title": "테슬라가 이긴 교류는 왜 다시 직류를 부르나",
+        "strength": "역사적 통념과 현대 계통의 반전을 한 문장에 담되 본문에서 승리 신화를 바로 교정할 수 있다."
+      },
+      {
+        "title": "교류가 세상을 이겼는데 전기는 왜 다시 직류로 가나",
+        "strength": "초보자에게 가장 직접적이지만 테슬라의 회전자계와 모터 네트워크라는 출발 장면이 약하다."
+      },
+      {
+        "title": "전기는 왜 교류와 직류 사이에서 계속 여권을 바꾸나",
+        "strength": "변환 경계를 잘 보여 주지만 검색 의도에서 HVDC와 테슬라 키워드가 흐려진다."
+      }
+    ]
+  },
+  "insight": {
+    "commonBelief": "테슬라의 교류가 직류를 이겼고 현대 HVDC는 그 승부를 뒤집는 차세대 송전 기술이라고 생각한다.",
+    "twistFact": "현대 전력망은 교류를 버리고 직류로 가는 것이 아니다. 변압과 동기화가 유리한 구간은 교류로, 저장·전자기기·긴 해저 케이블·정밀 제어가 유리한 구간은 직류로 나눈 뒤 전력반도체가 경계마다 전기를 다시 번역한다.",
+    "whatToWatch": "교류냐 직류냐를 묻기보다 변환 경계가 어디로 이동하는지, 그 경계의 변환기·보호·제어·케이블을 누가 장기 보증하는지, 프로젝트 수주가 공장 가동과 현금흐름으로 바뀌는지 확인한다.",
+    "freshnessArgument": "2026년 7월 기준 Hitachi Energy·Siemens Energy·GE Vernova의 HVDC 체계, 2025년 연차보고서와 2026년 케이블 수주·백로그, grid-forming과 데이터센터 직류 전환을 공식 원문으로 다시 맞췄다.",
+    "evidenceRefs": ["E1", "E2", "E4", "E5", "E7", "E8", "E9", "E15", "E18"]
+  },
+  "acts": [
+    {
+      "order": 1,
+      "heading": "한 방향으로 흐르는 직류와 방향을 바꾸는 교류를 물과 압력으로 푼다",
+      "purpose": "초보자용 물리 출발점",
+      "scene": "같은 1MW를 높은 전압으로 보낼수록 전류와 전선 열이 줄어드는 숫자 장면에서 변압기의 필요를 만든다.",
+      "causalBridge": "전압을 쉽게 바꾸려면 자기장이 변해야 하므로 다음 막에서 테슬라의 진짜 공헌인 다상 전류와 회전자계로 넘어간다."
+    },
+    {
+      "order": 2,
+      "heading": "테슬라는 교류 전체보다 회전하는 자기장을 산업의 언어로 만들었다",
+      "purpose": "역사적 오해 교정과 모터 원리",
+      "scene": "서로 시간차를 둔 두세 전류가 고정자 둘레의 자석 세기를 번갈아 바꾸자 가운데 회전자가 접촉 없이 따라 도는 장면을 보여 준다.",
+      "causalBridge": "모터 하나가 아니라 발전기·변압기·송전선·모터가 같은 주파수로 묶이면서 다음 막의 네트워크 효과가 생긴다."
+    },
+    {
+      "order": 3,
+      "heading": "50Hz와 60Hz가 발전소부터 공장 모터까지 하나의 약속이 된다",
+      "purpose": "교류 표준의 네트워크 효과",
+      "scene": "발전기, 승압 변압기, 송전선, 배전 변압기, 공장 모터가 같은 박자표를 공유하는 계통을 따라간다.",
+      "causalBridge": "하지만 배터리와 반도체는 직류로 작동하므로 다음 막에서 전력전자가 교류를 해체하고 다시 합성하는 장면으로 이동한다."
+    },
+    {
+      "order": 4,
+      "heading": "현대 모터는 벽의 교류를 곧바로 쓰지 않고 원하는 교류를 다시 만든다",
+      "purpose": "전력전자 시대의 반전",
+      "scene": "계통 AC가 정류기에서 DC가 되고 인버터에서 가변 주파수 3상 AC로 다시 합성되어 모터 속도를 바꾸는 경로를 보여 준다.",
+      "causalBridge": "전자기기 안에서 직류 구간이 늘었다면 왜 장거리 바다에서도 같은 선택이 유리한지 케이블의 충전 전류로 넘어간다."
+    },
+    {
+      "order": 5,
+      "heading": "해저 케이블은 교류를 보내기만 해도 전류 자리를 소비한다",
+      "purpose": "HVDC의 물리와 경제성",
+      "scene": "긴 해저 AC 케이블이 매 주기 절연층을 충전하고 방전해 유효전력 자리를 줄이는 반면 DC는 초기 충전 뒤 전력을 나르는 장면을 비교한다.",
+      "causalBridge": "직류가 유리해도 양끝 변환소와 보호가 비싸므로 다음 막에서는 어느 회사가 전체 계통과 어느 부품만 책임지는지 분리한다."
+    },
+    {
+      "order": 6,
+      "heading": "상장사 지도는 제품 목록이 아니라 전기가 바뀌는 경계로 읽는다",
+      "purpose": "산업 네트워크와 기술 성숙도",
+      "scene": "풀시스템, 변압기·차단기, 모터·드라이브, 케이블, 전력반도체, 직류 배전의 상장사를 직접·직접 인접·간접으로 배치한다.",
+      "causalBridge": "회사 수는 많지만 전체 계통 보증사는 적다는 사실을 확인한 뒤 왜 특허가 끝난 시장에서도 소수가 남는지 재무와 프로젝트 실행으로 내려간다."
+    },
+    {
+      "order": 7,
+      "heading": "해자는 특허보다 30년 보증과 공장·설치선·제어 소프트웨어에 남는다",
+      "purpose": "재무 착지와 경쟁 우위",
+      "scene": "DartLab 2025년 회사 전체 매출·이익·현금흐름과 공식 세그먼트 백로그를 기술 전용 매출과 분리해 본다.",
+      "causalBridge": "백로그가 커도 어느 경계가 실제로 이동할지는 정해지지 않았으므로 마지막 막에서 조건별 네 시나리오로 닫는다."
+    },
+    {
+      "order": 8,
+      "heading": "교류와 직류의 경계가 이동하는 네 가지 미래를 검증한다",
+      "purpose": "반증 가능한 관전 포인트",
+      "scene": "교류망 증설, 해상 HVDC, 직류 섬, grid-forming의 조건과 강한 회사 층, 지표, 무효화 조건을 같은 순서로 반복한다.",
+      "causalBridge": "독자는 다음 수주 발표를 관련주 뉴스가 아니라 변환 경계, 보증 범위, 공장 실행, 상호운용 증거로 분류하게 된다."
+    }
+  ],
+  "sections": [
+    {
+      "order": 1,
+      "heading": "전기는 왜 방향을 바꿔야 멀리 갈 수 있었나",
+      "subtitle": "전압을 올리면 전류와 열이 줄어드는 가장 단순한 숫자에서 시작한다",
+      "visualAnchor": "16-ac-dc-voltage-ladder SVG와 1MW 전송 계산이 전압·전류·열의 관계를 같이 보여 준다.",
+      "explanation": "쉽게 말하면 직류는 한 방향으로 흐르는 물, 교류는 앞뒤 방향을 주기적으로 바꾸는 물이며 변하는 자기장이 변압기에서 전압을 바꾸는 이유를 설명한다.",
+      "example": "숫자로 보면 이상적인 1MW를 1kV로 보내면 1000A, 100kV로 보내면 10A이며 같은 저항에서 열손실은 전류 제곱에 비례한다.",
+      "support": "주의할 점은 이 계산이 역률과 삼상식을 뺀 직관 예시이고 현대 직류도 전력반도체 변환기를 통해 전압을 바꿀 수 있다는 것이다.",
+      "transition": "변압하기 쉬운 교류가 장거리 전송을 열었다면 그 전기를 실제 산업의 회전으로 바꾼 테슬라의 회전자계로 넘어간다.",
+      "evaluation": "초보자가 교류의 승리를 방향 변화 자체가 아니라 당시 값싼 전압 변환과 낮은 전류의 결합으로 설명할 수 있어야 한다."
+    },
+    {
+      "order": 2,
+      "heading": "테슬라가 만든 것은 교류가 아니라 회전하는 자기장이었다",
+      "subtitle": "두세 개의 시간차 난 전류가 접촉 없는 회전을 만드는 장면을 본다",
+      "visualAnchor": "16-rotating-field 이미지와 16-rotating-field-sequence SVG가 실제 모터 질감과 정확한 위상 순서를 분리해 보여 준다.",
+      "explanation": "쉽게 말하면 서로 다른 시간에 가장 세지는 코일을 원형으로 배치해 자석의 가장 강한 방향이 계속 옆으로 이동하게 만들고 회전자가 이를 따라가게 한다.",
+      "example": "Tesla의 1888년 전력 전송 특허와 1890년 모터 특허는 독립 회로의 위상 차와 이동하는 극을 명시하며 Westinghouse는 1888년 관련 특허를 확보했다.",
+      "support": "오해하면 안 되는 점은 Tesla가 교류·변압기·전력망을 혼자 발명했다는 영웅전이 아니며 여러 발명가와 Westinghouse의 제조·상용화가 함께 있었다는 것이다.",
+      "transition": "회전자계가 실용 모터가 되자 같은 박자를 쓰는 발전기·변압기·송전선·모터의 네트워크가 왜 강해졌는지 다음 절에서 본다.",
+      "evaluation": "독자가 테슬라의 핵심 공헌을 교류 발명이라는 한마디보다 다상 회전자계와 유도모터 체계로 설명할 수 있어야 한다."
+    },
+    {
+      "order": 3,
+      "heading": "발전기에서 모터까지 하나의 주파수로 묶였다",
+      "subtitle": "50Hz와 60Hz는 전기 제품 전체가 공유하는 시간표다",
+      "visualAnchor": "16-one-frequency-network SVG가 발전, 승압, 송전, 강압, 모터와 표준의 네트워크 효과를 연결한다.",
+      "explanation": "주파수는 1초에 방향을 몇 번 왕복하는지 나타내며 계통의 모든 발전기가 같은 박자를 맞추고 변압기와 모터가 그 박자에 맞춰 설계되는 과정을 푼다.",
+      "example": "공장 펌프와 압축기의 유도모터부터 ABB·WEG·Yaskawa의 드라이브까지 3상 교류가 산업 설비의 공통 인터페이스가 된 사례를 붙인다.",
+      "support": "하지만 50Hz와 60Hz 지역이 갈리고 비동기 계통끼리는 바로 연결하기 어려우며 표준의 힘이 경로 의존성과 교체 비용도 만든다.",
+      "transition": "고정 주파수의 강한 네트워크가 생겼지만 현대 전자기기는 그 파형을 그대로 쓰지 않는다. 그래서 다음 절에서는 변환기 내부로 이동한다.",
+      "evaluation": "독자가 교류 해자를 단일 기계 성능보다 설치 기반과 공통 주파수의 네트워크 효과로 이해해야 한다."
+    },
+    {
+      "order": 4,
+      "heading": "전자기기는 교류를 받아 다시 직류로 바꾼다",
+      "subtitle": "정류기와 인버터가 테슬라의 회전자계를 필요할 때마다 다시 합성한다",
+      "visualAnchor": "16-modern-conversion-chain SVG가 발전기 AC, 송전 HVDC, 지역 AC, 드라이브 DC, 가변 3상 AC의 반복 변환을 보여 준다.",
+      "explanation": "쉽게 말하면 정류기는 교류를 직류로 펴고 인버터는 반도체 스위치를 빠르게 켜고 꺼 원하는 전압과 주파수의 교류를 다시 그린다.",
+      "example": "ABB는 산업 전기 에너지의 약 70%가 모터를 돌리는 데 쓰이며 가변속 드라이브가 전압과 주파수를 계속 조절한다고 설명한다.",
+      "support": "주의할 점은 직류 구간이 늘어도 모터 속 자기장은 다시 다상 교류이고 변환 단계마다 손실·열·필터·보호 비용이 생긴다는 것이다.",
+      "transition": "전자기기 안의 직류가 저장과 제어를 위해 생겼다면 긴 해저 케이블의 직류는 케이블 자체의 물리 때문에 생긴다는 차이로 넘어간다.",
+      "evaluation": "독자가 현대 전력전자를 테슬라 체계의 폐기가 아니라 필요한 장소에서 파형을 재구성하는 번역기로 설명할 수 있어야 한다."
+    },
+    {
+      "order": 5,
+      "heading": "장거리 바다에서는 직류가 다시 이긴다",
+      "subtitle": "케이블의 절연층이 교류를 매번 충전하는 비용을 이해한다",
+      "visualAnchor": "16-hvdc-cable-capacitance SVG와 16-converter-border 이미지가 충전 전류와 양끝 변환소의 교환 관계를 보여 준다.",
+      "explanation": "쉽게 말하면 해저 케이블의 도체와 바닷물 사이 절연층은 긴 축전기처럼 행동한다. 교류 주기마다 전하를 넣고 빼며 실제 전력에 쓸 전류 용량을 차지한다.",
+      "example": "미국 에너지부는 변환소 비용을 포함한 예시 손익분기 거리를 해저 약 37마일, 가공선 약 124마일로 제시하지만 프로젝트 조건에 따라 달라진다고 설명한다.",
+      "support": "오해하면 안 되는 점은 HVDC가 모든 거리에서 싸지 않으며 LCC와 VSC의 계통 요구, 직류 차단, 보호, 상호운용과 변환 손실이 남는다는 것이다.",
+      "transition": "케이블과 변환소를 함께 봐야 한다. 그래서 다음 절에서는 부품 목록이 아니라 전체 성능을 누가 보증하는지에 따라 회사를 다시 배치한다.",
+      "evaluation": "독자가 HVDC를 미래형 직류 승리보다 비싼 변환소와 긴 선로 절감 사이의 프로젝트 선택으로 설명할 수 있어야 한다."
+    },
+    {
+      "order": 6,
+      "heading": "회사 지도는 전기가 바뀌는 경계로 읽는다",
+      "subtitle": "20곳이 넘는 상장사와 세 곳 안팎의 풀시스템 보증사를 구분한다",
+      "visualAnchor": "16-company-boundary-map SVG와 필수 공정·회사·근거 표가 직접·직접 인접·간접 범위를 나눈다.",
+      "explanation": "쉽게 말하면 회사 이름보다 고장 났을 때 누가 책임지는지를 먼저 본다. 풀시스템 통합, 변압기·차단기, 모터·드라이브, 케이블, 전력반도체, 직류 배전으로 나눠 장기 보증의 주체를 찾는다.",
+      "example": "2025년 제품 자료를 보면 Hitachi Energy는 HVDC Classic·Light와 제어를, Siemens Energy와 GE Vernova는 변환소 체계를, Prysmian·Nexans·NKT는 케이블 시스템을 공식적으로 제공한다.",
+      "support": "주의할 점은 ABB가 2022년 Hitachi Energy 잔여 지분까지 매각했으므로 오늘의 ABB를 HVDC 풀시스템 사업자로 놓지 않고 모터·드라이브·전기화에 둬야 한다.",
+      "transition": "회사의 위치가 보이면 다음 질문은 왜 130년 전 특허가 끝난 뒤에도 소수만 남았느냐다. 다음 절에서 공장과 프로젝트 재무로 검산한다.",
+      "evaluation": "독자가 상장사 수가 많다는 말과 전체 HVDC 계통을 보증할 회사가 많다는 말을 분리해야 한다."
+    },
+    {
+      "order": 7,
+      "heading": "특허가 끝난 뒤에도 왜 몇 회사만 남았나",
+      "subtitle": "해자는 도면보다 공장, 설치선, 제어, 인증과 30년 책임에 쌓인다",
+      "visualAnchor": "DartLab Company 코드와 2025년 재무 표, 공식 백로그 수치가 회사 전체 체력과 기술 전용 실적의 경계를 보여 준다.",
+      "explanation": "전력 설비는 고객 계통마다 설계하고 수십 년 고장 책임을 지므로 시험 설비, 프로젝트 기록, 장주기 공장, 공급망, 보호·제어 소프트웨어가 함께 진입장벽이 된다.",
+      "example": "GE Vernova, HD현대일렉트릭, 효성중공업, LS ELECTRIC의 2025년 회사 전체 매출·영업이익·영업현금흐름·유형자산 취득을 DartLab에서 검산한다.",
+      "support": "주의할 점은 Siemens Energy Grid Technologies 백로그, GE Vernova Electrification 장비 백로그, NKT 고압 케이블 백로그가 범위와 통화가 달라 서로 시장점유율처럼 비교할 수 없다는 것이다.",
+      "transition": "현재 백로그가 커도 어떤 경계가 더 커질지는 조건에 달렸으므로 마지막 절에서 네 시나리오의 확인과 반증을 나눈다.",
+      "evaluation": "독자가 특허보다 프로젝트 실행과 장기 보증이 해자라는 점, 회사 전체 재무가 특정 기술 매출은 아니라는 점을 함께 말할 수 있어야 한다."
+    },
+    {
+      "order": 8,
+      "heading": "관전 포인트는 교류와 직류의 경계가 어디로 이동하느냐다",
+      "subtitle": "교류망 증설, 해상 HVDC, 직류 섬, grid-forming의 조건을 나눈다",
+      "visualAnchor": "16-scenario-boundary-shift SVG와 네 시나리오 본문이 조건, 경로, 결과, 지표, 무효화 순서를 반복한다.",
+      "explanation": "쉽게 말하면 하나의 낙관 전망이 아니라 어느 물리·표준·수주 조건이 생길 때 어느 회사 층이 강해지는지 네 갈래로 본다.",
+      "example": "변압기 공장 가동과 납기, 해상 프로젝트 최종투자결정, 직류 보호 인증과 설치 MW, grid-forming 상호운용·black start 실증을 지표로 제시한다.",
+      "support": "주의할 점은 수주 발표를 즉시 매출과 현금으로 읽거나 제안·시연·파트너십을 현장 가동으로 바꾸지 않고 각 시나리오가 틀리는 조건을 함께 두는 것이다.",
+      "transition": "마지막 질문을 교류냐 직류냐에서 어느 경계를 누가 실제로 보증하고 반복 매출로 바꾸는가로 바꾼다.",
+      "evaluation": "독자가 다음 발표를 기술명보다 경계 이동, 증거 단계, 보증 범위, 현금 전환으로 판정할 수 있어야 한다."
+    }
+  ],
+  "visuals": [
+    {
+      "title": "교류·직류와 전압 사다리",
+      "kind": "comparison-diagram",
+      "proves": "교류의 방향 변화가 변압을 가능하게 했고 높은 전압이 같은 전력의 전류와 열손실을 줄인다.",
+      "placement": "1절 1MW 전송 계산 직후",
+      "insertAfter": "1MW를 1kV와 100kV로 보내는 계산 문단",
+      "narrativeUse": "교류 승리를 추상적 전류 전쟁이 아니라 전압 변환의 경제성으로 바꾼다."
+    },
+    {
+      "title": "다상 회전자계 순서",
+      "kind": "sequence-diagram",
+      "proves": "시간차 난 세 전류의 최대점이 고정자 둘레를 이동하며 접촉 없는 회전을 만든다.",
+      "placement": "2절 회전자계 쉬운 설명 직후",
+      "insertAfter": "세 사람이 원형으로 자석을 넘기는 비유",
+      "narrativeUse": "테슬라의 공헌을 이름이 아니라 독자가 재설명할 수 있는 모터 원리로 만든다."
+    },
+    {
+      "title": "하나의 주파수 네트워크",
+      "kind": "network-map",
+      "proves": "발전기부터 모터까지 50·60Hz 약속이 설치 기반과 교체 비용을 만든다.",
+      "placement": "3절 주파수와 동기화 설명 직후",
+      "insertAfter": "계통을 거대한 합주단에 비유하는 문단",
+      "narrativeUse": "교류의 강점을 단일 장치 효율이 아니라 네트워크 효과로 확장한다."
+    },
+    {
+      "title": "현대 전기의 반복 변환 경로",
+      "kind": "timeline-flow",
+      "proves": "현대 계통은 AC와 DC를 한 번 고르는 대신 발전·송전·배전·구동 경계마다 반복 변환한다.",
+      "placement": "4절 정류기와 인버터 설명 직후",
+      "insertAfter": "VFD가 모터용 3상 교류를 다시 만든다는 문단",
+      "narrativeUse": "AC 대 DC 재대결이라는 프레임을 AC 등뼈와 DC 섬의 공존으로 뒤집는다."
+    },
+    {
+      "title": "해저 AC 케이블의 충전 전류",
+      "kind": "causal-diagram",
+      "proves": "긴 AC 케이블은 절연층을 계속 충방전해 전류 용량을 쓰지만 DC는 초기 충전 뒤 유효전력에 용량을 쓴다.",
+      "placement": "5절 케이블 축전기 비유 직후",
+      "insertAfter": "도체와 바닷물 사이 절연층 설명",
+      "narrativeUse": "HVDC 선택을 유행이 아니라 해저 케이블의 물리적 제약으로 이해시킨다."
+    },
+    {
+      "title": "전기 변환 경계의 상장사 지도",
+      "kind": "company-network",
+      "proves": "상장사는 많지만 풀시스템, 케이블, 장비, 반도체가 책임지는 실패와 보증 범위는 다르다.",
+      "placement": "6절 회사 증거 사다리와 범위 설명 직후",
+      "insertAfter": "직접·직접 인접·간접 회사 범위 문단",
+      "narrativeUse": "관련주 목록을 전기가 바뀌는 경계와 장기 책임의 네트워크로 바꾼다."
+    },
+    {
+      "title": "교류·직류 경계 이동 시나리오",
+      "kind": "scenario-matrix",
+      "proves": "교류망, 해상 HVDC, 직류 섬, grid-forming은 서로 다른 조건과 반증 지표를 가진다.",
+      "placement": "마지막 8절 도입 직후",
+      "insertAfter": "네 미래는 서로 배타적이지 않다는 문단",
+      "narrativeUse": "예언 대신 조건, 지표, 무효화를 반복해 독자가 다음 공시를 검증하게 한다."
+    }
+  ],
+  "imagePlan": [
+    {
+      "assetKey": "16-hero",
+      "sourcePolicy": "auto",
+      "slot": "hero",
+      "subject": "19세기 다상 교류 모터와 변압기에서 현대 HVDC 변환소와 해저 케이블로 이어지는 브랜드 없는 전기 여정",
+      "query": "polyphase AC motor transformer modern HVDC converter submarine cable editorial no logo",
+      "keywords": ["polyphase motor", "HVDC converter", "submarine cable"],
+      "placement": "frontmatter 다음 첫 장면과 도입 앞",
+      "narrativeUse": "테슬라의 회전자계와 현대 직류 변환이 한 전력 체계의 연속이라는 질문을 연다."
+    },
+    {
+      "assetKey": "16-rotating-field",
+      "sourcePolicy": "auto",
+      "slot": "inline",
+      "subject": "세 위상의 고정자 권선과 농형 회전자 주변을 회전하는 자기장을 보여 주는 브랜드 없는 유도모터 절개 개념 장면",
+      "query": "three phase induction motor cutaway rotating magnetic field editorial no labels",
+      "keywords": ["induction motor", "rotating magnetic field", "three phase"],
+      "placement": "2절 다상 회전자계 설명 앞",
+      "narrativeUse": "정확한 SVG를 보기 전에 고정자·회전자·회전 자기장의 물리적 장면을 직관적으로 보여 준다."
+    },
+    {
+      "assetKey": "16-converter-border",
+      "sourcePolicy": "auto",
+      "slot": "inline",
+      "subject": "3상 교류가 모듈형 변환기를 지나 두 직류 선과 해저 케이블로 이어지는 브랜드 없는 HVDC 변환 경계",
+      "query": "AC three phase to HVDC modular multilevel converter subsea cable editorial no logo",
+      "keywords": ["MMC converter", "AC DC conversion", "subsea HVDC"],
+      "placement": "5절 HVDC 변환소 비용 설명 직후",
+      "narrativeUse": "케이블의 이익을 얻기 위해 양끝에 거대한 번역소가 필요하다는 경제적 교환을 장면화한다."
+    }
+  ],
+  "relatedPosts": {
+    "searches": ["AI 전력망 변압기", "800V 데이터센터 직류", "후면전력공급망", "하이퍼튜브 선형모터", "암모니아 선박 발전기"],
+    "placementRule": "같은 설명을 반복하지 않고 대규모 변압기, 시설 직류, 칩 전력, 선형모터, 선박 전기화처럼 이 글의 앞뒤 경계를 더 깊게 볼 문단에 실제 존재하는 글만 연결한다.",
+    "links": [
+      {"path": "/blog/ai-power-transformer-supercycle", "title": "AI 전력망은 어디서 막히나", "reason": "현대 교류망의 변압기·차단기·케이블 병목을 확장한다.", "placement": "1절 또는 7절"},
+      {"path": "/blog/800vdc-ai-data-center-power", "title": "GPU 코어는 1V 미만인데, 왜 데이터센터는 800V로 가나", "reason": "시설 내부에서 직류 섬이 커지는 구체 사례를 연결한다.", "placement": "4절 직류 섬 설명"},
+      {"path": "/blog/backside-power-delivery-network", "title": "칩을 뒤집고 깎아 전기를 넣는 이유", "reason": "변환된 전력이 칩 마지막 수 마이크로미터에 도달하는 경계를 연결한다.", "placement": "4절 전력 여정"},
+      {"path": "/blog/hypertube-vacuum-maglev-network", "title": "진공 열차는 왜 어렵나", "reason": "회전자계가 선형추진으로 펴질 때 전력 제어와 인프라가 어떻게 달라지는지 비교한다.", "placement": "3절 모터 네트워크"},
+      {"path": "/blog/ammonia-ships-floating-power-plant", "title": "암모니아 선박은 왜 바다 위 발전소인가", "reason": "발전기·모터·인버터가 한 선박 안에서 작은 전력망을 만드는 사례를 잇는다.", "placement": "4절 모터 드라이브 설명"}
+    ]
+  },
+  "honestyGuards": [
+    "Tesla가 교류, 변압기, 전력망 전체를 혼자 발명했다고 쓰지 않는다.",
+    "전류 전쟁의 교류 승리를 현대 모든 구간에서 교류가 우월하다는 뜻으로 쓰지 않는다.",
+    "DOE 손익분기 거리 예시를 모든 HVDC 프로젝트의 고정 기준으로 쓰지 않는다.",
+    "LCC와 VSC를 우열로 단순화하지 않고 계통 강도, 전력 방향, 해상 공간과 제어 요구에 따라 나눈다.",
+    "파트너십, 제안, 시연, 제품 발표를 고객 설계 채택·현장 출하·독립 매출로 바꾸지 않는다.",
+    "회사 전체 매출·영업이익·현금흐름을 HVDC·모터·변압기 전용 실적으로 쓰지 않는다.",
+    "서로 범위와 통화가 다른 백로그를 시장점유율처럼 직접 비교하지 않는다.",
+    "ABB를 현재 HVDC 풀시스템 통합사로 배치하지 않고 Motion·Electrification 범위로 제한한다.",
+    "LS Cable을 독립 상장사로 쓰지 않고 LS Corp를 통한 간접 노출로만 표시한다.",
+    "상장사 수가 많다는 사실을 풀시스템 보증사도 많다는 뜻으로 바꾸지 않는다.",
+    "grid-forming을 이미 모든 계통에 보급된 표준으로 쓰지 않고 실증·상호운용·보호 과제를 남긴다.",
+    "특정 회사의 수주와 백로그를 주가 전망이나 매수·매도 결론으로 연결하지 않는다."
+  ],
+  "evidenceMap": [
+    {"id": "E1", "claim": "Tesla의 교류 모터 특허는 위상차가 난 복수 회로로 이동하는 자기극을 만든다.", "sourceType": "patent", "sourceRef": "Google Patents US433700A·US382280A", "period": "1888~1890", "unit": "patent", "scope": "원 특허 문장", "url": "https://patents.google.com/patent/US433700A/en"},
+    {"id": "E2", "claim": "Westinghouse는 1888년 Tesla의 AC 특허를 확보했고 다상 유도모터 상용화에는 여러 발명가와 제조사가 참여했다.", "sourceType": "official-history", "sourceRef": "IEEE Spectrum history", "period": "1888~1889", "unit": "event", "scope": "역사 해설", "url": "https://spectrum.ieee.org/may-1888-tesla-files-his-patents-for-electric-motor"},
+    {"id": "E3", "claim": "AC는 변압기로 높은 전압으로 바꿔 장거리 손실을 줄였고 전력전자 발전 뒤 HVDC 응용이 가능해졌다.", "sourceType": "government", "sourceRef": "US DOE Electricity 101", "period": "current reference", "unit": "principle", "scope": "교육 자료", "url": "https://www.energy.gov/oe/electricity-101"},
+    {"id": "E4", "claim": "DOE의 예시 HVDC 손익분기 거리는 해저 약 37마일, 가공선 약 124마일이며 변환소 비용과 표준·보호 과제가 남는다.", "sourceType": "government", "sourceRef": "US DOE Connecting the Country with HVDC", "period": "2023-09-27", "unit": "mile", "scope": "미국 DOE 예시, 프로젝트별 변동", "url": "https://www.energy.gov/oe/articles/connecting-country-hvdc"},
+    {"id": "E5", "claim": "Hitachi Energy는 HVDC Classic·Light, MACH 제어와 변환 변압기를 제공하며 550대 이상 변환 변압기 실적을 설명한다.", "sourceType": "company-official", "sourceRef": "Hitachi Energy HVDC converter transformers", "period": "2026-07 확인", "unit": "unit", "scope": "회사 공식 제품·실적 주장", "url": "https://www.hitachienergy.com/products-and-solutions/transformers/power-transformers/hvdc-converter-transformers"},
+    {"id": "E6", "claim": "Siemens Energy Grid Technologies의 FY2025 Q4 백로그는 420억유로이며 HVDC 프로젝트가 솔루션 수주를 지지했다.", "sourceType": "company-filing", "sourceRef": "Siemens Energy FY2025 Q4 earnings release", "period": "FY2025 Q4", "unit": "EUR", "scope": "Grid Technologies 전체 백로그", "url": "https://assets.siemens-energy.com/dam/cefb2e68-55c7-4d86-a913-b3950053facc/Earnings-Release-Q4-FY25-pdf_Original%20file.pdf"},
+    {"id": "E7", "claim": "GE Vernova의 2025년 Electrification 장비 백로그는 350억달러이며 회사 전체 매출은 DartLab에서 380.68억달러로 확인된다.", "sourceType": "company-filing+dartlab", "sourceRef": "GE Vernova 2025 annual report and Company('GEV').panel", "period": "2025", "unit": "USD", "scope": "백로그는 Electrification 장비, 재무는 회사 전체", "url": "https://www.gevernova.com/investors/annual-report"},
+    {"id": "E8", "claim": "ABB Motion 2025 매출은 82.47억달러이고 ABB는 산업 전기 에너지의 약 70%가 모터에 쓰인다고 설명한다.", "sourceType": "company-filing", "sourceRef": "ABB Annual Reporting Suite 2025 and VSD explainer", "period": "2025", "unit": "USD", "scope": "Motion 사업과 회사 기술 설명", "url": "https://www.abb.com/global/en/areas/motion/drives/expertise-technology/what-is-a-variable-speed-drive"},
+    {"id": "E9", "claim": "WEG는 2025년 순매출 408억헤알과 연간 1,900만대 이상 모터 생산을 공개했다.", "sourceType": "company-official", "sourceRef": "WEG corporate profile", "period": "2025", "unit": "BRL, units", "scope": "회사 전체와 생산 규모", "url": "https://ri.weg.net/en/weg/corporate-profile/"},
+    {"id": "E10", "claim": "HD현대일렉트릭은 최대 800kV·1,500MVA 변압기, HVDC 변환용 변압기, 모터·인버터를 제공한다.", "sourceType": "company-official", "sourceRef": "HD Hyundai Electric product pages", "period": "2026-07 확인", "unit": "kV, MVA", "scope": "공식 제품 범위", "url": "https://www.hyundai-electric.com/elect/m/en/product/product1.jsp"},
+    {"id": "E11", "claim": "효성중공업과 LS ELECTRIC은 변압기·모터·STATCOM·HVDC 또는 변환 변압기·직류 기기를 제공한다.", "sourceType": "company-official", "sourceRef": "Hyosung Heavy Industries and LS ELECTRIC product pages", "period": "2026-07 확인", "unit": "product", "scope": "공식 제품·개발 범위", "url": "https://www.ls-electric.com/products/category/Smart_Power_Solution/Power_Transmission/HVDC"},
+    {"id": "E12", "claim": "Prysmian은 HVAC와 HVDC 육상·해저 케이블 시스템을 제공하며 2026년 1분기 Transmission 백로그 약 170억유로를 공개했다.", "sourceType": "company-filing", "sourceRef": "Prysmian Submarine Power and Q1 2026 results", "period": "2026Q1", "unit": "EUR", "scope": "Transmission 전체 백로그", "url": "https://www.prysmian.com/en/markets/transmission/submarine-power"},
+    {"id": "E13", "claim": "Nexans LanWin2는 525kV, 250km, 2GW, 10억유로 규모 HVDC XLPE 케이블 프로젝트다.", "sourceType": "company-official", "sourceRef": "Nexans LanWin2 press release", "period": "2025-01-15", "unit": "kV, km, GW, EUR", "scope": "단일 프로젝트", "url": "https://www.nexans.com/press-releases/nexans-strengthens-its-partnership-with-tennet-through-a-new-project-under-frame-agreement/"},
+    {"id": "E14", "claim": "NKT의 2025년 고압 케이블 백로그는 102억유로이며 2025년 주소가능 프로젝트 다수는 DC 기술이었다.", "sourceType": "company-filing", "sourceRef": "NKT Annual Report 2025", "period": "2025-12-31", "unit": "EUR", "scope": "고압 케이블 백로그", "url": "https://investors.nkt.com/financial-reports/nkt-as-annual-report-2025-6-organic-growth-and-record-high-operational-ebitda/"},
+    {"id": "E15", "claim": "Infineon은 LCC·VSC HVDC용 사이리스터·IGBT·다이오드와 산업용 모터 드라이브용 전력반도체를 제공한다.", "sourceType": "company-official", "sourceRef": "Infineon HVDC and power transmission", "period": "2026-07 확인", "unit": "product", "scope": "공식 제품 범위", "url": "https://www.infineon.com/applications/industrial/power-transmission-and-distribution"},
+    {"id": "E16", "claim": "GEV 2025 회사 전체 매출·영업이익·영업현금흐름·생산자산 취득은 380.68·13.88·49.87·12.77억달러다.", "sourceType": "dartlab", "sourceRef": "Company('GEV').panel('IS'|'CF', freq='Y')", "period": "2025 fiscal", "unit": "USD", "scope": "회사 전체", "url": "https://eddmpython.github.io/dartlab/"},
+    {"id": "E17", "claim": "HD현대일렉트릭·효성중공업·LS ELECTRIC 2025 회사 전체 매출은 각각 4.08·5.97·4.97조원이며 기술 전용 매출이 아니다.", "sourceType": "dartlab", "sourceRef": "Company('267260'|'298040'|'010120').panel", "period": "2025 calendar", "unit": "KRW", "scope": "연결 회사 전체", "url": "https://eddmpython.github.io/dartlab/"},
+    {"id": "E18", "claim": "grid-forming 인버터는 외부 계통 파형을 따라가기만 하지 않고 전압·주파수를 형성하며 black start가 가능하지만 표준·상호운용 검증이 필요하다.", "sourceType": "government", "sourceRef": "US DOE UNIFI Consortium", "period": "2026-07 확인", "unit": "maturity", "scope": "연구·실증·표준화 단계", "url": "https://www.energy.gov/cmei/systems/unifi-consortium"}
+  ],
+  "watchScenarios": [
+    {
+      "id": "ac-backbone-rebuild",
+      "condition": "노후 교류망 교체와 데이터센터·공장 접속이 해상 직류보다 더 빠르게 늘어난다면",
+      "mechanism": "기존 50·60Hz 계통 안에서 변압기, 개폐기, 동기조상기, 모터와 드라이브의 설치량·서비스가 먼저 증가한다.",
+      "outcome": "HD현대일렉트릭·효성중공업·LS ELECTRIC·Hitachi·Siemens Energy·GE Vernova·ABB·WEG의 교류 장비 층이 넓게 강해진다.",
+      "watchMetric": "변압기·개폐기 수주잔고, 공장 증설과 가동률, 납기, 가격·믹스, 서비스 매출, 영업현금흐름을 확인한다.",
+      "invalidatedBy": "접속 대기와 인허가가 오래 지속되거나 신규 공장이 수요보다 빨리 늘어 납기·가격·가동률이 동시에 꺾이면 이 경로는 약해진다.",
+      "evidenceRefs": ["E6", "E7", "E8", "E10", "E11", "E17"]
+    },
+    {
+      "id": "offshore-hvdc-acceleration",
+      "condition": "해상풍력과 국가 간 연계선이 최종투자결정과 착공으로 이어져 장거리 해저 HVDC가 빨라진다면",
+      "mechanism": "변환소, HVDC 변압기, 제어·보호, 525kV급 케이블, 포설선과 해상 설치가 한 프로젝트로 묶여 장주기 물량이 된다.",
+      "outcome": "Hitachi Energy·Siemens Energy·GE Vernova와 Prysmian·Nexans·NKT의 직접 층이 가장 선명하게 강해진다.",
+      "watchMetric": "최종계약, 프로젝트 마진, 케이블·변환소 백로그, 공장·포설선 가동, 마일스톤 현금, 인도·시운전 일정을 확인한다.",
+      "invalidatedBy": "해상풍력 취소, 금리·원가 상승, 인허가 지연, 프로젝트 손실충당과 일정 재협상이 백로그 증가보다 커지면 수주 규모만으로는 성립하지 않는다.",
+      "evidenceRefs": ["E4", "E5", "E6", "E7", "E12", "E13", "E14"]
+    },
+    {
+      "id": "dc-islands-spread",
+      "condition": "데이터센터·공장·마이크로그리드가 배터리와 전자부하 사이의 변환 단계를 줄이려고 직류 배전을 반복 채택한다면",
+      "mechanism": "중앙 AC/DC 변환, DC/DC, 직류 차단·접지·보호, Si·SiC·GaN 전력반도체와 현장 제어의 가치가 커진다.",
+      "outcome": "Schneider·Eaton·Vertiv·Delta·LS ELECTRIC과 Infineon·STMicroelectronics·onsemi의 직접 인접 층이 강해진다.",
+      "watchMetric": "안전·상호운용 인증, 설치 MW, 고객 반복 발주, 변환 효율과 장애 데이터, 직류 제품·서비스의 독립 매출을 확인한다.",
+      "invalidatedBy": "보호·접지·유지보수 비용이 절감한 변환 손실보다 크거나 벤더 간 상호운용이 막히면 직류 섬은 일부 초대형 시설에 머문다.",
+      "evidenceRefs": ["E11", "E15", "E18"]
+    },
+    {
+      "id": "grid-forming-rewrites-synchronization",
+      "condition": "재생에너지·배터리 비중이 높아져 grid-forming 인버터가 계통 전압과 주파수, black start를 실제로 맡는다면",
+      "mechanism": "회전 발전기의 물리적 관성을 제어 소프트웨어와 전력반도체가 일부 대신하고 다중 변환기의 상호운용·보호가 새 병목이 된다.",
+      "outcome": "HVDC·STATCOM 제어를 가진 풀시스템 사업자, 전력반도체, 저장장치 통합사와 검증·시뮬레이션 소프트웨어의 가치가 커진다.",
+      "watchMetric": "계통운영자 의무 기준, 다중 벤더 실증, black start 성공, 고장통과·보호 시험, 실제 계통 장애와 보정 데이터를 확인한다.",
+      "invalidatedBy": "동기조상기와 기존 회전기가 더 싸고 안정적이거나 다중 벤더 상호작용과 고장전류 한계를 해결하지 못하면 역할 이전은 늦어진다.",
+      "evidenceRefs": ["E5", "E6", "E15", "E18"]
+    }
+  ],
+  "reviewGate": {
+    "status": "passed",
+    "requiredRounds": [
+      {"id": "titleHook", "status": "passed"},
+      {"id": "writerPanel", "status": "passed"},
+      {"id": "honestyEvidence", "status": "passed"},
+      {"id": "sectionFlow", "status": "passed"},
+      {"id": "visualStoryPlan", "status": "passed"},
+      {"id": "imageFit", "status": "passed"},
+      {"id": "assetSsot", "status": "passed"},
+      {"id": "scenarioWatch", "status": "passed"},
+      {"id": "readerFit", "status": "passed"},
+      {"id": "reevaluation", "status": "passed"}
+    ],
+    "loopEvidence": {
+      "workflow": "blog_plan_loop.workflow.js",
+      "rounds": [
+        {
+          "round": "history-physics-r1",
+          "planner": "Tesla 특허, DOE 전력 기초와 HVDC 자료를 바탕으로 교류 승리와 직류 복귀를 첫 관통선으로 세웠다.",
+          "evaluator": "인물 영웅전과 AC 대 DC 재대결에 가까워 현대 독자가 회사를 읽을 렌즈가 약하다고 평가했다.",
+          "skeptic": "Tesla가 교류·변압기·계통 전체를 발명했다는 오해, DOE 손익분기 거리의 고정 기준화, 현대 DC를 역사적 DC와 동일시하는 위험을 지적했다.",
+          "decision": "revise",
+          "evaluatorScore": 84
+        },
+        {
+          "round": "boundary-network-r2",
+          "planner": "관통선을 교류와 직류의 승패에서 전기가 바뀌는 경계로 바꾸고 회사 목록을 장기 보증 책임으로 다시 배치했다.",
+          "evaluator": "풀시스템 사업자와 부품사의 희소성 차이는 선명하지만 모터·드라이브가 왜 Tesla의 원리를 계속 쓰는지와 케이블 물리를 더 쉽게 이어야 한다고 평가했다.",
+          "skeptic": "ABB의 옛 Power Grids 역사와 현재 사업을 혼동하면 회사 지도가 틀리고, 서로 다른 백로그를 직접 비교하면 과장이라고 지적했다.",
+          "plannerRevision": "VFD의 AC→DC→가변 AC 경로, 해저 케이블 충전 전류, ABB 매각 경계, 범위가 다른 백로그 주석을 추가했다.",
+          "decision": "revise",
+          "evaluatorScore": 92
+        },
+        {
+          "round": "main-thread-verification-r3",
+          "planner": "2025년 DartLab 패널과 2026년 7월 공식 제품·백로그·grid-forming 근거를 메인 스레드에서 다시 확인하고 8절·7 SVG·3 개념 이미지 위치를 맞췄다.",
+          "evaluator": "전압 사다리, 회전자계, 주파수 네트워크, 반복 변환, 해저 HVDC, 회사 보증, 재무, 네 시나리오가 하나의 전기 여정으로 이어진다고 평가했다.",
+          "skeptic": "회사 전체 숫자를 기술 매출로 부르지 않고 프로젝트 수주를 현금으로 단정하지 않으며 각 시나리오에 무효화 조건이 있는지 최종 확인했다.",
+          "plannerRevision": "마지막 질문을 어떤 전류가 이기는가에서 어느 변환 경계를 누가 장기 보증하고 반복 현금으로 바꾸는가로 고쳤다.",
+          "decision": "passed",
+          "evaluatorScore": 97
+        }
+      ]
+    }
+  },
+  "_editorNote": "기술이야기 16편. Tesla 전기는 인물전이 아니라 회전자계가 만든 AC 네트워크와 전력전자가 만든 DC 섬의 공존을 다룬다. 모든 회사 수치는 기술 전용 범위를 분리하고 마지막은 조건별 경계 이동으로 닫는다."
+}
