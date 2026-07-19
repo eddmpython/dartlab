@@ -1,0 +1,42 @@
+name: Blog Media SSOT
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'blog/**'
+      - 'media/catalog.json'
+      - 'landing/static/thumbnails/**'
+      - '.gitignore'
+      - '.pre-commit-config.yaml'
+      - '.github/workflows/blogMediaSsot.yml'
+  pull_request:
+    branches: [master]
+    paths:
+      - 'blog/**'
+      - 'media/catalog.json'
+      - 'landing/static/thumbnails/**'
+      - '.gitignore'
+      - '.pre-commit-config.yaml'
+      - '.github/workflows/blogMediaSsot.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: blog-media-ssot-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  enforce:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Enforce Hugging Face media SSOT
+        run: python -X utf8 blog/_scripts/blogMediaGate.py --ref HEAD

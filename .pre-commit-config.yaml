@@ -27,6 +27,14 @@ repos:
 
   - repo: local
     hooks:
+      - id: blog-media-ssot
+        name: blog-media-ssot (HF 콘텐츠 주소 객체 강제)
+        entry: python -X utf8 blog/_scripts/blogMediaGate.py --staged
+        language: system
+        always_run: true
+        pass_filenames: false
+        stages: [pre-commit]
+
       - id: quality-gate
         name: quality-gate (complexity + dead code)
         entry: python tests/audit/qualityGate.py --changed-only

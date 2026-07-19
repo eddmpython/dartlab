@@ -13,10 +13,13 @@ fi
 # 1) AI 마커 차단
 "$PYTHON" .claude/hooks/check_no_ai_markers.py --check-staged || exit $?
 
-# 2) staged Python 파일 ruff format + check (experiments / notebooks 제외)
+# 2) 블로그 미디어는 HF 콘텐츠 주소 객체만 허용
+"$PYTHON" -X utf8 blog/_scripts/blogMediaGate.py --staged || exit $?
+
+# 3) staged Python 파일 ruff format + check (experiments / notebooks 제외)
 STAGED_PY=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.py$' | grep -vE '^(experiments|notebooks)/' | tr '\n' ' ')
 if [ -n "$STAGED_PY" ]; then
-  # uv run 은 dartlab 패키지 자동 rebuild 를 트리거 — Windows 에서 .venv/Scripts/dartlab.exe
+  # uv run 은 dartlab 패키지 자동 rebuild 를 트리거한다. Windows 에서 .venv/Scripts/dartlab.exe
   # 가 잡혀 있으면 OS error 32 로 hook 실패. .venv 안의 ruff 직접 호출이 가장 안정.
   if [ -x .venv/bin/ruff ]; then
     RUFF=".venv/bin/ruff"
@@ -44,7 +47,7 @@ if [ -n "$STAGED_PY" ]; then
     exit 1
   }
 
-  # 3) staged 파일 camelCase + 9 섹션 docstring lint (diff 기준 — legacy 통과)
+  # 4) staged 파일 camelCase + 9 섹션 docstring lint (diff 기준, legacy 통과)
   "$PYTHON" -X utf8 tests/audit/lint_camelcase_ast.py --strict $STAGED_PY || {
     echo "" >&2
     echo "[lint-camelcase] snake_case 식별자 또는 4 섹션 docstring 누락. 위 위반을 고친 뒤 재커밋." >&2

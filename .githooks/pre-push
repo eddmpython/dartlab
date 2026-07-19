@@ -15,11 +15,14 @@ fi
 # 1) AI 마커 차단
 "$PYTHON" .claude/hooks/check_no_ai_markers.py --check-push || exit $?
 
-# 2) push 범위의 변경 파일에 대응하는 테스트만 선별 실행.
+# 2) push 대상 전체의 블로그 미디어 HF SSOT 검사
+"$PYTHON" -X utf8 blog/_scripts/blogMediaGate.py --ref HEAD || exit $?
+
+# 3) push 범위의 변경 파일에 대응하는 테스트만 선별 실행.
 #    전수 unit 은 10분+ 소요로 비현실적 (CI 가 최종 게이트). 변경 모듈 관련 테스트 통과만
 #    강제해 이번 같은 유형 (predictionSignals 변경 → test_analysis_prediction 실패) 사고 차단.
 REMOTE_BRANCH=$(git rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null)
-# --diff-filter=d 로 삭제된 파일 제외 — stale 매칭이 pytest "file not found" 로
+# --diff-filter=d 로 삭제된 파일을 제외한다. stale 매칭이 pytest "file not found" 로
 # 무관한 push 를 차단하는 회귀 차단.
 if [ -n "$REMOTE_BRANCH" ]; then
   CHANGED_PY=$(git diff --name-only --diff-filter=d "$REMOTE_BRANCH..HEAD" -- 'src/dartlab/*.py' 'tests/test_*.py' 2>/dev/null)
@@ -51,7 +54,7 @@ if [ -n "$CHANGED_PY" ]; then
   TEST_FILES=$(echo "$TEST_FILES" | tr ' ' '\n' | sort -u | tr '\n' ' ')
 
   # 키워드 매칭으로 추가 테스트 파일 발견.
-  # git ls-files 로 *tracked* 테스트만 — untracked WIP 테스트 (다른 작업의 미완성분) 가
+  # git ls-files 로 tracked 테스트만 본다. untracked WIP 테스트 (다른 작업의 미완성분) 가
   # push 막는 false positive 차단. push 자체는 tracked 만 보내므로 untracked 가
   # 통과시킬 의무 X. 회귀 가드는 commit 된 코드만 책임진다.
   for kw in $KEYWORDS; do
@@ -75,11 +78,11 @@ if [ -n "$CHANGED_PY" ]; then
     fi
     $PYTEST_CMD $TEST_FILES -q --no-cov -x --no-header -m "unit or not (integration or heavy or realData or freshInstall)" 2>&1 | tail -40
     RC=${PIPESTATUS:-$?}
-    # pytest exit 5 = "no tests collected" — 대량 rename 등으로 매칭 로직이 수집 실패한 경우.
+    # pytest exit 5 = "no tests collected". 대량 rename 등으로 매칭 로직이 수집 실패한 경우.
     # 실제 회귀 검증은 CI 가 최종 게이트이므로 hook 에서는 false positive 로 간주하고 통과.
     if [ "$RC" != "0" ] && [ "$RC" != "5" ]; then
       echo "" >&2
-      echo "[pre-push] 관련 테스트 실패 — push 차단." >&2
+      echo "[pre-push] 관련 테스트 실패. push 차단." >&2
       echo "  수정 후 재push. 일시 우회: git push --no-verify" >&2
       exit 1
     fi

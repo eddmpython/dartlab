@@ -29,6 +29,13 @@
 - 본문과 frontmatter는 중앙 `media/catalog.json`이 가리키는 HF 객체 URL만 참조한다. HF 최상위는 `.gitattributes`, `objects`, `manifests`만 허용한다.
 - 예외는 팟캐스트다. 에피소드 폴더의 무시된 `cover.jpg`와 `static-video.jpg`는 재발행용 로컬 작업 사본으로 남겨도 된다. 공개본은 R2이며 Git 추적 대상이 아니다. 에피소드 `assets/`와 오디오 파일은 완료 상태에 남기지 않는다.
 
+### 미디어 SSOT 기계 강제
+
+- `blogMediaGate.py --staged`는 커밋될 Git index 자체를 읽는다. 포스트 폴더 위치와 관계없이 추적된 SVG와 이미지, 로컬 본문 참조, 카탈로그 밖 HF URL이 하나라도 있으면 커밋을 실패시킨다.
+- `blogMediaGate.py --ref HEAD`는 push 훅과 원격 `Blog Media SSOT` CI에서 전체 블로그를 다시 검사한다. `--no-verify`로 로컬 훅을 건너뛰어도 원격 검사가 같은 위반을 실패 처리한다.
+- `.gitignore`는 블로그와 합성 썸네일의 이미지 확장자를 위치와 관계없이 차단한다. 강제 추가한 파일도 게이트가 Git index에서 다시 잡는다.
+- 본문에서 허용되는 로컬 이미지 예외는 공용 UI 마스코트 6개뿐이다. 새 예외를 추가해 포스트 자산을 우회하지 않는다.
+
 ## 2. 자산·소스·이미지 정책
 
 - 이미지 수급은 **자율**이다. 파이프라인이 실제 제품·인물·현장처럼 사실성이 중요한 피사체는 공식 출처 또는 라이선스가 확인된 실사를, 개념·원리·추상 장면은 `image_gen`을 선택한다. 적합본이 없으면 운영자 질문으로 멈추지 않고 다른 적합 경로로 전환한다. 핀터레스트·구글 이미지 무단 사용은 금지다. FLUX는 운영자의 명시 지시가 있을 때만 쓴다.
@@ -43,6 +50,7 @@
 3. 모든 원격 객체의 실재를 확인한 뒤에만 중앙 catalog와 본문·frontmatter를 갱신한다.
 4. 갱신이 끝나면 로컬 미디어와 빈 staging 폴더를 삭제한다.
 5. `publishGate.py --post <글폴더>`로 HF 실재, 해시 경로, URL, CREDITS, Git 바이너리 0건을 한 번에 검사한다.
+6. 커밋 시 `blogMediaGate.py --staged`, push와 CI에서 `blogMediaGate.py --ref HEAD`가 동일한 SSOT를 다시 검사한다.
 
 원격 검증 전에 catalog나 공개 참조를 먼저 바꾸지 않는다. 어느 단계에서 실패하든 미완성 상태를 발행 완료로 기록하지 않는다.
 

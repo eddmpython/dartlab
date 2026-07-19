@@ -243,6 +243,7 @@ id · claim · apiRef{apiRef,args} · value · period{label,basis,granularity} �
 
 ## 4. 발행
 - 게이트는 바닥(위생)이다. 통과가 목적이 아니라 거짓말·줄깨짐·약어·맨숫자·범용표지·인사이트 부재를 막을 뿐이다. `build_carousel_contracts.py --dry-run`이 레이아웃·기획/토론·큰문장 흐름(`cards_plan.py`의 bigSentenceContract: 연결어 밀도·판단형 종결)·약어·`insightContract`(v4+: 통념·반전·렌즈·근거 + 반전≠제목 재진술)를 검사한다. reviewGate.status=passed + 라운드 passed라야 발행한다.
+- 블로그 미디어는 `publishBlogAssets.py`로 HF 콘텐츠 주소 객체에 발행한 뒤에만 커밋한다. `blogMediaGate.py --staged`가 Git index의 추적 이미지·SVG, 로컬 렌더링 참조, 카탈로그 밖 HF 객체를 차단하고, push 훅과 원격 CI가 `--ref HEAD`로 전체 글을 재검사한다. 로컬 훅을 건너뛰어도 원격 검사는 실패해야 한다.
 - 공개 발행(hfMedia)·landing push는 운영자 시각 검수·승인 후. dev를 띄워 실물 렌더를 눈으로 본 뒤에 올린다.
 
 ## 무엇을 거르나 - 각 단계의 kill

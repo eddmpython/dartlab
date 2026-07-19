@@ -22,13 +22,13 @@ from blogMedia import (
     mediaManifestPath,
     mediaUrl,
 )
+from blogMediaGate import CANONICAL_HF_URL_RE, SHARED_UI_MEDIA_REFS, renderedMediaRefs
 from companyReportPolicy import validateCompanyReportDebtRatioBan
 from publishBlogAssets import verifyRemoteAssets
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SEO_SCORE_MIN = 95
 EMPTY_TREE_REF = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
-HF_OBJECT_URL_PREFIX = "https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/"
 MEDIA_FRONTMATTER_RE = re.compile(r"^(?:ogImage|cardPreview|thumbnail|thumbnailBg):\s*.*(?:\r?\n|$)", re.M)
 MEDIA_LINK_RE = re.compile(
     rf"(!\[[^\]]*\]\()[^)]*\.(?:{IMAGE_EXTENSION_RE})(?:\s+[\"'][^\"']*[\"'])?(\))",
@@ -142,13 +142,11 @@ def mediaReferenceErrors(postDir: Path) -> list[str]:
     for record in records:
         if isinstance(record, dict) and record.get("path"):
             allowedUrls.add(mediaUrl(str(record["path"])))
-    localRefs = re.findall(rf"(?:\./)?assets/[^)\"' >]+\.(?:{IMAGE_EXTENSION_RE})", raw, re.I)
-    if localRefs:
-        errors.append(f"로컬 콘텐츠 미디어 참조 금지: {localRefs[0]}")
-    usedUrls = set(re.findall(rf"{re.escape(HF_OBJECT_URL_PREFIX)}[0-9a-f/]+\.(?:{IMAGE_EXTENSION_RE})", raw, re.I))
-    unexpected = sorted(usedUrls - allowedUrls)
-    if unexpected:
-        errors.append(f"media/catalog.json 밖 HF 객체 참조: {unexpected[0]}")
+    for ref in sorted(renderedMediaRefs(raw) - SHARED_UI_MEDIA_REFS):
+        if not CANONICAL_HF_URL_RE.fullmatch(ref):
+            errors.append(f"HF 콘텐츠 주소 객체 외 렌더링 미디어 금지: {ref}")
+        elif ref not in allowedUrls:
+            errors.append(f"media/catalog.json 밖 HF 객체 참조: {ref}")
     return errors
 
 

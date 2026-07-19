@@ -91,8 +91,21 @@ landing/static/blog/assets/
 /blog/**/*.jpg
 /blog/**/*.jpeg
 /blog/**/*.png
-/blog/**/assets/*.svg
+/blog/**/*.gif
+/blog/**/*.avif
+/blog/**/*.bmp
+/blog/**/*.tif
+/blog/**/*.tiff
+/blog/**/*.ico
+/blog/**/*.heic
+/blog/**/*.svg
 /landing/static/thumbnails/*.webp
+/landing/static/thumbnails/*.jpg
+/landing/static/thumbnails/*.jpeg
+/landing/static/thumbnails/*.png
+/landing/static/thumbnails/*.gif
+/landing/static/thumbnails/*.avif
+/landing/static/thumbnails/*.svg
 # Industry map generated artifacts — HF SSoT. 빌드/로컬 dev 시 seedFromHf.py --category industryMap 로 내려받음.
 landing/static/map/
 
