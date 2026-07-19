@@ -1,1 +1,1 @@
-"""Universe U0 coverage와 무변경 검증 모음."""
+"""Universe U0부터 U3까지 coverage, 무결성, SLO gate 모음."""

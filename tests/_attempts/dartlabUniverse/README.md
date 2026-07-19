@@ -1,6 +1,6 @@
-# DartLab Universe U0~U2
+# DartLab Universe U0~U3
 
-상태: U0 full census, U1 identity와 provenance, U2 capability execution kernel gate 구현. 3D, UI, route, 공개 버튼, RAG, 영속 index는 아직 없다.
+상태: U0 full census, U1 identity와 provenance, U2 capability execution kernel, U3 전수 catalog와 evidence graph 구현. U3 live gate는 upstream parquet 손상 1건만 차단 중이다. 3D, UI, route, 공개 버튼, RAG, 영속 index는 아직 없다.
 
 이 디렉터리는 이전 Universe 실험을 전부 제거한 뒤 `mainPlan/dartlab-universe/`의 제품 계약에 맞춰 처음부터 다시 만든 데이터 엔진 경계다. 기존 `src/dartlab`, `ui`, `landing`, `blog`, `media`는 수정하지 않고 authority로 읽기만 한다.
 
@@ -51,6 +51,22 @@
 - receiptVersion, kind, ruleId, ruleVersion, ruleHash, issuerExecutableHash exact schema descriptor
 - allowlisted decoder digest, subject binding, parent role, seed, snapshot, assumption, asOf, vintage 검증
 - 해석 불가 artifact를 `VERIFIED_ARTIFACT_UNINTERPRETED`로 닫고 execution과 graph 승격 차단
+
+## U3 구현 범위
+
+- HF file, blog, companion, media catalog, DART와 EDGAR identity, engine capability를 하나의 catalog로 결합
+- 원본 payload 복제 없이 revision, locator, selector, content digest만 보존
+- Parquet, Arrow IPC, JSON, JSONL, CSV와 기타 분류 형식의 bounded range descriptor
+- schema fingerprint, row count 또는 명시적 unavailable reason, response digest의 terminal C2 계약
+- SQLite lease, heartbeat, exact receipt, content-addressed receipt, 실패 attempt ledger를 가진 resume checkpoint
+- 인증, transport와 parser 오류는 재시도하고 성공 receipt만 content cache로 승격
+- catalog root와 descriptor set을 결박한 immutable snapshot, tombstone delta와 replay 검증
+- 대형 snapshot을 중간 JSON tree 없이 계산하는 byte 동일 canonical streaming hash
+- Arrow batch를 ephemeral DuckDB에 투영하고 visibility 교집합으로 exact resource와 object evidence pack 조회
+- object, evidence, identity, alias, capability를 연결하는 typed relation taxonomy와 bounded graph traversal
+- 알려지지 않은 endpoint, empty visibility, 미래 정보, 근거 누락, 가시성 누출을 fail-closed 차단
+- 고정 revision 무결성과 지속 수집원의 HEAD freshness를 분리한 snapshot 계약
+- cold projection, lookup, object detail, graph traversal, snapshot replay의 p50, p95, p99 SLO receipt
 
 ## 정본 명령
 
@@ -131,6 +147,44 @@ U1은 아직 verified statement를 admission하지 않으므로 live statement c
 
 비네트워크 Universe 회귀 81개와 dirty source를 다시 capture한 live G1이 함께 통과했다. U2 mutation에는 fake axis, registry drift, schema widening, source drift, invalid args, snapshot mismatch, ambient secret 제거, timeout, cancel, retry, concurrent idempotency, partial Arrow와 JSON output, 보호 경로 write, subprocess, output schema mismatch, CAS orphan이 포함된다. Simulator mutation에는 unknown issuer, broken parent chain, missing artifact, unknown schema, stale decoder, artifact schema version, subject mismatch, parent role mismatch, missing seed, snapshot mismatch, vintage와 step contract mismatch, `OBSERVED` leakage가 포함된다.
 
+## 2026-07-19 U3 live 인수 기록
+
+아래 값은 `eddmpython/dartlab-data@a5139face25d8ef4abf60112c601c922d81bec14`를 포함한 네 저장소의 고정 revision 관측값이다. 상류 HEAD가 전진해도 이 snapshot은 같은 commit SHA로 재생되며, 다음 수집이 delta를 만든다.
+
+| 항목 | 관측값 |
+|---|---:|
+| HF candidate와 terminal descriptor | 78,033 |
+| HF discovered byte | 310,958,427,561 |
+| eligible descriptor | 74,259 |
+| described eligible | 74,258 |
+| explicit unsupported | 3,774 |
+| parse error | 1 |
+| full catalog resource | 211,770 |
+| catalog object | 211,770 |
+| catalog evidence | 211,770 |
+| identity entity | 126,531 |
+| typed relation | 291,059 |
+| catalog, object evidence, relation coverage | 100% |
+| schema와 row contract coverage | 99.998653% |
+| source payload copy | 0 |
+| cold catalog projection | 14.433초 |
+| exact lookup p99 | 6.385ms |
+| object evidence detail p99 | 15.329ms |
+| 3-hop graph traversal p99 | 0.020ms |
+| snapshot replay | 3.375초 |
+| snapshot replay SLO | PASS |
+| pinned revision validation | PASS |
+| U3 integrated gate | BLOCKED 1 |
+
+차단된 정본은 `eddmpython/dartlab-data/dart/docs/024950.parquet` 4,777,778 bytes다. 파일은 시작 magic `PAR1`은 있지만 terminal footer magic이 없으며 `INVALID_PARQUET_FOOTER`로 종결된다. 여러 data HEAD에서 같은 source LFS SHA-256 `ef01e197ac634261e711ed8f8a62feb5b5d8556e605937534471f513ce3e77f6`와 같은 실패 response digest `813a24b5746d11eb475d51c27a02a19f0d8bdd502ff62ccacad1249c1eabb0f6`가 재현됐다. 동등성이 증명되지 않은 sibling 파일로 대체하거나 coverage를 100%로 위장하지 않는다.
+
+정본 명령:
+
+```powershell
+uv run python -X utf8 -m tests._attempts.dartlabUniverse.u3C2 --strict
+uv run python -X utf8 -m tests._attempts.dartlabUniverse.u3Gate --strict
+```
+
 ## 다음 gate
 
-다음 단계는 U3 전체 catalog와 evidence graph다. 기존 runtime 승격, 독립 3D harness, UI 연결, 공개 route는 각각 후속 gate와 운영자 확인 전까지 금지한다.
+우선 upstream parquet 1건을 권위 있게 복구한 뒤 U3를 완전 통과시킨다. 다음은 U4 UI 없는 질문과 `RetrievalEvidencePack` RAG 엔진이다. 그 다음 U5 3D 투영 계약과 U6 로컬 전용 천체 harness를 만든다. 기존 runtime 승격, UI 연결, 공개 route와 공개 버튼은 각각 후속 gate와 운영자 확인 전까지 금지한다.

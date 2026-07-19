@@ -69,8 +69,16 @@ def _summarize(sourceRef: str, records: Iterable[IdentityEvidence]) -> tuple[Ide
 
 def censusIdentitySources() -> IdentityCensus:
     """Local DART와 EDGAR identity authority를 전수 집계하고 collision을 기록한다."""
-    dart, dartIds = _summarize("DART_CORP_CODE_PARQUET", enumerateDartIdentities())
-    edgar, edgarIds = _summarize("SEC_TICKERS_PARQUET", enumerateEdgarIdentities())
+    return censusIdentityRecords(tuple(enumerateDartIdentities()), tuple(enumerateEdgarIdentities()))
+
+
+def censusIdentityRecords(
+    dartRecords: tuple[IdentityEvidence, ...],
+    edgarRecords: tuple[IdentityEvidence, ...],
+) -> IdentityCensus:
+    """이미 열거한 identity record를 재독 없이 G1 summary로 집계한다."""
+    dart, dartIds = _summarize("DART_CORP_CODE_PARQUET", dartRecords)
+    edgar, edgarIds = _summarize("SEC_TICKERS_PARQUET", edgarRecords)
     sources = (dart, edgar)
     base = {
         "sources": sources,

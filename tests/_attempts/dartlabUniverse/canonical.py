@@ -211,6 +211,15 @@ class CompanionCensus:
 
 
 @dataclass(frozen=True, slots=True)
+class MediaCatalogRecord:
+    recordKind: str
+    recordKey: str
+    targetRef: str | None
+    metadataDigest: str
+    relatedRefs: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
 class MediaCensus:
     objectCount: int
     aliasCount: int
@@ -223,6 +232,7 @@ class MediaCensus:
     unreferencedObjectDigests: tuple[str, ...]
     errors: tuple[str, ...]
     digest: str
+    records: tuple[MediaCatalogRecord, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)

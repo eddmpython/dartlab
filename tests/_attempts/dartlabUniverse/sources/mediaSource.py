@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import unquote, urlparse
 
-from ..canonical import DiscoveredFile, MediaCensus, canonicalDigest
+from ..canonical import DiscoveredFile, MediaCatalogRecord, MediaCensus, canonicalDigest
 
 _SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 _OBJECT_PREFIX = "objects/sha256/"
@@ -149,6 +149,35 @@ def reconcileMedia(
 
     unreferenced = tuple(sorted(set(objectPathByDigest) - referencedDigests))
     orderedErrors = tuple(sorted(set(errors)))
+    records = []
+    for objectDigest, metadata in sorted(objects.items()):
+        records.append(
+            MediaCatalogRecord(
+                recordKind="OBJECT",
+                recordKey=str(objectDigest),
+                targetRef=str(metadata.get("path") or "") if isinstance(metadata, dict) else None,
+                metadataDigest=canonicalDigest(metadata),
+            )
+        )
+    for alias, target in sorted(aliases.items()):
+        records.append(MediaCatalogRecord("ALIAS", str(alias), str(target), canonicalDigest(target)))
+    for kind, mapping in (("POST", posts), ("COLLECTION", collections), ("MANIFEST", manifests)):
+        for key, value in sorted(mapping.items()):
+            relatedRefs = []
+            for candidate in _allStrings(value):
+                normalized = str(candidate)
+                if normalized in aliases or normalized in objects or _objectPathFromRef(normalized):
+                    relatedRefs.append(normalized)
+            records.append(
+                MediaCatalogRecord(
+                    kind,
+                    str(key),
+                    None,
+                    canonicalDigest(value),
+                    tuple(sorted(set(relatedRefs))),
+                )
+            )
+    orderedRecords = tuple(sorted(records, key=lambda item: (item.recordKind, item.recordKey)))
     digest = canonicalDigest(
         {
             "catalogVersion": data.get("version"),
@@ -177,4 +206,5 @@ def reconcileMedia(
         unreferencedObjectDigests=unreferenced,
         errors=orderedErrors,
         digest=digest,
+        records=orderedRecords,
     )
