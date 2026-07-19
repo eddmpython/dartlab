@@ -43,6 +43,7 @@ def testSameCatalogProducesSameRootIndependentOfCreatedAt():
             "universeSnapshotId": first.universeSnapshotId,
             "catalogDigest": first.catalogDigest,
             "descriptorSetDigest": first.descriptorSetDigest,
+            "recoverySetDigest": first.recoverySetDigest,
             "capabilityRegistryVersion": first.capabilityRegistryVersion,
             "identityLedgerVersion": first.identityLedgerVersion,
             "relationTaxonomyVersion": first.relationTaxonomyVersion,

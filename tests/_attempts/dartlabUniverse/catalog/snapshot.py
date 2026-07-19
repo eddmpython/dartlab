@@ -14,6 +14,7 @@ from ..contracts import Visibility
 from ..temporal import parseInstant
 from .descriptorCrawler import ResourceDescriptor
 from .models import CatalogState
+from .recovery import ResourceRecovery
 
 
 @dataclass(frozen=True, slots=True)
@@ -39,6 +40,7 @@ class CatalogSnapshot:
     universeSnapshotId: str
     catalogDigest: str
     descriptorSetDigest: str
+    recoverySetDigest: str
     capabilityRegistryVersion: str
     identityLedgerVersion: str
     relationTaxonomyVersion: str
@@ -54,6 +56,7 @@ def _rootInputs(snapshot: CatalogSnapshot) -> object:
         "universeSnapshotId": snapshot.universeSnapshotId,
         "catalogDigest": snapshot.catalogDigest,
         "descriptorSetDigest": snapshot.descriptorSetDigest,
+        "recoverySetDigest": snapshot.recoverySetDigest,
         "capabilityRegistryVersion": snapshot.capabilityRegistryVersion,
         "identityLedgerVersion": snapshot.identityLedgerVersion,
         "relationTaxonomyVersion": snapshot.relationTaxonomyVersion,
@@ -153,6 +156,8 @@ def catalogSnapshotRootDigest(snapshot: CatalogSnapshot) -> str:
     _appendJsonString(prefix, snapshot.identityLedgerVersion)
     prefix.extend(b',"previousSnapshotId":')
     _appendOptionalJsonString(prefix, snapshot.previousSnapshotId)
+    prefix.extend(b',"recoverySetDigest":')
+    _appendJsonString(prefix, snapshot.recoverySetDigest)
     prefix.extend(b',"relationTaxonomyVersion":')
     _appendJsonString(prefix, snapshot.relationTaxonomyVersion)
     prefix.extend(b',"resources":[')
@@ -175,13 +180,14 @@ def buildCatalogSnapshot(
     *,
     universeSnapshotId: str,
     descriptors: tuple[ResourceDescriptor, ...] = (),
+    recoveries: tuple[ResourceRecovery, ...] = (),
     capabilityRegistryVersion: str,
     identityLedgerVersion: str,
     relationTaxonomyVersion: str,
     previousSnapshotId: str | None = None,
     createdAt: str | None = None,
 ) -> CatalogSnapshot:
-    """Catalog과 C2 descriptor ref만 가진 immutable snapshot을 만든다."""
+    """Catalog, descriptor, recovery receipt set을 가진 immutable snapshot을 만든다."""
     descriptorByResource = {item.resourceVersionId: item for item in descriptors}
     if len(descriptorByResource) != len(descriptors):
         raise ValueError("resource version당 descriptor는 하나여야 함")
@@ -210,10 +216,11 @@ def buildCatalogSnapshot(
     )
     base = CatalogSnapshot(
         snapshotId="",
-        schemaVersion="du-catalog-snapshot-v2",
+        schemaVersion="du-catalog-snapshot-v3",
         universeSnapshotId=universeSnapshotId,
         catalogDigest=catalog.digest,
         descriptorSetDigest=canonicalDigest(tuple(sorted(item.digest for item in descriptors))),
+        recoverySetDigest=canonicalDigest(tuple(sorted(item.digest for item in recoveries))),
         capabilityRegistryVersion=capabilityRegistryVersion,
         identityLedgerVersion=identityLedgerVersion,
         relationTaxonomyVersion=relationTaxonomyVersion,
@@ -229,19 +236,25 @@ def buildCatalogSnapshot(
 def validateCatalogSnapshot(snapshot: CatalogSnapshot) -> tuple[str, ...]:
     """Snapshot root와 resource logical uniqueness를 fail-closed 검증한다."""
     issues = []
-    if snapshot.schemaVersion != "du-catalog-snapshot-v2":
+    if snapshot.schemaVersion != "du-catalog-snapshot-v3":
         issues.append("SNAPSHOT_SCHEMA_VERSION_MISMATCH")
     if (
         not snapshot.snapshotId
         or not snapshot.catalogDigest
         or not snapshot.descriptorSetDigest
+        or not snapshot.recoverySetDigest
         or not snapshot.rootInputsDigest
         or not snapshot.createdAt
     ):
         issues.append("SNAPSHOT_REQUIRED_FIELD_MISSING")
     if any(
         not re.fullmatch(r"[0-9a-f]{64}", value)
-        for value in (snapshot.catalogDigest, snapshot.descriptorSetDigest, snapshot.rootInputsDigest)
+        for value in (
+            snapshot.catalogDigest,
+            snapshot.descriptorSetDigest,
+            snapshot.recoverySetDigest,
+            snapshot.rootInputsDigest,
+        )
     ):
         issues.append("SNAPSHOT_DIGEST_FORMAT_INVALID")
     digest = catalogSnapshotRootDigest(snapshot)

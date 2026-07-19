@@ -1,6 +1,6 @@
 # DartLab Universe U0~U3
 
-상태: U0 full census, U1 identity와 provenance, U2 capability execution kernel, U3 전수 catalog와 evidence graph 구현. U3 live gate는 upstream parquet 손상 1건만 차단 중이다. 3D, UI, route, 공개 버튼, RAG, 영속 index는 아직 없다.
+상태: U0 full census, U1 identity와 provenance, U2 capability execution kernel, U3 전수 catalog와 evidence graph 구현 및 live gate 통과. 손상된 upstream parquet 1건은 원본 상태를 숨기거나 외부 저장소를 수정하지 않고, 고정 raw authority와 historical transform을 사용한 Universe 전용 recovery receipt와 CAS로 복구했다. 3D, UI, route, 공개 버튼, RAG, 영속 query index는 아직 없다.
 
 이 디렉터리는 이전 Universe 실험을 전부 제거한 뒤 `mainPlan/dartlab-universe/`의 제품 계약에 맞춰 처음부터 다시 만든 데이터 엔진 경계다. 기존 `src/dartlab`, `ui`, `landing`, `blog`, `media`는 수정하지 않고 authority로 읽기만 한다.
 
@@ -66,6 +66,10 @@
 - object, evidence, identity, alias, capability를 연결하는 typed relation taxonomy와 bounded graph traversal
 - 알려지지 않은 endpoint, empty visibility, 미래 정보, 근거 누락, 가시성 누출을 fail-closed 차단
 - 고정 revision 무결성과 지속 수집원의 HEAD freshness를 분리한 snapshot 계약
+- 원본 `PARSE_ERROR`를 그대로 보존하면서 raw source object, historical transform source, derived CAS artifact를 결박하는 recovery receipt
+- Git object OID와 실제 LFS payload SHA-256을 각각 검증하고, 전체 Parquet batch read와 schema, row, footer를 확인하는 fail-closed recovery validator
+- repository HEAD가 바뀌어도 path, OID, byte size가 모두 같은 object만 현재 resource version에 재결박하는 SQLite recovery store
+- descriptor set과 recovery set을 함께 결박한 catalog snapshot v3
 - cold projection, lookup, object detail, graph traversal, snapshot replay의 p50, p95, p99 SLO receipt
 
 ## 정본 명령
@@ -153,38 +157,48 @@ U1은 아직 verified statement를 admission하지 않으므로 live statement c
 
 | 항목 | 관측값 |
 |---|---:|
-| HF candidate와 terminal descriptor | 78,033 |
-| HF discovered byte | 310,958,427,561 |
-| eligible descriptor | 74,259 |
-| described eligible | 74,258 |
+| HF candidate와 terminal descriptor | 78,034 |
+| HF discovered byte | 310,962,703,798 |
+| eligible descriptor | 74,260 |
+| directly described eligible | 74,259 |
+| recovered eligible | 1 |
 | explicit unsupported | 3,774 |
 | parse error | 1 |
-| full catalog resource | 211,770 |
-| catalog object | 211,770 |
-| catalog evidence | 211,770 |
+| full catalog resource | 211,771 |
+| catalog object | 211,771 |
+| catalog evidence | 211,771 |
 | identity entity | 126,531 |
-| typed relation | 291,059 |
+| typed relation | 291,061 |
 | catalog, object evidence, relation coverage | 100% |
-| schema와 row contract coverage | 99.998653% |
+| schema와 row contract coverage | 100% |
 | source payload copy | 0 |
-| cold catalog projection | 14.433초 |
-| exact lookup p99 | 6.385ms |
-| object evidence detail p99 | 15.329ms |
-| 3-hop graph traversal p99 | 0.020ms |
-| snapshot replay | 3.375초 |
+| recovery receipt | 1 |
+| cold catalog projection | 17.013초 |
+| exact lookup p99 | 7.191ms |
+| object evidence detail p99 | 19.857ms |
+| 3-hop graph traversal p99 | 0.027ms |
+| snapshot replay | 3.946초 |
 | snapshot replay SLO | PASS |
 | pinned revision validation | PASS |
-| U3 integrated gate | BLOCKED 1 |
+| source freshness | CURRENT |
+| U3 integrated gate | PASS |
 
-차단된 정본은 `eddmpython/dartlab-data/dart/docs/024950.parquet` 4,777,778 bytes다. 파일은 시작 magic `PAR1`은 있지만 terminal footer magic이 없으며 `INVALID_PARQUET_FOOTER`로 종결된다. 여러 data HEAD에서 같은 source LFS SHA-256 `ef01e197ac634261e711ed8f8a62feb5b5d8556e605937534471f513ce3e77f6`와 같은 실패 response digest `813a24b5746d11eb475d51c27a02a19f0d8bdd502ff62ccacad1249c1eabb0f6`가 재현됐다. 동등성이 증명되지 않은 sibling 파일로 대체하거나 coverage를 100%로 위장하지 않는다.
+손상된 정본은 `eddmpython/dartlab-data/dart/docs/024950.parquet` 4,777,778 bytes다. 파일은 시작 magic `PAR1`은 있지만 terminal footer magic이 없으며 원본 descriptor는 계속 `PARSE_ERROR/INVALID_PARQUET_FOOTER`로 남는다. target Git object OID는 `bf34d862b95469a76ff807717885dd08abdafd76`, LFS payload SHA-256은 `ef01e197ac634261e711ed8f8a62feb5b5d8556e605937534471f513ce3e77f6`다.
+
+복구 입력은 `eddmpython/dartlab-dart-original@46c49eb22615b22b2947a5afee01257a554411a5`의 `docs/024950.tar`다. Git object OID `b154fed12616ce56cd423e8593e6006a5b7489b4`, payload SHA-256 `16d26ad0c4160a30a0afa203c40a29b8e7f0c59d4db3625bf25daba5a8c81aa2`를 모두 검증한다. 변환은 git commit `3cf27ba98a20511e2c8803c0061e6509d06a9f89`의 `zipCollector.py`, `zipDocsXml.py`, `xmlAdapter.py` byte와 현재 recovery recipe byte를 digest로 결박한다.
+
+실제 recovery artifact는 44개 receipt, 751행, 44 row group, nonempty `section_content_mixed` 585행이다. CAS ref는 `cas:sha256:d13124eca1481c52d8a09aa485eafa1cb38b1d6a893162903873fcacddf71734`, transform source digest는 `8d63d89b81180b4dbaa36c03cc2c4c09642336e44fb0482bcc5d9998f79fb6c3`, recovery ID는 `du:v1:recovery:89970828c4101172ed862a723a80cbc3e17eaf6396bcf1ac86a696f30fe8fd9a`다. artifact나 receipt는 repo에 bake하지 않고 기본 local control-plane `%LOCALAPPDATA%/DartLab/universe/control/recovery-v1`에 둔다. sibling arrow나 과거 parquet로 대체하지 않았으며 외부 Hugging Face 파일도 수정하지 않았다.
+
+최종 catalog snapshot ID는 `du:v1:catalog-snapshot:6536c8cd72062c2cbc5f898ce733a3fb118d441cb8beb7b6ab4ecc836aa9a0cc`, recovery set digest는 `6427735a73053110b7f1bb4fd77d4e29a653ac650a6901c3fbb769073f1811da`다.
 
 정본 명령:
 
 ```powershell
+uv run python -X utf8 -m tests._attempts.dartlabUniverse.u3Recovery
 uv run python -X utf8 -m tests._attempts.dartlabUniverse.u3C2 --strict
 uv run python -X utf8 -m tests._attempts.dartlabUniverse.u3Gate --strict
 ```
 
 ## 다음 gate
 
-우선 upstream parquet 1건을 권위 있게 복구한 뒤 U3를 완전 통과시킨다. 다음은 U4 UI 없는 질문과 `RetrievalEvidencePack` RAG 엔진이다. 그 다음 U5 3D 투영 계약과 U6 로컬 전용 천체 harness를 만든다. 기존 runtime 승격, UI 연결, 공개 route와 공개 버튼은 각각 후속 gate와 운영자 확인 전까지 금지한다.
+다음은 U4 UI 없는 질문과 `RetrievalEvidencePack` RAG 엔진이다. 그 다음 U5 3D 투영 계약과 U6 로컬 전용 천체 harness를 만든다. 기존 runtime 승격, UI 연결, 공개 route와 공개 버튼은 각각 후속 gate와 운영자 확인 전까지 금지한다.

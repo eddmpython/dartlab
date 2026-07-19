@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from dataclasses import replace
 
+import pyarrow as pa
+import pyarrow.parquet as pq
 import pytest
 
 from tests._attempts.dartlabUniverse.canonical import canonicalDigest
@@ -13,6 +15,7 @@ from tests._attempts.dartlabUniverse.catalog.descriptorCrawler import (
     ResourceDescriptor,
     descriptorFormatKind,
 )
+from tests._attempts.dartlabUniverse.catalog.recovery import buildResourceRecovery
 from tests._attempts.dartlabUniverse.catalog.snapshot import buildCatalogSnapshot
 from tests._attempts.dartlabUniverse.contracts import (
     EpistemicClass,
@@ -21,6 +24,7 @@ from tests._attempts.dartlabUniverse.contracts import (
     VerificationState,
     Visibility,
 )
+from tests._attempts.dartlabUniverse.controlPlane.cas import ContentAddressedStore
 from tests._attempts.dartlabUniverse.execution.registry import buildCapabilityRegistry
 from tests._attempts.dartlabUniverse.graph.relations import (
     buildRelation,
@@ -126,6 +130,85 @@ def testU3PassesCompleteCatalogDescriptorAndEvidenceGraph(gateFixture):
     assert not failed.passed
     assert failed.failureCodes == ("PINNED_REVISION_VALIDATION_FAILED",)
     assert failed.digest == canonicalDigest(replace(failed, digest=""))
+
+
+def testU3AcceptsOnlyCasVerifiedRecoveryAndBindsItIntoSnapshot(tmp_path, gateFixture):
+    catalog, descriptors, _snapshot, relations = gateFixture
+    index = next(index for index, item in enumerate(descriptors) if item.formatKind != "UNSUPPORTED")
+    target = next(item for item in catalog.resources if item.resourceVersionId == descriptors[index].resourceVersionId)
+    source = next(
+        item
+        for item in catalog.resources
+        if item.resourceKind == "HF_FILE"
+        and item.resourceVersionId != target.resourceVersionId
+        and dict(item.locator).get("oid")
+        and item.byteSize
+    )
+    failedBase = replace(
+        descriptors[index],
+        status="PARSE_ERROR",
+        schemaFingerprint=None,
+        rowCount=None,
+        rowCountUnavailableReason="INVALID_PARQUET_FOOTER",
+        errorCode="INVALID_PARQUET_FOOTER",
+        digest="",
+    )
+    failed = replace(failedBase, digest=canonicalDigest(failedBase))
+    recoveredDescriptors = tuple(failed if offset == index else item for offset, item in enumerate(descriptors))
+    sink = pa.BufferOutputStream()
+    pq.write_table(pa.table({"value": [1]}), sink, version="1.0")
+    payload = sink.getvalue().to_pybytes()
+    artifact = pq.ParquetFile(pa.BufferReader(payload))
+    cas = ContentAddressedStore(tmp_path / "cas")
+    objectRef = cas.putBytes(payload)
+    recovery = buildResourceRecovery(
+        target,
+        failed,
+        targetPayloadDigest="d" * 64,
+        inputResources=(("RAW_SOURCE", source, "e" * 64),),
+        transformRef="git:fixture@" + "b" * 40,
+        transformSourceDigest="c" * 64,
+        artifactObjectRef=objectRef,
+        artifactByteSize=len(payload),
+        artifactMediaType="application/vnd.apache.parquet",
+        artifactSchemaFingerprint=canonicalDigest(str(artifact.schema_arrow)),
+        artifactRowCount=artifact.metadata.num_rows,
+        artifactRowGroupCount=artifact.metadata.num_row_groups,
+        artifactMetadata=(("fixture", "true"),),
+        createdAt="2026-07-19T00:00:00+00:00",
+    )
+    snapshot = buildCatalogSnapshot(
+        catalog,
+        universeSnapshotId="du:v1:snapshot:" + "a" * 64,
+        descriptors=recoveredDescriptors,
+        recoveries=(recovery,),
+        capabilityRegistryVersion=gateFixture[2].capabilityRegistryVersion,
+        identityLedgerVersion=gateFixture[2].identityLedgerVersion,
+        relationTaxonomyVersion=gateFixture[2].relationTaxonomyVersion,
+    )
+
+    report = validateU3(
+        catalog,
+        recoveredDescriptors,
+        snapshot,
+        statements=(),
+        relations=relations,
+        upstreamG1Passed=True,
+        upstreamG2Passed=True,
+        upstreamUniverseSnapshotId=snapshot.universeSnapshotId,
+        upstreamCensusSnapshotDigest=catalog.censusSnapshotDigest,
+        upstreamCapabilityRegistryVersion=snapshot.capabilityRegistryVersion,
+        upstreamIdentityLedgerVersion=snapshot.identityLedgerVersion,
+        upstreamRelationTaxonomyVersion=snapshot.relationTaxonomyVersion,
+        recoveries=(recovery,),
+        recoveryCas=cas,
+    )
+
+    assert report.passed, report.failureCodes
+    assert report.recoveredEligibleCount == report.recoveryReceiptCount == 1
+    assert report.recoverySetDigest == snapshot.recoverySetDigest
+    assert report.describedEligibleCount == report.descriptorEligibleCount
+    assert snapshot.recoverySetDigest == canonicalDigest((recovery.digest,))
 
 
 def testU3RejectsUnknownStatementAndRelationEndpoints(gateFixture):

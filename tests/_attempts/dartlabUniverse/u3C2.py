@@ -23,6 +23,7 @@ from .catalog.descriptorCrawler import (
     ResourceDescriptor,
     crawlCatalogDescriptors,
 )
+from .catalog.recoveryStore import ResourceRecoveryStore, defaultRecoveryRoot
 from .census import defaultRepoRoot, runFullCensus
 from .validation.c2 import validateC2
 from .validation.runtimeEnvironment import memoryEnvironment, runtimeEnvironment
@@ -122,6 +123,7 @@ def defaultCheckpointPath() -> Path:
 def runLiveC2(
     *,
     checkpointPath: Path,
+    recoveryRoot: Path,
     maxWorkers: int,
     maxRequestsPerSecond: float,
     progressEvery: int,
@@ -244,7 +246,16 @@ def runLiveC2(
                 heartbeat.close()
             finally:
                 checkpoint.releaseLease(leaseOwner)
-    report = validateC2(catalog, descriptors)
+    with ResourceRecoveryStore(recoveryRoot) as recoveryStore:
+        recoveries = recoveryStore.load(catalog, descriptors)
+        recoveryReceiptCount = recoveryStore.receiptCount()
+        staleRecoveryReceiptCount = recoveryStore.staleReceiptCount
+        report = validateC2(
+            catalog,
+            descriptors,
+            recoveries=recoveries,
+            recoveryCas=recoveryStore.cas,
+        )
     runtimeFailureCodes = set(report.failureCodes)
     if pinnedRevisionFailureCodes:
         runtimeFailureCodes.add("PINNED_REVISION_VALIDATION_FAILED")
@@ -266,7 +277,7 @@ def runLiveC2(
             liveExactReceiptCount = checkpoint.liveExactReceiptCount(catalog.resources, policy)
             terminalAttemptCount = checkpoint.terminalAttemptCount(policy)
     metrics = {
-        "schemaVersion": "du-u3-c2-live-v4",
+        "schemaVersion": "du-u3-c2-live-v5",
         "observedAtUtc": observedAtUtc,
         "sourceRevisions": sourceRevisions,
         "hfRepoFileCounts": hfRepoFileCounts,
@@ -297,6 +308,10 @@ def runLiveC2(
         "liveExactReceiptCount": liveExactReceiptCount,
         "contentCacheEntryCount": contentCacheEntryCount,
         "terminalAttemptCount": terminalAttemptCount,
+        "recoveryReceiptCount": recoveryReceiptCount,
+        "activeRecoveryCount": len(recoveries),
+        "staleRecoveryReceiptCount": staleRecoveryReceiptCount,
+        "recoverySetDigest": canonicalDigest(tuple(sorted(item.digest for item in recoveries))),
         "prunedReceiptCount": prunedReceiptCount,
         "pinnedRevisionValidationPassed": not pinnedRevisionFailureCodes,
         "pinnedRevisionFailureCodes": tuple(pinnedRevisionFailureCodes),
@@ -319,6 +334,7 @@ def runLiveC2(
 def buildArgumentParser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="DartLab Universe U3 live C2 descriptor gate")
     parser.add_argument("--checkpoint", type=Path, default=defaultCheckpointPath())
+    parser.add_argument("--recovery-root", type=Path, default=defaultRecoveryRoot())
     parser.add_argument("--max-workers", type=int, default=16)
     parser.add_argument("--max-requests-per-second", type=float, default=12.0)
     parser.add_argument("--progress-every", type=int, default=250)
@@ -338,6 +354,7 @@ def main(argv: list[str] | None = None) -> int:
         raise ValueError("worker, 요청률, progress 상한은 0보다 커야 함")
     report, metrics = runLiveC2(
         checkpointPath=args.checkpoint,
+        recoveryRoot=args.recovery_root,
         maxWorkers=args.max_workers,
         maxRequestsPerSecond=args.max_requests_per_second,
         progressEvery=args.progress_every,

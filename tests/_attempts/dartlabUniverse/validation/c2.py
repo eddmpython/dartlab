@@ -13,6 +13,8 @@ from ..catalog.descriptorCrawler import (
     descriptorFormatKind,
 )
 from ..catalog.models import CatalogState
+from ..catalog.recovery import ResourceRecovery, validateRecoverySet
+from ..controlPlane.cas import ContentAddressedStore
 
 _TERMINAL_STATES = frozenset(
     {"DESCRIBED", "UNSUPPORTED_FORMAT", "DESCRIPTOR_BLOCKED_RANGE", "PARSE_ERROR", "ACCESS_DENIED"}
@@ -29,6 +31,11 @@ class C2Report:
     terminalCount: int
     eligibleCount: int
     describedEligibleCount: int
+    directlyDescribedEligibleCount: int
+    recoveredEligibleCount: int
+    recoveryReceiptCount: int
+    recoverySetDigest: str
+    recoveryValidationDigest: str
     unsupportedCount: int
     rangeRequestCount: int
     rangeBytesRead: int
@@ -44,6 +51,8 @@ def validateC2(
     descriptors: tuple[ResourceDescriptor, ...],
     *,
     policy: DescriptorPolicy | None = None,
+    recoveries: tuple[ResourceRecovery, ...] = (),
+    recoveryCas: ContentAddressedStore | None = None,
 ) -> C2Report:
     """모든 HF candidate가 source와 format에 결박된 terminal descriptor인지 검사한다."""
     activePolicy = policy or DescriptorPolicy()
@@ -58,8 +67,15 @@ def validateC2(
     terminalCount = sum(item.status in _TERMINAL_STATES for item in descriptors)
     if terminalCount != len(candidates):
         failures.append("DESCRIPTOR_NONTERMINAL")
+    recoveryValidation = validateRecoverySet(catalog, descriptors, recoveries, cas=recoveryCas)
+    if not recoveryValidation.valid:
+        failures.append("RECOVERY_SET_INVALID")
+        failures.extend(recoveryValidation.issueCodes)
+    recoveryByTarget = {item.targetResourceVersionId: item for item in recoveries} if recoveryValidation.valid else {}
     eligible = tuple(item for item in candidates if descriptorFormatKind(item) != "UNSUPPORTED")
     describedEligible = 0
+    directlyDescribedEligible = 0
+    recoveredEligible = 0
     schemaCovered = 0
     rowCovered = 0
     for resource in candidates:
@@ -117,10 +133,17 @@ def validateC2(
             ):
                 failures.append("UNSUPPORTED_DESCRIPTOR_INCOMPLETE")
             continue
-        if descriptor.status != "DESCRIBED":
+        recovery = recoveryByTarget.get(resource.resourceVersionId)
+        if descriptor.status != "DESCRIBED" and recovery is None:
             failures.append("DESCRIPTOR_ELIGIBLE_NOT_DESCRIBED")
             continue
         describedEligible += 1
+        if recovery is not None:
+            recoveredEligible += 1
+            schemaCovered += 1
+            rowCovered += 1
+            continue
+        directlyDescribedEligible += 1
         if descriptor.errorCode is not None:
             failures.append("DESCRIPTOR_STATUS_SHAPE_INVALID")
         if descriptor.schemaFingerprint and _SHA256_RE.fullmatch(descriptor.schemaFingerprint):
@@ -142,6 +165,11 @@ def validateC2(
         terminalCount=terminalCount,
         eligibleCount=eligibleCount,
         describedEligibleCount=describedEligible,
+        directlyDescribedEligibleCount=directlyDescribedEligible,
+        recoveredEligibleCount=recoveredEligible,
+        recoveryReceiptCount=len(recoveries),
+        recoverySetDigest=recoveryValidation.recoverySetDigest,
+        recoveryValidationDigest=recoveryValidation.digest,
         unsupportedCount=sum(descriptorFormatKind(item) == "UNSUPPORTED" for item in candidates),
         rangeRequestCount=sum(item.rangeRequestCount for item in descriptors),
         rangeBytesRead=sum(item.rangeBytesRead for item in descriptors),

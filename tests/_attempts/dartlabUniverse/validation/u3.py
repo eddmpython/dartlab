@@ -9,8 +9,10 @@ from ..catalog.compiler import validateCatalogState
 from ..catalog.delta import CatalogDelta, applyDeltaResources, validateCatalogDelta
 from ..catalog.descriptorCrawler import ResourceDescriptor
 from ..catalog.models import CatalogEvidence, CatalogState, catalogObjectVersionId
+from ..catalog.recovery import ResourceRecovery
 from ..catalog.snapshot import CatalogSnapshot, SnapshotResourceRef, validateCatalogSnapshot
 from ..contracts import Visibility
+from ..controlPlane.cas import ContentAddressedStore
 from ..graph.relations import (
     GraphRelation,
     RelationTaxonomy,
@@ -31,6 +33,11 @@ class U3Report:
     descriptorTerminalCount: int
     descriptorEligibleCount: int
     describedEligibleCount: int
+    directlyDescribedEligibleCount: int
+    recoveredEligibleCount: int
+    recoveryReceiptCount: int
+    recoverySetDigest: str
+    recoveryValidationDigest: str
     schemaFingerprintCoverageRatio: float
     rowContractCoverageRatio: float
     objectEvidenceCoverageRatio: float
@@ -63,6 +70,8 @@ def validateU3(
     upstreamCapabilityRegistryVersion: str,
     upstreamIdentityLedgerVersion: str,
     upstreamRelationTaxonomyVersion: str,
+    recoveries: tuple[ResourceRecovery, ...] = (),
+    recoveryCas: ContentAddressedStore | None = None,
     previousSnapshot: CatalogSnapshot | None = None,
     delta: CatalogDelta | None = None,
     relationTaxonomy: RelationTaxonomy | None = None,
@@ -107,6 +116,9 @@ def validateU3(
     expectedDescriptorSetDigest = canonicalDigest(tuple(sorted(item.digest for item in descriptors)))
     if snapshot.descriptorSetDigest != expectedDescriptorSetDigest:
         failures.append("DESCRIPTOR_SET_SNAPSHOT_MISMATCH")
+    expectedRecoverySetDigest = canonicalDigest(tuple(sorted(item.digest for item in recoveries)))
+    if snapshot.recoverySetDigest != expectedRecoverySetDigest:
+        failures.append("RECOVERY_SET_SNAPSHOT_MISMATCH")
     descriptorByVersion = {item.resourceVersionId: item for item in descriptors}
     expectedSnapshotResources = tuple(
         SnapshotResourceRef(
@@ -130,7 +142,7 @@ def validateU3(
     if snapshot.resources != expectedSnapshotResources:
         failures.append("CATALOG_SNAPSHOT_RESOURCE_MISMATCH")
 
-    c2 = validateC2(catalog, descriptors)
+    c2 = validateC2(catalog, descriptors, recoveries=recoveries, recoveryCas=recoveryCas)
     failures.extend(c2.failureCodes)
 
     visibilityRank = {
@@ -351,6 +363,11 @@ def validateU3(
         descriptorTerminalCount=c2.terminalCount,
         descriptorEligibleCount=c2.eligibleCount,
         describedEligibleCount=c2.describedEligibleCount,
+        directlyDescribedEligibleCount=c2.directlyDescribedEligibleCount,
+        recoveredEligibleCount=c2.recoveredEligibleCount,
+        recoveryReceiptCount=c2.recoveryReceiptCount,
+        recoverySetDigest=c2.recoverySetDigest,
+        recoveryValidationDigest=c2.recoveryValidationDigest,
         schemaFingerprintCoverageRatio=c2.schemaFingerprintCoverageRatio,
         rowContractCoverageRatio=c2.rowContractCoverageRatio,
         objectEvidenceCoverageRatio=evidenceCovered / objectCount if objectCount else 1.0,

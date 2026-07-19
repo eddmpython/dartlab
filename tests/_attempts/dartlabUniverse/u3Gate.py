@@ -15,6 +15,7 @@ from .canonical import canonicalDigest, canonicalJson
 from .catalog.compiler import attachCapabilityRegistry, attachIdentityRecords, compileCatalog
 from .catalog.descriptorCheckpoint import DescriptorCheckpointStore
 from .catalog.descriptorCrawler import DescriptorPolicy
+from .catalog.recoveryStore import ResourceRecoveryStore, defaultRecoveryRoot
 from .catalog.snapshot import buildCatalogSnapshot
 from .census import defaultRepoRoot, runFullCensus
 from .graph.relations import compileCatalogRelations, defaultRelationTaxonomy
@@ -37,7 +38,7 @@ def defaultControlRoot() -> Path:
     return root / "DartLab" / "universe" / "control" / "u3"
 
 
-def runLiveU3(*, checkpointPath: Path, controlRoot: Path) -> tuple[object, dict[str, object]]:
+def runLiveU3(*, checkpointPath: Path, recoveryRoot: Path, controlRoot: Path) -> tuple[object, dict[str, object]]:
     """Live G0, G1, C2, catalog snapshot, evidence relation을 한 번에 검증한다."""
     repoRoot = defaultRepoRoot()
     load_dotenv(repoRoot / ".env", override=False)
@@ -63,30 +64,37 @@ def runLiveU3(*, checkpointPath: Path, controlRoot: Path) -> tuple[object, dict[
     g2 = validateG2(liveG1.capabilityRegistry)
     catalog = attachCapabilityRegistry(catalog, liveG1.capabilityRegistry)
     catalog = attachIdentityRecords(catalog, liveG1.identityRecords)
-    snapshot = buildCatalogSnapshot(
-        catalog,
-        universeSnapshotId=liveG1.snapshot.snapshotId,
-        descriptors=descriptors,
-        capabilityRegistryVersion=liveG1.capabilityRegistry.registryDigest,
-        identityLedgerVersion=liveG1.identityCensus.digest,
-        relationTaxonomyVersion=taxonomy.version,
-    )
-    relations = compileCatalogRelations(catalog, taxonomy=taxonomy)
-    slo = benchmarkU3Runtime(catalog, relations, snapshot)
-    report = validateU3(
-        catalog,
-        descriptors,
-        snapshot,
-        statements=(),
-        relations=relations,
-        upstreamG1Passed=liveG1.report.g1Passed,
-        upstreamG2Passed=g2.passed,
-        upstreamUniverseSnapshotId=liveG1.snapshot.snapshotId,
-        upstreamCensusSnapshotDigest=liveG1.report.u0SnapshotDigest,
-        upstreamCapabilityRegistryVersion=liveG1.capabilityRegistry.registryDigest,
-        upstreamIdentityLedgerVersion=liveG1.identityCensus.digest,
-        upstreamRelationTaxonomyVersion=taxonomy.version,
-    )
+    with ResourceRecoveryStore(recoveryRoot) as recoveryStore:
+        recoveries = recoveryStore.load(catalog, descriptors)
+        recoveryReceiptCount = recoveryStore.receiptCount()
+        staleRecoveryReceiptCount = recoveryStore.staleReceiptCount
+        snapshot = buildCatalogSnapshot(
+            catalog,
+            universeSnapshotId=liveG1.snapshot.snapshotId,
+            descriptors=descriptors,
+            recoveries=recoveries,
+            capabilityRegistryVersion=liveG1.capabilityRegistry.registryDigest,
+            identityLedgerVersion=liveG1.identityCensus.digest,
+            relationTaxonomyVersion=taxonomy.version,
+        )
+        relations = compileCatalogRelations(catalog, taxonomy=taxonomy)
+        slo = benchmarkU3Runtime(catalog, relations, snapshot)
+        report = validateU3(
+            catalog,
+            descriptors,
+            snapshot,
+            statements=(),
+            relations=relations,
+            upstreamG1Passed=liveG1.report.g1Passed,
+            upstreamG2Passed=g2.passed,
+            upstreamUniverseSnapshotId=liveG1.snapshot.snapshotId,
+            upstreamCensusSnapshotDigest=liveG1.report.u0SnapshotDigest,
+            upstreamCapabilityRegistryVersion=liveG1.capabilityRegistry.registryDigest,
+            upstreamIdentityLedgerVersion=liveG1.identityCensus.digest,
+            upstreamRelationTaxonomyVersion=taxonomy.version,
+            recoveries=recoveries,
+            recoveryCas=recoveryStore.cas,
+        )
     pinnedRevisionFailureCodes = []
     sourceHeadAdvanceEvents = []
     sourceHeadProbeFailureCodes = []
@@ -100,7 +108,7 @@ def runLiveU3(*, checkpointPath: Path, controlRoot: Path) -> tuple[object, dict[
     except Exception as exc:
         sourceHeadProbeFailureCodes.append(type(exc).__name__)
     metrics = {
-        "schemaVersion": "du-u3-gate-live-v4",
+        "schemaVersion": "du-u3-gate-live-v5",
         "passed": report.passed and slo.passed,
         "durationSeconds": round(time.perf_counter() - started, 6),
         "sourceRevisions": tuple((item.repoId, item.revision or "") for item in census.discovery.pinnedRepositories),
@@ -125,6 +133,10 @@ def runLiveU3(*, checkpointPath: Path, controlRoot: Path) -> tuple[object, dict[
         "validatedCapabilitySchemaCount": liveG1.capabilityRegistry.validatedSchemaCount,
         "inventedCapabilityCount": liveG1.capabilityRegistry.inventedAxisCount,
         "descriptorCount": len(descriptors),
+        "recoveryReceiptCount": recoveryReceiptCount,
+        "activeRecoveryCount": len(recoveries),
+        "staleRecoveryReceiptCount": staleRecoveryReceiptCount,
+        "recoverySetDigest": snapshot.recoverySetDigest,
         "relationCount": len(relations),
         "pinnedRevisionValidationPassed": not pinnedRevisionFailureCodes,
         "pinnedRevisionFailureCodes": tuple(pinnedRevisionFailureCodes),
@@ -143,6 +155,7 @@ def runLiveU3(*, checkpointPath: Path, controlRoot: Path) -> tuple[object, dict[
 def buildArgumentParser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="DartLab Universe U3 live catalog gate")
     parser.add_argument("--checkpoint", type=Path, default=defaultCheckpointPath())
+    parser.add_argument("--recovery-root", type=Path, default=defaultRecoveryRoot())
     parser.add_argument("--control-root", type=Path, default=defaultControlRoot())
     parser.add_argument("--strict", action="store_true")
     return parser
@@ -150,7 +163,11 @@ def buildArgumentParser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = buildArgumentParser().parse_args(argv)
-    passed, metrics = runLiveU3(checkpointPath=args.checkpoint, controlRoot=args.control_root)
+    passed, metrics = runLiveU3(
+        checkpointPath=args.checkpoint,
+        recoveryRoot=args.recovery_root,
+        controlRoot=args.control_root,
+    )
     sys.stdout.buffer.write(canonicalJson(metrics) + b"\n")
     return 2 if args.strict and not passed else 0
 
