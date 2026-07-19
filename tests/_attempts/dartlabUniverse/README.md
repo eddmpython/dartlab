@@ -1,6 +1,6 @@
-# DartLab Universe U0
+# DartLab Universe U0~U2
 
-상태: U0 full census와 U1 identity, temporal, provenance gate 구현. 3D, UI, route, 공개 버튼, RAG, 영속 index는 아직 없다.
+상태: U0 full census, U1 identity와 provenance, U2 capability execution kernel gate 구현. 3D, UI, route, 공개 버튼, RAG, 영속 index는 아직 없다.
 
 이 디렉터리는 이전 Universe 실험을 전부 제거한 뒤 `mainPlan/dartlab-universe/`의 제품 계약에 맞춰 처음부터 다시 만든 데이터 엔진 경계다. 기존 `src/dartlab`, `ui`, `landing`, `blog`, `media`는 수정하지 않고 authority로 읽기만 한다.
 
@@ -30,6 +30,27 @@
 - optimistic head, hash chain, append-only trigger를 가진 `control.sqlite`
 - concurrent head, supersede, database corruption, CAS 누락과 digest mismatch 차단
 - U0, identity collision, snapshot replay, temporal leakage, control integrity를 결합한 machine-readable G1
+
+## U2 구현 범위
+
+- runtime capability와 analysis, credit, industry, macro, quant, scan, story registry 합집합 전 후보 분류
+- runtime에 누락된 analysis 22축을 `CALLABLE_UNMIRRORED`로 숨김 없이 보존
+- runtime mirror에만 있고 actual registry에 없는 `scan.industry`, `scan.market`을 `MIRRORED_MISSING`으로 실행 차단
+- preview, 내부 helper, Company-bound deferred surface를 explicit gap reason과 함께 실행에서 차단
+- public dispatcher signature, registry module, 실제 axis implementation byte에 결박된 `SchemaDescriptor`
+- `**kwargs`와 `Any`를 추측하지 않는 schema closure와 widening mutation 차단
+- source byte digest가 바뀌면 descriptor를 `STALE`로 내리는 freshness 검증
+- snapshot, target, visibility, budget, args, seed, idempotency 순서의 fail-closed admission
+- 전용 subprocess worker와 HOME, TEMP, data, lineage, cache, output write redirect
+- Python audit hook 기반 allowlist 밖 write, subprocess, socket 차단
+- JSON canonical output과 DataFrame Arrow IPC output 분리
+- timeout, cancel, transient retry, partial row, output byte budget 계약
+- SQLite claim과 성공 receipt partial unique index를 사용한 durable idempotency
+- CAS object 선commit 뒤 receipt transaction, crash orphan quarantine 복구
+- 기존 simulator `AdmissionVerifier`를 통한 signed receipt tree 검증
+- receiptVersion, kind, ruleId, ruleVersion, ruleHash, issuerExecutableHash exact schema descriptor
+- allowlisted decoder digest, subject binding, parent role, seed, snapshot, assumption, asOf, vintage 검증
+- 해석 불가 artifact를 `VERIFIED_ARTIFACT_UNINTERPRETED`로 닫고 execution과 graph 승격 차단
 
 ## 정본 명령
 
@@ -89,6 +110,27 @@ live G1은 private HF G0, 현재 Git source 600개 이상, DART와 EDGAR local a
 
 U1은 아직 verified statement를 admission하지 않으므로 live statement contract 분모는 `NOT_APPLICABLE`이다. 이를 100%로 위장하지 않는다. Statement와 evidence validator 자체는 positive, mutation, future leakage, correction, retraction fixture로 검증한다.
 
+## 2026-07-19 U2 live G2 인수 기록
+
+아래 수치는 현재 live runtime과 registry source에서 다시 계산한 관측값이며 제품 상수가 아니다.
+
+| 항목 | 관측값 |
+|---|---:|
+| discovered capability candidate | 260 |
+| classified candidate | 260 |
+| eligible callable | 147 |
+| validated SchemaDescriptor | 147 |
+| blocked eligible | 0 |
+| invented axis | 0 |
+| catalog coverage | 100% |
+| execution readiness | 100% |
+| capability census digest | `ae9cc4fd72a7a87c7470245882c31aae029a2ddf6b4ef032b32da1778cfa268a` |
+| capability registry digest | `8a8288773737c2331f1005a6ec71e8112d4a836ec229541917b1d72be72bde24` |
+| G2 digest | `7392533efe6e3d86671f229d15062fe986807f75a6af200200aa3c42f72a324c` |
+| G2 | PASS |
+
+비네트워크 Universe 회귀 81개와 dirty source를 다시 capture한 live G1이 함께 통과했다. U2 mutation에는 fake axis, registry drift, schema widening, source drift, invalid args, snapshot mismatch, ambient secret 제거, timeout, cancel, retry, concurrent idempotency, partial Arrow와 JSON output, 보호 경로 write, subprocess, output schema mismatch, CAS orphan이 포함된다. Simulator mutation에는 unknown issuer, broken parent chain, missing artifact, unknown schema, stale decoder, artifact schema version, subject mismatch, parent role mismatch, missing seed, snapshot mismatch, vintage와 step contract mismatch, `OBSERVED` leakage가 포함된다.
+
 ## 다음 gate
 
-다음 단계는 U2 전용 kernel과 capability execution admission이다. 기존 runtime 승격, 독립 3D harness, UI 연결, 공개 route는 각각 후속 gate와 운영자 확인 전까지 금지한다.
+다음 단계는 U3 전체 catalog와 evidence graph다. 기존 runtime 승격, 독립 3D harness, UI 연결, 공개 route는 각각 후속 gate와 운영자 확인 전까지 금지한다.
