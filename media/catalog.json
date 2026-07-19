@@ -3791,6 +3791,15 @@
     "blog/08-tech-story/14-800vdc-ai-data-center-power/assets/14-hero.webp": "640d86d69c04a78c782eb6e25e6f7f54fa570b845bc5a5db12fb59e0ab53b39b",
     "blog/08-tech-story/14-800vdc-ai-data-center-power/assets/14-load-timescale.svg": "18d3d84615382b4a4cd20825b42bdaaebfacbfeb9881c8d01447e548e6edf67b",
     "blog/08-tech-story/14-800vdc-ai-data-center-power/assets/14-protection.webp": "eea2b1e8cd455ccde05b7d70678464937903fc147571a8a71b681a49a78e9f7e",
+    "blog/08-tech-story/15-backside-power-delivery-network/assets/15-backside-real-estate.svg": "d0f410b1ee60f0253e6ce1e839aba796e9f8a6d85fb55b1c32d4234ca14249a9",
+    "blog/08-tech-story/15-backside-power-delivery-network/assets/15-company-responsibility-map.svg": "486cac0dfc0922677435e63591579cf8814cb300653afa9b86cd1f4b77b033c3",
+    "blog/08-tech-story/15-backside-power-delivery-network/assets/15-flip-thin-drill-flow.svg": "58332f7896901158d134892beefea47b42bfc6e28d391682091b6162acc5142a",
+    "blog/08-tech-story/15-backside-power-delivery-network/assets/15-flip-thin.webp": "05347c819da91142d58e5cc70c51bc04a1ef1368d6017c599f3fd732e739bf22",
+    "blog/08-tech-story/15-backside-power-delivery-network/assets/15-foundry-evidence-timeline.svg": "8f82dc93818eacdc5ccae8c23cbe80f94deb9bc0ed23787c32ad9c63ed82cbc8",
+    "blog/08-tech-story/15-backside-power-delivery-network/assets/15-frontside-vs-backside.svg": "717ae793215342ce8ecc627415340d542a329832f43296b179f2d0c37730136e",
+    "blog/08-tech-story/15-backside-power-delivery-network/assets/15-hero.webp": "586004cd278d4f98ee4ce0f5a32e852a530a3c6d3ac1e4d7de97c005a0ffd0eb",
+    "blog/08-tech-story/15-backside-power-delivery-network/assets/15-overlay.webp": "bf5839b3958c10acb72f5a4cac7864d53cd5e88639fa842abbffc442352d15f9",
+    "blog/08-tech-story/15-backside-power-delivery-network/assets/15-yield-failure-map.svg": "a822ecbfc54881aa55569fbb5ef20622c2938344039f4047b672483cd179c79f",
     "blog/09-investment-stories/01-technical-investing-price-indicators/assets/01-price-indicator-workbench.webp": "486b12c36cd4319a408b1706e006e969fcd9f76a9ba13691bde49613d1caba6e",
     "blog/09-investment-stories/01-technical-investing-price-indicators/assets/01-thumbnail-bg.webp": "486b12c36cd4319a408b1706e006e969fcd9f76a9ba13691bde49613d1caba6e",
     "blog/09-investment-stories/01-technical-investing-price-indicators/assets/02-indicator-panels.webp": "f7af37afbad715ca79873cb16abc1452a0e67ea090e4b94a5999c8c8682778b5",
@@ -4370,6 +4379,8 @@
     "landing/static/thumbnails/V-visa.webp": "5b605d6c560e310c2caba6f2ad16497a3483c2a2ff8f257bb2abfd3096fb8fc6",
     "landing/static/thumbnails/WMT-walmart-card.webp": "7ab19c5923b2fe7ab6accef7f261a0aacaad17f89800a19d062e914f98e1126d",
     "landing/static/thumbnails/WMT-walmart.webp": "44e74c5cb5c9fdd9cbd9425a9b71b7462acfcaf689f373d2f57045271d9f5619",
+    "landing/static/thumbnails/backside-power-delivery-network-card.webp": "3593f8d7dd8fdeccf82b4559bb0c38bc2d6db9ba686f86dc257190c861be44fd",
+    "landing/static/thumbnails/backside-power-delivery-network.webp": "6c6f5d8d94fe0f97fcda270397ed9384d46074ecbe46dcc450e3e5ede4fb3e61",
     "landing/static/thumbnails/credit-01-005930-samsung-card.webp": "7cba6eb8e44ec5d2352dbca544cb9b2bc3bf83eb461f445d4b21e9c36fda78b1",
     "landing/static/thumbnails/credit-01-005930-samsung.webp": "7030a3db92a782fbb96770ad9328562792cdd5b932c06f2866fbc1b4b6d5f04a",
     "landing/static/thumbnails/credit-02-000660-sk-hynix-card.webp": "3b4a4546c5c41625491a3939362f6d46ba726563cda38b5d712f4429505a4670",
@@ -4855,6 +4866,10 @@
     "052c4cfad6d5f6685eb846da8dd4846719996bf44323f1d0fd5243365ae1052b": {
       "bytes": 33950,
       "path": "objects/sha256/05/052c4cfad6d5f6685eb846da8dd4846719996bf44323f1d0fd5243365ae1052b.webp"
+    },
+    "05347c819da91142d58e5cc70c51bc04a1ef1368d6017c599f3fd732e739bf22": {
+      "bytes": 210802,
+      "path": "objects/sha256/05/05347c819da91142d58e5cc70c51bc04a1ef1368d6017c599f3fd732e739bf22.webp"
     },
     "05415446a28b4ebdd168b0484f2c3675f3bb6539afd937b10f9ba27d6159f2ed": {
       "bytes": 4580,
@@ -8176,6 +8191,10 @@
       "bytes": 106844,
       "path": "objects/sha256/35/358e13085408edc6c49d25f32228a1941ed1a8a3edec7492e0efe118a10bb366.webp"
     },
+    "3593f8d7dd8fdeccf82b4559bb0c38bc2d6db9ba686f86dc257190c861be44fd": {
+      "bytes": 95964,
+      "path": "objects/sha256/35/3593f8d7dd8fdeccf82b4559bb0c38bc2d6db9ba686f86dc257190c861be44fd.webp"
+    },
     "359851f08e35fd1f2060eb4f70a361d8b01b78cc298a7eab56da9cb0d6e92715": {
       "bytes": 6889,
       "colorCount": 20,
@@ -9608,6 +9627,14 @@
       "bytes": 77904,
       "path": "objects/sha256/48/486b12c36cd4319a408b1706e006e969fcd9f76a9ba13691bde49613d1caba6e.webp"
     },
+    "486cac0dfc0922677435e63591579cf8814cb300653afa9b86cd1f4b77b033c3": {
+      "bytes": 4671,
+      "colorCount": 15,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/48/486cac0dfc0922677435e63591579cf8814cb300653afa9b86cd1f4b77b033c3.svg",
+      "textNodes": 27,
+      "viewBox": "0 0 1200 675"
+    },
     "488227e57ae27b4bbaf8cc723e8d8bc7d9f9769441af4ade7f5df62811a68d22": {
       "bytes": 6072,
       "colorCount": 12,
@@ -10660,6 +10687,14 @@
       "textNodes": 6,
       "viewBox": "0 0 800 420"
     },
+    "58332f7896901158d134892beefea47b42bfc6e28d391682091b6162acc5142a": {
+      "bytes": 7408,
+      "colorCount": 17,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/58/58332f7896901158d134892beefea47b42bfc6e28d391682091b6162acc5142a.svg",
+      "textNodes": 27,
+      "viewBox": "0 0 1200 675"
+    },
     "5834e75675d35e5edefa98d6d01eb5574f40fd8d041c0b78574619585eccf1ce": {
       "bytes": 40682,
       "path": "objects/sha256/58/5834e75675d35e5edefa98d6d01eb5574f40fd8d041c0b78574619585eccf1ce.webp"
@@ -10683,6 +10718,10 @@
     "5859eca6e2b280e8d163339edcedea46aacd1ce1cd5382f10bccac29ac537135": {
       "bytes": 53384,
       "path": "objects/sha256/58/5859eca6e2b280e8d163339edcedea46aacd1ce1cd5382f10bccac29ac537135.webp"
+    },
+    "586004cd278d4f98ee4ce0f5a32e852a530a3c6d3ac1e4d7de97c005a0ffd0eb": {
+      "bytes": 237072,
+      "path": "objects/sha256/58/586004cd278d4f98ee4ce0f5a32e852a530a3c6d3ac1e4d7de97c005a0ffd0eb.webp"
     },
     "589b7ab4a9e643945f2248f496184f3fed7a0f142a50b442e72451961e95fb37": {
       "bytes": 44588,
@@ -12008,6 +12047,10 @@
       "bytes": 67668,
       "path": "objects/sha256/6c/6c3ec3c6dfdcd042561559d7b009e52ed361e98267622872f2002931404d1c28.webp"
     },
+    "6c6f5d8d94fe0f97fcda270397ed9384d46074ecbe46dcc450e3e5ede4fb3e61": {
+      "bytes": 96166,
+      "path": "objects/sha256/6c/6c6f5d8d94fe0f97fcda270397ed9384d46074ecbe46dcc450e3e5ede4fb3e61.webp"
+    },
     "6c74bd65dca6ca755fd37f7bb1ec2f65b37efedac4ab6bcf858458288a58abdb": {
       "bytes": 5597,
       "colorCount": 14,
@@ -12315,6 +12358,14 @@
       "path": "objects/sha256/71/717071f41044b0462d61275727691bdde64f16255e688c627ff179db846fe41c.svg",
       "textNodes": 38,
       "viewBox": "0 0 1200 720"
+    },
+    "717ae793215342ce8ecc627415340d542a329832f43296b179f2d0c37730136e": {
+      "bytes": 5416,
+      "colorCount": 13,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/71/717ae793215342ce8ecc627415340d542a329832f43296b179f2d0c37730136e.svg",
+      "textNodes": 13,
+      "viewBox": "0 0 1200 675"
     },
     "71802375319865df750a1a7580ec98f1ca0193d2db5564274838e5aa6e66d9b9": {
       "bytes": 8070,
@@ -14432,6 +14483,14 @@
       "textNodes": 51,
       "viewBox": "0 0 1200 600"
     },
+    "8f82dc93818eacdc5ccae8c23cbe80f94deb9bc0ed23787c32ad9c63ed82cbc8": {
+      "bytes": 3992,
+      "colorCount": 14,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/8f/8f82dc93818eacdc5ccae8c23cbe80f94deb9bc0ed23787c32ad9c63ed82cbc8.svg",
+      "textNodes": 17,
+      "viewBox": "0 0 1200 675"
+    },
     "8f85af3bcc151730bc79f6c720208c29ee9153c61398a3c959979f10e90b4b64": {
       "bytes": 38614,
       "path": "objects/sha256/8f/8f85af3bcc151730bc79f6c720208c29ee9153c61398a3c959979f10e90b4b64.webp"
@@ -16059,6 +16118,14 @@
     "a81e444e9e1b71f2ae9a81848564af095524926ab143c6380b8fe9002560839e": {
       "bytes": 39834,
       "path": "objects/sha256/a8/a81e444e9e1b71f2ae9a81848564af095524926ab143c6380b8fe9002560839e.png"
+    },
+    "a822ecbfc54881aa55569fbb5ef20622c2938344039f4047b672483cd179c79f": {
+      "bytes": 5496,
+      "colorCount": 17,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/a8/a822ecbfc54881aa55569fbb5ef20622c2938344039f4047b672483cd179c79f.svg",
+      "textNodes": 30,
+      "viewBox": "0 0 1200 675"
     },
     "a82cf29e2a66a150ae31db5ef01ff51caeb922e50a46e3c19e1c7dd83a3a02ff": {
       "bytes": 5074,
@@ -17768,6 +17835,10 @@
       "textNodes": 14,
       "viewBox": "0 0 1080 300"
     },
+    "bf5839b3958c10acb72f5a4cac7864d53cd5e88639fa842abbffc442352d15f9": {
+      "bytes": 263262,
+      "path": "objects/sha256/bf/bf5839b3958c10acb72f5a4cac7864d53cd5e88639fa842abbffc442352d15f9.webp"
+    },
     "bf6b9a2ec93c879ecaf54bc212a7b120b65c2c1e64ae034b8732ab87717f9fde": {
       "bytes": 878,
       "colorCount": 6,
@@ -18999,6 +19070,14 @@
     "d0f3c063f34f14b0c6b7c38b5d07855aabfc2cb0878ae91e9b1cf5cd19805bea": {
       "bytes": 177478,
       "path": "objects/sha256/d0/d0f3c063f34f14b0c6b7c38b5d07855aabfc2cb0878ae91e9b1cf5cd19805bea.webp"
+    },
+    "d0f410b1ee60f0253e6ce1e839aba796e9f8a6d85fb55b1c32d4234ca14249a9": {
+      "bytes": 4778,
+      "colorCount": 19,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/d0/d0f410b1ee60f0253e6ce1e839aba796e9f8a6d85fb55b1c32d4234ca14249a9.svg",
+      "textNodes": 25,
+      "viewBox": "0 0 1200 675"
     },
     "d0fb4698a5efe05e1a5d86b2f2143e6be42cf24764ac1ed2f69638778ca49e81": {
       "bytes": 2476,
@@ -29144,6 +29223,35 @@
         "blog/08-tech-story/14-800vdc-ai-data-center-power/assets/14-load-timescale.svg",
         "blog/08-tech-story/14-800vdc-ai-data-center-power/assets/14-protection.webp",
         "landing/static/thumbnails/tech-800vdc-ai-data-center-power-card.webp"
+      ]
+    },
+    "08-tech-story/15-backside-power-delivery-network": {
+      "assets": {
+        "15-flip-thin": "blog/08-tech-story/15-backside-power-delivery-network/assets/15-flip-thin.webp",
+        "15-hero": "blog/08-tech-story/15-backside-power-delivery-network/assets/15-hero.webp",
+        "15-overlay": "blog/08-tech-story/15-backside-power-delivery-network/assets/15-overlay.webp"
+      },
+      "card": "landing/static/thumbnails/backside-power-delivery-network-card.webp",
+      "diagrams": {
+        "15-backside-real-estate": "blog/08-tech-story/15-backside-power-delivery-network/assets/15-backside-real-estate.svg",
+        "15-company-responsibility-map": "blog/08-tech-story/15-backside-power-delivery-network/assets/15-company-responsibility-map.svg",
+        "15-flip-thin-drill-flow": "blog/08-tech-story/15-backside-power-delivery-network/assets/15-flip-thin-drill-flow.svg",
+        "15-foundry-evidence-timeline": "blog/08-tech-story/15-backside-power-delivery-network/assets/15-foundry-evidence-timeline.svg",
+        "15-frontside-vs-backside": "blog/08-tech-story/15-backside-power-delivery-network/assets/15-frontside-vs-backside.svg",
+        "15-yield-failure-map": "blog/08-tech-story/15-backside-power-delivery-network/assets/15-yield-failure-map.svg"
+      },
+      "og": "landing/static/thumbnails/backside-power-delivery-network.webp",
+      "staging": [
+        "blog/08-tech-story/15-backside-power-delivery-network/assets/15-backside-real-estate.svg",
+        "blog/08-tech-story/15-backside-power-delivery-network/assets/15-company-responsibility-map.svg",
+        "blog/08-tech-story/15-backside-power-delivery-network/assets/15-flip-thin-drill-flow.svg",
+        "blog/08-tech-story/15-backside-power-delivery-network/assets/15-flip-thin.webp",
+        "blog/08-tech-story/15-backside-power-delivery-network/assets/15-foundry-evidence-timeline.svg",
+        "blog/08-tech-story/15-backside-power-delivery-network/assets/15-frontside-vs-backside.svg",
+        "blog/08-tech-story/15-backside-power-delivery-network/assets/15-hero.webp",
+        "blog/08-tech-story/15-backside-power-delivery-network/assets/15-overlay.webp",
+        "blog/08-tech-story/15-backside-power-delivery-network/assets/15-yield-failure-map.svg",
+        "landing/static/thumbnails/backside-power-delivery-network-card.webp"
       ]
     },
     "09-investment-stories/01-technical-investing-price-indicators": {

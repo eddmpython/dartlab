@@ -1,0 +1,546 @@
+{
+  "contractVersion": 2,
+  "passed": true,
+  "topicSlug": "backside-power-delivery-network",
+  "seriesOrder": 15,
+  "title": "칩을 뒤집고 깎아 전기를 넣는 이유",
+  "description": "앞면 배선이 막히자 완성한 웨이퍼를 붙이고 뒤집고 깎는다. Intel·TSMC·삼성전자부터 장비·EDA까지 후면전력공급망의 원리와 병목, 조건별 시나리오를 쉽게 추적한다.",
+  "readerQuestion": "트랜지스터는 앞면에 있는데 왜 완성한 웨이퍼를 붙이고 뒤집고 수백 나노미터까지 깎아 뒤에서 전기를 넣으며, 이 변화가 어느 공정의 실패 책임과 경제적 가치를 바꾸는지 초보자도 판단할 수 있을까?",
+  "titleContract": {
+    "selectedTitle": "칩을 뒤집고 깎아 전기를 넣는 이유",
+    "hookQuestion": "반도체를 거의 다 만든 뒤 왜 운반판에 붙여 뒤집고 실리콘을 다시 깎는가?",
+    "readerGap": "독자는 후면전력공급망을 전기를 더 잘 넣는 단일 배선 기술이나 특정 파운드리의 성능 이름으로 생각하기 쉽고, 장비 발표를 실제 고객 주문과 매출로 오해하기 쉽다.",
+    "promise": "앞면 전력망의 전압 강하, 본딩·뒤집기·박막화·나노 비아 공정, Intel·TSMC·삼성전자의 증거 단계, 실패 책임 회사 지도, DartLab 재무, 반증 가능한 네 시나리오를 한 웨이퍼 여행으로 연결한다.",
+    "whySelected": "완성한 칩을 다시 뒤집고 깎는 물리적 역설이 초보자의 호기심을 만들고, 회사 이름보다 공정 메커니즘을 중심에 둔다.",
+    "candidates": [
+      {
+        "title": "칩을 뒤집고 깎아 전기를 넣는 이유",
+        "strength": "후면전력공급망의 가장 낯선 공정 행동을 쉬운 문장으로 보여 주고 원리 해부를 예고한다."
+      },
+      {
+        "title": "GPU에 전기를 뒤에서 넣으면 무엇이 달라질까",
+        "strength": "AI 칩 독자에게 친숙하지만 CPU와 HPC 전반에 적용되는 기술 범위를 GPU로 좁힐 위험이 있다."
+      },
+      {
+        "title": "칩 앞면이 막히자 뒤면이 공장이 되었다",
+        "strength": "뒤면이 수동 지지면에서 전력·열·입출력의 희소 자원으로 변하는 통찰을 강조한다."
+      }
+    ]
+  },
+  "insight": {
+    "commonBelief": "후면전력공급망은 전력선을 칩 뒤로 옮겨 전압 강하를 줄이는 기술이므로 Intel·TSMC·삼성전자와 관련 장비 회사가 모두 비슷하게 수혜를 얻는다고 생각한다.",
+    "twistFact": "앞면 전력 배선 혼잡은 줄지만 운반판 본딩, 수백 나노미터 박막화, 보이지 않는 앞면 접점 정렬, 웨이퍼 응력, 열·ESD·디버그라는 새 수율 문제가 뒤면에 생긴다. 기술은 병목을 없애기보다 실패 책임을 옮긴다.",
+    "whatToWatch": "회사 기술명보다 대량생산 단계, 외부 고객 테이프아웃과 반복 물량, 웨이퍼 수율, 정렬·두께 계측 강도, 공정 단계와 원가, 열·ESD 신뢰성, 기술별 수주·매출 분리 공시를 순서대로 확인한다.",
+    "freshnessArgument": "Intel 18A의 2025년 고대량생산과 2026년 외부 고객 한계, TSMC A16의 2026년 하반기 양산 일정, 삼성 SF2Z의 2027년 일정, Lam의 2026년 나노 비아 정렬 연구까지 공식 원문을 2026년 7월 기준으로 맞췄다.",
+    "evidenceRefs": ["E1", "E2", "E3", "E4", "E5", "E6", "E8", "E10", "E12"]
+  },
+  "acts": [
+    {
+      "order": 1,
+      "heading": "앞면 복도에서 전력선과 신호선이 부딪히는 장면으로 시작한다",
+      "purpose": "초보자용 문제 정의와 통념 전환",
+      "scene": "여러 금속층을 내려오는 기존 전력 경로를 옥상 물탱크와 복도에 비유하고 IR drop을 전압이 길에서 낮아지는 현상으로 설명한다.",
+      "causalBridge": "앞면 길을 비우려면 전력선을 뒤로 보내야 하므로 다음 막에서 완성한 웨이퍼를 붙이고 뒤집고 깎는 실제 공정을 따라간다."
+    },
+    {
+      "order": 2,
+      "heading": "완성한 웨이퍼를 운반판에 붙이고 뒤집고 수백 나노미터까지 깎는다",
+      "purpose": "후면전력공급망 공정의 물리적 이해",
+      "scene": "본딩, 뒤집기, 연삭·연마·식각, 나노 비아, 후면 금속의 순서를 머리카락과 엘리베이터 비유로 풀고 imec 수치의 범위를 표시한다.",
+      "causalBridge": "공정 난도를 알았으므로 다음 막에서 Intel·TSMC·삼성전자의 서로 다른 양산 증거와 성능 주장 범위를 구분한다."
+    },
+    {
+      "order": 3,
+      "heading": "PowerVia, Super Power Rail, SF2Z를 하나의 기술명으로 합치지 않는다",
+      "purpose": "파운드리별 성숙도와 증거 단계 분리",
+      "scene": "Intel 18A의 2025년 HVM, TSMC A16의 2026년 하반기, 삼성 SF2Z의 2027년 일정을 같은 시간선에 놓고 회사 목표치와 상용 증거를 나눈다.",
+      "causalBridge": "양산 일정만으로 승자를 고를 수 없으므로 다음 막에서 실제 수율을 흔드는 정렬·변형·열·ESD·디버그 실패로 내려간다."
+    },
+    {
+      "order": 4,
+      "heading": "뒤에서 보이지 않는 앞면 접점을 맞히는 새 병목을 찾는다",
+      "purpose": "수율 역전과 기술적 깊이",
+      "scene": "나노 비아가 매립 전력 레일 모서리에 걸릴 때 저항이 커지는 장면과 웨이퍼 본딩 변형, 두께 편차, 응력, 열, 정전기 보호를 실패 지도로 묶는다.",
+      "causalBridge": "실패 종류가 보이면 회사도 장비 목록이 아니라 누가 그 실패를 고쳐야 하는지 책임 순서로 다시 배치할 수 있다."
+    },
+    {
+      "order": 5,
+      "heading": "연구기관부터 파운드리·EDA·본딩·박막화·계측을 실패 책임으로 연결한다",
+      "purpose": "산업 네트워크와 회사별 역할 해부",
+      "scene": "imec·IBM·Arm, Intel·TSMC·삼성, Synopsys·Cadence, EVG·DISCO, Applied·Lam·KLA를 공정과 공식 근거, 재무 흔적 표로 정리한다.",
+      "causalBridge": "기술 역할이 중요해도 매출 증거는 별개이므로 다음 막에서 DartLab 회사 전체 재무와 BSPDN 독립 매출의 부재를 함께 확인한다."
+    },
+    {
+      "order": 6,
+      "heading": "DartLab 재무에서 기술을 감당할 체력과 독립 매출의 빈칸을 함께 본다",
+      "purpose": "재무 착지와 과장 방지",
+      "scene": "Intel·삼성전자·Applied·KLA·Synopsys의 2025년 매출, 이익, 현금흐름, 투자·R&D를 재계산하고 모두 회사 전체 숫자라고 제한한다.",
+      "causalBridge": "현재 숫자가 후면전력 매출을 분리하지 못한다면 장기 가치는 뒤면에 추가될 전력 외 기능과 양면 설계 권한에서 찾아야 한다."
+    },
+    {
+      "order": 7,
+      "heading": "전력선이 들어간 뒤면에 커패시터·ESD·입출력·냉각이 들어오는 미래를 본다",
+      "purpose": "깊은 미래 관점과 네트워크 확장",
+      "scene": "뒤면의 제한된 면적을 전력과 열, 정전기 보호, 커패시터, 입출력이 나눠 쓰며 칩이 양면 시스템으로 변하는 모습을 설명한다.",
+      "causalBridge": "미래 기능이 여러 갈래라면 하나의 결론보다 조건에 따라 강해지는 회사 층을 나눈 시나리오로 닫아야 한다."
+    },
+    {
+      "order": 8,
+      "heading": "Intel 검증, TSMC 확산, 정렬 병목, 비용 지연의 네 시나리오를 비교한다",
+      "purpose": "반증 가능한 관전 포인트",
+      "scene": "각 조건에서 강해질 회사 층, 확인할 지표, 틀렸다고 판정할 조건을 제시해 다음 발표를 독자가 직접 분류하게 한다.",
+      "causalBridge": "독자는 관련주 이름보다 연구, 양산, 고객 반복 주문, 독립 매출로 증거가 이동하는 순서를 계속 추적하게 된다."
+    }
+  ],
+  "sections": [
+    {
+      "order": 1,
+      "heading": "전기는 왜 열 층의 계단을 내려와야 했나",
+      "subtitle": "전압 강하와 앞면 배선 혼잡을 복도와 배관으로 설명한다",
+      "visualAnchor": "15-frontside-vs-backside SVG에서 앞면 공유 구조와 뒤면 분리 구조를 같은 단면으로 비교한다.",
+      "explanation": "쉽게 말하면 전력선과 신호선이 낮은 금속층을 놓고 경쟁하고 긴 전력 경로의 저항이 순간 전압 강하를 만드는 이유를 복도 비유와 텍스트 경로로 푼다.",
+      "example": "Intel의 최대 20% 앞면 자원 설명과 시험 칩 5% 이상 주파수 개선, imec Arm 블록의 6% 주파수·16% 면적 연구를 서로 다른 증거로 구분한다.",
+      "support": "주의할 점은 회사 시험 칩과 설계 연구를 상용 GPU 전체의 고정 개선 폭으로 일반화하지 않는 것이다.",
+      "transition": "뒤면 공급의 이익을 이해했으므로 실제로 웨이퍼를 어떻게 뒤집고 깎는지 공정 장면으로 넘어간다.",
+      "evaluation": "초보자가 BSPDN을 새 트랜지스터가 아니라 전력선과 신호선의 공간 분리라고 설명할 수 있어야 한다."
+    },
+    {
+      "order": 2,
+      "heading": "완성한 웨이퍼를 붙이고 뒤집고 깎는다",
+      "subtitle": "본딩부터 나노 비아와 후면 금속까지 공정을 따라간다",
+      "visualAnchor": "15-flip-thin 이미지와 15-flip-thin-drill-flow SVG로 물리 장면과 공정 순서를 연속 배치한다.",
+      "explanation": "쉽게 말하면 운반판 본딩, 뒤집기, 연삭·연마·식각, 나노 비아, 금속 충전 과정을 머리카락과 엘리베이터 비유로 설명한다.",
+      "example": "imec 예시의 30nm 매립 전력 레일, 100nm 간격, 수백 나노미터 비아, 40nm 미만 두께 편차, 10nm 미만 정렬을 범위와 함께 제시한다.",
+      "support": "주의할 점은 연구 공정 예시를 Intel·TSMC·삼성 양산 규격으로 부르지 않고 앞면 감소 단계와 뒤면 추가 단계를 동시에 적는 것이다.",
+      "transition": "공정의 난도를 확인한 뒤 세 파운드리의 서로 다른 일정과 증거를 시간선으로 비교한다.",
+      "evaluation": "독자가 BSPDN이 단순히 칩 뒤에 전선을 붙이는 기술이 아니라는 점을 공정 순서로 말할 수 있어야 한다."
+    },
+    {
+      "order": 3,
+      "heading": "PowerVia, Super Power Rail, SF2Z는 같은 이름이 아니다",
+      "subtitle": "2025년 HVM과 2026·2027년 계획을 한 시간선에서 구분한다",
+      "visualAnchor": "15-foundry-evidence-timeline SVG와 파운드리 표가 기술명, 일정, 회사 주장, 미확인 항목을 분리한다.",
+      "explanation": "Intel 자체 제품 양산, TSMC A16 예정, 삼성 SF2Z 예정이라는 서로 다른 성숙도를 제품 발표와 외부 고객 경제성으로 나눠 설명한다.",
+      "example": "Intel 2025 10-K의 HVM·외부 고객 한계, TSMC A16 공식 PPA 목표, 삼성 SF2Z 2027년 일정을 각각 공식 범위로 인용한다.",
+      "support": "오해하면 안 되는 점은 18A 전체 개선을 PowerVia 단독 효과로 부르지 않고 세 회사의 공개되지 않은 내부 단면과 고객을 추정하지 않는 것이다.",
+      "transition": "양산 일정표보다 더 오래 남을 수 있는 접점 정렬과 웨이퍼 변형 문제로 이동한다.",
+      "evaluation": "독자가 로드맵, 시험 칩, 자체 제품 HVM, 외부 고객 양산을 서로 다른 증거 단계로 나눠야 한다."
+    },
+    {
+      "order": 4,
+      "heading": "새 병목은 보이지 않는 접점을 맞히는 일이다",
+      "subtitle": "정렬·두께·응력·열·ESD·디버그를 수율 문제로 묶는다",
+      "visualAnchor": "15-overlay 이미지와 15-yield-failure-map SVG로 나노 비아 오정렬과 여섯 실패가 수율로 모이는 모습을 보여 준다.",
+      "explanation": "본딩 변형과 웨이퍼 휨 때문에 뒤면 좌표가 달라지고 접점 모서리에 걸린 비아의 저항이 커지는 메커니즘을 설명한다.",
+      "example": "Applied의 10~100배 측정·60keV 주장을 회사 전망으로, Lam의 2026년 접점 시뮬레이션을 실제 팹 수율이 아닌 도구 증거로 제한한다.",
+      "support": "주의할 점은 계측 회사의 시장 주장을 독립 산업 평균이나 장비 수주로 바꾸지 않고 ESD와 열의 반례도 함께 두는 것이다.",
+      "transition": "실패 종류가 드러났으므로 다음 섹션에서는 각 실패를 고칠 연구기관, 파운드리, EDA, 장비 회사를 책임 순서로 배치한다.",
+      "evaluation": "독자가 기술이 병목을 없애지 않고 앞면 혼잡을 뒤면 수율로 옮긴다고 설명할 수 있어야 한다."
+    },
+    {
+      "order": 5,
+      "heading": "회사 지도는 장비 목록이 아니라 실패 책임으로 읽는다",
+      "subtitle": "연구부터 고객 제품까지 산업 네트워크를 세로로 연결한다",
+      "visualAnchor": "필수 공정·회사·근거 표와 15-company-responsibility-map SVG가 역할과 증거 범위를 나란히 놓는다.",
+      "explanation": "연구 경로, 파운드리·PDK, EDA, 본딩·박막화, 식각·증착·연마, 계측, 고객 제품을 실패 책임 기준으로 나눈다.",
+      "example": "Synopsys A16 인증과 Cadence 18A 협력, EVG·DISCO의 물리 공정, Applied·Lam의 공정·계측 인접성을 공식 자료와 연결한다.",
+      "support": "오해하면 안 되는 점은 설계 권한과 경제적 이익을 분리하고 고객명·매출이 공개되지 않은 회사를 직접 수혜로 확정하지 않는 것이다.",
+      "transition": "회사 위치가 보여도 매출 증거는 별개이므로 다음 섹션에서 DartLab 회사 전체 재무와 독립 매출의 빈칸을 검산한다.",
+      "evaluation": "독자가 회사 이름보다 어느 실패를 책임지고 어느 증거 단계에 있는지를 말할 수 있어야 한다."
+    },
+    {
+      "order": 6,
+      "heading": "앞면에서 줄어든 공정이 뒤면에서 누구의 매출이 되는가",
+      "subtitle": "DartLab 재무와 장비 시장 추정의 범위를 구분한다",
+      "visualAnchor": "DartLab Company 코드와 2025년 재무 표가 Intel·삼성전자·Applied·KLA·Synopsys의 체력과 기술 매출의 부재를 함께 보여 준다.",
+      "explanation": "회사 전체 매출·영업이익·현금흐름·설비투자·R&D를 후면전력 단독 실적으로 부르지 않고 양산·고객·수율·설치·독립 매출 증거 사다리를 제시한다.",
+      "example": "Intel 528.53억달러 매출과 22.14억달러 영업손실, Applied 283.68억달러 매출, Synopsys 70.54억달러 매출을 같은 단위와 기간으로 검산한다.",
+      "support": "주의할 점은 Applied의 월 10만 장당 10억달러 추가 서비스 가능 시장이 회사 추정이며 주문·매출이 아니라는 것이다.",
+      "transition": "현재 매출이 분리되지 않는다면 뒤면의 장기 가치는 전력 외 기능이 들어오는 다음 단계에서 다시 판단해야 한다.",
+      "evaluation": "독자가 기술 중요도, 회사 전체 체력, 기술 전용 매출을 서로 다른 숫자로 읽어야 한다."
+    },
+    {
+      "order": 7,
+      "heading": "칩 뒤면은 전력선에서 끝나지 않는다",
+      "subtitle": "전력·커패시터·ESD·입출력·냉각이 희소 면적을 놓고 경쟁한다",
+      "visualAnchor": "15-backside-real-estate SVG가 미래 뒤면의 다섯 기능과 충돌 관계를 한 장에 배치한다.",
+      "explanation": "쉽게 말하면 수동 지지면이던 뒤면이 기능하는 면이 되면서 전력과 열, 보호, 저장, 입출력을 앞면·뒤면·패키지에서 함께 설계해야 하는 변화를 설명한다.",
+      "example": "2026년 기준 imec의 MIM 커패시터·ESD·I/O 사례와 IBM의 후면 전력·미세유체 냉각 모델을 연구 증거로 연결한다.",
+      "support": "주의할 점은 미래 연구를 상용 로드맵으로 바꾸지 않고 뒤면 금속의 열 확산 장점과 냉각 공간 경쟁을 동시에 적는 것이다.",
+      "transition": "여러 기능과 일정이 경쟁하므로 마지막에는 조건별로 강해지는 회사 층과 반증 지표를 네 시나리오로 나눈다.",
+      "evaluation": "독자가 뒤면을 공짜 공간이 아니라 전력·열·입출력이 경쟁하는 희소 자원으로 설명할 수 있어야 한다."
+    },
+    {
+      "order": 8,
+      "heading": "관전 포인트는 네 가지 미래 시나리오다",
+      "subtitle": "양산 검증, 생태계 확산, 정렬 병목, 비용 지연을 조건으로 본다",
+      "visualAnchor": "본문의 네 시나리오가 조건, 메커니즘, 강한 회사 층, 관전 지표, 무효화 조건을 같은 순서로 반복한다.",
+      "explanation": "쉽게 말하면 Intel 외부 고객 경제성, TSMC A16 확산, 정렬·변형 병목, 비용·열·ESD 지연을 네 개의 독립 조건으로 세운다.",
+      "example": "외부 고객 물량·수율·마진, A16 고객 테이프아웃, 웨이퍼당 측정 강도, 공정 원가·신뢰성을 관전 지표로 제시한다.",
+      "support": "주의할 점은 관련주 결론 대신 각 시나리오가 틀렸다고 판정할 조건을 함께 써 확정적 예언을 피하는 것이다.",
+      "transition": "마지막 질문을 누가 수혜자인가에서 누가 숨은 접점을 수율과 독립 매출로 증명하는가로 바꾼다.",
+      "evaluation": "독자가 다음 회사 발표를 로드맵, HVM, 반복 주문, 독립 매출의 어느 칸인지 직접 분류할 수 있어야 한다."
+    }
+  ],
+  "visuals": [
+    {
+      "title": "앞면과 뒤면 전력 경로 비교",
+      "kind": "comparison-diagram",
+      "proves": "같은 트랜지스터에 전기를 보내도 앞면 공유 구조는 여러 금속층을 내려오고 뒤면 구조는 짧은 수직 접점을 쓴다.",
+      "placement": "1절 기존 전력 경로 텍스트 블록 직후",
+      "insertAfter": "칩 앞면 전력 공급과 칩 뒤면 전력 공급 코드블록",
+      "narrativeUse": "복도와 배관 비유를 실제 단면 관계로 바꿔 첫 기술 반전을 이해시킨다."
+    },
+    {
+      "title": "뒤집기와 박막화 공정 흐름",
+      "kind": "process-flow",
+      "proves": "앞면 제작, 본딩, 뒤집기, 박막화, 나노 비아, 후면 금속이 하나의 연속 공정이며 새 단계가 늘어난다.",
+      "placement": "2절 imec 공정 순서 목록 직후",
+      "insertAfter": "다섯 단계 공정 목록",
+      "narrativeUse": "단순 배선 변경이라는 오해를 공정 복잡성과 수율 책임으로 전환한다."
+    },
+    {
+      "title": "파운드리 증거 시간선",
+      "kind": "timeline",
+      "proves": "Intel 18A의 2025년 HVM과 TSMC A16·삼성 SF2Z의 예정 일정은 같은 성숙도가 아니다.",
+      "placement": "3절 세 회사의 시간표를 소개하는 첫 문단 직후",
+      "insertAfter": "세 회사의 시간표는 다르다는 문장",
+      "narrativeUse": "기술 이름 비교를 연구·계획·양산·외부 고객 증거 비교로 바꾼다."
+    },
+    {
+      "title": "후면 공정 수율 실패 지도",
+      "kind": "causal-map",
+      "proves": "정렬·두께·응력·열·ESD·디버그가 독립 문제가 아니라 모두 수율과 원가로 모인다.",
+      "placement": "4절 Applied와 Lam 근거 설명 직후",
+      "insertAfter": "시뮬레이션은 실제 팹 수율이 아니라는 문단",
+      "narrativeUse": "앞면 혼잡이 뒤면 실패 책임으로 옮겨 간다는 글의 중심 통찰을 시각화한다."
+    },
+    {
+      "title": "회사 실패 책임 네트워크",
+      "kind": "network-map",
+      "proves": "연구기관, 파운드리, EDA, 본딩·박막화, 공정·계측이 숨은 접점 수율을 함께 만든다.",
+      "placement": "5절 도입 문단 직후",
+      "insertAfter": "실패하면 누가 고쳐야 하는가를 묻는 문장",
+      "narrativeUse": "회사 목록을 공급망 네트워크와 책임 경계로 재배치한다."
+    },
+    {
+      "title": "뒤면 희소 면적 지도",
+      "kind": "resource-map",
+      "proves": "미래 뒤면은 전력만의 공간이 아니라 커패시터·ESD·입출력·냉각과 나눠 쓰는 제한된 자원이다.",
+      "placement": "7절 뒤면 기능 전환 설명 직후",
+      "insertAfter": "다른 기능도 들어오려 한다는 문단",
+      "narrativeUse": "단일 공정 이야기를 앞면·뒤면·패키지 동시 설계라는 미래 관점으로 확장한다."
+    },
+    {
+      "title": "후면 전력 단면 개념 장면",
+      "kind": "editorial-raster",
+      "proves": "앞면의 조밀한 신호선과 뒤면의 굵은 전력선이 물리적으로 분리되는 핵심 구조를 한눈에 보여 준다.",
+      "placement": "frontmatter 다음 도입 첫 장면",
+      "insertAfter": "frontmatter",
+      "narrativeUse": "낯선 기술을 읽기 전에 앞면과 뒤면이라는 공간 관계를 직관적으로 잡아 준다."
+    },
+    {
+      "title": "웨이퍼 뒤집기와 박막화 개념 장면",
+      "kind": "editorial-raster",
+      "proves": "운반판에 붙인 웨이퍼를 뒤집고 실리콘을 얇게 만드는 물리적 공정이 기술의 핵심 난도임을 보여 준다.",
+      "placement": "2절 박막화 설명 직후",
+      "insertAfter": "머리카락보다 백 배 이상 얇다는 문단",
+      "narrativeUse": "추상적인 공정명을 실제 제조 장면처럼 이해하게 한 뒤 순서 도식으로 연결한다."
+    },
+    {
+      "title": "숨은 접점 정렬 개념 장면",
+      "kind": "editorial-raster",
+      "proves": "뒤면에서 뚫는 나노 비아가 보이지 않는 앞면 전력 레일을 정밀하게 맞혀야 한다는 수율 문제를 보여 준다.",
+      "placement": "4절 접점 오정렬 설명 직후",
+      "insertAfter": "완전히 빗나가면 전기가 끊긴다는 문단",
+      "narrativeUse": "회사 네트워크가 왜 정렬과 계측을 중심으로 재편되는지 한 장면으로 납득시킨다."
+    }
+  ],
+  "imagePlan": [
+    {
+      "assetKey": "15-hero",
+      "sourcePolicy": "auto",
+      "slot": "hero",
+      "subject": "첨단 칩 단면에서 앞면의 조밀한 신호 배선과 뒤면의 굵은 전력 배선이 분리되어 트랜지스터에 연결되는 브랜드 없는 편집 장면",
+      "query": "backside power delivery semiconductor cutaway dense signal wiring backside power rails editorial no logo",
+      "keywords": ["backside power delivery", "chip cutaway", "power rails"],
+      "placement": "frontmatter 다음 첫 장면과 1절 원리 설명 앞",
+      "narrativeUse": "전력선을 칩 뒤로 옮긴다는 핵심 공간 관계를 텍스트보다 먼저 이해시킨다."
+    },
+    {
+      "assetKey": "15-flip-thin",
+      "sourcePolicy": "auto",
+      "slot": "inline",
+      "subject": "운반용 웨이퍼에 붙인 첨단 웨이퍼를 뒤집고 뒷면을 매우 얇게 연마하는 브랜드 없는 클린룸 공정 개념 장면",
+      "query": "semiconductor wafer carrier bonding flip thinning cleanroom editorial no logo",
+      "keywords": ["wafer bonding", "wafer thinning", "backside processing"],
+      "placement": "2절 본딩·뒤집기·박막화 설명 직후",
+      "narrativeUse": "완성한 웨이퍼를 다시 깎는 낯선 제조 행동과 물리적 난도를 보여 준다."
+    },
+    {
+      "assetKey": "15-overlay",
+      "sourcePolicy": "auto",
+      "slot": "inline",
+      "subject": "얇아진 실리콘 뒤에서 나노 비아가 숨은 앞면 매립 전력 레일의 정중앙을 맞히는 전자빔 계측 개념 장면",
+      "query": "nanoscale backside via alignment buried power rail electron beam metrology editorial no logo",
+      "keywords": ["nano via alignment", "buried power rail", "e beam metrology"],
+      "placement": "4절 접점 오정렬과 웨이퍼 변형 설명 사이",
+      "narrativeUse": "앞면 배선 병목이 뒤면 접점 정렬과 계측 병목으로 이동한다는 중심 통찰을 보여 준다."
+    }
+  ],
+  "relatedPosts": {
+    "searches": ["반도체 제조 공정", "HBM TSV 패키징", "AI 칩 냉각", "CPO 실리콘 포토닉스", "800V AI 데이터센터 전력"],
+    "placementRule": "같은 원리를 반복하지 않고 웨이퍼 전공정, 수직 비아, 칩 열, 광 I/O, 시설 전력처럼 후면전력공급망의 앞뒤 경계를 더 깊게 볼 문단 끝에 실제 존재하는 글만 연결한다.",
+    "links": [
+      {
+        "path": "/blog/sand-to-semiconductor",
+        "title": "모래가 반도체가 되기까지",
+        "reason": "앞면 트랜지스터와 금속 배선을 만드는 전체 전공정 뒤에 후면 공정이 어디에 붙는지 연결한다.",
+        "placement": "도입 마지막 문단"
+      },
+      {
+        "path": "/blog/hbm-stack-packaging-test",
+        "title": "HBM은 왜 쌓을까",
+        "reason": "HBM TSV와 BSPDN 나노 비아의 크기·목적·수율 책임 차이를 비교한다.",
+        "placement": "2절 나노 비아 설명"
+      },
+      {
+        "path": "/blog/semiconductor-cooling-network",
+        "title": "AI 칩의 다음 병목은 열이다",
+        "reason": "전력 배선과 냉각 구조가 같은 칩 뒤면의 제한된 면적에서 만나는 지점을 확장한다.",
+        "placement": "7절 뒤면 냉각 설명"
+      },
+      {
+        "path": "/blog/co-packaged-optics-silicon-photonics",
+        "title": "AI 클러스터는 왜 빛을 칩 옆으로 끌어오나",
+        "reason": "전력과 I/O가 모두 더 짧은 경로를 찾아 칩과 패키지 가까이 이동하는 공통 방향을 비교한다.",
+        "placement": "7절 입출력 설명"
+      },
+      {
+        "path": "/blog/800vdc-ai-data-center-power",
+        "title": "GPU 코어는 1V 미만인데, 왜 데이터센터는 800V로 가나",
+        "reason": "시설의 고전압 직류가 칩 내부의 낮은 전압과 후면 전력망까지 내려오는 더 큰 전력 여정을 연결한다.",
+        "placement": "1절 또는 결론의 전력 경계 설명"
+      }
+    ]
+  },
+  "honestyGuards": [
+    "Intel 시험 칩의 5% 이상 주파수 개선과 imec Arm 블록의 6% 주파수·16% 면적 연구를 상용 GPU 전체의 고정 성능으로 일반화하지 않는다.",
+    "Intel 18A의 종합 전압 강하·면적 수치를 PowerVia 단독 효과로 부르지 않는다.",
+    "TSMC A16의 PPA 수치는 회사 목표이며 2026년 하반기 양산 전 고객 제품 실측으로 쓰지 않는다.",
+    "삼성 SF2Z는 2027년 양산 예정이며 현재 출하 중이거나 특정 GPU 고객이 확정됐다고 쓰지 않는다.",
+    "imec의 30nm·100nm·40nm·10nm 수치는 연구 공정 예시이며 세 파운드리의 양산 규격으로 쓰지 않는다.",
+    "Applied의 10~100배 측정, 60keV 전자빔, 월 10만 장당 10억달러 시장은 회사 주장·추정이며 독립 평균·수주·매출로 바꾸지 않는다.",
+    "Lam의 2026년 접점 연구는 3차원 공정 시뮬레이션이며 실제 고객 팹의 수율 증거로 쓰지 않는다.",
+    "회사 전체 매출·영업이익·현금흐름·R&D·설비투자를 BSPDN 전용 실적으로 부르지 않는다.",
+    "EDA 인증, 장비 기술 자료, MOU·연구 협력을 고객 채택·반복 주문·독립 매출로 해석하지 않는다.",
+    "특정 고객이 공개되지 않은 TSMC·삼성 후면전력 공정에 NVIDIA·AMD 등 팹리스 이름을 임의로 연결하지 않는다.",
+    "미래 뒤면 커패시터·ESD·I/O·미세유체 냉각 연구를 확정 상용 로드맵으로 쓰지 않는다.",
+    "신규 생성 래스터는 원리·공정·정렬을 설명하는 개념 장면이며 실제 회사 제품·팹·회로 단면이라고 주장하지 않는다."
+  ],
+  "evidenceMap": [
+    {
+      "id": "E1",
+      "claim": "imec은 앞면 제작, 운반판 본딩, 뒤집기, 박막화, 나노 비아, 후면 금속으로 이어지는 BSPDN 공정과 정렬·두께 난도를 공개했다.",
+      "sourceType": "PRIMARY-RESEARCH",
+      "sourceRef": "imec backside power technical article",
+      "period": "current research flow checked 2026-07",
+      "unit": "nm, process sequence",
+      "scope": "imec research examples, not commercial foundry design rules",
+      "url": "https://www.imec-int.com/en/articles/how-power-chips-backside"
+    },
+    {
+      "id": "E2",
+      "claim": "imec의 Arm 블록 DTCO 연구는 앞면 전력망 대비 6% 주파수와 16% 면적 개선 가능성을 보고했다.",
+      "sourceType": "PRIMARY-RESEARCH",
+      "sourceRef": "imec backside power DTCO study",
+      "period": "research study checked 2026-07",
+      "unit": "percent frequency and area",
+      "scope": "modeled Arm block, not commercial whole-chip benchmark",
+      "url": "https://www.imec-int.com/en/articles/backside-power-delivery-options-dtco-study"
+    },
+    {
+      "id": "E3",
+      "claim": "Intel은 PowerVia 시험 칩에서 5%가 넘는 주파수 개선과 90%가 넘는 셀 밀도를 보고했다.",
+      "sourceType": "OFFICIAL-TECHNICAL",
+      "sourceRef": "Intel PowerVia technical release",
+      "period": "2023, current production context checked 2026-07",
+      "unit": "percent frequency and cell density",
+      "scope": "Intel test-chip claim, not external customer product result",
+      "url": "https://newsroom.intel.com/client-computing/powervia-intel-achieves-chipmaking-breakthrough"
+    },
+    {
+      "id": "E4",
+      "claim": "Intel 2025 10-K는 18A가 2025년 말 고대량생산에 진입했고 초기 자체 제품을 출시했지만 외부 파운드리 고객은 아직 적다고 밝혔다.",
+      "sourceType": "EDGAR-10-K",
+      "sourceRef": "Intel 2025 Form 10-K",
+      "period": "FY2025 filed 2026",
+      "unit": "production and customer stage",
+      "scope": "Intel company disclosure, 18A economics not separately proven",
+      "url": "https://www.intc.com/filings-reports/all-sec-filings/content/0000050863-26-000011/intc-20251227.htm"
+    },
+    {
+      "id": "E5",
+      "claim": "TSMC A16은 Super Power Rail과 나노시트를 결합하고 N2P 대비 8~10% 속도, 15~20% 전력, 최대 1.10배 밀도 목표를 제시한다.",
+      "sourceType": "OFFICIAL-PROCESS",
+      "sourceRef": "TSMC A16 process page",
+      "period": "volume production scheduled H2 2026",
+      "unit": "percent PPA and density",
+      "scope": "TSMC comparison targets, customer product results not yet disclosed",
+      "url": "https://www.tsmc.com/english/dedicatedFoundry/technology/logic/l_A16"
+    },
+    {
+      "id": "E6",
+      "claim": "삼성전자는 SF2Z에 후면전력공급망을 넣어 전압 강하와 PPA를 개선하고 2027년 양산할 계획이라고 밝혔다.",
+      "sourceType": "OFFICIAL-ROADMAP",
+      "sourceRef": "Samsung Foundry Forum 2024",
+      "period": "2024 announcement, 2027 production target",
+      "unit": "roadmap year and technology objective",
+      "scope": "roadmap, customers and shipment volume not disclosed",
+      "url": "https://news.samsung.com/global/samsung-showcases-ai-era-vision-and-latest-foundry-technologies-at-sff-2024"
+    },
+    {
+      "id": "E7",
+      "claim": "Synopsys는 TSMC A16 후면 라우팅을 포함한 인증 EDA 흐름을 공개했다.",
+      "sourceType": "OFFICIAL-EDA-CERTIFICATION",
+      "sourceRef": "Synopsys and TSMC certified flows",
+      "period": "2025",
+      "unit": "certification stage",
+      "scope": "design enablement, not standalone BSPDN revenue",
+      "url": "https://investor.synopsys.com/news/news-details/2025/Synopsys-and-TSMC-Usher-In-Angstrom-Scale-Designs-with-Certified-EDA-Flows-on-Advanced-TSMC-A16-and-N2P-Processes/default.aspx"
+    },
+    {
+      "id": "E8",
+      "claim": "Applied Materials는 후면 공정에 연마·증착·식각·에피택시·이온주입·열처리·금속과 고에너지 전자빔 계측이 필요하다고 설명한다.",
+      "sourceType": "OFFICIAL-EQUIPMENT-TECHNICAL",
+      "sourceRef": "Applied backside power and eBeam pages",
+      "period": "current portfolio checked 2026-07",
+      "unit": "process modules and measurement intensity",
+      "scope": "company technical and market view, orders not proven",
+      "url": "https://www.appliedmaterials.com/eu/en/semiconductor/markets-and-inflections/advanced-logic/backside-power.html"
+    },
+    {
+      "id": "E9",
+      "claim": "Lam Research의 3차원 공정 시뮬레이션은 나노 비아와 매립 전력 레일의 정렬과 모서리 형상이 접점 저항에 영향을 줄 수 있음을 보였다.",
+      "sourceType": "OFFICIAL-SIMULATION-RESEARCH",
+      "sourceRef": "Lam SEMulator3D BSPDN study",
+      "period": "2026-06-29",
+      "unit": "overlay and resistance sensitivity",
+      "scope": "simulation, not fab shipment or measured yield",
+      "url": "https://newsroom.lamresearch.com/optimizing-the-nano-tsv-to-bpr-connection-in-backside-power-networks?blog=true"
+    },
+    {
+      "id": "E10",
+      "claim": "DartLab 연간 패널에서 Intel·삼성전자·Applied·KLA·Synopsys의 2025년 회사 전체 재무를 재계산했다.",
+      "sourceType": "DARTLAB-EDGAR-DART",
+      "sourceRef": "dartlab.Company().panel('IS'/'CF', freq='Y') main-thread rerun",
+      "period": "CY2025 and FY2025",
+      "unit": "USD and KRW",
+      "scope": "company-wide financials, not standalone BSPDN revenue",
+      "url": "https://dartlab.ai"
+    },
+    {
+      "id": "E11",
+      "claim": "IBM Research는 직접 후면 접점이 셀 축소에 유리하고 자기정렬 구조가 오정렬 민감도를 줄일 수 있다고 연구했다.",
+      "sourceType": "PRIMARY-RESEARCH",
+      "sourceRef": "IBM backside power distribution research",
+      "period": "research checked 2026-07",
+      "unit": "cell architecture and alignment sensitivity",
+      "scope": "research comparison, not commercial product proof",
+      "url": "https://research.ibm.com/publications/backside-power-distribution-for-nanosheet-technologies-beyond-2nm"
+    },
+    {
+      "id": "E12",
+      "claim": "imec은 얇은 실리콘 기판에서 ESD 내성과 열 방출이 불리할 수 있고 미래 뒤면에 MIM 커패시터·ESD·I/O를 넣을 수 있다고 설명한다.",
+      "sourceType": "PRIMARY-RESEARCH",
+      "sourceRef": "imec ESD and backside function articles",
+      "period": "research checked 2026-07",
+      "unit": "reliability and future functions",
+      "scope": "research direction, not foundry production roadmap",
+      "url": "https://www.imec-int.com/en/articles/how-protect-advanced-cmos-technologies-thin-si-substrates-against-esd-events"
+    }
+  ],
+  "watchScenarios": [
+    {
+      "id": "intel-external-economics",
+      "condition": "Intel 18A 자체 제품의 수율이 안정되고 외부 파운드리 고객이 반복 물량과 후속 설계를 맡긴다면",
+      "mechanism": "PowerVia의 공정 통합과 디버그 경험이 자체 CPU 증거에서 외부 고객이 지불하는 양산 플랫폼으로 이동한다.",
+      "outcome": "Intel 파운드리와 18A 인증 EDA, 본딩·박막화·계측 장비의 상용화 증거가 가장 먼저 강해진다.",
+      "watchMetric": "외부 고객명, 테이프아웃, 웨이퍼 물량, 수율 개선, 파운드리 매출총이익, 반복 주문과 후속 노드 채택을 확인한다.",
+      "invalidatedBy": "자체 제품만 출하되고 외부 고객이 적으며 파운드리 손실과 수율 문제가 오래 지속되면 기술과 사업의 간격이 남는다.",
+      "evidenceRefs": ["E3", "E4", "E7", "E10"]
+    },
+    {
+      "id": "tsmc-a16-ecosystem",
+      "condition": "TSMC A16이 2026년 하반기 계획대로 양산되고 복잡한 신호 경로와 높은 전력 밀도의 HPC 고객이 빠르게 채택한다면",
+      "mechanism": "Super Power Rail이 넓은 팹리스와 인증 EDA·장비 생태계에 퍼지며 후면전력공급망의 고객 폭을 넓힌다.",
+      "outcome": "TSMC와 A16 인증 Synopsys·Cadence, 여러 공정·계측 장비사의 반복 가능한 수요가 강해진다.",
+      "watchMetric": "A16 양산 시작, 고객 테이프아웃과 제품 출하, N2P 대비 실제 PPA·비용·수율, A16 매출 비중을 확인한다.",
+      "invalidatedBy": "고객이 N2P로도 목표를 달성하거나 A16의 비용·수율 부담 때문에 일부 HPC 설계에만 머물면 생태계 확산은 좁아진다.",
+      "evidenceRefs": ["E5", "E7", "E8", "E10"]
+    },
+    {
+      "id": "overlay-warpage-bottleneck",
+      "condition": "보이지 않는 접점 정렬과 본딩·박막화 변형이 후면전력 양산 수율의 가장 오래 남는 병목이 된다면",
+      "mechanism": "웨이퍼당 측정과 공정 시뮬레이션, 고정밀 본딩·연삭의 가치가 커지고 장비 설치와 공정제어 강도가 높아진다.",
+      "outcome": "Applied, EV Group, DISCO, Lam과 공정제어 회사가 파운드리 여러 곳의 공통 실패를 해결하는 직접 인접 층으로 강해진다.",
+      "watchMetric": "웨이퍼당 측정 수, 신규 검사·본딩·연삭 장비 주문, 공정 단계, 접점 저항 분포, 고객 수율 개선 속도를 확인한다.",
+      "invalidatedBy": "자기정렬 직접 접점과 공정 보정이 정렬 민감도를 크게 낮추거나 기존 장비로 충분히 제어되면 새 장비 수요는 예상보다 작다.",
+      "evidenceRefs": ["E1", "E8", "E9", "E11"]
+    },
+    {
+      "id": "cost-thermal-reliability-delay",
+      "condition": "후면 추가 공정의 원가와 얇은 실리콘의 열·ESD·디버그 부담이 앞면 배선 개선보다 커진다면",
+      "mechanism": "고객은 모든 칩에 BSPDN을 쓰지 않고 앞면 전력 구조, 덜 공격적인 노드, 고급 패키징으로 성능과 비용을 맞춘다.",
+      "outcome": "BSPDN 특화 투자 속도는 느려지고 N2P 같은 전통 전력망과 패키징·냉각 최적화의 상대적 가치가 유지된다.",
+      "watchMetric": "웨이퍼당 추가 비용, 마스크·공정 단계, 열저항, ESD 시험, 제품 불량률, 노드별 고객 채택 범위를 확인한다.",
+      "invalidatedBy": "Intel·TSMC·삼성 세 곳에서 서로 다른 고객이 대량생산을 통과하고 비용·신뢰성·수율을 감당하면 지연 시나리오는 약해진다.",
+      "evidenceRefs": ["E4", "E5", "E6", "E12"]
+    }
+  ],
+  "reviewGate": {
+    "status": "passed",
+    "requiredRounds": [
+      {"id": "titleHook", "status": "passed"},
+      {"id": "writerPanel", "status": "passed"},
+      {"id": "honestyEvidence", "status": "passed"},
+      {"id": "sectionFlow", "status": "passed"},
+      {"id": "visualStoryPlan", "status": "passed"},
+      {"id": "imageFit", "status": "passed"},
+      {"id": "readerFit", "status": "passed"},
+      {"id": "reevaluation", "status": "passed"}
+    ],
+    "loopEvidence": {
+      "workflow": "blog_plan_loop.workflow.js",
+      "rounds": [
+        {
+          "round": "official-research-r1",
+          "planner": "imec·IBM의 1차 연구, Intel·TSMC·삼성의 공정·연차보고서, EDA 인증, 장비 기술 자료와 DartLab 재무를 물리·양산·경제 증거로 나눴다.",
+          "evaluator": "후면전력의 장점을 나열하기보다 완성한 웨이퍼를 뒤집고 깎는 장면에서 시작해 앞면 혼잡이 뒤면 수율로 이동하는 인과를 중심에 두라고 평가했다.",
+          "skeptic": "시험 칩 성능과 연구 블록 결과를 상용 GPU로 일반화할 수 없고 세 파운드리의 기술명과 일정, 공개 구조를 한 표로 단정하면 안 된다고 지적했다.",
+          "decision": "revise",
+          "evaluatorScore": 86
+        },
+        {
+          "round": "network-evidence-r2",
+          "planner": "회사 목록을 연구, 파운드리, EDA, 본딩·박막화, 공정·계측, 고객 제품의 실패 책임 네트워크로 다시 구성하고 증거 단계를 분리했다.",
+          "evaluator": "설계 권한과 경제적 가치를 나누고 Applied 시장 추정, Lam 시뮬레이션, EDA 인증을 주문·매출로 읽지 않는 재무 착지가 필요하다고 평가했다.",
+          "skeptic": "뒤면 금속의 열 확산 장점만 쓰면 냉각·ESD·응력 반례를 놓치며, 자기정렬 접점이 계측 부담을 낮출 가능성도 시나리오에 넣어야 한다고 요구했다.",
+          "plannerRevision": "실패 책임 표, DartLab 회사 전체 재무 범위, 뒤면 희소 면적, 자기정렬 반증 조건을 본문과 시나리오에 추가했다.",
+          "decision": "revise",
+          "evaluatorScore": 92
+        },
+        {
+          "round": "main-thread-verification-r3",
+          "planner": "공식 원문의 일정·수치와 DartLab 2025년 패널을 메인 스레드에서 다시 확인하고 8절 내러티브, SVG 6개, 개념 래스터 3개의 설명 위치를 맞췄다.",
+          "evaluator": "복도 비유에서 공정 장면, 파운드리 시간선, 수율 실패, 회사 네트워크, 재무, 양면 칩 미래, 네 시나리오로 인과가 이어지고 모든 강한 주장에 범위가 붙었다고 평가했다.",
+          "skeptic": "Intel 자체 제품을 외부 경제성으로 부르지 않고 TSMC·삼성 고객을 추정하지 않으며 회사 전체 숫자를 BSPDN 매출로 쓰지 않았는지 최종 확인했다.",
+          "plannerRevision": "관전 포인트를 조건·메커니즘·강한 회사 층·지표·무효화 조건으로 통일하고 결론을 수혜주가 아니라 수율과 독립 매출 증명 질문으로 고쳤다.",
+          "decision": "passed",
+          "evaluatorScore": 97
+        }
+      ]
+    }
+  },
+  "_editorNote": "후면전력공급망을 성능 기술이나 관련 회사 목록으로 쓰지 않고, 완성한 웨이퍼를 뒤집고 깎는 물리적 내러티브에서 출발해 앞면 혼잡이 뒤면 실패 책임으로 이동하는 산업 네트워크와 반증 가능한 미래 시나리오로 재구성했다."
+}
