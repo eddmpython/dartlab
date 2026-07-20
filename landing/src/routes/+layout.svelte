@@ -6,15 +6,12 @@
 	import { base } from '$app/paths';
 	import { page } from '$app/state';
 	import { themePref, applyTheme } from '$lib/theme';
-	import { setStaticBase } from '@dartlab/ui-runtime/data/dartlabData';
 	import { loadFinanceRows } from '@dartlab/ui-runtime/data/financeRows';
 	import { loadDartDb } from '$lib/data/duckdb';
 	import { provideFinanceRows } from '@dartlab/ui-surfaces/viewer';
 	import { provideScanDuckDb } from '@dartlab/ui-surfaces/scan';
 	import type { Snippet } from 'svelte';
 
-	// runtime/data 의 static 경로 base 주입 (과도기 · 4a-2 에서 RuntimeEnvironment.basePath 로 정식화)
-	setStaticBase(base);
 	// 정량재무제표 표(viewer FinanceDialog)는 DuckDB-WASM 대신 hyparquet raw 행으로 JS 집계 · 차트(bundle)와
 	// 같은 rowsCache 공유라 회사당 1회 다운로드·엔진 콜드스타트 0. scan 은 여전히 DuckDB-WASM(duckSql) · 전역 주입.
 	provideFinanceRows(loadFinanceRows);

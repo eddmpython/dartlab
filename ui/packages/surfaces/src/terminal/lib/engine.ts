@@ -297,6 +297,23 @@ export interface IndustryMacro {
 }
 
 export function createEngine(raw: RawData): Engine {
+	// 회사 유니버스 SSOT 는 viewer 와 같은 ecosystem. search-index 는 검색용 메타데이터로만 보강하고,
+	// ecosystem 에 없는 별도 시장(예: US) 행만 합친다.
+	const publishedIndex = new Map(raw.index.map((r) => [r.stockCode, r]));
+	const ecosystemRows: RawData['index'] = (raw.eco?.nodes || []).map((node) => {
+		const indexed = publishedIndex.get(node.id);
+		return {
+			stockCode: node.id,
+			corpName: node.label || indexed?.corpName || node.id,
+			industry: node.industry || indexed?.industry || 'misc',
+			stage: indexed?.stage || node.stageName,
+			revenue: node.revenue ?? indexed?.revenue ?? null
+		};
+	});
+	if (ecosystemRows.length) {
+		const ecosystemCodes = new Set(ecosystemRows.map((r) => r.stockCode));
+		raw = { ...raw, index: [...ecosystemRows, ...raw.index.filter((r) => !ecosystemCodes.has(r.stockCode))] };
+	}
 	const byCode: Record<string, RawData['index'][number]> = {};
 	const normByName: Record<string, string> = {}; // 정규화 법인명 → stockCode (lookupListed). 첫 매칭 우선.
 	for (const r of raw.index) {
@@ -307,6 +324,28 @@ export function createEngine(raw: RawData): Engine {
 	const ecoByCode: Record<string, EcoNode> = {};
 	for (const n of raw.eco?.nodes || []) ecoByCode[n.id] = n;
 	const years = raw.finance?.years || ['2021', '2022', '2023', '2024', '2025'];
+	const nullSeries = (): Num[] => years.map(() => null);
+	function emptyFinanceCompany(): FinanceCompany {
+		return {
+			is: { sales: nullSeries(), op: nullSeries(), net: nullSeries(), opMargin: nullSeries() },
+			bs: {
+				assets: {},
+				liab: {},
+				equity: {},
+				totals: {
+					totalAsset: nullSeries(),
+					totalLiab: nullSeries(),
+					totalEquity: nullSeries(),
+					currAsset: nullSeries(),
+					currLiab: nullSeries()
+				}
+			},
+			cf: { op: null, inv: null, fin: null, opening: null, closing: null, fx: null },
+			ratios: { roe: nullSeries(), debtRatio: nullSeries() },
+			macroExposure: null
+		};
+	}
+	const hasTerminalPrice = (code: string): boolean => !!raw.prices.data[code];
 
 	// industry → nodes 인덱스 1 회 구축 → industryNodes O(1) (회사전환마다 2664 전수스캔 3 회 제거).
 	const byIndustry: Record<string, EcoNode[]> = {};
@@ -696,16 +735,17 @@ export function createEngine(raw: RawData): Engine {
 		return co;
 	}
 	function buildCompanyImpl(code: string): Company | null {
-		const fin = raw.finance.companies[code];
+		const fin = raw.finance.companies[code] ?? emptyFinanceCompany();
 		const px = raw.prices.data[code];
-		if (!fin || !px) return null;
 		const idx = byCode[code];
-		const eco = ecoByCode[code] || ({} as EcoNode);
+		const eco = ecoByCode[code];
+		if (!idx && !eco) return null;
+		const node = eco || ({} as EcoNode);
 		const yrs = rev(years);
 		const name = idx ? idx.corpName : code;
 		const industry = idx ? idx.industry : 'misc';
-		const last = px.currentPrice;
-		const mktcapKRW = px.marketCap;
+		const last = px?.currentPrice ?? null;
+		const mktcapKRW = px?.marketCap ?? null;
 		// 표시 통화 · finance 엔트리 currency 태그(US=USD). 기본 KRW(KR 무회귀).
 		const currency = (fin as { currency?: string }).currency ?? 'KRW';
 
@@ -715,9 +755,9 @@ export function createEngine(raw: RawData): Engine {
 		const opm = lastNonNull(fin.is.opMargin);
 		const roe = lastNonNull(fin.ratios.roe);
 		const dr = lastNonNull(fin.ratios.debtRatio);
-		const per = net && net.v > 0 ? mktcapKRW / (net.v * 1e12) : null;
-		const pbr = eq && eq.v > 0 ? mktcapKRW / (eq.v * 1e12) : null;
-		const psr = sales && sales.v > 0 ? mktcapKRW / (sales.v * 1e12) : null;
+		const per = mktcapKRW != null && net && net.v > 0 ? mktcapKRW / (net.v * 1e12) : null;
+		const pbr = mktcapKRW != null && eq && eq.v > 0 ? mktcapKRW / (eq.v * 1e12) : null;
+		const psr = mktcapKRW != null && sales && sales.v > 0 ? mktcapKRW / (sales.v * 1e12) : null;
 		const npm = net && sales && sales.v ? (net.v / sales.v) * 100 : null;
 
 		const income = {
@@ -794,14 +834,14 @@ export function createEngine(raw: RawData): Engine {
 		};
 
 		const blog = raw.meta?.blog ? raw.meta.blog[code] : undefined;
-		const marketLabel = MARKET_LABEL[eco.market || ''] || 'KRX';
+		const marketLabel = MARKET_LABEL[node.market || ''] || 'KRX';
 		// ── 종합(composite) 축의 동종업종 백분위 · 등급을 매긴 *근거* ──
 		// 핵심: 원시지표(영업이익률 등) 백분위가 아니라 *축 자체*를 백분위한다. 같은 축에서 동종사들의 등급을
 		// gradeScore(0~1)로 환산해 회사 순위를 낸다. "이 축에서 업종 상위 N%" = 그 등급의 근거.
 		// (원시지표 백분위는 우측 패널 = 다른 세션 담당 · 여긴 축 종합만.)
 		const peers = industryNodes(industry);
 		const axisStat = (a: CompositeAxis): { score: Num; topPct: number | null; n: number; dist: { step: string; share: number; tone: Tone }[]; sameShare: number | null } => {
-			const myVal = eco[a.field] as string | undefined;
+			const myVal = node[a.field] as string | undefined;
 			if (a.kind === 'class') {
 				// 분류(현금흐름) · 순서 없음 → 순위·사다리 금지. 동종사 내 *같은 유형 비중*(빈도)만(순위 아님).
 				const valued = peers.filter((pn) => !!(pn[a.field] as string | undefined));
@@ -830,7 +870,7 @@ export function createEngine(raw: RawData): Engine {
 		};
 		// 종합 축 칩 · COMPOSITE_AXES SSOT 에서 파생(중간패널·다이얼로그·레이더 단일 출처). 결손 축은 누락(0대체 금지).
 		// cf(kind='class')는 GRADE_SCALE 에 없어 gradeTone='neutral' → 중립칩(거짓 순서 색 방지). 각 칩에 축 백분위(topPct)·분포(dist) 동봉.
-		const grades = COMPOSITE_AXES.map((a) => ({ a, v: (eco[a.field] as string | undefined) || '' }))
+		const grades = COMPOSITE_AXES.map((a) => ({ a, v: (node[a.field] as string | undefined) || '' }))
 			.filter((x) => !!x.v)
 			.map(({ a, v }) => {
 				const st = axisStat(a);
@@ -863,11 +903,11 @@ export function createEngine(raw: RawData): Engine {
 			currency,
 			marketLabel,
 			name: { kr: name, en: name },
-			sector: { kr: eco.industryName || SECTOR_KR[industry] || industry, en: SECTOR_EN[industry] || industry },
+			sector: { kr: node.industryName || SECTOR_KR[industry] || industry, en: SECTOR_EN[industry] || industry },
 			industry,
-			stage: eco.stageName || '',
-			role: eco.role || '',
-			eco,
+			stage: node.stageName || '',
+			role: node.role || '',
+			eco: node,
 			grades,
 			radar,
 			changes,
@@ -875,9 +915,9 @@ export function createEngine(raw: RawData): Engine {
 				last,
 				mktcap: fmtMoney(mktcapKRW, currency),
 				mktcapRaw: mktcapKRW,
-				ret1m: px.return1m, ret3m: px.return3m, ret1y: px.return1y,
-				vol1y: px.volatility1y, hi52: px.week52High, lo52: px.week52Low, vol: px.volumeAvg30d,
-				asOf: fmtDate(px.priceUpdated)
+				ret1m: px?.return1m ?? null, ret3m: px?.return3m ?? null, ret1y: px?.return1y ?? null,
+				vol1y: px?.volatility1y ?? null, hi52: px?.week52High ?? null, lo52: px?.week52Low ?? null, vol: px?.volumeAvg30d ?? null,
+				asOf: px ? fmtDate(px.priceUpdated) : '·'
 			},
 			fundamentals: { per, pbr, psr, npm, roe: roe ? roe.v : null, opm: opm ? opm.v : null, dr: dr ? dr.v : null },
 			financials: computeFinancials(fin),
@@ -902,17 +942,17 @@ export function createEngine(raw: RawData): Engine {
 	function search(q: string): string | null {
 		q = (q || '').trim();
 		if (!q) return null;
-		if (raw.finance.companies[q] && raw.prices.data[q]) return q;
+		if (byCode[q]) return q;
 		const up = q.toUpperCase();
 		const hit = raw.index.find(
 			(r) => r.stockCode === q || r.corpName === q || r.corpName.includes(q) || r.corpName.toUpperCase() === up
 		);
-		if (hit && raw.finance.companies[hit.stockCode] && raw.prices.data[hit.stockCode]) return hit.stockCode;
+		if (hit) return hit.stockCode;
 		return null;
 	}
 
 	// 출자 다이얼로그 · 피출자사명을 상장 종목으로 해소(보유지분 시가 환산용). 정규화 exact 매칭 +
-	// 시총·재무 존재(=buildCompany 전제) 게이트. 미해소는 null → 호출측이 비상장으로 처리(보수적).
+	// 시총 존재 게이트. 재무 seed 결손은 net=null 로 남겨도 상장사 링크·시총은 보존한다.
 	function lookupListed(name: string): { code: string; marketCap: number; net: number | null } | null {
 		const k = normalizeCorpName(name);
 		if (!k) return null;
@@ -920,8 +960,8 @@ export function createEngine(raw: RawData): Engine {
 		if (!code) return null;
 		const px = raw.prices.data[code];
 		const fin = raw.finance.companies[code];
-		if (!px || !px.marketCap || !fin) return null;
-		const netLatest = lastNonNull(fin.is.net); // 조 단위 → 원 환산
+		if (!px || !px.marketCap) return null;
+		const netLatest = fin ? lastNonNull(fin.is.net) : null; // 조 단위 → 원 환산
 		return { code, marketCap: px.marketCap, net: netLatest ? netLatest.v * 1e12 : null };
 	}
 
@@ -934,7 +974,6 @@ export function createEngine(raw: RawData): Engine {
 		const seen = new Set<string>();
 		const push = (r: RawData['index'][number]) => {
 			if (seen.has(r.stockCode)) return;
-			if (!raw.finance.companies[r.stockCode] || !raw.prices.data[r.stockCode]) return;
 			seen.add(r.stockCode);
 			out.push({ code: r.stockCode, name: r.corpName, industry: SECTOR_KR[r.industry] || r.industry });
 		};
@@ -953,7 +992,7 @@ export function createEngine(raw: RawData): Engine {
 	function featured(n = 14): string[] {
 		const out: string[] = [];
 		for (const r of raw.index) {
-			if (raw.finance.companies[r.stockCode] && raw.prices.data[r.stockCode]) out.push(r.stockCode);
+			if (hasTerminalPrice(r.stockCode)) out.push(r.stockCode);
 			if (out.length >= n) break;
 		}
 		return out;

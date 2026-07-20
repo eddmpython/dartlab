@@ -8,6 +8,7 @@
 	import Button from '$lib/components/ui/Button.svelte';
 	import Bar from '$lib/components/ui/Bar.svelte';
 	import { fmtKrwFromEok } from '@dartlab/ui-format/krw';
+	import { loadJson } from '@dartlab/ui-runtime/data/dartlabData';
 	import { loadDartDb, type DartDb } from '$lib/data/duckdb';
 
 	// ── DuckDB-WASM 통합 검증 · Phase A ──
@@ -38,8 +39,8 @@ LIMIT 10`);
 		errorMsg = '';
 		const t0 = performance.now();
 		try {
-			const r = await fetch(`${base}/map/ecosystem.json`);
-			const eco = await r.json();
+			const eco = await loadJson<any>('map/ecosystem.json', { fetchFn: fetch, required: true });
+			if (!eco) throw new Error('map/ecosystem.json 로드 실패');
 			nodes = eco.nodes ?? [];
 			totalSize = JSON.stringify(eco).length;
 			loadTime = performance.now() - t0;
@@ -65,9 +66,8 @@ LIMIT 10`);
 			dartDb = db;
 
 			// ecosystem.json 을 nodes 테이블로 등록 (작은 메타 JSON 패턴)
-			const ecoUrl = `${location.origin}${base}/map/ecosystem.json`;
-			const r = await fetch(ecoUrl);
-			const eco = await r.json();
+			const eco = await loadJson<any>('map/ecosystem.json', { fetchFn: fetch, required: true });
+			if (!eco) throw new Error('map/ecosystem.json 로드 실패');
 			nodes = eco.nodes ?? [];
 			totalSize = JSON.stringify(eco).length;
 			await db.registerJson('ecosystem', nodes);

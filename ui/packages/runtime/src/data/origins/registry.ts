@@ -2,9 +2,8 @@
 // P1: HF 계열(hf·hfRange) 만 등록 · 기존 origin.ts(HF URL SSOT)를 흡수.
 // P2: news·naver 워커 등록 · newsSource/naverPriceSource 가 각자 복제하던 env 게이트 + dev 프록시 URL
 //   조립을 여기로 흡수. 미배선(localApi·duckdbHf)은 후속 wave. 미등록 호출은 명시 throw(배선순서 가드).
-//   landingJson(landing JSON arm)은 origin 에서 제외 · loadJson(dartlabData)이 영속 cacheStore + 다중URL
-//   폴백(local↔HF) + base 전역에 의존하는 별도 arm 이라, 코어 단일-URL origin 추상·전역금지를 어기지 않게
-//   sibling 으로 둔다(dual-SSOT, 설계 패널 적대검증 결론. mainPlan/_done/data-workbench-ssot/07).
+//   landing JSON 도 이 레지스트리의 publicJsonPolicy 를 따른다. 실행(cacheStore·fetch fallback)은
+//   dartlabData.loadJson 이 담당하지만 원본 순서·TTL·캐시 여부는 여기서만 결정한다.
 import { hfUrl, hfRangeUrl, hfMediaUrl } from './hf';
 
 // vite env 안전 접근 · runtime 패키지 tsc 는 vite/client 타입 없이 검사된다(origin.ts 동일 패턴, 소비 앱이 번들 시 치환).
@@ -44,9 +43,7 @@ export type OriginId =
 	| 'govDev'
 	| 'csvWorker';
 
-/** 캐시 정책 · 오리진별 차등(정직 TTL, 04 §정직 TTL). scope='none' = 무캐시.
- *  ('persist' 는 선언만 하고 미구현이던 죽은 scope라 제거 · 영속 캐시는 JSON arm(dartlabData.loadJson)이
- *   cacheStore 로 직접·더 풍부하게[2-tier stale] 담당. 코어에 접지 않는 dual-SSOT 결정, mainPlan/_done.) */
+/** 캐시 정책 · 오리진별 차등(정직 TTL, 04 §정직 TTL). scope='none' = 무캐시. */
 export interface CachePolicy {
 	scope: 'memory' | 'none';
 	ttlMs: number;
@@ -61,6 +58,36 @@ interface OriginDef {
 }
 
 const MIN = 60_000;
+const HOUR = 60 * MIN;
+
+export type PublicJsonSource = 'hfLanding' | 'localStatic';
+
+export interface PublicJsonPolicy {
+	sourceOrder: readonly PublicJsonSource[];
+	cache: { scope: 'persistent' | 'none'; ttlMs: number; staleOnError: boolean };
+}
+
+const PUBLIC_JSON_PREFIXES = ['dashboards/', 'map/', 'lenses/'] as const;
+const PUBLIC_JSON_LIVE_PATHS = [
+	/^map\/ecosystem(?:-[^/]+)?\.json$/,
+	/^map\/search-index(?:-[^/]+)?\.json$/,
+	/^map\/prices-snapshot(?:-[^/]+)?\.json$/,
+	/^map\/industryStats(?:-[^/]+)?\.json$/,
+	/^dashboards\/macro(?:-[^/]+)?\.json$/
+] as const;
+
+/** 퍼블릭 JSON 원본 순서·캐시 정책 SSOT. 호출 화면은 이 결정을 override 할 수 없다. */
+export function publicJsonPolicy(path: string): PublicJsonPolicy {
+	const normalized = path.replace(/^\/+/, '').replace(/^landing\//, '');
+	const published = PUBLIC_JSON_PREFIXES.some((prefix) => normalized.startsWith(prefix));
+	const live = PUBLIC_JSON_LIVE_PATHS.some((pattern) => pattern.test(normalized));
+	return {
+		sourceOrder: published ? ['hfLanding', 'localStatic'] : ['localStatic', 'hfLanding'],
+		cache: live
+			? { scope: 'none', ttlMs: 0, staleOnError: false }
+			: { scope: 'persistent', ttlMs: 6 * HOUR, staleOnError: true }
+	};
+}
 
 // 워커 라우트 URL 조립 · path = 종목 코드. 둘 다 `?code=<encoded>` 쿼리(옛 newsEndpoint/naverEndpoint 동일).
 // path 는 종목코드, 또는 "코드\t회사명"(회사명 있으면 라이브 RSS 검색어 q 로 워커에 전달). resolve(path) 시그니처 유지.

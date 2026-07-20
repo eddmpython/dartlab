@@ -27,6 +27,31 @@ function rawWithUs(): RawData {
 	} as unknown as RawData;
 }
 
+function rawWithPriceOnlyIndexedCompany(): RawData {
+	const raw = rawWithUs();
+	raw.index = [{ stockCode: '099410', corpName: '동방선기', industry: 'machinery', revenue: null }];
+	raw.finance = { ...raw.finance, companies: {} };
+	raw.prices = {
+		data: {
+			'099410': {
+				currentPrice: 1000,
+				marketCap: 120_000_000_000,
+				return1m: 1.2,
+				return3m: null,
+				return1y: null,
+				volatility1y: null,
+				week52High: null,
+				week52Low: null,
+				volumeAvg30d: null,
+				foreignPct: null,
+				beta: null,
+				priceUpdated: '2026-06-24'
+			}
+		}
+	};
+	return raw;
+}
+
 describe('US terminal reach', () => {
 	const eng = createEngine(rawWithUs());
 
@@ -50,7 +75,44 @@ describe('US terminal reach', () => {
 		expect(co?.income.rows.find((r) => r.id === 'sales')?.vals.some((v) => v != null)).toBe(true);
 	});
 
-	it('finance 또는 prices 누락 회사는 buildCompany null (게이트 동작 확인)', () => {
+	it('검색 유니버스에도 없는 회사만 buildCompany null', () => {
 		expect(eng.buildCompany('ZZZZ')).toBeNull();
+	});
+});
+
+describe('terminal search universe parity', () => {
+	const eng = createEngine(rawWithPriceOnlyIndexedCompany());
+
+	it('finance seed 가 빠져도 가격이 있으면 자동완성에 노출한다', () => {
+		const hits = eng.suggest('동방선기', 5);
+		expect(hits.some((h) => h.code === '099410')).toBe(true);
+	});
+
+	it('finance seed 가 빠져도 검색과 회사 빌드는 막지 않는다', () => {
+		expect(eng.search('동방선기')).toBe('099410');
+		const co = eng.buildCompany('099410');
+		expect(co).not.toBeNull();
+		expect(co?.name.kr).toBe('동방선기');
+		expect(co?.price.last).toBe(1000);
+		expect(co?.income.rows.find((r) => r.id === 'sales')?.vals.every((v) => v == null)).toBe(true);
+	});
+
+	it('ecosystem 회사는 search-index 와 가격이 빠져도 같은 이름으로 검색하고 연다', () => {
+		const raw = rawWithUs();
+		raw.index = [];
+		raw.prices = { data: {} };
+		raw.eco = {
+			nodes: [{ id: '0001A0', label: '덕양에너젠', industry: 'energy', industryName: '에너지' }]
+		};
+		const parityEng = createEngine(raw);
+
+		expect(parityEng.suggest('덕양에너젠', 5)).toEqual([
+			expect.objectContaining({ code: '0001A0', name: '덕양에너젠' })
+		]);
+		expect(parityEng.search('덕양에너젠')).toBe('0001A0');
+		const co = parityEng.buildCompany('0001A0');
+		expect(co?.name.kr).toBe('덕양에너젠');
+		expect(co?.price.last).toBeNull();
+		expect(co?.price.mktcap).toBe('·');
 	});
 });

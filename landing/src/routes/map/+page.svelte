@@ -16,6 +16,7 @@
 	import { page } from '$app/state';
 	import type { PageData } from './$types';
 	import { base } from '$app/paths';
+	import { loadJson } from '@dartlab/ui-runtime/data/dartlabData';
 
 	let { data }: { data: PageData } = $props();
 	let tourOpen = $state(false);
@@ -361,8 +362,7 @@
 		selectedDetailLoading = true;
 		selectedDetailCode = stockCode;
 		try {
-			const r = await fetch(`${base}/map/companies/${stockCode}.json`);
-			selectedDetail = r.ok ? await r.json() : null;
+			selectedDetail = await loadJson<any>(`map/companies/${stockCode}.json`, { fetchFn: fetch });
 		} catch {
 			selectedDetail = null;
 		} finally {
@@ -387,13 +387,7 @@
 
 		const node = nodeFinderById(stockCode);
 		if (!node) return;
-		let detail: any = null;
-		try {
-			const r = await fetch(`${base}/map/companies/${stockCode}.json`);
-			detail = r.ok ? await r.json() : null;
-		} catch {
-			detail = null;
-		}
+		const detail = await loadJson<any>(`map/companies/${stockCode}.json`, { fetchFn: fetch });
 		compareSet = [...compareSet, { node, detail }];
 
 		// 레거시 2-way: compareB 는 compareSet 의 두 번째 회사
@@ -458,13 +452,7 @@
 		}
 		const node = nodeFinderById(stockCode);
 		if (!node) return;
-		let detail: any = null;
-		try {
-			const r = await fetch(`${base}/map/companies/${stockCode}.json`);
-			detail = r.ok ? await r.json() : null;
-		} catch {
-			detail = null;
-		}
+		const detail = await loadJson<any>(`map/companies/${stockCode}.json`, { fetchFn: fetch });
 		// 초기 배치: 우측 상단 기준 계단식 (Bloomberg 스타일)
 		const n_open = floatingCards.length;
 		const vw = typeof window !== 'undefined' ? window.innerWidth : 1400;
@@ -674,16 +662,15 @@
 		viewMode = 'industry';
 		selectedNode = null;
 		loadError = null;
-		const url = `${base}/map/industries/${industryId}.json`;
+		const path = `map/industries/${industryId}.json`;
 		try {
-			const res = await fetch(url);
-			console.log('[map] fetch', url, 'status', res.status);
-			if (!res.ok) {
-				loadError = `HTTP ${res.status} · ${url}`;
+			const detail = await loadJson<any>(path, { fetchFn: fetch });
+			if (!detail) {
+				loadError = `데이터 없음 · ${path}`;
 				industryDetail = null;
 				return;
 			}
-			industryDetail = await res.json();
+			industryDetail = detail;
 			console.log(
 				'[map] industryDetail loaded',
 				industryDetail?.industryId,

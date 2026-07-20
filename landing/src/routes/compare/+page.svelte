@@ -3,6 +3,7 @@
 	import { base } from '$app/paths';
 	import { page } from '$app/state';
 	import { FreshnessBadge } from '@dartlab/ui-surfaces/map';
+	import { loadJson } from '@dartlab/ui-runtime/data/dartlabData';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -30,13 +31,8 @@
 		for (const c of codes) {
 			const node = nodeById.get(c);
 			if (!node) continue;
-			try {
-				const r = await fetch(`${base}/map/companies/${c}.json`);
-				const detail = r.ok ? await r.json() : null;
-				results.push({ node, detail });
-			} catch {
-				results.push({ node, detail: null });
-			}
+			const detail = await loadJson<any>(`map/companies/${c}.json`, { fetchFn: fetch });
+			results.push({ node, detail });
 		}
 		companies = results;
 		loading = false;

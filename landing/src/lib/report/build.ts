@@ -1339,8 +1339,8 @@ export async function buildReport(
 	// 회사명·업종 = map/search-index.json (데이터 작업대 loadJson 직독). public search.universe 미배선.
 	const [fin, universe, indStats] = await Promise.all([
 		rt.finance.bundle(code),
-		loadJson<IndexRow[]>('map/search-index.json', { fetchFn: fetch, preferLocal: true }).catch(() => null),
-		loadJson<Record<string, { name: string; count: number; distribution: Record<string, IndDist | null> }>>('map/industryStats.json', { fetchFn: fetch, preferLocal: true }).catch(() => null)
+		loadJson<IndexRow[]>('map/search-index.json', { fetchFn: fetch }).catch(() => null),
+		loadJson<Record<string, { name: string; count: number; distribution: Record<string, IndDist | null> }>>('map/industryStats.json', { fetchFn: fetch }).catch(() => null)
 	]);
 	const meta = (universe ?? []).find((r) => r.stockCode === code);
 	const corpName = meta?.corpName ?? code;
@@ -1393,7 +1393,7 @@ export async function buildReport(
 		built = buildCapitalReturn(sr, cc, { corpName, niSeries: pick(tf?.statements.IS.find((r) => r.key === 'netIncome')?.values ?? []), yearCols });
 	} else if (persp.key === 'market') {
 		// 벤치마크 = 상장시장(markets.json)별 · 코스닥 종목에 코스피를 들이대지 않게(R1).
-		const markets = await loadJson<Record<string, string>>('map/markets.json', { fetchFn: fetch, preferLocal: true }).catch(() => null);
+		const markets = await loadJson<Record<string, string>>('map/markets.json', { fetchFn: fetch }).catch(() => null);
 		const mkt = markets?.[code] ?? '';
 		const isKosdaq = mkt.startsWith('KOSDAQ');
 		const benchRef = isKosdaq ? KR_INDEX_PRESETS[2] : KR_INDEX_PRESETS[0]; // 코스닥 : 코스피

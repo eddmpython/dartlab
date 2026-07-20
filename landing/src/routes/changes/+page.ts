@@ -1,14 +1,12 @@
 import type { PageLoad } from './$types';
-import { base } from '$app/paths';
+import { loadJson } from '@dartlab/ui-runtime/data/dartlabData';
 
 export const prerender = true;
 
 export const load: PageLoad = async ({ fetch }) => {
-	const [moversRes, metaRes] = await Promise.all([
-		fetch(`${base}/map/movers.json`),
-		fetch(`${base}/map/meta.json`)
+	const [movers, meta] = await Promise.all([
+		loadJson<any>('map/movers.json', { fetchFn: fetch }),
+		loadJson<any>('map/meta.json', { fetchFn: fetch })
 	]);
-	const movers = moversRes.ok ? await moversRes.json() : { categories: {}, disclaimer: '' };
-	const meta = metaRes.ok ? await metaRes.json() : null;
-	return { movers, meta };
+	return { movers: movers ?? { categories: {}, disclaimer: '' }, meta };
 };

@@ -557,9 +557,9 @@ export interface Company {
 	radar: RadarAxis[];
 	changes: ChangeRow[];
 	price: {
-		last: number;
+		last: Num;
 		mktcap: string;
-		mktcapRaw: number; // 원 · 캔들 최신가 기준 시총 보정용
+		mktcapRaw: Num; // 원 · 캔들 최신가 기준 시총 보정용
 		ret1m: Num;
 		ret3m: Num;
 		ret1y: Num;

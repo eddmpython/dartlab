@@ -1,26 +1,17 @@
 import type { PageLoad } from './$types';
-import { base } from '$app/paths';
+import { loadJson } from '@dartlab/ui-runtime/data/dartlabData';
 
 export const prerender = true;
 export const ssr = false;
 
-async function fetchJson(url: string, fetchFn: typeof fetch) {
-	try {
-		const r = await fetchFn(url);
-		return r.ok ? await r.json() : null;
-	} catch {
-		return null;
-	}
-}
-
 export const load: PageLoad = async ({ fetch }) => {
 	const [ecosystem, atlas, movers, insights, industryStats, timeline] = await Promise.all([
-		fetchJson(`${base}/map/ecosystem.json`, fetch),
-		fetchJson(`${base}/map/atlas.json`, fetch),
-		fetchJson(`${base}/map/movers.json`, fetch),
-		fetchJson(`${base}/map/insights.json`, fetch),
-		fetchJson(`${base}/map/industryStats.json`, fetch),
-		fetchJson(`${base}/map/timeline.json`, fetch)
+		loadJson<any>('map/ecosystem.json', { fetchFn: fetch }),
+		loadJson<any>('map/atlas.json', { fetchFn: fetch }),
+		loadJson<any>('map/movers.json', { fetchFn: fetch }),
+		loadJson<any>('map/insights.json', { fetchFn: fetch }),
+		loadJson<any>('map/industryStats.json', { fetchFn: fetch }),
+		loadJson<any>('map/timeline.json', { fetchFn: fetch })
 	]);
 	return {
 		ecosystem: ecosystem ?? { nodes: [], links: [], industries: [] },

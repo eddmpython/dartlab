@@ -12,8 +12,7 @@ let cache: Promise<Co[]> | null = null;
 export function loadCompanies(): Promise<Co[]> {
 	if (!cache) {
 		cache = loadJson<{ nodes?: Array<{ id?: string; stockCode?: string; label?: string }> }>('map/ecosystem.json', {
-			fetchFn: fetch,
-			preferLocal: true
+			fetchFn: fetch
 		})
 			.then((eco) =>
 				(eco?.nodes ?? [])

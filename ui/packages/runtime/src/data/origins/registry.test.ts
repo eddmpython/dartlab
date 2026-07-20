@@ -2,7 +2,7 @@
 // hfMedia 가 dartlab-data(hf)와 **다른 repo** base 로 해석되는지, 미등록 origin 이 throw 하는지,
 // 선행 슬래시가 정규화되는지 검증. 캐러셀 카드 hero src 가 잘못된 repo 로 새지 않게 고정.
 import { describe, it, expect } from 'vitest';
-import { originUrl, originConfigured, originCache } from './registry';
+import { originUrl, originConfigured, originCache, publicJsonPolicy } from './registry';
 import { HF_MEDIA_RESOLVE, HF_RESOLVE } from './hf';
 
 describe('origins.hfMedia', () => {
@@ -30,5 +30,31 @@ describe('origins.hfMedia', () => {
 
 	it('미등록 origin 은 throw · 배선순서 위반 노출', () => {
 		expect(() => originUrl('duckdbHf', 'x')).toThrow();
+	});
+});
+
+describe('public JSON policy SSOT', () => {
+	it('퍼블릭 산출물은 HF 최신본 우선, 정적 파일은 장애 폴백', () => {
+		expect(publicJsonPolicy('map/ecosystem.json').sourceOrder).toEqual(['hfLanding', 'localStatic']);
+		expect(publicJsonPolicy('dashboards/finance.json').sourceOrder).toEqual(['hfLanding', 'localStatic']);
+		expect(publicJsonPolicy('lenses/005930.json').sourceOrder).toEqual(['hfLanding', 'localStatic']);
+	});
+
+	it('회사 유니버스·시세·거시 최신본은 화면과 무관하게 무캐시', () => {
+		for (const path of [
+			'map/ecosystem.json',
+			'map/search-index.json',
+			'map/search-index-us.json',
+			'map/prices-snapshot.json',
+			'map/industryStats.json',
+			'dashboards/macro.json'
+		]) {
+			expect(publicJsonPolicy(path).cache.scope).toBe('none');
+		}
+	});
+
+	it('안정 퍼블릭 JSON만 6시간 영속 캐시', () => {
+		const policy = publicJsonPolicy('map/companies/005930.json');
+		expect(policy.cache).toEqual({ scope: 'persistent', ttlMs: 6 * 60 * 60_000, staleOnError: true });
 	});
 });

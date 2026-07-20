@@ -201,18 +201,17 @@ export async function loadLiveCompany(stockCode: string): Promise<LiveCompanyBun
 	const [companyMeta, meta, priceSnapshot] = await Promise.all([
 		loadJson<any>(`map/companies/${stockCode}.json`, {
 			fetchFn: fetch,
-			required: true,
-			preferLocal: true
+			required: true
 		}),
-		loadJson<any>('map/meta.json', { fetchFn: fetch, preferLocal: true }),
-		// 시세 스냅샷만 HF-first · 일배치 HF 갱신을 정적 사본이 가리는 동결 방지 (terminal routeLoad 동일)
+		loadJson<any>('map/meta.json', { fetchFn: fetch }),
+		// 원본 순서와 캐시는 publicJsonPolicy SSOT. 화면별 예외 없음.
 		loadJson<PriceSnapshotFile>('map/prices-snapshot.json', { fetchFn: fetch })
 	]);
 	const valuation = await withTimeout(valuationPromise, 1200, null);
 
 	const industryId = companyMeta?.ego?.industry ?? null;
 	const industryMeta = industryId
-		? await loadJson<any>(`map/industries/${industryId}.json`, { fetchFn: fetch, preferLocal: true })
+		? await loadJson<any>(`map/industries/${industryId}.json`, { fetchFn: fetch })
 		: null;
 
 	const financials = normalizeFinancials(companyMeta?.financials5y);

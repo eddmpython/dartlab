@@ -1,10 +1,9 @@
 import type { PageLoad } from './$types';
-import { base } from '$app/paths';
+import { loadJson } from '@dartlab/ui-runtime/data/dartlabData';
 
 export const prerender = true;
 
 export const load: PageLoad = async ({ fetch }) => {
-	const res = await fetch(`${base}/map/insights.json`);
-	const data = await res.json();
+	const data = await loadJson<any>('map/insights.json', { fetchFn: fetch, required: true });
 	return { data };
 };

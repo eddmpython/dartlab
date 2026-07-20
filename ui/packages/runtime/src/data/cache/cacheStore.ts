@@ -1,11 +1,8 @@
-// 옛 `$app/environment browser` 의존 제거 · runtime 패키지는 SvelteKit 을 모른다.
-const browser = typeof window !== 'undefined';
-
-const CACHE_NAME = 'dartlab-data-json-v1';
+const CACHE_NAME = 'dartlab-data-json-v2';
 const HEADER_TS = 'x-dartlab-cache-ts';
 
 function canUseCache(): boolean {
-	return browser && typeof caches !== 'undefined' && typeof location !== 'undefined';
+	return typeof caches !== 'undefined' && typeof location !== 'undefined';
 }
 
 function cacheRequest(path: string): Request {

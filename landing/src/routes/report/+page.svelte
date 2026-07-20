@@ -61,7 +61,7 @@
   // ── 종목 검색 (공통 작업대 SSOT · loadJson, raw fetch·자체 캐시 금지) ──
   // 회사명·코드 유니버스 = map/search-index.json (buildReport 와 동일 직독 경로, 추가 다운로드 0).
   let universe = $state<IndexRow[]>([]);
-  loadJson<IndexRow[]>('map/search-index.json', { fetchFn: fetch, preferLocal: true })
+  loadJson<IndexRow[]>('map/search-index.json', { fetchFn: fetch })
     .then((rows) => { universe = rows ?? []; })
     .catch(() => {});
   let query = $state('');

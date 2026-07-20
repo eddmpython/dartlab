@@ -2,13 +2,11 @@
 // 하므로 landing 잔류. worker 번들은 svelte 컴포넌트를 파싱 못 하므로 배럴(.svelte 재export) 대신
 // 순수 TS runtime sub-export(@dartlab/ui-surfaces/scan/runtime)만 import 한다(단계-8 worker 회귀 가드).
 import { loadFinanceLiteRuntime } from '@dartlab/ui-surfaces/scan/runtime';
-
-const DEFAULT_HF_RESOLVE = 'https://huggingface.co/datasets/eddmpython/dartlab-data/resolve/main';
+import { loadJson, setStaticBase } from '@dartlab/ui-runtime/data/dartlabData';
 
 type BootMessage = {
 	type: 'boot';
 	basePath: string;
-	hfResolve?: string;
 };
 
 type FinanceMessage = {
@@ -19,7 +17,6 @@ type WorkerMessage = BootMessage | FinanceMessage;
 
 type RuntimeContext = {
 	basePath: string;
-	hfResolve: string;
 };
 
 type PriceSnapshotFile = {
@@ -54,10 +51,8 @@ let context: RuntimeContext | null = null;
 self.onmessage = (event: MessageEvent<WorkerMessage>) => {
 	const msg = event.data;
 	if (msg.type === 'boot') {
-		context = {
-			basePath: msg.basePath,
-			hfResolve: (msg.hfResolve || DEFAULT_HF_RESOLVE).replace(/\/+$/, '')
-		};
+		context = { basePath: msg.basePath };
+		setStaticBase(msg.basePath);
 		void boot(context);
 		return;
 	}
@@ -68,13 +63,14 @@ self.onmessage = (event: MessageEvent<WorkerMessage>) => {
 
 async function boot(ctx: RuntimeContext) {
 	try {
-		const ecosystem = await loadLocalJson<any>('map/ecosystem.json', ctx.basePath, true);
+		setStaticBase(ctx.basePath);
+		const ecosystem = await loadJson<any>('map/ecosystem.json', { fetchFn: fetch, required: true });
 		const nodes = ((ecosystem?.nodes ?? []) as NodeRow[]).map(normalizeNode);
 		postMessage({ type: 'ecosystem', nodes, industries: buildIndustries(nodes) });
 
 		const [prices, meta] = await Promise.all([
-			loadLocalJson<PriceSnapshotFile>('map/prices-snapshot.json', ctx.basePath, false),
-			loadLocalJson<any>('map/meta.json', ctx.basePath, false)
+			loadJson<PriceSnapshotFile>('map/prices-snapshot.json', { fetchFn: fetch }),
+			loadJson<any>('map/meta.json', { fetchFn: fetch })
 		]);
 		const mergedNodes = mergePriceSnapshot(nodes, prices);
 		postMessage({
@@ -83,29 +79,8 @@ async function boot(ctx: RuntimeContext) {
 			meta,
 			industries: buildIndustries(mergedNodes)
 		});
-		void refreshFromHf(ctx, mergedNodes, meta);
 	} catch (err) {
 		postMessage({ type: 'error', error: err instanceof Error ? err.message : String(err) });
-	}
-}
-
-async function refreshFromHf(ctx: RuntimeContext, fallbackNodes: NodeRow[], fallbackMeta: unknown) {
-	try {
-		const [ecosystem, prices, meta] = await Promise.all([
-			loadHfJson<any>('map/ecosystem.json', ctx.hfResolve, false),
-			loadHfJson<PriceSnapshotFile>('map/prices-snapshot.json', ctx.hfResolve, false),
-			loadHfJson<any>('map/meta.json', ctx.hfResolve, false)
-		]);
-		const nodes = ((ecosystem?.nodes ?? fallbackNodes) as NodeRow[]).map(normalizeNode);
-		const mergedNodes = mergePriceSnapshot(nodes, prices);
-		postMessage({
-			type: 'sidecars',
-			nodes: mergedNodes,
-			meta: meta ?? fallbackMeta,
-			industries: buildIndustries(mergedNodes)
-		});
-	} catch {
-		// Local snapshot is already rendered. HF freshness must not block scan.
 	}
 }
 
@@ -117,36 +92,6 @@ async function loadFinance5y() {
 		postMessage({ type: 'finance5y', rows: result.rows, years: result.years });
 	} catch (err) {
 		postMessage({ type: 'finance5y-error', error: err instanceof Error ? err.message : String(err) });
-	}
-}
-
-async function loadLocalJson<T>(path: string, basePath: string, required: boolean): Promise<T | null> {
-	const normalized = path.replace(/^\/+/, '');
-	const local = await fetchJson<T>(`${basePath}/${normalized}`);
-	if (local != null) return local;
-	if (required) throw new Error(`${normalized} 로드 실패`);
-	return null;
-}
-
-async function loadHfJson<T>(
-	path: string,
-	hfResolve: string,
-	required: boolean
-): Promise<T | null> {
-	const normalized = path.replace(/^\/+/, '');
-	const hf = await fetchJson<T>(`${hfResolve}/landing/${normalized}`);
-	if (hf != null) return hf;
-	if (required) throw new Error(`${normalized} HF 로드 실패`);
-	return null;
-}
-
-async function fetchJson<T>(url: string): Promise<T | null> {
-	try {
-		const resp = await fetch(url);
-		if (!resp.ok) return null;
-		return (await resp.json()) as T;
-	} catch {
-		return null;
 	}
 }
 
