@@ -9,7 +9,16 @@
 // 윈도 정책: 연간(reprt_code 11011 = q4)만, 최신 maxYears 개 회계연도. 옛 bake 의 버그(최신 부분분기
 // 2026Q1 혼입·"최근 5개년" 표에 분기 섞임)를 구조적으로 배제.
 import { readParquetWholeFile, type FetchLike } from '../parquet/hfRange';
-import { buildGrid, FINANCE_COLUMNS, isStock, num, Q_BY_CODE, type Parsed, type RawRow } from './accounts';
+import {
+	buildGrid,
+	FINANCE_COLUMNS,
+	isStock,
+	num,
+	Q_BY_CODE,
+	selectFreshestFinanceScope,
+	type Parsed,
+	type RawRow
+} from './accounts';
 
 export interface AnnualStmtRow {
 	key: string;
@@ -39,7 +48,7 @@ export interface AnnualChartCFPoint {
 }
 export interface CompanyAnnualFinance {
 	code: string;
-	scope: 'CFS' | 'OFS'; // 연결 우선
+	scope: 'CFS' | 'OFS'; // 최신 공시 우선, 동률이면 연결
 	years: string[]; // 최신 우선 · 예: ['2025','2024','2023','2022','2021']
 	asOf: string | null; // 최신 회계연도 라벨 (데이터 기준 시점)
 	is: AnnualStmtRow[];
@@ -78,18 +87,10 @@ function parseScope(rows: RawRow[], fs: string): Parsed[] {
 	return out;
 }
 
-function hasScope(rows: RawRow[], fs: string): boolean {
-	for (const r of rows) {
-		if ((r.fs_div || '') !== fs) continue;
-		if (Q_BY_CODE[String(r.reprt_code || '')] && num(r.thstrm_amount) != null) return true;
-	}
-	return false;
-}
-
 // raw 행 → 연간 5개년 표준화 결과 (순수·테스트 가능, 네트워크 없음).
 export function buildAnnualFromRows(code: string, rows: RawRow[], maxYears = 5): CompanyAnnualFinance | null {
 	if (!rows || rows.length === 0) return null;
-	const scope: 'CFS' | 'OFS' | null = hasScope(rows, 'CFS') ? 'CFS' : hasScope(rows, 'OFS') ? 'OFS' : null;
+	const scope = selectFreshestFinanceScope(rows, 4);
 	if (!scope) return null;
 	const parsed = parseScope(rows, scope);
 	if (parsed.length === 0) return null;
@@ -245,7 +246,7 @@ function quarterStandalone(grid: Record<string, Map<string, Parsed>>, key: strin
 // raw 행 → 분기 뷰(순수·네트워크 없음). maxQuarters 개 최신 분기.
 export function buildQuarterlyFromRows(code: string, rows: RawRow[], maxQuarters = 8): CompanyQuarterlyFinance | null {
 	if (!rows || rows.length === 0) return null;
-	const scope: 'CFS' | 'OFS' | null = hasScope(rows, 'CFS') ? 'CFS' : hasScope(rows, 'OFS') ? 'OFS' : null;
+	const scope = selectFreshestFinanceScope(rows);
 	if (!scope) return null;
 	const parsed = parseScope(rows, scope);
 	if (parsed.length === 0) return null;

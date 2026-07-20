@@ -78,6 +78,31 @@ export interface RawRow extends Record<string, unknown> {
 	ord?: string | number | null;
 }
 
+export type FinanceScope = 'CFS' | 'OFS';
+
+/** 연결·별도 자동 선택 SSOT. 최신 유효 공시가 같은 경우에만 연결을 우선한다. */
+export function latestFinancePeriod(rows: RawRow[], scope: FinanceScope, quarter?: number): number | null {
+	let latest: number | null = null;
+	for (const row of rows) {
+		if ((row.fs_div || '') !== scope) continue;
+		if (!['IS', 'CIS', 'BS', 'CF'].includes(String(row.sj_div || ''))) continue;
+		const q = Q_BY_CODE[String(row.reprt_code || '')];
+		const year = Number(row.bsns_year);
+		if (!q || (quarter != null && q !== quarter) || !Number.isFinite(year) || num(row.thstrm_amount) == null) continue;
+		const period = year * 10 + q;
+		if (latest == null || period > latest) latest = period;
+	}
+	return latest;
+}
+
+export function selectFreshestFinanceScope(rows: RawRow[], quarter?: number): FinanceScope | null {
+	const cfs = latestFinancePeriod(rows, 'CFS', quarter);
+	const ofs = latestFinancePeriod(rows, 'OFS', quarter);
+	if (cfs == null) return ofs == null ? null : 'OFS';
+	if (ofs == null) return 'CFS';
+	return ofs > cfs ? 'OFS' : 'CFS';
+}
+
 export interface Parsed {
 	sj: string;
 	year: number;

@@ -7,7 +7,17 @@ import type { FinCard, FinMode, FinScope, FinSeries, Num, StmtKind, StmtRow, Ter
 import { resolveMarket } from '@dartlab/ui-contracts';
 import { moduleFallbackCore, type DataCore } from '../../../data/fetch/request';
 // 28 표준계정·계정매칭·파싱 primitive 는 data/finance/accounts.ts 단일 SSOT (블로그 annual.ts 와 공유).
-import { buildGrid, FINANCE_COLUMNS, isStock, num, Q_BY_CODE, type Parsed, type RawRow } from '../../../data/finance/accounts';
+import {
+	buildGrid,
+	FINANCE_COLUMNS,
+	isStock,
+	latestFinancePeriod,
+	num,
+	Q_BY_CODE,
+	selectFreshestFinanceScope,
+	type Parsed,
+	type RawRow
+} from '../../../data/finance/accounts';
 
 const browser = typeof window !== 'undefined';
 
@@ -89,25 +99,16 @@ export function loadFinanceRows(stockCode: string): Promise<RawRow[] | null> {
 	return loadRows(financeRowsCore(), stockCode.trim());
 }
 
-// 범위에 파싱 가능한 데이터(분기·금액)가 있는지 · 가용 범위 판정용.
-function scopeHasData(rows: RawRow[], fs: FinScope): boolean {
-	for (const r of rows) {
-		if ((r.fs_div || '') !== fs) continue;
-		if (!Q_BY_CODE[String(r.reprt_code || '')] || !Number.isFinite(Number(r.bsns_year)) || num(r.thstrm_amount) == null) continue;
-		return true;
-	}
-	return false;
-}
-
 // 터미널 재무 번들 · core 를 어댑터당 1 인스턴스로 주입(전역 싱글턴 금지). read 는 core 가 캐시·dedup 하고,
 // 번들 빌드(transform)는 재실행돼도 무거운 read 를 공유하므로 결과 레벨 bundleCache Map 은 폐기.
 // rows → 변환 번들 (scope 판정 + buildBundle). 브라우저는 core read 로, 워커(infra/workers/dataCsv)는
 // hyparquet read 로 같은 rows 를 만들어 이 함수를 공유한다. 변환 SSOT 1개, 베이크 0(런타임-SSOT 정합).
 export function bundleFromRows(rows: RawRow[], scope?: FinScope, currency?: 'KRW' | 'USD'): TerminalFinanceBundle | null {
-	const avail: FinScope[] = (['CFS', 'OFS'] as FinScope[]).filter((s) => scopeHasData(rows, s));
+	const avail: FinScope[] = (['CFS', 'OFS'] as FinScope[]).filter((s) => latestFinancePeriod(rows, s) != null);
 	if (avail.length === 0) return null;
-	// 기본 = 연결 우선(최신성보다 우선) · 연결이 있으면 옛 분기여도 연결, 연결이 아예 없을 때만 별도. 지정 + 가용 시 그대로.
-	const fallback: FinScope = avail.includes('CFS') ? 'CFS' : 'OFS';
+	// 자동 = 최신 유효 공시 범위. 같은 기간까지 있으면 연결 우선. 사용자가 지정한 가용 범위는 그대로 유지한다.
+	const fallback = selectFreshestFinanceScope(rows);
+	if (!fallback) return null;
 	const useScope: FinScope = scope && avail.includes(scope) ? scope : fallback;
 	const bundle = buildBundle(rows, useScope, avail);
 	if (bundle && currency) bundle.currency = currency;
