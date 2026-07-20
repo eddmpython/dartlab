@@ -72,6 +72,24 @@
 - descriptor set과 recovery set을 함께 결박한 catalog snapshot v3
 - cold projection, lookup, object detail, graph traversal, snapshot replay의 p50, p95, p99 SLO receipt
 
+## U4 구현 범위
+
+- 비신뢰 질문 원문을 저장하지 않고 NFC search term, explicit identifier, SHA-256 digest로 축소하는 query 계약
+- exact, structured, lexical, graph, contradiction 다섯 레인을 고정한 allowlist-only planner
+- capability execution과 외부 tool call을 만들 수 없는 UI-less read-only runtime
+- policy마다 resource, object, evidence provenance closure를 먼저 축소하는 visibility pre-filter
+- DART corpCode, SEC CIK, 종목 코드, Universe ID, resource locator의 exact lookup
+- object, source, resource kind와 subject, predicate, period, instant의 structured filtering
+- 영속 index나 source payload 복제 없이 process-local metadata posting을 쓰는 한국어와 영어 lexical retrieval
+- valid time, known time, visibility, node, edge, depth budget을 적용한 evidence graph traversal
+- conflict group과 `CONTRADICTS` relation을 항상 별도 탐색하는 contradiction lane
+- deterministic reciprocal-rank fusion과 lane별 score provenance
+- candidate와 contradictory evidence를 분리하고 locator, source revision, snapshot root, descriptor set, recovery set을 결박한 immutable `RetrievalEvidencePack`
+- pack digest, query plan, visibility, source revision, locator, content digest, lane coverage를 모델 없이 재생하는 G4E validator
+- query text의 prompt injection이 capability, subprocess, socket, 외부 tool call로 승격되지 않는 회귀 검증
+
+U4는 현재 query engine과 G4E 계약 단계다. live 전체 corpus golden query, 품질, leakage, latency gate를 통과하기 전에는 완료로 선언하지 않으며 U5 renderer를 시작하지 않는다.
+
 ## 정본 명령
 
 ```powershell
