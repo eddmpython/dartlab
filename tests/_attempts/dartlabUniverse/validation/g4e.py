@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass, replace
+from typing import Callable
 
 from ..canonical import canonicalDigest
 from ..catalog.models import CatalogState
@@ -43,6 +44,7 @@ def _validateRetrieved(
     snapshot: CatalogSnapshot,
     allowedVisibility: frozenset[Visibility],
     issues: list[ValidationIssue],
+    virtualRetrievedVerifiers: tuple[Callable[[RetrievedEvidence], bool], ...],
 ) -> None:
     evidenceById = {evidence.evidenceId: evidence for evidence in catalog.evidence}
     objectById = {obj.objectId: obj for obj in catalog.objects}
@@ -50,7 +52,11 @@ def _validateRetrieved(
     resourceByVersion = {resource.resourceVersionId: resource for resource in catalog.resources}
     snapshotByVersion = {resource.resourceVersionId: resource for resource in snapshot.resources}
     canonicalEvidence = evidenceById.get(item.evidence.evidenceId)
-    if canonicalEvidence is None or canonicalEvidence != item.evidence:
+    virtualRetrieved = any(verifier(item) for verifier in virtualRetrievedVerifiers)
+    virtualEvidence = canonicalEvidence is None and virtualRetrieved
+    if (canonicalEvidence is None and not virtualEvidence) or (
+        canonicalEvidence is not None and canonicalEvidence != item.evidence
+    ):
         _issue(issues, "EVIDENCE_CATALOG_MISMATCH", f"{path}.evidence", item.evidence.evidenceId)
         return
     if item.candidateKind == "OBJECT":
@@ -65,7 +71,7 @@ def _validateRetrieved(
             _issue(issues, "CANDIDATE_STATEMENT_BINDING_MISMATCH", path, item.candidateRef)
         elif statement.visibility not in allowedVisibility:
             _issue(issues, "CANDIDATE_VISIBILITY_DENIED", path, item.candidateRef)
-    else:
+    elif not virtualRetrieved:
         _issue(issues, "CANDIDATE_KIND_INVALID", f"{path}.candidateKind", item.candidateKind)
     resource = resourceByVersion.get(item.evidence.resourceVersionId)
     snapshotResource = snapshotByVersion.get(item.evidence.resourceVersionId)
@@ -80,7 +86,6 @@ def _validateRetrieved(
             resource.sourceKind,
             resource.sourceRef,
             resource.sourceRevision,
-            resource.locator,
             resource.contentDigest,
             resource.licenseRef,
         )
@@ -88,21 +93,29 @@ def _validateRetrieved(
             item.evidence.sourceKind,
             item.evidence.sourceRef,
             item.evidence.sourceRevision,
-            item.evidence.locator,
             item.evidence.contentDigest,
             item.evidence.licenseRef,
         )
-        if actual != expected:
+        locatorValid = item.evidence.locator == resource.locator or (
+            virtualEvidence
+            and item.evidence.locator[: len(resource.locator)] == resource.locator
+            and bool(item.evidence.selector)
+        )
+        if actual != expected or not locatorValid:
             _issue(issues, "EVIDENCE_PROVENANCE_MISMATCH", path, item.evidence.evidenceId)
         snapshotExpected = (
             snapshotResource.sourceKind,
             snapshotResource.sourceRef,
             snapshotResource.sourceRevision,
-            snapshotResource.locator,
             snapshotResource.contentDigest,
             snapshotResource.licenseRef,
         )
-        if actual != snapshotExpected:
+        snapshotLocatorValid = item.evidence.locator == snapshotResource.locator or (
+            virtualEvidence
+            and item.evidence.locator[: len(snapshotResource.locator)] == snapshotResource.locator
+            and bool(item.evidence.selector)
+        )
+        if actual != snapshotExpected or not snapshotLocatorValid:
             _issue(issues, "EVIDENCE_SNAPSHOT_MISMATCH", path, item.evidence.evidenceId)
     if item.rank < 1 or not math.isfinite(item.score) or item.score < 0:
         _issue(issues, "SCORE_INVALID", path, item.candidateRef)
@@ -127,6 +140,8 @@ def validateRetrievalEvidencePack(
     snapshot: CatalogSnapshot,
     catalog: CatalogState,
     graph: GraphStore,
+    virtualRetrievedVerifiers: tuple[Callable[[RetrievedEvidence], bool], ...] = (),
+    executionRefVerifiers: tuple[Callable[[str], bool], ...] = (),
 ) -> G4EValidationReport:
     """Pack digest, plan, snapshot, visibility, locator, lane coverage를 전부 재생한다."""
     issues: list[ValidationIssue] = []
@@ -155,8 +170,17 @@ def validateRetrievalEvidencePack(
     expectedPolicy = visibilityPolicyDigest(query)
     if pack.visibilityPolicyDigest != expectedPolicy or plan.visibilityPolicyDigest != expectedPolicy:
         _issue(issues, "VISIBILITY_POLICY_MISMATCH", "visibilityPolicyDigest", pack.visibilityPolicyDigest)
-    if plan.allowsCapabilityExecution or plan.allowsExternalToolCalls or pack.executionRefs:
-        _issue(issues, "EXECUTION_ESCALATION_FORBIDDEN", "executionRefs", "U4 retrieval은 read-only")
+    if plan.allowsExternalToolCalls:
+        _issue(issues, "EXTERNAL_TOOL_ESCALATION_FORBIDDEN", "queryPlan", "external tool call forbidden")
+    if plan.allowsCapabilityExecution != bool(query.capabilityRequests):
+        _issue(issues, "CAPABILITY_PLAN_BINDING_MISMATCH", "queryPlan", "explicit request mismatch")
+    if pack.executionRefs and not query.capabilityRequests:
+        _issue(issues, "EXECUTION_ESCALATION_FORBIDDEN", "executionRefs", "explicit request missing")
+    if len(pack.executionRefs) != len(set(pack.executionRefs)) or any(not item for item in pack.executionRefs):
+        _issue(issues, "EXECUTION_REF_INVALID", "executionRefs", "duplicate or empty execution ref")
+    for executionRef in pack.executionRefs:
+        if not any(verifier(executionRef) for verifier in executionRefVerifiers):
+            _issue(issues, "EXECUTION_REF_UNVERIFIED", "executionRefs", executionRef)
     laneNames = tuple(item.lane.value for item in pack.laneCoverage)
     if laneNames != REQUIRED_QUERY_LANES or any(not item.executed for item in pack.laneCoverage):
         _issue(issues, "LANE_COVERAGE_INCOMPLETE", "laneCoverage", ",".join(laneNames))
@@ -194,6 +218,7 @@ def validateRetrievalEvidencePack(
             snapshot=snapshot,
             allowedVisibility=allowed,
             issues=issues,
+            virtualRetrievedVerifiers=virtualRetrievedVerifiers,
         )
     expectedSourceRevisions = tuple(
         sorted({(item.evidence.sourceRef, item.evidence.sourceRevision) for item in allRetrieved})

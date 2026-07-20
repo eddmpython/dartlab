@@ -10,6 +10,8 @@ from ..catalog.snapshot import CatalogSnapshot
 from ..graph.query import GraphStore
 from ..identity.ledger import IdentityLedger
 from ..ids import logicalId
+from .adapters import LexicalAdapterContext, LexicalQueryAdapter, mergeLexicalResults
+from .capability import QueryCapabilityExecutor
 from .lanes import LaneHit, LaneResult, VisibleQueryView
 from .models import (
     RETRIEVAL_EVIDENCE_PACK_SCHEMA_VERSION,
@@ -41,6 +43,8 @@ class UniverseQueryEngine:
         graph: GraphStore,
         *,
         identityLedger: IdentityLedger | None = None,
+        lexicalAdapters: tuple[LexicalQueryAdapter, ...] = (),
+        capabilityExecutor: QueryCapabilityExecutor | None = None,
     ) -> None:
         if catalog.digest != snapshot.catalogDigest:
             raise ValueError("query engine catalog와 snapshot digest가 다름")
@@ -52,6 +56,8 @@ class UniverseQueryEngine:
         self.snapshot = snapshot
         self.graph = graph
         self.identityLedger = identityLedger
+        self.lexicalAdapters = lexicalAdapters
+        self.capabilityExecutor = capabilityExecutor
         self._views: dict[tuple[str, ...], VisibleQueryView] = {}
 
     def _view(self, query: UniverseQuery) -> VisibleQueryView:
@@ -118,14 +124,29 @@ class UniverseQueryEngine:
             activePlan.queryId != query.queryId
             or activePlan.queryDigest != query.digest
             or activePlan.snapshotId != self.snapshot.snapshotId
-            or activePlan.allowsCapabilityExecution
             or activePlan.allowsExternalToolCalls
         ):
             raise ValueError("query와 plan binding이 잘못됨")
+        if activePlan.allowsCapabilityExecution != bool(query.capabilityRequests):
+            raise ValueError("query와 capability plan binding이 잘못됨")
+        if query.capabilityRequests and self.capabilityExecutor is None:
+            raise ValueError("명시적 capability request에는 executor가 필요함")
         view = self._view(query)
         exact = view.exact(query, self.identityLedger)
         structured = view.structured(query)
-        lexical = view.lexical(query)
+        metadataLexical = view.lexical(query)
+        adapterContext = LexicalAdapterContext(
+            allowedVisibility=view.allowedVisibility,
+            objectById=view.objectById,
+            resourceByVersion=view.resourceByVersion,
+        )
+        lexical = mergeLexicalResults(
+            (
+                metadataLexical,
+                *(adapter.search(query, adapterContext) for adapter in self.lexicalAdapters),
+            ),
+            limit=query.budget.lexicalLimit,
+        )
         graph = view.graphLane(query, self.graph, (exact, structured, lexical))
         contradiction = view.contradiction(query, self.graph, (structured, graph))
         results = (exact, structured, lexical, graph, contradiction)
@@ -163,6 +184,26 @@ class UniverseQueryEngine:
             )
         )
         unresolvedReasons = tuple(sorted((*unresolved, *contradictionUnresolved)))
+        executionResults = (
+            tuple(
+                self.capabilityExecutor.execute(query, self.snapshot, request) for request in query.capabilityRequests
+            )
+            if self.capabilityExecutor is not None
+            else ()
+        )
+        executionRefs = tuple(sorted(item.executionRef for item in executionResults))
+        unresolvedReasons = tuple(
+            sorted(
+                {
+                    *unresolvedReasons,
+                    *(
+                        f"EXECUTION_STATUS:{item.capabilityId}:{item.status}"
+                        for item in executionResults
+                        if item.status not in {"SUCCEEDED", "PARTIAL"}
+                    ),
+                }
+            )
+        )
         allEvidence = (*candidateEvidence, *contradictoryEvidence)
         sourceRevisionSet = tuple(
             sorted({(item.evidence.sourceRef, item.evidence.sourceRevision) for item in allEvidence})
@@ -187,7 +228,7 @@ class UniverseQueryEngine:
             sourceRevisionSet=sourceRevisionSet,
             candidateEvidence=candidateEvidence,
             contradictoryEvidence=contradictoryEvidence,
-            executionRefs=(),
+            executionRefs=executionRefs,
             laneCoverage=laneCoverage,
             truncationReasons=truncationReasons,
             withheldReasons=tuple(

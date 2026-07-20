@@ -167,7 +167,7 @@ def buildQueryRuntimeFixture() -> QueryRuntimeFixture:
     graph = GraphStore((first, second), tuple(relations))
     snapshot = buildCatalogSnapshot(
         catalog,
-        universeSnapshotId="fixture:universe:u4",
+        universeSnapshotId="du:v1:snapshot:" + "1" * 64,
         capabilityRegistryVersion="fixture:capability:v1",
         identityLedgerVersion=ledger.revision,
         relationTaxonomyVersion=taxonomy.version,

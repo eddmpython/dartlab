@@ -22,6 +22,7 @@ class LaneHit:
     candidateKind: str
     laneScore: float
     reasonCodes: tuple[str, ...]
+    evidenceOverride: tuple[CatalogEvidence, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -179,6 +180,19 @@ class VisibleQueryView:
                 self._lexicalPostings.setdefault(token, set()).add(obj.objectId)
 
     def evidenceForHit(self, hit: LaneHit) -> tuple[CatalogEvidence, ...]:
+        if hit.evidenceOverride:
+            return tuple(
+                sorted(
+                    (
+                        item
+                        for item in hit.evidenceOverride
+                        if item.visibility in self.allowedVisibility
+                        and item.objectId in self.objectById
+                        and item.resourceVersionId in self.resourceByVersion
+                    ),
+                    key=lambda item: item.evidenceId,
+                )
+            )
         if hit.candidateKind == "OBJECT":
             return self.evidenceByObject.get(hit.candidateRef, ())
         if hit.candidateKind == "STATEMENT":

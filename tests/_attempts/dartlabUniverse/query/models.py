@@ -29,6 +29,7 @@ class QueryLane(str, Enum):
     LEXICAL = "LEXICAL"
     GRAPH = "GRAPH"
     CONTRADICTION = "CONTRADICTION"
+    CAPABILITY = "CAPABILITY"
 
 
 @dataclass(frozen=True, slots=True)
@@ -63,6 +64,15 @@ class QueryFilters:
 
 
 @dataclass(frozen=True, slots=True)
+class CapabilityRequest:
+    capabilityId: str
+    targetRefs: tuple[str, ...]
+    args: tuple[tuple[str, object], ...]
+    assumptionRefs: tuple[str, ...] = ()
+    seed: int | None = None
+
+
+@dataclass(frozen=True, slots=True)
 class UniverseQuery:
     schemaVersion: str
     queryId: str
@@ -74,6 +84,7 @@ class UniverseQuery:
     timeContext: QueryTimeContext
     allowedVisibility: tuple[Visibility, ...]
     budget: QueryBudget
+    capabilityRequests: tuple[CapabilityRequest, ...]
     digest: str
 
 
@@ -167,6 +178,60 @@ def _validateBudget(budget: QueryBudget) -> None:
         raise ValueError("query budget 상한을 초과함")
 
 
+def _freezeJson(value: object) -> object:
+    if isinstance(value, dict):
+        if any(not isinstance(key, str) or not key for key in value):
+            raise ValueError("capability args object key가 잘못됨")
+        return ("__DU_JSON_OBJECT__", tuple(sorted((key, _freezeJson(item)) for key, item in value.items())))
+    if isinstance(value, (list, tuple)):
+        return ("__DU_JSON_ARRAY__", tuple(_freezeJson(item) for item in value))
+    if value is None or isinstance(value, (str, int, float, bool)):
+        return value
+    raise ValueError(f"capability args JSON type이 아님: {type(value).__name__}")
+
+
+def capabilityArgs(request: CapabilityRequest) -> dict[str, object]:
+    def thaw(value: object) -> object:
+        if isinstance(value, tuple) and len(value) == 2 and value[0] == "__DU_JSON_OBJECT__":
+            return {str(item[0]): thaw(item[1]) for item in value[1]}
+        if isinstance(value, tuple) and len(value) == 2 and value[0] == "__DU_JSON_ARRAY__":
+            return [thaw(item) for item in value[1]]
+        return value
+
+    return {key: thaw(value) for key, value in request.args}
+
+
+def _normalizeCapabilityRequests(
+    requests: tuple[CapabilityRequest, ...],
+) -> tuple[CapabilityRequest, ...]:
+    if len(requests) > 4:
+        raise ValueError("query당 capability request는 4개 이하만 허용함")
+    normalized = []
+    for request in requests:
+        capabilityId = request.capabilityId.strip()
+        targetRefs = tuple(sorted({item.strip() for item in request.targetRefs if item.strip()}))
+        if not capabilityId or not targetRefs:
+            raise ValueError("capabilityId와 targetRefs는 필수")
+        if request.seed is not None and (isinstance(request.seed, bool) or not isinstance(request.seed, int)):
+            raise ValueError("capability seed는 정수여야 함")
+        args = tuple(sorted((str(key).strip(), _freezeJson(value)) for key, value in request.args))
+        if any(not key for key, _value in args) or len(args) != len(dict(args)):
+            raise ValueError("capability args key가 비었거나 중복됨")
+        normalized.append(
+            CapabilityRequest(
+                capabilityId=capabilityId,
+                targetRefs=targetRefs,
+                args=args,
+                assumptionRefs=tuple(sorted({item.strip() for item in request.assumptionRefs if item.strip()})),
+                seed=request.seed,
+            )
+        )
+    ordered = tuple(sorted(normalized, key=lambda item: (item.capabilityId, item.targetRefs, canonicalDigest(item))))
+    if len({(item.capabilityId, item.targetRefs, canonicalDigest(item.args)) for item in ordered}) != len(ordered):
+        raise ValueError("duplicate capability request")
+    return ordered
+
+
 def buildUniverseQuery(
     queryText: str,
     *,
@@ -174,6 +239,7 @@ def buildUniverseQuery(
     allowedVisibility: frozenset[Visibility],
     filters: QueryFilters | None = None,
     budget: QueryBudget | None = None,
+    capabilityRequests: tuple[CapabilityRequest, ...] = (),
 ) -> UniverseQuery:
     """비신뢰 원문은 digest와 term으로 축소하고 실행 가능한 명령은 만들지 않는다."""
     if not isinstance(queryText, str) or not queryText.strip():
@@ -197,6 +263,7 @@ def buildUniverseQuery(
     )
     explicitRefs = tuple(sorted(set(_DU_ID_RE.findall(normalizedText)) | set(activeFilters.exactRefs)))
     visibility = tuple(sorted(allowedVisibility, key=lambda item: item.value))
+    normalizedCapabilityRequests = _normalizeCapabilityRequests(capabilityRequests)
     queryTextDigest = canonicalDigest(normalizedText)
     base = UniverseQuery(
         schemaVersion=QUERY_SCHEMA_VERSION,
@@ -209,6 +276,7 @@ def buildUniverseQuery(
         timeContext=timeContext,
         allowedVisibility=visibility,
         budget=activeBudget,
+        capabilityRequests=normalizedCapabilityRequests,
         digest="",
     )
     digest = canonicalDigest(base)

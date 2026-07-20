@@ -1,6 +1,6 @@
-# DartLab Universe U0~U3
+# DartLab Universe U0~U4
 
-상태: U0 full census, U1 identity와 provenance, U2 capability execution kernel, U3 전수 catalog와 evidence graph 구현 및 live gate 통과. 손상된 upstream parquet 1건은 원본 상태를 숨기거나 외부 저장소를 수정하지 않고, 고정 raw authority와 historical transform을 사용한 Universe 전용 recovery receipt와 CAS로 복구했다. 3D, UI, route, 공개 버튼, RAG, 영속 query index는 아직 없다.
+상태: U0 full census, U1 identity와 provenance, U2 capability execution kernel, U3 전수 catalog와 evidence graph가 live gate를 통과했다. U4는 하이브리드 검색, 불변 근거 팩, 블로그 AST, 기존 content index, 명시적 capability 실행 결합까지 구현했고 전체 corpus golden query gate는 진행 중이다. 손상된 upstream parquet 1건은 원본 상태를 숨기거나 외부 저장소를 수정하지 않고, 고정 raw authority와 historical transform을 사용한 Universe 전용 recovery receipt와 CAS로 복구했다. 3D, UI, route, 공개 버튼, 답변 생성, 영속 query index는 아직 없다.
 
 이 디렉터리는 이전 Universe 실험을 전부 제거한 뒤 `mainPlan/dartlab-universe/`의 제품 계약에 맞춰 처음부터 다시 만든 데이터 엔진 경계다. 기존 `src/dartlab`, `ui`, `landing`, `blog`, `media`는 수정하지 않고 authority로 읽기만 한다.
 
@@ -76,7 +76,7 @@
 
 - 비신뢰 질문 원문을 저장하지 않고 NFC search term, explicit identifier, SHA-256 digest로 축소하는 query 계약
 - exact, structured, lexical, graph, contradiction 다섯 레인을 고정한 allowlist-only planner
-- capability execution과 외부 tool call을 만들 수 없는 UI-less read-only runtime
+- 질문 문장만으로 capability execution이나 외부 tool call을 만들 수 없는 UI-less runtime
 - policy마다 resource, object, evidence provenance closure를 먼저 축소하는 visibility pre-filter
 - DART corpCode, SEC CIK, 종목 코드, Universe ID, resource locator의 exact lookup
 - object, source, resource kind와 subject, predicate, period, instant의 structured filtering
@@ -84,8 +84,11 @@
 - valid time, known time, visibility, node, edge, depth budget을 적용한 evidence graph traversal
 - conflict group과 `CONTRADICTS` relation을 항상 별도 탐색하는 contradiction lane
 - deterministic reciprocal-rank fusion과 lane별 score provenance
+- 모든 현재 Markdown을 runtime에 다시 parse해 frontmatter, heading, paragraph, table, code, image, link, 외부 영상을 원래 path와 line, AST path에 결박하는 블로그 AST adapter
+- 현재 41만 건 규모인 기존 DART, EDGAR, 뉴스 content index를 manifest resource에 결박하고 raw snippet 대신 digest와 source selector만 근거 팩에 넣는 content search adapter
+- 별도 `CapabilityRequest`가 있을 때만 U2 admission, sandbox, CAS, receipt 경로로 검증된 엔진을 실행하고 execution ref를 근거 팩에 결박하는 capability adapter
 - candidate와 contradictory evidence를 분리하고 locator, source revision, snapshot root, descriptor set, recovery set을 결박한 immutable `RetrievalEvidencePack`
-- pack digest, query plan, visibility, source revision, locator, content digest, lane coverage를 모델 없이 재생하는 G4E validator
+- pack digest, query plan, visibility, source revision, locator, content digest, virtual evidence resolver, execution receipt, lane coverage를 모델 없이 재생하는 G4E validator
 - query text의 prompt injection이 capability, subprocess, socket, 외부 tool call로 승격되지 않는 회귀 검증
 
 U4는 현재 query engine과 G4E 계약 단계다. live 전체 corpus golden query, 품질, leakage, latency gate를 통과하기 전에는 완료로 선언하지 않으며 U5 renderer를 시작하지 않는다.

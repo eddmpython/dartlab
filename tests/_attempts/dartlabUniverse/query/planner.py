@@ -49,7 +49,7 @@ def buildQueryPlan(query: UniverseQuery, snapshot: CatalogSnapshot) -> QueryPlan
     """고정된 읽기 전용 operation만 배치하며 query text로 실행 단계를 만들지 않는다."""
     if snapshot.catalogDigest == "" or snapshot.rootInputsDigest == "":
         raise ValueError("query plan에는 완전한 catalog snapshot이 필요함")
-    steps = (
+    retrievalSteps = (
         QueryStep(0, QueryLane.EXACT, "LOOKUP_EXACT_REFS", query.budget.exactLimit, (), True),
         QueryStep(1, QueryLane.STRUCTURED, "FILTER_CATALOG_AND_STATEMENTS", query.budget.structuredLimit, (), True),
         QueryStep(2, QueryLane.LEXICAL, "SCAN_VISIBLE_METADATA", query.budget.lexicalLimit, (), True),
@@ -70,6 +70,21 @@ def buildQueryPlan(query: UniverseQuery, snapshot: CatalogSnapshot) -> QueryPlan
             True,
         ),
     )
+    capabilitySteps = (
+        (
+            QueryStep(
+                5,
+                QueryLane.CAPABILITY,
+                "EXECUTE_EXPLICIT_ADMITTED_CAPABILITY",
+                len(query.capabilityRequests),
+                (QueryLane.EXACT, QueryLane.STRUCTURED),
+                True,
+            ),
+        )
+        if query.capabilityRequests
+        else ()
+    )
+    steps = (*retrievalSteps, *capabilitySteps)
     base = QueryPlan(
         schemaVersion=QUERY_PLAN_SCHEMA_VERSION,
         queryId=query.queryId,
@@ -78,7 +93,7 @@ def buildQueryPlan(query: UniverseQuery, snapshot: CatalogSnapshot) -> QueryPlan
         queryDigest=query.digest,
         visibilityPolicyDigest=visibilityPolicyDigest(query),
         steps=steps,
-        allowsCapabilityExecution=False,
+        allowsCapabilityExecution=bool(query.capabilityRequests),
         allowsExternalToolCalls=False,
         digest="",
     )
