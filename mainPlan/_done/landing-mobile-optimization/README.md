@@ -1,6 +1,6 @@
 # 랜딩 전체 모바일 최적화
 
-> ★활성 — 기획 박제 완료, 운영자 승인 후 구현. 작성 2026-06-25.
+> 🔀 **흡수 완료 (2026-07-21)**. 이 PRD 를 문서대로 완주한 세션은 없지만, 핵심 요구(report·cards 모바일 엣지투엣지)는 이후 UI 작업들이 산발적으로 흡수해 코드에 실현·라이브 배포됐다. Phase1(report) 산출물 = `landing/src/routes/report/+page.svelte` `@media(max-width:640px) .sheet{width:100%;max-width:100%;margin:0;border-radius:0;box-shadow:none}` (거터 제거·데스크톱 무회귀). Phase2(cards) = 카드 모달 이중스크롤 제거(`6df7a4a46`)·모바일 텍스트-크롬 충돌 제거(`9dbed0a8e`) 등 다수 커밋. Phase4 전체 스윕은 문서 픽셀대로 전수 검증되진 않았으나 PRD 자체가 "픽셀은 스크린샷이 결정"이라 완결성 기준이 느슨. 문서는 설계 근거·CSS 명세 자산으로 보존.
 > 핵심 요구(운영자): **/report 쓸데없는 여백 없게 + 모바일 가독, /cards 동일, 랜딩 전체.**
 
 ## 문서

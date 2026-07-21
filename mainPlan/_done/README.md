@@ -14,6 +14,7 @@
 
 | 폴더 | 완료·상태 | 한 줄 |
 |---|---|---|
+| `dartlab-lens-product-architecture/` | 2026-07-18 | 내부 엔진격 폴더 구조는 유지하고 Analysis, Credit, Industry, Quant, Macro를 독립 Lens Product로 제품화. Story, Report, Simulate, Ask 조합 계약과 Terminal 3+2 렌더, 전 상장사 shard artifact 발행, 레이어 대신 제품 흐름을 설명하는 README까지 구현·검증. |
 | `realestate-data/` | 🚫 폐기 2026-06-23 | 공공데이터 부동산 실거래(국토부 RTMS) 수집·분석조합 PRD. **미착수 영구 기각**(빌드 0줄). PRD는 96점 완성이나 코드 실측 결론 = net-new 거래량 1축뿐·P1 조건부·즉시가능 비자명연결 0, 게다가 RTMS 키-계정 미스매치(403)로 P1 검증조차 미수행 → ROI 낮아 폐기. 보관 사유 = 경계지도·KILL 5·feasibility 방법론 자산. README 상단 폐기 배너 참조. |
 | `ui-platform-refactor/` | 2026-06-13 | public(GitHub Pages)·local(pip) 단일 UI 자산 공유 리팩토링(단계 1~10). ⚠ `08-shared-wiring-parity-maintenance.md` 는 현역 런북. |
 | `scan-grade-explainer/` | 2026-06-15 | 스캔등급 설명 다이얼로그. as-built 는 PRD 확장 — 10~12 종합축 SSOT(`COMPOSITE_AXES`) 통일 + 등급 근거 = 축 자체 동종업종 백분위(midrank)+분포 막대 + 현금흐름 부호 표기. 구현 SSOT=`ui/packages/surfaces/src/terminal/`. |
@@ -27,3 +28,4 @@
 | `macro-simulation-engine/` | 2026-07-15 | 거시 시뮬레이션 엔진. Phase 0~3(BVAR 팬·IRF·국면경로·시나리오 조건부) + 신용축(BAA10Y) 빌드·배포·검증 완료. 엔진 거처 = `src/dartlab/macro/simulate/`, 배선 = `runMacroSim`→`macro/sim/{kr,us}.json`→HF→`rt.macro.getSim`→macroLens. Phase 4(회사단 거시→재무 정량 브리지)는 held-out 측정으로 데이터벽 확정 → **미빌드(정공, 검증 실패 기능 표면화 금지)**. 잔여 = 금융사 패널 깊이(내부 fixable)·HY FRED 라이선스(외부). |
 | `pyproc-runtime-ssot/` | 2026-07-13 (라이브) | 브라우저 노트북 커널을 공유 런타임 **pyproc**(github.com/eddmpython/pyproc, 동일저자)으로 이관. **P0~P3 완료 + P2 라이브 배포**(`USE_PYPROC_ASGI=true` flip, deploy-landing GREEN). 실패 시 손수 경로 자동 폴백(kill-switch). P4(격리 fork)만 봉인(COEP/Chromium 전용 별도 PRD). ⚠ 자동반영=주간 게이트 핀 범프는 **현역 유지보수 절차**. 검증 = `00-verified-facts.md`. |
 | `terminal-data-download/` | 2026-06-19 (ship) | 터미널 데이터 내보내기. 공시 수평화표 CSV·재무제표 멀티시트 .xls·원본 .parquet passthrough·전체 데이터셋 HF 링크 전부 **이미 ship**(`ViewerStudio.svelte` `downloadPanelCsv`/`downloadFinanceExcel`/`hfUrl`). 상위 라이브 다운로드 센터는 `data-download-center/`(완료)가 소유. zero-dep .xlsx 고도화는 `table-export/`(활성 백로그)로 분리. |
+| `landing-mobile-optimization/` | 🔀 흡수 2026-07-21 | 랜딩 전체 모바일 최적화(/report·/cards 엣지투엣지·유체타이포). PRD 를 문서대로 완주한 세션은 없으나 핵심 요구가 후속 UI 작업에 **흡수·라이브 배포**됨. Phase1(report) = `report/+page.svelte` `@media(max-width:640px) .sheet` 거터 제거(데스크톱 무회귀). Phase2(cards) = 카드모달 이중스크롤 제거·모바일 텍스트충돌 제거 등 다수 커밋. Phase4 전체 스윕은 픽셀 전수검증 안 됨(PRD 자체가 "픽셀=스크린샷 결정"). 문서 = CSS 명세 자산 보존. |

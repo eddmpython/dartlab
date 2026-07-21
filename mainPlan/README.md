@@ -63,7 +63,6 @@
 | [edgar-terminal-reach](edgar-terminal-reach/) | 🟡 | US(EDGAR) 종목 터미널 도달 배선 재정렬. 옛 `_done/edgar-parity-wiring` 대체 PRD. 가격·지수 구조 확정. |
 | [table-export](table-export/) | ⚪ | zero-dep .xlsx 내보내기(뷰어 격자=미리보기). 기본 내보내기는 `_done/terminal-data-download`(ship)가 소유, 잔여 고도화 백로그. |
 | [terminal-improvement](terminal-improvement/) | ⚪ | 기존 터미널 surface 확장(워치리스트 1개만 신설). 비전 PRD, 구현 0. |
-| [landing-mobile-optimization](landing-mobile-optimization/) | ⚪ | 랜딩 모바일 최적화(리포트·카드 디자인). 기획 박제 완료, 운영자 승인 후 구현. |
 | [tutorial-guide](tutorial-guide/) | ⚪ | 공유 투어 엔진(map·terminal). PRD 확정, 착수 = 운영자 go. |
 
 ## 7. AI 연결 · 1급 AI
@@ -86,18 +85,11 @@
 |---|---|---|
 | [brokerage-research-index](brokerage-research-index/) | ⚪ | 증권사 리서치 링크 인덱스(메타만·본문 링크아웃). PRD 확정, `tests/_attempts/brokerageIndex` 졸업게이트 미착수. |
 
-## 10. 제품 아키텍처 (메타)
-
-| 폴더 | 상태 | 한 줄 |
-|---|---|---|
-| [dartlab-lens-product-architecture](dartlab-lens-product-architecture/) | ⚪ | 저장소 전체 제품 구조 + 공개 5 분석 렌즈 + 루트 README 제품화. 설계 확정(2026-07-18), 구현 미착수. |
-
----
-
 ## 완료·격리 (→ `_done/`)
 
 끝난 PRD 는 [_done/](_done/) 로 격리하고 [_done/README.md](_done/README.md) 보관 목록이 정본이다.
-최근 격리(2026-07-18): `pyproc-runtime-ssot`(라이브 배포) · `macro-simulation-engine`(완결) · `terminal-data-download`(이미 ship).
+최근 격리(2026-07-18): `dartlab-lens-product-architecture`(다섯 공개 렌즈 제품화) · `pyproc-runtime-ssot`(라이브 배포) · `macro-simulation-engine`(완결) · `terminal-data-download`(이미 ship).
+2026-07-21: `landing-mobile-optimization`(🔀 후속 UI 작업에 흡수·라이브).
 
 ## 정리 관찰 (후속 판단 필요)
 
