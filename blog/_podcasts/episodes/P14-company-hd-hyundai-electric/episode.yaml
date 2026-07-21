@@ -1,0 +1,75 @@
+# 에피소드 메타데이터. 회사 에피소드의 소스는 발행된 블로그 글이다.
+# 발행 시 guid, 오디오 크기, 길이, 발행일은 published.json에 기록한다.
+episode:
+  version: 1
+  episodeId: P14-company-hd-hyundai-electric
+  episodeNo: 14
+  slug: hd-hyundai-electric
+  title: "HD현대일렉트릭: 1조 이익을 만든 2밀리미터 장인의 손"
+  lane: company
+  language: ko
+  status: ready
+
+  audio:
+    generator: notebooklm
+    sourceHint: "Downloads/1조_이익을_만든_2밀리미터_장인의_손.m4a"
+    sourceDoc: https://eddmpython.github.io/dartlab/blog/267260-hd-hyundai-electric
+
+  image:
+    source: cover.jpg
+    key: episodes/hd-hyundai-electric/cover-3000.jpg
+  staticImage:
+    source: static-video.jpg
+    key: episodes/hd-hyundai-electric/static-video.jpg
+  thumbnail:
+    source: static-video.jpg
+    key: episodes/hd-hyundai-electric/static-video.jpg
+  sourceAssets:
+    - pool: companyAsset
+      name: transformer-factory
+      role: reusable-original
+  visual:
+    source: assets/source.webp
+    kicker: DartLab Podcast
+    titleLines:
+      - HD현대일렉트릭
+      - "[[1조 이익]]을 만든"
+      - "2밀리미터 장인의 손"
+    subtitle: 765kV 변압기, 허용 오차 2mm, 숙련공 20년
+    footer: DART 공시 · 2025년 · 투자권유 아님
+  caption:
+    hook: HD현대일렉트릭은 2018년 영업적자 1,006억원에서 2025년 영업이익 9,953억원으로 돌아섰습니다.
+    body: >-
+      이번 편은 세계에서 5~6곳만 만들 수 있는 765kV 초고압 변압기, 허용 오차 2mm의 권선 공정,
+      평균 경력 20년 숙련공, 11.1조원 수주잔고와 고객 선수금 구조를 함께 봅니다. 핵심은 전력망과
+      AI 데이터센터 수요가 실제 마진, 현금흐름, 생산능력으로 어떻게 번역되는지입니다.
+    cta: 전체 에피소드는 DartLab 팟캐스트와 블로그 글에서 들을 수 있습니다.
+    hashtags: ["#HD현대일렉트릭", "#267260", "#변압기", "#전력망", "#DartLab"]
+
+  audienceQuestion: HD현대일렉트릭은 어떻게 적자 1,006억원짜리 변압기 사업에서 영업이익 9,953억원 회사로 바뀌었을까?
+  oneLineMessage: >-
+    HD현대일렉트릭의 1조 이익은 수요 폭증만이 아니라 765kV 초고압 변압기 생산 병목,
+    권선 숙련공, 고객 선수금, 가격 전가력이 함께 만든 결과다. 그래서 다음 공시는 수주잔고 금액보다
+    납품 능력과 현금 전환 속도를 봐야 한다.
+  summary: >-
+    HD현대일렉트릭은 2018년 영업적자 1,006억원에서 2025년 영업이익 9,953억원, 영업이익률
+    24.4%로 돌아섰습니다. 이번 편은 세계에서 5~6곳만 만들 수 있는 765kV 초고압 변압기,
+    허용 오차 2mm 권선 공정, 평균 경력 20년 숙련공, 11.1조원 수주잔고와 고객 선수금 구조를
+    함께 보며 제조 병목이 어떻게 재무제표의 해자로 바뀌었는지 설명합니다.
+  whereToLook:
+    - 권선 숙련공 충원률과 울산, 앨라배마 생산 안정성
+    - 11.1조원 수주잔고가 실제 납품과 매출로 전환되는 속도
+    - 영업이익률 24% 안팎이 원자재 가격과 관세 변화 속에서도 유지되는지
+    - 고객 선수금과 계약부채가 영업현금흐름으로 이어지는지
+    - 765kV 초고압 변압기 단가와 북미 수주 비중
+  forbiddenAngles: [매수, 매도, 목표가, 수익 보장, 확정 전망, 수주 확정 단정]
+
+  stockCode: "267260"
+  corpName: HD현대일렉트릭
+  topicSlug: hd-hyundai-electric
+  cardType: company
+  youtubeId: ""
+  links:
+    blogSlug: "267260-hd-hyundai-electric"
+    cardSlug: "267260-hd-hyundai-electric"
+    terminalCode: "267260"
