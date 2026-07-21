@@ -2868,6 +2868,15 @@
     "blog/05-company-reports/170-035900-jyp-stadium-merchandise/assets/170-q1-merch-engine.svg": "3e0e85dc542e250bbe1c12a76815d4ee8af59fa86d03a88b1c718a52ee549368",
     "blog/05-company-reports/170-035900-jyp-stadium-merchandise/assets/170-revenue-mix.svg": "c5383280631feecd45946e73086cae5fc24be6c26a6c9f8f7cdbfa47230e0a82",
     "blog/05-company-reports/170-035900-jyp-stadium-merchandise/assets/170-stadium-merch-hero.webp": "6d9a088e35f460f94900ac50a556e85d5a10b6016d4f4d664c94146601064b29",
+    "blog/05-company-reports/171-071970-hd-hyundai-marine-engine-factory-clock/assets/171-capacity-paradox.svg": "e0cf69b020a4849a868c7f706db68e2c70527aa55b2e6587e82457a9ec059224",
+    "blog/05-company-reports/171-071970-hd-hyundai-marine-engine-factory-clock/assets/171-crankshaft-turbo-workshop.png": "7abc12e5dc0acb8c0b3a3b983896aa1b2a451a6d661ab0c5833fec8e02075121",
+    "blog/05-company-reports/171-071970-hd-hyundai-marine-engine-factory-clock/assets/171-engine-hall-clock.png": "ebd792ac7b5ee69330f13ea0f707d2f671e76f226ecf086ebc942fc19f8e4feb",
+    "blog/05-company-reports/171-071970-hd-hyundai-marine-engine-factory-clock/assets/171-factory-profit.svg": "707da11ac8034ad9cae700429fc46b28702d92091ad00d32da0938773bfb77e4",
+    "blog/05-company-reports/171-071970-hd-hyundai-marine-engine-factory-clock/assets/171-order-calendar.svg": "98ba0c2c9d0c59d9be683af22acbe3f8645b0312603ec79c32c6a78123b598bf",
+    "blog/05-company-reports/171-071970-hd-hyundai-marine-engine-factory-clock/assets/171-parts-room.svg": "025f967fc3b05f8b21ae9c997f7048a10c11f655d893a75c402c2ea1be82411c",
+    "blog/05-company-reports/171-071970-hd-hyundai-marine-engine-factory-clock/assets/171-recurring-profit.svg": "662d56807d3d262d26b2f646f3baf79af34124a5932bad9e5161a56cfbb2abba",
+    "blog/05-company-reports/171-071970-hd-hyundai-marine-engine-factory-clock/assets/171-test-bed-night.png": "5fdff32eb444a6722c8b47d3168dfb9cca60857b6caec48fa9209d4db2800d44",
+    "blog/05-company-reports/171-071970-hd-hyundai-marine-engine-factory-clock/assets/171-three-engine-roles.svg": "80d3afdc0b187c4f22bd32a129b7e9ee7c6d5d1e2e1a28e68ddaae6789588f59",
     "blog/05-company-reports/18-011070-lg-innotek/assets/18-apple-dependency.svg": "06d61bafca5e2d68d7deee033f59772e24de26d034fe3522357062352a7d27cc",
     "blog/05-company-reports/18-011070-lg-innotek/assets/18-assembly-line.webp": "c4cc3023c386e273af786ba92ad2cf2e5701f8a8cee1774db2176ea22bf1846c",
     "blog/05-company-reports/18-011070-lg-innotek/assets/18-camera-module.webp": "24bc6e00585ce89c2648df13788bfcdfbb13b2741cf132626961c91876873906",
@@ -4463,6 +4472,8 @@
     "landing/static/thumbnails/data-single-segment-concentration.webp": "c3d8d4ac69ece5ec42afcffc23d9e336ce7f6b8d233d86ab1627455eb3db5922",
     "landing/static/thumbnails/data-treasury-stock-not-cancelled-card.webp": "4c6df298e1ad9655026059f83ae0015ee99ade031be6538cfc58311d15c0a57a",
     "landing/static/thumbnails/data-treasury-stock-not-cancelled.webp": "0a9e31bd737777c0814b7b488b5b2ae952671833c7efe51e956ebc3bf257c005",
+    "landing/static/thumbnails/hd-hyundai-marine-engine-factory-clock-card.webp": "838da92c73733b2418e5c3cd3f057e4da0335486c8257eb4613f9eb567745f12",
+    "landing/static/thumbnails/hd-hyundai-marine-engine-factory-clock.webp": "94b8b6e350c877da3de7aa313083d11850522f982ef2633c28fb5adf2a1cc25b",
     "landing/static/thumbnails/investment-investor-flow-retail-institution-foreign-card.webp": "081103c7f22bb3e399c8d823a18fe6171eddacf85df323ec6c27d319ba2f6096",
     "landing/static/thumbnails/investment-investor-flow-retail-institution-foreign.webp": "63fd70387e29ff062e664ffbb5d3163ba37856fbf9651d80925f9e2198572c52",
     "landing/static/thumbnails/investment-price-vs-market-cap-card.webp": "672cb690d520b1908dad93fbf82df5b04db2ee8d9ff90e1c0d2897161ac6f391",
@@ -4662,6 +4673,14 @@
       "path": "objects/sha256/02/0254f43f9d48bdd4d8eaae60379f3cddca3331e04c5efa0d39381522bcc794d0.svg",
       "textNodes": 18,
       "viewBox": "0 0 1080 720"
+    },
+    "025f967fc3b05f8b21ae9c997f7048a10c11f655d893a75c402c2ea1be82411c": {
+      "bytes": 4575,
+      "colorCount": 23,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/02/025f967fc3b05f8b21ae9c997f7048a10c11f655d893a75c402c2ea1be82411c.svg",
+      "textNodes": 20,
+      "viewBox": "0 0 1200 720"
     },
     "0270b54b4fe46ddc0a50af5da385a8e677870c41c8584409f5c35447168fffd3": {
       "bytes": 3701,
@@ -11323,6 +11342,10 @@
       "bytes": 60986,
       "path": "objects/sha256/5f/5fda4aff9e57ca20f03c07507f51b2b7da0599157e2766547e4291f26a602776.webp"
     },
+    "5fdff32eb444a6722c8b47d3168dfb9cca60857b6caec48fa9209d4db2800d44": {
+      "bytes": 2292965,
+      "path": "objects/sha256/5f/5fdff32eb444a6722c8b47d3168dfb9cca60857b6caec48fa9209d4db2800d44.png"
+    },
     "5ffd5c12d451dfb3b001a8ecaccb95de0a75bff321884fbd5fd0c1e5a31bca49": {
       "bytes": 124844,
       "path": "objects/sha256/5f/5ffd5c12d451dfb3b001a8ecaccb95de0a75bff321884fbd5fd0c1e5a31bca49.webp"
@@ -11734,6 +11757,14 @@
       "path": "objects/sha256/66/661b7266a021ea26c74b2934f240dae6f756bc1545be787855a34d489f013654.svg",
       "textNodes": 14,
       "viewBox": "0 0 1200 720"
+    },
+    "662d56807d3d262d26b2f646f3baf79af34124a5932bad9e5161a56cfbb2abba": {
+      "bytes": 4139,
+      "colorCount": 30,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/66/662d56807d3d262d26b2f646f3baf79af34124a5932bad9e5161a56cfbb2abba.svg",
+      "textNodes": 20,
+      "viewBox": "0 0 1200 700"
     },
     "66375d89d100703b3b01a7abc795b19b8d8cd52b2fa01b22c2cdc0171638522b": {
       "bytes": 2969,
@@ -12329,6 +12360,14 @@
       "mediaType": "image/svg+xml",
       "path": "objects/sha256/70/7066b2f59393a03021286618c65d546880a1841dd575962e1b813ce8980997e6.svg",
       "textNodes": 36,
+      "viewBox": "0 0 1200 720"
+    },
+    "707da11ac8034ad9cae700429fc46b28702d92091ad00d32da0938773bfb77e4": {
+      "bytes": 4341,
+      "colorCount": 21,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/70/707da11ac8034ad9cae700429fc46b28702d92091ad00d32da0938773bfb77e4.svg",
+      "textNodes": 20,
       "viewBox": "0 0 1200 720"
     },
     "70a6b1385fa9b8050d61110faa5fec99fa185c58bd7bae8393bc90d279e5a71a": {
@@ -13091,6 +13130,10 @@
       "bytes": 210884,
       "path": "objects/sha256/7a/7ab277d2d9f013178eb2645485072fc2b8b391298b4660aa645756b67692f0d3.webp"
     },
+    "7abc12e5dc0acb8c0b3a3b983896aa1b2a451a6d661ab0c5833fec8e02075121": {
+      "bytes": 2678909,
+      "path": "objects/sha256/7a/7abc12e5dc0acb8c0b3a3b983896aa1b2a451a6d661ab0c5833fec8e02075121.png"
+    },
     "7ad0277611657abe6edc12bf6416f3bb2d55579a8dc3e37df71e9acb8982e0aa": {
       "bytes": 3099,
       "colorCount": 10,
@@ -13519,6 +13562,14 @@
       "textNodes": 28,
       "viewBox": "0 0 780 450"
     },
+    "80d3afdc0b187c4f22bd32a129b7e9ee7c6d5d1e2e1a28e68ddaae6789588f59": {
+      "bytes": 4484,
+      "colorCount": 29,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/80/80d3afdc0b187c4f22bd32a129b7e9ee7c6d5d1e2e1a28e68ddaae6789588f59.svg",
+      "textNodes": 24,
+      "viewBox": "0 0 1200 730"
+    },
     "8100eaf0e8980b13552e989a57d4d45eae1e659bda97f5132ea667d6dbe9dc6a": {
       "bytes": 120100,
       "path": "objects/sha256/81/8100eaf0e8980b13552e989a57d4d45eae1e659bda97f5132ea667d6dbe9dc6a.webp"
@@ -13698,6 +13749,10 @@
     "836cc5331ffb380db15f387bc7cad519ffee952d890cbe78fc49e207859d8459": {
       "bytes": 179190,
       "path": "objects/sha256/83/836cc5331ffb380db15f387bc7cad519ffee952d890cbe78fc49e207859d8459.webp"
+    },
+    "838da92c73733b2418e5c3cd3f057e4da0335486c8257eb4613f9eb567745f12": {
+      "bytes": 134948,
+      "path": "objects/sha256/83/838da92c73733b2418e5c3cd3f057e4da0335486c8257eb4613f9eb567745f12.webp"
     },
     "839e11afb9d1c9da3618c9bd72ebcde1e277e1a76a84f6fe7458616a9607a0b1": {
       "bytes": 57758,
@@ -14891,6 +14946,10 @@
       "bytes": 177528,
       "path": "objects/sha256/94/949e46e606fc1c36dfebedb7f7947ad2b6dad400b698ae6412bcd43adf3d85ed.webp"
     },
+    "94b8b6e350c877da3de7aa313083d11850522f982ef2633c28fb5adf2a1cc25b": {
+      "bytes": 93194,
+      "path": "objects/sha256/94/94b8b6e350c877da3de7aa313083d11850522f982ef2633c28fb5adf2a1cc25b.webp"
+    },
     "94d4dae4b22ee26b8e0c31f8021f65eccc656a4a94909e8c28cd75808b1cf0be": {
       "bytes": 196750,
       "path": "objects/sha256/94/94d4dae4b22ee26b8e0c31f8021f65eccc656a4a94909e8c28cd75808b1cf0be.webp"
@@ -15174,6 +15233,14 @@
     "98b095faac3a7ae1bb1597272f5f069dcc3dfeb38eb30ab1d92b6fbf0583a2ce": {
       "bytes": 108260,
       "path": "objects/sha256/98/98b095faac3a7ae1bb1597272f5f069dcc3dfeb38eb30ab1d92b6fbf0583a2ce.jpg"
+    },
+    "98ba0c2c9d0c59d9be683af22acbe3f8645b0312603ec79c32c6a78123b598bf": {
+      "bytes": 4084,
+      "colorCount": 29,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/98/98ba0c2c9d0c59d9be683af22acbe3f8645b0312603ec79c32c6a78123b598bf.svg",
+      "textNodes": 17,
+      "viewBox": "0 0 1200 700"
     },
     "98dceb6bf76e488530d4861b05716eaae0efd25c3c2e1106d0d449c0075d1dda": {
       "bytes": 39122,
@@ -20263,6 +20330,14 @@
       "bytes": 229096,
       "path": "objects/sha256/e0/e09d7d706eda6750dc56e2b6b501b1984144a16609db92d64c917905d0c04ff2.webp"
     },
+    "e0cf69b020a4849a868c7f706db68e2c70527aa55b2e6587e82457a9ec059224": {
+      "bytes": 4448,
+      "colorCount": 23,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/e0/e0cf69b020a4849a868c7f706db68e2c70527aa55b2e6587e82457a9ec059224.svg",
+      "textNodes": 18,
+      "viewBox": "0 0 1200 720"
+    },
     "e0e9c4d4c8cc938b297459ff514688bfb246610f0b92ac51b32100143d3d1e4d": {
       "bytes": 120598,
       "path": "objects/sha256/e0/e0e9c4d4c8cc938b297459ff514688bfb246610f0b92ac51b32100143d3d1e4d.webp"
@@ -20990,6 +21065,10 @@
       "path": "objects/sha256/eb/ebc954648af4d84d148d67efa0a1fa552d17592f854b037926ae0fe0872734dc.svg",
       "textNodes": 6,
       "viewBox": "0 0 800 420"
+    },
+    "ebd792ac7b5ee69330f13ea0f707d2f671e76f226ecf086ebc942fc19f8e4feb": {
+      "bytes": 2336199,
+      "path": "objects/sha256/eb/ebd792ac7b5ee69330f13ea0f707d2f671e76f226ecf086ebc942fc19f8e4feb.png"
     },
     "ebd7f1027ab6aef31fd2440090778e13c80b936d5b29402287bca7517d2f5fd4": {
       "bytes": 44586,
@@ -26433,6 +26512,35 @@
         "blog/05-company-reports/170-035900-jyp-stadium-merchandise/assets/170-q1-merch-engine.svg",
         "blog/05-company-reports/170-035900-jyp-stadium-merchandise/assets/170-revenue-mix.svg",
         "blog/05-company-reports/170-035900-jyp-stadium-merchandise/assets/170-stadium-merch-hero.webp"
+      ]
+    },
+    "05-company-reports/171-071970-hd-hyundai-marine-engine-factory-clock": {
+      "assets": {
+        "171-crankshaft-turbo-workshop": "blog/05-company-reports/171-071970-hd-hyundai-marine-engine-factory-clock/assets/171-crankshaft-turbo-workshop.png",
+        "171-engine-hall-clock": "blog/05-company-reports/171-071970-hd-hyundai-marine-engine-factory-clock/assets/171-engine-hall-clock.png",
+        "171-test-bed-night": "blog/05-company-reports/171-071970-hd-hyundai-marine-engine-factory-clock/assets/171-test-bed-night.png"
+      },
+      "card": "landing/static/thumbnails/hd-hyundai-marine-engine-factory-clock-card.webp",
+      "diagrams": {
+        "171-capacity-paradox": "blog/05-company-reports/171-071970-hd-hyundai-marine-engine-factory-clock/assets/171-capacity-paradox.svg",
+        "171-factory-profit": "blog/05-company-reports/171-071970-hd-hyundai-marine-engine-factory-clock/assets/171-factory-profit.svg",
+        "171-order-calendar": "blog/05-company-reports/171-071970-hd-hyundai-marine-engine-factory-clock/assets/171-order-calendar.svg",
+        "171-parts-room": "blog/05-company-reports/171-071970-hd-hyundai-marine-engine-factory-clock/assets/171-parts-room.svg",
+        "171-recurring-profit": "blog/05-company-reports/171-071970-hd-hyundai-marine-engine-factory-clock/assets/171-recurring-profit.svg",
+        "171-three-engine-roles": "blog/05-company-reports/171-071970-hd-hyundai-marine-engine-factory-clock/assets/171-three-engine-roles.svg"
+      },
+      "og": "landing/static/thumbnails/hd-hyundai-marine-engine-factory-clock.webp",
+      "staging": [
+        "blog/05-company-reports/171-071970-hd-hyundai-marine-engine-factory-clock/assets/171-capacity-paradox.svg",
+        "blog/05-company-reports/171-071970-hd-hyundai-marine-engine-factory-clock/assets/171-crankshaft-turbo-workshop.png",
+        "blog/05-company-reports/171-071970-hd-hyundai-marine-engine-factory-clock/assets/171-engine-hall-clock.png",
+        "blog/05-company-reports/171-071970-hd-hyundai-marine-engine-factory-clock/assets/171-factory-profit.svg",
+        "blog/05-company-reports/171-071970-hd-hyundai-marine-engine-factory-clock/assets/171-order-calendar.svg",
+        "blog/05-company-reports/171-071970-hd-hyundai-marine-engine-factory-clock/assets/171-parts-room.svg",
+        "blog/05-company-reports/171-071970-hd-hyundai-marine-engine-factory-clock/assets/171-recurring-profit.svg",
+        "blog/05-company-reports/171-071970-hd-hyundai-marine-engine-factory-clock/assets/171-test-bed-night.png",
+        "blog/05-company-reports/171-071970-hd-hyundai-marine-engine-factory-clock/assets/171-three-engine-roles.svg",
+        "landing/static/thumbnails/hd-hyundai-marine-engine-factory-clock-card.webp"
       ]
     },
     "05-company-reports/18-011070-lg-innotek": {
