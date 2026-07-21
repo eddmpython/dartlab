@@ -2877,6 +2877,15 @@
     "blog/05-company-reports/171-071970-hd-hyundai-marine-engine-factory-clock/assets/171-recurring-profit.svg": "662d56807d3d262d26b2f646f3baf79af34124a5932bad9e5161a56cfbb2abba",
     "blog/05-company-reports/171-071970-hd-hyundai-marine-engine-factory-clock/assets/171-test-bed-night.png": "5fdff32eb444a6722c8b47d3168dfb9cca60857b6caec48fa9209d4db2800d44",
     "blog/05-company-reports/171-071970-hd-hyundai-marine-engine-factory-clock/assets/171-three-engine-roles.svg": "80d3afdc0b187c4f22bd32a129b7e9ee7c6d5d1e2e1a28e68ddaae6789588f59",
+    "blog/05-company-reports/172-SPCX-spacex-starlink-cash-engine/assets/172-cash-capex.svg": "fdf0f69c8c7ecdff9ac7d79df9a2132276d1d66ce7cbddd5091933281943b53e",
+    "blog/05-company-reports/172-SPCX-spacex-starlink-cash-engine/assets/172-launch-flywheel.svg": "3f8a84e3e048938a042f08b1a4357ccbb96cb80f22f94af8f29ae368668eff12",
+    "blog/05-company-reports/172-SPCX-spacex-starlink-cash-engine/assets/172-remote-starlink-service.png": "0eb85a553b7897b07f3c1f709f029ff4896b2701a10f39313f3492c8cf526e03",
+    "blog/05-company-reports/172-SPCX-spacex-starlink-cash-engine/assets/172-rocket-starlink-loop.png": "3ce4ac0d22e1b80c24228575a2bda495ad3f41673c2377c57701c227d671f2d7",
+    "blog/05-company-reports/172-SPCX-spacex-starlink-cash-engine/assets/172-segment-profit.svg": "077b9947c5c8ee5e3853092a5409bbe5225ad4dabe7ed48e5d773452710dd151",
+    "blog/05-company-reports/172-SPCX-spacex-starlink-cash-engine/assets/172-starlink-scale.svg": "42c50137d30a3734a6a5518840a8aaa1feed77ac7f194ca41150d6fb7d50baa8",
+    "blog/05-company-reports/172-SPCX-spacex-starlink-cash-engine/assets/172-starship-capacity.svg": "48e7a9ea1e7a6053b7ec7e5de8d5e45517216084a7c99437a8d91b38ea888b48",
+    "blog/05-company-reports/172-SPCX-spacex-starlink-cash-engine/assets/172-starship-night-shift.png": "44eebeab3ef5f21bbca9105ae5e443260135fb9f29fececf2b7a58fdb19339f8",
+    "blog/05-company-reports/172-SPCX-spacex-starlink-cash-engine/assets/172-stock-expectation.svg": "362b677b4f1eed6a3e785ed439edebe22b77c6ed3e5f702e1e7ffaa5fb78ba73",
     "blog/05-company-reports/18-011070-lg-innotek/assets/18-apple-dependency.svg": "06d61bafca5e2d68d7deee033f59772e24de26d034fe3522357062352a7d27cc",
     "blog/05-company-reports/18-011070-lg-innotek/assets/18-assembly-line.webp": "c4cc3023c386e273af786ba92ad2cf2e5701f8a8cee1774db2176ea22bf1846c",
     "blog/05-company-reports/18-011070-lg-innotek/assets/18-camera-module.webp": "24bc6e00585ce89c2648df13788bfcdfbb13b2741cf132626961c91876873906",
@@ -4168,6 +4177,8 @@
     "landing/static/thumbnails/161890-kolmar.webp": "eb2eac6750b82c46c9a9ac9fa01a2f11ae7b24ac35bcef3fb8755d7fd7c4f4e2",
     "landing/static/thumbnails/17-construction-company-filings-card.webp": "8b9e814b32d226060306fbca5b9b6f0fc08b979ad3ecfed738ebedd4e1830e61",
     "landing/static/thumbnails/17-construction-company-filings.webp": "6ad768153e7cfc8c04f70af43bf4d2a40f230b7f7bc1fa54df5c8af1e04b396e",
+    "landing/static/thumbnails/172-spacex-starlink-cash-engine-card.webp": "fdec55cd6ea9dfcb810207f2aaa23259311732871fd528acd30d70383c63e2d7",
+    "landing/static/thumbnails/172-spacex-starlink-cash-engine.webp": "1a314e799af06fce6ae1468a47fffd08aa6346ed913f41655d58dda2f3028286",
     "landing/static/thumbnails/18-biotech-company-filings-card.webp": "24db45d9c8157bd368e759d1ed2025787157de922d9c47b1ebbf6fa564377760",
     "landing/static/thumbnails/18-biotech-company-filings.webp": "03c1f0564108ca387234b577ff1fec16640a6dc53b2c3313fb44199c82f10558",
     "landing/static/thumbnails/189300-intellian-card.webp": "3559d0d1d20e34fafdb924d668f892d27f943aa7644357f4120ed1fae8414b68",
@@ -5070,6 +5081,14 @@
       "bytes": 45062,
       "path": "objects/sha256/07/0756a9f18ec2add76545c48c6a2e1835d7823d2cfa9d36970c90bb56647d6138.webp"
     },
+    "077b9947c5c8ee5e3853092a5409bbe5225ad4dabe7ed48e5d773452710dd151": {
+      "bytes": 3453,
+      "colorCount": 13,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/07/077b9947c5c8ee5e3853092a5409bbe5225ad4dabe7ed48e5d773452710dd151.svg",
+      "textNodes": 21,
+      "viewBox": "0 0 1200 720"
+    },
     "07819cf2c00e9284ee6e01db032e47cfb3fbd600e228ad9d52dfd567a1051365": {
       "bytes": 166774,
       "path": "objects/sha256/07/07819cf2c00e9284ee6e01db032e47cfb3fbd600e228ad9d52dfd567a1051365.webp"
@@ -5553,6 +5572,10 @@
     "0ea3a60afcdd97c775dcafdfb71e87f2a6ffa359578e93c59af2b769c5afacf3": {
       "bytes": 298560,
       "path": "objects/sha256/0e/0ea3a60afcdd97c775dcafdfb71e87f2a6ffa359578e93c59af2b769c5afacf3.webp"
+    },
+    "0eb85a553b7897b07f3c1f709f029ff4896b2701a10f39313f3492c8cf526e03": {
+      "bytes": 2225681,
+      "path": "objects/sha256/0e/0eb85a553b7897b07f3c1f709f029ff4896b2701a10f39313f3492c8cf526e03.png"
     },
     "0ebd744e02df1dc89cd7dea8b5d15045316518b863ad6747f65efbfb48c65745": {
       "bytes": 45424,
@@ -6309,6 +6332,10 @@
     "1a0788511e113cfcac3a268de08662adebe28a61ebb5f392e66432fc7b70db07": {
       "bytes": 114268,
       "path": "objects/sha256/1a/1a0788511e113cfcac3a268de08662adebe28a61ebb5f392e66432fc7b70db07.webp"
+    },
+    "1a314e799af06fce6ae1468a47fffd08aa6346ed913f41655d58dda2f3028286": {
+      "bytes": 35418,
+      "path": "objects/sha256/1a/1a314e799af06fce6ae1468a47fffd08aa6346ed913f41655d58dda2f3028286.webp"
     },
     "1a4aa108a778bc6481069dfee63601379a93b40699c65c21edc94b385faa0bc9": {
       "bytes": 278228,
@@ -8286,6 +8313,14 @@
       "bytes": 72480,
       "path": "objects/sha256/36/361fd3591fd4e3810072ce5af378870cafb6e5c11963030cdcf1eb08ae8d7e54.webp"
     },
+    "362b677b4f1eed6a3e785ed439edebe22b77c6ed3e5f702e1e7ffaa5fb78ba73": {
+      "bytes": 3876,
+      "colorCount": 14,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/36/362b677b4f1eed6a3e785ed439edebe22b77c6ed3e5f702e1e7ffaa5fb78ba73.svg",
+      "textNodes": 18,
+      "viewBox": "0 0 1200 720"
+    },
     "3636febff05e83b7dc8a518d11d9009ccc89178c16afac071609214a9b9b8e89": {
       "bytes": 4437,
       "colorCount": 7,
@@ -8822,6 +8857,10 @@
       "bytes": 125002,
       "path": "objects/sha256/3c/3cd0f8e50d9b7abefd89703e84d2ebe181e9f324dc331b107f6d1a67dccbb188.webp"
     },
+    "3ce4ac0d22e1b80c24228575a2bda495ad3f41673c2377c57701c227d671f2d7": {
+      "bytes": 1690634,
+      "path": "objects/sha256/3c/3ce4ac0d22e1b80c24228575a2bda495ad3f41673c2377c57701c227d671f2d7.png"
+    },
     "3d027f4fbab9484a8a262247508b7e08aaea52de8f7c008a463e277780d35ec3": {
       "bytes": 77850,
       "path": "objects/sha256/3d/3d027f4fbab9484a8a262247508b7e08aaea52de8f7c008a463e277780d35ec3.webp"
@@ -9045,6 +9084,14 @@
     "3f811ec0229352fdd9e94437fdc5a1d92e5f1d70b134eb549e8cf64bc7781ccb": {
       "bytes": 127824,
       "path": "objects/sha256/3f/3f811ec0229352fdd9e94437fdc5a1d92e5f1d70b134eb549e8cf64bc7781ccb.webp"
+    },
+    "3f8a84e3e048938a042f08b1a4357ccbb96cb80f22f94af8f29ae368668eff12": {
+      "bytes": 4933,
+      "colorCount": 13,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/3f/3f8a84e3e048938a042f08b1a4357ccbb96cb80f22f94af8f29ae368668eff12.svg",
+      "textNodes": 21,
+      "viewBox": "0 0 1200 720"
     },
     "3fb73396430d9aaa07afd499f6cb87ab9b7df7b2fdac9a1c7078c060eda951f1": {
       "bytes": 186222,
@@ -9286,6 +9333,14 @@
       "bytes": 226212,
       "path": "objects/sha256/42/42b9c4140dc8c598790d5df20dc8b3759592779ca016584e7b010187a5cb90dd.webp"
     },
+    "42c50137d30a3734a6a5518840a8aaa1feed77ac7f194ca41150d6fb7d50baa8": {
+      "bytes": 4271,
+      "colorCount": 12,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/42/42c50137d30a3734a6a5518840a8aaa1feed77ac7f194ca41150d6fb7d50baa8.svg",
+      "textNodes": 26,
+      "viewBox": "0 0 1200 720"
+    },
     "42f32d6da8f62910a3bd38e78175193d9429335a1fb104ab400a68d7060a0ce2": {
       "bytes": 314894,
       "path": "objects/sha256/42/42f32d6da8f62910a3bd38e78175193d9429335a1fb104ab400a68d7060a0ce2.webp"
@@ -9405,6 +9460,10 @@
     "44e74c5cb5c9fdd9cbd9425a9b71b7462acfcaf689f373d2f57045271d9f5619": {
       "bytes": 86766,
       "path": "objects/sha256/44/44e74c5cb5c9fdd9cbd9425a9b71b7462acfcaf689f373d2f57045271d9f5619.webp"
+    },
+    "44eebeab3ef5f21bbca9105ae5e443260135fb9f29fececf2b7a58fdb19339f8": {
+      "bytes": 1799116,
+      "path": "objects/sha256/44/44eebeab3ef5f21bbca9105ae5e443260135fb9f29fececf2b7a58fdb19339f8.png"
     },
     "44f2e6bada76f46b9e32a5c6e8080b16d966d780bd719323cfb98a2e3cf10171": {
       "bytes": 8921,
@@ -9721,6 +9780,14 @@
       "path": "objects/sha256/48/48db487bd0062871be76bf2847452a8f9aafee4314050691268a91890a42c9d2.svg",
       "textNodes": 13,
       "viewBox": "0 0 900 506"
+    },
+    "48e7a9ea1e7a6053b7ec7e5de8d5e45517216084a7c99437a8d91b38ea888b48": {
+      "bytes": 4003,
+      "colorCount": 18,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/48/48e7a9ea1e7a6053b7ec7e5de8d5e45517216084a7c99437a8d91b38ea888b48.svg",
+      "textNodes": 21,
+      "viewBox": "0 0 1200 720"
     },
     "491c2637b1465774c7425c6c318058e1ab6710ebf944692a213501d387d714e7": {
       "bytes": 54338,
@@ -22414,6 +22481,18 @@
       "bytes": 167140,
       "path": "objects/sha256/fd/fdeaeda5606d8b2a31fd5b7d97c1bfdabf3e1942df7e9cf3267e29af04d93e03.webp"
     },
+    "fdec55cd6ea9dfcb810207f2aaa23259311732871fd528acd30d70383c63e2d7": {
+      "bytes": 40846,
+      "path": "objects/sha256/fd/fdec55cd6ea9dfcb810207f2aaa23259311732871fd528acd30d70383c63e2d7.webp"
+    },
+    "fdf0f69c8c7ecdff9ac7d79df9a2132276d1d66ce7cbddd5091933281943b53e": {
+      "bytes": 4370,
+      "colorCount": 12,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/fd/fdf0f69c8c7ecdff9ac7d79df9a2132276d1d66ce7cbddd5091933281943b53e.svg",
+      "textNodes": 28,
+      "viewBox": "0 0 1200 720"
+    },
     "fe58d1b42e7db7422b08ea0f4f455278a8e33c98b61da0aa56cf39316a621574": {
       "bytes": 128480,
       "path": "objects/sha256/fe/fe58d1b42e7db7422b08ea0f4f455278a8e33c98b61da0aa56cf39316a621574.webp"
@@ -26541,6 +26620,35 @@
         "blog/05-company-reports/171-071970-hd-hyundai-marine-engine-factory-clock/assets/171-test-bed-night.png",
         "blog/05-company-reports/171-071970-hd-hyundai-marine-engine-factory-clock/assets/171-three-engine-roles.svg",
         "landing/static/thumbnails/hd-hyundai-marine-engine-factory-clock-card.webp"
+      ]
+    },
+    "05-company-reports/172-SPCX-spacex-starlink-cash-engine": {
+      "assets": {
+        "172-remote-starlink-service": "blog/05-company-reports/172-SPCX-spacex-starlink-cash-engine/assets/172-remote-starlink-service.png",
+        "172-rocket-starlink-loop": "blog/05-company-reports/172-SPCX-spacex-starlink-cash-engine/assets/172-rocket-starlink-loop.png",
+        "172-starship-night-shift": "blog/05-company-reports/172-SPCX-spacex-starlink-cash-engine/assets/172-starship-night-shift.png"
+      },
+      "card": "landing/static/thumbnails/172-spacex-starlink-cash-engine-card.webp",
+      "diagrams": {
+        "172-cash-capex": "blog/05-company-reports/172-SPCX-spacex-starlink-cash-engine/assets/172-cash-capex.svg",
+        "172-launch-flywheel": "blog/05-company-reports/172-SPCX-spacex-starlink-cash-engine/assets/172-launch-flywheel.svg",
+        "172-segment-profit": "blog/05-company-reports/172-SPCX-spacex-starlink-cash-engine/assets/172-segment-profit.svg",
+        "172-starlink-scale": "blog/05-company-reports/172-SPCX-spacex-starlink-cash-engine/assets/172-starlink-scale.svg",
+        "172-starship-capacity": "blog/05-company-reports/172-SPCX-spacex-starlink-cash-engine/assets/172-starship-capacity.svg",
+        "172-stock-expectation": "blog/05-company-reports/172-SPCX-spacex-starlink-cash-engine/assets/172-stock-expectation.svg"
+      },
+      "og": "landing/static/thumbnails/172-spacex-starlink-cash-engine.webp",
+      "staging": [
+        "blog/05-company-reports/172-SPCX-spacex-starlink-cash-engine/assets/172-cash-capex.svg",
+        "blog/05-company-reports/172-SPCX-spacex-starlink-cash-engine/assets/172-launch-flywheel.svg",
+        "blog/05-company-reports/172-SPCX-spacex-starlink-cash-engine/assets/172-remote-starlink-service.png",
+        "blog/05-company-reports/172-SPCX-spacex-starlink-cash-engine/assets/172-rocket-starlink-loop.png",
+        "blog/05-company-reports/172-SPCX-spacex-starlink-cash-engine/assets/172-segment-profit.svg",
+        "blog/05-company-reports/172-SPCX-spacex-starlink-cash-engine/assets/172-starlink-scale.svg",
+        "blog/05-company-reports/172-SPCX-spacex-starlink-cash-engine/assets/172-starship-capacity.svg",
+        "blog/05-company-reports/172-SPCX-spacex-starlink-cash-engine/assets/172-starship-night-shift.png",
+        "blog/05-company-reports/172-SPCX-spacex-starlink-cash-engine/assets/172-stock-expectation.svg",
+        "landing/static/thumbnails/172-spacex-starlink-cash-engine-card.webp"
       ]
     },
     "05-company-reports/18-011070-lg-innotek": {
