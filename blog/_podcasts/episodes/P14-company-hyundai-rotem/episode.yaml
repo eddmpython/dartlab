@@ -1,0 +1,77 @@
+# 에피소드 메타데이터. 회사 에피소드의 소스는 발행된 블로그 글이다.
+# 발행 시 guid, 오디오 크기, 길이, 발행일은 published.json에 기록한다.
+episode:
+  version: 1
+  episodeId: P14-company-hyundai-rotem
+  episodeNo: 14
+  slug: hyundai-rotem
+  title: "현대로템: 1조 이익을 만든 2밀리미터 장인의 손"
+  lane: company
+  language: ko
+  status: ready
+
+  audio:
+    generator: notebooklm
+    sourceHint: "Downloads/1조_이익을_만든_2밀리미터_장인의_손.m4a"
+    sourceDoc: https://eddmpython.github.io/dartlab/blog/064350-hyundai-rotem
+
+  image:
+    source: cover.jpg
+    key: episodes/hyundai-rotem/cover-3000.jpg
+  staticImage:
+    source: static-video.jpg
+    key: episodes/hyundai-rotem/static-video.jpg
+  thumbnail:
+    source: static-video.jpg
+    key: episodes/hyundai-rotem/static-video.jpg
+  sourceAssets:
+    - pool: companyAsset
+      name: k2-tank
+      role: reusable-original
+  visual:
+    source: assets/source.webp
+    kicker: DartLab Podcast
+    titleLines:
+      - 현대로템
+      - "[[1조 이익]]을 만든"
+      - "2밀리미터 장인의 손"
+    subtitle: K2 전차 수출, 원가율 104%에서 76%, 차입 없는 성장
+    footer: DART 공시 · 2025년 · 투자권유 아님
+  caption:
+    hook: 현대로템은 2019년 팔수록 적자였지만 2025년 영업이익 1.01조원을 기록했습니다.
+    body: >-
+      매출원가율은 103.8%에서 76.2%로 내려왔고, 영업이익률은 -11.4%에서 17.2%로 바뀌었습니다.
+      차입금은 608억원에 그치지만 계약부채는 3.97조원입니다. 이번 편은 폴란드 K2 전차 수출,
+      수주 믹스, 감가상각비 395억원, 영업현금흐름 9,043억원을 함께 보며 전차 공장의 턴어라운드를
+      재무제표로 읽습니다.
+    cta: 전체 에피소드는 DartLab 팟캐스트와 블로그 글에서 들을 수 있습니다.
+    hashtags: ["#현대로템", "#064350", "#K2전차", "#K방산", "#DartLab"]
+
+  audienceQuestion: 현대로템은 어떻게 팔수록 적자였던 전차 공장에서 2025년 영업이익 1조 회사로 바뀌었을까?
+  oneLineMessage: >-
+    현대로템의 반전은 매출 증가만이 아니라 수주 믹스 변화, 원가율 하락, 고객 선수금 구조,
+    낮은 설비 부담이 함께 만든 결과다. 그래서 영업이익 1조보다 수주잔고가 실제 매출과 현금으로
+    바뀌는 속도를 봐야 한다.
+  summary: >-
+    현대로템은 2019년 매출원가율 103.8%, 영업이익률 -11.4%였던 회사에서 2025년 영업이익
+    1.01조원, 영업이익률 17.2%의 회사로 바뀌었습니다. 폴란드 K2 전차 수출 이후 수주 믹스가
+    고마진 방산으로 이동했고, 차입금은 608억원에 그친 반면 계약부채는 3.97조원까지 늘었습니다.
+    이번 편은 원가율 104%에서 76%로 내려온 과정, 감가상각비 395억원의 자산 경량 구조,
+    영업활동현금흐름 9,043억원과 잉여현금흐름 7,478억원을 함께 보며 전차 공장의 턴어라운드를
+    설명합니다.
+  whereToLook:
+    - 수주잔고가 실제 매출과 현금으로 바뀌는 속도
+    - 방산 매출 비중과 영업이익률 15% 안팎 유지 여부
+    - 매출채권 3.39조원의 회수 속도와 현금 순환
+    - 계약부채 3.97조원이 향후 매출로 전환되는 흐름
+  forbiddenAngles: [매수, 매도, 목표가, 수익 보장, 확정 전망, 방산 수주 확정 단정]
+
+  stockCode: "064350"
+  corpName: 현대로템
+  topicSlug: hyundai-rotem
+  cardType: company
+  youtubeId: ""
+  links:
+    blogSlug: "064350-hyundai-rotem"
+    cardSlug: "064350-hyundai-rotem"
+    terminalCode: "064350"
