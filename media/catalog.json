@@ -2896,6 +2896,16 @@
     "blog/05-company-reports/173-440110-fadu-ssd-controller-turnaround/assets/173-quarterly-turn.svg": "810fd9cc4f063c88e4f2636cb7413d19aebc2bba965ac78010173c93a9751f80",
     "blog/05-company-reports/173-440110-fadu-ssd-controller-turnaround/assets/173-three-clocks.svg": "7929d9eb9f3e7c1976d88b153edef93e87fefe644e9e7c3db7b33a5c0d3f3047",
     "blog/05-company-reports/173-440110-fadu-ssd-controller-turnaround/assets/173-trust-timeline.svg": "ac13c21d3076378f251a74cf4e9a6ea03415170fb12b9ad8037a1db0c3236a41",
+    "blog/05-company-reports/174-LUNR-intuitive-machines-lanteris/assets/174-acquisition-anatomy.svg": "84d246d3f182aad30b258dec13ef39278e0561b69fd29ac57f8cec9aea3b3bfa",
+    "blog/05-company-reports/174-LUNR-intuitive-machines-lanteris/assets/174-backlog-bridge.svg": "0ddda7242ee9c394279bdbffa92c9aeaa71a3944db39f2338b2c49374b774667",
+    "blog/05-company-reports/174-LUNR-intuitive-machines-lanteris/assets/174-build-connect-operate.svg": "6571b810c138434557fec6f5c15afa765577d462e47dcc69112605bca2970909",
+    "blog/05-company-reports/174-LUNR-intuitive-machines-lanteris/assets/174-cash-share-price.svg": "248d0f52cbc26ed8e6984c5f3186bda5cd3a870c95d7f19646aa0af4239b6082",
+    "blog/05-company-reports/174-LUNR-intuitive-machines-lanteris/assets/174-lanteris-factory.png": "10e7f19bc4d6e6ea715208e28d5b3a0f3046da514d14790ba547f693079b6b8f",
+    "blog/05-company-reports/174-LUNR-intuitive-machines-lanteris/assets/174-lunar-network.png": "616ef25ba965d56df59da670f2ba0bf740d077b365a97563662f417e8b61467c",
+    "blog/05-company-reports/174-LUNR-intuitive-machines-lanteris/assets/174-lunar-to-prime.png": "21bcb903d8de64e469e9cf3bfc21fe413061a31ee563377f971ec1817d56128d",
+    "blog/05-company-reports/174-LUNR-intuitive-machines-lanteris/assets/174-mission-contracts.svg": "a9a5651928a1ec84144c70b76bcf5e29e8819454c10404cf364d7a91e926c9ef",
+    "blog/05-company-reports/174-LUNR-intuitive-machines-lanteris/assets/174-mission-proof.svg": "4e9f202eddd0ca113f1f57626b451d0bc53288032f127ce87d17d05341e70316",
+    "blog/05-company-reports/174-LUNR-intuitive-machines-lanteris/assets/174-revenue-reality.svg": "6f5a8350fdad01f6dd5b8d251508ca4a17d219e91420e9cb7586fba15a19964f",
     "blog/05-company-reports/18-011070-lg-innotek/assets/18-apple-dependency.svg": "06d61bafca5e2d68d7deee033f59772e24de26d034fe3522357062352a7d27cc",
     "blog/05-company-reports/18-011070-lg-innotek/assets/18-assembly-line.webp": "c4cc3023c386e273af786ba92ad2cf2e5701f8a8cee1774db2176ea22bf1846c",
     "blog/05-company-reports/18-011070-lg-innotek/assets/18-camera-module.webp": "24bc6e00585ce89c2648df13788bfcdfbb13b2741cf132626961c91876873906",
@@ -4355,6 +4365,8 @@
     "landing/static/thumbnails/KO-coca-cola.webp": "fde9aa28a1caf6aa02317de4749ae3df9960284ee19d52a3407ae16585e2b527",
     "landing/static/thumbnails/LMT-lockheed-martin-card.webp": "b8f951946130207b6f0fc198303cb13ea459fbd689f061b81eb60ef526341ce3",
     "landing/static/thumbnails/LMT-lockheed-martin.webp": "621b73316948597381d5dc030b43dcceaa2dfe79ecde70f82ea34e8bf6eee4d9",
+    "landing/static/thumbnails/LUNR-intuitive-machines-lanteris-card.webp": "b1e9accb8ad52abc1278f16719a4209d40bacc2b975ce4e2637077f81df799c5",
+    "landing/static/thumbnails/LUNR-intuitive-machines-lanteris.webp": "2ad7e96a8619ce958e117db21e99f09f8bbe9e5bfe4081e537a4c5c555fd15c8",
     "landing/static/thumbnails/MA-mastercard-card.webp": "36e806359344b59309fcffd06223458f96b832496382dea3373203a0acb819f0",
     "landing/static/thumbnails/MA-mastercard.webp": "f1a88cc0fc7cc2814c5979beb691118960919c7f4aae42ab084496de30bffe66",
     "landing/static/thumbnails/MCD-mcdonalds-card.webp": "43c71761b3be018db141de7801f08fa7f9039bad8b63ba12492d92de882f329d",
@@ -5537,6 +5549,14 @@
       "bytes": 264144,
       "path": "objects/sha256/0d/0dad0ac967325fd45ec0b289da6c649ab0c77fafe181d39423ae644b88568585.webp"
     },
+    "0ddda7242ee9c394279bdbffa92c9aeaa71a3944db39f2338b2c49374b774667": {
+      "bytes": 3674,
+      "colorCount": 14,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/0d/0ddda7242ee9c394279bdbffa92c9aeaa71a3944db39f2338b2c49374b774667.svg",
+      "textNodes": 18,
+      "viewBox": "0 0 1200 675"
+    },
     "0de2ce94ab0b8d9c1299a6480324428a1048d764390b0edcd29839970e3b90a8": {
       "bytes": 130630,
       "path": "objects/sha256/0d/0de2ce94ab0b8d9c1299a6480324428a1048d764390b0edcd29839970e3b90a8.webp"
@@ -5716,6 +5736,10 @@
       "path": "objects/sha256/10/10d5f2ca152ff0b4b06ecf5ea0a7820c0563bf7ed63762ed527203b9a24974cd.svg",
       "textNodes": 26,
       "viewBox": "0 0 780 450"
+    },
+    "10e7f19bc4d6e6ea715208e28d5b3a0f3046da514d14790ba547f693079b6b8f": {
+      "bytes": 2445833,
+      "path": "objects/sha256/10/10e7f19bc4d6e6ea715208e28d5b3a0f3046da514d14790ba547f693079b6b8f.png"
     },
     "10edc5a04938c396d5f15bf799db13944ca6d4d31fb96599527ecf8cb6f22fb0": {
       "bytes": 5364,
@@ -6873,6 +6897,10 @@
       "bytes": 150812,
       "path": "objects/sha256/21/21b1e20bfe30a4a10ff9f6c747c267f8bd99f4ca938ca56d4f3151127c4bcd4f.webp"
     },
+    "21bcb903d8de64e469e9cf3bfc21fe413061a31ee563377f971ec1817d56128d": {
+      "bytes": 2302266,
+      "path": "objects/sha256/21/21bcb903d8de64e469e9cf3bfc21fe413061a31ee563377f971ec1817d56128d.png"
+    },
     "21c92763d3f08562aea4d94192ae82ac041a08a347cdf248d26f1defc7e9d242": {
       "bytes": 421370,
       "path": "objects/sha256/21/21c92763d3f08562aea4d94192ae82ac041a08a347cdf248d26f1defc7e9d242.webp"
@@ -7124,6 +7152,14 @@
     "24831fa243effb7218440b7d8cb7619ca84d7ac02400f79defaebeb42186909e": {
       "bytes": 462764,
       "path": "objects/sha256/24/24831fa243effb7218440b7d8cb7619ca84d7ac02400f79defaebeb42186909e.webp"
+    },
+    "248d0f52cbc26ed8e6984c5f3186bda5cd3a870c95d7f19646aa0af4239b6082": {
+      "bytes": 3727,
+      "colorCount": 16,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/24/248d0f52cbc26ed8e6984c5f3186bda5cd3a870c95d7f19646aa0af4239b6082.svg",
+      "textNodes": 23,
+      "viewBox": "0 0 1200 675"
     },
     "24ab2264332a1d68275b24217c319d84735ac0b3db621b8650b8fe5e47aea580": {
       "bytes": 2719,
@@ -7616,6 +7652,10 @@
     "2acec789bd35bca591a78433aff08c79efd84d026987d527607993b23ff87b60": {
       "bytes": 90696,
       "path": "objects/sha256/2a/2acec789bd35bca591a78433aff08c79efd84d026987d527607993b23ff87b60.webp"
+    },
+    "2ad7e96a8619ce958e117db21e99f09f8bbe9e5bfe4081e537a4c5c555fd15c8": {
+      "bytes": 106652,
+      "path": "objects/sha256/2a/2ad7e96a8619ce958e117db21e99f09f8bbe9e5bfe4081e537a4c5c555fd15c8.webp"
     },
     "2af1085b552c8d7f37534cf4ede3093443cafd16edb23d0d730a96ee65efd8f4": {
       "bytes": 95758,
@@ -10197,6 +10237,14 @@
       "bytes": 327198,
       "path": "objects/sha256/4e/4e85f7502cd55600b4c0f6b0c2605d6657d22b73e55a1958944f1940a85663f2.webp"
     },
+    "4e9f202eddd0ca113f1f57626b451d0bc53288032f127ce87d17d05341e70316": {
+      "bytes": 4282,
+      "colorCount": 16,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/4e/4e9f202eddd0ca113f1f57626b451d0bc53288032f127ce87d17d05341e70316.svg",
+      "textNodes": 22,
+      "viewBox": "0 0 1200 675"
+    },
     "4eaa8371ccc49e119895aec7ea9a82052cb4267aabcc7f0cc9a4d16f60be6af6": {
       "bytes": 29524,
       "path": "objects/sha256/4e/4eaa8371ccc49e119895aec7ea9a82052cb4267aabcc7f0cc9a4d16f60be6af6.webp"
@@ -11577,6 +11625,10 @@
       "bytes": 198180,
       "path": "objects/sha256/61/6163721bc6fd4c37076db9e1d3c26a418da950245720fcd9285bccd1a896c76e.webp"
     },
+    "616ef25ba965d56df59da670f2ba0bf740d077b365a97563662f417e8b61467c": {
+      "bytes": 1974830,
+      "path": "objects/sha256/61/616ef25ba965d56df59da670f2ba0bf740d077b365a97563662f417e8b61467c.png"
+    },
     "6180944c7b765ff7c9e0ca84e7695a505fb5a4a6453167605c1a17d0a100a764": {
       "bytes": 6332,
       "colorCount": 13,
@@ -11824,6 +11876,14 @@
     "6562a3435099bcba95ebf272106dc1481603355f0241b95ada590812451123aa": {
       "bytes": 40512,
       "path": "objects/sha256/65/6562a3435099bcba95ebf272106dc1481603355f0241b95ada590812451123aa.webp"
+    },
+    "6571b810c138434557fec6f5c15afa765577d462e47dcc69112605bca2970909": {
+      "bytes": 4322,
+      "colorCount": 13,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/65/6571b810c138434557fec6f5c15afa765577d462e47dcc69112605bca2970909.svg",
+      "textNodes": 25,
+      "viewBox": "0 0 1200 675"
     },
     "657dae67a81e50b7b9a0e8b16aa8e3629bf1a4d182d17bbf2228b568382d1ce7": {
       "bytes": 233350,
@@ -12384,6 +12444,14 @@
     "6f4aa856add68fd6f28cac0eca46e74662112cb583f9e8f882b311ffa420c175": {
       "bytes": 56106,
       "path": "objects/sha256/6f/6f4aa856add68fd6f28cac0eca46e74662112cb583f9e8f882b311ffa420c175.webp"
+    },
+    "6f5a8350fdad01f6dd5b8d251508ca4a17d219e91420e9cb7586fba15a19964f": {
+      "bytes": 3031,
+      "colorCount": 12,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/6f/6f5a8350fdad01f6dd5b8d251508ca4a17d219e91420e9cb7586fba15a19964f.svg",
+      "textNodes": 16,
+      "viewBox": "0 0 1200 675"
     },
     "6f74ce5abc29ddc7a7a6224256f23a5ec3e7a431e09ea31e64616ab3ba4a140c": {
       "bytes": 1602,
@@ -14000,6 +14068,14 @@
       "path": "objects/sha256/84/84cbce614013b41cc04253d378052ed1ad32c9c07cdfbc80e5203b0815173c21.svg",
       "textNodes": 9,
       "viewBox": "0 0 1080 300"
+    },
+    "84d246d3f182aad30b258dec13ef39278e0561b69fd29ac57f8cec9aea3b3bfa": {
+      "bytes": 2919,
+      "colorCount": 13,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/84/84d246d3f182aad30b258dec13ef39278e0561b69fd29ac57f8cec9aea3b3bfa.svg",
+      "textNodes": 17,
+      "viewBox": "0 0 1200 675"
     },
     "84d6b33aaf4d6bac2aa8ebeb6b2965551223799295f17c3d8b6ff1112d57e259": {
       "bytes": 46060,
@@ -16493,6 +16569,14 @@
       "bytes": 96444,
       "path": "objects/sha256/a9/a9a417ef3da30a5af84b499cbe07fff613108a0055c50d949e92d769c80572fd.webp"
     },
+    "a9a5651928a1ec84144c70b76bcf5e29e8819454c10404cf364d7a91e926c9ef": {
+      "bytes": 4401,
+      "colorCount": 12,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/a9/a9a5651928a1ec84144c70b76bcf5e29e8819454c10404cf364d7a91e926c9ef.svg",
+      "textNodes": 36,
+      "viewBox": "0 0 1200 675"
+    },
     "a9cc64ce6df10ea85c7737284e3671d0f31ad98859760658d405390a6bea9c17": {
       "bytes": 91316,
       "path": "objects/sha256/a9/a9cc64ce6df10ea85c7737284e3671d0f31ad98859760658d405390a6bea9c17.webp"
@@ -17156,6 +17240,10 @@
     "b1e3234accdc1add40afe5d94f994128cecddc7a41c3fd6b21445a315179aa01": {
       "bytes": 310290,
       "path": "objects/sha256/b1/b1e3234accdc1add40afe5d94f994128cecddc7a41c3fd6b21445a315179aa01.webp"
+    },
+    "b1e9accb8ad52abc1278f16719a4209d40bacc2b975ce4e2637077f81df799c5": {
+      "bytes": 134918,
+      "path": "objects/sha256/b1/b1e9accb8ad52abc1278f16719a4209d40bacc2b975ce4e2637077f81df799c5.webp"
     },
     "b1ead4224cd7e170818c9e9b295a3dcce652e11dc18442090c18bd96202968b4": {
       "bytes": 1899,
@@ -26768,6 +26856,37 @@
         "blog/05-company-reports/173-440110-fadu-ssd-controller-turnaround/assets/173-three-clocks.svg",
         "blog/05-company-reports/173-440110-fadu-ssd-controller-turnaround/assets/173-trust-timeline.svg",
         "landing/static/thumbnails/440110-fadu-ssd-controller-turnaround-card.webp"
+      ]
+    },
+    "05-company-reports/174-LUNR-intuitive-machines-lanteris": {
+      "assets": {
+        "174-lanteris-factory": "blog/05-company-reports/174-LUNR-intuitive-machines-lanteris/assets/174-lanteris-factory.png",
+        "174-lunar-network": "blog/05-company-reports/174-LUNR-intuitive-machines-lanteris/assets/174-lunar-network.png",
+        "174-lunar-to-prime": "blog/05-company-reports/174-LUNR-intuitive-machines-lanteris/assets/174-lunar-to-prime.png"
+      },
+      "card": "landing/static/thumbnails/LUNR-intuitive-machines-lanteris-card.webp",
+      "diagrams": {
+        "174-acquisition-anatomy": "blog/05-company-reports/174-LUNR-intuitive-machines-lanteris/assets/174-acquisition-anatomy.svg",
+        "174-backlog-bridge": "blog/05-company-reports/174-LUNR-intuitive-machines-lanteris/assets/174-backlog-bridge.svg",
+        "174-build-connect-operate": "blog/05-company-reports/174-LUNR-intuitive-machines-lanteris/assets/174-build-connect-operate.svg",
+        "174-cash-share-price": "blog/05-company-reports/174-LUNR-intuitive-machines-lanteris/assets/174-cash-share-price.svg",
+        "174-mission-contracts": "blog/05-company-reports/174-LUNR-intuitive-machines-lanteris/assets/174-mission-contracts.svg",
+        "174-mission-proof": "blog/05-company-reports/174-LUNR-intuitive-machines-lanteris/assets/174-mission-proof.svg",
+        "174-revenue-reality": "blog/05-company-reports/174-LUNR-intuitive-machines-lanteris/assets/174-revenue-reality.svg"
+      },
+      "og": "landing/static/thumbnails/LUNR-intuitive-machines-lanteris.webp",
+      "staging": [
+        "blog/05-company-reports/174-LUNR-intuitive-machines-lanteris/assets/174-acquisition-anatomy.svg",
+        "blog/05-company-reports/174-LUNR-intuitive-machines-lanteris/assets/174-backlog-bridge.svg",
+        "blog/05-company-reports/174-LUNR-intuitive-machines-lanteris/assets/174-build-connect-operate.svg",
+        "blog/05-company-reports/174-LUNR-intuitive-machines-lanteris/assets/174-cash-share-price.svg",
+        "blog/05-company-reports/174-LUNR-intuitive-machines-lanteris/assets/174-lanteris-factory.png",
+        "blog/05-company-reports/174-LUNR-intuitive-machines-lanteris/assets/174-lunar-network.png",
+        "blog/05-company-reports/174-LUNR-intuitive-machines-lanteris/assets/174-lunar-to-prime.png",
+        "blog/05-company-reports/174-LUNR-intuitive-machines-lanteris/assets/174-mission-contracts.svg",
+        "blog/05-company-reports/174-LUNR-intuitive-machines-lanteris/assets/174-mission-proof.svg",
+        "blog/05-company-reports/174-LUNR-intuitive-machines-lanteris/assets/174-revenue-reality.svg",
+        "landing/static/thumbnails/LUNR-intuitive-machines-lanteris-card.webp"
       ]
     },
     "05-company-reports/18-011070-lg-innotek": {
