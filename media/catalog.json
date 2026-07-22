@@ -2937,6 +2937,26 @@
     "blog/05-company-reports/177-044450-kss-vlgc-contract-clock/assets/177-three-clocks.svg": "222ec0d6d916f89da10106ff2695f870b905d85c24f9a2d979b8d092e46b0357",
     "blog/05-company-reports/177-044450-kss-vlgc-contract-clock/assets/177-vlgc-dawn-clock.png": "b1eb1e8e36f2e216841b3c5d12d42fdef5e71d4fe4c7aa6d8a26575d48375559",
     "blog/05-company-reports/177-044450-kss-vlgc-contract-clock/assets/177-watch-dashboard.svg": "53c6b5a866a6f9994a15fe70f7e2de69842c6816b314d8bba155ee17e4daf8b6",
+    "blog/05-company-reports/178-005850-sl-light-content-value/assets/178-business-mix.svg": "32a9a8eba8bfef20d0352e239c8ed2dc67a62531069260a592d212d0cf597f15",
+    "blog/05-company-reports/178-005850-sl-light-content-value/assets/178-cash-bridge.svg": "dc8f9432acb3d937267902471159c8253f4320dab4fbe6a03e3a334f6480c41c",
+    "blog/05-company-reports/178-005850-sl-light-content-value/assets/178-global-growth.svg": "947370a4a3ea981ff8a378e3f50e13095479e61e5e4d1a3a29cba5ed3306f1b8",
+    "blog/05-company-reports/178-005850-sl-light-content-value/assets/178-lamp-cash-robot-option.png": "0c36c999f02a1e1ef9da253dc386cece500c61fdac03df6f152531d3e0ecc7f4",
+    "blog/05-company-reports/178-005850-sl-light-content-value/assets/178-lamp-price-ladder.svg": "346947b916e67c1ac03a78fff49651f677e465fdbc9b95a2f39777ede628780e",
+    "blog/05-company-reports/178-005850-sl-light-content-value/assets/178-lamp-system-factory.png": "b1a4c926796290a4b6ca13efde4b377cb2a2305bc2a25789176ed39fb3fdd656",
+    "blog/05-company-reports/178-005850-sl-light-content-value/assets/178-local-factory-network.png": "a14a969b0be5946f1b6780de53359e85d169d7e5c850da2dc66386571318db53",
+    "blog/05-company-reports/178-005850-sl-light-content-value/assets/178-price-expectation.svg": "f031ed388247ddc3894ab8f421b61974553e5141aae045aad09d166f63b0db04",
+    "blog/05-company-reports/178-005850-sl-light-content-value/assets/178-profit-engine.svg": "3a4148f6d70027016f6cb97b6f851383c0a76346cd09a8cc5e26897688ac8fcc",
+    "blog/05-company-reports/178-005850-sl-light-content-value/assets/178-watch-dashboard.svg": "f5fc2922693249fce22195b4e63ebfdb59a39341769fb9d23e95331496393e38",
+    "blog/05-company-reports/179-340570-tnl-three-clocks/assets/179-cash-shift.svg": "f20bcdafd6327d9a57ce7380c4ca73dab254e7deba33f5a775b2b6de2707e378",
+    "blog/05-company-reports/179-340570-tnl-three-clocks/assets/179-five-year-reset.svg": "3cc7c75bbc0afd23424482ec58a06a92a790a8a3b32b6f6036754caec5106c90",
+    "blog/05-company-reports/179-340570-tnl-three-clocks/assets/179-price-expectation.svg": "da0a0ae6f21fe4587f07092413c01ea2c8e4f598c20d2f02021ef52b7ed45693",
+    "blog/05-company-reports/179-340570-tnl-three-clocks/assets/179-product-mix.svg": "ec712e828308ce39088546c8653c07ea3ab5f978ab4b7c91a65a4f4adf22a611",
+    "blog/05-company-reports/179-340570-tnl-three-clocks/assets/179-restock-wave.png": "ccb1af731e7b1fa575f772e0fe969848c6b820c08e657bb9cc48152c480f9480",
+    "blog/05-company-reports/179-340570-tnl-three-clocks/assets/179-shipment-clock.svg": "9ef9a91e5d009cdf81eb3bb9163c46e5085f7b6e1eb5e190f70cf54620bf259e",
+    "blog/05-company-reports/179-340570-tnl-three-clocks/assets/179-slovenia-bridge.png": "cd339a4b79b2e2b664efdcebcec82aa1720e6f7286a774201259fa65e9ec09ee",
+    "blog/05-company-reports/179-340570-tnl-three-clocks/assets/179-three-clocks-patch.png": "b80748f9d8dc48f990d6f8e33ef9807fd375c57e43aff55f1fc0f9af8d4f8757",
+    "blog/05-company-reports/179-340570-tnl-three-clocks/assets/179-three-ledgers.svg": "8648311f879eabe4853e8090303d48a1d52ace5ab283de2509cd9300e351ec8b",
+    "blog/05-company-reports/179-340570-tnl-three-clocks/assets/179-watch-dashboard.svg": "06ba17b60e0daa0858cd0746e906dd8941d9ef7512cbb274066da0441f6edfb3",
     "blog/05-company-reports/18-011070-lg-innotek/assets/18-apple-dependency.svg": "06d61bafca5e2d68d7deee033f59772e24de26d034fe3522357062352a7d27cc",
     "blog/05-company-reports/18-011070-lg-innotek/assets/18-assembly-line.webp": "c4cc3023c386e273af786ba92ad2cf2e5701f8a8cee1774db2176ea22bf1846c",
     "blog/05-company-reports/18-011070-lg-innotek/assets/18-camera-module.webp": "24bc6e00585ce89c2648df13788bfcdfbb13b2741cf132626961c91876873906",
@@ -4074,6 +4094,8 @@
     "landing/static/thumbnails/004370-nongshim.webp": "e5f776812c40ed2ef0602188691f3deeba068fb00af7ec12171ab7cb1fc81e14",
     "landing/static/thumbnails/005380-hyundai-motor-card.webp": "6adae249052337581cfeaac913e1b57f79b05e54074fd459e07eeab72a6e936c",
     "landing/static/thumbnails/005380-hyundai-motor.webp": "2af1085b552c8d7f37534cf4ede3093443cafd16edb23d0d730a96ee65efd8f4",
+    "landing/static/thumbnails/005850-sl-light-content-value-card.webp": "3ee55157b960dbbb59dc2e70a343dc5d0193ed9fa26e790f54df098f0390521a",
+    "landing/static/thumbnails/005850-sl-light-content-value.webp": "86edf65bb9664c1102ecf55e6b826ed722716fbc7987b0a7d4d9d2ed083ecb95",
     "landing/static/thumbnails/005930-samsung-card.webp": "879051ca74f9902a2955b2ed7cabe52b0d6b490139ef0ad2ef2f0aab3d4b3aa2",
     "landing/static/thumbnails/005930-samsung-rally-card.webp": "f48e0031004cf0aa7be3c1cf393b1d2636f5e9229bbd475925c10bf9c38fcfd3",
     "landing/static/thumbnails/005930-samsung-rally.webp": "1017c410334554d5b9f0e0a2990b882da606522c657200fe82d06dd717a9e913",
@@ -4312,6 +4334,8 @@
     "landing/static/thumbnails/336260-doosan-fuel-cell.webp": "e87fc117c95887db72dd0e93b6f56059310b913ed5540b7dfc1f3f8f7c2df487",
     "landing/static/thumbnails/34-operating-cash-flow-vs-net-income-card.webp": "3db6bbc71a9e0d3db3382de870fb78e6eacb46324334006fdc11e7e880ab5b5c",
     "landing/static/thumbnails/34-operating-cash-flow-vs-net-income.webp": "be80159e98fb5dc7ce5d1ff8b7bc63be2b7916c831049817b837637459212c84",
+    "landing/static/thumbnails/340570-tnl-three-clocks-card.webp": "81a0e87aafe2f58f9caba0441af771f6f4968ffce7227917d16497d1acc0e9bc",
+    "landing/static/thumbnails/340570-tnl-three-clocks.webp": "b130f5937f7d0bfc8bfb6598dca374e11e3938c8ca28f7e9140312c4abdacb2c",
     "landing/static/thumbnails/35-treasury-stock-third-party-allotment-and-major-shareholder-change-card.webp": "605f29ecd22e224de679f40ea7a0f9770e86eddcabb676efadcefa1987bd6909",
     "landing/static/thumbnails/35-treasury-stock-third-party-allotment-and-major-shareholder-change.webp": "3ad624ab195ac6bfd5e012dcd820e3d56a211791f88df7b732a684434d534cde",
     "landing/static/thumbnails/352820-hybe-card.webp": "1f46c3c48c46d2dbfd815843b8e69374b8727ff6a13c9ac5fea3ce67415cc184",
@@ -5102,6 +5126,14 @@
       "textNodes": 36,
       "viewBox": "0 0 1200 720"
     },
+    "06ba17b60e0daa0858cd0746e906dd8941d9ef7512cbb274066da0441f6edfb3": {
+      "bytes": 4999,
+      "colorCount": 28,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/06/06ba17b60e0daa0858cd0746e906dd8941d9ef7512cbb274066da0441f6edfb3.svg",
+      "textNodes": 33,
+      "viewBox": "0 0 1200 675"
+    },
     "06c0214c1a551630b33e7a535981d0a81a759136b9ae0c452d910a3df4590ec9": {
       "bytes": 6407,
       "colorCount": 22,
@@ -5465,6 +5497,10 @@
     "0c0e97e4d17eee64b2590aabecd04645fca3e2e5ad3cf3a751e059d4cb0c8695": {
       "bytes": 204152,
       "path": "objects/sha256/0c/0c0e97e4d17eee64b2590aabecd04645fca3e2e5ad3cf3a751e059d4cb0c8695.webp"
+    },
+    "0c36c999f02a1e1ef9da253dc386cece500c61fdac03df6f152531d3e0ecc7f4": {
+      "bytes": 2416920,
+      "path": "objects/sha256/0c/0c36c999f02a1e1ef9da253dc386cece500c61fdac03df6f152531d3e0ecc7f4.png"
     },
     "0c562fc2d8e1237b14dece48c9858052066a95787560c52a741e0e6bdfb3728b": {
       "bytes": 7310,
@@ -8186,6 +8222,14 @@
       "bytes": 106314,
       "path": "objects/sha256/32/3260900b55e165bb5030dd951e11ce0d32f42465b67527fb24911fbb226017ed.webp"
     },
+    "32a9a8eba8bfef20d0352e239c8ed2dc67a62531069260a592d212d0cf597f15": {
+      "bytes": 3068,
+      "colorCount": 21,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/32/32a9a8eba8bfef20d0352e239c8ed2dc67a62531069260a592d212d0cf597f15.svg",
+      "textNodes": 19,
+      "viewBox": "0 0 1200 675"
+    },
     "32c8f8e6b466d2392267dec25999f569c8dbf14a9b6b15ee0ba8ccad276020c1": {
       "bytes": 53196,
       "path": "objects/sha256/32/32c8f8e6b466d2392267dec25999f569c8dbf14a9b6b15ee0ba8ccad276020c1.webp"
@@ -8325,6 +8369,14 @@
       "path": "objects/sha256/34/3441edca724fb0ff5b9979cdd4fd58529e4253390754abca9a961f4e8947703f.svg",
       "textNodes": 6,
       "viewBox": "0 0 800 420"
+    },
+    "346947b916e67c1ac03a78fff49651f677e465fdbc9b95a2f39777ede628780e": {
+      "bytes": 2914,
+      "colorCount": 17,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/34/346947b916e67c1ac03a78fff49651f677e465fdbc9b95a2f39777ede628780e.svg",
+      "textNodes": 14,
+      "viewBox": "0 0 1200 675"
     },
     "3469fd6cda170af020118e8dfca8e3ddcffcbbbeae1063a6f0b3077374165170": {
       "bytes": 1977059,
@@ -8830,6 +8882,14 @@
       "bytes": 6000,
       "path": "objects/sha256/3a/3a3ce08ac036846735d4ce27656ca4f699ef4f735eb5049b18871aa1585b1ae6.webp"
     },
+    "3a4148f6d70027016f6cb97b6f851383c0a76346cd09a8cc5e26897688ac8fcc": {
+      "bytes": 2703,
+      "colorCount": 12,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/3a/3a4148f6d70027016f6cb97b6f851383c0a76346cd09a8cc5e26897688ac8fcc.svg",
+      "textNodes": 18,
+      "viewBox": "0 0 1200 675"
+    },
     "3a493ee3bc56f3fdafaf002719be2f7ccb0e61192850b4da5c5e02bf4fefc36a": {
       "bytes": 2863,
       "colorCount": 11,
@@ -9006,6 +9066,14 @@
       "bytes": 184154,
       "path": "objects/sha256/3c/3c9d5a1cb97a887ae011b41bac2c46c9fea7aad245d182ede514873c9d983c66.webp"
     },
+    "3cc7c75bbc0afd23424482ec58a06a92a790a8a3b32b6f6036754caec5106c90": {
+      "bytes": 3763,
+      "colorCount": 16,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/3c/3cc7c75bbc0afd23424482ec58a06a92a790a8a3b32b6f6036754caec5106c90.svg",
+      "textNodes": 23,
+      "viewBox": "0 0 1200 675"
+    },
     "3ccebf5ff63e64a4fe20f9b0b038fbed5deb07fbe3d1504a78fdbfb636a961f1": {
       "bytes": 4161,
       "colorCount": 8,
@@ -9177,6 +9245,10 @@
       "path": "objects/sha256/3e/3ecc0044c2c768980b101595f3610ddb4760d39e64939a896df59942b35b225b.svg",
       "textNodes": 13,
       "viewBox": "0 0 1080 320"
+    },
+    "3ee55157b960dbbb59dc2e70a343dc5d0193ed9fa26e790f54df098f0390521a": {
+      "bytes": 97566,
+      "path": "objects/sha256/3e/3ee55157b960dbbb59dc2e70a343dc5d0193ed9fa26e790f54df098f0390521a.webp"
     },
     "3ef2d0fe39d86010a1ff23a709206c9adf47da49c01a698901307f17ca1a7827": {
       "bytes": 153270,
@@ -13946,6 +14018,10 @@
       "bytes": 80954,
       "path": "objects/sha256/81/81913a60c83d2123cfabe0ac2a77b59f23dbbfced4dc2acd95d8eb7e74ef57c9.webp"
     },
+    "81a0e87aafe2f58f9caba0441af771f6f4968ffce7227917d16497d1acc0e9bc": {
+      "bytes": 84930,
+      "path": "objects/sha256/81/81a0e87aafe2f58f9caba0441af771f6f4968ffce7227917d16497d1acc0e9bc.webp"
+    },
     "81a45fc74cbf238a042a81d91d655d3106eac052150d5b81661f0c24ac4cd6eb": {
       "bytes": 199572,
       "path": "objects/sha256/81/81a45fc74cbf238a042a81d91d655d3106eac052150d5b81661f0c24ac4cd6eb.webp"
@@ -14338,6 +14414,14 @@
       "bytes": 194516,
       "path": "objects/sha256/86/8644b05164b83e5e8a98d5d4579f6e37955b1b057c71c3c2fcfa7b0ac234558e.webp"
     },
+    "8648311f879eabe4853e8090303d48a1d52ace5ab283de2509cd9300e351ec8b": {
+      "bytes": 4662,
+      "colorCount": 31,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/86/8648311f879eabe4853e8090303d48a1d52ace5ab283de2509cd9300e351ec8b.svg",
+      "textNodes": 25,
+      "viewBox": "0 0 1200 675"
+    },
     "866c52fc7ea013b88c82e61c8de9820de1778c4689c61874c0960d2d7f677dbb": {
       "bytes": 298788,
       "path": "objects/sha256/86/866c52fc7ea013b88c82e61c8de9820de1778c4689c61874c0960d2d7f677dbb.webp"
@@ -14373,6 +14457,10 @@
     "86e66a705338ce0a4a9e3956e453a574f8c49a84b5059d803d522f3e3b6c513a": {
       "bytes": 176736,
       "path": "objects/sha256/86/86e66a705338ce0a4a9e3956e453a574f8c49a84b5059d803d522f3e3b6c513a.webp"
+    },
+    "86edf65bb9664c1102ecf55e6b826ed722716fbc7987b0a7d4d9d2ed083ecb95": {
+      "bytes": 74858,
+      "path": "objects/sha256/86/86edf65bb9664c1102ecf55e6b826ed722716fbc7987b0a7d4d9d2ed083ecb95.webp"
     },
     "86ee64c5246c889ab1ce1410fe3cf58315d41e0d7724ad28a9dff5431710cc05": {
       "bytes": 6952,
@@ -15298,6 +15386,14 @@
       "textNodes": 22,
       "viewBox": "0 0 1200 480"
     },
+    "947370a4a3ea981ff8a378e3f50e13095479e61e5e4d1a3a29cba5ed3306f1b8": {
+      "bytes": 3321,
+      "colorCount": 17,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/94/947370a4a3ea981ff8a378e3f50e13095479e61e5e4d1a3a29cba5ed3306f1b8.svg",
+      "textNodes": 23,
+      "viewBox": "0 0 1200 675"
+    },
     "9484999c790da944a109b1f20df9239b76e5efc952466495453e8a986ed96d7b": {
       "bytes": 230166,
       "path": "objects/sha256/94/9484999c790da944a109b1f20df9239b76e5efc952466495453e8a986ed96d7b.webp"
@@ -16086,6 +16182,14 @@
       "textNodes": 6,
       "viewBox": "0 0 800 420"
     },
+    "9ef9a91e5d009cdf81eb3bb9163c46e5085f7b6e1eb5e190f70cf54620bf259e": {
+      "bytes": 3597,
+      "colorCount": 19,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/9e/9ef9a91e5d009cdf81eb3bb9163c46e5085f7b6e1eb5e190f70cf54620bf259e.svg",
+      "textNodes": 20,
+      "viewBox": "0 0 1200 675"
+    },
     "9f0f00a3a8ea4a8c74778038ac6cad12ee808011db5c29cc1f499501587c87cc": {
       "bytes": 2522,
       "colorCount": 9,
@@ -16189,6 +16293,10 @@
     "a12068532fcb61bee369f4092fd93d65efe0646924ec8121bb5972f7213a4d73": {
       "bytes": 122792,
       "path": "objects/sha256/a1/a12068532fcb61bee369f4092fd93d65efe0646924ec8121bb5972f7213a4d73.webp"
+    },
+    "a14a969b0be5946f1b6780de53359e85d169d7e5c850da2dc66386571318db53": {
+      "bytes": 2444982,
+      "path": "objects/sha256/a1/a14a969b0be5946f1b6780de53359e85d169d7e5c850da2dc66386571318db53.png"
     },
     "a164fea541b5ff8f7a8ce97ccc527a0c043902b6086d7042b2a74c1c4ed60c5a": {
       "bytes": 65304,
@@ -17358,6 +17466,10 @@
       "bytes": 112094,
       "path": "objects/sha256/b1/b1308d29e8186d9369fb55009ffc69bd0e13f1dfada487a2c3d7418468bf0889.webp"
     },
+    "b130f5937f7d0bfc8bfb6598dca374e11e3938c8ca28f7e9140312c4abdacb2c": {
+      "bytes": 76394,
+      "path": "objects/sha256/b1/b130f5937f7d0bfc8bfb6598dca374e11e3938c8ca28f7e9140312c4abdacb2c.webp"
+    },
     "b137a9a1f4744f02cdf0d5ea77fa4861fdbb5c06c85cf74f1506b90b7eb493e7": {
       "bytes": 20622,
       "path": "objects/sha256/b1/b137a9a1f4744f02cdf0d5ea77fa4861fdbb5c06c85cf74f1506b90b7eb493e7.webp"
@@ -17393,6 +17505,10 @@
     "b19a447d5bdc6c98e8d80b955c3fa8c08221f53cf0de97c019b924ff092727a9": {
       "bytes": 124582,
       "path": "objects/sha256/b1/b19a447d5bdc6c98e8d80b955c3fa8c08221f53cf0de97c019b924ff092727a9.webp"
+    },
+    "b1a4c926796290a4b6ca13efde4b377cb2a2305bc2a25789176ed39fb3fdd656": {
+      "bytes": 2072938,
+      "path": "objects/sha256/b1/b1a4c926796290a4b6ca13efde4b377cb2a2305bc2a25789176ed39fb3fdd656.png"
     },
     "b1b91fb186848d3aca940cd1f768da98ea005ccdc521119e1c8a7543f9bc8a8b": {
       "bytes": 2510,
@@ -17909,6 +18025,10 @@
       "path": "objects/sha256/b7/b7fa1ac1b9e470f489d961e5aaab4eef96ceeb20985670b031af8c52b9a2478a.svg",
       "textNodes": 14,
       "viewBox": "0 0 1200 660"
+    },
+    "b80748f9d8dc48f990d6f8e33ef9807fd375c57e43aff55f1fc0f9af8d4f8757": {
+      "bytes": 1951329,
+      "path": "objects/sha256/b8/b80748f9d8dc48f990d6f8e33ef9807fd375c57e43aff55f1fc0f9af8d4f8757.png"
     },
     "b80923d90599610711eccfd91c26104e86c962b2f6525127dc289b40d1ace282": {
       "bytes": 51018,
@@ -19342,6 +19462,10 @@
       "bytes": 349232,
       "path": "objects/sha256/cc/cca5598a7b4eecc73f42050e95f21ae167550e4acfc4d40ca8427f6fe6f63256.webp"
     },
+    "ccb1af731e7b1fa575f772e0fe969848c6b820c08e657bb9cc48152c480f9480": {
+      "bytes": 2045684,
+      "path": "objects/sha256/cc/ccb1af731e7b1fa575f772e0fe969848c6b820c08e657bb9cc48152c480f9480.png"
+    },
     "cce0f020a2a88c7703baffc16f944a44e2902017f59d4664c8768d610f12ff8a": {
       "bytes": 84128,
       "path": "objects/sha256/cc/cce0f020a2a88c7703baffc16f944a44e2902017f59d4664c8768d610f12ff8a.webp"
@@ -19373,6 +19497,10 @@
       "path": "objects/sha256/cd/cd26ad346107f314a958224e9f5b6e97b6a7468f1d34711b64fe24eb54823909.svg",
       "textNodes": 20,
       "viewBox": "0 0 1200 675"
+    },
+    "cd339a4b79b2e2b664efdcebcec82aa1720e6f7286a774201259fa65e9ec09ee": {
+      "bytes": 2218728,
+      "path": "objects/sha256/cd/cd339a4b79b2e2b664efdcebcec82aa1720e6f7286a774201259fa65e9ec09ee.png"
     },
     "cd540fbe0817f6105d4618beaff489827097b54500cd18386bf87ce9894c9c22": {
       "bytes": 7924,
@@ -20230,6 +20358,14 @@
       "textNodes": 19,
       "viewBox": "0 0 1080 740"
     },
+    "da0a0ae6f21fe4587f07092413c01ea2c8e4f598c20d2f02021ef52b7ed45693": {
+      "bytes": 3999,
+      "colorCount": 23,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/da/da0a0ae6f21fe4587f07092413c01ea2c8e4f598c20d2f02021ef52b7ed45693.svg",
+      "textNodes": 24,
+      "viewBox": "0 0 1200 675"
+    },
     "da13619c040339df3fbe22841a6e4170db2f86afff4bd76384ced145be7c8de1": {
       "bytes": 9424,
       "colorCount": 10,
@@ -20429,6 +20565,14 @@
     "dc8e7f25a1e347fd47221d29c275bce50a1f8371f247258a3639aaa09c40a0fc": {
       "bytes": 55386,
       "path": "objects/sha256/dc/dc8e7f25a1e347fd47221d29c275bce50a1f8371f247258a3639aaa09c40a0fc.webp"
+    },
+    "dc8f9432acb3d937267902471159c8253f4320dab4fbe6a03e3a334f6480c41c": {
+      "bytes": 3172,
+      "colorCount": 10,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/dc/dc8f9432acb3d937267902471159c8253f4320dab4fbe6a03e3a334f6480c41c.svg",
+      "textNodes": 20,
+      "viewBox": "0 0 1200 675"
     },
     "dce4aa43a35e776f857dd24802f9990e6cb235eade680dffd4a8b9ca5ea32ba5": {
       "bytes": 71370,
@@ -21582,6 +21726,14 @@
       "bytes": 239268,
       "path": "objects/sha256/ec/ec5721591817115164dee3a8e347404608c7efa34af5f721b1f446edbc5422ee.webp"
     },
+    "ec712e828308ce39088546c8653c07ea3ab5f978ab4b7c91a65a4f4adf22a611": {
+      "bytes": 3987,
+      "colorCount": 17,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/ec/ec712e828308ce39088546c8653c07ea3ab5f978ab4b7c91a65a4f4adf22a611.svg",
+      "textNodes": 16,
+      "viewBox": "0 0 1200 675"
+    },
     "ec73e9bd008863f004f8ab7fc45842a6500202c0b6bd8024bd91341304903067": {
       "bytes": 4355,
       "colorCount": 10,
@@ -21886,6 +22038,14 @@
       "textNodes": 14,
       "viewBox": "0 0 1200 760"
     },
+    "f031ed388247ddc3894ab8f421b61974553e5141aae045aad09d166f63b0db04": {
+      "bytes": 3363,
+      "colorCount": 24,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/f0/f031ed388247ddc3894ab8f421b61974553e5141aae045aad09d166f63b0db04.svg",
+      "textNodes": 21,
+      "viewBox": "0 0 1200 675"
+    },
     "f04342d529de061319c812f028a124366a36f9fc75ccdedb0c91e251f99c9350": {
       "bytes": 87008,
       "path": "objects/sha256/f0/f04342d529de061319c812f028a124366a36f9fc75ccdedb0c91e251f99c9350.webp"
@@ -21985,6 +22145,14 @@
     "f1d78b3d69c5f964e23912ecf290225637c60f1b683ba760a8e4778651a1bd20": {
       "bytes": 178780,
       "path": "objects/sha256/f1/f1d78b3d69c5f964e23912ecf290225637c60f1b683ba760a8e4778651a1bd20.webp"
+    },
+    "f20bcdafd6327d9a57ce7380c4ca73dab254e7deba33f5a775b2b6de2707e378": {
+      "bytes": 3800,
+      "colorCount": 22,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/f2/f20bcdafd6327d9a57ce7380c4ca73dab254e7deba33f5a775b2b6de2707e378.svg",
+      "textNodes": 19,
+      "viewBox": "0 0 1200 675"
     },
     "f21d7b43bc369cee0e975a5c68e125719f2231514dbbed5f49c7e599ddeceee5": {
       "bytes": 179534,
@@ -22289,6 +22457,14 @@
     "f5f2ce5c94009fc2c20fa64fcf39d87e031a80cbb64547bd09b6987c7dfcb51b": {
       "bytes": 43702,
       "path": "objects/sha256/f5/f5f2ce5c94009fc2c20fa64fcf39d87e031a80cbb64547bd09b6987c7dfcb51b.webp"
+    },
+    "f5fc2922693249fce22195b4e63ebfdb59a39341769fb9d23e95331496393e38": {
+      "bytes": 3580,
+      "colorCount": 32,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/f5/f5fc2922693249fce22195b4e63ebfdb59a39341769fb9d23e95331496393e38.svg",
+      "textNodes": 23,
+      "viewBox": "0 0 1200 675"
     },
     "f60243c8b69e94467080f725410ea56276741f8175387eaae3b1237d266a8782": {
       "bytes": 42806,
@@ -27255,6 +27431,68 @@
         "blog/05-company-reports/177-044450-kss-vlgc-contract-clock/assets/177-vlgc-dawn-clock.png",
         "blog/05-company-reports/177-044450-kss-vlgc-contract-clock/assets/177-watch-dashboard.svg",
         "landing/static/thumbnails/044450-kss-vlgc-contract-clock-card.png"
+      ]
+    },
+    "05-company-reports/178-005850-sl-light-content-value": {
+      "assets": {
+        "178-lamp-cash-robot-option": "blog/05-company-reports/178-005850-sl-light-content-value/assets/178-lamp-cash-robot-option.png",
+        "178-lamp-system-factory": "blog/05-company-reports/178-005850-sl-light-content-value/assets/178-lamp-system-factory.png",
+        "178-local-factory-network": "blog/05-company-reports/178-005850-sl-light-content-value/assets/178-local-factory-network.png"
+      },
+      "card": "landing/static/thumbnails/005850-sl-light-content-value-card.webp",
+      "diagrams": {
+        "178-business-mix": "blog/05-company-reports/178-005850-sl-light-content-value/assets/178-business-mix.svg",
+        "178-cash-bridge": "blog/05-company-reports/178-005850-sl-light-content-value/assets/178-cash-bridge.svg",
+        "178-global-growth": "blog/05-company-reports/178-005850-sl-light-content-value/assets/178-global-growth.svg",
+        "178-lamp-price-ladder": "blog/05-company-reports/178-005850-sl-light-content-value/assets/178-lamp-price-ladder.svg",
+        "178-price-expectation": "blog/05-company-reports/178-005850-sl-light-content-value/assets/178-price-expectation.svg",
+        "178-profit-engine": "blog/05-company-reports/178-005850-sl-light-content-value/assets/178-profit-engine.svg",
+        "178-watch-dashboard": "blog/05-company-reports/178-005850-sl-light-content-value/assets/178-watch-dashboard.svg"
+      },
+      "og": "landing/static/thumbnails/005850-sl-light-content-value.webp",
+      "staging": [
+        "blog/05-company-reports/178-005850-sl-light-content-value/assets/178-business-mix.svg",
+        "blog/05-company-reports/178-005850-sl-light-content-value/assets/178-cash-bridge.svg",
+        "blog/05-company-reports/178-005850-sl-light-content-value/assets/178-global-growth.svg",
+        "blog/05-company-reports/178-005850-sl-light-content-value/assets/178-lamp-cash-robot-option.png",
+        "blog/05-company-reports/178-005850-sl-light-content-value/assets/178-lamp-price-ladder.svg",
+        "blog/05-company-reports/178-005850-sl-light-content-value/assets/178-lamp-system-factory.png",
+        "blog/05-company-reports/178-005850-sl-light-content-value/assets/178-local-factory-network.png",
+        "blog/05-company-reports/178-005850-sl-light-content-value/assets/178-price-expectation.svg",
+        "blog/05-company-reports/178-005850-sl-light-content-value/assets/178-profit-engine.svg",
+        "blog/05-company-reports/178-005850-sl-light-content-value/assets/178-watch-dashboard.svg",
+        "landing/static/thumbnails/005850-sl-light-content-value-card.webp"
+      ]
+    },
+    "05-company-reports/179-340570-tnl-three-clocks": {
+      "assets": {
+        "179-restock-wave": "blog/05-company-reports/179-340570-tnl-three-clocks/assets/179-restock-wave.png",
+        "179-slovenia-bridge": "blog/05-company-reports/179-340570-tnl-three-clocks/assets/179-slovenia-bridge.png",
+        "179-three-clocks-patch": "blog/05-company-reports/179-340570-tnl-three-clocks/assets/179-three-clocks-patch.png"
+      },
+      "card": "landing/static/thumbnails/340570-tnl-three-clocks-card.webp",
+      "diagrams": {
+        "179-cash-shift": "blog/05-company-reports/179-340570-tnl-three-clocks/assets/179-cash-shift.svg",
+        "179-five-year-reset": "blog/05-company-reports/179-340570-tnl-three-clocks/assets/179-five-year-reset.svg",
+        "179-price-expectation": "blog/05-company-reports/179-340570-tnl-three-clocks/assets/179-price-expectation.svg",
+        "179-product-mix": "blog/05-company-reports/179-340570-tnl-three-clocks/assets/179-product-mix.svg",
+        "179-shipment-clock": "blog/05-company-reports/179-340570-tnl-three-clocks/assets/179-shipment-clock.svg",
+        "179-three-ledgers": "blog/05-company-reports/179-340570-tnl-three-clocks/assets/179-three-ledgers.svg",
+        "179-watch-dashboard": "blog/05-company-reports/179-340570-tnl-three-clocks/assets/179-watch-dashboard.svg"
+      },
+      "og": "landing/static/thumbnails/340570-tnl-three-clocks.webp",
+      "staging": [
+        "blog/05-company-reports/179-340570-tnl-three-clocks/assets/179-cash-shift.svg",
+        "blog/05-company-reports/179-340570-tnl-three-clocks/assets/179-five-year-reset.svg",
+        "blog/05-company-reports/179-340570-tnl-three-clocks/assets/179-price-expectation.svg",
+        "blog/05-company-reports/179-340570-tnl-three-clocks/assets/179-product-mix.svg",
+        "blog/05-company-reports/179-340570-tnl-three-clocks/assets/179-restock-wave.png",
+        "blog/05-company-reports/179-340570-tnl-three-clocks/assets/179-shipment-clock.svg",
+        "blog/05-company-reports/179-340570-tnl-three-clocks/assets/179-slovenia-bridge.png",
+        "blog/05-company-reports/179-340570-tnl-three-clocks/assets/179-three-clocks-patch.png",
+        "blog/05-company-reports/179-340570-tnl-three-clocks/assets/179-three-ledgers.svg",
+        "blog/05-company-reports/179-340570-tnl-three-clocks/assets/179-watch-dashboard.svg",
+        "landing/static/thumbnails/340570-tnl-three-clocks-card.webp"
       ]
     },
     "05-company-reports/18-011070-lg-innotek": {
