@@ -1,5 +1,9 @@
 # 04. Capability, 엔진 실행, 시뮬레이터 격리
 
+> 2026-07-22 정정: `simulate.mirror`는 제거됐다. L1, L1.5, L2 capability 실행의 현재 정본은
+> `dartlab.data("catalog")`, `dartlab.data("query")`다. Universe는 이 작업대를 소비하는 상위 제품이며
+> Data Workbench가 Universe를 역참조하지 않는 의존 규칙은 유지한다.
+
 ## 1. 전체의 의미
 
 "엔진별 호출 가능한 모든 데이터"는 모든 axis를 전 종목에 미리 실행해 결과를 쌓는다는 뜻이 아니다. 모든 실존 callable을 발견하고, 실제 입력·출력·안정성·비용·권한을 catalog하며, 요청 시 재현 가능한 방식으로 호출할 수 있다는 뜻이다.

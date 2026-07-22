@@ -164,7 +164,7 @@
     },
     {
       "id": "engines.data",
-      "title": "Data (수집·프리빌드 파이프라인)",
+      "title": "Unified Data Workbench",
       "category": "engines",
       "status": "limited",
       "dataSources": [],

@@ -1,5 +1,9 @@
 # 18. 거울 작업대 (Mirror Workbench) 설계 확정 + 개념확립 실측
 
+> 2026-07-22 superseded. 범용 정본은 `mainPlan/unified-data-workbench/`와
+> `src/dartlab/data/`다. 순수 shape folding은 `data.factorKernel`로 이관했고,
+> 실사용자가 없던 `simulate.mirror` 물질화 드라이버는 제거했다. 아래 내용은 설계 이력이다.
+
 > v1.0 (2026-07-07). 운영자 지시 "작업대를 완전히 처음부터 다시 세운다. 정공법으로. 장기 유지보수를
 > 손으로 하지 않는 방향, 확대되는 것을 자동흡수 가능하게." 6설계 x 2적대심사 + 종합(wf_6c13f3f9).
 > 개념확립 데모 = `tests/_attempts/workbench_mirror/` (mirror.py + demo.py, 값 물질화 0).

@@ -1473,3 +1473,10 @@ mainPlan UI 플랫폼 리팩토링이 **이 세션 동안** 단계-4b~5-2b로 �
 - **세탁 차단 회귀**: unsigned batch, 잘못된 event grid, outcome timing drift, 조립 후 actual row 변조를 모두 거부한다. 같은 입력의 반복 조립은 동일 episode와 hash를 만들고 입력 순서는 canonical 정렬된다.
 - **검증**: focused 20건, `tests/simulate` 전체 445건, ruff format/check, camelCase strict, docstring4 strict, py_compile, diff hygiene, 긴 줄표 검색, Guard Index strict l0-l15 7개 rule이 모두 통과했다. 신규 조립 공개 함수와 세부 함수에는 D/E 복잡도 증가가 없다.
 - **다음 P0**: 조립 계약은 닫혔지만 현재 수직 회귀는 한 origin fixture다. 다음은 실제 DART, EDGAR, price, macro, industry provider lane에서 여러 origin의 signed action과 realized outcome batch를 생산해 model tournament의 regime별 표본 수를 늘리는 일이다. 그 뒤 UI는 episode lineage, model x case x strategy, worst model, leader reversal을 읽는 mirror로 붙인다.
+
+## 2026-07-22 Unified Data Workbench 전환
+
+- **정본 변경**: 시뮬레이터 전용 `simulate.mirror`를 범용 데이터 플랫폼으로 오인할 수 있는 구조를 종료했다. L1, L1.5, L2 전체의 현재 정본은 `dartlab.data("catalog")`, `dartlab.data("query")`다.
+- **입력 배선**: `buildSnapshot`의 분기 재무 입력은 `analysis.simulationInputs` asset을 동일 query 계약으로 읽는다. fiscal period validAt 절단, catalog snapshot, contract hash, lineage, execution receipt가 시뮬레이션 결과까지 전달된다.
+- **정리**: `simulate.mirror` 물질화 드라이버와 전용 테스트를 제거했다. 재사용 가능한 shape folding kernel은 `data.factorKernel`로 이관했다.
+- **의존 방향**: `simulate -> data -> L2 -> L1.5 -> L1`만 허용한다. data가 simulate, story, AI를 import하는 역방향은 purity audit이 차단한다.

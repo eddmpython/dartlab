@@ -5,12 +5,15 @@ kind: curated
 scope: builtin
 status: unverified
 category: engines
-purpose: 응용 분석 skill이 시작 전에 참조할 Company, gather, scan 데이터 엔진의 기본 선택 순서와 evidence 계약을 정의한다.
+purpose: Unified Data Workbench 아래에서 Company, gather, scan 원천을 선택하고 수집, prebuild, freshness를 운영하는 기본 절차를 정의한다.
 whenToUse:
   - 응용 분석 skill을 만들기 전에 데이터 확보 순서를 정할 때
   - Company, gather, scan 중 어떤 데이터 엔진을 먼저 써야 하는지 판단할 때
   - 단일 종목, 원자료 수집, 횡단 비교를 한 질문 안에서 조합해야 할 때
 capabilityRefs:
+  - data
+  - data.catalog
+  - data.query
   - Company
   - Company.index
   - Company.panel
@@ -85,7 +88,7 @@ examples:
 source:
   type: curated_markdown
   owner: dartlab
-lastUpdated: "2026-05-02"
+lastUpdated: "2026-07-22"
 testUniverse:
   market: KR
   stockCodes:
@@ -94,6 +97,7 @@ testUniverse:
 
 ## 기본 판단
 
+- 여러 계층의 자산을 외부 프로세스나 시뮬레이터가 재사용해야 하면 먼저 `data("catalog")`, `data("query")` 계약을 쓴다. 아래 Company, gather, scan 선택 규칙은 각 owner가 데이터를 만드는 하위 실행 경계다.
 - 단일 종목의 재무, 공시, 사업, 하위 엔진 라우팅은 `Company`가 먼저다. scan prebuild는 peer 위치, universe ranking, Company 원자료 부재 시의 보조 경로다.
 - 최신 주가, 수급, 뉴스, 거시 원자료처럼 외부 데이터 신선도가 핵심이면 `gather`가 먼저다.
 - 후보 발굴, 순위, peer 위치, 시장 전체 분포가 핵심이면 `scan`이 먼저다.
@@ -122,6 +126,7 @@ testUniverse:
 ```python
 import dartlab
 
+dartlab.data("catalog")                    # L1, L1.5, L2 stable asset 발견
 dartlab.gather("price", "005930")          # 최신 raw data 보강 (provider·latestAsOf)
 dartlab.scan("fields")                       # universe·rank 위치 (횡단 비교)
 dartlab.Company("005930").panel("IS")        # 단일 종목 원자료 (항목 x 기간 격자)

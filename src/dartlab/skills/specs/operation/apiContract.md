@@ -43,7 +43,8 @@ procedure:
   - 검증 방법 기준을 확인한다.
   - '**IS · CIS · CF (flow)** — 4 분기 모두 있을 때만 단순 합 (3 분기 이하 → None).'
   - '**BS (stock)** — Q4 (= 연말잔액). 없으면 그 해 가장 최근 분기.'
-  - 공개 함수는 종목코드 (str) 또는 Company 만 받는다.
+  - Company 중심 공개 함수는 종목코드 또는 Company를 받고, data는 typed request와 동형 JSON mapping을 받는다.
+  - data의 public axis는 catalog와 query 둘뿐이며 factor와 lineage는 별도 axis로 만들지 않는다.
   - 추가 import 금지 — `import dartlab` 하나로 모든 기능 접근.
 requiredEvidence:
   - skillRef
@@ -81,7 +82,7 @@ source:
   type: absorbed_skills
   absorbedKey: api-contract
   format: markdown
-lastUpdated: '2026-05-03'
+lastUpdated: '2026-07-22'
 testUniverse:
   market: KR
   stockCodes:
@@ -102,6 +103,8 @@ testUniverse:
 - 내부 helper, ops, builder, recipe 실행 함수는 구현 세부사항이다. 사용자 문서, CHANGELOG, Skill 예시에서 직접 호출 대상으로 안내하지 않는다.
 - 새 기능은 먼저 기존 엔진의 축으로 수용 가능한지 판단한다. 축으로 표현할 수 없고 회사 객체의 자연스러운 장기 기능일 때만 provider facade 승격을 검토한다.
 - 공개 문서에서 허용되는 표현은 `dartlab.{engine}("{axis}", ...)`, `Company.{method}(...)`, 또는 이미 정의된 provider facade 뿐이다.
+- `data` 엔진도 같은 규칙을 따르며 공개 axis는 `catalog`, `query` 두 개다. factor, graph, narrative, resource를 별도 axis나 helper로 노출하지 않는다.
+- 다중 자산 질의처럼 종목코드 하나로 표현할 수 없는 엔진은 typed request와 동일한 JSON mapping을 함께 받는다. 외부 프로세스와 EngineCall이 별도 adapter 없이 같은 계약을 호출할 수 있어야 한다.
 
 ## 실행 순서
 
@@ -113,6 +116,6 @@ testUniverse:
 - 검증 방법 기준을 확인한다.
 - **IS · CIS · CF (flow)** — 4 분기 모두 있을 때만 단순 합 (3 분기 이하 → None).
 - **BS (stock)** — Q4 (= 연말잔액). 없으면 그 해 가장 최근 분기.
-- 공개 함수는 종목코드 (str) 또는 Company 만 받는다.
+- Company 중심 엔진의 공개 함수는 종목코드 또는 Company를 받는다. `data("catalog")`, `data("query")`는 CatalogQuery, DataQuery 또는 동형 JSON mapping을 받는 명시적 예외다.
 - 추가 import 금지 — `import dartlab` 하나로 모든 기능 접근.
 

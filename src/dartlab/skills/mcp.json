@@ -438,41 +438,41 @@
     },
     {
       "id": "engines.data",
-      "title": "Data (수집·프리빌드 파이프라인)",
+      "title": "Unified Data Workbench",
       "category": "engines",
-      "purpose": "Data 는 dartlab 의 데이터 파이프라인 운영 SSOT — DART 12h 수집, EDGAR 일배치, scan 프리빌드, HF 직렬 업로드를 하나의 워크플로우 그래프로 묶는다. 사용자 호출 기능 가 아니라 *운영자 절차* + python 진입점 (gather/Company/scan) 안내. 트리거 — '데이터 수집', 'data 명세', '프리빌드', 'HF 업로드'.",
+      "purpose": "Data Workbench는 L1, L1.5, L2의 원천, 정규 데이터, 횡단 데이터, 분석 자산을 하나의 자동 발견 카탈로그와 bounded query 계약으로 제공한다. 외부 프로세스의 범용 데이터 API, factor store projection, 시뮬레이터 입력 스냅샷에 같은 계약을 쓴다.",
       "whenToUse": [
         "data",
-        "데이터 수집",
-        "데이터 다운로드",
-        "데이터 프리빌드",
-        "HF 업로드",
-        "dataSync",
-        "dataPrebuild",
-        "edgarSync",
-        "12h 주기",
-        "workflow_run"
+        "데이터 작업대",
+        "데이터 스토어",
+        "팩터 스토어",
+        "자산 카탈로그",
+        "데이터 lineage",
+        "PIT query",
+        "시뮬레이터 입력",
+        "여러 엔진 데이터 통합"
       ],
       "nextSkills": [
+        "engines.data.foundation",
         "engines.company",
         "engines.gather",
         "engines.scan",
-        "engines.data.foundation"
+        "engines.analysis"
       ],
-      "bodyPreview": "## 엔진 역할\n\n`data` 는 dartlab 의 *데이터 파이프라인 SSOT*. python 호출 capability 가 아니라 — 운영자 절차 + 사용자가 데이터에 접근하는 진입점 (`Company`, `gather`, `scan`, `checkFreshness`, `collect`) 의 통합 안내.\n\n데이터 흐름:\n\n```\nDART API ──12h─→ dataSync.yml ──workflow_run─→ dataPrebuild.yml\n                      │                                │\n                      ↓                                ↓\n                HF dataset                    scan 프리빌드 parquet\n                (finance·panel·report)           (governance·workforce·etc)\n                      │                                │\n                      └────────────┬───"
+      "bodyPreview": "## 역할과 위치\n\n`data`는 특정 엔진의 별칭이 아니다. L1의 provider와 gather, L1.5의 scan, frame, synth, reference, L2의 analysis, credit, industry, macro, quant가 소유한 데이터 제품을 위에서 연합하는 독립 작업대다.\n\n```text\nsimulate, story, Universe, AI\n              ↓\n Unified Data Workbench\n              ↓\n      L2 분석 데이터 제품\n              ↓\n     L1.5 횡단, 정규화 제품\n              ↓\n       L1 원천, provider 제품\n```\n\n하위 owner가 `dataProduct.py`에 metadata provider를 선언하면 중앙 엔진 목록을 수정하지 않아도 다음 catalog snapshot에 자동 반영된다. source와 계산식의 소유권은 하위 엔진에 남고, `data`는 발견, 검증, 실행 예산, projection, lineage 결박을 담당한다.\n\n## 공개 호출 방식\n\npublic axis는 둘뿐이다.\n\n```python\nimpor"
     },
     {
       "id": "engines.data.foundation",
       "title": "데이터 엔진 기본기",
       "category": "engines",
-      "purpose": "응용 분석 skill이 시작 전에 참조할 Company, gather, scan 데이터 엔진의 기본 선택 순서와 evidence 계약을 정의한다.",
+      "purpose": "Unified Data Workbench 아래에서 Company, gather, scan 원천을 선택하고 수집, prebuild, freshness를 운영하는 기본 절차를 정의한다.",
       "whenToUse": [
         "응용 분석 skill을 만들기 전에 데이터 확보 순서를 정할 때",
         "Company, gather, scan 중 어떤 데이터 엔진을 먼저 써야 하는지 판단할 때",
         "단일 종목, 원자료 수집, 횡단 비교를 한 질문 안에서 조합해야 할 때"
       ],
       "nextSkills": [],
-      "bodyPreview": "## 기본 판단\n\n- 단일 종목의 재무, 공시, 사업, 하위 엔진 라우팅은 `Company`가 먼저다. scan prebuild는 peer 위치, universe ranking, Company 원자료 부재 시의 보조 경로다.\n- 최신 주가, 수급, 뉴스, 거시 원자료처럼 외부 데이터 신선도가 핵심이면 `gather`가 먼저다.\n- 후보 발굴, 순위, peer 위치, 시장 전체 분포가 핵심이면 `scan`이 먼저다.\n- 질문이 섞여 있으면 `Company`로 target을 고정하고, `gather`로 최신 raw data를 보강하고, `scan`으로 상대 위치를 확인한다.\n\n## 응용 Skill 작성 시작점\n\n- 응용 skill은 먼저 `knowledgeRefs`의 `engines.company`, `engines.gather`, `engines.scan`을 참조한다.\n- 단일 엔진의 기본 사용법은 각 엔진의 `SKILL.md`를 본다. capability/docstring은 스킬의 공개 호출과 반환 설명을 검산하는 원천 자료다.\n- 응용 skill은 이 skill의 requiredEvidence 중 자기 질문에 필요한 항목을 줄이지 말고 구체화한다.\n- 응용"
+      "bodyPreview": "## 기본 판단\n\n- 여러 계층의 자산을 외부 프로세스나 시뮬레이터가 재사용해야 하면 먼저 `data(\"catalog\")`, `data(\"query\")` 계약을 쓴다. 아래 Company, gather, scan 선택 규칙은 각 owner가 데이터를 만드는 하위 실행 경계다.\n- 단일 종목의 재무, 공시, 사업, 하위 엔진 라우팅은 `Company`가 먼저다. scan prebuild는 peer 위치, universe ranking, Company 원자료 부재 시의 보조 경로다.\n- 최신 주가, 수급, 뉴스, 거시 원자료처럼 외부 데이터 신선도가 핵심이면 `gather`가 먼저다.\n- 후보 발굴, 순위, peer 위치, 시장 전체 분포가 핵심이면 `scan`이 먼저다.\n- 질문이 섞여 있으면 `Company`로 target을 고정하고, `gather`로 최신 raw data를 보강하고, `scan`으로 상대 위치를 확인한다.\n\n## 응용 Skill 작성 시작점\n\n- 응용 skill은 먼저 `knowledgeRefs`의 `engines.company`, `engines.gather`, `engines.scan`을 참조한다.\n- 단일 엔진의 기본 사용법은 각 엔"
     },
     {
       "id": "engines.edgar",
@@ -1461,11 +1461,11 @@
       "whenToUse": [
         "dartlab 아키텍처 — 전체 청사진",
         "architecture",
-        "1. 레이어 — L0→L4 (L1.5 포함 6 단) 구조로 간다",
+        "1. 레이어 — L0→L4 (L1.5와 L2.5 data 포함) 구조로 간다",
         "2. 5 L2 분석엔진 — 두 소비자를 최고로 지원한다",
         "소비자별 차이",
         "3. 모듈 제공 패턴 — analysis 기준 (5 L2 엔진 동일)",
-        "4. import 방향 — L0 ← L1 ← L1.5 ← L2 ← L3 하향만 허용한다"
+        "4. import 방향 — L0 ← L1 ← L1.5 ← L2 ← L2.5 data ← L3 하향만 허용한다"
       ],
       "nextSkills": [],
       "bodyPreview": "외부 LLM 용 짧은 도입. < 200 토큰."

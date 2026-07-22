@@ -1,53 +1,63 @@
 ---
 id: engines.data
-title: Data (수집·프리빌드 파이프라인)
+title: Unified Data Workbench
 kind: curated
 scope: builtin
 status: observed
 category: engines
-purpose: Data 는 dartlab 의 데이터 파이프라인 운영 SSOT — DART 12h 수집, EDGAR 일배치, scan 프리빌드, HF 직렬 업로드를 하나의 워크플로우 그래프로 묶는다. 사용자 호출 capability 가 아니라 *운영자 절차* + python 진입점 (gather/Company/scan) 안내. 트리거 — '데이터 수집', 'data 명세', '프리빌드', 'HF 업로드'.
+purpose: Data Workbench는 L1, L1.5, L2의 원천, 정규 데이터, 횡단 데이터, 분석 자산을 하나의 자동 발견 카탈로그와 bounded query 계약으로 제공한다. 외부 프로세스의 범용 데이터 API, factor store projection, 시뮬레이터 입력 스냅샷에 같은 계약을 쓴다.
 whenToUse:
   - data
-  - 데이터 수집
-  - 데이터 다운로드
-  - 데이터 프리빌드
-  - HF 업로드
-  - dataSync
-  - dataPrebuild
-  - edgarSync
-  - 12h 주기
-  - workflow_run
+  - 데이터 작업대
+  - 데이터 스토어
+  - 팩터 스토어
+  - 자산 카탈로그
+  - 데이터 lineage
+  - PIT query
+  - 시뮬레이터 입력
+  - 여러 엔진 데이터 통합
 inputs:
-  - 종목코드 또는 universe
-  - 수집 카테고리 (finance · panel · report)
-  - 빌드 주기 (12h · 일 · 수동)
+  - catalog filter
+  - stable asset ID
+  - subjects
+  - measures
+  - projection
+  - validAt 또는 knownAt
+  - query budget
 outputs:
-  - parquet snapshot (HF dataset)
-  - scan 프리빌드 결과
-  - latestAsOf metadata
+  - DataCatalogResult
+  - DataResult
+  - typed DataPartition
+  - coverage와 gap
+  - snapshot과 lineage
+  - execution receipt
 capabilityRefs:
-  - Company
-  - gather
-  - scan
-  - collect
+  - data
+  - data.catalog
+  - data.query
 knowledgeRefs:
   - start.dartlabSkillOs
+  - engines.data.foundation
   - engines.company
   - engines.gather
   - engines.scan
+  - engines.analysis
 sourceRefs:
   - dartlab://skills/engines.data
 requiredEvidence:
-  - provider
-  - dataset
-  - latestAsOf
-  - source
-  - executionRef
-  - sourceRef
+  - assetId
+  - assetVersionId
+  - snapshotId
+  - contractHash
+  - coverage
+  - gaps
+  - lineageRefs
+  - executionReceipts
 expectedOutputs:
-  - 종목/유니버스 데이터 freshness
-  - 수집 결과 종목별 카테고리별 건수
-  - 빌드 산출물 위치
+  - 선택한 stable asset ID와 projection
+  - bounded partition 결과
+  - 시점 지원 여부와 honest gap
+  - 같은 snapshot에 결박된 lineage와 receipt
 runtimeCompatibility:
   server:
     status: supported
@@ -56,164 +66,185 @@ runtimeCompatibility:
   mcp:
     status: supported
   webAi:
-    status: limited
+    status: supported
   pyodide:
     status: limited
+    notes:
+      - packaged snapshot과 브라우저에서 실행 가능한 owner asset만 query할 수 있다.
 failureModes:
-  - 분석 답변에 latestAsOf 없이 *최신 데이터* 라고 단정
-  - HF 업로드 동시 실행 (concurrency.group 미설정 → sliding-window 429)
-  - workflow_run 체인 끊김 (dataSync 완료 후 dataPrebuild 트리거 미동작)
-  - Company.panel 의 topic 을 추측 (정식 topic 은 BS/IS/CF/CIS/SCE/ratios. 주석은 섹션명 검색)
+  - quant, credit, scan, AI 일부만 데이터 작업대 전체인 것처럼 설명함
+  - factor를 별도 최상위 엔진이나 고정 저장 스키마로 만듦
+  - latest 값을 과거 knownAt 라벨로 바꿈
+  - catalog 조회 중 owner 값을 실행함
+  - 여러 partition의 row, byte 예산을 각각 적용해 전체 예산을 초과함
+  - private, nested, bulk resource payload를 무제한 로드함
 forbidden:
-  - latestAsOf · provider · source 없이 데이터 신선도를 *최신* 으로 단정 금지.
-  - Company.panel topic 을 추측 금지 (정식 topic 은 BS/IS/CF/CIS/SCE/ratios. 주석은 c.panel("재고") 처럼 섹션명으로).
-  - HF 업로드 직렬화 우회 금지 (`concurrency.group: hf-dataset-push` 강제).
+  - Data Workbench를 특정 분석 엔진 묶음으로 축소하지 않는다.
+  - factor, graph, narrative, resource를 public axis로 늘리지 않는다. 모두 query projection이다.
+  - PIT 미지원 asset을 과거 시점 성공으로 반환하지 않는다.
+  - unit이 없는 값을 factor row로 가장하지 않는다.
+  - gap을 0 또는 빈 성공으로 바꾸지 않는다.
+  - data 계층에서 simulate, story, AI를 역참조하지 않는다.
 examples:
-  - 005930 finance freshness 확인
-  - 전종목 prebuild freshness 확인
-  - 신규 종목 KindList bootstrap
-  - dataSync workflow_dispatch mode=full
-  - scan 프리빌드 트리거
+  - L1, L1.5, L2 전체 asset catalog 조회
+  - scan.ratio를 factor projection으로 외부 프로세스에서 사용
+  - 여러 owner의 native 결과를 partition으로 한 번에 조회
+  - knownAt 지원 여부를 fail-closed로 검증
+  - 시뮬레이터 재무 입력을 snapshot과 receipt로 고정
 procedure:
-  - python 사용자 진입점은 `dartlab.checkFreshness("005930")` (개별) · `dartlab.collect(...)` · `dartlab.Company(code).panel(topic)`.
-  - 단일 종목 데이터는 `dartlab.Company(code).panel(topic)`. topic 은 BS/IS/CF/CIS/SCE/ratios.
-  - 전종목 횡단은 `dartlab.scan(axis)` — prebuilt parquet 또는 provider scan 함수 자동 라우팅.
-  - 운영자 워크플로우는 `.github/workflows/dataSync.yml` (12h) · `dataPrebuild.yml` (workflow_run) · `edgarSync.yml` (일).
-  - 수동 backup 은 `dataSync.yml workflow_dispatch mode=full` — 88 분기 차집합.
+  - dartlab.data()로 catalog와 query 두 public axis를 확인한다.
+  - dartlab.data("catalog")로 owner, layer, kind, temporalSupport, queryable을 조회한다.
+  - stable assetId를 선택하고 DataQuery에 subjects, measures, projection, time, budget을 명시한다.
+  - dartlab.data("query", assetId, query=...)를 호출한다.
+  - status, coverage, gaps를 먼저 검사한 뒤 partition data를 소비한다.
+  - snapshotId, contractHash, lineageRefs, executionReceipts를 결과와 함께 보존한다.
 linkedSkills:
+  - engines.data.foundation
   - engines.company
   - engines.gather
   - engines.scan
-  - engines.data.foundation
+  - engines.analysis
 source:
   type: manual_skill
   format: markdown
-lastUpdated: '2026-05-08'
+lastUpdated: '2026-07-22'
 testUniverse:
   market: KR
   stockCodes:
     - "005930"
 ---
 
-## 엔진 역할
+## 역할과 위치
 
-`data` 는 dartlab 의 *데이터 파이프라인 SSOT*. python 호출 capability 가 아니라 — 운영자 절차 + 사용자가 데이터에 접근하는 진입점 (`Company`, `gather`, `scan`, `checkFreshness`, `collect`) 의 통합 안내.
+`data`는 특정 엔진의 별칭이 아니다. L1의 provider와 gather, L1.5의 scan, frame, synth, reference, L2의 analysis, credit, industry, macro, quant가 소유한 데이터 제품을 위에서 연합하는 독립 작업대다.
 
-데이터 흐름:
-
+```text
+simulate, story, Universe, AI
+              ↓
+ Unified Data Workbench
+              ↓
+      L2 분석 데이터 제품
+              ↓
+     L1.5 횡단, 정규화 제품
+              ↓
+       L1 원천, provider 제품
 ```
-DART API ──12h─→ dataSync.yml ──workflow_run─→ dataPrebuild.yml
-                      │                                │
-                      ↓                                ↓
-                HF dataset                    scan 프리빌드 parquet
-                (finance·panel·report)           (governance·workforce·etc)
-                      │                                │
-                      └────────────┬───────────────────┘
-                                   ↓
-                           Company / gather / scan
-                                (사용자 진입점)
 
-EDGAR ──일배치─→ edgarSync.yml (end-to-end, HF 업로드 포함)
-
-KindList 신규 종목 ──bootstrap─→ 별도 워크플로우
-```
+하위 owner가 `dataProduct.py`에 metadata provider를 선언하면 중앙 엔진 목록을 수정하지 않아도 다음 catalog snapshot에 자동 반영된다. source와 계산식의 소유권은 하위 엔진에 남고, `data`는 발견, 검증, 실행 예산, projection, lineage 결박을 담당한다.
 
 ## 공개 호출 방식
+
+public axis는 둘뿐이다.
 
 ```python
 import dartlab
 
-# 1. 데이터 freshness 확인 (DART API 직접 조회)
-c = dartlab.Company("005930")   # 신선도는 panel 결과의 dataAsOf / latestPeriod 로 본다
-# → FreshnessResult: isFresh · missingCount · lastLocalDate · lastRemoteDate
-
-# 2. 단일/다종목 직접 수집 (DART_API_KEY 필요)
-dartlab.collect("005930", "000660", categories=["finance"])
-# → dict: {종목: {카테고리: 수집 건수}}
-
-# 3. 단일 종목 데이터 조회 (topic 은 BS/IS/CF/CIS/SCE/ratios)
-c = dartlab.Company("005930")
-print(c.panel.shape)             # 항목 x 기간 격자 크기
-bs = c.panel("BS", freq="Q")      # 분기 재무상태표
-ratios = c.panel("ratios")
-
-# 4. 횡단 데이터 (전종목 비율·계정)
-roe_all = dartlab.scan("ratio", "roe")
-revenue_all = dartlab.scan("account", "매출액")
+dartlab.data()             # catalog, query 가이드
+dartlab.data("catalog")   # metadata-only 발견
+dartlab.data("query", ...) # stable asset query
 ```
 
-```bash
-# 운영자 절차 — 워크플로우 수동 트리거
-gh workflow run dataSync.yml -f mode=full          # 88 분기 차집합 backup
-gh workflow run dataPrebuild.yml                   # scan 프리빌드 강제 재빌드
-gh workflow run edgarSync.yml                       # EDGAR 전체 동기
+factor, records, graph, narrative, resource는 새 axis가 아니라 `query`의 typed projection이다. 따라서 같은 asset을 native schema 그대로 쓸 수도 있고 factor store 형태로 투영할 수도 있다.
+
+## 카탈로그
+
+```python
+from dartlab.data import CatalogQuery
+
+allAssets = dartlab.data("catalog")
+l2Assets = dartlab.data(
+    "catalog",
+    query=CatalogQuery(layers=("L2",), search="valuation"),
+)
 ```
 
-## 강행 호출 룰 (agent 답변 품질 회귀 차단)
+`DataAssetDescriptor`는 최소 `assetId`, `assetVersionId`, `owner`, `layer`, `kind`, `sourceRef`, `queryable`, `temporalSupport`, executor metadata를 가진다. catalog는 값을 물질화하지 않는다. private, out-of-scope, catalog-only 자산도 분류를 위해 보이지만 `queryable=False`로 차단된다.
 
-data 는 *운영자 절차* SKILL — ask LLM 의 EngineCall 대상이 아님. 사용자 질문 ("데이터 freshness", "프리빌드 언제 됐어") 시 다음 4 룰 강행:
+## 범용 query
 
-1. **EngineCall(apiRef="data") 같은 호출 금지** — 데이터 freshness 는 `checkFreshness(stockCode)` 또는 `Company.panel` 결과 dict 의 `dataAsOf`/`latestPeriod` 필드 인용.
-2. **`dataAsOf` / `latestPeriod` / `freshness` 값을 답변 첫 줄 명시** — stale 데이터 환각 차단. `[dateRef:date:...:asOf]` inline.
-3. **scan 프리빌드 결과는 prebuild asOf 명시** — `dataAsOf` 가 며칠 전이면 그 시점 데이터임을 명시.
-4. **데이터 수집·파이프라인 운영 질문 ("HF 업로드", "재수집") 은 운영자 절차 안내 + GitHub Actions workflow 링크** — agent 가 직접 수집 시도 금지.
+```python
+from dartlab.data import DataQuery, NativeProjection, QueryBudget
+
+result = dartlab.data(
+    "query",
+    assets=("analysis.수익성", "credit.overview"),
+    query=DataQuery(
+        subjects=("005930",),
+        projection=NativeProjection(),
+        budget=QueryBudget(maxRows=10000, maxBytes=16 * 1024 * 1024),
+    ),
+)
+```
+
+owner별 native schema를 억지로 한 표로 합치지 않는다. `DataResult.partitions`가 asset과 selector별 schema를 보존한다. 전체 query 단위로 asset 수, subject 수, row 수, byte 수, 실행 기한을 제한한다.
 
 ## 호출 동작
 
-`checkFreshness(stockCode)` — DART API 의 최신 공시 vs 로컬 parquet 비교 → `isFresh` (bool), `missingCount`, `lastLocalDate`, `lastRemoteDate`. 캐시 가능.
+`catalog`는 owner의 metadata provider, registry, resource manifest, extraction concept, Company capability를 읽되 실제 값을 실행하지 않는다. `query`는 asset version을 해소하고 temporal support와 policy를 먼저 검사한 뒤 owner의 공개 callable을 실행한다. 결과는 projection하고 전체 query budget을 적용한 다음 coverage, gap, lineage, receipt와 함께 반환한다.
 
-`collect(*codes, categories=)` — 종목별 DART OpenAPI 직접 호출. multi-key 병렬 (DART_API_KEYS 쉼표 구분). 증분 수집 default.
+## Factor store로 사용
 
-`Company(code).panel(topic)` — finance topic (BS/IS/CF/CIS/SCE/ratios) 은 `freq="Q"|"Y"|"YTD"` + `scope="consolidated"|"separate"` 토글. 비finance topic (dividend·employee 등) 은 토픽별 자체 구조. `c.topics` 가 가용 topic SSOT.
+```python
+from dartlab.data import DataQuery, FactorProjection
 
-## 워크플로우 단일 책임
+factors = dartlab.data(
+    "query",
+    "scan.ratio",
+    query=DataQuery(
+        projection=FactorProjection(
+            measures=("roe",),
+            unit="percent",
+            frequency="Y",
+        ),
+    ),
+)
+```
 
-| workflow | 책임 | 주기 |
-| --- | --- | --- |
-| `dataSync.yml` | DART OpenAPI 수집 (finance·panel·report) | 12h cron |
-| `dataPrebuild.yml` | scan 프리빌드 parquet 빌드 | dataSync `workflow_run` |
-| `edgarSync.yml` | EDGAR 수집 + 가공 + HF 업로드 (end-to-end) | 일 cron |
-| `dataAudit.yml` | 데이터 무결성 감사 (gap · 누락 · stale) | 주간 |
+factor row는 `assetId`, `measureId`, `entityId`, `eventAt`, `availableAt`, `knownAt`, `value`, `unit`, `frequency`, `revisionId`, `sourceRef`, `evidenceRef`, `temporalStatus`를 담는다. owner가 unit을 선언하지 않았다면 호출자가 `FactorProjection.unit`을 명시해야 한다. `native` 같은 가짜 단위로 성공시키지 않는다.
 
-**HF 업로드 직렬화** — 모든 워크플로우의 HF 업로드 step 은 `concurrency.group: hf-dataset-push` 로 묶여 순차 처리. 동시 push 시 sliding-window 429 회피.
+## 시간과 PIT
 
-**workflow_run 체인** — dataSync 완료 → dataPrebuild 자동 트리거. EDGAR 는 단일 워크플로우 내부 end-to-end (분리 안 함).
+```python
+from dartlab.data import DataQuery, TimeContext
 
-**KindList bootstrap** — 신규 상장 종목은 dataSync 의 종목 목록 외라 별도 bootstrap workflow 가 KindList 변동 감지 후 첫 수집.
+historical = DataQuery(time=TimeContext(validAt="2024-Q4", knownAt="2025-03-31"))
+```
+
+valid time과 knowledge time은 분리한다. descriptor가 실제로 `knownAt`을 executor에 전달할 수 없으면 `PIT_UNSUPPORTED` gap으로 실패한다. latest-only asset을 과거 라벨로 바꾸지 않는다. 시뮬레이터의 `analysis.simulationInputs` asset은 fiscal period `validAt` 절단을 지원하며 filing revision `knownAt`은 지원하지 않는다.
 
 ## 대표 반환 형태
 
-```text
-dartlab.checkFreshness("005930")
-→ FreshnessResult
-   isFresh : bool
-   missingCount : int
-   lastLocalDate : str         # 로컬 parquet 의 마지막 공시 접수일
-   lastRemoteDate : str        # DART API 의 최신 공시 접수일
-```
+`DataResult`는 data와 다음 항목을 같은 snapshot에 묶는다.
 
-```text
-dartlab.collect("005930", categories=["finance"])
-→ dict
-   "005930" : {"finance": <수집 건수>}
-```
+- `status`: ok, partial, failed
+- `coverage`: 요청, 해소, 성공, 실패 수
+- `gaps`: machine-readable 결손과 정책 차단
+- `snapshotId`: catalog asset version set
+- `contractHash`: asset refs와 query 계약 해시
+- `lineageRefs`: source와 실행 ref
+- `executionReceipts`: asset version, query, selector에 결박된 영수증
 
-```text
-Company.panel("BS")
-→ pl.DataFrame
-   snakeId · 항목 · 2025Q4 · 2025Q3 · ...   # 분기별 컬럼
-```
+소비자는 partition만 떼어 저장하지 말고 이 envelope를 함께 보존한다.
 
-## evidence 기준
+## 시뮬레이터 내부 사용
 
-데이터 답변은 `provider` (DART · EDGAR · HF) · `dataset` · `latestAsOf` · `entity/universe` 를 남긴다. `isFresh=False` 면 missingCount 함께 답변에 명시.
+공개 `simulate` 경로는 `analysis.simulationInputs`를 동일한 `data("query")` 계약으로 조회한다. Data Workbench가 Company 분기 재무를 한 번 읽고 `validAt`까지 절단한 뒤 snapshot, contract hash, lineage, receipt를 반환한다. 시뮬레이터는 그 고정 입력만 DriverSheet 계산에 사용하고 결과에 `dataSnapshotId`, `dataContractHash`, `dataLineageRefs`, `dataExecutionReceipts`를 노출한다.
 
-## 기본 실행 순서
+## Resource 안전 정책
 
-1. 데이터 신선도 확인이면 `checkFreshness(code)` 또는 scan 프리빌드 metadata.
-2. 사용자 분석 진입은 `Company` · `gather` · `scan` 셋 중 하나 — data skill 자체가 호출 대상 아님.
-3. 운영자 데이터 갱신은 위 워크플로우 수동 트리거 또는 cron 대기.
+`ResourceProjection(includePayload=False)`는 payload를 읽지 않고 revision-fixed locator만 반환한다. payload 실행은 company 또는 series shard로 제한한다. bulk, date-shard, nested, private resource는 무제한 메모리 로드를 허용하지 않는다.
+
+## 운영 파이프라인
+
+수집 주기, HF 업로드, prebuild 운영은 [engines.data.foundation](dartlab://skills/engines.data.foundation)에서 다룬다. 그 절차는 Data Workbench의 공개 query 계약과 별개이며 `data`를 운영자 전용 개념으로 축소하지 않는다.
 
 ## 기본 검증
 
-데이터 SSOT 가 바뀌면 본 skill + [engines.data.foundation](/skills/engines.data.foundation) 응용 skill 갱신. 워크플로우 정의 (`.github/workflows/data*.yml`) 가 변경되면 본 skill 의 워크플로우 표를 같은 commit 에 갱신.
+- `data()` 가이드의 public axis가 `catalog`, `query` 둘뿐인지 확인한다.
+- catalog가 현재 owner registry와 resource를 빠짐없이 반영하고 값을 실행하지 않는지 확인한다.
+- 같은 catalog를 반복했을 때 snapshot ID와 asset version 순서가 같은지 확인한다.
+- knownAt 미지원 asset이 owner 호출 전에 `PIT_UNSUPPORTED`로 실패하는지 확인한다.
+- factor projection이 unit, entity, event time, source, evidence 필드를 보존하는지 확인한다.
+- row와 byte 예산이 partition별이 아니라 전체 query에 적용되는지 확인한다.
+- bulk resource locator가 payload를 읽지 않고, bulk payload 실행은 차단되는지 확인한다.
+- simulator result가 data snapshot, contract hash, lineage, receipt를 노출하는지 확인한다.

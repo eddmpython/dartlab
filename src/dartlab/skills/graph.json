@@ -5,7 +5,7 @@
       "title": "Analysis",
       "category": "engines",
       "purpose": "Analysis 엔진은 단일 기업의 재무제표, 가치평가, 지배구조, 전망, 기업 단위 매크로 민감도를 22개 분석 축으로 읽는 실행 스킬이다. 트리거 — '재무 분석', '가치평가', '지배구조 점검', '전망'.",
-      "inDegree": 29,
+      "inDegree": 31,
       "outDegree": 7,
       "cluster": "analysis",
       "isEntry": false,
@@ -236,11 +236,11 @@
     },
     {
       "id": "engines.data",
-      "title": "Data (수집·프리빌드 파이프라인)",
+      "title": "Unified Data Workbench",
       "category": "engines",
-      "purpose": "Data 는 dartlab 의 데이터 파이프라인 운영 SSOT — DART 12h 수집, EDGAR 일배치, scan 프리빌드, HF 직렬 업로드를 하나의 워크플로우 그래프로 묶는다. 사용자 호출 capability 가 아니라 *운영자 절차* + python 진입점 (gather/Company/scan) 안내. 트리거 — '데이터 수집', 'data 명세', '프리빌드', 'HF 업로드'.",
+      "purpose": "Data Workbench는 L1, L1.5, L2의 원천, 정규 데이터, 횡단 데이터, 분석 자산을 하나의 자동 발견 카탈로그와 bounded query 계약으로 제공한다. 외부 프로세스의 범용 데이터 API, factor store projection, 시뮬레이터 입력 스냅샷에 같은 계약을 쓴다.",
       "inDegree": 3,
-      "outDegree": 8,
+      "outDegree": 11,
       "cluster": "data",
       "isEntry": false,
       "isLeaf": false,
@@ -251,8 +251,8 @@
       "id": "engines.data.foundation",
       "title": "데이터 엔진 기본기",
       "category": "engines",
-      "purpose": "응용 분석 skill이 시작 전에 참조할 Company, gather, scan 데이터 엔진의 기본 선택 순서와 evidence 계약을 정의한다.",
-      "inDegree": 6,
+      "purpose": "Unified Data Workbench 아래에서 Company, gather, scan 원천을 선택하고 수집, prebuild, freshness를 운영하는 기본 절차를 정의한다.",
+      "inDegree": 7,
       "outDegree": 3,
       "cluster": "data",
       "isEntry": false,
@@ -4210,6 +4210,11 @@
     },
     {
       "src": "engines.data",
+      "dst": "engines.data.foundation",
+      "kind": "linkedRecipe"
+    },
+    {
+      "src": "engines.data",
       "dst": "engines.company",
       "kind": "linkedRecipe"
     },
@@ -4225,7 +4230,7 @@
     },
     {
       "src": "engines.data",
-      "dst": "engines.data.foundation",
+      "dst": "engines.analysis",
       "kind": "linkedRecipe"
     },
     {
@@ -4235,6 +4240,11 @@
     },
     {
       "src": "engines.data",
+      "dst": "engines.data.foundation",
+      "kind": "knowledge"
+    },
+    {
+      "src": "engines.data",
       "dst": "engines.company",
       "kind": "knowledge"
     },
@@ -4246,6 +4256,11 @@
     {
       "src": "engines.data",
       "dst": "engines.scan",
+      "kind": "knowledge"
+    },
+    {
+      "src": "engines.data",
+      "dst": "engines.analysis",
       "kind": "knowledge"
     },
     {
