@@ -12,6 +12,16 @@ from typing import Any, Iterable, Mapping
 from dartlab.data.contracts import DataAssetDescriptor, DataGap
 
 _ALLOWED_LAYERS = frozenset({"L1", "L1.5", "L2"})
+_EXECUTION_MODES = frozenset(
+    {
+        "ownerBulk",
+        "ownerBatch",
+        "subjectFanout",
+        "resourceCompanyShard",
+        "resourceBulk",
+        "unsupported",
+    }
+)
 
 
 def _canonical(value: Any) -> bytes:
@@ -49,11 +59,22 @@ def _declared(entry: Any) -> dict[str, Any]:
     for field in dataclasses.fields(entry):
         if field.name in ignored:
             continue
-        value = getattr(entry, field.name, None)
-        if value is None or not isinstance(value, (str, bool, int, float)):
+        value = _metadataValue(getattr(entry, field.name, None))
+        if value is None:
             continue
         out[field.name] = value
     return out
+
+
+def _metadataValue(value: Any) -> Any:
+    """Descriptor hash와 metadata에 보존 가능한 immutable 값을 선별한다."""
+
+    if isinstance(value, (str, bool, int, float)):
+        return value
+    if isinstance(value, (tuple, list)):
+        converted = tuple(_metadataValue(item) for item in value)
+        return converted if all(item is not None for item in converted) else None
+    return None
 
 
 def discoverOwnerProviders() -> tuple[tuple[Mapping[str, Any], ...], tuple[DataGap, ...]]:
@@ -105,6 +126,19 @@ def _registryAssets(provider: Mapping[str, Any]) -> Iterable[DataAssetDescriptor
                 else bool(declared.get("stockRequired") or declared.get("targetRequired"))
             )
             concurrencyGroup = registrySpec.get("concurrencyGroup") or provider.get("concurrencyGroup")
+            executionMode = str(declared.get("executionMode") or registrySpec.get("executionMode") or "unsupported")
+            if executionMode not in _EXECUTION_MODES:
+                raise ValueError(f"{owner}.{axis} executionMode가 유효하지 않음")
+            universeMarkets = tuple(
+                str(market).upper()
+                for market in (declared.get("universeMarkets") or registrySpec.get("universeMarkets") or ())
+            )
+            marketUnits = tuple(
+                (str(market).upper(), str(unit))
+                for market, unit in (declared.get("marketUnits") or registrySpec.get("marketUnits") or ())
+            )
+            universeKind = str(declared.get("universeKind") or registrySpec.get("universeKind") or "none")
+            marketParam = declared.get("marketParam") or registrySpec.get("marketParam")
             label = str(getattr(entry, "label", None) or getattr(entry, "section", None) or axis)
             description = str(getattr(entry, "description", None) or label)
             hidden = bool(getattr(entry, "hidden", False))
@@ -118,6 +152,11 @@ def _registryAssets(provider: Mapping[str, Any]) -> Iterable[DataAssetDescriptor
                     "selectorRequired": selectorRequired,
                     "subjectParam": registrySpec.get("subjectParam"),
                     "concurrencyGroup": concurrencyGroup,
+                    "executionMode": executionMode,
+                    "universeKind": universeKind,
+                    "universeMarkets": universeMarkets,
+                    "marketParam": marketParam,
+                    "marketUnits": marketUnits,
                 },
                 "sourceDigest": sourceDigest,
             }
@@ -139,6 +178,11 @@ def _registryAssets(provider: Mapping[str, Any]) -> Iterable[DataAssetDescriptor
                 selectorKind=selectorKind,
                 selectorRequired=selectorRequired,
                 concurrencyGroup=str(concurrencyGroup) if concurrencyGroup else None,
+                executionMode=executionMode,
+                universeKind=universeKind,
+                universeMarkets=universeMarkets,
+                marketParam=str(marketParam) if marketParam else None,
+                marketUnits=marketUnits,
                 metadata=tuple(sorted(declared.items())),
             )
 
@@ -164,6 +208,9 @@ def _declaredAssets(provider: Mapping[str, Any]) -> Iterable[DataAssetDescriptor
         selectorKind = str(spec.get("selectorKind") or ("subject" if spec.get("subjectParam") else "none"))
         if selectorKind not in {"none", "subject", "measure"}:
             raise ValueError(f"{assetId} selectorKind가 유효하지 않음")
+        executionMode = str(spec.get("executionMode") or "unsupported")
+        if executionMode not in _EXECUTION_MODES:
+            raise ValueError(f"{assetId} executionMode가 유효하지 않음")
         yield DataAssetDescriptor(
             assetId=assetId,
             assetVersionId=f"asset:{_digest(payload)}",
@@ -187,6 +234,11 @@ def _declaredAssets(provider: Mapping[str, Any]) -> Iterable[DataAssetDescriptor
             selectorKind=selectorKind,
             selectorRequired=bool(spec.get("selectorRequired", metadata.get("stockRequired", False))),
             concurrencyGroup=str(concurrencyGroup) if concurrencyGroup else None,
+            executionMode=executionMode,
+            universeKind=str(spec.get("universeKind") or "none"),
+            universeMarkets=tuple(str(market).upper() for market in spec.get("universeMarkets", ())),
+            marketParam=str(spec["marketParam"]) if spec.get("marketParam") else None,
+            marketUnits=tuple((str(market).upper(), str(unit)) for market, unit in spec.get("marketUnits", ())),
             metadata=tuple(sorted((str(key), value) for key, value in metadata.items())),
         )
 
@@ -232,6 +284,7 @@ def _resourceAssets() -> Iterable[DataAssetDescriptor]:
         owner, layer, inScope = _resourceOwner(category, directory)
         public = bool(spec.get("public"))
         shardKind = shardKinds.get(directory, "bulk")
+        executionMode = "resourceCompanyShard" if shardKind == "company" else "resourceBulk"
         payload = {"category": category, "spec": spec, "owner": owner, "layer": layer}
         queryable = inScope and public and not spec.get("nested") and not spec.get("deprecated")
         yield DataAssetDescriptor(
@@ -252,6 +305,7 @@ def _resourceAssets() -> Iterable[DataAssetDescriptor]:
             subjectParam="subject",
             selectorKind="subject",
             selectorRequired=False,
+            executionMode=executionMode,
             metadata=tuple(
                 sorted(
                     [(str(key), value) for key, value in spec.items() if isinstance(value, (str, bool, int, float))]

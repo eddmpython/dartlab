@@ -5,4 +5,13 @@ DATA_PRODUCT_DESCRIPTOR = {
     "layer": "L1",
     "companySurface": True,
     "registries": (),
+    "universeResolvers": (
+        {
+            "universeKind": "listedEquity",
+            "markets": ("KR", "US"),
+            "memberships": ("listed",),
+            "module": "dartlab.providers.universe",
+            "attribute": "listedEquityUniverse",
+        },
+    ),
 }

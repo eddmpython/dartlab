@@ -23,9 +23,11 @@ from dartlab.data.contracts import (
     DataResult,
     FactorProjection,
     ResourceProjection,
+    UniverseCoverage,
     projectionKind,
 )
 from dartlab.data.projections import projectOutput
+from dartlab.data.universe import ResolvedMarket, ResolvedUniverse, entityIds, resolveUniverse
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -37,6 +39,8 @@ class _ExecutionTask:
     query: DataQuery
     selector: Mapping[str, str]
     receiptRef: str
+    universeMarket: ResolvedMarket | None = None
+    universeSnapshotId: str | None = None
 
 
 def _executionWindows(
@@ -50,15 +54,16 @@ def _executionWindows(
     while pending:
         selectedCount = 0
         groups: set[str] = set()
-        assetIds: set[str] = set()
+        assetMarkets: set[tuple[str, str | None]] = set()
         for task in pending:
             group = task.descriptor.concurrencyGroup
             if group is not None and group in groups:
                 break
-            if task.descriptor.assetId in assetIds:
+            assetMarket = (task.descriptor.assetId, task.selector.get("market"))
+            if assetMarket in assetMarkets:
                 break
             selectedCount += 1
-            assetIds.add(task.descriptor.assetId)
+            assetMarkets.add(assetMarket)
             if group is not None:
                 groups.add(group)
             if selectedCount >= maxConcurrency:
@@ -123,11 +128,37 @@ def _temporalGap(descriptor: DataAssetDescriptor, query: DataQuery) -> DataGap |
 def _selectors(
     descriptor: DataAssetDescriptor,
     query: DataQuery,
-) -> tuple[tuple[dict[str, str], ...], DataGap | None]:
+) -> tuple[tuple[dict[str, str], ...], tuple[DataGap, ...]]:
     """Descriptor가 선언한 selector 계약으로 실행 partition을 계획한다."""
 
+    if query.universe is not None:
+        if descriptor.executionMode != "ownerBulk" or descriptor.universeKind != "listedEquity":
+            return (), (
+                DataGap(
+                    "UNIVERSE_UNSUPPORTED",
+                    f"{descriptor.assetId}는 listed equity owner-bulk 실행을 선언하지 않았습니다",
+                    descriptor.assetId,
+                ),
+            )
+        if query.universe.explicitIds:
+            return (), (
+                DataGap(
+                    "UNIVERSE_FILTER_UNSUPPORTED",
+                    "owner가 explicit entity filter pushdown을 선언하지 않았습니다",
+                    descriptor.assetId,
+                ),
+            )
+        if descriptor.marketParam and descriptor.marketParam in query.params:
+            return (), (
+                DataGap(
+                    "UNIVERSE_PARAM_CONFLICT",
+                    f"{descriptor.marketParam}은 universe markets가 소유합니다",
+                    descriptor.assetId,
+                ),
+            )
+
     if isinstance(query.projection, ResourceProjection) and not query.projection.includePayload:
-        return ({},), None
+        return ({},), ()
     projectionMeasures = query.projection.measures if isinstance(query.projection, FactorProjection) else ()
     measures = query.measures or projectionMeasures
     values = (
@@ -137,17 +168,36 @@ def _selectors(
         if descriptor.selectorKind == "measure"
         else ()
     )
-    if values:
-        return tuple({descriptor.selectorKind: value} for value in values), None
+    baseSelectors = tuple({descriptor.selectorKind: value} for value in values) if values else ({},)
     required = descriptor.selectorRequired or descriptor.executorKind == "resource"
-    if required:
+    if required and not values:
         expected = "subjects" if descriptor.selectorKind == "subject" else "measures"
-        return (), DataGap(
-            "MISSING_SELECTOR",
-            f"{descriptor.assetId} query에는 {expected}가 필요합니다",
-            descriptor.assetId,
+        return (), (
+            DataGap(
+                "MISSING_SELECTOR",
+                f"{descriptor.assetId} query에는 {expected}가 필요합니다",
+                descriptor.assetId,
+            ),
         )
-    return ({},), None
+    if query.universe is None:
+        return baseSelectors, ()
+
+    supportedMarkets = set(descriptor.universeMarkets)
+    selectors: list[dict[str, str]] = []
+    gaps: list[DataGap] = []
+    for market in query.universe.markets:
+        if market not in supportedMarkets:
+            gaps.append(
+                DataGap(
+                    "UNIVERSE_MARKET_UNSUPPORTED",
+                    f"{descriptor.assetId}는 {market} universe를 지원하지 않습니다",
+                    descriptor.assetId,
+                )
+            )
+            continue
+        for base in baseSelectors:
+            selectors.append(dict(base) | {"market": market})
+    return tuple(selectors), tuple(gaps)
 
 
 def _engineCall(descriptor: DataAssetDescriptor, query: DataQuery, selector: Mapping[str, str]) -> Any:
@@ -157,6 +207,9 @@ def _engineCall(descriptor: DataAssetDescriptor, query: DataQuery, selector: Map
     kwargs = dict(query.params)
     subject = selector.get("subject")
     measure = selector.get("measure")
+    market = selector.get("market")
+    if market is not None and descriptor.marketParam:
+        kwargs[descriptor.marketParam] = market
     if subject is not None and descriptor.subjectParam:
         kwargs[descriptor.subjectParam] = subject
     target = measure
@@ -196,6 +249,9 @@ def _callableCall(descriptor: DataAssetDescriptor, query: DataQuery, selector: M
     subject = selector.get("subject")
     if subject is not None and descriptor.subjectParam:
         kwargs[descriptor.subjectParam] = subject
+    market = selector.get("market")
+    if market is not None and descriptor.marketParam:
+        kwargs[descriptor.marketParam] = market
     if query.time is not None:
         if query.time.validAt is not None and descriptor.validTimeParam:
             kwargs[descriptor.validTimeParam] = query.time.validAt
@@ -221,13 +277,119 @@ def _outputBytes(value: Any) -> int:
     return len(repr(value).encode("utf-8"))
 
 
+def _universeCoverage(
+    task: _ExecutionTask,
+    raw: Any | None = None,
+    *,
+    gapCodes: tuple[str, ...] = (),
+) -> UniverseCoverage | None:
+    """Owner 결과를 snapshot membership과 비교해 market별 coverage를 만든다."""
+
+    membership = task.universeMarket
+    market = task.selector.get("market")
+    if membership is None or market is None:
+        return None
+    expected = frozenset(membership.entityIds)
+    selector = tuple(sorted((str(key), str(value)) for key, value in task.selector.items()))
+    if gapCodes:
+        return UniverseCoverage(
+            requestId=task.requestId,
+            assetId=task.descriptor.assetId,
+            market=market,
+            provider=membership.provider,
+            executionMode=task.descriptor.executionMode,
+            snapshotId=task.universeSnapshotId,
+            selector=selector,
+            requestedEntities=len(expected),
+            returnedEntities=0,
+            matchedEntities=0,
+            missingEntities=len(expected),
+            extraEntities=0,
+            status="failed",
+            missingSample=tuple(f"{market}:{value}" for value in sorted(expected)[:32]),
+            gapCodes=gapCodes,
+        )
+    observed = entityIds(raw, market)
+    if observed is None:
+        return UniverseCoverage(
+            requestId=task.requestId,
+            assetId=task.descriptor.assetId,
+            market=market,
+            provider=membership.provider,
+            executionMode=task.descriptor.executionMode,
+            snapshotId=task.universeSnapshotId,
+            selector=selector,
+            requestedEntities=len(expected),
+            returnedEntities=0,
+            matchedEntities=0,
+            missingEntities=0,
+            extraEntities=0,
+            status="unverified",
+            gapCodes=("UNIVERSE_COVERAGE_UNVERIFIED",),
+        )
+    matched = expected & observed
+    missing = expected - observed
+    extra = observed - expected
+    status = "complete" if not missing else "partial" if observed else "failed"
+    codes = ("UNIVERSE_COVERAGE_PARTIAL",) if missing else ()
+    return UniverseCoverage(
+        requestId=task.requestId,
+        assetId=task.descriptor.assetId,
+        market=market,
+        provider=membership.provider,
+        executionMode=task.descriptor.executionMode,
+        snapshotId=task.universeSnapshotId,
+        selector=selector,
+        requestedEntities=len(expected),
+        returnedEntities=len(observed),
+        matchedEntities=len(matched),
+        missingEntities=len(missing),
+        extraEntities=len(extra),
+        status=status,
+        missingSample=tuple(f"{market}:{value}" for value in sorted(missing)[:32]),
+        gapCodes=codes,
+    )
+
+
+def _failedUniverseCoverage(
+    requestId: str,
+    descriptor: DataAssetDescriptor,
+    market: str,
+    snapshotId: str | None,
+    membership: ResolvedMarket | None,
+    gapCodes: tuple[str, ...],
+) -> UniverseCoverage:
+    expected = membership.entityIds if membership is not None else ()
+    provider = membership.provider if membership is not None else None
+    return UniverseCoverage(
+        requestId=requestId,
+        assetId=descriptor.assetId,
+        market=market,
+        provider=provider,
+        executionMode=descriptor.executionMode,
+        snapshotId=snapshotId,
+        selector=(("market", market),),
+        requestedEntities=len(expected),
+        returnedEntities=0,
+        matchedEntities=0,
+        missingEntities=len(expected),
+        extraEntities=0,
+        status="failed",
+        missingSample=tuple(f"{market}:{value}" for value in expected[:32]),
+        gapCodes=gapCodes,
+    )
+
+
 def _activeQuery(query: DataQuery, request: DataRequest) -> DataQuery:
     """Query 공통값에 request별 override를 합성한다."""
 
+    subjects = request.subjects or (() if request.universe is not None else query.subjects)
+    universe = request.universe if request.universe is not None else None if request.subjects else query.universe
     return dataclasses.replace(
         query,
-        subjects=request.subjects or query.subjects,
+        subjects=subjects,
         measures=request.measures or query.measures,
+        universe=universe,
         projection=request.projection or query.projection,
         time=request.time or query.time,
         params=dict(query.params) | dict(request.params),
@@ -302,18 +464,62 @@ def executeDataQuery(assetIds: Sequence[str], query: DataQuery) -> DataResult:
 
     deadline = time.perf_counter() + query.budget.timeoutMs / 1000
     tasks: list[_ExecutionTask] = []
+    universeCache: dict[object, ResolvedUniverse] = {}
+    universeSnapshots: set[str] = set()
+    universeCoverage: list[UniverseCoverage] = []
     for requestId, descriptor, activeQuery in resolved:
         temporalGap = _temporalGap(descriptor, activeQuery)
         if temporalGap:
             gaps.append(dataclasses.replace(temporalGap, requestId=requestId))
             continue
-        selectors, selectorGap = _selectors(descriptor, activeQuery)
-        if selectorGap is not None:
-            gaps.append(dataclasses.replace(selectorGap, requestId=requestId))
-            continue
+        resolvedUniverse = None
+        if activeQuery.universe is not None:
+            resolvedUniverse = universeCache.get(activeQuery.universe)
+            if resolvedUniverse is None:
+                resolvedUniverse = resolveUniverse(activeQuery.universe)
+                universeCache[activeQuery.universe] = resolvedUniverse
+            universeSnapshots.add(resolvedUniverse.snapshotId)
+            gaps.extend(
+                dataclasses.replace(gap, assetId=descriptor.assetId, requestId=requestId)
+                for gap in resolvedUniverse.gaps
+            )
+        selectors, selectorGaps = _selectors(descriptor, activeQuery)
+        gaps.extend(dataclasses.replace(gap, requestId=requestId) for gap in selectorGaps)
+        universeByMarket = resolvedUniverse.byMarket() if resolvedUniverse is not None else {}
+        if activeQuery.universe is not None:
+            selectors = tuple(selector for selector in selectors if selector.get("market") in universeByMarket)
+        plannedMarkets = {selector["market"] for selector in selectors if "market" in selector}
+        if activeQuery.universe is not None:
+            selectorCodes = tuple(dict.fromkeys(gap.code for gap in selectorGaps))
+            resolverCodes = tuple(dict.fromkeys(gap.code for gap in resolvedUniverse.gaps)) if resolvedUniverse else ()
+            for market in activeQuery.universe.markets:
+                if market in plannedMarkets:
+                    continue
+                codes = selectorCodes or resolverCodes or ("UNIVERSE_UNSUPPORTED",)
+                universeCoverage.append(
+                    _failedUniverseCoverage(
+                        requestId,
+                        descriptor,
+                        market,
+                        resolvedUniverse.snapshotId if resolvedUniverse else None,
+                        universeByMarket.get(market),
+                        codes,
+                    )
+                )
         for selector in selectors:
             receiptRef = _receipt(descriptor, activeQuery, selector, requestId)
-            tasks.append(_ExecutionTask(requestId, descriptor, activeQuery, selector, receiptRef))
+            market = selector.get("market")
+            tasks.append(
+                _ExecutionTask(
+                    requestId,
+                    descriptor,
+                    activeQuery,
+                    selector,
+                    receiptRef,
+                    universeByMarket.get(market) if market else None,
+                    resolvedUniverse.snapshotId if resolvedUniverse else None,
+                )
+            )
 
     partitions = []
     receipts: list[str] = []
@@ -339,6 +545,9 @@ def executeDataQuery(assetIds: Sequence[str], query: DataQuery) -> DataResult:
                             requestId=task.requestId,
                         )
                     )
+                    coverageRow = _universeCoverage(task, gapCodes=("QUERY_BUDGET_EXHAUSTED",))
+                    if coverageRow is not None:
+                        universeCoverage.append(coverageRow)
                     stopExecution = True
                     abandonWindow = True
                     break
@@ -352,6 +561,9 @@ def executeDataQuery(assetIds: Sequence[str], query: DataQuery) -> DataResult:
                             requestId=task.requestId,
                         )
                     )
+                    coverageRow = _universeCoverage(task, gapCodes=("QUERY_TIMEOUT",))
+                    if coverageRow is not None:
+                        universeCoverage.append(coverageRow)
                     stopExecution = True
                     abandonWindow = True
                     break
@@ -367,6 +579,9 @@ def executeDataQuery(assetIds: Sequence[str], query: DataQuery) -> DataResult:
                             requestId=task.requestId,
                         )
                     )
+                    coverageRow = _universeCoverage(task, gapCodes=("QUERY_TIMEOUT",))
+                    if coverageRow is not None:
+                        universeCoverage.append(coverageRow)
                     stopExecution = True
                     abandonWindow = True
                     break
@@ -380,8 +595,51 @@ def executeDataQuery(assetIds: Sequence[str], query: DataQuery) -> DataResult:
                             requestId=task.requestId,
                         )
                     )
+                    coverageRow = _universeCoverage(task, gapCodes=("ASSET_EXECUTION_FAILED",))
+                    if coverageRow is not None:
+                        universeCoverage.append(coverageRow)
                     processedTasks += 1
                     continue
+                if time.perf_counter() > deadline:
+                    gaps.append(
+                        DataGap(
+                            "QUERY_TIMEOUT",
+                            "owner 결과가 query 기한 뒤에 도착해 폐기했습니다",
+                            task.descriptor.assetId,
+                            task.selector.get("subject"),
+                            requestId=task.requestId,
+                        )
+                    )
+                    coverageRow = _universeCoverage(task, gapCodes=("QUERY_TIMEOUT",))
+                    if coverageRow is not None:
+                        universeCoverage.append(coverageRow)
+                    stopExecution = True
+                    abandonWindow = True
+                    break
+                coverageRow = _universeCoverage(task, raw)
+                if coverageRow is not None:
+                    universeCoverage.append(coverageRow)
+                    if coverageRow.status == "partial":
+                        gaps.append(
+                            DataGap(
+                                "UNIVERSE_COVERAGE_PARTIAL",
+                                (
+                                    f"{coverageRow.market} {coverageRow.matchedEntities}/"
+                                    f"{coverageRow.requestedEntities} entities matched"
+                                ),
+                                task.descriptor.assetId,
+                                requestId=task.requestId,
+                            )
+                        )
+                    elif coverageRow.status == "unverified":
+                        gaps.append(
+                            DataGap(
+                                "UNIVERSE_COVERAGE_UNVERIFIED",
+                                f"{coverageRow.market} owner output에서 entity identity를 확인할 수 없습니다",
+                                task.descriptor.assetId,
+                                requestId=task.requestId,
+                            )
+                        )
                 tasksAfter = len(tasks) - processedTasks - 1
                 reservedRows = min(max(0, remainingRows - 1), tasksAfter)
                 reservedBytes = min(max(0, remainingBytes - 1), tasksAfter * 1024)
@@ -425,6 +683,17 @@ def executeDataQuery(assetIds: Sequence[str], query: DataQuery) -> DataResult:
                     future.cancel()
             executor.shutdown(wait=not abandonWindow, cancel_futures=abandonWindow)
 
+    coveredTaskKeys = {(row.requestId, row.selector) for row in universeCoverage if row.selector}
+    for task in tasks:
+        if task.universeMarket is None:
+            continue
+        selectorKey = tuple(sorted((str(key), str(value)) for key, value in task.selector.items()))
+        if (task.requestId, selectorKey) in coveredTaskKeys:
+            continue
+        coverageRow = _universeCoverage(task, gapCodes=("QUERY_NOT_EXECUTED",))
+        if coverageRow is not None:
+            universeCoverage.append(coverageRow)
+
     succeeded = len(partitions)
     failures = len(gaps)
     if query.completeness == "requireComplete" and failures:
@@ -443,6 +712,14 @@ def executeDataQuery(assetIds: Sequence[str], query: DataQuery) -> DataResult:
     lineageRefs = tuple(dict.fromkeys(ref for partition in partitions for ref in partition.lineageRefs))
     continuation = "row-budget" if any(partition.truncated for partition in partitions) else None
     assertions = tuple(assertion for partition in partitions for assertion in partition.qualityAssertions)
+    if len(universeSnapshots) == 1:
+        universeSnapshotId = next(iter(universeSnapshots))
+    elif universeSnapshots:
+        universeSnapshotId = (
+            f"universe-query:{hashlib.sha256(_canonical(tuple(sorted(universeSnapshots)))).hexdigest()}"
+        )
+    else:
+        universeSnapshotId = None
     return DataResult(
         status=status,
         partitions=tuple(partitions),
@@ -455,4 +732,6 @@ def executeDataQuery(assetIds: Sequence[str], query: DataQuery) -> DataResult:
         executionReceipts=tuple(receipts),
         continuation=continuation,
         qualityAssertions=assertions,
+        universeSnapshotId=universeSnapshotId,
+        universeCoverage=tuple(universeCoverage),
     )

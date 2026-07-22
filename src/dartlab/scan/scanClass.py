@@ -458,24 +458,11 @@ class Scan:
         from dartlab.core.utils.axisGuide import buildAxisGuideDataFrame
 
         financial_axes = set(_SCAN_GROUPS.get("financial", []))
-        _EDGAR_AXES = {
-            "profitability",
-            "growth",
-            "quality",
-            "liquidity",
-            "efficiency",
-            "cashflow",
-            "dividendTrend",
-            "capital",
-            "debt",
-            "account",
-            "ratio",
-        }
 
         def _group(key: str, _entry) -> str:
             if key in financial_axes:
                 return "financial"
-            if key in _EDGAR_AXES:
+            if "US" in _entry.universeMarkets:
                 return "DART+EDGAR"
             return "DART"
 

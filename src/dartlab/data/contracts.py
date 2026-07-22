@@ -89,6 +89,47 @@ Projection = (
 
 
 @dataclass(frozen=True, slots=True)
+class UniverseSelection:
+    """시장 전체 또는 명시 entity 집합을 고정하는 query selector.
+
+    ``listed``는 현재 상장 universe, ``allKnown``은 상장폐지 포함 전체 이력,
+    ``explicit``은 ``MARKET:ID`` 형태의 직접 목록을 뜻한다. 현재 시점 이외의
+    membership을 실제로 제공하지 못하는 owner는 실행 전에 fail closed한다.
+    """
+
+    markets: tuple[str, ...] = ("KR", "US")
+    membership: Literal["listed", "allKnown", "explicit"] = "listed"
+    explicitIds: tuple[str, ...] = ()
+    asOf: str | None = None
+
+    def __post_init__(self) -> None:
+        if self.membership not in {"listed", "allKnown", "explicit"}:
+            raise ValueError("universe membership이 유효하지 않습니다")
+        markets = tuple(sorted({str(market).strip().upper() for market in self.markets if str(market).strip()}))
+        parsed: set[tuple[str, str]] = set()
+        for raw in self.explicitIds:
+            market, separator, entityId = str(raw).strip().partition(":")
+            market = market.strip().upper()
+            entityId = entityId.strip()
+            if not separator or not market or not entityId or ":" in entityId:
+                raise ValueError("explicitIds는 MARKET:ID 형식이어야 합니다")
+            parsed.add((market, entityId))
+        if self.membership == "explicit" and not parsed:
+            raise ValueError("explicit universe에는 explicitIds가 필요합니다")
+        if self.membership == "explicit":
+            markets = tuple(sorted({market for market, _ in parsed}))
+        if not markets:
+            markets = tuple(sorted({market for market, _ in parsed}))
+        if not markets:
+            raise ValueError("universe markets가 비었습니다")
+        outside = tuple(f"{market}:{entityId}" for market, entityId in parsed if market not in markets)
+        if outside:
+            raise ValueError("explicitIds의 market이 universe markets 밖에 있습니다")
+        object.__setattr__(self, "markets", markets)
+        object.__setattr__(self, "explicitIds", tuple(f"{market}:{entityId}" for market, entityId in sorted(parsed)))
+
+
+@dataclass(frozen=True, slots=True)
 class DataRequest:
     """한 query 안에서 asset 하나와 원하는 view를 결박한다."""
 
@@ -97,6 +138,7 @@ class DataRequest:
     projection: Projection | None = None
     subjects: tuple[str, ...] = ()
     measures: tuple[str, ...] = ()
+    universe: UniverseSelection | None = None
     time: TimeContext | None = None
     params: Mapping[str, Any] = field(default_factory=dict)
 
@@ -105,6 +147,8 @@ class DataRequest:
             raise ValueError("assetId가 비었습니다")
         if self.requestId == "":
             raise ValueError("requestId는 비어 있을 수 없습니다")
+        if self.subjects and self.universe is not None:
+            raise ValueError("DataRequest는 subjects와 universe를 동시에 사용할 수 없습니다")
 
 
 @dataclass(frozen=True, slots=True)
@@ -125,6 +169,7 @@ class DataQuery:
 
     subjects: tuple[str, ...] = ()
     measures: tuple[str, ...] = ()
+    universe: UniverseSelection | None = None
     projection: Projection = field(default_factory=NativeProjection)
     time: TimeContext | None = None
     params: Mapping[str, Any] = field(default_factory=dict)
@@ -134,6 +179,8 @@ class DataQuery:
     lineage: Literal["summary", "full"] = "summary"
 
     def __post_init__(self) -> None:
+        if self.subjects and self.universe is not None:
+            raise ValueError("DataQuery는 subjects와 universe를 동시에 사용할 수 없습니다")
         if len(self.subjects) > self.budget.maxSubjects:
             raise ValueError("subjects가 query budget을 초과했습니다")
         querySubjects = set(self.subjects) | {subject for request in self.requests for subject in request.subjects}
@@ -183,6 +230,18 @@ class DataAssetDescriptor:
     selectorKind: Literal["none", "subject", "measure"] = "none"
     selectorRequired: bool = False
     concurrencyGroup: str | None = None
+    executionMode: Literal[
+        "ownerBulk",
+        "ownerBatch",
+        "subjectFanout",
+        "resourceCompanyShard",
+        "resourceBulk",
+        "unsupported",
+    ] = "unsupported"
+    universeKind: str = "none"
+    universeMarkets: tuple[str, ...] = ()
+    marketParam: str | None = None
+    marketUnits: tuple[tuple[str, str], ...] = ()
     metadata: tuple[tuple[str, Any], ...] = ()
 
 
@@ -206,6 +265,27 @@ class Coverage:
     resolvedAssets: int
     succeededPartitions: int
     failedPartitions: int
+
+
+@dataclass(frozen=True, slots=True)
+class UniverseCoverage:
+    """Asset, selector, market별 universe 실행과 실제 entity coverage."""
+
+    requestId: str
+    assetId: str
+    market: str
+    provider: str | None
+    executionMode: str
+    snapshotId: str | None
+    selector: tuple[tuple[str, str], ...]
+    requestedEntities: int
+    returnedEntities: int
+    matchedEntities: int
+    missingEntities: int
+    extraEntities: int
+    status: Literal["complete", "partial", "failed", "unverified"]
+    missingSample: tuple[str, ...] = ()
+    gapCodes: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -345,6 +425,8 @@ class DataResult:
     executionReceipts: tuple[str, ...]
     continuation: str | None = None
     qualityAssertions: tuple[QualityAssertion, ...] = ()
+    universeSnapshotId: str | None = None
+    universeCoverage: tuple[UniverseCoverage, ...] = ()
 
     def byRequest(self, requestId: str) -> tuple[DataPartition, ...]:
         """혼합 query 결과에서 request ID에 해당하는 partition만 반환한다."""

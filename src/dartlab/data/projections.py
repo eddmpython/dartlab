@@ -124,6 +124,7 @@ def _factorFrame(
     query: DataQuery,
     *,
     measure: str | None,
+    market: str | None,
     receiptRef: str,
 ) -> tuple[pl.DataFrame | None, tuple[DataGap, ...]]:
     from dartlab.data.factorKernel import foldToCanonical
@@ -149,7 +150,8 @@ def _factorFrame(
     projection = query.projection
     assert isinstance(projection, FactorProjection)
     declaredUnit = dict(descriptor.metadata).get("unit")
-    if projection.unit is None and not declaredUnit:
+    marketUnit = dict(descriptor.marketUnits).get(market) if market is not None else None
+    if projection.unit is None and not marketUnit and not declaredUnit:
         return None, gaps + (
             DataGap(
                 "FACTOR_UNIT_REQUIRED",
@@ -160,13 +162,20 @@ def _factorFrame(
     knownAt = query.time.knownAt if query.time else None
     validAt = query.time.validAt if query.time else None
     temporalStatus = "POINT_IN_TIME" if knownAt else "VALID_TIME" if validAt else "LATEST_ONLY"
-    unit = projection.unit or str(declaredUnit)
+    unit = projection.unit or marketUnit or str(declaredUnit)
     frequency = projection.frequency or str(query.params.get("freq") or "native")
     availableAt = declared.get("availableAt")
+    entityExpression = (
+        pl.concat_str(pl.lit(market), pl.col("entity").cast(pl.Utf8), separator=":")
+        if market is not None
+        else pl.col("entity").cast(pl.Utf8)
+    )
     frame = folded.with_columns(
         pl.lit(descriptor.assetId).alias("assetId"),
         pl.col("item").alias("measureId"),
-        pl.col("entity").alias("entityId"),
+        entityExpression.alias("entityId"),
+        pl.col("entity").cast(pl.Utf8).alias("sourceEntityId"),
+        pl.lit(market, dtype=pl.Utf8).alias("market"),
         pl.col("period").alias("eventAt"),
         pl.lit(str(availableAt) if availableAt is not None else None, dtype=pl.Utf8).alias("availableAt"),
         pl.lit(knownAt, dtype=pl.Utf8).alias("knownAt"),
@@ -180,6 +189,8 @@ def _factorFrame(
         "assetId",
         "measureId",
         "entityId",
+        "sourceEntityId",
+        "market",
         "entityName",
         "eventAt",
         "availableAt",
@@ -239,7 +250,14 @@ def projectOutput(
     if _isEmpty(raw) and not locatorOnly:
         return None, (DataGap("NO_DATA", "owner가 물질화할 데이터를 반환하지 않았습니다", descriptor.assetId),)
     if isinstance(projection, FactorProjection):
-        data, gaps = _factorFrame(raw, descriptor, query, measure=selector.get("measure"), receiptRef=receiptRef)
+        data, gaps = _factorFrame(
+            raw,
+            descriptor,
+            query,
+            measure=selector.get("measure"),
+            market=selector.get("market"),
+            receiptRef=receiptRef,
+        )
         if data is None:
             return None, gaps
     elif isinstance(projection, RecordsProjection):

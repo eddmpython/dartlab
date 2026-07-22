@@ -21,6 +21,7 @@ from dartlab.data.contracts import (
     RecordsProjection,
     ResourceProjection,
     TimeContext,
+    UniverseSelection,
 )
 from dartlab.data.execution import executeDataQuery
 
@@ -84,6 +85,12 @@ def _dataRequestFromMapping(value: Any) -> DataRequest:
         payload["projection"] = _projectionFromMapping(payload["projection"])
     if isinstance(payload.get("time"), Mapping):
         payload["time"] = TimeContext(**dict(payload["time"]))
+    if isinstance(payload.get("universe"), Mapping):
+        universe = dict(payload["universe"])
+        for key in ("markets", "explicitIds"):
+            if key in universe:
+                universe[key] = tuple(universe[key])
+        payload["universe"] = UniverseSelection(**universe)
     return DataRequest(**payload)
 
 
@@ -100,6 +107,12 @@ def _dataQuery(value: Any) -> DataQuery | None:
         payload["projection"] = _projectionFromMapping(payload["projection"])
     if isinstance(payload.get("time"), Mapping):
         payload["time"] = TimeContext(**dict(payload["time"]))
+    if isinstance(payload.get("universe"), Mapping):
+        universe = dict(payload["universe"])
+        for key in ("markets", "explicitIds"):
+            if key in universe:
+                universe[key] = tuple(universe[key])
+        payload["universe"] = UniverseSelection(**universe)
     if isinstance(payload.get("budget"), Mapping):
         payload["budget"] = QueryBudget(**dict(payload["budget"]))
     if "requests" in payload:

@@ -9,11 +9,29 @@
 from __future__ import annotations
 
 import importlib
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 import polars as pl
 
 # ── Axis Registry ────────────────────────────────────────
+
+_EDGAR_UNIVERSE_AXES = frozenset(
+    {
+        "account",
+        "ratio",
+        "profitability",
+        "growth",
+        "quality",
+        "liquidity",
+        "efficiency",
+        "cashflow",
+        "dividendTrend",
+        "capital",
+        "debt",
+        "valuation",
+        "audit",
+    }
+)
 
 
 @dataclass(frozen=True)
@@ -44,6 +62,11 @@ class _AxisEntry:
     returnType: str = "DataFrame"
     listModule: str | None = None  # target 없이 호출 시 목록 반환용
     listFn: str | None = None
+    executionMode: str = "ownerBulk"
+    universeKind: str = "listedEquity"
+    universeMarkets: tuple[str, ...] = ("KR",)
+    marketParam: str | None = "market"
+    marketUnits: tuple[tuple[str, str], ...] = ()
 
 
 _AXIS_REGISTRY: dict[str, _AxisEntry] = {
@@ -85,6 +108,7 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
         targetRequired=True,
         listModule="dartlab.providers.dart.finance.scanAccount",
         listFn="scanAccountList",
+        marketUnits=(("KR", "KRW"), ("US", "USD")),
     ),
     "ratio": _AxisEntry(
         module="dartlab.providers.dart.finance.scanAccount",
@@ -201,6 +225,10 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
         example='scan("fields", "roe")',
         targetParam="query",
         targetRequired=False,
+        executionMode="unsupported",
+        universeKind="catalog",
+        universeMarkets=(),
+        marketParam=None,
     ),
     "screen": _AxisEntry(
         module="dartlab.scan.screen",
@@ -254,6 +282,9 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
         example='scan("earningsFlash")',
     ),
 }
+
+for _axis in _EDGAR_UNIVERSE_AXES:
+    _AXIS_REGISTRY[_axis] = replace(_AXIS_REGISTRY[_axis], universeMarkets=("KR", "US"))
 
 
 # ── Aliases ──────────────────────────────────────────────
@@ -381,20 +412,7 @@ def _edgarDispatch(axis: str, kwargs: dict) -> pl.DataFrame | None:
     """
     # XBRL 기반 11 축 — edgarScan._DISPATCH 와 1:1. 미라우팅 시 scanClass 가 DART 구현
     # (valuation=네이버 실시간가, audit=DART 감사데이터)으로 잘못 fallback 하므로 전 축을 라우팅한다.
-    _EDGAR_XBRL_AXES = {
-        "profitability",
-        "growth",
-        "quality",
-        "liquidity",
-        "efficiency",
-        "cashflow",
-        "dividendTrend",
-        "capital",
-        "debt",
-        "valuation",
-        "audit",
-    }
-    if axis in _EDGAR_XBRL_AXES:
+    if axis in _EDGAR_UNIVERSE_AXES - {"account", "ratio"}:
         from dartlab.scan.builders.edgar.scan import edgarScan
 
         return edgarScan(axis, **kwargs)

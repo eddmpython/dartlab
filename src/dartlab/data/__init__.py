@@ -20,6 +20,8 @@ from dartlab.data.contracts import (
     RecordsProjection,
     ResourceProjection,
     TimeContext,
+    UniverseCoverage,
+    UniverseSelection,
 )
 from dartlab.data.entry import Data, data
 
@@ -44,5 +46,7 @@ __all__ = [
     "RecordsProjection",
     "ResourceProjection",
     "TimeContext",
+    "UniverseCoverage",
+    "UniverseSelection",
     "data",
 ]
