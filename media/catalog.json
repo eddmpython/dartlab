@@ -2886,6 +2886,16 @@
     "blog/05-company-reports/172-SPCX-spacex-starlink-cash-engine/assets/172-starship-capacity.svg": "48e7a9ea1e7a6053b7ec7e5de8d5e45517216084a7c99437a8d91b38ea888b48",
     "blog/05-company-reports/172-SPCX-spacex-starlink-cash-engine/assets/172-starship-night-shift.png": "44eebeab3ef5f21bbca9105ae5e443260135fb9f29fececf2b7a58fdb19339f8",
     "blog/05-company-reports/172-SPCX-spacex-starlink-cash-engine/assets/172-stock-expectation.svg": "362b677b4f1eed6a3e785ed439edebe22b77c6ed3e5f702e1e7ffaa5fb78ba73",
+    "blog/05-company-reports/173-440110-fadu-ssd-controller-turnaround/assets/173-cash-conversion.svg": "87a4042b36e85e725a2fbb1cb3c6aa65aa611ca851732b9ef383136e66cc3462",
+    "blog/05-company-reports/173-440110-fadu-ssd-controller-turnaround/assets/173-controller-brain.png": "b9a8716d86f66d62960c48572991b782b0eb512ad5a729fc56049c7a5dec0963",
+    "blog/05-company-reports/173-440110-fadu-ssd-controller-turnaround/assets/173-controller-flow.svg": "235f3806a078a84d26629605044c4fcf53ff404aa023f3b0a1ee53fd43bea6aa",
+    "blog/05-company-reports/173-440110-fadu-ssd-controller-turnaround/assets/173-fadu-qualification-night.png": "3469fd6cda170af020118e8dfca8e3ddcffcbbbeae1063a6f0b3077374165170",
+    "blog/05-company-reports/173-440110-fadu-ssd-controller-turnaround/assets/173-price-expectation.svg": "dc580f948618b3f32098184b7bbba1db54fa1bd0d026ff4aed0bd68be081597e",
+    "blog/05-company-reports/173-440110-fadu-ssd-controller-turnaround/assets/173-qualification-gate.svg": "00c32d35e53ab42f136807cc881401e5851d6323cd3011ca1d9bb01bf31fa36d",
+    "blog/05-company-reports/173-440110-fadu-ssd-controller-turnaround/assets/173-qualification-production-handoff.png": "af71f923c8ccd9a050ea6326f3b662839986620022c2226e91b73ff47cc578df",
+    "blog/05-company-reports/173-440110-fadu-ssd-controller-turnaround/assets/173-quarterly-turn.svg": "810fd9cc4f063c88e4f2636cb7413d19aebc2bba965ac78010173c93a9751f80",
+    "blog/05-company-reports/173-440110-fadu-ssd-controller-turnaround/assets/173-three-clocks.svg": "7929d9eb9f3e7c1976d88b153edef93e87fefe644e9e7c3db7b33a5c0d3f3047",
+    "blog/05-company-reports/173-440110-fadu-ssd-controller-turnaround/assets/173-trust-timeline.svg": "ac13c21d3076378f251a74cf4e9a6ea03415170fb12b9ad8037a1db0c3236a41",
     "blog/05-company-reports/18-011070-lg-innotek/assets/18-apple-dependency.svg": "06d61bafca5e2d68d7deee033f59772e24de26d034fe3522357062352a7d27cc",
     "blog/05-company-reports/18-011070-lg-innotek/assets/18-assembly-line.webp": "c4cc3023c386e273af786ba92ad2cf2e5701f8a8cee1774db2176ea22bf1846c",
     "blog/05-company-reports/18-011070-lg-innotek/assets/18-camera-module.webp": "24bc6e00585ce89c2648df13788bfcdfbb13b2741cf132626961c91876873906",
@@ -4285,6 +4295,8 @@
     "landing/static/thumbnails/43-cashflow-how-to-read.webp": "c3b61129ab67e28b389a4969fd42ff89284c899445046609d6d848d30d73ed21",
     "landing/static/thumbnails/439260-daehan-shipbuilding-card.webp": "d10c2ec37c354caa9672f3a2e322ac2141c45f830c6b4f31c606c29aad453696",
     "landing/static/thumbnails/439260-daehan-shipbuilding.webp": "2290daaa24abb00041d22dd35ad069de72c4a2ec95d031c26e21cce5098e878c",
+    "landing/static/thumbnails/440110-fadu-ssd-controller-turnaround-card.webp": "a048021200187ffce0e965fca0c85ae4ee3796ddcad70eb420ecbd28eaf6a509",
+    "landing/static/thumbnails/440110-fadu-ssd-controller-turnaround.webp": "76d413e8a61b441d8a2b126dd0b5cdc75647fc727011171f6dab056ea75d8dae",
     "landing/static/thumbnails/443060-hd-marine-aftermarket-card.webp": "a5a768c8f4810d766bca2260942e1e97271be81f0a49a34f88b0844bcd4f6507",
     "landing/static/thumbnails/443060-hd-marine-aftermarket.webp": "d3596a6c622d3e0d9e088abe1aed922c4a8add4cfbcab49a3664ddc6c8658a66",
     "landing/static/thumbnails/483650-dalba-global-card.webp": "7001501db2cf8675ebfa22bd8ba0d6ea7fdec5bb6a09dc5184609f556224e7da",
@@ -4576,6 +4588,14 @@
     "00a4f027412bcefeb89567c8fa4c8b0f16ba322072b8dfcaaa0de0f5ee9de7d1": {
       "bytes": 36926,
       "path": "objects/sha256/00/00a4f027412bcefeb89567c8fa4c8b0f16ba322072b8dfcaaa0de0f5ee9de7d1.webp"
+    },
+    "00c32d35e53ab42f136807cc881401e5851d6323cd3011ca1d9bb01bf31fa36d": {
+      "bytes": 5811,
+      "colorCount": 39,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/00/00c32d35e53ab42f136807cc881401e5851d6323cd3011ca1d9bb01bf31fa36d.svg",
+      "textNodes": 30,
+      "viewBox": "0 0 1600 900"
     },
     "00dcd39f0e78db1f866bd70c8fc89a5ac1b4b063b0368a453d54774bfa7c15c4": {
       "bytes": 245684,
@@ -6969,6 +6989,14 @@
       "textNodes": 18,
       "viewBox": "0 0 800 430"
     },
+    "235f3806a078a84d26629605044c4fcf53ff404aa023f3b0a1ee53fd43bea6aa": {
+      "bytes": 4782,
+      "colorCount": 25,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/23/235f3806a078a84d26629605044c4fcf53ff404aa023f3b0a1ee53fd43bea6aa.svg",
+      "textNodes": 16,
+      "viewBox": "0 0 1600 900"
+    },
     "2360642d7af58e42813fa4064b4f62d75dd8a5cc38b62b442154cfb8fcabf75d": {
       "bytes": 4720,
       "colorCount": 12,
@@ -8168,6 +8196,10 @@
       "path": "objects/sha256/34/3441edca724fb0ff5b9979cdd4fd58529e4253390754abca9a961f4e8947703f.svg",
       "textNodes": 6,
       "viewBox": "0 0 800 420"
+    },
+    "3469fd6cda170af020118e8dfca8e3ddcffcbbbeae1063a6f0b3077374165170": {
+      "bytes": 1977059,
+      "path": "objects/sha256/34/3469fd6cda170af020118e8dfca8e3ddcffcbbbeae1063a6f0b3077374165170.png"
     },
     "34831138281a1ffacfc24a89dd3a1cfeed39a1465f57780127e82f5bd0da0514": {
       "bytes": 6665,
@@ -12853,6 +12885,10 @@
       "bytes": 119412,
       "path": "objects/sha256/76/76ce75c0434011cb21349612efb393c1b91a78cbc0c0d1f8206c9419f048d2bf.webp"
     },
+    "76d413e8a61b441d8a2b126dd0b5cdc75647fc727011171f6dab056ea75d8dae": {
+      "bytes": 67206,
+      "path": "objects/sha256/76/76d413e8a61b441d8a2b126dd0b5cdc75647fc727011171f6dab056ea75d8dae.webp"
+    },
     "76d520570ab4963f0951036e74df445af61d9f363dbf8aad277509ad6c87e132": {
       "bytes": 8588,
       "colorCount": 12,
@@ -13064,6 +13100,14 @@
       "path": "objects/sha256/79/79260fcd80228636c6fd5a712b066be4f65ae763c6ce2b418c1824995d8fd7f5.svg",
       "textNodes": 16,
       "viewBox": "0 0 1200 520"
+    },
+    "7929d9eb9f3e7c1976d88b153edef93e87fefe644e9e7c3db7b33a5c0d3f3047": {
+      "bytes": 4480,
+      "colorCount": 28,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/79/7929d9eb9f3e7c1976d88b153edef93e87fefe644e9e7c3db7b33a5c0d3f3047.svg",
+      "textNodes": 16,
+      "viewBox": "0 0 1600 900"
     },
     "7930e37f27c0fa230d25b12250293846a3a94d7723ef17d7beb7e774765df4ed": {
       "bytes": 4160,
@@ -13641,6 +13685,14 @@
       "bytes": 120100,
       "path": "objects/sha256/81/8100eaf0e8980b13552e989a57d4d45eae1e659bda97f5132ea667d6dbe9dc6a.webp"
     },
+    "810fd9cc4f063c88e4f2636cb7413d19aebc2bba965ac78010173c93a9751f80": {
+      "bytes": 5101,
+      "colorCount": 17,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/81/810fd9cc4f063c88e4f2636cb7413d19aebc2bba965ac78010173c93a9751f80.svg",
+      "textNodes": 25,
+      "viewBox": "0 0 1600 900"
+    },
     "812b3261000525e2116bbc404506dbade1b4d5033b1956f857e4ac1a717c6fab": {
       "bytes": 8597,
       "colorCount": 16,
@@ -14144,6 +14196,14 @@
     "879051ca74f9902a2955b2ed7cabe52b0d6b490139ef0ad2ef2f0aab3d4b3aa2": {
       "bytes": 237602,
       "path": "objects/sha256/87/879051ca74f9902a2955b2ed7cabe52b0d6b490139ef0ad2ef2f0aab3d4b3aa2.webp"
+    },
+    "87a4042b36e85e725a2fbb1cb3c6aa65aa611ca851732b9ef383136e66cc3462": {
+      "bytes": 3364,
+      "colorCount": 20,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/87/87a4042b36e85e725a2fbb1cb3c6aa65aa611ca851732b9ef383136e66cc3462.svg",
+      "textNodes": 13,
+      "viewBox": "0 0 1600 900"
     },
     "87dcc4f411e4a1d8131956ba05d137509640e7a08450bfd67f0106876112106a": {
       "bytes": 71322,
@@ -15817,6 +15877,10 @@
       "textNodes": 14,
       "viewBox": "0 0 900 506"
     },
+    "a048021200187ffce0e965fca0c85ae4ee3796ddcad70eb420ecbd28eaf6a509": {
+      "bytes": 75588,
+      "path": "objects/sha256/a0/a048021200187ffce0e965fca0c85ae4ee3796ddcad70eb420ecbd28eaf6a509.webp"
+    },
     "a06a8a3968d9da30a65fac0aa7bacdf6393c923858275e9768101290ee381057": {
       "bytes": 2699,
       "colorCount": 8,
@@ -16621,6 +16685,14 @@
       "bytes": 92828,
       "path": "objects/sha256/ac/ac0452abe59a24390b3cf7aa263378c94c3b4e8c56db6fd42699b0c6f91c797b.webp"
     },
+    "ac13c21d3076378f251a74cf4e9a6ea03415170fb12b9ad8037a1db0c3236a41": {
+      "bytes": 4448,
+      "colorCount": 23,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/ac/ac13c21d3076378f251a74cf4e9a6ea03415170fb12b9ad8037a1db0c3236a41.svg",
+      "textNodes": 17,
+      "viewBox": "0 0 1600 900"
+    },
     "ac18f0c07e9aaee004a753073580264cd236c2bb642125e2c3d329acbf75c6e4": {
       "bytes": 153596,
       "path": "objects/sha256/ac/ac18f0c07e9aaee004a753073580264cd236c2bb642125e2c3d329acbf75c6e4.webp"
@@ -16916,6 +16988,10 @@
     "af6f473e17284475e2698adda1499129fbbb98ead3336f556b2e6117ffbad7de": {
       "bytes": 129406,
       "path": "objects/sha256/af/af6f473e17284475e2698adda1499129fbbb98ead3336f556b2e6117ffbad7de.webp"
+    },
+    "af71f923c8ccd9a050ea6326f3b662839986620022c2226e91b73ff47cc578df": {
+      "bytes": 2073633,
+      "path": "objects/sha256/af/af71f923c8ccd9a050ea6326f3b662839986620022c2226e91b73ff47cc578df.png"
     },
     "af8011ef862767a46d031d6ac4f9fcb0bb67960bc52d6cb8c03373e0b72151f1": {
       "bytes": 5028,
@@ -17688,6 +17764,10 @@
       "path": "objects/sha256/b9/b9684825085c3c6faaf2fd9a2cd81b42b74a043a8e527513d7bd6aa05ca3e041.svg",
       "textNodes": 51,
       "viewBox": "0 0 1200 720"
+    },
+    "b9a8716d86f66d62960c48572991b782b0eb512ad5a729fc56049c7a5dec0963": {
+      "bytes": 2366073,
+      "path": "objects/sha256/b9/b9a8716d86f66d62960c48572991b782b0eb512ad5a729fc56049c7a5dec0963.png"
     },
     "b9c454f842c00f01a5f5e784c9d875e3c91d8b2bd7923828079ad13c4dbf14dc": {
       "bytes": 2989,
@@ -20020,6 +20100,14 @@
     "dc538bde486ad33ff0290c380793ed3ce829ca1fa78b8275df146f51c20e8b12": {
       "bytes": 71810,
       "path": "objects/sha256/dc/dc538bde486ad33ff0290c380793ed3ce829ca1fa78b8275df146f51c20e8b12.webp"
+    },
+    "dc580f948618b3f32098184b7bbba1db54fa1bd0d026ff4aed0bd68be081597e": {
+      "bytes": 4604,
+      "colorCount": 27,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/dc/dc580f948618b3f32098184b7bbba1db54fa1bd0d026ff4aed0bd68be081597e.svg",
+      "textNodes": 19,
+      "viewBox": "0 0 1600 900"
     },
     "dc5c74a3a758c8c41854b1975920e586906301dc2742861b5e55e245b7fa429c": {
       "bytes": 147884,
@@ -26649,6 +26737,37 @@
         "blog/05-company-reports/172-SPCX-spacex-starlink-cash-engine/assets/172-starship-night-shift.png",
         "blog/05-company-reports/172-SPCX-spacex-starlink-cash-engine/assets/172-stock-expectation.svg",
         "landing/static/thumbnails/172-spacex-starlink-cash-engine-card.webp"
+      ]
+    },
+    "05-company-reports/173-440110-fadu-ssd-controller-turnaround": {
+      "assets": {
+        "173-controller-brain": "blog/05-company-reports/173-440110-fadu-ssd-controller-turnaround/assets/173-controller-brain.png",
+        "173-fadu-qualification-night": "blog/05-company-reports/173-440110-fadu-ssd-controller-turnaround/assets/173-fadu-qualification-night.png",
+        "173-qualification-production-handoff": "blog/05-company-reports/173-440110-fadu-ssd-controller-turnaround/assets/173-qualification-production-handoff.png"
+      },
+      "card": "landing/static/thumbnails/440110-fadu-ssd-controller-turnaround-card.webp",
+      "diagrams": {
+        "173-cash-conversion": "blog/05-company-reports/173-440110-fadu-ssd-controller-turnaround/assets/173-cash-conversion.svg",
+        "173-controller-flow": "blog/05-company-reports/173-440110-fadu-ssd-controller-turnaround/assets/173-controller-flow.svg",
+        "173-price-expectation": "blog/05-company-reports/173-440110-fadu-ssd-controller-turnaround/assets/173-price-expectation.svg",
+        "173-qualification-gate": "blog/05-company-reports/173-440110-fadu-ssd-controller-turnaround/assets/173-qualification-gate.svg",
+        "173-quarterly-turn": "blog/05-company-reports/173-440110-fadu-ssd-controller-turnaround/assets/173-quarterly-turn.svg",
+        "173-three-clocks": "blog/05-company-reports/173-440110-fadu-ssd-controller-turnaround/assets/173-three-clocks.svg",
+        "173-trust-timeline": "blog/05-company-reports/173-440110-fadu-ssd-controller-turnaround/assets/173-trust-timeline.svg"
+      },
+      "og": "landing/static/thumbnails/440110-fadu-ssd-controller-turnaround.webp",
+      "staging": [
+        "blog/05-company-reports/173-440110-fadu-ssd-controller-turnaround/assets/173-cash-conversion.svg",
+        "blog/05-company-reports/173-440110-fadu-ssd-controller-turnaround/assets/173-controller-brain.png",
+        "blog/05-company-reports/173-440110-fadu-ssd-controller-turnaround/assets/173-controller-flow.svg",
+        "blog/05-company-reports/173-440110-fadu-ssd-controller-turnaround/assets/173-fadu-qualification-night.png",
+        "blog/05-company-reports/173-440110-fadu-ssd-controller-turnaround/assets/173-price-expectation.svg",
+        "blog/05-company-reports/173-440110-fadu-ssd-controller-turnaround/assets/173-qualification-gate.svg",
+        "blog/05-company-reports/173-440110-fadu-ssd-controller-turnaround/assets/173-qualification-production-handoff.png",
+        "blog/05-company-reports/173-440110-fadu-ssd-controller-turnaround/assets/173-quarterly-turn.svg",
+        "blog/05-company-reports/173-440110-fadu-ssd-controller-turnaround/assets/173-three-clocks.svg",
+        "blog/05-company-reports/173-440110-fadu-ssd-controller-turnaround/assets/173-trust-timeline.svg",
+        "landing/static/thumbnails/440110-fadu-ssd-controller-turnaround-card.webp"
       ]
     },
     "05-company-reports/18-011070-lg-innotek": {
