@@ -2926,6 +2926,17 @@
     "blog/05-company-reports/176-INOD-innodata-ai-teachers/assets/176-price-expectation.svg": "1cba2991049a73ff6d7eb4cb274f9e666f25804aa763ace91c81652ec5ae8580",
     "blog/05-company-reports/176-INOD-innodata-ai-teachers/assets/176-revenue-headcount.svg": "12dda2da9ff4b47563586df62f5a6916976285a97b56c965220bcbf6a3e50d74",
     "blog/05-company-reports/176-INOD-innodata-ai-teachers/assets/176-share-comp.svg": "e80eabe144a8c3cc57560e58e601d77ea28aa820364711d8da7f409b81f95665",
+    "blog/05-company-reports/177-044450-kss-vlgc-contract-clock/assets/177-business-mix.svg": "d5303ef730ec52ce110223e5728f6f4abe3b32047f452018f7be382ef2c13b34",
+    "blog/05-company-reports/177-044450-kss-vlgc-contract-clock/assets/177-cash-bridge.svg": "f7af66577d96e8d12c8c84414492f14c951d13217e3762c81d1432b1f116a3a8",
+    "blog/05-company-reports/177-044450-kss-vlgc-contract-clock/assets/177-chartered-before-built.png": "6b4c31e1c548c0b2a6f01f1fb6dc6b9a80ceec46c2d078e56a3f45b046329f2e",
+    "blog/05-company-reports/177-044450-kss-vlgc-contract-clock/assets/177-contract-renewal-bridge.svg": "e2921deb4a6daae60fc3b3b2db62d36608c444a186011ec42b83de38cc2f7b36",
+    "blog/05-company-reports/177-044450-kss-vlgc-contract-clock/assets/177-engine-room-cash-discipline.png": "66343fc7a4ee402f58500380fcd698491cd1f4f6d4695d6b0c5e3058106200ba",
+    "blog/05-company-reports/177-044450-kss-vlgc-contract-clock/assets/177-newbuild-contract-math.svg": "124fe43a51e6182e1d53a1f2908f796ae6942a708fedc944e5f656bdd3ed3da0",
+    "blog/05-company-reports/177-044450-kss-vlgc-contract-clock/assets/177-price-expectation.svg": "7c830aab8b52624e7c66f24d54c1fcded10f058f9a8c41b381a4ea78be38f09e",
+    "blog/05-company-reports/177-044450-kss-vlgc-contract-clock/assets/177-q1-profit-mirage.svg": "62abdf70640f893de3a71ee6246676a08ad925a70d61f83ec20cd5aea891b5ff",
+    "blog/05-company-reports/177-044450-kss-vlgc-contract-clock/assets/177-three-clocks.svg": "222ec0d6d916f89da10106ff2695f870b905d85c24f9a2d979b8d092e46b0357",
+    "blog/05-company-reports/177-044450-kss-vlgc-contract-clock/assets/177-vlgc-dawn-clock.png": "b1eb1e8e36f2e216841b3c5d12d42fdef5e71d4fe4c7aa6d8a26575d48375559",
+    "blog/05-company-reports/177-044450-kss-vlgc-contract-clock/assets/177-watch-dashboard.svg": "53c6b5a866a6f9994a15fe70f7e2de69842c6816b314d8bba155ee17e4daf8b6",
     "blog/05-company-reports/18-011070-lg-innotek/assets/18-apple-dependency.svg": "06d61bafca5e2d68d7deee033f59772e24de26d034fe3522357062352a7d27cc",
     "blog/05-company-reports/18-011070-lg-innotek/assets/18-assembly-line.webp": "c4cc3023c386e273af786ba92ad2cf2e5701f8a8cee1774db2176ea22bf1846c",
     "blog/05-company-reports/18-011070-lg-innotek/assets/18-camera-module.webp": "24bc6e00585ce89c2648df13788bfcdfbb13b2741cf132626961c91876873906",
@@ -4149,6 +4160,8 @@
     "landing/static/thumbnails/042660-hanwha-ocean.webp": "f69c01dd35651463233997506938f4661ae91cb5231f38d038caa8a84c3bbb8e",
     "landing/static/thumbnails/042700-hanmi-semi-card.webp": "2c83ad75280ae8585b2a92e6896f81e1ed1c9b665b96f049a709e6cd31dd523c",
     "landing/static/thumbnails/042700-hanmi-semi.webp": "b12f32baffb0988ad2ecd90c4f916b9c5eeb0f8174816c54c61977f461832d26",
+    "landing/static/thumbnails/044450-kss-vlgc-contract-clock-card.png": "fbbcc4779fa4c9d3196c6f0d1bc49ed567bbb9bb918faa3ad6a110666ba9c883",
+    "landing/static/thumbnails/044450-kss-vlgc-contract-clock.png": "edbc96213eb368fb9cb0cabb7359fb4798c7c4a722c2335f4c5c33d84a42a3c9",
     "landing/static/thumbnails/047050-posco-international-card.webp": "6e278d950f8352a34f38e15c5eb43131deb4dffc9471e9116b69df0341c2d387",
     "landing/static/thumbnails/047050-posco-international.webp": "e3e4d1483d3fa46e8ef8765fd9a217678e79682aaed57156fe89b818b84e9244",
     "landing/static/thumbnails/047810-kai-system-integrator-card.webp": "6f4aa856add68fd6f28cac0eca46e74662112cb583f9e8f882b311ffa420c175",
@@ -5853,6 +5866,14 @@
       "textNodes": 12,
       "viewBox": "0 0 1200 520"
     },
+    "124fe43a51e6182e1d53a1f2908f796ae6942a708fedc944e5f656bdd3ed3da0": {
+      "bytes": 3093,
+      "colorCount": 18,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/12/124fe43a51e6182e1d53a1f2908f796ae6942a708fedc944e5f656bdd3ed3da0.svg",
+      "textNodes": 19,
+      "viewBox": "0 0 1200 675"
+    },
     "125af2ab5bcb85efbb259288b06dc34786ef7e58ba5ae1f9438614819989983a": {
       "bytes": 221146,
       "path": "objects/sha256/12/125af2ab5bcb85efbb259288b06dc34786ef7e58ba5ae1f9438614819989983a.webp"
@@ -6976,6 +6997,14 @@
     "22220efb517e1c15e8bbaf3f8ed3651950a97c3e39add4f011ecc59d59fe1769": {
       "bytes": 95772,
       "path": "objects/sha256/22/22220efb517e1c15e8bbaf3f8ed3651950a97c3e39add4f011ecc59d59fe1769.webp"
+    },
+    "222ec0d6d916f89da10106ff2695f870b905d85c24f9a2d979b8d092e46b0357": {
+      "bytes": 3196,
+      "colorCount": 23,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/22/222ec0d6d916f89da10106ff2695f870b905d85c24f9a2d979b8d092e46b0357.svg",
+      "textNodes": 15,
+      "viewBox": "0 0 1200 675"
     },
     "223741e80d01f06b40ce7fd298a968be6fb9e8f1504b56745adc38e46eaefbbb": {
       "bytes": 93122,
@@ -10609,6 +10638,14 @@
       "textNodes": 20,
       "viewBox": "0 0 1200 760"
     },
+    "53c6b5a866a6f9994a15fe70f7e2de69842c6816b314d8bba155ee17e4daf8b6": {
+      "bytes": 3550,
+      "colorCount": 25,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/53/53c6b5a866a6f9994a15fe70f7e2de69842c6816b314d8bba155ee17e4daf8b6.svg",
+      "textNodes": 25,
+      "viewBox": "0 0 1200 675"
+    },
     "53dcf40d713aa4b7bf2f43b885c72046ff1700ff7eb18ae9498d2d4506b90cce": {
       "bytes": 72996,
       "path": "objects/sha256/53/53dcf40d713aa4b7bf2f43b885c72046ff1700ff7eb18ae9498d2d4506b90cce.webp"
@@ -11781,6 +11818,14 @@
       "textNodes": 15,
       "viewBox": "0 0 1080 540"
     },
+    "62abdf70640f893de3a71ee6246676a08ad925a70d61f83ec20cd5aea891b5ff": {
+      "bytes": 2922,
+      "colorCount": 29,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/62/62abdf70640f893de3a71ee6246676a08ad925a70d61f83ec20cd5aea891b5ff.svg",
+      "textNodes": 23,
+      "viewBox": "0 0 1200 675"
+    },
     "62cff8f67a2469341f9734b3a09d86d6db5ddb5bd12c165de8dcb1d8530af1c5": {
       "bytes": 3237,
       "colorCount": 11,
@@ -11996,6 +12041,10 @@
       "path": "objects/sha256/66/662d56807d3d262d26b2f646f3baf79af34124a5932bad9e5161a56cfbb2abba.svg",
       "textNodes": 20,
       "viewBox": "0 0 1200 700"
+    },
+    "66343fc7a4ee402f58500380fcd698491cd1f4f6d4695d6b0c5e3058106200ba": {
+      "bytes": 2135739,
+      "path": "objects/sha256/66/66343fc7a4ee402f58500380fcd698491cd1f4f6d4695d6b0c5e3058106200ba.png"
     },
     "66375d89d100703b3b01a7abc795b19b8d8cd52b2fa01b22c2cdc0171638522b": {
       "bytes": 2969,
@@ -12288,6 +12337,10 @@
     "6b3e6a9295416e4c3e6f2bba0edf693d3c63297e34bcbcef4d61b9a4564a0742": {
       "bytes": 68748,
       "path": "objects/sha256/6b/6b3e6a9295416e4c3e6f2bba0edf693d3c63297e34bcbcef4d61b9a4564a0742.webp"
+    },
+    "6b4c31e1c548c0b2a6f01f1fb6dc6b9a80ceec46c2d078e56a3f45b046329f2e": {
+      "bytes": 2603371,
+      "path": "objects/sha256/6b/6b4c31e1c548c0b2a6f01f1fb6dc6b9a80ceec46c2d078e56a3f45b046329f2e.png"
     },
     "6b599542b0a8494a9468303e3f25fa074073c2d671851bc09d161ba484cb5fda": {
       "bytes": 97302,
@@ -13532,6 +13585,14 @@
     "7c4eb408a340c5c98769a41dd3ad00de92b996e50fba3aecb55e5ad2f5b7c9e5": {
       "bytes": 79154,
       "path": "objects/sha256/7c/7c4eb408a340c5c98769a41dd3ad00de92b996e50fba3aecb55e5ad2f5b7c9e5.webp"
+    },
+    "7c830aab8b52624e7c66f24d54c1fcded10f058f9a8c41b381a4ea78be38f09e": {
+      "bytes": 2718,
+      "colorCount": 17,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/7c/7c830aab8b52624e7c66f24d54c1fcded10f058f9a8c41b381a4ea78be38f09e.svg",
+      "textNodes": 17,
+      "viewBox": "0 0 1200 675"
     },
     "7c8aca705d1661c0c35754929586ca93f51e1e135360eb0852df9016da7c086a": {
       "bytes": 85430,
@@ -17369,6 +17430,10 @@
       "textNodes": 6,
       "viewBox": "0 0 800 420"
     },
+    "b1eb1e8e36f2e216841b3c5d12d42fdef5e71d4fe4c7aa6d8a26575d48375559": {
+      "bytes": 2118014,
+      "path": "objects/sha256/b1/b1eb1e8e36f2e216841b3c5d12d42fdef5e71d4fe4c7aa6d8a26575d48375559.png"
+    },
     "b1eba5baef2643b6899d90b0f465e0f9b3fdf1b1e38b1bb60df127c49e8952bd": {
       "bytes": 4702,
       "colorCount": 8,
@@ -19877,6 +19942,14 @@
       "textNodes": 25,
       "viewBox": "0 0 1200 620"
     },
+    "d5303ef730ec52ce110223e5728f6f4abe3b32047f452018f7be382ef2c13b34": {
+      "bytes": 2652,
+      "colorCount": 21,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/d5/d5303ef730ec52ce110223e5728f6f4abe3b32047f452018f7be382ef2c13b34.svg",
+      "textNodes": 11,
+      "viewBox": "0 0 1200 675"
+    },
     "d53a36aef8197f46f1f62b89ba8d2bf1bef2a252e2c8ac55e6de4c72ce45906d": {
       "bytes": 2815,
       "colorCount": 17,
@@ -20825,6 +20898,14 @@
       "bytes": 138346,
       "path": "objects/sha256/e2/e28dce8009726e2a1d8cdbd3b30a9ca8044e9d1fd6bb3a457ecffc5905869406.webp"
     },
+    "e2921deb4a6daae60fc3b3b2db62d36608c444a186011ec42b83de38cc2f7b36": {
+      "bytes": 2100,
+      "colorCount": 12,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/e2/e2921deb4a6daae60fc3b3b2db62d36608c444a186011ec42b83de38cc2f7b36.svg",
+      "textNodes": 21,
+      "viewBox": "0 0 1200 675"
+    },
     "e2987c1e779843561841a9a437fb2fa1fc9d1014941ccb6416180a3e0e6dc8ff": {
       "bytes": 175830,
       "path": "objects/sha256/e2/e2987c1e779843561841a9a437fb2fa1fc9d1014941ccb6416180a3e0e6dc8ff.webp"
@@ -21593,6 +21674,10 @@
       "bytes": 116438,
       "path": "objects/sha256/ed/edbc640f4f125ebec139cce930a12e491a003bc8a569374904f9049d7e4b68ca.webp"
     },
+    "edbc96213eb368fb9cb0cabb7359fb4798c7c4a722c2335f4c5c33d84a42a3c9": {
+      "bytes": 29002,
+      "path": "objects/sha256/ed/edbc96213eb368fb9cb0cabb7359fb4798c7c4a722c2335f4c5c33d84a42a3c9.png"
+    },
     "ee016ec99c129fc25085339dd499ae71ac94f28d100f5e815fd5522f58664f6d": {
       "bytes": 58632,
       "path": "objects/sha256/ee/ee016ec99c129fc25085339dd499ae71ac94f28d100f5e815fd5522f58664f6d.webp"
@@ -22349,6 +22434,14 @@
       "bytes": 134936,
       "path": "objects/sha256/f7/f7af37afbad715ca79873cb16abc1452a0e67ea090e4b94a5999c8c8682778b5.webp"
     },
+    "f7af66577d96e8d12c8c84414492f14c951d13217e3762c81d1432b1f116a3a8": {
+      "bytes": 2127,
+      "colorCount": 15,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/f7/f7af66577d96e8d12c8c84414492f14c951d13217e3762c81d1432b1f116a3a8.svg",
+      "textNodes": 11,
+      "viewBox": "0 0 1200 675"
+    },
     "f7c6616035d0affaa3f653c3bff6ab9017b77053f4dd02e953aff74d27aa94d4": {
       "bytes": 4578,
       "colorCount": 13,
@@ -22620,6 +22713,10 @@
       "path": "objects/sha256/fb/fbad48c5cee51824c80d451606d653532eed3746e96ebb366b93c7ac445f2c4c.svg",
       "textNodes": 4,
       "viewBox": "0 0 800 430"
+    },
+    "fbbcc4779fa4c9d3196c6f0d1bc49ed567bbb9bb918faa3ad6a110666ba9c883": {
+      "bytes": 2198,
+      "path": "objects/sha256/fb/fbbcc4779fa4c9d3196c6f0d1bc49ed567bbb9bb918faa3ad6a110666ba9c883.png"
     },
     "fbbceff60a1618a1827735931cca884cd550eb4290f900d8f1ff841d7621f50e": {
       "bytes": 2018,
@@ -27125,6 +27222,39 @@
         "blog/05-company-reports/176-INOD-innodata-ai-teachers/assets/176-revenue-headcount.svg",
         "blog/05-company-reports/176-INOD-innodata-ai-teachers/assets/176-share-comp.svg",
         "landing/static/thumbnails/INOD-innodata-ai-teachers-card.webp"
+      ]
+    },
+    "05-company-reports/177-044450-kss-vlgc-contract-clock": {
+      "assets": {
+        "177-chartered-before-built": "blog/05-company-reports/177-044450-kss-vlgc-contract-clock/assets/177-chartered-before-built.png",
+        "177-engine-room-cash-discipline": "blog/05-company-reports/177-044450-kss-vlgc-contract-clock/assets/177-engine-room-cash-discipline.png",
+        "177-vlgc-dawn-clock": "blog/05-company-reports/177-044450-kss-vlgc-contract-clock/assets/177-vlgc-dawn-clock.png"
+      },
+      "card": "landing/static/thumbnails/044450-kss-vlgc-contract-clock-card.png",
+      "diagrams": {
+        "177-business-mix": "blog/05-company-reports/177-044450-kss-vlgc-contract-clock/assets/177-business-mix.svg",
+        "177-cash-bridge": "blog/05-company-reports/177-044450-kss-vlgc-contract-clock/assets/177-cash-bridge.svg",
+        "177-contract-renewal-bridge": "blog/05-company-reports/177-044450-kss-vlgc-contract-clock/assets/177-contract-renewal-bridge.svg",
+        "177-newbuild-contract-math": "blog/05-company-reports/177-044450-kss-vlgc-contract-clock/assets/177-newbuild-contract-math.svg",
+        "177-price-expectation": "blog/05-company-reports/177-044450-kss-vlgc-contract-clock/assets/177-price-expectation.svg",
+        "177-q1-profit-mirage": "blog/05-company-reports/177-044450-kss-vlgc-contract-clock/assets/177-q1-profit-mirage.svg",
+        "177-three-clocks": "blog/05-company-reports/177-044450-kss-vlgc-contract-clock/assets/177-three-clocks.svg",
+        "177-watch-dashboard": "blog/05-company-reports/177-044450-kss-vlgc-contract-clock/assets/177-watch-dashboard.svg"
+      },
+      "og": "landing/static/thumbnails/044450-kss-vlgc-contract-clock.png",
+      "staging": [
+        "blog/05-company-reports/177-044450-kss-vlgc-contract-clock/assets/177-business-mix.svg",
+        "blog/05-company-reports/177-044450-kss-vlgc-contract-clock/assets/177-cash-bridge.svg",
+        "blog/05-company-reports/177-044450-kss-vlgc-contract-clock/assets/177-chartered-before-built.png",
+        "blog/05-company-reports/177-044450-kss-vlgc-contract-clock/assets/177-contract-renewal-bridge.svg",
+        "blog/05-company-reports/177-044450-kss-vlgc-contract-clock/assets/177-engine-room-cash-discipline.png",
+        "blog/05-company-reports/177-044450-kss-vlgc-contract-clock/assets/177-newbuild-contract-math.svg",
+        "blog/05-company-reports/177-044450-kss-vlgc-contract-clock/assets/177-price-expectation.svg",
+        "blog/05-company-reports/177-044450-kss-vlgc-contract-clock/assets/177-q1-profit-mirage.svg",
+        "blog/05-company-reports/177-044450-kss-vlgc-contract-clock/assets/177-three-clocks.svg",
+        "blog/05-company-reports/177-044450-kss-vlgc-contract-clock/assets/177-vlgc-dawn-clock.png",
+        "blog/05-company-reports/177-044450-kss-vlgc-contract-clock/assets/177-watch-dashboard.svg",
+        "landing/static/thumbnails/044450-kss-vlgc-contract-clock-card.png"
       ]
     },
     "05-company-reports/18-011070-lg-innotek": {
