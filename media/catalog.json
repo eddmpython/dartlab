@@ -2916,6 +2916,16 @@
     "blog/05-company-reports/175-171090-sunic-8gen-oled-evaporator/assets/175-price-expectation.svg": "86b96a2bcb14500182de04bee6fc50bdfffb69d9b20911c6bfb228bcb419a931",
     "blog/05-company-reports/175-171090-sunic-8gen-oled-evaporator/assets/175-revenue-clock.svg": "f11aeb1ba6c96e085e6355e4e7e093784e54e55339d57eaadd860b4829f7717e",
     "blog/05-company-reports/175-171090-sunic-8gen-oled-evaporator/assets/175-three-markets.png": "448bc8918d88f10bf055f4c6847ea5cdd8109ac511a11d70451752b5e7a98869",
+    "blog/05-company-reports/176-INOD-innodata-ai-teachers/assets/176-agent-evaluation-gauntlet.png": "fa8a7793d74132b9df56c76f9d15307032e45fda31bb9fde69d5385adf11dc8d",
+    "blog/05-company-reports/176-INOD-innodata-ai-teachers/assets/176-ai-teacher-loop.svg": "08666e3533a732ae9a3b2036ffb562abf72a3a2137c57e0d719228bd445ce404",
+    "blog/05-company-reports/176-INOD-innodata-ai-teachers/assets/176-cash-quality.svg": "bf5dee8ebc3cdaafb38319ca419c8425c05850550c8cc781731ea7557ac5f902",
+    "blog/05-company-reports/176-INOD-innodata-ai-teachers/assets/176-customer-concentration.svg": "ea7e7009790f49085d356fa5548be70d29baf6c5621ca3d91054b0e66db17781",
+    "blog/05-company-reports/176-INOD-innodata-ai-teachers/assets/176-data-to-ai-history.png": "2f7c4add3242eeebfd9e8fe8d72cc713606ddf5e80bff078ae47084ab18ab535",
+    "blog/05-company-reports/176-INOD-innodata-ai-teachers/assets/176-financial-inflection.svg": "9d0a9f4c234eda46d6bca6033568da32cfbb838bcbf64d1d6f1af5482a82ff66",
+    "blog/05-company-reports/176-INOD-innodata-ai-teachers/assets/176-human-evaluation-room.png": "77c4548da85ed98b58eb2cabb2a3bb9a9e668419d655fb634da624870f3b205c",
+    "blog/05-company-reports/176-INOD-innodata-ai-teachers/assets/176-price-expectation.svg": "1cba2991049a73ff6d7eb4cb274f9e666f25804aa763ace91c81652ec5ae8580",
+    "blog/05-company-reports/176-INOD-innodata-ai-teachers/assets/176-revenue-headcount.svg": "12dda2da9ff4b47563586df62f5a6916976285a97b56c965220bcbf6a3e50d74",
+    "blog/05-company-reports/176-INOD-innodata-ai-teachers/assets/176-share-comp.svg": "e80eabe144a8c3cc57560e58e601d77ea28aa820364711d8da7f409b81f95665",
     "blog/05-company-reports/18-011070-lg-innotek/assets/18-apple-dependency.svg": "06d61bafca5e2d68d7deee033f59772e24de26d034fe3522357062352a7d27cc",
     "blog/05-company-reports/18-011070-lg-innotek/assets/18-assembly-line.webp": "c4cc3023c386e273af786ba92ad2cf2e5701f8a8cee1774db2176ea22bf1846c",
     "blog/05-company-reports/18-011070-lg-innotek/assets/18-camera-module.webp": "24bc6e00585ce89c2648df13788bfcdfbb13b2741cf132626961c91876873906",
@@ -4369,6 +4379,8 @@
     "landing/static/thumbnails/HD-home-depot.webp": "505cc3d3e05fa4cf19b56329b6f08d5d461525388487207db2d76837c61273f1",
     "landing/static/thumbnails/IBM-ibm-card.webp": "ac437c25e9fe09cbdb37225de16f1d49d0b628b8b60cdaf847164ea43647636d",
     "landing/static/thumbnails/IBM-ibm.webp": "28c95a8af8e4df0c0e2bc7bf608d9c368c9d2fb9cb9d8db5b1d8a73e7384f6fd",
+    "landing/static/thumbnails/INOD-innodata-ai-teachers-card.webp": "8ebb64e47af090354a79d2412a56384a5d233d4605065c6638105f2a5d605b56",
+    "landing/static/thumbnails/INOD-innodata-ai-teachers.webp": "d372392b0cc3b4870dd1e7cf9609b61a57e50409c92fd2a657d9ea6f7a9d620c",
     "landing/static/thumbnails/INTC-intel-card.webp": "be04db4c10c9a782ef58ce46de91624f9deb8b0452a390d7cf63a03629ecc293",
     "landing/static/thumbnails/INTC-intel.webp": "974d741c4ca114a7a2d04a00eeac78f005ea9d3a9dbfbe37f44524996e046191",
     "landing/static/thumbnails/IONQ-ionq-card.webp": "052c4cfad6d5f6685eb846da8dd4846719996bf44323f1d0fd5243365ae1052b",
@@ -5161,6 +5173,14 @@
       "bytes": 161088,
       "path": "objects/sha256/08/084fddd8f768e802d0907ce002160855bcfdbaf276015273cdf69d7b8af8ced0.webp"
     },
+    "08666e3533a732ae9a3b2036ffb562abf72a3a2137c57e0d719228bd445ce404": {
+      "bytes": 4651,
+      "colorCount": 16,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/08/08666e3533a732ae9a3b2036ffb562abf72a3a2137c57e0d719228bd445ce404.svg",
+      "textNodes": 20,
+      "viewBox": "0 0 1600 900"
+    },
     "0872b401e99de172cc758293c8445730264667ad6c64ca3f0945de333dfc3307": {
       "bytes": 85386,
       "path": "objects/sha256/08/0872b401e99de172cc758293c8445730264667ad6c64ca3f0945de333dfc3307.webp"
@@ -5901,6 +5921,14 @@
       "bytes": 214792,
       "path": "objects/sha256/12/12dc4ee2801f64bcc869bbae7a4ebdf8c2e5083204e2211e7f0e545743f7274f.webp"
     },
+    "12dda2da9ff4b47563586df62f5a6916976285a97b56c965220bcbf6a3e50d74": {
+      "bytes": 3214,
+      "colorCount": 15,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/12/12dda2da9ff4b47563586df62f5a6916976285a97b56c965220bcbf6a3e50d74.svg",
+      "textNodes": 17,
+      "viewBox": "0 0 1600 900"
+    },
     "12fd522352f260860bb7354a84eb0eeb1a20f3e9b73ca6504d3bc7bfcc6ada51": {
       "bytes": 4365,
       "colorCount": 10,
@@ -6528,6 +6556,14 @@
       "path": "objects/sha256/1c/1c9a78079b2d422b2f15e8f1ca3bb76c800513691b66f7220e4e38ae4eee44a6.svg",
       "textNodes": 18,
       "viewBox": "0 0 1080 540"
+    },
+    "1cba2991049a73ff6d7eb4cb274f9e666f25804aa763ace91c81652ec5ae8580": {
+      "bytes": 3282,
+      "colorCount": 16,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/1c/1cba2991049a73ff6d7eb4cb274f9e666f25804aa763ace91c81652ec5ae8580.svg",
+      "textNodes": 20,
+      "viewBox": "0 0 1600 900"
     },
     "1cc9b9d6a4844f63863bfb0a82e4012b402e2389687ba925f6e43894b559514c": {
       "bytes": 4071,
@@ -7884,6 +7920,10 @@
     "2f596dc8ad749dabda2714ef91164f3b6f830fbdc172e8b28c445c02578c98ac": {
       "bytes": 545038,
       "path": "objects/sha256/2f/2f596dc8ad749dabda2714ef91164f3b6f830fbdc172e8b28c445c02578c98ac.webp"
+    },
+    "2f7c4add3242eeebfd9e8fe8d72cc713606ddf5e80bff078ae47084ab18ab535": {
+      "bytes": 2301967,
+      "path": "objects/sha256/2f/2f7c4add3242eeebfd9e8fe8d72cc713606ddf5e80bff078ae47084ab18ab535.png"
     },
     "2f83cb12c6107723596e6ba7cc91a1e2656fce09b622f14044fba5570b7fc7f5": {
       "bytes": 89042,
@@ -13093,6 +13133,10 @@
       "bytes": 160276,
       "path": "objects/sha256/77/77a6be4d66fc18bb5708e17260e6b1b6b7d797ae7fecc106fef9f1452095ac33.webp"
     },
+    "77c4548da85ed98b58eb2cabb2a3bb9a9e668419d655fb634da624870f3b205c": {
+      "bytes": 1910783,
+      "path": "objects/sha256/77/77c4548da85ed98b58eb2cabb2a3bb9a9e668419d655fb634da624870f3b205c.png"
+    },
     "77d877839f0ef41039dd00841688d5c04b0c33342c52669d003ff4921eda009a": {
       "bytes": 3053,
       "colorCount": 11,
@@ -14825,6 +14869,10 @@
       "textNodes": 35,
       "viewBox": "0 0 900 506"
     },
+    "8ebb64e47af090354a79d2412a56384a5d233d4605065c6638105f2a5d605b56": {
+      "bytes": 74752,
+      "path": "objects/sha256/8e/8ebb64e47af090354a79d2412a56384a5d233d4605065c6638105f2a5d605b56.webp"
+    },
     "8f0afa01dea2e6e58d833b691c27e3a7a5c65a2cdaa89b7baab26e046c82524a": {
       "bytes": 182720,
       "path": "objects/sha256/8f/8f0afa01dea2e6e58d833b691c27e3a7a5c65a2cdaa89b7baab26e046c82524a.webp"
@@ -15824,6 +15872,14 @@
     "9cff0e61d316bf9aa22d693f26df1c0e8f04e45be56b7e3bbd053f06f60e681b": {
       "bytes": 39416,
       "path": "objects/sha256/9c/9cff0e61d316bf9aa22d693f26df1c0e8f04e45be56b7e3bbd053f06f60e681b.webp"
+    },
+    "9d0a9f4c234eda46d6bca6033568da32cfbb838bcbf64d1d6f1af5482a82ff66": {
+      "bytes": 3957,
+      "colorCount": 20,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/9d/9d0a9f4c234eda46d6bca6033568da32cfbb838bcbf64d1d6f1af5482a82ff66.svg",
+      "textNodes": 35,
+      "viewBox": "0 0 1600 900"
     },
     "9d0c83e4791a02db84ee8695ef2863108aec970d821c997b99ea802e67740cdb": {
       "bytes": 72516,
@@ -18289,6 +18345,14 @@
       "bytes": 263262,
       "path": "objects/sha256/bf/bf5839b3958c10acb72f5a4cac7864d53cd5e88639fa842abbffc442352d15f9.webp"
     },
+    "bf5dee8ebc3cdaafb38319ca419c8425c05850550c8cc781731ea7557ac5f902": {
+      "bytes": 4077,
+      "colorCount": 19,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/bf/bf5dee8ebc3cdaafb38319ca419c8425c05850550c8cc781731ea7557ac5f902.svg",
+      "textNodes": 25,
+      "viewBox": "0 0 1600 900"
+    },
     "bf6b9a2ec93c879ecaf54bc212a7b120b65c2c1e64ae034b8732ab87717f9fde": {
       "bytes": 878,
       "colorCount": 6,
@@ -19680,6 +19744,10 @@
     "d3708e94e795fd79c0276be0f4fdf5547d7c105dd6e389e57a8fc5dac7567530": {
       "bytes": 40450,
       "path": "objects/sha256/d3/d3708e94e795fd79c0276be0f4fdf5547d7c105dd6e389e57a8fc5dac7567530.webp"
+    },
+    "d372392b0cc3b4870dd1e7cf9609b61a57e50409c92fd2a657d9ea6f7a9d620c": {
+      "bytes": 69292,
+      "path": "objects/sha256/d3/d372392b0cc3b4870dd1e7cf9609b61a57e50409c92fd2a657d9ea6f7a9d620c.webp"
     },
     "d3728785274c3386802ae599e9429f60be7dd439a67226c8ff13c889be54dc3f": {
       "bytes": 132980,
@@ -21145,6 +21213,14 @@
       "bytes": 93534,
       "path": "objects/sha256/e7/e7fe8ea3f338209b00234a8c0a5a81ab252972dfc1db217b38e6866c15855fc0.webp"
     },
+    "e80eabe144a8c3cc57560e58e601d77ea28aa820364711d8da7f409b81f95665": {
+      "bytes": 3432,
+      "colorCount": 17,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/e8/e80eabe144a8c3cc57560e58e601d77ea28aa820364711d8da7f409b81f95665.svg",
+      "textNodes": 19,
+      "viewBox": "0 0 1600 900"
+    },
     "e81389ebb0d8a83fe89c4eca8fa8f5e973f3ad572221bcb0c8e17e4e63e87397": {
       "bytes": 1271,
       "colorCount": 7,
@@ -21292,6 +21368,14 @@
       "path": "objects/sha256/ea/ea69eca20f03f2b1f09f3dc4fcd5340fadea29c518e5ebce93fdbddc788da9c0.svg",
       "textNodes": 27,
       "viewBox": "0 0 1200 760"
+    },
+    "ea7e7009790f49085d356fa5548be70d29baf6c5621ca3d91054b0e66db17781": {
+      "bytes": 3531,
+      "colorCount": 17,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/ea/ea7e7009790f49085d356fa5548be70d29baf6c5621ca3d91054b0e66db17781.svg",
+      "textNodes": 24,
+      "viewBox": "0 0 1600 900"
     },
     "ea8fe110208645766c40b0ef3c2f2e15abd4882ee2cefa62f22502f80eab37af": {
       "bytes": 45470,
@@ -22460,6 +22544,10 @@
       "path": "objects/sha256/fa/fa806c6e6ee835df439feb4bc2c010f0014e86464da1c56c8bda22dfd151ac07.svg",
       "textNodes": 39,
       "viewBox": "0 0 1200 720"
+    },
+    "fa8a7793d74132b9df56c76f9d15307032e45fda31bb9fde69d5385adf11dc8d": {
+      "bytes": 2036681,
+      "path": "objects/sha256/fa/fa8a7793d74132b9df56c76f9d15307032e45fda31bb9fde69d5385adf11dc8d.png"
     },
     "fad79289e648ad49ed86855dd0b7d62a774dfe34fa0c5a517384e46208f214d6": {
       "bytes": 1898,
@@ -27006,6 +27094,37 @@
         "blog/05-company-reports/175-171090-sunic-8gen-oled-evaporator/assets/175-revenue-clock.svg",
         "blog/05-company-reports/175-171090-sunic-8gen-oled-evaporator/assets/175-three-markets.png",
         "landing/static/thumbnails/175-171090-sunic-8gen-oled-evaporator-card.png"
+      ]
+    },
+    "05-company-reports/176-INOD-innodata-ai-teachers": {
+      "assets": {
+        "176-agent-evaluation-gauntlet": "blog/05-company-reports/176-INOD-innodata-ai-teachers/assets/176-agent-evaluation-gauntlet.png",
+        "176-data-to-ai-history": "blog/05-company-reports/176-INOD-innodata-ai-teachers/assets/176-data-to-ai-history.png",
+        "176-human-evaluation-room": "blog/05-company-reports/176-INOD-innodata-ai-teachers/assets/176-human-evaluation-room.png"
+      },
+      "card": "landing/static/thumbnails/INOD-innodata-ai-teachers-card.webp",
+      "diagrams": {
+        "176-ai-teacher-loop": "blog/05-company-reports/176-INOD-innodata-ai-teachers/assets/176-ai-teacher-loop.svg",
+        "176-cash-quality": "blog/05-company-reports/176-INOD-innodata-ai-teachers/assets/176-cash-quality.svg",
+        "176-customer-concentration": "blog/05-company-reports/176-INOD-innodata-ai-teachers/assets/176-customer-concentration.svg",
+        "176-financial-inflection": "blog/05-company-reports/176-INOD-innodata-ai-teachers/assets/176-financial-inflection.svg",
+        "176-price-expectation": "blog/05-company-reports/176-INOD-innodata-ai-teachers/assets/176-price-expectation.svg",
+        "176-revenue-headcount": "blog/05-company-reports/176-INOD-innodata-ai-teachers/assets/176-revenue-headcount.svg",
+        "176-share-comp": "blog/05-company-reports/176-INOD-innodata-ai-teachers/assets/176-share-comp.svg"
+      },
+      "og": "landing/static/thumbnails/INOD-innodata-ai-teachers.webp",
+      "staging": [
+        "blog/05-company-reports/176-INOD-innodata-ai-teachers/assets/176-agent-evaluation-gauntlet.png",
+        "blog/05-company-reports/176-INOD-innodata-ai-teachers/assets/176-ai-teacher-loop.svg",
+        "blog/05-company-reports/176-INOD-innodata-ai-teachers/assets/176-cash-quality.svg",
+        "blog/05-company-reports/176-INOD-innodata-ai-teachers/assets/176-customer-concentration.svg",
+        "blog/05-company-reports/176-INOD-innodata-ai-teachers/assets/176-data-to-ai-history.png",
+        "blog/05-company-reports/176-INOD-innodata-ai-teachers/assets/176-financial-inflection.svg",
+        "blog/05-company-reports/176-INOD-innodata-ai-teachers/assets/176-human-evaluation-room.png",
+        "blog/05-company-reports/176-INOD-innodata-ai-teachers/assets/176-price-expectation.svg",
+        "blog/05-company-reports/176-INOD-innodata-ai-teachers/assets/176-revenue-headcount.svg",
+        "blog/05-company-reports/176-INOD-innodata-ai-teachers/assets/176-share-comp.svg",
+        "landing/static/thumbnails/INOD-innodata-ai-teachers-card.webp"
       ]
     },
     "05-company-reports/18-011070-lg-innotek": {
