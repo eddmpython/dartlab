@@ -28,12 +28,14 @@ class FakeHfApi:
         self.calls: list[tuple[str, str, bool]] = []
         self._lock = threading.Lock()
 
-    def repo_info(self, repoId: str, *, repo_type: str, files_metadata: bool):
+    def repo_info(self, repoId: str, *, repo_type: str, files_metadata: bool, revision: str | None = None):
         with self._lock:
             self.calls.append((repoId, repo_type, files_metadata))
         if repoId in self.failures:
             raise self.failures[repoId]
         spec = self.repositories[repoId]
+        if revision is not None and revision != spec["revision"]:
+            raise FakeHttpError(404)
         siblings = tuple(
             SimpleNamespace(
                 rfilename=path,

@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "du-projection-lineage-fixture-v1",
+  "old": [
+    {"semanticKey": "L2:ENTITY:alpha", "members": ["a", "b", "c", "d", "e"]},
+    {"semanticKey": "L2:DATA:beta", "members": ["f", "g", "h", "i", "j", "l"]}
+  ],
+  "next": [
+    {"semanticKey": "L2:ENTITY:alpha", "members": ["a", "b", "c", "d", "e", "k"]},
+    {"semanticKey": "L2:DATA:beta", "members": ["f", "g", "h"]},
+    {"semanticKey": "L2:DATA:beta-split", "members": ["i", "j", "l"]}
+  ]
+}

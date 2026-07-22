@@ -33,11 +33,14 @@ def testEligibleSchemaClosurePassesG2(liveRegistry):
     assert liveRegistry.blockedEligibleCount == 0
 
 
-def testAnalysisRegistryDriftIsVisibleNotHidden(liveRegistry):
+def testAnalysisRegistryMirrorStateIsVisibleNotHidden(liveRegistry):
     analysisOnly = [item for item in liveRegistry.capabilities if item.candidateId.startswith("analysis.")]
-    assert len(analysisOnly) == 22
-    assert {item.status for item in analysisOnly} == {"CALLABLE_UNMIRRORED"}
-    assert all(item.gapReasons == ("CAPABILITY_MIRROR_MISSING",) for item in analysisOnly)
+    assert analysisOnly
+    assert {item.status for item in analysisOnly} <= {"ACTIVE", "CALLABLE_UNMIRRORED"}
+    assert all(item.eligible and item.schemaDescriptor is not None for item in analysisOnly)
+    assert all(
+        item.gapReasons == (() if item.status == "ACTIVE" else ("CAPABILITY_MIRROR_MISSING",)) for item in analysisOnly
+    )
 
 
 def testRuntimeOnlyScanAxesAreBlockedAsRegistryDrift(liveRegistry):

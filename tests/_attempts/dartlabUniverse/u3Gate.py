@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 
 from .canonical import canonicalDigest, canonicalJson
 from .catalog.compiler import attachCapabilityRegistry, attachIdentityRecords, compileCatalog
-from .catalog.descriptorCheckpoint import DescriptorCheckpointStore
+from .catalog.descriptorCheckpoint import DescriptorCheckpointStore, descriptorPolicyDigest
 from .catalog.descriptorCrawler import DescriptorPolicy
 from .catalog.recoveryStore import ResourceRecoveryStore, defaultRecoveryRoot
 from .catalog.snapshot import buildCatalogSnapshot
@@ -54,6 +54,8 @@ class LiveU3Artifacts:
     report: U3Report
     recoveryReceiptCount: int
     staleRecoveryReceiptCount: int
+    descriptorSnapshotPin: object
+    snapshotPinFailureCodes: tuple[str, ...]
 
 
 def buildLiveU3Artifacts(*, checkpointPath: Path, recoveryRoot: Path, controlRoot: Path) -> LiveU3Artifacts:
@@ -61,16 +63,49 @@ def buildLiveU3Artifacts(*, checkpointPath: Path, recoveryRoot: Path, controlRoo
     repoRoot = defaultRepoRoot()
     load_dotenv(repoRoot / ".env", override=False)
     token = os.getenv("HF_TOKEN") or os.getenv("HUGGINGFACE_HUB_TOKEN")
-    census = runFullCensus(repoRoot, token=token, protectExisting=False)
-    catalog = compileCatalog(census)
     policy = DescriptorPolicy()
     with DescriptorCheckpointStore(checkpointPath) as checkpoint:
-        checkpoint.assertNoActiveLease()
-        reusableDescriptors = checkpoint.load(catalog.resources, policy)
-        descriptorByVersion = {item.resourceVersionId: item for item in reusableDescriptors}
-        for attempt in checkpoint.loadTerminalAttempts(catalog.resources, policy):
-            descriptorByVersion.setdefault(attempt.resourceVersionId, attempt)
-        descriptors = tuple(sorted(descriptorByVersion.values(), key=lambda item: item.resourceVersionId))
+        owner = checkpoint.acquireLease()
+        heartbeat = checkpoint.startLeaseHeartbeat(owner)
+        try:
+            descriptorSnapshotPin = checkpoint.loadSnapshotPin()
+            census = runFullCensus(
+                repoRoot,
+                token=token,
+                protectExisting=False,
+                sourceRevisions=descriptorSnapshotPin.sourceRevisions,
+            )
+            # C2 snapshot의 system-time도 source revision과 함께 재생해야 catalog
+            # resource/evidence timestamp와 digest가 원 실행과 동일하다.
+            census = replace(census, observedAtUtc=descriptorSnapshotPin.observedAtUtc)
+            catalog = compileCatalog(census)
+            reusableDescriptors = checkpoint.load(catalog.resources, policy)
+            descriptorByVersion = {item.resourceVersionId: item for item in reusableDescriptors}
+            for attempt in checkpoint.loadTerminalAttempts(catalog.resources, policy):
+                descriptorByVersion.setdefault(attempt.resourceVersionId, attempt)
+            descriptors = tuple(sorted(descriptorByVersion.values(), key=lambda item: item.resourceVersionId))
+        finally:
+            try:
+                heartbeat.close()
+            finally:
+                checkpoint.releaseLease(owner)
+    actualRepoFileCounts = tuple((item.repoId, len(item.files)) for item in census.discovery.pinnedRepositories)
+    actualHfCandidateCount = len(census.discovery.hfFiles)
+    snapshotPinFailureCodes = []
+    if descriptorSnapshotPin.descriptorPolicyDigest != descriptorPolicyDigest(policy):
+        snapshotPinFailureCodes.append("C2_PIN_POLICY_MISMATCH")
+    if descriptorSnapshotPin.sourceRevisions != tuple(
+        (item.repoId, item.revision or "") for item in census.discovery.pinnedRepositories
+    ):
+        snapshotPinFailureCodes.append("C2_PIN_REVISION_MISMATCH")
+    if descriptorSnapshotPin.hfRepoFileCounts != actualRepoFileCounts:
+        snapshotPinFailureCodes.append("C2_PIN_FILE_COUNT_MISMATCH")
+    if descriptorSnapshotPin.hfCandidateCount != actualHfCandidateCount:
+        snapshotPinFailureCodes.append("C2_PIN_CANDIDATE_MISMATCH")
+    if descriptorSnapshotPin.catalogDigest != catalog.digest:
+        snapshotPinFailureCodes.append("C2_PIN_CATALOG_MISMATCH")
+    if descriptorSnapshotPin.u0SnapshotDigest != census.snapshotDigest:
+        snapshotPinFailureCodes.append("C2_PIN_U0_MISMATCH")
     taxonomy = defaultRelationTaxonomy()
     liveG1 = buildLiveG1(
         census,
@@ -112,6 +147,8 @@ def buildLiveU3Artifacts(*, checkpointPath: Path, recoveryRoot: Path, controlRoo
             recoveries=recoveries,
             recoveryCas=recoveryStore.cas,
         )
+        for failureCode in snapshotPinFailureCodes:
+            report = recordRuntimeFailure(report, failureCode)
     return LiveU3Artifacts(
         repoRoot=repoRoot,
         token=token,
@@ -127,6 +164,8 @@ def buildLiveU3Artifacts(*, checkpointPath: Path, recoveryRoot: Path, controlRoo
         report=report,
         recoveryReceiptCount=recoveryReceiptCount,
         staleRecoveryReceiptCount=staleRecoveryReceiptCount,
+        descriptorSnapshotPin=descriptorSnapshotPin,
+        snapshotPinFailureCodes=tuple(snapshotPinFailureCodes),
     )
 
 
@@ -151,6 +190,8 @@ def runLiveU3(*, checkpointPath: Path, recoveryRoot: Path, controlRoot: Path) ->
     token = artifacts.token
     recoveryReceiptCount = artifacts.recoveryReceiptCount
     staleRecoveryReceiptCount = artifacts.staleRecoveryReceiptCount
+    descriptorSnapshotPin = artifacts.descriptorSnapshotPin
+    snapshotPinFailureCodes = artifacts.snapshotPinFailureCodes
     pinnedRevisionFailureCodes = []
     sourceHeadAdvanceEvents = []
     sourceHeadProbeFailureCodes = []
@@ -189,6 +230,9 @@ def runLiveU3(*, checkpointPath: Path, recoveryRoot: Path, controlRoot: Path) ->
         "validatedCapabilitySchemaCount": liveG1.capabilityRegistry.validatedSchemaCount,
         "inventedCapabilityCount": liveG1.capabilityRegistry.inventedAxisCount,
         "descriptorCount": len(descriptors),
+        "descriptorSnapshotPinDigest": descriptorSnapshotPin.digest,
+        "descriptorSnapshotC2Digest": descriptorSnapshotPin.c2Digest,
+        "snapshotPinFailureCodes": snapshotPinFailureCodes,
         "recoveryReceiptCount": recoveryReceiptCount,
         "activeRecoveryCount": len(recoveries),
         "staleRecoveryReceiptCount": staleRecoveryReceiptCount,

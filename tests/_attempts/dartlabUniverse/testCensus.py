@@ -13,6 +13,7 @@ from dotenv import load_dotenv
 
 from tests._attempts.dartlabUniverse.benchmark import runMetadataCensusBenchmark
 from tests._attempts.dartlabUniverse.canonical import ConfiguredRepoSet, DiscoveryState, canonicalJson
+from tests._attempts.dartlabUniverse.catalog.compiler import compileCatalog
 from tests._attempts.dartlabUniverse.census import defaultRepoRoot, runFullCensus
 from tests._attempts.dartlabUniverse.census import main as censusMain
 from tests._attempts.dartlabUniverse.sources.blogSource import enumerateBlog
@@ -79,6 +80,33 @@ def testHfDiscoveryPreservesGitBlobAndLfsPayloadDigestsSeparately():
     assert file.lfsSha256 == payloadDigest
 
 
+def testHfDiscoveryReplaysRequestedExactRevisions():
+    repoRoot = defaultRepoRoot()
+    api = fakeHfApi(repoRoot)
+    configured = discoverConfiguredHfRepositories(fakeConfig())
+    revisions = {
+        "fixture/data": "a" * 40,
+        "fixture/media": "b" * 40,
+        "fixture/private": "c" * 40,
+    }
+
+    pinned = discoverHfRepositories(
+        configured,
+        "secret-not-recorded",
+        apiFactory=lambda: api,
+        sourceRevisions=revisions,
+    )
+
+    assert {item.repoId: item.revision for item in pinned} == revisions
+    with pytest.raises(ValueError, match="configured authority"):
+        discoverHfRepositories(
+            configured,
+            None,
+            apiFactory=lambda: api,
+            sourceRevisions={"fixture/data": "a" * 40},
+        )
+
+
 def testSameRevisionProducesSameSnapshotDigest():
     repoRoot = defaultRepoRoot()
     config = fakeConfig()
@@ -99,6 +127,7 @@ def testSameRevisionProducesSameSnapshotDigest():
     assert first.coverage.digest == second.coverage.digest
     assert first.discovery.payloadBodiesRead == 0
     assert first.coverage.g0Passed
+    assert compileCatalog(first).digest == compileCatalog(replace(second, observedAtUtc=first.observedAtUtc)).digest
 
 
 def testCapabilityRuntimeAndSevenRegistriesAreEnumerated():

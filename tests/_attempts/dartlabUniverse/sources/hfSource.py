@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import socket
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Iterator, Mapping
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import PurePosixPath
 from types import ModuleType
@@ -111,13 +111,18 @@ def _errorState(exc: Exception) -> tuple[DiscoveryState, str]:
     return DiscoveryState.PARTIAL, type(exc).__name__
 
 
-def _discoverOne(repoId: str, apiFactory: Callable[[], Any]) -> PinnedRepo:
+def _discoverOne(repoId: str, apiFactory: Callable[[], Any], revision: str | None = None) -> PinnedRepo:
     try:
         api = apiFactory()
-        info = api.repo_info(repoId, repo_type="dataset", files_metadata=True)
-        revision = str(getattr(info, "sha", "") or "").strip()
-        if not revision:
+        request = {"repo_type": "dataset", "files_metadata": True}
+        if revision is not None:
+            request["revision"] = revision
+        info = api.repo_info(repoId, **request)
+        resolvedRevision = str(getattr(info, "sha", "") or "").strip()
+        if not resolvedRevision:
             raise ValueError("repo revision 누락")
+        if revision is not None and resolvedRevision != revision:
+            raise ValueError("repo pinned revision 불일치")
         files = []
         for sibling in getattr(info, "siblings", ()) or ():
             path = str(getattr(sibling, "rfilename", "") or "").strip()
@@ -131,7 +136,7 @@ def _discoverOne(repoId: str, apiFactory: Callable[[], Any]) -> PinnedRepo:
         lastModified = getattr(info, "last_modified", None)
         return PinnedRepo(
             repoId=repoId,
-            revision=revision,
+            revision=resolvedRevision,
             lastModifiedUtc=lastModified.isoformat()
             if hasattr(lastModified, "isoformat")
             else str(lastModified or "") or None,
@@ -158,6 +163,7 @@ def discoverHfRepositories(
     *,
     apiFactory: Callable[[], Any] | None = None,
     maxWorkers: int = 4,
+    sourceRevisions: Mapping[str, str] | None = None,
 ) -> tuple[PinnedRepo, ...]:
     """설정 authority를 병렬 조회하고 각 tree를 한 revision에 고정한다.
 
@@ -166,6 +172,7 @@ def discoverHfRepositories(
         token: private dataset을 읽을 HF token. 값은 결과에 기록하지 않는다.
         apiFactory: 테스트용 API factory.
         maxWorkers: 동시 repo metadata 조회 상한.
+        sourceRevisions: 지정하면 HEAD 대신 이 exact commit들의 metadata tree를 읽음.
 
     Returns:
         성공과 실패를 모두 포함하는 repo별 terminal record.
@@ -178,10 +185,21 @@ def discoverHfRepositories(
     """
     if maxWorkers < 1:
         raise ValueError("maxWorkers는 1 이상이어야 함")
+    if sourceRevisions is not None and set(sourceRevisions) != set(configuredRepoSet.repoIds):
+        raise ValueError("source revision repo 집합이 configured authority와 다름")
     factory = apiFactory or (lambda: HfApi(token=token))
     workerCount = min(maxWorkers, max(1, len(configuredRepoSet.repoIds)))
     with ThreadPoolExecutor(max_workers=workerCount, thread_name_prefix="universe-census") as executor:
-        pinned = tuple(executor.map(lambda repoId: _discoverOne(repoId, factory), configuredRepoSet.repoIds))
+        pinned = tuple(
+            executor.map(
+                lambda repoId: _discoverOne(
+                    repoId,
+                    factory,
+                    sourceRevisions[repoId] if sourceRevisions is not None else None,
+                ),
+                configuredRepoSet.repoIds,
+            )
+        )
     return tuple(sorted(pinned, key=lambda repo: repo.repoId))
 
 

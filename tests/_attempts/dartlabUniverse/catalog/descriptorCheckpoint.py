@@ -10,7 +10,7 @@ import threading
 import time
 import uuid
 from collections.abc import Mapping
-from dataclasses import asdict, replace
+from dataclasses import asdict, dataclass, replace
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -27,6 +27,74 @@ _TRANSIENT_ERROR_CODES = frozenset({"RATE_LIMITED", "SOURCE_HTTP_ERROR", "TIMEOU
 
 class DescriptorCheckpointIntegrityError(RuntimeError):
     """Checkpoint byte가 receipt와 다르거나 immutable key가 충돌했다."""
+
+
+@dataclass(frozen=True, slots=True)
+class DescriptorSnapshotPin:
+    """C2가 통과한 descriptor 집합과 exact source revision의 원자적 경계."""
+
+    schemaVersion: str
+    observedAtUtc: str
+    sourceRevisions: tuple[tuple[str, str], ...]
+    hfRepoFileCounts: tuple[tuple[str, int], ...]
+    hfCandidateCount: int
+    catalogDigest: str
+    u0SnapshotDigest: str
+    descriptorPolicyDigest: str
+    c2Digest: str
+    digest: str
+
+
+def buildDescriptorSnapshotPin(
+    *,
+    observedAtUtc: str,
+    sourceRevisions: tuple[tuple[str, str], ...],
+    hfRepoFileCounts: tuple[tuple[str, int], ...],
+    hfCandidateCount: int,
+    catalogDigest: str,
+    u0SnapshotDigest: str,
+    policy: DescriptorPolicy,
+    c2Digest: str,
+) -> DescriptorSnapshotPin:
+    """검증된 C2 실행을 U3가 exact replay할 수 있는 digest 결박 pin으로 만든다."""
+    orderedRevisions = tuple(sorted(sourceRevisions))
+    orderedCounts = tuple(sorted(hfRepoFileCounts))
+    if (
+        not observedAtUtc
+        or len(orderedRevisions) != len({repoId for repoId, _revision in orderedRevisions})
+        or tuple(repoId for repoId, _revision in orderedRevisions) != tuple(repoId for repoId, _count in orderedCounts)
+        or any(not repoId or re.fullmatch(r"[0-9a-f]{40}", revision) is None for repoId, revision in orderedRevisions)
+        or any(count < 0 for _repoId, count in orderedCounts)
+        or hfCandidateCount != sum(count for _repoId, count in orderedCounts)
+        or any(re.fullmatch(r"[0-9a-f]{64}", value) is None for value in (catalogDigest, u0SnapshotDigest, c2Digest))
+    ):
+        raise ValueError("descriptor snapshot pin 입력이 유효하지 않음")
+    base = DescriptorSnapshotPin(
+        schemaVersion="du-descriptor-snapshot-pin-v1",
+        observedAtUtc=observedAtUtc,
+        sourceRevisions=orderedRevisions,
+        hfRepoFileCounts=orderedCounts,
+        hfCandidateCount=hfCandidateCount,
+        catalogDigest=catalogDigest,
+        u0SnapshotDigest=u0SnapshotDigest,
+        descriptorPolicyDigest=descriptorPolicyDigest(policy),
+        c2Digest=c2Digest,
+        digest="",
+    )
+    return replace(base, digest=canonicalDigest(base))
+
+
+def _decodeSnapshotPin(payload: bytes) -> DescriptorSnapshotPin:
+    try:
+        value = json.loads(payload)
+        value["sourceRevisions"] = tuple(tuple(item) for item in value["sourceRevisions"])
+        value["hfRepoFileCounts"] = tuple((str(item[0]), int(item[1])) for item in value["hfRepoFileCounts"])
+        pin = DescriptorSnapshotPin(**value)
+    except (KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
+        raise DescriptorCheckpointIntegrityError("descriptor snapshot pin decode failure") from exc
+    if pin.schemaVersion != "du-descriptor-snapshot-pin-v1" or pin.digest != canonicalDigest(replace(pin, digest="")):
+        raise DescriptorCheckpointIntegrityError("descriptor snapshot pin digest mismatch")
+    return pin
 
 
 class DescriptorLeaseHeartbeat:
@@ -280,6 +348,16 @@ class DescriptorCheckpointStore:
             )
             """
         )
+        self.connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS descriptor_snapshot_pin (
+                singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
+                payload_digest TEXT NOT NULL,
+                payload BLOB NOT NULL,
+                completed_at TEXT NOT NULL
+            )
+            """
+        )
         self.connection.commit()
         self.lastLoadReusedCount = 0
 
@@ -340,6 +418,25 @@ class DescriptorCheckpointStore:
         current = self.connection.execute("SELECT expires_at FROM crawl_lease WHERE singleton = 1").fetchone()
         if current is not None and float(current[0]) > time.time():
             raise RuntimeError("descriptor crawl이 진행 중이므로 final gate를 실행할 수 없음")
+
+    def assertLeaseOwner(self, ownerId: str) -> None:
+        """현재 유효한 crawler lease가 지정 owner에 속하는지 확인한다."""
+        current = self.connection.execute("SELECT owner_id, expires_at FROM crawl_lease WHERE singleton = 1").fetchone()
+        if current is None or str(current[0]) != ownerId or float(current[1]) <= time.time():
+            raise RuntimeError("descriptor crawl lease owner가 유효하지 않음")
+
+    def loadSnapshotPin(self) -> DescriptorSnapshotPin:
+        """가장 최근에 원자적으로 봉인한 C2 source revision 경계를 읽는다."""
+        row = self.connection.execute(
+            "SELECT payload_digest, payload FROM descriptor_snapshot_pin WHERE singleton = 1"
+        ).fetchone()
+        if row is None:
+            raise RuntimeError("통과한 C2 descriptor snapshot pin이 없음")
+        payloadDigest, rawPayload = row
+        payload = bytes(rawPayload)
+        if hashlib.sha256(payload).hexdigest() != payloadDigest:
+            raise DescriptorCheckpointIntegrityError("descriptor snapshot pin checksum mismatch")
+        return _decodeSnapshotPin(payload)
 
     def put(
         self,
@@ -576,11 +673,31 @@ class DescriptorCheckpointStore:
         self,
         resources: tuple[CatalogResource, ...],
         policy: DescriptorPolicy,
+        *,
+        snapshotPin: DescriptorSnapshotPin | None = None,
+        leaseOwner: str | None = None,
     ) -> int:
-        """Gate 통과 후에만 이전 policy와 사라진 resource receipt를 제거한다."""
-        self.assertNoActiveLease()
+        """Gate 통과 후 receipt 정리와 C2 snapshot pin 교체를 원자적으로 수행한다."""
+        if leaseOwner is None:
+            self.assertNoActiveLease()
+        else:
+            self.assertLeaseOwner(leaseOwner)
         policyDigest = descriptorPolicyDigest(policy)
         liveVersions = tuple(sorted(item.resourceVersionId for item in resources if item.resourceKind == "HF_FILE"))
+        if snapshotPin is not None:
+            if (
+                snapshotPin.descriptorPolicyDigest != policyDigest
+                or snapshotPin.hfCandidateCount != len(liveVersions)
+                or snapshotPin.digest != canonicalDigest(replace(snapshotPin, digest=""))
+            ):
+                raise ValueError("descriptor snapshot pin과 live catalog가 일치하지 않음")
+            currentRow = self.connection.execute(
+                "SELECT payload FROM descriptor_snapshot_pin WHERE singleton = 1"
+            ).fetchone()
+            if currentRow is not None:
+                currentPin = _decodeSnapshotPin(bytes(currentRow[0]))
+                if currentPin.observedAtUtc > snapshotPin.observedAtUtc:
+                    return 0
         before = int(self.connection.execute("SELECT count(*) FROM descriptor_receipts").fetchone()[0])
         with self.connection:
             self.connection.execute("BEGIN IMMEDIATE")
@@ -610,6 +727,16 @@ class DescriptorCheckpointStore:
                 (policyDigest,),
             )
             self.connection.execute("DROP TABLE live_descriptor_versions")
+            if snapshotPin is not None:
+                payload = canonicalJson(snapshotPin)
+                self.connection.execute(
+                    "INSERT OR REPLACE INTO descriptor_snapshot_pin VALUES (1, ?, ?, ?)",
+                    (
+                        hashlib.sha256(payload).hexdigest(),
+                        payload,
+                        datetime.now(timezone.utc).isoformat(),
+                    ),
+                )
         after = int(self.connection.execute("SELECT count(*) FROM descriptor_receipts").fetchone()[0])
         return before - after
 

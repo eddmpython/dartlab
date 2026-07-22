@@ -16,7 +16,11 @@ from huggingface_hub import HfApi
 
 from .canonical import canonicalDigest, canonicalJson
 from .catalog.compiler import compileCatalog
-from .catalog.descriptorCheckpoint import DescriptorCheckpointStore, descriptorPolicyDigest
+from .catalog.descriptorCheckpoint import (
+    DescriptorCheckpointStore,
+    buildDescriptorSnapshotPin,
+    descriptorPolicyDigest,
+)
 from .catalog.descriptorCrawler import (
     DescriptorPolicy,
     HfRangeReaderFactory,
@@ -271,11 +275,30 @@ def runLiveC2(
         report = replace(report, digest=canonicalDigest(report))
     prunedReceiptCount = 0
     if report.passed:
+        snapshotPin = buildDescriptorSnapshotPin(
+            observedAtUtc=observedAtUtc,
+            sourceRevisions=sourceRevisions,
+            hfRepoFileCounts=hfRepoFileCounts,
+            hfCandidateCount=hfCandidateCount,
+            catalogDigest=catalogDigest,
+            u0SnapshotDigest=u0SnapshotDigest,
+            policy=policy,
+            c2Digest=report.digest,
+        )
         with DescriptorCheckpointStore(checkpointPath) as checkpoint:
-            prunedReceiptCount = checkpoint.pruneObsolete(catalog.resources, policy)
-            exactReceiptCount, contentCacheEntryCount = checkpoint.receiptCounts(policy)
-            liveExactReceiptCount = checkpoint.liveExactReceiptCount(catalog.resources, policy)
-            terminalAttemptCount = checkpoint.terminalAttemptCount(policy)
+            owner = checkpoint.acquireLease()
+            try:
+                prunedReceiptCount = checkpoint.pruneObsolete(
+                    catalog.resources,
+                    policy,
+                    snapshotPin=snapshotPin,
+                    leaseOwner=owner,
+                )
+                exactReceiptCount, contentCacheEntryCount = checkpoint.receiptCounts(policy)
+                liveExactReceiptCount = checkpoint.liveExactReceiptCount(catalog.resources, policy)
+                terminalAttemptCount = checkpoint.terminalAttemptCount(policy)
+            finally:
+                checkpoint.releaseLease(owner)
     metrics = {
         "schemaVersion": "du-u3-c2-live-v5",
         "observedAtUtc": observedAtUtc,

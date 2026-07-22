@@ -89,6 +89,7 @@ def runFullCensus(
     apiFactory: Callable[[], Any] | None = None,
     maxWorkers: int = 4,
     protectExisting: bool = True,
+    sourceRevisions: tuple[tuple[str, str], ...] | None = None,
 ) -> CensusResult:
     """HF, capability, blog, companion, media, podcast metadata를 전수 조사한다.
 
@@ -99,6 +100,7 @@ def runFullCensus(
         apiFactory: 테스트용 HF API factory.
         maxWorkers: repo metadata 병렬 조회 상한.
         protectExisting: 기존 시스템 byte digest 전후 검증 여부.
+        sourceRevisions: 지정하면 HEAD가 아니라 검증된 exact HF commit 집합.
 
     Returns:
         machine-readable `CensusResult`.
@@ -117,6 +119,7 @@ def runFullCensus(
         _resolveToken(root, token),
         apiFactory=apiFactory,
         maxWorkers=maxWorkers,
+        sourceRevisions=dict(sourceRevisions) if sourceRevisions is not None else None,
     )
     hfFiles = tuple(file for repo in pinned for file in enumerateHfTree(repo))
     releases = readReleaseOverlay(configModule)

@@ -20,6 +20,7 @@ from tests._attempts.dartlabUniverse.canonical import canonicalDigest, canonical
 from tests._attempts.dartlabUniverse.catalog.descriptorCheckpoint import (
     DescriptorCheckpointIntegrityError,
     DescriptorCheckpointStore,
+    buildDescriptorSnapshotPin,
 )
 from tests._attempts.dartlabUniverse.catalog.descriptorCrawler import (
     MIB,
@@ -477,6 +478,46 @@ def testCheckpointPrunesOldPolicyOnlyAfterNoActiveLease(tmp_path: Path):
         checkpoint.releaseLease(owner)
         assert checkpoint.pruneObsolete((resource,), currentPolicy) == 1
         assert checkpoint.load((resource,), currentPolicy) == (descriptor,)
+
+
+def testCheckpointAtomicallyPinsPassedC2SnapshotWithPrunedReceipts(tmp_path: Path):
+    path = tmp_path / "facts.json"
+    path.write_text('[{"a":1}]', encoding="utf-8")
+    resource = _resource(path.name, path.stat().st_size)
+    policy = DescriptorPolicy()
+    descriptor = crawlDescriptor(resource, LocalRangeReader(path), policy=policy)
+    pin = buildDescriptorSnapshotPin(
+        observedAtUtc="2026-07-22T00:00:00+00:00",
+        sourceRevisions=(("fixture/data", "b" * 40),),
+        hfRepoFileCounts=(("fixture/data", 1),),
+        hfCandidateCount=1,
+        catalogDigest="c" * 64,
+        u0SnapshotDigest="d" * 64,
+        policy=policy,
+        c2Digest="e" * 64,
+    )
+
+    with DescriptorCheckpointStore(tmp_path / "descriptor.sqlite") as checkpoint:
+        checkpoint.put(descriptor, policy)
+        owner = checkpoint.acquireLease()
+        try:
+            checkpoint.pruneObsolete(
+                (resource,),
+                policy,
+                snapshotPin=pin,
+                leaseOwner=owner,
+            )
+        finally:
+            checkpoint.releaseLease(owner)
+
+        assert checkpoint.loadSnapshotPin() == pin
+        with checkpoint.connection:
+            checkpoint.connection.execute(
+                "UPDATE descriptor_snapshot_pin SET payload_digest = ?",
+                ("f" * 64,),
+            )
+        with pytest.raises(DescriptorCheckpointIntegrityError, match="checksum"):
+            checkpoint.loadSnapshotPin()
 
 
 def testCheckpointLeasePreventsConcurrentCrawlAndHeartbeatKeepsOwnership(tmp_path: Path):

@@ -1,6 +1,6 @@
-# DartLab Universe U0~U4
+# DartLab Universe U0~U6
 
-상태: U0 full census, U1 identity와 provenance, U2 capability execution kernel, U3 전수 catalog와 evidence graph, U4 하이브리드 검색과 불변 근거 팩이 live gate를 통과했다. U4는 전체 블로그 AST와 기존 DART, EDGAR, 뉴스 content index를 검색하고, DART와 EDGAR capability를 실제 고정 입력으로 실행해 Arrow 결과와 영수증을 재생 검증한다. 손상된 upstream parquet 1건은 원본 상태를 숨기거나 외부 저장소를 수정하지 않고, 고정 raw authority와 historical transform을 사용한 Universe 전용 recovery receipt와 CAS로 복구했다. 3D, UI, route, 공개 버튼, 답변 생성, 영속 query index는 아직 없다.
+상태: U0 full census, U1 identity와 provenance, U2 capability execution kernel, U3 전수 catalog와 evidence graph, U4 하이브리드 검색과 불변 근거 팩, U5 runtime-only 3D projection과 semantic LOD, U6 GPU transport와 독립 3D 검수 GUI가 live gate를 통과했다. U4는 전체 블로그 AST와 기존 DART, EDGAR, 뉴스 content index를 검색하고, DART와 EDGAR capability를 실제 고정 입력으로 실행해 Arrow 결과와 영수증을 재생 검증한다. 손상된 upstream parquet 1건은 원본 상태를 숨기거나 외부 저장소를 수정하지 않고, 고정 raw authority와 historical transform을 사용한 Universe 전용 recovery receipt와 CAS로 복구했다. U6 GUI는 loopback session token으로만 열리며 기존 UI, landing route, 공개 버튼에 연결되지 않았다. 답변 생성과 RAG, 영속 projection과 tile도 아직 없다.
 
 이 디렉터리는 이전 Universe 실험을 전부 제거한 뒤 `mainPlan/dartlab-universe/`의 제품 계약에 맞춰 처음부터 다시 만든 데이터 엔진 경계다. 기존 `src/dartlab`, `ui`, `landing`, `blog`, `media`는 수정하지 않고 authority로 읽기만 한다.
 
@@ -91,12 +91,46 @@
 - pack digest, query plan, visibility, source revision, locator, content digest, virtual evidence resolver, execution receipt, lane coverage를 모델 없이 재생하는 G4E validator
 - query text의 prompt injection이 capability, subprocess, socket, 외부 tool call로 승격되지 않는 회귀 검증
 
-U4 query engine과 G4E 계약은 fixture와 live 전체 corpus golden query, 품질, leakage, latency gate를 통과했다. U5는 이 검증된 snapshot과 evidence pack만 입력으로 받는 3D projection 계약부터 시작한다.
+U4 query engine과 G4E 계약은 fixture와 live 전체 corpus golden query, 품질, leakage, latency gate를 통과했다. U5와 U6는 이 검증된 snapshot을 하나의 결정적 3D 우주와 GPU runtime으로 변환한다.
+
+## U5 구현 범위
+
+- source가 아니라 의미 family와 stable hash shard를 쓰는 하나의 전체 Universe community hierarchy
+- 오른손 Y-up, root half extent 1,000,000 Q, round-half-even 정수 좌표
+- 64 Q 안전 슬롯과 ID-derived 3D jitter를 사용한 결정적 충돌 회피
+- 이전 ProjectionState 좌표 pin, community retained, split, merge, retired lineage
+- L0 root, L1 family, L2 cluster, L3 object, L4 resource, L5 row와 evidence 지연 해소 경로
+- object, kind, source, epistemic, verification, period, statement, evidence, relation type과 direction 100% 보존 assertion
+- 2MB 이하 deterministic MessagePack runtime tile과 scene, snapshot, visibility, generation envelope 결박
+- tile content digest, parent advertisement, stale binding, selected object, z=0 평면 붕괴의 fail-closed 검증
+- current full graph 30초, prior replay 30초, two-snapshot 1% delta 5초, RSS 2GB machine threshold
+- 동일 입력 좌표 digest equality, normalized displacement p95 2% 이하, cluster continuity 98% 이상
+- `EPHEMERAL` ProjectionState만 허용하고 승인 없는 coordinate map과 tile 영속화 0
+
+U5 live 판정은 `%LOCALAPPDATA%/DartLab/universe/control/u5/latest.json`의 digest 결박 report가 정본이다. report는 좌표나 tile payload를 저장하지 않는다.
+
+## U6 구현 범위
+
+- U5 SceneTile을 고정 stride node 28 bytes, edge 32 bytes의 GPU binary bundle로 변환
+- WebGPU renderer와 validation scope, 실제 frame pixel probe, 실패 시 WebGL2 자동 전환
+- 전체 우주에서 L2 은하계 overview를 streaming하고 선택한 은하계의 L3 실제 객체로 drill-down
+- 회전, 확대, 키보드 이동, 노드 선택, 상위와 전체 복귀, 이름과 관계 표시 제어
+- 320px부터 desktop까지 재배치되는 full-screen 3D GUI와 dark, light theme 대응
+- 원본 ID와 locator는 보존하면서 화면에는 사람 친화적인 한국어 family와 resource 이름을 제공하는 display adapter
+- manifest, source tile digest, binary record digest, metadata cardinality와 child tile closure 전수 검증
+- loopback host allowlist, fragment session token, constant-time 비교, no-store와 strict CSP
+- 외부 asset 0, 공개 surface reference 0, route 연결 0, 공개 버튼 연결 0
+- U5 full projection observer를 사용해 U5와 U6가 같은 in-memory snapshot과 projection을 원자적으로 검증
+- `EPHEMERAL` transport만 허용하고 승인 없는 GPU payload, coordinate map과 tile 영속화 0
+
+U6 live 판정은 `%LOCALAPPDATA%/DartLab/universe/control/u6/latest.json`의 digest 결박 report가 정본이다. U6 gate는 동일 실행의 U5 report도 `%LOCALAPPDATA%/DartLab/universe/control/u5/latest.json`에 원자적으로 갱신한다.
 
 ## 정본 명령
 
 ```powershell
 uv run python -X utf8 tests/_attempts/dartlabUniverse/census.py --all --strict --format json
+uv run python -X utf8 -m tests._attempts.dartlabUniverse.u5Gate --strict
+uv run python -X utf8 -m tests._attempts.dartlabUniverse.u6Gate --strict
 ```
 
 명령은 token을 출력하지 않으며 canonical JSON만 stdout에 쓴다. 결과를 보존하려면 shell redirect나 CI artifact를 사용한다. repo 안에 census 산출물을 bake하지 않는다.
@@ -259,6 +293,39 @@ DART canary는 4개 입력 340,478,422 bytes를, EDGAR canary는 9,998개 입력
 uv run python -X utf8 -m tests._attempts.dartlabUniverse.u4Gate --strict
 ```
 
+## 2026-07-22 U5와 U6 live 인수 기록
+
+U5와 U6는 한 프로세스에서 같은 in-memory projection을 공유해 검증했다. 작업공간 source가 동시에 전진해도 두 gate 사이의 snapshot이 갈라지지 않는다.
+
+| 항목 | 관측값 |
+|---|---:|
+| catalog object | 212,394 |
+| typed relation | 292,315 |
+| community | 1,813 |
+| scene tile | 1,818 |
+| full projection | 22.034초 |
+| projection replay | 21.684초 |
+| 1% incremental | 1.914초 |
+| coordinate determinism | 100% |
+| meaning preservation | 100% |
+| peak RSS | 1,809,506,304 bytes |
+| max source tile | 1,085,085 bytes |
+| encoded GPU payload | 95,232,159 bytes |
+| full GPU tile encode | 3.984초 |
+| initial GUI payload | 1,265,150 bytes |
+| max GPU bundle | 426,894 bytes |
+| tile, source, record, metadata, child closure coverage | 100% |
+| label coverage | 100% |
+| raw locator label | 0 |
+| external GUI asset | 0 |
+| public surface reference | 0 |
+| public route와 button | 0 |
+| persistent projection과 GPU artifact | 0 |
+| G5A와 U5B | PASS |
+| G6 | PASS |
+
+catalog snapshot ID는 `du:v1:catalog-snapshot:f375e0e1130b87ca05316e50c426a21784c7100f2986c1300244a8bcb844619c`, projection state ID는 `du:v1:projection-state:67930ff500e76216b1d420346e53a22a5331b37e139cc46ef344b5f571b48d68`다. U5 report digest는 `a8927941f7f08ebbef66c47e29da704d96cce1a9d70a0d327b21bb513de035eb`, U6 report digest는 `cd3873e91c5e5be9c9448ce2ba88290da35dd77ab051c610500e9861a1d5fe71`다.
+
 ## 다음 gate
 
-다음은 U5 대규모 3D 투영 계약과 로컬 전용 천체 harness다. 기존 runtime 승격, UI 연결, 공개 route와 공개 버튼은 각각 후속 gate와 운영자 확인 전까지 금지한다.
+다음은 운영자가 독립 3D GUI를 직접 확인한 뒤 결정한다. 승인 전에는 기존 runtime 승격, UI 연결, 공개 route와 공개 버튼을 금지한다. 질문을 은하계에 던지는 기능은 U4 근거 팩을 U6 선택 scope에 결박하는 별도 U7 RAG gate로 설계하며, 현재 U6의 데이터와 렌더링 정본을 변경하지 않는다.
