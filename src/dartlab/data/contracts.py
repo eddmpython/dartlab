@@ -180,6 +180,9 @@ class DataAssetDescriptor:
     subjectParam: str | None = None
     validTimeParam: str | None = None
     knowledgeTimeParam: str | None = None
+    selectorKind: Literal["none", "subject", "measure"] = "none"
+    selectorRequired: bool = False
+    concurrencyGroup: str | None = None
     metadata: tuple[tuple[str, Any], ...] = ()
 
 

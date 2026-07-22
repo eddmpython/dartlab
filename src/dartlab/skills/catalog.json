@@ -1871,7 +1871,7 @@
     },
     {
       "id": "engines.data",
-      "bodyPreview": "## 역할과 위치\n\n`data`는 특정 엔진의 별칭이 아니다. L1의 provider와 gather, L1.5의 scan, frame, synth, reference, L2의 analysis, credit, industry, macro, quant가 소유한 데이터 제품을 위에서 연합하는 독립 작업대다.\n\n```text\nsimulate, story, Universe, AI\n              ↓\n Unified Data Workbench\n              ↓\n      L2 분석 데이터 제품\n              ↓\n     L1.5 횡단, 정규화 제품\n              ↓\n       L1 원천, provider 제품\n```\n\n하위 owner가 `dataProduct.py`에 metadata provider를 선언하면 중앙 엔진 목록을 수정하지 않아도 다음 catalog snapshot에 자동 반영된다. source와 계산식의 소유권은 하위 엔진에 남고, `data`는 발견, 검증, 실행 예산, projection, lineage 결박을 담당한다.\n\n## 공개 호출 방식\n\npublic axis는 둘뿐이다.\n\n```python\nimport dartlab\n\ndartlab.data()             # catalog, query 가이드\ndartlab.data(\"catalog\")   # metadata-only 발견\ndartlab.data(\"query\", ...) # stable asset query\n```\n\nfactor, records, graph, narrative, resource는 새 axis가 아니라 `query`의 typed projection이다. 따라서 같은 asset을 native schema 그대로 쓸 수도 있고 factor store 형태로 투영할 수도 있다. `DataRequest`를 사용하면 한 query에서 asset마다 서로 다른 projection을 지정할 수 있다.\n\n## 카탈로그\n\n```python\nfrom dartlab.data import CatalogQuery\n\nallAssets = dartlab.data(\"catalog\")\nl2Assets = dartlab.data(\n    \"catalog\",\n    query=CatalogQuery(layers=(\"L2\",), search=\"valuation\"),\n)\n```\n\n`DataAssetDescriptor`는 최소 `assetId`, `assetVersionId`, `owner`, `layer`, `kind`, `sourceRef`, `queryable`, `temporalSupport`, executor metadata를 가진다. catalog는 값을 물질화하지 않는다. private, out-of-scope, catalog-only 자산도 분류를 위해 보이지만 `queryable=False`로 차단된다.\n\n## 범용 query\n\n```python\nfrom dartlab.data import DataQuery, NativeProje",
+      "bodyPreview": "## 역할과 위치\n\n`data`는 특정 엔진의 별칭이 아니다. L1의 provider와 gather, L1.5의 scan, frame, synth, reference, L2의 analysis, credit, industry, macro, quant가 소유한 데이터 제품을 위에서 연합하는 독립 작업대다.\n\n```text\nsimulate, story, Universe, AI\n              ↓\n Unified Data Workbench\n              ↓\n      L2 분석 데이터 제품\n              ↓\n     L1.5 횡단, 정규화 제품\n              ↓\n       L1 원천, provider 제품\n```\n\n하위 owner가 `dataProduct.py`에 metadata provider를 선언하면 중앙 엔진 목록을 수정하지 않아도 다음 catalog snapshot에 자동 반영된다. source와 계산식의 소유권은 하위 엔진에 남고, `data`는 발견, 검증, 실행 예산, projection, lineage 결박을 담당한다.\n\n## 공개 호출 방식\n\npublic axis는 둘뿐이다.\n\n```python\nimport dartlab\n\ndartlab.data()             # catalog, query 가이드\ndartlab.data(\"catalog\")   # metadata-only 발견\ndartlab.data(\"query\", ...) # stable asset query\n```\n\nfactor, records, graph, narrative, resource는 새 axis가 아니라 `query`의 typed projection이다. 따라서 같은 asset을 native schema 그대로 쓸 수도 있고 factor store 형태로 투영할 수도 있다. `DataRequest`를 사용하면 한 query에서 asset마다 서로 다른 projection을 지정할 수 있다.\n\n## 카탈로그\n\n```python\nfrom dartlab.data import CatalogQuery\n\nallAssets = dartlab.data(\"catalog\")\nl2Assets = dartlab.data(\n    \"catalog\",\n    query=CatalogQuery(layers=(\"L2\",), search=\"valuation\"),\n)\n```\n\n`DataAssetDescriptor`는 최소 `assetId`, `assetVersionId`, `owner`, `layer`, `kind`, `sourceRef`, `queryable`, `temporalSupport`, `selectorKind`, `selectorRequired`, `concurrencyGroup`, executor metadata를 가진다. catalog는 값을 물질화하지 않는다. private, out-of-scope, 폐기, catalog-only 자산도 분류를 위해 보이지만 `queryable=False`로 차단된다.\n\n## 범용 quer",
       "title": "Unified Data Workbench",
       "category": "engines",
       "categoryTitle": "Engines",
@@ -1972,7 +1972,9 @@
         "latest 값을 과거 knownAt 라벨로 바꿈",
         "catalog 조회 중 owner 값을 실행함",
         "여러 partition의 row, byte 예산을 각각 적용해 전체 예산을 초과함",
-        "private, nested, bulk resource payload를 무제한 로드함"
+        "private, nested, bulk resource payload를 무제한 로드함",
+        "빈 owner 결과를 성공 partition으로 반환함",
+        "공유 Company 상태를 쓰는 owner를 동시에 초기화해 경쟁 상태를 만듦"
       ],
       "forbidden": [
         "Data Workbench를 특정 분석 엔진 묶음으로 축소하지 않는다.",

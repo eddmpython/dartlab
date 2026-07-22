@@ -36,6 +36,7 @@ class GatherAxisEntry:
     targetRequired: bool = True
     targetType: TargetType = "stockCode"
     hidden: bool = False
+    queryable: bool = True
 
 
 AXIS_REGISTRY: dict[str, GatherAxisEntry] = {
@@ -223,6 +224,7 @@ AXIS_REGISTRY: dict[str, GatherAxisEntry] = {
         example='Company("005930").calendar(horizonDays=30)  # gather("calendar") 는 0.10 폐기',
         targetType="stockCode",
         hidden=True,
+        queryable=False,
     ),
 }
 

@@ -10,6 +10,7 @@ DATA_PRODUCT_DESCRIPTOR = {
             "attribute": "_AXIS_REGISTRY",
             "kind": "graph",
             "subjectParam": "target",
+            "selectorRequired": True,
         },
     ),
 }

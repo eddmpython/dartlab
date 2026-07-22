@@ -3,6 +3,7 @@
 DATA_PRODUCT_DESCRIPTOR = {
     "owner": "analysis",
     "layer": "L2",
+    "concurrencyGroup": "companyData",
     "callable": {"module": "dartlab.analysis.financial", "attribute": "Analysis"},
     "registries": (
         {
@@ -10,6 +11,7 @@ DATA_PRODUCT_DESCRIPTOR = {
             "attribute": "_AXIS_REGISTRY",
             "kind": "analysis",
             "subjectParam": "stockCode",
+            "selectorRequired": True,
         },
     ),
     "assets": (

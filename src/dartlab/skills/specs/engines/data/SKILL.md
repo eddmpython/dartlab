@@ -82,6 +82,8 @@ failureModes:
   - catalog 조회 중 owner 값을 실행함
   - 여러 partition의 row, byte 예산을 각각 적용해 전체 예산을 초과함
   - private, nested, bulk resource payload를 무제한 로드함
+  - 빈 owner 결과를 성공 partition으로 반환함
+  - 공유 Company 상태를 쓰는 owner를 동시에 초기화해 경쟁 상태를 만듦
 forbidden:
   - Data Workbench를 특정 분석 엔진 묶음으로 축소하지 않는다.
   - factor, graph, narrative, resource를 public axis로 늘리지 않는다. 모두 query projection이다.
@@ -163,7 +165,7 @@ l2Assets = dartlab.data(
 )
 ```
 
-`DataAssetDescriptor`는 최소 `assetId`, `assetVersionId`, `owner`, `layer`, `kind`, `sourceRef`, `queryable`, `temporalSupport`, executor metadata를 가진다. catalog는 값을 물질화하지 않는다. private, out-of-scope, catalog-only 자산도 분류를 위해 보이지만 `queryable=False`로 차단된다.
+`DataAssetDescriptor`는 최소 `assetId`, `assetVersionId`, `owner`, `layer`, `kind`, `sourceRef`, `queryable`, `temporalSupport`, `selectorKind`, `selectorRequired`, `concurrencyGroup`, executor metadata를 가진다. catalog는 값을 물질화하지 않는다. private, out-of-scope, 폐기, catalog-only 자산도 분류를 위해 보이지만 `queryable=False`로 차단된다.
 
 ## 범용 query
 
@@ -181,7 +183,9 @@ result = dartlab.data(
 )
 ```
 
-owner별 native schema를 억지로 한 표로 합치지 않는다. `DataResult.partitions`가 asset과 selector별 schema를 보존한다. 전체 query 단위로 asset 수, subject 수, row 수, byte 수, 실행 기한을 제한한다.
+owner별 native schema를 억지로 한 표로 합치지 않는다. `DataResult.partitions`가 asset과 selector별 schema를 보존한다. 전체 query 단위로 asset 수, subject 수, row 수, byte 수, 실행 기한을 제한한다. `maxConcurrency`는 독립 request를 병렬 실행하지만 같은 `concurrencyGroup`과 같은 asset은 직렬화한다.
+
+혼합 query에서는 앞 partition이 전체 row budget을 독점하지 않도록 뒤 실행 task마다 최소 1행과 작은 byte 여유를 예약한다. 결과 partition 순서는 실제 완료 순서가 아니라 요청 순서를 따른다.
 
 ## 혼합 Data Prism query
 
@@ -222,6 +226,8 @@ arrowTables = result.toArrow()
 ## 호출 동작
 
 `catalog`는 owner의 metadata provider, registry, resource manifest, extraction concept, Company capability를 읽되 실제 값을 실행하지 않는다. `query`는 asset version을 해소하고 temporal support와 policy를 먼저 검사한 뒤 owner의 공개 callable을 실행한다. 결과는 projection하고 전체 query budget을 적용한 다음 coverage, gap, lineage, receipt와 함께 반환한다.
+
+필수 subject 또는 measure가 없으면 owner 실행 전에 `MISSING_SELECTOR`로 실패한다. owner가 `None`, 빈 DataFrame, 빈 mapping 또는 빈 sequence를 반환하면 locator-only resource를 제외하고 `NO_DATA` gap이다. 빈 결과를 성공으로 소비하지 않는다.
 
 ## Factor store로 사용
 
@@ -302,3 +308,7 @@ valid time과 knowledge time은 분리한다. descriptor가 실제로 `knownAt`�
 - 한 query의 DataRequest마다 다른 projection과 owner parameter가 독립 적용되는지 확인한다.
 - latest-only factor와 narrative가 knownAt을 발명하지 않는지 확인한다.
 - 구조화 lineage, quality assertion과 Arrow 변환이 data와 같은 partition에 결박되는지 확인한다.
+- queryable catalog 전체가 한 혼합 query에서 빠짐없이 라우팅되는지 확인한다.
+- engine asset 전체가 records, narrative, factor projection과 Arrow 변환을 통과하는지 확인한다.
+- 독립 request는 병렬화되고 Company 공유 상태 group은 직렬화되는지 확인한다.
+- `None`과 빈 DataFrame이 `NO_DATA`이며 폐기 axis가 queryable이 아닌지 확인한다.

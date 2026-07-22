@@ -113,7 +113,7 @@ def build(company, *, emaPeriod: int = 50, rsiLow: float = 50, rsiHigh: float = 
     s.add("rsi_high", (rsi > rsiHigh) & ~np.isnan(rsi))
 
     return Rule(
-        entry_expr=s.bull & s.above_ema & s.rsiLow,
-        exit_expr=s.rsiHigh,
+        entry_expr=s.bull & s.above_ema & s.rsi_low,
+        exit_expr=s.rsi_high,
         meta={"style": "dipBuy"},
     ).withStop("atr", k=atrK, period=14)

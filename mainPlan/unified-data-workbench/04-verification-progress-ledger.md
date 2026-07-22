@@ -12,6 +12,7 @@
 | W5 | public facade, external smoke, Skill OS | 완료 |
 | W6 | compatibility cleanup와 완료 감사 | 완료 |
 | W7 | Signature Data Prism 혼합 query, evidence, quality, Arrow | 완료 |
+| W8 | 170개 전수 실행, selector, 빈 결과, 동시성 hardening | 완료 |
 
 ## 2. unit과 contract test
 
@@ -39,7 +40,7 @@
 
 - DATA_RELEASES 42 전수 분류
 - public 32와 private 10 가시성 보존
-- 실존 axis 147 전수 분류
+- 실존 axis 147 전수 분류, 실행 가능 146과 폐기 1 분리
 - analysis 22 누락 0
 - extraction concept 88 전수 분류
 - L1, L1.5, L2 owner package 전수 상태 부여
@@ -81,7 +82,7 @@ uv run python -X utf8 tests/audit/dartlabGuard.py strict --scope l0-l15 --provid
 1. data와 simulate 양방향 import
 2. lower owner가 data import
 3. historical query가 latest 값에 asOf label만 붙임
-4. 147축 또는 owner resource가 조용히 누락
+4. 실존 registry axis 또는 owner resource가 조용히 누락
 5. catalog discovery 중 data fetch나 engine execution
 6. private locator 또는 token 노출
 7. factor에 source revision, timing, evidence가 없음
@@ -133,7 +134,7 @@ uv run python -X utf8 tests/audit/dartlabGuard.py strict --scope l0-l15 --provid
 - top-level cycle 0건, Data Workbench purity 위반 0건
 - 공개 API manifest와 coverage에 `dartlab.data` 반영 후 quick product smoke 4건 통과
 - 새 data 엔진 addEngine round trip strict 통과
-- 저장소 전체 preflight 실행 완료. 작업대 관련 공개 API와 gather mirror 누락은 수정했다. 남은 실패는 기존 사용자 작업의 포맷 30개, 로컬 블로그 미디어 2개, 기존 provider 역방향 import 1개, 기존 노트북 공개 계약 2개와 Windows shell wheel 명령 호환 문제로 분리했다.
+- 저장소 전체 preflight를 시도하고 작업대 관련 공개 API와 gather mirror 누락을 수정했다. 전체 runner는 mutation smoke 자식 프로세스를 남긴 채 상한을 초과해 관련 하위 gate를 개별 검증했다.
 
 ### 2026-07-22 W7
 
@@ -149,8 +150,27 @@ uv run python -X utf8 tests/audit/dartlabGuard.py strict --scope l0-l15 --provid
 - 기존 단일 asset query 호환 포함 data 집중 회귀 16건 통과
 - 로컬 실측 import 1.1454초, cold catalog 1.1971초, warm catalog 18.1ms
 - 2개 owner 혼합 factor와 narrative query median 19.338ms, p95 23.652ms, Arrow 변환 median 0.547ms
-- 격리 wheel 설치본에서 catalog 353개, queryable 171개, 혼합 factor와 narrative, Arrow 2개 table 검증
+- 당시 격리 wheel 설치본에서 catalog 353개, queryable 171개, 혼합 factor와 narrative, Arrow 2개 table 검증
 - data와 simulator 집중 회귀 43건, attempt와 Skill OS 회귀 25건 통과
 - workbench purity 위반 0건, top-level cycle 0건
 - L0부터 L1.5 strict guard 7개 규칙, public API coverage, quick product smoke 4건 통과
 - 전체 preflight는 두 번 실행했으나 runner가 자식 mutation smoke를 남긴 채 각각 124초와 304초 상한을 초과했다. 잔존 프로세스는 PID tree를 확인해 종료하고 관련 하위 gate를 개별 검증했다.
+
+### 2026-07-22 W8
+
+- 항상 예외를 내는 폐기 축 `gather.calendar`를 catalog-only로 정정해 queryable 170개 확정
+- `selectorKind`, `selectorRequired`를 descriptor에 추가하고 owner 이름 하드코딩 제거
+- 필수 selector 누락을 owner 실행 전 `MISSING_SELECTOR`로 차단
+- `None`, 빈 DataFrame, 빈 mapping과 sequence를 `NO_DATA` gap으로 판정
+- `maxConcurrency`를 실제 실행 window에 적용하고 결과 순서를 요청 순서로 고정
+- analysis, credit, quant의 Company 공유 상태를 `companyData` concurrency group으로 직렬화
+- queryable 170개 전수 executor 해소와 한 번의 혼합 query 라우팅 통과
+- engine asset 146개에 records, narrative, factor projection 438개 cell과 Arrow 438개 table 통과
+- industry graph 9개 전체에서 node, edge 방향, evidence 보존 통과
+- 실제 queryable 170개를 격리 프로세스에서 모두 실행
+- 실제 non-empty 성공 163개, 이 중 30초 이내 146개와 30초 초과 180초 이내 17개
+- `NO_DATA` 4개, owner 시간 계약 오류 1개, 180초 초과 2개를 성공으로 가장하지 않고 분리
+- quant.entry와 quant.style을 막던 dipBuy Signal key 두 곳 수정 후 실제 재실행 성공
+- L1 price, L2 credit와 macro, simulator input의 실제 4자산 혼합 query 4.278초, partition 4개, Arrow table 4개, quality assertion 16개 확인
+- 앞 partition이 row budget을 독점하지 않도록 뒤 task마다 최소 1행과 byte 여유 예약
+- 최종 격리 wheel 설치본에서 catalog 353개와 queryable 170개, factor 999행, narrative 1행, Arrow table 2개 확인

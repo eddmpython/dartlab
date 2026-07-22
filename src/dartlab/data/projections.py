@@ -42,6 +42,20 @@ def _rowCount(value: Any) -> int:
     return 1
 
 
+def _isEmpty(value: Any) -> bool:
+    """Owner의 실제 결손을 빈 성공 partition으로 바꾸지 않는다."""
+
+    if value is None:
+        return True
+    if isinstance(value, pl.DataFrame):
+        return value.is_empty()
+    if isinstance(value, (Mapping, Sequence)) and not isinstance(value, (str, bytes)):
+        return len(value) == 0
+    if isinstance(value, str):
+        return not value.strip()
+    return False
+
+
 def _truncate(value: Any, maxRows: int) -> tuple[Any, bool]:
     if isinstance(value, pl.DataFrame):
         return value.head(maxRows), value.height > maxRows
@@ -221,6 +235,9 @@ def projectOutput(
     projection = query.projection
     data = raw
     gaps: tuple[DataGap, ...] = ()
+    locatorOnly = isinstance(projection, ResourceProjection) and not projection.includePayload
+    if _isEmpty(raw) and not locatorOnly:
+        return None, (DataGap("NO_DATA", "owner가 물질화할 데이터를 반환하지 않았습니다", descriptor.assetId),)
     if isinstance(projection, FactorProjection):
         data, gaps = _factorFrame(raw, descriptor, query, measure=selector.get("measure"), receiptRef=receiptRef)
         if data is None:

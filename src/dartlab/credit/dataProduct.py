@@ -3,6 +3,7 @@
 DATA_PRODUCT_DESCRIPTOR = {
     "owner": "credit",
     "layer": "L2",
+    "concurrencyGroup": "companyData",
     "callable": {"module": "dartlab.credit", "attribute": None},
     "registries": (
         {
@@ -10,6 +11,7 @@ DATA_PRODUCT_DESCRIPTOR = {
             "attribute": "_AXIS_REGISTRY",
             "kind": "analysis",
             "subjectParam": "target",
+            "selectorRequired": True,
         },
     ),
 }

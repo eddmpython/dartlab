@@ -8,6 +8,8 @@ import importlib
 import json
 import time
 from collections.abc import Mapping, Sequence
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import TimeoutError as FutureTimeoutError
 from typing import Any
 
 from dartlab.data.catalog import buildCatalog
@@ -24,6 +26,47 @@ from dartlab.data.contracts import (
     projectionKind,
 )
 from dartlab.data.projections import projectOutput
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class _ExecutionTask:
+    """결정적 순서를 가진 owner 실행 단위."""
+
+    requestId: str
+    descriptor: DataAssetDescriptor
+    query: DataQuery
+    selector: Mapping[str, str]
+    receiptRef: str
+
+
+def _executionWindows(
+    tasks: Sequence[_ExecutionTask],
+    maxConcurrency: int,
+) -> tuple[tuple[_ExecutionTask, ...], ...]:
+    """같은 공유 상태 group을 직렬화하며 독립 task는 병렬 window로 묶는다."""
+
+    pending = list(tasks)
+    windows: list[tuple[_ExecutionTask, ...]] = []
+    while pending:
+        selectedCount = 0
+        groups: set[str] = set()
+        assetIds: set[str] = set()
+        for task in pending:
+            group = task.descriptor.concurrencyGroup
+            if group is not None and group in groups:
+                break
+            if task.descriptor.assetId in assetIds:
+                break
+            selectedCount += 1
+            assetIds.add(task.descriptor.assetId)
+            if group is not None:
+                groups.add(group)
+            if selectedCount >= maxConcurrency:
+                break
+        window = tuple(pending[:selectedCount])
+        del pending[:selectedCount]
+        windows.append(window)
+    return tuple(windows)
 
 
 def _canonical(value: Any) -> bytes:
@@ -77,19 +120,34 @@ def _temporalGap(descriptor: DataAssetDescriptor, query: DataQuery) -> DataGap |
     return None
 
 
-def _selectors(descriptor: DataAssetDescriptor, query: DataQuery) -> tuple[dict[str, str], ...]:
-    declared = dict(descriptor.metadata)
-    stockRequired = declared.get("stockRequired") is True or descriptor.owner in {"analysis", "credit", "quant"}
-    targetRequired = declared.get("targetRequired") is True or bool(declared.get("listFn"))
-    if stockRequired and query.subjects:
-        return tuple({"subject": subject} for subject in query.subjects)
+def _selectors(
+    descriptor: DataAssetDescriptor,
+    query: DataQuery,
+) -> tuple[tuple[dict[str, str], ...], DataGap | None]:
+    """Descriptor가 선언한 selector 계약으로 실행 partition을 계획한다."""
+
+    if isinstance(query.projection, ResourceProjection) and not query.projection.includePayload:
+        return ({},), None
     projectionMeasures = query.projection.measures if isinstance(query.projection, FactorProjection) else ()
     measures = query.measures or projectionMeasures
-    if targetRequired and measures:
-        return tuple({"measure": measure} for measure in measures)
-    if query.subjects and descriptor.owner in {"gather", "industry"}:
-        return tuple({"subject": subject} for subject in query.subjects)
-    return ({},)
+    values = (
+        query.subjects
+        if descriptor.selectorKind == "subject"
+        else measures
+        if descriptor.selectorKind == "measure"
+        else ()
+    )
+    if values:
+        return tuple({descriptor.selectorKind: value} for value in values), None
+    required = descriptor.selectorRequired or descriptor.executorKind == "resource"
+    if required:
+        expected = "subjects" if descriptor.selectorKind == "subject" else "measures"
+        return (), DataGap(
+            "MISSING_SELECTOR",
+            f"{descriptor.assetId} query에는 {expected}가 필요합니다",
+            descriptor.assetId,
+        )
+    return ({},), None
 
 
 def _engineCall(descriptor: DataAssetDescriptor, query: DataQuery, selector: Mapping[str, str]) -> Any:
@@ -242,86 +300,130 @@ def executeDataQuery(assetIds: Sequence[str], query: DataQuery) -> DataResult:
             continue
         resolved.append((requestId, descriptor, activeQuery))
 
-    partitions = []
-    receipts: list[str] = []
-    remainingRows = query.budget.maxRows
-    remainingBytes = query.budget.maxBytes
     deadline = time.perf_counter() + query.budget.timeoutMs / 1000
-    stopExecution = False
+    tasks: list[_ExecutionTask] = []
     for requestId, descriptor, activeQuery in resolved:
-        if stopExecution:
-            break
         temporalGap = _temporalGap(descriptor, activeQuery)
         if temporalGap:
             gaps.append(dataclasses.replace(temporalGap, requestId=requestId))
             continue
-        for selector in _selectors(descriptor, activeQuery):
-            if remainingRows <= 0 or remainingBytes <= 0:
-                gaps.append(
-                    DataGap(
-                        "QUERY_BUDGET_EXHAUSTED",
-                        "전체 query 결과 예산이 소진됐습니다",
-                        descriptor.assetId,
-                        requestId=requestId,
-                    )
-                )
-                stopExecution = True
-                break
-            if time.perf_counter() >= deadline:
-                gaps.append(
-                    DataGap(
-                        "QUERY_TIMEOUT",
-                        "query 실행 기한을 초과했습니다",
-                        descriptor.assetId,
-                        requestId=requestId,
-                    )
-                )
-                stopExecution = True
-                break
+        selectors, selectorGap = _selectors(descriptor, activeQuery)
+        if selectorGap is not None:
+            gaps.append(dataclasses.replace(selectorGap, requestId=requestId))
+            continue
+        for selector in selectors:
             receiptRef = _receipt(descriptor, activeQuery, selector, requestId)
-            try:
-                raw = _execute(descriptor, activeQuery, selector)
-                if time.perf_counter() >= deadline:
+            tasks.append(_ExecutionTask(requestId, descriptor, activeQuery, selector, receiptRef))
+
+    partitions = []
+    receipts: list[str] = []
+    remainingRows = query.budget.maxRows
+    remainingBytes = query.budget.maxBytes
+    stopExecution = False
+    processedTasks = 0
+    maxConcurrency = min(query.budget.maxConcurrency, len(tasks)) if tasks else 1
+    for window in _executionWindows(tasks, maxConcurrency):
+        if stopExecution:
+            break
+        executor = ThreadPoolExecutor(max_workers=len(window), thread_name_prefix="dartlab-data")
+        futures = tuple(executor.submit(_execute, task.descriptor, task.query, task.selector) for task in window)
+        abandonWindow = False
+        try:
+            for task, future in zip(window, futures, strict=True):
+                if remainingRows <= 0 or remainingBytes <= 0:
+                    gaps.append(
+                        DataGap(
+                            "QUERY_BUDGET_EXHAUSTED",
+                            "전체 query 결과 예산이 소진됐습니다",
+                            task.descriptor.assetId,
+                            requestId=task.requestId,
+                        )
+                    )
+                    stopExecution = True
+                    abandonWindow = True
+                    break
+                remainingSeconds = deadline - time.perf_counter()
+                if remainingSeconds <= 0:
+                    gaps.append(
+                        DataGap(
+                            "QUERY_TIMEOUT",
+                            "query 실행 기한을 초과했습니다",
+                            task.descriptor.assetId,
+                            requestId=task.requestId,
+                        )
+                    )
+                    stopExecution = True
+                    abandonWindow = True
+                    break
+                try:
+                    raw = future.result(timeout=remainingSeconds)
+                except FutureTimeoutError:
                     gaps.append(
                         DataGap(
                             "QUERY_TIMEOUT",
                             "owner 실행이 query 기한을 초과했습니다",
-                            descriptor.assetId,
-                            requestId=requestId,
+                            task.descriptor.assetId,
+                            task.selector.get("subject"),
+                            requestId=task.requestId,
                         )
                     )
                     stopExecution = True
+                    abandonWindow = True
                     break
-                partitionBudget = dataclasses.replace(
-                    activeQuery.budget,
-                    maxRows=remainingRows,
-                    maxBytes=remainingBytes,
-                )
-                partitionQuery = dataclasses.replace(activeQuery, budget=partitionBudget)
-                partition, projectionGaps = projectOutput(
-                    raw,
-                    descriptor,
-                    partitionQuery,
-                    selector=selector,
-                    receiptRef=receiptRef,
-                    requestId=requestId,
-                )
-                gaps.extend(dataclasses.replace(gap, requestId=gap.requestId or requestId) for gap in projectionGaps)
-                if partition is not None:
-                    partitions.append(partition)
-                    receipts.append(receiptRef)
-                    remainingRows -= partition.rowCount
-                    remainingBytes -= _outputBytes(partition.data)
-            except Exception as exc:
-                gaps.append(
-                    DataGap(
-                        "ASSET_EXECUTION_FAILED",
-                        f"{type(exc).__name__}: {exc}",
-                        descriptor.assetId,
-                        selector.get("subject"),
-                        requestId=requestId,
+                except Exception as exc:
+                    gaps.append(
+                        DataGap(
+                            "ASSET_EXECUTION_FAILED",
+                            f"{type(exc).__name__}: {exc}",
+                            task.descriptor.assetId,
+                            task.selector.get("subject"),
+                            requestId=task.requestId,
+                        )
                     )
+                    processedTasks += 1
+                    continue
+                tasksAfter = len(tasks) - processedTasks - 1
+                reservedRows = min(max(0, remainingRows - 1), tasksAfter)
+                reservedBytes = min(max(0, remainingBytes - 1), tasksAfter * 1024)
+                partitionBudget = dataclasses.replace(
+                    task.query.budget,
+                    maxRows=remainingRows - reservedRows,
+                    maxBytes=remainingBytes - reservedBytes,
                 )
+                partitionQuery = dataclasses.replace(task.query, budget=partitionBudget)
+                try:
+                    partition, projectionGaps = projectOutput(
+                        raw,
+                        task.descriptor,
+                        partitionQuery,
+                        selector=task.selector,
+                        receiptRef=task.receiptRef,
+                        requestId=task.requestId,
+                    )
+                    gaps.extend(
+                        dataclasses.replace(gap, requestId=gap.requestId or task.requestId) for gap in projectionGaps
+                    )
+                    if partition is not None:
+                        partitions.append(partition)
+                        receipts.append(task.receiptRef)
+                        remainingRows -= partition.rowCount
+                        remainingBytes -= _outputBytes(partition.data)
+                except Exception as exc:
+                    gaps.append(
+                        DataGap(
+                            "ASSET_EXECUTION_FAILED",
+                            f"{type(exc).__name__}: {exc}",
+                            task.descriptor.assetId,
+                            task.selector.get("subject"),
+                            requestId=task.requestId,
+                        )
+                    )
+                processedTasks += 1
+        finally:
+            for future in futures:
+                if abandonWindow:
+                    future.cancel()
+            executor.shutdown(wait=not abandonWindow, cancel_futures=abandonWindow)
 
     succeeded = len(partitions)
     failures = len(gaps)

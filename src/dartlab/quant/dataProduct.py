@@ -3,6 +3,7 @@
 DATA_PRODUCT_DESCRIPTOR = {
     "owner": "quant",
     "layer": "L2",
+    "concurrencyGroup": "companyData",
     "callable": {"module": "dartlab.quant", "attribute": "Quant"},
     "registries": (
         {

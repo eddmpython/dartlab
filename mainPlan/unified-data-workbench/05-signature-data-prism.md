@@ -127,12 +127,12 @@ simulator는 `analysis.simulationInputs` native view를 소비한다. 혼합 que
 
 ## 6. 데이터 전수 활용의 정확한 의미
 
-2026-07-22 실측 catalog는 353개 asset을 발견한다. 이 중 171개는 현재 runtime에서 queryable이며, 182개는 concept, owner metadata, method, private resource, nested 또는 범위 밖 asset이라 catalog-only다.
+2026-07-22 최종 실측 catalog는 353개 asset을 발견한다. 이 중 170개는 현재 runtime에서 queryable이며, 183개는 concept, owner metadata, method, private resource, nested, 폐기 축 또는 범위 밖 asset이라 catalog-only다. 항상 예외를 내는 `gather.calendar`는 catalog에는 보존하되 queryable에서 제외했다.
 
 따라서 "모든 데이터를 다 활용한다"는 두 단계로 구분해야 한다.
 
 1. 발견과 분류: 현재 대상 asset 353개 모두 catalog에 들어온다.
-2. 값 물질화: 정책과 executor가 있는 171개만 즉시 query할 수 있다.
+2. 값 물질화: 정책과 executor가 있는 170개는 query를 실행할 수 있다. 현재 원천 결손과 owner 계산 비용 때문에 모든 자산이 기본 30초 안에 non-empty 결과를 보장한다는 뜻은 아니다.
 
 catalog-only를 누락으로 숨기지 않는다. `queryable=False`, visibility, temporalSupport, gap으로 이유를 드러낸다. private 데이터나 실행 불가능한 개념 메타데이터를 억지로 값처럼 반환하지 않는 것이 완성도다.
 
@@ -149,6 +149,10 @@ catalog-only를 누락으로 숨기지 않는다. `queryable=False`, visibility,
 - simulator 동일 query 계약 유지
 - 외부 JSON mapping 호출
 - latest-only temporal truth 보존
+- descriptor 기반 subject와 measure selector, 필수 selector 실행 전 검증
+- 빈 owner 결과를 성공으로 바꾸지 않는 `NO_DATA` gap
+- `maxConcurrency` 실제 병렬 실행과 Company 공유 상태 concurrency group 직렬화
+- queryable 170개 전수 라우팅, 146개 engine asset의 records, narrative, factor와 Arrow 전수 projection
 
 후속 transport 및 scale 범위:
 
@@ -160,3 +164,5 @@ catalog-only를 누락으로 숨기지 않는다. `queryable=False`, visibility,
 - quality suite의 도메인별 expectation 확대
 
 이 항목들은 현재 의미 계약을 바꾸지 않고 확장할 수 있다. 특히 vector index나 precomputed 복제본은 runtime SSOT가 불가능함이 증명되고 사용자 승인을 받은 경우에만 도입한다.
+
+실제 자산별 인증 결과와 interactive, batch 구분은 [06-full-certification-and-hardening.md](06-full-certification-and-hardening.md)에 고정한다.

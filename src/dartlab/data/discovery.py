@@ -87,6 +87,24 @@ def _registryAssets(provider: Mapping[str, Any]) -> Iterable[DataAssetDescriptor
         sourceDigest = _sourceDigest(module)
         for axis, entry in registry.items():
             declared = _declared(entry)
+            selectorKind = registrySpec.get("selectorKind")
+            if selectorKind is None:
+                selectorKind = (
+                    "subject"
+                    if registrySpec.get("subjectParam")
+                    else "measure"
+                    if "targetParam" in declared
+                    else "none"
+                )
+            if selectorKind not in {"none", "subject", "measure"}:
+                raise ValueError(f"{owner}.{axis} selectorKind가 유효하지 않음")
+            configuredRequired = registrySpec.get("selectorRequired")
+            selectorRequired = (
+                bool(configuredRequired)
+                if configuredRequired is not None
+                else bool(declared.get("stockRequired") or declared.get("targetRequired"))
+            )
+            concurrencyGroup = registrySpec.get("concurrencyGroup") or provider.get("concurrencyGroup")
             label = str(getattr(entry, "label", None) or getattr(entry, "section", None) or axis)
             description = str(getattr(entry, "description", None) or label)
             hidden = bool(getattr(entry, "hidden", False))
@@ -94,6 +112,13 @@ def _registryAssets(provider: Mapping[str, Any]) -> Iterable[DataAssetDescriptor
                 "owner": owner,
                 "axis": str(axis),
                 "declared": declared,
+                "registryContract": {
+                    "kind": registrySpec.get("kind", "native"),
+                    "selectorKind": selectorKind,
+                    "selectorRequired": selectorRequired,
+                    "subjectParam": registrySpec.get("subjectParam"),
+                    "concurrencyGroup": concurrencyGroup,
+                },
                 "sourceDigest": sourceDigest,
             }
             yield DataAssetDescriptor(
@@ -105,12 +130,15 @@ def _registryAssets(provider: Mapping[str, Any]) -> Iterable[DataAssetDescriptor
                 label=label,
                 description=description,
                 sourceRef=f"python:{registrySpec['module']}:{registrySpec['attribute']}",
-                queryable=True,
+                queryable=bool(declared.get("queryable", True)),
                 hidden=hidden,
                 temporalSupport=("latest",),
-                executorKind="engineAxis",
-                executorAxis=str(axis),
+                executorKind="engineAxis" if declared.get("queryable", True) else "catalog",
+                executorAxis=str(axis) if declared.get("queryable", True) else None,
                 subjectParam=registrySpec.get("subjectParam"),
+                selectorKind=selectorKind,
+                selectorRequired=selectorRequired,
+                concurrencyGroup=str(concurrencyGroup) if concurrencyGroup else None,
                 metadata=tuple(sorted(declared.items())),
             )
 
@@ -128,10 +156,14 @@ def _declaredAssets(provider: Mapping[str, Any]) -> Iterable[DataAssetDescriptor
         executor = spec.get("executor")
         if not isinstance(executor, Mapping):
             raise TypeError(f"{assetId} executor가 mapping이 아님")
-        payload = {"owner": owner, "layer": layer, "spec": spec}
+        concurrencyGroup = spec.get("concurrencyGroup") or provider.get("concurrencyGroup")
+        payload = {"owner": owner, "layer": layer, "spec": spec, "concurrencyGroup": concurrencyGroup}
         metadata = spec.get("metadata", {})
         if not isinstance(metadata, Mapping):
             raise TypeError(f"{assetId} metadata가 mapping이 아님")
+        selectorKind = str(spec.get("selectorKind") or ("subject" if spec.get("subjectParam") else "none"))
+        if selectorKind not in {"none", "subject", "measure"}:
+            raise ValueError(f"{assetId} selectorKind가 유효하지 않음")
         yield DataAssetDescriptor(
             assetId=assetId,
             assetVersionId=f"asset:{_digest(payload)}",
@@ -152,6 +184,9 @@ def _declaredAssets(provider: Mapping[str, Any]) -> Iterable[DataAssetDescriptor
             subjectParam=str(spec["subjectParam"]) if spec.get("subjectParam") else None,
             validTimeParam=str(spec["validTimeParam"]) if spec.get("validTimeParam") else None,
             knowledgeTimeParam=str(spec["knowledgeTimeParam"]) if spec.get("knowledgeTimeParam") else None,
+            selectorKind=selectorKind,
+            selectorRequired=bool(spec.get("selectorRequired", metadata.get("stockRequired", False))),
+            concurrencyGroup=str(concurrencyGroup) if concurrencyGroup else None,
             metadata=tuple(sorted((str(key), value) for key, value in metadata.items())),
         )
 
@@ -215,6 +250,8 @@ def _resourceAssets() -> Iterable[DataAssetDescriptor]:
             executorKind="resource" if queryable else "catalog",
             executorAxis=category if queryable else None,
             subjectParam="subject",
+            selectorKind="subject",
+            selectorRequired=False,
             metadata=tuple(
                 sorted(
                     [(str(key), value) for key, value in spec.items() if isinstance(value, (str, bool, int, float))]

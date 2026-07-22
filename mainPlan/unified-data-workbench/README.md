@@ -1,6 +1,6 @@
 # DartLab Unified Data Workbench
 
-상태: 구현, 통합 검증, 외부 설치 검증, Signature Data Prism 혼합 query 승격 완료. 2026-07-22 저장소 실측과 공식 외부 설계 조사를 반영한다.
+상태: 구현, 전수 라우팅과 projection 인증, 170개 실제 물질화 감사, 외부 설치 검증 완료. 2026-07-22 저장소 실측과 공식 외부 설계 조사를 반영한다.
 
 ## 한 문장 정의
 
@@ -53,6 +53,7 @@ result = dartlab.data(
 4. [03-migration-deletion-rollback.md](03-migration-deletion-rollback.md): Universe와 Mirror 선별 승격, simulator 전환, 삭제와 롤백
 5. [04-verification-progress-ledger.md](04-verification-progress-ledger.md): 단계, 테스트, 실데이터 matrix, fatal gate, 진행 원장
 6. [05-signature-data-prism.md](05-signature-data-prism.md): 공식 외부 조사, 공통 evidence spine, 혼합 query, 용도별 설계
+7. [06-full-certification-and-hardening.md](06-full-certification-and-hardening.md): 170개 전수 실행 결과, concurrency, 빈 결과, 성능 등급, 남은 owner 상태
 
 ## 기존 계획과의 관계
 

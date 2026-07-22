@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import importlib
 from types import SimpleNamespace
 
 from dartlab.data import CatalogQuery
@@ -15,7 +16,7 @@ def testCatalogCoversEveryCurrentLowerLayerRegistryAndResource():
 
     assert result.status == "ok"
     assert len(result.gaps) == 0
-    assert sum(asset.executorKind == "engineAxis" for asset in assets) == 147
+    assert sum(asset.executorKind == "engineAxis" for asset in assets) == 146
     assert sum(asset.owner == "analysis" and asset.executorKind == "engineAxis" for asset in assets) == 22
     simulationInputs = next(asset for asset in assets if asset.assetId == "analysis.simulationInputs")
     assert simulationInputs.executorKind == "callable"
@@ -67,6 +68,25 @@ def testCatalogSnapshotIsDeterministic():
     ]
 
 
+def testEveryQueryableAssetHasResolvableExecutor():
+    import dartlab
+
+    assets = [asset for asset in dartlab.data("catalog").assets if asset.queryable]
+    assert len(assets) == 170
+    for asset in assets:
+        if asset.executorKind == "engineAxis":
+            assert callable(getattr(dartlab, asset.owner))
+            assert asset.executorAxis
+        elif asset.executorKind == "callable":
+            module = importlib.import_module(asset.executorModule or "")
+            assert callable(getattr(module, asset.executorAttribute or ""))
+        elif asset.executorKind == "resource":
+            assert asset.executorAxis
+            assert asset.selectorKind == "subject"
+        else:
+            raise AssertionError(f"queryable executorKind가 유효하지 않음: {asset.assetId}")
+
+
 def testPrivateResourceIsCataloguedButNotQueryable():
     import dartlab
 
@@ -74,6 +94,15 @@ def testPrivateResourceIsCataloguedButNotQueryable():
     asset = next(item for item in result.assets if item.assetId == "resource.forwardTests")
     assert asset.visibility == "PRIVATE"
     assert not asset.queryable
+
+
+def testDeprecatedRegistryAxisIsCataloguedButNotQueryable():
+    import dartlab
+
+    asset = next(item for item in dartlab.data("catalog").assets if item.assetId == "gather.calendar")
+    assert asset.hidden
+    assert not asset.queryable
+    assert asset.executorKind == "catalog"
 
 
 def testNewOwnerProviderNeedsNoCentralEngineList(monkeypatch):

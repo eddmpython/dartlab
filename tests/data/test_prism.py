@@ -3,8 +3,17 @@
 from __future__ import annotations
 
 import polars as pl
+import pytest
 
-from dartlab.data import DataQuery, DataRequest, FactorProjection, GraphProjection, NarrativeProjection
+from dartlab.data import (
+    DataQuery,
+    DataRequest,
+    FactorProjection,
+    GraphProjection,
+    NarrativeProjection,
+    QueryBudget,
+    RecordsProjection,
+)
 
 
 def _factorSource() -> pl.DataFrame:
@@ -168,3 +177,96 @@ def testGraphViewKeepsDirectionAndEvidenceWhileArrowSelectsTables(monkeypatch):
     assert graph["edges"][0]["targetId"] == "buyer"
     assert graph["evidence"]["sourceRef"].startswith("python:")
     assert set(result.toArrow()) == {"factor:measure=roe"}
+
+
+@pytest.mark.parametrize(
+    "projection",
+    (RecordsProjection(), NarrativeProjection(), FactorProjection(unit="score")),
+    ids=("records", "narrative", "factor"),
+)
+def testEveryEngineAssetPassesUniversalProjectionMatrix(monkeypatch, projection):
+    import dartlab
+
+    assets = tuple(
+        asset for asset in dartlab.data("catalog").assets if asset.queryable and asset.executorKind == "engineAxis"
+    )
+
+    def fakeEngine(owner):
+        def execute(axis, *args, **kwargs):
+            if isinstance(projection, FactorProjection):
+                return pl.DataFrame(
+                    {
+                        "종목코드": ["005930"],
+                        "종목명": ["삼성전자"],
+                        "2025": [1.0],
+                    }
+                )
+            return {"text": f"{owner}.{axis}", "value": 1.0}
+
+        return execute
+
+    for owner in {asset.owner for asset in assets}:
+        monkeypatch.setattr(dartlab, owner, fakeEngine(owner))
+    requests = tuple(
+        DataRequest(
+            asset.assetId,
+            requestId=asset.assetId,
+            projection=projection,
+            subjects=("probe",) if asset.selectorKind == "subject" else (),
+            measures=("probe",) if asset.selectorKind == "measure" else (),
+        )
+        for asset in assets
+    )
+
+    result = dartlab.data(
+        "query",
+        query=DataQuery(
+            requests=requests,
+            budget=QueryBudget(maxAssets=len(requests), maxRows=2_000),
+            completeness="requireComplete",
+        ),
+    )
+
+    assert result.status == "ok"
+    assert not result.gaps
+    assert len(result.partitions) == len(assets) == 146
+    assert {partition.projectionKind for partition in result.partitions} == {projection.kind}
+    assert len(result.toArrow()) == len(assets)
+
+
+def testEveryGraphAssetPreservesNodesEdgesAndEvidence(monkeypatch):
+    import dartlab
+
+    assets = tuple(
+        asset
+        for asset in dartlab.data("catalog").assets
+        if asset.queryable and asset.owner == "industry" and asset.kind == "graph"
+    )
+    monkeypatch.setattr(
+        dartlab,
+        "industry",
+        lambda *args, **kwargs: {
+            "nodes": ({"nodeId": "source"}, {"nodeId": "target"}),
+            "edges": ({"sourceId": "source", "targetId": "target", "predicate": "links"},),
+        },
+    )
+    result = dartlab.data(
+        "query",
+        query=DataQuery(
+            requests=tuple(
+                DataRequest(
+                    asset.assetId,
+                    requestId=asset.assetId,
+                    projection=GraphProjection(),
+                    subjects=("semiconductor",),
+                )
+                for asset in assets
+            )
+        ),
+    )
+
+    assert result.status == "ok"
+    assert len(result.partitions) == len(assets) == 9
+    for partition in result.partitions:
+        assert partition.data["edges"][0]["sourceId"] == "source"
+        assert partition.data["evidence"]["evidenceRef"].startswith("data-execution:")
