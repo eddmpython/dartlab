@@ -229,6 +229,7 @@ def test_readResourcePage_returnsSchemaValidEmptyStream(
     assert schema.names == ["value", "sourcePath"]
     assert tuple((field.name, str(field.type)) for field in schema) == empty.actualSchemaFields
     assert table.num_rows == 0
+    assert len(tuple(pa.ipc.open_stream(empty.encodedBytes))) == 1
     assert empty.receipt.startRow == empty.receipt.nextRow == 6
     assert empty.receipt.rowCount == 0
     assert empty.receipt.truncated is False

@@ -194,9 +194,18 @@ def readResourcePage(
     options = pa.ipc.IpcWriteOptions(compression=None)
     with openResourceBatchReader(manifest, request) as reader:
         schema = reader.schema
+        wroteBatch = False
         with pa.ipc.new_stream(sink, schema, options=options) as writer:
             for batch in reader:
                 writer.write_batch(batch)
+                wroteBatch = True
+            if not wroteBatch:
+                writer.write_batch(
+                    pa.RecordBatch.from_arrays(
+                        [pa.array([], type=field.type) for field in schema],
+                        schema=schema,
+                    )
+                )
         receipt = reader.receipt()
     encodedBytes = sink.getvalue().to_pybytes()
     return ResourcePage(
