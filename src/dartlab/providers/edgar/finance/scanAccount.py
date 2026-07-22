@@ -20,6 +20,37 @@ from dartlab.providers.edgar.finance.mapper import EDGAR_TO_DART_ALIASES, EdgarM
 
 _log = logging.getLogger(__name__)
 
+_DUCKDB_THREADS = 4
+_DUCKDB_MEMORY_LIMIT_MB = 64
+_DUCKDB_YEAR_SQL = """
+    SELECT
+        regexp_extract(filename, '([0-9]{10})[.]parquet$', 1) AS fileCik,
+        fy,
+        first(val ORDER BY file_row_number)
+            FILTER (WHERE fp = 'FY') AS fyFirst,
+        arg_min(val, file_row_number)
+            FILTER (WHERE fp = 'FY') AS fyVal,
+        arg_min(
+            val,
+            struct_pack(absVal := abs(val), tieVal := val, rowNum := file_row_number)
+        ) FILTER (WHERE fp = 'Q1') AS q1,
+        arg_min(
+            val,
+            struct_pack(absVal := abs(val), tieVal := val, rowNum := file_row_number)
+        ) FILTER (WHERE fp = 'Q2') AS q2,
+        arg_min(
+            val,
+            struct_pack(absVal := abs(val), tieVal := val, rowNum := file_row_number)
+        ) FILTER (WHERE fp = 'Q3') AS q3
+    FROM read_parquet(?, filename = true, file_row_number = true)
+    WHERE namespace = 'us-gaap'
+      AND lower(tag) IN (SELECT unnest(?))
+      AND starts_with(unit, 'USD')
+      AND fy BETWEEN 2000 AND 2030
+      AND fp IN ('FY', 'Q1', 'Q2', 'Q3')
+    GROUP BY fileCik, fy
+"""
+
 
 def _buildEdgarTagKeys(dartSnakeId: str) -> set[str]:
     """dartSnakeId에 매핑되는 모든 EDGAR XBRL tag를 수집."""
@@ -115,7 +146,7 @@ class _EdgarFileProcessor:
         return pl.DataFrame(rows) if rows else None
 
     def _parseQuarterly(self, df: pl.DataFrame, ticker: str) -> pl.DataFrame | None:
-        """분기: FY + frame 기반 standalone Q1-Q3 → Q4 역산."""
+        """분기: FY + frame 기반 standalone Q1-Q3에서 Q4를 역산한다."""
         rows: list[dict] = []
 
         for fy in df["fy"].unique().sort().to_list():
@@ -153,32 +184,163 @@ class _EdgarFileProcessor:
         return pl.DataFrame(rows) if rows else None
 
 
+def _listedParquetFiles(edgarDir: Path, cikToTicker: dict[str, str]) -> list[Path]:
+    """ticker map에 등재되고 실제 존재하는 filename CIK 파일만 반환한다."""
+    return [path for cik in sorted(cikToTicker) if (path := edgarDir / f"{cik}.parquet").is_file()]
+
+
+def _resultFromLong(longFrame: pl.DataFrame, cikToTicker: dict[str, str]) -> pl.DataFrame:
+    """filename CIK long rows를 기존 wide 반환 계약으로 변환한다."""
+    if longFrame.is_empty():
+        return pl.DataFrame({"stockCode": []})
+
+    tickerFrame = pl.DataFrame(
+        {
+            "fileCik": list(cikToTicker),
+            "stockCode": list(cikToTicker.values()),
+        }
+    )
+    values = (
+        longFrame.join(tickerFrame, on="fileCik", how="inner")
+        .sort(["fileCik", "period"])
+        .group_by(["stockCode", "period"], maintain_order=True)
+        .agg(pl.col("amount").first())
+    )
+    if values.is_empty():
+        return pl.DataFrame({"stockCode": []})
+
+    result = values.pivot(on="period", index="stockCode", values="amount")
+    periodCols = sorted((name for name in result.columns if name != "stockCode"), reverse=True)
+    return _joinCorpName(result.select(["stockCode", *periodCols]))
+
+
+def _resultFromYearRows(
+    yearRows: pl.DataFrame,
+    cikToTicker: dict[str, str],
+    *,
+    freq: str,
+) -> pl.DataFrame:
+    """DuckDB company-year rows에 기존 annual과 quarterly 규칙을 적용한다."""
+    if yearRows.is_empty():
+        return pl.DataFrame({"stockCode": []})
+
+    if freq == "Y":
+        longFrame = (
+            yearRows.filter(pl.col("fyFirst").is_not_null())
+            .with_columns(
+                pl.col("fy").cast(pl.Utf8).alias("period"),
+                pl.col("fyFirst").alias("amount"),
+            )
+            .select(["fileCik", "period", "amount"])
+        )
+        return _resultFromLong(longFrame, cikToTicker)
+
+    quarters = (
+        yearRows.select(["fileCik", "fy", "q1", "q2", "q3"])
+        .unpivot(
+            index=["fileCik", "fy"],
+            on=["q1", "q2", "q3"],
+            variable_name="quarter",
+            value_name="amount",
+        )
+        .filter(pl.col("amount").is_not_null())
+        .with_columns((pl.col("fy").cast(pl.Utf8) + pl.col("quarter").str.to_uppercase()).alias("period"))
+        .select(["fileCik", "period", "amount"])
+    )
+    fourth = (
+        yearRows.filter(pl.col("fyVal").is_not_null())
+        .with_columns(
+            (pl.col("fy").cast(pl.Utf8) + pl.lit("Q4")).alias("period"),
+            pl.when(
+                pl.all_horizontal(
+                    pl.col("q1").is_not_null(),
+                    pl.col("q2").is_not_null(),
+                    pl.col("q3").is_not_null(),
+                )
+            )
+            .then(pl.col("fyVal") - (pl.col("q1") + pl.col("q2") + pl.col("q3")))
+            .otherwise(pl.col("fyVal"))
+            .alias("amount"),
+        )
+        .select(["fileCik", "period", "amount"])
+    )
+    return _resultFromLong(pl.concat([quarters, fourth]), cikToTicker)
+
+
+def _scanAccountDuckDb(
+    parquetFiles: list[Path],
+    tagKeys: set[str],
+    cikToTicker: dict[str, str],
+    *,
+    freq: str,
+) -> pl.DataFrame:
+    """listed EDGAR parquet를 bounded DuckDB source aggregation으로 조회한다."""
+    import duckdb
+
+    if not parquetFiles:
+        return pl.DataFrame({"stockCode": []})
+
+    connection = duckdb.connect(":memory:")
+    try:
+        connection.execute(f"PRAGMA threads={_DUCKDB_THREADS}")
+        connection.execute(f"PRAGMA memory_limit='{_DUCKDB_MEMORY_LIMIT_MB}MB'")
+        yearRows = connection.execute(
+            _DUCKDB_YEAR_SQL,
+            [[str(path) for path in parquetFiles], sorted(tagKeys)],
+        ).pl()
+    finally:
+        connection.close()
+
+    return _resultFromYearRows(yearRows, cikToTicker, freq=freq)
+
+
+def _scanAccountFileLoop(
+    parquetFiles: list[Path],
+    tagKeys: set[str],
+    cikToTicker: dict[str, str],
+    *,
+    freq: str,
+) -> pl.DataFrame:
+    """기존 파일별 ThreadPool 구현을 fallback으로 실행한다."""
+    processor = _EdgarFileProcessor(tagKeys, freq=freq, cikToTicker=cikToTicker)
+    with ThreadPoolExecutor(max_workers=min(os.cpu_count() or 4, 8)) as pool:
+        chunks = [result for result in pool.map(processor, parquetFiles) if result is not None]
+
+    if not chunks:
+        return pl.DataFrame({"stockCode": []})
+
+    allDf = pl.concat(chunks).group_by(["stockCode", "period"]).agg(pl.col("amount").first())
+    result = allDf.pivot(on="period", index="stockCode", values="amount")
+    periodCols = sorted((name for name in result.columns if name != "stockCode"), reverse=True)
+    return _joinCorpName(result.select(["stockCode", *periodCols]))
+
+
 def scanAccount(
     dartSnakeId: str,
     *,
     freq: str = "Q",
 ) -> pl.DataFrame:
-    """전종목 EDGAR 단일 계정 시계열 — US 패리티 atomic primitive.
+    """전종목 EDGAR 단일 계정 시계열. US 패리티 atomic primitive.
 
-    DART ``scanAccount`` 와 동치 — 동일 snakeId 호출 시 동일 schema 의 wide DataFrame
+    DART ``scanAccount`` 와 동치다. 동일 snakeId 호출 시 동일 schema 의 wide DataFrame
     반환. 내부적으로 ``_buildEdgarTagKeys`` 가 DART snakeId → us-gaap concept set
     매핑 (``sales`` → ``{"Revenues", "RevenueFromContractWithCustomer*", "SalesRevenueNet"}`` 등).
 
-    parquet 병렬 처리:
-      - ``edgar/*.parquet`` glob → ThreadPoolExecutor (8 workers) 로 분산 scan.
-      - 파일당 ``_EdgarFileProcessor`` 가 tagKeys 매칭 → ``(stockCode, period, amount)`` row 추출.
-      - 전체 chunks ``pl.concat`` 후 ``group_by(stockCode, period).agg(first)`` 중복 제거.
+    parquet source-native 처리:
+      - ticker map에 존재하는 filename CIK 파일만 source manifest에 포함.
+      - DuckDB 4 threads, 64 MiB limit로 filter와 company-year aggregation.
+      - DuckDB 비가용 또는 실패 시 기존 ThreadPool file-loop로 안전하게 fallback.
       - period pivot wide → ``stockCode + 기간 컬럼들`` (최신 period 좌측).
       - ``_joinCorpName`` 으로 corpName 추가.
 
     Args:
         dartSnakeId: DART canonical snakeId (예: ``"sales"`` / ``"operating_profit"`` /
-            ``"total_assets"``). DART scanAccount 와 호환되는 키 사용 — provider 간 동일
+            ``"total_assets"``). DART scanAccount 와 호환되는 키 사용. provider 간 동일
             호출 가능. 미매핑 snakeId 호출 시 빈 DataFrame + warning.
         freq: ``"Q"`` 분기 wide (default) / ``"Y"`` 연간 wide. Company 엔진 freq 와 일치.
 
     Returns:
-        pl.DataFrame — ``stockCode`` (=ticker) / ``corpName`` (str) + 기간 컬럼들
+        pl.DataFrame. ``stockCode`` (=ticker) / ``corpName`` (str) + 기간 컬럼들
         (``"2025Q4"`` / ... / ``"2019Q1"``, 최신 좌측). row ~10K (SEC 등록 ticker 전체).
 
     Raises:
@@ -189,7 +351,7 @@ def scanAccount(
         >>> df.sort("2025", descending=True).head(10)
               / 가변 기간 컬럼 (float). freq="Q": ``"YYYYQn"`` / freq="Y": ``"YYYY"``.
             - row ≤ SEC 등록 ticker 수 (~10K).
-            - 빈 DataFrame — parquet 부재 또는 tagKeys 매칭 0.
+            - 빈 DataFrame: parquet 부재 또는 tagKeys 매칭 0.
         Prerequisites:
             - ``edgar/*.parquet`` (companyfacts XBRL 정규화본).
             - ``_buildEdgarTagKeys`` 의 us-gaap concept 매핑 사전.
@@ -199,12 +361,12 @@ def scanAccount(
             - parquet 은 SEC ``data.sec.gov/api/xbrl/companyfacts`` nightly pull.
         Dataflow:
             - dartSnakeId → ``_buildEdgarTagKeys`` (us-gaap concept set)
-            - → ``edgar/*.parquet`` glob → ``ThreadPoolExecutor`` (8 workers)
-            - → ``_EdgarFileProcessor`` 파일별 (stockCode, period, amount) row 추출
-            - → pl.concat → group_by(stockCode, period) first 중복 제거
+            - → ticker map filename CIK pruning
+            - → DuckDB source-native filter + company-year aggregation
+            - → 실패 시 ``_EdgarFileProcessor`` ThreadPool fallback
             - → period pivot wide (latest 좌측) → ``_joinCorpName`` → pl.DataFrame.
         TargetMarkets:
-            - US (SEC EDGAR) — NYSE/NASDAQ/AMEX/OTC SEC 등록 + 10-K/10-Q 정기공시.
+            - US (SEC EDGAR). NYSE/NASDAQ/AMEX/OTC SEC 등록 + 10-K/10-Q 정기공시.
     """
     from dartlab.core.dataLoader import _dataDir
 
@@ -234,29 +396,23 @@ def scanAccount(
         _log.warning("EDGAR에서 '%s'에 매핑되는 tag 없음", dartSnakeId)
         return pl.DataFrame({"stockCode": []})
 
-    processor = _EdgarFileProcessor(tagKeys, freq=freq, cikToTicker=cikToTicker)
-
-    _log.info("scanAccount(edgar, '%s', freq=%s): %d 파일 스캔", dartSnakeId, freq, len(parquetFiles))
-
-    with ThreadPoolExecutor(max_workers=min(os.cpu_count() or 4, 8)) as pool:
-        chunks = [r for r in pool.map(processor, parquetFiles) if r is not None]
-
-    if not chunks:
-        return pl.DataFrame({"stockCode": []})
-
-    allDf = pl.concat(chunks)
-    allDf = allDf.group_by(["stockCode", "period"]).agg(pl.col("amount").first())
-
-    result = allDf.pivot(on="period", index="stockCode", values="amount")  # polars-streaming-unsupported: pivot
-    periodCols = sorted(
-        (c for c in result.columns if c != "stockCode"),
-        reverse=True,
+    listedFiles = _listedParquetFiles(edgarDir, cikToTicker)
+    _log.info(
+        "scanAccount(edgar, '%s', freq=%s): listed %d/%d 파일 source-native scan",
+        dartSnakeId,
+        freq,
+        len(listedFiles),
+        len(parquetFiles),
     )
-    result = result.select(["stockCode"] + periodCols)
 
-    result = _joinCorpName(result)
+    try:
+        result = _scanAccountDuckDb(listedFiles, tagKeys, cikToTicker, freq=freq)
+    except Exception as exc:
+        _log.warning("scanAccount(edgar) DuckDB 실패, file-loop fallback: %s", exc)
+        result = _scanAccountFileLoop(parquetFiles, tagKeys, cikToTicker, freq=freq)
 
-    _log.info("scanAccount(edgar): %d종목 × %d기간", result.height, len(periodCols))
+    periodCount = len([name for name in result.columns if name not in ("stockCode", "corpName")])
+    _log.info("scanAccount(edgar): %d종목 × %d기간", result.height, periodCount)
     return result
 
 
