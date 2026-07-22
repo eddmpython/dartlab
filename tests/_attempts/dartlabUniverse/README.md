@@ -1,6 +1,6 @@
 # DartLab Universe U0~U4
 
-상태: U0 full census, U1 identity와 provenance, U2 capability execution kernel, U3 전수 catalog와 evidence graph가 live gate를 통과했다. U4는 하이브리드 검색, 불변 근거 팩, 블로그 AST, 기존 content index, 명시적 capability 실행 결합까지 구현했고 전체 corpus golden query gate는 진행 중이다. 손상된 upstream parquet 1건은 원본 상태를 숨기거나 외부 저장소를 수정하지 않고, 고정 raw authority와 historical transform을 사용한 Universe 전용 recovery receipt와 CAS로 복구했다. 3D, UI, route, 공개 버튼, 답변 생성, 영속 query index는 아직 없다.
+상태: U0 full census, U1 identity와 provenance, U2 capability execution kernel, U3 전수 catalog와 evidence graph, U4 하이브리드 검색과 불변 근거 팩이 live gate를 통과했다. U4는 전체 블로그 AST와 기존 DART, EDGAR, 뉴스 content index를 검색하고, DART와 EDGAR capability를 실제 고정 입력으로 실행해 Arrow 결과와 영수증을 재생 검증한다. 손상된 upstream parquet 1건은 원본 상태를 숨기거나 외부 저장소를 수정하지 않고, 고정 raw authority와 historical transform을 사용한 Universe 전용 recovery receipt와 CAS로 복구했다. 3D, UI, route, 공개 버튼, 답변 생성, 영속 query index는 아직 없다.
 
 이 디렉터리는 이전 Universe 실험을 전부 제거한 뒤 `mainPlan/dartlab-universe/`의 제품 계약에 맞춰 처음부터 다시 만든 데이터 엔진 경계다. 기존 `src/dartlab`, `ui`, `landing`, `blog`, `media`는 수정하지 않고 authority로 읽기만 한다.
 
@@ -91,7 +91,7 @@
 - pack digest, query plan, visibility, source revision, locator, content digest, virtual evidence resolver, execution receipt, lane coverage를 모델 없이 재생하는 G4E validator
 - query text의 prompt injection이 capability, subprocess, socket, 외부 tool call로 승격되지 않는 회귀 검증
 
-U4는 현재 query engine과 G4E 계약 단계다. live 전체 corpus golden query, 품질, leakage, latency gate를 통과하기 전에는 완료로 선언하지 않으며 U5 renderer를 시작하지 않는다.
+U4 query engine과 G4E 계약은 fixture와 live 전체 corpus golden query, 품질, leakage, latency gate를 통과했다. U5는 이 검증된 snapshot과 evidence pack만 입력으로 받는 3D projection 계약부터 시작한다.
 
 ## 정본 명령
 
@@ -220,6 +220,45 @@ uv run python -X utf8 -m tests._attempts.dartlabUniverse.u3C2 --strict
 uv run python -X utf8 -m tests._attempts.dartlabUniverse.u3Gate --strict
 ```
 
+## 2026-07-22 U4 live 인수 기록
+
+아래 값은 네 HF 저장소의 현재 고정 revision, 현재 로컬 블로그, 현재 content index를 하나의 catalog snapshot으로 결박한 관측값이다. 상류 HEAD가 바뀌면 C2와 U3를 다시 통과하기 전까지 U4가 닫히도록 한다.
+
+| 항목 | 관측값 |
+|---|---:|
+| U3 upstream | PASS |
+| blog post | 279 |
+| blog AST block | 55,984 |
+| blog image | 1,858 |
+| external video | 14 |
+| stale blog resource | 0 |
+| content index artifact | 12 |
+| fixture golden query | PASS |
+| live golden query | PASS |
+| live recall@20 | 100% |
+| exact recall@1 | 100% |
+| G4E validation | 100% |
+| private leakage | 0 |
+| hybrid retrieval p95 | 710.247ms |
+| DART source universe | 2,727 |
+| DART returned company | 2,685 |
+| DART row coverage | 98.460% |
+| DART numeric period value | 10,960 |
+| EDGAR source universe | 6,007 |
+| EDGAR returned company | 4,529 |
+| EDGAR row coverage | 75.395% |
+| EDGAR numeric period value | 44,710 |
+| capability canary | PASS |
+| U4 integrated gate | PASS |
+
+DART canary는 4개 입력 340,478,422 bytes를, EDGAR canary는 9,998개 입력 523,944,157 bytes를 실행 경계에 결박했다. 두 시장 모두 Arrow magic, execution ref, durable receipt replay, G4E 검증을 통과했다. U4 catalog snapshot ID는 `du:v1:catalog-snapshot:c093714d26a4a891d0121619b800315ee147fb833c9e6e5071aa43542491701e`다.
+
+정본 명령:
+
+```powershell
+uv run python -X utf8 -m tests._attempts.dartlabUniverse.u4Gate --strict
+```
+
 ## 다음 gate
 
-다음은 U4 UI 없는 질문과 `RetrievalEvidencePack` RAG 엔진이다. 그 다음 U5 3D 투영 계약과 U6 로컬 전용 천체 harness를 만든다. 기존 runtime 승격, UI 연결, 공개 route와 공개 버튼은 각각 후속 gate와 운영자 확인 전까지 금지한다.
+다음은 U5 대규모 3D 투영 계약과 로컬 전용 천체 harness다. 기존 runtime 승격, UI 연결, 공개 route와 공개 버튼은 각각 후속 gate와 운영자 확인 전까지 금지한다.

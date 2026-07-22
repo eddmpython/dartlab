@@ -46,6 +46,7 @@ class ExecutionRequest:
 @dataclass(frozen=True, slots=True)
 class ExecutionPolicy:
     controlRoot: str
+    readDataRoot: str | None = None
     expectedSnapshotId: str | None = None
     allowedRuntimeBoundaries: tuple[str, ...] = ("LOCAL_PYTHON",)
     allowedVisibilityScopes: tuple[str, ...] = ("LOCAL",)
@@ -159,6 +160,16 @@ def admitExecution(
         protected = Path(protectedPath).resolve()
         if controlRoot == protected or controlRoot.is_relative_to(protected) or protected.is_relative_to(controlRoot):
             reasons.append("CONTROL_ROOT_OVERLAPS_PROTECTED_PATH")
+    if policy.readDataRoot is not None:
+        readDataRoot = Path(policy.readDataRoot).resolve()
+        if not readDataRoot.is_dir():
+            reasons.append("READ_DATA_ROOT_INVALID")
+        if (
+            controlRoot == readDataRoot
+            or controlRoot.is_relative_to(readDataRoot)
+            or readDataRoot.is_relative_to(controlRoot)
+        ):
+            reasons.append("CONTROL_ROOT_OVERLAPS_READ_DATA_ROOT")
     reasons.extend(_bounded(request, policy))
     key = _idempotencyKey(request, capability, normalizedArgs)
     if not key:

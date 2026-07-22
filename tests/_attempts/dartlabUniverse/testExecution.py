@@ -162,6 +162,34 @@ def testWorkerEnvironmentDropsAmbientSecrets(tmp_path, monkeypatch):
     assert environment["SAFE_SETTING"] == "visible"
 
 
+def testWorkerEnvironmentMountsExistingDataRootWithoutMakingItWritable(tmp_path):
+    readDataRoot = tmp_path / "source-data"
+    readDataRoot.mkdir()
+    (readDataRoot / "source.txt").write_text("immutable", encoding="utf-8")
+    environment = buildWorkerEnvironment(tmp_path / "worker-env", readDataRoot=readDataRoot)
+    assert environment["DARTLAB_DATA_DIR"] == readDataRoot.resolve().as_posix()
+    assert environment["DARTLAB_UNIVERSE_READ_DATA_ROOT"] == readDataRoot.resolve().as_posix()
+    assert environment["DARTLAB_NO_HF_DOWNLOAD"] == "1"
+    assert (readDataRoot / "source.txt").read_text(encoding="utf-8") == "immutable"
+
+
+def testAdmissionRejectsMissingOrOverlappingReadDataRoot(tmp_path):
+    valid = _decision(tmp_path / "valid-control", "deterministicFixture")
+    missingPolicy = replace(valid.policy, readDataRoot=(tmp_path / "missing").as_posix())
+    missing = admitExecution(valid.request, _registry(valid.capability), missingPolicy)
+    assert not missing.admitted
+    assert "READ_DATA_ROOT_INVALID" in missing.reasonCodes
+
+    dataRoot = tmp_path / "data"
+    dataRoot.mkdir()
+    overlappingPolicy = replace(
+        valid.policy, controlRoot=(dataRoot / "control").as_posix(), readDataRoot=dataRoot.as_posix()
+    )
+    overlapping = admitExecution(valid.request, _registry(valid.capability), overlappingPolicy)
+    assert not overlapping.admitted
+    assert "CONTROL_ROOT_OVERLAPS_READ_DATA_ROOT" in overlapping.reasonCodes
+
+
 def testIdempotencyReturnsSameSuccessReceipt(tmp_path):
     decision = _decision(tmp_path, "deterministicFixture", args={"value": 8})
     first = runCapability(decision, CancelToken())

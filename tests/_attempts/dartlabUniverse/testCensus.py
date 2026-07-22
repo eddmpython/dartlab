@@ -6,12 +6,13 @@ import json
 import os
 from dataclasses import replace
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 from dotenv import load_dotenv
 
 from tests._attempts.dartlabUniverse.benchmark import runMetadataCensusBenchmark
-from tests._attempts.dartlabUniverse.canonical import DiscoveryState, canonicalJson
+from tests._attempts.dartlabUniverse.canonical import ConfiguredRepoSet, DiscoveryState, canonicalJson
 from tests._attempts.dartlabUniverse.census import defaultRepoRoot, runFullCensus
 from tests._attempts.dartlabUniverse.census import main as censusMain
 from tests._attempts.dartlabUniverse.sources.blogSource import enumerateBlog
@@ -50,6 +51,32 @@ def testHfDiscoveryPinsRevisionAndReadsMetadataOnly():
     assert all(file.payloadBodyRead is False for file in files)
     unknown = next(file for file in files if file.path.endswith(".mystery"))
     assert unknown.state is DiscoveryState.UNSUPPORTED_FORMAT
+
+
+def testHfDiscoveryPreservesGitBlobAndLfsPayloadDigestsSeparately():
+    payloadDigest = "b" * 64
+    api = SimpleNamespace(
+        repo_info=lambda *_args, **_kwargs: SimpleNamespace(
+            sha="c" * 40,
+            last_modified=None,
+            private=False,
+            siblings=(
+                SimpleNamespace(
+                    rfilename="dart/contentIndex/main_meta.parquet",
+                    size=123,
+                    blob_id="a" * 40,
+                    lfs={"sha256": payloadDigest},
+                ),
+            ),
+        )
+    )
+    configured = ConfiguredRepoSet(("fixture/data",), "fixture")
+
+    pinned = discoverHfRepositories(configured, "token", apiFactory=lambda: api)
+    file = tuple(enumerateHfTree(pinned[0]))[0]
+
+    assert file.oid == "a" * 40
+    assert file.lfsSha256 == payloadDigest
 
 
 def testSameRevisionProducesSameSnapshotDigest():

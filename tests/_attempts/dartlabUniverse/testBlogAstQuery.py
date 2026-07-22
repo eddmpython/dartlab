@@ -26,7 +26,7 @@ def _queryAndPack():
     index = _blogIndex()
     query = buildUniverseQuery(
         "54V는 왜 갑자기 200kg의 구리가 되는가",
-        timeContext=QueryTimeContext("2026-07-19T00:00:00Z", "2026-07-19T00:00:00Z"),
+        timeContext=QueryTimeContext("9999-12-30T00:00:00Z", "9999-12-30T00:00:00Z"),
         allowedVisibility=frozenset({Visibility.PUBLIC}),
     )
     plan = buildQueryPlan(query, runtime.snapshot)
@@ -82,6 +82,27 @@ def testBlogBodyQueryReturnsOriginalMarkdownAstLocator():
     assert dict(hits[0].evidence.selector)["blockKind"] in {"HEADING", "PARAGRAPH"}
     assert hits[0].evidence.quoteDigest
     assert "text" not in dict(hits[0].evidence.selector)
+
+
+def testBlogImageAltQueryKeepsImageEvidenceKind():
+    runtime = buildQueryRuntimeFixture()
+    index = _blogIndex()
+    query = buildUniverseQuery(
+        "사업보고서 전체를 panel 위치 지도로 여는 흐름",
+        timeContext=QueryTimeContext("9999-12-30T00:00:00Z", "9999-12-30T00:00:00Z"),
+        allowedVisibility=frozenset({Visibility.PUBLIC}),
+    )
+    plan = buildQueryPlan(query, runtime.snapshot)
+    with UniverseQueryEngine(
+        runtime.catalog,
+        runtime.snapshot,
+        runtime.graph,
+        identityLedger=runtime.ledger,
+        lexicalAdapters=(index,),
+    ) as engine:
+        pack = engine.execute(query, plan=plan)
+
+    assert any(dict(item.evidence.selector).get("blockKind") == "IMAGE" for item in pack.candidateEvidence[:20])
 
 
 def testG4EReparsesVirtualBlogEvidenceWithoutModel():

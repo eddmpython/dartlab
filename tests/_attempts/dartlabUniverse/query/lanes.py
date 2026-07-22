@@ -46,7 +46,7 @@ def _normalizeIdentifierText(value: str) -> str | None:
     return f"{normalizedNamespace}:{normalizedValue}"
 
 
-def _timeVisibleObject(item: CatalogObject, query: UniverseQuery) -> bool:
+def timeVisibleObject(item: CatalogObject, query: UniverseQuery) -> bool:
     valid = parseInstant(query.timeContext.validAt)
     known = parseInstant(query.timeContext.knownAt)
     start = parseInstant(item.validTime.start) if item.validTime.start else None
@@ -62,7 +62,7 @@ def _timeVisibleObject(item: CatalogObject, query: UniverseQuery) -> bool:
     )
 
 
-def _timeVisibleStatement(item: GraphStatement, query: UniverseQuery) -> bool:
+def timeVisibleStatement(item: GraphStatement, query: UniverseQuery) -> bool:
     valid = parseInstant(query.timeContext.validAt)
     known = parseInstant(query.timeContext.knownAt)
     start = parseInstant(item.validTime.start) if item.validTime.start else None
@@ -78,7 +78,7 @@ def _timeVisibleStatement(item: GraphStatement, query: UniverseQuery) -> bool:
     )
 
 
-def _timeVisibleRelation(item: GraphRelation, query: UniverseQuery) -> bool:
+def timeVisibleRelation(item: GraphRelation, query: UniverseQuery) -> bool:
     valid = parseInstant(query.timeContext.validAt)
     known = parseInstant(query.timeContext.knownAt)
     start = parseInstant(item.validTime.start) if item.validTime.start else None
@@ -223,7 +223,7 @@ class VisibleQueryView:
                 if resolution.state is ResolutionState.RESOLVED and resolution.entityId in self.objectById:
                     objectIds.add(str(resolution.entityId))
                     reasons.setdefault(str(resolution.entityId), set()).add("IDENTITY_LEDGER_MATCH")
-        ordered = tuple(sorted(objectIds))
+        ordered = tuple(item for item in sorted(objectIds) if timeVisibleObject(self.objectById[item], query))
         total = len(ordered)
         selected = ordered[: query.budget.exactLimit]
         hits = tuple(
@@ -247,7 +247,7 @@ class VisibleQueryView:
         hits: list[LaneHit] = []
         if hasObjectFilters:
             for obj in self.objects:
-                if not _timeVisibleObject(obj, query):
+                if not timeVisibleObject(obj, query):
                     continue
                 resources = tuple(self.resourceByVersion[ref] for ref in obj.resourceRefs)
                 if filters.objectKinds and obj.objectKind.upper() not in filters.objectKinds:
@@ -263,7 +263,7 @@ class VisibleQueryView:
                 hits.append(LaneHit(obj.objectId, "OBJECT", 1.0, ("STRUCTURED_OBJECT_FILTER",)))
         if hasStatementFilters:
             for statement in self.statements:
-                if not _timeVisibleStatement(statement, query):
+                if not timeVisibleStatement(statement, query):
                     continue
                 if filters.subjectRefs and statement.subjectRef not in filters.subjectRefs:
                     continue
@@ -301,6 +301,8 @@ class VisibleQueryView:
                 continue
             inverseFrequency = math.log1p(objectCount / len(postings))
             for objectId in postings:
+                if not timeVisibleObject(self.objectById[objectId], query):
+                    continue
                 scores[objectId] = scores.get(objectId, 0.0) + inverseFrequency
                 matches.setdefault(objectId, set()).add(term)
         ranked = tuple(sorted(scores, key=lambda item: (-scores[item], item)))
@@ -382,14 +384,14 @@ class VisibleQueryView:
                 statement.statementId not in candidateStatements
                 and statement.conflictGroupId is not None
                 and statement.conflictGroupId in conflictGroups
-                and _timeVisibleStatement(statement, query)
+                and timeVisibleStatement(statement, query)
             ):
                 contradictions.add(statement.statementId)
         for relation in graph.relations:
             if (
                 relation.relationType != "CONTRADICTS"
                 or relation.visibility not in self.allowedVisibility
-                or not _timeVisibleRelation(relation, query)
+                or not timeVisibleRelation(relation, query)
             ):
                 continue
             if relation.fromRef in candidateStatements and relation.toRef in self.statementById:

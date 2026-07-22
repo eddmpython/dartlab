@@ -2,12 +2,21 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 from dataclasses import replace
+
+import polars as pl
+import pytest
 
 from tests._attempts.dartlabUniverse.canonical import canonicalJson
 from tests._attempts.dartlabUniverse.contracts import Visibility
 from tests._attempts.dartlabUniverse.query.adapters import LexicalAdapterContext
-from tests._attempts.dartlabUniverse.query.contentSearch import DartContentSearchAdapter
+from tests._attempts.dartlabUniverse.query.contentSearch import (
+    DartContentSearchAdapter,
+    _bindLocalContentIndex,
+    _defaultSearch,
+)
 from tests._attempts.dartlabUniverse.query.engine import UniverseQueryEngine
 from tests._attempts.dartlabUniverse.query.models import QueryTimeContext, buildUniverseQuery
 from tests._attempts.dartlabUniverse.query.planner import buildQueryPlan
@@ -187,3 +196,124 @@ def testContentHitMutationAndVisibilityBypassAreRejected():
     )
     assert hidden.hits == ()
     assert calls == []
+
+
+@pytest.mark.parametrize(
+    ("namespace", "identifier", "source", "sourceRef"),
+    (
+        ("DART_RCEPT_NO", "20260701900720", "allFilings", "dart:allFilings:20260701900720#section=0"),
+        ("SEC_ACCESSION", "0001039399-26-000009", "edgar-panel", "edgar:panel:0001039399-26-000009#section=0"),
+    ),
+)
+def testDartReceiptAndSecAccessionAreSourceNativeExactRankOne(namespace, identifier, source, sourceRef):
+    runtime = buildQueryRuntimeFixture()
+
+    def exactRows(value: str, _limit: int) -> tuple[dict[str, object], ...]:
+        assert value == identifier
+        return (
+            {
+                "rcept_no": identifier,
+                "source": source,
+                "sourceRef": sourceRef,
+                "sourceDataAsOf": "20260708",
+                "section_order": 0,
+                "scope": "content",
+            },
+        )
+
+    adapter = DartContentSearchAdapter(
+        runtime.catalog,
+        searchCallable=lambda _queryText, _limit: (),
+        exactSearchCallable=exactRows,
+        indexResourceVersionId=_publicAnchor(runtime),
+    )
+    query = buildUniverseQuery(
+        f"{namespace}:{identifier}",
+        timeContext=QueryTimeContext("2026-07-19T00:00:00Z", "2026-07-19T00:00:00Z"),
+        allowedVisibility=frozenset({Visibility.PUBLIC}),
+    )
+    plan = buildQueryPlan(query, runtime.snapshot)
+    with UniverseQueryEngine(
+        runtime.catalog,
+        runtime.snapshot,
+        runtime.graph,
+        exactAdapters=(adapter,),
+    ) as engine:
+        pack = engine.execute(query, plan=plan)
+
+    first = pack.candidateEvidence[0]
+    assert first.rank == 1
+    assert first.candidateKind == "CONTENT_HIT"
+    assert dict(first.evidence.selector)["sourceRef"] == sourceRef
+    assert any(item.lane.value == "EXACT" for item in first.scoreProvenance)
+    assert adapter.latestRuns[0].lane.value == "EXACT"
+
+    report = validateRetrievalEvidencePack(
+        pack,
+        query=query,
+        plan=plan,
+        snapshot=runtime.snapshot,
+        catalog=runtime.catalog,
+        graph=runtime.graph,
+        virtualRetrievedVerifiers=(adapter.verifyRetrieved,),
+    )
+    assert report.valid, report.issues
+
+
+def testLocalContentIndexArtifactsMustMatchCatalogResources(tmp_path, monkeypatch):
+    runtime = buildQueryRuntimeFixture()
+    active = tmp_path / "active"
+    active.mkdir()
+    payloads = {
+        "main_meta.parquet": b"metadata",
+        "main.postings.bin": b"postings",
+    }
+    fileHashes = {}
+    fileSources = {}
+    resources = []
+    anchor = runtime.catalog.resources[0]
+    for index, (name, payload) in enumerate(payloads.items()):
+        (active / name).write_bytes(payload)
+        digest = hashlib.sha256(payload).hexdigest()
+        sourcePath = f"dart/contentIndex/lite/_staging/fixture/{name}"
+        fileHashes[name] = digest
+        fileSources[name] = sourcePath
+        resources.append(
+            replace(
+                anchor,
+                resourceId=f"du:v1:hf-file:{index:064x}",
+                resourceVersionId=f"du:v1:hf-file-version:{index:064x}",
+                locator=(("path", sourcePath), ("lfsSha256", digest)),
+                contentDigest=digest,
+                byteSize=len(payload),
+            )
+        )
+    (active / "manifest.json").write_text(
+        json.dumps({"fileHashes": fileHashes, "fileSources": fileSources}),
+        encoding="utf-8",
+    )
+    catalog = replace(runtime.catalog, resources=tuple(resources))
+    monkeypatch.setattr("dartlab.providers.dart.search.fieldIndex._activeIndexDir", lambda: active)
+
+    binding = _bindLocalContentIndex(catalog)
+    assert binding.metaResourceVersionId == resources[0].resourceVersionId
+    assert set(binding.resourceVersionIds) == {item.resourceVersionId for item in resources}
+
+    (active / "main.postings.bin").write_bytes(b"mutated")
+    with pytest.raises(ValueError, match="digest 불일치"):
+        _bindLocalContentIndex(catalog)
+
+
+def testDefaultContentSearchAppliesSourceIntentBeforeRanking(monkeypatch):
+    calls = []
+
+    def searchContent(queryText: str, *, sourceKind: str | None, limit: int):
+        calls.append((queryText, sourceKind, limit))
+        return pl.DataFrame({"sourceRef": ["edgar:panel:fixture"]})
+
+    monkeypatch.setattr("dartlab.providers.dart.search.fieldIndex.searchContent", searchContent)
+
+    rows = _defaultSearch("Apple Form 10-K", 20)
+
+    assert calls == [("Apple Form 10-K", "filing", 20)]
+    assert rows == ({"sourceRef": "edgar:panel:fixture"},)

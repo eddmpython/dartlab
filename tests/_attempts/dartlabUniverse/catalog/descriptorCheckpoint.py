@@ -220,6 +220,9 @@ class DescriptorCheckpointStore:
         self.connection = sqlite3.connect(self.path, timeout=30.0)
         self.connection.execute("PRAGMA journal_mode=WAL")
         self.connection.execute("PRAGMA synchronous=FULL")
+        self.connection.execute("PRAGMA temp_store=MEMORY")
+        self.connection.execute("PRAGMA cache_size=-65536")
+        self.connection.execute("PRAGMA mmap_size=536870912")
         integrity = self.connection.execute("PRAGMA quick_check").fetchone()
         if integrity is None or integrity[0] != "ok":
             self.connection.close()
@@ -529,31 +532,43 @@ class DescriptorCheckpointStore:
                 resourcesByContentKey.setdefault(contentKey, []).append(resource)
         reusedCount = 0
         if resourcesByContentKey:
-            cacheCursor = self.connection.execute(
-                "SELECT content_key, format_kind, semantic_digest, payload_digest, payload "
-                "FROM descriptor_content_cache WHERE policy_digest = ? ORDER BY content_key",
-                (policyDigest,),
-            )
-            for rawContentKey, rawFormatKind, rawSemanticDigest, rawPayloadDigest, rawPayload in cacheCursor:
-                targets = resourcesByContentKey.get(str(rawContentKey))
-                if not targets:
-                    continue
-                formatKind = str(rawFormatKind)
-                semanticDigest = str(rawSemanticDigest)
-                payloadDigest = str(rawPayloadDigest)
-                payload = bytes(rawPayload)
-                if hashlib.sha256(payload).hexdigest() != payloadDigest:
-                    raise DescriptorCheckpointIntegrityError("descriptor content cache checksum mismatch")
-                cachedDescriptor = _decode(payload)
-                if _fastDescriptorSemanticDigest(cachedDescriptor) != semanticDigest:
-                    raise DescriptorCheckpointIntegrityError("descriptor content cache semantic mismatch")
-                if cachedDescriptor.status not in _REUSABLE_DESCRIPTOR_STATES:
-                    continue
-                for resource in targets:
-                    if formatKind != descriptorFormatKind(resource):
-                        raise DescriptorCheckpointIntegrityError("descriptor content cache format mismatch")
-                    descriptors.append(_rebindDescriptor(cachedDescriptor, resource))
-                    reusedCount += 1
+            with self.connection:
+                self.connection.execute("DROP TABLE IF EXISTS temp.load_descriptor_content_keys")
+                self.connection.execute("CREATE TEMP TABLE load_descriptor_content_keys (content_key TEXT PRIMARY KEY)")
+                self.connection.executemany(
+                    "INSERT INTO load_descriptor_content_keys VALUES (?)",
+                    ((item,) for item in resourcesByContentKey),
+                )
+            try:
+                cacheCursor = self.connection.execute(
+                    "SELECT cache.content_key, cache.format_kind, cache.semantic_digest, "
+                    "cache.payload_digest, cache.payload "
+                    "FROM descriptor_content_cache cache "
+                    "JOIN load_descriptor_content_keys live ON live.content_key = cache.content_key "
+                    "WHERE cache.policy_digest = ? ORDER BY cache.content_key",
+                    (policyDigest,),
+                )
+                for rawContentKey, rawFormatKind, rawSemanticDigest, rawPayloadDigest, rawPayload in cacheCursor:
+                    targets = resourcesByContentKey[str(rawContentKey)]
+                    formatKind = str(rawFormatKind)
+                    semanticDigest = str(rawSemanticDigest)
+                    payloadDigest = str(rawPayloadDigest)
+                    payload = bytes(rawPayload)
+                    if hashlib.sha256(payload).hexdigest() != payloadDigest:
+                        raise DescriptorCheckpointIntegrityError("descriptor content cache checksum mismatch")
+                    cachedDescriptor = _decode(payload)
+                    if _fastDescriptorSemanticDigest(cachedDescriptor) != semanticDigest:
+                        raise DescriptorCheckpointIntegrityError("descriptor content cache semantic mismatch")
+                    if cachedDescriptor.status not in _REUSABLE_DESCRIPTOR_STATES:
+                        continue
+                    for resource in targets:
+                        if formatKind != descriptorFormatKind(resource):
+                            raise DescriptorCheckpointIntegrityError("descriptor content cache format mismatch")
+                        descriptors.append(_rebindDescriptor(cachedDescriptor, resource))
+                        reusedCount += 1
+            finally:
+                with self.connection:
+                    self.connection.execute("DROP TABLE IF EXISTS temp.load_descriptor_content_keys")
         self.lastLoadReusedCount = reusedCount
         return tuple(sorted(descriptors, key=lambda item: item.resourceVersionId))
 

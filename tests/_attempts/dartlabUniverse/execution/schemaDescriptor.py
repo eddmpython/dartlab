@@ -248,6 +248,8 @@ def _matchesSchema(value: Any, schema: dict[str, Any], path: str = "$") -> list[
         return [ValidationIssue("SCHEMA_TYPE_UNKNOWN", path, str(expected))]
     if not matched:
         return [ValidationIssue("SCHEMA_TYPE", path, f"expected={expected}, actual={type(value).__name__}")]
+    if "enum" in schema and value not in schema["enum"]:
+        return [ValidationIssue("SCHEMA_ENUM", path, f"allowed={schema['enum']}, actual={value!r}")]
     if expected == "object" and isinstance(value, dict):
         properties = schema.get("properties", {})
         for name in schema.get("required", []):

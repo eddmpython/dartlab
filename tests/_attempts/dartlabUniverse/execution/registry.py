@@ -152,12 +152,38 @@ def _axisImplementationEvidence(engine: str, axis: str) -> tuple[tuple[str, ...]
                     targets.append(getattr(importlib.import_module(calcModule), calcFunction))
                 except (ImportError, AttributeError) as exc:
                     raise RuntimeError(f"axis calc unresolved: {calcModule}:{calcFunction}") from exc
+    if engine == "scan" and axis in {"account", "ratio"}:
+        edgarModule = importlib.import_module("dartlab.providers.edgar.finance.scanAccount")
+        targets.append(getattr(edgarModule, "scanAccount" if axis == "account" else "scanRatio"))
     for target in targets:
         item = _fileEvidence(target)
         if item is not None and item[0] not in digests:
             digests.append(item[0])
             evidence.append(item[1])
     return tuple(sorted(digests)), tuple(sorted(evidence))
+
+
+def _closeAxisSpecificArgs(descriptor: SchemaDescriptor, engine: str | None, axis: str | None) -> SchemaDescriptor:
+    """Dispatcher의 명시적이고 소스에 존재하는 axis별 kwargs만 schema에 추가한다."""
+    if engine != "scan" or axis not in {"account", "ratio"}:
+        return descriptor
+    argsSchema = dict(descriptor.argsSchema)
+    properties = dict(argsSchema.get("properties", {}))
+    properties["market"] = {"type": "string", "enum": ["dart", "edgar", "us", "US"]}
+    argsSchema["properties"] = dict(sorted(properties.items()))
+    descriptorInputs = {
+        "apiRef": descriptor.apiRef,
+        "axis": descriptor.axis,
+        "sourceDigest": descriptor.sourceDigest,
+        "argsSchema": argsSchema,
+        "outputSchema": descriptor.outputSchema,
+        "version": descriptor.version,
+    }
+    return replace(
+        descriptor,
+        descriptorId=f"du:v1:schema:{canonicalDigest(descriptorInputs)}",
+        argsSchema=argsSchema,
+    )
 
 
 def _axisCandidate(
@@ -294,6 +320,7 @@ def _buildRef(
             "evidenceRefs": evidence,
         },
     )
+    descriptor = _closeAxisSpecificArgs(descriptor, engine, axis)
     corpus = buildContractCorpus(descriptor)
     report = validateSchemaDescriptor(descriptor, corpus)
     descriptor = closeSchemaDescriptor(descriptor, corpus, report)

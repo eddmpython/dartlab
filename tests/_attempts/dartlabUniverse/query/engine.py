@@ -7,10 +7,17 @@ from dataclasses import replace
 from ..canonical import canonicalDigest
 from ..catalog.models import CatalogState
 from ..catalog.snapshot import CatalogSnapshot
+from ..contracts import Visibility
 from ..graph.query import GraphStore
 from ..identity.ledger import IdentityLedger
 from ..ids import logicalId
-from .adapters import LexicalAdapterContext, LexicalQueryAdapter, mergeLexicalResults
+from .adapters import (
+    ExactQueryAdapter,
+    LexicalAdapterContext,
+    LexicalQueryAdapter,
+    mergeExactResults,
+    mergeLexicalResults,
+)
 from .capability import QueryCapabilityExecutor
 from .lanes import LaneHit, LaneResult, VisibleQueryView
 from .models import (
@@ -43,6 +50,7 @@ class UniverseQueryEngine:
         graph: GraphStore,
         *,
         identityLedger: IdentityLedger | None = None,
+        exactAdapters: tuple[ExactQueryAdapter, ...] = (),
         lexicalAdapters: tuple[LexicalQueryAdapter, ...] = (),
         capabilityExecutor: QueryCapabilityExecutor | None = None,
     ) -> None:
@@ -56,17 +64,24 @@ class UniverseQueryEngine:
         self.snapshot = snapshot
         self.graph = graph
         self.identityLedger = identityLedger
+        self.exactAdapters = exactAdapters
         self.lexicalAdapters = lexicalAdapters
         self.capabilityExecutor = capabilityExecutor
         self._views: dict[tuple[str, ...], VisibleQueryView] = {}
 
     def _view(self, query: UniverseQuery) -> VisibleQueryView:
-        key = tuple(item.value for item in query.allowedVisibility)
+        return self.prepare(frozenset(query.allowedVisibility))
+
+    def prepare(self, allowedVisibility: frozenset[Visibility]) -> VisibleQueryView:
+        """Visibility별 process-local projection을 query latency 측정 전에 준비한다."""
+        if not allowedVisibility or any(not isinstance(item, Visibility) for item in allowedVisibility):
+            raise ValueError("query engine visibility projection 입력이 잘못됨")
+        key = tuple(item.value for item in sorted(allowedVisibility, key=lambda item: item.value))
         if key not in self._views:
             self._views[key] = VisibleQueryView(
                 self.catalog,
                 self.graph,
-                allowedVisibility=frozenset(query.allowedVisibility),
+                allowedVisibility=allowedVisibility,
             )
         return self._views[key]
 
@@ -132,14 +147,21 @@ class UniverseQueryEngine:
         if query.capabilityRequests and self.capabilityExecutor is None:
             raise ValueError("명시적 capability request에는 executor가 필요함")
         view = self._view(query)
-        exact = view.exact(query, self.identityLedger)
-        structured = view.structured(query)
-        metadataLexical = view.lexical(query)
+        metadataExact = view.exact(query, self.identityLedger)
         adapterContext = LexicalAdapterContext(
             allowedVisibility=view.allowedVisibility,
             objectById=view.objectById,
             resourceByVersion=view.resourceByVersion,
         )
+        exact = mergeExactResults(
+            (
+                metadataExact,
+                *(adapter.searchExact(query, adapterContext) for adapter in self.exactAdapters),
+            ),
+            limit=query.budget.exactLimit,
+        )
+        structured = view.structured(query)
+        metadataLexical = view.lexical(query)
         lexical = mergeLexicalResults(
             (
                 metadataLexical,

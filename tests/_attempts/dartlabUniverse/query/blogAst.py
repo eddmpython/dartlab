@@ -18,7 +18,7 @@ from ..canonical import canonicalDigest
 from ..catalog.models import CatalogEvidence, CatalogState
 from ..ids import blogBlockIds, logicalId
 from .adapters import LexicalAdapterContext
-from .lanes import LaneHit, LaneResult
+from .lanes import LaneHit, LaneResult, timeVisibleObject
 from .models import QueryLane, RetrievedEvidence, UniverseQuery, normalizeSearchTerms
 
 BLOG_AST_SCHEMA_VERSION = "du-blog-ast-v1"
@@ -69,7 +69,7 @@ def _splitFrontmatter(text: str) -> tuple[dict[str, Any], str, int]:
     return loaded, "\n".join(lines[endIndex + 1 :]), endIndex + 1
 
 
-def _inlineText(token: Token) -> str:
+def _inlineText(token: Token, *, includeImageAlt: bool = True) -> str:
     if token.type != "inline":
         return token.content
     values = []
@@ -78,7 +78,7 @@ def _inlineText(token: Token) -> str:
             values.append(child.content)
         elif child.type in {"softbreak", "hardbreak"}:
             values.append(" ")
-        elif child.type == "image":
+        elif child.type == "image" and includeImageAlt:
             values.append(child.content)
     return "".join(values).strip()
 
@@ -222,7 +222,12 @@ class BlogAstIndex:
                 )
             elif token.type == "paragraph_open" and index + 1 < len(tokens):
                 inline = tokens[index + 1]
-                append("PARAGRAPH", _inlineText(inline), lineStart=lineStart, lineEnd=lineEnd)
+                append(
+                    "PARAGRAPH",
+                    _inlineText(inline, includeImageAlt=False),
+                    lineStart=lineStart,
+                    lineEnd=lineEnd,
+                )
                 for child in inline.children or ():
                     if child.type == "image":
                         append(
@@ -372,7 +377,9 @@ class BlogAstIndex:
             inverseFrequency = math.log1p(blockCount / len(postings))
             for blockId in postings:
                 block = self._blockById[blockId]
-                if block.postObjectId not in context.objectById:
+                if block.postObjectId not in context.objectById or not timeVisibleObject(
+                    context.objectById[block.postObjectId], query
+                ):
                     continue
                 blockScores[blockId] = blockScores.get(blockId, 0.0) + inverseFrequency
                 matchedTerms.setdefault(blockId, set()).add(term)

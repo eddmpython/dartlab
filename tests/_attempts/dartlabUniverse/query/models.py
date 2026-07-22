@@ -19,7 +19,8 @@ REQUIRED_QUERY_LANES = ("EXACT", "STRUCTURED", "LEXICAL", "GRAPH", "CONTRADICTIO
 _TOKEN_RE = re.compile(r"[\w가-힣]+(?:[-._:/][\w가-힣]+)*", re.UNICODE)
 _DU_ID_RE = re.compile(r"du:v1:[a-z][a-z0-9-]{0,62}:[0-9a-f]{64}")
 _EXPLICIT_IDENTIFIER_RE = re.compile(
-    r"(?i)\b(DART_CORP_CODE|SEC_CIK|KR_STOCK_CODE|US_TICKER|ISIN)\s*[:=]\s*([A-Z0-9.-]+)"
+    r"(?i)\b(DART_CORP_CODE|DART_RCEPT_NO|SEC_CIK|SEC_ACCESSION|KR_STOCK_CODE|US_TICKER|ISIN)"
+    r"\s*[:=]\s*([A-Z0-9.-]+)"
 )
 
 

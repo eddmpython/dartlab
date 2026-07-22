@@ -119,6 +119,7 @@ class HfFileMetadata:
     path: str
     size: int
     oid: str | None
+    lfsSha256: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -142,6 +143,7 @@ class DiscoveredFile:
     formatKind: str
     state: DiscoveryState
     payloadBodyRead: bool = False
+    lfsSha256: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

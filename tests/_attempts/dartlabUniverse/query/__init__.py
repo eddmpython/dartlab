@@ -2,6 +2,7 @@
 
 from .blogAst import BlogAstIndex
 from .capability import CapabilityExecutionAdapter
+from .capabilityCanary import CapabilityCanaryReport, runCapabilityCanary
 from .contentSearch import DartContentSearchAdapter
 from .engine import UniverseQueryEngine
 from .models import (
@@ -19,6 +20,7 @@ __all__ = (
     "QueryBudget",
     "BlogAstIndex",
     "CapabilityExecutionAdapter",
+    "CapabilityCanaryReport",
     "CapabilityRequest",
     "DartContentSearchAdapter",
     "QueryFilters",
@@ -29,4 +31,5 @@ __all__ = (
     "UniverseQueryEngine",
     "buildQueryPlan",
     "buildUniverseQuery",
+    "runCapabilityCanary",
 )

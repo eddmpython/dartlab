@@ -50,6 +50,7 @@ class CapabilityExecutionAdapter:
         *,
         controlRoot: Path,
         protectedPaths: tuple[Path, ...],
+        readDataRoot: Path | None = None,
         allowedRuntimeBoundaries: tuple[str, ...] = ("LOCAL_PYTHON",),
         allowedExecutorPrefixes: tuple[str, ...] = ("dartlab",),
     ) -> None:
@@ -57,6 +58,7 @@ class CapabilityExecutionAdapter:
         self.registry = registry
         self.controlRoot = controlRoot.resolve()
         self.protectedPaths = tuple(item.resolve() for item in protectedPaths)
+        self.readDataRoot = readDataRoot.resolve() if readDataRoot is not None else None
         self.allowedRuntimeBoundaries = allowedRuntimeBoundaries
         self.allowedExecutorPrefixes = allowedExecutorPrefixes
         self._receiptById: dict[str, ExecutionReceipt] = {}
@@ -104,6 +106,7 @@ class CapabilityExecutionAdapter:
         )
         policy = ExecutionPolicy(
             controlRoot=self.controlRoot.as_posix(),
+            readDataRoot=self.readDataRoot.as_posix() if self.readDataRoot is not None else None,
             expectedSnapshotId=snapshot.universeSnapshotId,
             allowedRuntimeBoundaries=self.allowedRuntimeBoundaries,
             allowedVisibilityScopes=tuple(item.value for item in query.allowedVisibility),

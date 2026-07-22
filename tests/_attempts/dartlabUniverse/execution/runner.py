@@ -284,7 +284,7 @@ def _runWorker(
         raise RuntimeError("admitted capability descriptor 누락")
     if not _executorAllowed(capability.apiRef, admitted.policy.allowedExecutorPrefixes):
         raise RuntimeError("EXECUTOR_NOT_ALLOWLISTED")
-    environment = buildWorkerEnvironment(workerRoot)
+    environment = buildWorkerEnvironment(workerRoot, readDataRoot=admitted.policy.readDataRoot)
     job = {
         "workerRoot": workerRoot.as_posix(),
         "apiRef": capability.apiRef,

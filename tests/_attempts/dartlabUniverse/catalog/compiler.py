@@ -462,12 +462,15 @@ def compileCatalog(census: CensusResult) -> CatalogState:
             (item.repoId, item.revision, item.path, item.size, item.formatKind),
         )
         resourceId, resourceVersionId = hfFileIds(item.repoId, item.path, item.revision, oid)
-        locator = (
+        locatorItems = [
             ("repo", item.repoId),
             ("revision", item.revision),
             ("path", item.path),
             ("oid", item.oid or oid),
-        )
+        ]
+        if item.lfsSha256:
+            locatorItems.append(("lfsSha256", item.lfsSha256))
+        locator = tuple(locatorItems)
         status = "DISCOVERED" if item.state is DiscoveryState.CLASSIFIED else item.state.value
         resource = CatalogResource(
             resourceId=resourceId,
@@ -480,7 +483,7 @@ def compileCatalog(census: CensusResult) -> CatalogState:
             sourceRevision=item.revision,
             locator=locator,
             contentSelector=(),
-            contentDigest=oid,
+            contentDigest=item.lfsSha256 or oid,
             mediaType=_MEDIA_TYPE.get(item.formatKind),
             schemaFingerprint=None,
             byteSize=item.size if item.size >= 0 else None,

@@ -6,7 +6,7 @@ import pytest
 
 from .execution.admission import ExecutionBudget, ExecutionPolicy, ExecutionRequest, admitExecution
 from .execution.registry import buildCapabilityRegistry
-from .execution.schemaDescriptor import buildContractCorpus, validateSchemaDescriptor
+from .execution.schemaDescriptor import buildContractCorpus, validateSchemaDescriptor, validateValue
 from .sources.capabilitySource import enumerateCapabilities
 from .validation.g2 import validateG2
 
@@ -80,6 +80,18 @@ def testSourceDigestMutationMakesDescriptorStale(liveRegistry):
     report = validateSchemaDescriptor(descriptor, corpus)
     assert not report.valid
     assert "SOURCE_DIGEST_STALE" in {item.code for item in report.issues}
+
+
+def testScanAccountSchemaClosesDartAndEdgarMarketDispatch(liveRegistry):
+    capability = liveRegistry.byCandidate("scan.account")
+    assert capability is not None and capability.schemaDescriptor is not None
+    schema = capability.schemaDescriptor.argsSchema
+    assert validateValue({"target": "sales", "freq": "Y", "market": "dart"}, schema).valid
+    assert validateValue({"target": "sales", "freq": "Y", "market": "edgar"}, schema).valid
+    assert not validateValue({"target": "sales", "freq": "Y", "market": "unknown"}, schema).valid
+    assert any(
+        "providers/edgar/finance/scanAccount.py" in item for item in capability.schemaDescriptor.extractionEvidenceRefs
+    )
 
 
 def testInventedAxisCannotBeAdmitted(liveRegistry, tmp_path):

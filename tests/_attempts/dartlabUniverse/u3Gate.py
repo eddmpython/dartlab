@@ -6,7 +6,7 @@ import argparse
 import os
 import sys
 import time
-from dataclasses import asdict, replace
+from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -38,12 +38,29 @@ def defaultControlRoot() -> Path:
     return root / "DartLab" / "universe" / "control" / "u3"
 
 
-def runLiveU3(*, checkpointPath: Path, recoveryRoot: Path, controlRoot: Path) -> tuple[object, dict[str, object]]:
-    """Live G0, G1, C2, catalog snapshot, evidence relation을 한 번에 검증한다."""
+@dataclass(frozen=True, slots=True)
+class LiveU3Artifacts:
+    repoRoot: Path
+    token: str | None
+    census: object
+    catalog: object
+    descriptors: tuple[object, ...]
+    recoveries: tuple[object, ...]
+    liveG1: object
+    g2: object
+    snapshot: object
+    relations: tuple[object, ...]
+    slo: object
+    report: U3Report
+    recoveryReceiptCount: int
+    staleRecoveryReceiptCount: int
+
+
+def buildLiveU3Artifacts(*, checkpointPath: Path, recoveryRoot: Path, controlRoot: Path) -> LiveU3Artifacts:
+    """U3와 후속 gate가 공유하는 현재 catalog, snapshot, relation을 한 번 조립한다."""
     repoRoot = defaultRepoRoot()
     load_dotenv(repoRoot / ".env", override=False)
     token = os.getenv("HF_TOKEN") or os.getenv("HUGGINGFACE_HUB_TOKEN")
-    started = time.perf_counter()
     census = runFullCensus(repoRoot, token=token, protectExisting=False)
     catalog = compileCatalog(census)
     policy = DescriptorPolicy()
@@ -95,6 +112,45 @@ def runLiveU3(*, checkpointPath: Path, recoveryRoot: Path, controlRoot: Path) ->
             recoveries=recoveries,
             recoveryCas=recoveryStore.cas,
         )
+    return LiveU3Artifacts(
+        repoRoot=repoRoot,
+        token=token,
+        census=census,
+        catalog=catalog,
+        descriptors=descriptors,
+        recoveries=recoveries,
+        liveG1=liveG1,
+        g2=g2,
+        snapshot=snapshot,
+        relations=relations,
+        slo=slo,
+        report=report,
+        recoveryReceiptCount=recoveryReceiptCount,
+        staleRecoveryReceiptCount=staleRecoveryReceiptCount,
+    )
+
+
+def runLiveU3(*, checkpointPath: Path, recoveryRoot: Path, controlRoot: Path) -> tuple[object, dict[str, object]]:
+    """Live G0, G1, C2, catalog snapshot, evidence relation을 한 번에 검증한다."""
+    started = time.perf_counter()
+    artifacts = buildLiveU3Artifacts(
+        checkpointPath=checkpointPath,
+        recoveryRoot=recoveryRoot,
+        controlRoot=controlRoot,
+    )
+    census = artifacts.census
+    catalog = artifacts.catalog
+    descriptors = artifacts.descriptors
+    recoveries = artifacts.recoveries
+    liveG1 = artifacts.liveG1
+    g2 = artifacts.g2
+    snapshot = artifacts.snapshot
+    relations = artifacts.relations
+    slo = artifacts.slo
+    report = artifacts.report
+    token = artifacts.token
+    recoveryReceiptCount = artifacts.recoveryReceiptCount
+    staleRecoveryReceiptCount = artifacts.staleRecoveryReceiptCount
     pinnedRevisionFailureCodes = []
     sourceHeadAdvanceEvents = []
     sourceHeadProbeFailureCodes = []

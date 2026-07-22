@@ -125,8 +125,9 @@ def _discoverOne(repoId: str, apiFactory: Callable[[], Any]) -> PinnedRepo:
                 raise ValueError("HF sibling path 누락")
             rawSize = getattr(sibling, "size", None)
             size = int(rawSize) if rawSize is not None else -1
-            oid = str(getattr(sibling, "blob_id", "") or "") or _lfsOid(sibling)
-            files.append(HfFileMetadata(path=path, size=size, oid=oid))
+            lfsSha256 = _lfsOid(sibling)
+            oid = str(getattr(sibling, "blob_id", "") or "") or lfsSha256
+            files.append(HfFileMetadata(path=path, size=size, oid=oid, lfsSha256=lfsSha256))
         lastModified = getattr(info, "last_modified", None)
         return PinnedRepo(
             repoId=repoId,
@@ -242,4 +243,5 @@ def enumerateHfTree(repo: PinnedRepo) -> Iterator[DiscoveredFile]:
             oid=fileMeta.oid,
             formatKind=formatKind,
             state=state,
+            lfsSha256=fileMeta.lfsSha256,
         )

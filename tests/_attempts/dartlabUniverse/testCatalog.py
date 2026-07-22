@@ -53,6 +53,23 @@ def testFullDiscoveryCompilesToTraceableCatalog():
     assert all(item.visibility is not Visibility.PUBLIC or item.licenseRef for item in catalog.resources)
     assert all(item.schemaVersion == CATALOG_OBJECT_SCHEMA_VERSION for item in catalog.objects)
     assert all(item.objectVersionId and item.canonicalLabel and item.resourceRefs for item in catalog.objects)
+
+
+def testCatalogKeepsGitObjectAddressAndUsesLfsPayloadAsContentDigest():
+    census = _fakeResult()
+    source = census.discovery.hfFiles[0]
+    payloadDigest = "f" * 64
+    changedFile = replace(source, lfsSha256=payloadDigest)
+    discovery = replace(
+        census.discovery,
+        hfFiles=tuple(changedFile if item is source else item for item in census.discovery.hfFiles),
+    )
+    catalog = compileCatalog(replace(census, discovery=discovery))
+    resource = next(item for item in catalog.resources if dict(item.locator).get("path") == source.path)
+
+    assert dict(resource.locator)["oid"] == source.oid
+    assert dict(resource.locator)["lfsSha256"] == payloadDigest
+    assert resource.contentDigest == payloadDigest
     assert all(item.epistemicClass is EpistemicClass.OBSERVED for item in catalog.objects)
     assert all(item.systemTime.knownAt for item in catalog.objects)
 

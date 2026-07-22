@@ -1,0 +1,250 @@
+{
+  "schemaVersion": "du-query-gold-v1",
+  "cases": [
+    {
+      "caseId": "fixture-exact-dart-corp-code",
+      "scope": "FIXTURE",
+      "tags": ["EXACT"],
+      "queryText": "DART_CORP_CODE:00126380",
+      "timeContext": {"validAt": "2026-07-19T00:00:00Z", "knownAt": "2026-07-19T00:00:00Z"},
+      "allowedVisibility": ["PUBLIC", "LOCAL"],
+      "filters": {},
+      "expectations": [
+        {"section": "CANDIDATE", "topK": 1, "candidateKind": "OBJECT", "objectIdentifier": "DART_CORP_CODE:00126380"}
+      ],
+      "expectNoEvidence": false,
+      "expectCompleteness": "COMPLETE"
+    },
+    {
+      "caseId": "fixture-exact-edgar-cik",
+      "scope": "FIXTURE",
+      "tags": ["EXACT"],
+      "queryText": "SEC_CIK:320193",
+      "timeContext": {"validAt": "2026-07-19T00:00:00Z", "knownAt": "2026-07-19T00:00:00Z"},
+      "allowedVisibility": ["PUBLIC", "LOCAL"],
+      "filters": {},
+      "expectations": [
+        {"section": "CANDIDATE", "topK": 1, "candidateKind": "OBJECT", "objectIdentifier": "SEC_CIK:320193"}
+      ],
+      "expectNoEvidence": false,
+      "expectCompleteness": "COMPLETE"
+    },
+    {
+      "caseId": "fixture-structured-assets",
+      "scope": "FIXTURE",
+      "tags": ["STRUCTURED_NUMERIC"],
+      "queryText": "삼성전자 2025 연결 자산",
+      "timeContext": {"validAt": "2026-07-19T00:00:00Z", "knownAt": "2026-07-19T00:00:00Z"},
+      "allowedVisibility": ["PUBLIC", "LOCAL"],
+      "filters": {
+        "subjectRefs": ["du:v1:organization:cb7b372d58818710c19a2ec62da219441caf9024cdf560ebafb90516489142e0"],
+        "predicates": ["assets"],
+        "periodStart": "2025-01-01",
+        "periodEnd": "2025-12-31"
+      },
+      "expectations": [
+        {
+          "section": "CANDIDATE",
+          "topK": 20,
+          "candidateKind": "STATEMENT",
+          "candidateRef": "du:v1:statement:c15353849ddf4ff955d337dc89be8ac60f6080dbaac4fdc32e4fa002688bc248",
+          "statement": {
+            "predicate": "assets",
+            "value": 100000000,
+            "unit": "currency",
+            "currency": "KRW",
+            "scope": "consolidated",
+            "periodStart": "2025-01-01",
+            "periodEnd": "2025-12-31",
+            "epistemicClass": "OBSERVED"
+          }
+        }
+      ],
+      "expectNoEvidence": false
+    },
+    {
+      "caseId": "fixture-contradictory-assets",
+      "scope": "FIXTURE",
+      "tags": ["CONTRADICTION"],
+      "queryText": "삼성전자 2025 연결 자산의 반대 근거",
+      "timeContext": {"validAt": "2026-07-19T00:00:00Z", "knownAt": "2026-07-19T00:00:00Z"},
+      "allowedVisibility": ["PUBLIC", "LOCAL"],
+      "filters": {
+        "subjectRefs": ["du:v1:organization:cb7b372d58818710c19a2ec62da219441caf9024cdf560ebafb90516489142e0"],
+        "predicates": ["assets"],
+        "periodStart": "2025-01-01",
+        "periodEnd": "2025-12-31"
+      },
+      "expectations": [
+        {
+          "section": "CONTRADICTORY",
+          "topK": 20,
+          "candidateKind": "STATEMENT",
+          "candidateRef": "du:v1:statement:23a3fce95dd8e6f7b5cdbaf7154ca72e8896cb1f14a3789cbf5197bf1c1e2696",
+          "statement": {"predicate": "assets", "value": 99000000, "currency": "KRW", "periodEnd": "2025-12-31"}
+        }
+      ],
+      "expectNoEvidence": false
+    },
+    {
+      "caseId": "fixture-point-in-time-abstain",
+      "scope": "FIXTURE",
+      "tags": ["PIT", "ABSTAIN"],
+      "queryText": "2025년 말 당시 알려진 삼성전자 자산",
+      "timeContext": {"validAt": "2025-12-31T00:00:00Z", "knownAt": "2025-12-31T00:00:00Z"},
+      "allowedVisibility": ["PUBLIC", "LOCAL"],
+      "filters": {
+        "subjectRefs": ["du:v1:organization:cb7b372d58818710c19a2ec62da219441caf9024cdf560ebafb90516489142e0"],
+        "predicates": ["assets"],
+        "periodStart": "2025-01-01",
+        "periodEnd": "2025-12-31"
+      },
+      "expectations": [],
+      "expectNoEvidence": true,
+      "expectCompleteness": "ABSTAIN"
+    },
+    {
+      "caseId": "fixture-public-cannot-see-local-resource",
+      "scope": "FIXTURE",
+      "tags": ["PRIVATE_LEAKAGE", "ABSTAIN"],
+      "queryText": "du:v1:blog-companion-version:6dc2ba018079a219f085c62f847017d350d3f85f8f1e68ace9086f043254f4f0",
+      "timeContext": {"validAt": "2026-07-19T00:00:00Z", "knownAt": "2026-07-19T00:00:00Z"},
+      "allowedVisibility": ["PUBLIC"],
+      "filters": {
+        "exactRefs": ["du:v1:blog-companion-version:6dc2ba018079a219f085c62f847017d350d3f85f8f1e68ace9086f043254f4f0"]
+      },
+      "expectations": [],
+      "expectNoEvidence": true,
+      "expectCompleteness": "ABSTAIN"
+    },
+    {
+      "caseId": "live-exact-dart-corp-code",
+      "scope": "LIVE",
+      "tags": ["EXACT"],
+      "queryText": "DART_CORP_CODE:00126380",
+      "timeContext": {"validAt": "9999-12-30T00:00:00Z", "knownAt": "9999-12-30T00:00:00Z"},
+      "allowedVisibility": ["PUBLIC", "LOCAL"],
+      "filters": {},
+      "expectations": [
+        {"section": "CANDIDATE", "topK": 1, "candidateKind": "OBJECT", "objectIdentifier": "DART_CORP_CODE:00126380"}
+      ],
+      "expectNoEvidence": false
+    },
+    {
+      "caseId": "live-exact-edgar-cik",
+      "scope": "LIVE",
+      "tags": ["EXACT"],
+      "queryText": "SEC_CIK:320193",
+      "timeContext": {"validAt": "9999-12-30T00:00:00Z", "knownAt": "9999-12-30T00:00:00Z"},
+      "allowedVisibility": ["PUBLIC", "LOCAL"],
+      "filters": {},
+      "expectations": [
+        {"section": "CANDIDATE", "topK": 1, "candidateKind": "OBJECT", "objectIdentifier": "SEC_CIK:0000320193"}
+      ],
+      "expectNoEvidence": false
+    },
+    {
+      "caseId": "live-exact-dart-filing",
+      "scope": "LIVE",
+      "tags": ["EXACT"],
+      "queryText": "DART_RCEPT_NO:20260701900720",
+      "timeContext": {"validAt": "9999-12-30T00:00:00Z", "knownAt": "9999-12-30T00:00:00Z"},
+      "allowedVisibility": ["PUBLIC", "LOCAL"],
+      "filters": {},
+      "expectations": [
+        {"section": "CANDIDATE", "topK": 1, "candidateKind": "CONTENT_HIT", "sourceRefPrefix": "dart:allFilings:20260701900720"}
+      ],
+      "expectNoEvidence": false
+    },
+    {
+      "caseId": "live-exact-edgar-accession",
+      "scope": "LIVE",
+      "tags": ["EXACT"],
+      "queryText": "SEC_ACCESSION:0001039399-26-000009",
+      "timeContext": {"validAt": "9999-12-30T00:00:00Z", "knownAt": "9999-12-30T00:00:00Z"},
+      "allowedVisibility": ["PUBLIC", "LOCAL"],
+      "filters": {},
+      "expectations": [
+        {"section": "CANDIDATE", "topK": 1, "candidateKind": "CONTENT_HIT", "sourceRefPrefix": "edgar:panel:0001039399-26-000009"}
+      ],
+      "expectNoEvidence": false
+    },
+    {
+      "caseId": "live-blog-heading",
+      "scope": "LIVE",
+      "tags": ["BLOG"],
+      "queryText": "54V는 왜 갑자기 200kg의 구리가 되는가",
+      "timeContext": {"validAt": "9999-12-30T00:00:00Z", "knownAt": "9999-12-30T00:00:00Z"},
+      "allowedVisibility": ["PUBLIC", "LOCAL"],
+      "filters": {},
+      "expectations": [
+        {"section": "CANDIDATE", "topK": 20, "candidateKind": "OBJECT", "objectLabelContains": "GPU 코어는 1V 미만", "selector": {"blockKind": "HEADING"}}
+      ],
+      "expectNoEvidence": false
+    },
+    {
+      "caseId": "live-blog-image-alt",
+      "scope": "LIVE",
+      "tags": ["BLOG", "IMAGE"],
+      "queryText": "사업보고서 전체를 panel 위치 지도로 여는 흐름",
+      "timeContext": {"validAt": "9999-12-30T00:00:00Z", "knownAt": "9999-12-30T00:00:00Z"},
+      "allowedVisibility": ["PUBLIC", "LOCAL"],
+      "filters": {},
+      "expectations": [
+        {"section": "CANDIDATE", "topK": 20, "candidateKind": "OBJECT", "selector": {"blockKind": "IMAGE"}}
+      ],
+      "expectNoEvidence": false
+    },
+    {
+      "caseId": "live-blog-video",
+      "scope": "LIVE",
+      "tags": ["BLOG", "VIDEO"],
+      "queryText": "YouTube epzGLIOWLR0",
+      "timeContext": {"validAt": "9999-12-30T00:00:00Z", "knownAt": "9999-12-30T00:00:00Z"},
+      "allowedVisibility": ["PUBLIC", "LOCAL"],
+      "filters": {},
+      "expectations": [
+        {"section": "CANDIDATE", "topK": 20, "candidateKind": "OBJECT", "selector": {"blockKind": "EXTERNAL_VIDEO"}}
+      ],
+      "expectNoEvidence": false
+    },
+    {
+      "caseId": "live-dart-content",
+      "scope": "LIVE",
+      "tags": ["CONTENT"],
+      "queryText": "전환사채 발행 목적",
+      "timeContext": {"validAt": "9999-12-30T00:00:00Z", "knownAt": "9999-12-30T00:00:00Z"},
+      "allowedVisibility": ["PUBLIC", "LOCAL"],
+      "filters": {},
+      "expectations": [
+        {"section": "CANDIDATE", "topK": 20, "candidateKind": "CONTENT_HIT", "sourceRefPrefix": "dart:"}
+      ],
+      "expectNoEvidence": false
+    },
+    {
+      "caseId": "live-edgar-content",
+      "scope": "LIVE",
+      "tags": ["CONTENT"],
+      "queryText": "Apple Form 10-K",
+      "timeContext": {"validAt": "9999-12-30T00:00:00Z", "knownAt": "9999-12-30T00:00:00Z"},
+      "allowedVisibility": ["PUBLIC", "LOCAL"],
+      "filters": {},
+      "expectations": [
+        {"section": "CANDIDATE", "topK": 20, "candidateKind": "CONTENT_HIT", "sourceRefPrefix": "edgar:"}
+      ],
+      "expectNoEvidence": false
+    },
+    {
+      "caseId": "live-abstain-unknown",
+      "scope": "LIVE",
+      "tags": ["ABSTAIN"],
+      "queryText": "qzvwxjklneverexistinguniverseobjectxqz",
+      "timeContext": {"validAt": "9999-12-30T00:00:00Z", "knownAt": "9999-12-30T00:00:00Z"},
+      "allowedVisibility": ["PUBLIC", "LOCAL"],
+      "filters": {},
+      "expectations": [],
+      "expectNoEvidence": true,
+      "expectCompleteness": "ABSTAIN"
+    }
+  ]
+}

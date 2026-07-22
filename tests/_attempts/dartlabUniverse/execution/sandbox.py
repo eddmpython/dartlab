@@ -77,11 +77,10 @@ class AuditGuard:
             raise SandboxViolation(f"NETWORK_BLOCKED:{event}")
 
 
-def buildWorkerEnvironment(workerRoot: str | Path) -> dict[str, str]:
-    """모든 일반 write 위치를 worker root 아래로 강제한다."""
+def buildWorkerEnvironment(workerRoot: str | Path, *, readDataRoot: str | Path | None = None) -> dict[str, str]:
+    """일반 write 위치는 worker 아래로 강제하고 선택한 data root는 read-only로 노출한다."""
     root = Path(workerRoot).resolve()
     paths = {
-        "DARTLAB_DATA_DIR": root / "data",
         "DARTLAB_LINEAGE_DIR": root / "lineage",
         "HOME": root / "home",
         "USERPROFILE": root / "home",
@@ -98,7 +97,15 @@ def buildWorkerEnvironment(workerRoot: str | Path) -> dict[str, str]:
         key: value for key, value in os.environ.items() if not any(marker in key.upper() for marker in secretMarkers)
     }
     environment.update({key: path.as_posix() for key, path in paths.items()})
+    dataRoot = Path(readDataRoot).resolve() if readDataRoot is not None else root / "data"
+    if readDataRoot is None:
+        dataRoot.mkdir(parents=True, exist_ok=True)
+    elif not dataRoot.is_dir():
+        raise ValueError("readDataRoot는 존재하는 디렉터리여야 함")
+    environment["DARTLAB_DATA_DIR"] = dataRoot.as_posix()
+    environment["DARTLAB_UNIVERSE_READ_DATA_ROOT"] = dataRoot.as_posix()
     environment["PYTHONDONTWRITEBYTECODE"] = "1"
+    environment["DARTLAB_NO_HF_DOWNLOAD"] = "1"
     environment["DARTLAB_UNIVERSE_WORKER_ROOT"] = root.as_posix()
     return environment
 
