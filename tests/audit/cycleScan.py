@@ -48,6 +48,7 @@ PRIMARY_PACKAGES: tuple[str, ...] = (
     "macro",
     "quant",
     "industry",
+    "data",
     "story",
     "company",
     "ai",

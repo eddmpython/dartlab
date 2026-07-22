@@ -23,6 +23,7 @@ LAYER_OF: dict[str, float] = {
     "quant": 2.0,
     "industry": 2.0,
     "credit": 2.0,
+    "data": 2.5,
     "simulate": 2.5,
     "story": 3.0,
     "ai": 4.0,

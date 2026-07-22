@@ -23,6 +23,7 @@ LAYERS = {
     "dartlab.industry": 2,
     "dartlab.macro": 2,
     "dartlab.quant": 2,
+    "dartlab.data": 2,
     "dartlab.simulate": 2,  # L2.5 시나리오/작업대 (다중 L2 결합 합법, L2_PEERS 미소속). 등록 시 신규 위반 0 실측.
     "dartlab.ai": 3,
 }

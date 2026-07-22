@@ -793,6 +793,11 @@ class _Module(sys.modules[__name__].__class__):
             instance = Scan()
             setattr(self, name, instance)
             return instance
+        if name == "data":
+            Data = importlib.import_module("dartlab.data").Data
+            instance = Data()
+            setattr(self, name, instance)
+            return instance
         if name == "analysis":
             from dartlab.analysis.financial import Analysis
 
@@ -889,6 +894,11 @@ if not _IS_PYODIDE:
 
         return Scan()
 
+    def _dataFactory():
+        Data = importlib.import_module("dartlab.data").Data
+
+        return Data()
+
     def _analysisFactory():
         from dartlab.analysis.financial import Analysis
 
@@ -922,6 +932,7 @@ if not _IS_PYODIDE:
     # dartlab → L2 import 가 단방향 정책 위반으로 잡히는 것 방지).
 
     importlib.import_module("dartlab.gather")
+    importlib.import_module("dartlab.data")
     importlib.import_module("dartlab.analysis.financial")
     importlib.import_module("dartlab.industry")
     importlib.import_module("dartlab.macro")
@@ -930,6 +941,7 @@ if not _IS_PYODIDE:
     importlib.import_module("dartlab.simulate")
 
     _makeCallableModule("dartlab.gather", _gatherFactory)
+    _makeCallableModule("dartlab.data", _dataFactory)
     _makeCallableModule("dartlab.scan", _scanFactory)
     _makeCallableModule("dartlab.analysis", _analysisFactory)
     _makeCallableModule("dartlab.analysis.financial", _analysisFactory)
@@ -938,6 +950,7 @@ if not _IS_PYODIDE:
     _makeCallableModule("dartlab.industry", _industryFactory)
     _makeCallableModule("dartlab.simulate", _simulateFactory)
     sys.modules[__name__].gather = sys.modules["dartlab.gather"]
+    sys.modules[__name__].data = sys.modules["dartlab.data"]
 
     # credit은 함수형 (이미 callable)
     from dartlab.credit import credit as _credit_callable
@@ -960,6 +973,7 @@ __all__ = [
     "collectAll",
     "scan",
     "analysis",
+    "data",
     "gather",
     "quant",
     "credit",

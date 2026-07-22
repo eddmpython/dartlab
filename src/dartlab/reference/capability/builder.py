@@ -273,14 +273,9 @@ def _applyAiContract(entry: dict[str, Any], sections: dict[str, str]) -> None:
 
 # axis-engine 라이브 축 레지스트리 — 모듈 이동 추종 (AST-소스 의존 0, install-robust).
 # gather 표준(engine(axis, target)) 전 엔진을 {engine}.{axis} 로 카탈로그 등록.
-_AXIS_REGISTRIES: tuple[tuple[str, str, str], ...] = (
-    ("scan", "dartlab.scan.router", "_AXIS_REGISTRY"),
-    ("macro", "dartlab.macro", "_AXIS_REGISTRY"),
-    ("gather", "dartlab.gather.entry.dispatch", "AXIS_REGISTRY"),
-    ("industry", "dartlab.industry", "_AXIS_REGISTRY"),
-    ("credit", "dartlab.credit", "_AXIS_REGISTRY"),
-    ("quant", "dartlab.quant", "_AXIS_REGISTRY"),
-)
+from dartlab.reference.capability.dataProducts import axisRegistryTargets
+
+_AXIS_REGISTRIES: tuple[tuple[str, str, str], ...] = axisRegistryTargets()
 
 
 # 축 엔트리에서 카탈로그로 실을 필요가 없는 필드. **항목마다 사유 필수** (게으른 덤프 방지).
@@ -671,12 +666,9 @@ def buildCapabilities() -> dict[str, Any]:
         # callable class/module 의 __call__ docstring 이 더 풍부하면 fallback
         # _CallableModule 패턴 (scan/macro/quant): 내부 class __call__ 탐색
         if hasattr(obj, "__call__") and not inspect.isfunction(obj):
-            _CALLABLE_MODULE_MAP = {
-                "scan": ("dartlab.scan", "Scan"),
-                "macro": ("dartlab.macro", "Macro"),
-                "quant": ("dartlab.quant", "Quant"),
-                "industry": ("dartlab.industry", "Industry"),
-            }
+            from dartlab.reference.capability.dataProducts import callableModuleTargets
+
+            _CALLABLE_MODULE_MAP = callableModuleTargets()
             candidates = [inspect.getdoc(getattr(type(obj), "__call__", None))]
             if name in _CALLABLE_MODULE_MAP:
                 mod_path, cls_name = _CALLABLE_MODULE_MAP[name]

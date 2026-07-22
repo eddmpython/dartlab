@@ -43,6 +43,7 @@ _DEFAULT_ENGINES: tuple[str, ...] = (
     "frame",
     "synth",
     "reference",
+    "data",
 )
 
 _REQUIRED_SKILL_SECTIONS: tuple[str, ...] = (
@@ -121,7 +122,7 @@ def auditEngine(name: str) -> dict:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="addEngine round-trip audit (T5-4)")
-    parser.add_argument("--engine", help="단일 엔진 검사 (기본: 9 엔진 전체)")
+    parser.add_argument("--engine", help="단일 엔진 검사 (기본: 10 엔진 전체)")
     parser.add_argument("--strict", action="store_true", help="fail 발견 시 exit 2")
     parser.add_argument("--json", action="store_true", help="JSON 출력")
     args = parser.parse_args()

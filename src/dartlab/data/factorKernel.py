@@ -1,4 +1,4 @@
-"""거울 작업대 순수 커널 : 엔진 자기서술을 반사해 이질 반환을 단일 tidy 롱으로 접는다 (L1.5 reference).
+"""Unified Data Workbench 팩터 투영 순수 커널.
 
 Capabilities:
     - reflectAxes: loadCapabilities() 소비로 축 카탈로그 + declared 필드를 얻는다 (raw 레지스트리
@@ -38,9 +38,9 @@ Raises:
 SeeAlso:
     - mainPlan/scenario-simulator/18-workbench-mirror-design.md (설계·판정)
     - reference.capability.builder._injectAxisRegistriesLive (declared 원천)
-    - tests/reference/capability/test_mirrorFold.py (7 shape 접기 + gap 방출)
+    - tests/data/test_factor_kernel.py (7 shape 접기 + gap 방출)
 
-Layer: L1.5 reference. polars 만 의존 (하향). 순수함수, 엔진 데이터 접근 0.
+Layer: L2.5 data. capability metadata와 polars만 소비하는 순수 투영 커널.
 """
 
 from __future__ import annotations
@@ -125,12 +125,15 @@ def reflectAxes() -> pl.DataFrame:
             "engine": key.split(".", 1)[0],
             "axis": key.split(".", 1)[1],
             "summary": entry.get("summary"),
-            "declared": entry.get("declared") or {},
+            "declared": dict(entry.get("declared") or {}),
         }
         for key, entry in loadCapabilities().items()
         if isinstance(entry, dict) and str(entry.get("kind", "")).endswith("_axis") and "." in key
     ]
-    return pl.DataFrame(rows).sort(["engine", "axis"])
+    if not rows:
+        return pl.DataFrame(schema={"engine": pl.Utf8, "axis": pl.Utf8, "summary": pl.Utf8, "declared": pl.Object})
+    declared = pl.Series("declared", [row.pop("declared") for row in rows], dtype=pl.Object)
+    return pl.DataFrame(rows).with_columns(declared).sort(["engine", "axis"])
 
 
 def universeScopeOf(declared: dict) -> str:

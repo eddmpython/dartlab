@@ -1,6 +1,6 @@
-"""거울 작업대 순수 커널 : 반사(loadCapabilities 소비) + 이질 접기 + 갭 방출 (reference/capability).
+"""Data Workbench 팩터 커널의 반사, 이질 접기, gap 방출 검증.
 
-엔진 데이터 0 (합성 fixture 는 실제 반환 형태만 재현, 메모리 가드). 값 물질화는 L2.5 드라이버 소관.
+엔진 데이터 0인 순수 투영 검증이다. 합성 fixture는 실제 반환 형태만 재현한다.
 
 Covers:
 - reflectAxes: loadCapabilities 소비로 축 + declared 획득 (raw 레지스트리 재반사 없음), 척추 3축이
@@ -16,7 +16,7 @@ from __future__ import annotations
 import polars as pl
 import pytest
 
-from dartlab.reference.capability.mirror import (
+from dartlab.data.factorKernel import (
     CANON,
     foldToCanonical,
     laneOf,
@@ -31,9 +31,12 @@ SPINE_ATOMS = ("scan.account", "scan.ratio", "scan.note")
 
 def testReflectAxesFromCapabilities():
     """축 카탈로그가 loadCapabilities 소비로 반사되고 척추 원자가 listFn 을 선언한다."""
+    from dartlab.reference.capability.dataProducts import axisRegistryTargets
+
     cat = reflectAxes()
     assert cat.height >= 100
-    assert cat["engine"].n_unique() == 6
+    expectedOwners = {owner for owner, _module, _attribute in axisRegistryTargets()}
+    assert set(cat["engine"].to_list()) == expectedOwners
     for atom in SPINE_ATOMS:
         eng, ax = atom.split(".")
         row = cat.filter((pl.col("engine") == eng) & (pl.col("axis") == ax))
@@ -164,7 +167,7 @@ def testMixedDtypeFramePreservesNumerics():
 
 def testPeriodRegexRejectsNonYears():
     """period 정규식이 종목코드·무효월·계정코드를 period 로 오탐하지 않는다."""
-    from dartlab.reference.capability.mirror import _periodCols
+    from dartlab.data.factorKernel import _periodCols
 
     assert _periodCols(["005930", "202599", "1000", "2400"]) == []  # 비-period
     assert _periodCols(["2025", "2025Q3", "202503"]) == ["2025", "2025Q3", "202503"]  # 진짜 period

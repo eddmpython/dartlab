@@ -21,9 +21,7 @@
 from __future__ import annotations
 
 import argparse
-import inspect
 import json
-import re
 from pathlib import Path
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -31,12 +29,10 @@ _BASELINE = _REPO_ROOT / "tests" / "audit" / "_baselines" / "axisDeclaredCoverag
 
 
 def _callableModuleEngines() -> list[str]:
-    """_CALLABLE_MODULE_MAP(builder.py 함수 지역 상수)에 등록된 엔진. 소스에서 정적 추출."""
-    import dartlab.reference.capability.builder as builder
+    """Owner-local dataProduct provider가 선언한 root callable 엔진."""
+    from dartlab.reference.capability.dataProducts import callableModuleTargets
 
-    src = inspect.getsource(builder)
-    match = re.search(r"_CALLABLE_MODULE_MAP\s*=\s*\{(.*?)\}", src, re.DOTALL)
-    return re.findall(r'"(\w+)":', match.group(1)) if match else []
+    return sorted(callableModuleTargets())
 
 
 def _survey() -> dict:
