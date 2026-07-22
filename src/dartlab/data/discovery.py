@@ -125,7 +125,11 @@ def _registryAssets(provider: Mapping[str, Any]) -> Iterable[DataAssetDescriptor
                 if configuredRequired is not None
                 else bool(declared.get("stockRequired") or declared.get("targetRequired"))
             )
-            concurrencyGroup = registrySpec.get("concurrencyGroup") or provider.get("concurrencyGroup")
+            concurrencyGroup = (
+                declared.get("concurrencyGroup")
+                or registrySpec.get("concurrencyGroup")
+                or provider.get("concurrencyGroup")
+            )
             executionMode = str(declared.get("executionMode") or registrySpec.get("executionMode") or "unsupported")
             if executionMode not in _EXECUTION_MODES:
                 raise ValueError(f"{owner}.{axis} executionMode가 유효하지 않음")

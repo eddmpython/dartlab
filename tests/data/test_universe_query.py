@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import threading
+import time
+
 import polars as pl
 import pytest
 
@@ -69,6 +72,7 @@ def testScanCatalogDeclaresMarketBulkCapability():
     assert account.executionMode == "ownerBulk"
     assert account.universeMarkets == ("KR", "US")
     assert account.marketUnits == (("KR", "KRW"), ("US", "USD"))
+    assert account.concurrencyGroup == "local-finance-scan"
     assert governance.universeMarkets == ("KR",)
     assert fields.executionMode == "unsupported"
 
@@ -110,6 +114,39 @@ def testOneQueryCallsDartAndEdgarOnceEachWithoutSubjectFanout(monkeypatch):
         ("US", 2, 2, "complete"),
     ]
     assert result.universeSnapshotId is not None
+
+
+def testLocalDartAndEdgarFinanceScansShareOneIoConcurrencyGroup(monkeypatch):
+    import dartlab
+
+    _installUniverseFixtures(monkeypatch)
+    lock = threading.Lock()
+    active = 0
+    peak = 0
+
+    def fakeScan(axis, target=None, **kwargs):
+        nonlocal active, peak
+        with lock:
+            active += 1
+            peak = max(peak, active)
+        time.sleep(0.02)
+        with lock:
+            active -= 1
+        return _marketFrame(kwargs["market"])
+
+    monkeypatch.setattr(dartlab, "scan", fakeScan)
+    result = dartlab.data(
+        "query",
+        "scan.account",
+        query=DataQuery(
+            universe=UniverseSelection(("KR", "US")),
+            measures=("sales",),
+            budget=QueryBudget(maxConcurrency=2),
+        ),
+    )
+
+    assert result.status == "ok"
+    assert peak == 1
 
 
 def testFactorProjectionNamespacesMarketsAndUsesNativeCurrency(monkeypatch):

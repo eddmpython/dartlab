@@ -67,6 +67,7 @@ class _AxisEntry:
     universeMarkets: tuple[str, ...] = ("KR",)
     marketParam: str | None = "market"
     marketUnits: tuple[tuple[str, str], ...] = ()
+    concurrencyGroup: str | None = None
 
 
 _AXIS_REGISTRY: dict[str, _AxisEntry] = {
@@ -109,6 +110,7 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
         listModule="dartlab.providers.dart.finance.scanAccount",
         listFn="scanAccountList",
         marketUnits=(("KR", "KRW"), ("US", "USD")),
+        concurrencyGroup="local-finance-scan",
     ),
     "ratio": _AxisEntry(
         module="dartlab.providers.dart.finance.scanAccount",
@@ -120,6 +122,7 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
         targetRequired=True,
         listModule="dartlab.providers.dart.finance.scanAccount",
         listFn="scanRatioList",
+        concurrencyGroup="local-finance-scan",
     ),
     "note": _AxisEntry(
         module="dartlab.scan.note",
