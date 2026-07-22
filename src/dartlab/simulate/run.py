@@ -104,6 +104,10 @@ class SimulationResult:
     quality: str = "ok"
     assumptions: tuple[str, ...] = field(default_factory=tuple)
     warnings: tuple[str, ...] = field(default_factory=tuple)
+    dataSnapshotId: str = ""
+    dataContractHash: str = ""
+    dataLineageRefs: tuple[str, ...] = field(default_factory=tuple)
+    dataExecutionReceipts: tuple[str, ...] = field(default_factory=tuple)
 
 
 def _audit(driverId: str, nv: NodeValue) -> NodeAudit:
@@ -259,6 +263,10 @@ def runScenario(
         quality=quality,
         assumptions=assumptions,
         warnings=tuple(warnings),
+        dataSnapshotId=str(snapshot.get("dataSnapshotId", "")),
+        dataContractHash=str(snapshot.get("dataContractHash", "")),
+        dataLineageRefs=tuple(snapshot.get("dataLineageRefs", ())),
+        dataExecutionReceipts=tuple(snapshot.get("dataExecutionReceipts", ())),
     )
 
 

@@ -166,6 +166,51 @@ def _sliceSeriesAsOf(series: dict, periods: list[str], asOf: str | None) -> tupl
     return sliced, _periodLabel(effectiveKey), _periodLabel(latestKey), _periodLabel(requestedKey)
 
 
+def _workbenchFinanceInputs(company: Any, asOf: str | None) -> tuple[dict, dict[str, Any]]:
+    """통합 Data Workbench를 통해 시뮬레이터의 read-once 재무 입력을 취득한다."""
+    import dartlab
+    from dartlab.data import DataQuery, TimeContext
+
+    subject = str(getattr(company, "stockCode", None) or "bound-company")
+    time = TimeContext(validAt=asOf) if asOf is not None else None
+    result = dartlab.data(
+        "query",
+        "analysis.simulationInputs",
+        query=DataQuery(
+            subjects=(subject,),
+            time=time,
+            params={"company": company},
+            completeness="requireComplete",
+        ),
+    )
+    if result.partitions:
+        payload = result.partitions[0].data
+        if isinstance(payload, dict):
+            metadata = {
+                "dataSnapshotId": result.snapshotId,
+                "dataContractHash": result.contractHash,
+                "dataLineageRefs": result.lineageRefs,
+                "dataExecutionReceipts": result.executionReceipts,
+            }
+            return payload, metadata
+    for gap in result.gaps:
+        if gap.code == "ASSET_EXECUTION_FAILED" and "asOf" in gap.message:
+            raise ValueError(gap.message)
+    requested = str(asOf) if asOf is not None else "latest"
+    return {
+        "series": None,
+        "asOf": requested,
+        "latestAsOf": "latest",
+        "requestedAsOf": requested,
+    }, {
+        "dataSnapshotId": result.snapshotId,
+        "dataContractHash": result.contractHash,
+        "dataLineageRefs": result.lineageRefs,
+        "dataExecutionReceipts": result.executionReceipts,
+        "dataInputGaps": tuple(f"{gap.code}:{gap.message}" for gap in result.gaps),
+    }
+
+
 def buildSnapshot(company: Any, *, asOf: str | None = None) -> dict:
     """Read a company's frozen base metrics ONCE into a simulate snapshot (§13b-5).
 
@@ -227,19 +272,11 @@ def buildSnapshot(company: Any, *, asOf: str | None = None) -> dict:
     # 최근 4개 연도를 합산하는 오류가 있었다. shares 조회의 기존 fallback만 재사용하고, 계산
     # 시리즈는 반드시 Q 경로에서 한 번 읽어 asOf 절단한다.
     _annualSeries, shares, _currency = _getSeriesAndShares(company)
-    try:
-        quarterly = company._buildFinanceSeries(freq="Q")
-    except (ValueError, KeyError, AttributeError):
-        quarterly = None
-    rawSeries = quarterly[0] if isinstance(quarterly, tuple) and len(quarterly) >= 2 else None
-    periods = list(quarterly[1]) if isinstance(quarterly, tuple) and len(quarterly) >= 2 else []
-    if rawSeries:
-        series, effectiveAsOf, latestAsOf, requestedAsOf = _sliceSeriesAsOf(rawSeries, periods, asOf)
-    else:
-        requestedAsOf = str(asOf) if asOf is not None else "latest"
-        effectiveAsOf = requestedAsOf
-        latestAsOf = "latest"
-        series = None
+    workbenchInput, workbenchMetadata = _workbenchFinanceInputs(company, asOf)
+    series = workbenchInput["series"]
+    effectiveAsOf = workbenchInput["asOf"]
+    latestAsOf = workbenchInput["latestAsOf"]
+    requestedAsOf = workbenchInput["requestedAsOf"]
     base = _baseMetrics(series) if series else {"revenue": None, "margin": None, "netDebt": None}
 
     sectorKey = _resolveSectorKey(company)
@@ -292,6 +329,7 @@ def buildSnapshot(company: Any, *, asOf: str | None = None) -> dict:
         "requestedAsOf": requestedAsOf,
         "assumptions": tuple(assumptions),
         "warnings": tuple(warnings),
+        **workbenchMetadata,
     }
 
 
