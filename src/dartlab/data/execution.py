@@ -666,6 +666,16 @@ def executeDataQuery(assetIds: Sequence[str], query: DataQuery) -> DataResult:
                         receipts.append(task.receiptRef)
                         remainingRows -= partition.rowCount
                         remainingBytes -= _outputBytes(partition.data)
+                        if partition.truncated:
+                            gaps.append(
+                                DataGap(
+                                    "CONTINUATION_UNSUPPORTED",
+                                    "owner가 pageable source revision과 cursor를 선언하지 않아 이어보기를 발급하지 않았습니다",
+                                    task.descriptor.assetId,
+                                    task.selector.get("subject"),
+                                    requestId=task.requestId,
+                                )
+                            )
                 except Exception as exc:
                     gaps.append(
                         DataGap(
@@ -710,7 +720,7 @@ def executeDataQuery(assetIds: Sequence[str], query: DataQuery) -> DataResult:
     )
     contractHash = hashlib.sha256(_canonical({"assets": resolvedRefs, "query": query})).hexdigest()
     lineageRefs = tuple(dict.fromkeys(ref for partition in partitions for ref in partition.lineageRefs))
-    continuation = "row-budget" if any(partition.truncated for partition in partitions) else None
+    continuation = None
     assertions = tuple(assertion for partition in partitions for assertion in partition.qualityAssertions)
     if len(universeSnapshots) == 1:
         universeSnapshotId = next(iter(universeSnapshots))

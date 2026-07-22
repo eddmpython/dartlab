@@ -39,3 +39,14 @@ def testDuplicateExplicitRequestIdsFailClosed():
                 DataRequest("gather.narrative", "same"),
             )
         )
+
+
+def testContinuationIsOpaqueAndCannotOverrideStoredQuery():
+    token = "dltc1." + "A" * 43
+    query = DataQuery(continuation=token)
+
+    assert token not in repr(query)
+    with pytest.raises(ValueError, match="덮어쓸"):
+        DataQuery(continuation=token, measures=("sales",))
+    with pytest.raises(ValueError, match="비었습니다"):
+        DataQuery(continuation="")

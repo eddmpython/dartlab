@@ -91,6 +91,16 @@ def testOneQueryBuildsFactorAndNarrativeViews(monkeypatch):
     assert arrow["technicalFactor:measure=rsi"].num_rows == 2
     assert arrow["filingEvidence:subject=005930"].num_rows == 1
 
+    batches = list(result.iterArrowBatches(maxRows=1, maxBytes=1_000_000))
+    assert [key for key, _batch in batches] == [
+        "technicalFactor:measure=rsi",
+        "technicalFactor:measure=rsi",
+        "filingEvidence:subject=005930",
+    ]
+    assert all(batch.num_rows == 1 for _key, batch in batches)
+    with pytest.raises(ValueError, match="한 행"):
+        list(result.iterArrowBatches(maxRows=1, maxBytes=1))
+
 
 def testJsonMappingCanEnterMixedWorkbenchWithoutPythonContractObjects(monkeypatch):
     import dartlab

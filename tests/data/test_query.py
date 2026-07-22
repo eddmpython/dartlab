@@ -101,10 +101,27 @@ def testNativeProjectionAppliesRowBudget(monkeypatch):
         "scan.governance",
         query=DataQuery(budget=QueryBudget(maxRows=1)),
     )
-    assert result.status == "ok"
+    assert result.status == "partial"
     assert result.partitions[0].rowCount == 1
     assert result.partitions[0].truncated
-    assert result.continuation == "row-budget"
+    assert result.continuation is None
+    assert [gap.code for gap in result.gaps] == ["CONTINUATION_UNSUPPORTED"]
+
+
+def testRequireCompleteRejectsEagerTruncation(monkeypatch):
+    import dartlab
+
+    monkeypatch.setattr(dartlab, "scan", lambda *args, **kwargs: _ratioFrame())
+    result = dartlab.data(
+        "query",
+        "scan.governance",
+        query=DataQuery(budget=QueryBudget(maxRows=1), completeness="requireComplete"),
+    )
+
+    assert result.status == "failed"
+    assert result.partitions == ()
+    assert result.continuation is None
+    assert [gap.code for gap in result.gaps] == ["CONTINUATION_UNSUPPORTED"]
 
 
 def testFactorProjectionRejectsUnknownUnit(monkeypatch):
@@ -170,9 +187,11 @@ def testRowBudgetIsGlobalAcrossPartitions(monkeypatch):
         query=DataQuery(subjects=("005930", "000660"), budget=QueryBudget(maxRows=3)),
     )
 
-    assert result.status == "ok"
+    assert result.status == "partial"
     assert sum(partition.rowCount for partition in result.partitions) == 3
     assert result.partitions[-1].truncated
+    assert result.continuation is None
+    assert [gap.code for gap in result.gaps] == ["CONTINUATION_UNSUPPORTED"]
 
 
 def testRowBudgetReservesCapacityForLaterMixedRequests(monkeypatch):
@@ -188,13 +207,13 @@ def testRowBudgetReservesCapacityForLaterMixedRequests(monkeypatch):
                 DataRequest("macro.cycle", "scalar"),
             ),
             budget=QueryBudget(maxRows=10, maxConcurrency=2),
-            completeness="requireComplete",
         ),
     )
 
-    assert result.status == "ok"
+    assert result.status == "partial"
     assert [partition.rowCount for partition in result.partitions] == [9, 1]
     assert [partition.requestId for partition in result.partitions] == ["wide", "scalar"]
+    assert [gap.code for gap in result.gaps] == ["CONTINUATION_UNSUPPORTED"]
 
 
 def testTimeoutDropsLateOwnerResult(monkeypatch):

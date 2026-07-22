@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Literal, Mapping
 
@@ -177,8 +178,26 @@ class DataQuery:
     budget: QueryBudget = field(default_factory=QueryBudget)
     completeness: Literal["allowPartial", "requireComplete"] = "allowPartial"
     lineage: Literal["summary", "full"] = "summary"
+    continuation: str | None = field(default=None, repr=False)
 
     def __post_init__(self) -> None:
+        if self.continuation is not None:
+            if not isinstance(self.continuation, str) or not self.continuation.strip():
+                raise ValueError("continuation token이 비었습니다")
+            hasOverride = bool(
+                self.subjects
+                or self.measures
+                or self.universe is not None
+                or self.time is not None
+                or self.params
+                or self.requests
+                or not isinstance(self.projection, NativeProjection)
+                or self.budget != QueryBudget()
+                or self.completeness != "allowPartial"
+                or self.lineage != "summary"
+            )
+            if hasOverride:
+                raise ValueError("continuation query는 저장된 원 질의를 덮어쓸 수 없습니다")
         if self.subjects and self.universe is not None:
             raise ValueError("DataQuery는 subjects와 universe를 동시에 사용할 수 없습니다")
         if len(self.subjects) > self.budget.maxSubjects:
@@ -398,6 +417,60 @@ class DataPartition:
         """
         return self.toPolars().to_arrow()
 
+    def iterArrowBatches(
+        self,
+        *,
+        maxRows: int = 65_536,
+        maxBytes: int = 8 * 1024 * 1024,
+    ) -> Iterator[pa.RecordBatch]:
+        """Partition을 row와 byte 상한이 있는 Arrow RecordBatch로 순회한다.
+
+        Args:
+            maxRows: batch 하나의 최대 행 수.
+            maxBytes: batch 하나의 최대 Arrow logical byte 수.
+
+        Returns:
+            원래 행 순서를 보존하는 bounded RecordBatch iterator.
+
+        Raises:
+            ValueError: 예산이 양수가 아니거나 한 행이 maxBytes보다 클 때.
+
+        Example:
+            ``for batch in partition.iterArrowBatches(): consume(batch)``.
+
+        Guide:
+            외부 프로세스 전송 시 전체 partition을 다시 합치지 않고 순차 소비한다.
+
+        SeeAlso:
+            ``DataResult.iterArrowBatches``와 ``toArrow``.
+
+        AIContext:
+            이 메서드는 materialized partition의 transport adapter다. 원천 paging은
+            query continuation owner가 별도로 책임진다.
+        """
+        if maxRows <= 0 or maxBytes <= 0:
+            raise ValueError("Arrow batch 예산은 양수여야 합니다")
+        table = self.toArrow()
+        for sourceBatch in table.to_batches(max_chunksize=maxRows):
+            offset = 0
+            while offset < sourceBatch.num_rows:
+                remaining = sourceBatch.slice(offset)
+                if remaining.nbytes <= maxBytes:
+                    yield remaining
+                    break
+                low = 0
+                high = remaining.num_rows
+                while low < high:
+                    middle = (low + high + 1) // 2
+                    if remaining.slice(0, middle).nbytes <= maxBytes:
+                        low = middle
+                    else:
+                        high = middle - 1
+                if low == 0:
+                    raise ValueError("Arrow 한 행이 maxBytes를 초과했습니다")
+                yield remaining.slice(0, low)
+                offset += low
+
 
 @dataclass(frozen=True, slots=True)
 class DataCatalogResult:
@@ -423,7 +496,7 @@ class DataResult:
     gaps: tuple[DataGap, ...]
     lineageRefs: tuple[str, ...]
     executionReceipts: tuple[str, ...]
-    continuation: str | None = None
+    continuation: str | None = field(default=None, repr=False)
     qualityAssertions: tuple[QualityAssertion, ...] = ()
     universeSnapshotId: str | None = None
     universeCoverage: tuple[UniverseCoverage, ...] = ()
@@ -475,6 +548,53 @@ class DataResult:
                 key = f"{key}:{index}"
             tables[key] = table
         return tables
+
+    def iterArrowBatches(
+        self,
+        *,
+        maxRows: int = 65_536,
+        maxBytes: int = 8 * 1024 * 1024,
+    ) -> Iterator[tuple[str, pa.RecordBatch]]:
+        """표 형태 partition을 stable key와 bounded Arrow batch로 순회한다.
+
+        Args:
+            maxRows: batch 하나의 최대 행 수.
+            maxBytes: batch 하나의 최대 Arrow logical byte 수.
+
+        Returns:
+            ``(partitionKey, RecordBatch)`` iterator.
+
+        Raises:
+            ValueError: batch 예산이 유효하지 않거나 한 행이 byte 상한보다 클 때.
+
+        Example:
+            ``for key, batch in result.iterArrowBatches(): consume(key, batch)``.
+
+        Guide:
+            key 규칙은 ``toArrow``와 같고 graph와 resource locator는 제외한다.
+
+        SeeAlso:
+            ``DataPartition.iterArrowBatches``와 ``toArrow``.
+
+        AIContext:
+            외부 factor store, Arrow IPC, Flight adapter가 partition 전체 concat 없이
+            결과를 전달하는 transport surface다.
+        """
+        used: set[str] = set()
+        for index, partition in enumerate(self.partitions):
+            if partition.projectionKind in {"graph", "resource"}:
+                continue
+            requestKey = partition.requestId or partition.asset.assetId
+            selectorKey = ",".join(f"{key}={value}" for key, value in partition.selector)
+            baseKey = f"{requestKey}:{selectorKey}" if selectorKey else requestKey
+            key = f"{baseKey}:{index}" if baseKey in used else baseKey
+            used.add(key)
+            try:
+                batches = partition.iterArrowBatches(maxRows=maxRows, maxBytes=maxBytes)
+                for batch in batches:
+                    yield key, batch
+            except TypeError:
+                continue
 
 
 def projectionKind(projection: Projection) -> str:
