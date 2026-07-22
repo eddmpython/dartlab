@@ -357,3 +357,17 @@ def test_close_isIdempotent(tmp_path: Path) -> None:
     reader.close()
     reader.close()
     assert tuple(reader) == ()
+
+
+def test_schema_remainsAvailableAfterClose(tmp_path: Path) -> None:
+    root = tmp_path / "resource"
+    _writeResourceRoot(root)
+    manifest = loadResourceManifest("resource.test", root, useCache=False)
+    reader = openResourceBatchReader(
+        manifest,
+        ResourceReadRequest(("value",), includeSourcePath=False),
+    )
+    expected = reader.schema
+    reader.close()
+    assert reader.schema == expected
+    assert reader.schema.names == ["value"]

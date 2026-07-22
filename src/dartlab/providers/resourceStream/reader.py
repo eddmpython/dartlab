@@ -150,6 +150,7 @@ class BoundedBatchReader:
         cleanup: Callable[[], None] | None = None,
     ) -> None:
         self._reader = reader
+        self._schema = reader.schema
         self._sourcePin = sourcePin
         self._queryPin = queryPin
         self._integrityMode = integrityMode
@@ -176,6 +177,21 @@ class BoundedBatchReader:
     def __iter__(self) -> BoundedBatchReader:
         """현재 reader를 순차 RecordBatch iterator로 반환한다."""
         return self
+
+    @property
+    def schema(self) -> pa.Schema:
+        """Reader가 닫힌 뒤에도 유효한 projected Arrow schema를 반환한다.
+
+        Requires:
+            reader construction이 성공해 native schema가 고정됐어야 한다.
+
+        Raises:
+            None.
+
+        Example:
+            ``writer = pa.ipc.new_stream(sink, reader.schema)``.
+        """
+        return self._schema
 
     def _hasMoreRows(self) -> bool:
         while True:
