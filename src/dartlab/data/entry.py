@@ -12,6 +12,7 @@ from dartlab.data.catalog import buildCatalog
 from dartlab.data.contracts import (
     CatalogQuery,
     DataQuery,
+    DataRequest,
     FactorProjection,
     GraphProjection,
     NarrativeProjection,
@@ -70,6 +71,22 @@ def _catalogQuery(value: Any) -> CatalogQuery | None:
     return CatalogQuery(**payload)
 
 
+def _dataRequestFromMapping(value: Any) -> DataRequest:
+    if isinstance(value, DataRequest):
+        return value
+    if not isinstance(value, Mapping):
+        raise TypeError("requests 항목은 DataRequest 또는 mapping이어야 합니다")
+    payload = dict(value)
+    for key in ("subjects", "measures"):
+        if key in payload:
+            payload[key] = tuple(payload[key])
+    if "projection" in payload:
+        payload["projection"] = _projectionFromMapping(payload["projection"])
+    if isinstance(payload.get("time"), Mapping):
+        payload["time"] = TimeContext(**dict(payload["time"]))
+    return DataRequest(**payload)
+
+
 def _dataQuery(value: Any) -> DataQuery | None:
     if value is None or isinstance(value, DataQuery):
         return value
@@ -85,6 +102,8 @@ def _dataQuery(value: Any) -> DataQuery | None:
         payload["time"] = TimeContext(**dict(payload["time"]))
     if isinstance(payload.get("budget"), Mapping):
         payload["budget"] = QueryBudget(**dict(payload["budget"]))
+    if "requests" in payload:
+        payload["requests"] = tuple(_dataRequestFromMapping(item) for item in payload["requests"])
     return DataQuery(**payload)
 
 
@@ -96,7 +115,7 @@ def guide() -> pl.DataFrame:
             "역할": ["L1, L1.5, L2 asset 발견", "asset materialization과 typed projection"],
             "예시": [
                 'dartlab.data("catalog", query=CatalogQuery(layers=("L2",)))',
-                'dartlab.data("query", "scan.ratio", query=DataQuery(measures=("roe",)))',
+                'dartlab.data("query", query=DataQuery(requests=(DataRequest("scan.ratio"),)))',
             ],
         }
     )
@@ -107,11 +126,13 @@ class Data:
 
     Capabilities:
         metadata-only catalog와 bounded query 두 축을 제공한다. query는 native, records, factor,
-        graph, narrative, resource projection을 사용하고 result에 snapshot, gap, lineage, receipt를 결박한다.
+        graph, narrative, resource projection을 사용한다. DataRequest를 쓰면 한 query에서 서로 다른
+        projection을 함께 실행하고 result에 snapshot, gap, lineage, quality, receipt를 결박한다.
 
     Guide:
         먼저 ``data("catalog")``로 AssetRef를 찾고, 같은 asset ID를 ``data("query")``에 전달한다.
-        factor store 용도는 새 API가 아니라 ``FactorProjection``을 사용한다.
+        factor store 용도는 새 API가 아니라 ``FactorProjection``을 사용한다. quant와 technical 계산은
+        원래 owner가 수행하고 data는 해당 결과를 factor view로 투영한다.
 
     Requires:
         query axis는 owner asset이 요구하는 데이터와 자격 증명을 그대로 요구한다.

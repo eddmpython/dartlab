@@ -47,3 +47,50 @@ def testEngineCallCanReachDataCatalogWithJsonArgs():
     assert result.ok
     payload = result.data["result"]
     assert any(asset["assetId"] == "scan.ratio" for asset in payload["assets"])
+
+
+def testEngineCallCanExecuteMixedDataRequests(monkeypatch):
+    import dartlab
+    from dartlab.ai.tools.engineCall import engineCall
+
+    monkeypatch.setattr(
+        dartlab,
+        "scan",
+        lambda *args, **kwargs: pl.DataFrame({"종목코드": ["005930"], "종목명": ["삼성전자"], "2025": [12.0]}),
+    )
+    monkeypatch.setattr(
+        dartlab,
+        "gather",
+        lambda *args, **kwargs: {"risk": "수요 둔화 가능성"},
+    )
+
+    result = engineCall(
+        {
+            "apiRef": "data",
+            "args": {
+                "axis": "query",
+                "query": {
+                    "requests": [
+                        {
+                            "assetId": "scan.ratio",
+                            "requestId": "factor",
+                            "measures": ["roe"],
+                            "projection": {"kind": "factor", "measures": ["roe"], "unit": "percent"},
+                        },
+                        {
+                            "assetId": "gather.narrative",
+                            "requestId": "evidence",
+                            "subjects": ["005930"],
+                            "projection": {"kind": "narrative"},
+                        },
+                    ]
+                },
+            },
+        }
+    )
+
+    assert result.ok
+    payload = result.data["result"]
+    assert payload["status"] == "ok"
+    assert [partition["requestId"] for partition in payload["partitions"]] == ["factor", "evidence"]
+    assert [partition["projectionKind"] for partition in payload["partitions"]] == ["factor", "narrative"]

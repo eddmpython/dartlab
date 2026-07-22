@@ -17,9 +17,11 @@ from dartlab.data.contracts import (
     DataAssetDescriptor,
     DataGap,
     DataQuery,
+    DataRequest,
     DataResult,
     FactorProjection,
     ResourceProjection,
+    projectionKind,
 )
 from dartlab.data.projections import projectOutput
 
@@ -41,10 +43,16 @@ def _canonical(value: Any) -> bytes:
     ).encode()
 
 
-def _receipt(descriptor: DataAssetDescriptor, query: DataQuery, selector: Mapping[str, str]) -> str:
+def _receipt(
+    descriptor: DataAssetDescriptor,
+    query: DataQuery,
+    selector: Mapping[str, str],
+    requestId: str,
+) -> str:
     payload = {
         "assetVersionId": descriptor.assetVersionId,
         "query": query,
+        "requestId": requestId,
         "selector": dict(selector),
     }
     return f"data-execution:{hashlib.sha256(_canonical(payload)).hexdigest()}"
@@ -155,6 +163,46 @@ def _outputBytes(value: Any) -> int:
     return len(repr(value).encode("utf-8"))
 
 
+def _activeQuery(query: DataQuery, request: DataRequest) -> DataQuery:
+    """Query 공통값에 request별 override를 합성한다."""
+
+    return dataclasses.replace(
+        query,
+        subjects=request.subjects or query.subjects,
+        measures=request.measures or query.measures,
+        projection=request.projection or query.projection,
+        time=request.time or query.time,
+        params=dict(query.params) | dict(request.params),
+        requests=(),
+    )
+
+
+def _compiledRequests(assetIds: Sequence[str], query: DataQuery) -> tuple[tuple[str, DataRequest, DataQuery], ...]:
+    """Legacy asset 인자와 혼합 DataRequest를 stable 실행 단위로 합친다."""
+
+    legacyIds = tuple(dict.fromkeys(str(assetId) for assetId in assetIds if str(assetId)))
+    requests = [DataRequest(assetId=assetId, requestId=assetId) for assetId in legacyIds]
+    requests.extend(query.requests)
+    if not requests:
+        raise ValueError("query assets가 비었습니다")
+    if len(requests) > query.budget.maxAssets:
+        raise ValueError("assets가 query budget을 초과했습니다")
+
+    used: set[str] = set()
+    compiled = []
+    for index, request in enumerate(requests):
+        active = _activeQuery(query, request)
+        baseId = request.requestId or f"{request.assetId}:{projectionKind(active.projection)}"
+        requestId = baseId
+        if requestId in used:
+            if request.requestId is not None:
+                raise ValueError("requestId는 query 안에서 고유해야 합니다")
+            requestId = f"{baseId}:{index}"
+        used.add(requestId)
+        compiled.append((requestId, request, active))
+    return tuple(compiled)
+
+
 def executeDataQuery(assetIds: Sequence[str], query: DataQuery) -> DataResult:
     """Asset IDs를 resolve, validate, execute, project해 하나의 DataResult로 반환한다.
 
@@ -172,24 +220,27 @@ def executeDataQuery(assetIds: Sequence[str], query: DataQuery) -> DataResult:
     Raises:
         ValueError: asset 수가 budget을 넘거나 asset ID가 비어 있을 때.
     """
-    requested = tuple(dict.fromkeys(str(assetId) for assetId in assetIds if str(assetId)))
-    if not requested:
-        raise ValueError("query assets가 비었습니다")
-    if len(requested) > query.budget.maxAssets:
-        raise ValueError("assets가 query budget을 초과했습니다")
+    requested = _compiledRequests(assetIds, query)
     catalog = buildCatalog()
     byId = {asset.assetId: asset for asset in catalog.assets}
-    descriptors: list[DataAssetDescriptor] = []
+    resolved: list[tuple[str, DataAssetDescriptor, DataQuery]] = []
     gaps: list[DataGap] = list(catalog.gaps)
-    for assetId in requested:
-        descriptor = byId.get(assetId)
+    for requestId, request, activeQuery in requested:
+        descriptor = byId.get(request.assetId)
         if descriptor is None:
-            gaps.append(DataGap("ASSET_NOT_FOUND", assetId, assetId))
+            gaps.append(DataGap("ASSET_NOT_FOUND", request.assetId, request.assetId, requestId=requestId))
             continue
         if not descriptor.queryable:
-            gaps.append(DataGap("ASSET_NOT_QUERYABLE", "catalog-only 또는 policy 차단 asset", assetId))
+            gaps.append(
+                DataGap(
+                    "ASSET_NOT_QUERYABLE",
+                    "catalog-only 또는 policy 차단 asset",
+                    request.assetId,
+                    requestId=requestId,
+                )
+            )
             continue
-        descriptors.append(descriptor)
+        resolved.append((requestId, descriptor, activeQuery))
 
     partitions = []
     receipts: list[str] = []
@@ -197,45 +248,65 @@ def executeDataQuery(assetIds: Sequence[str], query: DataQuery) -> DataResult:
     remainingBytes = query.budget.maxBytes
     deadline = time.perf_counter() + query.budget.timeoutMs / 1000
     stopExecution = False
-    for descriptor in descriptors:
+    for requestId, descriptor, activeQuery in resolved:
         if stopExecution:
             break
-        temporalGap = _temporalGap(descriptor, query)
+        temporalGap = _temporalGap(descriptor, activeQuery)
         if temporalGap:
-            gaps.append(temporalGap)
+            gaps.append(dataclasses.replace(temporalGap, requestId=requestId))
             continue
-        for selector in _selectors(descriptor, query):
+        for selector in _selectors(descriptor, activeQuery):
             if remainingRows <= 0 or remainingBytes <= 0:
                 gaps.append(
-                    DataGap("QUERY_BUDGET_EXHAUSTED", "전체 query 결과 예산이 소진됐습니다", descriptor.assetId)
+                    DataGap(
+                        "QUERY_BUDGET_EXHAUSTED",
+                        "전체 query 결과 예산이 소진됐습니다",
+                        descriptor.assetId,
+                        requestId=requestId,
+                    )
                 )
                 stopExecution = True
                 break
             if time.perf_counter() >= deadline:
-                gaps.append(DataGap("QUERY_TIMEOUT", "query 실행 기한을 초과했습니다", descriptor.assetId))
+                gaps.append(
+                    DataGap(
+                        "QUERY_TIMEOUT",
+                        "query 실행 기한을 초과했습니다",
+                        descriptor.assetId,
+                        requestId=requestId,
+                    )
+                )
                 stopExecution = True
                 break
-            receiptRef = _receipt(descriptor, query, selector)
+            receiptRef = _receipt(descriptor, activeQuery, selector, requestId)
             try:
-                raw = _execute(descriptor, query, selector)
+                raw = _execute(descriptor, activeQuery, selector)
                 if time.perf_counter() >= deadline:
-                    gaps.append(DataGap("QUERY_TIMEOUT", "owner 실행이 query 기한을 초과했습니다", descriptor.assetId))
+                    gaps.append(
+                        DataGap(
+                            "QUERY_TIMEOUT",
+                            "owner 실행이 query 기한을 초과했습니다",
+                            descriptor.assetId,
+                            requestId=requestId,
+                        )
+                    )
                     stopExecution = True
                     break
                 partitionBudget = dataclasses.replace(
-                    query.budget,
+                    activeQuery.budget,
                     maxRows=remainingRows,
                     maxBytes=remainingBytes,
                 )
-                partitionQuery = dataclasses.replace(query, budget=partitionBudget)
+                partitionQuery = dataclasses.replace(activeQuery, budget=partitionBudget)
                 partition, projectionGaps = projectOutput(
                     raw,
                     descriptor,
                     partitionQuery,
                     selector=selector,
                     receiptRef=receiptRef,
+                    requestId=requestId,
                 )
-                gaps.extend(projectionGaps)
+                gaps.extend(dataclasses.replace(gap, requestId=gap.requestId or requestId) for gap in projectionGaps)
                 if partition is not None:
                     partitions.append(partition)
                     receipts.append(receiptRef)
@@ -248,6 +319,7 @@ def executeDataQuery(assetIds: Sequence[str], query: DataQuery) -> DataResult:
                         f"{type(exc).__name__}: {exc}",
                         descriptor.assetId,
                         selector.get("subject"),
+                        requestId=requestId,
                     )
                 )
 
@@ -262,19 +334,23 @@ def executeDataQuery(assetIds: Sequence[str], query: DataQuery) -> DataResult:
         status = "partial"
     else:
         status = "ok"
-    resolvedRefs = tuple(AssetRef(item.assetId, item.assetVersionId) for item in descriptors)
+    resolvedRefs = tuple(
+        dict.fromkeys(AssetRef(descriptor.assetId, descriptor.assetVersionId) for _, descriptor, _ in resolved)
+    )
     contractHash = hashlib.sha256(_canonical({"assets": resolvedRefs, "query": query})).hexdigest()
     lineageRefs = tuple(dict.fromkeys(ref for partition in partitions for ref in partition.lineageRefs))
     continuation = "row-budget" if any(partition.truncated for partition in partitions) else None
+    assertions = tuple(assertion for partition in partitions for assertion in partition.qualityAssertions)
     return DataResult(
         status=status,
         partitions=tuple(partitions),
         assets=resolvedRefs,
         snapshotId=catalog.snapshotId,
         contractHash=contractHash,
-        coverage=Coverage(len(requested), len(descriptors), succeeded, failures),
+        coverage=Coverage(len(requested), len(resolved), succeeded, failures),
         gaps=tuple(gaps),
         lineageRefs=lineageRefs,
         executionReceipts=tuple(receipts),
         continuation=continuation,
+        qualityAssertions=assertions,
     )

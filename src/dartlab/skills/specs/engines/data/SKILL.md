@@ -22,6 +22,7 @@ inputs:
   - subjects
   - measures
   - projection
+  - asset별 DataRequest
   - validAt 또는 knownAt
   - query budget
 outputs:
@@ -31,6 +32,8 @@ outputs:
   - coverage와 gap
   - snapshot과 lineage
   - execution receipt
+  - 구조화 DataLineage와 QualityAssertion
+  - Polars와 Arrow table
 capabilityRefs:
   - data
   - data.catalog
@@ -53,6 +56,7 @@ requiredEvidence:
   - gaps
   - lineageRefs
   - executionReceipts
+  - qualityAssertions
 expectedOutputs:
   - 선택한 stable asset ID와 projection
   - bounded partition 결과
@@ -89,13 +93,14 @@ examples:
   - L1, L1.5, L2 전체 asset catalog 조회
   - scan.ratio를 factor projection으로 외부 프로세스에서 사용
   - 여러 owner의 native 결과를 partition으로 한 번에 조회
+  - 한 query에서 factor, narrative, simulation input을 서로 다른 DataRequest로 조회
   - knownAt 지원 여부를 fail-closed로 검증
   - 시뮬레이터 재무 입력을 snapshot과 receipt로 고정
 procedure:
   - dartlab.data()로 catalog와 query 두 public axis를 확인한다.
   - dartlab.data("catalog")로 owner, layer, kind, temporalSupport, queryable을 조회한다.
-  - stable assetId를 선택하고 DataQuery에 subjects, measures, projection, time, budget을 명시한다.
-  - dartlab.data("query", assetId, query=...)를 호출한다.
+  - stable assetId를 선택하고 단일 view면 DataQuery, 혼합 view면 asset별 DataRequest에 subjects, measures, projection, time을 명시한다.
+  - dartlab.data("query", assetId, query=...) 또는 dartlab.data("query", query=DataQuery(requests=(...)))를 호출한다.
   - status, coverage, gaps를 먼저 검사한 뒤 partition data를 소비한다.
   - snapshotId, contractHash, lineageRefs, executionReceipts를 결과와 함께 보존한다.
 linkedSkills:
@@ -144,7 +149,7 @@ dartlab.data("catalog")   # metadata-only 발견
 dartlab.data("query", ...) # stable asset query
 ```
 
-factor, records, graph, narrative, resource는 새 axis가 아니라 `query`의 typed projection이다. 따라서 같은 asset을 native schema 그대로 쓸 수도 있고 factor store 형태로 투영할 수도 있다.
+factor, records, graph, narrative, resource는 새 axis가 아니라 `query`의 typed projection이다. 따라서 같은 asset을 native schema 그대로 쓸 수도 있고 factor store 형태로 투영할 수도 있다. `DataRequest`를 사용하면 한 query에서 asset마다 서로 다른 projection을 지정할 수 있다.
 
 ## 카탈로그
 
@@ -178,6 +183,42 @@ result = dartlab.data(
 
 owner별 native schema를 억지로 한 표로 합치지 않는다. `DataResult.partitions`가 asset과 selector별 schema를 보존한다. 전체 query 단위로 asset 수, subject 수, row 수, byte 수, 실행 기한을 제한한다.
 
+## 혼합 Data Prism query
+
+```python
+from dartlab.data import DataQuery, DataRequest, FactorProjection, NarrativeProjection
+
+result = dartlab.data(
+    "query",
+    query=DataQuery(
+        requests=(
+            DataRequest(
+                "scan.ratio",
+                "technicalFactor",
+                projection=FactorProjection(measures=("roe",), unit="percent"),
+                measures=("roe",),
+            ),
+            DataRequest(
+                "gather.narrative",
+                "filingEvidence",
+                projection=NarrativeProjection(),
+                subjects=("005930",),
+            ),
+            DataRequest(
+                "analysis.simulationInputs",
+                "scenarioState",
+                subjects=("005930",),
+            ),
+        )
+    ),
+)
+
+factor = result.byRequest("technicalFactor")
+arrowTables = result.toArrow()
+```
+
+이 호출은 factor store, narrative evidence, simulator input을 별도 엔진으로 분리하지 않는다. 계산은 각 owner가 수행하고 Data Workbench는 같은 snapshot, lineage, quality, budget으로 묶는다. JSON mapping만으로도 동일하게 호출할 수 있어 외부 프로세스와 AI EngineCall이 Python contract 객체를 만들 필요가 없다.
+
 ## 호출 동작
 
 `catalog`는 owner의 metadata provider, registry, resource manifest, extraction concept, Company capability를 읽되 실제 값을 실행하지 않는다. `query`는 asset version을 해소하고 temporal support와 policy를 먼저 검사한 뒤 owner의 공개 callable을 실행한다. 결과는 projection하고 전체 query budget을 적용한 다음 coverage, gap, lineage, receipt와 함께 반환한다.
@@ -202,6 +243,12 @@ factors = dartlab.data(
 
 factor row는 `assetId`, `measureId`, `entityId`, `eventAt`, `availableAt`, `knownAt`, `value`, `unit`, `frequency`, `revisionId`, `sourceRef`, `evidenceRef`, `temporalStatus`를 담는다. owner가 unit을 선언하지 않았다면 호출자가 `FactorProjection.unit`을 명시해야 한다. `native` 같은 가짜 단위로 성공시키지 않는다.
 
+최신 전용 asset의 `knownAt`은 `None`이다. query 실행 시각을 knowledge time으로 자동 주입하지 않는다. RSI, momentum, volatility 같은 quant와 technical 계산은 quant, scan 또는 indicator owner가 수행하며 data는 결과를 factor view로 투영한다.
+
+## Narrative evidence로 사용
+
+`NarrativeProjection`은 문자열 목록 대신 `documentId`, `chunkId`, `section`, `text`, `language`, `contentHash`, `eventAt`, `availableAt`, `knownAt`, `revisionId`, `sourceRef`, `evidenceRef`를 가진 table을 반환한다. 이 identity는 keyword, semantic, hybrid retrieval과 답변 인용에서 공통으로 쓸 수 있다. embedding이나 vector index는 runtime SSOT 승인 없이 미리 굽지 않는다.
+
 ## 시간과 PIT
 
 ```python
@@ -223,6 +270,10 @@ valid time과 knowledge time은 분리한다. descriptor가 실제로 `knownAt`�
 - `contractHash`: asset refs와 query 계약 해시
 - `lineageRefs`: source와 실행 ref
 - `executionReceipts`: asset version, query, selector에 결박된 영수증
+- `DataPartition.lineage`: run, job, dataset 구조의 계보 facet
+- `qualityAssertions`: row, byte, provenance, temporal truth 검증 결과
+
+표 형태 partition은 `toPolars()`와 `toArrow()`로 외부 프로세스에 바로 전달한다. 혼합 결과는 `byRequest(requestId)`로 선택한다.
 
 소비자는 partition만 떼어 저장하지 말고 이 envelope를 함께 보존한다.
 
@@ -248,3 +299,6 @@ valid time과 knowledge time은 분리한다. descriptor가 실제로 `knownAt`�
 - row와 byte 예산이 partition별이 아니라 전체 query에 적용되는지 확인한다.
 - bulk resource locator가 payload를 읽지 않고, bulk payload 실행은 차단되는지 확인한다.
 - simulator result가 data snapshot, contract hash, lineage, receipt를 노출하는지 확인한다.
+- 한 query의 DataRequest마다 다른 projection과 owner parameter가 독립 적용되는지 확인한다.
+- latest-only factor와 narrative가 knownAt을 발명하지 않는지 확인한다.
+- 구조화 lineage, quality assertion과 Arrow 변환이 data와 같은 partition에 결박되는지 확인한다.

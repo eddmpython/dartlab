@@ -11,6 +11,7 @@
 | W4 | simulator adoption과 parity | 완료 |
 | W5 | public facade, external smoke, Skill OS | 완료 |
 | W6 | compatibility cleanup와 완료 감사 | 완료 |
+| W7 | Signature Data Prism 혼합 query, evidence, quality, Arrow | 완료 |
 
 ## 2. unit과 contract test
 
@@ -133,3 +134,23 @@ uv run python -X utf8 tests/audit/dartlabGuard.py strict --scope l0-l15 --provid
 - 공개 API manifest와 coverage에 `dartlab.data` 반영 후 quick product smoke 4건 통과
 - 새 data 엔진 addEngine round trip strict 통과
 - 저장소 전체 preflight 실행 완료. 작업대 관련 공개 API와 gather mirror 누락은 수정했다. 남은 실패는 기존 사용자 작업의 포맷 30개, 로컬 블로그 미디어 2개, 기존 provider 역방향 import 1개, 기존 노트북 공개 계약 2개와 Windows shell wheel 명령 호환 문제로 분리했다.
+
+### 2026-07-22 W7
+
+- Feast, Iceberg, OpenLineage, Arrow Flight, Polars, Weaviate, Great Expectations 공식 설계 조사
+- Data Prism attempt에서 혼합 projection과 결정적 narrative evidence 3건 통과
+- `DataRequest` asset별 projection override를 기존 `query` axis에 승격
+- 한 호출에서 factor, narrative, graph, native, records, resource view 혼합 가능
+- narrative에 documentId, chunkId, language, contentHash, 시간, source, evidence spine 적용
+- factor latest-only knownAt 현재 시각 자동 주입 제거
+- partition별 구조화 DataLineage와 QualityAssertion 결박
+- `byRequest`, `toPolars`, `toArrow` 외부 소비 adapter 추가
+- Python contract object 없는 JSON mapping 혼합 query 검증
+- 기존 단일 asset query 호환 포함 data 집중 회귀 16건 통과
+- 로컬 실측 import 1.1454초, cold catalog 1.1971초, warm catalog 18.1ms
+- 2개 owner 혼합 factor와 narrative query median 19.338ms, p95 23.652ms, Arrow 변환 median 0.547ms
+- 격리 wheel 설치본에서 catalog 353개, queryable 171개, 혼합 factor와 narrative, Arrow 2개 table 검증
+- data와 simulator 집중 회귀 43건, attempt와 Skill OS 회귀 25건 통과
+- workbench purity 위반 0건, top-level cycle 0건
+- L0부터 L1.5 strict guard 7개 규칙, public API coverage, quick product smoke 4건 통과
+- 전체 preflight는 두 번 실행했으나 runner가 자식 mutation smoke를 남긴 채 각각 124초와 304초 상한을 초과했다. 잔존 프로세스는 PID tree를 확인해 종료하고 관련 하위 gate를 개별 검증했다.

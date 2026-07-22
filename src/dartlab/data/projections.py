@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import dataclasses
 from collections.abc import Mapping, Sequence
-from datetime import datetime, timezone
 from typing import Any
 
 import polars as pl
@@ -22,6 +21,7 @@ from dartlab.data.contracts import (
     RecordsProjection,
     ResourceProjection,
 )
+from dartlab.data.evidence import lineageFacet, narrativeFrame, qualityAssertions
 
 
 def _schema(value: Any) -> tuple[tuple[str, str], ...]:
@@ -143,17 +143,19 @@ def _factorFrame(
                 descriptor.assetId,
             ),
         )
-    now = datetime.now(timezone.utc).isoformat()
-    temporalStatus = "LATEST_ONLY" if query.time is None else "REQUESTED"
+    knownAt = query.time.knownAt if query.time else None
+    validAt = query.time.validAt if query.time else None
+    temporalStatus = "POINT_IN_TIME" if knownAt else "VALID_TIME" if validAt else "LATEST_ONLY"
     unit = projection.unit or str(declaredUnit)
     frequency = projection.frequency or str(query.params.get("freq") or "native")
+    availableAt = declared.get("availableAt")
     frame = folded.with_columns(
         pl.lit(descriptor.assetId).alias("assetId"),
         pl.col("item").alias("measureId"),
         pl.col("entity").alias("entityId"),
         pl.col("period").alias("eventAt"),
-        pl.lit(None, dtype=pl.Utf8).alias("availableAt"),
-        pl.lit(query.time.knownAt if query.time else now).alias("knownAt"),
+        pl.lit(str(availableAt) if availableAt is not None else None, dtype=pl.Utf8).alias("availableAt"),
+        pl.lit(knownAt, dtype=pl.Utf8).alias("knownAt"),
         pl.lit(unit).alias("unit"),
         pl.lit(frequency).alias("frequency"),
         pl.lit(descriptor.assetVersionId).alias("revisionId"),
@@ -195,6 +197,7 @@ def projectOutput(
     *,
     selector: Mapping[str, str],
     receiptRef: str,
+    requestId: str | None = None,
 ) -> tuple[DataPartition | None, tuple[DataGap, ...]]:
     """Native output을 query projection 하나로 변환하고 schema partition을 만든다.
 
@@ -231,10 +234,15 @@ def projectOutput(
             data = {"nodes": (), "edges": tuple(raw.iter_rows(named=True))}
         else:
             return None, (DataGap("PROJECTION_INCOMPATIBLE", "graph 구조가 아닌 asset입니다", descriptor.assetId),)
+        data["evidence"] = {
+            "assetId": descriptor.assetId,
+            "revisionId": descriptor.assetVersionId,
+            "sourceRef": descriptor.sourceRef,
+            "evidenceRef": receiptRef,
+        }
     elif isinstance(projection, NarrativeProjection):
-        records = _records(raw)
-        data = [row for row in records if row.get("valueText") or isinstance(row.get("value"), str)]
-        if not data:
+        data = narrativeFrame(raw, descriptor, query, selector=selector, receiptRef=receiptRef)
+        if data.is_empty():
             return None, (DataGap("PROJECTION_INCOMPATIBLE", "narrative text가 없습니다", descriptor.assetId),)
     elif isinstance(projection, ResourceProjection):
         data = {
@@ -248,18 +256,32 @@ def projectOutput(
     elif not isinstance(projection, NativeProjection):
         return None, (DataGap("PROJECTION_UNKNOWN", type(projection).__name__, descriptor.assetId),)
 
-    originalRows = _rowCount(data)
     data, truncated = _bounded(data, query.budget.maxRows, query.budget.maxBytes)
-    temporalStatus = "LATEST_ONLY" if query.time is None else "SUPPORTED"
+    rowCount = _rowCount(data)
+    knownAt = query.time.knownAt if query.time else None
+    validAt = query.time.validAt if query.time else None
+    temporalStatus = "POINT_IN_TIME" if knownAt else "VALID_TIME" if validAt else "LATEST_ONLY"
+    estimatedSize = getattr(data, "estimated_size", None)
+    outputBytes = int(estimatedSize()) if callable(estimatedSize) else len(repr(data).encode("utf-8"))
+    assertions = qualityAssertions(
+        descriptor,
+        query,
+        rowCount=rowCount,
+        outputBytes=outputBytes,
+        truncated=truncated,
+    )
     partition = DataPartition(
         asset=AssetRef(descriptor.assetId, descriptor.assetVersionId),
         projectionKind=projection.kind,
         data=data,
         schema=_schema(data),
-        rowCount=min(originalRows, query.budget.maxRows),
+        rowCount=rowCount,
         truncated=truncated,
         selector=tuple(sorted((str(key), str(value)) for key, value in selector.items())),
         temporalStatus=temporalStatus,
         lineageRefs=(descriptor.sourceRef, receiptRef),
+        requestId=requestId,
+        lineage=lineageFacet(descriptor, receiptRef),
+        qualityAssertions=assertions,
     )
     return partition, gaps

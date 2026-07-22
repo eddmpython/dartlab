@@ -1,6 +1,6 @@
 # DartLab Unified Data Workbench
 
-상태: 구현, 통합 검증, 외부 설치 검증 완료. 2026-07-22 저장소 실측과 세 전문가의 아키텍처, API, 이관 토론 및 상호 반박을 반영한다.
+상태: 구현, 통합 검증, 외부 설치 검증, Signature Data Prism 혼합 query 승격 완료. 2026-07-22 저장소 실측과 공식 외부 설계 조사를 반영한다.
 
 ## 한 문장 정의
 
@@ -20,6 +20,8 @@
 8. simulator는 같은 query 계약을 소비한다. data가 simulate를 import하는 역방향은 금지한다.
 9. 자동 발견은 중앙 엔진 손 목록이 아니라 owner-declared metadata provider로 수행한다.
 10. 전체 호출은 전체 RAM 적재를 뜻하지 않는다. catalog, plan, bounded materialization, continuation이 단일 진입점에서 끝난다는 뜻이다.
+11. 한 query의 `DataRequest`마다 서로 다른 projection을 지정해 factor, narrative, graph, native view를 같은 result envelope로 받을 수 있다.
+12. partition은 구조화 lineage, quality assertion과 Arrow transport를 제공한다.
 
 ## 공개 계약
 
@@ -50,6 +52,7 @@ result = dartlab.data(
 3. [02-contract-and-architecture.md](02-contract-and-architecture.md): 타입, catalog, query, PIT, 계보, 자동 발견, 의존 방향
 4. [03-migration-deletion-rollback.md](03-migration-deletion-rollback.md): Universe와 Mirror 선별 승격, simulator 전환, 삭제와 롤백
 5. [04-verification-progress-ledger.md](04-verification-progress-ledger.md): 단계, 테스트, 실데이터 matrix, fatal gate, 진행 원장
+6. [05-signature-data-prism.md](05-signature-data-prism.md): 공식 외부 조사, 공통 evidence spine, 혼합 query, 용도별 설계
 
 ## 기존 계획과의 관계
 
