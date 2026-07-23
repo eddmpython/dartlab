@@ -204,7 +204,9 @@ async function discoverRouteSession(apiBase, signal) {
 function showRouteWaiting(apiBase) {
 	loadingState.hidden = true;
 	errorTitle.textContent = '로컬 지식 엔진 연결 대기 중';
-	errorDetail.textContent = `DartLab Universe 엔진을 ${new URL(apiBase).host}에서 찾고 있습니다. 실행되면 자동으로 연결됩니다.`;
+	errorDetail.textContent =
+		`DartLab Universe 엔진을 ${new URL(apiBase).host}에서 찾고 있습니다. ` +
+		'엔진을 실행하고 브라우저가 로컬 네트워크 접근을 물으면 허용하세요. 권한이 열리면 자동으로 연결됩니다.';
 	errorState.dataset.kind = 'waiting';
 	errorState.hidden = false;
 	backendLabel.textContent = '엔진 대기 중';

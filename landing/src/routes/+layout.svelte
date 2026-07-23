@@ -37,8 +37,8 @@
 	});
 </script>
 
-<CloudflareWebAnalytics />
 {#if !isUniverseRoute}
+	<CloudflareWebAnalytics />
 	<CommandPalette />
 	<InstallPrompt />
 	<NotifyOptIn />
