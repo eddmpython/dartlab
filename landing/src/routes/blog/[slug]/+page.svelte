@@ -73,34 +73,55 @@
 	}
 
 	/**
-	 * dartlab 이야기 본문의 python 블록을 실행 셀로 승격시킨다.
+	 * dartlab 이야기 본문의 Python 블록을 편집 가능한 노트북 셀로 승격시킨다.
 	 *
-	 * 코드 원본은 markdown 코드펜스 하나뿐이고, 여기서는 그 아래에 실행 막대만 붙인다. 셀을 따로
-	 * 굽지 않으므로 글을 고치면 실행되는 코드도 함께 바뀐다. 다른 카테고리 글의 코드블록은 읽는
-	 * 예시라 손대지 않는다.
+	 * 코드 원본은 markdown 코드펜스 하나뿐이다. 정적 코드블록은 서버 렌더와 검색용으로 남기고,
+	 * 브라우저에서는 같은 자리에 CodeMirror 셀을 보여 준다. 다른 카테고리 글은 읽는 예시라 그대로 둔다.
 	 */
 	function mountRunnableCells() {
 		if (!articleEl || postInfo?.category !== 'dartlab-stories') return;
 		const blocks = [...articleEl.querySelectorAll<HTMLElement>('pre[data-lang="python"]')];
 		const codes = blocks.map((pre) => pre.textContent ?? '');
+		editableCodes = [...codes];
 		blocks.forEach((pre, i) => {
 			const host = pre.parentElement as HTMLElement | null;
 			if (!host || host.dataset.runnable) return;
 			host.dataset.runnable = '1';
+			host.hidden = true;
+			host.setAttribute('aria-hidden', 'true');
+			runnableHosts.push(host);
 			const target = document.createElement('div');
 			host.after(target);
+			runnableTargets.push(target);
 			runnables.push(
 				mount(RunnableCode, {
 					target,
 					props: {
 						code: codes[i],
-						// 글 순서가 곧 실행 순서다. 중간 셀을 먼저 눌러도 앞 셀이 알아서 선행 실행된다.
-						prereq: codes.slice(0, i),
+						// 중간 셀을 먼저 실행하면 위 셀의 현재 편집값을 순서대로 먼저 실행한다.
+						getPrereq: () => editableCodes.slice(0, i),
+						onCodeChange: (value: string) => {
+							editableCodes[i] = value;
+						},
 						onOpenNotebook: i === 0 ? openAsNotebook : undefined
 					}
 				})
 			);
 		});
+	}
+
+	function clearRunnableCells() {
+		runnables.forEach((component) => void unmount(component));
+		runnables = [];
+		runnableTargets.forEach((target) => target.remove());
+		runnableTargets = [];
+		runnableHosts.forEach((host) => {
+			host.hidden = false;
+			host.removeAttribute('aria-hidden');
+			delete host.dataset.runnable;
+		});
+		runnableHosts = [];
+		editableCodes = [];
 	}
 
 	/** 이 글을 노트북 하나로. 글마다 안정 id 라 두 번 눌러도 사본이 늘지 않고 하던 곳으로 간다. */
@@ -142,6 +163,9 @@
 
 	let cleanup: (() => void) | undefined;
 	let runnables: Record<string, unknown>[] = [];
+	let runnableHosts: HTMLElement[] = [];
+	let runnableTargets: HTMLElement[] = [];
+	let editableCodes: string[] = [];
 	let mounted = false;
 	let tocVisible = $state(true);
 	let footerEl: HTMLElement | undefined = $state();
@@ -168,8 +192,7 @@
 			mounted = false;
 			cleanup?.();
 			footerCleanup?.();
-			runnables.forEach((c) => void unmount(c));
-			runnables = [];
+			clearRunnableCells();
 		};
 	});
 
@@ -268,9 +291,8 @@
 		data;
 		tick().then(() => {
 			if (!mounted) return;
+			clearRunnableCells();
 			addCopyButtons();
-			runnables.forEach((c) => void unmount(c));
-			runnables = [];
 			mountRunnableCells();
 			extractToc();
 			cleanup?.();

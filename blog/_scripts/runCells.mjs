@@ -2,7 +2,7 @@
  * 브라우저 실행셀 발행 게이트.
  *
  * "dartlab 이야기" 는 본문 python 코드펜스가 곧 브라우저 실행셀이다. 이 하네스는 실제
- * chromium 에서 글을 열고 실행 막대를 위에서 아래로 눌러, 셀마다 출력이 실제로 났는지 본다.
+ * chromium 에서 글을 열고 인라인 노트북 셀을 위에서 아래로 실행해, 출력이 실제로 났는지 본다.
  * 커널은 앱과 같은 pyodide 워커다. auditBlog.py 가 문자(계약·SEO)를 보는 발행 게이트라면,
  * 이것은 코드가 브라우저에서 실제로 도는지 보는 짝이다.
  *
@@ -92,25 +92,25 @@ async function openPost(page, folder) {
 
 /** 셀 하나를 누르고 결과가 확정될 때까지 기다린다. */
 async function runOneCell(page, index, budgetMs) {
-	const bar = page.locator('.rc-bar').nth(index);
-	const runBtn = bar.locator('button.rc-run');
+	const cell = page.locator('[data-testid="blog-notebook-cell"]').nth(index);
+	const runBtn = cell.locator('[data-testid="blog-cell-run"]');
 	await runBtn.click();
 
 	// 버튼이 다시 살아나면 실행이 끝난 것이다.
 	await runBtn.waitFor({ state: 'attached' });
 	await page.waitForFunction(
 		(i) => {
-			const btn = document.querySelectorAll('.rc-bar')[i]?.querySelector('button.rc-run');
+			const btn = document
+				.querySelectorAll('[data-testid="blog-notebook-cell"]')[i]
+				?.querySelector('[data-testid="blog-cell-run"]');
 			return btn && !btn.disabled;
 		},
 		index,
 		{ timeout: budgetMs }
 	);
 
-	// rc-out 은 output 이 있을 때만 붙는다. OutputPanel 은 data 가 비면 스스로 사라진다.
-	// 인덱스로 찾으면 안 된다. 출력 없는 셀이 하나라도 있으면 그 뒤가 통째로 밀린다.
-	// 같은 컴포넌트가 rc-bar 와 rc-out 을 한 부모 아래 낳으므로 그 부모로 범위를 좁힌다.
-	const out = bar.locator('xpath=..').locator('.rc-out');
+	// output 은 결과가 있을 때만 붙는다. 셀 자체로 범위를 좁혀 빈 출력 뒤의 인덱스 밀림을 막는다.
+	const out = cell.locator('[data-testid="blog-cell-output"]');
 	const hasOut = (await out.count()) > 0;
 	if (!hasOut) return { status: 'empty', text: '' };
 
@@ -128,7 +128,7 @@ async function runPost(page, folder, afterOpen = null) {
 	const expected = expectedCodeCells(folder);
 	if (expected > 0) {
 		try {
-			await page.waitForSelector('.rc-bar', { timeout: FIRST_CELL_MS });
+			await page.waitForSelector('[data-testid="blog-notebook-cell"]', { timeout: FIRST_CELL_MS });
 		} catch {
 			return {
 				folder,
@@ -136,7 +136,7 @@ async function runPost(page, folder, afterOpen = null) {
 				results: [
 					{
 						status: 'error',
-						text: `본문 python 코드 ${expected}개지만 실행 막대가 뜨지 않았다`,
+						text: `본문 python 코드 ${expected}개지만 노트북 셀이 뜨지 않았다`,
 						index: 0,
 						elapsedSec: +(FIRST_CELL_MS / 1000).toFixed(1),
 					},
@@ -145,7 +145,7 @@ async function runPost(page, folder, afterOpen = null) {
 		}
 	}
 
-	const cells = await page.locator('.rc-bar').count();
+	const cells = await page.locator('[data-testid="blog-notebook-cell"]').count();
 	if (expected > 0 && cells < expected) {
 		return {
 			folder,
@@ -153,7 +153,7 @@ async function runPost(page, folder, afterOpen = null) {
 			results: [
 				{
 					status: 'error',
-					text: `본문 python 코드 ${expected}개지만 실행 막대는 ${cells}개다`,
+					text: `본문 python 코드 ${expected}개지만 노트북 셀은 ${cells}개다`,
 					index: 0,
 					elapsedSec: 0,
 				},
@@ -161,7 +161,24 @@ async function runPost(page, folder, afterOpen = null) {
 		};
 	}
 	if (cells === 0) {
-		return { folder, cells: 0, results: [], note: '실행 막대가 하나도 없다' };
+		return { folder, cells: 0, results: [], note: '노트북 셀이 하나도 없다' };
+	}
+	const editors = await page
+		.locator('[data-testid="blog-notebook-cell"] .cm-content[contenteditable="true"]')
+		.count();
+	if (editors < cells) {
+		return {
+			folder,
+			cells,
+			results: [
+				{
+					status: 'error',
+					text: `노트북 셀 ${cells}개 중 편집 가능한 셀은 ${editors}개다`,
+					index: 0,
+					elapsedSec: 0,
+				},
+			],
+		};
 	}
 
 	const results = [];

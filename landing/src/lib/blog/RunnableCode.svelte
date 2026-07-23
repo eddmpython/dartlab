@@ -1,132 +1,310 @@
 <script lang="ts">
-	// dartlab 이야기 본문의 python 블록 위에 붙는 실행 막대.
-	//
-	// 코드 원본은 markdown 코드펜스 하나뿐이다. 이 컴포넌트는 그 위에 버튼만 얹고, 실행은
-	// 노트북과 같은 pyodide 커널에서 한다. 한 페이지의 셀들이 커널 하나를 공유하므로 위 셀에서
-	// 만든 `c` 를 아래 셀이 그대로 쓴다. 글 읽는 순서가 곧 실행 순서다.
-	import { Play, Loader2, NotebookPen } from 'lucide-svelte';
+	// dartlab 이야기 본문의 Python 코드펜스를 편집 가능한 노트북 셀로 보여 준다.
+	// 글의 코드펜스가 원본이고, 편집값은 현재 페이지의 커널에서만 실행한다.
+	import { ExternalLink, Loader2, Play, RotateCcw } from 'lucide-svelte';
 	import { onMount } from 'svelte';
-	import { runSnippet, prewarmEngine, prewarmData, takePrewarmedOutput, engineStatus } from '$lib/notebook/stores/executionStore';
+	import {
+		runSnippet,
+		prewarmEngine,
+		prewarmData,
+		takePrewarmedOutput,
+		engineStatus
+	} from '$lib/notebook/stores/executionStore';
 	import type { CellOutput } from '$lib/notebook/engine/executionEngine';
+	import CodeCell from '$lib/notebook/components/CodeCell.svelte';
 	import OutputPanel from '$lib/notebook/components/OutputPanel.svelte';
 
 	interface Props {
 		code: string;
-		/** 이 셀보다 위에 있는 본문 코드들. 커널이 아직 안 돌린 것만 먼저 흘린다. */
-		prereq?: string[];
-		/** 이 글을 노트북으로 가져간다. 첫 셀에만 붙인다(첫 셀 판별에도 쓴다). */
+		/** 현재 셀보다 위에 있는 편집값을 실행 시점에 읽는다. */
+		getPrereq?: () => string[];
+		/** 페이지가 관리하는 셀 값도 함께 갱신한다. */
+		onCodeChange?: (code: string) => void;
+		/** 글 전체를 노트북 편집 화면에서 연다. 첫 셀에만 붙인다. */
 		onOpenNotebook?: () => void;
 	}
-	let { code, prereq = [], onOpenNotebook }: Props = $props();
 
+	let { code, getPrereq = () => [], onCodeChange, onOpenNotebook }: Props = $props();
+	// svelte-ignore state_referenced_locally
+	let editableCode = $state(code);
 	let output = $state<CellOutput | undefined>(undefined);
 	let running = $state(false);
+	let active = $state(false);
 
-	// 클릭이 느린 두 원인을 진입 즉시 백그라운드로 없앤다.
-	//   (1) 설치: pyodide + dartlab(21MB + polars) 12~20초. prewarmEngine 이 미리 끝낸다(멱등).
-	//   (2) 데이터: 첫 셀이 여는 회사의 panel parquet(~12.8MB) fetch. 설치만 데워도 첫 클릭은 이 fetch
-	//       때문에 여전히 느리다(실측 16초). 그래서 첫 셀은 설치가 끝난 뒤 자기 코드를 조용히 한 번
-	//       실행해 데이터까지 커널 FS 에 올려 둔다. 그러면 사용자의 첫 클릭은 fetch 없이 실행만 한다.
-	// dartlab 이야기는 독자 의도가 코드 실행이라 이 선제 다운로드가 정당하다(카테고리 한정).
+	const dirty = $derived(editableCode !== code);
+	const downloading = $derived(running && $engineStatus === 'loading');
+
+	// 독자가 글을 읽는 동안 커널과 첫 셀 데이터를 미리 준비한다. 수정한 코드는 선제 실행하지 않는다.
 	onMount(() => {
-		const w = window as unknown as { requestIdleCallback?: (cb: (d?: unknown) => void) => void };
+		const browserWindow = window as unknown as {
+			requestIdleCallback?: (callback: () => void) => void;
+		};
 		const kick = async () => {
 			await prewarmEngine();
-			if (onOpenNotebook) await prewarmData(code); // 첫 셀만. 자기 데이터를 선제 캐시.
+			if (onOpenNotebook) await prewarmData(code);
 		};
-		if (w.requestIdleCallback) w.requestIdleCallback(() => void kick());
+		if (browserWindow.requestIdleCallback) browserWindow.requestIdleCallback(() => void kick());
 		else setTimeout(() => void kick(), 1200);
 	});
 
-	/** 파이썬과 dartlab 을 내려받는 중일 때만 오래 걸린다고 말한다. 따뜻한 커널에는 거짓말이다. */
-	let downloading = $derived(running && $engineStatus === 'loading');
+	function updateCode(value: string) {
+		editableCode = value;
+		output = undefined;
+		onCodeChange?.(value);
+	}
+
+	function resetCode() {
+		updateCode(code);
+	}
 
 	async function run() {
-		// 프리페치가 읽는 동안 이 셀 결과를 미리 냈으면 fetch 도 계산도 없이 즉시 보여준다(체감 0초).
-		const pre = takePrewarmedOutput(code);
-		if (pre) {
-			output = pre;
-			return;
+		if (running) return;
+		// 원본 코드의 프리페치 결과만 재사용한다. 사용자가 고친 코드는 반드시 실제로 실행한다.
+		if (!dirty) {
+			const prewarmed = takePrewarmedOutput(code);
+			if (prewarmed) {
+				output = prewarmed;
+				return;
+			}
 		}
 		running = true;
 		output = undefined;
 		try {
-			output = await runSnippet(code, prereq);
+			output = await runSnippet(editableCode, getPrereq());
 		} finally {
 			running = false;
 		}
 	}
 </script>
 
-<div class="rc-bar">
-	<button class="rc-btn rc-run" onclick={run} onpointerenter={prewarmEngine} disabled={running}>
-		{#if running}<Loader2 size={13} class="rc-spin" /> 실행 중{:else}<Play size={13} /> 실행{/if}
-	</button>
-	{#if onOpenNotebook}
-		<button class="rc-btn" onclick={onOpenNotebook} onpointerenter={prewarmEngine}>
-			<NotebookPen size={13} /> 노트북 생성하기
-		</button>
-	{/if}
-	{#if downloading}
-		<span class="rc-note">처음 실행은 파이썬과 dartlab 을 내려받느라 20 초쯤 걸립니다.</span>
-	{/if}
-</div>
+<section
+	class="blog-cell"
+	data-testid="blog-notebook-cell"
+	onfocusin={() => (active = true)}
+	onfocusout={() => (active = false)}
+>
+	<header class="blog-cell-header">
+		<div class="blog-cell-kind">
+			<span class="blog-cell-dot"></span>
+			<span>Python 셀</span>
+			<span class="blog-cell-hint">직접 수정하고 실행할 수 있습니다</span>
+		</div>
+		<div class="blog-cell-actions">
+			{#if dirty}
+				<button class="blog-cell-action" onclick={resetCode} aria-label="원본 코드로 되돌리기">
+					<RotateCcw size={13} /> 원본
+				</button>
+			{/if}
+			{#if onOpenNotebook}
+				<button class="blog-cell-action" onclick={onOpenNotebook} onpointerenter={prewarmEngine}>
+					<ExternalLink size={13} /> 전체 화면
+				</button>
+			{/if}
+		</div>
+	</header>
 
-{#if output}
-	<div class="rc-out"><OutputPanel {output} /></div>
-{/if}
+	<div class="blog-cell-body">
+		<button
+			class="blog-cell-run"
+			data-testid="blog-cell-run"
+			onclick={run}
+			onpointerenter={prewarmEngine}
+			disabled={running}
+			aria-label={running ? 'Python 셀 실행 중' : 'Python 셀 실행'}
+		>
+			{#if running}
+				<Loader2 size={15} class="blog-cell-spin" />
+			{:else}
+				<Play size={15} />
+			{/if}
+		</button>
+		<div class="blog-cell-editor">
+			<CodeCell
+				content={editableCode}
+				isActive={active}
+				isRunning={running}
+				onContentChange={updateCode}
+				onRun={run}
+				onRunAndMove={run}
+			/>
+		</div>
+	</div>
+
+	{#if downloading}
+		<p class="blog-cell-note">처음 실행할 때는 파이썬과 dartlab을 내려받느라 잠시 걸립니다.</p>
+	{/if}
+
+	{#if output}
+		<div class="blog-cell-output" data-testid="blog-cell-output">
+			<OutputPanel {output} />
+		</div>
+	{/if}
+</section>
 
 <style>
-	.rc-bar {
+	.blog-cell {
+		--nb-bg: var(--dl-bg-deep);
+		--nb-surface: var(--dl-bg-base);
+		--nb-card: var(--dl-bg-raised);
+		--nb-border: var(--dl-line-strong);
+		--nb-text: var(--dl-ink);
+		--nb-text-secondary: var(--dl-ink-mute);
+		--nb-text-muted: var(--dl-ink-dim);
+		--nb-success: var(--dl-good);
+		--nb-error: var(--dl-bad);
+
+		margin: 1.25rem 0 1.75rem;
+		border: 1px solid var(--nb-border);
+		border-radius: 12px;
+		background: var(--nb-card);
+		box-shadow: 0 16px 34px rgba(3, 5, 9, 0.18);
+		overflow: hidden;
+		transition: border-color 0.15s ease, box-shadow 0.15s ease;
+	}
+
+	.blog-cell:focus-within {
+		border-color: rgba(var(--dl-accent-rgb), 0.55);
+		box-shadow: 0 18px 38px rgba(3, 5, 9, 0.24), 0 0 0 1px rgba(var(--dl-accent-rgb), 0.08);
+	}
+
+	.blog-cell-header {
 		display: flex;
 		align-items: center;
-		gap: 8px;
-		flex-wrap: wrap;
-		margin: -6px 0 10px;
-	}
-	.rc-btn {
-		display: inline-flex;
-		align-items: center;
-		gap: 5px;
-		padding: 5px 11px;
-		border: 1px solid var(--dl-line-strong);
-		border-radius: var(--dl-r-sm);
-		background: var(--dl-bg-raised);
-		color: var(--dl-ink-mute);
+		justify-content: space-between;
+		gap: 12px;
+		min-height: 34px;
+		padding: 5px 9px 5px 12px;
+		border-bottom: 1px solid var(--nb-border);
+		background: color-mix(in srgb, var(--nb-card) 88%, var(--dl-bg-base));
 		font-family: var(--dl-font-ui);
-		font-size: 12.5px;
+	}
+
+	.blog-cell-kind,
+	.blog-cell-actions,
+	.blog-cell-action {
+		display: flex;
+		align-items: center;
+	}
+
+	.blog-cell-kind {
+		gap: 7px;
+		color: var(--nb-text-secondary);
+		font-size: 11.5px;
+		font-weight: 650;
+	}
+
+	.blog-cell-dot {
+		width: 7px;
+		height: 7px;
+		border-radius: 50%;
+		background: var(--dl-accent);
+		box-shadow: 0 0 0 3px rgba(var(--dl-accent-rgb), 0.12);
+	}
+
+	.blog-cell-hint {
+		color: var(--nb-text-muted);
+		font-weight: 450;
+	}
+
+	.blog-cell-actions {
+		gap: 4px;
+	}
+
+	.blog-cell-action {
+		gap: 5px;
+		padding: 4px 7px;
+		border: 0;
+		border-radius: 6px;
+		background: transparent;
+		color: var(--nb-text-muted);
+		font-family: var(--dl-font-ui);
+		font-size: 11.5px;
 		cursor: pointer;
-		transition: all 0.12s ease;
 	}
-	.rc-btn:hover:not(:disabled) {
-		border-color: var(--dl-accent);
+
+	.blog-cell-action:hover {
+		background: rgba(var(--dl-accent-rgb), 0.09);
 		color: var(--dl-accent);
 	}
-	.rc-btn:disabled {
-		opacity: 0.6;
+
+	.blog-cell-body {
+		display: grid;
+		grid-template-columns: 42px minmax(0, 1fr);
+		min-height: 68px;
+		background: var(--nb-surface);
+	}
+
+	.blog-cell-run {
+		display: flex;
+		align-items: flex-start;
+		justify-content: center;
+		padding: 14px 0 0;
+		border: 0;
+		border-right: 1px solid var(--nb-border);
+		background: color-mix(in srgb, var(--nb-card) 88%, transparent);
+		color: var(--dl-accent);
+		cursor: pointer;
+	}
+
+	.blog-cell-run:hover:not(:disabled) {
+		background: rgba(var(--dl-accent-rgb), 0.09);
+	}
+
+	.blog-cell-run:disabled {
 		cursor: default;
+		opacity: 0.75;
 	}
-	.rc-run {
-		color: var(--dl-accent);
-		border-color: rgba(var(--dl-accent-rgb), 0.45);
+
+	.blog-cell-editor {
+		min-width: 0;
+		padding: 3px 0;
 	}
-	.rc-note {
-		font-size: 12px;
-		color: var(--dl-ink-mute);
+
+	.blog-cell-note {
+		margin: 0;
+		padding: 7px 12px;
+		border-top: 1px solid var(--nb-border);
+		color: var(--nb-text-muted);
+		font-family: var(--dl-font-ui);
+		font-size: 11.5px;
 	}
-	.rc-bar :global(.rc-spin) {
-		animation: rc-spin 0.9s linear infinite;
+
+	.blog-cell-output {
+		border-top: 1px solid var(--nb-border);
+		background: var(--nb-bg);
+		overflow-x: auto;
 	}
-	@keyframes rc-spin {
+
+	.blog-cell-output :global(.output-panel) {
+		border-top: 0;
+	}
+
+	.blog-cell :global(.blog-cell-spin) {
+		animation: blog-cell-spin 0.9s linear infinite;
+	}
+
+	@keyframes blog-cell-spin {
 		to {
 			transform: rotate(360deg);
 		}
 	}
-	.rc-out {
-		margin: -4px 0 18px;
-		border: 1px solid var(--dl-line);
-		border-radius: var(--dl-r-sm);
-		background: var(--dl-bg-base);
-		overflow-x: auto;
+
+	@media (max-width: 640px) {
+		.blog-cell-hint {
+			display: none;
+		}
+
+		.blog-cell-action {
+			font-size: 0;
+		}
+
+		.blog-cell-action :global(svg) {
+			width: 15px;
+			height: 15px;
+		}
+
+		.blog-cell-body {
+			grid-template-columns: 36px minmax(0, 1fr);
+		}
 	}
 </style>
