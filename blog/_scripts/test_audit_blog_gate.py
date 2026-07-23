@@ -588,6 +588,21 @@ value = 12345
     assert ab._validateThousandsSeparators(raw, body) == []
 
 
+def test_thousands_separator_gate_uses_frontmatter_stock_code_as_identifier() -> None:
+    raw = """---
+title: "펄어비스 263750: 두 IP가 만난 한 분기"
+description: "종목코드를 회사명 옆에 괄호 없이 표기한다."
+category: company-reports
+stockCode: "263750"
+---
+
+펄어비스 263750의 사업 변화를 확인한다.
+"""
+    body = ab.strip_frontmatter(raw)
+
+    assert ab._validateThousandsSeparators(raw, body) == []
+
+
 def test_every_blog_category_publish_gate_blocks_missing_thousands_separator(tmp_path: Path) -> None:
     for index, category in enumerate(sorted(ab.BLOG_CATEGORIES), start=1):
         postDir = tmp_path / "blog" / f"{index:02d}-{category}" / "01-number-format"

@@ -506,7 +506,13 @@ def _hasYearQuantityUnitAfter(text: str, end: int) -> bool:
     return YEAR_QUANTITY_UNIT_AFTER_RE.match(text[end : end + 16]) is not None
 
 
-def _isNumberIdentifier(text: str, start: int, end: int, digits: str) -> bool:
+def _isNumberIdentifier(
+    text: str,
+    start: int,
+    end: int,
+    digits: str,
+    identifierValues: set[str] | None = None,
+) -> bool:
     before = text[max(0, start - 24) : start]
     after = text[end : end + 16]
     hasUnit = _hasQuantityUnitAfter(text, end)
@@ -517,6 +523,8 @@ def _isNumberIdentifier(text: str, start: int, end: int, digits: str) -> bool:
     if suffix and not hasUnit:
         return True
     if IDENTIFIER_CONTEXT_BEFORE_RE.search(before) and not hasUnit:
+        return True
+    if not hasUnit and identifierValues and digits in identifierValues:
         return True
     if len(digits) == 6 and not hasUnit and before.endswith("(") and after.startswith(")"):
         return True
@@ -529,7 +537,11 @@ def _isNumberIdentifier(text: str, start: int, end: int, digits: str) -> bool:
     return False
 
 
-def _findUnformattedThousands(text: str, label: str) -> list[str]:
+def _findUnformattedThousands(
+    text: str,
+    label: str,
+    identifierValues: set[str] | None = None,
+) -> list[str]:
     visible = _maskNumberExemptMarkup(text)
     fails: list[str] = []
     for match in GROUPED_NUMBER_RE.finditer(visible):
@@ -548,7 +560,7 @@ def _findUnformattedThousands(text: str, label: str) -> list[str]:
         value = int(digits)
         if 1800 <= value <= 2199 and not _hasYearQuantityUnitAfter(visible, end):
             continue
-        if _isNumberIdentifier(visible, start, end, digits):
+        if _isNumberIdentifier(visible, start, end, digits, identifierValues):
             continue
         formatted = f"{match.group('sign')}{value:,}{match.group('fraction') or ''}"
         line = visible.count("\n", 0, start) + 1
@@ -560,13 +572,14 @@ def _validateThousandsSeparators(raw: str, body: str) -> list[str]:
     """모든 블로그의 독자 노출 수량에 천 단위 콤마를 강제한다."""
 
     fails: list[str] = []
+    identifierValues = {value for key in ("stockCode",) if (value := _clean_scalar(frontmatter_value(raw, key)))}
     for label, text in (
         ("title", _clean_scalar(frontmatter_value(raw, "title"))),
         ("description", _clean_scalar(frontmatter_value(raw, "description"))),
         ("본문", body),
     ):
         if text:
-            fails.extend(_findUnformattedThousands(text, label))
+            fails.extend(_findUnformattedThousands(text, label, identifierValues))
     return fails
 
 
