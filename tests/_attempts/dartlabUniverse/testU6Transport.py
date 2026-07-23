@@ -15,8 +15,11 @@ import pytest
 
 from tests._attempts.dartlabUniverse.spatialTestSupport import spatialFixture
 from tests._attempts.dartlabUniverse.u6Harness import (
+    _DEFAULT_ROUTE_ORIGINS,
     _displayObjectLabels,
     _handlerFactory,
+    _launchUrl,
+    buildArgumentParser,
     buildFixtureTransport,
 )
 from tests._attempts.dartlabUniverse.u6Transport import (
@@ -132,6 +135,34 @@ def testRouteSessionCorsAllowsOnlyPinnedOrigin(transport):
             assert response.headers["Access-Control-Allow-Origin"] == routeOrigin
             assert response.headers["Access-Control-Allow-Private-Network"] == "true"
 
+        session = urllib.request.Request(
+            f"{base}/api/session",
+            headers={"Origin": routeOrigin},
+        )
+        with urllib.request.urlopen(session) as response:
+            payload = json.loads(response.read())
+            assert response.status == 200
+            assert payload == {
+                "schemaVersion": "du-u6-route-session-v1",
+                "token": token,
+            }
+            assert response.headers["Access-Control-Allow-Origin"] == routeOrigin
+
+        for deniedOrigin in (None, "https://example.com"):
+            headers = {"Origin": deniedOrigin} if deniedOrigin else {}
+            deniedSession = urllib.request.Request(f"{base}/api/session", headers=headers)
+            with pytest.raises(urllib.error.HTTPError) as error:
+                urllib.request.urlopen(deniedSession)
+            assert error.value.code == 403
+
+        unauthenticatedManifest = urllib.request.Request(
+            f"{base}/api/manifest",
+            headers={"Origin": routeOrigin},
+        )
+        with pytest.raises(urllib.error.HTTPError) as error:
+            urllib.request.urlopen(unauthenticatedManifest)
+        assert error.value.code == 401
+
         manifest = urllib.request.Request(
             f"{base}/api/manifest",
             headers={
@@ -159,6 +190,68 @@ def testRouteSessionCorsAllowsOnlyPinnedOrigin(transport):
         assert not thread.is_alive()
 
 
+def testRouteSessionCorsSupportsExactProductAndDevelopmentOrigins(transport):
+    token = "fixture-local-session-token-that-is-long-enough"
+    staticRoot = Path(__file__).with_name("gui")
+    routeOrigins = (
+        "https://eddmpython.github.io",
+        "http://127.0.0.1:5173",
+    )
+    server = ThreadingHTTPServer(
+        ("127.0.0.1", 0),
+        _handlerFactory(transport, token, staticRoot, routeOrigins),
+    )
+    server.daemon_threads = True
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    base = f"http://127.0.0.1:{server.server_address[1]}"
+    try:
+        for routeOrigin in routeOrigins:
+            request = urllib.request.Request(
+                f"{base}/api/session",
+                headers={"Origin": routeOrigin},
+            )
+            with urllib.request.urlopen(request) as response:
+                assert response.status == 200
+                assert response.headers["Access-Control-Allow-Origin"] == routeOrigin
+
+        standalone = urllib.request.Request(
+            f"{base}/api/session",
+            headers={
+                "Sec-Fetch-Site": "same-origin",
+                "Sec-Fetch-Mode": "cors",
+            },
+        )
+        with urllib.request.urlopen(standalone) as response:
+            assert response.status == 200
+            assert response.headers.get("Access-Control-Allow-Origin") is None
+
+        denied = urllib.request.Request(
+            f"{base}/api/session",
+            headers={"Origin": "https://eddmpython.github.io.attacker.example"},
+        )
+        with pytest.raises(urllib.error.HTTPError) as error:
+            urllib.request.urlopen(denied)
+        assert error.value.code == 403
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)
+        assert not thread.is_alive()
+
+
+def testLaunchUrlNeverContainsSessionToken():
+    routeUrl = "https://eddmpython.github.io/dartlab/universe"
+    direct = _launchUrl(routeUrl=routeUrl, runtimeUrl="http://127.0.0.1:8765")
+    custom = _launchUrl(routeUrl=routeUrl, runtimeUrl="http://127.0.0.1:9876")
+    standalone = _launchUrl(routeUrl=None, runtimeUrl="http://127.0.0.1:8765")
+
+    assert direct == routeUrl
+    assert custom == routeUrl + "/#api=http%3A%2F%2F127.0.0.1%3A9876"
+    assert standalone == "http://127.0.0.1:8765"
+    assert all("token" not in url.casefold() for url in (direct, custom, standalone))
+
+
 def testHarnessAssetsRemainIndependentFromPublicUi():
     guiRoot = Path(__file__).with_name("gui")
     expected = {
@@ -173,5 +266,14 @@ def testHarnessAssetsRemainIndependentFromPublicUi():
     }
 
     assert expected == {item.name for item in guiRoot.iterdir() if item.is_file()}
-    assert all("http://" not in (guiRoot / item).read_text(encoding="utf-8") for item in expected)
+    assert "http://127.0.0.1:8765" in (guiRoot / "app.js").read_text(encoding="utf-8")
+    assert all("http://" not in (guiRoot / item).read_text(encoding="utf-8") for item in expected - {"app.js"})
     assert all("https://" not in (guiRoot / item).read_text(encoding="utf-8") for item in expected)
+
+
+def testHarnessDefaultPortMatchesDirectRouteDiscoveryPort():
+    args = buildArgumentParser().parse_args([])
+    assert args.host == "127.0.0.1"
+    assert args.port == 8765
+    assert args.route_url == "http://127.0.0.1:5173/universe"
+    assert tuple(args.allowed_origin) == _DEFAULT_ROUTE_ORIGINS

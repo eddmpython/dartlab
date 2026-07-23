@@ -91,15 +91,15 @@ export function bindCameraControls(canvas, camera, onChange, onClick) {
 	let lastY = 0;
 	let travel = 0;
 
-	canvas.addEventListener('pointerdown', (event) => {
+	const onPointerDown = (event) => {
 		activePointer = event.pointerId;
 		lastX = event.clientX;
 		lastY = event.clientY;
 		travel = 0;
 		canvas.setPointerCapture(event.pointerId);
-	});
+	};
 
-	canvas.addEventListener('pointermove', (event) => {
+	const onPointerMove = (event) => {
 		if (event.pointerId !== activePointer) return;
 		const dx = event.clientX - lastX;
 		const dy = event.clientY - lastY;
@@ -108,21 +108,21 @@ export function bindCameraControls(canvas, camera, onChange, onClick) {
 		travel += Math.hypot(dx, dy);
 		camera.orbit(dx, dy);
 		onChange();
-	});
+	};
 
-	canvas.addEventListener('pointerup', (event) => {
+	const onPointerUp = (event) => {
 		if (event.pointerId !== activePointer) return;
 		activePointer = null;
 		if (travel < 5) onClick(event.clientX, event.clientY);
-	});
+	};
 
-	canvas.addEventListener('wheel', (event) => {
+	const onWheel = (event) => {
 		event.preventDefault();
 		camera.zoom(event.deltaY);
 		onChange();
-	}, { passive: false });
+	};
 
-	window.addEventListener('keydown', (event) => {
+	const onKeyDown = (event) => {
 		if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) return;
 		const movement = {
 			ArrowLeft: [-1, 0],
@@ -141,5 +141,19 @@ export function bindCameraControls(canvas, camera, onChange, onClick) {
 			camera.zoom(120);
 			onChange();
 		}
-	});
+	};
+
+	canvas.addEventListener('pointerdown', onPointerDown);
+	canvas.addEventListener('pointermove', onPointerMove);
+	canvas.addEventListener('pointerup', onPointerUp);
+	canvas.addEventListener('wheel', onWheel, { passive: false });
+	window.addEventListener('keydown', onKeyDown);
+
+	return () => {
+		canvas.removeEventListener('pointerdown', onPointerDown);
+		canvas.removeEventListener('pointermove', onPointerMove);
+		canvas.removeEventListener('pointerup', onPointerUp);
+		canvas.removeEventListener('wheel', onWheel);
+		window.removeEventListener('keydown', onKeyDown);
+	};
 }

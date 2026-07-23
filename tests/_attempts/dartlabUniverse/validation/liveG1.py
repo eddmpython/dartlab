@@ -15,6 +15,7 @@ from ..identity.dartIdentitySource import enumerateDartIdentities
 from ..identity.edgarIdentitySource import enumerateEdgarIdentities
 from ..identity.ledger import IdentityEvidence
 from ..provenance import (
+    SnapshotValidationReport,
     SourceInput,
     UniverseSnapshot,
     buildUniverseSnapshot,
@@ -30,6 +31,7 @@ class LiveG1Result:
     identityRecords: tuple[IdentityEvidence, ...]
     capabilityRegistry: UniverseCapabilityRegistry
     snapshot: UniverseSnapshot
+    replayValidation: SnapshotValidationReport
     report: G1Report
 
 
@@ -112,4 +114,4 @@ def buildLiveG1(
         controlPlaneIntegrity=store.verifyIntegrity(),
         currentControlPlaneHeadId=controlHead,
     )
-    return LiveG1Result(identity, identityRecords, capabilityRegistry, snapshot, report)
+    return LiveG1Result(identity, identityRecords, capabilityRegistry, snapshot, replay, report)

@@ -216,6 +216,8 @@ def runLiveU3(*, checkpointPath: Path, recoveryRoot: Path, controlRoot: Path) ->
         "mediaCatalogRecordCount": len(census.discovery.mediaCensus.records),
         "u0SnapshotDigest": census.snapshotDigest,
         "g1Digest": liveG1.report.digest,
+        "g1": asdict(liveG1.report),
+        "g1Replay": asdict(liveG1.replayValidation),
         "g2Digest": g2.digest,
         "universeSnapshotId": liveG1.snapshot.snapshotId,
         "catalogDigest": catalog.digest,

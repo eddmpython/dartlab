@@ -56,6 +56,7 @@ class U6Measurements:
     externalAssetReferenceCount: int
     publicSurfaceReferenceCount: int
     publicRouteConnected: bool
+    brandChromeConnected: bool
     publicButtonConnected: bool
     persistentArtifactCount: int
 
@@ -129,6 +130,8 @@ def validateU6(measurements: U6Measurements, *, thresholds: U6Thresholds | None 
         failures.append("EXTERNAL_GUI_ASSET_REFERENCE_FOUND")
     if not measurements.publicRouteConnected:
         failures.append("DIRECT_UNIVERSE_ROUTE_MISSING")
+    if not measurements.brandChromeConnected:
+        failures.append("BRAND_CHROME_SSOT_MISSING")
     if measurements.publicSurfaceReferenceCount or measurements.publicButtonConnected:
         failures.append("UNAPPROVED_PUBLIC_UNIVERSE_ENTRY_POINT")
     base = U6Report(

@@ -24,6 +24,9 @@
 	import { installPyapiBridge } from '$lib/pyapi/pyapiBridge';
 
 	let { children }: { children: Snippet } = $props();
+	let isUniverseRoute = $derived(
+		page.url.pathname === `${base}/universe` || page.url.pathname === `${base}/universe/`
+	);
 
 	// browser-as-server: Service Worker 가 /pyapi/* 를 넘기면 pyodide 워커의 dartlab FastAPI 로 relay.
 	onMount(() => installPyapiBridge());
@@ -35,9 +38,11 @@
 </script>
 
 <CloudflareWebAnalytics />
-<CommandPalette />
-<InstallPrompt />
-<NotifyOptIn />
+{#if !isUniverseRoute}
+	<CommandPalette />
+	<InstallPrompt />
+	<NotifyOptIn />
+{/if}
 {@render children()}
 
 <style>

@@ -43,8 +43,8 @@ function rgba(value) {
 	return [0.48, 0.72, 1, 1];
 }
 
-function palette() {
-	const styles = getComputedStyle(document.documentElement);
+function palette(element) {
+	const styles = getComputedStyle(element);
 	return Array.from({ length: 6 }, (_, index) => rgba(styles.getPropertyValue(`--series-${index + 1}`)));
 }
 
@@ -142,7 +142,7 @@ export class WebGlUniverseRenderer {
 
 	_uploadNodes() {
 		const gl = this.gl;
-		const colors = palette();
+		const colors = palette(this.canvas);
 		const values = new Float32Array(this.nodes.length * 9);
 		this.nodes.forEach((node, index) => {
 			const offset = index * 9;
@@ -159,7 +159,7 @@ export class WebGlUniverseRenderer {
 
 	_uploadEdges() {
 		const gl = this.gl;
-		const colors = palette();
+		const colors = palette(this.canvas);
 		const values = new Float32Array(this.edges.length * 14);
 		this.edges.forEach((edge, index) => {
 			const color = [...colors[edge.styleIndex % colors.length].slice(0, 3), Math.min(0.34, 0.08 + edge.weight * 0.025)];

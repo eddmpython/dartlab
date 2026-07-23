@@ -1,13 +1,47 @@
 <script lang="ts">
+	import { base } from '$app/paths';
 	import { onMount } from 'svelte';
+	import {
+		BrandMark,
+		BrandSocial,
+		BrandSwitch,
+		DARTLAB_BRAND_LINKS,
+		SupportDialog,
+		fetchGithubStars
+	} from '@dartlab/ui-surfaces/terminal';
 	import '../../../../tests/_attempts/dartlabUniverse/gui/universe.css';
+
+	const links = DARTLAB_BRAND_LINKS;
+	let ghStars = $state<number | null>(null);
+	let supportOpen = $state(false);
+
+	fetchGithubStars(links.repo).then((count) => (ghStars = count));
 
 	onMount(() => {
 		document.body.dataset.universeRoute = 'true';
-		void import('../../../../tests/_attempts/dartlabUniverse/gui/app.js').then(
-			(module) => module.bootUniverse()
-		);
+		let active = true;
+		let dispose: (() => void) | undefined;
+		void import('../../../../tests/_attempts/dartlabUniverse/gui/app.js')
+			.then((module) => {
+				if (!active) return;
+				dispose = module.disposeUniverse;
+				return module.bootUniverse();
+			})
+			.catch((error: unknown) => {
+				if (!active) return;
+				const loading = document.getElementById('loading-state');
+				const errorState = document.getElementById('error-state');
+				const errorDetail = document.getElementById('error-detail');
+				if (loading) loading.hidden = true;
+				if (errorDetail) {
+					errorDetail.textContent =
+						error instanceof Error ? error.message : 'Universe 모듈을 불러오지 못했습니다';
+				}
+				if (errorState) errorState.hidden = false;
+			});
 		return () => {
+			active = false;
+			dispose?.();
 			delete document.body.dataset.universeRoute;
 		};
 	});
@@ -27,17 +61,23 @@
 	<div id="label-layer" aria-hidden="true"></div>
 	<header class="topbar">
 		<div class="identity">
-			<span class="wordmark">DARTLAB</span>
-			<span class="section-name">UNIVERSE</span>
+			<BrandMark tag="universe" href="{base}/" {base} title="DartLab 홈" />
 		</div>
 		<div class="scene-status" role="status" aria-live="polite">
 			<span id="scope-label">전체 우주</span>
 			<span class="separator" aria-hidden="true"></span>
 			<span id="visible-count">불러오는 중</span>
 		</div>
-		<div class="backend-state">
-			<span class="pulse" aria-hidden="true"></span>
-			<span id="backend-label">GPU 확인 중</span>
+		<div class="topbar-actions">
+			<div class="backend-state">
+				<span class="pulse" aria-hidden="true"></span>
+				<span id="backend-label">GPU 확인 중</span>
+			</div>
+			<div class="brand-social-theme">
+				<BrandSocial {links} {ghStars} onSupport={() => (supportOpen = true)}>
+					{#snippet leading()}<BrandSwitch />{/snippet}
+				</BrandSocial>
+			</div>
 		</div>
 	</header>
 
@@ -81,7 +121,15 @@
 	</div>
 
 	<div id="error-state" class="error-state" role="alert" hidden>
-		<strong>우주를 열지 못했습니다</strong>
+		<strong id="error-title">우주를 열지 못했습니다</strong>
 		<span id="error-detail"></span>
 	</div>
 </main>
+
+<SupportDialog
+	lang="kr"
+	{links}
+	{base}
+	open={supportOpen}
+	onClose={() => (supportOpen = false)}
+/>

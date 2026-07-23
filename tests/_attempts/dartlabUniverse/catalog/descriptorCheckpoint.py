@@ -14,6 +14,8 @@ from dataclasses import asdict, dataclass, replace
 from datetime import datetime, timezone
 from pathlib import Path
 
+import msgspec
+
 from ..canonical import canonicalDigest, canonicalJson
 from .descriptorCrawler import DESCRIPTOR_SCHEMA_VERSION, DescriptorPolicy, ResourceDescriptor, descriptorFormatKind
 from .models import CatalogResource
@@ -23,6 +25,32 @@ _TERMINAL_DESCRIPTOR_STATES = frozenset(
 )
 _REUSABLE_DESCRIPTOR_STATES = frozenset({"DESCRIBED", "UNSUPPORTED_FORMAT"})
 _TRANSIENT_ERROR_CODES = frozenset({"RATE_LIMITED", "SOURCE_HTTP_ERROR", "TIMEOUT"})
+_DESCRIPTOR_DIGEST_SLOT = re.compile(rb',"digest":"([0-9a-f]{64})","errorCode":')
+
+
+class _DescriptorWire(msgspec.Struct, frozen=True, forbid_unknown_fields=True):
+    """Checkpoint JSON을 strict field 집합으로 decode하는 wire record."""
+
+    descriptorId: str
+    schemaVersion: str
+    resourceVersionId: str
+    sourceRevision: str
+    formatKind: str
+    status: str
+    schemaFingerprint: str | None
+    rowCount: int | None
+    rowCountUnavailableReason: str | None
+    metadata: tuple[tuple[str, str], ...]
+    magicHex: str | None
+    rangeRequestCount: int
+    rangeBytesRead: int
+    responseDigest: str
+    errorCode: str | None
+    digest: str
+
+
+_FAST_CANONICAL_ENCODER = msgspec.json.Encoder(order="sorted")
+_DESCRIPTOR_DECODER = msgspec.json.Decoder(_DescriptorWire, strict=True)
 
 
 class DescriptorCheckpointIntegrityError(RuntimeError):
@@ -191,14 +219,8 @@ def _descriptorSemanticDigest(descriptor: ResourceDescriptor) -> str:
 
 
 def _fastCanonicalDigest(value: object) -> str:
-    """이미 canonical payload에서 decode된 JSON 호환 값의 SHA-256을 계산한다."""
-    payload = json.dumps(
-        value,
-        ensure_ascii=False,
-        sort_keys=True,
-        separators=(",", ":"),
-        allow_nan=False,
-    ).encode("utf-8")
+    """문자열, 정수, null 계약 값을 canonical key 순서로 빠르게 직렬화한다."""
+    payload = _FAST_CANONICAL_ENCODER.encode(value)
     return hashlib.sha256(payload).hexdigest()
 
 
@@ -220,62 +242,85 @@ def _fastDescriptorSemanticDigest(descriptor: ResourceDescriptor) -> str:
     )
 
 
-def _fastDescriptorDigest(descriptor: ResourceDescriptor) -> str:
-    """Canonical payload field를 명시해 범용 dataclass 재귀 없이 digest를 계산한다."""
-    return _fastCanonicalDigest(
+def _rebindDescriptor(descriptor: ResourceDescriptor, resource: CatalogResource) -> ResourceDescriptor:
+    formatKind = descriptorFormatKind(resource)
+    descriptorId = _fastCanonicalDigest((resource.resourceVersionId, formatKind, DESCRIPTOR_SCHEMA_VERSION))
+    digest = _fastCanonicalDigest(
         {
-            "descriptorId": descriptor.descriptorId,
+            "descriptorId": descriptorId,
             "schemaVersion": descriptor.schemaVersion,
-            "resourceVersionId": descriptor.resourceVersionId,
-            "sourceRevision": descriptor.sourceRevision,
-            "formatKind": descriptor.formatKind,
+            "resourceVersionId": resource.resourceVersionId,
+            "sourceRevision": resource.sourceRevision,
+            "formatKind": formatKind,
             "status": descriptor.status,
             "schemaFingerprint": descriptor.schemaFingerprint,
             "rowCount": descriptor.rowCount,
             "rowCountUnavailableReason": descriptor.rowCountUnavailableReason,
             "metadata": descriptor.metadata,
             "magicHex": descriptor.magicHex,
-            "rangeRequestCount": descriptor.rangeRequestCount,
-            "rangeBytesRead": descriptor.rangeBytesRead,
+            "rangeRequestCount": 0,
+            "rangeBytesRead": 0,
             "responseDigest": descriptor.responseDigest,
             "errorCode": descriptor.errorCode,
             "digest": "",
         }
     )
-
-
-def _rebindDescriptor(descriptor: ResourceDescriptor, resource: CatalogResource) -> ResourceDescriptor:
-    formatKind = descriptorFormatKind(resource)
-    base = replace(
-        descriptor,
-        descriptorId=_fastCanonicalDigest((resource.resourceVersionId, formatKind, DESCRIPTOR_SCHEMA_VERSION)),
+    return ResourceDescriptor(
+        descriptorId=descriptorId,
+        schemaVersion=descriptor.schemaVersion,
         resourceVersionId=resource.resourceVersionId,
         sourceRevision=resource.sourceRevision,
         formatKind=formatKind,
+        status=descriptor.status,
+        schemaFingerprint=descriptor.schemaFingerprint,
+        rowCount=descriptor.rowCount,
+        rowCountUnavailableReason=descriptor.rowCountUnavailableReason,
+        metadata=descriptor.metadata,
+        magicHex=descriptor.magicHex,
         rangeRequestCount=0,
         rangeBytesRead=0,
-        digest="",
+        responseDigest=descriptor.responseDigest,
+        errorCode=descriptor.errorCode,
+        digest=digest,
     )
-    return replace(base, digest=_fastDescriptorDigest(base))
 
 
 def _decode(payload: bytes) -> ResourceDescriptor:
-    value = json.loads(payload)
-    claimedDigest = value.get("digest")
-    if not isinstance(claimedDigest, str) or not re.fullmatch(r"[0-9a-f]{64}", claimedDigest):
+    digestSlots = _DESCRIPTOR_DIGEST_SLOT.findall(payload)
+    if len(digestSlots) != 1:
         raise DescriptorCheckpointIntegrityError("descriptor digest missing")
-    needle = b',"digest":"' + claimedDigest.encode("ascii") + b'","errorCode":'
-    if payload.count(needle) != 1:
-        raise DescriptorCheckpointIntegrityError("descriptor canonical digest slot mismatch")
-    digestPayload = payload.replace(
-        needle,
+    claimedDigest = digestSlots[0].decode("ascii")
+    digestPayload = _DESCRIPTOR_DIGEST_SLOT.sub(
         b',"digest":"","errorCode":',
-        1,
+        payload,
+        count=1,
     )
     if claimedDigest != hashlib.sha256(digestPayload).hexdigest():
         raise DescriptorCheckpointIntegrityError("descriptor digest mismatch")
-    value["metadata"] = tuple(tuple(item) for item in value["metadata"])
-    descriptor = ResourceDescriptor(**value)
+    try:
+        wire = _DESCRIPTOR_DECODER.decode(payload)
+        descriptor = ResourceDescriptor(
+            descriptorId=wire.descriptorId,
+            schemaVersion=wire.schemaVersion,
+            resourceVersionId=wire.resourceVersionId,
+            sourceRevision=wire.sourceRevision,
+            formatKind=wire.formatKind,
+            status=wire.status,
+            schemaFingerprint=wire.schemaFingerprint,
+            rowCount=wire.rowCount,
+            rowCountUnavailableReason=wire.rowCountUnavailableReason,
+            metadata=wire.metadata,
+            magicHex=wire.magicHex,
+            rangeRequestCount=wire.rangeRequestCount,
+            rangeBytesRead=wire.rangeBytesRead,
+            responseDigest=wire.responseDigest,
+            errorCode=wire.errorCode,
+            digest=wire.digest,
+        )
+    except (msgspec.DecodeError, TypeError, ValueError) as exc:
+        raise DescriptorCheckpointIntegrityError("descriptor decode failure") from exc
+    if descriptor.digest != claimedDigest:
+        raise DescriptorCheckpointIntegrityError("descriptor digest field mismatch")
     return descriptor
 
 
@@ -583,18 +628,26 @@ class DescriptorCheckpointStore:
         resourceByVersion = {item.resourceVersionId: item for item in resources if item.resourceKind == "HF_FILE"}
         descriptors = []
         with self.connection:
-            self.connection.execute("DROP TABLE IF EXISTS temp.load_descriptor_versions")
-            self.connection.execute("CREATE TEMP TABLE load_descriptor_versions (resource_version_id TEXT PRIMARY KEY)")
+            self.connection.execute("DROP TABLE IF EXISTS temp.load_descriptor_resources")
+            self.connection.execute(
+                "CREATE TEMP TABLE load_descriptor_resources (resource_version_id TEXT PRIMARY KEY, content_key TEXT)"
+            )
             self.connection.executemany(
-                "INSERT INTO load_descriptor_versions VALUES (?)",
-                ((item,) for item in resourceByVersion),
+                "INSERT INTO load_descriptor_resources VALUES (?, ?)",
+                (
+                    (resource.resourceVersionId, descriptorContentKey(resource))
+                    for resource in resourceByVersion.values()
+                ),
+            )
+            self.connection.execute(
+                "CREATE INDEX load_descriptor_resources_content_key ON load_descriptor_resources (content_key)"
             )
         try:
             rows = self.connection.execute(
                 "SELECT receipt.resource_version_id, receipt.source_revision, receipt.format_kind, "
                 "receipt.descriptor_digest, receipt.payload_digest, receipt.payload "
                 "FROM descriptor_receipts receipt "
-                "JOIN load_descriptor_versions live "
+                "JOIN load_descriptor_resources live "
                 "ON live.resource_version_id = receipt.resource_version_id "
                 "WHERE receipt.policy_digest = ? ORDER BY receipt.resource_version_id",
                 (policyDigest,),
@@ -616,33 +669,30 @@ class DescriptorCheckpointStore:
                     raise DescriptorCheckpointIntegrityError("descriptor receipt column mismatch")
                 if descriptor.status in _REUSABLE_DESCRIPTOR_STATES:
                     descriptors.append(descriptor)
-        finally:
-            with self.connection:
-                self.connection.execute("DROP TABLE IF EXISTS temp.load_descriptor_versions")
-        loadedVersions = {item.resourceVersionId for item in descriptors}
-        resourcesByContentKey: dict[str, list[CatalogResource]] = {}
-        for resource in resourceByVersion.values():
-            if resource.resourceVersionId in loadedVersions:
-                continue
-            contentKey = descriptorContentKey(resource)
-            if contentKey is not None:
-                resourcesByContentKey.setdefault(contentKey, []).append(resource)
-        reusedCount = 0
-        if resourcesByContentKey:
-            with self.connection:
-                self.connection.execute("DROP TABLE IF EXISTS temp.load_descriptor_content_keys")
-                self.connection.execute("CREATE TEMP TABLE load_descriptor_content_keys (content_key TEXT PRIMARY KEY)")
-                self.connection.executemany(
-                    "INSERT INTO load_descriptor_content_keys VALUES (?)",
-                    ((item,) for item in resourcesByContentKey),
-                )
-            try:
+            loadedVersions = {item.resourceVersionId for item in descriptors}
+            if loadedVersions:
+                with self.connection:
+                    self.connection.executemany(
+                        "DELETE FROM load_descriptor_resources WHERE resource_version_id = ?",
+                        ((item,) for item in loadedVersions),
+                    )
+            resourcesByContentKey: dict[str, list[CatalogResource]] = {}
+            for resource in resourceByVersion.values():
+                if resource.resourceVersionId in loadedVersions:
+                    continue
+                contentKey = descriptorContentKey(resource)
+                if contentKey is not None:
+                    resourcesByContentKey.setdefault(contentKey, []).append(resource)
+            reusedCount = 0
+            if resourcesByContentKey:
                 cacheCursor = self.connection.execute(
                     "SELECT cache.content_key, cache.format_kind, cache.semantic_digest, "
                     "cache.payload_digest, cache.payload "
                     "FROM descriptor_content_cache cache "
-                    "JOIN load_descriptor_content_keys live ON live.content_key = cache.content_key "
-                    "WHERE cache.policy_digest = ? ORDER BY cache.content_key",
+                    "WHERE cache.policy_digest = ? AND EXISTS ("
+                    "SELECT 1 FROM load_descriptor_resources live "
+                    "WHERE live.content_key = cache.content_key"
+                    ") ORDER BY cache.content_key",
                     (policyDigest,),
                 )
                 for rawContentKey, rawFormatKind, rawSemanticDigest, rawPayloadDigest, rawPayload in cacheCursor:
@@ -663,11 +713,11 @@ class DescriptorCheckpointStore:
                             raise DescriptorCheckpointIntegrityError("descriptor content cache format mismatch")
                         descriptors.append(_rebindDescriptor(cachedDescriptor, resource))
                         reusedCount += 1
-            finally:
-                with self.connection:
-                    self.connection.execute("DROP TABLE IF EXISTS temp.load_descriptor_content_keys")
-        self.lastLoadReusedCount = reusedCount
-        return tuple(sorted(descriptors, key=lambda item: item.resourceVersionId))
+            self.lastLoadReusedCount = reusedCount
+            return tuple(sorted(descriptors, key=lambda item: item.resourceVersionId))
+        finally:
+            with self.connection:
+                self.connection.execute("DROP TABLE IF EXISTS temp.load_descriptor_resources")
 
     def pruneObsolete(
         self,

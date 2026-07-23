@@ -20,9 +20,12 @@ from tests._attempts.dartlabUniverse.canonical import canonicalDigest, canonical
 from tests._attempts.dartlabUniverse.catalog.descriptorCheckpoint import (
     DescriptorCheckpointIntegrityError,
     DescriptorCheckpointStore,
+    _decode,
+    _fastCanonicalDigest,
     buildDescriptorSnapshotPin,
 )
 from tests._attempts.dartlabUniverse.catalog.descriptorCrawler import (
+    DESCRIPTOR_SCHEMA_VERSION,
     MIB,
     DescriptorPolicy,
     DescriptorReadError,
@@ -311,7 +314,20 @@ def testCheckpointRebindsUnchangedContentAcrossPinnedRevisions(tmp_path: Path):
         assert checkpoint.receiptCounts(policy) == (1, 1)
         assert checkpoint.liveExactReceiptCount((reboundResource,), policy) == 0
 
+    expectedBase = replace(
+        descriptor,
+        descriptorId=canonicalDigest(
+            (reboundResource.resourceVersionId, descriptor.formatKind, DESCRIPTOR_SCHEMA_VERSION)
+        ),
+        resourceVersionId=reboundResource.resourceVersionId,
+        sourceRevision=reboundResource.sourceRevision,
+        rangeRequestCount=0,
+        rangeBytesRead=0,
+        digest="",
+    )
+    expected = replace(expectedBase, digest=canonicalDigest(expectedBase))
     assert recrawled == resumed
+    assert resumed == (expected,)
     assert resumed[0].resourceVersionId == reboundResource.resourceVersionId
     assert resumed[0].sourceRevision == nextRevision
     assert resumed[0].descriptorId != descriptor.descriptorId
@@ -319,6 +335,38 @@ def testCheckpointRebindsUnchangedContentAcrossPinnedRevisions(tmp_path: Path):
     assert resumed[0].rowCount == descriptor.rowCount
     assert resumed[0].rangeRequestCount == 0
     assert resumed[0].rangeBytesRead == 0
+
+
+def testCheckpointFastCanonicalDigestMatchesCanonicalContract():
+    value = {
+        "integer": 42,
+        "korean": "지식우주",
+        "metadata": (("escaped", '따옴표"와 역슬래시\\'), ("line", "첫째\n둘째")),
+        "none": None,
+    }
+
+    assert _fastCanonicalDigest(value) == canonicalDigest(value)
+
+
+@pytest.mark.parametrize("mutation", ("unknown_field", "wrong_type", "missing_field"))
+def testCheckpointStrictWireDecodeRejectsSchemaMutation(tmp_path: Path, mutation: str):
+    path = tmp_path / "facts.json"
+    path.write_text('[{"a":1}]', encoding="utf-8")
+    resource = _resource(path.name, path.stat().st_size)
+    descriptor = crawlDescriptor(resource, LocalRangeReader(path))
+    value = json.loads(canonicalJson(descriptor))
+    if mutation == "unknown_field":
+        value["unexpected"] = "forbidden"
+    elif mutation == "wrong_type":
+        value["rangeRequestCount"] = "0"
+    else:
+        del value["status"]
+    value["digest"] = ""
+    value["digest"] = canonicalDigest(value)
+    payload = canonicalJson(value)
+
+    with pytest.raises(DescriptorCheckpointIntegrityError, match="decode failure"):
+        _decode(payload)
 
 
 def testCheckpointRetriesAccessAndTransportDependentTerminalStates(tmp_path: Path):

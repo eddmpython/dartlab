@@ -9,6 +9,11 @@ import unicodedata
 from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 
+try:
+    import msgspec
+except ImportError:  # pragma: no cover - Pyodide에는 msgspec wheel이 없다.
+    msgspec = None
+
 from ..canonical import canonicalDigest
 from ..contracts import Visibility
 from ..temporal import parseInstant
@@ -66,6 +71,8 @@ def _rootInputs(snapshot: CatalogSnapshot) -> object:
 
 
 _DIGEST_BUFFER_BYTES = 1 << 20
+_RESOURCE_JSON_ENCODER = msgspec.json.Encoder(order="sorted") if msgspec is not None else None
+_SHA256_HEX_RE = re.compile(r"[0-9a-f]{64}")
 
 
 class _DigestWriter:
@@ -113,8 +120,41 @@ def _appendStringPairs(buffer: bytearray, values: tuple[tuple[str, str], ...]) -
     buffer.extend(b"]")
 
 
+def _resourceRequiresNormalization(item: SnapshotResourceRef) -> bool:
+    """msgspec fast path 전에 canonical NFC 정규화 필요 여부를 확인한다."""
+    scalarValues = (
+        item.resourceId,
+        item.resourceVersionId,
+        item.sourceKind,
+        item.sourceRef,
+        item.sourceRevision,
+        item.contentDigest,
+        item.licenseRef,
+        item.status,
+        item.descriptorDigest,
+        item.visibility.value,
+    )
+    for value in scalarValues:
+        if value is not None and not value.isascii() and not unicodedata.is_normalized("NFC", value):
+            return True
+    for values in (item.locator, item.contentSelector):
+        for key, value in values:
+            if (
+                not key.isascii()
+                and not unicodedata.is_normalized("NFC", key)
+                or not value.isascii()
+                and not unicodedata.is_normalized("NFC", value)
+            ):
+                return True
+    return False
+
+
 def _snapshotResourceJson(item: SnapshotResourceRef) -> bytes:
     """SnapshotResourceRef 한 건을 canonical key 순서로 직렬화한다."""
+    if _RESOURCE_JSON_ENCODER is not None:
+        payload = _RESOURCE_JSON_ENCODER.encode(item)
+        if payload.isascii() or not _resourceRequiresNormalization(item):
+            return payload
     buffer = bytearray(b'{"contentDigest":')
     _appendJsonString(buffer, item.contentDigest)
     buffer.extend(b',"contentSelector":')
@@ -248,7 +288,7 @@ def validateCatalogSnapshot(snapshot: CatalogSnapshot) -> tuple[str, ...]:
     ):
         issues.append("SNAPSHOT_REQUIRED_FIELD_MISSING")
     if any(
-        not re.fullmatch(r"[0-9a-f]{64}", value)
+        not _SHA256_HEX_RE.fullmatch(value)
         for value in (
             snapshot.catalogDigest,
             snapshot.descriptorSetDigest,
@@ -282,11 +322,13 @@ def validateCatalogSnapshot(snapshot: CatalogSnapshot) -> tuple[str, ...]:
             item.sourceKind and item.sourceRef and item.sourceRevision and item.locator
         )
         integrityInvalid = integrityInvalid or (
-            not re.fullmatch(r"[0-9a-f]{64}", item.contentDigest)
+            not _SHA256_HEX_RE.fullmatch(item.contentDigest)
             or item.descriptorDigest is not None
-            and not re.fullmatch(r"[0-9a-f]{64}", item.descriptorDigest)
-            or len(item.locator) != len(dict(item.locator))
-            or len(item.contentSelector) != len(dict(item.contentSelector))
+            and not _SHA256_HEX_RE.fullmatch(item.descriptorDigest)
+            or len(item.locator) > 1
+            and len(item.locator) != len({key for key, _ in item.locator})
+            or len(item.contentSelector) > 1
+            and len(item.contentSelector) != len({key for key, _ in item.contentSelector})
         )
     if orderMismatch:
         issues.append("SNAPSHOT_RESOURCE_ORDER_MISMATCH")

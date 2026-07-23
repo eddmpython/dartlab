@@ -86,6 +86,23 @@ def _directRouteConnected(repoRoot: Path) -> bool:
     )
 
 
+def _brandChromeConnected(repoRoot: Path) -> bool:
+    page = repoRoot / _DIRECT_ROUTE / "+page.svelte"
+    if not page.is_file():
+        return False
+    pageText = page.read_text(encoding="utf-8", errors="ignore")
+    required = (
+        "@dartlab/ui-surfaces/terminal",
+        "DARTLAB_BRAND_LINKS",
+        "<BrandMark",
+        "<BrandSocial",
+        "<BrandSwitch",
+        "<SupportDialog",
+        "fetchGithubStars",
+    )
+    return all(value in pageText for value in required)
+
+
 def _writeReport(path: Path, metrics: dict[str, object]) -> bytes:
     payload = canonicalJson(metrics) + b"\n"
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -156,13 +173,15 @@ def _auditProjection(
     guiAssets = tuple(sorted(path for path in guiRoot.iterdir() if path.is_file()))
     guiTexts = {path.name: path.read_text(encoding="utf-8") for path in guiAssets}
     guiAssetBytes = sum(path.stat().st_size for path in guiAssets)
-    externalAssetReferenceCount = sum(text.count("http://") + text.count("https://") for text in guiTexts.values())
+    referencedUrls = [url for text in guiTexts.values() for url in re.findall(r"""https?://[^\s"'`)]+""", text)]
+    externalAssetReferenceCount = sum(
+        not url.startswith(("http://127.0.0.1", "http://localhost", "http://[::1]")) for url in referencedUrls
+    )
     appSource = guiTexts.get("app.js", "")
     cssSource = guiTexts.get("universe.css", "")
     webGpuSource = guiTexts.get("webgpu-renderer.js", "")
     webGlSource = guiTexts.get("webgl2-renderer.js", "")
     harnessSource = Path(__file__).with_name("u6Harness.py").read_text(encoding="utf-8")
-    appSource = guiTexts.get("app.js", "")
     tileCodecSource = guiTexts.get("tile-codec.js", "")
     publicEntryPointCount = _publicSurfaceReferenceCount(repoRoot)
     return {
@@ -197,12 +216,22 @@ def _auditProjection(
             and "secrets.compare_digest" in harnessSource
             and "127.0.0.1" in harnessSource
             and "Access-Control-Allow-Private-Network" in harnessSource
+            and "/api/session" in harnessSource
+            and "https://eddmpython.github.io" in harnessSource
+            and "_launchUrl" in harnessSource
+            and "du-u6-route-session-v1" in harnessSource
+            and "du-u6-route-session-v1" in appSource
+            and "ROUTE_RUNTIME_ORIGIN" in appSource
+            and "targetAddressSpace" in appSource
             and "loopbackHosts" in appSource
             and "targetAddressSpace" in tileCodecSource
+            and "#token=" not in harnessSource
+            and "params.get('token')" not in appSource
         ),
         "externalAssetReferenceCount": externalAssetReferenceCount,
         "publicSurfaceReferenceCount": publicEntryPointCount,
         "publicRouteConnected": _directRouteConnected(repoRoot),
+        "brandChromeConnected": _brandChromeConnected(repoRoot),
         "publicButtonConnected": bool(publicEntryPointCount),
         "encodedPayloadBytes": encodedBytes,
     }
@@ -271,6 +300,7 @@ def runLiveU6(
         externalAssetReferenceCount=int(auditResult["externalAssetReferenceCount"]),
         publicSurfaceReferenceCount=int(auditResult["publicSurfaceReferenceCount"]),
         publicRouteConnected=bool(auditResult["publicRouteConnected"]),
+        brandChromeConnected=bool(auditResult["brandChromeConnected"]),
         publicButtonConnected=bool(auditResult["publicButtonConnected"]),
         persistentArtifactCount=0,
     )

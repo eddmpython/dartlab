@@ -9,10 +9,11 @@ function runtimeUrl(path, apiBase) {
 	return apiBase ? `${apiBase}${path}` : path;
 }
 
-async function request(path, token, apiBase) {
+async function request(path, token, apiBase, signal) {
 	const requestOptions = {
 		cache: 'no-store',
-		headers: { 'X-DartLab-Universe-Token': token }
+		headers: { 'X-DartLab-Universe-Token': token },
+		signal
 	};
 	if (apiBase) requestOptions.targetAddressSpace = 'loopback';
 	const response = await fetch(runtimeUrl(path, apiBase), requestOptions);
@@ -20,8 +21,8 @@ async function request(path, token, apiBase) {
 	return response;
 }
 
-export async function loadManifest(token, apiBase = '') {
-	const response = await request('/api/manifest', token, apiBase);
+export async function loadManifest(token, apiBase = '', signal) {
+	const response = await request('/api/manifest', token, apiBase, signal);
 	const manifest = await response.json();
 	if (manifest.schemaVersion !== 'du-gpu-manifest-v1') throw new Error('지원하지 않는 manifest');
 	if (manifest.transport?.persistenceMode !== 'EPHEMERAL') throw new Error('영속 tile은 허용되지 않음');
@@ -29,8 +30,8 @@ export async function loadManifest(token, apiBase = '') {
 	return manifest;
 }
 
-export async function loadTile(tileId, token, expectedProjectionDigest, apiBase = '') {
-	const response = await request(`/api/tile/${encodeURIComponent(tileId)}`, token, apiBase);
+export async function loadTile(tileId, token, expectedProjectionDigest, apiBase = '', signal) {
+	const response = await request(`/api/tile/${encodeURIComponent(tileId)}`, token, apiBase, signal);
 	const buffer = await response.arrayBuffer();
 	const bytes = new Uint8Array(buffer);
 	if (bytes.length < 12 || MAGIC.some((value, index) => bytes[index] !== value)) {

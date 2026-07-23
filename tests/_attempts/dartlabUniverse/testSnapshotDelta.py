@@ -4,16 +4,63 @@ from __future__ import annotations
 
 from dataclasses import replace
 
-from tests._attempts.dartlabUniverse.canonical import canonicalDigest
+from tests._attempts.dartlabUniverse.canonical import canonicalDigest, canonicalJson
 from tests._attempts.dartlabUniverse.catalog.compiler import compileCatalog
 from tests._attempts.dartlabUniverse.catalog.delta import (
     applyDeltaResources,
     buildCatalogDelta,
     validateCatalogDelta,
 )
-from tests._attempts.dartlabUniverse.catalog.snapshot import buildCatalogSnapshot, validateCatalogSnapshot
+from tests._attempts.dartlabUniverse.catalog.snapshot import (
+    SnapshotResourceRef,
+    _snapshotResourceJson,
+    buildCatalogSnapshot,
+    validateCatalogSnapshot,
+)
+from tests._attempts.dartlabUniverse.contracts import Visibility
 from tests._attempts.dartlabUniverse.ids import versionId
 from tests._attempts.dartlabUniverse.testCoverage import _fakeResult
+
+
+def testSnapshotResourceFastEncodingPreservesCanonicalUnicodeAndFallback(monkeypatch):
+    normalizedItem = SnapshotResourceRef(
+        resourceId="du:v1:resource:한글",
+        resourceVersionId="du:v1:resource-version:é",
+        sourceKind="HF_FILE",
+        sourceRef="조직/저장소",
+        sourceRevision="revision",
+        locator=(("path", "폴더/é.parquet"),),
+        contentSelector=(("kind", "parquet"),),
+        contentDigest="a" * 64,
+        visibility=Visibility.PUBLIC,
+        licenseRef="Apache-2.0",
+        status="DESCRIBED",
+        descriptorDigest="b" * 64,
+    )
+    decomposedItem = replace(
+        normalizedItem,
+        resourceVersionId="du:v1:resource-version:e\u0301",
+        locator=(("path", "폴더/e\u0301.parquet"),),
+    )
+    escapedItem = replace(
+        normalizedItem,
+        sourceRef='repo/"quoted"\\line\n',
+        locator=(("z", "two"), ("a", "one")),
+        contentSelector=(("path", "a/b"), ("control", "\t")),
+        visibility=Visibility.LOCAL,
+        licenseRef=None,
+        descriptorDigest=None,
+    )
+
+    assert _snapshotResourceJson(normalizedItem) == canonicalJson(normalizedItem)
+    assert _snapshotResourceJson(decomposedItem) == canonicalJson(decomposedItem)
+    assert _snapshotResourceJson(escapedItem) == canonicalJson(escapedItem)
+
+    monkeypatch.setattr(
+        "tests._attempts.dartlabUniverse.catalog.snapshot._RESOURCE_JSON_ENCODER",
+        None,
+    )
+    assert _snapshotResourceJson(normalizedItem) == canonicalJson(normalizedItem)
 
 
 def testSameCatalogProducesSameRootIndependentOfCreatedAt():
@@ -53,6 +100,11 @@ def testSameCatalogProducesSameRootIndependentOfCreatedAt():
     )
     assert validateCatalogSnapshot(first) == ()
     assert "SNAPSHOT_CREATED_AT_INVALID" in validateCatalogSnapshot(replace(first, createdAt="invalid"))
+    tamperedResource = replace(first.resources[0], contentDigest="invalid")
+    tampered = replace(first, resources=(tamperedResource, *first.resources[1:]))
+    tamperedIssues = validateCatalogSnapshot(tampered)
+    assert "SNAPSHOT_ROOT_MISMATCH" in tamperedIssues
+    assert "SNAPSHOT_RESOURCE_INTEGRITY_INVALID" in tamperedIssues
 
 
 def testDeltaCoversAddChangeDeleteAndRebuildsTarget():

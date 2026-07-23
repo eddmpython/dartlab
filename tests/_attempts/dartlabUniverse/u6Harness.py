@@ -52,6 +52,9 @@ _OBJECT_KIND_LABELS = {
     "ORGANIZATION": "법인",
     "TABLE": "데이터 테이블",
 }
+# 추가 Origin은 기본적으로 열지 않는다. routeUrl의 정확한 Origin 하나만 아래에서 허용한다.
+_DEFAULT_ROUTE_ORIGINS: tuple[str, ...] = ()
+_DEFAULT_ROUTE_RUNTIME = "http://127.0.0.1:8765"
 
 
 def _isOpaqueLabel(value: str) -> bool:
@@ -145,7 +148,24 @@ def buildLiveTransport(
         controlRoot=u3ControlRoot,
     )
     if not artifacts.report.passed:
-        raise RuntimeError(f"U6 live harness가 실패한 U3를 거부함: {artifacts.report.failureCodes}")
+        failureDetail = {
+            "u3": artifacts.report.failureCodes,
+            "g1": artifacts.liveG1.report.failureCodes,
+            "g1ReplayIssues": tuple(
+                {
+                    "code": issue.code,
+                    "path": issue.path,
+                    "detail": issue.detail,
+                }
+                for issue in artifacts.liveG1.replayValidation.issues
+            ),
+            "g2": getattr(artifacts.g2, "failureCodes", ()),
+            "slo": getattr(artifacts.slo, "failureCodes", ()),
+            "snapshotPin": artifacts.snapshotPinFailureCodes,
+        }
+        raise RuntimeError(
+            "U6 live harness가 실패한 U3를 거부함: " + json.dumps(failureDetail, ensure_ascii=False, sort_keys=True)
+        )
     projection = compileSpatialProjection(
         artifacts.catalog,
         artifacts.snapshot,
@@ -160,8 +180,10 @@ def _handlerFactory(
     transport: UniverseGpuTransport,
     token: str,
     staticRoot: Path,
-    allowedOrigin: str | None = None,
+    allowedOrigins: str | tuple[str, ...] | None = None,
 ):
+    routeOrigins = frozenset((allowedOrigins,) if isinstance(allowedOrigins, str) else allowedOrigins or ())
+
     class UniverseHandler(BaseHTTPRequestHandler):
         server_version = "DartLabUniverseHarness/1"
 
@@ -176,13 +198,14 @@ def _handlerFactory(
             )
             self.send_header("Referrer-Policy", "no-referrer")
             self.send_header("X-Content-Type-Options", "nosniff")
-            routeSession = self.headers.get("Origin") == allowedOrigin
+            requestOrigin = self.headers.get("Origin")
+            routeSession = requestOrigin in routeOrigins
             self.send_header(
                 "Cross-Origin-Resource-Policy",
                 "cross-origin" if routeSession else "same-origin",
             )
             if routeSession:
-                self.send_header("Access-Control-Allow-Origin", allowedOrigin)
+                self.send_header("Access-Control-Allow-Origin", requestOrigin)
                 self.send_header("Access-Control-Allow-Private-Network", "true")
                 self.send_header("Access-Control-Expose-Headers", "ETag")
                 self.send_header("Vary", "Origin")
@@ -200,8 +223,26 @@ def _handlerFactory(
             provided = self.headers.get("X-DartLab-Universe-Token", "")
             return secrets.compare_digest(provided, token)
 
+        def _routeOriginAuthorized(self) -> bool:
+            requestOrigin = self.headers.get("Origin")
+            if requestOrigin in routeOrigins:
+                return True
+            if requestOrigin is not None:
+                return False
+            hostHeader = self.headers.get("Host", "")
+            host = (
+                hostHeader[1 : hostHeader.find("]")]
+                if hostHeader.startswith("[") and "]" in hostHeader
+                else hostHeader.split(":", 1)[0]
+            ).casefold()
+            return (
+                host in {"127.0.0.1", "::1", "localhost"}
+                and self.headers.get("Sec-Fetch-Site") == "same-origin"
+                and self.headers.get("Sec-Fetch-Mode") in {"cors", "same-origin"}
+            )
+
         def do_OPTIONS(self) -> None:  # noqa: N802
-            if allowedOrigin is None or self.headers.get("Origin") != allowedOrigin:
+            if not self._routeOriginAuthorized():
                 self._send(b"", "text/plain; charset=utf-8", status=HTTPStatus.FORBIDDEN)
                 return
             self.send_response(HTTPStatus.NO_CONTENT)
@@ -213,6 +254,21 @@ def _handlerFactory(
 
         def do_GET(self) -> None:  # noqa: N802
             parsed = urlparse(self.path)
+            if parsed.path == "/api/session":
+                if not self._routeOriginAuthorized():
+                    self._send(b'{"error":"forbidden"}', "application/json", status=HTTPStatus.FORBIDDEN)
+                    return
+                payload = json.dumps(
+                    {
+                        "schemaVersion": "du-u6-route-session-v1",
+                        "token": token,
+                    },
+                    ensure_ascii=False,
+                    separators=(",", ":"),
+                    sort_keys=True,
+                ).encode("utf-8")
+                self._send(payload, "application/json; charset=utf-8")
+                return
             if parsed.path.startswith("/api/") and not self._authorized():
                 self._send(b'{"error":"unauthorized"}', "application/json", status=HTTPStatus.UNAUTHORIZED)
                 return
@@ -238,6 +294,29 @@ def _handlerFactory(
     return UniverseHandler
 
 
+def _routeOrigin(routeUrl: str) -> str:
+    parsed = urlparse(routeUrl)
+    if (
+        parsed.scheme not in {"http", "https"}
+        or not parsed.netloc
+        or parsed.username
+        or parsed.password
+        or parsed.query
+        or parsed.fragment
+    ):
+        raise ValueError("route URL은 query와 fragment가 없는 http(s) 절대주소여야 함")
+    return f"{parsed.scheme}://{parsed.netloc}"
+
+
+def _launchUrl(*, routeUrl: str | None, runtimeUrl: str) -> str:
+    if routeUrl is None:
+        return runtimeUrl
+    route = routeUrl.rstrip("/")
+    if runtimeUrl == _DEFAULT_ROUTE_RUNTIME:
+        return route
+    return f"{route}/#{urlencode({'api': runtimeUrl})}"
+
+
 def serveTransport(
     transport: UniverseGpuTransport,
     *,
@@ -245,29 +324,32 @@ def serveTransport(
     port: int,
     openBrowser: bool,
     routeUrl: str | None = None,
+    allowedOrigins: tuple[str, ...] = _DEFAULT_ROUTE_ORIGINS,
 ) -> None:
     if host not in {"127.0.0.1", "::1", "localhost"}:
         raise ValueError("U6 harness는 loopback host만 허용함")
     token = secrets.token_urlsafe(32)
     staticRoot = Path(__file__).with_name("gui")
-    parsedRoute = urlparse(routeUrl) if routeUrl else None
-    if parsedRoute and (
-        parsedRoute.scheme not in {"http", "https"}
-        or not parsedRoute.netloc
-        or parsedRoute.query
-        or parsedRoute.fragment
-    ):
-        raise ValueError("route URL은 query와 fragment가 없는 http(s) 절대주소여야 함")
-    allowedOrigin = f"{parsedRoute.scheme}://{parsedRoute.netloc}" if parsedRoute else None
+    routeOrigin = _routeOrigin(routeUrl) if routeUrl else None
+    routeOrigins = tuple(
+        dict.fromkeys(
+            (
+                *(origin.strip().rstrip("/") for origin in allowedOrigins),
+                *((routeOrigin,) if routeOrigin else ()),
+            )
+        )
+    )
+    for origin in routeOrigins:
+        if _routeOrigin(origin) != origin:
+            raise ValueError("allowed origin은 path가 없는 http(s) origin이어야 함")
     server = ThreadingHTTPServer(
         (host, port),
-        _handlerFactory(transport, token, staticRoot, allowedOrigin),
+        _handlerFactory(transport, token, staticRoot, routeOrigins),
     )
     server.daemon_threads = True
     actualPort = int(server.server_address[1])
     runtimeUrl = f"http://{host}:{actualPort}"
-    standaloneUrl = f"{runtimeUrl}/#token={token}"
-    url = f"{routeUrl.rstrip('/')}/#{urlencode({'api': runtimeUrl, 'token': token})}" if routeUrl else standaloneUrl
+    url = _launchUrl(routeUrl=routeUrl, runtimeUrl=runtimeUrl)
     summary = {
         "schemaVersion": "du-u6-harness-session-v1",
         "url": url,
@@ -298,12 +380,23 @@ def buildArgumentParser() -> argparse.ArgumentParser:
     mode.add_argument("--live", action="store_true", help="현재 통과한 U3 pin으로 전체 Universe를 구성")
     mode.add_argument("--fixture", action="store_true", help="결정적 대형 fixture로 빠르게 검수")
     parser.add_argument("--host", default="127.0.0.1")
-    parser.add_argument("--port", type=int, default=0)
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=8765,
+        help="직접 route가 자동 발견하는 loopback 포트. 다른 포트는 fragment session으로만 연결",
+    )
     parser.add_argument("--open", action="store_true")
     parser.add_argument(
         "--route-url",
         default=os.getenv("DARTLAB_UNIVERSE_ROUTE_URL", "http://127.0.0.1:5173/universe"),
         help="직접 검수할 /universe 화면 주소. 지정하면 해당 화면에 loopback 세션을 연결",
+    )
+    parser.add_argument(
+        "--allowed-origin",
+        action="append",
+        default=list(_DEFAULT_ROUTE_ORIGINS),
+        help="loopback session을 발급할 정확한 route origin. 반복 지정 가능",
     )
     parser.add_argument(
         "--standalone",
@@ -335,6 +428,7 @@ def main(argv: list[str] | None = None) -> int:
         port=args.port,
         openBrowser=args.open,
         routeUrl=None if args.standalone else args.route_url,
+        allowedOrigins=tuple(args.allowed_origin),
     )
     return 0
 
