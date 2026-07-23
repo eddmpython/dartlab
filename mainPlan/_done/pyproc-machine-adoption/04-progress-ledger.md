@@ -14,6 +14,9 @@
 - [x] capability 진단과 고급 기능 비활성 표기
 - [x] base-aware, request-client-aware Service Worker bridge
 - [x] 블로그 즉시 편집 셀과 사용자 의도 실행
+- [x] 블로그 전체 화면 투영의 sequential, 무자동실행 정책
+- [x] 옛 글 노트북 실행 정책과 중복 정의 오류 출력 정규화
+- [x] 인라인 블로그 전역과 전체 화면 노트북 machine 격리
 - [x] 플레이그라운드 공용 worker 통합
 - [x] Gate A, Gate B, landing check, test, build
 - [x] 일반 non-COI 제품 smoke

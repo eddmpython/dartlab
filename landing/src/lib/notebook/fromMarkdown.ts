@@ -73,6 +73,14 @@ export function markdownToNotebook(raw: string, slug: string, title: string, des
 		title,
 		description,
 		cells: markdownToCells(raw, slug),
-		metadata: { createdAt: now, updatedAt: now }
+		metadata: {
+			sourceKind: 'blog-post',
+			execution: {
+				mode: 'sequential',
+				autoRun: false
+			},
+			createdAt: now,
+			updatedAt: now
+		}
 	};
 }

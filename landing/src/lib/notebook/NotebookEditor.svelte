@@ -11,7 +11,13 @@
 		cellWidth
 	} from './stores/notebookStore';
 	import type { Notebook, Cell as CellType } from './stores/notebookStore';
-	import { initEngine, executeAllCells, engineStatus } from './stores/executionStore';
+	import {
+		initEngine,
+		executeAllCells,
+		engineStatus,
+		setReactiveMode
+	} from './stores/executionStore';
+	import { resolveNotebookExecutionPolicy } from './executionPolicy';
 	import NotebookToolbar from './toolbar/NotebookToolbar.svelte';
 	import Cell from './components/Cell.svelte';
 	import Sidebar from './sidebar/Sidebar.svelte';
@@ -46,12 +52,15 @@
 				await loadFromStorage();
 			}
 			if (!mounted) return;
+			const execution = resolveNotebookExecutionPolicy($notebook);
+			setReactiveMode(execution.mode === 'reactive');
 			engineStarted = true;
-			initEngine();
+			void initEngine(execution.autoRun);
 
 			unsubEngine = engineStatus.subscribe((status) => {
 				if (engineStarted && status === 'idle') {
-					initEngine();
+					// 죽은 워커를 다시 띄우는 복구 경로에서 셀 전체를 뜻밖에 재실행하지 않는다.
+					void initEngine(false);
 				}
 			});
 

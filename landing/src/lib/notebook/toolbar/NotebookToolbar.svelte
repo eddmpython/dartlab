@@ -39,7 +39,8 @@
 		engineStatus,
 		executeAllCells,
 		destroyEngine,
-		reactiveMode
+		reactiveMode,
+		setReactiveMode
 	} from '../stores/executionStore';
 	import {
 		downloadNotebook,
@@ -268,9 +269,9 @@
 	<button
 		class="float-btn"
 		class:reactive-on={$reactiveMode}
-		onclick={() => reactiveMode.update((v) => !v)}
-		title={$reactiveMode ? '반응형 실행 ON' : '반응형 실행 OFF'}
-		aria-label="반응형 실행 토글"
+		onclick={() => setReactiveMode(!$reactiveMode, true)}
+		title={$reactiveMode ? '반응형 실행 중 · 눌러서 순차 실행으로 전환' : '순차 실행 중 · 눌러서 반응형 실행으로 전환'}
+		aria-label={$reactiveMode ? '반응형 실행 켜짐' : '순차 실행 켜짐'}
 	>
 		<Zap size={16} />
 	</button>

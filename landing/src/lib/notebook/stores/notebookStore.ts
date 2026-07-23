@@ -1,5 +1,6 @@
 import { writable, derived, get } from 'svelte/store';
 import { putNotebook } from '../storage/localStore';
+import { prepareNotebookForLoad } from '../executionPolicy';
 
 export interface CellOutput {
 	type: 'text' | 'html' | 'image' | 'error' | 'dataframe' | 'widget';
@@ -25,6 +26,13 @@ export interface WorkspaceFile {
 	isDir: boolean;
 }
 
+export type NotebookExecutionMode = 'reactive' | 'sequential';
+
+export interface NotebookExecutionPolicy {
+	mode: NotebookExecutionMode;
+	autoRun: boolean;
+}
+
 export interface Notebook {
 	id: string;
 	title: string;
@@ -36,6 +44,8 @@ export interface Notebook {
 		contentId?: string;
 		notebookFilePath?: string;
 		layout?: string;
+		sourceKind?: 'blog-post';
+		execution?: NotebookExecutionPolicy;
 		createdAt: string;
 		updatedAt: string;
 	};
@@ -304,18 +314,13 @@ export function focusPrevCell(currentId: string): void {
 }
 
 export function loadNotebook(data: Notebook): void {
-	const outputMap = new Map<string, CellOutput>();
-	for (const cell of data.cells) {
-		if (cell.output) {
-			outputMap.set(cell.id, cell.output);
-		}
-	}
-	const cleanCells = data.cells.map(({ output: _o, ...rest }) => rest as Cell);
-	notebook.set({ ...data, cells: cleanCells });
-	cellOutputs.set(outputMap);
+	const prepared = prepareNotebookForLoad(data);
+	notebook.set(prepared.notebook);
+	cellOutputs.set(prepared.outputs);
+	cellErrors.set(new Map());
 
-	if (data.cells.length > 0) {
-		activeCellId.set(data.cells[0].id);
+	if (prepared.notebook.cells.length > 0) {
+		activeCellId.set(prepared.notebook.cells[0].id);
 	}
 	saveToStorage();
 }

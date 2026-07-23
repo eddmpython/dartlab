@@ -9,6 +9,7 @@
 3. 블로그의 1차 경험은 "노트북 생성"이 아니라 본문 안의 즉시 편집 셀이어야 한다. 전체 노트북은 긴 작업을 위한 보조 진입점이다.
 4. 페이지 진입 시 자동 실행이나 데이터 prefetch는 비용과 놀람을 만든다. 사용자 의도 뒤에만 런타임을 준비한다.
 5. durable history, process pool, virtual origin을 무조건 켜는 것은 이득이 아니다. 현재 worker loader와 브라우저 전역 계약에서 거짓 지원이나 메모리 회귀가 된다.
+6. 블로그 글의 전체 화면 투영은 원문 순서를 보존하는 sequential 노트북이다. 일반 reactive 노트북과 같은 자동 실행 및 중복 정의 검사를 적용하면 정상 예제가 오류가 되므로 실행 정책을 출처 메타데이터로 분리한다.
 
 ## 채택한 범위
 
@@ -19,6 +20,8 @@
 - `checkEnvironment()` 결과를 capability에 그대로 노출한다.
 - core와 wheel 캐시는 pyproc 경유 OPFS 단일 소유로 통합한다.
 - 블로그, 노트북, 플레이그라운드는 같은 execution store와 worker singleton을 사용한다.
+- 블로그 투영 노트북은 기본 `sequential`, `autoRun: false`이고 사용자가 선택할 때만 reactive로 전환한다.
+- 블로그 셀에서 실행한 전역은 전체 화면 노트북 실행 전에 새 machine으로 격리한다.
 
 ## 보류한 범위
 

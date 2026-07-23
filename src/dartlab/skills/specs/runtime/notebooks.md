@@ -119,11 +119,16 @@ Colab 은 브라우저에서 바로 실행 (Google 계정). Molab 은 marimo 클
 노트북 셀로 보이며, 실행 버튼을 누른 뒤에만 공용 Python worker를 준비한다. 독자는 글 안에서 코드를
 고치고 바로 재실행할 수 있다. 첫 셀의 "전체 화면"은 긴 실습이 필요할 때만 글 한 편을 노트북 한 권
 (`post:<slug>`)으로 투영하는 보조 진입점이다. 사본을 굽지 않는다. 글이 SSOT이고 노트북은 그 투영이다.
+글에서 투영한 노트북은 원문의 셀 순서를 보존하는 `sequential` 모드이며, 열기만 해서는 어느 셀도
+실행하지 않는다. 같은 변수를 여러 셀에서 다시 정의해도 순차 실행 계약에서는 오류가 아니다. 사용자가
+툴바에서 reactive 모드로 바꾼 경우에만 일반 브라우저 노트북과 같은 reactive 규칙을 적용한다.
 
 - 연재 운영 규약: `blog/03-dartlab-stories/PIPELINE.md`
 - 노트북 편집 화면 좌측 사이드바의 첫 아이콘이 이 연재 목록과 검색이다.
 - 기계 가드: `tests/audit/notebookContract.py` 가 colab · marimo 예제와 `dartlab 이야기` 본문
   코드펜스를 AST 로 훑어 공개 호출 계약 밖 심볼을 막는다. CI fast `notebooks` 게이트.
+- 저장된 옛 `post:<slug>` 노트북도 로드 시 `sequential`, `autoRun: false`로 정규화한다. reactive
+  중복 정의에서 생긴 옛 오류 출력만 제거하고 실제 실행 결과와 사용자가 고친 코드는 보존한다.
 
 브라우저에서 되는 것과 안 되는 것, pyproc capability와 업그레이드 게이트는
 `runtime.pyodideBrowser`가 정본이다.

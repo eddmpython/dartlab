@@ -81,6 +81,8 @@ testUniverse:
 - 블로그의 `dartlab 이야기` Python 코드펜스는 페이지가 열리면 즉시 편집 가능한 셀로 보인다.
 - 페이지 진입만으로 Python, wheel, 데이터를 받지 않는다. 실행 버튼 클릭이나 명시적 hover 같은 사용자 의도 뒤에만 공용 worker를 준비한다.
 - 블로그 셀, 브라우저 노트북, 플레이그라운드는 한 `WorkerEngine`과 한 pyproc machine을 공유한다. 별도 main-thread Pyodide를 만들지 않는다.
+- 블로그 글을 전체 화면으로 투영한 `post:<slug>` 노트북은 기본 `sequential`, `autoRun: false`다. 일반 브라우저 노트북만 기본 reactive 자동 실행을 사용한다.
+- 블로그 셀에서 만든 Python 전역은 전체 화면 노트북의 첫 실행 전에 새 machine으로 격리한다. 저장된 옛 글 노트북의 reactive 중복 정의 오류는 로드 시 제거하되 코드와 정상 출력은 보존한다.
 - 런타임 버전 정본은 `landing/runtime-manifest.json`이다. 브라우저와 Node 게이트가 같은 pyproc, Pyodide, DartLab exact pin을 읽고 캐시 namespace를 만든다.
 - `import dartlab`을 실행하기 전에 `lxml`, `numpy`, `polars`, `pyarrow`를 Pyodide 배포판에서 명시적으로 적재하고 DartLab exact wheel을 설치한다. 지연 import만 믿지 않는다.
 - 기본 실행, 파일, 출력, 환경 진단은 pyproc machine 공개 계약을 쓴다. `runtime.raw`는 ASGI 안정화 폴백에만 허용한다.
@@ -108,6 +110,7 @@ pyproc은 1.0 전까지 patch도 breaking으로 취급한다. 모든 후보는 �
 2. Chromium Gate B: 실제 COI와 JSPI 환경, root machine, exact DartLab, branching history, 2-lane process pool.
 3. landing `check`, 전체 unit test, production build.
 4. 일반 non-COI 블로그에서 초기 무실행, 첫 셀 실행, 편집 후 재실행 수동 smoke.
+5. 글 전체 화면 투영에서 초기 무실행, 순차 단일 셀 실행, reactive 전환, 옛 저장본 정규화 smoke.
 
 자동 병합은 금지한다. PR 토큰이 없으면 전체 게이트를 통과한 후보 브랜치와 중복 방지 이슈만 만든다.
 

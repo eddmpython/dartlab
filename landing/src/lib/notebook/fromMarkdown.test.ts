@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { isPostNotebook, markdownToCells, postNotebookId } from './fromMarkdown';
+import {
+	isPostNotebook,
+	markdownToCells,
+	markdownToNotebook,
+	postNotebookId
+} from './fromMarkdown';
 
 const POST = `---
 title: "테스트"
@@ -107,5 +112,14 @@ describe('postNotebookId', () => {
 		expect(postNotebookId('what-is-dartlab')).toBe('post:what-is-dartlab');
 		expect(isPostNotebook('post:what-is-dartlab')).toBe(true);
 		expect(isPostNotebook('c0ffee-uuid')).toBe(false);
+	});
+
+	it('블로그 투영은 순차 실행이고 페이지 진입 자동 실행이 없다', () => {
+		const notebook = markdownToNotebook(POST, 'what-is-dartlab', '테스트', '설명');
+		expect(notebook.metadata.sourceKind).toBe('blog-post');
+		expect(notebook.metadata.execution).toEqual({
+			mode: 'sequential',
+			autoRun: false
+		});
 	});
 });

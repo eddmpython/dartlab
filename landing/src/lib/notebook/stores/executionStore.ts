@@ -5,6 +5,7 @@ import { notebook, applyCellExecutionResult, setCellOutput, focusNextCell, nextE
 import type { WorkspaceFile } from './notebookStore';
 import { getReactiveCells, detectMultipleDefinitions } from '../engine/dataflow';
 import { initWidgetBridge, registerWidgetCell, destroyWidgetBridge } from '../widgets/WidgetBridge';
+import { withNotebookExecutionMode } from '../executionPolicy';
 
 export type EngineStatus = 'idle' | 'loading' | 'ready' | 'executing' | 'error';
 
@@ -114,13 +115,23 @@ let attachedNotebookId: string | null = null;
 export async function initEngine(autoRun = true): Promise<void> {
 	await bringUpEngine();
 	if (!engine?.isReady) return;
+	// 블로그 셀이 아직 실행 중인 상태에서 전체 화면으로 이동할 수 있다. 같은 실행 큐가 끝난 뒤
+	// 커널 오염 여부를 판정해야 진행 중인 전역이 새 노트북으로 새지 않는다.
+	await executionQueue;
 
 	// 엔진이 이미 떠 있다고 해서 부착까지 끝난 건 아니다. 사전 로딩(prewarmEngine)이 엔진만 올려 둔
 	// 경우 여기서 처음 부착한다. 옛 코드는 `if (engine?.isReady) return` 이라 프리워밍이 autoRun 을
 	// 통째로 건너뛰게 만들었다(첫 셀이 영영 안 돌던 회귀).
 	const nbId = get(notebook).id;
+	// 블로그 인라인 셀에서 실행한 Python 전역은 글을 노트북으로 열 때 넘어가면 안 된다.
+	// 실행 전 프리워밍만 한 커널은 재사용하되, 실제 토막을 돌린 커널은 새 머신으로 격리한다.
+	if (!attachedNotebookId && ranSnippets.size > 0) {
+		disposeEngine(false);
+		await bringUpEngine();
+		if (!engine?.isReady) return;
+	}
 	if (attachedNotebookId && attachedNotebookId !== nbId) {
-		destroyEngine();
+		disposeEngine(false);
 		await bringUpEngine();
 		if (!engine?.isReady) return;
 	}
@@ -197,6 +208,7 @@ async function executeSingleCell(cellId: string, code: string): Promise<boolean>
 }
 
 async function runReactiveCells(triggeredCellId: string): Promise<void> {
+	if (!get(reactiveMode)) return;
 	const nb = get(notebook);
 	const cells = nb.cells.map((c) => ({ id: c.id, type: c.type, content: c.content }));
 	const dependentCellIds = getReactiveCells(triggeredCellId, cells);
@@ -223,7 +235,7 @@ async function runReactiveCells(triggeredCellId: string): Promise<void> {
 }
 
 async function triggerWidgetReactive(definingCellId: string): Promise<void> {
-	if (!engine?.isReady) return;
+	if (!engine?.isReady || !get(reactiveMode)) return;
 
 	return enqueueExecution(async () => {
 		await runReactiveCells(definingCellId);
@@ -233,9 +245,21 @@ async function triggerWidgetReactive(definingCellId: string): Promise<void> {
 
 function refreshCellErrors(): Map<string, string[]> {
 	const nb = get(notebook);
-	const errors = detectMultipleDefinitions(nb.cells);
+	const errors = get(reactiveMode)
+		? detectMultipleDefinitions(nb.cells)
+		: new Map<string, string[]>();
 	setCellErrors(errors);
 	return errors;
+}
+
+export function setReactiveMode(enabled: boolean, persist = false): void {
+	reactiveMode.set(enabled);
+	refreshCellErrors();
+	if (!persist) return;
+	notebook.update((current) =>
+		withNotebookExecutionMode(current, enabled ? 'reactive' : 'sequential')
+	);
+	saveToStorage();
 }
 
 export async function executeCell(cellId: string, code: string, moveToNext = false): Promise<void> {
@@ -359,7 +383,7 @@ export async function runSnippet(code: string, prereq: string[] = []): Promise<C
 	});
 }
 
-export function destroyEngine(): void {
+function disposeEngine(notifyIdle: boolean): void {
 	if (syncTimer) {
 		clearTimeout(syncTimer);
 		syncTimer = null;
@@ -371,10 +395,14 @@ export function destroyEngine(): void {
 	ranSnippets.clear(); // 커널이 사라지면 그 안의 변수도 사라진다
 	attachedNotebookId = null; // 다음 initEngine 이 다시 부착(복원+autoRun)하도록
 	prewarmed = null; // 워커가 사라졌으니 사전 로딩도 다시 할 수 있게
-	engineStatus.set('idle');
+	if (notifyIdle) engineStatus.set('idle');
 	runningCellId.set(null);
 	engineError.set(null);
 	reactiveQueue.set(new Set());
+}
+
+export function destroyEngine(): void {
+	disposeEngine(true);
 }
 
 export async function getVariableNames(): Promise<string[]> {

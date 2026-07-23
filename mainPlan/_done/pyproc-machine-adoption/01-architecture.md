@@ -17,6 +17,17 @@
 
 페이지가 열릴 때 편집기만 만든다. 실행 버튼 클릭이나 명시적 hover 뒤에 worker를 만들고 machine을 부팅한다. 같은 SPA 세션에서는 모든 Python 표면이 이 singleton을 재사용한다.
 
+## 노트북 실행 정책
+
+일반 브라우저 노트북은 기존처럼 reactive와 자동 실행을 기본으로 한다. 블로그 글에서 투영한
+`post:<slug>` 노트북은 `sourceKind: blog-post`, `execution.mode: sequential`,
+`execution.autoRun: false`를 저장한다. 전체 화면을 열어도 실행하지 않고 사용자가 누른 셀만 순서대로
+실행한다. 툴바 전환은 이 메타데이터를 갱신하므로 사용자의 reactive 선택은 다시 열어도 유지된다.
+
+옛 저장본은 로드 경계에서 같은 정책으로 정규화한다. reactive 중복 정의가 만든 오류 출력만 버리고
+사용자가 편집한 코드와 정상 출력은 유지한다. 블로그 인라인 셀을 먼저 실행한 세션에서 전체 화면으로
+이동하면 첫 노트북 실행 전 worker machine을 새로 만들어 인라인 전역이 노트북 상태로 새지 않게 한다.
+
 ## 버전과 의존성
 
 `landing/runtime-manifest.json`이 다음 세 값을 함께 잠근다. 브라우저의 `runtimeManifest.ts`와 Node 게이트가 이 파일을 같이 읽는다.
@@ -64,6 +75,7 @@ pyproc 소유:
 DartLab 소유:
 
 - postMessage 명령과 실행 직렬화
+- 노트북 출처별 sequential 또는 reactive 실행 정책
 - 셀 출력 포매팅과 widget shim
 - DartLab 의존성 목록
 - notebook workspace ID와 manifest
