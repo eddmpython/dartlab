@@ -13,7 +13,7 @@
 // 숫자·인과는 메인 스레드 dartlab 직독으로 args.evidence 에 주입(에이전트는 dartlab 호출 안 함, 환각 방지).
 //
 // 실행: Workflow({ scriptPath: "blog/_scripts/blog_plan_loop.workflow.js",
-//                  args: { contentKind, topic, corpName, stockCode, evidence, recentTitles } })
+//                  args: { contentKind, seriesOrder, topic, corpName, stockCode, evidence, recentTitles } })
 // 산물: { plan, loopLog, passed, rounds }
 //   passed=false 면 발행 금지. plan 을 index.md 집필 + imagePlan 수급 + visuals 차트의 입력으로 쓴다.
 // 문서 SSOT: operation.content · BLOG.md Phase 1/2/4 · PIPELINE.md.
@@ -42,9 +42,9 @@ const PRINCIPLES = `블로그 심층 리포트 원칙(합격선):
 11. 기업이야기 금지 지표: contentKind 가 company-reports 이면 부채비율, debt-to-equity, D/E ratio, 부채총계를 자본총계로 나눈 값은 제목, 본문, 표, 차트, 코드, brief.json 어디에도 쓰지 않는다. 이 지표는 인사이트 후보에서도 제외하고 honestyGuards 에 금지어를 되풀이하지 않는다. 부채 위험은 절대 차입금, 순차입금, 만기, 이자비용, 이자보상, 영업현금흐름, 유동성으로 설명한다.
 표기: em dash(긴 줄표) 금지. 부연은 마침표·괄호, 범위는 물결(~). 문장은 다/요/까.`
 
-const IMAGE_NOTE = `이미지 기획(내용 연상 강제): hero 1장 + 본문 inline 2~3장 이상. 각 항목의 assetKey 는 assets/{assetKey}.webp 와 CREDITS.md 를 잇는 영문 kebab-case 키이고 sourcePolicy 는 auto 다. 파이프라인이 실제 제품·인물·현장처럼 사실성이 중요한 피사체는 공식 또는 라이선스가 확인된 실사를, 개념·원리·추상 장면은 image_gen 을 자율 선택한다. 수급 실패를 운영자 질문으로 넘기지 말고 다른 적합 소스로 전환한다. inline 이미지는 insertAfterAct·placement·narrativeUse 로 본문 위치와 역할을 정한다. 범용 스카이라인·추상 배경으로 도망가면 실패. query 는 실사 검색용 영어 검색어, keywords 는 오매치 차단용이다.`
+const IMAGE_NOTE = `이미지 기획(내용 연상 강제): 일반 심층 글은 hero 1장과 본문 inline 2장 이상, 기술이야기 17편부터는 hero 1장과 inline 4장 이상을 먼저 기획한다. 각 항목의 assetKey 는 assets/{assetKey}.webp 와 CREDITS.md 를 잇는 영문 kebab-case 키이고 sourcePolicy 는 auto 다. 파이프라인이 실제 제품·인물·현장처럼 사실성이 중요한 피사체는 공식 또는 라이선스가 확인된 실사를, 개념·원리·추상 장면은 image_gen 을 자율 선택한다. 수급 실패를 운영자 질문으로 넘기지 말고 다른 적합 소스로 전환한다. 장면 이미지는 분위기 채우기가 아니라 독자가 다음 설명을 이해할 공간과 장비를 미리 보여 줘야 한다. inline 이미지는 insertAfterAct·placement·narrativeUse 로 본문 위치와 역할을 정한다. 범용 스카이라인·추상 배경으로 도망가면 실패. query 는 실사 검색용 영어 검색어, keywords 는 오매치 차단용이다.`
 
-const VISUAL_NOTE = `막별 비주얼: 이야기가 요구하는 차트·표·그래프 세트를 막마다 정한다(고정 템플릿 아님). 추이=line, 비교/구성=bar, 부문믹스=도넛/스택, 두 계열 대비=grouped, 공정·회사·근거 지도=table. 한 막에 하나로 부족하면 같은 actOrder 에 2~4개를 기획한다. 시각물은 글 뒤 자동 부록이 아니라 본문 중간 설명 장치다. placement·insertAfter·narrativeUse 로 어느 문장 뒤에 왜 들어가는지 적는다. 각 차트는 그 막의 주장을 증명해야 하고, 큰 숫자를 가려도 차트만으로 같은 긴장이 남아야 한다. 손수 못생긴 차트 금지. kind·title·proves·seriesHint 를 명확히 적어 메인 스레드가 정식 렌더로 그리게 한다.`
+const VISUAL_NOTE = `막별 비주얼: 이야기가 요구하는 장면 이미지·작동 원리 도식·판단용 표와 차트를 함께 정한다(고정 템플릿 아님). 추이=line, 비교/구성=bar, 부문믹스=도넛/스택, 두 계열 대비=grouped, 공정·회사·근거 지도=table 또는 diagram 이다. 기술이야기 17편부터 visuals 는 10개 이상, kind 는 3종 이상으로 기획하고 imagePlan 5장과 역할이 겹치지 않게 한다. 모든 H2에 visualAnchor 를 두고 개념 점프가 두 번 이상인 H2에는 시각 앵커를 하나 더 둔다. 한 막에 하나로 부족하면 같은 actOrder 에 2~4개를 기획한다. 시각물은 글 뒤 자동 부록이 아니라 본문 중간 설명 장치다. placement·insertAfter·narrativeUse 로 어느 문장 뒤에 왜 들어가는지 적는다. 각 시각물은 그 막의 주장을 증명해야 하고, 큰 숫자를 가려도 같은 긴장이 남아야 한다. 채우기용 이미지와 손수 못생긴 차트는 실패다. kind·title·proves·seriesHint 를 명확히 적어 메인 스레드가 정식 렌더로 그리게 한다.`
 
 const SECTION_NOTE = `섹션별 독해 구조(강제): 모든 주요 H2 섹션은 기획에서 먼저 설계한다. 순서는 1) 섹션 타이틀 2) 한 줄 서브타이틀/훅 3) 이미지·표·도식·코드 출력 같은 시각 앵커 4) 설명적 서술 5) 실제 예시 6) 보완 설명·오해 방지 7) 다음 섹션 연결문이다. 기획안의 sections[] 에 heading, subtitle, visualAnchor, explanation, example, support, transition, evaluation 을 모두 채운다. 평가자는 섹션마다 이 흐름이 끊기면 재기획을 요구한다.`
 
@@ -308,6 +308,7 @@ const stockCode = A.stockCode || ''
 const evidence = A.evidence || ''
 const recent = Array.isArray(A.recentTitles) ? A.recentTitles.join(' / ') : (A.recentTitles || '없음')
 const contentKind = A.contentKind || (stockCode ? 'company-reports' : 'tech-story')
+const seriesOrder = Number(A.seriesOrder || 0)
 const PASS_MIN = 92
 const MAX_ROUNDS = 8
 
@@ -315,7 +316,10 @@ const MAX_ROUNDS = 8
 // 아니다. 하한을 두면 채우기용 막과 채우기용 이미지가 붙는다. 값은 blog/_scripts/auditBlog.py 의
 // GENRE_PLAN_SHAPE 와 같아야 한다(어긋나면 발행 게이트가 잡는다).
 const PLAN_SHAPE = { 'dartlab-stories': { acts: 3, visuals: 1, images: 1 } }
-const shape = PLAN_SHAPE[contentKind] || { acts: 6, visuals: 3, images: 3 }
+const richTechStory = contentKind === 'tech-story' && seriesOrder >= 17
+const shape = richTechStory
+  ? { acts: 6, visuals: 10, images: 5 }
+  : (PLAN_SHAPE[contentKind] || { acts: 6, visuals: 3, images: 3 })
 PLAN_SCHEMA.properties.acts.minItems = shape.acts
 PLAN_SCHEMA.properties.sections.minItems = shape.acts
 PLAN_SCHEMA.properties.visuals.minItems = shape.visuals
@@ -365,7 +369,7 @@ const NOTES =
 
 const CONTENT_GUIDANCE = {
   'company-reports': `기업이야기: 회사 하나의 내러티브를 깊게 판다. 사업 구조, 공시 문장, 제품·고객·수주·원가·자본배치·현금흐름을 한 회사 안에서 연결한다. DART 또는 EDGAR 근거와 dartlab 실측을 분리하고, 다음 공시에서 볼 렌즈로 닫는다. 부채비율과 같은 자본 대비 부채 지표는 인사이트가 아니므로 기획부터 제외한다. 부채 부담을 다룰 때는 절대 차입금, 순차입금, 만기, 이자비용, 이자보상, 영업현금흐름, 유동성 가운데 서사를 실제로 설명하는 근거를 고른다.`,
-  'tech-story': `기술이야기: 기술이 주어다. 기술 원리, 공정 파이프라인·네트워크망, 어느 칸에 어떤 회사가 있고 왜 그 회사가 병목·표준·원가·고객 접점을 쥐는지 설명한다. 한국사는 DART, 미국사는 EDGAR를 연결한다. 돈 이야기만 앞세우거나 "누가 돈을 버나" 템플릿이면 실패다. 마지막은 조건별 변화 경로, 관찰 지표, 반증 조건을 묶은 관전 시나리오로 닫는다.`,
+  'tech-story': `기술이야기: 기술이 주어다. 기술 원리, 공정 파이프라인·네트워크망, 어느 칸에 어떤 회사가 있고 왜 그 회사가 병목·표준·원가·고객 접점을 쥐는지 설명한다. 장면 이미지는 현장을, 원리 도식은 작동 순서를, 표와 차트는 비교와 판단을 맡는다. 세 역할을 한 종류로 대신하지 않는다. 한국사는 DART, 미국사는 EDGAR를 연결한다. 돈 이야기만 앞세우거나 "누가 돈을 버나" 템플릿이면 실패다. 마지막은 조건별 변화 경로, 관찰 지표, 반증 조건을 묶은 관전 시나리오로 닫는다.`,
   'data-reports': `데이터 리포트: scan과 전종목 파서로 전체 시장의 특이점을 찾는다. 개별 회사는 대표 사례일 뿐이다. 표본·분모·제외 조건·정제 전후를 드러내고, DART·EDGAR 전체 유니버스 또는 제외 사유를 명시한다. 순위표 나열로 끝나면 실패다.`,
   'investment-stories': `투자이야기: 투자자가 시장을 읽을 때 쓰는 언어와 프레임이 주어다. 주가, 경제 변수, 증권사 표현, 투자 용어, 기술적투자 보조지표, 기술투자 관점을 설명한다. 지지선·목표가·보조지표를 매수·매도 결론으로 쓰면 실패다. 선행 회사·기술·데이터 글이 있으면 relatedPosts 로 연결하고, 독자가 다음 차트·공시·경제지표에서 무엇을 확인할지로 닫는다.`,
   'dartlab-stories': `dartlab 이야기: dartlab 자체가 주어인 교육 연재다. 독자는 아무것도 모른 채 도착한다. 한 편에 개념 하나를 가르치고, 본문 python 코드블록을 독자가 브라우저에서 그대로 실행하게 만든다. 코드는 공개 호출 계약 안의 dartlab 함수와 Company 메서드만 쓴다. 브라우저에서 안 되는 것(실시간 시세·뉴스 수집 등)은 숨기지 말고 그 자리에서 밝힌다. 6 막 인과가 아니라 3 단계 이상의 학습 단계로 짠다: 무엇을 왜 배우나, 직접 해 본다, 무엇을 얻었고 다음은 무엇인가. imagePlan 은 그 편에 정말 필요한 그림만 적는다. 채우기용 이미지, 코드 없는 설명, 실행해 보지 않은 코드는 실패다. .shape 와 행열 크기, 내부 기능 개수, 인증 개수는 독자에게 의미 있는 근거가 아니므로 금지한다. select 와 trace 는 필요할 때 쓰는 도구일 뿐 독립 주제가 아니다.`,
@@ -512,7 +516,7 @@ ${JSON.stringify(plan)}`,
 - abstract-writing: 설명이 숫자·표·공시·값보다 먼저 오거나, "구조", "흐름", "맥락", "시사점", "메커니즘", "핵심", "프레임" 같은 말이 실제 근거 없이 떠 있나.
 - weak-section-flow: sections[] 가 없거나, 섹션마다 타이틀, 훅, 시각 앵커, 설명, 예시, 보완, 다음 연결이 기획되지 않았나.
 - generic-image: imagePlan 이미지가 내용·회사·제품을 연상시키지 않고 범용 스카이라인·추상인가. 하나라도 있으면 kill.
-- appendix-visual: visuals/imagePlan 이 본문 중간 placement 없이 뒤에 자동으로 붙는 부록처럼 기획됐나. 필요한 표·그래프·테이블 조합을 빼먹었나. 그러면 kill.
+- appendix-visual: visuals/imagePlan 이 본문 중간 placement 없이 뒤에 자동으로 붙는 부록처럼 기획됐나. 장면 이미지·작동 원리 도식·판단용 표와 차트 중 필요한 역할을 빼먹었나. 기술이야기 17편부터 visuals 10개, kind 3종, imagePlan 5장 하한을 못 채웠나. 하나라도 해당하면 kill.
 - weak-reference: relatedPosts 가 비어 있거나, 선행 글 검색어·링크 배치 이유 없이 억지 내부 링크만 붙였나.
 - overclaim: 동행을 인과로 단정, 과장·투자권유·우열 단정이 있나.
 
@@ -564,6 +568,8 @@ ${FIELD_GUIDE}`,
     { label: `기획작가 개선 r${round}`, phase: '평가개선', schema: PLAN_SCHEMA }
   )
 }
+
+if (seriesOrder > 0) plan.seriesOrder = seriesOrder
 
 plan.reviewGate = {
   status: passed ? 'passed' : 'planned',

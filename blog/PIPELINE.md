@@ -34,6 +34,7 @@
 - **공통 파이프라인**: 기획이 글과 이미지를 동시에 결정한다. 신규 심층 글의 `brief.json`은 `contractVersion: 2`이며 관통선, 핵심 인싸이트, `watchScenarios[]`, `sections[]`, evidenceMap, DART/EDGAR·dartlab·price·macro·internal-blog 근거, 보여줄 표·차트·`imagePlan[]`, 참고글 연결 계획, 오독 방지 조건을 함께 가진다. 기존 글은 수정 전까지 레거시 호환으로 감사한다.
 - **섹션 독해 구조 계약**: 각 주요 H2는 `타이틀 -> 한 줄 서브타이틀/훅 -> 이미지·표·도식·코드 출력 같은 시각 앵커 -> 설명적 서술 -> 실제 예시 -> 보완 설명·오해 방지 -> 다음 섹션 연결문` 순서로 기획한다. `brief.json.sections[]` 는 `heading`, `subtitle`, `visualAnchor`, `explanation`, `example`, `support`, `transition`, `evaluation` 을 모두 가진다. 평가·개선 루프는 섹션별로 이 흐름을 점검하고 약한 섹션을 재기획한다.
 - **비주얼 위치 계약**: 표·그래프·테이블·이미지는 뒤에 자동으로 붙는 부록이 아니다. 기획이 각 `visuals[]` 와 `imagePlan[]` 에 `placement`, `insertAfter`, `narrativeUse` 를 적어 본문 어느 설명 뒤에서 어떤 이해를 만들지 결정한다. 한 막이나 카드에 하나로 부족하면 2~4개 시각물을 같이 기획한다.
+- **기술이야기 시각 밀도 계약**: 17편부터 `visuals[]` 10개 이상, `imagePlan[]`은 hero 1장과 inline 4장 이상, `visuals.kind` 3종 이상을 기획한다. 장면 이미지는 현장, 작동 원리 도식은 단계와 인과, 표와 차트는 비교와 판단을 맡는다. 모든 H2에 시각 앵커를 두고 개념 점프가 두 번 이상이면 하나를 더 둔다. 채우기용 배경이나 같은 도식 반복은 개수로 인정하지 않는다. `auditBlog.py`가 이 하한과 역할 다양성을 발행 전에 검사한다.
 - **템플릿 금지**: "누가 돈을 버나", "왜 못 버나", "아직 적자" 같은 금융 결론형 문구를 제목·막 구조의 기본 프레임으로 반복하지 않는다. 기술·시장·기업의 구체 메커니즘이 제목과 H2의 주어여야 한다.
 - **누락 차단**: imagePlan 없이 발행, 데이터 설명 없는 숫자 카드, 공정·회사 지도 없는 기술 글, 전수 스캔 없는 데이터 글, 회사 내러티브 없는 기업 글은 형식 점수와 관계없이 재작성한다.
 
@@ -51,7 +52,7 @@
 - → BLOG.md §Phase 0
 
 ## 2. 기획: 전문 에이전트 적대 토론 (+ 평가·개선 루프)
-- **turnkey 루프(필수, 카드·팟캐스트 파리티)**: `Workflow({ scriptPath: "blog/_scripts/blog_plan_loop.workflow.js", args: { contentKind, topic, corpName, stockCode, evidence, recentTitles } })`. 단독 작업(에이전트 체인 스킵)은 BLOG.md:158 경고 위반이고 클리셰·얕음·이미지 부실을 부른다. **반드시 이 루프로 기획한다.** 산출 plan(관통선·인싸이트·막구조·섹션별 독해 구조·막별비주얼·imagePlan·evidenceMap·정직성가드)을 `brief.json` 으로 글 폴더에 저장(발행 게이트가 이 산출물을 확인).
+- **turnkey 루프(필수, 카드·팟캐스트 파리티)**: `Workflow({ scriptPath: "blog/_scripts/blog_plan_loop.workflow.js", args: { contentKind, seriesOrder, topic, corpName, stockCode, evidence, recentTitles } })`. 단독 작업(에이전트 체인 스킵)은 BLOG.md:158 경고 위반이고 클리셰·얕음·이미지 부실을 부른다. **반드시 이 루프로 기획한다.** 산출 plan(관통선·인싸이트·막구조·섹션별 독해 구조·막별비주얼·imagePlan·evidenceMap·정직성가드)을 `brief.json` 으로 글 폴더에 저장(발행 게이트가 이 산출물을 확인). `seriesOrder`는 강화된 시각 밀도 계약을 워크플로와 발행 게이트에서 같은 기준으로 고르는 입력이다.
 - **92점 루프 게이트(필수)**: 작가기획 → 평가 피드백 → 작가 재기획 → 재평가를 최소 2라운드 실행한다. `reviewGate.loopEvidence.workflow="blog_plan_loop.workflow.js"`, `rounds >= 2`, 마지막 `evaluatorScore >= 92`, 마지막 `decision=passed`, 재기획 흔적이 없으면 발행 실패다. 신규 심층 글은 마지막 관전 시나리오와 이미지 SSOT도 같은 루프에서 평가한다.
 - 병렬 4 에이전트(마찰 0)는 클리셰를 통과시킨다 → **적대 토론**으로: 재무분석가 vs 산업·역사가(서로 다른 관통선 경합) → 회의론자(둘 다 "템플릿 클리셰"로 격파) + 독자대리인(재미) → **단일 관통선 + 정직성 가드**로 수렴.
 - 산출: **독자질문 1(관통선)** + **핵심 인싸이트 1(그 질문의 답)** + 막 구조표 + **섹션별 독해 구조표** + 막별 테이블 + 제목/description 후보 + **막별 비주얼 기획**(고정 템플릿 아님. 이야기가 요구하는 차트·표·카드를 막마다 정한다: 부문 믹스=도넛, OPM 궤적=라인, peer=바, 수주 runway=런웨이 차트. 카드뉴스 `imagePlan`처럼 블로그 차트도 스토리가 정한다). 각 비주얼은 `placement`, `insertAfter`, `narrativeUse` 로 본문 중간 삽입 위치와 독자 이해 역할까지 결정한다.

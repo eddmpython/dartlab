@@ -37,7 +37,7 @@
 | `publishGate.py` | **블로그 발행 단일 진입점**. `auditBlog` 하드 계약 + SEO 95 + 신규 v2 시나리오·이미지 SSOT를 함께 검사 |
 | `blogMediaGate.py` | **커밋·push·CI 미디어 강제 게이트**. Git index 또는 Git ref를 읽어 추적 이미지·SVG, 로컬 렌더링 참조, 카탈로그 밖 HF 객체를 차단 |
 | `blogMedia.py` | 중앙 `media/catalog.json`, HF 객체 경로, URL, 콘텐츠 해시 계약 SSOT |
-| `auditBlog.py` | 9개 카테고리의 내러티브·쉬운 설명 공통 편집 검사와 심층 글 구조 audit를 맡는 하드 계약 엔진. 단독 결과는 발행 승인 아님 |
+| `auditBlog.py` | 9개 카테고리의 내러티브·쉬운 설명 공통 편집 검사와 심층 글 구조 audit를 맡는 하드 계약 엔진. 기술이야기 17편부터 visuals 10개, imagePlan 5장, 시각물 3종 하한도 검사한다. 단독 결과는 발행 승인 아님 |
 | `audit_seo.py` | SEO·깊이·캐러셀 진단과 `publishGate.py`의 점수 엔진. 단독 결과는 발행 승인 아님 |
 | `auditBlogFinance.py` | 회사 글 재무 표 ↔ `dartlab.Company().select()` 실측 1:1 정합 |
 | `companyReportPolicy.py` | 기업이야기 금지 지표와 문서·기획·SVG 정책을 공통 검사 |

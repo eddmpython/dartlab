@@ -462,6 +462,20 @@ def test_publish_gate_blocks_visuals_without_inline_use(monkeypatch, tmp_path: P
     assert any("imagePlan[2].narrativeUse" in err for err in errors)
 
 
+def test_publish_gate_blocks_sparse_visual_plan_for_new_tech_story(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(ab, "repo_root", lambda: tmp_path)
+    post = _write_tech_post(tmp_path)
+    brief = _brief()
+    brief["seriesOrder"] = 17
+    (post / "brief.json").write_text(json.dumps(brief, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    errors = ab.publish_gate(post)
+
+    assert any("visuals 는 최소 10개" in err for err in errors)
+    assert any("imagePlan 은 5장 이상" in err for err in errors)
+    assert any("inline 이미지는 4장 이상" in err for err in errors)
+
+
 def test_publish_gate_blocks_missing_section_flow(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(ab, "repo_root", lambda: tmp_path)
     post = _write_tech_post(tmp_path)

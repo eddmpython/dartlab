@@ -70,6 +70,9 @@ GENRE_TARGET_PROSE_CHARS = {
 # imagePlan 길이가 정한다(publish_gate 가 그 정합을 본다).
 _DEFAULT_PLAN_SHAPE = {"acts": 6, "visuals": 3, "images": 3}
 GENRE_PLAN_SHAPE = {"dartlab-stories": {"acts": 3, "visuals": 1, "images": 1}}
+TECH_STORY_RICH_VISUAL_FROM_ORDER = 17
+TECH_STORY_RICH_PLAN_SHAPE = {"acts": 6, "visuals": 10, "images": 5}
+TECH_STORY_RICH_VISUAL_KIND_MIN = 3
 DEEP_MIN_PROSE_CHARS = GENRE_MIN_PROSE_CHARS["company-reports"]
 DEEP_TARGET_PROSE_CHARS = GENRE_TARGET_PROSE_CHARS["company-reports"]
 BLOG_REVIEW_SCORE_MIN = 92
@@ -606,7 +609,18 @@ def _validate_loop_evidence(
     return fails
 
 
-def plan_shape(category: str) -> dict[str, int]:
+def _plan_series_order(plan: dict[str, object] | None) -> int:
+    if not isinstance(plan, dict):
+        return 0
+    try:
+        return int(plan.get("seriesOrder") or 0)
+    except (TypeError, ValueError):
+        return 0
+
+
+def plan_shape(category: str, plan: dict[str, object] | None = None) -> dict[str, int]:
+    if category == "tech-story" and _plan_series_order(plan) >= TECH_STORY_RICH_VISUAL_FROM_ORDER:
+        return TECH_STORY_RICH_PLAN_SHAPE
     return GENRE_PLAN_SHAPE.get(category, _DEFAULT_PLAN_SHAPE)
 
 
@@ -684,7 +698,7 @@ def _validate_section_plan(plan: dict[str, object], *, label: str, category: str
 def _validate_common_plan(
     plan: dict[str, object], payload: dict[str, object], *, label: str, category: str = ""
 ) -> list[str]:
-    shape = plan_shape(category)
+    shape = plan_shape(category, plan)
     fails: list[str] = []
     missing = [field for field in BLOG_REQUIRED_PLAN_FIELDS if field not in plan]
     if missing:
@@ -823,6 +837,18 @@ def _validate_common_plan(
         if not str(raw.get("kind") or "").strip():
             fails.append(f"{label}: visuals[{idx}].kind 누락")
 
+    if category == "tech-story" and _plan_series_order(plan) >= TECH_STORY_RICH_VISUAL_FROM_ORDER:
+        visual_kinds = {
+            str(raw.get("kind") or "").strip().lower()
+            for raw in visuals
+            if isinstance(raw, dict) and str(raw.get("kind") or "").strip()
+        }
+        if len(visual_kinds) < TECH_STORY_RICH_VISUAL_KIND_MIN:
+            fails.append(
+                f"{label}: 기술이야기 {TECH_STORY_RICH_VISUAL_FROM_ORDER}편부터 visuals.kind 는 "
+                f"{TECH_STORY_RICH_VISUAL_KIND_MIN}종 이상이어야 함(현재 {len(visual_kinds)}종)"
+            )
+
     image_plan = plan.get("imagePlan") if isinstance(plan.get("imagePlan"), list) else []
     if len(image_plan) < shape["images"]:
         fails.append(f"{label}: imagePlan 은 {shape['images']}장 이상이어야 함(현재 {len(image_plan)})")
@@ -839,6 +865,16 @@ def _validate_common_plan(
                     fails.append(f"{label}: imagePlan[{idx}].slot 누락")
             elif _compact_len(raw.get(field)) < 8:
                 fails.append(f"{label}: imagePlan[{idx}].{field} 이 너무 약함")
+
+    if category == "tech-story" and _plan_series_order(plan) >= TECH_STORY_RICH_VISUAL_FROM_ORDER:
+        slots = [str(raw.get("slot") or "").strip().lower() for raw in image_plan if isinstance(raw, dict)]
+        if slots.count("hero") != 1:
+            fails.append(f"{label}: 풍부한 기술이야기 imagePlan 은 hero 를 정확히 1장 기획해야 함")
+        if slots.count("inline") < TECH_STORY_RICH_PLAN_SHAPE["images"] - 1:
+            fails.append(
+                f"{label}: 기술이야기 {TECH_STORY_RICH_VISUAL_FROM_ORDER}편부터 "
+                f"inline 이미지는 {TECH_STORY_RICH_PLAN_SHAPE['images'] - 1}장 이상이어야 함"
+            )
 
     contractVersion = _planContractVersion(plan)
     if contractVersion and contractVersion != BLOG_PLAN_CONTRACT_VERSION:

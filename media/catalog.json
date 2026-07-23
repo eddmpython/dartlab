@@ -3900,15 +3900,20 @@
     "blog/08-tech-story/16-tesla-ac-grid-dc-return/assets/16-rotating-field.webp": "0c9c25ead2e6c48b441add3afa8c0acbefccd0f68426a6b367b69da3f07efe10",
     "blog/08-tech-story/16-tesla-ac-grid-dc-return/assets/16-scenario-boundary-shift.svg": "7ff39a6fd494043a707eda4e6d209dd87ec8c39fd3797bcc5cd1bde1c002b961",
     "blog/08-tech-story/17-quantum-computing-evidence-ladder/assets/17-company-network.svg": "221512f318454d94723473a65e7476e1cc2f893e450a3eb3f019d2e55a5a3412",
+    "blog/08-tech-story/17-quantum-computing-evidence-ladder/assets/17-control-loop.svg": "85a43b6038b4daaf4f86a0e71d46f9853bcbd8204941ddb9b3a0c195a5dcb734",
+    "blog/08-tech-story/17-quantum-computing-evidence-ladder/assets/17-control-signal-chain.png": "06412f129f47436e6b36b054b4ba9325ac52e2fbe7f07f285a223c85c16aaa4d",
+    "blog/08-tech-story/17-quantum-computing-evidence-ladder/assets/17-crypto-migration-stack.svg": "1c955a94c9893142bfdac4368475668eaad424d2bcdcab804daf020ba18f4900",
     "blog/08-tech-story/17-quantum-computing-evidence-ladder/assets/17-evidence-ladder.svg": "522a02ba6678202fbd86f2af37debb597c7bf97757bf015f2980bcbc227786b9",
     "blog/08-tech-story/17-quantum-computing-evidence-ladder/assets/17-hero.png": "7b2e56bc68d2cb9e3cfdc5358fd7bbba90ffd409bd4b0ba97357336c91c13dd9",
     "blog/08-tech-story/17-quantum-computing-evidence-ladder/assets/17-logical-qubit.png": "8eae4bbf6fa21113c4fb67838c720b6ac95714018ab289c1f4d12a07cc22a392",
     "blog/08-tech-story/17-quantum-computing-evidence-ladder/assets/17-modality-map.svg": "df87f893e8fe2f819bf1a938d6ea3a14428684c140cbc0dbb6c51422b571c15e",
+    "blog/08-tech-story/17-quantum-computing-evidence-ladder/assets/17-network-migration-field.png": "26b577270cbea9f2b10dfef52ba38273246146cd7a45fec4b0da9affdae21169",
     "blog/08-tech-story/17-quantum-computing-evidence-ladder/assets/17-physical-logical-qubit.svg": "6dc7c73679ade134d02e95890c097bcfd43a5eebc6532c4f98013e1ba23c326c",
     "blog/08-tech-story/17-quantum-computing-evidence-ladder/assets/17-pqc-qkd.svg": "848d2c89d72d0ba2e27cfdbb0fafd1a27a5dcc916bb4802507bfd6a0bfdebae2",
     "blog/08-tech-story/17-quantum-computing-evidence-ladder/assets/17-quantum-computation-flow.svg": "81b5031f5f810f3dcfb58c8289c2c62c75aefb6b7efd1b99410ea66e6ecfc2b9",
     "blog/08-tech-story/17-quantum-computing-evidence-ladder/assets/17-quantum-security.png": "cac62a283d8c9915d2d77245b3b9a7df01a28fb97fd6bb70af344e0b72733487",
     "blog/08-tech-story/17-quantum-computing-evidence-ladder/assets/17-quantum-stack.svg": "3ac0d8591a8b540fa6113a741312f57e1e609ca350bf9029f3264093a95c0ffd",
+    "blog/08-tech-story/17-quantum-computing-evidence-ladder/assets/17-revenue-clocks.svg": "fbcb2151954244e92e479b80f0c6d75bc88a557736eda49df9af7a56097b26d3",
     "blog/08-tech-story/17-quantum-computing-evidence-ladder/assets/17-scenario-map.svg": "b50f838e7e2c920deaacaa6506f5f1290dbb884653bbd56887d8bc5df85fa371",
     "blog/09-investment-stories/01-technical-investing-price-indicators/assets/01-price-indicator-workbench.webp": "486b12c36cd4319a408b1706e006e969fcd9f76a9ba13691bde49613d1caba6e",
     "blog/09-investment-stories/01-technical-investing-price-indicators/assets/01-thumbnail-bg.webp": "486b12c36cd4319a408b1706e006e969fcd9f76a9ba13691bde49613d1caba6e",
@@ -5094,6 +5099,10 @@
     "0638c66c72a03c78f459b77653c1f3ee5fb28a9b7fc0bcc49af8faa851760d9d": {
       "bytes": 80816,
       "path": "objects/sha256/06/0638c66c72a03c78f459b77653c1f3ee5fb28a9b7fc0bcc49af8faa851760d9d.webp"
+    },
+    "06412f129f47436e6b36b054b4ba9325ac52e2fbe7f07f285a223c85c16aaa4d": {
+      "bytes": 2304425,
+      "path": "objects/sha256/06/06412f129f47436e6b36b054b4ba9325ac52e2fbe7f07f285a223c85c16aaa4d.png"
     },
     "0651753757d4c065f57aac0b6c73244d6b1d399893e70cec8e1e6dc7cab0cdd7": {
       "bytes": 34004,
@@ -6619,6 +6628,14 @@
       "bytes": 88796,
       "path": "objects/sha256/1c/1c7ad07e6eb096d24536c8fd34ae12ba49c71f561641f904a51a7e4eab42a5db.webp"
     },
+    "1c955a94c9893142bfdac4368475668eaad424d2bcdcab804daf020ba18f4900": {
+      "bytes": 5925,
+      "colorCount": 31,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/1c/1c955a94c9893142bfdac4368475668eaad424d2bcdcab804daf020ba18f4900.svg",
+      "textNodes": 35,
+      "viewBox": "0 0 1200 675"
+    },
     "1c9a78079b2d422b2f15e8f1ca3bb76c800513691b66f7220e4e38ae4eee44a6": {
       "bytes": 3317,
       "colorCount": 10,
@@ -7462,6 +7479,10 @@
     "26af11aafb75550c95e48384df6c84150918592584a609c946a68850af31d739": {
       "bytes": 186224,
       "path": "objects/sha256/26/26af11aafb75550c95e48384df6c84150918592584a609c946a68850af31d739.webp"
+    },
+    "26b577270cbea9f2b10dfef52ba38273246146cd7a45fec4b0da9affdae21169": {
+      "bytes": 2410797,
+      "path": "objects/sha256/26/26b577270cbea9f2b10dfef52ba38273246146cd7a45fec4b0da9affdae21169.png"
     },
     "26bb2576f04b1aa4df72c84e8e5105925b785ff88893527e434ed1b09385f454": {
       "bytes": 2069,
@@ -14454,6 +14475,14 @@
       "path": "objects/sha256/85/8582946a62016c7f6f69e297feddca9f51280c9e081f1fea57b73d687b82820e.svg",
       "textNodes": 50,
       "viewBox": "0 0 1200 820"
+    },
+    "85a43b6038b4daaf4f86a0e71d46f9853bcbd8204941ddb9b3a0c195a5dcb734": {
+      "bytes": 6705,
+      "colorCount": 23,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/85/85a43b6038b4daaf4f86a0e71d46f9853bcbd8204941ddb9b3a0c195a5dcb734.svg",
+      "textNodes": 38,
+      "viewBox": "0 0 1200 675"
     },
     "85bee58879171538b6222fc9b72ef2efb63759052537fd6b3ffaf44047d0209e": {
       "bytes": 4702,
@@ -23011,6 +23040,14 @@
       "bytes": 123012,
       "path": "objects/sha256/fb/fbc8c551f10b304a02226e6aca67b8036e5aada2ddafd8f6f11885ebc9fb873b.webp"
     },
+    "fbcb2151954244e92e479b80f0c6d75bc88a557736eda49df9af7a56097b26d3": {
+      "bytes": 4965,
+      "colorCount": 28,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/fb/fbcb2151954244e92e479b80f0c6d75bc88a557736eda49df9af7a56097b26d3.svg",
+      "textNodes": 23,
+      "viewBox": "0 0 1200 675"
+    },
     "fbcec9b5afa9fb8ab1289d71f15605883cc63e3947a21d6ae158cd990d696aa2": {
       "bytes": 6815,
       "colorCount": 14,
@@ -30540,33 +30577,43 @@
     },
     "08-tech-story/17-quantum-computing-evidence-ladder": {
       "assets": {
+        "17-control-signal-chain": "blog/08-tech-story/17-quantum-computing-evidence-ladder/assets/17-control-signal-chain.png",
         "17-hero": "blog/08-tech-story/17-quantum-computing-evidence-ladder/assets/17-hero.png",
         "17-logical-qubit": "blog/08-tech-story/17-quantum-computing-evidence-ladder/assets/17-logical-qubit.png",
+        "17-network-migration-field": "blog/08-tech-story/17-quantum-computing-evidence-ladder/assets/17-network-migration-field.png",
         "17-quantum-security": "blog/08-tech-story/17-quantum-computing-evidence-ladder/assets/17-quantum-security.png"
       },
       "card": "landing/static/thumbnails/quantum-computing-evidence-ladder-card.webp",
       "diagrams": {
         "17-company-network": "blog/08-tech-story/17-quantum-computing-evidence-ladder/assets/17-company-network.svg",
+        "17-control-loop": "blog/08-tech-story/17-quantum-computing-evidence-ladder/assets/17-control-loop.svg",
+        "17-crypto-migration-stack": "blog/08-tech-story/17-quantum-computing-evidence-ladder/assets/17-crypto-migration-stack.svg",
         "17-evidence-ladder": "blog/08-tech-story/17-quantum-computing-evidence-ladder/assets/17-evidence-ladder.svg",
         "17-modality-map": "blog/08-tech-story/17-quantum-computing-evidence-ladder/assets/17-modality-map.svg",
         "17-physical-logical-qubit": "blog/08-tech-story/17-quantum-computing-evidence-ladder/assets/17-physical-logical-qubit.svg",
         "17-pqc-qkd": "blog/08-tech-story/17-quantum-computing-evidence-ladder/assets/17-pqc-qkd.svg",
         "17-quantum-computation-flow": "blog/08-tech-story/17-quantum-computing-evidence-ladder/assets/17-quantum-computation-flow.svg",
         "17-quantum-stack": "blog/08-tech-story/17-quantum-computing-evidence-ladder/assets/17-quantum-stack.svg",
+        "17-revenue-clocks": "blog/08-tech-story/17-quantum-computing-evidence-ladder/assets/17-revenue-clocks.svg",
         "17-scenario-map": "blog/08-tech-story/17-quantum-computing-evidence-ladder/assets/17-scenario-map.svg"
       },
       "og": "landing/static/thumbnails/quantum-computing-evidence-ladder.webp",
       "staging": [
         "blog/08-tech-story/17-quantum-computing-evidence-ladder/assets/17-company-network.svg",
+        "blog/08-tech-story/17-quantum-computing-evidence-ladder/assets/17-control-loop.svg",
+        "blog/08-tech-story/17-quantum-computing-evidence-ladder/assets/17-control-signal-chain.png",
+        "blog/08-tech-story/17-quantum-computing-evidence-ladder/assets/17-crypto-migration-stack.svg",
         "blog/08-tech-story/17-quantum-computing-evidence-ladder/assets/17-evidence-ladder.svg",
         "blog/08-tech-story/17-quantum-computing-evidence-ladder/assets/17-hero.png",
         "blog/08-tech-story/17-quantum-computing-evidence-ladder/assets/17-logical-qubit.png",
         "blog/08-tech-story/17-quantum-computing-evidence-ladder/assets/17-modality-map.svg",
+        "blog/08-tech-story/17-quantum-computing-evidence-ladder/assets/17-network-migration-field.png",
         "blog/08-tech-story/17-quantum-computing-evidence-ladder/assets/17-physical-logical-qubit.svg",
         "blog/08-tech-story/17-quantum-computing-evidence-ladder/assets/17-pqc-qkd.svg",
         "blog/08-tech-story/17-quantum-computing-evidence-ladder/assets/17-quantum-computation-flow.svg",
         "blog/08-tech-story/17-quantum-computing-evidence-ladder/assets/17-quantum-security.png",
         "blog/08-tech-story/17-quantum-computing-evidence-ladder/assets/17-quantum-stack.svg",
+        "blog/08-tech-story/17-quantum-computing-evidence-ladder/assets/17-revenue-clocks.svg",
         "blog/08-tech-story/17-quantum-computing-evidence-ladder/assets/17-scenario-map.svg",
         "landing/static/thumbnails/quantum-computing-evidence-ladder-card.webp"
       ]
