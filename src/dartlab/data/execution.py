@@ -109,6 +109,13 @@ def _requestRef(
 
 
 def _temporalGap(descriptor: DataAssetDescriptor, query: DataQuery) -> DataGap | None:
+    metadata = dict(descriptor.metadata)
+    if metadata.get("knownAtRequired") is True and (query.time is None or query.time.knownAt is None):
+        return DataGap(
+            "FEATURE_KNOWN_AT_REQUIRED",
+            "owner feature asset은 명시적인 knownAt cutoff가 필요합니다",
+            descriptor.assetId,
+        )
     if query.time is None:
         return None
     support = set(descriptor.temporalSupport)
@@ -118,7 +125,11 @@ def _temporalGap(descriptor: DataAssetDescriptor, query: DataQuery) -> DataGap |
             "owner가 knownAt vintage를 실제 실행에 전달할 수 없습니다",
             descriptor.assetId,
         )
-    if query.time.knownAt is not None and isinstance(query.projection, (FactorProjection, NarrativeProjection)):
+    observationPit = metadata.get("observationPIT") is True
+    if query.time.knownAt is not None and (
+        isinstance(query.projection, NarrativeProjection)
+        or (isinstance(query.projection, FactorProjection) and not observationPit)
+    ):
         return DataGap(
             "OBSERVATION_PIT_METADATA_REQUIRED",
             "canonical projection이 row별 knowledge time과 revision을 보존하지 못해 PIT를 발급하지 않습니다",

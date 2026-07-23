@@ -3,13 +3,21 @@
 from __future__ import annotations
 
 import json
-import math
 from dataclasses import dataclass, replace
-from datetime import date
+from datetime import date, datetime
 from hashlib import sha256
 from pathlib import Path
 from typing import Mapping
 
+from dartlab.data.featureObservation import (
+    VARIABLE_OBSERVATION_SCHEMA,
+    FeatureObservationError,
+    VariableObservation,
+    makeVariableObservation,
+    observationPayload,
+    validateVariableObservation,
+)
+from dartlab.data.vintage import VintageRef, canonicalPayloadHash
 from dartlab.simulate.admissionRegistry import (
     AdmissionReceipt,
     AdmissionVerifier,
@@ -24,8 +32,6 @@ from dartlab.simulate.stateSupport import (
     stateContractHash,
 )
 from dartlab.simulate.stateVariables import (
-    STATE_EVIDENCE_ROLES,
-    STATE_TIMINGS,
     StateVariableError,
     StateVariableRegistry,
     StateVariableSpec,
@@ -34,9 +40,7 @@ from dartlab.simulate.stateVariables import (
 )
 from dartlab.simulate.vintage import (
     VintageError,
-    VintageRef,
     canonicalPayloadBytes,
-    canonicalPayloadHash,
     isExactAsKnown,
     validateVintageRef,
 )
@@ -51,7 +55,6 @@ PIT_STATE_RULE_HASH = sha256(b"dartlab.compiled-point-in-time-state.v1").hexdige
 PIT_STATE_EXECUTABLE_HASH = sha256(b"dartlab.point-in-time-state-compiler.v1").hexdigest()
 STATE_SELECTION_RULE_ID = "latest-event-then-revision-v1"
 STATE_CUTOFF_POLICY_ID = "date-only-same-day-conditional-v1"
-VARIABLE_OBSERVATION_SCHEMA = "variable-observation-v1"
 PROVIDER_OBSERVATION_BATCH_SCHEMA = "provider-observation-batch-v1"
 STATE_COMPILE_SPEC_SCHEMA = "state-compile-spec-v1"
 COMPILED_PIT_STATE_SCHEMA = "compiled-point-in-time-state-v1"
@@ -62,9 +65,13 @@ class StateCompilerError(ValueError):
 
 
 def _dateText(value: str, label: str) -> str:
-    text = str(value).replace("-", "")[:8]
+    text = str(value).replace("-", "")
     if len(text) != 8 or not text.isdigit():
         raise StateCompilerError(f"invalid {label}: {value}")
+    try:
+        date(int(text[:4]), int(text[4:6]), int(text[6:8]))
+    except ValueError as error:
+        raise StateCompilerError(f"invalid {label}: {value}") from error
     return text
 
 
@@ -76,33 +83,19 @@ def _dateValue(value: str, label: str) -> date:
         raise StateCompilerError(f"invalid {label}: {value}") from error
 
 
+def _issuedDateText(value: str, label: str) -> str:
+    raw = str(value)
+    try:
+        issued = datetime.fromisoformat(raw[:-1] + "+00:00" if raw.endswith("Z") else raw)
+    except ValueError as error:
+        raise StateCompilerError(f"invalid {label}: {value}") from error
+    if issued.tzinfo is None:
+        raise StateCompilerError(f"invalid {label}: {value}")
+    return issued.date().strftime("%Y%m%d")
+
+
 def _validDigest(value: str) -> bool:
     return len(value) == 64 and all(character in "0123456789abcdef" for character in value.lower())
-
-
-@dataclass(frozen=True)
-class VariableObservation:
-    """공급자 신호 하나의 값, 의미, 수정판, 공개시점, 원천 빈티지를 보존한다."""
-
-    observationId: str
-    providerId: str
-    datasetId: str
-    entityId: str
-    signalId: str
-    value: float
-    unit: str
-    frequency: str
-    timing: str
-    transformId: str
-    evidenceRole: str
-    eventAt: str
-    availableAt: str
-    knowledgeAsOf: str
-    availabilityPrecision: str
-    revisionId: str
-    vintage: VintageRef
-    normalizationRuleHash: str
-    schemaVersion: str = VARIABLE_OBSERVATION_SCHEMA
 
 
 @dataclass(frozen=True)
@@ -165,59 +158,14 @@ class CompiledPointInTimeState:
     schemaVersion: str = COMPILED_PIT_STATE_SCHEMA
 
 
-def _observationPayload(observation: VariableObservation) -> dict:
-    return {name: getattr(observation, name) for name in observation.__dataclass_fields__ if name != "observationId"}
-
-
-def makeVariableObservation(**values) -> VariableObservation:
-    """Create a content-addressed provider observation.
-
-    Args:
-        values: Every ``VariableObservation`` field except ``observationId``.
-
-    Returns:
-        Observation whose ID binds value, meaning, timing, revision, and vintage.
-
-    Raises:
-        TypeError: If a required dataclass field is absent.
-
-    Example:
-        ``observation = makeVariableObservation(providerId="edgar", ...)``
-    """
-
-    provisional = VariableObservation(observationId="", **values)
-    return replace(provisional, observationId=canonicalPayloadHash(_observationPayload(provisional)))
+_observationPayload = observationPayload
 
 
 def _validateObservation(observation: VariableObservation) -> None:
-    if observation.schemaVersion != VARIABLE_OBSERVATION_SCHEMA:
-        raise StateCompilerError("variable observation protocol mismatch")
-    if observation.observationId != canonicalPayloadHash(_observationPayload(observation)):
-        raise StateCompilerError("variable observation content hash mismatch")
-    if not math.isfinite(float(observation.value)):
-        raise StateCompilerError("variable observation is not finite")
-    if (
-        not observation.providerId
-        or not observation.datasetId
-        or not observation.entityId
-        or not observation.signalId
-        or not observation.revisionId
-        or not observation.unit
-        or not observation.frequency
-        or not observation.transformId
-        or observation.timing not in STATE_TIMINGS
-        or observation.evidenceRole not in STATE_EVIDENCE_ROLES
-        or observation.availabilityPrecision != "date"
-        or not _validDigest(observation.normalizationRuleHash)
-    ):
-        raise StateCompilerError("variable observation contract is incomplete")
-    eventAt = _dateText(observation.eventAt, "eventAt")
-    availableAt = _dateText(observation.availableAt, "availableAt")
-    knowledgeAsOf = _dateText(observation.knowledgeAsOf, "knowledgeAsOf")
-    if eventAt > availableAt or availableAt > knowledgeAsOf:
-        raise StateCompilerError("variable observation time order is invalid")
-    if observation.vintage.availableAt != availableAt or observation.vintage.knowledgeAsOf != knowledgeAsOf:
-        raise StateCompilerError("variable observation vintage cutoff mismatch")
+    try:
+        validateVariableObservation(observation)
+    except FeatureObservationError as error:
+        raise StateCompilerError(str(error)) from error
 
 
 def _queryPayload(
@@ -444,7 +392,7 @@ def _verifyBatch(
             or source.status != "verifiedVintage"
             or source.revisionPolicy != "asKnown"
             or source.coverage != "asOfExact"
-            or _dateText(source.issuedAt, "source issuedAt") > _dateText(decisionAsOf, "decisionAsOf")
+            or _issuedDateText(source.issuedAt, "source issuedAt") > _dateText(decisionAsOf, "decisionAsOf")
         ):
             raise StateCompilerError("provider observation source contract mismatch")
     if (
@@ -457,7 +405,7 @@ def _verifyBatch(
         or receipt.revisionPolicy != "asKnown"
         or receipt.coverage != "asOfExact"
         or receipt.knowledgeAsOf != batch.cutoffAsOf
-        or _dateText(receipt.issuedAt, "batch issuedAt") > _dateText(decisionAsOf, "decisionAsOf")
+        or _issuedDateText(receipt.issuedAt, "batch issuedAt") > _dateText(decisionAsOf, "decisionAsOf")
         or artifactPath(verifier.artifactRoot, batch.batchId).read_bytes()
         != canonicalPayloadBytes(_batchPayload(replace(batch, batchReceiptId="")))
     ):
@@ -640,11 +588,8 @@ def compilePointInTimeState(
             ordered[-1].eventAt,
             ordered[-1].availableAt,
             ordered[-1].knowledgeAsOf,
-            ordered[-1].revisionId,
         )
-        tied = [
-            item for item in ordered if (item.eventAt, item.availableAt, item.knowledgeAsOf, item.revisionId) == topKey
-        ]
+        tied = [item for item in ordered if (item.eventAt, item.availableAt, item.knowledgeAsOf) == topKey]
         if len({item.observationId for item in tied}) != 1:
             raise StateCompilerError(f"ambiguous state observation revision: {variable.variableId}")
         selected = ordered[-1]
@@ -946,7 +891,7 @@ def validatePointInTimeStateReceipt(
         or receipt.revisionPolicy != "asKnown"
         or receipt.coverage != "asOfExact"
         or receipt.knowledgeAsOf != _dateText(knowledgeAsOf, "knowledgeAsOf")
-        or _dateText(receipt.issuedAt, "state issuedAt") > _dateText(decisionAsOf, "decisionAsOf")
+        or _issuedDateText(receipt.issuedAt, "state issuedAt") > _dateText(decisionAsOf, "decisionAsOf")
     ):
         raise StateCompilerError("point-in-time state signed contract mismatch")
     raw = artifactPath(admissionVerifier.artifactRoot, stateManifestHash).read_bytes()

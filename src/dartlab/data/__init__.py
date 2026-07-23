@@ -24,12 +24,36 @@ from dartlab.data.contracts import (
     UniverseSelection,
 )
 from dartlab.data.entry import Data, data
+from dartlab.data.featureObservation import (
+    FeatureObservationError,
+    VariableObservation,
+    makeVariableObservation,
+    validateVariableObservation,
+)
+from dartlab.data.featureQuery import (
+    FeatureObservationSet,
+    FeatureQueryError,
+    FeatureReadQuery,
+    FeatureReadResult,
+    FeatureSelection,
+    buildFeatureObservationSet,
+    featureObservationSetFromValue,
+    readFeatures,
+)
+from dartlab.data.featureRegistry import (
+    StateVariableError,
+    StateVariableRegistry,
+    StateVariableSpec,
+    buildStateVariableRegistry,
+    stateVariableContractHash,
+)
 from dartlab.data.pageScan import (
     PageScanCheckpoint,
     PageScanError,
     iterDataArrowBatches,
     iterDataResultPages,
 )
+from dartlab.data.vintage import VintageError, VintageRef, isExactAsKnown, validateVintageRef
 
 __all__ = [
     "AssetRef",
@@ -44,6 +68,12 @@ __all__ = [
     "DataRequest",
     "DataResult",
     "FactorProjection",
+    "FeatureObservationError",
+    "FeatureObservationSet",
+    "FeatureQueryError",
+    "FeatureReadQuery",
+    "FeatureReadResult",
+    "FeatureSelection",
     "GraphProjection",
     "NarrativeProjection",
     "NativeProjection",
@@ -53,10 +83,25 @@ __all__ = [
     "QualityAssertion",
     "RecordsProjection",
     "ResourceProjection",
+    "StateVariableError",
+    "StateVariableRegistry",
+    "StateVariableSpec",
     "TimeContext",
     "UniverseCoverage",
     "UniverseSelection",
+    "VariableObservation",
+    "VintageError",
+    "VintageRef",
+    "buildFeatureObservationSet",
+    "buildStateVariableRegistry",
     "data",
+    "featureObservationSetFromValue",
+    "isExactAsKnown",
     "iterDataArrowBatches",
     "iterDataResultPages",
+    "makeVariableObservation",
+    "readFeatures",
+    "stateVariableContractHash",
+    "validateVariableObservation",
+    "validateVintageRef",
 ]

@@ -7,7 +7,7 @@ import hashlib
 import importlib
 import json
 from pathlib import Path
-from typing import Any, Iterable, Mapping
+from typing import Any, Iterable, Literal, Mapping, cast
 
 from dartlab.data.contracts import DataAssetDescriptor, DataGap
 
@@ -22,6 +22,15 @@ _EXECUTION_MODES = frozenset(
         "unsupported",
     }
 )
+_SelectorKind = Literal["none", "subject", "measure"]
+_ExecutionMode = Literal[
+    "ownerBulk",
+    "ownerBatch",
+    "subjectFanout",
+    "resourceCompanyShard",
+    "resourceBulk",
+    "unsupported",
+]
 
 
 def _canonical(value: Any) -> bytes:
@@ -29,7 +38,7 @@ def _canonical(value: Any) -> bytes:
         """카탈로그 계약 값을 결정적 JSON 표현으로 변환한다."""
 
         if dataclasses.is_dataclass(item):
-            return dataclasses.asdict(item)
+            return dataclasses.asdict(cast(Any, item))
         if isinstance(item, (set, frozenset, tuple)):
             return list(item)
         return str(item)
@@ -133,6 +142,7 @@ def _registryAssets(provider: Mapping[str, Any]) -> Iterable[DataAssetDescriptor
             executionMode = str(declared.get("executionMode") or registrySpec.get("executionMode") or "unsupported")
             if executionMode not in _EXECUTION_MODES:
                 raise ValueError(f"{owner}.{axis} executionMode가 유효하지 않음")
+            typedExecutionMode = cast(_ExecutionMode, executionMode)
             universeMarkets = tuple(
                 str(market).upper()
                 for market in (declared.get("universeMarkets") or registrySpec.get("universeMarkets") or ())
@@ -182,7 +192,7 @@ def _registryAssets(provider: Mapping[str, Any]) -> Iterable[DataAssetDescriptor
                 selectorKind=selectorKind,
                 selectorRequired=selectorRequired,
                 concurrencyGroup=str(concurrencyGroup) if concurrencyGroup else None,
-                executionMode=executionMode,
+                executionMode=typedExecutionMode,
                 universeKind=universeKind,
                 universeMarkets=universeMarkets,
                 marketParam=str(marketParam) if marketParam else None,
@@ -205,16 +215,31 @@ def _declaredAssets(provider: Mapping[str, Any]) -> Iterable[DataAssetDescriptor
         if not isinstance(executor, Mapping):
             raise TypeError(f"{assetId} executor가 mapping이 아님")
         concurrencyGroup = spec.get("concurrencyGroup") or provider.get("concurrencyGroup")
-        payload = {"owner": owner, "layer": layer, "spec": spec, "concurrencyGroup": concurrencyGroup}
+        rawSourceModules = spec.get("sourceModules", ())
+        if not isinstance(rawSourceModules, (tuple, list)) or any(type(item) is not str for item in rawSourceModules):
+            raise TypeError(f"{assetId} sourceModules가 string sequence가 아님")
+        sourceModules = tuple(dict.fromkeys((str(executor["module"]), *rawSourceModules)))
+        sourceDigests = tuple(
+            (moduleName, _sourceDigest(importlib.import_module(moduleName))) for moduleName in sourceModules
+        )
+        payload = {
+            "owner": owner,
+            "layer": layer,
+            "spec": spec,
+            "concurrencyGroup": concurrencyGroup,
+            "sourceDigests": sourceDigests,
+        }
         metadata = spec.get("metadata", {})
         if not isinstance(metadata, Mapping):
             raise TypeError(f"{assetId} metadata가 mapping이 아님")
         selectorKind = str(spec.get("selectorKind") or ("subject" if spec.get("subjectParam") else "none"))
         if selectorKind not in {"none", "subject", "measure"}:
             raise ValueError(f"{assetId} selectorKind가 유효하지 않음")
+        typedSelectorKind = cast(_SelectorKind, selectorKind)
         executionMode = str(spec.get("executionMode") or "unsupported")
         if executionMode not in _EXECUTION_MODES:
             raise ValueError(f"{assetId} executionMode가 유효하지 않음")
+        typedExecutionMode = cast(_ExecutionMode, executionMode)
         yield DataAssetDescriptor(
             assetId=assetId,
             assetVersionId=f"asset:{_digest(payload)}",
@@ -235,10 +260,10 @@ def _declaredAssets(provider: Mapping[str, Any]) -> Iterable[DataAssetDescriptor
             subjectParam=str(spec["subjectParam"]) if spec.get("subjectParam") else None,
             validTimeParam=str(spec["validTimeParam"]) if spec.get("validTimeParam") else None,
             knowledgeTimeParam=str(spec["knowledgeTimeParam"]) if spec.get("knowledgeTimeParam") else None,
-            selectorKind=selectorKind,
+            selectorKind=typedSelectorKind,
             selectorRequired=bool(spec.get("selectorRequired", metadata.get("stockRequired", False))),
             concurrencyGroup=str(concurrencyGroup) if concurrencyGroup else None,
-            executionMode=executionMode,
+            executionMode=typedExecutionMode,
             universeKind=str(spec.get("universeKind") or "none"),
             universeMarkets=tuple(str(market).upper() for market in spec.get("universeMarkets", ())),
             marketParam=str(spec["marketParam"]) if spec.get("marketParam") else None,

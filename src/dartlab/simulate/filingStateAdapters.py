@@ -4,12 +4,19 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
+from datetime import date
 from hashlib import sha256
 from pathlib import Path
 from typing import Mapping
 
 import polars as pl
 
+from dartlab.analysis.financial.filingFeatures import (
+    EDGAR_FINANCIAL_FEATURE_MAPPINGS as _FINANCIAL_STATE_VARIABLES,
+)
+from dartlab.analysis.financial.filingFeatures import (
+    EDGAR_FINANCIAL_FEATURE_NORMALIZATION_HASH,
+)
 from dartlab.simulate.admissionRegistry import (
     AdmissionReceipt,
     TrustedIssuer,
@@ -36,7 +43,7 @@ EDGAR_QUARTERLY_FINANCIAL_SOURCE_RULE_HASH = sha256(b"dartlab.edgar-quarterly-fi
 EDGAR_QUARTERLY_FINANCIAL_SOURCE_EXECUTABLE_HASH = sha256(
     b"dartlab.edgar-quarterly-financial-source-issuer.v1"
 ).hexdigest()
-EDGAR_QUARTERLY_FINANCIAL_NORMALIZATION_HASH = sha256(b"dartlab.edgar-quarterly-financial-state-adapter.v1").hexdigest()
+EDGAR_QUARTERLY_FINANCIAL_NORMALIZATION_HASH = EDGAR_FINANCIAL_FEATURE_NORMALIZATION_HASH
 DART_RETAINED_FINANCE_DATASET_ID = "retained-finance"
 DART_RETAINED_FINANCE_LIMITATION = "dartRetainedFinanceRowsAreConditionalUntilRawFilingReceiptsExist"
 
@@ -66,126 +73,14 @@ class EdgarQuarterlyFinancialAdapterResult:
     batch: ProviderObservationBatch
 
 
-@dataclass(frozen=True)
-class _FinancialVariableMapping:
-    variableId: str
-    fieldName: str
-    unit: str
-    evidenceRole: str
-    timing: str
-    transformId: str
-    lower: float | None
-    upper: float | None
-
-
-_FINANCIAL_STATE_VARIABLES: tuple[_FinancialVariableMapping, ...] = (
-    _FinancialVariableMapping(
-        "financial.revenue",
-        "revenue",
-        "USD",
-        "deterministicDerived",
-        "flow",
-        "standalone-quarter-flow-v1",
-        0.0,
-        None,
-    ),
-    _FinancialVariableMapping(
-        "financial.operatingMargin",
-        "operatingMargin",
-        "ratio",
-        "deterministicDerived",
-        "ratio",
-        "operating-profit-div-revenue-v1",
-        -1.0,
-        1.0,
-    ),
-    _FinancialVariableMapping(
-        "financial.cash",
-        "cash",
-        "USD",
-        "observed",
-        "stock",
-        "latest-filing-instant-v1",
-        0.0,
-        None,
-    ),
-    _FinancialVariableMapping(
-        "financial.debt",
-        "debt",
-        "USD",
-        "deterministicDerived",
-        "stock",
-        "interest-bearing-debt-normalized-v1",
-        0.0,
-        None,
-    ),
-    _FinancialVariableMapping(
-        "financial.receivables",
-        "receivables",
-        "USD",
-        "observed",
-        "stock",
-        "latest-filing-instant-v1",
-        0.0,
-        None,
-    ),
-    _FinancialVariableMapping(
-        "financial.inventories",
-        "inventories",
-        "USD",
-        "observed",
-        "stock",
-        "latest-filing-instant-v1",
-        0.0,
-        None,
-    ),
-    _FinancialVariableMapping(
-        "financial.payables",
-        "payables",
-        "USD",
-        "observed",
-        "stock",
-        "latest-filing-instant-v1",
-        0.0,
-        None,
-    ),
-    _FinancialVariableMapping(
-        "financial.ppe",
-        "ppe",
-        "USD",
-        "observed",
-        "stock",
-        "latest-filing-instant-v1",
-        0.0,
-        None,
-    ),
-    _FinancialVariableMapping(
-        "financial.otherNetAssets",
-        "otherNetAssets",
-        "USD",
-        "deterministicDerived",
-        "stock",
-        "balance-residual-other-net-assets-v1",
-        None,
-        None,
-    ),
-    _FinancialVariableMapping(
-        "financial.equity",
-        "equity",
-        "USD",
-        "observed",
-        "stock",
-        "latest-filing-instant-v1",
-        None,
-        None,
-    ),
-)
-
-
 def _dateText(value: str, label: str) -> str:
-    text = str(value).replace("-", "")[:8]
+    text = str(value).replace("-", "")
     if len(text) != 8 or not text.isdigit():
         raise FilingStateAdapterError(f"invalid {label}: {value}")
+    try:
+        date(int(text[:4]), int(text[4:6]), int(text[6:8]))
+    except ValueError as error:
+        raise FilingStateAdapterError(f"invalid {label}: {value}") from error
     return text
 
 

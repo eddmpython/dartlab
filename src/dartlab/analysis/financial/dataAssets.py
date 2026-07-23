@@ -58,9 +58,11 @@ def simulationInputs(
             raise ValueError("simulationInputs는 subject 또는 company가 필요합니다")
         import dartlab
 
-        company = dartlab.Company(subject)
+        companyFactory = getattr(dartlab, "Company")
+        company = companyFactory(subject)
+    resolvedCompany: Any = company
     try:
-        quarterly = company._buildFinanceSeries(freq="Q")
+        quarterly = resolvedCompany._buildFinanceSeries(freq="Q")
     except (ValueError, KeyError, AttributeError):
         quarterly = None
     rawSeries = quarterly[0] if isinstance(quarterly, tuple) and len(quarterly) >= 2 else None
@@ -78,3 +80,50 @@ def simulationInputs(
         "latestAsOf": latestAsOf,
         "requestedAsOf": requestedAsOf,
     }
+
+
+def edgarFinancialFeatures(
+    *,
+    subject: str | None = None,
+    company: Any | None = None,
+    knownAt: str,
+) -> dict[str, Any]:
+    """로컬 EDGAR evidence에서 operating-company PIT feature envelope를 만든다.
+
+    Args:
+        subject: US ticker 또는 Company가 해소할 수 있는 EDGAR identity.
+        company: 테스트와 read-once 조합을 위한 기존 EDGAR Company.
+        knownAt: SEC filing knowledge cutoff.
+
+    Returns:
+        Data Workbench가 검증하고 FactorProjection으로 변환할 plain mapping.
+
+    Raises:
+        ValueError: Subject가 없거나 EDGAR Company가 아니거나 coherent reduced state가 없을 때.
+        FileNotFoundError: 현재 runtime에 local companyfacts shard가 없을 때.
+
+    Example:
+        ``payload = edgarFinancialFeatures(subject="AAPL", knownAt="20250201")``
+    """
+
+    if company is None:
+        if not subject:
+            raise ValueError("edgarFinancialFeatures는 subject 또는 company가 필요합니다")
+        import dartlab
+
+        companyFactory = getattr(dartlab, "Company")
+        company = companyFactory(subject)
+    resolvedCompany: Any = company
+    cik = getattr(resolvedCompany, "cik", None)
+    ticker = str(getattr(resolvedCompany, "ticker", subject or "")).strip().upper()
+    if not cik or not ticker or ticker.isdigit():
+        raise ValueError("edgarFinancialFeatures는 canonical ticker가 있는 EDGAR Company가 필요합니다")
+    from dartlab.analysis.financial.filingFeatures import buildEdgarFinancialFeatureInput
+    from dartlab.providers.edgar.finance.facts import readCompanyFactsLocal
+
+    facts = readCompanyFactsLocal(str(cik))
+    return buildEdgarFinancialFeatureInput(
+        facts,
+        entityId=f"US:{ticker}",
+        knownAt=knownAt,
+    )

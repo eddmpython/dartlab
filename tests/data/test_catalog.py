@@ -21,6 +21,11 @@ def testCatalogCoversEveryCurrentLowerLayerRegistryAndResource():
     simulationInputs = next(asset for asset in assets if asset.assetId == "analysis.simulationInputs")
     assert simulationInputs.executorKind == "callable"
     assert simulationInputs.temporalSupport == ("latest", "validAt")
+    edgarFeatures = next(asset for asset in assets if asset.assetId == "analysis.edgarFinancialFeatures")
+    assert edgarFeatures.executorKind == "callable"
+    assert edgarFeatures.temporalSupport == ("knownAt",)
+    assert edgarFeatures.executionMode == "subjectFanout"
+    assert dict(edgarFeatures.metadata)["observationPIT"] is True
     assert sum(asset.kind == "resource" for asset in assets) == 42
     assert sum(asset.assetId.startswith("concept.") for asset in assets) == 88
     assert sum(asset.assetId.startswith("providers.Company") for asset in assets) == 64
@@ -72,7 +77,7 @@ def testEveryQueryableAssetHasResolvableExecutor():
     import dartlab
 
     assets = [asset for asset in dartlab.data("catalog").assets if asset.queryable]
-    assert len(assets) == 170
+    assert len(assets) == 171
     for asset in assets:
         if asset.executorKind == "engineAxis":
             assert callable(getattr(dartlab, asset.owner))
@@ -136,3 +141,28 @@ def testNewOwnerProviderNeedsNoCentralEngineList(monkeypatch):
 
     assert providers == (descriptor,)
     assert errors == ()
+
+
+def testDeclaredCallableVersionBindsExecutorAndTransitiveSourceDigests(monkeypatch):
+    import dartlab.data.discovery as discovery
+
+    provider = {
+        "owner": "analysis",
+        "layer": "L2",
+        "assets": (
+            {
+                "assetId": "analysis.featureProbe",
+                "executor": {"module": "owner.executor", "attribute": "run"},
+                "sourceModules": ("owner.definition",),
+            },
+        ),
+    }
+    digests = {"owner.executor": "a" * 64, "owner.definition": "b" * 64}
+    monkeypatch.setattr(discovery.importlib, "import_module", lambda name: SimpleNamespace(name=name))
+    monkeypatch.setattr(discovery, "_sourceDigest", lambda module: digests[module.name])
+
+    first = tuple(discovery._declaredAssets(provider))[0]
+    digests["owner.definition"] = "c" * 64
+    second = tuple(discovery._declaredAssets(provider))[0]
+
+    assert first.assetVersionId != second.assetVersionId

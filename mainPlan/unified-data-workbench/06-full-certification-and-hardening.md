@@ -10,19 +10,21 @@ Data Workbench 공통 계층은 signature-grade로 판정한다. 이유는 일�
 
 | 항목 | 실측 |
 |---|---:|
-| 전체 asset | 353 |
-| queryable | 170 |
+| 전체 asset | 354 |
+| queryable | 171 |
 | catalog-only | 183 |
 | engineAxis | 146 |
-| callable | 1 |
+| callable | 2 |
 | resource locator | 23 |
 | L1 queryable | 39 |
 | L1.5 queryable | 28 |
-| L2 queryable | 103 |
+| L2 queryable | 104 |
 
 `gather.calendar`는 registry에 남아 있지만 호출하면 항상 폐기 예외를 내므로 `queryable=False`와 `executorKind=catalog`로 바로잡았다. catalog에서 삭제하지 않아 폐기 이유와 drift는 계속 추적된다.
 
 ## 3. 전수 계약 인증
+
+아래 표는 W8 당시 queryable 170개 baseline이다. W10의 171번째 callable asset은 공통 feature 집중 회귀와 실제 AAPL smoke로 별도 인증했으며 §8에 기록한다.
 
 | gate | 범위 | 결과 |
 |---|---:|---:|
@@ -102,7 +104,15 @@ quant.entry와 quant.style은 `dipBuy`가 등록하지 않은 camelCase Signal k
 
 - runtime `timeoutMs`는 owner Python 호출을 강제 종료하지 못하는 협력적 제한이다. 전수 인증 runner는 프로세스 격리로 이 한계를 보완했다.
 - row와 byte budget은 owner 결과를 받은 뒤 projection에서 적용된다. owner별 predicate, projection, slice pushdown은 별도 최적화가 필요하다.
-- 실제 knownAt vintage를 제공하는 asset은 아직 없다. latest-only를 과거 성공으로 꾸미지 않는 fail-closed가 현재 정답이다.
-- Arrow table 변환은 완료됐지만 네트워크 Arrow Flight server와 continuation token은 아직 transport 확장 범위다.
+- `analysis.edgarFinancialFeatures`가 실제 filing cutoff를 쓰는 knownAt feature를 제공하지만, retained companyfacts가 historical admission snapshot 전체를 보존하지 않아 exact가 아니라 conditional이다.
+- raw DART와 EDGAR resource는 opaque continuation을 지원한다. 전종목 계산 feature paging과 네트워크 Arrow Flight server는 아직 확장 범위다.
 
 따라서 현재 제품은 단일 프로세스와 외부 Python 소비에 강력한 범용 데이터 작업대다. 분산 서버에서 hard cancellation, streaming, owner pushdown까지 갖춘 최종 물리 플랫폼이라고 부르지는 않는다.
+
+## 8. 2026-07-23 revision-aware feature 확장
+
+data 공통 계층에 feature registry, observation, vintage, revision-aware query 계약을 추가했다. `analysis.edgarFinancialFeatures`는 subject와 knownAt을 받는 두 번째 callable asset이며 로컬 EDGAR companyfacts에서 operating-company reduced financial feature를 만든다. catalog는 354개, queryable은 171개가 됐다.
+
+AAPL 실제 로컬 smoke에서 revenue와 operating margin 두 feature를 한 공개 query로 반환했다. 관측의 `knownAt`은 query cutoff가 아니라 실제 최대 filing date였고, 인접 cutoff는 같은 evidence에 대해 동일 observation ID와 revision ID를 유지했다. 현재 보존 이력의 한계는 `latestRetained`, `periodOnly`, `conditional`로 표시했다.
+
+이 확장은 전종목 raw resource continuation을 전종목 factor store로 바꾸지 않는다. 현재 feature callable은 `subjectFanout`이다. 영구 materialization, historical universe, 전종목 계산 feature paging, offline과 online serving은 runtime SSOT로 불가능하다는 실측, 별도 atomic generation 설계 토론, 명시적 아키텍처 승인 뒤에만 코드와 실행을 진행한다.

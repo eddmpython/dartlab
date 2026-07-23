@@ -1983,7 +1983,8 @@
         "전종목 DART와 EDGAR를 호출자가 종목별 반복 호출함",
         "continuation과 함께 원 질의 override를 전송함",
         "빈 owner 결과를 성공 partition으로 반환함",
-        "공유 Company 상태를 쓰는 owner를 동시에 초기화해 경쟁 상태를 만듦"
+        "공유 Company 상태를 쓰는 owner를 동시에 초기화해 경쟁 상태를 만듦",
+        "전종목 원천 paging을 전종목 PIT factor paging으로 과장함"
       ],
       "forbidden": [
         "Data Workbench를 특정 분석 엔진 묶음으로 축소하지 않는다.",
@@ -2000,7 +2001,8 @@
         "한 query에서 factor, narrative, simulation input을 서로 다른 DataRequest로 조회",
         "knownAt 지원 여부를 fail-closed로 검증",
         "시뮬레이터 재무 입력을 snapshot과 receipt로 고정",
-        "DART와 EDGAR 전종목 원천을 한 query와 한 continuation chain으로 순회"
+        "DART와 EDGAR 전종목 원천을 한 query와 한 continuation chain으로 순회",
+        "EDGAR 단일 종목의 revision-aware 재무 feature를 knownAt 기준으로 조회"
       ],
       "runtimeCompatibility": {
         "server": {

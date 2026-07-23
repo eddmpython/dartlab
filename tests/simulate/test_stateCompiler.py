@@ -192,6 +192,17 @@ def testFutureRevisionCannotChangePastState(tmp_path) -> None:
     assert may.statePrimitives[0].value == 130.0
 
 
+def testSameTimestampRevisionsAreAmbiguousInsteadOfLexicallyOrdered(tmp_path) -> None:
+    context = _context(tmp_path)
+    source = _sourceReceipt(context, b"source")
+    first = _observation(source, value=100.0, revisionId="a")
+    second = _observation(source, value=999.0, revisionId="z")
+    registry = buildStateVariableRegistry((_variableSpec(),))
+
+    with pytest.raises(StateCompilerError, match="ambiguous"):
+        compilePointInTimeState(registry, (_batch((first, second)),), _compileSpec())
+
+
 def testConditionalAndSameDayEvidenceCannotBecomeExact(tmp_path) -> None:
     context = _context(tmp_path)
     source = _sourceReceipt(context, b"source")

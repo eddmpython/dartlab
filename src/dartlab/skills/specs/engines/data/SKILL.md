@@ -91,6 +91,7 @@ failureModes:
   - continuation과 함께 원 질의 override를 전송함
   - 빈 owner 결과를 성공 partition으로 반환함
   - 공유 Company 상태를 쓰는 owner를 동시에 초기화해 경쟁 상태를 만듦
+  - 전종목 원천 paging을 전종목 PIT factor paging으로 과장함
 forbidden:
   - Data Workbench를 특정 분석 엔진 묶음으로 축소하지 않는다.
   - factor, graph, narrative, resource를 public axis로 늘리지 않는다. 모두 query projection이다.
@@ -106,6 +107,7 @@ examples:
   - knownAt 지원 여부를 fail-closed로 검증
   - 시뮬레이터 재무 입력을 snapshot과 receipt로 고정
   - DART와 EDGAR 전종목 원천을 한 query와 한 continuation chain으로 순회
+  - EDGAR 단일 종목의 revision-aware 재무 feature를 knownAt 기준으로 조회
 procedure:
   - dartlab.data()로 catalog와 query 두 public axis를 확인한다.
   - dartlab.data("catalog")로 owner, layer, kind, temporalSupport, queryable을 조회한다.
@@ -236,6 +238,8 @@ for partitionKey, batch in page.iterAllArrowBatches(
 
 첫 호출은 전체 원천을 메모리에 한꺼번에 올린다는 뜻이 아니다. query 하나가 작업 단위를 등록하고 `iterAllArrowBatches()`가 opaque continuation을 내부에서 자동 소비한다는 뜻이다. 각 page와 Arrow batch는 row, byte, time, shard 상한 안에서 반환된다. `iterPages()`는 page envelope가 필요한 소비자용이고 checkpoint callback으로 다음 token을 process restart용 저장소에 기록할 수 있다. `DataPartition.selector`와 `DataResult.universeCoverage`는 source shard 수, 선택 shard 수, 완료 shard 수, cursor 위치, market, source provider를 노출한다. DART는 `KR`과 `dart`, EDGAR는 `US`와 `edgar`로 구분된다.
 
+이 절의 전종목 기능은 `resource.finance`와 `resource.edgar` 원천 shard 순회다. 계산된 PIT factor 전종목 paging과 같은 뜻이 아니다. 현재 EDGAR PIT feature asset은 명시한 subject를 처리하는 `subjectFanout` 자산이며, 전체 시장 feature paging을 지원한다고 선언하지 않는다.
+
 continuation은 private control plane에 결박된 opaque capability다. 별도 프로세스가 token만 전달해 재개할 수 있고, 이미 commit된 page는 원천 provider 접촉 없이 동일하게 replay된다. 이어지는 page는 최초 발급 때 고정한 timeout을 다시 사용한다. 각 public page 진입은 영속 sweep cursor를 이용한 작은 bounded maintenance step을 한 번 실행하므로, 만료 chain과 CAS artifact 정리가 요청 하나를 무제한 점유하지 않는다. token query에는 assets, target, budget 등 원 질의 override를 함께 보내지 않는다.
 
 ## 혼합 Data Prism query
@@ -298,11 +302,40 @@ factors = dartlab.data(
 )
 ```
 
-factor row는 `assetId`, `measureId`, `entityId`, `eventAt`, `availableAt`, `knownAt`, `value`, `unit`, `frequency`, `revisionId`, `sourceRef`, `evidenceRef`, `temporalStatus`를 담는다. owner가 unit을 선언하지 않았다면 호출자가 `FactorProjection.unit`을 명시해야 한다. `native` 같은 가짜 단위로 성공시키지 않는다.
+revision-aware EDGAR 재무 feature도 같은 외부 진입점으로 조회한다.
+
+```python
+import dartlab
+
+pit = dartlab.data(
+    "query",
+    query={
+        "requests": [
+            {
+                "assetId": "analysis.edgarFinancialFeatures",
+                "requestId": "aaplPit",
+                "subjects": ["AAPL"],
+                "projection": {
+                    "kind": "factor",
+                    "measures": [
+                        "financial.revenue",
+                        "financial.operatingMargin",
+                    ],
+                },
+                "time": {"knownAt": "2025-02-01"},
+            }
+        ]
+    },
+)
+```
+
+이 자산은 로컬 EDGAR companyfacts를 한 번 읽고 실제 filing cutoff를 적용한다. 현재 원천이 historical admission snapshot 전체를 보존하지 않으므로 결과는 `latestRetained`, `periodOnly`, `conditional`이다. query cutoff를 관측의 knowledge time이나 revision identity로 복사하지 않는다. 인접 cutoff에서 같은 evidence와 값이 선택되면 같은 observation ID와 revision ID를 유지한다.
+
+일반 factor row는 `assetId`, `measureId`, `entityId`, `eventAt`, `availableAt`, `knownAt`, `value`, `unit`, `frequency`, `revisionId`, `sourceRef`, `evidenceRef`, `temporalStatus`를 담는다. typed feature observation에서 나온 row는 여기에 `featureVersionId`, `observationId`, `featureRegistryHash`, `featureObservationSetHash`, `featureQueryHash`, `normalizationRuleHash`, vintage payload, artifact, contract, receipt identity를 더해 정의, 값, 시점, evidence를 함께 결박한다. owner가 unit을 선언하지 않았다면 호출자가 `FactorProjection.unit`을 명시해야 한다. `native` 같은 가짜 단위로 성공시키지 않는다.
 
 최신 전용 asset의 `knownAt`은 `None`이다. query 실행 시각을 knowledge time으로 자동 주입하지 않는다. RSI, momentum, volatility 같은 quant와 technical 계산은 quant, scan 또는 indicator owner가 수행하며 data는 결과를 factor view로 투영한다.
 
-현재 `FactorProjection`은 content-sealed runtime factor view다. 영구 feature materialization, historical universe, revision-aware PIT join, offline/online serving은 아직 별도 저장 계약이 아니므로 완성된 영구 factor store라고 과장하지 않는다. 이 기능은 원본 SSOT와 atomic generation 정책이 승인된 뒤 같은 query, content identity, lineage 계약 위에 추가한다.
+현재 `FactorProjection`과 `FeatureObservationSet`은 content-sealed runtime factor view와 revision-aware PIT selection을 제공한다. 엄격한 달력 날짜, `MARKET:ID` entity, valid time과 knowledge time, staleness, bounds, same-day conditional, revision ambiguity, missing coverage를 공통 data 계약에서 검증한다. 영구 feature materialization, historical universe, 전종목 계산 feature paging, offline/online serving은 아직 별도 저장 계약이 아니므로 완성된 영구 factor store라고 과장하지 않는다. 성능이나 편의만으로 영구 사본, 인덱스, immutable generation을 추가하지 않는다. runtime SSOT로 목표를 달성할 수 없다는 실측, 사전 설계 토론, 원본 SSOT와 atomic generation 정책에 대한 명시 승인이 모두 끝난 뒤에만 코드, 실행, 커밋을 진행한다.
 
 ## Narrative evidence로 사용
 
@@ -317,6 +350,8 @@ historical = DataQuery(time=TimeContext(validAt="2024-Q4", knownAt="2025-03-31")
 ```
 
 valid time과 knowledge time은 분리한다. descriptor가 실제로 `knownAt`을 executor에 전달할 수 없으면 `PIT_UNSUPPORTED` gap으로 실패한다. factor와 narrative canonical projection은 row별 observation knowledge time과 revision까지 보존할 수 없으면 `OBSERVATION_PIT_METADATA_REQUIRED`로 추가 차단한다. query cutoff를 row의 `knownAt`으로 복사하지 않는다. latest-only asset을 과거 라벨로 바꾸지 않는다. 시뮬레이터의 `analysis.simulationInputs` asset은 fiscal period `validAt` 절단을 지원하며 filing revision `knownAt`은 지원하지 않는다.
+
+PIT factor owner가 `observationPIT=True`를 선언했더라도 실제 반환값이 `FeatureObservationSet` 또는 검증된 `feature-observation-input-v1` envelope가 아니면 `FEATURE_OBSERVATION_ENVELOPE_REQUIRED`로 실패한다. 같은 event, availability, knowledge timestamp에 서로 다른 revision이 남으면 revision ID 문자열 순서로 고르지 않고 ambiguous로 차단한다. `requireExact`는 명시적인 entity scope와 완전한 feature matrix가 필요하며 missing, stale, bounds 위반, same-day date precision, conditional vintage 중 하나라도 있으면 exact가 아니다.
 
 ## 대표 반환 형태
 
@@ -341,6 +376,8 @@ valid time과 knowledge time은 분리한다. descriptor가 실제로 `knownAt`�
 ## 시뮬레이터 내부 사용
 
 공개 `simulate` 경로는 `analysis.simulationInputs`를 동일한 `data("query")` 계약으로 조회한다. Data Workbench가 Company 분기 재무를 한 번 읽고 `validAt`까지 절단한 뒤 실제 payload 기반 data snapshot, catalog snapshot, contract hash, lineage, receipt를 반환한다. 시뮬레이터는 content seal이 없는 성공 입력을 거부하고 결과에 `dataSnapshotId`, `dataContractHash`, `dataLineageRefs`, `dataExecutionReceipts`를 노출한다.
+
+feature registry, observation, query, vintage 계약의 정본은 `dartlab.data`에 있다. simulator의 기존 import 경로는 compatibility re-export로 유지하므로 외부 작업대와 시뮬레이터가 같은 feature 의미와 시점 선택 규칙을 공유한다.
 
 ## Resource 안전 정책
 
@@ -371,6 +408,11 @@ shard-local cursor는 이전 page의 모든 행을 다시 건너뛰는 global OF
 - EngineCall과 HTTP가 nested factor DataFrame을 문자열이 아닌 bounded 구조로 보존하는지 확인한다.
 - 한 query의 DataRequest마다 다른 projection과 owner parameter가 독립 적용되는지 확인한다.
 - latest-only factor와 narrative가 knownAt을 발명하지 않는지 확인한다.
+- observationPIT owner가 일반 DataFrame을 반환하면 typed envelope 요구로 실패하는지 확인한다.
+- 동일 timestamp의 서로 다른 revision, stale, bounds 위반, same-day date precision이 exact로 통과하지 않는지 확인한다.
+- canonical entity와 달력 날짜, feature version, observation identity가 content hash와 factor row에 결박되는지 확인한다.
+- `analysis.edgarFinancialFeatures`의 인접 cutoff가 같은 evidence일 때 동일 revision을 유지하고 현재 보존 범위를 conditional로 표시하는지 확인한다.
+- 전종목 raw resource paging과 subject-only PIT feature 범위를 서로 바꿔 말하지 않는지 확인한다.
 - 구조화 lineage, quality assertion과 Arrow 변환이 data와 같은 partition에 결박되는지 확인한다.
 - queryable catalog 전체가 한 혼합 query에서 빠짐없이 라우팅되는지 확인한다.
 - engine asset 전체가 records, narrative, factor projection과 Arrow 변환을 통과하는지 확인한다.

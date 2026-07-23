@@ -127,9 +127,40 @@ def _factorFrame(
     query: DataQuery,
     *,
     measure: str | None,
+    subject: str | None,
     market: str | None,
     receiptRef: str,
 ) -> tuple[pl.DataFrame | None, tuple[DataGap, ...]]:
+    from dartlab.data.featureQuery import FeatureQueryError, featureObservationSetFromValue
+
+    try:
+        featureDataset = featureObservationSetFromValue(raw)
+    except FeatureQueryError as error:
+        return None, (DataGap(error.code, str(error), descriptor.assetId),)
+    if featureDataset is not None:
+        return _featureObservationFrame(
+            featureDataset,
+            descriptor,
+            query,
+            measure=measure,
+            subject=subject,
+            market=market,
+            receiptRef=receiptRef,
+        )
+    if (
+        query.time is not None
+        and query.time.knownAt is not None
+        and dict(descriptor.metadata).get("observationPIT") is True
+    ):
+        return None, (
+            DataGap(
+                "FEATURE_OBSERVATION_ENVELOPE_REQUIRED",
+                "observationPIT owner가 검증 가능한 feature observation envelope를 반환하지 않았습니다",
+                descriptor.assetId,
+                subject,
+            ),
+        )
+
     from dartlab.data.factorKernel import foldToCanonical
 
     declared = dict(descriptor.metadata)
@@ -217,6 +248,180 @@ def _factorFrame(
     return frame, gaps
 
 
+def _featureObservationFrame(
+    dataset: Any,
+    descriptor: DataAssetDescriptor,
+    query: DataQuery,
+    *,
+    measure: str | None,
+    subject: str | None,
+    market: str | None,
+    receiptRef: str,
+) -> tuple[pl.DataFrame | None, tuple[DataGap, ...]]:
+    """검증된 observation dataset을 실제 bitemporal factor view로 투영한다."""
+
+    from dartlab.data.featureQuery import FeatureQueryError, FeatureReadQuery, readFeatures
+
+    projection = query.projection
+    assert isinstance(projection, FactorProjection)
+    featureIds = projection.measures or query.measures or ((measure,) if measure is not None else ())
+    availableEntities = tuple(sorted({item.entityId for item in dataset.observations}))
+    declaredMarket = dict(descriptor.metadata).get("market")
+    requestedMarket = (market or (str(declaredMarket) if declaredMarket is not None else "")).upper() or None
+    requestedSubjects = (subject,) if subject is not None else query.subjects
+    entityIds: list[str] = []
+    for requested in requestedSubjects:
+        requested = str(requested).strip()
+        if ":" in requested:
+            entityMarket, _separator, entity = requested.partition(":")
+            canonical = f"{entityMarket.upper()}:{entity}"
+            if requestedMarket is not None and entityMarket.upper() != requestedMarket:
+                return None, (
+                    DataGap(
+                        "FEATURE_MARKET_MISMATCH",
+                        f"requested market {entityMarket.upper()}가 asset market {requestedMarket}와 다릅니다",
+                        descriptor.assetId,
+                        requested,
+                    ),
+                )
+            matches = tuple(entityId for entityId in availableEntities if entityId.casefold() == canonical.casefold())
+        elif requestedMarket is not None:
+            canonical = f"{requestedMarket}:{requested}"
+            matches = tuple(entityId for entityId in availableEntities if entityId.casefold() == canonical.casefold())
+        else:
+            return None, (
+                DataGap(
+                    "FEATURE_MARKET_REQUIRED",
+                    f"{requested}를 canonical entityId로 해소할 market이 없습니다",
+                    descriptor.assetId,
+                    requested,
+                ),
+            )
+        if not matches and descriptor.executionMode == "subjectFanout" and len(availableEntities) == 1:
+            ownerEntity = availableEntities[0]
+            ownerMarket, separator, _ownerId = ownerEntity.partition(":")
+            if separator and (requestedMarket is None or ownerMarket == requestedMarket):
+                matches = (ownerEntity,)
+        entityIds.extend(matches or (canonical,))
+    knownAt = query.time.knownAt if query.time else None
+    validAt = query.time.validAt if query.time else None
+    try:
+        result = readFeatures(
+            dataset,
+            FeatureReadQuery(
+                featureIds=tuple(featureIds),
+                entityIds=tuple(dict.fromkeys(entityIds)),
+                validAt=validAt,
+                knownAt=knownAt,
+                mode="pointInTime" if knownAt is not None else "history",
+            ),
+        )
+    except FeatureQueryError as error:
+        return None, (DataGap(error.code, str(error), descriptor.assetId, subject),)
+    gaps = tuple(
+        DataGap(
+            "FEATURE_OBSERVATION_MISSING",
+            f"{featureId}/{entityId}",
+            descriptor.assetId,
+            entityId,
+        )
+        for featureId, entityId in result.missing
+    )
+    if not result.selections:
+        return None, gaps or (DataGap("FACTOR_EMPTY", "feature observation이 없습니다", descriptor.assetId),)
+    if projection.unit is not None and any(item.observation.unit != projection.unit for item in result.selections):
+        return None, gaps + (
+            DataGap(
+                "FACTOR_UNIT_MISMATCH",
+                "FeatureProjection.unit은 observation 의미를 덮어쓸 수 없습니다",
+                descriptor.assetId,
+            ),
+        )
+    if projection.frequency is not None and any(
+        item.observation.frequency != projection.frequency for item in result.selections
+    ):
+        return None, gaps + (
+            DataGap(
+                "FACTOR_FREQUENCY_MISMATCH",
+                "FeatureProjection.frequency는 observation 의미를 덮어쓸 수 없습니다",
+                descriptor.assetId,
+            ),
+        )
+    if result.mode == "pointInTime":
+        gaps += tuple(
+            DataGap(
+                "FEATURE_OBSERVATION_CONDITIONAL",
+                f"{item.featureId}/{item.observation.entityId}",
+                descriptor.assetId,
+                item.observation.entityId,
+            )
+            for item in result.selections
+            if not item.exactAsKnown
+        )
+    rows = []
+    for item in result.selections:
+        observation = item.observation
+        entityMarket, separator, _entity = observation.entityId.partition(":")
+        if separator and requestedMarket is not None and entityMarket != requestedMarket:
+            return None, gaps + (
+                DataGap(
+                    "FEATURE_MARKET_MISMATCH",
+                    f"observation market {entityMarket}가 요청 market {requestedMarket}와 다릅니다",
+                    descriptor.assetId,
+                    observation.entityId,
+                ),
+            )
+        effectiveMarket = entityMarket if separator else requestedMarket
+        canonicalEntity = (
+            observation.entityId
+            if separator or effectiveMarket is None
+            else f"{effectiveMarket}:{observation.entityId}"
+        )
+        rows.append(
+            {
+                "assetId": descriptor.assetId,
+                "measureId": item.featureId,
+                "featureVersionId": item.featureVersionId,
+                "entityId": canonicalEntity,
+                "sourceEntityId": _entity if separator else observation.entityId,
+                "market": effectiveMarket,
+                "entityName": None,
+                "eventAt": observation.eventAt,
+                "availableAt": observation.availableAt,
+                "knownAt": observation.knowledgeAsOf,
+                "value": float(observation.value),
+                "valueText": None,
+                "unit": observation.unit,
+                "frequency": observation.frequency,
+                "revisionId": observation.revisionId,
+                "sourceRef": observation.vintage.artifactId,
+                "evidenceRef": receiptRef,
+                "status": "ok" if item.exactAsKnown else "conditional",
+                "gapReason": None if item.exactAsKnown else "conditionalRevisionCoverage",
+                "temporalStatus": "POINT_IN_TIME" if knownAt is not None else "OBSERVATION_HISTORY",
+                "featureRegistryHash": result.registryHash,
+                "featureObservationSetHash": result.observationSetHash,
+                "featureQueryHash": result.queryHash,
+                "providerId": observation.providerId,
+                "datasetId": observation.datasetId,
+                "signalId": observation.signalId,
+                "timing": observation.timing,
+                "transformId": observation.transformId,
+                "evidenceRole": observation.evidenceRole,
+                "availabilityPrecision": observation.availabilityPrecision,
+                "normalizationRuleHash": observation.normalizationRuleHash,
+                "revisionPolicy": observation.vintage.revisionPolicy,
+                "coverage": observation.vintage.coverage,
+                "vintagePayloadHash": observation.vintage.payloadHash,
+                "vintageArtifactHash": observation.vintage.artifactHash,
+                "vintageContractHash": observation.vintage.contractHash or None,
+                "vintageReceiptId": observation.vintage.receiptId or None,
+                "observationId": observation.observationId,
+            }
+        )
+    return pl.DataFrame(rows, strict=False), gaps
+
+
 def _semanticContent(data: Any, projection: Any) -> Any:
     """projection이 생성한 순환 provenance만 content hash 입력에서 제거한다."""
 
@@ -287,6 +492,7 @@ def projectOutput(
             descriptor,
             query,
             measure=selector.get("measure"),
+            subject=selector.get("subject"),
             market=selector.get("market"),
             receiptRef=_RECEIPT_PLACEHOLDER,
         )
@@ -331,6 +537,10 @@ def projectOutput(
     knownAt = query.time.knownAt if query.time else None
     validAt = query.time.validAt if query.time else None
     temporalStatus = "POINT_IN_TIME" if knownAt else "VALID_TIME" if validAt else "LATEST_ONLY"
+    if isinstance(data, pl.DataFrame) and data.height and "temporalStatus" in data.columns:
+        statuses = tuple(data["temporalStatus"].drop_nulls().unique().to_list())
+        if len(statuses) == 1:
+            temporalStatus = str(statuses[0])
     estimatedSize = getattr(data, "estimated_size", None)
     if callable(estimatedSize):
         observedSize = estimatedSize()

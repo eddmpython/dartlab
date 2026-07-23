@@ -299,6 +299,13 @@ def testEveryQueryableAssetRoutesThroughOneMixedQuery(monkeypatch):
         return {"simulation": kwargs}
 
     monkeypatch.setattr(dataAssets, "simulationInputs", fakeSimulationInputs)
+    featureCalls = []
+
+    def fakeEdgarFinancialFeatures(**kwargs):
+        featureCalls.append(kwargs)
+        return {"features": kwargs}
+
+    monkeypatch.setattr(dataAssets, "edgarFinancialFeatures", fakeEdgarFinancialFeatures)
 
     requests = []
     for asset in assets:
@@ -312,6 +319,7 @@ def testEveryQueryableAssetRoutesThroughOneMixedQuery(monkeypatch):
                 projection=projection,
                 subjects=subjects,
                 measures=measures,
+                time=TimeContext(knownAt="20250201") if asset.assetId == "analysis.edgarFinancialFeatures" else None,
             )
         )
 
@@ -326,12 +334,13 @@ def testEveryQueryableAssetRoutesThroughOneMixedQuery(monkeypatch):
 
     assert result.status == "ok"
     assert not result.gaps
-    assert len(result.partitions) == len(assets) == 170
+    assert len(result.partitions) == len(assets) == 171
     assert {partition.requestId for partition in result.partitions} == {asset.assetId for asset in assets}
     assert Counter(owner for owner, *_ in engineCalls) == Counter(
         asset.owner for asset in assets if asset.executorKind == "engineAxis"
     )
     assert simulationCalls == [{"subject": "probe"}]
+    assert featureCalls == [{"knownAt": "20250201", "subject": "probe"}]
 
 
 def testMaxConcurrencyAcceleratesMixedQueryAndKeepsResultOrder(monkeypatch):

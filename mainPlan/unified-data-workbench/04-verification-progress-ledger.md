@@ -14,6 +14,7 @@
 | W7 | Signature Data Prism 혼합 query, evidence, quality, Arrow | 완료 |
 | W8 | 170개 전수 실행, selector, 빈 결과, 동시성 hardening | 완료 |
 | W9 | 실제 content 봉인, 외부 구조 보존, 전종목 자동 page 소비 | 완료 |
+| W10 | 공통 feature observation 계약과 실제 EDGAR PIT factor 수직 슬라이스 | 완료 |
 
 ## 2. unit과 contract test
 
@@ -189,3 +190,23 @@ uv run python -X utf8 tests/audit/dartlabGuard.py strict --scope l0-l15 --provid
 - 한 Python 소비 흐름에서 DART 5개와 EDGAR 4개 synthetic shard를 중복과 누락 없이 완주
 - resource owner의 description과 read가 single-use manifest session을 공유해 전수 manifest 순회를 page당 3회에서 2회로 축소
 - strict mutable source의 pre-snapshot과 반환 전 post-validation, committed replay 무접촉 계약 유지
+
+### 2026-07-23 W10
+
+- feature registry, observation, vintage, revision-aware query 계약을 `dartlab.data` 공통 계층으로 이동
+- 기존 simulator import 경로는 compatibility re-export로 유지해 외부 작업대와 simulator의 의미 규칙 통일
+- 엄격한 달력 날짜, `MARKET:ID` entity, feature definition과 normalization 결박, duplicate와 normalization drift 차단
+- valid time과 knowledge time, staleness, bounds, same-day date precision, missing matrix, 동일 timestamp revision ambiguity를 공통 PIT selector에서 검증
+- `observationPIT` 선언 owner가 typed observation envelope 대신 일반 frame을 반환하면 실행 후 fail-closed
+- `analysis.edgarFinancialFeatures` callable asset을 catalog에 추가해 전체 354개, queryable 171개, callable 2개로 확장
+- 로컬 EDGAR companyfacts 전용 9열 reader와 operating-company reduced financial feature owner 구현
+- 외부 JSON mapping 한 번 호출에서 AAPL revenue와 operating margin을 factor row로 반환하고 actual filing time, observation ID, revision ID, feature version, lineage를 보존
+- query cutoff가 달라도 같은 evidence와 값이면 동일 observation과 revision identity를 유지
+- retained companyfacts의 과거 admission snapshot 부재를 `latestRetained`, `periodOnly`, `conditional` gap으로 표면화
+- 전체 시장 원천 DART와 EDGAR continuation과 subject-only PIT feature 범위를 명시적으로 분리
+- 공통 feature, actual owner, catalog, query, simulator 집중 회귀 93건 통과
+- 작업대 핵심, simulator, architecture, Skill OS 연결 회귀 196건 통과
+- continuation, restart, CAS, Arrow, page scan 회귀 207건 통과와 환경 의존 2건 skip
+- resource paging과 별도 process resume 회귀 31건 통과
+- L0부터 L15 strict guard 7개 규칙, workbench purity, 신규 공개 함수 docstring strict, camelCase, Ruff, targeted Pyright 통과
+- 영구 materialization, historical universe, 전종목 계산 feature paging, offline과 online serving은 runtime SSOT 불가능 실측, 사전 설계 토론, 명시 승인 전 미구현 상태 유지

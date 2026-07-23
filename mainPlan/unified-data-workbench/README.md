@@ -1,6 +1,6 @@
 # DartLab Unified Data Workbench
 
-상태: 구현, 전수 라우팅과 projection 인증, 170개 실제 물질화 감사, 외부 설치 검증 완료. 2026-07-22 저장소 실측과 공식 외부 설계 조사를 반영한다.
+상태: 구현, 전수 라우팅과 projection 인증, 170개 실제 물질화 감사, 171개 queryable catalog, 외부 설치 검증 완료. 2026-07-23 저장소 실측을 반영한다.
 
 ## 한 문장 정의
 
@@ -24,6 +24,8 @@
 12. partition은 구조화 lineage, quality assertion과 Arrow transport를 제공한다.
 13. catalog `snapshotId`와 실제 반환 content의 `dataSnapshotId`를 분리하고 partition마다 `contentHash`를 둔다.
 14. 전종목 continuation은 첫 `DataResult`의 `iterPages()` 또는 `iterAllArrowBatches()`가 자동 소비한다.
+15. feature registry, observation, vintage, PIT query는 data 공통 계약이며 simulator와 외부 소비자가 같은 의미 규칙을 쓴다.
+16. 전종목 원천 paging과 계산된 전종목 factor paging은 구분한다. 현재 EDGAR PIT feature는 subject 단위 callable이다.
 
 ## 공개 계약
 
@@ -44,6 +46,8 @@ result = dartlab.data(
     ),
 )
 ```
+
+같은 진입점에서 `analysis.edgarFinancialFeatures`를 `knownAt`과 `FactorProjection`으로 요청하면 실제 filing cutoff를 보존한 revision-aware feature row를 얻는다. 현재 retained companyfacts의 이력 한계 때문에 이 자산은 `latestRetained`, `periodOnly`, `conditional`로 정직하게 반환한다.
 
 `DataResult`는 최소한 `status`, `partitions`, `assets`, `snapshotId`, `dataSnapshotId`, `contractHash`, `coverage`, `gaps`, `lineageRefs`, `executionReceipts`, `continuation`을 함께 가진다. schema와 실제 값의 `contentHash`는 각 partition이 보존한다.
 
