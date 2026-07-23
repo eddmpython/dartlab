@@ -2,6 +2,7 @@
 
 from .contracts import (
     IntegrityMode,
+    ResourceCursorV2,
     ResourceManifest,
     ResourcePredicate,
     ResourceReadReceipt,
@@ -21,6 +22,7 @@ from .workbench import (
 __all__ = [
     "BoundedBatchReader",
     "IntegrityMode",
+    "ResourceCursorV2",
     "ResourceManifest",
     "ResourceDescription",
     "ResourcePage",

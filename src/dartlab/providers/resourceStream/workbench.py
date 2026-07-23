@@ -12,7 +12,7 @@ import dartlab.config as dartlabConfig
 from dartlab.core.dataConfig import DATA_RELEASES
 
 from .contracts import ResourceReadReceipt, ResourceReadRequest
-from .manifest import loadResourceManifest
+from .manifest import loadResourceManifest, validateManifestSources
 from .reader import openResourceBatchReader
 
 
@@ -192,7 +192,12 @@ def readResourcePage(
     manifest = _loadFullManifest(resourceId, category, cachePath, root=root)
     sink = pa.BufferOutputStream()
     options = pa.ipc.IpcWriteOptions(compression=None)
-    with openResourceBatchReader(manifest, request) as reader:
+    with openResourceBatchReader(
+        manifest,
+        request,
+        sourcesPrevalidated=True,
+        validateAfterRead=False,
+    ) as reader:
         schema = reader.schema
         wroteBatch = False
         with pa.ipc.new_stream(sink, schema, options=options) as writer:
@@ -207,6 +212,7 @@ def readResourcePage(
                     )
                 )
         receipt = reader.receipt()
+    validateManifestSources(manifest)
     encodedBytes = sink.getvalue().to_pybytes()
     return ResourcePage(
         resourceId=resourceId,

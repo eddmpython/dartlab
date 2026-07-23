@@ -8,6 +8,7 @@ from datetime import date
 import pytest
 
 from dartlab.providers.resourceStream.contracts import (
+    ResourceCursorV2,
     ResourceManifest,
     ResourcePredicate,
     ResourceReadReceipt,
@@ -72,6 +73,8 @@ def test_queryPin_excludesPagingBudgetsButPinsSemantics() -> None:
         startRow=100,
         expectedSourcePin=sourcePin,
         expectedQueryPin=firstPin,
+        cursor=ResourceCursorV2(1, 7),
+        maxShards=1,
     )
     assert resumed.queryPin("resource.test") == firstPin
     changed = ResourceReadRequest(columns=("value", "companyId"))
@@ -109,6 +112,62 @@ def test_toBytes_areStrictJsonForExternalProcess() -> None:
         rowCount=2,
         byteCount=64,
         truncated=True,
+        startCursor=ResourceCursorV2(0, 0),
+        nextCursor=ResourceCursorV2(0, 2),
+        scannedShardCount=1,
     )
     assert json.loads(receipt.toBytes())["nextRow"] == 2
     assert json.loads(ResourceReadRequest(("value",)).toBytes())["columns"] == ["value"]
+
+
+def test_resourceCursorV2_roundTripsStrictMappingAndRejectsLegacyOffset() -> None:
+    cursor = ResourceCursorV2.fromMapping({"version": 2, "shardOrdinal": 3, "physicalRowInShard": 19})
+    assert cursor.toMapping() == {
+        "version": 2,
+        "shardOrdinal": 3,
+        "physicalRowInShard": 19,
+    }
+    with pytest.raises(ValueError, match="key"):
+        ResourceCursorV2.fromMapping({"version": 2, "shardOrdinal": 3, "physicalRowInShard": 19, "extra": 1})
+    with pytest.raises(TypeError, match="int"):
+        ResourceCursorV2.fromMapping({"version": 2, "shardOrdinal": True, "physicalRowInShard": 0})
+    with pytest.raises(ValueError, match="RESOURCE_CURSOR_V1_UNSUPPORTED"):
+        ResourceReadRequest(
+            ("value",),
+            startRow=1,
+            expectedSourcePin="resource-source-full:abc",
+            expectedQueryPin="resource-query:def",
+        )
+
+
+def test_receipt_allowsZeroRowsWhenPhysicalCursorAdvances() -> None:
+    receipt = ResourceReadReceipt(
+        sourcePin="resource-source-full:abc",
+        queryPin="resource-query:def",
+        integrityMode="full",
+        startRow=0,
+        nextRow=0,
+        batchCount=0,
+        rowCount=0,
+        byteCount=0,
+        truncated=True,
+        startCursor=ResourceCursorV2(0, 0),
+        nextCursor=ResourceCursorV2(2, 0),
+        scannedShardCount=2,
+    )
+    assert receipt.nextCursor == ResourceCursorV2(2, 0)
+    with pytest.raises(ValueError, match="전진"):
+        ResourceReadReceipt(
+            sourcePin=receipt.sourcePin,
+            queryPin=receipt.queryPin,
+            integrityMode="full",
+            startRow=0,
+            nextRow=0,
+            batchCount=0,
+            rowCount=0,
+            byteCount=0,
+            truncated=True,
+            startCursor=ResourceCursorV2(0, 0),
+            nextCursor=ResourceCursorV2(0, 0),
+            scannedShardCount=1,
+        )

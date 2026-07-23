@@ -4,13 +4,14 @@ from __future__ import annotations
 
 from dataclasses import FrozenInstanceError
 from pathlib import Path
+from typing import Any, cast
 
 import pyarrow as pa
 import pyarrow.parquet as pq
 import pytest
 
 import dartlab.providers.resourceStream.workbench as workbenchModule
-from dartlab.providers.resourceStream import describeResource, readResourcePage
+from dartlab.providers.resourceStream import ResourcePage, describeResource, readResourcePage
 
 pytestmark = pytest.mark.unit
 
@@ -57,7 +58,7 @@ def flatResource(
     return dataRoot, resourceRoot, tmp_path / "manifest.json"
 
 
-def _decodePage(page: object) -> tuple[pa.Schema, pa.Table]:
+def _decodePage(page: ResourcePage) -> tuple[pa.Schema, pa.Table]:
     stream = pa.ipc.open_stream(page.encodedBytes)
     schema = stream.schema
     batches = tuple(stream)
@@ -87,7 +88,7 @@ def test_describeResource_returnsImmutablePathSafeContract(
     assert str(dataRoot) not in repr(first)
     assert str(resourceRoot) not in repr(first)
     with pytest.raises(FrozenInstanceError):
-        first.totalBytes = 0
+        first.totalBytes = 0  # type: ignore[misc]
 
 
 def test_describeResource_rejectsUnknownMismatchAccessEscapeNestedAndMissing(
@@ -158,6 +159,7 @@ def test_readResourcePage_returnsTwoPinnedPagesWithoutDuplicates(
         cachePath,
     )
     firstSchema, firstTable = _decodePage(first)
+    assert first.receipt.nextCursor is not None
     second = readResourcePage(
         _RESOURCE_ID,
         _CATEGORY,
@@ -169,6 +171,7 @@ def test_readResourcePage_returnsTwoPinnedPagesWithoutDuplicates(
             "startRow": first.receipt.nextRow,
             "expectedSourcePin": first.receipt.sourcePin,
             "expectedQueryPin": first.receipt.queryPin,
+            "cursor": first.receipt.nextCursor.toMapping(),
         },
         cachePath,
     )
@@ -205,22 +208,14 @@ def test_readResourcePage_returnsSchemaValidEmptyStream(
     flatResource: tuple[Path, Path, Path],
 ) -> None:
     _dataRoot, _resourceRoot, cachePath = flatResource
-    first = readResourcePage(
-        _RESOURCE_ID,
-        _CATEGORY,
-        {"columns": ["value"], "maxRows": 6, "maxBytes": 1_000_000},
-        cachePath,
-    )
     empty = readResourcePage(
         _RESOURCE_ID,
         _CATEGORY,
         {
             "columns": ["value"],
+            "predicates": [{"column": "value", "operator": "gt", "value": 1_000_000}],
             "maxRows": 6,
             "maxBytes": 1_000_000,
-            "startRow": 6,
-            "expectedSourcePin": first.receipt.sourcePin,
-            "expectedQueryPin": first.receipt.queryPin,
         },
         cachePath,
     )
@@ -230,7 +225,7 @@ def test_readResourcePage_returnsSchemaValidEmptyStream(
     assert tuple((field.name, str(field.type)) for field in schema) == empty.actualSchemaFields
     assert table.num_rows == 0
     assert len(tuple(pa.ipc.open_stream(empty.encodedBytes))) == 1
-    assert empty.receipt.startRow == empty.receipt.nextRow == 6
+    assert empty.receipt.startRow == empty.receipt.nextRow == 0
     assert empty.receipt.rowCount == 0
     assert empty.receipt.truncated is False
     assert empty.encodedBytes
@@ -264,12 +259,35 @@ def test_readResourcePage_writesExplicitUncompressedSingleStream(
     assert stream.schema.names == ["value", "sourcePath"]
 
 
+def test_readResourcePage_revalidatesSourceAfterIteration(
+    flatResource: tuple[Path, Path, Path],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _dataRoot, resourceRoot, cachePath = flatResource
+    realValidate = workbenchModule.validateManifestSources
+
+    def mutateThenValidate(manifest):
+        target = resourceRoot / "A.parquet"
+        target.write_bytes(target.read_bytes() + b"changed-after-read")
+        return realValidate(manifest)
+
+    monkeypatch.setattr(workbenchModule, "validateManifestSources", mutateThenValidate)
+
+    with pytest.raises(ValueError, match="RESOURCE_SOURCE_DRIFT"):
+        readResourcePage(
+            _RESOURCE_ID,
+            _CATEGORY,
+            {"columns": ["value"], "maxRows": 2, "maxBytes": 1_000_000},
+            cachePath,
+        )
+
+
 def test_readResourcePage_preservesMissingAndRawContentPolicies(
     flatResource: tuple[Path, Path, Path],
 ) -> None:
     _dataRoot, _resourceRoot, cachePath = flatResource
     with pytest.raises(TypeError, match="requestMapping"):
-        readResourcePage(_RESOURCE_ID, _CATEGORY, [], cachePath)
+        readResourcePage(_RESOURCE_ID, _CATEGORY, cast(Any, []), cachePath)
     with pytest.raises(ValueError, match="resource column"):
         readResourcePage(
             _RESOURCE_ID,

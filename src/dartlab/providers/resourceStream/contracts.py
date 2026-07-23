@@ -14,6 +14,56 @@ IntegrityMode = Literal["full", "footerFast"]
 PredicateOperator = Literal["eq", "ne", "gt", "ge", "lt", "le", "isin"]
 
 
+@dataclass(frozen=True, order=True, slots=True)
+class ResourceCursorV2:
+    """Pinned query의 다음 physical parquet row를 가리키는 shard-local cursor다.
+
+    ``shardOrdinal``은 query가 선택한 sorted shard tuple 안의 위치다. ``physicalRowInShard``는
+    해당 parquet 안에서 다음에 검사할 inclusive physical row다. 두 값은 sourcePin과 queryPin에
+    결박해 전달하며 logical output offset으로 해석하지 않는다.
+    """
+
+    shardOrdinal: int
+    physicalRowInShard: int
+    version: int = 2
+
+    def __post_init__(self) -> None:
+        """Version과 두 cursor 좌표를 exact nonnegative int로 검증한다."""
+
+        if type(self.version) is not int or self.version != 2:
+            raise ValueError("resource cursor version은 2여야 합니다")
+        for name in ("shardOrdinal", "physicalRowInShard"):
+            value = getattr(self, name)
+            if type(value) is not int:
+                raise TypeError(f"resource cursor {name}은 int여야 합니다")
+            if value < 0:
+                raise ValueError(f"resource cursor {name}은 0 이상이어야 합니다")
+
+    def toMapping(self) -> dict[str, int]:
+        """Cursor를 exact-key strict JSON mapping으로 반환한다."""
+
+        return {
+            "version": self.version,
+            "shardOrdinal": self.shardOrdinal,
+            "physicalRowInShard": self.physicalRowInShard,
+        }
+
+    @classmethod
+    def fromMapping(cls, value: Mapping[str, object]) -> ResourceCursorV2:
+        """외부 mapping에서 canonical v2 cursor를 복원한다."""
+
+        if not isinstance(value, Mapping):
+            raise TypeError("resource cursor는 Mapping이어야 합니다")
+        expected = {"version", "shardOrdinal", "physicalRowInShard"}
+        if set(value) != expected:
+            raise ValueError("resource cursor key가 유효하지 않습니다")
+        return cls(
+            shardOrdinal=cast(int, value["shardOrdinal"]),
+            physicalRowInShard=cast(int, value["physicalRowInShard"]),
+            version=cast(int, value["version"]),
+        )
+
+
 def _strictJsonValue(value: object, path: str = "$") -> object:
     if value is None or isinstance(value, (bool, int, str)):
         return value
@@ -218,7 +268,9 @@ class ResourceReadRequest:
         maxRows: page 전체 row 상한.
         maxBytes: page 전체 Arrow logical byte 상한.
         includeSourcePath: root 상대 sourcePath 포함 여부.
-        startRow: filter와 projection 뒤 logical result offset.
+        startRow: 반환된 logical row의 누적 telemetry. scan selector가 아니다.
+        cursor: query-selected shard와 physical row를 고정한 v2 resume cursor.
+        maxShards: 한 page가 검사할 distinct shard 상한.
         expectedSourcePin: resume이 결박된 full source pin.
         expectedQueryPin: resume이 결박된 query pin.
         allowRawContent: contentRaw 명시 opt-in.
@@ -239,7 +291,7 @@ class ResourceReadRequest:
         ResourceReadReceipt, ResourceManifest.
 
     Requires:
-        startRow가 0보다 크면 두 expected pin이 모두 필요하다.
+        resume cursor에는 두 expected pin이 모두 필요하다. cursor 없는 startRow resume은 거부한다.
 
     AIContext:
         lower owner가 Mapping으로 받아 Data Workbench에 Arrow batch를 공급할 수 있는 경계다.
@@ -267,6 +319,8 @@ class ResourceReadRequest:
     expectedSourcePin: str | None = None
     expectedQueryPin: str | None = None
     allowRawContent: bool = False
+    cursor: ResourceCursorV2 | None = None
+    maxShards: int = 64
 
     def __post_init__(self) -> None:
         if not isinstance(self.columns, (tuple, list)) or any(not isinstance(column, str) for column in self.columns):
@@ -286,7 +340,7 @@ class ResourceReadRequest:
         ):
             raise TypeError("companyIds는 str sequence여야 합니다")
         companyIds = tuple(sorted({companyId.strip() for companyId in self.companyIds if companyId.strip()}))
-        for name in ("batchRows", "maxRows", "maxBytes"):
+        for name in ("batchRows", "maxRows", "maxBytes", "maxShards"):
             value = getattr(self, name)
             if isinstance(value, bool) or not isinstance(value, int):
                 raise TypeError(f"{name}는 int여야 합니다")
@@ -302,8 +356,12 @@ class ResourceReadRequest:
                 raise TypeError(f"{name}은 str 또는 None이어야 합니다")
         if not isinstance(self.includeSourcePath, bool) or not isinstance(self.allowRawContent, bool):
             raise TypeError("includeSourcePath와 allowRawContent는 bool이어야 합니다")
-        if self.startRow > 0 and (not self.expectedSourcePin or not self.expectedQueryPin):
-            raise ValueError("resume startRow에는 expectedSourcePin과 expectedQueryPin이 필요합니다")
+        if self.cursor is not None and not isinstance(self.cursor, ResourceCursorV2):
+            raise TypeError("cursor는 ResourceCursorV2 또는 None이어야 합니다")
+        if self.startRow > 0 and self.cursor is None:
+            raise ValueError("RESOURCE_CURSOR_V1_UNSUPPORTED: startRow 단독 resume은 지원하지 않습니다")
+        if self.cursor is not None and (not self.expectedSourcePin or not self.expectedQueryPin):
+            raise ValueError("resume cursor에는 expectedSourcePin과 expectedQueryPin이 필요합니다")
         object.__setattr__(self, "columns", columns)
         object.__setattr__(self, "predicates", predicates)
         object.__setattr__(self, "companyIds", companyIds)
@@ -354,6 +412,8 @@ class ResourceReadRequest:
             "expectedSourcePin": self.expectedSourcePin,
             "expectedQueryPin": self.expectedQueryPin,
             "allowRawContent": self.allowRawContent,
+            "cursor": self.cursor.toMapping() if self.cursor is not None else None,
+            "maxShards": self.maxShards,
         }
 
     def toBytes(self) -> bytes:
@@ -420,6 +480,15 @@ class ResourceReadRequest:
             raise TypeError("columns는 sequence여야 합니다")
         if not isinstance(companyIds, (tuple, list)):
             raise TypeError("companyIds는 sequence여야 합니다")
+        cursorValue = value.get("cursor")
+        if cursorValue is None:
+            cursor = None
+        elif isinstance(cursorValue, ResourceCursorV2):
+            cursor = cursorValue
+        elif isinstance(cursorValue, Mapping):
+            cursor = ResourceCursorV2.fromMapping(cursorValue)
+        else:
+            raise TypeError("cursor는 ResourceCursorV2, Mapping 또는 None이어야 합니다")
         return cls(
             columns=tuple(cast(str, item) for item in columns),
             predicates=predicates,
@@ -432,6 +501,8 @@ class ResourceReadRequest:
             expectedSourcePin=cast(str | None, value.get("expectedSourcePin")),
             expectedQueryPin=cast(str | None, value.get("expectedQueryPin")),
             allowRawContent=cast(bool, value.get("allowRawContent", False)),
+            cursor=cursor,
+            maxShards=cast(int, value.get("maxShards", 64)),
         )
 
 
@@ -560,10 +631,10 @@ class ResourceManifest:
 
 @dataclass(frozen=True, slots=True)
 class ResourceReadReceipt:
-    """Page 결과의 source, query, offset과 budget 사용량이다.
+    """Page 결과의 source, query, shard cursor와 budget 사용량이다.
 
     Capabilities:
-        다음 page가 필요한 full source pin, query pin, nextRow와 truncation을 보존한다.
+        다음 page가 필요한 full source pin, query pin, physical cursor와 truncation을 보존한다.
 
     Args:
         sourcePin: manifest source identity.
@@ -575,15 +646,18 @@ class ResourceReadReceipt:
         rowCount: 반환 row 수.
         byteCount: 반환 Arrow logical bytes.
         truncated: budget으로 절단됐는지 여부.
+        startCursor: 이번 page의 normalized v2 physical 시작점.
+        nextCursor: 다음 page 시작점. 완전 소진이면 None.
+        scannedShardCount: 이번 page가 실제 검사한 distinct shard 수.
 
     Returns:
         immutable receipt.
 
     Example:
-        ``nextRequest = {"startRow": receipt.nextRow}``.
+        ``nextRequest = {"startRow": receipt.nextRow, "cursor": receipt.nextCursor.toMapping()}``.
 
     Guide:
-        full sourcePin과 queryPin도 nextRow와 함께 전달한다.
+        full sourcePin과 queryPin도 nextCursor와 함께 전달한다.
 
     SeeAlso:
         ResourceReadRequest.
@@ -611,6 +685,33 @@ class ResourceReadReceipt:
     rowCount: int
     byteCount: int
     truncated: bool
+    startCursor: ResourceCursorV2
+    nextCursor: ResourceCursorV2 | None
+    scannedShardCount: int
+
+    def __post_init__(self) -> None:
+        """Logical telemetry와 shard-local cursor transition을 fail closed로 검증한다."""
+
+        for name in ("startRow", "nextRow", "batchCount", "rowCount", "byteCount", "scannedShardCount"):
+            value = getattr(self, name)
+            if type(value) is not int:
+                raise TypeError(f"receipt {name}은 int여야 합니다")
+            if value < 0:
+                raise ValueError(f"receipt {name}은 0 이상이어야 합니다")
+        if self.nextRow != self.startRow + self.rowCount:
+            raise ValueError("receipt nextRow는 startRow + rowCount여야 합니다")
+        if type(self.truncated) is not bool:
+            raise TypeError("receipt truncated는 bool이어야 합니다")
+        if not isinstance(self.startCursor, ResourceCursorV2):
+            raise TypeError("receipt startCursor는 ResourceCursorV2여야 합니다")
+        if self.nextCursor is not None and not isinstance(self.nextCursor, ResourceCursorV2):
+            raise TypeError("receipt nextCursor는 ResourceCursorV2 또는 None이어야 합니다")
+        if self.truncated != (self.nextCursor is not None):
+            raise ValueError("receipt truncated와 nextCursor가 일치하지 않습니다")
+        if self.nextCursor is not None and self.nextCursor <= self.startCursor:
+            raise ValueError("receipt nextCursor는 startCursor보다 전진해야 합니다")
+        if self.scannedShardCount <= 0:
+            raise ValueError("receipt scannedShardCount는 양수여야 합니다")
 
     def toMapping(self) -> dict[str, object]:
         """Receipt를 strict JSON-compatible mapping으로 반환한다.

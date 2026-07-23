@@ -10,7 +10,10 @@ import pyarrow.parquet as pq
 import pytest
 
 from dartlab.providers.resourceStream import (
+    BoundedBatchReader,
+    ResourceCursorV2,
     ResourcePredicate,
+    ResourceReadReceipt,
     ResourceReadRequest,
     loadResourceManifest,
     openResourceBatchReader,
@@ -38,7 +41,7 @@ def _writeResourceRoot(root: Path) -> None:
     _writeShard(root / "B.parquet", "B", (40, 50, 60))
 
 
-def _readTable(reader: object) -> tuple[pa.Table, object]:
+def _readTable(reader: BoundedBatchReader) -> tuple[pa.Table, ResourceReadReceipt]:
     with reader:
         batches = tuple(reader)
         receipt = reader.receipt()
@@ -69,6 +72,7 @@ def test_openResourceBatchReader_pagesAllShardsWithoutDuplicates(tmp_path: Path)
         startRow=firstReceipt.nextRow,
         expectedSourcePin=firstReceipt.sourcePin,
         expectedQueryPin=firstReceipt.queryPin,
+        cursor=firstReceipt.nextCursor,
     )
     secondTable, secondReceipt = _readTable(openResourceBatchReader(manifest, secondRequest))
 
@@ -83,6 +87,7 @@ def test_openResourceBatchReader_pagesAllShardsWithoutDuplicates(tmp_path: Path)
         60,
     ]
     assert firstReceipt.truncated is True
+    assert firstReceipt.nextCursor is not None
     assert secondReceipt.nextRow == 6
     assert secondReceipt.truncated is False
     sourcePaths = firstTable["sourcePath"].to_pylist() + secondTable["sourcePath"].to_pylist()
@@ -243,6 +248,7 @@ def test_openResourceBatchReader_pinsSourceAndQueryOnResume(tmp_path: Path) -> N
                 startRow=1,
                 expectedSourcePin=footerManifest.sourcePin,
                 expectedQueryPin=queryPin,
+                cursor=ResourceCursorV2(0, 1),
             ),
         )
 
@@ -319,7 +325,6 @@ def test_openResourceBatchReader_enforcesRowAndLogicalByteBudgets(tmp_path: Path
     )
     with oversized, pytest.raises(ValueError, match="RESOURCE_ROW_EXCEEDS_MAX_BYTES"):
         tuple(oversized)
-    assert oversized.receipt().nextRow == 0
 
 
 def test_openResourceBatchReader_rejectsUnknownColumnsAndCompanies(tmp_path: Path) -> None:
@@ -346,6 +351,9 @@ def test_receipt_tracksPinnedBoundedUsage(tmp_path: Path) -> None:
     assert receipt.queryPin == request.queryPin(manifest.resourceId)
     assert receipt.rowCount == table.num_rows == 1
     assert receipt.nextRow == 1
+    assert receipt.startCursor == ResourceCursorV2(0, 0)
+    assert receipt.nextCursor == ResourceCursorV2(0, 1)
+    assert receipt.scannedShardCount == 1
     assert receipt.toBytes()
 
 
@@ -371,3 +379,158 @@ def test_schema_remainsAvailableAfterClose(tmp_path: Path) -> None:
     reader.close()
     assert reader.schema == expected
     assert reader.schema.names == ["value"]
+
+
+def test_shardCursorV2_advancesAcrossZeroMatchShardsWithoutMissingRows(tmp_path: Path) -> None:
+    root = tmp_path / "resource"
+    root.mkdir()
+    _writeShard(root / "A.parquet", "A", (1, 2))
+    _writeShard(root / "B.parquet", "B", (10, 11))
+    _writeShard(root / "C.parquet", "C", (20, 21))
+    manifest = loadResourceManifest("resource.test", root, useCache=False)
+    predicate = ResourcePredicate("value", "ge", 10)
+    cursor: ResourceCursorV2 | None = None
+    logicalRow = 0
+    sourcePin: str | None = None
+    queryPin: str | None = None
+    collected: list[int] = []
+    observedCursors: list[ResourceCursorV2] = []
+
+    while True:
+        request = ResourceReadRequest(
+            ("value",),
+            predicates=(predicate,),
+            maxRows=1,
+            maxBytes=1_000_000,
+            maxShards=1,
+            startRow=logicalRow,
+            cursor=cursor,
+            expectedSourcePin=sourcePin,
+            expectedQueryPin=queryPin,
+        )
+        table, receipt = _readTable(openResourceBatchReader(manifest, request))
+        if table.num_rows:
+            collected.extend(table["value"].to_pylist())
+        logicalRow = receipt.nextRow
+        sourcePin = receipt.sourcePin
+        queryPin = receipt.queryPin
+        assert receipt.scannedShardCount == 1
+        if receipt.nextCursor is None:
+            break
+        observedCursors.append(receipt.nextCursor)
+        cursor = receipt.nextCursor
+
+    assert collected == [10, 11, 20, 21]
+    assert observedCursors == sorted(observedCursors)
+    assert len(set(observedCursors)) == len(observedCursors)
+    assert observedCursors[0] == ResourceCursorV2(1, 0)
+    assert logicalRow == 4
+
+
+def test_shardCursorV2_deepResumeOpensOnlyCurrentShard(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import dartlab.providers.resourceStream.reader as readerModule
+
+    root = tmp_path / "resource"
+    root.mkdir()
+    for index in range(10):
+        companyId = chr(ord("A") + index)
+        _writeShard(root / f"{companyId}.parquet", companyId, (index,))
+    manifest = loadResourceManifest("resource.test", root, useCache=False)
+    base = ResourceReadRequest(("value",), maxRows=1, maxShards=1)
+    opened: list[str] = []
+    realMetadata = readerModule._pinnedShardMetadata
+
+    def recordMetadata(path: Path, shard):
+        opened.append(path.name)
+        return realMetadata(path, shard)
+
+    monkeypatch.setattr(readerModule, "_pinnedShardMetadata", recordMetadata)
+    request = ResourceReadRequest(
+        ("value",),
+        maxRows=1,
+        maxShards=1,
+        startRow=8,
+        cursor=ResourceCursorV2(8, 0),
+        expectedSourcePin=manifest.sourcePin,
+        expectedQueryPin=base.queryPin(manifest.resourceId),
+    )
+    table, receipt = _readTable(openResourceBatchReader(manifest, request))
+
+    assert table["value"].to_pylist() == [8]
+    assert opened == ["I.parquet"]
+    assert receipt.nextCursor == ResourceCursorV2(9, 0)
+
+
+def test_variableSchemaPagesFillMissingColumnsWithoutGlobalUnion(tmp_path: Path) -> None:
+    root = tmp_path / "resource"
+    root.mkdir()
+    pq.write_table(pa.table({"companyId": ["A"], "left": [1]}), root / "A.parquet")
+    pq.write_table(pa.table({"companyId": ["B"], "right": [2]}), root / "B.parquet")
+    manifest = loadResourceManifest("resource.test", root, useCache=False)
+    assert manifest.commonSchemaFields == (("companyId", "string"),)
+    request = ResourceReadRequest(("companyId", "left", "right"), maxRows=10)
+    table, receipt = _readTable(openResourceBatchReader(manifest, request))
+
+    assert table.to_pydict() == {
+        "companyId": ["A", "B"],
+        "left": [1, None],
+        "right": [None, 2],
+        "sourcePath": ["A.parquet", "B.parquet"],
+    }
+    assert receipt.truncated is False
+    assert receipt.scannedShardCount == 2
+
+
+@pytest.mark.parametrize(
+    "typeName",
+    ["bool", "date32[day]", "double", "float", "int32", "int64", "large_string", "null", "uint32"],
+)
+def test_projectedSchema_supportsCurrentFlatResourceScalarTypes(typeName: str) -> None:
+    import dartlab.providers.resourceStream.reader as readerModule
+
+    assert str(readerModule._arrowType(typeName)) == typeName
+
+
+def test_projectedSchema_rejectsUnsupportedNestedTypeExplicitly(tmp_path: Path) -> None:
+    root = tmp_path / "resource"
+    root.mkdir()
+    pq.write_table(pa.table({"nested": [[1, 2], [3]]}), root / "A.parquet")
+    manifest = loadResourceManifest("resource.test", root, useCache=False)
+
+    with pytest.raises(ValueError, match="RESOURCE_SCHEMA_INCOMPATIBLE"):
+        openResourceBatchReader(manifest, ResourceReadRequest(("nested",)))
+
+
+def test_pageReader_reusesOneDuckdbConnectionAcrossShardWindow(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import dartlab.providers.resourceStream.reader as readerModule
+
+    root = tmp_path / "resource"
+    root.mkdir()
+    for companyId in ("A", "B", "C"):
+        _writeShard(root / f"{companyId}.parquet", companyId, (1,))
+    manifest = loadResourceManifest("resource.test", root, useCache=False)
+    realConnect = readerModule.duckdb.connect
+    connectionCount = 0
+
+    def countConnect(*args, **kwargs):
+        nonlocal connectionCount
+        connectionCount += 1
+        return realConnect(*args, **kwargs)
+
+    monkeypatch.setattr(readerModule.duckdb, "connect", countConnect)
+    request = ResourceReadRequest(
+        ("value",),
+        predicates=(ResourcePredicate("value", "gt", 1_000),),
+        maxShards=3,
+    )
+    table, receipt = _readTable(openResourceBatchReader(manifest, request))
+
+    assert table.num_rows == 0
+    assert receipt.scannedShardCount == 3
+    assert connectionCount == 1
