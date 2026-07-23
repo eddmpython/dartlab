@@ -1877,7 +1877,7 @@
       "categoryTitle": "Engines",
       "kind": "curated",
       "status": "observed",
-      "purpose": "Data Workbench는 L1, L1.5, L2의 원천, 정규 데이터, 횡단 데이터, 분석 자산을 하나의 자동 발견 카탈로그와 bounded query 계약으로 제공한다. 외부 프로세스의 범용 데이터 API, factor store projection, 시뮬레이터 입력 스냅샷에 같은 계약을 쓴다.",
+      "purpose": "Data Workbench는 L1, L1.5, L2의 원천, 정규 데이터, 횡단 데이터, 분석 자산을 하나의 자동 발견 카탈로그와 bounded query 계약으로 제공한다. 외부 프로세스의 범용 데이터 API, factor store projection, 시뮬레이터 입력 스냅샷에 같은 계약을 쓴다. 트리거는 '데이터 작업대', '팩터 스토어', '전종목 DART EDGAR 조회'다.",
       "whenToUse": [
         "data",
         "데이터 작업대",
@@ -1897,7 +1897,8 @@
         "projection",
         "asset별 DataRequest",
         "validAt 또는 knownAt",
-        "query budget"
+        "query budget",
+        "opaque continuation token"
       ],
       "requiredInputs": [],
       "outputs": [
@@ -1908,7 +1909,8 @@
         "snapshot과 lineage",
         "execution receipt",
         "구조화 DataLineage와 QualityAssertion",
-        "Polars와 Arrow table"
+        "Polars와 Arrow table",
+        "전종목 source shard coverage와 opaque continuation"
       ],
       "apiRefs": [
         "data",
@@ -1945,6 +1947,7 @@
         "stable assetId를 선택하고 단일 view면 DataQuery, 혼합 view면 asset별 DataRequest에 subjects, measures, projection, time을 명시한다.",
         "dartlab.data(\"query\", assetId, query=...) 또는 dartlab.data(\"query\", query=DataQuery(requests=(...)))를 호출한다.",
         "status, coverage, gaps를 먼저 검사한 뒤 partition data를 소비한다.",
+        "partial resource 결과는 result.continuation만 다음 query에 전달하고 원 질의를 덮어쓰지 않는다.",
         "snapshotId, contractHash, lineageRefs, executionReceipts를 결과와 함께 보존한다."
       ],
       "recipeSteps": [],
@@ -1973,6 +1976,8 @@
         "catalog 조회 중 owner 값을 실행함",
         "여러 partition의 row, byte 예산을 각각 적용해 전체 예산을 초과함",
         "private, nested, bulk resource payload를 무제한 로드함",
+        "전종목 DART와 EDGAR를 호출자가 종목별 반복 호출함",
+        "continuation과 함께 원 질의 override를 전송함",
         "빈 owner 결과를 성공 partition으로 반환함",
         "공유 Company 상태를 쓰는 owner를 동시에 초기화해 경쟁 상태를 만듦"
       ],
@@ -1990,7 +1995,8 @@
         "여러 owner의 native 결과를 partition으로 한 번에 조회",
         "한 query에서 factor, narrative, simulation input을 서로 다른 DataRequest로 조회",
         "knownAt 지원 여부를 fail-closed로 검증",
-        "시뮬레이터 재무 입력을 snapshot과 receipt로 고정"
+        "시뮬레이터 재무 입력을 snapshot과 receipt로 고정",
+        "DART와 EDGAR 전종목 원천을 한 query와 한 continuation chain으로 순회"
       ],
       "runtimeCompatibility": {
         "server": {

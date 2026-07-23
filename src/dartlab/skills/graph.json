@@ -238,7 +238,7 @@
       "id": "engines.data",
       "title": "Unified Data Workbench",
       "category": "engines",
-      "purpose": "Data Workbench는 L1, L1.5, L2의 원천, 정규 데이터, 횡단 데이터, 분석 자산을 하나의 자동 발견 카탈로그와 bounded query 계약으로 제공한다. 외부 프로세스의 범용 데이터 API, factor store projection, 시뮬레이터 입력 스냅샷에 같은 계약을 쓴다.",
+      "purpose": "Data Workbench는 L1, L1.5, L2의 원천, 정규 데이터, 횡단 데이터, 분석 자산을 하나의 자동 발견 카탈로그와 bounded query 계약으로 제공한다. 외부 프로세스의 범용 데이터 API, factor store projection, 시뮬레이터 입력 스냅샷에 같은 계약을 쓴다. 트리거는 '데이터 작업대', '팩터 스토어', '전종목 DART EDGAR 조회'다.",
       "inDegree": 3,
       "outDegree": 11,
       "cluster": "data",

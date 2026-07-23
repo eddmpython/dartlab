@@ -5,7 +5,7 @@ kind: curated
 scope: builtin
 status: observed
 category: engines
-purpose: Data Workbench는 L1, L1.5, L2의 원천, 정규 데이터, 횡단 데이터, 분석 자산을 하나의 자동 발견 카탈로그와 bounded query 계약으로 제공한다. 외부 프로세스의 범용 데이터 API, factor store projection, 시뮬레이터 입력 스냅샷에 같은 계약을 쓴다.
+purpose: Data Workbench는 L1, L1.5, L2의 원천, 정규 데이터, 횡단 데이터, 분석 자산을 하나의 자동 발견 카탈로그와 bounded query 계약으로 제공한다. 외부 프로세스의 범용 데이터 API, factor store projection, 시뮬레이터 입력 스냅샷에 같은 계약을 쓴다. 트리거는 '데이터 작업대', '팩터 스토어', '전종목 DART EDGAR 조회'다.
 whenToUse:
   - data
   - 데이터 작업대
@@ -25,6 +25,7 @@ inputs:
   - asset별 DataRequest
   - validAt 또는 knownAt
   - query budget
+  - opaque continuation token
 outputs:
   - DataCatalogResult
   - DataResult
@@ -34,6 +35,7 @@ outputs:
   - execution receipt
   - 구조화 DataLineage와 QualityAssertion
   - Polars와 Arrow table
+  - 전종목 source shard coverage와 opaque continuation
 capabilityRefs:
   - data
   - data.catalog
@@ -82,6 +84,8 @@ failureModes:
   - catalog 조회 중 owner 값을 실행함
   - 여러 partition의 row, byte 예산을 각각 적용해 전체 예산을 초과함
   - private, nested, bulk resource payload를 무제한 로드함
+  - 전종목 DART와 EDGAR를 호출자가 종목별 반복 호출함
+  - continuation과 함께 원 질의 override를 전송함
   - 빈 owner 결과를 성공 partition으로 반환함
   - 공유 Company 상태를 쓰는 owner를 동시에 초기화해 경쟁 상태를 만듦
 forbidden:
@@ -98,12 +102,14 @@ examples:
   - 한 query에서 factor, narrative, simulation input을 서로 다른 DataRequest로 조회
   - knownAt 지원 여부를 fail-closed로 검증
   - 시뮬레이터 재무 입력을 snapshot과 receipt로 고정
+  - DART와 EDGAR 전종목 원천을 한 query와 한 continuation chain으로 순회
 procedure:
   - dartlab.data()로 catalog와 query 두 public axis를 확인한다.
   - dartlab.data("catalog")로 owner, layer, kind, temporalSupport, queryable을 조회한다.
   - stable assetId를 선택하고 단일 view면 DataQuery, 혼합 view면 asset별 DataRequest에 subjects, measures, projection, time을 명시한다.
   - dartlab.data("query", assetId, query=...) 또는 dartlab.data("query", query=DataQuery(requests=(...)))를 호출한다.
   - status, coverage, gaps를 먼저 검사한 뒤 partition data를 소비한다.
+  - partial resource 결과는 result.continuation만 다음 query에 전달하고 원 질의를 덮어쓰지 않는다.
   - snapshotId, contractHash, lineageRefs, executionReceipts를 결과와 함께 보존한다.
 linkedSkills:
   - engines.data.foundation
@@ -114,7 +120,7 @@ linkedSkills:
 source:
   type: manual_skill
   format: markdown
-lastUpdated: '2026-07-22'
+lastUpdated: '2026-07-23'
 testUniverse:
   market: KR
   stockCodes:
@@ -186,6 +192,44 @@ result = dartlab.data(
 owner별 native schema를 억지로 한 표로 합치지 않는다. `DataResult.partitions`가 asset과 selector별 schema를 보존한다. 전체 query 단위로 asset 수, subject 수, row 수, byte 수, 실행 기한을 제한한다. `maxConcurrency`는 독립 request를 병렬 실행하지만 같은 `concurrencyGroup`과 같은 asset은 직렬화한다.
 
 혼합 query에서는 앞 partition이 전체 row budget을 독점하지 않도록 뒤 실행 task마다 최소 1행과 작은 byte 여유를 예약한다. 결과 partition 순서는 실제 완료 순서가 아니라 요청 순서를 따른다.
+
+## DART와 EDGAR 전종목 원천 순회
+
+전종목 조회는 종목별 API를 호출자가 반복하는 방식이 아니다. 한 mapping query가 DART와 EDGAR request를 함께 등록하고, 작업대가 서로 다른 Arrow schema를 partition으로 보존한 채 하나의 opaque continuation chain으로 순회한다.
+
+```python
+import dartlab
+
+page = dartlab.data(
+    "query",
+    query={
+        "requests": [
+            {
+                "assetId": "resource.finance",
+                "requestId": "dartAll",
+                "params": {"columns": ["stock_code", "account_id", "thstrm_amount"]},
+            },
+            {
+                "assetId": "resource.edgar",
+                "requestId": "edgarAll",
+                "params": {"columns": ["cik", "tag", "val"]},
+            },
+        ],
+        "budget": {
+            "maxRows": 100000,
+            "maxBytes": 64 * 1024 * 1024,
+            "timeoutMs": 120000,
+        },
+    },
+)
+
+while page.continuation is not None:
+    page = dartlab.data("query", query={"continuation": page.continuation})
+```
+
+첫 호출은 전체 원천을 메모리에 한꺼번에 올린다는 뜻이 아니다. query 하나가 작업 단위를 등록한다는 뜻이며, 각 page는 row, byte, time, shard 상한 안에서 반환된다. `DataPartition.selector`와 `DataResult.universeCoverage`는 source shard 수, 선택 shard 수, 완료 shard 수, cursor 위치, market, source provider를 노출한다. DART는 `KR`과 `dart`, EDGAR는 `US`와 `edgar`로 구분된다.
+
+continuation은 private control plane에 결박된 opaque capability다. 별도 프로세스가 token만 전달해 재개할 수 있고, 이미 commit된 page는 원천 provider 접촉 없이 동일하게 replay된다. 이어지는 page는 최초 발급 때 고정한 timeout을 다시 사용한다. 각 public page 진입은 영속 sweep cursor를 이용한 작은 bounded maintenance step을 한 번 실행하므로, 만료 chain과 CAS artifact 정리가 요청 하나를 무제한 점유하지 않는다. token query에는 assets, target, budget 등 원 질의 override를 함께 보내지 않는다.
 
 ## 혼합 Data Prism query
 
@@ -289,7 +333,9 @@ valid time과 knowledge time은 분리한다. descriptor가 실제로 `knownAt`�
 
 ## Resource 안전 정책
 
-`ResourceProjection(includePayload=False)`는 payload를 읽지 않고 revision-fixed locator만 반환한다. payload 실행은 company 또는 series shard로 제한한다. bulk, date-shard, nested, private resource는 무제한 메모리 로드를 허용하지 않는다.
+`ResourceProjection(includePayload=False)`는 payload를 읽지 않고 revision-fixed locator만 반환한다. native full-universe paging은 flat company-sharded resource와 EDGAR finance에 한정하며, 다른 bulk, date-shard, nested, private resource는 무제한 메모리 로드를 허용하지 않는다. pageable resource와 eager asset의 혼합 실행, `requireComplete`, resume query override는 실행 전에 차단한다.
+
+shard-local cursor는 이전 page의 모든 행을 다시 건너뛰는 global OFFSET을 사용하지 않는다. 다만 현재 mutable full-integrity 모드는 각 page 전후에 전체 file set과 shard stat을 재검증한다. cache hit은 file set, size, mtime과 저장된 manifest digest를 검증하며, 외부에서 size와 mtime까지 동일하게 위조한 rewrite를 매 page 다시 해시하지는 않는다. 따라서 데이터 읽기는 page shard에 국한되지만 전체 순회를 아직 `O(total rows + shards)` 또는 immutable cryptographic snapshot이라고 주장하지 않는다. immutable generation과 atomic marker가 도입되기 전까지는 현재의 전수 stat 검증 비용을 유지한다.
 
 ## 운영 파이프라인
 
@@ -304,6 +350,10 @@ valid time과 knowledge time은 분리한다. descriptor가 실제로 `knownAt`�
 - factor projection이 unit, entity, event time, source, evidence 필드를 보존하는지 확인한다.
 - row와 byte 예산이 partition별이 아니라 전체 query에 적용되는지 확인한다.
 - bulk resource locator가 payload를 읽지 않고, bulk payload 실행은 차단되는지 확인한다.
+- DART와 EDGAR 전종목 request가 한 공개 mapping query와 한 token chain으로 이어지는지 확인한다.
+- 별도 프로세스 재시작이 token만으로 이어지고 commit page replay가 provider 없이 byte-stable인지 확인한다.
+- shard-local cursor의 tiny page, predicate 0행, deep resume에 중복과 누락이 없는지 확인한다.
+- source, selected, completed shard 수와 DART, EDGAR market/provider coverage가 정직한지 확인한다.
 - simulator result가 data snapshot, contract hash, lineage, receipt를 노출하는지 확인한다.
 - 한 query의 DataRequest마다 다른 projection과 owner parameter가 독립 적용되는지 확인한다.
 - latest-only factor와 narrative가 knownAt을 발명하지 않는지 확인한다.
