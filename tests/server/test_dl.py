@@ -12,11 +12,15 @@ integration:
 
 from __future__ import annotations
 
+import math
+
+import polars as pl
 import pytest
 
 starlette = pytest.importorskip("starlette", reason="starlette not installed (optional [ai] dependency)")
 from starlette.testclient import TestClient  # noqa: E402
 
+from dartlab.data.contracts import AssetRef, Coverage, DataPartition, DataResult  # noqa: E402
 from dartlab.server import app  # noqa: E402
 
 pytestmark = pytest.mark.unit
@@ -98,3 +102,57 @@ class TestDlCallValidation:
         )
         # 200 (어떻게든 처리) 또는 400 (target 필요) — 둘 다 허용. 500 아니면 OK.
         assert resp.status_code != 500
+
+
+class TestDlStructuredDataResult:
+    def test_nested_polars_is_bounded_json_and_keeps_query_continuation(self, client, monkeypatch):
+        from dartlab.server.api import dl as dlModule
+
+        values = [float(index) for index in range(205)]
+        values[:3] = [math.nan, math.inf, -math.inf]
+        asset = AssetRef("scan.ratio", "asset:v1")
+        partition = DataPartition(
+            asset=asset,
+            projectionKind="factor",
+            data={
+                "frame": pl.DataFrame({"entityId": [f"KR:{index:06d}" for index in range(205)], "value": values}),
+                "series": pl.Series("scores", [1.0, math.nan, math.inf]),
+            },
+            schema=(("frame", "DataFrame"), ("series", "Series")),
+            rowCount=205,
+            truncated=False,
+            selector=(("measure", "roe"),),
+            temporalStatus="LATEST_ONLY",
+            lineageRefs=("source", "receipt"),
+            requestId="factor",
+        )
+        result = DataResult(
+            status="partial",
+            partitions=(partition,),
+            assets=(asset,),
+            snapshotId="data-snapshot:v1",
+            contractHash="a" * 64,
+            coverage=Coverage(1, 1, 1, 0),
+            gaps=(),
+            lineageRefs=("source",),
+            executionReceipts=("receipt",),
+            continuation="opaque-next-page",
+        )
+        monkeypatch.setattr(dlModule, "_dispatch", lambda *_args, **_kwargs: result)
+
+        response = client.post("/api/dl/call", json={"apiRef": "analysis"})
+
+        assert response.status_code == 200
+        payload = response.json()["data"]
+        partitionPayload = payload["partitions"][0]
+        framePayload = partitionPayload["data"]["frame"]
+        seriesPayload = partitionPayload["data"]["series"]
+        assert payload["continuation"] == "opaque-next-page"
+        assert partitionPayload["truncated"] is False
+        assert framePayload["_type"] == "DataFrame"
+        assert framePayload["rowCount"] == 205
+        assert framePayload["previewRowCount"] == 200
+        assert framePayload["previewTruncated"] is True
+        assert [row["value"] for row in framePayload["rows"][:3]] == [None, None, None]
+        assert seriesPayload["_type"] == "Series"
+        assert seriesPayload["values"] == [1.0, None, None]

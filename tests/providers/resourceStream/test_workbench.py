@@ -11,7 +11,12 @@ import pyarrow.parquet as pq
 import pytest
 
 import dartlab.providers.resourceStream.workbench as workbenchModule
-from dartlab.providers.resourceStream import ResourcePage, describeResource, readResourcePage
+from dartlab.providers.resourceStream import (
+    ResourcePage,
+    describeResource,
+    prepareResourceRead,
+    readResourcePage,
+)
 
 pytestmark = pytest.mark.unit
 
@@ -202,6 +207,86 @@ def test_readResourcePage_returnsTwoPinnedPagesWithoutDuplicates(
         "A.parquet",
         "B.parquet",
     ]
+
+
+def test_prepareResourceRead_reusesOneManifestAcrossDescriptionAndPage(
+    flatResource: tuple[Path, Path, Path],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import dartlab.providers.resourceStream.manifest as manifestModule
+
+    _dataRoot, resourceRoot, cachePath = flatResource
+    realResourcePaths = manifestModule._resourcePaths
+    fullScans: list[Path] = []
+
+    def countResourcePaths(root: Path) -> tuple[Path, ...]:
+        fullScans.append(root)
+        return realResourcePaths(root)
+
+    monkeypatch.setattr(manifestModule, "_resourcePaths", countResourcePaths)
+    legacyDescription = describeResource(_RESOURCE_ID, _CATEGORY, cachePath)
+    legacyPage = readResourcePage(
+        _RESOURCE_ID,
+        _CATEGORY,
+        {
+            "columns": ["companyId", "value"],
+            "batchRows": 2,
+            "maxRows": 4,
+            "maxBytes": 1_000_000,
+        },
+        cachePath,
+    )
+    assert legacyDescription.sourcePin == legacyPage.receipt.sourcePin
+    assert fullScans == [resourceRoot.resolve()] * 3
+
+    fullScans.clear()
+    prepared = prepareResourceRead(_RESOURCE_ID, _CATEGORY, cachePath)
+    assert prepared.description.shardCount == 2
+
+    first = prepared.read(
+        {
+            "columns": ["companyId", "value"],
+            "batchRows": 2,
+            "maxRows": 4,
+            "maxBytes": 1_000_000,
+        }
+    )
+    _firstSchema, firstTable = _decodePage(first)
+    assert first.receipt.nextCursor is not None
+    assert firstTable["value"].to_pylist() == [10, 20, 30, 40]
+    assert fullScans == [resourceRoot.resolve(), resourceRoot.resolve()]
+    with pytest.raises(ValueError, match="RESOURCE_READ_SESSION_CONSUMED"):
+        prepared.read({"columns": ["value"]})
+
+
+def test_prepareResourceRead_failsClosedOnDriftBetweenDescriptionAndRead(
+    flatResource: tuple[Path, Path, Path],
+) -> None:
+    _dataRoot, resourceRoot, cachePath = flatResource
+    prepared = prepareResourceRead(_RESOURCE_ID, _CATEGORY, cachePath)
+    assert prepared.description.shardCount == 2
+    untouched = resourceRoot / "B.parquet"
+    oldStat = untouched.stat()
+    untouched.touch()
+    untouchedStat = untouched.stat()
+    if untouchedStat.st_mtime_ns == oldStat.st_mtime_ns:
+        import os
+
+        os.utime(
+            untouched,
+            ns=(oldStat.st_atime_ns, oldStat.st_mtime_ns + 1_000_000_000),
+        )
+
+    with pytest.raises(ValueError, match="RESOURCE_SOURCE_DRIFT"):
+        prepared.read(
+            {
+                "columns": ["value"],
+                "batchRows": 1,
+                "maxRows": 1,
+                "maxBytes": 1_000_000,
+                "maxShards": 1,
+            }
+        )
 
 
 def test_readResourcePage_returnsSchemaValidEmptyStream(

@@ -8,6 +8,7 @@ from typing import Any
 
 import polars as pl
 
+from dartlab.data.contentSeal import contentHash, executionReceipt
 from dartlab.data.contracts import (
     AssetRef,
     DataAssetDescriptor,
@@ -22,6 +23,8 @@ from dartlab.data.contracts import (
     ResourceProjection,
 )
 from dartlab.data.evidence import lineageFacet, narrativeFrame, qualityAssertions
+
+_RECEIPT_PLACEHOLDER = f"data-execution:{'0' * 64}"
 
 
 def _schema(value: Any) -> tuple[tuple[str, str], ...]:
@@ -90,7 +93,7 @@ def _bounded(value: Any, maxRows: int, maxBytes: int) -> tuple[Any, bool]:
 
 def _records(value: Any, *, path: str = "$") -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
-    if dataclasses.is_dataclass(value):
+    if dataclasses.is_dataclass(value) and not isinstance(value, type):
         value = dataclasses.asdict(value)
     if isinstance(value, pl.DataFrame):
         for index, row in enumerate(value.iter_rows(named=True)):
@@ -159,9 +162,8 @@ def _factorFrame(
                 descriptor.assetId,
             ),
         )
-    knownAt = query.time.knownAt if query.time else None
     validAt = query.time.validAt if query.time else None
-    temporalStatus = "POINT_IN_TIME" if knownAt else "VALID_TIME" if validAt else "LATEST_ONLY"
+    temporalStatus = "VALID_TIME" if validAt else "LATEST_ONLY"
     unit = projection.unit or marketUnit or str(declaredUnit)
     frequency = projection.frequency or str(query.params.get("freq") or "native")
     availableAt = declared.get("availableAt")
@@ -178,7 +180,7 @@ def _factorFrame(
         pl.lit(market, dtype=pl.Utf8).alias("market"),
         pl.col("period").alias("eventAt"),
         pl.lit(str(availableAt) if availableAt is not None else None, dtype=pl.Utf8).alias("availableAt"),
-        pl.lit(knownAt, dtype=pl.Utf8).alias("knownAt"),
+        pl.lit(None, dtype=pl.Utf8).alias("knownAt"),
         pl.lit(unit).alias("unit"),
         pl.lit(frequency).alias("frequency"),
         pl.lit(descriptor.assetVersionId).alias("revisionId"),
@@ -215,6 +217,36 @@ def _factorFrame(
     return frame, gaps
 
 
+def _semanticContent(data: Any, projection: Any) -> Any:
+    """projection이 생성한 순환 provenance만 content hash 입력에서 제거한다."""
+
+    if isinstance(projection, (FactorProjection, NarrativeProjection)):
+        if isinstance(data, pl.DataFrame) and "evidenceRef" in data.columns:
+            return data.drop("evidenceRef")
+    if isinstance(projection, GraphProjection) and isinstance(data, Mapping):
+        semantic = dict(data)
+        evidence = semantic.get("evidence")
+        if isinstance(evidence, Mapping):
+            semantic["evidence"] = {key: value for key, value in evidence.items() if key != "evidenceRef"}
+        return semantic
+    return data
+
+
+def _bindReceipt(data: Any, projection: Any, receiptRef: str) -> Any:
+    """content에서 유도한 최종 receipt를 projection provenance에 다시 결박한다."""
+
+    if isinstance(projection, (FactorProjection, NarrativeProjection)):
+        if isinstance(data, pl.DataFrame) and "evidenceRef" in data.columns:
+            return data.with_columns(pl.lit(receiptRef).alias("evidenceRef"))
+    if isinstance(projection, GraphProjection) and isinstance(data, Mapping):
+        bound = dict(data)
+        evidence = bound.get("evidence")
+        if isinstance(evidence, Mapping):
+            bound["evidence"] = {**evidence, "evidenceRef": receiptRef}
+        return bound
+    return data
+
+
 def projectOutput(
     raw: Any,
     descriptor: DataAssetDescriptor,
@@ -235,7 +267,7 @@ def projectOutput(
         descriptor: 실행한 asset descriptor.
         query: projection과 budget이 결박된 query.
         selector: subject와 measure 등 partition selector.
-        receiptRef: 같은 실행의 evidence receipt ref.
+        receiptRef: 실제 결과와 결합할 deterministic request ref.
 
     Returns:
         DataPartition 또는 None과 projection gap tuple.
@@ -256,7 +288,7 @@ def projectOutput(
             query,
             measure=selector.get("measure"),
             market=selector.get("market"),
-            receiptRef=receiptRef,
+            receiptRef=_RECEIPT_PLACEHOLDER,
         )
         if data is None:
             return None, gaps
@@ -273,10 +305,10 @@ def projectOutput(
             "assetId": descriptor.assetId,
             "revisionId": descriptor.assetVersionId,
             "sourceRef": descriptor.sourceRef,
-            "evidenceRef": receiptRef,
+            "evidenceRef": _RECEIPT_PLACEHOLDER,
         }
     elif isinstance(projection, NarrativeProjection):
-        data = narrativeFrame(raw, descriptor, query, selector=selector, receiptRef=receiptRef)
+        data = narrativeFrame(raw, descriptor, query, selector=selector, receiptRef=_RECEIPT_PLACEHOLDER)
         if data.is_empty():
             return None, (DataGap("PROJECTION_INCOMPATIBLE", "narrative text가 없습니다", descriptor.assetId),)
     elif isinstance(projection, ResourceProjection):
@@ -292,18 +324,28 @@ def projectOutput(
         return None, (DataGap("PROJECTION_UNKNOWN", type(projection).__name__, descriptor.assetId),)
 
     data, truncated = _bounded(data, query.budget.maxRows, query.budget.maxBytes)
+    contentHashRef = contentHash(_semanticContent(data, projection))
+    finalReceiptRef = executionReceipt(receiptRef, contentHashRef)
+    data = _bindReceipt(data, projection, finalReceiptRef)
     rowCount = _rowCount(data)
     knownAt = query.time.knownAt if query.time else None
     validAt = query.time.validAt if query.time else None
     temporalStatus = "POINT_IN_TIME" if knownAt else "VALID_TIME" if validAt else "LATEST_ONLY"
     estimatedSize = getattr(data, "estimated_size", None)
-    outputBytes = int(estimatedSize()) if callable(estimatedSize) else len(repr(data).encode("utf-8"))
+    if callable(estimatedSize):
+        observedSize = estimatedSize()
+        if type(observedSize) is not int:
+            raise TypeError("projection output byte estimate가 int가 아닙니다")
+        outputBytes = observedSize
+    else:
+        outputBytes = len(repr(data).encode("utf-8"))
     assertions = qualityAssertions(
         descriptor,
         query,
         rowCount=rowCount,
         outputBytes=outputBytes,
         truncated=truncated,
+        contentHash=contentHashRef,
     )
     partition = DataPartition(
         asset=AssetRef(descriptor.assetId, descriptor.assetVersionId),
@@ -314,9 +356,10 @@ def projectOutput(
         truncated=truncated,
         selector=tuple(sorted((str(key), str(value)) for key, value in selector.items())),
         temporalStatus=temporalStatus,
-        lineageRefs=(descriptor.sourceRef, receiptRef),
+        lineageRefs=(descriptor.sourceRef, finalReceiptRef),
         requestId=requestId,
-        lineage=lineageFacet(descriptor, receiptRef),
+        lineage=lineageFacet(descriptor, finalReceiptRef),
         qualityAssertions=assertions,
+        contentHash=contentHashRef,
     )
     return partition, gaps

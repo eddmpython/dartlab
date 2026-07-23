@@ -24,6 +24,12 @@ from dartlab.data.contracts import (
     UniverseSelection,
 )
 from dartlab.data.entry import Data, data
+from dartlab.data.pageScan import (
+    PageScanCheckpoint,
+    PageScanError,
+    iterDataArrowBatches,
+    iterDataResultPages,
+)
 
 __all__ = [
     "AssetRef",
@@ -41,6 +47,8 @@ __all__ = [
     "GraphProjection",
     "NarrativeProjection",
     "NativeProjection",
+    "PageScanCheckpoint",
+    "PageScanError",
     "QueryBudget",
     "QualityAssertion",
     "RecordsProjection",
@@ -49,4 +57,6 @@ __all__ = [
     "UniverseCoverage",
     "UniverseSelection",
     "data",
+    "iterDataArrowBatches",
+    "iterDataResultPages",
 ]

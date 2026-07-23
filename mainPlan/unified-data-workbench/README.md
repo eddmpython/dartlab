@@ -22,6 +22,8 @@
 10. 전체 호출은 전체 RAM 적재를 뜻하지 않는다. catalog, plan, bounded materialization, continuation이 단일 진입점에서 끝난다는 뜻이다.
 11. 한 query의 `DataRequest`마다 서로 다른 projection을 지정해 factor, narrative, graph, native view를 같은 result envelope로 받을 수 있다.
 12. partition은 구조화 lineage, quality assertion과 Arrow transport를 제공한다.
+13. catalog `snapshotId`와 실제 반환 content의 `dataSnapshotId`를 분리하고 partition마다 `contentHash`를 둔다.
+14. 전종목 continuation은 첫 `DataResult`의 `iterPages()` 또는 `iterAllArrowBatches()`가 자동 소비한다.
 
 ## 공개 계약
 
@@ -43,7 +45,7 @@ result = dartlab.data(
 )
 ```
 
-`DataResult`는 최소한 `status`, `partitions`, `assets`, `snapshotId`, `contractHash`, `coverage`, `gaps`, `lineageRefs`, `executionReceipts`, `continuation`을 함께 가진다. schema는 각 partition이 보존한다.
+`DataResult`는 최소한 `status`, `partitions`, `assets`, `snapshotId`, `dataSnapshotId`, `contractHash`, `coverage`, `gaps`, `lineageRefs`, `executionReceipts`, `continuation`을 함께 가진다. schema와 실제 값의 `contentHash`는 각 partition이 보존한다.
 
 ## 문서 지도
 

@@ -350,6 +350,7 @@ class DataPartition:
     requestId: str | None = None
     lineage: DataLineage | None = None
     qualityAssertions: tuple[QualityAssertion, ...] = ()
+    contentHash: str | None = None
 
     def toPolars(self) -> pl.DataFrame:
         """Partition data를 외부 분석에 바로 쓰는 Polars DataFrame으로 변환한다.
@@ -503,11 +504,58 @@ class DataResult:
     qualityAssertions: tuple[QualityAssertion, ...] = ()
     universeSnapshotId: str | None = None
     universeCoverage: tuple[UniverseCoverage, ...] = ()
+    dataSnapshotId: str | None = None
 
     def byRequest(self, requestId: str) -> tuple[DataPartition, ...]:
         """혼합 query 결과에서 request ID에 해당하는 partition만 반환한다."""
 
         return tuple(partition for partition in self.partitions if partition.requestId == requestId)
+
+    def iterPages(
+        self,
+        *,
+        maxPages: int = 10_000,
+        deadline: float | None = None,
+        checkpoint: Any = None,
+    ) -> Iterator[DataResult]:
+        """현재 page부터 continuation chain 끝까지 lazy 순회한다.
+
+        한 번 받은 ``DataResult``에서 시작해 사용자가 token 재호출 loop를 작성하지 않아도 된다.
+        각 원천 page는 기존 row, byte, shard 상한을 유지하며 전체 결과를 RAM에 합치지 않는다.
+        """
+
+        import importlib
+
+        iterator = getattr(importlib.import_module("dartlab.data.pageScan"), "iterDataResultPages")
+        return iterator(
+            self,
+            maxPages=maxPages,
+            deadline=deadline,
+            checkpoint=checkpoint,
+        )
+
+    def iterAllArrowBatches(
+        self,
+        *,
+        maxPages: int = 10_000,
+        deadline: float | None = None,
+        checkpoint: Any = None,
+        maxRows: int = 65_536,
+        maxBytes: int = 8 * 1024 * 1024,
+    ) -> Iterator[tuple[str, pa.RecordBatch]]:
+        """Continuation chain 전체를 bounded Arrow batch 한 흐름으로 순회한다."""
+
+        import importlib
+
+        iterator = getattr(importlib.import_module("dartlab.data.pageScan"), "iterDataArrowBatches")
+        return iterator(
+            self,
+            maxPages=maxPages,
+            deadline=deadline,
+            checkpoint=checkpoint,
+            maxRows=maxRows,
+            maxBytes=maxBytes,
+        )
 
     def toArrow(self) -> dict[str, pa.Table]:
         """표 형태 partition을 request-aware Arrow table mapping으로 변환한다.

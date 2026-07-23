@@ -15,7 +15,9 @@ from .reader import BoundedBatchReader, openResourceBatchReader
 from .workbench import (
     ResourceDescription,
     ResourcePage,
+    ResourceReadSession,
     describeResource,
+    prepareResourceRead,
     readResourcePage,
 )
 
@@ -26,6 +28,7 @@ __all__ = [
     "ResourceManifest",
     "ResourceDescription",
     "ResourcePage",
+    "ResourceReadSession",
     "ResourcePredicate",
     "ResourceReadReceipt",
     "ResourceReadRequest",
@@ -34,6 +37,7 @@ __all__ = [
     "describeResource",
     "loadResourceManifest",
     "openResourceBatchReader",
+    "prepareResourceRead",
     "readResourcePage",
     "validateManifestSources",
 ]

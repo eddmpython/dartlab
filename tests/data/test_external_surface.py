@@ -94,3 +94,9 @@ def testEngineCallCanExecuteMixedDataRequests(monkeypatch):
     assert payload["status"] == "ok"
     assert [partition["requestId"] for partition in payload["partitions"]] == ["factor", "evidence"]
     assert [partition["projectionKind"] for partition in payload["partitions"]] == ["factor", "narrative"]
+    assert [partition["data"]["_type"] for partition in payload["partitions"]] == [
+        "DataFrame",
+        "DataFrame",
+    ]
+    assert payload["partitions"][0]["data"]["rows"][0]["measureId"] == "roe"
+    assert payload["dataSnapshotId"].startswith("data-content-snapshot:")

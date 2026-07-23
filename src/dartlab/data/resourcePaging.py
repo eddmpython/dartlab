@@ -19,6 +19,7 @@ from typing import Any
 import polars as pl
 import pyarrow as pa
 
+from dartlab.data.contentSeal import resultSnapshotId
 from dartlab.data.continuation import (
     ArrowPayloadFacts,
     ContinuationError,
@@ -43,6 +44,7 @@ from dartlab.data.contracts import (
     DataQuery,
     DataResult,
     NativeProjection,
+    QualityAssertion,
     UniverseCoverage,
 )
 
@@ -94,6 +96,7 @@ class _OwnerBoundary:
     describe: Callable[..., Any]
     read: Callable[..., Any]
     requestType: Any
+    prepare: Callable[..., Any] | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -202,10 +205,16 @@ def _ownerBoundary() -> _OwnerBoundary:
     contracts = importlib.import_module(_OWNER_CONTRACTS_MODULE)
     describe = getattr(module, "describeResource")
     read = getattr(module, "readResourcePage")
+    prepare = getattr(module, "prepareResourceRead", None)
     requestType = getattr(contracts, "ResourceReadRequest")
-    if not callable(describe) or not callable(read) or not hasattr(requestType, "fromMapping"):
+    if (
+        not callable(describe)
+        or not callable(read)
+        or (prepare is not None and not callable(prepare))
+        or not hasattr(requestType, "fromMapping")
+    ):
         raise RuntimeError("resource owner boundary가 유효하지 않습니다")
-    return _OwnerBoundary(describe, read, requestType)
+    return _OwnerBoundary(describe, read, requestType, prepare)
 
 
 def _textDigest(value: str) -> str:
@@ -878,10 +887,13 @@ def _descriptionTask(
     requestId: str,
     descriptor: DataAssetDescriptor,
     query: DataQuery,
+    *,
+    description: Any | None = None,
 ) -> _ResourceTask:
     category = descriptor.executorAxis or descriptor.assetId.removeprefix("resource.")
     cachePath = _manifestCachePath(descriptor.assetId, category)
-    description = boundary.describe(descriptor.assetId, category, cachePath)
+    if description is None:
+        description = boundary.describe(descriptor.assetId, category, cachePath)
     if (
         getattr(description, "resourceId", None) != descriptor.assetId
         or getattr(description, "category", None) != category
@@ -924,16 +936,63 @@ def _descriptionTask(
     )
 
 
+def _preparedDescriptionTask(
+    boundary: _OwnerBoundary,
+    requestId: str,
+    descriptor: DataAssetDescriptor,
+    query: DataQuery,
+) -> tuple[_ResourceTask, Any | None]:
+    """가능하면 description과 바로 이어질 page가 같은 owner manifest를 쓰게 한다."""
+
+    if boundary.prepare is None:
+        return _descriptionTask(boundary, requestId, descriptor, query), None
+    category = descriptor.executorAxis or descriptor.assetId.removeprefix("resource.")
+    prepared = boundary.prepare(
+        descriptor.assetId,
+        category,
+        _manifestCachePath(descriptor.assetId, category),
+    )
+    description = getattr(prepared, "description", None)
+    if description is None or not callable(getattr(prepared, "read", None)):
+        raise ValueError("prepared resource owner 계약이 유효하지 않습니다")
+    return (
+        _descriptionTask(
+            boundary,
+            requestId,
+            descriptor,
+            query,
+            description=description,
+        ),
+        prepared,
+    )
+
+
 def _currentSourcePins(
     boundary: _OwnerBoundary,
     session: _ResourceSession,
     *,
     deadline: float,
-) -> dict[str, str]:
+) -> tuple[dict[str, str], dict[str, Any]]:
     pins = {}
+    preparedReads: dict[str, Any] = {}
     for task in session.tasks:
         _requireDeadline(deadline)
-        description = boundary.describe(task.assetId, task.category, _manifestCachePath(task.assetId, task.category))
+        if boundary.prepare is None:
+            description = boundary.describe(
+                task.assetId,
+                task.category,
+                _manifestCachePath(task.assetId, task.category),
+            )
+        else:
+            prepared = boundary.prepare(
+                task.assetId,
+                task.category,
+                _manifestCachePath(task.assetId, task.category),
+            )
+            description = getattr(prepared, "description", None)
+            if description is None or not callable(getattr(prepared, "read", None)):
+                raise ContinuationError("CONTINUATION_SOURCE_STALE")
+            preparedReads[task.requestId] = prepared
         _requireDeadline(deadline)
         if (
             getattr(description, "resourceId", None) != task.assetId
@@ -945,7 +1004,7 @@ def _currentSourcePins(
         if not isinstance(ownerPin, str):
             raise ContinuationError("CONTINUATION_SOURCE_STALE")
         pins[task.requestId] = _textDigest(ownerPin)
-    return pins
+    return pins, preparedReads
 
 
 def _validateOwnerPage(
@@ -1013,6 +1072,7 @@ def _materializeOnce(
     byteLimit: int,
     logicalLimit: int,
     deadline: float,
+    preparedReads: Mapping[str, Any] | None = None,
 ) -> PageEnvelope:
     _requireDeadline(deadline)
     _validateQueryPayload(state.queryPayload)
@@ -1049,12 +1109,16 @@ def _materializeOnce(
             "expectedQueryPin": task.ownerQueryPin,
         }
         request = boundary.requestType.fromMapping(requestMapping)
-        page = boundary.read(
-            task.assetId,
-            task.category,
-            request.toMapping(),
-            _manifestCachePath(task.assetId, task.category),
-        )
+        prepared = preparedReads.get(task.requestId) if preparedReads is not None else None
+        if prepared is not None:
+            page = prepared.read(request.toMapping())
+        else:
+            page = boundary.read(
+                task.assetId,
+                task.category,
+                request.toMapping(),
+                _manifestCachePath(task.assetId, task.category),
+            )
         _requireDeadline(deadline)
         facts, payload, startCursor, nextCursor, scannedShardCount = _validateOwnerPage(task, page, request)
         receipt = page.receipt
@@ -1107,6 +1171,7 @@ def _materialize(
     boundary: _OwnerBoundary,
     *,
     deadline: float,
+    preparedReads: Mapping[str, Any] | None = None,
 ) -> PageEnvelope:
     session = _decodeSession(state.cursorPayload)
     rowLimit = session.pageMaxRows
@@ -1122,6 +1187,7 @@ def _materialize(
                 byteLimit=byteLimit,
                 logicalLimit=logicalLimit,
                 deadline=deadline,
+                preparedReads=preparedReads if attempt == 0 else None,
             )
         except ContinuationError as error:
             if error.code not in {"CONTINUATION_BYTE_BUDGET", "CONTINUATION_LOGICAL_BYTE_BUDGET"} or attempt == 5:
@@ -1239,6 +1305,7 @@ def _resultFromPage(session: _ResourceSession, page: Any) -> DataResult:
         frame = pl.from_arrow(table)
         if not isinstance(frame, pl.DataFrame):
             raise ContinuationError("CONTINUATION_PAYLOAD_INVALID")
+        contentHashRef = f"sha256:{hashlib.sha256(entry.payload).hexdigest()}"
         partitions.append(
             DataPartition(
                 asset=AssetRef(task.assetId, task.assetVersionId),
@@ -1251,6 +1318,17 @@ def _resultFromPage(session: _ResourceSession, page: Any) -> DataResult:
                 temporalStatus="LATEST_ONLY",
                 lineageRefs=(task.sourceRef, page.pageRef),
                 requestId=task.requestId,
+                qualityAssertions=(
+                    QualityAssertion(
+                        assertionId="contentSealed",
+                        success=True,
+                        severity="error",
+                        expected="verified Arrow IPC content hash",
+                        observed=contentHashRef,
+                        assetId=task.assetId,
+                    ),
+                ),
+                contentHash=contentHashRef,
             )
         )
     assets = tuple(dict.fromkeys(AssetRef(task.assetId, task.assetVersionId) for task in session.tasks))
@@ -1258,6 +1336,12 @@ def _resultFromPage(session: _ResourceSession, page: Any) -> DataResult:
     universeCoverage = _universeCoverage(session, entryByRequest)
     universeSnapshotId = "resource-universe:" + canonicalDigest(
         {task.requestId: task.ownerSourcePin for task in session.tasks}
+    )
+    dataSnapshotId = resultSnapshotId(
+        catalogSnapshotId=session.snapshotId,
+        contractHash=session.contractHash,
+        partitions=partitions,
+        universeSnapshotId=universeSnapshotId,
     )
     return DataResult(
         status="partial" if page.nextToken is not None else "ok",
@@ -1270,8 +1354,10 @@ def _resultFromPage(session: _ResourceSession, page: Any) -> DataResult:
         lineageRefs=lineageRefs,
         executionReceipts=(page.pageRef,),
         continuation=page.nextToken,
+        qualityAssertions=tuple(assertion for partition in partitions for assertion in partition.qualityAssertions),
         universeSnapshotId=universeSnapshotId,
         universeCoverage=universeCoverage,
+        dataSnapshotId=dataSnapshotId,
     )
 
 
@@ -1403,9 +1489,12 @@ def executeInitialResourcePaging(
     try:
         _requireDeadline(deadline)
         boundary = _ownerBoundary()
-        tasks = tuple(
-            _descriptionTask(boundary, requestId, descriptor, active) for requestId, descriptor, active in resolved
+        preparedTasks = tuple(
+            _preparedDescriptionTask(boundary, requestId, descriptor, active)
+            for requestId, descriptor, active in resolved
         )
+        tasks = tuple(task for task, _prepared in preparedTasks)
+        preparedReads = {task.requestId: prepared for task, prepared in preparedTasks if prepared is not None}
         _requireDeadline(deadline)
         session = _ResourceSession(
             snapshotId=snapshotId,
@@ -1429,7 +1518,12 @@ def executeInitialResourcePaging(
         page = redeemStore.redeem(
             issued.token,
             pins,
-            materialize=lambda current: _materialize(current, boundary, deadline=deadline),
+            materialize=lambda current: _materialize(
+                current,
+                boundary,
+                deadline=deadline,
+                preparedReads=preparedReads,
+            ),
             waitSeconds=_requireDeadline(deadline),
         )
         _requireDeadline(deadline)
@@ -1484,10 +1578,15 @@ def resumeResourcePaging(token: str, *, deadline: float, startedAt: float | None
 
             _requireDeadline(deadline)
             boundary = _ownerBoundary()
-            currentSources = _currentSourcePins(boundary, session, deadline=deadline)
+            currentSources, preparedReads = _currentSourcePins(boundary, session, deadline=deadline)
             currentPins = _pins(session, context.state.queryPayload, currentSources)
             _requireCurrentPins(context.pins, currentPins)
-            return _materialize(current, boundary, deadline=deadline)
+            return _materialize(
+                current,
+                boundary,
+                deadline=deadline,
+                preparedReads=preparedReads,
+            )
 
         _requireDeadline(deadline)
         redeemStore = _continuationStore(deadline=deadline, runMaintenance=False)

@@ -27,7 +27,7 @@ def _language(text: str) -> str:
 
 
 def _textLeaves(value: Any, *, path: str = "$") -> list[tuple[str, str]]:
-    if dataclasses.is_dataclass(value):
+    if dataclasses.is_dataclass(value) and not isinstance(value, type):
         value = dataclasses.asdict(value)
     leaves: list[tuple[str, str]] = []
     if isinstance(value, pl.DataFrame):
@@ -90,10 +90,9 @@ def narrativeFrame(
             "sourceRef": descriptor.sourceRef,
         }
     )
-    knownAt = query.time.knownAt if query.time else None
     validAt = query.time.validAt if query.time else None
     availableAt = dict(descriptor.metadata).get("availableAt")
-    temporalStatus = "POINT_IN_TIME" if knownAt else "VALID_TIME" if validAt else "LATEST_ONLY"
+    temporalStatus = "VALID_TIME" if validAt else "LATEST_ONLY"
     rows = []
     for path, text in _textLeaves(raw):
         contentHash = _digest(text)
@@ -108,7 +107,7 @@ def narrativeFrame(
                 "contentHash": contentHash,
                 "eventAt": validAt,
                 "availableAt": str(availableAt) if availableAt is not None else None,
-                "knownAt": knownAt,
+                "knownAt": None,
                 "revisionId": descriptor.assetVersionId,
                 "sourceRef": descriptor.sourceRef,
                 "evidenceRef": receiptRef,
@@ -138,6 +137,7 @@ def qualityAssertions(
     rowCount: int,
     outputBytes: int,
     truncated: bool,
+    contentHash: str | None,
 ) -> tuple[QualityAssertion, ...]:
     """Partition 예산, provenance, temporal truth를 machine-readable assertion으로 만든다."""
 
@@ -174,6 +174,14 @@ def qualityAssertions(
             severity="error",
             expected="requested cutoff passed to owner or latest-only declared",
             observed=temporalObserved,
+            assetId=descriptor.assetId,
+        ),
+        QualityAssertion(
+            assertionId="contentSealed",
+            success=contentHash is not None,
+            severity="error" if contentHash is not None else "warning",
+            expected="deterministic content hash",
+            observed=contentHash or "unsupported opaque content",
             assetId=descriptor.assetId,
         ),
     )

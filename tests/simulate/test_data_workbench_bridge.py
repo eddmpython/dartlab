@@ -24,7 +24,8 @@ def testBuildSnapshotBindsWorkbenchSnapshotAndReceipts(monkeypatch):
     snapshot = buildSnapshot(FakeCompany(), asOf="2020Q4")
 
     assert snapshot["baseRevenue"] == 100.0
-    assert snapshot["dataSnapshotId"].startswith("data-snapshot:")
+    assert snapshot["dataSnapshotId"].startswith("data-content-snapshot:")
+    assert snapshot["dataCatalogSnapshotId"].startswith("data-snapshot:")
     assert len(snapshot["dataContractHash"]) == 64
     assert snapshot["dataLineageRefs"]
     assert snapshot["dataExecutionReceipts"][0].startswith("data-execution:")

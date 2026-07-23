@@ -1,9 +1,8 @@
 """Master API dispatch — dartlab capability registry 의 HTTP face.
 
-dartlab.ai.tools.engineCall 의 dispatch 패턴을 참고하되, **JSON-safe 직렬화 강행**
-(engineCall 의 `_resultToRefs` 가 dict 결과를 `str(...)[:4000]` 으로 stringify
-하므로 structured 데이터 손실 발생). dashboard 가 사용할 master entry 는 dict /
-list / DataFrame 모두 구조 보존이 필수.
+dartlab.ai.tools.engineCall 의 dispatch 패턴을 참고하되, **JSON-safe 직렬화 강행**.
+dashboard 가 사용할 master entry 는 dataclass / dict / list / DataFrame / Series 모두
+구조를 보존해야 한다.
 
 capability 화이트리스트 + private 차단은 capability registry (loadCapabilities) 와
 공유 — engineCall 과 같은 ACL.
@@ -38,6 +37,7 @@ Raises:
 from __future__ import annotations
 
 import math
+from dataclasses import fields, is_dataclass
 from datetime import date, datetime
 from typing import Any
 
@@ -51,6 +51,9 @@ from dartlab.reference.capability import loadCapabilities
 CAPABILITIES = loadCapabilities()
 
 router = APIRouter(prefix="/api/dl", tags=["dl"])
+
+_JSON_PREVIEW_ROWS = 200
+_JSON_MAX_DEPTH = 50
 
 
 class DlCallRequest(BaseModel):
@@ -143,11 +146,12 @@ def _dispatch(apiRef: str, target: str | None, args: list[Any], kwargs: dict[str
 def _toJsonSafe(obj: Any, _depth: int = 0) -> Any:
     """recursively 변환 — DataFrame / dict / list / numpy / datetime → JSON.
 
-    DataFrame 은 {_type: 'DataFrame', rowCount, columns, rows} 로 unwrap.
+    DataFrame과 Series는 실제 크기와 bounded preview를 함께 반환한다. 이 preview 표시는
+    DataResult의 query-level ``truncated``와 ``continuation``을 변경하지 않는다.
     NaN / inf 는 null (JSON 호환). 깊이 제한 50.
     """
-    if _depth > 50:
-        return f"<truncated depth>: {type(obj).__name__}"
+    if _depth > _JSON_MAX_DEPTH:
+        return {"_type": type(obj).__name__, "previewTruncated": True, "reason": "maxDepth"}
 
     if obj is None or isinstance(obj, (str, bool, int)):
         return obj
@@ -158,23 +162,43 @@ def _toJsonSafe(obj: Any, _depth: int = 0) -> Any:
     if isinstance(obj, (datetime, date)):
         return obj.isoformat()
     if isinstance(obj, pl.DataFrame):
+        preview = obj.head(_JSON_PREVIEW_ROWS)
         return {
             "_type": "DataFrame",
             "rowCount": obj.height,
+            "previewRowCount": preview.height,
             "columns": list(obj.columns),
-            "rows": [_toJsonSafe(r, _depth + 1) for r in obj.to_dicts()],
+            "schema": [
+                {"name": name, "dtype": str(dtype)} for name, dtype in zip(obj.columns, obj.dtypes, strict=True)
+            ],
+            "rows": [_toJsonSafe(row, _depth + 1) for row in preview.to_dicts()],
+            "previewTruncated": obj.height > preview.height,
         }
     if isinstance(obj, pl.Series):
-        return obj.to_list()
+        preview = obj.head(_JSON_PREVIEW_ROWS)
+        return {
+            "_type": "Series",
+            "name": obj.name,
+            "dtype": str(obj.dtype),
+            "length": obj.len(),
+            "previewLength": preview.len(),
+            "values": [_toJsonSafe(item, _depth + 1) for item in preview.to_list()],
+            "previewTruncated": obj.len() > preview.len(),
+        }
+    if is_dataclass(obj) and not isinstance(obj, type):
+        return {field.name: _toJsonSafe(getattr(obj, field.name), _depth + 1) for field in fields(obj)}
     if isinstance(obj, dict):
         return {str(k): _toJsonSafe(v, _depth + 1) for k, v in obj.items()}
-    if isinstance(obj, (list, tuple, set)):
-        return [_toJsonSafe(v, _depth + 1) for v in obj]
+    if isinstance(obj, (list, tuple, set, frozenset)):
+        items = sorted(obj, key=str) if isinstance(obj, (set, frozenset)) else obj
+        return [_toJsonSafe(v, _depth + 1) for v in items]
     # numpy 타입 / 기타 — fallback to str
     try:
         # numpy scalars 등
-        if hasattr(obj, "item") and callable(obj.item):
-            return _toJsonSafe(obj.item(), _depth + 1)
+        candidate: Any = obj
+        itemFn = getattr(candidate, "item", None)
+        if callable(itemFn):
+            return _toJsonSafe(itemFn(), _depth + 1)
     except Exception:
         pass
     return str(obj)

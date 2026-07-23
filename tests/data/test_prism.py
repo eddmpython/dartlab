@@ -84,6 +84,7 @@ def testOneQueryBuildsFactorAndNarrativeViews(monkeypatch):
         "byteBudget",
         "provenanceBound",
         "temporalTruth",
+        "contentSealed",
     }
 
     arrow = result.toArrow()

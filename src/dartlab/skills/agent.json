@@ -1907,6 +1907,7 @@
         "typed DataPartition",
         "coverage와 gap",
         "snapshot과 lineage",
+        "실제 결과 content hash와 data snapshot",
         "execution receipt",
         "구조화 DataLineage와 QualityAssertion",
         "Polars와 Arrow table",
@@ -1947,14 +1948,17 @@
         "stable assetId를 선택하고 단일 view면 DataQuery, 혼합 view면 asset별 DataRequest에 subjects, measures, projection, time을 명시한다.",
         "dartlab.data(\"query\", assetId, query=...) 또는 dartlab.data(\"query\", query=DataQuery(requests=(...)))를 호출한다.",
         "status, coverage, gaps를 먼저 검사한 뒤 partition data를 소비한다.",
-        "partial resource 결과는 result.continuation만 다음 query에 전달하고 원 질의를 덮어쓰지 않는다.",
-        "snapshotId, contractHash, lineageRefs, executionReceipts를 결과와 함께 보존한다."
+        "전체 resource를 한 소비 흐름으로 읽을 때 result.iterPages() 또는 result.iterAllArrowBatches()를 사용한다.",
+        "수동 재개가 필요하면 partial result의 continuation만 다음 query에 전달하고 원 질의를 덮어쓰지 않는다.",
+        "snapshotId, dataSnapshotId, contractHash, partition contentHash, lineageRefs, executionReceipts를 함께 보존한다."
       ],
       "recipeSteps": [],
       "requiredEvidence": [
         "assetId",
         "assetVersionId",
         "snapshotId",
+        "dataSnapshotId",
+        "DataPartition.contentHash",
         "contractHash",
         "coverage",
         "gaps",

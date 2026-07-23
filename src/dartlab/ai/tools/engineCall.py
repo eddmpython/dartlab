@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import logging
+import math
 import os
 import re
 from contextlib import contextmanager, redirect_stderr, redirect_stdout
+from dataclasses import fields, is_dataclass
+from datetime import date, datetime
 from io import StringIO
 from typing import Any
 
@@ -21,6 +24,9 @@ from .industryContext import getIndustryBadge
 from .types import ToolResult
 
 _FILING_DIRECT_CONFIDENCE = _baseScore("filing_direct")
+
+_JSON_PREVIEW_ROWS = 20
+_JSON_MAX_DEPTH = 50
 
 _AUTO_GATHER_ENABLED = os.environ.get("DARTLAB_AUTO_GATHER", "1") not in {"0", "false", "False"}
 
@@ -617,7 +623,7 @@ def _resultToRefs(apiRef: str, result: Any, *, target: str = "") -> ToolResult:
             refs=[table_ref],
             data={"rowCount": result.height, "columns": list(result.columns)},
         )
-    if isinstance(result, dict | list | tuple):
+    if isinstance(result, dict | list | tuple) or is_dataclass(result):
         payload = _jsonableResult(result)
         ref = Ref(
             id=f"execution:{apiRef}:{target or 'result'}",
@@ -637,14 +643,52 @@ def _resultToRefs(apiRef: str, result: Any, *, target: str = "") -> ToolResult:
     return ToolResult(True, f"{apiRef} 실행 완료", refs=[ref], data={"result": str(result)})
 
 
-def _jsonableResult(value: Any) -> Any:
-    """ToolResult payload 에 실을 수 있게 primitive/container 로 축소한다."""
-    if value is None or isinstance(value, str | int | float | bool):
+def _jsonableResult(value: Any, _depth: int = 0) -> Any:
+    """ToolResult payload를 bounded JSON-safe 구조로 변환한다.
+
+    DataFrame과 Series는 전체 값을 문자열로 만들지 않는다. 실제 크기와 제한된 preview를
+    함께 보존해 query의 ``truncated``와 ``continuation`` 의미를 덮어쓰지 않는다.
+    """
+    if _depth > _JSON_MAX_DEPTH:
+        return {"_type": type(value).__name__, "previewTruncated": True, "reason": "maxDepth"}
+    if value is None or isinstance(value, str | int | bool):
         return value
+    if isinstance(value, float):
+        return value if math.isfinite(value) else None
+    if isinstance(value, datetime | date):
+        return value.isoformat()
+    if isinstance(value, pl.DataFrame):
+        preview = value.head(_JSON_PREVIEW_ROWS)
+        return {
+            "_type": "DataFrame",
+            "rowCount": value.height,
+            "previewRowCount": preview.height,
+            "columns": list(value.columns),
+            "schema": [
+                {"name": name, "dtype": str(dtype)}
+                for name, dtype in zip(value.columns, value.dtypes, strict=True)
+            ],
+            "rows": [_jsonableResult(row, _depth + 1) for row in preview.to_dicts()],
+            "previewTruncated": value.height > preview.height,
+        }
+    if isinstance(value, pl.Series):
+        preview = value.head(_JSON_PREVIEW_ROWS)
+        return {
+            "_type": "Series",
+            "name": value.name,
+            "dtype": str(value.dtype),
+            "length": value.len(),
+            "previewLength": preview.len(),
+            "values": [_jsonableResult(item, _depth + 1) for item in preview.to_list()],
+            "previewTruncated": value.len() > preview.len(),
+        }
     if isinstance(value, dict):
-        return {str(k): _jsonableResult(v) for k, v in value.items()}
-    if isinstance(value, list | tuple):
-        return [_jsonableResult(v) for v in value]
+        return {str(k): _jsonableResult(v, _depth + 1) for k, v in value.items()}
+    if isinstance(value, list | tuple | set | frozenset):
+        items = sorted(value, key=str) if isinstance(value, set | frozenset) else value
+        return [_jsonableResult(item, _depth + 1) for item in items]
+    if is_dataclass(value) and not isinstance(value, type):
+        return {field.name: _jsonableResult(getattr(value, field.name), _depth + 1) for field in fields(value)}
     return str(value)
 
 

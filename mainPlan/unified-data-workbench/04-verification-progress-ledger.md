@@ -13,6 +13,7 @@
 | W6 | compatibility cleanup와 완료 감사 | 완료 |
 | W7 | Signature Data Prism 혼합 query, evidence, quality, Arrow | 완료 |
 | W8 | 170개 전수 실행, selector, 빈 결과, 동시성 hardening | 완료 |
+| W9 | 실제 content 봉인, 외부 구조 보존, 전종목 자동 page 소비 | 완료 |
 
 ## 2. unit과 contract test
 
@@ -174,3 +175,17 @@ uv run python -X utf8 tests/audit/dartlabGuard.py strict --scope l0-l15 --provid
 - L1 price, L2 credit와 macro, simulator input의 실제 4자산 혼합 query 4.278초, partition 4개, Arrow table 4개, quality assertion 16개 확인
 - 앞 partition이 row budget을 독점하지 않도록 뒤 task마다 최소 1행과 byte 여유 예약
 - 최종 격리 wheel 설치본에서 catalog 353개와 queryable 170개, factor 999행, narrative 1행, Arrow table 2개 확인
+
+### 2026-07-23 W9
+
+- catalog version set인 기존 `snapshotId`와 실제 반환값을 결박한 `dataSnapshotId`를 분리
+- 모든 표준 partition에 schema와 값 기반 `contentHash` 및 `contentSealed` quality assertion 추가
+- 실행 영수증을 query metadata만이 아니라 실제 반환 content hash에 결박
+- 같은 query와 같은 값의 identity 안정성, 값 변경 시 content hash, receipt, data snapshot 동시 변경 검증
+- resource Arrow payload의 검증된 inner IPC digest를 partition content identity로 승격
+- simulator 입력이 catalog snapshot 대신 실제 content-sealed data snapshot을 소비하도록 전환
+- EngineCall 20행, HTTP 200행 bounded JSON preview로 nested DataFrame과 Series 구조 보존
+- 첫 `DataResult`의 `iterPages()`와 `iterAllArrowBatches()`가 opaque continuation을 자동 소비하도록 추가
+- 한 Python 소비 흐름에서 DART 5개와 EDGAR 4개 synthetic shard를 중복과 누락 없이 완주
+- resource owner의 description과 read가 single-use manifest session을 공유해 전수 manifest 순회를 page당 3회에서 2회로 축소
+- strict mutable source의 pre-snapshot과 반환 전 post-validation, committed replay 무접촉 계약 유지

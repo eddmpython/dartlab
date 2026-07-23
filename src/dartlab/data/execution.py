@@ -13,6 +13,7 @@ from concurrent.futures import TimeoutError as FutureTimeoutError
 from typing import Any
 
 from dartlab.data.catalog import buildCatalog
+from dartlab.data.contentSeal import resultSnapshotId
 from dartlab.data.contracts import (
     AssetRef,
     Coverage,
@@ -22,6 +23,7 @@ from dartlab.data.contracts import (
     DataRequest,
     DataResult,
     FactorProjection,
+    NarrativeProjection,
     ResourceProjection,
     UniverseCoverage,
     projectionKind,
@@ -38,7 +40,7 @@ class _ExecutionTask:
     descriptor: DataAssetDescriptor
     query: DataQuery
     selector: Mapping[str, str]
-    receiptRef: str
+    requestRef: str
     universeMarket: ResolvedMarket | None = None
     universeSnapshotId: str | None = None
 
@@ -91,7 +93,7 @@ def _canonical(value: Any) -> bytes:
     ).encode()
 
 
-def _receipt(
+def _requestRef(
     descriptor: DataAssetDescriptor,
     query: DataQuery,
     selector: Mapping[str, str],
@@ -103,7 +105,7 @@ def _receipt(
         "requestId": requestId,
         "selector": dict(selector),
     }
-    return f"data-execution:{hashlib.sha256(_canonical(payload)).hexdigest()}"
+    return f"data-request:{hashlib.sha256(_canonical(payload)).hexdigest()}"
 
 
 def _temporalGap(descriptor: DataAssetDescriptor, query: DataQuery) -> DataGap | None:
@@ -114,6 +116,12 @@ def _temporalGap(descriptor: DataAssetDescriptor, query: DataQuery) -> DataGap |
         return DataGap(
             "PIT_UNSUPPORTED",
             "owner가 knownAt vintage를 실제 실행에 전달할 수 없습니다",
+            descriptor.assetId,
+        )
+    if query.time.knownAt is not None and isinstance(query.projection, (FactorProjection, NarrativeProjection)):
+        return DataGap(
+            "OBSERVATION_PIT_METADATA_REQUIRED",
+            "canonical projection이 row별 knowledge time과 revision을 보존하지 못해 PIT를 발급하지 않습니다",
             descriptor.assetId,
         )
     if query.time.validAt is not None and "validAt" not in support:
@@ -273,7 +281,10 @@ def _execute(descriptor: DataAssetDescriptor, query: DataQuery, selector: Mappin
 def _outputBytes(value: Any) -> int:
     estimatedSize = getattr(value, "estimated_size", None)
     if callable(estimatedSize):
-        return int(estimatedSize())
+        observedSize = estimatedSize()
+        if type(observedSize) is not int:
+            raise TypeError("owner output byte estimate가 int가 아닙니다")
+        return observedSize
     return len(repr(value).encode("utf-8"))
 
 
@@ -533,7 +544,7 @@ def executeDataQuery(assetIds: Sequence[str], query: DataQuery) -> DataResult:
                     )
                 )
         for selector in selectors:
-            receiptRef = _receipt(descriptor, activeQuery, selector, requestId)
+            requestRef = _requestRef(descriptor, activeQuery, selector, requestId)
             market = selector.get("market")
             tasks.append(
                 _ExecutionTask(
@@ -541,7 +552,7 @@ def executeDataQuery(assetIds: Sequence[str], query: DataQuery) -> DataResult:
                     descriptor,
                     activeQuery,
                     selector,
-                    receiptRef,
+                    requestRef,
                     universeByMarket.get(market) if market else None,
                     resolvedUniverse.snapshotId if resolvedUniverse else None,
                 )
@@ -681,7 +692,7 @@ def executeDataQuery(assetIds: Sequence[str], query: DataQuery) -> DataResult:
                         task.descriptor,
                         partitionQuery,
                         selector=task.selector,
-                        receiptRef=task.receiptRef,
+                        receiptRef=task.requestRef,
                         requestId=task.requestId,
                     )
                     gaps.extend(
@@ -689,7 +700,8 @@ def executeDataQuery(assetIds: Sequence[str], query: DataQuery) -> DataResult:
                     )
                     if partition is not None:
                         partitions.append(partition)
-                        receipts.append(task.receiptRef)
+                        if partition.lineage is not None:
+                            receipts.append(partition.lineage.runId)
                         remainingRows -= partition.rowCount
                         remainingBytes -= _outputBytes(partition.data)
                         if partition.truncated:
@@ -756,6 +768,12 @@ def executeDataQuery(assetIds: Sequence[str], query: DataQuery) -> DataResult:
         )
     else:
         universeSnapshotId = None
+    dataSnapshotId = resultSnapshotId(
+        catalogSnapshotId=catalog.snapshotId,
+        contractHash=contractHash,
+        partitions=partitions,
+        universeSnapshotId=universeSnapshotId,
+    )
     return DataResult(
         status=status,
         partitions=tuple(partitions),
@@ -770,4 +788,5 @@ def executeDataQuery(assetIds: Sequence[str], query: DataQuery) -> DataResult:
         qualityAssertions=assertions,
         universeSnapshotId=universeSnapshotId,
         universeCoverage=tuple(universeCoverage),
+        dataSnapshotId=dataSnapshotId,
     )

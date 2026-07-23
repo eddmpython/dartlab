@@ -173,7 +173,8 @@ def _workbenchFinanceInputs(company: Any, asOf: str | None) -> tuple[dict, dict[
 
     subject = str(getattr(company, "stockCode", None) or "bound-company")
     time = TimeContext(validAt=asOf) if asOf is not None else None
-    result = dartlab.data(
+    dataCall = getattr(dartlab, "data")
+    result = dataCall(
         "query",
         "analysis.simulationInputs",
         query=DataQuery(
@@ -186,8 +187,11 @@ def _workbenchFinanceInputs(company: Any, asOf: str | None) -> tuple[dict, dict[
     if result.partitions:
         payload = result.partitions[0].data
         if isinstance(payload, dict):
+            if result.dataSnapshotId is None:
+                raise RuntimeError("simulation input 결과가 content-sealed snapshot이 아닙니다")
             metadata = {
-                "dataSnapshotId": result.snapshotId,
+                "dataSnapshotId": result.dataSnapshotId,
+                "dataCatalogSnapshotId": result.snapshotId,
                 "dataContractHash": result.contractHash,
                 "dataLineageRefs": result.lineageRefs,
                 "dataExecutionReceipts": result.executionReceipts,
@@ -203,7 +207,8 @@ def _workbenchFinanceInputs(company: Any, asOf: str | None) -> tuple[dict, dict[
         "latestAsOf": "latest",
         "requestedAsOf": requested,
     }, {
-        "dataSnapshotId": result.snapshotId,
+        "dataSnapshotId": result.dataSnapshotId or "",
+        "dataCatalogSnapshotId": result.snapshotId,
         "dataContractHash": result.contractHash,
         "dataLineageRefs": result.lineageRefs,
         "dataExecutionReceipts": result.executionReceipts,

@@ -249,6 +249,14 @@ def owner(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> _SyntheticOwner:
     monkeypatch.setattr(executionModule, "buildCatalog", lambda: _catalog(*assets))
     monkeypatch.setattr(workbenchModule, "describeResource", value.describe)
     monkeypatch.setattr(workbenchModule, "readResourcePage", value.read)
+
+    def prepare(resourceId: str, category: str, cachePath: Path):
+        return SimpleNamespace(
+            description=value.describe(resourceId, category, cachePath),
+            read=lambda requestMapping: value.read(resourceId, category, requestMapping, cachePath),
+        )
+
+    monkeypatch.setattr(workbenchModule, "prepareResourceRead", prepare)
     return value
 
 
@@ -295,6 +303,9 @@ def testPublicQueryMultiplexesDartAndEdgarAcrossOneTokenChain(
     assert result.continuation is not None
     assert len(result.executionReceipts) == 1
     assert result.executionReceipts[0].startswith("cas:sha256:")
+    assert result.dataSnapshotId is not None
+    assert result.dataSnapshotId.startswith("data-content-snapshot:")
+    assert all(partition.contentHash is not None for partition in result.partitions)
     assert tuple(asset.assetId for asset in result.assets) == ("resource.finance", "resource.edgar")
     dartSelector = dict(result.partitions[0].selector)
     edgarSelector = dict(result.partitions[1].selector)
@@ -414,6 +425,22 @@ def testOneMappingCallEntersBothDartAndEdgarResources(owner: _SyntheticOwner) ->
     assert owner.calls == [("resource.finance", 0, 2), ("resource.edgar", 0, 2)]
 
 
+def testOneResultMethodConsumesAllDartAndEdgarPages(owner: _SyntheticOwner) -> None:
+    first = _publicData("query", query=_pageQuery())
+    dartIds: list[str] = []
+    edgarIds: list[int] = []
+
+    for _key, batch in first.iterAllArrowBatches(maxRows=1, maxBytes=1024):
+        if "companyId" in batch.schema.names:
+            dartIds.extend(batch.column("companyId").to_pylist())
+        if "cik" in batch.schema.names:
+            edgarIds.extend(batch.column("cik").to_pylist())
+
+    assert dartIds == ["K1", "K2", "K3", "K4", "K5"]
+    assert edgarIds == [10, 20, 30, 40]
+    assert len(owner.calls) >= 4
+
+
 def testSameResourceCanBeRequestedTwiceWithDifferentViews(owner: _SyntheticOwner) -> None:
     result = _publicData(
         "query",
@@ -445,6 +472,7 @@ def testPlanningFailureDoesNotLeakOwnerDetails(
         raise RuntimeError(r"C:\private\manifest-secret")
 
     monkeypatch.setattr(workbenchModule, "describeResource", failDescription)
+    monkeypatch.setattr(workbenchModule, "prepareResourceRead", failDescription)
     result = _publicData("query", query=_pageQuery())
 
     assert result.status == "failed"
@@ -740,6 +768,10 @@ def testCommittedReplaySurvivesSourceDriftWithoutProviderContact(owner: _Synthet
     replay = _publicData("query", query=DataQuery(continuation=token))
 
     assert replay.executionReceipts == committed.executionReceipts
+    assert replay.dataSnapshotId == committed.dataSnapshotId
+    assert [partition.contentHash for partition in replay.partitions] == [
+        partition.contentHash for partition in committed.partitions
+    ]
     assert replay.continuation == committed.continuation
     assert len(owner.calls) == callsBefore
 
