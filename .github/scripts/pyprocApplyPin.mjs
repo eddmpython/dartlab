@@ -1,4 +1,5 @@
-// landing/package.json 의 pyproc npm 버전을 주어진 값으로 교체. pyprocPinBump.yml 의 gate/land 잡.
+// landing/package.json과 runtime-manifest.json의 pyproc 버전을 함께 교체.
+// pyprocPinBump.yml 의 gate/landing/propose 잡이 같은 정본을 쓴다.
 // 사용: node .github/scripts/pyprocApplyPin.mjs <x.y.z>
 // 교체 후 npm install 은 워크플로가 별도 수행(lock 갱신).
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -10,6 +11,7 @@ if (!/^\d+\.\d+\.\d+$/.test(ver)) {
 }
 
 const PKG = 'landing/package.json';
+const MANIFEST = 'landing/runtime-manifest.json';
 const before = readFileSync(PKG, 'utf8');
 const re = /("pyproc":\s*")\d+\.\d+\.\d+(")/;
 if (!re.test(before)) {
@@ -17,9 +19,13 @@ if (!re.test(before)) {
 	process.exit(1);
 }
 const after = before.replace(re, `$1${ver}$2`);
-if (after === before) {
+const manifest = JSON.parse(readFileSync(MANIFEST, 'utf8'));
+const manifestChanged = manifest.pyproc !== ver;
+manifest.pyproc = ver;
+if (after === before && !manifestChanged) {
 	console.log(`이미 ${ver} (변경 없음)`);
 	process.exit(0);
 }
-writeFileSync(PKG, after);
+if (after !== before) writeFileSync(PKG, after);
+if (manifestChanged) writeFileSync(MANIFEST, JSON.stringify(manifest, null, 2) + '\n');
 console.log(`pyproc -> ${ver}`);

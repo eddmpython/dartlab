@@ -1,3 +1,5 @@
+import { DARTLAB_REQUIREMENT } from './runtimeManifest';
+
 /**
  * dartlab 의 Pyodide 런타임 의존성을 한 번에 준비한다.
  *
@@ -8,30 +10,26 @@
  */
 
 interface RuntimeLike {
-	loadPackagesFromImports(code: string): Promise<unknown>;
+	loadPackages(packages: string[]): Promise<unknown>;
+	install(packageName: string): Promise<unknown>;
 	runAsync(code: string): Promise<unknown>;
 }
 
 const DARTLAB_IMPORT_RE = /(?:^|\n)[ \t]*(?:import[ \t]+dartlab|from[ \t]+dartlab[ \t.])/;
 
-export const DARTLAB_PYODIDE_PRELOAD = [
-	'import lxml',
-	'import numpy',
-	'import polars',
-	'import pyarrow'
-].join('\n');
-
-const INSTALL_DARTLAB = `import micropip
-await micropip.install("dartlab")`;
+export const DARTLAB_PYODIDE_PACKAGES = ['lxml', 'numpy', 'polars', 'pyarrow'];
+export const DARTLAB_PYODIDE_PRELOAD = DARTLAB_PYODIDE_PACKAGES
+	.map((packageName) => `import ${packageName}`)
+	.join('\n');
 
 export function createDartlabRuntimeLoader(runtime: RuntimeLike) {
 	let ready = false;
 	let installing: Promise<void> | null = null;
 
 	async function install(): Promise<void> {
-		await runtime.loadPackagesFromImports(DARTLAB_PYODIDE_PRELOAD);
+		await runtime.loadPackages(DARTLAB_PYODIDE_PACKAGES);
 		await runtime.runAsync(DARTLAB_PYODIDE_PRELOAD);
-		await runtime.runAsync(INSTALL_DARTLAB);
+		await runtime.install(DARTLAB_REQUIREMENT);
 		await runtime.runAsync('import dartlab');
 		ready = true;
 	}

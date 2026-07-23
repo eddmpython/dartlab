@@ -1,7 +1,8 @@
 /// <reference lib="webworker" />
 import { MARIMO_SHIM_FILES } from './marimoShim';
 import { wrapLastExpression } from './lastExpression';
-import { CheckpointGraph } from './checkpointGraph';
+import { PyprocCheckpointStore } from './pyprocCheckpointStore';
+import { isSharedInterruptBuffer } from './interruptBuffer';
 import {
 	mergePackageSpecs,
 	packageSpecKey,
@@ -11,30 +12,33 @@ import {
 	serializePackageManifest
 } from './packageManifest';
 import { HandRolledAsgi, PyprocAsgi, type AsgiKernel } from './kernel/asgiSeam';
-import { Runtime } from 'pyproc/runtime';
+import {
+	boot,
+	checkEnvironment,
+	type EnvReport,
+	type PyprocMachine,
+	type Runtime,
+	type WheelCache
+} from 'pyproc';
 import { createDartlabRuntimeLoader } from './dartlabRuntime';
+import {
+	PYODIDE_CDN_ESM,
+	PYODIDE_INDEX,
+	PYPROC_CACHE_NAMESPACE
+} from './runtimeManifest';
 
 declare const self: DedicatedWorkerGlobalScope;
 
-// pyodide 는 이제 공유 rt(pyproc Runtime) 로 감싸 FS·run·출력·인터럽트를 rt.* 로 쓴다(단일 런타임
-// SSOT). 여기 남는 직접 표면은 pyproc 미담당분뿐: mountNativeFS(OPFS 워크스페이스) + _module(체크포인트
-// 스냅샷). runPython/runPythonAsync/globals 는 pyproc 설치 실패 시 HandRolledAsgi(raw) 폴백용(PyLike 충족).
+// 직접 Pyodide 표면은 ASGI 비상 폴백에만 남긴다. 정상 실행, 파일, 패키지, 워크스페이스,
+// 체크포인트는 모두 pyproc machine/runtime 공개 계약을 쓴다.
 interface PyodideInterface {
 	runPythonAsync: (code: string) => Promise<unknown>;
 	runPython: (code: string) => unknown;
 	globals: { get: (name: string) => unknown; set: (name: string, value: unknown) => void };
-	mountNativeFS?: (
-		path: string,
-		handle: FileSystemDirectoryHandle
-	) => Promise<{ syncfs: () => Promise<void> }>;
-	_module: {
-		HEAPU8: Uint8Array;
-		_emscripten_stack_get_current?: () => number;
-		_emscripten_stack_restore?: (pointer: number) => void;
-	};
+	_module: unknown;
 }
 
-const PYODIDE_CDN_ESM = 'https://cdn.jsdelivr.net/pyodide/v0.27.5/full/pyodide.mjs';
+const PYPROC_CACHE_ROOT = 'dartlab-pyproc-runtime';
 
 // matplotlib 을 테마 중립으로: 투명 배경 + 중립 회색 텍스트/축(다크·라이트 양쪽 가독).
 const MATPLOTLIBRC = [
@@ -53,17 +57,22 @@ const MATPLOTLIBRC = [
 ].join('\n');
 
 let pyodide: PyodideInterface | null = null;
-// 공유 pyproc Runtime(단일 런타임 SSOT). init 에서 new Runtime(pyodide) 로 만들어 커널(ASGI)·셀실행·
-// 파일 IO 가 같은 rt 를 쓴다. pyodide 가 set 이면 rt 도 항상 set(둘은 init 에서 함께 생성).
+let machine: PyprocMachine | null = null;
+// machine.runtime은 패키지, 출력, 인터럽트, ASGI 같은 고급 능력에만 쓴다.
 let rt: Runtime | null = null;
+let wheelCache: WheelCache | null = null;
+let environmentReport: EnvReport | null = null;
+let coreCacheEnabled = false;
 let stdoutBuffer: string[] = [];
 let stderrBuffer: string[] = [];
 const wrapCache = new Map<string, string>();
 let workspaceSync: (() => Promise<void>) | null = null;
 let persistentWorkspace = false;
 let attachedWorkspaceId: string | null = null;
+let workspaceLease: 'exclusive' | 'conflict' | 'unsupported' = 'unsupported';
+let releaseWorkspaceLease: (() => void) | null = null;
 let interruptMode: 'soft' | 'hard' = 'hard';
-let checkpointGraph: CheckpointGraph | null = null;
+let checkpointStore: PyprocCheckpointStore | null = null;
 let packageRestoreSignature = '';
 let packageRestoreError = '';
 
@@ -86,8 +95,9 @@ async function ensureDartlab(code: string): Promise<void> {
 
 // browser-as-server: 이 워커(노트북 execute 커널)에 dartlab FastAPI 를 얹는다. 한 커널, 두 인터페이스.
 // ASGI dispatch 는 커널 seam(kernel/asgiSeam.ts)이 소유한다. USE_PYPROC_ASGI=true(기본)면 워커의
-// pyodide 를 new Runtime(py) 로 채택해 pyproc AsgiServer 로 서빙(공유 런타임 SSOT). 설치 실패 시 손수
-// _dl_dispatch 경로로 자동 폴백(kill-switch). false 로 되돌리면 손수 경로 고정. mainPlan/pyproc-runtime-ssot.
+// boot()의 machine.runtime으로 pyproc AsgiServer를 서빙한다. 설치 실패 시 손수
+// _dl_dispatch 경로로 자동 폴백(kill-switch). false 로 되돌리면 손수 경로 고정.
+// 현재 계약: mainPlan/_done/pyproc-machine-adoption.
 // fastapi 는 첫 /pyapi 요청 때만 설치(노트북만 쓰면 비용 0). dartlab 설치는 seam 위 ensureDartlab.
 const USE_PYPROC_ASGI = true;
 let asgiKernel: AsgiKernel | null = null;
@@ -97,7 +107,7 @@ function reply(id: string, result: unknown, error?: string) {
 }
 
 function installMarimoShim() {
-	if (!rt) return;
+	if (!machine) return;
 	const dirs = new Set<string>();
 	for (const path of Object.keys(MARIMO_SHIM_FILES)) {
 		const parts = path.split('/').slice(0, -1);
@@ -110,57 +120,143 @@ function installMarimoShim() {
 	}
 	const sortedDirs = Array.from(dirs).sort((a, b) => a.length - b.length);
 	for (const dir of sortedDirs) {
-		try { rt.fs.mkdir(dir); } catch { /* exists */ }
+		try { machine.fs.mkdir(dir); } catch { /* exists */ }
 	}
 	for (const [path, content] of Object.entries(MARIMO_SHIM_FILES)) {
-		rt.fs.writeFile(path, content.trim() + '\n');
+		machine.fs.writeFile(path, content.trim() + '\n');
 	}
+}
+
+async function openRuntimeCacheDirs(): Promise<{
+	coreCacheDir?: FileSystemDirectoryHandle;
+	wheelDir?: FileSystemDirectoryHandle;
+}> {
+	if (!self.navigator.storage?.getDirectory) return {};
+	try {
+		const estimate = await self.navigator.storage.estimate();
+		if (estimate.quota && estimate.usage && estimate.usage / estimate.quota > 0.9) return {};
+		const root = await self.navigator.storage.getDirectory();
+		const cacheRoot = await root.getDirectoryHandle(PYPROC_CACHE_ROOT, { create: true });
+		await retainRuntimeCacheGenerations(cacheRoot);
+		const versionRoot = await cacheRoot.getDirectoryHandle(PYPROC_CACHE_NAMESPACE, { create: true });
+		const coreCacheDir = await versionRoot.getDirectoryHandle('core', { create: true });
+		const wheelDir = await versionRoot.getDirectoryHandle('wheels', { create: true });
+		return { coreCacheDir, wheelDir };
+	} catch {
+		return {};
+	}
+}
+
+async function retainRuntimeCacheGenerations(cacheRoot: FileSystemDirectoryHandle): Promise<void> {
+	type Entry = { name: string; lastUsed: number };
+	const indexHandle = await cacheRoot.getFileHandle('_generations.json', { create: true });
+	let generations: Entry[] = [];
+	try {
+		const text = await (await indexHandle.getFile()).text();
+		const parsed = JSON.parse(text) as { generations?: Entry[] };
+		if (Array.isArray(parsed.generations)) generations = parsed.generations;
+	} catch {
+		generations = [];
+	}
+	const now = Date.now();
+	const next = [
+		{ name: PYPROC_CACHE_NAMESPACE, lastUsed: now },
+		...generations.filter((entry) => entry.name !== PYPROC_CACHE_NAMESPACE)
+	]
+		.sort((a, b) => b.lastUsed - a.lastUsed);
+	for (const stale of next.slice(2)) {
+		try {
+			await cacheRoot.removeEntry(stale.name, { recursive: true });
+		} catch {
+			/* another tab may still hold the old generation */
+		}
+	}
+	const writable = await indexHandle.createWritable();
+	await writable.write(JSON.stringify({ generations: next.slice(0, 2) }));
+	await writable.close();
+}
+
+async function loadRuntimePackages(packages: string[]): Promise<void> {
+	if (!rt) throw new Error('pyproc runtime not initialized');
+	if (wheelCache) {
+		await wheelCache.loadPackages(packages);
+		return;
+	}
+	await rt.loadPackages(packages);
+}
+
+async function installRuntimePackage(packageName: string): Promise<void> {
+	if (!rt) throw new Error('pyproc runtime not initialized');
+	if (wheelCache) {
+		await wheelCache.install(packageName);
+		return;
+	}
+	await rt.install(packageName);
 }
 
 async function initialize(interruptBuffer?: Uint8Array | null) {
 	const { loadPyodide: _loadPyodide } = await import(/* @vite-ignore */ PYODIDE_CDN_ESM) as { loadPyodide: (config?: Record<string, unknown>) => Promise<PyodideInterface> };
-	pyodide = await _loadPyodide({
-		indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.27.5/full/'
+	const cacheDirs = await openRuntimeCacheDirs();
+	coreCacheEnabled = Boolean(cacheDirs.coreCacheDir);
+	machine = await boot({
+		indexURL: PYODIDE_INDEX,
+		loadPyodide: _loadPyodide as (config: unknown) => Promise<unknown>,
+		coreCacheDir: cacheDirs.coreCacheDir,
+		stdout: (text) => stdoutBuffer.push(text),
+		stderr: (text) => stderrBuffer.push(text)
 	});
-	// 공유 런타임 채택: 이후 FS·run·출력·인터럽트·패키지로드는 전부 rt.* 로(pyproc 단일 SSOT).
-	rt = new Runtime(pyodide);
-	dartlabLoader = createDartlabRuntimeLoader(rt);
+	rt = machine.runtime;
+	pyodide = rt.raw as PyodideInterface;
+	environmentReport = checkEnvironment();
+	wheelCache = cacheDirs.wheelDir ? rt.enableWheelCache({ dir: cacheDirs.wheelDir }) : null;
+	checkpointStore = new PyprocCheckpointStore(machine);
+	// boot()이 만든 내부 cp0은 힙 전체 복사다. 체크포인트 UI를 쓰지 않는 일반 세션이 그 비용을
+	// 계속 들고 있지 않도록 즉시 해제한다. 첫 명시적 createCheckpoint가 새 기준을 만든다.
+	checkpointStore.clear();
+	dartlabLoader = createDartlabRuntimeLoader({
+		loadPackages: loadRuntimePackages,
+		install: installRuntimePackage,
+		runAsync: (code) => machine!.runAsync(code)
+	});
 	// 인터럽트: rt 는 SAB 를 받아 엔진이 Uint8Array 뷰로 감싼다(공유 유지). 미지원 엔진이면 false.
-	if (interruptBuffer && rt.setInterruptBuffer(interruptBuffer.buffer)) {
+	if (isSharedInterruptBuffer(interruptBuffer) && rt.setInterruptBuffer(interruptBuffer.buffer)) {
 		interruptMode = 'soft';
 	}
 	rt.setStdout((text) => stdoutBuffer.push(text));
 	rt.setStderr((text) => stderrBuffer.push(text));
-	await rt.loadPackagesFromImports('import micropip');
-	try { rt.fs.mkdir('/workspace'); } catch { /* exists */ }
+	await loadRuntimePackages(['micropip']);
+	try { machine.fs.mkdir('/workspace'); } catch { /* exists */ }
 	// 허브 프리워밍 시점에는 대상 ID가 없다. OPFS는 attachWorkspace에서 노트북별로 마운트한다.
 	// 웹워커에는 DOM(document)이 없으므로 matplotlib 은 non-interactive AGG 백엔드 강제.
 	// (기본 pyodide 백엔드는 wasm_backend 가 js.document 를 import 하려다 워커에서 실패)
 	// + matplotlibrc 로 테마 중립 색 강제.
-	rt.fs.writeFile('/matplotlibrc', MATPLOTLIBRC);
-	rt.run('import os, sys; os.chdir("/workspace")\nif "/workspace" not in sys.path: sys.path.insert(0, "/workspace")\nos.environ["MPLBACKEND"] = "AGG"\nos.environ["MATPLOTLIBRC"] = "/matplotlibrc"');
+	machine.fs.writeFile('/matplotlibrc', MATPLOTLIBRC);
+	machine.run('import os, sys; os.chdir("/workspace")\nif "/workspace" not in sys.path: sys.path.insert(0, "/workspace")\nos.environ["MPLBACKEND"] = "AGG"\nos.environ["MATPLOTLIBRC"] = "/matplotlibrc"');
 	installMarimoShim();
 	asgiKernel = USE_PYPROC_ASGI ? new PyprocAsgi(rt) : new HandRolledAsgi(pyodide);
 }
 
 async function attachWorkspace(workspaceId: string): Promise<boolean> {
-	if (!pyodide?.mountNativeFS || !self.navigator.storage?.getDirectory) return false;
+	if (!rt || !self.navigator.storage?.getDirectory) return false;
 	if (attachedWorkspaceId === workspaceId) return persistentWorkspace;
 	if (attachedWorkspaceId) throw new Error('a different notebook workspace is already attached');
 
 	try {
 		const safeId = workspaceId.replace(/[^a-zA-Z0-9_-]/g, '_');
+		if (!(await acquireWorkspaceLease(safeId))) return false;
 		const root = await self.navigator.storage.getDirectory();
 		const workspaces = await root.getDirectoryHandle('dartlab-notebook-workspaces', { create: true });
 		const handle = await workspaces.getDirectoryHandle(safeId, { create: true });
-		const mounted = await pyodide.mountNativeFS('/workspace', handle);
-		workspaceSync = mounted.syncfs;
+		const mounted = await rt.mountHome(handle, '/workspace');
+		workspaceSync = mounted.sync;
 		await workspaceSync();
 		attachedWorkspaceId = workspaceId;
 		persistentWorkspace = true;
 		await restoreWorkspacePackages().catch(() => undefined);
 		return true;
 	} catch {
+		releaseWorkspaceLease?.();
+		releaseWorkspaceLease = null;
 		workspaceSync = null;
 		attachedWorkspaceId = null;
 		persistentWorkspace = false;
@@ -174,22 +270,51 @@ async function syncWorkspace(): Promise<void> {
 }
 
 function fileExists(path: string): boolean {
-	return rt ? rt.fs.exists(path) : false;
+	return machine ? machine.fs.exists(path) : false;
 }
 
 function readTextFile(path: string): string | null {
-	if (!rt || !fileExists(path)) return null;
+	if (!machine || !fileExists(path)) return null;
 	try {
-		return rt.fs.readFile(path, { encoding: 'utf8' }) as string;
+		return machine.fs.readFile(path, { encoding: 'utf8' }) as string;
 	} catch {
 		return null;
 	}
 }
 
+async function acquireWorkspaceLease(workspaceId: string): Promise<boolean> {
+	if (!self.navigator.locks) {
+		workspaceLease = 'unsupported';
+		return true;
+	}
+	let settle: ((acquired: boolean) => void) | null = null;
+	const acquired = new Promise<boolean>((resolve) => {
+		settle = resolve;
+	});
+	void self.navigator.locks
+		.request(`dartlab-notebook:${workspaceId}`, { ifAvailable: true }, async (lock) => {
+			if (!lock) {
+				workspaceLease = 'conflict';
+				settle?.(false);
+				return;
+			}
+			workspaceLease = 'exclusive';
+			settle?.(true);
+			await new Promise<void>((resolve) => {
+				releaseWorkspaceLease = resolve;
+			});
+		})
+		.catch(() => {
+			workspaceLease = 'conflict';
+			settle?.(false);
+		});
+	return acquired;
+}
+
 function ensurePackageDir(): void {
-	if (!rt || fileExists(PACKAGE_DIR)) return;
+	if (!machine || fileExists(PACKAGE_DIR)) return;
 	try {
-		rt.fs.mkdir(PACKAGE_DIR);
+		machine.fs.mkdir(PACKAGE_DIR);
 	} catch {
 		/* directory may already exist */
 	}
@@ -215,19 +340,20 @@ function readWorkspacePackageSpecs(): string[] {
 }
 
 async function writePackageManifest(specs: string[]): Promise<void> {
-	if (!rt) return;
+	if (!machine) return;
 	ensurePackageDir();
-	rt.fs.writeFile(PACKAGE_MANIFEST_PATH, serializePackageManifest(specs));
+	machine.fs.writeFile(PACKAGE_MANIFEST_PATH, serializePackageManifest(specs));
 	await syncWorkspace();
 }
 
 async function installPackageSpecs(specs: string[], persist: boolean): Promise<string[]> {
-	if (!rt) return [];
+	if (!machine || !rt) return [];
 	const normalized = mergePackageSpecs([], specs);
 	if (normalized.length === 0) return [];
-	await rt.runAsync(
-		`import micropip\nawait micropip.install(${JSON.stringify(normalized)})\nimport importlib\nimportlib.invalidate_caches()`
-	);
+	for (const packageName of normalized) {
+		await installRuntimePackage(packageName);
+	}
+	await machine.runAsync('import importlib; importlib.invalidate_caches()');
 	packageRestoreError = '';
 	if (persist) {
 		const nextSpecs = mergePackageSpecs(readManifestPackages(), normalized);
@@ -382,7 +508,7 @@ __json__.dumps(__eddm_fmt__)
 `;
 
 async function execute(code: string) {
-	if (!rt) return { type: 'error', data: 'Pyodide not initialized', executedAt: new Date().toISOString() };
+	if (!machine || !rt) return { type: 'error', data: 'Pyodide not initialized', executedAt: new Date().toISOString() };
 
 	stdoutBuffer = [];
 	stderrBuffer = [];
@@ -403,7 +529,7 @@ async function execute(code: string) {
 		const hasImport = /(?:^|\n)\s*(?:import |from )\S+/.test(code);
 		if (hasImport) {
 			await rt.loadPackagesFromImports(code);
-			rt.run('import importlib; importlib.invalidate_caches()');
+			machine.run('import importlib; importlib.invalidate_caches()');
 		}
 
 		let wrappedCode = wrapCache.get(code);
@@ -412,7 +538,7 @@ async function execute(code: string) {
 			if (wrapCache.size >= 200) wrapCache.delete(wrapCache.keys().next().value!);
 			wrapCache.set(code, wrappedCode);
 		}
-		await rt.runAsync(wrappedCode);
+		await machine.runAsync(wrappedCode);
 
 		let stdout = stdoutBuffer.join('\n');
 		// matplotlib 첫 플롯의 "building the font cache" 안내는 stderr 로 나오지만 오류가 아니다.
@@ -428,15 +554,15 @@ async function execute(code: string) {
 		// (dartlab 등 라이브러리가 stderr 로 로그를 남겨도 표·그림 결과가 사라지지 않도록).
 		if (stderr) stdout = stdout ? stdout + '\n' + stderr : stderr;
 
-		const hasResult = rt.run('__eddmlab_result__ is not None') as boolean;
-		const hasFigures = rt.run(
+		const hasResult = machine.run('__eddmlab_result__ is not None') as boolean;
+		const hasFigures = machine.run(
 			"__import__('matplotlib.pyplot', fromlist=['pyplot']).get_fignums() if 'matplotlib' in __import__('sys').modules else []"
 		);
 		const needsFormat = hasResult || (hasFigures && (hasFigures as unknown[]).length > 0);
 
 		let fmt = { repr: '', df: null as unknown, img: null as string | null, html: null as string | null, widget: null as string | null };
 		if (needsFormat) {
-			const raw = rt.run(FORMAT_CODE);
+			const raw = machine.run(FORMAT_CODE);
 			const str = String(raw);
 			if (str && str !== 'None') {
 				const parsed = JSON.parse(str);
@@ -487,9 +613,25 @@ self.onmessage = async (e: MessageEvent) => {
 			case 'getRuntimeCapabilities': {
 				reply(id, {
 					persistentWorkspace,
+					workspaceLease,
 					interrupt: interruptMode,
-					memoryTransactions: 'experimental',
-					packagePersistence: 'workspace-manifest'
+					memoryTransactions: 'beta-opt-in',
+					packagePersistence: 'workspace-manifest',
+					runtime: 'pyproc-machine',
+					history: 'branching-volatile',
+					durableHistory: 'disabled-worker-replay-unverified',
+					processes: 'unavailable-worker-loader',
+					environment: environmentReport,
+					coreCache: {
+						enabled: coreCacheEnabled,
+						hits: rt?.coreCache?.hits ?? 0,
+						misses: rt?.coreCache?.misses ?? 0
+					},
+					wheelCache: {
+						enabled: wheelCache !== null,
+						hits: wheelCache?.hits ?? 0,
+						misses: wheelCache?.misses ?? 0
+					}
 				});
 				break;
 			}
@@ -499,23 +641,21 @@ self.onmessage = async (e: MessageEvent) => {
 				break;
 			}
 			case 'createCheckpoint': {
-				if (!pyodide) throw new Error('Pyodide not initialized');
-				checkpointGraph ??= new CheckpointGraph(pyodide._module);
-				reply(id, checkpointGraph.create((args[0] as string) || 'checkpoint'));
+				if (!checkpointStore) throw new Error('pyproc machine not initialized');
+				reply(id, checkpointStore.create((args[0] as string) || 'checkpoint'));
 				break;
 			}
 			case 'restoreCheckpoint': {
-				if (!checkpointGraph) throw new Error('checkpoint graph is empty');
-				reply(id, checkpointGraph.restore(args[0] as string));
+				if (!checkpointStore) throw new Error('pyproc machine not initialized');
+				reply(id, checkpointStore.restore(args[0] as string));
 				break;
 			}
 			case 'listCheckpoints': {
-				reply(id, checkpointGraph?.list() ?? []);
+				reply(id, checkpointStore?.list() ?? []);
 				break;
 			}
 			case 'clearCheckpoints': {
-				checkpointGraph?.clear();
-				checkpointGraph = null;
+				checkpointStore?.clear();
 				reply(id, null);
 				break;
 			}
@@ -553,18 +693,26 @@ self.onmessage = async (e: MessageEvent) => {
 				}
 				const req = args[0] as { method: string; path: string; body?: string };
 				const res = await asgiKernel.serve(req.method, req.path, req.body ?? '');
-				reply(id, { status: res.status, headers: { 'content-type': 'application/json', 'x-dartlab-tier': 'browser', 'x-dartlab-kernel': asgiKernel.name }, body: res.body });
+				reply(id, {
+					status: res.status,
+					headers: {
+						...res.headers,
+						'x-dartlab-tier': 'browser',
+						'x-dartlab-kernel': asgiKernel.name
+					},
+					body: res.body
+				});
 				break;
 			}
 			case 'getVariableNames': {
-				if (!rt) { reply(id, []); break; }
-				const result = rt.run("[k for k in dir() if not k.startswith('_')]");
+				if (!machine) { reply(id, []); break; }
+				const result = machine.run("[k for k in dir() if not k.startswith('_')]");
 				reply(id, Array.from(result as Iterable<string>));
 				break;
 			}
 			case 'getVariablesWithInfo': {
-				if (!rt) { reply(id, []); break; }
-				const result = rt.run(`
+				if (!machine) { reply(id, []); break; }
+				const result = machine.run(`
 import json as __json__
 __vars__ = []
 for __n__ in sorted([k for k in dir() if not k.startswith('_')]):
@@ -583,7 +731,7 @@ __json__.dumps(__vars__)
 				break;
 			}
 			case 'getCompletions': {
-				if (!rt) { reply(id, []); break; }
+				if (!machine) { reply(id, []); break; }
 				const objName = args[0] as string;
 				const code = objName ? `
 import json as __json__
@@ -617,7 +765,7 @@ for __comp_n__ in __comp_names__[:100]:
     __comp_items__.append({'label': __comp_n__, 'type': __comp_t__})
 __json__.dumps(__comp_items__)
 `;
-				const result = rt.run(code);
+				const result = machine.run(code);
 				const str = String(result);
 				reply(id, (!str || str === 'None') ? [] : JSON.parse(str));
 				break;
@@ -629,10 +777,10 @@ __json__.dumps(__comp_items__)
 				break;
 			}
 			case 'getInstalledPackages': {
-				if (!rt) { reply(id, []); break; }
+				if (!machine) { reply(id, []); break; }
 				const requestedSpecs = readWorkspacePackageSpecs();
 				const requestedByKey = new Map(requestedSpecs.map((spec) => [packageSpecKey(spec), spec]));
-				const result = await rt.runAsync(`
+				const result = await machine.runAsync(`
 import json as __json__
 import micropip
 __pkgs__ = []
@@ -670,9 +818,9 @@ __json__.dumps(__pkgs__)
 				break;
 			}
 			case 'getDocstring': {
-				if (!rt) { reply(id, null); break; }
+				if (!machine) { reply(id, null); break; }
 				const name = args[0] as string;
-				const result = rt.run(`
+				const result = machine.run(`
 import json as __json__
 import inspect as __inspect__
 __doc_result__ = None
@@ -697,11 +845,11 @@ __doc_result__
 				break;
 			}
 			case 'updateWidgetValue': {
-				if (!rt) { reply(id, null); break; }
+				if (!machine) { reply(id, null); break; }
 				const [widgetId, value] = args as [string, unknown];
 				const safeId = widgetId.replace(/'/g, "\\'");
 				const valueStr = JSON.stringify(value);
-				rt.run(`
+				machine.run(`
 from marimo._ui.base import UIElement as __UIElem__
 __UIElem__._set_value('${safeId}', __import__('json').loads('${valueStr.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'))
 `);
@@ -709,14 +857,14 @@ __UIElem__._set_value('${safeId}', __import__('json').loads('${valueStr.replace(
 				break;
 			}
 			case 'listFiles': {
-				if (!rt) { reply(id, []); break; }
+				if (!machine) { reply(id, []); break; }
 				const path = args[0] as string;
 				try {
-					const entries = rt.fs.readdir(path);
+					const entries = machine.fs.readdir(path);
 					const result = entries.map((name) => {
 						const fullPath = path.endsWith('/') ? path + name : path + '/' + name;
 						try {
-							const stat = rt!.fs.stat(fullPath);
+							const stat = machine!.fs.stat(fullPath);
 							return { name, path: fullPath, isDir: stat.isDir, size: stat.size };
 						} catch {
 							return { name, path: fullPath, isDir: false, size: 0 };
@@ -727,26 +875,26 @@ __UIElem__._set_value('${safeId}', __import__('json').loads('${valueStr.replace(
 				break;
 			}
 			case 'readFile': {
-				if (!rt) { reply(id, ''); break; }
+				if (!machine) { reply(id, ''); break; }
 				try {
-					reply(id, rt.fs.readFile(args[0] as string, { encoding: 'utf8' }) as string);
+					reply(id, machine.fs.readFile(args[0] as string, { encoding: 'utf8' }) as string);
 				} catch { reply(id, ''); }
 				break;
 			}
 			case 'writeFile': {
-				if (!rt) { reply(id, null); break; }
-				rt.fs.writeFile(args[0] as string, args[1] as string);
+				if (!machine) { reply(id, null); break; }
+				machine.fs.writeFile(args[0] as string, args[1] as string);
 				await syncWorkspace();
 				reply(id, null);
 				break;
 			}
 			case 'mkdir': {
-				if (!rt) { reply(id, null); break; }
+				if (!machine) { reply(id, null); break; }
 				const p = args[0] as string;
-				try { rt.fs.mkdir(p); } catch { /* exists */ }
+				try { machine.fs.mkdir(p); } catch { /* exists */ }
 				const initPath = p.endsWith('/') ? p + '__init__.py' : p + '/__init__.py';
-				if (!rt.fs.exists(initPath)) {
-					try { rt.fs.writeFile(initPath, ''); } catch { /* skip */ }
+				if (!machine.fs.exists(initPath)) {
+					try { machine.fs.writeFile(initPath, ''); } catch { /* skip */ }
 				}
 				await syncWorkspace();
 				reply(id, null);
@@ -768,19 +916,19 @@ __UIElem__._set_value('${safeId}', __import__('json').loads('${valueStr.replace(
 };
 
 async function removeFileRecursive(path: string): Promise<void> {
-	const r = rt;
-	if (!r) return;
+	const currentMachine = machine;
+	if (!currentMachine) return;
 	try {
-		const stat = r.fs.stat(path);
+		const stat = currentMachine.fs.stat(path);
 		if (stat.isDir) {
-			const entries = r.fs.readdir(path);
+			const entries = currentMachine.fs.readdir(path);
 			for (const name of entries) {
 				const child = path.endsWith('/') ? path + name : path + '/' + name;
 				await removeFileRecursive(child);
 			}
-			r.fs.rmdir(path);
+			currentMachine.fs.rmdir(path);
 		} else {
-			r.fs.unlink(path);
+			currentMachine.fs.unlink(path);
 		}
 	} catch { /* ignore */ }
 }

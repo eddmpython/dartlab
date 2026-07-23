@@ -19,11 +19,15 @@ export const notebookFilePath = writable<string>('/workspace/Untitled.py');
 let engine: ExecutionEngine | null = null;
 let syncTimer: ReturnType<typeof setTimeout> | null = null;
 
-let executionQueue: Promise<void> = Promise.resolve();
+let executionQueue: Promise<unknown> = Promise.resolve();
 
-function enqueueExecution(fn: () => Promise<void>): Promise<void> {
-	executionQueue = executionQueue.then(fn, fn);
-	return executionQueue;
+function enqueueExecution<T>(fn: () => Promise<T>): Promise<T> {
+	const next = executionQueue.then(fn, fn);
+	executionQueue = next.then(
+		() => undefined,
+		() => undefined
+	);
+	return next;
 }
 
 function debouncedSync() {
@@ -43,41 +47,10 @@ export function prewarmEngine(): Promise<void> {
 	if (!prewarmed) {
 		prewarmed = (async () => {
 			await bringUpEngine(); // 엔진 기동만. 노트북 부착(autoRun)은 에디터가 한다.
-			await engine?.warm?.();
+			await enqueueExecution(async () => engine?.warm?.());
 		})().catch(() => undefined);
 	}
 	return prewarmed;
-}
-
-const dataWarmed = new Set<string>();
-const prewarmedOutputs = new Map<string, CellOutput>();
-
-/**
- * 데이터 + 결과 사전 계산. 첫 셀 코드를 조용히 한 번 실행한다. 이때 두 가지가 미리 끝난다.
- *   (1) 그 셀이 여는 회사의 parquet 이 커널 FS 로 올라온다(다음 실행은 fetch 없음).
- *   (2) panel 의 polars WASM 계산 결과(표)까지 나온다. 그 결과를 버리지 않고 캐시한다.
- * 사용자가 글 읽는 동안 이 계산이 끝나 있으면, 첫 클릭은 fetch 도 계산도 없이 캐시된 결과를
- * 즉시 보여준다(체감 0초). 캐시 결과는 이번 세션에서 방금 같은 커널이 낸 것이라 정확하다.
- * 멱등. 커널이 죽으면 FS·결과 캐시 모두 무효라 destroyEngine 에서 비운다.
- */
-export async function prewarmData(code: string): Promise<void> {
-	const key = code.trim();
-	if (!key || dataWarmed.has(key)) return;
-	dataWarmed.add(key);
-	try {
-		const out = await runSnippet(code); // 데이터 fetch + 계산. 결과를 캐시한다.
-		if (out.type !== 'error') prewarmedOutputs.set(key, out);
-	} catch {
-		dataWarmed.delete(key); // 실패면 다음 기회에 다시.
-	}
-}
-
-/** 프리페치가 미리 낸 결과를 한 번 꺼내 쓴다(꺼내면 지워, 재클릭은 실제 재실행). */
-export function takePrewarmedOutput(code: string): CellOutput | undefined {
-	const key = code.trim();
-	const out = prewarmedOutputs.get(key);
-	if (out) prewarmedOutputs.delete(key);
-	return out;
 }
 
 /**
@@ -90,10 +63,12 @@ export async function serveApi(req: {
 	body?: string;
 }): Promise<PyApiResponse> {
 	await bringUpEngine();
-	if (!engine?.isReady || !engine.serveApi) {
-		return { status: 503, headers: { 'content-type': 'application/json' }, body: '{"error":"engine not ready"}' };
-	}
-	return engine.serveApi(req);
+	return enqueueExecution(async () => {
+		if (!engine?.isReady || !engine.serveApi) {
+			return { status: 503, headers: { 'content-type': 'application/json' }, body: '{"error":"engine not ready"}' };
+		}
+		return engine.serveApi(req);
+	});
 }
 
 let bringUp: Promise<void> | null = null;
@@ -316,8 +291,6 @@ export async function interruptExecution(): Promise<void> {
 	if (engine.isReady) return;
 
 	ranSnippets.clear();
-	dataWarmed.clear();
-	prewarmedOutputs.clear();
 	prewarmed = null;
 	destroyWidgetBridge();
 	reactiveQueue.set(new Set());
@@ -356,27 +329,34 @@ export async function runSnippet(code: string, prereq: string[] = []): Promise<C
 	// initialize 중일 수 있다. 그러면 준비를 안 기다린 채 "엔진 없음" 으로 끝난다. bringUpEngine 은
 	// 중복 호출이 안전하고, 진행 중이면 그 약속을 공유한다.
 	await bringUpEngine();
-	if (!engine?.isReady) {
-		return { type: 'error', data: '파이썬 엔진을 띄우지 못했습니다.', executedAt: new Date().toISOString() };
-	}
-	engineStatus.set('executing');
-	try {
-		// 독자는 글 중간 셀을 먼저 누른다. 그때 위 셀이 만든 `c` 가 없어 NameError 를 본다.
-		// 자기 실수도 아닌데 첫 경험이 빨간 traceback 이다. 앞 셀들을 같은 커널에 먼저 흘린다.
-		// 이미 돌린 토막은 건너뛴다. 커널이 살아 있는 한 그 상태도 살아 있다.
-		for (const before of prereq) {
-			const key = before.trim();
-			if (!key || ranSnippets.has(key)) continue;
-			const out = await engine.execute(before);
-			if (out.type === 'error') return out; // 선행이 깨지면 그 오류를 그대로 보여준다
-			ranSnippets.add(key);
+	return enqueueExecution(async () => {
+		if (!engine?.isReady) {
+			const detail = get(engineError);
+			return {
+				type: 'error',
+				data: `파이썬 엔진을 띄우지 못했습니다.${detail ? `\n${detail}` : ''}`,
+				executedAt: new Date().toISOString()
+			};
 		}
-		const result = await engine.execute(code);
-		if (result.type !== 'error') ranSnippets.add(code.trim());
-		return result;
-	} finally {
-		engineStatus.set('ready');
-	}
+		engineStatus.set('executing');
+		try {
+			// 독자는 글 중간 셀을 먼저 누른다. 그때 위 셀이 만든 `c` 가 없어 NameError 를 본다.
+			// 자기 실수도 아닌데 첫 경험이 빨간 traceback 이다. 앞 셀들을 같은 커널에 먼저 흘린다.
+			// 이미 돌린 토막은 건너뛴다. 커널이 살아 있는 한 그 상태도 살아 있다.
+			for (const before of prereq) {
+				const key = before.trim();
+				if (!key || ranSnippets.has(key)) continue;
+				const out = await engine.execute(before);
+				if (out.type === 'error') return out;
+				ranSnippets.add(key);
+			}
+			const result = await engine.execute(code);
+			if (result.type !== 'error') ranSnippets.add(code.trim());
+			return result;
+		} finally {
+			engineStatus.set('ready');
+		}
+	});
 }
 
 export function destroyEngine(): void {
@@ -389,8 +369,6 @@ export function destroyEngine(): void {
 	engine?.destroy();
 	engine = null;
 	ranSnippets.clear(); // 커널이 사라지면 그 안의 변수도 사라진다
-	dataWarmed.clear(); // 데이터 캐시(FS)도 커널과 함께 사라진다
-	prewarmedOutputs.clear(); // 미리 낸 결과도 커널이 죽으면 무효
 	attachedNotebookId = null; // 다음 initEngine 이 다시 부착(복원+autoRun)하도록
 	prewarmed = null; // 워커가 사라졌으니 사전 로딩도 다시 할 수 있게
 	engineStatus.set('idle');

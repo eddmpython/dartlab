@@ -2,7 +2,9 @@ import type { PageLoad } from './$types';
 import { error } from '@sveltejs/kit';
 import { loadJson } from '@dartlab/ui-runtime/data/dartlabData';
 
-export const prerender = true;
+// 산업 JSON이 있는 빌드에서는 svelte.config의 industryEntries가 정적 페이지를 만든다.
+// 데이터가 없는 개발/호환성 빌드에서는 동적 패턴 자체를 강제 prerender하지 않는다.
+export const prerender = 'auto';
 
 export const load: PageLoad = async ({ params, fetch }) => {
 	const { id } = params;

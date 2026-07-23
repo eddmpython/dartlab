@@ -1,44 +1,63 @@
-// PYPROC GATE-B (Tier-2): 실 headless Chromium + crossOriginIsolated(COEP credentialless) 에서
-//  (1) R1: micropip 이 dartlab 휠(files.pythonhosted.org, CORP 없음)을 설치하나?
-//  (2) fork: pyproc PyProc.boot(2) 스냅샷-fork + map 이 실동작하나?
-// node 로는 못 덮는 프로세스 OS 경로(SAB + 중첩 워커)를 실브라우저에서 검증. pyprocPinBump.yml 의
-// tier2/minor+ 핀 범프에서 돈다. 실측(로컬): R1 OK + fork 286ms/워커 + map 결과 정확.
-//
-// 사용: node .github/scripts/pyprocForkSmoke.mjs
-// 요구: npm 에 pyproc(핀 SHA) + playwright + chromium(`npx playwright install chromium`). 네트워크 필요.
-// 주의: pyproc v0.0.4 기본 indexURL 은 v314.0.2(부재)라 소비자가 indexURL 을 반드시 넘긴다.
+// PYPROC GATE-B: 실 Chromium의 COI 환경에서 root machine, DartLab wheel, history, proc를 검증한다.
 import { chromium } from 'playwright';
 import http from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { join, extname, dirname } from 'node:path';
 import { createRequire } from 'node:module';
 
-const PYODIDE_INDEX = 'https://cdn.jsdelivr.net/pyodide/v0.27.5/full/';
-// pyproc 는 landing 워크스페이스 의존이라 npm install 시 landing/node_modules 로 간다. 루트/landing 양쪽 대응.
-// pyproc 은 exports 맵이 있어 package.json 서브패스가 막힌다. '.'(index.js) 를 해소해 패키지 디렉토리를 얻는다.
-const PYPROC_DIR = dirname(
-	createRequire(import.meta.url).resolve('pyproc', { paths: [process.cwd(), join(process.cwd(), 'landing')] })
+const RUNTIME_MANIFEST = JSON.parse(
+	await readFile(new URL('../../landing/runtime-manifest.json', import.meta.url), 'utf8')
 );
-const MIME = { '.js': 'text/javascript', '.mjs': 'text/javascript', '.json': 'application/json', '.map': 'application/json', '.wasm': 'application/wasm' };
+const PYODIDE_VERSION = RUNTIME_MANIFEST.pyodide;
+const DARTLAB_VERSION = RUNTIME_MANIFEST.dartlab;
+const PYODIDE_INDEX = `https://cdn.jsdelivr.net/pyodide/v${PYODIDE_VERSION}/full/`;
+const PYPROC_DIR = dirname(
+	createRequire(import.meta.url).resolve('pyproc', {
+		paths: [process.cwd(), join(process.cwd(), 'landing')]
+	})
+);
+const PYPROC_VERSION = JSON.parse(
+	await readFile(join(PYPROC_DIR, 'package.json'), 'utf8')
+).version;
+if (PYPROC_VERSION !== RUNTIME_MANIFEST.pyproc) {
+	throw new Error(`pyproc manifest ${RUNTIME_MANIFEST.pyproc} != installed ${PYPROC_VERSION}`);
+}
+const MIME = {
+	'.js': 'text/javascript',
+	'.mjs': 'text/javascript',
+	'.json': 'application/json',
+	'.map': 'application/json',
+	'.wasm': 'application/wasm'
+};
 const FN = 'def _fn(n):\\n    return sum(i*i for i in range(n))';
 
 const TEST_HTML = `<!doctype html><html><head><meta charset="utf-8"></head><body>
 <script type="module">
 window.__r = { step: 'start', coi: globalThis.crossOriginIsolated };
 try {
-  const { boot, PyProc } = await import('/pyproc/index.js');
-  const rt = await boot({ indexURL: '${PYODIDE_INDEX}' });
-  window.__r.run = rt.run('1 + 1');
-  await rt.install('micropip');
-  await rt.runAsync('import micropip; await micropip.install("dartlab")');
-  window.__r.wheelInstall = 'OK';
-  window.__r.dartlabVersion = rt.run('import dartlab; dartlab.__version__');
-  const os = new PyProc({ indexURL: '${PYODIDE_INDEX}' });
-  window.__r.bootInfo = await os.boot(2);
-  window.__r.forkOut = await os.map('${FN}', [1000, 2000]);
-  os.terminate();
+  const { boot, checkEnvironment } = await import('/pyproc/index.js');
+  const machine = await boot({ indexURL: '${PYODIDE_INDEX}', packages: ['micropip', 'polars'] });
+  window.__r.run = machine.run('1 + 1');
+  window.__r.environment = checkEnvironment();
+  await machine.runtime.install('dartlab==${DARTLAB_VERSION}');
+  window.__r.dartlabVersion = machine.run('import dartlab, polars; dartlab.__version__');
+  machine.run('branch_value = 1');
+  const a = machine.history.checkpoint();
+  machine.run('branch_value = 2');
+  machine.history.checkpoint();
+  machine.history.restore(a);
+  machine.run('branch_value = 3');
+  const c = machine.history.checkpoint();
+  window.__r.branchParent = machine.history.tree().find((node) => node.index === c.index)?.parent;
+  window.__r.branchExpected = a.index;
+  const pool = await machine.proc({ lanes: 2, indexURL: '${PYODIDE_INDEX}' });
+  window.__r.forkOut = await pool.map('${FN}', [1000, 2000]);
+  window.__r.processes = pool.ps().length;
+  pool.terminate();
   window.__r.step = 'done';
-} catch (e) { window.__r.error = String(e && e.stack || e).slice(-600); }
+} catch (error) {
+  window.__r.error = String(error && error.stack || error).slice(-1200);
+}
 window.__done = true;
 </script></body></html>`;
 
@@ -63,37 +82,33 @@ const server = http.createServer(async (req, res) => {
 	res.statusCode = 404;
 	res.end('404');
 });
-await new Promise((r) => server.listen(0, r));
+await new Promise((resolve) => server.listen(0, resolve));
 const port = server.address().port;
 
 const browser = await chromium.launch({ headless: true });
 try {
 	const page = await browser.newPage();
 	const logs = [];
-	page.on('console', (m) => logs.push(m.text()));
-	page.on('pageerror', (e) => logs.push('PAGEERR ' + String(e).slice(0, 300)));
+	page.on('console', (message) => logs.push(message.text()));
+	page.on('pageerror', (error) => logs.push(`PAGEERR ${String(error).slice(0, 500)}`));
 	await page.goto(`http://localhost:${port}/`, { waitUntil: 'load' });
-	try {
-		await page.waitForFunction('window.__done === true', undefined, { timeout: 300000 });
-	} catch (e) {
-		logs.push('WAIT_TIMEOUT ' + String(e).slice(0, 120));
-	}
-	const r = await page.evaluate(() => window.__r || { step: 'no __r' });
+	await page.waitForFunction('window.__done === true', undefined, { timeout: 300_000 });
+	const result = await page.evaluate(() => window.__r);
 	const pass =
-		r.coi === true &&
-		r.wheelInstall === 'OK' &&
-		r.bootInfo &&
-		r.bootInfo.forked === true &&
-		Array.isArray(r.forkOut) &&
-		r.forkOut.length === 2;
-	if (pass) {
-		console.log(`[pyproc-fork-smoke] PASS coi+휠설치(R1)+fork ${r.bootInfo.workers}워커/${r.bootInfo.avgBootMs}ms, map=${JSON.stringify(r.forkOut)}`);
-	} else {
-		console.error('[pyproc-fork-smoke] FAIL', JSON.stringify(r));
-		console.error('LOGS:', logs.slice(-10).join('\n'));
-	}
-	process.exitCode = pass ? 0 : 1;
+		result.step === 'done' &&
+		result.coi === true &&
+		result.environment?.ok === true &&
+		result.dartlabVersion === DARTLAB_VERSION &&
+		result.branchParent === result.branchExpected &&
+		Array.isArray(result.forkOut) &&
+		result.forkOut.length === 2;
+	if (!pass) throw new Error(`${JSON.stringify(result)}\n${logs.slice(-10).join('\n')}`);
+	console.log(`[pyproc-fork-smoke] PASS ${JSON.stringify(result)}`);
+} catch (error) {
+	console.error('[pyproc-fork-smoke] FAIL');
+	console.error(String(error?.stack || error).slice(-2000));
+	process.exitCode = 1;
 } finally {
 	await browser.close();
-	server.close();
+	await new Promise((resolve) => server.close(resolve));
 }

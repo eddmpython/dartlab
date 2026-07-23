@@ -1,8 +1,8 @@
 /// <reference lib="webworker" />
 // 커널 seam (ASGI arm). browser-as-server dispatch 를 손수(_dl_dispatch)와 pyproc(AsgiServer)
-// 두 impl 중 플래그로 고른다. USE_PYPROC_ASGI=false(기본)면 오늘 경로와 바이트 동일.
+// 두 impl 중 플래그로 고른다. pyproc가 기본이고 손수 구현은 안정화 기간의 자동 폴백이다.
 // mainPlan/pyproc-runtime-ssot P1. dartlab 라우팅(/pyapi 접두·query)·설치는 seam 위 워커 소유.
-import type { Runtime as PyprocRuntime, PyprocAsgiServer } from 'pyproc/runtime';
+import type { AsgiServer as PyprocAsgiServer, Runtime as PyprocRuntime } from 'pyproc';
 
 interface PyLike {
 	runPython: (code: string) => unknown;
@@ -13,6 +13,7 @@ interface PyLike {
 
 export interface AsgiResult {
 	status: number;
+	headers: Record<string, string>;
 	body: string;
 }
 
@@ -80,11 +81,11 @@ export class HandRolledAsgi implements AsgiKernel {
 		const status = res.get(0) as number;
 		const bodyText = res.get(1) as string;
 		res.destroy();
-		return { status, body: bodyText };
+		return { status, headers: { 'content-type': 'application/json' }, body: bodyText };
 	}
 }
 
-// pyproc 경로. 워커가 init 에서 만든 공유 Runtime(rt = new Runtime(pyodide)) 을 그대로 받는다.
+// pyproc 경로. 워커가 boot()로 만든 machine.runtime을 그대로 받는다.
 // 워커의 FS·run·출력·인터럽트도 같은 rt 를 쓰므로 커널·셀실행이 단일 런타임 SSOT 를 공유한다.
 // enableAsgiServer 로 dispatch. 설치(fastapi 등) 실패 시 워커가 HandRolledAsgi(raw pyodide) 로 폴백.
 export class PyprocAsgi implements AsgiKernel {
@@ -111,6 +112,6 @@ export class PyprocAsgi implements AsgiKernel {
 			route = route.slice(0, qi);
 		}
 		const res = await this.asgi!.serve(method, route || '/', body, query);
-		return { status: res.status, body: res.body };
+		return { status: res.status, headers: Object.fromEntries(res.headers), body: res.body };
 	}
 }

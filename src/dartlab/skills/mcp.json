@@ -5132,14 +5132,14 @@
       "id": "runtime.pyodideBrowser",
       "title": "Pyodide / Web AI 실행 범위",
       "category": "runtime",
-      "purpose": "브라우저에서 가능한 DartLab skill과 제한을 구분한다.",
+      "purpose": "브라우저의 pyproc machine에서 가능한 DartLab 실행 범위와 성능, 영속성, 격리 제한을 구분한다.",
       "whenToUse": [
         "파이오디드에서 가능한 분석",
         "웹 AI에서 바로 실행 가능한 기능",
         "HuggingFace prebuilt 데이터 기반 분석"
       ],
       "nextSkills": [],
-      "bodyPreview": "## 절차\n\n- skill search 결과의 `runtimeCompatibility.pyodide.status`를 먼저 확인한다.\n- `supported`는 브라우저 내 파일 또는 자동 lazy 로드 데이터로 바로 실행할 수 있다.\n- `limited`는 HF snapshot, 업로드 파일, prebuilt parquet 같은 제한 조건을 함께 표시한다.\n- `unsupported`는 로컬 Python 또는 서버 ask 경로를 안내한다.\n- 브라우저에서 말하는 최신성은 live API가 아니라 사용한 snapshot의 asOf 기준으로만 표현한다."
+      "bodyPreview": "## 절차\n\n- skill search 결과의 `runtimeCompatibility.pyodide.status`를 먼저 확인한다.\n- `supported`는 브라우저 내 파일 또는 자동 lazy 로드 데이터로 바로 실행할 수 있다.\n- `limited`는 HF snapshot, 업로드 파일, prebuilt parquet 같은 제한 조건을 함께 표시한다.\n- `unsupported`는 로컬 Python 또는 서버 ask 경로를 안내한다.\n- 브라우저에서 말하는 최신성은 live API가 아니라 사용한 snapshot의 asOf 기준으로만 표현한다.\n\n## DartLab 웹 실행 계약\n\n- 블로그의 `dartlab 이야기` Python 코드펜스는 페이지가 열리면 즉시 편집 가능한 셀로 보인다.\n- 페이지 진입만으로 Python, wheel, 데이터를 받지 않는다. 실행 버튼 클릭이나 명시적 hover 같은 사용자 의도 뒤에만 공용 worker를 준비한다.\n- 블로그 셀, 브라우저 노트북, 플레이그라운드는 한 `WorkerEngine`과 한 pyproc machine을 공유한다. 별도 main-thread Pyodide를 만들지 않는다.\n- 런타임 버전 정본은"
     },
     {
       "id": "runtime.python",

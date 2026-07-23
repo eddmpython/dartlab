@@ -2414,7 +2414,9 @@
       ],
       "requiredSetup": [],
       "limitations": [
-        "live KRX/DART/OpenAI OAuth 호출은 브라우저에서 제한된다."
+        "live KRX/DART/OpenAI OAuth 호출은 브라우저에서 제한된다.",
+        "pyproc durable history와 process pool은 worker loader 계약이 검증될 때까지 비활성이다.",
+        "COOP/COEP가 없으면 기본 셀은 실행되지만 soft interrupt와 process 기능은 사용할 수 없다."
       ]
     },
     {

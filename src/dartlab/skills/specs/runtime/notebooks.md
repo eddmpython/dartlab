@@ -34,7 +34,7 @@ procedure:
   - 환경을 고른다 (브라우저 즉시 → Colab/Molab, 로컬 영구 → marimo).
   - 노트북 카탈로그에서 분석 대상에 맞는 항목을 연다.
   - 첫 셀에서 의존성 추가 (`!pip install dartlab` 또는 `uv add dartlab`).
-  - 코드 실행 — 데이터는 자동 다운로드.
+  - 코드 실행 - 데이터는 자동 다운로드.
   - 새 노트북 작성 시 작성 규칙 (Colab 마크다운 / marimo 주석) 을 따른다.
 requiredEvidence:
   - execution
@@ -60,7 +60,7 @@ runtimeCompatibility:
   pyodide:
     status: limited
     notes:
-      - marimo wasm 빌드는 별도 — 본 카탈로그 외 항목.
+      - marimo wasm 빌드는 별도 - 본 카탈로그 외 항목.
 failureModes:
   - Colab 노트북을 로컬 jupyter 와 혼동
   - marimo 의 reactive 모델을 jupyter 의 셀 순서 모델로 오해
@@ -78,7 +78,7 @@ examples:
 source:
   type: curated_markdown
   owner: dartlab
-lastUpdated: "2026-05-06"
+lastUpdated: "2026-07-23"
 testUniverse:
   market: KR
   stockCodes:
@@ -115,16 +115,18 @@ Colab 은 브라우저에서 바로 실행 (Google 계정). Molab 은 marimo 클
 계정도 설치도 필요 없고, 코드와 결과가 바깥으로 나가지 않는다. 노트북은 IndexedDB 에 저장된다.
 
 허브에는 예제도 레슨도 없다. **실습장이지 교재가 아니다.** 배우는 곳은 블로그 연재
-`dartlab 이야기`(`blog/03-dartlab-stories/`)다. 그 글의 python 코드펜스는 독자의 브라우저에서
-그대로 실행되고, 첫 블록의 "노트북 생성하기" 가 글 한 편을 노트북 한 권(`post:<slug>`)으로 투영한다.
-사본을 굽지 않는다. 글이 SSOT 이고 노트북은 그 투영이다.
+`dartlab 이야기`(`blog/03-dartlab-stories/`)다. 그 글의 python 코드펜스는 처음부터 편집 가능한
+노트북 셀로 보이며, 실행 버튼을 누른 뒤에만 공용 Python worker를 준비한다. 독자는 글 안에서 코드를
+고치고 바로 재실행할 수 있다. 첫 셀의 "전체 화면"은 긴 실습이 필요할 때만 글 한 편을 노트북 한 권
+(`post:<slug>`)으로 투영하는 보조 진입점이다. 사본을 굽지 않는다. 글이 SSOT이고 노트북은 그 투영이다.
 
 - 연재 운영 규약: `blog/03-dartlab-stories/PIPELINE.md`
 - 노트북 편집 화면 좌측 사이드바의 첫 아이콘이 이 연재 목록과 검색이다.
 - 기계 가드: `tests/audit/notebookContract.py` 가 colab · marimo 예제와 `dartlab 이야기` 본문
   코드펜스를 AST 로 훑어 공개 호출 계약 밖 심볼을 막는다. CI fast `notebooks` 게이트.
 
-브라우저에서 되는 것과 안 되는 것은 `runtime.pyodide` 가 정본이다.
+브라우저에서 되는 것과 안 되는 것, pyproc capability와 업그레이드 게이트는
+`runtime.pyodideBrowser`가 정본이다.
 
 ## 로컬 marimo 실행
 
@@ -134,31 +136,31 @@ uv run --with marimo marimo edit notebooks/marimo/01_company.py
 
 같은 코드 (`notebooks/marimo/{name}.py`) 가 Molab 클라우드에서도 동작한다.
 
-Colab (`.ipynb`) 과 marimo (`.py`) 는 **1:1 대응** — 같은 분석을 두 노트북 형식으로 유지한다. 한쪽만 갱신 금지.
+Colab (`.ipynb`) 과 marimo (`.py`) 는 **1:1 대응** - 같은 분석을 두 노트북 형식으로 유지한다. 한쪽만 갱신 금지.
 
 ## 노트북 작성 규칙
 
-### Colab — 마크다운 허용
+### Colab - 마크다운 허용
 
 - 학습·공유용 독자가 맥락을 빠르게 잡게 마크다운 셀로 섹션 설명.
 - **3~4 코드 셀마다 1 마크다운**. 너무 잦으면 흐름 끊고, 너무 드물면 맥락 사라진다.
 - 노트북 최상단 1 장: 제목 + 한 줄 요약 + "이 노트북에서 다루는 것" 2~3 줄.
 - 주요 섹션 전환점에만 1 장씩.
 
-### marimo — 코드 + 짧은 주석
+### marimo - 코드 + 짧은 주석
 
 - 실습·실행용. 설명은 코드 옆 짧은 주석으로.
 - 첫 줄 한글 주석으로 셀 의도 표시.
-- 마크다운 셀 자제 — reactive 모델은 코드 흐름이 본체다.
+- 마크다운 셀 자제 - reactive 모델은 코드 흐름이 본체다.
 
 ### 공통 규칙
 
 - 같은 분석은 같은 코드·같은 순서로 두 노트북에 동기화.
 - 셀 순서에 의존하는 비결정 코드 금지 (marimo 가 reactive 라 의도와 다른 결과 낳는다).
-- 큰 데이터 셋 (Company 3 개 이상 동시 로드) 금지 — OOM 위험.
+- 큰 데이터 셋 (Company 3 개 이상 동시 로드) 금지 - OOM 위험.
 
 ## 다음 단계
 
-- [start.installUv](/skills/start.installUv) — 로컬 dartlab 설치.
-- [start.quickStart](/skills/start.quickStart) — 8 단계 walkthrough.
-- [engines.company](/skills/engines.company) — Company 엔진 메서드 카탈로그.
+- [start.installUv](/skills/start.installUv) - 로컬 dartlab 설치.
+- [start.quickStart](/skills/start.quickStart) - 8 단계 walkthrough.
+- [engines.company](/skills/engines.company) - Company 엔진 메서드 카탈로그.

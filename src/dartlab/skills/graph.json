@@ -3658,7 +3658,7 @@
       "id": "runtime.pyodideBrowser",
       "title": "Pyodide / Web AI 실행 범위",
       "category": "runtime",
-      "purpose": "브라우저에서 가능한 DartLab skill과 제한을 구분한다.",
+      "purpose": "브라우저의 pyproc machine에서 가능한 DartLab 실행 범위와 성능, 영속성, 격리 제한을 구분한다.",
       "inDegree": 0,
       "outDegree": 0,
       "cluster": "runtime",

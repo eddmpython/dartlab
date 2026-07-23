@@ -13,7 +13,7 @@
  *
  * 렌더는 저장이 아니라 렌더 시점에 매번 정화한다. 오염된 저장 출력도 재렌더마다 재정화된다.
  */
-import { Marked } from 'marked';
+import { Marked, type RendererObject, type Tokens } from 'marked';
 import DOMPurify from 'dompurify';
 
 const YT_ID = /^[\w-]{11}$/;
@@ -64,21 +64,17 @@ const embedExtension = {
 	],
 };
 
-// marked 18 의 renderer 는 토큰 객체를 받는다(옛 위치인자 아님).
-type ImageToken = { href: string; title: string | null; text: string };
-type LinkToken = { href: string; title: string | null; text: string; tokens?: unknown[] };
-
 /** 이미지는 반응형 + lazy (figure 로 감싸 캡션 여지). */
-const imageRenderer = {
+const imageRenderer: { renderer: RendererObject } = {
 	renderer: {
-		image({ href, title, text }: ImageToken) {
+		image({ href, title, text }: Tokens.Image) {
 			const t = title ? ` title="${title}"` : '';
 			const cap = text ? `<figcaption>${text}</figcaption>` : '';
 			return `<figure class="rm-figure"><img class="rm-img" loading="lazy" src="${href}" alt="${text || ''}"${t} />${cap}</figure>`;
 		},
-		link(this: { parser: { parseInline: (t: unknown[]) => string } }, token: LinkToken) {
+		link(token: Tokens.Link) {
 			const { href, title, text, tokens } = token;
-			const inner = tokens && tokens.length ? this.parser.parseInline(tokens) : text;
+			const inner = tokens.length ? this.parser.parseInline(tokens) : text;
 			const t = title ? ` title="${title}"` : '';
 			const rel = /^https?:\/\//.test(href) ? ' target="_blank" rel="noopener noreferrer nofollow"' : '';
 			return `<a href="${href}"${t}${rel}>${inner}</a>`;

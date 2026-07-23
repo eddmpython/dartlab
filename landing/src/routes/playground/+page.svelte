@@ -77,6 +77,9 @@ except Exception:
 	];
 
 	const stepLabels: Record<string, string> = {
+		engine: 'pyproc machine',
+		company: '회사 객체 준비',
+		ready: '완료',
 		pyodide: 'Pyodide 엔진',
 		packages: '패키지 로드',
 		wheel: 'dartlab 설치',

@@ -1,5 +1,7 @@
 # pyproc Runtime SSOT - dartlab 커널을 pyproc 공유 런타임으로
 
+> 2026-07-23 현재 계약은 [pyproc machine 채택 완료 문서](../pyproc-machine-adoption/README.md)가 정본이다. 이 폴더는 `new Runtime(py)`와 초기 SHA 핀 시기의 역사 문서로 보존하며, 현재 API나 운영 절차의 근거로 사용하지 않는다.
+
 상태: **P0~P3 완료 + P2 라이브 배포 (pyproc 기본 커널)** (2026-07-12). P0 파리티 + P1 seam + P3 자동반영 + **P2 flip(`USE_PYPROC_ASGI=true`) 검증 후 push, deploy-landing GREEN 로 라이브 배포됨**. 실패 시 손수 경로 자동 폴백(kill-switch). P4(격리 fork)만 봉인(스냅샷 spike SUPPORTED, COEP/Chromium전용은 별도 PRD). 검증 기반 = [00-verified-facts.md](00-verified-facts.md), 진행 = [06-progress-ledger.md](06-progress-ledger.md).
 
 범위: dartlab 브라우저 노트북의 pyodide 커널을, 저자 동일의 공유 런타임 **pyproc**(github.com/eddmpython/pyproc, "브라우저 파이썬 프로세스 OS")으로 이관한다. 손수 만든 것(pyodide boot, ASGI dispatch, heap 체크포인트, interrupt)을 pyproc 이 흡수하고, dartlab 은 노트북 고유층(postMessage·OPFS·결과 포매팅·SW 배선)만 소유한다. 나아가 멀티코어 fork·터미널·리액티브를 점진 획득한다.

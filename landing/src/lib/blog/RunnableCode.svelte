@@ -2,12 +2,9 @@
 	// dartlab 이야기 본문의 Python 코드펜스를 편집 가능한 노트북 셀로 보여 준다.
 	// 글의 코드펜스가 원본이고, 편집값은 현재 페이지의 커널에서만 실행한다.
 	import { ExternalLink, Loader2, Play, RotateCcw } from 'lucide-svelte';
-	import { onMount } from 'svelte';
 	import {
 		runSnippet,
 		prewarmEngine,
-		prewarmData,
-		takePrewarmedOutput,
 		engineStatus
 	} from '$lib/notebook/stores/executionStore';
 	import type { CellOutput } from '$lib/notebook/engine/executionEngine';
@@ -34,19 +31,6 @@
 	const dirty = $derived(editableCode !== code);
 	const downloading = $derived(running && $engineStatus === 'loading');
 
-	// 독자가 글을 읽는 동안 커널과 첫 셀 데이터를 미리 준비한다. 수정한 코드는 선제 실행하지 않는다.
-	onMount(() => {
-		const browserWindow = window as unknown as {
-			requestIdleCallback?: (callback: () => void) => void;
-		};
-		const kick = async () => {
-			await prewarmEngine();
-			if (onOpenNotebook) await prewarmData(code);
-		};
-		if (browserWindow.requestIdleCallback) browserWindow.requestIdleCallback(() => void kick());
-		else setTimeout(() => void kick(), 1200);
-	});
-
 	function updateCode(value: string) {
 		editableCode = value;
 		output = undefined;
@@ -59,14 +43,6 @@
 
 	async function run() {
 		if (running) return;
-		// 원본 코드의 프리페치 결과만 재사용한다. 사용자가 고친 코드는 반드시 실제로 실행한다.
-		if (!dirty) {
-			const prewarmed = takePrewarmedOutput(code);
-			if (prewarmed) {
-				output = prewarmed;
-				return;
-			}
-		}
 		running = true;
 		output = undefined;
 		try {

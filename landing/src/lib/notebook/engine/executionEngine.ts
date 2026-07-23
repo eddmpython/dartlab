@@ -46,9 +46,23 @@ export interface PyApiResponse {
 
 export interface RuntimeCapabilities {
 	persistentWorkspace: boolean;
+	workspaceLease: 'exclusive' | 'conflict' | 'unsupported';
 	interrupt: 'soft' | 'hard';
-	memoryTransactions: 'experimental';
+	memoryTransactions: 'beta-opt-in';
 	packagePersistence?: 'workspace-manifest';
+	runtime: 'pyproc-machine';
+	history: 'branching-volatile';
+	durableHistory: 'disabled-worker-replay-unverified';
+	processes: 'unavailable-worker-loader';
+	environment: {
+		ok: boolean;
+		crossOriginIsolated: boolean;
+		sharedArrayBuffer: boolean;
+		jspi: boolean;
+		issues: Array<{ code: string; need: string; why: string; fix: string }>;
+	} | null;
+	coreCache: { enabled: boolean; hits: number; misses: number };
+	wheelCache: { enabled: boolean; hits: number; misses: number };
 }
 
 export interface CheckpointInfo {

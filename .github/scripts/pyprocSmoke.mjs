@@ -1,61 +1,89 @@
-// PYPROC GATE-A: 핀된 pyproc(Runtime + AsgiServer) x 현재 발행된 PyPI dartlab 이 브라우저 런타임에서
-// 동작하는지 node-pyodide 로 검증. 주간 핀 범프 봇(pyprocPinBump.yml)이 새 pyproc SHA 를 착지시키기
-// 전에 이 게이트를 통과해야 한다. dartlab 은 micropip 로 auto-sync 되므로 대상 = "핀 pyproc x PyPI 최신
-// dartlab"(프로덕션 현실). boot() 은 main-thread(document) 전용이라 쓰지 않고, 워커 프로덕션 경로와
-// 동일하게 node-pyodide 를 new Runtime(py) 로 채택한다(pyproc/runtime, SAB 쓰는 process-os 미유입).
-//
-// 사용: node .github/scripts/pyprocSmoke.mjs
-// 요구: npm 에 pyproc(핀 SHA) + pyodide 설치. 네트워크(PyPI + pyodide CDN) 필요.
-// 실측 기대: pyproc rt.run + rt.fs(파일 IO) + rt.setStdout + AsgiServer 로 dartlab /health 200. 실패 시 exit 1.
+// PYPROC GATE-A: 현재 landing이 쓰는 공개 machine 계약을 node-pyodide에서 검증한다.
+// Pyodide 설치 버전은 landing/runtime-manifest.json과 맞아야 한다.
 
 import { loadPyodide } from 'pyodide';
 import { createRequire } from 'node:module';
 import { pathToFileURL } from 'node:url';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import { readFileSync } from 'node:fs';
 
-// pyproc 는 landing 워크스페이스 의존이라 npm install 시 landing/node_modules 로 간다(루트 아님).
-// 루트/landing 양쪽에서 해소되도록 명시 paths.
-const _ppRuntime = createRequire(import.meta.url).resolve('pyproc/runtime', {
+const RUNTIME_MANIFEST = JSON.parse(
+	readFileSync(new URL('../../landing/runtime-manifest.json', import.meta.url), 'utf8')
+);
+const PYODIDE_VERSION = RUNTIME_MANIFEST.pyodide;
+const DARTLAB_VERSION = RUNTIME_MANIFEST.dartlab;
+const PYODIDE_INDEX = `https://cdn.jsdelivr.net/pyodide/v${PYODIDE_VERSION}/full/`;
+const startedAt = Date.now();
+
+const pyprocEntry = createRequire(import.meta.url).resolve('pyproc', {
 	paths: [process.cwd(), join(process.cwd(), 'landing')]
 });
-const { Runtime } = await import(pathToFileURL(_ppRuntime).href);
+const pyprocVersion = JSON.parse(
+	readFileSync(join(dirname(pyprocEntry), 'package.json'), 'utf8')
+).version;
+const { boot, checkEnvironment } = await import(pathToFileURL(pyprocEntry).href);
 
-const t0 = Date.now();
-const el = () => ((Date.now() - t0) / 1000).toFixed(1) + 's';
+function requireValue(condition, message) {
+	if (!condition) throw new Error(message);
+}
 
 try {
-	const py = await loadPyodide();
-	await py.loadPackage(['micropip']);
+	requireValue(
+		pyprocVersion === RUNTIME_MANIFEST.pyproc,
+		`pyproc manifest ${RUNTIME_MANIFEST.pyproc} != installed ${pyprocVersion}`
+	);
+	let loaderCalls = 0;
+	const stdout = [];
+	const machine = await boot({
+		indexURL: PYODIDE_INDEX,
+		loadPyodide: async () => {
+			loaderCalls += 1;
+			return loadPyodide();
+		},
+		stdout: (text) => stdout.push(text)
+	});
+	const rt = machine.runtime;
 
-	const rt = new Runtime(py); // 우리 pyodide 를 채택(재부팅 안 함)
-	if (rt.run('1 + 1') !== 2) throw new Error('Runtime.run 기본 실행 실패');
+	requireValue(loaderCalls === 1, `loadPyodide 호출 ${loaderCalls}회`);
+	requireValue(machine.run('1 + 1') === 2, 'machine.run 기본 실행 실패');
+	machine.fs.mkdir('/gate');
+	machine.fs.writeFile('/gate/a.txt', 'x안녕');
+	requireValue(
+		machine.fs.readFile('/gate/a.txt', { encoding: 'utf8' }) === 'x안녕',
+		'machine.fs UTF-8 왕복 실패'
+	);
+	requireValue(machine.fs.stat('/gate').isDir, 'machine.fs stat 실패');
+	machine.fs.unlink('/gate/a.txt');
+	machine.fs.rmdir('/gate');
 
-	// 워커가 raw pyodide.FS/setStdout 에서 rt.* 로 이관했으므로 그 계약을 게이트가 지킨다(pyproc 범프 회귀
-	// 가드). migration notes #1(readFile 기본 binary·{utf8} 문자열)·#2(stat.isDir, mode 비트 없음)·
-	// readdir(./.. 이미 필터)·writeFile(문자열→utf8)·exists. 하나라도 어긋나면 워커 파일 IO 가 깨진다.
-	rt.fs.mkdir('/gate');
-	rt.fs.writeFile('/gate/a.txt', 'x안녕'); // 문자열 → utf8 자동(워커 marimoShim/matplotlibrc 패턴)
-	if (rt.fs.readFile('/gate/a.txt', { encoding: 'utf8' }) !== 'x안녕') throw new Error('rt.fs readFile{utf8} 원문 불일치(#1)');
-	if (!(rt.fs.readFile('/gate/a.txt') instanceof Uint8Array)) throw new Error('rt.fs readFile 기본 binary 아님(#1)');
-	if (rt.fs.stat('/gate').isDir !== true || rt.fs.stat('/gate/a.txt').isDir !== false) throw new Error('rt.fs stat.isDir 어긋남(#2)');
-	const _ents = rt.fs.readdir('/gate');
-	if (!_ents.includes('a.txt') || _ents.includes('.') || _ents.includes('..')) throw new Error('rt.fs readdir ./.. 필터 어긋남');
-	if (rt.fs.exists('/gate/a.txt') !== true || rt.fs.exists('/gate/none') !== false) throw new Error('rt.fs exists 어긋남');
-	rt.fs.unlink('/gate/a.txt');
-	rt.fs.rmdir('/gate');
-	if (rt.fs.exists('/gate') !== false) throw new Error('rt.fs unlink/rmdir 후 잔존');
-	const _cap = [];
-	rt.setStdout((t) => _cap.push(t));
-	rt.run('print("gatecap")');
-	rt.setStdout(null);
-	if (!_cap.join('').includes('gatecap')) throw new Error('rt.setStdout 청크 캡처 실패');
+	rt.setStdout((text) => stdout.push(text));
+	machine.run('print("gatecap")');
+	requireValue(stdout.join('').includes('gatecap'), 'runtime stdout 캡처 실패');
 
-	// 워커 PYAPI 설치 시퀀스와 동일(fastapi lazy + typing-extensions 4.12 승격).
-	await rt.runAsync(`
+	machine.run('branch_value = 1');
+	const branchA = machine.history.checkpoint();
+	machine.run('branch_value = 2');
+	machine.history.checkpoint();
+	machine.history.restore(branchA);
+	requireValue(machine.run('branch_value') === 1, 'history restore 실패');
+	machine.run('branch_value = 3');
+	const branchC = machine.history.checkpoint();
+	const branchNode = machine.history.tree().find((node) => node.index === branchC.index);
+	requireValue(branchNode?.parent === branchA.index, 'history 분기 부모 실패');
+
+	await rt.loadPackages(['micropip', 'lxml', 'numpy', 'polars', 'pyarrow']);
+	await rt.install(`dartlab==${DARTLAB_VERSION}`);
+	const imported = machine.run(
+		'import dartlab, polars, pyarrow, lxml, numpy; [dartlab.__version__, polars.__version__]'
+	);
+	const versions = Array.from(imported);
+	imported.destroy?.();
+	requireValue(versions[0] === DARTLAB_VERSION, `dartlab 버전 불일치: ${versions[0]}`);
+
+	await machine.runAsync(`
 import micropip
-await micropip.install("dartlab")
 try:
-    import fastapi  # noqa
+    import fastapi
 except ImportError:
     try:
         micropip.uninstall("typing-extensions")
@@ -66,16 +94,25 @@ except ImportError:
 import dartlab.webapi as _w
 _dl_app = _w.buildBrowserApi()
 `);
-
 	const asgi = rt.enableAsgiServer({ app: '_dl_app' });
 	await asgi.install();
-	const health = await asgi.serve('GET', '/health', null, ''); // 실제 dartlab 라우트를 pyproc 으로 서빙
-	if (health.status !== 200) throw new Error(`/health status ${health.status} (200 기대)`);
+	const health = await asgi.serve('GET', '/health', null, '');
+	requireValue(health.status === 200, `/health status ${health.status}`);
+	requireValue(JSON.parse(health.body).version === DARTLAB_VERSION, '/health dartlab 버전 불일치');
 
-	const ver = JSON.parse(health.body).version || '?';
-	console.log(`[pyproc-smoke] PASS pyproc Runtime+AsgiServer 가 dartlab ${ver} /health 200 서빙 (${el()})`);
-} catch (e) {
-	console.error('[pyproc-smoke] FAIL: pyproc Runtime/AsgiServer + dartlab 검증 실패');
-	console.error(String(e).slice(-800));
+	const report = {
+		ok: true,
+		pyproc: '0.0.10',
+		pyodide: PYODIDE_VERSION,
+		dartlab: DARTLAB_VERSION,
+		history: { branchParent: branchNode.parent, restored: 1 },
+		asgi: { status: health.status },
+		environment: checkEnvironment(),
+		elapsedMs: Date.now() - startedAt
+	};
+	console.log(`[pyproc-smoke] PASS ${JSON.stringify(report)}`);
+} catch (error) {
+	console.error('[pyproc-smoke] FAIL: 공개 machine 계약 검증 실패');
+	console.error(String(error?.stack || error).slice(-1500));
 	process.exit(1);
 }

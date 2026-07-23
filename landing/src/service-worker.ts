@@ -11,7 +11,7 @@
  * - ⛔ 크로스오리진(HF parquet·프록시 /media·/news 등 데이터)은 SW 가 절대 가로채지 않는다. hyparquet/DuckDB
  *   의 Range 요청을 네트워크에 그대로 맡겨야 첫 방문자의 저장소·메모리를 불리지 않는다(설계 불변).
  */
-import { build, files, version } from '$service-worker';
+import { base, build, files, version } from '$service-worker';
 import {
 	SUBSCRIBE_URL,
 	VAPID_PUBLIC_KEY,
@@ -26,31 +26,6 @@ declare const self: ServiceWorkerGlobalScope;
 const SHELL = `dartlab-shell-${version}`;
 const SHELL_ASSETS = [...build, ...files];
 const ASSET_SET = new Set(SHELL_ASSETS);
-
-/**
- * 노트북 런타임 캐시. pyodide 커널(CDN 휠 ~32MB)과 dartlab wheel(~21MB)은 노트북을 여는 순간
- * 매번 다시 받는다(실측: 같은 프로필 재방문도 12.2초 -> 11.2초로 거의 그대로. HF wheel 은 서명된
- * xet CDN 으로 302 되어 URL 이 매번 달라 HTTP 캐시가 안 먹는다). 그래서 노트북을 실제로 연 사용자만
- * 이 캐시를 채운다. 크로스오리진 무간섭이라는 SW 설계 불변은 그대로 두고, 아래 좁은 허용목록만 예외다.
- * panel/parquet 같은 데이터 Range 요청은 여전히 절대 가로채지 않는다(경로에 /pyodide/ 가 없다).
- */
-const PYODIDE_CACHE = 'dartlab-pyodide-v1';
-
-/** 버전이 URL 에 박혀 불변인 것(cache-first). */
-function isImmutableRuntimeAsset(url: URL): boolean {
-	return (
-		(url.hostname === 'cdn.jsdelivr.net' && url.pathname.startsWith('/pyodide/')) ||
-		url.hostname === 'files.pythonhosted.org'
-	);
-}
-
-/**
- * dartlab wheel(stale-while-revalidate). 파일명에 버전이 있지만 같은 버전으로 재발행하는 운영이 있어
- * cache-first 로 굳히면 옛 wheel 이 영구 고착된다. 캐시를 즉시 주고 뒤에서 갱신한다.
- */
-function isDartlabWheel(url: URL): boolean {
-	return url.hostname === 'huggingface.co' && url.pathname.includes('/pyodide/') && url.pathname.endsWith('.whl');
-}
 
 /**
  * 노트북 데이터 캐시. pyodide 는 parquet 을 통째로 받아 FS 에 쓴다(005930 panel 보드 12.8MB, 실측 약 5.2초).
@@ -110,7 +85,7 @@ self.addEventListener('activate', (event) => {
 						(k) =>
 							k.startsWith('dartlab-scan-') ||
 							(k.startsWith('dartlab-shell-') && k !== SHELL) ||
-							(k.startsWith('dartlab-pyodide-') && k !== PYODIDE_CACHE) ||
+							k.startsWith('dartlab-pyodide-') ||
 							(k.startsWith('dartlab-nbdata-') && k !== NB_DATA_CACHE)
 					)
 					.map((k) => caches.delete(k))
@@ -124,9 +99,13 @@ self.addEventListener('activate', (event) => {
  * browser-as-server: /pyapi/* 요청을 컨트롤 중인 페이지로 넘겨 pyodide 워커의 dartlab FastAPI 가
  * 서빙하게 하고, 그 응답을 진짜 HTTP Response 로 돌려준다. codaro-anywhere/10 검증 배선.
  */
-async function handlePyapi(req: Request, path: string): Promise<Response> {
+async function handlePyapi(req: Request, path: string, clientId: string): Promise<Response> {
 	const clients = await self.clients.matchAll({ includeUncontrolled: true, type: 'window' });
-	const client = clients[0];
+	const requestClient = clientId ? await self.clients.get(clientId) : null;
+	const client =
+		requestClient ??
+		clients.find((candidate) => (candidate as WindowClient).focused) ??
+		clients.find((candidate) => (candidate as WindowClient).visibilityState === 'visible');
 	if (!client) {
 		return new Response(JSON.stringify({ error: 'no client to serve pyapi' }), {
 			status: 503,
@@ -136,7 +115,16 @@ async function handlePyapi(req: Request, path: string): Promise<Response> {
 	const body = req.method === 'GET' || req.method === 'HEAD' ? '' : await req.text();
 	return new Promise<Response>((resolve) => {
 		const channel = new MessageChannel();
+		const timeout = setTimeout(() => {
+			channel.port1.close();
+			resolve(new Response(JSON.stringify({ error: 'pyapi client timeout' }), {
+				status: 504,
+				headers: { 'content-type': 'application/json' }
+			}));
+		}, 180_000);
 		channel.port1.onmessage = (ev) => {
+			clearTimeout(timeout);
+			channel.port1.close();
 			const { status, headers, body: b } = ev.data as { status: number; headers: Record<string, string>; body: string };
 			resolve(new Response(b, { status, headers }));
 		};
@@ -150,48 +138,14 @@ self.addEventListener('fetch', (event) => {
 
 	// browser-as-server: /pyapi/* 는 브라우저 안 dartlab FastAPI 로. 컨트롤 페이지의 pyodide 워커가
 	// 서빙한다(mainPlan/browser-as-server-ssot). GET/POST 모두. 캐시하지 않는다(라이브 계산).
-	if (url.pathname.startsWith('/pyapi/')) {
-		event.respondWith(handlePyapi(req, url.pathname + url.search));
+	const pyapiPrefix = `${base}/pyapi/`;
+	if (url.pathname.startsWith(pyapiPrefix)) {
+		const apiPath = url.pathname.slice(base.length) + url.search;
+		event.respondWith(handlePyapi(req, apiPath, event.clientId));
 		return;
 	}
 
 	if (req.method !== 'GET') return;
-
-	// 노트북 런타임(pyodide 커널 휠 + dartlab wheel)만 크로스오리진 예외. 데이터(parquet Range)는 제외.
-	if (isImmutableRuntimeAsset(url)) {
-		event.respondWith(
-			(async () => {
-				const cache = await caches.open(PYODIDE_CACHE);
-				const hit = await cache.match(req);
-				if (hit) return hit;
-				const res = await fetch(req);
-				if (res.ok) event.waitUntil(cache.put(req, cacheable(res.clone())));
-				return res;
-			})()
-		);
-		return;
-	}
-	if (isDartlabWheel(url)) {
-		event.respondWith(
-			(async () => {
-				const cache = await caches.open(PYODIDE_CACHE);
-				const hit = await cache.match(req);
-				const fresh = fetch(req)
-					.then((res) => {
-						if (res.ok) cache.put(req, cacheable(res.clone()));
-						return res;
-					})
-					.catch(() => undefined);
-				if (hit) {
-					event.waitUntil(fresh); // 뒤에서 갱신(같은 버전 재발행 대응)
-					return hit;
-				}
-				const res = await fresh;
-				return res ?? Response.error();
-			})()
-		);
-		return;
-	}
 
 	if (isNotebookDataWholeGet(url, req)) {
 		event.respondWith(

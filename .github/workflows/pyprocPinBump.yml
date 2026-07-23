@@ -1,6 +1,5 @@
 # pyproc 핀 자동 반영(게이트). pyproc 은 npm 에 릴리즈되고 dartlab 은 npm 버전으로 소비한다.
-# 최신 npm 버전 -> 게이트 통과 -> 봇 PR. patch + 비 tier2(격리 경로 무접촉) + GATE-A green 만 auto-merge,
-# 그 외(minor+/tier2)는 사람 리뷰 + 실 Chromium GATE-B. mainPlan/pyproc-runtime-ssot 02-auto-update.
+# 최신 npm 버전 -> 전체 게이트 -> 리뷰 PR. pyproc 0.x는 patch도 breaking일 수 있어 자동 병합하지 않는다.
 name: pyproc pin bump (gated)
 
 on:
@@ -11,6 +10,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  issues: write
 
 concurrency:
   group: pyproc-pin
@@ -48,16 +48,38 @@ jobs:
         run: |
           node .github/scripts/pyprocApplyPin.mjs "${{ needs.resolve.outputs.latest }}"
           npm install
-          npm install --no-save pyodide@0.27.5
+          PYODIDE_VERSION="$(node -p "require('./landing/runtime-manifest.json').pyodide")"
+          npm install --no-save "pyodide@$PYODIDE_VERSION"
       - name: GATE-A (pyproc Runtime+AsgiServer x dartlab)
         run: node .github/scripts/pyprocSmoke.mjs
 
-  # Tier-2(프로세스 OS/JSPI) 경로가 바뀌거나 minor+ 면 실 Chromium 에서 crossOriginIsolated fork +
-  # R1(COEP 하 휠설치)까지 검증. node 로는 못 덮는 경로라 Playwright chromium 필요.
+  landing:
+    needs: [resolve, gate-a]
+    if: ${{ needs.resolve.outputs.newer == 'true' && needs.gate-a.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "20"
+          cache: npm
+      - name: 후보 핀 설치
+        run: |
+          node .github/scripts/pyprocApplyPin.mjs "${{ needs.resolve.outputs.latest }}"
+          npm install
+      - name: landing 타입, 단위, 프로덕션 빌드
+        run: |
+          npm --workspace landing run check
+          npm --workspace landing run test
+          npm --workspace landing run build
+
+  # 모든 0.x 후보를 실 Chromium에서 검증한다. 소스 경로 분류로 이 게이트를 생략하지 않는다.
   gate-b:
     needs: [resolve, gate-a]
-    if: ${{ needs.resolve.outputs.newer == 'true' && (needs.resolve.outputs.tier2 == 'true' || needs.resolve.outputs.bump != 'patch') }}
+    if: ${{ needs.resolve.outputs.newer == 'true' && needs.gate-a.result == 'success' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
@@ -72,10 +94,12 @@ jobs:
       - name: "GATE-B (실 Chromium, crossOriginIsolated fork + R1 휠설치)"
         run: node .github/scripts/pyprocForkSmoke.mjs
 
-  land:
-    needs: [resolve, gate-a, gate-b]
-    if: ${{ always() && needs.resolve.outputs.newer == 'true' && needs.gate-a.result == 'success' && (needs.gate-b.result == 'success' || needs.gate-b.result == 'skipped') }}
+  propose:
+    needs: [resolve, gate-a, gate-b, landing]
+    if: ${{ always() && needs.resolve.outputs.newer == 'true' && needs.gate-a.result == 'success' && needs.gate-b.result == 'success' && needs.landing.result == 'success' }}
     runs-on: ubuntu-latest
+    env:
+      PYPROC_UPDATE_TOKEN: ${{ secrets.PYPROC_UPDATE_TOKEN }}
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
@@ -85,23 +109,48 @@ jobs:
         run: |
           node .github/scripts/pyprocApplyPin.mjs "${{ needs.resolve.outputs.latest }}"
           npm install
-      - name: 봇 PR (patch+비tier2 -> auto-merge, 그 외 리뷰)
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: 리뷰 후보 브랜치 생성
+        id: branch
         run: |
           set -euo pipefail
           BR="pyproc-pin-${{ needs.resolve.outputs.latest }}"
+          if git ls-remote --exit-code --heads origin "$BR" >/dev/null 2>&1; then
+            echo "branch=$BR" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          node .github/scripts/pyprocApplyPin.mjs "${{ needs.resolve.outputs.latest }}"
+          npm install
           git config user.name "dartlab-bot"
           git config user.email "dartlab-bot@users.noreply.github.com"
           git switch -c "$BR"
-          git commit -o landing/package.json package-lock.json \
-            -m "개선: pyproc 핀 ${{ needs.resolve.outputs.latest }} (npm, GATE-A green)"
+          git commit -o landing/package.json landing/runtime-manifest.json package-lock.json \
+            -m "개선: pyproc 핀 ${{ needs.resolve.outputs.latest }} 전체 게이트 통과"
           git push -u origin "$BR"
-          gh pr create -B master -H "$BR" \
-            -t "pyproc 핀 -> ${{ needs.resolve.outputs.latest }}" \
-            -b "npm ${{ needs.resolve.outputs.current }} -> ${{ needs.resolve.outputs.latest }} / bump=${{ needs.resolve.outputs.bump }} / tier2=${{ needs.resolve.outputs.tier2 }} / GATE-A PASS"
-          if [ "${{ needs.resolve.outputs.bump }}" = "patch" ] && [ "${{ needs.resolve.outputs.tier2 }}" != "true" ]; then
-            gh pr merge --squash --auto
+          echo "branch=$BR" >> "$GITHUB_OUTPUT"
+      - name: 리뷰 PR 생성
+        if: ${{ env.PYPROC_UPDATE_TOKEN != '' }}
+        env:
+          GH_TOKEN: ${{ env.PYPROC_UPDATE_TOKEN }}
+        run: |
+          set -euo pipefail
+          EXISTING="$(gh pr list -B master -H "${{ steps.branch.outputs.branch }}" --state open --json url --jq '.[0].url // empty')"
+          if [ -n "$EXISTING" ]; then
+            echo "기존 리뷰 PR: $EXISTING"
           else
-            gh pr edit --add-label pyproc-tier2-review || true
+            gh pr create -B master -H "${{ steps.branch.outputs.branch }}" \
+              -t "pyproc 핀 -> ${{ needs.resolve.outputs.latest }}" \
+              -b "npm ${{ needs.resolve.outputs.current }} -> ${{ needs.resolve.outputs.latest }} / GATE-A, Chromium, landing check, test, build PASS / pyproc 0.x 수동 리뷰 필수"
+          fi
+      - name: PR 권한 미설정 알림
+        if: ${{ env.PYPROC_UPDATE_TOKEN == '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TITLE="pyproc ${{ needs.resolve.outputs.latest }} 업데이트 리뷰 필요"
+          BODY="후보 브랜치 \`${{ steps.branch.outputs.branch }}\`가 전체 게이트를 통과했습니다. 저장소의 Actions PR 생성 권한이 꺼져 있어 자동 PR 대신 이 이슈를 남깁니다. PYPROC_UPDATE_TOKEN을 설정하거나 저장소 권한을 고친 뒤 수동 PR을 만드세요."
+          EXISTING="$(gh issue list --search "$TITLE in:title" --state open --json number --jq '.[0].number // empty')"
+          if [ -n "$EXISTING" ]; then
+            gh issue comment "$EXISTING" --body "$BODY"
+          else
+            gh issue create --title "$TITLE" --body "$BODY"
           fi

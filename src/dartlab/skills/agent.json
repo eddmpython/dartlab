@@ -27614,7 +27614,7 @@
     },
     {
       "id": "runtime.notebooks",
-      "bodyPreview": "## 노트북 카탈로그\n\nColab 은 브라우저에서 바로 실행 (Google 계정). Molab 은 marimo 클라우드 (무료).\n\n노트북 파일명은 `notebooks/colab/{name}.ipynb` 와 `notebooks/marimo/{name}.py` 가 1:1 로 같다.\n축 개수는 각 엔진 카탈로그(인자 없이 호출) 실측값이다.\n\n| 노트북 | 기능 | 설명 |\n|---|---|---|\n| `01_company` | **Company** | `Company(\"005930\")` 로 회사를 잡고 `c.panel` · `c.select` · `c.trace` |\n| `02_gather` | **Gather** | `gather()` 16 축. 주가 · 수급 · 거시 · 뉴스 (네트워크 필요, 로컬 전용) |\n| `03_scan` | **Scan** | `scan()` 27 축 전 종목 횡단 스캔 |\n| `04_quant` | **Quant** | `c.quant()` 48 축. 기술적 지표 · 신호 · 백테스트 |\n| `05_analysis` | **Analysis** | `c.analysis()` 22 축. 수익성 · 성장성 · 안정성 · 밸류에이션 |\n| `06_macro` | **Macro** | `macro()` 15 축. 사이클 · 금리 · 시나리오 |\n| `07_credit` | **Credit** | `c.credit()` dCR 등급 + 7 축 위험 |\n| `08_story` | **Story** | `c.story()` 구조화 보고서 |\n| `09_ai` | **Ask (AI)** | `ask(\"...\")` 자연어 LLM 분석 |\n| `10_search` | **Search** | `search()` 공시 제목 · 본문 검색 |\n| `11_listing` | **Listing** | `listing()` 상장사 · 공시 · 토픽 목록 |\n\n- Colab: `https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/{name}.ipynb`\n- Molab: `https://molab.marimo.io/github/eddmpython/dartlab/blob/master/notebooks/marimo/{name}.py`\n\n## 브라우저 노트북 (설치 0)\n\n`landing` 의 `/notebooks` 는 pyodide 로 브라우저 안에서 도는 별도 표면이다. Colab/Molab 과 달리\n계정도 설치도 필요 없고, 코드와 결과가 바깥으로 나가지 않는다. 노트북은 IndexedDB 에 저장된다.\n\n허브에는 예제도 레슨도 없다. **실습장이지 교재가 아니다.** 배우는 곳은 블로그 연재\n`dartlab 이야기`(`blog/03-dartlab-stories/`)다. 그 글의 python 코드펜스는 독자의 브라우저에서\n그대로 실행되고, 첫 블록의 \"노트북 생성하기\" 가 글 한 편을 노트북 한 권(`post:<slug>`)으로 투영한다",
+      "bodyPreview": "## 노트북 카탈로그\n\nColab 은 브라우저에서 바로 실행 (Google 계정). Molab 은 marimo 클라우드 (무료).\n\n노트북 파일명은 `notebooks/colab/{name}.ipynb` 와 `notebooks/marimo/{name}.py` 가 1:1 로 같다.\n축 개수는 각 엔진 카탈로그(인자 없이 호출) 실측값이다.\n\n| 노트북 | 기능 | 설명 |\n|---|---|---|\n| `01_company` | **Company** | `Company(\"005930\")` 로 회사를 잡고 `c.panel` · `c.select` · `c.trace` |\n| `02_gather` | **Gather** | `gather()` 16 축. 주가 · 수급 · 거시 · 뉴스 (네트워크 필요, 로컬 전용) |\n| `03_scan` | **Scan** | `scan()` 27 축 전 종목 횡단 스캔 |\n| `04_quant` | **Quant** | `c.quant()` 48 축. 기술적 지표 · 신호 · 백테스트 |\n| `05_analysis` | **Analysis** | `c.analysis()` 22 축. 수익성 · 성장성 · 안정성 · 밸류에이션 |\n| `06_macro` | **Macro** | `macro()` 15 축. 사이클 · 금리 · 시나리오 |\n| `07_credit` | **Credit** | `c.credit()` dCR 등급 + 7 축 위험 |\n| `08_story` | **Story** | `c.story()` 구조화 보고서 |\n| `09_ai` | **Ask (AI)** | `ask(\"...\")` 자연어 LLM 분석 |\n| `10_search` | **Search** | `search()` 공시 제목 · 본문 검색 |\n| `11_listing` | **Listing** | `listing()` 상장사 · 공시 · 토픽 목록 |\n\n- Colab: `https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/{name}.ipynb`\n- Molab: `https://molab.marimo.io/github/eddmpython/dartlab/blob/master/notebooks/marimo/{name}.py`\n\n## 브라우저 노트북 (설치 0)\n\n`landing` 의 `/notebooks` 는 pyodide 로 브라우저 안에서 도는 별도 표면이다. Colab/Molab 과 달리\n계정도 설치도 필요 없고, 코드와 결과가 바깥으로 나가지 않는다. 노트북은 IndexedDB 에 저장된다.\n\n허브에는 예제도 레슨도 없다. **실습장이지 교재가 아니다.** 배우는 곳은 블로그 연재\n`dartlab 이야기`(`blog/03-dartlab-stories/`)다. 그 글의 python 코드펜스는 처음부터 편집 가능한\n노트북 셀로 보이며, 실행 버튼을 누른 뒤에만 공용 Python worker를 준비한다. 독자는 글 안에서 코드를\n",
       "title": "Colab · Molab · 로컬 marimo 노트북",
       "category": "runtime",
       "categoryTitle": "Runtime",
@@ -27662,7 +27662,7 @@
         "환경을 고른다 (브라우저 즉시 → Colab/Molab, 로컬 영구 → marimo).",
         "노트북 카탈로그에서 분석 대상에 맞는 항목을 연다.",
         "첫 셀에서 의존성 추가 (`!pip install dartlab` 또는 `uv add dartlab`).",
-        "코드 실행 — 데이터는 자동 다운로드.",
+        "코드 실행 - 데이터는 자동 다운로드.",
         "새 노트북 작성 시 작성 규칙 (Colab 마크다운 / marimo 주석) 을 따른다."
       ],
       "recipeSteps": [],
@@ -27716,7 +27716,7 @@
         "pyodide": {
           "status": "limited",
           "notes": [
-            "marimo wasm 빌드는 별도 — 본 카탈로그 외 항목."
+            "marimo wasm 빌드는 별도 - 본 카탈로그 외 항목."
           ]
         }
       }
@@ -27999,13 +27999,13 @@
     },
     {
       "id": "runtime.pyodideBrowser",
-      "bodyPreview": "## 절차\n\n- skill search 결과의 `runtimeCompatibility.pyodide.status`를 먼저 확인한다.\n- `supported`는 브라우저 내 파일 또는 자동 lazy 로드 데이터로 바로 실행할 수 있다.\n- `limited`는 HF snapshot, 업로드 파일, prebuilt parquet 같은 제한 조건을 함께 표시한다.\n- `unsupported`는 로컬 Python 또는 서버 ask 경로를 안내한다.\n- 브라우저에서 말하는 최신성은 live API가 아니라 사용한 snapshot의 asOf 기준으로만 표현한다.",
+      "bodyPreview": "## 절차\n\n- skill search 결과의 `runtimeCompatibility.pyodide.status`를 먼저 확인한다.\n- `supported`는 브라우저 내 파일 또는 자동 lazy 로드 데이터로 바로 실행할 수 있다.\n- `limited`는 HF snapshot, 업로드 파일, prebuilt parquet 같은 제한 조건을 함께 표시한다.\n- `unsupported`는 로컬 Python 또는 서버 ask 경로를 안내한다.\n- 브라우저에서 말하는 최신성은 live API가 아니라 사용한 snapshot의 asOf 기준으로만 표현한다.\n\n## DartLab 웹 실행 계약\n\n- 블로그의 `dartlab 이야기` Python 코드펜스는 페이지가 열리면 즉시 편집 가능한 셀로 보인다.\n- 페이지 진입만으로 Python, wheel, 데이터를 받지 않는다. 실행 버튼 클릭이나 명시적 hover 같은 사용자 의도 뒤에만 공용 worker를 준비한다.\n- 블로그 셀, 브라우저 노트북, 플레이그라운드는 한 `WorkerEngine`과 한 pyproc machine을 공유한다. 별도 main-thread Pyodide를 만들지 않는다.\n- 런타임 버전 정본은 `landing/runtime-manifest.json`이다. 브라우저와 Node 게이트가 같은 pyproc, Pyodide, DartLab exact pin을 읽고 캐시 namespace를 만든다.\n- `import dartlab`을 실행하기 전에 `lxml`, `numpy`, `polars`, `pyarrow`를 Pyodide 배포판에서 명시적으로 적재하고 DartLab exact wheel을 설치한다. 지연 import만 믿지 않는다.\n- 기본 실행, 파일, 출력, 환경 진단은 pyproc machine 공개 계약을 쓴다. `runtime.raw`는 ASGI 안정화 폴백에만 허용한다.\n\n## capability 경계\n\n| 기능 | 현재 계약 |\n|---|---|\n| 기본 Python 셀 | 모든 현대 브라우저에서 지원 |\n| soft interrupt | `crossOriginIsolated`와 `SharedArrayBuffer`가 있을 때만 지원 |\n| OPFS workspace | 지원 시 notebook별 mount, Web Lock 단독 writer |\n| core와 wheel 캐시 | OPFS 지원 시 사용, 버전별 최근 2세대 유지, 사용량 90% 이상이면 우회 |\n| checkpoint | pyproc machine history의 휘발성 branching tree |\n| durable history | worker deterministic replay loader 검증 전 비활성 |\n| process pool | worker 자식 loader 검증 전 비활성 |\n| browser-as-server | pyproc ASGI가 기본, 손수 ASGI는 한 안정화 주기의 kill-switch |\n\nCOOP/COEP가 없다는 이유로 기본 machine 부팅을 실패시키면 안",
       "title": "Pyodide / Web AI 실행 범위",
       "category": "runtime",
       "categoryTitle": "Runtime",
       "kind": "curated",
-      "status": "unverified",
-      "purpose": "브라우저에서 가능한 DartLab skill과 제한을 구분한다.",
+      "status": "observed",
+      "purpose": "브라우저의 pyproc machine에서 가능한 DartLab 실행 범위와 성능, 영속성, 격리 제한을 구분한다.",
       "whenToUse": [
         "파이오디드에서 가능한 분석",
         "웹 AI에서 바로 실행 가능한 기능",
@@ -28018,7 +28018,8 @@
       "requiredInputs": [],
       "outputs": [
         "supported/limited/unsupported 판정",
-        "필요한 데이터 원천"
+        "필요한 데이터 원천",
+        "브라우저 런타임 기능 판정"
       ],
       "apiRefs": [],
       "toolRefs": [
@@ -28038,14 +28039,21 @@
         "`supported`는 브라우저 내 파일 또는 자동 lazy 로드 데이터로 바로 실행할 수 있다.",
         "`limited`는 HF snapshot, 업로드 파일, prebuilt parquet 같은 제한 조건을 함께 표시한다.",
         "`unsupported`는 로컬 Python 또는 서버 ask 경로를 안내한다.",
-        "브라우저에서 말하는 최신성은 live API가 아니라 사용한 snapshot의 asOf 기준으로만 표현한다."
+        "브라우저에서 말하는 최신성은 live API가 아니라 사용한 snapshot의 asOf 기준으로만 표현한다.",
+        "블로그의 `dartlab 이야기` Python 코드펜스는 페이지가 열리면 즉시 편집 가능한 셀로 보인다.",
+        "페이지 진입만으로 Python, wheel, 데이터를 받지 않는다. 실행 버튼 클릭이나 명시적 hover 같은 사용자 의도 뒤에만 공용 worker를 준비한다.",
+        "블로그 셀, 브라우저 노트북, 플레이그라운드는 한 `WorkerEngine`과 한 pyproc machine을 공유한다. 별도 main-thread Pyodide를 만들지 않는다.",
+        "런타임 버전 정본은 `landing/runtime-manifest.json`이다. 브라우저와 Node 게이트가 같은 pyproc, Pyodide, DartLab exact pin을 읽고 캐시 namespace를 만든다.",
+        "`import dartlab`을 실행하기 전에 `lxml`, `numpy`, `polars`, `pyarrow`를 Pyodide 배포판에서 명시적으로 적재하고 DartLab exact wheel을 설치한다. 지연 import만 믿지 않는다.",
+        "기본 실행, 파일, 출력, 환경 진단은 pyproc machine 공개 계약을 쓴다. `runtime.raw`는 ASGI 안정화 폴백에만 허용한다."
       ],
       "recipeSteps": [],
       "requiredEvidence": [
         "runtimeCompatibility",
         "dataset",
         "executionRef",
-        "sourceRef"
+        "sourceRef",
+        "browserSmoke"
       ],
       "expectedOutputs": [
         "runtime limits",
@@ -28053,10 +28061,15 @@
       ],
       "visualGuidance": [],
       "failureModes": [
-        "서버 전용 skill을 브라우저에서 가능하다고 말함"
+        "서버 전용 skill을 브라우저에서 가능하다고 말함",
+        "Pyodide가 지연 import의 C 확장 의존성을 자동 발견한다고 가정함",
+        "SharedArrayBuffer가 없는 일반 페이지에서 기본 machine 부팅까지 막음",
+        "pyproc 0.x patch를 하위 호환으로 간주하고 게이트 없이 올림"
       ],
       "forbidden": [
-        "Pyodide 가능 여부 허위 단정"
+        "Pyodide 가능 여부 허위 단정",
+        "블로그를 열기만 했는데 Python 또는 데이터 다운로드 시작",
+        "durable history와 process 기능을 기능 확인 없이 노출"
       ],
       "examples": [
         "파이오디드에서 바로 가능한 분석 뭐가 있나"
@@ -28081,7 +28094,9 @@
             "browser uploaded parquet/csv"
           ],
           "limitations": [
-            "live KRX/DART/OpenAI OAuth 호출은 브라우저에서 제한된다."
+            "live KRX/DART/OpenAI OAuth 호출은 브라우저에서 제한된다.",
+            "pyproc durable history와 process pool은 worker loader 계약이 검증될 때까지 비활성이다.",
+            "COOP/COEP가 없으면 기본 셀은 실행되지만 soft interrupt와 process 기능은 사용할 수 없다."
           ]
         }
       }
