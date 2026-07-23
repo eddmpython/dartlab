@@ -1,7 +1,7 @@
 ---
 title: "양자컴퓨터는 왜 큐비트 수보다 오류의 사다리가 중요한가"
 date: "2026-07-22"
-description: "양자컴퓨터의 중첩과 간섭부터 오류정정, 하드웨어 방식, 상장사 산업망, 실제 주문과 PQC 전환까지 하나의 증거 사다리로 쉽게 풀고 상용화의 단계를 판정한다."
+description: "양자컴퓨터의 중첩과 오류정정부터 클라우드, QPU, 제어·냉각·광학 공급망, 네트워크 장비와 PQC 전환까지 쉽게 연결하고 실제 거래 단계를 판정한다."
 category: tech-story
 series: tech-story
 seriesOrder: 17
@@ -163,24 +163,41 @@ Quantinuum은 2026년 6월 나스닥에 QNT로 상장해 주당 60달러에 2,80
 
 Quantinuum의 강점은 QCCD 방식의 이온트랩 하드웨어, 오류정정 연구, TKET 소프트웨어와 응용을 한 회사 안에 묶은 수직 통합이다. 동시에 높은 연구개발비와 고객 집중, 시스템 판매 시점 변동도 함께 공개됐다. IPO가 만든 진짜 가격표는 “가장 좋은 기술” 한 줄이 아니라 **정확도, 논리 연산, 고객 다변화, 매출 인식, 현금 소모를 공개시장 안에서 계속 비교할 수 있게 된 것**이다.
 
-![양자산업의 하드웨어, 제조와 제어, 클라우드, 보안 층에 상장사를 배치한 지도](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/53/53b8bfb9a77e9bcf3710d08fe0557757f232efa527d5d3de9111393867cbcd7e.svg)
+### 양자 계산 한 번이 여섯 회사군을 지난다
 
-필수 산업 지도를 증거 범위와 함께 정리하면 다음과 같다.
+회사 지도를 가장 쉽게 이해하는 방법은 QPU를 식당의 화구라고 생각하는 것이다. 화구만 있다고 주문이 음식이 되지는 않는다. 클라우드는 주문을 받는 창구, 컴파일러는 조리법을 주방 언어로 바꾸는 역할, CPU와 GPU는 주문 순서와 오류 처리를 맡는 주방장, 제어장비는 실제 불 세기를 조절하는 손, 냉동기와 레이저는 주방 설비에 해당한다.
 
-| 공정/층위 | 기술 역할 | 대표 회사 | 공시 근거 | 재무로 보이는 흔적 | 기술 성숙도 |
+1. 제약사, 연구소, 대학, 정부기관이 풀 문제를 정한다.
+2. Amazon Braket, Azure Quantum, IBM Quantum 같은 플랫폼에서 QPU와 실행 방식을 고른다.
+3. 컴파일러가 회로를 해당 장비가 이해하는 게이트와 펄스로 바꾼다.
+4. CPU와 GPU가 회로 최적화, 작업 편성, 측정 반복, 오류 신호 해독을 맡는다.
+5. Keysight 같은 제어장비, Oxford Instruments와 FormFactor 같은 극저온·검사장비, Coherent 같은 레이저·광학 부품이 물리 동작을 만든다.
+6. IonQ, Quantinuum, Rigetti, D-Wave 같은 QPU가 측정값을 내고 결과가 다시 고객에게 돌아간다.
+
+이 순서를 보면 누가 먼저 돈을 받을지도 보인다. 고객은 플랫폼 사용료나 프로젝트 비용을 낸다. 플랫폼은 QPU 접근권을 공급한다. QPU 회사는 장비를 만들기 위해 제어기, 냉각기, 계측기, 레이저와 웨이퍼를 산다. 완전한 범용 양자컴퓨터가 나오기 전에도 **연구장비와 클라우드 접근, 제어와 시험 층에는 현재형 거래가 생길 수 있다.**
+
+![양자 계산과 양자안전 네트워크에서 고객의 예산이 플랫폼, 장비, 부품과 통신 인프라로 이동하는 지도](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/22/221512f318454d94723473a65e7476e1cc2f893e450a3eb3f019d2e55a5a3412.svg)
+
+| 공정/층위 | 실제로 파는 것 | 대표 회사 | 돈을 내는 고객 | 공시 근거 | 읽을 때 주의 |
 |---|---|---|---|---|---|
-| 게이트형 QPU | 초전도 또는 이온트랩 회로 실행 | IONQ, QNT, RGTI, IBM, Alphabet | SEC 10-Q, S-1, 회사 연차보고서 | 장비와 접근 매출, 연구개발비, 영업현금 유출 | 외부 접근과 일부 현장 판매, 대규모 오류정정은 개발 중 |
-| 어닐링과 하이브리드 최적화 | 에너지 최저점 탐색과 고전 솔버 결합 | D-Wave | SEC 10-Q, 고객 시스템 계약 | bookings, QCaaS, 시스템 인도 매출 | 상용 접근과 장비 판매, 범용 게이트형과 별도 |
-| 파운드리와 핵심 부품 | 웨이퍼, 광학, 냉각, 제어, 패키징 | IBM 계획 자회사, GlobalFoundries, Keysight, Coherent | NIST 지원 의향서, 각사 10-K | CAPEX, 장비 매출, 지원금과 장기 공급계약 | 양자 전용 매출 분리가 제한적 |
-| 클라우드와 HPC 연결 | QPU 접근, 작업 편성, 고전 후처리 | Amazon, Microsoft, NVIDIA, IBM | Braket, Azure Quantum, CUDA-Q 공식 자료 | 클라우드와 데이터센터 전체에 포함 | 서비스 제공 중, 독립 양자 매출은 대부분 비공개 |
-| 광자와 양자광학 | 광원, 도파로, 검출과 파운드리 | QUBT, PsiQuantum 비상장, Coherent 인접 | QUBT 10-Q, NIST 의향서 | 인수 매출, 파운드리 CAPEX, 현금 소모 | 부품과 파운드리 초기 상용화, 범용 계산은 개발 중 |
-| 양자안전 보안 | PQC 소프트웨어, QKD, QRNG, 키관리 | KT, SK텔레콤, 우리넷, 아이씨티케이, 케이씨에스, 엑스게이트, 우리로 | DART 사업보고서, KISA 사업, 회사 제품 자료 | 보안장비와 전용회선 매출에 섞임 | 일부 서비스와 장비 판매, 양자 전용 매출 분리 부족 |
+| 접근 플랫폼 | QPU 작업, 예약, 시뮬레이터, 개발환경 | Amazon, Microsoft, IBM | 기업, 대학, 연구소 | Braket과 Azure에서 여러 회사 QPU를 유료 사용 가능 | 양자 매출은 클라우드 전체에서 따로 공개되지 않음 |
+| 게이트형 QPU | 이온트랩·초전도 회로 실행과 시스템 | IONQ, QNT, RGTI, IBM, Alphabet | 클라우드, 국가연구소, 대학, 기업 | 외부 접근, 장비 주문, 일부 현장 설치 | 큐비트 수만으로 방식 간 순위를 매길 수 없음 |
+| 어닐링 | 최적화용 QPU와 하이브리드 솔버 | D-Wave | 기업, 대학, 공공기관 | QCaaS와 시스템 구매 계약 | 범용 게이트형과 다른 계산 모델 |
+| 고전 가속과 연결 | 회로 시뮬레이션, 오류 해독, GPU와 QPU의 저지연 연결 | NVIDIA, IBM | QPU 개발사, 슈퍼컴퓨팅 센터 | CUDA-Q와 NVQLink 채택·통합 발표 | NVIDIA 전체 매출을 양자 매출로 부를 수 없음 |
+| 제어와 판독 | 펄스 생성, 신호 읽기, 교정 시스템 | Keysight | QPU 개발사, 연구소 | Keysight 제어시스템이 Fujitsu·RIKEN 256큐비트 장비에 탑재 | 전사 매출에서 양자 비중은 비공개 |
+| 극저온과 웨이퍼 검사 | 밀리켈빈 냉각, 4K 웨이퍼 프로빙, 소자 특성 측정 | Oxford Instruments, FormFactor | 양자 연구소, 파운드리, QPU 개발사 | 양자 전용 냉각·검사 제품군을 판매 | 제품 연결과 큰 양자 매출은 다른 주장 |
+| 레이저와 광학 | 이온 포획, 원자 냉각, 광자 생성과 측정용 광원 | Coherent | 이온·중성원자·광자 회사와 연구소 | 양자광학용 레이저 제품군을 판매 | 범용 광학 매출과 양자 수요가 섞임 |
+| 웨이퍼와 패키징 | 양자급 웨이퍼, 도파로, 배선과 패키징 | GlobalFoundries, IBM 계획 자회사 | QPU 회사와 정부 프로그램 | 미국의 파운드리 지원 의향서 | 계획 자금과 실제 고객 매출을 구분해야 함 |
 
-대형주 간접투자도 범위를 지켜야 한다. NVIDIA의 CUDA-Q와 QPU 연결은 생태계의 중요한 제어면이지만 NVIDIA 매출을 양자 매출로 부를 수 없다. Amazon Braket과 Azure Quantum도 여러 회사 QPU의 유통 창구이지만 클라우드 전체에서 차지하는 숫자는 공개되지 않는다. Honeywell은 Quantinuum의 출발과 지분 관계로 연결되지만 QNT 상장 뒤에는 두 상장사의 가치와 공시 범위를 따로 읽어야 한다.
+Keysight 사례는 이 연결망이 단순 테마표가 아니라는 점을 보여 준다. 회사는 2025년 자사 Quantum Control System이 Fujitsu와 RIKEN의 256큐비트 초전도 컴퓨터에 들어갔다고 밝혔다. 반면 FormFactor의 4K 웨이퍼 검사장비, Oxford Instruments의 희석냉동기, Coherent의 냉각 원자·양자광학 레이저는 양자 전용 제품 페이지가 있어도 양자 매출이 별도 공시되지는 않는다. **제품이 존재한다는 증거, 고객 장비에 들어갔다는 증거, 반복 매출이 커졌다는 증거를 세 칸으로 나눠야 한다.**
+
+대형주 간접 연결도 같은 원칙을 따른다. Amazon과 Microsoft는 여러 QPU의 유통 창구이고 NVIDIA는 고전 계산과 QPU를 잇는 제어면이다. 그러나 이 연결만으로 각 회사의 실적이 양자 수요에 민감하다고 단정할 수 없다. Honeywell도 Quantinuum의 출발과 지분 관계로 연결되지만 QNT 상장 뒤에는 두 회사의 가치와 공시 범위를 따로 읽어야 한다.
 
 ## 7. 한국은 양자컴퓨터보다 암호 교체 시계가 먼저 간다
 
 국내 양자 관련주를 미국 순수 하드웨어 회사와 같은 표에 놓으면 가장 큰 오해가 생긴다. 국내 상장사의 실제 제품은 대부분 QKD, PQC, QRNG, VPN, 키관리, 광전송 장비와 보안칩이다.
+
+여기서 **양자 네트워크라는 말도 세 가지로 나눠야 한다.** 첫째는 사용자가 인터넷으로 QPU에 접속하는 클라우드망이다. 둘째는 기존 기업망을 PQC와 QKD로 보호하는 양자안전망이다. 셋째는 멀리 떨어진 양자 노드 사이에 얽힘을 전달하려는 양자인터넷 연구다. 지금 Cisco, Cloudflare, Nokia, KT와 국내 보안장비 회사에서 제품과 매출 경로가 보이는 곳은 주로 둘째다.
 
 **PQC, 즉 양자내성암호는 양자컴퓨터를 쓰는 암호가 아니다.** 일반 CPU와 통신장비에서 돌아가는 새로운 수학 알고리즘이다. 충분히 큰 양자컴퓨터가 RSA와 타원곡선암호를 깨는 미래에 대비해, 양자 공격에도 버티도록 키 교환과 전자서명을 바꾼다. NIST는 2024년 ML-KEM, ML-DSA, SLH-DSA 표준을 확정했고 즉시 전환을 시작하라고 권고했다.
 
@@ -190,11 +207,31 @@ QKD, 즉 양자키분배는 다르다. 광자 같은 양자 상태를 전송해 
 
 ![PQC, QKD, QRNG가 사용하는 물리 자산과 적용 범위를 비교한 지도](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/84/848d2c89d72d0ba2e27cfdbb0fafd1a27a5dcc916bb4802507bfd6a0bfdebae2.svg)
 
+### 기업의 한 통신이 바뀌는 순서
+
+PQC 전환은 암호 알고리즘 하나를 내려받는 일로 끝나지 않는다. 한 직원이 지사에서 본사 서버에 접속하는 장면만 따라가도 돈이 쓰이는 층이 보인다.
+
+1. 회사는 서버, 인증서, VPN, 라우터에 어떤 암호가 숨어 있는지 목록부터 만든다.
+2. 웹과 애플리케이션의 TLS, 인증서, 서명 라이브러리를 PQC 또는 기존 방식과 섞은 하이브리드 방식으로 바꾼다.
+3. 지사와 데이터센터 사이의 라우터, 스위치, 방화벽, VPN 터널을 교체하거나 펌웨어를 올린다.
+4. 보안칩, HSM, 키관리시스템이 새 키를 만들고 보관하며 수명주기를 관리한다.
+5. 국가기간망처럼 특히 중요한 일부 광회선에는 QKD 장비와 키관리 계층을 추가할 수 있다.
+
+| 네트워크 층 | 실제 제품과 역할 | 글로벌 상장사 | 국내 상장사 | 공개된 현재 단계 | 가장 큰 함정 |
+|---|---|---|---|---|---|
+| 웹·제로트러스트·SASE | TLS, 사내 접속, 사이트 간 IPsec에 PQC 적용 | Cloudflare | 통신사와 보안 서비스사 | Cloudflare One 주요 연결 방식에 하이브리드 ML-KEM 적용 | 무료·번들 기능은 PQC 독립 매출이 아닐 수 있음 |
+| 라우터·스위치·방화벽 | 장비 부팅, 관리, MACsec, IPsec, VPN을 양자안전 방식으로 전환 | Cisco, Nokia | 엑스게이트, 케이씨에스 | Cisco 제품 로드맵, Nokia의 이동통신·데이터센터 실증, 국내 Quantum VPN 제품 | 로드맵과 전체 설치 기반 전환을 혼동하면 안 됨 |
+| 인증서·키관리·HSM | 키 생성·보관·교체, 전자서명과 인증서 수명주기 관리 | Thales | 아이씨티케이, 케이씨에스 | PQC KMS·CA·라이브러리, Q-HSM과 보안칩 제품 공개 | 제품 출시와 고객 반복 매출은 다른 단계 |
+| 통신 회선 | 기업 전용회선에 PQC를 적용하고 선택 구간에 QKD 추가 | Nokia | KT, SK텔레콤, 우리넷 | KT 약관의 QKD·PQC 회선, SKT 하이브리드 제품, 광전송 장비 연결 | 통신사 전체 매출에서 양자 몫은 분리되지 않음 |
+| 단말과 보안칩 | 기기 고유키, QRNG, PUF, PQC 연산을 칩에 묶음 | Thales 등 | 아이씨티케이, 케이씨에스 | ICTK의 PQC·PUF 칩과 KMS, KCS의 QKEV7·QC-VPN | 납품처, 물량, 단가가 없으면 실적 민감도를 모름 |
+
+글로벌 연결망도 이미 제품 단계로 내려오고 있다. Cisco는 2026년 12월까지 핵심 포트폴리오 대부분에 양자안전 통신 기능을 제공하겠다는 제품별 로드맵을 냈다. Cloudflare는 TLS뿐 아니라 Zero Trust와 사이트 간 IPsec까지 하이브리드 ML-KEM 경로를 공개했다. Nokia는 라우터와 광전송 장비에서 양자안전 IPsec·MACsec·광전송을 실증했고, Thales는 PKI, HSM, 키관리와 네트워크 암호 전환을 한 묶음으로 제시한다. 이 회사들은 양자컴퓨터 제조사가 아니라 **기존 네트워크 예산이 PQC 전환으로 이동할 때 만나는 회사**다.
+
 한국인터넷진흥원은 2026년 통신, 금융, 교통, 국방, 우주 다섯 분야의 양자내성암호 시범전환을 추진했고, 3월 통신 분야 재공모에는 9억 원 예산을 명시했다. 이 숫자는 국내 양자보안 전체 시장 규모가 아니다. 실제 인프라에서 암호 목록을 찾고, 교체 절차와 성능, 호환성, 제약조건을 뽑는 시범사업 규모다.
 
-KT 이용약관에는 QKD 방식과 PQC 방식의 양자암호 전용회선이 들어가 있다. SK텔레콤은 ID Quantique의 QKD와 자체 PQC를 결합한 제품, QKD 구독형 서비스를 공개했다. 이는 기술이 전시회 데모만은 아니라는 증거다. 다만 통신사 전체 매출에서 양자보안이 차지하는 독립 숫자는 작거나 공개되지 않아 주가 민감도는 낮다.
+KT 이용약관에는 QKD 방식과 PQC 방식의 양자암호 전용회선이 들어가 있다. SK텔레콤은 ID Quantique의 QKD와 자체 PQC를 결합한 제품을 공개했다. 케이씨에스는 QKEV7 기반 QC-VPN, 아이씨티케이는 PQC KMS·CA·라이브러리와 PQC·PUF 보안칩, 엑스게이트는 QRNG가 들어간 Quantum VPN과 PQC 확장 경로를 제품으로 설명한다. 우리넷은 광전송과 양자암호 장비 쪽에 연결된다. 제품 연결은 존재하지만 곧바로 회사 전체의 양자 매출을 뜻하지 않는다.
 
-우리넷은 광전송과 암호장비, 아이씨티케이는 PUF와 PQC 보안칩, 케이씨에스는 SK텔레콤과 결합한 암호칩과 Q-HSM, 엑스게이트는 QRNG와 PQC를 결합한 VPN, 우리로는 단일광자 검출소자에 연결된다. 제품 연결은 존재하지만 곧바로 회사 전체의 양자 매출을 뜻하지 않는다. DART에서 확인해야 할 것은 사업보고서의 제품 설명 다음 칸이다. 고객명, 수주금액, 납품 완료, 매출 인식과 반복 발주가 따로 나오는지 보아야 한다.
+DART에서 확인해야 할 것은 제품 설명 다음 칸이다. 고객명, 수주금액, 납품 완료, 매출 인식, 같은 고객의 추가 발주가 따로 나오는지 보아야 한다. “양자”라는 단어가 사업보고서에 한 번 등장하는 것보다 **어느 네트워크 층에서 누가 비용을 지불했고 그 거래가 반복됐는지**가 훨씬 강한 증거다.
 
 이 전환은 대형 양자컴퓨터가 완성되기 전에 돈이 쓰인다는 점이 중요하다. 오늘 훔친 암호문을 저장해 두었다가 미래 양자컴퓨터로 푸는 `harvest now, decrypt later` 위험 때문에 수명이 긴 기밀 데이터는 먼저 움직여야 한다. [백신형 보안에서 EDR 운영으로 바뀐 과정](/blog/antivirus-to-edr-who-profits)처럼, 암호 전환도 알고리즘 구매 한 번보다 자산 발견, 키와 인증서 교체, 하이브리드 운영, 검증과 반복 갱신이 긴 사업이 된다.
 
@@ -244,7 +281,7 @@ KT 이용약관에는 QKD 방식과 PQC 방식의 양자암호 전용회선이 �
 
 만약 미국의 2030년과 2031년 고가치 자산 전환 일정, NIST의 2035년 취약 알고리즘 제거 방향, 한국의 다섯 산업 시범전환이 조달과 인증 기준으로 내려간다면 양자 분야에서 먼저 반복 매출이 커지는 곳은 계산기가 아니라 보안 운영일 수 있다.
 
-이 경우 암호 자산 탐색, PQC 라이브러리, 보안칩, VPN과 전용회선, 인증서와 키관리, 호환성 시험이 연결된다. 한국에서는 통신사와 보안장비 회사의 역할이 더 선명해진다. 확인 지표는 시범사업 선정이 아니라 본사업 예산, 표준 적합성, 기존 장비의 펌웨어 교체율, 고객 반복 계약, 독립 제품 매출이다. 성능 저하와 호환성 문제가 해결되지 않거나 조달 일정이 계속 미뤄지면 전환은 긴 하이브리드 단계에 머문다.
+이 경우 암호 자산 탐색, PQC 라이브러리, 보안칩, VPN과 전용회선, 인증서와 키관리, 호환성 시험이 연결된다. Cloudflare 같은 엣지망, Cisco와 Nokia 같은 네트워크 장비, Thales 같은 키관리, KT와 SK텔레콤 같은 회선, 아이씨티케이·케이씨에스·엑스게이트 같은 칩과 VPN 회사가 서로 다른 예산에서 만난다. 확인 지표는 시범사업 선정이 아니라 본사업 예산, 표준 적합성, 기존 장비의 펌웨어 교체율, 고객 반복 계약, 독립 제품 매출이다. 성능 저하와 호환성 문제가 해결되지 않거나 조달 일정이 계속 미뤄지면 전환은 긴 하이브리드 단계에 머문다.
 
 양자 분야의 호재는 분명하다. 정부는 제조 병목에 자금을 대기 시작했고, 일부 고객은 실제 장비를 주문했으며, 공개시장은 Quantinuum이라는 새 비교 대상을 얻었다. 그러나 오늘의 반등을 내일의 범용 양자컴퓨터 완성으로 읽을 필요는 없다. **가장 좋은 관전법은 회사 이름을 외우는 것이 아니라, 그 회사의 증거가 사다리의 어느 칸에 있고 다음 칸으로 실제 내려오는지 확인하는 것이다.**
 
@@ -260,7 +297,21 @@ KT 이용약관에는 QKD 방식과 PQC 방식의 양자암호 전용회선이 �
 - [Rigetti 2026년 1분기 실적](https://investors.rigetti.com/news-releases/news-release-details/rigetti-computing-reports-first-quarter-2026-financial-results)
 - [Quantinuum IPO 투자설명서](https://www.sec.gov/Archives/edgar/data/2110105/000162828026041003/quantinuum-424b4.htm)
 - [QUBT 2026년 1분기 10-Q](https://www.sec.gov/Archives/edgar/data/1758009/000121390026054473/ea0289133-10q_quantum.htm)
+- [AWS, Amazon Braket 지원 QPU와 실행 방식](https://docs.aws.amazon.com/braket/latest/developerguide/braket-devices.html)
+- [Microsoft, Azure Quantum 개요와 하드웨어 공급자](https://learn.microsoft.com/en-us/azure/quantum/overview-azure-quantum)
+- [NVIDIA, QPU와 GPU를 연결하는 NVQLink](https://www.nvidia.com/en-us/solutions/quantum-computing/nvqlink/)
+- [Keysight, Fujitsu·RIKEN 256큐비트 장비 제어시스템](https://www.keysight.com/be/en/about/newsroom/news-releases/2025/0515-pr25-073-keysight-quantum-control-system-embedded-within-fujitsu-and-rikens-world-leading-256-qubit-quantum-computer.html)
+- [FormFactor, 양자용 극저온 웨이퍼 검사장비](https://www.formfactor.com/products/quantum-cryo/)
+- [Oxford Instruments, 양자용 극저온·제조·측정 장비](https://www.oxinst.com/applications/quantum-technology)
+- [Coherent, 냉각 원자와 양자광학용 레이저](https://www.coherent.com/industrial-solutions/instrumentation/scientific/cold-atoms-quantum-optics)
 - [NIST 양자내성암호 표준](https://csrc.nist.gov/Projects/Post-Quantum-Cryptography)
 - [KISA 2026년 양자내성암호 시범전환](https://www.kisa.or.kr/402/form?lang_type=KO&page=2&postSeq=2569)
+- [Cisco, 양자안전 통신 제품 로드맵](https://www.cisco.com/site/us/en/about/trust-center/post-quantum-cryptography.html)
+- [Cloudflare, TLS·Zero Trust·IPsec의 PQC 적용](https://developers.cloudflare.com/ssl/post-quantum-cryptography/)
+- [Nokia, KDDI 데이터센터 양자안전 광전송 실증](https://www.nokia.com/newsroom/nokia-and-kddi-demonstrate-quantum-safe-optical-transport-for-secure-ai-and-data-center-infrastructure/)
+- [Thales, PKI·키관리·네트워크 양자안전 전환](https://cpl.thalesgroup.com/sites/default/files/content/solution_briefs/quantum-safe-security-data-identities-networks-sb.pdf)
+- [케이씨에스, QKEV7 기반 QC-VPN](https://www.kcins.co.kr/)
+- [아이씨티케이, PQC KMS·CA·라이브러리](https://ictk.com/pressRelease/?bmode=view&idx=161872957)
+- [엑스게이트, Quantum VPN](https://www.axgate.com/main/about/product/quantum.php)
 
 > 이 글은 기술과 산업 구조를 이해하기 위한 자료다. 특정 종목의 매수나 매도를 권하지 않는다. 수치 기준일은 2026년 7월 22일이며, 의향서와 로드맵은 이후 최종 계약과 실행 과정에서 달라질 수 있다.

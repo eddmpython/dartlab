@@ -3899,7 +3899,7 @@
     "blog/08-tech-story/16-tesla-ac-grid-dc-return/assets/16-rotating-field-sequence.svg": "b29009c428da4c05a781644940e995c94449eed1dacf6ac0d1ef30c2e105ee24",
     "blog/08-tech-story/16-tesla-ac-grid-dc-return/assets/16-rotating-field.webp": "0c9c25ead2e6c48b441add3afa8c0acbefccd0f68426a6b367b69da3f07efe10",
     "blog/08-tech-story/16-tesla-ac-grid-dc-return/assets/16-scenario-boundary-shift.svg": "7ff39a6fd494043a707eda4e6d209dd87ec8c39fd3797bcc5cd1bde1c002b961",
-    "blog/08-tech-story/17-quantum-computing-evidence-ladder/assets/17-company-network.svg": "53b8bfb9a77e9bcf3710d08fe0557757f232efa527d5d3de9111393867cbcd7e",
+    "blog/08-tech-story/17-quantum-computing-evidence-ladder/assets/17-company-network.svg": "221512f318454d94723473a65e7476e1cc2f893e450a3eb3f019d2e55a5a3412",
     "blog/08-tech-story/17-quantum-computing-evidence-ladder/assets/17-evidence-ladder.svg": "522a02ba6678202fbd86f2af37debb597c7bf97757bf015f2980bcbc227786b9",
     "blog/08-tech-story/17-quantum-computing-evidence-ladder/assets/17-hero.png": "7b2e56bc68d2cb9e3cfdc5358fd7bbba90ffd409bd4b0ba97357336c91c13dd9",
     "blog/08-tech-story/17-quantum-computing-evidence-ladder/assets/17-logical-qubit.png": "8eae4bbf6fa21113c4fb67838c720b6ac95714018ab289c1f4d12a07cc22a392",
@@ -7038,6 +7038,14 @@
     "22018865e980bcd78dfb170a0d6ac2f27c37093a9a8a6e3ea5d6dcb90b5b11cc": {
       "bytes": 22716,
       "path": "objects/sha256/22/22018865e980bcd78dfb170a0d6ac2f27c37093a9a8a6e3ea5d6dcb90b5b11cc.webp"
+    },
+    "221512f318454d94723473a65e7476e1cc2f893e450a3eb3f019d2e55a5a3412": {
+      "bytes": 9143,
+      "colorCount": 20,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/22/221512f318454d94723473a65e7476e1cc2f893e450a3eb3f019d2e55a5a3412.svg",
+      "textNodes": 48,
+      "viewBox": "0 0 1200 675"
     },
     "221ffbf1f25fba9c2cd233739021bef7ff16867ad61be908751434073d389b55": {
       "bytes": 271964,
