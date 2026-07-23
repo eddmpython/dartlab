@@ -104,6 +104,61 @@ def testLoopbackHandlerRequiresSessionTokenForPrivateRuntimeData(transport):
         assert not thread.is_alive()
 
 
+def testRouteSessionCorsAllowsOnlyPinnedOrigin(transport):
+    token = "fixture-local-session-token-that-is-long-enough"
+    staticRoot = Path(__file__).with_name("gui")
+    routeOrigin = "https://eddmpython.github.io"
+    server = ThreadingHTTPServer(
+        ("127.0.0.1", 0),
+        _handlerFactory(transport, token, staticRoot, routeOrigin),
+    )
+    server.daemon_threads = True
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    base = f"http://127.0.0.1:{server.server_address[1]}"
+    try:
+        preflight = urllib.request.Request(
+            f"{base}/api/manifest",
+            method="OPTIONS",
+            headers={
+                "Origin": routeOrigin,
+                "Access-Control-Request-Method": "GET",
+                "Access-Control-Request-Headers": "X-DartLab-Universe-Token",
+                "Access-Control-Request-Private-Network": "true",
+            },
+        )
+        with urllib.request.urlopen(preflight) as response:
+            assert response.status == 204
+            assert response.headers["Access-Control-Allow-Origin"] == routeOrigin
+            assert response.headers["Access-Control-Allow-Private-Network"] == "true"
+
+        manifest = urllib.request.Request(
+            f"{base}/api/manifest",
+            headers={
+                "Origin": routeOrigin,
+                "X-DartLab-Universe-Token": token,
+            },
+        )
+        with urllib.request.urlopen(manifest) as response:
+            assert response.status == 200
+            assert response.headers["Access-Control-Allow-Origin"] == routeOrigin
+            assert response.headers["Cross-Origin-Resource-Policy"] == "cross-origin"
+
+        denied = urllib.request.Request(
+            f"{base}/api/manifest",
+            method="OPTIONS",
+            headers={"Origin": "https://example.com"},
+        )
+        with pytest.raises(urllib.error.HTTPError) as error:
+            urllib.request.urlopen(denied)
+        assert error.value.code == 403
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)
+        assert not thread.is_alive()
+
+
 def testHarnessAssetsRemainIndependentFromPublicUi():
     guiRoot = Path(__file__).with_name("gui")
     expected = {

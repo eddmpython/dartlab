@@ -1,3 +1,4 @@
+// @ts-nocheck
 export function multiply4(a, b) {
 	const out = new Float32Array(16);
 	for (let column = 0; column < 4; column += 1) {

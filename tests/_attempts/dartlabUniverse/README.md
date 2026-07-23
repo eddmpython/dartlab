@@ -1,6 +1,6 @@
 # DartLab Universe U0~U6
 
-상태: U0 full census, U1 identity와 provenance, U2 capability execution kernel, U3 전수 catalog와 evidence graph, U4 하이브리드 검색과 불변 근거 팩, U5 runtime-only 3D projection과 semantic LOD, U6 GPU transport와 독립 3D 검수 GUI가 live gate를 통과했다. U4는 전체 블로그 AST와 기존 DART, EDGAR, 뉴스 content index를 검색하고, DART와 EDGAR capability를 실제 고정 입력으로 실행해 Arrow 결과와 영수증을 재생 검증한다. 손상된 upstream parquet 1건은 원본 상태를 숨기거나 외부 저장소를 수정하지 않고, 고정 raw authority와 historical transform을 사용한 Universe 전용 recovery receipt와 CAS로 복구했다. U6 GUI는 loopback session token으로만 열리며 기존 UI, landing route, 공개 버튼에 연결되지 않았다. 답변 생성과 RAG, 영속 projection과 tile도 아직 없다.
+상태: U0 full census, U1 identity와 provenance, U2 capability execution kernel, U3 전수 catalog와 evidence graph, U4 하이브리드 검색과 불변 근거 팩, U5 runtime-only 3D projection과 semantic LOD, U6 GPU transport와 독립 3D 검수 GUI가 live gate를 통과했다. U4는 전체 블로그 AST와 기존 DART, EDGAR, 뉴스 content index를 검색하고, DART와 EDGAR capability를 실제 고정 입력으로 실행해 Arrow 결과와 영수증을 재생 검증한다. 손상된 upstream parquet 1건은 원본 상태를 숨기거나 외부 저장소를 수정하지 않고, 고정 raw authority와 historical transform을 사용한 Universe 전용 recovery receipt와 CAS로 복구했다. U6 GUI는 `/universe` 직접 주소와 loopback session token으로만 열리며 메뉴, 카드, 공개 버튼에는 연결되지 않았다. 답변 생성과 RAG, 영속 projection과 tile도 아직 없다.
 
 이 디렉터리는 이전 Universe 실험을 전부 제거한 뒤 `mainPlan/dartlab-universe/`의 제품 계약에 맞춰 처음부터 다시 만든 데이터 엔진 경계다. 기존 `src/dartlab`, `ui`, `landing`, `blog`, `media`는 수정하지 않고 authority로 읽기만 한다.
 
@@ -119,7 +119,7 @@ U5 live 판정은 `%LOCALAPPDATA%/DartLab/universe/control/u5/latest.json`의 di
 - 원본 ID와 locator는 보존하면서 화면에는 사람 친화적인 한국어 family와 resource 이름을 제공하는 display adapter
 - manifest, source tile digest, binary record digest, metadata cardinality와 child tile closure 전수 검증
 - loopback host allowlist, fragment session token, constant-time 비교, no-store와 strict CSP
-- 외부 asset 0, 공개 surface reference 0, route 연결 0, 공개 버튼 연결 0
+- 외부 asset 0, 직접 route 연결 1, route 밖 공개 진입 링크와 버튼 0
 - U5 full projection observer를 사용해 U5와 U6가 같은 in-memory snapshot과 projection을 원자적으로 검증
 - `EPHEMERAL` transport만 허용하고 승인 없는 GPU payload, coordinate map과 tile 영속화 0
 
@@ -326,6 +326,22 @@ U5와 U6는 한 프로세스에서 같은 in-memory projection을 공유해 검�
 
 catalog snapshot ID는 `du:v1:catalog-snapshot:f375e0e1130b87ca05316e50c426a21784c7100f2986c1300244a8bcb844619c`, projection state ID는 `du:v1:projection-state:67930ff500e76216b1d420346e53a22a5331b37e139cc46ef344b5f571b48d68`다. U5 report digest는 `a8927941f7f08ebbef66c47e29da704d96cce1a9d70a0d327b21bb513de035eb`, U6 report digest는 `cd3873e91c5e5be9c9448ce2ba88290da35dd77ab051c610500e9861a1d5fe71`다.
 
+## 2026-07-23 직접 화면 route 승인
+
+운영자 승인에 따라 `/universe` 고정 화면 route만 연결했다. 홈, 메뉴, 카드, sitemap에는 진입 링크를 만들지 않는다. 화면은 GPU bundle을 저장하거나 공개 저장소에 복사하지 않고, U6 loopback runtime이 세션마다 만든 일회성 tile을 fragment token과 고정 Origin CORS로 읽는다.
+
+로컬 landing route로 직접 확인:
+
+```powershell
+# terminal 1
+npm run dev -w landing
+
+# terminal 2
+uv run python -X utf8 -m tests._attempts.dartlabUniverse.u6Harness --live --route-url http://127.0.0.1:5173/universe --open
+```
+
+배포된 route로 직접 확인할 때는 두 번째 명령의 `--route-url`만 `https://eddmpython.github.io/dartlab/universe`로 바꾼다. 데이터는 계속 loopback에서만 제공되고 session token은 URL fragment 안에만 존재한다.
+
 ## 다음 gate
 
-다음은 운영자가 독립 3D GUI를 직접 확인한 뒤 결정한다. 승인 전에는 기존 runtime 승격, UI 연결, 공개 route와 공개 버튼을 금지한다. 질문을 은하계에 던지는 기능은 U4 근거 팩을 U6 선택 scope에 결박하는 별도 U7 RAG gate로 설계하며, 현재 U6의 데이터와 렌더링 정본을 변경하지 않는다.
+질문을 은하계에 던지는 기능은 U4 근거 팩을 U6 선택 scope에 결박하는 별도 U7 RAG gate로 설계한다. 현재 U6의 데이터와 렌더링 정본은 변경하지 않으며, 공개 진입 버튼은 운영자의 별도 승인 전까지 금지한다.

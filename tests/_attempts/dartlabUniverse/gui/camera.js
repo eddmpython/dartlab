@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { lookAt, multiply4, perspective } from './math.js';
 
 export class OrbitCamera {

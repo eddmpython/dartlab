@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import re
 import secrets
 import sys
@@ -12,7 +13,7 @@ import webbrowser
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path, PurePosixPath
-from urllib.parse import unquote, urlparse
+from urllib.parse import unquote, urlencode, urlparse
 
 from .catalog.models import CatalogResource, CatalogState
 from .catalog.recoveryStore import defaultRecoveryRoot
@@ -155,7 +156,12 @@ def buildLiveTransport(
     return UniverseGpuTransport(projection, objectLabels=labels)
 
 
-def _handlerFactory(transport: UniverseGpuTransport, token: str, staticRoot: Path):
+def _handlerFactory(
+    transport: UniverseGpuTransport,
+    token: str,
+    staticRoot: Path,
+    allowedOrigin: str | None = None,
+):
     class UniverseHandler(BaseHTTPRequestHandler):
         server_version = "DartLabUniverseHarness/1"
 
@@ -170,7 +176,16 @@ def _handlerFactory(transport: UniverseGpuTransport, token: str, staticRoot: Pat
             )
             self.send_header("Referrer-Policy", "no-referrer")
             self.send_header("X-Content-Type-Options", "nosniff")
-            self.send_header("Cross-Origin-Resource-Policy", "same-origin")
+            routeSession = self.headers.get("Origin") == allowedOrigin
+            self.send_header(
+                "Cross-Origin-Resource-Policy",
+                "cross-origin" if routeSession else "same-origin",
+            )
+            if routeSession:
+                self.send_header("Access-Control-Allow-Origin", allowedOrigin)
+                self.send_header("Access-Control-Allow-Private-Network", "true")
+                self.send_header("Access-Control-Expose-Headers", "ETag")
+                self.send_header("Vary", "Origin")
 
         def _send(self, payload: bytes, contentType: str, *, status: HTTPStatus = HTTPStatus.OK) -> None:
             self.send_response(status)
@@ -184,6 +199,17 @@ def _handlerFactory(transport: UniverseGpuTransport, token: str, staticRoot: Pat
         def _authorized(self) -> bool:
             provided = self.headers.get("X-DartLab-Universe-Token", "")
             return secrets.compare_digest(provided, token)
+
+        def do_OPTIONS(self) -> None:  # noqa: N802
+            if allowedOrigin is None or self.headers.get("Origin") != allowedOrigin:
+                self._send(b"", "text/plain; charset=utf-8", status=HTTPStatus.FORBIDDEN)
+                return
+            self.send_response(HTTPStatus.NO_CONTENT)
+            self._securityHeaders()
+            self.send_header("Access-Control-Allow-Methods", "GET, OPTIONS")
+            self.send_header("Access-Control-Allow-Headers", "X-DartLab-Universe-Token")
+            self.send_header("Access-Control-Max-Age", "600")
+            self.end_headers()
 
         def do_GET(self) -> None:  # noqa: N802
             parsed = urlparse(self.path)
@@ -218,25 +244,41 @@ def serveTransport(
     host: str,
     port: int,
     openBrowser: bool,
+    routeUrl: str | None = None,
 ) -> None:
     if host not in {"127.0.0.1", "::1", "localhost"}:
         raise ValueError("U6 harness는 loopback host만 허용함")
     token = secrets.token_urlsafe(32)
     staticRoot = Path(__file__).with_name("gui")
-    server = ThreadingHTTPServer((host, port), _handlerFactory(transport, token, staticRoot))
+    parsedRoute = urlparse(routeUrl) if routeUrl else None
+    if parsedRoute and (
+        parsedRoute.scheme not in {"http", "https"}
+        or not parsedRoute.netloc
+        or parsedRoute.query
+        or parsedRoute.fragment
+    ):
+        raise ValueError("route URL은 query와 fragment가 없는 http(s) 절대주소여야 함")
+    allowedOrigin = f"{parsedRoute.scheme}://{parsedRoute.netloc}" if parsedRoute else None
+    server = ThreadingHTTPServer(
+        (host, port),
+        _handlerFactory(transport, token, staticRoot, allowedOrigin),
+    )
     server.daemon_threads = True
     actualPort = int(server.server_address[1])
-    url = f"http://{host}:{actualPort}/#token={token}"
+    runtimeUrl = f"http://{host}:{actualPort}"
+    standaloneUrl = f"{runtimeUrl}/#token={token}"
+    url = f"{routeUrl.rstrip('/')}/#{urlencode({'api': runtimeUrl, 'token': token})}" if routeUrl else standaloneUrl
     summary = {
         "schemaVersion": "du-u6-harness-session-v1",
         "url": url,
+        "runtimeUrl": runtimeUrl,
         "sceneId": transport.projection.manifest.sceneId,
         "snapshotId": transport.projection.manifest.snapshotId,
         "objectCount": transport.projection.manifest.objectCount,
         "relationCount": transport.projection.manifest.relationCount,
         "tileCount": transport.projection.manifest.tileCount,
         "persistenceMode": "EPHEMERAL",
-        "publicRouteConnected": False,
+        "publicRouteConnected": bool(routeUrl),
         "publicButtonConnected": False,
     }
     print(json.dumps(summary, ensure_ascii=False, sort_keys=True), flush=True)
@@ -258,6 +300,16 @@ def buildArgumentParser() -> argparse.ArgumentParser:
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=0)
     parser.add_argument("--open", action="store_true")
+    parser.add_argument(
+        "--route-url",
+        default=os.getenv("DARTLAB_UNIVERSE_ROUTE_URL", "http://127.0.0.1:5173/universe"),
+        help="직접 검수할 /universe 화면 주소. 지정하면 해당 화면에 loopback 세션을 연결",
+    )
+    parser.add_argument(
+        "--standalone",
+        action="store_true",
+        help="landing route 대신 harness 자체 화면을 사용",
+    )
     parser.add_argument("--checkpoint", type=Path, default=defaultCheckpointPath())
     parser.add_argument("--recovery-root", type=Path, default=defaultRecoveryRoot())
     parser.add_argument("--u3-control-root", type=Path, default=defaultControlRoot())
@@ -282,6 +334,7 @@ def main(argv: list[str] | None = None) -> int:
         host=args.host,
         port=args.port,
         openBrowser=args.open,
+        routeUrl=None if args.standalone else args.route_url,
     )
     return 0
 

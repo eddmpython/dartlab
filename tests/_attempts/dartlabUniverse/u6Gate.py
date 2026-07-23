@@ -7,6 +7,7 @@ import hashlib
 import json
 import os
 import platform
+import re
 import struct
 import sys
 import time
@@ -24,11 +25,10 @@ from .u6Harness import _STATIC_TYPES, _displayObjectLabels
 from .u6Transport import EDGE_RECORD, GPU_TILE_MAGIC, NODE_RECORD, UniverseGpuTransport
 from .validation.u6 import U6Measurements, validateU6
 
-_PUBLIC_SURFACE_NEEDLES = (
-    "dartlabuniverse.u6harness",
-    "dartlab 지식 우주",
-    "/knowledge-universe",
-    "/universe-3d",
+_DIRECT_ROUTE = Path("landing/src/routes/universe")
+_PUBLIC_ENTRY_PATTERN = re.compile(
+    r"""(?:href\s*=|goto\s*\(|pushState\s*\(|replaceState\s*\(|["'])[^\r\n]{0,240}(?<![.\w-])/universe(?:[/?"'#)]|$)""",
+    re.IGNORECASE,
 )
 
 
@@ -52,6 +52,8 @@ def _decodeTile(payload: bytes) -> tuple[dict[str, object], bytes]:
 
 
 def _publicSurfaceReferenceCount(repoRoot: Path) -> int:
+    """승인된 직접 라우트 밖의 공개 진입 링크를 센다."""
+
     count = 0
     for relative in ("landing/src", "ui/apps", "ui/packages"):
         root = repoRoot / relative
@@ -60,9 +62,28 @@ def _publicSurfaceReferenceCount(repoRoot: Path) -> int:
         for path in root.rglob("*"):
             if not path.is_file() or path.suffix.lower() not in {".svelte", ".ts", ".js", ".html"}:
                 continue
-            text = path.read_text(encoding="utf-8", errors="ignore").casefold()
-            count += sum(text.count(needle) for needle in _PUBLIC_SURFACE_NEEDLES)
+            resolved = path.resolve()
+            routeRoot = (repoRoot / _DIRECT_ROUTE).resolve()
+            if resolved == routeRoot or routeRoot in resolved.parents:
+                continue
+            text = path.read_text(encoding="utf-8", errors="ignore")
+            count += len(_PUBLIC_ENTRY_PATTERN.findall(text))
     return count
+
+
+def _directRouteConnected(repoRoot: Path) -> bool:
+    page = repoRoot / _DIRECT_ROUTE / "+page.svelte"
+    load = repoRoot / _DIRECT_ROUTE / "+page.ts"
+    if not page.is_file() or not load.is_file():
+        return False
+    pageText = page.read_text(encoding="utf-8", errors="ignore")
+    loadText = load.read_text(encoding="utf-8", errors="ignore")
+    return (
+        "bootUniverse" in pageText
+        and 'content="noindex,nofollow"' in pageText
+        and "export const prerender = true" in loadText
+        and "export const ssr = false" in loadText
+    )
 
 
 def _writeReport(path: Path, metrics: dict[str, object]) -> bytes:
@@ -141,6 +162,9 @@ def _auditProjection(
     webGpuSource = guiTexts.get("webgpu-renderer.js", "")
     webGlSource = guiTexts.get("webgl2-renderer.js", "")
     harnessSource = Path(__file__).with_name("u6Harness.py").read_text(encoding="utf-8")
+    appSource = guiTexts.get("app.js", "")
+    tileCodecSource = guiTexts.get("tile-codec.js", "")
+    publicEntryPointCount = _publicSurfaceReferenceCount(repoRoot)
     return {
         "projectionStateId": projection.state.projectionStateId,
         "coordinateMapDigest": projection.state.logicalCoordinateMapDigest,
@@ -172,9 +196,14 @@ def _auditProjection(
             "X-DartLab-Universe-Token" in harnessSource
             and "secrets.compare_digest" in harnessSource
             and "127.0.0.1" in harnessSource
+            and "Access-Control-Allow-Private-Network" in harnessSource
+            and "loopbackHosts" in appSource
+            and "targetAddressSpace" in tileCodecSource
         ),
         "externalAssetReferenceCount": externalAssetReferenceCount,
-        "publicSurfaceReferenceCount": _publicSurfaceReferenceCount(repoRoot),
+        "publicSurfaceReferenceCount": publicEntryPointCount,
+        "publicRouteConnected": _directRouteConnected(repoRoot),
+        "publicButtonConnected": bool(publicEntryPointCount),
         "encodedPayloadBytes": encodedBytes,
     }
 
@@ -241,8 +270,8 @@ def runLiveU6(
         sessionTokenContractPresent=bool(auditResult["sessionTokenContractPresent"]),
         externalAssetReferenceCount=int(auditResult["externalAssetReferenceCount"]),
         publicSurfaceReferenceCount=int(auditResult["publicSurfaceReferenceCount"]),
-        publicRouteConnected=False,
-        publicButtonConnected=False,
+        publicRouteConnected=bool(auditResult["publicRouteConnected"]),
+        publicButtonConnected=bool(auditResult["publicButtonConnected"]),
         persistentArtifactCount=0,
     )
     report = validateU6(measurements)

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { screenPoint } from './math.js';
 
 function shader(gl, type, source) {

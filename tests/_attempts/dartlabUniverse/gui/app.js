@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { OrbitCamera, bindCameraControls } from './camera.js';
 import { loadManifest, loadTile } from './tile-codec.js';
 import { WebGlUniverseRenderer } from './webgl2-renderer.js';
@@ -54,6 +55,20 @@ function tokenFromFragment() {
 	return token;
 }
 
+function apiBaseFromFragment() {
+	const raw = new URLSearchParams(location.hash.slice(1)).get('api') || '';
+	if (!raw) return '';
+	const parsed = new URL(raw);
+	const loopbackHosts = new Set(['127.0.0.1', 'localhost', '[::1]']);
+	if (parsed.protocol !== 'http:' || !loopbackHosts.has(parsed.hostname)) {
+		throw new Error('Universe runtime은 loopback 주소만 허용함');
+	}
+	if (parsed.username || parsed.password || parsed.search || parsed.hash) {
+		throw new Error('Universe runtime 주소 형식이 잘못됨');
+	}
+	return parsed.origin;
+}
+
 function setLoading(title, detail) {
 	element('loading-title').textContent = title;
 	loadingDetail.textContent = detail;
@@ -77,23 +92,23 @@ function mergeTiles(tiles, label) {
 	return { nodes: [...nodes.values()], edges, label };
 }
 
-async function cachedTile(tileId, token) {
+async function cachedTile(tileId, token, apiBase) {
 	if (!tileCache.has(tileId)) {
-		tileCache.set(tileId, loadTile(tileId, token, manifest.scene.projectionDigest));
+		tileCache.set(tileId, loadTile(tileId, token, manifest.scene.projectionDigest, apiBase));
 	}
 	return tileCache.get(tileId);
 }
 
-async function initializeOverview(token) {
-	const root = await cachedTile(manifest.rootTileId, token);
+async function initializeOverview(token, apiBase) {
+	const root = await cachedTile(manifest.rootTileId, token, apiBase);
 	const overviewId = root.header.childTileIds[0];
 	if (!overviewId) throw new Error('overview tile이 없음');
-	const overview = await cachedTile(overviewId, token);
+	const overview = await cachedTile(overviewId, token, apiBase);
 	const pageIds = overview.header.childTileIds;
 	const pages = [];
 	for (let offset = 0; offset < pageIds.length; offset += 4) {
 		loadingDetail.textContent = `은하계 ${Math.min(offset + 4, pageIds.length)} / ${pageIds.length}`;
-		pages.push(...await Promise.all(pageIds.slice(offset, offset + 4).map((tileId) => cachedTile(tileId, token))));
+		pages.push(...await Promise.all(pageIds.slice(offset, offset + 4).map((tileId) => cachedTile(tileId, token, apiBase))));
 	}
 	overviewScene = mergeTiles([overview, ...pages], '전체 우주');
 	setScene(overviewScene, { resetCamera: true, clearHistory: true });
@@ -253,12 +268,12 @@ function selectNode(node) {
 	scheduleFrame();
 }
 
-async function drillSelected(token) {
+async function drillSelected(token, apiBase) {
 	const tileId = selectedNode?.metadata.drillTargetTileId;
 	if (!tileId) return;
 	setLoading('은하계로 진입하고 있습니다', selectedNode.metadata.label);
 	try {
-		const tile = await cachedTile(tileId, token);
+		const tile = await cachedTile(tileId, token, apiBase);
 		history.push(currentScene);
 		const scene = mergeTiles([tile], selectedNode.metadata.label);
 		setScene(scene, { resetCamera: true });
@@ -292,11 +307,12 @@ function showFatal(message) {
 
 async function main() {
 	const token = tokenFromFragment();
+	const apiBase = apiBaseFromFragment();
 	setLoading('지식 우주를 구성하고 있습니다', '검증된 manifest를 확인하는 중');
-	manifest = await loadManifest(token);
+	manifest = await loadManifest(token, apiBase);
 	renderLegend(manifest.styleKeys);
 	renderer = await initializeRenderer();
-	await initializeOverview(token);
+	await initializeOverview(token, apiBase);
 	await verifyRendererFrame();
 	bindCameraControls(canvas, camera, scheduleFrame, pickNode);
 	new ResizeObserver(scheduleFrame).observe(canvas);
@@ -318,8 +334,8 @@ async function main() {
 		scheduleFrame();
 	});
 	element('close-selection').addEventListener('click', () => selectNode(null));
-	drillButton.addEventListener('click', () => void drillSelected(token));
-	canvas.addEventListener('dblclick', () => void drillSelected(token));
+	drillButton.addEventListener('click', () => void drillSelected(token, apiBase));
+	canvas.addEventListener('dblclick', () => void drillSelected(token, apiBase));
 	canvas.addEventListener('pointerdown', () => { element('interaction-hint').hidden = true; }, { once: true });
 	document.addEventListener('visibilitychange', () => { if (!document.hidden) scheduleFrame(); });
 	matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => {
@@ -328,4 +344,15 @@ async function main() {
 	});
 }
 
-main().catch((error) => showFatal(error instanceof Error ? error.message : '알 수 없는 오류'));
+let bootPromise = null;
+
+export function bootUniverse() {
+	if (!bootPromise) {
+		bootPromise = main().catch((error) => showFatal(error instanceof Error ? error.message : '알 수 없는 오류'));
+	}
+	return bootPromise;
+}
+
+if (document.body.dataset.universeStandalone === 'true') {
+	void bootUniverse();
+}

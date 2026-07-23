@@ -11,6 +11,7 @@ const skillsDir = path.resolve(__dirname, '..', 'src', 'dartlab', 'skills');
 const pyodideDir = path.resolve(__dirname, '..', 'pyodide');
 const sharedChartDir = path.resolve(__dirname, '..', 'ui', 'shared', 'chart');
 const uiPackagesDir = path.resolve(__dirname, '..', 'ui', 'packages');
+const universeGuiDir = path.resolve(__dirname, '..', 'tests', '_attempts', 'dartlabUniverse', 'gui');
 
 const pyprojectText = fs.readFileSync(path.resolve(__dirname, '..', 'pyproject.toml'), 'utf-8');
 const versionMatch = pyprojectText.match(/^version\s*=\s*"([^"]+)"/m);
@@ -364,7 +365,8 @@ export default defineConfig({
 				pyodideDir,
 				sharedChartDir,
 				skillsDir,
-				uiPackagesDir
+				uiPackagesDir,
+				universeGuiDir
 			]
 		}
 	}

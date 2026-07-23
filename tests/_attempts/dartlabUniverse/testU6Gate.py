@@ -45,7 +45,7 @@ def _passingMeasurements() -> U6Measurements:
         sessionTokenContractPresent=True,
         externalAssetReferenceCount=0,
         publicSurfaceReferenceCount=0,
-        publicRouteConnected=False,
+        publicRouteConnected=True,
         publicButtonConnected=False,
         persistentArtifactCount=0,
     )
@@ -79,7 +79,7 @@ def testU6GateRejectsTransportConservationAndU5BindingRegression() -> None:
     } <= set(report.failureCodes)
 
 
-def testU6GateRejectsGpuGuiAndPublicSurfaceRegression() -> None:
+def testU6GateRejectsGpuGuiAndPublicEntryPointRegression() -> None:
     measurements = replace(
         _passingMeasurements(),
         persistenceMode="PERSISTENT",
@@ -91,7 +91,7 @@ def testU6GateRejectsGpuGuiAndPublicSurfaceRegression() -> None:
         sessionTokenContractPresent=False,
         externalAssetReferenceCount=1,
         publicSurfaceReferenceCount=1,
-        publicRouteConnected=True,
+        publicRouteConnected=False,
         publicButtonConnected=True,
     )
     report = validateU6(measurements)
@@ -104,5 +104,19 @@ def testU6GateRejectsGpuGuiAndPublicSurfaceRegression() -> None:
         "RESPONSIVE_GUI_CONTRACT_MISSING",
         "LOOPBACK_SESSION_TOKEN_CONTRACT_MISSING",
         "EXTERNAL_GUI_ASSET_REFERENCE_FOUND",
-        "UNAPPROVED_PUBLIC_UNIVERSE_SURFACE",
+        "DIRECT_UNIVERSE_ROUTE_MISSING",
+        "UNAPPROVED_PUBLIC_UNIVERSE_ENTRY_POINT",
     } <= set(report.failureCodes)
+
+
+def testDirectRouteExistsWithoutAnyPublicEntryPoint() -> None:
+    from pathlib import Path
+
+    from tests._attempts.dartlabUniverse.u6Gate import (
+        _directRouteConnected,
+        _publicSurfaceReferenceCount,
+    )
+
+    repoRoot = Path(__file__).resolve().parents[3]
+    assert _directRouteConnected(repoRoot)
+    assert _publicSurfaceReferenceCount(repoRoot) == 0

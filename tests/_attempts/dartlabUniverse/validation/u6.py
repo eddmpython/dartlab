@@ -127,12 +127,10 @@ def validateU6(measurements: U6Measurements, *, thresholds: U6Thresholds | None 
         failures.append("LOOPBACK_SESSION_TOKEN_CONTRACT_MISSING")
     if measurements.externalAssetReferenceCount:
         failures.append("EXTERNAL_GUI_ASSET_REFERENCE_FOUND")
-    if (
-        measurements.publicSurfaceReferenceCount
-        or measurements.publicRouteConnected
-        or measurements.publicButtonConnected
-    ):
-        failures.append("UNAPPROVED_PUBLIC_UNIVERSE_SURFACE")
+    if not measurements.publicRouteConnected:
+        failures.append("DIRECT_UNIVERSE_ROUTE_MISSING")
+    if measurements.publicSurfaceReferenceCount or measurements.publicButtonConnected:
+        failures.append("UNAPPROVED_PUBLIC_UNIVERSE_ENTRY_POINT")
     base = U6Report(
         schemaVersion="du-u6-report-v1",
         gate="G6_GPU_TRANSPORT_GUI",
