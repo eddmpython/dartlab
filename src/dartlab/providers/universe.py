@@ -24,9 +24,12 @@ def listedEquityUniverse(
     if asOf is not None:
         raise ValueError("UNIVERSE_PIT_UNSUPPORTED")
     if normalizedMarket == "KR":
-        from dartlab.gather.krx.listing.registry import getKindList
+        from dartlab.core.listingResolver import getListingResolver
 
-        frame = getKindList()
+        resolver = getListingResolver()
+        if resolver is None:
+            raise RuntimeError("UNIVERSE_RESOLVER_UNAVAILABLE")
+        frame = resolver.kindList()
         return (
             frame.select(
                 pl.col("종목코드").cast(pl.Utf8).str.zfill(6).alias("entityId"),

@@ -278,6 +278,22 @@ def _resourceOwner(category: str, directory: str) -> tuple[str, str, bool]:
     return "gather", "L1", True
 
 
+def _resourceMarkets(directory: str) -> tuple[str, ...]:
+    if directory.startswith("dart/"):
+        return ("KR",)
+    if directory.startswith("edgar/"):
+        return ("US",)
+    return ()
+
+
+def _resourceSourceProvider(directory: str) -> str | None:
+    if directory.startswith("dart/"):
+        return "dart"
+    if directory.startswith("edgar/"):
+        return "edgar"
+    return None
+
+
 def _resourceAssets() -> Iterable[DataAssetDescriptor]:
     from dartlab.core.dataConfig import DATA_RELEASES, downloadCatalog
 
@@ -289,7 +305,18 @@ def _resourceAssets() -> Iterable[DataAssetDescriptor]:
         public = bool(spec.get("public"))
         shardKind = shardKinds.get(directory, "bulk")
         executionMode = "resourceCompanyShard" if shardKind == "company" else "resourceBulk"
-        payload = {"category": category, "spec": spec, "owner": owner, "layer": layer}
+        universeMarkets = _resourceMarkets(directory)
+        sourceProvider = _resourceSourceProvider(directory)
+        payload = {
+            "category": category,
+            "spec": spec,
+            "owner": owner,
+            "layer": layer,
+            "shardKind": shardKind,
+            "executionMode": executionMode,
+            "universeMarkets": universeMarkets,
+            "sourceProvider": sourceProvider,
+        }
         queryable = inScope and public and not spec.get("nested") and not spec.get("deprecated")
         yield DataAssetDescriptor(
             assetId=f"resource.{category}",
@@ -310,10 +337,12 @@ def _resourceAssets() -> Iterable[DataAssetDescriptor]:
             selectorKind="subject",
             selectorRequired=False,
             executionMode=executionMode,
+            universeMarkets=universeMarkets,
             metadata=tuple(
                 sorted(
                     [(str(key), value) for key, value in spec.items() if isinstance(value, (str, bool, int, float))]
                     + [("shardKind", shardKind)]
+                    + ([("sourceProvider", sourceProvider)] if sourceProvider is not None else [])
                 )
             ),
         )

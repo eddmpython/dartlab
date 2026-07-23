@@ -32,7 +32,10 @@ class QueryBudget:
 
     def __post_init__(self) -> None:
         for name in ("maxRows", "maxBytes", "timeoutMs", "maxAssets", "maxSubjects", "maxConcurrency"):
-            if getattr(self, name) <= 0:
+            value = getattr(self, name)
+            if type(value) is not int:
+                raise TypeError(f"{name}은 int여야 합니다")
+            if value <= 0:
                 raise ValueError(f"{name}은 양수여야 합니다")
 
 

@@ -12,6 +12,12 @@ def testBudgetRejectsNonPositiveLimits():
         QueryBudget(maxRows=0)
 
 
+@pytest.mark.parametrize("value", (True, 1.5, "100"))
+def testBudgetRequiresExactIntegers(value):
+    with pytest.raises(TypeError, match="maxRows"):
+        QueryBudget(maxRows=value)
+
+
 def testQueryRejectsSubjectsBeyondBudget():
     with pytest.raises(ValueError, match="subjects"):
         DataQuery(subjects=("a", "b"), budget=QueryBudget(maxSubjects=1))

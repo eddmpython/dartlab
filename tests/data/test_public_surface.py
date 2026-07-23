@@ -9,6 +9,9 @@ def testRootDataIsCallableAndHasOnlyTwoAxes():
     assert callable(dartlab.data)
     guide = dartlab.data()
     assert guide["axis"].to_list() == ["catalog", "query"]
+    queryExample = guide.filter(guide["axis"] == "query")["예시"].item()
+    assert "resource.finance" in queryExample
+    assert "resource.edgar" in queryExample
 
 
 def testCapabilityCatalogIncludesDataAndAnalysisAxes():

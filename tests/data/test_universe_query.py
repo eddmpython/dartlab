@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import threading
 import time
+from types import SimpleNamespace
 
 import polars as pl
 import pytest
@@ -29,7 +30,10 @@ def _installUniverseFixtures(monkeypatch) -> None:
             "is_otc": [False, False],
         }
     )
-    monkeypatch.setattr("dartlab.gather.krx.listing.registry.getKindList", lambda: kr)
+    monkeypatch.setattr(
+        "dartlab.core.listingResolver.getListingResolver",
+        lambda: SimpleNamespace(kindList=lambda **_kwargs: kr),
+    )
     monkeypatch.setattr("dartlab.core.dataLoader.loadEdgarTargetUniverse", lambda tier="all": us)
 
 

@@ -440,6 +440,15 @@ def executeDataQuery(assetIds: Sequence[str], query: DataQuery) -> DataResult:
     Raises:
         ValueError: asset 수가 budget을 넘거나 asset ID가 비어 있을 때.
     """
+    startedAt = time.perf_counter()
+    deadline = startedAt + query.budget.timeoutMs / 1000
+    if query.continuation is not None:
+        if assetIds:
+            raise ValueError("continuation query는 assets override를 허용하지 않습니다")
+        from dartlab.data.resourcePaging import resumeResourcePaging
+
+        return resumeResourcePaging(query.continuation, deadline=deadline, startedAt=startedAt)
+
     requested = _compiledRequests(assetIds, query)
     catalog = buildCatalog()
     byId = {asset.assetId: asset for asset in catalog.assets}
@@ -462,7 +471,24 @@ def executeDataQuery(assetIds: Sequence[str], query: DataQuery) -> DataResult:
             continue
         resolved.append((requestId, descriptor, activeQuery))
 
-    deadline = time.perf_counter() + query.budget.timeoutMs / 1000
+    from dartlab.data.resourcePaging import executeInitialResourcePaging, isPageableResource
+
+    if any(isPageableResource(descriptor, activeQuery) for _, descriptor, activeQuery in resolved):
+        resolvedRefs = tuple(
+            dict.fromkeys(AssetRef(descriptor.assetId, descriptor.assetVersionId) for _, descriptor, _ in resolved)
+        )
+        contractHash = hashlib.sha256(_canonical({"assets": resolvedRefs, "query": query})).hexdigest()
+        return executeInitialResourcePaging(
+            assetIds,
+            query,
+            requestedAssets=len(requested),
+            snapshotId=catalog.snapshotId,
+            contractHash=contractHash,
+            resolved=resolved,
+            hasPlanningGaps=bool(gaps),
+            deadline=deadline,
+        )
+
     tasks: list[_ExecutionTask] = []
     universeCache: dict[object, ResolvedUniverse] = {}
     universeSnapshots: set[str] = set()

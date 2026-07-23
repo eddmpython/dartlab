@@ -96,6 +96,17 @@ def testPrivateResourceIsCataloguedButNotQueryable():
     assert not asset.queryable
 
 
+def testDartAndEdgarResourcesDeclareTheirUniverseMarkets():
+    import dartlab
+
+    assets = {asset.assetId: asset for asset in dartlab.data("catalog").assets}
+
+    assert assets["resource.finance"].universeMarkets == ("KR",)
+    assert assets["resource.edgar"].universeMarkets == ("US",)
+    assert dict(assets["resource.finance"].metadata)["sourceProvider"] == "dart"
+    assert dict(assets["resource.edgar"].metadata)["sourceProvider"] == "edgar"
+
+
 def testDeprecatedRegistryAxisIsCataloguedButNotQueryable():
     import dartlab
 
