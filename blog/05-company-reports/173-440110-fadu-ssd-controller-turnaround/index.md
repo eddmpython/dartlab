@@ -39,6 +39,10 @@ ai:
   dataAsOf: "2026-07-22"
 ---
 
+<script>
+	import CompanyFinancials from '$lib/components/blog/CompanyFinancials.svelte';
+</script>
+
 밤늦은 시험실에 기업용 SSD가 줄지어 꽂혀 있다. 서버는 쉬지 않고 데이터를 쓰고 지운다. 엔지니어는 속도가 한 번 잘 나오는지보다 몇 시간 뒤에도 같은 성능이 유지되는지, 갑자기 전원이 끊겨도 데이터가 남는지, 수많은 오류를 제대로 고치는지 지켜본다. 이 시험을 몇 달 반복해도 대량 주문은 아직 시작되지 않을 수 있다.
 
 ![기업용 SSD 고객검증실에서 반복 시험을 진행하는 장면](https://huggingface.co/datasets/eddmpython/dartlab-media/resolve/main/objects/sha256/34/3469fd6cda170af020118e8dfca8e3ddcffcbbbeae1063a6f0b3077374165170.png)
