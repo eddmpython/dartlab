@@ -528,6 +528,87 @@ ROE와 PER은 리레이팅을 설명하는 KPI다.
         assert any("전문가 말투" in err for err in errors), category
 
 
+def test_thousands_separator_gate_blocks_unformatted_reader_quantities() -> None:
+    raw = """---
+title: "매출 1234억원을 만든 공장"
+description: "직원 12345명과 비용 -9876.5달러를 비교한다."
+category: reading-disclosures
+---
+
+| 항목 | 값 |
+|---|---:|
+| 생산량 | 4567개 |
+"""
+    body = ab.strip_frontmatter(raw)
+
+    errors = ab._validateThousandsSeparators(raw, body)
+
+    assert any("'1234' -> '1,234'" in error for error in errors)
+    assert any("'12345' -> '12,345'" in error for error in errors)
+    assert any("'-9876.5' -> '-9,876.5'" in error for error in errors)
+    assert any("'4567' -> '4,567'" in error for error in errors)
+
+
+def test_thousands_separator_gate_blocks_malformed_groups_and_six_digit_quantities() -> None:
+    raw = """---
+title: "방문 123456건과 매출 12,34억원"
+description: "표기 형식을 검증한다."
+category: reading-disclosures
+---
+
+직원은 2026만명이고 비용은 123,45,678원이며 생산량은 1234,567개다.
+"""
+    body = ab.strip_frontmatter(raw)
+
+    errors = ab._validateThousandsSeparators(raw, body)
+
+    assert any("'123456' -> '123,456'" in error for error in errors)
+    assert any("'12,34'" in error for error in errors)
+    assert any("'2026' -> '2,026'" in error for error in errors)
+    assert any("'123,45,678'" in error for error in errors)
+    assert any("'1234,567'" in error for error in errors)
+
+
+def test_thousands_separator_gate_allows_identifiers_and_nonprose() -> None:
+    raw = """---
+title: "2026년 삼성전자 1,234억원"
+description: "종목코드 005930, ISO 9001, 1200×630 해상도를 구분한다."
+category: reading-disclosures
+---
+
+2025Q4 매출은 12,345.6억원이다. 한미약품(128940)도 같은 기준으로 본다.
+`range(1000)`과 https://example.com/report/12345 는 독자 수량 표기가 아니다.
+
+```python
+value = 12345
+```
+"""
+    body = ab.strip_frontmatter(raw)
+
+    assert ab._validateThousandsSeparators(raw, body) == []
+
+
+def test_every_blog_category_publish_gate_blocks_missing_thousands_separator(tmp_path: Path) -> None:
+    for index, category in enumerate(sorted(ab.BLOG_CATEGORIES), start=1):
+        postDir = tmp_path / "blog" / f"{index:02d}-{category}" / "01-number-format"
+        postDir.mkdir(parents=True)
+        (postDir / "index.md").write_text(
+            f"""---
+title: "새 표에서 1234개 행 읽기"
+description: "새 표의 숫자 표기 규칙을 설명한다."
+category: {category}
+---
+
+새 표에는 1234개 행이 보인다.
+""",
+            encoding="utf-8",
+        )
+
+        errors = ab.publish_gate(postDir)
+
+        assert any("천 단위 콤마 누락" in error for error in errors), category
+
+
 def test_short_category_publish_gate_requires_reader_narrative(tmp_path: Path) -> None:
     postDir = tmp_path / "blog" / "02-dartlab-news" / "01-update"
     postDir.mkdir(parents=True)

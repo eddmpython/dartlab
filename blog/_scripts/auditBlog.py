@@ -163,6 +163,35 @@ COMMON_CLOSE_ARC_RE = re.compile(r"다음|봐야|확인|조건|기준|렌즈|체
 DARTLAB_TRANSITION_RE = re.compile(
     r"다음|이어|넘어|이제|앞|뒤|그래서|그다음|그러면|마지막|왜|해야|수\s*있|오해|반복|재사용|이해|막을"
 )
+UNFORMATTED_THOUSANDS_RE = re.compile(
+    r"(?<![0-9_,.])(?P<sign>[+-]?)(?P<integer>\d{4,})(?P<fraction>\.\d+)?(?![0-9_,.])"
+)
+GROUPED_NUMBER_RE = re.compile(r"(?<![0-9_,.])[+-]?\d+(?:,\d+)+(?:\.\d+)?(?![0-9_,.])")
+QUANTITY_UNIT_AFTER_RE = re.compile(
+    r"^\s*(?:"
+    r"%p?|원(?:어치)?|(?:천|만|억|조)\s*원|달러|유로|엔|위안|USD|KRW|EUR|JPY|"
+    r"(?:천|만|억|조)?(?:명|개(?:사|년)?|건|대|척|곳|사|회|번|줄|장|쪽|자|배|포인트|주(?:식)?|가지)|"
+    r"(?:천|만|억|조)(?![가-힣])|"
+    r"톤|배럴|리터|L|kg|g|km|cm|mm|m|"
+    r"KB|MB|GB|TB|W|kW|MW|GW|V|kV|VDC|VAC|A|mA|Hz|MHz|GHz|bps"
+    r")(?=$|[^가-힣]|은|는|이|가|을|를|의|에|로|와|과|도|만|마다|보다|처럼|까지|부터|이고|이며|이다|였다|라고|라는)",
+    re.I,
+)
+YEAR_QUANTITY_UNIT_AFTER_RE = re.compile(
+    r"^\s*(?:"
+    r"%p?|원(?:어치)?|(?:천|만|억|조)\s*원|달러|유로|위안|USD|KRW|EUR|JPY|"
+    r"(?:천|만|억|조)?(?:명|개(?:사|년)?|건|대|척|곳|사|회|번|줄|장|쪽|자|배|포인트|주(?:식)?|가지)|"
+    r"(?:천|만|억|조)(?![가-힣])|"
+    r"톤|배럴|리터|kg|km|cm|mm|KB|MB|GB|TB|kW|MW|GW|kV|VDC|VAC|Hz|MHz|GHz|bps"
+    r")(?=$|[^0-9A-Za-z가-힣]|은|는|이|가|을|를|의|에|로|와|과|도|만|마다|보다|처럼|까지|부터|이고|이며|이다|였다|라고|라는)",
+    re.I,
+)
+IDENTIFIER_CONTEXT_BEFORE_RE = re.compile(
+    r"(?:(?:K-?IFRS|IFRS|GAAP|IAS)(?:\s*제)?|ISO|IEC|KS|RFC|ISBN|MDL|"
+    r"버전|version|모델|model|규격|표준|"
+    r"종목\s*코드|stockCode|ticker|접수\s*번호|문서\s*번호|식별자|ID)\s*$",
+    re.I,
+)
 SECTION_PLAN_FIELDS = (
     "heading",
     "subtitle",
@@ -451,6 +480,94 @@ _OG_RE = re.compile(r"^/thumbnails/.+\.webp$")
 
 def _clean_scalar(value: str) -> str:
     return str(value or "").strip().strip("\"'")
+
+
+def _maskNumberExemptMarkup(text: str) -> str:
+    """독자 수량 표기에서 코드, URL, 태그 같은 비산문 영역을 가린다."""
+
+    def blank(match: re.Match[str]) -> str:
+        return re.sub(r"[^\n]", " ", match.group(0))
+
+    visible = re.sub(r"```[\s\S]*?```", blank, text)
+    visible = re.sub(r"<!--[\s\S]*?-->", blank, visible)
+    visible = re.sub(r"`[^`\n]*`", blank, visible)
+    visible = re.sub(r"!?\[([^\]]*)\]\([^)]+\)", lambda match: match.group(1), visible)
+    visible = re.sub(r"https?://\S+", blank, visible)
+    visible = re.sub(r"<[^>\n]+>", blank, visible)
+    visible = re.sub(r"\b\d{2,4}-\d{3,4}-\d{4}\b", blank, visible)
+    return visible
+
+
+def _hasQuantityUnitAfter(text: str, end: int) -> bool:
+    return QUANTITY_UNIT_AFTER_RE.match(text[end : end + 16]) is not None
+
+
+def _hasYearQuantityUnitAfter(text: str, end: int) -> bool:
+    return YEAR_QUANTITY_UNIT_AFTER_RE.match(text[end : end + 16]) is not None
+
+
+def _isNumberIdentifier(text: str, start: int, end: int, digits: str) -> bool:
+    before = text[max(0, start - 24) : start]
+    after = text[end : end + 16]
+    hasUnit = _hasQuantityUnitAfter(text, end)
+
+    if start > 0 and re.match(r"[A-Za-z]", text[start - 1]):
+        return True
+    suffix = re.match(r"[A-Za-z]+", after)
+    if suffix and not hasUnit:
+        return True
+    if IDENTIFIER_CONTEXT_BEFORE_RE.search(before) and not hasUnit:
+        return True
+    if len(digits) == 6 and not hasUnit and before.endswith("(") and after.startswith(")"):
+        return True
+    if digits.startswith("0") and not hasUnit:
+        return True
+    if re.fullmatch(r"(?:19|20|21)\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])", digits):
+        return True
+    if re.match(r"\s*[x×]\s*\d{2,5}\b", after) or re.search(r"\b\d{2,5}\s*[x×]\s*$", before):
+        return True
+    return False
+
+
+def _findUnformattedThousands(text: str, label: str) -> list[str]:
+    visible = _maskNumberExemptMarkup(text)
+    fails: list[str] = []
+    for match in GROUPED_NUMBER_RE.finditer(visible):
+        token = match.group(0)
+        integer = token.lstrip("+-").split(".", 1)[0]
+        groups = integer.split(",")
+        if len(groups[0]) <= 3 and all(len(group) == 3 for group in groups[1:]):
+            continue
+        line = visible.count("\n", 0, match.start()) + 1
+        fails.append(f"천 단위 콤마 형식 오류: {label} {line}행 {token!r}")
+    for match in UNFORMATTED_THOUSANDS_RE.finditer(visible):
+        token = match.group(0)
+        digits = match.group("integer")
+        start, end = match.span()
+        hasUnit = _hasQuantityUnitAfter(visible, end)
+        value = int(digits)
+        if 1800 <= value <= 2199 and not _hasYearQuantityUnitAfter(visible, end):
+            continue
+        if _isNumberIdentifier(visible, start, end, digits):
+            continue
+        formatted = f"{match.group('sign')}{value:,}{match.group('fraction') or ''}"
+        line = visible.count("\n", 0, start) + 1
+        fails.append(f"천 단위 콤마 누락: {label} {line}행 {token!r} -> {formatted!r}")
+    return fails
+
+
+def _validateThousandsSeparators(raw: str, body: str) -> list[str]:
+    """모든 블로그의 독자 노출 수량에 천 단위 콤마를 강제한다."""
+
+    fails: list[str] = []
+    for label, text in (
+        ("title", _clean_scalar(frontmatter_value(raw, "title"))),
+        ("description", _clean_scalar(frontmatter_value(raw, "description"))),
+        ("본문", body),
+    ):
+        if text:
+            fails.extend(_findUnformattedThousands(text, label))
+    return fails
 
 
 def _compact_len(value: object) -> int:
@@ -1284,6 +1401,7 @@ def publish_gate(post_dir: Path, *, requireContractV2: bool = False) -> list[str
     body = strip_frontmatter(raw)
     cat = _clean_scalar(frontmatter_value(raw, "category"))
     fails: list[str] = []
+    fails.extend(_validateThousandsSeparators(raw, body))
     if cat not in CONTENT_GENRE_CATEGORIES:
         fails.extend(_validate_common_body_plainness(body, cat))
         return fails  # 단문 카테고리는 공통 편집 계약만 검사하고 심층 계약은 제외
