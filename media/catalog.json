@@ -3915,6 +3915,20 @@
     "blog/08-tech-story/17-quantum-computing-evidence-ladder/assets/17-quantum-stack.svg": "3ac0d8591a8b540fa6113a741312f57e1e609ca350bf9029f3264093a95c0ffd",
     "blog/08-tech-story/17-quantum-computing-evidence-ladder/assets/17-revenue-clocks.svg": "fbcb2151954244e92e479b80f0c6d75bc88a557736eda49df9af7a56097b26d3",
     "blog/08-tech-story/17-quantum-computing-evidence-ladder/assets/17-scenario-map.svg": "b50f838e7e2c920deaacaa6506f5f1290dbb884653bbd56887d8bc5df85fa371",
+    "blog/08-tech-story/18-perovskite-silicon-tandem/assets/18-2t-4t.svg": "ce976053e6386ee8b6dc48934638b5bad763a93adcec2a71f15150e65286029a",
+    "blog/08-tech-story/18-perovskite-silicon-tandem/assets/18-coating-line.png": "f57bce9f0a91d544db1501cb8667822435727a7c592b7c778d01ba3833fb310d",
+    "blog/08-tech-story/18-perovskite-silicon-tandem/assets/18-company-map.svg": "15a9e5ec955c6b9cab7aa94846b3c3fbf04287ef36d6f1a9870d5a7612d3eda4",
+    "blog/08-tech-story/18-perovskite-silicon-tandem/assets/18-degradation-map.svg": "1b3800862b121c1be5e17a666d652d8c534dc969cc8fa9e591f052dbc4a58be7",
+    "blog/08-tech-story/18-perovskite-silicon-tandem/assets/18-evidence-distribution.svg": "435b6c3250dc588a5bbbe008b3f3624ba5fba1f28265d29f465a64fda4fe81dc",
+    "blog/08-tech-story/18-perovskite-silicon-tandem/assets/18-field-validation.png": "16453903c2421d6eacefea88fa85b939c53bb518c9b8cc6d1721a4e2e6935b46",
+    "blog/08-tech-story/18-perovskite-silicon-tandem/assets/18-financial-traces.svg": "945501ee9fc94af6103a0da3e1ff80f18edc82ac470cba6aea4b51b8d682b3e9",
+    "blog/08-tech-story/18-perovskite-silicon-tandem/assets/18-hero.png": "dc7e71a41798884c49035a0c252ea2b4921cd97102f62900cea45f5dec9a6873",
+    "blog/08-tech-story/18-perovskite-silicon-tandem/assets/18-lead-loop.svg": "1620d8560b43e646821b0e38554ce0881f023c2c3b4d21d7f10e917d6a2fc130",
+    "blog/08-tech-story/18-perovskite-silicon-tandem/assets/18-scale-gap.svg": "fb249b5d3ab79803e2cefeca46479f20c3b9c6f6c5be77fc7bc159e4825614c0",
+    "blog/08-tech-story/18-perovskite-silicon-tandem/assets/18-scenario-map.svg": "fe8c0c8e095b611b98e609faf1ad3740b6e5a821458a23b9641eeaba291f7923",
+    "blog/08-tech-story/18-perovskite-silicon-tandem/assets/18-spectrum-cutaway.png": "5dd948578211db2f48c9989248f5e9a5ea85ebe97c368f793e854a4d85fe642e",
+    "blog/08-tech-story/18-perovskite-silicon-tandem/assets/18-spectrum-split.svg": "f1c275dc79db409afb2ec82e6a40328e63948952a5959ebfca9c552a2eba2c4e",
+    "blog/08-tech-story/18-perovskite-silicon-tandem/assets/18-stress-test.png": "701f8e7318328410ca3be8a04b757d3510ca4be679fe687473fb030cf72214b4",
     "blog/09-investment-stories/01-technical-investing-price-indicators/assets/01-price-indicator-workbench.webp": "486b12c36cd4319a408b1706e006e969fcd9f76a9ba13691bde49613d1caba6e",
     "blog/09-investment-stories/01-technical-investing-price-indicators/assets/01-thumbnail-bg.webp": "486b12c36cd4319a408b1706e006e969fcd9f76a9ba13691bde49613d1caba6e",
     "blog/09-investment-stories/01-technical-investing-price-indicators/assets/02-indicator-panels.webp": "f7af37afbad715ca79873cb16abc1452a0e67ea090e4b94a5999c8c8682778b5",
@@ -4619,6 +4633,8 @@
     "landing/static/thumbnails/news-vscode-extension-install.webp": "4dc81c5b6175275bd6e0963c4a7ce40ec38c5136f5dc424ef5f5967beeaa41e9",
     "landing/static/thumbnails/overseas-stock-return-exchange-rate-card.webp": "5a9f3710a03160f88fdd3fa2ec795f8a09fe2e20b65e151495bdbd694f5f00c6",
     "landing/static/thumbnails/overseas-stock-return-exchange-rate.webp": "598a9258184ad5b7a58d42a3b913ca758aa96ca599e349e1544bfdff44abcfd8",
+    "landing/static/thumbnails/perovskite-silicon-tandem-card.webp": "039ced1f1d617d1f5ad70769f2c8434e73f79ef292ef16713fff926a0e8e7022",
+    "landing/static/thumbnails/perovskite-silicon-tandem.webp": "a09983e535f9656b64f917ef06af59ca5016ad7d51b78672b2d370dafa30028b",
     "landing/static/thumbnails/power-equipment-supercycle-card.webp": "a2458f20b293911db36a89d1b7487c8fcc80ed1d022fbcaaba08229da212645d",
     "landing/static/thumbnails/power-equipment-supercycle.webp": "cfc8b05f8eb0bd157b8c1d22d54af355b8f3120fbf99a04dc9f9289c0aed0240",
     "landing/static/thumbnails/quantum-computing-evidence-ladder-card.webp": "bcc7d3c3450ccdd9a1770bc494da0c0f73a68a5a275b72a275f854c149beccd4",
@@ -4891,6 +4907,10 @@
       "path": "objects/sha256/03/03712d90bc73fb894bbff056d39979b0226e9cc9e5ead5b1cf9c592eaad84642.svg",
       "textNodes": 9,
       "viewBox": "0 0 1000 460"
+    },
+    "039ced1f1d617d1f5ad70769f2c8434e73f79ef292ef16713fff926a0e8e7022": {
+      "bytes": 67868,
+      "path": "objects/sha256/03/039ced1f1d617d1f5ad70769f2c8434e73f79ef292ef16713fff926a0e8e7022.webp"
     },
     "03a4efa4617c45b681c013745338751bf84b131451c486a3245a0a5c436c7957": {
       "bytes": 17940,
@@ -6156,6 +6176,14 @@
       "textNodes": 18,
       "viewBox": "0 0 1200 720"
     },
+    "15a9e5ec955c6b9cab7aa94846b3c3fbf04287ef36d6f1a9870d5a7612d3eda4": {
+      "bytes": 2602,
+      "colorCount": 11,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/15/15a9e5ec955c6b9cab7aa94846b3c3fbf04287ef36d6f1a9870d5a7612d3eda4.svg",
+      "textNodes": 20,
+      "viewBox": "0 0 1200 675"
+    },
     "15abab42cef0aef7c51d16b7a6f9a11c2712064bd24277bdc0338fe8da4eab87": {
       "bytes": 228440,
       "path": "objects/sha256/15/15abab42cef0aef7c51d16b7a6f9a11c2712064bd24277bdc0338fe8da4eab87.webp"
@@ -6188,6 +6216,14 @@
       "bytes": 40666,
       "path": "objects/sha256/16/161d57b9500f8bc7312cdcb9d2c19ec684523bf52790c2efebeee039f5da5ab6.webp"
     },
+    "1620d8560b43e646821b0e38554ce0881f023c2c3b4d21d7f10e917d6a2fc130": {
+      "bytes": 2748,
+      "colorCount": 14,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/16/1620d8560b43e646821b0e38554ce0881f023c2c3b4d21d7f10e917d6a2fc130.svg",
+      "textNodes": 16,
+      "viewBox": "0 0 1200 675"
+    },
     "162ae00fe5f14b473fdfdb9c0f7af19511416beeb9350d7cda69a7fccfdb6803": {
       "bytes": 6159,
       "colorCount": 12,
@@ -6203,6 +6239,10 @@
       "path": "objects/sha256/16/1640de5e6f29b7858ff12cef00114304677766876b3df7f36050c940f357914b.svg",
       "textNodes": 7,
       "viewBox": "0 0 1200 800"
+    },
+    "16453903c2421d6eacefea88fa85b939c53bb518c9b8cc6d1721a4e2e6935b46": {
+      "bytes": 2621668,
+      "path": "objects/sha256/16/16453903c2421d6eacefea88fa85b939c53bb518c9b8cc6d1721a4e2e6935b46.png"
     },
     "164b134fb091bca1c85b2b06d3b1874067c09dad04c965a543eb9385ac2dddcf": {
       "bytes": 2326,
@@ -6535,6 +6575,14 @@
     "1afee4096430f97c9912afd0c294b0e74dcb711e54adba40cb3326b2f3e63a52": {
       "bytes": 146286,
       "path": "objects/sha256/1a/1afee4096430f97c9912afd0c294b0e74dcb711e54adba40cb3326b2f3e63a52.webp"
+    },
+    "1b3800862b121c1be5e17a666d652d8c534dc969cc8fa9e591f052dbc4a58be7": {
+      "bytes": 2873,
+      "colorCount": 14,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/1b/1b3800862b121c1be5e17a666d652d8c534dc969cc8fa9e591f052dbc4a58be7.svg",
+      "textNodes": 17,
+      "viewBox": "0 0 1200 675"
     },
     "1b562115c11e92a9e17becf05473f1591eefd5666cde5e4f0b1223b16fc5f059": {
       "bytes": 66926,
@@ -9664,6 +9712,14 @@
       "textNodes": 17,
       "viewBox": "0 0 1080 520"
     },
+    "435b6c3250dc588a5bbbe008b3f3624ba5fba1f28265d29f465a64fda4fe81dc": {
+      "bytes": 3077,
+      "colorCount": 11,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/43/435b6c3250dc588a5bbbe008b3f3624ba5fba1f28265d29f465a64fda4fe81dc.svg",
+      "textNodes": 23,
+      "viewBox": "0 0 1200 675"
+    },
     "43c71761b3be018db141de7801f08fa7f9039bad8b63ba12492d92de882f329d": {
       "bytes": 167644,
       "path": "objects/sha256/43/43c71761b3be018db141de7801f08fa7f9039bad8b63ba12492d92de882f329d.webp"
@@ -11564,6 +11620,10 @@
       "textNodes": 14,
       "viewBox": "0 0 1000 500"
     },
+    "5dd948578211db2f48c9989248f5e9a5ea85ebe97c368f793e854a4d85fe642e": {
+      "bytes": 2482750,
+      "path": "objects/sha256/5d/5dd948578211db2f48c9989248f5e9a5ea85ebe97c368f793e854a4d85fe642e.png"
+    },
     "5de453c91e19f8eed6c7d8c0f303922d0b86849891f9d036beb8a8ebb7f8b767": {
       "bytes": 6059,
       "colorCount": 12,
@@ -12779,6 +12839,10 @@
     "7001501db2cf8675ebfa22bd8ba0d6ea7fdec5bb6a09dc5184609f556224e7da": {
       "bytes": 125852,
       "path": "objects/sha256/70/7001501db2cf8675ebfa22bd8ba0d6ea7fdec5bb6a09dc5184609f556224e7da.webp"
+    },
+    "701f8e7318328410ca3be8a04b757d3510ca4be679fe687473fb030cf72214b4": {
+      "bytes": 2603908,
+      "path": "objects/sha256/70/701f8e7318328410ca3be8a04b757d3510ca4be679fe687473fb030cf72214b4.png"
     },
     "7030a3db92a782fbb96770ad9328562792cdd5b932c06f2866fbc1b4b6d5f04a": {
       "bytes": 164230,
@@ -15488,6 +15552,14 @@
       "textNodes": 16,
       "viewBox": "0 0 1080 540"
     },
+    "945501ee9fc94af6103a0da3e1ff80f18edc82ac470cba6aea4b51b8d682b3e9": {
+      "bytes": 3201,
+      "colorCount": 11,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/94/945501ee9fc94af6103a0da3e1ff80f18edc82ac470cba6aea4b51b8d682b3e9.svg",
+      "textNodes": 30,
+      "viewBox": "0 0 1200 675"
+    },
     "946854978ee6ccbcca198a8c6ed33af378d5179b169b1d4a8e1255648c3a39f9": {
       "bytes": 3914,
       "colorCount": 11,
@@ -16359,6 +16431,10 @@
     "a07e064d7949a312c3fda0f93787386f09edd679675d53053cf7adf88ae71b5a": {
       "bytes": 151766,
       "path": "objects/sha256/a0/a07e064d7949a312c3fda0f93787386f09edd679675d53053cf7adf88ae71b5a.webp"
+    },
+    "a09983e535f9656b64f917ef06af59ca5016ad7d51b78672b2d370dafa30028b": {
+      "bytes": 56582,
+      "path": "objects/sha256/a0/a09983e535f9656b64f917ef06af59ca5016ad7d51b78672b2d370dafa30028b.webp"
     },
     "a0a0152e46d85332688abf2f67a13c85aeff35bd51fc496a486e4edf0bfb86c9": {
       "bytes": 50250,
@@ -19708,6 +19784,14 @@
       "bytes": 60834,
       "path": "objects/sha256/ce/ce7e9a6eab6ad590595ba28c49d9e2dfcf6093868b534fe061c3e3cb927d05fe.webp"
     },
+    "ce976053e6386ee8b6dc48934638b5bad763a93adcec2a71f15150e65286029a": {
+      "bytes": 2526,
+      "colorCount": 13,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/ce/ce976053e6386ee8b6dc48934638b5bad763a93adcec2a71f15150e65286029a.svg",
+      "textNodes": 15,
+      "viewBox": "0 0 1200 675"
+    },
     "ce9946ba3304f1281545591a06b1fc50b17b4e7c87e21b0afed025ff42c99600": {
       "bytes": 164180,
       "path": "objects/sha256/ce/ce9946ba3304f1281545591a06b1fc50b17b4e7c87e21b0afed025ff42c99600.webp"
@@ -20679,6 +20763,10 @@
       "path": "objects/sha256/dc/dc6993c340c6600ddd9c0a26b794b4c89d92fc179c6bfa94fc613b6af054b4ba.svg",
       "textNodes": 74,
       "viewBox": "0 0 1200 720"
+    },
+    "dc7e71a41798884c49035a0c252ea2b4921cd97102f62900cea45f5dec9a6873": {
+      "bytes": 1917220,
+      "path": "objects/sha256/dc/dc7e71a41798884c49035a0c252ea2b4921cd97102f62900cea45f5dec9a6873.png"
     },
     "dc89cb8aaa83a0f137d4a414d048b54d27d9bef2db8d788c1d18d07dd7d391dd": {
       "bytes": 4684,
@@ -22276,6 +22364,14 @@
       "bytes": 47792,
       "path": "objects/sha256/f1/f1a88cc0fc7cc2814c5979beb691118960919c7f4aae42ab084496de30bffe66.webp"
     },
+    "f1c275dc79db409afb2ec82e6a40328e63948952a5959ebfca9c552a2eba2c4e": {
+      "bytes": 2692,
+      "colorCount": 13,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/f1/f1c275dc79db409afb2ec82e6a40328e63948952a5959ebfca9c552a2eba2c4e.svg",
+      "textNodes": 12,
+      "viewBox": "0 0 1200 675"
+    },
     "f1d78b3d69c5f964e23912ecf290225637c60f1b683ba760a8e4778651a1bd20": {
       "bytes": 178780,
       "path": "objects/sha256/f1/f1d78b3d69c5f964e23912ecf290225637c60f1b683ba760a8e4778651a1bd20.webp"
@@ -22547,6 +22643,10 @@
     "f57bb5a498b33606505658b4e36898446bffd308a1a9f9f3f5c8a1ccf1539dbf": {
       "bytes": 64050,
       "path": "objects/sha256/f5/f57bb5a498b33606505658b4e36898446bffd308a1a9f9f3f5c8a1ccf1539dbf.webp"
+    },
+    "f57bce9f0a91d544db1501cb8667822435727a7c592b7c778d01ba3833fb310d": {
+      "bytes": 2055182,
+      "path": "objects/sha256/f5/f57bce9f0a91d544db1501cb8667822435727a7c592b7c778d01ba3833fb310d.png"
     },
     "f58c9809988a621dab934f4b200332e2c3b165604a24f7611743e145acf64707": {
       "bytes": 7253,
@@ -22972,6 +23072,14 @@
       "bytes": 162492,
       "path": "objects/sha256/fb/fb05ef2a573fd8d39f4546b82505853c395ebefe9e46dacff0e5d3e4fd765c5a.webp"
     },
+    "fb249b5d3ab79803e2cefeca46479f20c3b9c6f6c5be77fc7bc159e4825614c0": {
+      "bytes": 2483,
+      "colorCount": 15,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/fb/fb249b5d3ab79803e2cefeca46479f20c3b9c6f6c5be77fc7bc159e4825614c0.svg",
+      "textNodes": 12,
+      "viewBox": "0 0 1200 675"
+    },
     "fb29c97f72822d93a1880e1bde882d05a18b86c600e7322a3bcab0a8dc6d0fac": {
       "bytes": 53746,
       "path": "objects/sha256/fb/fb29c97f72822d93a1880e1bde882d05a18b86c600e7322a3bcab0a8dc6d0fac.webp"
@@ -23271,6 +23379,14 @@
     "fe71f12e9956a28df5a1c7fae7c8a7d2f878e1404babad9fde47aa4347bf8943": {
       "bytes": 191674,
       "path": "objects/sha256/fe/fe71f12e9956a28df5a1c7fae7c8a7d2f878e1404babad9fde47aa4347bf8943.webp"
+    },
+    "fe8c0c8e095b611b98e609faf1ad3740b6e5a821458a23b9641eeaba291f7923": {
+      "bytes": 2759,
+      "colorCount": 11,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/fe/fe8c0c8e095b611b98e609faf1ad3740b6e5a821458a23b9641eeaba291f7923.svg",
+      "textNodes": 18,
+      "viewBox": "0 0 1200 675"
     },
     "feaa235f652cf3eef4ca7b995173821bfc652bd218bf280fcb101e839dd7158b": {
       "bytes": 5989,
@@ -30616,6 +30732,45 @@
         "blog/08-tech-story/17-quantum-computing-evidence-ladder/assets/17-revenue-clocks.svg",
         "blog/08-tech-story/17-quantum-computing-evidence-ladder/assets/17-scenario-map.svg",
         "landing/static/thumbnails/quantum-computing-evidence-ladder-card.webp"
+      ]
+    },
+    "08-tech-story/18-perovskite-silicon-tandem": {
+      "assets": {
+        "18-coating-line": "blog/08-tech-story/18-perovskite-silicon-tandem/assets/18-coating-line.png",
+        "18-field-validation": "blog/08-tech-story/18-perovskite-silicon-tandem/assets/18-field-validation.png",
+        "18-hero": "blog/08-tech-story/18-perovskite-silicon-tandem/assets/18-hero.png",
+        "18-spectrum-cutaway": "blog/08-tech-story/18-perovskite-silicon-tandem/assets/18-spectrum-cutaway.png",
+        "18-stress-test": "blog/08-tech-story/18-perovskite-silicon-tandem/assets/18-stress-test.png"
+      },
+      "card": "landing/static/thumbnails/perovskite-silicon-tandem-card.webp",
+      "diagrams": {
+        "18-2t-4t": "blog/08-tech-story/18-perovskite-silicon-tandem/assets/18-2t-4t.svg",
+        "18-company-map": "blog/08-tech-story/18-perovskite-silicon-tandem/assets/18-company-map.svg",
+        "18-degradation-map": "blog/08-tech-story/18-perovskite-silicon-tandem/assets/18-degradation-map.svg",
+        "18-evidence-distribution": "blog/08-tech-story/18-perovskite-silicon-tandem/assets/18-evidence-distribution.svg",
+        "18-financial-traces": "blog/08-tech-story/18-perovskite-silicon-tandem/assets/18-financial-traces.svg",
+        "18-lead-loop": "blog/08-tech-story/18-perovskite-silicon-tandem/assets/18-lead-loop.svg",
+        "18-scale-gap": "blog/08-tech-story/18-perovskite-silicon-tandem/assets/18-scale-gap.svg",
+        "18-scenario-map": "blog/08-tech-story/18-perovskite-silicon-tandem/assets/18-scenario-map.svg",
+        "18-spectrum-split": "blog/08-tech-story/18-perovskite-silicon-tandem/assets/18-spectrum-split.svg"
+      },
+      "og": "landing/static/thumbnails/perovskite-silicon-tandem.webp",
+      "staging": [
+        "blog/08-tech-story/18-perovskite-silicon-tandem/assets/18-2t-4t.svg",
+        "blog/08-tech-story/18-perovskite-silicon-tandem/assets/18-coating-line.png",
+        "blog/08-tech-story/18-perovskite-silicon-tandem/assets/18-company-map.svg",
+        "blog/08-tech-story/18-perovskite-silicon-tandem/assets/18-degradation-map.svg",
+        "blog/08-tech-story/18-perovskite-silicon-tandem/assets/18-evidence-distribution.svg",
+        "blog/08-tech-story/18-perovskite-silicon-tandem/assets/18-field-validation.png",
+        "blog/08-tech-story/18-perovskite-silicon-tandem/assets/18-financial-traces.svg",
+        "blog/08-tech-story/18-perovskite-silicon-tandem/assets/18-hero.png",
+        "blog/08-tech-story/18-perovskite-silicon-tandem/assets/18-lead-loop.svg",
+        "blog/08-tech-story/18-perovskite-silicon-tandem/assets/18-scale-gap.svg",
+        "blog/08-tech-story/18-perovskite-silicon-tandem/assets/18-scenario-map.svg",
+        "blog/08-tech-story/18-perovskite-silicon-tandem/assets/18-spectrum-cutaway.png",
+        "blog/08-tech-story/18-perovskite-silicon-tandem/assets/18-spectrum-split.svg",
+        "blog/08-tech-story/18-perovskite-silicon-tandem/assets/18-stress-test.png",
+        "landing/static/thumbnails/perovskite-silicon-tandem-card.webp"
       ]
     },
     "09-investment-stories/01-technical-investing-price-indicators": {

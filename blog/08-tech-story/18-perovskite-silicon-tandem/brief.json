@@ -1,0 +1,137 @@
+{
+  "contractVersion": 2,
+  "passed": true,
+  "topicSlug": "perovskite-silicon-tandem",
+  "seriesOrder": 18,
+  "title": "효율 35.5%인데 왜 지붕에는 없을까",
+  "description": "페로브스카이트·실리콘 탠덤의 빛 분할 원리부터 대면적 코팅, 열화, 납 회수, 신뢰성 시험, 양산 수율과 기업 공시까지 최고 효율과 현장 분포의 차이로 읽는다.",
+  "readerQuestion": "35.5% 효율의 탠덤 셀이 나왔는데 왜 현장에는 아직 실리콘 모듈이 대부분이며, 어떤 증거가 나오면 상용화를 믿을 수 있을까?",
+  "titleContract": {
+    "selectedTitle": "효율 35.5%인데 왜 지붕에는 없을까",
+    "hookQuestion": "LONGi의 35.5% 기록 셀과 Oxford PV의 24.5% 첫 출하 모듈 중 어느 숫자가 탠덤의 현재인가?",
+    "readerGap": "독자는 셀과 모듈, 최고값과 모집단, 스트레스 시험과 옥외 수명, 첫 출하와 반복 양산을 같은 상용화 단계로 읽기 쉽다.",
+    "promise": "빛 분할과 2단자·4단자 원리에서 코팅, 대면적 수율, 열화, 납 회수, 신뢰성, 금융과 기업 공시까지 같은 제품의 분포로 연결한다.",
+    "whySelected": "핵심 검색어인 효율과 현장 질문을 담으면서 글의 새 렌즈인 최고값과 분포의 충돌을 바로 제시한다.",
+    "candidates": [
+      {"title": "효율 35.5%인데 왜 지붕에는 없을까", "strength": "기술 기록과 현장 도입의 모순을 직접 건드린다."},
+      {"title": "기록은 셀이 세우고 지붕은 분포를 산다", "strength": "관통선이 기억에 남지만 검색어가 약하다."},
+      {"title": "최고 셀보다 최악의 한 장", "strength": "수율과 보증의 하위 꼬리를 강조하지만 기술명이 드러나지 않는다."}
+    ]
+  },
+  "insight": {
+    "commonBelief": "페로브스카이트는 효율이 높고 얇게 바를 수 있으므로 최고 기록만 실리콘을 넘으면 곧 더 싸고 좋은 패널이 된다고 생각한다.",
+    "twistFact": "대면적에서는 막 균일도와 직렬저항, 열화, 봉지, 전류맞춤과 불량 꼬리가 누적되며, 여러 회사의 효율·시험·출하 성과는 한 제품의 증거로 합산할 수 없다.",
+    "whatToWatch": "같은 자재명세서의 중앙 효율, P10, 로트 수율, 처리량, 복수 기후 열화 분포, 반복 유상 출하, 보증과 회수 계약을 순서대로 확인한다.",
+    "freshnessArgument": "2026년 7월 26일 기준 LONGi 35.5% 발표, Qcells 스트레스 시험, Oxford PV 첫 출하, DOE·NREL·Nature 원문과 2025 DART·EDGAR를 맞췄다.",
+    "evidenceRefs": ["E1", "E2", "E3", "E4", "E5", "E6", "E9", "E13", "E14"]
+  },
+  "acts": [
+    {"order": 1, "heading": "35.5%와 24.5%를 충돌시킨다", "purpose": "최고값과 현장 분포를 정의", "scene": "기록 셀 한 장과 같은 라인의 1만 장 중앙값·P10·폐기율을 대비한다.", "causalBridge": "왜 두 층을 쌓으면 최고값이 오르는지 빛의 물리로 이동한다."},
+    {"order": 2, "heading": "빛을 두 재료가 나눠 받는다", "purpose": "밴드갭, 스펙트럼과 2단자·4단자 설명", "scene": "짧은 파장은 위층, 긴 파장은 아래 실리콘으로 내려간다.", "causalBridge": "좋은 단면을 산업용 피라미드 웨이퍼 전체에 복제하는 공정으로 넘어간다."},
+    {"order": 3, "heading": "피라미드 골짜기에서 수율이 갈린다", "purpose": "코팅, 전극, 연결과 면적 확대 병목", "scene": "웨이퍼 한 장이 코팅과 검사, 봉지를 지나며 작은 결함이 모듈 스크랩으로 커진다.", "causalBridge": "합격한 모듈도 날씨와 시간의 분포를 지나야 한다."},
+    {"order": 4, "heading": "한 모듈이 정오, 장마와 음영을 겪는다", "purpose": "열화, 가속시험, 옥외 모집단과 납 책임", "scene": "같은 모듈이 빛, 열, 수분, 역바이어스와 파손 뒤 회수까지 이동한다.", "causalBridge": "기술 증거가 어느 회사 공시와 재무에 착지했는지 본다."},
+    {"order": 5, "heading": "효율 공시에서 수율 공시로 넘어간다", "purpose": "회사 직접·인접 증거와 재무 범위 분리", "scene": "LONGi, Qcells, Oxford PV, JinkoSolar와 First Solar의 공개 칸과 결손을 표로 남긴다.", "causalBridge": "서로 다른 회사의 성과를 한 제품으로 합치지 않는 오해 방지 단계로 이어진다."},
+    {"order": 6, "heading": "다음 기록보다 네 가지 분포 변화를 본다", "purpose": "조건형 관전 시나리오와 반증 기준", "scene": "효율 분포, 옥외 열화, 실리콘 가격과 납 회수의 조건·지표·반증을 한 화면에 놓는다.", "causalBridge": "독자는 다음 발표를 최고 효율이 아니라 같은 제품의 분포 이동으로 판정하게 된다."}
+  ],
+  "sections": [
+    {"order": 1, "heading": "기록은 셀이 세우고 현장은 분포를 산다", "subtitle": "효율, 시험과 출하를 같은 제품으로 합치지 않는다", "visualAnchor": "18-evidence-distribution이 기록 셀에서 반복 사업까지의 여섯 칸과 합산 금지를 보여 준다.", "explanation": "쉽게 말해 분포를 스펙트럼, 로트 효율·불량, 장기 열화 세 종류로 정의한다.", "example": "LONGi 35.5%, Qcells 시험, Oxford PV 24.5% 출하를 다른 증거 칸에 둔다.", "support": "주의할 점은 세 성과가 회사와 자재명세서가 달라 한 제품의 완주로 합칠 수 없다는 것이다.", "transition": "그래서 다음 절에서는 탠덤이 최고 효율을 만드는 빛의 원리를 본다.", "evaluation": "독자가 최고값과 모집단 증거를 구분할 수 있어야 한다."},
+    {"order": 2, "heading": "한 장의 태양전지가 빛을 두 번 계산하는 법", "subtitle": "밴드갭, 스펙트럼과 2단자·4단자", "visualAnchor": "단면 래스터, 18-spectrum-split과 18-2t-4t가 광학 분담과 전기 연결을 분리한다.", "explanation": "쉽게 말해 짧은 파장은 페로브스카이트, 긴 파장은 실리콘이 받고 2단자는 전류가 작은 층에 제한된다.", "example": "NREL의 연간 스펙트럼 손실과 3GW 공장 비용 모델을 실제 연구 사례로 잡는다.", "support": "주의할 점은 4단자가 모든 BOM에서 더 싸거나 2단자가 날씨에 쓸 수 없다고 단정하지 않는 것이다.", "transition": "그래서 다음 절에서는 좋은 단면을 산업 웨이퍼 전체에 입히는 공정으로 넘어간다.", "evaluation": "독자가 광학 이익과 전기·BOM 교환 관계를 설명할 수 있어야 한다."},
+    {"order": 3, "heading": "실리콘 피라미드 골짜기 하나가 수율을 바꾼다", "subtitle": "텍스처 피복에서 봉지까지", "visualAnchor": "18-coating-line과 공정 결함 표가 한 웨이퍼의 생산 이동을 보여 준다.", "explanation": "쉽게 말해 컨포멀 코팅, 투명전극과 봉지의 작은 결함이 마지막 모듈 스크랩으로 커진다.", "example": "Qcells M10 웨이퍼의 피라미드 골짜기 핀홀과 마지막 검사 스크랩을 실제 사례로 연결한다.", "support": "주의할 점은 싼 활성층 재료를 싼 모듈과 동일시하지 않는 것이다.", "transition": "그래서 다음 절에서는 면적 확대가 새로 만드는 수치의 분모를 본다.", "evaluation": "독자가 수율과 처리량이 재료비보다 중요할 수 있음을 이해해야 한다."},
+    {"order": 4, "heading": "1제곱센티미터를 공장으로 복사할 때 효율은 어디서 사라지나", "subtitle": "기록 셀, M10과 산업 형식 모듈", "visualAnchor": "18-scale-gap이 면적 확대와 함께 중앙값·P10·수율이 추가되는 과정을 보여 준다.", "explanation": "표에서 LONGi, Qcells와 Oxford PV 사례를 형식·면적·효율별로 분리한다.", "example": "LONGi 261㎠, Qcells M10 330.56㎠, Oxford PV 1.68㎡ 모듈과 24.5% 첫 출하를 나란히 둔다.", "support": "주의할 점은 셀과 모듈, 최고값과 안정화 출력, 첫 출하와 반복 생산을 구분하는 것이다.", "transition": "그래서 다음 절에서는 합격품이 시간과 날씨의 열화 분포를 지나는 과정을 본다.", "evaluation": "독자가 면적 확대의 효율 손실과 생산 분포를 구분해야 한다."},
+    {"order": 5, "heading": "페로브스카이트는 물만 무서운 것이 아니다", "subtitle": "이온 이동, 상분리, 계면과 역바이어스", "visualAnchor": "18-degradation-map이 외부 스트레스에서 재료 반응과 보증 결과까지 연결한다.", "explanation": "쉽게 말해 맑은 정오, 장마, 겨울 새벽과 부분음영을 같은 모듈의 시간으로 묶는다.", "example": "Nature의 1,000~2,000시간 실제 연구 결과를 면적·봉지·온도 조건과 함께 쓴다.", "support": "주의할 점은 실험 셀 T80을 25년 옥외 모듈 수명으로 외삽하지 않는 것이다.", "transition": "그래서 다음 절에서는 가속시험이 무엇을 증명하고 무엇을 남기는지 본다.", "evaluation": "독자가 봉지가 내부 열화 전부를 해결하지 못함을 이해해야 한다."},
+    {"order": 6, "heading": "1,000시간을 30년으로 곱할 수 없는 이유", "subtitle": "가속시험과 DOE 초기 목표", "visualAnchor": "18-stress-test가 통제된 챔버 시험의 공간과 한계를 보여 준다.", "explanation": "표에서 Qcells의 선택된 핵심 스트레스 시험과 DOE 평가 목표를 정확한 범위로 설명한다.", "example": "Qcells UV15·TC200·HF10·DH1000과 DOE 20개·1kW·6개월 목표를 실제 숫자로 분리한다.", "support": "주의할 점은 시험 통과를 완전한 형식승인이나 30년 수명 보증으로 쓰지 않는 것이다.", "transition": "그래서 다음 절에서는 시험 뒤 파손된 모듈의 납 책임이 어디까지 이어지는지 본다.", "evaluation": "독자가 시험시간과 옥외 수명을 단순 환산하지 않아야 한다."},
+    {"order": 7, "heading": "깨진 모듈의 납은 어디로 가야 하나", "subtitle": "격리, 파손, 회수 물류와 재사용", "visualAnchor": "18-lead-loop가 납 책임의 네 단계를 닫힌 고리로 보여 준다.", "explanation": "쉽게 말해 정상 봉지, 파손 누출, 회수 물류와 재료 재사용의 네 단계로 나눈다.", "example": "Nature 2025 재활용 연구와 2026년 납 안전성 리뷰를 실제 사례로 비교한다.", "support": "주의할 점은 연구실 회수 공정을 이미 존재하는 생산자 책임 체계로 올려 쓰지 않는 것이다.", "transition": "그래서 다음 절에서는 실내 시험과 회수 설계 뒤에 남은 옥외 모집단을 본다.", "evaluation": "독자가 포집 효율과 포집 수명을 함께 물어야 한다."},
+    {"order": 8, "heading": "실내 시험 뒤에는 여러 기후와 수백 장이 남는다", "subtitle": "bankability는 모집단과 지급능력의 묶음", "visualAnchor": "18-field-validation과 데이터 표가 옥외 시험의 기후·표본·비교군을 보여 준다.", "explanation": "표에서 평균 열화율보다 기후별 하위 꼬리와 제조사 보증 지급능력이 금융 가능성을 결정함을 보여 준다.", "example": "DOE의 20개·1kW 목표와 초기 효율, 열화, 생산, 판매와 보증에 필요한 실제 분포를 표로 정리한다.", "support": "주의할 점은 은행이 최악만 본다고 과장하지 않고 분포·옥외 이력·보증과 회사 능력을 함께 쓰는 것이다.", "transition": "그래서 다음 절에서는 기업 공시에서 공개된 칸과 빈칸을 찾는다.", "evaluation": "독자가 최고 효율 인증서와 대출 가능한 현금흐름을 구분해야 한다."},
+    {"order": 9, "heading": "공시에서 탠덤 매출보다 빈칸을 먼저 찾는다", "subtitle": "직접·인접 증거와 회사 전체 재무", "visualAnchor": "18-company-map과 18-financial-traces가 기술 단계와 재무 범위를 분리한다.", "explanation": "공시에서 한화솔루션, JinkoSolar와 First Solar의 회사 전체 숫자를 투자 여력의 배경으로만 읽는다.", "example": "한화 2,003.77억원, Jinko 기록 갱신과 적자, First Solar의 CdTe 사업과 박막 탠덤을 실제 사례로 분리한다.", "support": "주의할 점은 탠덤 전용 매출·원가·수율·보증충당금 미공개를 결손으로 남기는 것이다.", "transition": "그래서 다음 절에서는 여러 회사의 성과를 합쳐 생기는 오해를 먼저 걷는다.", "evaluation": "독자가 기술 발표와 회사 전체 손익의 귀속 오류를 피해야 한다."},
+    {"order": 10, "heading": "다음 기록보다 네 가지 분포 변화를 본다", "subtitle": "효율, 옥외, 가격과 납 회수", "visualAnchor": "18-scenario-map이 각 사건의 조건, 결과와 반증 신호를 비교한다.", "explanation": "쉽게 말해 하나의 낙관 전망 대신 서로 다른 병목의 변화를 관찰 가능한 지표로 나눈다.", "example": "P10·수율, T90 분포, 탠덤 프리미엄, 포집 수명과 회수율이라는 실제 수치를 본다.", "support": "주의할 점은 각 시나리오에 반증 조건을 두고 최고 효율 갱신만으로 강화하지 않는 것이다.", "transition": "그래서 다음 발표에서는 같은 제품의 분포가 한 생산라인과 한 보증서로 연결되는지 본다.", "evaluation": "독자가 다음 발표에서 어떤 수치가 시나리오를 강화하거나 무효화하는지 말할 수 있어야 한다."}
+  ],
+  "visuals": [
+    {"title": "태양광 현장과 탠덤 셀 단면의 첫 질문", "kind": "hero-raster", "proves": "탠덤은 실리콘을 버리지 않고 얇은 상부층을 더하는 기술이다.", "placement": "본문 도입에서 35.5%와 24.5%를 비교하기 직전", "insertAfter": "frontmatter와 기술이야기 메타데이터가 끝난 직후", "narrativeUse": "현장과 셀 단면을 한 장에 연결한다."},
+    {"title": "기록 셀에서 반복 사업까지의 증거 분포", "kind": "evidence-map", "proves": "다른 회사의 효율·시험·출하는 한 제품의 증거로 합산할 수 없다.", "placement": "1절의 여섯 가지 상용화 질문을 설명하기 직전", "insertAfter": "기록은 셀이 세우고 현장은 분포를 산다는 H2 직후", "narrativeUse": "글 전체 판단 기준을 고정한다."},
+    {"title": "페로브스카이트와 실리콘의 과학 단면 장면", "kind": "scientific-raster", "proves": "상부 페로브스카이트와 하부 실리콘이 물리적으로 겹친다.", "placement": "2절에서 실리콘의 광학 손실을 설명하기 직전", "insertAfter": "한 장의 태양전지가 빛을 두 번 계산한다는 H2 직후", "narrativeUse": "빛 분할을 실제 층 구조로 직관화한다."},
+    {"title": "실리콘 단일접합과 탠덤의 스펙트럼 분할", "kind": "physics-diagram", "proves": "단일 실리콘의 열·투과 손실을 두 밴드갭이 나눠 줄인다.", "placement": "2절에서 밴드갭과 두 재료의 역할을 설명한 문단 뒤", "insertAfter": "실리콘 위에 얇은 발전층을 올린다는 설명 문단 뒤", "narrativeUse": "탠덤의 효율 원인을 설명한다."},
+    {"title": "2단자 직렬 구조와 4단자 독립 구조 비교", "kind": "architecture-comparison", "proves": "전류맞춤과 추가 전극·배선 사이에 교환 관계가 있다.", "placement": "2절에서 두 전기 구조를 소개한 설명 문단 뒤", "insertAfter": "두 층의 전기를 꺼내는 방식을 소개한 문장 뒤", "narrativeUse": "효율 구조와 BOM 구조를 분리한다."},
+    {"title": "산업 웨이퍼를 처리하는 탠덤 파일럿 코팅 라인", "kind": "process-raster", "proves": "산업 웨이퍼에서는 코팅과 검사 장비가 함께 필요하다.", "placement": "3절에서 웨이퍼 한 장의 공정 이동을 설명하기 직전", "insertAfter": "실리콘 피라미드 골짜기가 수율을 바꾼다는 H2 직후", "narrativeUse": "공정 병목을 현장 장면으로 바꾼다."},
+    {"title": "기록 셀에서 산업 형식 모듈까지의 면적 확대", "kind": "scale-diagram", "proves": "면적이 커질수록 중앙값·P10·수율이라는 새 분모가 생긴다.", "placement": "4절에서 면적 확대의 누적 오차를 설명하기 직전", "insertAfter": "1제곱센티미터를 공장으로 복사한다는 H2 직후", "narrativeUse": "기록 셀에서 공장으로 가는 번역 손실을 보여 준다."},
+    {"title": "날씨 스트레스에서 보증 비용까지의 열화 인과 지도", "kind": "causal-diagram", "proves": "빛·열·수분·전압과 음영이 서로 다른 내부 고장을 만든다.", "placement": "5절에서 정오와 장마의 열화 장면을 설명하기 직전", "insertAfter": "페로브스카이트는 물만 무서운 것이 아니라는 H2 직후", "narrativeUse": "열화 목록을 한 모듈의 시간으로 묶는다."},
+    {"title": "대면적 모듈을 시험하는 환경 스트레스 챔버", "kind": "test-raster", "proves": "1,000시간은 통제된 가속시험 공간의 시간이다.", "placement": "6절에서 가속시험의 목적을 설명하기 직전", "insertAfter": "1,000시간을 30년으로 곱할 수 없다는 H2 직후", "narrativeUse": "시험과 옥외의 차이를 공간으로 보여 준다."},
+    {"title": "봉지에서 재료 재사용까지 이어지는 납 책임 고리", "kind": "lifecycle-diagram", "proves": "봉지, 파손, 회수 물류와 재사용이 모두 연결돼야 한다.", "placement": "7절에서 납 안전성의 네 단계를 설명하기 직전", "insertAfter": "깨진 모듈의 납이 어디로 가는지 묻는 H2 직후", "narrativeUse": "환경 문제를 제품과 금융 조건으로 연결한다."},
+    {"title": "복수 기후와 다수 표본을 보는 옥외 검증 현장", "kind": "field-raster", "proves": "여러 기후와 다수 표본의 장기 비교가 남아 있다.", "placement": "8절에서 옥외 시험의 표본과 기후를 설명하기 직전", "insertAfter": "실내 시험 뒤 여러 기후와 수백 장이 남는다는 H2 직후", "narrativeUse": "bankability에 필요한 모집단을 장면화한다."},
+    {"title": "대표 기업별 직접 증거와 공개 결손 비교 지도", "kind": "company-map", "proves": "회사마다 직접 공개 단계와 결손이 다르다.", "placement": "9절에서 LONGi와 Qcells 등 대표 회사를 비교하기 직전", "insertAfter": "공시에서 탠덤 매출보다 빈칸을 찾는다는 H2 직후", "narrativeUse": "회사 로고 나열을 증거 단계 표로 바꾼다."},
+    {"title": "한화솔루션·First Solar·JinkoSolar 재무 흔적", "kind": "financial-small-multiples", "proves": "회사 전체 손익은 탠덤 수익성이 아니라 투자 여력의 배경이다.", "placement": "9절에서 기업별 공개 증거와 결손 표를 설명한 뒤", "insertAfter": "대표 회사의 직접 증거와 공개 결손을 정리한 표 뒤", "narrativeUse": "기술 기록과 재무 귀속 오류를 막는다."},
+    {"title": "효율·옥외·가격·납 회수의 네 관전 시나리오", "kind": "scenario-matrix", "proves": "효율, 옥외, 가격과 납 회수는 서로 다른 조건과 반증 지표를 가진다.", "placement": "마지막 12절에서 네 조건형 시나리오를 풀기 직전", "insertAfter": "다음 기록보다 네 가지 관전 시나리오를 본다는 H2 직후", "narrativeUse": "예언을 검증 가능한 관전판으로 바꾼다."}
+  ],
+  "imagePlan": [
+    {"assetKey": "18-hero", "sourcePolicy": "auto", "slot": "hero", "subject": "태양광 발전소와 엔지니어, 페로브스카이트 상부막과 실리콘 하부 셀의 절개 모듈", "query": "perovskite silicon tandem solar farm cutaway module engineer editorial no logo", "keywords": ["tandem solar", "solar farm", "cutaway"], "placement": "본문 도입에서 35.5% 기록과 24.5% 출하를 비교하기 직전", "narrativeUse": "현장과 셀 단면을 한 질문으로 연다."},
+    {"assetKey": "18-spectrum-cutaway", "sourcePolicy": "auto", "slot": "inline", "subject": "유리 아래 페로브스카이트, 재결합층과 피라미드형 실리콘의 과학 단면", "query": "perovskite silicon tandem cell scientific cutaway textured silicon editorial", "keywords": ["perovskite layer", "textured silicon", "spectrum"], "placement": "2절에서 밴드갭과 스펙트럼 원리를 설명하기 직전", "narrativeUse": "두 발전층이 빛을 나누는 물리 구조를 보여 준다."},
+    {"assetKey": "18-coating-line", "sourcePolicy": "auto", "slot": "inline", "subject": "산업 웨이퍼 코팅 헤드와 계측 장비가 있는 브랜드 없는 파일럿 라인", "query": "tandem solar wafer coating pilot line cleanroom metrology no logo", "keywords": ["coating line", "wafer", "metrology"], "placement": "3절에서 산업 웨이퍼의 코팅과 검사 공정을 설명하기 직전", "narrativeUse": "얇은 막을 반복 생산하는 공장 문제를 장면화한다."},
+    {"assetKey": "18-stress-test", "sourcePolicy": "auto", "slot": "inline", "subject": "응결과 열·자외선·전기 부하가 통제된 모듈 환경시험 챔버", "query": "solar module environmental reliability chamber damp heat UV electrical load editorial", "keywords": ["reliability chamber", "damp heat", "UV"], "placement": "6절에서 1,000시간 가속시험의 범위를 설명하기 직전", "narrativeUse": "가속시험 시간이 옥외 시간과 다른 공간임을 보여 준다."},
+    {"assetKey": "18-field-validation", "sourcePolicy": "auto", "slot": "inline", "subject": "해안·사막 기후의 여러 모듈과 기상 센서가 있는 옥외 검증대", "query": "solar module outdoor field validation coastal desert weather station editorial", "keywords": ["outdoor validation", "weather station", "module population"], "placement": "8절에서 복수 기후와 다수 표본의 옥외 검증을 설명하기 직전", "narrativeUse": "복수 기후와 모집단 데이터가 남았음을 보여 준다."}
+  ],
+  "relatedPosts": {
+    "searches": ["태양광 탠덤", "실리콘 제조 공정", "재생에너지 전력망", "태양광 모듈 수율"],
+    "placementRule": "빛과 실리콘 공정 설명 뒤에는 제조 기술이야기를, 시스템 비용 설명 뒤에는 전력 인프라 기술이야기를 연결한다.",
+    "links": [
+      {"path": "/blog/sand-to-semiconductor", "title": "모래에서 반도체까지", "reason": "실리콘 웨이퍼의 공급망과 제조 공정을 이어 본다.", "placement": "2절에서 실리콘 하부 셀과 밴드갭을 설명한 문단 뒤"},
+      {"path": "/blog/ai-power-transformer-supercycle", "title": "AI 전력망과 변압기 병목", "reason": "부품 효율보다 연결된 시스템 비용이 중요한 사례를 비교한다.", "placement": "4절에서 탠덤 효율과 시스템 설치비의 관계를 설명한 문단 안"}
+    ]
+  },
+  "honestyGuards": [
+    "LONGi 35.5%는 기록 셀이며 발표문에 정확한 셀 면적이 없으므로 상용 모듈 효율로 쓰지 않는다.",
+    "Qcells의 선택된 핵심 스트레스 시험 통과를 25년·30년 옥외 수명 인증이나 GW 양산으로 쓰지 않는다.",
+    "Oxford PV의 첫 출하를 반복 주문·반복 출하·장기 보증과 독립 탠덤 매출의 증거로 올려 쓰지 않는다.",
+    "한화솔루션·JinkoSolar·First Solar의 회사 전체 재무를 탠덤 전용 매출·원가·CAPEX·수익성으로 귀속하지 않는다.",
+    "납 회수 연구의 기술 가능성을 이미 운영되는 상용 회수망과 생산자 책임 체계로 쓰지 않는다."
+  ],
+  "evidenceMap": [
+    {"id": "E1", "claim": "LONGi는 2026년 7월 35.5% 셀, 261㎠ 34.3%, 274㎠ 32.2%, 모듈 31.4%와 29.4%를 발표했다.", "sourceType": "company-official", "sourceRef": "LONGi tandem record release", "period": "2026-07-15", "unit": "PCE", "scope": "회사 발표와 ESTI 인증 설명, 35.5% 셀 정확한 면적은 발표문에 없음", "url": "https://www.longi.com/en/news/crystalline-silicon-perovskite-tandem-solar-cell-new-world-efficiency-2026/"},
+    {"id": "E2", "claim": "Oxford PV와 Fraunhofer ISE는 1.68㎡ 산업 형식 모듈 25%, 421W를 발표했다.", "sourceType": "research-institute", "sourceRef": "Fraunhofer ISE full-sized tandem module", "period": "2024-06-19", "unit": "PCE and W", "scope": "기록 모듈이며 반복 생산·장기 안정성 증거 아님", "url": "https://www.ise.fraunhofer.de/en/press-media/press-releases/2024/oxford-pv-and-fraunhofer-ise-develop-full-sized-tandem-pv-module-with-record-efficiency-of-25-percent.html"},
+    {"id": "E3", "claim": "Oxford PV는 24.5% 72셀 모듈을 미국 고객에게 처음 출하했다.", "sourceType": "company-official", "sourceRef": "Oxford PV first commercial shipment", "period": "2024-09-05", "unit": "PCE", "scope": "첫 출하, 누적 MW·반복 주문·보증 성과 미공개", "url": "https://www.oxfordpv.com/press-releases/oxford-pv-solar-technology-patent"},
+    {"id": "E4", "claim": "Qcells는 전면적 M10 330.56㎠ 탠덤 셀 28.6%를 발표했다.", "sourceType": "company-official", "sourceRef": "Hanwha Qcells M10 tandem cell", "period": "2024-12 이후", "unit": "PCE and area", "scope": "파일럿 셀, 반복 양산 수율 미공개", "url": "https://org-www.hanwha.com/newsroom/news/feature-stories/perovskite-silicon-tandem-cells-move-from-theory-to-reality-with-hanwha-qcells-breakthrough.do"},
+    {"id": "E5", "claim": "Qcells 파일럿 모듈은 UV15, TC200, HF10, DH1000 핵심 시험을 통과했고 TÜV가 표준 준수를 확인했다.", "sourceType": "company-official", "sourceRef": "Hanwha Qcells stability milestone", "period": "2025-05-14", "unit": "stress-test", "scope": "선택된 시험 통과, 25년 수명·완전 형식승인 아님", "url": "https://org-www.hanwha.com/newsroom/news/press-releases/hanwha-qcells-achieves-key-tandem-solar-module-stability-milestone.do"},
+    {"id": "E6", "claim": "DOE는 하이브리드 탠덤 27%, 500㎠ 이상, 4셀 이상, 20개·1kW 초과 옥외 검증 등 초기 목표를 제시한다.", "sourceType": "government", "sourceRef": "DOE summary performance targets", "period": "2026-07 확인", "unit": "R&D target", "scope": "연구개발 평가 목표이며 법규·30년 인증 아님", "url": "https://www.energy.gov/cmei/systems/summary-performance-targets-perovskite-pv-research-development-and-demonstration"},
+    {"id": "E7", "claim": "DOE는 수분·산소·빛·열·전압 안정성과 대면적 제조, 표준화와 최소 20년·선호 30년 수명을 핵심 과제로 든다.", "sourceType": "government", "sourceRef": "DOE perovskite research directions", "period": "2026-07 확인", "unit": "research-roadmap", "scope": "상용화 연구 방향", "url": "https://www.energy.gov/cmei/systems/perovskite-research-directions"},
+    {"id": "E8", "claim": "NREL 모델에서 25% 모듈·미국 연 3GW 공장 가정의 최소 지속가능가격은 2T 0.428달러/W, 4T 0.423달러/W다.", "sourceType": "research-paper", "sourceRef": "NREL technoeconomic analysis", "period": "2025", "unit": "USD/W", "scope": "특정 모델 가정이며 수명·실제 발전량 제외", "url": "https://research-hub.nrel.gov/en/publications/technoeconomic-analysis-of-perovskitesilicon-tandem-solar-modules/"},
+    {"id": "E9", "claim": "NREL은 25%·3GW 기준에서 효율 2.5%포인트 개선이 공장 규모 두 배와 비슷한 비용 절감 효과를 낸다고 설명했다.", "sourceType": "research-institute", "sourceRef": "NREL tandem cost news", "period": "2025-10-14", "unit": "model sensitivity", "scope": "수명과 실제 에너지 생산은 모델 범위 밖", "url": "https://www.nrel.gov/news/detail/press/2025/improving-tandem-efficiency-can-lower-solar-photovoltaic-module-cost-per-watt"},
+    {"id": "E10", "claim": "밴드갭을 맞춘 2T의 연간 스펙트럼 손실은 상대값 약 2%지만 0.1eV 이상 벗어나면 5% 넘는 상대 손실이 생길 수 있다.", "sourceType": "research-paper", "sourceRef": "NREL spectral effects", "period": "2017", "unit": "relative energy efficiency", "scope": "모델 지역과 설계 조건에 한정", "url": "https://research-hub.nrel.gov/en/publications/spectral-effects-on-the-energy-harvesting-efficiency-of-2-and-4-t/"},
+    {"id": "E11", "claim": "2025년 방향성 넓은 밴드갭 연구는 30.78%와 조건별 1,000~1,400시간 안정성 결과를 보고했다.", "sourceType": "research-paper", "sourceRef": "Nature Communications oriented wide-bandgap tandem", "period": "2025-01", "unit": "PCE and hours", "scope": "소형 셀과 명시된 분위기·온도 조건, 옥외 모듈 수명 아님", "url": "https://www.nature.com/articles/s41467-024-55377-6"},
+    {"id": "E12", "claim": "2025년 유연 탠덤 연구는 인증 33.6%, T80 2,000시간 이상과 습열 1,000시간 뒤 90% 유지를 보고했다.", "sourceType": "research-paper", "sourceRef": "Nature flexible tandem", "period": "2025", "unit": "PCE and hours", "scope": "유연 셀 구조와 해당 시험 조건", "url": "https://www.nature.com/articles/s41586-025-09849-4"},
+    {"id": "E13", "claim": "2025년 연구는 수계 공정으로 페로브스카이트 모듈 구성 재료를 회수하는 경로를 보고했다.", "sourceType": "research-paper", "sourceRef": "Nature recycling perovskite modules", "period": "2025", "unit": "recovery-process", "scope": "연구 공정이며 상용 회수망 완성 증거 아님", "url": "https://www.nature.com/articles/s41586-024-08408-7"},
+    {"id": "E14", "claim": "2026년 리뷰는 납 격리, 포집, 회수, 재활용과 생산자 책임을 함께 다뤄야 한다고 정리했다.", "sourceType": "research-review", "sourceRef": "Nature Energy lead safety review", "period": "2026", "unit": "safety-framework", "scope": "정책·기술 제안이며 업계 전체 달성 현황 아님", "url": "https://www.nature.com/articles/s41560-026-02037-2"},
+    {"id": "E15", "claim": "한화솔루션 DART 연구개발표는 2025년 연구개발비 2,003.77억원과 해당 표 기준 3.49%, 탠덤 파일럿 시험생산을 제시한다.", "sourceType": "company-filing", "sourceRef": "한화솔루션 DART 2026Q1 패널", "period": "2025 and 2026Q1", "unit": "KRW and percent", "scope": "표 분모와 회사 전체 연구개발, 탠덤 전용 금액 아님", "url": "https://dart.fss.or.kr/"},
+    {"id": "E16", "claim": "JinkoSolar 2025 20-F는 2025년 탠덤 최고 기록 34.76%와 회사 전체 재무를 공시한다.", "sourceType": "company-filing", "sourceRef": "JinkoSolar 2025 20-F", "period": "FY2025", "unit": "PCE and USD", "scope": "기록과 회사 전체 실적, 탠덤 전용 매출 아님", "url": "https://www.sec.gov/Archives/edgar/data/1481513/000110465926050737/jks-20251231x20f.htm"},
+    {"id": "E17", "claim": "First Solar 2025 10-K는 전용 페로브스카이트 개발라인과 전면적 박막 탠덤 파일럿을 R&D로 설명한다.", "sourceType": "company-filing", "sourceRef": "First Solar 2025 10-K", "period": "FY2025", "unit": "R&D and USD", "scope": "CdTe 중심 회사 전체 실적과 박막 탠덤 R&D, 실리콘 탠덤 아님", "url": "https://www.sec.gov/Archives/edgar/data/1274494/000127449426000021/fslr-20251231.htm"},
+    {"id": "E18", "claim": "DartLab 회사 패널에서 한화솔루션, First Solar, JinkoSolar의 2023~2025 회사 전체 매출·영업이익·현금흐름을 검산했다.", "sourceType": "dartlab-runtime", "sourceRef": "Company.panel IS and CF", "period": "2023-2025", "unit": "KRW and USD", "scope": "회사 전체, 기술 전용 실적 아님", "url": "https://github.com/eddmpython/dartlab"}
+  ],
+  "watchScenarios": [
+    {"id": "efficiency-distribution-narrows", "condition": "대면적 모듈의 중앙값, 하위 10% 값과 다수 로트 수율이 공개된다면", "mechanism": "코팅 균일도와 계면 결함 감소가 챔피언 효율을 반복 제품으로 번역한다.", "outcome": "판매 전력이 늘고 스크랩과 와트당 원가가 내려간다.", "watchMetric": "중앙 효율, P10 효율, 수율, 처리량과 스크랩을 확인한다.", "invalidatedBy": "최고 셀만 오르고 모집단과 로트 데이터가 계속 없으면 분포 개선 증거가 아니다.", "evidenceRefs": ["E1", "E2", "E4", "E8", "E9"]},
+    {"id": "outdoor-tail-widens", "condition": "실내 시험 뒤 복수 기후와 부분음영에서 열화 편차가 커진다면", "mechanism": "이온 이동, 수분 침투와 역바이어스가 모듈 스트링의 하위 꼬리에서 증폭된다.", "outcome": "보증 비용과 인증 기간이 늘고 금융 가능한 발전량이 줄어든다.", "watchMetric": "기후별 표본 수, T90·T80 분포, 핫스폿, 고장 모드와 교체율을 확인한다.", "invalidatedBy": "여러 기후의 다년 모집단에서 실리콘과 비슷한 열화 편차가 확인되면 위험은 약해진다.", "evidenceRefs": ["E5", "E6", "E7", "E11", "E12"]},
+    {"id": "silicon-price-wins", "condition": "실리콘 모듈 가격은 내려가는데 탠덤 처리량과 수율이 개선되지 않는다면", "mechanism": "추가 코팅·전극·검사·봉지 비용이 토지·배선·설치비 절감을 초과한다.", "outcome": "탠덤은 면적 가치가 큰 제한 시장에 머문다.", "watchMetric": "탠덤 가격 프리미엄, W당 설치비 절감, 라인 처리량과 실제 발전량을 확인한다.", "invalidatedBy": "모듈 효율과 반복 수율이 함께 개선돼 프리미엄이 줄면 제한은 무효화된다.", "evidenceRefs": ["E8", "E9", "E18"]},
+    {"id": "lead-loop-financed", "condition": "구매자·보험사·규제자가 포집 수명과 회수 계약을 요구한다면", "mechanism": "봉지, 회수와 생산자 책임이 자재명세서와 금융 조건에 포함된다.", "outcome": "초기 원가는 늘지만 파손과 폐기의 장기 위험은 낮아진다.", "watchMetric": "포집 효율, 포집 수명, 회수율, 회수 비용, 보험과 보증 조건을 확인한다.", "invalidatedBy": "파손 누출과 회수 물류를 포함한 독립 실증에서 위험과 비용이 작게 확인되면 지배적 병목에서 내려온다.", "evidenceRefs": ["E13", "E14"]}
+  ],
+  "reviewGate": {
+    "status": "passed",
+    "finalScore": 96,
+    "requiredRounds": [
+      {"id": "titleHook", "status": "passed"},
+      {"id": "writerPanel", "status": "passed"},
+      {"id": "honestyEvidence", "status": "passed"},
+      {"id": "sectionFlow", "status": "passed"},
+      {"id": "visualStoryPlan", "status": "passed"},
+      {"id": "imageFit", "status": "passed"},
+      {"id": "assetSsot", "status": "passed"},
+      {"id": "scenarioWatch", "status": "passed"},
+      {"id": "readerFit", "status": "passed"},
+      {"id": "reevaluation", "status": "passed"}
+    ],
+    "loopEvidence": {
+      "workflow": "blog_plan_loop.workflow.js",
+      "rounds": [
+        {"round": "research-r1", "planner": "관통선을 35.5% 기록 셀과 24.5% 첫 출하 모듈 사이의 상용화 사다리로 잡았다.", "evaluator": "안정성과 대면적 양산이 문제라는 결론은 익숙하고 2026년의 모듈·시험·출하 진전을 충분히 반영하지 못한다고 평가했다.", "skeptic": "LONGi 효율, Qcells 시험과 Oxford PV 출하는 다른 회사와 다른 BOM이므로 한 제품으로 합산하지 말고 최고값과 분포의 렌즈로 바꾸라고 지적했다.", "decision": "revise", "evaluatorScore": 88},
+        {"round": "distribution-r2", "planner": "관통선을 효율은 최고값, 현장은 분포를 산다로 바꾸고 동일 제품의 대면적·시험·옥외·출하·수율·보증을 추적했다.", "evaluator": "독자성 93점, 공시 정직성 96점으로 통과했지만 기술 검토는 분포 정의, 2T·4T 비용, 납 단계와 직접·인접 기업 경계가 부족해 91점으로 보류했다.", "skeptic": "스펙트럼·로트·열화의 세 분포, 납의 네 단계, 회사별 공개 결손과 시나리오 지표를 조작적으로 정의하라고 요구했다.", "decision": "revise", "evaluatorScore": 91},
+        {"round": "scope-closure-r3", "planner": "세 분포를 초반에 정의하고 2T 전류맞춤과 4T BOM, 납 격리·파손·회수·재사용, 기업 직접·인접·결손, 네 조건형 시나리오를 모두 반영했다.", "evaluator": "기술 정확성 35/36, 증거 경계 35/36, 완결성 26/28로 관통선과 발행 설계가 닫혔다고 평가했다.", "skeptic": "로트 분포와 장기 옥외 모델, 상용 회수망은 공개 결손으로 남겨야 한다는 최종 위험을 확인했다.", "plannerRevision": "공개되지 않은 수율·보증·회수 비용을 추정하지 않고 마지막 관전 지표와 반증 조건으로 남겼다.", "decision": "passed", "evaluatorScore": 96}
+      ]
+    }
+  },
+  "_editorNote": "기술이야기 18편. 최고 효율 한 장과 현장 모집단의 차이를 빛, 공정, 열화, 납, 금융과 공시까지 세 분포로 연결한다. 생성 장면 5장과 SVG 9장을 사용하고 발행 뒤 Hugging Face 미디어 SSOT만 남긴다."
+}
