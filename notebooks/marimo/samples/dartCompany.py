@@ -5,8 +5,8 @@
 """DART 한국 상장기업 탐색. panel 중심 흐름.
 
 공개 호출 계약만 쓴다. `dartlab.{engine}("{axis}", ...)` 와 engines skill 의 capabilityRefs 에
-등재된 `Company.{method}` 뿐이다. 내부 메서드(show · topics · diff · notes · filings · sector)는
-계약이 아니므로 예제에 싣지 않는다.
+등재된 `Company.{method}` 뿐이다. 은퇴한 `show`와 비공개 메서드(topics · diff · notes ·
+filings · sector)는 계약이 아니므로 예제에 싣지 않는다.
 
 실행: marimo edit notebooks/marimo/samples/dartCompany.py
 """

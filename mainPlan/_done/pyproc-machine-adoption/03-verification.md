@@ -12,7 +12,7 @@
 | production build | PASS | worker bundle 포함 static build |
 | pyproc Gate A | PASS | exact versions, C 확장, FS, stdout, branch, ASGI |
 | pyproc Gate B | PASS | 실제 Chromium COI와 JSPI, branch, 2 process lanes |
-| notebook public contract | 기존 실패 | 별도 기업글 2편의 `Company.cik`, `Company.show` |
+| notebook public contract | PASS | 은퇴한 `Company.show`와 비공개 `Company.cik` 예제 제거 |
 
 Gate A에서 DartLab 0.10.9와 `polars`, `pyarrow`, `lxml`, `numpy` import, history branch parent, ASGI `/health` 200을 확인했다.
 
@@ -48,5 +48,4 @@ production build를 Vite preview로 띄우고 실제 Chrome에서 확인했다.
 - process pool은 제품 worker에서 비활성이다. Gate B는 upstream 능력 검증용이다.
 - hard interrupt는 worker를 재시작하므로 현재 세션 변수를 잃는다.
 - 손수 ASGI fallback은 안정화 기간 동안 남아 있다.
-- `tests/audit/notebookContract.py`는 이번 노트북 런타임과 무관한 기업글 2편의 `Company.cik`, `Company.show` 때문에 기존 실패한다. 해당 공개 계약 또는 글 코드는 별도 정리가 필요하다.
 - 기존 Svelte a11y warning과 npm audit 취약점은 이 변경 범위 밖의 기존 부채다.

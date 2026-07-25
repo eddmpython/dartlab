@@ -215,4 +215,4 @@ cleaner = df.filter((pl.col("순이익률")/pl.col("영업이익률")).abs() < 1
 
 ---
 
-> 이 글의 모든 숫자는 2026-04-07 기준 `dartlab.scan()`과 `dartlab.Company("002380").show("IS")` 호출 결과 그대로다. 같은 코드를 [터미널](/blog/dartlab-easy-start)에서 실행하면 같은 결과가 나온다. 검증 가능성이 dartlab의 약속이다.
+> 이 글의 모든 숫자는 2026-04-07 기준 `dartlab.scan()`과 `dartlab.Company("002380").panel("IS")` 호출 결과 그대로다. 같은 코드를 [터미널](/blog/dartlab-easy-start)에서 실행하면 같은 결과가 나온다. 검증 가능성이 dartlab의 약속이다.

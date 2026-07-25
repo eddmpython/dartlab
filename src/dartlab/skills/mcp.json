@@ -100,7 +100,7 @@
         "Company",
         "company",
         "단일 기업 분석",
-        "show",
+        "panel",
         "disclosure",
         "filings",
         "analysis",
@@ -1148,7 +1148,7 @@
         "story.show 응용"
       ],
       "nextSkills": [],
-      "bodyPreview": "## 절차\n\n- 기업 식별과 사용 가능한 Company topic을 확인한다.\n- macro, scan 또는 industry 맥락이 필요한지 reference에서 확인한다.\n- Company.analysis와 원본 show 결과를 실행해 수치 근거를 만든다.\n- 판단 claim은 대상, 기간, metric, value ref에 묶는다.\n\n## 공개 호출 방식\n\n```python\nimport dartlab\n\nc = dartlab.Company(\"005930\")\n# 6 막 인과 chain — 배경/사이클/실적/구조/전망/리스크\nstory_df = c.story(reportType=\"companyCausal\")\nprint(story_df.summaryCard)\n```\n\n\n- `c = dartlab.Company(\"005930\")`\n- `c.story()`\n- `dartlab.story(c)`\n\n## 호출 동작\n\n- analysis, credit, macro, scan, quant 결과를 thesis/evidence/risk/limit 구조로 조립한다. 숫자 계산은 하위 엔진 결과 ref에 묶는다.\n- 실행 전에 target, period/date, metric, "
+      "bodyPreview": "## 절차\n\n- 기업 식별과 사용 가능한 Company topic을 확인한다.\n- macro, scan 또는 industry 맥락이 필요한지 reference에서 확인한다.\n- Company.analysis와 원본 panel 결과를 실행해 수치 근거를 만든다.\n- 판단 claim은 대상, 기간, metric, value ref에 묶는다.\n\n## 공개 호출 방식\n\n```python\nimport dartlab\n\nc = dartlab.Company(\"005930\")\n# 6 막 인과 chain — 배경/사이클/실적/구조/전망/리스크\nstory_df = c.story(reportType=\"companyCausal\")\nprint(story_df.summaryCard)\n```\n\n\n- `c = dartlab.Company(\"005930\")`\n- `c.story()`\n- `dartlab.story(c)`\n\n## 호출 동작\n\n- analysis, credit, macro, scan, quant 결과를 thesis/evidence/risk/limit 구조로 조립한다. 숫자 계산은 하위 엔진 결과 ref에 묶는다.\n- 실행 전에 target, period/date, metric,"
     },
     {
       "id": "engines.story.dartlabStory",
@@ -1652,11 +1652,11 @@
         "1. 목적 — 엔진 end-to-end 통로를 점검한다",
         "2. 점검 범위 — 체크리스트로 간다",
         "Company facade",
-        "show · select",
+        "panel · select",
         "analysis (L2)"
       ],
       "nextSkills": [],
-      "bodyPreview": "## Skill OS 흡수 규칙\n\n- 이 skill이 공식 진입점이다. 삭제된 운영 문서 경로를 다시 안내하지 않는다.\n- 공개 호출 방식과 대표 반환 형태는 skill에서 확인하고, 세부 필드는 capability/docstring으로 검산한다.\n- 분석이나 변경 결과는 ref, 실행 로그, 테스트 결과로 검증한다.\n\n## 실행 순서\n\n- 1. 목적 — 엔진 end-to-end 통로를 점검한다 기준을 확인한다.\n- 2. 점검 범위 — 체크리스트로 간다 기준을 확인한다.\n- Company facade 기준을 확인한다.\n- show · select 기준을 확인한다.\n- analysis (L2) 기준을 확인한다.\n- Company 생성 → show · select · analysis · credit · scan · story · macro · gather · quant 전체 통로 작동 확인.\n- 주요 종목 (KR + US) 에서 반환값이 기대 형식인지.\n- 새 기능 추가·데이터 갱신·리팩토링 후 회귀 감지.\n- AI audit 전에 선행 점검 (엔진 깨진 채 AI 돌리면 무의미).\n- AI 답변 품질 audit은 자동 점수로 통과 처리하지 않는다. `/api/a"
+      "bodyPreview": "## Skill OS 흡수 규칙\n\n- 이 skill이 공식 진입점이다. 삭제된 운영 문서 경로를 다시 안내하지 않는다.\n- 공개 호출 방식과 대표 반환 형태는 skill에서 확인하고, 세부 필드는 capability/docstring으로 검산한다.\n- 분석이나 변경 결과는 ref, 실행 로그, 테스트 결과로 검증한다.\n\n## 실행 순서\n\n- 1. 목적 — 엔진 end-to-end 통로를 점검한다 기준을 확인한다.\n- 2. 점검 범위 — 체크리스트로 간다 기준을 확인한다.\n- Company facade 기준을 확인한다.\n- panel · select 기준을 확인한다.\n- analysis (L2) 기준을 확인한다.\n- Company 생성 → panel · select · analysis · credit · scan · story · macro · gather · quant 전체 통로 작동 확인.\n- 주요 종목 (KR + US) 에서 반환값이 기대 형식인지.\n- 새 기능 추가·데이터 갱신·리팩토링 후 회귀 감지.\n- AI audit 전에 선행 점검 (엔진 깨진 채 AI 돌리면 무의미).\n- AI 답변 품질 audit은 자동 점수로 통과 처리하지 않는다. `/api"
     },
     {
       "id": "operation.extendSkills",
@@ -5350,7 +5350,7 @@
         "start.dartlabSkillOs",
         "runtime.channel"
       ],
-      "bodyPreview": "## endpoint 카탈로그\n\n| 경로 | method | 매핑 |\n|---|---|---|\n| `/v1/company/{code}/show/{topic}` | GET | Company.show |\n| `/v1/company/{code}/analysis/{axis}` | GET | Company.analysis |\n| `/v1/scan/{axis}` | GET | scan |\n| `/v1/macro/{axis}` | GET | dartlab.macro |\n| `/v1/quant/{axis}` | GET | dartlab.quant |\n| `/v1/search` | GET | dartlab.search |\n| `/v1/recipe/{id}/execute` | POST | recipe execute |\n| `/v1/skills` | GET | listSkills |\n| `/v1/skill/{id}` | GET | getSkill |\n\n## OpenAPI 3.0 YAML (snippet)\n\n```yaml\nopenapi: 3.0.0\ninfo:\n  title: dartlab API\n  version: 0.10.3\npaths:\n  /v1/company/{code}/s"
+      "bodyPreview": "## endpoint 카탈로그\n\n| 경로 | method | 매핑 |\n|---|---|---|\n| `/v1/company/{code}/show/{topic}` | GET | Company.panel (호환 URL) |\n| `/v1/company/{code}/analysis/{axis}` | GET | Company.analysis |\n| `/v1/scan/{axis}` | GET | scan |\n| `/v1/macro/{axis}` | GET | dartlab.macro |\n| `/v1/quant/{axis}` | GET | dartlab.quant |\n| `/v1/search` | GET | dartlab.search |\n| `/v1/recipe/{id}/execute` | POST | recipe execute |\n| `/v1/skills` | GET | listSkills |\n| `/v1/skill/{id}` | GET | getSkill |\n\n## OpenAPI 3.0 YAML (snippet)\n\n```yaml\nopenapi: 3.0.0\ninfo:\n  title: dartlab API\n  version: 0.10.3\npaths:\n  /v1/compan"
     },
     {
       "id": "start.quickStart",

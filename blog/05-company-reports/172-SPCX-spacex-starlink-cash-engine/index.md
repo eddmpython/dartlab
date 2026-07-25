@@ -398,16 +398,21 @@ IPO가 주는 가장 큰 자산은 단순한 현금 잔액보다 시간이다. 2
 
 ### 직접 확인한 세 단계
 
-첫 번째 셀은 티커가 어떤 회사와 SEC 식별번호로 연결되는지 확인한다. 미국 공시의 CIK가 낯설다면 [EDGAR를 처음부터 읽는 법](/blog/everything-about-edgar)에서 티커와 회사 및 공시의 연결 구조를 먼저 볼 수 있다.
+첫 번째 셀은 티커가 어떤 회사와 SEC 식별번호로 연결되는지 확인한다. CIK는 `Company`의 공개 속성이 아니므로 `c.cik`처럼 읽지 않고, 공개 회사 목록의 `cik` 열에서 조회한다. 미국 공시의 CIK가 낯설다면 [EDGAR를 처음부터 읽는 법](/blog/everything-about-edgar)에서 티커와 회사 및 공시의 연결 구조를 먼저 볼 수 있다.
 
 ```python
 import dartlab
+import polars as pl
 
-c = dartlab.Company("SPCX")
-(c.corpName, c.market, c.cik)
+identity = (
+    dartlab.listing(market="US")
+    .filter(pl.col("종목코드") == "SPCX")
+    .select("종목코드", "회사명", "시장구분", "cik")
+)
+identity
 ```
 
-결과는 `SPACE EXPLORATION TECHNOLOGIES CORP`, `US`, `0001181412`다. 이름이 비슷한 우주 회사나 상장 전 사모 가격을 잘못 붙이지 않았는지 먼저 확인한 것이다.
+결과 행은 `SPCX`, `SPACE EXPLORATION TECHNOLOGIES CORP`, 상장 시장, `0001181412`를 함께 보여준다. 이름이 비슷한 우주 회사나 상장 전 사모 가격을 잘못 붙이지 않았는지 먼저 확인한 것이다.
 
 두 번째 셀은 상장 뒤 일별 가격을 같은 시장과 통화로 받는다. 이 글에서는 2026년 6월 12일 첫 거래부터 7월 21일까지의 시가, 고가, 저가, 종가와 거래량을 사용했다.
 

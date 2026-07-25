@@ -12,7 +12,7 @@ whenToUse:
   - 1. 목적 — 엔진 end-to-end 통로를 점검한다
   - 2. 점검 범위 — 체크리스트로 간다
   - Company facade
-  - show · select
+  - panel · select
   - analysis (L2)
 inputs:
   - 작업 목적
@@ -33,9 +33,9 @@ procedure:
   - 1. 목적 — 엔진 end-to-end 통로를 점검한다 기준을 확인한다.
   - 2. 점검 범위 — 체크리스트로 간다 기준을 확인한다.
   - Company facade 기준을 확인한다.
-  - show · select 기준을 확인한다.
+  - panel · select 기준을 확인한다.
   - analysis (L2) 기준을 확인한다.
-  - Company 생성 → show · select · analysis · credit · scan · story · macro · gather · quant 전체 통로 작동 확인.
+  - Company 생성 → panel · select · analysis · credit · scan · story · macro · gather · quant 전체 통로 작동 확인.
   - 주요 종목 (KR + US) 에서 반환값이 기대 형식인지.
   - 새 기능 추가·데이터 갱신·리팩토링 후 회귀 감지.
   - AI audit 전에 선행 점검 (엔진 깨진 채 AI 돌리면 무의미).
@@ -91,9 +91,9 @@ testUniverse:
 - 1. 목적 — 엔진 end-to-end 통로를 점검한다 기준을 확인한다.
 - 2. 점검 범위 — 체크리스트로 간다 기준을 확인한다.
 - Company facade 기준을 확인한다.
-- show · select 기준을 확인한다.
+- panel · select 기준을 확인한다.
 - analysis (L2) 기준을 확인한다.
-- Company 생성 → show · select · analysis · credit · scan · story · macro · gather · quant 전체 통로 작동 확인.
+- Company 생성 → panel · select · analysis · credit · scan · story · macro · gather · quant 전체 통로 작동 확인.
 - 주요 종목 (KR + US) 에서 반환값이 기대 형식인지.
 - 새 기능 추가·데이터 갱신·리팩토링 후 회귀 감지.
 - AI audit 전에 선행 점검 (엔진 깨진 채 AI 돌리면 무의미).

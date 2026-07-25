@@ -260,7 +260,7 @@
         "Company",
         "company",
         "단일 기업 분석",
-        "show",
+        "panel",
         "disclosure",
         "filings",
         "analysis",
@@ -349,7 +349,7 @@
       "visualGuidance": [],
       "failureModes": [
         "종목코드/market을 확정하지 않고 분석을 시작함",
-        "show topic과 analysis axis를 혼동함",
+        "panel topic과 analysis axis를 혼동함",
         "원자료 조회 결과를 분석 결론으로 바로 말함"
       ],
       "forbidden": [
@@ -5089,7 +5089,7 @@
     },
     {
       "id": "engines.story.companyCausal",
-      "bodyPreview": "## 절차\n\n- 기업 식별과 사용 가능한 Company topic을 확인한다.\n- macro, scan 또는 industry 맥락이 필요한지 reference에서 확인한다.\n- Company.analysis와 원본 show 결과를 실행해 수치 근거를 만든다.\n- 판단 claim은 대상, 기간, metric, value ref에 묶는다.\n\n## 공개 호출 방식\n\n```python\nimport dartlab\n\nc = dartlab.Company(\"005930\")\n# 6 막 인과 chain — 배경/사이클/실적/구조/전망/리스크\nstory_df = c.story(reportType=\"companyCausal\")\nprint(story_df.summaryCard)\n```\n\n\n- `c = dartlab.Company(\"005930\")`\n- `c.story()`\n- `dartlab.story(c)`\n\n## 호출 동작\n\n- analysis, credit, macro, scan, quant 결과를 thesis/evidence/risk/limit 구조로 조립한다. 숫자 계산은 하위 엔진 결과 ref에 묶는다.\n- 실행 전에 target, period/date, metric, source 또는 universe를 확인한다.\n- 데이터가 없거나 runtime 제한이 있으면 값을 추정하지 않고 한계와 필요한 다음 수집 경로를 말한다.\n\n## 대표 반환 형태\n\n- report dict 또는 block list를 반환한다. 핵심 키는 thesis, evidenceBlocks, riskBlocks, limits, sourceRefs다.\n- 전체 세부 필드는 공개 docstring/capability와 동기화한다. 코드/API 변경으로 이 설명이 오래되면 skill 갱신 누락으로 본다.\n\n## 기본 검증\n\n- 실행 결과는 tableRef, valueRef, dateRef, executionRef 중 필요한 근거로 남긴다.\n- 최종 판단의 숫자 claim은 해당 table/value ref에 직접 묶는다.\n- 스킬과 실제 공개 API의 호출 방식, 대표 반환 형태, 오류/제한 동작이 다르면 같은 변경에서 스킬을 갱신한다.",
+      "bodyPreview": "## 절차\n\n- 기업 식별과 사용 가능한 Company topic을 확인한다.\n- macro, scan 또는 industry 맥락이 필요한지 reference에서 확인한다.\n- Company.analysis와 원본 panel 결과를 실행해 수치 근거를 만든다.\n- 판단 claim은 대상, 기간, metric, value ref에 묶는다.\n\n## 공개 호출 방식\n\n```python\nimport dartlab\n\nc = dartlab.Company(\"005930\")\n# 6 막 인과 chain — 배경/사이클/실적/구조/전망/리스크\nstory_df = c.story(reportType=\"companyCausal\")\nprint(story_df.summaryCard)\n```\n\n\n- `c = dartlab.Company(\"005930\")`\n- `c.story()`\n- `dartlab.story(c)`\n\n## 호출 동작\n\n- analysis, credit, macro, scan, quant 결과를 thesis/evidence/risk/limit 구조로 조립한다. 숫자 계산은 하위 엔진 결과 ref에 묶는다.\n- 실행 전에 target, period/date, metric, source 또는 universe를 확인한다.\n- 데이터가 없거나 runtime 제한이 있으면 값을 추정하지 않고 한계와 필요한 다음 수집 경로를 말한다.\n\n## 대표 반환 형태\n\n- report dict 또는 block list를 반환한다. 핵심 키는 thesis, evidenceBlocks, riskBlocks, limits, sourceRefs다.\n- 전체 세부 필드는 공개 docstring/capability와 동기화한다. 코드/API 변경으로 이 설명이 오래되면 skill 갱신 누락으로 본다.\n\n## 기본 검증\n\n- 실행 결과는 tableRef, valueRef, dateRef, executionRef 중 필요한 근거로 남긴다.\n- 최종 판단의 숫자 claim은 해당 table/value ref에 직접 묶는다.\n- 스킬과 실제 공개 API의 호출 방식, 대표 반환 형태, 오류/제한 동작이 다르면 같은 변경에서 스킬을 갱신한다.",
       "title": "Story Company Causal — 6 막 인과",
       "category": "engines",
       "categoryTitle": "Engines",
@@ -5121,7 +5121,7 @@
       "procedure": [
         "기업 식별과 사용 가능한 Company topic을 확인한다.",
         "macro, scan 또는 industry 맥락이 필요한지 reference에서 확인한다.",
-        "Company.analysis와 원본 show 결과를 실행해 수치 근거를 만든다.",
+        "Company.analysis와 원본 panel 결과를 실행해 수치 근거를 만든다.",
         "판단 claim은 대상, 기간, metric, value ref에 묶는다.",
         "`c = dartlab.Company(\"005930\")`",
         "`c.story()`",
@@ -7942,7 +7942,7 @@
     },
     {
       "id": "operation.engineAudit",
-      "bodyPreview": "## Skill OS 흡수 규칙\n\n- 이 skill이 공식 진입점이다. 삭제된 운영 문서 경로를 다시 안내하지 않는다.\n- 공개 호출 방식과 대표 반환 형태는 skill에서 확인하고, 세부 필드는 capability/docstring으로 검산한다.\n- 분석이나 변경 결과는 ref, 실행 로그, 테스트 결과로 검증한다.\n\n## 실행 순서\n\n- 1. 목적 — 엔진 end-to-end 통로를 점검한다 기준을 확인한다.\n- 2. 점검 범위 — 체크리스트로 간다 기준을 확인한다.\n- Company facade 기준을 확인한다.\n- show · select 기준을 확인한다.\n- analysis (L2) 기준을 확인한다.\n- Company 생성 → show · select · analysis · credit · scan · story · macro · gather · quant 전체 통로 작동 확인.\n- 주요 종목 (KR + US) 에서 반환값이 기대 형식인지.\n- 새 기능 추가·데이터 갱신·리팩토링 후 회귀 감지.\n- AI audit 전에 선행 점검 (엔진 깨진 채 AI 돌리면 무의미).\n- AI 답변 품질 audit은 자동 점수로 통과 처리하지 않는다. `/api/ask` 서버 경유 원문 답변, refs, events, meta를 저장한 뒤 사람이 직접 읽어 P/F와 root cause를 기록한다.\n- 실패 root cause는 `skillSearch`, `generatedSpecSearch`, `planEvidence`, `engineCall`, `runPython`, `verifyAnswer`, `composeAnswer`, `publicEvent/UI` 중 하나로 귀속한다.\n- 직접 원문 review 전에는 “품질 통과” 또는 “완료”를 주장하지 않는다.\n\n## 실행 스크립트\n\n| 스크립트 | 역할 |\n|---|---|\n| `tests/ai/runners/engineAudit.py` | dartlab 엔진 end-to-end 기능 점검 batch runner. `--stock 005930` 단일, `--quick` 핵심만, 인자 없으면 전체 종목. 결과 `data/audit/engine/{YYYY-MM-DD}/{stockCode}.json` + `report.md`. AI audit 선행 점검용 — 엔진 깨진 채 AI 돌리면 무의미 |",
+      "bodyPreview": "## Skill OS 흡수 규칙\n\n- 이 skill이 공식 진입점이다. 삭제된 운영 문서 경로를 다시 안내하지 않는다.\n- 공개 호출 방식과 대표 반환 형태는 skill에서 확인하고, 세부 필드는 capability/docstring으로 검산한다.\n- 분석이나 변경 결과는 ref, 실행 로그, 테스트 결과로 검증한다.\n\n## 실행 순서\n\n- 1. 목적 — 엔진 end-to-end 통로를 점검한다 기준을 확인한다.\n- 2. 점검 범위 — 체크리스트로 간다 기준을 확인한다.\n- Company facade 기준을 확인한다.\n- panel · select 기준을 확인한다.\n- analysis (L2) 기준을 확인한다.\n- Company 생성 → panel · select · analysis · credit · scan · story · macro · gather · quant 전체 통로 작동 확인.\n- 주요 종목 (KR + US) 에서 반환값이 기대 형식인지.\n- 새 기능 추가·데이터 갱신·리팩토링 후 회귀 감지.\n- AI audit 전에 선행 점검 (엔진 깨진 채 AI 돌리면 무의미).\n- AI 답변 품질 audit은 자동 점수로 통과 처리하지 않는다. `/api/ask` 서버 경유 원문 답변, refs, events, meta를 저장한 뒤 사람이 직접 읽어 P/F와 root cause를 기록한다.\n- 실패 root cause는 `skillSearch`, `generatedSpecSearch`, `planEvidence`, `engineCall`, `runPython`, `verifyAnswer`, `composeAnswer`, `publicEvent/UI` 중 하나로 귀속한다.\n- 직접 원문 review 전에는 “품질 통과” 또는 “완료”를 주장하지 않는다.\n\n## 실행 스크립트\n\n| 스크립트 | 역할 |\n|---|---|\n| `tests/ai/runners/engineAudit.py` | dartlab 엔진 end-to-end 기능 점검 batch runner. `--stock 005930` 단일, `--quick` 핵심만, 인자 없으면 전체 종목. 결과 `data/audit/engine/{YYYY-MM-DD}/{stockCode}.json` + `report.md`. AI audit 선행 점검용 — 엔진 깨진 채 AI 돌리면 무의미 |",
       "title": "Engine Audit — 엔진 기능 점검 규격",
       "category": "operation",
       "categoryTitle": "Operation",
@@ -7955,7 +7955,7 @@
         "1. 목적 — 엔진 end-to-end 통로를 점검한다",
         "2. 점검 범위 — 체크리스트로 간다",
         "Company facade",
-        "show · select",
+        "panel · select",
         "analysis (L2)"
       ],
       "inputs": [
@@ -7989,9 +7989,9 @@
         "1. 목적 — 엔진 end-to-end 통로를 점검한다 기준을 확인한다.",
         "2. 점검 범위 — 체크리스트로 간다 기준을 확인한다.",
         "Company facade 기준을 확인한다.",
-        "show · select 기준을 확인한다.",
+        "panel · select 기준을 확인한다.",
         "analysis (L2) 기준을 확인한다.",
-        "Company 생성 → show · select · analysis · credit · scan · story · macro · gather · quant 전체 통로 작동 확인.",
+        "Company 생성 → panel · select · analysis · credit · scan · story · macro · gather · quant 전체 통로 작동 확인.",
         "주요 종목 (KR + US) 에서 반환값이 기대 형식인지.",
         "새 기능 추가·데이터 갱신·리팩토링 후 회귀 감지.",
         "AI audit 전에 선행 점검 (엔진 깨진 채 AI 돌리면 무의미)."
@@ -12215,7 +12215,7 @@
     },
     {
       "id": "recipes.fundamental.governance.relatedPartyTransactionShare",
-      "bodyPreview": "## 공개 호출 방식\n\n```python\nimport dartlab\nimport polars as pl\n\ntarget = \"005930\"\nc = dartlab.Company(target)\n\ntry:\n    rpt_rows = c.gather(\"relatedPartyTransactions\").to_dicts()\nexcept Exception:\n    rpt_rows = []\n\ntry:\n    rev_rows = c.panel(\"revenue\").to_dicts()\n    rev_by_year = {str(r.get(\"year\"))[:4]: float(r.get(\"revenue\") or 0) for r in rev_rows}\nexcept Exception:\n    rev_by_year = {}\n\naudit = []\nfor r in sorted(rpt_rows, key=lambda x: str(x.get(\"year\") or \"\")):\n    yr = str(r.get(\"year\"))[:4]\n    sales_to_rp = float(r.get(\"salesToRelated\") or 0)\n    purch_from_rp = float(r.get(\"purchasesFromRelated\") or 0)\n    total_rev = rev_by_year.get(yr, 0)\n    audit.append({\n        \"year\": yr,\n        \"salesToRpPct\": sales_to_rp / total_rev if total_rev else None,\n        \"purchPct\": purch_from_rp / total_rev if total_rev else None,\n        \"absoluteSales\": sales_to_rp,\n    })\n\ntable = pl.DataFrame(audit) if audit else pl.DataFrame(\n    schema={\"year\": pl.Utf8, \"salesToRpPct\": pl.Float64, \"purchPct\": pl.Float64, \"absoluteSales\": pl.Float64}\n)\n\nemit_result(\n    table=table,\n    values={\"years\": table.height,\n            \"latestSalesPct\": float(table[\"salesToRpPct\"].drop_nulls().tail(1)[0]) if table[\"salesToRpPct\"].drop_nulls().len() else None},\n    date=str(table[\"year\"].max()) if table.height else None,\n    sources=[\"dartlab://gather/relatedPartyTransactions\", \"dartlab://show/revenue\"],\n)\n```\n\n## 호출 동작\n\n### 1. 결론 도출\n\nsalesToRpPct + purchPct 추세 단정. 예: \"5y 추세: salesToRpPct 24% → 31% (",
+      "bodyPreview": "## 공개 호출 방식\n\n```python\nimport dartlab\nimport polars as pl\n\ntarget = \"005930\"\nc = dartlab.Company(target)\n\ntry:\n    rpt_rows = c.gather(\"relatedPartyTransactions\").to_dicts()\nexcept Exception:\n    rpt_rows = []\n\ntry:\n    rev_rows = c.panel(\"revenue\").to_dicts()\n    rev_by_year = {str(r.get(\"year\"))[:4]: float(r.get(\"revenue\") or 0) for r in rev_rows}\nexcept Exception:\n    rev_by_year = {}\n\naudit = []\nfor r in sorted(rpt_rows, key=lambda x: str(x.get(\"year\") or \"\")):\n    yr = str(r.get(\"year\"))[:4]\n    sales_to_rp = float(r.get(\"salesToRelated\") or 0)\n    purch_from_rp = float(r.get(\"purchasesFromRelated\") or 0)\n    total_rev = rev_by_year.get(yr, 0)\n    audit.append({\n        \"year\": yr,\n        \"salesToRpPct\": sales_to_rp / total_rev if total_rev else None,\n        \"purchPct\": purch_from_rp / total_rev if total_rev else None,\n        \"absoluteSales\": sales_to_rp,\n    })\n\ntable = pl.DataFrame(audit) if audit else pl.DataFrame(\n    schema={\"year\": pl.Utf8, \"salesToRpPct\": pl.Float64, \"purchPct\": pl.Float64, \"absoluteSales\": pl.Float64}\n)\n\nemit_result(\n    table=table,\n    values={\"years\": table.height,\n            \"latestSalesPct\": float(table[\"salesToRpPct\"].drop_nulls().tail(1)[0]) if table[\"salesToRpPct\"].drop_nulls().len() else None},\n    date=str(table[\"year\"].max()) if table.height else None,\n    sources=[\"dartlab://gather/relatedPartyTransactions\", \"dartlab://panel/revenue\"],\n)\n```\n\n## 호출 동작\n\n### 1. 결론 도출\n\nsalesToRpPct + purchPct 추세 단정. 예: \"5y 추세: salesToRpPct 24% → 31% ",
       "title": "특수관계자 매출·매입 비중 추세",
       "category": "recipes",
       "categoryTitle": "Recipes",
@@ -19013,7 +19013,7 @@
     },
     {
       "id": "recipes.macro.companyMacroPathProjection",
-      "bodyPreview": "## 공개 호출 방식\n\n```python\nimport dartlab\nimport polars as pl\n\ntarget = \"005930\"\nc = dartlab.Company(target)\n\ndef latest_period(df):\n    if hasattr(df, \"columns\"):\n        for col in df.columns:\n            if str(col)[:4].isdigit():\n                return str(col)\n    return \"latest\"\n\ndef compact(obj):\n    if isinstance(obj, pl.DataFrame):\n        return {\"type\": \"DataFrame\", \"rows\": obj.height, \"columns\": obj.width}\n    if isinstance(obj, dict):\n        return {\"type\": \"dict\", \"keys\": list(obj.keys())[:8]}\n    return {\"type\": type(obj).__name__}\n\nforecast = c.analysis(\"growth\")\nmacro_sensitivity = c.analysis(\"macroSensitivity\")\nvaluation_band = c.analysis(\"valuationBand\")\nscenario = dartlab.macro(\"scenario\", market=\"KR\")\nbs = c.panel(\"BS\", freq=\"Y\")\n\nemit_result(\n    table=[\n        {\"step\": \"companyGrowth\", \"result\": compact(forecast)},\n        {\"step\": \"macroSensitivity\", \"result\": compact(macro_sensitivity)},\n        {\"step\": \"scenario\", \"result\": compact(scenario)},\n        {\"step\": \"valuationBand\", \"result\": compact(valuation_band)},\n    ],\n    values={\"target\": target, \"pathSteps\": 4, \"scenarioReady\": compact(scenario)[\"type\"] != \"NoneType\"},\n    date=latest_period(bs),\n    sources=[\"dartlab://company/show\", \"dartlab://company/forecast\", \"dartlab://macro/scenario\"],\n)\n```\n\n## 호출 동작\n\n### 1. 결론 도출\n\n146 시나리오 fair value 분포 + probAboveCurrent 단정. 예: \"005930 현재가 78,000 / p25 fair=72,500 / p50=82,300 / p75=94,100 / probAboveCurrent=0.62 → median fair value > 현재가 (5.5% 상회) + 62% ",
+      "bodyPreview": "## 공개 호출 방식\n\n```python\nimport dartlab\nimport polars as pl\n\ntarget = \"005930\"\nc = dartlab.Company(target)\n\ndef latest_period(df):\n    if hasattr(df, \"columns\"):\n        for col in df.columns:\n            if str(col)[:4].isdigit():\n                return str(col)\n    return \"latest\"\n\ndef compact(obj):\n    if isinstance(obj, pl.DataFrame):\n        return {\"type\": \"DataFrame\", \"rows\": obj.height, \"columns\": obj.width}\n    if isinstance(obj, dict):\n        return {\"type\": \"dict\", \"keys\": list(obj.keys())[:8]}\n    return {\"type\": type(obj).__name__}\n\nforecast = c.analysis(\"growth\")\nmacro_sensitivity = c.analysis(\"macroSensitivity\")\nvaluation_band = c.analysis(\"valuationBand\")\nscenario = dartlab.macro(\"scenario\", market=\"KR\")\nbs = c.panel(\"BS\", freq=\"Y\")\n\nemit_result(\n    table=[\n        {\"step\": \"companyGrowth\", \"result\": compact(forecast)},\n        {\"step\": \"macroSensitivity\", \"result\": compact(macro_sensitivity)},\n        {\"step\": \"scenario\", \"result\": compact(scenario)},\n        {\"step\": \"valuationBand\", \"result\": compact(valuation_band)},\n    ],\n    values={\"target\": target, \"pathSteps\": 4, \"scenarioReady\": compact(scenario)[\"type\"] != \"NoneType\"},\n    date=latest_period(bs),\n    sources=[\"dartlab://company/panel\", \"dartlab://company/forecast\", \"dartlab://macro/scenario\"],\n)\n```\n\n## 호출 동작\n\n### 1. 결론 도출\n\n146 시나리오 fair value 분포 + probAboveCurrent 단정. 예: \"005930 현재가 78,000 / p25 fair=72,500 / p50=82,300 / p75=94,100 / probAboveCurrent=0.62 → median fair value > 현재가 (5.5% 상회) + 62%",
       "title": "회사 P&L × 매크로 시나리오 grid → 적정가치 분포 (p25/50/75)",
       "category": "recipes",
       "categoryTitle": "Recipes",
@@ -29193,7 +29193,7 @@
     },
     {
       "id": "start.openApiSpec",
-      "bodyPreview": "## endpoint 카탈로그\n\n| 경로 | method | 매핑 |\n|---|---|---|\n| `/v1/company/{code}/show/{topic}` | GET | Company.show |\n| `/v1/company/{code}/analysis/{axis}` | GET | Company.analysis |\n| `/v1/scan/{axis}` | GET | scan |\n| `/v1/macro/{axis}` | GET | dartlab.macro |\n| `/v1/quant/{axis}` | GET | dartlab.quant |\n| `/v1/search` | GET | dartlab.search |\n| `/v1/recipe/{id}/execute` | POST | recipe execute |\n| `/v1/skills` | GET | listSkills |\n| `/v1/skill/{id}` | GET | getSkill |\n\n## OpenAPI 3.0 YAML (snippet)\n\n```yaml\nopenapi: 3.0.0\ninfo:\n  title: dartlab API\n  version: 0.10.3\npaths:\n  /v1/company/{code}/show/{topic}:\n    get:\n      parameters:\n        - name: code\n          in: path\n          required: true\n          schema: {type: string, pattern: \"^[0-9]{6}$\"}\n        - name: topic\n          in: path\n          required: true\n          schema: {type: string, enum: [BS, IS, CF, CIS, SCE]}\n      responses:\n        200:\n          description: success\n          content:\n            application/json:\n              schema:\n                $ref: \"#/components/schemas/CompanyShowResult\"\n```\n\n## 강행 룰\n\n1. 모든 endpoint OpenAPI YAML 작성 (자동 생성 X — 사람 작성).\n2. error code 표준 (400/401/404/429/500).\n3. rate limit (per-API-key, per-IP).\n4. response 단위 dateRef + evidence ref 동행.\n\n## 기본 검증\n\n- YAML 정합 (swagger-cli validate).\n- 모든 endpoint test 통과 (smoke).\n- rate limit metric.",
+      "bodyPreview": "## endpoint 카탈로그\n\n| 경로 | method | 매핑 |\n|---|---|---|\n| `/v1/company/{code}/show/{topic}` | GET | Company.panel (호환 URL) |\n| `/v1/company/{code}/analysis/{axis}` | GET | Company.analysis |\n| `/v1/scan/{axis}` | GET | scan |\n| `/v1/macro/{axis}` | GET | dartlab.macro |\n| `/v1/quant/{axis}` | GET | dartlab.quant |\n| `/v1/search` | GET | dartlab.search |\n| `/v1/recipe/{id}/execute` | POST | recipe execute |\n| `/v1/skills` | GET | listSkills |\n| `/v1/skill/{id}` | GET | getSkill |\n\n## OpenAPI 3.0 YAML (snippet)\n\n```yaml\nopenapi: 3.0.0\ninfo:\n  title: dartlab API\n  version: 0.10.3\npaths:\n  /v1/company/{code}/show/{topic}:\n    get:\n      parameters:\n        - name: code\n          in: path\n          required: true\n          schema: {type: string, pattern: \"^[0-9]{6}$\"}\n        - name: topic\n          in: path\n          required: true\n          schema: {type: string, enum: [BS, IS, CF, CIS, SCE]}\n      responses:\n        200:\n          description: success\n          content:\n            application/json:\n              schema:\n                $ref: \"#/components/schemas/CompanyShowResult\"\n```\n\n## 강행 룰\n\n1. 모든 endpoint OpenAPI YAML 작성 (자동 생성 X — 사람 작성).\n2. error code 표준 (400/401/404/429/500).\n3. rate limit (per-API-key, per-IP).\n4. response 단위 dateRef + evidence ref 동행.\n\n## 기본 검증\n\n- YAML 정합 (swagger-cli validate).\n- 모든 endpoint test 통과 (smoke).\n- rate limit metric.",
       "title": "OpenAPI Spec — public REST 진입점",
       "category": "start",
       "categoryTitle": "Start",

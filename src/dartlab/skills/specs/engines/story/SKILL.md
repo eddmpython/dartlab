@@ -240,7 +240,7 @@ story 답변은 `target` · `reportType` · `template` · 모든 block 의 `tabl
 
 - 기업 식별과 사용 가능한 Company topic을 확인한다.
 - macro, scan 또는 industry 맥락이 필요한지 reference에서 확인한다.
-- Company.analysis와 원본 show 결과를 실행해 수치 근거를 만든다.
+- Company.analysis와 원본 panel 결과를 실행해 수치 근거를 만든다.
 - 판단 claim은 대상, 기간, metric, value ref에 묶는다.
 
 ## 공개 호출 방식

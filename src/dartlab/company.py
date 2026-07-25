@@ -41,11 +41,11 @@ def Company(stockCode: str) -> CompanyProtocol:
 
     Capabilities:
         - 종목 파사드 하나로 엔진 전수 접근: analysis · credit · quant · macro ·
-          industry · gather · show. 엔진 이름만 기억하면 됨.
+          industry · gather · panel. 엔진 이름만 기억하면 됨.
         - 종목코드 ("005930"), 회사명 ("삼성전자"), 영문 ticker ("AAPL") 모두 지원
         - canHandle() 체인: provider priority 순 자동 라우팅 (DART → EDGAR)
         - 새 국가 추가 시 이 파일 수정 불필요 — provider 패키지만 추가
-        - 핵심 인터페이스: show(topic) / index / trace(topic) / diff() / select()
+        - 핵심 인터페이스: panel(topic) / index / trace(topic) / diff() / select()
         - 모든 데이터 접근은 ``c.panel(topic)`` 으로 통합 — finance topic
           (BS·IS·CF·CIS·SCE·ratios) 도 ``c.panel("BS")`` · ``c.panel("IS", freq="Y")``
           처럼 호출. 별도 namespace property 나 바로가기는 사용하지 않는다

@@ -134,7 +134,7 @@
 					</div>
 					<div class="flex items-center gap-2">
 						<span class="w-1 h-1 rounded-full bg-dl-accent"></span>
-						`c.show(...)`
+						`c.panel(...)`
 					</div>
 					<div class="flex items-center gap-2">
 						<span class="w-1 h-1 rounded-full bg-dl-primary"></span>

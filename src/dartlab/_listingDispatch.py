@@ -50,10 +50,16 @@ def listing(
     -------
     pl.DataFrame
         kind="companies" (기본):
+            market="KR" 또는 생략:
             종목코드 : str — 6자리 종목코드
             종목명 : str — 회사명
             시장 : str — 유가/코스닥/코넥스
             업종 : str — 업종명
+            market="US":
+            종목코드 : str — 미국 ticker
+            회사명 : str — SEC 등록 회사명
+            시장구분 : str — 거래소
+            cik : str — 10자리 SEC 식별번호
         kind="filings":
             id : str — 공시 접수번호
             date : str — 접수일
@@ -74,9 +80,12 @@ def listing(
     Example::
 
         import dartlab
+        import polars as pl
+
         dartlab.listing()                              # 전 종목 (기존 호환)
         dartlab.listing("dartlist")                    # DART 전체 법인 (비상장 포함, corp_code)
-        dartlab.listing(market="US")                   # EDGAR 종목
+        us = dartlab.listing(market="US")              # EDGAR 종목 + 공개 CIK 열
+        us.filter(pl.col("종목코드") == "AAPL").select("종목코드", "회사명", "cik")
         dartlab.listing("filings", corp="005930")      # DART 공시 메타
         dartlab.listing("filings", corp="AAPL")        # EDGAR 공시 메타
         dartlab.listing("topics", corp="005930")       # 토픽 목록

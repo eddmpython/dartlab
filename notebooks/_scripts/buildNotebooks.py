@@ -1,6 +1,6 @@
 """Generate expanded colab + marimo notebooks for all 11 engines.
 
-Plan v10 P11 — notebook 동기화. 사용자 surface 만 사용 (show/select/sections/...).
+Plan v10 P11 — notebook 동기화. 사용자 surface 만 사용 (panel/select/sections/...).
 """
 
 import json

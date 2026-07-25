@@ -46,7 +46,7 @@ linkedSkills:
 
 | 경로 | method | 매핑 |
 |---|---|---|
-| `/v1/company/{code}/show/{topic}` | GET | Company.show |
+| `/v1/company/{code}/show/{topic}` | GET | Company.panel (호환 URL) |
 | `/v1/company/{code}/analysis/{axis}` | GET | Company.analysis |
 | `/v1/scan/{axis}` | GET | scan |
 | `/v1/macro/{axis}` | GET | dartlab.macro |

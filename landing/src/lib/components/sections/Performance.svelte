@@ -15,7 +15,7 @@
 			detail: '329 토픽 × 106 기간 즉시'
 		},
 		{
-			label: 'show(topic)',
+			label: 'panel(topic)',
 			time: '<50ms',
 			bar: 3,
 			detail: '단일 토픽 블록 추출'

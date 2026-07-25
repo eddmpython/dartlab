@@ -4,7 +4,7 @@
 
 	const features = [
 		{ feature: 'panel 수평화', dart: true, edgar: true },
-		{ feature: 'show(topic)', dart: true, edgar: true },
+		{ feature: 'panel(topic)', dart: true, edgar: true },
 		{ feature: 'trace(topic)', dart: true, edgar: true },
 		{ feature: 'diff(topic)', dart: true, edgar: true },
 		{ feature: 'BS · IS · CF 정규화', dart: true, edgar: true },
@@ -45,9 +45,9 @@
 					<pre class="font-mono text-xs text-dl-text-muted leading-relaxed"><code>c = Company(<span class="text-dl-primary">"005930"</span>)
 c.topics
 c.panel(<span class="text-dl-primary">"businessOverview"</span>)
-c.show(<span class="text-dl-primary">"businessOverview"</span>)
-c.show("BS")
-c.show("ratios")
+c.panel(<span class="text-dl-primary">"businessOverview"</span>)
+c.panel("BS")
+c.panel("ratios")
 c.diff(<span class="text-dl-primary">"businessOverview"</span>)
 c.insights.grades()</code></pre>
 				</div>
@@ -55,9 +55,9 @@ c.insights.grades()</code></pre>
 					<div class="text-[10px] font-mono text-dl-accent uppercase tracking-wider mb-3">US (EDGAR)</div>
 					<pre class="font-mono text-xs text-dl-text-muted leading-relaxed"><code>c = Company(<span class="text-dl-accent">"AAPL"</span>)
 c.panel()
-c.show(<span class="text-dl-accent">"business"</span>)
-c.show("BS")
-c.show("ratios")
+c.panel(<span class="text-dl-accent">"business"</span>)
+c.panel("BS")
+c.panel("ratios")
 c.diff(<span class="text-dl-accent">"10-K::item7Mdna"</span>)
 c.insights.grades()</code></pre>
 				</div>

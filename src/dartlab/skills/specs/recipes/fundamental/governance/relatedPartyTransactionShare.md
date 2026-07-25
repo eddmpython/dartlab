@@ -104,7 +104,7 @@ emit_result(
     values={"years": table.height,
             "latestSalesPct": float(table["salesToRpPct"].drop_nulls().tail(1)[0]) if table["salesToRpPct"].drop_nulls().len() else None},
     date=str(table["year"].max()) if table.height else None,
-    sources=["dartlab://gather/relatedPartyTransactions", "dartlab://show/revenue"],
+    sources=["dartlab://gather/relatedPartyTransactions", "dartlab://panel/revenue"],
 )
 ```
 

@@ -25,21 +25,21 @@
 		<Playground
 			label="samsung-IS"
 			stockCode="005930"
-			code={`print(c.show("IS"))`}
+			code={`print(c.panel("IS"))`}
 		/>
 
 		<h2 class="text-sm font-semibold text-dl-text-muted mb-2 mt-8">2) 삼성전자 재무비율</h2>
 		<Playground
 			label="samsung-ratios"
 			stockCode="005930"
-			code={`print(c.show("ratios"))`}
+			code={`print(c.panel("ratios"))`}
 		/>
 
 		<h2 class="text-sm font-semibold text-dl-text-muted mb-2 mt-8">3) Apple 손익계산서 (다른 종목)</h2>
 		<Playground
 			label="apple-IS"
 			stockCode="AAPL"
-			code={`print(c.show("IS"))`}
+			code={`print(c.panel("IS"))`}
 		/>
 	</div>
 </div>

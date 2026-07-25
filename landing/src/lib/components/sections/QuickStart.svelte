@@ -7,8 +7,8 @@
 	const snippet = `import dartlab
 
 c = dartlab.Company("005930")   # 삼성전자
-c.show("IS")                    # 손익계산서 전 분기
-c.show("CF")                    # 현금흐름표 · 문자열만 바꾸면 끝`;
+c.panel("IS")                   # 손익계산서 전 분기
+c.panel("CF")                   # 현금흐름표 · 문자열만 바꾸면 끝`;
 
 	async function copy() {
 		await navigator.clipboard.writeText(snippet);

@@ -10,7 +10,7 @@ dartlab 호출 계약은 단순하다 — 무인자 호출로 어떤 축이 있�
 
 | # | 노트북 | 엔진 | 설계 문서 |
 |---|---|---|---|
-| 01 | [01_company.py](01_company.py) | Company facade (L0/L1) — show/select/sections/diff | [engines.company](../../engines.company) |
+| 01 | [01_company.py](01_company.py) | Company facade (L0/L1) — panel/select/sections/diff | [engines.company](../../engines.company) |
 | 02 | [02_gather.py](02_gather.py) | gather — 외부 시장 데이터 (주가/수급/매크로/뉴스) | [engines.gather](../../engines.gather) |
 | 03 | [03_scan.py](03_scan.py) | scan — 전 종목 횡단 사전 빌드 (parquet) | [engines.scan](../../engines.scan) |
 | 04 | [04_quant.py](04_quant.py) | quant — 가격 기반 정량 신호 | [engines.quant](../../engines.quant) |

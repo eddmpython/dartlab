@@ -112,7 +112,7 @@ emit_result(
     table=table,
     values={"groupName": group_name, "affiliates": table.height, "crossHoldings": cross_n},
     date=None,
-    sources=["dartlab://show/groupAffiliation", "dartlab://scan/groupAffiliates"],
+    sources=["dartlab://panel/groupAffiliation", "dartlab://scan/groupAffiliates"],
 )
 ```
 

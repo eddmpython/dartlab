@@ -10,7 +10,7 @@ whenToUse:
   - Company
   - company
   - 단일 기업 분석
-  - show
+  - panel
   - disclosure
   - filings
   - analysis
@@ -79,7 +79,7 @@ runtimeCompatibility:
     status: limited
 failureModes:
   - 종목코드/market을 확정하지 않고 분석을 시작함
-  - show topic과 analysis axis를 혼동함
+  - panel topic과 analysis axis를 혼동함
   - 원자료 조회 결과를 분석 결론으로 바로 말함
 forbidden:
   - target 없는 Company 작업을 완료 처리하지 않는다.
@@ -109,7 +109,7 @@ linkedSkills:
 source:
   type: manual_skill
   format: markdown
-lastUpdated: '2026-05-07'
+lastUpdated: '2026-07-26'
 testUniverse:
   market: KR
   stockCodes:
@@ -155,7 +155,7 @@ industry = c.industry()
 
 ## 호출 동작
 
-Company 생성 시 target과 market/provider를 확정한다. 이후 `show/select/trace`는 원자료 조회, `analysis/credit/quant/macro/story`는 하위 엔진 호출, `gather`는 보조 데이터 수집, `disclosure/liveFilings/readFiling`은 공시 접근을 담당한다.
+Company 생성 시 target과 market/provider를 확정한다. 이후 `panel/select/trace`는 원자료 조회, `analysis/credit/quant/macro/story`는 하위 엔진 호출, `gather`는 보조 데이터 수집, `disclosure/liveFilings/readFiling`은 공시 접근을 담당한다.
 
 무인자 또는 topic 누락 호출은 가능한 topic/axis 가이드를 반환할 수 있다. 데이터가 없으면 결손을 0으로 채우지 않고 빈 DataFrame, `None`, flags, 제한 메시지로 표현한다.
 
@@ -213,7 +213,7 @@ topic/axis, source, metric, value, unit,
 tableRef, valueRef, dateRef, executionRef
 ```
 
-`show/select/trace`는 원자료 기반 table/selection/lineage가 중심이고, `analysis/credit/quant/macro/story`는 각 엔진의 반환 계약을 따른다.
+`panel/select/trace`는 원자료 기반 table/selection/lineage가 중심이고, `analysis/credit/quant/macro/story`는 각 엔진의 반환 계약을 따른다.
 
 ## evidence 기준
 
@@ -222,7 +222,7 @@ tableRef, valueRef, dateRef, executionRef
 ## 기본 실행 순서
 
 1. `dartlab.Company(code_or_ticker)`로 target을 고정한다.
-2. 원자료 확인이면 `show/select/trace`, 심층 분석이면 하위 엔진 메서드를 고른다.
+2. 원자료 확인이면 `panel/select/trace`, 심층 분석이면 하위 엔진 메서드를 고른다.
 3. 반환값의 기준일, source, 결손/flags를 확인한다.
 4. 숫자 claim은 valueRef/tableRef에 묶는다.
 5. 여러 축을 조합하는 최종 서술은 `story`로 넘긴다.

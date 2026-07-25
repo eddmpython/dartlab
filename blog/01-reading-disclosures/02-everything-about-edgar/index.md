@@ -478,7 +478,7 @@ apple.show("CF")       # 현금흐름표
 apple.show("ratios")   # 재무비율 (ROE, 부채비율 등)
 ```
 
-DART 분석과 코드가 완전히 같다. `Company("005930")`이든 `Company("AAPL")`이든, `show(topic)`에서 같은 구조의 DataFrame이 나온다.
+DART 분석과 코드가 완전히 같다. `Company("005930")`이든 `Company("AAPL")`이든, `panel(topic)`에서 같은 구조의 DataFrame이 나온다.
 
 ### 지금 되는 것
 

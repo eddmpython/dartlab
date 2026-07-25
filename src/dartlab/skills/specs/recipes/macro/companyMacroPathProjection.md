@@ -118,7 +118,7 @@ emit_result(
     ],
     values={"target": target, "pathSteps": 4, "scenarioReady": compact(scenario)["type"] != "NoneType"},
     date=latest_period(bs),
-    sources=["dartlab://company/show", "dartlab://company/forecast", "dartlab://macro/scenario"],
+    sources=["dartlab://company/panel", "dartlab://company/forecast", "dartlab://macro/scenario"],
 )
 ```
 

@@ -204,7 +204,7 @@ EngineCall(apiRef="Company.panel", args={"stockCode": "005930", "stmt": "BS", "f
 EngineCall(apiRef="Company.analysis", args={"stockCode": "005930", "group": "financial", "axis": "수익성"})
 ```
 
-분기-축 통합은 engine 미지원 — 3 호출 결과를 ai 가 답변에 직접 엮는다. show 결과의 `tableRef`·`valueRef` 와 analysis 결과의 `executionRef` 가 함께 발급되어 refs 가치체인 유지.
+분기-축 통합은 engine 미지원 — 3 호출 결과를 ai 가 답변에 직접 엮는다. panel 결과의 `tableRef`·`valueRef` 와 analysis 결과의 `executionRef` 가 함께 발급되어 refs 가치체인 유지.
 
 ## 호출 동작
 

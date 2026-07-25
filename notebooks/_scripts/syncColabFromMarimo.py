@@ -63,11 +63,11 @@ NOTEBOOKS: dict[str, list[dict]] = {
         ),
         code(
             "# 손익계산서 (분기)",
-            'c.show("IS")',
+            'c.panel("IS")',
         ),
         code(
             "# 연간 합산",
-            'c.show("IS", freq="Y")',
+            'c.panel("IS", freq="Y")',
         ),
         code(
             "# 행 필터",
@@ -76,11 +76,11 @@ NOTEBOOKS: dict[str, list[dict]] = {
         md(
             "## 주석 · 정형 공시",
             "",
-            "`show` 는 재무제표뿐 아니라 재고·배당 같은 주석/정형 공시 토픽도 같은 방식으로 꺼낸다.",
+            "`panel` 은 재무제표뿐 아니라 재고·배당 같은 주석/정형 공시 토픽도 같은 방식으로 꺼낸다.",
         ),
         code(
             "# 주석 — 재고자산",
-            'c.show("inventory")',
+            'c.panel("inventory")',
         ),
         md(
             "## 사업보고서 섹션 · 공시 이력",

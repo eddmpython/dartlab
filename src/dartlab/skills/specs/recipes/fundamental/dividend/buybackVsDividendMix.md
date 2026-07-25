@@ -128,7 +128,7 @@ emit_result(
     table=table,
     values={"years": table.height, "lastBuybackRatio": float(table["buybackRatio"].drop_nulls().tail(1)[0]) if table["buybackRatio"].drop_nulls().len() else None},
     date=str(table["year"].max()) if table.height else None,
-    sources=["dartlab://analysis/capitalAllocation", "dartlab://show/cf"],
+    sources=["dartlab://analysis/capitalAllocation", "dartlab://panel/cf"],
 )
 ```
 

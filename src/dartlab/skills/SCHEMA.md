@@ -153,7 +153,7 @@ frontmatter 아래 본문은 mdsvex 가 렌더한다. Shiki 코드 하이라이�
 
 Recipe 는 RunPython 스크립트 모음이 아니라 **엔진 호출 오케스트레이션** 이다. 공개 API 또는 engine capability 가 이미 존재하면 `toolRefs[]` 와 본문 절차에서 `EngineCall` 을 우선한다.
 
-- **EngineCall 우선** — `Company.show`, `Company.trace`, `Company.disclosure`, `scan.*`, `gather.*`, `analysis.*`, `quant.*`, `credit.*`, `macro.*`, `viz.*` 처럼 capability 에 등록된 실행은 EngineCall 로 호출하도록 쓴다.
+- **EngineCall 우선** — `Company.panel`, `Company.trace`, `Company.disclosure`, `scan.*`, `gather.*`, `analysis.*`, `quant.*`, `credit.*`, `macro.*`, `viz.*` 처럼 capability 에 등록된 실행은 EngineCall 로 호출하도록 쓴다.
 - **RunPython fallback** — 엔진 결과를 합치거나, L1/L1.5 helper 를 직접 호출해야 하거나, 아직 EngineCall surface 가 없는 실험 경로일 때만 보조 코드블록으로 둔다. 이 경우 본문에 "RunPython fallback" 또는 "RunPython 폴백" 을 명시한다.
 - **계산 소유권** — recipe 안 Python 은 glue code 다. 엔진에 있는 계산을 recipe 코드에 다시 구현하지 않는다.
 - **근거 보존** — EngineCall 결과의 `tableRef` / `valueRef` / `dateRef` / `sourceRef` 를 우선 사용하고, fallback 코드도 `emit_result(...)` 로 같은 evidence 를 남긴다.

@@ -43,7 +43,7 @@
 		},
 		{
 			question: 'EDGAR 10-K · 10-Q 도 지원하나요?',
-			answer: '지원합니다. dartlab.Company("AAPL") 처럼 티커를 넘기면 미국 10-K · 10-Q 분석이 가능합니다. DART 와 동일한 인터페이스 · sections · show · trace · diff · BS · IS · CF · ratios 모두 동일하게 동작합니다.'
+			answer: '지원합니다. dartlab.Company("AAPL") 처럼 티커를 넘기면 미국 10-K · 10-Q 분석이 가능합니다. DART 와 동일한 인터페이스 · sections · panel · trace · diff · BS · IS · CF · ratios 모두 동일하게 동작합니다.'
 		},
 		{
 			question: '코드를 짜야만 쓸 수 있나요?',
@@ -59,7 +59,7 @@
 		},
 		{
 			question: '재무제표 데이터를 Python 으로 어떻게 가져오나요?',
-			answer: 'pip install dartlab 후 import dartlab; c = dartlab.Company("005930") 한 줄이면 삼성전자 재무제표에 접근할 수 있습니다. c.show("BS") 재무상태표, c.show("IS") 손익계산서, c.show("CF") 현금흐름표로 XBRL 정규화된 재무 데이터를 바로 씁니다. 데이터는 자동 다운로드됩니다.'
+			answer: 'pip install dartlab 후 import dartlab; c = dartlab.Company("005930") 한 줄이면 삼성전자 재무제표에 접근할 수 있습니다. c.panel("BS") 재무상태표, c.panel("IS") 손익계산서, c.panel("CF") 현금흐름표로 XBRL 정규화된 재무 데이터를 바로 씁니다. 데이터는 자동 다운로드됩니다.'
 		}
 	];
 

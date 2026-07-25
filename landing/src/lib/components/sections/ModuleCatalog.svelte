@@ -70,7 +70,7 @@
 			borderColor: 'border-dl-warning/30',
 			desc: '소스 횡단 분석 엔진',
 			modules: [
-				{ name: 'show(topic)', desc: '토픽별 블록 인덱스 + 데이터' },
+				{ name: 'panel(topic)', desc: '토픽별 블록 인덱스 + 데이터' },
 				{ name: 'trace(topic)', desc: '소스 추적 (docs/finance/report)' },
 				{ name: 'diff(topic)', desc: '기간 간 텍스트 변화 감지' },
 				{ name: 'insights', desc: '7 영역 등급 + 이상치 감지' },
