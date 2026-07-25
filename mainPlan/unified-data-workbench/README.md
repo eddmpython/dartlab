@@ -1,6 +1,6 @@
 # DartLab Unified Data Workbench
 
-상태: 구현, 전수 라우팅과 projection 인증, 170개 실제 물질화 감사, 171개 queryable catalog, 외부 설치 검증 완료. 2026-07-23 저장소 실측을 반영한다.
+상태: 구현과 hardening 진행. 355개 catalog, 172개 queryable asset, DART와 EDGAR 원천 및 계산 owner paging, mixed outer continuation, immutable generation과 receipt 기반 재생을 검증했다. 2026-07-26에는 universe 계획 중 원천 자동 갱신을 제거하고 local-only snapshot 경계를 추가했다. 통합 회귀 637개를 수집해 634개 통과, 환경 의존 3개 skip을 확인했다. 별도 프로세스 격리 감사 21개도 통과했고 owner child 50회에서 zero-live 50회와 artifact residue 0개를 확인했다. 작업대 순수성 검사는 계층 역전과 원천 직독 0건을 확인했다.
 
 ## 한 문장 정의
 
@@ -25,7 +25,12 @@
 13. catalog `snapshotId`와 실제 반환 content의 `dataSnapshotId`를 분리하고 partition마다 `contentHash`를 둔다.
 14. 전종목 continuation은 첫 `DataResult`의 `iterPages()` 또는 `iterAllArrowBatches()`가 자동 소비한다.
 15. feature registry, observation, vintage, PIT query는 data 공통 계약이며 simulator와 외부 소비자가 같은 의미 규칙을 쓴다.
-16. 전종목 원천 paging과 계산된 전종목 factor paging은 구분한다. 현재 EDGAR PIT feature는 subject 단위 callable이다.
+16. 전종목 원천 paging과 계산된 전종목 factor paging은 구분한다. `analysis.dartFinancialFeatures`와 `analysis.edgarFinancialFeatures`는 각 시장의 현재 상장 universe를 계산형 owner continuation으로 순회한다.
+17. pageable resource, 계산 owner, 일반 eager asset을 한 query에 섞어도 외부에는 outer continuation 하나만 노출한다. 일반 eager owner는 fresh child에서 한 번 실행해 content seal로 고정한다.
+18. `runtime`, `reuse`, `refresh`, `offline` materialization 정책은 기존 `query` axis에 속한다. 별도 factor-store axis를 만들지 않는다.
+19. immutable generation은 asset, source, query, universe, contract, schema의 exact pin 여섯 개로 식별한다. READY 전 세대는 보이지 않고 receipt 재생은 owner와 source를 호출하지 않는다.
+20. cold `refresh`는 terminal generation을 동기적으로 완성한 뒤 첫 page와 receipt를 반환한다. warm `reuse`와 receipt 기반 `offline`은 저장된 page를 바로 읽는다.
+21. Data Workbench query는 universe를 해소하는 동안 source를 갱신하지 않는다. 이미 존재하는 owner snapshot을 읽어 pin하며, 갱신은 gather와 pipeline이 소유한다.
 
 ## 공개 계약
 
@@ -49,7 +54,88 @@ result = dartlab.data(
 
 같은 진입점에서 `analysis.edgarFinancialFeatures`를 `knownAt`과 `FactorProjection`으로 요청하면 실제 filing cutoff를 보존한 revision-aware feature row를 얻는다. 현재 retained companyfacts의 이력 한계 때문에 이 자산은 `latestRetained`, `periodOnly`, `conditional`로 정직하게 반환한다.
 
-`DataResult`는 최소한 `status`, `partitions`, `assets`, `snapshotId`, `dataSnapshotId`, `contractHash`, `coverage`, `gaps`, `lineageRefs`, `executionReceipts`, `continuation`을 함께 가진다. schema와 실제 값의 `contentHash`는 각 partition이 보존한다.
+DART와 EDGAR 현재 상장 universe 전체도 호출자가 ticker를 반복하지 않고 한 query로 등록한다.
+
+```python
+first = dartlab.data(
+    "query",
+    query={
+        "requests": [
+            {
+                "assetId": "analysis.dartFinancialFeatures",
+                "requestId": "krListedPit",
+                "universe": {"markets": ["KR"], "membership": "listed"},
+                "projection": {
+                    "kind": "factor",
+                    "measures": [
+                        "financial.revenue",
+                        "financial.operatingMargin",
+                    ],
+                },
+                "time": {"knownAt": "20260723"},
+            },
+            {
+                "assetId": "analysis.edgarFinancialFeatures",
+                "requestId": "usListedPit",
+                "universe": {"markets": ["US"], "membership": "listed"},
+                "projection": {
+                    "kind": "factor",
+                    "measures": [
+                        "financial.revenue",
+                        "financial.operatingMargin",
+                    ],
+                },
+                "time": {"knownAt": "20260723"},
+            }
+        ],
+        "budget": {
+            "maxRows": 100000,
+            "maxBytes": 64 * 1024 * 1024,
+            "timeoutMs": 120000,
+            "maxAssets": 4,
+            "maxSubjects": 20000,
+            "maxConcurrency": 2,
+        },
+    },
+)
+
+for page in first.iterPages():
+    consume(page)
+```
+
+한 query는 전체 작업과 universe를 고정한다는 뜻이며, 전체 회사를 첫 응답에 한꺼번에 계산하거나 RAM에 적재한다는 뜻이 아니다. owner별 한 page의 종목 시도 상한은 8이고 row, byte, time 예산이 더 작으면 page도 더 작아진다. 종목 실패는 gap으로 남고 cursor는 다음 종목으로 진행한다.
+
+실제 읽기 전용 전수 감사에서 DART strict PIT factor는 2,661개 중 2,352개, 88.3878%가 성공했다. EDGAR full-state strict는 7,669개 중 632개, 8.24097%였다. revenue와 operating margin만 요청해 불필요한 stock state 의존을 제거한 production flow-only 경로는 3,136개, 40.8919%가 성공했다. 이 개선은 PIT cutoff, 4분기 연속성, 동일 accession lineage, revision 충돌 검증을 낮추지 않았다. 공식 감사 실행 구간은 loader와 network 호출 0회였고 시작과 종료 source snapshot이 같았다.
+
+감사 준비 단계에서 잘못 실행한 loader가 DART 원천 파일 1개를 갱신한 사고와 eager 실현 가능성 probe가 macro, news 파일을 갱신한 사고는 각각 [DART 전수 감사 기록](../../tests/_attempts/dataWorkbenchDartScale/README.md)과 [process deadline 기록](../../tests/_attempts/dataWorkbenchProcessDeadline/README.md)에 이전 관측값, 현재 digest, 영향 경로를 분리해 남겼다. 이 사고는 공식 감사 구간의 불변 판정에 포함시키지 않으며, 원천 전체가 세션 내내 한 번도 변하지 않았다고 주장하지 않는다.
+
+같은 query를 다른 프로세스가 factor-store처럼 재사용해야 하면 materialization 정책만 추가한다.
+
+```python
+built = dartlab.data(
+    "query",
+    query={
+        "requests": [...],
+        "budget": {...},
+        "materialization": {"mode": "refresh"},
+    },
+)
+receipt = built.materializationReceipt
+
+offline = dartlab.data(
+    "query",
+    query={
+        "materialization": {
+            "mode": "offline",
+            "receipt": receipt,
+        }
+    },
+)
+```
+
+`refresh`는 현재 source와 contract를 다시 해소해 exact generation을 만들거나 이미 같은 generation이 READY면 재사용한다. `reuse`는 같은 logical query의 최신 READY generation을 먼저 찾고 없으면 cold build한다. `offline`은 receipt의 exact generation만 읽는다. 세 모드는 같은 `DARTLAB_HOME`을 보는 다른 Python 프로세스에서 쓸 수 있다. 원격 다중 노드 서비스나 네트워크 권한 계층을 뜻하지 않는다.
+
+`DataResult`는 최소한 `status`, `partitions`, `assets`, `snapshotId`, `dataSnapshotId`, `contractHash`, `coverage`, `gaps`, `lineageRefs`, `executionReceipts`, `continuation`, `materializationReceipt`를 함께 가진다. schema와 실제 값의 `contentHash`는 각 partition이 보존한다.
 
 ## 문서 지도
 

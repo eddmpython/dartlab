@@ -125,14 +125,22 @@ simulator는 `analysis.simulationInputs` native view를 소비한다. 혼합 que
 
 `GraphProjection`은 node와 edge를 보존하고 asset revision, source, execution evidence를 동봉한다. scalar flatten으로 관계 방향과 predicate를 잃지 않는다.
 
+### 재사용 가능한 immutable generation
+
+FactorProjection만 별도 저장 엔진으로 떼지 않는다. 어느 projection이든 같은 query에 `refresh`, `reuse`, `offline` 정책을 지정하면 immutable generation과 receipt를 사용할 수 있다. 따라서 factor store는 Data Prism의 한 저장 활용법이고, simulator snapshot, narrative evidence, raw resource handoff도 같은 generation 계약을 공유한다.
+
+runtime은 첫 bounded page를 바로 소비하는 경로다. cold refresh는 source와 contract를 고정하고 전체 continuation을 terminal까지 동기적으로 구축한다. 이후 같은 `DARTLAB_HOME`을 보는 외부 process는 receipt만으로 page를 재생한다. 이 구분 덕분에 "한 번 진입"과 "전종목을 첫 응답 RAM에 적재"를 혼동하지 않는다.
+
 ## 6. 데이터 전수 활용의 정확한 의미
 
-2026-07-22 최종 실측 catalog는 353개 asset을 발견한다. 이 중 170개는 현재 runtime에서 queryable이며, 183개는 concept, owner metadata, method, private resource, nested, 폐기 축 또는 범위 밖 asset이라 catalog-only다. 항상 예외를 내는 `gather.calendar`는 catalog에는 보존하되 queryable에서 제외했다.
+2026-07-23 최종 실측 catalog는 355개 asset을 발견한다. 이 중 172개는 현재 runtime에서 queryable이며, 나머지는 concept, owner metadata, method, private resource, nested, 폐기 축 또는 범위 밖 asset이라 catalog-only다. 항상 예외를 내는 `gather.calendar`는 catalog에는 보존하되 queryable에서 제외했다.
 
 따라서 "모든 데이터를 다 활용한다"는 두 단계로 구분해야 한다.
 
-1. 발견과 분류: 현재 대상 asset 353개 모두 catalog에 들어온다.
-2. 값 물질화: 정책과 executor가 있는 170개는 query를 실행할 수 있다. 현재 원천 결손과 owner 계산 비용 때문에 모든 자산이 기본 30초 안에 non-empty 결과를 보장한다는 뜻은 아니다.
+1. 발견과 분류: 현재 대상 asset 355개 모두 catalog에 들어온다.
+2. 값 물질화: 정책과 executor가 있는 172개는 query를 실행할 수 있다. 현재 원천 결손과 owner 계산 비용 때문에 모든 자산이 기본 30초 안에 non-empty 결과를 보장한다는 뜻은 아니다.
+3. 시장 범위: DART 2,661개와 EDGAR 7,669개 현재 상장 entity를 한 query에 등록할 수 있다.
+4. 팩터 품질: 원천 파일 접근과 strict factor 성공은 같은 수치가 아니다. 성공하지 못한 entity도 구조화 gap과 coverage에서 사라지지 않는다.
 
 catalog-only를 누락으로 숨기지 않는다. `queryable=False`, visibility, temporalSupport, gap으로 이유를 드러낸다. private 데이터나 실행 불가능한 개념 메타데이터를 억지로 값처럼 반환하지 않는 것이 완성도다.
 
@@ -148,21 +156,27 @@ catalog-only를 누락으로 숨기지 않는다. `queryable=False`, visibility,
 - Polars와 Arrow 즉시 변환
 - simulator 동일 query 계약 유지
 - 외부 JSON mapping 호출
+- DART와 EDGAR 원천 및 계산 owner의 bounded 전종목 continuation
+- pageable, eager 혼합 request의 단일 outer continuation
+- fresh process eager content seal과 owner 재호출 없는 resume
+- exact six-pin immutable generation과 structured receipt
+- 다른 process의 owner와 source 무접촉 offline replay
 - latest-only temporal truth 보존
 - descriptor 기반 subject와 measure selector, 필수 selector 실행 전 검증
 - 빈 owner 결과를 성공으로 바꾸지 않는 `NO_DATA` gap
 - `maxConcurrency` 실제 병렬 실행과 Company 공유 상태 concurrency group 직렬화
-- queryable 170개 전수 라우팅, 146개 engine asset의 records, narrative, factor와 Arrow 전수 projection
+- queryable 172개 전수 라우팅, engine asset의 records, narrative, factor와 Arrow 전수 projection
 
 후속 transport 및 scale 범위:
 
 - 실제 Arrow Flight server와 ticket 기반 streaming
 - owner별 predicate, projection, slice pushdown
-- redeemable continuation token
+- 별도 scheduler와 distributed materialization worker
+- 원격 다중 노드 storage 및 access-control plane
 - knownAt vintage를 실제 제공하는 source 확대
 - narrative hybrid retrieval adapter와 reranker
 - quality suite의 도메인별 expectation 확대
 
-이 항목들은 현재 의미 계약을 바꾸지 않고 확장할 수 있다. 특히 vector index나 precomputed 복제본은 runtime SSOT가 불가능함이 증명되고 사용자 승인을 받은 경우에만 도입한다.
+이 항목들은 현재 의미 계약을 바꾸지 않고 확장할 수 있다. vector index나 추가 precomputed projection은 source, query, contract, schema pin과 atomic publication을 같은 방식으로 보존해야 한다.
 
 실제 자산별 인증 결과와 interactive, batch 구분은 [06-full-certification-and-hardening.md](06-full-certification-and-hardening.md)에 고정한다.

@@ -6,6 +6,8 @@ from collections.abc import Iterator
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Literal, Mapping
 
+from dartlab.data.materialization.contracts import MaterializationDirective
+
 if TYPE_CHECKING:
     import polars as pl
     import pyarrow as pa
@@ -181,9 +183,12 @@ class DataQuery:
     budget: QueryBudget = field(default_factory=QueryBudget)
     completeness: Literal["allowPartial", "requireComplete"] = "allowPartial"
     lineage: Literal["summary", "full"] = "summary"
+    materialization: MaterializationDirective = field(default_factory=MaterializationDirective)
     continuation: str | None = field(default=None, repr=False)
 
     def __post_init__(self) -> None:
+        if not isinstance(self.materialization, MaterializationDirective):
+            raise TypeError("materialization은 MaterializationDirective여야 합니다")
         if self.continuation is not None:
             if not isinstance(self.continuation, str) or not self.continuation.strip():
                 raise ValueError("continuation token이 비었습니다")
@@ -198,6 +203,7 @@ class DataQuery:
                 or self.budget != QueryBudget()
                 or self.completeness != "allowPartial"
                 or self.lineage != "summary"
+                or self.materialization != MaterializationDirective()
             )
             if hasOverride:
                 raise ValueError("continuation query는 저장된 원 질의를 덮어쓸 수 없습니다")
@@ -247,6 +253,7 @@ class DataAssetDescriptor:
     executorModule: str | None = None
     executorAttribute: str | None = None
     subjectParam: str | None = None
+    measureParam: str | None = None
     validTimeParam: str | None = None
     knowledgeTimeParam: str | None = None
     selectorKind: Literal["none", "subject", "measure"] = "none"
@@ -505,6 +512,7 @@ class DataResult:
     universeSnapshotId: str | None = None
     universeCoverage: tuple[UniverseCoverage, ...] = ()
     dataSnapshotId: str | None = None
+    materializationReceipt: Mapping[str, Any] | None = None
 
     def byRequest(self, requestId: str) -> tuple[DataPartition, ...]:
         """혼합 query 결과에서 request ID에 해당하는 partition만 반환한다."""

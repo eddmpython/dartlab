@@ -15,6 +15,7 @@
 | W8 | 170개 전수 실행, selector, 빈 결과, 동시성 hardening | 완료 |
 | W9 | 실제 content 봉인, 외부 구조 보존, 전종목 자동 page 소비 | 완료 |
 | W10 | 공통 feature observation 계약과 실제 EDGAR PIT factor 수직 슬라이스 | 완료 |
+| W11 | EDGAR 현재 상장 universe 계산 feature runtime continuation | 완료 |
 
 ## 2. unit과 contract test
 
@@ -203,10 +204,53 @@ uv run python -X utf8 tests/audit/dartlabGuard.py strict --scope l0-l15 --provid
 - 외부 JSON mapping 한 번 호출에서 AAPL revenue와 operating margin을 factor row로 반환하고 actual filing time, observation ID, revision ID, feature version, lineage를 보존
 - query cutoff가 달라도 같은 evidence와 값이면 동일 observation과 revision identity를 유지
 - retained companyfacts의 과거 admission snapshot 부재를 `latestRetained`, `periodOnly`, `conditional` gap으로 표면화
-- 전체 시장 원천 DART와 EDGAR continuation과 subject-only PIT feature 범위를 명시적으로 분리
+- W10 종료 시점의 전체 시장 원천 DART와 EDGAR continuation과 subject-only PIT feature 범위를 명시적으로 분리
 - 공통 feature, actual owner, catalog, query, simulator 집중 회귀 93건 통과
 - 작업대 핵심, simulator, architecture, Skill OS 연결 회귀 196건 통과
 - continuation, restart, CAS, Arrow, page scan 회귀 207건 통과와 환경 의존 2건 skip
 - resource paging과 별도 process resume 회귀 31건 통과
 - L0부터 L15 strict guard 7개 규칙, workbench purity, 신규 공개 함수 docstring strict, camelCase, Ruff, targeted Pyright 통과
-- 영구 materialization, historical universe, 전종목 계산 feature paging, offline과 online serving은 runtime SSOT 불가능 실측, 사전 설계 토론, 명시 승인 전 미구현 상태 유지
+- W10 종료 시점에는 immutable materialization, historical universe, 전종목 계산 feature paging, offline receipt 재생이 미구현 상태였음
+
+### 2026-07-23 W11
+
+- `analysis.edgarFinancialFeatures`에 `UniverseSelection(markets=("US",), membership="listed")`를 지정하면 호출자 종목 반복 없이 한 `data("query", ...)`로 전체 현재 상장 universe 작업 등록
+- 계산 owner용 continuation을 raw resource paging과 분리하되 같은 opaque token 저장소와 24시간 임시 보존 정책을 사용
+- 한 page의 종목 시도를 최대 8개로 제한하고 row, byte, time, concurrency 예산을 함께 적용
+- 종목별 실패를 `FEATURE_ENTITY_UNAVAILABLE` 등 구조화 gap으로 보존하면서 cursor를 전진시켜 한 실패가 뒤 종목을 막지 않도록 구현
+- 원 query, contract, 외부 Arrow schema, `resource.edgar` source manifest, universe membership과 ticker, CIK mapping을 continuation에 digest로 고정
+- 미완료 재개 시 source 또는 universe identity drift를 owner 호출 전에 차단하고, commit된 page는 source와 owner 접촉 없이 replay
+- 명시한 `subjects`는 기존 eager `subjectFanout` 경로를 유지하고 universe source를 읽지 않도록 회귀 고정
+- synthetic 10종목은 첫 page 8개와 다음 page 2개로 중복과 누락 없이 완주
+- row budget 3에서는 3개, 3개, 3개, 1개 page로 완주하고 실패 cursor, replay, source drift, CIK drift, historical preflight를 포함한 owner paging 집중 회귀 10건 통과
+- data 전체 회귀 365건 통과와 환경 의존 2건 skip 확인. 이후 추가된 owner paging 집중 회귀 10건도 별도 통과
+- 실제 로컬 smoke에서 US 현재 상장 7,669개를 한 query에 등록하고 첫 page 8개 시도, 1개 성공, 7개 gap, 21.415초, continuation 발급 확인
+- 실제 7,669개 전 page 완주는 아직 인증하지 않았으므로 즉시 전체 계산 완료나 영구 factor store 성능으로 과장하지 않음
+- W11 종료 시점에는 historical `asOf`, pageable과 eager 혼합, `requireComplete`, DART 계산 feature, 일반 owner 전체 paging을 실행 전 차단 또는 범위 밖으로 유지
+- W11 종료 시점에는 immutable generation과 offline receipt 재생이 아직 없었음
+
+### 2026-07-23 W12
+
+- `analysis.dartFinancialFeatures`를 KR 현재 상장 universe 계산 owner로 추가하고 catalog 355개, queryable 172개로 확장
+- exact DART finance bytes, full-file digest, 종목 identity, 상장 membership, 회사별 결산월, knownAt을 한 owner query에 결박
+- DART 2,661개 공식 전수 감사 실행 구간에서 2,352개 strict PIT factor 성공, 성공률 88.3878%, loader 0, network 0, 시작과 종료 source snapshot 동일 확인
+- EDGAR 7,669개 strict full-state 전수 감사에서 632개 성공, 성공률 8.24097%, local source 접근 7,229개와 factor 성공률을 분리해 기록
+- EDGAR revenue와 operating margin 요청을 stock state와 분리한 production flow-only 전수 감사에서 3,136개 성공, 성공률 40.8919%, strict 대비 2,504개와 32.6509%p 증가
+- flow-only 전수 감사 223.016초, p50 82.996ms, p95 286.363ms, loader 0, network 0, 5,667개 unique source hash와 listing 불변
+- 계산 owner, raw resource, 일반 eager asset을 한 outer continuation으로 섞는 composite scheduler 추가
+- 일반 eager callable과 engine axis를 fresh child에서 실행하고 bounded content seal로 고정해 resume owner 재호출 0회
+- source, query, contract, schema, owner code와 universe drift를 lower owner 실행 전에 검증
+- 파일 크기 가드를 위해 composite, owner, execution, process 책임을 private 모듈과 얇은 호환 파사드로 분리
+- 공식 DART 감사 전에 잘못 실행한 loader가 `data/dart/finance/006660.parquet`를 갱신한 사고는 `tests/_attempts/dataWorkbenchDartScale/README.md`에 이전과 현재 digest를 기록하고 추가 덮어쓰기 없이 보존
+- eager 실현 가능성 probe가 macro와 news 파일을 자동 갱신한 사고는 `tests/_attempts/dataWorkbenchProcessDeadline/README.md`에 신규 8개와 갱신된 etag 4개를 기록하고 이후 fixture 실행으로 차단
+
+### 2026-07-23 W13
+
+- 기존 `query` axis에 `runtime`, `reuse`, `refresh`, `offline` materialization 정책 추가
+- asset, source, query, universe, contract, schema exact pin 여섯 개로 immutable generation identity 구성
+- BUILDING 비가시성, single builder epoch와 lease, ordered Arrow CAS page, terminal manifest, atomic READY publication 구현
+- SQLite에는 digest, 상태, 수치, lease만 저장하고 query 원문, owner identity, token, Arrow payload 저장 금지
+- structured receipt만 받은 fresh process가 catalog, owner, source 호출 0회로 page 0과 continuation page 1 재생
+- materialization CAS page payload read는 public page당 정확히 1회
+- page read 중 GC race, crash recovery, concurrent builder, corruption, private path, bounded GC를 포함한 19개 집중 회귀 통과
+- cold build는 전체 6시간과 page별 timeout 상한, warm replay는 목표 page 하나 적재

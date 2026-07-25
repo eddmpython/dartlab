@@ -3,9 +3,7 @@
 from __future__ import annotations
 
 import hashlib
-import json
 import os
-import tempfile
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any
@@ -18,11 +16,20 @@ from .contracts import (
     IntegrityMode,
     ResourceManifest,
     ResourceShard,
-    canonicalJsonBytes,
+)
+from .contracts import (
+    canonicalJsonBytes as canonicalJsonBytes,
+)
+from .manifestCache import (
+    _CACHE_VALIDATION,
+    _defaultCachePath,
+    _readCacheCandidate,
+    _sourcePin,
+    _writeCache,
+    loadPinnedResourceManifest,
+    loadPinnedResourceManifestReadOnly,
 )
 
-_CACHE_FORMAT = "dartlab-resource-manifest-v2"
-_CACHE_VALIDATION = "fileSet+size+mtimeNs+cacheDocumentSha256"
 _SCHEMA_POLICY = "allShardsArrowPermissiveV1"
 _SCHEMA_READ_CHUNK_SIZE = 256
 
@@ -83,166 +90,6 @@ def _resourcePaths(root: Path) -> tuple[Path, ...]:
     if not paths:
         raise ValueError("resource parquet shard가 없습니다")
     return paths
-
-
-def _sourcePin(
-    resourceId: str,
-    integrityMode: IntegrityMode,
-    schemaFields: tuple[tuple[str, str], ...],
-    commonSchemaFields: tuple[tuple[str, str], ...],
-    shards: tuple[ResourceShard, ...],
-) -> str:
-    payload = {
-        "format": "full-file-sha256-manifest-v2" if integrityMode == "full" else "parquet-footer-fast-manifest-v2",
-        "resourceId": resourceId,
-        "integrityMode": integrityMode,
-        "schemaPolicy": _SCHEMA_POLICY,
-        "schemaFields": schemaFields,
-        "commonSchemaFields": commonSchemaFields,
-        "shards": [(shard.companyId, shard.relativePath, shard.byteSize, shard.integrityDigest) for shard in shards],
-    }
-    pinKind = "full" if integrityMode == "full" else "footer-fast"
-    return f"resource-source-{pinKind}:{hashlib.sha256(canonicalJsonBytes(payload)).hexdigest()}"
-
-
-def _defaultCachePath(resourceId: str, root: Path, integrityMode: IntegrityMode) -> Path:
-    configured = os.getenv("DARTLAB_RESOURCE_MANIFEST_CACHE")
-    cacheRoot = Path(configured).expanduser() if configured else Path.home() / ".dartlab" / "cache" / "resourceStream"
-    identity = hashlib.sha256(
-        canonicalJsonBytes(
-            {
-                "resourceId": resourceId,
-                "rootPath": str(root),
-                "integrityMode": integrityMode,
-            }
-        )
-    ).hexdigest()
-    return cacheRoot / f"{identity}.json"
-
-
-def _cachePayload(manifest: ResourceManifest) -> dict[str, object]:
-    return {
-        "format": _CACHE_FORMAT,
-        "rootPath": manifest.rootPath,
-        "resourceId": manifest.resourceId,
-        "integrityMode": manifest.integrityMode,
-        "schemaPolicy": _SCHEMA_POLICY,
-        "schemaFields": [list(field) for field in manifest.schemaFields],
-        "commonSchemaFields": [list(field) for field in manifest.commonSchemaFields],
-        "totalBytes": manifest.totalBytes,
-        "sourcePin": manifest.sourcePin,
-        "cacheValidation": _CACHE_VALIDATION,
-        "shards": [shard.toMapping() for shard in manifest.shards],
-    }
-
-
-def _writeCache(cachePath: Path, manifest: ResourceManifest) -> None:
-    cachePath.parent.mkdir(parents=True, exist_ok=True)
-    payload = _cachePayload(manifest)
-    document = dict(payload)
-    document["cacheDocumentSha256"] = hashlib.sha256(canonicalJsonBytes(payload)).hexdigest()
-    tempPath: Path | None = None
-    try:
-        with tempfile.NamedTemporaryFile(
-            mode="wb",
-            prefix=f"{cachePath.name}.",
-            suffix=".tmp",
-            dir=cachePath.parent,
-            delete=False,
-        ) as stream:
-            tempPath = Path(stream.name)
-            stream.write(canonicalJsonBytes(document))
-            stream.flush()
-            os.fsync(stream.fileno())
-        os.replace(tempPath, cachePath)
-    finally:
-        if tempPath is not None and tempPath.exists():
-            tempPath.unlink()
-
-
-def _manifestFromCacheDocument(
-    document: dict[str, Any],
-    root: Path,
-    resourceId: str,
-    integrityMode: IntegrityMode,
-) -> ResourceManifest | None:
-    expectedIntegrity = document.get("cacheDocumentSha256")
-    payload = {key: value for key, value in document.items() if key != "cacheDocumentSha256"}
-    if not isinstance(expectedIntegrity, str):
-        return None
-    if hashlib.sha256(canonicalJsonBytes(payload)).hexdigest() != expectedIntegrity:
-        return None
-    if (
-        payload.get("format") != _CACHE_FORMAT
-        or payload.get("rootPath") != str(root)
-        or payload.get("resourceId") != resourceId
-        or payload.get("integrityMode") != integrityMode
-        or payload.get("schemaPolicy") != _SCHEMA_POLICY
-        or payload.get("cacheValidation") != _CACHE_VALIDATION
-    ):
-        return None
-    shardValues = payload.get("shards")
-    schemaValues = payload.get("schemaFields")
-    commonSchemaValues = payload.get("commonSchemaFields")
-    if (
-        not isinstance(shardValues, list)
-        or not isinstance(schemaValues, list)
-        or not isinstance(commonSchemaValues, list)
-    ):
-        return None
-    shards = tuple(
-        ResourceShard(
-            companyId=str(value["companyId"]),
-            relativePath=str(value["relativePath"]),
-            byteSize=int(value["byteSize"]),
-            mtimeNs=int(value["mtimeNs"]),
-            integrityDigest=str(value["integrityDigest"]),
-        )
-        for value in shardValues
-        if isinstance(value, dict)
-    )
-    if len(shards) != len(shardValues):
-        return None
-    schemaFields = tuple((str(value[0]), str(value[1])) for value in schemaValues)
-    commonSchemaFields = tuple((str(value[0]), str(value[1])) for value in commonSchemaValues)
-    sourcePin = _sourcePin(
-        resourceId,
-        integrityMode,
-        schemaFields,
-        commonSchemaFields,
-        shards,
-    )
-    if payload.get("sourcePin") != sourcePin:
-        return None
-    return ResourceManifest(
-        resourceId=resourceId,
-        rootPath=str(root),
-        shards=shards,
-        schemaFields=schemaFields,
-        totalBytes=int(payload["totalBytes"]),
-        integrityMode=integrityMode,
-        sourcePin=sourcePin,
-        commonSchemaFields=commonSchemaFields,
-        cacheHit=False,
-        cacheValidation=_CACHE_VALIDATION,
-    )
-
-
-def _readCacheCandidate(
-    cachePath: Path,
-    root: Path,
-    resourceId: str,
-    integrityMode: IntegrityMode,
-) -> ResourceManifest | None:
-    if not cachePath.is_file():
-        return None
-    try:
-        document = json.loads(cachePath.read_text(encoding="utf-8"))
-        if not isinstance(document, dict):
-            return None
-        return _manifestFromCacheDocument(document, root, resourceId, integrityMode)
-    except (OSError, TypeError, ValueError, KeyError, IndexError, json.JSONDecodeError):
-        return None
 
 
 def _cacheIsFresh(candidate: ResourceManifest, paths: tuple[Path, ...]) -> bool:
@@ -491,3 +338,114 @@ def validateManifestSources(manifest: ResourceManifest) -> None:
         stat = path.stat()
         if stat.st_size != shard.byteSize or stat.st_mtime_ns != shard.mtimeNs:
             raise ValueError(f"RESOURCE_SOURCE_DRIFT: {shard.relativePath}")
+
+
+def _manifestShardPath(manifest: ResourceManifest, companyId: str) -> tuple[ResourceShard, Path]:
+    if not isinstance(manifest, ResourceManifest):
+        raise TypeError("manifest는 ResourceManifest여야 합니다")
+    if not isinstance(companyId, str):
+        raise TypeError("companyId는 str이어야 합니다")
+    normalizedCompanyId = companyId.strip()
+    if not normalizedCompanyId:
+        raise ValueError("companyId가 비었습니다")
+    if manifest.integrityMode != "full":
+        raise ValueError("RESOURCE_INTEGRITY_MODE_UNSUPPORTED: full manifest가 필요합니다")
+
+    shard = next((item for item in manifest.shards if item.companyId == normalizedCompanyId), None)
+    if shard is None:
+        raise ValueError(f"RESOURCE_COMPANY_UNKNOWN: {normalizedCompanyId}")
+
+    root = Path(manifest.rootPath).resolve()
+    expectedRelativePath = f"{shard.companyId}.parquet"
+    if shard.relativePath != expectedRelativePath:
+        raise ValueError("RESOURCE_SHARD_PATH_ESCAPE: pinned shard path가 flat identity와 다릅니다")
+    path = (root / shard.relativePath).resolve()
+    if path.parent != root:
+        raise ValueError("RESOURCE_SHARD_PATH_ESCAPE: pinned shard path가 resource root를 벗어났습니다")
+    if not path.is_file():
+        raise ValueError(f"RESOURCE_SOURCE_DRIFT: {shard.relativePath}")
+    return shard, path
+
+
+def readVerifiedManifestShard(
+    manifest: ResourceManifest,
+    companyId: str,
+) -> tuple[ResourceShard, bytes]:
+    """Pinned full manifest의 company shard bytes를 한 번 읽어 재검증한다.
+
+    Capabilities:
+        전체 resource를 다시 hash하지 않고 선택한 shard 하나를 같은 file descriptor에서 읽고
+        full-file SHA-256과 pre/post stat identity를 pinned identity와 비교한다.
+
+    Args:
+        manifest: cache document와 source pin 검증을 통과한 resource manifest.
+        companyId: manifest에 등록된 정확한 company shard ID.
+
+    Returns:
+        검증된 immutable ``ResourceShard`` identity와 그 검증에 사용한 동일 immutable bytes.
+
+    Raises:
+        TypeError: manifest 또는 companyId 타입이 유효하지 않을 때.
+        ValueError: full integrity가 아니거나 company, path, stat, payload가 pinned identity와 다를 때.
+
+    Example:
+        ``identity, payload = readVerifiedManifestShard(manifest, "0000320193")``.
+
+    Guide:
+        Consumer는 반환 bytes를 직접 parse하고 같은 path를 다시 열지 않는다.
+
+    When:
+        persistent manifest cache가 metadata cache hit이어도 선택 payload의 강한 무결성이 필요할 때 호출한다.
+
+    How:
+        Flat root path를 고정하고 한 descriptor에서 bytes와 SHA-256을 만들며 전후 fstat을 검증한다.
+
+    SeeAlso:
+        loadPinnedResourceManifest, validateManifestSources.
+
+    Requires:
+        manifest는 ``integrityMode="full"``이어야 하고 shard path는 flat root를 벗어나면 안 된다.
+
+    AIContext:
+        same-size same-mtime 교체와 hash 뒤 path reopen TOCTOU를 selected shard 비용만으로 닫는다.
+
+    LLM Specifications:
+        AntiPatterns:
+            - footerFast digest를 payload verification에 사용
+            - manifest 전체 payload를 company마다 다시 hash
+            - relativePath를 검증 없이 filesystem path로 결합
+            - 검증 뒤 같은 path를 다시 열어 parse
+        Freshness:
+            호출 시점의 selected shard bytes와 pre/post filesystem stat이다.
+        Dataflow:
+            pinned shard -> flat path gate -> open -> pre-fstat -> bytes+SHA-256 -> post-fstat -> digest compare.
+        OutputSchema:
+            - companyId : str, verified company identity
+            - integrityDigest : str, verified full-file SHA-256
+            - payload : bytes, digest를 계산한 동일 bytes
+        Prerequisites:
+            cache document SHA-256과 sourcePin 재계산 검증을 통과한 manifest.
+        TargetMarkets:
+            DATA_RELEASES flat company-sharded resources.
+    """
+    shard, path = _manifestShardPath(manifest, companyId)
+    digest = hashlib.sha256()
+    payload = bytearray()
+    try:
+        with path.open("rb") as stream:
+            before = os.fstat(stream.fileno())
+            if (before.st_size, before.st_mtime_ns) != (shard.byteSize, shard.mtimeNs):
+                raise ValueError(f"RESOURCE_SOURCE_DRIFT: {shard.relativePath}")
+            while chunk := stream.read(1024 * 1024):
+                digest.update(chunk)
+                payload.extend(chunk)
+            after = os.fstat(stream.fileno())
+    except FileNotFoundError:
+        raise ValueError(f"RESOURCE_SOURCE_DRIFT: {shard.relativePath}") from None
+    beforeIdentity = (before.st_dev, before.st_ino, before.st_size, before.st_mtime_ns)
+    afterIdentity = (after.st_dev, after.st_ino, after.st_size, after.st_mtime_ns)
+    if beforeIdentity != afterIdentity or (after.st_size, after.st_mtime_ns) != (shard.byteSize, shard.mtimeNs):
+        raise ValueError(f"RESOURCE_SOURCE_DRIFT: {shard.relativePath}")
+    if len(payload) != shard.byteSize or digest.hexdigest() != shard.integrityDigest:
+        raise ValueError(f"RESOURCE_SOURCE_DRIFT: {shard.relativePath} payload digest")
+    return shard, bytes(payload)

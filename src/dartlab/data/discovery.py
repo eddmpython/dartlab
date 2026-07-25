@@ -86,6 +86,36 @@ def _metadataValue(value: Any) -> Any:
     return None
 
 
+def _executorParams(
+    assetId: str,
+    *,
+    subjectParam: Any = None,
+    measureParam: Any = None,
+    validTimeParam: Any = None,
+    knowledgeTimeParam: Any = None,
+    marketParam: Any = None,
+) -> dict[str, str | None]:
+    """Owner callable keyword 선언을 검증하고 이름 충돌을 차단한다."""
+
+    raw = {
+        "subjectParam": subjectParam,
+        "measureParam": measureParam,
+        "validTimeParam": validTimeParam,
+        "knowledgeTimeParam": knowledgeTimeParam,
+        "marketParam": marketParam,
+    }
+    invalid = tuple(
+        name for name, value in raw.items() if value is not None and (type(value) is not str or not value.strip())
+    )
+    if invalid:
+        raise TypeError(f"{assetId} executor parameter 선언이 유효하지 않음: {', '.join(invalid)}")
+    normalized = {name: value.strip() if isinstance(value, str) else None for name, value in raw.items()}
+    names = tuple(value for value in normalized.values() if value is not None)
+    if len(names) != len(set(names)):
+        raise ValueError(f"{assetId} executor parameter 이름이 충돌함")
+    return normalized
+
+
 def discoverOwnerProviders() -> tuple[tuple[Mapping[str, Any], ...], tuple[DataGap, ...]]:
     """Installed dartlab package에서 metadata-only dataProduct provider를 자동 발견한다.
 
@@ -153,6 +183,15 @@ def _registryAssets(provider: Mapping[str, Any]) -> Iterable[DataAssetDescriptor
             )
             universeKind = str(declared.get("universeKind") or registrySpec.get("universeKind") or "none")
             marketParam = declared.get("marketParam") or registrySpec.get("marketParam")
+            measureParam = (
+                declared.get("measureParam") if "measureParam" in declared else registrySpec.get("measureParam")
+            )
+            executorParams = _executorParams(
+                f"{owner}.{axis}",
+                subjectParam=registrySpec.get("subjectParam"),
+                measureParam=measureParam,
+                marketParam=marketParam,
+            )
             label = str(getattr(entry, "label", None) or getattr(entry, "section", None) or axis)
             description = str(getattr(entry, "description", None) or label)
             hidden = bool(getattr(entry, "hidden", False))
@@ -165,6 +204,7 @@ def _registryAssets(provider: Mapping[str, Any]) -> Iterable[DataAssetDescriptor
                     "selectorKind": selectorKind,
                     "selectorRequired": selectorRequired,
                     "subjectParam": registrySpec.get("subjectParam"),
+                    "measureParam": measureParam,
                     "concurrencyGroup": concurrencyGroup,
                     "executionMode": executionMode,
                     "universeKind": universeKind,
@@ -188,14 +228,15 @@ def _registryAssets(provider: Mapping[str, Any]) -> Iterable[DataAssetDescriptor
                 temporalSupport=("latest",),
                 executorKind="engineAxis" if declared.get("queryable", True) else "catalog",
                 executorAxis=str(axis) if declared.get("queryable", True) else None,
-                subjectParam=registrySpec.get("subjectParam"),
+                subjectParam=executorParams["subjectParam"],
+                measureParam=executorParams["measureParam"],
                 selectorKind=selectorKind,
                 selectorRequired=selectorRequired,
                 concurrencyGroup=str(concurrencyGroup) if concurrencyGroup else None,
                 executionMode=typedExecutionMode,
                 universeKind=universeKind,
                 universeMarkets=universeMarkets,
-                marketParam=str(marketParam) if marketParam else None,
+                marketParam=executorParams["marketParam"],
                 marketUnits=marketUnits,
                 metadata=tuple(sorted(declared.items())),
             )
@@ -214,7 +255,9 @@ def _declaredAssets(provider: Mapping[str, Any]) -> Iterable[DataAssetDescriptor
         executor = spec.get("executor")
         if not isinstance(executor, Mapping):
             raise TypeError(f"{assetId} executor가 mapping이 아님")
-        concurrencyGroup = spec.get("concurrencyGroup") or provider.get("concurrencyGroup")
+        concurrencyGroup = (
+            spec.get("concurrencyGroup") if "concurrencyGroup" in spec else provider.get("concurrencyGroup")
+        )
         rawSourceModules = spec.get("sourceModules", ())
         if not isinstance(rawSourceModules, (tuple, list)) or any(type(item) is not str for item in rawSourceModules):
             raise TypeError(f"{assetId} sourceModules가 string sequence가 아님")
@@ -240,6 +283,14 @@ def _declaredAssets(provider: Mapping[str, Any]) -> Iterable[DataAssetDescriptor
         if executionMode not in _EXECUTION_MODES:
             raise ValueError(f"{assetId} executionMode가 유효하지 않음")
         typedExecutionMode = cast(_ExecutionMode, executionMode)
+        executorParams = _executorParams(
+            assetId,
+            subjectParam=spec.get("subjectParam"),
+            measureParam=spec.get("measureParam"),
+            validTimeParam=spec.get("validTimeParam"),
+            knowledgeTimeParam=spec.get("knowledgeTimeParam"),
+            marketParam=spec.get("marketParam"),
+        )
         yield DataAssetDescriptor(
             assetId=assetId,
             assetVersionId=f"asset:{_digest(payload)}",
@@ -257,16 +308,17 @@ def _declaredAssets(provider: Mapping[str, Any]) -> Iterable[DataAssetDescriptor
             executorKind="callable",
             executorModule=str(executor["module"]),
             executorAttribute=str(executor["attribute"]),
-            subjectParam=str(spec["subjectParam"]) if spec.get("subjectParam") else None,
-            validTimeParam=str(spec["validTimeParam"]) if spec.get("validTimeParam") else None,
-            knowledgeTimeParam=str(spec["knowledgeTimeParam"]) if spec.get("knowledgeTimeParam") else None,
+            subjectParam=executorParams["subjectParam"],
+            measureParam=executorParams["measureParam"],
+            validTimeParam=executorParams["validTimeParam"],
+            knowledgeTimeParam=executorParams["knowledgeTimeParam"],
             selectorKind=typedSelectorKind,
             selectorRequired=bool(spec.get("selectorRequired", metadata.get("stockRequired", False))),
             concurrencyGroup=str(concurrencyGroup) if concurrencyGroup else None,
             executionMode=typedExecutionMode,
             universeKind=str(spec.get("universeKind") or "none"),
             universeMarkets=tuple(str(market).upper() for market in spec.get("universeMarkets", ())),
-            marketParam=str(spec["marketParam"]) if spec.get("marketParam") else None,
+            marketParam=executorParams["marketParam"],
             marketUnits=tuple((str(market).upper(), str(unit)) for market, unit in spec.get("marketUnits", ())),
             metadata=tuple(sorted((str(key), value) for key, value in metadata.items())),
         )

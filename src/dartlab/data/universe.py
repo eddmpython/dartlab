@@ -24,6 +24,44 @@ class ResolvedMarket:
     provider: str
     entityIds: tuple[str, ...]
     membershipDigest: str
+    sourceEntityIds: tuple[tuple[str, str], ...] = ()
+    entityParams: tuple[tuple[str, tuple[tuple[str, str], ...]], ...] = ()
+
+    def sourceIdByEntity(self) -> dict[str, str]:
+        """공개 entity ID를 owner 원천 식별자로 연결한다.
+
+        Args:
+            없음.
+
+        Returns:
+            Canonical entity ID에서 source entity ID로 가는 새 mapping.
+
+        Raises:
+            없음.
+
+        Example:
+            ``membership.sourceIdByEntity()["AAPL"]``.
+        """
+
+        return dict(self.sourceEntityIds)
+
+    def paramsByEntity(self) -> dict[str, tuple[tuple[str, str], ...]]:
+        """공개 entity ID별 snapshot-bound executor parameter를 반환한다.
+
+        Args:
+            없음.
+
+        Returns:
+            Canonical entity ID에서 정렬된 parameter tuple로 가는 mapping.
+
+        Raises:
+            없음.
+
+        Example:
+            ``membership.paramsByEntity()["005930"]``.
+        """
+
+        return dict(self.entityParams)
 
 
 @dataclass(frozen=True, slots=True)
@@ -36,14 +74,40 @@ class ResolvedUniverse:
     gaps: tuple[DataGap, ...]
 
     def byMarket(self) -> dict[str, ResolvedMarket]:
-        """해소된 membership을 market key mapping으로 반환한다."""
+        """해소된 membership을 market key mapping으로 반환한다.
+
+        Args:
+            없음.
+
+        Returns:
+            Market code에서 revision-fixed membership으로 가는 mapping.
+
+        Raises:
+            없음.
+
+        Example:
+            ``resolved.byMarket()["US"]``.
+        """
 
         return {item.market: item for item in self.markets}
 
 
 def _canonical(value: Any) -> bytes:
     def serializeDefault(item: Any) -> Any:
-        """Universe snapshot 값을 결정적 JSON 표현으로 변환한다."""
+        """Universe snapshot 값을 결정적 JSON 표현으로 변환한다.
+
+        Args:
+            item: JSON encoder가 직접 처리하지 못한 값.
+
+        Returns:
+            Dataclass, mapping 또는 collection의 결정적 표현.
+
+        Raises:
+            없음.
+
+        Example:
+            ``serializeDefault(selection)``.
+        """
 
         if dataclasses.is_dataclass(item):
             return {field.name: getattr(item, field.name) for field in dataclasses.fields(item)}
@@ -103,19 +167,70 @@ def _loadMembership(selection: UniverseSelection, market: str) -> tuple[Resolved
         if frame.height and "provider" in frame.columns
         else str(spec.get("provider") or "unknown")
     )
-    ids = tuple(sorted({str(value) for value in frame["entityId"].drop_nulls().to_list() if str(value)}))
+    normalized = frame.with_columns(pl.col("entityId").cast(pl.Utf8))
+    ids = tuple(sorted({str(value) for value in normalized["entityId"].drop_nulls().to_list() if str(value)}))
+    sourceIds: tuple[tuple[str, str], ...] = ()
+    if "sourceEntityId" in normalized.columns:
+        sourceIds = tuple(
+            sorted(
+                {
+                    (str(row["entityId"]), str(row["sourceEntityId"]))
+                    for row in normalized.select("entityId", "sourceEntityId").drop_nulls().iter_rows(named=True)
+                    if str(row["entityId"]) and str(row["sourceEntityId"])
+                }
+            )
+        )
+    paramColumns = tuple(sorted(column for column in normalized.columns if column.startswith("param_")))
+    entityParams: tuple[tuple[str, tuple[tuple[str, str], ...]], ...] = ()
+    if paramColumns:
+        paramsByEntity: dict[str, tuple[tuple[str, str], ...]] = {}
+        for row in normalized.select("entityId", *paramColumns).iter_rows(named=True):
+            entityId = str(row["entityId"])
+            params = tuple(
+                (column.removeprefix("param_"), str(row[column]))
+                for column in paramColumns
+                if row[column] is not None and str(row[column])
+            )
+            previous = paramsByEntity.get(entityId)
+            if previous is not None and previous != params:
+                return None, DataGap(
+                    "UNIVERSE_RESOLUTION_FAILED",
+                    f"{market} entity parameter가 충돌합니다: {entityId}",
+                    systemic=True,
+                )
+            paramsByEntity[entityId] = params
+        entityParams = tuple(sorted(paramsByEntity.items()))
     explicit = tuple(value.split(":", 1)[1] for value in selection.explicitIds if value.startswith(f"{market}:"))
     missing = tuple(value for value in explicit if value not in set(ids))
     if explicit:
         ids = tuple(value for value in explicit if value in set(ids))
+        selected = set(ids)
+        sourceIds = tuple(item for item in sourceIds if item[0] in selected)
+        entityParams = tuple(item for item in entityParams if item[0] in selected)
     digest = hashlib.sha256(
-        _canonical({"market": market, "provider": provider, "membership": selection.membership, "ids": ids})
+        _canonical(
+            {
+                "market": market,
+                "provider": provider,
+                "membership": selection.membership,
+                "ids": ids,
+                "sourceIds": sourceIds,
+                "entityParams": entityParams,
+            }
+        )
     ).hexdigest()
     gap = None
     if missing:
         sample = ", ".join(f"{market}:{value}" for value in missing[:8])
         gap = DataGap("UNIVERSE_ENTITY_NOT_FOUND", sample, systemic=False)
-    return ResolvedMarket(market, provider, ids, digest), gap
+    return ResolvedMarket(
+        market=market,
+        provider=provider,
+        entityIds=ids,
+        membershipDigest=digest,
+        sourceEntityIds=sourceIds,
+        entityParams=entityParams,
+    ), gap
 
 
 def _explicitMarket(selection: UniverseSelection, market: str) -> ResolvedMarket:
@@ -128,7 +243,20 @@ def _explicitMarket(selection: UniverseSelection, market: str) -> ResolvedMarket
 
 
 def resolveUniverse(selection: UniverseSelection) -> ResolvedUniverse:
-    """Owner-declared resolver로 market membership을 한 번 해소한다."""
+    """Owner-declared resolver로 market membership을 한 번 해소한다.
+
+    Args:
+        selection: Market, membership 종류와 optional as-of scope.
+
+    Returns:
+        Membership, gap과 content-bound snapshot을 가진 resolved universe.
+
+    Raises:
+        없음. Resolver 실패는 구조화된 gap으로 반환한다.
+
+    Example:
+        ``resolved = resolveUniverse(UniverseSelection(("US",)))``.
+    """
 
     markets: list[ResolvedMarket] = []
     gaps: list[DataGap] = []
@@ -153,7 +281,21 @@ def resolveUniverse(selection: UniverseSelection) -> ResolvedUniverse:
 
 
 def entityIds(value: Any, market: str) -> frozenset[str] | None:
-    """Owner native output에서 market universe identity를 보수적으로 추출한다."""
+    """Owner native output에서 market universe identity를 보수적으로 추출한다.
+
+    Args:
+        value: Owner가 반환한 native output.
+        market: Entity 정규화에 사용할 market code.
+
+    Returns:
+        확인된 canonical entity 집합 또는 검증 불가 시 ``None``.
+
+    Raises:
+        없음.
+
+    Example:
+        ``observed = entityIds(frame, "US")``.
+    """
 
     if not isinstance(value, pl.DataFrame):
         return None

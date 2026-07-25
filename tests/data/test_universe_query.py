@@ -10,6 +10,7 @@ import polars as pl
 import pytest
 
 from dartlab.data import DataQuery, FactorProjection, QueryBudget, UniverseSelection
+from dartlab.data.universe import resolveUniverse
 
 
 def _installUniverseFixtures(monkeypatch) -> None:
@@ -18,6 +19,7 @@ def _installUniverseFixtures(monkeypatch) -> None:
             "회사명": ["삼성전자", "SK하이닉스"],
             "시장구분": ["유가", "유가"],
             "종목코드": ["005930", "000660"],
+            "결산월": ["12월", "03월"],
         }
     )
     us = pl.DataFrame(
@@ -34,7 +36,10 @@ def _installUniverseFixtures(monkeypatch) -> None:
         "dartlab.core.listingResolver.getListingResolver",
         lambda: SimpleNamespace(kindList=lambda **_kwargs: kr),
     )
-    monkeypatch.setattr("dartlab.core.dataLoader.loadEdgarTargetUniverse", lambda tier="all": us)
+    monkeypatch.setattr(
+        "dartlab.core.dataLoader.loadEdgarTargetUniverse",
+        lambda tier="all", **_kwargs: us,
+    )
 
 
 def _marketFrame(market: str) -> pl.DataFrame:
@@ -63,6 +68,31 @@ def testUniverseSelectionCanonicalizesAndDoesNotConsumeSubjectBudget():
     assert query.universe == selection
     with pytest.raises(ValueError, match="동시에"):
         DataQuery(subjects=("005930",), universe=selection)
+
+
+def testResolvedUniverseKeepsOwnerSourceIdentityWithoutChangingPublicEntity(monkeypatch):
+    _installUniverseFixtures(monkeypatch)
+
+    resolved = resolveUniverse(UniverseSelection(("US",)))
+    market = resolved.byMarket()["US"]
+
+    assert market.entityIds == ("AAPL", "MSFT")
+    assert market.sourceIdByEntity() == {
+        "AAPL": "0000320193",
+        "MSFT": "0000789019",
+    }
+
+
+def testResolvedKrUniverseBindsPerEntityFiscalYearEndMonth(monkeypatch):
+    _installUniverseFixtures(monkeypatch)
+
+    resolved = resolveUniverse(UniverseSelection(("KR",)))
+    market = resolved.byMarket()["KR"]
+
+    assert market.paramsByEntity() == {
+        "000660": (("fiscalYearEndMonth", "3"),),
+        "005930": (("fiscalYearEndMonth", "12"),),
+    }
 
 
 def testScanCatalogDeclaresMarketBulkCapability():

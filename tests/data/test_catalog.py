@@ -23,9 +23,33 @@ def testCatalogCoversEveryCurrentLowerLayerRegistryAndResource():
     assert simulationInputs.temporalSupport == ("latest", "validAt")
     edgarFeatures = next(asset for asset in assets if asset.assetId == "analysis.edgarFinancialFeatures")
     assert edgarFeatures.executorKind == "callable"
+    assert edgarFeatures.measureParam == "measures"
     assert edgarFeatures.temporalSupport == ("knownAt",)
     assert edgarFeatures.executionMode == "subjectFanout"
-    assert dict(edgarFeatures.metadata)["observationPIT"] is True
+    assert edgarFeatures.concurrencyGroup is None
+    assert edgarFeatures.universeKind == "listedEquity"
+    assert edgarFeatures.universeMarkets == ("US",)
+    featureMetadata = dict(edgarFeatures.metadata)
+    assert featureMetadata["observationPIT"] is True
+    assert featureMetadata["continuationSourceAssetId"] == "resource.edgar"
+    assert featureMetadata["continuationSourceCategory"] == "edgar"
+    assert featureMetadata["sourceEntityParam"] == "sourceEntityId"
+    assert featureMetadata["sourcePayloadParam"] == "sourcePayload"
+    assert featureMetadata["sourceIntegrityParam"] == "sourceIntegrityDigest"
+    assert featureMetadata["pageMaxEntities"] == 8
+    dartFeatures = next(asset for asset in assets if asset.assetId == "analysis.dartFinancialFeatures")
+    assert dartFeatures.executorKind == "callable"
+    assert dartFeatures.temporalSupport == ("knownAt",)
+    assert dartFeatures.executionMode == "subjectFanout"
+    assert dartFeatures.concurrencyGroup is None
+    assert dartFeatures.universeKind == "listedEquity"
+    assert dartFeatures.universeMarkets == ("KR",)
+    dartFeatureMetadata = dict(dartFeatures.metadata)
+    assert dartFeatureMetadata["continuationSourceAssetId"] == "resource.finance"
+    assert dartFeatureMetadata["continuationSourceCategory"] == "finance"
+    assert dartFeatureMetadata["entityParamMap"] == (("fiscalYearEndMonth", "fiscalYearEndMonth"),)
+    assert dartFeatureMetadata["observationPIT"] is True
+    assert dartFeatureMetadata["pageMaxEntities"] == 8
     assert sum(asset.kind == "resource" for asset in assets) == 42
     assert sum(asset.assetId.startswith("concept.") for asset in assets) == 88
     assert sum(asset.assetId.startswith("providers.Company") for asset in assets) == 64
@@ -77,7 +101,7 @@ def testEveryQueryableAssetHasResolvableExecutor():
     import dartlab
 
     assets = [asset for asset in dartlab.data("catalog").assets if asset.queryable]
-    assert len(assets) == 171
+    assert len(assets) == 172
     for asset in assets:
         if asset.executorKind == "engineAxis":
             assert callable(getattr(dartlab, asset.owner))

@@ -32,12 +32,19 @@ def listedEquityUniverse(
         frame = resolver.kindList()
         return (
             frame.select(
-                pl.col("종목코드").cast(pl.Utf8).str.zfill(6).alias("entityId"),
-                pl.col("종목코드").cast(pl.Utf8).str.zfill(6).alias("sourceEntityId"),
+                pl.col("종목코드").cast(pl.Utf8).str.to_uppercase().str.zfill(6).alias("entityId"),
+                pl.col("종목코드").cast(pl.Utf8).str.to_uppercase().str.zfill(6).alias("sourceEntityId"),
                 pl.col("회사명").cast(pl.Utf8).alias("name"),
                 pl.col("시장구분").cast(pl.Utf8).alias("exchange"),
+                pl.col("결산월")
+                .cast(pl.Utf8)
+                .str.extract(r"(\d{1,2})", 1)
+                .cast(pl.Int16, strict=False)
+                .alias("param_fiscalYearEndMonth"),
             )
-            .filter(pl.col("entityId").str.len_chars() == 6)
+            .filter(
+                pl.col("entityId").str.contains(r"^[0-9A-Z]{6}$") & pl.col("param_fiscalYearEndMonth").is_between(1, 12)
+            )
             .with_columns(
                 pl.lit("KR").alias("market"),
                 pl.lit("dart").alias("provider"),
@@ -48,7 +55,9 @@ def listedEquityUniverse(
     if normalizedMarket == "US":
         from dartlab.core.dataLoader import loadEdgarTargetUniverse
 
-        frame = loadEdgarTargetUniverse("all")
+        # Data Workbench query는 관측 중 source를 갱신하지 않는다. 이미 존재하는
+        # owner snapshot만 읽고 digest로 pin한다. 갱신은 gather/pipeline이 소유한다.
+        frame = loadEdgarTargetUniverse("all", localOnly=True)
         return (
             frame.select(
                 pl.col("ticker").cast(pl.Utf8).str.to_uppercase().alias("entityId"),

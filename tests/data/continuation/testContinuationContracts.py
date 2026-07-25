@@ -1,8 +1,10 @@
-"""Continuation contract secrecy and canonical digest locks."""
+"""Continuation contract secrecy, integrity, and canonical digest locks."""
 
 from __future__ import annotations
 
+import ast
 import math
+from pathlib import Path
 
 import pytest
 
@@ -61,6 +63,30 @@ def testContinuationErrorOnlyAcceptsSafeRegisteredCodes():
     assert error.code == "CONTINUATION_EXPIRED"
     assert "secret" not in str(error)
     assert repr(error) == "ContinuationError(code='CONTINUATION_EXPIRED')"
+
+
+def testEveryLiteralContinuationErrorCodeIsRegistered():
+    dataRoot = Path(__file__).resolve().parents[3] / "src" / "dartlab" / "data"
+    literals: set[str] = set()
+    for path in dataRoot.rglob("*.py"):
+        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call) or not node.args:
+                continue
+            callableName = (
+                node.func.id
+                if isinstance(node.func, ast.Name)
+                else node.func.attr
+                if isinstance(node.func, ast.Attribute)
+                else None
+            )
+            code = node.args[0]
+            if callableName == "ContinuationError" and isinstance(code, ast.Constant) and isinstance(code.value, str):
+                literals.add(code.value)
+
+    assert literals
+    for code in sorted(literals):
+        assert ContinuationError(code).code == code
 
 
 @pytest.mark.parametrize(

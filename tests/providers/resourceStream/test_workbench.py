@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import hashlib
+import os
 from dataclasses import FrozenInstanceError
 from pathlib import Path
 from typing import Any, cast
@@ -10,6 +12,7 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 import pytest
 
+import dartlab.providers.resourceStream.manifest as manifestModule
 import dartlab.providers.resourceStream.workbench as workbenchModule
 from dartlab.providers.resourceStream import (
     ResourcePage,
@@ -146,6 +149,207 @@ def test_describeResource_rejectsUnknownMismatchAccessEscapeNestedAndMissing(
     with pytest.raises(ValueError, match="RESOURCE_ROOT_MISSING"):
         describeResource("resource.missingResource", "missingResource", cachePath)
     assert Path(workbenchModule.dartlabConfig.dataDir).resolve() == dataRoot.resolve()
+
+
+def test_verifyResourceShardPayloads_loadsPinnedManifestOnceAndReusesDuplicateShard(
+    flatResource: tuple[Path, Path, Path],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _dataRoot, resourceRoot, cachePath = flatResource
+    description = describeResource(_RESOURCE_ID, _CATEGORY, cachePath)
+    realLoad = workbenchModule.loadPinnedResourceManifest
+    realRead = workbenchModule.readVerifiedManifestShard
+    loadCount = 0
+    readCompanyIds: list[str] = []
+
+    def countLoad(*args: object, **kwargs: object):
+        nonlocal loadCount
+        loadCount += 1
+        return realLoad(*args, **kwargs)
+
+    def countRead(manifest, companyId: str):
+        readCompanyIds.append(companyId)
+        return realRead(manifest, companyId)
+
+    def failFullTreeScan(_root: Path) -> tuple[Path, ...]:
+        raise AssertionError("pinned page batch가 resource file set을 다시 순회했습니다")
+
+    monkeypatch.setattr(workbenchModule, "loadPinnedResourceManifest", countLoad)
+    monkeypatch.setattr(workbenchModule, "readVerifiedManifestShard", countRead)
+    monkeypatch.setattr(manifestModule, "_resourcePaths", failFullTreeScan)
+    payloads = workbenchModule.verifyResourceShardPayloads(
+        _RESOURCE_ID,
+        _CATEGORY,
+        ("A", "B", "A"),
+        description.sourcePin,
+        cachePath,
+    )
+
+    assert loadCount == 1
+    assert readCompanyIds == ["A", "B"]
+    assert [payload.companyId for payload in payloads] == ["A", "B", "A"]
+    assert payloads[0] is payloads[2]
+    assert payloads[0].relativePath == "A.parquet"
+    assert payloads[0].encodedBytes == (resourceRoot / "A.parquet").read_bytes()
+    assert payloads[0].encodedByteCount == len(payloads[0].encodedBytes)
+    assert payloads[0].integrityDigest == hashlib.sha256(payloads[0].encodedBytes).hexdigest()
+    assert "encodedBytes" not in repr(payloads[0])
+
+
+def test_verifyResourceShardPayloads_routesSandboxReadToLocklessLoader(
+    flatResource: tuple[Path, Path, Path],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _dataRoot, _resourceRoot, cachePath = flatResource
+    description = describeResource(_RESOURCE_ID, _CATEGORY, cachePath)
+    realReadOnlyLoad = workbenchModule.loadPinnedResourceManifestReadOnly
+    readOnlyLoads = 0
+
+    def failLockedLoad(*_args: object, **_kwargs: object):
+        raise AssertionError("sandbox read가 locked pinned loader를 호출했습니다")
+
+    def countReadOnlyLoad(*args: object, **kwargs: object):
+        nonlocal readOnlyLoads
+        readOnlyLoads += 1
+        return realReadOnlyLoad(*args, **kwargs)
+
+    monkeypatch.setattr(
+        workbenchModule,
+        "loadPinnedResourceManifest",
+        failLockedLoad,
+    )
+    monkeypatch.setattr(
+        workbenchModule,
+        "loadPinnedResourceManifestReadOnly",
+        countReadOnlyLoad,
+    )
+    payloads = workbenchModule.verifyResourceShardPayloads(
+        _RESOURCE_ID,
+        _CATEGORY,
+        ("A",),
+        description.sourcePin,
+        cachePath,
+        readOnlyCache=True,
+    )
+
+    assert readOnlyLoads == 1
+    assert [payload.companyId for payload in payloads] == ["A"]
+
+
+def test_verifyResourceShardPayloads_rejectsStealthSameSizeSameMtimeMutation(
+    flatResource: tuple[Path, Path, Path],
+) -> None:
+    _dataRoot, resourceRoot, cachePath = flatResource
+    first = describeResource(_RESOURCE_ID, _CATEGORY, cachePath)
+    changedPath = resourceRoot / "A.parquet"
+    oldStat = changedPath.stat()
+    payload = bytearray(changedPath.read_bytes())
+    payload[16] ^= 1
+    changedPath.write_bytes(payload)
+    os.utime(changedPath, ns=(oldStat.st_atime_ns, oldStat.st_mtime_ns))
+
+    cached = describeResource(_RESOURCE_ID, _CATEGORY, cachePath)
+    assert cached.cacheHit is True
+    assert cached.sourcePin == first.sourcePin
+    with pytest.raises(ValueError, match="RESOURCE_SOURCE_DRIFT"):
+        workbenchModule.verifyResourceShardPayloads(
+            _RESOURCE_ID,
+            _CATEGORY,
+            ("A",),
+            first.sourcePin,
+            cachePath,
+        )
+
+
+def test_verifyResourceShardPayloads_ignoresUnselectedStealthMutation(
+    flatResource: tuple[Path, Path, Path],
+) -> None:
+    _dataRoot, resourceRoot, cachePath = flatResource
+    description = describeResource(_RESOURCE_ID, _CATEGORY, cachePath)
+    changedPath = resourceRoot / "B.parquet"
+    oldStat = changedPath.stat()
+    payload = bytearray(changedPath.read_bytes())
+    payload[16] ^= 1
+    changedPath.write_bytes(payload)
+    os.utime(changedPath, ns=(oldStat.st_atime_ns, oldStat.st_mtime_ns))
+
+    verified = workbenchModule.verifyResourceShardPayloads(
+        _RESOURCE_ID,
+        _CATEGORY,
+        ("A",),
+        description.sourcePin,
+        cachePath,
+    )
+
+    assert len(verified) == 1
+    assert verified[0].companyId == "A"
+    assert verified[0].encodedBytes == (resourceRoot / "A.parquet").read_bytes()
+
+
+def test_verifyResourceShardPayloads_rejectsUnknownCompany(
+    flatResource: tuple[Path, Path, Path],
+) -> None:
+    _dataRoot, _resourceRoot, cachePath = flatResource
+    description = describeResource(_RESOURCE_ID, _CATEGORY, cachePath)
+
+    with pytest.raises(ValueError, match="RESOURCE_COMPANY_UNKNOWN"):
+        workbenchModule.verifyResourceShardPayloads(
+            _RESOURCE_ID,
+            _CATEGORY,
+            ("UNKNOWN",),
+            description.sourcePin,
+            cachePath,
+        )
+
+
+def test_verifyResourceShardPayloads_canReportAvailableSubsetWithoutReload(
+    flatResource: tuple[Path, Path, Path],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _dataRoot, _resourceRoot, cachePath = flatResource
+    description = describeResource(_RESOURCE_ID, _CATEGORY, cachePath)
+    realLoad = workbenchModule.loadPinnedResourceManifest
+    loadCount = 0
+
+    def countLoad(*args: object, **kwargs: object):
+        nonlocal loadCount
+        loadCount += 1
+        return realLoad(*args, **kwargs)
+
+    monkeypatch.setattr(workbenchModule, "loadPinnedResourceManifest", countLoad)
+    verified = workbenchModule.verifyResourceShardPayloads(
+        _RESOURCE_ID,
+        _CATEGORY,
+        ("UNKNOWN", "A", "MISSING", "A"),
+        description.sourcePin,
+        cachePath,
+        allowMissing=True,
+    )
+
+    assert loadCount == 1
+    assert [payload.companyId for payload in verified] == ["A", "A"]
+    assert verified[0] is verified[1]
+
+
+def test_verifyResourceShardPayloads_rejectsWrongExpectedSourcePinBeforePayloadRead(
+    flatResource: tuple[Path, Path, Path],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _dataRoot, _resourceRoot, cachePath = flatResource
+    describeResource(_RESOURCE_ID, _CATEGORY, cachePath)
+
+    def failRead(*_args: object, **_kwargs: object):
+        raise AssertionError("wrong source pin에서 shard payload를 읽었습니다")
+
+    monkeypatch.setattr(workbenchModule, "readVerifiedManifestShard", failRead)
+    with pytest.raises(ValueError, match="RESOURCE_SOURCE_DRIFT"):
+        workbenchModule.verifyResourceShardPayloads(
+            _RESOURCE_ID,
+            _CATEGORY,
+            ("A",),
+            "resource-source-full:" + "f" * 64,
+            cachePath,
+        )
 
 
 def test_readResourcePage_returnsTwoPinnedPagesWithoutDuplicates(

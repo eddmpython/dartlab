@@ -127,6 +127,15 @@ def _loadAndNormalize(
         "thstrm_add_amount",
     ]
     df = loadData(stockCode, category="finance", columns=_FINANCE_COLS)
+    return _normalizeFinanceFrame(df, fsDivPref)
+
+
+def _normalizeFinanceFrame(
+    df: pl.DataFrame,
+    fsDivPref: str = "CFS",
+) -> tuple[pl.DataFrame, list[str]] | None:
+    """이미 읽은 DART finance frame을 분기 피벗 직전 형태로 정규화한다."""
+
     if isEmptyDf(df):
         return None
 

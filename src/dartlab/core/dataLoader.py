@@ -556,13 +556,44 @@ def updateEdgarListedUniverse(*, force: bool = False) -> Path:
     return updateListedUniverse(force=force)
 
 
-def loadEdgarListedUniverse(*, forceUpdate: bool = False) -> pl.DataFrame:
-    """현재 상장 universe 캐시 로드. 필요 시 SEC 원본에서 갱신."""
-    path = updateEdgarListedUniverse(force=forceUpdate)
+def loadEdgarListedUniverse(
+    *,
+    forceUpdate: bool = False,
+    localOnly: bool = False,
+) -> pl.DataFrame:
+    """현재 상장 universe 캐시를 갱신 정책에 맞춰 로드한다.
+
+    Args:
+        forceUpdate: SEC 원본을 강제로 다시 확인한다.
+        localOnly: 기존 parquet만 읽고 network와 파일 갱신을 금지한다.
+
+    Returns:
+        CIK, ticker, 회사명, 거래소를 가진 현재 상장 universe.
+
+    Raises:
+        ValueError: ``forceUpdate``와 ``localOnly``를 동시에 요청한 경우.
+        FileNotFoundError: local-only cache가 존재하지 않는 경우.
+
+    Example:
+        ``snapshot = loadEdgarListedUniverse(localOnly=True)``.
+    """
+    if forceUpdate and localOnly:
+        raise ValueError("forceUpdate와 localOnly는 함께 사용할 수 없습니다")
+    path = (
+        _getDataRoot() / "edgar" / "listedUniverse.parquet"
+        if localOnly
+        else updateEdgarListedUniverse(force=forceUpdate)
+    )
+    if localOnly and not path.is_file():
+        raise FileNotFoundError("EDGAR listed universe local snapshot이 없습니다")
     return pl.read_parquet(path)
 
 
-def loadEdgarTargetUniverse(tier: str = "all") -> pl.DataFrame:
+def loadEdgarTargetUniverse(
+    tier: str = "all",
+    *,
+    localOnly: bool = False,
+) -> pl.DataFrame:
     """tier별 EDGAR 상장사 목록 반환.
 
     Parameters
@@ -580,7 +611,11 @@ def loadEdgarTargetUniverse(tier: str = "all") -> pl.DataFrame:
     """
     from dartlab.core.dataLoaderUniverse import loadEdgarTargetUniverse as _impl
 
-    return _impl(loadEdgarListedUniverse(), tier, _loadSp500Tickers())
+    return _impl(
+        loadEdgarListedUniverse(localOnly=localOnly),
+        tier,
+        _loadSp500Tickers(),
+    )
 
 
 def _loadSp500Tickers() -> list[str] | None:

@@ -79,6 +79,42 @@ class CompiledQuarterlyFinancialState:
     stateHash: str
 
 
+@dataclass(frozen=True)
+class CompiledQuarterlyFlowState:
+    """Stock 결합 없이 최신 coherent 분기 흐름과 네 분기 이력을 보존한다."""
+
+    quarters: tuple[QuarterFlow, ...]
+    quarterRevenue: float
+    quarterOperatingProfit: float
+    ttmRevenue: float
+    ttmOperatingProfit: float
+    knowledgeAsOf: str
+    fiscalThrough: str
+    reportingCurrency: str
+    revisionPolicy: str
+    frequency: str
+    evidence: tuple[FactEvidence, ...]
+    warnings: tuple[str, ...]
+    stateHash: str
+
+
+@dataclass(frozen=True)
+class CompiledQuarterlyRevenueState:
+    """영업이익 dependency 없이 최신 coherent 매출 네 분기를 보존한다."""
+
+    quarters: tuple[FactEvidence, ...]
+    quarterRevenue: float
+    ttmRevenue: float
+    knowledgeAsOf: str
+    fiscalThrough: str
+    reportingCurrency: str
+    revisionPolicy: str
+    frequency: str
+    evidence: tuple[FactEvidence, ...]
+    warnings: tuple[str, ...]
+    stateHash: str
+
+
 _STOCK_TAGS: dict[str, tuple[str, ...]] = {
     "cashAndEquivalents": (
         "CashAndCashEquivalentsAtCarryingValue",
@@ -313,13 +349,63 @@ def _quarterEvidence(
         & (pl.col("__end") <= fiscalThrough)
         & (pl.col("unit") == "USD")
     ).with_columns((pl.col("end").cast(pl.Date) - pl.col("start").cast(pl.Date)).dt.total_days().alias("__days"))
-    flows = tagged.filter(pl.col("__days").is_between(60, 120))
+    flowRowsByEnd: dict[str, list[dict]] = {}
+    annualRowsByEnd: dict[str, list[dict]] = {}
+    yearToDateRowsByStart: dict[str, list[dict]] = {}
+    for row in tagged.iter_rows(named=True):
+        days = int(row["__days"])
+        end = str(row["__end"])
+        if 60 <= days <= 120:
+            flowRowsByEnd.setdefault(end, []).append(row)
+        if 300 <= days <= 400:
+            annualRowsByEnd.setdefault(end, []).append(row)
+        if 200 <= days <= 300:
+            yearToDateRowsByStart.setdefault(str(row["__start"]), []).append(row)
+    flowEnds = tuple(sorted(flowRowsByEnd, reverse=True))
+    quarterSelectionCache: dict[str | None, dict[str, FactEvidence]] = {}
 
-    def selectQuarterFacts(frame: pl.DataFrame) -> dict[str, FactEvidence]:
+    def selectLatest(
+        rows: list[dict],
+        *,
+        conflictKind: str,
+        fiscalEnd: str,
+        kind: str,
+    ) -> FactEvidence | None:
+        """태그 우선순위와 최신 filing 기준으로 한 관측을 선택한다.
+
+        Args:
+            rows: 동일 기간 후보 행.
+            conflictKind: 충돌 오류에 표시할 관측 종류.
+            fiscalEnd: 충돌 오류에 표시할 회계 기간말.
+            kind: 생성할 evidence 종류.
+
+        Returns:
+            최신 단일 관측. 후보가 없으면 ``None``.
+
+        Raises:
+            EdgarStateError: 최신 접수 안에 서로 다른 값이 있으면 발생한다.
+
+        Example:
+            ``selectLatest(rows, conflictKind="quarterly", fiscalEnd=end, kind="flowQuarter")``.
+        """
+
+        for tag in tags:
+            tagRows = [row for row in rows if row["tag"] == tag]
+            if not tagRows:
+                continue
+            latestFiled = max(str(row["__filed"]) for row in tagRows)
+            latest = [row for row in tagRows if str(row["__filed"]) == latestFiled]
+            values = {float(row["__value"]) for row in latest}
+            if len(values) != 1:
+                raise EdgarStateError(f"conflicting {conflictKind} values for {conceptId}:{fiscalEnd}")
+            return _rawEvidence(conceptId, latest[0], kind=kind)
+        return None
+
+    def selectQuarterFacts(filedThrough: str | None = None) -> dict[str, FactEvidence]:
         """주어진 filing cutoff 안에서 분기별 최신 단독 흐름을 선택한다.
 
         Args:
-            frame: 정규화된 단독 분기 flow 행.
+            filedThrough: 포함할 최신 filing 날짜. ``None``이면 전체를 포함한다.
 
         Returns:
             분기말별 최신 ``FactEvidence`` 매핑.
@@ -328,69 +414,54 @@ def _quarterEvidence(
             EdgarStateError: 같은 분기와 최신 접수에 서로 다른 값이 있으면 발생한다.
 
         Example:
-            ``selectQuarterFacts(flows)`` 로 cutoff 안의 분기 흐름을 선택한다.
+            ``selectQuarterFacts("20250131")`` 로 cutoff 안의 분기 흐름을 선택한다.
         """
 
+        cached = quarterSelectionCache.get(filedThrough)
+        if cached is not None:
+            return cached
         selected: dict[str, FactEvidence] = {}
-        for end in sorted(frame["__end"].unique().to_list() if frame.height else [], reverse=True):
-            endRows = frame.filter(pl.col("__end") == end).sort("__filed", descending=True)
-            for tag in tags:
-                tagRows = endRows.filter(pl.col("tag") == tag)
-                if tagRows.height == 0:
-                    continue
-                latestFiled = str(tagRows["__filed"].max())
-                latest = tagRows.filter(pl.col("__filed") == latestFiled)
-                values = set(float(value) for value in latest["__value"].to_list())
-                if len(values) != 1:
-                    raise EdgarStateError(f"conflicting quarterly values for {conceptId}:{end}")
-                selected[str(end)] = _rawEvidence(
-                    conceptId,
-                    latest.row(0, named=True),
-                    kind="flowQuarter",
-                )
-                break
+        for end in flowEnds:
+            endRows = flowRowsByEnd[end]
+            if filedThrough is not None:
+                endRows = [row for row in endRows if str(row["__filed"]) <= filedThrough]
+            evidence = selectLatest(
+                endRows,
+                conflictKind="quarterly",
+                fiscalEnd=end,
+                kind="flowQuarter",
+            )
+            if evidence is not None:
+                selected[end] = evidence
+        quarterSelectionCache[filedThrough] = selected
         return selected
 
-    out = selectQuarterFacts(flows)
-    annuals = tagged.filter(pl.col("__days").is_between(300, 400))
-    for end in sorted(annuals["__end"].unique().to_list() if annuals.height else [], reverse=True):
-        if str(end) in out:
+    out = dict(selectQuarterFacts())
+    for end in sorted(annualRowsByEnd, reverse=True):
+        if end in out:
             continue
-        endRows = annuals.filter(pl.col("__end") == end).sort("__filed", descending=True)
-        annual: FactEvidence | None = None
-        for tag in tags:
-            tagRows = endRows.filter(pl.col("tag") == tag)
-            if tagRows.height:
-                latestFiled = str(tagRows["__filed"].max())
-                latest = tagRows.filter(pl.col("__filed") == latestFiled)
-                values = set(float(value) for value in latest["__value"].to_list())
-                if len(values) != 1:
-                    raise EdgarStateError(f"conflicting annual values for {conceptId}:{end}")
-                annual = _rawEvidence(conceptId, latest.row(0, named=True), kind="flowAnnual")
-                break
+        annual = selectLatest(
+            annualRowsByEnd[end],
+            conflictKind="annual",
+            fiscalEnd=end,
+            kind="flowAnnual",
+        )
         if annual is None or annual.fiscalStart is None:
             continue
-        ytdCandidates = tagged.filter(
-            (pl.col("__start") == annual.fiscalStart)
-            & (pl.col("__end") < annual.fiscalEnd)
-            & (pl.col("__filed") <= annual.filedAt)
-            & pl.col("__days").is_between(200, 300)
-        )
+        ytdCandidates = [
+            row
+            for row in yearToDateRowsByStart.get(annual.fiscalStart, ())
+            if str(row["__end"]) < annual.fiscalEnd and str(row["__filed"]) <= annual.filedAt
+        ]
         ytd: FactEvidence | None = None
-        if ytdCandidates.height:
-            latestEnd = str(ytdCandidates["__end"].max())
-            endRows = ytdCandidates.filter(pl.col("__end") == latestEnd).sort("__filed", descending=True)
-            for tag in tags:
-                tagRows = endRows.filter(pl.col("tag") == tag)
-                if tagRows.height == 0:
-                    continue
-                latestFiled = str(tagRows["__filed"].max())
-                latest = tagRows.filter(pl.col("__filed") == latestFiled)
-                values = set(float(value) for value in latest["__value"].to_list())
-                if len(values) != 1:
-                    raise EdgarStateError(f"conflicting year-to-date values for {conceptId}:{latestEnd}")
-                ytd = _rawEvidence(conceptId, latest.row(0, named=True), kind="flowYearToDate")
-                break
+        if ytdCandidates:
+            latestEnd = max(str(row["__end"]) for row in ytdCandidates)
+            ytd = selectLatest(
+                [row for row in ytdCandidates if str(row["__end"]) == latestEnd],
+                conflictKind="year-to-date",
+                fiscalEnd=latestEnd,
+                kind="flowYearToDate",
+            )
         if ytd is not None:
             q4Start = (datetime.strptime(ytd.fiscalEnd, "%Y%m%d") + timedelta(days=1)).strftime("%Y%m%d")
             q4Days = (datetime.strptime(annual.fiscalEnd, "%Y%m%d") - datetime.strptime(q4Start, "%Y%m%d")).days
@@ -414,7 +485,7 @@ def _quarterEvidence(
                     ),
                 )
                 continue
-        asKnownAtAnnual = selectQuarterFacts(flows.filter(pl.col("__filed") <= annual.filedAt))
+        asKnownAtAnnual = selectQuarterFacts(annual.filedAt)
         firstThree = sorted(
             (
                 item
@@ -545,6 +616,61 @@ def _compileQuarterWindow(pit: pl.DataFrame, fiscalThrough: str) -> tuple[Quarte
     return tuple(flows)
 
 
+def _compileRevenueQuarterWindow(
+    pit: pl.DataFrame,
+    fiscalThrough: str,
+) -> tuple[FactEvidence, ...]:
+    """한 fiscal end까지 연속된 매출 단독 네 분기를 컴파일한다."""
+
+    revenue = _quarterEvidence(
+        pit,
+        "revenueQuarter",
+        _REVENUE_TAGS,
+        fiscalThrough=fiscalThrough,
+    )
+    candidates = sorted(revenue, reverse=True)
+    if fiscalThrough not in candidates:
+        raise EdgarStateError("revenue flow quarters must end at the requested fiscalThrough date")
+
+    def priorQuarter(currentEnd: str) -> str | None:
+        currentStart = revenue[currentEnd].fiscalStart
+        if currentStart is None:
+            return None
+        startDate = datetime.strptime(currentStart, "%Y%m%d")
+        for candidateEnd in candidates:
+            if candidateEnd >= currentEnd:
+                continue
+            gap = (startDate - datetime.strptime(candidateEnd, "%Y%m%d")).days
+            if 0 <= gap <= 14:
+                return candidateEnd
+        return None
+
+    commonEnds = [fiscalThrough]
+    while len(commonEnds) < 4:
+        prior = priorQuarter(commonEnds[-1])
+        if prior is None:
+            break
+        commonEnds.append(prior)
+    if len(commonEnds) != 4:
+        raise EdgarStateError("four standalone revenue quarters are required")
+    chronological = tuple(revenue[end] for end in reversed(commonEnds))
+    gaps = [
+        (datetime.strptime(str(current.fiscalStart), "%Y%m%d") - datetime.strptime(previous.fiscalEnd, "%Y%m%d")).days
+        for previous, current in zip(
+            chronological,
+            chronological[1:],
+        )
+    ]
+    if any(gap < 0 or gap > 14 for gap in gaps):
+        raise EdgarStateError("revenue quarters are not contiguous")
+    start = chronological[0].fiscalStart
+    assert start is not None
+    span = (pl.Series([fiscalThrough]).str.to_date("%Y%m%d")[0] - pl.Series([start]).str.to_date("%Y%m%d")[0]).days
+    if span < 270 or span > 400:
+        raise EdgarStateError("revenue quarters do not form one fiscal year")
+    return chronological
+
+
 def _compileTtm(pit: pl.DataFrame, fiscalThrough: str) -> tuple[float, float, tuple[FactEvidence, ...]]:
     flows = _compileQuarterWindow(pit, fiscalThrough)
     revenueTtm = sum(flow.revenue.value for flow in flows)
@@ -632,6 +758,191 @@ def compileEdgarFinancialState(
         reportingCurrency="USD",
         revisionPolicy="asKnown",
         evidence=evidence,
+        warnings=warnings,
+        stateHash=_hash(payload),
+    )
+
+
+def compileEdgarQuarterlyFlowState(
+    facts: pl.DataFrame,
+    *,
+    knowledgeAsOf: str,
+    fiscalThrough: str | None = None,
+) -> CompiledQuarterlyFlowState:
+    """Stock facts 없이 coherent revenue와 operating-profit 분기 흐름을 컴파일한다.
+
+    Args:
+        facts: Normalized EDGAR company facts rows.
+        knowledgeAsOf: Filing knowledge cutoff in ``YYYYMMDD`` form.
+        fiscalThrough: Optional fiscal-end date to select explicitly.
+
+    Returns:
+        Latest coherent quarter, four-quarter history, evidence, and a state hash.
+
+    Raises:
+        EdgarStateError: Facts cannot form a coherent four-quarter flow state.
+
+    Example:
+        ``compileEdgarQuarterlyFlowState(facts, knowledgeAsOf="20250228")``.
+    """
+
+    cutoff = _dateText(knowledgeAsOf)
+    pit = _normalize(facts, cutoff)
+    warnings: tuple[str, ...] = ()
+    if fiscalThrough is not None:
+        effectiveFiscalThrough = _dateText(fiscalThrough)
+        quarters = _compileQuarterWindow(pit, effectiveFiscalThrough)
+    else:
+        latestEnd = max(str(value) for value in pit["__end"].drop_nulls().to_list() if str(value))
+        revenue = _quarterEvidence(
+            pit,
+            "revenueQuarter",
+            _REVENUE_TAGS,
+            fiscalThrough=latestEnd,
+        )
+        operating = _quarterEvidence(
+            pit,
+            "operatingProfitQuarter",
+            _OPERATING_PROFIT_TAGS,
+            fiscalThrough=latestEnd,
+        )
+        candidates = tuple(sorted(set(revenue) & set(operating), reverse=True))
+        if not candidates:
+            raise EdgarStateError("four common standalone revenue and operating-profit quarters are required")
+        firstError: EdgarStateError | None = None
+        quarters = ()
+        effectiveFiscalThrough = ""
+        for candidate in candidates:
+            try:
+                candidateQuarters = _compileQuarterWindow(pit, candidate)
+                if candidateQuarters[-1].revenue.value <= 0:
+                    raise EdgarStateError("financial state revenue must be positive")
+                quarters = candidateQuarters
+                effectiveFiscalThrough = candidate
+                if candidate != candidates[0]:
+                    warnings = (f"latestIncompleteFlow:{candidates[0]}",)
+                break
+            except EdgarStateError as error:
+                if firstError is None:
+                    firstError = error
+        if not quarters:
+            assert firstError is not None
+            raise firstError
+    latest = quarters[-1]
+    quarterRevenue = latest.revenue.value
+    if quarterRevenue <= 0:
+        raise EdgarStateError("financial state revenue must be positive")
+    quarterOperatingProfit = latest.operatingProfit.value
+    ttmRevenue = sum(flow.revenue.value for flow in quarters)
+    ttmOperatingProfit = sum(flow.operatingProfit.value for flow in quarters)
+    evidence = tuple(item for flow in quarters for item in (flow.revenue, flow.operatingProfit))
+    payload = {
+        "quarters": [asdict(flow) for flow in quarters],
+        "quarterRevenue": quarterRevenue,
+        "quarterOperatingProfit": quarterOperatingProfit,
+        "ttmRevenue": ttmRevenue,
+        "ttmOperatingProfit": ttmOperatingProfit,
+        "knowledgeAsOf": cutoff,
+        "fiscalThrough": effectiveFiscalThrough,
+        "reportingCurrency": "USD",
+        "revisionPolicy": "asKnown",
+        "frequency": "quarter",
+        "evidence": [asdict(item) for item in evidence],
+        "warnings": warnings,
+    }
+    return CompiledQuarterlyFlowState(
+        quarters=quarters,
+        quarterRevenue=quarterRevenue,
+        quarterOperatingProfit=quarterOperatingProfit,
+        ttmRevenue=ttmRevenue,
+        ttmOperatingProfit=ttmOperatingProfit,
+        knowledgeAsOf=cutoff,
+        fiscalThrough=effectiveFiscalThrough,
+        reportingCurrency="USD",
+        revisionPolicy="asKnown",
+        frequency="quarter",
+        evidence=evidence,
+        warnings=warnings,
+        stateHash=_hash(payload),
+    )
+
+
+def compileEdgarQuarterlyRevenueState(
+    facts: pl.DataFrame,
+    *,
+    knowledgeAsOf: str,
+    fiscalThrough: str | None = None,
+) -> CompiledQuarterlyRevenueState:
+    """영업이익이나 stock facts 없이 coherent revenue 네 분기를 컴파일한다."""
+
+    cutoff = _dateText(knowledgeAsOf)
+    pit = _normalize(facts, cutoff)
+    warnings: tuple[str, ...] = ()
+    if fiscalThrough is not None:
+        effectiveFiscalThrough = _dateText(fiscalThrough)
+        quarters = _compileRevenueQuarterWindow(
+            pit,
+            effectiveFiscalThrough,
+        )
+    else:
+        latestEnd = max(str(value) for value in pit["__end"].drop_nulls().to_list() if str(value))
+        revenue = _quarterEvidence(
+            pit,
+            "revenueQuarter",
+            _REVENUE_TAGS,
+            fiscalThrough=latestEnd,
+        )
+        candidates = tuple(sorted(revenue, reverse=True))
+        if not candidates:
+            raise EdgarStateError("four standalone revenue quarters are required")
+        firstError: EdgarStateError | None = None
+        quarters = ()
+        effectiveFiscalThrough = ""
+        for candidate in candidates:
+            try:
+                candidateQuarters = _compileRevenueQuarterWindow(
+                    pit,
+                    candidate,
+                )
+                if candidateQuarters[-1].value <= 0:
+                    raise EdgarStateError("financial state revenue must be positive")
+                quarters = candidateQuarters
+                effectiveFiscalThrough = candidate
+                if candidate != candidates[0]:
+                    warnings = (f"latestIncompleteFlow:{candidates[0]}",)
+                break
+            except EdgarStateError as error:
+                if firstError is None:
+                    firstError = error
+        if not quarters:
+            assert firstError is not None
+            raise firstError
+    quarterRevenue = quarters[-1].value
+    if quarterRevenue <= 0:
+        raise EdgarStateError("financial state revenue must be positive")
+    ttmRevenue = sum(item.value for item in quarters)
+    payload = {
+        "quarters": [asdict(item) for item in quarters],
+        "quarterRevenue": quarterRevenue,
+        "ttmRevenue": ttmRevenue,
+        "knowledgeAsOf": cutoff,
+        "fiscalThrough": effectiveFiscalThrough,
+        "reportingCurrency": "USD",
+        "revisionPolicy": "asKnown",
+        "frequency": "quarter",
+        "evidence": [asdict(item) for item in quarters],
+        "warnings": warnings,
+    }
+    return CompiledQuarterlyRevenueState(
+        quarters=quarters,
+        quarterRevenue=quarterRevenue,
+        ttmRevenue=ttmRevenue,
+        knowledgeAsOf=cutoff,
+        fiscalThrough=effectiveFiscalThrough,
+        reportingCurrency="USD",
+        revisionPolicy="asKnown",
+        frequency="quarter",
+        evidence=quarters,
         warnings=warnings,
         stateHash=_hash(payload),
     )

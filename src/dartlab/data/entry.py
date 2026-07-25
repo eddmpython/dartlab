@@ -24,6 +24,7 @@ from dartlab.data.contracts import (
     UniverseSelection,
 )
 from dartlab.data.execution import executeDataQuery
+from dartlab.data.materialization import parseMaterializationDirective
 
 
 @dataclass(frozen=True, slots=True)
@@ -121,6 +122,8 @@ def _dataQuery(value: Any) -> DataQuery | None:
         payload["budget"] = QueryBudget(**dict(payload["budget"]))
     if "requests" in payload:
         payload["requests"] = tuple(_dataRequestFromMapping(item) for item in payload["requests"])
+    if "materialization" in payload:
+        payload["materialization"] = parseMaterializationDirective(payload["materialization"])
     return DataQuery(**payload)
 
 
@@ -146,13 +149,15 @@ class Data:
         metadata-only catalog와 bounded query 두 축을 제공한다. query는 native, records, factor,
         graph, narrative, resource projection을 사용한다. DataRequest를 쓰면 한 query에서 서로 다른
         projection을 함께 실행하고 result에 snapshot, gap, lineage, quality, receipt를 결박한다.
-        DART와 EDGAR 전종목 원천은 서로 다른 schema를 유지한 채 한 continuation chain으로 순회한다.
+        DART와 EDGAR 전종목 원천 및 계산 feature는 서로 다른 schema를 유지한 채 한 continuation
+        chain으로 순회한다. immutable generation은 같은 query axis의 materialization 정책으로 쓴다.
 
     Guide:
         먼저 ``data("catalog")``로 AssetRef를 찾고, 같은 asset ID를 ``data("query")``에 전달한다.
         factor store 용도는 새 API가 아니라 ``FactorProjection``을 사용한다. quant와 technical 계산은
         원래 owner가 수행하고 data는 해당 결과를 factor view로 투영한다.
-        partial resource result는 ``data("query", query={"continuation": result.continuation})``으로 재개한다.
+        partial result는 ``data("query", query={"continuation": result.continuation})``으로 재개한다.
+        다른 process 재생은 ``materialization={"mode": "offline", "receipt": receipt}``를 사용한다.
 
     Requires:
         query axis는 owner asset이 요구하는 데이터와 자격 증명을 그대로 요구한다.
@@ -174,8 +179,8 @@ class Data:
         """Data Workbench의 catalog 또는 query axis를 실행한다.
 
         Capabilities:
-            no-arg guide, metadata-only catalog, stable asset ID 기반 query, typed result, token-only resource
-            resume을 제공한다.
+            no-arg guide, metadata-only catalog, stable asset ID 기반 query, typed result, token-only
+            resume, receipt 기반 immutable replay를 제공한다.
 
         Args:
             axis: ``catalog`` 또는 ``query``.

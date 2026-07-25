@@ -6,6 +6,7 @@ import hashlib
 import json
 import os
 from concurrent.futures import ProcessPoolExecutor
+from dataclasses import replace
 from pathlib import Path
 
 import pyarrow as pa
@@ -14,7 +15,9 @@ import pytest
 
 import dartlab.providers.resourceStream.manifest as manifestModule
 from dartlab.providers.resourceStream.manifest import (
+    loadPinnedResourceManifest,
     loadResourceManifest,
+    readVerifiedManifestShard,
     validateManifestSources,
 )
 
@@ -135,6 +138,31 @@ def test_loadResourceManifest_rejectsCorruptCacheDocument(
     assert rebuilt.sourcePin != "resource-source-full:corrupt"
 
 
+def test_loadPinnedResourceManifest_rejectsCorruptCacheWithoutTreeScan(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    root = tmp_path / "resource"
+    cachePath = tmp_path / "manifest.json"
+    _writeResourceRoot(root)
+    first = loadResourceManifest("resource.test", root, cachePath=cachePath)
+    document = json.loads(cachePath.read_text(encoding="utf-8"))
+    document["sourcePin"] = "resource-source-full:corrupt"
+    cachePath.write_text(json.dumps(document), encoding="utf-8")
+
+    def failTreeScan(_root: Path) -> tuple[Path, ...]:
+        raise AssertionError("pinned cache failure가 source tree rebuild로 우회했습니다")
+
+    monkeypatch.setattr(manifestModule, "_resourcePaths", failTreeScan)
+    with pytest.raises(ValueError, match="RESOURCE_SOURCE_DRIFT"):
+        loadPinnedResourceManifest(
+            "resource.test",
+            root,
+            first.sourcePin,
+            cachePath=cachePath,
+        )
+
+
 def test_loadResourceManifest_cacheValidationHonestlyStopsAtSizeAndMtime(
     tmp_path: Path,
 ) -> None:
@@ -180,6 +208,37 @@ def test_loadResourceManifest_footerFastIsExplicitBenchmarkIdentity(tmp_path: Pa
     )
     assert manifest.integrityMode == "footerFast"
     assert manifest.sourcePin.startswith("resource-source-footer-fast:")
+
+
+def test_readVerifiedManifestShard_rejectsFooterFastIdentity(tmp_path: Path) -> None:
+    root = tmp_path / "resource"
+    _writeResourceRoot(root)
+    manifest = loadResourceManifest(
+        "resource.test",
+        root,
+        integrityMode="footerFast",
+        useCache=False,
+    )
+
+    with pytest.raises(ValueError, match="RESOURCE_INTEGRITY_MODE_UNSUPPORTED"):
+        readVerifiedManifestShard(manifest, "A")
+
+
+def test_readVerifiedManifestShard_rejectsPinnedPathEscape(tmp_path: Path) -> None:
+    root = tmp_path / "resource"
+    _writeResourceRoot(root)
+    manifest = loadResourceManifest("resource.test", root, useCache=False)
+    escapedShard = replace(
+        manifest.shards[0],
+        relativePath="../A.parquet",
+    )
+    escapedManifest = replace(
+        manifest,
+        shards=(escapedShard, *manifest.shards[1:]),
+    )
+
+    with pytest.raises(ValueError, match="RESOURCE_SHARD_PATH_ESCAPE"):
+        readVerifiedManifestShard(escapedManifest, "A")
 
 
 def test_loadResourceManifest_unionsHistoricalShardSchemas(tmp_path: Path) -> None:

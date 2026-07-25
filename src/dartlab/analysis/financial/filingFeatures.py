@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Sequence
 from dataclasses import asdict, dataclass
 from datetime import date
 from hashlib import sha256
@@ -12,10 +13,15 @@ import polars as pl
 
 from dartlab.analysis.financial.edgarPitState import (
     CompiledQuarterlyFinancialState,
+    CompiledQuarterlyFlowState,
+    CompiledQuarterlyRevenueState,
     compileEdgarQuarterlyFinancialState,
+    compileEdgarQuarterlyFlowState,
+    compileEdgarQuarterlyRevenueState,
 )
 
 EDGAR_FINANCIAL_FEATURE_NORMALIZATION_HASH = sha256(b"dartlab.edgar-quarterly-financial-state-adapter.v1").hexdigest()
+EDGAR_FLOW_FEATURE_NORMALIZATION_HASH = sha256(b"dartlab.edgar-quarterly-flow-feature-adapter.v1").hexdigest()
 
 
 @dataclass(frozen=True)
@@ -134,6 +140,12 @@ EDGAR_FINANCIAL_FEATURE_MAPPINGS: tuple[EdgarFinancialFeatureMapping, ...] = (
         None,
     ),
 )
+_FLOW_ONLY_MEASURES = frozenset(
+    {
+        "financial.revenue",
+        "financial.operatingMargin",
+    }
+)
 
 
 def _dateText(value: str, label: str) -> str:
@@ -152,7 +164,9 @@ def _canonicalHash(value: Any) -> str:
     return sha256(payload.encode("utf-8")).hexdigest()
 
 
-def _sourceRefs(compiled: CompiledQuarterlyFinancialState) -> tuple[str, ...]:
+def _sourceRefs(
+    compiled: (CompiledQuarterlyFinancialState | CompiledQuarterlyFlowState | CompiledQuarterlyRevenueState),
+) -> tuple[str, ...]:
     refs = set()
     for item in compiled.evidence:
         refs.add(f"{item.accession}|{item.tag}|{item.fiscalStart}|{item.fiscalEnd}|{item.status}")
@@ -160,23 +174,46 @@ def _sourceRefs(compiled: CompiledQuarterlyFinancialState) -> tuple[str, ...]:
     return tuple(sorted(refs))
 
 
-def _stableEvidencePayload(compiled: CompiledQuarterlyFinancialState) -> dict[str, Any]:
+def _mappingValue(
+    compiled: (CompiledQuarterlyFinancialState | CompiledQuarterlyFlowState | CompiledQuarterlyRevenueState),
+    mapping: EdgarFinancialFeatureMapping,
+) -> float:
+    if isinstance(compiled, CompiledQuarterlyRevenueState):
+        if mapping.variableId == "financial.revenue":
+            return float(compiled.quarterRevenue)
+        raise ValueError(f"revenue-only compiler가 지원하지 않는 measure입니다: {mapping.variableId}")
+    if isinstance(compiled, CompiledQuarterlyFlowState):
+        if mapping.variableId == "financial.revenue":
+            return float(compiled.quarterRevenue)
+        if mapping.variableId == "financial.operatingMargin":
+            return float(compiled.quarterOperatingProfit / compiled.quarterRevenue)
+        raise ValueError(f"flow-only compiler가 지원하지 않는 measure입니다: {mapping.variableId}")
+    return float(getattr(compiled.state, mapping.fieldName))
+
+
+def _stableEvidencePayload(
+    compiled: (CompiledQuarterlyFinancialState | CompiledQuarterlyFlowState | CompiledQuarterlyRevenueState),
+    mappings: tuple[EdgarFinancialFeatureMapping, ...],
+    *,
+    normalizationRuleHash: str,
+    flowOnly: bool,
+) -> dict[str, Any]:
     """Query cutoff을 제외하고 값, 선택 evidence, 의미만 revision identity에 넣는다."""
 
     return {
-        "schemaVersion": "edgar-quarterly-financial-evidence-v1",
+        "schemaVersion": ("edgar-quarterly-flow-evidence-v1" if flowOnly else "edgar-quarterly-financial-evidence-v1"),
         "fiscalThrough": compiled.fiscalThrough,
         "reportingCurrency": compiled.reportingCurrency,
         "frequency": compiled.frequency,
-        "values": {
-            item.variableId: float(getattr(compiled.state, item.fieldName)) for item in EDGAR_FINANCIAL_FEATURE_MAPPINGS
-        },
+        "values": {item.variableId: _mappingValue(compiled, item) for item in mappings},
         "evidence": tuple(asdict(item) for item in compiled.evidence),
-        "normalizationRuleHash": EDGAR_FINANCIAL_FEATURE_NORMALIZATION_HASH,
+        "normalizationRuleHash": normalizationRuleHash,
     }
 
 
-def _featureSpecs() -> tuple[dict[str, Any], ...]:
+def _featureSpecs(
+    mappings: tuple[EdgarFinancialFeatureMapping, ...],
+) -> tuple[dict[str, Any], ...]:
     return tuple(
         {
             "variableId": item.variableId,
@@ -193,8 +230,29 @@ def _featureSpecs() -> tuple[dict[str, Any], ...]:
             "lower": item.lower,
             "upper": item.upper,
         }
-        for item in EDGAR_FINANCIAL_FEATURE_MAPPINGS
+        for item in mappings
     )
+
+
+def _selectedMappings(
+    measures: Sequence[str],
+) -> tuple[tuple[EdgarFinancialFeatureMapping, ...], bool]:
+    if isinstance(measures, (str, bytes)):
+        raise TypeError("EDGAR feature measures는 string sequence여야 합니다")
+    requested = tuple(measures)
+    if any(type(item) is not str or not item or item != item.strip() for item in requested):
+        raise ValueError("EDGAR feature measure ID가 유효하지 않습니다")
+    if len(requested) != len(set(requested)):
+        raise ValueError("EDGAR feature measures에 중복이 있습니다")
+    byId = {mapping.variableId: mapping for mapping in EDGAR_FINANCIAL_FEATURE_MAPPINGS}
+    unknown = tuple(item for item in requested if item not in byId)
+    if unknown:
+        raise ValueError(f"EDGAR feature measure가 지원되지 않습니다: {', '.join(unknown)}")
+    if not requested:
+        return EDGAR_FINANCIAL_FEATURE_MAPPINGS, False
+    requestedSet = set(requested)
+    mappings = tuple(mapping for mapping in EDGAR_FINANCIAL_FEATURE_MAPPINGS if mapping.variableId in requestedSet)
+    return mappings, requestedSet.issubset(_FLOW_ONLY_MEASURES)
 
 
 def buildEdgarFinancialFeatureInput(
@@ -203,6 +261,7 @@ def buildEdgarFinancialFeatureInput(
     entityId: str,
     knownAt: str,
     validAt: str | None = None,
+    measures: Sequence[str] = (),
 ) -> dict[str, Any]:
     """EDGAR companyfacts를 cutoff-stable plain feature envelope로 만든다.
 
@@ -211,6 +270,7 @@ def buildEdgarFinancialFeatureInput(
         entityId: ``US:TICKER`` 형태의 canonical entity identity.
         knownAt: 소비자가 허용하는 filing knowledge cutoff.
         validAt: 선택 가능한 fiscal event cutoff. 생략하면 knownAt 시점의 최신 분기.
+        measures: 생성할 feature ID. 비우면 기존 strict full-state 전체를 생성한다.
 
     Returns:
         Data Workbench가 상위 계층에서 검증할 ``feature-observation-input-v1`` mapping.
@@ -224,6 +284,7 @@ def buildEdgarFinancialFeatureInput(
 
     if not entityId.startswith("US:") or len(entityId.partition(":")[2]) == 0:
         raise ValueError("EDGAR feature entityId는 US:ENTITY 형식이어야 합니다")
+    mappings, flowOnly = _selectedMappings(measures)
     cutoff = _dateText(knownAt, "knownAt")
     selectedFacts = facts
     if validAt is not None:
@@ -234,13 +295,36 @@ def buildEdgarFinancialFeatureInput(
             pl.col("end").is_not_null()
             & (pl.col("end").cast(pl.Utf8).str.replace_all("-", "").str.slice(0, 8) <= valid)
         )
-    compiled = compileEdgarQuarterlyFinancialState(selectedFacts, knowledgeAsOf=cutoff)
+    compiled: CompiledQuarterlyFinancialState | CompiledQuarterlyFlowState | CompiledQuarterlyRevenueState
+    if flowOnly:
+        if {item.variableId for item in mappings} == {"financial.revenue"}:
+            compiled = compileEdgarQuarterlyRevenueState(
+                selectedFacts,
+                knowledgeAsOf=cutoff,
+            )
+        else:
+            compiled = compileEdgarQuarterlyFlowState(
+                selectedFacts,
+                knowledgeAsOf=cutoff,
+            )
+        normalizationRuleHash = EDGAR_FLOW_FEATURE_NORMALIZATION_HASH
+    else:
+        compiled = compileEdgarQuarterlyFinancialState(
+            selectedFacts,
+            knowledgeAsOf=cutoff,
+        )
+        normalizationRuleHash = EDGAR_FINANCIAL_FEATURE_NORMALIZATION_HASH
     availableAt = max(_dateText(item.filedAt, "filedAt") for item in compiled.evidence)
-    stablePayload = _stableEvidencePayload(compiled)
+    stablePayload = _stableEvidencePayload(
+        compiled,
+        mappings,
+        normalizationRuleHash=normalizationRuleHash,
+        flowOnly=flowOnly,
+    )
     evidenceHash = _canonicalHash(stablePayload)
     sourceRefs = _sourceRefs(compiled)
     vintage = {
-        "artifactKind": "edgarCompiledFinancialEvidence",
+        "artifactKind": ("edgarCompiledFlowEvidence" if flowOnly else "edgarCompiledFinancialEvidence"),
         "provider": "edgar",
         "artifactId": f"{entityId}:{compiled.fiscalThrough}:{evidenceHash}",
         "artifactHash": evidenceHash,
@@ -250,7 +334,7 @@ def buildEdgarFinancialFeatureInput(
         "revisionPolicy": "latestRetained",
         "coverage": "periodOnly",
         "fiscalThrough": compiled.fiscalThrough,
-        "contractHash": EDGAR_FINANCIAL_FEATURE_NORMALIZATION_HASH,
+        "contractHash": normalizationRuleHash,
         "sourceRefs": sourceRefs,
     }
     observations = tuple(
@@ -259,7 +343,7 @@ def buildEdgarFinancialFeatureInput(
             "datasetId": "quarterly-financial",
             "entityId": entityId,
             "signalId": item.variableId,
-            "value": float(getattr(compiled.state, item.fieldName)),
+            "value": _mappingValue(compiled, item),
             "unit": item.unit,
             "frequency": "quarter",
             "timing": item.timing,
@@ -271,13 +355,13 @@ def buildEdgarFinancialFeatureInput(
             "availabilityPrecision": "date",
             "revisionId": evidenceHash,
             "vintage": vintage,
-            "normalizationRuleHash": EDGAR_FINANCIAL_FEATURE_NORMALIZATION_HASH,
+            "normalizationRuleHash": normalizationRuleHash,
         }
-        for item in EDGAR_FINANCIAL_FEATURE_MAPPINGS
+        for item in mappings
     )
     return {
         "schemaVersion": "feature-observation-input-v1",
-        "specs": _featureSpecs(),
+        "specs": _featureSpecs(mappings),
         "observations": observations,
     }
 
@@ -285,6 +369,7 @@ def buildEdgarFinancialFeatureInput(
 __all__ = [
     "EDGAR_FINANCIAL_FEATURE_MAPPINGS",
     "EDGAR_FINANCIAL_FEATURE_NORMALIZATION_HASH",
+    "EDGAR_FLOW_FEATURE_NORMALIZATION_HASH",
     "EdgarFinancialFeatureMapping",
     "buildEdgarFinancialFeatureInput",
 ]

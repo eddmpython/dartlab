@@ -47,6 +47,10 @@ from dartlab.data.featureRegistry import (
     buildStateVariableRegistry,
     stateVariableContractHash,
 )
+from dartlab.data.materialization import (
+    MaterializationDirective,
+    MaterializationReceipt,
+)
 from dartlab.data.pageScan import (
     PageScanCheckpoint,
     PageScanError,
@@ -75,6 +79,8 @@ __all__ = [
     "FeatureReadResult",
     "FeatureSelection",
     "GraphProjection",
+    "MaterializationDirective",
+    "MaterializationReceipt",
     "NarrativeProjection",
     "NativeProjection",
     "PageScanCheckpoint",

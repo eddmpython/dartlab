@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -12,7 +12,13 @@ import dartlab.config as dartlabConfig
 from dartlab.core.dataConfig import DATA_RELEASES
 
 from .contracts import ResourceManifest, ResourceReadReceipt, ResourceReadRequest
-from .manifest import loadResourceManifest, validateManifestSources
+from .manifest import (
+    loadPinnedResourceManifest,
+    loadPinnedResourceManifestReadOnly,
+    loadResourceManifest,
+    readVerifiedManifestShard,
+    validateManifestSources,
+)
 from .reader import openResourceBatchReader
 
 
@@ -46,6 +52,23 @@ class ResourcePage:
     category: str
     receipt: ResourceReadReceipt
     actualSchemaFields: tuple[tuple[str, str], ...]
+    encodedBytes: bytes = field(repr=False)
+    encodedByteCount: int = field(init=False)
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "encodedByteCount", len(self.encodedBytes))
+
+
+@dataclass(frozen=True, slots=True)
+class VerifiedResourceShardPayload:
+    """Pinned digest 검증에 사용한 동일 immutable company shard bytes다.
+
+    Absolute root는 보존하지 않는다. encodedBytes는 repr에서 제외하고 byte count만 표시한다.
+    """
+
+    companyId: str
+    relativePath: str
+    integrityDigest: str
     encodedBytes: bytes = field(repr=False)
     encodedByteCount: int = field(init=False)
 
@@ -131,7 +154,7 @@ def _loadFullManifest(
     cachePath: str | Path | None,
     *,
     root: Path | None = None,
-):
+) -> ResourceManifest:
     resolvedRoot = root if root is not None else _resolveFlatRoot(resourceId, category)
     return loadResourceManifest(
         resourceId,
@@ -251,6 +274,120 @@ def describeResource(
         readResourcePage, ResourceDescription.
     """
     return prepareResourceRead(resourceId, category, cachePath).description
+
+
+def verifyResourceShardPayloads(
+    resourceId: str,
+    category: str,
+    companyIds: Sequence[str],
+    expectedSourcePin: str,
+    cachePath: str | Path | None = None,
+    *,
+    allowMissing: bool = False,
+    readOnlyCache: bool = False,
+) -> tuple[VerifiedResourceShardPayload, ...]:
+    """Pinned resource source에서 선택 company shard bytes를 batch 검증한다.
+
+    Capabilities:
+        Manifest cache document를 한 번만 읽고 expected source pin에 결박한 뒤 선택한 각 unique
+        shard를 한 번 읽어 full-file SHA-256과 동일 immutable bytes를 반환한다.
+
+    Args:
+        resourceId: DATA_RELEASES와 결박할 stable resource ID.
+        category: DATA_RELEASES flat category.
+        companyIds: 입력 순서로 검증할 exact company shard ID sequence.
+        expectedSourcePin: caller가 이미 고정한 full resource source pin.
+        cachePath: 최초 source issue가 쓴 persistent manifest cache JSON 경로.
+        allowMissing: ``True``면 manifest에 없는 company를 결과에서 제외한다.
+        readOnlyCache: ``True``면 sandbox child용 lockless pinned cache reader를 쓴다.
+
+    Returns:
+        입력 순서와 같은 immutable verified shard payload tuple. 중복 ID는 같은 검증 bytes를 재사용하고
+        ``allowMissing=True``일 때 없는 ID는 결과에서 제외한다.
+
+    Raises:
+        TypeError: companyIds collection 또는 item 타입이 유효하지 않을 때.
+        ValueError: resource binding, cache, source pin, company, path, stat 또는 payload integrity가 다를 때.
+
+    Example:
+        ``verifyResourceShardPayloads("resource.edgar", "edgar", ("0000320193",), sourcePin)``.
+
+    Guide:
+        Owner는 page의 source company IDs를 한 번에 전달하고 consumer는 encodedBytes를 직접 parse한다.
+
+    When:
+        Continuation page가 전수 stat 없이 selected-shard payload만 강하게 검증해야 할 때 호출한다.
+
+    How:
+        Pinned cache envelope를 한 번 검증하고 각 unique shard를 같은 descriptor에서 read와 hash한다.
+
+    SeeAlso:
+        describeResource, loadPinnedResourceManifest, readVerifiedManifestShard.
+
+    Requires:
+        최초 issue가 같은 cachePath에 full manifest를 썼고 expectedSourcePin은 그 cache와 같아야 한다.
+
+    AIContext:
+        O(total shards) page stat과 hash 뒤 path reopen을 모두 제거하는 owner batch seam이다.
+
+    LLM Specifications:
+        AntiPatterns:
+            - expectedSourcePin 없이 검증
+            - footerFast manifest 허용
+            - entity마다 manifest를 다시 load
+            - 반환 bytes 대신 shard path를 다시 열어 parse
+        Freshness:
+            최초 issue cache identity와 호출 시점 selected shard full payload bytes다.
+        Dataflow:
+            resource binding -> pinned cache once -> expected source pin -> unique shard bytes+SHA-256.
+        OutputSchema:
+            - companyId : str, verified company identity
+            - relativePath : str, flat pinned shard identity
+            - integrityDigest : str, verified full-file SHA-256
+            - encodedBytes : bytes, digest를 계산한 동일 immutable bytes
+        Prerequisites:
+            DATA_RELEASES registration과 최초 issue가 쓴 v2 full manifest cache.
+        TargetMarkets:
+            DATA_RELEASES flat company-sharded resources.
+    """
+    if isinstance(companyIds, (str, bytes)) or not isinstance(companyIds, Sequence):
+        raise TypeError("companyIds는 str sequence여야 합니다")
+    if type(allowMissing) is not bool:
+        raise TypeError("allowMissing은 bool이어야 합니다")
+    if type(readOnlyCache) is not bool:
+        raise TypeError("readOnlyCache는 bool이어야 합니다")
+    normalizedCompanyIds: list[str] = []
+    for companyId in companyIds:
+        if not isinstance(companyId, str):
+            raise TypeError("companyIds item은 str이어야 합니다")
+        normalizedCompanyId = companyId.strip()
+        if not normalizedCompanyId:
+            raise ValueError("companyId가 비었습니다")
+        normalizedCompanyIds.append(normalizedCompanyId)
+    if not normalizedCompanyIds:
+        raise ValueError("companyIds가 비었습니다")
+
+    root = _resolveFlatRoot(resourceId, category)
+    manifestLoader = loadPinnedResourceManifestReadOnly if readOnlyCache else loadPinnedResourceManifest
+    manifest = manifestLoader(
+        resourceId,
+        root,
+        expectedSourcePin,
+        cachePath=cachePath,
+    )
+    knownCompanyIds = {shard.companyId for shard in manifest.shards}
+    payloadByCompany: dict[str, VerifiedResourceShardPayload] = {}
+    for companyId in dict.fromkeys(normalizedCompanyIds):
+        if allowMissing and companyId not in knownCompanyIds:
+            continue
+        identity, encodedBytes = readVerifiedManifestShard(manifest, companyId)
+        payloadByCompany[companyId] = VerifiedResourceShardPayload(
+            companyId=identity.companyId,
+            relativePath=identity.relativePath,
+            integrityDigest=identity.integrityDigest,
+            encodedBytes=encodedBytes,
+        )
+    return tuple(payloadByCompany[companyId] for companyId in normalizedCompanyIds if companyId in payloadByCompany)
 
 
 def _readResourcePageFromManifest(

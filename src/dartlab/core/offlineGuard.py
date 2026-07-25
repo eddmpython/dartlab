@@ -50,6 +50,7 @@ _ORIGINAL_CONNECT = None
 _ORIGINAL_CONNECT_EX = None
 _ORIGINAL_GETADDRINFO = None
 _ENFORCED = False
+_STRICT = False
 
 # DNS resolve cache: IP -> hostname. getaddrinfo 가 host name 으로 resolve 한 결과를
 # socket.connect 시점에 raw IP 로 받기 때문에 hostname 매칭이 안 된다. getaddrinfo
@@ -60,12 +61,18 @@ _dnsCache: dict[str, str] = {}
 # loopback + HuggingFace dataset CDN 기본 허용. prebuild 가 HF 에서 raw / derived
 # parquet 다운로드는 필수 (CI runner 는 디스크에 없음). 외부 API (DART/EDGAR/FRED/
 # ECOS/Naver/KRX) 는 sync 단계 책임이므로 차단.
-_DEFAULT_ALLOWED_HOSTS: frozenset[str] = frozenset(
+_LOOPBACK_HOSTS: frozenset[str] = frozenset(
     {
         "127.0.0.1",
         "::1",
         "0.0.0.0",
         "localhost",
+    }
+)
+
+_DEFAULT_ALLOWED_HOSTS: frozenset[str] = frozenset(
+    {
+        *_LOOPBACK_HOSTS,
         # HuggingFace Hub — dataset 다운로드 (prebuild input).
         "huggingface.co",
         "cdn-lfs.huggingface.co",
@@ -88,9 +95,13 @@ _extraAllowed: set[str] = set()
 class OfflineViolation(RuntimeError):
     """prebuild·offline 단계에서 외부 네트워크 호출 시도 발생."""
 
+    code = "OFFLINE_NETWORK_BLOCKED"
+
 
 def _hostnameAllowed(host: str) -> bool:
     """순수 hostname 매칭 (cache 미사용)."""
+    if _STRICT:
+        return host in _LOOPBACK_HOSTS or host.startswith("127.")
     if host in _DEFAULT_ALLOWED_HOSTS:
         return True
     if host in _extraAllowed:
@@ -144,7 +155,10 @@ def _extractHost(address) -> str | None:
 def _guardedConnect(self, address):
     host = _extractHost(address)
     if host is None or _isAllowedHost(host):
-        return _ORIGINAL_CONNECT(self, address)
+        originalConnect = _ORIGINAL_CONNECT
+        if originalConnect is None:
+            raise RuntimeError("offline guard original connect가 초기화되지 않았습니다")
+        return originalConnect(self, address)
     raise OfflineViolation(
         f"prebuild 단계 외부 네트워크 호출 차단: host={host!r} address={address!r}. "
         "외부 API 호출은 sync/ 단계로 이동시키시오. "
@@ -155,7 +169,10 @@ def _guardedConnect(self, address):
 def _guardedConnectEx(self, address):
     host = _extractHost(address)
     if host is None or _isAllowedHost(host):
-        return _ORIGINAL_CONNECT_EX(self, address)
+        originalConnectEx = _ORIGINAL_CONNECT_EX
+        if originalConnectEx is None:
+            raise RuntimeError("offline guard original connect_ex가 초기화되지 않았습니다")
+        return originalConnectEx(self, address)
     raise OfflineViolation(f"prebuild 단계 외부 네트워크 호출 차단 (connect_ex): host={host!r} address={address!r}.")
 
 
@@ -167,7 +184,15 @@ def _guardedGetaddrinfo(host, *args, **kwargs):
     허용/차단 판정 가능. hostname 허용된 경우에만 캐시 — 차단 host 의 IP 는 캐시
     안 함 (false negative 방지).
     """
-    results = _ORIGINAL_GETADDRINFO(host, *args, **kwargs)
+    if _STRICT and isinstance(host, str) and not _hostnameAllowed(host.strip().lower()):
+        raise OfflineViolation(
+            f"strict offline 단계 DNS 호출 차단: host={host!r}. "
+            "eager continuation child는 loopback 외 네트워크를 허용하지 않습니다."
+        )
+    originalGetaddrinfo = _ORIGINAL_GETADDRINFO
+    if originalGetaddrinfo is None:
+        raise RuntimeError("offline guard original getaddrinfo가 초기화되지 않았습니다")
+    results = originalGetaddrinfo(host, *args, **kwargs)
     if host and isinstance(host, str):
         hostLower = host.strip().lower()
         if _hostnameAllowed(hostLower):
@@ -181,20 +206,26 @@ def _guardedGetaddrinfo(host, *args, **kwargs):
     return results
 
 
-def enforceOffline(allowedHosts: Iterable[str] | None = None) -> None:
+def enforceOffline(
+    allowedHosts: Iterable[str] | None = None,
+    *,
+    strict: bool = False,
+) -> None:
     """외부 네트워크 호출 차단 가드 활성화.
 
     ``socket.socket.connect`` / ``connect_ex`` 를 monkey-patch. loopback 은 통과.
 
     Args:
         allowedHosts: 기본 loopback 외 추가 허용할 host 명/IP. 예: 로컬 OLAP 서버 IP.
+        strict: ``True``면 HF와 추가 host도 제외하고 loopback만 허용.
 
     Idempotent — 이미 활성화돼 있으면 allowedHosts 만 추가하고 return.
     """
-    global _ORIGINAL_CONNECT, _ORIGINAL_CONNECT_EX, _ORIGINAL_GETADDRINFO, _ENFORCED
+    global _ORIGINAL_CONNECT, _ORIGINAL_CONNECT_EX, _ORIGINAL_GETADDRINFO, _ENFORCED, _STRICT
 
     if allowedHosts:
         _extraAllowed.update(h.strip().lower() for h in allowedHosts if h and h.strip())
+    _STRICT = _STRICT or strict
 
     if _ENFORCED:
         return
@@ -210,7 +241,7 @@ def enforceOffline(allowedHosts: Iterable[str] | None = None) -> None:
 
 def releaseOffline() -> None:
     """가드 해제 — 테스트 fixture 전용. 운영 코드에서는 호출 금지."""
-    global _ORIGINAL_CONNECT, _ORIGINAL_CONNECT_EX, _ORIGINAL_GETADDRINFO, _ENFORCED
+    global _ORIGINAL_CONNECT, _ORIGINAL_CONNECT_EX, _ORIGINAL_GETADDRINFO, _ENFORCED, _STRICT
 
     if not _ENFORCED:
         return
@@ -226,6 +257,7 @@ def releaseOffline() -> None:
     _extraAllowed.clear()
     _dnsCache.clear()
     _ENFORCED = False
+    _STRICT = False
 
 
 def isOfflineEnforced() -> bool:

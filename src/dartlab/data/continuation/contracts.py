@@ -37,6 +37,22 @@ _ERROR_MESSAGES = {
     "CONTINUATION_SECURITY_FAILED": "continuation private storage 보안 설정에 실패했습니다",
     "CONTINUATION_COMPRESSION_UNSUPPORTED": "continuation Arrow IPC compression을 지원하지 않습니다",
     "CONTINUATION_LOGICAL_BYTE_BUDGET": "continuation Arrow logical byte budget을 초과했습니다",
+    "CONTINUATION_ARTIFACT_WRITE_FAILED": "continuation private artifact 쓰기에 실패했습니다",
+    "CONTINUATION_ARTIFACT_INVALID": "continuation private artifact 무결성 검증에 실패했습니다",
+    "CONTINUATION_ARTIFACT_CLEANUP_FAILED": "continuation private artifact 정리에 실패했습니다",
+    "CONTINUATION_OWNER_PROCESS_CLEANUP_FAILED": "continuation owner process 정리에 실패했습니다",
+    "CONTINUATION_OWNER_PROCESS_JOB_FAILED": "continuation owner process 격리 설정에 실패했습니다",
+    "CONTINUATION_OWNER_PROCESS_FAILED": "continuation owner process 실행에 실패했습니다",
+    "OFFLINE_NETWORK_BLOCKED": "eager continuation 실행에서 외부 네트워크 접근이 차단되었습니다",
+    "PAGEABLE_EAGER_CODE_PIN_FAILED": "eager executor code identity를 고정하지 못했습니다",
+    "PAGEABLE_EAGER_EXECUTOR_UNSUPPORTED": "격리 실행을 지원하지 않는 eager executor입니다",
+    "PAGEABLE_EAGER_PROCESS_BUDGET": "eager executor 격리 실행에 필요한 시간 budget이 부족합니다",
+    "PAGEABLE_EAGER_PROCESS_FAILED": "eager executor 격리 실행에 실패했습니다",
+    "PAGEABLE_EAGER_SEAL_BUDGET": "eager result seal이 private state byte budget을 초과했습니다",
+    "PAGEABLE_EAGER_SEAL_RESULT_BUDGET": "eager selector result가 할당된 byte budget을 초과했습니다",
+    "PAGEABLE_EAGER_SEAL_ROW_BUDGET": "eager selector 수가 row budget을 초과했습니다",
+    "PAGEABLE_EAGER_SELECTOR_UNSUPPORTED": "eager selector 계약을 격리 실행으로 고정할 수 없습니다",
+    "PAGEABLE_EAGER_WRITE_BLOCKED": "eager executor의 source filesystem 쓰기가 차단되었습니다",
 }
 
 

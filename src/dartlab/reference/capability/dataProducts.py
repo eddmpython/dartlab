@@ -10,14 +10,41 @@ import importlib
 import importlib.util
 import pkgutil
 from collections.abc import Mapping
+from pathlib import Path
 from typing import Any
+
+
+def _filesystemProviderExists(moduleInfo: Any) -> bool | None:
+    """FileFinder package에서 dataProduct module 존재 여부를 import 없이 확인한다."""
+
+    finderPath = getattr(getattr(moduleInfo, "module_finder", None), "path", None)
+    if not isinstance(finderPath, str):
+        return None
+    root = Path(finderPath)
+    if not root.is_dir():
+        return None
+    package = root / str(moduleInfo.name)
+    return (package / "dataProduct.py").is_file() or (package / "dataProduct" / "__init__.py").is_file()
 
 
 def discoverDataProductProviders(
     *,
     layers: frozenset[str] | None = None,
 ) -> tuple[tuple[Mapping[str, Any], ...], tuple[str, ...]]:
-    """Installed top-level package의 dataProduct mapping을 자동 발견한다."""
+    """Installed top-level package의 dataProduct mapping을 자동 발견한다.
+
+    Args:
+        layers: 포함할 optional architecture layer 집합.
+
+    Returns:
+        Owner 순으로 정렬된 descriptor와 안전한 discovery error tuple.
+
+    Raises:
+        없음. Provider별 import와 계약 오류는 error tuple로 격리한다.
+
+    Example:
+        ``providers, errors = discoverDataProductProviders(layers=frozenset({"L2"}))``.
+    """
     import dartlab
 
     providers: list[Mapping[str, Any]] = []
@@ -27,7 +54,10 @@ def discoverDataProductProviders(
             continue
         providerName = f"dartlab.{moduleInfo.name}.dataProduct"
         try:
-            if importlib.util.find_spec(providerName) is None:
+            filesystemStatus = _filesystemProviderExists(moduleInfo)
+            if filesystemStatus is False:
+                continue
+            if filesystemStatus is None and importlib.util.find_spec(providerName) is None:
                 continue
             module = importlib.import_module(providerName)
             descriptor = getattr(module, "DATA_PRODUCT_DESCRIPTOR", None)
@@ -44,7 +74,20 @@ def discoverDataProductProviders(
 
 
 def axisRegistryTargets() -> tuple[tuple[str, str, str], ...]:
-    """Owner provider에서 axis registry target을 derived view로 만든다."""
+    """Owner provider에서 axis registry target을 derived view로 만든다.
+
+    Args:
+        없음.
+
+    Returns:
+        Owner, registry module, attribute tuple의 정렬된 sequence.
+
+    Raises:
+        없음.
+
+    Example:
+        ``targets = axisRegistryTargets()``.
+    """
     providers, _ = discoverDataProductProviders()
     targets = []
     for provider in providers:
@@ -54,7 +97,20 @@ def axisRegistryTargets() -> tuple[tuple[str, str, str], ...]:
 
 
 def callableModuleTargets() -> dict[str, tuple[str, str | None]]:
-    """Owner provider에서 root callable doc target을 derived view로 만든다."""
+    """Owner provider에서 root callable doc target을 derived view로 만든다.
+
+    Args:
+        없음.
+
+    Returns:
+        Owner에서 callable module과 optional attribute로 가는 mapping.
+
+    Raises:
+        없음.
+
+    Example:
+        ``targets = callableModuleTargets()``.
+    """
     providers, _ = discoverDataProductProviders()
     targets: dict[str, tuple[str, str | None]] = {}
     for provider in providers:

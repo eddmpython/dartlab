@@ -8,7 +8,6 @@ import hmac
 import importlib
 import json
 import math
-import os
 import re
 import time
 from collections.abc import Callable, Mapping, Sequence
@@ -23,9 +22,7 @@ from dartlab.data.contentSeal import resultSnapshotId
 from dartlab.data.continuation import (
     ArrowPayloadFacts,
     ContinuationError,
-    ContinuationMaintenanceBudget,
     ContinuationPins,
-    ContinuationPolicy,
     ContinuationQueryState,
     ContinuationStore,
     PageEnvelope,
@@ -47,21 +44,23 @@ from dartlab.data.contracts import (
     QualityAssertion,
     UniverseCoverage,
 )
-
-_MAX_PAGE_ROWS = 100_000
-_MAX_PAGE_BYTES = 64 * 1024 * 1024
-_MAX_STATE_BYTES = 512 * 1024
-_MAX_PAGE_SHARDS = 64
-_TOKEN_TTL_SECONDS = 24 * 60 * 60
-_MAINTENANCE_BUDGET = ContinuationMaintenanceBudget(
-    maxChains=1,
-    maxRootScans=1,
-    maxContinuationRows=32,
-    maxLedgerScans=32,
-    maxCasPrefixes=1,
-    maxCasEntries=32,
-    maxArtifactDeletes=32,
+from dartlab.data.pagingRuntime import (
+    MAX_PAGE_BYTES as _MAX_PAGE_BYTES,
 )
+from dartlab.data.pagingRuntime import (
+    MAX_PAGE_ROWS as _MAX_PAGE_ROWS,
+)
+from dartlab.data.pagingRuntime import (
+    MAX_STATE_BYTES as _MAX_STATE_BYTES,
+)
+from dartlab.data.pagingRuntime import (
+    continuationStore,
+    manifestCachePath,
+    requireDeadline,
+    workbenchRoot,
+)
+
+_MAX_PAGE_SHARDS = 64
 _FORMAT_VERSION = 2
 _DIGEST_RE = re.compile(r"^[0-9a-f]{64}$")
 _OWNER_MODULE = "dartlab.providers.resourceStream.workbench"
@@ -738,48 +737,23 @@ def _validateMultiplexPayload(
 
 
 def _workbenchRoot() -> Path:
-    configured = os.getenv("DARTLAB_HOME")
-    home = Path(configured).expanduser() if configured else Path.home() / ".dartlab"
-    return home.resolve() / "data-workbench"
+    return workbenchRoot()
 
 
 def _manifestCachePath(assetId: str, category: str) -> Path:
-    root = _workbenchRoot() / "manifest-cache"
-    root.mkdir(parents=True, exist_ok=True)
-    identity = canonicalDigest({"assetId": assetId, "category": category})
-    return root / f"{identity}.json"
+    return manifestCachePath(assetId, category)
 
 
 def _requireDeadline(deadline: float) -> float:
-    if type(deadline) not in {int, float} or not math.isfinite(deadline):
-        raise ContinuationError("CONTINUATION_TIMEOUT")
-    remaining = float(deadline) - time.perf_counter()
-    if remaining <= 0:
-        raise ContinuationError("CONTINUATION_TIMEOUT")
-    return remaining
+    return requireDeadline(deadline)
 
 
 def _continuationStore(*, deadline: float, runMaintenance: bool = True) -> ContinuationStore:
-    remaining = _requireDeadline(deadline)
-    waitSeconds = min(30.0, remaining)
-    policy = ContinuationPolicy(
-        maxPageRows=_MAX_PAGE_ROWS,
-        maxPageBytes=_MAX_PAGE_BYTES,
-        maxPageLogicalBytes=_MAX_PAGE_BYTES,
-        maxStateBytes=_MAX_STATE_BYTES,
-        tokenTtlSeconds=_TOKEN_TTL_SECONDS,
-        waitSeconds=waitSeconds,
-        pollSeconds=min(0.01, waitSeconds),
-    )
-    store = ContinuationStore(
-        _workbenchRoot() / "continuations",
-        policy=policy,
+    return continuationStore(
+        deadline=deadline,
         payloadValidator=_validateMultiplexPayload,
+        runMaintenance=runMaintenance,
     )
-    if runMaintenance:
-        store.maintain(_MAINTENANCE_BUDGET)
-        _requireDeadline(deadline)
-    return store
 
 
 def _contractDigest(session: _ResourceSession) -> str:

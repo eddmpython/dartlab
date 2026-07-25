@@ -56,6 +56,71 @@ class TestDlCapabilities:
         # L2 5 engines + L3 Story 가 catalogue 에 존재
         for engine in ("analysis", "quant", "credit", "macro", "industry"):
             assert engine in refs, f"engine missing from catalogue: {engine}"
+        assert "data" in refs
+
+    def test_data_workbench_catalog_is_callable_through_master_api(self, client):
+        """외부 HTTP 진입점 하나로 Data Workbench catalog를 실제 호출한다."""
+
+        resp = client.post(
+            "/api/dl/call",
+            json={
+                "apiRef": "data",
+                "args": ["catalog"],
+                "kwargs": {"query": {"search": "edgarFinancialFeatures"}},
+            },
+        )
+
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["ok"] is True
+        assert body["apiRef"] == "data"
+        assert [asset["assetId"] for asset in body["data"]["assets"]] == ["analysis.edgarFinancialFeatures"]
+
+    def test_data_workbench_factor_query_is_callable_through_master_api(
+        self,
+        client,
+        monkeypatch,
+    ):
+        """외부 HTTP 호출이 JSON query를 실제 factor projection까지 전달한다."""
+
+        import dartlab
+
+        monkeypatch.setattr(
+            dartlab,
+            "scan",
+            lambda *args, **kwargs: pl.DataFrame(
+                {
+                    "종목코드": ["005930"],
+                    "종목명": ["삼성전자"],
+                    "2025": [12.0],
+                }
+            ),
+        )
+        resp = client.post(
+            "/api/dl/call",
+            json={
+                "apiRef": "data",
+                "args": ["query", "scan.ratio"],
+                "kwargs": {
+                    "query": {
+                        "projection": {
+                            "kind": "factor",
+                            "measures": ["roe"],
+                            "unit": "percent",
+                            "frequency": "Y",
+                        }
+                    }
+                },
+            },
+        )
+
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["ok"] is True
+        assert body["data"]["status"] == "ok"
+        partition = body["data"]["partitions"][0]
+        assert partition["projectionKind"] == "factor"
+        assert partition["data"]["rows"][0]["measureId"] == "roe"
 
 
 class TestDlCallValidation:
@@ -137,6 +202,18 @@ class TestDlStructuredDataResult:
             lineageRefs=("source",),
             executionReceipts=("receipt",),
             continuation="opaque-next-page",
+            materializationReceipt={
+                "generationKey": "b" * 64,
+                "terminalRootDigest": "c" * 64,
+                "pins": {
+                    "assetDigest": "d" * 64,
+                    "sourceDigest": "e" * 64,
+                    "queryDigest": "f" * 64,
+                    "universeDigest": "1" * 64,
+                    "contractDigest": "2" * 64,
+                    "schemaDigest": "3" * 64,
+                },
+            },
         )
         monkeypatch.setattr(dlModule, "_dispatch", lambda *_args, **_kwargs: result)
 
@@ -148,6 +225,7 @@ class TestDlStructuredDataResult:
         framePayload = partitionPayload["data"]["frame"]
         seriesPayload = partitionPayload["data"]["series"]
         assert payload["continuation"] == "opaque-next-page"
+        assert payload["materializationReceipt"] == result.materializationReceipt
         assert partitionPayload["truncated"] is False
         assert framePayload["_type"] == "DataFrame"
         assert framePayload["rowCount"] == 205

@@ -500,7 +500,40 @@ def testInvalidContinuationBecomesSafeCodeGap(owner: _SyntheticOwner) -> None:
     assert result.gaps[0].systemic is True
 
 
-def testMixedPageableAndEagerFailsBeforeAnyOwnerExecution(
+def testMixedPageableAndEagerShareOneOuterExecution(
+    owner: _SyntheticOwner,
+) -> None:
+    result = _publicData(
+        "query",
+        query=DataQuery(
+            requests=(
+                DataRequest("resource.finance", "page", params={"columns": ["companyId"]}),
+                DataRequest(
+                    "resource.finance",
+                    "locator",
+                    projection=ResourceProjection(),
+                    subjects=("K1",),
+                ),
+            ),
+            budget=QueryBudget(maxRows=2, maxConcurrency=2),
+        ),
+    )
+    assert result.status == "partial", result.gaps
+    assert [partition.requestId for partition in result.partitions] == ["page"]
+    assert result.continuation is not None
+    pages = [result]
+    token = result.continuation
+    while token is not None:
+        page = _publicData("query", query=DataQuery(continuation=token))
+        pages.append(page)
+        token = page.continuation
+    assert pages[-1].status == "ok", pages[-1].gaps
+    assert sum(partition.rowCount for page in pages for partition in page.byRequest("page")) == 5
+    assert sum(partition.rowCount for page in pages for partition in page.byRequest("locator")) == 1
+    assert len(owner.calls) == 3
+
+
+def testMixedPageableAndMonkeypatchedEagerFailsCodePinBeforeAnyExecution(
     owner: _SyntheticOwner,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -520,11 +553,12 @@ def testMixedPageableAndEagerFailsBeforeAnyOwnerExecution(
             requests=(
                 DataRequest("resource.finance", "page", params={"columns": ["companyId"]}),
                 DataRequest("scan.governance", "eager"),
-            )
+            ),
         ),
     )
+
     assert result.status == "failed"
-    assert [gap.code for gap in result.gaps] == ["PAGEABLE_MIXED_EXECUTION_UNSUPPORTED"]
+    assert result.gaps[0].code == "PAGEABLE_EAGER_CODE_PIN_FAILED"
     assert owner.calls == []
     assert eagerCalled is False
 

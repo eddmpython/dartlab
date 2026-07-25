@@ -306,6 +306,13 @@ def testEveryQueryableAssetRoutesThroughOneMixedQuery(monkeypatch):
         return {"features": kwargs}
 
     monkeypatch.setattr(dataAssets, "edgarFinancialFeatures", fakeEdgarFinancialFeatures)
+    dartFeatureCalls = []
+
+    def fakeDartFinancialFeatures(**kwargs):
+        dartFeatureCalls.append(kwargs)
+        return {"features": kwargs}
+
+    monkeypatch.setattr(dataAssets, "dartFinancialFeatures", fakeDartFinancialFeatures)
 
     requests = []
     for asset in assets:
@@ -319,7 +326,7 @@ def testEveryQueryableAssetRoutesThroughOneMixedQuery(monkeypatch):
                 projection=projection,
                 subjects=subjects,
                 measures=measures,
-                time=TimeContext(knownAt="20250201") if asset.assetId == "analysis.edgarFinancialFeatures" else None,
+                time=(TimeContext(knownAt="20250201") if dict(asset.metadata).get("knownAtRequired") is True else None),
             )
         )
 
@@ -332,15 +339,22 @@ def testEveryQueryableAssetRoutesThroughOneMixedQuery(monkeypatch):
         ),
     )
 
-    assert result.status == "ok"
+    assert result.status == "ok", result.gaps
     assert not result.gaps
-    assert len(result.partitions) == len(assets) == 171
+    assert len(result.partitions) == len(assets) == 172
     assert {partition.requestId for partition in result.partitions} == {asset.assetId for asset in assets}
     assert Counter(owner for owner, *_ in engineCalls) == Counter(
         asset.owner for asset in assets if asset.executorKind == "engineAxis"
     )
     assert simulationCalls == [{"subject": "probe"}]
-    assert featureCalls == [{"knownAt": "20250201", "subject": "probe"}]
+    assert featureCalls == [
+        {
+            "knownAt": "20250201",
+            "measures": (),
+            "subject": "probe",
+        }
+    ]
+    assert dartFeatureCalls == [{"knownAt": "20250201", "subject": "probe"}]
 
 
 def testMaxConcurrencyAcceleratesMixedQueryAndKeepsResultOrder(monkeypatch):
