@@ -229,3 +229,116 @@ def testOwnerRejectsMalformedAndImpossibleFactDates(column: str, value: str) -> 
 
     with pytest.raises(owner.EdgarStateError, match="invalid date"):
         owner.compileEdgarFinancialState(makeFiling(), knowledgeAsOf="20250231")
+
+
+def makeFilingWithoutOperatingIncome(
+    *,
+    componentTags: tuple[tuple[str, float], ...],
+    componentAccession: str = "fixed",
+) -> pl.DataFrame:
+    """`OperatingIncomeLoss` 없이 영업이익 구성요소만 태깅한 filing을 만든다."""
+
+    frame = makeFiling().filter(pl.col("tag") != "OperatingIncomeLoss")
+    fiscalEnd = date(2024, 12, 31)
+    rows = []
+    for lag in range(3, -1, -1):
+        quarterEnd = fiscalEnd - timedelta(days=91 * lag)
+        quarterStart = quarterEnd - timedelta(days=89)
+        for tag, value in componentTags:
+            rows.append(
+                {
+                    "namespace": "us-gaap",
+                    "tag": tag,
+                    "unit": "USD",
+                    "val": value,
+                    "form": "10-Q",
+                    "filed": "2025-01-30",
+                    "start": quarterStart.isoformat(),
+                    "end": quarterEnd.isoformat(),
+                    "accn": componentAccession,
+                }
+            )
+    return pl.concat([frame, pl.DataFrame(rows)], how="vertical")
+
+
+def testOperatingProfitIsDerivedFromGrossProfitMinusOperatingExpenses() -> None:
+    """소계 태그가 없어도 같은 접수의 구성요소로 영업이익을 유도한다."""
+
+    facts = makeFilingWithoutOperatingIncome(
+        componentTags=(("GrossProfit", 35.0), ("OperatingExpenses", 15.0)),
+    )
+    compiled = owner.compileEdgarFinancialState(facts, knowledgeAsOf="20250228")
+
+    assert compiled.state.revenue == 400.0
+    assert compiled.state.operatingMargin == pytest.approx(0.2)
+    operatingEvidence = [item for item in compiled.evidence if item.conceptId == "operatingProfitQuarter"]
+    assert operatingEvidence
+    assert all(item.status == "derived" for item in operatingEvidence)
+    assert all(item.tag == "GrossProfit-OperatingExpenses" for item in operatingEvidence)
+
+
+def testOperatingProfitIsDerivedFromRevenueMinusTotalCosts() -> None:
+    """매출총이익이 없으면 매출에서 총비용을 빼는 두 번째 유도로 넘어간다."""
+
+    facts = makeFilingWithoutOperatingIncome(
+        componentTags=(("CostsAndExpenses", 80.0),),
+    )
+    compiled = owner.compileEdgarFinancialState(facts, knowledgeAsOf="20250228")
+
+    assert compiled.state.operatingMargin == pytest.approx(0.2)
+    operatingEvidence = [item for item in compiled.evidence if item.conceptId == "operatingProfitQuarter"]
+    assert all(item.status == "derived" for item in operatingEvidence)
+
+
+def testDerivationRefusesComponentsFromAnotherAccession() -> None:
+    """서로 다른 접수의 구성요소는 섞지 않는다. 유도 없이 실패해야 한다."""
+
+    facts = makeFilingWithoutOperatingIncome(
+        componentTags=(("GrossProfit", 35.0), ("OperatingExpenses", 15.0)),
+        componentAccession="other-accession",
+    )
+    with pytest.raises(owner.EdgarStateError):
+        owner.compileEdgarFinancialState(facts, knowledgeAsOf="20250228")
+
+
+def testLineageAccessionsTreatObservedAndSameAccessionDerivationAsOneFiling() -> None:
+    """관측 하나와 같은 접수 안의 구성요소 유도는 한 filing lineage 다."""
+
+    observed = owner.FactEvidence(
+        conceptId="revenueQuarter",
+        value=100.0,
+        unit="USD",
+        currency="USD",
+        kind="flowQuarter",
+        fiscalStart="20241001",
+        fiscalEnd="20241231",
+        filedAt="20250130",
+        accession="acc-1",
+        form="10-Q",
+        tag="Revenues",
+        status="observed",
+    )
+    derived = owner.FactEvidence(
+        conceptId="operatingProfitQuarter",
+        value=20.0,
+        unit="USD",
+        currency="USD",
+        kind="flowQuarter",
+        fiscalStart="20241001",
+        fiscalEnd="20241231",
+        filedAt="20250130",
+        accession="acc-1",
+        form="10-Q",
+        tag="GrossProfit-OperatingExpenses",
+        status="derived",
+        derivation="gross profit minus operating expenses in one accession",
+        derivationInputs=(
+            "acc-1|GrossProfit|20241001|20241231",
+            "acc-1|OperatingExpenses|20241001|20241231",
+        ),
+    )
+
+    assert owner._lineageAccessions(observed) == owner._lineageAccessions(derived)
+
+    foreign = owner.FactEvidence(**{**asdict(derived), "derivationInputs": ("acc-2|GrossProfit|20241001|20241231",)})
+    assert owner._lineageAccessions(observed) != owner._lineageAccessions(foreign)

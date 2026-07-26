@@ -148,6 +148,12 @@ _REVENUE_TAGS = (
     "RealEstateRevenueNet",
 )
 _OPERATING_PROFIT_TAGS = ("OperatingIncomeLoss",)
+# 영업이익 유도용 구성요소. 기준이 서로 달라 한 태그 목록으로 합치지 않는다.
+# `OperatingExpenses` 는 매출원가를 제외한 판관비 계열이라 매출총이익에서 빼고,
+# `CostsAndExpenses` 는 매출원가를 포함한 총비용이라 매출에서 뺀다.
+_GROSS_PROFIT_TAGS = ("GrossProfit",)
+_OPERATING_EXPENSE_TAGS = ("OperatingExpenses",)
+_TOTAL_COSTS_TAGS = ("CostsAndExpenses",)
 
 
 def _tagRuleDigest(payload: object) -> str:
@@ -182,6 +188,11 @@ def flowSelectionRuleDigest() -> str:
         {
             "revenue": list(_REVENUE_TAGS),
             "operatingProfit": list(_OPERATING_PROFIT_TAGS),
+            "operatingProfitFallback": {
+                "grossProfit": list(_GROSS_PROFIT_TAGS),
+                "operatingExpenses": list(_OPERATING_EXPENSE_TAGS),
+                "totalCosts": list(_TOTAL_COSTS_TAGS),
+            },
         }
     )
 
@@ -213,6 +224,11 @@ def stateSelectionRuleDigest() -> str:
             "flow": {
                 "revenue": list(_REVENUE_TAGS),
                 "operatingProfit": list(_OPERATING_PROFIT_TAGS),
+                "operatingProfitFallback": {
+                    "grossProfit": list(_GROSS_PROFIT_TAGS),
+                    "operatingExpenses": list(_OPERATING_EXPENSE_TAGS),
+                    "totalCosts": list(_TOTAL_COSTS_TAGS),
+                },
             },
             "stock": {key: list(value) for key, value in _STOCK_TAGS.items()},
             "debt": {
@@ -617,14 +633,132 @@ def _quarterEvidence(
     return out
 
 
-def _compileQuarterWindow(pit: pl.DataFrame, fiscalThrough: str) -> tuple[QuarterFlow, ...]:
-    revenue = _quarterEvidence(pit, "revenueQuarter", _REVENUE_TAGS, fiscalThrough=fiscalThrough)
-    operating = _quarterEvidence(
+def _lineageAccessions(item: FactEvidence) -> tuple[str, ...]:
+    """한 관측이 실제로 의존하는 접수 집합을 반환한다.
+
+    관측값은 자기 접수 하나에, 유도값은 유도 입력이 가리키는 접수 집합에 의존한다.
+    집합으로 비교해야 같은 접수 안에서 태그 두 개를 쓴 유도와 그 접수의 단일 관측을
+    같은 filing lineage 로 인정할 수 있다.
+    """
+
+    if not item.derivationInputs:
+        return (item.accession,)
+    return tuple(sorted({entry.split("|", 1)[0] for entry in item.derivationInputs}))
+
+
+def _componentDerivedOperatingProfit(
+    minuend: dict[str, FactEvidence],
+    subtrahend: dict[str, FactEvidence],
+    *,
+    derivation: str,
+) -> dict[str, FactEvidence]:
+    """같은 접수와 같은 회계 구간의 두 구성요소에서 영업이익을 유도한다.
+
+    Args:
+        minuend: 피감수 분기 관측. 매출총이익 또는 매출이다.
+        subtrahend: 감수 분기 관측. 영업비용 또는 총비용이다.
+        derivation: 유도 근거 문장.
+
+    Returns:
+        분기말별 유도 영업이익 ``FactEvidence`` 매핑.
+
+    Example:
+        ``_componentDerivedOperatingProfit(gross, opex, derivation="...")``.
+
+    Guide:
+        접수나 회계 구간이 다르면 유도하지 않는다. 서로 다른 filing 을 섞으면
+        PIT 계약이 깨진다.
+
+    Requires:
+        두 구성요소는 같은 통화 단위여야 한다.
+
+    AIContext:
+        `OperatingIncomeLoss` 소계를 제시하지 않는 금융, REIT, 자산운용 filer 를
+        검증 완화 없이 수용한다.
+    """
+
+    derived: dict[str, FactEvidence] = {}
+    for end, lead in minuend.items():
+        follow = subtrahend.get(end)
+        if follow is None:
+            continue
+        if lead.accession != follow.accession:
+            continue
+        if lead.fiscalStart != follow.fiscalStart or lead.fiscalEnd != follow.fiscalEnd:
+            continue
+        if lead.unit != follow.unit or lead.currency != follow.currency:
+            continue
+        components = (lead, follow)
+        derived[end] = FactEvidence(
+            conceptId="operatingProfitQuarter",
+            value=lead.value - follow.value,
+            unit=lead.unit,
+            currency=lead.currency,
+            kind="flowQuarter",
+            fiscalStart=lead.fiscalStart,
+            fiscalEnd=lead.fiscalEnd,
+            filedAt=max(lead.filedAt, follow.filedAt),
+            accession=lead.accession,
+            form=lead.form,
+            tag=f"{lead.tag}-{follow.tag}",
+            status="derived",
+            derivation=derivation,
+            derivationInputs=tuple(
+                f"{item.accession}|{item.tag}|{item.fiscalStart}|{item.fiscalEnd}" for item in components
+            ),
+        )
+    return derived
+
+
+def _operatingProfitEvidence(
+    pit: pl.DataFrame,
+    revenue: dict[str, FactEvidence],
+    *,
+    fiscalThrough: str,
+) -> dict[str, FactEvidence]:
+    """관측 영업이익을 우선하고 없는 분기만 구성요소에서 유도한다."""
+
+    observed = _quarterEvidence(
         pit,
         "operatingProfitQuarter",
         _OPERATING_PROFIT_TAGS,
         fiscalThrough=fiscalThrough,
     )
+    missing = set(revenue) - set(observed)
+    if not missing:
+        return observed
+    gross = _quarterEvidence(pit, "grossProfitQuarter", _GROSS_PROFIT_TAGS, fiscalThrough=fiscalThrough)
+    operatingExpenses = _quarterEvidence(
+        pit,
+        "operatingExpensesQuarter",
+        _OPERATING_EXPENSE_TAGS,
+        fiscalThrough=fiscalThrough,
+    )
+    totalCosts = _quarterEvidence(pit, "totalCostsQuarter", _TOTAL_COSTS_TAGS, fiscalThrough=fiscalThrough)
+    fallbacks = (
+        _componentDerivedOperatingProfit(
+            gross,
+            operatingExpenses,
+            derivation="gross profit minus operating expenses in one accession",
+        ),
+        _componentDerivedOperatingProfit(
+            revenue,
+            totalCosts,
+            derivation="revenue minus total costs and expenses in one accession",
+        ),
+    )
+    resolved = dict(observed)
+    for candidate in fallbacks:
+        for end in missing - set(resolved):
+            item = candidate.get(end)
+            if item is not None:
+                resolved[end] = item
+    return resolved
+
+
+def _compileQuarterWindow(pit: pl.DataFrame, fiscalThrough: str) -> tuple[QuarterFlow, ...]:
+    revenue = _quarterEvidence(pit, "revenueQuarter", _REVENUE_TAGS, fiscalThrough=fiscalThrough)
+    operating = _operatingProfitEvidence(pit, revenue, fiscalThrough=fiscalThrough)
     candidates = sorted(set(revenue) & set(operating), reverse=True)
     if fiscalThrough not in candidates:
         raise EdgarStateError("TTM flow quarters must end at the stock fiscalThrough date")
@@ -689,9 +823,7 @@ def _compileQuarterWindow(pit: pl.DataFrame, fiscalThrough: str) -> tuple[Quarte
         if revenueItem.fiscalStart != operatingItem.fiscalStart:
             raise EdgarStateError(f"quarter flow concepts do not share one fiscal interval: {end}")
         if revenueItem.status == "derived" or operatingItem.status == "derived":
-            revenueAccessions = tuple(item.split("|", 1)[0] for item in revenueItem.derivationInputs)
-            operatingAccessions = tuple(item.split("|", 1)[0] for item in operatingItem.derivationInputs)
-            if revenueAccessions != operatingAccessions:
+            if _lineageAccessions(revenueItem) != _lineageAccessions(operatingItem):
                 raise EdgarStateError(f"derived quarter concepts do not share one filing lineage: {end}")
         fiscalStart = str(revenueItem.fiscalStart)
         flows.append(QuarterFlow(fiscalStart, end, revenueItem, operatingItem))
