@@ -149,6 +149,12 @@ GATES: dict[str, Gate] = {
             "python -X utf8 tests/audit/staleImports.py --check && "
             "python -X utf8 tests/audit/axisDeclaredCoverage.py --check --quiet && "
             "python -X utf8 tests/audit/workbenchPurity.py --check && "
+            # 파일 크기 룰 3. 800 줄 초과 단일 파일 회귀를 차단한다. baseline 은 부채
+            # 원장이라 baseline 밖 신규 위반만 fail 한다. providers 는 기존 대상이고
+            # dataHub 는 continuation store 와 resource paging 분할 이후 편입했다.
+            "python -X utf8 tests/audit/folderSize.py src/dartlab/providers && "
+            "python -X utf8 tests/audit/folderSize.py src/dartlab/dataHub && "
+            "python -X utf8 tests/audit/initThin.py src/dartlab/dataHub && "
             "python -X utf8 tests/audit/untrustedWrapAudit.py --strict && "
             "python -X utf8 tests/audit/checkAgentBoundary.py --strict && "
             # 색상 SSOT 가드 — 브랜드색(#ff3f6f/#fb923c/#ec4899/#ea4647) 토큰 우회 하드코딩 회귀 차단(baseline-ratchet).

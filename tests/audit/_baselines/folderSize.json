@@ -1,6 +1,9 @@
 {
-  "_note": "P-트랙 phase 통과마다 축소",
+  "_note": "P-트랙 phase 통과마다 축소. dataHub 의 remote, transport, workerPlane 은 의미 경계가 맞는 폴더라 LoC 기준 over_split 만 등재한다.",
   "over_split": [
+    "src/dartlab/dataHub/remote",
+    "src/dartlab/dataHub/transport",
+    "src/dartlab/dataHub/workerPlane",
     "src/dartlab/providers/dart/panel/canonical",
     "src/dartlab/providers/dart/panel/spine"
   ],
