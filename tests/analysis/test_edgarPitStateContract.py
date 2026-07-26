@@ -342,3 +342,75 @@ def testLineageAccessionsTreatObservedAndSameAccessionDerivationAsOneFiling() ->
 
     foreign = owner.FactEvidence(**{**asdict(derived), "derivationInputs": ("acc-2|GrossProfit|20241001|20241231",)})
     assert owner._lineageAccessions(observed) != owner._lineageAccessions(foreign)
+
+
+def testMissingComponentIsImputedAndAbsorbedByResidualPlug() -> None:
+    """재고 미태깅은 결손이 아니라 세분성 부족이다. 항등식은 그대로 닫힌다."""
+
+    facts = makeFiling().filter(pl.col("tag") != "InventoryNet")
+    compiled = owner.compileEdgarFinancialState(facts, knowledgeAsOf="20250228")
+
+    assert compiled.state.inventories == 0.0
+    assert compiled.state.equity == 40.0
+    assert any(item.startswith("imputedZeroComponents:") for item in compiled.warnings)
+    assert "inventories" in next(item for item in compiled.warnings if item.startswith("imputedZeroComponents:"))
+    # 미태깅 재고 5.0 은 사라지지 않고 잔차 플러그로 이동한다.
+    baseline = owner.compileEdgarFinancialState(makeFiling(), knowledgeAsOf="20250228")
+    assert compiled.state.otherNetAssets == pytest.approx(baseline.state.otherNetAssets + 5.0)
+
+
+def testDebtFreeCompanyIsNotAFailure() -> None:
+    """이자부부채 태그가 하나도 없는 회사는 실패가 아니라 무차입이다."""
+
+    facts = makeFiling().filter(~pl.col("tag").is_in(["LongTermDebtCurrent", "LongTermDebtNoncurrent"]))
+    compiled = owner.compileEdgarFinancialState(facts, knowledgeAsOf="20250228")
+
+    assert compiled.state.debt == 0.0
+    assert "totalDebt" in next(item for item in compiled.warnings if item.startswith("imputedZeroComponents:"))
+    debtEvidence = next(item for item in compiled.evidence if item.conceptId == "totalDebt")
+    assert debtEvidence.derivation == "no interest-bearing debt tagged in this accession"
+
+
+def testAnchorConceptsAreStillRequired() -> None:
+    """자산총계, 부채총계, 자본은 임퓨트 대상이 아니다."""
+
+    for anchorTag in ("Assets", "Liabilities", "StockholdersEquity"):
+        facts = makeFiling().filter(pl.col("tag") != anchorTag)
+        with pytest.raises(owner.EdgarStateError):
+            owner.compileEdgarFinancialState(facts, knowledgeAsOf="20250228")
+
+
+def testNoncontrollingInterestClosesTheBalanceIdentity() -> None:
+    """지배주주 자본만 태깅되면 비지배지분을 더해야 항등식이 닫힌다."""
+
+    facts = makeFiling().with_columns(
+        pl.when(pl.col("tag") == "Liabilities").then(pl.lit(55.0)).otherwise(pl.col("val")).alias("val")
+    )
+    nci = facts.filter(pl.col("tag") == "StockholdersEquity").with_columns(
+        pl.lit("MinorityInterest").alias("tag"),
+        pl.lit(5.0).alias("val"),
+    )
+    compiled = owner.compileEdgarFinancialState(pl.concat([facts, nci]), knowledgeAsOf="20250228")
+
+    assert compiled.state.equity == 45.0
+    equityEvidence = next(item for item in compiled.evidence if item.conceptId == "equityIncludingNci")
+    assert equityEvidence.status == "derived"
+    assert equityEvidence.tag == "StockholdersEquity+MinorityInterest"
+
+
+def testStockCandidateTraversalPrefersTheFilingThatAlsoHasFlow() -> None:
+    """대차만 있는 최신 filing 때문에 흐름 있는 직전 filing 을 놓치지 않는다."""
+
+    base = makeFiling()
+    newerStockOnly = base.filter(pl.col("start").is_null()).with_columns(
+        pl.lit("newer").alias("accn"),
+        pl.lit("2025-04-30").alias("filed"),
+        pl.lit("2025-03-31").alias("end"),
+    )
+    compiled = owner.compileEdgarFinancialState(
+        pl.concat([base, newerStockOnly]),
+        knowledgeAsOf="20250501",
+    )
+
+    assert compiled.fiscalThrough == "20241231"
+    assert {item.accession for item in compiled.evidence if item.kind == "stock"} == {"fixed"}

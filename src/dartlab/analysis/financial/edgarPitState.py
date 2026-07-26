@@ -397,6 +397,7 @@ def _stockCandidates(
         | set(_DEBT_SHORT_FUNDING)
         | set(_DEBT_NONCURRENT)
         | set(_DEBT_TOTAL)
+        | set(_NONCONTROLLING_INTEREST_TAGS)
     )
     stock = pit.filter(pl.col("tag").is_in(list(allTags)) & pl.col("start").is_null() & pl.col("end").is_not_null())
     if stock.height == 0:
