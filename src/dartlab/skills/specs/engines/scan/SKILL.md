@@ -5,7 +5,7 @@ kind: curated
 scope: builtin
 status: observed
 category: engines
-purpose: Scan 엔진은 시장/유니버스 횡단면에서 후보를 발굴하고 순위를 계산하는 실행 스킬이다. 트리거 — '스캔', '종목 발굴', '후보 추출', '랭킹'.
+purpose: Scan 엔진은 시장/유니버스 횡단면에서 후보를 발굴하고 순위를 계산하는 실행 스킬이다. 트리거 - '스캔', '종목 발굴', '후보 추출', '랭킹'.
 whenToUse:
   - Scan
   - scan
@@ -79,7 +79,7 @@ examples:
   - 매출 상위 100 개 회사 발굴
   - 신용 위험 상위 100 개 스크리닝
 procedure:
-  - dartlab.scan() 으로 22 축 가이드 DataFrame 확인.
+  - dartlab.scan() 으로 27 축 가이드 DataFrame 확인.
   - axis 선택 (account · ratio · screen · valuation · quality · governance 등).
   - dartlab.scan(axis, target?, universe=..., spec=...) 호출.
   - 결과의 ranking · universe · datasetAsOf · filter · formula · executionRef 묶음.
@@ -93,7 +93,7 @@ linkedSkills:
 source:
   type: manual_skill
   format: markdown
-lastUpdated: '2026-05-07'
+lastUpdated: '2026-07-18'
 testUniverse:
   market: KR
   stockCodes:
@@ -127,7 +127,7 @@ inventory = dartlab.scan("note", "재고자산")   # 주석 lineitem 횡단 (재
 # 조건형 스크리닝
 fields = dartlab.scan("fields", "roe")
 value = dartlab.scan("screen", "value")
-custom = dartlab.scan("screen", spec={"filters": []})
+custom = dartlab.scan("screen", spec={"where": []})
 
 # 파생 필드 조합 (spec.define): 순현금 = 현금 - 단기차입, 저부채 교차
 safe = dartlab.scan("screen", spec={
@@ -149,6 +149,9 @@ comp = dartlab.scan("screen", spec={
               {"field": "@roeIndPct", "op": ">", "value": 80}],    # 업종내 ROE 상위 20%
     "sort": {"field": "@roeIndPct", "desc": True}})
 # 저장 스크린으로 등재된 실증본: dartlab.scan("screen", "resilientCompounders")
+
+# 판정 근거 포함 결과: members, coverage, funnel, excluded, nearMiss, executionRef
+explained = dartlab.scan("screen", "resilientCompounders", explain=True)
 ```
 
 **define 노드 문법 (폐쇄 vocabulary, 문자열 eval 없음, 단위 전파)**
@@ -170,12 +173,12 @@ comp = dartlab.scan("screen", spec={
 
 ## 강행 호출 룰 (agent 답변 품질 회귀 차단)
 
-22 axis 횡단 스크리닝에서 다음 4 룰 강행 — 메모리 압박 + refs 0 회귀 차단.
+27 axis 횡단 스크리닝에서 다음 4 룰 강행 - 메모리 압박 + refs 0 회귀 차단.
 
-1. **1 차 도구는 EngineCall 강제**. `EngineCall(apiRef="scan", args={"axis": "ratio", "metric": "roe"})` 양식. RunPython 으로 전 종목 parquet 직접 로드 금지 — Polars Rust 힙 누수 (Company 1 개 ≈ 200~500MB) 로 OOM 가능.
-2. **개별 종목 분석 질문에 scan 호출 금지** — "삼성전자 수익성" 처럼 단일 기업이면 `Company.panel`/`Company.analysis` 사용. scan 은 *여러 종목 후보 찾기* 한정.
+1. **1 차 도구는 EngineCall 강제**. `EngineCall(apiRef="scan", args={"axis": "ratio", "metric": "roe"})` 양식. RunPython 으로 전 종목 parquet 직접 로드 금지 - Polars Rust 힙 누수 (Company 1 개 ≈ 200~500MB) 로 OOM 가능.
+2. **개별 종목 분석 질문에 scan 호출 금지** - "삼성전자 수익성" 처럼 단일 기업이면 `Company.panel`/`Company.analysis` 사용. scan 은 *여러 종목 후보 찾기* 한정.
 3. **scan 결과 후보 → 상위 N (보통 10~20) 만 다음 단계로 전달**. 전종목 결과 그대로 답변 본문 dump 금지.
-4. **본문 숫자에 `[datasetRef:...]` + `[tableRef:...]` inline 표기 필수** — 스캔 결과는 prebuild 시점 (asOf) 변동 큼.
+4. **본문 숫자에 `[datasetRef:...]` + `[tableRef:...]` inline 표기 필수** - 스캔 결과는 prebuild 시점 (asOf) 변동 큼.
 
 ## 호출 동작
 
@@ -234,7 +237,7 @@ stockCode/ticker, corpName/name, market/universe, latestAsOf/asOf,
 metric/value/score, rank, basis/source, flags
 ```
 
-`screen`은 조건식과 통과 여부, `account`/`ratio`는 계정명 또는 ratio id, 기간별 값, 기준일을 포함해야 한다. ranking/filter 결과를 말할 때는 원값과 rank를 함께 제시한다.
+`screen`은 기본적으로 멤버 DataFrame을 반환한다. `explain=True`이면 `members`, 조건별 `coverage`, 순차 `funnel`, `excluded`, `nearMiss`, `datasetAsOf`, `executionRef`를 가진 dict를 반환한다. 결측은 FAIL이나 0이 아니라 UNKNOWN으로 집계된다. `account`/`ratio`는 계정명 또는 ratio id, 기간별 값, 기준일을 포함해야 한다. ranking/filter 결과를 말할 때는 원값과 rank를 함께 제시한다.
 
 ## axis-specific 회피 (회귀 가드)
 
@@ -245,10 +248,10 @@ metric/value/score, rank, basis/source, flags
 | account | snake_id 임의 추측 X (scanAccountList 또는 normalizeColumn 으로 정확 매칭); 단일 계정 (매출액만) 으로 비율 추정 X (비율은 ratio axis) |
 | audit | 감사의견 (한정/거절/부적정) 만으로 *분식* 단정 X; 감사인 변경과 *지배구조 위험* 단순 인과 X |
 | capital | 자사주 매입 vs 소각 동치 처리 X; 유상증자 빈도와 *위험* 단순 인과 X (사용처 capex/부채상환 확인) |
-| cashflow | 8 종 현금흐름 패턴 분류 (Healthy/Growing/Distressed/Mature/...) 명시 없이 *위험* 단정 X; capex 음수 vs 양수 의미 회사별 다름 — 부호 임의 해석 X |
+| cashflow | 8 종 현금흐름 패턴 분류 (Healthy/Growing/Distressed/Mature/...) 명시 없이 *위험* 단정 X; capex 음수 vs 양수 의미 회사별 다름 - 부호 임의 해석 X |
 | debt | 부채비율 단일 metric 으로 *위험* 단정 X (ICR + OCF/부채 교차); 사채 1 년 만기 비중 무시 X |
 | disclosureRisk | 공시 변화 신호와 확정 사실 혼동 X; 단일 신호로 *위험* 단정 X (5+ 신호 종합) |
-| orders | book-to-bill 상위 그대로 추천 X (micro-cap 잡음 — 매출 규모·계약건수 필터 필수); momentum 극단치(직전TTM 0 근처)를 추세 단정 X; amountSuspect 값 신뢰 X (값-정합 위반) |
+| orders | book-to-bill 상위 그대로 추천 X (micro-cap 잡음 - 매출 규모·계약건수 필터 필수); momentum 극단치(직전TTM 0 근처)를 추세 단정 X; amountSuspect 값 신뢰 X (값-정합 위반) |
 | ipo | `[발행조건확정]` 을 6 섹션 기대 X (CORRECTION doc, FULL 신고서를 봐야); chainOk/financialsOk False 발행사 값 신뢰 X (항등식 위반); 적용 PER 를 절대 고/저평가로 단정 X (발행사 선택 비교군 기준) |
 | salesByProduct | read-time panel 파싱 X (prebuild consolidation SSOT); 부문 절대매출 비교 X (단위-불변 mix 지표만: 비중·HHI·다각화등급) |
 | narrativeMetric | 사업보고서 서술 표에서 뽑은 수주잔고·가동률을 감사받은 재무수치와 동급 취급 X (비표준 서술 항목); 저신뢰(confidence 낮음)·부재 지표를 값으로 인용 X (정직 gap 그대로 표기) |
@@ -286,19 +289,19 @@ agent (ai/mcp/server) 가 본 엔진을 호출할 때는 `EngineCall(apiRef="sca
 | `dartlab.scan("account", "매출액")` | `{"axis": "account", "target": "매출액"}` |
 | `dartlab.scan("ratio", "roe")` | `{"axis": "ratio", "target": "roe"}` |
 | `dartlab.scan("screen", "value")` | `{"axis": "screen", "target": "value"}` |
-| `dartlab.scan("screen", spec={"filters": [...]})` | `{"axis": "screen", "spec": {"filters": [...]}}` |
+| `dartlab.scan("screen", spec={"where": [...]}, explain=True)` | `{"axis": "screen", "spec": {"where": [...]}, "explain": true}` |
 
-**guard** — axis 와 target 을 점 표기로 합쳐 `apiRef="scan.ratio.roe"` 호출 금지 (`unknown_api_ref` 차단). args 안에 분리.
+**guard** - axis 와 target 을 점 표기로 합쳐 `apiRef="scan.ratio.roe"` 호출 금지 (`unknown_api_ref` 차단). args 안에 분리.
 
 ## 산업/섹터 질문 ("반도체 어때?" 류) 처리
 
 "반도체", "2 차전지", "자동차" 같은 산업 keyword 가 질문에 있으면:
 
-1. **industry 엔진 우선** — `dartlab.industry("반도체")` 또는 `c.industry()` 가 산업 라이프사이클 단계 (도입·성장·성숙·재도약·쇠퇴) + 밸류체인 노드 + 동종 종목 list 반환.
-2. **scan 으로 횡단면 비교** — 같은 industryHint 안에서 `dartlab.scan(axis, universe={"industryHint": "반도체"})` 또는 결과 DataFrame 의 `industryName` 컬럼 필터.
+1. **industry 엔진 우선** - `dartlab.industry("반도체")` 또는 `c.industry()` 가 산업 라이프사이클 단계 (도입·성장·성숙·재도약·쇠퇴) + 밸류체인 노드 + 동종 종목 list 반환.
+2. **scan 으로 횡단면 비교** - 같은 industryHint 안에서 `dartlab.scan(axis, universe={"industryHint": "반도체"})` 또는 결과 DataFrame 의 `industryName` 컬럼 필터.
 3. 답변에는 산업 라이프사이클 단계 + 공정/세부 분류 (전공정 FAB · 후공정 패키징 · 테스트 · 설계 · 소재 · 장비) 별 ranking 둘 다.
 
-단일 종목 답변에 부착되는 `industryBadge` (Company.panel 응답) 는 같은 산업 종목 peers list 를 자동 포함 — 별도 industry 호출 없이 peer 후보 즉시 사용 가능.
+단일 종목 답변에 부착되는 `industryBadge` (Company.panel 응답) 는 같은 산업 종목 peers list 를 자동 포함 - 별도 industry 호출 없이 peer 후보 즉시 사용 가능.
 
 ## universe default
 
@@ -307,7 +310,7 @@ agent (ai/mcp/server) 가 본 엔진을 호출할 때는 `EngineCall(apiRef="sca
 - 산업 한정 → `universe={"industryHint": "반도체"}`.
 - 사용자 지정 종목 list → `universe={"stockCodes": ["005930", "000660"]}`.
 
-기준일 (`datasetAsOf`) 은 결과 DataFrame 의 컬럼으로 반환. 답변에 그대로 인용 — 데이터 freshness 명시.
+기준일 (`datasetAsOf`) 은 결과 DataFrame 의 컬럼으로 반환. 답변에 그대로 인용 - 데이터 freshness 명시.
 
 ## 기본 실행 순서
 

@@ -5,7 +5,7 @@ kind: curated
 scope: builtin
 status: observed
 category: engines
-purpose: Quant 엔진은 가격, 기술적 신호, 팩터, 리스크, 텍스트/공시, 횡단면 랭킹, 포트폴리오, 백테스트를 46개 축으로 실행하는 정량 분석 스킬이다. 트리거 — '퀀트', '팩터', '백테스트', '모멘텀', '기술적 신호'.
+purpose: Quant 엔진은 가격, 기술적 신호, 팩터, 리스크, 텍스트/공시, 횡단면 랭킹, 포트폴리오, 백테스트를 46개 축으로 실행하는 정량 분석 스킬이다. 트리거 - '퀀트', '팩터', '백테스트', '모멘텀', '기술적 신호'.
 whenToUse:
   - Quant
   - quant
@@ -26,6 +26,7 @@ inputs:
 outputs:
   - guide DataFrame
   - axis별 DataFrame 또는 dict
+  - 괴리 대표 product
   - backtest/portfolio result
   - assumptions/flags
 capabilityRefs:
@@ -83,7 +84,7 @@ procedure:
   - axis 선택 (지표 · 판단 · 베타 · 순위 · 리스크패리티 · backtest 등).
   - 단일 종목은 dartlab.quant(axis, code), 종목 리스트는 dartlab.quant(axis, [code1, code2]).
   - 결과의 period · benchmark · valueRef · dateRef · executionRef 묶음.
-  - 백테스트 결론은 미래 성과 보장 아님 — 가정 (수수료 · 슬리피지 · 벤치마크) 명시.
+  - 백테스트 결론은 미래 성과 보장 아님 - 가정 (수수료 · 슬리피지 · 벤치마크) 명시.
 linkedSkills:
   - engines.quant.damodaranValuation
   - engines.quant.indicators
@@ -93,7 +94,7 @@ linkedSkills:
 source:
   type: manual_skill
   format: markdown
-lastUpdated: '2026-05-07'
+lastUpdated: '2026-07-18'
 testUniverse:
   market: KR
   stockCodes:
@@ -123,16 +124,27 @@ bt = dartlab.quant("backtest", "005930", style="trendFollow")
 
 c = dartlab.Company("005930")
 company_quant = c.quant("모멘텀")
+divergence = c.quant("괴리")
+```
+
+`괴리`는 Quant 대표 제품이다. 공시 이익 변화, 시장 횡단면 이익 서프라이즈 프록시,
+가격 반응을 비교한다. 실제 애널리스트 컨센서스가 없으면 이를 기대치로 가장하지 않고
+`product.gaps`에 `quant.analystConsensus`로 남긴다.
+
+```text
+classification: underReaction | confirmation | overOptimism | deteriorationPriced | inconclusive
+fundamental, expectation, price,
+product{conclusion, confidence, evidence, gaps, scenarios, falsifiers, payload}
 ```
 
 ## 강행 호출 룰 (agent 답변 품질 회귀 차단)
 
-46 axis 질문 (베타·모멘텀·변동성·factor·forecast·backtest 등) 에서 다음 4 룰 강행 — 위반 시 refs=0 회귀.
+46 axis 질문 (베타·모멘텀·변동성·factor·forecast·backtest 등) 에서 다음 4 룰 강행 - 위반 시 refs=0 회귀.
 
-1. **1 차 도구는 EngineCall 강제**. `EngineCall(apiRef="quant", args={"axis": "베타", "stockCode": "005930"})` 양식. **RunPython 직접 numpy/polars 계산은 engine 결과 부재 시에만 fallback** — 처음부터 raw 계산 금지.
-2. **본문 안 숫자에 inline ref 표기 필수** — `[tableRef:...]` 또는 `[valueRef:...]` 형식. ref 없는 quant 결과는 답변 보류.
-3. **backtest 결과는 `executionRef` 명시** — 백테스트 일자 / 룰 / 파라미터 ref 박지 않으면 hindsight 환각.
-4. **forecast/walkforward 같은 가정 강한 축은 `[conf:30]` 기본** — 가정 (lookahead window · trend assumption) 본문에 명시.
+1. **1 차 도구는 EngineCall 강제**. `EngineCall(apiRef="quant", args={"axis": "베타", "stockCode": "005930"})` 양식. **RunPython 직접 numpy/polars 계산은 engine 결과 부재 시에만 fallback** - 처음부터 raw 계산 금지.
+2. **본문 안 숫자에 inline ref 표기 필수** - `[tableRef:...]` 또는 `[valueRef:...]` 형식. ref 없는 quant 결과는 답변 보류.
+3. **backtest 결과는 `executionRef` 명시** - 백테스트 일자 / 룰 / 파라미터 ref 박지 않으면 hindsight 환각.
+4. **forecast/walkforward 같은 가정 강한 축은 `[conf:30]` 기본** - 가정 (lookahead window · trend assumption) 본문에 명시.
 
 ## 호출 동작
 
@@ -209,7 +221,7 @@ company_quant = c.quant("모멘텀")
 | beta | benchmarkMode (market/sector/style/auto) 명시; 회귀 기간 (3y/5y/10y) 명시 |
 | chartPatterns | 차트 패턴 → 자동 매매 신호 단정 X (거래량/시장환경 동반); 목표가 패턴만으로 단언 X (fundamental anchor) |
 | damodaranValuation | 적자 회사에 PER 기반 보정 없이 DCF 단정 X |
-| divergence | 재무 vs 가격 괴리 한 신호로 매매 X (산업/매크로 동반); mean reversion + 시장효율성 가정 명시 |
+| divergence | 공시 이익, 기대 프록시, 가격 반응의 괴리 한 신호로 매매 X; expectation.method가 실제 컨센서스인지 프록시인지 확인; mean reversion 가정 명시 |
 | earnings | SUE 한 분기로 PEAD 단정 X (다분기 누적); 컨센서스 추정기관 수/편차 명시 |
 | entry | 진입진단 = 실시간 진단만 (백테스트 검증 X); 스톱/청산 단일 룰 X (변동성/리스크 한도 동반) |
 | eventSignal | 이벤트 (M&A/경영진) 단일 신호로 가격 영향 단정 X; 공시 발표 vs 가격 반영 시점 차이 명시 |
@@ -269,7 +281,7 @@ metric, value, score/signal/rank, assumptions, flags
 
 ## Top-level helper (axis 미등록)
 
-`scanBacktest` 는 axis 가 아닌 attribute 로만 호출한다 (registry dispatcher 의 `fn(stockCode, **kw)` 계약과 시그니처가 어긋나기 때문 — 첫 인자가 DataFrame).
+`scanBacktest` 는 axis 가 아닌 attribute 로만 호출한다 (registry dispatcher 의 `fn(stockCode, **kw)` 계약과 시그니처가 어긋나기 때문 - 첫 인자가 DataFrame).
 
 ```python
 top = dl.scan("valuation").filter(pl.col("등급") == "A").sort("PER").head(20)
@@ -314,7 +326,7 @@ import dartlab
 # 자동 dispatch (ADF p-value 기반)
 r = dartlab.quant("예측", "005930", horizon=5)
 
-# 명시 ensemble — 결과는 모델 평균
+# 명시 ensemble - 결과는 모델 평균
 r = dartlab.quant("예측", "005930", horizon=10, models=["etsHolt", "theta"])
 
 # US 종목 auto-detect
@@ -330,7 +342,7 @@ r = c.quant("예측", horizon=5)
 `dartlab.quant("예측", stockCode, ...)` 가 dispatch 진입. 다음 순서로 진행:
 
 1. stockCode → market auto-detect (KR 6 자리 vs US ticker)
-2. OHLCV 시계열 수집 — 부족 시 error dict 반환
+2. OHLCV 시계열 수집 - 부족 시 error dict 반환
 3. log-return 시계열 변환 + ADF p-value 계산
 4. `_pickModel` 로 모델 선택 (아래 룰)
 5. fit + horizon-step forecast 생성
@@ -339,11 +351,11 @@ r = c.quant("예측", horizon=5)
 
 ## 모델 dispatch 룰 (`_pickModel`)
 
-1. `n < 60` → `naive` (데이터 부족 — drift 평균만 사용)
+1. `n < 60` → `naive` (데이터 부족 - drift 평균만 사용)
 2. ADF p-value < 0.05 → `ar1` (평균회귀 시계열엔 ρ·y_prev 점추정이 정석. theta 는
-   SES 가 마지막 점프에 끌려가 비현실 점추정을 낼 수 있어 자동 선택에서 제외 —
+   SES 가 마지막 점프에 끌려가 비현실 점추정을 낼 수 있어 자동 선택에서 제외 -
    cycle 1 dogfood 회귀 결과)
-3. else → `etsHolt` (level + trend, no seasonality — Holt linear)
+3. else → `etsHolt` (level + trend, no seasonality - Holt linear)
 
 `models` 인자 명시 시 dispatch 무시하고 강제 사용 (1 개면 단일, 여러 개면 평균 ensemble).
 Theta 는 명시 호출 (`models=["theta"]`) 시에만 사용. log-return 시계열은 거의 항상
@@ -399,7 +411,7 @@ forecast 결과를 인용할 때 다음을 함께 명시:
 - 합성 sideways (OU ρ=0.7) → ADF p < 0.05 → ar1 선택, |pointForecast| 작음
 - 합성 downtrend → cumLogReturn[5] < 0
 - 모든 horizon 에서 lowerBound < pointForecast < upperBound 단조 보장 (conformalHalfWidth ≥ 0)
-- NaN/inf 출력 없음 — 데이터 부족 시 명시 error dict
+- NaN/inf 출력 없음 - 데이터 부족 시 명시 error dict
 - Cycle 1 회귀 (2026-05-09): 005930 실데이터에서 theta 가 +1.8%/day 비현실 점추정 →
   dispatch 룰을 ar1 로 변경. theta 는 명시 호출 시에만 사용 가능하도록 가드.
 
@@ -411,7 +423,7 @@ forecast 모델을 walk-forward 로 OOS 검증하려면 `forecastRuleFactory` �
 from dartlab.quant.benchmark.forecast import forecastRuleFactory
 from dartlab.quant.strategy.backtest import walkForward
 
-# Loose mode (default) — point only
+# Loose mode (default) - point only
 factory = forecastRuleFactory(threshold=0.0005, models=["ar1"])
 bt = walkForward(close, rule=None, rule_factory=factory, train=180, test=30, step=30)
 # bt.cpcv["refit_count"] = fold 마다 재학습 횟수
@@ -421,19 +433,19 @@ bt = walkForward(close, rule=None, rule_factory=factory, train=180, test=30, ste
 
 ### Entry / Exit 룰
 
-**Loose mode (default)** — `requireConfidence=False`:
+**Loose mode (default)** - `requireConfidence=False`:
 ```
 entry = pointForecast > threshold
 exit  = pointForecast < -threshold
 ```
 
-**Strict mode** — `requireConfidence=True`:
+**Strict mode** - `requireConfidence=True`:
 ```
 entry = pointForecast > threshold AND (point - halfWidth) > -threshold
 exit  = pointForecast < -threshold OR (point + halfWidth) < -2*threshold
 ```
 
-일별 log-return 의 conformal half-width 는 일별 σ (~0.5~2%) 와 동급이라 strict 모드의 `lower > -threshold` 가 사실상 영원히 False — entry 0. 일별 단위에서 strict 는 권장 안 함. 누적 horizon 시그널 검증할 때만.
+일별 log-return 의 conformal half-width 는 일별 σ (~0.5~2%) 와 동급이라 strict 모드의 `lower > -threshold` 가 사실상 영원히 False - entry 0. 일별 단위에서 strict 는 권장 안 함. 누적 horizon 시그널 검증할 때만.
 
 ### 검증된 성능 (2026-05-09 dogfood)
 
@@ -448,7 +460,7 @@ exit  = pointForecast < -threshold OR (point + halfWidth) < -2*threshold
 - AutoARIMA / TBATS / SARIMA / GARCH-fit 가격 예측은 본 축 범위 밖 (base install SSOT 보존)
 - 변동성 예측은 별도 축 `volatility` 의 `forecast=True` 옵션 사용
 - 1 일~수십일 이내 단기 forecast 만 의미 있음. 장기 (>60 일) 점예측은 conformal width 가 비대해짐
-- pointForecast 는 *기댓값* 이 아니라 *모델 점추정* — 시장 변동성·뉴스·이벤트 충격 미반영
+- pointForecast 는 *기댓값* 이 아니라 *모델 점추정* - 시장 변동성·뉴스·이벤트 충격 미반영
 
 ## 기본 검증
 
@@ -458,7 +470,7 @@ exit  = pointForecast < -threshold OR (point + halfWidth) < -2*threshold
 
 ## 엔진 역할
 
-`marketContext` 축은 가격 시계열 기반 — 일별 log-return 회귀로 시장 베타 + 거시 변수 베타 + 수급 강도를 1 행 evidence 로 묶는다. 모든 회귀는 numpy-only OLS 로 산출.
+`marketContext` 축은 가격 시계열 기반 - 일별 log-return 회귀로 시장 베타 + 거시 변수 베타 + 수급 강도를 1 행 evidence 로 묶는다. 모든 회귀는 numpy-only OLS 로 산출.
 
 ## scan.macroBeta 와 책임 분리
 
@@ -471,7 +483,7 @@ exit  = pointForecast < -threshold OR (point + halfWidth) < -2*threshold
 | 컬럼 | usdkrwBeta · baseRateBeta · cpiBeta · m2Beta | gdpBeta · rateBeta · fxBeta |
 | 사용 시점 | 단기~중기 시장 변동 진단 | 중장기 펀더멘털 시나리오 |
 
-같은 "거시 민감도" 라도 측정 대상 (가격 vs 매출) · 시간 단위 (일/연) · 컬럼명 모두 분리 — silent alias 회피.
+같은 "거시 민감도" 라도 측정 대상 (가격 vs 매출) · 시간 단위 (일/연) · 컬럼명 모두 분리 - silent alias 회피.
 
 ## 공개 호출 방식
 
@@ -542,13 +554,13 @@ r = dartlab.quant("시장맥락", "AAPL", macroVars=["FEDFUNDS", "DGS10"])
 }
 ```
 
-`macroSource` 단일 키 — wide 호출 성공 시 `"wide"`, wide 실패 후 var 별 fetch 가 일부 성공하면 `"singleFallback"`, 둘 다 실패면 `"none"`. wide 실패 사유는 `macroWideErrorType` 진단 키로 별도 보존.
+`macroSource` 단일 키 - wide 호출 성공 시 `"wide"`, wide 실패 후 var 별 fetch 가 일부 성공하면 `"singleFallback"`, 둘 다 실패면 `"none"`. wide 실패 사유는 `macroWideErrorType` 진단 키로 별도 보존.
 
 ## evidence 기준
 
 - target: `stockCode`
 - period: `lookbackDays`, `dateRef`
-- benchmark: 종목 상장 시장 (KOSPI/KOSDAQ/SPX) — `fetchBenchmarkOhlcv` 의 결과
+- benchmark: 종목 상장 시장 (KOSPI/KOSDAQ/SPX) - `fetchBenchmarkOhlcv` 의 결과
 - metric: `marketBeta`, `*Beta` 키 + `_r2` 쌍
 - value: 숫자 + R² 함께
 - dateRef: `dateRef`
@@ -557,16 +569,16 @@ r = dartlab.quant("시장맥락", "AAPL", macroVars=["FEDFUNDS", "DGS10"])
 ## 자기 검증 노트
 
 - 005930 (수출주) `usdkrwBeta` 음/양 부호는 시기에 따라 변할 수 있으나 |β| > 0.3 기대 (FX 민감)
-- 035420 (네이버, 내수 IT) `|usdkrwBeta|` 작음 — 환율 비민감
+- 035420 (네이버, 내수 IT) `|usdkrwBeta|` 작음 - 환율 비민감
 - KOSPI 종목 `marketBeta` ∈ [0.3, 1.8] 합리적 범위
 - US 종목 호출 시 flow 자동 비활성 (flowAvailable=False)
-- R² < 0.05 인 베타는 *noise* — summary 인용 시 신중
+- R² < 0.05 인 베타는 *noise* - summary 인용 시 신중
 
 ## 한계 및 비목표
 
 - 펀더멘털 (재무 vs 거시) 회귀는 `scan.macroBeta` 가 책임. 변수명도 분리 (gdpBeta/rateBeta vs cpiBeta/baseRateBeta)
 - 거시 변수 빈도 mismatch (월별 CPI 가 일별 join 시 forward-fill) → R² 가 작은 건 *분포의 본질*
-- 다변량 회귀 (multiple regression with controls) 는 본 축 범위 밖 — 단변량 OLS 로 시작
+- 다변량 회귀 (multiple regression with controls) 는 본 축 범위 밖 - 단변량 OLS 로 시작
 - VAR / cointegration / Granger causality 등 시계열 인과는 본 축 외부
 
 ## 기본 검증
@@ -577,13 +589,13 @@ r = dartlab.quant("시장맥락", "AAPL", macroVars=["FEDFUNDS", "DGS10"])
 
 ## 엔진 역할
 
-`scanBacktest` 는 scan 결과 universe + signalFn (또는 style) → ``multiAssetBacktest`` 호출의 wrapper. 내부 로직 0 — 모든 백테스트는 ``multiAssetBacktest`` SSOT 가 처리. 본 helper 의 책임은 ① universe 추출, ② signalFn → Rule 변환, ③ scanContext SHA-1 기록.
+`scanBacktest` 는 scan 결과 universe + signalFn (또는 style) → ``multiAssetBacktest`` 호출의 wrapper. 내부 로직 0 - 모든 백테스트는 ``multiAssetBacktest`` SSOT 가 처리. 본 helper 의 책임은 ① universe 추출, ② signalFn → Rule 변환, ③ scanContext SHA-1 기록.
 
 ## architecture 룰 준수
 
 - quant → scan import **금지** (역방향). scan 결과는 사용자가 호출자에서 추출해 ``pl.DataFrame`` 입력으로 전달.
-- 본 helper 는 ``dartlab.scan`` 을 import 하지 않음 — 단지 stockCode 컬럼이 있는 DataFrame 만 받는다.
-- axis 미등록 — registry dispatcher 의 ``fn(stockCode=stockCode, **kwargs)`` 계약은 첫 인자가 stockCode. scanBacktest 의 첫 인자는 DataFrame 이라 어긋남. ``dartlab.quant("scanBacktest", ...)`` 호출 X.
+- 본 helper 는 ``dartlab.scan`` 을 import 하지 않음 - 단지 stockCode 컬럼이 있는 DataFrame 만 받는다.
+- axis 미등록 - registry dispatcher 의 ``fn(stockCode=stockCode, **kwargs)`` 계약은 첫 인자가 stockCode. scanBacktest 의 첫 인자는 DataFrame 이라 어긋남. ``dartlab.quant("scanBacktest", ...)`` 호출 X.
 
 ## 공개 호출 방식
 
@@ -596,7 +608,7 @@ top = dl.scan("valuation").filter(pl.col("등급") == "A").sort("PER").head(20)
 result = dl.quant.scanBacktest(top, style="trendFollow", topN=20)
 result.sharpe, result.mdd, result.scanContext
 
-# signalFn 직접 정의 — 단순 momentum 시그널
+# signalFn 직접 정의 - 단순 momentum 시그널
 import numpy as np
 def momentum_signal(close):
     sma_short = np.convolve(close, np.ones(10) / 10, mode="same")
@@ -611,9 +623,9 @@ result = dl.quant.scanBacktest(top, signalFn=momentum_signal, topN=20)
 `dartlab.quant.scanBacktest(scanResult, ...)` 가 진입. 다음 순서:
 
 1. scanResult 빈 DataFrame / 누락 시 error 반환
-2. signalFn 또는 style 둘 중 하나 필수 — 미지정 시 error
+2. signalFn 또는 style 둘 중 하나 필수 - 미지정 시 error
 3. universeCol 자동 감지 (`stockCode` → `종목코드` → `stock_code` → `corp_code`)
-4. scanResult.head(topN) 로 universe 추출 — 사용자가 사전 sort/filter 책임
+4. scanResult.head(topN) 로 universe 추출 - 사용자가 사전 sort/filter 책임
 5. signalFn 우선, fallback 으로 style → STYLE_REGISTRY 의 build 함수
 6. multiAssetBacktest 호출 (weighting=equal/inv_vol/risk_parity)
 7. BacktestResult.scanContext 에 universe 출처 SHA-1 + signalSource 기록 후 dataclasses.replace
@@ -647,7 +659,7 @@ BacktestResult(
     dsr=float,                    # Probabilistic Sharpe Ratio (Lopez de Prado)
     pbo=float | None,
     style=str,                    # "style:trendFollow" 또는 "signalFn"
-    scanContext=dict,             # universe 출처 추적 — 본 helper 신규 필드
+    scanContext=dict,             # universe 출처 추적 - 본 helper 신규 필드
     status="ok" | "error",
     reason=str | None,
 )
@@ -688,8 +700,8 @@ BacktestResult(
 
 ## 한계 및 비목표
 
-- universe 의 등급/sort 자동 추출 X — 사용자가 사전에 ``scanResult.filter(...).sort(...).head(N)`` 책임
-- multi-period 백테스트 (월별 리밸런싱) 는 본 helper 범위 밖 — ``multiAssetBacktest`` 가 정적 가중치만 지원
+- universe 의 등급/sort 자동 추출 X - 사용자가 사전에 ``scanResult.filter(...).sort(...).head(N)`` 책임
+- multi-period 백테스트 (월별 리밸런싱) 는 본 helper 범위 밖 - ``multiAssetBacktest`` 가 정적 가중치만 지원
 - forecast 모델의 fold 마다 재학습 (walk-forward refit) 은 후속 PR
 
 ## 기본 검증
@@ -700,7 +712,7 @@ BacktestResult(
 
 ## 엔진 역할
 
-quant 엔진의 워크포워드 축 응용 skill — Lopez de Prado 슬라이딩 OOS Sharpe + DSR + PBO. strategy 그룹. SSOT 는 `_AXIS_REGISTRY` (`src/dartlab/quant/__init__.py`).
+quant 엔진의 워크포워드 축 응용 skill - Lopez de Prado 슬라이딩 OOS Sharpe + DSR + PBO. strategy 그룹. SSOT 는 `_AXIS_REGISTRY` (`src/dartlab/quant/__init__.py`).
 
 ## 공개 호출 방식
 
@@ -720,7 +732,7 @@ result = dartlab.quant.walkforward("005930")
 
 ### rule_factory 옵션 (forecast OOS 검증)
 
-기본 호출은 정적 Rule 슬라이스 — 같은 entry/exit 시계열을 IS/OOS 에 그대로 적용. forecast 모델처럼 *IS fit + OOS predict* 패턴은 ``walkForward(close, rule=None, rule_factory=...)`` 로 호출.
+기본 호출은 정적 Rule 슬라이스 - 같은 entry/exit 시계열을 IS/OOS 에 그대로 적용. forecast 모델처럼 *IS fit + OOS predict* 패턴은 ``walkForward(close, rule=None, rule_factory=...)`` 로 호출.
 
 ```python
 from dartlab.quant.benchmark.forecast import forecastRuleFactory

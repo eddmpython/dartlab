@@ -5,7 +5,7 @@ kind: curated
 scope: builtin
 status: observed
 category: engines
-purpose: Story 는 6 막 인과 구조의 회사 보고서를 조립하는 **L3 조합기**다. 분석엔진 X — L2 5 분석엔진 (analysis · credit · macro · quant · industry) 끼리의 import 순환을 방지하기 위해, story 가 단독으로 다중 결합 책임을 짊어진다. L2 5 엔진 + L1.5 (scan) 결과를 블록 단위로 조합 — 11 reportType × 7 기업유형 템플릿. 자체 계산 0, 모든 숫자는 하위 엔진 ref. 트리거 — '보고서', '기업 이야기', 'story', '6 막 인과'.
+purpose: Story 는 6 막 인과 구조의 회사 보고서를 조립하는 **L3 조합기**다. 분석엔진 X. 다섯 공개 렌즈 (analysis · credit · industry · quant · macro) 의 대표 product와 scan 근거를 독립 상태로 모아 11 reportType × 7 기업유형 템플릿에 배치한다. 자체 계산과 통합점수는 0, 모든 숫자와 렌즈 결론은 하위 엔진 ref. 트리거는 '보고서', '기업 이야기', 'story', '6 막 인과'.
 whenToUse:
   - Story
   - story
@@ -18,10 +18,12 @@ whenToUse:
   - narrative 블록
 inputs:
   - 종목코드 또는 Company
-  - reportType (선택 — full · executive · credit · valuation · ...)
+  - reportType (선택 - full · executive · credit · valuation · ...)
   - 자유 조립 시 Block 리스트
 outputs:
   - Story 인스턴스 (sections · summaryCard)
+  - 렌즈별 대표 product 원문 (lensProducts)
+  - 렌즈 호출 또는 계약 결손 (lensGaps)
   - render 출력 (rich · html · markdown · json)
   - block list (scorecard · creditScore · narrative · valuationBand · ...)
 capabilityRefs:
@@ -61,11 +63,12 @@ failureModes:
   - 하위 엔진 (analysis · credit) 결과 ref 없이 narrative 만 생성
   - reportType 미지정 + 기업유형 자동 감지 실패 시 fallback 없음
   - block 자유 조립 시 evidence 없는 빈 섹션 발급
-  - story 가 직접 숫자 계산 — 모든 숫자는 하위 엔진 결과 ref 에 묶어야
+  - story 가 직접 숫자 계산 - 모든 숫자는 하위 엔진 결과 ref 에 묶어야
 forbidden:
-  - story 에서 직접 숫자 계산 또는 추정 금지 — 하위 엔진 결과만 인용.
+  - story 에서 직접 숫자 계산 또는 추정 금지 - 하위 엔진 결과만 인용.
+  - 다섯 렌즈를 하나의 종합점수나 단일 등급으로 합산 금지.
   - thesis · risk 문장에 source ref 없이 단정 금지.
-  - 옛 단일 reportType (`thesis`) 으로 새 보고서 생성 금지 — 명시 reportType 또는 자동 감지.
+  - 옛 단일 reportType (`thesis`) 으로 새 보고서 생성 금지 - 명시 reportType 또는 자동 감지.
 examples:
   - 005930 전체 보고서
   - 신용분석 전용 보고서 (reportType="credit")
@@ -73,10 +76,10 @@ examples:
   - 20 등급 신용평가 함께 보기
   - 자유 블록 조립 (Story([blocks]))
 procedure:
-  - dartlab.Company(code).story() 가 가장 단순한 진입 — 자동 reportType + 기업유형 감지.
+  - dartlab.Company(code).story() 가 가장 단순한 진입 - 자동 reportType + 기업유형 감지.
   - 명시 호출은 c.story(reportType="credit") 또는 c.story(section_name).
   - 자유 조립은 from dartlab.story import blocks, Story; b = blocks(c); Story([b["growth"], b["margin"]]).
-  - 출력 형식 — story.render("markdown") / toHtml() / toMarkdown().
+  - 출력 형식 - story.render("markdown") / toHtml() / toMarkdown().
   - 하위 엔진 (analysis · credit · macro · industry) 결과의 ref 가 자동 묶임.
 linkedSkills:
   - engines.company
@@ -96,20 +99,20 @@ testUniverse:
 
 ## 엔진 역할
 
-`story` 는 *해석하지 않고 다양한 관점의 근거를 배치* 하는 **L3 조합기**다. 분석엔진 X. L2 5 분석엔진 — analysis (재무 인과) · credit (신용 위험) · macro (시장 환경) · quant (정량 신호) · industry (밸류체인 위치) — 와 L1.5 scan (횡단 비교) 결과를 블록 단위로 조합해 6 막 구조 보고서를 만든다.
+`story` 는 *해석하지 않고 다양한 관점의 근거를 배치* 하는 **L3 조합기**다. 분석엔진 X. L2 5 분석엔진 - analysis (재무 인과) · credit (신용 위험) · macro (시장 환경) · quant (정량 신호) · industry (밸류체인 위치) - 와 L1.5 scan (횡단 비교) 결과를 블록 단위로 조합해 6 막 구조 보고서를 만든다.
 
-### story 가 L3 조합기인 이유 — 순환참조 방지
+### story 가 L3 조합기인 이유 - 순환참조 방지
 
-L2 5 분석엔진은 도메인 격리 (analysis ⊥ credit ⊥ macro ⊥ quant ⊥ industry) 가 import 단방향으로 강제돼 있다. L2 끼리 직접 import 하면 순환참조가 생긴다. 이 결합 책임을 story 가 단독으로 짊어져 6 막 보고서로 직조한다 — 자체 숫자 계산 0, 모든 숫자는 하위 엔진 결과 ref 에 묶이고, story 자체는 *thesis · evidence · risk · limit* 의 문장 골격만 제공.
+L2 5 분석엔진은 도메인 격리 (analysis ⊥ credit ⊥ macro ⊥ quant ⊥ industry) 가 import 단방향으로 강제돼 있다. L2 끼리 직접 import 하면 순환참조가 생긴다. 이 결합 책임을 story 가 단독으로 짊어져 6 막 보고서로 직조한다 - 자체 숫자 계산 0, 모든 숫자는 하위 엔진 결과 ref 에 묶이고, story 자체는 *thesis · evidence · risk · limit* 의 문장 골격만 제공.
 
-이 구조 덕분에 새 L2 분석엔진을 추가해도 기존 L2 엔진은 수정 0 — story 의 블록 등록만 늘어난다.
+이 구조 덕분에 새 L2 분석엔진을 추가해도 기존 L2 엔진은 수정 0 - story 의 블록 등록만 늘어난다.
 
 ## 공개 호출 방식
 
 ```python
 import dartlab
 
-# 1. Company-bound — 가장 단순한 진입점
+# 1. Company-bound - 가장 단순한 진입점
 c = dartlab.Company("005930")
 story = c.story()                          # 자동 reportType + 기업유형 감지
 print(story.render("markdown"))
@@ -136,13 +139,13 @@ print(custom.render("json"))               # AI 소비용
 
 ## 강행 호출 룰 (agent 답변 품질 회귀 차단)
 
-story 는 L3 조합기 — *자체 계산 0*. 모든 숫자는 하위 엔진 (analysis/credit/macro/quant/industry/scan) ref 인용으로 들어와야 함.
+story 는 L3 조합기 - *자체 계산 0*. 모든 숫자는 하위 엔진 (analysis/credit/macro/quant/industry/scan) ref 인용으로 들어와야 함.
 
-1. **story 본문 안 모든 숫자에 하위 엔진 ref inline 표기 필수** — `[tableRef:...]`/`[valueRef:...]` 형식. ref 없는 숫자는 story 본문 진입 차단.
-2. **story 안에서 직접 계산 금지** — RunPython 으로 ratio/forecast/score 산출 금지. 하위 엔진 호출 결과의 `items`/`flags`/`assumptions` 그대로 차용.
-3. **블록 evidence 부족 시 빈 섹션 + `limits` 에 명시** — 임의로 채우거나 환각 금지. story 의 spec 가 "evidence 비면 빈 섹션" 정공.
-4. **reportType 미명시 시 자동 감지 결과 본문에 노출** — "자동 선택: `executive` (이유: ...)" 한 줄.
-5. **같은 `(stockCode, period)` 분기 데이터는 1 회 fetch 후 in-memory 재사용** — 같은 회사 같은 기간의 EngineCall 을 axis 만 바꿔 반복 호출 금지. story 가 L3 조합기로서 차입금·충당부채·부문정보 등 여러 블록을 만들 때, Company.panel 한 번으로 모든 stmt (BS/IS/CF) + 분기 시계열을 받아 in-memory 분기 후 각 블록에 분배한다. 회귀 사례 — Q3 hybrid 답변 137s + RSS 7.6GB 폭증 (같은 005930 분기 데이터 차입금/충당부채/부문정보 4 회 반복 load). CLAUDE.md 메모리 안전 강행규칙 (Company 1 개 ≈ 200~500MB) 직결.
+1. **story 본문 안 모든 숫자에 하위 엔진 ref inline 표기 필수** - `[tableRef:...]`/`[valueRef:...]` 형식. ref 없는 숫자는 story 본문 진입 차단.
+2. **story 안에서 직접 계산 금지** - RunPython 으로 ratio/forecast/score 산출 금지. 하위 엔진 호출 결과의 `items`/`flags`/`assumptions` 그대로 차용.
+3. **블록 evidence 부족 시 빈 섹션 + `limits` 에 명시** - 임의로 채우거나 환각 금지. story 의 spec 가 "evidence 비면 빈 섹션" 정공.
+4. **reportType 미명시 시 자동 감지 결과 본문에 노출** - "자동 선택: `executive` (이유: ...)" 한 줄.
+5. **같은 `(stockCode, period)` 분기 데이터는 1 회 fetch 후 in-memory 재사용** - 같은 회사 같은 기간의 EngineCall 을 axis 만 바꿔 반복 호출 금지. story 가 L3 조합기로서 차입금·충당부채·부문정보 등 여러 블록을 만들 때, Company.panel 한 번으로 모든 stmt (BS/IS/CF) + 분기 시계열을 받아 in-memory 분기 후 각 블록에 분배한다. 회귀 사례 - Q3 hybrid 답변 137s + RSS 7.6GB 폭증 (같은 005930 분기 데이터 차입금/충당부채/부문정보 4 회 반복 load). CLAUDE.md 메모리 안전 강행규칙 (Company 1 개 ≈ 200~500MB) 직결.
 
 ## 호출 동작
 
@@ -150,11 +153,11 @@ story 는 L3 조합기 — *자체 계산 0*. 모든 숫자는 하위 엔진 (an
 
 기업유형 template: 일반 · 금융 · 지주 · 신생/성장 · 사이클 · 자원 · 플랫폼 7 종. analysis 의 `companyType` 함수로 판정.
 
-`Story` 클래스 자체를 호출하면 `Story(itemsOrStockCode, *, stockCode=, corpName=, sections=, layout=)` — 자유 조립 또는 직접 종목코드. `dartlab.story` 가 클래스 자체이므로 *함수처럼 호출하지 않는다* (`dartlab.story(c)` 같은 호출은 `Story(c)` 가 되어 첫 인자 타입이 안 맞음).
+`Story` 클래스 자체를 호출하면 `Story(itemsOrStockCode, *, stockCode=, corpName=, sections=, layout=)` - 자유 조립 또는 직접 종목코드. `dartlab.story` 가 클래스 자체이므로 *함수처럼 호출하지 않는다* (`dartlab.story(c)` 같은 호출은 `Story(c)` 가 되어 첫 인자 타입이 안 맞음).
 
-블록 한 개의 evidence 가 비면 빈 섹션이 그대로 나간다 — story 는 채워주지 않음. 하위 엔진 호출 결과 부족 시 해당 블록 skip 또는 limits 에 명시.
+블록 한 개의 evidence 가 비면 빈 섹션이 그대로 나간다 - story 는 채워주지 않음. 하위 엔진 호출 결과 부족 시 해당 블록 skip 또는 limits 에 명시.
 
-## 2 축 체계 — reportType × template
+## 2 축 체계 - reportType × template
 
 ```
 reportType   (집중 시점)              template     (기업 유형 자동 감지)
@@ -180,6 +183,9 @@ reportType × template = block list 결정. 각 block 은 하위 엔진 (analysi
 Story 인스턴스
    sections : list[Section]      # 6 막별 섹션
    summaryCard : SummaryCard     # 최상단 요약 (grade · 핵심 metrics)
+   lensProducts : dict           # reportType에 필요한 렌즈별 product 원문
+   lensGaps : list[dict]         # 호출 실패 또는 product 계약 결손
+   reportType : str              # 선택된 보고서 관점
    render(fmt) : str             # "rich" / "html" / "markdown" / "json"
    toHtml() : str
    toMarkdown() : str
@@ -196,7 +202,7 @@ section dict
 
 ## evidence 기준
 
-story 답변은 `target` · `reportType` · `template` · 모든 block 의 `tableRef` / `valueRef` 를 남긴다. evidence 없는 thesis 문장은 *허용 안 됨* — block 자체를 skip 또는 limits 에 명시.
+story 답변은 `target` · `reportType` · `template` · 모든 block 의 `tableRef` / `valueRef` 를 남긴다. evidence 없는 thesis 문장은 *허용 안 됨* - block 자체를 skip 또는 limits 에 명시.
 
 ## docstring ↔ story 환류
 
@@ -219,11 +225,11 @@ story 답변은 `target` · `reportType` · `template` · 모든 block 의 `tabl
 
 ## 기본 실행 순서
 
-1. **ask 모드 단일 답변** — LLM 이 5 단 양식 직접 작성. Company.panel + 자동 부착 badge 인용. story() 호출 불필요.
-2. **종합 보고서 / landing 페이지** — `Company(code).story()` 자동 reportType.
+1. **ask 모드 단일 답변** - LLM 이 5 단 양식 직접 작성. Company.panel + 자동 부착 badge 인용. story() 호출 불필요.
+2. **종합 보고서 / landing 페이지** - `Company(code).story()` 자동 reportType.
 3. 신용 / 가치평가 / 거버넌스 등 집중 시점이면 `reportType=` 명시.
 4. 자유 조립은 `blocks(c)` 로 block dict 받고 `Story([...])`.
-5. 출력 형식 — markdown (텍스트 응답), html (landing 임베드), json (후속 처리).
+5. 출력 형식 - markdown (텍스트 응답), html (landing 임베드), json (후속 처리).
 
 ## 기본 검증
 
