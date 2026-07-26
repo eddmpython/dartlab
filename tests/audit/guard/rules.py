@@ -268,6 +268,7 @@ def checkLazyBoundaryDebt(records: list[ModuleRecord]) -> list[Violation]:
                         importRecord.line,
                         f"lazy root-facade import: {record.topPackage} imports dartlab",
                         importKind="root-facade",
+                        subject=target if target is not None else "root",
                     )
                 )
                 continue
@@ -279,10 +280,16 @@ def checkLazyBoundaryDebt(records: list[ModuleRecord]) -> list[Violation]:
                         importRecord.line,
                         f"lazy L1 cross import: {record.topPackage} imports {target}",
                         importKind="lazy",
+                        subject=target if target is not None else "root",
                     )
                 )
                 continue
-            if target in L15_PEERS or target in L2_PEERS:
+            # 예전에는 L1.5 와 L2 만 상위로 셌다. 그래서 L1 이 L2.5(data, simulate)나
+            # L3 이상(story, ai, mcp)을 lazy 로 끌어와도 원장에 남지 않았다. 계층
+            # 숫자로 비교하면 어느 층이 새로 생겨도 규칙이 따라온다.
+            ownerLayer = LAYER_OF.get(record.topPackage)
+            targetLayer = LAYER_OF.get(target)
+            if ownerLayer is not None and targetLayer is not None and targetLayer > ownerLayer:
                 violations.append(
                     makeViolation(
                         "architecture.lazyUpperImport",
@@ -290,6 +297,7 @@ def checkLazyBoundaryDebt(records: list[ModuleRecord]) -> list[Violation]:
                         importRecord.line,
                         f"lazy upper import: {record.topPackage} imports {target}",
                         importKind="lazy",
+                        subject=target if target is not None else "root",
                     )
                 )
     return violations
@@ -400,9 +408,25 @@ def checkProviderCompanyFile(path: Path, providerName: str) -> list[Violation]:
     return violations
 
 
-def makeViolation(rule: str, path: str, line: int, message: str, *, importKind: str = "direct") -> Violation:
-    """표준 baseline key를 가진 Violation 생성."""
-    baselineKey = f"{rule}:{importKind}:{path}:{line}"
+def makeViolation(
+    rule: str,
+    path: str,
+    line: int,
+    message: str,
+    *,
+    importKind: str = "direct",
+    subject: str | None = None,
+) -> Violation:
+    """표준 baseline key를 가진 Violation 생성.
+
+    `subject` 를 주면 줄번호 대신 그것으로 키를 만든다. 줄번호 키는 5,660 줄과 4,681 줄
+    짜리 최다 편집 파일 두 개를 가리키고 있어서, 위쪽에 한 줄만 끼워 넣어도 같은 위반이
+    신규로 잡히고 baseline 항목은 죽은 채 남았다. 그러면 원장을 읽는 대신 다시 뜨는
+    습관이 든다. 대상 패키지로 잡으면 파일이 커져도 키가 유지된다.
+    """
+
+    anchor = subject if subject is not None else str(line)
+    baselineKey = f"{rule}:{importKind}:{path}:{anchor}"
     return Violation(
         rule=rule,
         path=path,

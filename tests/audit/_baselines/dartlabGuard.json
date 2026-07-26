@@ -6,26 +6,23 @@
     "architecture.lazyUpperImport": []
   },
   "protectedCompanyFacadeDebt": {
-    "_note": "Company facade 공개 표면 보호 원장. providers/{dart,edgar}/company.py 내부 lazy 상위 의존은 사용자 호출 표면을 보존하기 위해 active cleanup 대상에서 제외하고 신규 증가만 차단한다.",
+    "_note": "Company facade 공개 표면 보호 원장. providers/{dart,edgar}/company.py 안의 lazy 상위 의존은 사용자 호출 표면을 보존하려고 남긴 것이라 정리 대상이 아니고 신규 증가만 차단한다. 키를 줄번호에서 대상 패키지로 바꿨다. 예전 키는 5,660 줄과 4,681 줄짜리 최다 편집 파일을 가리켜 위쪽 한 줄만 밀려도 같은 위반이 신규로 잡히고 항목은 죽은 채 남았다. 겸사겸사 17 개 줄번호 항목이 14 개 관계로 접혔고, 계층 비교로 바꾸면서 그동안 아예 보이지 않던 simulate 와 story 두 관계가 드러나 함께 실렸다.",
     "architecture.lazyRootFacadeImport": [],
     "architecture.lazyUpperImport": [
-      "architecture.lazyUpperImport:lazy:src/dartlab/providers/dart/company.py:2371",
-      "architecture.lazyUpperImport:lazy:src/dartlab/providers/dart/company.py:3156",
-      "architecture.lazyUpperImport:lazy:src/dartlab/providers/dart/company.py:3228",
-      "architecture.lazyUpperImport:lazy:src/dartlab/providers/dart/company.py:3352",
-      "architecture.lazyUpperImport:lazy:src/dartlab/providers/dart/company.py:3353",
-      "architecture.lazyUpperImport:lazy:src/dartlab/providers/dart/company.py:3956",
-      "architecture.lazyUpperImport:lazy:src/dartlab/providers/dart/company.py:4253",
-      "architecture.lazyUpperImport:lazy:src/dartlab/providers/dart/company.py:5033",
-      "architecture.lazyUpperImport:lazy:src/dartlab/providers/dart/company.py:5034",
-      "architecture.lazyUpperImport:lazy:src/dartlab/providers/dart/company.py:5045",
-      "architecture.lazyUpperImport:lazy:src/dartlab/providers/dart/company.py:5114",
-      "architecture.lazyUpperImport:lazy:src/dartlab/providers/dart/company.py:5380",
-      "architecture.lazyUpperImport:lazy:src/dartlab/providers/edgar/company.py:1177",
-      "architecture.lazyUpperImport:lazy:src/dartlab/providers/edgar/company.py:1239",
-      "architecture.lazyUpperImport:lazy:src/dartlab/providers/edgar/company.py:2071",
-      "architecture.lazyUpperImport:lazy:src/dartlab/providers/edgar/company.py:3044",
-      "architecture.lazyUpperImport:lazy:src/dartlab/providers/edgar/company.py:382"
+      "architecture.lazyUpperImport:lazy:src/dartlab/providers/dart/company.py:analysis",
+      "architecture.lazyUpperImport:lazy:src/dartlab/providers/dart/company.py:credit",
+      "architecture.lazyUpperImport:lazy:src/dartlab/providers/dart/company.py:frame",
+      "architecture.lazyUpperImport:lazy:src/dartlab/providers/dart/company.py:industry",
+      "architecture.lazyUpperImport:lazy:src/dartlab/providers/dart/company.py:macro",
+      "architecture.lazyUpperImport:lazy:src/dartlab/providers/dart/company.py:quant",
+      "architecture.lazyUpperImport:lazy:src/dartlab/providers/dart/company.py:simulate",
+      "architecture.lazyUpperImport:lazy:src/dartlab/providers/dart/company.py:story",
+      "architecture.lazyUpperImport:lazy:src/dartlab/providers/dart/company.py:synth",
+      "architecture.lazyUpperImport:lazy:src/dartlab/providers/edgar/company.py:credit",
+      "architecture.lazyUpperImport:lazy:src/dartlab/providers/edgar/company.py:frame",
+      "architecture.lazyUpperImport:lazy:src/dartlab/providers/edgar/company.py:macro",
+      "architecture.lazyUpperImport:lazy:src/dartlab/providers/edgar/company.py:quant",
+      "architecture.lazyUpperImport:lazy:src/dartlab/providers/edgar/company.py:synth"
     ]
   },
   "deferred": {
