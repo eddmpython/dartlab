@@ -151,6 +151,18 @@ include = [
     "README.md",
     "LICENSE",
 ]
+# ⚠ sdist 에도 artifacts 필수 (2026-07-26 사고 class). `python -m build` 는 sdist 를 먼저 굽고
+# *그 sdist 를 풀어서* wheel 을 빌드한다. 그래서 sdist 에서 빠진 파일은 wheel 에서도 사라진다.
+# `include` 는 positive filter 일 뿐이라 .gitignore(VCS) 배제를 이기지 못한다. .gitignore 에
+# `src/dartlab/ui/build/` 가 추가된 순간(0.10.8~0.10.9) sdist 가 UI 를 통째로 떨궜고, PyPI wheel
+# 0.10.9 의 dartlab/ui/** 가 0 개가 되어 데스크탑 런처가 "UI 빌드 파일(index.html) 없음" 으로
+# 기동 불능이 됐다. VCS 배제를 이기는 유일한 키가 artifacts 다. wheel 타깃과 반드시 동기 유지.
+artifacts = [
+    "src/dartlab/ui/build/**",
+    "src/dartlab/**/*.json",
+    "src/dartlab/**/*.parquet",
+    "src/dartlab/py.typed",
+]
 exclude = [
     "**/_reference/**",
     "**/_backup/**",

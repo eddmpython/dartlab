@@ -132,7 +132,7 @@ jobs:
         run: |
           set -euo pipefail
           WHL=$(ls dist/*.whl | head -n1)
-          python -X utf8 .github/scripts/verifyWheel.py "$WHL"
+          python -X utf8 .github/scripts/verifyWheel.py "$WHL" --require-ui
 
       # 브라우저 dartlab 은 micropip.install("dartlab") 로 PyPI 최신을 받는다. wheel 의존성 마커가
       # pyodide 를 깨면(예 marimo transitive msgspec) 브라우저가 조용히 죽는다. 발행 전에 그걸 잡는다.

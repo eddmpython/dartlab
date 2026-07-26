@@ -53,18 +53,36 @@ _REQUIRED_BUNDLE_FILES = [
     "dartlab/providers/edinet/docs/sections/mapperData/sectionMappings.json",
 ]
 
+# 데스크탑 런처가 기동에 요구하는 번들 UI. wheel 에 이게 없으면 런처는
+# "UI 빌드 파일(index.html) 없음" 으로 죽는다 (0.10.9 사고). UI 빌드 step 이 선행하는
+# publish 경로에서만 --require-ui 로 켠다 (ci-fast wheel-smoke 는 UI 를 굽지 않는다).
+_REQUIRED_UI_FILES = [
+    "dartlab/ui/build/index.html",
+]
 
-def checkBundle(whl: Path) -> int:
+
+def checkBundle(whl: Path, *, requireUi: bool = False) -> int:
     """wheel zip 목록에 필수 리소스가 모두 있는지 확인."""
     with zipfile.ZipFile(whl) as z:
         names = set(z.namelist())
-    missing = [f for f in _REQUIRED_BUNDLE_FILES if f not in names]
+    required = list(_REQUIRED_BUNDLE_FILES)
+    if requireUi:
+        required += _REQUIRED_UI_FILES
+    missing = [f for f in required if f not in names]
     if missing:
-        print("FAIL — wheel 에 필수 리소스 누락 (2026-04-19 사고 class):")
+        print("FAIL - wheel 에 필수 리소스 누락 (2026-04-19 사고 class):")
         for m in missing:
             print(f"  - {m}")
+        if requireUi and any(m in _REQUIRED_UI_FILES for m in missing):
+            print(
+                "\n  진단: `python -m build` 는 sdist 를 먼저 굽고 *그 sdist 로* wheel 을 만든다.\n"
+                "  src/dartlab/ui/build/ 는 .gitignore 대상이라 sdist 타깃에 artifacts 가 없으면\n"
+                "  sdist 단계에서 통째로 탈락하고 wheel 에서도 사라진다.\n"
+                "  확인: pyproject.toml [tool.hatch.build.targets.sdist] 의 artifacts."
+            )
         return 1
-    print(f"OK — 번들 리소스 {len(_REQUIRED_BUNDLE_FILES)}개 모두 포함, wheel 총 {len(names)} 파일")
+    uiCount = len([n for n in names if n.startswith("dartlab/ui/")])
+    print(f"OK - 번들 리소스 {len(required)}개 모두 포함, wheel 총 {len(names)} 파일 (UI {uiCount} 파일)")
     return 0
 
 
@@ -153,6 +171,11 @@ def main() -> int:
         action="store_true",
         help="격리 venv 설치 단계 생략 (번들 검증만 수행)",
     )
+    parser.add_argument(
+        "--require-ui",
+        action="store_true",
+        help="dartlab/ui/build/index.html 번들 필수화 (UI 빌드 step 이 선행하는 publish 경로 전용)",
+    )
     args = parser.parse_args()
 
     whl: Path = args.wheel
@@ -164,7 +187,7 @@ def main() -> int:
         return 3
 
     print(f"[verify-wheel] {whl}")
-    rc = checkBundle(whl)
+    rc = checkBundle(whl, requireUi=args.require_ui)
     if rc != 0:
         return rc
 

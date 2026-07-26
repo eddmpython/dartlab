@@ -290,7 +290,97 @@ def test_gitignorePatterns_noUnrootedDirsOverlappingSrcDartlab():
 
 
 # ════════════════════════════════════════
-# Loud-fail 로더 계약 — Phase A1 에서 전환한 로더들
+# sdist -> wheel 경로 계약 (2026-07-26 사고 class)
+# ════════════════════════════════════════
+#
+# `python -m build` (publish.yml 이 쓰는 바로 그 명령) 은 sdist 를 먼저 굽고
+# *그 sdist 를 풀어서* wheel 을 만든다. 그래서 sdist 에서 빠진 파일은 wheel 에서도 사라진다.
+# `include` 는 positive filter 라 .gitignore(VCS) 배제를 이기지 못하고, 이기는 키는
+# `artifacts` 뿐이다. 0.10.8~0.10.9 에서 .gitignore 에 `src/dartlab/ui/build/` 가 추가됐는데
+# sdist 타깃에 artifacts 가 없어 PyPI wheel 의 dartlab/ui/** 가 0 개가 됐고,
+# 데스크탑 런처가 "UI 빌드 파일(index.html) 없음" 으로 기동 불능이 됐다.
+
+
+def _hatchTargets() -> tuple[dict, dict]:
+    """pyproject 의 wheel / sdist 빌드 타깃 설정."""
+    import tomllib
+
+    data = tomllib.loads((_REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    targets = data["tool"]["hatch"]["build"]["targets"]
+    return targets["wheel"], targets["sdist"]
+
+
+def test_sdistArtifacts_supersetOfWheelArtifacts():
+    """sdist 의 artifacts 가 wheel artifacts 를 전부 덮는지 (빌드 안 하는 상시 게이트).
+
+    wheel 타깃에만 artifacts 를 넣고 sdist 를 빠뜨리면, 로컬 `--wheel` 빌드는 통과하는데
+    publish 의 sdist->wheel 경로에서만 파일이 사라지는 조용한 회귀가 난다.
+    """
+    wheelTarget, sdistTarget = _hatchTargets()
+    wheelArtifacts = set(wheelTarget.get("artifacts", []))
+    sdistArtifacts = set(sdistTarget.get("artifacts", []))
+
+    missing = sorted(wheelArtifacts - sdistArtifacts)
+    assert not missing, (
+        "sdist 타깃 artifacts 에 누락된 wheel artifacts 패턴:\n"
+        + "\n".join(f"  - {m}" for m in missing)
+        + "\n\n`python -m build` 는 sdist 로 wheel 을 굽는다. sdist 에서 빠지면 wheel 에서도 빠진다.\n"
+        "pyproject.toml [tool.hatch.build.targets.sdist] 의 artifacts 를 wheel 과 동기화하라."
+    )
+
+
+def test_gitignoredBundlePaths_declaredAsArtifactsInBothTargets():
+    """.gitignore 로 배제되는 번들 경로는 wheel/sdist 양쪽 artifacts 에 선언돼 있어야 한다."""
+    wheelTarget, sdistTarget = _hatchTargets()
+    uiPattern = "src/dartlab/ui/build/**"
+
+    gitignore = (_REPO_ROOT / ".gitignore").read_text(encoding="utf-8")
+    if "src/dartlab/ui/build/" not in gitignore:
+        pytest.skip(".gitignore 가 src/dartlab/ui/build/ 를 배제하지 않음 (전제 변경)")
+
+    for name, target in (("wheel", wheelTarget), ("sdist", sdistTarget)):
+        assert uiPattern in target.get("artifacts", []), (
+            f"[tool.hatch.build.targets.{name}] artifacts 에 `{uiPattern}` 누락.\n"
+            ".gitignore 가 배제하는 경로는 artifacts 로만 되살릴 수 있다 (include 로는 불가).\n"
+            "누락 시 데스크탑 런처가 UI 없이 배포되어 기동 불능이 된다 (0.10.9 사고)."
+        )
+
+
+@pytest.fixture(scope="module")
+def builtSdistWheel(tmp_path_factory) -> Path | None:
+    """publish 와 동일하게 sdist -> wheel 로 빌드한 wheel 경로 (UI 빌드 없으면 None)."""
+    if not (_SRC_ROOT / "ui" / "build" / "index.html").exists():
+        return None
+    out = tmp_path_factory.mktemp("sdist-to-wheel-test")
+    result = subprocess.run(
+        [sys.executable, "-m", "build", "--outdir", str(out)],
+        cwd=_REPO_ROOT,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        return None
+    wheels = list(out.glob("*.whl"))
+    return wheels[0] if wheels else None
+
+
+@pytest.mark.slow
+def test_uiBuild_survivesSdistToWheel(builtSdistWheel: Path | None):
+    """UI 빌드가 존재할 때, publish 경로(sdist->wheel)로 구운 wheel 에 UI 가 남는지 실측."""
+    if builtSdistWheel is None:
+        pytest.skip("src/dartlab/ui/build/index.html 없음 (UI 빌드 선행 필요) 또는 build 실패")
+
+    with zipfile.ZipFile(builtSdistWheel) as zf:
+        names = set(zf.namelist())
+
+    assert "dartlab/ui/build/index.html" in names, (
+        "sdist->wheel 경로에서 UI 빌드가 사라졌다 (0.10.9 사고 재현).\n"
+        "pyproject.toml [tool.hatch.build.targets.sdist] 의 artifacts 를 확인하라."
+    )
+
+
+# ════════════════════════════════════════
+# Loud-fail 로더 계약 (Phase A1 에서 전환한 로더들)
 # ════════════════════════════════════════
 
 
