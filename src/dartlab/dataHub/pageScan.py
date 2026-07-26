@@ -14,6 +14,9 @@ if TYPE_CHECKING:
     import pyarrow as pa
 
 _DEFAULT_MAX_PAGES = 10_000
+_DEFAULT_MAX_PAGE_RETRIES = 2
+_RETRY_BACKOFF_SECONDS = 0.5
+_MAX_PAGE_RETRIES_LIMIT = 16
 
 _ERROR_MESSAGES = {
     "PAGE_SCAN_ARGUMENT_INVALID": "page scan 인자가 유효하지 않습니다",
@@ -135,8 +138,8 @@ def _requireDeadline(deadline: float | None) -> None:
 def _defaultQueryCaller(token: str) -> DataResult:
     import dartlab
 
-    data = cast(Callable[..., Any], getattr(dartlab, "data"))
-    return cast(DataResult, data("query", query={"continuation": token}))
+    hub = cast(Callable[..., Any], getattr(dartlab, "dataHub"))
+    return cast(DataResult, hub("query", query={"continuation": token}))
 
 
 def _validateArguments(
@@ -144,8 +147,11 @@ def _validateArguments(
     deadline: float | None,
     checkpoint: Callable[[PageScanCheckpoint], None] | None,
     queryCaller: PageQueryCaller | None,
+    maxPageRetries: int = _DEFAULT_MAX_PAGE_RETRIES,
 ) -> tuple[float | None, PageQueryCaller]:
     if type(maxPages) is not int or maxPages <= 0:
+        raise PageScanError("PAGE_SCAN_ARGUMENT_INVALID")
+    if type(maxPageRetries) is not int or maxPageRetries < 0 or maxPageRetries > _MAX_PAGE_RETRIES_LIMIT:
         raise PageScanError("PAGE_SCAN_ARGUMENT_INVALID")
     normalizedDeadline = _validatedDeadline(deadline)
     if checkpoint is not None and not callable(checkpoint):
@@ -155,6 +161,56 @@ def _validateArguments(
     return normalizedDeadline, queryCaller or _defaultQueryCaller
 
 
+def _resumeOnce(caller: PageQueryCaller, token: str) -> DataResult:
+    """Token 하나로 다음 page를 한 번 받아 계약을 검증한다."""
+
+    try:
+        resumed = caller(token)
+    except PageScanError:
+        raise
+    except Exception:
+        raise PageScanError("PAGE_SCAN_RESUME_FAILED") from None
+    if not isinstance(resumed, DataResult):
+        raise PageScanError("PAGE_SCAN_RESULT_INVALID")
+    if resumed.status == "failed":
+        raise PageScanError("PAGE_SCAN_PAGE_FAILED")
+    return resumed
+
+
+def _resumeWithRetry(
+    caller: PageQueryCaller,
+    token: str,
+    *,
+    maxPageRetries: int,
+    deadline: float | None,
+) -> DataResult:
+    """실패한 page를 같은 token으로 bounded 재시도한다.
+
+    Continuation token은 실패해도 소모되지 않는다. commit된 page는 원천 접촉 없이 동일하게
+    replay되고 실패한 page는 애초에 commit되지 않으므로 같은 token 재사용이 중복이나 누락을
+    만들지 않는다. 재시도가 없으면 120 page 순회에서 한 page의 일시 실패가 전체 sweep을
+    끝내므로 전종목 완주 자체가 성립하지 않는다.
+
+    ``PAGE_SCAN_PAGE_FAILED``와 ``PAGE_SCAN_RESUME_FAILED``만 재시도한다. identity drift,
+    token 순환, 계약 위반은 재시도해도 같은 결과라 즉시 올린다.
+    """
+
+    attempt = 0
+    while True:
+        _requireDeadline(deadline)
+        try:
+            return _resumeOnce(caller, token)
+        except PageScanError as error:
+            transient = error.code in {"PAGE_SCAN_PAGE_FAILED", "PAGE_SCAN_RESUME_FAILED"}
+            if not transient or attempt >= maxPageRetries:
+                raise
+            attempt += 1
+            backoff = _RETRY_BACKOFF_SECONDS * (2 ** (attempt - 1))
+            if deadline is not None and time.monotonic() + backoff >= deadline:
+                raise PageScanError("PAGE_SCAN_DEADLINE") from None
+            time.sleep(backoff)
+
+
 def iterDataResultPages(
     initial: DataResult,
     *,
@@ -162,6 +218,7 @@ def iterDataResultPages(
     deadline: float | None = None,
     checkpoint: Callable[[PageScanCheckpoint], None] | None = None,
     queryCaller: PageQueryCaller | None = None,
+    maxPageRetries: int = _DEFAULT_MAX_PAGE_RETRIES,
 ) -> Iterator[DataResult]:
     """초기 DataResult부터 완료 page까지 token-only continuation을 lazy 순회한다.
 
@@ -176,6 +233,7 @@ def iterDataResultPages(
         deadline: ``time.monotonic()`` 기준 절대 실행 기한. None이면 helper 자체 기한은 없다.
         checkpoint: 검증된 page를 yield하기 직전에 호출할 callback.
         queryCaller: token 하나만 받는 resume seam. None이면 public ``dartlab.dataHub``를 사용한다.
+        maxPageRetries: 일시 실패한 page를 같은 token으로 재시도할 최대 횟수. 0이면 재시도하지 않는다.
 
     Returns:
         동일 chain의 ``DataResult`` page iterator.
@@ -206,7 +264,13 @@ def iterDataResultPages(
         사용자는 continuation loop를 직접 쓰지 않지만 각 page는 기존 bounded source 계약을 그대로 따른다.
     """
 
-    normalizedDeadline, caller = _validateArguments(maxPages, deadline, checkpoint, queryCaller)
+    normalizedDeadline, caller = _validateArguments(
+        maxPages,
+        deadline,
+        checkpoint,
+        queryCaller,
+        maxPageRetries,
+    )
     if not isinstance(initial, DataResult):
         raise PageScanError("PAGE_SCAN_RESULT_INVALID")
 
@@ -247,16 +311,13 @@ def iterDataResultPages(
             return
         if pageNumber >= maxPages:
             raise PageScanError("PAGE_SCAN_MAX_PAGES")
+        resumed = _resumeWithRetry(
+            caller,
+            nextToken,
+            maxPageRetries=maxPageRetries,
+            deadline=normalizedDeadline,
+        )
         _requireDeadline(normalizedDeadline)
-        try:
-            resumed = caller(nextToken)
-        except PageScanError:
-            raise
-        except Exception:
-            raise PageScanError("PAGE_SCAN_RESUME_FAILED") from None
-        _requireDeadline(normalizedDeadline)
-        if not isinstance(resumed, DataResult):
-            raise PageScanError("PAGE_SCAN_RESULT_INVALID")
         page = resumed
         pageNumber += 1
 
@@ -268,6 +329,7 @@ def iterDataArrowBatches(
     deadline: float | None = None,
     checkpoint: Callable[[PageScanCheckpoint], None] | None = None,
     queryCaller: PageQueryCaller | None = None,
+    maxPageRetries: int = _DEFAULT_MAX_PAGE_RETRIES,
     maxRows: int = 65_536,
     maxBytes: int = 8 * 1024 * 1024,
 ) -> Iterator[tuple[str, pa.RecordBatch]]:
@@ -279,6 +341,7 @@ def iterDataArrowBatches(
         deadline: ``time.monotonic()`` 기준 절대 실행 기한.
         checkpoint: 각 page 검증 뒤 첫 batch보다 먼저 호출할 callback.
         queryCaller: token-only resume seam.
+        maxPageRetries: 일시 실패한 page를 같은 token으로 재시도할 최대 횟수.
         maxRows: 반환 batch 하나의 row 상한.
         maxBytes: 반환 batch 하나의 Arrow logical byte 상한.
 
@@ -313,6 +376,7 @@ def iterDataArrowBatches(
         deadline=deadline,
         checkpoint=checkpoint,
         queryCaller=queryCaller,
+        maxPageRetries=maxPageRetries,
     ):
         yield from page.iterArrowBatches(maxRows=maxRows, maxBytes=maxBytes)
 

@@ -8,7 +8,6 @@ from .contracts import (
     MaintenanceBudget,
     MaintenanceReport,
     MaterializationError,
-    raiseFromContinuation,
     requireDigest,
     requireNonNegativeInt,
 )
@@ -57,6 +56,7 @@ class MaterializationMaintenance(MaterializationReplay):
         pagesReleased = 0
         generationsDeleted = 0
         artifactsDeleted = 0
+        artifactsDeferred = 0
         bytesFreed = 0
         with self._connection(immediate=True) as connection:
             expiredReaders = connection.execute(
@@ -186,8 +186,14 @@ class MaterializationMaintenance(MaterializationReplay):
                 expectedBytes = requireNonNegativeInt(row["byte_count"])
                 try:
                     deleted, freed = self.cas.deleteBytes(digest)
-                except ContinuationError as error:
-                    raiseFromContinuation(error)
+                except ContinuationError:
+                    # GC_PENDING 은 이미 commit 된 durable 마커라 이 digest 는 다음 호출에서
+                    # 다시 시도된다. 파일 하나가 잠겼다고 같은 트랜잭션의 reader lease 정리,
+                    # generation 전이, page 해제까지 통째로 rollback 시키지 않는다.
+                    # Windows 에서 다른 process 가 CAS 파일을 열고 있으면 unlink 가
+                    # PermissionError 이고, 그 상태가 지속되면 GC 가 영구 정지한다.
+                    artifactsDeferred += 1
+                    continue
                 if deleted and freed != expectedBytes:
                     raise MaterializationError("MATERIALIZATION_CORRUPT")
                 cursor = connection.execute(
@@ -207,4 +213,5 @@ class MaterializationMaintenance(MaterializationReplay):
             generationsDeleted=generationsDeleted,
             artifactsDeleted=artifactsDeleted,
             bytesFreed=bytesFreed,
+            artifactsDeferred=artifactsDeferred,
         )

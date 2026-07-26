@@ -122,7 +122,7 @@ def testDefaultCallerUsesExactPublicTokenOnlyQuery(monkeypatch: pytest.MonkeyPat
         calls.append((args, kwargs))
         return _result(2, None)
 
-    monkeypatch.setattr(dartlab, "data", fakeData)
+    monkeypatch.setattr(dartlab, "dataHub", fakeData)
 
     pages = list(iterDataResultPages(_result(1, "opaque-token")))
 
@@ -133,7 +133,7 @@ def testDefaultCallerUsesExactPublicTokenOnlyQuery(monkeypatch: pytest.MonkeyPat
 def testDataResultMethodsExposeOneFlowPageAndArrowConsumption(monkeypatch: pytest.MonkeyPatch) -> None:
     import dartlab
 
-    monkeypatch.setattr(dartlab, "data", lambda *_args, **_kwargs: _result(2, None, rows=2))
+    monkeypatch.setattr(dartlab, "dataHub", lambda *_args, **_kwargs: _result(2, None, rows=2))
     pages = list(_result(1, "opaque-token", rows=2).iterPages())
     batches = list(_result(1, "opaque-token", rows=2).iterAllArrowBatches(maxRows=1, maxBytes=1024))
 
@@ -218,13 +218,77 @@ def testFailedPageAndResumeExceptionAreSanitized() -> None:
     def failResume(_token: str) -> DataResult:
         raise RuntimeError(token)
 
-    iterator = iterDataResultPages(_result(1, token), queryCaller=failResume)
+    iterator = iterDataResultPages(_result(1, token), queryCaller=failResume, maxPageRetries=0)
     next(iterator)
     with pytest.raises(PageScanError) as captured:
         next(iterator)
     assert captured.value.code == "PAGE_SCAN_RESUME_FAILED"
     assert token not in str(captured.value)
     assert token not in repr(captured.value)
+
+
+def testTransientPageFailureIsRetriedWithSameTokenUntilSweepCompletes(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """일시 실패한 page는 같은 token으로 재시도해 전종목 sweep을 완주시킨다."""
+
+    monkeypatch.setattr(pageScanModule.time, "sleep", lambda _seconds: None)
+    seen: list[str] = []
+
+    def flakyResume(token: str) -> DataResult:
+        seen.append(token)
+        if len(seen) == 1:
+            return _result(2, None, status="failed")
+        if len(seen) == 2:
+            raise RuntimeError("transient owner glitch")
+        return _result(2, None)
+
+    pages = list(iterDataResultPages(_result(1, "page-two-token"), queryCaller=flakyResume))
+
+    assert [page.partitions[0].data["page"].item(0) for page in pages] == [1, 2]
+    assert seen == ["page-two-token"] * 3
+
+
+def testRetryBudgetExhaustionRaisesTheOriginalTransientCode(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """재시도를 다 써도 실패하면 원래 transient code를 그대로 올린다."""
+
+    monkeypatch.setattr(pageScanModule.time, "sleep", lambda _seconds: None)
+    attempts: list[str] = []
+
+    def alwaysFailing(token: str) -> DataResult:
+        attempts.append(token)
+        return _result(2, None, status="failed")
+
+    iterator = iterDataResultPages(
+        _result(1, "page-two-token"),
+        queryCaller=alwaysFailing,
+        maxPageRetries=2,
+    )
+    next(iterator)
+    with pytest.raises(PageScanError) as captured:
+        next(iterator)
+    assert captured.value.code == "PAGE_SCAN_PAGE_FAILED"
+    assert len(attempts) == 3
+
+
+def testNonTransientPageFailureIsNotRetried(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Identity drift 같은 결정적 위반은 재시도해도 같으므로 즉시 올린다."""
+
+    monkeypatch.setattr(pageScanModule.time, "sleep", lambda _seconds: None)
+    attempts: list[str] = []
+
+    def driftingResume(token: str) -> DataResult:
+        attempts.append(token)
+        return _result(2, None, contractHash="f" * 64)
+
+    iterator = iterDataResultPages(_result(1, "page-two-token"), queryCaller=driftingResume)
+    next(iterator)
+    with pytest.raises(PageScanError) as captured:
+        next(iterator)
+    assert captured.value.code == "PAGE_SCAN_IDENTITY_DRIFT"
+    assert len(attempts) == 1
 
 
 def testUnknownPageStatusAndCheckpointReprFailClosed() -> None:
@@ -271,6 +335,9 @@ def testArrowBatchesSpanEveryPageWithIndependentBounds() -> None:
         {"deadline": float("nan")},
         {"checkpoint": cast(Any, "not-callable")},
         {"queryCaller": cast(Any, "not-callable")},
+        {"maxPageRetries": -1},
+        {"maxPageRetries": 17},
+        {"maxPageRetries": cast(Any, True)},
     ],
 )
 def testInvalidScanArgumentsFailBeforeYield(kwargs: dict[str, object]) -> None:

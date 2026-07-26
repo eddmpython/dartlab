@@ -17,6 +17,7 @@ from .ledger import DataHubJobLedger
 from .runtime import dataHubJobLedger
 
 _MEDIA_TYPE = "application/vnd.dartlab.datahub-result+json"
+_MAINTENANCE_MAXIMUM = 32
 
 
 def _httpError(error: DataHubControlError) -> HTTPException:
@@ -90,7 +91,12 @@ def buildDataHubRouter(
             authorize(authorization, role="client")
             if not isinstance(payload, dict) or not isinstance(payload.get("query"), dict):
                 raise DataHubControlError("DATA_HUB_INVALID")
-            job = activeLedger().submit(
+            ledger = activeLedger()
+            # 제출 한 번마다 작은 bounded 정리 step 을 태운다. 별도 스케줄러나 daemon 없이
+            # 만료 lease 재queue 와 retention 초과 terminal job, CAS payload 를 회수한다.
+            # claim 은 원자 경합 hot path 라 여기에 붙이지 않는다.
+            ledger.maintain(maximum=_MAINTENANCE_MAXIMUM)
+            job = ledger.submit(
                 payload["query"],
                 idempotencyKey=payload.get("idempotencyKey"),
                 priority=payload.get("priority", 0),

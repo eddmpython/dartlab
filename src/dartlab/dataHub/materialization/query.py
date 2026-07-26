@@ -52,7 +52,7 @@ def replayMaterializedQuery(
 ) -> DataResult | None:
     """Receipt 또는 canonical query digest로 READY fast path를 실행한다."""
 
-    store = materializationStore(pageTimeoutMs=query.budget.timeoutMs)
+    store = materializationStore(pageTimeoutMs=query.budget.timeoutMs, runMaintenance=True)
     if directive.mode == "offline":
         if directive.receipt is None:
             raise MaterializationError("MATERIALIZATION_INVALID")
@@ -77,7 +77,7 @@ def materializeCompositeQuery(
 
     identity = compositeMaterializationIdentity(plan)
     exactPins = GenerationPins(**identity)
-    store = materializationStore(pageTimeoutMs=query.budget.timeoutMs)
+    store = materializationStore(pageTimeoutMs=query.budget.timeoutMs, runMaintenance=True)
     buildDeadline = time.perf_counter() + store.policy.maxBuildSeconds
 
     def ownerProducer():

@@ -7,8 +7,15 @@ from pathlib import Path
 
 from dartlab.dataHub.pagingRuntime import MAX_PAGE_BYTES, dataHubRoot
 
-from .contracts import MaterializationPolicy
+from .contracts import MaintenanceBudget, MaterializationPolicy
 from .store import MaterializationStore
+
+MAINTENANCE_BUDGET = MaintenanceBudget(
+    maxReaderLeases=8,
+    maxGenerationTransitions=1,
+    maxPageReferences=32,
+    maxArtifacts=32,
+)
 
 
 def materializationRoot() -> Path:
@@ -37,12 +44,26 @@ def _cachedMaterializationStore(
     )
 
 
-def materializationStore(*, pageTimeoutMs: int = 30_000) -> MaterializationStore:
-    """Page deadline보다 긴 builder lease를 가진 production store를 재사용한다."""
+def materializationStore(
+    *,
+    pageTimeoutMs: int = 30_000,
+    runMaintenance: bool = False,
+) -> MaterializationStore:
+    """Page deadline보다 긴 builder lease를 가진 production store를 재사용한다.
+
+    ``runMaintenance`` 는 ``pagingRuntime.continuationStore`` 와 같은 계약이다. 공개 query
+    진입 한 번마다 작은 bounded GC step 을 실행해 별도 스케줄러나 daemon 없이 expired
+    reader, stale BUILDING, retention 초과 READY generation, unreferenced CAS 를 회수한다.
+    page 읽기 경로는 이 flag 를 켜지 않는다. 켜지 않으면 ``readyRetentionSeconds`` 가 영원히
+    발동하지 않아 원천 digest 가 바뀔 때마다 전종목 generation 사본이 누적된다.
+    """
 
     if type(pageTimeoutMs) is not int or pageTimeoutMs <= 0:
         raise ValueError("pageTimeoutMs는 양의 int여야 합니다")
-    return _cachedMaterializationStore(
+    store = _cachedMaterializationStore(
         str(materializationRoot()),
         pageTimeoutMs,
     )
+    if runMaintenance:
+        store.maintain(MAINTENANCE_BUDGET)
+    return store

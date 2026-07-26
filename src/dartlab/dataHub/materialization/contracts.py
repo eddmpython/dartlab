@@ -432,6 +432,7 @@ class MaintenanceReport:
     generationsDeleted: int
     artifactsDeleted: int
     bytesFreed: int
+    artifactsDeferred: int = 0
 
 
 @dataclass(frozen=True, slots=True)

@@ -521,6 +521,11 @@ def executeDataQuery(assetIds: Sequence[str], query: DataQuery) -> DataResult:
         partitions = []
     elif succeeded == 0:
         status = "failed"
+    elif any(gap.systemic for gap in gaps):
+        # D09 장애 정직성. universe resolver 부재, provider discovery 실패, 빈 universe 같은
+        # systemic gap 은 다른 asset 하나가 성공했다는 이유로 partial 로 내려가지 않는다.
+        # 단일 asset 의 정상 결손과 provider 전체 장애를 같은 등급으로 숨기지 않기 위함이다.
+        status = "failed"
     elif failures:
         status = "partial"
     else:

@@ -96,7 +96,22 @@ class DataHubJobLedger:
         finally:
             connection.close()
 
+    def _enableWriteAheadLog(self) -> None:
+        """WAL 저널 활성화. `materialization.ledger`, `continuation.continuationStore` 와 동일 계약.
+
+        journal_mode 는 트랜잭션 안에서 바꿀 수 없으므로 `_initialize` 의 IMMEDIATE
+        트랜잭션 진입 전에 raw 연결로 한 번 설정한다. WAL 은 DB 파일에 영속하는
+        속성이라 이후 연결은 다시 설정할 필요가 없다. 기본 delete 저널이면 reader 가
+        writer 를 전면 차단해 worker 수만큼 claim 이 직렬화된다.
+        """
+        connection = self._connect()
+        try:
+            connection.execute("PRAGMA journal_mode=WAL")
+        finally:
+            connection.close()
+
     def _initialize(self) -> None:
+        self._enableWriteAheadLog()
         with self._connection(immediate=True) as connection:
             connection.executescript(
                 """
