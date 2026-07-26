@@ -385,7 +385,12 @@ def resolveLatestPeriod(periods: list[str] | set[str] | None) -> str | None:
         # YYYY: (year, 0, False) — 분기 뒤
         if "Q" in p:
             year = p[:4]
-            q = p[5:] if "-" in p else p[p.index("Q") + 1 :]
+            # 분기 숫자는 언제나 'Q' 뒤에 있다. 예전에는 대시가 있으면 `p[5:]` 로
+            # 잘랐는데, 이 모듈이 `formatPeriod` 로 만드는 표준형이 바로 '2024-Q1'
+            # 이라 그 경우 'Q1' 을 int 로 넘겨 ValueError 가 났다. 그러면 키가 전부
+            # (0,0,0) 으로 같아져 max 가 입력 첫 원소를 돌려줬고, 호출부가 set 을
+            # list 로 넘기기 때문에 실행마다 답이 달라졌다.
+            q = p[p.index("Q") + 1 :]
             try:
                 return (int(year), int(q), 1)
             except ValueError:

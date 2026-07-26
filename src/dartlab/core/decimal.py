@@ -83,10 +83,15 @@ def toDecimal(value: Any, *, default: Decimal | None = None) -> Decimal:
                 raise ValueError(f"toDecimal: infinity {value}")
             return Decimal(str(value))
         return Decimal(value)
-    except (_decimal.InvalidOperation, TypeError, ValueError):
+    except (_decimal.InvalidOperation, TypeError, ValueError) as error:
         if default is not None:
             return default
-        raise
+        # 계약은 ValueError 다. 예전에는 원래 예외를 그대로 다시 올려서, 잘못된
+        # 문자열이 들어오면 `decimal.InvalidOperation` 이 새어 나갔다. ValueError 만
+        # 잡던 호출자는 그것을 놓친다.
+        if isinstance(error, ValueError):
+            raise
+        raise ValueError(f"toDecimal: 변환 실패 {value!r}") from error
 
 
 def roundDecimal(value: Decimal | float | str, *, places: int = 2) -> Decimal:
@@ -172,8 +177,13 @@ def isClose(a: Any, b: Any, *, absTol: str | Decimal = "0.001") -> bool:
     Raises:
         ValueError: a, b, absTol 변환 실패.
     """
-    da = toDecimal(a, default=Decimal("0"))
-    db = toDecimal(b, default=Decimal("0"))
+    # 변환 실패를 0 으로 갈음하지 않는다. 예전에는 두 피연산자 모두 `default=0` 이라
+    # `isClose(nan, 0)` 과 `isClose(None, 0)` 이 True 를 돌려줬다. 이 함수의 존재
+    # 이유가 자산 = 부채 + 자본 검증인데, 값이 없는 대차대조표가 검증을 통과해
+    # 버리는 셈이었다. 위 Raises 항목이 처음부터 ValueError 를 약속하고 있었으므로
+    # 코드를 그 계약에 맞춘다.
+    da = toDecimal(a)
+    db = toDecimal(b)
     tol = toDecimal(absTol)
     return abs(da - db) <= tol
 
