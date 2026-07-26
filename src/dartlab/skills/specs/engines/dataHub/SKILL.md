@@ -344,6 +344,8 @@ EDGAR full-state 성공률은 요청하지 않은 세분 항목을 요구하지 
 
 남은 결손의 책임 소재도 실측했다. 단독분기 매출 행을 4개 이상 가진 회사는 97.8%가 성공하므로 컴파일러는 병목이 아니다. 나머지는 분기 흐름을 YTD와 연간으로만 태깅하는 filer 관행이라 태그 확장으로 열리지 않는다.
 
+위 EDGAR 세 수치는 `tests/audit/edgarCoverageAudit.py` 하나가 낸다. `--measures`를 비우면 full-state strict, `financial.revenue,financial.operatingMargin`이면 flow-only, `financial.revenue`면 revenue 단독이다. 감사는 로컬 `data/edgar/listedUniverse.parquet`와 companyfacts parquet을 읽기 전용으로 열고 dataLoader와 네트워크를 프로세스 수준에서 차단하며, 시작과 종료 시점의 SHA-256이 다르면 실패로 끝난다. 로컬 원천을 요구하므로 CI 게이트가 아니라 운영자 명령이다.
+
 ## Immutable generation과 다른 process 재생
 
 materialization은 새 axis가 아니라 기존 query의 정책이다.

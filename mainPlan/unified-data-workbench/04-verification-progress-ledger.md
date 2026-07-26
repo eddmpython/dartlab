@@ -424,3 +424,53 @@ DataHub 정체성 문장인 "종목별 반복 호출 없이 한 query 로 전시
 기록으로 남길 실수가 하나 있다. 첫 혼합 실행 도중 폴더 그룹핑을 수행해 자식 프로세스의
 모듈 import 가 깨졌다. 제품 결함이 아니라 작업 순서 실수이며, 트리를 정리한 뒤 재실행해
 위 수치를 얻었다. 장시간 실측 중에는 src 를 건드리지 않는다.
+
+### 2026-07-26 W20: 감사 하네스 졸업과 공개 수치 재현 경로 확보
+
+W16 후속 기록이 남긴 구멍을 닫았다. 공개 문서가 인용하는 EDGAR 커버리지 세 수치를
+만든 하네스가 `tests/_attempts` 에 있어 깨끗한 클론에서는 재현할 수 없었다. 수치는
+공개하면서 그 수치를 만든 절차는 추적되지 않는 상태였다.
+
+- 정본을 `tests/audit/edgarCoverageAudit.py` 로 졸업시켰다. 회귀는
+  `tests/audit/test_edgarCoverageAudit.py` 9 건이다
+- `audit.py` 와 `productionFlowAudit.py` 는 요청 measure 하나만 다른 같은 감사였다.
+  `--measures` 를 비우면 full-state strict, flow 두 개면 flow-only, revenue 하나면
+  revenue 단독이라 세 공개 수치가 한 도구에서 나온다
+- `flowPrototype.py` 와 `flowAudit.py` 는 flow-only 계약이 production 으로 올라가며
+  승계된 prototype 이라 정본에 들이지 않았다
+- 졸업 과정에서 이 하네스가 `dartlab.dataHub.ownerPaging` 을 참조해 이미 다시 깨져
+  있는 것을 확인했다. 추적되지 않는 도구가 조용히 썩는다는 것을 같은 폴더가 두 번
+  보여준 셈이다
+- CI 게이트에는 걸지 않는다. 전종목 실행은 로컬 EDGAR parquet 을 요구하므로 운영자
+  명령이고, CI 가 도는 것은 universe 고정과 실패 분류와 envelope 계약 회귀뿐이다
+
+원본 폴더는 지우지 않았다. `result.json` 등 실측 원장이 위 기록들에서 인용되기
+때문이며, README 에 승계 관계와 정본 경로를 명시했다.
+
+### 2026-07-26 W21: paging 그룹핑 뒤 혼합 완주 재인증과 자식 정지 진단
+
+폴더 그룹핑은 자식 프로세스의 spawn target 모듈 경로를 바꾸므로 회귀가 단위 테스트로
+끝나지 않는다. W19 와 같은 query 를 다시 걸어 규모에서 확인했다.
+
+- page 162 개, factor row 8,932 개. W19 수치와 정확히 일치한다
+- `iterPages()` 가 수동 token loop 없이 끝까지 소비했고 마지막 checkpoint 가 없다
+- 소요 2,261.188 초로 W19 의 852.738 초보다 길다. 같은 시각 CI 와 테스트가 함께 돌던
+  기계 부하 차이이며 page 수와 row 수가 같으므로 계약 회귀가 아니다
+
+CI 의 마지막 red 는 Linux 자식이 기한을 통째로 쓰고도 끝나지 않는 건 하나다. bounded
+join 과 main thread warm import 를 넣고도 재현됐고, 로그가 남기는 것은 평평한
+`PAGEABLE_EAGER_PROCESS_FAILED` 와 `elapsed=179.998` 뿐이라 원인 지목이 불가능했다.
+가설로 두 번 틀렸으므로 이번에는 진단을 먼저 세웠다.
+
+- `describeStalledThread` 를 `processLifecycle` 에 두고 두 자식이 공유한다. join 이
+  만료됐는데 worker 가 살아 있으면 그 thread 의 frame 을 파일, 줄, 함수로 요약해 자식
+  stderr 로 낸다. 공개 payload 에는 싣지 않으므로 D08 은 그대로다
+- 자식이 침묵하던 원인 자체도 고쳤다. 기존 실패 경로는 worker 가 살아 있으면 결과를
+  보내지 않았는데, worker 는 `output` 리스트에만 쓰고 connection 을 만지지 않으므로
+  보내도 경합이 없다. 보내지 않는 동안 부모는 원인 대신 자기 기한을 다 썼다
+- 회귀 2 건으로 요약이 실제 blocking frame 을 가리키는지, 알 수 없는 thread 에서
+  진단이 먼저 죽지 않는지 고정했다
+
+졸업시킨 감사 하네스에서 stale import 가 하나 더 나왔다. `dartlab.dataHub.universe` 는
+catalog 로 옮겨져 이미 없는 경로였다. 추적되지 않는 도구가 조용히 썩는다는 근거가 한
+폴더에서 세 번째로 나온 셈이다.
