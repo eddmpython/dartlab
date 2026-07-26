@@ -2739,7 +2739,7 @@ class Company:
 
         LLM Specifications:
             AntiPatterns:
-                - 본문 그대로 인용 → external untrusted 룰 위반. wrap_external_in_result 마커 후.
+                - 본문 그대로 인용 → external untrusted 룰 위반. wrapExternalInResult 마커 후.
                 - days 큰 값 (>90) → 외부 API 부하/pagination 비용.
             OutputSchema:
                 - pl.DataFrame [title, date, source, link] 또는 None.

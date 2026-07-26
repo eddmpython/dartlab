@@ -1,6 +1,6 @@
 """알림 sink 정화 — authoritative(발송 전). landing sanitize.ts 는 SW 렌더 방어심층 미러.
 
-알림 body 는 LLM 프롬프트가 아니라 OS 알림센터 + 화면에 렌더되는 별개 sink → wrap_external_in_result
+알림 body 는 LLM 프롬프트가 아니라 OS 알림센터 + 화면에 렌더되는 별개 sink → wrapExternalInResult
 부적용. 제어/zero-width/양방향(RTL) 제어문자 strip + 공백 정규화 + 길이 cap + (외부 본문은) 출처 라벨.
 설계: mainPlan/watcher-notify-platform/02-hub-d1-receiving.md §6.
 """

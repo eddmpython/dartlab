@@ -72,7 +72,7 @@ FSI 패턴 — 다음 단일 도구만 Write 가능:
 
 ### 5. evidence + 신뢰 결합
 
-모든 정보 수집 후 → `EvidenceGate(refs)` 강제 → `GroundingCheck(claims)` 선택. 외부 본문 (web/news) 자동 `wrap_external_in_result` (`runtime.untrustedContent` SSOT).
+모든 정보 수집 후 → `EvidenceGate(refs)` 강제 → `GroundingCheck(claims)` 선택. 외부 본문 (web/news) 자동 `wrapExternalInResult` (`runtime.untrustedContent` SSOT).
 
 ## 권장 흐름
 

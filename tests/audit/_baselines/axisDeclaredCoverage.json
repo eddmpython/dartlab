@@ -1,6 +1,8 @@
 {
   "axisCounts": {
+    "analysis": 22,
     "credit": 8,
+    "dataHub": 2,
     "gather": 18,
     "industry": 9,
     "macro": 15,
@@ -8,8 +10,5 @@
     "scan": 27
   },
   "undeclared": [],
-  "handTableMismatch": [
-    "credit",
-    "gather"
-  ]
+  "handTableMismatch": []
 }

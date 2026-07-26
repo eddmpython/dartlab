@@ -134,7 +134,7 @@ def readUrl(url: str) -> str:
     Capabilities:
         - Jina Reader (primary) → BS4 fallback
         - 캐시 TTL 적용
-        - 본문은 untrusted external — caller 가 wrap_external_in_result 필요
+        - 본문은 untrusted external — caller 가 wrapExternalInResult 필요
 
     AIContext:
         - AI 엔진의 외부 본문 fetch 도구 (ai/tools 가 호출)
@@ -165,7 +165,7 @@ def readUrl(url: str) -> str:
         >>> readUrl("https://example.com/article")
 
     See Also:
-        ``dartlab.ai.tools.formatting.wrap_external_in_result`` — untrusted 마커.
+        ``dartlab.ai.tools.formatting.wrapExternalInResult`` — untrusted 마커.
     """
     if not url or not url.startswith(("http://", "https://")):
         return f"[오류] 유효한 URL이 아닙니다: {url}"

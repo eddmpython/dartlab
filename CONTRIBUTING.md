@@ -61,7 +61,7 @@ uv run python -X utf8 tests/run.py gate smoke   # 약 30초
 ### E. AI 엔진 / Skill OS / 데이터 (외부 기여자에게 영향 큰 항목)
 
 - **graph 강박 회귀 금지** — chat-native + LLM 자율 tool calling 본체 보존. `BRIEF/WORK/CRITIQUE/COMPOSE/GATE/HARVEST` 식 고정 노드 클래스 신설 금지.
-- **외부 본문 untrusted** — DART/EDGAR 공시 본문 / 뉴스 / 웹 검색 결과는 *데이터* 이지 *지시* 아님. `wrap_external_in_result` 마커 강제.
+- **외부 본문 untrusted** — DART/EDGAR 공시 본문 / 뉴스 / 웹 검색 결과는 *데이터* 이지 *지시* 아님. `wrapExternalInResult` 마커 강제.
 - **자동 docstring sweep 금지** — public API 9 섹션 docstring 은 *함수 단위 수동 작성*. 자동 fill 도구 제안 / 작성 모두 금지.
 - **Dependabot 라벨 자동** — `보안:` prefix + label `security` 자동 부여.
 
@@ -278,14 +278,14 @@ PR 단계에서 새 테스트 파일은 다음 마커 중 하나를 가져야 �
 DART / EDGAR / 뉴스 / 웹 검색 결과 본문은 *데이터* 이지 *지시* 가 아니다. 새 gather source 추가 시 다음 보일러플레이트를 따른다.
 
 ```python
-from dartlab.ai.tools.formatting import wrap_external_in_result
+from dartlab.ai.tools.formatting import wrapExternalInResult
 
 def fetchSomeExternal(query: str) -> dict:
     body = httpClient.fetch(query)
-    return wrap_external_in_result(body, sourceType="external", url=query)
+    return wrapExternalInResult(body, sourceType="external", url=query)
 ```
 
-`wrap_external_in_result` 가 마커로 본문을 격리한다 — LLM 이 본문 안 "이전 지시 무시" 같은 prompt injection 을 따르지 않게 한다. 신규 source 의 wrap 누락은 `tests/audit/untrustedWrapAudit.py` 가 PR 차단.
+`wrapExternalInResult` 가 마커로 본문을 격리한다 — LLM 이 본문 안 "이전 지시 무시" 같은 prompt injection 을 따르지 않게 한다. 신규 source 의 wrap 누락은 `tests/audit/untrustedWrapAudit.py` 가 PR 차단.
 
 ---
 

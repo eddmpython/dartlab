@@ -1,7 +1,7 @@
 """Untrusted content tier — Scope 1 가드 단위 테스트.
 
 검증:
-- formatting.strip_html / wrap_external / wrap_external_in_result idempotency 와 정확성
+- formatting.strip_html / wrap_external / wrapExternalInResult idempotency 와 정확성
 - webSearch ref 가 sourceType=external 으로 빌드되고 HTML 태그 strip
 - read 가 dartlab repo 내부면 internal, 밖이면 external
 - agent / runner serialization 에서 external 본문이 [EXTERNAL CONTENT START/END] 마커로 감싸짐
@@ -215,7 +215,7 @@ class TestSerializationE2E:
     """agent.py + runner.py 의 직렬화 단계에서 외부 본문이 마커로 감싸지는지 E2E."""
 
     def test_wrap_in_result_chain(self):
-        """webSearch 결과 → wrap_external_in_result → JSON 직렬화에 마커 포함."""
+        """webSearch 결과 → wrapExternalInResult → JSON 직렬화에 마커 포함."""
         from dartlab.ai.tools.types import ToolResult
 
         result = ToolResult(

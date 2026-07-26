@@ -577,7 +577,7 @@ def handleNews(
     See Also:
         main.GatherEntry._run : dispatch caller.
         mixins/news.news : 본 handler 가 호출하는 backend.
-        formatting.wrap_external_in_result : 본문 untrusted 마커 wrap.
+        formatting.wrapExternalInResult : 본문 untrusted 마커 wrap.
     """
     days = kwargs.pop("days", 30)
     return g.news(target, market=market, days=days)
@@ -1193,7 +1193,7 @@ def handleDartDoc(
     See Also:
         main.GatherEntry._run : dispatch caller.
         dart.viewer.fetch : 위임 대상 — 공시 본문 sub-doc 파싱.
-        formatting.wrap_external_in_result : 본문 untrusted 마커 wrap.
+        formatting.wrapExternalInResult : 본문 untrusted 마커 wrap.
     """
     if not target:
         raise ValueError("gather('dartDoc') 는 rcept_no (14자리) target 필요")

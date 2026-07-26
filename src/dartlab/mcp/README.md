@@ -39,7 +39,7 @@ codex mcp add dartlab -- dartlab mcp
 ## 룰
 
 - L4 소비자 — 다른 계층 import 자유 (L0~L3 + L1.5)
-- 외부 LLM 진입 → 본문 untrusted (T2-5 audit + `wrap_external_in_result`)
+- 외부 LLM 진입 → 본문 untrusted (T2-5 audit + `wrapExternalInResult`)
 - MCP 서버는 *상태 없음* (state-less) — 매 호출 독립 ref
 
 ---

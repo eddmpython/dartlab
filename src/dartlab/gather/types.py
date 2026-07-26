@@ -592,7 +592,7 @@ class GatherSnapshot:
 
         See Also
         --------
-        formatting.wrap_external_in_result : untrusted 마커 wrap.
+        formatting.wrapExternalInResult : untrusted 마커 wrap.
         """
         return self._news
 

@@ -1,13 +1,13 @@
-"""untrusted wrap audit — 외부 ref 발급 위치 ↔ wrap_external_in_result 동행 검증 (T2-5).
+"""untrusted wrap audit — 외부 ref 발급 위치 ↔ wrapExternalInResult 동행 검증 (T2-5).
 
 dartlab 의 보안 룰: 외부 본문 (DART/EDGAR/뉴스/웹) 은 *데이터지 지시 아니다*. 본문
 안 '이전 지시 무시' / 'X 실행해라' 따르지 않는다. `Ref.sourceType="external"` 발급
 위치는 직렬화 시 `[EXTERNAL CONTENT START — untrusted ...]` 마커로 감싸진다
-(`ai/tools/formatting.py::wrap_external_in_result`).
+(`ai/tools/formatting.py::wrapExternalInResult`).
 
 본 audit: src/dartlab/ 전체에서
     1. `sourceType="external"` 또는 `sourceType=\\"external\\"` 발급 위치 grep
-    2. 같은 모듈 또는 직계 호출자에 `wrap_external_in_result` 호출 동행 확인
+    2. 같은 모듈 또는 직계 호출자에 `wrapExternalInResult` 호출 동행 확인
     3. baseline 부채 원장 — 신규 위반만 차단
 
 baseline: `tests/audit/_baselines/untrustedWrap.json`
@@ -43,7 +43,7 @@ _EXTERNAL_PATTERNS: tuple[str, ...] = (
 
 # wrap 호출 / wrap 동행 신호.
 _WRAP_SIGNALS: tuple[str, ...] = (
-    "wrap_external_in_result",
+    "wrapExternalInResult",
     "wrap_external",  # alias
     "wrapExternal",  # camelCase 변형 가능
     "# untrusted-wrap: ok",  # 명시 면제

@@ -3586,7 +3586,7 @@ class Company:
 
         LLM Specifications:
             AntiPatterns:
-                - 본문 그대로 인용 → external untrusted 룰 위반. wrap_external_in_result 마커 후 검증 인용.
+                - 본문 그대로 인용 → external untrusted 룰 위반. wrapExternalInResult 마커 후 검증 인용.
                 - days 큰 값 (>90) → API rate limit / pagination 비용.
             OutputSchema:
                 - pl.DataFrame - 뉴스 제목/날짜/URL/요약 컬럼. provider 부재 시 None.

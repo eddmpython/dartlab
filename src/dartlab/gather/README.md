@@ -61,7 +61,7 @@ dartlab.gather.writeEnvExample()                 # .env.example 생성 (레지�
 
 - L1 raw 생산 owner — 외부 API 호출은 본 폴더만 (gather ↛ providers 상호 import 금지)
 - core 만 import
-- 외부 본문 untrusted — `wrap_external_in_result` 마커 (T2-5 audit)
+- 외부 본문 untrusted — `wrapExternalInResult` 마커 (T2-5 audit)
 - prebuild 단계 import 금지 (offlineGuard, T7-2)
 
 ## 법적 고지 (데이터 출처)

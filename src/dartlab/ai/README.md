@@ -34,7 +34,7 @@ result = dartlab.ask("삼성전자 재무건전성")
 ## 룰 (CLAUDE.md 강행)
 
 - **본체는 `agent.py`** — chat-native + LLM 자율 tool calling. 5 패스 노드 클래스 신설 금지.
-- **외부 본문은 untrusted** — `wrap_external_in_result` 마커 강제 (T2-5 audit).
+- **외부 본문은 untrusted** — `wrapExternalInResult` 마커 강제 (T2-5 audit).
 - **5 패스 노드 식별자 회귀 가드** — `tests/audit/checkAgentBoundary.py` 가 차단 (T11-5).
 - **ref circularity 가드** — `tests/audit/refCircularityCheck.py` (T11-3).
 

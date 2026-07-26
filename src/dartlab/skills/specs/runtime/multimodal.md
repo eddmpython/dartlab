@@ -52,7 +52,7 @@ def parseChart(
     schema: dict,                   # 추출 JSON schema
     sourceUrl: str = "",            # 원본 URL (untrusted wrap 용)
 ) -> dict:
-    """차트/표 이미지 → JSON 추출. 결과 자동 wrap_external_in_result."""
+    """차트/표 이미지 → JSON 추출. 결과 자동 wrapExternalInResult."""
 ```
 
 ## 사용 패턴
