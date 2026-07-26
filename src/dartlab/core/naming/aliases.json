@@ -9,62 +9,130 @@
   "aliases": {
     "stockIdentifier": {
       "standard": "stockCode",
-      "aliases": ["codeOrName", "stkCd", "stk_cd", "stock_code"],
-      "scope": ["arg", "var"],
+      "aliases": [
+        "codeOrName",
+        "stkCd",
+        "stk_cd",
+        "stock_code"
+      ],
+      "scope": [
+        "arg",
+        "var"
+      ],
       "note": "종목코드/회사명 통합 식별자 (KR 6자리). 'ticker' 는 EDGAR/SEC US 도메인 표준 별칭으로 면제. 'corpCode' 는 DART API 의 8자리 corp_code 식별자 — 별 의미라 alias 에서 분리. 'code' 도 Python source code / OAuth code 와 충돌해 alias 에서 분리."
     },
     "marketCode": {
       "standard": "market",
-      "aliases": ["mkt", "exchange"],
-      "scope": ["arg"],
+      "aliases": [
+        "mkt",
+        "exchange"
+      ],
+      "scope": [
+        "arg"
+      ],
       "note": "시장 코드: 'KR' / 'US' / 'auto'. core.market.resolveMarket 으로 자동 감지."
     },
     "periodLabel": {
       "standard": "period",
-      "aliases": ["date", "ts", "yyyymm", "yyyymmdd", "timeframe"],
-      "scope": ["arg"],
+      "aliases": [
+        "date",
+        "ts",
+        "yyyymm",
+        "yyyymmdd",
+        "timeframe"
+      ],
+      "scope": [
+        "arg"
+      ],
       "note": "기간 라벨 (ISO date 또는 YYYYMM). 시계열 한 점 식별."
     },
     "periodList": {
       "standard": "periods",
-      "aliases": ["yyyymms"],
-      "scope": ["arg"],
+      "aliases": [
+        "yyyymms"
+      ],
+      "scope": [
+        "arg"
+      ],
       "note": "기간 라벨 리스트. 'dates' 는 quant backtest 도메인 (datetime list) 표준 의미라 면제."
     },
     "limitInt": {
       "standard": "limit",
-      "aliases": ["topK", "top_k", "maxItems", "max_items", "count", "size"],
-      "scope": ["arg"],
-      "note": "결과 개수 한도. None 이면 전수."
+      "aliases": [
+        "topK",
+        "top_k",
+        "maxItems",
+        "max_items",
+        "count",
+        "size"
+      ],
+      "scope": [
+        "arg"
+      ],
+      "note": "결과 개수 한도. None 이면 전수. 두 곳은 예외다. simulate 는 `topK` 가 매개변수가 아니라 도메인 어휘라서 출력 스키마 키(`topK`)와 컬럼(`topKProb`), 함수명(`hardenedTopK`)이 모두 그 단어로 서 있다. facade `search` 의 `topK` 는 이미 `limit` 이 정본이고 문서에 호환 alias 로 적힌 뒤 곧바로 `limit` 으로 강제 변환된다. 둘 다 이름을 바꾸면 계약이 깨지거나 호환 장치 자체가 사라진다.",
+      "scopeExclude": [
+        "src/dartlab/simulate/",
+        "src/dartlab/__init__.py"
+      ]
     },
     "verboseFlag": {
       "standard": "verbose",
-      "aliases": ["debug", "loud"],
-      "scope": ["arg"],
+      "aliases": [
+        "debug",
+        "loud"
+      ],
+      "scope": [
+        "arg"
+      ],
       "note": "진행 로그 출력 여부."
     },
     "freqLabel": {
       "standard": "freq",
-      "aliases": ["periodKind", "period_kind", "frequency"],
-      "scope": ["arg"],
-      "note": "주기: 'Y' (annual) / 'Q' (quarterly) / 'M' (monthly)."
+      "aliases": [
+        "periodKind",
+        "period_kind",
+        "frequency"
+      ],
+      "scope": [
+        "arg"
+      ],
+      "note": "주기: 'Y' (annual) / 'Q' (quarterly) / 'M' (monthly). simulate 는 예외다. 그 엔진은 `frequency` 를 매개변수뿐 아니라 dataclass 필드와 직렬화 키로 함께 쓰고, 그 키가 `canonicalPayloadHash` 입력이라 이름을 바꾸면 계약 해시가 같이 바뀐다. 매개변수만 `freq` 로 돌리면 필드와 키에서 어긋나므로 더 나쁘다.",
+      "scopeExclude": [
+        "src/dartlab/simulate/"
+      ]
     },
     "rawFlag": {
       "standard": "raw",
-      "aliases": ["asIs", "as_is", "noAdjust", "no_adjust"],
-      "scope": ["arg"],
+      "aliases": [
+        "asIs",
+        "as_is",
+        "noAdjust",
+        "no_adjust"
+      ],
+      "scope": [
+        "arg"
+      ],
       "note": "수정 전 원본 사용 여부 (가격 등)."
     },
     "lookbackInt": {
       "standard": "lookback",
-      "aliases": ["lookbackDays", "windowDays"],
-      "scope": ["arg"],
+      "aliases": [
+        "lookbackDays",
+        "windowDays"
+      ],
+      "scope": [
+        "arg"
+      ],
       "note": "과거 lookback 일수/기간. 'window' 는 sliding window (rolling) 도메인 표준 의미라 면제 (quant/transforms)."
     },
     "topicName": {
       "standard": "topic",
-      "aliases": ["section"],
-      "scope": ["arg"],
+      "aliases": [
+        "section"
+      ],
+      "scope": [
+        "arg"
+      ],
       "note": "공시 topic / 섹션 식별자 (예: 'IS', 'BS', 'businessOverview'). 'category' 는 의미 다름 (분류 일반) — alias 제외."
     }
   }

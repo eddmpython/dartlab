@@ -148,7 +148,10 @@ GATES: dict[str, Gate] = {
             # 몰랐다. 이제 baseline 밖 신규 cycle 이 생기면 여기서 멈춘다.
             "python -X utf8 tests/audit/cycleScan.py && "
             '(lint-imports || python -c "pass") && '
-            "python -X utf8 tests/audit/namingConsistency.py && "
+            # 키가 줄번호를 담던 동안에는 무관한 편집이 유령 위반을 만들어 strict 를
+            # 걸 수 없었다. 키를 함수명 기반으로 바꾸고 사전 오류를 바로잡아 신규가
+            # 0 이 된 지금은 조언이 아니라 차단으로 세운다.
+            "python -X utf8 tests/audit/namingConsistency.py --strict && "
             "python -X utf8 tests/audit/checkEngineSpecSchema.py && "
             "python -X utf8 tests/audit/valuationPublishLint.py --strict && "
             "python -X utf8 tests/audit/dossierVerdictLint.py --strict && "

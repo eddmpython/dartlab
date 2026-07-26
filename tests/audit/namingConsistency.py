@@ -50,6 +50,10 @@ SKIP_PATH_PARTS: tuple[str, ...] = (
 SKIP_PATH_PREFIXES: tuple[str, ...] = (
     "src/dartlab/server/api/",
     "src/dartlab/server/services/",
+    # webapi 도 FastAPI route handler 다. `@app.get("/company/{code}/story/{section}")`
+    # 처럼 매개변수 이름이 URL placeholder 에 묶여 있어 바꾸면 라우팅이 깨진다.
+    # 같은 이유로 면제되는 server/api 와 함께 있어야 하는데 빠져 있었다.
+    "src/dartlab/webapi/",
     "src/dartlab/cli/services/",
     "src/dartlab/cli/commands/",
 )
@@ -84,13 +88,21 @@ def _loadAliases() -> dict[str, dict]:
     return data.get("aliases", {})
 
 
-def _buildAliasIndex(aliases: dict[str, dict]) -> dict[str, tuple[str, str]]:
-    """alias 이름 → (standard, meaning) 역인덱스. 같은 alias 가 여러 의미면 마지막 우선."""
-    out: dict[str, tuple[str, str]] = {}
+def _buildAliasIndex(aliases: dict[str, dict]) -> dict[str, tuple[str, str, tuple[str, ...]]]:
+    """alias 이름 → (standard, meaning, 면제 경로 접두) 역인덱스.
+
+    같은 alias 가 여러 의미면 마지막 우선. `scopeExclude` 는 그 규칙만 특정 경로에서
+    끄는 장치다. 한 단어가 어떤 엔진에서는 직렬화 키로 이미 굳어 있어 이름을 바꾸면
+    계약 해시가 함께 바뀌는 경우가 있는데, 그때 규칙 전체를 지우면 다른 엔진의 보호가
+    같이 사라진다.
+    """
+
+    out: dict[str, tuple[str, str, tuple[str, ...]]] = {}
     for meaning, spec in aliases.items():
         std = spec.get("standard", "")
+        excluded = tuple(spec.get("scopeExclude", ()))
         for alias in spec.get("aliases", []):
-            out[alias] = (std, meaning)
+            out[alias] = (std, meaning, excluded)
     return out
 
 
@@ -107,7 +119,7 @@ def _isSkipped(p: Path) -> bool:
     return any(rel.startswith(prefix) for prefix in SKIP_PATH_PREFIXES)
 
 
-def _scanFile(path: Path, aliasIndex: dict[str, tuple[str, str]]) -> list[Violation]:
+def _scanFile(path: Path, aliasIndex: dict[str, tuple[str, str, tuple[str, ...]]]) -> list[Violation]:
     """단일 .py 파일에서 매개변수 alias 사용 검출."""
     violations: list[Violation] = []
     try:
@@ -129,8 +141,10 @@ def _scanFile(path: Path, aliasIndex: dict[str, tuple[str, str]]) -> list[Violat
         args = node.args
         for arg in list(args.posonlyargs) + list(args.args) + list(args.kwonlyargs):
             if arg.arg in aliasIndex:
-                std, meaning = aliasIndex[arg.arg]
+                std, meaning, excluded = aliasIndex[arg.arg]
                 if arg.arg == std:
+                    continue
+                if any(relPath.startswith(prefix) for prefix in excluded):
                     continue
                 violations.append(
                     Violation(
@@ -150,8 +164,19 @@ def _baselineFile() -> Path:
     return Path(__file__).resolve().parent / "_baselines" / "namingConsistency.json"
 
 
+def _baselineKey(violation: Violation) -> str:
+    """줄 이동에 흔들리지 않는 baseline 키.
+
+    예전 키는 `path:line:argName` 이라 함수 위쪽에 한 줄만 끼워 넣어도 같은 위반이
+    신규로 잡히고 baseline 항목은 죽은 채 남았다. 실측하니 신규 53 건 중 9 건이 그런
+    유령이었다. 함수명으로 잡으면 파일이 커져도 키가 유지된다.
+    """
+
+    return f"{violation.path}::{violation.funcName}::{violation.argName}"
+
+
 def _loadBaseline() -> set[str]:
-    """기존 baseline 항목 set — 'path:line:argName' 형식."""
+    """기존 baseline 항목 set."""
     path = _baselineFile()
     if not path.exists():
         return set()
@@ -167,7 +192,7 @@ def _saveBaseline(violations: list[Violation]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     import json as _json
 
-    items = sorted({f"{v.path}:{v.line}:{v.argName}" for v in violations})
+    items = sorted({_baselineKey(v) for v in violations})
     path.write_text(
         _json.dumps(
             {"violations": items, "note": "T8-4 baseline — 신규 위반만 strict 차단"},
@@ -211,7 +236,7 @@ def main(argv: list[str]) -> int:
 
     # T8-4 — baseline 부채 원장 비교
     baseline = _loadBaseline()
-    newViolations = [v for v in allViolations if f"{v.path}:{v.line}:{v.argName}" not in baseline]
+    newViolations = [v for v in allViolations if _baselineKey(v) not in baseline]
 
     print(
         f"[naming-consistency] 전체 위반 {len(allViolations)} 건 (baseline {len(baseline)}, 신규 {len(newViolations)}):"
