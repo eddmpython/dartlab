@@ -30,12 +30,13 @@ from dartlab.dataHub.ownerPagingSource import _currentTaskSourcePin, _pins
 from dartlab.dataHub.ownerPagingState import (
     _decodeSession,
     _descriptorTree,
+    _encodeProcessSession,
     _encodeSession,
     _ownerCodePin,
     _requestedMeasures,
     _validateQueryPayload,
 )
-from dartlab.dataHub.pagingRuntime import requireDeadline
+from dartlab.dataHub.pagingRuntime import MAX_STATE_BYTES, requireDeadline
 
 
 def _ownerFacade() -> Any:
@@ -55,7 +56,7 @@ def _candidates(session: _OwnerSession) -> tuple[tuple[_OwnerTask, int], ...]:
     while len(selected) < session.pageMaxEntities:
         task = session.tasks[taskIndex]
         ordinal = task.cursor + offsets[task.requestId]
-        if ordinal < len(task.entities):
+        if ordinal < task.entityCount:
             selected.append((task, ordinal))
             offsets[task.requestId] += 1
             consecutiveExhausted = 0
@@ -295,8 +296,15 @@ def _runOwnerPageProcess(
 ):
     from dartlab.dataHub.ownerProcess import runOwnerPage
 
+    # IPC payload 는 durable state 상한 안에서 엔티티 목록을 함께 싣고, 넘치면 목록을
+    # 빼고 보낸다. 목록이 실려 오면 자식은 universe 를 볼 필요가 없고, 빠지면 자식이
+    # 재해소해 채운다. 덕분에 payload 는 universe 규모와 무관하게 상한 안에 머문다.
+    try:
+        requestPayload = _encodeProcessSession(session, maxBytes=MAX_STATE_BYTES)
+    except ContinuationError:
+        requestPayload = _encodeSession(session)
     outcome = runOwnerPage(
-        _encodeSession(session),
+        requestPayload,
         publicDeadline=deadline,
     )
     if outcome.status == "ok" and outcome.page is not None and outcome.zeroLive:
@@ -324,11 +332,18 @@ def _materialize(
     *,
     deadline: float,
     sourcesPrevalidated: bool = False,
+    hydratedSession: _OwnerSession | None = None,
 ) -> PageEnvelope:
+    """다음 owner page 를 계산한다.
+
+    `hydratedSession` 은 첫 page 전용이다. 호출자가 이미 엔티티가 채워진 세션을 들고
+    있으면 durable state 를 다시 decode 해 universe 를 재해소하는 왕복을 건너뛴다.
+    """
+
     requireDeadline(deadline)
     _validateQueryPayload(state.queryPayload)
-    session = _decodeSession(state.cursorPayload)
-    if all(task.cursor >= len(task.entities) for task in session.tasks):
+    session = hydratedSession if hydratedSession is not None else _decodeSession(state.cursorPayload)
+    if all(task.cursor >= task.entityCount for task in session.tasks):
         raise ContinuationError("CONTINUATION_CORRUPT")
     if not sourcesPrevalidated:
         _requireTaskSources(session, deadline=deadline)
@@ -349,12 +364,12 @@ def _materialize(
     _requireDecodedPage(session, candidates, decoded)
     requireDeadline(deadline)
     _requireTaskContracts(session, deadline=deadline)
-    _requireTaskSources(session, deadline=deadline)
+    _requireTaskSources(session, deadline=deadline)  # page 확정 직전 source 불변 재확인
     entries = decoded.entries
     nextTasks = _updatedTasks(session, entries)
     nextTaskIndex = _nextTaskIndex(session, entries)
     nextState = None
-    if any(task.cursor < len(task.entities) for task in nextTasks):
+    if any(task.cursor < task.entityCount for task in nextTasks):
         nextState = ContinuationQueryState(
             state.queryPayload,
             _encodeSession(

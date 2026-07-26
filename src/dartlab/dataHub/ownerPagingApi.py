@@ -152,6 +152,10 @@ def _plannedTask(
         membership.membershipDigest,
         requestedMeasures,
     )
+    entities = _entities(
+        membership,
+        tuple(source for source, _target in entityParamMap),
+    )
     pageQuery = dataclasses.replace(query, subjects=(), universe=None, requests=())
     queryPin = canonicalDigest(
         {
@@ -175,10 +179,8 @@ def _plannedTask(
         ownerCodePin=ownerCodePin,
         sourcePin=sourcePin,
         queryPin=queryPin,
-        entities=_entities(
-            membership,
-            tuple(source for source, _target in entityParamMap),
-        ),
+        entities=entities,
+        entityCount=len(entities),
     )
 
 
@@ -332,6 +334,7 @@ def executeInitialOwnerPaging(
                 current,
                 deadline=deadline,
                 sourcesPrevalidated=True,
+                hydratedSession=session,
             ),
             waitSeconds=requireDeadline(deadline),
         )

@@ -230,7 +230,9 @@ def _sessionPayload(
         maxConcurrency=2,
         tasks=(task,),
     )
-    return ownerPaging._encodeSession(session)
+    # 자식 IPC payload 는 durable state 와 인코딩이 다르다. durable 쪽은 엔티티 목록을
+    # 담지 않으므로 자식이 universe 를 재해소해야 하고, 합성 세션에는 그 universe 가 없다.
+    return ownerPaging._encodeProcessSession(session)
 
 
 def testShortBudgetIsRejectedBeforeSpawn() -> None:

@@ -611,8 +611,12 @@ def testActualKrUsOwnerPlansFitOneOuterState(monkeypatch):
     assert set(entityCounts) == {"us", "kr"}
     assert entityCounts["us"] >= 5_000
     assert entityCounts["kr"] >= 2_000
-    assert lowerSizes["us"] > 450_000
-    assert lowerSizes["kr"] > 150_000
+    # lower state 는 엔티티 수와 무관해야 한다. 목록을 담던 시절 US 는 450KB 를 넘었고
+    # 두 시장을 한 query 에 등록하면 state 예산을 초과했다. 이제 개수만 담으므로
+    # 엔티티가 5,000 개든 2,000 개든 state 크기는 같은 자릿수에 머문다.
+    assert lowerSizes["us"] < 32_000
+    assert lowerSizes["kr"] < 32_000
+    assert abs(lowerSizes["us"] - lowerSizes["kr"]) < 8_000
     assert len(cursorPayload) < 120_000
     assert len(encodedState) < MAX_STATE_BYTES
 

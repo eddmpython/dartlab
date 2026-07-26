@@ -27,11 +27,11 @@ from dartlab.dataHub.ownerPagingSchedule import _candidates, _requireDecodedPage
 
 def _progressSelector(task: _OwnerTask) -> tuple[tuple[str, str], ...]:
     return (
-        ("complete", str(task.cursor >= len(task.entities)).lower()),
+        ("complete", str(task.cursor >= task.entityCount).lower()),
         ("completedEntityCount", str(task.cursor)),
         ("failedEntityCount", str(task.failedEntities)),
         ("nextEntityOrdinal", str(task.cursor)),
-        ("requestedEntityCount", str(len(task.entities))),
+        ("requestedEntityCount", str(task.entityCount)),
         ("succeededEntityCount", str(task.succeededEntities)),
     )
 
@@ -39,7 +39,7 @@ def _progressSelector(task: _OwnerTask) -> tuple[tuple[str, str], ...]:
 def _universeCoverage(tasks: Sequence[_OwnerTask]) -> tuple[UniverseCoverage, ...]:
     rows = []
     for task in tasks:
-        complete = task.cursor >= len(task.entities)
+        complete = task.cursor >= task.entityCount
         if complete and task.failedEntities == 0:
             status = "complete"
             gapCodes: tuple[str, ...] = ()
@@ -58,10 +58,10 @@ def _universeCoverage(tasks: Sequence[_OwnerTask]) -> tuple[UniverseCoverage, ..
                 executionMode=task.descriptor.executionMode,
                 snapshotId=task.universeSnapshotId,
                 selector=_progressSelector(task),
-                requestedEntities=len(task.entities),
+                requestedEntities=task.entityCount,
                 returnedEntities=task.succeededEntities,
                 matchedEntities=task.succeededEntities,
-                missingEntities=len(task.entities) - task.succeededEntities,
+                missingEntities=task.entityCount - task.succeededEntities,
                 extraEntities=0,
                 status=status,
                 missingSample=task.failedSample,
@@ -82,7 +82,7 @@ def _resultFromPage(session: _OwnerSession, page: Any) -> DataResult:
     _requireDecodedPage(session, _candidates(session), decoded)
     byRequest = {task.requestId: task for task in session.tasks}
     nextTasks = _updatedTasks(session, decoded.entries)
-    complete = all(task.cursor >= len(task.entities) for task in nextTasks)
+    complete = all(task.cursor >= task.entityCount for task in nextTasks)
     if (page.nextToken is None) != complete:
         raise ContinuationError("CONTINUATION_CORRUPT")
     partitions: list[DataPartition] = []

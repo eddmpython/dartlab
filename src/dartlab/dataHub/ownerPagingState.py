@@ -27,12 +27,18 @@ from dartlab.dataHub.ownerPagingModels import (
     _FORMAT_VERSION,
     _MAX_ENTITY_PARAMS,
     _MAX_PAGE_ENTITIES,
+    _MAX_UNIVERSE_ENTITIES,
     _PAGE_KIND,
     _EntityRef,
     _OwnerSession,
     _OwnerTask,
 )
-from dartlab.dataHub.pagingRuntime import MAX_PAGE_BYTES, MAX_PAGE_ROWS, MAX_STATE_BYTES
+from dartlab.dataHub.pagingRuntime import (
+    MAX_OWNER_PROCESS_REQUEST_BYTES,
+    MAX_PAGE_BYTES,
+    MAX_PAGE_ROWS,
+    MAX_STATE_BYTES,
+)
 from dartlab.dataHub.pagingStateCodec import requireDigest, requireOptionalText, requireText, strictTree
 
 
@@ -368,8 +374,8 @@ def _validateQueryPayload(payload: bytes) -> None:
         raise ContinuationError("CONTINUATION_CORRUPT")
 
 
-def _taskTree(task: _OwnerTask) -> dict[str, Any]:
-    return {
+def _taskTree(task: _OwnerTask, *, includeEntities: bool = False) -> dict[str, Any]:
+    tree: dict[str, Any] = {
         "requestId": task.requestId,
         "descriptor": _descriptorTree(task.descriptor),
         "query": _queryTree(task.query),
@@ -384,41 +390,72 @@ def _taskTree(task: _OwnerTask) -> dict[str, Any]:
         "ownerCodePin": task.ownerCodePin,
         "sourcePin": task.sourcePin,
         "queryPin": task.queryPin,
-        "entities": [
+        # 엔티티 목록은 저장하지 않는다. resume 이 universe 를 재해소해 같은 목록을
+        # 다시 만들고 membershipDigest 로 동일성을 검증하므로 저장본은 중복이며,
+        # 엔티티 수에 비례해 state 가 커져 두 시장 혼합이 예산을 넘긴다.
+        "entityCount": task.entityCount,
+        "cursor": task.cursor,
+        "succeededEntities": task.succeededEntities,
+        "failedEntities": task.failedEntities,
+        "failedSample": list(task.failedSample),
+    }
+    if includeEntities:
+        tree["entities"] = [
             {
                 "entityId": entity.entityId,
                 "sourceEntityId": entity.sourceEntityId,
                 "params": [list(item) for item in entity.params],
             }
             for entity in task.entities
-        ],
-        "cursor": task.cursor,
-        "succeededEntities": task.succeededEntities,
-        "failedEntities": task.failedEntities,
-        "failedSample": list(task.failedSample),
+        ]
+    return tree
+
+
+def _sessionTree(session: _OwnerSession, *, includeEntities: bool) -> dict[str, Any]:
+    """Owner session 을 canonical tree 로 만든다.
+
+    `includeEntities` 는 자식 프로세스 IPC 전용이다. durable continuation state 에는
+    엔티티 목록을 담지 않는다. 목록은 universe membership 에서 결정적으로 도출되고
+    엔티티 수에 비례해 state 가 커지면 두 시장 혼합 등록이 예산을 넘기기 때문이다.
+    """
+
+    return {
+        "version": _FORMAT_VERSION,
+        "pageKind": _PAGE_KIND,
+        "snapshotId": session.snapshotId,
+        "contractHash": session.contractHash,
+        "requestedAssets": session.requestedAssets,
+        "universeSnapshotId": session.universeSnapshotId,
+        "pageMaxRows": session.pageMaxRows,
+        "pageMaxBytes": session.pageMaxBytes,
+        "pageMaxLogicalBytes": session.pageMaxLogicalBytes,
+        "pageMaxEntities": session.pageMaxEntities,
+        "pageTimeoutMs": session.pageTimeoutMs,
+        "maxConcurrency": session.maxConcurrency,
+        "nextTaskIndex": session.nextTaskIndex,
+        "tasks": [_taskTree(task, includeEntities=includeEntities) for task in session.tasks],
     }
 
 
 def _encodeSession(session: _OwnerSession) -> bytes:
-    payload = canonicalJsonBytes(
-        {
-            "version": _FORMAT_VERSION,
-            "pageKind": _PAGE_KIND,
-            "snapshotId": session.snapshotId,
-            "contractHash": session.contractHash,
-            "requestedAssets": session.requestedAssets,
-            "universeSnapshotId": session.universeSnapshotId,
-            "pageMaxRows": session.pageMaxRows,
-            "pageMaxBytes": session.pageMaxBytes,
-            "pageMaxLogicalBytes": session.pageMaxLogicalBytes,
-            "pageMaxEntities": session.pageMaxEntities,
-            "pageTimeoutMs": session.pageTimeoutMs,
-            "maxConcurrency": session.maxConcurrency,
-            "nextTaskIndex": session.nextTaskIndex,
-            "tasks": [_taskTree(task) for task in session.tasks],
-        }
-    )
+    """Durable continuation state 를 인코딩한다. 엔티티 목록은 담지 않는다."""
+
+    payload = canonicalJsonBytes(_sessionTree(session, includeEntities=False))
     if len(payload) > MAX_STATE_BYTES:
+        raise ContinuationError("CONTINUATION_STATE_BUDGET")
+    return payload
+
+
+def _encodeProcessSession(session: _OwnerSession, *, maxBytes: int = MAX_OWNER_PROCESS_REQUEST_BYTES) -> bytes:
+    """자식 프로세스 IPC 전용 인코딩. 엔티티 목록을 함께 싣는다.
+
+    이 payload 는 durable 하지 않고 한 page 실행 동안만 존재하므로 별도 상한을 쓴다.
+    자식이 universe 를 다시 해소하지 않게 해 부모의 monkeypatch seam 과 격리 계약을
+    그대로 유지한다.
+    """
+
+    payload = canonicalJsonBytes(_sessionTree(session, includeEntities=True))
+    if len(payload) > maxBytes:
         raise ContinuationError("CONTINUATION_STATE_BUDGET")
     return payload
 
@@ -444,6 +481,7 @@ def _decodeEntity(value: Any) -> _EntityRef:
 
 
 def _decodeTask(value: Any) -> _OwnerTask:
+    optional = {"entities"}
     expected = {
         "requestId",
         "descriptor",
@@ -459,38 +497,46 @@ def _decodeTask(value: Any) -> _OwnerTask:
         "ownerCodePin",
         "sourcePin",
         "queryPin",
-        "entities",
+        "entityCount",
         "cursor",
         "succeededEntities",
         "failedEntities",
         "failedSample",
     }
-    if not isinstance(value, dict) or set(value) != expected:
+    if not isinstance(value, dict) or not expected <= set(value) <= (expected | optional):
         raise ContinuationError("CONTINUATION_CORRUPT")
-    entitiesValue = value["entities"]
+    entityCount = value["entityCount"]
     failedSample = value["failedSample"]
     if (
-        not isinstance(entitiesValue, list)
-        or not entitiesValue
+        type(entityCount) is not int
+        or entityCount <= 0
+        or entityCount > _MAX_UNIVERSE_ENTITIES
         or not isinstance(failedSample, list)
         or any(type(item) is not str for item in failedSample)
         or len(failedSample) > 32
     ):
         raise ContinuationError("CONTINUATION_CORRUPT")
-    entities = tuple(_decodeEntity(item) for item in entitiesValue)
+    entitiesValue = value.get("entities")
+    if entitiesValue is None:
+        entities: tuple[_EntityRef, ...] = ()
+    else:
+        if not isinstance(entitiesValue, list) or len(entitiesValue) != entityCount:
+            raise ContinuationError("CONTINUATION_CORRUPT")
+        entities = tuple(_decodeEntity(item) for item in entitiesValue)
+        if len({entity.entityId for entity in entities}) != len(entities):
+            raise ContinuationError("CONTINUATION_CORRUPT")
     cursor = value["cursor"]
     succeeded = value["succeededEntities"]
     failed = value["failedEntities"]
     if (
         type(cursor) is not int
         or cursor < 0
-        or cursor > len(entities)
+        or cursor > entityCount
         or type(succeeded) is not int
         or succeeded < 0
         or type(failed) is not int
         or failed < 0
         or succeeded + failed != cursor
-        or len({entity.entityId for entity in entities}) != len(entities)
     ):
         raise ContinuationError("CONTINUATION_CORRUPT")
     descriptor = _decodeDescriptor(value["descriptor"])
@@ -530,7 +576,10 @@ def _decodeTask(value: Any) -> _OwnerTask:
         ownerCodePin=ownerCodePin,
         sourcePin=sourcePin,
         queryPin=queryPin,
+        # durable state 에는 목록이 없다. resume 은 `_rehydrateTask`, 자식 IPC 는
+        # `_encodeProcessSession` 이 실은 목록으로 채운다.
         entities=entities,
+        entityCount=entityCount,
         cursor=cursor,
         succeededEntities=succeeded,
         failedEntities=failed,
@@ -538,7 +587,13 @@ def _decodeTask(value: Any) -> _OwnerTask:
     )
 
 
-def _decodeSession(payload: bytes) -> _OwnerSession:
+def _decodeProcessSession(payload: bytes) -> _OwnerSession:
+    """자식 프로세스 IPC payload 를 엔티티 목록까지 포함해 복원한다."""
+
+    return _decodeSession(payload, maxBytes=MAX_OWNER_PROCESS_REQUEST_BYTES)
+
+
+def _decodeSession(payload: bytes, *, maxBytes: int = MAX_STATE_BYTES) -> _OwnerSession:
     expected = {
         "version",
         "pageKind",
@@ -555,7 +610,7 @@ def _decodeSession(payload: bytes) -> _OwnerSession:
         "nextTaskIndex",
         "tasks",
     }
-    if not isinstance(payload, bytes) or len(payload) > MAX_STATE_BYTES:
+    if not isinstance(payload, bytes) or len(payload) > maxBytes:
         raise ContinuationError("CONTINUATION_STATE_BUDGET")
     root = _jsonLoad(payload)
     if (
@@ -596,6 +651,11 @@ def _decodeSession(payload: bytes) -> _OwnerSession:
         or nextTaskIndex >= len(tasks)
     ):
         raise ContinuationError("CONTINUATION_CORRUPT")
+    # 재수화는 여기 한 곳에서만 한다. 소비처 15 곳은 언제나 채워진 세션을 본다.
+    # 이미 채워진 IPC 세션이면 `_hydrateTask` 가 universe 를 다시 해소하지 않는다.
+    from dartlab.dataHub.ownerPagingSource import _hydrateTask
+
+    tasks = tuple(_hydrateTask(task) for task in tasks)
     return _OwnerSession(
         snapshotId=_requireText(root["snapshotId"]),
         contractHash=_requireDigest(root["contractHash"]),

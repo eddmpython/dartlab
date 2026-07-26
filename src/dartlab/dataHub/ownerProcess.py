@@ -75,7 +75,10 @@ def _pageWorker(
         from dartlab.dataHub import ownerPaging
         from dartlab.dataHub.continuation import inspectArrowIpcPayload
 
-        session = ownerPaging._decodeSession(sessionPayload)
+        # durable 인코딩은 엔티티 목록을 담지 않으므로 IPC 크기가 universe 규모와
+        # 무관하다. 목록은 자식이 universe 를 재해소해 채우고, 이미 실려 온 경우
+        # (합성 세션 등) 그대로 쓴다. `_decodeSession` 이 재수화까지 수행한다.
+        session = ownerPaging._decodeProcessSession(sessionPayload)
         candidates = ownerPaging._candidates(session)
         if not candidates:
             raise ContinuationError("CONTINUATION_CORRUPT")
@@ -435,6 +438,8 @@ def runOwnerPage(
         Timeout과 partial child 결과는 page 전체를 미커밋으로 남긴다.
     """
 
+    # IPC payload 는 durable state 와 달리 엔티티 목록을 함께 싣는다. 한 page 실행
+    # 동안만 존재하므로 durable state 상한이 아니라 request 상한을 적용한다.
     if not isinstance(sessionPayload, bytes) or not sessionPayload or len(sessionPayload) > MAX_STATE_BYTES:
         raise ValueError("owner session payload 크기가 유효하지 않습니다")
     numeric = (publicDeadline, cleanupGraceSeconds, minimumWorkSeconds)

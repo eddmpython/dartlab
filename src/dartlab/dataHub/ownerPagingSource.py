@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 import hmac
 import importlib
 from collections.abc import Mapping, Sequence
@@ -64,6 +65,63 @@ def _entities(
     )
 
 
+def _hydrateTask(task: _OwnerTask) -> _OwnerTask:
+    """Universe 를 재해소해 비어 있는 엔티티 목록을 채운다.
+
+    Args:
+        task: durable state 에서 복원한 owner task.
+
+    Returns:
+        엔티티가 채워진 task. 이미 채워져 있으면 그대로 반환한다.
+
+    Raises:
+        ContinuationError: universe snapshot, provider, membership, 엔티티 수가
+            발급 시점과 다를 때 `CONTINUATION_SOURCE_STALE`.
+
+    Example:
+        ``task = _hydrateTask(task)``.
+
+    Guide:
+        엔티티 목록은 durable state 에 담지 않는다. 담으면 엔티티 수에 비례해 state 가
+        커져 두 시장 혼합 등록이 예산을 넘긴다.
+
+    When:
+        `_decodeSession` 이 복원 직후 한 번만 호출한다. 소비처는 항상 채워진 세션을 본다.
+
+    How:
+        같은 selection 으로 universe 를 다시 해소하고 `_entities` 로 목록을 재구성한다.
+
+    See Also:
+        ``_entities`` 와 ``_currentTaskSourcePin``.
+
+    Requires:
+        도출 동일성은 membershipDigest, descriptor, ownerCodePin 세 pin 이 보장한다.
+
+    AI Context:
+        local-only universe snapshot 만 읽고 원천 provider 는 접촉하지 않는다.
+    """
+
+    if task.entities:
+        return task
+    resolved = _ownerFacade().resolveUniverse(task.selection)
+    if resolved.gaps or resolved.snapshotId != task.universeSnapshotId:
+        raise ContinuationError("CONTINUATION_SOURCE_STALE")
+    membership = resolved.byMarket().get(task.market)
+    if (
+        membership is None
+        or membership.provider != task.provider
+        or membership.membershipDigest != task.membershipDigest
+    ):
+        raise ContinuationError("CONTINUATION_SOURCE_STALE")
+    entities = _entities(
+        membership,
+        tuple(source for source, _target in _entityParamMap(task.descriptor)),
+    )
+    if len(entities) != task.entityCount:
+        raise ContinuationError("CONTINUATION_SOURCE_STALE")
+    return dataclasses.replace(task, entities=entities)
+
+
 def _currentTaskSourcePin(task: _OwnerTask) -> str:
     resolved = _ownerFacade().resolveUniverse(task.selection)
     if resolved.gaps or resolved.snapshotId != task.universeSnapshotId:
@@ -107,7 +165,7 @@ def _contractDigest(session: _OwnerSession) -> str:
                     "membershipDigest": task.membershipDigest,
                     "sourceAssetId": task.sourceAssetId,
                     "sourceCategory": task.sourceCategory,
-                    "entityCount": len(task.entities),
+                    "entityCount": task.entityCount,
                 }
                 for task in session.tasks
             ],
