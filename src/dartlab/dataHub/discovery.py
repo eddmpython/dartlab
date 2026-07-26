@@ -86,6 +86,57 @@ def _metadataValue(value: Any) -> Any:
     return None
 
 
+def _requireTemporalDeclarationMatchesExecutor(
+    assetId: str,
+    *,
+    temporalSupport: tuple[str, ...],
+    validTimeParam: Any,
+    knowledgeTimeParam: Any,
+) -> None:
+    """선언한 시점 지원과 executor 가 실제로 받을 수 있는 인자가 맞는지 검증한다.
+
+    Capabilities:
+        owner 가 `knownAt` 지원을 선언하고도 그 값을 받을 인자가 없어 조용히 버리는
+        경로를 catalog 단계에서 차단한다.
+
+    Args:
+        assetId: 검증할 asset 식별자.
+        temporalSupport: owner 가 선언한 시점 지원 목록.
+        validTimeParam: executor 가 valid time 을 받을 인자 이름.
+        knowledgeTimeParam: executor 가 knowledge time 을 받을 인자 이름.
+
+    Raises:
+        ValueError: 선언과 인자가 어긋날 때.
+
+    Example:
+        ``_requireTemporalDeclarationMatchesExecutor(assetId, temporalSupport=("knownAt",), ...)``.
+
+    Guide:
+        선언만 믿으면 D05 가 owner 규율에만 의존하게 된다. 기계로 고정한다.
+
+    When:
+        descriptor 를 만들기 직전에 호출한다.
+
+    How:
+        선언한 축마다 대응 인자가 실제로 존재하는지 확인한다.
+
+    See Also:
+        ``_temporalGap``.
+
+    Requires:
+        `latest` 는 인자를 요구하지 않는다.
+
+    AI Context:
+        인자가 없으면 시점이 조용히 버려지고 query cutoff 가 관측 시점으로 둔갑한다.
+        그것이 정확히 D05 가 금지한 경로다.
+    """
+
+    if "knownAt" in temporalSupport and not knowledgeTimeParam:
+        raise ValueError(f"{assetId}: knownAt을 선언했지만 executor가 받을 인자가 없습니다")
+    if "validAt" in temporalSupport and not validTimeParam:
+        raise ValueError(f"{assetId}: validAt을 선언했지만 executor가 받을 인자가 없습니다")
+
+
 def _executorParams(
     assetId: str,
     *,
@@ -290,6 +341,12 @@ def _declaredAssets(provider: Mapping[str, Any]) -> Iterable[DataAssetDescriptor
             validTimeParam=spec.get("validTimeParam"),
             knowledgeTimeParam=spec.get("knowledgeTimeParam"),
             marketParam=spec.get("marketParam"),
+        )
+        _requireTemporalDeclarationMatchesExecutor(
+            assetId,
+            temporalSupport=tuple(str(item) for item in spec.get("temporalSupport", ("latest",))),
+            validTimeParam=executorParams["validTimeParam"],
+            knowledgeTimeParam=executorParams["knowledgeTimeParam"],
         )
         yield DataAssetDescriptor(
             assetId=assetId,

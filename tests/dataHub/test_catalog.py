@@ -5,6 +5,8 @@ from __future__ import annotations
 import importlib
 from types import SimpleNamespace
 
+import pytest
+
 from dartlab.dataHub import CatalogQuery
 
 
@@ -190,3 +192,54 @@ def testDeclaredCallableVersionBindsExecutorAndTransitiveSourceDigests(monkeypat
     second = tuple(discovery._declaredAssets(provider))[0]
 
     assert first.assetVersionId != second.assetVersionId
+
+
+def testTemporalDeclarationMustMatchExecutorParameters() -> None:
+    """시점 지원을 선언하면 그 값을 받을 executor 인자가 실제로 있어야 한다."""
+
+    from dartlab.dataHub.discovery import _requireTemporalDeclarationMatchesExecutor
+
+    # 선언과 인자가 맞으면 통과한다.
+    _requireTemporalDeclarationMatchesExecutor(
+        "fixture.asset",
+        temporalSupport=("latest", "knownAt"),
+        validTimeParam=None,
+        knowledgeTimeParam="knownAt",
+    )
+    _requireTemporalDeclarationMatchesExecutor(
+        "fixture.asset",
+        temporalSupport=("latest",),
+        validTimeParam=None,
+        knowledgeTimeParam=None,
+    )
+
+    # knownAt 을 선언하고 인자가 없으면 catalog 단계에서 막는다.
+    with pytest.raises(ValueError, match="knownAt"):
+        _requireTemporalDeclarationMatchesExecutor(
+            "fixture.asset",
+            temporalSupport=("knownAt",),
+            validTimeParam=None,
+            knowledgeTimeParam=None,
+        )
+    with pytest.raises(ValueError, match="validAt"):
+        _requireTemporalDeclarationMatchesExecutor(
+            "fixture.asset",
+            temporalSupport=("validAt",),
+            validTimeParam=None,
+            knowledgeTimeParam=None,
+        )
+
+
+def testLiveCatalogHasNoTemporalDeclarationDrift() -> None:
+    """실제 catalog 전수에서 선언과 인자가 어긋난 asset 이 없어야 한다."""
+
+    from dartlab.dataHub.catalog import buildCatalog
+
+    catalog = buildCatalog()
+    drifted = [
+        asset.assetId
+        for asset in catalog.assets
+        if ("knownAt" in asset.temporalSupport and not asset.knowledgeTimeParam)
+        or ("validAt" in asset.temporalSupport and not asset.validTimeParam)
+    ]
+    assert drifted == []
