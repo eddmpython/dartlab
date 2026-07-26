@@ -66,6 +66,35 @@ from dartlab.dataHub.processLifecycle import (
     processGroupAlive,
     stopProcessGroup,
 )
+from dartlab.dataHub.telemetry import dataHubLogger
+
+_log = dataHubLogger(__name__)
+
+
+def _recordOwnerOutcome(outcome: OwnerProcessOutcome) -> None:
+    """자식 실행 관측치를 진단 채널에 남긴다.
+
+    준비 시간, cleanup trace, zero-live, Job Object 상태는 status 만 보고 버려졌다.
+    자식이 왜 실패했는지 알 수 있는 유일한 통로이므로 실패 결과만 기록한다.
+    """
+
+    if outcome.status == "ok":
+        return
+    _log.warning(
+        "owner child outcome status=%s errorCode=%s spawned=%s zeroLive=%s "
+        "ready=%.3f elapsed=%.3f overshoot=%.3f cleanup=%s jobObject=(attempted=%s assigned=%s error=%s)",
+        outcome.status,
+        outcome.errorCode,
+        outcome.spawned,
+        outcome.zeroLive,
+        outcome.readySeconds or 0.0,
+        outcome.elapsedSeconds,
+        outcome.deadlineOvershootSeconds,
+        outcome.cleanupTrace,
+        outcome.jobObjectAttempted,
+        outcome.jobObjectAssigned,
+        outcome.jobObjectError,
+    )
 
 
 def _pageWorker(
@@ -729,7 +758,7 @@ def runOwnerPage(
         page = None
         errorCode = _cleanupFailureCode(errorCode, cleanupError)
     endedAt = time.perf_counter()
-    return OwnerProcessOutcome(
+    outcome = OwnerProcessOutcome(
         status=status,
         page=page,
         spawned=processStarted,
@@ -749,6 +778,8 @@ def runOwnerPage(
         jobObjectError=job.error,
         errorCode=errorCode,
     )
+    _recordOwnerOutcome(outcome)
+    return outcome
 
 
 __all__ = [

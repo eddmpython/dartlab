@@ -86,6 +86,7 @@ from dartlab.dataHub.processLifecycle import (
     processGroupAlive,
     stopProcessGroup,
 )
+from dartlab.dataHub.telemetry import dataHubLogger
 
 EagerProcessStatus = Literal[
     "ok",
@@ -97,6 +98,8 @@ EagerProcessStatus = Literal[
     "jobFailed",
     "cleanupFailed",
 ]
+
+_log = dataHubLogger(__name__)
 
 _PUBLIC_ERROR_CODES = frozenset(
     {
@@ -143,9 +146,75 @@ class EagerProcessOutcome:
 
 
 def _publicErrorCode(code: str | None) -> str:
+    """자식이 보고한 code 를 공개 목록으로 좁힌다.
+
+    목록 밖 code 는 내부 사정을 노출할 수 있으므로 일반 실패로 뭉갠다. 다만 원래 code 를
+    그냥 버리면 진단이 불가능해지므로 side channel 에 남긴다. 이 뭉갬이 Linux 전용
+    실패를 오래 미궁에 두었던 직접 원인이다.
+    """
+
     if code in _PUBLIC_ERROR_CODES:
         return code
+    if code is not None:
+        _log.warning(
+            "eager child error code redacted rawCode=%s publicCode=%s",
+            code,
+            "PAGEABLE_EAGER_PROCESS_FAILED",
+        )
     return "PAGEABLE_EAGER_PROCESS_FAILED"
+
+
+def recordChildOutcome(outcome: EagerProcessOutcome) -> None:
+    """자식 실행 관측치를 진단 채널에 남긴다.
+
+    Capabilities:
+        status 만 보고 버려지던 준비 시간, cleanup trace, zero-live, Job Object 상태를
+        보존한다.
+
+    Args:
+        outcome: parent 가 관측한 자식 실행 결과.
+
+    Returns:
+        없음.
+
+    Example:
+        ``recordChildOutcome(outcome)``.
+
+    Guide:
+        성공 결과는 남기지 않는다. 실패만 기록해 잡음을 만들지 않는다.
+
+    When:
+        supervisor 가 outcome 을 공개 code 로 바꾸기 직전에 호출한다.
+
+    How:
+        관측 필드를 구조화 로그 한 줄로 내보낸다.
+
+    See Also:
+        ``_publicErrorCode``.
+
+    Requires:
+        공개 반환은 이 호출과 무관하게 축약 상태를 유지한다.
+
+    AI Context:
+        운영자가 자식 실패를 진단할 수 있는 유일한 통로다.
+    """
+
+    if outcome.status == "ok":
+        return
+    _log.warning(
+        "eager child outcome status=%s errorCode=%s spawned=%s zeroLive=%s "
+        "elapsed=%.3f overshoot=%.3f cleanup=%s jobObject=(attempted=%s assigned=%s error=%s)",
+        outcome.status,
+        outcome.errorCode,
+        outcome.spawned,
+        outcome.zeroLive,
+        outcome.elapsedSeconds,
+        outcome.deadlineOvershootSeconds,
+        outcome.cleanupTrace,
+        outcome.jobObjectAttempted,
+        outcome.jobObjectAssigned,
+        outcome.jobObjectError,
+    )
 
 
 def _budgetOutcome(startedAt: float, publicDeadline: float) -> EagerProcessOutcome:
@@ -481,7 +550,7 @@ def runEagerSeal(
         seal = None
         errorCode = "EAGER_PROCESS_LIVE_AFTER_CLEANUP"
     endedAt = time.perf_counter()
-    return EagerProcessOutcome(
+    outcome = EagerProcessOutcome(
         status,
         seal,
         processStarted,
@@ -498,6 +567,8 @@ def runEagerSeal(
         job.error,
         None if status == "ok" else _publicErrorCode(errorCode),
     )
+    recordChildOutcome(outcome)
+    return outcome
 
 
 __all__ = [
