@@ -10,6 +10,7 @@ from typing import Any
 
 import polars as pl
 
+from dartlab.dataHub.cancellation import raiseIfCancelled
 from dartlab.dataHub.contentSeal import contentHash
 from dartlab.dataHub.continuation import (
     ContinuationError,
@@ -344,6 +345,7 @@ def _materialize(
     있으면 durable state 를 다시 decode 해 universe 를 재해소하는 왕복을 건너뛴다.
     """
 
+    raiseIfCancelled()
     requireDeadline(deadline)
     _validateQueryPayload(state.queryPayload)
     session = hydratedSession if hydratedSession is not None else _decodeSession(state.cursorPayload)

@@ -6,6 +6,7 @@ import secrets
 import time
 from collections.abc import Sequence
 
+from dartlab.dataHub.cancellation import raiseIfCancelled
 from dartlab.dataHub.compositePaging import (
     CompositePagingPlan,
     compositeMaterializationIdentity,
@@ -90,6 +91,8 @@ def materializeCompositeQuery(
         result = executePreparedCompositePaging(plan, deadline=pageDeadline)
         pageCount = 0
         while True:
+            # 취소는 page 경계에서만 관측한다. 최대 대기는 page 하나의 실행 시간이다.
+            raiseIfCancelled()
             if time.perf_counter() >= buildDeadline:
                 raise MaterializationError("MATERIALIZATION_BUDGET")
             _raiseProducerFailure(result)

@@ -9,6 +9,7 @@ from typing import Any, Callable
 
 import httpx
 
+from dartlab.dataHub.cancellation import CancellationToken, activeCancellation
 from dartlab.dataHub.entry import dataHub
 from dartlab.dataHub.telemetry import dataHubLogger, recordFailure
 from dartlab.dataHub.transport import encodeDataResult
@@ -65,6 +66,7 @@ class DataHubWorker:
         leaseEpoch: int,
         stop: threading.Event,
         lost: threading.Event,
+        cancelToken: CancellationToken | None = None,
     ) -> None:
         interval = max(5.0, self.leaseSeconds / 3)
         while not stop.wait(interval):
@@ -79,9 +81,13 @@ class DataHubWorker:
                 )
                 if not response.is_success:
                     lost.set()
+                    if cancelToken is not None:
+                        cancelToken.cancel()
                     return
             except httpx.HTTPError:
                 lost.set()
+                if cancelToken is not None:
+                    cancelToken.cancel()
                 return
 
     def _fail(self, jobId: str, leaseEpoch: int) -> None:
@@ -125,15 +131,19 @@ class DataHubWorker:
         jobId = job["jobId"]
         stop = threading.Event()
         lost = threading.Event()
+        cancelToken = CancellationToken("leaseLost")
         heartbeat = threading.Thread(
             target=self._heartbeatLoop,
-            args=(jobId, leaseEpoch, stop, lost),
+            args=(jobId, leaseEpoch, stop, lost, cancelToken),
             name=f"dataHub-heartbeat-{jobId[:8]}",
             daemon=True,
         )
         heartbeat.start()
         try:
-            result = self._queryRunner("query", query=request)
+            # lease 를 잃으면 실행 중인 query 도 다음 page 경계에서 멈춘다. 이 배선이
+            # 없으면 취소된 job 이 자기 timeout 까지 머신 하나를 계속 태운다.
+            with activeCancellation(cancelToken):
+                result = self._queryRunner("query", query=request)
             payload = encodeDataResult(result)
             if lost.is_set():
                 return WorkerRun(claimed=True, jobId=jobId, completed=False, leaseLost=True)
