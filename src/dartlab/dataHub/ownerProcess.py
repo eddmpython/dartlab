@@ -61,6 +61,11 @@ from dartlab.dataHub.pagingRuntime import (
     OWNER_PROCESS_CLEANUP_GRACE_SECONDS,
     ownerProcessArtifactRoot,
 )
+from dartlab.dataHub.processLifecycle import (
+    becomeProcessGroupLeader,
+    processGroupAlive,
+    stopProcessGroup,
+)
 
 
 def _pageWorker(
@@ -150,6 +155,9 @@ def _pageChildMain(
     worker: threading.Thread | None = None
     workerGate = threading.Event()
     try:
+        # POSIX 는 Job Object 가 없으므로 자식이 새 session leader 가 돼야 부모가
+        # 손자까지 group 단위로 회수할 수 있다. Windows 에서는 아무 일도 하지 않는다.
+        becomeProcessGroupLeader()
         if not startGate.wait(timeout=10.0):
             return
         root = _ensureArtifactRoot()
@@ -255,6 +263,7 @@ def _stopProcess(
         if process.is_alive():
             process.kill()
             trace.append("kill")
+    trace.extend(stopProcessGroup(process.pid, publicDeadline))
     if job.close():
         trace.append("jobClose")
     process.join(timeout=max(0.0, publicDeadline - time.perf_counter()))
@@ -351,7 +360,10 @@ def _zeroLive(
         and not _windowsThreadAlive(threadNativeId)
     )
     jobTreeReleased = not job.attempted or (job.assigned and job.closedSuccessfully and job.error is None)
-    return directZeroLive and jobTreeReleased
+    # POSIX 에서 `jobTreeReleased` 는 무조건 참이라 손자 프로세스를 놓친다. group 이
+    # 비었는지 직접 확인해 Windows 와 같은 강도의 zero-live 판정을 만든다.
+    groupReleased = not processGroupAlive(pid)
+    return directZeroLive and jobTreeReleased and groupReleased
 
 
 def _cleanupFailureCode(

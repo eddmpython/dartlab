@@ -42,7 +42,6 @@ import importlib
 import math
 import multiprocessing
 import os
-import signal
 import time
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
@@ -82,6 +81,10 @@ from dartlab.dataHub.pagingRuntime import (
     MAX_OWNER_PROCESS_REQUEST_BYTES,
     MIN_OWNER_PROCESS_WORK_SECONDS,
     OWNER_PROCESS_CLEANUP_GRACE_SECONDS,
+)
+from dartlab.dataHub.processLifecycle import (
+    processGroupAlive,
+    stopProcessGroup,
 )
 
 EagerProcessStatus = Literal[
@@ -143,44 +146,6 @@ def _publicErrorCode(code: str | None) -> str:
     if code in _PUBLIC_ERROR_CODES:
         return code
     return "PAGEABLE_EAGER_PROCESS_FAILED"
-
-
-def _posixGroupAlive(pid: int | None) -> bool:
-    if os.name == "nt" or pid is None:
-        return False
-    try:
-        os.killpg(pid, 0)
-    except ProcessLookupError:
-        return False
-    except PermissionError:
-        return True
-    return True
-
-
-def _waitPosixGroupZero(pid: int | None, deadline: float) -> bool:
-    while _posixGroupAlive(pid) and time.perf_counter() < deadline:
-        time.sleep(min(0.01, max(0.0, deadline - time.perf_counter())))
-    return not _posixGroupAlive(pid)
-
-
-def _stopPosixGroup(pid: int | None, deadline: float) -> tuple[str, ...]:
-    if os.name == "nt" or pid is None:
-        return ()
-    trace: list[str] = []
-    for activeSignal, label, waitSeconds in (
-        (signal.SIGTERM, "groupTerminate", 0.05),
-        (signal.SIGKILL, "groupKill", None),
-    ):
-        if not _posixGroupAlive(pid):
-            break
-        try:
-            os.killpg(pid, activeSignal)
-            trace.append(label)
-        except ProcessLookupError:
-            break
-        waitDeadline = deadline if waitSeconds is None else min(deadline, time.perf_counter() + waitSeconds)
-        _waitPosixGroupZero(pid, waitDeadline)
-    return tuple(trace)
 
 
 def _budgetOutcome(startedAt: float, publicDeadline: float) -> EagerProcessOutcome:
@@ -435,7 +400,7 @@ def runEagerSeal(
                 status = "protocolFailed"
                 errorCode = protocolError
                 cleanupTrace = _stopProcess(process, job, normalizedDeadline)
-                cleanupTrace += _stopPosixGroup(pid, normalizedDeadline)
+                cleanupTrace += stopProcessGroup(pid, normalizedDeadline)
             elif (
                 tracker.resultFrame is not None
                 and not process.is_alive()
@@ -443,7 +408,7 @@ def runEagerSeal(
                 and childCompletedAt <= workDeadline
             ):
                 cleanupTrace = _finishProcess(process, job, normalizedDeadline)
-                cleanupTrace += _stopPosixGroup(pid, normalizedDeadline)
+                cleanupTrace += stopProcessGroup(pid, normalizedDeadline)
                 resultFrame = tracker.resultFrame
                 assert resultFrame is not None
                 if resultFrame["status"] == "failed":
@@ -474,28 +439,28 @@ def runEagerSeal(
                 status = "timedOut"
                 errorCode = "CONTINUATION_TIMEOUT"
                 cleanupTrace = _stopProcess(process, job, normalizedDeadline)
-                cleanupTrace += _stopPosixGroup(pid, normalizedDeadline)
+                cleanupTrace += stopProcessGroup(pid, normalizedDeadline)
             else:
                 status = "childFailed"
                 errorCode = "EAGER_PROCESS_CHILD_DID_NOT_EXIT"
                 cleanupTrace = _stopProcess(process, job, normalizedDeadline)
-                cleanupTrace += _stopPosixGroup(pid, normalizedDeadline)
+                cleanupTrace += stopProcessGroup(pid, normalizedDeadline)
     except ContinuationError as error:
         if processStarted:
             cleanupTrace = _stopProcess(process, job, normalizedDeadline)
-            cleanupTrace += _stopPosixGroup(pid, normalizedDeadline)
+            cleanupTrace += stopProcessGroup(pid, normalizedDeadline)
         status = "artifactFailed"
         errorCode = error.code
     except Exception as error:
         if processStarted:
             cleanupTrace = _stopProcess(process, job, normalizedDeadline)
-            cleanupTrace += _stopPosixGroup(pid, normalizedDeadline)
+            cleanupTrace += stopProcessGroup(pid, normalizedDeadline)
         status = "childFailed"
         errorCode = _safeErrorCode(error)
     except BaseException:
         if processStarted:
             _stopProcess(process, job, normalizedDeadline)
-            _stopPosixGroup(pid, normalizedDeadline)
+            stopProcessGroup(pid, normalizedDeadline)
         _removeArtifact(artifactPath)
         raise
     finally:
@@ -504,7 +469,7 @@ def runEagerSeal(
         receiveConnection.close()
         job.close()
 
-    zeroLive = _zeroLive(process, pid, threadNativeId, job) and not _posixGroupAlive(pid) if processStarted else True
+    zeroLive = _zeroLive(process, pid, threadNativeId, job) and not processGroupAlive(pid) if processStarted else True
     try:
         _removeArtifact(artifactPath)
     except ContinuationError as error:

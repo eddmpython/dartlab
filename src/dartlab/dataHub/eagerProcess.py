@@ -85,6 +85,7 @@ from dartlab.dataHub.pagingRuntime import (
     MAX_OWNER_PROCESS_REQUEST_BYTES,
     requireDeadline,
 )
+from dartlab.dataHub.processLifecycle import becomeProcessGroupLeader
 from dartlab.dataHub.telemetry import dataHubLogger, recordFailure
 
 _FORMAT_VERSION = 1
@@ -678,8 +679,7 @@ def _childMain(
     worker: threading.Thread | None = None
     workerGate = threading.Event()
     try:
-        if os.name != "nt":
-            os.setsid()
+        becomeProcessGroupLeader()
         if not startGate.wait(timeout=10.0):
             return
         root = _ensureArtifactRoot()
