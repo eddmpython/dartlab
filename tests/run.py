@@ -143,7 +143,10 @@ GATES: dict[str, Gate] = {
             "python -X utf8 tests/audit/silentSubstitute.py && "
             "python tests/audit/stale_references.py && "
             "python -X utf8 tests/audit/lint_camelcase_ast.py --changed --strict && "
-            '(python -X utf8 tests/audit/cycleScan.py || python -c "pass") && '
+            # baseline 은 2-cycle 목록이다. 예전에는 개수만 적고 늘어나도 WARN 만 찍은
+            # 뒤 0 을 돌려줬고, 게이트마저 실패를 삼켜 5 에서 10 으로 느는 동안 아무도
+            # 몰랐다. 이제 baseline 밖 신규 cycle 이 생기면 여기서 멈춘다.
+            "python -X utf8 tests/audit/cycleScan.py && "
             '(lint-imports || python -c "pass") && '
             "python -X utf8 tests/audit/namingConsistency.py && "
             "python -X utf8 tests/audit/checkEngineSpecSchema.py && "

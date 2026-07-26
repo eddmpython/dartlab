@@ -1,8 +1,7 @@
 {
   "violations": [
-    "src/dartlab/synth/bottomUpBeta.py: synth->frame import_module(dartlab.frame.sector)",
     "src/dartlab/synth/bottomUpBeta.py: synth->scan import_module(dartlab.scan.io.parquet)",
     "src/dartlab/synth/impliedERP.py: synth->scan import_module(dartlab.scan.io.parquet)"
   ],
-  "_note": "L1.5 importlib 동적 cross — 정적 AST 가드 사각(W-G2) 보강용 baseline. synth->frame/scan 은 sanctioned 아님(pattern-4 는 L2 전용). 진짜 미허가 위반이나 정적 가드가 importlib 로 우회당해 못 봤던 것 — 추적 부채로 동결, 해소=호출자 inversion(L2 가 데이터 주입). 신규 차단. (debt-honesty P1-7)"
+  "_note": "L1.5 importlib 동적 cross 부채 원장. 정적 AST 가드가 importlib 로 우회당해 못 보던 자리다. frame 관통 한 건과 두 파일의 parseNumStr 관통은 해소했다. 둘 다 L1.5 가 재export 한 L0 정의를 가져오고 있었을 뿐이라 core 에서 직접 받도록 내렸다. 남은 두 건은 scan 이 실제로 소유한 private `_ensureScanData` 라 해소 방법이 다르다. 호출자 inversion 또는 데이터 디렉토리 해석기의 core 승격이 필요하다. 신규 차단."
 }

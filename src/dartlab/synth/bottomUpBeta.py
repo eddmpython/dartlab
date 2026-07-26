@@ -14,6 +14,11 @@ import random
 from statistics import mean, median
 from typing import Any
 
+# 둘 다 L0 정의다. 예전에는 frame.sector 와 scan.io.parquet 이 재export 한 것을
+# 동적 import 로 가져와 L1.5 형제를 관통하는 모양이 됐다.
+from dartlab.core.sector import getSectorParamsByName
+from dartlab.core.utils.helpers import parseNumStr
+
 
 def calcBottomUpBeta(
     *,
@@ -99,10 +104,6 @@ def calcBottomUpBeta(
 
     if len(peers) < 5:
         # sector_default fallback
-        import importlib
-
-        getSectorParamsByName = importlib.import_module("dartlab.frame.sector").getSectorParamsByName
-
         sector_beta: float | None = None
         try:
             sp = getSectorParamsByName(sector)
@@ -194,9 +195,9 @@ def _extractKrPeers(sector: str, limit: int) -> list[dict[str, Any]]:
 
         import polars as pl
 
-        _scanHelpers = importlib.import_module("dartlab.scan.io.parquet")
-        _ensureScanData = _scanHelpers._ensureScanData
-        parseNumStr = _scanHelpers.parseNumStr
+        # `_ensureScanData` 는 scan 이 실제로 소유한 private 라 동적 import 를 유지한다.
+        # `parseNumStr` 은 core 정의를 scan 이 재export 한 것뿐이라 직접 내려 받는다.
+        _ensureScanData = importlib.import_module("dartlab.scan.io.parquet")._ensureScanData
     except ImportError:
         return []
 
@@ -272,9 +273,6 @@ def _extractKrPeers(sector: str, limit: int) -> list[dict[str, Any]]:
 
 def _sectorBetaFallback(sector: str) -> float:
     """sectorParams 에서 섹터 β 조회. 없으면 1.0."""
-    import importlib
-
-    getSectorParamsByName = importlib.import_module("dartlab.frame.sector").getSectorParamsByName
 
     try:
         sp = getSectorParamsByName(sector)

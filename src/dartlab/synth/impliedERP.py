@@ -17,6 +17,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+# L0 정의다. 예전에는 scan.io.parquet 이 재export 한 것을 동적 import 로 가져왔다.
+from dartlab.core.utils.helpers import parseNumStr
+
 _CACHE_ROOT = Path("data/cache/impliedERP")
 
 
@@ -222,9 +225,9 @@ def _aggregateFinanceSnapshot() -> dict[str, Any] | None:
 
         import polars as pl
 
-        _scanHelpers = importlib.import_module("dartlab.scan.io.parquet")
-        _ensureScanData = _scanHelpers._ensureScanData
-        parseNumStr = _scanHelpers.parseNumStr
+        # `_ensureScanData` 는 scan 소유 private 라 동적 import 유지.
+        # `parseNumStr` 은 core 정의의 재export 라 직접 내려 받는다.
+        _ensureScanData = importlib.import_module("dartlab.scan.io.parquet")._ensureScanData
 
         scan_dir = _ensureScanData()
         path = scan_dir / "finance.parquet"

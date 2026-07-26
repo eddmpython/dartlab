@@ -12,7 +12,7 @@ from typing import Any, Iterable, Iterator, Mapping
 
 import polars as pl
 
-from dartlab.pipeline.hashing import fileHash
+from dartlab.core.utils.fileDigest import fileHash
 from dartlab.providers.dart.search.catalog import normalizeCatalogRows
 from dartlab.providers.dart.search.freshness import DEFAULT_DATE_COLUMNS, normalizeSearchDate, periodToDataAsOf
 from dartlab.providers.dart.search.sourceManifest import SOURCE_MANIFEST_SOURCES

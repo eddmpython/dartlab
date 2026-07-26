@@ -37,33 +37,29 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 SRC = ROOT / "src" / "dartlab"
 
+
 # dartlab 1 차 패키지 (dartlab.<X> 단위 노드)
-PRIMARY_PACKAGES: tuple[str, ...] = (
-    "core",
-    "gather",
-    "scan",
-    "search",
-    "analysis",
-    "credit",
-    "macro",
-    "quant",
-    "industry",
-    "data",
-    "story",
-    "company",
-    "ai",
-    "viz",
-    "dashboard",
-    "mcp",
-    "server",
-    "mappers",
-    "providers",
-    "channel",
-    "cli",
-    "pipeline",
-    "skills",
-    "ui",
-)
+def _discoverPrimaryPackages() -> tuple[str, ...]:
+    """`src/dartlab/` 직속 1 차 패키지를 실제 트리에서 뽑는다.
+
+    손으로 적은 목록은 실재하지 않는 이름(dashboard, mappers, search, ui)을 남기고
+    실재하는 패키지(dataHub, frame, reference, simulate, synth, webapi)를 빠뜨린 채
+    오래 방치됐다. 목록에 없는 패키지는 노드가 되지 않으므로 그 안의 cycle 은 아예
+    보이지 않는다. 트리에서 뽑으면 그 표류가 구조적으로 불가능해진다.
+    """
+
+    names: set[str] = set()
+    for child in SRC.iterdir():
+        if child.name.startswith(("_", ".")) or child.name == "__pycache__":
+            continue
+        if child.is_dir() and (child / "__init__.py").exists():
+            names.add(child.name)
+        elif child.suffix == ".py" and child.stem != "__init__":
+            names.add(child.stem)
+    return tuple(sorted(names))
+
+
+PRIMARY_PACKAGES: tuple[str, ...] = _discoverPrimaryPackages()
 
 
 def _modulePath(p: Path) -> str | None:
@@ -227,15 +223,31 @@ def _loadBaseline() -> dict:
         return {}
 
 
-def _saveBaseline(twoCount: int, longerCount: int) -> None:
-    """T9-3 — 현재 cycle 카운트를 baseline 으로 저장."""
+def _cycleKey(cycle: tuple[str, ...]) -> str:
+    """cycle 을 방향 무관 안정 키로 만든다. 시작점이 달라도 같은 cycle 은 같은 키다."""
+
+    return " <-> ".join(sorted(cycle))
+
+
+def _saveBaseline(twoCycles: list[tuple[str, ...]], longerCount: int) -> None:
+    """현재 2-cycle 목록과 longer 개수를 baseline 으로 저장한다.
+
+    이전 형식은 2-cycle 도 개수만 적었다. 그래서 하나가 사라지고 다른 하나가 생기면
+    개수가 같아 아예 보이지 않았고, 늘어나도 어느 것이 새로 생긴 것인지 답할 수
+    없었다. 목록으로 적으면 신규 cycle 을 이름으로 지목할 수 있다.
+    """
+
     import datetime as _dt
     import json as _json
 
     path = _baselineFile()
     path.parent.mkdir(parents=True, exist_ok=True)
     data = {
-        "twoCycleCount": twoCount,
+        "_note": (
+            "양방향 cycle 부채 원장. 여기 적힌 것 밖의 새 2-cycle 은 차단된다. "
+            "항목을 지우려면 한쪽 import 를 하위 계층으로 강등하거나 위임으로 끊는다."
+        ),
+        "twoCycles": sorted(_cycleKey(cycle) for cycle in twoCycles),
         "longerCycleCount": longerCount,
         "measuredAt": _dt.datetime.now(_dt.UTC).isoformat(),
     }
@@ -257,8 +269,8 @@ def main(argv: list[str]) -> int:
     mode = "top-level only" if toplevelOnly else "전수 (lazy 포함)"
 
     if updateBaseline:
-        _saveBaseline(len(twoCycles), len(longerCycles))
-        print(f"[cycle-scan] baseline 갱신 — 2-cycle {len(twoCycles)} / longer {len(longerCycles)}")
+        _saveBaseline(twoCycles, len(longerCycles))
+        print(f"[cycle-scan] baseline 갱신. 2-cycle {len(twoCycles)} / longer {len(longerCycles)}")
         return 0
 
     if not twoCycles and not longerCycles:
@@ -270,12 +282,17 @@ def main(argv: list[str]) -> int:
 
     # T9-3 — baseline 비교
     baseline = _loadBaseline()
-    if baseline:
-        twoDelta = len(twoCycles) - baseline.get("twoCycleCount", 0)
+    freshCycles: list[str] = []
+    if baseline and not toplevelOnly:
+        allowed = set(baseline.get("twoCycles", ()))
+        current = {_cycleKey(cycle) for cycle in twoCycles}
+        freshCycles = sorted(current - allowed)
         longerDelta = len(longerCycles) - baseline.get("longerCycleCount", 0)
-        print(f"\n[cycle-scan] baseline 대비 delta: 2-cycle {twoDelta:+d} / longer {longerDelta:+d}")
-        if twoDelta > 0 or longerDelta > 0:
-            print("[cycle-scan] WARN — cycle 증가 (monthly 정리 quota 위반)")
+        print(f"\n[cycle-scan] baseline 밖 신규 2-cycle {len(freshCycles)} / longer {longerDelta:+d}")
+        for item in sorted(allowed - current):
+            print(f"  해소됨: {item} (baseline 에서 지워도 된다)")
+        for item in freshCycles:
+            print(f"  신규 차단: {item}")
 
     print(
         "\n정책 SSOT: src/dartlab/skills/specs/operation/architecture.md\n"
@@ -284,6 +301,10 @@ def main(argv: list[str]) -> int:
         "  - 양방향 cycle 절대금지\n"
         "해소: 한쪽 import 를 story 위임 또는 core 강등 후 재실행."
     )
+    # 신규 2-cycle 은 baseline 유무와 무관하게 차단한다. 예전에는 늘어나도 WARN 만
+    # 찍고 0 을 돌려줘 아무도 모르는 채 누적됐다.
+    if freshCycles:
+        return 1
     return 2 if strict else 0
 
 

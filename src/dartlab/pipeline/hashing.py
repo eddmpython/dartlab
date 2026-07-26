@@ -10,29 +10,9 @@ from __future__ import annotations
 import hashlib
 from pathlib import Path
 
-
-def fileHash(path: Path, *, chunkSize: int = 1 << 20) -> str:
-    """파일 내용의 blake2b 해시(16-byte digest hex).
-
-    Args:
-        path: 대상 파일.
-        chunkSize: 스트리밍 청크 바이트(기본 1MB — 대형 parquet 메모리 안전).
-
-    Returns:
-        hex digest 문자열.
-
-    Raises:
-        OSError: 읽기 실패.
-
-    Example:
-        >>> isinstance(fileHash(Path(__file__)), str)
-        True
-    """
-    h = hashlib.blake2b(digest_size=16)
-    with path.open("rb") as f:
-        for chunk in iter(lambda: f.read(chunkSize), b""):
-            h.update(chunk)
-    return h.hexdigest()
+# `fileHash` 는 도메인 중립 primitive 라 core 로 내렸다. providers 가 이 함수 하나
+# 때문에 pipeline 을 top-level import 해 두 패키지가 양방향으로 묶여 있었다.
+from dartlab.core.utils.fileDigest import fileHash
 
 
 def partialFileHash(path: Path, *, headBytes: int = 65536) -> str:
