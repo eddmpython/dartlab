@@ -4,9 +4,11 @@ from __future__ import annotations
 
 import json
 import math
+from collections.abc import Callable, Iterator
 from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta
 from hashlib import sha256
+from typing import TypeVar
 
 import polars as pl
 
@@ -115,6 +117,8 @@ class CompiledQuarterlyRevenueState:
     stateHash: str
 
 
+_STOCK_ANCHOR_CONCEPTS = ("totalAssets", "totalLiabilities", "equityIncludingNci")
+_NONCONTROLLING_INTEREST_TAGS = ("MinorityInterest",)
 _STOCK_TAGS: dict[str, tuple[str, ...]] = {
     "cashAndEquivalents": (
         "CashAndCashEquivalentsAtCarryingValue",
@@ -231,6 +235,8 @@ def stateSelectionRuleDigest() -> str:
                 },
             },
             "stock": {key: list(value) for key, value in _STOCK_TAGS.items()},
+            "stockAnchors": list(_STOCK_ANCHOR_CONCEPTS),
+            "noncontrollingInterest": list(_NONCONTROLLING_INTEREST_TAGS),
             "debt": {
                 "currentTerm": list(_DEBT_CURRENT_TERM),
                 "shortFunding": list(_DEBT_SHORT_FUNDING),
@@ -347,11 +353,44 @@ def _pick(group: pl.DataFrame, conceptId: str, tags: tuple[str, ...], *, kind: s
     return None
 
 
-def _compileStock(
+def _combinedEquity(parent: FactEvidence, noncontrolling: FactEvidence) -> FactEvidence:
+    """지배주주 자본에 비지배지분을 더해 연결 자본 관측을 만든다."""
+
+    components = (parent, noncontrolling)
+    return FactEvidence(
+        conceptId="equityIncludingNci",
+        value=parent.value + noncontrolling.value,
+        unit=parent.unit,
+        currency=parent.currency,
+        kind="stock",
+        fiscalStart=parent.fiscalStart,
+        fiscalEnd=parent.fiscalEnd,
+        filedAt=max(parent.filedAt, noncontrolling.filedAt),
+        accession=parent.accession,
+        form=parent.form,
+        tag=f"{parent.tag}+{noncontrolling.tag}",
+        status="derived",
+        derivation="parent stockholders equity plus noncontrolling interest",
+        derivationInputs=tuple(
+            f"{item.accession}|{item.tag}|{item.fiscalStart}|{item.fiscalEnd}" for item in components
+        ),
+    )
+
+
+_StockCandidate = tuple[dict[str, float], tuple[FactEvidence, ...], str, tuple[str, ...]]
+_FlowResult = TypeVar("_FlowResult")
+
+
+def _stockCandidates(
     pit: pl.DataFrame,
     *,
     requestedFiscalThrough: str | None = None,
-) -> tuple[dict[str, float], tuple[FactEvidence, ...], str, tuple[str, ...]]:
+) -> Iterator[_StockCandidate]:
+    """접수 후보를 최신순으로 순회하며 성립하는 stock state를 모두 내놓는다.
+
+    한 후보만 반환하면 대차는 있으나 분기 흐름이 없는 최신 filing 에 걸려 회사 전체가
+    실패한다. 소비자가 흐름 창까지 성립하는 첫 후보를 고를 수 있도록 지연 순회한다.
+    """
     allTags = (
         {tag for tags in _STOCK_TAGS.values() for tag in tags}
         | set(_DEBT_CURRENT_TERM)
@@ -371,6 +410,7 @@ def _compileStock(
         candidates = candidates.filter(pl.col("__end") == target)
         if candidates.height == 0:
             raise EdgarStateError(f"requested fiscalThrough is unavailable: {target}")
+    firstConflict: EdgarStateError | None = None
     for candidate in candidates.iter_rows(named=True):
         group = stock.filter(
             (pl.col("__end") == candidate["__end"])
@@ -379,16 +419,32 @@ def _compileStock(
         )
         evidence: dict[str, FactEvidence] = {}
         try:
+            imputed: list[str] = []
             for conceptId, tags in _STOCK_TAGS.items():
                 selected = _pick(group, conceptId, tags, kind="stock")
                 if selected is None:
-                    break
+                    if conceptId in _STOCK_ANCHOR_CONCEPTS:
+                        break
+                    # 미태깅 구성요소는 결측이 아니라 세분성 부족이다. 0 으로 두면 그 금액이
+                    # `otherNetAssets` 잔차 플러그로 흡수되고 대차 항등식은 그대로 닫힌다.
+                    # 재고 개념이 없는 소프트웨어, 서비스, 금융, REIT 를 실패로 처리하지 않는다.
+                    imputed.append(conceptId)
+                    continue
                 evidence[conceptId] = selected
             else:
+                equity = evidence["equityIncludingNci"]
+                if equity.tag == "StockholdersEquity":
+                    # 지배주주 자본만 태깅됐다면 비지배지분을 더해야 항등식이 닫힌다.
+                    # 더하지 않으면 비지배지분이 있는 회사가 구조적으로 항등식 검사에 걸린다.
+                    noncontrolling = _pick(group, "noncontrollingInterest", _NONCONTROLLING_INTEREST_TAGS, kind="stock")
+                    if noncontrolling is not None:
+                        evidence["noncontrollingInterest"] = noncontrolling
+                        evidence["equityIncludingNci"] = _combinedEquity(equity, noncontrolling)
                 current = _pick(group, "currentTermDebt", _DEBT_CURRENT_TERM, kind="stock")
                 shortFunding = _pick(group, "shortTermFunding", _DEBT_SHORT_FUNDING, kind="stock")
                 noncurrent = _pick(group, "interestBearingDebtNoncurrent", _DEBT_NONCURRENT, kind="stock")
                 total = _pick(group, "reportedTotalDebt", _DEBT_TOTAL, kind="stock")
+                termComponents: tuple[FactEvidence, ...]
                 if current is not None and noncurrent is not None:
                     termDebt = current.value + noncurrent.value
                     termComponents = (current, noncurrent)
@@ -398,8 +454,16 @@ def _compileStock(
                     termDebt = total.value
                     termComponents = (total,)
                     evidence[total.conceptId] = total
+                elif shortFunding is not None:
+                    # 리볼버나 기업어음만 쓰는 회사는 term debt 태그가 없다.
+                    termDebt = 0.0
+                    termComponents = ()
                 else:
-                    continue
+                    # 이자부부채 태그가 하나도 없다. 무차입이 실제로 흔하므로 실패로 보지 않고
+                    # 0 으로 두되 imputed 로 남긴다. 미태깅 차입금이면 그 금액은 플러그로 간다.
+                    termDebt = 0.0
+                    termComponents = ()
+                    imputed.append("totalDebt")
                 debt = termDebt + (shortFunding.value if shortFunding is not None else 0.0)
                 if shortFunding is not None:
                     evidence[shortFunding.conceptId] = shortFunding
@@ -415,21 +479,93 @@ def _compileStock(
                     filedAt=str(candidate["__filed"]),
                     accession=str(candidate["accn"]),
                     form=str(candidate["form"]),
-                    tag="+".join(item.tag for item in components),
-                    status="derived" if len(components) > 1 else "observed",
-                    derivation="term debt plus non-overlapping short-term funding; reported total excluded",
+                    tag="+".join(item.tag for item in components) if components else "none",
+                    status="derived" if len(components) != 1 else "observed",
+                    derivation=(
+                        "no interest-bearing debt tagged in this accession"
+                        if not components
+                        else "term debt plus non-overlapping short-term funding; reported total excluded"
+                    ),
                     derivationInputs=tuple(
                         f"{item.accession}|{item.tag}|{item.fiscalStart}|{item.fiscalEnd}" for item in components
                     ),
                 )
                 evidence["totalDebt"] = debtEvidence
                 values = {conceptId: item.value for conceptId, item in evidence.items()}
+                for conceptId in imputed:
+                    values.setdefault(conceptId, 0.0)
                 warnings = []
                 if str(candidate["__end"]) != latestCandidateEnd:
                     warnings.append(f"latestIncompleteFiling:{latestCandidateEnd}")
-                return values, tuple(evidence.values()), str(candidate["__end"]), tuple(warnings)
-        except EdgarStateError:
-            raise
+                if imputed:
+                    warnings.append(f"imputedZeroComponents:{','.join(sorted(imputed))}")
+                yield values, tuple(evidence.values()), str(candidate["__end"]), tuple(warnings)
+                continue
+        except EdgarStateError as error:
+            # 한 접수의 단위나 값 충돌이 회사 전체를 죽이지 않는다. 다음 후보 접수로 넘어가고,
+            # 어떤 후보도 성립하지 않으면 마지막에 첫 충돌 원인을 그대로 올린다.
+            if firstConflict is None:
+                firstConflict = error
+            continue
+    if firstConflict is not None:
+        raise firstConflict
+
+
+def _compileStock(
+    pit: pl.DataFrame,
+    *,
+    requestedFiscalThrough: str | None = None,
+) -> _StockCandidate:
+    """최신 접수 기준으로 성립하는 첫 stock state를 반환한다."""
+
+    for candidate in _stockCandidates(pit, requestedFiscalThrough=requestedFiscalThrough):
+        return candidate
+    raise EdgarStateError("no single accession contains a coherent stock state")
+
+
+def _compileStockWithFlow(
+    pit: pl.DataFrame,
+    flowCompiler: Callable[[pl.DataFrame, str], _FlowResult],
+    *,
+    requestedFiscalThrough: str | None = None,
+) -> tuple[_StockCandidate, _FlowResult]:
+    """대차와 분기 흐름 창이 함께 성립하는 첫 접수 후보를 선택한다.
+
+    Args:
+        pit: 지식 시점으로 절단한 정규화 facts.
+        flowCompiler: 선택한 회계 기간말로 흐름을 컴파일하는 호출자.
+        requestedFiscalThrough: 명시한 회계 기간말.
+
+    Returns:
+        선택한 stock 후보와 그 후보 기준 흐름 컴파일 결과.
+
+    Raises:
+        EdgarStateError: 어떤 후보도 대차와 흐름을 동시에 만족하지 못할 때.
+
+    Example:
+        ``candidate, flows = _compileStockWithFlow(pit, _compileQuarterWindow)``.
+
+    Guide:
+        대차만 있는 최신 filing 때문에 흐름이 있는 직전 filing 을 놓치지 않게 한다.
+
+    Requires:
+        후보 순회는 최신 접수부터 시작해야 한다.
+
+    AIContext:
+        검증을 낮추지 않고 후보 탐색 범위만 넓힌다. 각 후보의 계약 검사는 그대로다.
+    """
+
+    firstFlowError: EdgarStateError | None = None
+    for candidate in _stockCandidates(pit, requestedFiscalThrough=requestedFiscalThrough):
+        try:
+            flows = flowCompiler(pit, candidate[2])
+        except EdgarStateError as error:
+            if firstFlowError is None:
+                firstFlowError = error
+            continue
+        return candidate, flows
+    if firstFlowError is not None:
+        raise firstFlowError
     raise EdgarStateError("no single accession contains a coherent stock state")
 
 
@@ -949,11 +1085,13 @@ def compileEdgarFinancialState(
 
     cutoff = _dateText(knowledgeAsOf)
     pit = _normalize(facts, cutoff)
-    values, stockEvidence, effectiveFiscalThrough, warnings = _compileStock(
+    candidate, ttm = _compileStockWithFlow(
         pit,
+        _compileTtm,
         requestedFiscalThrough=fiscalThrough,
     )
-    revenueTtm, operatingTtm, flowEvidence = _compileTtm(pit, effectiveFiscalThrough)
+    values, stockEvidence, effectiveFiscalThrough, warnings = candidate
+    revenueTtm, operatingTtm, flowEvidence = ttm
     state = _financialState(values, revenue=revenueTtm, operatingProfit=operatingTtm)
     evidence = stockEvidence + flowEvidence
     payload = {
@@ -1187,11 +1325,12 @@ def compileEdgarQuarterlyFinancialState(
 
     cutoff = _dateText(knowledgeAsOf)
     pit = _normalize(facts, cutoff)
-    values, stockEvidence, effectiveFiscalThrough, warnings = _compileStock(
+    candidate, quarters = _compileStockWithFlow(
         pit,
+        _compileQuarterWindow,
         requestedFiscalThrough=fiscalThrough,
     )
-    quarters = _compileQuarterWindow(pit, effectiveFiscalThrough)
+    values, stockEvidence, effectiveFiscalThrough, warnings = candidate
     latest = quarters[-1]
     state = _financialState(
         values,
