@@ -45,6 +45,7 @@ ALLOWED_ROOT = frozenset(
         ".gitignore",
         ".pre-commit-config.yaml",
         ".python-version",
+        "ARCHITECTURE.md",
         "CHANGELOG.md",
         "CITATION.cff",
         "CODE_OF_CONDUCT.md",

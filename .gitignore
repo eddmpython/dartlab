@@ -29,7 +29,7 @@ PLAN.md
 TODO.md
 .agent/
 .claude/
-# User skill 인큐베이션 영역 — registry.py:309 가 .dartlab/skills/ 를 user skill 로 로드.
+# User skill 인큐베이션 영역 - registry.py:309 가 .dartlab/skills/ 를 user skill 로 로드.
 # 운영자별 실험 산출물이라 추적 X.
 .dartlab/
 
@@ -37,23 +37,23 @@ TODO.md
 /main.py
 /skills-lock.json
 /BROKEN_LINKS_REPORT.txt
-# 로컬 스크래치 디렉토리 (디버그 산출물·임시 데이터 — CLAUDE.md 워크스페이스 청결: repo 추적 금지)
+# 로컬 스크래치 디렉토리 (디버그 산출물·임시 데이터 - CLAUDE.md 워크스페이스 청결: repo 추적 금지)
 /.tmp/
-# Data (repo-root 만 — src/dartlab/core/data/ 같은 패키지 번들 리소스는 제외하면 안 됨)
+# Data (repo-root 만 - src/dartlab/core/data/ 같은 패키지 번들 리소스는 제외하면 안 됨)
 /data/
-# DART 원본 zip — 절대 공개 금지 (CLAUDE.md "DART 원본 zip 비공개" 강행규칙).
+# DART 원본 zip - 절대 공개 금지 (CLAUDE.md "DART 원본 zip 비공개" 강행규칙).
 # /data/ 가 이미 모두 무시하지만 명시 라인으로 의도 강조 + 미래 docs.parquet 만 별도
 # tracking 결정 시에도 zip 은 영구 차단 강제.
 /data/dart/original/
-# 공시 오리지널 통일 백업 store (gather.original) — DART(정기+비정기)·EDGAR 전 form 가공 0 원본.
+# 공시 오리지널 통일 백업 store (gather.original) - DART(정기+비정기)·EDGAR 전 form 가공 0 원본.
 # 로컬 백업 전용·HF 미공개(publish-ready-gated). /data/ 가 이미 무시하지만 의도 강조 명시 라인.
 /data/original/
 
-# Backup (파일 삭제 대신 이동) — repo-root 만. src/dartlab 내부의 _backup/
+# Backup (파일 삭제 대신 이동) - repo-root 만. src/dartlab 내부의 _backup/
 # (예: providers/dart/finance/mapperData/_backup/) 은 번들 리소스이므로 제외하면 안 됨.
 /_backup/
 
-# tests/_attempts/ 는 스크래치 실험 인큐베이터 — 게이트 아님 (tests/run.py --ignore=tests/_attempts).
+# tests/_attempts/ 는 스크래치 실험 인큐베이터 - 게이트 아님 (tests/run.py --ignore=tests/_attempts).
 # 코드·데이터 전부 추적 제외 (로컬 전용). 검증된 산출물은 memory + src/ 로 졸업시킨다.
 tests/_attempts/
 
@@ -106,7 +106,7 @@ landing/static/blog/assets/
 /landing/static/thumbnails/*.gif
 /landing/static/thumbnails/*.avif
 /landing/static/thumbnails/*.svg
-# Industry map generated artifacts — HF SSoT. 빌드/로컬 dev 시 seedFromHf.py --category industryMap 로 내려받음.
+# Industry map generated artifacts - HF SSoT. 빌드/로컬 dev 시 seedFromHf.py --category industryMap 로 내려받음.
 landing/static/map/
 
 # MkDocs build
@@ -118,7 +118,7 @@ site/
 # Pytest / benchmark / cache artifacts
 .pytest_cache/
 
-# Mutation testing cache (mutmut) — 결과는 mutmut results 명시 호출, cache 자체는 추적 X
+# Mutation testing cache (mutmut) - 결과는 mutmut results 명시 호출, cache 자체는 추적 X
 .mutmut-cache
 mutants/
 
@@ -135,15 +135,15 @@ htmlcov/
 # Log files (any directory)
 *.log
 
-# Removed sandbox dirs — never track again
+# Removed sandbox dirs - never track again
 /experiments/
 /spaces/
-# examples/ — sandbox 였으나 T5-2 트랙으로 plugin example 패키지는 tracking 재개.
+# examples/ - sandbox 였으나 T5-2 트랙으로 plugin example 패키지는 tracking 재개.
 # plugin-example 외 sandbox 잔여는 별도 정리.
 /examples/*
 !/examples/plugin-example/
 
-# Local git hooks (제공자별 셋업 — 추적 안 함)
+# Local git hooks (제공자별 셋업 - 추적 안 함)
 /.githooks/
 
 # Backup directories (landing 로컬 작업 백업)
@@ -153,6 +153,7 @@ crates/
 .vscode/
 
 # Temp / debug scripts (root)
+/.codex-tmp/
 /analyze_coverage.py
 /final_report.py
 /tmp_*.py
@@ -162,19 +163,19 @@ crates/
 # SNS + Video pipeline (local-only workspace, assets/docs/video/toolkit 통합)
 /sns/
 
-# 로컬 환경별 ignore (개별 dev 머신용 — repo 공유 안 함)
+# 로컬 환경별 ignore (개별 dev 머신용 - repo 공유 안 함)
 .gitignore.local
 tests/fixtures/dart/docs/034730.parquet
 tests/fixtures/dart/docs/055550.parquet
 tests/fixtures/sections_baseline/
-# HF dataset 자동 다운로드 캐시 — 100MB+ parquet 다수, git 추적 X
+# HF dataset 자동 다운로드 캐시 - 100MB+ parquet 다수, git 추적 X
 tests/fixtures/dart/scan/
 tests/fixtures/krx/
 tests/fixtures/krxList/
 unsloth_compiled_cache/
 tests/audit/_camelcaseIndex.json
 
-# 구 Svelte UI 백업 (2026-05-16 React 재구축 시) — 참고용 로컬 보존
+# 구 Svelte UI 백업 (2026-05-16 React 재구축 시) - 참고용 로컬 보존
 ui/web.backup/
 .venv-ci/
 ui/web/test-results/

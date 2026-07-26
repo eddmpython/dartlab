@@ -124,7 +124,7 @@ c = dartlab.Company("005930")       # 삼성전자
 
 c.panel()                           # 전체 공시 수평화 격자 (항목 × 기간)
 c.panel("IS")                       # 손익계산서 (finance 정규화 숫자)
-c.panel("is")                       # native 손익 — 사업보고서 항목 그대로 (XBRL+옛 통합 2013~)
+c.panel("is")                       # native 손익 - 사업보고서 항목 그대로 (XBRL+옛 통합 2013~)
 c.panel("ratios")                   # native 재무비율 (5표 항목으로 계산)
 c.panel("사업")                      # 사업 개요 등 공시 본문 행 검색
 c.filings()                         # 원문 공시 링크
@@ -177,8 +177,8 @@ import dartlab
 
 c = dartlab.Company("005930")       # 삼성전자
 
-c.panel()                           # 모든 항목, 모든 기간, 나란히 — 잡는 순간 격자
-# shape: (223, 14) — 공시 항목 × 기간
+c.panel()                           # 모든 항목, 모든 기간, 나란히 - 잡는 순간 격자
+# shape: (223, 14) - 공시 항목 × 기간
 #                     2026Q1  2025Q4  2025Q3  2024Q4  ...
 # (표지)                  v       v       v       v
 # 사업의 내용             v       v       v       v
@@ -190,7 +190,7 @@ c.panel()                           # 모든 항목, 모든 기간, 나란히 �
 > <img src=".github/assets/panel-grid.webp" alt="c.panel() 출력 예시: 삼성전자 공시 항목 × 기간 전체 격자" width="720">
 
 ```python
-c.panel("IS")                       # 손익계산서 — finance 정규화 (분기 기본)
+c.panel("IS")                       # 손익계산서 - finance 정규화 (분기 기본)
 c.panel("IS", freq="year")          # freq로 연간 합산
 ```
 
@@ -199,7 +199,7 @@ c.panel("IS", freq="year")          # freq로 연간 합산
 > <img src=".github/assets/panel-is-finance.webp" alt="c.panel('IS', freq='year'): 삼성전자 연간 손익계산서 (finance 정규화)" width="720">
 
 ```python
-c.panel("is", freq="year")          # native 손익 — 사업보고서 항목 그대로 (2013~)
+c.panel("is", freq="year")          # native 손익 - 사업보고서 항목 그대로 (2013~)
 c.panel("ratios")                   # native 재무비율, 5표 항목으로 계산
 ```
 
@@ -211,7 +211,7 @@ c.panel("ratios")                   # native 재무비율, 5표 항목으로 계
 c.panel("사업")                      # 사업 개요 등 공시 본문 행 검색
 c.panel.search("재고")               # 본문 전체 검색
 
-c.filings()                         # 모든 보고서 — DART 뷰어로 바로 연결
+c.filings()                         # 모든 보고서 - DART 뷰어로 바로 연결
 ```
 
 > 사업보고서부터 분기보고서까지, dartUrl로 원문 즉시 확인
@@ -231,39 +231,134 @@ dartlab.ask("삼성전자 재무건전성 분석해줘")
 
 API 키 불필요. [HuggingFace](https://huggingface.co/datasets/eddmpython/dartlab-data)에서 자동 다운로드, 로컬 캐시로 즉시 로드.
 
-## 세 겹의 분석
+## DataHub: 전 계층 하나의 데이터 진입점
 
-Company가 종목코드 하나로 데이터를 준비하면, 세 겹이 분석한다.
+`dartlab.dataHub`는 특정 스캐너나 AI 전용 도구가 아니다. L1 원천, L1.5 횡단 데이터,
+L2 분석 자산을 하나의 catalog와 query 계약으로 발견하고 외부 Python, HTTP,
+시뮬레이터가 함께 쓰는 독립 데이터 플랫폼 엔진이다. Factor store는 별도 제품이
+아니라 이 작업대의 `factor` projection과 immutable materialization을 조합한 사용
+방식이다.
 
-1. **분석 엔진**: 숫자를 만든다. 마진 추이, 현금흐름 패턴, 부도 확률, 업종 비교, 매크로 사이클. 해석하지 않는다. 숫자와 근거만 제공한다.
-2. **story (L3 조합기)**: 분석엔진 X. L2 5 분석엔진 끼리의 import 순환을 막기 위해, story 가 단독으로 다중 결합 책임을 짊어진다. 엔진 데이터를 블록 단위로 조합하여 11가지 보고서 타입 × 7가지 기업유형 템플릿. 해석은 제공하지 않는다. 다양한 관점의 근거를 체계적으로 배치한다.
-3. **AI**: 엔진을 직접 쓰고 판단한다. 결과를 의심하고, 원본으로 검증하고, 이상하면 가정을 바꿔서 재계산한다. dartlab을 대표하는 적극적 분석가.
+```python
+import dartlab
 
-## DartLab은 무엇인가
+catalog = dartlab.dataHub(
+    "catalog",
+    query={"layers": ["L1", "L1.5", "L2"], "search": "financialFeatures"},
+)
 
-하나의 호출 계약. `dartlab.엔진()` 으로 가이드 보고 `dartlab.엔진("축")` 으로 실행.
+first = dartlab.dataHub(
+    "query",
+    query={
+        "requests": [
+            {
+                "assetId": "analysis.dartFinancialFeatures",
+                "requestId": "krListed",
+                "universe": {"markets": ["KR"], "membership": "listed"},
+                "projection": {
+                    "kind": "factor",
+                    "measures": [
+                        "financial.revenue",
+                        "financial.operatingMargin",
+                    ],
+                },
+                "time": {"knownAt": "20260723"},
+            },
+            {
+                "assetId": "analysis.edgarFinancialFeatures",
+                "requestId": "usListed",
+                "universe": {"markets": ["US"], "membership": "listed"},
+                "projection": {
+                    "kind": "factor",
+                    "measures": [
+                        "financial.revenue",
+                        "financial.operatingMargin",
+                    ],
+                },
+                "time": {"knownAt": "20260723"},
+            },
+        ],
+        "budget": {
+            "maxRows": 100000,
+            "maxBytes": 64 * 1024 * 1024,
+            "timeoutMs": 120000,
+            "maxAssets": 4,
+            "maxSubjects": 20000,
+            "maxConcurrency": 2,
+        },
+        "materialization": {"mode": "refresh"},
+    },
+)
 
-> **처음이라면?** `Company` → `Story` → `Ask` 순서로. 종목코드로 데이터를 보고, 보고서를 만들고, AI에게 물어본다.
+for page in first.iterPages():
+    consume(page)
+```
 
-> **엔진 이름을 클릭하면** 사용법 4 섹션 (`공개 호출 방식` · `호출 동작` · `대표 반환 형태` · `기본 검증`) 으로 진입한다. 모든 엔진이 같은 4 섹션을 갖는다.
+이 호출 하나가 현재 상장 KR 2,661개와 US 7,669개의 작업을 등록한다. 종목별 API를
+호출자가 반복하거나 전 데이터를 첫 응답 RAM에 올리는 방식이 아니다. 작업대가 row,
+byte, time 상한 안에서 opaque continuation을 소비하고, 성공하지 못한 종목도 구조화
+gap과 coverage에 남긴다.
 
-| 레이어 | 엔진 | 하는 일 | 진입점 | 노트북 |
-|--------|------|---------|--------|--------|
-| Data | [Data](https://eddmpython.github.io/dartlab/skills/engines.data) | HuggingFace 사전 구축, 자동 다운로드 | `Company("005930")` | — |
-| L1 | [Company](https://eddmpython.github.io/dartlab/skills/engines.company) | provider facade: 공시 + 재무제표 + 정형 데이터를 종목코드 하나로 통합 | `c.panel()` | [Colab](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/01_company.ipynb) · [marimo](https://marimo.app/github.com/eddmpython/dartlab/blob/master/notebooks/marimo/01_company.py) |
-| L1 | [Gather](https://eddmpython.github.io/dartlab/skills/engines.gather) | 외부 시장 데이터 (주가/수급/매크로/뉴스) | `dartlab.gather()` | [Colab](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/02_gather.ipynb) · [marimo](https://marimo.app/github.com/eddmpython/dartlab/blob/master/notebooks/marimo/02_gather.py) |
-| L1.5 | [Scan](https://eddmpython.github.io/dartlab/skills/engines.scan) | 전 종목 사전 빌드 (거버넌스/비율/현금흐름 등 parquet) | `dartlab.scan()` | [Colab](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/03_scan.ipynb) · [marimo](https://marimo.app/github.com/eddmpython/dartlab/blob/master/notebooks/marimo/03_scan.py) |
-| L2 | [Analysis](https://eddmpython.github.io/dartlab/skills/engines.analysis) | 재무 심층 분석 (수익성/안정성/현금흐름) + 가치평가 + 전망 | `c.analysis("financial", "수익성")` | [Colab](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/05_analysis.ipynb) · [marimo](https://marimo.app/github.com/eddmpython/dartlab/blob/master/notebooks/marimo/05_analysis.py) |
-| L2 | [Quant](https://eddmpython.github.io/dartlab/skills/engines.quant) | 가격 기반 정량 신호 (기술/리스크/팩터/백테스트) | `c.quant()` | [Colab](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/04_quant.ipynb) · [marimo](https://marimo.app/github.com/eddmpython/dartlab/blob/master/notebooks/marimo/04_quant.py) |
-| L2 | [Credit](https://eddmpython.github.io/dartlab/skills/engines.credit) | 독립 신용평가 (dCR 등급, 부도확률, 건전도) | `c.credit("등급")` | [Colab](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/07_credit.ipynb) · [marimo](https://marimo.app/github.com/eddmpython/dartlab/blob/master/notebooks/marimo/07_credit.py) |
-| L2 | [Macro](https://eddmpython.github.io/dartlab/skills/engines.macro) | 시장 레벨 매크로 (사이클/금리/유동성/심리/자산 + 시나리오 110) | `dartlab.macro("사이클")` | [Colab](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/06_macro.ipynb) · [marimo](https://marimo.app/github.com/eddmpython/dartlab/blob/master/notebooks/marimo/06_macro.py) |
-| L2 | [Industry](https://eddmpython.github.io/dartlab/skills/engines.industry) | 산업 매퍼: 전 상장사 × 공정·역할·스트림 + 공급망 엣지 (산업지도 `/map`) | `c.industry()`, `dartlab.industry("semiconductor")` | — |
-| L3 | [Story](https://eddmpython.github.io/dartlab/skills/engines.story) | 조합기 (분석엔진 X): L2 5엔진 (analysis · credit · macro · quant · industry) + L1.5 scan 블록 조합. 순환참조 방지 책임자. 11 타입 × 7 템플릿 (해석 안 함) | `c.story("수익성")` | [Colab](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/08_story.ipynb) · [marimo](https://marimo.app/github.com/eddmpython/dartlab/blob/master/notebooks/marimo/08_story.py) |
-| L4 | [AI/Skills](https://eddmpython.github.io/dartlab/skills) | skills 검색 + DartLab 실행 + ref 검산을 쓰는 분석 작업대 (사람도 L4) | `dartlab.ask()` | [Colab](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/09_ai.ipynb) · [marimo](https://marimo.app/github.com/eddmpython/dartlab/blob/master/notebooks/marimo/09_ai.py) |
-| L4 | [Channel](https://eddmpython.github.io/dartlab/skills) | 외부 공유: `dartlab channel` 한 줄로 폰에서 PC dartlab 사용 | `dartlab channel` | — |
-| core | [Search](https://eddmpython.github.io/dartlab/skills/engines.search) | 공시 시맨틱 검색 *(beta: 인덱스 신선도 부족)* | `dartlab.search()` | [Colab](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/10_search.ipynb) · [marimo](https://marimo.app/github.com/eddmpython/dartlab/blob/master/notebooks/marimo/10_search.py) |
-| facade | [Listing](https://eddmpython.github.io/dartlab/skills/engines.gather) | 종목/공시/topic 카탈로그 API | `dartlab.listing()` | [Colab](https://colab.research.google.com/github/eddmpython/dartlab/blob/master/notebooks/colab/11_listing.ipynb) · [marimo](https://marimo.app/github.com/eddmpython/dartlab/blob/master/notebooks/marimo/11_listing.py) |
-| viz | [Viz](https://eddmpython.github.io/dartlab/skills/engines.viz) | 차트/다이어그램 (`emit_chart`) | `emit_chart({...})` | — |
+Cold `refresh`는 terminal generation을 동기적으로 완성하므로 즉시 반환 경로가 아니다.
+같은 `DARTLAB_HOME`을 보는 다른 프로세스의 warm `reuse`와 receipt 기반 `offline`은
+저장된 Arrow page를 owner와 source 재호출 없이 읽는다. 외부 프로세스는
+`DataHubClient` 또는 `AsyncDataHubClient`로 `/api/dataHub/v1` 계약을 호출하고,
+분산 노드는 pull worker로 같은 job ledger를 소비한다. 자세한 계약은
+[engines.dataHub](https://eddmpython.github.io/dartlab/skills/engines.dataHub)와
+[설계 문서](mainPlan/unified-data-workbench/README.md)에 있다.
+
+## 공시에서 판단까지
+
+DartLab은 DART와 EDGAR 공시를 비교 가능한 기업 데이터로 바꾸고, 다섯 개의 분석 렌즈로 근거 있는 기업 판단을 만드는 오픈소스 리서치 시스템이다.
+
+```text
+공시 원문 → Company와 Panel → 다섯 분석 렌즈 → Story, Simulate, Ask
+                              ↘ Scan과 Screener
+```
+
+- **Company와 Panel**은 회사마다 다른 공시 목차와 계정을 항목과 기간의 격자로 맞춘다.
+- **Scan과 Screener**는 같은 조건을 전체 상장사에 적용하고, 통과와 탈락 이유를 함께 남긴다.
+- **다섯 분석 렌즈**는 서로 다른 질문에 독립적으로 답한다. 하나의 종합점수로 합치지 않는다.
+- **Story, Simulate, Ask**는 렌즈가 만든 결론과 근거를 재계산하지 않고 조사 목적에 맞게 조합한다.
+
+## 다섯 분석 렌즈
+
+각 렌즈의 대표 결과에는 `conclusion`, `drivers`, `evidence`, `confidence`, `gaps`, `falsifiers`, `asOf`, `dataAsOf`가 같은 문법으로 들어간다. `confidence.score`는 수익률 예측 확률이 아니라 해당 판단에 필요한 근거 충족도다. 세부 축은 그대로 공개되며, 대표 호출에서 시작해 필요한 근거까지 내려갈 수 있다.
+
+| 렌즈 | 답하는 질문 | 대표 호출 |
+|---|---|---|
+| [Analysis](https://eddmpython.github.io/dartlab/skills/engines.analysis) | 이 회사의 사업, 이익, 현금, 자본배분과 가치는 어떻게 연결되는가? | `c.analysis("종합평가")` |
+| [Credit](https://eddmpython.github.io/dartlab/skills/engines.credit) | 이 회사는 빚을 감당할 수 있고, 무엇이 등급을 깨는가? | `c.credit("등급", detail=True)` |
+| [Industry](https://eddmpython.github.io/dartlab/skills/engines.industry) | 이 회사는 가치사슬 어디에 있고, 이익 풀과 비교기업은 누구인가? | `c.industry()` |
+| [Quant](https://eddmpython.github.io/dartlab/skills/engines.quant) | 공시 펀더멘털 변화와 시장 기대, 가격 반응 사이에 괴리가 있는가? | `c.quant("괴리")` |
+| [Macro](https://eddmpython.github.io/dartlab/skills/engines.macro) | 거시 변화가 어떤 경로로 이 회사의 재무와 가치에 전달되는가? | `c.macro("전파")` |
+
+Industry의 Company 대표 호출은 현재 검증된 DART 가치사슬 taxonomy가 있는 한국 기업을 대상으로 한다. EDGAR 기업은 Story와 공개 렌즈 bundle에서 가짜 산업 매핑 대신 `blocked` 결손과 사유를 반환한다.
+
+```python
+analysis = c.analysis("종합평가")
+credit = c.credit("등급", detail=True)
+industry = c.industry()
+quant = c.quant("괴리")
+macro = c.macro("전파")
+
+print(analysis["product"]["conclusion"])
+print(credit["product"]["gaps"])
+print(macro["product"]["time"])
+```
+
+`product`는 기존 엔진 결과에 추가되는 공통 외피다. 기존 등급, 비율, 가치사슬, 기술지표와 전파 경로는 그대로 유지되므로 세부 분석 능력을 숨기지 않는다.
+
+## 판단 워크플로
+
+| 작업 | 하는 일 | 대표 호출 |
+|---|---|---|
+| Story와 Report | 필요한 렌즈의 독립 결론, 근거, 한계를 한 보고서에 배치 | `c.story(type="full")` |
+| Simulate | 결정론 시나리오와 렌즈 가정을 하나의 가정 원장으로 추적 | `c.simulate(scenario="adverse")` |
+| Ask | 렌즈 결론과 기준시점을 `valueRef`, `dateRef`로 인용해 설명 | `dartlab.ask("삼성전자 하방 위험을 근거와 함께 분석해줘")` |
+| Scan과 Screener | 전체 상장사에 같은 조건을 적용하고 제외 이유를 설명 | `dartlab.scan("screen", "resilientCompounders", explain=True)` |
+
+Story JSON과 ReportModel은 렌즈별 원문을 `lensProducts`에 보존한다. 렌즈 간 단일 등급은 만들지 않으며, `usable`, `partial`, `blocked` 상태와 데이터 결손을 그대로 노출한다.
 
 > 모든 노트북: [marimo](notebooks/marimo/) · [colab](notebooks/colab/) · [![Open in marimo](https://marimo.io/shield.svg)](https://marimo.app/github.com/eddmpython/dartlab/blob/master/notebooks/marimo)
 
@@ -327,13 +422,13 @@ dartlab.scan("account", "매출액")      # 전종목 매출액 시계열
 ```python
 import dartlab
 
-# 주석·서술 비교 — disclosureKey·scope·leafType 정렬키로 회사 간 한 행 정렬
+# 주석·서술 비교 - disclosureKey·scope·leafType 정렬키로 회사 간 한 행 정렬
 dartlab.compare(["005930", "000660"], topic="재고")
 
-# 재무제표 셀 비교 — acode 단위, 값은 원 환산 (단위·라벨 착시 제거)
+# 재무제표 셀 비교 - acode 단위, 값은 원 환산 (단위·라벨 착시 제거)
 dartlab.compare(["005930", "000660"], topic="is", freq="year")
 
-# 다기간 — 셀 컬럼이 {code}␟{period} 로 회사·시점 namespace
+# 다기간 - 셀 컬럼이 {code}␟{period} 로 회사·시점 namespace
 dartlab.compare(["005930", "000660"], topic="유형자산", period=["2025Q4", "2024Q4"])
 ```
 
@@ -372,55 +467,98 @@ for batch in a.iterNews("삼성전자", days=30, batchSize=100):
 
 > 설계: [engines.analysis](https://eddmpython.github.io/dartlab/skills)
 
-수익구조 → 수익성 → 성장성 → 안정성 → 현금흐름 → 자본배분 → 가치평가 → 전망. 원본 재무제표를 인과 서사로 가공한다.
+**이 회사의 사업, 이익, 현금, 자본배분과 가치는 어떻게 연결되는가?**
+
+대표 결과는 사업, 이익, 현금, 회복력, 자본배분, 가치, 위험의 직접 계산을 한 흐름으로 묶는다. 필수 영역의 데이터가 없으면 판단을 막거나 `partial`로 낮추며, 세부 22축은 그대로 drilldown할 수 있다.
 
 ```python
-c.analysis("financial", "수익성")       # 수익성 분석
-c.analysis("수익성")                     # 단축형 (financial 자동)
+result = c.analysis("종합평가")
+print(result["product"]["conclusion"])
+print(result["product"]["drivers"])
+print(result["product"]["gaps"])
 
-print(c.credit())                            # 사용 가능한 축 가이드 DataFrame (self-discovery)
-c.credit("등급")                             # dCR-AA, 건전도 93/100
-c.credit("등급", detail=True)                # 등급 + 서사 + 지표 시계열
+c.analysis("수익성")                  # 세부 축
+c.analysis("현금흐름")                # 세부 축
+c.analysis("가치평가")                # 세부 축
 ```
 
 ### Credit: 독립 신용분석
 
 > 설계: [engines.credit](https://eddmpython.github.io/dartlab/skills) | 보고서: [eddmpython.github.io/dartlab/blog/credit-reports](https://eddmpython.github.io/dartlab/blog/credit-reports)
 
-3-Track 모델(일반/금융/지주) + Notch Adjustment + CHS 시장 보정 + 별도재무 블렌딩.
+**이 회사는 빚을 감당할 수 있고, 무엇이 등급을 깨는가?**
+
+3-Track 모델(일반/금융/지주), Notch Adjustment, CHS 시장 보정과 별도재무 블렌딩으로 dCR 등급을 만든다. 대표 제품은 등급과 부도확률뿐 아니라 동인, 명시적 가정, 하방 스트레스와 tripwire를 함께 반환한다.
 
 **79개사 검증: 대기업 87% (26/30), 중대형 82% (41/50), 전체 70% (55/79, v5.0 과대평가 수정 후 재측정 예정). 삼성전자 AA+ 정확 일치.** 검증 방법론은 [methodology](https://eddmpython.github.io/dartlab/skills/operation.methodology) 참조.
 
 ```python
-print(c.credit())            # self-discovery — 사용 가능한 축 + 종합 등급
+print(c.credit())            # 세부 축 가이드
 
-cr = c.credit("등급")        # 종합 등급
+cr = c.credit("등급", detail=True)
 print(cr["grade"])          # dCR-AA+
-print(cr["healthScore"])    # 96 (0-100, 높을수록 건전)
-print(cr["pdEstimate"])     # 0.01% 부도확률
-
-cr = c.credit("등급", detail=True)  # 등급 + 서사 + 지표 + 괴리 설명
-print(cr["divergenceExplanation"])  # 신평사와 왜 다른지
+print(cr["product"]["conclusion"])
+print(cr["product"]["scenarios"])
+print(cr["product"]["falsifiers"])
 ```
 
 신용분석 보고서 발간 (credit 서사 + 신평사 대조가 story 5막에 자동 통합):
 
 ```python
 from dartlab.story.publisher import publishReport
-publishReport("005930")               # 6막 보고서 (credit narrative + audit 포함)
+publishReport("005930")
 ```
 
-### Macro: 종목코드 없이 경제를 읽다
+### Industry: 가치사슬과 비교기업
+
+> 설계: [engines.industry](https://eddmpython.github.io/dartlab/skills)
+
+**이 회사는 가치사슬 어디에 있고, 이익 풀과 비교기업은 누구인가?**
+
+산업 이름만 붙이는 분류기가 아니다. 공정과 역할, upstream과 downstream 관계, 동종 stage, profit pool과 관계 근거를 한 제품으로 반환한다. 직접 관계나 최신성이 부족하면 그 범위를 `gaps`에 남긴다.
+
+```python
+position = c.industry()
+print(position["product"]["conclusion"])
+print(position["peers"])
+print(position["relationships"])
+```
+
+### Quant: 기대와 가격 반응의 괴리
+
+> 설계: [engines.quant](https://eddmpython.github.io/dartlab/skills)
+
+**공시 펀더멘털 변화와 시장 기대, 가격 반응 사이에 괴리가 있는가?**
+
+대표 제품은 공시 이익 변화, 횡단면 이익 서프라이즈 프록시, 실제 가격 반응을 비교해 미반영, 확인, 과열, 악화 반영 또는 판단 보류로 분류한다. 실제 애널리스트 컨센서스가 없는 경우 프록시를 컨센서스로 가장하지 않는다.
+
+```python
+gap = c.quant("괴리")
+print(gap["classification"])
+print(gap["product"]["conclusion"])
+print(gap["product"]["gaps"])
+
+c.quant("판단")                    # 세부 가격 판단
+c.quant("베타", benchmarkMode="sector")
+```
+
+### Macro: 기업까지 닿는 거시 전달경로
 
 > 설계: [engines.macro](https://eddmpython.github.io/dartlab/skills)
 
-Company 없이 경제 환경을 분석한다. `import dartlab` 하나로.
+**거시 변화가 어떤 경로로 이 회사의 재무와 가치에 전달되는가?**
+
+대표 제품은 최신 거시 관측에서 산업 노출, 회사 재무 근거, 가치 레버까지 이어지는 edge를 보여준다. 기업 직접 근거가 없으면 sector prior 또는 template 상태로 남겨 시장 해석과 기업 해석을 구분한다. 시장 자체를 읽는 세부 축도 그대로 제공한다.
 
 ```python
-dartlab.macro("사이클")          # 경기 4국면 판별
-dartlab.macro("금리")            # 금리 + Nelson-Siegel 수익률곡선
-dartlab.macro("예측")            # LEI + 침체확률 + Hamilton RS + GDP Nowcast
-dartlab.macro("종합")            # 매크로 종합 + 투자전략 + 포트폴리오 매핑
+transmission = c.macro("전파")
+print(transmission["product"]["conclusion"])
+print(transmission["edges"])
+print(transmission["product"]["gaps"])
+
+dartlab.macro("사이클")          # 시장 국면
+dartlab.macro("금리")            # 금리와 수익률곡선
+dartlab.macro("위기")            # 금융 건전성
 ```
 
 시장 사이클·금리·유동성·심리·자산 신호와 글로벌 거시 분석 방법론(Hamilton EM, Kalman DFM, Nelson-Siegel, Cleveland Fed 프로빗, Sahm Rule, BIS Credit-to-GDP)을 **numpy만으로 직접 구현**.
@@ -431,11 +569,17 @@ dartlab.macro("종합")            # 매크로 종합 + 투자전략 + 포트폴
 
 > 설계: [engines.story](https://eddmpython.github.io/dartlab/skills)
 
-analysis를 구조화 보고서로 조립. 4개 출력 형식: rich(터미널), html, markdown, json.
+필요한 렌즈의 제품 결과를 재계산 없이 구조화 보고서로 조립한다. 각 렌즈의 결론, 근거 충족도, 시점과 결손은 독립적으로 유지하며 단일 종합점수는 만들지 않는다. 출력 형식은 rich, html, markdown, json 네 가지다.
 
 ```python
-c.story()              # 전체 보고서
-dartlab.ask()            # 보고서 + AI 종합의견
+story = c.story(type="full")
+print(story.lensProducts["analysis"]["conclusion"])
+print(story.toMarkdown())
+
+simulation = c.simulate(scenario="adverse")
+print(simulation.assumptionLedger)
+
+dartlab.ask("삼성전자 하방 위험을 근거와 함께 분석해줘")
 ```
 
 > 삼성전자 보고서 미리보기: *"매출 +23.8% 성장, 영업이익률 8.6%→21.4% 반등. FCF 양수 전환, ROIC > WACC, 재투자가 가치를 창출하는 구간."*
@@ -448,7 +592,7 @@ dartlab.ask()            # 보고서 + AI 종합의견
 
 ```python
 from dartlab.story.publisher import publishReport
-publishReport("068270")    # 셀트리온 — 6막 기업이야기 자동 발간
+publishReport("068270")    # 셀트리온 - 6막 기업이야기 자동 발간
 ```
 
 **발간된 기업이야기:**
@@ -540,12 +684,12 @@ c.panel("매출")                          c.panel("revenue")
 `uvx dartlab mcp` 의 cold start 가 Claude Desktop attach timeout 안에 들어가지 못하므로 **사전 설치 + entry point 직접 호출** 이 정본입니다. `command: "python"` 은 Microsoft Store Python 환경에서 spawn ENOENT 로 실패할 수 있어 (이슈 [#28](https://github.com/eddmpython/dartlab/issues/28)), `command: "dartlab"` 으로 entry point 를 직접 호출하는 게 가장 견고합니다.
 
 ```bash
-# 1. 사전 설치 (한 번만) — .local/bin/dartlab(.exe) entry point 생성
+# 1. 사전 설치 (한 번만) - .local/bin/dartlab(.exe) entry point 생성
 uv tool install dartlab        # 또는: pipx install dartlab
 ```
 
 ```jsonc
-// 2-A. Claude Desktop — %APPDATA%\Claude\claude_desktop_config.json
+// 2-A. Claude Desktop - %APPDATA%\Claude\claude_desktop_config.json
 {
   "mcpServers": {
     "dartlab": {
@@ -767,9 +911,9 @@ e.filings("AAPL", forms=["10-K", "10-Q"])
 |---|---|---|
 | **단일 base install: `[extras]` 분리 없음** | `pip install dartlab` 한 번에 분석·서버·MCP·viz·AI provider 가 함께 들어온다 | 분석 도구에 "이것도 설치하세요" 가 누적되면 첫 사용까지 마찰이 늘어난다. 단일 진입 SSOT 가 우선. wheel 크기·cold start 비용은 PEP 562 lazy load 와 pyodide 분기로 흡수한다. |
 | **사전 구축 데이터, API 키 0 으로 시작** | `Company("005930")` 호출 시 HuggingFace 에서 자동 다운로드 → 로컬 캐시. DART API 키는 *재수집* 만 필요 | "키 만들고 환경변수 세팅" 단계를 1순위 사용 경로에서 제거. 키 발급은 `dartlab collect` 같은 raw 재수집 흐름에서만 등장. |
-| **공시 본문은 데이터, 지시 아님** | 외부 본문은 직렬화 시 `[EXTERNAL CONTENT START — untrusted ...]` 마커로 자동 감쌈 | DART/EDGAR/뉴스 본문 안의 "이전 지시 무시" 같은 패턴이 AI 동작을 바꾸지 못하도록 직렬화 단에서 강제. 마커 안 숫자·날짜·고유명사는 1차 출처 재검증 후 인용. |
+| **공시 본문은 데이터, 지시 아님** | 외부 본문은 직렬화 시 `[EXTERNAL CONTENT START - untrusted ...]` 마커로 자동 감쌈 | DART/EDGAR/뉴스 본문 안의 "이전 지시 무시" 같은 패턴이 AI 동작을 바꾸지 못하도록 직렬화 단에서 강제. 마커 안 숫자·날짜·고유명사는 1차 출처 재검증 후 인용. |
 | **AI 엔진 = chat-native + LLM 자율 tool calling** | `BRIEF/WORK/CRITIQUE/COMPOSE/GATE/HARVEST` 식 고정 노드 그래프 없음. 본체는 `ai/agent.py`, 능력은 `ai/tools/` | 0.7.15 에서 15,420 줄 삭제로 회귀 차단. graph 식 강박은 verify 강제·workbench 본체화 회귀를 부르고 LLM 자율성을 잠근다. |
-| **L0~L4 단방향 import (4 형제 cross 금지)** | core ← gather/providers ← scan/frame/synth/reference ← analysis 5종 ← story ← ai/mcp | `import-linter` + `dartlabGuard.py strict --scope l0-l15` 가 PR 게이트. 외부 기여자가 어디에 코드를 더할지 한 그림으로 판단 가능. |
+| **내부 단방향 import** | 제품 설명과 별개로 코드 폴더는 단방향 의존을 유지한다 | 자세한 레이어와 기여 규율은 [ARCHITECTURE.md](ARCHITECTURE.md)에 둔다. `import-linter`와 `dartlabGuard.py strict --scope l0-l15`가 PR 게이트다. |
 | **테스트 직렬화 강제 (Polars OOM 가드)** | `pytest -v` 전체 호출 금지. `tests/test-lock.sh tests/ -m "<marker>"` 경유 | Company 1개 ≈ 200~500 MB Rust 힙은 `gc.collect()` 회수 불가. CI 와 로컬을 같은 lock wrapper 명령으로 통일. |
 | **메시지 한국어 우선, API 영어** | `Company`, `pastInsight`, `analysis` 등 symbol 은 영어. CLI 에러·진행 메시지는 한국어 | classifier 에 `Natural Language :: Korean / English` 둘 다 선언. PyPI 영어 사용자 대상 영문 진입은 [README_EN.md](README_EN.md) 와 영문 docstring 으로 별도 트랙. |
 | **단일 SSOT: Skill OS** | 외부 LLM·사용자가 `capabilities()` 한 줄로 304 specs 카탈로그 질의 | 코드·문서·계약을 같은 파일 (`src/dartlab/skills/specs/**`) 로 운영. README ↔ docs ↔ 코드 drift 를 SSOT 한 곳에서 방지. |
@@ -787,7 +931,7 @@ c = dartlab.Company("005930")   # HuggingFace 자동 다운로드 (최초 ~수�
 c.panel("IS")                   # 손익계산서, 분기 기본
 ```
 
-세 줄: API 키 0, 환경변수 0. 영문 사용자는 [README_EN.md](README_EN.md), 다른 진입 경로 (CLI · AI · MCP) 는 위 ["두 가지 시작점"](#두-가지-시작점) 참조.
+세 줄: API 키 0, 환경변수 0. 영문 사용자는 [README_EN.md](README_EN.md), 다른 진입 경로 (CLI · AI · MCP) 는 위 [세 가지 시작점](#세-가지-시작점) 참조.
 
 ## 기여
 
