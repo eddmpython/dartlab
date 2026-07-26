@@ -8,7 +8,7 @@ from pathlib import Path
 
 import polars as pl
 
-from dartlab import config as _dartlabConfig
+import dartlab.config as _dartlabConfig
 from dartlab.core.dataConfig import DATA_RELEASES
 from dartlab.core.dataLoader import loadEdgarListedUniverse
 from dartlab.core.edgarClient import (

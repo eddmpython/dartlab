@@ -26,6 +26,7 @@ import 가 0 인 것. lazy facade 로 빠진 후 어떤 모듈이 `from dartlab 
 from __future__ import annotations
 
 import argparse
+import ast
 import re
 import sys
 from collections import defaultdict
@@ -89,18 +90,32 @@ def _findStale(file: Path) -> list[tuple[int, str, bool]]:
         source = file.read_text(encoding="utf-8")
     except (OSError, UnicodeDecodeError):
         return []
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return []
+
+    # 정규식은 docstring 안의 사용 예시도 import 로 셌다. 실제로 `providers/{dart,edgar}/
+    # openapi/__init__.py` 두 항목은 모듈 docstring 3 번째 줄의 예제였다. AST 는 문법
+    # 구조를 보므로 문자열 안의 같은 문구를 import 로 오인하지 않는다.
     out: list[tuple[int, str, bool]] = []
-    for m in _RE_FROM_TOP.finditer(source):
-        # 줄 번호 계산 (offset → line). m.start() 는 ^ (line start) — 첫 글자가 공백이면 indented.
-        line = source.count("\n", 0, m.start()) + 1
-        names = m.group(1).strip()
-        moduleLevel = source[m.start() : m.start() + 1] not in (" ", "\t")
-        out.append((line, f"from dartlab import {names}", moduleLevel))
-    for m in _RE_IMPORT_TOP.finditer(source):
-        line = source.count("\n", 0, m.start()) + 1
-        snippet = source[m.start() : m.end()].strip()
-        moduleLevel = source[m.start() : m.start() + 1] not in (" ", "\t")
-        out.append((line, snippet, moduleLevel))
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ImportFrom):
+            if node.module != "dartlab" or (node.level or 0) > 0:
+                continue
+            names = ", ".join(
+                alias.name if alias.asname is None else f"{alias.name} as {alias.asname}" for alias in node.names
+            )
+            snippet = f"from dartlab import {names}"
+        elif isinstance(node, ast.Import):
+            aliases = [alias for alias in node.names if alias.name == "dartlab"]
+            if not aliases:
+                continue
+            alias = aliases[0]
+            snippet = "import dartlab" if alias.asname is None else f"import dartlab as {alias.asname}"
+        else:
+            continue
+        out.append((node.lineno, snippet, node.col_offset == 0))
     return out
 
 

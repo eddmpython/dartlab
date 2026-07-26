@@ -3,7 +3,7 @@ from __future__ import annotations
 import re as _re
 from typing import Any
 
-from dartlab import Company
+from dartlab.company import Company
 
 from ..api.common import HANDLED_API_ERRORS
 from ..cache import companyCache

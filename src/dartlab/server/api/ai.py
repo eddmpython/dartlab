@@ -9,7 +9,6 @@ from typing import Any
 from fastapi import APIRouter, HTTPException, Query, Request
 from sse_starlette.sse import EventSourceResponse
 
-import dartlab
 from dartlab.ai.settings import (
     buildProviderCatalog,
     getProfileManager,
@@ -17,6 +16,18 @@ from dartlab.ai.settings import (
     publicProviderIds,
 )
 from dartlab.ai.settings.modelResolver import fallbackModels, isOpenaiChatModel, sortOpenaiModels
+
+
+def _packageVersion() -> str:
+    """설치된 dartlab 버전. facade 를 거치지 않고 패키지 메타데이터에서 직접 읽는다."""
+
+    from importlib.metadata import PackageNotFoundError, version
+
+    try:
+        return version("dartlab")
+    except PackageNotFoundError:
+        return "0.0.0"
+
 
 from ..chat import OLLAMA_MODEL_GUIDE
 from ..models import (
@@ -138,7 +149,7 @@ def apiStatus(
     )
     codex_detail = buildCodexDetail(probe=probe and (target_provider is None or target_provider == "codex"))
 
-    version = dartlab.__version__ if hasattr(dartlab, "__version__") else "unknown"
+    version = _packageVersion()
 
     # Room 정보 (터널 모드에서 협업 세션 활성 시)
     room_info = None

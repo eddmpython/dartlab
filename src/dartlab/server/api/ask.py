@@ -10,8 +10,7 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 from sse_starlette.sse import EventSourceResponse
 
-import dartlab
-from dartlab import config as dartlab_config
+import dartlab.config as dartlab_config
 
 from ..agentGateway import streamAgentRun
 from ..models import AgentRunMessage, AgentRunRequest, AskRequest
@@ -43,7 +42,7 @@ class CopilotRequest(BaseModel):
 @router.post("/api/ask")
 async def apiAsk(req: AskRequest):
     """LLM 질문 — AI가 질문 의도를 자율 판단하고 종목/매크로/비교를 결정한다."""
-    dartlab.verbose = False
+    dartlab_config.verbose = False
 
     if req.stream:
         return EventSourceResponse(
@@ -100,7 +99,7 @@ async def apiCompanyCopilot(stockCode: str, req: CopilotRequest):
     함께 받아 시스템 프롬프트의 evidence 진입점으로 주입한다. 응답은 SSE
     (stream=True) 또는 단일 plain_chat (stream=False).
     """
-    dartlab.verbose = False
+    dartlab_config.verbose = False
 
     if req.stream:
         return EventSourceResponse(

@@ -10,7 +10,7 @@ from __future__ import annotations
 import time
 from collections import OrderedDict
 
-from dartlab import Company
+from dartlab.company import Company
 
 MAX_SIZE = 5
 BASE_TTL = 600

@@ -1,18 +1,8 @@
 {
   "violations": [
-    "src/dartlab/gather/edgar/saver.py::from dartlab import config as _dartlabConfig",
-    "src/dartlab/providers/dart/openapi/__init__.py::from dartlab import OpenDart",
-    "src/dartlab/providers/edgar/openapi/__init__.py::from dartlab import OpenEdgar",
-    "src/dartlab/server/api/ai.py::import dartlab",
-    "src/dartlab/server/api/ask.py::from dartlab import config as dartlab_config",
-    "src/dartlab/server/api/ask.py::import dartlab",
     "src/dartlab/server/api/company.py::import dartlab",
-    "src/dartlab/server/api/data.py::from dartlab import Company",
-    "src/dartlab/server/api/data.py::import dartlab",
     "src/dartlab/server/api/dl.py::import dartlab",
-    "src/dartlab/server/cache.py::from dartlab import Company",
-    "src/dartlab/server/services/aiAnalysis.py::from dartlab import Company",
-    "src/dartlab/server/services/companyApi.py::from dartlab import Company"
+    "src/dartlab/server/services/aiAnalysis.py::from dartlab import Company"
   ],
-  "_note": "module-level(col-0) stale top-level dartlab import 알려진 사이트 (relpath::snippet). function-local lazy(sandbox/cycle-break)는 제외 — 의도된 패턴. 본 목록은 ratchet 부채(신규 col-0 차단·목표 0, server/skills.add* codemod 후 축소). (debt-honesty P1-2)"
+  "_note": "module-level(col-0) stale top-level dartlab import 부채 원장. function-local lazy 는 의도된 패턴이라 제외한다. 13 건에서 3 건으로 줄였다. 사라진 둘은 애초에 오탐이었고(모듈 docstring 안 사용 예시를 정규식이 import 로 셌다) 나머지 여덟은 서브패키지 직접 import 로 바꿨다. 남은 셋 중 `server/api/dl.py` 는 capability 해석 루트라 의도적이고, `server/api/company.py` 는 facade 안에 정의된 `searchName` 을 먼저 모듈로 빼야 닫힌다. 신규 col-0 은 차단."
 }

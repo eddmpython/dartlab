@@ -84,27 +84,34 @@ _PYTEST_MARKER_RE = re.compile(r"@pytest\.mark\.(\w+)")
 _TEST_FN_RE = re.compile(r"^(?:async\s+)?def\s+(test\w*)\s*\(", re.MULTILINE)
 
 
+def _countEntries(value: object) -> int:
+    """항목 리스트를 구조에 상관없이 센다.
+
+    예전에는 `violations`, `known`, `protectedCompanyFacadeDebt` 세 모양만 알아봤다.
+    그런데 원장마다 키 이름이 달라서 `missing`, `over_split`, `under_split`,
+    `twoCycles`, `asymmetry` 같은 이름을 쓰는 열네 개 원장이 전부 0 으로 집계됐다.
+    가장 큰 `testCoverage` 1,106 건이 통째로 0 이었다. 이름을 하나씩 등록하는 방식은
+    새 원장이 생길 때마다 같은 침묵을 반복하므로 모양으로 센다.
+    """
+
+    if isinstance(value, list):
+        return len(value)
+    if isinstance(value, dict):
+        return sum(_countEntries(item) for key, item in value.items() if not key.startswith("_"))
+    return 0
+
+
 def _countViolations(baselinePath: Path) -> int:
-    """단일 baseline json 의 위반 항목 수 — 두 가지 구조 지원."""
+    """단일 baseline json 의 위반 항목 수."""
     if not baselinePath.exists():
         return 0
     try:
-        # utf-8-sig — 일부 baseline(예: testCoverage.json) 이 BOM 으로 적혀 plain
-        # utf-8 디코드가 깨진다. BOM 유무 모두 관용 (정직 경로 재연결로 표면화됨).
+        # utf-8-sig. 일부 baseline(예 testCoverage.json)이 BOM 으로 적혀 plain utf-8
+        # 디코드가 깨진다. BOM 유무 모두 관용한다.
         data = json.loads(baselinePath.read_text(encoding="utf-8-sig"))
     except json.JSONDecodeError as exc:
-        raise SystemExit(f"[measureProgress] baseline 손상: {baselinePath} — {exc}") from exc
-    if isinstance(data, dict) and isinstance(data.get("violations"), list):
-        return len(data["violations"])
-    total = 0
-    for key in ("known", "protectedCompanyFacadeDebt"):
-        section = data.get(key) if isinstance(data, dict) else None
-        if not isinstance(section, dict):
-            continue
-        for value in section.values():
-            if isinstance(value, list):
-                total += len(value)
-    return total
+        raise SystemExit(f"[measureProgress] baseline 손상: {baselinePath} ({exc})") from exc
+    return _countEntries(data)
 
 
 def _measureBaselineDebt() -> dict:

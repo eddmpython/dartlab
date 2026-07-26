@@ -10,8 +10,19 @@ from typing import Any
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import FileResponse
 
-import dartlab
-from dartlab import Company
+from dartlab.company import Company
+
+
+def _packageVersion() -> str:
+    """설치된 dartlab 버전. facade 를 거치지 않고 패키지 메타데이터에서 직접 읽는다."""
+
+    from importlib.metadata import PackageNotFoundError, version
+
+    try:
+        return version("dartlab")
+    except PackageNotFoundError:
+        return "0.0.0"
+
 
 from .common import (
     HANDLED_API_ERRORS,
@@ -172,7 +183,7 @@ def apiDataStats():
     from dartlab.core.dataLoader import _dataDir
 
     stats: dict[str, Any] = {
-        "version": dartlab.__version__ if hasattr(dartlab, "__version__") else "unknown",
+        "version": _packageVersion(),
     }
     for category in ("panel", "finance"):
         try:
