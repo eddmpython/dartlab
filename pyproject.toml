@@ -186,6 +186,12 @@ ignore = ["E402", "E501", "E741", "F841", "F401"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# ⚠ `--import-mode=importlib` 는 rootdir 을 sys.path 에 넣지 않는다. 그래서 spawn 자식이
+# target 을 unpickle 할 때 `tests` 패키지를 못 찾고 ModuleNotFoundError 로 죽는다.
+# 로컬 `python -m pytest` 는 CWD 가 sys.path[0] 이라 우연히 통과했고 CI 는 콘솔 스크립트라
+# 실패했다. multiprocessing 은 부모 sys.path 를 preparation data 로 자식에 전달하므로
+# 여기서 한 번 넣으면 두 경로가 같아진다. 제거하면 spawn 회귀 5 건이 CI 에서만 되살아난다.
+pythonpath = ["."]
 python_files = ["test_*.py", "test*.py", "bench_*.py", "bench*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*", "test*"]
