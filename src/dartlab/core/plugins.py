@@ -74,6 +74,11 @@ class PluginDescriptor:
     schema: dict[str, Any] = field(default_factory=dict)
 
 
+# 이름별 descriptor 단일 인스턴스. `loadPlugin` 의 메타 보강이 이후 조회에
+# 살아남게 하는 유일한 장치다.
+_DESCRIPTOR_CACHE: dict[str, PluginDescriptor] = {}
+
+
 def discoverPlugins() -> list[PluginDescriptor]:  # noqa: N802  (Python convention)
     """`dartlab.plugins` entry group 의 plugin 목록 메타 수집 (T10-4).
 
@@ -110,6 +115,9 @@ def discoverPlugins() -> list[PluginDescriptor]:  # noqa: N802  (Python conventi
     Raises:
         없음 — 실패는 silent skip.
     """
+    # 이름별 단일 인스턴스를 공유한다. 예전에는 호출마다 새 객체를 만들어서
+    # `loadPlugin` 이 보강한 kind, schema, docstring 이 그 자리에서 버려졌고
+    # `listPlugins` 와 `describePlugin` 은 언제나 기본값만 내보냈다.
     descriptors: dict[str, PluginDescriptor] = {}
     try:
         eps = entry_points(group=_ENTRY_GROUP)
@@ -133,6 +141,14 @@ def discoverPlugins() -> list[PluginDescriptor]:  # noqa: N802  (Python conventi
         )
         descriptors[ep.name] = descriptor
 
+    for name, descriptor in descriptors.items():
+        cached = _DESCRIPTOR_CACHE.get(name)
+        if cached is not None and cached.moduleName == descriptor.moduleName:
+            descriptors[name] = cached
+        else:
+            _DESCRIPTOR_CACHE[name] = descriptor
+    for stale in set(_DESCRIPTOR_CACHE) - set(descriptors):
+        _DESCRIPTOR_CACHE.pop(stale, None)
     return sorted(descriptors.values(), key=lambda d: d.name)
 
 

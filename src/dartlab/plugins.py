@@ -196,3 +196,24 @@ def resetForTesting() -> None:
     _loadedPlugins.clear()
     _loadedNames.clear()
     _discovered = False
+
+
+# `help` 가 `dartlab.plugins.listPlugins` 를 안내하는데 그 이름이 여기 없어서
+# 안내대로 따라 치면 AttributeError 였다. 조회 구현은 `core.plugins` 가 이미
+# 가지고 있으므로 여기서 그 이름을 세워 안내가 실재하게 만든다. 두 모듈이 같은
+# entry point group 을 각자 읽는 문제는 외부 플러그인 계약을 바꾸는 일이라
+# 여기서 손대지 않는다.
+def listPlugins() -> list[dict[str, Any]]:
+    """설치된 dartlab plugin 목록을 메타와 함께 돌려준다."""
+
+    from dartlab.core.plugins import listPlugins as _listPlugins
+
+    return _listPlugins()
+
+
+def describePlugin(name: str) -> dict[str, Any]:
+    """plugin 하나의 상세 메타를 돌려준다."""
+
+    from dartlab.core.plugins import describePlugin as _describePlugin
+
+    return _describePlugin(name)
