@@ -137,6 +137,10 @@ GATES: dict[str, Gate] = {
             "python -X utf8 blog/_scripts/blogMediaGate.py --ref HEAD && "
             "python -X utf8 tests/audit/workspaceHygiene.py && "
             "python -X utf8 tests/audit/checkSilentFail.py && "
+            # checkSilentFail 은 "파일 부재 시 빈 값" 한 종류만 본다. 라이브러리에서
+            # 실제로 지배적인 침묵은 광범위 catch 가 원인을 버리고 대체값을 돌려주는
+            # 모양이라 별도로 센다. 통과 조건은 흐름 변경이 아니라 원인 한 줄 기록이다.
+            "python -X utf8 tests/audit/silentSubstitute.py && "
             "python tests/audit/stale_references.py && "
             "python -X utf8 tests/audit/lint_camelcase_ast.py --changed --strict && "
             '(python -X utf8 tests/audit/cycleScan.py || python -c "pass") && '

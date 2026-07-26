@@ -45,7 +45,9 @@ def _cikToTicker() -> dict[str, str]:
             if cik and ticker and cik not in out:
                 out[cik] = ticker
         return out
-    except Exception:  # noqa: BLE001 — 맵 부재 → 빈 dict(stmt 발행 skip, raw 빌드는 진행)
+    # 맵 부재면 stmt 발행만 skip 하고 raw 빌드는 진행
+    except Exception as exc:  # noqa: BLE001
+        print(f"[pipeline] edgar cik→ticker 맵 산출 실패: {type(exc).__name__}: {exc}", flush=True)
         return {}
 
 
@@ -130,7 +132,9 @@ def _universeCiks() -> set[str]:
         tk = pl.read_parquet(Path(cfg.dataDir) / "edgar" / "tickers.parquet")
         hit = tk.filter(pl.col("ticker").cast(pl.Utf8).str.to_uppercase().is_in(list(uni)))
         return {str(c).strip().zfill(10) for c in hit["cik"].to_list()}
-    except Exception:  # noqa: BLE001 — universe 산출 실패 → 빈 set(발행 skip, 빌드는 진행)
+    # universe 산출 실패면 발행만 skip 하고 빌드는 진행
+    except Exception as exc:  # noqa: BLE001
+        print(f"[pipeline] edgar universe CIK 산출 실패: {type(exc).__name__}: {exc}", flush=True)
         return set()
 
 

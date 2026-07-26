@@ -421,7 +421,9 @@ def _lastObsDate(g, seriesId: str) -> str | None:
             return None
         dates = df.get_column("date").to_list()
         return str(max(dates))[:10] if dates else None
-    except Exception:  # noqa: BLE001 — asOf 보조 정보·실패는 None
+    # asOf 보조 정보라 실패해도 None 으로 진행
+    except Exception as exc:  # noqa: BLE001
+        print(f"[pipeline] macro 최종 관측일 산출 실패: {type(exc).__name__}: {exc}", flush=True)
         return None
 
 

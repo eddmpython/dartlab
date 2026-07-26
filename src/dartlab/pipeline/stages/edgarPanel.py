@@ -64,7 +64,10 @@ def _universeTickerByCik() -> dict[str, list[str]]:
         # (IPO)의 CIK 가 빠져 daily-index 의 그 공시가 조용히 누락되고 0 changed 로 녹색 보고된다.
         # forceUpdate fetch 실패 시엔 universe.updateListedUniverse 가 stale 캐시를 서빙(무중단).
         uni = loadEdgarListedUniverse(forceUpdate=True)
-    except Exception:  # noqa: BLE001 — universe 부재면 빈 맵(상위가 0 changed 로 보고)
+    # universe 부재면 상위가 0 changed 로 보고한다.
+    except Exception as exc:  # noqa: BLE001
+        # 이 자리의 침묵은 신규 상장 공시 누락을 녹색 보고로 바꿔 놓기 때문에 반드시 남긴다.
+        print(f"[pipeline] edgarPanel universe 로드 실패: {type(exc).__name__}: {exc}", flush=True)
         return {}
     if "cik" not in uni.columns or "ticker" not in uni.columns:
         return {}

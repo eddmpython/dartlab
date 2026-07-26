@@ -49,7 +49,9 @@ def _universeTickers() -> list[str]:
             if tk and tk not in seen:
                 seen[tk] = None
         return list(seen)
-    except Exception:  # noqa: BLE001 — 유니버스 산출 실패 → 빈 목록(skip, 빌드는 격리)
+    # 유니버스 산출 실패는 skip 하고 빌드는 격리
+    except Exception as exc:  # noqa: BLE001
+        print(f"[pipeline] edgarPrices universe 산출 실패: {type(exc).__name__}: {exc}", flush=True)
         return []
 
 

@@ -53,7 +53,9 @@ def _hfFileSet(repo: str, *, token: str | None) -> set[str] | None:
 
     try:
         return set(retryHfCall(HfApi(token=token).list_repo_files, repo_id=repo, repo_type="dataset"))
-    except Exception:  # noqa: BLE001 — listing 실패 → None(호출부: 모든 404 transient 취급, 보수적)
+    # listing 실패는 None(호출부가 404 전부 transient 취급)
+    except Exception as exc:  # noqa: BLE001
+        print(f"[pipeline] dartZip HF listing 실패: {type(exc).__name__}: {exc}", flush=True)
         return None
 
 
@@ -475,7 +477,9 @@ def _panelRceptsFromHf(repo: str, relDir: str, code: str, *, token: str | None) 
             tbl = pq.read_table(fh, columns=["rceptNo"])
     except FileNotFoundError:
         return None  # 신규 종목 — panel 미존재(파일집합 reconcile 영역, 본 rcept reconcile 대상 아님)
-    except Exception:  # noqa: BLE001 — 일시 실패(네트워크/5xx/스키마) → skip(다음 run 회복)
+    # 일시 실패는 skip 후 다음 run 회복
+    except Exception as exc:  # noqa: BLE001
+        print(f"[pipeline] dartZip panel rcept 조회 실패: {type(exc).__name__}: {exc}", flush=True)
         return None
     return {str(x) for x in tbl.column("rceptNo").to_pylist() if x}
 
@@ -507,7 +511,9 @@ def _fullPeriodicRcepts(client, code: str) -> set[str]:
 
     try:
         df = listFilings(client, code, start="20110101", filingType="A", fetchAll=True)
-    except Exception:  # noqa: BLE001 — 개별 종목 조회 실패 → 빈 set(다음 run 회복)
+    # 개별 종목 실패는 빈 set 후 다음 run 회복
+    except Exception as exc:  # noqa: BLE001
+        print(f"[pipeline] dartZip 정기보고서 rcept 조회 실패: {type(exc).__name__}: {exc}", flush=True)
         return set()
     if df.is_empty() or "report_nm" not in df.columns or "rcept_no" not in df.columns:
         return set()
