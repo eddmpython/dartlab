@@ -26,7 +26,7 @@ How:
     Parent가 임시 artifact를 만들고 child 결과를 Arrow IPC와 SHA-256으로 검증한다.
 
 See Also:
-    ``dartlab.dataHub.compositePaging``과 ``dartlab.dataHub.isolation.ownerProcess``.
+    ``dartlab.dataHub.paging.composite``과 ``dartlab.dataHub.isolation.ownerProcess``.
 
 Requires:
     Descriptor와 query는 strict canonical JSON으로 표현 가능해야 한다.
@@ -83,7 +83,7 @@ from dartlab.dataHub.isolation.ownerProcess import (
     _strictJson,
 )
 from dartlab.dataHub.isolation.processLifecycle import becomeProcessGroupLeader
-from dartlab.dataHub.pagingRuntime import (
+from dartlab.dataHub.paging.runtime import (
     MAX_OWNER_PROCESS_REQUEST_BYTES,
     requireDeadline,
 )
@@ -164,7 +164,7 @@ def _decodeBundle(
         raise ContinuationError("CONTINUATION_PAYLOAD_INVALID") from None
     if schema != _EAGER_SCHEMA or len(batches) != 1 or table.num_rows != len(selectors):
         raise ContinuationError("CONTINUATION_PAYLOAD_INVALID")
-    composite = importlib.import_module("dartlab.dataHub.compositePaging")
+    composite = importlib.import_module("dartlab.dataHub.paging.composite")
     results: list[bytes] = []
     for expectedIndex, (row, selector) in enumerate(zip(table.to_pylist(), selectors, strict=True)):
         resultPayload = row["resultPayload"]
@@ -298,7 +298,7 @@ def validateEagerSeal(
 
     seal = unpackEagerSeal(packedSeal, selectors=selectors)
     payloads = _decodeBundle(seal.payload, selectors=selectors)
-    composite = importlib.import_module("dartlab.dataHub.compositePaging")
+    composite = importlib.import_module("dartlab.dataHub.paging.composite")
     expectedAsset = (AssetRef(descriptor.assetId, descriptor.assetVersionId),)
     for payload, selector in zip(payloads, selectors, strict=True):
         result = composite._decodeEagerResult(payload)
@@ -321,7 +321,7 @@ def eagerCodePin(
 ) -> str:
     """Callable 또는 engine axis의 parent-child 실행 identity를 만든다."""
 
-    owner = importlib.import_module("dartlab.dataHub.ownerPaging")
+    owner = importlib.import_module("dartlab.dataHub.paging.owner")
     activeMeasures = tuple(requestedMeasures)
     if any(type(measure) is not str or not measure for measure in activeMeasures):
         raise ContinuationError("PAGEABLE_EAGER_CODE_PIN_FAILED")
@@ -510,7 +510,7 @@ def _resultForSelector(
         ),
     )
     try:
-        return importlib.import_module("dartlab.dataHub.compositePaging")._encodeEagerResult(
+        return importlib.import_module("dartlab.dataHub.paging.composite")._encodeEagerResult(
             result,
             maxBytes=maxBytes,
         )
@@ -521,8 +521,8 @@ def _resultForSelector(
 
 
 def _buildBundle(request: Mapping[str, Any], *, workDeadline: float) -> bytes:
-    owner = importlib.import_module("dartlab.dataHub.ownerPaging")
-    composite = importlib.import_module("dartlab.dataHub.compositePaging")
+    owner = importlib.import_module("dartlab.dataHub.paging.owner")
+    composite = importlib.import_module("dartlab.dataHub.paging.composite")
     execution = importlib.import_module("dartlab.dataHub.execution")
     descriptor = owner._decodeDescriptor(request["descriptor"])
     query = composite._decodeQuery(request["query"])
@@ -685,8 +685,8 @@ def _warmChildImports() -> None:
     for moduleName in (
         "polars",
         "pyarrow",
-        "dartlab.dataHub.ownerPaging",
-        "dartlab.dataHub.compositePaging",
+        "dartlab.dataHub.paging.owner",
+        "dartlab.dataHub.paging.composite",
         "dartlab.dataHub.execution",
     ):
         try:
@@ -714,7 +714,6 @@ def _childMain(
         from dartlab.dataHub.isolation.eagerSandbox import enforceEagerSandbox
 
         enforceEagerSandbox(path)
-        _warmChildImports()
 
         def runWorker() -> None:
             """격리된 thread에서 eager owner worker를 실행한다."""
@@ -738,6 +737,10 @@ def _childMain(
                 }
             )
         )
+        # ready 를 먼저 보낸 뒤 main thread 에서 무거운 모듈을 데운다. ready 는 자식이
+        # 살아 있다는 신호이고 import 는 work 이므로 준비 창을 잡아먹으면 안 된다.
+        # workerGate 를 아직 열지 않았으므로 worker 와 동시 import 경합도 없다.
+        _warmChildImports()
         workerGate.set()
         # join 에 기한이 없으면 worker 가 멈출 때 자식이 영원히 살아남는다. 부모의 kill
         # 경로가 결국 회수하지만 그때까지 실행 슬롯을 통째로 붙잡고, 실패 원인도 남지

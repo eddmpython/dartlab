@@ -534,7 +534,7 @@ class DataResult:
 
         import importlib
 
-        iterator = getattr(importlib.import_module("dartlab.dataHub.pageScan"), "iterDataResultPages")
+        iterator = getattr(importlib.import_module("dartlab.dataHub.paging.scan"), "iterDataResultPages")
         return iterator(
             self,
             maxPages=maxPages,
@@ -555,7 +555,7 @@ class DataResult:
 
         import importlib
 
-        iterator = getattr(importlib.import_module("dartlab.dataHub.pageScan"), "iterDataArrowBatches")
+        iterator = getattr(importlib.import_module("dartlab.dataHub.paging.scan"), "iterDataArrowBatches")
         return iterator(
             self,
             maxPages=maxPages,

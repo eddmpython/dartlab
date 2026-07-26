@@ -10,7 +10,7 @@ import pyarrow as pa
 
 from dartlab.dataHub.continuation import ArrowPayloadFacts, ContinuationPins
 from dartlab.dataHub.contracts import DataAssetDescriptor, DataQuery, DataResult
-from dartlab.dataHub.pagingRuntime import MAX_STATE_BYTES
+from dartlab.dataHub.paging.runtime import MAX_STATE_BYTES
 
 _FORMAT_VERSION = 1
 _PAGE_KIND = "composite"

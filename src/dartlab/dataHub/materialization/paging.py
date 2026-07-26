@@ -8,10 +8,6 @@ import json
 from collections.abc import Mapping, Sequence
 from typing import Any
 
-from dartlab.dataHub.compositePaging import (
-    decodeMaterializationPage,
-    materializationPageSchemaDigest,
-)
 from dartlab.dataHub.continuation import (
     ArrowPayloadFacts,
     ContinuationError,
@@ -24,7 +20,11 @@ from dartlab.dataHub.continuation import (
     validateArrowIpcPayload,
 )
 from dartlab.dataHub.contracts import DataResult
-from dartlab.dataHub.pagingRuntime import (
+from dartlab.dataHub.paging.composite import (
+    decodeMaterializationPage,
+    materializationPageSchemaDigest,
+)
+from dartlab.dataHub.paging.runtime import (
     MAX_PAGE_BYTES,
     MAX_STATE_BYTES,
     continuationStore,

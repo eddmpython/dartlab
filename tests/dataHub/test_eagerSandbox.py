@@ -19,7 +19,7 @@ import pytest
 
 from dartlab.dataHub.contracts import DataAssetDescriptor, DataQuery, QueryBudget
 from dartlab.dataHub.isolation.eagerSupervisor import runEagerSeal
-from dartlab.dataHub.pagingRuntime import ownerProcessArtifactRoot
+from dartlab.dataHub.paging.runtime import ownerProcessArtifactRoot
 
 _CONTRACT_HASH = "c" * 64
 

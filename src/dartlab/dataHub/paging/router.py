@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dartlab.dataHub.continuation import ContinuationError, validateArrowIpcPayload
 from dartlab.dataHub.contracts import DataResult
-from dartlab.dataHub.pagingRuntime import continuationStore, requireDeadline
+from dartlab.dataHub.paging.runtime import continuationStore, requireDeadline
 
 
 def resumeDataPaging(
@@ -38,7 +38,7 @@ def resumeDataPaging(
             runMaintenance=False,
         ).loadContext(token)
     except ContinuationError:
-        from dartlab.dataHub.resourcePaging import resumeResourcePaging
+        from dartlab.dataHub.paging.resource import resumeResourcePaging
 
         return resumeResourcePaging(token, deadline=deadline, startedAt=startedAt)
     from dartlab.dataHub.materialization.paging import isMaterializedPagingState
@@ -53,19 +53,19 @@ def resumeDataPaging(
             deadline=deadline,
             startedAt=startedAt,
         )
-    from dartlab.dataHub.compositePaging import isCompositePagingState
+    from dartlab.dataHub.paging.composite import isCompositePagingState
 
     if isCompositePagingState(context.state.cursorPayload):
-        from dartlab.dataHub.compositePaging import resumeCompositePaging
+        from dartlab.dataHub.paging.composite import resumeCompositePaging
 
         return resumeCompositePaging(token, deadline=deadline, startedAt=startedAt)
-    from dartlab.dataHub.ownerPaging import isOwnerPagingState
+    from dartlab.dataHub.paging.owner import isOwnerPagingState
 
     if isOwnerPagingState(context.state.cursorPayload):
-        from dartlab.dataHub.ownerPaging import resumeOwnerPaging
+        from dartlab.dataHub.paging.owner import resumeOwnerPaging
 
         return resumeOwnerPaging(token, deadline=deadline, startedAt=startedAt)
-    from dartlab.dataHub.resourcePaging import resumeResourcePaging
+    from dartlab.dataHub.paging.resource import resumeResourcePaging
 
     return resumeResourcePaging(token, deadline=deadline, startedAt=startedAt)
 

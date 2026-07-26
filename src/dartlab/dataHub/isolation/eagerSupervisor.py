@@ -81,7 +81,7 @@ from dartlab.dataHub.isolation.processLifecycle import (
     processGroupAlive,
     stopProcessGroup,
 )
-from dartlab.dataHub.pagingRuntime import (
+from dartlab.dataHub.paging.runtime import (
     MAX_OWNER_PROCESS_REQUEST_BYTES,
     MIN_OWNER_PROCESS_WORK_SECONDS,
     OWNER_PROCESS_CLEANUP_GRACE_SECONDS,
@@ -299,9 +299,9 @@ def runEagerSeal(
     if workDeadline - startedAt < float(minimumWorkSeconds):
         return _budgetOutcome(startedAt, normalizedDeadline)
 
-    composite = importlib.import_module("dartlab.dataHub.compositePaging")
+    composite = importlib.import_module("dartlab.dataHub.paging.composite")
     execution = importlib.import_module("dartlab.dataHub.execution")
-    owner = importlib.import_module("dartlab.dataHub.ownerPaging")
+    owner = importlib.import_module("dartlab.dataHub.paging.owner")
     requestedMeasures = execution._requestedMeasures(query)
     expectedCodePin = eagerCodePin(
         descriptor,

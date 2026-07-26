@@ -20,9 +20,9 @@ from dartlab.dataHub.contracts import (
     UniverseCoverage,
 )
 from dartlab.dataHub.identity.contentSeal import contentHash, resultSnapshotId
-from dartlab.dataHub.ownerPagingModels import _OwnerSession, _OwnerTask
-from dartlab.dataHub.ownerPagingPayload import _decodePage
-from dartlab.dataHub.ownerPagingSchedule import _candidates, _requireDecodedPage, _updatedTasks
+from dartlab.dataHub.paging.owner.models import _OwnerSession, _OwnerTask
+from dartlab.dataHub.paging.owner.payload import _decodePage
+from dartlab.dataHub.paging.owner.schedule import _candidates, _requireDecodedPage, _updatedTasks
 
 
 def _progressSelector(task: _OwnerTask) -> tuple[tuple[str, str], ...]:

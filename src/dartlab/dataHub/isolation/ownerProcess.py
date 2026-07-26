@@ -51,7 +51,7 @@ from dartlab.dataHub.isolation.processLifecycle import (
     processGroupAlive,
     stopProcessGroup,
 )
-from dartlab.dataHub.pagingRuntime import (
+from dartlab.dataHub.paging.runtime import (
     MAX_OWNER_PROCESS_CONTROL_FRAME_BYTES,
     MAX_STATE_BYTES,
     MIN_OWNER_PROCESS_WORK_SECONDS,
@@ -530,7 +530,7 @@ def runOwnerPage(
                 else:
                     assert artifactRoot is not None and artifactPath is not None
                     try:
-                        from dartlab.dataHub import ownerPaging
+                        from dartlab.dataHub.paging import owner as ownerPaging
 
                         session = ownerPaging._decodeSession(sessionPayload)
                         payload = _readArtifact(

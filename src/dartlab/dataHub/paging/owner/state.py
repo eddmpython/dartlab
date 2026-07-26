@@ -23,7 +23,7 @@ from dartlab.dataHub.contracts import (
     TimeContext,
     UniverseSelection,
 )
-from dartlab.dataHub.ownerPagingModels import (
+from dartlab.dataHub.paging.owner.models import (
     _FORMAT_VERSION,
     _MAX_ENTITY_PARAMS,
     _MAX_PAGE_ENTITIES,
@@ -33,13 +33,13 @@ from dartlab.dataHub.ownerPagingModels import (
     _OwnerSession,
     _OwnerTask,
 )
-from dartlab.dataHub.pagingRuntime import (
+from dartlab.dataHub.paging.runtime import (
     MAX_OWNER_PROCESS_REQUEST_BYTES,
     MAX_PAGE_BYTES,
     MAX_PAGE_ROWS,
     MAX_STATE_BYTES,
 )
-from dartlab.dataHub.pagingStateCodec import requireDigest, requireOptionalText, requireText, strictTree
+from dartlab.dataHub.paging.stateCodec import requireDigest, requireOptionalText, requireText, strictTree
 
 
 def _strictTree(value: Any, *, seen: set[int] | None = None) -> Any:
@@ -653,7 +653,7 @@ def _decodeSession(payload: bytes, *, maxBytes: int = MAX_STATE_BYTES) -> _Owner
         raise ContinuationError("CONTINUATION_CORRUPT")
     # 재수화는 여기 한 곳에서만 한다. 소비처 15 곳은 언제나 채워진 세션을 본다.
     # 이미 채워진 IPC 세션이면 `_hydrateTask` 가 universe 를 다시 해소하지 않는다.
-    from dartlab.dataHub.ownerPagingSource import _hydrateTask
+    from dartlab.dataHub.paging.owner.source import _hydrateTask
 
     tasks = tuple(_hydrateTask(task) for task in tasks)
     return _OwnerSession(

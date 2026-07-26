@@ -5,11 +5,11 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from typing import Any
 
-from dartlab.dataHub.compositePagingModels import _AdapterProtocol
-from dartlab.dataHub.compositePagingPayload import _decodeComposite
 from dartlab.dataHub.continuation import ContinuationError, canonicalDigest
 from dartlab.dataHub.contracts import AssetRef, Coverage, DataGap, DataResult
 from dartlab.dataHub.identity.contentSeal import resultSnapshotId
+from dartlab.dataHub.paging.composite.models import _AdapterProtocol
+from dartlab.dataHub.paging.composite.payload import _decodeComposite
 
 
 def _resultFromComposite(

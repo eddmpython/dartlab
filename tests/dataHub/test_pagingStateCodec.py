@@ -8,7 +8,7 @@ from typing import Any, cast
 import pytest
 
 from dartlab.dataHub.continuation import ContinuationError, canonicalJsonBytes
-from dartlab.dataHub.pagingStateCodec import (
+from dartlab.dataHub.paging.stateCodec import (
     requireDigest,
     requireOptionalText,
     requireText,

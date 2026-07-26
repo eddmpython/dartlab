@@ -14,14 +14,6 @@ import zlib
 from collections.abc import Mapping, Sequence
 from typing import Any
 
-from dartlab.dataHub.compositePagingModels import (
-    _EAGER_SCHEMA,
-    _FORMAT_VERSION,
-    _LOWER_SESSION_ENCODING,
-    _MAX_LANES,
-    _MAX_PACKED_SESSION_BYTES,
-    _PAGE_KIND,
-)
 from dartlab.dataHub.continuation import (
     ContinuationError,
     ContinuationPins,
@@ -42,8 +34,16 @@ from dartlab.dataHub.contracts import (
     TimeContext,
     UniverseSelection,
 )
-from dartlab.dataHub.pagingRuntime import MAX_PAGE_BYTES, MAX_PAGE_ROWS, MAX_STATE_BYTES
-from dartlab.dataHub.pagingStateCodec import requireDigest, requireText, strictTree
+from dartlab.dataHub.paging.composite.models import (
+    _EAGER_SCHEMA,
+    _FORMAT_VERSION,
+    _LOWER_SESSION_ENCODING,
+    _MAX_LANES,
+    _MAX_PACKED_SESSION_BYTES,
+    _PAGE_KIND,
+)
+from dartlab.dataHub.paging.runtime import MAX_PAGE_BYTES, MAX_PAGE_ROWS, MAX_STATE_BYTES
+from dartlab.dataHub.paging.stateCodec import requireDigest, requireText, strictTree
 
 
 def _strictTree(value: Any, *, seen: set[int] | None = None) -> Any:
@@ -384,7 +384,7 @@ def isCompositePagingState(payload: bytes) -> bool:
 
 
 def _descriptorCodec() -> tuple[Any, Any, Any, Any, Any]:
-    module = importlib.import_module("dartlab.dataHub.ownerPaging")
+    module = importlib.import_module("dartlab.dataHub.paging.owner")
     return (
         getattr(module, "_descriptorTree"),
         getattr(module, "_decodeDescriptor"),

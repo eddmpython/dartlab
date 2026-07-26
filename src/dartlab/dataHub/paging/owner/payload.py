@@ -15,13 +15,13 @@ from dartlab.dataHub.continuation import (
     arrowSchemaDigest,
     inspectArrowIpcPayload,
 )
-from dartlab.dataHub.ownerPagingModels import (
+from dartlab.dataHub.paging.owner.models import (
     _OUTER_SCHEMA,
     _DecodedPage,
     _OwnerEntry,
 )
-from dartlab.dataHub.ownerPagingState import _requireDigest, _requireOptionalText, _requireText
-from dartlab.dataHub.pagingRuntime import MAX_PAGE_ROWS, continuationStore
+from dartlab.dataHub.paging.owner.state import _requireDigest, _requireOptionalText, _requireText
+from dartlab.dataHub.paging.runtime import MAX_PAGE_ROWS, continuationStore
 from dartlab.dataHub.telemetry import dataHubLogger, recordFailure
 
 _log = dataHubLogger(__name__)

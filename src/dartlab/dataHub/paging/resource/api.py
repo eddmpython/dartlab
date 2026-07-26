@@ -1,4 +1,7 @@
-"""Provider-owned full-universe resources를 한 continuation chain으로 multiplex한다."""
+"""Resource multiplex paging 의 공개 진입점.
+
+첫 page 발급과 continuation 재개 두 함수만 둔다. 계약 세부는 형제 모듈이 소유한다.
+"""
 
 from __future__ import annotations
 
@@ -44,25 +47,25 @@ from dartlab.dataHub.contracts import (
     UniverseCoverage,
 )
 from dartlab.dataHub.identity.contentSeal import resultSnapshotId
-from dartlab.dataHub.pagingRuntime import (
+from dartlab.dataHub.paging.runtime import (
     MAX_PAGE_BYTES as _MAX_PAGE_BYTES,
 )
-from dartlab.dataHub.pagingRuntime import (
+from dartlab.dataHub.paging.runtime import (
     MAX_PAGE_ROWS as _MAX_PAGE_ROWS,
 )
-from dartlab.dataHub.pagingRuntime import (
+from dartlab.dataHub.paging.runtime import (
     MAX_STATE_BYTES as _MAX_STATE_BYTES,
 )
-from dartlab.dataHub.pagingRuntime import (
+from dartlab.dataHub.paging.runtime import (
     continuationStore,
     dataHubRoot,
     manifestCachePath,
     requireDeadline,
 )
-from dartlab.dataHub.pagingStateCodec import requireDigest, requireText, strictTree
+from dartlab.dataHub.paging.stateCodec import requireDigest, requireText, strictTree
 from dartlab.dataHub.telemetry import dataHubLogger, recordFailure
 
-from .resourcePagingModels import (
+from .models import (
     _CURSOR_KEYS,
     _FORMAT_VERSION,
     _MAX_PAGE_SHARDS,
@@ -81,25 +84,25 @@ from .resourcePagingModels import (
     _ResourceTask,
     _textDigest,
 )
-from .resourcePagingPayload import (
+from .payload import (
     _decodeMultiplex,
     _encodeMultiplex,
     _innerTable,
     _validateMultiplexPayload,
 )
-from .resourcePagingResults import (
+from .results import (
     _failedResult,
     _planFailure,
     _resultFromPage,
     _universeCoverage,
 )
-from .resourcePagingSchedule import (
+from .schedule import (
     _materialize,
     _materializeOnce,
     _progressSelector,
     _progressValues,
 )
-from .resourcePagingSource import (
+from .source import (
     _continuationStore,
     _contractDigest,
     _currentSourcePins,
@@ -112,7 +115,7 @@ from .resourcePagingSource import (
     _validateOwnerPage,
     isPageableResource,
 )
-from .resourcePagingState import (
+from .state import (
     _cursorBytes,
     _cursorFromBytes,
     _cursorMapping,
@@ -132,7 +135,6 @@ from .resourcePagingState import (
 )
 
 _log = dataHubLogger(__name__)
-
 
 def executeInitialResourcePaging(
     assetIds: Sequence[str],
@@ -277,7 +279,6 @@ def executeInitialResourcePaging(
             requestedAssets=requestedAssets,
             resolvedAssets=len(resolved),
         )
-
 
 def resumeResourcePaging(token: str, *, deadline: float, startedAt: float | None = None) -> DataResult:
     """Token private state를 catalog lookup 없이 복원해 다음 multiplex page를 반환한다."""

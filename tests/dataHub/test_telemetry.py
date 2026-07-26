@@ -24,7 +24,7 @@ def _clean() -> None:
 def testLoggerNamesStayUnderDataHubNamespace() -> None:
     """모든 DataHub logger 는 한 이름 공간 아래 모인다."""
 
-    assert dataHubLogger("dartlab.dataHub.ownerPagingApi").name == "dartlab.dataHub.ownerPagingApi"
+    assert dataHubLogger("dartlab.dataHub.paging.owner.api").name == "dartlab.dataHub.paging.owner.api"
     assert dataHubLogger("dartlab.dataHub.workerPlane.worker").name == "dartlab.dataHub.workerPlane.worker"
     assert dataHubLogger("someOther.module").name == "dartlab.dataHub.module"
 

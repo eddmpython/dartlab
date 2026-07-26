@@ -30,7 +30,7 @@ def testCapabilityCatalogIncludesDataAndAnalysisAxes():
 
 
 def testDataHubPrivateRootUsesCanonicalName(tmp_path, monkeypatch):
-    from dartlab.dataHub.pagingRuntime import dataHubRoot
+    from dartlab.dataHub.paging.runtime import dataHubRoot
 
     monkeypatch.setenv("DARTLAB_HOME", str(tmp_path))
     assert dataHubRoot() == tmp_path / "dataHub"

@@ -20,8 +20,8 @@ import pytest
 
 import dartlab.dataHub.isolation.ownerProcess as ownerProcess
 import dartlab.dataHub.isolation.ownerProcessArtifacts as ownerProcessArtifacts
-import dartlab.dataHub.ownerPaging as ownerPaging
-import dartlab.dataHub.ownerPagingApi as ownerPagingApi
+import dartlab.dataHub.paging.owner as ownerPaging
+import dartlab.dataHub.paging.owner.api as ownerPagingApi
 from dartlab.dataHub import (
     DataAssetDescriptor,
     DataQuery,
@@ -38,7 +38,7 @@ from dartlab.dataHub.isolation.ownerProcess import (
     _decodeControlFrame,
     runOwnerPage,
 )
-from dartlab.dataHub.pagingRuntime import (
+from dartlab.dataHub.paging.runtime import (
     MAX_OWNER_PROCESS_CONTROL_FRAME_BYTES,
     MAX_STATE_BYTES,
     MIN_OWNER_PROCESS_WORK_SECONDS,

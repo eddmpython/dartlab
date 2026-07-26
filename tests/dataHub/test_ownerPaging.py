@@ -15,8 +15,8 @@ import pytest
 
 import dartlab.analysis.financial.dataAssets as dataAssets
 import dartlab.dataHub.catalog as dataCatalog
-import dartlab.dataHub.ownerPaging as ownerPaging
-import dartlab.dataHub.ownerPagingEntity as ownerPagingEntity
+import dartlab.dataHub.paging.owner as ownerPaging
+import dartlab.dataHub.paging.owner.entity as ownerPagingEntity
 from dartlab.dataHub import (
     DataQuery,
     DataResult,
@@ -634,7 +634,7 @@ def testOwnerCodePinIsStableAcrossFreshProcess() -> None:
     expected = ownerPaging._ownerCodePin(descriptor)
     script = (
         "from dartlab.dataHub.catalog import buildCatalog;"
-        "from dartlab.dataHub.ownerPaging import _ownerCodePin;"
+        "from dartlab.dataHub.paging.owner import _ownerCodePin;"
         "descriptor=next(asset for asset in buildCatalog().assets "
         "if asset.assetId=='analysis.edgarFinancialFeatures');"
         "print(_ownerCodePin(descriptor))"

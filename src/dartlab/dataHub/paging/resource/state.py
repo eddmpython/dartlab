@@ -18,18 +18,18 @@ from dartlab.dataHub.continuation import (
 from dartlab.dataHub.contracts import (
     DataQuery,
 )
-from dartlab.dataHub.pagingRuntime import (
+from dartlab.dataHub.paging.runtime import (
     MAX_PAGE_BYTES as _MAX_PAGE_BYTES,
 )
-from dartlab.dataHub.pagingRuntime import (
+from dartlab.dataHub.paging.runtime import (
     MAX_PAGE_ROWS as _MAX_PAGE_ROWS,
 )
-from dartlab.dataHub.pagingRuntime import (
+from dartlab.dataHub.paging.runtime import (
     MAX_STATE_BYTES as _MAX_STATE_BYTES,
 )
-from dartlab.dataHub.pagingStateCodec import requireDigest, requireText, strictTree
+from dartlab.dataHub.paging.stateCodec import requireDigest, requireText, strictTree
 
-from .resourcePagingModels import (
+from .models import (
     _CURSOR_KEYS,
     _FORMAT_VERSION,
     _MAX_PAGE_SHARDS,

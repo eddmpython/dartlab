@@ -15,13 +15,13 @@ from dartlab.dataHub.continuation import (
     canonicalDigest,
 )
 from dartlab.dataHub.contracts import AssetRef, DataAssetDescriptor, DataQuery, DataResult, FactorProjection
-from dartlab.dataHub.ownerPagingEntity import _entityParamMap
-from dartlab.dataHub.ownerPagingModels import _MAX_PAGE_ENTITIES, _OwnerSession, _OwnerTask
-from dartlab.dataHub.ownerPagingPayload import _continuationStore
-from dartlab.dataHub.ownerPagingResults import _failedResult, _planFailure, _resultFromPage
-from dartlab.dataHub.ownerPagingSchedule import _materialize, _requireTaskContracts, _requireTaskSources
-from dartlab.dataHub.ownerPagingSource import _entities, _pins, _requireCurrentPins, _sourcePin
-from dartlab.dataHub.ownerPagingState import (
+from dartlab.dataHub.paging.owner.entity import _entityParamMap
+from dartlab.dataHub.paging.owner.models import _MAX_PAGE_ENTITIES, _OwnerSession, _OwnerTask
+from dartlab.dataHub.paging.owner.payload import _continuationStore
+from dartlab.dataHub.paging.owner.results import _failedResult, _planFailure, _resultFromPage
+from dartlab.dataHub.paging.owner.schedule import _materialize, _requireTaskContracts, _requireTaskSources
+from dartlab.dataHub.paging.owner.source import _entities, _pins, _requireCurrentPins, _sourcePin
+from dartlab.dataHub.paging.owner.state import (
     _decodeSession,
     _descriptorTree,
     _encodeSession,
@@ -32,7 +32,7 @@ from dartlab.dataHub.ownerPagingState import (
     _selectionTree,
     _validateQueryPayload,
 )
-from dartlab.dataHub.pagingRuntime import MAX_PAGE_BYTES, MAX_PAGE_ROWS, requireDeadline
+from dartlab.dataHub.paging.runtime import MAX_PAGE_BYTES, MAX_PAGE_ROWS, requireDeadline
 from dartlab.dataHub.telemetry import dataHubLogger, recordFailure
 
 _log = dataHubLogger(__name__)
@@ -41,7 +41,7 @@ _log = dataHubLogger(__name__)
 def _ownerFacade() -> Any:
     """현재 호환 파사드의 monkeypatch seam을 반환한다."""
 
-    import dartlab.dataHub.ownerPaging as facade
+    import dartlab.dataHub.paging.owner as facade
 
     return facade
 

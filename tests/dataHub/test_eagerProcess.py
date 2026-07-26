@@ -11,7 +11,6 @@ import polars as pl
 import pytest
 
 import dartlab
-from dartlab.dataHub.compositePaging import _encodeEagerResult
 from dartlab.dataHub.continuation import ContinuationError, arrowSchemaDigest, canonicalDigest
 from dartlab.dataHub.contracts import (
     AssetRef,
@@ -31,6 +30,7 @@ from dartlab.dataHub.isolation.eagerProcess import (
     unpackEagerSeal,
     validateEagerSeal,
 )
+from dartlab.dataHub.paging.composite import _encodeEagerResult
 
 _CONTRACT_HASH = "a" * 64
 _PUBLIC_EAGER_ERRORS = (

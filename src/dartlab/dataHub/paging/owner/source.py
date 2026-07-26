@@ -16,8 +16,8 @@ from dartlab.dataHub.continuation import (
     bytesDigest,
     canonicalDigest,
 )
-from dartlab.dataHub.ownerPagingEntity import _entityParamMap
-from dartlab.dataHub.ownerPagingModels import (
+from dartlab.dataHub.paging.owner.entity import _entityParamMap
+from dartlab.dataHub.paging.owner.models import (
     _FORMAT_VERSION,
     _OUTER_SCHEMA,
     _PAGE_KIND,
@@ -25,14 +25,14 @@ from dartlab.dataHub.ownerPagingModels import (
     _OwnerSession,
     _OwnerTask,
 )
-from dartlab.dataHub.ownerPagingState import _requestedMeasures, _sourcePin
-from dartlab.dataHub.pagingRuntime import manifestCachePath
+from dartlab.dataHub.paging.owner.state import _requestedMeasures, _sourcePin
+from dartlab.dataHub.paging.runtime import manifestCachePath
 
 
 def _ownerFacade() -> Any:
     """현재 호환 파사드의 monkeypatch seam을 반환한다."""
 
-    import dartlab.dataHub.ownerPaging as facade
+    import dartlab.dataHub.paging.owner as facade
 
     return facade
 

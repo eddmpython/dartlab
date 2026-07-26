@@ -26,13 +26,13 @@ from dartlab.dataHub.contracts import (
     DataQuery,
     NativeProjection,
 )
-from dartlab.dataHub.pagingRuntime import (
+from dartlab.dataHub.paging.runtime import (
     continuationStore,
     manifestCachePath,
     requireDeadline,
 )
 
-from .resourcePagingModels import (
+from .models import (
     _FORMAT_VERSION,
     _MULTIPLEX_SCHEMA,
     _OWNER_CONTRACTS_MODULE,
@@ -44,11 +44,11 @@ from .resourcePagingModels import (
     _ResourceTask,
     _textDigest,
 )
-from .resourcePagingPayload import (
+from .payload import (
     _innerTable,
     _validateMultiplexPayload,
 )
-from .resourcePagingState import (
+from .state import (
     _cursorMapping,
     _cursorPosition,
     _originCursor,

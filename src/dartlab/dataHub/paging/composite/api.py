@@ -7,7 +7,9 @@ import time
 from collections.abc import Mapping, Sequence
 from typing import Any
 
-from dartlab.dataHub.compositePagingModels import (
+from dartlab.dataHub.continuation import ContinuationError, ContinuationQueryState, canonicalDigest
+from dartlab.dataHub.contracts import AssetRef, DataAssetDescriptor, DataQuery, DataResult
+from dartlab.dataHub.paging.composite.models import (
     _CONTROL_BASE_BYTES,
     _CONTROL_PER_LANE_BYTES,
     _FORMAT_VERSION,
@@ -17,22 +19,20 @@ from dartlab.dataHub.compositePagingModels import (
     CompositePagingPlan,
     _AdapterProtocol,
 )
-from dartlab.dataHub.compositePagingPayload import (
+from dartlab.dataHub.paging.composite.payload import (
     _validateCompositePayload,
     materializationPageSchemaDigest,
 )
-from dartlab.dataHub.compositePagingResults import _failedResult, _resultFromComposite
-from dartlab.dataHub.compositePagingSchedule import _materializeComposite, _outerPins
-from dartlab.dataHub.compositePagingState import (
+from dartlab.dataHub.paging.composite.results import _failedResult, _resultFromComposite
+from dartlab.dataHub.paging.composite.schedule import _materializeComposite, _outerPins
+from dartlab.dataHub.paging.composite.state import (
     _decodeSession,
     _encodeSession,
     _laneTree,
     _queryPayload,
     _validateQueryPayload,
 )
-from dartlab.dataHub.continuation import ContinuationError, ContinuationQueryState, canonicalDigest
-from dartlab.dataHub.contracts import AssetRef, DataAssetDescriptor, DataQuery, DataResult
-from dartlab.dataHub.pagingRuntime import (
+from dartlab.dataHub.paging.runtime import (
     MAX_PAGE_BYTES,
     MAX_PAGE_ROWS,
     continuationStore,
@@ -46,7 +46,7 @@ _log = dataHubLogger(__name__)
 def _defaultAdapters() -> _AdapterProtocol:
     """호환 파사드에서 현재 production adapter seam을 가져온다."""
 
-    import dartlab.dataHub.compositePaging as facade
+    import dartlab.dataHub.paging.composite as facade
 
     return facade._ProductionAdapters()
 

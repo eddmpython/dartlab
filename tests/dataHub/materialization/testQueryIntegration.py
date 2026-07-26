@@ -12,17 +12,10 @@ import polars as pl
 import pytest
 
 import dartlab
-import dartlab.dataHub.compositePaging as compositePaging
 import dartlab.dataHub.execution as execution
 import dartlab.dataHub.materialization.query as materializationQuery
+import dartlab.dataHub.paging.composite as compositePaging
 from dartlab.ai.tools.engineCall import _jsonableResult
-from dartlab.dataHub.compositePaging import (
-    _EAGER_SCHEMA,
-    _decodeEagerResult,
-    _encodeEagerResult,
-    _LaneAllocation,
-    _LanePage,
-)
 from dartlab.dataHub.continuation import (
     ContinuationError,
     arrowSchemaDigest,
@@ -38,6 +31,13 @@ from dartlab.dataHub.contracts import (
     DataResult,
 )
 from dartlab.dataHub.materialization.runtime import materializationStore
+from dartlab.dataHub.paging.composite import (
+    _EAGER_SCHEMA,
+    _decodeEagerResult,
+    _encodeEagerResult,
+    _LaneAllocation,
+    _LanePage,
+)
 from dartlab.webapi.browserApi import _json
 
 pytestmark = pytest.mark.unit

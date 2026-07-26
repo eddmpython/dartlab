@@ -16,23 +16,23 @@ from dartlab.dataHub.continuation import (
     ContinuationQueryState,
     PageEnvelope,
 )
-from dartlab.dataHub.pagingRuntime import (
+from dartlab.dataHub.paging.runtime import (
     manifestCachePath,
     requireDeadline,
 )
 
-from .resourcePagingModels import (
+from .models import (
     _MultiplexEntry,
     _OwnerBoundary,
     _ResourceTask,
 )
-from .resourcePagingPayload import (
+from .payload import (
     _encodeMultiplex,
 )
-from .resourcePagingSource import (
+from .source import (
     _validateOwnerPage,
 )
-from .resourcePagingState import (
+from .state import (
     _cursorMapping,
     _decodeSession,
     _encodeSession,

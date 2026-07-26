@@ -8,25 +8,6 @@ from collections.abc import Mapping, Sequence
 from concurrent.futures import ALL_COMPLETED, ThreadPoolExecutor, wait
 from typing import Any
 
-from dartlab.dataHub.compositePagingModels import (
-    _COMPOSITE_SCHEMA,
-    _CONTROL_BASE_BYTES,
-    _CONTROL_PER_LANE_BYTES,
-    _FORMAT_VERSION,
-    _MIN_CHILD_BYTES,
-    _PAGE_KIND,
-    _AdapterProtocol,
-    _LaneAllocation,
-    _LanePage,
-)
-from dartlab.dataHub.compositePagingPayload import _encodeCompositeRows
-from dartlab.dataHub.compositePagingState import (
-    _decodeSession,
-    _encodeSession,
-    _jsonLoad,
-    _strictTree,
-    _validateQueryPayload,
-)
 from dartlab.dataHub.continuation import (
     ContinuationError,
     ContinuationPins,
@@ -37,7 +18,26 @@ from dartlab.dataHub.continuation import (
     canonicalDigest,
     canonicalJsonBytes,
 )
-from dartlab.dataHub.pagingRuntime import requireDeadline
+from dartlab.dataHub.paging.composite.models import (
+    _COMPOSITE_SCHEMA,
+    _CONTROL_BASE_BYTES,
+    _CONTROL_PER_LANE_BYTES,
+    _FORMAT_VERSION,
+    _MIN_CHILD_BYTES,
+    _PAGE_KIND,
+    _AdapterProtocol,
+    _LaneAllocation,
+    _LanePage,
+)
+from dartlab.dataHub.paging.composite.payload import _encodeCompositeRows
+from dartlab.dataHub.paging.composite.state import (
+    _decodeSession,
+    _encodeSession,
+    _jsonLoad,
+    _strictTree,
+    _validateQueryPayload,
+)
+from dartlab.dataHub.paging.runtime import requireDeadline
 
 
 def _outerPins(session: Mapping[str, Any], queryPayload: bytes) -> ContinuationPins:

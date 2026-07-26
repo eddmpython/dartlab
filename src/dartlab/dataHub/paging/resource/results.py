@@ -30,18 +30,18 @@ from dartlab.dataHub.contracts import (
 )
 from dartlab.dataHub.identity.contentSeal import resultSnapshotId
 
-from .resourcePagingModels import (
+from .models import (
     _MultiplexEntry,
     _ResourceSession,
 )
-from .resourcePagingPayload import (
+from .payload import (
     _decodeMultiplex,
 )
-from .resourcePagingSchedule import (
+from .schedule import (
     _progressSelector,
     _progressValues,
 )
-from .resourcePagingState import (
+from .state import (
     _originCursor,
 )
 

@@ -18,17 +18,17 @@ from dartlab.dataHub.continuation import (
     canonicalJsonBytes,
 )
 from dartlab.dataHub.identity.contentSeal import contentHash
-from dartlab.dataHub.ownerPagingEntity import _failureEntry
-from dartlab.dataHub.ownerPagingModels import (
+from dartlab.dataHub.paging.owner.entity import _failureEntry
+from dartlab.dataHub.paging.owner.models import (
     _DecodedPage,
     _OwnerEntry,
     _OwnerSession,
     _OwnerTask,
     _VerifiedEntitySource,
 )
-from dartlab.dataHub.ownerPagingPayload import _decodePage, _encodePage
-from dartlab.dataHub.ownerPagingSource import _currentTaskSourcePin, _pins
-from dartlab.dataHub.ownerPagingState import (
+from dartlab.dataHub.paging.owner.payload import _decodePage, _encodePage
+from dartlab.dataHub.paging.owner.source import _currentTaskSourcePin, _pins
+from dartlab.dataHub.paging.owner.state import (
     _decodeSession,
     _descriptorTree,
     _encodeProcessSession,
@@ -37,7 +37,7 @@ from dartlab.dataHub.ownerPagingState import (
     _requestedMeasures,
     _validateQueryPayload,
 )
-from dartlab.dataHub.pagingRuntime import MAX_STATE_BYTES, requireDeadline
+from dartlab.dataHub.paging.runtime import MAX_STATE_BYTES, requireDeadline
 from dartlab.dataHub.telemetry import dataHubLogger, recordFailure
 
 _log = dataHubLogger(__name__)
@@ -46,7 +46,7 @@ _log = dataHubLogger(__name__)
 def _ownerFacade() -> Any:
     """현재 호환 파사드의 monkeypatch seam을 반환한다."""
 
-    import dartlab.dataHub.ownerPaging as facade
+    import dartlab.dataHub.paging.owner as facade
 
     return facade
 

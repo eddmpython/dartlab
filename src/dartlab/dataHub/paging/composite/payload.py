@@ -13,18 +13,6 @@ from typing import Any
 import polars as pl
 import pyarrow as pa
 
-from dartlab.dataHub.compositePagingModels import (
-    _COMPOSITE_SCHEMA,
-    _EAGER_SCHEMA,
-    _DecodedComposite,
-)
-from dartlab.dataHub.compositePagingState import (
-    _jsonLoad,
-    _queryPayload,
-    _requireDigest,
-    _requireText,
-    _strictTree,
-)
 from dartlab.dataHub.continuation import (
     ArrowPayloadFacts,
     ContinuationError,
@@ -44,7 +32,19 @@ from dartlab.dataHub.contracts import (
     QualityAssertion,
     UniverseCoverage,
 )
-from dartlab.dataHub.pagingRuntime import MAX_PAGE_BYTES
+from dartlab.dataHub.paging.composite.models import (
+    _COMPOSITE_SCHEMA,
+    _EAGER_SCHEMA,
+    _DecodedComposite,
+)
+from dartlab.dataHub.paging.composite.state import (
+    _jsonLoad,
+    _queryPayload,
+    _requireDigest,
+    _requireText,
+    _strictTree,
+)
+from dartlab.dataHub.paging.runtime import MAX_PAGE_BYTES
 from dartlab.dataHub.telemetry import dataHubLogger, recordFailure
 
 _log = dataHubLogger(__name__)

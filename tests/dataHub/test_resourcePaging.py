@@ -612,7 +612,7 @@ def testContractDriftOnPendingResumeFailsBeforeOwnerRead(
 ) -> None:
     # `_contractDigest` 는 `_pins` 와 같은 source 계층이 소유한다. 파사드를 패치하면
     # 호출자가 자기 모듈의 이름을 그대로 보므로 drift 가 재현되지 않는다.
-    import dartlab.dataHub.resourcePagingSource as resourcePagingSourceModule
+    import dartlab.dataHub.paging.resource.source as resourcePagingSourceModule
 
     first = _publicData("query", query=_pageQuery())
     assert first.continuation is not None
@@ -650,7 +650,7 @@ def testZeroRowPageMayAdvancePhysicalCursor(
     owner: _SyntheticOwner,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    import dartlab.dataHub.resourcePaging as resourcePagingModule
+    import dartlab.dataHub.paging.resource.api as resourcePagingModule
 
     monkeypatch.setattr(resourcePagingModule, "_MAX_PAGE_SHARDS", 1)
     result = _publicData(
@@ -686,7 +686,7 @@ def testResumeDeadlineIncludesContextLoad(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     from dartlab.dataHub.continuation import ContinuationStore
-    from dartlab.dataHub.resourcePaging import resumeResourcePaging
+    from dartlab.dataHub.paging.resource import resumeResourcePaging
 
     first = _publicData("query", query=_pageQuery())
     assert first.continuation is not None
@@ -708,7 +708,7 @@ def testResumeDeadlineIncludesCommittedReplay(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     from dartlab.dataHub.continuation import ContinuationStore
-    from dartlab.dataHub.resourcePaging import resumeResourcePaging
+    from dartlab.dataHub.paging.resource import resumeResourcePaging
 
     first = _publicData("query", query=_pageQuery())
     assert first.continuation is not None
@@ -733,7 +733,7 @@ def testTokenOnlyResumeReusesTheIssuedPageTimeout(
     owner: _SyntheticOwner,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    import dartlab.dataHub.resourcePaging as resourcePagingModule
+    import dartlab.dataHub.paging.resource.api as resourcePagingModule
 
     query = replace(
         _pageQuery(),

@@ -6,12 +6,14 @@ import importlib
 from collections.abc import Mapping
 from typing import Any
 
-from dartlab.dataHub.compositePagingModels import (
+from dartlab.dataHub.continuation import ContinuationError, arrowSchemaDigest, canonicalDigest
+from dartlab.dataHub.contracts import DataAssetDescriptor, DataQuery, ResourceProjection
+from dartlab.dataHub.paging.composite.models import (
     _CONTROL_BASE_BYTES,
     _CONTROL_PER_LANE_BYTES,
     _EAGER_SCHEMA,
 )
-from dartlab.dataHub.compositePagingState import (
+from dartlab.dataHub.paging.composite.state import (
     _descriptorCodec,
     _isSafeEagerLane,
     _jsonLoad,
@@ -20,9 +22,7 @@ from dartlab.dataHub.compositePagingState import (
     _queryTree,
     _strictTree,
 )
-from dartlab.dataHub.continuation import ContinuationError, arrowSchemaDigest, canonicalDigest
-from dartlab.dataHub.contracts import DataAssetDescriptor, DataQuery, ResourceProjection
-from dartlab.dataHub.pagingRuntime import MAX_PAGE_BYTES, MAX_PAGE_ROWS, requireDeadline
+from dartlab.dataHub.paging.runtime import MAX_PAGE_BYTES, MAX_PAGE_ROWS, requireDeadline
 
 
 class CompositePlanAdapterMixin:
@@ -41,8 +41,8 @@ class CompositePlanAdapterMixin:
     ) -> Mapping[str, Any]:
         """요청 종류에 맞는 resource, owner, eager lane 계획을 만든다."""
         requireDeadline(deadline)
-        resource = importlib.import_module("dartlab.dataHub.resourcePaging")
-        owner = importlib.import_module("dartlab.dataHub.ownerPaging")
+        resource = importlib.import_module("dartlab.dataHub.paging.resource")
+        owner = importlib.import_module("dartlab.dataHub.paging.owner")
         if resource.isPageableResource(descriptor, query):
             return self._planResource(
                 requestId,
@@ -77,7 +77,7 @@ class CompositePlanAdapterMixin:
         snapshotId: str,
         contractHash: str,
     ) -> Mapping[str, Any]:
-        module = importlib.import_module("dartlab.dataHub.resourcePaging")
+        module = importlib.import_module("dartlab.dataHub.paging.resource")
         boundary = module._ownerBoundary()
         task = module._descriptionTask(boundary, requestId, descriptor, query)
         session = module._ResourceSession(
@@ -114,7 +114,7 @@ class CompositePlanAdapterMixin:
         snapshotId: str,
         contractHash: str,
     ) -> Mapping[str, Any]:
-        module = importlib.import_module("dartlab.dataHub.ownerPaging")
+        module = importlib.import_module("dartlab.dataHub.paging.owner")
         task = module._plannedTask(requestId, descriptor, query)
         declaredCap = dict(descriptor.metadata).get("pageMaxEntities", 8)
         if type(declaredCap) is not int or declaredCap <= 0:

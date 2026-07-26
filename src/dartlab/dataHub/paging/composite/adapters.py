@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from dartlab.dataHub.compositePagingPlanAdapter import CompositePlanAdapterMixin
-from dartlab.dataHub.compositePagingRunAdapter import CompositeRunAdapterMixin
+from dartlab.dataHub.paging.composite.planAdapter import CompositePlanAdapterMixin
+from dartlab.dataHub.paging.composite.runAdapter import CompositeRunAdapterMixin
 
 
 class _ProductionAdapters(CompositePlanAdapterMixin, CompositeRunAdapterMixin):

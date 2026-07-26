@@ -19,17 +19,17 @@ from dartlab.dataHub.continuation import (
     arrowSchemaDigest,
     inspectArrowIpcPayload,
 )
-from dartlab.dataHub.pagingRuntime import (
+from dartlab.dataHub.paging.runtime import (
     MAX_PAGE_ROWS as _MAX_PAGE_ROWS,
 )
 from dartlab.dataHub.telemetry import dataHubLogger, recordFailure
 
-from .resourcePagingModels import (
+from .models import (
     _MULTIPLEX_SCHEMA,
     _DecodedMultiplex,
     _MultiplexEntry,
 )
-from .resourcePagingState import (
+from .state import (
     _cursorBytes,
     _cursorFromBytes,
     _cursorMapping,

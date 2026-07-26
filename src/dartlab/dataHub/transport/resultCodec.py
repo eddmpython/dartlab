@@ -9,14 +9,14 @@ import hmac
 import json
 from typing import Any
 
-from dartlab.dataHub.compositePaging import (
-    decodeMaterializationPage,
-    encodeMaterializationPage,
-)
 from dartlab.dataHub.continuation import canonicalJsonBytes
 from dartlab.dataHub.contracts import DataResult
 from dartlab.dataHub.controlPlane.errors import DataHubControlError
-from dartlab.dataHub.pagingRuntime import MAX_PAGE_BYTES
+from dartlab.dataHub.paging.composite import (
+    decodeMaterializationPage,
+    encodeMaterializationPage,
+)
+from dartlab.dataHub.paging.runtime import MAX_PAGE_BYTES
 from dartlab.dataHub.telemetry import dataHubLogger, recordFailure
 
 _FORMAT_VERSION = 1

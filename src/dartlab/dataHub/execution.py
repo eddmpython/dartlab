@@ -99,7 +99,7 @@ def executeDataQuery(assetIds: Sequence[str], query: DataQuery) -> DataResult:
     if query.continuation is not None:
         if assetIds:
             raise ValueError("continuation query는 assets override를 허용하지 않습니다")
-        from dartlab.dataHub.pagingRouter import resumeDataPaging
+        from dartlab.dataHub.paging.router import resumeDataPaging
 
         try:
             return resumeDataPaging(
@@ -179,10 +179,10 @@ def executeDataQuery(assetIds: Sequence[str], query: DataQuery) -> DataResult:
                 executionReceipts=(),
             )
         try:
-            from dartlab.dataHub.compositePaging import prepareCompositePaging
             from dartlab.dataHub.materialization.query import (
                 materializeCompositeQuery,
             )
+            from dartlab.dataHub.paging.composite import prepareCompositePaging
 
             plan = prepareCompositePaging(
                 assetIds,
@@ -218,8 +218,8 @@ def executeDataQuery(assetIds: Sequence[str], query: DataQuery) -> DataResult:
             resolvedAssets=len(resolved),
         )
 
-    from dartlab.dataHub.ownerPaging import executeInitialOwnerPaging, isPageableOwner
-    from dartlab.dataHub.resourcePaging import executeInitialResourcePaging, isPageableResource
+    from dartlab.dataHub.paging.owner import executeInitialOwnerPaging, isPageableOwner
+    from dartlab.dataHub.paging.resource import executeInitialResourcePaging, isPageableResource
 
     resourcePaging = tuple(isPageableResource(descriptor, activeQuery) for _, descriptor, activeQuery in resolved)
     ownerPaging = tuple(isPageableOwner(descriptor, activeQuery) for _, descriptor, activeQuery in resolved)
@@ -231,7 +231,7 @@ def executeDataQuery(assetIds: Sequence[str], query: DataQuery) -> DataResult:
             dict.fromkeys(AssetRef(descriptor.assetId, descriptor.assetVersionId) for _, descriptor, _ in resolved)
         )
         contractHash = hashlib.sha256(_canonical({"assets": resolvedRefs, "query": query})).hexdigest()
-        from dartlab.dataHub.compositePaging import executeInitialCompositePaging
+        from dartlab.dataHub.paging.composite import executeInitialCompositePaging
 
         return executeInitialCompositePaging(
             assetIds,

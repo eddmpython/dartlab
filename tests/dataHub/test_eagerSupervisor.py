@@ -8,7 +8,6 @@ import time
 
 import pytest
 
-from dartlab.dataHub.compositePaging import _decodeEagerResult
 from dartlab.dataHub.continuation import ContinuationError
 from dartlab.dataHub.contracts import (
     DataAssetDescriptor,
@@ -23,7 +22,8 @@ from dartlab.dataHub.isolation.eagerProcess import (
     validateEagerSeal,
 )
 from dartlab.dataHub.isolation.eagerSupervisor import runEagerSeal
-from dartlab.dataHub.pagingRuntime import (
+from dartlab.dataHub.paging.composite import _decodeEagerResult
+from dartlab.dataHub.paging.runtime import (
     MAX_OWNER_PROCESS_CONTROL_FRAME_BYTES,
     ownerProcessArtifactRoot,
 )

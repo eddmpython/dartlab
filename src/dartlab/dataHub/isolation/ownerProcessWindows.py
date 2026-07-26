@@ -17,7 +17,7 @@ from dartlab.dataHub.isolation.ownerProcessModels import (
     _PROCESS_TERMINATE,
     _ProtocolViolation,
 )
-from dartlab.dataHub.pagingRuntime import MAX_OWNER_PROCESS_CONTROL_BYTES
+from dartlab.dataHub.paging.runtime import MAX_OWNER_PROCESS_CONTROL_BYTES
 
 
 class _IoCounters(ctypes.Structure):

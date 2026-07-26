@@ -6,15 +6,15 @@
 
 from __future__ import annotations
 
-from dartlab.dataHub.compositePagingAdapters import _ProductionAdapters
-from dartlab.dataHub.compositePagingApi import (
+from dartlab.dataHub.paging.composite.adapters import _ProductionAdapters
+from dartlab.dataHub.paging.composite.api import (
     compositeMaterializationIdentity,
     executeInitialCompositePaging,
     executePreparedCompositePaging,
     prepareCompositePaging,
     resumeCompositePaging,
 )
-from dartlab.dataHub.compositePagingModels import (
+from dartlab.dataHub.paging.composite.models import (
     _COMPOSITE_METADATA,
     _COMPOSITE_SCHEMA,
     _CONTROL_BASE_BYTES,
@@ -34,7 +34,7 @@ from dartlab.dataHub.compositePagingModels import (
     _LaneAllocation,
     _LanePage,
 )
-from dartlab.dataHub.compositePagingPayload import (
+from dartlab.dataHub.paging.composite.payload import (
     _arrowPayload,
     _assertionTree,
     _decodeAssertion,
@@ -60,15 +60,15 @@ from dartlab.dataHub.compositePagingPayload import (
     encodeMaterializationPage,
     materializationPageSchemaDigest,
 )
-from dartlab.dataHub.compositePagingResults import _failedResult, _resultFromComposite
-from dartlab.dataHub.compositePagingSchedule import (
+from dartlab.dataHub.paging.composite.results import _failedResult, _resultFromComposite
+from dartlab.dataHub.paging.composite.schedule import (
     _allocations,
     _materializeComposite,
     _outerPins,
     _selectLaneIndexes,
     _updatedSession,
 )
-from dartlab.dataHub.compositePagingState import (
+from dartlab.dataHub.paging.composite.state import (
     _decodeLane,
     _decodePins,
     _decodeQuery,

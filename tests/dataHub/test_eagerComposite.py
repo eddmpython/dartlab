@@ -6,10 +6,6 @@ import os
 import socket
 import time
 
-from dartlab.dataHub.compositePaging import (
-    executeInitialCompositePaging,
-    resumeCompositePaging,
-)
 from dartlab.dataHub.contracts import (
     Coverage,
     DataAssetDescriptor,
@@ -18,6 +14,10 @@ from dartlab.dataHub.contracts import (
     DataRequest,
     QueryBudget,
     ResourceProjection,
+)
+from dartlab.dataHub.paging.composite import (
+    executeInitialCompositePaging,
+    resumeCompositePaging,
 )
 
 _CONTRACT_HASH = "d" * 64

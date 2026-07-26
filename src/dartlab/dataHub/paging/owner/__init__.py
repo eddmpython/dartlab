@@ -8,13 +8,13 @@ from __future__ import annotations
 
 from dartlab.dataHub.catalog.universe import resolveUniverse
 from dartlab.dataHub.continuation import ContinuationError, canonicalDigest, inspectArrowIpcPayload
-from dartlab.dataHub.ownerPagingApi import (
+from dartlab.dataHub.paging.owner.api import (
     _plannedTask,
     executeInitialOwnerPaging,
     isPageableOwner,
     resumeOwnerPaging,
 )
-from dartlab.dataHub.ownerPagingEntity import (
+from dartlab.dataHub.paging.owner.entity import (
     _entityParamMap,
     _executeEntity,
     _failureEntry,
@@ -22,7 +22,7 @@ from dartlab.dataHub.ownerPagingEntity import (
     _requestRef,
     _sourcePayloadParams,
 )
-from dartlab.dataHub.ownerPagingModels import (
+from dartlab.dataHub.paging.owner.models import (
     _DIGEST_RE,
     _FORMAT_VERSION,
     _MAX_ENTITY_PARAMS,
@@ -37,7 +37,7 @@ from dartlab.dataHub.ownerPagingModels import (
     _OwnerTask,
     _VerifiedEntitySource,
 )
-from dartlab.dataHub.ownerPagingPayload import (
+from dartlab.dataHub.paging.owner.payload import (
     _continuationStore,
     _decodePage,
     _encodePage,
@@ -46,14 +46,14 @@ from dartlab.dataHub.ownerPagingPayload import (
     _innerTable,
     _validateOwnerPayload,
 )
-from dartlab.dataHub.ownerPagingResults import (
+from dartlab.dataHub.paging.owner.results import (
     _failedResult,
     _planFailure,
     _progressSelector,
     _resultFromPage,
     _universeCoverage,
 )
-from dartlab.dataHub.ownerPagingSchedule import (
+from dartlab.dataHub.paging.owner.schedule import (
     _boundedEntries,
     _candidates,
     _executionWindows,
@@ -65,7 +65,7 @@ from dartlab.dataHub.ownerPagingSchedule import (
     _runOwnerPageProcess,
     _updatedTasks,
 )
-from dartlab.dataHub.ownerPagingSource import (
+from dartlab.dataHub.paging.owner.source import (
     _contractDigest,
     _currentTaskSourcePin,
     _entities,
@@ -74,7 +74,7 @@ from dartlab.dataHub.ownerPagingSource import (
     _resourceSourcePin,
     _sourcePin,
 )
-from dartlab.dataHub.ownerPagingState import (
+from dartlab.dataHub.paging.owner.state import (
     _callablePinValue,
     _codePinTree,
     _decodeDescriptor,
@@ -101,7 +101,7 @@ from dartlab.dataHub.ownerPagingState import (
     _validateQueryPayload,
     isOwnerPagingState,
 )
-from dartlab.dataHub.pagingRuntime import requireDeadline
+from dartlab.dataHub.paging.runtime import requireDeadline
 
 __all__ = [
     "executeInitialOwnerPaging",

@@ -53,7 +53,7 @@ from dartlab.dataHub.materialization import (
     MaterializationDirective,
     MaterializationReceipt,
 )
-from dartlab.dataHub.pageScan import (
+from dartlab.dataHub.paging.scan import (
     PageScanCheckpoint,
     PageScanError,
     iterDataArrowBatches,

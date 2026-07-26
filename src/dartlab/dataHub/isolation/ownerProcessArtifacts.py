@@ -25,7 +25,7 @@ from dartlab.dataHub.isolation.ownerProcessModels import (
     _REPARSE_POINT,
     _ProtocolViolation,
 )
-from dartlab.dataHub.pagingRuntime import (
+from dartlab.dataHub.paging.runtime import (
     MAX_OWNER_PROCESS_CONTROL_FRAME_BYTES,
     MAX_OWNER_PROCESS_REQUEST_BYTES,
     MAX_STATE_BYTES,

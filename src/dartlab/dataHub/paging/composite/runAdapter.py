@@ -9,21 +9,6 @@ from collections.abc import Mapping
 from types import SimpleNamespace
 from typing import Any
 
-from dartlab.dataHub.compositePagingModels import _EAGER_SCHEMA, _LaneAllocation, _LanePage
-from dartlab.dataHub.compositePagingPayload import _decodeEagerResult, _encodeEagerResult
-from dartlab.dataHub.compositePagingState import (
-    _decodePins,
-    _decodeQuery,
-    _descriptorCodec,
-    _isSafeEagerLane,
-    _jsonLoad,
-    _packLowerSession,
-    _pinsTree,
-    _requireDigest,
-    _requireText,
-    _samePins,
-    _unpackLowerSession,
-)
 from dartlab.dataHub.continuation import (
     ContinuationError,
     ContinuationPins,
@@ -44,7 +29,22 @@ from dartlab.dataHub.contracts import (
     UniverseCoverage,
 )
 from dartlab.dataHub.identity.contentSeal import resultSnapshotId
-from dartlab.dataHub.pagingRuntime import requireDeadline
+from dartlab.dataHub.paging.composite.models import _EAGER_SCHEMA, _LaneAllocation, _LanePage
+from dartlab.dataHub.paging.composite.payload import _decodeEagerResult, _encodeEagerResult
+from dartlab.dataHub.paging.composite.state import (
+    _decodePins,
+    _decodeQuery,
+    _descriptorCodec,
+    _isSafeEagerLane,
+    _jsonLoad,
+    _packLowerSession,
+    _pinsTree,
+    _requireDigest,
+    _requireText,
+    _samePins,
+    _unpackLowerSession,
+)
+from dartlab.dataHub.paging.runtime import requireDeadline
 
 
 class CompositeRunAdapterMixin:
@@ -78,7 +78,7 @@ class CompositeRunAdapterMixin:
 
     @classmethod
     def _validateResource(cls, lane: Mapping[str, Any], *, deadline: float) -> Any:
-        module = importlib.import_module("dartlab.dataHub.resourcePaging")
+        module = importlib.import_module("dartlab.dataHub.paging.resource")
         queryPayload, sessionPayload, expectedPins = cls._lowerState(lane)
         module._validateQueryPayload(queryPayload)
         session = module._decodeSession(sessionPayload)
@@ -94,7 +94,7 @@ class CompositeRunAdapterMixin:
 
     @classmethod
     def _validateOwner(cls, lane: Mapping[str, Any], *, deadline: float) -> Any:
-        module = importlib.import_module("dartlab.dataHub.ownerPaging")
+        module = importlib.import_module("dartlab.dataHub.paging.owner")
         queryPayload, sessionPayload, expectedPins = cls._lowerState(lane)
         module._validateQueryPayload(queryPayload)
         session = module._decodeSession(sessionPayload)
@@ -236,7 +236,7 @@ class CompositeRunAdapterMixin:
         deadline: float,
         validation: Any,
     ) -> _LanePage:
-        module = importlib.import_module("dartlab.dataHub.resourcePaging")
+        module = importlib.import_module("dartlab.dataHub.paging.resource")
         queryPayload, sessionPayload, expectedPins = cls._lowerState(lane)
         session = module._decodeSession(sessionPayload)
         session = dataclasses.replace(
@@ -280,7 +280,7 @@ class CompositeRunAdapterMixin:
         *,
         deadline: float,
     ) -> _LanePage:
-        module = importlib.import_module("dartlab.dataHub.ownerPaging")
+        module = importlib.import_module("dartlab.dataHub.paging.owner")
         queryPayload, sessionPayload, expectedPins = cls._lowerState(lane)
         session = module._decodeSession(sessionPayload)
         session = dataclasses.replace(
@@ -492,7 +492,7 @@ class CompositeRunAdapterMixin:
             return _decodeEagerResult(row["childPayload"])
         queryPayload, sessionPayload, _pins = self._lowerState(lane)
         del queryPayload
-        moduleName = "dartlab.dataHub.resourcePaging" if kind == "resource" else "dartlab.dataHub.ownerPaging"
+        moduleName = "dartlab.dataHub.paging.resource" if kind == "resource" else "dartlab.dataHub.paging.owner"
         module = importlib.import_module(moduleName)
         session = module._decodeSession(sessionPayload)
         if kind == "resource":

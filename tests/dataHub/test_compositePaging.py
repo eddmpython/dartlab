@@ -13,23 +13,6 @@ from typing import Any, Literal
 import polars as pl
 import pytest
 
-from dartlab.dataHub.compositePaging import (
-    _EAGER_SCHEMA,
-    _decodeEagerResult,
-    _decodeSession,
-    _encodeEagerResult,
-    _encodeSession,
-    _LaneAllocation,
-    _LanePage,
-    _laneTree,
-    _packLowerSession,
-    _ProductionAdapters,
-    _queryPayload,
-    _unpackLowerSession,
-    _validateCompositePayload,
-    executeInitialCompositePaging,
-    resumeCompositePaging,
-)
 from dartlab.dataHub.continuation import (
     ContinuationError,
     ContinuationQueryState,
@@ -53,7 +36,24 @@ from dartlab.dataHub.contracts import (
     TimeContext,
     UniverseSelection,
 )
-from dartlab.dataHub.pagingRuntime import MAX_STATE_BYTES, continuationStore
+from dartlab.dataHub.paging.composite import (
+    _EAGER_SCHEMA,
+    _decodeEagerResult,
+    _decodeSession,
+    _encodeEagerResult,
+    _encodeSession,
+    _LaneAllocation,
+    _LanePage,
+    _laneTree,
+    _packLowerSession,
+    _ProductionAdapters,
+    _queryPayload,
+    _unpackLowerSession,
+    _validateCompositePayload,
+    executeInitialCompositePaging,
+    resumeCompositePaging,
+)
+from dartlab.dataHub.paging.runtime import MAX_STATE_BYTES, continuationStore
 
 
 class _FakeAdapters:
@@ -500,7 +500,7 @@ def testActualKrUsOwnerPlansFitOneOuterState(monkeypatch):
     """현재 KR+US owner plan을 source 갱신 없이 한 outer state에 봉인한다."""
 
     import dartlab.core.dataLoader as dataLoader
-    import dartlab.dataHub.ownerPaging as ownerPaging
+    import dartlab.dataHub.paging.owner as ownerPaging
     from dartlab.dataHub.catalog import buildCatalog
 
     monkeypatch.setattr(

@@ -5,7 +5,7 @@ from __future__ import annotations
 from functools import lru_cache
 from pathlib import Path
 
-from dartlab.dataHub.pagingRuntime import MAX_PAGE_BYTES, dataHubRoot
+from dartlab.dataHub.paging.runtime import MAX_PAGE_BYTES, dataHubRoot
 
 from .contracts import MaintenanceBudget, MaterializationPolicy
 from .store import MaterializationStore

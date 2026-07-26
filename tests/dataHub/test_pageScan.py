@@ -9,14 +9,14 @@ from typing import Any, cast
 import polars as pl
 import pytest
 
-import dartlab.dataHub.pageScan as pageScanModule
+import dartlab.dataHub.paging.scan as pageScanModule
 from dartlab.dataHub.contracts import (
     AssetRef,
     Coverage,
     DataPartition,
     DataResult,
 )
-from dartlab.dataHub.pageScan import (
+from dartlab.dataHub.paging.scan import (
     PageScanCheckpoint,
     PageScanError,
     iterDataArrowBatches,

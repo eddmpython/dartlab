@@ -5,7 +5,7 @@ from __future__ import annotations
 from functools import lru_cache
 from pathlib import Path
 
-from dartlab.dataHub.pagingRuntime import dataHubRoot
+from dartlab.dataHub.paging.runtime import dataHubRoot
 
 from .ledger import DataHubJobLedger
 

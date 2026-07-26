@@ -10,7 +10,7 @@ import polars as pl
 
 from dartlab.dataHub.continuation import ContinuationError
 from dartlab.dataHub.contracts import DataAssetDescriptor
-from dartlab.dataHub.ownerPagingModels import (
+from dartlab.dataHub.paging.owner.models import (
     _DIGEST_RE,
     _MAX_ENTITY_PARAMS,
     _EntityRef,
@@ -18,9 +18,9 @@ from dartlab.dataHub.ownerPagingModels import (
     _OwnerTask,
     _VerifiedEntitySource,
 )
-from dartlab.dataHub.ownerPagingPayload import _framePayload
-from dartlab.dataHub.ownerPagingState import _requestedMeasures
-from dartlab.dataHub.pagingRuntime import manifestCachePath, requireDeadline
+from dartlab.dataHub.paging.owner.payload import _framePayload
+from dartlab.dataHub.paging.owner.state import _requestedMeasures
+from dartlab.dataHub.paging.runtime import manifestCachePath, requireDeadline
 from dartlab.dataHub.projection.output import projectOutput
 
 

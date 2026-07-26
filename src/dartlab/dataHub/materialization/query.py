@@ -7,17 +7,17 @@ import time
 from collections.abc import Sequence
 
 from dartlab.dataHub.cancellation import raiseIfCancelled
-from dartlab.dataHub.compositePaging import (
+from dartlab.dataHub.continuation import ContinuationError
+from dartlab.dataHub.contracts import DataQuery, DataResult
+from dartlab.dataHub.paging.composite import (
     CompositePagingPlan,
     compositeMaterializationIdentity,
     compositeQueryDigest,
     encodeMaterializationPage,
     executePreparedCompositePaging,
 )
-from dartlab.dataHub.continuation import ContinuationError
-from dartlab.dataHub.contracts import DataQuery, DataResult
-from dartlab.dataHub.pagingRouter import resumeDataPaging
-from dartlab.dataHub.pagingRuntime import MAX_PAGE_BYTES
+from dartlab.dataHub.paging.router import resumeDataPaging
+from dartlab.dataHub.paging.runtime import MAX_PAGE_BYTES
 
 from .contracts import (
     GenerationPins,
