@@ -958,12 +958,15 @@ def calcRatios(
 
 def _calcProfitability(r: RatioResult) -> None:
     """수익성 비율 (12개)."""
-    r.roe = _safePct(r.netIncomeTTM, r.ownersEquity)
+    # 자본이 음수면 ROE 는 부호가 뒤집힌다. 적자 기업이 +200% 로 읽혀 수익성
+    # 랭킹 맨 위에 올라가고, -500~500 범위 검사도 그 값을 잡지 못한다. 같은
+    # 저장소의 scan 빌더와 roce, noncurrentRatio 는 이미 분모 양수를 요구한다.
+    r.roe = _safePctPositive(r.netIncomeTTM, r.ownersEquity)
     if r.roe is not None and not (-500 <= r.roe <= 500):
         r.warnings.append(f"ROE {r.roe:.0f}% 범위 초과")
         r.roe = None
 
-    r.roa = _safePct(r.netIncomeTTM, r.totalAssets)
+    r.roa = _safePctPositive(r.netIncomeTTM, r.totalAssets)
     if r.roa is not None and not (-200 <= r.roa <= 200):
         r.warnings.append(f"ROA {r.roa:.0f}% 범위 초과")
         r.roa = None
@@ -1004,7 +1007,8 @@ def _calcProfitability(r: RatioResult) -> None:
 
 def _calcStability(r: RatioResult) -> None:
     """안정성 비율 (9개)."""
-    r.debtRatio = _safePct(r.totalLiabilities, r.totalEquity)
+    # 자본잠식 기업의 부채비율은 음수가 아니라 정의되지 않는다.
+    r.debtRatio = _safePctPositive(r.totalLiabilities, r.totalEquity)
     if r.debtRatio is not None and r.debtRatio > 5000:
         r.debtRatio = None
 
@@ -1019,7 +1023,7 @@ def _calcStability(r: RatioResult) -> None:
     # 현금비율: (현금 + 현금성자산) / 유동부채
     r.cashRatio = _safePct(r.cash, r.currentLiabilities)
 
-    r.equityRatio = _safePct(r.totalEquity, r.totalAssets)
+    r.equityRatio = _safePctPositive(r.totalEquity, r.totalAssets)
 
     if r.operatingIncomeTTM is not None and r.financeCosts and r.financeCosts > 0:
         r.interestCoverage = _safeRound(r.operatingIncomeTTM / r.financeCosts, 2)
@@ -1027,7 +1031,7 @@ def _calcStability(r: RatioResult) -> None:
     totalBorrowings = r.shortTermBorrowings + r.longTermBorrowings + r.bonds
     r.netDebt = totalBorrowings - (r.cash or 0)
 
-    r.netDebtRatio = _safePct(r.netDebt, r.totalEquity)
+    r.netDebtRatio = _safePctPositive(r.netDebt, r.totalEquity)
 
     if r.noncurrentAssets is not None and r.totalEquity and r.totalEquity > 0:
         r.noncurrentRatio = _safeRound((r.noncurrentAssets / r.totalEquity) * 100, 2)
