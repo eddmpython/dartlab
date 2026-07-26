@@ -155,6 +155,7 @@ offline = dartlab.dataHub(
 6. [05-signature-data-prism.md](05-signature-data-prism.md): 공식 외부 조사, 공통 evidence spine, 혼합 query, 용도별 설계
 7. [06-full-certification-and-hardening.md](06-full-certification-and-hardening.md): 170개 전수 실행 결과, concurrency, 빈 결과, 성능 등급, 남은 owner 상태
 8. [07-datahub-distributed-runtime.md](07-datahub-distributed-runtime.md): canonical 이름, 원격 API, 비동기 client, durable job, 분산 worker
+9. [08-universe-state-budget.md](08-universe-state-budget.md): 두 시장 혼합 등록이 state 예산에 걸리는 구조 결함과 수정 설계
 
 ## 기존 계획과의 관계
 

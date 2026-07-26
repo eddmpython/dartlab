@@ -331,3 +331,33 @@ W16 최초 기록은 성공률을 티커 7,683 분모로만 적어 시장 커버
 호출을 0 으로 막고 로컬만 읽는다. 그 조건에서 나온 `SOURCE_FILE_MISSING` 을 검증
 없이 원천 한계로 해석했다. 결론 자체는 실측으로 맞았지만 근거 없이 단정한 절차가
 틀렸다. 측정 조건은 결론으로 확대하지 않는다.
+
+### 2026-07-26 W17: KR 전종목 완주 최초 인증과 혼합 등록 결함
+
+전종목 완주가 처음으로 인증됐다. W11 이후 "전 page 실제 완주는 아직 인증하지 않았다"
+로 남아 있던 항목이다.
+
+공개 계약 `dartlab.dataHub("query", ...)` 한 번으로 KR 현재 상장 universe 를 등록하고
+`iterPages()` 가 수동 token loop 없이 42 page 를 끝까지 소비했다.
+
+- page 42 개. `ceil(2661/64)` 예측치와 정확히 일치한다
+- factor row 4,012 개, 요청 엔티티 2,661 개
+- 소요 355.007 초
+- `snapshotId` 와 `contractHash` 가 42 page 내내 단일 유지됐다
+- 실패 분해는 `FEATURE_ENTITY_UNAVAILABLE` 298 과 `FEATURE_SOURCE_MISSING` 12 로,
+  2,661 에서 310 을 빼면 2,351 이라 기존 DART strict 성공 2,352 와 일치한다
+
+완주를 가능하게 한 것은 같은 W16 에서 추가한 page scan bounded 재시도다. 재시도가 없던
+동안에는 42 page 중 한 page 의 일시 실패가 sweep 전체를 끝냈고, 그것이 완주 미인증의
+실제 원인이었다. 물리 한계나 토큰 수명 문제가 아니었다.
+
+같은 실행에서 구조 결함을 하나 확정했다. KR 과 US 를 한 query 에 함께 등록하는 문서
+대표 예제가 실제 universe 에서 `CONTINUATION_STATE_BUDGET` 으로 즉시 실패한다. owner
+세션 raw state 가 713,285 bytes 로 한도 524,288 의 1.36 배다. 단일 시장은 둘 다 정상이다.
+
+원인은 `_OwnerTask.entities` 가 엔티티 10,344 개를 세션에 통째로 직렬화하는 것이다.
+그 목록은 재개 시 `_currentSourcePins` 가 이미 universe 를 재해소해 다시 만들고 비교하는
+값이라 순수 중복이다. 수정 설계와 소비처 전수, 검증 항목은
+[08-universe-state-budget.md](08-universe-state-budget.md) 에 있다.
+
+US 단독 완주와 혼합 완주는 아직 인증하지 않았다. 혼합은 위 결함 수정이 선행 조건이다.
