@@ -136,6 +136,7 @@ from .state import (
 
 _log = dataHubLogger(__name__)
 
+
 def executeInitialResourcePaging(
     assetIds: Sequence[str],
     query: DataQuery,
@@ -279,6 +280,7 @@ def executeInitialResourcePaging(
             requestedAssets=requestedAssets,
             resolvedAssets=len(resolved),
         )
+
 
 def resumeResourcePaging(token: str, *, deadline: float, startedAt: float | None = None) -> DataResult:
     """Token private state를 catalog lookup 없이 복원해 다음 multiplex page를 반환한다."""

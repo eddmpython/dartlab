@@ -82,7 +82,10 @@ from dartlab.dataHub.isolation.ownerProcess import (
     _safeErrorCode,
     _strictJson,
 )
-from dartlab.dataHub.isolation.processLifecycle import becomeProcessGroupLeader
+from dartlab.dataHub.isolation.processLifecycle import (
+    becomeProcessGroupLeader,
+    describeStalledThread,
+)
 from dartlab.dataHub.paging.runtime import (
     MAX_OWNER_PROCESS_REQUEST_BYTES,
     requireDeadline,
@@ -748,28 +751,37 @@ def _childMain(
         joinSeconds = max(0.0, workDeadline - time.perf_counter())
         worker.join(timeout=joinSeconds)
         if worker.is_alive():
+            # 멈춘 지점을 자식 stderr 로 남긴다. 부모가 받는 것은 평평한 실패 코드라
+            # 여기서 잡지 않으면 어디서 섰는지 영영 알 수 없다.
+            print(
+                f"[dataHub] eager worker stalled at {describeStalledThread(worker.ident)}",
+                file=sys.stderr,
+                flush=True,
+            )
             raise RuntimeError("EAGER_PROCESS_WORKER_DID_NOT_FINISH")
         if len(output) != 1:
             raise RuntimeError("EAGER_PROCESS_WORKER_RESULT_INVALID")
         sendConnection.send_bytes(_strictJson(output[0]))
     except BaseException as error:
-        if worker is None or not worker.is_alive():
-            try:
-                sendConnection.send_bytes(
-                    _strictJson(
-                        {
-                            "artifactId": artifactId,
-                            "byteCount": None,
-                            "digest": None,
-                            "errorCode": _safeErrorCode(error),
-                            "kind": "result",
-                            "rowCount": None,
-                            "status": "failed",
-                        }
-                    )
+        # worker 는 결과를 `output` 리스트에만 넣고 이 connection 을 만지지 않는다.
+        # 그래서 worker 가 아직 살아 있어도 여기서 실패를 보내는 것이 안전하다.
+        # 보내지 않으면 부모는 원인 대신 자기 기한이 다 찰 때까지 침묵을 받는다.
+        try:
+            sendConnection.send_bytes(
+                _strictJson(
+                    {
+                        "artifactId": artifactId,
+                        "byteCount": None,
+                        "digest": None,
+                        "errorCode": _safeErrorCode(error),
+                        "kind": "result",
+                        "rowCount": None,
+                        "status": "failed",
+                    }
                 )
-            except BaseException:
-                pass
+            )
+        except BaseException:
+            pass
     finally:
         workerGate.set()
         sendConnection.close()

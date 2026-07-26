@@ -50,3 +50,40 @@ def testWaitReturnsImmediatelyForReleasedGroup() -> None:
     startedAt = time.perf_counter()
     assert waitProcessGroupZero(None, startedAt + 5) is True
     assert time.perf_counter() - startedAt < 1.0
+
+
+def testStalledThreadDescriptionPointsAtTheBlockingFrame() -> None:
+    """멈춘 thread 요약은 그 thread 가 실제로 서 있는 파일과 줄을 가리킨다."""
+
+    import threading
+
+    from dartlab.dataHub.isolation.processLifecycle import describeStalledThread
+
+    release = threading.Event()
+
+    def blocked() -> None:
+        release.wait(timeout=5.0)
+
+    worker = threading.Thread(target=blocked, daemon=True)
+    worker.start()
+    try:
+        deadline = time.perf_counter() + 2.0
+        summary = ""
+        while time.perf_counter() < deadline:
+            summary = describeStalledThread(worker.ident)
+            if "blocked" in summary:
+                break
+        assert "blocked" in summary
+        assert "test_processLifecycle.py" in summary
+    finally:
+        release.set()
+        worker.join(timeout=5.0)
+
+
+def testStalledThreadDescriptionNeverRaisesOnUnknownThread() -> None:
+    """진단 경로가 진단 대상보다 먼저 죽으면 안 된다."""
+
+    from dartlab.dataHub.isolation.processLifecycle import describeStalledThread
+
+    assert describeStalledThread(None) == "thread-ident-unavailable"
+    assert describeStalledThread(-1) == "thread-gone"

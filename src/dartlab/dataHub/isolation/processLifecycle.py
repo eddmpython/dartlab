@@ -12,7 +12,60 @@ from __future__ import annotations
 
 import os
 import signal
+import sys
 import time
+import traceback
+from pathlib import Path
+
+_STALL_FRAME_LIMIT = 6
+
+
+def describeStalledThread(threadIdent: int | None) -> str:
+    """기한을 넘긴 worker thread 가 서 있는 지점을 한 줄로 요약한다.
+
+    Capabilities:
+        살아 있는 thread 의 현재 frame 을 잡아 파일명, 줄번호, 함수명으로 압축한다.
+
+    AIContext:
+        자식이 기한을 다 쓰고도 끝나지 않을 때 부모가 받는 것은 평평한 실패 코드뿐이라
+        어디서 멈췄는지 알 수 없다. 이 요약이 그 공백을 메운다.
+
+    Guide:
+        반환값은 진단용이라 자식 stderr 로 내보내고 공개 payload 에는 싣지 않는다.
+
+    When:
+        `Thread.join(timeout=...)` 이 만료됐는데 thread 가 여전히 살아 있을 때.
+
+    How:
+        `sys._current_frames()` 에서 해당 ident 의 frame 을 찾아 안쪽 몇 개만 남긴다.
+
+    Requires:
+        `threading.Thread.ident`. `native_id` 는 frame 표의 키가 아니라 쓸 수 없다.
+
+    Raises:
+        올리지 않는다. 진단 경로가 진단 대상보다 먼저 죽으면 안 된다.
+
+    Example:
+        ``describeStalledThread(worker.ident)``.
+
+    See Also:
+        ``waitProcessGroupZero``.
+    """
+
+    if threadIdent is None:
+        return "thread-ident-unavailable"
+    try:
+        frame = sys._current_frames().get(threadIdent)
+    except Exception:
+        return "thread-frames-unavailable"
+    if frame is None:
+        return "thread-gone"
+    try:
+        stack = traceback.extract_stack(frame)
+    except Exception:
+        return "thread-stack-unavailable"
+    tail = stack[-_STALL_FRAME_LIMIT:]
+    return " <- ".join(f"{Path(item.filename).name}:{item.lineno}:{item.name}" for item in reversed(tail))
 
 
 def becomeProcessGroupLeader() -> bool:
@@ -137,6 +190,7 @@ def stopProcessGroup(pid: int | None, deadline: float) -> tuple[str, ...]:
 
 __all__ = [
     "becomeProcessGroupLeader",
+    "describeStalledThread",
     "processGroupAlive",
     "stopProcessGroup",
     "waitProcessGroupZero",
