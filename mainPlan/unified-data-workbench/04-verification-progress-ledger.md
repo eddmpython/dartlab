@@ -397,3 +397,30 @@ US 현재 상장 universe 전종목 완주를 인증했다. 공개 계약 한 �
 
 KR 42 page 와 합쳐 두 시장 모두 완주가 인증됐다. W11 이후 남아 있던 미인증 항목이
 닫혔다.
+
+### 2026-07-26 W19: 두 시장 혼합 전종목 완주 인증
+
+DataHub 정체성 문장인 "종목별 반복 호출 없이 한 query 로 전시장을 등록한다" 를 실제
+규모에서 증명했다. 오늘 아침까지 이 예제는 `CONTINUATION_STATE_BUDGET` 으로 즉시
+실패했다.
+
+공개 계약 `dartlab.dataHub("query", ...)` 한 번으로 KR 과 US 현재 상장 universe 를
+함께 등록하고 `iterPages()` 가 수동 token loop 없이 끝까지 소비했다.
+
+- page 162 개, factor row 8,932 개, 소요 852.738 초
+- 엔티티 10,344 개. `krListedPit` 2,661 과 `usListedPit` 7,683
+- row 수는 단일 시장 완주 합계와 정확히 일치한다. KR 4,012 더하기 US 4,920
+- 최종 checkpoint 가 `complete=true`, `pageNumber=162` 다
+- `snapshotId` 가 162 page 내내 단일 유지됐다
+
+세 인증을 합치면 KR 42 page, US 121 page, 혼합 162 page 다. 혼합이 단일 시장 합보다
+한 page 적은 것은 scheduler 가 두 lane 을 round-robin 하며 마지막 page 를 함께 채우기
+때문이다.
+
+완주를 가능하게 한 것은 두 가지다. page scan bounded 재시도가 없던 동안에는 한 page 의
+일시 실패가 sweep 전체를 끝냈고, continuation state 가 엔티티 목록을 담던 동안에는 두
+시장 등록 자체가 예산을 넘겼다. 둘 다 같은 날 닫았다.
+
+기록으로 남길 실수가 하나 있다. 첫 혼합 실행 도중 폴더 그룹핑을 수행해 자식 프로세스의
+모듈 import 가 깨졌다. 제품 결함이 아니라 작업 순서 실수이며, 트리를 정리한 뒤 재실행해
+위 수치를 얻었다. 장시간 실측 중에는 src 를 건드리지 않는다.

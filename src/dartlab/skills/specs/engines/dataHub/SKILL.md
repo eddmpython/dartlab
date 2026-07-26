@@ -326,6 +326,8 @@ for page in first.iterPages():
     consume(page)
 ```
 
+전종목 완주는 실측으로 인증했다. KR은 42 page 355.007초, US는 121 page 605.024초, 두 시장 혼합은 162 page 852.738초로 `iterPages()`가 수동 token loop 없이 끝까지 소비했다. 혼합 실행은 엔티티 10,344개를 한 query로 등록했고 factor row 8,932개는 단일 시장 완주 합계와 정확히 일치했다. page 수는 세 경우 모두 `ceil(엔티티/64)` 예측치와 맞았고 `snapshotId`는 전 page에서 단일 유지됐다.
+
 한 query는 전체 universe와 계산 계약을 고정한다는 뜻이다. 첫 응답에서 전종목을 모두 계산하거나 메모리에 적재한다는 뜻이 아니다. owner lane 한 page는 종목 시도 64개를 넘지 않으며 row, byte, time 예산이 먼저 소진되면 더 작아진다. 종목별 실패는 gap과 누적 universe coverage에 남고 cursor는 다음 종목으로 진행한다.
 
 continuation은 원 query, contract, 외부 Arrow schema, source manifest, universe membership, entity와 source ID mapping, DART 결산월, requested measure를 digest로 고정한다. 미완료 token을 재개할 때 source, universe, owner code, requested measure가 바뀌면 실패한다. commit된 page replay는 source와 owner를 다시 접촉하지 않는다. token은 private control plane에 24시간 임시 보존된다.

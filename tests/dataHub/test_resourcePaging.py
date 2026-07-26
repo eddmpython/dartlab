@@ -554,6 +554,11 @@ def testMixedPageableAndMonkeypatchedEagerFailsCodePinBeforeAnyExecution(
                 DataRequest("resource.finance", "page", params={"columns": ["companyId"]}),
                 DataRequest("scan.governance", "eager"),
             ),
+            # 이 회귀는 code pin 검사가 owner 실행보다 먼저인지를 본다. 자식은 fresh spawn
+            # 이라 pin 을 계산하기 전에 owner 모듈 전체를 sandbox 하위에서 새로 import
+            # 해야 하고, 병렬 부하가 큰 CI 러너에서는 기본 30 초 안에 그 지점에 닿지
+            # 못해 timeout 이 pin 실패를 가린다. 순서 계약을 보려면 기한이 넉넉해야 한다.
+            budget=QueryBudget(timeoutMs=180_000),
         ),
     )
 

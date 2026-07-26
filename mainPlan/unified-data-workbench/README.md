@@ -1,6 +1,6 @@
 # DartLab DataHub
 
-상태: 구현과 hardening 진행. 355개 catalog, 172개 queryable asset, DART와 EDGAR 원천 및 계산 owner paging, mixed outer continuation, immutable generation과 receipt 기반 재생을 검증했다. 2026-07-26에는 universe 계획 중 원천 자동 갱신을 제거하고 local-only snapshot 경계를 추가했다. 통합 회귀 637개를 수집해 634개 통과, 환경 의존 3개 skip을 확인했다. 별도 프로세스 격리 감사 21개도 통과했고 owner child 50회에서 zero-live 50회와 artifact residue 0개를 확인했다. 작업대 순수성 검사는 계층 역전과 원천 직독 0건을 확인했다.
+상태: 구현과 hardening 진행. KR 42 page, US 121 page, 두 시장 혼합 162 page 로 전종목 완주를 모두 인증했다. 355개 catalog, 172개 queryable asset, DART와 EDGAR 원천 및 계산 owner paging, mixed outer continuation, immutable generation과 receipt 기반 재생을 검증했다. 2026-07-26에는 universe 계획 중 원천 자동 갱신을 제거하고 local-only snapshot 경계를 추가했다. 통합 회귀 637개를 수집해 634개 통과, 환경 의존 3개 skip을 확인했다. 별도 프로세스 격리 감사 21개도 통과했고 owner child 50회에서 zero-live 50회와 artifact residue 0개를 확인했다. 작업대 순수성 검사는 계층 역전과 원천 직독 0건을 확인했다.
 
 ## 한 문장 정의
 
