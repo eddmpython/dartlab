@@ -86,7 +86,7 @@ from dartlab.dataHub.paging.runtime import (
     MIN_OWNER_PROCESS_WORK_SECONDS,
     OWNER_PROCESS_CLEANUP_GRACE_SECONDS,
 )
-from dartlab.dataHub.telemetry import dataHubLogger
+from dartlab.dataHub.telemetry import dataHubLogger, recordFailure
 
 EagerProcessStatus = Literal[
     "ok",
@@ -511,7 +511,26 @@ def runEagerSeal(
                 cleanupTrace += stopProcessGroup(pid, normalizedDeadline)
             else:
                 status = "childFailed"
-                errorCode = "EAGER_PROCESS_CHILD_DID_NOT_EXIT"
+                # 자식이 typed 실패를 이미 보냈다면 그것이 부모의 추정보다 정확하다.
+                # 자식은 worker thread 가 non-daemon 이라 결과를 보낸 뒤에도 잠시 더
+                # 살아 있을 수 있는데, 그 지연 때문에 진짜 원인을 지우면 안 된다.
+                reportedFrame = tracker.resultFrame
+                reportedCode = (
+                    str(reportedFrame["errorCode"])
+                    if reportedFrame is not None and reportedFrame["status"] == "failed"
+                    else None
+                )
+                errorCode = reportedCode or "EAGER_PROCESS_CHILD_DID_NOT_EXIT"
+                recordFailure(
+                    _log,
+                    "EAGER_PROCESS_CHILD_LINGERED",
+                    context={
+                        "hasResultFrame": reportedFrame is not None,
+                        "reportedCode": reportedCode,
+                        "childCompleted": childCompletedAt is not None,
+                        "processAlive": process.is_alive(),
+                    },
+                )
                 cleanupTrace = _stopProcess(process, job, normalizedDeadline)
                 cleanupTrace += stopProcessGroup(pid, normalizedDeadline)
     except ContinuationError as error:
