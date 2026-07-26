@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import calendar
 import json
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import date
 from hashlib import sha256
@@ -456,6 +457,60 @@ def _evidencePayload(
     )
 
 
+def _selectedMappings(
+    measures: Sequence[str],
+) -> tuple[DartFinancialFeatureMapping, ...]:
+    """요청한 measure 만 남긴다. EDGAR owner 와 같은 정규화 규칙을 쓴다.
+
+    Args:
+        measures: 요청 measure ID. 비어 있으면 전체를 반환한다.
+
+    Returns:
+        요청 순서가 아니라 선언 순서를 유지한 mapping tuple.
+
+    Raises:
+        TypeError: string sequence 가 아닐 때.
+        ValueError: 빈 ID, 중복, 미지원 measure 가 있을 때.
+
+    Example:
+        ``_selectedMappings(("financial.revenue",))``.
+
+    Guide:
+        선언 순서를 유지해야 observation 순서가 결정적으로 남는다.
+
+    When:
+        owner 진입에서 요청 measure 를 좁힐 때 호출한다.
+
+    How:
+        선언 목록을 요청 집합으로 걸러낸다.
+
+    See Also:
+        ``DART_FINANCIAL_FEATURE_MAPPINGS``.
+
+    Requires:
+        미지원 measure 는 조용히 버리지 않고 실패시킨다.
+
+    AI Context:
+        요청하지 않은 measure 를 계산하지 않는 것이 owner pushdown 의 본질이다.
+    """
+
+    if isinstance(measures, (str, bytes)):
+        raise TypeError("DART feature measures는 string sequence여야 합니다")
+    requested = tuple(measures)
+    if any(type(item) is not str or not item or item != item.strip() for item in requested):
+        raise ValueError("DART feature measure ID가 유효하지 않습니다")
+    if len(requested) != len(set(requested)):
+        raise ValueError("DART feature measures에 중복이 있습니다")
+    byId = {mapping.variableId: mapping for mapping in DART_FINANCIAL_FEATURE_MAPPINGS}
+    unknown = tuple(item for item in requested if item not in byId)
+    if unknown:
+        raise ValueError(f"DART feature measure가 지원되지 않습니다: {', '.join(unknown)}")
+    if not requested:
+        return DART_FINANCIAL_FEATURE_MAPPINGS
+    requestedSet = set(requested)
+    return tuple(mapping for mapping in DART_FINANCIAL_FEATURE_MAPPINGS if mapping.variableId in requestedSet)
+
+
 def buildDartFinancialFeatureInput(
     finance: pl.DataFrame,
     *,
@@ -463,6 +518,7 @@ def buildDartFinancialFeatureInput(
     knownAt: str,
     validAt: str | None = None,
     fiscalYearEndMonth: int,
+    measures: Sequence[str] = (),
 ) -> dict[str, Any]:
     """DART finance 원장을 cutoff-stable quarterly feature envelope로 만든다.
 
@@ -472,6 +528,7 @@ def buildDartFinancialFeatureInput(
         knownAt: 허용할 접수 지식 시점.
         validAt: 선택할 수 있는 마지막 회계 사건 시점.
         fiscalYearEndMonth: 해당 회사의 회계연도 말 월.
+        measures: 요청 measure ID. 비어 있으면 전체를 계산한다.
 
     Returns:
         Data Workbench가 검증할 ``feature-observation-input-v1`` mapping.
@@ -483,6 +540,7 @@ def buildDartFinancialFeatureInput(
         ``buildDartFinancialFeatureInput(frame, entityId="KR:005930", knownAt="20250520", fiscalYearEndMonth=12)``.
     """
 
+    selectedMappings = _selectedMappings(measures)
     market, separator, code = str(entityId).partition(":")
     if (
         separator != ":"
@@ -571,7 +629,7 @@ def buildDartFinancialFeatureInput(
             "vintage": vintage,
             "normalizationRuleHash": DART_FINANCIAL_FEATURE_NORMALIZATION_HASH,
         }
-        for item in DART_FINANCIAL_FEATURE_MAPPINGS
+        for item in selectedMappings
         if item.fieldName in values
     )
     return {

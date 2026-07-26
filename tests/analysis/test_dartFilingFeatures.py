@@ -298,3 +298,53 @@ def testDataAssetRejectsNonAsciiAlphanumericKrTicker() -> None:
             knownAt="20250320",
             fiscalYearEndMonth=12,
         )
+
+
+def testRequestedMeasuresAreHonoredAndUnknownOnesFailClosed() -> None:
+    """요청한 measure 만 반환한다. EDGAR owner 와 같은 pushdown 계약이다."""
+
+    from dartlab.analysis.financial.dartFilingFeatures import (
+        DART_FINANCIAL_FEATURE_MAPPINGS,
+        buildDartFinancialFeatureInput,
+    )
+
+    frame = _finance()
+    full = buildDartFinancialFeatureInput(
+        frame,
+        entityId="KR:005930",
+        knownAt="20250320",
+        fiscalYearEndMonth=12,
+    )
+    narrowed = buildDartFinancialFeatureInput(
+        frame,
+        entityId="KR:005930",
+        knownAt="20250320",
+        fiscalYearEndMonth=12,
+        measures=("financial.revenue",),
+    )
+
+    fullIds = {item["signalId"] for item in full["observations"]}
+    narrowedIds = {item["signalId"] for item in narrowed["observations"]}
+    assert narrowedIds == {"financial.revenue"}
+    assert narrowedIds < fullIds
+    # 선언 순서는 그대로라 observation 순서가 결정적이다.
+    declared = [item.variableId for item in DART_FINANCIAL_FEATURE_MAPPINGS]
+    emitted = [item["signalId"] for item in full["observations"]]
+    assert emitted == [item for item in declared if item in fullIds]
+
+    with pytest.raises(ValueError, match="지원되지 않습니다"):
+        buildDartFinancialFeatureInput(
+            frame,
+            entityId="KR:005930",
+            knownAt="20250320",
+            fiscalYearEndMonth=12,
+            measures=("financial.unknown",),
+        )
+    with pytest.raises(ValueError, match="중복"):
+        buildDartFinancialFeatureInput(
+            frame,
+            entityId="KR:005930",
+            knownAt="20250320",
+            fiscalYearEndMonth=12,
+            measures=("financial.revenue", "financial.revenue"),
+        )

@@ -292,6 +292,9 @@ def testDartEntityParameterIsPinnedRoundTrippedAndInjected(
             "sourcePayload": _SOURCE_PAYLOAD,
             "sourceIntegrityDigest": _SOURCE_PAYLOAD_DIGEST,
             "knownAt": "20250520",
+            # DART owner 도 measure pushdown 을 선언하므로 요청 measure 가 함께 내려간다.
+            # 요청하지 않은 measure 를 owner 가 계산하지 않게 하는 것이 pushdown 의 본질이다.
+            "measures": ("financial.revenue",),
         }
     ]
     assert entry.gapCodes == ("FEATURE_ENTITY_UNAVAILABLE",)

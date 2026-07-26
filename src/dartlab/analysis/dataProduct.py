@@ -90,6 +90,7 @@ DATA_PRODUCT_DESCRIPTOR = {
                 "dartlab.providers.dart.finance.mapper",
             ),
             "subjectParam": "subject",
+            "measureParam": "measures",
             "knowledgeTimeParam": "knownAt",
             "temporalSupport": ("knownAt",),
             "selectorKind": "subject",

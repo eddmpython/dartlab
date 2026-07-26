@@ -205,6 +205,7 @@ def dartFinancialFeatures(
     sourceIntegrityDigest: str | None = None,
     knownAt: str,
     fiscalYearEndMonth: int | str,
+    measures: Sequence[str] = (),
 ) -> dict[str, Any]:
     """검증된 DART finance shard에서 PIT quarterly feature envelope를 만든다.
 
@@ -215,6 +216,7 @@ def dartFinancialFeatures(
         sourceIntegrityDigest: ``sourcePayload``의 full-file SHA-256.
         knownAt: DART 접수 지식 cutoff.
         fiscalYearEndMonth: Universe snapshot이 결박한 회사별 결산월.
+        measures: 요청 measure ID. 비어 있으면 전체를 계산한다.
 
     Returns:
         Data Workbench가 검증하고 FactorProjection으로 변환할 plain mapping.
@@ -277,4 +279,5 @@ def dartFinancialFeatures(
         entityId=f"KR:{code}",
         knownAt=knownAt,
         fiscalYearEndMonth=fiscalMonth,
+        measures=measures,
     )

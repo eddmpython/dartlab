@@ -354,7 +354,9 @@ def testEveryQueryableAssetRoutesThroughOneMixedQuery(monkeypatch):
             "subject": "probe",
         }
     ]
-    assert dartFeatureCalls == [{"knownAt": "20250201", "subject": "probe"}]
+    # DART owner 도 measure pushdown 을 선언하므로 measure 인자가 함께 내려간다.
+    # 요청을 좁히지 않은 질의는 빈 tuple 이고 owner 는 전체를 계산한다. EDGAR 와 같은 계약이다.
+    assert dartFeatureCalls == [{"knownAt": "20250201", "subject": "probe", "measures": ()}]
 
 
 def testMaxConcurrencyAcceleratesMixedQueryAndKeepsResultOrder(monkeypatch):
