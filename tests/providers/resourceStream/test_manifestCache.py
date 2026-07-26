@@ -54,7 +54,7 @@ def _sandboxPinnedRead(
     resultQueue: Any,
 ) -> None:
     try:
-        from dartlab.dataHub.eagerSandbox import enforceProcessSandbox
+        from dartlab.dataHub.isolation.eagerSandbox import enforceProcessSandbox
         from dartlab.providers.resourceStream.manifest import (
             readVerifiedManifestShard,
         )
