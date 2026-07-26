@@ -10,6 +10,10 @@ from __future__ import annotations
 import re
 from functools import lru_cache
 
+from dartlab.core.logger import getLogger
+
+_log = getLogger(__name__)
+
 _CODE_RE = re.compile(r"\((\d{6})[/)\s]")
 
 # 투자의견 화이트리스트 — '(코드/의견)' 패턴의 의견부만(날짜 '(6/29)' 등 오탐 차단).
@@ -45,7 +49,9 @@ def _listedPairs() -> tuple[tuple[str, str], ...]:
         ]
         pairs.sort(key=lambda x: len(x[0]), reverse=True)
         return tuple(pairs)
-    except Exception:  # noqa: BLE001 — 키/네트워크 없으면 명시코드 경로만 사용
+    except Exception as exc:  # noqa: BLE001
+        # 키나 네트워크가 없으면 명시코드 경로만 쓴다. 흐름은 그대로 두고 원인만 남긴다.
+        _log.warning("상장 종목 쌍 조회 실패로 빈 결과 반환: %s: %s", type(exc).__name__, exc)
         return ()
 
 

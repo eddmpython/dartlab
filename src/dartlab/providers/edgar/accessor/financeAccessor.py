@@ -7,8 +7,11 @@ from typing import TYPE_CHECKING, Any
 
 import polars as pl
 
+from dartlab.core.logger import getLogger
 from dartlab.core.memory import _CACHE_MISSING
 from dartlab.core.ratios import calcRatios, calcRatioSeries, toSeriesDict
+
+_log = getLogger(__name__)
 
 if TYPE_CHECKING:
     from dartlab.providers.edgar.company import Company
@@ -100,7 +103,8 @@ class _FinanceAccessor:
             from dartlab.core.dataLoader import loadData
 
             df = loadData(self._company.ticker, category="edgarFinanceStmt")
-        except Exception:  # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
+            _log.warning("발행 재무 artifact 로드 실패로 None 반환: %s: %s", type(exc).__name__, exc)
             return None
         if df is None or df.is_empty() or "sj_div" not in df.columns:
             return None

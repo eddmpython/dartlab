@@ -43,7 +43,8 @@ def _loadPriorAuditor() -> pl.DataFrame | None:
             hf_hub_download, _HF_REPO, _HF_AUDITOR_PATH, repo_type="dataset", token=os.environ.get("HF_TOKEN")
         )
         return pl.read_parquet(fp)
-    except Exception:  # noqa: BLE001 (네트워크/부재 모두 graceful None)
+    except Exception as exc:  # noqa: BLE001
+        _log.warning("직전 감사인 스냅샷 로드 실패로 None 반환: %s: %s", type(exc).__name__, exc)
         return None
 
 

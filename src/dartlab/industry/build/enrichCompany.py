@@ -11,6 +11,10 @@ import re
 from pathlib import Path
 from typing import Any, Callable
 
+from dartlab.core.logger import getLogger
+
+_log = getLogger(__name__)
+
 logger = logging.getLogger(__name__)
 
 _BLOG_DIR = Path(__file__).resolve().parents[4] / "blog" / "05-company-reports"
@@ -39,7 +43,8 @@ def _parseFrontmatter(mdText: str) -> dict:
         return {}
     try:
         return yaml.safe_load(m.group(1)) or {}
-    except Exception:
+    except Exception as exc:
+        _log.warning("frontmatter 파싱 실패로 빈 dict 반환: %s: %s", type(exc).__name__, exc)
         return {}
 
 

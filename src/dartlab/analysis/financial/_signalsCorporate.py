@@ -684,8 +684,10 @@ def _loadGrowthMap() -> dict[str, float]:
         return gmap
     except (ImportError, ValueError, AttributeError):
         return {}
-    except Exception:
-        # polars.exceptions.ColumnNotFoundError 등 scan 결과 schema 변경 시 graceful fallback.
+    except Exception as exc:
+        # scan 결과 schema 가 바뀌면 성장 신호가 통째로 빈 채 내려간다. 흐름은 그대로
+        # 두되 원인은 남긴다. 그러지 않으면 신호 부재와 데이터 없음이 구분되지 않는다.
+        log.warning("성장 맵 로드 실패로 빈 맵 반환: %s: %s", type(exc).__name__, exc)
         return {}
 
 

@@ -14,6 +14,10 @@ from __future__ import annotations
 import importlib
 from typing import TYPE_CHECKING, Any, Callable
 
+from dartlab.core.logger import getLogger
+
+_log = getLogger(__name__)
+
 if TYPE_CHECKING:
     from dartlab.core.protocols import (  # noqa: F401
         FinanceDataAccessor,
@@ -334,7 +338,8 @@ def getCapabilityCatalog() -> "dict[str, Any]":
         return {}
     try:
         return _capabilityCatalogProvider()
-    except Exception:
+    except Exception as exc:
+        _log.warning("capability 카탈로그 provider 실패로 빈 카탈로그 반환: %s: %s", type(exc).__name__, exc)
         return {}
 
 

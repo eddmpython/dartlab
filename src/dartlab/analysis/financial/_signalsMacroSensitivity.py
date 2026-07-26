@@ -27,11 +27,14 @@ from dartlab.analysis.financial._predictionUtils import (
     _clamp,
 )
 from dartlab.analysis.financial._signalsMacroBreak import _getStockCode
+from dartlab.core.logger import getLogger
 from dartlab.core.memory import memoizedCalc
 from dartlab.core.polarsUtil import isEmptyDf
 from dartlab.core.utils.calc import safeDiv as _safe
 from dartlab.core.utils.helpers import annualColsFromPeriods, toDictBySnakeId
 from dartlab.core.utils.safe import get as _get
+
+_log = getLogger(__name__)
 
 log = logging.getLogger(__name__)
 _getF = _getF2 = _getF3 = _getF4 = _get
@@ -501,7 +504,8 @@ def _materializeFromHf(seriesId: str, source: str):
         if df is None or df.is_empty():
             return None
         return enrichAndCache(seriesId, df, source=source)
-    except Exception:
+    except Exception as exc:
+        _log.warning("HF 시계열 구성 실패로 None 반환 (%s): %s: %s", seriesId, type(exc).__name__, exc)
         return None
 
 

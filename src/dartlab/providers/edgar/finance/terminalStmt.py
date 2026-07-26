@@ -22,6 +22,10 @@ from __future__ import annotations
 
 import polars as pl
 
+from dartlab.core.logger import getLogger
+
+_log = getLogger(__name__)
+
 # DART dart/finance 와 동형 — 터미널 financeSource 가 읽는 컬럼(`accounts.ts FINANCE_COLUMNS`).
 FINANCE_COLUMNS: tuple[str, ...] = (
     "sj_div",
@@ -95,7 +99,8 @@ def _stmtWide(company, stmt: str):
             return None
     try:
         return company.panel(stmt)
-    except Exception:  # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
+        _log.warning("panel 조회 실패로 None 반환: %s: %s", type(exc).__name__, exc)
         return None
 
 

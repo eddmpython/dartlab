@@ -8,6 +8,10 @@ from __future__ import annotations
 
 from typing import Any
 
+from dartlab.core.logger import getLogger
+
+_log = getLogger(__name__)
+
 
 def calcChainPosition(company: Any) -> dict | None:
     """이 회사의 산업 가치사슬 위치 + 동일 공정 peers.
@@ -308,7 +312,8 @@ def calcSectorMetrics(company: Any) -> dict | None:
 
         prof = scanProfitability()
         grow = scanGrowth()
-    except Exception:
+    except Exception as exc:
+        _log.warning("섹터 지표 산출 실패로 None 반환: %s: %s", type(exc).__name__, exc)
         return None
 
     # stockCode → 지표 매핑
@@ -444,7 +449,8 @@ def calcSectorCycle(company: Any, *, sectorMetrics: dict | None = None) -> dict 
 
             scanProfitability = importlib.import_module("dartlab.scan.financial.profitability").scanProfitability
             prof = scanProfitability()
-        except Exception:
+        except Exception as exc:
+            _log.warning("섹터 사이클 산출 실패로 None 반환: %s: %s", type(exc).__name__, exc)
             return None
 
         if prof.is_empty():

@@ -92,7 +92,8 @@ def fetchSubsidiaryRows(cik: str, ticker: str, accession: str, filingDate: str, 
         html = client.get(f"{base}/{ex21}", timeout=30).text
         year = str(filingDate)[:4]
         return [{"stockCode": ticker, "year": year, **r} for r in parseSubsidiaries(html)]
-    except Exception:  # noqa: BLE001 (개별 회사 실패 격리)
+    except Exception as exc:  # noqa: BLE001
+        _log.warning("종속회사 표 수집 실패로 빈 목록 반환 (%s): %s: %s", ticker, type(exc).__name__, exc)
         return []
 
 

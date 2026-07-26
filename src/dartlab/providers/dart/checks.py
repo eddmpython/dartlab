@@ -11,6 +11,10 @@ from typing import Any
 
 import polars as pl
 
+from dartlab.core.logger import getLogger
+
+_log = getLogger(__name__)
+
 _PERIOD_COLUMN_RE = re.compile(r"^\d{4}(Q[1-4])?$")
 
 _DART_FRESHNESS_TTL_DAYS = 30
@@ -188,7 +192,8 @@ def _checkDartDocsFreshness(stockCode: str, category: str = "panel"):
 
     try:
         result = checkFreshness(stockCode)
-    except Exception:  # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
+        _log.warning("문서 신선도 확인 실패로 None 반환 (%s): %s: %s", stockCode, type(exc).__name__, exc)
         return None
     if not result.isFresh:
         latestReport = result.missingFilings[0]["report_nm"] if result.missingFilings else ""

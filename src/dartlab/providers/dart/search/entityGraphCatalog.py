@@ -13,7 +13,10 @@ from typing import Any
 
 import polars as pl
 
+from dartlab.core.logger import getLogger
 from dartlab.providers.dart.search.entityGraph import ENTITY_GRAPH_CATALOG_NAME
+
+_log = getLogger(__name__)
 
 ENTITY_GRAPH_CATALOG_SCHEMA_VERSION = "searchEntityGraphCatalog.v1"
 
@@ -246,7 +249,8 @@ def writeEntityGraphCatalog(catalog: pl.DataFrame, path: str | Path) -> None:
 def _industry(companyFactory: Callable[[str], Any], code: str) -> dict[str, Any]:
     try:
         data = companyFactory(code).industry() or {}
-    except Exception:
+    except Exception as exc:
+        _log.warning("업종 조회 실패로 빈 결과 반환 (%s): %s: %s", code, type(exc).__name__, exc)
         return {}
     return dict(data) if isinstance(data, Mapping) else {}
 
