@@ -605,12 +605,14 @@ def testContractDriftOnPendingResumeFailsBeforeOwnerRead(
     owner: _SyntheticOwner,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    import dartlab.dataHub.resourcePaging as resourcePagingModule
+    # `_contractDigest` 는 `_pins` 와 같은 source 계층이 소유한다. 파사드를 패치하면
+    # 호출자가 자기 모듈의 이름을 그대로 보므로 drift 가 재현되지 않는다.
+    import dartlab.dataHub.resourcePagingSource as resourcePagingSourceModule
 
     first = _publicData("query", query=_pageQuery())
     assert first.continuation is not None
     callsBefore = len(owner.calls)
-    monkeypatch.setattr(resourcePagingModule, "_contractDigest", lambda _session: "f" * 64)
+    monkeypatch.setattr(resourcePagingSourceModule, "_contractDigest", lambda _session: "f" * 64)
 
     result = _publicData("query", query=DataQuery(continuation=first.continuation))
 
