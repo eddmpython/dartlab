@@ -24,7 +24,6 @@ from dartlab.dataHub.contracts import (
     UniverseSelection,
 )
 from dartlab.dataHub.ownerPagingModels import (
-    _DIGEST_RE,
     _FORMAT_VERSION,
     _MAX_ENTITY_PARAMS,
     _MAX_PAGE_ENTITIES,
@@ -34,52 +33,13 @@ from dartlab.dataHub.ownerPagingModels import (
     _OwnerTask,
 )
 from dartlab.dataHub.pagingRuntime import MAX_PAGE_BYTES, MAX_PAGE_ROWS, MAX_STATE_BYTES
+from dartlab.dataHub.pagingStateCodec import requireDigest, requireOptionalText, requireText, strictTree
 
 
 def _strictTree(value: Any, *, seen: set[int] | None = None) -> Any:
-    activeSeen = set() if seen is None else seen
-    if value is None or type(value) in {str, bool, int}:
-        return value
-    if type(value) is float:
-        if not math.isfinite(value):
-            raise ValueError("query float는 유한해야 합니다")
-        return value
-    if dataclasses.is_dataclass(value) and not isinstance(value, type):
-        identity = id(value)
-        if identity in activeSeen:
-            raise ValueError("query tree에 cycle이 있습니다")
-        activeSeen.add(identity)
-        try:
-            return {
-                field.name: _strictTree(getattr(value, field.name), seen=activeSeen)
-                for field in dataclasses.fields(value)
-            }
-        finally:
-            activeSeen.remove(identity)
-    if isinstance(value, Mapping):
-        identity = id(value)
-        if identity in activeSeen:
-            raise ValueError("query tree에 cycle이 있습니다")
-        activeSeen.add(identity)
-        try:
-            tree: dict[str, Any] = {}
-            for key, item in value.items():
-                if type(key) is not str:
-                    raise TypeError("query mapping key는 str이어야 합니다")
-                tree[key] = _strictTree(item, seen=activeSeen)
-            return tree
-        finally:
-            activeSeen.remove(identity)
-    if isinstance(value, (tuple, list)):
-        identity = id(value)
-        if identity in activeSeen:
-            raise ValueError("query tree에 cycle이 있습니다")
-        activeSeen.add(identity)
-        try:
-            return [_strictTree(item, seen=activeSeen) for item in value]
-        finally:
-            activeSeen.remove(identity)
-    raise TypeError("query에는 strict JSON 값만 허용됩니다")
+    """owner paging query tree를 공유 codec으로 canonical 변환한다."""
+
+    return strictTree(value, context="query", seen=seen)
 
 
 def _jsonLoad(payload: bytes) -> Any:
@@ -135,23 +95,9 @@ def _jsonLoad(payload: bytes) -> Any:
         raise ContinuationError("CONTINUATION_CORRUPT") from None
 
 
-def _requireText(value: Any) -> str:
-    if type(value) is not str or not value:
-        raise ContinuationError("CONTINUATION_CORRUPT")
-    return value
-
-
-def _requireOptionalText(value: Any) -> str | None:
-    if value is None:
-        return None
-    return _requireText(value)
-
-
-def _requireDigest(value: Any) -> str:
-    text = _requireText(value)
-    if _DIGEST_RE.fullmatch(text) is None:
-        raise ContinuationError("CONTINUATION_CORRUPT")
-    return text
+_requireText = requireText
+_requireOptionalText = requireOptionalText
+_requireDigest = requireDigest
 
 
 def _queryTree(query: DataQuery) -> dict[str, Any]:

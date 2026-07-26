@@ -15,7 +15,6 @@ from collections.abc import Mapping, Sequence
 from typing import Any
 
 from dartlab.dataHub.compositePagingModels import (
-    _DIGEST_LENGTH,
     _EAGER_SCHEMA,
     _FORMAT_VERSION,
     _LOWER_SESSION_ENCODING,
@@ -44,54 +43,13 @@ from dartlab.dataHub.contracts import (
     UniverseSelection,
 )
 from dartlab.dataHub.pagingRuntime import MAX_PAGE_BYTES, MAX_PAGE_ROWS, MAX_STATE_BYTES
+from dartlab.dataHub.pagingStateCodec import requireDigest, requireText, strictTree
 
 
 def _strictTree(value: Any, *, seen: set[int] | None = None) -> Any:
-    """임의 fallback coercion 없이 canonical JSON tree를 만든다."""
+    """compositePagingState state tree를 공유 codec으로 canonical 변환한다."""
 
-    activeSeen = set() if seen is None else seen
-    if value is None or type(value) in {str, bool, int}:
-        return value
-    if type(value) is float:
-        if not math.isfinite(value):
-            raise ValueError("composite state float는 유한해야 합니다")
-        return value
-    if dataclasses.is_dataclass(value) and not isinstance(value, type):
-        identity = id(value)
-        if identity in activeSeen:
-            raise ValueError("composite state에 cycle이 있습니다")
-        activeSeen.add(identity)
-        try:
-            return {
-                field.name: _strictTree(getattr(value, field.name), seen=activeSeen)
-                for field in dataclasses.fields(value)
-            }
-        finally:
-            activeSeen.remove(identity)
-    if isinstance(value, Mapping):
-        identity = id(value)
-        if identity in activeSeen:
-            raise ValueError("composite state에 cycle이 있습니다")
-        activeSeen.add(identity)
-        try:
-            result = {}
-            for key, item in value.items():
-                if type(key) is not str:
-                    raise TypeError("composite state mapping key는 str이어야 합니다")
-                result[key] = _strictTree(item, seen=activeSeen)
-            return result
-        finally:
-            activeSeen.remove(identity)
-    if isinstance(value, (tuple, list)):
-        identity = id(value)
-        if identity in activeSeen:
-            raise ValueError("composite state에 cycle이 있습니다")
-        activeSeen.add(identity)
-        try:
-            return [_strictTree(item, seen=activeSeen) for item in value]
-        finally:
-            activeSeen.remove(identity)
-    raise TypeError("composite state에는 strict JSON 값만 허용됩니다")
+    return strictTree(value, context="composite state", seen=seen)
 
 
 def _jsonLoad(payload: bytes) -> Any:
@@ -117,17 +75,10 @@ def _jsonLoad(payload: bytes) -> Any:
     return value
 
 
-def _requireText(value: Any) -> str:
-    if type(value) is not str or not value:
-        raise ContinuationError("CONTINUATION_CORRUPT")
-    return value
+_requireText = requireText
 
 
-def _requireDigest(value: Any) -> str:
-    text = _requireText(value)
-    if len(text) != _DIGEST_LENGTH or any(character not in "0123456789abcdef" for character in text):
-        raise ContinuationError("CONTINUATION_CORRUPT")
-    return text
+_requireDigest = requireDigest
 
 
 def _packLowerSession(payload: bytes) -> dict[str, Any]:

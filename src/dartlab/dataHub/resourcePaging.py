@@ -59,10 +59,10 @@ from dartlab.dataHub.pagingRuntime import (
     manifestCachePath,
     requireDeadline,
 )
+from dartlab.dataHub.pagingStateCodec import requireDigest, requireText, strictTree
 
 _MAX_PAGE_SHARDS = 64
 _FORMAT_VERSION = 2
-_DIGEST_RE = re.compile(r"^[0-9a-f]{64}$")
 _OWNER_MODULE = "dartlab.providers.resourceStream.workbench"
 _OWNER_CONTRACTS_MODULE = "dartlab.providers.resourceStream.contracts"
 _MULTIPLEX_METADATA = {b"dartlab.dataHub.resource-multiplex": b"v2"}
@@ -223,51 +223,9 @@ def _textDigest(value: str) -> str:
 
 
 def _strictTree(value: Any, *, seen: set[int] | None = None) -> Any:
-    """Typed query를 fallback coercion 없는 strict JSON tree로 바꾼다."""
+    """resourcePaging state tree를 공유 codec으로 canonical 변환한다."""
 
-    activeSeen = set() if seen is None else seen
-    if value is None or type(value) in {str, bool, int}:
-        return value
-    if type(value) is float:
-        if not math.isfinite(value):
-            raise ValueError("query float는 유한해야 합니다")
-        return value
-    if dataclasses.is_dataclass(value) and not isinstance(value, type):
-        identity = id(value)
-        if identity in activeSeen:
-            raise ValueError("query tree에 cycle이 있습니다")
-        activeSeen.add(identity)
-        try:
-            return {
-                field.name: _strictTree(getattr(value, field.name), seen=activeSeen)
-                for field in dataclasses.fields(value)
-            }
-        finally:
-            activeSeen.remove(identity)
-    if isinstance(value, Mapping):
-        identity = id(value)
-        if identity in activeSeen:
-            raise ValueError("query tree에 cycle이 있습니다")
-        activeSeen.add(identity)
-        try:
-            result = {}
-            for key, item in value.items():
-                if type(key) is not str:
-                    raise TypeError("query mapping key는 str이어야 합니다")
-                result[key] = _strictTree(item, seen=activeSeen)
-            return result
-        finally:
-            activeSeen.remove(identity)
-    if isinstance(value, (tuple, list)):
-        identity = id(value)
-        if identity in activeSeen:
-            raise ValueError("query tree에 cycle이 있습니다")
-        activeSeen.add(identity)
-        try:
-            return [_strictTree(item, seen=activeSeen) for item in value]
-        finally:
-            activeSeen.remove(identity)
-    raise TypeError("query에는 strict JSON 값만 허용됩니다")
+    return strictTree(value, context="resource state", seen=seen)
 
 
 def _queryPayload(assetIds: Sequence[str], query: DataQuery) -> bytes:
@@ -423,17 +381,10 @@ def _encodeSession(session: _ResourceSession) -> bytes:
     return payload
 
 
-def _requireText(value: Any) -> str:
-    if type(value) is not str or not value:
-        raise ContinuationError("CONTINUATION_CORRUPT")
-    return value
+_requireText = requireText
 
 
-def _requireDigest(value: Any) -> str:
-    text = _requireText(value)
-    if _DIGEST_RE.fullmatch(text) is None:
-        raise ContinuationError("CONTINUATION_CORRUPT")
-    return text
+_requireDigest = requireDigest
 
 
 def _decodeTask(value: Any) -> _ResourceTask:
