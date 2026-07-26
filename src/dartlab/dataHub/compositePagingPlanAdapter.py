@@ -191,8 +191,8 @@ class CompositePlanAdapterMixin:
         else:
             if descriptor.executorKind not in {"callable", "engineAxis"}:
                 raise ContinuationError("PAGEABLE_EAGER_EXECUTOR_UNSUPPORTED")
-            eagerProcess = importlib.import_module("dartlab.dataHub.eagerProcess")
-            supervisor = importlib.import_module("dartlab.dataHub.eagerSupervisor")
+            eagerProcess = importlib.import_module("dartlab.dataHub.isolation.eagerProcess")
+            supervisor = importlib.import_module("dartlab.dataHub.isolation.eagerSupervisor")
             codePin = eagerProcess.eagerCodePin(
                 descriptor,
                 requestedMeasures=execution._requestedMeasures(query),

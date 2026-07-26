@@ -31,7 +31,7 @@ from dartlab.dataHub.feature.observation import makeVariableObservation
 from dartlab.dataHub.feature.query import buildFeatureObservationSet
 from dartlab.dataHub.feature.registry import StateVariableSpec, buildStateVariableRegistry
 from dartlab.dataHub.identity.vintage import VintageRef
-from dartlab.dataHub.ownerProcess import OwnerProcessPage
+from dartlab.dataHub.isolation.ownerProcess import OwnerProcessPage
 
 _DIGEST = "1" * 64
 _NORMALIZATION = "2" * 64

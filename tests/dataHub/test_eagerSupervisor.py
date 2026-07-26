@@ -16,13 +16,13 @@ from dartlab.dataHub.contracts import (
     FactorProjection,
     QueryBudget,
 )
-from dartlab.dataHub.eagerProcess import (
+from dartlab.dataHub.isolation.eagerProcess import (
     eagerCodePin,
     eagerResultAt,
     packEagerSeal,
     validateEagerSeal,
 )
-from dartlab.dataHub.eagerSupervisor import runEagerSeal
+from dartlab.dataHub.isolation.eagerSupervisor import runEagerSeal
 from dartlab.dataHub.pagingRuntime import (
     MAX_OWNER_PROCESS_CONTROL_FRAME_BYTES,
     ownerProcessArtifactRoot,

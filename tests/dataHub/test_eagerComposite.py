@@ -147,7 +147,7 @@ def testMixedInitialSealsGeneralEagerAndResumeTouchesOnlyLocator(
         failIfEagerRunsAgain,
     )
     monkeypatch.setattr(
-        "dartlab.dataHub.eagerSupervisor.runEagerSeal",
+        "dartlab.dataHub.isolation.eagerSupervisor.runEagerSeal",
         failIfEagerRunsAgain,
     )
     resumed = resumeCompositePaging(

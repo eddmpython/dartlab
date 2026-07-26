@@ -150,7 +150,7 @@ class CompositeRunAdapterMixin:
     def _validateEager(cls, lane: Mapping[str, Any], *, deadline: float) -> Any:
         descriptor, query, private = cls._eagerState(lane)
         if private["eagerMode"] == "sealed":
-            eagerProcess = importlib.import_module("dartlab.dataHub.eagerProcess")
+            eagerProcess = importlib.import_module("dartlab.dataHub.isolation.eagerProcess")
             seal = eagerProcess.validateEagerSeal(
                 private["sealed"],
                 selectors=private["selectors"],
@@ -341,7 +341,7 @@ class CompositeRunAdapterMixin:
         descriptor, query, private = cls._eagerState(lane)
         if private["eagerMode"] == "sealed":
             cursor = int(private["cursor"])
-            payload = importlib.import_module("dartlab.dataHub.eagerProcess").eagerResultAt(
+            payload = importlib.import_module("dartlab.dataHub.isolation.eagerProcess").eagerResultAt(
                 private["sealed"],
                 selectors=private["selectors"],
                 index=cursor,

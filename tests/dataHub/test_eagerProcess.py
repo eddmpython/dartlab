@@ -20,7 +20,7 @@ from dartlab.dataHub.contracts import (
     DataPartition,
     DataResult,
 )
-from dartlab.dataHub.eagerProcess import (
+from dartlab.dataHub.isolation.eagerProcess import (
     _EAGER_SCHEMA,
     _MAX_BUNDLE_BYTES,
     EagerSeal,

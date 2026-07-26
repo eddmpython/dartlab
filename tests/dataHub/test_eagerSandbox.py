@@ -18,7 +18,7 @@ import pyarrow.parquet as pq
 import pytest
 
 from dartlab.dataHub.contracts import DataAssetDescriptor, DataQuery, QueryBudget
-from dartlab.dataHub.eagerSupervisor import runEagerSeal
+from dartlab.dataHub.isolation.eagerSupervisor import runEagerSeal
 from dartlab.dataHub.pagingRuntime import ownerProcessArtifactRoot
 
 _CONTRACT_HASH = "c" * 64

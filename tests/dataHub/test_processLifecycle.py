@@ -7,7 +7,7 @@ import time
 
 import pytest
 
-from dartlab.dataHub.processLifecycle import (
+from dartlab.dataHub.isolation.processLifecycle import (
     becomeProcessGroupLeader,
     processGroupAlive,
     stopProcessGroup,

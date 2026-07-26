@@ -299,7 +299,7 @@ def _runOwnerPageProcess(
     *,
     deadline: float,
 ):
-    from dartlab.dataHub.ownerProcess import runOwnerPage
+    from dartlab.dataHub.isolation.ownerProcess import runOwnerPage
 
     # IPC payload 는 durable state 상한 안에서 엔티티 목록을 함께 싣고, 넘치면 목록을
     # 빼고 보낸다. 목록이 실려 오면 자식은 universe 를 볼 필요가 없고, 빠지면 자식이

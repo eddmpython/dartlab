@@ -18,10 +18,10 @@ from pathlib import Path
 import polars as pl
 import pytest
 
+import dartlab.dataHub.isolation.ownerProcess as ownerProcess
+import dartlab.dataHub.isolation.ownerProcessArtifacts as ownerProcessArtifacts
 import dartlab.dataHub.ownerPaging as ownerPaging
 import dartlab.dataHub.ownerPagingApi as ownerPagingApi
-import dartlab.dataHub.ownerProcess as ownerProcess
-import dartlab.dataHub.ownerProcessArtifacts as ownerProcessArtifacts
 from dartlab.dataHub import (
     DataAssetDescriptor,
     DataQuery,
@@ -33,7 +33,7 @@ from dartlab.dataHub.feature.observation import makeVariableObservation
 from dartlab.dataHub.feature.query import buildFeatureObservationSet
 from dartlab.dataHub.feature.registry import StateVariableSpec, buildStateVariableRegistry
 from dartlab.dataHub.identity.vintage import VintageRef
-from dartlab.dataHub.ownerProcess import (
+from dartlab.dataHub.isolation.ownerProcess import (
     _artifactPath,
     _decodeControlFrame,
     runOwnerPage,

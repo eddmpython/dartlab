@@ -105,7 +105,7 @@ def testSwallowedOwnerCauseReachesSideChannelButNotPublicGap(
     """삼켜진 원인은 로그로 남고 공개 gap 메시지는 축약을 유지한다."""
 
     import dartlab
-    import dartlab.dataHub.ownerProcess as ownerProcess
+    import dartlab.dataHub.isolation.ownerProcess as ownerProcess
 
     secretCause = "강제 주입 owner child boundary 파손"
     monkeypatch.setattr(

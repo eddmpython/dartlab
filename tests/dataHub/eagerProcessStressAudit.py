@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from dartlab.dataHub.ownerProcess import runOwnerPage
+from dartlab.dataHub.isolation.ownerProcess import runOwnerPage
 from dartlab.dataHub.pagingRuntime import ownerProcessArtifactRoot
 from tests.dataHub.test_eagerComposite import (
     testMixedInitialSealsGeneralEagerAndResumeTouchesOnlyLocator as _runMixedInitial,
