@@ -7,16 +7,16 @@ from hashlib import sha256
 
 import pytest
 
-from dartlab.dataHub.featureObservation import FeatureObservationError, makeVariableObservation
-from dartlab.dataHub.featureQuery import (
+from dartlab.dataHub.feature.observation import FeatureObservationError, makeVariableObservation
+from dartlab.dataHub.feature.query import (
     FeatureQueryError,
     FeatureReadQuery,
     buildFeatureObservationSet,
     featureObservationSetFromValue,
     readFeatures,
 )
-from dartlab.dataHub.featureRegistry import StateVariableSpec, buildStateVariableRegistry
-from dartlab.dataHub.vintage import VintageRef
+from dartlab.dataHub.feature.registry import StateVariableSpec, buildStateVariableRegistry
+from dartlab.dataHub.identity.vintage import VintageRef
 
 _SOURCE_HASH = sha256(b"source").hexdigest()
 _NORMALIZATION_HASH = sha256(b"normalization").hexdigest()

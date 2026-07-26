@@ -13,7 +13,6 @@ from typing import Any
 
 import polars as pl
 
-from dartlab.dataHub.contentSeal import resultSnapshotId
 from dartlab.dataHub.continuation import (
     ContinuationError,
     canonicalDigest,
@@ -29,6 +28,7 @@ from dartlab.dataHub.contracts import (
     QualityAssertion,
     UniverseCoverage,
 )
+from dartlab.dataHub.identity.contentSeal import resultSnapshotId
 
 from .resourcePagingModels import (
     _MultiplexEntry,

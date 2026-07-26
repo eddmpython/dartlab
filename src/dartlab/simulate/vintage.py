@@ -1,6 +1,6 @@
 """Compatibility re-exports for provider-neutral vintage contracts."""
 
-from dartlab.dataHub.vintage import (
+from dartlab.dataHub.identity.vintage import (
     COVERAGE_KINDS,
     REVISION_POLICIES,
     VintageError,

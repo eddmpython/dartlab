@@ -14,11 +14,11 @@ from dartlab.dataHub.contracts import (
     TimeContext,
 )
 from dartlab.dataHub.execution import _temporalGap
-from dartlab.dataHub.featureObservation import makeVariableObservation
-from dartlab.dataHub.featureQuery import buildFeatureObservationSet
-from dartlab.dataHub.featureRegistry import StateVariableSpec, buildStateVariableRegistry
+from dartlab.dataHub.feature.observation import makeVariableObservation
+from dartlab.dataHub.feature.query import buildFeatureObservationSet
+from dartlab.dataHub.feature.registry import StateVariableSpec, buildStateVariableRegistry
+from dartlab.dataHub.identity.vintage import VintageRef
 from dartlab.dataHub.projections import projectOutput
-from dartlab.dataHub.vintage import VintageRef
 
 _SOURCE_HASH = sha256(b"edgar-source").hexdigest()
 _NORMALIZATION_HASH = sha256(b"edgar-normalization").hexdigest()

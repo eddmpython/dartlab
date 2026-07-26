@@ -7,9 +7,9 @@ from typing import Any
 
 from dartlab.dataHub.compositePagingModels import _AdapterProtocol
 from dartlab.dataHub.compositePagingPayload import _decodeComposite
-from dartlab.dataHub.contentSeal import resultSnapshotId
 from dartlab.dataHub.continuation import ContinuationError, canonicalDigest
 from dartlab.dataHub.contracts import AssetRef, Coverage, DataGap, DataResult
+from dartlab.dataHub.identity.contentSeal import resultSnapshotId
 
 
 def _resultFromComposite(

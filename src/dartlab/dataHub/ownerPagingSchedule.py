@@ -11,13 +11,13 @@ from typing import Any
 import polars as pl
 
 from dartlab.dataHub.cancellation import raiseIfCancelled
-from dartlab.dataHub.contentSeal import contentHash
 from dartlab.dataHub.continuation import (
     ContinuationError,
     ContinuationQueryState,
     PageEnvelope,
     canonicalJsonBytes,
 )
+from dartlab.dataHub.identity.contentSeal import contentHash
 from dartlab.dataHub.ownerPagingEntity import _failureEntry
 from dartlab.dataHub.ownerPagingModels import (
     _DecodedPage,

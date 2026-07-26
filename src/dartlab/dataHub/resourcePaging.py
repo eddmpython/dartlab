@@ -18,7 +18,6 @@ from typing import Any
 import polars as pl
 import pyarrow as pa
 
-from dartlab.dataHub.contentSeal import resultSnapshotId
 from dartlab.dataHub.continuation import (
     ArrowPayloadFacts,
     ContinuationError,
@@ -44,6 +43,7 @@ from dartlab.dataHub.contracts import (
     QualityAssertion,
     UniverseCoverage,
 )
+from dartlab.dataHub.identity.contentSeal import resultSnapshotId
 from dartlab.dataHub.pagingRuntime import (
     MAX_PAGE_BYTES as _MAX_PAGE_BYTES,
 )

@@ -6,7 +6,7 @@ from dataclasses import replace
 
 import pytest
 
-import dartlab.dataHub.featureRegistry as canonical
+import dartlab.dataHub.feature.registry as canonical
 import dartlab.simulate.stateVariables as compatibility
 
 _REGISTRY_HASH = "b43ec06ed53833cac036a5bf3fd44d061dce5daa3913ca66e44712bc9db096c6"
@@ -38,7 +38,7 @@ def testSimulateCompatibilityPathReexportsCanonicalObjects() -> None:
     assert compatibility.STATE_VARIABLE_ROLES is canonical.STATE_VARIABLE_ROLES
     assert compatibility.STATE_EVIDENCE_ROLES is canonical.STATE_EVIDENCE_ROLES
     assert compatibility.STATE_TIMINGS is canonical.STATE_TIMINGS
-    assert canonical.StateVariableSpec.__module__ == "dartlab.dataHub.featureRegistry"
+    assert canonical.StateVariableSpec.__module__ == "dartlab.dataHub.feature.registry"
 
 
 def testRegistryAndContractHashesRemainByteCompatible() -> None:

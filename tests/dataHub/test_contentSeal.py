@@ -5,7 +5,6 @@ from __future__ import annotations
 import polars as pl
 import pyarrow as pa
 
-from dartlab.dataHub.contentSeal import contentHash
 from dartlab.dataHub.contracts import (
     DataAssetDescriptor,
     DataQuery,
@@ -13,6 +12,7 @@ from dartlab.dataHub.contracts import (
     TimeContext,
 )
 from dartlab.dataHub.execution import _temporalGap
+from dartlab.dataHub.identity.contentSeal import contentHash
 
 
 def _factorQuery() -> dict:

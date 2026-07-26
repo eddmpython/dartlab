@@ -24,7 +24,6 @@ from dartlab.dataHub.compositePagingState import (
     _samePins,
     _unpackLowerSession,
 )
-from dartlab.dataHub.contentSeal import resultSnapshotId
 from dartlab.dataHub.continuation import (
     ContinuationError,
     ContinuationPins,
@@ -44,6 +43,7 @@ from dartlab.dataHub.contracts import (
     QueryBudget,
     UniverseCoverage,
 )
+from dartlab.dataHub.identity.contentSeal import resultSnapshotId
 from dartlab.dataHub.pagingRuntime import requireDeadline
 
 

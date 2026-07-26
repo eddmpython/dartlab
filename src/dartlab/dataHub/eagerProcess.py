@@ -486,7 +486,7 @@ def _resultForSelector(
     receipts = tuple(
         dict.fromkeys(partition.lineage.runId for partition in partitions if partition.lineage is not None)
     )
-    resultSnapshotId = importlib.import_module("dartlab.dataHub.contentSeal").resultSnapshotId
+    resultSnapshotId = importlib.import_module("dartlab.dataHub.identity.contentSeal").resultSnapshotId
     result = DataResult(
         status="failed" if not partitions and gaps else "partial" if gaps else "ok",
         partitions=partitions,

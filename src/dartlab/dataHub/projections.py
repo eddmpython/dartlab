@@ -8,7 +8,6 @@ from typing import Any
 
 import polars as pl
 
-from dartlab.dataHub.contentSeal import contentHash, executionReceipt
 from dartlab.dataHub.contracts import (
     AssetRef,
     DataAssetDescriptor,
@@ -23,6 +22,7 @@ from dartlab.dataHub.contracts import (
     ResourceProjection,
 )
 from dartlab.dataHub.evidence import lineageFacet, narrativeFrame, qualityAssertions
+from dartlab.dataHub.identity.contentSeal import contentHash, executionReceipt
 
 _RECEIPT_PLACEHOLDER = f"data-execution:{'0' * 64}"
 
@@ -131,7 +131,7 @@ def _factorFrame(
     market: str | None,
     receiptRef: str,
 ) -> tuple[pl.DataFrame | None, tuple[DataGap, ...]]:
-    from dartlab.dataHub.featureQuery import FeatureQueryError, featureObservationSetFromValue
+    from dartlab.dataHub.feature.query import FeatureQueryError, featureObservationSetFromValue
 
     try:
         featureDataset = featureObservationSetFromValue(raw)
@@ -260,7 +260,7 @@ def _featureObservationFrame(
 ) -> tuple[pl.DataFrame | None, tuple[DataGap, ...]]:
     """검증된 observation dataset을 실제 bitemporal factor view로 투영한다."""
 
-    from dartlab.dataHub.featureQuery import FeatureQueryError, FeatureReadQuery, readFeatures
+    from dartlab.dataHub.feature.query import FeatureQueryError, FeatureReadQuery, readFeatures
 
     projection = query.projection
     assert isinstance(projection, FactorProjection)

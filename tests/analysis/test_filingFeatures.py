@@ -16,7 +16,7 @@ from dartlab.analysis.financial.filingFeatures import (
     buildEdgarFinancialFeatureInput,
 )
 from dartlab.dataHub import DataQuery, DataResult, FactorProjection, TimeContext, data
-from dartlab.dataHub.featureQuery import featureObservationSetFromValue
+from dartlab.dataHub.feature.query import featureObservationSetFromValue
 
 
 def _filing(accn: str, filed: str, fiscalEnd: str, *, scale: float = 1.0) -> pl.DataFrame:

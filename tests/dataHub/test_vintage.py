@@ -8,7 +8,7 @@ from typing import Any, cast
 
 import pytest
 
-import dartlab.dataHub.vintage as dataVintage
+import dartlab.dataHub.identity.vintage as dataVintage
 import dartlab.simulate.vintage as simulateVintage
 
 
@@ -42,7 +42,7 @@ def testSimulateVintageReexportsCanonicalObjectsByIdentity() -> None:
     )
     for name in names:
         assert getattr(simulateVintage, name) is getattr(dataVintage, name)
-    assert dataVintage.VintageRef.__module__ == "dartlab.dataHub.vintage"
+    assert dataVintage.VintageRef.__module__ == "dartlab.dataHub.identity.vintage"
     assert "dartlab.simulate" not in inspect.getsource(dataVintage)
 
 

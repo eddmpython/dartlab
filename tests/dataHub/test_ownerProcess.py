@@ -29,9 +29,10 @@ from dartlab.dataHub import (
     QueryBudget,
     UniverseSelection,
 )
-from dartlab.dataHub.featureObservation import makeVariableObservation
-from dartlab.dataHub.featureQuery import buildFeatureObservationSet
-from dartlab.dataHub.featureRegistry import StateVariableSpec, buildStateVariableRegistry
+from dartlab.dataHub.feature.observation import makeVariableObservation
+from dartlab.dataHub.feature.query import buildFeatureObservationSet
+from dartlab.dataHub.feature.registry import StateVariableSpec, buildStateVariableRegistry
+from dartlab.dataHub.identity.vintage import VintageRef
 from dartlab.dataHub.ownerProcess import (
     _artifactPath,
     _decodeControlFrame,
@@ -43,7 +44,6 @@ from dartlab.dataHub.pagingRuntime import (
     MIN_OWNER_PROCESS_WORK_SECONDS,
     ownerProcessArtifactRoot,
 )
-from dartlab.dataHub.vintage import VintageRef
 
 _DIGEST = "1" * 64
 _SECOND_DIGEST = "2" * 64

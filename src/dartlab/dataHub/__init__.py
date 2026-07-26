@@ -25,13 +25,13 @@ from dartlab.dataHub.contracts import (
 )
 from dartlab.dataHub.controlPlane import DataHubControlError, DataHubJob
 from dartlab.dataHub.entry import Data, DataHub, data, dataHub
-from dartlab.dataHub.featureObservation import (
+from dartlab.dataHub.feature.observation import (
     FeatureObservationError,
     VariableObservation,
     makeVariableObservation,
     validateVariableObservation,
 )
-from dartlab.dataHub.featureQuery import (
+from dartlab.dataHub.feature.query import (
     FeatureObservationSet,
     FeatureQueryError,
     FeatureReadQuery,
@@ -41,13 +41,14 @@ from dartlab.dataHub.featureQuery import (
     featureObservationSetFromValue,
     readFeatures,
 )
-from dartlab.dataHub.featureRegistry import (
+from dartlab.dataHub.feature.registry import (
     StateVariableError,
     StateVariableRegistry,
     StateVariableSpec,
     buildStateVariableRegistry,
     stateVariableContractHash,
 )
+from dartlab.dataHub.identity.vintage import VintageError, VintageRef, isExactAsKnown, validateVintageRef
 from dartlab.dataHub.materialization import (
     MaterializationDirective,
     MaterializationReceipt,
@@ -59,7 +60,6 @@ from dartlab.dataHub.pageScan import (
     iterDataResultPages,
 )
 from dartlab.dataHub.remote import AsyncDataHubClient, DataHubClient
-from dartlab.dataHub.vintage import VintageError, VintageRef, isExactAsKnown, validateVintageRef
 from dartlab.dataHub.workerPlane import DataHubWorker, WorkerRun
 
 __all__ = [

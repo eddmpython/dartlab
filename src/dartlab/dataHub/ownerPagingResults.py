@@ -7,7 +7,6 @@ from typing import Any
 
 import polars as pl
 
-from dartlab.dataHub.contentSeal import contentHash, resultSnapshotId
 from dartlab.dataHub.continuation import ContinuationError
 from dartlab.dataHub.contracts import (
     AssetRef,
@@ -20,6 +19,7 @@ from dartlab.dataHub.contracts import (
     QualityAssertion,
     UniverseCoverage,
 )
+from dartlab.dataHub.identity.contentSeal import contentHash, resultSnapshotId
 from dartlab.dataHub.ownerPagingModels import _OwnerSession, _OwnerTask
 from dartlab.dataHub.ownerPagingPayload import _decodePage
 from dartlab.dataHub.ownerPagingSchedule import _candidates, _requireDecodedPage, _updatedTasks

@@ -7,9 +7,9 @@ from hashlib import sha256
 
 import pytest
 
-import dartlab.dataHub.featureObservation as canonical
+import dartlab.dataHub.feature.observation as canonical
 import dartlab.simulate.stateCompiler as compatibility
-from dartlab.dataHub.vintage import VintageRef, canonicalPayloadHash
+from dartlab.dataHub.identity.vintage import VintageRef, canonicalPayloadHash
 
 _OBSERVATION_HASH = "685b9e6500e7d03ff7a3a265063c3d5be54071bface56c7d563a59dadf000d81"
 
@@ -72,7 +72,7 @@ def testSimulateCompatibilityPathReexportsCanonicalObjects() -> None:
     assert compatibility.validateVariableObservation is canonical.validateVariableObservation
     assert compatibility._observationPayload is canonical.observationPayload
     assert compatibility.VARIABLE_OBSERVATION_SCHEMA == canonical.VARIABLE_OBSERVATION_SCHEMA
-    assert canonical.VariableObservation.__module__ == "dartlab.dataHub.featureObservation"
+    assert canonical.VariableObservation.__module__ == "dartlab.dataHub.feature.observation"
     assert canonical.__all__ == [
         "FeatureObservationError",
         "VARIABLE_OBSERVATION_SCHEMA",
