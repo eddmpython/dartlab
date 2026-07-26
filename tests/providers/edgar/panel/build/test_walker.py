@@ -6,7 +6,7 @@ from collections import Counter
 
 import pytest
 
-from .synthData import synthPre, synthPrimaryHtml, synthPrimaryHtmlNoInline
+from ..synthData import synthPre, synthPrimaryHtml, synthPrimaryHtmlNoInline
 
 pytestmark = pytest.mark.unit
 

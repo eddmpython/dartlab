@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from .synthData import synthPrimaryHtml
+from ..synthData import synthPrimaryHtml
 
 pytestmark = pytest.mark.unit
 

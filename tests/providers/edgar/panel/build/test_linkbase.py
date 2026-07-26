@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from .synthData import synthLab, synthPre
+from ..synthData import synthLab, synthPre
 
 pytestmark = pytest.mark.unit
 

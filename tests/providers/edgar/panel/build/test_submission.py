@@ -6,7 +6,7 @@ from datetime import date
 
 import pytest
 
-from .synthData import synthSubmissionTxt
+from ..synthData import synthSubmissionTxt
 
 pytestmark = pytest.mark.unit
 

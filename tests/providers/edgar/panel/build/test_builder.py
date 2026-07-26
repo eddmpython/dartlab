@@ -11,7 +11,7 @@ pytestmark = pytest.mark.unit
 def test_filing_text_to_board(builtTicker) -> None:
     from dartlab.providers.edgar.panel.build.builder import filingTextToBoard
 
-    from .synthData import synthSubmissionTxt
+    from ..synthData import synthSubmissionTxt
 
     board = filingTextToBoard(synthSubmissionTxt(), ticker=builtTicker)
     assert board
@@ -26,7 +26,7 @@ def test_build_edgar_panel_artifacts(builtTicker) -> None:
     from dartlab.providers.dart.panel.schema import PANEL_SCHEMA
     from dartlab.providers.edgar.panel.build.builder import buildEdgarPanel, panelPath
 
-    from .synthData import synthSubmissionTxt
+    from ..synthData import synthSubmissionTxt
 
     stats = buildEdgarPanel(builtTicker, [{"text": synthSubmissionTxt()}])
     assert stats["rows"] > 0 and stats["filings"] == 1
@@ -43,7 +43,7 @@ def test_build_edgar_panel_native_payload_read(builtTicker) -> None:
     from dartlab.providers.edgar.panel.build.builder import buildEdgarPanel, panelPath
     from dartlab.providers.edgar.panel.native import decodeNativeCellsPayload, readNative
 
-    from .synthData import synthSubmissionTxt
+    from ..synthData import synthSubmissionTxt
 
     buildEdgarPanel(builtTicker, [{"text": synthSubmissionTxt()}])
     board = pl.read_parquet(str(panelPath(builtTicker)))
@@ -79,7 +79,7 @@ def test_append_filing_texts_to_panel_incremental(builtTicker, tmp_path) -> None
         panelPath,
     )
 
-    from .synthData import synthSubmissionTxt
+    from ..synthData import synthSubmissionTxt
 
     # 초기 빌드 (1 filing)
     buildEdgarPanel(builtTicker, [{"text": synthSubmissionTxt()}], overwrite=True)
@@ -184,7 +184,7 @@ def test_build_edgar_panel_all(builtTicker) -> None:
     """buildEdgarPanelAll — ticker별 text records dict."""
     from dartlab.providers.edgar.panel.build.builder import buildEdgarPanelAll
 
-    from .synthData import synthSubmissionTxt
+    from ..synthData import synthSubmissionTxt
 
     res = buildEdgarPanelAll({"TEST": [{"text": synthSubmissionTxt()}]})
     assert res["TEST"]["rows"] > 0

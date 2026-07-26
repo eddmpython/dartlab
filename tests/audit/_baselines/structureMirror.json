@@ -25,13 +25,7 @@
     "edgar/docs/sections/itemBoundary.py",
     "edgar/docs/sections/sectionsBuilder.py",
     "edgar/docs/sections/sectionsStorage.py",
-    "edgar/docs/viewer.py",
-    "edgar/panel/build/builder.py",
-    "edgar/panel/build/instance.py",
-    "edgar/panel/build/linkbase.py",
-    "edgar/panel/build/mapper.py",
-    "edgar/panel/build/submission.py",
-    "edgar/panel/build/walker.py"
+    "edgar/docs/viewer.py"
   ],
-  "_note": "src↔tests mirror 부채 원장 (룰 7). docs 농장 은퇴+panel 재배치 후 현 상태 동기화 — 삭제된 farm 경로 제거, 재배치 survivor 등록. P6 에서 점진 충원."
+  "_note": "src 와 tests 미러 부채 원장(룰 7). edgar/panel/build 여섯 항목은 닫았다. 커버리지가 없던 것이 아니라 src 가 build 폴더로 내려갈 때 테스트가 따라가지 않아 미러 경로만 어긋나 있었다. 파일을 옮기고 공용 헬퍼 참조를 부모 패키지로 맞췄으며, 같은 이름의 재export 파사드 `panel/mapper.py` 에는 파사드가 구현과 어긋나지 않는지 보는 회귀를 새로 세웠다. 나머지는 진짜 커버리지 공백이다."
 }
