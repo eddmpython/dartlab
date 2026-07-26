@@ -62,7 +62,13 @@ def _engineFolders() -> set[str]:
     엔진이 아니다. 그 spec 의 capabilityRefs 는 계약이 아니다.
     """
     pkg = _REPO / "src" / "dartlab"
-    return {d.name for d in _ENGINE_SPECS.iterdir() if d.is_dir() and (pkg / d.name).is_dir()}
+    # SKILL.md 실재까지 조건에 넣는다. 예전에는 폴더 존재만 봐서, 엔진 이름이 바뀌며
+    # 남은 빈 spec 폴더 하나가 바로 뒤의 읽기에서 FileNotFoundError 로 게이트를 통째로
+    # 죽였다. git 이 빈 폴더를 추적하지 않아 CI 에서는 보이지도 않는 로컬 전용 사고였다.
+    # spec 이 없는 폴더는 spec 이 아니다.
+    return {
+        d.name for d in _ENGINE_SPECS.iterdir() if d.is_dir() and (pkg / d.name).is_dir() and (d / "SKILL.md").is_file()
+    }
 
 
 def _loadContract() -> tuple[set[str], set[str]]:
