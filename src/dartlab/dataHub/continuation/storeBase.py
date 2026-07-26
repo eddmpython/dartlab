@@ -19,6 +19,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from dartlab.dataHub.telemetry import dataHubLogger, recordFailure
+
 from .arrowPayload import validateArrowIpcPayload
 from .artifactStore import ArtifactStore
 from .contracts import (
@@ -40,6 +42,9 @@ _INITIALIZE_LOCK = threading.Lock()
 _PayloadValidator = Callable[..., ArrowPayloadFacts]
 _SCHEMA_VERSION = 3
 _SWEEP_NAMES = frozenset({"artifacts", "cas", "roots"})
+
+
+_log = dataHubLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -175,6 +180,7 @@ class _ContinuationStoreBase:
                 raise ValueError
             number = float(value)
         except Exception:
+            recordFailure(_log, "CONTINUATION_CLOCK_INVALID")
             raise ContinuationError("CONTINUATION_CLOCK_INVALID") from None
         if not math.isfinite(number) or number < 0:
             raise ContinuationError("CONTINUATION_CLOCK_INVALID")

@@ -22,6 +22,9 @@ from dartlab.dataHub.ownerPagingModels import (
 )
 from dartlab.dataHub.ownerPagingState import _requireDigest, _requireOptionalText, _requireText
 from dartlab.dataHub.pagingRuntime import MAX_PAGE_ROWS, continuationStore
+from dartlab.dataHub.telemetry import dataHubLogger, recordFailure
+
+_log = dataHubLogger(__name__)
 
 
 def _framePayload(frame: pl.DataFrame) -> bytes:
@@ -42,6 +45,7 @@ def _innerTable(payload: bytes, *, logicalLimit: int) -> tuple[ArrowPayloadFacts
         batches = tuple(reader)
         table = pa.Table.from_batches(batches, schema=schema)
     except Exception:
+        recordFailure(_log, "CONTINUATION_PAYLOAD_INVALID")
         raise ContinuationError("CONTINUATION_PAYLOAD_INVALID") from None
     if not batches or table.num_rows != facts.rowCount:
         raise ContinuationError("CONTINUATION_PAYLOAD_INVALID")
@@ -169,6 +173,7 @@ def _decodePage(
         batches = tuple(reader)
         table = pa.Table.from_batches(batches, schema=schema)
     except Exception:
+        recordFailure(_log, "CONTINUATION_PAYLOAD_INVALID")
         raise ContinuationError("CONTINUATION_PAYLOAD_INVALID") from None
     if len(batches) != 1 or not schema.equals(_OUTER_SCHEMA, check_metadata=True):
         raise ContinuationError("CONTINUATION_PAYLOAD_INVALID")

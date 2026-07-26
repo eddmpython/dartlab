@@ -37,6 +37,9 @@ from dartlab.dataHub.ownerPagingState import (
     _validateQueryPayload,
 )
 from dartlab.dataHub.pagingRuntime import MAX_STATE_BYTES, requireDeadline
+from dartlab.dataHub.telemetry import dataHubLogger, recordFailure
+
+_log = dataHubLogger(__name__)
 
 
 def _ownerFacade() -> Any:
@@ -246,6 +249,7 @@ def _requireTaskContracts(session: _OwnerSession, *, deadline: float) -> None:
     except ContinuationError:
         raise
     except Exception:
+        recordFailure(_log, "CONTINUATION_CONTRACT_STALE")
         raise ContinuationError("CONTINUATION_CONTRACT_STALE") from None
 
 

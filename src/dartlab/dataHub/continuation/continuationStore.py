@@ -13,6 +13,8 @@ import time
 import uuid
 from collections.abc import Callable
 
+from dartlab.dataHub.telemetry import dataHubLogger, recordFailure
+
 from .contracts import (
     ArrowPayloadFacts,
     ContinuationError,
@@ -35,6 +37,8 @@ _SWEEP_NAMES = frozenset({"artifacts", "cas", "roots"})
 
 from .storeBase import _LeaseHeartbeat, _resultDigest
 from .storeIntegrity import _ContinuationStoreIntegrity
+
+_log = dataHubLogger(__name__)
 
 
 class ContinuationStore(_ContinuationStoreIntegrity):
@@ -626,6 +630,7 @@ class ContinuationStore(_ContinuationStoreIntegrity):
                 except ContinuationError:
                     raise
                 except Exception:
+                    recordFailure(_log, "CONTINUATION_OWNER_FAILED")
                     raise ContinuationError("CONTINUATION_OWNER_FAILED") from None
                 if not isinstance(envelope, PageEnvelope):
                     raise ContinuationError("CONTINUATION_OWNER_FAILED")

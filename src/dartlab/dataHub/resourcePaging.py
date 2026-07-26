@@ -60,6 +60,7 @@ from dartlab.dataHub.pagingRuntime import (
     requireDeadline,
 )
 from dartlab.dataHub.pagingStateCodec import requireDigest, requireText, strictTree
+from dartlab.dataHub.telemetry import dataHubLogger, recordFailure
 
 from .resourcePagingModels import (
     _CURSOR_KEYS,
@@ -129,6 +130,8 @@ from .resourcePagingState import (
     _taskTree,
     _validateQueryPayload,
 )
+
+_log = dataHubLogger(__name__)
 
 
 def executeInitialResourcePaging(
@@ -262,6 +265,7 @@ def executeInitialResourcePaging(
             resolvedAssets=len(resolved),
         )
     except Exception:
+        recordFailure(_log, "RESOURCE_PAGE_PLAN_FAILED")
         return _failedResult(
             "RESOURCE_PAGE_PLAN_FAILED",
             "resource page 계획을 고정하지 못했습니다",
@@ -334,6 +338,7 @@ def resumeResourcePaging(token: str, *, deadline: float, startedAt: float | None
             resolvedAssets=len(session.tasks) if session is not None else 0,
         )
     except Exception:
+        recordFailure(_log, "CONTINUATION_OWNER_FAILED")
         return _failedResult(
             "CONTINUATION_OWNER_FAILED",
             "continuation page owner 실행에 실패했습니다",

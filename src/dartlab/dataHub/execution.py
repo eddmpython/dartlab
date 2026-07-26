@@ -41,7 +41,10 @@ from dartlab.dataHub.executionSupport import (
 )
 from dartlab.dataHub.materialization import MaterializationDirective, MaterializationError
 from dartlab.dataHub.projections import projectOutput
+from dartlab.dataHub.telemetry import dataHubLogger, recordFailure
 from dartlab.dataHub.universe import ResolvedUniverse, resolveUniverse
+
+_log = dataHubLogger(__name__)
 
 
 def _systemicFailureResult(
@@ -202,6 +205,7 @@ def executeDataQuery(assetIds: Sequence[str], query: DataQuery) -> DataResult:
             code = error.code
             message = str(error)
         except Exception:
+            recordFailure(_log, "MATERIALIZATION_NOT_READY")
             code = "MATERIALIZATION_NOT_READY"
             message = "materialization generation을 게시하지 못했습니다"
         return _systemicFailureResult(

@@ -11,11 +11,16 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
+from dartlab.dataHub.telemetry import dataHubLogger, recordFailure
+
 from .contracts import ContinuationError
 from .privateStorage import _resolvePrivateRoot, securePrivatePath, verifyPrivatePath
 
 _DIGEST_RE = re.compile(r"^[0-9a-f]{64}$")
 _DIRECTORY_SECURITY_LOCK = threading.RLock()
+
+
+_log = dataHubLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -187,6 +192,7 @@ class ArtifactStore:
             except ContinuationError:
                 raise
             except Exception:
+                recordFailure(_log, "CONTINUATION_CORRUPT")
                 raise ContinuationError("CONTINUATION_CORRUPT") from None
             if registered is not True:
                 raise ContinuationError("CONTINUATION_CORRUPT")

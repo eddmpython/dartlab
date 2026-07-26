@@ -7,10 +7,15 @@ import struct
 from dataclasses import dataclass
 from typing import Any, Never
 
+from dartlab.dataHub.telemetry import dataHubLogger, recordFailure
+
 from .contracts import ArrowPayloadFacts, ContinuationError
 
 _FILE_MAGIC = b"ARROW1"
 _CONTINUATION_MARKER = 0xFFFFFFFF
+
+
+_log = dataHubLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -194,6 +199,7 @@ def arrowSchemaDigest(schema: Any) -> str:
     try:
         payload = schema.serialize().to_pybytes()
     except Exception:
+        recordFailure(_log, "CONTINUATION_PAYLOAD_INVALID")
         raise ContinuationError("CONTINUATION_PAYLOAD_INVALID") from None
     return hashlib.sha256(payload).hexdigest()
 
@@ -264,6 +270,7 @@ def inspectArrowIpcPayload(payload: bytes, *, maxLogicalBytes: int | None = None
     except ContinuationError:
         raise
     except Exception:
+        recordFailure(_log, "CONTINUATION_PAYLOAD_INVALID")
         raise ContinuationError("CONTINUATION_PAYLOAD_INVALID") from None
     if rowCount != preflight.rowCount or len(batches) != preflight.recordBatchCount:
         raise ContinuationError("CONTINUATION_PAYLOAD_INVALID")

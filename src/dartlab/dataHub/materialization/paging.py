@@ -30,6 +30,7 @@ from dartlab.dataHub.pagingRuntime import (
     continuationStore,
     requireDeadline,
 )
+from dartlab.dataHub.telemetry import dataHubLogger, recordFailure
 
 from .contracts import (
     MaterializationError,
@@ -41,6 +42,9 @@ from .runtime import materializationStore
 
 FORMAT_VERSION = 1
 PAGE_KIND = "materialization"
+
+
+_log = dataHubLogger(__name__)
 
 
 def jsonLoad(payload: bytes) -> Any:
@@ -60,6 +64,7 @@ def jsonLoad(payload: bytes) -> Any:
     except ContinuationError:
         raise
     except Exception:
+        recordFailure(_log, "CONTINUATION_CORRUPT")
         raise ContinuationError("CONTINUATION_CORRUPT") from None
     if canonicalJsonBytes(value) != payload:
         raise ContinuationError("CONTINUATION_CORRUPT")

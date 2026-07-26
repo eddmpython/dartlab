@@ -10,7 +10,10 @@ from typing import Any, Callable
 import httpx
 
 from dartlab.dataHub.entry import dataHub
+from dartlab.dataHub.telemetry import dataHubLogger, recordFailure
 from dartlab.dataHub.transport import encodeDataResult
+
+_log = dataHubLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -145,6 +148,8 @@ class DataHubWorker:
             complete.raise_for_status()
             return WorkerRun(claimed=True, jobId=jobId, completed=True, leaseLost=False)
         except Exception:
+            # 원격 운영자는 고정 code 하나만 받는다. 원인은 이 side channel 에만 남는다.
+            recordFailure(_log, "DATA_HUB_WORKER_FAILED", context={"jobId": jobId, "workerId": self.workerId})
             if not lost.is_set():
                 self._fail(jobId, leaseEpoch)
             return WorkerRun(

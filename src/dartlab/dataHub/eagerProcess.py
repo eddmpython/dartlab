@@ -85,6 +85,7 @@ from dartlab.dataHub.pagingRuntime import (
     MAX_OWNER_PROCESS_REQUEST_BYTES,
     requireDeadline,
 )
+from dartlab.dataHub.telemetry import dataHubLogger, recordFailure
 
 _FORMAT_VERSION = 1
 _PACK_ENCODING = "zlib-base64-v1"
@@ -103,6 +104,9 @@ _EAGER_SCHEMA = pa.schema(
     ],
     metadata=_EAGER_METADATA,
 )
+
+
+_log = dataHubLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -154,6 +158,7 @@ def _decodeBundle(
         batches = tuple(reader)
         table = pa.Table.from_batches(batches, schema=schema)
     except Exception:
+        recordFailure(_log, "CONTINUATION_PAYLOAD_INVALID")
         raise ContinuationError("CONTINUATION_PAYLOAD_INVALID") from None
     if schema != _EAGER_SCHEMA or len(batches) != 1 or table.num_rows != len(selectors):
         raise ContinuationError("CONTINUATION_PAYLOAD_INVALID")

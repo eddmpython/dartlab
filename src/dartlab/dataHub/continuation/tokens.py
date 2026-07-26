@@ -7,10 +7,15 @@ import hashlib
 import hmac
 import re
 
+from dartlab.dataHub.telemetry import dataHubLogger, recordFailure
+
 from .contracts import ContinuationError
 
 _TOKEN_RE = re.compile(r"^dltc1\.([A-Za-z0-9_-]{43})$")
 _DIGEST_RE = re.compile(r"^[0-9a-f]{64}$")
+
+
+_log = dataHubLogger(__name__)
 
 
 def encodeToken(secret: bytes) -> str:
@@ -80,6 +85,7 @@ def decodeToken(token: str) -> bytes:
     try:
         secret = base64.urlsafe_b64decode(match.group(1) + "=")
     except Exception:
+        recordFailure(_log, "CONTINUATION_INVALID")
         raise ContinuationError("CONTINUATION_INVALID") from None
     if len(secret) != 32:
         raise ContinuationError("CONTINUATION_INVALID")

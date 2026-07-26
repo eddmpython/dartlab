@@ -45,6 +45,9 @@ from dartlab.dataHub.contracts import (
     UniverseCoverage,
 )
 from dartlab.dataHub.pagingRuntime import MAX_PAGE_BYTES
+from dartlab.dataHub.telemetry import dataHubLogger, recordFailure
+
+_log = dataHubLogger(__name__)
 
 
 def compositeQueryDigest(
@@ -97,6 +100,7 @@ def _readArrowTable(payload: bytes, schema: pa.Schema, *, maxLogicalBytes: int) 
         batches = tuple(reader)
         table = pa.Table.from_batches(batches, schema=actualSchema)
     except Exception:
+        recordFailure(_log, "CONTINUATION_PAYLOAD_INVALID")
         raise ContinuationError("CONTINUATION_PAYLOAD_INVALID") from None
     if actualSchema != schema or len(batches) != 1 or table.num_rows != facts.rowCount:
         raise ContinuationError("CONTINUATION_PAYLOAD_INVALID")
@@ -419,6 +423,7 @@ def _readArrowTableAny(payload: bytes) -> pa.Table:
         batches = tuple(reader)
         table = pa.Table.from_batches(batches, schema=schema)
     except Exception:
+        recordFailure(_log, "CONTINUATION_PAYLOAD_INVALID")
         raise ContinuationError("CONTINUATION_PAYLOAD_INVALID") from None
     if len(batches) != 1 or table.num_rows != facts.rowCount:
         raise ContinuationError("CONTINUATION_PAYLOAD_INVALID")

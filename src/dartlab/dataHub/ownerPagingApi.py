@@ -33,6 +33,9 @@ from dartlab.dataHub.ownerPagingState import (
     _validateQueryPayload,
 )
 from dartlab.dataHub.pagingRuntime import MAX_PAGE_BYTES, MAX_PAGE_ROWS, requireDeadline
+from dartlab.dataHub.telemetry import dataHubLogger, recordFailure
+
+_log = dataHubLogger(__name__)
 
 
 def _ownerFacade() -> Any:
@@ -351,6 +354,7 @@ def executeInitialOwnerPaging(
             resolvedAssets=len(resolved),
         )
     except Exception:
+        recordFailure(_log, "OWNER_PAGE_PLAN_FAILED")
         return _failedResult(
             "OWNER_PAGE_PLAN_FAILED",
             "계산형 universe page 계획을 고정하지 못했습니다",
@@ -473,6 +477,7 @@ def resumeOwnerPaging(
             resolvedAssets=len(session.tasks) if session is not None else 0,
         )
     except Exception:
+        recordFailure(_log, "CONTINUATION_OWNER_FAILED")
         return _failedResult(
             "CONTINUATION_OWNER_FAILED",
             "계산형 continuation page owner 실행에 실패했습니다",

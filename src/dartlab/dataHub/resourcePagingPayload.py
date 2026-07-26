@@ -22,6 +22,7 @@ from dartlab.dataHub.continuation import (
 from dartlab.dataHub.pagingRuntime import (
     MAX_PAGE_ROWS as _MAX_PAGE_ROWS,
 )
+from dartlab.dataHub.telemetry import dataHubLogger, recordFailure
 
 from .resourcePagingModels import (
     _MULTIPLEX_SCHEMA,
@@ -37,6 +38,8 @@ from .resourcePagingState import (
     _requireText,
 )
 
+_log = dataHubLogger(__name__)
+
 
 def _innerTable(payload: bytes, *, logicalLimit: int) -> tuple[ArrowPayloadFacts, pa.Table, int]:
     facts = inspectArrowIpcPayload(payload, maxLogicalBytes=logicalLimit)
@@ -48,6 +51,7 @@ def _innerTable(payload: bytes, *, logicalLimit: int) -> tuple[ArrowPayloadFacts
         batches = tuple(reader)
         table = pa.Table.from_batches(batches, schema=schema)
     except Exception:
+        recordFailure(_log, "CONTINUATION_PAYLOAD_INVALID")
         raise ContinuationError("CONTINUATION_PAYLOAD_INVALID") from None
     if len(batches) != 1 or table.num_rows != facts.rowCount:
         raise ContinuationError("CONTINUATION_PAYLOAD_INVALID")
@@ -136,6 +140,7 @@ def _decodeMultiplex(
         batches = tuple(reader)
         table = pa.Table.from_batches(batches, schema=schema)
     except Exception:
+        recordFailure(_log, "CONTINUATION_PAYLOAD_INVALID")
         raise ContinuationError("CONTINUATION_PAYLOAD_INVALID") from None
     if len(batches) != 1 or not schema.equals(_MULTIPLEX_SCHEMA, check_metadata=True):
         raise ContinuationError("CONTINUATION_PAYLOAD_INVALID")

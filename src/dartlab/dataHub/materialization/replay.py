@@ -15,6 +15,7 @@ from dartlab.dataHub.continuation import (
     canonicalJsonBytes,
     validateArrowIpcPayload,
 )
+from dartlab.dataHub.telemetry import dataHubLogger, recordFailure
 
 from .contracts import (
     FORMAT_VERSION,
@@ -35,6 +36,8 @@ from .contracts import (
     requireNonNegativeInt,
 )
 from .publication import MaterializationPublication
+
+_log = dataHubLogger(__name__)
 
 
 def decodeCanonicalJson(payload: bytes) -> Any:
@@ -57,6 +60,7 @@ def decodeCanonicalJson(payload: bytes) -> Any:
     except MaterializationError:
         raise
     except Exception:
+        recordFailure(_log, "MATERIALIZATION_CORRUPT")
         raise MaterializationError("MATERIALIZATION_CORRUPT") from None
 
 

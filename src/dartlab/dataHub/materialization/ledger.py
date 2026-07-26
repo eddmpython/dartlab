@@ -18,6 +18,7 @@ from dartlab.dataHub.continuation.privateStorage import (
     securePrivatePath,
     verifyPrivatePath,
 )
+from dartlab.dataHub.telemetry import dataHubLogger, recordFailure
 
 from .contracts import (
     BuildClaim,
@@ -36,6 +37,9 @@ from .contracts import (
 from .schema import createSchema, validateSchema
 
 INITIALIZE_LOCK = threading.RLock()
+
+
+_log = dataHubLogger(__name__)
 
 
 class MaterializationLedger:
@@ -114,6 +118,7 @@ class MaterializationLedger:
         try:
             now = float(self.clock())
         except Exception:
+            recordFailure(_log, "MATERIALIZATION_INVALID")
             raise MaterializationError("MATERIALIZATION_INVALID") from None
         if not math.isfinite(now) or now < 0:
             raise MaterializationError("MATERIALIZATION_INVALID")

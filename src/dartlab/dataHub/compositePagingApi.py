@@ -38,6 +38,9 @@ from dartlab.dataHub.pagingRuntime import (
     continuationStore,
     requireDeadline,
 )
+from dartlab.dataHub.telemetry import dataHubLogger, recordFailure
+
+_log = dataHubLogger(__name__)
 
 
 def _defaultAdapters() -> _AdapterProtocol:
@@ -296,6 +299,7 @@ def executeInitialCompositePaging(
             resolvedAssets=len(resolved),
         )
     except Exception:
+        recordFailure(_log, "COMPOSITE_PAGE_PLAN_FAILED")
         return _failedResult(
             "COMPOSITE_PAGE_PLAN_FAILED",
             "mixed page 계획을 고정하지 못했습니다",
@@ -380,6 +384,7 @@ def resumeCompositePaging(
             resolvedAssets=session["resolvedAssets"] if session is not None else 0,
         )
     except Exception:
+        recordFailure(_log, "CONTINUATION_OWNER_FAILED")
         return _failedResult(
             "CONTINUATION_OWNER_FAILED",
             "mixed continuation owner 실행에 실패했습니다",

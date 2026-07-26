@@ -17,8 +17,12 @@ from dartlab.dataHub.continuation import canonicalJsonBytes
 from dartlab.dataHub.contracts import DataResult
 from dartlab.dataHub.controlPlane.errors import DataHubControlError
 from dartlab.dataHub.pagingRuntime import MAX_PAGE_BYTES
+from dartlab.dataHub.telemetry import dataHubLogger, recordFailure
 
 _FORMAT_VERSION = 1
+
+
+_log = dataHubLogger(__name__)
 
 
 def encodeDataResult(result: DataResult) -> bytes:
@@ -29,6 +33,7 @@ def encodeDataResult(result: DataResult) -> bytes:
     try:
         payload = encodeMaterializationPage(result, maxBytes=MAX_PAGE_BYTES)
     except Exception:
+        recordFailure(_log, "DATA_HUB_PAYLOAD_BUDGET")
         raise DataHubControlError("DATA_HUB_PAYLOAD_BUDGET") from None
     payloadDigest = hashlib.sha256(payload).hexdigest()
     return canonicalJsonBytes(
@@ -82,6 +87,7 @@ def decodeDataResult(payload: bytes) -> DataResult:
     try:
         result = decodeMaterializationPage(resultPayload)
     except Exception:
+        recordFailure(_log, "DATA_HUB_CORRUPT")
         raise DataHubControlError("DATA_HUB_CORRUPT") from None
     return dataclasses.replace(
         result,
