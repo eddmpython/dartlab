@@ -5,7 +5,7 @@
  * 본 파일은 그것에 의존 안 하는 generic 타입만 둔다 (순환 import 방지).
  */
 
-export type Op = '>=' | '<=' | '==' | '!=' | 'between' | 'contains' | 'in' | 'exists';
+export type Op = '>' | '>=' | '<' | '<=' | '==' | '!=' | 'between' | 'contains' | 'in' | 'exists';
 
 /** 단일 필터 조건. between 일 때는 value2 도 사용. */
 export interface FilterCond {

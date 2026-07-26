@@ -764,19 +764,6 @@
 .dlTerm .valVerdict { padding: 4px 7px; border-top: 1px solid var(--bd); font-size: 10px; text-wrap: pretty; line-height: 1.45; }
 
 /* VERDICT (종합 판정) */
-.dlTerm .vdRisk { font-family: var(--cond); font-size: 9px; color: var(--dim); letter-spacing: 0.4px; }
-.dlTerm .vdTop { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 6px 7px; border-bottom: 1px solid var(--bd); }
-.dlTerm .vdBand { font-family: var(--cond); font-weight: 700; font-size: 12px; letter-spacing: 0.3px; white-space: nowrap; }
-.dlTerm .vdChips { display: flex; gap: 4px; flex-wrap: wrap; }
-.dlTerm .vdChip { display: inline-flex; align-items: baseline; gap: 4px; background: var(--dl-bg-deep); border: 1px solid var(--bd); border-radius: 3px; padding: 2px 6px; }
-.dlTerm .vdChip i { font-family: var(--cond); font-style: normal; font-size: 8px; color: var(--dimmer); text-transform: uppercase; letter-spacing: 0.4px; }
-.dlTerm .vdChip b { font-family: var(--mono); font-size: 11px; font-weight: 700; }
-.dlTerm .vdChip em { font-family: var(--cond); font-style: normal; font-size: 9px; }
-.dlTerm .vdSummary { font-size: 10.5px; line-height: 1.5; color: var(--txt); padding: 5px 7px; text-wrap: pretty; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.dlTerm .vdSC { display: flex; flex-wrap: wrap; gap: 3px 6px; padding: 0 7px 6px; }
-.dlTerm .vdS, .dlTerm .vdC { font-size: 9.5px; line-height: 1.4; padding: 1px 5px; border-radius: 2px; }
-.dlTerm .vdS { color: var(--up); background: rgba(52, 211, 153, 0.08); }
-.dlTerm .vdC { color: var(--dn); background: rgba(240, 97, 111, 0.08); }
 
 /* DUPONT ROE 분해 */
 .dlTerm .dupontRow { display: flex; align-items: stretch; gap: 2px; padding: 7px; }

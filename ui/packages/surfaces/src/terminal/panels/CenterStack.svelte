@@ -257,10 +257,9 @@
 		{ l: 'ROE', v: e.roe != null ? e.roe.toFixed(1) + '%' : '·' },
 		{ l: lang === 'en' ? 'OP MGN' : '영업이익률', v: e.opMargin != null ? e.opMargin.toFixed(1) + '%' : '·' }
 	]);
-	// ── 하단 분석: 종합 판정 + DuPont ROE 분해 (모두 동기 tier · finance.json 즉시) ──
+	// 하단 분석 도구: DuPont ROE 분해. 렌즈의 텍스트 판단은 우측 스택이 담당한다.
 	const fz = $derived(co.financials);
 	const dp = $derived(fz.dupont); // {netMargin, assetTurn, equityMult, roe}
-	const vd = $derived(co.verdict);
 	const dpTone = $derived(dp.roe == null ? 'tNeu' : dp.roe >= 12 ? 'tUp' : dp.roe >= 6 ? 'tNeu' : 'tDn');
 	const roeDriver = $derived.by<{ kr: string; en: string; tone: Tone } | null>(() => {
 		const { netMargin, assetTurn, equityMult } = dp;
@@ -276,13 +275,6 @@
 		{ k: 'em', label: lang === 'en' ? 'Leverage' : '레버리지', disp: dp.equityMult != null ? dp.equityMult.toFixed(2) + '배' : '·', arr: fz.equityMult, col: (dp.equityMult ?? 0) >= 2.5 ? '#f0616f' : (dp.equityMult ?? 0) >= 2 ? '#fbbf24' : '#a78bfa', op: '=' },
 		{ k: 'roe', label: 'ROE', disp: dp.roe != null ? dp.roe.toFixed(1) + '%' : '·', arr: fz.roe, col: '#34d399', op: '' }
 	]);
-	// 업종 백분위 중앙값 → 상위 N%
-	const pctTop = $derived.by<number | null>(() => {
-		const ms = co.percentile?.metrics ?? [];
-		const ps = ms.map((m) => m.p).filter((x): x is number => x != null).sort((a, b) => a - b);
-		if (!ps.length) return null;
-		return 100 - ps[Math.floor(ps.length / 2)] + 1;
-	});
 	// 미니 스파크라인 path
 	function spark(arr: Num[], w = 46, h = 13): string {
 		const vals = arr.filter((x): x is number => x != null);
@@ -591,27 +583,6 @@
 {#if finFull}
 	<FinFullscreen {co} {lang} bundle={finBundle} mode={finMode} onMode={(m) => (finMode = m)} onScope={(s) => (finScope = s)} candles={chartCode === co.code ? candles : null} initialTab={finFullTab} onClose={() => (finFull = false)} />
 {/if}
-
-<!-- VERDICT (종합 판정 · co.verdict 합성, 동기 tier 즉시 렌더) -->
-<Panel {lang} className="eAnalysis" prov="derived" title={{ kr: '종합 판정', en: 'VERDICT' }} flush>
-	{#snippet right()}<span class="vdRisk">{lang === 'en' ? 'risk' : '위험'} <b class="tDn">{vd.riskRed}</b>·<b class="tWarn">{vd.riskYellow}</b></span>{/snippet}
-	<div class="vdTop">
-		<span class={'vdBand ' + tcls(vd.band.tone)}>{txc(vd.band, lang)}</span>
-		<div class="vdChips">
-			<span class="vdChip"><i>{lang === 'en' ? 'credit' : '신용'}</i><b class="tCredit">{co.credit.grade}</b></span>
-			<span class="vdChip"><i>ROE</i><b class={dpTone}>{dp.roe != null ? dp.roe.toFixed(1) + '%' : '·'}</b>{#if roeDriver}<em class={tcls(roeDriver.tone)}>{txc(roeDriver, lang)}</em>{/if}</span>
-			{#if pctTop != null}<span class="vdChip"><i>{lang === 'en' ? 'sector' : '업종'}</i><b class="tUp">{lang === 'en' ? 'top ' + pctTop + '%' : '상위 ' + pctTop + '%'}</b></span>{/if}
-			{#if v && v.upside != null}<span class="vdChip"><i>{lang === 'en' ? 'value' : '밸류'}</i><b class={v.upside > 8 ? 'tUp' : v.upside < -8 ? 'tDn' : 'tNeu'}>{(v.upside >= 0 ? '+' : '') + v.upside.toFixed(0)}% {lang === 'en' ? 'up' : '여력'}</b></span>{/if}
-		</div>
-	</div>
-	<div class="vdSummary">{tx(co.analysis.summary, lang)}</div>
-	{#if vd.strengths.length || vd.concerns.length}
-		<div class="vdSC">
-			{#each vd.strengths.slice(0, 3) as sg (sg.en)}<span class="vdS">▲ {tx(sg, lang)}</span>{/each}
-			{#each vd.concerns.slice(0, 3) as cn (cn.en)}<span class="vdC">▼ {tx(cn, lang)}</span>{/each}
-		</div>
-	{/if}
-</Panel>
 
 <div class="rowSplit">
 	<!-- DUPONT ROE 분해 -->

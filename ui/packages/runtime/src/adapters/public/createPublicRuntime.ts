@@ -39,8 +39,10 @@ import { createSearchPort } from '../../data/search/filingSearch';
 import { loadCompanyNews } from './sources/newsSource';
 import { loadMarketNews } from './sources/marketNewsSource';
 import { createReportSource } from './sources/reportSource';
+import { createPublicLensPort } from './sources/lensSource';
 import { publicExportPort, type PublicExportShared } from './sources/exportSource';
 import { localStoragePort } from '../local/sources/storageSource';
+import { listScanPresets, saveScanPreset } from '../../data/scanPresets';
 
 /** 공유 엔진 의존 메서드 · companyLive(reportFacts)·duckSql(changes) 는 landing 잔류라 셸이 주입. */
 export interface PublicRuntimeSharedPorts {
@@ -161,8 +163,12 @@ function publicScanPort(shared: PublicRuntimeSharedPorts): ScanPort {
 	return {
 		changes: shared.changes,
 		listTableSources: () => notWiredYet('scan.listTableSources', '단계-8(scan 추출)'),
-		getPresets: () => notWiredYet('scan.getPresets', '단계-8(scan 추출)'),
-		savePreset: () => notWiredYet('scan.savePreset', '단계-8(scan 추출)')
+		async getPresets() {
+			return listScanPresets();
+		},
+		async savePreset(preset) {
+			saveScanPreset(preset);
+		}
 	};
 }
 
@@ -181,6 +187,7 @@ export function createPublicRuntime(options: PublicRuntimeOptions): DartLabRunti
 		macro: createHfMacroPort(dataCore),
 		expectations: createExpectationPort(dataCore),
 		report: createReportSource(dataCore),
+		lens: createPublicLensPort(),
 		scan: publicScanPort(options.shared),
 		ipo: publicIpoPort(dataCore),
 		export: publicExportPort(localStoragePort(), options.exportShared),

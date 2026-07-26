@@ -1,4 +1,4 @@
-// Runtime 최상위 계약 — mainPlan/02 §2. 의존 0 (타입 전용 패키지).
+// Runtime 최상위 계약 - mainPlan/02 §2. 의존 0 (타입 전용 패키지).
 // 빈값 규약: `[]` = 조회 성공·해당 없음 / `null` = 데이터셋 자체 미존재·미공시. 어댑터는 이 의미를 섞지 않는다.
 import type { CompanyPort } from './company';
 import type { PricePort } from './price';
@@ -19,8 +19,9 @@ import type { ServicesPort } from './services';
 import type { ExportPort } from './export';
 import type { NavigationPort } from './navigation';
 import type { StoragePort } from './storage';
+import type { LensPort } from './lensProduct';
 
-/** 단일 정의 — 옛 landing 코드의 3중 재정의(types.ts·terminalFinance.ts·reportSeries.ts)를 수렴. */
+/** 단일 정의 - 옛 landing 코드의 3중 재정의(types.ts·terminalFinance.ts·reportSeries.ts)를 수렴. */
 export type Num = number | null;
 
 export type FetchLike = (input: string, init?: RequestInit) => Promise<Response>;
@@ -47,7 +48,7 @@ export interface DataCoverage {
 	note?: string;
 }
 
-/** 어댑터 반환 metadata 봉투 — stale 데이터를 최신처럼 표시하지 않기 위한 계약 (02 §3.6). */
+/** 어댑터 반환 metadata 봉투 - stale 데이터를 최신처럼 표시하지 않기 위한 계약 (02 §3.6). */
 export interface RuntimeDataEnvelope<T> {
 	data: T;
 	provenance: DataProvenance[];
@@ -61,7 +62,7 @@ export interface TelemetryPort {
 	event(name: string, props?: Record<string, string | number>): void;
 }
 
-/** flag 식별자 — 목록은 단계-2 구현에서 union으로 좁힌다(잠정 string). */
+/** flag 식별자 - 목록은 단계-2 구현에서 union으로 좁힌다(잠정 string). */
 export type DartLabFeatureFlag = string;
 
 export interface FeatureFlagPort {
@@ -69,7 +70,7 @@ export interface FeatureFlagPort {
 }
 
 /**
- * Port 메서드는 전부 required — optional 메서드(`x?:`) + 조용한 fallback 금지 (02 §3).
+ * Port 메서드는 전부 required - optional 메서드(`x?:`) + 조용한 fallback 금지 (02 §3).
  * 미지원 기능은 null/빈값 + RuntimeDataEnvelope.stale/provenance 로 정직하게 드러낸다.
  */
 export interface DartLabRuntime {
@@ -84,6 +85,7 @@ export interface DartLabRuntime {
 	macro: MacroPort;
 	expectations: ExpectationsPort;
 	report: ReportPort;
+	lens: LensPort;
 	scan: ScanPort;
 	ipo: IpoPort;
 	map: MapPort;

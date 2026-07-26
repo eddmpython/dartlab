@@ -22,7 +22,7 @@ describe('loadIpoReport', () => {
 		const core = fakeCore([{ rcept: '20260626000715', reportJson: JSON.stringify(REPORT) }]);
 		const r = await loadIpoReport(core, '20260626000715');
 		expect(r?.title).toBe('기도산업 공모분석');
-		expect(r?.sections[0].title).toBe('공모 개요');
+		expect(r?.sections[0]?.title).toBe('공모 개요');
 		expect(r?.summary?.priceBand).toEqual([24800, 28400]);
 	});
 

@@ -107,7 +107,7 @@ export function normalizeNumeric(node: ScanNode, metricKey: string, defs: Record
 	return defs[metricKey]?.unit === '억원' ? num / 1e8 : num;
 }
 
-const NUMERIC_OPS = new Set(['>=', '<=', '==', '!=', 'between']);
+const NUMERIC_OPS = new Set(['>', '>=', '<', '<=', '==', '!=', 'between']);
 
 /**
  * 한 종목 x 한 조건 판정. 결측은 어떤 연산자에서도 UNKNOWN 이다.
@@ -144,7 +144,9 @@ export function evalVerdict(node: ScanNode, cond: FilterCond, defs: Record<strin
 		} else {
 			const target = Number(cond.value);
 			if (!Number.isFinite(target)) return 'UNKNOWN';
-			if (cond.op === '>=') result = num >= target;
+			if (cond.op === '>') result = num > target;
+			else if (cond.op === '>=') result = num >= target;
+			else if (cond.op === '<') result = num < target;
 			else if (cond.op === '<=') result = num <= target;
 			else if (cond.op === '==') result = num === target;
 			else result = num !== target;

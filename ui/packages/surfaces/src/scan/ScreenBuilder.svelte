@@ -71,7 +71,7 @@
 	function opsFor(metric: string): Array<FilterCond['op']> {
 		const def = METRICS_BY_KEY[metric];
 		if (!def) return ['exists'];
-		if (def.type === 'number') return ['>=', '<=', 'between', '==', '!=', 'exists'];
+		if (def.type === 'number') return ['>', '>=', '<', '<=', 'between', '==', '!=', 'exists'];
 		if (def.type === 'enum') return ['==', '!=', 'exists'];
 		return ['contains', '==', '!=', 'exists'];
 	}

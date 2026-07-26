@@ -4,7 +4,7 @@
 	// 중앙 스택            = 시각화 중심 (차트·그래프·전체화면 분석)
 	// 우측 스택            = 테이블·텍스트·수치·정성 · 그래프 배치 금지 (그래프는 중앙으로)
 	import './terminal.css';
-	import type { Candle, DartLabRuntime, MacroLatest } from '@dartlab/ui-contracts';
+	import type { Candle, DartLabRuntime, LensProductBundle, MacroLatest } from '@dartlab/ui-contracts';
 	import { setDartLabRuntime } from '@dartlab/ui-runtime';
 	import type { Engine } from './lib/engine';
 	import type { TerminalHosts, TerminalBrandLinks } from './lib/hosts';
@@ -134,6 +134,34 @@
 	});
 
 	const co = $derived(eng.buildCompany(sym));
+	let lensBundle = $state<LensProductBundle | null>(null);
+	let lensState = $state<'loading' | 'ready' | 'empty'>('loading');
+	$effect(() => {
+		const code = co?.code;
+		if (!code) {
+			lensBundle = null;
+			lensState = 'empty';
+			return;
+		}
+		let cancelled = false;
+		lensState = 'loading';
+		lensBundle = null;
+		runtime.lens.products(code).then((bundle) => {
+			if (cancelled || co?.code !== code) return;
+			if (bundle && bundle.target !== code) {
+				lensBundle = null;
+				lensState = 'empty';
+				return;
+			}
+			lensBundle = bundle;
+			lensState = bundle ? 'ready' : 'empty';
+		}).catch(() => {
+			if (cancelled || co?.code !== code) return;
+			lensBundle = null;
+			lensState = 'empty';
+		});
+		return () => { cancelled = true; };
+	});
 	// 회사 선택 시 포트 경유로 모든 온디맨드 소스를 병렬 워밍업(패널 effect 전 캐시 준비).
 	$effect(() => {
 		const c = co;
@@ -311,7 +339,7 @@
 				{/if}
 			</div>
 			<div class="col colC"><CenterStack {co} {lang} ctl={chartCtl} kpis={macroKpis} suggest={(q, n) => eng.suggest(q, n)} onPick={pick} {cardsCodes} {onOpenCards} /></div>
-			<div class="col colR"><RightStack {co} {lang} {hosts} repoUrl={links.repo} onPick={pick} lookupListed={eng.lookupListed} percentileIn={eng.percentileIn} /></div>
+			<div class="col colR"><RightStack {co} {lang} {hosts} repoUrl={links.repo} onPick={pick} lookupListed={eng.lookupListed} percentileIn={eng.percentileIn} {lensBundle} {lensState} /></div>
 		</main>
 
 		<footer class="statusBar">

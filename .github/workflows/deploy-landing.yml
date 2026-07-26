@@ -5,7 +5,7 @@ on:
     branches: [master]
     paths:
       - 'landing/**'
-      # 워크스페이스 패키지·루트 lockfile — landing 빌드 의존 (단계-3부터, 4a-2에서 paths 편입.
+      # 워크스페이스 패키지·루트 lockfile - landing 빌드 의존 (단계-3부터, 4a-2에서 paths 편입.
       # 누락 시 패키지만 바뀐 push 가 deploy 를 건너뛰어 고장난 lock/패키지가 다음 배포까지 잠복)
       - 'ui/packages/**'
       - 'package.json'
@@ -23,7 +23,7 @@ on:
     # Daily rebuild keeps the static index in sync if preview events are missed.
     - cron: '0 15 * * *'
   workflow_run:
-    workflows: ["Industry Map Build"]
+    workflows: ["Industry Map Build", "Lens Product Build"]
     types: [completed]
   workflow_dispatch:
 
@@ -77,13 +77,20 @@ jobs:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           DARTLAB_DATA_DIR: ${{ github.workspace }}
 
-      # dashboards 는 git 사본이 최후 폴백 — HF seed 가 있으면 덮어써 신선화 (mapBuild 가 매일 publish).
-      # ⚠ seedFromHf 는 HF 에 dir 부재 시 EntryNotFoundError 크래시 (로컬 실측) — mapBuild 첫 publish
+      # dashboards 는 git 사본이 최후 폴백 - HF seed 가 있으면 덮어써 신선화 (mapBuild 가 매일 publish).
+      # ⚠ seedFromHf 는 HF 에 dir 부재 시 EntryNotFoundError 크래시 (로컬 실측) - mapBuild 첫 publish
       # 전·HF 장애 시에도 배포가 죽지 않도록 본 스텝만 내성형 (실패 = git 사본으로 빌드).
       - name: Seed dashboards from HF (tolerant)
-        # block scalar 필수 — plain scalar 는 'WARN:' 콜론에서 YAML 파싱이 깨진다 (0초 워크플로 failure 실측)
+        # block scalar 필수 - plain scalar 는 'WARN:' 콜론에서 YAML 파싱이 깨진다 (0초 워크플로 failure 실측)
         run: |
-          uv run python -X utf8 .github/scripts/sync/seedFromHf.py --category dashboards || echo "WARN: dashboards HF seed 실패 — git 사본으로 빌드"
+          uv run python -X utf8 .github/scripts/sync/seedFromHf.py --category dashboards || echo "WARN: dashboards HF seed 실패 - git 사본으로 빌드"
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          DARTLAB_DATA_DIR: ${{ github.workspace }}
+
+      - name: Seed lens products from HF (tolerant)
+        run: |
+          uv run python -X utf8 .github/scripts/sync/seedFromHf.py --category lensProducts || echo "WARN: lens products HF seed 실패"
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           DARTLAB_DATA_DIR: ${{ github.workspace }}
@@ -104,7 +111,15 @@ jobs:
             rm -rf landing/dashboards
             echo "dashboards seeded: $(ls landing/static/dashboards)"
           else
-            echo "WARN: HF dashboards seed 없음 — git 사본으로 빌드 (mapBuild publish 전 과도기)"
+            echo "WARN: HF dashboards seed 없음 - git 사본으로 빌드 (mapBuild publish 전 과도기)"
+          fi
+          if [ -d landing/lenses ]; then
+            mkdir -p landing/static/lenses
+            cp -r landing/lenses/. landing/static/lenses/
+            rm -rf landing/lenses
+            echo "lens products seeded: $(find landing/static/lenses -maxdepth 1 -name '*.json' | wc -l)"
+          else
+            echo "WARN: HF lens products seed 없음"
           fi
           count=$(find landing/static/map/companies -maxdepth 1 -name '*.json' 2>/dev/null | wc -l)
           echo "map companies count: $count"
@@ -125,9 +140,9 @@ jobs:
         # 루트 npm 워크스페이스 (플랫폼 단계-1a): 설치는 repo 루트 lockfile 단일,
         # landing 빌드는 -w 로 실행. heap 옵션은 landing build 스크립트(viteHeap.mjs)에 내장.
         env:
-          # 공시 Q&A 질문 수집 Worker(공개 URL, secret 아님) — 빌드에 심어야 prod 토글 노출.
+          # 공시 Q&A 질문 수집 Worker(공개 URL, secret 아님) - 빌드에 심어야 prod 토글 노출.
           VITE_FEEDBACK_URL: https://dartlab-question-collector.eddmpython.workers.dev
-          # Web Push 알림(pushHub Worker) — 공개값(secret 아님). 비우면 NotifyOptIn graceful hidden·SW 재구독 skip.
+          # Web Push 알림(pushHub Worker) - 공개값(secret 아님). 비우면 NotifyOptIn graceful hidden·SW 재구독 skip.
           # VAPID 공개키 = genVapid.mjs raw 65B base64url. 허브 base = 배포한 dartlab-push-hub.<sub>.workers.dev.
           VITE_VAPID_PUBLIC_KEY: ${{ vars.VITE_VAPID_PUBLIC_KEY }}
           VITE_PUSHHUB_URL: ${{ vars.VITE_PUSHHUB_URL }}

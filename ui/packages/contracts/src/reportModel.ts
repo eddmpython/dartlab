@@ -1,8 +1,9 @@
-// 전문 리포트 서사 문법 SSOT — Python story.buildReportModel 과 TS build.ts 가 둘 다 conform.
+// 전문 리포트 서사 문법 SSOT - Python story.buildReportModel 과 TS build.ts 가 둘 다 conform.
 // mainPlan/professional-report-engine/03-report-engine-architecture.md §1. 기존 report.ts(ReportPort)와 분리.
-// 기존 8 블록(랜딩 model.ts) + 신규 10 블록(00-PRD §7). 신규는 전부 optional/graceful-skip — 구 렌더러 무회귀.
+// 기존 8 블록(랜딩 model.ts) + 신규 10 블록(00-PRD §7). 신규는 전부 optional/graceful-skip - 구 렌더러 무회귀.
 import type { Num } from './runtime';
 import type { EvidenceRef } from './evidence';
+import type { LensProductBundle, LensSummaryRow } from './lensProduct';
 
 // ── 기존 8 블록 (landing model.ts 에서 이주, 동치) ──
 export type ReportBlockLegacy =
@@ -15,7 +16,7 @@ export type ReportBlockLegacy =
   | { type: 'line'; label?: string; series: number[]; xLabels?: [string, string]; markers?: { label: string; v: number }[]; valueFmt?: 'won' }
   | { type: 'share'; label?: string; rows: { year: string; segs: { label: string; pct: number; key: string }[] }[]; legend: { label: string; key: string }[] };
 
-// ── 신규 10 블록 (00-PRD §7) — 전부 optional 추가, 구 렌더러 graceful-skip ──
+// ── 신규 10 블록 (00-PRD §7) - 전부 optional 추가, 구 렌더러 graceful-skip ──
 export type ReportBlockPro =
   | { type: 'thesis'; thesis: Thesis }
   | { type: 'exhibit'; n: number; title: string; takeaway: string; source: string; unit?: string; child: ReportBlock; refs?: EvidenceRef[] }
@@ -42,7 +43,7 @@ export interface Thesis {
   pillars: ThesisPillar[]; // 지지기둥 3
   bearCase: string; // 약세론 (thesis 와 동등 무게)
   triggers: string[]; // 관점전환 트리거
-  call: string | null; // 콜 (내재가치·등급·상대위치) — 매매지시 아님. 미산출 null.
+  call: string | null; // 콜 (내재가치·등급·상대위치) - 매매지시 아님. 미산출 null.
 }
 
 export interface VerdictRow {
@@ -101,7 +102,7 @@ export interface CreditView {
   confidenceMethod: string; // "ratio"
 }
 
-// ── ReportModel / Section / Overview (마이그레이션 안전 — 신규 전부 optional) ──
+// ── ReportModel / Section / Overview (마이그레이션 안전 - 신규 전부 optional) ──
 export type ReportSourceEngine =
   | 'analysis' | 'credit' | 'quant' | 'industry' | 'macro' | 'story' | 'valuation' | 'forecast';
 
@@ -133,9 +134,11 @@ export interface ReportModel {
   qualityLabel: 'verified' | 'conditional';
   focusQuestions: string[];
   pending?: boolean;
-  // 신규 (전부 optional — 구 렌더러 무회귀)
+  // 신규 (전부 optional - 구 렌더러 무회귀)
   thesis?: Thesis; // narrativeOverview(string) 의 구조화 후계. 둘 다 채우면 thesis 우선.
   schemaVersion?: number; // 1=레거시, 2=pro 아크. 부재=1.
+  lensProducts?: LensProductBundle; // 엔진별 독립 판단 원문. 통합 점수 없음.
+  lensSummary?: LensSummaryRow[]; // 제품 직접 필드의 표시용 투영.
 }
 
 export interface OverviewModel {
@@ -144,7 +147,7 @@ export interface OverviewModel {
   asOf: string;
   dataBasis: string;
   industry?: string;
-  thesis: string; // 기존 string 유지(구 렌더러 폴백) — 항상 채움
+  thesis: string; // 기존 string 유지(구 렌더러 폴백) - 항상 채움
   thesisStruct?: Thesis; // 신규 구조화 (pro 렌더러 우선)
   takes: { key: string; label: string; line: string; engine: ReportSourceEngine }[];
 }

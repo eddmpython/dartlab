@@ -188,6 +188,15 @@ export const FINANCE_ACCOUNTS: readonly FinanceAccountSpec[] = [
 		names: ['유동부채']
 	},
 	{
+		id: 'shortterm_borrowings',
+		label: '단기차입금',
+		group: 'financeBalance',
+		statement: 'BS',
+		higherBetter: false,
+		ids: ['dart_ShortTermBorrowings', 'ifrs-full_ShorttermBorrowings'],
+		names: ['단기차입금', '단기차입부채']
+	},
+	{
 		id: 'trade_payables',
 		label: '매입채무',
 		group: 'financeBalance',

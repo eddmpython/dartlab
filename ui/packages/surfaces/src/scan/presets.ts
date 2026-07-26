@@ -11,6 +11,9 @@
  * SSOT: 다른 곳에서 프리셋 정의 금지.
  */
 
+import { SCAN_SCREEN_PRESETS, type ScanScreenSpec } from '@dartlab/ui-contracts';
+
+import { screenDefinitionToPreset } from './specEngine';
 import type { FilterCond, SortKey } from './types';
 import type { MetricKey } from './metrics';
 
@@ -28,9 +31,13 @@ export interface Preset {
 	cols?: MetricKey[];
 	/** 적용 시 필요한 런타임 데이터 로더. */
 	loaders?: RuntimeLoader[];
+	/** Python과 watcher도 소비하는 screens/*.json 원본 spec. */
+	spec?: ScanScreenSpec;
+	schemaVersion?: number;
+	notify?: boolean;
 }
 
-export const PRESETS: Preset[] = [
+const BUILTIN_PRESETS: Preset[] = [
 	{
 		id: 'real-money-makers',
 		title: '진짜 돈 버는 회사',
@@ -166,6 +173,12 @@ export const PRESETS: Preset[] = [
 		cols: ['auditRisk', 'debtGrade', 'roeDelta', 'numericChanges1y', 'structuralChanges1y', 'totalChanges1y'],
 		loaders: ['report']
 	}
+];
+
+/** 하드코딩 호환 프리셋과 언어중립 JSON spec 프리셋의 단일 공개 목록. */
+export const PRESETS: Preset[] = [
+	...BUILTIN_PRESETS,
+	...SCAN_SCREEN_PRESETS.map((definition) => screenDefinitionToPreset(definition))
 ];
 
 export const PRESETS_BY_ID = new Map(PRESETS.map((p) => [p.id, p]));

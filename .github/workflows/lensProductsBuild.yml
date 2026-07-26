@@ -1,0 +1,113 @@
+name: Lens Product Build
+
+on:
+  schedule:
+    - cron: '30 17 * * 0'
+  workflow_dispatch:
+
+concurrency:
+  group: lens-product-build
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  build-shards:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Build all-listed-company shard
+        env:
+          DART_API_KEY: ${{ secrets.DART_API_KEY }}
+          SHARD: ${{ matrix.shard }}
+        run: |
+          set -euo pipefail
+          manifest=$(printf '_shard-%02d.json' "$SHARD")
+          uv run python -X utf8 landing/_scripts/buildLensProducts.py \
+            --all \
+            --shard-index "$SHARD" \
+            --shard-count 24 \
+            --manifest-name "$manifest" \
+            --min-products 3 \
+            --min-success-rate 0
+
+      - name: Upload shard artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lens-products-${{ matrix.shard }}
+          path: landing/static/lenses/
+          retention-days: 1
+          if-no-files-found: error
+
+  publish:
+    needs: build-shards
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Download all shards
+        uses: actions/download-artifact@v4
+        with:
+          pattern: lens-products-*
+          path: landing/static/lenses
+          merge-multiple: true
+
+      - name: Merge and validate complete coverage
+        run: |
+          set -euo pipefail
+          python -X utf8 landing/_scripts/buildLensProducts.py \
+            --merge-shards \
+            --shard-count 24 \
+            --min-success-rate 0.7
+          jq -e '.noComposite == true and .coverageRate == 1 and .successRate >= 0.7 and .covered == .requested' landing/static/lenses/index.json >/dev/null
+          for path in landing/static/lenses/*.json; do
+            jq -e '.noComposite == true and (has("results") | not)' "$path" >/dev/null
+          done
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Upload complete lens artifacts to HF
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          uv run python -X utf8 - <<'EOF'
+          import os
+          from huggingface_hub import HfApi
+          from dartlab.core.hfRetry import retryHfCall
+
+          retryHfCall(
+              HfApi(token=os.environ["HF_TOKEN"]).upload_folder,
+              folder_path="landing/static/lenses",
+              path_in_repo="landing/lenses",
+              repo_id="eddmpython/dartlab-data",
+              repo_type="dataset",
+              allow_patterns=["*.json"],
+              delete_patterns=["*.json"],
+              commit_message="갱신: 전 상장사 분석 렌즈 대표 제품 JSON",
+          )
+          EOF

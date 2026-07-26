@@ -9,6 +9,7 @@
 		InvestmentPeriod,
 		InvestmentTrendYear,
 		InvestmentsView,
+		LensProductBundle,
 		NewsItem,
 		NonRegularFiling,
 		NoteSeriesBundle,
@@ -26,6 +27,7 @@
 	import { gradeTone } from '../lib/engine';
 	import { forensicSignals } from '../lib/forensic'; // 풀스크린에 묻힌 결정론 적신호(감사독립성·단기상환벽) 우측 승격
 	import Panel from '../ui/Panel.svelte';
+	import LensTensionsPanel from './LensTensionsPanel.svelte';
 	import { rollupProfitPool, type IndustryStageRollup } from '../../map/industryPool'; // 이익 풀 · 공정별 영업이익률×매출 rollup
 	import ViewerOverlay from './ViewerOverlay.svelte'; // 얇은 셸 · 본체(ViewerStudio)는 셸 주입 lazy 로더
 	import { viewerEntry } from '../lib/viewerEntry.svelte'; // 중앙 "공시뷰어" 버튼 신호 구독
@@ -46,8 +48,10 @@
 		onPick: (code: string) => void;
 		lookupListed: ListedLookup; // 피출자사명→상장 종목 해소(출자 다이얼로그 시가 환산·클릭 이동)
 		percentileIn: (code: string, universe: Universe) => UniversePercentile | null; // 유니버스 교차 백분위(상세보기 다이얼로그)
+		lensBundle: LensProductBundle | null;
+		lensState: 'loading' | 'ready' | 'empty';
 	}
-	let { co, lang, hosts, repoUrl, onPick, lookupListed, percentileIn }: Props = $props();
+	let { co, lang, hosts, repoUrl, onPick, lookupListed, percentileIn, lensBundle, lensState }: Props = $props();
 	const rt = useDartLabRuntime();
 	const base = rt.env.basePath;
 
@@ -637,6 +641,8 @@
 	const homepageHost = $derived(homepage ? homepage.replace(/^https?:\/\//, '').replace(/\/$/, '') : '');
 	const conf = $derived(cr.healthScore >= 70 ? 'HIGH' : 'MEDIUM');
 </script>
+
+<LensTensionsPanel bundle={lensBundle} loadState={lensState} {lang} />
 
 <!-- RISK FLAGS · 글랜스는 점등(red/yellow)만. 헤더 '상세보기' → 점검 차원 전체 카탈로그·조건·현상태 다이얼로그.
      포렌식 신호(감사인 독립성·단기 상환벽)도 이 패널에 흡수 · 출처만 다른 같은 조기경보라 별 패널로 나누지 않는다. -->

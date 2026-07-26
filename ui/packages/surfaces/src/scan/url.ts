@@ -12,7 +12,7 @@ import type { ScanPayload, FilterCond, SortKey } from './types';
 import { METRICS_BY_KEY } from './metrics';
 
 const VALID_METRIC_KEYS = new Set(Object.keys(METRICS_BY_KEY));
-const VALID_OPS = new Set(['>=', '<=', '==', '!=', 'between', 'contains', 'in', 'exists']);
+const VALID_OPS = new Set(['>', '>=', '<', '<=', '==', '!=', 'between', 'contains', 'in', 'exists']);
 
 function b64encode(s: string): string {
 	if (typeof window === 'undefined') return '';

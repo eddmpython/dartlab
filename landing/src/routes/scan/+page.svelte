@@ -20,6 +20,8 @@
 		METRICS_BY_KEY,
 		PINNED_COLUMNS,
 		PRESETS_BY_ID,
+		materializeScreenSpec,
+		downloadCsv,
 		buildVerdictGrid,
 		nearMiss,
 		relaxThreshold,
@@ -41,8 +43,8 @@
 		type DbState
 	} from '@dartlab/ui-surfaces/scan';
 	import { getPublicRuntime } from '$lib/runtime/publicRuntime';
-	import { HF_RESOLVE, loadJson } from '@dartlab/ui-runtime/data/dartlabData';
-	import type { ProductIndexItem } from '@dartlab/ui-contracts';
+	import { loadJson } from '@dartlab/ui-runtime/data/dartlabData';
+	import type { ProductIndexItem, ScanScreenSpec } from '@dartlab/ui-contracts';
 	import type { ValuationRuntimeMetrics } from '$lib/data/valuationRuntime';
 	import type { ChangeMetrics } from '$lib/data/changesRuntime';
 	import type { DartDb } from '$lib/data/duckdb';
@@ -100,6 +102,8 @@
 	let searchQuery = $state('');
 	let presetOpen = $state(false);
 	let activePresetId = $state<string | null>(null);
+	let activeScreenSpec = $state<ScanScreenSpec | null>(null);
+	let activeScreenLimit = $state<number | null>(null);
 	let runtimeState = $state<'loading' | 'ready' | 'error'>('loading');
 	let runtimeError = $state<string | null>(null);
 	let trendState = $state<'idle' | 'loading' | 'ready' | 'error'>('idle');
@@ -258,14 +262,19 @@
 
 	// KR 노드에 parquet 런타임 맵을 병합한 뒤 US 노드를 덧댄다. US 는 자체 로더가 완성형이라
 	// KR 전용 맵을 끼우지 않는다 (없는 개념을 결측처럼 보이게 만들기 때문).
-	let allNodes = $derived(usNodes.length > 0 ? [...krNodes, ...usNodes] : krNodes);
+	let sourceNodes = $derived(usNodes.length > 0 ? [...krNodes, ...usNodes] : krNodes);
+	let specProjection = $derived(
+		activeScreenSpec ? materializeScreenSpec(sourceNodes, activeScreenSpec) : null
+	);
+	let allNodes = $derived(specProjection?.nodes ?? sourceNodes);
+	let effectiveMetrics = $derived({ ...METRICS_BY_KEY, ...(specProjection?.metrics ?? {}) });
 	/** 조회 시장 범위만 적용한 노드. 분포·발굴 피드·프리셋의 모집단. */
 	let marketNodes = $derived(marketScope === 'KR' ? krNodes : allNodes.filter((n) => inScope(n, marketScope)));
 
 	// ── Percentiles (활성 컬럼별 p10/p90) · 셀 분위 색상용 ─
 	// 시장별로 따로 뽑는다. KR 분포로 US 셀을 칠하면 히트맵이 통화 스케일차와 회계기준 차이를
 	// "좋음/나쁨" 색으로 위조한다. Grid 가 행의 시장에 맞는 분포를 골라 쓴다.
-	let percentilesByMkt = $derived(percentilesByMarket(allNodes, activeColumns, METRICS_BY_KEY));
+	let percentilesByMkt = $derived(percentilesByMarket(allNodes, activeColumns, effectiveMetrics));
 
 	// ── Filter / sort ──────────────────────────────────
 	// 조건 판정은 verdict.ts SSOT 로 이관했다. 옛 로컬 evalCond 는 결측을 비대칭 처리했고
@@ -294,7 +303,7 @@
 	});
 
 	/** 조건 x 종목 판정격자. members / nearMiss / funnel / 결측이 전부 여기서 나온다. */
-	let grid = $derived(buildVerdictGrid(scopedNodes, conds, METRICS_BY_KEY));
+	let grid = $derived(buildVerdictGrid(scopedNodes, conds, effectiveMetrics));
 
 	/** 결측 포함 보기 = UNKNOWN 을 탈락시키지 않고 남긴다 (fail 이 하나도 없으면 통과 취급). */
 	let includeUnknown = $state(false);
@@ -327,6 +336,8 @@
 		}
 		selectedIndustries = new Set();
 		activePresetId = null;
+		activeScreenSpec = null;
+		activeScreenLimit = null;
 	}
 
 	function sortNodes(list: ScanNode[]): ScanNode[] {
@@ -354,14 +365,15 @@
 	// 근접후보는 통과 종목 뒤에 격리해 붙인다. 랭킹 안으로 섞으면 "통과했다" 는 거짓말이 된다.
 	let sortedNodes = $derived.by(() => {
 		const list = sortNodes(filteredNodes.slice());
-		if (!showNearMiss || nearMissRows.length === 0) return list;
-		return [...list, ...sortNodes(nearMissRows.map((r) => r.node))];
+		const limited = activeScreenLimit ? list.slice(0, activeScreenLimit) : list;
+		if (!showNearMiss || nearMissRows.length === 0) return limited;
+		return [...limited, ...sortNodes(nearMissRows.map((r) => r.node))];
 	});
 
 	let filterOptions = $derived.by(() => {
 		const map: Record<string, string[]> = {};
 		for (const key of activeColumns) {
-			const def = METRICS_BY_KEY[key];
+			const def = effectiveMetrics[key];
 			if (!def || def.type !== 'enum') continue;
 			const values = new Set<string>();
 			for (const node of allNodes) {
@@ -386,12 +398,25 @@
 		selectedIndustries = new Set();
 		searchQuery = '';
 		activePresetId = null;
+		activeScreenSpec = null;
+		activeScreenLimit = null;
 	}
 
 	// ── Preset ─────────────────────────────────────────
 	function applyPreset(p: Preset) {
-		conds = [...p.conds];
-		if (p.sorts.length > 0) sorts = p.sorts.slice();
+		if (p.spec) {
+			const projection = materializeScreenSpec(sourceNodes, p.spec);
+			activeScreenSpec = p.spec;
+			activeScreenLimit = projection.limit;
+			conds = projection.conds;
+			if (projection.sorts.length > 0) sorts = projection.sorts;
+			if (marketScope !== 'KR') setMarketScope('KR');
+		} else {
+			activeScreenSpec = null;
+			activeScreenLimit = null;
+			conds = [...p.conds];
+			if (p.sorts.length > 0) sorts = p.sorts.slice();
+		}
 		if (p.cols && p.cols.length > 0) {
 			const next = new Set(activeColumns);
 			for (const c of p.cols) next.add(c);
@@ -505,6 +530,17 @@
 					void ensureLoaders(inferLoaders(activeColumns));
 				}
 				if (payload.p) activePresetId = payload.p;
+				if (payload.p) {
+					const preset = PRESETS_BY_ID.get(payload.p);
+					if (preset?.spec) {
+						const projection = materializeScreenSpec(sourceNodes, preset.spec);
+						activeScreenSpec = preset.spec;
+						activeScreenLimit = projection.limit;
+						conds = projection.conds;
+						if (projection.sorts.length > 0) sorts = projection.sorts;
+						void ensureLoaders(preset.loaders ?? ['finance5y']);
+					}
+				}
 				if (payload.sel) selectedRow = payload.sel;
 			}
 		} else if (presetId) {
@@ -557,6 +593,8 @@
 		conds = s.conds.slice();
 		if (s.sort.length > 0) sorts = s.sort.slice();
 		activePresetId = null;
+		activeScreenSpec = null;
+		activeScreenLimit = null;
 		void ensureLoaders(inferLoaders(activeColumns));
 	}
 
@@ -581,8 +619,7 @@
 		try {
 			const ecosystem = await loadJson<any>('map/ecosystem.json', {
 				fetchFn: fetch,
-				required: true,
-				preferLocal: true
+				required: true
 			});
 			hfNodes = (ecosystem?.nodes ?? []) as ScanNode[];
 			runtimeState = 'ready';
@@ -637,14 +674,14 @@
 			runtimeWorker = null;
 			void bootRuntimeFallback();
 		};
-		runtimeWorker.postMessage({ type: 'boot', basePath: base, hfResolve: HF_RESOLVE });
+		runtimeWorker.postMessage({ type: 'boot', basePath: base });
 	}
 
 	async function bootRuntimeSidecars() {
 		const [prices, meta] = await Promise.all([
-			// 시세 스냅샷만 HF-first · 일배치 HF 갱신을 정적 사본이 가리는 동결 방지 (terminal routeLoad 동일)
+			// 원본·캐시는 publicJsonPolicy SSOT. 화면별 우선순위 override 금지.
 			loadJson<PriceSnapshotFile>('map/prices-snapshot.json', { fetchFn: fetch }),
-			loadJson<any>('map/meta.json', { fetchFn: fetch, preferLocal: true })
+			loadJson<any>('map/meta.json', { fetchFn: fetch })
 		]);
 		hfNodes = mergePriceSnapshot(hfNodes, prices);
 		runtimeMeta = meta ?? runtimeMeta;
@@ -1069,6 +1106,8 @@
 		searchQuery = '';
 		selectedRow = null;
 		activePresetId = null;
+		activeScreenSpec = null;
+		activeScreenLimit = null;
 		dataExplorerOpen = false;
 		const loaderKeys = [
 			...nextCols,
@@ -1089,6 +1128,13 @@
 
 	function handleCellHover(info: typeof cellHover) {
 		cellHover = info;
+	}
+
+	function exportScreenCsv() {
+		const columns = Array.from(new Set(['id', 'label', 'industryName', ...activeColumns]));
+		const rows = sortedNodes.map((node) => node as Record<string, unknown>);
+		const date = new Date().toISOString().slice(0, 10);
+		downloadCsv(`dartlab-screen-${activePresetId ?? 'custom'}-${date}.csv`, columns, rows);
 	}
 
 	// ── Industry list (display order: 회사 수 내림) ────
@@ -1134,6 +1180,9 @@
 			{/if}
 		</div>
 		<div class="page-head-right">
+			<button type="button" class="explore-btn" onclick={exportScreenCsv} disabled={sortedNodes.length === 0}>
+				<span>CSV 내보내기</span>
+			</button>
 			<button type="button" class="explore-btn" onclick={openDataExplorer}>
 				<SlidersHorizontal size={14} />
 				<span>데이터 탐색</span>
@@ -1190,10 +1239,11 @@
 	{#if activePresetId}
 		{@const p = PRESETS_BY_ID.get(activePresetId)}
 		{#if p}
-			<div class="active-preset">
+			<div class="active-preset" title={p.desc}>
 				<span class="ap-label">활성 프리셋</span>
 				<span class="ap-title">{p.title}</span>
 				<span class="ap-sub">{p.subtitle}</span>
+				{#if p.notify}<span class="ap-sub">WATCH</span>{/if}
 				<button type="button" class="ap-x" onclick={clearFilters} aria-label="프리셋 해제">✕</button>
 			</div>
 		{/if}
@@ -1201,11 +1251,11 @@
 
 	<VerdictRibbon
 		{grid}
-		metrics={METRICS_BY_KEY}
+		metrics={effectiveMetrics}
 		nearMissCount={nearMissRows.length}
 		{includeUnknown}
 		{showNearMiss}
-		relaxFor={(i, target) => relaxThreshold(scopedNodes, conds, i, target, METRICS_BY_KEY)}
+		relaxFor={(i, target) => relaxThreshold(scopedNodes, conds, i, target, effectiveMetrics)}
 		onToggleUnknown={() => (includeUnknown = !includeUnknown)}
 		onToggleNearMiss={() => (showNearMiss = !showNearMiss)}
 		onRelax={applyRelax}

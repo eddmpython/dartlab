@@ -1,4 +1,4 @@
-// @dartlab/ui-contracts 공개 표면 — 타입 + 순수 선언(presets·라우팅 규칙), 의존 0.
+// @dartlab/ui-contracts 공개 표면 - 타입 + 순수 선언(presets·라우팅 규칙), 의존 0.
 export * from './runtime';
 export * from './market';
 export * from './company';
@@ -12,7 +12,9 @@ export * from './macro';
 export * from './expectations';
 export * from './report';
 export * from './reportModel';
+export * from './lensProduct';
 export * from './scan';
+export * from './scanPresets.generated';
 export * from './ipo';
 export * from './map';
 export * from './search';

@@ -33,6 +33,8 @@ export { loadFinanceLiteRuntime, loadCompanyFinanceLitePeriods } from './finance
 export { encodeScanPayload, decodeScanPayload } from './url';
 export { DEFAULT_COLUMNS, METRICS_BY_KEY, PINNED_COLUMNS, type MetricGroup } from './metrics';
 export { PRESETS_BY_ID, type Preset, type RuntimeLoader } from './presets';
+export { materializeScreenSpec, type ScreenSpecProjection } from './specEngine';
+export { downloadCsv, toCsv } from './csvExport';
 export type { SavedColumnSet, ScanNode, FilterCond, SortKey } from './types';
 
 // ── DART(KR) + EDGAR(US) 동시 조회 ──

@@ -1,0 +1,51 @@
+[
+  {
+    "id": "missing-not-equal",
+    "kind": "number",
+    "unit": "%",
+    "raw": null,
+    "condition": {"op": "!=", "value": 5},
+    "expected": "UNKNOWN"
+  },
+  {
+    "id": "missing-greater-equal",
+    "kind": "number",
+    "unit": "%",
+    "raw": null,
+    "condition": {"op": ">=", "value": 5},
+    "expected": "UNKNOWN"
+  },
+  {
+    "id": "eok-scale-equality",
+    "kind": "number",
+    "unit": "억원",
+    "raw": 100000000000,
+    "pythonScale": 100000000,
+    "condition": {"op": "==", "value": 1000},
+    "expected": "PASS"
+  },
+  {
+    "id": "strict-string-equality",
+    "kind": "text",
+    "unit": "텍스트",
+    "raw": "05",
+    "condition": {"op": "==", "value": 5},
+    "expected": "FAIL"
+  },
+  {
+    "id": "open-greater-than",
+    "kind": "number",
+    "unit": "배",
+    "raw": 2,
+    "condition": {"op": ">", "value": 2},
+    "expected": "FAIL"
+  },
+  {
+    "id": "inclusive-between",
+    "kind": "number",
+    "unit": "%",
+    "raw": 10,
+    "condition": {"op": "between", "value": [10, 20]},
+    "expected": "PASS"
+  }
+]

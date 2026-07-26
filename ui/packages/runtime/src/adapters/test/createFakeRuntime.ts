@@ -15,6 +15,7 @@ import type {
 	FinancePort,
 	IndexPort,
 	IpoPort,
+	LensPort,
 	MacroPort,
 	MapPort,
 	NavigationPort,
@@ -462,6 +463,76 @@ function fakeMap(): MapPort {
 	};
 }
 
+function fakeLens(): LensPort {
+	const product = (engine: 'analysis' | 'credit' | 'industry' | 'quant' | 'macro') => ({
+		schemaVersion: 1 as const,
+		identity: { target: FIXTURE_CODE, market: 'KR', engine, axis: '대표', version: '1' },
+		time: { asOf: '2026-06-05', dataAsOf: '2026Q1', period: '2026Q1', knowledgeBoundary: '2026-06-05' },
+		status: 'usable' as const,
+		conclusion: { label: `${engine} fixture`, summary: `${engine} 대표 판단 fixture` },
+		confidence: { level: 'high' as const, score: 80, method: 'fixture' },
+		drivers: [],
+		evidence: [{ id: `${engine}.1`, kind: 'fixture', sourceRef: 'fixture://lens', status: 'observed' as const }],
+		assumptions: [], gaps: [], scenarios: [], falsifiers: [], payload: {}
+	});
+	return {
+		async products(code) {
+			if (code !== FIXTURE_CODE) return null;
+			const products = {
+				analysis: product('analysis'), credit: product('credit'), industry: product('industry'),
+				quant: product('quant'), macro: product('macro')
+			};
+			return {
+				schemaVersion: 1, target: code, market: 'KR',
+				engines: ['analysis', 'credit', 'industry', 'quant', 'macro'],
+				products,
+				tensions: {
+					schemaVersion: 1,
+					items: [
+						{
+							schemaVersion: 1,
+							id: 'fundamentalPriceDivergence:fixture',
+							target: code,
+							patternId: 'fundamentalPriceDivergence',
+							kind: 'divergence',
+							status: 'active',
+							asOf: '2026-06-05',
+							headline: { kr: '펀더멘털과 가격 반응이 갈립니다', en: 'Fundamentals and price reaction diverge' },
+							mechanism: { kr: '공시 기반 변화와 시장 가격이 서로 다른 방향을 가리킵니다.', en: 'Filing change and market price point in opposite directions.' },
+							question: { kr: '가격이 놓친 변화인지 숫자가 늦은 위험인지 확인해야 합니다.', en: 'Check whether price missed the change or filings lag a risk.' },
+							sides: [
+								{
+									engine: 'quant', claimId: 'quant.fundamental', label: '공시 이익 변화',
+									comparisonKey: 'fundamentalMomentum', basis: 'marketBehavior', direction: 'supportive',
+									horizon: 'latestPeriod', asOf: '2026-06-05', dataAsOf: '2026Q1', period: '2026Q1',
+									status: 'observed', sourceRef: 'fixture://quant/fundamental', evidenceRefs: ['quant.fundamental']
+								},
+								{
+									engine: 'quant', claimId: 'quant.priceReaction', label: '가격 반응',
+									comparisonKey: 'marketReaction', basis: 'marketBehavior', direction: 'adverse',
+									horizon: 'currentMarket', asOf: '2026-06-05', dataAsOf: '2026-06-05', period: '2026Q1',
+									status: 'observed', sourceRef: 'fixture://quant/price', evidenceRefs: ['quant.price']
+								}
+							],
+							falsifiers: [{ id: 'quant.classificationBreak', condition: '다음 실적 또는 가격 방향이 반전', sourceRef: 'fixture://quant/break' }],
+							gaps: [], algorithmVersion: '1', noComposite: true
+						}
+					],
+					evaluations: [
+						{ patternId: 'fundamentalPriceDivergence', status: 'active', reason: 'active' },
+						{ patternId: 'earningsCashDivergence', status: 'clear', reason: 'aligned' },
+						{ patternId: 'growthCreditTradeoff', status: 'clear', reason: 'aligned' },
+						{ patternId: 'industryExecutionCounterforce', status: 'clear', reason: 'aligned' },
+						{ patternId: 'macroCompanyCounterforce', status: 'clear', reason: 'aligned' }
+					],
+					noComposite: true
+				},
+				statusCounts: { usable: 5 }, gaps: [], noComposite: true
+			};
+		}
+	};
+}
+
 function fakeSearch(): SearchPort {
 	const universe = [{ stockCode: FIXTURE_CODE, corpName: '픽스처전자', industry: '반도체', revenue: 100 }];
 	return {
@@ -646,6 +717,7 @@ export function createFakeRuntime(options: FakeRuntimeOptions = {}): DartLabRunt
 		macro: fakeMacro(),
 		expectations: { getScorecard: async () => null, getLedger: async () => null, getEstimateStatements: async () => null }, // 픽스처 미발간 = 빈 패널 문구
 		report: fakeReport(),
+		lens: fakeLens(),
 		scan: fakeScan(),
 		ipo: fakeIpo(),
 		map: fakeMap(),
