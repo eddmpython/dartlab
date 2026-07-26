@@ -48,6 +48,7 @@ import inspect
 import os
 import sys
 import threading
+import time
 import zlib
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
@@ -682,6 +683,7 @@ def _childMain(
         becomeProcessGroupLeader()
         if not startGate.wait(timeout=10.0):
             return
+        workDeadline = _decodeRequest(requestPayload)["workDeadlineNs"] / 1_000_000_000
         root = _ensureArtifactRoot()
         path = _artifactPath(root, artifactId)
         from dartlab.dataHub.eagerSandbox import enforceEagerSandbox
@@ -711,7 +713,13 @@ def _childMain(
             )
         )
         workerGate.set()
-        worker.join()
+        # join 에 기한이 없으면 worker 가 멈출 때 자식이 영원히 살아남는다. 부모의 kill
+        # 경로가 결국 회수하지만 그때까지 실행 슬롯을 통째로 붙잡고, 실패 원인도 남지
+        # 않는다. 자식은 자기 work deadline 안에서 스스로 끝나야 한다.
+        joinSeconds = max(0.0, workDeadline - time.perf_counter())
+        worker.join(timeout=joinSeconds)
+        if worker.is_alive():
+            raise RuntimeError("EAGER_PROCESS_WORKER_DID_NOT_FINISH")
         if len(output) != 1:
             raise RuntimeError("EAGER_PROCESS_WORKER_RESULT_INVALID")
         sendConnection.send_bytes(_strictJson(output[0]))

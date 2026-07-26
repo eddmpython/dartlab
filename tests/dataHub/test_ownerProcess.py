@@ -742,3 +742,21 @@ def testFreshOwnerSpawnReadyMeasurementStaysBelowMinimumWorkWindow() -> None:
         )
     )
     assert p95 < MIN_OWNER_PROCESS_WORK_SECONDS
+
+
+def testHangingWorkerSelfLimitsWithinItsOwnWorkDeadline() -> None:
+    """자식은 자기 work deadline 안에서 스스로 끝난다. 부모 kill 에만 의존하지 않는다."""
+
+    startedAt = time.perf_counter()
+    outcome = runOwnerPage(
+        _sessionPayload("_fixtureHang"),
+        publicDeadline=startedAt + 12.0,
+    )
+    elapsed = time.perf_counter() - startedAt
+
+    # 부모가 결국 회수하므로 zero-live 는 유지된다.
+    assert outcome.zeroLive is True
+    assert outcome.page is None
+    # 자식이 무한 정지하지 않으므로 공개 기한을 크게 넘기지 않는다.
+    assert elapsed < 30.0
+    assert outcome.deadlineOvershootSeconds < 15.0
