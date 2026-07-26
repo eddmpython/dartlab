@@ -173,9 +173,14 @@ def main(argv: list[str] | None = None) -> int:
     undocumented = _checkDocumented(decos)
 
     if not newRaw and not undocumented:
-        print(
-            f"[deprecationAudit] 통과 — raw DeprecationWarning {len(rawWarns)} (전부 baseline), @deprecated {len(decos)} 전부 문서화."
+        # `@deprecated` 가 0 이면 문서화 검사는 아무것도 보지 않은 것이다. 그것을
+        # "전부 문서화" 로 적으면 검사가 돌아간 것처럼 읽힌다. 실제로 이 저장소는
+        # `warnDeprecated` 와 `@deprecated` 를 쓰는 곳이 아직 없어서 그 검사가 한 번도
+        # 평가된 적이 없고, 아홉 개 폐기 예고에는 제거 버전도 붙어 있지 않다.
+        documented = (
+            f"@deprecated {len(decos)} 전부 문서화" if decos else "@deprecated 0 건이라 문서화 검사는 대상 없음"
         )
+        print(f"[deprecationAudit] 통과. raw DeprecationWarning {len(rawWarns)} (전부 baseline), {documented}.")
         return 0
 
     if newRaw:

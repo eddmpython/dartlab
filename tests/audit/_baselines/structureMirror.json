@@ -12,10 +12,8 @@
     "dart/parse/htmlTableParser.py",
     "dart/sectionPeriod.py",
     "dart/sectionTopic.py",
-    "dart/sectionXml.py",
     "dart/tableAI.py",
     "dart/tableParser.py",
-    "dart/tableRows.py",
     "dart/topicStandard.py",
     "dart/viewer.py",
     "dart/viewerSerialize.py",
@@ -27,5 +25,5 @@
     "edgar/docs/sections/sectionsStorage.py",
     "edgar/docs/viewer.py"
   ],
-  "_note": "src 와 tests 미러 부채 원장(룰 7). edgar/panel/build 여섯 항목은 닫았다. 커버리지가 없던 것이 아니라 src 가 build 폴더로 내려갈 때 테스트가 따라가지 않아 미러 경로만 어긋나 있었다. 파일을 옮기고 공용 헬퍼 참조를 부모 패키지로 맞췄으며, 같은 이름의 재export 파사드 `panel/mapper.py` 에는 파사드가 구현과 어긋나지 않는지 보는 회귀를 새로 세웠다. 나머지는 진짜 커버리지 공백이다."
+  "_note": "src 와 tests 미러 부채 원장(룰 7). edgar/panel/build 여섯 항목은 경로만 어긋난 것이라 옮겨 닫았고, dart/tableRows.py 와 dart/sectionXml.py 는 진짜 공백이라 회귀를 새로 세워 닫았다. 두 파서는 각각 산업 그래프 빌드와 panel 빌드가 그대로 호출하는데 테스트가 하나도 없었다. 나머지는 아직 공백이다."
 }

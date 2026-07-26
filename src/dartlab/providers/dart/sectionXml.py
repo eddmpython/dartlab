@@ -282,11 +282,16 @@ def xmlChunkToMixed(rawXml: str) -> str:
         가 받을 양식.
 
     Raises:
-        없음 — XML parse 실패 시 rawXml 그대로 반환 (fallback).
+        없음. 다만 파서를 `recover=True` 로 쓰기 때문에 깨진 XML 이 예외를 올리지 않고,
+        아래 `except` 폴백은 실질적으로 실행되지 않는다. 깨진 입력은 파서가 건져낸
+        조각만 남는다. 태그 없는 알몸 텍스트는 요소가 아니라 아예 살아남지 못한다.
 
     Example:
-        >>> xmlChunkToMixed('<P>본문</P><TABLE BORDER="1"><TR><TD>cell</TD></TR></TABLE>')
-        '본문\\n\\n<table>\\n<tr><td>cell</td></tr>\\n</table>'
+        1x1 표는 데이터 표가 아니라 문단 프레임이라 HTML 이 아닌 평문이 된다.
+        아래는 진짜 데이터 표다.
+
+        >>> xmlChunkToMixed('<TABLE BORDER="1"><TR><TD>a</TD><TD>b</TD></TR></TABLE>')
+        '<table>\\n<tr><td>a</td><td>b</td></tr>\\n</table>'
     """
     if not rawXml or not rawXml.strip():
         return ""
