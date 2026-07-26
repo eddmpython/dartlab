@@ -90,10 +90,10 @@ class _EdgarNotesWrapper:
 
         LLM Specifications:
             AntiPatterns:
-                - 카테고리 키 알면 `c.notes.<카테고리>` 호출이 더 빠름 — `.all()` 은 회사
+                - 카테고리 키 알면 `c.notes.<카테고리>` 호출이 더 빠름 - `.all()` 은 회사
                   전체 TextBlock 일괄 fetch 라 메모리 사용 크다.
             OutputSchema:
-                - pl.DataFrame — `concept` (us-gaap tag) / `value` (XBRL TextBlock 본문) /
+                - pl.DataFrame - `concept` (us-gaap tag) / `value` (XBRL TextBlock 본문) /
                   `period` (분기 키) / `dimensions` (axis 정보). 주석 없으면 None.
             Prerequisites:
                 - 본 Company 인스턴스에 `companyfacts.json` (SEC XBRL) 캐시 존재.
@@ -122,7 +122,7 @@ class _EdgarNotesWrapper:
             AntiPatterns:
                 - 본 list 외 카테고리 호출 → `AttributeError`. caller 가 list 검사 의무.
             OutputSchema:
-                - list[str] — 본 회사가 disclose 한 카테고리만. 모든 회사 공통 set 아님.
+                - list[str] - 본 회사가 disclose 한 카테고리만. 모든 회사 공통 set 아님.
             Prerequisites:
                 - companyfacts.json 캐시 + notesParsers 의 `CATEGORY_LABELS` 매핑.
             Freshness:
@@ -147,8 +147,8 @@ class _EdgarNotesWrapper:
             >>> c.notes.keysKr()
 
         SeeAlso:
-            - ``keys`` — 영어 카테고리 ID 버전. cross-provider 라벨 dispatch 는 본 함수.
-            - ``dart.providers.dart.docs.notes`` — KR 패리티.
+            - ``keys`` - 영어 카테고리 ID 버전. cross-provider 라벨 dispatch 는 본 함수.
+            - ``dart.providers.dart.docs.notes`` - KR 패리티.
 
         Requires:
             - dartlab
@@ -156,7 +156,7 @@ class _EdgarNotesWrapper:
 
         Capabilities:
             - ``keys()`` 의 영어 카테고리 ID 를 `CATEGORY_LABELS` 매핑으로 한국어 라벨화.
-              누락된 카테고리는 원본 영문 그대로 통과 — Workbench UI 라벨링 용도.
+              누락된 카테고리는 원본 영문 그대로 통과 - Workbench UI 라벨링 용도.
 
         Guide:
             - "이 회사 어떤 주석 있나 한국어로" → 본 함수.
@@ -170,7 +170,7 @@ class _EdgarNotesWrapper:
                 - 라벨 값으로 다시 ``c.notes.<라벨>`` 호출 → AttributeError. 라벨은 표시용,
                   실 API 는 ``keys()`` 의 영문 ID 사용.
             OutputSchema:
-                - list[str] — 한국어 라벨 또는 매핑 없는 원본 영문.
+                - list[str] - 한국어 라벨 또는 매핑 없는 원본 영문.
             Prerequisites:
                 - notesParsers.CATEGORY_LABELS 정적 매핑.
             Freshness:
@@ -185,7 +185,7 @@ class _EdgarNotesWrapper:
         return [CATEGORY_LABELS.get(k, k) for k in self.keys()]
 
     def quarterly(self, query: str | None = None) -> pl.DataFrame | None:
-        """분기 단위 TextBlock 주석 검색 — ``notes()`` alias.
+        """분기 단위 TextBlock 주석 검색 - ``notes()`` alias.
 
         Args:
             query: 검색어 (None 이면 전체).
@@ -201,10 +201,10 @@ class _EdgarNotesWrapper:
 
         LLM Specifications:
             AntiPatterns:
-                - 본 함수는 alias — 실제로는 10-K + 10-Q 모두 포함, 분기로 필터링 X.
+                - 본 함수는 alias - 실제로는 10-K + 10-Q 모두 포함, 분기로 필터링 X.
                   엄밀 분기만 원하면 ``c.docs.notes(query)`` 후 period 컬럼 직접 필터.
             OutputSchema:
-                - pl.DataFrame — `concept` / `value` / `period` / `dimensions`. 매치 없으면 None.
+                - pl.DataFrame - `concept` / `value` / `period` / `dimensions`. 매치 없으면 None.
             Prerequisites:
                 - companyfacts.json 캐시.
             Freshness:
@@ -406,7 +406,7 @@ def _isPeriodColumn(col: str) -> bool:
 
 
 def _filterPeriodColumnsByAsOf(df: "pl.DataFrame", asOf: str) -> "pl.DataFrame":
-    """asOf 이후 fiscal period 컬럼 drop — look-ahead bias 방지 (DART 와 동일 패턴).
+    """asOf 이후 fiscal period 컬럼 drop - look-ahead bias 방지 (DART 와 동일 패턴).
 
     EDGAR finance topic 의 horizontal view 는 컬럼명이 fiscal period
     (예: "2024", "2024Q3"). asOf 이후 컬럼 drop 으로 미래 정보 누설 차단.
@@ -462,7 +462,7 @@ class Company:
 
     @staticmethod
     def canHandle(code: str) -> bool:
-        """US ticker (영문 1~5 자) 또는 CIK (10 자리 이하 숫자) 판별 — Company 라우터 게이트.
+        """US ticker (영문 1~5 자) 또는 CIK (10 자리 이하 숫자) 판별 - Company 라우터 게이트.
 
         Capabilities:
             - 영문 1~5 자 (AAPL/MSFT 등) → True.
@@ -474,7 +474,7 @@ class Company:
             code: ticker 또는 CIK 문자열. strip 자동.
 
         Returns:
-            bool — True 면 EDGAR 처리, False 면 다른 provider (dart/edinet) 시도.
+            bool - True 면 EDGAR 처리, False 면 다른 provider (dart/edinet) 시도.
 
         Example:
             >>> # Company.canHandle("AAPL")  # True
@@ -488,12 +488,12 @@ class Company:
             - 한국어 회사명 → False (resolveCompany 가 다른 경로).
 
         SeeAlso:
-            - ``Company.priority`` — 라우터 우선순위 SSOT.
-            - ``dartlab.providers.dart.company.Company.canHandle`` — KR stockCode 판정.
-            - operation.apiContract — provider 라우팅 SSOT.
+            - ``Company.priority`` - 라우터 우선순위 SSOT.
+            - ``dartlab.providers.dart.company.Company.canHandle`` - KR stockCode 판정.
+            - operation.apiContract - provider 라우팅 SSOT.
 
         Requires:
-            - re (stdlib) — ticker 패턴 검증.
+            - re (stdlib) - ticker 패턴 검증.
 
         AIContext:
             Company 팩토리 내부 라우터. AI 가 사용자 입력 "AAPL" / "0000320193" 받으면 자동
@@ -501,7 +501,7 @@ class Company:
 
         LLM Specifications:
             AntiPatterns:
-                - 6 자리 숫자 (KR 종목코드) 도 본 함수 True 반환 — dart provider 가 먼저 매칭 의무.
+                - 6 자리 숫자 (KR 종목코드) 도 본 함수 True 반환 - dart provider 가 먼저 매칭 의무.
                 - 영문 6 자 이상 (예 "GOOGLE") → False. ticker 는 최대 5 자 가정.
                 - 빈 문자열 → re 매칭 False.
             OutputSchema:
@@ -525,7 +525,7 @@ class Company:
 
     @staticmethod
     def priority() -> int:
-        """provider 우선순위 — 낮을수록 먼저 시도. EDGAR=20.
+        """provider 우선순위 - 낮을수록 먼저 시도. EDGAR=20.
 
         Returns:
             우선순위 int (DART=10, EDGAR=20, EDINET=30).
@@ -549,12 +549,12 @@ class Company:
             Dataflow:
                 - Company 팩토리 → 본 함수 → provider 순위 정렬 → canHandle 시도.
             TargetMarkets:
-                - US (SEC EDGAR) — 본 provider 식별자.
+                - US (SEC EDGAR) - 본 provider 식별자.
         """
         return 20
 
     def __init__(self, ticker: str):
-        """EDGAR US Company 인스턴스 초기화 — ticker/CIK 3-tier 해석 + accessor 4 종 셋업.
+        """EDGAR US Company 인스턴스 초기화 - ticker/CIK 3-tier 해석 + accessor 4 종 셋업.
 
         Args:
             ticker: 영문 ticker (``"AAPL"`` / ``"BRK.B"``) 또는 SEC CIK 숫자
@@ -575,9 +575,9 @@ class Company:
             '0000320193'
 
         SeeAlso:
-            - ``_resolveTickerRow`` — parquet → listed universe → SEC identity 3-tier 해석.
-            - ``providers.edgar.openapi.identity.resolveIssuer`` — SEC ``company_tickers.json`` 조회.
-            - ``frame.dataLoader.loadEdgarListedUniverse`` — HF listed universe parquet.
+            - ``_resolveTickerRow`` - parquet → listed universe → SEC identity 3-tier 해석.
+            - ``providers.edgar.openapi.identity.resolveIssuer`` - SEC ``company_tickers.json`` 조회.
+            - ``frame.dataLoader.loadEdgarListedUniverse`` - HF listed universe parquet.
 
         Requires:
             - polars
@@ -586,9 +586,9 @@ class Company:
             - dartlab.core.edgarClient (lazy SEC API fallback)
 
         Capabilities:
-            - 단일 미국 상장사 facade 진입점 — docs/finance/profile 통합 access.
-            - ticker / CIK 양방향 입력 — 사용자 편의.
-            - lazy SEC API — local parquet 우선 hit, 미스 시에만 네트워크.
+            - 단일 미국 상장사 facade 진입점 - docs/finance/profile 통합 access.
+            - ticker / CIK 양방향 입력 - 사용자 편의.
+            - lazy SEC API - local parquet 우선 hit, 미스 시에만 네트워크.
 
         Guide:
             - "Apple 재무" → ``Company("AAPL").panel("IS")``.
@@ -596,18 +596,18 @@ class Company:
             - "다종목 순회" → ``with Company(t) as c: ...`` (OomTripwire 보호).
 
         AIContext:
-            Ask Workbench Company facade — LLM 이 첫 호출하는 US provider 엔트리.
+            Ask Workbench Company facade - LLM 이 첫 호출하는 US provider 엔트리.
             ``co.panel("BS")`` / ``co.notes("inventory")`` 등 모든 후속 호출의 self.
 
         LLM Specifications:
             AntiPatterns:
-                - 회사명 입력 X — EDGAR 는 ticker / CIK strict ("Apple" → ValueError).
+                - 회사명 입력 X - EDGAR 는 ticker / CIK strict ("Apple" → ValueError).
                 - SEC User-Agent header 미설정 → HTTP 403 (dartlab.core.http 가 처리하나 환경 변수 ``DARTLAB_USER_AGENT`` 권장).
-                - ``Company(t)`` 한 인스턴스 다종목 재사용 X — 종목당 신규 Company 강제.
+                - ``Company(t)`` 한 인스턴스 다종목 재사용 X - 종목당 신규 Company 강제.
                 - ``with`` 누락 다종목 루프 → Polars Rust heap 누적 → OOM.
                 - 11 자리 이상 CIK 호출 → 포맷 위반 ValueError.
             OutputSchema:
-                - Company 인스턴스 — ``ticker`` (str upper) / ``cik`` (str zero-padded 10)
+                - Company 인스턴스 - ``ticker`` (str upper) / ``cik`` (str zero-padded 10)
                   / ``corpName`` (str, tickers.json title) / ``_cache`` (BoundedCache 30).
                 - 내부 accessor: ``_docs`` (DocsAccessor) / ``_finance`` (FinanceAccessor)
                   / ``_profileAccessor`` (ProfileAccessor) / ``_reportAccessor`` (lazy None).
@@ -623,7 +623,7 @@ class Company:
                   (tier 3) ``identity.resolveIssuer`` SEC API
                 - → ``cik`` zfill(10) + BoundedCache(30) + 3 accessor 인스턴스화 → Company.
             TargetMarkets:
-                - US (SEC EDGAR) — NYSE/NASDAQ/AMEX/OTC SEC 등록 종목 한정. 비등록/외국 X.
+                - US (SEC EDGAR) - NYSE/NASDAQ/AMEX/OTC SEC 등록 종목 한정. 비등록/외국 X.
         """
         if not ticker or not isinstance(ticker, str):
             raise ValueError("ticker는 비어있지 않은 문자열이어야 합니다.")
@@ -732,7 +732,7 @@ class Company:
     # ── P7: Company context manager + 메모리-safe surface (룰 11 + MemorySafeProvider) ──
 
     def __enter__(self) -> "Company":
-        """context manager 진입 — OomTripwire 시작 + self 반환.
+        """context manager 진입 - OomTripwire 시작 + self 반환.
 
         Example:
             with Company("AAPL") as c:
@@ -751,7 +751,7 @@ class Company:
         return self
 
     def __exit__(self, _excType: object, _excVal: object, _excTb: object) -> None:
-        """context manager 종료 — OomTripwire 정지 + BoundedCache evict + RSS 회수.
+        """context manager 종료 - OomTripwire 정지 + BoundedCache evict + RSS 회수.
 
         Args:
             excType: 예외 type.
@@ -787,9 +787,9 @@ class Company:
             없음.
 
         SeeAlso:
-            - ``__exit__`` — context manager 종료 시 본 함수 자동 호출.
-            - ``memorySnapshot`` — 호출 전/후 RSS 비교.
-            - ``dartlab.core.memory.cleanupBetweenCompanies`` — Polars Rust heap 회수 트리거.
+            - ``__exit__`` - context manager 종료 시 본 함수 자동 호출.
+            - ``memorySnapshot`` - 호출 전/후 RSS 비교.
+            - ``dartlab.core.memory.cleanupBetweenCompanies`` - Polars Rust heap 회수 트리거.
 
         Requires:
             - dartlab
@@ -812,7 +812,7 @@ class Company:
                 - 호출 없이 다종목 순회 → Rust heap 누적 → OOM.
                 - ``gc.collect()`` 만 호출 → Polars 힙은 Python gc 회수 X. 본 함수 의무.
             OutputSchema:
-                - int — evict 된 cache entry 수 (0 가능).
+                - int - evict 된 cache entry 수 (0 가능).
             Prerequisites:
                 - 본 Company 인스턴스 활성 상태.
             Freshness:
@@ -820,7 +820,7 @@ class Company:
             Dataflow:
                 - self._cache → clear → cleanupBetweenCompanies → Rust heap 회수.
             TargetMarkets:
-                - US (SEC EDGAR) — 본 클래스의 cache 정리.
+                - US (SEC EDGAR) - 본 클래스의 cache 정리.
         """
         from dartlab.core.memory import cleanupBetweenCompanies
 
@@ -844,8 +844,8 @@ class Company:
             없음.
 
         SeeAlso:
-            - ``cleanupCache`` — 본 함수가 보여준 RSS 회수.
-            - ``dartlab.core.memory.getMemoryMb`` — psutil 기반 RSS 추정.
+            - ``cleanupCache`` - 본 함수가 보여준 RSS 회수.
+            - ``dartlab.core.memory.getMemoryMb`` - psutil 기반 RSS 추정.
 
         Requires:
             - dartlab
@@ -865,7 +865,7 @@ class Company:
 
         LLM Specifications:
             AntiPatterns:
-                - RSS 값을 절대값으로 비교 시 환경 차이 (Windows vs WSL) — 추세만 사용.
+                - RSS 값을 절대값으로 비교 시 환경 차이 (Windows vs WSL) - 추세만 사용.
                 - cacheSize 0 == 메모리 정리 완료 X. Polars Rust heap 은 별도 영역.
             OutputSchema:
                 - dict {"cacheSize": int, "rssMb": int}.
@@ -876,7 +876,7 @@ class Company:
             Dataflow:
                 - psutil RSS + self._cache len → 본 함수 → dict.
             TargetMarkets:
-                - US (SEC EDGAR) — 본 클래스 인스턴스 추적.
+                - US (SEC EDGAR) - 본 클래스 인스턴스 추적.
         """
         from dartlab.core.memory import getMemoryMb
 
@@ -904,8 +904,8 @@ class Company:
             c.fiscalYearEnd  # "09-26" (마지막 토요일 변형 가능)
 
         SeeAlso:
-            - ``dartlab.providers.dart.company.Company.fiscalYearEnd`` — KR 패리티 (12-31 고정).
-            - ``finance/scanAccount`` — 본 값을 활용한 분기→연도 매칭.
+            - ``dartlab.providers.dart.company.Company.fiscalYearEnd`` - KR 패리티 (12-31 고정).
+            - ``finance/scanAccount`` - 본 값을 활용한 분기→연도 매칭.
 
         Requires:
             - dartlab
@@ -926,7 +926,7 @@ class Company:
         LLM Specifications:
             AntiPatterns:
                 - 모든 US 회사가 12-31 가정 → AAPL/CSCO/ORCL 등 변형 FY 회사 비교 시 wrong period.
-                - 본 값을 ISO date 로 사용 X — "MM-DD" 만, 연도 정보 없음.
+                - 본 값을 ISO date 로 사용 X - "MM-DD" 만, 연도 정보 없음.
             OutputSchema:
                 - str "MM-DD" 또는 None (companyfacts 없음).
             Prerequisites:
@@ -936,7 +936,7 @@ class Company:
             Dataflow:
                 - companyfacts.parquet → fp='FY' filter → fy 별 mode → mode of mode → month-day.
             TargetMarkets:
-                - US (SEC EDGAR) — XBRL 회계 연도 SSOT.
+                - US (SEC EDGAR) - XBRL 회계 연도 SSOT.
         """
         cacheKey = "_fiscalYearEnd"
         if cacheKey in self._cache:
@@ -1007,7 +1007,7 @@ class Company:
             - currency: 통화 식별자
 
         Returns:
-            str — ticker 심볼 (예: "AAPL").
+            str - ticker 심볼 (예: "AAPL").
 
         Raises:
             없음.
@@ -1029,7 +1029,7 @@ class Company:
             Dataflow:
                 - __init__ ticker 정규화 → self.ticker → 본 property.
             TargetMarkets:
-                - US (SEC EDGAR) — ticker SSOT.
+                - US (SEC EDGAR) - ticker SSOT.
         """
         return self.ticker
 
@@ -1055,7 +1055,7 @@ class Company:
             - currency: 통화 식별자
 
         Returns:
-            str — "US".
+            str - "US".
 
         Raises:
             없음.
@@ -1067,7 +1067,7 @@ class Company:
 
         LLM Specifications:
             AntiPatterns:
-                - 시장 세분화 (NYSE vs NASDAQ) 필요 시 본 값으로는 부족 — listing 메타에서 추출.
+                - 시장 세분화 (NYSE vs NASDAQ) 필요 시 본 값으로는 부족 - listing 메타에서 추출.
             OutputSchema:
                 - 고정 str "US".
             Prerequisites:
@@ -1103,7 +1103,7 @@ class Company:
             - market: 시장 식별자
 
         Returns:
-            str — "USD".
+            str - "USD".
 
         Raises:
             없음.
@@ -1115,7 +1115,7 @@ class Company:
 
         LLM Specifications:
             AntiPatterns:
-                - 외국 등록 (ADR) 회사도 본 함수 "USD" 반환 — 보고통화 vs 결산통화 차이는 별도 추출 의무.
+                - 외국 등록 (ADR) 회사도 본 함수 "USD" 반환 - 보고통화 vs 결산통화 차이는 별도 추출 의무.
             OutputSchema:
                 - 고정 str "USD".
             Prerequisites:
@@ -1131,12 +1131,12 @@ class Company:
 
     @property
     def quant(self):
-        """주가 기술적 분석 — dual access (Phase 8 A3).
+        """주가 기술적 분석 - dual access (Phase 8 A3).
 
         ``c.quant`` (object) 또는 ``c.quant(axis, ...)`` (call) 양식 모두 지원.
 
         Returns:
-            ``CallableAccessor`` — ``c.quant.SMA(...)`` 또는 ``c.quant("SMA")`` 사용.
+            ``CallableAccessor`` - ``c.quant.SMA(...)`` 또는 ``c.quant("SMA")`` 사용.
 
         Raises:
             없음.
@@ -1147,8 +1147,8 @@ class Company:
             >>> c.quant("returns")     # 주가 수익률
 
         SeeAlso:
-            - ``dartlab.quant.Quant`` — 30 축 SSOT.
-            - ``dart.providers.dart.company.Company.quant`` — KR 패리티 (동일 인터페이스).
+            - ``dartlab.quant.Quant`` - 30 축 SSOT.
+            - ``dart.providers.dart.company.Company.quant`` - KR 패리티 (동일 인터페이스).
 
         Requires:
             - dartlab
@@ -1156,7 +1156,7 @@ class Company:
 
         Capabilities:
             - ``dartlab.quant.Quant`` 의 30 축 (SMA/EMA/RSI/MACD/Bollinger/ATR/returns 등) 을
-              본 회사 ticker 기준으로 호출. property 접근/call 호환 — ``CallableAccessor`` 가
+              본 회사 ticker 기준으로 호출. property 접근/call 호환 - ``CallableAccessor`` 가
               두 양식 모두 동일 backend dispatch.
 
         Guide:
@@ -1164,7 +1164,7 @@ class Company:
             - "사용 가능 quant 축" → ``c.quant()`` 빈 호출.
 
         AIContext:
-            workbench 주가 분석 entry. 본 함수는 주가 시계열 origin 만 — 재무 시계열은 ``finance``.
+            workbench 주가 분석 entry. 본 함수는 주가 시계열 origin 만 - 재무 시계열은 ``finance``.
         """
         from dartlab.core.dualAccess import CallableAccessor
 
@@ -1173,7 +1173,7 @@ class Company:
         return self._cache["_quantAccessor"]
 
     def _quantImpl(self, axis=None, *, metric=None, **kwargs):
-        """주가 기술적 분석 — 30축 (내부 구현)."""
+        """주가 기술적 분석 - 30축 (내부 구현)."""
         from dartlab.quant import Quant
 
         if axis is None and metric is not None:
@@ -1184,7 +1184,7 @@ class Company:
         return q(axis, self.stockCode, **kwargs)
 
     def macro(self, axis=None, target=None, *, overrides: dict | None = None, **kwargs):
-        """시장 매크로 분석 — EDGAR 회사는 US 시장 위임 (Phase 8 A2).
+        """시장 매크로 분석 - EDGAR 회사는 US 시장 위임 (Phase 8 A2).
 
         Args:
             axis: 매크로 축 (None 이면 가이드).
@@ -1203,8 +1203,8 @@ class Company:
             >>> c.macro("yield_curve")
 
         SeeAlso:
-            - ``dartlab.macro.Macro`` — 매크로 axis 카탈로그 SSOT.
-            - ``dart.providers.dart.company.Company.macro`` — KR 패리티 (market="KR" 위임).
+            - ``dartlab.macro.Macro`` - 매크로 axis 카탈로그 SSOT.
+            - ``dart.providers.dart.company.Company.macro`` - KR 패리티 (market="KR" 위임).
 
         Requires:
             - dartlab
@@ -1212,14 +1212,14 @@ class Company:
 
         Capabilities:
             - 본 회사의 시장 매크로 (yield_curve / inflation / fx / fedFunds 등) 를 US 기준으로
-              조회. dart 와 동일 시그니처 — `market="US"` 자동 주입.
+              조회. dart 와 동일 시그니처 - `market="US"` 자동 주입.
 
         Guide:
             - "US yield curve 영향" → ``c.macro("yield_curve")``.
             - "사용 가능 매크로 축" → ``c.macro()`` 빈 호출.
 
         AIContext:
-            매크로 변수 회사 영향 질문 entry. axis 미정 시 가이드 반환 — AI 가 미지원 axis 추측 대신 빈 호출로 카탈로그 확인.
+            매크로 변수 회사 영향 질문 entry. axis 미정 시 가이드 반환 - AI 가 미지원 axis 추측 대신 빈 호출로 카탈로그 확인.
 
         LLM Specifications:
             AntiPatterns:
@@ -1238,7 +1238,7 @@ class Company:
         """
         from dartlab.macro import Macro
 
-        return Macro()(axis, target, market="US", overrides=overrides, **kwargs)
+        return Macro()(axis, target, market="US", overrides=overrides, company=self, **kwargs)
 
     # ── Phase 10 H2: story 2차 가공 직접 노출 ──
 
@@ -1256,9 +1256,9 @@ class Company:
             >>> c.causalWeights()
 
         SeeAlso:
-            - ``dartlab.story.narrative.buildCausalWeights`` — 본 함수의 implementation.
-            - ``valuationImpact`` — 본 가중치를 DCF override 로 변환.
-            - ``storyTree`` — 가중치 적용한 3 trajectory DCF.
+            - ``dartlab.story.narrative.buildCausalWeights`` - 본 함수의 implementation.
+            - ``valuationImpact`` - 본 가중치를 DCF override 로 변환.
+            - ``storyTree`` - 가중치 적용한 3 trajectory DCF.
 
         Requires:
             - dartlab
@@ -1276,10 +1276,10 @@ class Company:
 
         LLM Specifications:
             AntiPatterns:
-                - weight 의 절대값 비교 X — 회사 간 비교는 정성적 해석만.
+                - weight 의 절대값 비교 X - 회사 간 비교는 정성적 해석만.
                 - 가중치 합 1.0 가정 → narrative override 시 깨질 수 있음.
             OutputSchema:
-                - list[dict] — 각 dict {"act": str, "driver": str, "weight": float}.
+                - list[dict] - 각 dict {"act": str, "driver": str, "weight": float}.
             Prerequisites:
                 - finance + sections 데이터 (story.narrative 가 합산).
             Freshness:
@@ -1308,9 +1308,9 @@ class Company:
             >>> c.valuationImpact()
 
         SeeAlso:
-            - ``causalWeights`` — 본 함수의 입력.
-            - ``storyTree`` — 본 override 적용한 3 trajectory DCF.
-            - ``dartlab.story.narrative.buildValuationImpact`` — implementation.
+            - ``causalWeights`` - 본 함수의 입력.
+            - ``storyTree`` - 본 override 적용한 3 trajectory DCF.
+            - ``dartlab.story.narrative.buildValuationImpact`` - implementation.
 
         Requires:
             - dartlab
@@ -1362,9 +1362,9 @@ class Company:
             >>> c.storyTree()
 
         SeeAlso:
-            - ``causalWeights`` / ``valuationImpact`` — 본 함수의 입력 가중치.
-            - ``dartlab.story.dcf`` — 3 trajectory 계산 모듈.
-            - ``narrativeDiff`` — 사용자 가설과 본 tree 비교.
+            - ``causalWeights`` / ``valuationImpact`` - 본 함수의 입력 가중치.
+            - ``dartlab.story.dcf`` - 3 trajectory 계산 모듈.
+            - ``narrativeDiff`` - 사용자 가설과 본 tree 비교.
 
         Requires:
             - dartlab
@@ -1383,7 +1383,7 @@ class Company:
 
         LLM Specifications:
             AntiPatterns:
-                - bull/bear range 좁다고 안전하다 결론 — narrative 가 우상향 편향이면 bear 도 낙관적.
+                - bull/bear range 좁다고 안전하다 결론 - narrative 가 우상향 편향이면 bear 도 낙관적.
                 - basePeriod 가정 (예 분기 마지막) 없이 호출 → 최신 자동, 의도 명확하면 명시.
             OutputSchema:
                 - dict {"base": {fairPrice, revenueGrowth, ...}, "bull": ..., "bear": ...}.
@@ -1418,9 +1418,9 @@ class Company:
             >>> c.narrativeDiff(claims=["margin_expansion"])
 
         SeeAlso:
-            - ``storyTree`` — claim 적용된 trajectory.
-            - ``causalWeights`` — claim 의 사전 가중치.
-            - ``dartlab.story.narrativeDiff.computeImpact`` — implementation.
+            - ``storyTree`` - claim 적용된 trajectory.
+            - ``causalWeights`` - claim 의 사전 가중치.
+            - ``dartlab.story.narrativeDiff.computeImpact`` - implementation.
 
         Requires:
             - dartlab
@@ -1434,14 +1434,14 @@ class Company:
             - "이 회사 valuation 의 핵심 claim 뭐냐" → 본 함수 결과 dFV 큰 순 정렬.
 
         AIContext:
-            workbench 가 narrative 분해 답변 시 claim 별 dFV 인용 — AI 가 "margin expansion 이 valuation 의 30%" 류 정량 진술 가능.
+            workbench 가 narrative 분해 답변 시 claim 별 dFV 인용 - AI 가 "margin expansion 이 valuation 의 30%" 류 정량 진술 가능.
 
         LLM Specifications:
             AntiPatterns:
                 - claim list 일부만 넣고 "주요 claim" 결론 → 전체 list 필수.
                 - dFV 의 절대값 외부 비교 → 회사 별 base FV 차이로 직접 비교 무의미.
             OutputSchema:
-                - list[dict] — 각 {"claim": str, "dFV": float, "dFVpct": float, ...}.
+                - list[dict] - 각 {"claim": str, "dFV": float, "dFVpct": float, ...}.
             Prerequisites:
                 - storyTree base trajectory + claims 카탈로그.
             Freshness:
@@ -1463,7 +1463,7 @@ class Company:
         """NASDAQ/NYSE 상장 기업 목록 (EDGAR universe).
 
         Args:
-            forceRefresh: 캐시 무시 — 현재 EDGAR 는 자동 캐시라 noop.
+            forceRefresh: 캐시 무시 - 현재 EDGAR 는 자동 캐시라 noop.
                 DartCompany.listing 과 시그니처 동기 목적.
 
         Returns:
@@ -1476,9 +1476,9 @@ class Company:
             >>> Company.listing().head()
 
         SeeAlso:
-            - ``search`` — keyword 부분 매칭 검색.
-            - ``dart.providers.dart.company.Company.listing`` — KR 패리티.
-            - ``dartlab.core.dataLoader.loadEdgarListedUniverse`` — origin.
+            - ``search`` - keyword 부분 매칭 검색.
+            - ``dart.providers.dart.company.Company.listing`` - KR 패리티.
+            - ``dartlab.core.dataLoader.loadEdgarListedUniverse`` - origin.
 
         Requires:
             - dartlab
@@ -1494,14 +1494,14 @@ class Company:
 
         AIContext:
             workbench universe 탐색 시 본 함수 origin. DataFrame 그대로 LLM 에 노출하면 토큰
-            낭비 — ``head``/``filter`` 후 보내야.
+            낭비 - ``head``/``filter`` 후 보내야.
 
         LLM Specifications:
             AntiPatterns:
                 - 전체 universe 그대로 LLM 컨텍스트 주입 → ~10K 행 토큰 초과.
-                - forceRefresh=True 가 실제 fetch 한다고 가정 — EDGAR 는 정적 parquet.
+                - forceRefresh=True 가 실제 fetch 한다고 가정 - EDGAR 는 정적 parquet.
             OutputSchema:
-                - pl.DataFrame — 컬럼 ["종목코드", "회사명", "시장구분", "cik"].
+                - pl.DataFrame - 컬럼 ["종목코드", "회사명", "시장구분", "cik"].
             Prerequisites:
                 - data/edgar/listed.parquet (`scripts/build/buildEdgarUniverse.py` 산출).
             Freshness:
@@ -1541,15 +1541,15 @@ class Company:
             >>> Company.search("apple", limit=10)
 
         SeeAlso:
-            - ``listing`` — 전체 universe.
-            - ``dart.providers.dart.company.Company.search`` — KR 패리티 (회사명 한글 부분).
+            - ``listing`` - 전체 universe.
+            - ``dart.providers.dart.company.Company.search`` - KR 패리티 (회사명 한글 부분).
 
         Requires:
             - dartlab
             - polars
 
         Capabilities:
-            - 3-단계 매칭 — (1) ticker 정확 (대문자) (2) ticker 부분 (3) 회사명 부분 (대소무시).
+            - 3-단계 매칭 - (1) ticker 정확 (대문자) (2) ticker 부분 (3) 회사명 부분 (대소무시).
               앞 단계에서 매치 발견 시 뒤 단계 skip. limit 으로 head N.
 
         Guide:
@@ -1565,7 +1565,7 @@ class Company:
                 - limit 없이 흔한 단어 (예 "Inc", "Corp") 검색 → 수천 row 반환 → 토큰 폭증.
                 - 한글 회사명 입력 → US universe 에는 없음 → 빈 결과.
             OutputSchema:
-                - pl.DataFrame — 컬럼 ["종목코드", "회사명", "시장구분", "cik"]. 매치 없으면 빈 DF.
+                - pl.DataFrame - 컬럼 ["종목코드", "회사명", "시장구분", "cik"]. 매치 없으면 빈 DF.
             Prerequisites:
                 - listing 과 동일 (data/edgar/listed.parquet).
             Freshness:
@@ -1637,7 +1637,7 @@ class Company:
             port: 로컬 서버 포트 (기본 8400).
 
         Returns:
-            None — 브라우저가 자동으로 열림.
+            None - 브라우저가 자동으로 열림.
 
         Raises:
             OSError: 포트 점유 시.
@@ -1653,7 +1653,7 @@ class Company:
                 - headless 환경 (CI / docker) 에서 호출 → 브라우저 launch 실패. notebooks/JupyterLab 전용.
                 - 이미 점유된 포트 → OSError. caller 가 port 변경 의무.
             OutputSchema:
-                - None — side effect (브라우저 자동 open).
+                - None - side effect (브라우저 자동 open).
             Prerequisites:
                 - 로컬 표시 가능 환경 + `dartlab.providers._common.viewer` 의존.
             Freshness:
@@ -1661,7 +1661,7 @@ class Company:
             Dataflow:
                 - self.ticker → launchViewer → FastAPI 서버 + 브라우저 open.
             TargetMarkets:
-                - US (SEC EDGAR) — viewer 는 ticker 별 디스패치.
+                - US (SEC EDGAR) - viewer 는 ticker 별 디스패치.
         """
         from dartlab.providers._common.viewer import launchViewer
 
@@ -1672,11 +1672,11 @@ class Company:
 
         사용자 진입점은 ``c.panel("IS", freq=, scope=)`` 만이다 (api-contract).
         EDGAR 는 ``scope="separate"`` 미지원 (SEC 는 연결만 보고).
-        ``freq="YTD"`` 도 미지원 — annual 로 fallback.
+        ``freq="YTD"`` 도 미지원 - annual 로 fallback.
 
         Args:
             freq: ``"Q"`` (분기, 기본) / ``"Y"`` (연간) / ``"YTD"`` (annual fallback).
-            scope: ``"consolidated"`` (기본) — separate 는 raise.
+            scope: ``"consolidated"`` (기본) - separate 는 raise.
 
         Returns:
             ``(series, periods)`` 또는 None.
@@ -1685,40 +1685,40 @@ class Company:
 
         return buildFinanceSeries(self, freq=freq, scope=scope)
 
-    # c.BS / c.IS / c.CF / c.CIS property 제거 (Plan v10 P0 — api-contract).
+    # c.BS / c.IS / c.CF / c.CIS property 제거 (Plan v10 P0 - api-contract).
     # 사용자는 c.panel("IS") / c.panel("IS", freq="Y") 사용.
 
-    # c.SCE property 제거 (Plan v10 P1) — c.panel("SCE") 사용
+    # c.SCE property 제거 (Plan v10 P1) - c.panel("SCE") 사용
 
     def _buildRatios(self) -> pl.DataFrame | None:
-        """[INTERNAL] EDGAR 재무비율 DataFrame 빌더 — show("ratios") 가 호출."""
+        """[INTERNAL] EDGAR 재무비율 DataFrame 빌더 - show("ratios") 가 호출."""
         from dartlab.providers.edgar.builder.dataDispatcher import buildRatios
 
         return buildRatios(self)
 
-    # insights는 analysis 내부 — c.analysis("financial", "종합평가")로 접근
+    # insights는 analysis 내부 - c.analysis("financial", "종합평가")로 접근
 
     @property
     def reportModel(self):
-        """전문 리포트 계약 모델 — story 블록 + de-gate 밸류에이션을 thesis-led ReportModel(dict).
+        """전문 리포트 계약 모델 - story 블록 + de-gate 밸류에이션을 thesis-led ReportModel(dict).
 
         랜딩 /report 가 **동일 계약**(contracts/reportModel.ts)을 소비하는 SSOT. self-calc 0.
-        dart Company 와 동형 — buildReportModel 위임.
+        dart Company 와 동형 - buildReportModel 위임.
 
         Returns:
             CallableAccessor: 호출 시 ``_reportModelImpl`` 이 ReportModel dict
             (schemaVersion=2) 반환. 데이터 부족 시 {"skipped": True, ...}.
 
         Raises:
-            없음 — 데이터 부족·빌드 실패는 skipped dict 로 반환.
+            없음 - 데이터 부족·빌드 실패는 skipped dict 로 반환.
 
         Example:
             >>> Company("AAPL").reportModel("valuation")["schemaVersion"]
             2
 
         SeeAlso:
-            - ``dartlab.story.report.buildReportModel`` — backend SSOT.
-            - ``story`` — 레거시 Story dataclass(공존).
+            - ``dartlab.story.report.buildReportModel`` - backend SSOT.
+            - ``story`` - 레거시 Story dataclass(공존).
         """
         from dartlab.core.dualAccess import CallableAccessor
 
@@ -1727,7 +1727,7 @@ class Company:
         return self._cache["_reportModelAccessor"]
 
     def _reportModelImpl(self, perspective: str = "full", *, basePeriod: str | None = None) -> dict:
-        """reportModel 실제 구현 — buildReportModel(L3) 에 위임."""
+        """reportModel 실제 구현 - buildReportModel(L3) 에 위임."""
         import importlib
 
         buildReportModel = importlib.import_module("dartlab.story.report").buildReportModel
@@ -1735,12 +1735,12 @@ class Company:
 
     @property
     def story(self):
-        """재무 검토 보고서 — dual access.
+        """재무 검토 보고서 - dual access.
 
         ``c.story`` (Story 객체) 또는 ``c.story(section=...)`` (call) 양식 모두 지원.
 
         Returns:
-            ``CallableAccessor`` — 14 섹션 보고서 빌더.
+            ``CallableAccessor`` - 14 섹션 보고서 빌더.
 
         Raises:
             없음.
@@ -1751,9 +1751,9 @@ class Company:
             >>> c.story("수익성")       # 특정 섹션
 
         SeeAlso:
-            - ``analysis`` — 14 섹션 raw 분석 결과 (본 함수가 합산).
-            - ``dartlab.story.registry.buildStory`` — implementation.
-            - ``dart.providers.dart.company.Company.story`` — KR 패리티.
+            - ``analysis`` - 14 섹션 raw 분석 결과 (본 함수가 합산).
+            - ``dartlab.story.registry.buildStory`` - implementation.
+            - ``dart.providers.dart.company.Company.story`` - KR 패리티.
 
         Requires:
             - dartlab
@@ -1792,7 +1792,7 @@ class Company:
         preset: str | None = None,  # deprecated
         perspective: str | None = None,  # deprecated
     ):
-        """재무제표 구조화 보고서 — 기업이야기꾼의 대본.
+        """재무제표 구조화 보고서 - 기업이야기꾼의 대본.
 
         Capabilities:
             - 14개 섹션 전체 보고서 (수익구조~재무정합성)
@@ -1826,7 +1826,7 @@ class Company:
             basePeriod: 기준 기간.
 
         Returns:
-            Story — 구조화 보고서.
+            Story - 구조화 보고서.
 
         Example::
 
@@ -1855,10 +1855,10 @@ class Company:
 
     @property
     def analysis(self):
-        """분석 엔진 실행 — dual access.
+        """분석 엔진 실행 - dual access.
 
         Returns:
-            ``CallableAccessor`` — 22 축 분석 엔트리.
+            ``CallableAccessor`` - 22 축 분석 엔트리.
 
         Raises:
             없음.
@@ -1869,9 +1869,9 @@ class Company:
             >>> c.analysis("financial", "수익성")        # 수익성 분석
 
         SeeAlso:
-            - ``story`` — 22 축 결과를 보고서로 합산.
-            - ``dartlab.analysis.financial.Analysis`` — 분석 backend SSOT.
-            - ``dart.providers.dart.company.Company.analysis`` — KR 패리티.
+            - ``story`` - 22 축 결과를 보고서로 합산.
+            - ``dartlab.analysis.financial.Analysis`` - 분석 backend SSOT.
+            - ``dart.providers.dart.company.Company.analysis`` - KR 패리티.
 
         Requires:
             - dartlab
@@ -1895,7 +1895,7 @@ class Company:
         return self._cache["_analysisAccessor"]
 
     def _analysisImpl(self, axis: str | None = None, sub: str | None = None, **kwargs):
-        """분석 엔진 실행 — analysis()에 self를 바인딩 (내부 구현).
+        """분석 엔진 실행 - analysis()에 self를 바인딩 (내부 구현).
 
         Capabilities:
             - 22축 분석 (5 group)
@@ -1954,7 +1954,7 @@ class Company:
         return _analysis(axis, company=self, **kwargs)
 
     def validateStory(self, overrides: dict | None = None) -> dict:
-        """Damodaran 스토리 검증 — Possible / Plausible / Probable.
+        """Damodaran 스토리 검증 - Possible / Plausible / Probable.
 
         Args:
             overrides: DCF override dict (선택).
@@ -1970,15 +1970,15 @@ class Company:
             >>> c.validateStory()
 
         SeeAlso:
-            - ``storyTree`` / ``causalWeights`` — 검증 대상 story.
-            - ``dartlab.analysis.financial.storyValidation`` — 검증 backend.
+            - ``storyTree`` / ``causalWeights`` - 검증 대상 story.
+            - ``dartlab.analysis.financial.storyValidation`` - 검증 backend.
 
         Requires:
             - dartlab
             - polars
 
         Capabilities:
-            - Damodaran 의 3 단계 검증 — Possible (precedents) / Plausible (band) / Probable (rules).
+            - Damodaran 의 3 단계 검증 - Possible (precedents) / Plausible (band) / Probable (rules).
               과거 동종 회사 사례 / valuation 범위 / valuation sins 룰 종합 후 overall severity 산출.
 
         Guide:
@@ -1991,7 +1991,7 @@ class Company:
         LLM Specifications:
             AntiPatterns:
                 - overall "info" 결과를 "안전" 결론 → severity 는 룰 위반 부재일 뿐 valuation 정답 아님.
-                - precedents 비교군 자동 선정 — 사용자가 명시 시 다른 결과 가능.
+                - precedents 비교군 자동 선정 - 사용자가 명시 시 다른 결과 가능.
             OutputSchema:
                 - dict {"precedents": list, "plausibility": dict, "rules": dict, "overall": str}.
             Prerequisites:
@@ -2029,10 +2029,10 @@ class Company:
 
     @property
     def credit(self):
-        """독립 신용평가 — dual access.
+        """독립 신용평가 - dual access.
 
         Returns:
-            ``CallableAccessor`` — dCR 20단계 등급 빌더.
+            ``CallableAccessor`` - dCR 20단계 등급 빌더.
 
         Raises:
             없음.
@@ -2042,8 +2042,8 @@ class Company:
             >>> c.credit()
 
         SeeAlso:
-            - ``dartlab.credit.creditCompany`` — implementation.
-            - ``dart.providers.dart.company.Company.credit`` — KR 패리티 (KIS/NICE 와 비교).
+            - ``dartlab.credit.creditCompany`` - implementation.
+            - ``dart.providers.dart.company.Company.credit`` - KR 패리티 (KIS/NICE 와 비교).
 
         Requires:
             - dartlab
@@ -2067,13 +2067,13 @@ class Company:
         return self._cache["_creditAccessor"]
 
     def _creditImpl(self, axis: str | None = None, *, detail: bool = False, basePeriod: str | None = None):
-        """독립 신용평가 — dCR 20단계 등급 (내부 구현)."""
+        """독립 신용평가 - dCR 20단계 등급 (내부 구현)."""
         from dartlab.credit import creditCompany
 
         return creditCompany(self, axis=axis, detail=detail, basePeriod=basePeriod)
 
     def gather(self, axis: str | None = None, **kwargs):
-        """외부 시장 데이터 수집 — gather()에 self.ticker를 바인딩.
+        """외부 시장 데이터 수집 - gather()에 self.ticker를 바인딩.
 
         Capabilities:
             - 주가, 뉴스, 매크로 등 외부 데이터 소스 수집
@@ -2101,24 +2101,24 @@ class Company:
         -------
         pl.DataFrame | None
             axis=None (가이드):
-                axis : str — 축 이름
-                label : str — 한글 레이블
-                description : str — 설명
-                example : str — 사용 예시
+                axis : str - 축 이름
+                label : str - 한글 레이블
+                description : str - 설명
+                example : str - 사용 예시
             axis="price":
-                date : date — 날짜
-                open : float — 시가 (USD)
-                high : float — 고가 (USD)
-                low : float — 저가 (USD)
-                close : float — 종가 (USD)
-                volume : int — 거래량
+                date : date - 날짜
+                open : float - 시가 (USD)
+                high : float - 고가 (USD)
+                low : float - 저가 (USD)
+                close : float - 종가 (USD)
+                volume : int - 거래량
             axis="news":
-                title : str — 뉴스 제목
-                link : str — 기사 URL
-                pubDate : str — 발행일
+                title : str - 뉴스 제목
+                link : str - 기사 URL
+                pubDate : str - 발행일
             axis="macro":
-                date : date — 날짜
-                지표별 컬럼 : float — FRED 거시지표 값
+                date : date - 날짜
+                지표별 컬럼 : float - FRED 거시지표 값
             데이터 없으면 None.
 
         Raises:
@@ -2132,10 +2132,10 @@ class Company:
 
         LLM Specifications:
             AntiPatterns:
-                - 본 함수는 외부 API origin — rate limit / network 실패 가능. caller 가 retry 분기.
+                - 본 함수는 외부 API origin - rate limit / network 실패 가능. caller 가 retry 분기.
                 - "price" 축 대량 종목 일괄 호출 → 외부 API 차단. 종목당 sequential.
             OutputSchema:
-                - axis 별로 다름 — guide 시 dict / price 시 OHLCV DataFrame / news 시 metadata 등.
+                - axis 별로 다름 - guide 시 dict / price 시 OHLCV DataFrame / news 시 metadata 등.
             Prerequisites:
                 - 인터넷 + axis 별 origin 키 (FRED/yfinance/Naver/etc).
             Freshness:
@@ -2143,7 +2143,7 @@ class Company:
             Dataflow:
                 - getGatherProvider() → entry(axis, ticker, market="US") → 외부 API → 본 함수.
             TargetMarkets:
-                - US (SEC EDGAR) — market="US" 자동 주입.
+                - US (SEC EDGAR) - market="US" 자동 주입.
         """
         from dartlab.core.gatherProvider import getGatherProvider
 
@@ -2153,10 +2153,10 @@ class Company:
         return provider.entry(axis, self.ticker, market="US", **kwargs)
 
     def calendar(self, *, horizonDays: int = 30) -> "pl.DataFrame":
-        """다가오는 정기공시 catalyst 일정 — EDGAR/SEC 시장.
+        """다가오는 정기공시 catalyst 일정 - EDGAR/SEC 시장.
 
         현재 정기공시 cycle 추론은 KR DART 전용 (분기/반기/사업보고서 패턴 기반).
-        SEC 의 10-K/10-Q 패턴은 별도 추론기 필요 — 미구현. 빈 DataFrame 반환.
+        SEC 의 10-K/10-Q 패턴은 별도 추론기 필요 - 미구현. 빈 DataFrame 반환.
         DartCompany.calendar 와 시그니처 일치 (CompanyProtocol 일관성).
 
         Args:
@@ -2173,8 +2173,8 @@ class Company:
             >>> c.calendar(horizonDays=60)
 
         SeeAlso:
-            - ``dart.providers.dart.company.Company.calendar`` — KR 패리티 (real cycle 추론).
-            - ``dartlab.providers.dart.ops.calendar.OUTPUT_SCHEMA`` — 공통 스키마.
+            - ``dart.providers.dart.company.Company.calendar`` - KR 패리티 (real cycle 추론).
+            - ``dartlab.providers.dart.ops.calendar.OUTPUT_SCHEMA`` - 공통 스키마.
 
         Requires:
             - dartlab
@@ -2185,17 +2185,17 @@ class Company:
               상태라 빈 DataFrame 반환. CompanyProtocol 일관성 보장 목적.
 
         Guide:
-            - "EDGAR catalyst 일정" → 본 함수 (현재 빈 결과 — 향후 SEC cycle 추론기 도입 후 구현).
+            - "EDGAR catalyst 일정" → 본 함수 (현재 빈 결과 - 향후 SEC cycle 추론기 도입 후 구현).
 
         AIContext:
-            AI 가 본 함수 결과 비어있어도 "데이터 없음" 으로 그대로 답해야 — 추정/허위 일정 답변 금지.
+            AI 가 본 함수 결과 비어있어도 "데이터 없음" 으로 그대로 답해야 - 추정/허위 일정 답변 금지.
 
         LLM Specifications:
             AntiPatterns:
                 - SEC 회사도 12-31 결산 가정해 분기 일정 추정 → fiscalYearEnd 다른 회사 false.
                 - 빈 결과 → "공시 없음" 으로 잘못 해석. 본 함수가 미구현이라 빈 반환.
             OutputSchema:
-                - pl.DataFrame (OUTPUT_SCHEMA) — 현 빈 행, 컬럼만 보존.
+                - pl.DataFrame (OUTPUT_SCHEMA) - 현 빈 행, 컬럼만 보존.
             Prerequisites:
                 - 없음 (현재 stub).
             Freshness:
@@ -2203,14 +2203,14 @@ class Company:
             Dataflow:
                 - 현재 빈 → 향후 SEC submissions cycle 추론.
             TargetMarkets:
-                - US (SEC EDGAR) — 향후 cycle 추론기 구현 영역.
+                - US (SEC EDGAR) - 향후 cycle 추론기 구현 영역.
         """
         from dartlab.providers.dart.ops.calendar import OUTPUT_SCHEMA
 
         return pl.DataFrame(schema=OUTPUT_SCHEMA)
 
     def filings(self) -> pl.DataFrame | None:
-        """SEC 공시 문서 목록 — 10-K/10-Q 등 정기보고서 목록.
+        """SEC 공시 문서 목록 - 10-K/10-Q 등 정기보고서 목록.
 
         Capabilities:
             - 사전 수집된 filing 메타데이터 조회
@@ -2232,7 +2232,7 @@ class Company:
             - readFiling: filing 원문 읽기
 
         Returns:
-            pl.DataFrame — docId | filedAt | formType | ... 또는 None.
+            pl.DataFrame - docId | filedAt | formType | ... 또는 None.
 
         Raises:
             없음.
@@ -2270,7 +2270,7 @@ class Company:
         Policy:
             dartlab 자체 파이프라인은 **SEC 벌크** (``companyfacts.zip`` daily
             + 분기 ``financial-statement-data-sets``) 를 primary 소스로 사용한다.
-            이 메서드는 **자동 파이프라인·프리빌드·HF 배포가 사용하지 않는다** —
+            이 메서드는 **자동 파이프라인·프리빌드·HF 배포가 사용하지 않는다** -
             사용자가 공시 당일 최신 분기를 즉시 반영하고 싶을 때만 명시적으로 호출.
             상세: ``engines.edgar`` 및 ``operation.apiContract`` "EDGAR 수집 경로".
 
@@ -2301,9 +2301,9 @@ class Company:
         LLM Specifications:
             AntiPatterns:
                 - 자동 파이프라인 안에서 호출 → SEC rate limit 위반. 사용자 즉시 새로고침만.
-                - 본 함수 반환 0 = 실패 — caller 가 분기. exception 던지지 않음.
+                - 본 함수 반환 0 = 실패 - caller 가 분기. exception 던지지 않음.
             OutputSchema:
-                - int — 저장된 parquet 행 수 (성공) 또는 0 (실패).
+                - int - 저장된 parquet 행 수 (성공) 또는 0 (실패).
             Prerequisites:
                 - 인터넷 + data.sec.gov 접근 + SEC 표준 User-Agent.
             Freshness:
@@ -2311,7 +2311,7 @@ class Company:
             Dataflow:
                 - SEC companyfacts API → EdgarClient → saveFinance → 본 parquet → 캐시 무효화.
             TargetMarkets:
-                - US (SEC EDGAR) — 자체 벌크 vs API 두 origin 중 후자 (사용자 명시).
+                - US (SEC EDGAR) - 자체 벌크 vs API 두 origin 중 후자 (사용자 명시).
         """
         import polars as _pl
 
@@ -2343,7 +2343,7 @@ class Company:
         keyword: str | None = None,
         finalOnly: bool = False,
     ) -> pl.DataFrame:
-        """SEC EDGAR filing 검색 — liveFilings 위임.
+        """SEC EDGAR filing 검색 - liveFilings 위임.
 
         Capabilities:
             - 기간/유형/키워드 필터로 SEC filing 검색
@@ -2373,7 +2373,7 @@ class Company:
             finalOnly: EDGAR에서는 미사용 (DART 호환 파라미터).
 
         Returns:
-            pl.DataFrame — docId | filedAt | title | formType | docUrl | ...
+            pl.DataFrame - docId | filedAt | title | formType | docUrl | ...
 
         Raises:
             httpx.HTTPError: SEC EDGAR API 호출 실패.
@@ -2388,9 +2388,9 @@ class Company:
         LLM Specifications:
             AntiPatterns:
                 - DART finalOnly 인자 사용 시도 → EDGAR 는 무시 (raise X). 시그니처 호환 목적만.
-                - type 단일 form 지정 — 여러 form 조합 시 liveFilings(forms=[...]) 직접 호출.
+                - type 단일 form 지정 - 여러 form 조합 시 liveFilings(forms=[...]) 직접 호출.
             OutputSchema:
-                - pl.DataFrame [docId/filedAt/title/formType/docUrl/...] — liveFilings 와 동일.
+                - pl.DataFrame [docId/filedAt/title/formType/docUrl/...] - liveFilings 와 동일.
             Prerequisites:
                 - 인터넷 + SEC EDGAR submissions API.
             Freshness:
@@ -2398,7 +2398,7 @@ class Company:
             Dataflow:
                 - 사용자 인자 → liveFilings(start, end, days, keyword, forms) → 본 함수.
             TargetMarkets:
-                - US (SEC EDGAR) — DART 동등 disclosure 인터페이스 패리티.
+                - US (SEC EDGAR) - DART 동등 disclosure 인터페이스 패리티.
         """
         return self.liveFilings(start, end, days=days, keyword=keyword, forms=[type] if type else None)
 
@@ -2413,7 +2413,7 @@ class Company:
         forms: list[str] | tuple[str, ...] | None = None,
         finalOnly: bool = False,
     ) -> pl.DataFrame:
-        """SEC EDGAR 실시간 filing 목록 — OpenEdgar API 직접 조회.
+        """SEC EDGAR 실시간 filing 목록 - OpenEdgar API 직접 조회.
 
         Capabilities:
             - SEC EDGAR submissions API에서 최신 filing 실시간 조회
@@ -2446,7 +2446,7 @@ class Company:
             finalOnly: EDGAR에서는 미사용.
 
         Returns:
-            pl.DataFrame — docId | filedAt | title | formType | docUrl | ...
+            pl.DataFrame - docId | filedAt | title | formType | docUrl | ...
 
         Raises:
             httpx.HTTPError: SEC EDGAR API 호출 실패.
@@ -2460,7 +2460,7 @@ class Company:
         LLM Specifications:
             AntiPatterns:
                 - limit 큰 값 (>100) → SEC API 응답 지연 + 토큰 비용 증가. 보통 20~50.
-                - 동일 cacheKey 중복 호출 — 캐시 활용 OK. 다른 시간대 호출 시 cacheKey 자동 갱신.
+                - 동일 cacheKey 중복 호출 - 캐시 활용 OK. 다른 시간대 호출 시 cacheKey 자동 갱신.
             OutputSchema:
                 - pl.DataFrame [docId, filedAt, title, formType, docUrl, indexUrl, market, ticker,
                   cik, accessionNo, filingUrl, filingIndexUrl, primaryDocument, reportDate].
@@ -2471,7 +2471,7 @@ class Company:
             Dataflow:
                 - resolveDateWindow + forms → OpenEdgar(ticker).filings → filterFilingsByKeyword → 정규화 → head(limit).
             TargetMarkets:
-                - US (SEC EDGAR) — SUPPORTED_REGULAR_FORMS 의 10-K/Q/8-K/DEF 14A 등.
+                - US (SEC EDGAR) - SUPPORTED_REGULAR_FORMS 의 10-K/Q/8-K/DEF 14A 등.
         """
         del finalOnly  # EDGAR regular filings에는 finalOnly 개념이 없다.
 
@@ -2568,7 +2568,7 @@ class Company:
         *,
         maxChars: int | None = None,
     ) -> dict[str, Any]:
-        """filing 원문 읽기 — URL/accessionNo/DataFrame row로 SEC 문서 다운로드.
+        """filing 원문 읽기 - URL/accessionNo/DataFrame row로 SEC 문서 다운로드.
 
         Capabilities:
             - filing URL, accessionNo 문자열, liveFilings() row 모두 지원
@@ -2594,7 +2594,7 @@ class Company:
             maxChars: 최대 문자수. None이면 전체.
 
         Returns:
-            dict — docId, market, title, docUrl, raw, text, truncated 키 포함.
+            dict - docId, market, title, docUrl, raw, text, truncated 키 포함.
 
         Raises:
             ValueError: filing URL/accessionNo 부재.
@@ -2677,7 +2677,7 @@ class Company:
 
     @property
     def topics(self) -> pl.DataFrame:
-        """topic 목록 요약 — topic/source/blocks/periods DataFrame.
+        """topic 목록 요약 - topic/source/blocks/periods DataFrame.
 
         Capabilities:
             - finance(BS/IS/CF/CIS/ratios) + docs(10-K/10-Q 항목) 전체 topic 열거
@@ -2699,7 +2699,7 @@ class Company:
             - show: 특정 topic 데이터 조회
 
         Returns:
-            pl.DataFrame — topic | source | blocks | periods.
+            pl.DataFrame - topic | source | blocks | periods.
 
         Raises:
             없음.
@@ -2711,7 +2711,7 @@ class Company:
 
         LLM Specifications:
             AntiPatterns:
-                - 전체 DataFrame 그대로 LLM 컨텍스트 — 보통 50~100 행이라 OK 지만 source 필터로 줄이는 게 효율.
+                - 전체 DataFrame 그대로 LLM 컨텍스트 - 보통 50~100 행이라 OK 지만 source 필터로 줄이는 게 효율.
                 - blocks/periods 정수 → topic 깊이 단순 비교 가능, 하지만 docs vs finance 척도 다름.
             OutputSchema:
                 - pl.DataFrame [topic, source, blocks:int, periods:int].
@@ -2741,7 +2741,7 @@ class Company:
             ordered.append("ratios")
             seen.add("ratios")
 
-        # 2. docs topics — form별 정렬 (10-K → 10-Q → 20-F → 기타)
+        # 2. docs topics - form별 정렬 (10-K → 10-Q → 20-F → 기타)
         sec = self._docs.sections
         if sec is not None:
             topicCol = sec["topic"].unique().to_list()
@@ -2779,7 +2779,7 @@ class Company:
 
     @property
     def panel(self):
-        """공시 수평화 보드 — 잡는 순간 item × 기간 wide DataFrame (EDGAR panel, US 기본).
+        """공시 수평화 보드 - 잡는 순간 item × 기간 wide DataFrame (EDGAR panel, US 기본).
 
         DART ``c.panel`` 의 EDGAR 미러. SEC 10-K/10-Q/20-F 의 item(섹션·표·서술)을 cross-market
         ``PANEL_SCHEMA`` 위에서 항목 × 기간 wide 로 수평화한 보드 (``providers.edgar.panel`` 의 ``Panel``
@@ -2787,43 +2787,43 @@ class Company:
         SEC full-submission text 를 메모리로 fetch 해 직접 생산(``data/edgar/panel/{ticker}.parquet``).
         원본 ``.txt`` 저장과 별도 셀 artifact 는 없다. native 재무 payload 는 같은 panel row 에 보존한다.
         ``c.panel`` 자체가 ``pl.DataFrame``
-        (Panel subclass) — shape/filter 등 polars 연산 그대로. ``c.panel("Risk")`` 로 섹션 행 검색,
+        (Panel subclass) - shape/filter 등 polars 연산 그대로. ``c.panel("Risk")`` 로 섹션 행 검색,
         소문자 ``c.panel("is")`` 는 panel payload native, ``c.panel("IS")`` 같은 대문자 강한 소스는
         companyfacts(내부 finance dispatch)로 위임.
 
         Args:
-            없음 (property — self.ticker 사용).
+            없음 (property - self.ticker 사용).
 
         Returns:
             ``Panel`` 인스턴스(= wide ``pl.DataFrame``). ``c.panel`` 자체가 wide, ``c.panel(key)`` 로
             섹션 검색 / 강한 소스(companyfacts) 주입.
 
         Raises:
-            없음 — artifact 부재 시 빈 DataFrame.
+            없음 - artifact 부재 시 빈 DataFrame.
 
         Example:
             >>> c = Company("AAPL")
-            >>> c.panel.shape                          # wide (item × period) — DataFrame 그대로  # doctest: +SKIP
+            >>> c.panel.shape                          # wide (item × period) - DataFrame 그대로  # doctest: +SKIP
             >>> c.panel("Risk")                        # 섹션명/itemId 행 (raw 공시)  # doctest: +SKIP
-            >>> c.panel("IS")                          # 강한 소스 — companyfacts 위임 (내부 finance)  # doctest: +SKIP
+            >>> c.panel("IS")                          # 강한 소스 - companyfacts 위임 (내부 finance)  # doctest: +SKIP
             >>> c.panel.search("supply chain")         # 본문 전체검색  # doctest: +SKIP
 
         SeeAlso:
-            - ``providers.edgar.panel.Panel`` — 반환 본체 (pl.DataFrame subclass + __call__, US 기본).
-            - ``providers.edgar.panel.build`` — SEC text → panel 단일 artifact + native payload 생산.
-            - ``_showImpl`` — 강한 소스(companyfacts finance) dispatch — c.panel 이 주입 재사용 (내부 머신러리).
+            - ``providers.edgar.panel.Panel`` - 반환 본체 (pl.DataFrame subclass + __call__, US 기본).
+            - ``providers.edgar.panel.build`` - SEC text → panel 단일 artifact + native payload 생산.
+            - ``_showImpl`` - 강한 소스(companyfacts finance) dispatch - c.panel 이 주입 재사용 (내부 머신러리).
 
         Requires:
             - data/edgar/panel/{ticker}.parquet (사전빌드 artifact, edgar.panel.build).
 
         Capabilities:
-            - 한 회사 공시를 item × 기간 wide 로 — 잡는 순간 DataFrame, callable 로 섹션·강한 소스 라우팅.
+            - 한 회사 공시를 item × 기간 wide 로 - 잡는 순간 DataFrame, callable 로 섹션·강한 소스 라우팅.
 
         Guide:
             - ``c.panel`` 잡으면 wide. ``c.panel("Risk")`` 섹션 검색. 재무는 소문자 native, 대문자 finance.
 
         AIContext:
-            - 상태 없는 lazy read — 매 접근 새 Panel (누적 0). contentRaw 는 외부 untrusted.
+            - 상태 없는 lazy read - 매 접근 새 Panel (누적 0). contentRaw 는 외부 untrusted.
 
         When:
             - 한 회사의 공시 수평화 보드가 EDGAR Company 흐름에서 필요할 때.
@@ -2833,8 +2833,8 @@ class Company:
 
         LLM Specifications:
             AntiPatterns:
-                - c.panel 결과 캐싱 강제 금지 — 상태 없는 lazy(누적 0).
-                - native is/bs/cf 를 별도 셀 artifact 로 기대 금지 — panel 단일 artifact payload 에서 분해.
+                - c.panel 결과 캐싱 강제 금지 - 상태 없는 lazy(누적 0).
+                - native is/bs/cf 를 별도 셀 artifact 로 기대 금지 - panel 단일 artifact payload 에서 분해.
             OutputSchema:
                 - ``Panel`` (wide DataFrame subclass + callable 검색).
             Prerequisites:
@@ -2851,7 +2851,7 @@ class Company:
         from dartlab.providers.edgar.panel.native import readNative
 
         p = _Panel(self.ticker)
-        # facade 주입 (DI, cycle 0) — panel 패키지는 finance 를 import 안 하고 주입된 callable 만 호출.
+        # facade 주입 (DI, cycle 0) - panel 패키지는 finance 를 import 안 하고 주입된 callable 만 호출.
         #   _nativeFn : is/bs/cf/ratios = panel 단일 artifact payload read-time 분해.
         #   _showFn   : IS/BS/CF/RATIOS = finance(companyfacts) 위임 (내부 _showImpl).
         #   _strongFn : finance 강한 소스 판정(isStrongTopic).
@@ -2876,7 +2876,7 @@ class Company:
         asOf: str | None = None,
         **_kw: Any,
     ) -> pl.DataFrame | None:
-        """topic 데이터 조회 — sections 사상의 핵심 소비 경로 (내부 구현).
+        """topic 데이터 조회 - sections 사상의 핵심 소비 경로 (내부 구현).
 
         Capabilities:
             - finance topic(BS/IS/CF/CIS/ratios) + docs topic(10-K/10-Q 항목) 통합 조회
@@ -2910,16 +2910,16 @@ class Company:
         -------
         pl.DataFrame | None
             finance topic (IS/BS/CF/CIS):
-                account : str — 계정 식별자 (snakeId)
-                2024, 2023, ... : float — 연간 값 (USD)
+                account : str - 계정 식별자 (snakeId)
+                2024, 2023, ... : float - 연간 값 (USD)
             ratios topic:
-                account : str — 비율명
-                2024, 2023, ... : float — 비율값 (%, 배)
+                account : str - 비율명
+                2024, 2023, ... : float - 비율값 (%, 배)
             notes topic (inventory, borrowings 등):
-                항목 : str — 세부 항목명
-                연도 컬럼 : float — 금액 (USD)
+                항목 : str - 세부 항목명
+                연도 컬럼 : float - 금액 (USD)
             docs topic (10-K 항목):
-                block 미지정: block : int, title : str — 블록 목차
+                block 미지정: block : int, title : str - 블록 목차
                 block 지정: 기간 컬럼에 텍스트 내용
             데이터 없으면 None.
 
@@ -2952,10 +2952,10 @@ class Company:
 
     @property
     def select(self):
-        """``show()`` 결과에서 행/열 필터 — dual access proxy.
+        """``show()`` 결과에서 행/열 필터 - dual access proxy.
 
         Returns:
-            ``CallableAccessor`` — call/attr form 둘 다 ``_selectImpl`` 호출. ``SelectResult``
+            ``CallableAccessor`` - call/attr form 둘 다 ``_selectImpl`` 호출. ``SelectResult``
             반환. 상세는 ``_selectImpl`` docstring.
 
         Example:
@@ -2967,9 +2967,9 @@ class Company:
             없음 (해당 topic 부재 시 ``_selectImpl`` 이 None 반환).
 
         SeeAlso:
-            - ``_selectImpl`` — 실제 구현.
-            - ``show`` — 본 함수의 입력 소스.
-            - ``dartlab.frame.select.SelectResult`` — 반환 객체 + ``.chart()`` 체이닝.
+            - ``_selectImpl`` - 실제 구현.
+            - ``show`` - 본 함수의 입력 소스.
+            - ``dartlab.frame.select.SelectResult`` - 반환 객체 + ``.chart()`` 체이닝.
 
         Requires:
             - dartlab
@@ -2984,7 +2984,7 @@ class Company:
             - "여러 계정 + 여러 연도" → ``c.select("IS", ["Revenue", "Net Income"], ["2024", "2023"])``.
 
         AIContext:
-            AI 가 show() 결과 전부 노출 비용 회피용 — 필요 행/열만 정밀 추출 후 LLM 컨텍스트.
+            AI 가 show() 결과 전부 노출 비용 회피용 - 필요 행/열만 정밀 추출 후 LLM 컨텍스트.
         """
         from dartlab.core.dualAccess import CallableAccessor
 
@@ -3002,7 +3002,7 @@ class Company:
         scope: str = "consolidated",
         strict: bool = True,
     ):
-        """show() 결과에서 행/열 필터 — 특정 계정 x 특정 기간 추출 (내부 구현).
+        """show() 결과에서 행/열 필터 - 특정 계정 x 특정 기간 추출 (내부 구현).
 
         Capabilities:
             - show() 결과에서 행(항목)과 열(기간) 동시 필터
@@ -3024,8 +3024,8 @@ class Company:
 
         Args:
             topic: topic 이름 (BS, IS 등).
-            indList: 행 필터 — 항목 문자열 또는 리스트.
-            colList: 열 필터 — 기간 문자열 또는 리스트.
+            indList: 행 필터 - 항목 문자열 또는 리스트.
+            colList: 열 필터 - 기간 문자열 또는 리스트.
 
         Returns
         -------
@@ -3101,7 +3101,7 @@ class Company:
         )
 
     def trace(self, topic: str, period: str | None = None) -> dict[str, Any] | None:
-        """topic 데이터 출처 추적 — source provenance 확인.
+        """topic 데이터 출처 추적 - source provenance 확인.
 
         Capabilities:
             - topic 데이터가 docs/finance 중 어디서 왔는지 추적
@@ -3111,7 +3111,7 @@ class Company:
             데이터: 없음 (SEC EDGAR 자동 수집)
 
         AIContext:
-            - 데이터 신뢰성 검증에 활용 — 출처와 커버리지 확인
+            - 데이터 신뢰성 검증에 활용 - 출처와 커버리지 확인
 
         Guide:
             - "이 데이터 어디서 왔어?" → c.trace("BS")
@@ -3127,7 +3127,7 @@ class Company:
             period: 특정 기간 필터 (선택).
 
         Returns:
-            dict — topic, primarySource, whySelected, availableSources 등. 없으면 None.
+            dict - topic, primarySource, whySelected, availableSources 등. 없으면 None.
 
         Raises:
             없음 (데이터 부재 시 None 반환).
@@ -3140,7 +3140,7 @@ class Company:
         LLM Specifications:
             AntiPatterns:
                 - 본 함수 결과 없이 show() 값만 인용 → AI 환각 위험. 데이터 origin 명시 의무.
-                - period 필터는 트레이스 결과에 metadata 만 — 실 row 필터링은 show() 가 처리.
+                - period 필터는 트레이스 결과에 metadata 만 - 실 row 필터링은 show() 가 처리.
             OutputSchema:
                 - dict {topic, period, chapter, label, primarySource, fallbackSources,
                   selectedPayloadRef, availableSources:list, whySelected} 또는 None.
@@ -3234,7 +3234,7 @@ class Company:
 
     @property
     def index(self) -> pl.DataFrame:
-        """topic별 메타데이터 인덱스 — chapter/label/kind/source/periods 보드.
+        """topic별 메타데이터 인덱스 - chapter/label/kind/source/periods 보드.
 
         Capabilities:
             - 전체 topic의 chapter, label, kind(finance/docs), source, periods, shape 요약
@@ -3257,7 +3257,7 @@ class Company:
             - view: 브라우저에서 시각적 탐색
 
         Returns:
-            pl.DataFrame — ``chapter | topic | label | kind | source | periods | shape | preview``.
+            pl.DataFrame - ``chapter | topic | label | kind | source | periods | shape | preview``.
 
         Raises:
             없음 (데이터 부재 시 빈 DataFrame).
@@ -3268,8 +3268,8 @@ class Company:
 
         LLM Specifications:
             AntiPatterns:
-                - preview 컬럼을 본문 대용으로 사용 X — 100 자 미만 잘림. 실 본문은 show() 호출.
-                - source 컬럼은 origin priority 결정 후 결과 — 미정의 시 None.
+                - preview 컬럼을 본문 대용으로 사용 X - 100 자 미만 잘림. 실 본문은 show() 호출.
+                - source 컬럼은 origin priority 결정 후 결과 - 미정의 시 None.
             OutputSchema:
                 - pl.DataFrame [chapter, topic, label, kind, source, periods, shape, preview] 또는 빈.
             Prerequisites:
@@ -3403,7 +3403,7 @@ class Company:
         fromPeriod: str | None = None,
         toPeriod: str | None = None,
     ) -> pl.DataFrame | None:
-        """기간간 텍스트 변경 비교 — 공시 서술형 diff.
+        """기간간 텍스트 변경 비교 - 공시 서술형 diff.
 
         Capabilities:
             - 전체 topic 변경 요약 (topic 없이 호출)
@@ -3432,7 +3432,7 @@ class Company:
             toPeriod: 비교 종료 기간 (예: "2024").
 
         Returns:
-            pl.DataFrame — 변경 요약/이력/줄단위 diff. 없으면 None.
+            pl.DataFrame - 변경 요약/이력/줄단위 diff. 없으면 None.
 
         Raises:
             없음.
@@ -3447,9 +3447,9 @@ class Company:
         LLM Specifications:
             AntiPatterns:
                 - 줄 단위 diff (3-인자 호출) 결과를 그대로 LLM 컨텍스트 → 거대 본문 토큰 폭증. 변경 줄만 추출.
-                - period 라벨 형식 변형 ("2023Q4" vs "2023") 매칭 X — sections 컬럼명 일치 의무.
+                - period 라벨 형식 변형 ("2023Q4" vs "2023") 매칭 X - sections 컬럼명 일치 의무.
             OutputSchema:
-                - pl.DataFrame — 호출 모드에 따라 다름: (1) 전체 요약 (2) topic 이력 (3) 줄 단위 diff.
+                - pl.DataFrame - 호출 모드에 따라 다름: (1) 전체 요약 (2) topic 이력 (3) 줄 단위 diff.
             Prerequisites:
                 - docs.sections (10-K/10-Q 본문 + period 컬럼).
             Freshness:
@@ -3481,7 +3481,7 @@ class Company:
         keyword: str | None = None,
         keywords: list[str] | None = None,
     ) -> pl.DataFrame | None:
-        """공시 텍스트 키워드 빈도 추이 — topic x period x keyword 히트맵.
+        """공시 텍스트 키워드 빈도 추이 - topic x period x keyword 히트맵.
 
         Capabilities:
             - 10-K/10-Q 서술형 텍스트에서 키워드 등장 빈도 추적
@@ -3508,7 +3508,7 @@ class Company:
             keywords: 복수 키워드 리스트. keyword와 동시 지정 시 keyword 우선.
 
         Returns:
-            pl.DataFrame — topic | period | keyword | count. 없으면 None.
+            pl.DataFrame - topic | period | keyword | count. 없으면 None.
 
         Raises:
             없음.
@@ -3522,8 +3522,8 @@ class Company:
 
         LLM Specifications:
             AntiPatterns:
-                - 짧은 키워드 (예 "AI") → 단어 경계 무시 매칭 — "RAID" 도 hit. 정확 매칭 의무 시 정규식.
-                - 빈도 절대값 비교 X — 본문 길이 차이 무시. 정규화 (per 1k tokens) 별도.
+                - 짧은 키워드 (예 "AI") → 단어 경계 무시 매칭 - "RAID" 도 hit. 정확 매칭 의무 시 정규식.
+                - 빈도 절대값 비교 X - 본문 길이 차이 무시. 정규화 (per 1k tokens) 별도.
             OutputSchema:
                 - pl.DataFrame [topic, period, keyword, count] 또는 None.
             Prerequisites:
@@ -3548,7 +3548,7 @@ class Company:
         return keywordFrequency(docsSections, keywords=kws)
 
     def news(self, *, days: int = 30) -> pl.DataFrame:
-        """최근 뉴스 수집 — 종목 관련 뉴스 DataFrame.
+        """최근 뉴스 수집 - 종목 관련 뉴스 DataFrame.
 
         Capabilities:
             - 종목명/ticker 기반 최근 뉴스 수집
@@ -3573,7 +3573,7 @@ class Company:
             days: 수집 기간 일수 (기본 30).
 
         Returns:
-            pl.DataFrame — 뉴스 제목, 날짜, URL 등 포함.
+            pl.DataFrame - 뉴스 제목, 날짜, URL 등 포함.
 
         Raises:
             httpx.HTTPError: 외부 뉴스 API 호출 실패.
@@ -3589,15 +3589,15 @@ class Company:
                 - 본문 그대로 인용 → external untrusted 룰 위반. wrap_external_in_result 마커 후 검증 인용.
                 - days 큰 값 (>90) → API rate limit / pagination 비용.
             OutputSchema:
-                - pl.DataFrame — 뉴스 제목/날짜/URL/요약 컬럼. provider 부재 시 None.
+                - pl.DataFrame - 뉴스 제목/날짜/URL/요약 컬럼. provider 부재 시 None.
             Prerequisites:
-                - 인터넷 + 뉴스 origin (gatherProvider — Naver/Yahoo/etc).
+                - 인터넷 + 뉴스 origin (gatherProvider - Naver/Yahoo/etc).
             Freshness:
                 - 외부 origin 실시간 (분 단위).
             Dataflow:
                 - getGatherProvider().news(ticker, market="US", days) → 본 함수.
             TargetMarkets:
-                - US (SEC EDGAR) — ticker 기반, English news 위주.
+                - US (SEC EDGAR) - ticker 기반, English news 위주.
         """
         from dartlab.core.gatherProvider import getGatherProvider
 
@@ -3608,7 +3608,7 @@ class Company:
         self,
         topic: str | None = None,
     ) -> pl.DataFrame | None:
-        """공시 변화 감지 — 중요도 스코어링 기반 변화 요약.
+        """공시 변화 감지 - 중요도 스코어링 기반 변화 요약.
 
         Capabilities:
             - 기간간 공시 텍스트 변화를 중요도 점수로 자동 스코어링
@@ -3634,7 +3634,7 @@ class Company:
             topic: topic 이름. None이면 전체 topic 요약.
 
         Returns:
-            pl.DataFrame — topic | score | summary 등. 없으면 None.
+            pl.DataFrame - topic | score | summary 등. 없으면 None.
 
         Raises:
             없음.
@@ -3647,8 +3647,8 @@ class Company:
 
         LLM Specifications:
             AntiPatterns:
-                - score 임계 hard-code 후 "큰 변화" 결론 X — 회사별 base score 분포 다름.
-                - 결과 None ≠ "변화 없음" — sections 부재로 분석 불가일 수 있음.
+                - score 임계 hard-code 후 "큰 변화" 결론 X - 회사별 base score 분포 다름.
+                - 결과 None ≠ "변화 없음" - sections 부재로 분석 불가일 수 있음.
             OutputSchema:
                 - pl.DataFrame [topic, score, summary, fromPeriod, toPeriod, ...] 또는 None.
             Prerequisites:
@@ -3680,7 +3680,7 @@ class Company:
         reflect: bool = False,
         **kwargs,
     ) -> str:
-        """LLM에게 이 기업에 대해 질문 — 엔진 계산 결과 기반 AI 해석.
+        """LLM에게 이 기업에 대해 질문 - 엔진 계산 결과 기반 AI 해석.
 
         Capabilities:
             - 질문 분류 → 분석 패키지 선택 → 엔진 계산 → LLM 해석
@@ -3712,7 +3712,7 @@ class Company:
             reflect: 자기 반성 모드 (답변 품질 자가 검증).
 
         Returns:
-            str — LLM 응답 텍스트. ``stream=True`` 면 ``Generator[str]``.
+            str - LLM 응답 텍스트. ``stream=True`` 면 ``Generator[str]``.
 
         Raises:
             ValueError: provider/model 미설정 + 환경변수 키 부재.
@@ -3726,7 +3726,7 @@ class Company:
         LLM Specifications:
             AntiPatterns:
                 - 응답 직접 외부 인용 → AI 환각 검증 의무. dartlab tool 결과 인용만 신뢰.
-                - reflect=True 가 항상 더 정확 X — 시간/토큰 비용 2 배. 중요 질문만.
+                - reflect=True 가 항상 더 정확 X - 시간/토큰 비용 2 배. 중요 질문만.
                 - stream=True 결과를 list() 로 즉시 수집 → 메모리 부담. 사용자 출력 stream 목적이면 그대로.
             OutputSchema:
                 - str (stream=False) 또는 Generator[str] (stream=True).
@@ -3738,7 +3738,7 @@ class Company:
             Dataflow:
                 - question + self.stockCode → ai.kernel.ask → tool calling → 본 함수.
             TargetMarkets:
-                - US (SEC EDGAR) — workbench evidence + ask 인터페이스.
+                - US (SEC EDGAR) - workbench evidence + ask 인터페이스.
         """
         import importlib
 
@@ -3755,7 +3755,7 @@ class Company:
 
     @property
     def _report(self):
-        """[INTERNAL] EDGAR report 백엔드 — XBRL 기반. 사용자 API: c.panel(...)."""
+        """[INTERNAL] EDGAR report 백엔드 - XBRL 기반. 사용자 API: c.panel(...)."""
         if self._reportAccessor is None:
             from dartlab.providers.edgar.accessor.reportAccessor import _ReportAccessor
 
@@ -3801,7 +3801,7 @@ class Company:
         LLM Specifications:
             AntiPatterns:
                 - 슬라이스 그대로 LLM 컨텍스트 → 회사 한 명당 수십 슬라이스 → 토큰 부담. 필요한 topic 만 필터.
-                - 슬라이스 ID 의 안정성 가정 X — 본 회사 sections 갱신 시 ID 재산정.
+                - 슬라이스 ID 의 안정성 가정 X - 본 회사 sections 갱신 시 ID 재산정.
             OutputSchema:
                 - pl.DataFrame [sliceId, topic, period, text, tokenCount] 또는 None.
             Prerequisites:
@@ -3830,8 +3830,8 @@ class Company:
 
         LLM Specifications:
             AntiPatterns:
-                - block_id 의 안정성 가정 X — sections 갱신 시 재산정.
-                - 본 블록을 벡터 임베딩 사전 계산 가정 X — provider 별 별도 처리.
+                - block_id 의 안정성 가정 X - sections 갱신 시 재산정.
+                - 본 블록을 벡터 임베딩 사전 계산 가정 X - provider 별 별도 처리.
             OutputSchema:
                 - pl.DataFrame [block_id, text, topic, period] 또는 None.
             Prerequisites:
@@ -3847,7 +3847,7 @@ class Company:
 
     @property
     def notes(self):
-        """주석 접근자 — EDGAR docs.notes 래핑.
+        """주석 접근자 - EDGAR docs.notes 래핑.
 
         ``c.notes("inventory")`` (call) 또는 ``c.notes.inventory`` (attr) 양식 지원.
 
@@ -3863,8 +3863,8 @@ class Company:
             >>> c.notes.keys()              # 사용 가능 카테고리
 
         SeeAlso:
-            - ``_EdgarNotesWrapper`` — 본 함수의 반환 래퍼 (.all/.keys/.keysKr/.quarterly).
-            - ``dart.providers.dart.company.Company.notes`` — KR 패리티.
+            - ``_EdgarNotesWrapper`` - 본 함수의 반환 래퍼 (.all/.keys/.keysKr/.quarterly).
+            - ``dart.providers.dart.company.Company.notes`` - KR 패리티.
 
         Requires:
             - dartlab
@@ -3879,7 +3879,7 @@ class Company:
             - "어떤 카테고리 있나" → ``c.notes.keys()``.
 
         AIContext:
-            workbench 가 재무제표 footnote 질문 받을 때 본 함수 entry — DART c.notes 와 동일 API.
+            workbench 가 재무제표 footnote 질문 받을 때 본 함수 entry - DART c.notes 와 동일 API.
         """
         from dartlab.core.memory import _CACHE_MISSING
 
@@ -3905,9 +3905,9 @@ class Company:
         LLM Specifications:
             AntiPatterns:
                 - 전체 facts 그대로 노출 → 수백 row × 수십 컬럼 토큰 폭증. topic/period 필터 의무.
-                - facts ≠ companyfacts API raw — 본 함수는 dartlab 정규화 결과.
+                - facts ≠ companyfacts API raw - 본 함수는 dartlab 정규화 결과.
             OutputSchema:
-                - pl.DataFrame — topic × period 매트릭스 또는 None.
+                - pl.DataFrame - topic × period 매트릭스 또는 None.
             Prerequisites:
                 - profileAccessor + companyfacts/finance 합산.
             Freshness:
@@ -3919,12 +3919,12 @@ class Company:
         """
         return getattr(self._profileAccessor, "facts", None)
 
-    # c.ratioSeries property 제거 (Plan v10 P1) — show("ratios") 사용
-    # sector, sectorParams, sceMatrix — EXEMPT (test_protocol.py)
+    # c.ratioSeries property 제거 (Plan v10 P1) - show("ratios") 사용
+    # sector, sectorParams, sceMatrix - EXEMPT (test_protocol.py)
 
     @property
     def rank(self):
-        """피어 그룹 내 랭킹 — EDGAR 는 현재 미지원.
+        """피어 그룹 내 랭킹 - EDGAR 는 현재 미지원.
 
         Returns:
             None (US 피어 랭킹 미구현).
@@ -3939,7 +3939,7 @@ class Company:
 
     @property
     def sources(self) -> pl.DataFrame:
-        """데이터 소스 현황 — EDGAR 는 docs + finance 2 소스.
+        """데이터 소스 현황 - EDGAR 는 docs + finance 2 소스.
 
         Returns:
             source/available/rows/cols/shape 컬럼 DataFrame.
@@ -3952,8 +3952,8 @@ class Company:
             >>> c.sources
 
         SeeAlso:
-            - ``trace`` — topic 별 source 추적.
-            - ``dart.providers.dart.company.Company.sources`` — KR 패리티 (8 소스).
+            - ``trace`` - topic 별 source 추적.
+            - ``dart.providers.dart.company.Company.sources`` - KR 패리티 (8 소스).
 
         Requires:
             - dartlab
@@ -3961,7 +3961,7 @@ class Company:
 
         Capabilities:
             - 본 회사의 데이터 source (docs/finance) 가용 상태 + 각 source 의 shape 메타.
-              DART (8 source) 대비 EDGAR 는 2 source — 시그니처 동기 목적.
+              DART (8 source) 대비 EDGAR 는 2 source - 시그니처 동기 목적.
 
         Guide:
             - "이 회사 어떤 데이터 있나" → 본 property.
@@ -3971,8 +3971,8 @@ class Company:
 
         LLM Specifications:
             AntiPatterns:
-                - 현재 rows/cols/shape 값 0/0/"" 고정 — 향후 실 shape 채울 예정 (skeleton).
-                - DART 8 source 와 비교 시 EDGAR 가 적다고 판단 X — XBRL 통합이라 source 그루핑 다름.
+                - 현재 rows/cols/shape 값 0/0/"" 고정 - 향후 실 shape 채울 예정 (skeleton).
+                - DART 8 source 와 비교 시 EDGAR 가 적다고 판단 X - XBRL 통합이라 source 그루핑 다름.
             OutputSchema:
                 - pl.DataFrame [source, available:bool, rows:int, cols:int, shape:str].
             Prerequisites:
@@ -4014,8 +4014,8 @@ class Company:
             >>> c.table("BS")
 
         SeeAlso:
-            - ``show`` — 본 함수의 실 backend (현재 단순 위임).
-            - ``dart.providers.dart.company.Company.table`` — KR 패리티 (실 subtopic/numeric 처리).
+            - ``show`` - 본 함수의 실 backend (현재 단순 위임).
+            - ``dart.providers.dart.company.Company.table`` - KR 패리티 (실 subtopic/numeric 처리).
 
         Requires:
             - dartlab
@@ -4023,19 +4023,19 @@ class Company:
 
         Capabilities:
             - DartCompany.table 와 동일 시그니처 보존용 wrapper. subtopic/numeric 인자 현재 미사용
-              (skeleton) — show() 결과 단순 전달. 향후 EDGAR subtopic 분해 시 확장.
+              (skeleton) - show() 결과 단순 전달. 향후 EDGAR subtopic 분해 시 확장.
 
         Guide:
             - "BS table" → ``c.table("BS")`` (show 와 동일).
 
         AIContext:
-            DartCompany API 와 동일 시그니처 — AI 가 cross-provider 코드 작성 시 분기 불필요.
+            DartCompany API 와 동일 시그니처 - AI 가 cross-provider 코드 작성 시 분기 불필요.
 
         LLM Specifications:
             AntiPatterns:
                 - subtopic / numeric 인자 영향 가정 → 현재 무시. show() 사용이 더 명확.
             OutputSchema:
-                - pl.DataFrame — show() 결과 그대로 또는 None.
+                - pl.DataFrame - show() 결과 그대로 또는 None.
             Prerequisites:
                 - show() 와 동일.
             Freshness:
@@ -4043,7 +4043,7 @@ class Company:
             Dataflow:
                 - 사용자 인자 → show(topic, period) → 본 함수.
             TargetMarkets:
-                - US (SEC EDGAR) — DART 호환 시그니처.
+                - US (SEC EDGAR) - DART 호환 시그니처.
         """
         df = self._showImpl(topic, period=period)
         if df is None:
@@ -4051,7 +4051,7 @@ class Company:
         return df
 
     def audit(self) -> list | None:
-        """감사/내부통제 분석 — EDGAR item9A + item14 기반.
+        """감사/내부통제 분석 - EDGAR item9A + item14 기반.
 
         10-K Item 9A(Controls and Procedures) 텍스트에서 material weakness,
         going concern 등 핵심 키워드를 탐지한다.
@@ -4060,11 +4060,11 @@ class Company:
         -------
         list[dict] | None
             각 dict 키:
-                type : str — 발견 유형 (material_weakness/going_concern/
+                type : str - 발견 유형 (material_weakness/going_concern/
                     ineffective_controls/clean/audit_fees)
-                period : str — 해당 기간 (예: "2024")
-                severity : str — 심각도 (critical/warning/ok)
-                amount : str — 감사 수수료 금액 (audit_fees 유형만)
+                period : str - 해당 기간 (예: "2024")
+                severity : str - 심각도 (critical/warning/ok)
+                amount : str - 감사 수수료 금액 (audit_fees 유형만)
             발견 없으면 None.
 
         Raises:
@@ -4078,15 +4078,15 @@ class Company:
             발견 dict 리스트 또는 None. 각 dict 키 위 Returns 표 참조.
 
         SeeAlso:
-            - ``governance`` — Part III item10/12/11 텍스트.
-            - ``show("10-K::item9AControlsAndProcedures")`` — 본 함수 origin.
+            - ``governance`` - Part III item10/12/11 텍스트.
+            - ``show("10-K::item9AControlsAndProcedures")`` - 본 함수 origin.
 
         Requires:
             - dartlab
             - polars
 
         Capabilities:
-            - 10-K Item 9A (내부통제) + Item 14 (감사 수수료) 텍스트에서 키워드 기반 자동 탐지 —
+            - 10-K Item 9A (내부통제) + Item 14 (감사 수수료) 텍스트에서 키워드 기반 자동 탐지 -
               material weakness / going concern / ineffective controls / clean. 감사 수수료 금액 정규식 추출.
 
         Guide:
@@ -4147,7 +4147,7 @@ class Company:
         return findings or None
 
     def governance(self, view: str | None = None) -> pl.DataFrame | None:
-        """지배구조 분석 — EDGAR item10/item12 기반.
+        """지배구조 분석 - EDGAR item10/item12 기반.
 
         10-K Part III에서 이사회 구성, 소유 구조 텍스트를 제공한다.
         DART와 달리 구조화된 수치가 아닌 텍스트 데이터이다.
@@ -4155,9 +4155,9 @@ class Company:
         Returns
         -------
         pl.DataFrame | None
-            항목 : str — 분석 영역 (directors/ownership/compensation)
-            기간 : str — 데이터 기간 (예: "2024")
-            내용 : str — 10-K 텍스트 요약 (최대 500자)
+            항목 : str - 분석 영역 (directors/ownership/compensation)
+            기간 : str - 데이터 기간 (예: "2024")
+            내용 : str - 10-K 텍스트 요약 (최대 500자)
             view="all"/"market"이면 None (EDGAR 미지원).
             데이터 없으면 None.
 
@@ -4175,8 +4175,8 @@ class Company:
             지배구조 텍스트 DataFrame (directors/ownership/compensation 항목) 또는 None.
 
         SeeAlso:
-            - ``audit`` — Item 9A/14 감사 관련.
-            - ``dart.providers.dart.company.Company.governance`` — KR 패리티 (구조화 수치).
+            - ``audit`` - Item 9A/14 감사 관련.
+            - ``dart.providers.dart.company.Company.governance`` - KR 패리티 (구조화 수치).
 
         Requires:
             - dartlab
@@ -4190,12 +4190,12 @@ class Company:
             - "이 회사 이사회 / 임원 보수 / 소유 구조" → 본 함수 텍스트 본문.
 
         AIContext:
-            DART governance 가 정량 수치 반환하는 반면 EDGAR 는 텍스트 origin — AI 가 본문 요약 의무.
+            DART governance 가 정량 수치 반환하는 반면 EDGAR 는 텍스트 origin - AI 가 본문 요약 의무.
 
         LLM Specifications:
             AntiPatterns:
                 - 텍스트 500 자 truncate → 본문 전부 가정 X. 원본은 show("10-K::item10...").
-                - view="all"/"market" 호출 시 None — 호출자 분기 의무.
+                - view="all"/"market" 호출 시 None - 호출자 분기 의무.
             OutputSchema:
                 - pl.DataFrame [항목:str, 기간:str, 내용:str≤500] 또는 None.
             Prerequisites:
@@ -4229,7 +4229,7 @@ class Company:
         return pl.DataFrame(rows)
 
     def workforce(self, view: str | None = None) -> pl.DataFrame | None:
-        """인력 분석 — EDGAR item1 + IS 기반.
+        """인력 분석 - EDGAR item1 + IS 기반.
 
         10-K Item 1(Business)에서 직원 수를 추출하고, IS 매출 대비
         1인당 매출을 계산한다.
@@ -4248,8 +4248,8 @@ class Company:
             >>> c.workforce()
 
         SeeAlso:
-            - ``governance`` / ``audit`` — 10-K Part III/9A 동일 origin 패밀리.
-            - ``dart.providers.dart.company.Company.workforce`` — KR 패리티 (구조화 직원 수).
+            - ``governance`` / ``audit`` - 10-K Part III/9A 동일 origin 패밀리.
+            - ``dart.providers.dart.company.Company.workforce`` - KR 패리티 (구조화 직원 수).
 
         Requires:
             - dartlab
@@ -4264,12 +4264,12 @@ class Company:
             - "1 인당 매출 효율" → 본 함수 "1인당매출" 컬럼.
 
         AIContext:
-            DART 가 구조화 수치 반환하는 반면 EDGAR 는 텍스트 추출 — 정확도 ~90%. AI 가 환각 vs 실수치 분기.
+            DART 가 구조화 수치 반환하는 반면 EDGAR 는 텍스트 추출 - 정확도 ~90%. AI 가 환각 vs 실수치 분기.
 
         LLM Specifications:
             AntiPatterns:
-                - 텍스트 추출 정확도 100% 가정 X — 본문 표현 변화 시 None 가능.
-                - 1 인당 매출 절대값 회사 간 비교 X — fiscal year 차이/사업부문 차이 큼.
+                - 텍스트 추출 정확도 100% 가정 X - 본문 표현 변화 시 None 가능.
+                - 1 인당 매출 절대값 회사 간 비교 X - fiscal year 차이/사업부문 차이 큼.
             OutputSchema:
                 - pl.DataFrame [종목코드, 회사명, 직원수:int, 기간:str, 1인당매출:float|None] 또는 None.
             Prerequisites:
@@ -4356,18 +4356,18 @@ class Company:
         )
 
     def capital(self, view: str | None = None) -> pl.DataFrame | None:
-        """주주환원/자본구조 — EDGAR BS/CF 기반 단일 회사 분석.
+        """주주환원/자본구조 - EDGAR BS/CF 기반 단일 회사 분석.
 
         DART와 달리 전종목 횡단비교(view="all")는 미지원.
 
         Returns
         -------
         pl.DataFrame | None
-            종목코드 : str — ticker
-            회사명 : str — 회사명
-            total_stockholders_equity : float — 자기자본 (USD)
-            retained_earnings : float — 이익잉여금 (USD)
-            dividends_paid : float — 배당금 지급액 (USD, 있을 때만)
+            종목코드 : str - ticker
+            회사명 : str - 회사명
+            total_stockholders_equity : float - 자기자본 (USD)
+            retained_earnings : float - 이익잉여금 (USD)
+            dividends_paid : float - 배당금 지급액 (USD, 있을 때만)
             view="all"/"market"이면 None.
 
         Raises:
@@ -4384,8 +4384,8 @@ class Company:
             자기자본/이익잉여금/배당 DataFrame 또는 None.
 
         SeeAlso:
-            - ``debt`` — 부채구조 (BS 동일 origin).
-            - ``dart.providers.dart.company.Company.capital`` — KR 전종목 횡단 지원.
+            - ``debt`` - 부채구조 (BS 동일 origin).
+            - ``dart.providers.dart.company.Company.capital`` - KR 전종목 횡단 지원.
 
         Requires:
             - dartlab
@@ -4404,7 +4404,7 @@ class Company:
 
         LLM Specifications:
             AntiPatterns:
-                - 단일 period 결과로 추세 결론 X — 본 함수는 latest 만, 추세는 show("CF") 사용.
+                - 단일 period 결과로 추세 결론 X - 본 함수는 latest 만, 추세는 show("CF") 사용.
                 - view="all" 호출 → KR 와 달리 None. 횡단비교는 dart 만.
             OutputSchema:
                 - pl.DataFrame 1 행 [종목코드, 회사명, total_stockholders_equity, retained_earnings, dividends_paid].
@@ -4443,20 +4443,20 @@ class Company:
         return pl.DataFrame(rows)
 
     def debt(self, view: str | None = None) -> pl.DataFrame | None:
-        """부채구조 분석 — EDGAR BS 기반 단일 회사 분석.
+        """부채구조 분석 - EDGAR BS 기반 단일 회사 분석.
 
         DART와 달리 전종목 횡단비교(view="all")는 미지원.
 
         Returns
         -------
         pl.DataFrame | None
-            종목코드 : str — ticker
-            회사명 : str — 회사명
-            total_liabilities : float — 부채총계 (USD)
-            shortterm_borrowings : float — 단기차입금 (USD)
-            longterm_borrowings : float — 장기차입금 (USD)
-            current_liabilities : float — 유동부채 (USD)
-            noncurrent_liabilities : float — 비유동부채 (USD)
+            종목코드 : str - ticker
+            회사명 : str - 회사명
+            total_liabilities : float - 부채총계 (USD)
+            shortterm_borrowings : float - 단기차입금 (USD)
+            longterm_borrowings : float - 장기차입금 (USD)
+            current_liabilities : float - 유동부채 (USD)
+            noncurrent_liabilities : float - 비유동부채 (USD)
             view="all"/"market"이면 None.
 
         Raises:
@@ -4473,8 +4473,8 @@ class Company:
             부채구조 DataFrame (total_liabilities/shortterm/longterm/current/noncurrent) 또는 None.
 
         SeeAlso:
-            - ``capital`` — 자본구조 (BS 동일 origin).
-            - ``dart.providers.dart.company.Company.debt`` — KR 패리티 (전종목 횡단 지원).
+            - ``capital`` - 자본구조 (BS 동일 origin).
+            - ``dart.providers.dart.company.Company.debt`` - KR 패리티 (전종목 횡단 지원).
 
         Requires:
             - dartlab
@@ -4493,7 +4493,7 @@ class Company:
 
         LLM Specifications:
             AntiPatterns:
-                - debt ≠ liabilities — borrowings 가 진짜 차입금, liabilities 는 매입채무 포함.
+                - debt ≠ liabilities - borrowings 가 진짜 차입금, liabilities 는 매입채무 포함.
                 - view="all" → KR 와 달리 None. 횡단비교는 dart 만.
             OutputSchema:
                 - pl.DataFrame 1 행 [종목코드, 회사명, total_liabilities, shortterm_borrowings, ...].
@@ -4537,24 +4537,24 @@ class Company:
         return pl.DataFrame(rows)
 
     def network(self, view: str | None = None, *, hops: int = 1):
-        """기업 네트워크 그래프 — EDGAR 미구현 (cross-provider symmetry placeholder).
+        """기업 네트워크 그래프 - EDGAR 미구현 (cross-provider symmetry placeholder).
 
         Capabilities:
             - SEC ownership / Form 13F filings 기반 향후 구현.
-            - 현 단계 None — dart.network 와 cross-provider symmetric API 보장.
+            - 현 단계 None - dart.network 와 cross-provider symmetric API 보장.
 
         Args:
             view: None / "members" / "edges" / "cycles" / "peers".
             hops: ego 깊이.
 
         Returns:
-            None — EDGAR 네트워크 prebuild 미구현.
+            None - EDGAR 네트워크 prebuild 미구현.
 
         Guide:
             - "이 회사 그룹 계열사" → 현 단계 KR (dart) 한정. EDGAR 는 향후.
 
         SeeAlso:
-            - ``dart.Company.network`` — KR 한정 구현.
+            - ``dart.Company.network`` - KR 한정 구현.
 
         Requires:
             - 외부 의존 없음 (placeholder).
@@ -4587,20 +4587,20 @@ class Company:
         return None
 
     def topicSummaries(self) -> dict[str, str]:
-        """topic 별 한 줄 요약 dict — cross-provider symmetric placeholder.
+        """topic 별 한 줄 요약 dict - cross-provider symmetric placeholder.
 
         Capabilities:
-            - 현 단계 빈 dict — sections summary 향후 구현.
+            - 현 단계 빈 dict - sections summary 향후 구현.
             - dart.topicSummaries 와 동일 시그니처.
 
         Returns:
-            dict[str, str] — 현재 빈 dict.
+            dict[str, str] - 현재 빈 dict.
 
         Guide:
             - "이 회사 topic 한 줄씩" → 현 단계 KR (dart) 한정.
 
         SeeAlso:
-            - ``dart.Company.topicSummaries`` — KR 한정 구현.
+            - ``dart.Company.topicSummaries`` - KR 한정 구현.
 
         Requires:
             - 외부 의존 없음 (placeholder).
@@ -4631,10 +4631,10 @@ class Company:
         return {}
 
     def update(self, *, categories: list[str] | None = None) -> dict[str, int]:
-        """누락 공시 증분 수집 — EDGAR bulk re-sync placeholder.
+        """누락 공시 증분 수집 - EDGAR bulk re-sync placeholder.
 
         Capabilities:
-            - dart.update 와 동일 시그니처 — categories 별 수집 통계 dict 반환.
+            - dart.update 와 동일 시그니처 - categories 별 수집 통계 dict 반환.
             - 현 단계 EDGAR bulk pipeline (companyfactsBulk + 분기 datasetBulk) 가 batch
               처리하므로 종목 1 개 단위 update 는 미구현.
 
@@ -4642,14 +4642,14 @@ class Company:
             categories: 수집 영역 list 또는 None.
 
         Returns:
-            dict[str, int] — 현재 빈 dict (EDGAR bulk 가 일괄 처리).
+            dict[str, int] - 현재 빈 dict (EDGAR bulk 가 일괄 처리).
 
         Guide:
             - "이 회사 최신 데이터" → bulk pipeline 의 cron 갱신 대기 또는 ``refreshFromApi()``.
 
         SeeAlso:
-            - ``Company.refreshFromApi`` — SEC API per-ticker 즉시 갱신.
-            - ``dart.Company.update`` — KR 한정 종목 단위 update.
+            - ``Company.refreshFromApi`` - SEC API per-ticker 즉시 갱신.
+            - ``dart.Company.update`` - KR 한정 종목 단위 update.
 
         Requires:
             - 외부 의존 없음 (placeholder).

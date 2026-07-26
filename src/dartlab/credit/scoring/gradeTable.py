@@ -14,6 +14,7 @@ from __future__ import annotations
 from dartlab.synth.creditGradeTable import (  # noqa: F401
     estimatePD,
     gradeCategory,
+    gradeRank,
     isInvestmentGrade,
     mapTo20Grade,
     notchGrade,
@@ -22,6 +23,7 @@ from dartlab.synth.creditGradeTable import (  # noqa: F401
 __all__ = [
     "estimatePD",
     "gradeCategory",
+    "gradeRank",
     "isInvestmentGrade",
     "mapTo20Grade",
     "notchGrade",

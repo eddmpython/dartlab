@@ -34,6 +34,7 @@ SeeAlso:
 
 from __future__ import annotations
 
+from dataclasses import fields, is_dataclass
 from typing import Any
 
 _ROW_CAP = 500  # 브라우저 페이로드 상한. 넘으면 잘라 보내고 truncated 표기.
@@ -43,6 +44,8 @@ def _json(obj: Any) -> Any:
     """dartlab 결과(polars DataFrame/Panel/dict/스칼라)를 JSON 안전 형태로."""
     if obj is None:
         return None
+    if type(obj) in {str, bool, int, float}:
+        return obj
     # polars DataFrame / dartlab Panel (둘 다 columns·height·to_dicts 를 가짐)
     to_dicts = getattr(obj, "to_dicts", None)
     columns = getattr(obj, "columns", None)
@@ -55,10 +58,12 @@ def _json(obj: Any) -> Any:
             "rows": rows,
             "truncated": bool(height and height > _ROW_CAP),
         }
+    if is_dataclass(obj) and not isinstance(obj, type):
+        return {field.name: _json(getattr(obj, field.name)) for field in fields(obj)}
     if isinstance(obj, dict):
-        return obj
+        return {str(key): _json(value) for key, value in obj.items()}
     if isinstance(obj, (list, tuple)):
-        return list(obj)
+        return [_json(value) for value in obj]
     # SelectResult 등 .df 를 가진 래퍼
     df = getattr(obj, "df", None)
     if df is not None and df is not obj:
@@ -117,6 +122,13 @@ def buildBrowserApi():  # noqa: C901
     async def industry(code: str) -> Any:
         """산업 위치(업종·공정 단계·동종사)."""
         return _json(dartlab.Company(code).industry())
+
+    @app.get("/company/{code}/lenses")
+    async def lenses(code: str) -> Any:
+        """다섯 대표 렌즈의 product bundle. 브라우저는 의미를 재구현하지 않는다."""
+        from dartlab.story.lensProducts import collectLensProducts, publicLensBundle
+
+        return publicLensBundle(collectLensProducts(dartlab.Company(code)))
 
     @app.get("/company/{code}/trace/{topic}")
     async def trace(code: str, topic: str) -> Any:

@@ -1,4 +1,4 @@
-"""이익 모멘텀 — SUE + PEAD.
+"""이익 모멘텀 - SUE + PEAD.
 
 학술 근거: Ball & Brown (1968), Bernard & Thomas (1989).
 """
@@ -87,8 +87,8 @@ def calcEarnings(stockCode: str, *, market: str = "auto", **kwargs) -> dict:
 
     LLM Specifications:
         AntiPatterns:
-            - SUE 단독 인용 — earningsTrend + peadStrength 함께.
-            - 발표 직전에 본 함수 호출 — drift 효과는 발표 후 60+ 일.
+            - SUE 단독 인용 - earningsTrend + peadStrength 함께.
+            - 발표 직전에 본 함수 호출 - drift 효과는 발표 후 60+ 일.
         OutputSchema:
             ``{stockCode, market, sue: float, latestOpIncome: float, prevMean:
               float, peadSignal: str, peadStrength: str, earningsTrend: str,
@@ -134,7 +134,7 @@ def calcEarnings(stockCode: str, *, market: str = "auto", **kwargs) -> dict:
                     yearly[y] = v
     else:
         # DART: sj_div + account_nm 필터
-        stock = annual.filter((pl.col("sj_div") == "IS") & pl.col("account_nm").str.contains("영업이익"))
+        stock = annual.filter(pl.col("sj_div").is_in(["IS", "CIS"]) & pl.col("account_nm").str.contains("영업이익"))
         for row in stock.iter_rows(named=True):
             y = row.get("bsns_year")
             v = _parse(row.get("thstrm_amount"))

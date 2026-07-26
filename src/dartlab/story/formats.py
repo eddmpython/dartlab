@@ -159,6 +159,31 @@ def _mdRenderSummaryCard(summaryCard) -> str | None:
     return "\n".join(lines) if lines else None
 
 
+def _mdRenderLensProducts(story) -> str | None:
+    """다섯 렌즈의 직접 결론만 표로 보여준다. 통합 점수는 만들지 않는다."""
+    from dartlab.story.lensProducts import lensSummary
+
+    rows = lensSummary(getattr(story, "lensProducts", {}))
+    if not rows:
+        return None
+    lines = ["### 분석 렌즈", "", "| 렌즈 | 상태 | 판단 | 신뢰도 | 데이터 시점 |", "| --- | --- | --- | --- | --- |"]
+    for row in rows:
+        confidence = row.get("confidenceLevel") or "unknown"
+        if row.get("confidenceScore") is not None:
+            confidence = f"{confidence} ({row['confidenceScore']})"
+        dataAsOf = row.get("dataAsOf")
+        if isinstance(dataAsOf, dict):
+            dataAsOf = dataAsOf.get("sourceDataAsOf") or dataAsOf.get("date") or dataAsOf.get("retrievedAt")
+        when = dataAsOf or row.get("period") or row.get("asOf") or "미상"
+        lines.append(
+            f"| {row['engine']} | {row.get('status') or 'unknown'} | "
+            f"{row.get('label') or '판단 없음'} | {confidence} | {when} |"
+        )
+    lines.append("")
+    lines.append("렌즈별 판단은 독립 결과이며 통합 점수나 단일 등급으로 합산하지 않습니다.")
+    return "\n".join(lines)
+
+
 def _mdRenderTemplateHeader(story, templateName: str | None, tmplInfo: dict) -> list[str]:
     """스토리 템플릿 표시 블록. 반환: markdown 문자열 리스트."""
     if not templateName:
@@ -169,7 +194,7 @@ def _mdRenderTemplateHeader(story, templateName: str | None, tmplInfo: dict) -> 
         parts.append(f"**스토리: {' + '.join(allTemplates)}**")
     else:
         desc = tmplInfo.get("description", "") if tmplInfo else ""
-        parts.append(f"**스토리: {templateName}** — {desc}")
+        parts.append(f"**스토리: {templateName}** - {desc}")
     keyQuestions = tmplInfo.get("keyQuestions", []) if tmplInfo else []
     if keyQuestions:
         qLines = [f"  - {q}" for q in keyQuestions]
@@ -360,6 +385,10 @@ def renderMarkdown(story, *, chartDir: str | None = None) -> str:
     if card:
         parts.append(card)
 
+    lensProducts = _mdRenderLensProducts(story)
+    if lensProducts:
+        parts.append(lensProducts)
+
     parts.extend(_mdRenderTemplateHeader(story, templateName, tmplInfo))
 
     if story.circulationSummary:
@@ -493,8 +522,14 @@ def renderJson(story) -> str:
     result: dict[str, Any] = {
         "stockCode": story.stockCode,
         "corpName": story.corpName,
+        "reportType": getattr(story, "reportType", None),
         "sections": sections,
     }
+    from dartlab.story.lensProducts import publicLensBundle
+
+    publicBundle = publicLensBundle(getattr(story, "_lensBundle", None))
+    if isinstance(publicBundle, dict) and (publicBundle.get("products") or publicBundle.get("gaps")):
+        result["lensProducts"] = publicBundle
     if story.summaryCard:
         card = story.summaryCard
         result["summaryCard"] = {
@@ -520,7 +555,7 @@ def renderAscii(story, *, width: int = 80) -> str:
     HeadingBlock → 밑줄
     MetricBlock → "label: value" 한 줄
     TableBlock → 간단 문자 표 (첫 3컬럼)
-    FlagBlock → "[⚠] severity — message"
+    FlagBlock → "[⚠] severity - message"
     ChartBlock → ``spec.toAscii()``
 
     Parameters
@@ -595,7 +630,7 @@ def renderAscii(story, *, width: int = 80) -> str:
                 severity = getattr(block, "severity", "info")
                 message = getattr(block, "message", "")
                 icon = "⚠" if severity in ("warning", "error", "danger") else "●"
-                lines.append(f"    [{icon}] {severity:<8} — {message}")
+                lines.append(f"    [{icon}] {severity:<8} - {message}")
             elif isinstance(block, TableBlock):
                 try:
                     df = getattr(block, "df", None)

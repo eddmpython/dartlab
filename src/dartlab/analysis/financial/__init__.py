@@ -33,7 +33,7 @@ from dartlab.analysis.financial._registry import (
     _resolveAxis,
 )
 
-# ── axis warm-up — calc 간 공유 accessor 선제 빌드 ──
+# ── axis warm-up - calc 간 공유 accessor 선제 빌드 ──
 
 
 def _warmupFinanceAccessors(company: Any) -> None:
@@ -45,7 +45,7 @@ def _warmupFinanceAccessors(company: Any) -> None:
     _cache 의 ``_financeStmt_{sjDiv}_Q_consolidated`` key 를 미리 적재하면
     이후 calc 들은 전부 cache-hit 로 수렴한다.
 
-    금융업 CF 부재 같은 정상 예외는 조용히 무시 — 해당 calc 가 내부에서
+    금융업 CF 부재 같은 정상 예외는 조용히 무시 - 해당 calc 가 내부에서
     None 반환으로 처리한다.
     """
     stmt = getattr(company, "_financeStmt", None)
@@ -163,15 +163,15 @@ class _GroupAccessor:
 
 
 class Analysis:
-    """재무제표 완전 분석 — 20축, 단일 종목 심층.
+    """재무제표 완전 분석 - 20축, 단일 종목 심층.
 
     Capabilities:
-        Part 1 — 사업구조: 수익구조, 자금조달, 자산구조, 현금흐름
-        Part 2 — 핵심비율: 수익성, 성장성, 안정성, 효율성, 종합평가
-        Part 3 — 심화분석: 이익품질, 비용구조, 자본배분, 투자효율, 재무정합성
-        Part 4 — 가치평가: DCF, DDM, 상대가치, RIM, 목표주가, 역내재성장률, 민감도
-        Part 5 — 비재무 심화: 지배구조, 공시변화감지, 비교분석
-        Part 6 — 전망분석: 매출전망, 예측신호
+        Part 1 - 사업구조: 수익구조, 자금조달, 자산구조, 현금흐름
+        Part 2 - 핵심비율: 수익성, 성장성, 안정성, 효율성, 종합평가
+        Part 3 - 심화분석: 이익품질, 비용구조, 자본배분, 투자효율, 재무정합성
+        Part 4 - 가치평가: DCF, DDM, 상대가치, RIM, 목표주가, 역내재성장률, 민감도
+        Part 5 - 비재무 심화: 지배구조, 공시변화감지, 비교분석
+        Part 6 - 전망분석: 매출전망, 예측신호
         - 각 축은 Company를 받아 dict를 반환하는 순수 함수 집합
         - story()가 이 결과를 소비하여 구조화 보고서 생성
 
@@ -185,11 +185,11 @@ class Analysis:
 
     Guide:
         - AI 역할: AI는 analysis를 단일 기업 재무·가치·리스크 해석 엔진으로 보고 axis/subaxis와 필요한 재무 evidence를 선택한다.
-        - "이 회사 수익구조?" -> analysis("financial", "수익구조") — 매출원가율, 판관비율 등
-        - "재무 건전한가?" -> analysis("financial", "안정성") — 부채비율, 유동비율, ICR
-        - "이익이 진짜야?" -> analysis("financial", "이익품질") — 발생주의 비율, OCF/NI
-        - "적정가치?" -> analysis("valuation", "가치평가") — DCF/DDM/상대/RIM/목표가
-        - "전체 종합?" -> analysis("financial", "종합평가") — 15축 통합 스코어
+        - "이 회사 수익구조?" -> analysis("financial", "수익구조") - 매출원가율, 판관비율 등
+        - "재무 건전한가?" -> analysis("financial", "안정성") - 부채비율, 유동비율, ICR
+        - "이익이 진짜야?" -> analysis("financial", "이익품질") - 발생주의 비율, OCF/NI
+        - "적정가치?" -> analysis("valuation", "가치평가") - DCF/DDM/상대/RIM/목표가
+        - "전체 종합?" -> analysis("financial", "종합평가") - 15축 통합 스코어
         - 15축 전부 보고 싶으면 story() 사용 권장
 
     SeeAlso:
@@ -229,7 +229,7 @@ class Analysis:
         overrides: dict | None = None,
         **kwargs: Any,
     ) -> pl.DataFrame | dict:
-        """재무 심층 분석 — 5 그룹 22 축 인과 분석 + 가치평가 + 전망.
+        """재무 심층 분석 - 5 그룹 22 축 인과 분석 + 가치평가 + 전망.
 
         2단계 호출: analysis("그룹", "축") 또는 analysis("축") 단축형.
 
@@ -253,20 +253,20 @@ class Analysis:
         -------
         dict
             축별 분석 결과. 공통 키:
-                period : str — 기준 기간
-                items : list[dict] — 개별 지표 목록
-                    name : str — 지표명
-                    value : float | str — 값
-                    unit : str — 단위 (%, 원, 배, 일, 점)
-                    trend : str — 추세 (상승/하락/유지)
+                period : str - 기준 기간
+                items : list[dict] - 개별 지표 목록
+                    name : str - 지표명
+                    value : float | str - 값
+                    unit : str - 단위 (%, 원, 배, 일, 점)
+                    trend : str - 추세 (상승/하락/유지)
             축별 추가 키:
-                marginTrend : list — 마진 시계열 (수익성)
-                debtMetrics : dict — 부채 지표 (안정성)
-                fcfHistory : list — FCF 시계열 (현금흐름)
-                targetPrice : float — 적정 주가 (가치평가, 원)
-                forecastRevenue : list — 매출 전망 (매출전망)
+                marginTrend : list - 마진 시계열 (수익성)
+                debtMetrics : dict - 부채 지표 (안정성)
+                fcfHistory : list - FCF 시계열 (현금흐름)
+                targetPrice : float - 적정 주가 (가치평가, 원)
+                forecastRevenue : list - 매출 전망 (매출전망)
         pl.DataFrame
-            axis=None: 가이드 — 축 목록 + 설명 + 예시.
+            axis=None: 가이드 - 축 목록 + 설명 + 예시.
             그룹만 지정 시: 그룹 내 축 목록.
 
         Raises
@@ -286,38 +286,38 @@ class Analysis:
         Notes
         -----
         DART 공시 재무제표 기반. API 키 불필요.
-        분기별 비교 가능성이 핵심 — 모든 축이 시계열 추이를 포함.
+        분기별 비교 가능성이 핵심 - 모든 축이 시계열 추이를 포함.
 
         Guide
         -----
         When: 개별 종목의 재무 인과를 심층 분석할 때.
-        How: 6막 인과 순서 — 수익구조 → 수익성 → 성장성 → 안정성 → 현금흐름 → 자본배분.
+        How: 6막 인과 순서 - 수익구조 → 수익성 → 성장성 → 안정성 → 현금흐름 → 자본배분.
             story full/executive 타입이 이 순서로 조합.
             credit 분석 시 안정성 + 현금흐름 먼저, credit 엔진과 함께 사용.
             valuation 분석 시 수익성 + 성장성 → 가치평가 + 매출전망 순서.
 
         See Also
         --------
-        credit : 독립 신용 분석 — analysis(안정성) 와 함께 사용.
-        scan : 전종목 횡단 비교 — 상대 위치 파악 후 심층 분석.
-        quant : 가격 기반 정량 신호 — analysis 재무 + quant 기술 조합.
-        macro : 거시 환경 — 기업 분석의 매크로 컨텍스트.
+        credit : 독립 신용 분석 - analysis(안정성) 와 함께 사용.
+        scan : 전종목 횡단 비교 - 상대 위치 파악 후 심층 분석.
+        quant : 가격 기반 정량 신호 - analysis 재무 + quant 기술 조합.
+        macro : 거시 환경 - 기업 분석의 매크로 컨텍스트.
 
         LLM Specifications:
             AntiPatterns:
-                - axis 영문 ("profitability") 사용 (실제는 한글 — "수익성")
+                - axis 영문 ("profitability") 사용 (실제는 한글 - "수익성")
                 - "valuation" 그룹에 "수익성" 같이 다른 그룹 sub 전달 (그룹별 sub 다름)
-                - overrides 키 추측 (axis 별 다름 — calc 함수 시그니처 확인)
+                - overrides 키 추측 (axis 별 다름 - calc 함수 시그니처 확인)
             OutputSchema:
-                - period : str — 기준 기간
-                - items : list[dict] — 지표 (name / value / unit / trend)
+                - period : str - 기준 기간
+                - items : list[dict] - 지표 (name / value / unit / trend)
                 - axis 별 추가: marginTrend (수익성), debtMetrics (안정성), fcfHistory
                   (현금흐름), targetPrice (가치평가), forecastRevenue (매출전망)
-                - dataAsOf : dict — latestPeriod / retrievedAt
+                - dataAsOf : dict - latestPeriod / retrievedAt
             Prerequisites:
                 - finance 데이터 (자동 다운로드)
             Freshness:
-                finance 분기 — 마감 후 30~45 일.
+                finance 분기 - 마감 후 30~45 일.
             Dataflow:
                 analysis(axis) → 결과 dict → review/story 가 보고서로 조립
             TargetMarkets:
@@ -331,14 +331,14 @@ class Analysis:
             company = sub
             sub = None
 
-        # stockCode 인자 수용 — 일관성 규약 (종목 = stockCode).
+        # stockCode 인자 수용 - 일관성 규약 (종목 = stockCode).
         # company 없고 stockCode 있으면 Company 생성.
         if company is None and stockCode is not None:
             from dartlab.company import Company
 
             company = Company(stockCode)
 
-        # 그룹 해석 — 직접 그룹명 또는 한글 그룹 alias
+        # 그룹 해석 - 직접 그룹명 또는 한글 그룹 alias
         group = axis if axis in _GROUPS else _ALIASES.get(axis) if _ALIASES.get(axis) in _GROUPS else None
 
         if group is not None:
@@ -385,18 +385,18 @@ class Analysis:
         return pl.DataFrame(rows)
 
     def _guide(self) -> pl.DataFrame:
-        """축 가이드 — 5엔진 통일 컬럼 (axis, label, description, example, group, items, apiKey).
+        """축 가이드 - 5엔진 통일 컬럼 (axis, label, description, example, group, items, apiKey).
 
         Returns
         -------
         pl.DataFrame
-            axis : str — 축 이름
-            label : str — 한글 레이블
-            description : str — 설명
-            example : str — 사용 예시
-            group : str — 소속 그룹 (entry.section)
-            items : int — calc 함수 개수
-            apiKey : str — 필요한 API 키 ("불필요" — 모든 축이 DART 공시 기반)
+            axis : str - 축 이름
+            label : str - 한글 레이블
+            description : str - 설명
+            example : str - 사용 예시
+            group : str - 소속 그룹 (entry.section)
+            items : int - calc 함수 개수
+            apiKey : str - 필요한 API 키 ("불필요" - 모든 축이 DART 공시 기반)
         """
         from dartlab.synth.axisGuide import buildAxisGuideDataFrame
 
@@ -437,6 +437,7 @@ class Analysis:
         """
         _warmupFinanceAccessors(company)
         results: dict[str, Any] = {}
+        appliedOverrides: dict[str, Any] = {}
         for calc in entry.calcs:
             try:
                 mod = importlib.import_module(calc.module)
@@ -446,6 +447,7 @@ class Analysis:
                     kw["basePeriod"] = basePeriod
                 if overrides and _acceptsOverrides(fn):
                     kw["overrides"] = overrides
+                    appliedOverrides.update(overrides)
                 results[calc.blockKey] = fn(company, **kw)
             except (
                 KeyError,
@@ -459,23 +461,31 @@ class Analysis:
             ):
                 results[calc.blockKey] = None
 
-        # 엔진 투명성 — 4 엔진 공통 utility (core/overrides.py)
+        # 엔진 투명성 - 4 엔진 공통 utility (core/overrides.py)
         from dartlab.synth.overrides import buildAssumptions
 
-        assumptions = buildAssumptions(results, engine="analysis", overrides=overrides)
+        assumptions = buildAssumptions(results, engine="analysis", overrides=appliedOverrides or None)
         if assumptions:
             results["assumptions"] = assumptions
 
-        # Phase 15 B2: dataAsOf 자동 주입 — 각 calc history 의 최신 period + 호출 시각
+        # Phase 15 B2: dataAsOf 자동 주입 - 각 calc history 의 최신 period + 호출 시각
         try:
             from dartlab.core.utils.period import resolveLatestPeriod
 
             periods_pool: set[str] = set()
-            for block in results.values():
-                if isinstance(block, dict) and isinstance(block.get("history"), list):
-                    for row in block["history"]:
-                        if isinstance(row, dict) and row.get("period"):
-                            periods_pool.add(row["period"])
+
+            def _collectPeriods(value: Any) -> None:
+                if isinstance(value, dict):
+                    period = value.get("period")
+                    if isinstance(period, str) and period:
+                        periods_pool.add(period)
+                    for child in value.values():
+                        _collectPeriods(child)
+                elif isinstance(value, list):
+                    for child in value:
+                        _collectPeriods(child)
+
+            _collectPeriods(results)
             latest = resolveLatestPeriod(list(periods_pool)) if periods_pool else None
             if latest or basePeriod:
                 import datetime as _dt
@@ -486,6 +496,11 @@ class Analysis:
                 }
         except (ImportError, AttributeError, KeyError, TypeError):
             pass
+
+        if entry.section == "종합평가":
+            from dartlab.analysis.financial.representative import buildAnalysisProduct
+
+            results["product"] = buildAnalysisProduct(company, results, basePeriod=basePeriod)
         return results
 
     def __getattr__(self, name: str) -> "_GroupAccessor":
@@ -498,17 +513,17 @@ class Analysis:
     def __repr__(self) -> str:
         total_calcs = sum(len(e.calcs) for e in _AXIS_REGISTRY.values())
         lines = [
-            f"Analysis — {len(_AXIS_REGISTRY)}축 · {total_calcs}개 분석 함수 | 단일 종목 재무 심층 분석",
+            f"Analysis - {len(_AXIS_REGISTRY)}축 · {total_calcs}개 분석 함수 | 단일 종목 재무 심층 분석",
             "",
             "━━━ 분석 축 ━━━",
         ]
         # 그룹별로 묶어 표시
         _GROUP_LABELS = {
-            "financial": "Part 1~3 — 재무분석",
-            "valuation": "Part 4 — 가치평가",
-            "governance": "Part 5 — 비재무 심화",
-            "forecast": "Part 6 — 전망분석",
-            "macro": "Part 6 — 매크로 연결",
+            "financial": "Part 1~3 - 재무분석",
+            "valuation": "Part 4 - 가치평가",
+            "governance": "Part 5 - 비재무 심화",
+            "forecast": "Part 6 - 전망분석",
+            "macro": "Part 6 - 매크로 연결",
         }
         for group, axes in _GROUPS.items():
             lines.append(f"  [{_GROUP_LABELS.get(group, group)}]")
@@ -525,7 +540,7 @@ class Analysis:
         lines.append('  c.analysis("가치평가")                    # DCF/DDM/RIM/상대가치')
         lines.append("")
         lines.append("━━━ 데이터 ━━━")
-        lines.append("  DART 전자공시 기반 재무제표 — API 키 불필요 (자동 다운로드)")
+        lines.append("  DART 전자공시 기반 재무제표 - API 키 불필요 (자동 다운로드)")
         lines.append("  전체 결과를 보고서로 → c.story()")
         lines.append("")
         lines.append(

@@ -1,4 +1,4 @@
-"""Credit engine unit tests — scorecard pure functions.
+"""Credit engine unit tests - scorecard pure functions.
 
 Tests scoreMetric, axisScore, mapTo20Grade, weightedScore,
 gradeCategory, isInvestmentGrade, cashFlowGrade, creditOutlook.
@@ -436,14 +436,14 @@ class TestNotchGrade:
 
 
 class TestMarketGuard:
-    """S1-L4.3 — credit 등급표는 KR(WICS) calibration 전용. 비-KR 은 등급 미산출(None).
+    """S1-L4.3 - credit 등급표는 KR(WICS) calibration 전용. 비-KR 은 등급 미산출(None).
 
     US(EDGAR) 회사를 그대로 태우면 sectorThresholds 가 KR 기본임계를 US-GAAP 숫자에 먹여
     non-None 가짜 등급을 내던 회귀(확신 오정렬)를 차단한다.
     """
 
     def test_us_market_returns_none_before_data(self):
-        """market='US' 면 데이터 접근 전 None — 가짜 등급 차단."""
+        """market='US' 면 데이터 접근 전 None - 가짜 등급 차단."""
         from dartlab.credit.engine import evaluateCompany
 
         class _FakeUs:
@@ -455,7 +455,7 @@ class TestMarketGuard:
         assert evaluateCompany(_FakeUs()) is None
 
     def test_kr_market_passes_guard(self, monkeypatch):
-        """KR/KR하위시장(KOSPI·KOSDAQ)/미지정/비-str(mock) 은 가드 통과 — _getSectorInfo 진입.
+        """KR/KR하위시장(KOSPI·KOSDAQ)/미지정/비-str(mock) 은 가드 통과 - _getSectorInfo 진입.
 
         DartCompany.market 은 'KR' 상수지만 일부 mock 은 'KOSPI' 등 KR 하위시장 라벨을 쓴다
         (test_calcs CreditMockCompany). 이들·비-str mock 을 막으면 KR 평가가 깨진다(회귀).
@@ -485,3 +485,32 @@ class TestMarketGuard:
         for fake in (_FakeKr(), _FakeKospi(), _FakeKosdaq(), _FakeDefault(), _FakeMock()):
             with pytest.raises(RuntimeError, match="guard-passed"):
                 engine.evaluateCompany(fake)
+
+
+class TestNotchMonotonicGate:
+    """위험점수가 gate를 넘은 뒤 notch 때문에 gate 이전보다 좋아지는 역전을 차단한다."""
+
+    def test_large_company_notch_cannot_cross_gate_grade(self, monkeypatch):
+        from dartlab.credit import _enginePostAdjust as post
+
+        monkeypatch.setattr(post, "_calcCHSAdjustment", lambda company, score: {"status": "missing"})
+        monkeypatch.setattr(
+            post,
+            "_calcNotchAdjustment",
+            lambda *args, **kwargs: {"totalNotch": 4, "reasons": ["대형기업"]},
+        )
+        monkeypatch.setattr(post, "_explainDivergence", lambda *args, **kwargs: [])
+
+        grade, _, _, _, _, notch, _ = post._applyPostAdjustments(
+            object(),
+            10.65,
+            {"revenue": 100e12},
+            {"history": []},
+            [],
+            False,
+            False,
+            None,
+        )
+
+        assert grade == "A+"
+        assert notch["monotonicGate"] == "A+"

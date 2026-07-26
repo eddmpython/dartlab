@@ -1,4 +1,4 @@
-"""L2.5 simulate registry + runScenario — deterministic driver DAG end to end.
+"""L2.5 simulate registry + runScenario - deterministic driver DAG end to end.
 
 Unit tests (no Company load) cover the registry node fns over a synthetic snapshot:
 - buildScenarioSheet wiring (4 nodes: macro -> rev -> proforma -> dcf) + topo evaluation.
@@ -234,6 +234,34 @@ def test_run_scenario_surfaces_assumptions_and_warnings(monkeypatch) -> None:
 
 
 @pytest.mark.unit
+def test_run_scenario_preserves_lens_context_without_changing_driver_hashes(monkeypatch) -> None:
+    from dartlab.simulate.run import runScenario
+
+    snapshot = _snapshot(baseRevenue=300.0)
+    monkeypatch.setattr("dartlab.simulate.run.buildSnapshot", lambda company, asOf=None: snapshot)
+    product = {
+        "identity": {"engine": "macro"},
+        "assumptions": [{"id": "edgeSign", "value": "registryPrior"}],
+        "scenarios": [{"id": "ratesUp"}],
+    }
+
+    plain = runScenario(object(), scenario="baseline", horizon=3)
+    contextual = runScenario(
+        object(),
+        scenario="baseline",
+        horizon=3,
+        lensBundle={"products": {"macro": product}},
+    )
+
+    assert contextual.lensProducts == {"macro": product}
+    assert len(contextual.assumptionLedger) == 2
+    assert all(row["appliedToDriverSheet"] is False for row in contextual.assumptionLedger)
+    assert {key: row.inputsHash for key, row in contextual.nodes.items()} == {
+        key: row.inputsHash for key, row in plain.nodes.items()
+    }
+
+
+@pytest.mark.unit
 def test_adverse_lower_revenue_than_baseline() -> None:
     base = evaluateSheet(buildScenarioSheet(_snapshot(baseRevenue=300.0), scenario="baseline", horizon=3))
     adv = evaluateSheet(buildScenarioSheet(_snapshot(baseRevenue=300.0), scenario="adverse", horizon=3))
@@ -315,7 +343,7 @@ def test_snapshot_rejects_asof_outside_available_periods(monkeypatch) -> None:
 
 
 # ──────────────────────────────────────────────────────────────────────
-# realData — runScenario on one company (serial, del after)
+# realData - runScenario on one company (serial, del after)
 # ──────────────────────────────────────────────────────────────────────
 @pytest.mark.realData
 @pytest.mark.serial
@@ -328,7 +356,7 @@ def test_realData_runScenario_005930() -> None:
     try:
         baseline = runScenario(c, scenario="baseline", horizon=3)
         if baseline.revenuePath is None or baseline.proformaYears == 0:
-            pytest.skip("005930 finance series unavailable — realData skip environment")
+            pytest.skip("005930 finance series unavailable - realData skip environment")
 
         # paths + proforma populated.
         assert baseline.scenarioName == "baseline"

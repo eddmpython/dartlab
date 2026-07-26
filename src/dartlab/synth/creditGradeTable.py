@@ -3,7 +3,7 @@
 20단계 신용등급 (AAA~D) 과 1년 부도확률 (PD) 매핑은 도메인-중립 universal 표준이다.
 credit (신용 평가), analysis (distress 분석), bond (채권 평가) 모두 같은 표 사용.
 
-본 모듈은 SSOT — 다른 도메인은 여기서 import. 자체 표 복제 금지.
+본 모듈은 SSOT - 다른 도메인은 여기서 import. 자체 표 복제 금지.
 """
 
 from __future__ import annotations
@@ -69,6 +69,11 @@ def notchGrade(grade: str, notches: int) -> str:
         return grade
     newIdx = max(0, min(len(_GRADE_ORDER) - 1, idx + notches))
     return _GRADE_ORDER[newIdx]
+
+
+def gradeRank(grade: str) -> int | None:
+    """AAA부터 D까지의 20단계 순서를 반환한다. 알 수 없는 등급은 None."""
+    return _GRADE_TO_IDX.get(grade)
 
 
 def isInvestmentGrade(grade: str) -> bool:

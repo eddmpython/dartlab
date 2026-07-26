@@ -267,7 +267,7 @@ def _screenQuality() -> pl.DataFrame:
 
 
 def _screenAll() -> pl.DataFrame:
-    """전 프리셋 플래그 통합 — 종목별로 어떤 프리셋에 해당하는지."""
+    """전 프리셋 플래그 통합 - 종목별로 어떤 프리셋에 해당하는지."""
     vDf = _screenValue()
     dDf = _screenDividend()
     gDf = _screenGrowth()
@@ -396,7 +396,13 @@ _DISPATCH = {
 }
 
 
-def scanScreen(target: str | None = None, *, spec: dict | None = None, verbose: bool = True) -> pl.DataFrame:
+def scanScreen(
+    target: str | None = None,
+    *,
+    spec: dict | None = None,
+    explain: bool = False,
+    verbose: bool = True,
+) -> pl.DataFrame | dict:
     """멀티팩터 스크리닝을 실행한다.
 
     Summary
@@ -417,6 +423,9 @@ def scanScreen(target: str | None = None, *, spec: dict | None = None, verbose: 
     spec : dict | None
         조건형 스크리닝 명세. 예:
         ``{"where": [{"field": "finance.ratio.roe", "op": ">", "value": 10}]}``.
+    explain : bool
+        True면 멤버뿐 아니라 coverage, funnel, excluded, nearMiss, executionRef를
+        포함한 설명 dict를 반환한다. 기본 False는 기존 DataFrame 계약을 유지한다.
     verbose : bool
         True 면 실행 로그를 logger.info 로 출력한다.
 
@@ -424,17 +433,20 @@ def scanScreen(target: str | None = None, *, spec: dict | None = None, verbose: 
     -------
     pl.DataFrame
         preset 목록 호출:
-            preset : str — 프리셋 키.
-            description : str — 프리셋 설명.
+            preset : str - 프리셋 키.
+            description : str - 프리셋 설명.
         preset 실행:
-            stockCode/종목코드 : str — 후보 종목코드.
-            축별 지표 컬럼 : object — 프리셋이 반환하는 지표.
+            stockCode/종목코드 : str - 후보 종목코드.
+            축별 지표 컬럼 : object - 프리셋이 반환하는 지표.
         spec 실행:
-            stockCode : str — 후보 종목코드.
-            <field> : object — where/select/sort 에서 요청한 필드 값.
-            docsHitCount : int — docs 조건 hit 수 (건), docs 조건 사용 시.
-            docsBestScore : float — docs 최고 검색 점수 (점), docs 조건 사용 시.
-            docsSnippet : str — 대표 공시 snippet (텍스트), docs 조건 사용 시.
+            stockCode : str - 후보 종목코드.
+            <field> : object - where/select/sort 에서 요청한 필드 값.
+            docsHitCount : int - docs 조건 hit 수 (건), docs 조건 사용 시.
+            docsBestScore : float - docs 최고 검색 점수 (점), docs 조건 사용 시.
+            docsSnippet : str - 대표 공시 snippet (텍스트), docs 조건 사용 시.
+        explain=True 실행:
+            members : list[dict] - 기존 executor와 같은 후보.
+            coverage/funnel/excluded/nearMiss : object - 3상태 판정 근거.
 
     Raises
     ------
@@ -475,7 +487,7 @@ def scanScreen(target: str | None = None, *, spec: dict | None = None, verbose: 
 
     AIContext:
         Agent 가 "저PBR + 부채 안전" 같은 multi-factor 질문 시 본 함수 dispatch. 프리셋
-        있으면 그것 사용 — 새 조건이면 spec 으로 직접 구성 (먼저 `scan("fields")` 로
+        있으면 그것 사용 - 새 조건이면 spec 으로 직접 구성 (먼저 `scan("fields")` 로
         field 가용성 확인 권장).
 
     Requires:
@@ -490,15 +502,16 @@ def scanScreen(target: str | None = None, *, spec: dict | None = None, verbose: 
     dartlab.search : docs 텍스트 조건의 검색 인덱스.
     """
     if spec is not None:
-        from dartlab.scan.builders.kr.fields import executeScreenSpec
+        from dartlab.scan.builders.kr.fields import executeScreenSpec, executeScreenSpecDetailed
 
         if target is not None:
             raise ValueError("screen 은 target 프리셋과 spec 을 동시에 받을 수 없습니다.")
         if verbose:
             _log.info("screen(spec): 실행 중...")
-        result = executeScreenSpec(spec)
+        result = executeScreenSpecDetailed(spec) if explain else executeScreenSpec(spec)
         if verbose:
-            _log.info(f"screen(spec): {result.shape[0]}종목")
+            count = result.get("memberCount", 0) if isinstance(result, dict) else result.shape[0]
+            _log.info(f"screen(spec): {count}종목")
         return result
 
     if target is None:
@@ -516,14 +529,15 @@ def scanScreen(target: str | None = None, *, spec: dict | None = None, verbose: 
         return result
 
     # 프리셋이 아니면 저장된 명명 스크린(id 대소문자 보존) 실행. 미존재면 loadScreen 이 가용목록 포함 ValueError.
-    from dartlab.scan.builders.kr.fields import executeScreenSpec
+    from dartlab.scan.builders.kr.fields import executeScreenSpec, executeScreenSpecDetailed
 
     savedSpec = loadScreen(target.strip())
     if verbose:
         _log.info(f"screen({target}): 저장 스크린 실행")
-    result = executeScreenSpec(savedSpec)
+    result = executeScreenSpecDetailed(savedSpec) if explain else executeScreenSpec(savedSpec)
     if verbose:
-        _log.info(f"screen({target}): {result.shape[0]}종목")
+        count = result.get("memberCount", 0) if isinstance(result, dict) else result.shape[0]
+        _log.info(f"screen({target}): {count}종목")
     return result
 
 

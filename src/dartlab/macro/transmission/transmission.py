@@ -8,6 +8,7 @@ quality remains owned by ``Company.analysis("macro", "매크로민감도")``.
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
+from datetime import date
 from typing import Any
 
 from dartlab.macro.seriesFetch import getGather
@@ -342,6 +343,9 @@ def analyzeTransmission(
     market: str = "KR",
     *,
     sectorKey: str | None = None,
+    stockCode: str | None = None,
+    companyEvidence: list[dict[str, Any]] | None = None,
+    contextGaps: list[dict[str, Any]] | None = None,
     asOf: str | None = None,
     includeCrossMarket: bool = True,
 ) -> dict[str, Any]:
@@ -350,11 +354,14 @@ def analyzeTransmission(
     Args:
         market: Target market, currently ``KR`` or ``US``.
         sectorKey: Optional sector key filter. ``all`` edges always survive.
+        stockCode: Optional company target bound by ``Company.macro("전파")``.
+        companyEvidence: Company financial evidence rows from the public facade.
+        contextGaps: Missing company context rows collected by the facade.
         asOf: Optional date cap passed to macro series fetch.
         includeCrossMarket: If true, include US/GLOBAL drivers that can transmit into KR risk appetite.
 
     Returns:
-        dict[str, Any]: ``{market, asOf, drivers, edges, regimeEvidence, sourceRefs, missing}``.
+        dict[str, Any]: ``{market, asOf, dataAsOf, drivers, edges, product}``.
         Driver rows contain ``sourceLineage`` with ``sourceSeriesId``, ``date``, ``value``,
         ``unit``, ``artifactPath`` and ``status``. Edge rows carry ``evidenceLabel`` as
         ``OBS``/``PRIOR``/``TPL``.
@@ -393,14 +400,27 @@ def analyzeTransmission(
         if lineageMissing is not None:
             missing.append(lineageMissing)
         driverRows.append(
-            {**asdict(driver), "defaultLagMonths": list(driver.defaultLagMonths), "sourceLineage": lineage}
+            {
+                **asdict(driver),
+                "defaultLagMonths": list(driver.defaultLagMonths),
+                "sourceLineage": lineage,
+                "signal": _driverSignal(lineage),
+            }
         )
 
-    edgeRows = [_edgeRow(edge) for edge in selectedEdges if edge.driverId in driversById]
-    return {
+    driverRowsById = {row["id"]: row for row in driverRows}
+    edgeRows = [
+        _edgeRow(edge, driverRowsById.get(edge.driverId), companyEvidence or [])
+        for edge in selectedEdges
+        if edge.driverId in driversById
+    ]
+    result = {
+        "target": stockCode or f"{normalizedMarket}:{sectorKey or 'market'}",
+        "stockCode": stockCode,
         "market": normalizedMarket,
         "sectorKey": sectorKey,
-        "asOf": _latestAsOf(driverRows),
+        "asOf": asOf or date.today().isoformat(),
+        "dataAsOf": _latestAsOf(driverRows),
         "drivers": driverRows,
         "edges": edgeRows,
         "regimeEvidence": _regimeEvidence(driverRows),
@@ -411,7 +431,12 @@ def analyzeTransmission(
             "macro/{ecos,fred}/observations.parquet",
         ],
         "missing": missing,
+        "contextGaps": contextGaps or [],
     }
+    from dartlab.macro.transmission._product import buildTransmissionProduct
+
+    result["product"] = buildTransmissionProduct(result)
+    return result
 
 
 def _marketSet(market: str, *, includeCrossMarket: bool) -> set[str]:
@@ -426,7 +451,21 @@ def _sectorMatches(edge: TransmissionEdge, sectorKey: str | None) -> bool:
     return sectorKey in edge.sectorKeys
 
 
-def _edgeRow(edge: TransmissionEdge) -> dict[str, Any]:
+def _edgeRow(
+    edge: TransmissionEdge,
+    driver: dict[str, Any] | None,
+    companyEvidence: list[dict[str, Any]],
+) -> dict[str, Any]:
+    matched, matchedRequirements = _matchCompanyEvidence(edge.requiredCompanyEvidence, companyEvidence)
+    requiredCount = len(edge.requiredCompanyEvidence)
+    coverage = len(matchedRequirements) / requiredCount if requiredCount else 1.0
+    if requiredCount and coverage >= 0.5:
+        resolvedEvidenceLevel = "companyObserved"
+    elif matchedRequirements:
+        resolvedEvidenceLevel = "companyPartial"
+    else:
+        resolvedEvidenceLevel = edge.evidenceLevel
+    signal = driver.get("signal") if isinstance(driver, dict) else "missing"
     return {
         **asdict(edge),
         "sectorKeys": list(edge.sectorKeys),
@@ -436,6 +475,12 @@ def _edgeRow(edge: TransmissionEdge) -> dict[str, Any]:
         "sourceRefs": list(edge.sourceRefs),
         "evidenceLabel": _EVIDENCE_LABELS.get(edge.evidenceLevel, "LOCK"),
         "sourceRef": f"macro.transmission:edge:{edge.id}",
+        "driverSignal": signal,
+        "impactDirection": _impactDirection(signal, edge.sign),
+        "resolvedEvidenceLevel": resolvedEvidenceLevel,
+        "companyEvidenceCoverage": round(coverage, 3),
+        "matchedCompanyRequirements": matchedRequirements,
+        "companyEvidence": matched,
     }
 
 
@@ -446,6 +491,9 @@ def _sourceLineage(driver: MacroDriver, *, asOf: str | None) -> tuple[dict[str, 
         "sourceSeriesId": driver.sourceSeriesId,
         "date": None,
         "value": None,
+        "previousDate": None,
+        "previousValue": None,
+        "change": None,
         "unit": driver.unit,
         "artifactPath": artifactPath,
         "asOfPolicy": driver.requiredAsOfPolicy,
@@ -464,11 +512,24 @@ def _sourceLineage(driver: MacroDriver, *, asOf: str | None) -> tuple[dict[str, 
         latest = rows[-1]
         dateValue = latest["date"][0]
         value = latest["value"][0]
+        previousDate = None
+        previousValue = None
+        change = None
+        if len(rows) >= 2:
+            previous = rows[-2]
+            previousDate = str(previous["date"][0])[:10]
+            rawPrevious = previous["value"][0]
+            previousValue = float(rawPrevious) if rawPrevious is not None else None
+            if value is not None and previousValue is not None:
+                change = float(value) - previousValue
         return (
             {
                 **base,
                 "date": str(dateValue)[:10],
                 "value": float(value) if value is not None else None,
+                "previousDate": previousDate,
+                "previousValue": previousValue,
+                "change": change,
                 "status": "observed",
             },
             None,
@@ -488,6 +549,59 @@ def _sourceLineage(driver: MacroDriver, *, asOf: str | None) -> tuple[dict[str, 
 def _latestAsOf(driverRows: list[dict[str, Any]]) -> str | None:
     dates = [row["sourceLineage"].get("date") for row in driverRows if row.get("sourceLineage", {}).get("date")]
     return max(dates) if dates else None
+
+
+def _driverSignal(lineage: dict[str, Any]) -> str:
+    change = lineage.get("change")
+    if not isinstance(change, (int, float)) or isinstance(change, bool):
+        return "missing"
+    if change > 0:
+        return "rising"
+    if change < 0:
+        return "falling"
+    return "flat"
+
+
+def _impactDirection(signal: str, sign: str) -> str:
+    if signal not in {"rising", "falling"}:
+        return "unresolved"
+    if sign == "mixed":
+        return "twoSided"
+    positiveMove = signal == "rising"
+    if sign == "negative":
+        return "headwind" if positiveMove else "tailwind"
+    if sign == "positive":
+        return "tailwind" if positiveMove else "headwind"
+    return "unresolved"
+
+
+def _matchCompanyEvidence(
+    requirements: tuple[str, ...],
+    companyEvidence: list[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], list[str]]:
+    matchedRows: list[dict[str, Any]] = []
+    matchedRequirements: list[str] = []
+    seenRows = set()
+    for requirement in requirements:
+        normalizedRequirement = _normalizeEvidenceText(requirement)
+        for row in companyEvidence:
+            if not isinstance(row, dict):
+                continue
+            searchable = _normalizeEvidenceText(f"{row.get('id', '')} {row.get('label', '')}")
+            if not searchable:
+                continue
+            if normalizedRequirement in searchable or searchable in normalizedRequirement:
+                matchedRequirements.append(requirement)
+                rowKey = row.get("id") or row.get("sourceRef") or row.get("label")
+                if rowKey not in seenRows:
+                    seenRows.add(rowKey)
+                    matchedRows.append(row)
+                break
+    return matchedRows, matchedRequirements
+
+
+def _normalizeEvidenceText(value: str) -> str:
+    return "".join(character.lower() for character in str(value) if character.isalnum())
 
 
 def _regimeEvidence(driverRows: list[dict[str, Any]]) -> list[dict[str, Any]]:

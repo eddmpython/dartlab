@@ -1,4 +1,4 @@
-"""industry(L2) calc 함수 — 회사·섹터 단위 산업 분석.
+"""industry(L2) calc 함수 - 회사·섹터 단위 산업 분석.
 
 nodes.json + scan + macro 데이터를 조합하여 dict/숫자만 반환.
 story(L3)가 블록으로 소비한다. 해석/서사는 하지 않는다.
@@ -25,15 +25,15 @@ def calcChainPosition(company: Any) -> dict | None:
     Returns
     -------
     dict | None
-        industry : str — 산업 ID (taxonomy key)
-        industryName : str — 산업명 (한글)
-        stage : str — 공정 단계 key (예: "fabrication")
-        stageName : str — 공정명 (한글)
-        role : str — 역할 ("제조" | "도매" | "소매" | "연구" | "서비스")
-        stream : str — 가치사슬 위치 ("upstream" | "midstream" | "downstream")
-        confidence : float — 매핑 신뢰도 (0~1)
-        source : str — 매핑 소스 (예: "manual", "auto")
-        peers : list[dict] — 같은 공정의 다른 회사 최대 10 개 (confidence 내림차순)
+        industry : str - 산업 ID (taxonomy key)
+        industryName : str - 산업명 (한글)
+        stage : str - 공정 단계 key (예: "fabrication")
+        stageName : str - 공정명 (한글)
+        role : str - 역할 ("제조" | "도매" | "소매" | "연구" | "서비스")
+        stream : str - 가치사슬 위치 ("upstream" | "midstream" | "downstream")
+        confidence : float - 매핑 신뢰도 (0~1)
+        source : str - 매핑 소스 (예: "manual", "auto")
+        peers : list[dict] - 같은 공정의 다른 회사 최대 10 개 (confidence 내림차순)
         primary 노드 없거나 stage 미지정 시 None.
 
     Raises
@@ -119,6 +119,7 @@ def calcChainPosition(company: Any) -> dict | None:
         "stream": myNode.stream,
         "confidence": myNode.confidence,
         "source": myNode.source,
+        "updatedAt": myNode.updatedAt,
         "peers": peers[:10],
     }
 
@@ -137,10 +138,10 @@ def _distribution(values: list[float]) -> dict | None:
     Returns
     -------
     dict | None
-        n : int — 표본 수
-        p10/p25/median/p75/p90 : float — 백분위 (%)
-        mean : float — 평균
-        std : float — 표준편차
+        n : int - 표본 수
+        p10/p25/median/p75/p90 : float - 백분위 (%)
+        mean : float - 평균
+        std : float - 표준편차
         표본 < 3 이면 None.
     """
     cleaned = sorted(v for v in values if v is not None)
@@ -207,7 +208,7 @@ def _percentile(value: float, dist: dict) -> float | None:
 
 
 def calcSectorMetrics(company: Any) -> dict | None:
-    """동종 산업 분포 + 백분위 — OPM/CAGR/ROE 3 축 (한국 시장).
+    """동종 산업 분포 + 백분위 - OPM/CAGR/ROE 3 축 (한국 시장).
 
     Capabilities:
         scan.profitability + scan.growth 횡단면 데이터에서 동일 industry 의 모든 primary
@@ -222,15 +223,15 @@ def calcSectorMetrics(company: Any) -> dict | None:
     Returns
     -------
     dict | None
-        industryId : str — 산업 ID
-        industryName : str — 산업명
-        peerCount : int — 동종사 수
-        opmDistribution : dict — {n, p10, p25, median, p75, p90, mean, std} (%)
-        cagrDistribution : dict — 동일 구조 (%, YoY 매출 CAGR)
-        roeDistribution : dict — 동일 구조 (%)
-        myOpmPercentile : float | None — 대상 회사 OPM 백분위 (%)
-        myCagrPercentile : float | None — CAGR 백분위 (%)
-        myRoePercentile : float | None — ROE 백분위 (%)
+        industryId : str - 산업 ID
+        industryName : str - 산업명
+        peerCount : int - 동종사 수
+        opmDistribution : dict - {n, p10, p25, median, p75, p90, mean, std} (%)
+        cagrDistribution : dict - 동일 구조 (%, YoY 매출 CAGR)
+        roeDistribution : dict - 동일 구조 (%)
+        myOpmPercentile : float | None - 대상 회사 OPM 백분위 (%)
+        myCagrPercentile : float | None - CAGR 백분위 (%)
+        myRoePercentile : float | None - ROE 백분위 (%)
         scan 데이터 부재 회사는 분포 제외. 동종 3 사 미만이면 None.
 
     Raises
@@ -350,8 +351,8 @@ def calcSectorMetrics(company: Any) -> dict | None:
     }
 
 
-def calcSectorCycle(company: Any) -> dict | None:
-    """산업 사이클 판정 — 동종 OPM 중앙값 기반 확장/수축/안정.
+def calcSectorCycle(company: Any, *, sectorMetrics: dict | None = None) -> dict | None:
+    """산업 사이클 판정 - 동종 OPM 중앙값 기반 확장/수축/안정.
 
     Capabilities:
         scan.profitability 의 동종 업종 OPM 중앙값을 기준으로 사이클 phase 와 방향을 판정.
@@ -366,12 +367,12 @@ def calcSectorCycle(company: Any) -> dict | None:
     Returns
     -------
     dict | None
-        industryId : str — 산업 ID
-        industryName : str — 산업명
-        phase : str — "확장" | "수축" | "안정" (시계열 확장 시 "회복" | "정점" 추가)
-        direction : str — "개선" | "악화" | "횡보"
-        opmTrend : list[dict] — [{year, median}] (시계열 확장 시)
-        confidence : float — 판정 신뢰도 (0~1)
+        industryId : str - 산업 ID
+        industryName : str - 산업명
+        phase : str - "확장" | "수축" | "안정" (시계열 확장 시 "회복" | "정점" 추가)
+        direction : str - "개선" | "악화" | "횡보"
+        opmTrend : list[dict] - [{year, median}] (시계열 확장 시)
+        confidence : float - 판정 신뢰도 (0~1)
         동종 3 사 미만이면 None.
 
     Raises
@@ -432,27 +433,34 @@ def calcSectorCycle(company: Any) -> dict | None:
     if not ind:
         return None
 
-    # 연도별 업종 OPM 중앙값 — scan finance.parquet 직접 접근
-    try:
-        import importlib
+    metricsDist = sectorMetrics.get("opmDistribution") if isinstance(sectorMetrics, dict) else None
+    medianFromMetrics = metricsDist.get("median") if isinstance(metricsDist, dict) else None
+    if isinstance(medianFromMetrics, (int, float)) and not isinstance(medianFromMetrics, bool):
+        median_opm = float(medianFromMetrics)
+    else:
+        # 연도별 업종 OPM 중앙값 - scan finance.parquet 직접 접근
+        try:
+            import importlib
 
-        scanProfitability = importlib.import_module("dartlab.scan.financial.profitability").scanProfitability
-        prof = scanProfitability()
-    except Exception:
-        return None
+            scanProfitability = importlib.import_module("dartlab.scan.financial.profitability").scanProfitability
+            prof = scanProfitability()
+        except Exception:
+            return None
 
-    if prof.is_empty():
-        return None
+        if prof.is_empty():
+            return None
 
-    profMap = {r["stockCode"]: r for r in prof.iter_rows(named=True)}
-    peerCodes = {n.stockCode for n in nodes if n.industry == myNode.industry and n.primary}
+        profMap = {r["stockCode"]: r for r in prof.iter_rows(named=True)}
+        peerCodes = {n.stockCode for n in nodes if n.industry == myNode.industry and n.primary}
 
-    # 현재 scan 은 단일 연도만 — 시계열 미지원 시 단순 판정
-    currentOpms = [profMap[c]["opMargin"] for c in peerCodes if c in profMap and profMap[c].get("opMargin") is not None]
-    if len(currentOpms) < 3:
-        return None
+        # 현재 scan 은 단일 연도만 - 시계열 미지원 시 단순 판정
+        currentOpms = [
+            profMap[c]["opMargin"] for c in peerCodes if c in profMap and profMap[c].get("opMargin") is not None
+        ]
+        if len(currentOpms) < 3:
+            return None
 
-    median_opm = sorted(currentOpms)[len(currentOpms) // 2]
+        median_opm = sorted(currentOpms)[len(currentOpms) // 2]
 
     # 단순 판정 (시계열 데이터 없을 때 현재값 기반)
     if median_opm > 10:
@@ -491,13 +499,13 @@ def calcSectorDynamics(company: Any, *, macroPhase: str | None = None) -> dict |
     Returns
     -------
     dict | None
-        industryId : str — 산업 ID
-        industryName : str — 산업명
-        tailwind : list[str] — 순풍 요인 (예: ["경기 회복기", "수출 호조"])
-        headwind : list[str] — 역풍 요인 (예: ["금리 상승", "원자재 비용"])
-        macroPhase : str — 입력 그대로 (또는 "미확인")
-        cycleSensitivity : str — "high" | "moderate" | "defensive"
-        summary : str — "{업종}: {요인1} · {요인2} → 순풍/역풍"
+        industryId : str - 산업 ID
+        industryName : str - 산업명
+        tailwind : list[str] - 순풍 요인 (예: ["경기 회복기", "수출 호조"])
+        headwind : list[str] - 역풍 요인 (예: ["금리 상승", "원자재 비용"])
+        macroPhase : str - 입력 그대로 (또는 "미확인")
+        cycleSensitivity : str - "high" | "moderate" | "defensive"
+        summary : str - "{업종}: {요인1} · {요인2} → 순풍/역풍"
         매핑 실패 시 None.
 
     Raises
@@ -580,7 +588,7 @@ def calcSectorDynamics(company: Any, *, macroPhase: str | None = None) -> dict |
     else:
         sensitivity = "moderate"
 
-    # 매크로 국면 — 외부 주입 (None 이면 "미확인" fallback)
+    # 매크로 국면 - 외부 주입 (None 이면 "미확인" fallback)
     phase = macroPhase if macroPhase else "미확인"
 
     # 순풍/역풍 규칙 기반 판정
@@ -589,15 +597,15 @@ def calcSectorDynamics(company: Any, *, macroPhase: str | None = None) -> dict |
 
     if phase in ("회복", "확장"):
         if sensitivity == "high":
-            tailwind.append("경기 회복기 — 경기민감 업종 수혜")
+            tailwind.append("경기 회복기 - 경기민감 업종 수혜")
         elif sensitivity == "moderate":
-            tailwind.append("경기 확장기 — 완만한 수혜")
+            tailwind.append("경기 확장기 - 완만한 수혜")
         # defensive 는 경기와 무관
     elif phase in ("둔화", "침체"):
         if sensitivity == "high":
-            headwind.append("경기 둔화 — 경기민감 업종 직격")
+            headwind.append("경기 둔화 - 경기민감 업종 직격")
         elif sensitivity == "defensive":
-            tailwind.append("경기 방어주 — 상대적 안정")
+            tailwind.append("경기 방어주 - 상대적 안정")
 
     # 요약 문장
     wind = "순풍" if len(tailwind) > len(headwind) else "역풍" if len(headwind) > len(tailwind) else "중립"

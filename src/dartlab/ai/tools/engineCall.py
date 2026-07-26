@@ -33,7 +33,7 @@ _AUTO_GATHER_ENABLED = os.environ.get("DARTLAB_AUTO_GATHER", "1") not in {"0", "
 _PERIOD_RE = re.compile(r"^\d{4}(?:Q[1-4])?$")
 _STMT_LABELS = {"BS": "재무상태표", "IS": "손익계산서", "CF": "현금흐름표"}
 # 컬럼 alias SSOT 는 dartlab.ai.tools.columnAlias 에 있다. 여기서는 priority list 만
-# 호환 dict 로 변환해 사용 — IS/CF/BS 5+ 표준 컬럼 + 한국어 label.
+# 호환 dict 로 변환해 사용 - IS/CF/BS 5+ 표준 컬럼 + 한국어 label.
 from .columnAlias import topicAccountPriority as _topicAccountPriority
 
 _ACCOUNT_PRIORITY = {
@@ -53,7 +53,7 @@ def engineCall(plan: dict[str, Any] | None = None, **kwargs: Any) -> ToolResult:
         return ToolResult(False, "apiRef를 확인하지 못했습니다.", error="missing_api_ref")
     if apiRef.startswith("_") or "._" in apiRef or "internal" in apiRef.lower():
         return ToolResult(False, f"private/internal API는 차단됩니다: {apiRef}", error="private_api_blocked")
-    # alias 정규화 — `dartlab.scan` → `scan`, `dartlab.capabilities` → `capabilities`,
+    # alias 정규화 - `dartlab.scan` → `scan`, `dartlab.capabilities` → `capabilities`,
     # `scan.growth` → `scan` (axis="growth" 흡수). CAPABILITIES 에는 canonical form 만 있어서
     # 정규화 없이 capability check 가 unreachable 핸들러 (line ~ scan/capabilities) 차단했던 회귀.
     apiRef = _aliasToCanonical(apiRef, call_plan)
@@ -98,7 +98,7 @@ _RESERVED_PLAN_KEYS = frozenset({"apiRef", "engine", "method", "target", "stockC
 
 
 def _normalizeArgsDict(plan: dict[str, Any]) -> None:
-    """ToolSpec schema 가 args 를 dict 로 정의 — 모델 양식 그대로 flatten.
+    """ToolSpec schema 가 args 를 dict 로 정의 - 모델 양식 그대로 flatten.
 
     LLM 표준 호출: `{"apiRef": "Company.panel", "args": {"stockCode": "005930", "topic": "IS"}}`.
     이전 핸들러들은 `plan["args"]` 를 list 로 가정 (옛 형식) → dict 면 `list(dict)` 가 *키* 만
@@ -117,7 +117,7 @@ def _normalizeArgsDict(plan: dict[str, Any]) -> None:
     for key, value in raw.items():
         # plan root 에 이미 명시된 키는 우선 (옛 호환). 그 외 setdefault 로 흡수.
         plan.setdefault(key, value)
-        # method args/kwargs 로 전달할 키만 kwargs 에 — apiRef/engine/method/target/args 등 제외.
+        # method args/kwargs 로 전달할 키만 kwargs 에 - apiRef/engine/method/target/args 등 제외.
         if key not in _RESERVED_PLAN_KEYS:
             existing_kwargs.setdefault(key, value)
     plan["args"] = []
@@ -126,7 +126,7 @@ def _normalizeArgsDict(plan: dict[str, Any]) -> None:
 
 def _apiRef(plan: dict[str, Any]) -> str:
     raw = str(plan.get("apiRef") or "").strip()
-    # 방어적 파서 — 모델이 'Company.panel TSLA IS freq=Q' 처럼 인자까지 apiRef 에 합쳐
+    # 방어적 파서 - 모델이 'Company.panel TSLA IS freq=Q' 처럼 인자까지 apiRef 에 합쳐
     # 보내는 회귀 케이스. 첫 토큰을 apiRef 로, 나머지는 args/kwargs 로 흡수.
     if raw and " " in raw:
         parts = raw.split()
@@ -198,17 +198,17 @@ def _aliasToCanonical(apiRef: str, plan: dict[str, Any]) -> str:
 
 
 def _companyShow(plan: dict[str, Any]) -> ToolResult:
-    """Company.panel — 5 책임 분할 (topic 해결 / company 해결 / table fetch / refs / data)."""
+    """Company.panel - 5 책임 분할 (topic 해결 / company 해결 / table fetch / refs / data)."""
     target = str(plan.get("target") or plan.get("stockCode") or "").strip()
     topic = _resolveTopic(plan)
     if topic not in _STMT_LABELS:
-        # 공개 show 은퇴 — docs/report 토픽은 panel facade 로 (finance/report 주입 + raw 검색).
+        # 공개 show 은퇴 - docs/report 토픽은 panel facade 로 (finance/report 주입 + raw 검색).
         return _genericCompanyMethod("panel", target, [topic], {})
     company = _resolveCompany(target or str(plan.get("question") or ""))
     if company is None:
         return ToolResult(
             False,
-            "stockCode 누락 — EngineCall 호출 시 args dict 안에 stockCode 를 반드시 포함. 예: "
+            "stockCode 누락 - EngineCall 호출 시 args dict 안에 stockCode 를 반드시 포함. 예: "
             '{"apiRef":"Company.panel","args":{"stockCode":"005930","topic":"IS"}} '
             "(plan root 가 아닌 args 안에).",
             error="company_not_resolved",
@@ -219,7 +219,7 @@ def _companyShow(plan: dict[str, Any]) -> ToolResult:
     if not isinstance(table, pl.DataFrame) or table.height == 0:
         msg = f"{companyName or stockCode} {topic} 데이터를 찾지 못했습니다."
         if autoGatherUsed:
-            msg += " (자동 update 후에도 빈 결과 — 미공시 분기 또는 폐상장 가능성)."
+            msg += " (자동 update 후에도 빈 결과 - 미공시 분기 또는 폐상장 가능성)."
         return ToolResult(False, msg, error="empty_result")
     summary = _summarizeStatement(topic, table)
     if not summary:
@@ -256,9 +256,9 @@ def _fetchTableWithAutoGather(company: Any, topic: str) -> tuple[pl.DataFrame | 
 def _buildShowRefs(stockCode: str, companyName: str, topic: str, summary: dict[str, Any], company: Any) -> list[Ref]:
     """tableRef + valueRef × n + dateRef + (선택) creditRef. enrich closure 가 docRef + confidence + provenance 부착.
 
-    creditRef 신규 — dcrBadge.axes (7축 신용 점수) 가 Company.panel 의 부수 data 라 옛 코드는
+    creditRef 신규 - dcrBadge.axes (7축 신용 점수) 가 Company.panel 의 부수 data 라 옛 코드는
     별도 ref 없이 data 만 노출. 답안 작성 시 "신용 7축" 류 질문에 IS tableRef 부적합 인용 회귀.
-    creditRef 발행으로 시맨틱 정합 — `[evidenceRef:creditRef:credit:005930:dcr:axes]` 인용 가능.
+    creditRef 발행으로 시맨틱 정합 - `[evidenceRef:creditRef:credit:005930:dcr:axes]` 인용 가능.
     """
     filingMap = buildPeriodToFiling(company)
     latestPeriod = summary["latestPeriod"]
@@ -376,7 +376,7 @@ def _buildIndustryRef(stockCode: str, companyName: str, company: Any) -> Ref | N
 def _showSummaryMessage(
     companyName: str, stockCode: str, topic: str, summary: dict[str, Any], autoGatherUsed: bool
 ) -> str:
-    """tool result summary 문자열 — 기간 range + auto-gather 표기."""
+    """tool result summary 문자열 - 기간 range + auto-gather 표기."""
     periods = summary.get("periods") or [summary["latestPeriod"]]
     periodLabel = f"{periods[-1]}~{periods[0]} ({len(periods)} 분기)" if len(periods) > 1 else periods[0]
     msg = f"{companyName or stockCode} {_STMT_LABELS[topic]} {periodLabel} 확인"
@@ -393,7 +393,7 @@ def _buildShowData(
     summary: dict[str, Any],
     autoGatherUsed: bool,
 ) -> dict[str, Any]:
-    """ToolResult.data — 호출자 종합 페이로드 (summary + markdown + dcr/industry badge)."""
+    """ToolResult.data - 호출자 종합 페이로드 (summary + markdown + dcr/industry badge)."""
     data: dict[str, Any] = {
         "companyName": companyName,
         "stockCode": stockCode,
@@ -416,7 +416,7 @@ def _tryAutoUpdate(company: Any, category: str) -> bool:
     """company.update(categories=[category]) 자동 호출. 예외/지연 발생 시 False.
 
     실패 정책: 어떤 예외든 잡아서 False 반환 (호출자가 기존 empty_result 처리).
-    DART API 호출이라 5~30s 소요 가능 — 환경에 따라 timeout 보호 필요 시 별도 thread/signal.
+    DART API 호출이라 5~30s 소요 가능 - 환경에 따라 timeout 보호 필요 시 별도 thread/signal.
     """
     if not hasattr(company, "update"):
         return False
@@ -432,16 +432,31 @@ def _tryAutoUpdate(company: Any, category: str) -> bool:
 
 
 def _scan(plan: dict[str, Any]) -> ToolResult:
-    axis = str(plan.get("axis") or plan.get("target") or (plan.get("args") or [""])[0] or "").strip() or "growth"
+    rawArgs = list(plan.get("args") or [])
+    explicitAxis = plan.get("axis")
+    axis = str(explicitAxis or plan.get("target") or (rawArgs[0] if rawArgs else "") or "").strip() or "growth"
+    target = None
+    if explicitAxis:
+        target = plan.get("target") or plan.get("metric") or (rawArgs[0] if rawArgs else None)
+    elif plan.get("metric"):
+        target = plan.get("metric")
+    callKwargs = dict(plan.get("kwargs") or {})
+    for reserved in ("axis", "target", "metric", "apiRef", "stockCode", "question"):
+        callKwargs.pop(reserved, None)
+    for key in ("spec", "explain", "market", "source", "universe"):
+        if key in plan:
+            callKwargs[key] = plan[key]
     import dartlab
 
     # 회귀 가드: CAPABILITIES 에는 `scan.industry` 등이 있지만 underlying `dartlab.scan(axis)` 가
     # 다른 axis 어휘를 쓰면 ValueError → uncaught traceback 노출. try/except 로 친절한 에러.
     try:
         with _quietExecutionNoise():
-            result = dartlab.scan(axis)
-    except (ValueError, KeyError) as exc:
+            result = dartlab.scan(axis, target, **callKwargs)
+    except (ValueError, KeyError, TypeError) as exc:
         return ToolResult(False, f"dartlab.scan('{axis}') 실행 실패: {exc}", error="invalid_scan_axis")
+    if isinstance(result, dict):
+        return _resultToRefs(f"scan.{axis}", result, target=str(target or ""))
     if not isinstance(result, pl.DataFrame) or result.height == 0:
         return ToolResult(False, f"dartlab.scan('{axis}') 결과가 비어 있습니다.", error="empty_scan")
     if axis.lower() == "growth" or "성장" in axis:
@@ -568,7 +583,7 @@ def _publicCapabilityKey(key: str) -> bool:
 
 def _publicCapabilitySummary(value: Any) -> str:
     text = str(value or "").splitlines()[0]
-    text = text.replace(" — 내부 구현", "").replace("(내부 구현)", "").replace("**", "")
+    text = text.replace(" - 내부 구현", "").replace("(내부 구현)", "").replace("**", "")
     return text[:180]
 
 
@@ -625,14 +640,17 @@ def _resultToRefs(apiRef: str, result: Any, *, target: str = "") -> ToolResult:
         )
     if isinstance(result, dict | list | tuple) or is_dataclass(result):
         payload = _jsonableResult(result)
-        ref = Ref(
-            id=f"execution:{apiRef}:{target or 'result'}",
-            kind="executionRef",
-            title=f"{apiRef} result",
-            source=apiRef,
-            payload={"result": payload, "preview": str(payload)[:4000]},
-        )
-        return ToolResult(True, f"{apiRef} 실행 완료", refs=[ref], data={"result": payload})
+        refs = [
+            Ref(
+                id=f"execution:{apiRef}:{target or 'result'}",
+                kind="executionRef",
+                title=f"{apiRef} result",
+                source=apiRef,
+                payload={"result": payload, "preview": str(payload)[:4000]},
+            )
+        ]
+        refs.extend(_lensRefs(apiRef, payload, target=target))
+        return ToolResult(True, f"{apiRef} 실행 완료", refs=refs, data={"result": payload})
     ref = Ref(
         id=f"execution:{apiRef}:{target or 'result'}",
         kind="executionRef",
@@ -665,8 +683,7 @@ def _jsonableResult(value: Any, _depth: int = 0) -> Any:
             "previewRowCount": preview.height,
             "columns": list(value.columns),
             "schema": [
-                {"name": name, "dtype": str(dtype)}
-                for name, dtype in zip(value.columns, value.dtypes, strict=True)
+                {"name": name, "dtype": str(dtype)} for name, dtype in zip(value.columns, value.dtypes, strict=True)
             ],
             "rows": [_jsonableResult(row, _depth + 1) for row in preview.to_dicts()],
             "previewTruncated": value.height > preview.height,
@@ -690,6 +707,89 @@ def _jsonableResult(value: Any, _depth: int = 0) -> Any:
     if is_dataclass(value) and not isinstance(value, type):
         return {field.name: _jsonableResult(getattr(value, field.name), _depth + 1) for field in fields(value)}
     return str(value)
+
+
+def _lensRefs(apiRef: str, payload: Any, *, target: str) -> list[Ref]:
+    """Lens Product의 직접 결론과 시간 경계를 근거 ref로 만든다."""
+    refs: list[Ref] = []
+    for engine, product in _findLensProducts(payload):
+        identity = product.get("identity") if isinstance(product.get("identity"), dict) else {}
+        conclusion = product.get("conclusion") if isinstance(product.get("conclusion"), dict) else {}
+        confidence = product.get("confidence") if isinstance(product.get("confidence"), dict) else {}
+        time = product.get("time") if isinstance(product.get("time"), dict) else {}
+        refTarget = str(identity.get("target") or target or "result")
+        axis = str(identity.get("axis") or "representative")
+        stem = _refStem(refTarget, engine, axis)
+        refs.append(
+            Ref(
+                id=f"value:{stem}:conclusion",
+                kind="valueRef",
+                title=f"{engine} 대표 판단",
+                source=apiRef,
+                payload={
+                    "engine": engine,
+                    "target": refTarget,
+                    "axis": axis,
+                    "status": product.get("status"),
+                    "label": conclusion.get("label"),
+                    "summary": conclusion.get("summary"),
+                    "confidence": confidence.get("score"),
+                    "confidenceLevel": confidence.get("level"),
+                    "confidenceMethod": confidence.get("method"),
+                },
+            )
+        )
+        refs.append(
+            Ref(
+                id=f"date:{stem}:boundary",
+                kind="dateRef",
+                title=f"{engine} 기준시점",
+                source=apiRef,
+                payload={
+                    "engine": engine,
+                    "asOf": time.get("asOf"),
+                    "dataAsOf": time.get("dataAsOf"),
+                    "period": time.get("period"),
+                    "knowledgeBoundary": time.get("knowledgeBoundary"),
+                },
+            )
+        )
+    return refs
+
+
+def _findLensProducts(payload: Any) -> list[tuple[str, dict[str, Any]]]:
+    if not isinstance(payload, dict):
+        return []
+    candidates: list[dict[str, Any]] = []
+    direct = payload.get("product")
+    if isinstance(direct, dict):
+        candidates.append(direct)
+
+    for key in ("products", "lensProducts"):
+        value = payload.get(key)
+        if not isinstance(value, dict):
+            continue
+        productMap = value.get("products") if isinstance(value.get("products"), dict) else value
+        candidates.extend(row for row in productMap.values() if isinstance(row, dict))
+
+    rows: list[tuple[str, dict[str, Any]]] = []
+    seen: set[tuple[str, str, str]] = set()
+    for product in candidates:
+        identity = product.get("identity") if isinstance(product.get("identity"), dict) else {}
+        engine = str(identity.get("engine") or "")
+        if engine not in {"analysis", "credit", "industry", "quant", "macro"}:
+            continue
+        key = (engine, str(identity.get("target") or ""), str(identity.get("axis") or ""))
+        if key in seen:
+            continue
+        seen.add(key)
+        rows.append((engine, product))
+    return rows
+
+
+def _refStem(*parts: str) -> str:
+    value = ":".join(str(part) for part in parts)
+    return re.sub(r"[^0-9A-Za-z가-힣_.:-]+", "_", value).strip("_:") or "lens"
 
 
 def _resolveCompany(target: str):
@@ -748,7 +848,7 @@ def _findPriorityRows(statement: str, table: pl.DataFrame, periods: list[str]) -
     """priority list (IS 8 · BS 10 · CF 8) 순회 한 번. 매칭된 row 의 모든 period 값 보존.
 
     SSOT: _projectLatest / _projectTimeseries 가 같은 데이터를 두 형태로 가공. priority 순회 2번
-    중복 (옛 _selectRows + _selectTimeseries) 제거. 모든 period 가 None 인 row 만 skip — 한 period
+    중복 (옛 _selectRows + _selectTimeseries) 제거. 모든 period 가 None 인 row 만 skip - 한 period
     이라도 값 있으면 보존 (latest None 이면 _projectLatest 에서 제외, timeseries 는 유지).
     """
     if "snakeId" not in table.columns:

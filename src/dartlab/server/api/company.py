@@ -44,7 +44,7 @@ def _panelTextWide(company):
 
 @router.get("/api/search")
 def apiSearch(q: str = Query(..., min_length=1)):
-    """종목 검색 — 회사명 substring + KIND 주요제품 substring 합집합. 둘 다 0 이면 fuzzy.
+    """종목 검색 - 회사명 substring + KIND 주요제품 substring 합집합. 둘 다 0 이면 fuzzy.
 
     "HBM" → SK하이닉스, "메모리" → 삼성전자/SK하이닉스 등 *제품 키워드* 로
     회사 찾기 지원. KIND parquet 의 `주요제품` 컬럼이 SSOT (kindlist 1 회 룩업).
@@ -57,7 +57,7 @@ def apiSearch(q: str = Query(..., min_length=1)):
         df = dartlab.searchName(q)
         name_rows = df.to_dicts() if len(df) > 0 else []
 
-        # 2. 주요제품 substring — KIND listing parquet 의 `주요제품` 컬럼.
+        # 2. 주요제품 substring - KIND listing parquet 의 `주요제품` 컬럼.
         #    회사명 매칭에 못 잡힌 회사만 추가 (dedup by 종목코드).
         product_rows: list[dict] = []
         try:
@@ -114,7 +114,7 @@ def _findBlogPosts(stockCode: str) -> list[dict[str, str]]:
     발간 판정: frontmatter 의 `title` + `date` + `category: company-reports` 박혀있으면 발간.
     URL 우선순위:
       1. frontmatter publishedUrl / permalink / url (http 시작)
-      2. fallback — landing route `/blog/{slug}` 추정 URL (NN-CODE-{slug} 의 slug 부분).
+      2. fallback - landing route `/blog/{slug}` 추정 URL (NN-CODE-{slug} 의 slug 부분).
     """
     from pathlib import Path
 
@@ -134,7 +134,7 @@ def _findBlogPosts(stockCode: str) -> list[dict[str, str]]:
             continue
         # landing route /blog/[slug] 의 slug 형식은 `CODE-slug` (예: 000660-skhynix).
         # landing src/routes/blog/[slug]/+page.ts normalizePath 와 일치.
-        # backend 가 `skhynix` 단독으로 보내면 landing 에서 404 — 회귀 차단 (2026-05-19).
+        # backend 가 `skhynix` 단독으로 보내면 landing 에서 404 - 회귀 차단 (2026-05-19).
         slug = f"{parts[1]}-{parts[2]}"
         md = None
         for candidate in ("index.md", "page.md", "README.md"):
@@ -174,10 +174,10 @@ def _findBlogPosts(stockCode: str) -> list[dict[str, str]]:
                         if v.startswith("http"):
                             published_url = v
                         break
-        # 발간 판정 — title + date + company-reports 카테고리.
+        # 발간 판정 - title + date + company-reports 카테고리.
         if not (title and has_date and category == "company-reports"):
             continue
-        # URL 결정 — frontmatter publishedUrl 우선, 없으면 추정.
+        # URL 결정 - frontmatter publishedUrl 우선, 없으면 추정.
         url = published_url or f"{_BLOG_BASE_URL}/{slug}"
         posts.append({"title": title, "slug": slug, "url": url})
     return posts
@@ -209,7 +209,7 @@ def _findCorpMeta(stockCode: str) -> dict[str, str]:
                 return out
     except Exception:  # noqa: BLE001
         pass
-    # fallback — listing() 전수에서 종목코드 직접 매칭.
+    # fallback - listing() 전수에서 종목코드 직접 매칭.
     try:
         df = dartlab.listing()
         if isEmptyDf(df):
@@ -231,7 +231,7 @@ _PRODUCT_TAG_BLOCKLIST = {"전자공시", "투자", "주식", "재무제표", "�
 
 
 def _findProductsFromBlog(stockCode: str) -> list[str]:
-    """blog frontmatter tags 에서 제품 후보 추출 — 회사명/종목코드/blocklist 제외.
+    """blog frontmatter tags 에서 제품 후보 추출 - 회사명/종목코드/blocklist 제외.
 
     _PRODUCT_MAP 미커버 회사 fallback. tags 의 첫 N 개 (회사명/종목코드 제외).
     """
@@ -293,7 +293,7 @@ def _findProductsFromBlog(stockCode: str) -> list[str]:
         for t in tags:
             if t == code_pad or t in _PRODUCT_TAG_BLOCKLIST:
                 continue
-            # 회사명 후보 (보통 첫 tag, 한글) 제외 — frontmatter 의 corpName 매칭 시 skip.
+            # 회사명 후보 (보통 첫 tag, 한글) 제외 - frontmatter 의 corpName 매칭 시 skip.
             if "corpName:" in fm:
                 # rough: corpName 줄 추출.
                 for line in fm.splitlines():
@@ -312,8 +312,8 @@ def _findProductsFromBlog(stockCode: str) -> list[str]:
     return []
 
 
-# 주요 회사 제품 mock map — 사업보고서 "주요제품" 추출 자동화 전 임시.
-# P-DASH-V1 D14 — 헤더 라벨 가시화 목적. 실제 추출은 후속 PR.
+# 주요 회사 제품 mock map - 사업보고서 "주요제품" 추출 자동화 전 임시.
+# P-DASH-V1 D14 - 헤더 라벨 가시화 목적. 실제 추출은 후속 PR.
 _PRODUCT_MAP: dict[str, list[str]] = {
     "005930": ["메모리", "디스플레이", "파운드리", "스마트폰"],
     "000660": ["DRAM", "NAND", "HBM"],
@@ -332,10 +332,10 @@ _PRODUCT_MAP: dict[str, list[str]] = {
 
 @router.get("/api/company/{code}/meta")
 def apiCompanyMeta(code: str):
-    """회사 헤더 확장 메타 — corpName + 시장 + 섹터 + 제품 + 블로그 글.
+    """회사 헤더 확장 메타 - corpName + 시장 + 섹터 + 제품 + 블로그 글.
 
     kindlist parquet 단일 룩업만으로 응답 (Company.rawFinance collect 우회).
-    회사 페이지 진입 시 부모 layout 의 corpName 도 본 endpoint 가 SSOT —
+    회사 페이지 진입 시 부모 layout 의 corpName 도 본 endpoint 가 SSOT -
     회사명 한 글자 받자고 `/api/viz/dashboard/{code}` 전체 빌드하던 회귀 차단
     (P-DASH-V2, 2026-05-19).
 
@@ -376,6 +376,23 @@ def apiCompany(code: str):
         raise HTTPException(status_code=404, detail=guideDetail(exc)) from exc
 
 
+@router.get("/api/company/{code}/lenses")
+def apiCompanyLenses(code: str) -> dict[str, Any]:
+    """다섯 대표 렌즈의 검증된 product bundle을 반환한다."""
+    try:
+        company = get_company(code)
+        from dartlab.story.lensProducts import collectLensProducts, publicLensBundle
+        from dartlab.synth.lensContract import validatePublicLensBundle
+
+        bundle = publicLensBundle(collectLensProducts(company))
+        if bundle is None:
+            raise ValueError("공개 lens bundle을 만들 수 없습니다.")
+        validatePublicLensBundle(bundle)
+        return bundle
+    except HANDLED_API_ERRORS as exc:
+        raise HTTPException(status_code=404, detail=guideDetail(exc)) from exc
+
+
 @router.get("/api/company/{code}/index")
 def apiCompanyIndex(code: str, request: Request, response: Response):
     """회사 데이터 구조 인덱스 DataFrame."""
@@ -397,9 +414,9 @@ def apiCompanyInit(
     request: Request,
     response: Response = None,
 ):
-    """SPA 초기 로드 번들 — panel toc + 첫 절(sectionLeaf) full-period grid.
+    """SPA 초기 로드 번들 - panel toc + 첫 절(sectionLeaf) full-period grid.
 
-    grid 는 전체 기간 (frontend 가 window slice + 인접셀 diff 수행) — 백엔드 계산 0.
+    grid 는 전체 기간 (frontend 가 window slice + 인접셀 diff 수행) - 백엔드 계산 0.
     """
     try:
         company = getCompany(code)
@@ -441,10 +458,10 @@ def apiCompanyToc(
     request: Request,
     response: Response = None,
 ):
-    """목차(TOC) — panel 의 chapter > sectionLeaf > blockLeaf 트리.
+    """목차(TOC) - panel 의 chapter > sectionLeaf > blockLeaf 트리.
 
     panel 이 SPINE 정렬·라벨링 SSOT 이므로 재정렬 0. diff(hasChanges)는 frontend
-    인접셀 비교로 이전 — 백엔드 계산 없음.
+    인접셀 비교로 이전 - 백엔드 계산 없음.
     """
     try:
         company = getCompany(code)
@@ -459,20 +476,20 @@ def apiCompanyPanel(
     code: str,
     request: Request,
     section: str | None = Query(
-        None, description="sectionKey ({chapter}␟{sectionLeaf}) — 한 절 grid. 생략 시 전체 격자."
+        None, description="sectionKey ({chapter}␟{sectionLeaf}) - 한 절 grid. 생략 시 전체 격자."
     ),
     periods: str | None = Query(
         None, description="comma-separated 표시 기간 (최신좌측). 생략 시 전체 기간 (full-period)."
     ),
-    block: str | None = Query(None, description="blockLeaf — 그 항목 행만 (주석 등 세분 단위). 생략 시 절 전체."),
+    block: str | None = Query(None, description="blockLeaf - 그 항목 행만 (주석 등 세분 단위). 생략 시 절 전체."),
     response: Response = None,
 ):
-    """panel 의 한 절(section)/항목(block) grid — 항목 × 기간 wide (viewer 본문).
+    """panel 의 한 절(section)/항목(block) grid - 항목 × 기간 wide (viewer 본문).
 
     section: sectionKey ({chapter}␟{sectionLeaf}). 생략 시 전체 격자.
-    block: blockLeaf — 주석처럼 세분된 한 항목만 (뭉텅이 스크롤 대신 항목 단위 수평 격자).
+    block: blockLeaf - 주석처럼 세분된 한 항목만 (뭉텅이 스크롤 대신 항목 단위 수평 격자).
     periods: 표시 window (예 "2026Q1,2025Q4,2025Q3"). 생략 시 전체 기간.
-    diff/timeline 은 frontend (인접셀 비교 + window slice) — 백엔드 계산 0.
+    diff/timeline 은 frontend (인접셀 비교 + window slice) - 백엔드 계산 0.
     """
     try:
         company = getCompany(code)
@@ -499,7 +516,7 @@ def apiViewerDoc(
     compare: str | None = Query(None),
     response: Response = None,
 ):
-    """panel text 기반 신구대조 뷰어 — viewer() dict 반환."""
+    """panel text 기반 신구대조 뷰어 - viewer() dict 반환."""
     try:
         company = getCompany(code)
         sec = _panelTextWide(company)
@@ -580,10 +597,10 @@ async def apiParseRawTable(code: str, topic: str, blockIdx: int):
 
 @router.get("/api/company/{code}/show/{topic}")
 def apiCompanyShow(code: str, topic: str, block: int | None = Query(None), raw: bool = Query(False)):
-    """topic payload 조회 — show(topic) API 대응."""
+    """topic payload 조회 - show(topic) API 대응."""
     try:
         company = getCompany(code)
-        # block(docs 블록 인덱스)은 panel 미지원 — 무시. raw→tag(원본 XML, raw 공시 검색 한정).
+        # block(docs 블록 인덱스)은 panel 미지원 - 무시. raw→tag(원본 XML, raw 공시 검색 한정).
         result = company.panel(topic, tag=raw)
         return {
             "stockCode": company.stockCode,
@@ -598,7 +615,7 @@ def apiCompanyShow(code: str, topic: str, block: int | None = Query(None), raw: 
 
 @router.get("/api/company/{code}/trace/{topic}")
 def apiCompanyTrace(code: str, topic: str):
-    """source provenance 조회 — trace(topic) API 대응."""
+    """source provenance 조회 - trace(topic) API 대응."""
     try:
         company = getCompany(code)
         return {
@@ -716,7 +733,7 @@ def apiCompanyInsights(code: str):
 
 @router.get("/api/company/{code}/network")
 def apiCompanyNetwork(code: str, hops: int = 1):
-    """관계사 네트워크 그래프 — ego 중심 N-hop."""
+    """관계사 네트워크 그래프 - ego 중심 N-hop."""
     hops = max(1, min(hops, 3))
     try:
         company = getCompany(code)
@@ -795,12 +812,12 @@ def apiCompanyScan(code: str, axis: str):
 
 @router.get("/api/company/{code}/scan/position")
 def apiCompanyScanPosition(code: str):
-    """6-Axis 전체 포지션 요약 — 사전 빌드 스냅샷 기반."""
+    """6-Axis 전체 포지션 요약 - 사전 빌드 스냅샷 기반."""
     from dartlab.scan.builders.kr.snapshot import getScanPosition
 
     position = getScanPosition(code)
     if position is None:
-        raise HTTPException(status_code=404, detail="scan 스냅샷 없음 — buildScanSnapshot() 선행 필요")
+        raise HTTPException(status_code=404, detail="scan 스냅샷 없음 - buildScanSnapshot() 선행 필요")
 
     return {
         "stockCode": code,
@@ -811,7 +828,7 @@ def apiCompanyScanPosition(code: str):
 
 @router.get("/api/company/{code}/insights/unified")
 def apiCompanyInsightsUnified(code: str):
-    """통합 인사이트 — 등급 + 스캔 + 피어 결합."""
+    """통합 인사이트 - 등급 + 스캔 + 피어 결합."""
     try:
         company = getCompany(code)
     except HANDLED_API_ERRORS as exc:

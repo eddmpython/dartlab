@@ -1,4 +1,4 @@
-"""_AXIS_REGISTRY 부분 A — 1~3 부 (수익구조 ~ 재무정합성)."""
+"""_AXIS_REGISTRY 부분 A - 1~3 부 (수익구조 ~ 재무정합성)."""
 
 from __future__ import annotations
 
@@ -176,6 +176,12 @@ _AXES_A: dict[str, _AxisEntry] = {
             _CalcEntry("calcScorecard", "dartlab.analysis.financial.scorecard", "scorecard", "재무 스코어카드"),
             _CalcEntry("calcPiotroskiDetail", "dartlab.analysis.financial.scorecard", "piotroski", "Piotroski F-Score"),
             _CalcEntry("calcSummaryFlags", "dartlab.analysis.financial.scorecard", "summaryFlags", "종합 플래그"),
+            _CalcEntry(
+                "calcRepresentativeAnalysis",
+                "dartlab.analysis.financial.representative",
+                "representative",
+                "대표 재무 판단",
+            ),
         ),
     ),
     "이익품질": _AxisEntry(
@@ -206,7 +212,7 @@ _AXES_A: dict[str, _AxisEntry] = {
                 "calcQualityAnomalies",
                 "dartlab.analysis.financial.earningsQuality",
                 "qualityAnomalies",
-                "Phase 7 — Damodaran Ch.4 회계 품질 이상치 (Beneish + Sloan + 5 카테고리 + 감사보고서 docs)",
+                "Phase 7 - Damodaran Ch.4 회계 품질 이상치 (Beneish + Sloan + 5 카테고리 + 감사보고서 docs)",
             ),
             _CalcEntry(
                 "calcRichardsonAccrual",
@@ -340,5 +346,5 @@ _AXES_A: dict[str, _AxisEntry] = {
             ),
         ),
     ),
-    # 신용평가는 독립 엔진 (c.credit()) — analysis 축에서 제거
+    # 신용평가는 독립 엔진 (c.credit()) - analysis 축에서 제거
 }

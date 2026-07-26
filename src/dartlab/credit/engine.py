@@ -65,7 +65,7 @@ def _isFinancial(company) -> bool:
 
 
 def _isHolding(company) -> bool:
-    """지주사 판별 — 이름 + 재무 구조 복합 기준.
+    """지주사 판별 - 이름 + 재무 구조 복합 기준.
 
     1. 이름에 "지주"/"홀딩스"/"Holdings" 포함
     2. 관계기업투자자산/총자산 > holding_investment_ratio (재무 구조 기반)
@@ -108,7 +108,7 @@ def _isCyclical(sector) -> bool:
 
 
 def _isCaptiveFinance(totalBorrowing: float, ebitda: float | None, isFinancial: bool) -> bool:
-    """캡티브 금융 감지 — D/EBITDA > 15."""
+    """캡티브 금융 감지 - D/EBITDA > 15."""
     if isFinancial or ebitda is None or ebitda <= 0 or totalBorrowing <= 0:
         return False
     return totalBorrowing / ebitda > 15
@@ -141,7 +141,13 @@ def _isCaptiveByOFS(company, consolidatedBorrowing: float) -> bool:
 # ═══════════════════════════════════════════════════════════
 
 
-def evaluate(stockCode: str, *, detail: bool = False, basePeriod: str | None = None) -> dict | None:
+def evaluate(
+    stockCode: str,
+    *,
+    detail: bool = False,
+    basePeriod: str | None = None,
+    overrides: dict | None = None,
+) -> dict | None:
     """신용등급 산출 메인 진입점.
 
     Capabilities:
@@ -157,7 +163,7 @@ def evaluate(stockCode: str, *, detail: bool = False, basePeriod: str | None = N
         dict | None: ``evaluateCompany`` 결과 그대로.
 
     Raises:
-        없음 — Company 인스턴스화 실패 시 None.
+        없음 - Company 인스턴스화 실패 시 None.
 
     Example:
         >>> from dartlab.credit.engine import evaluate
@@ -187,10 +193,16 @@ def evaluate(stockCode: str, *, detail: bool = False, basePeriod: str | None = N
     from dartlab.company import Company
 
     company = Company(stockCode)
-    return evaluateCompany(company, detail=detail, basePeriod=basePeriod)
+    return evaluateCompany(company, detail=detail, basePeriod=basePeriod, overrides=overrides)
 
 
-def evaluateCompany(company, *, detail: bool = False, basePeriod: str | None = None) -> dict | None:
+def evaluateCompany(
+    company,
+    *,
+    detail: bool = False,
+    basePeriod: str | None = None,
+    overrides: dict | None = None,
+) -> dict | None:
     """Company → dCR 신용등급 (3-Track 분기 + CHS·Notch 보정).
 
     Capabilities:
@@ -239,7 +251,7 @@ def evaluateCompany(company, *, detail: bool = False, basePeriod: str | None = N
         - Track A (일반): 7 축 (repayment/leverage/liquidity/cashFlow/
           businessStability/reliability/disclosureRisk)
         - Track B (금융): 5 축 (capitalAdequacy/profitability/assetQuality/
-          liquidity/businessStability) — 7 축 framework 미적용
+          liquidity/businessStability) - 7 축 framework 미적용
         - Track C (지주): 7 축 + 가중치 차별화 + 별도재무 블렌딩
 
     When:
@@ -260,16 +272,16 @@ def evaluateCompany(company, *, detail: bool = False, basePeriod: str | None = N
         Company.finance (BS/IS/CF) + 종가 (CHS) + 업종 룩업.
 
     AIContext:
-        ``grade`` + ``outlook`` 만 인용 금지 — divergenceExplanation 과 notch
+        ``grade`` + ``outlook`` 만 인용 금지 - divergenceExplanation 과 notch
         / CHS adjustment 도 함께 노출해 등급 변동 근거 투명화. invest
         decision 은 grade + score + 시계열 모두 검토.
 
     LLM Specifications:
         AntiPatterns:
             - Track B 금융사 결과의 ``eCR`` 가 None 이라 "데이터 누락" 으로
-              해석 금지 — Track B 는 eCR 미적용이 정상.
+              해석 금지 - Track B 는 eCR 미적용이 정상.
             - basePeriod 미지정 시 최신이 partial quarter 인 경우 자동
-              skip (R25-1) — currentScore 와 score 차이 발생 가능, 정상.
+              skip (R25-1) - currentScore 와 score 차이 발생 가능, 정상.
         OutputSchema:
             상기 22 키 dict. detail=True 시 metricsHistory + narratives 추가.
         Prerequisites:
@@ -280,22 +292,32 @@ def evaluateCompany(company, *, detail: bool = False, basePeriod: str | None = N
             company → _getSectorInfo → Track 분기 → calcAllMetrics →
             가중평균 → calcCHS → notch 7 룰 → mapTo20Grade → dict.
         TargetMarkets: KR (DART) 만. US (EDGAR) 는 KR(WICS) calibration 미검증이라
-            등급 미산출(None) — US calibration 은 Slice2 (_usDefaultThresholds).
+            등급 미산출(None) - US calibration 은 Slice2 (_usDefaultThresholds).
     """
-    # ⛔ 시장 가드 — 등급표·임계값은 KR(WICS 업종·한국 회계) calibration 전용.
+    # ⛔ 시장 가드 - 등급표·임계값은 KR(WICS 업종·한국 회계) calibration 전용.
     # US(EDGAR) 회사를 그대로 태우면 sectorThresholds 가 sector=None→_defaultThresholds(KR)
     # 를 US-GAAP 숫자에 먹여 non-None *가짜 등급* 을 낸다(확신 오정렬). _revenueSelect 의
-    # 정직 None 과 대칭화 — 비-KR 시장은 등급 미산출(None). US calibration = Slice2.
-    # KR 하위시장(KOSPI/KOSDAQ/KONEX)·미지정·비-str(mock)은 KR 로 통과 — US/JP 등 외화회계만 차단.
+    # 정직 None 과 대칭화 - 비-KR 시장은 등급 미산출(None). US calibration = Slice2.
+    # KR 하위시장(KOSPI/KOSDAQ/KONEX)·미지정·비-str(mock)은 KR 로 통과 - US/JP 등 외화회계만 차단.
     _market = getattr(company, "market", "KR")
     if isinstance(_market, str) and _market.strip().upper() not in ("", "KR", "KOSPI", "KOSDAQ", "KONEX"):
         return None
+
+    from dartlab.synth.overrides import validateOverrides
+
+    requestedOverrides = validateOverrides(overrides, engine="credit")
 
     sector, industryGroup = _getSectorInfo(company)
     isFinancialCo = _isFinancial(company)
 
     if isFinancialCo:
-        return _evaluateFinancial(company, detail=detail, basePeriod=basePeriod, sector=sector)
+        financialResult = _evaluateFinancial(company, detail=detail, basePeriod=basePeriod, sector=sector)
+        if financialResult is not None and requestedOverrides:
+            financialResult["appliedOverrides"] = {}
+            financialResult["ignoredOverrides"] = {
+                key: "금융회사 Track B에는 일반기업 override calibration이 없습니다." for key in requestedOverrides
+            }
+        return financialResult
 
     metrics = calcAllMetrics(company, basePeriod=basePeriod)
     if metrics is None or not metrics.get("history"):
@@ -309,6 +331,8 @@ def evaluateCompany(company, *, detail: bool = False, basePeriod: str | None = N
             if any(row.get(k) is not None for k in _CORE_METRIC_KEYS):
                 latest = row
                 break
+    latest = dict(latest)
+    appliedOverrides, ignoredOverrides, scenarioAdjustments = _applyCreditOverrides(latest, requestedOverrides)
     holding = _isHolding(company)
     captive = _isCaptiveFinance(latest.get("totalBorrowing") or 0, latest.get("ebitda"), isFinancialCo)
     if not captive and not isFinancialCo:
@@ -434,9 +458,9 @@ def evaluateCompany(company, *, detail: bool = False, basePeriod: str | None = N
     ]
 
     for a in axes:
-        score = a.get("score") or 0
+        score = a.get("score")
         weight = a.get("weight", 0)
-        a["contribution"] = round(score * weight, 2)
+        a["contribution"] = round(score * weight, 2) if score is not None else None
 
     currentScore = weightedScore([{"score": a["score"], "weight": a["weight"]} for a in axes])
 
@@ -485,12 +509,18 @@ def evaluateCompany(company, *, detail: bool = False, basePeriod: str | None = N
                 "name": a["name"],
                 "score": a["score"],
                 "weight": round(a["weight"] * 100),
-                "contribution": a.get("contribution", 0),
+                "contribution": a.get("contribution"),
                 "metrics": _normalizeMetricsForOutput(a["metrics"]),
             }
             for a in axes
         ],
     }
+
+    if requestedOverrides:
+        result["appliedOverrides"] = appliedOverrides
+        result["ignoredOverrides"] = ignoredOverrides
+        result["scenarioMetrics"] = latest
+        result["scenarioAdjustments"] = scenarioAdjustments
 
     if detail:
         result["metricsHistory"] = metrics["history"]
@@ -547,3 +577,86 @@ def evaluateCompany(company, *, detail: bool = False, basePeriod: str | None = N
         }
 
     return result
+
+
+def _applyCreditOverrides(
+    latest: dict,
+    requested: dict,
+) -> tuple[dict, dict[str, str], dict[str, dict[str, float]]]:
+    """검증된 신용 override를 실제 점수 입력에 적용한다.
+
+    명시 override는 stress preset 뒤에 적용한다. 계산에 쓰이지 않는 키는
+    적용된 것처럼 기록하지 않고 ``ignoredOverrides``에 이유를 남긴다.
+    """
+    if not requested:
+        return {}, {}, {}
+
+    applied: dict = {}
+    ignored: dict[str, str] = {}
+    adjustments: dict[str, dict[str, float]] = {}
+
+    stress = requested.get("scenarioStress")
+    stressFactors = {
+        "mild": {
+            "debtRatio": 1.10,
+            "ebitdaInterestCoverage": 0.85,
+            "currentRatio": 0.90,
+            "ocfToDebt": 0.85,
+            "focfToDebt": 0.80,
+        },
+        "moderate": {
+            "debtRatio": 1.25,
+            "ebitdaInterestCoverage": 0.65,
+            "currentRatio": 0.75,
+            "ocfToDebt": 0.65,
+            "focfToDebt": 0.50,
+        },
+        "severe": {
+            "debtRatio": 1.50,
+            "ebitdaInterestCoverage": 0.40,
+            "currentRatio": 0.55,
+            "ocfToDebt": 0.35,
+            "focfToDebt": 0.20,
+        },
+    }
+    if stress is not None:
+        factors = stressFactors.get(stress) if isinstance(stress, str) else None
+        if factors is None:
+            ignored["scenarioStress"] = "mild, moderate, severe 중 하나여야 합니다."
+        else:
+            for metric, factor in factors.items():
+                before = latest.get(metric)
+                if isinstance(before, bool) or not isinstance(before, (int, float)):
+                    continue
+                after = round(float(before) * factor, 6)
+                latest[metric] = after
+                adjustments[metric] = {"before": float(before), "after": after}
+            if adjustments:
+                applied["scenarioStress"] = stress
+            else:
+                ignored["scenarioStress"] = "stress를 적용할 관측 지표가 없습니다."
+
+    keyMap = {
+        "debtRatio": "debtRatio",
+        "interestCoverage": "ebitdaInterestCoverage",
+        "currentRatio": "currentRatio",
+        "ocfToDebt": "ocfToDebt",
+        "fcfToDebt": "focfToDebt",
+    }
+    for publicKey, metricKey in keyMap.items():
+        if publicKey not in requested:
+            continue
+        value = requested[publicKey]
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            ignored[publicKey] = "숫자 값이어야 합니다."
+            continue
+        before = latest.get(metricKey)
+        latest[metricKey] = float(value)
+        applied[publicKey] = value
+        if isinstance(before, (int, float)) and not isinstance(before, bool):
+            adjustments[metricKey] = {"before": float(before), "after": float(value)}
+
+    if "quickRatio" in requested:
+        ignored["quickRatio"] = "현재 dCR 유동성 축에는 검증된 당좌비율 calibration이 없습니다."
+
+    return applied, ignored, adjustments

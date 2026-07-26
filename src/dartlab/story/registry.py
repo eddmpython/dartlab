@@ -1,7 +1,7 @@
-"""story 레지스트리 — 템플릿 기반 Story 생성.
+"""story 레지스트리 - 템플릿 기반 Story 생성.
 
 buildBlocks 는 분석 calc* 결과를 블록으로 변환해 BlockMap 으로 반환한다. 100+ 블록을
-26+ 그룹으로 묶어 그룹별 빌더 함수로 분리 — 새 블록 추가 시 해당 그룹만 수정.
+26+ 그룹으로 묶어 그룹별 빌더 함수로 분리 - 새 블록 추가 시 해당 그룹만 수정.
 buildBlocks 본체는 preset 처리 + currency setup + 그룹 loop 만 담당.
 """
 
@@ -24,7 +24,7 @@ except ImportError:
 
 _LOG = logging.getLogger("dartlab.story")
 
-# Phase 4 G15a: buildBlocks preset — 전체 호출 113초/7.9GB 회피
+# Phase 4 G15a: buildBlocks preset - 전체 호출 113초/7.9GB 회피
 _MINIMAL_KEYS: frozenset[str] = frozenset(
     {
         "profile",
@@ -49,19 +49,19 @@ _STANDARD_KEYS: frozenset[str] = _MINIMAL_KEYS | frozenset(
         "distressScore",
         "valuationSynthesis",
         "plausibilityBand",
-        # storyPrecedents 제외 (scan 271MB 다운로드 회피 — preset="full" 에서만)
+        # storyPrecedents 제외 (scan 271MB 다운로드 회피 - preset="full" 에서만)
     }
 )
 
 
 def _safeCall(fn: Callable):
-    """블록 빌드 실패 시 빈 list 반환 — 한 그룹 실패가 다른 그룹 영향 차단.
+    """블록 빌드 실패 시 빈 list 반환 - 한 그룹 실패가 다른 그룹 영향 차단.
 
     잡는 예외 카테고리:
-        KeyError/ValueError/TypeError/AttributeError — 데이터 누락 + 타입 mismatch
-        ArithmeticError/IndexError — 계산식 + 인덱싱 실패
-        ImportError/RuntimeError — 외부 모듈 + 런타임 의존성 실패
-        polars.exceptions.PolarsError — DataFrame 연산 실패
+        KeyError/ValueError/TypeError/AttributeError - 데이터 누락 + 타입 mismatch
+        ArithmeticError/IndexError - 계산식 + 인덱싱 실패
+        ImportError/RuntimeError - 외부 모듈 + 런타임 의존성 실패
+        polars.exceptions.PolarsError - DataFrame 연산 실패
     """
     try:
         return fn()
@@ -77,7 +77,7 @@ def _safeCall(fn: Callable):
         _POLARS_ERR,
     ) as exc:
         _LOG.debug(
-            "story block build 실패: %s — %s: %s",
+            "story block build 실패: %s - %s: %s",
             getattr(fn, "__name__", "?"),
             type(exc).__name__,
             exc,
@@ -90,7 +90,7 @@ def _resolvePresetKeys(keys: set[str] | None, preset: str) -> set[str] | None:
 
     minimal (~30초): 6막 골격 블록 ~11개
     standard (기본, ~60초): minimal + 주요 분석 블록 (storyPrecedents 제외)
-    full (~113초): 전체 블록 — keys=None 유지
+    full (~113초): 전체 블록 - keys=None 유지
     """
     if keys is not None:
         return keys
@@ -104,7 +104,7 @@ def _resolvePresetKeys(keys: set[str] | None, preset: str) -> set[str] | None:
 def _setupCurrency(company) -> None:
     """story builders + analysis 의 금액 포맷을 company.currency 로 설정.
 
-    contextvars — 스레드 안전. analysis.financial.capital 의 _analysis_currency
+    contextvars - 스레드 안전. analysis.financial.capital 의 _analysis_currency
     가 없으면 (구버전) silent skip.
     """
     from dartlab.story.builders import _storyCurrency
@@ -120,7 +120,7 @@ def _setupCurrency(company) -> None:
 
 
 def _makeNeed(keys: set[str] | None) -> Callable[[str], bool]:
-    """need(key) — 그룹 빌더가 사용할 키 게이트 헬퍼."""
+    """need(key) - 그룹 빌더가 사용할 키 게이트 헬퍼."""
 
     def _need(key: str) -> bool:
         return keys is None or key in keys
@@ -129,14 +129,14 @@ def _makeNeed(keys: set[str] | None) -> Callable[[str], bool]:
 
 
 # ──────────────────────────────────────────────────────────────────
-# 그룹 빌더 함수 — buildBlocks 가 호출하는 그룹 단위 책임 분해.
+# 그룹 빌더 함수 - buildBlocks 가 호출하는 그룹 단위 책임 분해.
 # 각 함수: (company, keys, basePeriod, safe, need, out) -> None.
 # 그룹 게이트 (keys 매칭) + lazy import (calc + builder) + 블록 등록.
 # ──────────────────────────────────────────────────────────────────
 
 
 def _buildRevenueBlocks(company, keys, basePeriod, safe: Callable, need: Callable, out: dict) -> None:
-    """1 부 — 사업구조 (10 블록)."""
+    """1 부 - 사업구조 (10 블록)."""
     if keys is not None and not (
         keys
         & {
@@ -205,7 +205,7 @@ def _buildRevenueBlocks(company, keys, basePeriod, safe: Callable, need: Callabl
 
 
 def _buildCapitalBlocks(company, keys, basePeriod, safe: Callable, need: Callable, out: dict) -> None:
-    """1 부 — 자본구조 (9 블록)."""
+    """1 부 - 자본구조 (9 블록)."""
     if keys is not None and not (
         keys
         & {
@@ -265,7 +265,7 @@ def _buildCapitalBlocks(company, keys, basePeriod, safe: Callable, need: Callabl
 
 
 def _buildAssetBlocks(company, keys, basePeriod, safe: Callable, need: Callable, out: dict) -> None:
-    """1 부 — 자산구조 (4 블록)."""
+    """1 부 - 자산구조 (4 블록)."""
     if keys is not None and not (keys & {"assetStructure", "workingCapital", "capexPattern", "assetFlags"}):
         return
     from dartlab.analysis.financial.asset import (
@@ -292,7 +292,7 @@ def _buildAssetBlocks(company, keys, basePeriod, safe: Callable, need: Callable,
 
 
 def _buildCashflowBlocks(company, keys, basePeriod, safe: Callable, need: Callable, out: dict) -> None:
-    """1 부 — 현금흐름 (4 블록)."""
+    """1 부 - 현금흐름 (4 블록)."""
     if keys is not None and not (keys & {"cashFlowOverview", "cashQuality", "ocfDecomposition", "cashFlowFlags"}):
         return
     from dartlab.analysis.financial.cashflow import (
@@ -323,7 +323,7 @@ def _buildCashflowBlocks(company, keys, basePeriod, safe: Callable, need: Callab
 
 
 def _buildProfitabilityBlocks(company, keys, basePeriod, safe: Callable, need: Callable, out: dict) -> None:
-    """2 부 — 수익성 (6 블록)."""
+    """2 부 - 수익성 (6 블록)."""
     if keys is not None and not (
         keys & {"marginTrend", "returnTrend", "dupont", "penmanDecomposition", "roicTree", "profitabilityFlags"}
     ):
@@ -363,7 +363,7 @@ def _buildProfitabilityBlocks(company, keys, basePeriod, safe: Callable, need: C
 
 
 def _buildGrowthBlocks(company, keys, basePeriod, safe: Callable, need: Callable, out: dict) -> None:
-    """2 부 — 성장 (4 블록)."""
+    """2 부 - 성장 (4 블록)."""
     if keys is not None and not (keys & {"growthTrend", "growthQuality", "cagrComparison", "growthFlags"}):
         return
     from dartlab.analysis.financial.growthAnalysis import (
@@ -390,7 +390,7 @@ def _buildGrowthBlocks(company, keys, basePeriod, safe: Callable, need: Callable
 
 
 def _buildStabilityBlocks(company, keys, basePeriod, safe: Callable, need: Callable, out: dict) -> None:
-    """2 부 — 안정성 (5+ 블록 — scenarioSensitivity/criticalAssumptions/improvementLevers/marketRisk 공유)."""
+    """2 부 - 안정성 (5+ 블록 - scenarioSensitivity/criticalAssumptions/improvementLevers/marketRisk 공유)."""
     if keys is not None and not (
         keys
         & {
@@ -435,7 +435,7 @@ def _buildStabilityBlocks(company, keys, basePeriod, safe: Callable, need: Calla
             out["scenarioSensitivity"] = safe(lambda: scenarioSensitivityBlock(_ss))
         if need("criticalAssumptions"):
             out["criticalAssumptions"] = safe(lambda: criticalAssumptionsBlock(_ss))
-        # improvementLevers — 같은 SS 캐시 시점, 메모리 압박 전
+        # improvementLevers - 같은 SS 캐시 시점, 메모리 압박 전
         if need("improvementLevers") and _ss:
             from dartlab.analysis.financial.scenarioSensitivity import calcImprovementLevers
             from dartlab.story.builders import improvementLeversBlock
@@ -454,7 +454,7 @@ def _buildStabilityBlocks(company, keys, basePeriod, safe: Callable, need: Calla
 
 
 def _buildEfficiencyBlocks(company, keys, basePeriod, safe: Callable, need: Callable, out: dict) -> None:
-    """2 부 — 효율성 (3 블록)."""
+    """2 부 - 효율성 (3 블록)."""
     if keys is not None and not (keys & {"turnoverTrend", "cccTrend", "efficiencyFlags"}):
         return
     from dartlab.analysis.financial.efficiency import (
@@ -476,7 +476,7 @@ def _buildEfficiencyBlocks(company, keys, basePeriod, safe: Callable, need: Call
 
 
 def _buildScorecardBlocks(company, keys, basePeriod, safe: Callable, need: Callable, out: dict) -> None:
-    """2 부 — 종합 (3 블록)."""
+    """2 부 - 종합 (3 블록)."""
     if keys is not None and not (keys & {"scorecard", "piotroski", "summaryFlags"}):
         return
     from dartlab.analysis.financial.scorecard import (
@@ -528,7 +528,7 @@ def _buildIndustryBlocks(company, keys, basePeriod, safe: Callable, need: Callab
 
 
 def _buildEarningsQualityBlocks(company, keys, basePeriod, safe: Callable, need: Callable, out: dict) -> None:
-    """3 부 — 이익품질 (6 블록)."""
+    """3 부 - 이익품질 (6 블록)."""
     if keys is not None and not (
         keys
         & {
@@ -581,7 +581,7 @@ def _buildEarningsQualityBlocks(company, keys, basePeriod, safe: Callable, need:
 
 
 def _buildCostStructureBlocks(company, keys, basePeriod, safe: Callable, need: Callable, out: dict) -> None:
-    """3 부 — 비용구조 (4 블록)."""
+    """3 부 - 비용구조 (4 블록)."""
     if keys is not None and not (
         keys & {"costBreakdown", "operatingLeverage", "breakevenEstimate", "costStructureFlags"}
     ):
@@ -616,7 +616,7 @@ def _buildCostStructureBlocks(company, keys, basePeriod, safe: Callable, need: C
 
 
 def _buildCapitalAllocationBlocks(company, keys, basePeriod, safe: Callable, need: Callable, out: dict) -> None:
-    """3 부 — 자본배분 (8 블록 — div/sh 결과 캐시 공유)."""
+    """3 부 - 자본배분 (8 블록 - div/sh 결과 캐시 공유)."""
     if keys is not None and not (
         keys
         & {
@@ -686,7 +686,7 @@ def _buildCapitalAllocationBlocks(company, keys, basePeriod, safe: Callable, nee
 
 
 def _buildInvestmentBlocks(company, keys, basePeriod, safe: Callable, need: Callable, out: dict) -> None:
-    """3 부 — 투자효율 (4 블록)."""
+    """3 부 - 투자효율 (4 블록)."""
     if keys is not None and not (keys & {"roicTimeline", "investmentIntensity", "evaTimeline", "investmentFlags"}):
         return
     from dartlab.analysis.financial.investmentAnalysis import (
@@ -715,7 +715,7 @@ def _buildInvestmentBlocks(company, keys, basePeriod, safe: Callable, need: Call
 
 
 def _buildCrossStatementBlocks(company, keys, basePeriod, safe: Callable, need: Callable, out: dict) -> None:
-    """3 부 — 재무정합성 + 세무 (7 블록)."""
+    """3 부 - 재무정합성 + 세무 (7 블록)."""
     if keys is not None and not (
         keys
         & {
@@ -776,7 +776,7 @@ def _buildCrossStatementBlocks(company, keys, basePeriod, safe: Callable, need: 
 
 
 def _buildCreditBlocks(company, keys, basePeriod, safe: Callable, need: Callable, out: dict) -> None:
-    """3-6 — 신용평가 (8+ 블록)."""
+    """3-6 - 신용평가 (8+ 블록)."""
     if keys is not None and not (
         keys
         & {
@@ -844,7 +844,7 @@ def _buildCreditBlocks(company, keys, basePeriod, safe: Callable, need: Callable
 
 
 def _buildValuationBlocks(company, keys, basePeriod, safe: Callable, need: Callable, out: dict) -> None:
-    """4 부 — 가치평가 (Damodaran 흡수 포함 storyPrecedents/plausibilityBand)."""
+    """4 부 - 가치평가 (Damodaran 흡수 포함 storyPrecedents/plausibilityBand)."""
     _CORE_KEYS = {
         "dcfValuation",
         "ddmValuation",
@@ -901,7 +901,7 @@ def _buildValuationBlocks(company, keys, basePeriod, safe: Callable, need: Calla
             out["relativeValuation"] = safe(lambda: relativeValuationBlock(calcRelVal(company, basePeriod=basePeriod)))
         if need("residualIncome"):
             out["residualIncome"] = safe(lambda: residualIncomeBlock(calcRim(company, basePeriod=basePeriod)))
-        # priceTarget 결과를 valuationSynthesis 에 전달 — 두 모델 차이 narration 자동 추가
+        # priceTarget 결과를 valuationSynthesis 에 전달 - 두 모델 차이 narration 자동 추가
         _ptCache: dict = {}
 
         def _getPt():
@@ -928,7 +928,7 @@ def _buildValuationBlocks(company, keys, basePeriod, safe: Callable, need: Calla
             out["valuationFlags"] = safe(
                 lambda: valuationFlagsBlock(calcValuationFlags(company, basePeriod=basePeriod))
             )
-        # dFV (dartlab Fair Value) — 4엔진 통합 적정주가
+        # dFV (dartlab Fair Value) - 4엔진 통합 적정주가
         if need("dFV") or need("methodFitness") or need("qualityFactors"):
             from dartlab.analysis.valuation.dFV import calcDFV
             from dartlab.story.builders import dFVBlock, methodFitnessBlock, qualityFactorsBlock
@@ -940,7 +940,7 @@ def _buildValuationBlocks(company, keys, basePeriod, safe: Callable, need: Calla
                 out["methodFitness"] = methodFitnessBlock(_dfv_data) if _dfv_data else []
             if need("qualityFactors"):
                 out["qualityFactors"] = qualityFactorsBlock(_dfv_data) if _dfv_data else []
-        # Damodaran 흡수 — lifeCycle / valuationSins
+        # Damodaran 흡수 - lifeCycle / valuationSins
         if need("lifeCycleStage"):
             from dartlab.analysis.financial.lifeCycle import calcLifeCycle
             from dartlab.story.builders import lifeCycleStageBlock
@@ -952,7 +952,7 @@ def _buildValuationBlocks(company, keys, basePeriod, safe: Callable, need: Calla
 
             out["valuationSins"] = safe(lambda: valuationSinsBlock(calcValuationSins(company, basePeriod=basePeriod)))
 
-    # Damodaran 흡수 — storyPrecedents / plausibilityBand (별도 calc 모듈)
+    # Damodaran 흡수 - storyPrecedents / plausibilityBand (별도 calc 모듈)
     if need("storyPrecedents"):
         from dartlab.analysis.financial.storyValidation import calcStoryPrecedents
         from dartlab.story.builders import storyPrecedentsBlock
@@ -968,7 +968,7 @@ def _buildValuationBlocks(company, keys, basePeriod, safe: Callable, need: Calla
 
 
 def _buildGovernanceBlocks(company, keys, basePeriod, safe: Callable, need: Callable, out: dict) -> None:
-    """5 부 — 비재무 심화 거버넌스 (6 블록)."""
+    """5 부 - 비재무 심화 거버넌스 (6 블록)."""
     if keys is not None and not (
         keys
         & {
@@ -1021,7 +1021,7 @@ def _buildGovernanceBlocks(company, keys, basePeriod, safe: Callable, need: Call
 
 
 def _buildDisclosureDeltaBlocks(company, keys, basePeriod, safe: Callable, need: Callable, out: dict) -> None:
-    """5 부 — 공시변화 (4 블록)."""
+    """5 부 - 공시변화 (4 블록)."""
     if keys is not None and not (
         keys & {"disclosureChangeSummary", "keyTopicChanges", "changeIntensity", "disclosureDeltaFlags"}
     ):
@@ -1054,7 +1054,7 @@ def _buildDisclosureDeltaBlocks(company, keys, basePeriod, safe: Callable, need:
 
 
 def _buildPeerBenchmarkBlocks(company, keys, basePeriod, safe: Callable, need: Callable, out: dict) -> None:
-    """5 부 — 비교분석 peer benchmark (3 블록)."""
+    """5 부 - 비교분석 peer benchmark (3 블록)."""
     if keys is not None and not (keys & {"peerRanking", "riskReturnPosition", "peerBenchmarkFlags"}):
         return
     from dartlab.analysis.financial.peerBenchmark import (
@@ -1081,7 +1081,7 @@ def _buildPeerBenchmarkBlocks(company, keys, basePeriod, safe: Callable, need: C
 
 
 def _buildForecastBlocks(company, keys, basePeriod, safe: Callable, need: Callable, out: dict) -> None:
-    """6 부 — 전망분석 (8 블록)."""
+    """6 부 - 전망분석 (8 블록)."""
     if keys is not None and not (
         keys
         & {
@@ -1144,7 +1144,7 @@ def _buildForecastBlocks(company, keys, basePeriod, safe: Callable, need: Callab
 
 
 def _buildPeerPositionBlocks(company, keys, basePeriod, safe: Callable, need: Callable, out: dict) -> None:
-    """비교분석 — scan 교차 조합 (peerPosition/governanceSummary)."""
+    """비교분석 - scan 교차 조합 (peerPosition/governanceSummary)."""
     if keys is not None and not (keys & {"peerPosition", "governanceSummary"}):
         return
     import importlib
@@ -1162,7 +1162,7 @@ def _buildPeerPositionBlocks(company, keys, basePeriod, safe: Callable, need: Ca
 
 
 def _buildQuantTechnicalBlocks(company, keys, basePeriod, safe: Callable, need: Callable, out: dict) -> None:
-    """시장분석 — quant 기술적 + 알파 12 (story 통합)."""
+    """시장분석 - quant 기술적 + 알파 12 (story 통합)."""
     _CORE_KEYS = {
         "technicalVerdict",
         "technicalSignals",
@@ -1232,7 +1232,7 @@ def _buildQuantTechnicalBlocks(company, keys, basePeriod, safe: Callable, need: 
         out["technicalVerdict"] = safe(lambda: technicalVerdictBlock(calcTechnicalVerdict(company)))
     if need("technicalSignals"):
         out["technicalSignals"] = safe(lambda: technicalSignalsBlock(calcTechnicalSignals(company)))
-    # quant 서사 모듈 5+1 — review 가 서사를 생성 (엔진=숫자만, story=이야기꾼)
+    # quant 서사 모듈 5+1 - review 가 서사를 생성 (엔진=숫자만, story=이야기꾼)
     _narrate_map = {
         "trendNarrative": (calcTrendData, lambda d: narrateTrend(d.get("verdict", {})) if d else ""),
         "riskNarrative": (calcRiskData, lambda d: narrateQuantRisk(d.get("data"), d.get("verdict")) if d else ""),
@@ -1272,7 +1272,7 @@ def _buildQuantTechnicalBlocks(company, keys, basePeriod, safe: Callable, need: 
     if need("marketAnalysisFlags"):
         out["marketAnalysisFlags"] = safe(lambda: marketAnalysisFlagsBlock(calcMarketAnalysisFlags(company)))
 
-    # Sprint 2~7 신규 12 alpha — 동일 narrative map 패턴.
+    # Sprint 2~7 신규 12 alpha - 동일 narrative map 패턴.
     _alpha_market = "US" if getattr(company, "currency", "KRW") == "USD" else "KR"
     _stockCode = getattr(company, "stockCode", None)
 
@@ -1329,7 +1329,7 @@ def _buildQuantTechnicalBlocks(company, keys, basePeriod, safe: Callable, need: 
 
 
 def _buildMacroBlocks(company, keys, basePeriod, safe: Callable, need: Callable, out: dict) -> None:
-    """매크로 — 시장 환경 + 기업-매크로 연결 (12 블록)."""
+    """매크로 - 시장 환경 + 기업-매크로 연결 (12 블록)."""
     _MACRO_KEYS = {
         "macroEnvironment",
         "macroCycle",
@@ -1361,7 +1361,7 @@ def _buildMacroBlocks(company, keys, basePeriod, safe: Callable, need: Callable,
         valuationBandBlock,
     )
 
-    # macro("종합") 1회 호출 + 캐시 — 11축 전부 포함
+    # macro("종합") 1회 호출 + 캐시 - 11축 전부 포함
     _macro_summary: list = [None]
     _macro_market = getattr(company, "market", "KR")
 
@@ -1454,10 +1454,10 @@ def buildBlocks(
     basePeriod: str | None = None,
     preset: str = "standard",
 ):
-    """블록 사전 — analysis calc* 결과를 블록으로 변환.
+    """블록 사전 - analysis calc* 결과를 블록으로 변환.
 
     keys 가 지정되면 해당 블록만 빌드한다 (선택적 빌드, preset 무시).
-    keys=None 이면 preset 에 따라 빌드 범위 결정 — 자세한 정책은
+    keys=None 이면 preset 에 따라 빌드 범위 결정 - 자세한 정책은
     ``_resolvePresetKeys`` 참조.
 
     내부적으로 ``_GROUP_BUILDERS`` (그룹별 빌더 list) 를 순회. 새 블록 추가 시
@@ -1465,7 +1465,7 @@ def buildBlocks(
     """
     keys = _resolvePresetKeys(keys, preset)
     _setupCurrency(company)
-    # buildBlocks 본체에서 사용하는 헬퍼 — 그룹 빌더 추출 시 인자로 전달.
+    # buildBlocks 본체에서 사용하는 헬퍼 - 그룹 빌더 추출 시 인자로 전달.
     # 이전 inline 정의 (_safe/_need) 와 같은 이름 유지해 본체 호출 그대로.
     _safe = _safeCall
     _need = _makeNeed(keys)
@@ -1508,7 +1508,7 @@ def buildBlocks(
     _buildMacroBlocks(company, keys, basePeriod, _safe, _need, b)
     _buildScenarioBlocks(company, keys, basePeriod, _safe, _need, b)
 
-    # ── 종료 — BlockMap 변환 + 메모리 해제 힌트 ──
+    # ── 종료 - BlockMap 변환 + 메모리 해제 힌트 ──
     import gc
 
     from dartlab.story.blockMap import BlockMap
@@ -1570,6 +1570,20 @@ def buildStory(
     # ── ReportType 해석 ──
     reportType = resolveReportType(type)
 
+    def _attachLensProducts(story):
+        from dartlab.story.lensProducts import collectLensProducts, enginesForReportType
+
+        bundle = collectLensProducts(
+            company,
+            engines=enginesForReportType(reportType.key),
+            basePeriod=basePeriod,
+        )
+        story.reportType = reportType.key
+        story.lensProducts = bundle["products"]
+        story.lensGaps = bundle["gaps"]
+        story._lensBundle = bundle
+        return story
+
     # ── thesis 타입: 서사 주도 특수 경로 (블록화 예외) ──
     if reportType.key == "thesis":
         from dartlab.story.builders import thesisReportBlocks
@@ -1579,7 +1593,7 @@ def buildStory(
         story = Story(stockCode=stockCode, corpName=corpName, layout=ly)
         thesis_blocks = thesisReportBlocks(company, hypothesis)
         story.sections = [Section(key="thesisReport", partId="T", title="논제 검증", blocks=thesis_blocks)]
-        return story
+        return _attachLensProducts(story)
 
     # ── lifeCycle 기반 강조 블록 자동 설정 ──
     # lifeCycle phase 에 따라 어떤 분석 관점이 중요한지 자동 결정
@@ -1780,7 +1794,7 @@ def buildStory(
         if story.sections:
             story.sections[0].blocks.insert(0, TextBlock(guide, style="dim"))
 
-    return story
+    return _attachLensProducts(story)
 
 
-# [Phase 3 워밍업 함수는 제거됨 — 위 buildBlocks 주석 참조]
+# [Phase 3 워밍업 함수는 제거됨 - 위 buildBlocks 주석 참조]

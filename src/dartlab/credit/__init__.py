@@ -36,11 +36,11 @@ if TYPE_CHECKING:
 
 _log = getLogger(__name__)
 
-# Public surface — Company.credit() 와 단독 호출 양쪽 진입.
+# Public surface - Company.credit() 와 단독 호출 양쪽 진입.
 __all__ = ["axes", "credit", "creditCompany", "guide"]
 
 
-# ── 7축 레지스트리 (Phase 8 A4: 4엔진 통일 — @dataclass _AxisEntry) ──
+# ── 7축 레지스트리 (Phase 8 A4: 4엔진 통일 - @dataclass _AxisEntry) ──
 
 
 @dataclass(frozen=True)
@@ -113,7 +113,7 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
     ),
 }
 
-# 하위 호환 — 기존 코드가 _CREDIT_AXES (한글키→fullName) 참조하는 곳용.
+# 하위 호환 - 기존 코드가 _CREDIT_AXES (한글키→fullName) 참조하는 곳용.
 _CREDIT_AXES: dict[str, str] = {
     "채무상환": "채무상환능력",
     "자본구조": "자본구조",
@@ -153,17 +153,17 @@ def guide() -> "pl.DataFrame":
         로그 출력. 신규 사용자 self-discovery 진입점.
 
     공시 재무제표만으로 독립 신용등급(dCR)을 산출하는 엔진의 축 카탈로그.
-    외부 API 키 불필요 — DART/EDGAR 재무 데이터 기반.
+    외부 API 키 불필요 - DART/EDGAR 재무 데이터 기반.
 
     Returns
     -------
     polars.DataFrame
-        axis : str — 영문 축 키 (grade, repayment, leverage, …)
-        label : str — 한글 라벨 (등급, 채무상환능력, 자본구조, …)
-        description : str — 축 설명
-        example : str — 호출 예시
-        group : str — 그룹 분류 (dCR)
-        apiKey : str — API 키 필요 여부 ("불필요" — 재무 데이터 기반)
+        axis : str - 영문 축 키 (grade, repayment, leverage, …)
+        label : str - 한글 라벨 (등급, 채무상환능력, 자본구조, …)
+        description : str - 축 설명
+        example : str - 호출 예시
+        group : str - 그룹 분류 (dCR)
+        apiKey : str - API 키 필요 여부 ("불필요" - 재무 데이터 기반)
 
     Examples
     --------
@@ -208,7 +208,7 @@ def guide() -> "pl.DataFrame":
     # 빠른 시작 안내 출력
     _lines = [
         "",
-        "dCR — 독립 신용등급 (7축 정량 스코어링)",
+        "dCR - 독립 신용등급 (7축 정량 스코어링)",
         "",
         "━━━ 빠른 시작 ━━━",
         '  c = dartlab.Company("005930")',
@@ -272,7 +272,7 @@ def _filterAxis(result: dict, axis: str) -> dict | None:
 def credit(
     axis: str | None = None, target: str | None = None, *, detail: bool = False, basePeriod: str | None = None
 ) -> dict | "pl.DataFrame" | None:
-    """신용등급 산출 단일 진입점 — gather 표준 ``credit(axis, target)`` axis-first.
+    """신용등급 산출 단일 진입점 - gather 표준 ``credit(axis, target)`` axis-first.
 
     gather 표준: ``credit("채무상환", "005930")`` (axis, target=stockCode). 종합등급은
     ``credit("등급", "005930")`` 또는 단축 ``credit("005930")``. **backward-compat**: 옛
@@ -306,19 +306,19 @@ def credit(
         - stockCode=None → 가이드 DataFrame (axis, label, description, example, group)
         - axis="등급" 또는 None+stockCode → 종합 등급 dict
 
-          grade : str — dCR 등급 (예: "dCR-AA+")
-          score : float — 위험 점수 (0=최우량, 100=최위험) (점)
-          healthScore : float — 건전성 점수 (100-score) (점)
-          axes : list[dict] — 7축 상세 (name, score, weight, metrics)
-          eCR : str | None — 현금흐름등급
-          outlook : str — 전망 ("안정적"/"긍정적"/"부정적")
+          grade : str - dCR 등급 (예: "dCR-AA+")
+          score : float - 위험 점수 (0=최우량, 100=최위험) (점)
+          healthScore : float - 건전성 점수 (100-score) (점)
+          axes : list[dict] - 7축 상세 (name, score, weight, metrics)
+          eCR : str | None - 현금흐름등급
+          outlook : str - 전망 ("안정적"/"긍정적"/"부정적")
 
         - axis=축이름 → 해당 축 dict
 
-          axis : str — 축 풀네임
-          score : float — 해당 축 위험 점수 (점)
-          weight : int — 가중치 (%)
-          metrics : list[dict] — 개별 지표 (name, value, score)
+          axis : str - 축 풀네임
+          score : float - 해당 축 위험 점수 (점)
+          weight : int - 가중치 (%)
+          metrics : list[dict] - 개별 지표 (name, value, score)
 
     Examples
     --------
@@ -348,26 +348,26 @@ def credit(
     How: credit 단독으로 종합 등급 확인 → analysis(안정성, 현금흐름) 와 함께 심층 진단.
         story credit 타입이 credit + analysis(안정성) + analysis(현금흐름) + analysis(자금조달) 순서로 조합.
     Verified:
-        - credit 단독 → dCR 등급 + 7축 위험점수 + PD 추정 (observed via ai-ask, 2026-04-25 — 정식 Phase P 판정 아님)
-        - credit + analysis(안정성,현금흐름) → 부도 위험 종합 진단 (observed via ai-ask, 2026-04-25 — 정식 Phase P 판정 아님)
+        - credit 단독 → dCR 등급 + 7축 위험점수 + PD 추정 (observed via ai-ask, 2026-04-25 - 정식 Phase P 판정 아님)
+        - credit + analysis(안정성,현금흐름) → 부도 위험 종합 진단 (observed via ai-ask, 2026-04-25 - 정식 Phase P 판정 아님)
 
     See Also
     --------
-    analysis : 재무 심층 분석 — 안정성·현금흐름 축이 credit 과 상호 보완.
+    analysis : 재무 심층 분석 - 안정성·현금흐름 축이 credit 과 상호 보완.
     scan : 전종목 재무건전성 비교.
 
     LLM Specifications:
         AntiPatterns:
-            - axis 영문 ("repayment") 사용 시 한글 alias 함께 — 한글 우선 권장
+            - axis 영문 ("repayment") 사용 시 한글 alias 함께 - 한글 우선 권장
             - 종합 score 단독 인용 (grade + 7 축 dict 함께)
             - "부도 위험 높음" 단정 X (등급 + outlook + 시계열 함께)
         OutputSchema:
-            - grade : str — dCR 등급 (dCR-AAA ~ dCR-D)
-            - score : float — 위험 점수 (0~100, 0 = 최우량)
-            - healthScore : float — 건전성 점수 (100 - score)
-            - axes : list[dict] — 7 축 (name / score / weight / metrics)
-            - eCR : str | None — 현금흐름등급
-            - outlook : str — 안정적 / 긍정적 / 부정적
+            - grade : str - dCR 등급 (dCR-AAA ~ dCR-D)
+            - score : float - 위험 점수 (0~100, 0 = 최우량)
+            - healthScore : float - 건전성 점수 (100 - score)
+            - axes : list[dict] - 7 축 (name / score / weight / metrics)
+            - eCR : str | None - 현금흐름등급
+            - outlook : str - 안정적 / 긍정적 / 부정적
         Prerequisites:
             - finance + report 데이터 (자동 다운로드)
         Freshness:
@@ -386,7 +386,7 @@ def credit(
         import warnings
 
         warnings.warn(
-            f'dartlab.credit("{axis}", "{target}") 호출은 deprecated — '
+            f'dartlab.credit("{axis}", "{target}") 호출은 deprecated - '
             f'dartlab.credit("{target}", "{axis}") (axis-first) 를 사용하세요.',
             DeprecationWarning,
             stacklevel=2,
@@ -398,20 +398,32 @@ def credit(
     if stockCode is None:
         return guide()
 
-    from dartlab.credit.engine import evaluate
-
     # "등급"/"grade" 등 종합 alias는 axis로 처리하지 않음 (전체 결과)
     if axis is not None and axis in _GRADE_ALIASES:
         axis = None
 
-    result = evaluate(stockCode, detail=detail or (axis is not None), basePeriod=basePeriod)
+    from dartlab.company import Company
+    from dartlab.credit.engine import evaluateCompany
+
+    company = Company(stockCode)
+    result = evaluateCompany(company, detail=True, basePeriod=basePeriod)
     if result is None:
-        return None
+        if axis is not None:
+            return None
+        from dartlab.credit.product import blockedCreditResult
+
+        return blockedCreditResult(
+            company,
+            reason="해당 시장에는 검증된 dCR calibration이 없거나 필수 재무 근거가 부족합니다.",
+            basePeriod=basePeriod,
+        )
 
     if axis is not None:
         return _filterAxis(result, axis)
 
-    return result
+    from dartlab.credit.product import attachCreditProduct
+
+    return attachCreditProduct(company, result, basePeriod=basePeriod)
 
 
 def creditCompany(
@@ -426,7 +438,7 @@ def creditCompany(
 
     Capabilities:
         ``credit()`` 의 Company-bound 변형. DartCompany / EdgarCompany 인스턴스를 받아 동일
-        7 축 + 종합 등급 산출. ``overrides`` 지원 — AI / 사용자가 시나리오 가정 (예: 부채비율
+        7 축 + 종합 등급 산출. ``overrides`` 지원 - AI / 사용자가 시나리오 가정 (예: 부채비율
         150% 가정) 을 주입해 stress / what-if 분석 가능.
 
     Parameters
@@ -463,7 +475,7 @@ def creditCompany(
 
     Guide:
         ``Company.credit`` 의 위임 대상. overrides 사용 시 ``assumptions`` 키가 결과 dict 에
-        추가 — UI / 답변에 "가정 명시" 단서 인용 권장.
+        추가 - UI / 답변에 "가정 명시" 단서 인용 권장.
 
     When:
         Company 객체에 binding 된 신용 분석. AI/사용자가 stress 시나리오 (부채비율 가정 등) 를
@@ -496,33 +508,39 @@ def creditCompany(
     else:
         axis_filter = axis
 
-    # overrides 전달 (engine 이 소비 가능하면 사용, 아니면 TypeError fallback 없이 무시)
-    kwargs: dict = {}
-    if overrides:
-        kwargs["overrides"] = overrides
-    try:
-        result = evaluateCompany(
-            company,
-            detail=detail or (axis_filter is not None),
-            basePeriod=basePeriod,
-            **kwargs,
-        )
-    except TypeError:
-        # engine 이 아직 overrides 수용 전 — 경고 없이 자동 계산
-        result = evaluateCompany(company, detail=detail or (axis_filter is not None), basePeriod=basePeriod)
+    result = evaluateCompany(
+        company,
+        detail=True,
+        basePeriod=basePeriod,
+        overrides=overrides,
+    )
     if result is None:
-        return None
+        if axis_filter is not None:
+            return None
+        from dartlab.credit.product import blockedCreditResult
+
+        return blockedCreditResult(
+            company,
+            reason="해당 시장에는 검증된 dCR calibration이 없거나 필수 재무 근거가 부족합니다.",
+            basePeriod=basePeriod,
+        )
 
     if axis_filter is not None:
         result = _filterAxis(result, axis_filter)
 
-    # assumptions 투명화 — 4 엔진 공통 utility (core/overrides.py)
+    # assumptions 투명화 - 4 엔진 공통 utility (core/overrides.py)
     if isinstance(result, dict):
         from dartlab.synth.overrides import buildAssumptions
 
-        assumptions = buildAssumptions(result, engine="credit", overrides=overrides)
+        appliedOverrides = result.get("appliedOverrides") if isinstance(result.get("appliedOverrides"), dict) else None
+        assumptions = buildAssumptions(result, engine="credit", overrides=appliedOverrides)
         if assumptions:
             result["assumptions"] = assumptions
+
+    if axis_filter is None and isinstance(result, dict):
+        from dartlab.credit.product import attachCreditProduct
+
+        result = attachCreditProduct(company, result, basePeriod=basePeriod)
 
     return result
 
@@ -533,8 +551,8 @@ def axes() -> dict[str, str]:
     Returns
     -------
     dict[str, str]
-        키 : str — 축 이름 (예: "repayment", "leverage").
-        값 : str — 한글 레이블 (예: "채무상환능력", "자본구조").
+        키 : str - 축 이름 (예: "repayment", "leverage").
+        값 : str - 한글 레이블 (예: "채무상환능력", "자본구조").
 
     Raises:
         없음.

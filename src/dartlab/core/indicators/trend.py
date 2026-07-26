@@ -47,6 +47,10 @@ def vsma(close: NDArray[np.float64], period: int) -> NDArray[np.float64]:
     """Compute Simple Moving Average using cumsum optimization."""
     n = len(close)
     result = np.full(n, np.nan, dtype=np.float64)
+    if period < 1:
+        raise ValueError("period must be at least 1")
+    if n < period:
+        return result
     cumsum = np.cumsum(close)
     result[period - 1 :] = (cumsum[period - 1 :] - np.concatenate([[0], cumsum[:-period]])) / period
     return result
@@ -56,6 +60,10 @@ def vema(close: NDArray[np.float64], period: int) -> NDArray[np.float64]:
     """Compute Exponential Moving Average."""
     n = len(close)
     result = np.full(n, np.nan, dtype=np.float64)
+    if period < 1:
+        raise ValueError("period must be at least 1")
+    if n < period:
+        return result
     alpha = 2.0 / (period + 1)
     result[period - 1] = np.mean(close[:period])
     for i in range(period, n):
@@ -91,6 +99,11 @@ def vadx(
 ) -> NDArray[np.float64]:
     """Compute Average Directional Index."""
     n = len(close)
+    adx = np.full(n, np.nan, dtype=np.float64)
+    if period < 1:
+        raise ValueError("period must be at least 1")
+    if n < 2 * period:
+        return adx
     upMove = np.diff(high, prepend=high[0])
     downMove = -np.diff(low, prepend=low[0])
     plusDm = np.where((upMove > downMove) & (upMove > 0), upMove, 0)
@@ -120,7 +133,6 @@ def vadx(
     diSum = plusDi + minusDi
     diSumMask = diSum != 0
     dx[diSumMask] = 100.0 * np.abs(plusDi[diSumMask] - minusDi[diSumMask]) / diSum[diSumMask]
-    adx = np.full(n, np.nan, dtype=np.float64)
     adx[2 * period - 1] = np.mean(dx[period : 2 * period])
     for i in range(2 * period, n):
         adx[i] = (adx[i - 1] * (period - 1) + dx[i]) / period
@@ -192,6 +204,10 @@ def vsupertrend(
     lower = hl2 - multiplier * atr
     st = np.full(n, np.nan, dtype=np.float64)
     direction = np.zeros(n, dtype=np.int8)
+    if period < 1:
+        raise ValueError("period must be at least 1")
+    if n < period:
+        return st, direction
     st[period - 1] = upper[period - 1]
     direction[period - 1] = -1
     for i in range(period, n):

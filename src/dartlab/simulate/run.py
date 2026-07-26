@@ -1,4 +1,4 @@
-"""End-to-end deterministic scenario run (L2.5, internal) — `runScenario`.
+"""End-to-end deterministic scenario run (L2.5, internal) - `runScenario`.
 
 Per `mainPlan/scenario-simulator/01-engine-architecture.md` §3, a simulate result is always a set
 of node values each carrying ``ref + quality gate status + provenance + asOf``. This module wires
@@ -9,12 +9,12 @@ the born-clean foundation into one run:
         -> evaluateSheet(sheet)        # deterministic topo executor (§6.2)
           -> SimulationResult          # ref + quality status + provenance + asOf (§3)
 
-`runScenario` is internal. Callable top-level / Company previews exist, but apiContract /
-EngineCall registration, the lens path, Play, and DriverRegistry convergence are later phases
-(see the ledger). honest-gap (§3): a missing leaf or absent base metric leaves the corresponding
-field None and downgrades the node's quality status to ``partial`` — never silently 0.
+`runScenario` is internal. Callable top-level and Company surfaces attach the current lens
+products as context while the deterministic DriverSheet remains unchanged. Play and
+DriverRegistry convergence remain separate phases. honest-gap (§3): a missing leaf or absent base metric leaves the corresponding
+field None and downgrades the node's quality status to ``partial`` - never silently 0.
 
-Born-clean (§10): imports forward only — L2.5 `registry`/`sheet` (which themselves import L0/L1.5/
+Born-clean (§10): imports forward only - L2.5 `registry`/`sheet` (which themselves import L0/L1.5/
 L2). The legacy `analysis/forecast/simulation.py` flow is never touched.
 
 Layer: L2.5.
@@ -61,7 +61,7 @@ class NodeAudit:
 
 @dataclass(frozen=True)
 class SimulationResult:
-    """One deterministic scenario run's result — values + ref/quality/provenance per node (§3).
+    """One deterministic scenario run's result - values + ref/quality/provenance per node (§3).
 
     Capabilities:
         Carries the scenario's revenue / margin / proforma-FCF paths, the dcf per-share value, and
@@ -73,7 +73,7 @@ class SimulationResult:
         scenarioName  : the scenario id this run used.
         horizon       : number of forecast years.
         revenuePath   : per-year absolute revenue (None when base revenue absent).
-        marginPath    : per-year operating margin (%) — carried from the transfer node frozen input.
+        marginPath    : per-year operating margin (%) - carried from the transfer node frozen input.
         fcfPath       : per-year proforma FCF (None on a proforma gap).
         proformaYears : number of ProFormaYear projections the L2 leaf produced.
         terminalRevenue : the proforma terminal-year revenue (the proforma node value).
@@ -104,6 +104,8 @@ class SimulationResult:
     quality: str = "ok"
     assumptions: tuple[str, ...] = field(default_factory=tuple)
     warnings: tuple[str, ...] = field(default_factory=tuple)
+    lensProducts: dict[str, dict[str, Any]] = field(default_factory=dict)
+    assumptionLedger: tuple[dict[str, Any], ...] = field(default_factory=tuple)
     dataSnapshotId: str = ""
     dataContractHash: str = ""
     dataLineageRefs: tuple[str, ...] = field(default_factory=tuple)
@@ -130,6 +132,7 @@ def runScenario(
     scenario: str = "baseline",
     horizon: int = 3,
     asOf: str | None = None,
+    lensBundle: dict[str, Any] | None = None,
 ) -> SimulationResult:
     """Run one deterministic scenario on a company, end to end (§3 internal driver).
 
@@ -139,14 +142,14 @@ def runScenario(
         it with the topological executor, and assembles a `SimulationResult` carrying the
         revenue / margin / FCF paths, the dcf per-share value, and a per-node audit
         (provenance / refs / quality status / inputsHash / asOf). honest-gap: a missing leaf or
-        absent base metric leaves the field None and downgrades the node status to ``partial`` —
+        absent base metric leaves the field None and downgrades the node status to ``partial`` -
         never 0. Deterministic by construction: re-running on the same company / scenario yields
         identical per-node `inputsHash`es (no RNG on this path).
 
     Args:
         company: a `Company` (DART/EDGAR) instance to simulate. Read forward via the L2 finance
             accessors (`_buildFinanceSeries`, `sector`, `sectorParams`).
-        scenario: the scenario id — a key of `synth.scenario.getPresetScenarios("KR")` (e.g.
+        scenario: the scenario id - a key of `synth.scenario.getPresetScenarios("KR")` (e.g.
             ``"baseline"``, ``"adverse"``, ``"semiconductor_down"``).
         horizon: number of forecast years. It cannot exceed the selected preset path.
         asOf: explicit fiscal period (YYYY or YYYY-Qn). This is period-scoped PIT, not filing
@@ -168,14 +171,14 @@ def runScenario(
         ('baseline', 3)
 
     Guide:
-        This is the deterministic (lens=None) path. To compare scenarios, call once per scenario
-        over the same company; baseline vs adverse differ only in the macro preset, so a lower
-        adverse revenue path is the expected qualitative signal. The result is the audit object —
+        This is the deterministic path. ``lensBundle`` preserves lens assumptions and scenarios
+        as context but never overrides DriverSheet inputs. To compare scenarios, call once per
+        scenario over the same company; baseline vs adverse differ only in the macro preset, so a lower
+        adverse revenue path is the expected qualitative signal. The result is the audit object -
         read each node's provenance / refs to explain the number.
 
     When:
-        Internally, to compute a deterministic scenario answer before the public `simulate` verb,
-        lens path, and Play exist.
+        Internally, to compute a deterministic scenario answer for the public `simulate` verb.
 
     How:
         buildSnapshot (read once) -> buildScenarioSheet -> evaluateSheet -> assemble
@@ -191,15 +194,15 @@ def runScenario(
         for a non-partial result.
 
     AIContext:
-        The output is a deterministic transform of frozen assumptions, not a forecast — always
+        The output is a deterministic transform of frozen assumptions, not a forecast - always
         surface the scenario id, the per-node provenance/refs, and `asOf`. A ``partial`` quality
         means a data gap (a None field), not a zero value; report the gap, do not impute 0.
 
     LLM Specifications:
         AntiPatterns:
-            - Quoting `dcfPerShare` as a target price — it is a scenario-conditioned transform.
-            - Treating a None `revenuePath` as 0 — it is an honest base-revenue gap.
-            - Re-running with a different `asOf` and comparing inputsHashes — vintage is part of
+            - Quoting `dcfPerShare` as a target price - it is a scenario-conditioned transform.
+            - Treating a None `revenuePath` as 0 - it is an honest base-revenue gap.
+            - Re-running with a different `asOf` and comparing inputsHashes - vintage is part of
               the hash.
         OutputSchema: ``SimulationResult`` (see its field docstring).
         Prerequisites: a `Company` with a finance series.
@@ -242,9 +245,14 @@ def runScenario(
 
     warnings: list[str] = list(snapshotWarnings)
     if snapshot.get("baseRevenue") is None:
-        warnings.append("base revenue absent — scenario path unavailable (honest-gap)")
+        warnings.append("base revenue absent - scenario path unavailable (honest-gap)")
     if snapshot.get("shares") in (None, 0):
-        warnings.append("shares unavailable — dcf per-share unavailable (honest-gap)")
+        warnings.append("shares unavailable - dcf per-share unavailable (honest-gap)")
+
+    products = lensBundle.get("products") if isinstance(lensBundle, dict) else {}
+    if not isinstance(products, dict):
+        products = {}
+    assumptionLedger = _assumptionLedger(assumptions, products)
 
     return SimulationResult(
         scenarioName=scenario,
@@ -263,11 +271,57 @@ def runScenario(
         quality=quality,
         assumptions=assumptions,
         warnings=tuple(warnings),
+        lensProducts=products,
+        assumptionLedger=assumptionLedger,
         dataSnapshotId=str(snapshot.get("dataSnapshotId", "")),
         dataContractHash=str(snapshot.get("dataContractHash", "")),
         dataLineageRefs=tuple(snapshot.get("dataLineageRefs", ())),
         dataExecutionReceipts=tuple(snapshot.get("dataExecutionReceipts", ())),
     )
+
+
+def _assumptionLedger(
+    deterministicAssumptions: tuple[str, ...],
+    products: dict[str, dict[str, Any]],
+) -> tuple[dict[str, Any], ...]:
+    """시뮬레이션 가정과 렌즈 맥락을 변경 없이 한 원장에 투영한다.
+
+    렌즈의 가정과 시나리오는 설명 맥락이다. 결정론 DriverSheet 입력을
+    덮어쓰지 않았음을 ``appliedToDriverSheet=False``로 명시한다.
+    """
+    rows: list[dict[str, Any]] = [
+        {
+            "source": "simulate",
+            "kind": "deterministicAssumption",
+            "id": value,
+            "appliedToDriverSheet": True,
+        }
+        for value in deterministicAssumptions
+    ]
+    for engine, product in products.items():
+        if not isinstance(product, dict):
+            continue
+        for assumption in product.get("assumptions") or []:
+            if isinstance(assumption, dict):
+                rows.append(
+                    {
+                        "source": engine,
+                        "kind": "lensAssumptionContext",
+                        "appliedToDriverSheet": False,
+                        "value": assumption,
+                    }
+                )
+        for scenario in product.get("scenarios") or []:
+            if isinstance(scenario, dict):
+                rows.append(
+                    {
+                        "source": engine,
+                        "kind": "lensScenarioContext",
+                        "appliedToDriverSheet": False,
+                        "value": scenario,
+                    }
+                )
+    return tuple(rows)
 
 
 def _marginPathFromSnapshot(snapshot: dict, scenario: str, horizon: int) -> tuple[float, ...] | None:

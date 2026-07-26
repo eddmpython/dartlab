@@ -44,15 +44,15 @@ def scanFields(query: str | None = None, source: str | None = None) -> pl.DataFr
     Returns
     -------
     pl.DataFrame
-        field : str — `screen` spec 에 넣는 정규 필드 키 (단위 없음).
-        label : str — 사람용 한글/영문 라벨 (단위 없음).
-        source : str — 데이터 원천 이름 (단위 없음).
-        kind : str — ``"number"``, ``"text"``, ``"boolean"``, ``"context"``.
-        unit : str — 비교 단위. 원/%/배/건/일/점/주/텍스트/없음.
-        operatorSet : str — 허용 연산자 목록.
-        coverage : str — 로컬 prebuild 기준 관측 범위 또는 설명.
-        example : str — `scan("screen", spec=...)` 에 넣을 조건 예시.
-        notes : str — 해석·성능·제약 설명.
+        field : str - `screen` spec 에 넣는 정규 필드 키 (단위 없음).
+        label : str - 사람용 한글/영문 라벨 (단위 없음).
+        source : str - 데이터 원천 이름 (단위 없음).
+        kind : str - ``"number"``, ``"text"``, ``"boolean"``, ``"context"``.
+        unit : str - 비교 단위. 원/%/배/건/일/점/주/텍스트/없음.
+        operatorSet : str - 허용 연산자 목록.
+        coverage : str - 로컬 prebuild 기준 관측 범위 또는 설명.
+        example : str - `scan("screen", spec=...)` 에 넣을 조건 예시.
+        notes : str - 해석·성능·제약 설명.
 
     Raises
     ------
@@ -81,7 +81,7 @@ def scanFields(query: str | None = None, source: str | None = None) -> pl.DataFr
     Capabilities:
         - 5 원천 (finance / report / docs / krx / krxIndex / valuation) 의 가용 필드를 한 표로
           노출. 각 필드의 단위·연산자·coverage·example·notes 메타로 spec 작성을 가이드.
-        - 데이터 자체는 로드 안 함 — 카탈로그 검색만. 실제 scan 은 `scan("screen", spec=...)`.
+        - 데이터 자체는 로드 안 함 - 카탈로그 검색만. 실제 scan 은 `scan("screen", spec=...)`.
 
     AIContext:
         Agent 가 사용자 의도 ("저PBR 종목" / "ROE 높은 회사") 를 받으면, 직접 raw 컬럼 추정
@@ -139,12 +139,12 @@ def executeScreenSpec(spec: dict[str, Any]) -> pl.DataFrame:
     Returns
     -------
     pl.DataFrame
-        stockCode : str — 후보 종목코드.
-        <field> : object — where/select/sort 에서 요청한 필드 값 (필드별 단위).
-        docsHitCount : int — docs 조건 hit 수 (건), docs 조건이 있을 때.
-        docsBestScore : float — docs 검색 최고 점수 (점), docs 조건이 있을 때.
-        docsSnippet : str — 대표 공시 snippet (텍스트), docs 조건이 있을 때.
-        dartUrl : str — 대표 DART 링크 (텍스트), docs 조건이 있을 때.
+        stockCode : str - 후보 종목코드.
+        <field> : object - where/select/sort 에서 요청한 필드 값 (필드별 단위).
+        docsHitCount : int - docs 조건 hit 수 (건), docs 조건이 있을 때.
+        docsBestScore : float - docs 검색 최고 점수 (점), docs 조건이 있을 때.
+        docsSnippet : str - 대표 공시 snippet (텍스트), docs 조건이 있을 때.
+        dartUrl : str - 대표 DART 링크 (텍스트), docs 조건이 있을 때.
 
     Raises
     ------
@@ -179,7 +179,7 @@ def executeScreenSpec(spec: dict[str, Any]) -> pl.DataFrame:
         - spec 의 ``where`` (AND) / ``any`` (OR) / ``select`` / ``sort`` / ``limit`` 을 해석해
           필요한 원천만 lazy 로 로드 후 후보 종목 DataFrame 반환. finance/ratio/valuation/krx/
           report/docs 필드를 동일 spec 안에서 자유 조합.
-        - 필드별 resolver 가 단위·연산자 검증 — 잘못된 spec 은 즉시 ValueError.
+        - 필드별 resolver 가 단위·연산자 검증 - 잘못된 spec 은 즉시 ValueError.
 
     AIContext:
         Agent 가 ``dartlab.scan("screen", spec={...})`` 호출 시 본 함수가 router 진입점.
@@ -189,7 +189,7 @@ def executeScreenSpec(spec: dict[str, Any]) -> pl.DataFrame:
     Requires:
         - 필요시 lazy 로드: scan/finance.parquet (finance/ratio), scan/report/{apiType}.parquet,
           docs 검색 인덱스 (`dartlab.search`), valuation.parquet, krx listing.
-        - 외부 호출 없음 — 모든 데이터 로컬 prebuild 자산.
+        - 외부 호출 없음 - 모든 데이터 로컬 prebuild 자산.
 
     See Also
     --------
@@ -263,6 +263,136 @@ def executeScreenSpec(spec: dict[str, Any]) -> pl.DataFrame:
             result = result.sort(sort_field, descending=bool(sort.get("desc", False)), nulls_last=True)
 
     return result.head(limit)
+
+
+def executeScreenSpecDetailed(spec: dict[str, Any]) -> dict[str, Any]:
+    """같은 screen spec을 실행하고 판정 근거와 제외 이유를 함께 반환한다.
+
+    기존 ``executeScreenSpec``의 멤버 테이블을 정본으로 유지한다. 설명 경로는
+    동일 필드 로더로 전체 상장 유니버스의 PASS/FAIL/UNKNOWN을 평가해
+    coverage, funnel, near miss를 더한다. explain opt-in에서만 실행되므로
+    기존 DataFrame 반환과 실행 시간은 바뀌지 않는다.
+    """
+    from datetime import datetime, timezone
+
+    from dartlab.scan.screen.verdict import summarizeVerdicts
+
+    if not isinstance(spec, dict):
+        raise ValueError("screen spec 은 dict 여야 합니다.")
+    members = executeScreenSpec(spec)
+    workSpec = {**spec, "_axisCache": {}}
+    derivedValues, derivedUnits = _computeDerived(workSpec)
+    if derivedValues:
+        workSpec["_derivedValues"] = derivedValues
+        workSpec["_derivedUnits"] = derivedUnits
+
+    where = _ensureConditionList(spec.get("where", []), key="where")
+    anyConditions = _ensureConditionList(spec.get("any", []), key="any")
+    normalizedWhere: list[dict[str, Any]] = []
+    normalizedAny: list[dict[str, Any]] = []
+    framesByField: dict[str, pl.DataFrame] = {}
+    kinds: dict[str, str] = {}
+
+    for sourceConditions, targetConditions in ((where, normalizedWhere), (anyConditions, normalizedAny)):
+        for cond in sourceConditions:
+            field = _normalizeField(str(cond.get("field", "")))
+            meta = _fieldMeta(field, workSpec)
+            publicCondition = {**cond, "field": field}
+            if field.startswith("docs."):
+                values = _docsConditionValues(cond, workSpec)
+                framesByField[field] = (
+                    values.select("stockCode", pl.lit(True).alias(field))
+                    if values is not None and not values.is_empty()
+                    else pl.DataFrame({"stockCode": [], field: []})
+                )
+                kinds[field] = "boolean"
+                publicCondition = {"field": field, "op": "==", "value": True, "query": cond.get("value")}
+            else:
+                framesByField.setdefault(field, _loadFieldValues(field, workSpec))
+                kinds[field] = str(meta["kind"])
+            targetConditions.append(publicCondition)
+
+    conditions: list[dict[str, Any]] = normalizedWhere.copy()
+    if normalizedAny:
+        conditions.append({"field": "__any__", "op": "any", "alternatives": normalizedAny})
+
+    universe = _screenUniverse()
+    for field, frame in framesByField.items():
+        if frame is None or frame.is_empty() or "stockCode" not in frame.columns or field not in frame.columns:
+            continue
+        universe = universe.join(frame.select("stockCode", field), on="stockCode", how="left")
+        if field.startswith("docs."):
+            universe = universe.with_columns(pl.col(field).fill_null(False).alias(field))
+
+    rawRows = universe.to_dicts()
+    summary = summarizeVerdicts(rawRows, conditions, kinds=kinds)
+    nearMissCodes = set(summary.pop("nearMissCodes", []))
+    byCode = {str(row.get("stockCode") or ""): row for row in rawRows}
+    memberCodes = _stockCodes(members)
+    summary["memberCodes"] = memberCodes
+    summary["memberCount"] = len(memberCodes)
+
+    datasetAsOf = spec.get("asOf")
+    gaps = []
+    if datasetAsOf is None:
+        gaps.append(
+            {
+                "code": "datasetAsOfUnavailable",
+                "message": "spec에 asOf가 없어 각 prebuild 원천의 최신 스냅샷을 사용했습니다.",
+            }
+        )
+    return {
+        "schemaVersion": 1,
+        "status": "partial" if gaps else "usable",
+        "screen": {
+            "id": spec.get("id"),
+            "spec": _publicSpec(spec),
+            "formula": {"all": where, "any": anyConditions, "missingPolicy": "UNKNOWN excluded"},
+        },
+        "universe": {
+            "market": str(spec.get("market") or "KR").upper(),
+            "source": "dartlab.listing",
+            "count": summary["universe"],
+        },
+        "datasetAsOf": datasetAsOf,
+        "executedAt": datetime.now(timezone.utc).date().isoformat(),
+        "members": members.to_dicts(),
+        "memberCount": members.height,
+        "coverage": summary["coverage"],
+        "funnel": summary["funnel"],
+        "excluded": summary["excluded"],
+        "nearMiss": [byCode[code] for code in nearMissCodes if code in byCode][:50],
+        "gaps": gaps,
+        "executionRef": {
+            "engine": "scan",
+            "axis": "screen",
+            "specVersion": spec.get("schemaVersion", 1),
+        },
+    }
+
+
+def _screenUniverse() -> pl.DataFrame:
+    """KR 상장 유니버스를 ``stockCode`` 단일 컬럼으로 반환한다."""
+    from dartlab import listing
+
+    raw = listing()
+    if raw is None or raw.is_empty():
+        return pl.DataFrame({"stockCode": []}, schema={"stockCode": pl.Utf8})
+    stockColumn = next((column for column in ("stockCode", "종목코드", "stock_code") if column in raw.columns), None)
+    if stockColumn is None:
+        return pl.DataFrame({"stockCode": []}, schema={"stockCode": pl.Utf8})
+    return raw.select(pl.col(stockColumn).cast(pl.Utf8).alias("stockCode")).drop_nulls().unique()
+
+
+def _stockCodes(frame: pl.DataFrame) -> list[str]:
+    if frame is None or frame.is_empty():
+        return []
+    column = next((name for name in ("stockCode", "종목코드") if name in frame.columns), None)
+    return [str(value) for value in frame[column].to_list()] if column else []
+
+
+def _publicSpec(spec: dict[str, Any]) -> dict[str, Any]:
+    return {key: value for key, value in spec.items() if not str(key).startswith("_") and key != "explain"}
 
 
 def _ensureConditionList(value: Any, *, key: str) -> list[dict[str, Any]]:
@@ -526,7 +656,7 @@ def _loadKrx(field: str, spec: dict[str, Any]) -> pl.DataFrame:
 
 
 def _loadKrxLatestYear(*, asof: str | None = None) -> pl.DataFrame:
-    """Sprint 4 PR4 — asof 옵션 패스스루. default None → 기존 동작."""
+    """Sprint 4 PR4 - asof 옵션 패스스루. default None → 기존 동작."""
     from dartlab.gather.bulkData.hfBulk import loadFiltered
 
     this_year = date.today().year
@@ -537,7 +667,7 @@ def _loadKrxLatestYear(*, asof: str | None = None) -> pl.DataFrame:
 
 
 def _loadKrxWindow(*, start: str | None, end: str | None, asof: str | None = None) -> pl.DataFrame:
-    """Sprint 4 PR4 — asof 옵션 패스스루. default None → 기존 동작."""
+    """Sprint 4 PR4 - asof 옵션 패스스루. default None → 기존 동작."""
     from dartlab.gather.bulkData.hfBulk import loadFiltered
 
     return loadFiltered(start=start, end=end, adjustment="raw", asof=asof)
@@ -572,7 +702,7 @@ def _applyCondition(df: pl.DataFrame, field: str, cond: dict[str, Any], meta: di
         raise ValueError(f"{field!r} 조건에는 value 가 필요합니다.")
 
     value = cond["value"]
-    if meta["kind"] == "number" or _looksNumeric(value):
+    if meta["kind"] == "number":
         expr = _numericExpr(field)
         if op == ">":
             return df.filter(expr > float(value))
@@ -610,14 +740,6 @@ def _numericExpr(field: str) -> pl.Expr:
         .str.replace_all("배", "")
         .cast(pl.Float64, strict=False)
     )
-
-
-def _looksNumeric(value: Any) -> bool:
-    try:
-        float(value)
-        return True
-    except (TypeError, ValueError):
-        return False
 
 
 def _innerJoinOnStock(frames: list[pl.DataFrame]) -> pl.DataFrame:
@@ -1218,4 +1340,4 @@ def _loadCompositeAxis(field: str, spec: dict[str, Any]) -> pl.DataFrame:
     return df.select(pl.col(scCol).cast(pl.Utf8).alias("stockCode"), pl.col(col).alias(field))
 
 
-__all__ = ["executeScreenSpec", "scanFields"]
+__all__ = ["executeScreenSpec", "executeScreenSpecDetailed", "scanFields"]

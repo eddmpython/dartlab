@@ -28,9 +28,9 @@ ROOT = Path(__file__).resolve().parents[2]
 PREBUILD_DIR = ROOT / ".github" / "scripts" / "prebuild"
 
 
-# 사전 정의 금지 import — 외부 API 호출이 함수 진입 즉시 강제되는 모듈만.
-# cache-first 모듈 (예: dartlab.gather.krx.listing 의 getKrxList — 메모리·파일·API
-# 3-tier) 은 제외 — cache hit 시 통과, miss 시 socket guard 가 차단.
+# 사전 정의 금지 import - 외부 API 호출이 함수 진입 즉시 강제되는 모듈만.
+# cache-first 모듈 (예: dartlab.gather.krx.listing 의 getKrxList - 메모리·파일·API
+# 3-tier) 은 제외 - cache hit 시 통과, miss 시 socket guard 가 차단.
 _FORBIDDEN_IMPORTS: tuple[str, ...] = (
     "dartlab.providers.dart.openapi",
     "dartlab.providers.edgar.openapi",
@@ -103,7 +103,7 @@ def test_prebuild_main_enforces_offline(scriptPath: Path) -> None:
         body = body[1:]
     assert _callsEnforceOffline(body), (
         f"{scriptPath.name}: main() 진입 5 stmt 안에 enforceOffline() 호출 필요. "
-        "외부 API 호출 차단 가드 누락 — prebuild = offline only."
+        "외부 API 호출 차단 가드 누락 - prebuild = offline only."
     )
 
 
@@ -127,7 +127,7 @@ def test_prebuild_blocked_imports(scriptPath: Path) -> None:
 
 
 def test_offline_guard_runtime() -> None:
-    """런타임 가드 자체 동작 — 외부 host 차단, loopback / HF 통과."""
+    """런타임 가드 자체 동작 - 외부 host 차단, loopback / HF 통과."""
     import socket
 
     from dartlab.core.offlineGuard import OfflineViolation, enforceOffline, releaseOffline
@@ -155,3 +155,22 @@ def test_offline_guard_idempotent() -> None:
     finally:
         releaseOffline()
     assert not isOfflineEnforced()
+
+
+def test_offline_guard_strict_blocks_hf_before_dns() -> None:
+    """Strict child mode는 기본 HF 예외도 제거하고 loopback만 남긴다."""
+    import socket
+
+    from dartlab.core.offlineGuard import (
+        OfflineViolation,
+        enforceOffline,
+        releaseOffline,
+    )
+
+    enforceOffline(strict=True)
+    try:
+        with pytest.raises(OfflineViolation):
+            socket.getaddrinfo("huggingface.co", 443)
+        assert socket.getaddrinfo("localhost", 0)
+    finally:
+        releaseOffline()

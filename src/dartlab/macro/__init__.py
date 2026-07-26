@@ -1,9 +1,9 @@
-"""시장 레벨 매크로 분석 엔진 — 6막 인과 서사.
+"""시장 레벨 매크로 분석 엔진 - 6막 인과 서사.
 
 dartlab의 핵심 사상 4가지 비교 가능성 중 "시장 내/시장 간 비교"를 담당.
 gather(L1)이 수집한 원시 데이터 위에 6막 인과 해석을 제공한다.
 
-6막 구조 — "앞 막이 뒷 막의 원인"::
+6막 구조 - "앞 막이 뒷 막의 원인"::
 
     1막: "경제는 어디에 있나"     (국면 진단)     cycle, inventory
      ↓
@@ -33,8 +33,8 @@ gather(L1)이 수집한 원시 데이터 위에 6막 인과 해석을 제공한�
 학술 근거:
     - FOMC 성명서 구조 (고용/물가 → 정책 → 포워드 가이던스)
     - ECB 전파 메커니즘 (정책금리 → 금융상태 → 실물 → 물가)
-    - Bernanke & Gertler (1995) — 신용 채널, 금융가속기
-    - Ray Dalio — 단기/장기 부채 사이클
+    - Bernanke & Gertler (1995) - 신용 채널, 금융가속기
+    - Ray Dalio - 단기/장기 부채 사이클
     - Goldman Sachs/IMF 매크로 보고서 구조
 """
 
@@ -59,7 +59,7 @@ _ACT_LABELS: dict[int, str] = {
     0: "종합",
 }
 
-# Public surface — Macro callable + sub-axis 진입.
+# Public surface - Macro callable + sub-axis 진입.
 __all__ = ["Macro"]
 
 # ── Axis Registry ────────────────────────────────────────
@@ -208,7 +208,7 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
         module="dartlab.macro.simulate.simulate",
         fn="analyzeSimulation",
         label="전망시뮬",
-        description="BVAR 변수 팬(분위 경로) + 충격반응 IRF + 국면 forward — 미래 확률 시뮬",
+        description="BVAR 변수 팬(분위 경로) + 충격반응 IRF + 국면 forward - 미래 확률 시뮬",
         example='macro("시뮬레이션", market="US")',
         act=6,
     ),
@@ -217,7 +217,7 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
         module="dartlab.macro.summary",
         fn="analyzeSummary",
         label="종합",
-        description="6막 전체 종합 — 점수 + 자산배분 + 40개 투자전략",
+        description="6막 전체 종합 - 점수 + 자산배분 + 40개 투자전략",
         example='macro("종합")',
         act=0,
     ),
@@ -302,13 +302,13 @@ def _resolve(axis: str) -> str:
     available = list(_AXIS_REGISTRY.keys()) + list(_ALIASES.keys())
     hint = ", ".join(sorted(set(available)))
     msg = f"'{axis}' 축을 찾을 수 없습니다. 사용 가능: {hint}"
-    # market 코드 오용 가드 — 'KR'/'US' 류 ISO 시장 코드를 axis 자리에 넣은 경우
+    # market 코드 오용 가드 - 'KR'/'US' 류 ISO 시장 코드를 axis 자리에 넣은 경우
     # 친절한 호출 예 동봉. LLM agent 가 KeyError 메시지 안 hint 로 자가 교정.
     if axis.strip().upper() in {"KR", "US", "JP", "JPN", "EU", "CN", "UK", "DE", "FR"}:
         msg += (
             f". 힌트: '{axis}' 는 market 코드입니다. 첫 인자는 axis 이름 "
             f"(예: 'cycle'/'사이클'/'rates'/'금리'), 시장은 market='{axis.strip().upper()}' "
-            f"keyword 로 넘기세요 — dartlab.macro('사이클', market='{axis.strip().upper()}')"
+            f"keyword 로 넘기세요 - dartlab.macro('사이클', market='{axis.strip().upper()}')"
         )
     raise KeyError(msg)
 
@@ -316,8 +316,20 @@ def _resolve(axis: str) -> str:
 # ── Macro 클래스 ────────────────────────────────────────
 
 
+def _bindCompanyTransmissionContext(target: dict[str, Any], company: Any) -> None:
+    """전파 축에만 Company 교차 렌즈 문맥을 지연 결합한다."""
+    from dartlab.synth.macroCompanyContext import buildMacroCompanyContext
+
+    context = buildMacroCompanyContext(company)
+    target.setdefault("stockCode", str(getattr(company, "stockCode", "") or "unknown"))
+    if context.get("sectorKey"):
+        target.setdefault("sectorKey", context["sectorKey"])
+    target.setdefault("companyEvidence", context["companyEvidence"])
+    target.setdefault("contextGaps", context["contextGaps"])
+
+
 class Macro:
-    """시장 레벨 매크로 분석 — 6 막 인과 서사 엔진.
+    """시장 레벨 매크로 분석 - 6 막 인과 서사 엔진.
 
     Capabilities:
         FRED · ECOS 등 공개 매크로 데이터를 가져와 사이클 4 국면 (침체/회복/
@@ -341,14 +353,14 @@ class Macro:
         >>> macro("시나리오", "2008 금융위기")    # 역사적 시나리오
 
     Guide:
-        매크로 엔진은 6 막 인과의 최상위 — 사이클 → 업종 (scan) → 기업
+        매크로 엔진은 6 막 인과의 최상위 - 사이클 → 업종 (scan) → 기업
         (analysis) 순서로 분석 흐름이 흘러간다. 종목 분석 전 매크로 환경부터
         파악할 때 사용. KR/US 시장 모두 지원, market 명시 필수.
 
     SeeAlso:
-        - ``Quant``: 시장 심리·변동성 — macro 사이클과 교차 분석
-        - ``analysis``: 개별 기업 재무 — macro 환경 하 기업 건전성
-        - ``scan``: 전종목 횡단 — macro 사이클별 업종 영향 비교
+        - ``Quant``: 시장 심리·변동성 - macro 사이클과 교차 분석
+        - ``analysis``: 개별 기업 재무 - macro 환경 하 기업 건전성
+        - ``scan``: 전종목 횡단 - macro 사이클별 업종 영향 비교
         - ``synth.scenario``: 시나리오 카탈로그 SSOT
 
     Requires:
@@ -362,9 +374,9 @@ class Macro:
 
     LLM Specifications:
         AntiPatterns:
-            - axis 영문 추측 (cycle/crisis) — 한국어 키만 매핑
-            - market 미지정 시 default "US" — KR 의도면 명시 필수
-            - overrides 키 임의 추가 — 유효 키 4 종 (cyclePhase/rateScenario/
+            - axis 영문 추측 (cycle/crisis) - 한국어 키만 매핑
+            - market 미지정 시 default "US" - KR 의도면 명시 필수
+            - overrides 키 임의 추가 - 유효 키 4 종 (cyclePhase/rateScenario/
               fxScenario/liquidityScenario) 외 ValueError
         OutputSchema:
             - axis=None: ``pl.DataFrame(columns=[axis, label, description, example, group])``
@@ -413,11 +425,11 @@ class Macro:
         -------
         pl.DataFrame | dict
             axis=None (가이드): DataFrame (axis/label/description/example/group 컬럼)
-            axis 지정: dict — 축별 분석 결과.
+            axis 지정: dict - 축별 분석 결과.
                 cycle: {phase, label, confidence, indicators[{name, value, signal}]}
                 summary: {indicators[], narrative}
                 rates/liquidity/trade/...: {지표별 dict, narrative}
-            _summary (autoEnrich 자동) — 핵심 요약 + [엔진가정].
+            _summary (autoEnrich 자동) - 핵심 요약 + [엔진가정].
 
         Raises
         ------
@@ -443,31 +455,31 @@ class Macro:
         -----
         AI 역할: AI는 macro를 시장 환경과 기업/섹터 해석을 연결하는 엔진으로 보고 asOf, 지표, 방향성 근거를 고정한다.
         When: 종목 분석 전 경제 환경을 먼저 파악할 때. Company 없이 사용 가능.
-        How: 6막 인과의 최상위 — macro(사이클) → scan(업종) → analysis(기업) 순서.
+        How: 6막 인과의 최상위 - macro(사이클) → scan(업종) → analysis(기업) 순서.
             story macro/crisis 타입이 macro 종합 → analysis(안정성, 현금흐름) 순서로 조합.
         Verified:
-            - macro("사이클") → CLI + 사분면 + 금리 + 유동성 + 심리 (observed via ai-ask, 2026-04-25 — 정식 Phase P 판정 아님)
-            - macro + analysis 조합 → 경제 고려한 논제 검증 (observed via ai-ask, 2026-04-25 — 정식 Phase P 판정 아님)
+            - macro("사이클") → CLI + 사분면 + 금리 + 유동성 + 심리 (observed via ai-ask, 2026-04-25 - 정식 Phase P 판정 아님)
+            - macro + analysis 조합 → 경제 고려한 논제 검증 (observed via ai-ask, 2026-04-25 - 정식 Phase P 판정 아님)
 
         See Also
         --------
-        scan : 전종목 횡단 — macro 사이클에 따른 업종별 영향 비교.
-        quant : 시장 심리·변동성 — macro 사이클과 교차 분석.
-        analysis : 개별 기업 재무 — macro 환경 하에서 기업 건전성 판단.
+        scan : 전종목 횡단 - macro 사이클에 따른 업종별 영향 비교.
+        quant : 시장 심리·변동성 - macro 사이클과 교차 분석.
+        analysis : 개별 기업 재무 - macro 환경 하에서 기업 건전성 판단.
 
         LLM Specifications:
             AntiPatterns:
-                - axis 추측 (한글 — 사이클 / 위기 / 시나리오 / 유동성 / 심리 / 금리 / 종합 등)
-                - market 미지정 시 default "US" — KR 분석 의도면 명시 필수
+                - axis 추측 (한글 - 사이클 / 위기 / 시나리오 / 유동성 / 심리 / 금리 / 종합 등)
+                - market 미지정 시 default "US" - KR 분석 의도면 명시 필수
                 - overrides 키 추측 (cyclePhase / rateScenario / fxScenario / liquidityScenario)
             OutputSchema:
-                - axis="사이클": dict — phase / label / confidence / indicators
-                - axis="시나리오": dict — historical analogue + projection
-                - axis="종합": dict — indicators[] + narrative + 투자전략
+                - axis="사이클": dict - phase / label / confidence / indicators
+                - axis="시나리오": dict - historical analogue + projection
+                - axis="종합": dict - indicators[] + narrative + 투자전략
                 - axis 미지정: 가이드 DataFrame (axis/label/description/example/group)
             Prerequisites:
-                - FRED 데이터 (US) — 공개 API, API 키 불필요
-                - ECOS (KR) — public API
+                - FRED 데이터 (US) - 공개 API, API 키 불필요
+                - ECOS (KR) - public API
             Freshness:
                 FRED / ECOS 갱신 주기 (월 / 분기).
             Dataflow:
@@ -493,31 +505,39 @@ class Macro:
         merged: dict = {**clean, **kwargs}
 
         key = _resolve(axis)
+        company = merged.pop("company", None)
+        fallbackKwargs = dict(kwargs)
+        fallbackKwargs.pop("company", None)
+        if key == "transmission" and company is not None:
+            _bindCompanyTransmissionContext(merged, company)
+            _bindCompanyTransmissionContext(fallbackKwargs, company)
         entry = _AXIS_REGISTRY[key]
         mod = importlib.import_module(entry.module)
         fn = getattr(mod, entry.fn)
 
         # 2번째 positional: macro("시나리오", "2008 금융위기")
-        # 시그니처 기반 분기 — target positional 받지 않는 축(cycle/rates/...)에는 drop
+        # 시그니처 기반 분기 - target positional 받지 않는 축(cycle/rates/...)에는 drop
         sig = inspect.signature(fn)
-        accepts_positional = any(
-            p.kind in (inspect.Parameter.POSITIONAL_ONLY, inspect.Parameter.POSITIONAL_OR_KEYWORD)
+        targetParameters = [
+            p
             for p in sig.parameters.values()
-        )
-        effective_target = target if (target is not None and accepts_positional) else None
+            if p.kind in (inspect.Parameter.POSITIONAL_ONLY, inspect.Parameter.POSITIONAL_OR_KEYWORD)
+            and p.name != "market"
+        ]
+        effective_target = target if (target is not None and targetParameters) else None
         try:
             if effective_target is not None:
                 result = fn(effective_target, market=market, **merged)
             else:
                 result = fn(market=market, **merged)
         except TypeError:
-            # 축 함수가 override 키 수용 전 — 키 제거 후 재시도
+            # 축 함수가 override 키 수용 전 - 키 제거 후 재시도
             if effective_target is not None:
-                result = fn(effective_target, market=market, **kwargs)
+                result = fn(effective_target, market=market, **fallbackKwargs)
             else:
-                result = fn(market=market, **kwargs)
+                result = fn(market=market, **fallbackKwargs)
 
-        # assumptions 투명화 — 4 엔진 공통 utility (phase → cyclePhase alias 자동)
+        # assumptions 투명화 - 4 엔진 공통 utility (phase → cyclePhase alias 자동)
         if isinstance(result, dict):
             from dartlab.synth.overrides import buildAssumptions
 
@@ -534,12 +554,12 @@ class Macro:
         pl.DataFrame
             축별 메타데이터 테이블. 컬럼:
 
-            - axis : str — 정규 축 키 (예: ``"cycle"``, ``"rates"``).
-            - label : str — 한글 축 이름 (예: ``"사이클"``, ``"금리"``).
-            - description : str — 축이 수행하는 분석 한 줄 설명.
-            - example : str — 호출 예시 코드 문자열.
-            - group : str — 6막 내 위치 (예: ``"제1막: 경제는 어디에 있나"``).
-            - apiKey : str — 필요한 API 키 안내.
+            - axis : str - 정규 축 키 (예: ``"cycle"``, ``"rates"``).
+            - label : str - 한글 축 이름 (예: ``"사이클"``, ``"금리"``).
+            - description : str - 축이 수행하는 분석 한 줄 설명.
+            - example : str - 호출 예시 코드 문자열.
+            - group : str - 6막 내 위치 (예: ``"제1막: 경제는 어디에 있나"``).
+            - apiKey : str - 필요한 API 키 안내.
         """
         from dartlab.synth.axisGuide import buildAxisGuideDataFrame
 
@@ -556,7 +576,7 @@ class Macro:
 
     def __repr__(self) -> str:
         n = len(_AXIS_REGISTRY)
-        lines = [f"Macro — 6막 인과 서사, {n}축 시장 레벨 매크로 분석"]
+        lines = [f"Macro - 6막 인과 서사, {n}축 시장 레벨 매크로 분석"]
         lines.append("")
 
         lines.append("━━━ 6막 구조 ━━━")

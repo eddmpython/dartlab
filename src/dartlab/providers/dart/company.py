@@ -38,15 +38,15 @@ _log = getLogger(__name__)
 from dartlab.core.registry import getModuleEntries as _getModuleEntries
 
 
-# listing 함수는 ListingResolver registry 경유 (정공법 B — DIP).
+# listing 함수는 ListingResolver registry 경유 (정공법 B - DIP).
 # providers/dart 가 gather/listing 직접 import 0 (cycle 회피).
 def _listingResolver():
-    """ListingResolver lazy resolver — auto-discovery 가 gather/listing register."""
+    """ListingResolver lazy resolver - auto-discovery 가 gather/listing register."""
     from dartlab.core.listingResolver import getListingResolver
 
     resolver = getListingResolver()
     if resolver is None:
-        raise RuntimeError("ListingResolver 미등록 — dartlab.gather.krx.listing 모듈 로드 실패")
+        raise RuntimeError("ListingResolver 미등록 - dartlab.gather.krx.listing 모듈 로드 실패")
     return resolver
 
 
@@ -68,7 +68,7 @@ def codeToName(stockCode):
     LLM Specifications:
         AntiPatterns:
             - 4 자리 / 7 자리 코드 호출 → None. KR stockCode 는 6 자리 strict.
-            - 회사명으로 호출 X — 반대 매핑은 ``nameToCode``.
+            - 회사명으로 호출 X - 반대 매핑은 ``nameToCode``.
         OutputSchema:
             - str 회사명 또는 None.
         Prerequisites:
@@ -101,7 +101,7 @@ def nameToCode(corpName):
     LLM Specifications:
         AntiPatterns:
             - 영문명 호출 → None. KIND 는 한국어 정식 회사명 기반.
-            - 정확 매치만 — 부분 매칭은 ``searchName``.
+            - 정확 매치만 - 부분 매칭은 ``searchName``.
         OutputSchema:
             - str 6 자리 종목코드 또는 None.
         Prerequisites:
@@ -136,7 +136,7 @@ def getKindList(*, forceRefresh: bool = False):
             - forceRefresh=True 빈번 호출 → KRX 부하. 일 1 회 충분.
             - 전체 DataFrame 그대로 LLM 컨텍스트 → 2000+ row 토큰 폭증. searchName 활용.
         OutputSchema:
-            - pl.DataFrame — 컬럼 [stockCode, corpName, market, sector, ...].
+            - pl.DataFrame - 컬럼 [stockCode, corpName, market, sector, ...].
         Prerequisites:
             - 인터넷 + KRX KIND endpoint.
         Freshness:
@@ -154,7 +154,7 @@ def searchName(keyword, *, limit: int | None = None):
 
     Args:
         keyword: 회사명 substring.
-        limit: 최대 행 수. None 이면 무제한 (룰 8 — None 은 keyword 만족용 explicit opt-out).
+        limit: 최대 행 수. None 이면 무제한 (룰 8 - None 은 keyword 만족용 explicit opt-out).
 
     Returns:
         매칭 DataFrame 또는 None.
@@ -166,9 +166,9 @@ def searchName(keyword, *, limit: int | None = None):
         없음.
 
     SeeAlso:
-        - ``nameToCode`` — 정확 매치.
-        - ``iterName`` — 같은 결과의 row-level generator.
-        - ``Company.search`` — Company 라우터 패리티 인터페이스.
+        - ``nameToCode`` - 정확 매치.
+        - ``iterName`` - 같은 결과의 row-level generator.
+        - ``Company.search`` - Company 라우터 패리티 인터페이스.
 
     Requires:
         - dartlab
@@ -207,7 +207,7 @@ def searchName(keyword, *, limit: int | None = None):
 
 
 def iterName(keyword, *, limit: int | None = None):
-    """``searchName`` 의 iterator pair (룰 10) — row-level 스트리밍.
+    """``searchName`` 의 iterator pair (룰 10) - row-level 스트리밍.
 
     Args:
         keyword: 회사명 substring.
@@ -224,7 +224,7 @@ def iterName(keyword, *, limit: int | None = None):
         ...     print(row["corp_name"])
 
     SeeAlso:
-        - ``searchName`` — 같은 결과의 DataFrame 버전.
+        - ``searchName`` - 같은 결과의 DataFrame 버전.
 
     Requires:
         - dartlab
@@ -237,14 +237,14 @@ def iterName(keyword, *, limit: int | None = None):
         - "대량 회사 순차 처리" → ``for row in iterName(kw):``.
 
     AIContext:
-        AI 의 자동 batch 처리 — 결과 row 하나씩 회사 분석 dispatch. searchName 보다 lazy.
+        AI 의 자동 batch 처리 - 결과 row 하나씩 회사 분석 dispatch. searchName 보다 lazy.
 
     LLM Specifications:
         AntiPatterns:
             - generator 소진 후 재호출 → 새 generator (정상 동작).
             - generator → list() 즉시 변환 시 searchName 과 동등. iterName 의 streaming 이점 사라짐.
         OutputSchema:
-            - generator[dict] — row dict 시리즈.
+            - generator[dict] - row dict 시리즈.
         Prerequisites:
             - ``searchName`` 과 동일.
         Freshness:
@@ -286,11 +286,11 @@ _ALL_PROPERTIES: list[tuple[str, str]] | None = None
 
 
 def _getModuleRegistry() -> list[tuple[str, str, str, Any]]:
-    """lazy 모듈 레지스트리 — 최초 접근 시 구축."""
+    """lazy 모듈 레지스트리 - 최초 접근 시 구축."""
     global _MODULE_REGISTRY, _MODULE_INDEX
     if _MODULE_REGISTRY is None:
         _MODULE_REGISTRY = [
-            # finance 재무제표 — panel-only 전환 후 finance/ 경로가 XBRL 재무 SSOT.
+            # finance 재무제표 - panel-only 전환 후 finance/ 경로가 XBRL 재무 SSOT.
             ("dartlab.providers.dart.finance.statements", "statements", "재무제표", None),
         ] + [(e.modulePath, e.funcName, e.label, e.extractor) for e in _getModuleEntries()]
         _MODULE_INDEX = {entry[1]: i for i, entry in enumerate(_MODULE_REGISTRY)}
@@ -298,7 +298,7 @@ def _getModuleRegistry() -> list[tuple[str, str, str, Any]]:
 
 
 def _getModuleIndex() -> dict[str, int]:
-    """lazy 모듈 인덱스 — 최초 접근 시 구축."""
+    """lazy 모듈 인덱스 - 최초 접근 시 구축."""
     global _MODULE_INDEX
     if _MODULE_INDEX is None:
         _getModuleRegistry()
@@ -306,7 +306,7 @@ def _getModuleIndex() -> dict[str, int]:
 
 
 def _getAllProperties() -> list[tuple[str, str]]:
-    """lazy all() 순서 목록 — 최초 접근 시 구축."""
+    """lazy all() 순서 목록 - 최초 접근 시 구축."""
     global _ALL_PROPERTIES
     if _ALL_PROPERTIES is None:
         _ALL_PROPERTIES = [
@@ -323,7 +323,7 @@ def _getAllProperties() -> list[tuple[str, str]]:
 
 
 def rebuildModuleRegistry() -> None:
-    """플러그인 등록 후 호출 — 모듈 레지스트리 캐시 무효화.
+    """플러그인 등록 후 호출 - 모듈 레지스트리 캐시 무효화.
 
     Raises:
         없음.
@@ -332,8 +332,8 @@ def rebuildModuleRegistry() -> None:
         >>> rebuildModuleRegistry()
 
     SeeAlso:
-        - ``_getModuleRegistry`` — 실 lazy 재구축 함수.
-        - ``listExportModules`` / ``iterExportModules`` — registry 소비자.
+        - ``_getModuleRegistry`` - 실 lazy 재구축 함수.
+        - ``listExportModules`` / ``iterExportModules`` - registry 소비자.
 
     Requires:
         - dartlab
@@ -482,7 +482,7 @@ _TOPIC_LABELS: dict[str, str] = {
 
 
 def _filterPeriodColumnsByAsOf(df: "pl.DataFrame", asOf: str) -> "pl.DataFrame":
-    """asOf 이후 fiscal period 컬럼/행 drop — look-ahead bias 방지.
+    """asOf 이후 fiscal period 컬럼/행 drop - look-ahead bias 방지.
 
     DART 재무제표 finance topic 의 horizontal view 는 컬럼명이 fiscal period
     (예: "2025Q4", "2024", "2023Q3"). 사용자가 시점 X 분석 재현 시 X 이후
@@ -534,7 +534,7 @@ def listExportModules(*, limit: int | None = None) -> list[tuple[str, str]]:
         limit: 최대 항목 수. None 이면 무제한.
 
     Returns:
-        ``(prop, label)`` 튜플 리스트 — Excel export 컬럼명 생성용. prop 은 Company
+        ``(prop, label)`` 튜플 리스트 - Excel export 컬럼명 생성용. prop 은 Company
         속성명 (예 ``"businessOverview"``), label 은 사용자 표시용 한글 라벨.
 
     Example:
@@ -544,8 +544,8 @@ def listExportModules(*, limit: int | None = None) -> list[tuple[str, str]]:
         없음.
 
     SeeAlso:
-        - ``iterExportModules`` — 같은 결과 generator pair.
-        - ``rebuildModuleRegistry`` — registry 캐시 갱신.
+        - ``iterExportModules`` - 같은 결과 generator pair.
+        - ``rebuildModuleRegistry`` - registry 캐시 갱신.
 
     Requires:
         - dartlab
@@ -559,14 +559,14 @@ def listExportModules(*, limit: int | None = None) -> list[tuple[str, str]]:
         - "사용 가능 module 목록" → ``listExportModules()``.
 
     AIContext:
-        workbench introspection — Company 이 가진 attribute (BS/IS/dividend/employee 등) 카탈로그.
+        workbench introspection - Company 이 가진 attribute (BS/IS/dividend/employee 등) 카탈로그.
 
     LLM Specifications:
         AntiPatterns:
             - limit 없이 노출 → 30+ 항목, 토큰 부담. UI 한정 표시.
             - registry 변경 직후 호출 → 캐시 stale 가능. rebuildModuleRegistry 선행 의무.
         OutputSchema:
-            - list[tuple[str, str]] — (propName, 한국어 라벨) pair.
+            - list[tuple[str, str]] - (propName, 한국어 라벨) pair.
         Prerequisites:
             - _MODULE_REGISTRY 초기화 완료.
         Freshness:
@@ -599,7 +599,7 @@ def iterExportModules(*, limit: int | None = None):
         ...     print(prop, label)
 
     SeeAlso:
-        - ``listExportModules`` — 같은 결과 list 버전.
+        - ``listExportModules`` - 같은 결과 list 버전.
 
     Requires:
         - dartlab
@@ -612,7 +612,7 @@ def iterExportModules(*, limit: int | None = None):
         - "module 별 처리 streaming" → ``for prop, label in iterExportModules():``.
 
     AIContext:
-        AI 의 자동 module-by-module dispatch 시 메모리 절약 — 한 번에 1 module 처리.
+        AI 의 자동 module-by-module dispatch 시 메모리 절약 - 한 번에 1 module 처리.
 
     LLM Specifications:
         AntiPatterns:
@@ -670,12 +670,12 @@ class Company:
 
     Notes
     -----
-    **첫 호출 시간** — Company(stockCode) 최초 호출은 해당 종목의 panel /
+    **첫 호출 시간** - Company(stockCode) 최초 호출은 해당 종목의 panel /
     finance / report parquet 를 HuggingFace 에서 자동 다운로드한다 (총
     ~수MB ~ 수십MB). 네트워크 속도에 따라 **30~60초** 소요. 2회째부터는
-    로컬 캐시 사용 — 즉시 반환.
+    로컬 캐시 사용 - 즉시 반환.
 
-    Company 편의성 3원칙 (CLAUDE.md) 중 "속도 — 첫 호출 5초 이내" 는 캐시
+    Company 편의성 3원칙 (CLAUDE.md) 중 "속도 - 첫 호출 5초 이내" 는 캐시
     적중 기준. cold start (캐시 없음) 는 다운로드 시간 포함이며 진행 상황
     은 기본 INFO 레벨 logger 로 출력 (silence: ``logging.getLogger("dartlab").setLevel(WARNING)``).
     """
@@ -705,11 +705,11 @@ class Company:
             code: 종목코드/회사명 후보 문자열.
 
         Returns:
-            bool — DART 처리 가능 여부.
+            bool - DART 처리 가능 여부.
 
         SeeAlso:
-            - ``edgar.Company.canHandle`` — US ticker 패리티.
-            - ``priority`` — 라우터 정렬 SSOT.
+            - ``edgar.Company.canHandle`` - US ticker 패리티.
+            - ``priority`` - 라우터 정렬 SSOT.
 
         Requires:
             - dartlab
@@ -717,19 +717,19 @@ class Company:
 
         Capabilities:
             - 6 자리 alphanumeric (KR stockCode) 또는 한글 (회사명) 매칭. EDGAR 의 5 자리 영문 ticker
-              와 disjoint — 라우터 정확 dispatch.
+              와 disjoint - 라우터 정확 dispatch.
 
         Guide:
             - "DART 처리 가능 코드냐" → 본 함수.
 
         AIContext:
-            Company 팩토리 내부. AI 가 직접 호출 X — Company() 가 자동 dispatch.
+            Company 팩토리 내부. AI 가 직접 호출 X - Company() 가 자동 dispatch.
 
         LLM Specifications:
             AntiPatterns:
-                - 영문 5 자 ticker (예 "AAPL") → False — EDGAR 가 처리.
+                - 영문 5 자 ticker (예 "AAPL") → False - EDGAR 가 처리.
                 - 빈 문자열 → False (re.match 실패).
-                - 6 자리지만 영문 only (예 "ABCDEF") → True 가능 — KRX KIND lookup 시 실 매치 필요.
+                - 6 자리지만 영문 only (예 "ABCDEF") → True 가능 - KRX KIND lookup 시 실 매치 필요.
             OutputSchema:
                 - bool.
             Prerequisites:
@@ -754,7 +754,7 @@ class Company:
         Returns
         -------
         int
-            provider 우선순위. DART 는 10 — EDGAR (20) 보다 먼저 시도.
+            provider 우선순위. DART 는 10 - EDGAR (20) 보다 먼저 시도.
 
         Raises:
             없음.
@@ -767,7 +767,7 @@ class Company:
 
         LLM Specifications:
             AntiPatterns:
-                - 본 상수 외부에서 hard-code 비교 — 라우터 순서 변경 시 회귀.
+                - 본 상수 외부에서 hard-code 비교 - 라우터 순서 변경 시 회귀.
             OutputSchema:
                 - int 상수 10.
             Prerequisites:
@@ -777,12 +777,12 @@ class Company:
             Dataflow:
                 - Company 팩토리 → 본 함수 → provider 우선순위 정렬.
             TargetMarkets:
-                - KR — primary provider.
+                - KR - primary provider.
         """
         return 10
 
     def __init__(self, stockCode: str):
-        """DART KR Company 인스턴스 초기화 — stockCode 해석 + parquet 캐시 + accessor 5 종 셋업.
+        """DART KR Company 인스턴스 초기화 - stockCode 해석 + parquet 캐시 + accessor 5 종 셋업.
 
         Args:
             stockCode: 6 자리 종목코드 (``"005930"``) 또는 한글 회사명 (``"삼성전자"``).
@@ -804,9 +804,9 @@ class Company:
             '삼성전자'
 
         SeeAlso:
-            - ``nameToCode`` — 한글명 → 6 자리 코드 매핑 (ListingResolver).
-            - ``__enter__`` / ``__exit__`` — context manager + OomTripwire + cleanupCache.
-            - ``_ensureAllData`` — panel/finance/report parquet 셋 verify.
+            - ``nameToCode`` - 한글명 → 6 자리 코드 매핑 (ListingResolver).
+            - ``__enter__`` / ``__exit__`` - context manager + OomTripwire + cleanupCache.
+            - ``_ensureAllData`` - panel/finance/report parquet 셋 verify.
 
         Requires:
             - polars
@@ -815,9 +815,9 @@ class Company:
             - dartlab.core.dataLoader.loadData (corpName 추출)
 
         Capabilities:
-            - 단일 한국 상장사 facade 진입점 — panel/finance/report 통합 access.
-            - lazy finance — 첫 ``c.finance.*`` 접근 시 parquet load.
-            - pyodide-aware — emscripten 에선 corpName 을 stockCode 로 폴백 (네트워크 비용 회피).
+            - 단일 한국 상장사 facade 진입점 - panel/finance/report 통합 access.
+            - lazy finance - 첫 ``c.finance.*`` 접근 시 parquet load.
+            - pyodide-aware - emscripten 에선 corpName 을 stockCode 로 폴백 (네트워크 비용 회피).
 
         Guide:
             - "삼성전자 분석" → ``Company("005930")``.
@@ -825,23 +825,23 @@ class Company:
             - "다종목 순회" → ``with Company(code) as c: ...`` 패턴 강제 (OomTripwire).
 
         AIContext:
-            Ask Workbench Company facade — LLM 이 첫 호출하는 KR provider 엔트리.
+            Ask Workbench Company facade - LLM 이 첫 호출하는 KR provider 엔트리.
             ``co.panel(topic)`` / ``co.search(query)`` 등 모든 후속 호출의 self.
 
         LLM Specifications:
             AntiPatterns:
                 - 4 자리/7 자리/8 자리 코드 호출 → ValueError. KR stockCode 는 6 자리 strict.
-                - ``Company(code)`` 한 인스턴스로 다종목 처리 시도 — 종목당 신규 Company 강제.
+                - ``Company(code)`` 한 인스턴스로 다종목 처리 시도 - 종목당 신규 Company 강제.
                 - ``with`` 누락 다종목 루프 → Polars Rust heap 누적 → OOM (cleanupCache 미호출).
                 - 한글 외 다국어 회사명 (Samsung/サムスン) → KIND 미매치 → ValueError.
             OutputSchema:
-                - Company 인스턴스 — ``stockCode`` (str 6 upper) / ``corpName`` (str)
+                - Company 인스턴스 - ``stockCode`` (str 6 upper) / ``corpName`` (str)
                   / ``_cache`` (BoundedCache 30) / ``_hasPanel/_hasFinanceParquet/_hasReport`` (bool).
                 - 내부 accessor: ``_finance`` (FinanceAccessor)
                   / ``_report`` (ReportAccessor) / ``_profileAccessor`` / ``_notesAccessor`` (panel 있을 때만).
             Prerequisites:
                 - KIND 룩업 캐시 또는 HuggingFace origin 다운로드 권한 (cold start 가능).
-                - ``_ensureAllData`` 가 panel/finance/report parquet 확인 — 하나라도 있으면 통과.
+                - ``_ensureAllData`` 가 panel/finance/report parquet 확인 - 하나라도 있으면 통과.
             Freshness:
                 - 초기화 wall-clock ≥ 2.0s 시 INFO log (HF cold start 추적).
                 - panel freshness 는 ``_checkDartDocsFreshness`` 가 trailing date 와 비교 후
@@ -852,7 +852,7 @@ class Company:
                 - → ``_ensureAllData`` (panel/finance/report parquet existence check)
                 - → BoundedCache(30) + 5 accessor 인스턴스화 → Company.
             TargetMarkets:
-                - KR (DART) — KOSPI/KOSDAQ/KONEX 등록 종목 한정. 비상장/외국주 X.
+                - KR (DART) - KOSPI/KOSDAQ/KONEX 등록 종목 한정. 비상장/외국주 X.
         """
         import time as _time
 
@@ -882,13 +882,13 @@ class Company:
         if corpName:
             self.corpName = corpName
         elif sys.platform == "emscripten":
-            # pyodide: panel 선행 fetch 회피 — 사용자가 요청한 카테고리만 lazy fetch.
+            # pyodide: panel 선행 fetch 회피 - 사용자가 요청한 카테고리만 lazy fetch.
             # 진짜 corpName 이 필요하면 show/select 가 나중에 panel 을 가져옴.
             self.corpName = self.stockCode
         else:
             self.corpName = self.stockCode
 
-        # finance는 lazy — 첫 접근 시 _ensureFinanceLoaded()에서 검증
+        # finance는 lazy - 첫 접근 시 _ensureFinanceLoaded()에서 검증
         self._financeChecked = False
 
         if not self._hasPanel and not self._hasFinanceParquet and not self._hasReport:
@@ -901,11 +901,11 @@ class Company:
         self._notesAccessor = Notes(self) if self._hasPanel else None
         # public namespace 모두 제거 (P3a/b/c/d)
         self._profileAccessor = _ProfileAccessor(self)
-        # private 백엔드 — 내부 compute 전용 (story/credit/valuation 등). panel-only로 docs accessor 은퇴.
+        # private 백엔드 - 내부 compute 전용 (story/credit/valuation 등). panel-only로 docs accessor 은퇴.
         self._finance = _FinanceAccessor(self)
         self._report = _ReportAccessor(self)
 
-        # 초기화 wall-clock — 2초 이상이면 사용자에게 총 시간 보고 (cold start
+        # 초기화 wall-clock - 2초 이상이면 사용자에게 총 시간 보고 (cold start
         # 시 HF 다운로드 포함. Company 편의성 3원칙 "첫 호출 5초 이내" 감시).
         _initElapsed = _time.perf_counter() - _initStart
         if _initElapsed >= 2.0:
@@ -957,7 +957,7 @@ class Company:
     # ── P7: Company context manager + 메모리-safe surface (룰 11 + MemorySafeProvider) ──
 
     def __enter__(self) -> "Company":
-        """context manager 진입 — OomTripwire 시작 + self 반환.
+        """context manager 진입 - OomTripwire 시작 + self 반환.
 
         M5: OomTripwire 가 background watcher 로 RSS 폴링,
         EMERGENCY 초과 시 kernel OOM-kill 전에 graceful 종료.
@@ -979,7 +979,7 @@ class Company:
         return self
 
     def __exit__(self, _excType: object, _excVal: object, _excTb: object) -> None:
-        """context manager 종료 — OomTripwire 정지 + BoundedCache evict + RSS 회수.
+        """context manager 종료 - OomTripwire 정지 + BoundedCache evict + RSS 회수.
 
         룰 11 만족. Polars 네이티브 힙 누수 차단.
 
@@ -1000,7 +1000,7 @@ class Company:
         try:
             self.cleanupCache()
         except (AttributeError, KeyError, RuntimeError):
-            pass  # cleanup 실패는 silent — 정상 종료 우선
+            pass  # cleanup 실패는 silent - 정상 종료 우선
 
     def cleanupCache(self) -> int:
         """BoundedCache 전체 evict + cleanupBetweenCompanies 실행.
@@ -1020,9 +1020,9 @@ class Company:
             없음 (cleanupBetweenCompanies 가 내부 silent).
 
         SeeAlso:
-            - ``memorySnapshot`` — 호출 전/후 RSS 비교.
-            - ``__exit__`` — context manager 종료 시 본 함수 자동 호출.
-            - ``dartlab.core.memory.cleanupBetweenCompanies`` — Polars Rust heap 회수.
+            - ``memorySnapshot`` - 호출 전/후 RSS 비교.
+            - ``__exit__`` - context manager 종료 시 본 함수 자동 호출.
+            - ``dartlab.core.memory.cleanupBetweenCompanies`` - Polars Rust heap 회수.
 
         Requires:
             - dartlab
@@ -1043,7 +1043,7 @@ class Company:
                 - 호출 없이 다종목 순회 → Polars 힙 누적 → OOM.
                 - ``gc.collect()`` 만 호출 → Rust heap 회수 X. 본 함수 필수.
             OutputSchema:
-                - int — evict 된 entry 수.
+                - int - evict 된 entry 수.
             Prerequisites:
                 - 인스턴스 활성 상태.
             Freshness:
@@ -1051,7 +1051,7 @@ class Company:
             Dataflow:
                 - self._cache → clear → cleanupBetweenCompanies(label) → Rust heap.
             TargetMarkets:
-                - KR — 본 클래스 인스턴스.
+                - KR - 본 클래스 인스턴스.
         """
         from dartlab.core.memory import cleanupBetweenCompanies
 
@@ -1077,8 +1077,8 @@ class Company:
             없음.
 
         SeeAlso:
-            - ``cleanupCache`` — 본 함수가 보여준 RSS 회수.
-            - ``dartlab.core.memory.getMemoryMb`` — psutil 기반 RSS.
+            - ``cleanupCache`` - 본 함수가 보여준 RSS 회수.
+            - ``dartlab.core.memory.getMemoryMb`` - psutil 기반 RSS.
 
         Requires:
             - dartlab
@@ -1096,7 +1096,7 @@ class Company:
 
         LLM Specifications:
             AntiPatterns:
-                - RSS 절대값 환경 간 비교 X (Windows vs WSL 차이) — 동일 환경 내 추세만.
+                - RSS 절대값 환경 간 비교 X (Windows vs WSL 차이) - 동일 환경 내 추세만.
                 - cacheSize 0 == 메모리 정리 완료 X. Polars Rust heap 별도 영역.
             OutputSchema:
                 - dict {"cacheSize": int, "rssMb": int}.
@@ -1107,14 +1107,14 @@ class Company:
             Dataflow:
                 - psutil RSS + self._cache len → 본 함수.
             TargetMarkets:
-                - KR — 본 클래스 인스턴스 추적.
+                - KR - 본 클래스 인스턴스 추적.
         """
         from dartlab.core.memory import getMemoryMb
 
         return {"cacheSize": len(self._cache), "rssMb": int(getMemoryMb())}
 
     def topicSummaries(self) -> dict[str, str]:
-        """토픽별 요약 dict — AI가 경로 탐색에 사용.
+        """토픽별 요약 dict - AI가 경로 탐색에 사용.
 
         각 panel text topic의 최신 기간 첫 텍스트에서 200자 요약을 추출한다.
         finance topic은 고정 설명을 반환한다.
@@ -1129,12 +1129,12 @@ class Company:
             없음.
 
         Returns:
-            dict[str, str] — topic → 200 자 요약 텍스트.
+            dict[str, str] - topic → 200 자 요약 텍스트.
 
         SeeAlso:
-            - ``topics`` — DataFrame 카탈로그.
-            - ``index`` — topic 메타 보드.
-            - ``panel`` — 공시 본문/표 원본 격자.
+            - ``topics`` - DataFrame 카탈로그.
+            - ``index`` - topic 메타 보드.
+            - ``panel`` - 공시 본문/표 원본 격자.
 
         Requires:
             - dartlab
@@ -1148,18 +1148,18 @@ class Company:
             - "이 회사 어떤 데이터 어떤 내용 담고 있나" → 본 함수.
 
         AIContext:
-            workbench query routing — 사용자 자연어 → topic 선택 시 본 dict 으로 후보 좁힘.
+            workbench query routing - 사용자 자연어 → topic 선택 시 본 dict 으로 후보 좁힘.
 
         LLM Specifications:
             AntiPatterns:
-                - 200 자 cap → 본문 전체 가정 X — 자세히는 show() 호출 의무.
-                - 본 함수 결과는 cache — 새 보고서 업데이트 시 새 인스턴스 만들어야.
+                - 200 자 cap → 본문 전체 가정 X - 자세히는 show() 호출 의무.
+                - 본 함수 결과는 cache - 새 보고서 업데이트 시 새 인스턴스 만들어야.
             OutputSchema:
-                - dict[str, str] — topic 이름 → 한국어 요약 (≤ 200 자).
+                - dict[str, str] - topic 이름 → 한국어 요약 (≤ 200 자).
             Prerequisites:
                 - panel text (선택) + finance topic 카탈로그.
             Freshness:
-                - 인스턴스 cache — 동일 인스턴스 lifetime 동안 고정.
+                - 인스턴스 cache - 동일 인스턴스 lifetime 동안 고정.
             Dataflow:
                 - finance summaries (고정) + panel latest text 200 자 합산.
             TargetMarkets:
@@ -1173,16 +1173,16 @@ class Company:
 
         # finance 고정 설명
         _FINANCE_SUMMARIES = {
-            "BS": "재무상태표 — 자산, 부채, 자본 잔액",
-            "IS": "손익계산서 — 매출, 영업이익, 당기순이익",
-            "CIS": "포괄손익계산서 — 기타포괄손익 포함",
-            "CF": "현금흐름표 — 영업/투자/재무 활동 현금",
-            "SCE": "자본변동표 — 자본 구성요소별 변동",
-            "ratios": "재무비율 — 수익성/안정성/성장성/효율성/밸류에이션",
+            "BS": "재무상태표 - 자산, 부채, 자본 잔액",
+            "IS": "손익계산서 - 매출, 영업이익, 당기순이익",
+            "CIS": "포괄손익계산서 - 기타포괄손익 포함",
+            "CF": "현금흐름표 - 영업/투자/재무 활동 현금",
+            "SCE": "자본변동표 - 자본 구성요소별 변동",
+            "ratios": "재무비율 - 수익성/안정성/성장성/효율성/밸류에이션",
         }
         summaries.update(_FINANCE_SUMMARIES)
 
-        # panel topic 요약 — 최신 기간 첫 텍스트 200자
+        # panel topic 요약 - 최신 기간 첫 텍스트 200자
         textWide = self._panelTextWide() if self._hasPanel else None
         if textWide is not None and not textWide.is_empty():
             periodCols = sorted(
@@ -1211,7 +1211,7 @@ class Company:
 
     @property
     def _hasFinance(self) -> bool:
-        """finance 사용 가능 여부 — lazy check 포함."""
+        """finance 사용 가능 여부 - lazy check 포함."""
         self._ensureFinanceLoaded()
         return self._hasFinanceParquet
 
@@ -1264,7 +1264,7 @@ class Company:
             forceRefresh: True면 캐시 무시, KIND에서 재다운로드.
 
         Returns:
-            pl.DataFrame — code, name, market, sector 등.
+            pl.DataFrame - code, name, market, sector 등.
 
         Requires:
             데이터: listing (자동 다운로드)
@@ -1280,7 +1280,7 @@ class Company:
                 - forceRefresh=True 빈번 호출 → KRX 부하.
                 - 전체 ~2500 row 그대로 LLM → 토큰 폭증. search 활용.
             OutputSchema:
-                - pl.DataFrame — [code, name, market, sector, ...].
+                - pl.DataFrame - [code, name, market, sector, ...].
             Prerequisites:
                 - 인터넷 + KRX KIND endpoint.
             Freshness:
@@ -1301,7 +1301,7 @@ class Company:
             limit: 최대 행 수. None 이면 무제한.
 
         Returns:
-            pl.DataFrame — 매칭 종목 목록.
+            pl.DataFrame - 매칭 종목 목록.
 
         Example:
             >>> Company.search("삼성", limit=10)
@@ -1334,7 +1334,7 @@ class Company:
             stockCode: 종목코드 ("005930") 또는 종목명 ("삼성전자").
 
         Returns:
-            str | None — 6자리 종목코드. 못 찾으면 None.
+            str | None - 6자리 종목코드. 못 찾으면 None.
 
         Raises:
             없음.
@@ -1343,8 +1343,8 @@ class Company:
             >>> Company("005930").resolve()
 
         SeeAlso:
-            - ``codeName`` — 반대 (code → name).
-            - ``nameToCode`` — module-level 등가.
+            - ``codeName`` - 반대 (code → name).
+            - ``nameToCode`` - module-level 등가.
 
         Requires:
             - dartlab
@@ -1352,18 +1352,18 @@ class Company:
 
         Capabilities:
             - 입력이 6 자리 alphanumeric 이면 그대로 (대문자화), 한국어 회사명이면 nameToCode 위임.
-              사용자 입력 표준화 entry — KR 종목코드 또는 회사명 양쪽 받는 헬퍼.
+              사용자 입력 표준화 entry - KR 종목코드 또는 회사명 양쪽 받는 헬퍼.
 
         Guide:
             - "사용자 모호 입력 → 표준 종목코드" → 본 함수.
 
         AIContext:
-            AI 가 사용자 발화 "삼성전자" / "005930" 모두 처리 — 일관 stockCode 반환.
+            AI 가 사용자 발화 "삼성전자" / "005930" 모두 처리 - 일관 stockCode 반환.
 
         LLM Specifications:
             AntiPatterns:
                 - 영문 5 자 → 6 자리 매칭 X → nameToCode 시도 → None. EDGAR 코드는 다른 provider.
-                - 회사명 정확 매치만 — 부분 매치는 ``searchName``.
+                - 회사명 정확 매치만 - 부분 매치는 ``searchName``.
             OutputSchema:
                 - str (6 자 대문자) 또는 None.
             Prerequisites:
@@ -1388,7 +1388,7 @@ class Company:
             stockCode: 6자리 종목코드.
 
         Returns:
-            str | None — 회사명. 못 찾으면 None.
+            str | None - 회사명. 못 찾으면 None.
 
         Raises:
             없음.
@@ -1421,7 +1421,7 @@ class Company:
             - 최종 업데이트 일시
 
         Returns:
-            pl.DataFrame — 종목코드, 회사명, panel/finance/report 유무, 최종일시.
+            pl.DataFrame - 종목코드, 회사명, panel/finance/report 유무, 최종일시.
 
         Raises:
             없음.
@@ -1432,7 +1432,7 @@ class Company:
         LLM Specifications:
             AntiPatterns:
                 - 전체 status DataFrame LLM 컨텍스트 → 수천 row.
-                - 보유 == 최신 가정 X — update() 미실행 시 stale 가능.
+                - 보유 == 최신 가정 X - update() 미실행 시 stale 가능.
             OutputSchema:
                 - pl.DataFrame [stockCode, corpName, panel:bool, finance:bool, report:bool, lastUpdated].
             Prerequisites:
@@ -1442,7 +1442,7 @@ class Company:
             Dataflow:
                 - data/{docs,finance,report}/*.parquet → buildIndex → 본 staticmethod.
             TargetMarkets:
-                - KR — 로컬 보유 종목 카탈로그.
+                - KR - 로컬 보유 종목 카탈로그.
         """
         return buildIndex()
 
@@ -1455,7 +1455,7 @@ class Company:
             - DART 뷰어 링크 포함
 
         Returns:
-            pl.DataFrame | None — year, rceptDate, rceptNo, reportNm, viewerUrl 등.
+            pl.DataFrame | None - year, rceptDate, rceptNo, reportNm, viewerUrl 등.
 
         AIContext:
             - 어떤 공시가 보유돼 있는지 확인하여 분석 범위 결정에 활용
@@ -1474,13 +1474,13 @@ class Company:
 
         LLM Specifications:
             AntiPatterns:
-                - 실시간 공시 확인용으로 사용 (filings 는 local cache — 실시간은 disclosure/liveFilings)
+                - 실시간 공시 확인용으로 사용 (filings 는 local cache - 실시간은 disclosure/liveFilings)
                 - readFiling 호출 전 filings 결과의 컬럼명 추측 (rceptNo 사용)
             OutputSchema:
-                - rceptNo : str — 공시 접수번호 (readFiling 입력용)
-                - filedAt : str — 공시 일자
-                - title : str — 공시 제목
-                - viewerUrl : str — DART 뷰어 링크
+                - rceptNo : str - 공시 접수번호 (readFiling 입력용)
+                - filedAt : str - 공시 일자
+                - title : str - 공시 제목
+                - viewerUrl : str - DART 뷰어 링크
             Freshness:
                 local cache 기반. c.update() 호출 시점이 기준.
 
@@ -1505,10 +1505,10 @@ class Company:
             categories: ["finance", "docs", "report"]. None이면 전체.
 
         Returns:
-            dict — {카테고리: 수집 건수}.
+            dict - {카테고리: 수집 건수}.
 
         AIContext:
-            - 데이터 최신성 유지에 활용 — 분석 전 자동 갱신 트리거 가능
+            - 데이터 최신성 유지에 활용 - 분석 전 자동 갱신 트리거 가능
 
         Guide:
             - "최신 공시 반영해줘" → c.update()
@@ -1526,9 +1526,9 @@ class Company:
                 - 분석 전 무조건 update() 호출 (이미 최신이면 불필요한 비용)
                 - categories 에 "all" 같은 값 (None 또는 list[str] 만)
             OutputSchema:
-                - finance : int — 추가 수집된 finance 건수
-                - docs : int — 추가 수집된 docs 건수
-                - report : int — 추가 수집된 report 건수
+                - finance : int - 추가 수집된 finance 건수
+                - docs : int - 추가 수집된 docs 건수
+                - report : int - 추가 수집된 report 건수
             Freshness:
                 호출 시점에 DART API 와 비교해 누락만 수집. 매 호출 시점 = 최신 기준.
 
@@ -1554,7 +1554,7 @@ class Company:
     ) -> pl.DataFrame:
         """**[단일 종목 전용]** OpenDART 공시 목록 조회. **stockCode 필수**.
 
-        ⚠ AI 사용 분기 — 절대 헷갈리지 마라:
+        ⚠ AI 사용 분기 - 절대 헷갈리지 마라:
             - "**삼성전자** 최근 공시" → ``c.disclosure(stockCode="005930")`` ✅
             - "**최근 자사주 매입 공시 낸 회사**" → ``dartlab.search("자사주 취득")`` (전종목 검색)
             - "**전종목 정기공시 5건**" → ``dartlab.search("사업보고서")`` (전종목 검색)
@@ -1596,20 +1596,20 @@ class Company:
             - 전종목: "최근 어떤 회사들이 자사주 매입했어?" → dartlab.search("자기주식 취득")
 
         SeeAlso:
-            - dartlab.search: **전종목 공시 검색 — 키워드 기반 (이 함수 대안)**
+            - dartlab.search: **전종목 공시 검색 - 키워드 기반 (이 함수 대안)**
             - liveFilings: 실시간 최신 공시 (정규화된 포맷, 단일 종목)
             - readFiling: 공시 원문 텍스트 읽기
             - filings: 로컬 보유 공시 목록 (단일 종목)
 
         LLM Specifications:
             AntiPatterns:
-                - 전종목 disclosure() (단일 종목 전용 — 전종목은 dartlab.search())
+                - 전종목 disclosure() (단일 종목 전용 - 전종목은 dartlab.search())
                 - days 와 start/end 동시 (start/end 우선)
             OutputSchema:
-                - rceptNo : str — 공시 접수번호 (readFiling 입력용)
-                - filedAt : str — 공시 일자 (YYYY-MM-DD)
-                - title : str — 공시 제목
-                - formType : str — 공시 유형 (정기/주요사항/지분 등)
+                - rceptNo : str - 공시 접수번호 (readFiling 입력용)
+                - filedAt : str - 공시 일자 (YYYY-MM-DD)
+                - title : str - 공시 제목
+                - formType : str - 공시 유형 (정기/주요사항/지분 등)
             Freshness:
                 DART API 실시간 (분 단위). filings() 와 다름 (filings 는 local cache).
 
@@ -1679,10 +1679,10 @@ class Company:
                 - 종목코드 외 ticker 전달 (KR DART 전용)
                 - keyword 정규식 입력 (단순 substring 만 지원)
             OutputSchema:
-                - rceptNo : str — 공시 접수번호 (readFiling 입력용)
-                - filedAt : str — 공시 일자
-                - title : str — 공시 제목
-                - importance : float — 중요도 점수
+                - rceptNo : str - 공시 접수번호 (readFiling 입력용)
+                - filedAt : str - 공시 일자
+                - title : str - 공시 제목
+                - importance : float - 중요도 점수
             Freshness:
                 DART API 실시간 (분 단위).
             TargetMarkets:
@@ -1750,11 +1750,11 @@ class Company:
                 - 종목 이름 (str) 을 filing 인자로 전달 (rceptNo 또는 row 만)
                 - 정기보고서 topic 분석을 readFiling 원문 분해로 우회
             OutputSchema:
-                - rceptNo : str — 공시 접수번호
-                - viewerUrl : str — DART 뷰어 링크
-                - text : str — 공시 본문
+                - rceptNo : str - 공시 접수번호
+                - viewerUrl : str - DART 뷰어 링크
+                - text : str - 공시 본문
             Freshness:
-                DART API 실시간. 단 본문 캐시 없음 — 매 호출 = 새 download.
+                DART API 실시간. 단 본문 캐시 없음 - 매 호출 = 새 download.
 
         Raises:
             없음.
@@ -1786,7 +1786,7 @@ class Company:
             c.rawFinance.columns   # 컬럼 목록 확인
 
         AIContext:
-            - XBRL 정규화 전 원본 구조 파악 — 매핑 검증에 활용
+            - XBRL 정규화 전 원본 구조 파악 - 매핑 검증에 활용
 
         Guide:
             - "원본 재무 데이터 보여줘" → c.rawFinance
@@ -1800,9 +1800,9 @@ class Company:
         LLM Specifications:
             AntiPatterns:
                 - 분석 답변에 raw parquet 직접 인용 (panel("BS") 등 가공본 우선)
-                - 매 호출 reload (캐시 — 1 회면 충분)
+                - 매 호출 reload (캐시 - 1 회면 충분)
             OutputSchema:
-                - XBRL 정규화 전 원본 — bsns_year / sj_div / account_id / amount 등
+                - XBRL 정규화 전 원본 - bsns_year / sj_div / account_id / amount 등
             Freshness:
                 HuggingFace finance parquet 다운로드 시점.
 
@@ -1840,7 +1840,7 @@ class Company:
             c.rawReport.columns    # 컬럼 목록 확인
 
         AIContext:
-            - 정기보고서 API 원본 확인 — report topic 매핑 검증에 활용
+            - 정기보고서 API 원본 확인 - report topic 매핑 검증에 활용
 
         Guide:
             - "원본 보고서 데이터 보여줘" → c.rawReport
@@ -1854,9 +1854,9 @@ class Company:
         LLM Specifications:
             AntiPatterns:
                 - report 원본을 본문 답변에 직접 인용 (show / story 가공본 우선)
-                - 매 호출 reload (캐시 — 1 회면 충분)
+                - 매 호출 reload (캐시 - 1 회면 충분)
             OutputSchema:
-                - 정기보고서 API 원본 — 컬럼은 보고서 form 별로 다름
+                - 정기보고서 API 원본 - 컬럼은 보고서 form 별로 다름
             Freshness:
                 HuggingFace report parquet 다운로드 시점.
 
@@ -1873,7 +1873,7 @@ class Company:
         self._cache[cacheKey] = df
         return df
 
-    # c.notes property 제거 (Plan v10 P2) — 12 sub-property 모두 c.panel("inventory") 등으로 통합.
+    # c.notes property 제거 (Plan v10 P2) - 12 sub-property 모두 c.panel("inventory") 등으로 통합.
     # Notes 클래스는 _notesAccessor (private) 로 유지, show() topic dispatch 가 호출.
 
     def _safePrimary(self, name: str) -> pl.DataFrame | None:
@@ -1937,7 +1937,7 @@ class Company:
 
         return financeStmt(self, sjDiv, freq=freq, scope=scope)
 
-    # c.BS / c.IS / c.CF / c.CIS property 제거 (Plan v10 P0 — api-contract).
+    # c.BS / c.IS / c.CF / c.CIS property 제거 (Plan v10 P0 - api-contract).
     # 사용자는 c.panel("IS") / c.panel("IS", freq="Y", scope="separate") 사용.
 
     def _panelTextWide(self) -> pl.DataFrame | None:
@@ -1946,7 +1946,7 @@ class Company:
 
         return panelTextWide(self.stockCode)
 
-    # docs profile 농장(docsProfileBuilder) 은퇴 — chapter/label 메타는 panel section 카탈로그가 표면.
+    # docs profile 농장(docsProfileBuilder) 은퇴 - chapter/label 메타는 panel section 카탈로그가 표면.
     # 하위호환 graceful stub: profileTable=None, chapterMap={}, chapter="", label=topic 그대로.
     def _profileTable(self) -> pl.DataFrame | None:
         return None
@@ -2003,13 +2003,13 @@ class Company:
         낮춘다. 결정론: 같은 시나리오·asOf 재실행 시 inputsHash 동일.
 
         Args:
-            scenario: 시나리오 id — ``synth.scenario.getPresetScenarios("KR")`` 의 키
+            scenario: 시나리오 id - ``synth.scenario.getPresetScenarios("KR")`` 의 키
                 (``"baseline"`` / ``"adverse"`` / ``"severelyAdverse"`` 등).
             horizon: 예측 연수 (기본 3). 프리셋의 실제 경로 길이를 넘길 수 없다.
             asOf: 명시 재무 기간(YYYY 또는 YYYY-Qn). 기간 단위 PIT이며 접수일 vintage 복원 미지원.
 
         Returns:
-            ``SimulationResult`` — 시나리오 경로 + dcf 주당가치 + 노드별 audit + 전체 품질
+            ``SimulationResult`` - 시나리오 경로 + dcf 주당가치 + 노드별 audit + 전체 품질
             (``"ok"`` / ``"partial"``).
 
         Raises:
@@ -2037,12 +2037,12 @@ class Company:
 
         Guide:
             - 시나리오 비교는 시나리오마다 한 번씩 호출 (baseline vs adverse 는 매크로만 다름).
-              결과는 audit 객체 — 노드 provenance/refs 로 숫자를 설명.
+              결과는 audit 객체 - 노드 provenance/refs 로 숫자를 설명.
 
         AIContext:
-            - 출력은 예측이 아니라 고정 가정의 결정론 변환 — 시나리오 id·노드 provenance/refs·asOf
-              를 같이 노출. ``partial`` 은 데이터 갭(None)이지 0 아님. lens(비결정론)·다중
-              드라이버·Play 는 후속 단계.
+            - 출력은 예측이 아니라 고정 가정의 결정론 변환 - 시나리오 id·노드 provenance/refs·asOf
+              를 같이 노출. ``partial`` 은 데이터 갭(None)이지 0 아님. 대표 렌즈의 가정과
+              시나리오는 ``assumptionLedger``에 맥락으로 보존하며 DriverSheet 입력을 바꾸지 않음.
 
         When:
             - 한 회사의 시나리오-조건부 경로·가치가 Company 흐름에서 필요할 때.
@@ -2052,8 +2052,8 @@ class Company:
 
         LLM Specifications:
             AntiPatterns:
-                - ``dcfPerShare`` 를 목표주가로 인용 — 시나리오-조건부 변환이다.
-                - None ``revenuePath`` 를 0 으로 취급 — 정직한 base 매출 갭.
+                - ``dcfPerShare`` 를 목표주가로 인용 - 시나리오-조건부 변환이다.
+                - None ``revenuePath`` 를 0 으로 취급 - 정직한 base 매출 갭.
             OutputSchema:
                 - ``SimulationResult`` (paths + dcf + 노드 audit + 품질).
             Prerequisites:
@@ -2066,53 +2066,65 @@ class Company:
                 - KR (getPresetScenarios("KR") + KR elasticity).
         """
         from dartlab.simulate.run import runScenario
+        from dartlab.story.lensProducts import collectLensProducts
 
-        return runScenario(self, scenario=scenario, horizon=horizon, asOf=asOf)
+        lensBundle = collectLensProducts(
+            self,
+            engines=("analysis", "credit", "quant", "macro"),
+            basePeriod=asOf,
+        )
+        return runScenario(
+            self,
+            scenario=scenario,
+            horizon=horizon,
+            asOf=asOf,
+            lensBundle=lensBundle,
+        )
 
     @property
     def panel(self):
-        """공시 수평화 보드 — 잡는 순간 항목 × 기간 wide DataFrame (panel 엔진).
+        """공시 수평화 보드 - 잡는 순간 항목 × 기간 wide DataFrame (panel 엔진).
 
         DART 공시 본문(재무제표·주석·서술)을 native canonicalKey(정부 표준 ACLASS scope-strip)로
-        수평 정렬한 wide. ``c.panel`` 은 그 자체가 ``pl.DataFrame``(Panel subclass) — shape/filter
+        수평 정렬한 wide. ``c.panel`` 은 그 자체가 ``pl.DataFrame``(Panel subclass) - shape/filter
         등 polars 연산 그대로. ``c.panel("재고")`` 로 섹션 행 검색, ``c.panel("IS")`` 같은 강한 소스는
         ``show`` 의 finance/report 를 끼워넣어 위임(더 강한 정규화 숫자·정형 공시). 사전빌드 artifact
         lazy read (콜드 <1s). 기본 plain(태그 strip), ``Panel(code, tag=True)`` 면 원본 XML 무손실.
 
         Args:
-            없음 (property — self.stockCode 사용).
+            없음 (property - self.stockCode 사용).
 
         Returns:
             ``Panel`` 인스턴스(= wide ``pl.DataFrame``). ``c.panel`` 자체가 wide, ``c.panel(key)`` 로
             섹션 검색 / 강한 소스 주입.
 
         Raises:
-            없음 — artifact 부재 시 빈 DataFrame.
+            없음 - artifact 부재 시 빈 DataFrame.
 
         Example:
             >>> c = Company("005930")
-            >>> c.panel.shape                          # wide (항목 × period) — DataFrame 그대로
+            >>> c.panel.shape                          # wide (항목 × period) - DataFrame 그대로
             >>> c.panel("재고")                        # 섹션명/canonicalKey 행 (raw 공시)
             >>> c.panel("재고", tag=True)              # 원본 XML 행
-            >>> c.panel("IS")                          # 강한 소스 — finance 주입 (show 위임)
+            >>> c.panel("IS")                          # 강한 소스 - finance 주입 (show 위임)
             >>> c.panel("재고", source="raw")          # 강제 raw 공시
 
         SeeAlso:
-            - ``providers.dart.panel.Panel`` — 반환 본체 (pl.DataFrame subclass + __call__).
-            - ``show`` — 강한 소스(finance/report/notes) dispatch — c.panel 이 주입 재사용.
+            - ``providers.dart.panel.Panel`` - 반환 본체 (pl.DataFrame subclass + __call__).
+            - ``show`` - 강한 소스(finance/report/notes) dispatch - c.panel 이 주입 재사용.
 
         Requires:
             - data/dart/panel/{code}/*.parquet (사전빌드 artifact).
 
         Capabilities:
-            - 한 회사 공시를 항목 × 기간 wide 로 — 잡는 순간 DataFrame, callable 로 섹션·강한 소스 라우팅.
+            - 한 회사 공시를 항목 × 기간 wide 로 - 잡는 순간 DataFrame, callable 로 섹션·강한 소스 라우팅.
 
         Guide:
             - `c.panel.board()` 로 가용 canonicalKey 확인 후 `c.panel(key)`. 회사간은 모듈
               레벨 `compare` (`dartlab.compare(codes, topic=...)`, 회사 단위 facade 밖).
 
         AIContext:
-            - 상태 없는 lazy read — 매 접근 새 Panel (누적 0). contentRaw 는 외부 untrusted.
+            - 상태 없는 lazy read - 매 접근 새 Panel (누적 0). contentRaw 는 외부 untrusted.
 
         When:
             - 한 회사의 공시 수평화 보드가 Company 흐름에서 필요할 때.
@@ -2122,8 +2134,8 @@ class Company:
 
         LLM Specifications:
             AntiPatterns:
-                - c.panel 결과 캐싱 강제 금지 — 상태 없는 lazy(누적 0).
-                - canonicalKey 추측 금지 — board 로 확인 후 show.
+                - c.panel 결과 캐싱 강제 금지 - 상태 없는 lazy(누적 0).
+                - canonicalKey 추측 금지 - board 로 확인 후 show.
             OutputSchema:
                 - ``Panel`` (board/show/wide/long/periods 메서드).
             Prerequisites:
@@ -2139,9 +2151,9 @@ class Company:
         from dartlab.providers.dart.panel import Panel as _Panel
 
         p = _Panel(self.stockCode, marketNs="kr")
-        # facade 주입 — c.panel("IS") 강한 소스는 finance/report 모듈(_showImpl 내부 dispatch)에 직접
-        # 붙는다(공개 c.show property 우회). finance 모듈은 삭제 대상이 아님 — panel 이 그 표면이 된다.
-        # panel 패키지는 finance 를 import 안 함 — 주입된 callable 만 호출(layer 격리, cycle 0).
+        # facade 주입 - c.panel("IS") 강한 소스는 finance/report 모듈(_showImpl 내부 dispatch)에 직접
+        # 붙는다(공개 c.show property 우회). finance 모듈은 삭제 대상이 아님 - panel 이 그 표면이 된다.
+        # panel 패키지는 finance 를 import 안 함 - 주입된 callable 만 호출(layer 격리, cycle 0).
         p._showFn = self._showImpl
         p._strongFn = isStrongTopic
         return p
@@ -2157,7 +2169,7 @@ class Company:
         raw: bool = False,
         asOf: str | None = None,
     ) -> pl.DataFrame | None:
-        """topic 의 데이터를 반환 — 내부 구현 (사용자는 ``c.show`` 호출).
+        """topic 의 데이터를 반환 - 내부 구현 (사용자는 ``c.show`` 호출).
 
         ``operation.apiContract`` 의 "단일 진입점 + 파라미터 계약" 규칙에 따라
         모든 topic 접근은 ``c.panel(topic, ...)`` 로 통합한다.
@@ -2175,9 +2187,9 @@ class Company:
                 ``"majorShareholder"`` 가 아니다. 전체 목록은 ``c.topics``.
             block: 블록 인덱스. None 이면 블록 목차 (1개면 바로 데이터).
             period: 단일 기간 필터 (``"2023"``, ``"2024Q2"``) 또는 리스트 (세로 비교 뷰).
-            freq: 시계열 주기 — ``"Q"`` (분기, 기본) / ``"Y"`` (연간 strict 합) /
+            freq: 시계열 주기 - ``"Q"`` (분기, 기본) / ``"Y"`` (연간 strict 합) /
                 ``"YTD"`` (year-to-date 누적). pandas 관용 코드. **finance topic 한정**.
-            scope: 재무제표 범위 — ``"consolidated"`` (연결, 기본) / ``"separate"`` (별도).
+            scope: 재무제표 범위 - ``"consolidated"`` (연결, 기본) / ``"separate"`` (별도).
                 **finance topic 한정**.
             raw: True 면 원본 그대로 (정제 없이).
 
@@ -2185,28 +2197,28 @@ class Company:
         -------
         pl.DataFrame | None
             finance topic (IS/BS/CF/CIS/SCE):
-                snakeId : str — 계정 식별자 (영문 snake_case)
-                항목 : str — 계정명 (한글)
-                2025Q4, 2025Q3, ... : float — 분기별 값 (원 단위, freq="Q" 기본)
-                2025, 2024, ... : float — 연간 합산 값 (원 단위, freq="Y")
+                snakeId : str - 계정 식별자 (영문 snake_case)
+                항목 : str - 계정명 (한글)
+                2025Q4, 2025Q3, ... : float - 분기별 값 (원 단위, freq="Q" 기본)
+                2025, 2024, ... : float - 연간 합산 값 (원 단위, freq="Y")
             ratios topic:
-                항목 : str — 비율명
-                2025Q4, 2025Q3, ... : float — 비율값 (%, 배)
+                항목 : str - 비율명
+                2025Q4, 2025Q3, ... : float - 비율값 (%, 배)
             notes topic (inventory, borrowings 등):
-                항목 : str — 세부 항목명
-                당기, 전기 또는 연도 컬럼 : float — 금액 (원 단위)
+                항목 : str - 세부 항목명
+                당기, 전기 또는 연도 컬럼 : float - 금액 (원 단위)
             docs/report topic (dividend, employee 등):
-                topic별 컬럼 구조 — c.panel(topic) 실행으로 확인
+                topic별 컬럼 구조 - c.panel(topic) 실행으로 확인
             블록 미지정 + 멀티블록 topic:
-                block : int — 블록 번호
-                title : str — 블록 제목
+                block : int - 블록 번호
+                title : str - 블록 제목
             데이터 없으면 None.
 
         Requires:
             데이터: panel (자동 다운로드). finance topic 은 finance parquet 도 필요.
 
         AIContext:
-            - 120+ topic 단일 접근점 — LLM 이 데이터 조회 핵심 도구
+            - 120+ topic 단일 접근점 - LLM 이 데이터 조회 핵심 도구
             - finance topic 은 freq/scope 토글로 분기/연간/연결/별도 자유 전환
 
         Guide:
@@ -2239,10 +2251,10 @@ class Company:
                 - freq="M" 같은 미지원 값 (Q/Y/YTD 만)
                 - finance topic 에 raw=True 후 비율 계산 (정제 단계 누락)
             OutputSchema:
-                - snakeId : str — 영문 snake_case 계정 식별자 (finance 한정)
-                - 항목 : str — 한글 계정명
-                - 2025Q4, 2025Q3, ... : float — 분기 값 (원 단위, freq="Q" 기본)
-                - 2025, 2024, ... : float — 연간 합산 (원 단위, freq="Y")
+                - snakeId : str - 영문 snake_case 계정 식별자 (finance 한정)
+                - 항목 : str - 한글 계정명
+                - 2025Q4, 2025Q3, ... : float - 분기 값 (원 단위, freq="Q" 기본)
+                - 2025, 2024, ... : float - 연간 합산 (원 단위, freq="Y")
             Freshness:
                 분기 마감 후 45일 (DART 공시 마감일). c.update() 로 증분 갱신.
         """
@@ -2275,10 +2287,10 @@ class Company:
 
     @property
     def select(self):
-        """``show()`` 결과에서 행/열 필터 — dual access proxy.
+        """``show()`` 결과에서 행/열 필터 - dual access proxy.
 
         Returns:
-            ``CallableAccessor`` — call/attr form 둘 다 ``_selectImpl`` 호출. ``SelectResult``
+            ``CallableAccessor`` - call/attr form 둘 다 ``_selectImpl`` 호출. ``SelectResult``
             반환 (filtered DataFrame + meta). 상세는 ``_selectImpl`` docstring.
 
         Example:
@@ -2291,9 +2303,9 @@ class Company:
             없음 (해당 topic 부재 시 ``_selectImpl`` 이 None 반환).
 
         SeeAlso:
-            - ``_selectImpl`` — 실제 필터 구현.
-            - ``show`` — 본 함수의 입력 source.
-            - ``dartlab.frame.select.SelectResult`` — 반환 객체 + ``.chart()`` 체이닝.
+            - ``_selectImpl`` - 실제 필터 구현.
+            - ``show`` - 본 함수의 입력 source.
+            - ``dartlab.frame.select.SelectResult`` - 반환 객체 + ``.chart()`` 체이닝.
 
         Requires:
             - dartlab
@@ -2308,7 +2320,7 @@ class Company:
             - "여러 계정 + 여러 연도" → ``c.select("IS", ["매출액", "당기순이익"], ["2024", "2023"])``.
 
         AIContext:
-            show() 전체 노출 비용 회피 — 필요 행/열만 정밀 추출 후 LLM 컨텍스트 주입.
+            show() 전체 노출 비용 회피 - 필요 행/열만 정밀 추출 후 LLM 컨텍스트 주입.
         """
         from dartlab.core.dualAccess import CallableAccessor
 
@@ -2326,7 +2338,7 @@ class Company:
         scope: str = "consolidated",
         strict: bool = True,
     ):
-        """show() 결과에서 행(indList) + 열(colList) 필터 — 내부 구현.
+        """show() 결과에서 행(indList) + 열(colList) 필터 - 내부 구현.
 
         ``c.panel()`` 와 동일한 freq/scope 파라미터를 받는다 (api-contract).
 
@@ -2334,8 +2346,8 @@ class Company:
             topic: IS, BS, CF, CIS, SCE 또는 docs topic.
             indList: 행 필터. 한글 항목/snakeId/항목명. 단일 str 도 가능.
             colList: 열(기간) 필터. 단일 str 도 가능.
-            freq: 시계열 주기 — ``"Q"`` (분기, 기본) / ``"Y"`` (연간) / ``"YTD"`` (누적).
-            scope: 재무제표 범위 — ``"consolidated"`` (연결, 기본) / ``"separate"`` (별도).
+            freq: 시계열 주기 - ``"Q"`` (분기, 기본) / ``"Y"`` (연간) / ``"YTD"`` (누적).
+            scope: 재무제표 범위 - ``"consolidated"`` (연결, 기본) / ``"separate"`` (별도).
 
         Returns
         -------
@@ -2344,9 +2356,9 @@ class Company:
             .chart() 체이닝으로 시각화 가능.
             내부 DataFrame 접근: result.df (pl.DataFrame).
             finance topic 예시 (c.select("IS", ["매출액"])):
-                snakeId : str — 계정 식별자
-                항목 : str — 계정명
-                2025Q4, 2025Q3, ... : float — 분기별 값 (원 단위)
+                snakeId : str - 계정 식별자
+                항목 : str - 계정명
+                2025Q4, 2025Q3, ... : float - 분기별 값 (원 단위)
             행 매칭 실패 시 ValueError.
 
         Example::
@@ -2369,7 +2381,7 @@ class Company:
         if df is None or not isinstance(df, pl.DataFrame):
             if not strict:
                 return None
-            # show 가 정상 None 반환한 경우 (raw 모드 등) — ValueError 대신 명확한 안내
+            # show 가 정상 None 반환한 경우 (raw 모드 등) - ValueError 대신 명확한 안내
             raise ValueError(
                 f"'{topic}' topic 의 데이터를 가져올 수 없습니다. "
                 f"topic 이름을 확인하거나 c.panel('{topic}') 로 직접 호출해보세요."
@@ -2388,7 +2400,7 @@ class Company:
                 "필터링할 항목을 1개 이상 전달하세요. 예: c.select('IS', ['매출액'])"
             )
 
-        # _showImpl 은 finance 통계표만 반환(공개 show + panel-only) — block-index 경로 소멸.
+        # _showImpl 은 finance 통계표만 반환(공개 show + panel-only) - block-index 경로 소멸.
         filtered = selectFromShow(df, indList, colList)
         if filtered is None:
             if not strict:
@@ -2431,7 +2443,7 @@ class Company:
             period: 특정 기간. None 이면 전체.
 
         Returns:
-            dict — primarySource, fallbackSources, whySelected, availableSources 등.
+            dict - primarySource, fallbackSources, whySelected, availableSources 등.
             topic 미존재 시 None.
 
         Raises:
@@ -2445,7 +2457,7 @@ class Company:
             >>> c.trace("dividend")     # 배당 데이터 출처
 
         AIContext:
-            - 데이터 출처 신뢰도 판단 — finance > report > docs 우선순위 확인
+            - 데이터 출처 신뢰도 판단 - finance > report > docs 우선순위 확인
             - 분석 결과의 근거 투명성 확보
 
         Guide:
@@ -2459,7 +2471,7 @@ class Company:
         LLM Specifications:
             AntiPatterns:
                 - 결과 없이 show() 인용 → AI 환각 위험. trace 결과 source 명시 의무.
-                - period 인자는 metadata 만 — 실 row 필터는 show() 가 처리.
+                - period 인자는 metadata 만 - 실 row 필터는 show() 가 처리.
             OutputSchema:
                 - dict {topic, period, primarySource, fallbackSources, selectedPayloadRef,
                   availableSources:list, whySelected, template?, rowCount?, yearCount?, coverage?} 또는 None.
@@ -2551,7 +2563,7 @@ class Company:
             toPeriod: 비교 끝 기간 ("2024").
 
         Returns:
-            pl.DataFrame | None — 변경 요약, 히스토리, 또는 줄 단위 diff.
+            pl.DataFrame | None - 변경 요약, 히스토리, 또는 줄 단위 diff.
 
         Requires:
             데이터: panel (2개 이상 기간 필요)
@@ -2563,7 +2575,7 @@ class Company:
             c.diff("businessOverview", "2023", "2024")  # 줄 단위 diff
 
         AIContext:
-            - 기간간 공시 변경 감지 — 사업 방향 전환, 리스크 요인 변화 탐지
+            - 기간간 공시 변경 감지 - 사업 방향 전환, 리스크 요인 변화 탐지
             - watch()보다 세밀한 줄 단위 변경 추적
 
         Guide:
@@ -2584,7 +2596,7 @@ class Company:
                 - 줄 단위 diff (3 인자) 결과를 그대로 LLM → 거대 본문 토큰 폭증. 변경 줄만.
                 - period 형식 변형 ("2023Q4" vs "2023") → panel text 컬럼명 매칭 X.
             OutputSchema:
-                - 호출 모드별 — (1) 전체 요약 (2) topic 히스토리 (3) 줄 단위 diff DataFrame.
+                - 호출 모드별 - (1) 전체 요약 (2) topic 히스토리 (3) 줄 단위 diff DataFrame.
             Prerequisites:
                 - panel text wide (2 기간 이상).
             Freshness:
@@ -2633,7 +2645,7 @@ class Company:
             keywords: 복수 키워드 리스트.
 
         Returns:
-            pl.DataFrame | None — topic x period x keyword 빈도.
+            pl.DataFrame | None - topic x period x keyword 빈도.
 
         Requires:
             데이터: panel
@@ -2663,7 +2675,7 @@ class Company:
         LLM Specifications:
             AntiPatterns:
                 - 짧은 keyword ("AI") → 단어 경계 무시 매칭 ("RAID" 도 hit). 정확 매칭 시 정규식.
-                - 빈도 절대값 비교 X — 본문 길이 차이 무시. 정규화 별도.
+                - 빈도 절대값 비교 X - 본문 길이 차이 무시. 정규화 별도.
             OutputSchema:
                 - pl.DataFrame [topic, period, keyword, count] 또는 None.
             Prerequisites:
@@ -2700,7 +2712,7 @@ class Company:
             days: 최근 N일. 기본 30.
 
         Returns:
-            pl.DataFrame — title, date, source, link.
+            pl.DataFrame - title, date, source, link.
 
         Requires:
             없음 (공개 RSS)
@@ -2732,7 +2744,7 @@ class Company:
             OutputSchema:
                 - pl.DataFrame [title, date, source, link] 또는 None.
             Prerequisites:
-                - 인터넷 + 뉴스 origin (gatherProvider — Naver/Google).
+                - 인터넷 + 뉴스 origin (gatherProvider - Naver/Google).
             Freshness:
                 - 외부 origin 실시간.
             Dataflow:
@@ -2749,7 +2761,7 @@ class Company:
         self,
         topic: str | None = None,
     ) -> pl.DataFrame | None:
-        """공시 변화 감지 — 중요도 스코어링 기반 변화 요약.
+        """공시 변화 감지 - 중요도 스코어링 기반 변화 요약.
 
         Capabilities:
             - 전체 topic 변화 중요도 스코어링
@@ -2760,7 +2772,7 @@ class Company:
             topic: topic 이름. None이면 전체 중요도 순 요약.
 
         Returns:
-            pl.DataFrame | None — topic, score, changeType, details 등.
+            pl.DataFrame | None - topic, score, changeType, details 등.
 
         Requires:
             데이터: panel (자동 다운로드)
@@ -2771,7 +2783,7 @@ class Company:
             c.watch("riskManagement")    # 특정 topic
 
         AIContext:
-            - 공시 변화 중요도 자동 평가 — 분석 우선순위 결정에 활용
+            - 공시 변화 중요도 자동 평가 - 분석 우선순위 결정에 활용
             - 텍스트 변화량 + 재무 영향 통합 스코어
 
         Guide:
@@ -2787,8 +2799,8 @@ class Company:
 
         LLM Specifications:
             AntiPatterns:
-                - score 임계 hard-code 후 "큰 변화" 결론 X — 회사별 base score 분포 다름.
-                - 결과 None ≠ "변화 없음" — sections 부재로 분석 불가일 수 있음.
+                - score 임계 hard-code 후 "큰 변화" 결론 X - 회사별 base score 분포 다름.
+                - 결과 None ≠ "변화 없음" - sections 부재로 분석 불가일 수 있음.
             OutputSchema:
                 - pl.DataFrame [topic, score, changeType, fromPeriod, toPeriod, details] 또는 None.
             Prerequisites:
@@ -2810,11 +2822,11 @@ class Company:
 
     @property
     def reportModel(self):
-        """전문 리포트 계약 모델 — story 블록 + de-gate 밸류에이션을 thesis-led ReportModel(dict).
+        """전문 리포트 계약 모델 - story 블록 + de-gate 밸류에이션을 thesis-led ReportModel(dict).
 
         story 가 합산한 분석 섹션을 계약 ReportBlock 으로 매핑하고, 밸류에이션 de-gate
         (내재가치 bridge·시나리오)와 구조화 thesis 를 pro 블록으로 합성한다. 랜딩 /report 가
-        **동일 계약**(contracts/reportModel.ts)을 소비하는 SSOT. self-calc 0 — 숫자는 L2 엔진.
+        **동일 계약**(contracts/reportModel.ts)을 소비하는 SSOT. self-calc 0 - 숫자는 L2 엔진.
 
         Guide:
             - "전문 리포트" → c.reportModel()
@@ -2826,15 +2838,15 @@ class Company:
             {"skipped": True, ...}. dual-access proxy (story 패턴).
 
         Raises:
-            없음 — 데이터 부족·빌드 실패는 skipped dict 로 반환.
+            없음 - 데이터 부족·빌드 실패는 skipped dict 로 반환.
 
         Example:
             >>> Company("005930").reportModel("valuation")["schemaVersion"]
             2
 
         SeeAlso:
-            - ``dartlab.story.report.buildReportModel`` — backend SSOT.
-            - ``story`` — 레거시 Story dataclass(CLI/렌더용, 공존).
+            - ``dartlab.story.report.buildReportModel`` - backend SSOT.
+            - ``story`` - 레거시 Story dataclass(CLI/렌더용, 공존).
 
         Requires:
             - dartlab
@@ -2854,7 +2866,7 @@ class Company:
         return self._cache["_reportModelAccessor"]
 
     def _reportModelImpl(self, perspective: str = "full", *, basePeriod: str | None = None) -> dict:
-        """reportModel 실제 구현 — buildReportModel(L3) 에 위임."""
+        """reportModel 실제 구현 - buildReportModel(L3) 에 위임."""
         import importlib
 
         buildReportModel = importlib.import_module("dartlab.story.report").buildReportModel
@@ -2862,7 +2874,7 @@ class Company:
 
     @property
     def story(self):
-        """5엔진 결과 조립 보고서 — 11 reportType × 7 template. 느림(60~80초). dual access.
+        """5엔진 결과 조립 보고서 - 11 reportType × 7 template. 느림(60~80초). dual access.
 
         Guide:
             - "보고서" → c.story()
@@ -2885,9 +2897,9 @@ class Company:
             >>> Company("005930").story()
 
         SeeAlso:
-            - ``_storyImpl`` — 실제 구현 + 14 섹션 + preset/template 옵션.
-            - ``analysis`` — 14축 raw 분석 (story 가 합산).
-            - ``dartlab.story.registry.buildStory`` — backend SSOT.
+            - ``_storyImpl`` - 실제 구현 + 14 섹션 + preset/template 옵션.
+            - ``analysis`` - 14축 raw 분석 (story 가 합산).
+            - ``dartlab.story.registry.buildStory`` - backend SSOT.
 
         Requires:
             - dartlab
@@ -2920,7 +2932,7 @@ class Company:
         preset: str | None = None,  # deprecated
         perspective: str | None = None,  # deprecated
     ):
-        """재무제표 구조화 보고서 — 기업이야기꾼의 대본 (내부 구현).
+        """재무제표 구조화 보고서 - 기업이야기꾼의 대본 (내부 구현).
 
         Capabilities:
             - 14개 섹션 전체 보고서 (수익구조~재무정합성)
@@ -2945,7 +2957,7 @@ class Company:
             detail: True면 전체 블록, False면 섹션 요약만. None이면 preset 기본값 또는 True.
 
         Returns:
-            Story — 구조화 보고서.
+            Story - 구조화 보고서.
 
         Requires:
             데이터: finance + report (자동 다운로드)
@@ -2969,10 +2981,10 @@ class Company:
             - "요약만 보여줘" -> c.story(detail=False)
             - "AI 가 해석한 보고서" -> dartlab.ask("005930 보고서 작성해줘") (AI 가 story tool 호출)
             Verified:
-                - credit 타입 → 신용 종합 보고서 (observed via credit ai-ask, 2026-04-25 — 정식 Phase P 판정 아님)
-                - audit 타입 → 분식회계 가능성 판정 보고서 (observed via ai-ask, 2026-04-25 — 정식 Phase P 판정 아님)
-                - governance 타입 → 지배구조 점검 보고서 (observed via ai-ask, 2026-04-25 — 정식 Phase P 판정 아님)
-                - dividend 타입 → 배당 매력 종합 보고서 (observed via ai-ask, 2026-04-25 — 정식 Phase P 판정 아님)
+                - credit 타입 → 신용 종합 보고서 (observed via credit ai-ask, 2026-04-25 - 정식 Phase P 판정 아님)
+                - audit 타입 → 분식회계 가능성 판정 보고서 (observed via ai-ask, 2026-04-25 - 정식 Phase P 판정 아님)
+                - governance 타입 → 지배구조 점검 보고서 (observed via ai-ask, 2026-04-25 - 정식 Phase P 판정 아님)
+                - dividend 타입 → 배당 매력 종합 보고서 (observed via ai-ask, 2026-04-25 - 정식 Phase P 판정 아님)
 
         SeeAlso:
             - dartlab.ask: AI 자율 분석 (분석 질문은 여기로)
@@ -2982,10 +2994,10 @@ class Company:
         LLM Specifications:
             AntiPatterns:
                 - story() 무인자 호출 후 결과 dict 전체를 답변 본문에 dump (사용자 부담)
-                - section 추측 (정확한 한글 섹션명 — c.topics 또는 가이드 확인 후)
+                - section 추측 (정확한 한글 섹션명 - c.topics 또는 가이드 확인 후)
                 - preset / template 잘못 매핑 (executive/audit/credit/growth/valuation 만)
             OutputSchema:
-                - Story 객체 — 14 섹션 dict + 메타 (basePeriod, prefset, template)
+                - Story 객체 - 14 섹션 dict + 메타 (basePeriod, prefset, template)
                 - section 지정 시: 단일 섹션 dict
                 - .toMarkdown() 메서드로 markdown 문자열 변환
             Prerequisites:
@@ -3013,7 +3025,7 @@ class Company:
 
     @property
     def analysis(self):
-        """재무제표 완전 분석 — 22축 (5 group), 6막 인과 구조. dual access (api-contract).
+        """재무제표 완전 분석 - 22축 (5 group), 6막 인과 구조. dual access (api-contract).
 
         Guide:
             - "분석해줘" → c.analysis() (가이드 반환)
@@ -3037,9 +3049,9 @@ class Company:
             >>> Company("005930").analysis()
 
         SeeAlso:
-            - ``_analysisImpl`` — 실 dispatch (22 축 5 group).
-            - ``story`` — analysis 결과를 보고서로 합산.
-            - ``dartlab.analysis.financial.Analysis`` — backend SSOT.
+            - ``_analysisImpl`` - 실 dispatch (22 축 5 group).
+            - ``story`` - analysis 결과를 보고서로 합산.
+            - ``dartlab.analysis.financial.Analysis`` - backend SSOT.
 
         Requires:
             - dartlab
@@ -3050,7 +3062,7 @@ class Company:
               분석 dispatch dual-access. axis 미지정 시 카탈로그. self 자동 바인딩.
 
         AIContext:
-            workbench 분석 도구 entry — 축 미지정 호출로 capability 확인 후 정확 dispatch.
+            workbench 분석 도구 entry - 축 미지정 호출로 capability 확인 후 정확 dispatch.
         """
         from dartlab.core.dualAccess import CallableAccessor
 
@@ -3059,7 +3071,7 @@ class Company:
         return self._cache["_analysisAccessor"]
 
     def _analysisImpl(self, axis: str | None = None, sub: str | None = None, **kwargs):
-        """재무제표 완전 분석 — 22축, 단일 종목 심층 (내부 구현).
+        """재무제표 완전 분석 - 22축, 단일 종목 심층 (내부 구현).
 
         Capabilities:
             - 22축 분석 (5 group)
@@ -3082,16 +3094,16 @@ class Company:
             **kwargs: 축별 추가 옵션.
 
         Returns:
-            pl.DataFrame | dict — axis=None이면 가이드 DataFrame (axis/label/description/example/group/items).
+            pl.DataFrame | dict - axis=None이면 가이드 DataFrame (axis/label/description/example/group/items).
             axis 지정 시 dict:
-                {calcName} : dict — 축별 계산 결과
-                    history : list[dict] — 시계열 ({period, ...지표})
-                    displayHints : dict — core 컬럼 목록
-                    turningPoints : list — 전환점 (있으면)
-                {calcName}Flags : list[str] — 경고 플래그
-                dataAsOf : dict — latestPeriod, retrievedAt
-            _summary (autoEnrich 자동 주입) — 핵심 지표 요약 + [엔진가정] 블록.
-            assumptions — 엔진 가정 (overrides 재호출용).
+                {calcName} : dict - 축별 계산 결과
+                    history : list[dict] - 시계열 ({period, ...지표})
+                    displayHints : dict - core 컬럼 목록
+                    turningPoints : list - 전환점 (있으면)
+                {calcName}Flags : list[str] - 경고 플래그
+                dataAsOf : dict - latestPeriod, retrievedAt
+            _summary (autoEnrich 자동 주입) - 핵심 지표 요약 + [엔진가정] 블록.
+            assumptions - 엔진 가정 (overrides 재호출용).
 
         Requires:
             데이터: finance (자동 다운로드)
@@ -3116,11 +3128,11 @@ class Company:
             - "가치평가 해줘" → c.analysis("valuation", "가치평가")
             - "매출전망" → c.analysis("forecast", "매출전망")
             Verified:
-                - 수익성 단독 → 마진 시계열 + 전환점 + 반도체 사이클 인과 (observed via ai-ask, 2026-04-25 — 정식 Phase P 판정 아님)
-                - 이익품질 + 재무정합성 → 분식회계 가능성 판정 (observed via ai-ask, 2026-04-25 — 정식 Phase P 판정 아님)
-                - 가치평가 → 적정주가 범위 + 현재가 대비 판정 (observed via ai-ask, 2026-04-25 — 정식 Phase P 판정 아님)
-                - 자본배분 + 현금흐름 → 배당 매력 종합 판단 (observed via ai-ask, 2026-04-25 — 정식 Phase P 판정 아님)
-                - 지배구조 → 이사회 독립성 + 지배력 집중 점검 (observed via ai-ask, 2026-04-25 — 정식 Phase P 판정 아님)
+                - 수익성 단독 → 마진 시계열 + 전환점 + 반도체 사이클 인과 (observed via ai-ask, 2026-04-25 - 정식 Phase P 판정 아님)
+                - 이익품질 + 재무정합성 → 분식회계 가능성 판정 (observed via ai-ask, 2026-04-25 - 정식 Phase P 판정 아님)
+                - 가치평가 → 적정주가 범위 + 현재가 대비 판정 (observed via ai-ask, 2026-04-25 - 정식 Phase P 판정 아님)
+                - 자본배분 + 현금흐름 → 배당 매력 종합 판단 (observed via ai-ask, 2026-04-25 - 정식 Phase P 판정 아님)
+                - 지배구조 → 이사회 독립성 + 지배력 집중 점검 (observed via ai-ask, 2026-04-25 - 정식 Phase P 판정 아님)
 
         SeeAlso:
             - story: 22축 분석을 섹션별 보고서로 조합
@@ -3130,16 +3142,16 @@ class Company:
         LLM Specifications:
             AntiPatterns:
                 - axis 만 주고 sub 없이 호출 (그룹 가이드만 반환, 실제 분석 X)
-                - 그룹명 ("financial") 을 axis 로, 축명 ("수익성") 을 sub 로 — 순서 헷갈림
+                - 그룹명 ("financial") 을 axis 로, 축명 ("수익성") 을 sub 로 - 순서 헷갈림
                 - sub 에 영문 ("profitability") 사용 (실제는 한글)
             OutputSchema:
-                - history : list[dict] — 시계열 (period + 지표들)
-                - displayHints : dict — core 컬럼 목록
-                - turningPoints : list — 전환점
-                - dataAsOf : dict — latestPeriod, retrievedAt
-                - assumptions : dict — 엔진 가정 (overrides 재호출용)
+                - history : list[dict] - 시계열 (period + 지표들)
+                - displayHints : dict - core 컬럼 목록
+                - turningPoints : list - 전환점
+                - dataAsOf : dict - latestPeriod, retrievedAt
+                - assumptions : dict - 엔진 가정 (overrides 재호출용)
             Freshness:
-                finance 데이터 기준 — 분기 마감 후 45일.
+                finance 데이터 기준 - 분기 마감 후 45일.
         """
         from dartlab.analysis.financial import Analysis
 
@@ -3151,7 +3163,7 @@ class Company:
         return _analysis(axis, company=self, **kwargs)
 
     def validateStory(self, overrides: dict | None = None) -> dict:
-        """Damodaran 스토리 검증 — Possible / Plausible / Probable 3 테스트 통합.
+        """Damodaran 스토리 검증 - Possible / Plausible / Probable 3 테스트 통합.
 
         *Narrative and Numbers* (2017) 의 핵심: 밸류에이션의 타당성은
         (1) 과거 유사 사례, (2) 피어 분포 내 위치, (3) 수학·경제 첫 원칙
@@ -3168,10 +3180,10 @@ class Company:
 
         Returns:
             dict
-                precedents : dict — Possible Test 결과
-                plausibility : dict — Plausible Test 결과
-                rules : dict — Probable Test 결과
-                overall : str — "info" | "warn" | "critical"
+                precedents : dict - Possible Test 결과
+                plausibility : dict - Plausible Test 결과
+                rules : dict - Probable Test 결과
+                overall : str - "info" | "warn" | "critical"
 
         Example::
 
@@ -3184,8 +3196,8 @@ class Company:
             없음.
 
         SeeAlso:
-            - ``storyTree`` / ``causalWeights`` — 검증 대상 story.
-            - ``dartlab.analysis.financial.storyValidation`` — 3 테스트 backend.
+            - ``storyTree`` / ``causalWeights`` - 검증 대상 story.
+            - ``dartlab.analysis.financial.storyValidation`` - 3 테스트 backend.
 
         Requires:
             - dartlab
@@ -3201,7 +3213,7 @@ class Company:
         LLM Specifications:
             AntiPatterns:
                 - overall "info" 결과를 "안전" 결론 → severity 는 룰 위반 부재일 뿐 valuation 정답 아님.
-                - precedents 자동 선정 — 사용자 명시 시 다른 결과 가능.
+                - precedents 자동 선정 - 사용자 명시 시 다른 결과 가능.
             OutputSchema:
                 - dict {"precedents": dict, "plausibility": dict, "rules": dict, "overall": str}.
             Prerequisites:
@@ -3238,7 +3250,7 @@ class Company:
 
     @property
     def credit(self):
-        """dartlab 독립 신용평가 (dCR-AAA~D). 7축 — 채무상환/자본구조/유동성/현금흐름/사업안정성/재무신뢰성/공시리스크.
+        """dartlab 독립 신용평가 (dCR-AAA~D). 7축 - 채무상환/자본구조/유동성/현금흐름/사업안정성/재무신뢰성/공시리스크.
 
         Guide:
             - "신용등급" → c.credit("등급")
@@ -3261,9 +3273,9 @@ class Company:
             >>> Company("005930").credit()
 
         SeeAlso:
-            - ``_creditImpl`` — 실 구현 (dCR 20 단계 + 7 축).
-            - ``analysis("financial", "안정성")`` — credit 보완 입력.
-            - ``story(preset="credit")`` — credit 결과 보고서 합성.
+            - ``_creditImpl`` - 실 구현 (dCR 20 단계 + 7 축).
+            - ``analysis("financial", "안정성")`` - credit 보완 입력.
+            - ``story(preset="credit")`` - credit 결과 보고서 합성.
 
         Requires:
             - dartlab
@@ -3290,7 +3302,7 @@ class Company:
         basePeriod: str | None = None,
         overrides: dict | None = None,
     ):
-        """독립 신용평가 — dCR 20단계 등급 (내부 구현).
+        """독립 신용평가 - dCR 20단계 등급 (내부 구현).
 
         dartlab 독립 신용평가 엔진(credit/)이 산출하는 dCR 등급.
         7축 정량 스코어링 + 업종별 차등 + 시계열 안정화.
@@ -3317,8 +3329,8 @@ class Company:
             When: 부도 위험·신용등급·채무상환능력 판단이 필요할 때.
             How: 무인자 호출로 종합 등급, axis 로 개별 축, detail=True 로 시계열.
             Verified:
-                - credit 단독 → dCR 등급 + 7축 위험점수 분해 + PD 추정 (observed via ai-ask, 2026-04-25 — 정식 Phase P 판정 아님)
-                - credit + analysis(안정성,현금흐름) → 부도 위험 종합 진단 (observed via ai-ask, 2026-04-25 — 정식 Phase P 판정 아님)
+                - credit 단독 → dCR 등급 + 7축 위험점수 분해 + PD 추정 (observed via ai-ask, 2026-04-25 - 정식 Phase P 판정 아님)
+                - credit + analysis(안정성,현금흐름) → 부도 위험 종합 진단 (observed via ai-ask, 2026-04-25 - 정식 Phase P 판정 아님)
 
         SeeAlso:
             - story("신용평가"): 보고서 형식으로 렌더링
@@ -3329,13 +3341,13 @@ class Company:
                 - axis 와 detail=True 동시 (개별 축에 detail 효과 없음)
                 - overrides 키 추측 (validateOverrides 가 검증, 미지원 키는 차단)
             OutputSchema:
-                - grade : str — dCR 등급 (예: dCR-AA, dCR-BBB)
-                - score : float — 종합 점수 (0~10)
-                - healthScore : float — 재무 건전성 점수
-                - axes : dict — 7축 위험 점수 (axis 미지정 시)
-                - outlook : str — 등급 전망
+                - grade : str - dCR 등급 (예: dCR-AA, dCR-BBB)
+                - score : float - 종합 점수 (0~10)
+                - healthScore : float - 재무 건전성 점수
+                - axes : dict - 7축 위험 점수 (axis 미지정 시)
+                - outlook : str - 등급 전망
             Freshness:
-                finance 데이터 기준 — 분기 마감 후 45일.
+                finance 데이터 기준 - 분기 마감 후 45일.
         """
         from dartlab.credit import creditCompany
         from dartlab.synth.overrides import validateOverrides
@@ -3347,7 +3359,7 @@ class Company:
         return creditCompany(self, axis=axis, detail=detail, basePeriod=basePeriod, **kwargs)
 
     def gather(self, axis: str | None = None, target: str | None = None, **kwargs):
-        """외부 시장 데이터 수집 — 4축 (price/flow/macro/news).
+        """외부 시장 데이터 수집 - 4축 (price/flow/macro/news).
 
         Args:
             axis: 데이터 축. price/flow/macro/news/sector/insider/peers/ownership.
@@ -3377,29 +3389,29 @@ class Company:
         -------
         pl.DataFrame | None
             axis=None (가이드):
-                axis : str — 축 이름
-                label : str — 한글 레이블
-                description : str — 설명
-                example : str — 사용 예시
+                axis : str - 축 이름
+                label : str - 한글 레이블
+                description : str - 설명
+                example : str - 사용 예시
             axis="price":
-                date : date — 날짜
-                open : float — 시가 (원)
-                high : float — 고가 (원)
-                low : float — 저가 (원)
-                close : float — 종가 (원)
-                volume : int — 거래량
+                date : date - 날짜
+                open : float - 시가 (원)
+                high : float - 고가 (원)
+                low : float - 저가 (원)
+                close : float - 종가 (원)
+                volume : int - 거래량
             axis="flow":
-                date : date — 날짜
-                외국인순매수 : int — 외국인 순매수량
-                기관순매수 : int — 기관 순매수량
+                date : date - 날짜
+                외국인순매수 : int - 외국인 순매수량
+                기관순매수 : int - 기관 순매수량
                 (KR 전용. EDGAR ticker는 None 반환)
             axis="macro":
-                date : date — 날짜
-                지표별 컬럼 : float — ECOS/FRED 거시지표 값
+                date : date - 날짜
+                지표별 컬럼 : float - ECOS/FRED 거시지표 값
             axis="news":
-                title : str — 뉴스 제목
-                link : str — 기사 URL
-                pubDate : str — 발행일
+                title : str - 뉴스 제목
+                link : str - 기사 URL
+                pubDate : str - 발행일
             데이터 없으면 None.
 
         Requires:
@@ -3421,7 +3433,7 @@ class Company:
             - "거시경제 지표" → c.gather("macro")
             - "뉴스 수집" → c.gather("news") 또는 c.news()
             Verified:
-                - gather("news") → 뉴스 목록 + 헤드라인 해석 (observed via ai-ask, 2026-04-25 — 정식 Phase P 판정 아님)
+                - gather("news") → 뉴스 목록 + 헤드라인 해석 (observed via ai-ask, 2026-04-25 - 정식 Phase P 판정 아님)
 
         SeeAlso:
             - news: 뉴스 전용 단축 메서드
@@ -3501,8 +3513,8 @@ class Company:
 
         LLM Specifications:
             AntiPatterns:
-                - numeric=True 후 변환 실패 row 가 None — caller 가 null 분기 의무.
-                - subtopic 이름 추측 — 정확 이름은 sections 본문 또는 show(topic) 확인.
+                - numeric=True 후 변환 실패 row 가 None - caller 가 null 분기 의무.
+                - subtopic 이름 추측 - 정확 이름은 sections 본문 또는 show(topic) 확인.
             OutputSchema:
                 - ParsedSubtopicTable {df: pl.DataFrame, subtopic: str, columns: list} 또는 None.
             Prerequisites:
@@ -3514,7 +3526,7 @@ class Company:
             TargetMarkets:
                 - KR (DART 정기보고서 표).
         """
-        # subtopic markdown 표 농장 은퇴(§영구소실) — 정형 표는 panel/공통파서(panelXmlTables)
+        # subtopic markdown 표 농장 은퇴(§영구소실) - 정형 표는 panel/공통파서(panelXmlTables)
         # 또는 c.panel raw 공시 검색 사용. 본 API 는 None 반환.
         _ = (topic, subtopic, numeric, period)
         return None
@@ -3555,16 +3567,16 @@ class Company:
 
         LLM Specifications:
             AntiPatterns:
-                - 매 호출마다 c.topics 재호출 (캐시 — 1 회면 충분)
+                - 매 호출마다 c.topics 재호출 (캐시 - 1 회면 충분)
                 - topics 결과로 추측한 토픽명을 show() 에 잘못 매핑 (정확한 topic 문자열 필요)
             OutputSchema:
-                - order : int — chapter 순서
-                - chapter : str — 장 이름
-                - topic : str — topic 식별자 (show 호출 키)
-                - source : str — panel / finance / report
-                - blocks : int — 블록 수
-                - periods : int — 기간 수
-                - latestPeriod : str — 최신 기간
+                - order : int - chapter 순서
+                - chapter : str - 장 이름
+                - topic : str - topic 식별자 (show 호출 키)
+                - source : str - panel / finance / report
+                - blocks : int - 블록 수
+                - periods : int - 기간 수
+                - latestPeriod : str - 최신 기간
             Freshness:
                 panel/finance/report 각각의 c.update() 시점.
 
@@ -3575,7 +3587,7 @@ class Company:
         if cacheKey in self._cache:
             return self._cache[cacheKey]
 
-        # panel topic catalog — panel text wide 에서 유도 (docs topicManifest 은퇴).
+        # panel topic catalog - panel text wide 에서 유도 (docs topicManifest 은퇴).
         textWide = self._panelTextWide()
         rows: list[dict[str, Any]] = []
         seen: set[str] = set()
@@ -3674,7 +3686,7 @@ class Company:
             c.sources                  # 3행 DataFrame
 
         AIContext:
-            - 데이터 가용성 사전 점검 — 분석 가능 범위 판단의 기초
+            - 데이터 가용성 사전 점검 - 분석 가능 범위 판단의 기초
 
         Guide:
             - "데이터 뭐가 있어?" → c.sources
@@ -3686,14 +3698,14 @@ class Company:
 
         LLM Specifications:
             AntiPatterns:
-                - 매 분석마다 c.sources 호출 (캐시 — 1 회면 충분)
+                - 매 분석마다 c.sources 호출 (캐시 - 1 회면 충분)
                 - sources 결과로 분석 결정 (가용성만 확인, 실제 분석은 show)
             OutputSchema:
-                - source : str — panel / finance / report
-                - available : bool — 데이터 보유 여부
-                - rows : int | None — 행 수
-                - cols : int | None — 컬럼 수
-                - shape : str — "rows × cols" 표기
+                - source : str - panel / finance / report
+                - available : bool - 데이터 보유 여부
+                - rows : int | None - 행 수
+                - cols : int | None - 컬럼 수
+                - shape : str - "rows × cols" 표기
             Freshness:
                 panel / rawFinance / rawReport 의 다운로드 시점 기준.
 
@@ -3742,7 +3754,7 @@ class Company:
             - profile: 통합 프로필 접근자
 
         Returns:
-            pl.DataFrame — 컬럼: chapter, topic, label, kind, source, periods, shape, preview.
+            pl.DataFrame - 컬럼: chapter, topic, label, kind, source, periods, shape, preview.
 
         Raises:
             없음 (데이터 부재 시 빈 DataFrame).
@@ -3760,14 +3772,14 @@ class Company:
                 - index 결과 전체를 답변 본문에 dump (50+ 행)
                 - chapter / kind 추측 (panel / finance / report 중 source 컬럼 확인 후)
             OutputSchema:
-                - chapter : str — I / II / III ... (보고서 장)
-                - topic : str — topic 식별자 (show 호출 키)
-                - label : str — 사람용 라벨
-                - kind : str — table / text / notice
-                - source : str — panel / finance / report
-                - periods : str — 보유 기간 표기
-                - shape : str — "rows × cols"
-                - preview : str — 첫 줄 미리보기
+                - chapter : str - I / II / III ... (보고서 장)
+                - topic : str - topic 식별자 (show 호출 키)
+                - label : str - 사람용 라벨
+                - kind : str - table / text / notice
+                - source : str - panel / finance / report
+                - periods : str - 보유 기간 표기
+                - shape : str - "rows × cols"
+                - preview : str - 첫 줄 미리보기
             Freshness:
                 panel / finance / report 다운로드 시점.
         """
@@ -3848,9 +3860,9 @@ class Company:
         Returns
         -------
         pl.DataFrame | None
-            topic : str — 데이터 소스 topic
-            period : str — 기간 (예: "2025Q4")
-            value : str — 해당 topic/period 의 텍스트 또는 숫자 요약
+            topic : str - 데이터 소스 topic
+            period : str - 기간 (예: "2025Q4")
+            value : str - 해당 topic/period 의 텍스트 또는 숫자 요약
             데이터 없으면 None.
 
         LLM Specifications:
@@ -3858,9 +3870,9 @@ class Company:
                 - facts 결과를 그대로 답변 본문에 dump (수백 행)
                 - value 가 텍스트일 때 숫자 계산 시도 (numeric 파싱 별도)
             OutputSchema:
-                - topic : str — topic 식별자
-                - period : str — 기간 (2025Q4 형식)
-                - value : str — 텍스트 또는 숫자 요약
+                - topic : str - topic 식별자
+                - period : str - 기간 (2025Q4 형식)
+                - value : str - 텍스트 또는 숫자 요약
             Freshness:
                 sections / finance / report 의 c.update() 시점.
 
@@ -3888,12 +3900,12 @@ class Company:
         except (OSError, ValueError, KeyError, RuntimeError, pl.exceptions.ComputeError) as e:  # noqa: BLE001
             # finance parquet 로딩/파싱 실패 → 이유 노출 후 docs fallback 허용.
             # silent 실패 시 panel("IS") 가 docs 기반으로 잘못된 결과 반환하는 사례 방지.
-            # (IO / 형식 오류 / 컬럼 부재 / polars 변환 실패 — 다양한 정상 fallback 분기)
+            # (IO / 형식 오류 / 컬럼 부재 / polars 변환 실패 - 다양한 정상 fallback 분기)
             import warnings
 
             warnings.warn(
                 f"finance parquet 로딩 실패 ({self.stockCode}): {type(e).__name__}: {e}. "
-                f"docs fallback 으로 전환됩니다 — 수치 정합성이 떨어질 수 있습니다.",
+                f"docs fallback 으로 전환됩니다 - 수치 정합성이 떨어질 수 있습니다.",
                 stacklevel=2,
             )
             ts = None
@@ -4037,10 +4049,10 @@ class Company:
                 - sector 결과를 sector 컬럼 (str) 만 인용 (industryGroup 도 함께)
                 - confidence 무시하고 단정 (1.0 = override, 0.5~0.9 = 키워드 매칭)
             OutputSchema:
-                - sector : Sector enum — IT / Materials / Industrials / ...
-                - industryGroup : IndustryGroup enum — SEMICONDUCTOR / AUTOMOBILE / ...
-                - confidence : float — 0.0~1.0 (1.0 = override, 0.5+ = 키워드 매칭)
-                - source : str — override / keyword / industry
+                - sector : Sector enum - IT / Materials / Industrials / ...
+                - industryGroup : IndustryGroup enum - SEMICONDUCTOR / AUTOMOBILE / ...
+                - confidence : float - 0.0~1.0 (1.0 = override, 0.5+ = 키워드 매칭)
+                - source : str - override / keyword / industry
             Freshness:
                 KIND 상장사 목록 시점.
             TargetMarkets:
@@ -4137,7 +4149,7 @@ class Company:
             c.rank.sizeClass          # "large"
 
         AIContext:
-            - 시장/섹터 내 상대 위치 파악 — 피어 비교 분석의 기초
+            - 시장/섹터 내 상대 위치 파악 - 피어 비교 분석의 기초
             - sizeClass로 대형/중형/소형주 분류
 
         Guide:
@@ -4154,12 +4166,12 @@ class Company:
                 - rank 단독 노출 (sizeClass + sector 함께)
                 - rank 결과를 절대 평가로 인용 (시장 전체 / 섹터 내 모두 표시)
             OutputSchema:
-                - revenueRank : int — 매출 기준 시장 순위
-                - revenueRankInSector : int — 매출 기준 섹터 순위
-                - sizeClass : str — large / mid / small
-                - sectorTotal : int — 섹터 종목 수
+                - revenueRank : int - 매출 기준 시장 순위
+                - revenueRankInSector : int - 매출 기준 섹터 순위
+                - sizeClass : str - large / mid / small
+                - sectorTotal : int - 섹터 종목 수
             Freshness:
-                scan 데이터 기준 — 분기 마감 후 갱신.
+                scan 데이터 기준 - 분기 마감 후 갱신.
             TargetMarkets:
                 - KR
 
@@ -4176,7 +4188,7 @@ class Company:
         self._cache[cacheKey] = result
         return result
 
-    # insights는 analysis 내부 — c.analysis("financial", "종합평가")로 접근
+    # insights는 analysis 내부 - c.analysis("financial", "종합평가")로 접근
 
     def audit(self):
         """감사 리스크 종합 분석.
@@ -4194,11 +4206,11 @@ class Company:
         Returns
         -------
         dict
-            opinion : str — 감사의견 ("적정", "한정", "부적정", "의견거절")
-            auditorChanges : list[dict] — 감사인 변경 이력 (year, from, to, reason)
-            goingConcern : bool — 계속기업 불확실성 존재 여부
-            kam : list[str] — 핵심감사사항 목록
-            internalControl : str — 내부회계관리제도 검토의견
+            opinion : str - 감사의견 ("적정", "한정", "부적정", "의견거절")
+            auditorChanges : list[dict] - 감사인 변경 이력 (year, from, to, reason)
+            goingConcern : bool - 계속기업 불확실성 존재 여부
+            kam : list[str] - 핵심감사사항 목록
+            internalControl : str - 내부회계관리제도 검토의견
 
         Requires:
             데이터: panel + report (자동 다운로드)
@@ -4209,7 +4221,7 @@ class Company:
             c.audit()
 
         AIContext:
-            - 감사 리스크 종합 평가 — 투자 의사결정의 핵심 안전장치
+            - 감사 리스크 종합 평가 - 투자 의사결정의 핵심 안전장치
             - 감사의견 변경, 계속기업 불확실성은 최고 경고 수준
 
         Guide:
@@ -4225,15 +4237,15 @@ class Company:
         LLM Specifications:
             AntiPatterns:
                 - "한정/부적정" 같은 무거운 결과를 답변 본문에 단정 노출 (출처 + 연도 함께)
-                - audit() 결과를 매 분석마다 호출 (캐시 — 1 회면 충분)
+                - audit() 결과를 매 분석마다 호출 (캐시 - 1 회면 충분)
             OutputSchema:
-                - opinion : str — 감사의견 (적정 / 한정 / 부적정 / 의견거절)
-                - auditorChanges : list[dict] — 감사인 변경 이력 (year, from, to, reason)
-                - goingConcern : bool — 계속기업 불확실성 존재 여부
-                - kam : list[str] — 핵심감사사항
-                - internalControl : str — 내부회계관리제도 검토의견
+                - opinion : str - 감사의견 (적정 / 한정 / 부적정 / 의견거절)
+                - auditorChanges : list[dict] - 감사인 변경 이력 (year, from, to, reason)
+                - goingConcern : bool - 계속기업 불확실성 존재 여부
+                - kam : list[str] - 핵심감사사항
+                - internalControl : str - 내부회계관리제도 검토의견
             Freshness:
-                report 데이터 기준 — 정기보고서 마감 후 30~45 일.
+                report 데이터 기준 - 정기보고서 마감 후 30~45 일.
 
         Raises:
             없음.
@@ -4255,8 +4267,8 @@ class Company:
             없음 (self 바인딩).
 
         Returns:
-            pl.DataFrame 또는 None — panel native 임원보수 섹션 행(항목 × period).
-            구조화 payByType/topPay(개인별 시계열)는 농장 은퇴로 드롭 — 본문 텍스트만.
+            pl.DataFrame 또는 None - panel native 임원보수 섹션 행(항목 × period).
+            구조화 payByType/topPay(개인별 시계열)는 농장 은퇴로 드롭 - 본문 텍스트만.
 
         Requires:
             panel artifact (임원보수 섹션 contentRaw).
@@ -4269,7 +4281,7 @@ class Company:
             print(pay.topPay)      # 상위 보수 list
 
         AIContext:
-            - 한국 unique disclosure — US proxy 가 숨기는 미등기/퇴직 임원 보수 노출
+            - 한국 unique disclosure - US proxy 가 숨기는 미등기/퇴직 임원 보수 노출
             - 산정기준 narrative 가 보수 메커니즘 추적 가능 (스톡옵션 행사 timing 등)
             - 회사별 보수 top 1~3 의 직위 변경 = 인사 리스크 신호
 
@@ -4284,11 +4296,11 @@ class Company:
 
         LLM Specifications:
             AntiPatterns:
-                - topPay 전체 dump 답변 본문에 (수십 행 — 상위 5~10 명만 인용)
+                - topPay 전체 dump 답변 본문에 (수십 행 - 상위 5~10 명만 인용)
                 - 산정기준 narrative 생략 후 보수 총액만 인용 (메커니즘 불명)
                 - 직책 정규화 없이 회사 간 비교 (대표이사 vs 부회장 vs 사장 의미 차이)
             OutputSchema:
-                - pl.DataFrame | None — panel native 임원보수 섹션 행(텍스트, 구조화 드롭).
+                - pl.DataFrame | None - panel native 임원보수 섹션 행(텍스트, 구조화 드롭).
             Prerequisites:
                 - panel artifact 박힘
             Freshness:
@@ -4300,13 +4312,13 @@ class Company:
             없음.
         """
         # docs.finance.executivePay(개인별 구조화 파싱) 은퇴 → panel native 보수 섹션 텍스트.
-        # 개인별 시계열(payByType/topPay)은 정부 native 태깅 없어 복원 불가 — 섹션 본문만.
+        # 개인별 시계열(payByType/topPay)은 정부 native 태깅 없어 복원 불가 - 섹션 본문만.
         p = self.panel
         hit = p("보수")
         return hit if hit is not None else p.search("보수총액")
 
     def relatedPartyTx(self):
-        """관계자 거래 (RPT) — 공정거래법 §26 chaebol disclosure 100억 원 threshold (2024-01-01 시행).
+        """관계자 거래 (RPT) - 공정거래법 §26 chaebol disclosure 100억 원 threshold (2024-01-01 시행).
 
         Capabilities:
             - K-IFRS 1024 footnote 의 특수관계자 거래 line-item 추출
@@ -4318,7 +4330,7 @@ class Company:
             없음 (self 바인딩).
 
         Returns:
-            RelatedPartyTxResult 또는 None — guarantees / revenue / etc DataFrame list 보유.
+            RelatedPartyTxResult 또는 None - guarantees / revenue / etc DataFrame list 보유.
 
         Requires:
             DART 사업보고서 본문 (관계자거래 섹션 자동 파싱).
@@ -4331,7 +4343,7 @@ class Company:
             print(rpt.revenue)      # 매출 거래 list
 
         AIContext:
-            - 2024-01-01 부터 threshold 100억 원 (이전 10억 원 X — 룰 변경 주의)
+            - 2024-01-01 부터 threshold 100억 원 (이전 10억 원 X - 룰 변경 주의)
             - 2025 FTC 데이터: top-10 chaebol = 193 조 원 = 전체 disclosed RPT 의 70%
             - chaebol RPT graph 구축 시 affiliateGroup 와 join 필수 (회사 단독 X)
 
@@ -4346,7 +4358,7 @@ class Company:
 
         LLM Specifications:
             AntiPatterns:
-                - threshold 10억 원으로 답변 (구 룰 — 2024-01-01 부터 100억)
+                - threshold 10억 원으로 답변 (구 룰 - 2024-01-01 부터 100억)
                 - 단일 회사 RPT 만 인용 + chaebol 전체 흐름 무시 (RPT 의 핵심 = inter-affiliate)
                 - RPT 본문 narrative 생략 + 금액만 인용 (목적 + 조건 빠짐)
             OutputSchema:
@@ -4364,7 +4376,7 @@ class Company:
             없음.
         """
         # docs.finance.relatedPartyTx(구조화 파싱) 은퇴 → panel native 특수관계자 섹션 텍스트.
-        # guaranteeDf/assetTxDf/revenueTxDf 구조화는 정부 native 태깅 없어 드롭 — 본문만.
+        # guaranteeDf/assetTxDf/revenueTxDf 구조화는 정부 native 태깅 없어 드롭 - 본문만.
         p = self.panel
         hit = p("특수관계자")
         return hit if hit is not None else p.search("특수관계자")
@@ -4373,21 +4385,21 @@ class Company:
         """K-IFRS 주석 세부항목 (리스 약정 · 우발채무 · 퇴직급여 가정 · 파생 등) 추출.
 
         Capabilities:
-            - K-IFRS 주석 표 본문 파싱 (NOTES_KEYWORDS 23 종 — 리스/우발/퇴직/파생/금융자산 등)
+            - K-IFRS 주석 표 본문 파싱 (NOTES_KEYWORDS 23 종 - 리스/우발/퇴직/파생/금융자산 등)
             - 연간/분기/반기 분기
             - 최근 5 년 historical panel
             - audit-grade citation 의 핵심 evidence layer
 
         Args:
-            keyword: 주석 키워드 (NOTES_KEYWORDS 23 종 중 하나 — 리스 · 우발채무 · 퇴직급여 · 파생 등)
+            keyword: 주석 키워드 (NOTES_KEYWORDS 23 종 중 하나 - 리스 · 우발채무 · 퇴직급여 · 파생 등)
             period: "y" 연간 · "q" 분기 · "h" 반기 (default "y").
 
         Returns:
-            pl.DataFrame 또는 None — panel native 주석 행(항목 × period wide).
+            pl.DataFrame 또는 None - panel native 주석 행(항목 × period wide).
             keyword 가 disclosureKey/sectionLeaf/blockLeaf 에 매칭되는 주석 블록.
 
         Requires:
-            panel artifact (정부 native NT_ 주석 정렬 — ``read.alignNotes``).
+            panel artifact (정부 native NT_ 주석 정렬 - ``read.alignNotes``).
 
         Example::
 
@@ -4398,7 +4410,7 @@ class Company:
         AIContext:
             - footnote-grade Q&A 의 raw 데이터 (Bloomberg/FactSet 미보유 영역)
             - "LG energy 의 리스 약정 중 중국 비중" 같은 질문은 본 method 의 답 source
-            - 주석 양식이 분기별로 미세 변경 — narrative 비교 시 변경 가능성 인지
+            - 주석 양식이 분기별로 미세 변경 - narrative 비교 시 변경 가능성 인지
 
         Guide:
             - "삼성전자 리스 약정" → c.notesDetail("리스")
@@ -4412,11 +4424,11 @@ class Company:
 
         LLM Specifications:
             AntiPatterns:
-                - keyword 미지원 (NOTES_KEYWORDS 23 종 밖 — 직접 호출 X)
+                - keyword 미지원 (NOTES_KEYWORDS 23 종 밖 - 직접 호출 X)
                 - 연간 답변에 분기 비교 (period 인자 무시)
                 - 5 년 panel 전체 dump (답변 본문 상위 3~5 년만 인용)
             OutputSchema:
-                - pl.DataFrame | None — panel native 주석 wide (항목 × period).
+                - pl.DataFrame | None - panel native 주석 wide (항목 × period).
             Prerequisites:
                 - panel artifact 박힘 (online/bulk 빌드)
                 - keyword 가 주석 제목/disclosureKey 에 매칭
@@ -4429,8 +4441,8 @@ class Company:
             없음.
         """
         # docs.finance.notesDetail(regex 파싱) 은퇴 → panel native NT_ 주석(read.alignNotes) 직접.
-        # period 는 wide 주석 검색에 미사용(panel 은 전 기간 행 반환) — 시그니처 호환 유지.
-        # 제목 매칭(__call__) 우선, 없으면 본문 전문검색(search) fallback — 옛 본문기반 parity.
+        # period 는 wide 주석 검색에 미사용(panel 은 전 기간 행 반환) - 시그니처 호환 유지.
+        # 제목 매칭(__call__) 우선, 없으면 본문 전문검색(search) fallback - 옛 본문기반 parity.
         p = self.panel
         hit = p(keyword)
         return hit if hit is not None else p.search(keyword)
@@ -4448,7 +4460,7 @@ class Company:
             ``dartlab.gather("flow", ...)`` 경유만 지원.
 
         Returns:
-            pl.DataFrame — 외국인/기관/개인 net-buy 시계열. 빈 결과면 빈 DataFrame.
+            pl.DataFrame - 외국인/기관/개인 net-buy 시계열. 빈 결과면 빈 DataFrame.
 
         Requires:
             Naver flow API (KR 시장 한정). 외 시장 빈 결과.
@@ -4461,7 +4473,7 @@ class Company:
         AIContext:
             - KOSPI/KOSDAQ 외국인 수급의 가장 중요한 daily signal
             - 외국인 net-buy 누적 추세 + 기관 동조/역행 패턴이 단기 시세 driver
-            - 한국 unique — 외국인/기관/개인 종목별 일별 net-buy 가 공개 (US 시장은 없음)
+            - 한국 unique - 외국인/기관/개인 종목별 일별 net-buy 가 공개 (US 시장은 없음)
 
         Guide:
             - "삼성전자 외국인 매수세" → c.flow()
@@ -4469,14 +4481,14 @@ class Company:
             - "외국인 순매수 누적" → c.flow() + cumsum
 
         SeeAlso:
-            - gather("flow") : 동일 본체 — flow axis 직접 호출
+            - gather("flow") : 동일 본체 - flow axis 직접 호출
             - krx : KRX 시장 전체 axis (시장 평균과 비교)
 
         LLM Specifications:
             AntiPatterns:
-                - 일별 raw flow 전체 dump (답변 본문 — 최근 5~30 일 + 누적 비중만)
+                - 일별 raw flow 전체 dump (답변 본문 - 최근 5~30 일 + 누적 비중만)
                 - 외국인 net-buy 단독 신호 해석 (기관 동조/역행 context 동반 필수)
-                - KR 외 시장에 호출 (빈 결과 정상 — 시장 제한 명시)
+                - KR 외 시장에 호출 (빈 결과 정상 - 시장 제한 명시)
             OutputSchema:
                 - date : Date
                 - foreignNet : Int64 (단위 = 주)
@@ -4502,7 +4514,7 @@ class Company:
             - currency: 통화 코드
 
         Returns:
-            str — "KR".
+            str - "KR".
 
         Example::
 
@@ -4514,7 +4526,7 @@ class Company:
 
         LLM Specifications:
             AntiPatterns:
-                - 시장 세분화 (KOSPI vs KOSDAQ) 필요 시 본 값 부족 — listing 메타에서.
+                - 시장 세분화 (KOSPI vs KOSDAQ) 필요 시 본 값 부족 - listing 메타에서.
             OutputSchema:
                 - 고정 str "KR".
             Prerequisites:
@@ -4524,7 +4536,7 @@ class Company:
             Dataflow:
                 - 본 property → "KR".
             TargetMarkets:
-                - KR — DART provider 통합 라벨.
+                - KR - DART provider 통합 라벨.
         """
         return "KR"
 
@@ -4533,7 +4545,7 @@ class Company:
         """회계연도 종료 월-일 (한국 종목은 12-31 표준).
 
         EDGAR 와의 fiscal year-end 비교를 위한 metadata.
-        한국 회계 관습 상 거의 모든 상장사가 12월말 결산 — 상수 반환.
+        한국 회계 관습 상 거의 모든 상장사가 12월말 결산 - 상수 반환.
 
         Returns:
             "12-31".
@@ -4546,7 +4558,7 @@ class Company:
 
         LLM Specifications:
             AntiPatterns:
-                - 모든 KR 회사 12-31 단정 X — 드물지만 다른 회계년도 존재 가능 (실 종목 결산월 확인).
+                - 모든 KR 회사 12-31 단정 X - 드물지만 다른 회계년도 존재 가능 (실 종목 결산월 확인).
             OutputSchema:
                 - 고정 str "12-31".
             Prerequisites:
@@ -4556,7 +4568,7 @@ class Company:
             Dataflow:
                 - 본 property → "12-31".
             TargetMarkets:
-                - KR — 한국 회계 관습 표준.
+                - KR - 한국 회계 관습 표준.
         """
         return "12-31"
 
@@ -4568,7 +4580,7 @@ class Company:
             - market: 시장 코드
 
         Returns:
-            str — "KRW".
+            str - "KRW".
 
         Example::
 
@@ -4580,7 +4592,7 @@ class Company:
 
         LLM Specifications:
             AntiPatterns:
-                - 외화 결산 회사 (드물지만 가능) 도 본 함수 "KRW" 반환 — 실 보고통화 별도 확인.
+                - 외화 결산 회사 (드물지만 가능) 도 본 함수 "KRW" 반환 - 실 보고통화 별도 확인.
             OutputSchema:
                 - 고정 str "KRW".
             Prerequisites:
@@ -4590,7 +4602,7 @@ class Company:
             Dataflow:
                 - 본 property → "KRW".
             TargetMarkets:
-                - KR — 한국 표준 통화.
+                - KR - 한국 표준 통화.
         """
         return "KRW"
 
@@ -4631,7 +4643,7 @@ class Company:
             c.network("peers")       # 이 회사 중심 서브그래프 DataFrame
 
         AIContext:
-            - 그룹 계열사/출자 구조 파악 — 지배구조 분석의 기초 데이터
+            - 그룹 계열사/출자 구조 파악 - 지배구조 분석의 기초 데이터
             - 순환출자 탐지로 거버넌스 리스크 감지
 
         Guide:
@@ -4646,7 +4658,7 @@ class Company:
 
         LLM Specifications:
             AntiPatterns:
-                - view 미지정 시 NetworkView 객체 — 답변 본문에 dump X (.show() 로 별도)
+                - view 미지정 시 NetworkView 객체 - 답변 본문에 dump X (.show() 로 별도)
                 - hops > 2 (네트워크 폭주, 메모리 부담)
                 - "순환출자 = 분식" 단정 X (한국 그룹 일반)
             OutputSchema:
@@ -4678,13 +4690,13 @@ class Company:
         Returns
         -------
         pl.DataFrame | None
-            종목코드 : str — 6자리 종목코드
-            종목명 : str — 회사명
-            최대주주지분율 : float — 최대주주 + 특수관계인 지분율 (%)
-            사외이사비율 : float — 사외이사 비율 (%)
-            감사위원회 : str — 감사위원회 설치 여부
-            종합점수 : float — 거버넌스 종합 점수 (100점 만점)
-            등급 : str — A/B/C/D/E 등급
+            종목코드 : str - 6자리 종목코드
+            종목명 : str - 회사명
+            최대주주지분율 : float - 최대주주 + 특수관계인 지분율 (%)
+            사외이사비율 : float - 사외이사 비율 (%)
+            감사위원회 : str - 감사위원회 설치 여부
+            종합점수 : float - 거버넌스 종합 점수 (100점 만점)
+            등급 : str - A/B/C/D/E 등급
             데이터 없으면 None.
 
         Requires:
@@ -4697,7 +4709,7 @@ class Company:
             c.governance("all")      # 전체 상장사
 
         AIContext:
-            - 지배구조 리스크 평가 — 사외이사/감사위원/최대주주 정량 데이터
+            - 지배구조 리스크 평가 - 사외이사/감사위원/최대주주 정량 데이터
             - 시장 횡단 비교로 상대적 거버넌스 수준 판단
 
         Guide:
@@ -4714,13 +4726,13 @@ class Company:
                 - view="all" 호출 후 전체 결과를 답변 본문에 dump (수천 행)
                 - 종합점수 단독 노출 (사외이사 비율 + 최대주주 지분율 함께)
             OutputSchema:
-                - 종목코드 : str — 6 자리
+                - 종목코드 : str - 6 자리
                 - 종목명 : str
-                - 최대주주지분율 : float — % (특수관계인 포함)
-                - 사외이사비율 : float — %
-                - 감사위원회 : str — 설치 여부
-                - 종합점수 : float — 100 점 만점
-                - 등급 : str — A/B/C/D/E
+                - 최대주주지분율 : float - % (특수관계인 포함)
+                - 사외이사비율 : float - %
+                - 감사위원회 : str - 설치 여부
+                - 종합점수 : float - 100 점 만점
+                - 등급 : str - A/B/C/D/E
             Freshness:
                 정기보고서 마감 후 30~45 일.
             TargetMarkets:
@@ -4761,7 +4773,7 @@ class Company:
             c.workforce("all")       # 전체 상장사
 
         AIContext:
-            - 인력 효율성/근무환경 정량 평가 — 1인당 매출, 급여 수준 비교
+            - 인력 효율성/근무환경 정량 평가 - 1인당 매출, 급여 수준 비교
             - 시장 횡단 비교로 인적자원 경쟁력 판단
 
         Guide:
@@ -4779,9 +4791,9 @@ class Company:
                 - "고임금 = 위험" 단정 X (생산성 함께)
             OutputSchema:
                 - 종목코드 : str
-                - 직원수 : int — 정규/비정규 합계
-                - 평균근속 : float — 년
-                - 1인당매출 : float — 억원
+                - 직원수 : int - 정규/비정규 합계
+                - 평균근속 : float - 년
+                - 1인당매출 : float - 억원
             Freshness:
                 정기보고서 마감 후 30~45 일.
             TargetMarkets:
@@ -4809,13 +4821,13 @@ class Company:
         Returns
         -------
         pl.DataFrame | None
-            종목코드 : str — 6자리 종목코드
-            종목명 : str — 회사명
-            배당수익률 : float — 배당수익률 (%)
-            배당성향 : float — 배당성향 (%)
-            자사주매입 : int — 자사주 매입 주수 (주)
-            총환원율 : float — (배당 + 자사주) / 시가총액 (%)
-            분류 : str — 환원형/중립/희석형
+            종목코드 : str - 6자리 종목코드
+            종목명 : str - 회사명
+            배당수익률 : float - 배당수익률 (%)
+            배당성향 : float - 배당성향 (%)
+            자사주매입 : int - 자사주 매입 주수 (주)
+            총환원율 : float - (배당 + 자사주) / 시가총액 (%)
+            분류 : str - 환원형/중립/희석형
             데이터 없으면 None.
 
         Requires:
@@ -4828,7 +4840,7 @@ class Company:
             c.capital("all")         # 전체 상장사
 
         AIContext:
-            - 주주환원 정책 평가 — 배당수익률/성향/자사주 정량 데이터
+            - 주주환원 정책 평가 - 배당수익률/성향/자사주 정량 데이터
             - 시장 횡단 비교로 상대적 환원 수준 판단
 
         Guide:
@@ -4847,11 +4859,11 @@ class Company:
                 - "환원형" 단정 X (총환원율 + 분류 + 시계열 함께)
             OutputSchema:
                 - 종목코드 : str
-                - 배당수익률 : float — %
-                - 배당성향 : float — %
-                - 자사주매입 : int — 주
-                - 총환원율 : float — % ((배당 + 자사주) / 시가총액)
-                - 분류 : str — 환원형 / 중립 / 희석형
+                - 배당수익률 : float - %
+                - 배당성향 : float - %
+                - 자사주매입 : int - 주
+                - 총환원율 : float - % ((배당 + 자사주) / 시가총액)
+                - 분류 : str - 환원형 / 중립 / 희석형
             Freshness:
                 정기보고서 마감 후 30~45 일.
             TargetMarkets:
@@ -4882,12 +4894,12 @@ class Company:
         Returns
         -------
         pl.DataFrame | None
-            종목코드 : str — 6자리 종목코드
-            종목명 : str — 회사명
-            부채비율 : float — 부채비율 (%)
-            차입금의존도 : float — 차입금의존도 (%)
-            ICR : float — 이자보상배율 (배)
-            위험등급 : str — 안전/주의/경고/위험
+            종목코드 : str - 6자리 종목코드
+            종목명 : str - 회사명
+            부채비율 : float - 부채비율 (%)
+            차입금의존도 : float - 차입금의존도 (%)
+            ICR : float - 이자보상배율 (배)
+            위험등급 : str - 안전/주의/경고/위험
             데이터 없으면 None.
 
         Requires:
@@ -4900,7 +4912,7 @@ class Company:
             c.debt("all")            # 전체 상장사
 
         AIContext:
-            - 부채 구조/건전성 정량 평가 — 차입금 의존도, 만기 구조
+            - 부채 구조/건전성 정량 평가 - 차입금 의존도, 만기 구조
             - 시장 횡단 비교로 상대적 재무 안정성 판단
 
         Guide:
@@ -4919,10 +4931,10 @@ class Company:
                 - "위험" 단정 X (위험등급 + 절대값 + peer median 함께)
             OutputSchema:
                 - 종목코드 : str
-                - 부채비율 : float — %
-                - 차입금의존도 : float — %
-                - ICR : float — 배 (이자보상배율)
-                - 위험등급 : str — 안전 / 주의 / 경고 / 위험
+                - 부채비율 : float - %
+                - 차입금의존도 : float - %
+                - ICR : float - 배 (이자보상배율)
+                - 위험등급 : str - 안전 / 주의 / 경고 / 위험
             Freshness:
                 정기보고서 마감 후 30~45 일.
             TargetMarkets:
@@ -4965,9 +4977,9 @@ class Company:
             >>> Company("005930").quant()
 
         SeeAlso:
-            - ``_quantImpl`` — 실 구현 (31 축 dispatch).
-            - ``dartlab.quant.Quant`` — backend SSOT.
-            - ``edgar.Company.quant`` — US 패리티 (Naver vs Yahoo origin 차이).
+            - ``_quantImpl`` - 실 구현 (31 축 dispatch).
+            - ``dartlab.quant.Quant`` - backend SSOT.
+            - ``edgar.Company.quant`` - US 패리티 (Naver vs Yahoo origin 차이).
 
         Requires:
             - dartlab
@@ -4978,7 +4990,7 @@ class Company:
               자동 바인딩. axis 미지정 시 카탈로그 + 한글 axis 한정.
 
         AIContext:
-            주가 기반 기술 판단 entry — 재무 (analysis) 와 분리. ``c.quant("판단")`` 종합 verdict.
+            주가 기반 기술 판단 entry - 재무 (analysis) 와 분리. ``c.quant("판단")`` 종합 verdict.
         """
         from dartlab.core.dualAccess import CallableAccessor
 
@@ -4987,7 +4999,7 @@ class Company:
         return self._cache["_quantAccessor"]
 
     def _quantImpl(self, axis=None, *, overrides: dict | None = None, metric=None, **kwargs):
-        """주가 기술적 분석 — 30축 (내부 구현).
+        """주가 기술적 분석 - 30축 (내부 구현).
 
         Args:
             axis: 축 이름. None이면 30축 가이드 DataFrame.
@@ -5004,19 +5016,19 @@ class Company:
             When: 주가 기반 기술적 판단이 필요할 때.
             How: axis 로 분석 영역 지정. 무인자 = 가이드.
             Verified:
-                - quant("판단") → RSI/ADX/MACD/볼린저/상대강도 + 종합 판정 (observed via ai-ask, 2026-04-25 — 정식 Phase P 판정 아님)
+                - quant("판단") → RSI/ADX/MACD/볼린저/상대강도 + 종합 판정 (observed via ai-ask, 2026-04-25 - 정식 Phase P 판정 아님)
 
         LLM Specifications:
             AntiPatterns:
                 - 영문 axis ("momentum") 사용 (실제는 한글 "모멘텀")
-                - metric= 인자 사용 (Phase 8 deprecated alias — axis= 사용)
+                - metric= 인자 사용 (Phase 8 deprecated alias - axis= 사용)
                 - overrides 키 추측 (window/threshold/period/benchmark 만)
             OutputSchema:
-                - axis="판단": dict — verdict (str) + RSI/ADX/SMA/MACD 등 핵심 지표
-                - axis="지표": DataFrame — 45 개 기술 지표 컬럼
-                - axis="베타": dict — beta 값 + benchmark + window
+                - axis="판단": dict - verdict (str) + RSI/ADX/SMA/MACD 등 핵심 지표
+                - axis="지표": DataFrame - 45 개 기술 지표 컬럼
+                - axis="베타": dict - beta 값 + benchmark + window
             Freshness:
-                price 데이터 기준 — T+1 (전일 종가).
+                price 데이터 기준 - T+1 (전일 종가).
         """
         from dartlab.quant import Quant
         from dartlab.synth.overrides import validateOverrides
@@ -5042,13 +5054,13 @@ class Company:
         return result
 
     def macro(self, axis=None, target=None, *, overrides: dict | None = None, **kwargs):
-        """시장 매크로 (6막 인과 — 사이클/재고/기업/정책/유동성/심리/시나리오). KR 자동 위임.
+        """시장 매크로 (6막 인과 - 사이클/재고/기업/정책/유동성/심리/시나리오). KR 자동 위임.
 
         Returns
         -------
         pl.DataFrame | dict
             axis=None: 가이드 DataFrame (axis/label/description/example/group).
-            axis 지정: dict — 축별 매크로 분석 결과 (indicators, narrative 포함).
+            axis 지정: dict - 축별 매크로 분석 결과 (indicators, narrative 포함).
 
         Guide:
             When: 거시경제 환경·사이클 판단이 필요할 때.
@@ -5058,16 +5070,16 @@ class Company:
             - "위기 진단" → c.macro("위기")
             - "2008 시나리오" → c.macro("시나리오", "2008 금융위기")
             Verified:
-                - macro("사이클") → CLI + 사분면 + 금리 + 유동성 + 심리 6축 (observed via ai-ask, 2026-04-25 — 정식 Phase P 판정 아님)
-                - macro + analysis → 경제 고려한 종목 분석 (observed via thesis ai-ask, 2026-04-25 — 정식 Phase P 판정 아님)
+                - macro("사이클") → CLI + 사분면 + 금리 + 유동성 + 심리 6축 (observed via ai-ask, 2026-04-25 - 정식 Phase P 판정 아님)
+                - macro + analysis → 경제 고려한 종목 분석 (observed via thesis ai-ask, 2026-04-25 - 정식 Phase P 판정 아님)
 
         LLM Specifications:
             AntiPatterns:
-                - axis 추측 (한글 — 사이클 / 위기 / 시나리오 / 유동성 / 심리)
+                - axis 추측 (한글 - 사이클 / 위기 / 시나리오 / 유동성 / 심리)
                 - 종목 매크로 = 시장 매크로 혼동 (이건 c.macro = 시장 KR 자동)
             OutputSchema:
-                - axis="사이클": dict — quadrant + indicators + narrative
-                - axis="시나리오": dict — historical analogue + projection
+                - axis="사이클": dict - quadrant + indicators + narrative
+                - axis="시나리오": dict - historical analogue + projection
                 - axis 미지정: 가이드 DataFrame
             Freshness:
                 ECOS / FRED 갱신 주기 (월 / 분기).
@@ -5079,14 +5091,14 @@ class Company:
             >>> Company("005930").macro()
 
         Args:
-            axis: 매크로 축 (한글 — "사이클" / "위기" / "시나리오" / "유동성" / "심리"). None 이면 가이드.
+            axis: 매크로 축 (한글 - "사이클" / "위기" / "시나리오" / "유동성" / "심리"). None 이면 가이드.
             target: axis="시나리오" 시 시나리오 이름 (예 "2008 금융위기").
             overrides: 매크로 가정 교체 dict.
             **kwargs: 축별 추가 인자.
 
         SeeAlso:
-            - ``dartlab.macro.Macro`` — 매크로 backend SSOT.
-            - ``edgar.Company.macro`` — US 패리티.
+            - ``dartlab.macro.Macro`` - 매크로 backend SSOT.
+            - ``edgar.Company.macro`` - US 패리티.
 
         Requires:
             - dartlab
@@ -5094,39 +5106,39 @@ class Company:
 
         Capabilities:
             - KR 시장 매크로 (ECOS + KRX 데이터) 자동 위임. market="KR" 자동 주입. KR 회사 매크로 영향
-              분석 entry — US 회사는 edgar.macro 별도.
+              분석 entry - US 회사는 edgar.macro 별도.
 
         AIContext:
-            거시환경 회사 영향 답변 시 본 함수. axis 미지정 시 가이드 반환 — AI 가 카탈로그 먼저 확인.
+            거시환경 회사 영향 답변 시 본 함수. axis 미지정 시 가이드 반환 - AI 가 카탈로그 먼저 확인.
         """
         from dartlab.macro import Macro
 
-        return Macro()(axis, target, market="KR", overrides=overrides, **kwargs)
+        return Macro()(axis, target, market="KR", overrides=overrides, company=self, **kwargs)
 
     # ── Phase 10 H2: story 2차 가공 직접 노출 (AI tool 자동 수집 대상) ──
 
     def causalWeights(self) -> list[dict]:
-        """6막 인과 가중치 — 수익구조→수익성→현금흐름→자금조달→자산배치→가치평가 amplify/dampen/neutral.
+        """6막 인과 가중치 - 수익구조→수익성→현금흐름→자금조달→자산배치→가치평가 amplify/dampen/neutral.
 
         Guide:
             - "인과 체인" → c.causalWeights()
             - "어느 막이 약해" → 결과의 direction='dampen' 필터
 
         Returns:
-            list[dict] — from_act/to_act/metric_from/metric_to/delta_from/delta_to/weight/direction
+            list[dict] - from_act/to_act/metric_from/metric_to/delta_from/delta_to/weight/direction
 
         LLM Specifications:
             AntiPatterns:
                 - direction 단독 인용 (weight + metric 함께)
-                - 6 막 인과는 종목 분석 한정 — 매크로 / 산업 분석에는 부적합
+                - 6 막 인과는 종목 분석 한정 - 매크로 / 산업 분석에는 부적합
             OutputSchema:
-                - from_act : str — 출발 막
-                - to_act : str — 도착 막
-                - metric_from : str — 출발 지표
-                - metric_to : str — 도착 지표
-                - delta_from / delta_to : float — 변화율
-                - weight : float — 영향 강도
-                - direction : str — amplify / dampen / neutral
+                - from_act : str - 출발 막
+                - to_act : str - 도착 막
+                - metric_from : str - 출발 지표
+                - metric_to : str - 도착 지표
+                - delta_from / delta_to : float - 변화율
+                - weight : float - 영향 강도
+                - direction : str - amplify / dampen / neutral
             Freshness:
                 finance 시계열 시점.
 
@@ -5137,9 +5149,9 @@ class Company:
             >>> Company("005930").causalWeights()
 
         SeeAlso:
-            - ``valuationImpact`` — 본 가중치를 DCF override 로 변환.
-            - ``storyTree`` — 본 가중치 적용한 3 trajectory.
-            - ``dartlab.story.narrative.buildCausalWeights`` — implementation.
+            - ``valuationImpact`` - 본 가중치를 DCF override 로 변환.
+            - ``storyTree`` - 본 가중치 적용한 3 trajectory.
+            - ``dartlab.story.narrative.buildCausalWeights`` - implementation.
 
         Requires:
             - dartlab
@@ -5150,7 +5162,7 @@ class Company:
               dampen/neutral) 계산. 매 막 출발/도착 지표 + delta + weight + direction.
 
         AIContext:
-            AI 가 "이 회사 핵심 인과 chain" 답변 시 본 함수 결과 인용 — 단일 지표가 아닌 chain 구조.
+            AI 가 "이 회사 핵심 인과 chain" 답변 시 본 함수 결과 인용 - 단일 지표가 아닌 chain 구조.
         """
         import importlib
 
@@ -5159,26 +5171,26 @@ class Company:
         return buildCausalWeights(self, {})
 
     def valuationImpact(self) -> dict:
-        """인과 체인에서 DCF override 힌트 — narrative → 숫자 피드백.
+        """인과 체인에서 DCF override 힌트 - narrative → 숫자 피드백.
 
         Guide:
             - "WACC 조정 어떻게" → c.valuationImpact()['waccAdj']
             - "override 근거" → c.valuationImpact()['narrative']
 
         Returns:
-            dict — terminalGrowthAdj/waccAdj/narrative/overrides
+            dict - terminalGrowthAdj/waccAdj/narrative/overrides
 
         LLM Specifications:
             AntiPatterns:
                 - waccAdj 단독 노출 (narrative 근거 함께)
                 - DCF 직접 override 적용 X (overrides 는 힌트, 사용자 판단 후 적용)
             OutputSchema:
-                - terminalGrowthAdj : float — terminal growth 가산 (% 포인트)
-                - waccAdj : float — WACC 가산 (% 포인트)
-                - narrative : str — 조정 근거 (인과 체인)
-                - overrides : dict — analysis(valuation, overrides=...) 호출용
+                - terminalGrowthAdj : float - terminal growth 가산 (% 포인트)
+                - waccAdj : float - WACC 가산 (% 포인트)
+                - narrative : str - 조정 근거 (인과 체인)
+                - overrides : dict - analysis(valuation, overrides=...) 호출용
             Freshness:
-                story 인과 체인 기준 — finance 데이터 시점.
+                story 인과 체인 기준 - finance 데이터 시점.
 
         Raises:
             없음.
@@ -5187,9 +5199,9 @@ class Company:
             >>> Company("005930").valuationImpact()
 
         SeeAlso:
-            - ``causalWeights`` — 본 함수의 입력 chain.
-            - ``storyTree`` — 본 override 적용 3 시나리오.
-            - ``analysis("valuation")`` — 본 overrides 직접 주입 가능.
+            - ``causalWeights`` - 본 함수의 입력 chain.
+            - ``storyTree`` - 본 override 적용 3 시나리오.
+            - ``analysis("valuation")`` - 본 overrides 직접 주입 가능.
 
         Requires:
             - dartlab
@@ -5197,7 +5209,7 @@ class Company:
 
         Capabilities:
             - causalWeights chain → DCF 파라미터 (terminalGrowth/WACC) 가산 + narrative 근거.
-              narrative → 숫자 피드백 — AI 가 직접 override 적용 가능한 hint dict.
+              narrative → 숫자 피드백 - AI 가 직접 override 적용 가능한 hint dict.
 
         AIContext:
             narrative 가 valuation 어떻게 바꾸나 답변 시 본 함수. base/adjusted 비교 의무.
@@ -5212,24 +5224,24 @@ class Company:
         return buildValuationImpact(chains)
 
     def storyTree(self, *, basePeriod: str | None = None) -> dict:
-        """Damodaran 3P — possible(낙관)/plausible(중도)/probable(보수) 3 DCF + 민감도.
+        """Damodaran 3P - possible(낙관)/plausible(중도)/probable(보수) 3 DCF + 민감도.
 
         Guide:
             - "3 시나리오 가치" → c.storyTree()
             - "서사 민감도" → c.storyTree()['summary']['spreadPct']
 
         Returns:
-            dict — possible/plausible/probable + summary {min/max/spread/spreadPct/mean}
+            dict - possible/plausible/probable + summary {min/max/spread/spreadPct/mean}
 
         LLM Specifications:
             AntiPatterns:
                 - 단일 시나리오 (예: probable) 만 인용 (3 시나리오 + 분포 함께)
                 - spreadPct 가 작으면 "확실" 단정 X (가정 강도와 함께)
             OutputSchema:
-                - possible : dict — 낙관 시나리오 DCF 결과
-                - plausible : dict — 중도 시나리오
-                - probable : dict — 보수 시나리오
-                - summary : dict — min / max / spread / spreadPct / mean
+                - possible : dict - 낙관 시나리오 DCF 결과
+                - plausible : dict - 중도 시나리오
+                - probable : dict - 보수 시나리오
+                - summary : dict - min / max / spread / spreadPct / mean
             Freshness:
                 finance 시계열 시점.
 
@@ -5240,8 +5252,8 @@ class Company:
             basePeriod: 기준 fiscal period. None 이면 최신 분기.
 
         SeeAlso:
-            - ``causalWeights`` / ``valuationImpact`` — 본 함수의 입력 시나리오.
-            - ``validateStory`` — 본 결과의 plausibility 검증.
+            - ``causalWeights`` / ``valuationImpact`` - 본 함수의 입력 시나리오.
+            - ``validateStory`` - 본 결과의 plausibility 검증.
 
         Requires:
             - dartlab
@@ -5261,25 +5273,25 @@ class Company:
         return buildStoryTree(self, basePeriod=basePeriod)
 
     def narrativeDiff(self, *, claims: list[str] | None = None) -> list[dict]:
-        """각 claim 제거 시 dFV 변화 — Thought Anchors 기반 정량 기여도.
+        """각 claim 제거 시 dFV 변화 - Thought Anchors 기반 정량 기여도.
 
         Guide:
             - "가치 기여도" → c.narrativeDiff()
             - "낮은WACC 기여 몇%" → 결과 필터 claim='낮은WACC'
 
         Returns:
-            list[dict] — claim/dFV_neutral/delta_abs/delta_pct/contribution
+            list[dict] - claim/dFV_neutral/delta_abs/delta_pct/contribution
 
         LLM Specifications:
             AntiPatterns:
                 - contribution 단독 인용 (delta_abs + delta_pct 함께)
                 - claim 추측 (default 또는 명시 list 만)
             OutputSchema:
-                - claim : str — narrative claim 식별자
-                - dFV_neutral : float — 중립 시나리오 가치
-                - delta_abs : float — claim 제거 시 절대 변화
-                - delta_pct : float — % 변화
-                - contribution : float — 기여도 (정규화)
+                - claim : str - narrative claim 식별자
+                - dFV_neutral : float - 중립 시나리오 가치
+                - delta_abs : float - claim 제거 시 절대 변화
+                - delta_pct : float - % 변화
+                - contribution : float - 기여도 (정규화)
             Freshness:
                 story 인과 체인 시점.
 
@@ -5293,9 +5305,9 @@ class Company:
             claims: 영향 분석 대상 claim 리스트. None 이면 전체 default claims.
 
         SeeAlso:
-            - ``storyTree`` — base trajectory.
-            - ``causalWeights`` — claim 가중치.
-            - ``dartlab.story.narrativeDiff.computeImpact`` — implementation.
+            - ``storyTree`` - base trajectory.
+            - ``causalWeights`` - claim 가중치.
+            - ``dartlab.story.narrativeDiff.computeImpact`` - implementation.
 
         Requires:
             - dartlab
@@ -5313,7 +5325,7 @@ class Company:
 
         return computeImpact(self, claims=claims)
 
-    def industry(self) -> dict | None:
+    def industry(self) -> dict:
         """이 회사의 밸류체인 산업 내 위치를 분석한다.
 
         Returns:
@@ -5333,22 +5345,22 @@ class Company:
                 - peers 추측 (industry().peers 가 실제 매칭된 종목)
                 - confidence 무시하고 단정 (낮으면 매칭 신뢰도 낮음)
             OutputSchema:
-                - chainId : str — 산업 체인 ID (semiconductor / automobile / ...)
-                - chainName : str — 한글 산업명
-                - stage : str — upstream / midstream / downstream / fab / equipment / ...
-                - stageLabel : str — 한글 단계 레이블
-                - confidence : float — 0.0~1.0 매칭 신뢰도
-                - peers : list[str] — 같은 stage 종목코드
+                - chainId : str - 산업 체인 ID (semiconductor / automobile / ...)
+                - chainName : str - 한글 산업명
+                - stage : str - upstream / midstream / downstream / fab / equipment / ...
+                - stageLabel : str - 한글 단계 레이블
+                - confidence : float - 0.0~1.0 매칭 신뢰도
+                - peers : list[str] - 같은 stage 종목코드
             Freshness:
-                산업 지도 정의 시점 — 운영자 수동 업데이트.
+                산업 지도 정의 시점 - 운영자 수동 업데이트.
 
         Raises:
             없음.
 
         SeeAlso:
-            - ``sector`` — WICS 11 대 섹터 분류 (industry 와 다른 차원).
-            - ``sectorParams`` — 섹터별 valuation 파라미터.
-            - ``dartlab.industry.calcs.companyCalcs.calcChainPosition`` — 본 함수 backend.
+            - ``sector`` - WICS 11 대 섹터 분류 (industry 와 다른 차원).
+            - ``sectorParams`` - 섹터별 valuation 파라미터.
+            - ``dartlab.industry.calcs.companyCalcs.calcChainPosition`` - 본 함수 backend.
 
         Requires:
             - dartlab
@@ -5356,18 +5368,18 @@ class Company:
 
         Capabilities:
             - 회사의 산업 밸류체인 내 위치 (upstream/midstream/downstream/fab/equipment 등) 분류 +
-              같은 stage peer 종목코드 list 반환. sector vs industry 분리 — 후자는 가치사슬 차원.
+              같은 stage peer 종목코드 list 반환. sector vs industry 분리 - 후자는 가치사슬 차원.
 
         Guide:
             - "이 회사 가치사슬 어디" → 본 함수.
             - "같은 stage peer" → result["peers"].
 
         AIContext:
-            동종 비교 시 sector (11 대) 보다 chain stage 가 더 정밀 — AI 가 peer 선정에 본 함수 활용.
+            동종 비교 시 sector (11 대) 보다 chain stage 가 더 정밀 - AI 가 peer 선정에 본 함수 활용.
         """
-        from dartlab.industry.calcs.companyCalcs import calcChainPosition
+        from dartlab.industry.product import companyIndustryResult
 
-        return calcChainPosition(self)
+        return companyIndustryResult(self)
 
     def view(self, *, port: int = 8400) -> None:
         """브라우저에서 공시 뷰어를 엽니다.
@@ -5391,7 +5403,7 @@ class Company:
             c.view()
 
         AIContext:
-            - 시각적 탐색 인터페이스 — 사용자가 브라우저에서 직접 데이터 탐색
+            - 시각적 탐색 인터페이스 - 사용자가 브라우저에서 직접 데이터 탐색
 
         Guide:
             - "공시 뷰어 열어줘" → c.view()
@@ -5409,7 +5421,7 @@ class Company:
                 - headless 환경 (CI/docker) 호출 → 브라우저 launch 실패. notebooks/JupyterLab 전용.
                 - 점유된 포트 → OSError. caller port 변경 의무.
             OutputSchema:
-                - None — side effect (브라우저 자동 open).
+                - None - side effect (브라우저 자동 open).
             Prerequisites:
                 - 로컬 표시 가능 환경 + dartlab.providers._common.viewer.
             Freshness:
@@ -5456,7 +5468,7 @@ class Company:
             **kwargs: provider별 추가 옵션.
 
         Returns:
-            str — LLM 응답 텍스트. ``stream=True`` 면 ``Generator[str]``.
+            str - LLM 응답 텍스트. ``stream=True`` 면 ``Generator[str]``.
 
         Raises:
             ValueError: provider/model 미설정 + 환경변수 키 부재.
@@ -5487,7 +5499,7 @@ class Company:
         LLM Specifications:
             AntiPatterns:
                 - 응답 직접 외부 인용 → AI 환각 검증 의무. dartlab tool 결과만 신뢰.
-                - reflect=True 항상 정확 X — 시간/토큰 2 배.
+                - reflect=True 항상 정확 X - 시간/토큰 2 배.
                 - stream=True 결과 list() 즉시 변환 → stream 의미 사라짐.
             OutputSchema:
                 - str (stream=False) 또는 Generator[str] (stream=True).
@@ -5498,7 +5510,7 @@ class Company:
             Dataflow:
                 - question + self.stockCode → ai.kernel.ask → tool calling → 본 함수.
             TargetMarkets:
-                - KR (DART) — workbench evidence + ask 인터페이스.
+                - KR (DART) - workbench evidence + ask 인터페이스.
         """
         import importlib
 
@@ -5532,8 +5544,8 @@ class Company:
             >>> Company("005930").calendar()
 
         SeeAlso:
-            - ``dartlab.providers.dart.ops.calendar.predictCalendar`` — backend cycle 추론.
-            - ``edgar.Company.calendar`` — US 패리티 (현재 미구현 stub).
+            - ``dartlab.providers.dart.ops.calendar.predictCalendar`` - backend cycle 추론.
+            - ``edgar.Company.calendar`` - US 패리티 (현재 미구현 stub).
 
         Requires:
             - dartlab
@@ -5552,9 +5564,9 @@ class Company:
         LLM Specifications:
             AntiPatterns:
                 - history 부재 회사 (신규 상장) → 빈 DataFrame. caller 분기 의무.
-                - horizon 큰 값 (>180) → 예측 정확도 낮음 — 분기 1 회 cycle 한정.
+                - horizon 큰 값 (>180) → 예측 정확도 낮음 - 분기 1 회 cycle 한정.
             OutputSchema:
-                - pl.DataFrame (OUTPUT_SCHEMA) — [stockCode, expectedDate, reportType, confidence].
+                - pl.DataFrame (OUTPUT_SCHEMA) - [stockCode, expectedDate, reportType, confidence].
             Prerequisites:
                 - disclosure history (최근 400 일).
             Freshness:
@@ -5572,7 +5584,7 @@ class Company:
         return predictCalendar({self.stockCode: history}, horizonDays=horizonDays)
 
 
-# ── DisclosureFetcher 구현 + register (정공법 B — DIP) ─────────────
+# ── DisclosureFetcher 구현 + register (정공법 B - DIP) ─────────────
 
 
 class _DartDisclosureFetcher:
@@ -5597,22 +5609,22 @@ class _DartDisclosureFetcher:
             없음.
 
         SeeAlso:
-            - ``Company.disclosure`` — 본 함수가 호출하는 backend.
-            - ``dartlab.core.disclosureFetcher.registerDisclosureFetcher`` — gather/Calendar 의존성 주입.
+            - ``Company.disclosure`` - 본 함수가 호출하는 backend.
+            - ``dartlab.core.disclosureFetcher.registerDisclosureFetcher`` - gather/Calendar 의존성 주입.
 
         Requires:
             - dartlab
             - polars
 
         Capabilities:
-            - gather/Calendar 의 DisclosureFetcher 어댑터 — Company.disclosure() 위임 + 예외 silent.
-              DIP (정공법 B) 패턴 — Calendar 가 직접 Company import 회피.
+            - gather/Calendar 의 DisclosureFetcher 어댑터 - Company.disclosure() 위임 + 예외 silent.
+              DIP (정공법 B) 패턴 - Calendar 가 직접 Company import 회피.
 
         Guide:
-            - 자동 등록 (import 시점) — 직접 호출 X.
+            - 자동 등록 (import 시점) - 직접 호출 X.
 
         AIContext:
-            본 어댑터는 인프라 layer — AI 가 직접 사용 X. gather/calendar 가 내부 사용.
+            본 어댑터는 인프라 layer - AI 가 직접 사용 X. gather/calendar 가 내부 사용.
 
         LLM Specifications:
             AntiPatterns:

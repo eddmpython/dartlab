@@ -4,12 +4,12 @@ quant/__init__.py 가 911 줄 god module 이라 데이터 부분만 분리.
 identity 보존을 위해 __init__.py 가 본 모듈에서 re-export 한다.
 
 내용:
-- _AxisEntry — 축 메타 dataclass
-- _AXIS_REGISTRY — 31 축 정의 (technical · risk · microstructure · fundamental ·
+- _AxisEntry - 축 메타 dataclass
+- _AXIS_REGISTRY - 31 축 정의 (technical · risk · microstructure · fundamental ·
   text · crossSection · portfolio · strategy 8 그룹)
-- _ALIASES — 한글/영문 alias → 정식 축 이름
-- _OLD_METRICS — 하위호환 metric 이름 set
-- _GROUPS — 그룹 ID → 한국어 라벨
+- _ALIASES - 한글/영문 alias → 정식 축 이름
+- _OLD_METRICS - 하위호환 metric 이름 set
+- _GROUPS - 그룹 ID → 한국어 라벨
 """
 
 from __future__ import annotations
@@ -33,7 +33,7 @@ class _AxisEntry:
     multiStock: bool = False  # True = 종목 리스트 입력
 
 
-# ── A: 기술적 (technical) — 가격 전용 ────────────────────
+# ── A: 기술적 (technical) - 가격 전용 ────────────────────
 
 _AXIS_REGISTRY: dict[str, _AxisEntry] = {
     "indicators": _AxisEntry(
@@ -112,11 +112,11 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
         module="dartlab.quant.regime.chartPatterns",
         fn="calcChartPatterns",
         label="차트패턴",
-        description="거시 차트 패턴 — W/M/H&S/삼중/원형 (자동 인식 + 목표가)",
+        description="거시 차트 패턴 - W/M/H&S/삼중/원형 (자동 인식 + 목표가)",
         example='quant("차트패턴", "005930")',
         group="technical",
     ),
-    # ── B: 리스크 (risk) — 가격 + 벤치마크 ────────────────
+    # ── B: 리스크 (risk) - 가격 + 벤치마크 ────────────────
     "beta": _AxisEntry(
         module="dartlab.quant.screen.axTechnical",
         fn="calcBeta",
@@ -157,7 +157,7 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
         example='quant("잔여수익", "005930")',
         group="risk",
     ),
-    # ── C: 미시구조 (microstructure) — 가격 + 거래량/수급 ─
+    # ── C: 미시구조 (microstructure) - 가격 + 거래량/수급 ─
     "liquidity": _AxisEntry(
         module="dartlab.quant.risk.microstructure",
         fn="calcLiquidity",
@@ -182,12 +182,12 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
         example='quant("거래량", "005930")',
         group="microstructure",
     ),
-    # ── D: 펀더멘털 퀀트 (fundamental) — scan 프리빌드 ────
+    # ── D: 펀더멘털 퀀트 (fundamental) - scan 프리빌드 ────
     "divergence": _AxisEntry(
         module="dartlab.quant.screen.axTechnical",
         fn="calcDivergence",
         label="괴리",
-        description="재무-기술적 괴리 진단",
+        description="공시 펀더멘털, 시장 기대 프록시, 가격 반응의 괴리 진단",
         example='quant("괴리", "005930")',
         group="fundamental",
     ),
@@ -215,7 +215,7 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
         example='quant("이익모멘텀", "005930")',
         group="fundamental",
     ),
-    # ── E: 텍스트/공시 (text) — dartlab 고유 차별화 ───────
+    # ── E: 텍스트/공시 (text) - dartlab 고유 차별화 ───────
     "sentiment": _AxisEntry(
         module="dartlab.quant.text.sentiment",
         fn="calcSentiment",
@@ -256,7 +256,7 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
         example='quant("거버넌스퀀트", "005930")',
         group="text",
     ),
-    # ── F: 횡단면 (crossSection) — 시장 레벨 ─────────────
+    # ── F: 횡단면 (crossSection) - 시장 레벨 ─────────────
     "ranking": _AxisEntry(
         module="dartlab.quant.factor.ranking",
         fn="calcRanking",
@@ -289,7 +289,7 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
         module="dartlab.quant.alphas.altman",
         fn="calcAltmanFactor",
         label="Altman Z",
-        description="Altman 1968/1995 — 전종목 부실확률 (safe/grey/distress 3 zone) + topSafe/topDistress",
+        description="Altman 1968/1995 - 전종목 부실확률 (safe/grey/distress 3 zone) + topSafe/topDistress",
         example='quant("altman")',
         group="fundamental",
         stockRequired=False,
@@ -298,7 +298,7 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
         module="dartlab.quant.alphas.piotroski",
         fn="calcPiotroskiFactor",
         label="Piotroski F",
-        description="Piotroski 2000 — 9 신호 합 (0~9점) 전종목 분포 + 9 신호 시장 통과율",
+        description="Piotroski 2000 - 9 신호 합 (0~9점) 전종목 분포 + 9 신호 시장 통과율",
         example='quant("piotroski")',
         group="fundamental",
         stockRequired=False,
@@ -307,7 +307,7 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
         module="dartlab.quant.alphas.beneish",
         fn="calcBeneishFactor",
         label="Beneish M",
-        description="Beneish 1999 — 8변수 이익조작 감지, red flag (M > -1.78) 비율 + topFlag",
+        description="Beneish 1999 - 8변수 이익조작 감지, red flag (M > -1.78) 비율 + topFlag",
         example='quant("beneish")',
         group="fundamental",
         stockRequired=False,
@@ -316,7 +316,7 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
         module="dartlab.quant.alphas.accruals",
         fn="calcAccrualsFactor",
         label="Sloan Accrual",
-        description="Sloan 1996 — (NI−CFO)/TA, high/neutral/low 3 그룹 분포",
+        description="Sloan 1996 - (NI−CFO)/TA, high/neutral/low 3 그룹 분포",
         example='quant("accruals")',
         group="fundamental",
         stockRequired=False,
@@ -325,7 +325,7 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
         module="dartlab.quant.alphas.qFactor",
         fn="calcQFactor",
         label="q-factor",
-        description="Hou-Xue-Zhang 2015 — ROE + (−assetGrowth) composite, 수익성×보수투자",
+        description="Hou-Xue-Zhang 2015 - ROE + (−assetGrowth) composite, 수익성×보수투자",
         example='quant("qfactor")',
         group="fundamental",
         stockRequired=False,
@@ -334,7 +334,7 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
         module="dartlab.quant.alphas.qmj",
         fn="calcQMJ",
         label="QMJ",
-        description="Asness-Frazzini-Pedersen 2019 — Profitability + Safety 합성 품질 랭킹",
+        description="Asness-Frazzini-Pedersen 2019 - Profitability + Safety 합성 품질 랭킹",
         example='quant("qmj")',
         group="fundamental",
         stockRequired=False,
@@ -343,7 +343,7 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
         module="dartlab.quant.alphas.bab",
         fn="calcBAB",
         label="BAB 저베타",
-        description="Frazzini-Pedersen 2014 — 252일 beta 저베타 랭킹 + 60일 realized vol 보조",
+        description="Frazzini-Pedersen 2014 - 252일 beta 저베타 랭킹 + 60일 realized vol 보조",
         example='quant("bab")',
         group="risk",
         stockRequired=False,
@@ -352,7 +352,7 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
         module="dartlab.quant.alphas.earningsSurprise",
         fn="calcEarningsSurprise",
         label="이익서프라이즈",
-        description="Bernard-Thomas 1989 PEAD — YoY NI growth z-score, positive SUE drift 후보",
+        description="Bernard-Thomas 1989 PEAD - YoY NI growth z-score, positive SUE drift 후보",
         example='quant("surprise")',
         group="fundamental",
         stockRequired=False,
@@ -361,12 +361,12 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
         module="dartlab.quant.alphas.fundamentalMomentum",
         fn="calcFundamentalMomentum",
         label="펀더-가격 모멘텀",
-        description="Chordia-Shivakumar 2006 — earnings + 12-1 price 모멘텀 합성 랭킹",
+        description="Chordia-Shivakumar 2006 - earnings + 12-1 price 모멘텀 합성 랭킹",
         example='quant("fundmom")',
         group="fundamental",
         stockRequired=False,
     ),
-    # ── G: 포트폴리오 (portfolio) — 멀티종목 ─────────────
+    # ── G: 포트폴리오 (portfolio) - 멀티종목 ─────────────
     "meanvar": _AxisEntry(
         module="dartlab.quant.portfolio.optimize",
         fn="optimizeMeanVar",
@@ -389,7 +389,7 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
         module="dartlab.quant.portfolio.optimize",
         fn="allocateERC",
         label="자산배분",
-        description="Equal Risk Contribution (Maillard 2010) — 종목별 위험 기여도 균등 배분",
+        description="Equal Risk Contribution (Maillard 2010) - 종목별 위험 기여도 균등 배분",
         example='quant("자산배분", ["005930","000660"])',
         group="portfolio",
         multiStock=True,

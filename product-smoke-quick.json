@@ -8,7 +8,7 @@
     },
     "details": {
       "type": "public-access",
-      "height": 38,
+      "height": 40,
       "symbols": [
         "dartlab.Company",
         "dartlab.Fred",
@@ -23,10 +23,10 @@
       ]
     },
     "elapsedSec": 1.156,
-    "rssBeforeMb": 22.9,
-    "rssAfterMb": 94.8,
-    "rssDeltaMb": 71.9,
-    "rssPeakMb": 94.8,
+    "rssBeforeMb": 23.0,
+    "rssAfterMb": 107.4,
+    "rssDeltaMb": 84.4,
+    "rssPeakMb": 107.4,
     "returnCode": 0,
     "budget": {
       "maxElapsedSec": 20.0,
@@ -46,15 +46,15 @@
     },
     "details": {
       "type": "dict",
-      "height": 226,
+      "height": 252,
       "width": null,
       "columns": []
     },
-    "elapsedSec": 1.141,
+    "elapsedSec": 1.25,
     "rssBeforeMb": 23.0,
-    "rssAfterMb": 98.8,
-    "rssDeltaMb": 75.8,
-    "rssPeakMb": 98.8,
+    "rssAfterMb": 108.3,
+    "rssDeltaMb": 85.2,
+    "rssPeakMb": 108.3,
     "returnCode": 0,
     "budget": {
       "maxElapsedSec": 20.0,
@@ -85,11 +85,11 @@
         "apiKey"
       ]
     },
-    "elapsedSec": 0.937,
+    "elapsedSec": 1.016,
     "rssBeforeMb": 23.1,
-    "rssAfterMb": 94.5,
-    "rssDeltaMb": 71.4,
-    "rssPeakMb": 94.5,
+    "rssAfterMb": 105.6,
+    "rssDeltaMb": 82.5,
+    "rssPeakMb": 105.6,
     "returnCode": 0,
     "budget": {
       "maxElapsedSec": 20.0,
@@ -111,11 +111,11 @@
       "type": "Company",
       "height": 1
     },
-    "elapsedSec": 1.047,
+    "elapsedSec": 1.094,
     "rssBeforeMb": 23.0,
-    "rssAfterMb": 102.0,
-    "rssDeltaMb": 79.0,
-    "rssPeakMb": 102.0,
+    "rssAfterMb": 113.2,
+    "rssDeltaMb": 90.3,
+    "rssPeakMb": 113.2,
     "returnCode": 0,
     "budget": {
       "maxElapsedSec": 30.0,

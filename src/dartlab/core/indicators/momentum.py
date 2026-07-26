@@ -49,6 +49,10 @@ def vrsi(close: NDArray[np.float64], period: int = 14) -> NDArray[np.float64]:
     """Compute Relative Strength Index using Wilder smoothing."""
     n = len(close)
     result = np.full(n, np.nan, dtype=np.float64)
+    if period < 1:
+        raise ValueError("period must be at least 1")
+    if n <= period:
+        return result
     deltas = np.diff(close, prepend=close[0])
     gains = np.where(deltas > 0, deltas, 0)
     losses = np.where(deltas < 0, -deltas, 0)

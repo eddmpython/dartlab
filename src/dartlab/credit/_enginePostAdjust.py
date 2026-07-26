@@ -1,4 +1,4 @@
-"""Engine 공통 후처리 — CHS/Notch/divergence/TS smoothing/OFS blending.
+"""Engine 공통 후처리 - CHS/Notch/divergence/TS smoothing/OFS blending.
 
 engine.py 분리: 시계열 안정화·OFS 블렌딩·후처리·출력 정규화.
 """
@@ -33,9 +33,9 @@ def _explainDivergence(
     ocf = latest.get("ocf")
     if fcf is not None and fcf < 0:
         if ocf is not None and ocf > 0:
-            explanations.append("FCF 음수(OCF 양수) — 대규모 투자(CAPEX) 사이클 중. 투자와 부실을 정량으로 구분 불가")
+            explanations.append("FCF 음수(OCF 양수) - 대규모 투자(CAPEX) 사이클 중. 투자와 부실을 정량으로 구분 불가")
         else:
-            explanations.append("FCF·OCF 모두 음수 — 현금흐름 악화 신호")
+            explanations.append("FCF·OCF 모두 음수 - 현금흐름 악화 신호")
 
     if chsResult and chsResult.get("adjustment", 0) > 1:
         explanations.append(
@@ -45,12 +45,12 @@ def _explainDivergence(
 
     de = latest.get("debtToEbitda") or 0
     if de > 10:
-        explanations.append(f"D/EBITDA {de:.1f}x — 자본집약 업종 구조적 특성 (CAPEX/리스 부채)")
+        explanations.append(f"D/EBITDA {de:.1f}x - 자본집약 업종 구조적 특성 (CAPEX/리스 부채)")
 
     if captive:
-        explanations.append("캡티브 금융자회사 연결 — 연결 차입금에 금융자회사 대출 원금 포함")
+        explanations.append("캡티브 금융자회사 연결 - 연결 차입금에 금융자회사 대출 원금 포함")
     if holding:
-        explanations.append("지주사 연결 구조 — 자회사 부채가 연결 레버리지에 반영")
+        explanations.append("지주사 연결 구조 - 자회사 부채가 연결 레버리지에 반영")
 
     explanations.append("dartlab dCR은 공시 정량 데이터 기반. 시장 지위, 경영진, 그룹 지원 등 정성 요소는 미반영")
 
@@ -58,9 +58,9 @@ def _explainDivergence(
 
 
 def _applyPostAdjustments(company, overall, latest, metrics, axes, captive, holding, sepMetrics):
-    """CHS + Notch + divergence — Track A/B 공통 후처리."""
-    from dartlab.credit.scoring.creditScorecard import estimatePD
-    from dartlab.credit.scoring.creditScorecard import notchGrade as _notchGrade
+    """CHS + Notch + divergence - Track A/B 공통 후처리."""
+    from dartlab.credit.scoring.creditScorecard import estimatePD, notchGrade
+    from dartlab.credit.scoring.gradeTable import gradeRank
 
     chsResult = _calcCHSAdjustment(company, overall)
     if chsResult.get("status") == "ok":
@@ -70,7 +70,14 @@ def _applyPostAdjustments(company, overall, latest, metrics, axes, captive, hold
 
     notchAdj = _calcNotchAdjustment(company, grade, overall, latest, metrics, holding, captive, sepMetrics)
     if notchAdj["totalNotch"] != 0:
-        grade = _notchGrade(grade, -notchAdj["totalNotch"])
+        adjustedGrade = notchGrade(grade, -notchAdj["totalNotch"])
+        gateGrade, _, _ = mapTo20Grade(_CONFIG["notch_gate_score"])
+        adjustedRank = gradeRank(adjustedGrade)
+        gateRank = gradeRank(gateGrade)
+        if adjustedRank is not None and gateRank is not None and adjustedRank < gateRank:
+            adjustedGrade = gateGrade
+            notchAdj["monotonicGate"] = gateGrade
+        grade = adjustedGrade
         pdEstimate = estimatePD(grade)
         gradeDesc = gradeCategory(grade) + " (notch 조정)"
 
@@ -80,7 +87,7 @@ def _applyPostAdjustments(company, overall, latest, metrics, axes, captive, hold
 
 
 def _applyTimeSeriesSmoothing(currentScore: float, historicalScores: list[float]) -> float:
-    """3개년 가중이동평균 — _CONFIG["ts_weights"] 사용."""
+    """3개년 가중이동평균 - _CONFIG["ts_weights"] 사용."""
     w = _CONFIG["ts_weights"]
     if len(historicalScores) >= 2:
         overall = currentScore * w[0] + historicalScores[0] * w[1] + historicalScores[1] * w[2]

@@ -1,20 +1,16 @@
-"""Callable `simulate` preview wrapper over `runScenario` (L2.5).
+"""Callable `simulate` wrapper over `Company.simulate` (L2.5).
 
-`dartlab.simulate(code, scenario=..., horizon=..., asOf=...)` is the callable preview entry for
+`dartlab.simulate(code, scenario=..., horizon=..., asOf=...)` is the callable entry for
 the deterministic scenario-simulator core. It resolves the code to a `Company`, guards the
-KR-only macro presets, and delegates to the internal `simulate.run.runScenario` driver — mirroring
+KR-only macro presets, and delegates to the internal `simulate.run.runScenario` driver - mirroring
 how `dartlab.compare` wraps `panel.compare` (top-level verb, outside the Company facade).
 
-The function is importable, but `simulate` is not yet registered in the Skill OS / apiContract
-engine list. Until the axis-dispatch contract is decided, callers must treat it as a preview rather
-than a stable public contract.
-
 This is the deterministic subset only (`scenario` + `horizon` + `asOf`). The full
-`mainPlan/scenario-simulator/01` signature also carries `drivers` / `lens` / `mode`; those (the
-non-deterministic lens path, multi-driver overrides, and Play replay) are later phases — see the
-ledger. Adding inert params now would be clutter, so they are deferred, not stubbed.
+`mainPlan/scenario-simulator/01` signature also carries `drivers` / `lens` / `mode`. The current
+Company surface attaches representative lens products as explicit context while keeping the
+DriverSheet deterministic. Multi-driver overrides and Play replay remain separate work.
 
-Layer: L2.5. Imports forward only — constructs the root `Company` facade (L1) and calls the L2.5
+Layer: L2.5. Imports forward only - constructs the root `Company` facade (L1) and calls the L2.5
 `run` driver. The legacy `analysis/forecast/simulation.py` flow is never touched (born-clean).
 """
 
@@ -46,9 +42,9 @@ def simulate(
           (이 경로에 난수 없음).
 
     Args:
-        code: 종목코드("005930") 또는 한글 회사명("삼성전자"). 현재 KR(DART) 전용 — 미국 ticker
+        code: 종목코드("005930") 또는 한글 회사명("삼성전자"). 현재 KR(DART) 전용 - 미국 ticker
             는 `ValueError` (매크로 프리셋이 KR 기준이라 US 프리셋 합류 전까지 차단).
-        scenario: 시나리오 id — ``synth.scenario.getPresetScenarios("KR")`` 의 키
+        scenario: 시나리오 id - ``synth.scenario.getPresetScenarios("KR")`` 의 키
             (예: ``"baseline"``, ``"adverse"``, ``"severelyAdverse"``).
         horizon: 예측 연수 (기본 3). 선택한 프리셋의 실제 경로 길이를 넘길 수 없다.
         asOf: 명시 재무 기간(YYYY 또는 YYYY-Qn). 현재는 기간 단위 PIT이며 공시 접수일
@@ -89,17 +85,17 @@ def simulate(
         시계열이 필요하다.
 
     AIContext:
-        출력은 미래 예측이 아니라 *고정된 가정의 결정론 변환*이다 — 항상 시나리오 id, 노드별
+        출력은 미래 예측이 아니라 *고정된 가정의 결정론 변환*이다 - 항상 시나리오 id, 노드별
         provenance/refs, asOf 를 같이 노출한다. ``partial`` 품질은 데이터 갭(None 필드)이지 0 이
-        아니다 — 갭을 보고하고 0 으로 대체하지 않는다. lens(비결정론 보완)·다중 드라이버·Play
-        리플레이는 후속 단계이며 현재 verb 는 결정론 경로만 제공한다.
+        아니다. 갭을 보고하고 0 으로 대체하지 않는다. ``lensProducts``와
+        ``assumptionLedger``는 설명 맥락이며 결정론 DriverSheet를 바꾸지 않는다.
 
     LLM Specifications:
         AntiPatterns:
-            - ``dcfPerShare`` 를 목표주가로 인용 — 시나리오-조건부 변환이다.
-            - None ``revenuePath`` 를 0 으로 취급 — 정직한 base 매출 갭이다.
-            - asOf 를 바꿔 다시 돌린 뒤 inputsHash 비교 — 기준시점도 해시의 일부.
-            - drivers/lens/mode 인자를 기대 — 현재 결정론 subset 만, 후속 단계.
+            - ``dcfPerShare`` 를 목표주가로 인용 - 시나리오-조건부 변환이다.
+            - None ``revenuePath`` 를 0 으로 취급 - 정직한 base 매출 갭이다.
+            - asOf 를 바꿔 다시 돌린 뒤 inputsHash 비교 - 기준시점도 해시의 일부.
+            - lensProducts의 가정을 DriverSheet에 적용된 override로 해석.
         OutputSchema: ``SimulationResult`` (해당 필드 docstring 참조).
         Prerequisites: 재무 시계열을 가진 KR `Company`.
         Freshness: 회사의 최신 재무 기간을 asOf/latestAsOf 로 상속.
@@ -108,15 +104,14 @@ def simulate(
         TargetMarkets: KR (getPresetScenarios("KR") + KR elasticity). US 는 US 프리셋 합류 후.
     """
     import dartlab
-    from dartlab.simulate.run import runScenario
 
     company = dartlab.Company(code)
-    # KR 전용 가드 — 매크로 프리셋이 KR 기준이라 비-KR(US → EDGAR)은 차단한다. DART/EDGAR Company
+    # KR 전용 가드 - 매크로 프리셋이 KR 기준이라 비-KR(US → EDGAR)은 차단한다. DART/EDGAR Company
     # 둘 다 .stockCode 를 노출하므로(EDGAR 는 ticker 를 stockCode 로 미러) market 을 식별자로 쓴다.
     market = getattr(company, "market", None)
     if market != "KR":
         raise ValueError(
-            f"simulate 는 현재 KR(DART) 전용입니다 — '{code}' (market={market!r}) 은(는) 지원하지 "
+            f"simulate 는 현재 KR(DART) 전용입니다 - '{code}' (market={market!r}) 은(는) 지원하지 "
             "않습니다. US 매크로 프리셋 합류 전까지 차단."
         )
-    return runScenario(company, scenario=scenario, horizon=horizon, asOf=asOf)
+    return company.simulate(scenario=scenario, horizon=horizon, asOf=asOf)

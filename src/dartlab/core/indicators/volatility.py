@@ -45,13 +45,17 @@ def vatr(
 ) -> NDArray[np.float64]:
     """Compute Average True Range using Wilder smoothing."""
     n = len(close)
+    atr = np.full(n, np.nan, dtype=np.float64)
+    if period < 1:
+        raise ValueError("period must be at least 1")
+    if n < period:
+        return atr
     tr = np.empty(n, dtype=np.float64)
     tr[0] = high[0] - low[0]
     hl = high[1:] - low[1:]
     hc = np.abs(high[1:] - close[:-1])
     lc = np.abs(low[1:] - close[:-1])
     tr[1:] = np.maximum(np.maximum(hl, hc), lc)
-    atr = np.full(n, np.nan, dtype=np.float64)
     atr[period - 1] = np.mean(tr[:period])
     for i in range(period, n):
         atr[i] = (atr[i - 1] * (period - 1) + tr[i]) / period

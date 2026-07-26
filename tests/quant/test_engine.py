@@ -1,4 +1,4 @@
-"""Quant engine unit tests — vectorized indicators, signals, verdict.
+"""Quant engine unit tests - vectorized indicators, signals, verdict.
 
 Uses synthetic NumPy arrays (uptrend, downtrend, sideways).
 No real data loading, no Company objects.
@@ -17,7 +17,7 @@ pytestmark = pytest.mark.unit
 # ── imports ──
 
 from dartlab.quant.signal.generator import vcross, vcrossover, vcrossunder, vgoldenCross, vrsiSignal
-from dartlab.synth.indicators import vatr, vbollinger, vema, vmacd, vrsi, vsma
+from dartlab.synth.indicators import vadx, vatr, vbollinger, vema, vmacd, vrsi, vsma, vsupertrend
 
 # ── helpers: synthetic OHLCV ──
 
@@ -106,6 +106,23 @@ class TestVema:
         ema_diff = np.abs(close[valid] - ema[valid])
         sma_diff = np.abs(close[valid] - sma[valid])
         assert np.mean(ema_diff[-20:]) < np.mean(sma_diff[-20:])
+
+    def test_short_history_returns_aligned_nan_arrays(self):
+        close = np.arange(1.0, 8.0)
+        high, low, close, _volume = _make_ohlcv(close)
+
+        assert np.isnan(vsma(close, 20)).all()
+        assert np.isnan(vema(close, 12)).all()
+        assert np.isnan(vrsi(close, 14)).all()
+        assert np.isnan(vatr(high, low, close, 14)).all()
+        assert np.isnan(vadx(high, low, close, 14)).all()
+        supertrend, direction = vsupertrend(high, low, close, 10)
+        assert np.isnan(supertrend).all()
+        assert not direction.any()
+        macd, signal, histogram = vmacd(close)
+        assert np.isnan(macd).all()
+        assert np.isnan(signal).all()
+        assert np.isnan(histogram).all()
 
 
 # ═══════════════════════════════════════════════════════════

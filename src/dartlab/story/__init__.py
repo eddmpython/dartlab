@@ -1,6 +1,6 @@
-"""dartlab.story — L3 조합기 (분석엔진 X, 보고서 스토리보드).
+"""dartlab.story - L3 조합기 (분석엔진 X, 보고서 스토리보드).
 
-c.story() 하나로 6 막 인과 보고서 생성 + 렌더링. 분석엔진 X — L2 5 분석엔진
+c.story() 하나로 6 막 인과 보고서 생성 + 렌더링. 분석엔진 X - L2 5 분석엔진
 (analysis · credit · macro · quant · industry) 끼리의 import 순환을 방지하기 위해
 story 가 단독으로 다중 결합 책임을 짊어진다. 자체 계산 0, 모든 숫자는 하위 엔진 ref.
 AI 는 이 위에 올라간다 (L4).
@@ -91,7 +91,7 @@ def blocks(company, *, basePeriod: str | None = None):
         company: Company 객체.
 
     Returns:
-        BlockMap — 한글/영문/attribute 접근 가능한 블록 사전.
+        BlockMap - 한글/영문/attribute 접근 가능한 블록 사전.
 
     Example::
 
@@ -127,7 +127,7 @@ def _flattenItems(items) -> list:
 
 @dataclass
 class Story:
-    """보고서 조합기 — 6 엔진 블록을 조합하여 6막 구조화 보고서 생성.
+    """보고서 조합기 - 6 엔진 블록을 조합하여 6막 구조화 보고서 생성.
 
     analysis/credit/scan/quant/macro/industry 엔진의 결과를 블록 단위로 조합.
     11 보고서 타입 × 7 기업유형 템플릿. 해석하지 않고 다양한 관점의 근거를 배치.
@@ -150,11 +150,11 @@ class Story:
     -------
     Story
         보고서 인스턴스. 주요 속성/메서드:
-            sections : list[Section] — 6막별 섹션 목록
-            render(fmt) : str — 렌더링 ("rich"/"html"/"markdown"/"json")
-            toHtml() : str — HTML 출력
-            toMarkdown() : str — Markdown 출력
-            summaryCard : SummaryCard — 최상단 요약 카드
+            sections : list[Section] - 6막별 섹션 목록
+            render(fmt) : str - 렌더링 ("rich"/"html"/"markdown"/"json")
+            toHtml() : str - HTML 출력
+            toMarkdown() : str - Markdown 출력
+            summaryCard : SummaryCard - 최상단 요약 카드
 
     Raises
     ------
@@ -182,24 +182,24 @@ class Story:
     -----
     AI 역할: AI는 story를 검증된 engine output을 보고서 섹션으로 조립하는 엔진으로 보고 원자료 없이 새 claim을 만들지 않는다.
     When: 종목의 종합 분석 보고서가 필요할 때.
-    How: 11 타입 중 선택 — full(전체), executive(경영진 요약), credit(신용),
+    How: 11 타입 중 선택 - full(전체), executive(경영진 요약), credit(신용),
         valuation(가치평가), growth(성장), crisis(위기), audit(감사),
         dividend(배당), governance(지배구조), macro(매크로), thesis(투자논제).
     Verified:
-        - credit 타입 → credit + analysis(안정성,현금흐름,자금조달) 조합 (observed via ai-ask, 2026-04-25 — 정식 Phase P 판정 아님)
-        - audit 타입 → analysis(이익품질,재무정합성) + 감사의견 (observed via ai-ask, 2026-04-25 — 정식 Phase P 판정 아님)
-        - governance 타입 → analysis(지배구조,공시변화) (observed via ai-ask, 2026-04-25 — 정식 Phase P 판정 아님)
-        - dividend 타입 → analysis(수익구조,현금흐름,자본배분) (observed via ai-ask, 2026-04-25 — 정식 Phase P 판정 아님)
-        - valuation 타입 → analysis(가치평가) + quant (observed via ai-ask, 2026-04-25 — 정식 Phase P 판정 아님)
-        - thesis 타입 → macro + analysis 복합 근거 수집 (observed via ai-ask, 2026-04-25 — 정식 Phase P 판정 아님)
+        - credit 타입 → credit + analysis(안정성,현금흐름,자금조달) 조합 (observed via ai-ask, 2026-04-25 - 정식 Phase P 판정 아님)
+        - audit 타입 → analysis(이익품질,재무정합성) + 감사의견 (observed via ai-ask, 2026-04-25 - 정식 Phase P 판정 아님)
+        - governance 타입 → analysis(지배구조,공시변화) (observed via ai-ask, 2026-04-25 - 정식 Phase P 판정 아님)
+        - dividend 타입 → analysis(수익구조,현금흐름,자본배분) (observed via ai-ask, 2026-04-25 - 정식 Phase P 판정 아님)
+        - valuation 타입 → analysis(가치평가) + quant (observed via ai-ask, 2026-04-25 - 정식 Phase P 판정 아님)
+        - thesis 타입 → macro + analysis 복합 근거 수집 (observed via ai-ask, 2026-04-25 - 정식 Phase P 판정 아님)
 
     See Also
     --------
-    analysis : 재무 심층 분석 — story 의 주요 데이터 공급원.
-    credit : 신용 분석 — story credit 타입의 핵심 엔진.
-    scan : 전종목 비교 — 동종업계 비교 블록 제공.
-    quant : 기술적 분석 — 가격 기반 신호 블록 제공.
-    macro : 거시 분석 — 매크로 환경 블록 제공.
+    analysis : 재무 심층 분석 - story 의 주요 데이터 공급원.
+    credit : 신용 분석 - story credit 타입의 핵심 엔진.
+    scan : 전종목 비교 - 동종업계 비교 블록 제공.
+    quant : 기술적 분석 - 가격 기반 신호 블록 제공.
+    macro : 거시 분석 - 매크로 환경 블록 제공.
     """
 
     stockCode: str = ""
@@ -211,6 +211,10 @@ class Story:
     actTransitions: dict = field(default_factory=dict)  # 6막 전환 인과 문장
     summaryCard: SummaryCard | None = None  # 최상단 요약 카드
     template: str | None = None  # 스토리 템플릿 (사이클/성장/지주 등)
+    reportType: str | None = None  # 보고서 관점
+    lensProducts: dict = field(default_factory=dict)  # 엔진별 Lens Product 원문
+    lensGaps: list[dict] = field(default_factory=list)  # 대표 축 호출 또는 계약 결손
+    _lensBundle: dict = field(default_factory=dict, repr=False)  # 같은 세션 원본 재사용
 
     def __init__(
         self,
@@ -223,6 +227,9 @@ class Story:
         aiNote: str | None = None,
         circulationSummary: str = "",
         summaryCard: SummaryCard | None = None,
+        reportType: str | None = None,
+        lensProducts: dict | None = None,
+        lensGaps: list[dict] | None = None,
     ):
         """리스트 전달 시 자유 조립, 아니면 일반 생성."""
         if isinstance(itemsOrStockCode, list):
@@ -246,6 +253,10 @@ class Story:
             self.aiNote = aiNote
             self.circulationSummary = circulationSummary
             self.summaryCard = summaryCard
+            self.reportType = reportType
+            self.lensProducts = lensProducts or {}
+            self.lensGaps = lensGaps or []
+            self._lensBundle = {}
         elif isinstance(itemsOrStockCode, str):
             # Story("005930", corpName=..., ...)
             self.stockCode = itemsOrStockCode
@@ -255,6 +266,10 @@ class Story:
             self.aiNote = aiNote
             self.circulationSummary = circulationSummary
             self.summaryCard = summaryCard
+            self.reportType = reportType
+            self.lensProducts = lensProducts or {}
+            self.lensGaps = lensGaps or []
+            self._lensBundle = {}
         else:
             # Story(stockCode=..., corpName=..., ...)
             self.stockCode = stockCode
@@ -264,9 +279,13 @@ class Story:
             self.aiNote = aiNote
             self.circulationSummary = circulationSummary
             self.summaryCard = summaryCard
+            self.reportType = reportType
+            self.lensProducts = lensProducts or {}
+            self.lensGaps = lensGaps or []
+            self._lensBundle = {}
 
     def render(self, fmt: str = "rich") -> str:
-        """통합 렌더러 — rich/html/markdown/json 4종 출력.
+        """통합 렌더러 - rich/html/markdown/json 4종 출력.
 
         Capabilities:
             - rich: 터미널 컬러 텍스트 (기본값)
@@ -295,7 +314,7 @@ class Story:
             fmt: 출력 형식. "rich" | "html" | "markdown" | "json".
 
         Returns:
-            str — 해당 형식으로 렌더링된 보고서 텍스트.
+            str - 해당 형식으로 렌더링된 보고서 텍스트.
 
         Example::
 
@@ -352,7 +371,7 @@ class Story:
 
         Capabilities:
             - Story를 완전한 HTML 문자열로 변환
-            - 인라인 스타일 포함 — 외부 CSS 불필요
+            - 인라인 스타일 포함 - 외부 CSS 불필요
             - 웹 페이지 삽입, 이메일 첨부, 파일 저장에 적합
 
         Requires:
@@ -374,7 +393,7 @@ class Story:
             없음.
 
         Returns:
-            str — HTML 문자열.
+            str - HTML 문자열.
 
         Example::
 
@@ -412,7 +431,7 @@ class Story:
             없음.
 
         Returns:
-            str — Markdown 문자열.
+            str - Markdown 문자열.
 
         Example::
 
@@ -450,7 +469,7 @@ class Story:
             없음.
 
         Returns:
-            str — JSON 문자열.
+            str - JSON 문자열.
 
         Example::
 

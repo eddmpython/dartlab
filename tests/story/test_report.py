@@ -1,7 +1,7 @@
-"""P2 리포트 emitter 게이트 — Story 블록 → 계약 ReportBlock 매핑 + pro 블록 합성 (offline).
+"""P2 리포트 emitter 게이트 - Story 블록 → 계약 ReportBlock 매핑 + pro 블록 합성 (offline).
 
 플랜 SSOT: mainPlan/professional-report-engine/03-report-engine-architecture.md §2.3.
-buildReportModel 은 self-calc 0 — 본 파일은 순수 매핑 헬퍼(_mapBlock·_valuationView·
+buildReportModel 은 self-calc 0 - 본 파일은 순수 매핑 헬퍼(_mapBlock·_valuationView·
 _scenarioSet·_buildThesis)를 합성 입력으로 검증. company 데이터 의존 end-to-end 는 CI.
 """
 
@@ -86,9 +86,7 @@ def test_scenario_set_none_without_base():
 # ── P1e 신용 pro 블록 (creditPanel) ──
 
 
-def test_credit_view_maps_badge(monkeypatch):
-    from dartlab.credit import engine as _engine
-
+def test_credit_view_maps_badge():
     result = {
         "grade": "dCR-AA+",
         "gradeRaw": "AA+",
@@ -98,23 +96,19 @@ def test_credit_view_maps_badge(monkeypatch):
         "outlook": "안정적",
         "investmentGrade": True,
         "axes": [{"name": "레버리지", "weight": 0.25, "score": 82}, "junk"],
+        "product": {"confidence": {"score": 91, "method": "coverage"}},
     }
-    monkeypatch.setattr(_engine, "evaluateCompany", lambda c, **k: result)
-    cv = _creditView(object())
+    cv = _creditView(result)
     assert cv["grade"] == "dCR-AA+" and cv["gradeRaw"] == "AA+"
     assert cv["pdEstimate"] == 0.4 and cv["outlook"] == "안정적"
     assert cv["investmentGrade"] is True
-    assert cv["confidenceMethod"] == "ratio" and cv["confidence"] is not None
+    assert cv["confidenceMethod"] == "coverage" and cv["confidence"] == 91
     assert cv["axes"] == [{"name": "레버리지", "weight": 0.25, "score": 82}], "dict 아닌 축은 걸러짐"
 
 
-def test_credit_view_none_on_no_grade(monkeypatch):
-    from dartlab.credit import engine as _engine
-
-    monkeypatch.setattr(_engine, "evaluateCompany", lambda c, **k: None)
-    assert _creditView(object()) is None, "평가 None 이면 None"
-    monkeypatch.setattr(_engine, "evaluateCompany", lambda c, **k: {"grade": None})
-    assert _creditView(object()) is None, "grade 없으면 None (graceful skip)"
+def test_credit_view_none_on_no_grade():
+    assert _creditView(None) is None, "평가 None 이면 None"
+    assert _creditView({"grade": None}) is None, "grade 없으면 None (graceful skip)"
 
 
 def test_headline_includes_credit_grade():
@@ -128,14 +122,19 @@ def test_build_report_model_emits_credit_section(monkeypatch):
     import types
 
     from dartlab.analysis.valuation import dFV as _dfv
-    from dartlab.credit import engine as _engine
     from dartlab.story import registry as _registry
     from dartlab.story import thesis as _thesis
     from dartlab.story.report import buildReportModel
 
     sec = types.SimpleNamespace(key="earnings", title="수익체력", blocks=[TextBlock(text="요약")])
     card = types.SimpleNamespace(grades={"수익성": "A"}, conclusion="양호")
-    story = types.SimpleNamespace(sections=[sec], summaryCard=card, stockCode="005930", corpName="삼성전자")
+    story = types.SimpleNamespace(
+        sections=[sec],
+        summaryCard=card,
+        stockCode="005930",
+        corpName="삼성전자",
+        lensProducts={},
+    )
     result = {
         "grade": "dCR-AA+",
         "gradeRaw": "AA+",
@@ -145,10 +144,11 @@ def test_build_report_model_emits_credit_section(monkeypatch):
         "outlook": "안정적",
         "investmentGrade": True,
         "axes": [],
+        "product": {"confidence": {"score": 90, "method": "coverage"}},
     }
+    story._lensBundle = {"results": {"credit": result}, "products": {}, "gaps": [], "noComposite": True}
     monkeypatch.setattr(_registry, "buildStory", lambda c, **k: story)
     monkeypatch.setattr(_dfv, "calcDFV", lambda c, **k: None)
-    monkeypatch.setattr(_engine, "evaluateCompany", lambda c, **k: result)
     monkeypatch.setattr(_thesis, "buildThesis", lambda *a, **k: None)
 
     model = buildReportModel(object(), "full")
