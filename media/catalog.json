@@ -2966,6 +2966,15 @@
     "blog/05-company-reports/18-011070-lg-innotek/assets/18-periscope.webp": "e714b8d02ff12f6f14540d024b2cbe35ef6302e4dc7ce3da6a4b5eb72c6526f7",
     "blog/05-company-reports/18-011070-lg-innotek/assets/18-scorecard.svg": "aca54e6bb910ceb3b10085dae64222abe0b5d9bd24077a931a0a5977ffafffea",
     "blog/05-company-reports/18-011070-lg-innotek/assets/18-thumbnail-bg.webp": "5fda4aff9e57ca20f03c07507f51b2b7da0599157e2766547e4291f26a602776",
+    "blog/05-company-reports/180-018670-sk-gas-two-fuels/assets/180-cash-debt-ledger.svg": "3c1c7db7b9fcecde426c3d041b0b6649636e73e7cfdc256b0129b3e2bb6e3827",
+    "blog/05-company-reports/180-018670-sk-gas-two-fuels/assets/180-dual-fuel-plant.svg": "ad3b947e7c21729af744244213cc3903efcd0b160933a30efb63b73954c5d8b7",
+    "blog/05-company-reports/180-018670-sk-gas-two-fuels/assets/180-five-year-profit.svg": "808fbda64f99a74fddf33f44248582ad17141b8b2db97a35a980162d8cc382c9",
+    "blog/05-company-reports/180-018670-sk-gas-two-fuels/assets/180-gps-cash-recycle.svg": "c531eb0d7b2cfc24835fb8fefcbe34c6cb798159479e9a0683685468816981ef",
+    "blog/05-company-reports/180-018670-sk-gas-two-fuels/assets/180-lpg-cp-clock.svg": "eac1bf5b49032f2abf9aae9e3f97a28979b56d21d24296d16f5a005dc1cb8cd2",
+    "blog/05-company-reports/180-018670-sk-gas-two-fuels/assets/180-monday-dashboard.svg": "6f48abef4f2be8f7ff0268b407253dceb786ef25c0eb9561c013fcf4963a1e1c",
+    "blog/05-company-reports/180-018670-sk-gas-two-fuels/assets/180-route-and-storage.png": "30c7eb04c455b4d1ef079526a961c5c07fbe2c5ae3c12d191d01c2507681823c",
+    "blog/05-company-reports/180-018670-sk-gas-two-fuels/assets/180-three-business-clocks.png": "cb9b71c557b660b96d23982136cdcacce158751cf35ed85570598027bd70fb6c",
+    "blog/05-company-reports/180-018670-sk-gas-two-fuels/assets/180-two-fuel-switch.png": "fd6ff157a85bbcbdafb49f80bf38f7ca038d9f30b7a902dba292167f5c5766b9",
     "blog/05-company-reports/19-011780-kumho-petrochemical/assets/19-big4-comparison.svg": "0a859919d83ca6c460eed9603f140d707eca89ae5afba8c5c512b8d3f6fb91f5",
     "blog/05-company-reports/19-011780-kumho-petrochemical/assets/19-business-structure.svg": "875931bcbc354b98996b7568906acad9d46b1ea1f0b1123f4e3698bb6551156c",
     "blog/05-company-reports/19-011780-kumho-petrochemical/assets/19-ev-tire.webp": "949e46e606fc1c36dfebedb7f7947ad2b6dad400b698ae6412bcd43adf3d85ed",
@@ -4288,6 +4297,8 @@
     "landing/static/thumbnails/175-171090-sunic-8gen-oled-evaporator.png": "2709a8cbd0a1b8dc24f0ca6338d43f5ede80d315668649da9c8ed117edb86cf8",
     "landing/static/thumbnails/18-biotech-company-filings-card.webp": "24db45d9c8157bd368e759d1ed2025787157de922d9c47b1ebbf6fa564377760",
     "landing/static/thumbnails/18-biotech-company-filings.webp": "03c1f0564108ca387234b577ff1fec16640a6dc53b2c3313fb44199c82f10558",
+    "landing/static/thumbnails/180-018670-sk-gas-two-fuels-card.png": "9f1e6719d053b1e071df86c88e2bfa56d81930c3905b0ab0a24546a55f50d971",
+    "landing/static/thumbnails/180-018670-sk-gas-two-fuels.png": "7d73e5e0079fbce9c01633eb9bc4e972707500cbafaf7a6598f2e8e6a1da752d",
     "landing/static/thumbnails/189300-intellian-card.webp": "3559d0d1d20e34fafdb924d668f892d27f943aa7644357f4120ed1fae8414b68",
     "landing/static/thumbnails/189300-intellian.webp": "6a5579e1c09da6ab0675b4a9a8969c332a3ee49ff5614dd7b56c9fc9d389539b",
     "landing/static/thumbnails/19-financial-company-filings-card.webp": "ee6daa6dc7cef15e3b1e1b5444a69071e7370c7d42908a065fa38757e900c739",
@@ -8184,6 +8195,10 @@
       "bytes": 72704,
       "path": "objects/sha256/30/30acdafd3592cfa298aa4da774a88a84c9c379301b5746befb6f5ecc61a8dbdf.webp"
     },
+    "30c7eb04c455b4d1ef079526a961c5c07fbe2c5ae3c12d191d01c2507681823c": {
+      "bytes": 2359412,
+      "path": "objects/sha256/30/30c7eb04c455b4d1ef079526a961c5c07fbe2c5ae3c12d191d01c2507681823c.png"
+    },
     "30f80dfa80f1670c295801c599f72f676b0589299f4fbf52412a0520a00884e1": {
       "bytes": 384702,
       "path": "objects/sha256/30/30f80dfa80f1670c295801c599f72f676b0589299f4fbf52412a0520a00884e1.webp"
@@ -9123,6 +9138,14 @@
     "3bf4145b7f23a946d0cfa6929c558852c5136d4e32dbc022764452000b8e33df": {
       "bytes": 73576,
       "path": "objects/sha256/3b/3bf4145b7f23a946d0cfa6929c558852c5136d4e32dbc022764452000b8e33df.webp"
+    },
+    "3c1c7db7b9fcecde426c3d041b0b6649636e73e7cfdc256b0129b3e2bb6e3827": {
+      "bytes": 4173,
+      "colorCount": 22,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/3c/3c1c7db7b9fcecde426c3d041b0b6649636e73e7cfdc256b0129b3e2bb6e3827.svg",
+      "textNodes": 21,
+      "viewBox": "0 0 1200 675"
     },
     "3c3392136cba6192daece4cb9c3b2b089627955f5d83b51dd204f742c245eca6": {
       "bytes": 97402,
@@ -12784,6 +12807,14 @@
       "bytes": 156424,
       "path": "objects/sha256/6f/6f2b7d33a98affbd43c6f3e95fe7f44faba36c78b028b944963044433626d73d.webp"
     },
+    "6f48abef4f2be8f7ff0268b407253dceb786ef25c0eb9561c013fcf4963a1e1c": {
+      "bytes": 4493,
+      "colorCount": 16,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/6f/6f48abef4f2be8f7ff0268b407253dceb786ef25c0eb9561c013fcf4963a1e1c.svg",
+      "textNodes": 26,
+      "viewBox": "0 0 1200 675"
+    },
     "6f4aa856add68fd6f28cac0eca46e74662112cb583f9e8f882b311ffa420c175": {
       "bytes": 56106,
       "path": "objects/sha256/6f/6f4aa856add68fd6f28cac0eca46e74662112cb583f9e8f882b311ffa420c175.webp"
@@ -13852,6 +13883,10 @@
       "bytes": 156964,
       "path": "objects/sha256/7d/7d6d487953fd94dd228429ee7fa4d958c466397e27ecbac17023d4bf41195598.webp"
     },
+    "7d73e5e0079fbce9c01633eb9bc4e972707500cbafaf7a6598f2e8e6a1da752d": {
+      "bytes": 100832,
+      "path": "objects/sha256/7d/7d73e5e0079fbce9c01633eb9bc4e972707500cbafaf7a6598f2e8e6a1da752d.png"
+    },
     "7d7b1436cb4333cf675d75f4149cb62c9e136ead655f2d62f5cebbea17dd2a65": {
       "bytes": 62962,
       "path": "objects/sha256/7d/7d7b1436cb4333cf675d75f4149cb62c9e136ead655f2d62f5cebbea17dd2a65.webp"
@@ -14095,6 +14130,14 @@
     "807ee36b15a043198de88ba71c36e3eb6a0824767a865622da663983826de7e2": {
       "bytes": 74972,
       "path": "objects/sha256/80/807ee36b15a043198de88ba71c36e3eb6a0824767a865622da663983826de7e2.webp"
+    },
+    "808fbda64f99a74fddf33f44248582ad17141b8b2db97a35a980162d8cc382c9": {
+      "bytes": 4827,
+      "colorCount": 16,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/80/808fbda64f99a74fddf33f44248582ad17141b8b2db97a35a980162d8cc382c9.svg",
+      "textNodes": 30,
+      "viewBox": "0 0 1200 675"
     },
     "809e0b9fae154c3a3672e87068a103b41f19e1c036fc1d5dd81e6b63844ba8b7": {
       "bytes": 210956,
@@ -16380,6 +16423,10 @@
       "textNodes": 11,
       "viewBox": "0 0 1100 600"
     },
+    "9f1e6719d053b1e071df86c88e2bfa56d81930c3905b0ab0a24546a55f50d971": {
+      "bytes": 141246,
+      "path": "objects/sha256/9f/9f1e6719d053b1e071df86c88e2bfa56d81930c3905b0ab0a24546a55f50d971.png"
+    },
     "9f2267928bee28678905ce3010c8d2802fcb2a3376d589cb1dc791aeb44bbf77": {
       "bytes": 104682,
       "path": "objects/sha256/9f/9f2267928bee28678905ce3010c8d2802fcb2a3376d589cb1dc791aeb44bbf77.webp"
@@ -17351,6 +17398,14 @@
     "ad334e082b95aea380d1ffef82a530337ffb133ff5404ce0709d31fe907d28b8": {
       "bytes": 83488,
       "path": "objects/sha256/ad/ad334e082b95aea380d1ffef82a530337ffb133ff5404ce0709d31fe907d28b8.webp"
+    },
+    "ad3b947e7c21729af744244213cc3903efcd0b160933a30efb63b73954c5d8b7": {
+      "bytes": 4969,
+      "colorCount": 26,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/ad/ad3b947e7c21729af744244213cc3903efcd0b160933a30efb63b73954c5d8b7.svg",
+      "textNodes": 15,
+      "viewBox": "0 0 1200 675"
     },
     "ad4706e9cb55305e3a62ac5abef3e81f84ec987fadff5269923c9299d9e7ee55": {
       "bytes": 116386,
@@ -19180,6 +19235,14 @@
       "textNodes": 48,
       "viewBox": "0 0 1080 720"
     },
+    "c531eb0d7b2cfc24835fb8fefcbe34c6cb798159479e9a0683685468816981ef": {
+      "bytes": 3962,
+      "colorCount": 18,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/c5/c531eb0d7b2cfc24835fb8fefcbe34c6cb798159479e9a0683685468816981ef.svg",
+      "textNodes": 19,
+      "viewBox": "0 0 1200 675"
+    },
     "c5383280631feecd45946e73086cae5fc24be6c26a6c9f8f7cdbfa47230e0a82": {
       "bytes": 2620,
       "colorCount": 17,
@@ -19567,6 +19630,10 @@
     "cb6de6a7e75c4ee9b4ff14af5bae819951f542ed16c51667d79f6d2d037ff51b": {
       "bytes": 56916,
       "path": "objects/sha256/cb/cb6de6a7e75c4ee9b4ff14af5bae819951f542ed16c51667d79f6d2d037ff51b.webp"
+    },
+    "cb9b71c557b660b96d23982136cdcacce158751cf35ed85570598027bd70fb6c": {
+      "bytes": 2585503,
+      "path": "objects/sha256/cb/cb9b71c557b660b96d23982136cdcacce158751cf35ed85570598027bd70fb6c.png"
     },
     "cba4271dc1a71eb22a291ab22d09562272efa5a50426d1fd72f152fc8a5ffa49": {
       "bytes": 250400,
@@ -21844,6 +21911,14 @@
       "textNodes": 28,
       "viewBox": "0 0 1200 720"
     },
+    "eac1bf5b49032f2abf9aae9e3f97a28979b56d21d24296d16f5a005dc1cb8cd2": {
+      "bytes": 4276,
+      "colorCount": 17,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/ea/eac1bf5b49032f2abf9aae9e3f97a28979b56d21d24296d16f5a005dc1cb8cd2.svg",
+      "textNodes": 28,
+      "viewBox": "0 0 1200 675"
+    },
     "eaf1ea4ec3a221dff79e3710a48c24ae83cdf82322e6c4b5716c3211070ec999": {
       "bytes": 61246,
       "path": "objects/sha256/ea/eaf1ea4ec3a221dff79e3710a48c24ae83cdf82322e6c4b5716c3211070ec999.webp"
@@ -23291,6 +23366,10 @@
     "fd67d6d56abace1b81d35ce5999ccb28cb11b2476f2232b6dd98db373734b098": {
       "bytes": 104704,
       "path": "objects/sha256/fd/fd67d6d56abace1b81d35ce5999ccb28cb11b2476f2232b6dd98db373734b098.webp"
+    },
+    "fd6ff157a85bbcbdafb49f80bf38f7ca038d9f30b7a902dba292167f5c5766b9": {
+      "bytes": 2318435,
+      "path": "objects/sha256/fd/fd6ff157a85bbcbdafb49f80bf38f7ca038d9f30b7a902dba292167f5c5766b9.png"
     },
     "fd84408bf891521fbee6d232e92ab9ecd65e0fed63c356ddd29490b3cbca412a": {
       "bytes": 173184,
@@ -27779,6 +27858,35 @@
         "blog/05-company-reports/18-011070-lg-innotek/assets/18-periscope.webp",
         "blog/05-company-reports/18-011070-lg-innotek/assets/18-scorecard.svg",
         "blog/05-company-reports/18-011070-lg-innotek/assets/18-thumbnail-bg.webp"
+      ]
+    },
+    "05-company-reports/180-018670-sk-gas-two-fuels": {
+      "assets": {
+        "180-route-and-storage": "blog/05-company-reports/180-018670-sk-gas-two-fuels/assets/180-route-and-storage.png",
+        "180-three-business-clocks": "blog/05-company-reports/180-018670-sk-gas-two-fuels/assets/180-three-business-clocks.png",
+        "180-two-fuel-switch": "blog/05-company-reports/180-018670-sk-gas-two-fuels/assets/180-two-fuel-switch.png"
+      },
+      "card": "landing/static/thumbnails/180-018670-sk-gas-two-fuels-card.png",
+      "diagrams": {
+        "180-cash-debt-ledger": "blog/05-company-reports/180-018670-sk-gas-two-fuels/assets/180-cash-debt-ledger.svg",
+        "180-dual-fuel-plant": "blog/05-company-reports/180-018670-sk-gas-two-fuels/assets/180-dual-fuel-plant.svg",
+        "180-five-year-profit": "blog/05-company-reports/180-018670-sk-gas-two-fuels/assets/180-five-year-profit.svg",
+        "180-gps-cash-recycle": "blog/05-company-reports/180-018670-sk-gas-two-fuels/assets/180-gps-cash-recycle.svg",
+        "180-lpg-cp-clock": "blog/05-company-reports/180-018670-sk-gas-two-fuels/assets/180-lpg-cp-clock.svg",
+        "180-monday-dashboard": "blog/05-company-reports/180-018670-sk-gas-two-fuels/assets/180-monday-dashboard.svg"
+      },
+      "og": "landing/static/thumbnails/180-018670-sk-gas-two-fuels.png",
+      "staging": [
+        "blog/05-company-reports/180-018670-sk-gas-two-fuels/assets/180-cash-debt-ledger.svg",
+        "blog/05-company-reports/180-018670-sk-gas-two-fuels/assets/180-dual-fuel-plant.svg",
+        "blog/05-company-reports/180-018670-sk-gas-two-fuels/assets/180-five-year-profit.svg",
+        "blog/05-company-reports/180-018670-sk-gas-two-fuels/assets/180-gps-cash-recycle.svg",
+        "blog/05-company-reports/180-018670-sk-gas-two-fuels/assets/180-lpg-cp-clock.svg",
+        "blog/05-company-reports/180-018670-sk-gas-two-fuels/assets/180-monday-dashboard.svg",
+        "blog/05-company-reports/180-018670-sk-gas-two-fuels/assets/180-route-and-storage.png",
+        "blog/05-company-reports/180-018670-sk-gas-two-fuels/assets/180-three-business-clocks.png",
+        "blog/05-company-reports/180-018670-sk-gas-two-fuels/assets/180-two-fuel-switch.png",
+        "landing/static/thumbnails/180-018670-sk-gas-two-fuels-card.png"
       ]
     },
     "05-company-reports/19-011780-kumho-petrochemical": {
