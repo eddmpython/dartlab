@@ -670,6 +670,31 @@ def _worker(
         )
 
 
+def _warmChildImports() -> None:
+    """무거운 모듈을 main thread 에서 먼저 import 한다.
+
+    worker 는 별도 thread 에서 돌고, 자식은 fresh spawn 이라 polars 와 pyarrow 같은
+    C 확장을 그 thread 에서 최초로 import 하게 된다. POSIX 에서 비-main thread 의
+    C 확장 최초 import 는 확장이 설치하는 thread pool 이나 lock 때문에 교착할 수 있고,
+    그러면 자식이 자기 기한을 꽉 채우고도 끝나지 않는다.
+
+    sandbox 를 이미 설치한 뒤 호출하므로 write 와 network 차단은 그대로 유지된다.
+    실패는 삼키지 않고 worker 가 같은 import 를 다시 시도해 typed 오류로 보고하게 둔다.
+    """
+
+    for moduleName in (
+        "polars",
+        "pyarrow",
+        "dartlab.dataHub.ownerPaging",
+        "dartlab.dataHub.compositePaging",
+        "dartlab.dataHub.execution",
+    ):
+        try:
+            importlib.import_module(moduleName)
+        except Exception:
+            recordFailure(_log, "CHILD_WARM_IMPORT_FAILED", context={"module": moduleName})
+
+
 def _childMain(
     sendConnection: Connection,
     startGate: Any,
@@ -689,6 +714,7 @@ def _childMain(
         from dartlab.dataHub.eagerSandbox import enforceEagerSandbox
 
         enforceEagerSandbox(path)
+        _warmChildImports()
 
         def runWorker() -> None:
             """격리된 thread에서 eager owner worker를 실행한다."""
