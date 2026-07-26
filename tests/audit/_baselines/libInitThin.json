@@ -1,5 +1,5 @@
 {
-  "_note": "src/dartlab 전역 __init__ thin 부채 원장. 이전에는 dataHub 와 gather 만 가드가 걸려 있었다. __init__ 은 재export 파사드여야 하고 로직은 형제 모듈이 소유한다. 여기 적힌 것은 그 규칙이 없던 시절의 빚이며 신규 위반은 차단된다.",
+  "_note": "src/dartlab 전역 __init__ thin 부채 원장. __init__ 은 재export 파사드여야 하고 로직은 형제 모듈이 소유한다. 예전에는 dataHub 와 gather 만 가드가 걸려 있어 나머지가 자랐다. providers/_common 의 httpRetry 와 dart/panel/spine 의 조회는 형제 모듈로 내려 닫았다.",
   "violations": [
     "src/dartlab/__init__.py",
     "src/dartlab/ai/__init__.py",
@@ -16,11 +16,9 @@
     "src/dartlab/industry/__init__.py",
     "src/dartlab/macro/__init__.py",
     "src/dartlab/macro/scenarios/__init__.py",
-    "src/dartlab/providers/_common/__init__.py",
     "src/dartlab/providers/dart/build/__init__.py",
     "src/dartlab/providers/dart/openapi/__init__.py",
     "src/dartlab/providers/dart/panel/canonical/__init__.py",
-    "src/dartlab/providers/dart/panel/spine/__init__.py",
     "src/dartlab/providers/edgar/docs/__init__.py",
     "src/dartlab/providers/edgar/openapi/__init__.py",
     "src/dartlab/providers/edgar/search/__init__.py",
