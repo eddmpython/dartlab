@@ -107,7 +107,13 @@ for page in first.iterPages():
 
 실제 읽기 전용 전수 감사에서 DART strict PIT factor는 2,661개 중 2,352개, 88.3878%가 성공했다. EDGAR는 2026-07-26 기준 7,683개 universe에서 full-state strict 2,420개, 31.4981%, flow-only 3,256개, 42.3793%, revenue 단독 4,038개, 52.5576%다. 이 수치들은 PIT cutoff, 4분기 연속성, 동일 accession lineage, revision 충돌, 대차 항등식 검증을 낮추지 않고 얻었다. 공식 감사 실행 구간은 loader와 network 호출 0회였고 시작과 종료 source snapshot이 같았다.
 
-EDGAR full-state는 8.24097%에서 올랐다. 요청하지 않은 세분 항목을 필수로 요구하던 계약을 정정하고, 대차와 분기 흐름이 함께 성립하는 접수 후보를 순회하도록 바꾼 결과다. 남은 최대 결손은 흐름 창 2,024개로 4개 연속 단독분기가 원천에 없는 경우이며, `OperatingIncomeLoss` 소계가 없는 회사의 83%는 유도 구성요소도 없다. 이 두 갭은 컴파일러가 아니라 원천 태깅 한계다.
+EDGAR full-state는 8.24097%에서 올랐다. 요청하지 않은 세분 항목을 필수로 요구하던 계약을 정정하고, 대차와 분기 흐름이 함께 성립하는 접수 후보를 순회하도록 바꾼 결과다.
+
+분모 7,683은 NYSE, Nasdaq, CBOE 전 티커이므로 ADR, ETF, 펀드, 워런트, 다중 클래스를 포함한다. 이 백분율을 시장 커버리지로 읽으면 안 된다. 449개는 companyfacts parquet 자체가 없는데 80개 표본에서 47.5%가 SEC 404, 50.0%가 태그 20개 미만 껍데기, 2.5%만 실데이터를 가진 수집 갭이었다. 1,456개는 cutoff 이전 10-K 또는 10-Q가 없는 ETF, 펀드, 20-F 외국기업이다. 둘을 뺀 사업회사 5,778개 기준은 revenue 단독 69.9%, flow-only 56.4%, full-state 41.9%다.
+
+남은 결손은 컴파일러 책임이 아니다. 단독분기 매출 행을 4개 이상 가진 회사는 97.8%가 성공한다. 실패의 대부분은 분기 흐름을 YTD 와 연간으로만 태깅하는 filer 관행이고, `OperatingIncomeLoss` 소계가 없는 회사의 83%는 유도 구성요소도 갖지 않는다.
+
+HuggingFace 배포본과 로컬 스냅샷은 동일하며 companyfacts 수집은 매일 UTC 04:30 cron 으로 살아 있다. 감사 하네스가 loader 와 network 를 0 으로 막고 로컬만 읽는 것은 재현성을 위한 의도된 설계이므로, 그 조건에서 나온 `SOURCE_FILE_MISSING` 을 원천 한계로 해석하지 않는다.
 
 감사 준비 단계에서 잘못 실행한 loader가 DART 원천 파일 1개를 갱신한 사고와 eager 실현 가능성 probe가 macro, news 파일을 갱신한 사고는 각각 [DART 전수 감사 기록](../../tests/_attempts/dataWorkbenchDartScale/README.md)과 [process deadline 기록](../../tests/_attempts/dataWorkbenchProcessDeadline/README.md)에 이전 관측값, 현재 digest, 영향 경로를 분리해 남겼다. 이 사고는 공식 감사 구간의 불변 판정에 포함시키지 않으며, 원천 전체가 세션 내내 한 번도 변하지 않았다고 주장하지 않는다.
 

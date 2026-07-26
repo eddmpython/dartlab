@@ -304,3 +304,30 @@ uv run python -X utf8 tests/audit/dartlabGuard.py strict --scope l0-l15 --provid
 - 400 개 표본 진단에서 `OperatingIncomeLoss` 가 없는 73 개 중 유도 구성요소를 가진 것은 9 개뿐이고 61 개는 구성요소가 아예 없다. 남은 영업이익 갭의 대부분은 원천 태깅 부재다
 - owner, resource, composite 의 `strictTree` 와 문자열, digest 검증 중복을 `pagingStateCodec` 으로 통합. `_jsonLoad` 와 `_validateQueryPayload` 는 lane 마다 canonical 검사 위치와 state 스키마가 달라 통합 대상에서 제외했다
 - `tests/_attempts` 의 DataHub 감사 하네스 11 개가 W15 canonical rename 이후 import 오류로 전부 실행 불가였다. 27 개 참조를 정정해 실적 재현 경로를 복구했다. 다만 이 폴더는 VCS 추적 대상이 아니라 깨끗한 클론에서는 여전히 재현할 수 없다
+
+### 2026-07-26 W16 후속: EDGAR 성공률 분모 정정
+
+W16 최초 기록은 성공률을 티커 7,683 분모로만 적어 시장 커버리지처럼 읽히게 했다.
+분모를 실측 분해해 다시 적는다.
+
+- 449 개는 companyfacts parquet 자체가 없다. 80 개 표본을 SEC 원본에 직접 조회한
+  결과 47.5% 가 404, 50.0% 가 태그 20 개 미만 껍데기, 2.5% 만 실데이터를 가진
+  수집 갭이었다. 대부분 ADR 과 신규 등록 CIK 다.
+- 1,456 개는 parquet 은 있으나 cutoff 이전 10-K 또는 10-Q 가 없다. ETF, 펀드,
+  20-F 외국기업이라 모집단 밖이다.
+- 둘을 뺀 사업회사 5,778 개 기준으로 revenue 단독 69.9%, flow-only 56.4%,
+  full-state 41.9% 다.
+
+책임 소재도 갈랐다. 455 개 표본 교차 집계에서 단독분기 매출 행 4 개 이상을 가진
+323 개 중 316 개가 성공해 97.8% 다. 재료가 있으면 컴파일러는 실패하지 않는다.
+실패는 분기 흐름을 YTD 와 연간으로만 태깅하는 filer 관행이 지배한다.
+
+수집 파이프라인 상태도 확인했다. `edgarSync.yml` 은 매일 UTC 04:30 cron 으로 살아
+있고 최근 6 회 중 5 회 성공했다. HuggingFace 배포본과 로컬 스냅샷은 표본 대조에서
+행 수, 태그 수, 최신 filed 가 모두 같았다. 로컬 파일 mtime 은 파일을 쓴 시각이지
+데이터 시점이 아니다.
+
+기록으로 남길 판단 오류가 하나 있다. 감사 하네스는 재현성을 위해 loader 와 network
+호출을 0 으로 막고 로컬만 읽는다. 그 조건에서 나온 `SOURCE_FILE_MISSING` 을 검증
+없이 원천 한계로 해석했다. 결론 자체는 실측으로 맞았지만 근거 없이 단정한 절차가
+틀렸다. 측정 조건은 결론으로 확대하지 않는다.

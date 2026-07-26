@@ -336,7 +336,11 @@ EDGAR revenue 또는 operating margin만 요청하면 stock state와 분리된 s
 
 실제 읽기 전용 감사에서 DART는 2,661개 중 2,352개 strict feature 성공, 88.3878%였다. EDGAR는 2026-07-26 기준 7,683개 universe에서 measure 미지정 또는 stock measure를 포함하는 full-state strict compiler가 2,420개 성공, 31.4981%였고 `financial.revenue`와 `financial.operatingMargin`만 요청하는 flow-only compiler가 3,256개 성공, 42.3793%였다. `financial.revenue` 단독은 4,038개 성공, 52.5576%다. 이 세 EDGAR 수치와 원천 접근 성공률은 서로 바꿔 쓰지 않는다. 나머지는 누락하지 않고 source, PIT filing, flow window, lineage, stock state, balance, unit, revision gap으로 분류했다.
 
-EDGAR full-state 성공률은 요청하지 않은 세분 항목을 요구하지 않도록 정정한 결과다. 필수 앵커는 자산총계, 부채총계, 연결자본 셋이고 현금, 매출채권, 재고, 매입채무, 유형자산, 차입금은 태깅되지 않으면 0으로 두고 `imputedZeroComponents` 경고에 남긴다. `otherNetAssets`가 잔차 플러그라 임퓨트한 금액은 플러그로 흡수되고 대차 항등식은 실제 앵커 값으로 검사한다. 세분성은 줄지만 항등식, PIT cutoff, 4분기 연속성, 동일 accession lineage, revision 충돌 검증은 그대로다. 남은 최대 결손은 흐름 창 2,024개이며 4개 연속 단독분기가 실제로 없는 경우다.
+EDGAR full-state 성공률은 요청하지 않은 세분 항목을 요구하지 않도록 정정한 결과다. 필수 앵커는 자산총계, 부채총계, 연결자본 셋이고 현금, 매출채권, 재고, 매입채무, 유형자산, 차입금은 태깅되지 않으면 0으로 두고 `imputedZeroComponents` 경고에 남긴다. `otherNetAssets`가 잔차 플러그라 임퓨트한 금액은 플러그로 흡수되고 대차 항등식은 실제 앵커 값으로 검사한다. 세분성은 줄지만 항등식, PIT cutoff, 4분기 연속성, 동일 accession lineage, revision 충돌 검증은 그대로다.
+
+위 백분율의 분모 7,683은 NYSE, Nasdaq, CBOE 전 티커라 ADR, ETF, 펀드, 워런트, 다중 클래스가 함께 들어 있다. 성공률을 시장 커버리지로 읽지 않는다. 실측 분해는 다음과 같다. 449개는 companyfacts parquet 자체가 없고, 80개 표본에서 47.5%는 SEC 원본이 404, 50.0%는 태그 20개 미만 껍데기, 2.5%만 실데이터를 가진 수집 갭이었다. 1,456개는 parquet은 있으나 cutoff 이전 10-K 또는 10-Q가 없는 ETF, 펀드, 20-F 외국기업이다. 이 둘을 뺀 사업회사 5,778개 기준으로 다시 재면 revenue 단독 69.9%, flow-only 56.4%, full-state 41.9%다.
+
+남은 결손의 책임 소재도 실측했다. 단독분기 매출 행을 4개 이상 가진 회사는 97.8%가 성공하므로 컴파일러는 병목이 아니다. 나머지는 분기 흐름을 YTD와 연간으로만 태깅하는 filer 관행이라 태그 확장으로 열리지 않는다.
 
 ## Immutable generation과 다른 process 재생
 
