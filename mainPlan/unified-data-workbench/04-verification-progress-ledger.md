@@ -254,3 +254,31 @@ uv run python -X utf8 tests/audit/dartlabGuard.py strict --scope l0-l15 --provid
 - materialization CAS page payload read는 public page당 정확히 1회
 - page read 중 GC race, crash recovery, concurrent builder, corruption, private path, bounded GC를 포함한 19개 집중 회귀 통과
 - cold build는 전체 6시간과 page별 timeout 상한, warm replay는 목표 page 하나 적재
+
+### 2026-07-26 W14
+
+- immutable generation의 warm page 재생을 전체 page ledger scan에서 ordinal 직접 조회로 변경해 page 수 증가에 따른 반복 scan 제거
+- production materialization store를 root와 timeout 조합별로 재사용하고 immutable terminal manifest를 process당 제한된 16개 root까지 검증 cache
+- CAS가 이미 수행한 SHA-256 검증을 replay와 publication 계층에서 중복 수행하지 않도록 정리
+- reader lease 최종 검증과 release를 한 SQLite transaction으로 합쳐 page 재생의 ledger 연결을 5회에서 2회로 축소
+- 8 page, page당 100행, 60회 warm replay 실측에서 p50 93.278ms에서 51.501ms로 44.8%, p95 116.479ms에서 57.471ms로 50.7% 단축
+- fresh owner process fixture에서 종목 8개 대비 64개 batch의 p50 처리량이 초당 3.794개에서 18.276개로 4.82배 증가했고 최대 payload는 411,008 bytes로 8MiB 상한의 4.9%
+- DART와 EDGAR 계산 owner page 상한을 8개에서 64개로 확대
+- 실제 local-only 첫 page 단일 실측에서 KR은 8개 3.737초에서 64개 9.242초, US는 8개 3.910초에서 64개 5.644초
+- 완료 종목 처리량은 KR 2.14개/초에서 6.92개/초로 3.24배, US 2.05개/초에서 11.34개/초로 5.53배 증가
+- 64개 page도 30초 기본 예산의 31% 이하였으며 row, byte, time budget과 continuation이 더 작은 실제 경계를 계속 강제
+
+### 2026-07-26 W15
+
+- canonical 엔진 폴더와 공개 진입점을 `src/dartlab/dataHub/`, `dartlab.dataHub(...)`로 전환
+- `dartlab.data`는 기존 소비자를 위한 callable compatibility alias로 유지
+- capability key를 `dataHub.catalog`, `dataHub.query`로 승격하고 Skill OS 정본을 `engines.dataHub`로 이동
+- `/api/dataHub/v1` versioned catalog, job, result, cancel, worker lease API 추가
+- request와 result를 private SHA-256 CAS에 저장하고 SQLite에는 digest, 상태, 우선순위, 시도 수, lease epoch만 보존
+- idempotency key, 원자 claim, heartbeat, lease 만료 재queue, bounded retry, stale completion 차단 구현
+- client와 worker bearer token을 역할별로 분리하고 서로 대체할 수 없게 고정
+- `DataHubClient`, `AsyncDataHubClient`에 local과 같은 catalog와 query 의미, submit, wait, cancel, result 계약 추가
+- pull 기반 `DataHubWorker`와 `python -m dartlab.dataHub.workerPlane` 실행 진입점 추가
+- remote wire에서 bounded Arrow materialization page, continuation, immutable receipt를 digest 검증 후 복원
+- control plane, remote, public surface 집중 회귀 13건 통과
+- 이동된 DataHub 전수 회귀는 504개를 분할 실행해 501개 통과와 환경 의존 3개 skip 확인

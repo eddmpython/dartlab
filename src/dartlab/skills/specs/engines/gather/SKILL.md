@@ -36,7 +36,7 @@ capabilityRefs:
   - Company.gather
 knowledgeRefs:
   - start.dartlabSkillOs
-  - engines.data.foundation
+  - engines.dataHub.foundation
   - engines.macro
 sourceRefs:
   - dartlab://skills/engines.gather

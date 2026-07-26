@@ -437,12 +437,12 @@
       "bodyPreview": "## 엔진 역할\n\n`viewerSpec` 은 dartlab landing 의 공시뷰어 UI 사양서. python capability 가 아니라 SvelteKit 페이지 디자인 SSOT 다.\n\n3 원칙:\n\n1. **스캔 속도** — 애널리스트가 50 + 보고서를 아침에 봄. 인지 부하 최소화.\n2. **증거 수준** — 컴플라이언스팀이 스크린샷 찍음. 기간 / 출처 모호함 없음.\n3. **다크 가독성** — 배경 `#050811` 에서 팔 길이 거리에서 읽을 수 있어야 함.\n\n## 공개 호출 방식\n\n본 spec 은 landing 빌드의 다음 라우트에서 적용:\n\n- `/company/[code]/sections/[topic]` — section viewer\n- `/company/[code]/diff/[topic]` — 기간 diff 표시\n\nCSS 변수 · component prop 매핑:\n\n```css\n.docViewerBody {\n  font-size: 14px;\n  line-height: 1.85;\n  max-width: 720px;\n  color: rgba(241, 245, 249, 0.82);\n  margin-bottom: 10px;\n}\n.docViewe"
     },
     {
-      "id": "engines.data",
-      "title": "Unified Data Workbench",
+      "id": "engines.dataHub",
+      "title": "DartLab DataHub",
       "category": "engines",
-      "purpose": "Data Workbench는 L1, L1.5, L2의 원천, 정규 데이터, 횡단 데이터, 분석 자산을 하나의 자동 발견 카탈로그와 bounded query 계약으로 제공한다. 외부 프로세스의 범용 데이터 API, factor store projection, 시뮬레이터 입력 스냅샷에 같은 계약을 쓴다. 트리거는 '데이터 작업대', '팩터 스토어', '전종목 DART EDGAR 조회'다.",
+      "purpose": "DataHub는 L1, L1.5, L2의 원천, 정규 데이터, 횡단 데이터, 분석 자산을 하나의 자동 발견 카탈로그와 bounded query 계약으로 제공한다. 외부 프로세스의 범용 데이터 API, factor store projection, 시뮬레이터 입력 스냅샷에 같은 계약을 쓴다. 트리거는 '데이터허브', '데이터 작업대', '팩터 스토어', '전종목 DART EDGAR 조회'다.",
       "whenToUse": [
-        "data",
+        "dataHub",
         "데이터 작업대",
         "데이터 스토어",
         "팩터 스토어",
@@ -453,19 +453,19 @@
         "여러 엔진 데이터 통합"
       ],
       "nextSkills": [
-        "engines.data.foundation",
+        "engines.dataHub.foundation",
         "engines.company",
         "engines.gather",
         "engines.scan",
         "engines.analysis"
       ],
-      "bodyPreview": "## 역할과 위치\n\n`data`는 특정 엔진의 별칭이 아니다. L1의 provider와 gather, L1.5의 scan, frame, synth, reference, L2의 analysis, credit, industry, macro, quant가 소유한 데이터 제품을 위에서 연합하는 독립 작업대다.\n\n```text\nsimulate, story, Universe, AI\n              ↓\n Unified Data Workbench\n              ↓\n      L2 분석 데이터 제품\n              ↓\n     L1.5 횡단, 정규화 제품\n              ↓\n       L1 원천, provider 제품\n```\n\n하위 owner가 `dataProduct.py`에 metadata provider를 선언하면 중앙 엔진 목록을 수정하지 않아도 다음 catalog snapshot에 자동 반영된다. source와 계산식의 소유권은 하위 엔진에 남고, `data`는 발견, 검증, 실행 예산, projection, lineage 결박을 담당한다.\n\n## 공개 호출 방식\n\npublic axis는 둘뿐이다.\n\n```python\nimpor"
+      "bodyPreview": "## 역할과 위치\n\n`dataHub`는 특정 엔진의 별칭이 아니다. L1의 provider와 gather, L1.5의 scan, frame, synth, reference, L2의 analysis, credit, industry, macro, quant가 소유한 데이터 제품을 위에서 연합하는 독립 데이터 플랫폼이다.\n\n```text\nsimulate, story, Universe, AI\n              ↓\n       DartLab DataHub\n              ↓\n      L2 분석 데이터 제품\n              ↓\n     L1.5 횡단, 정규화 제품\n              ↓\n       L1 원천, provider 제품\n```\n\n하위 owner가 `dataProduct.py`에 metadata provider를 선언하면 중앙 엔진 목록을 수정하지 않아도 다음 catalog snapshot에 자동 반영된다. source와 계산식의 소유권은 하위 엔진에 남고, `dataHub`는 발견, 검증, 실행 예산, projection, lineage 결박을 담당한다.\n\n## 공개 호출 방식\n\npublic axis는 둘뿐이다.\n\n```py"
     },
     {
-      "id": "engines.data.foundation",
+      "id": "engines.dataHub.foundation",
       "title": "데이터 엔진 기본기",
       "category": "engines",
-      "purpose": "Unified Data Workbench 아래에서 Company, gather, scan 원천을 선택하고 수집, prebuild, freshness를 운영하는 기본 절차를 정의한다.",
+      "purpose": "DartLab DataHub 아래에서 Company, gather, scan 원천을 선택하고 수집, prebuild, freshness를 운영하는 기본 절차를 정의한다.",
       "whenToUse": [
         "응용 분석 skill을 만들기 전에 데이터 확보 순서를 정할 때",
         "Company, gather, scan 중 어떤 데이터 엔진을 먼저 써야 하는지 판단할 때",
@@ -858,7 +858,7 @@
       ],
       "nextSkills": [
         "engines.company",
-        "engines.data.foundation"
+        "engines.dataHub.foundation"
       ],
       "bodyPreview": "## 엔진 역할\n\n`mappers` 는 사용자 capability 가 아니라 *내부 모듈* 이다. DART 사업보고서·재무제표·주석의 한글 계정명을 dartlab 공통 snake_id 로 정규화한다. EDGAR 측은 SEC GAAP 태그 → 같은 snake_id (양쪽 SSOT 동등).\n\nAI 가 직접 쓸 자리는 `RunPython` 안의 prelude 헬퍼 — `normalizeColumn(topic, hint)`, `columnsFor(topic)`, `availableTopics()`. 매핑 자체 편집은 운영자 절차 (`src/dartlab/mappers/{topic}.json` 직접 수정).\n\n## 공개 호출 방식\n\n```python\n# RunPython 안에서 — prelude 자동 노출\nimport dartlab\nc = dartlab.Company(\"005930\")\nbs = c.panel(\"BS\", freq=\"Q\")\n\n# 한글 → snake_id 정규화 (추측 금지)\ncol = normalizeColumn(\"BS\", \"총자산\")        # → \"total_assets\"\ncol2 = normalizeColumn(\"IS\", \"영업\")       "
     },
@@ -929,7 +929,7 @@
       ],
       "nextSkills": [
         "engines.company",
-        "engines.data"
+        "engines.dataHub"
       ],
       "bodyPreview": "## 엔진 역할\n\n`panel` 은 DART 공시 본문을 **정부 표준 XBRL 분류(canonicalKey) 뼈대 위에서 항목(행) × 기간(열)\nwide 로 수평화**하는 엔진이다. 양식(era)·회사마다 흔들리는 ACLASS·제목을 기간 간 정렬 가능한\n형태로 고정한다. `Panel(code)` / `c.panel` 을 잡는 순간 그 회사의 큰 분기별 시계열 wide\n`pl.DataFrame` 이 된다 (Panel 은 `pl.DataFrame` subclass).\n\n핵심 설계:\n\n- **정렬키 = native canonicalKey** — `disclosureKey` 는 정부 발행 ACLASS(DART XBRL 표준 Link\n  Role)를 scope-strip 한 순수함수 산출(`mapper.canonicalKey`, BS_C→BS / NT_C_D826380→NT_D826380).\n  손매핑·학습 0 ([[feedback_xml_native_truth]]).\n- **행 순서·계층 = 정부 서식 뼈대(spine)** — `blockOrder` 는 보고서마다 0 리셋이라 read 가\n  재발견 못 하고 `canonicalKey` 는 정렬 가능 번호가 아니"
     },
@@ -1461,11 +1461,11 @@
       "whenToUse": [
         "dartlab 아키텍처 — 전체 청사진",
         "architecture",
-        "1. 레이어 — L0→L4 (L1.5와 L2.5 data 포함) 구조로 간다",
+        "1. 레이어 — L0→L4 (L1.5와 L2.5 dataHub 포함) 구조로 간다",
         "2. 5 L2 분석엔진 — 두 소비자를 최고로 지원한다",
         "소비자별 차이",
         "3. 모듈 제공 패턴 — analysis 기준 (5 L2 엔진 동일)",
-        "4. import 방향 — L0 ← L1 ← L1.5 ← L2 ← L2.5 data ← L3 하향만 허용한다"
+        "4. import 방향 — L0 ← L1 ← L1.5 ← L2 ← L2.5 dataHub ← L3 하향만 허용한다"
       ],
       "nextSkills": [],
       "bodyPreview": "외부 LLM 용 짧은 도입. < 200 토큰."
@@ -1589,7 +1589,7 @@
         "데이터 슬라이스 다운로드"
       ],
       "nextSkills": [],
-      "bodyPreview": "## 역할\n\n데이터 다운로드 센터는 dartlab 공개 데이터(HuggingFace `eddmpython/dartlab-data` 의 parquet)를 python 을 쓰지 않는 소비자가 **슬라이스·라이브**로 가져가게 하는 서빙 층이다. `engines.data`(수집·프리빌드·업로드 파이프라인)의 반대편, 소비 층에 해당한다. 랜딩 `/data` 표면 + Cloudflare Worker `dartlab-data-csv` 로 구성된다.\n\n핵심 원칙: **CSV 사본을 굽지 않는다.** HF parquet 이 SSOT 이고 브라우저·워커가 요청 시점에 직독·변환한다(런타임-SSOT, `operation.architecture`).\n\n## 정신 모델 (거울 URL)\n\nHF parquet 경로를 그대로 비추고 확장자만 바꾼다.\n\n```\nHF   …/resolve/main/{dir}/{id}.parquet\nAPI  https://{worker}/v1/{dir}/{id}.{csv|tsv}\n```\n\n워커가 아는 유일한 데이터 지식 = `dartlab.core.dataConfig.DATA_RELEASES` 의 `public` 플래그에서 도출한 노출 화이트리스트(`do"
+      "bodyPreview": "## 역할\n\n데이터 다운로드 센터는 dartlab 공개 데이터(HuggingFace `eddmpython/dartlab-data` 의 parquet)를 python 을 쓰지 않는 소비자가 **슬라이스·라이브**로 가져가게 하는 서빙 층이다. `engines.dataHub`(수집·프리빌드·업로드 파이프라인)의 반대편, 소비 층에 해당한다. 랜딩 `/data` 표면 + Cloudflare Worker `dartlab-data-csv` 로 구성된다.\n\n핵심 원칙: **CSV 사본을 굽지 않는다.** HF parquet 이 SSOT 이고 브라우저·워커가 요청 시점에 직독·변환한다(런타임-SSOT, `operation.architecture`).\n\n## 정신 모델 (거울 URL)\n\nHF parquet 경로를 그대로 비추고 확장자만 바꾼다.\n\n```\nHF   …/resolve/main/{dir}/{id}.parquet\nAPI  https://{worker}/v1/{dir}/{id}.{csv|tsv}\n```\n\n워커가 아는 유일한 데이터 지식 = `dartlab.core.dataConfig.DATA_RELEASES` 의 `public` 플래그에서 도출한 노출 화이트리스트("
     },
     {
       "id": "operation.dataLineage",

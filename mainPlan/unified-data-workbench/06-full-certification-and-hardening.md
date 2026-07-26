@@ -105,7 +105,7 @@ quant.entry와 quant.style은 `dipBuy`가 등록하지 않은 camelCase Signal k
 - runtime `timeoutMs`는 owner Python 호출을 강제 종료하지 못하는 협력적 제한이다. 전수 인증 runner는 프로세스 격리로 이 한계를 보완했다.
 - row와 byte budget은 owner 결과를 받은 뒤 projection에서 적용된다. owner별 predicate, projection, slice pushdown은 별도 최적화가 필요하다.
 - `analysis.edgarFinancialFeatures`가 실제 filing cutoff를 쓰는 knownAt feature를 제공하지만, retained companyfacts가 historical admission snapshot 전체를 보존하지 않아 exact가 아니라 conditional이다.
-- raw DART와 EDGAR resource 및 두 시장의 계산 feature는 opaque continuation을 지원한다. pageable, eager 혼합 query는 outer continuation 하나를 사용한다. 네트워크 Arrow Flight server와 원격 다중 노드 storage는 아직 확장 범위다.
+- raw DART와 EDGAR resource 및 두 시장의 계산 feature는 opaque continuation을 지원한다. pageable, eager 혼합 query는 outer continuation 하나를 사용한다. versioned HTTP API와 원격 분산 worker는 지원하며, Arrow Flight 전용 server와 control plane multi-primary storage는 확장 범위다.
 - cold materialization은 현재 요청 process에서 terminal generation을 동기적으로 구축한다. 별도 scheduler와 distributed worker는 없다.
 - fresh child의 write guard는 Python과 알려진 데이터 writer를 차단하지만 임의 native syscall을 막는 적대적 OS sandbox는 아니다. 설치된 trusted owner 실행 격리로 사용한다.
 - receipt 재생은 같은 `DARTLAB_HOME` 또는 같은 private storage를 보는 process 범위다. 원격 인증과 권한 분리는 별도 service plane이 필요하다.
@@ -163,3 +163,13 @@ fresh spawned process가 structured receipt만 받아 page 0과 continuation pag
 같은 실행에서 중복 테스트 모듈명도 발견했다. `tests/data/test_contracts.py`와 continuation 하위의 동명 파일 때문에 `tests/data` 전체 수집이 불가능했고, data와 resourceStream을 함께 수집할 때 provider 하위의 동명 파일도 충돌했다. 두 계약 테스트를 고유 이름으로 옮겨 통합 수집 사각지대를 제거했다. 최종 집중 검증은 data, local-only core, DART와 EDGAR provider, resourceStream, 외부 HTTP master API, simulator 계약을 합쳐 637개를 수집해 634개 통과와 환경 의존 3개 skip이다. Guard quick은 architecture와 provider 규칙을 모두 통과했고 workbench purity는 계층 역전과 원천 직독 0건을 확인했다.
 
 별도 장시간 격리 감사 21개도 통과했다. owner child 50회 연속 실행에서 성공 50회, zero-live 50회, artifact residue 0개였고 준비 시간은 p50 1.568초, p95 4.539초, 최대 7.989초였다. eager와 owner 혼합 초기 실행 20회도 매회 artifact residue 0개였다.
+
+## 13. 2026-07-26 W14 속도와 효율
+
+warm materialization replay는 ordinal page 하나만 SQLite에서 직접 읽고, immutable terminal manifest는 검증 후 process 안의 16개 root 제한 cache에서 재사용한다. store 초기화도 같은 root와 timeout 조합에서 재사용한다. CAS가 이미 digest를 검증한 payload를 상위 계층에서 다시 SHA-256 계산하지 않고, reader lease의 마지막 검증과 release는 한 transaction으로 끝낸다.
+
+8 page와 page당 100행을 둔 60회 재생 실측에서 SQLite 연결은 호출당 5회에서 2회로 줄었다. p50은 93.278ms에서 51.501ms로 44.8%, p95는 116.479ms에서 57.471ms로 50.7% 단축됐다. terminal manifest는 같은 process의 60회 요청에서 한 번만 읽었다. cache는 최대 16개 manifest로 제한해 속도를 위해 메모리를 무제한 점유하지 않는다.
+
+계산 owner의 page 상한은 8개에서 64개로 높였다. fresh process fixture p50 처리량은 8개 batch의 초당 3.794개에서 64개 batch의 초당 18.276개로 4.82배 증가했고, 64개 payload는 최대 411,008 bytes로 8MiB 상한의 약 4.9%였다.
+
+실제 local-only 첫 page 단일 실측에서 KR은 8개 3.737초에서 64개 9.242초, US는 8개 3.910초에서 64개 5.644초였다. 완료 종목 기준 처리량은 각각 3.24배와 5.53배 증가했다. 두 시장 모두 64개 page가 30초 기본 예산의 31% 이하였고 row, byte, time budget이 먼저 닿으면 더 작은 page를 반환하는 fail-closed 경계는 유지한다. 이 수치는 첫 page 실측이며 전시장 전체 완주 시간 보증으로 확대하지 않는다.

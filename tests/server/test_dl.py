@@ -20,7 +20,7 @@ import pytest
 starlette = pytest.importorskip("starlette", reason="starlette not installed (optional [ai] dependency)")
 from starlette.testclient import TestClient  # noqa: E402
 
-from dartlab.data.contracts import AssetRef, Coverage, DataPartition, DataResult  # noqa: E402
+from dartlab.dataHub.contracts import AssetRef, Coverage, DataPartition, DataResult  # noqa: E402
 from dartlab.server import app  # noqa: E402
 
 pytestmark = pytest.mark.unit

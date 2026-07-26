@@ -169,7 +169,7 @@ def _sliceSeriesAsOf(series: dict, periods: list[str], asOf: str | None) -> tupl
 def _workbenchFinanceInputs(company: Any, asOf: str | None) -> tuple[dict, dict[str, Any]]:
     """통합 Data Workbench를 통해 시뮬레이터의 read-once 재무 입력을 취득한다."""
     import dartlab
-    from dartlab.data import DataQuery, TimeContext
+    from dartlab.dataHub import DataQuery, TimeContext
 
     subject = str(getattr(company, "stockCode", None) or "bound-company")
     time = TimeContext(validAt=asOf) if asOf is not None else None

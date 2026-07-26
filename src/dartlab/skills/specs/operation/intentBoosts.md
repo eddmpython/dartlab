@@ -150,7 +150,7 @@ intentBoosts:
       - 시작
       - "company research"
     boost: 13.0
-  - skillIds: ["engines.data.foundation"]
+  - skillIds: ["engines.dataHub.foundation"]
     terms:
       - "데이터 엔진"
       - "데이터 기본기"

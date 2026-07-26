@@ -15,7 +15,7 @@ import ast
 from pathlib import Path
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
-_DATA_ROOT = _REPO_ROOT / "src/dartlab/data"
+_DATA_ROOT = _REPO_ROOT / "src/dartlab/dataHub"
 _OWNER_PRODUCTS = tuple((_REPO_ROOT / "src/dartlab").glob("*/dataProduct.py"))
 
 # 데이터 우회 토큰 (문자열 등장 자체가 위반). denylist 는 불완전하므로 import allowlist 로 보강.
@@ -33,11 +33,15 @@ _DENY_TOKENS = (
 )
 # 허용 import 접두. lower owner 실행은 root facade 또는 descriptor의 동적 callable만 탄다.
 _ALLOW_IMPORT_PREFIXES = (
-    "dartlab.data",
+    "dartlab.dataHub",
     "dartlab.reference",
     "dartlab.core",
 )
 # dartlab 루트 facade 는 `import dartlab` (서브패키지 아님) 로만 허용.
+
+
+def _isAllowedImport(name: str) -> bool:
+    return any(name == prefix or name.startswith(f"{prefix}.") for prefix in _ALLOW_IMPORT_PREFIXES)
 
 
 def _scan(path: Path) -> list[str]:
@@ -57,11 +61,11 @@ def _scan(path: Path) -> list[str]:
                 name = alias.name
                 if name == "dartlab":
                     continue  # 루트 facade 허용
-                if name.startswith("dartlab.") and not name.startswith(_ALLOW_IMPORT_PREFIXES):
+                if name.startswith("dartlab.") and not _isAllowedImport(name):
                     violations.append(f"L{node.lineno}: 비허용 dartlab import '{name}' (allowlist 밖)")
         elif isinstance(node, ast.ImportFrom):
             mod = node.module or ""
-            if mod.startswith("dartlab.") and not mod.startswith(_ALLOW_IMPORT_PREFIXES):
+            if mod.startswith("dartlab.") and not _isAllowedImport(mod):
                 violations.append(f"L{node.lineno}: 비허용 dartlab import '{mod}' (allowlist 밖)")
     return violations
 
@@ -78,7 +82,7 @@ def _scanOwnerProduct(path: Path) -> list[str]:
         else:
             continue
         for name in names:
-            if name == "dartlab.data" or name.startswith("dartlab.data."):
+            if name == "dartlab.dataHub" or name.startswith("dartlab.dataHub."):
                 violations.append(f"L{node.lineno}: owner metadata가 data를 역참조함")
     return violations
 

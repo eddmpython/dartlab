@@ -1,6 +1,6 @@
 """공용 data feature registry를 유지하는 simulate 호환 import 경로."""
 
-from dartlab.data.featureRegistry import (
+from dartlab.dataHub.featureRegistry import (
     STATE_EVIDENCE_ROLES,
     STATE_TIMINGS,
     STATE_VARIABLE_REGISTRY_SCHEMA,

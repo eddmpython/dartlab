@@ -188,7 +188,7 @@ EdgarCompany 의 `panel / select / trace / liveFilings / readFiling / analysis /
 
 XBRL concept 정규화는 EdgarCompany 내부에서 SEC GAAP 태그 → 공통 snake_id 매핑. 사용자 호출에선 DART 와 같은 한글/snake 이름 사용.
 
-데이터 수집·HF 업로드는 [engines.data](/skills/engines.data) 의 `edgarSync.yml` 워크플로우 (일배치).
+데이터 수집·HF 업로드는 [engines.dataHub](/skills/engines.dataHub) 의 `edgarSync.yml` 워크플로우 (일배치).
 
 ## 대표 반환 형태
 

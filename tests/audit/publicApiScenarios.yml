@@ -21,6 +21,7 @@ public_api:
     - compare
     - config
     - credit
+    - dataHub
     - data
     - dataDir
     - gather
@@ -105,6 +106,7 @@ scenarios:
       - dartlab.compare
       - dartlab.config
       - dartlab.credit
+      - dartlab.dataHub
       - dartlab.data
       - dartlab.dataDir
       - dartlab.gather

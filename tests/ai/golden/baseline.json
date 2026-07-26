@@ -61,7 +61,7 @@
           "skill:start.dartlabSkillOs",
           "skill:engines.credit.creditRisk",
           "skill:engines.company",
-          "skill:engines.data.foundation",
+          "skill:engines.dataHub.foundation",
           "api:Company.analysis",
           "api:Company.rawFinance",
           "api:Company.show",

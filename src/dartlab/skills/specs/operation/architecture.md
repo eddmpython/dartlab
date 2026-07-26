@@ -9,11 +9,11 @@ purpose: dartlab 아키텍처 — 전체 청사진 운영 규칙을 Skill OS에�
 whenToUse:
   - dartlab 아키텍처 — 전체 청사진
   - architecture
-  - 1. 레이어 — L0→L4 (L1.5와 L2.5 data 포함) 구조로 간다
+  - 1. 레이어 — L0→L4 (L1.5와 L2.5 dataHub 포함) 구조로 간다
   - 2. 5 L2 분석엔진 — 두 소비자를 최고로 지원한다
   - 소비자별 차이
   - 3. 모듈 제공 패턴 — analysis 기준 (5 L2 엔진 동일)
-  - 4. import 방향 — L0 ← L1 ← L1.5 ← L2 ← L2.5 data ← L3 하향만 허용한다
+  - 4. import 방향 — L0 ← L1 ← L1.5 ← L2 ← L2.5 dataHub ← L3 하향만 허용한다
 inputs:
   - 작업 목적
   - 대상 엔진 또는 실행 환경
@@ -30,11 +30,11 @@ knowledgeRefs:
 sourceRefs:
   - dartlab://skills/operation.architecture
 procedure:
-  - 1. 레이어 — L0→L4 (L1.5와 L2.5 data 포함) 구조로 간다 기준을 확인한다.
+  - 1. 레이어 — L0→L4 (L1.5와 L2.5 dataHub 포함) 구조로 간다 기준을 확인한다.
   - 2. 5 L2 분석엔진 — 두 소비자를 최고로 지원한다 기준을 확인한다.
   - 소비자별 차이 기준을 확인한다.
   - 3. 모듈 제공 패턴 — analysis 기준 (5 L2 엔진 동일) 기준을 확인한다.
-  - 4. import 방향 — L0 ← L1 ← L1.5 ← L2 ← L2.5 data ← L3 하향만 허용한다 기준을 확인한다.
+  - 4. import 방향 — L0 ← L1 ← L1.5 ← L2 ← L2.5 dataHub ← L3 하향만 허용한다 기준을 확인한다.
   - data는 lower owner의 metadata와 공개 callable만 소비하고 simulate, story, AI를 역참조하지 않는다.
   - '**story 가 쓸 때** — L3 조합기로서 5 L2 분석엔진 + L1.5 4 형제 (scan/frame/synth/reference) 의 calc 결과를 블록으로 변환하여 보고서에 배치. 자체 해석·계산 0 — 모든 숫자는 하위 엔진 ref. story 가 단독으로 다중 결합 책임을 짊어져 L2 끼리 직접 import 가 만드는 순환참조를 차단.'
   - '**AI 가 쓸 때** — AI 가 주체. 엔진 결과를 의심하고, 원본 (`c.show`) 으로 검증하고, override 로 재계산.'
@@ -89,17 +89,17 @@ testUniverse:
 
 ## 실행 순서
 
-- 1. 레이어 — L0→L4 (L1.5 포함 6 단) 구조로 간다 기준을 확인한다.
+- 1. 레이어: L0→L4 (L1.5와 L2.5 dataHub 포함 7단) 구조로 간다 기준을 확인한다.
 - 2. 5 L2 분석엔진 — 두 소비자를 최고로 지원한다 기준을 확인한다.
 - 소비자별 차이 기준을 확인한다.
 - 3. 모듈 제공 패턴 — analysis 기준 (5 L2 엔진 동일) 기준을 확인한다.
-- 4. import 방향 — L0 ← L1 ← L1.5 ← L2 ← L3 하향만 허용한다 기준을 확인한다.
+- 4. import 방향: L0 ← L1 ← L1.5 ← L2 ← L2.5 dataHub ← L3 하향만 허용한다 기준을 확인한다.
 - **story 가 쓸 때** — L3 조합기로서 5 L2 분석엔진 + L1.5 4 형제 (scan/frame/synth/reference) 의 calc 결과를 블록으로 변환하여 보고서에 배치. 자체 해석·계산 0 — 모든 숫자는 하위 엔진 ref. story 가 단독으로 다중 결합 책임을 짊어져 L2 끼리 직접 import 가 만드는 순환참조를 차단.
 - **AI 가 쓸 때** — AI 가 주체. 엔진 결과를 의심하고, 원본 (`c.show`) 으로 검증하고, override 로 재계산.
 - 엔진은 양쪽 모두에게 최고의 재료를 제공한다. 숫자와 근거를 투명하게 반환하여 story 는 배치하고 AI 는 검증할 수 있게.
 - calc 함수는 **독립 모듈** — 다른 calc 호출 가능하지만 순환 없음.
 
-## 6 단 계층 SSOT (L0 → L4) — P-CORE B 정리 결과 반영
+## 7단 계층 SSOT (L0 → L4): P-CORE B 정리 결과 반영
 
 | Layer | 구성 | 역할 |
 |---|---|---|
@@ -107,30 +107,30 @@ testUniverse:
 | **L1 (ETL 스테이지 분할)** | `gather` · `providers` | **gather = Extract** (모든 외부 네트워크 fetch → raw: DART OpenAPI·EDGAR/SEC client·키풀·submissions/facts/docs/bulk/universe/FTS). **providers = Transform(raw→parquet build) + Load(parquet→DataFrame read)** — HTTP 클라이언트 import 0 ([tests/architecture/test_providers_no_network.py](https://github.com/eddmpython/dartlab/blob/master/tests/architecture/test_providers_no_network.py) 강제). core 만 import, **gather ↛ providers 상호 import 금지**. EDINET 은 별도 제3 규제기관(API 통신 불가). |
 | **L1.5 (가공 4 형제)** | `scan` · `frame` · `synth` · `reference` | raw 생산 0, 책임 분리 가공기. core·L1 만 import. **4 형제끼리 cross import 금지** ([tests/architecture/test_l15_no_cross_import.py](https://github.com/eddmpython/dartlab/blob/master/tests/architecture/test_l15_no_cross_import.py) 강제). 책임: scan=횡단면 (한 metric × 다수 회사), frame=raw 결합 (panel/시계열 view — `disclosureDiff` 등 동일 회사 N-1 vs N 보고서 sentence-level diff 포함), synth=분석 후처리·매칭·시나리오, reference=정적 JSON 룩업+매핑 엔진 |
 | **L2 분석엔진 (5)** | `analysis` · `credit` · `macro` · `quant` · `industry` | 단일 도메인 분석. core·L1.5 만 import. L1 직접 import 는 L1.5 에 없는 raw 가 필요할 때만 예외. **다른 L2 직접 import 금지** (도메인 격리 + 순환참조 방지) |
-| **L2.5 데이터 플랫폼** | `data` | L1, L1.5, L2 owner의 metadata와 공개 callable을 자동 발견해 catalog, bounded query, typed projection, PIT gate, lineage를 제공. source와 계산을 복제하지 않는다. `simulate`, `story`, `ai` 역참조 금지 |
-| **L3 조합기와 시뮬레이터** | `story` · `simulate` | story는 하위 결과를 보고서로 조합한다. simulate는 `data` snapshot을 소비해 조건부 경로를 계산한다. 둘 다 data보다 위에 있고 data가 이들을 import하지 않는다 |
+| **L2.5 데이터 플랫폼** | `dataHub` | L1, L1.5, L2 owner의 metadata와 공개 callable을 자동 발견해 catalog, bounded query, typed projection, PIT gate, lineage를 제공. source와 계산을 복제하지 않는다. `simulate`, `story`, `ai` 역참조 금지 |
+| **L3 조합기와 시뮬레이터** | `story` · `simulate` | story는 하위 결과를 보고서로 조합한다. simulate는 `dataHub` snapshot을 소비해 조건부 경로를 계산한다. 둘 다 dataHub보다 위에 있고 dataHub가 이들을 import하지 않는다 |
 | L4 소비자 | `ai` · `mcp` | dartlab 라이브러리 직접 호출 — AI 자율 추론 + tool 사용 (ai) · 외부 LLM 진입 (mcp). 엔진 결과를 의심·검증·재계산 |
 | 표현/전송 헬퍼 (sink) | `viz` · `cli` · `server` · `channel` · `pipeline` | 비즈니스 로직 0 — 모든 계층 결과를 다른 매체로 표현/조합. viz=차트·excel·html 렌더, cli=CLI wrapper, server=HTTP host, channel=외부 공유, **pipeline=수집 오케스트레이션**(gather fetch + providers build + HF upload 합법 조합 — 흩어진 sync 스크립트의 in-library SSOT, `dartlab sync`·`python -m dartlab.pipeline`). import 룰은 L4 와 동일(모든 하위 OK)이지만 책임 분리. sink 자격은 `SINK_HELPERS`+`PRIMARY_PACKAGES` 등록(`test_pipeline_sink`)으로 강제 |
 
 import 정책 (P-CORE B 정리 결과):
 
-1. **상하 단방향 절대 강제**: `L0 ← L1 ← L1.5 ← L2 ← L2.5 data ← L3 ← L4` (CI lint와 Data Workbench purity audit로 강제).
+1. **상하 단방향 절대 강제**: `L0 ← L1 ← L1.5 ← L2 ← L2.5 dataHub ← L3 ← L4` (CI lint와 DataHub purity audit로 강제).
 2. **L1 cross import 금지 (ETL 단방향)**: gather ↛ providers AND providers ↛ gather ([tests/architecture/test_l1_no_cross_import.py](https://github.com/eddmpython/dartlab/blob/master/tests/architecture/test_l1_no_cross_import.py)). 두 L1 의 통신 채널은 셋뿐 — **(a) 디스크 raw artifact, (b) core DIP Protocol seam** (`core.dartClient`/`dartBuild`/`edgarClient`/`edgarBuild` — gather/providers 가 import 시점에 register, 소비자는 core 경유로 위임 호출), **(c) sink-layer orchestration** (`pipeline`·`cli`·`.github/scripts/sync/*` — gather fetch + providers build + HF upload 조합). 정본은 in-library **`dartlab.pipeline`**(L4 sink, `runStage`/`runPipeline`) — 로컬 `dartlab sync` 와 CI `python -m dartlab.pipeline` 가 동일 SSOT 호출. 옛 `.github/scripts/sync/*` 는 점진적으로 그 stage 로 흡수 — **edgar/allFilings/dartZip/edgarPanel·macro 는 in-library 흡수 완료(스크립트 = thin shim·로직 중복 0), 잔여 dart/news 는 전환기 stage 가 동형 호출(`runScript`)**. providers build 가 gather fetch 를 트리거해야 하면 core seam 으로 위임(예: `convertQuarterlyToParquets` zip 부재 시 `core.edgarClient.downloadQuarterlyDataset`). 정공이지 우회 아님.
 3. **L1.5 4 형제 cross import 금지**: scan ↛ frame ↛ synth ↛ reference ([tests/architecture/test_l15_no_cross_import.py](https://github.com/eddmpython/dartlab/blob/master/tests/architecture/test_l15_no_cross_import.py)). core 잡동사니화 재발 방지.
 4. **L1.5 진입 룰**: 새 모듈 추가 시 ≥ 2 분석엔진이 같은 형태로 사용해야 함 ([tests/architecture/test_l15_entry_rule.py](https://github.com/eddmpython/dartlab/blob/master/tests/architecture/test_l15_entry_rule.py)). 1 개만 쓰면 그 분석엔진 owner.
 5. **core L0 only**: core/ 가 상위 계층 import 금지 ([tests/architecture/test_core_l0_only.py](https://github.com/eddmpython/dartlab/blob/master/tests/architecture/test_core_l0_only.py)). di.py 만 lazy import 예외.
 6. **양방향 cycle 절대금지**: `tests/audit/cycleScan.py` CI 강제 (양방향 2-cycle + 3+ 모듈 cycle 검출).
 7. story 가 다중 L2 소비 책임 잔존 (조합기) — 그러나 단방향 sibling import 도 도메인적 자연 의존이면 허용.
-8. **별도빌드 금지**: 모든 외부 데이터 수집과 빌드는 owner SSOT를 경유한다. 수집은 `gather`, provider transform/load는 `providers`, 횡단 prebuild는 `scan`, orchestration은 `pipeline`이 소유한다. `data`는 이 로직을 재구현하지 않고 catalog와 query로 연합한다. `.github/scripts/{sync,meta}/*`도 owner 공개 함수에 위임한다.
+8. **별도빌드 금지**: 모든 외부 데이터 수집과 빌드는 owner SSOT를 경유한다. 수집은 `gather`, provider transform/load는 `providers`, 횡단 prebuild는 `scan`, orchestration은 `pipeline`이 소유한다. `dataHub`는 이 로직을 재구현하지 않고 catalog와 query로 연합한다. `.github/scripts/{sync,meta}/*`도 owner 공개 함수에 위임한다.
 
-### Unified Data Workbench 경계
+### DartLab DataHub 경계
 
-- 각 L1, L1.5, L2 owner는 자기 package의 `dataProduct.py`에 plain metadata mapping만 선언한다. lower owner가 `dartlab.data`를 import하면 계층 역전이다.
-- `data`는 중앙 엔진 이름 목록을 소유하지 않는다. owner provider를 발견해 registry와 callable asset을 derived catalog로 만든다.
+- 각 L1, L1.5, L2 owner는 자기 package의 `dataProduct.py`에 plain metadata mapping만 선언한다. lower owner가 `dartlab.dataHub`를 import하면 계층 역전이다.
+- `dataHub`는 중앙 엔진 이름 목록을 소유하지 않는다. owner provider를 발견해 registry와 callable asset을 derived catalog로 만든다.
 - public axis는 `catalog`, `query` 둘뿐이다. factor, records, graph, narrative, resource는 query projection이다.
-- `data`는 source owner나 계산 owner가 아니다. 직접 parquet reader, Company loop, simulate, story, AI import를 금지한다.
-- `simulate`는 `data`를 소비할 수 있고 data snapshot, contract hash, lineage, receipt를 결과에 보존한다. 반대 방향은 금지한다.
-- private, nested, bulk resource 정책과 전체 query row, byte, time, asset, subject 예산은 data 실행 경계에서 fail-closed로 적용한다.
+- `dataHub`는 source owner나 계산 owner가 아니다. 직접 parquet reader, Company loop, simulate, story, AI import를 금지한다.
+- `simulate`는 `dataHub`를 소비할 수 있고 data snapshot, contract hash, lineage, receipt를 결과에 보존한다. 반대 방향은 금지한다.
+- private, nested, bulk resource 정책과 전체 query row, byte, time, asset, subject 예산은 dataHub 실행 경계에서 fail-closed로 적용한다.
 
 ### L0~L1.5 완료 게이트 (2026-05-13)
 

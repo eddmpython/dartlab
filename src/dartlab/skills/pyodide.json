@@ -163,8 +163,8 @@
       "limitations": []
     },
     {
-      "id": "engines.data",
-      "title": "Unified Data Workbench",
+      "id": "engines.dataHub",
+      "title": "DartLab DataHub",
       "category": "engines",
       "status": "limited",
       "dataSources": [],
@@ -172,7 +172,7 @@
       "limitations": []
     },
     {
-      "id": "engines.data.foundation",
+      "id": "engines.dataHub.foundation",
       "title": "데이터 엔진 기본기",
       "category": "engines",
       "status": "limited",

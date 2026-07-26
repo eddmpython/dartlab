@@ -34,7 +34,7 @@ default_whitelist:
   - operation.apiContract
   - engines.company
   - operation.code
-  - engines.data
+  - engines.dataHub
   - operation.philosophy
   # refactor-checklist 는 옛 API 예시·사고 사례 SSOT — 의도된 잔존
   - operation.refactorChecklist
@@ -135,7 +135,7 @@ patterns:
       - CHANGELOG.md
       - operation.apiContract
       - engines.company
-      - engines.data
+      - engines.dataHub
 
   - name: report_namespace_attr
     regex: '\bc\.report\.\w+'

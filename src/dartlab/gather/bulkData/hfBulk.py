@@ -9,7 +9,7 @@ HF 벌크는 공공데이터포털(data.go.kr) gov 축이 publish (date 샤딩, 
 데이터 흐름 (dartlab 표준 — `core/dataLoader.loadData`, category=govPrices):
     1. 로컬 `data/gov/prices/date/{YYYY}.parquet` 확인
     2. 없으면 HF (`eddmpython/dartlab-data` / `gov/prices/date/{YYYY}.parquet`) 다운로드
-    3. 있으면 ETag + Content-Length 검증 → stale 시 재다운로드 (3-Layer Freshness, engines.data §13)
+    3. 있으면 ETag + Content-Length 검증 → stale 시 재다운로드 (3-Layer Freshness, engines.dataHub)
     4. LRU 캐시 (16개) — 같은 세션 재호출 시 메모리 hit
 
 기타 dartlab 카테고리 (finance · report · scan · edgar · ...) 와 완전 동일 패턴.

@@ -1,113 +1,25 @@
-"""DartLab Unified Data Workbench public package."""
+"""이전 ``dartlab.data`` import를 ``dartlab.dataHub``로 연결하는 호환 계층."""
 
-from dartlab.data.contracts import (
-    AssetRef,
-    CatalogQuery,
-    DataAssetDescriptor,
-    DataCatalogResult,
-    DataGap,
-    DataLineage,
-    DataPartition,
-    DataQuery,
-    DataRequest,
-    DataResult,
-    FactorProjection,
-    GraphProjection,
-    NarrativeProjection,
-    NativeProjection,
-    QualityAssertion,
-    QueryBudget,
-    RecordsProjection,
-    ResourceProjection,
-    TimeContext,
-    UniverseCoverage,
-    UniverseSelection,
-)
-from dartlab.data.entry import Data, data
-from dartlab.data.featureObservation import (
-    FeatureObservationError,
-    VariableObservation,
-    makeVariableObservation,
-    validateVariableObservation,
-)
-from dartlab.data.featureQuery import (
-    FeatureObservationSet,
-    FeatureQueryError,
-    FeatureReadQuery,
-    FeatureReadResult,
-    FeatureSelection,
-    buildFeatureObservationSet,
-    featureObservationSetFromValue,
-    readFeatures,
-)
-from dartlab.data.featureRegistry import (
-    StateVariableError,
-    StateVariableRegistry,
-    StateVariableSpec,
-    buildStateVariableRegistry,
-    stateVariableContractHash,
-)
-from dartlab.data.materialization import (
-    MaterializationDirective,
-    MaterializationReceipt,
-)
-from dartlab.data.pageScan import (
-    PageScanCheckpoint,
-    PageScanError,
-    iterDataArrowBatches,
-    iterDataResultPages,
-)
-from dartlab.data.vintage import VintageError, VintageRef, isExactAsKnown, validateVintageRef
+from __future__ import annotations
 
-__all__ = [
-    "AssetRef",
-    "CatalogQuery",
-    "Data",
-    "DataAssetDescriptor",
-    "DataCatalogResult",
-    "DataGap",
-    "DataLineage",
-    "DataPartition",
-    "DataQuery",
-    "DataRequest",
-    "DataResult",
-    "FactorProjection",
-    "FeatureObservationError",
-    "FeatureObservationSet",
-    "FeatureQueryError",
-    "FeatureReadQuery",
-    "FeatureReadResult",
-    "FeatureSelection",
-    "GraphProjection",
-    "MaterializationDirective",
-    "MaterializationReceipt",
-    "NarrativeProjection",
-    "NativeProjection",
-    "PageScanCheckpoint",
-    "PageScanError",
-    "QueryBudget",
-    "QualityAssertion",
-    "RecordsProjection",
-    "ResourceProjection",
-    "StateVariableError",
-    "StateVariableRegistry",
-    "StateVariableSpec",
-    "TimeContext",
-    "UniverseCoverage",
-    "UniverseSelection",
-    "VariableObservation",
-    "VintageError",
-    "VintageRef",
-    "buildFeatureObservationSet",
-    "buildStateVariableRegistry",
-    "data",
-    "featureObservationSetFromValue",
-    "isExactAsKnown",
-    "iterDataArrowBatches",
-    "iterDataResultPages",
-    "makeVariableObservation",
-    "readFeatures",
-    "stateVariableContractHash",
-    "validateVariableObservation",
-    "validateVintageRef",
-]
+import sys
+import types
+from typing import Any
+
+import dartlab.dataHub as _dataHubModule
+from dartlab.dataHub import __all__ as _dataHubExports
+
+for _name in _dataHubExports:
+    globals()[_name] = getattr(_dataHubModule, _name)
+
+
+class _CompatibilityModule(types.ModuleType):
+    """호환 module 호출을 canonical DataHub instance로 위임한다."""
+
+    def __call__(self, *args: Any, **kwargs: Any) -> Any:
+        return _dataHubModule(*args, **kwargs)
+
+
+sys.modules[__name__].__class__ = _CompatibilityModule
+
+__all__ = list(_dataHubExports)

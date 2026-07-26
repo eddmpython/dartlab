@@ -51,7 +51,7 @@ capabilityRefs:
 knowledgeRefs:
   - start.dartlabSkillOs
   - engines.company
-  - engines.data.foundation
+  - engines.dataHub.foundation
   - engines.story
 sourceRefs:
   - dartlab://skills/engines.analysis

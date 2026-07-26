@@ -42,7 +42,7 @@ outputs:
 knowledgeRefs:
   - start.dartlabSkillOs
   - engines.company
-  - engines.data
+  - engines.dataHub
   - operation.philosophy
 capabilityRefs:
   - compare
@@ -105,7 +105,7 @@ procedure:
   - US(EDGAR)는 같은 read 표면 — `from dartlab.providers.edgar.panel import Panel; Panel(ticker)` / `Company(ticker).panel`. EDGAR `panel` 패키지도 `read`·`schema`·`period`·`mapper`·`canonical`·`spine` 뼈대 이름을 DART 와 맞춘다. 빌드는 SEC full-submission text 를 메모리로 fetch 한 뒤 `edgar/panel/{ticker}.parquet` 만 저장한다. 원본 `.txt` 저장과 별도 `panelCell` artifact 는 없다. 소문자 재무 키 `Panel(ticker)("is")` / `c.panel("is")` 는 panel row native payload 를 read-time 분해하고, 대문자 `c.panel("IS")` 는 companyfacts finance 로 위임한다.
 linkedSkills:
   - engines.company
-  - engines.data
+  - engines.dataHub
 source:
   type: manual_skill
   format: markdown

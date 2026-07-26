@@ -31,7 +31,7 @@ capabilityRefs:
   - scan
 knowledgeRefs:
   - start.dartlabSkillOs
-  - engines.data.foundation
+  - engines.dataHub.foundation
   - engines.analysis
 sourceRefs:
   - dartlab://skills/engines.scan

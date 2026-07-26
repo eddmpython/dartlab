@@ -10,7 +10,7 @@ import pytest
 
 from dartlab.analysis.financial.dartFilingFeatures import buildDartFinancialFeatureInput
 from dartlab.analysis.financial.dataAssets import dartFinancialFeatures
-from dartlab.data.featureQuery import featureObservationSetFromValue
+from dartlab.dataHub.featureQuery import featureObservationSetFromValue
 
 pytestmark = pytest.mark.unit
 

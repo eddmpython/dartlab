@@ -412,7 +412,7 @@ dev = [
 # Import-linter — 레이어 단방향 강제 + L2 양방향 cycle 차단 (P0 가드)
 # ────────────────────────────────────────────────────────────────────
 # 정책 SSOT: src/dartlab/skills/specs/operation/architecture.md
-#   1. 상하 단방향: L0 ← L1 ← L1.5 ← L2 ← L2.5 data ← L3 ← L4 (이 contract)
+#   1. 상하 단방향: L0 ← L1 ← L1.5 ← L2 ← L2.5 dataHub ← L3 ← L4 (이 contract)
 #   2. L2 동급 단방향 허용 (sibling import OK)
 #   3. L2 양방향 순환 절대금지 (별도: tests/audit/cycleScan.py)
 # ════════════════════════════════════════════════════════════════════
@@ -430,12 +430,12 @@ root_package = "dartlab"
 
 # ── Contract 1: 상하 layer 단방향 (L2 는 exhaustive=false 로 제외, 별도 forbidden)
 [[tool.importlinter.contracts]]
-name = "Layered architecture (L0~L1.5 + L2.5 data + L3 + L4)"
+name = "Layered architecture (L0~L1.5 + L2.5 dataHub + L3 + L4)"
 type = "layers"
 layers = [
     "dartlab.ai | dartlab.company",
     "dartlab.story",
-    "dartlab.data",
+    "dartlab.dataHub",
     "dartlab.scan",
     "dartlab.gather",
     "dartlab.core",
@@ -470,6 +470,7 @@ source_modules = [
 ]
 forbidden_modules = [
     "dartlab.story",
+    "dartlab.dataHub",
     "dartlab.data",
     "dartlab.ai",
     "dartlab.company",

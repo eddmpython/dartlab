@@ -29,6 +29,7 @@ from .api import (
     company_router,
     dart_router,
     data_router,
+    dataHub_router,
     dl_router,
     macro_router,
     price_events_router,
@@ -228,6 +229,7 @@ app.include_router(analysis_router)
 app.include_router(ask_router)
 app.include_router(company_router)
 app.include_router(data_router)
+app.include_router(dataHub_router)
 app.include_router(dl_router)
 app.include_router(macro_router)
 app.include_router(price_events_router)

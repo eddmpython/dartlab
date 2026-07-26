@@ -1,7 +1,7 @@
 # 04. Capability, 엔진 실행, 시뮬레이터 격리
 
 > 2026-07-22 정정: `simulate.mirror`는 제거됐다. L1, L1.5, L2 capability 실행의 현재 정본은
-> `dartlab.data("catalog")`, `dartlab.data("query")`다. Universe는 이 작업대를 소비하는 상위 제품이며
+> `dartlab.dataHub("catalog")`, `dartlab.dataHub("query")`다. Universe는 이 작업대를 소비하는 상위 제품이며
 > Data Workbench가 Universe를 역참조하지 않는 의존 규칙은 유지한다.
 
 ## 1. 전체의 의미

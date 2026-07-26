@@ -47,7 +47,7 @@ def test_builtin_skills_are_engine_owned_execution_docs() -> None:
         "engines.macro",
         "engines.story",
         "engines.viz",
-        "engines.data.foundation",
+        "engines.dataHub.foundation",
         "engines.viz.tableBackedChart",
     } <= ids
     # Phase B/C/D (2026-05-18) 흡수 완료 — analysis 엔진 7 종 (analysis/scan/quant/macro/
@@ -472,7 +472,7 @@ def testSkillArtifactsKeepRecipeCategorySeparateFromEngines() -> None:
 
 
 def test_data_engine_foundation_references_manual_engine_skills() -> None:
-    spec = skills.get("engines.data.foundation", includeUser=False)
+    spec = skills.get("engines.dataHub.foundation", includeUser=False)
 
     assert {"Company", "gather", "scan"} <= set(spec.capabilityRefs)
     assert {"engines.company", "engines.gather", "engines.scan"} <= set(spec.knowledgeRefs)

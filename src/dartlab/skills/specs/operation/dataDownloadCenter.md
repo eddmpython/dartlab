@@ -35,7 +35,7 @@ runtimeCompatibility:
   pyodide:
     status: limited
 knowledgeRefs:
-  - engines.data
+  - engines.dataHub
   - operation.architecture
   - operation.ui
   - runtime.dataAvailabilityCheck
@@ -54,7 +54,7 @@ lastUpdated: '2026-07-01'
 
 ## 역할
 
-데이터 다운로드 센터는 dartlab 공개 데이터(HuggingFace `eddmpython/dartlab-data` 의 parquet)를 python 을 쓰지 않는 소비자가 **슬라이스·라이브**로 가져가게 하는 서빙 층이다. `engines.data`(수집·프리빌드·업로드 파이프라인)의 반대편, 소비 층에 해당한다. 랜딩 `/data` 표면 + Cloudflare Worker `dartlab-data-csv` 로 구성된다.
+데이터 다운로드 센터는 dartlab 공개 데이터(HuggingFace `eddmpython/dartlab-data` 의 parquet)를 python 을 쓰지 않는 소비자가 **슬라이스·라이브**로 가져가게 하는 서빙 층이다. `engines.dataHub`(수집·프리빌드·업로드 파이프라인)의 반대편, 소비 층에 해당한다. 랜딩 `/data` 표면 + Cloudflare Worker `dartlab-data-csv` 로 구성된다.
 
 핵심 원칙: **CSV 사본을 굽지 않는다.** HF parquet 이 SSOT 이고 브라우저·워커가 요청 시점에 직독·변환한다(런타임-SSOT, `operation.architecture`).
 

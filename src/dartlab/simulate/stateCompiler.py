@@ -9,7 +9,7 @@ from hashlib import sha256
 from pathlib import Path
 from typing import Mapping
 
-from dartlab.data.featureObservation import (
+from dartlab.dataHub.featureObservation import (
     VARIABLE_OBSERVATION_SCHEMA,
     FeatureObservationError,
     VariableObservation,
@@ -17,7 +17,7 @@ from dartlab.data.featureObservation import (
     observationPayload,
     validateVariableObservation,
 )
-from dartlab.data.vintage import VintageRef, canonicalPayloadHash
+from dartlab.dataHub.vintage import VintageRef, canonicalPayloadHash
 from dartlab.simulate.admissionRegistry import (
     AdmissionReceipt,
     AdmissionVerifier,

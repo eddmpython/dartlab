@@ -99,7 +99,7 @@
       "knowledgeRefs": [
         "start.dartlabSkillOs",
         "engines.company",
-        "engines.data.foundation",
+        "engines.dataHub.foundation",
         "engines.story"
       ],
       "linkedSkills": [
@@ -1870,16 +1870,16 @@
       }
     },
     {
-      "id": "engines.data",
-      "bodyPreview": "## 역할과 위치\n\n`data`는 특정 엔진의 별칭이 아니다. L1의 provider와 gather, L1.5의 scan, frame, synth, reference, L2의 analysis, credit, industry, macro, quant가 소유한 데이터 제품을 위에서 연합하는 독립 작업대다.\n\n```text\nsimulate, story, Universe, AI\n              ↓\n Unified Data Workbench\n              ↓\n      L2 분석 데이터 제품\n              ↓\n     L1.5 횡단, 정규화 제품\n              ↓\n       L1 원천, provider 제품\n```\n\n하위 owner가 `dataProduct.py`에 metadata provider를 선언하면 중앙 엔진 목록을 수정하지 않아도 다음 catalog snapshot에 자동 반영된다. source와 계산식의 소유권은 하위 엔진에 남고, `data`는 발견, 검증, 실행 예산, projection, lineage 결박을 담당한다.\n\n## 공개 호출 방식\n\npublic axis는 둘뿐이다.\n\n```python\nimport dartlab\n\ndartlab.data()             # catalog, query 가이드\ndartlab.data(\"catalog\")   # metadata-only 발견\ndartlab.data(\"query\", ...) # stable asset query\n```\n\nfactor, records, graph, narrative, resource는 새 axis가 아니라 `query`의 typed projection이다. 따라서 같은 asset을 native schema 그대로 쓸 수도 있고 factor store 형태로 투영할 수도 있다. `DataRequest`를 사용하면 한 query에서 asset마다 서로 다른 projection을 지정할 수 있다.\n\n## 카탈로그\n\n```python\nfrom dartlab.data import CatalogQuery\n\nallAssets = dartlab.data(\"catalog\")\nl2Assets = dartlab.data(\n    \"catalog\",\n    query=CatalogQuery(layers=(\"L2\",), search=\"valuation\"),\n)\n```\n\n`DataAssetDescriptor`는 최소 `assetId`, `assetVersionId`, `owner`, `layer`, `kind`, `sourceRef`, `queryable`, `temporalSupport`, `selectorKind`, `selectorRequired`, `concurrencyGroup`, executor metadata를 가진다. catalog는 값을 물질화하지 않는다. private, out-of-scope, 폐기, catalog-only 자산도 분류를 위해 보이지만 `queryable=False`로 차단된다.\n\n## 범용 quer",
-      "title": "Unified Data Workbench",
+      "id": "engines.dataHub",
+      "bodyPreview": "## 역할과 위치\n\n`dataHub`는 특정 엔진의 별칭이 아니다. L1의 provider와 gather, L1.5의 scan, frame, synth, reference, L2의 analysis, credit, industry, macro, quant가 소유한 데이터 제품을 위에서 연합하는 독립 데이터 플랫폼이다.\n\n```text\nsimulate, story, Universe, AI\n              ↓\n       DartLab DataHub\n              ↓\n      L2 분석 데이터 제품\n              ↓\n     L1.5 횡단, 정규화 제품\n              ↓\n       L1 원천, provider 제품\n```\n\n하위 owner가 `dataProduct.py`에 metadata provider를 선언하면 중앙 엔진 목록을 수정하지 않아도 다음 catalog snapshot에 자동 반영된다. source와 계산식의 소유권은 하위 엔진에 남고, `dataHub`는 발견, 검증, 실행 예산, projection, lineage 결박을 담당한다.\n\n## 공개 호출 방식\n\npublic axis는 둘뿐이다.\n\n```python\nimport dartlab\n\ndartlab.dataHub()             # catalog, query 가이드\ndartlab.dataHub(\"catalog\")   # metadata-only 발견\ndartlab.dataHub(\"query\", ...) # stable asset query\n```\n\nfactor, records, graph, narrative, resource는 새 axis가 아니라 `query`의 typed projection이다. 따라서 같은 asset을 native schema 그대로 쓸 수도 있고 factor store 형태로 투영할 수도 있다. `DataRequest`를 사용하면 한 query에서 asset마다 서로 다른 projection을 지정할 수 있다.\n\n다른 프로세스와 머신은 같은 의미 계약을 versioned remote API로 사용한다.\n\n```python\nfrom dartlab.dataHub import AsyncDataHubClient, DataHubClient\n\nwith DataHubClient(\"https://host\", clientToken) as hub:\n    job = hub.query(query, wait=False, idempotencyKey=\"daily-close\")\n    result = hub.wait(job.jobId)\n\nasync with AsyncDataHubClient(\"https://host\", clientToken) as hub:\n    result = await hub.query(query)\n```\n\n분산 worker는 `python -m dartlab.dataHub.workerPlane --base-url https://host --worker-id node-a`로 실행한다. 여러 worker가",
+      "title": "DartLab DataHub",
       "category": "engines",
       "categoryTitle": "Engines",
       "kind": "curated",
       "status": "observed",
-      "purpose": "Data Workbench는 L1, L1.5, L2의 원천, 정규 데이터, 횡단 데이터, 분석 자산을 하나의 자동 발견 카탈로그와 bounded query 계약으로 제공한다. 외부 프로세스의 범용 데이터 API, factor store projection, 시뮬레이터 입력 스냅샷에 같은 계약을 쓴다. 트리거는 '데이터 작업대', '팩터 스토어', '전종목 DART EDGAR 조회'다.",
+      "purpose": "DataHub는 L1, L1.5, L2의 원천, 정규 데이터, 횡단 데이터, 분석 자산을 하나의 자동 발견 카탈로그와 bounded query 계약으로 제공한다. 외부 프로세스의 범용 데이터 API, factor store projection, 시뮬레이터 입력 스냅샷에 같은 계약을 쓴다. 트리거는 '데이터허브', '데이터 작업대', '팩터 스토어', '전종목 DART EDGAR 조회'다.",
       "whenToUse": [
-        "data",
+        "dataHub",
         "데이터 작업대",
         "데이터 스토어",
         "팩터 스토어",
@@ -1898,7 +1898,9 @@
         "asset별 DataRequest",
         "validAt 또는 knownAt",
         "query budget",
-        "opaque continuation token"
+        "opaque continuation token",
+        "materialization mode",
+        "structured materialization receipt"
       ],
       "requiredInputs": [],
       "outputs": [
@@ -1911,25 +1913,29 @@
         "execution receipt",
         "구조화 DataLineage와 QualityAssertion",
         "Polars와 Arrow table",
-        "전종목 source shard coverage와 opaque continuation"
+        "전종목 source shard coverage와 opaque continuation",
+        "KR과 US 현재 상장 factor universe coverage와 opaque continuation",
+        "immutable generation receipt",
+        "durable remote job와 lease 상태",
+        "무손실 원격 DataResult"
       ],
       "apiRefs": [
-        "data",
-        "data.catalog",
-        "data.query"
+        "dataHub",
+        "dataHub.catalog",
+        "dataHub.query"
       ],
       "toolRefs": [],
       "datasetRefs": [],
       "knowledgeRefs": [
         "start.dartlabSkillOs",
-        "engines.data.foundation",
+        "engines.dataHub.foundation",
         "engines.company",
         "engines.gather",
         "engines.scan",
         "engines.analysis"
       ],
       "linkedSkills": [
-        "engines.data.foundation",
+        "engines.dataHub.foundation",
         "engines.company",
         "engines.gather",
         "engines.scan",
@@ -1940,17 +1946,19 @@
       "succeededBy": [],
       "deprecatedBy": [],
       "sourceRefs": [
-        "dartlab://skills/engines.data"
+        "dartlab://skills/engines.dataHub"
       ],
       "procedure": [
-        "dartlab.data()로 catalog와 query 두 public axis를 확인한다.",
-        "dartlab.data(\"catalog\")로 owner, layer, kind, temporalSupport, queryable을 조회한다.",
+        "dartlab.dataHub()로 catalog와 query 두 public axis를 확인한다.",
+        "dartlab.dataHub(\"catalog\")로 owner, layer, kind, temporalSupport, queryable을 조회한다.",
         "stable assetId를 선택하고 단일 view면 DataQuery, 혼합 view면 asset별 DataRequest에 subjects, measures, projection, time을 명시한다.",
-        "dartlab.data(\"query\", assetId, query=...) 또는 dartlab.data(\"query\", query=DataQuery(requests=(...)))를 호출한다.",
+        "dartlab.dataHub(\"query\", assetId, query=...) 또는 dartlab.dataHub(\"query\", query=DataQuery(requests=(...)))를 호출한다.",
         "status, coverage, gaps를 먼저 검사한 뒤 partition data를 소비한다.",
-        "전체 resource를 한 소비 흐름으로 읽을 때 result.iterPages() 또는 result.iterAllArrowBatches()를 사용한다.",
+        "pageable resource와 owner 계산 결과를 한 소비 흐름으로 읽을 때 result.iterPages() 또는 result.iterAllArrowBatches()를 사용한다.",
         "수동 재개가 필요하면 partial result의 continuation만 다음 query에 전달하고 원 질의를 덮어쓰지 않는다.",
-        "snapshotId, dataSnapshotId, contractHash, partition contentHash, lineageRefs, executionReceipts를 함께 보존한다."
+        "저장이 필요하면 runtime, reuse, refresh, offline 중 의미에 맞는 materialization mode를 query에 지정한다.",
+        "다른 process의 exact 재생에는 DataResult.materializationReceipt를 보존하고 offline mode에 그대로 전달한다.",
+        "snapshotId, dataSnapshotId, contractHash, partition contentHash, lineageRefs, executionReceipts, materializationReceipt를 함께 보존한다."
       ],
       "recipeSteps": [],
       "requiredEvidence": [
@@ -1964,13 +1972,15 @@
         "gaps",
         "lineageRefs",
         "executionReceipts",
+        "materializationReceipt",
         "qualityAssertions"
       ],
       "expectedOutputs": [
         "선택한 stable asset ID와 projection",
         "bounded partition 결과",
         "시점 지원 여부와 honest gap",
-        "같은 snapshot에 결박된 lineage와 receipt"
+        "같은 snapshot에 결박된 lineage와 receipt",
+        "저장 모드에서는 exact materialization receipt"
       ],
       "visualGuidance": [],
       "failureModes": [
@@ -1984,10 +1994,12 @@
         "continuation과 함께 원 질의 override를 전송함",
         "빈 owner 결과를 성공 partition으로 반환함",
         "공유 Company 상태를 쓰는 owner를 동시에 초기화해 경쟁 상태를 만듦",
-        "전종목 원천 paging을 전종목 PIT factor paging으로 과장함"
+        "원천 접근 entity 수를 strict factor 성공 entity 수로 과장함",
+        "cold materialization을 첫 응답 즉시 전종목 적재라고 설명함",
+        "receipt 없이 offline exact generation을 재생한다고 주장함"
       ],
       "forbidden": [
-        "Data Workbench를 특정 분석 엔진 묶음으로 축소하지 않는다.",
+        "DataHub를 특정 분석 엔진 묶음으로 축소하지 않는다.",
         "factor, graph, narrative, resource를 public axis로 늘리지 않는다. 모두 query projection이다.",
         "PIT 미지원 asset을 과거 시점 성공으로 반환하지 않는다.",
         "unit이 없는 값을 factor row로 가장하지 않는다.",
@@ -2002,7 +2014,11 @@
         "knownAt 지원 여부를 fail-closed로 검증",
         "시뮬레이터 재무 입력을 snapshot과 receipt로 고정",
         "DART와 EDGAR 전종목 원천을 한 query와 한 continuation chain으로 순회",
-        "EDGAR 단일 종목의 revision-aware 재무 feature를 knownAt 기준으로 조회"
+        "EDGAR 단일 종목의 revision-aware 재무 feature를 knownAt 기준으로 조회",
+        "DART KR과 EDGAR US 현재 상장 universe의 revision-aware 재무 feature를 한 query와 continuation으로 순회",
+        "immutable generation을 다른 process에서 receipt만으로 재생",
+        "외부 process에서 sync 또는 asyncio client로 query 제출",
+        "여러 host worker가 durable queue를 원자 claim해 실행"
       ],
       "runtimeCompatibility": {
         "server": {
@@ -2026,14 +2042,14 @@
       }
     },
     {
-      "id": "engines.data.foundation",
-      "bodyPreview": "## 기본 판단\n\n- 여러 계층의 자산을 외부 프로세스나 시뮬레이터가 재사용해야 하면 먼저 `data(\"catalog\")`, `data(\"query\")` 계약을 쓴다. 아래 Company, gather, scan 선택 규칙은 각 owner가 데이터를 만드는 하위 실행 경계다.\n- 단일 종목의 재무, 공시, 사업, 하위 엔진 라우팅은 `Company`가 먼저다. scan prebuild는 peer 위치, universe ranking, Company 원자료 부재 시의 보조 경로다.\n- 최신 주가, 수급, 뉴스, 거시 원자료처럼 외부 데이터 신선도가 핵심이면 `gather`가 먼저다.\n- 후보 발굴, 순위, peer 위치, 시장 전체 분포가 핵심이면 `scan`이 먼저다.\n- 질문이 섞여 있으면 `Company`로 target을 고정하고, `gather`로 최신 raw data를 보강하고, `scan`으로 상대 위치를 확인한다.\n\n## 응용 Skill 작성 시작점\n\n- 응용 skill은 먼저 `knowledgeRefs`의 `engines.company`, `engines.gather`, `engines.scan`을 참조한다.\n- 단일 엔진의 기본 사용법은 각 엔진의 `SKILL.md`를 본다. capability/docstring은 스킬의 공개 호출과 반환 설명을 검산하는 원천 자료다.\n- 응용 skill은 이 skill의 requiredEvidence 중 자기 질문에 필요한 항목을 줄이지 말고 구체화한다.\n- 응용 skill은 source table ref를 만든 뒤 analysis, credit, quant, macro, story, viz로 넘긴다.\n\n## 절차\n\n- 질문을 단일 종목, 원자료 최신성, 횡단 비교 중 어디에 속하는지 분류한다.\n- 필요한 경우 세 경로를 조합하되, 각 경로의 evidence 이름을 분리한다.\n- Company 경로는 target, topic, source, period를 남긴다.\n- gather 경로는 provider, latestAsOf, metric, table을 남긴다.\n- scan 경로는 universe, metric, period, rank, table을 남긴다.\n- table/value/date ref를 만든 뒤에는 최종 답변의 material claim마다 해당 ref를 직접 연결한다. evidence refs 전체 목록만 제출하는 것은 숫자 claim 근거가 아니다.\n- 후보·상위·랭킹 산출물은 입력/유니버스, 필터, 계산식/지표, 결과 evidence table이 있어야 재현 가능한 데이터 결론으로 취급한다.\n- 최종 답변 전에 데이터 한계와 후속 분석 엔진으로 넘긴 근거 ref를 확인한다.\n\n## 공개 호출 방식\n\n```python\nimport dartlab\n\ndartlab.data(\"catalog\")                    # L1, L1.5, L2 stable asset 발견\ndartlab.gather(\"price\", \"005930\")          # 최신 raw da",
+      "id": "engines.dataHub.foundation",
+      "bodyPreview": "## 기본 판단\n\n- 여러 계층의 자산을 외부 프로세스나 시뮬레이터가 재사용해야 하면 먼저 `data(\"catalog\")`, `data(\"query\")` 계약을 쓴다. 아래 Company, gather, scan 선택 규칙은 각 owner가 데이터를 만드는 하위 실행 경계다.\n- 단일 종목의 재무, 공시, 사업, 하위 엔진 라우팅은 `Company`가 먼저다. scan prebuild는 peer 위치, universe ranking, Company 원자료 부재 시의 보조 경로다.\n- 최신 주가, 수급, 뉴스, 거시 원자료처럼 외부 데이터 신선도가 핵심이면 `gather`가 먼저다.\n- 후보 발굴, 순위, peer 위치, 시장 전체 분포가 핵심이면 `scan`이 먼저다.\n- 질문이 섞여 있으면 `Company`로 target을 고정하고, `gather`로 최신 raw data를 보강하고, `scan`으로 상대 위치를 확인한다.\n\n## 응용 Skill 작성 시작점\n\n- 응용 skill은 먼저 `knowledgeRefs`의 `engines.company`, `engines.gather`, `engines.scan`을 참조한다.\n- 단일 엔진의 기본 사용법은 각 엔진의 `SKILL.md`를 본다. capability/docstring은 스킬의 공개 호출과 반환 설명을 검산하는 원천 자료다.\n- 응용 skill은 이 skill의 requiredEvidence 중 자기 질문에 필요한 항목을 줄이지 말고 구체화한다.\n- 응용 skill은 source table ref를 만든 뒤 analysis, credit, quant, macro, story, viz로 넘긴다.\n\n## 절차\n\n- 질문을 단일 종목, 원자료 최신성, 횡단 비교 중 어디에 속하는지 분류한다.\n- 필요한 경우 세 경로를 조합하되, 각 경로의 evidence 이름을 분리한다.\n- Company 경로는 target, topic, source, period를 남긴다.\n- gather 경로는 provider, latestAsOf, metric, table을 남긴다.\n- scan 경로는 universe, metric, period, rank, table을 남긴다.\n- table/value/date ref를 만든 뒤에는 최종 답변의 material claim마다 해당 ref를 직접 연결한다. evidence refs 전체 목록만 제출하는 것은 숫자 claim 근거가 아니다.\n- 후보·상위·랭킹 산출물은 입력/유니버스, 필터, 계산식/지표, 결과 evidence table이 있어야 재현 가능한 데이터 결론으로 취급한다.\n- 최종 답변 전에 데이터 한계와 후속 분석 엔진으로 넘긴 근거 ref를 확인한다.\n\n## 공개 호출 방식\n\n```python\nimport dartlab\n\ndartlab.dataHub(\"catalog\")                    # L1, L1.5, L2 stable asset 발견\ndartlab.gather(\"price\", \"005930\")          # 최신 raw",
       "title": "데이터 엔진 기본기",
       "category": "engines",
       "categoryTitle": "Engines",
       "kind": "curated",
       "status": "unverified",
-      "purpose": "Unified Data Workbench 아래에서 Company, gather, scan 원천을 선택하고 수집, prebuild, freshness를 운영하는 기본 절차를 정의한다.",
+      "purpose": "DartLab DataHub 아래에서 Company, gather, scan 원천을 선택하고 수집, prebuild, freshness를 운영하는 기본 절차를 정의한다.",
       "whenToUse": [
         "응용 분석 skill을 만들기 전에 데이터 확보 순서를 정할 때",
         "Company, gather, scan 중 어떤 데이터 엔진을 먼저 써야 하는지 판단할 때",
@@ -2043,9 +2059,9 @@
       "requiredInputs": [],
       "outputs": [],
       "apiRefs": [
-        "data",
-        "data.catalog",
-        "data.query",
+        "dataHub",
+        "dataHub.catalog",
+        "dataHub.query",
         "Company",
         "Company.index",
         "Company.panel",
@@ -2435,7 +2451,7 @@
       "datasetRefs": [],
       "knowledgeRefs": [
         "start.dartlabSkillOs",
-        "engines.data.foundation",
+        "engines.dataHub.foundation",
         "engines.macro"
       ],
       "linkedSkills": [
@@ -3694,11 +3710,11 @@
       "knowledgeRefs": [
         "start.dartlabSkillOs",
         "engines.company",
-        "engines.data.foundation"
+        "engines.dataHub.foundation"
       ],
       "linkedSkills": [
         "engines.company",
-        "engines.data.foundation"
+        "engines.dataHub.foundation"
       ],
       "requires": [],
       "alternatives": [],
@@ -3975,12 +3991,12 @@
       "knowledgeRefs": [
         "start.dartlabSkillOs",
         "engines.company",
-        "engines.data",
+        "engines.dataHub",
         "operation.philosophy"
       ],
       "linkedSkills": [
         "engines.company",
-        "engines.data"
+        "engines.dataHub"
       ],
       "requires": [],
       "alternatives": [],
@@ -4494,7 +4510,7 @@
       "datasetRefs": [],
       "knowledgeRefs": [
         "start.dartlabSkillOs",
-        "engines.data.foundation",
+        "engines.dataHub.foundation",
         "engines.analysis"
       ],
       "linkedSkills": [
@@ -6960,11 +6976,11 @@
       "whenToUse": [
         "dartlab 아키텍처 — 전체 청사진",
         "architecture",
-        "1. 레이어 — L0→L4 (L1.5와 L2.5 data 포함) 구조로 간다",
+        "1. 레이어 — L0→L4 (L1.5와 L2.5 dataHub 포함) 구조로 간다",
         "2. 5 L2 분석엔진 — 두 소비자를 최고로 지원한다",
         "소비자별 차이",
         "3. 모듈 제공 패턴 — analysis 기준 (5 L2 엔진 동일)",
-        "4. import 방향 — L0 ← L1 ← L1.5 ← L2 ← L2.5 data ← L3 하향만 허용한다"
+        "4. import 방향 — L0 ← L1 ← L1.5 ← L2 ← L2.5 dataHub ← L3 하향만 허용한다"
       ],
       "inputs": [
         "작업 목적",
@@ -6994,11 +7010,11 @@
         "dartlab://skills/operation.architecture"
       ],
       "procedure": [
-        "1. 레이어 — L0→L4 (L1.5와 L2.5 data 포함) 구조로 간다 기준을 확인한다.",
+        "1. 레이어 — L0→L4 (L1.5와 L2.5 dataHub 포함) 구조로 간다 기준을 확인한다.",
         "2. 5 L2 분석엔진 — 두 소비자를 최고로 지원한다 기준을 확인한다.",
         "소비자별 차이 기준을 확인한다.",
         "3. 모듈 제공 패턴 — analysis 기준 (5 L2 엔진 동일) 기준을 확인한다.",
-        "4. import 방향 — L0 ← L1 ← L1.5 ← L2 ← L2.5 data ← L3 하향만 허용한다 기준을 확인한다.",
+        "4. import 방향 — L0 ← L1 ← L1.5 ← L2 ← L2.5 dataHub ← L3 하향만 허용한다 기준을 확인한다.",
         "data는 lower owner의 metadata와 공개 callable만 소비하고 simulate, story, AI를 역참조하지 않는다.",
         "**story 가 쓸 때** — L3 조합기로서 5 L2 분석엔진 + L1.5 4 형제 (scan/frame/synth/reference) 의 calc 결과를 블록으로 변환하여 보고서에 배치. 자체 해석·계산 0 — 모든 숫자는 하위 엔진 ref. story 가 단독으로 다중 결합 책임을 짊어져 L2 끼리 직접 import 가 만드는 순환참조를 차단.",
         "**AI 가 쓸 때** — AI 가 주체. 엔진 결과를 의심하고, 원본 (`c.show`) 으로 검증하고, override 로 재계산.",
@@ -7620,7 +7636,7 @@
     },
     {
       "id": "operation.dataDownloadCenter",
-      "bodyPreview": "## 역할\n\n데이터 다운로드 센터는 dartlab 공개 데이터(HuggingFace `eddmpython/dartlab-data` 의 parquet)를 python 을 쓰지 않는 소비자가 **슬라이스·라이브**로 가져가게 하는 서빙 층이다. `engines.data`(수집·프리빌드·업로드 파이프라인)의 반대편, 소비 층에 해당한다. 랜딩 `/data` 표면 + Cloudflare Worker `dartlab-data-csv` 로 구성된다.\n\n핵심 원칙: **CSV 사본을 굽지 않는다.** HF parquet 이 SSOT 이고 브라우저·워커가 요청 시점에 직독·변환한다(런타임-SSOT, `operation.architecture`).\n\n## 정신 모델 (거울 URL)\n\nHF parquet 경로를 그대로 비추고 확장자만 바꾼다.\n\n```\nHF   …/resolve/main/{dir}/{id}.parquet\nAPI  https://{worker}/v1/{dir}/{id}.{csv|tsv}\n```\n\n워커가 아는 유일한 데이터 지식 = `dartlab.core.dataConfig.DATA_RELEASES` 의 `public` 플래그에서 도출한 노출 화이트리스트(`downloadCatalog()`). 새 public·flat·표형 카테고리는 코드 0 으로 자동 노출, private 은 자동 차단된다.\n\n## 2 티어\n\n| 티어 | 백엔드 | 범위 | 방식 |\n|---|---|---|---|\n| Tier1 브라우저 | 0 | 노출 dir 전부(날짜샤드 포함) | parquet 직독 → xlsx/csv (buildWorkbook·csvExport 재사용) |\n| Tier2 워커 | Cloudflare Worker 1개 | 회사·시리즈 flat 파일 | parquet → CSV/TSV 온더플라이 (IMPORTDATA·Power Query) |\n\nTier2 부적격(날짜샤드·전종목 대형)은 413 + Tier1 안내로 정직하게 떨어뜨린다.\n\n## URL 계약\n\n```\n/v1/{dir}/{id}.{csv|tsv}?cols=&tail=&head=&freq=\n/v1/{dir}/{id}/schema.json      # footer 만 (cols/tail 추측용)\n/v1/                            # 자기기술 카탈로그 (url_syntax·params·datasets)\n```\n\n- `cols` 컬럼 투영(출력 순서 겸용) · `tail`/`head` 행 슬라이스 · `freq` 다운샘플(d/w/m/q/y, last-of-period).\n- 숫자는 en-US invariant, 결손은 빈 셀(0 대체 금지), 선두 UTF-8 BOM, CRLF. 기본 TSV(한국 Excel 콤마 로케일 회피) + CSV 병행.\n- 셀(cols×rows) cap 초과 시 최근행 우선 자동 tail + `X-DartLab-Capped` 헤더 신호(본문 주석행 금지, IMPORTDATA 오염 방지).\n\n## 런타임 변환 (워커·브라우저 공유 SSOT)\n\nraw 슬라",
+      "bodyPreview": "## 역할\n\n데이터 다운로드 센터는 dartlab 공개 데이터(HuggingFace `eddmpython/dartlab-data` 의 parquet)를 python 을 쓰지 않는 소비자가 **슬라이스·라이브**로 가져가게 하는 서빙 층이다. `engines.dataHub`(수집·프리빌드·업로드 파이프라인)의 반대편, 소비 층에 해당한다. 랜딩 `/data` 표면 + Cloudflare Worker `dartlab-data-csv` 로 구성된다.\n\n핵심 원칙: **CSV 사본을 굽지 않는다.** HF parquet 이 SSOT 이고 브라우저·워커가 요청 시점에 직독·변환한다(런타임-SSOT, `operation.architecture`).\n\n## 정신 모델 (거울 URL)\n\nHF parquet 경로를 그대로 비추고 확장자만 바꾼다.\n\n```\nHF   …/resolve/main/{dir}/{id}.parquet\nAPI  https://{worker}/v1/{dir}/{id}.{csv|tsv}\n```\n\n워커가 아는 유일한 데이터 지식 = `dartlab.core.dataConfig.DATA_RELEASES` 의 `public` 플래그에서 도출한 노출 화이트리스트(`downloadCatalog()`). 새 public·flat·표형 카테고리는 코드 0 으로 자동 노출, private 은 자동 차단된다.\n\n## 2 티어\n\n| 티어 | 백엔드 | 범위 | 방식 |\n|---|---|---|---|\n| Tier1 브라우저 | 0 | 노출 dir 전부(날짜샤드 포함) | parquet 직독 → xlsx/csv (buildWorkbook·csvExport 재사용) |\n| Tier2 워커 | Cloudflare Worker 1개 | 회사·시리즈 flat 파일 | parquet → CSV/TSV 온더플라이 (IMPORTDATA·Power Query) |\n\nTier2 부적격(날짜샤드·전종목 대형)은 413 + Tier1 안내로 정직하게 떨어뜨린다.\n\n## URL 계약\n\n```\n/v1/{dir}/{id}.{csv|tsv}?cols=&tail=&head=&freq=\n/v1/{dir}/{id}/schema.json      # footer 만 (cols/tail 추측용)\n/v1/                            # 자기기술 카탈로그 (url_syntax·params·datasets)\n```\n\n- `cols` 컬럼 투영(출력 순서 겸용) · `tail`/`head` 행 슬라이스 · `freq` 다운샘플(d/w/m/q/y, last-of-period).\n- 숫자는 en-US invariant, 결손은 빈 셀(0 대체 금지), 선두 UTF-8 BOM, CRLF. 기본 TSV(한국 Excel 콤마 로케일 회피) + CSV 병행.\n- 셀(cols×rows) cap 초과 시 최근행 우선 자동 tail + `X-DartLab-Capped` 헤더 신호(본문 주석행 금지, IMPORTDATA 오염 방지).\n\n## 런타임 변환 (워커·브라우저 공유 SSOT)\n\nraw",
       "title": "데이터 다운로드 센터 (공개 parquet · 시트·코드 라이브 서빙)",
       "category": "operation",
       "categoryTitle": "Operation",
@@ -7652,7 +7668,7 @@
       "toolRefs": [],
       "datasetRefs": [],
       "knowledgeRefs": [
-        "engines.data",
+        "engines.dataHub",
         "operation.architecture",
         "operation.ui",
         "runtime.dataAvailabilityCheck"

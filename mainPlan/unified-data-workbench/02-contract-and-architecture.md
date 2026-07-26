@@ -1,10 +1,12 @@
 # 02. 계약과 아키텍처
 
+분산·원격·비동기 실행면은 [07-datahub-distributed-runtime.md](07-datahub-distributed-runtime.md)를 정본으로 한다.
+
 ## 1. 공개 facade
 
 ```python
-dartlab.data("catalog", query=CatalogQuery(...))
-dartlab.data("query", assets=(...), query=DataQuery(...))
+dartlab.dataHub("catalog", query=CatalogQuery(...))
+dartlab.dataHub("query", assets=(...), query=DataQuery(...))
 ```
 
 no-arg 호출은 두 axis와 사용 예를 담은 guide DataFrame을 반환한다. 알 수 없는 axis는 fail-fast한다. accessor chain과 detail helper를 공개하지 않는다.
@@ -22,7 +24,7 @@ assetId는 안정 논리 ID다. schema나 구현 변경을 ID rename으로 숨�
 
 ## 3. descriptor
 
-각 owner는 metadata-only `dataProduct` provider를 소유한다. data는 top-level package를 열거하고 provider가 선언한 descriptor만 실행 후보로 받는다.
+각 owner는 metadata-only `dataProduct` provider를 소유한다. dataHub는 top-level package를 열거하고 provider가 선언한 descriptor만 실행 후보로 받는다.
 
 필수 필드:
 
@@ -40,7 +42,7 @@ licenseRef
 costClass
 ```
 
-새 axis는 owner registry에 등록되면 provider가 자동 projection한다. 새 engine은 자기 package에 provider 하나를 선언한다. data 중앙 파일에 engine 이름을 추가하지 않는다. descriptor가 없는 새 package도 catalog에서 `UNCLASSIFIED_OWNER`로 나타나 조용히 누락되지 않는다.
+새 axis는 owner registry에 등록되면 provider가 자동 projection한다. 새 engine은 자기 package에 provider 하나를 선언한다. dataHub 중앙 파일에 engine 이름을 추가하지 않는다. descriptor가 없는 새 package도 catalog에서 `UNCLASSIFIED_OWNER`로 나타나 조용히 누락되지 않는다.
 
 catalog discovery는 네트워크나 값 실행을 하지 않는다. metadata import에 side effect가 있으면 provider가 실패다.
 
@@ -142,9 +144,9 @@ DataFrame은 Arrow IPC 또는 Polars partition으로 전달하고, 큰 결과는
 
 ### 7.1 DART와 EDGAR 계산 feature runtime paging
 
-`analysis.dartFinancialFeatures`와 `analysis.edgarFinancialFeatures`는 `FactorProjection`, 각 시장의 현재 `listed` universe, 부분 성공 정책 조합에서 owner 계산을 continuation page로 실행한다. 호출자는 종목별 반복문을 만들지 않고 한 `data("query", ...)`에 KR과 US universe를 함께 등록할 수 있다. 명시한 `subjects`는 이 paging 경로로 바꾸지 않고 기존 eager `subjectFanout`으로 실행한다.
+`analysis.dartFinancialFeatures`와 `analysis.edgarFinancialFeatures`는 `FactorProjection`, 각 시장의 현재 `listed` universe, 부분 성공 정책 조합에서 owner 계산을 continuation page로 실행한다. 호출자는 종목별 반복문을 만들지 않고 한 `dataHub("query", ...)`에 KR과 US universe를 함께 등록할 수 있다. 명시한 `subjects`는 이 paging 경로로 바꾸지 않고 기존 eager `subjectFanout`으로 실행한다.
 
-owner lane 한 page는 종목 시도 8개를 넘지 않으며 row, byte, time 예산이 더 작은 경계를 만들 수 있다. 종목별 계산 실패는 machine-readable gap으로 남고 cursor는 실패 종목을 지나 다음 종목으로 전진한다. `requireComplete`와 historical universe는 owner 호출 전에 거부한다.
+owner lane 한 page는 종목 시도 64개를 넘지 않으며 row, byte, time 예산이 더 작은 경계를 만들 수 있다. 종목별 계산 실패는 machine-readable gap으로 남고 cursor는 실패 종목을 지나 다음 종목으로 전진한다. `requireComplete`와 historical universe는 owner 호출 전에 거부한다.
 
 continuation private state는 원 query, contract, 외부 Arrow schema, source manifest, 상장 membership, entity와 source ID mapping, DART 결산월 같은 entity parameter를 digest로 고정한다. 미완료 token을 재개할 때 source, universe, 요청 measure, owner code가 달라지면 실패한다. commit된 page replay는 source와 owner를 다시 접촉하지 않는다. token의 임시 보존 기한은 24시간이다.
 
@@ -199,10 +201,10 @@ systemic outage, policy denial, invalid query는 result-level failure다. 개별
 
 ## 9. 의존 방향
 
-data package 내부 후보:
+dataHub package 구조:
 
 ```text
-data/
+dataHub/
   __init__.py
   entry.py
   contracts.py
@@ -212,7 +214,12 @@ data/
   execution.py
   projections.py
   lineage.py
-  result.py
+  materialization/
+  continuation/
+  controlPlane/
+  remote/
+  transport/
+  workerPlane/
 ```
 
-data가 허용하는 import는 core, gather, providers, scan, frame, synth, reference, L2 owner뿐이다. simulate, story, Universe, AI, server, UI를 import하지 않는다.
+dataHub가 허용하는 import는 core, gather, providers, scan, frame, synth, reference, L2 owner뿐이다. simulate, story, Universe, AI, server, UI를 import하지 않는다. server는 반대로 dataHub의 versioned router를 호스팅한다.

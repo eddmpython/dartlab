@@ -6,7 +6,7 @@ DartLab에는 데이터와 계산이 부족한 것이 아니다. L1의 gather와
 
 현재 소비자는 각 엔진의 반환형, target 위치, period 표현, 오류, 캐시, 계보를 따로 알아야 한다. simulator의 Mirror는 일부 축을 정규화하지만 전체 데이터 플랫폼이 아니라 6개 엔진용 내부 물질화 도구다. Universe attempts는 더 넓은 control plane을 증명했지만 simulator가 사용할 수 없는 상위 제품으로 설계됐다.
 
-Data Workbench는 이 두 장점을 합치되 둘의 잘못된 경계를 승계하지 않는다.
+DataHub는 이 두 장점을 합치되 둘의 잘못된 경계를 승계하지 않는다.
 
 ## 2. 범위
 
@@ -22,7 +22,7 @@ Data Workbench는 이 두 장점을 합치되 둘의 잘못된 경계를 승계�
 
 ### 3.1 외부 Python 사용자
 
-`dartlab.data` 하나로 자산을 찾고, 여러 owner의 자산을 한 query에 묶고, factor 또는 native 형태로 받는다. 각 엔진의 내부 import 경로나 parquet 위치를 알 필요가 없다.
+`dartlab.dataHub` 하나로 자산을 찾고, 여러 owner의 자산을 한 query에 묶고, factor 또는 native 형태로 받는다. 각 엔진의 내부 import 경로나 parquet 위치를 알 필요가 없다.
 
 ### 3.2 simulator
 
@@ -40,7 +40,7 @@ Universe, story, AI, UI가 서로 다른 내부 reader를 만들지 않고 같�
 
 ### D01. owner truth
 
-원천 수집은 gather, provider 변환과 load는 providers, 횡단 가공은 scan, 도메인 계산은 각 L2 owner가 정본이다. data에서 이를 재구현하지 않는다.
+원천 수집은 gather, provider 변환과 load는 providers, 횡단 가공은 scan, 도메인 계산은 각 L2 owner가 정본이다. dataHub에서 이를 재구현하지 않는다.
 
 ### D02. 한 catalog, 분산 소유
 

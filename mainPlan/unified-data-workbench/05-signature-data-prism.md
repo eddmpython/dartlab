@@ -2,7 +2,7 @@
 
 ## 1. 제품 판정
 
-Data Workbench의 최종 정체성은 factor store가 아니다. DartLab이 소유하거나 발견한 모든 데이터 자산을 하나의 진입점에서 목적별 view로 바꾸는 `Data Prism`이다.
+DataHub의 최종 정체성은 factor store가 아니다. DartLab이 소유하거나 발견한 모든 데이터 자산을 하나의 진입점에서 목적별 view로 바꾸는 `Data Prism`이다.
 
 ```text
                     factor view     quant, technical, ML
@@ -12,7 +12,7 @@ catalog + query  -> graph view      relation, transmission, causality
                     resource view   external locator, bulk handoff
 ```
 
-외부 사용자는 `dartlab.data("query", ...)` 한 번만 호출한다. 내부 simulator도 같은 계약을 쓴다. 계산은 quant, scan, analysis 등 원래 owner가 수행하고 data는 발견, 실행, view 변환, 시간 진실성, 계보, 품질, transport를 담당한다.
+외부 사용자는 `dartlab.dataHub("query", ...)` 한 번만 호출한다. 내부 simulator도 같은 계약을 쓴다. 계산은 quant, scan, analysis 등 원래 owner가 수행하고 dataHub는 발견, 실행, view 변환, 시간 진실성, 계보, 품질, transport를 담당한다.
 
 ## 2. 공식 설계 조사와 흡수한 개념
 
@@ -60,14 +60,14 @@ catalog + query  -> graph view      relation, transmission, causality
 
 ```python
 import dartlab
-from dartlab.data import (
+from dartlab.dataHub import (
     DataQuery,
     DataRequest,
     FactorProjection,
     NarrativeProjection,
 )
 
-result = dartlab.data(
+result = dartlab.dataHub(
     "query",
     query=DataQuery(
         requests=(

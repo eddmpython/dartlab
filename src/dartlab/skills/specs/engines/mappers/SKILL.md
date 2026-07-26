@@ -26,7 +26,7 @@ toolRefs:
 knowledgeRefs:
   - start.dartlabSkillOs
   - engines.company
-  - engines.data.foundation
+  - engines.dataHub.foundation
 sourceRefs:
   - dartlab://skills/engines.mappers
 requiredEvidence:
@@ -71,7 +71,7 @@ procedure:
   - prod JSON 단독 권한 진입점은 `src/dartlab/reference/mapping/mappingPromote.py` 만. atomic write + `_metadata.{lastUpdate,addedCount,promoteCommit}` 갱신 + `AccountMapper.release()` 자동 호출.
 linkedSkills:
   - engines.company
-  - engines.data.foundation
+  - engines.dataHub.foundation
 source:
   type: manual_skill
   format: markdown

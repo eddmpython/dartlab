@@ -35,13 +35,6 @@
         "title": "viewerSpec — 공시뷰어 UI 설계 v1.0"
       },
       {
-        "id": "engines.data",
-        "category": "engines",
-        "inDegree": 0,
-        "outDegree": 8,
-        "title": "Data (수집·프리빌드 파이프라인)"
-      },
-      {
         "id": "engines.edgar.docs",
         "category": "engines",
         "inDegree": 0,
