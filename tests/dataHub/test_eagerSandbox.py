@@ -7,11 +7,11 @@ import sqlite3
 import subprocess
 import sys
 import time
+from importlib.util import find_spec
 from io import BytesIO
 from pathlib import Path
 
 import numpy as np
-import pandas as pd
 import polars as pl
 import pyarrow as pa
 import pyarrow.parquet as pq
@@ -66,6 +66,8 @@ def _fixturePyArrowWrite(*, subject: str, outputPath: str):
 
 def _fixturePandasWrite(*, subject: str, outputPath: str):
     del subject
+    import pandas as pd
+
     pd.DataFrame({"value": [1]}).to_parquet(outputPath)
     return {"written": True}
 
@@ -143,21 +145,22 @@ def _run(attribute: str, outputPath: Path):
     )
 
 
-@pytest.mark.parametrize(
-    ("attribute", "expectedCode"),
-    [
-        ("_fixtureNetwork", "OFFLINE_NETWORK_BLOCKED"),
-        ("_fixturePythonWrite", "PAGEABLE_EAGER_WRITE_BLOCKED"),
-        ("_fixtureSqliteWrite", "PAGEABLE_EAGER_WRITE_BLOCKED"),
-        ("_fixturePolarsWrite", "PAGEABLE_EAGER_WRITE_BLOCKED"),
-        ("_fixturePolarsBuffer", "PAGEABLE_EAGER_WRITE_BLOCKED"),
-        ("_fixturePyArrowWrite", "PAGEABLE_EAGER_WRITE_BLOCKED"),
-        ("_fixturePandasWrite", "PAGEABLE_EAGER_WRITE_BLOCKED"),
-        ("_fixtureNumpyWrite", "PAGEABLE_EAGER_WRITE_BLOCKED"),
-        ("_fixtureNumpyTofile", "PAGEABLE_EAGER_WRITE_BLOCKED"),
-        ("_fixtureSubprocessWrite", "PAGEABLE_EAGER_WRITE_BLOCKED"),
-    ],
-)
+_SANDBOX_CASES = [
+    ("_fixtureNetwork", "OFFLINE_NETWORK_BLOCKED"),
+    ("_fixturePythonWrite", "PAGEABLE_EAGER_WRITE_BLOCKED"),
+    ("_fixtureSqliteWrite", "PAGEABLE_EAGER_WRITE_BLOCKED"),
+    ("_fixturePolarsWrite", "PAGEABLE_EAGER_WRITE_BLOCKED"),
+    ("_fixturePolarsBuffer", "PAGEABLE_EAGER_WRITE_BLOCKED"),
+    ("_fixturePyArrowWrite", "PAGEABLE_EAGER_WRITE_BLOCKED"),
+    ("_fixtureNumpyWrite", "PAGEABLE_EAGER_WRITE_BLOCKED"),
+    ("_fixtureNumpyTofile", "PAGEABLE_EAGER_WRITE_BLOCKED"),
+    ("_fixtureSubprocessWrite", "PAGEABLE_EAGER_WRITE_BLOCKED"),
+]
+if find_spec("pandas") is not None:
+    _SANDBOX_CASES.append(("_fixturePandasWrite", "PAGEABLE_EAGER_WRITE_BLOCKED"))
+
+
+@pytest.mark.parametrize(("attribute", "expectedCode"), _SANDBOX_CASES)
 def testSandboxBlocksNetworkPythonNativeAndDescendantWrites(
     tmp_path,
     monkeypatch,

@@ -5377,7 +5377,7 @@ class Company:
         AIContext:
             동종 비교 시 sector (11 대) 보다 chain stage 가 더 정밀 - AI 가 peer 선정에 본 함수 활용.
         """
-        from dartlab.industry.product import companyIndustryResult
+        from dartlab.industry.calcs.companyCalcs import companyIndustryResult
 
         return companyIndustryResult(self)
 

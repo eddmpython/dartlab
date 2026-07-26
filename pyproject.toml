@@ -49,17 +49,17 @@ classifiers = [
     "Typing :: Typed",
 ]
 dependencies = [
-    # core (pyodide 호환 — polars, numpy, bs4, lxml은 pyodide 빌트인)
+    # core (pyodide 호환 - polars, numpy, bs4, lxml은 pyodide 빌트인)
     # core
     "beautifulsoup4>=4.14.3,<5",
     "diff-match-patch>=20230430",
     "openpyxl>=3.1.5,<4",
-    # C 확장 — 일반: PyPI, pyodide: 빌트인 (버전 무관)
+    # C 확장 - 일반: PyPI, pyodide: 빌트인 (버전 무관)
     "lxml>=6.0.2,<7; sys_platform != 'emscripten'",
     "lxml; sys_platform == 'emscripten'",
     "polars>=1.0.0,<2; sys_platform != 'emscripten'",
     "polars; sys_platform == 'emscripten'",
-    # M6: cross-company × multi-table aggregation 의 OOC god mode — Polars
+    # M6: cross-company × multi-table aggregation 의 OOC god mode - Polars
     # LazyFrame ↔ DuckDB relation Arrow zero-copy. 환경변수
     # DARTLAB_CROSS_SCAN_ENGINE=duckdb 또는 large dataset 검출 시 자동 fallback.
     "duckdb>=1.0,<2; sys_platform != 'emscripten'",
@@ -81,16 +81,13 @@ dependencies = [
     "fastapi>=0.135.1,<1; sys_platform != 'emscripten'",
     "uvicorn[standard]>=0.30.0,<1; sys_platform != 'emscripten'",
     "sse-starlette>=2.0.0,<4; sys_platform != 'emscripten'",
-    "mcp[cli]>=1.0,!=1.27.1,<1.28.2; sys_platform != 'emscripten'",  # 1.27.1 Linux wheel 의 mcp.server namespace 회귀 — CI Fast 차단 (2026-05-17)
+    "mcp[cli]>=1.0,!=1.27.1,<1.28.2; sys_platform != 'emscripten'",  # 1.27.1 Linux wheel 의 mcp.server namespace 회귀 - CI Fast 차단 (2026-05-17)
     "qrcode>=7.0,<9; sys_platform != 'emscripten'",
     "PyYAML>=6.0.0,<7; sys_platform != 'emscripten'",
     # viz
     "plotly>=5.0.0,<7; sys_platform != 'emscripten'",
     # Universe local checkpoint canonical JSON codec
     "msgspec>=0.21.1,<1; sys_platform != 'emscripten'",
-    # marimo(노트북 프레임워크)는 pyodide 데이터분석 wheel 에 불필요. transitive msgspec(순수휠 없음)이
-    # micropip.install(wheel) 을 깨뜨린다. 다른 서버/AI dep 과 동일하게 emscripten 제외 (build.py strip 불요).
-    "marimo>=0.23.6; sys_platform != 'emscripten'",
 ]
 
 [project.scripts]
@@ -112,7 +109,7 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/dartlab"]
-# include 는 .gitignore 규칙을 override — CI 에서 python -m build 가 .gitignore 의
+# include 는 .gitignore 규칙을 override - CI 에서 python -m build 가 .gitignore 의
 # 'data/' 루트-미지정 패턴에 걸려 src/dartlab/*/data/ 를 wheel 에서 빠뜨리는
 # packaging 사고 방어. artifacts 만으로는 불충분함이 실증됨 (2026-04-19).
 include = [
@@ -171,7 +168,7 @@ exclude = ["experiments", "*/_reference"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I"]
-# F401 = unused import — __init__.py 의 의도적 re-export 패턴이 dartlab 전반에 다수 (camelCase codemod 후 더 늘어남).
+# F401 = unused import - __init__.py 의 의도적 re-export 패턴이 dartlab 전반에 다수 (camelCase codemod 후 더 늘어남).
 # 진짜 unused import 는 deptry / vulture 가 catch.
 ignore = ["E402", "E501", "E741", "F841", "F401"]
 
@@ -180,55 +177,55 @@ testpaths = ["tests"]
 python_files = ["test_*.py", "test*.py", "bench_*.py", "bench*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*", "test*"]
-addopts = "-v --tb=short"
+addopts = "-v --tb=short --import-mode=importlib"
 asyncio_mode = "auto"
-# Hypothesis ghostwriter draft 폴더는 자동 수집 제외 — 명시 호출 시에만 실행.
+# Hypothesis ghostwriter draft 폴더는 자동 수집 제외 - 명시 호출 시에만 실행.
 # (`tests/_drafts/` 안 fuzz draft 는 사용자 review 후 정식 위치로 이동.)
 # pytest default (`*.egg .* CVS _darcs {arch} dist node_modules venv`) + `_drafts` 추가.
 norecursedirs = ["*.egg", ".*", "CVS", "_darcs", "{arch}", "dist", "node_modules", "venv", "_drafts"]
 markers = [
     "requires_data: 로컬 parquet 데이터 필요 (CI에서 skip)",
-    "unit: 순수 로직/mock만 — 데이터 로드 없음, 병렬 안전",
-    "integration: Company 1개 로딩 필요 — 중간 무게",
-    "heavy: 대량 데이터 로드 — 단독 실행 필수",
-    "realData: 엔진별 실제 데이터 스모크 — HF parquet + 실제 파이프라인 실행 (schema drift/silent None 방어)",
+    "unit: 순수 로직/mock만 - 데이터 로드 없음, 병렬 안전",
+    "integration: Company 1개 로딩 필요 - 중간 무게",
+    "heavy: 대량 데이터 로드 - 단독 실행 필수",
+    "realData: 엔진별 실제 데이터 스모크 - HF parquet + 실제 파이프라인 실행 (schema drift/silent None 방어)",
     "freshInstall: 빈 캐시 → 자동 다운로드 경로 검증 (외부 사용자 첫 호출 시나리오)",
-    "network: 외부 HTTP API 호출 (HF/DART/EDGAR/FRED) — transient 실패 재시도 대상",
-    "slow: 실행 30초 이상 — PR fast path 에서 제외",
+    "network: 외부 HTTP API 호출 (HF/DART/EDGAR/FRED) - transient 실패 재시도 대상",
+    "slow: 실행 30초 이상 - PR fast path 에서 제외",
     # flaky 는 pytest-rerunfailures 가 설치된 환경에서 작동. 미설치 환경에선 무시.
-    # 미등록 시 PytestUnknownMarkWarning — 본 항목으로 warning 차단.
+    # 미등록 시 PytestUnknownMarkWarning - 본 항목으로 warning 차단.
     "flaky: transient 실패 자동 재시도 (pytest-rerunfailures)",
-    # ghostwriter 자동 생성 draft (사용자 review 전) — `tests/_drafts/` 안 한정.
-    "draft: Hypothesis ghostwriter 자동 draft — 정식 위치 이동 전 시범 검증",
-    # AI agent eval — LLM 호출 + judge 채점. 운영자 트리거 또는 nightly.
+    # ghostwriter 자동 생성 draft (사용자 review 전) - `tests/_drafts/` 안 한정.
+    "draft: Hypothesis ghostwriter 자동 draft - 정식 위치 이동 전 시범 검증",
+    # AI agent eval - LLM 호출 + judge 채점. 운영자 트리거 또는 nightly.
     "eval: AI agent LLM 출력 회귀 (외부 API 호출, 비용 발생)",
     # mutation testing 메타 마커.
-    "mutation: mutmut 대상 표시 — 잘못된 mutant 가 잡혀야 통과",
-    # metamorphic — 변환 후 보존 속성 검증 (수치 분석에 oracle 부재 시).
+    "mutation: mutmut 대상 표시 - 잘못된 mutant 가 잡혀야 통과",
+    # metamorphic - 변환 후 보존 속성 검증 (수치 분석에 oracle 부재 시).
     "metamorphic: 변환 후 속성 보존 (ranking shift, 단위 변환, 통화 환산)",
-    # vcr — record-replay 카세트 사용 (외부 HTTP mock).
+    # vcr - record-replay 카세트 사용 (외부 HTTP mock).
     "vcr: HTTP record-replay 카세트 사용 (네트워크 없이 회귀 검증)",
-    # Phase A — ETL 단계 검증 (parquet row group sort + IPC mirror 빌더).
+    # Phase A - ETL 단계 검증 (parquet row group sort + IPC mirror 빌더).
     "etl: ETL 산출물 검증 (parquet row group 메타, IPC mirror 동기성)",
-    # Phase B/D — 메모리 회귀 가드 (RSS 측정).
-    "memory: RSS 회귀 가드 — Company 1개 분석 시 peak RSS 검증",
-    # T3-3 — pytest-xdist serial 강제. Company / OOM 위험 테스트는 단일 worker 에서만.
+    # Phase B/D - 메모리 회귀 가드 (RSS 측정).
+    "memory: RSS 회귀 가드 - Company 1개 분석 시 peak RSS 검증",
+    # T3-3 - pytest-xdist serial 강제. Company / OOM 위험 테스트는 단일 worker 에서만.
     "serial: pytest-xdist 병렬 제외 (Company 인스턴스 / Polars 힙 OOM 위험 / 전역 상태 변경)",
-    # 마스터 플랜 v2 트랙 7 PR-M5 — MCP 출시 자동 smoke. CI Fast 에 등록.
-    "mcpDogfood: MCP 출시 가드 — stdio + Streamable HTTP transport 통합 dispatch 검증",
+    # 마스터 플랜 v2 트랙 7 PR-M5 - MCP 출시 자동 smoke. CI Fast 에 등록.
+    "mcpDogfood: MCP 출시 가드 - stdio + Streamable HTTP transport 통합 dispatch 검증",
 ]
 
 # ════════════════════════════════════════════════════════════════════
-# Mutation testing (mutmut) — Track 5
+# Mutation testing (mutmut) - Track 5
 # ────────────────────────────────────────────────────────────────────
 # 부분 적용: Polars/numpy native 호출 비중 큰 모듈은 mutant 의미 없음 (core/ 외 제외).
 # 실행: uv run mutmut run    # 약 30-60 분
 # 결과: uv run mutmut results
 # 목표: mutation score ≥ 80%
 [tool.mutmut]
-# T6-2 — paths 3 → 12 → 30 확장. 1.0.0 게이트 30 모듈 mutation score ≥ 80%.
+# T6-2 - paths 3 → 12 → 30 확장. 1.0.0 게이트 30 모듈 mutation score ≥ 80%.
 paths_to_mutate = [
-    # core/ — 기존 + sprint 보강 (7)
+    # core/ - 기존 + sprint 보강 (7)
     "src/dartlab/core/formatting.py",
     "src/dartlab/core/cache.py",
     "src/dartlab/core/naming/__init__.py",
@@ -241,42 +238,42 @@ paths_to_mutate = [
     "src/dartlab/core/credentialLifecycle.py",
     "src/dartlab/core/plugins.py",
     "src/dartlab/core/ratios.py",
-    # analysis/ — 재무 계산 (확장 4)
+    # analysis/ - 재무 계산 (확장 4)
     "src/dartlab/analysis/ratios.py",
     "src/dartlab/analysis/cashflow.py",
     "src/dartlab/analysis/financial/ratios.py",
     "src/dartlab/analysis/growth.py",
-    # credit/ — Z-score + zone (3)
+    # credit/ - Z-score + zone (3)
     "src/dartlab/credit/altman.py",
     "src/dartlab/credit/beneish.py",
     "src/dartlab/credit/zone.py",
-    # quant/ — factor + portfolio (3)
+    # quant/ - factor + portfolio (3)
     "src/dartlab/quant/factors.py",
     "src/dartlab/quant/foreignFlow.py",
     "src/dartlab/quant/portfolio/mapping.py",
-    # macro/ — cycle + sector (2)
+    # macro/ - cycle + sector (2)
     "src/dartlab/macro/cycle.py",
     "src/dartlab/macro/sectorRotation.py",
-    # industry/ — peer + momentum (2)
+    # industry/ - peer + momentum (2)
     "src/dartlab/industry/peerMatrix.py",
     "src/dartlab/industry/sectorMomentum.py",
-    # scan/ — top recipe (3)
+    # scan/ - top recipe (3)
     "src/dartlab/scan/foreignFlow.py",
     "src/dartlab/scan/scanRatio.py",
     "src/dartlab/scan/disclosure.py",
-    # synth/ — scenario (1)
+    # synth/ - scenario (1)
     "src/dartlab/synth/scenarioMatch.py",
     # mappers / reference (1)
     "src/dartlab/reference/mapper.py",
 ]
 tests_dir = "tests/"
 runner = "uv run python -X utf8 -m pytest -x -m unit --no-cov -q"
-# CI 통합은 주간 cron — 매 PR fail gate 는 아님 (시간 비용 큼).
-# 신규 path 가 존재하지 않는 경우 mutmut 가 skip — pyproject 가 ground truth.
+# CI 통합은 주간 cron - 매 PR fail gate 는 아님 (시간 비용 큼).
+# 신규 path 가 존재하지 않는 경우 mutmut 가 skip - pyproject 가 ground truth.
 
 [tool.coverage.run]
 source = ["dartlab"]
-# omit — coverage 90% 의 "90%" 는 "business logic 기준" 이 되도록 thin boundary /
+# omit - coverage 90% 의 "90%" 는 "business logic 기준" 이 되도록 thin boundary /
 # rendering / external-adapter / experimental 코드를 제외. 이 코드들은 realData
 # smoke + wheel-smoke + integration 테스트로 간접 검증되거나 테스트 ROI 가 낮음.
 omit = [
@@ -284,40 +281,40 @@ omit = [
     "src/dartlab/engines/ai/providers/*",
     "src/dartlab/review/*",
 
-    # CLI — 얕은 argparse 래퍼. cli_e2e.py 가 핵심 경로 커버.
+    # CLI - 얕은 argparse 래퍼. cli_e2e.py 가 핵심 경로 커버.
     "src/dartlab/cli/commands/*",
     "src/dartlab/cli/main.py",
     "src/dartlab/cli/parser.py",
     "src/dartlab/cli/rendering.py",
     "src/dartlab/cli/services/*",
 
-    # 서버 API — HTTP 핸들러, realData end-to-end 로 간접 검증.
+    # 서버 API - HTTP 핸들러, realData end-to-end 로 간접 검증.
     "src/dartlab/server/api/*",
     "src/dartlab/server/web.py",
 
-    # 외부 API 클라이언트 — 네트워크 의존, 모킹 ROI 낮음.
+    # 외부 API 클라이언트 - 네트워크 의존, 모킹 ROI 낮음.
     "src/dartlab/providers/dart/openapi/*",
     "src/dartlab/providers/edgar/openapi/*",
     "src/dartlab/providers/edinet/openapi/*",
 
-    # 메신저 어댑터 — Slack/Telegram/Discord SDK 모킹 ROI 낮음.
+    # 메신저 어댑터 - Slack/Telegram/Discord SDK 모킹 ROI 낮음.
     "src/dartlab/channel/adapters/*",
     "src/dartlab/channel/devtunnel.py",
 
-    # 시각화 — Plotly/차트 렌더링, snapshot 테스트 영역.
+    # 시각화 - Plotly/차트 렌더링, snapshot 테스트 영역.
     "src/dartlab/viz/charts/*",
     "src/dartlab/viz/generators.py",
     "src/dartlab/viz/plotly.py",
 
-    # 개발자 전용 — 사용자 미접근.
+    # 개발자 전용 - 사용자 미접근.
     "src/dartlab/ai/audit/*",
     "src/dartlab/mcp/*",
 
-    # 얕은 display/AI helper 래퍼 — great_tables/IPython 옵셔널.
+    # 얕은 display/AI helper 래퍼 - great_tables/IPython 옵셔널.
     "src/dartlab/viz/display/*",
     "src/dartlab/viz/network.py",
 
-    # 실험/레거시 — 사용 여부 재평가 필요, 현재 0% 모듈.
+    # 실험/레거시 - 사용 여부 재평가 필요, 현재 0% 모듈.
     "src/dartlab/analysis/financial/research/*",
     "**/_reference/*",
     "**/_backup/*",
@@ -331,7 +328,7 @@ exclude_lines = [
     "if __name__",
     "raise NotImplementedError",
 ]
-# Coverage ratchet — omit 확대 후 추정 41.5% 기준 40 에서 시작.
+# Coverage ratchet - omit 확대 후 추정 41.5% 기준 40 에서 시작.
 # 경로 B (strategic omit + business logic 집중 테스트) 진행 중.
 # 단계 계획: 40 → 50 → 60 → 70 → 80 → 90 (omitted-adjusted). PR 마다 하락 시 CI FAIL.
 # CI 에서 `pytest --cov-fail-under` 플래그로 실제 강제.
@@ -356,7 +353,7 @@ exclude_dirs = ["experiments", "tests"]
 skips = ["B101"]
 
 [tool.deptry]
-# 옵셔널 통합 의존성 — 사용자가 별도 설치할 때만 동작 (런타임 ImportError 가드 있음)
+# 옵셔널 통합 의존성 - 사용자가 별도 설치할 때만 동작 (런타임 ImportError 가드 있음)
 extend_exclude = [
     "src/dartlab/.*/_reference/.*",  # 학습/실험 코드, 런타임 미사용
 ]
@@ -389,9 +386,9 @@ dev = [
     "build>=1.4.0",
     "hatchling>=1.29.0",
     "hypothesis>=6.100.0",
-    "import-linter>=2.0",  # tests/audit/cycleScan.py + pyproject [tool.importlinter] — 레이어 단방향 강제 (P0 가드)
+    "import-linter>=2.0",  # tests/audit/cycleScan.py + pyproject [tool.importlinter] - 레이어 단방향 강제 (P0 가드)
     "libcst>=1.8.6",
-    "networkx[default]>=3.0",  # scripts/build/buildIndustryMap.py — Kamada-Kawai+PageRank (default extra: scipy 포함)
+    "networkx[default]>=3.0",  # scripts/build/buildIndustryMap.py - Kamada-Kawai+PageRank (default extra: scipy 포함)
     "pillow>=12.1.1",
     "pre-commit>=4.0.0",
     "pyright>=1.1.0",
@@ -399,17 +396,17 @@ dev = [
     "pytest-asyncio>=0.24.0",
     "pytest-benchmark>=5.0.0",
     "pytest-cov>=6.0.0",
-    "syrupy>=4.7.0",  # CLI 출력 (rich Console export_text) snapshot 동결 — 본 SSOT 통합 acceptance test
+    "syrupy>=4.7.0",  # CLI 출력 (rich Console export_text) snapshot 동결 - 본 SSOT 통합 acceptance test
     "pandera[polars]>=0.29.0,!=0.32.0,<0.33",  # raw finance/report/docs frame 계약. gather endpoint silent drift 차단. 0.32.0 만 배제: polars 백엔드가 pa.Field(isin=...) 빌트인 체크를 등록하지 않아 class 정의 시점에 KeyError. 0.32.1 에서 수정 확인(2026-07-10 실측).
-    "mutmut>=3.0.0",  # mutation testing — "테스트가 깨진 코드 잡나" 측정. core/ 한정 (Polars native 모듈 제외).
-    "vcrpy>=6.0.0",  # HTTP record-replay — providers/dart, providers/edgar 외부 호출 회귀.
+    "mutmut>=3.0.0",  # mutation testing - "테스트가 깨진 코드 잡나" 측정. core/ 한정 (Polars native 모듈 제외).
+    "vcrpy>=6.0.0",  # HTTP record-replay - providers/dart, providers/edgar 외부 호출 회귀.
     "radon>=6.0.0",
     "rope>=1.14.0",
     "vulture>=2.0",
 ]
 
 # ════════════════════════════════════════════════════════════════════
-# Import-linter — 레이어 단방향 강제 + L2 양방향 cycle 차단 (P0 가드)
+# Import-linter - 레이어 단방향 강제 + L2 양방향 cycle 차단 (P0 가드)
 # ────────────────────────────────────────────────────────────────────
 # 정책 SSOT: src/dartlab/skills/specs/operation/architecture.md
 #   1. 상하 단방향: L0 ← L1 ← L1.5 ← L2 ← L2.5 dataHub ← L3 ← L4 (이 contract)
@@ -420,12 +417,12 @@ dev = [
 [tool.importlinter]
 root_package = "dartlab"
 
-# F4 강행 — contract 활성화 + 핵심 chain link 8 곳 importlib 변환.
+# F4 강행 - contract 활성화 + 핵심 chain link 8 곳 importlib 변환.
 # 잔존 위반 은 후속 0.10.x 에서 점진 inversion. 본 phase 는 가드 활성 + 기반 정리.
-# CI fast 의 lint-imports step 은 continue-on-error(`|| pass`) — *의도된 advisory* (숨은 fail 아님).
+# CI fast 의 lint-imports step 은 continue-on-error(`|| pass`) - *의도된 advisory* (숨은 fail 아님).
 # 레이어 단방향의 blocking SSOT = `tests/audit/dartlabGuard.py`(architecture-l0-l15 게이트, strict) +
 # `cycleScan.py` + `tests/architecture/test_l2|l15_no_cross_import`(P1-7 에서 importlib 동적 import
-# 탐지 추가). import-linter 는 transitive 가시화 보조 — 이중 가드라 advisory 유지가 정합.
+# 탐지 추가). import-linter 는 transitive 가시화 보조 - 이중 가드라 advisory 유지가 정합.
 # (debt-honesty P1-6 결정: blocking 전환 대신 advisory 명시 + stale ignore 정정)
 
 # ── Contract 1: 상하 layer 단방향 (L2 는 exhaustive=false 로 제외, 별도 forbidden)
@@ -441,7 +438,7 @@ layers = [
     "dartlab.core",
 ]
 exhaustive = false  # L2 5 엔진은 이 contract 에서 무시 (sibling 단방향 허용)
-ignore_imports = []  # 후속 정리 — 진행하며 한 줄씩 비움
+ignore_imports = []  # 후속 정리 - 진행하며 한 줄씩 비움
 
 # ── Contract 1b: L0~L1.5 완료 게이트 전용 (tests/architecture 와 동일 범위)
 [[tool.importlinter.contracts]]
@@ -456,7 +453,7 @@ exhaustive = false
 ignore_imports = []
 
 # ── Contract 2: L2 가 상위 (L3/L4) import 금지 (direct only)
-# allow_indirect_imports: true — direct 만 차단. transitive 는 root facade 정공법 D
+# allow_indirect_imports: true - direct 만 차단. transitive 는 root facade 정공법 D
 # (dartlab/__init__.py 의 PEP 562 lazy + function-local import) 의 본질이라 도구 검사 외.
 [[tool.importlinter.contracts]]
 name = "L2 must not import L3/L4"
@@ -478,7 +475,7 @@ forbidden_modules = [
 allow_indirect_imports = true
 ignore_imports = []
 
-# ── Contract 3: L2 가 하위 (L1.5/L1) 우회 import 금지 — L2 는 L0 만 직접 import (direct only)
+# ── Contract 3: L2 가 하위 (L1.5/L1) 우회 import 금지 - L2 는 L0 만 직접 import (direct only)
 [[tool.importlinter.contracts]]
 name = "L2 must not import L1.5/L1"
 type = "forbidden"
@@ -494,7 +491,7 @@ forbidden_modules = [
     "dartlab.gather",
 ]
 allow_indirect_imports = true
-# 빌더/raw 데이터 접근 예외 — CLAUDE.md 표 "L1 직접 import 는 L1.5 에 없는 raw 가 필요할 때만 예외" 에 해당.
+# 빌더/raw 데이터 접근 예외 - CLAUDE.md 표 "L1 직접 import 는 L1.5 에 없는 raw 가 필요할 때만 예외" 에 해당.
 # industry/build 산업지도 빌더, quant alphas/factor/benchmark/screen/regime/signal 의 HF bulk + krx listing
 # 등 raw 데이터 접근. frame/synth facade 확장 별도 트랙으로 점진 이전.
 ignore_imports = [
@@ -514,7 +511,7 @@ ignore_imports = [
     "dartlab.quant.signal.flow -> dartlab.gather.entry",
     "dartlab.analysis.valuation.fitness -> dartlab.scan.builders.kr.extended",
     # _signalsCorporate: Scan facade + invest-edge raw 접근 (L2→L1.5 합법, CLAUDE.md 허용).
-    # Contract 3(L2 는 L0 만 직접) 가 facade 접근까지 과엄격 flag — 기존 예외와 동류. (debt-honesty P1-6)
+    # Contract 3(L2 는 L0 만 직접) 가 facade 접근까지 과엄격 flag - 기존 예외와 동류. (debt-honesty P1-6)
     "dartlab.analysis.financial._signalsCorporate -> dartlab.scan",
     "dartlab.analysis.financial._signalsCorporate -> dartlab.scan.network.edges",
 ]

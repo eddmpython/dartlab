@@ -1,7 +1,7 @@
-"""capability 카탈로그 라이브 빌더 — 엔진 docstring/registry introspect → 런타임 dict.
+"""capability 카탈로그 라이브 빌더 - 엔진 docstring/registry introspect → 런타임 dict.
 
 ``loadCapabilities()`` 가 스킬엔진(EngineCall · ReadCapability · 검색) 첫 조회 시 docstring 소스에서
-1 회 빌드(프로세스 캐시)한다. **사본(생성 파일) 없음** — docstring 이 유일 진실
+1 회 빌드(프로세스 캐시)한다. **사본(생성 파일) 없음** - docstring 이 유일 진실
 (operation.code §"CAPABILITIES 단일 진실의 원천"), drift 표면 0. cold ~0.5s · warm ~18ms.
 
 산출 (라이브, 캐시):
@@ -44,7 +44,7 @@ def _parseDocstringSections(doc: str | None) -> dict[str, str]:
 
     for line in doc.split("\n"):
         stripped = line.strip()
-        # NumPy style 구분선 ("-------") — 이전 섹션 헤더의 일부이므로 skip
+        # NumPy style 구분선 ("-------") - 이전 섹션 헤더의 일부이므로 skip
         if stripped and all(c == "-" for c in stripped):
             continue
         # "SectionName:" (Google) 또는 "SectionName" 단독 줄 (NumPy) 매칭
@@ -66,7 +66,7 @@ def _parseDocstringSections(doc: str | None) -> dict[str, str]:
             elif stripped:
                 currentLines.append(stripped)
             elif currentLines:
-                # 빈 줄 — 블록 종료가 아님 (다음 섹션이 나올 때까지)
+                # 빈 줄 - 블록 종료가 아님 (다음 섹션이 나올 때까지)
                 currentLines.append("")
 
     # 마지막 섹션 저장
@@ -94,8 +94,8 @@ def _parseLLMSpecs(value: str | None) -> dict[str, Any]:
             - 분기 데이터인데 monthly average 비교
             - 한국 회사에 미국 GAAP 가정
         OutputSchema:
-            - 자산총계 : float — BS 자산 총계 (원)
-            - 자본총계 : float — BS 자본 총계 (원)
+            - 자산총계 : float - BS 자산 총계 (원)
+            - 자본총계 : float - BS 자본 총계 (원)
         Freshness:
             분기마감 후 45일 (DART 공시 마감)
         ...
@@ -182,7 +182,8 @@ def _parseAiContract(value: str | None) -> dict[str, Any]:
 
 
 _RETURN_FIELD_RE = re.compile(
-    r"^(?P<indent>\s*)(?P<name>[^:\n]{1,120})\s*:\s*(?P<type>[^—\-\n]+)(?:[—-]\s*(?P<desc>.*))?$"
+    r"^(?P<indent>\s*)(?P<name>[^:\n]{1,120})\s*:\s*(?P<type>[^\u2014\u2013\-\n]+)"
+    r"(?:[\u2014\u2013-]\s*(?P<desc>.*))?$"
 )
 _RETURN_UNIT_RE = re.compile(r"\((?P<unit>%|원|백만원|천원|달러|USD|KRW|일|배|점|건|주|명|개|회|년|월|분기|bps|pp)\)")
 
@@ -191,7 +192,7 @@ def _parseReturnsSchema(value: str | None) -> list[dict[str, Any]]:
     """Parse Returns text into a machine-readable field schema.
 
     The docstring remains the SSOT. This parser only compiles the existing
-    `key : type — description (unit)` convention into generated metadata.
+    `key : type - description (unit)` convention into generated metadata.
     """
     if not value:
         return []
@@ -271,7 +272,7 @@ def _applyAiContract(entry: dict[str, Any], sections: dict[str, str]) -> None:
 # ─── 런타임 capability 카탈로그 생성 ──────────────────────────
 
 
-# axis-engine 라이브 축 레지스트리 — 모듈 이동 추종 (AST-소스 의존 0, install-robust).
+# axis-engine 라이브 축 레지스트리 - 모듈 이동 추종 (AST-소스 의존 0, install-robust).
 # gather 표준(engine(axis, target)) 전 엔진을 {engine}.{axis} 로 카탈로그 등록.
 from dartlab.reference.capability.dataProducts import axisRegistryTargets
 
@@ -290,6 +291,21 @@ _AXIS_IGNORE_FIELDS: frozenset[str] = frozenset(
         "axis",  # credit 전용. "{prefix}.{axis}" 키와 중복
     }
 )
+
+
+def _jsonSafeDeclaredValue(value: Any) -> Any:
+    """선언 값을 JSON 소비처가 받을 수 있는 형태로 보존한다."""
+    if value is None or isinstance(value, (str, bool, int, float)):
+        return value
+    if dataclasses.is_dataclass(value) and not isinstance(value, type):
+        return {
+            field.name: _jsonSafeDeclaredValue(getattr(value, field.name, None)) for field in dataclasses.fields(value)
+        }
+    if isinstance(value, (list, tuple)):
+        return [_jsonSafeDeclaredValue(item) for item in value]
+    if isinstance(value, dict):
+        return {str(key): _jsonSafeDeclaredValue(item) for key, item in value.items()}
+    return str(value)
 
 
 def _declaredAxisFields(entry: Any) -> dict[str, Any]:
@@ -320,8 +336,7 @@ def _declaredAxisFields(entry: Any) -> dict[str, Any]:
         value = getattr(entry, field.name, None)
         if value is None:  # 미선언. 0/False 로 대체 금지
             continue
-        if isinstance(value, (str, bool, int, float)):
-            declared[field.name] = value
+        declared[field.name] = _jsonSafeDeclaredValue(value)
     return declared
 
 
@@ -347,9 +362,10 @@ def _injectAxisRegistriesLive(entries: dict[str, dict[str, Any]]) -> None:
             continue
         for axisName, entry in registry.items():
             axisEntry: dict[str, Any] = {"kind": f"{prefix}_axis"}
-            if label := getattr(entry, "label", None):
-                axisEntry["summary"] = str(label)
-            if description := getattr(entry, "description", None):
+            label = getattr(entry, "label", None)
+            description = getattr(entry, "description", None)
+            axisEntry["summary"] = str(label or description or axisName)
+            if description:
                 axisEntry["capabilities"] = str(description)
             if declared := _declaredAxisFields(entry):
                 axisEntry["declared"] = declared
@@ -644,7 +660,7 @@ def buildCapabilities() -> dict[str, Any]:
     """런타임 capabilities 카탈로그 dict 를 docstring 소스에서 라이브 빌드.
 
     ``__all__`` 함수 + Company 메서드 + scan/macro/gather 축 레지스트리를 하나의 dict 로.
-    사본(``_generated.py``) 없이 매 프로세스 첫 조회 시 1 회 빌드(loader 가 캐시) — docstring 이
+    사본(``_generated.py``) 없이 매 프로세스 첫 조회 시 1 회 빌드(loader 가 캐시) - docstring 이
     유일 진실(operation.code §"CAPABILITIES 단일 진실의 원천"), drift 표면 0.
     """
     import dartlab
@@ -747,7 +763,7 @@ def buildCapabilities() -> dict[str, Any]:
         _applyAiContract(entry, sections)
         entries[f"Company.{memberName}"] = entry
 
-    # 3~6) scan/macro/gather 축 레지스트리 — 라이브 객체 introspection (install-robust,
+    # 3~6) scan/macro/gather 축 레지스트리 - 라이브 객체 introspection (install-robust,
     # AST-소스파싱 X). 레지스트리가 모듈 이동해도 추종한다 (옛 AST 는 _AXIS_REGISTRY 가
     # scan/__init__→router 로 이동하며 scan 19 축을 조용히 누락하던 버그).
     _injectAxisRegistriesLive(entries)
@@ -758,7 +774,7 @@ def buildCapabilities() -> dict[str, Any]:
 
 @lru_cache(maxsize=1)
 def loadCapabilities() -> dict[str, Any]:
-    """capability 카탈로그 — docstring 소스에서 라이브 빌드 (프로세스당 1 회 캐시).
+    """capability 카탈로그 - docstring 소스에서 라이브 빌드 (프로세스당 1 회 캐시).
 
     스킬엔진(EngineCall/ReadCapability/검색)이 처음 조회할 때 1 회 빌드하고 캐시한다.
     사본(``_generated.py``) 없음 → drift 불가, 항상 현재 docstring 진실. cold ~0.5s, warm ~18ms.
@@ -768,5 +784,5 @@ def loadCapabilities() -> dict[str, Any]:
 
 @lru_cache(maxsize=1)
 def loadAnalysisGraph() -> dict[str, Any]:
-    """analysisGraph — capability 카탈로그에서 라이브 컴파일 (프로세스당 1 회 캐시)."""
+    """analysisGraph - capability 카탈로그에서 라이브 컴파일 (프로세스당 1 회 캐시)."""
     return _buildAnalysisGraph(loadCapabilities())

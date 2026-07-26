@@ -1,4 +1,4 @@
-"""F1 강행 — credit/ 폴더 구조 회귀 방지.
+"""F1 강행 - credit/ 폴더 구조 회귀 방지.
 
 credit/ 평면 18 파일이 4 서브폴더 (scoring/models/monitoring/features) 로
 정리됐다. 본 테스트는 평면 회귀 (서브폴더 우회 import) 를 차단한다.
@@ -19,7 +19,9 @@ CREDIT = Path(__file__).resolve().parent.parent.parent / "src" / "dartlab" / "cr
 
 ROOT_ALLOWED: set[str] = {
     "__init__.py",
+    "dataProduct.py",
     "engine.py",
+    "product.py",
     "_engineConfig.py",
     "_engineNotch.py",
     "_engineCHS.py",

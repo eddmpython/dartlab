@@ -5,7 +5,7 @@ kind: curated
 scope: builtin
 status: observed
 category: engines
-purpose: Company 엔진은 종목코드 하나를 target으로 고정하고 재무, 공시, 검색, 분석, 신용, 수집, 퀀트, 매크로, 스토리, 산업 연결을 제공하는 facade 실행 스킬이다. 트리거 — '회사 분석', '단일 기업', '005930', 'Company.panel'.
+purpose: Company 엔진은 종목코드 하나를 target으로 고정하고 재무, 공시, 검색, 분석, 신용, 수집, 퀀트, 매크로, 스토리, 산업 연결을 제공하는 facade 실행 스킬이다. 트리거 - '회사 분석', '단일 기업', '005930', 'Company.panel'.
 whenToUse:
   - Company
   - company
@@ -97,7 +97,7 @@ examples:
 procedure:
   - dartlab.Company(code) 로 종목코드 또는 ticker 로 facade 생성.
   - 정식 topic 은 IS · BS · CF · CIS · SCE · ratios. 주석은 섹션명으로 검색.
-  - c.panel(topic) 으로 단일 topic 본문 (source priority — finance > report > docs).
+  - c.panel(topic) 으로 단일 topic 본문 (source priority - finance > report > docs).
   - 깊이 분석은 c.analysis · c.credit · c.quant · c.macro · c.story 같은 하위 엔진.
   - 답변에 target · period · topic · tableRef · valueRef · dateRef · executionRef 묶음.
 linkedSkills:
@@ -148,10 +148,10 @@ industry = c.industry()
 
 단일 종목 질문은 본 엔진이 1 차 진입점. 다음 4 룰 강행:
 
-1. **`EngineCall(apiRef="Company.panel", args={"stockCode": "...", "topic": "..."})` 1 회로 다수 답변 가능** — 응답 `data` dict 에 `dcrBadge` (Track G 7 축 신용) + `industryBadge` (Track E 산업/lifecycle/peers) 자동 부착. 신용·산업 질문은 추가 EngineCall 불필요.
-2. **본문 안 숫자 / 점수 / 등급 / peers 명에 inline ref 표기 필수** — tool result 의 `refs` 배열에 들어온 id 그대로 `table:Company.panel:005930` 또는 `tableRef:id` literal 로 표기한다.
-3. **다중 종목 비교는 `PeerCompareN` 1 회 강제** (2~12 종목) — Company.panel 를 N 회 반복 호출 + RunPython 정렬 패턴 금지. 메모리 압박 + refs 가치체인 약화.
-4. **RunPython 직접 BS/IS/CF 비율 계산 금지** — Company.panel 결과의 `dcrBadge.axes` (7 축 신용) 또는 Company.analysis 결과의 `items` / `history` 인용. 같은 비율 재계산은 raw fallback 만.
+1. **`EngineCall(apiRef="Company.panel", args={"stockCode": "...", "topic": "..."})` 1 회로 다수 답변 가능** - 응답 `data` dict 에 `dcrBadge` (Track G 7 축 신용) + `industryBadge` (Track E 산업/lifecycle/peers) 자동 부착. 신용·산업 질문은 추가 EngineCall 불필요.
+2. **본문 안 숫자 / 점수 / 등급 / peers 명에 inline ref 표기 필수** - tool result 의 `refs` 배열에 들어온 id 그대로 `table:Company.panel:005930` 또는 `tableRef:id` literal 로 표기한다.
+3. **다중 종목 비교는 `PeerCompareN` 1 회 강제** (2~12 종목) - Company.panel 를 N 회 반복 호출 + RunPython 정렬 패턴 금지. 메모리 압박 + refs 가치체인 약화.
+4. **RunPython 직접 BS/IS/CF 비율 계산 금지** - Company.panel 결과의 `dcrBadge.axes` (7 축 신용) 또는 Company.analysis 결과의 `items` / `history` 인용. 같은 비율 재계산은 raw fallback 만.
 
 ## 호출 동작
 
@@ -161,25 +161,25 @@ Company 생성 시 target과 market/provider를 확정한다. 이후 `panel/sele
 
 ### `c.panel()` 응답 data 의 자동 부착 필드 (단일 종목 답변의 1 차 진입점)
 
-`c.panel(topic)` 의 반환 dict (server agent/MCP 경유 시 `EngineCall(apiRef="Company.panel")` 결과의 `data`) 에는 원자료 외에 다음이 자동 부착된다 — 별도 도구 호출 없이 그대로 인용:
+`c.panel(topic)` 의 반환 dict (server agent/MCP 경유 시 `EngineCall(apiRef="Company.panel")` 결과의 `data`) 에는 원자료 외에 다음이 자동 부착된다 - 별도 도구 호출 없이 그대로 인용:
 
 | key | 내용 | 사용처 |
 | --- | --- | --- |
 | `dcrBadge.grade` · `dcrBadge.score` · `dcrBadge.healthScore` · `dcrBadge.outlook` | dCR 등급 + 위험/건전성 점수 + 전망 | 답변 헤더 chip · 신용 한 줄 결론 |
-| `dcrBadge.axes` | **7 축 완전 형태** — 각 항목 `{name, weight, score}` (채무상환 25w/X / 자본구조 20w/X / 유동성 15w/X / 현금흐름 15w/X / 사업안정성 10w/X / 재무신뢰성 10w/X / 공시 5w/X) | 7 축 약점 분해 — 추가 `c.credit()` 호출 불필요 |
+| `dcrBadge.axes` | **7 축 완전 형태** - 각 항목 `{name, weight, score}` (채무상환 25w/X / 자본구조 20w/X / 유동성 15w/X / 현금흐름 15w/X / 사업안정성 10w/X / 재무신뢰성 10w/X / 공시 5w/X) | 7 축 약점 분해 - 추가 `c.credit()` 호출 불필요 |
 | `dcrBadge.confidence` · `dcrBadge.confidenceMethod` | 신뢰도 (0-100, "ratio" 등) | `[conf:N]` chip |
 | `industryBadge.industryId` · `industryBadge.industryName` · `industryBadge.stageName` · `industryBadge.phase` | 산업 식별 + 라이프사이클 단계 (도입·성장·성숙·재도약·쇠퇴) | 답변 헤더 chip · 산업 맥락 |
 | `industryBadge.peers` | 같은 산업 노드의 동종 종목 list | 비교 후보 |
 
-**가드** — 7 축 점수가 `dcrBadge.axes` 에 *이미 있다*. "7 축 약점 / 점수 차이" 질문에 `EngineCall("credit")` 재호출 금지 (반환은 axis 가이드 metadata 만 — 실제 점수 아님). 약점 분해 양식: `약점 = weight × score 기여도`. 예: 재무신뢰성 10% × 25.0 = 2.50, 채무상환 25% × 6.77 = 1.69.
+**가드** - 7 축 점수가 `dcrBadge.axes` 에 *이미 있다*. "7 축 약점 / 점수 차이" 질문에 `EngineCall("credit")` 재호출 금지 (반환은 axis 가이드 metadata 만 - 실제 점수 아님). 약점 분해 양식: `약점 = weight × score 기여도`. 예: 재무신뢰성 10% × 25.0 = 2.50, 채무상환 25% × 6.77 = 1.69.
 
 ### stockCode resolve 실패 시 행동 (회복 절차)
 
-`c = dartlab.Company(code)` 가 코드 미발견 / 비상장 / 데이터셋 미수집 면 fail-fast — 같은 코드로 `c.panel / c.credit / c.analysis` 등 반복 호출 금지. 한 번 `company_not_resolved` 면 즉시 답변에 "데이터 없음" + 가능한 원인 (잘못된 6 자리 / 비상장 / 미수집) 명시. 회사명만 주어졌으면 `dartlab.Company.search("회사명")` 1 회로 코드 lookup 후 재시도, 그것도 fail 이면 멈춤.
+`c = dartlab.Company(code)` 가 코드 미발견 / 비상장 / 데이터셋 미수집 면 fail-fast - 같은 코드로 `c.panel / c.credit / c.analysis` 등 반복 호출 금지. 한 번 `company_not_resolved` 면 즉시 답변에 "데이터 없음" + 가능한 원인 (잘못된 6 자리 / 비상장 / 미수집) 명시. 회사명만 주어졌으면 `dartlab.Company.search("회사명")` 1 회로 코드 lookup 후 재시도, 그것도 fail 이면 멈춤.
 
 ### dataAsOf freshness
 
-`c.panel()` / `c.analysis()` 결과의 `latestPeriod` (또는 `dataAsOf`) 가 *오늘* 기준 stale (예: 2 분기 이상 뒤) 일 수 있다. 정기보고서 공시 지연 / 분기 잠정실적 미반영 / fixture 환경 가능성. 답변 헤더 chip 옆에 `📅 데이터 as-of {latestPeriod}` 노출 권장 — 사용자가 "지금이 최신인가" 즉시 판단.
+`c.panel()` / `c.analysis()` 결과의 `latestPeriod` (또는 `dataAsOf`) 가 *오늘* 기준 stale (예: 2 분기 이상 뒤) 일 수 있다. 정기보고서 공시 지연 / 분기 잠정실적 미반영 / fixture 환경 가능성. 답변 헤더 chip 옆에 `📅 데이터 as-of {latestPeriod}` 노출 권장 - 사용자가 "지금이 최신인가" 즉시 판단.
 
 ## 전체 축/메서드 목록
 
@@ -188,7 +188,7 @@ Company 생성 시 target과 market/provider를 확정한다. 이후 `panel/sele
 | search/listing/resolve/codeName/status | 기업 식별/목록 | `dartlab.Company.search("삼성전자")` |
 | filings/disclosure/liveFilings/readFiling | 공시 목록/본문 | `c.filings()` |
 | rawFinance/rawReport | raw parquet 접근 | `c.rawFinance()` |
-| panel/select/trace/diff | 원자료 조회/추적/비교 | `c.panel("BS")` |
+| show/panel/select/trace/diff | 원자료 조회/추적/비교 | `c.panel("BS")` |
 | keywordTrend/news/watch | 텍스트/뉴스/감시 | `c.news()` |
 | story/validateStory/storyTree/narrativeDiff | 보고서/스토리 | `c.story()` |
 | reportModel | 전문 리포트 계약(thesis·섹션·pro 블록) | `c.reportModel("valuation")` |
@@ -231,7 +231,7 @@ tableRef, valueRef, dateRef, executionRef
 
 스킬은 공개 실행 문서다. Company 공개 메서드, 하위 엔진 연결, 대표 반환 형태가 바뀌면 이 파일과 관련 응용 스킬을 같은 변경에서 갱신한다.
 
-## 메모리 안전 — 다중 회사 loop
+## 메모리 안전 - 다중 회사 loop
 
 Polars = 네이티브 Rust 힙, `gc.collect()` 회수 불가, Company 1 개 ≈ 200~500MB. 다중 회사 loop 진입점은 매 iteration 끝에 `cleanupBetweenCompanies(label=...)` 호출 또는 `with Company(code) as c:` (context manager `__exit__` 자동 호출) 강행. 누락 시 OOM.
 
@@ -239,7 +239,7 @@ Polars = 네이티브 Rust 힙, `gc.collect()` 회수 불가, Company 1 개 ≈ 
 
 | 스크립트 | 룰 |
 |---|---|
-| `tests/audit/cleanupBetweenCompaniesCalls.py` | M8 — AST heuristic 으로 (1) `for x in <stockCodes\|codes\|tickers\|parquetFiles>:` 패턴 (2) body 안 `loadData()` / `Company()` 무거운 호출 (3) body 안 `cleanupBetweenCompanies(` 부재 — 세 조건 AND 시 violation. baseline `tests/audit/_baselines/cleanupCalls.json` 외만 fail |
+| `tests/audit/cleanupBetweenCompaniesCalls.py` | M8 - AST heuristic 으로 (1) `for x in <stockCodes\|codes\|tickers\|parquetFiles>:` 패턴 (2) body 안 `loadData()` / `Company()` 무거운 호출 (3) body 안 `cleanupBetweenCompanies(` 부재 - 세 조건 AND 시 violation. baseline `tests/audit/_baselines/cleanupCalls.json` 외만 fail |
 
 
 ---
@@ -320,7 +320,7 @@ view = c.panel("businessOverview")
 
 `company.finance` 는 사용자 capability 가 아니라 *Company 엔진 내부 sub-module* 이다. XBRL 표준 계정 매핑 + 주석 영역 6 sub-domain 파서를 묶어 단일 회사의 재무 시계열을 빌드한다. dartlab 공개 호출은 Company facade 경유.
 
-본 sub-spec 은 운영 SSOT — 파일 구조 · 6 sub-domain 책임 · 검증 결과 · 매핑 사이클을 한 곳에서 관리.
+본 sub-spec 은 운영 SSOT - 파일 구조 · 6 sub-domain 책임 · 검증 결과 · 매핑 사이클을 한 곳에서 관리.
 
 ## 공개 호출 방식
 
@@ -328,7 +328,7 @@ view = c.panel("businessOverview")
 import dartlab
 
 with dartlab.Company("005930") as c:
-    # 시계열 (분기 / 연도 / 누적) — Plan v10: c.panel 단일 진입
+    # 시계열 (분기 / 연도 / 누적) - Plan v10: c.panel 단일 진입
     q = c.panel("IS", freq="Q")
     y = c.panel("IS", freq="Y")
     cum = c.panel("IS", freq="YTD")
@@ -337,7 +337,7 @@ with dartlab.Company("005930") as c:
     r = c.panel("ratios")                       # CFS 기본
     rOfs = c.panel("ratios", scope="separate")  # OFS
 
-# 6 sub-domain — 주석 영역 파서
+# 6 sub-domain - 주석 영역 파서
 from dartlab.finance.summary import fsSummary
 from dartlab.finance.majorHolder import majorHolder, holderOverview
 from dartlab.finance.segment import segments
@@ -355,14 +355,14 @@ raw = rawMaterial("005930")         # 원재료 / 생산설비 / 시설투자
 
 ## 호출 동작
 
-- `Company.timeseries` / `annual` / `cumulative` — `buildTimeseries(stockCode, fsDivPref)` 위임. CFS 우선, 없으면 OFS fallback. snakeId × period 의 nested dict 반환.
-- `Company.ratios` — `calcRatios(series, marketCap=None)` 위임. ROE · ROA · 마진 · 부채비율 · FCF 등.
-- `Company.getTimeseries(period, fsDivPref)` — 4 조합 (q/y/cum × CFS/OFS) 명시 조회.
-- `fsSummary(source, ifrsOnly=True)` — 4 단계 브릿지 매칭. 2 년 미만 → None.
-- `majorHolder(stockCode)` — 사업보고서 "VII. 주주에 관한 사항" 파싱.
-- `segments(stockCode)` / `affiliates(stockCode)` — 주석 표 추출 (일반 + 횡전개).
-- `costByNature(stockCode, period)` — 3 가지 테이블 유형 (inline / split / multiCol) 자동 감지.
-- `rawMaterial(stockCode)` — 원재료 + 유형자산 변동 + 시설투자 3 영역 동시 추출.
+- `Company.timeseries` / `annual` / `cumulative` - `buildTimeseries(stockCode, fsDivPref)` 위임. CFS 우선, 없으면 OFS fallback. snakeId × period 의 nested dict 반환.
+- `Company.ratios` - `calcRatios(series, marketCap=None)` 위임. ROE · ROA · 마진 · 부채비율 · FCF 등.
+- `Company.getTimeseries(period, fsDivPref)` - 4 조합 (q/y/cum × CFS/OFS) 명시 조회.
+- `fsSummary(source, ifrsOnly=True)` - 4 단계 브릿지 매칭. 2 년 미만 → None.
+- `majorHolder(stockCode)` - 사업보고서 "VII. 주주에 관한 사항" 파싱.
+- `segments(stockCode)` / `affiliates(stockCode)` - 주석 표 추출 (일반 + 횡전개).
+- `costByNature(stockCode, period)` - 3 가지 테이블 유형 (inline / split / multiCol) 자동 감지.
+- `rawMaterial(stockCode)` - 원재료 + 유형자산 변동 + 시설투자 3 영역 동시 추출.
 
 미매핑 계정 발견 시 `engines.mappers` 학습 후보 데이터로 흐른다 (사람 검토 후 `AccountMapper.release()`).
 
@@ -399,7 +399,7 @@ majorHolder(stockCode)
 
 ## 코어 finance 엔진
 
-`src/dartlab/providers/dart/finance/` — 분기별 · 연도별 · 누적 시계열 + 재무비율.
+`src/dartlab/providers/dart/finance/` - 분기별 · 연도별 · 누적 시계열 + 재무비율.
 
 | 파일 | 역할 |
 |------|------|
@@ -410,7 +410,7 @@ majorHolder(stockCode)
 | `scanAccount.py` | 미매핑 계정 스캔 (학습 후속 데이터) |
 | `spec.py` | 엔진 명세 (`summary.mappedAccounts` 등) |
 
-데이터 SSOT — `reference/data/accountMappings.json` (`learnedSynonyms: 31,489` / `standardAccounts: 3,402` / `merged: 34,171`). 학습 사이클은 `engines.mappers` 참조.
+데이터 SSOT - `reference/data/accountMappings.json` (`learnedSynonyms: 31,489` / `standardAccounts: 3,402` / `merged: 34,171`). 학습 사이클은 `engines.mappers` 참조.
 
 ### 시계열 API
 
@@ -437,7 +437,7 @@ majorHolder(stockCode)
 
 | 호출 | 설명 |
 |--------|------|
-| `c.panel(topic, freq="Q")` | 분기별 (CFS) — topic ∈ BS·IS·CF·CIS·SCE·ratios |
+| `c.panel(topic, freq="Q")` | 분기별 (CFS) - topic ∈ BS·IS·CF·CIS·SCE·ratios |
 | `c.panel(topic, freq="Y")` | 연도별 (CFS) |
 | `c.panel(topic, freq="YTD")` | 분기별 누적 (CFS) |
 | `c.panel("ratios")` | 재무비율 (CFS) |
@@ -445,8 +445,8 @@ majorHolder(stockCode)
 
 ### scope 파라미터
 
-- `"consolidated"` — 연결재무제표 (기본값). 없으면 separate fallback.
-- `"separate"` — 별도재무제표. 없으면 consolidated fallback.
+- `"consolidated"` - 연결재무제표 (기본값). 없으면 separate fallback.
+- `"separate"` - 별도재무제표. 없으면 consolidated fallback.
 
 ### 검증 결과 (삼성전자 005930, 2024)
 
@@ -460,7 +460,7 @@ majorHolder(stockCode)
 
 `src/dartlab/providers/dart/docs/finance/{name}/` + `disclosure/rawMaterial/` 의 6 영역.
 
-### 1. summary — 요약재무 브릿지 매칭
+### 1. summary - 요약재무 브릿지 매칭
 
 `dartlab.finance.summary.fsSummary(source, ifrsOnly=True)` → `AnalysisResult | None`.
 
@@ -476,39 +476,39 @@ DART 공시 요약재무정보에서 숫자 브릿지 매칭으로 계정명을 
 | `pipeline.py` | `fsSummary()` · `loadYearData()` 오케스트레이터 |
 
 **매칭 알고리즘 (4 단계)**:
-1. **정확 매칭** — N년 전기 금액 == N-1년 당기 금액 (차이 &lt; 0.5)
-2. **재작성 보정** — 이름 유사도 0.8+ 금액 차이 5% 이내
-3. **명칭변경 보정** — 이름 유사도 0.6+ 금액 차이 5% 이내
-4. **특수항목** — EPS · 회사수 등 이름 강제 매칭
+1. **정확 매칭** - N년 전기 금액 == N-1년 당기 금액 (차이 &lt; 0.5)
+2. **재작성 보정** - 이름 유사도 0.8+ 금액 차이 5% 이내
+3. **명칭변경 보정** - 이름 유사도 0.6+ 금액 차이 5% 이내
+4. **특수항목** - EPS · 회사수 등 이름 강제 매칭
 
-**검증** — 158 개 기업 구간 내 97.7%, 오매칭 0.07%. 임계 `BREAKPOINT_THRESHOLD = 0.85`. 핵심 계정 10 개.
+**검증** - 158 개 기업 구간 내 97.7%, 오매칭 0.07%. 임계 `BREAKPOINT_THRESHOLD = 0.85`. 핵심 계정 10 개.
 
-**AnalysisResult 필드** — corpName / nYears / nPairs / nBreakpoints / nSegments / allRate / contRate / segments / breakpoints / pairResults / yearAccounts.
+**AnalysisResult 필드** - corpName / nYears / nPairs / nBreakpoints / nSegments / allRate / contRate / segments / breakpoints / pairResults / yearAccounts.
 
-**BridgeResult** — `pairs: {당해년도 계정명: 전년도 계정명}` · `yearGap` (보통 1, 갭 있으면 2+).
+**BridgeResult** - `pairs: {당해년도 계정명: 전년도 계정명}` · `yearGap` (보통 1, 갭 있으면 2+).
 
-**입력 데이터** — polars DataFrame 또는 parquet. 필수: `year` / `report_type` / `rcept_date` / `section_title` / `section_content`. 선택: `corp_name`.
+**입력 데이터** - polars DataFrame 또는 parquet. 필수: `year` / `report_type` / `rcept_date` / `section_title` / `section_content`. 선택: `corp_name`.
 
-### 2. majorHolder — 주주 현황
+### 2. majorHolder - 주주 현황
 
 `dartlab.finance.majorHolder.majorHolder(stockCode)` → `MajorHolderResult | None`.
 `dartlab.finance.majorHolder.holderOverview(stockCode)` → `HolderOverview | None`.
 
-**MajorHolderResult** — corpName / majorHolder (최대주주명) / majorRatio / totalRatio (특수관계인 포함) / holders / timeSeries.
+**MajorHolderResult** - corpName / majorHolder (최대주주명) / majorRatio / totalRatio (특수관계인 포함) / holders / timeSeries.
 
-**HolderOverview** — bigHolders (5% 이상) · minority (소액주주) · voting (의결권).
+**HolderOverview** - bigHolders (5% 이상) · minority (소액주주) · voting (의결권).
 
-**파싱 성공률 (267 종목)** — 최대주주 100% (227/0/40) · 5% 이상 주주 100% (217/0/50) · 소액주주 100% (214/0/53) · 의결권 100% (223/0/44).
+**파싱 성공률 (267 종목)** - 최대주주 100% (227/0/40) · 5% 이상 주주 100% (217/0/50) · 소액주주 100% (214/0/53) · 의결권 100% (223/0/44).
 
 **파싱 전략**:
-- majorHolder — "VII. 주주에 관한 사항" → "성 명 | 관 계" 헤더 + 8-cell 데이터행, "본인"/"최대주주" 관계 식별
-- 5% 이상 주주 — `| 5% 이상 주주 | 주주명 | 소유주식수 | 지분율 | 비고 |` 구조
-- 소액주주 — 단일행 `| 주주수 | 전체주주수 | 비율 | 소액주식수 | 총발행 | 비율 |`
-- 의결권 — A(발행총수) ~ F(행사가능) 보통주/우선주 분리
+- majorHolder - "VII. 주주에 관한 사항" → "성 명 | 관 계" 헤더 + 8-cell 데이터행, "본인"/"최대주주" 관계 식별
+- 5% 이상 주주 - `| 5% 이상 주주 | 주주명 | 소유주식수 | 지분율 | 비고 |` 구조
+- 소액주주 - 단일행 `| 주주수 | 전체주주수 | 비율 | 소액주식수 | 총발행 | 비율 |`
+- 의결권 - A(발행총수) ~ F(행사가능) 보통주/우선주 분리
 
-**주의** — 2015 년 이전 보고서 테이블 구조 차이로 지분율 오류 가능. 스팩/비상장사 5% 이상 주주/소액주주 부재.
+**주의** - 2015 년 이전 보고서 테이블 구조 차이로 지분율 오류 가능. 스팩/비상장사 5% 이상 주주/소액주주 부재.
 
-### 3. segment — 사업부문 보고
+### 3. segment - 사업부문 보고
 
 `dartlab.finance.segment.segments(stockCode)` → `SegmentsResult` (사업부문 · 제품 · 지역 테이블).
 
@@ -519,7 +519,7 @@ DART 공시 요약재무정보에서 숫자 브릿지 매칭으로 계정명을 
 | `parser.py` | 부문 테이블 파싱 (일반 + 횡전개) |
 | `pipeline.py` | `segments()` 오케스트레이터 |
 
-### 4. affiliate — 관계기업 / 공동기업
+### 4. affiliate - 관계기업 / 공동기업
 
 `dartlab.finance.affiliate.affiliates(stockCode)` → `AffiliatesResult` (지분 현황 + 변동).
 
@@ -530,46 +530,46 @@ DART 공시 요약재무정보에서 숫자 브릿지 매칭으로 계정명을 
 | `parser.py` | 프로필 / 변동 파싱 (일반 + 횡전개) |
 | `pipeline.py` | `affiliates()` 오케스트레이터 |
 
-### 5. costByNature — 비용의 성격별 분류
+### 5. costByNature - 비용의 성격별 분류
 
 `dartlab.finance.costByNature.costByNature(stockCode, period)` → `CostByNatureResult`.
 
-**파일 구성** — `types.py` (`CostByNatureResult`) · `parser.py` (inline/split/multiCol 3 방식) · `pipeline.py`.
+**파일 구성** - `types.py` (`CostByNatureResult`) · `parser.py` (inline/split/multiCol 3 방식) · `pipeline.py`.
 
-**성능** — 171 / 171 (100%) 파싱 성공 · 시계열 173 종목 · 교차검증 일치율 87.8% · null 17.5%.
+**성능** - 171 / 171 (100%) 파싱 성공 · 시계열 173 종목 · 교차검증 일치율 87.8% · null 17.5%.
 
 **파서 구조**:
 - 3 가지 테이블 유형 자동 감지 (inline / split / multiCol)
 - 30 개 정규화 매핑 (487 원본 → 표준)
 - 22 가지 합계행 패턴 자동 제거
 
-**period** — `"y"` 사업보고서 (연간) · `"q"` Q1/반기/Q3/사업보고서 (분기) · `"h"` 반기.
+**period** - `"y"` 사업보고서 (연간) · `"q"` Q1/반기/Q3/사업보고서 (분기) · `"h"` 반기.
 
-**ratios** — 각 비용 항목의 양수 합계 대비 비율 (%) DataFrame (year · account · amount · ratio).
+**ratios** - 각 비용 항목의 양수 합계 대비 비율 (%) DataFrame (year · account · amount · ratio).
 
-**제한** — 금융업/리츠/지주회사 58 / 267 미공시. 교차검증 불일치 12.2% 는 소급 재작성 (파서 오류 아님).
+**제한** - 금융업/리츠/지주회사 58 / 267 미공시. 교차검증 불일치 12.2% 는 소급 재작성 (파서 오류 아님).
 
-### 6. rawMaterial — 원재료 · 생산설비 · 시설투자
+### 6. rawMaterial - 원재료 · 생산설비 · 시설투자
 
 `dartlab.finance.rawMaterial.rawMaterial(stockCode)` → `RawMaterialResult | None`.
 
-**RawMaterialResult** — corpName / year / materials / equipment / capexItems.
+**RawMaterialResult** - corpName / year / materials / equipment / capexItems.
 
-- **RawMaterial** — segment · item · usage · amount · ratio · supplier
-- **Equipment** — land · buildings · structures · machinery · construction · vehicles · fixtures · rou · undelivered · other · total · depreciation · capex
-- **CapexItem** — segment · amount
+- **RawMaterial** - segment · item · usage · amount · ratio · supplier
+- **Equipment** - land · buildings · structures · machinery · construction · vehicles · fixtures · rou · undelivered · other · total · depreciation · capex
+- **CapexItem** - segment · amount
 
-**파싱 성공률 (267 종목)** — 원재료 93.0% · 생산설비 33.8% · 시설투자 16.2%. 125 종목 None (해당사항 없음 또는 매입 테이블 부재).
+**파싱 성공률 (267 종목)** - 원재료 93.0% · 생산설비 33.8% · 시설투자 16.2%. 125 종목 None (해당사항 없음 또는 매입 테이블 부재).
 
-**품질 검증** — ratio 이상 (>100%) 2 / DL이앤씨 1, 그 외 0 건 (amt-None / 숫자 item / total 음수 / 1조 초과 / 런타임 에러).
+**품질 검증** - ratio 이상 (>100%) 2 / DL이앤씨 1, 그 외 0 건 (amt-None / 숫자 item / total 음수 / 1조 초과 / 런타임 에러).
 
-**검증 완료 종목 스팟체크** — 삼성전자 (14 건 매입 · 2,059,452 설비) · 현대차 (17 건 · 44,533,941) · SK하이닉스 (5 건 · 60,157,474) · LG화학 (5 건 · 54,570,446) · LG · SK · F&F.
+**검증 완료 종목 스팟체크** - 삼성전자 (14 건 매입 · 2,059,452 설비) · 현대차 (17 건 · 44,533,941) · SK하이닉스 (5 건 · 60,157,474) · LG화학 (5 건 · 54,570,446) · LG · SK · F&F.
 
 **파싱 전략 (원재료 12 단계)**:
-1. 헤더 직접 감지 — `(매입액|투입액)` + `(품목|원재료|부문)` 조합
+1. 헤더 직접 감지 - `(매입액|투입액)` + `(품목|원재료|부문)` 조합
 2. `_findHeaderIndices()` 동적 매핑
 3. shifted 행 감지 (segment 생략 시 왼쪽 밀림)
-4. 합쳐진 "매입액 (비율)" 셀 분리 — `1,483,067 (43.8%)` 패턴
+4. 합쳐진 "매입액 (비율)" 셀 분리 - `1,483,067 (43.8%)` 패턴
 5. 연도별 헤더 (`제N기`, `20XX년`) 지원
 6. 분할 헤더 (row1 + row2 병합)
 7. 비율 > 100 shifted 감지
@@ -579,20 +579,20 @@ DART 공시 요약재무정보에서 숫자 브릿지 매칭으로 계정명을 
 11. 각주 참조 필터 (`(주N)`)
 12. amount 없는 헤더 진입 차단
 
-**제한** — DL이앤씨 헤더 shifted 2 건 · 단위 혼재 (USD/천USD/백만원) 미지원 · 생산설비 33.8% (테이블 형식 다양).
+**제한** - DL이앤씨 헤더 shifted 2 건 · 단위 혼재 (USD/천USD/백만원) 미지원 · 생산설비 33.8% (테이블 형식 다양).
 
 ## 의존 (sub-domain 공통)
 
-- `dartlab.frame.dataLoader` — `loadData` · `extractCorpName` · `PERIOD_KINDS`
-- `dartlab.providers.notesExtractor` — `extractNotesContent` · `findNumberedSection`
-- `dartlab.providers.reportSelector` — 보고서 선택
-- `dartlab.providers.tableParser` — 마크다운 테이블 파싱, 금액/단위 처리
-- `engines.mappers` — 계정명 → snakeId 정규화
+- `dartlab.frame.dataLoader` - `loadData` · `extractCorpName` · `PERIOD_KINDS`
+- `dartlab.providers.notesExtractor` - `extractNotesContent` · `findNumberedSection`
+- `dartlab.providers.reportSelector` - 보고서 선택
+- `dartlab.providers.tableParser` - 마크다운 테이블 파싱, 금액/단위 처리
+- `engines.mappers` - 계정명 → snakeId 정규화
 
 ## evidence 기준
 
 - finance 시계열 인용 시 `stockCode` · `fsDivPref` · `period` · `snakeId` · `source` (DART).
-- 6 sub-domain 인용 시 `parsing_success_rate` 명시 (예 — 원재료 93.0%, 생산설비 33.8%).
+- 6 sub-domain 인용 시 `parsing_success_rate` 명시 (예 - 원재료 93.0%, 생산설비 33.8%).
 - 미매핑 계정 발견 시 `engines.mappers` 후속 학습 후보로 로그.
 
 ## 기본 검증
@@ -610,11 +610,11 @@ print(f"{result.corpName}: {result.allRate:.1%}")  # 매칭률
 
 ## 변경 이력
 
-- 2026-03-06 — 6 sub-domain 패키지 초기 구축 (affiliate / segment / summary / majorHolder / costByNature / rawMaterial)
-- 2026-03-06 — `stockCode` 시그니처 전환, `extractor` 중복 제거 → `core` re-export
-- 2026-03-07 — rawMaterial 실무 투입
-- 2026-03-09 — XBRL 계정 표준화 + Company `docs/finance` 통합
-- 2026-05-12 — STATUS.md 7 곳 → 본 sub-spec 통합 (Skill OS 운영 SSOT 승격)
+- 2026-03-06 - 6 sub-domain 패키지 초기 구축 (affiliate / segment / summary / majorHolder / costByNature / rawMaterial)
+- 2026-03-06 - `stockCode` 시그니처 전환, `extractor` 중복 제거 → `core` re-export
+- 2026-03-07 - rawMaterial 실무 투입
+- 2026-03-09 - XBRL 계정 표준화 + Company `docs/finance` 통합
+- 2026-05-12 - STATUS.md 7 곳 → 본 sub-spec 통합 (Skill OS 운영 SSOT 승격)
 
 ## (흡수) engines.company.researchStarter 본문
 
@@ -658,7 +658,7 @@ print(f"{result.corpName}: {result.allRate:.1%}")  # 매칭률
 
 `panel` 은 한 회사의 전체 공시 지도다. 각 보고기간 공시 문서를 topic 별로 쪼개고 시간축으로 옆으로 늘어놓아 가로화 보드 하나로 만든다. 개별 사업보고서를 하나씩 열지 않고 모든 공시 블록을 시계열로 한 번에 비교한다.
 
-한국 DART 사업보고서는 수십 개 장/하위 항목을 갖는다 — 제 I 장 (회사 개황) ~ 제 XII 장 (상세표). 각 보고서가 분기/연도별로 별도 파일이라서 같은 topic ("사업의 개요") 이 여러 기간에 흩어진다. `panel` 은 이 흩어진 원문을 **topic × 기간 매트릭스**로 재구성한다.
+한국 DART 사업보고서는 수십 개 장/하위 항목을 갖는다 - 제 I 장 (회사 개황) ~ 제 XII 장 (상세표). 각 보고서가 분기/연도별로 별도 파일이라서 같은 topic ("사업의 개요") 이 여러 기간에 흩어진다. `panel` 은 이 흩어진 원문을 **topic × 기간 매트릭스**로 재구성한다.
 
 ## 공개 호출 방식
 
@@ -697,9 +697,9 @@ df = df.filter(pl.col("topic") == "companyOverview")
 
 `c.panel(topic)` 는 source priority 를 적용한다:
 
-1. **finance** (BS, IS, CF, CIS, SCE) — 숫자는 권위 있으므로 docs 본문보다 우선.
-2. **report** — DART 정형 공시 데이터.
-3. **docs** — 원본 산문 텍스트와 표.
+1. **finance** (BS, IS, CF, CIS, SCE) - 숫자는 권위 있으므로 docs 본문보다 우선.
+2. **report** - DART 정형 공시 데이터.
+3. **docs** - 원본 산문 텍스트와 표.
 
 `c.trace(topic)` 는 어떤 source 가 실제 선택됐는지 확인:
 - 선택된 source (docs / finance / report).
@@ -728,7 +728,7 @@ II      │ businessOverview │ text      │ heading      │ "…"    │ "�
 | `topic` | snakeCase 표준 식별자 (`companyOverview`, `businessOverview`, `BS`, `IS`, `CF`). |
 | `blockType` | `"text"` 또는 `"table"`. |
 | `blockOrder` | topic 내 블록 순서 (원문 순서 보존). |
-| `textNodeType` | text 블록 sub-type — `"heading"` 또는 `"body"`. table 은 null. |
+| `textNodeType` | text 블록 sub-type - `"heading"` 또는 `"body"`. table 은 null. |
 | `textLevel` | heading 깊이 (1, 2, 3, ...). body / table 은 null. |
 | `textPath` | heading 의 구조 경로. |
 
@@ -761,10 +761,10 @@ EDGAR 도 같은 구조. topic 이름만 SEC form 규약 (`10-K::item1Business`,
 
 ## 다음 단계
 
-- [engines.company](/skills/engines.company) — Company facade 전체 메서드 카탈로그.
-- **engines.company.disclosureEvent** — 공시 이벤트 추적 (본문 § "(흡수) engines.company.disclosureEvent 본문" 참고).
-- **engines.company.usEdgarReview** — 미국 종목 EDGAR 리뷰 (본문 § "(흡수) engines.company.usEdgarReview 본문" 참고).
-- [start.quickStart](/skills/start.quickStart) — 8 단계 walkthrough.
+- [engines.company](/skills/engines.company) - Company facade 전체 메서드 카탈로그.
+- **engines.company.disclosureEvent** - 공시 이벤트 추적 (본문 § "(흡수) engines.company.disclosureEvent 본문" 참고).
+- **engines.company.usEdgarReview** - 미국 종목 EDGAR 리뷰 (본문 § "(흡수) engines.company.usEdgarReview 본문" 참고).
+- [start.quickStart](/skills/start.quickStart) - 8 단계 walkthrough.
 
 ## (흡수) engines.company.usEdgarReview 본문
 

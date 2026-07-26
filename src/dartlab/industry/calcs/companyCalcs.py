@@ -620,3 +620,10 @@ def calcSectorDynamics(company: Any, *, macroPhase: str | None = None) -> dict |
         "cycleSensitivity": sensitivity,
         "summary": summary,
     }
+
+
+def companyIndustryResult(company: Any) -> dict[str, Any]:
+    """Company facade가 허용된 industry calc 경계로 대표 제품을 호출한다."""
+    from dartlab.industry.product import companyIndustryResult as _companyIndustryResult
+
+    return _companyIndustryResult(company)

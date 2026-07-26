@@ -1,4 +1,4 @@
-"""F2 강행 — macro/ 폴더 구조 회귀 방지.
+"""F2 강행 - macro/ 폴더 구조 회귀 방지.
 
 F2.1 (이번 라운드): assets/historicalContext → corporate/, liquidity/sentiment → cycles/, _helpers → seriesFetch.
 root 잔존: __init__, seriesFetch, summary, spec.
@@ -14,6 +14,7 @@ MACRO = Path(__file__).resolve().parent.parent.parent / "src" / "dartlab" / "mac
 
 ROOT_ALLOWED: set[str] = {
     "__init__.py",
+    "dataProduct.py",
     "seriesFetch.py",  # F2.1: _helpers.py → seriesFetch.py (헬퍼 generic 이름 폐지)
     "summary.py",
     "spec.py",
@@ -68,7 +69,7 @@ def test_macro_subfolder_layout(subfolder: str, expected: set[str]) -> None:
     sub = MACRO / subfolder
     assert sub.is_dir(), f"macro/{subfolder}/ 누락"
     assert (sub / "__init__.py").exists(), f"macro/{subfolder}/__init__.py 누락"
-    # private split file (`_*.py`) 은 layout 검사 제외 — public API 표면만 강제.
+    # private split file (`_*.py`) 은 layout 검사 제외 - public API 표면만 강제.
     actual = {p.name for p in sub.glob("*.py") if not p.name.startswith("_")} - {"__init__.py"}
     assert actual == expected, f"macro/{subfolder}/ 모듈 불일치: 기대 {expected}, 실제 {actual}"
 

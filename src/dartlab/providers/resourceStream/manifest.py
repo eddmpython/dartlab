@@ -268,10 +268,11 @@ def loadResourceManifest(
         Path(cachePath).resolve() if cachePath is not None else _defaultCachePath(normalizedId, root, integrityMode)
     )
     resolvedCachePath.parent.mkdir(parents=True, exist_ok=True)
-    with FileLock(f"{resolvedCachePath}.lock", timeout=lockTimeoutSeconds):
+    lockPath = Path(f"{resolvedCachePath}.lock")
+    with FileLock(str(lockPath), timeout=lockTimeoutSeconds):
         candidate = _readCacheCandidate(resolvedCachePath, root, normalizedId, integrityMode)
         if candidate is not None and _cacheIsFresh(candidate, paths):
-            return ResourceManifest(
+            manifest = ResourceManifest(
                 resourceId=candidate.resourceId,
                 rootPath=candidate.rootPath,
                 shards=candidate.shards,
@@ -283,9 +284,11 @@ def loadResourceManifest(
                 cacheHit=True,
                 cacheValidation=_CACHE_VALIDATION,
             )
-        manifest = _buildManifest(normalizedId, root, paths, integrityMode, candidate)
-        _writeCache(resolvedCachePath, manifest)
-        return manifest
+        else:
+            manifest = _buildManifest(normalizedId, root, paths, integrityMode, candidate)
+            _writeCache(resolvedCachePath, manifest)
+    lockPath.unlink(missing_ok=True)
+    return manifest
 
 
 def validateManifestSources(manifest: ResourceManifest) -> None:
