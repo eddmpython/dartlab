@@ -361,3 +361,39 @@ W16 최초 기록은 성공률을 티커 7,683 분모로만 적어 시장 커버
 [08-universe-state-budget.md](08-universe-state-budget.md) 에 있다.
 
 US 단독 완주와 혼합 완주는 아직 인증하지 않았다. 혼합은 위 결함 수정이 선행 조건이다.
+
+### 2026-07-26 W18: 운영 결함 정리와 US 전종목 완주 인증
+
+목표를 다시 "DataHub 를 강력하게" 로 잡고 미착수로 남아 있던 구현 잔여를 닫았다.
+
+- 실행 진단 side channel `telemetry` 를 신설하고 원인을 축약 code 로 바꿔 버리던 26 곳에
+  배선했다. 공개 gap 메시지는 축약을 유지하고 traceback 과 상관 키는 로그로만 나간다.
+  code 별 카운터와 구간 p50, p95 도 함께 제공한다.
+- `processLifecycle` 을 신설해 eager 에만 있던 POSIX process group 봉쇄를 owner 에도
+  붙였다. 자식이 `setsid` 로 group leader 가 되고 종료 시 group 전체를 회수하며
+  zero-live 판정이 group 이 실제로 비었는지 확인한다. 기존에는 POSIX 에서
+  `jobTreeReleased` 가 무조건 참이라 손자 프로세스를 놓쳤다.
+- `cancellation` 을 신설해 lease 상실이 실행 중 query 에 도달하게 했다. 취소는 page
+  경계에서만 관측하므로 최대 대기는 page 하나다. 기존에는 취소된 job 이 자기 timeout
+  까지 머신을 계속 태웠고 전종목이면 최대 6 시간이었다.
+- Coverage 실패 수를 gap 행 개수에서 asset 단위로 바꾸고 catalog discovery gap 을
+  데이터 실패에서 분리했다.
+- 원격 결과 예산을 제출 시점에 fail-closed 로 검사한다. wire codec 의 base64 팽창을
+  반영하지 않아 큰 예산 job 이 계산을 세 번 반복한 뒤에야 실패하던 낭비를 없앴다.
+- catalog 단계에서 `temporalSupport` 선언과 executor 인자의 정합을 검증한다. `knownAt`
+  을 선언하고 받을 인자가 없으면 시점이 조용히 버려져 query cutoff 가 관측 시점으로
+  둔갑했다. D05 를 지키는 기계 가드가 그동안 하나도 없었다.
+- 자식 실행 관측치와 `_publicErrorCode` 가 뭉개던 원래 code 를 진단 채널에 보존한다.
+  준비 시간, cleanup trace, zero-live, Job Object 상태는 status 만 읽히고 버려졌다.
+
+US 현재 상장 universe 전종목 완주를 인증했다. 공개 계약 한 번으로 등록하고
+`iterPages()` 가 수동 token loop 없이 121 page 를 끝까지 소비했다.
+
+- page 121 개. `ceil(7683/64)` 예측치와 정확히 일치한다
+- factor row 4,920 개, 요청 엔티티 7,683 개, 소요 605.024 초
+- `snapshotId` 가 121 page 내내 단일 유지됐다
+- 실패 분해는 `FEATURE_ENTITY_UNAVAILABLE` 3,978 과 `FEATURE_SOURCE_MISSING` 449 로,
+  7,683 에서 4,427 을 빼면 3,256 이라 flow-only 전수 감사 성공치와 정확히 일치한다
+
+KR 42 page 와 합쳐 두 시장 모두 완주가 인증됐다. W11 이후 남아 있던 미인증 항목이
+닫혔다.
