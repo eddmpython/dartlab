@@ -282,3 +282,25 @@ uv run python -X utf8 tests/audit/dartlabGuard.py strict --scope l0-l15 --provid
 - remote wire에서 bounded Arrow materialization page, continuation, immutable receipt를 digest 검증 후 복원
 - control plane, remote, public surface 집중 회귀 13건 통과
 - 이동된 DataHub 전수 회귀는 504개를 분할 실행해 501개 통과와 환경 의존 3개 skip 확인
+
+### 2026-07-26 W16
+
+- DataHub 운영 결함 정정. control plane ledger 에 WAL 저널 활성화. 형제 ledger 두 곳은 이미 쓰고 있었고 이 저장소만 기본 delete 저널이라 reader 가 writer 를 전면 차단했다
+- systemic gap 을 query status 실패로 승격. 헌장 D09 가 요구하는 단일 asset 결손과 provider 전체 장애의 구분이 실행 경로에 없었다
+- materialization store 와 job ledger 의 bounded maintenance 를 공개 진입에 배선. 두 GC 는 정의만 있고 호출자가 테스트뿐이라 retention 이 한 번도 발동하지 않았고 READY generation 과 terminal job 이 무한 누적되는 상태였다
+- maintenance 의 CAS 삭제 실패를 digest 단위로 이연. GC_PENDING 이 durable 마커라 다음 호출에서 재시도되며 파일 하나의 잠금이 같은 트랜잭션의 reader lease 정리와 generation 전이를 rollback 시키지 않는다
+- page scan 에 같은 token 기반 bounded 재시도 추가. commit 된 page 는 원천 접촉 없이 replay 되고 실패한 page 는 commit 되지 않으므로 token 재사용이 중복과 누락을 만들지 않는다. 재시도 부재가 전종목 완주 미인증의 실제 원인이었다
+- 기본 resume caller 가 참조하던 legacy alias 를 canonical 진입점으로 정정
+- EDGAR 매출 태그를 `reference/data/accountMappings.json` 정본에 맞추고 업종 전용 총매출 태그를 후순위로 추가
+- normalization rule hash 를 adapter 버전 상수가 아니라 실제 태그 선택 규칙 digest 에서 유도. 기존 상수는 태그 우선순위가 바뀌어도 값이 같아 옛 규칙으로 선택한 관측과 구운 generation 이 현행 계약처럼 통과할 수 있었다
+- `OperatingIncomeLoss` 소계가 없는 filer 를 위해 같은 접수 안의 구성요소로 영업이익을 유도. 매출총이익에서 영업비용을 빼거나 매출에서 총비용을 뺀다
+- derived quarter lineage 판정을 접수 집합 비교로 정정. 기존 tuple 동일성 비교는 한 접수 안에서 태그 두 개를 쓴 유도와 그 접수의 단일 관측을 다른 lineage 로 잘못 막았다
+- 대차 필수 앵커를 자산총계, 부채총계, 연결자본 셋으로 좁히고 나머지 구성요소는 임퓨트 후 `imputedZeroComponents` 경고로 남긴다. `otherNetAssets` 잔차 플러그가 흡수하므로 항등식은 실제 앵커 값으로 그대로 닫힌다
+- 지배주주 자본만 태깅된 경우 비지배지분을 더해 연결자본을 만든다. 사전 필터 집합 누락으로 최초 구현이 실행되지 않던 것도 함께 정정했다
+- 한 접수의 단위나 값 충돌이 회사 전체를 죽이지 않게 하고, 어떤 후보도 성립하지 않으면 첫 충돌 원인을 그대로 올린다
+- stock 후보 순회를 지연 generator 로 바꾸고 대차와 분기 흐름이 함께 성립하는 첫 후보를 선택. 기존에는 구성요소 완전성 요구가 흐름 가용성과 우연히 상관되어 올바른 후보로 떨어졌을 뿐이라 대차만 있는 최신 filing 이 흐름 있는 직전 filing 을 가리면 회사 전체가 실패했다
+- 7,683 개 universe 읽기 전용 전수 감사 3 회. full-state strict 632 개에서 2,420 개, 31.4981%. flow-only 3,136 개에서 3,256 개, 42.3793%. revenue 단독 3,902 개에서 4,038 개, 52.5576%. 세 실행 모두 loader 0, network 0, 시작과 종료 source snapshot 동일
+- `NO_COHERENT_STOCK_STATE` 는 4,689 개에서 632 개로 줄었다. 뒤 단계 실패 증가는 검증 약화가 아니라 stock 단계를 통과해 도달한 인구가 늘어난 결과이며 항등식 차단 363 건과 단위 충돌 차단 14 건은 그대로 작동한다
+- 400 개 표본 진단에서 `OperatingIncomeLoss` 가 없는 73 개 중 유도 구성요소를 가진 것은 9 개뿐이고 61 개는 구성요소가 아예 없다. 남은 영업이익 갭의 대부분은 원천 태깅 부재다
+- owner, resource, composite 의 `strictTree` 와 문자열, digest 검증 중복을 `pagingStateCodec` 으로 통합. `_jsonLoad` 와 `_validateQueryPayload` 는 lane 마다 canonical 검사 위치와 state 스키마가 달라 통합 대상에서 제외했다
+- `tests/_attempts` 의 DataHub 감사 하네스 11 개가 W15 canonical rename 이후 import 오류로 전부 실행 불가였다. 27 개 참조를 정정해 실적 재현 경로를 복구했다. 다만 이 폴더는 VCS 추적 대상이 아니라 깨끗한 클론에서는 여전히 재현할 수 없다

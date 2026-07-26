@@ -334,7 +334,9 @@ EDGAR revenue 또는 operating margin만 요청하면 stock state와 분리된 s
 
 명시한 `subjects`는 기존 eager `subjectFanout` 경로를 유지한다. historical `asOf`, `allKnown`, `requireComplete`는 지원하지 않는다. pageable resource, 계산 owner, 일반 eager asset의 혼합은 outer continuation 하나로 지원한다.
 
-실제 읽기 전용 감사에서 DART는 2,661개 중 2,352개 strict feature 성공, 88.3878%였다. EDGAR는 measure 미지정 또는 stock measure를 포함하는 full-state strict compiler에서 7,669개 중 632개 성공, 8.24097%였다. `financial.revenue`와 `financial.operatingMargin`만 요청하는 flow-only compiler에서는 같은 7,669개 중 3,136개 성공, 40.89190%였다. 이 두 EDGAR 수치와 원천 접근 성공률은 서로 바꿔 쓰지 않는다. 나머지는 누락하지 않고 source, PIT filing, flow window, lineage, stock state, balance, unit, revision gap으로 분류했다.
+실제 읽기 전용 감사에서 DART는 2,661개 중 2,352개 strict feature 성공, 88.3878%였다. EDGAR는 2026-07-26 기준 7,683개 universe에서 measure 미지정 또는 stock measure를 포함하는 full-state strict compiler가 2,420개 성공, 31.4981%였고 `financial.revenue`와 `financial.operatingMargin`만 요청하는 flow-only compiler가 3,256개 성공, 42.3793%였다. `financial.revenue` 단독은 4,038개 성공, 52.5576%다. 이 세 EDGAR 수치와 원천 접근 성공률은 서로 바꿔 쓰지 않는다. 나머지는 누락하지 않고 source, PIT filing, flow window, lineage, stock state, balance, unit, revision gap으로 분류했다.
+
+EDGAR full-state 성공률은 요청하지 않은 세분 항목을 요구하지 않도록 정정한 결과다. 필수 앵커는 자산총계, 부채총계, 연결자본 셋이고 현금, 매출채권, 재고, 매입채무, 유형자산, 차입금은 태깅되지 않으면 0으로 두고 `imputedZeroComponents` 경고에 남긴다. `otherNetAssets`가 잔차 플러그라 임퓨트한 금액은 플러그로 흡수되고 대차 항등식은 실제 앵커 값으로 검사한다. 세분성은 줄지만 항등식, PIT cutoff, 4분기 연속성, 동일 accession lineage, revision 충돌 검증은 그대로다. 남은 최대 결손은 흐름 창 2,024개이며 4개 연속 단독분기가 실제로 없는 경우다.
 
 ## Immutable generation과 다른 process 재생
 

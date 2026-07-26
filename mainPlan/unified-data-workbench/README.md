@@ -105,7 +105,9 @@ for page in first.iterPages():
 
 한 query는 전체 작업과 universe를 고정한다는 뜻이며, 전체 회사를 첫 응답에 한꺼번에 계산하거나 RAM에 적재한다는 뜻이 아니다. owner별 한 page의 종목 시도 상한은 64개이고 row, byte, time 예산이 더 작으면 page도 더 작아진다. 종목 실패는 gap으로 남고 cursor는 다음 종목으로 진행한다.
 
-실제 읽기 전용 전수 감사에서 DART strict PIT factor는 2,661개 중 2,352개, 88.3878%가 성공했다. EDGAR full-state strict는 7,669개 중 632개, 8.24097%였다. revenue와 operating margin만 요청해 불필요한 stock state 의존을 제거한 production flow-only 경로는 3,136개, 40.8919%가 성공했다. 이 개선은 PIT cutoff, 4분기 연속성, 동일 accession lineage, revision 충돌 검증을 낮추지 않았다. 공식 감사 실행 구간은 loader와 network 호출 0회였고 시작과 종료 source snapshot이 같았다.
+실제 읽기 전용 전수 감사에서 DART strict PIT factor는 2,661개 중 2,352개, 88.3878%가 성공했다. EDGAR는 2026-07-26 기준 7,683개 universe에서 full-state strict 2,420개, 31.4981%, flow-only 3,256개, 42.3793%, revenue 단독 4,038개, 52.5576%다. 이 수치들은 PIT cutoff, 4분기 연속성, 동일 accession lineage, revision 충돌, 대차 항등식 검증을 낮추지 않고 얻었다. 공식 감사 실행 구간은 loader와 network 호출 0회였고 시작과 종료 source snapshot이 같았다.
+
+EDGAR full-state는 8.24097%에서 올랐다. 요청하지 않은 세분 항목을 필수로 요구하던 계약을 정정하고, 대차와 분기 흐름이 함께 성립하는 접수 후보를 순회하도록 바꾼 결과다. 남은 최대 결손은 흐름 창 2,024개로 4개 연속 단독분기가 원천에 없는 경우이며, `OperatingIncomeLoss` 소계가 없는 회사의 83%는 유도 구성요소도 없다. 이 두 갭은 컴파일러가 아니라 원천 태깅 한계다.
 
 감사 준비 단계에서 잘못 실행한 loader가 DART 원천 파일 1개를 갱신한 사고와 eager 실현 가능성 probe가 macro, news 파일을 갱신한 사고는 각각 [DART 전수 감사 기록](../../tests/_attempts/dataWorkbenchDartScale/README.md)과 [process deadline 기록](../../tests/_attempts/dataWorkbenchProcessDeadline/README.md)에 이전 관측값, 현재 digest, 영향 경로를 분리해 남겼다. 이 사고는 공식 감사 구간의 불변 판정에 포함시키지 않으며, 원천 전체가 세션 내내 한 번도 변하지 않았다고 주장하지 않는다.
 
