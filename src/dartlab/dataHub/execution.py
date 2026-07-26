@@ -10,6 +10,7 @@ from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import TimeoutError as FutureTimeoutError
 
 from dartlab.dataHub.catalog import buildCatalog
+from dartlab.dataHub.catalog.universe import ResolvedUniverse, resolveUniverse
 from dartlab.dataHub.continuation import ContinuationError
 from dartlab.dataHub.contracts import (
     AssetRef,
@@ -40,9 +41,8 @@ from dartlab.dataHub.executionSupport import (
 )
 from dartlab.dataHub.identity.contentSeal import resultSnapshotId
 from dartlab.dataHub.materialization import MaterializationDirective, MaterializationError
-from dartlab.dataHub.projections import projectOutput
+from dartlab.dataHub.projection.output import projectOutput
 from dartlab.dataHub.telemetry import dataHubLogger, recordFailure
-from dartlab.dataHub.universe import ResolvedUniverse, resolveUniverse
 
 _log = dataHubLogger(__name__)
 

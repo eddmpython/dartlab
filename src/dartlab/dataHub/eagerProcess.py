@@ -427,7 +427,7 @@ def _resultForSelector(
         requireDeadline(workDeadline)
         membership = None
         if activeQuery.universe is not None:
-            resolved = importlib.import_module("dartlab.dataHub.universe").resolveUniverse(activeQuery.universe)
+            resolved = importlib.import_module("dartlab.dataHub.catalog.universe").resolveUniverse(activeQuery.universe)
             requireDeadline(workDeadline)
             if resolved.gaps or resolved.snapshotId != universeSnapshotId:
                 raise ContinuationError("CONTINUATION_SOURCE_STALE")
@@ -444,7 +444,7 @@ def _resultForSelector(
         coverage = execution._universeCoverage(task, raw)
         if coverage is not None:
             coverageRows = (coverage,)
-        partition, projectionGaps = importlib.import_module("dartlab.dataHub.projections").projectOutput(
+        partition, projectionGaps = importlib.import_module("dartlab.dataHub.projection.output").projectOutput(
             raw,
             descriptor,
             activeQuery,

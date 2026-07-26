@@ -168,7 +168,7 @@ class CompositePlanAdapterMixin:
             raise ContinuationError(selectorGaps[0].code if selectorGaps else "EAGER_SELECTOR_EMPTY")
         universeSnapshotId = None
         if query.universe is not None:
-            universe = importlib.import_module("dartlab.dataHub.universe").resolveUniverse(query.universe)
+            universe = importlib.import_module("dartlab.dataHub.catalog.universe").resolveUniverse(query.universe)
             requireDeadline(deadline)
             if universe.gaps:
                 raise ContinuationError(universe.gaps[0].code)

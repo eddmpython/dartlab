@@ -21,7 +21,7 @@ from dartlab.dataHub.ownerPagingModels import (
 from dartlab.dataHub.ownerPagingPayload import _framePayload
 from dartlab.dataHub.ownerPagingState import _requestedMeasures
 from dartlab.dataHub.pagingRuntime import manifestCachePath, requireDeadline
-from dartlab.dataHub.projections import projectOutput
+from dartlab.dataHub.projection.output import projectOutput
 
 
 def _requestRef(task: _OwnerTask, entityId: str) -> str:

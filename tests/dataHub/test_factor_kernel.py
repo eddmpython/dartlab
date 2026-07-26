@@ -16,7 +16,7 @@ from __future__ import annotations
 import polars as pl
 import pytest
 
-from dartlab.dataHub.factorKernel import (
+from dartlab.dataHub.projection.factorKernel import (
     CANON,
     foldToCanonical,
     laneOf,
@@ -167,7 +167,7 @@ def testMixedDtypeFramePreservesNumerics():
 
 def testPeriodRegexRejectsNonYears():
     """period 정규식이 종목코드·무효월·계정코드를 period 로 오탐하지 않는다."""
-    from dartlab.dataHub.factorKernel import _periodCols
+    from dartlab.dataHub.projection.factorKernel import _periodCols
 
     assert _periodCols(["005930", "202599", "1000", "2400"]) == []  # 비-period
     assert _periodCols(["2025", "2025Q3", "202503"]) == ["2025", "2025Q3", "202503"]  # 진짜 period

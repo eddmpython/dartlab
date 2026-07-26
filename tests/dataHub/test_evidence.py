@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dartlab.dataHub.contracts import DataAssetDescriptor, DataQuery
-from dartlab.dataHub.evidence import narrativeFrame
+from dartlab.dataHub.projection.evidence import narrativeFrame
 
 
 def testNarrativeFrameHasStableDocumentAndChunkIdentity():

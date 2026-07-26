@@ -26,12 +26,12 @@ from dartlab.dataHub import (
     UniverseSelection,
     data,
 )
+from dartlab.dataHub.catalog.universe import ResolvedMarket, ResolvedUniverse
 from dartlab.dataHub.feature.observation import makeVariableObservation
 from dartlab.dataHub.feature.query import buildFeatureObservationSet
 from dartlab.dataHub.feature.registry import StateVariableSpec, buildStateVariableRegistry
 from dartlab.dataHub.identity.vintage import VintageRef
 from dartlab.dataHub.ownerProcess import OwnerProcessPage
-from dartlab.dataHub.universe import ResolvedMarket, ResolvedUniverse
 
 _DIGEST = "1" * 64
 _NORMALIZATION = "2" * 64

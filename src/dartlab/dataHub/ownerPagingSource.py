@@ -8,6 +8,7 @@ import importlib
 from collections.abc import Mapping, Sequence
 from typing import Any
 
+from dartlab.dataHub.catalog.universe import ResolvedMarket
 from dartlab.dataHub.continuation import (
     ContinuationError,
     ContinuationPins,
@@ -26,7 +27,6 @@ from dartlab.dataHub.ownerPagingModels import (
 )
 from dartlab.dataHub.ownerPagingState import _requestedMeasures, _sourcePin
 from dartlab.dataHub.pagingRuntime import manifestCachePath
-from dartlab.dataHub.universe import ResolvedMarket
 
 
 def _ownerFacade() -> Any:

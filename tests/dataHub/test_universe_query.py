@@ -10,7 +10,7 @@ import polars as pl
 import pytest
 
 from dartlab.dataHub import DataQuery, FactorProjection, QueryBudget, UniverseSelection
-from dartlab.dataHub.universe import resolveUniverse
+from dartlab.dataHub.catalog.universe import resolveUniverse
 
 
 def _installUniverseFixtures(monkeypatch) -> None:

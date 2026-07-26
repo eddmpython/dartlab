@@ -6,6 +6,7 @@ State, source pin, Arrow payload, entity 실행, scheduler, result, API 책임�
 
 from __future__ import annotations
 
+from dartlab.dataHub.catalog.universe import resolveUniverse
 from dartlab.dataHub.continuation import ContinuationError, canonicalDigest, inspectArrowIpcPayload
 from dartlab.dataHub.ownerPagingApi import (
     _plannedTask,
@@ -101,7 +102,6 @@ from dartlab.dataHub.ownerPagingState import (
     isOwnerPagingState,
 )
 from dartlab.dataHub.pagingRuntime import requireDeadline
-from dartlab.dataHub.universe import resolveUniverse
 
 __all__ = [
     "executeInitialOwnerPaging",

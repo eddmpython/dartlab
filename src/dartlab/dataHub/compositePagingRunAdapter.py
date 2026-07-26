@@ -192,7 +192,7 @@ class CompositeRunAdapterMixin:
         if not hmac.compare_digest(currentCodePin, _requireDigest(private["codePin"])):
             raise ContinuationError("CONTINUATION_CONTRACT_STALE")
         if query.universe is not None:
-            universe = importlib.import_module("dartlab.dataHub.universe").resolveUniverse(query.universe)
+            universe = importlib.import_module("dartlab.dataHub.catalog.universe").resolveUniverse(query.universe)
             requireDeadline(deadline)
             if universe.gaps or universe.snapshotId != private["universeSnapshotId"]:
                 raise ContinuationError("CONTINUATION_SOURCE_STALE")
@@ -387,7 +387,9 @@ class CompositeRunAdapterMixin:
             requireDeadline(deadline)
             membership = None
             if activeQuery.universe is not None:
-                resolved = importlib.import_module("dartlab.dataHub.universe").resolveUniverse(activeQuery.universe)
+                resolved = importlib.import_module("dartlab.dataHub.catalog.universe").resolveUniverse(
+                    activeQuery.universe
+                )
                 membership = resolved.byMarket().get(selector.get("market"))
             task = execution._ExecutionTask(
                 lane["requestId"],
@@ -401,7 +403,7 @@ class CompositeRunAdapterMixin:
             coverageRow = execution._universeCoverage(task, raw)
             if coverageRow is not None:
                 universeCoverage = (coverageRow,)
-            partition, projectionGaps = importlib.import_module("dartlab.dataHub.projections").projectOutput(
+            partition, projectionGaps = importlib.import_module("dartlab.dataHub.projection.output").projectOutput(
                 raw,
                 descriptor,
                 activeQuery,

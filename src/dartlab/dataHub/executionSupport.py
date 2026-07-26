@@ -9,6 +9,7 @@ import json
 from collections.abc import Mapping, Sequence
 from typing import Any
 
+from dartlab.dataHub.catalog.universe import ResolvedMarket, entityIds
 from dartlab.dataHub.contracts import (
     DataAssetDescriptor,
     DataGap,
@@ -20,7 +21,6 @@ from dartlab.dataHub.contracts import (
     UniverseCoverage,
     projectionKind,
 )
-from dartlab.dataHub.universe import ResolvedMarket, entityIds
 
 
 @dataclasses.dataclass(frozen=True, slots=True)

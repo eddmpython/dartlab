@@ -18,7 +18,7 @@ from dartlab.dataHub.feature.observation import makeVariableObservation
 from dartlab.dataHub.feature.query import buildFeatureObservationSet
 from dartlab.dataHub.feature.registry import StateVariableSpec, buildStateVariableRegistry
 from dartlab.dataHub.identity.vintage import VintageRef
-from dartlab.dataHub.projections import projectOutput
+from dartlab.dataHub.projection.output import projectOutput
 
 _SOURCE_HASH = sha256(b"edgar-source").hexdigest()
 _NORMALIZATION_HASH = sha256(b"edgar-normalization").hexdigest()

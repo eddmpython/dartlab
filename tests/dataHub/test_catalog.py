@@ -170,7 +170,7 @@ def testNewOwnerProviderNeedsNoCentralEngineList(monkeypatch):
 
 
 def testDeclaredCallableVersionBindsExecutorAndTransitiveSourceDigests(monkeypatch):
-    import dartlab.dataHub.discovery as discovery
+    import dartlab.dataHub.catalog.discovery as discovery
 
     provider = {
         "owner": "analysis",
@@ -197,7 +197,7 @@ def testDeclaredCallableVersionBindsExecutorAndTransitiveSourceDigests(monkeypat
 def testTemporalDeclarationMustMatchExecutorParameters() -> None:
     """시점 지원을 선언하면 그 값을 받을 executor 인자가 실제로 있어야 한다."""
 
-    from dartlab.dataHub.discovery import _requireTemporalDeclarationMatchesExecutor
+    from dartlab.dataHub.catalog.discovery import _requireTemporalDeclarationMatchesExecutor
 
     # 선언과 인자가 맞으면 통과한다.
     _requireTemporalDeclarationMatchesExecutor(
