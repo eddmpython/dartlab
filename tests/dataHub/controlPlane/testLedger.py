@@ -106,3 +106,23 @@ def testCompleteReadCancelAndBoundedMaintenance(tmp_path: Path) -> None:
     assert report.jobsDeleted == 1
     assert report.artifactsDeleted >= 1
     assert ledger.get(cancelled.jobId).state == "cancelled"
+
+
+def testSubmitRejectsBudgetThatCannotFitTheResultWire(tmp_path):
+    """결과가 wire 상한을 넘길 예산은 제출에서 막는다. 계산 후 재시도로 낭비하지 않는다."""
+
+    ledger = DataHubJobLedger(tmp_path / "jobs")
+    oversized = {
+        "requests": [{"assetId": "scan.ratio", "requestId": "r"}],
+        "budget": {"maxBytes": 64 * 1024 * 1024},
+    }
+
+    with pytest.raises(DataHubControlError) as captured:
+        ledger.submit(oversized)
+    assert captured.value.code == "DATA_HUB_PAYLOAD_BUDGET"
+
+    fits = {
+        "requests": [{"assetId": "scan.ratio", "requestId": "r"}],
+        "budget": {"maxBytes": 4 * 1024 * 1024},
+    }
+    assert ledger.submit(fits).jobId

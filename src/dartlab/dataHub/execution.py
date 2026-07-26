@@ -520,6 +520,12 @@ def executeDataQuery(assetIds: Sequence[str], query: DataQuery) -> DataResult:
 
     succeeded = len(partitions)
     failures = len(gaps)
+    # 성적표는 asset 단위 실패 수다. catalog discovery gap 은 데이터 실패가 아니고,
+    # 한 asset 이 gap 을 여러 개 만들어도 실패는 하나다. gaps 개수를 그대로 쓰면
+    # 두 방향 모두로 성적표가 부정확해진다.
+    catalogGapKeys = {(gap.code, gap.assetId, gap.requestId) for gap in catalog.gaps}
+    dataGaps = [gap for gap in gaps if (gap.code, gap.assetId, gap.requestId) not in catalogGapKeys]
+    failedAssets = len({(gap.requestId, gap.assetId) for gap in dataGaps})
     if query.completeness == "requireComplete" and failures:
         status = "failed"
         partitions = []
@@ -561,7 +567,7 @@ def executeDataQuery(assetIds: Sequence[str], query: DataQuery) -> DataResult:
         assets=resolvedRefs,
         snapshotId=catalog.snapshotId,
         contractHash=contractHash,
-        coverage=Coverage(len(requested), len(resolved), succeeded, failures),
+        coverage=Coverage(len(requested), len(resolved), succeeded, failedAssets),
         gaps=tuple(gaps),
         lineageRefs=lineageRefs,
         executionReceipts=tuple(receipts),

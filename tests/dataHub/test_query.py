@@ -422,3 +422,21 @@ def testConcurrencyGroupSerializesCompanyDataOwners(monkeypatch):
     assert result.status == "ok"
     assert maxActive == 1
     assert [partition.requestId for partition in result.partitions] == ["analysis", "credit", "macro"]
+
+
+def testCoverageCountsFailedAssetsNotGapRows() -> None:
+    """성적표는 asset 단위 실패 수다. 한 asset 이 gap 을 여럿 만들어도 실패는 하나다."""
+
+    import dartlab
+
+    result = dartlab.dataHub(
+        "query",
+        assets=("does.notExistOne", "does.notExistTwo"),
+        query=DataQuery(subjects=("005930",)),
+    )
+
+    assert result.status == "failed"
+    assert result.coverage.requestedAssets == 2
+    # gap 은 asset 마다 하나씩이므로 실패 수와 일치해야 한다.
+    assert result.coverage.failedPartitions == len({(g.requestId, g.assetId) for g in result.gaps})
+    assert result.coverage.failedPartitions <= len(result.gaps)

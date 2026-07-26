@@ -55,6 +55,56 @@ def _durableQuery(query: Mapping[str, Any]) -> dict[str, Any]:
     return payload
 
 
+# wire codec 이 Arrow payload 를 base64 로 감싸므로 결과는 원시 대비 약 4/3 로 커진다.
+# 여유를 조금 두고 계산한 원시 상한이다.
+_MAX_RAW_RESULT_BYTES = (_MAX_RESULT_BYTES * 3) // 4 - 64 * 1024
+
+
+def _requireResultBudgetFits(query: Any) -> None:
+    """결과가 wire 상한을 넘길 예산이면 제출 시점에 거부한다.
+
+    Capabilities:
+        6 시간짜리 계산을 세 번 반복한 뒤에야 예산 오류로 죽는 낭비를 막는다.
+
+    Args:
+        query: 제출한 query mapping.
+
+    Raises:
+        DataHubControlError: query byte 예산이 wire 상한을 넘길 때
+            ``DATA_HUB_PAYLOAD_BUDGET``.
+
+    Example:
+        ``_requireResultBudgetFits(query)``.
+
+    Guide:
+        page 예산과 결과 상한은 서로 다른 계층이라 자동으로 맞춰지지 않는다.
+
+    When:
+        job 을 ledger 에 넣기 직전에 검사한다.
+
+    How:
+        base64 팽창을 반영한 원시 상한과 query 의 `maxBytes` 를 비교한다.
+
+    See Also:
+        ``dartlab.dataHub.transport.resultCodec``.
+
+    Requires:
+        예산을 명시하지 않은 query 는 기본값이 상한 안이므로 통과시킨다.
+
+    AI Context:
+        worker 재시도는 결정적 예산 위반을 고쳐주지 못한다. 제출에서 막아야 한다.
+    """
+
+    if not isinstance(query, dict):
+        return
+    budget = query.get("budget")
+    if not isinstance(budget, dict):
+        return
+    maxBytes = budget.get("maxBytes")
+    if type(maxBytes) is int and maxBytes > _MAX_RAW_RESULT_BYTES:
+        raise DataHubControlError("DATA_HUB_PAYLOAD_BUDGET")
+
+
 class DataHubJobLedger:
     """원격 worker가 경쟁할 수 있는 durable lease queue."""
 
@@ -187,6 +237,7 @@ class DataHubJobLedger:
         )
         if len(requestPayload) > _MAX_REQUEST_BYTES:
             raise DataHubControlError("DATA_HUB_PAYLOAD_BUDGET")
+        _requireResultBudgetFits(query)
         requestDigest = hashlib.sha256(requestPayload).hexdigest()
         idempotencyDigest = _identityDigest(idempotencyKey) if idempotencyKey is not None else None
         now = self._clock()
