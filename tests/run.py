@@ -150,11 +150,16 @@ GATES: dict[str, Gate] = {
             "python -X utf8 tests/audit/axisDeclaredCoverage.py --check --quiet && "
             "python -X utf8 tests/audit/workbenchPurity.py --check && "
             # 파일 크기 룰 3. 800 줄 초과 단일 파일 회귀를 차단한다. baseline 은 부채
-            # 원장이라 baseline 밖 신규 위반만 fail 한다. providers 는 기존 대상이고
-            # dataHub 는 continuation store 와 resource paging 분할 이후 편입했다.
-            "python -X utf8 tests/audit/folderSize.py src/dartlab/providers && "
-            "python -X utf8 tests/audit/folderSize.py src/dartlab/dataHub && "
-            "python -X utf8 tests/audit/initThin.py src/dartlab/dataHub && "
+            # 원장이라 baseline 밖 신규 위반만 fail 한다. 예전에는 providers 와 dataHub
+            # 두 폴더만 걸려 있어 나머지 엔진이 무방비로 자랐다. 대상을 src/dartlab
+            # 전역으로 올리고 baseline 을 그 superset 으로 잡아 기존 보장은 그대로 두면서
+            # 어느 엔진에서든 새 위반이 들어오지 못하게 한다.
+            "python -X utf8 tests/audit/folderSize.py src/dartlab "
+            "--baseline tests/audit/_baselines/libSize.json && "
+            # `__init__` 은 재export 파사드여야 하고 로직은 형제 모듈이 소유한다.
+            # 대상을 전역으로 올려 어느 엔진에서든 새 위반이 들어오지 못하게 한다.
+            "python -X utf8 tests/audit/initThin.py src/dartlab "
+            "--baseline tests/audit/_baselines/libInitThin.json && "
             "python -X utf8 tests/audit/untrustedWrapAudit.py --strict && "
             "python -X utf8 tests/audit/checkAgentBoundary.py --strict && "
             # 색상 SSOT 가드 — 브랜드색(#ff3f6f/#fb923c/#ec4899/#ea4647) 토큰 우회 하드코딩 회귀 차단(baseline-ratchet).
