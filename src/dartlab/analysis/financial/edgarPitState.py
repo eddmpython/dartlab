@@ -136,11 +136,93 @@ _DEBT_SHORT_FUNDING = ("CommercialPaper", "ShortTermBorrowings", "ShortTermDebtC
 _DEBT_NONCURRENT = ("LongTermDebtNoncurrent",)
 _DEBT_TOTAL = ("LongTermDebt", "LongTermDebtAndFinanceLeaseObligations")
 _REVENUE_TAGS = (
+    # 앞 4개는 `reference/data/accountMappings.json` 의 edgar `revenue.commonTags` 정본이다.
+    # 뒤 2개는 그 정본에 없는 업종 전용 총매출 태그로, 일반 태그가 하나도 없을 때만 닿는다.
+    # 순서가 곧 우선순위다. `selectLatest` 가 먼저 매칭되는 태그를 채택한다.
     "RevenueFromContractWithCustomerExcludingAssessedTax",
+    "RevenueFromContractWithCustomerIncludingAssessedTax",
     "Revenues",
     "SalesRevenueNet",
+    "SalesRevenueGoodsNet",
+    "RevenuesNetOfInterestExpense",
+    "RealEstateRevenueNet",
 )
 _OPERATING_PROFIT_TAGS = ("OperatingIncomeLoss",)
+
+
+def _tagRuleDigest(payload: object) -> str:
+    """태그 선택 규칙을 canonical JSON digest로 고정한다."""
+
+    return sha256(json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")).hexdigest()
+
+
+def flowSelectionRuleDigest() -> str:
+    """분기 흐름 선택에 실제로 쓰는 태그 우선순위의 digest를 반환한다.
+
+    Capabilities:
+        매출과 영업이익 태그 우선순위를 계약 identity로 노출한다.
+
+    Returns:
+        태그 목록과 순서를 결박한 SHA-256 hex digest.
+
+    Example:
+        ``digest = flowSelectionRuleDigest()``.
+
+    Guide:
+        adapter의 normalization rule hash에 합성해 태그 변경이 계약 identity를 바꾸게 한다.
+
+    Requires:
+        태그 순서가 우선순위이므로 순서 변경도 다른 digest여야 한다.
+
+    AIContext:
+        같은 원천에서 다른 태그 규칙으로 만든 관측을 같은 계약으로 착각하지 않게 한다.
+    """
+
+    return _tagRuleDigest(
+        {
+            "revenue": list(_REVENUE_TAGS),
+            "operatingProfit": list(_OPERATING_PROFIT_TAGS),
+        }
+    )
+
+
+def stateSelectionRuleDigest() -> str:
+    """전체 재무상태 선택에 쓰는 stock과 흐름 태그 규칙의 digest를 반환한다.
+
+    Capabilities:
+        대차 항목, 차입금 블록, 흐름 태그 우선순위를 하나의 계약 identity로 묶는다.
+
+    Returns:
+        stock과 flow 태그 규칙 전체를 결박한 SHA-256 hex digest.
+
+    Example:
+        ``digest = stateSelectionRuleDigest()``.
+
+    Guide:
+        full-state adapter의 normalization rule hash에 합성한다.
+
+    Requires:
+        차입금 구성 태그도 값에 영향을 주므로 함께 결박해야 한다.
+
+    AIContext:
+        태그 테이블 변경이 캐시된 generation을 조용히 통과시키지 않게 한다.
+    """
+
+    return _tagRuleDigest(
+        {
+            "flow": {
+                "revenue": list(_REVENUE_TAGS),
+                "operatingProfit": list(_OPERATING_PROFIT_TAGS),
+            },
+            "stock": {key: list(value) for key, value in _STOCK_TAGS.items()},
+            "debt": {
+                "currentTerm": list(_DEBT_CURRENT_TERM),
+                "shortFunding": list(_DEBT_SHORT_FUNDING),
+                "noncurrent": list(_DEBT_NONCURRENT),
+                "total": list(_DEBT_TOTAL),
+            },
+        }
+    )
 
 
 def _dateText(value) -> str:

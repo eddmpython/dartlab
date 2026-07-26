@@ -9,7 +9,12 @@ import polars as pl
 import pytest
 
 import dartlab.analysis.financial.dataAssets as dataAssets
-from dartlab.analysis.financial.filingFeatures import buildEdgarFinancialFeatureInput
+import dartlab.analysis.financial.edgarPitState as edgarPitState
+from dartlab.analysis.financial.filingFeatures import (
+    EDGAR_FINANCIAL_FEATURE_NORMALIZATION_HASH,
+    EDGAR_FLOW_FEATURE_NORMALIZATION_HASH,
+    buildEdgarFinancialFeatureInput,
+)
 from dartlab.dataHub import DataQuery, DataResult, FactorProjection, TimeContext, data
 from dartlab.dataHub.featureQuery import featureObservationSetFromValue
 
@@ -328,3 +333,38 @@ def testKnownAtIsRequiredBeforeOwnerExecution(monkeypatch: pytest.MonkeyPatch) -
     assert result.status == "failed"
     assert calls == 0
     assert [gap.code for gap in result.gaps] == ["FEATURE_KNOWN_AT_REQUIRED"]
+
+
+def testNormalizationHashTracksTagSelectionRule(monkeypatch: pytest.MonkeyPatch) -> None:
+    """태그 우선순위가 바뀌면 normalization 계약 해시도 반드시 바뀐다."""
+
+    baselineFlow = edgarPitState.flowSelectionRuleDigest()
+    baselineState = edgarPitState.stateSelectionRuleDigest()
+
+    monkeypatch.setattr(
+        edgarPitState,
+        "_REVENUE_TAGS",
+        (*edgarPitState._REVENUE_TAGS, "SalesRevenueServicesNet"),
+    )
+
+    assert edgarPitState.flowSelectionRuleDigest() != baselineFlow
+    assert edgarPitState.stateSelectionRuleDigest() != baselineState
+
+
+def testSelectionRuleDigestIsOrderSensitive(monkeypatch: pytest.MonkeyPatch) -> None:
+    """태그 순서가 곧 우선순위이므로 순서만 달라도 다른 계약이다."""
+
+    baseline = edgarPitState.flowSelectionRuleDigest()
+    monkeypatch.setattr(
+        edgarPitState,
+        "_REVENUE_TAGS",
+        tuple(reversed(edgarPitState._REVENUE_TAGS)),
+    )
+
+    assert edgarPitState.flowSelectionRuleDigest() != baseline
+
+
+def testFlowAndStateNormalizationHashesAreDistinct() -> None:
+    """흐름 전용 계약과 전체 재무상태 계약을 같은 identity로 섞지 않는다."""
+
+    assert EDGAR_FLOW_FEATURE_NORMALIZATION_HASH != EDGAR_FINANCIAL_FEATURE_NORMALIZATION_HASH

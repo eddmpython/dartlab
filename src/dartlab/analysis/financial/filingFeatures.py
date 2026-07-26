@@ -18,10 +18,22 @@ from dartlab.analysis.financial.edgarPitState import (
     compileEdgarQuarterlyFinancialState,
     compileEdgarQuarterlyFlowState,
     compileEdgarQuarterlyRevenueState,
+    flowSelectionRuleDigest,
+    stateSelectionRuleDigest,
 )
 
-EDGAR_FINANCIAL_FEATURE_NORMALIZATION_HASH = sha256(b"dartlab.edgar-quarterly-financial-state-adapter.v1").hexdigest()
-EDGAR_FLOW_FEATURE_NORMALIZATION_HASH = sha256(b"dartlab.edgar-quarterly-flow-feature-adapter.v1").hexdigest()
+_FINANCIAL_ADAPTER_RULE = b"dartlab.edgar-quarterly-financial-state-adapter.v1"
+_FLOW_ADAPTER_RULE = b"dartlab.edgar-quarterly-flow-feature-adapter.v1"
+
+# adapter 버전과 실제 태그 선택 규칙을 함께 결박한다. 태그 우선순위가 바뀌면 같은 원천에서도
+# 다른 값이 선택되므로 계약 identity도 반드시 달라져야 한다. adapter 버전 문자열만 쓰면 옛
+# 태그 규칙으로 구운 READY generation 과 관측이 현행 계약인 것처럼 통과한다.
+EDGAR_FINANCIAL_FEATURE_NORMALIZATION_HASH = sha256(
+    _FINANCIAL_ADAPTER_RULE + b"|" + stateSelectionRuleDigest().encode("ascii")
+).hexdigest()
+EDGAR_FLOW_FEATURE_NORMALIZATION_HASH = sha256(
+    _FLOW_ADAPTER_RULE + b"|" + flowSelectionRuleDigest().encode("ascii")
+).hexdigest()
 
 
 @dataclass(frozen=True)
