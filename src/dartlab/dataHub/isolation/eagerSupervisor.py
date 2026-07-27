@@ -36,45 +36,33 @@ AI Context:
 
 from __future__ import annotations
 
-import hashlib
-import hmac
-import importlib
-import math
-import multiprocessing
-import os
 import time
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from multiprocessing.connection import wait
-from typing import Any, Literal, cast
 
-from dartlab.dataHub.continuation import ContinuationError, arrowSchemaDigest
+from dartlab.dataHub.continuation import ContinuationError
 from dartlab.dataHub.contracts import DataAssetDescriptor, DataQuery
 from dartlab.dataHub.isolation.eagerProcess import (
-    _BUNDLE_OVERHEAD_BYTES,
-    _EAGER_SCHEMA,
-    _FORMAT_VERSION,
     _MAX_BUNDLE_BYTES,
     EagerSeal,
-    _childMain,
-    _decodeBundle,
-    eagerCodePin,
+)
+from dartlab.dataHub.isolation.eagerSupervisorRequest import (
+    _buildSealRequest,
+    _validateSealArguments,
+)
+from dartlab.dataHub.isolation.eagerSupervisorRun import (
+    EagerProcessStatus,
+    _openSealLaunch,
+    _pumpSealFrames,
+    _releaseSealLaunch,
+    _SealLaunch,
+    _SealRun,
+    _settleSealOutcome,
 )
 from dartlab.dataHub.isolation.ownerProcess import (
-    _artifactPath,
-    _awaitChildExit,
-    _ControlTracker,
-    _createArtifact,
-    _drainAvailable,
-    _ensureArtifactRoot,
-    _finishProcess,
-    _ProtocolViolation,
-    _readArtifact,
     _removeArtifact,
     _safeErrorCode,
-    _sentinelReady,
     _stopProcess,
-    _strictJson,
     _WindowsJob,
     _zeroLive,
 )
@@ -83,22 +71,10 @@ from dartlab.dataHub.isolation.processLifecycle import (
     stopProcessGroup,
 )
 from dartlab.dataHub.paging.runtime import (
-    MAX_OWNER_PROCESS_REQUEST_BYTES,
     MIN_OWNER_PROCESS_WORK_SECONDS,
     OWNER_PROCESS_CLEANUP_GRACE_SECONDS,
 )
-from dartlab.dataHub.telemetry import dataHubLogger, recordFailure
-
-EagerProcessStatus = Literal[
-    "ok",
-    "budgetRejected",
-    "timedOut",
-    "protocolFailed",
-    "childFailed",
-    "artifactFailed",
-    "jobFailed",
-    "cleanupFailed",
-]
+from dartlab.dataHub.telemetry import dataHubLogger
 
 _log = dataHubLogger(__name__)
 
@@ -283,96 +259,38 @@ def runEagerSeal(
 ) -> EagerProcessOutcome:
     """General eager lane을 fresh child에서 실행하고 content-sealed bundle로 회수한다."""
 
-    numeric = (publicDeadline, cleanupGraceSeconds, minimumWorkSeconds)
-    if any(type(value) not in {int, float} or not math.isfinite(value) for value in numeric):
-        raise ValueError("eager process deadline 값은 유한한 숫자여야 합니다")
-    if cleanupGraceSeconds <= 0 or minimumWorkSeconds <= 0:
-        raise ValueError("eager process deadline 예약은 양수여야 합니다")
-    if (
-        not selectors
-        or type(maxBundleBytes) is not int
-        or not _BUNDLE_OVERHEAD_BYTES < maxBundleBytes <= _MAX_BUNDLE_BYTES
-    ):
-        raise ValueError("eager process seal 예산이 유효하지 않습니다")
+    _validateSealArguments(
+        selectors,
+        publicDeadline=publicDeadline,
+        cleanupGraceSeconds=cleanupGraceSeconds,
+        minimumWorkSeconds=minimumWorkSeconds,
+        maxBundleBytes=maxBundleBytes,
+    )
     startedAt = time.perf_counter()
     normalizedDeadline = float(publicDeadline)
     workDeadline = normalizedDeadline - float(cleanupGraceSeconds)
     if workDeadline - startedAt < float(minimumWorkSeconds):
         return _budgetOutcome(startedAt, normalizedDeadline)
 
-    composite = importlib.import_module("dartlab.dataHub.paging.composite")
-    execution = importlib.import_module("dartlab.dataHub.execution")
-    owner = importlib.import_module("dartlab.dataHub.paging.owner")
-    requestedMeasures = execution._requestedMeasures(query)
-    expectedCodePin = eagerCodePin(
+    requestPayload = _buildSealRequest(
         descriptor,
-        requestedMeasures=requestedMeasures,
+        query,
+        selectors,
+        requestId=requestId,
+        snapshotId=snapshotId,
+        contractHash=contractHash,
+        universeSnapshotId=universeSnapshotId,
+        codePin=codePin,
+        maxBundleBytes=maxBundleBytes,
+        workDeadline=workDeadline,
     )
-    activeCodePin = expectedCodePin if codePin is None else codePin
-    if (
-        type(activeCodePin) is not str
-        or len(activeCodePin) != 64
-        or any(character not in "0123456789abcdef" for character in activeCodePin)
-    ):
-        raise ValueError("eager code pin이 유효하지 않습니다")
-    if not hmac.compare_digest(activeCodePin, expectedCodePin):
-        raise ContinuationError("PAGEABLE_EAGER_CODE_PIN_FAILED")
-    requestPayload = _strictJson(
-        {
-            "artifactId": "0" * 64,
-            "codePin": activeCodePin,
-            "contractHash": contractHash,
-            "descriptor": owner._descriptorTree(descriptor),
-            "maxBytes": maxBundleBytes,
-            "maxRows": query.budget.maxRows,
-            "query": composite._queryTree(query),
-            "requestId": requestId,
-            "selectors": [dict(selector) for selector in selectors],
-            "snapshotId": snapshotId,
-            "universeSnapshotId": universeSnapshotId,
-            "version": _FORMAT_VERSION,
-            "workDeadlineNs": int(workDeadline * 1_000_000_000),
-        }
-    )
-    if len(requestPayload) > MAX_OWNER_PROCESS_REQUEST_BYTES:
-        raise ValueError("eager process input payload가 상한을 초과했습니다")
 
-    artifactRoot = None
-    artifactPath = None
-    receiveConnection: Any | None = None
-    sendConnection: Any | None = None
-    startGate: Any | None = None
-    process: Any | None = None
+    launch = _SealLaunch()
     job = _WindowsJob()
     try:
-        artifactId = os.urandom(32).hex()
-        request = importlib.import_module("json").loads(requestPayload.decode("ascii"))
-        request["artifactId"] = artifactId
-        requestPayload = _strictJson(request)
-        artifactRoot = _ensureArtifactRoot()
-        artifactPath = _artifactPath(artifactRoot, artifactId)
-        _createArtifact(artifactPath, artifactRoot)
-        context = multiprocessing.get_context("spawn")
-        receiveConnection, sendConnection = context.Pipe(duplex=False)
-        startGate = context.Event()
-        process = context.Process(
-            target=_childMain,
-            args=(sendConnection, startGate, requestPayload, artifactId),
-            name="dartlab-eager-seal",
-            daemon=False,
-        )
-        job.create()
+        _openSealLaunch(launch, job, requestPayload)
     except BaseException as error:
-        if sendConnection is not None:
-            sendConnection.close()
-        if receiveConnection is not None:
-            receiveConnection.close()
-        job.close()
-        if artifactPath is not None:
-            try:
-                _removeArtifact(artifactPath)
-            except ContinuationError:
-                pass
+        _releaseSealLaunch(launch, job)
         if not isinstance(error, Exception):
             raise
         return _setupFailure(
@@ -382,210 +300,101 @@ def runEagerSeal(
             job=job,
         )
     assert (
-        artifactRoot is not None
-        and artifactPath is not None
-        and receiveConnection is not None
-        and sendConnection is not None
-        and startGate is not None
-        and process is not None
+        launch.artifactRoot is not None
+        and launch.artifactPath is not None
+        and launch.receiveConnection is not None
+        and launch.sendConnection is not None
+        and launch.startGate is not None
+        and launch.process is not None
     )
     if workDeadline - time.perf_counter() < float(minimumWorkSeconds):
-        startGate.set()
-        sendConnection.close()
-        receiveConnection.close()
+        launch.startGate.set()
+        launch.sendConnection.close()
+        launch.receiveConnection.close()
         job.close()
-        _removeArtifact(artifactPath)
+        _removeArtifact(launch.artifactPath)
         return _budgetOutcome(startedAt, normalizedDeadline)
-    tracker = _ControlTracker(frames=[])
-    status: EagerProcessStatus = "childFailed"
-    seal: EagerSeal | None = None
-    errorCode: str | None = None
-    cleanupTrace: tuple[str, ...] = ()
-    pid: int | None = None
-    threadNativeId: int | None = None
-    processStarted = False
-    protocolError: str | None = None
-    childCompletedAt: float | None = None
+    run = _SealRun()
     try:
-        process.start()
-        processStarted = True
-        pid = process.pid
-        if pid is None:
+        launch.process.start()
+        run.processStarted = True
+        run.pid = launch.process.pid
+        if run.pid is None:
             raise RuntimeError("EAGER_PROCESS_PID_UNAVAILABLE")
-        sendConnection.close()
-        job.assign(pid)
+        launch.sendConnection.close()
+        job.assign(run.pid)
         if job.attempted and not job.assigned:
-            status = "jobFailed"
-            errorCode = "EAGER_PROCESS_JOB_REQUIRED"
-            cleanupTrace = _stopProcess(process, job, normalizedDeadline)
+            run.status = "jobFailed"
+            run.errorCode = "EAGER_PROCESS_JOB_REQUIRED"
+            run.cleanupTrace = _stopProcess(launch.process, job, normalizedDeadline)
         else:
-            startGate.set()
-            while time.perf_counter() < workDeadline:
-                readyItems = wait(
-                    cast(Any, [receiveConnection, process.sentinel]),
-                    timeout=min(
-                        0.05,
-                        max(0.0, workDeadline - time.perf_counter()),
-                    ),
-                )
-                if receiveConnection in readyItems:
-                    try:
-                        _drainAvailable(
-                            receiveConnection,
-                            tracker,
-                            artifactId=artifactId,
-                        )
-                    except _ProtocolViolation as error:
-                        protocolError = str(error)
-                        break
-                    readyFrame = tracker.readyFrame
-                    if readyFrame is not None:
-                        if readyFrame["pid"] != pid:
-                            protocolError = "EAGER_PROCESS_READY_PID_MISMATCH"
-                            break
-                        threadNativeId = int(readyFrame["threadNativeId"])
-                if process.sentinel in readyItems:
-                    childCompletedAt = time.perf_counter()
-                    try:
-                        _drainAvailable(
-                            receiveConnection,
-                            tracker,
-                            artifactId=artifactId,
-                        )
-                    except _ProtocolViolation as error:
-                        protocolError = str(error)
-                    break
-                if tracker.resultFrame is not None and _sentinelReady(
-                    process,
-                    max(0.0, workDeadline - time.perf_counter()),
-                ):
-                    childCompletedAt = time.perf_counter()
-                    _drainAvailable(
-                        receiveConnection,
-                        tracker,
-                        artifactId=artifactId,
-                    )
-                    break
-            if protocolError is not None:
-                status = "protocolFailed"
-                errorCode = protocolError
-                cleanupTrace = _stopProcess(process, job, normalizedDeadline)
-                cleanupTrace += stopProcessGroup(pid, normalizedDeadline)
-            elif (
-                tracker.resultFrame is not None
-                and childCompletedAt is not None
-                and childCompletedAt <= workDeadline
-                and _awaitChildExit(process, workDeadline)
-            ):
-                cleanupTrace = _finishProcess(process, job, normalizedDeadline)
-                cleanupTrace += stopProcessGroup(pid, normalizedDeadline)
-                resultFrame = tracker.resultFrame
-                assert resultFrame is not None
-                if resultFrame["status"] == "failed":
-                    status = "childFailed"
-                    errorCode = str(resultFrame["errorCode"])
-                else:
-                    payload = _readArtifact(
-                        artifactPath,
-                        artifactRoot,
-                        byteCount=int(resultFrame["byteCount"]),
-                        digest=str(resultFrame["digest"]),
-                        maxBytes=maxBundleBytes,
-                    )
-                    results = _decodeBundle(payload, selectors=selectors)
-                    if len(results) != int(resultFrame["rowCount"]):
-                        raise ContinuationError("CONTINUATION_PAYLOAD_ROW_MISMATCH")
-                    seal = EagerSeal(
-                        payload,
-                        hashlib.sha256(payload).hexdigest(),
-                        len(payload),
-                        len(results),
-                        arrowSchemaDigest(_EAGER_SCHEMA),
-                    )
-                    status = "ok"
-            elif time.perf_counter() >= workDeadline or (
-                childCompletedAt is not None and childCompletedAt > workDeadline
-            ):
-                status = "timedOut"
-                errorCode = "CONTINUATION_TIMEOUT"
-                cleanupTrace = _stopProcess(process, job, normalizedDeadline)
-                cleanupTrace += stopProcessGroup(pid, normalizedDeadline)
-            else:
-                status = "childFailed"
-                # 자식이 typed 실패를 이미 보냈다면 그것이 부모의 추정보다 정확하다.
-                # 자식은 worker thread 가 non-daemon 이라 결과를 보낸 뒤에도 잠시 더
-                # 살아 있을 수 있는데, 그 지연 때문에 진짜 원인을 지우면 안 된다.
-                reportedFrame = tracker.resultFrame
-                reportedCode = (
-                    str(reportedFrame["errorCode"])
-                    if reportedFrame is not None and reportedFrame["status"] == "failed"
-                    else None
-                )
-                errorCode = reportedCode or "EAGER_PROCESS_CHILD_DID_NOT_EXIT"
-                recordFailure(
-                    _log,
-                    "EAGER_PROCESS_CHILD_LINGERED",
-                    context={
-                        "hasResultFrame": reportedFrame is not None,
-                        "reportedCode": reportedCode,
-                        "childCompleted": childCompletedAt is not None,
-                        "processAlive": process.is_alive(),
-                    },
-                )
-                cleanupTrace = _stopProcess(process, job, normalizedDeadline)
-                cleanupTrace += stopProcessGroup(pid, normalizedDeadline)
+            launch.startGate.set()
+            _pumpSealFrames(run, launch, workDeadline=workDeadline)
+            _settleSealOutcome(
+                run,
+                launch,
+                job,
+                selectors,
+                workDeadline=workDeadline,
+                publicDeadline=normalizedDeadline,
+                maxBundleBytes=maxBundleBytes,
+            )
     except ContinuationError as error:
-        if processStarted:
-            cleanupTrace = _stopProcess(process, job, normalizedDeadline)
-            cleanupTrace += stopProcessGroup(pid, normalizedDeadline)
-        status = "artifactFailed"
-        errorCode = error.code
+        if run.processStarted:
+            run.cleanupTrace = _stopProcess(launch.process, job, normalizedDeadline)
+            run.cleanupTrace += stopProcessGroup(run.pid, normalizedDeadline)
+        run.status = "artifactFailed"
+        run.errorCode = error.code
     except Exception as error:
-        if processStarted:
-            cleanupTrace = _stopProcess(process, job, normalizedDeadline)
-            cleanupTrace += stopProcessGroup(pid, normalizedDeadline)
-        status = "childFailed"
-        errorCode = _safeErrorCode(error)
+        if run.processStarted:
+            run.cleanupTrace = _stopProcess(launch.process, job, normalizedDeadline)
+            run.cleanupTrace += stopProcessGroup(run.pid, normalizedDeadline)
+        run.status = "childFailed"
+        run.errorCode = _safeErrorCode(error)
     except BaseException:
-        if processStarted:
-            _stopProcess(process, job, normalizedDeadline)
-            stopProcessGroup(pid, normalizedDeadline)
-        _removeArtifact(artifactPath)
+        if run.processStarted:
+            _stopProcess(launch.process, job, normalizedDeadline)
+            stopProcessGroup(run.pid, normalizedDeadline)
+        _removeArtifact(launch.artifactPath)
         raise
     finally:
-        startGate.set()
-        sendConnection.close()
-        receiveConnection.close()
+        launch.startGate.set()
+        launch.sendConnection.close()
+        launch.receiveConnection.close()
         job.close()
 
-    zeroLive = _zeroLive(process, pid, threadNativeId, job) and not processGroupAlive(pid) if processStarted else True
+    zeroLive = (
+        _zeroLive(launch.process, run.pid, run.threadNativeId, job) and not processGroupAlive(run.pid)
+        if run.processStarted
+        else True
+    )
     try:
-        _removeArtifact(artifactPath)
+        _removeArtifact(launch.artifactPath)
     except ContinuationError as error:
-        status = "cleanupFailed"
-        seal = None
-        errorCode = error.code
+        run.status = "cleanupFailed"
+        run.seal = None
+        run.errorCode = error.code
     if not zeroLive:
-        status = "cleanupFailed"
-        seal = None
-        errorCode = "EAGER_PROCESS_LIVE_AFTER_CLEANUP"
+        run.status = "cleanupFailed"
+        run.seal = None
+        run.errorCode = "EAGER_PROCESS_LIVE_AFTER_CLEANUP"
     endedAt = time.perf_counter()
     outcome = EagerProcessOutcome(
-        status,
-        seal,
-        processStarted,
-        pid,
-        threadNativeId,
+        run.status,
+        run.seal,
+        run.processStarted,
+        run.pid,
+        run.threadNativeId,
         endedAt - startedAt,
         max(0.0, endedAt - normalizedDeadline),
-        len(tracker.frames),
-        tracker.byteCount,
-        cleanupTrace,
+        len(run.tracker.frames),
+        run.tracker.byteCount,
+        run.cleanupTrace,
         zeroLive,
         job.attempted,
         job.assigned,
         job.error,
-        None if status == "ok" else _publicErrorCode(errorCode),
+        None if run.status == "ok" else _publicErrorCode(run.errorCode),
     )
     recordChildOutcome(outcome)
     return outcome
