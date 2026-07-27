@@ -47,7 +47,7 @@ class AdapterPlan:
     """참이면 정규화 표와 기간 목록을 미리 만들어야 한다."""
 
 
-def _series(*, options: bool = False) -> tuple[tuple[str, str, Any], ...]:
+def _series() -> tuple[tuple[str, str, Any], ...]:
     """`categories` 와 `series` 를 기본값으로 덮어쓰는 가장 흔한 모양."""
     return (("categories", ALWAYS, []), ("series", ALWAYS, []))
 
