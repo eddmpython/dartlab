@@ -304,11 +304,23 @@ def vectorBacktest(
             }
         )
 
-    # 일별 수익률 (포지션 기반)
+    # 일별 수익률 (포지션 기반). 체결 비용을 진입과 청산 봉에 실어 준다.
+    #
+    # 예전에는 종가만으로 만들어서 수수료, 슬리피지, 갭, 물량 충격이 하나도 반영되지
+    # 않았다. 그 비용은 거래 손익에만 붙었기 때문에, 수수료를 0 에서 1000bp 로 올려도
+    # 샤프와 최대낙폭이 글자 하나 바뀌지 않았다. 모듈 docstring 이 "수수료 15bp,
+    # 슬리피지 5bp" 를 물린다고 밝히는데 정작 대표 지표가 그것을 모르는 셈이었다.
     daily_ret = np.zeros(n, dtype=np.float64)
     for i in range(1, n):
         if pos[i] == 1:
             daily_ret[i] = (close[i] - close[i - 1]) / close[i - 1]
+    for trade in trades:
+        # `cost_bps` 는 왕복 기준이라 절반씩 진입 봉과 청산 봉에 나눠 붙인다.
+        oneWay = float(trade.get("cost_bps", 0.0)) / 2.0 / 1e4
+        for barKey in ("entry_idx", "exit_idx"):
+            bar = int(trade.get(barKey, -1))
+            if 0 <= bar < n:
+                daily_ret[bar] -= oneWay
     equity = np.cumprod(1.0 + daily_ret)
 
     # trades DataFrame
