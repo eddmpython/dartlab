@@ -8,16 +8,10 @@ from __future__ import annotations
 
 import polars as pl
 
+from dartlab.synth.rowAccess import safeDiv
 from dartlab.viz.display.finance.accounts import extractSeries
 from dartlab.viz.display.finance.periods import lastNPeriods
 from dartlab.viz.display.finance.schema import PeriodKind
-
-
-def _safeDiv(a: float | None, b: float | None) -> float | None:
-    """a / b 안전. b 가 0/None 이면 None."""
-    if a is None or b is None or b == 0:
-        return None
-    return a / b
 
 
 def _gp(rev: float | None, cos: float | None, gp: float | None) -> float | None:
@@ -48,9 +42,9 @@ def isOverview(norm: pl.DataFrame, nPeriods: int, periodKind: PeriodKind) -> dic
     ni = extractSeries(norm, "netIncome", periods)
 
     gpVals = [_gp(rev[i], cos[i], gp[i]) for i in range(len(periods))]
-    gpm = [(_safeDiv(gpVals[i], rev[i]) or 0) * 100 if rev[i] else None for i in range(len(periods))]
-    opm = [(_safeDiv(op[i], rev[i]) or 0) * 100 if rev[i] else None for i in range(len(periods))]
-    npm = [(_safeDiv(ni[i], rev[i]) or 0) * 100 if rev[i] else None for i in range(len(periods))]
+    gpm = [(safeDiv(gpVals[i], rev[i]) or 0) * 100 if rev[i] else None for i in range(len(periods))]
+    opm = [(safeDiv(op[i], rev[i]) or 0) * 100 if rev[i] else None for i in range(len(periods))]
+    npm = [(safeDiv(ni[i], rev[i]) or 0) * 100 if rev[i] else None for i in range(len(periods))]
 
     return {
         "periods": periods,
@@ -90,9 +84,9 @@ def isMarginTrend(norm: pl.DataFrame, nPeriods: int, periodKind: PeriodKind) -> 
     op = extractSeries(norm, "operatingIncome", periods)
     ni = extractSeries(norm, "netIncome", periods)
     gpVals = [_gp(rev[i], cos[i], gp[i]) for i in range(len(periods))]
-    gpm = [(_safeDiv(gpVals[i], rev[i]) or 0) * 100 if rev[i] else None for i in range(len(periods))]
-    opm = [(_safeDiv(op[i], rev[i]) or 0) * 100 if rev[i] else None for i in range(len(periods))]
-    npm = [(_safeDiv(ni[i], rev[i]) or 0) * 100 if rev[i] else None for i in range(len(periods))]
+    gpm = [(safeDiv(gpVals[i], rev[i]) or 0) * 100 if rev[i] else None for i in range(len(periods))]
+    opm = [(safeDiv(op[i], rev[i]) or 0) * 100 if rev[i] else None for i in range(len(periods))]
+    npm = [(safeDiv(ni[i], rev[i]) or 0) * 100 if rev[i] else None for i in range(len(periods))]
     return {"periods": periods, "gpm": gpm, "opm": opm, "npm": npm}
 
 
@@ -203,12 +197,12 @@ def bsLeverage(norm: pl.DataFrame, nPeriods: int, periodKind: PeriodKind) -> dic
     eq = extractSeries(norm, "equity", periods)
     curA = extractSeries(norm, "currentAssets", periods)
     curL = extractSeries(norm, "currentLiabilities", periods)
-    debtToEquity = [(_safeDiv(liab[i], eq[i]) or 0) * 100 if liab[i] and eq[i] else None for i in range(len(periods))]
+    debtToEquity = [(safeDiv(liab[i], eq[i]) or 0) * 100 if liab[i] and eq[i] else None for i in range(len(periods))]
     debtToAssets = [
-        (_safeDiv(liab[i], assets[i]) or 0) * 100 if liab[i] and assets[i] else None for i in range(len(periods))
+        (safeDiv(liab[i], assets[i]) or 0) * 100 if liab[i] and assets[i] else None for i in range(len(periods))
     ]
     currentRatio = [
-        (_safeDiv(curA[i], curL[i]) or 0) * 100 if curA[i] and curL[i] else None for i in range(len(periods))
+        (safeDiv(curA[i], curL[i]) or 0) * 100 if curA[i] and curL[i] else None for i in range(len(periods))
     ]
     return {
         "periods": periods,

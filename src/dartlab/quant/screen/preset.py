@@ -10,6 +10,7 @@ import logging
 import polars as pl
 
 from dartlab.core.polarsUtil import isEmptyDf
+from dartlab.quant.numeric import parseNumber
 from dartlab.quant.screen.dataAccess import loadScanParquet
 from dartlab.synth.scanBridge import extractAnnualConsolidated, isEdgarSchema
 
@@ -130,15 +131,6 @@ def _screenPriceBased(preset: str, market: str, universe: list[str] | None = Non
     return result
 
 
-def _parse(val) -> float | None:
-    """문자열/숫자 → float. core SSOT 사용."""
-    if isinstance(val, (int, float)):
-        return float(val)
-    from dartlab.core.utils.helpers import parseNumStr
-
-    return parseNumStr(val)
-
-
 def calcScreen(*, market: str = "KR", preset: str = "quality", stockCode: str | None = None, **kwargs) -> dict:
     """팩터 스크리닝.
 
@@ -256,8 +248,8 @@ def calcScreen(*, market: str = "KR", preset: str = "quality", stockCode: str | 
                 stocks[code] = {"name": row.get("corp_name", "")}
             sj = row.get("sj_div", "")
             nm = str(row.get("account_nm", ""))
-            amt = _parse(row.get("thstrm_amount"))
-            prev = _parse(row.get("frmtrm_amount"))
+            amt = parseNumber(row.get("thstrm_amount"))
+            prev = parseNumber(row.get("frmtrm_amount"))
             s = stocks[code]
             if sj == "IS" and nm == "매출액":
                 s["sales"] = amt

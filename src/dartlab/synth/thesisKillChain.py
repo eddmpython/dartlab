@@ -14,6 +14,19 @@ from typing import Any
 
 import polars as pl
 
+from dartlab.synth.rowAccess import (
+    diff,
+    evidenceSummary,
+    firstValue,
+    latestDate,
+    pctChange,
+    rowsOf,
+    safeDiv,
+    toFloat,
+)
+
+_DATE_KEYS = ("date", "rcept_dt", "datetime", "publishedAt", "filedAt", "period")
+
 _ACCOUNT_ALIASES: dict[str, tuple[str, ...]] = {
     "revenue": ("sales", "revenue", "매출액", "영업수익"),
     "operatingProfit": ("operating_profit", "operating_income", "영업이익"),
@@ -66,11 +79,11 @@ def buildThesisKillChainMemo(
     panel = _statementPanel(statement_map)
     raw_sets = {
         "statements": panel,
-        "filings": _rows(filings),
-        "priceRows": _rows(priceRows),
-        "flowRows": _rows(flowRows),
-        "consensusRows": _rows(consensusRows),
-        "scanRows": _rows(scanRows),
+        "filings": rowsOf(filings),
+        "priceRows": rowsOf(priceRows),
+        "flowRows": rowsOf(flowRows),
+        "consensusRows": rowsOf(consensusRows),
+        "scanRows": rowsOf(scanRows),
         "assumptions": _assumptionRows(assumptions),
     }
     thesis_rows = _thesisIntake(thesis, raw_sets["assumptions"])
@@ -299,16 +312,16 @@ def _fragilityMap(
     rows = [
         _metricRow(
             "revenueGrowth",
-            _pctChange(_toFloat(latest.get("revenue")), _toFloat(previous.get("revenue"))),
+            pctChange(toFloat(latest.get("revenue")), toFloat(previous.get("revenue"))),
             "growth below 0 or above unsustainably high range",
             risk=lambda value: value is not None and value < -0.10,
             watch=lambda value: value is not None and (value < 0 or value > 0.35),
         ),
         _metricRow(
             "operatingMarginTrend",
-            _diff(
-                _safeDiv(_toFloat(latest.get("operatingProfit")), _toFloat(latest.get("revenue"))),
-                _safeDiv(_toFloat(previous.get("operatingProfit")), _toFloat(previous.get("revenue"))),
+            diff(
+                safeDiv(toFloat(latest.get("operatingProfit")), toFloat(latest.get("revenue"))),
+                safeDiv(toFloat(previous.get("operatingProfit")), toFloat(previous.get("revenue"))),
             ),
             "margin deterioration breaks operating leverage assumption",
             risk=lambda value: value is not None and value < -0.05,
@@ -316,21 +329,21 @@ def _fragilityMap(
         ),
         _metricRow(
             "cashConversion",
-            _safeDiv(_toFloat(latest.get("cfo")), _toFloat(latest.get("netIncome"))),
+            safeDiv(toFloat(latest.get("cfo")), toFloat(latest.get("netIncome"))),
             "CFO does not support accounting earnings",
             risk=lambda value: value is not None and value < 0.60,
             watch=lambda value: value is not None and value < 0.85,
         ),
         _metricRow(
             "debtToEquity",
-            _safeDiv(_toFloat(latest.get("debt")), _toFloat(latest.get("equity"))),
+            safeDiv(toFloat(latest.get("debt")), toFloat(latest.get("equity"))),
             "leverage reduces scenario room",
             risk=lambda value: value is not None and value > 1.50,
             watch=lambda value: value is not None and value > 0.80,
         ),
         _metricRow(
             "cashToDebt",
-            _safeDiv(_toFloat(latest.get("cash")), _toFloat(latest.get("debt"))),
+            safeDiv(toFloat(latest.get("cash")), toFloat(latest.get("debt"))),
             "liquidity cushion is thin",
             risk=lambda value: value is not None and value < 0.20,
             watch=lambda value: value is not None and value < 0.40,
@@ -365,17 +378,17 @@ def _marketFragility(price_rows: list[dict[str, Any]], flow_rows: list[dict[str,
     prices = _sortRows(price_rows)
     latest = prices[0] if prices else {}
     previous = prices[1] if len(prices) > 1 else {}
-    price_change = _pctChange(
-        _toFloat(_first(latest, "close", "price", "종가")),
-        _toFloat(_first(previous, "close", "price", "종가")),
+    price_change = pctChange(
+        toFloat(firstValue(latest, "close", "price", "종가")),
+        toFloat(firstValue(previous, "close", "price", "종가")),
     )
     flows = _sortRows(flow_rows)
     latest_flow = flows[0] if flows else {}
     net_flow = sum(
         value
         for value in (
-            _toFloat(_first(latest_flow, "foreignNetBuy", "foreignNet", "외국인순매수")),
-            _toFloat(_first(latest_flow, "institutionNetBuy", "institutionNet", "기관순매수")),
+            toFloat(firstValue(latest_flow, "foreignNetBuy", "foreignNet", "외국인순매수")),
+            toFloat(firstValue(latest_flow, "institutionNetBuy", "institutionNet", "기관순매수")),
         )
         if value is not None
     )
@@ -410,9 +423,9 @@ def _consensusFragility(consensus_rows: list[dict[str, Any]]) -> list[dict[str, 
             }
         ]
     latest, previous = rows[0], rows[1]
-    op_revision = _pctChange(
-        _toFloat(_first(latest, "opConsensus", "operatingProfitConsensus", "operatingProfit")),
-        _toFloat(_first(previous, "opConsensus", "operatingProfitConsensus", "operatingProfit")),
+    op_revision = pctChange(
+        toFloat(firstValue(latest, "opConsensus", "operatingProfitConsensus", "operatingProfit")),
+        toFloat(firstValue(previous, "opConsensus", "operatingProfitConsensus", "operatingProfit")),
     )
     return [
         _metricRow(
@@ -449,19 +462,19 @@ def _triggerCatalog(
             rows.append(
                 {
                     "triggerId": f"filing:{category}",
-                    "trigger": _first(filing, "report_nm", "title", "headline") or category,
+                    "trigger": firstValue(filing, "report_nm", "title", "headline") or category,
                     "source": "filing",
                     "status": "risk" if category in {"auditRisk", "financingStress"} else "watch",
                     "evidence": category,
                 }
             )
     for scan in scan_rows[:8]:
-        score = _toFloat(_first(scan, "score", "value", "riskScore"))
+        score = toFloat(firstValue(scan, "score", "value", "riskScore"))
         if score is not None and score > 0:
             rows.append(
                 {
-                    "triggerId": f"scan:{_first(scan, 'axis', 'metric', 'screen') or 'primitive'}",
-                    "trigger": _first(scan, "axis", "metric", "screen") or "scanPrimitive",
+                    "triggerId": f"scan:{firstValue(scan, 'axis', 'metric', 'screen') or 'primitive'}",
+                    "trigger": firstValue(scan, "axis", "metric", "screen") or "scanPrimitive",
                     "source": "scan",
                     "status": "watch",
                     "evidence": "positive scan primitive score",
@@ -811,7 +824,7 @@ def _deepDiveRows(
                 "step": name,
                 "status": status,
                 "rowCount": len(table),
-                "evidence": _evidenceSummary(table),
+                "evidence": evidenceSummary(table),
                 "nextAction": _nextAction(name, status),
             }
         )
@@ -881,24 +894,8 @@ def _valueFromFrame(frame: pl.DataFrame, aliases: tuple[str, ...], period: str) 
         for raw in frame.select([label_col, period]).to_dicts():
             label = _compact(str(raw.get(label_col) or ""))
             if any(_compact(alias) in label for alias in aliases):
-                return _toFloat(raw.get(period))
+                return toFloat(raw.get(period))
     return None
-
-
-def _rows(data: Iterable[Mapping[str, Any]] | pl.DataFrame | Mapping[str, Any] | None) -> list[dict[str, Any]]:
-    if data is None:
-        return []
-    if isinstance(data, pl.DataFrame):
-        return [dict(row) for row in data.to_dicts()]
-    if isinstance(data, Mapping):
-        return [dict(data)]
-    if isinstance(data, str):
-        return []
-    rows: list[dict[str, Any]] = []
-    for item in data:
-        if isinstance(item, Mapping):
-            rows.append(dict(item))
-    return rows
 
 
 def _filingCategory(text: str) -> str | None:
@@ -1033,62 +1030,13 @@ def _sortRows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 
 def _dateOf(row: Mapping[str, Any]) -> str | None:
-    value = _first(row, "date", "rcept_dt", "datetime", "publishedAt", "filedAt", "period")
+    value = firstValue(row, *_DATE_KEYS)
     return str(value) if value is not None else None
 
 
 def _latestDate(*items: Any) -> str | None:
-    dates: list[str] = []
-    for item in items:
-        if isinstance(item, list):
-            for row in item:
-                date = _dateOf(row) if isinstance(row, Mapping) else None
-                if date:
-                    dates.append(str(date))
-        elif isinstance(item, Mapping):
-            date = _dateOf(item)
-            if date:
-                dates.append(str(date))
-    return max(dates) if dates else None
-
-
-def _first(row: Mapping[str, Any], *keys: str) -> Any:
-    lowered = {str(key).lower(): key for key in row}
-    for key in keys:
-        if key in row and row[key] is not None:
-            return row[key]
-        actual = lowered.get(key.lower())
-        if actual is not None and row[actual] is not None:
-            return row[actual]
-    return None
-
-
-def _pctChange(current: float | None, previous: float | None) -> float | None:
-    if current is None or previous in (None, 0):
-        return None
-    return (current - previous) / abs(previous)
-
-
-def _safeDiv(numerator: float | None, denominator: float | None) -> float | None:
-    if numerator is None or denominator in (None, 0):
-        return None
-    return numerator / denominator
-
-
-def _diff(left: float | None, right: float | None) -> float | None:
-    if left is None or right is None:
-        return None
-    return left - right
-
-
-def _toFloat(value: Any) -> float | None:
-    try:
-        number = float(value)
-    except (TypeError, ValueError):
-        return None
-    if number != number:
-        return None
-    return number
+    """이 판독기가 날짜로 보는 key 목록을 공유 접근자에 넘긴다."""
+    return latestDate(items, keys=_DATE_KEYS)
 
 
 def _round(value: float | None) -> float | None:
@@ -1100,15 +1048,6 @@ def _maxStatus(rows: list[dict[str, Any]]) -> str:
     if not rows:
         return "missing"
     return max((str(row.get("status") or "missing") for row in rows), key=lambda item: rank.get(item, 0))
-
-
-def _evidenceSummary(rows: list[dict[str, Any]]) -> str:
-    if not rows:
-        return "no rows"
-    for row in rows:
-        if row.get("evidence"):
-            return str(row["evidence"])
-    return ", ".join(rows[0].keys())
 
 
 def _nextAction(step: str, status: str) -> str:

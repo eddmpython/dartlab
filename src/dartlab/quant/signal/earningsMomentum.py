@@ -11,19 +11,11 @@ import numpy as np
 import polars as pl
 
 from dartlab.core.market import resolveMarket
+from dartlab.quant.numeric import parseNumber
 from dartlab.quant.screen.dataAccess import loadScanParquet
 from dartlab.synth.scanBridge import extractAnnualConsolidated, isEdgarSchema
 
 log = logging.getLogger(__name__)
-
-
-def _parse(val) -> float | None:
-    """문자열/숫자 → float. core SSOT 사용."""
-    if isinstance(val, (int, float)):
-        return float(val)
-    from dartlab.core.utils.helpers import parseNumStr
-
-    return parseNumStr(val)
 
 
 def calcEarnings(stockCode: str, *, market: str = "auto", **kwargs) -> dict:
@@ -137,7 +129,7 @@ def calcEarnings(stockCode: str, *, market: str = "auto", **kwargs) -> dict:
         stock = annual.filter(pl.col("sj_div").is_in(["IS", "CIS"]) & pl.col("account_nm").str.contains("영업이익"))
         for row in stock.iter_rows(named=True):
             y = row.get("bsns_year")
-            v = _parse(row.get("thstrm_amount"))
+            v = parseNumber(row.get("thstrm_amount"))
             if y and v is not None:
                 if y not in yearly or abs(v) > abs(yearly.get(y, 0)):
                     yearly[y] = v

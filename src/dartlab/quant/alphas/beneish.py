@@ -30,15 +30,10 @@ import polars as pl
 
 from dartlab.quant.factor.build import _latestYear
 from dartlab.quant.screen.dataAccess import extractAccount, loadScanParquet
+from dartlab.synth.rowAccess import safeDiv
 from dartlab.synth.scanBridge import extractAnnualConsolidated, isEdgarSchema
 
 log = logging.getLogger(__name__)
-
-
-def _safeDiv(num: float | None, den: float | None) -> float | None:
-    if num is None or den is None or den == 0:
-        return None
-    return num / den
 
 
 def _computeM(cur: pl.DataFrame, prev: pl.DataFrame) -> float | None:
@@ -70,40 +65,40 @@ def _computeM(cur: pl.DataFrame, prev: pl.DataFrame) -> float | None:
         return None
 
     # DSRI
-    dsri_num = _safeDiv(ar, sales)
-    dsri_den = _safeDiv(ar_p, sales_p)
-    dsri = _safeDiv(dsri_num, dsri_den) if (dsri_num and dsri_den) else 1.0
+    dsri_num = safeDiv(ar, sales)
+    dsri_den = safeDiv(ar_p, sales_p)
+    dsri = safeDiv(dsri_num, dsri_den) if (dsri_num and dsri_den) else 1.0
 
     # GMI — 전년 GM / 현재 GM (악화 시 > 1)
-    gm = _safeDiv(gp, sales)
-    gm_p = _safeDiv(gp_p, sales_p)
-    gmi = _safeDiv(gm_p, gm) if (gm and gm_p and gm > 0) else 1.0
+    gm = safeDiv(gp, sales)
+    gm_p = safeDiv(gp_p, sales_p)
+    gmi = safeDiv(gm_p, gm) if (gm and gm_p and gm > 0) else 1.0
 
     # AQI — (1 - CA/TA) / prev
-    aqi_num = 1 - _safeDiv(ca, ta) if ca is not None else None
-    aqi_den = 1 - _safeDiv(caP, taP) if caP is not None else None
-    aqi = _safeDiv(aqi_num, aqi_den) if (aqi_num and aqi_den and aqi_den > 0) else 1.0
+    aqi_num = 1 - safeDiv(ca, ta) if ca is not None else None
+    aqi_den = 1 - safeDiv(caP, taP) if caP is not None else None
+    aqi = safeDiv(aqi_num, aqi_den) if (aqi_num and aqi_den and aqi_den > 0) else 1.0
 
     # SGI
     sgi = sales / sales_p if sales_p > 0 else 1.0
 
     # DEPI — 전년 감가율 / 현재 감가율 (감소 시 > 1)
-    dep_rate = _safeDiv(dep, ta) if dep else None
-    dep_rate_p = _safeDiv(depP, taP) if depP else None
-    depi = _safeDiv(dep_rate_p, dep_rate) if (dep_rate and dep_rate_p and dep_rate > 0) else 1.0
+    dep_rate = safeDiv(dep, ta) if dep else None
+    dep_rate_p = safeDiv(depP, taP) if depP else None
+    depi = safeDiv(dep_rate_p, dep_rate) if (dep_rate and dep_rate_p and dep_rate > 0) else 1.0
 
     # SGAI
-    sgai_num = _safeDiv(sga, sales)
-    sgai_den = _safeDiv(sgaP, sales_p)
-    sgai = _safeDiv(sgai_num, sgai_den) if (sgai_num and sgai_den) else 1.0
+    sgai_num = safeDiv(sga, sales)
+    sgai_den = safeDiv(sgaP, sales_p)
+    sgai = safeDiv(sgai_num, sgai_den) if (sgai_num and sgai_den) else 1.0
 
     # TATA
     tata = ((ni or 0) - (ocf or 0)) / ta if (ni is not None or ocf is not None) and ta > 0 else 0.0
 
     # LVGI
-    lvgi_num = _safeDiv(tl, ta) if tl is not None else None
-    lvgi_den = _safeDiv(tlP, taP) if tlP is not None else None
-    lvgi = _safeDiv(lvgi_num, lvgi_den) if (lvgi_num and lvgi_den and lvgi_den > 0) else 1.0
+    lvgi_num = safeDiv(tl, ta) if tl is not None else None
+    lvgi_den = safeDiv(tlP, taP) if tlP is not None else None
+    lvgi = safeDiv(lvgi_num, lvgi_den) if (lvgi_num and lvgi_den and lvgi_den > 0) else 1.0
 
     m = (
         -4.84

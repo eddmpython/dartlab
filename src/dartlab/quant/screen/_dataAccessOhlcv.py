@@ -1,4 +1,4 @@
-"""quant 공용 헬퍼 — OHLCV fetch + numpy 변환 + 신호 시리즈 어댑터."""
+"""quant 공용 헬퍼: OHLCV fetch + numpy 변환 + 신호 시리즈 어댑터."""
 
 from __future__ import annotations
 
@@ -10,12 +10,13 @@ if TYPE_CHECKING:
     import polars as pl
 
 from dartlab.core.polarsUtil import isEmptyDf
+from dartlab.synth.marketDataAccess import fetchOhlcv as fetchOhlcvShared
 
 log = logging.getLogger(__name__)
 
 
 def fetchOhlcv(stockCode: str, **kwargs: Any) -> "pl.DataFrame | None":
-    """gather("price")로 OHLCV 수집 — 실패 시 None.
+    """gather("price")로 OHLCV 수집: 실패 시 None.
 
     Parameters
     ----------
@@ -27,32 +28,27 @@ def fetchOhlcv(stockCode: str, **kwargs: Any) -> "pl.DataFrame | None":
     Returns
     -------
     pl.DataFrame | None
-        date : date — 거래일
-        open : float — 시가 (원)
-        high : float — 고가 (원)
-        low : float — 저가 (원)
-        close : float — 종가 (원)
-        volume : int — 거래량 (주)
+        date : date: 거래일
+        open : float: 시가 (원)
+        high : float: 고가 (원)
+        low : float: 저가 (원)
+        close : float: 종가 (원)
+        volume : int: 거래량 (주)
         수집 실패 시 None.
 
     Requires:
         L1 gather provider (KR KRX 또는 US Yahoo Finance) 활성.
 
     Raises:
-        없음 — 모든 실패는 None 반환 + warning 로그.
+        없음. 모든 실패는 None 반환 + warning 로그.
     """
-    try:
-        from dartlab.gather.entry import GatherEntry
-
-        g = GatherEntry()
-        return g("price", stockCode, **kwargs)
-    except (ImportError, ValueError, TypeError, RuntimeError):
-        log.warning("OHLCV fetch 실패: %s", stockCode)
-        return None
+    # 수집 자체는 L1.5 `synth.marketDataAccess` 가 정본이다. 예전에는 같은 여섯 줄을
+    # 여기서도 갖고 있어서, 한쪽만 예외를 더 잡으면 같은 종목이 엔진에 따라 다르게 비었다.
+    return fetchOhlcvShared(stockCode, **kwargs)
 
 
 def fetchBenchmark(market: str = "KR", **kwargs: Any) -> "pl.DataFrame | None":
-    """벤치마크 OHLCV 수집 — KR=KRX 지수, US=S&P500.
+    """벤치마크 OHLCV 수집: KR=KRX 지수, US=S&P500.
 
     Parameters
     ----------
@@ -64,12 +60,12 @@ def fetchBenchmark(market: str = "KR", **kwargs: Any) -> "pl.DataFrame | None":
     Returns
     -------
     pl.DataFrame | None
-        date : date — 거래일
-        open : float — 시가
-        high : float — 고가
-        low : float — 저가
-        close : float — 종가
-        volume : int — 거래량
+        date : date: 거래일
+        open : float: 시가
+        high : float: 고가
+        low : float: 저가
+        close : float: 종가
+        volume : int: 거래량
         수집 실패 시 None.
 
     Example:
@@ -81,7 +77,7 @@ def fetchBenchmark(market: str = "KR", **kwargs: Any) -> "pl.DataFrame | None":
         gather provider 활성 + 벤치마크 시리즈 등록.
 
     Raises:
-        없음 — 실패는 None.
+        없음. 실패는 None.
     """
     try:
         from dartlab.quant.benchmark.data import fetchBenchmarkOhlcv
@@ -109,10 +105,10 @@ def ohlcvToArrays(df) -> dict:
         - date 컬럼은 list 로 보존 (날짜 객체 형식 유지)
 
     Args:
-        df: pl.DataFrame — OHLCV (date/open/high/low/close/volume).
+        df: pl.DataFrame: OHLCV (date/open/high/low/close/volume).
 
     Returns:
-        dict — keys ``open/high/low/close/volume/date``. 빈 df 시 ``{}``.
+        dict: keys ``open/high/low/close/volume/date``. 빈 df 시 ``{}``.
 
     Guide:
         Quant signal/regime 모듈 (technical indicators, chartPatterns) 의 표준 입력 변환.
@@ -127,7 +123,7 @@ def ohlcvToArrays(df) -> dict:
         df 가 polars DataFrame.
 
     Raises:
-        없음 — 누락 컬럼 자동 skip.
+        없음. 누락 컬럼 자동 skip.
 
     Example:
         >>> arr = ohlcvToArrays(df)
@@ -158,7 +154,7 @@ def ohlcvToArrays(df) -> dict:
 
 
 def tomMask(dates) -> "Any":
-    """Turn-of-the-Month boolean mask — KR 캘린더 시즌신호.
+    """Turn-of-the-Month boolean mask: KR 캘린더 시즌신호.
 
     KOSDAQ 에서 학술 검증된 월말 3거래일 + 월초 3거래일 효과를 boolean 시계열로 반환.
     학술 근거: Lakonishok-Smidt 1988, Korean Journal of Finance (KOSDAQ TOM, 2018+).
@@ -170,10 +166,10 @@ def tomMask(dates) -> "Any":
         - TOM 효과 (월말·월초 abnormal return) 진입 마스크
 
     Args:
-        dates: ``list[date]`` 또는 polars Date Series — OHLCV 의 date 컬럼.
+        dates: ``list[date]`` 또는 polars Date Series: OHLCV 의 date 컬럼.
 
     Returns:
-        numpy.ndarray[bool] — 길이 N. 월말 3 일 / 월초 3 일 True.
+        numpy.ndarray[bool]: 길이 N. 월말 3 일 / 월초 3 일 True.
 
     Guide:
         seasonalKR 스타일의 진입 게이트. 다른 위치에서 재구현 금지 (SSOT).
@@ -188,7 +184,7 @@ def tomMask(dates) -> "Any":
         dates 의 각 원소가 ``.day`` 속성 보유 (date/datetime).
 
     Raises:
-        없음 — 빈 입력 시 빈 array.
+        없음. 빈 입력 시 빈 array.
 
     Example:
         >>> from datetime import date
@@ -225,7 +221,7 @@ def extractSignalSeries(arr: dict, fn, *, key: str | None = None, **kwargs) -> "
         **kwargs: fn 에 전달할 추가 인자.
 
     Returns:
-        dict ``{key: NDArray}`` — 길이 보존.
+        dict ``{key: NDArray}``: 길이 보존.
 
     Guide:
         Strategy DSL 의 v*-함수 시계열 분기 단일 SSOT. 다른 위치에 비슷한 wrapper 금지.
@@ -241,7 +237,7 @@ def extractSignalSeries(arr: dict, fn, *, key: str | None = None, **kwargs) -> "
         arr 에 close 컬럼 + fn 이 callable + 시그니처 readable.
 
     Raises:
-        없음 — close 부재 또는 빈 arr 시 ``{}``.
+        없음. close 부재 또는 빈 arr 시 ``{}``.
 
     Example:
         >>> def vsma(close, n=20): ...

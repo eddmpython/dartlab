@@ -195,15 +195,6 @@ def icTimeSeries(
     }
 
 
-def _parse(val) -> float | None:
-    """문자열/숫자 → float. core SSOT 사용."""
-    if isinstance(val, (int, float)):
-        return float(val)
-    from dartlab.core.utils.helpers import parseNumStr
-
-    return parseNumStr(val)
-
-
 def _loadAccount(lf: pl.LazyFrame, sj: str, account: str, year: str) -> dict[str, float]:
     """특정 계정의 전종목 금액 추출 — scanBridge 경유 DART/EDGAR 통일."""
     try:

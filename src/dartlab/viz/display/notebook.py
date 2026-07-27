@@ -8,6 +8,7 @@ from typing import Any
 import polars as pl
 
 from dartlab.viz.display._detect import hasGreatTables, hasItables
+from dartlab.viz.display.richFrame import _labelColumn
 
 _PERIOD_RE = re.compile(r"^\d{4}(Q[1-4])?$")
 
@@ -22,14 +23,6 @@ def _periodColumns(df: pl.DataFrame) -> list[str]:
     """기간 컬럼 추출 (최신 먼저)."""
     cols = [c for c in df.columns if _PERIOD_RE.match(c)]
     return sorted(cols, reverse=True)
-
-
-def _labelColumn(df: pl.DataFrame) -> str | None:
-    """항목 컬럼 찾기."""
-    for candidate in ("항목", "label", "account_nm", "topic"):
-        if candidate in df.columns:
-            return candidate
-    return None
 
 
 # ── Great Tables ──

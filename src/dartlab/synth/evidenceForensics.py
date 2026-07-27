@@ -14,6 +14,8 @@ from typing import Any
 
 import polars as pl
 
+from dartlab.synth.rowAccess import diff, safeDiv, toFloat
+
 _PERIOD_RE = re.compile(r"^\d{4}(?:Q[1-4])?$")
 
 _ACCOUNT_ALIASES: dict[str, tuple[str, ...]] = {
@@ -59,10 +61,10 @@ def buildEvidenceForensicsMemo(
     events: Iterable[Mapping[str, Any]] | None = None,
     scanRows: Iterable[Mapping[str, Any]] | None = None,
 ) -> dict[str, Any]:
-    """L1.5 Evidence Forensics — 매출-현금 brige + WC 변화 + 공시 변화 + 이상 패턴 종합.
+    """L1.5 Evidence Forensics. 매출-현금 brige + WC 변화 + 공시 변화 + 이상 패턴 종합.
 
     Capabilities:
-        분식 회계 신호 자동 탐지 — (1) 매출 → 현금 bridge (OCF/NI 격차),
+        분식 회계 신호 자동 탐지. (1) 매출 → 현금 bridge (OCF/NI 격차),
         (2) WC 변화 (재고/매출채권 비정상), (3) 공시 변화 (지배구조/주석),
         (4) event (자기주식취득/특수 거래), (5) scan 횡단면 이상치. 5 source
         합성하여 risk score + 후보 종목 라벨.
@@ -90,7 +92,7 @@ def buildEvidenceForensicsMemo(
             - ``trace`` (list): 가정 추적
 
     Raises:
-        없음 — 데이터 누락은 trace 에 기록.
+        없음. 데이터 누락은 trace 에 기록.
 
     Example:
         >>> memo = buildEvidenceForensicsMemo(target="005930", statements=...)
@@ -100,7 +102,7 @@ def buildEvidenceForensicsMemo(
     Guide:
         Sloan (1996) accrual model + Beneish M-Score + DSO/DIO 비정상 + 공시
         패턴. riskScore > 60 = high risk, 30~60 = moderate, < 30 = low.
-        분식 의심 단정 금지 — academic 신호 합성.
+        분식 의심 단정 금지. academic 신호 합성.
 
     SeeAlso:
         - ``buildDamodaranMemo``: valuation memo (별도 함수)
@@ -111,12 +113,12 @@ def buildEvidenceForensicsMemo(
         statements (BS/IS/CF) + 일부 옵션 입력.
 
     AIContext:
-        analyzed memo 사용자에게 노출 시 "분식 의심" 단어 회피 — "이상 신호
+        analyzed memo 사용자에게 노출 시 "분식 의심" 단어 회피. "이상 신호
         탐지" 표현 권장. riskScore 60+ 시 추가 deep dive 권장.
 
     LLM Specifications:
         AntiPatterns:
-            - riskScore 만 인용 — candidateRows + falsifierRows 함께 노출.
+            - riskScore 만 인용 금지. candidateRows + falsifierRows 함께 노출.
             - panelTextRows 빈 dict 호출 → 공시 변화 source 누락. trace 확인 필수.
         OutputSchema:
             상기 9 키 dict.
@@ -267,13 +269,13 @@ def _valueFromFrame(frame: pl.DataFrame, aliases: tuple[str, ...], period: str) 
             except Exception:  # noqa: BLE001
                 continue
             if filtered.height:
-                return _toFloat(filtered.select(period).row(0)[0])
+                return toFloat(filtered.select(period).row(0)[0])
     compact_aliases = {_compact(alias) for alias in aliases}
     for label_col in label_cols:
         for raw in frame.select([label_col, period]).to_dicts():
             label = _compact(str(raw.get(label_col) or ""))
             if any(alias and alias in label for alias in compact_aliases):
-                return _toFloat(raw.get(period))
+                return toFloat(raw.get(period))
     return None
 
 
@@ -355,7 +357,7 @@ def _revenueCashBridge(panel: list[dict[str, Any]]) -> list[dict[str, Any]]:
         receivable_growth = _growth(row.get("receivables"), prev.get("receivables"))
         cfo_to_net = _safeDiv(row.get("cfo"), row.get("netIncome"))
         cfo_to_revenue = _safeDiv(row.get("cfo"), row.get("revenue"))
-        ar_gap = _diff(receivable_growth, revenue_growth)
+        ar_gap = diff(receivable_growth, revenue_growth)
         status = "ok"
         if ar_gap is not None and ar_gap > 0.15 and (cfo_to_net is None or cfo_to_net < 0.8):
             status = "risk"
@@ -389,7 +391,7 @@ def _workingCapitalRows(panel: list[dict[str, Any]]) -> list[dict[str, Any]]:
         ccc = dso + dio - dpo if dso is not None and dio is not None and dpo is not None else None
         inventory_growth = _growth(row.get("inventories"), prev.get("inventories"))
         revenue_growth = _growth(row.get("revenue"), prev.get("revenue"))
-        inv_gap = _diff(inventory_growth, revenue_growth)
+        inv_gap = diff(inventory_growth, revenue_growth)
         status = "ok"
         if (ccc is not None and ccc > 180) or (inv_gap is not None and inv_gap > 0.2):
             status = "risk"
@@ -479,7 +481,7 @@ def _eventCategory(text: str) -> str | None:
 def _anomalyRows(scanRows: Iterable[Mapping[str, Any]]) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     for idx, row in enumerate(scanRows):
-        score = _toFloat(row.get("score") or row.get("riskScore") or row.get("value"))
+        score = toFloat(row.get("score") or row.get("riskScore") or row.get("value"))
         rows.append(
             {
                 "rank": idx + 1,
@@ -646,39 +648,21 @@ def _nextAction(step: str, status: str) -> str:
 
 
 def _growth(current: Any, previous: Any) -> float | None:
-    current_value = _toFloat(current)
-    previous_value = _toFloat(previous)
+    current_value = toFloat(current)
+    previous_value = toFloat(previous)
     if current_value is None or previous_value in (None, 0):
         return None
     return (current_value - previous_value) / abs(previous_value)
 
 
 def _safeDiv(numerator: Any, denominator: Any, *, scale: float = 1.0) -> float | None:
-    n = _toFloat(numerator)
-    d = _toFloat(denominator)
-    if n is None or d in (None, 0):
-        return None
-    return n / d * scale
-
-
-def _diff(left: float | None, right: float | None) -> float | None:
-    if left is None or right is None:
-        return None
-    return left - right
+    """공유 나눗셈에 강제변환과 배율을 얹는다. 이 판독기만 배율을 쓴다."""
+    value = safeDiv(toFloat(numerator), toFloat(denominator))
+    return None if value is None else value * scale
 
 
 def _round(value: float | None) -> float | None:
     return None if value is None else round(float(value), 4)
-
-
-def _toFloat(value: Any) -> float | None:
-    try:
-        number = float(value)
-    except (TypeError, ValueError):
-        return None
-    if number != number:
-        return None
-    return number
 
 
 def _compact(text: str) -> str:

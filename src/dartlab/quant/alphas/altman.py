@@ -31,12 +31,6 @@ from dartlab.synth.scanBridge import extractAnnualConsolidated, isEdgarSchema
 log = logging.getLogger(__name__)
 
 
-def _safeDiv(num: float | None, den: float | None) -> float | None:
-    if num is None or den is None or den == 0:
-        return None
-    return num / den
-
-
 def _zoneZ(z: float) -> str:
     if z > 2.99:
         return "safe"

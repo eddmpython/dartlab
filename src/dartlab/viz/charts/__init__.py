@@ -21,6 +21,7 @@ from typing import Any
 import polars as pl
 
 from dartlab.core.palette import COLORS
+from dartlab.viz.renderers.plotly import _applyTheme, _ensurePlotly
 
 _PERIOD_COL_RE = re.compile(r"^\d{4}(Q[1-4])?$")
 
@@ -43,30 +44,6 @@ def _autoEmit(company: Any, generatorName: str) -> None:
             emitChart(spec)
     except (ImportError, AttributeError, KeyError, OSError, TypeError, ValueError):
         pass
-
-
-def _ensurePlotly():
-    """Lazy import with clear error."""
-    try:
-        import plotly.graph_objects as go
-
-        return go
-    except ImportError:
-        raise ImportError("plotly 패키지가 필요합니다.\n  pip install --upgrade dartlab") from None
-
-
-def _applyTheme(fig) -> None:
-    """DartLab 테마 적용."""
-    fig.update_layout(
-        font_family="Pretendard, -apple-system, sans-serif",
-        plot_bgcolor="white",
-        paper_bgcolor="white",
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-        margin=dict(l=60, r=20, t=60, b=40),
-        hovermode="x unified",
-    )
-    fig.update_xaxes(showgrid=True, gridcolor="#f0f0f0", gridwidth=1)
-    fig.update_yaxes(showgrid=True, gridcolor="#f0f0f0", gridwidth=1)
 
 
 def _autoNumericCols(df: pl.DataFrame, exclude: list[str] | None = None) -> list[str]:

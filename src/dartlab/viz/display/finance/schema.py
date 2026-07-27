@@ -16,15 +16,33 @@ from __future__ import annotations
 
 from typing import Literal, TypedDict
 
-PeriodKind = Literal["annual", "quarterly"]
+# 생성 컨텍스트와 기간 종류는 재무 화면만의 것이 아니다. `viz.schema` 가 정본이고 여기서는
+# 그대로 다시 내보낸다. 예전에는 두 파일이 `Meta` 와 `makeMeta` 를 글자까지 똑같이 갖고
+# 있어서, 한쪽에 필드를 더하면 같은 view 가 어느 모듈을 거쳤는지에 따라 다른 meta 를 달았다.
+from dartlab.viz.schema import Meta, PeriodKind, makeMeta
+
+__all__ = [
+    "EvidenceBinding",
+    "Meta",
+    "PeriodKind",
+    "Series",
+    "SeriesAxis",
+    "SeriesIntent",
+    "SeriesPoint",
+    "SeriesType",
+    "View",
+    "ViewKind",
+    "makeBinding",
+    "makeMeta",
+]
 
 ViewKind = Literal[
-    "trend",  # 시계열 (line/bar) — categories=기간, series=지표
-    "snapshot",  # 단일 기간 막대 — categories=항목, series 1개
-    "breakdown",  # 구성 (pie) — categories=항목, series 1개 (data=값)
-    "table",  # 표 — categories=기간, series=행
-    "waterfall",  # 폭포 — categories=단계, series=값+측정종류
-    "matrix",  # 2D 행렬 (heatmap) — categories=X축, series=Y축×values
+    "trend",  # 시계열 (line/bar): categories=기간, series=지표
+    "snapshot",  # 단일 기간 막대: categories=항목, series 1개
+    "breakdown",  # 구성 (pie): categories=항목, series 1개 (data=값)
+    "table",  # 표: categories=기간, series=행
+    "waterfall",  # 폭포: categories=단계, series=값+측정종류
+    "matrix",  # 2D 행렬 (heatmap): categories=X축, series=Y축×values
 ]
 
 SeriesIntent = Literal["primary", "positive", "negative", "neutral", "accent"]
@@ -74,16 +92,6 @@ class EvidenceBinding(TypedDict, total=False):
     tableRef: str  # "finance:005930:IS:annual"
 
 
-class Meta(TypedDict, total=False):
-    """view 생성 컨텍스트."""
-
-    stockCode: str
-    corpName: str | None
-    periodKind: PeriodKind
-    periods: list[str]
-    generatedAt: str  # ISO8601
-
-
 class View(TypedDict, total=False):
     """viz/finance view 표준 출력.
 
@@ -116,24 +124,3 @@ def makeBinding(
         "periods": list(periods),
         "tableRef": f"finance:{stockCode}:{topic}:{periodKind}",
     }
-
-
-def makeMeta(
-    stockCode: str,
-    *,
-    corpName: str | None = None,
-    periodKind: PeriodKind | None = None,
-    periods: list[str] | None = None,
-    generatedAt: str | None = None,
-) -> Meta:
-    """Meta 표준 생성."""
-    out: Meta = {"stockCode": str(stockCode)}
-    if corpName is not None:
-        out["corpName"] = corpName
-    if periodKind is not None:
-        out["periodKind"] = periodKind
-    if periods is not None:
-        out["periods"] = list(periods)
-    if generatedAt is not None:
-        out["generatedAt"] = generatedAt
-    return out

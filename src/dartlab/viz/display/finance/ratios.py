@@ -4,16 +4,10 @@ from __future__ import annotations
 
 import polars as pl
 
+from dartlab.synth.rowAccess import safeDiv
 from dartlab.viz.display.finance.accounts import extractSeries
 from dartlab.viz.display.finance.periods import lastNPeriods
 from dartlab.viz.display.finance.schema import PeriodKind
-
-
-def _safeDiv(a: float | None, b: float | None) -> float | None:
-    """a / b 안전."""
-    if a is None or b is None or b == 0:
-        return None
-    return a / b
 
 
 def _pct(x: float | None) -> float | None:
@@ -42,11 +36,11 @@ def profitability(norm: pl.DataFrame, nPeriods: int, periodKind: PeriodKind) -> 
 
     return {
         "periods": periods,
-        "roe": [_pct(_safeDiv(ni[i], eq[i])) for i in range(len(periods))],
-        "roa": [_pct(_safeDiv(ni[i], assets[i])) for i in range(len(periods))],
-        "gpm": [_pct(_safeDiv(_gpAt(i), rev[i])) for i in range(len(periods))],
-        "opm": [_pct(_safeDiv(op[i], rev[i])) for i in range(len(periods))],
-        "npm": [_pct(_safeDiv(ni[i], rev[i])) for i in range(len(periods))],
+        "roe": [_pct(safeDiv(ni[i], eq[i])) for i in range(len(periods))],
+        "roa": [_pct(safeDiv(ni[i], assets[i])) for i in range(len(periods))],
+        "gpm": [_pct(safeDiv(_gpAt(i), rev[i])) for i in range(len(periods))],
+        "opm": [_pct(safeDiv(op[i], rev[i])) for i in range(len(periods))],
+        "npm": [_pct(safeDiv(ni[i], rev[i])) for i in range(len(periods))],
     }
 
 
@@ -64,15 +58,15 @@ def stability(norm: pl.DataFrame, nPeriods: int, periodKind: PeriodKind) -> dict
     def _quick(i: int) -> float | None:
         """당좌비율 = (현금+매출채권) / 유동부채."""
         num = (cash[i] or 0) + (rec[i] or 0) if curL[i] else None
-        return _pct(_safeDiv(num, curL[i]))
+        return _pct(safeDiv(num, curL[i]))
 
     return {
         "periods": periods,
-        "currentRatio": [_pct(_safeDiv(curA[i], curL[i])) for i in range(len(periods))],
+        "currentRatio": [_pct(safeDiv(curA[i], curL[i])) for i in range(len(periods))],
         "quickRatio": [_quick(i) for i in range(len(periods))],
-        "cashRatio": [_pct(_safeDiv(cash[i], curL[i])) for i in range(len(periods))],
-        "debtRatio": [_pct(_safeDiv(liab[i], eq[i])) for i in range(len(periods))],
-        "equityRatio": [_pct(_safeDiv(eq[i], assets[i])) for i in range(len(periods))],
+        "cashRatio": [_pct(safeDiv(cash[i], curL[i])) for i in range(len(periods))],
+        "debtRatio": [_pct(safeDiv(liab[i], eq[i])) for i in range(len(periods))],
+        "equityRatio": [_pct(safeDiv(eq[i], assets[i])) for i in range(len(periods))],
     }
 
 
@@ -84,16 +78,16 @@ def efficiency(norm: pl.DataFrame, nPeriods: int, periodKind: PeriodKind) -> dic
     assets = extractSeries(norm, "assets", periods)
     inv = extractSeries(norm, "inventories", periods)
     rec = extractSeries(norm, "receivables", periods)
-    assetTurn = [_safeDiv(rev[i], assets[i]) for i in range(len(periods))]
-    invTurn = [_safeDiv(cos[i], inv[i]) for i in range(len(periods))]
-    recTurn = [_safeDiv(rev[i], rec[i]) for i in range(len(periods))]
+    assetTurn = [safeDiv(rev[i], assets[i]) for i in range(len(periods))]
+    invTurn = [safeDiv(cos[i], inv[i]) for i in range(len(periods))]
+    recTurn = [safeDiv(rev[i], rec[i]) for i in range(len(periods))]
     return {
         "periods": periods,
         "assetTurnover": assetTurn,
         "inventoryTurnover": invTurn,
         "receivableTurnover": recTurn,
-        "dso": [_safeDiv(365.0, v) for v in recTurn],
-        "dio": [_safeDiv(365.0, v) for v in invTurn],
+        "dso": [safeDiv(365.0, v) for v in recTurn],
+        "dio": [safeDiv(365.0, v) for v in invTurn],
     }
 
 

@@ -30,15 +30,10 @@ import polars as pl
 
 from dartlab.quant.factor.build import _latestYear
 from dartlab.quant.screen.dataAccess import extractAccount, loadScanParquet
+from dartlab.synth.rowAccess import safeDiv
 from dartlab.synth.scanBridge import extractAnnualConsolidated, isEdgarSchema
 
 log = logging.getLogger(__name__)
-
-
-def _safeDiv(num: float | None, den: float | None) -> float | None:
-    if num is None or den is None or den == 0:
-        return None
-    return num / den
 
 
 def _scoreOne(cur: pl.DataFrame, prev: pl.DataFrame | None) -> dict | None:
@@ -56,7 +51,7 @@ def _scoreOne(cur: pl.DataFrame, prev: pl.DataFrame | None) -> dict | None:
     eq = extractAccount(cur, "total_equity")
 
     components: dict[str, bool] = {}
-    roa = _safeDiv(ni, ta)
+    roa = safeDiv(ni, ta)
     components["roaPositive"] = bool(roa is not None and roa > 0)
     components["ocfPositive"] = bool(ocf is not None and ocf > 0)
     components["cfGtNi"] = bool(ocf is not None and ni is not None and ocf > ni)
@@ -81,36 +76,36 @@ def _scoreOne(cur: pl.DataFrame, prev: pl.DataFrame | None) -> dict | None:
         sales_prev = extractAccount(prev, "sales")
         eq_prev = extractAccount(prev, "total_equity")
 
-    roa_prev = _safeDiv(ni_prev, ta_prev)
+    roa_prev = safeDiv(ni_prev, ta_prev)
     components["roaIncreasing"] = bool(roa is not None and roa_prev is not None and roa > roa_prev)
 
     # leverage = TL / TA (decreasing is good)
-    lev_cur = _safeDiv(tl, ta)
-    lev_prev = _safeDiv(tl_prev, ta_prev)
+    lev_cur = safeDiv(tl, ta)
+    lev_prev = safeDiv(tl_prev, ta_prev)
     components["debtDecreasing"] = bool(lev_cur is not None and lev_prev is not None and lev_cur < lev_prev)
 
     # current ratio
-    cr_cur = _safeDiv(ca, cl)
-    cr_prev = _safeDiv(ca_prev, cl_prev)
+    cr_cur = safeDiv(ca, cl)
+    cr_prev = safeDiv(ca_prev, cl_prev)
     components["currentRatioUp"] = bool(cr_cur is not None and cr_prev is not None and cr_cur > cr_prev)
 
     # no new shares: 자본 대비 자산 비율 지속 (equity dilution proxy)
     # 실제 issued_shares 없음 → equity가 자산 대비 떨어지지 않으면 pass (보수적)
-    e2a_cur = _safeDiv(eq, ta)
-    e2a_prev = _safeDiv(eq_prev, ta_prev)
+    e2a_cur = safeDiv(eq, ta)
+    e2a_prev = safeDiv(eq_prev, ta_prev)
     if e2a_cur is not None and e2a_prev is not None:
         components["noNewShares"] = bool(e2a_cur >= e2a_prev * 0.95)
     else:
         components["noNewShares"] = True  # 데이터 없으면 보수적 pass
 
     # gross margin
-    gm_cur = _safeDiv(gp, sales)
-    gm_prev = _safeDiv(gp_prev, sales_prev)
+    gm_cur = safeDiv(gp, sales)
+    gm_prev = safeDiv(gp_prev, sales_prev)
     components["grossMarginUp"] = bool(gm_cur is not None and gm_prev is not None and gm_cur > gm_prev)
 
     # asset turnover
-    at_cur = _safeDiv(sales, ta)
-    at_prev = _safeDiv(sales_prev, ta_prev)
+    at_cur = safeDiv(sales, ta)
+    at_prev = safeDiv(sales_prev, ta_prev)
     components["assetTurnoverUp"] = bool(at_cur is not None and at_prev is not None and at_cur > at_prev)
 
     total = sum(1 for v in components.values() if v)

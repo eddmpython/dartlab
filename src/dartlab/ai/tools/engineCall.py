@@ -34,6 +34,8 @@ _PERIOD_RE = re.compile(r"^\d{4}(?:Q[1-4])?$")
 _STMT_LABELS = {"BS": "재무상태표", "IS": "손익계산서", "CF": "현금흐름표"}
 # 컬럼 alias SSOT 는 dartlab.ai.tools.columnAlias 에 있다. 여기서는 priority list 만
 # 호환 dict 로 변환해 사용 - IS/CF/BS 5+ 표준 컬럼 + 한국어 label.
+from dartlab.synth.rowAccess import toFloat
+
 from .columnAlias import topicAccountPriority as _topicAccountPriority
 
 _ACCOUNT_PRIORITY = {
@@ -973,10 +975,10 @@ def _rankGrowthRows(df: pl.DataFrame) -> list[dict[str, Any]]:
         return []
     scored: list[dict[str, Any]] = []
     for row in df.to_dicts():
-        values = [_toFloat(row.get(col)) for col in ("매출CAGR", "영업이익CAGR", "순이익CAGR")]
+        values = [toFloat(row.get(col)) for col in ("매출CAGR", "영업이익CAGR", "순이익CAGR")]
         valid = [value for value in values if value is not None]
-        revenue = _toFloat(row.get("revenue"))
-        years = _toFloat(row.get("years"))
+        revenue = toFloat(row.get("revenue"))
+        years = toFloat(row.get("years"))
         if len(valid) < 3 or any(value <= 10 for value in valid):
             continue
         if revenue is None or revenue < 100_000_000_000:
@@ -1016,16 +1018,6 @@ def _growthMarkdown(rowCount: int, rows: list[dict[str, Any]]) -> str:
     )
     lines.append("근거는 scan growth datasetRef, tableRef, valueRef로 남겼습니다.")
     return "\n".join(lines)
-
-
-def _toFloat(value: Any) -> float | None:
-    try:
-        number = float(value)
-    except (TypeError, ValueError):
-        return None
-    if number != number:
-        return None
-    return number
 
 
 @contextmanager

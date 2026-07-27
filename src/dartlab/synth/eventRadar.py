@@ -13,6 +13,18 @@ from typing import Any
 
 import polars as pl
 
+from dartlab.synth.rowAccess import (
+    evidenceSummary,
+    firstValue,
+    latestDate,
+    pctChange,
+    rowsOf,
+    safeDiv,
+    toFloat,
+)
+
+_DATE_KEYS = ("date", "rcept_dt", "datetime", "publishedAt", "filedAt", "tradingDate")
+
 _EVENT_KEYWORDS: dict[str, tuple[str, ...]] = {
     "earnings": ("잠정", "실적", "earnings", "guidance", "preliminary"),
     "capitalAction": ("배당", "자사주", "소각", "유상증자", "무상증자", "split", "dividend", "buyback"),
@@ -47,16 +59,16 @@ def buildEventRadarMemo(
     """Build an L1.5 event/catalyst radar memo from raw rows."""
 
     raw_sets = {
-        "filings": _rows(filings),
-        "newsRows": _rows(newsRows),
-        "priceRows": _rows(priceRows),
-        "flowRows": _rows(flowRows),
-        "insiderRows": _rows(insiderRows),
-        "ownershipRows": _rows(ownershipRows),
-        "dividendRows": _rows(dividendRows),
-        "splitRows": _rows(splitRows),
-        "consensusRows": _rows(consensusRows),
-        "scanRows": _rows(scanRows),
+        "filings": rowsOf(filings),
+        "newsRows": rowsOf(newsRows),
+        "priceRows": rowsOf(priceRows),
+        "flowRows": rowsOf(flowRows),
+        "insiderRows": rowsOf(insiderRows),
+        "ownershipRows": rowsOf(ownershipRows),
+        "dividendRows": rowsOf(dividendRows),
+        "splitRows": rowsOf(splitRows),
+        "consensusRows": rowsOf(consensusRows),
+        "scanRows": rowsOf(scanRows),
     }
     coverage_rows = _coverageRows(raw_sets)
     event_rows = _eventInbox(raw_sets["filings"], raw_sets["newsRows"])
@@ -211,8 +223,8 @@ def _eventInbox(filings: list[dict[str, Any]], news_rows: list[dict[str, Any]]) 
 
 
 def _eventRow(row: Mapping[str, Any], *, source: str) -> dict[str, Any]:
-    title = str(_first(row, "report_nm", "title", "headline", "event", "summary") or "")
-    date = _first(row, "rcept_dt", "date", "datetime", "publishedAt", "filedAt")
+    title = str(firstValue(row, "report_nm", "title", "headline", "event", "summary") or "")
+    date = firstValue(row, "rcept_dt", "date", "datetime", "publishedAt", "filedAt")
     text = " ".join(str(row.get(key) or "") for key in row)
     category = _eventCategory(f"{title} {text}")
     status = "risk" if category in _RISK_CATEGORIES else "watch" if category in _WATCH_CATEGORIES else "ok"
@@ -235,14 +247,16 @@ def _priceFlowReaction(
     latest = price[0] if price else {}
     previous = price[1] if len(price) > 1 else {}
     latest_flow = flow[0] if flow else {}
-    close = _toFloat(_first(latest, "close", "종가", "price", "last"))
-    prev_close = _toFloat(_first(previous, "close", "종가", "price", "last"))
-    volume = _toFloat(_first(latest, "volume", "거래량"))
-    prev_volume = _toFloat(_first(previous, "volume", "거래량"))
-    price_change = _pctChange(close, prev_close)
-    volume_ratio = _safeDiv(volume, prev_volume)
-    foreign_net = _toFloat(_first(latest_flow, "foreignNetBuy", "foreignNet", "외국인순매수", "foreign"))
-    institution_net = _toFloat(_first(latest_flow, "institutionNetBuy", "institutionNet", "기관순매수", "institution"))
+    close = toFloat(firstValue(latest, "close", "종가", "price", "last"))
+    prev_close = toFloat(firstValue(previous, "close", "종가", "price", "last"))
+    volume = toFloat(firstValue(latest, "volume", "거래량"))
+    prev_volume = toFloat(firstValue(previous, "volume", "거래량"))
+    price_change = pctChange(close, prev_close)
+    volume_ratio = safeDiv(volume, prev_volume)
+    foreign_net = toFloat(firstValue(latest_flow, "foreignNetBuy", "foreignNet", "외국인순매수", "foreign"))
+    institution_net = toFloat(
+        firstValue(latest_flow, "institutionNetBuy", "institutionNet", "기관순매수", "institution")
+    )
     net_flow = sum(value for value in (foreign_net, institution_net) if value is not None) or None
     status = "missing"
     if latest:
@@ -275,14 +289,14 @@ def _insiderOwnershipSignal(
     rows: list[dict[str, Any]] = []
     for idx, row in enumerate(_sortRows(insider_rows)[:10], start=1):
         text = " ".join(str(row.get(key) or "") for key in row)
-        amount = _toFloat(_first(row, "amount", "shares", "changeShares", "수량", "변동주식수"))
+        amount = toFloat(firstValue(row, "amount", "shares", "changeShares", "수량", "변동주식수"))
         direction = _direction(text, amount)
         status = "watch" if direction in {"buy", "sell"} else "ok"
         rows.append(
             {
                 "rank": idx,
                 "date": _dateOf(row),
-                "holder": _first(row, "name", "holder", "person", "성명") or "unknown",
+                "holder": firstValue(row, "name", "holder", "person", "성명") or "unknown",
                 "direction": direction,
                 "amount": amount,
                 "status": status,
@@ -290,13 +304,13 @@ def _insiderOwnershipSignal(
             }
         )
     for idx, row in enumerate(_sortRows(ownership_rows)[:5], start=len(rows) + 1):
-        pct_change = _toFloat(_first(row, "changePct", "ownershipChange", "지분변동", "delta"))
+        pct_change = toFloat(firstValue(row, "changePct", "ownershipChange", "지분변동", "delta"))
         status = "watch" if pct_change is not None and abs(pct_change) >= 1 else "ok"
         rows.append(
             {
                 "rank": idx,
                 "date": _dateOf(row),
-                "holder": _first(row, "holder", "name", "shareholder", "주주명") or "major holder",
+                "holder": firstValue(row, "holder", "name", "shareholder", "주주명") or "major holder",
                 "direction": "ownershipChange" if pct_change else "snapshot",
                 "amount": pct_change,
                 "status": status,
@@ -325,7 +339,7 @@ def _capitalActionMonitor(
 ) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     for row in _sortRows(dividend_rows):
-        value = _toFloat(_first(row, "dividend", "dps", "cashDividend", "배당금", "value"))
+        value = toFloat(firstValue(row, "dividend", "dps", "cashDividend", "배당금", "value"))
         rows.append(
             {
                 "date": _dateOf(row),
@@ -336,7 +350,7 @@ def _capitalActionMonitor(
             }
         )
     for row in _sortRows(split_rows):
-        ratio = _first(row, "ratio", "splitRatio", "분할비율")
+        ratio = firstValue(row, "ratio", "splitRatio", "분할비율")
         rows.append(
             {
                 "date": _dateOf(row),
@@ -392,9 +406,9 @@ def _consensusDriftWatch(consensus_rows: list[dict[str, Any]]) -> list[dict[str,
         "eps": ("epsConsensus", "eps", "EPS"),
         "targetPrice": ("targetPrice", "priceTarget", "목표주가"),
     }.items():
-        latest_value = _toFloat(_first(latest, *keys))
-        previous_value = _toFloat(_first(previous, *keys))
-        revision = _pctChange(latest_value, previous_value)
+        latest_value = toFloat(firstValue(latest, *keys))
+        previous_value = toFloat(firstValue(previous, *keys))
+        revision = pctChange(latest_value, previous_value)
         status = "ok"
         if revision is not None and revision <= -0.10:
             status = "risk"
@@ -417,12 +431,12 @@ def _consensusDriftWatch(consensus_rows: list[dict[str, Any]]) -> list[dict[str,
 def _scanContext(scan_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     for idx, row in enumerate(scan_rows[:10], start=1):
-        score = _toFloat(_first(row, "score", "value", "rankScore", "riskScore"))
+        score = toFloat(firstValue(row, "score", "value", "rankScore", "riskScore"))
         rows.append(
             {
                 "rank": idx,
-                "target": _first(row, "stockCode", "ticker", "target") or "",
-                "axis": _first(row, "axis", "metric", "screen") or "scanPrimitive",
+                "target": firstValue(row, "stockCode", "ticker", "target") or "",
+                "axis": firstValue(row, "axis", "metric", "screen") or "scanPrimitive",
                 "score": score,
                 "status": "watch" if score is not None and score > 0 else "ok",
                 "evidence": "optional scan primitive row",
@@ -542,7 +556,7 @@ def _deepDiveRows(
                 "step": name,
                 "status": _maxStatus(table),
                 "rowCount": len(table),
-                "evidence": _evidenceSummary(table),
+                "evidence": evidenceSummary(table),
                 "nextAction": _nextAction(name, _maxStatus(table)),
             }
         )
@@ -590,77 +604,18 @@ def _direction(text: str, amount: float | None) -> str:
     return "unknown"
 
 
-def _rows(data: Iterable[Mapping[str, Any]] | pl.DataFrame | Mapping[str, Any] | None) -> list[dict[str, Any]]:
-    if data is None:
-        return []
-    if isinstance(data, pl.DataFrame):
-        return [dict(row) for row in data.to_dicts()]
-    if isinstance(data, Mapping):
-        return [dict(data)]
-    if isinstance(data, str):
-        return []
-    rows: list[dict[str, Any]] = []
-    for item in data:
-        if isinstance(item, Mapping):
-            rows.append(dict(item))
-    return rows
-
-
 def _sortRows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return sorted(rows, key=lambda row: str(_dateOf(row) or ""), reverse=True)
 
 
 def _latestDate(*items: Any) -> str | None:
-    dates: list[str] = []
-    for item in items:
-        if isinstance(item, list):
-            for row in item:
-                date = _dateOf(row) if isinstance(row, Mapping) else None
-                if date:
-                    dates.append(str(date))
-        elif isinstance(item, Mapping):
-            date = _dateOf(item)
-            if date:
-                dates.append(str(date))
-    return max(dates) if dates else None
+    """이 판독기가 날짜로 보는 key 목록을 공유 접근자에 넘긴다."""
+    return latestDate(items, keys=_DATE_KEYS)
 
 
 def _dateOf(row: Mapping[str, Any]) -> str | None:
-    value = _first(row, "date", "rcept_dt", "datetime", "publishedAt", "filedAt", "tradingDate")
+    value = firstValue(row, *_DATE_KEYS)
     return str(value) if value is not None else None
-
-
-def _first(row: Mapping[str, Any], *keys: str) -> Any:
-    lowered = {str(key).lower(): key for key in row}
-    for key in keys:
-        if key in row and row[key] is not None:
-            return row[key]
-        actual = lowered.get(key.lower())
-        if actual is not None and row[actual] is not None:
-            return row[actual]
-    return None
-
-
-def _pctChange(current: float | None, previous: float | None) -> float | None:
-    if current is None or previous in (None, 0):
-        return None
-    return (current - previous) / abs(previous)
-
-
-def _safeDiv(numerator: float | None, denominator: float | None) -> float | None:
-    if numerator is None or denominator in (None, 0):
-        return None
-    return numerator / denominator
-
-
-def _toFloat(value: Any) -> float | None:
-    try:
-        number = float(value)
-    except (TypeError, ValueError):
-        return None
-    if number != number:
-        return None
-    return number
 
 
 def _round(value: float | None) -> float | None:
@@ -676,15 +631,6 @@ def _maxStatus(rows: list[dict[str, Any]]) -> str:
     if not rows:
         return "missing"
     return max((str(row.get("status") or "missing") for row in rows), key=lambda item: rank.get(item, 0))
-
-
-def _evidenceSummary(rows: list[dict[str, Any]]) -> str:
-    if not rows:
-        return "no rows"
-    for row in rows:
-        if row.get("evidence"):
-            return str(row["evidence"])
-    return ", ".join(rows[0].keys())
 
 
 def _nextAction(step: str, status: str) -> str:
