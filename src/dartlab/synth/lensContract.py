@@ -349,6 +349,43 @@ def _temporalUpperBound(value: str) -> date | None:
     return None
 
 
+# 값이 "언제 알았나"(시점)를 뜻하는 키. 그 시점이 knowledge boundary 뒤면 look-ahead 다.
+_INSTANT_KEYS = frozenset(
+    {"date", "dataasof", "observedat", "retrievedat", "sourcedataasof", "marketasof", "financialasof"}
+)
+
+# 값이 "어디까지 담았나"(범위)를 뜻하는 키. 회계 기간 표기가 들어온다.
+#
+# 범위는 시점처럼 다루면 안 된다. `latestPeriod: "2026"` 을 2026-12-31 로 읽으면, 2026 년
+# 7 월에 2026 년 반기까지 받은 지극히 정상적인 결과가 "미래 자료를 봤다"로 걸린다. 실제로
+# `Company.analysis("종합평가")` 가 그 이유로 통째로 죽고 있었다.
+#
+# 범위에서 look-ahead 는 그 기간이 *시작하기도 전*에 담았다고 할 때 생긴다. 그래서 끝이
+# 아니라 시작으로 잰다. `latestPeriod: "2027"` 은 2027-01-01 이 경계보다 뒤라 그대로 걸린다.
+_COVERAGE_KEYS = frozenset({"latestperiod"})
+
+
+def _temporalLowerBound(value: str) -> date | None:
+    """기간 표기를 그 기간이 시작하는 날로 정규화한다. 날짜는 그대로 둔다.
+
+    범위형 값의 look-ahead 판정에 쓴다. 기간이 경계보다 늦게 시작했으면 그 자료는 아직
+    존재할 수 없다. 반대로 이미 시작한 기간을 부분적으로 담는 것은 정상이라 걸리면 안 된다.
+    """
+    upper = _temporalUpperBound(value)
+    if upper is None:
+        return None
+    normalized = value.strip().upper()
+    if re.fullmatch(r"(?:FY)?(\d{4})(?:FY)?", normalized):
+        return date(upper.year, 1, 1)
+    if re.fullmatch(r"(\d{4})\s*[-./ ]?\s*Q[1-4]", normalized) or re.fullmatch(r"(\d{4})년\s*[1-4]분기", normalized):
+        return date(upper.year, upper.month - 2, 1)
+    if re.fullmatch(r"(\d{4})\s*[-./ ]?\s*H[12]", normalized):
+        return date(upper.year, upper.month - 5, 1)
+    if re.fullmatch(r"(\d{4})[-./](\d{1,2})", normalized) or re.fullmatch(r"(\d{4})(\d{2})", normalized):
+        return date(upper.year, upper.month, 1)
+    return upper
+
+
 def _dataAsOfDates(value: Any) -> list[date]:
     if isinstance(value, str):
         parsed = _temporalUpperBound(value)
@@ -358,16 +395,7 @@ def _dataAsOfDates(value: Any) -> list[date]:
     if not isinstance(value, dict):
         return []
     dates: list[date] = []
-    temporalKeys = {
-        "date",
-        "dataasof",
-        "observedat",
-        "retrievedat",
-        "sourcedataasof",
-        "latestperiod",
-        "marketasof",
-        "financialasof",
-    }
+    temporalKeys = _INSTANT_KEYS | _COVERAGE_KEYS
     foundTemporalValue = False
     for key, raw in value.items():
         if str(key).lower() not in temporalKeys or raw is None or raw == "":
@@ -375,7 +403,8 @@ def _dataAsOfDates(value: Any) -> list[date]:
         foundTemporalValue = True
         if not isinstance(raw, str):
             raise ValueError(f"lens product dataAsOf.{key} 는 문자열이어야 합니다.")
-        parsed = _temporalUpperBound(raw)
+        isCoverage = str(key).lower() in _COVERAGE_KEYS
+        parsed = _temporalLowerBound(raw) if isCoverage else _temporalUpperBound(raw)
         if parsed is None:
             raise ValueError(f"lens product dataAsOf.{key} 시간 형식을 해석할 수 없습니다.")
         dates.append(parsed)
