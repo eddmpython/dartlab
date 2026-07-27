@@ -248,6 +248,82 @@ def _factorFrame(
     return frame, gaps
 
 
+def _selectionContractGap(result, projection, descriptor: DataAssetDescriptor) -> DataGap | None:
+    """읽어 온 관측이 projection 이 선언한 뜻과 맞는지 본다. 어긋나면 gap.
+
+    단위와 주기는 관측 자체의 의미다. projection 이 다른 값을 적었다고 그것으로 덮어쓰면
+    숫자는 그대로인데 뜻만 바뀐 결과가 나간다. 그래서 맞추는 대신 실패로 끝낸다.
+    """
+    if not result.selections:
+        return DataGap("FACTOR_EMPTY", "feature observation이 없습니다", descriptor.assetId)
+    if projection.unit is not None and any(item.observation.unit != projection.unit for item in result.selections):
+        return DataGap(
+            "FACTOR_UNIT_MISMATCH",
+            "FeatureProjection.unit은 observation 의미를 덮어쓸 수 없습니다",
+            descriptor.assetId,
+        )
+    if projection.frequency is not None and any(
+        item.observation.frequency != projection.frequency for item in result.selections
+    ):
+        return DataGap(
+            "FACTOR_FREQUENCY_MISMATCH",
+            "FeatureProjection.frequency는 observation 의미를 덮어쓸 수 없습니다",
+            descriptor.assetId,
+        )
+    return None
+
+
+def _resolveEntityIds(
+    requestedSubjects,
+    *,
+    availableEntities: tuple[str, ...],
+    requestedMarket: str | None,
+    descriptor: DataAssetDescriptor,
+) -> tuple[list[str], DataGap | None]:
+    """요청한 종목 표기를 canonical entityId 로 해소한다.
+
+    시장 접두어가 붙었으면 asset 의 시장과 어긋나지 않는지 보고, 안 붙었으면 asset 의 시장을
+    씌운다. 둘 다 없으면 무엇으로 해소할지 정할 근거가 없어 실패로 끝낸다. 추측해서 붙이면
+    다른 시장의 같은 코드를 조용히 집을 수 있다.
+
+    Returns:
+        ``(entityIds, gap)``. gap 이 있으면 목록은 쓰지 않는다.
+    """
+    entityIds: list[str] = []
+    for raw in requestedSubjects:
+        requested = str(raw).strip()
+        if ":" in requested:
+            entityMarket, _separator, entity = requested.partition(":")
+            canonical = f"{entityMarket.upper()}:{entity}"
+            if requestedMarket is not None and entityMarket.upper() != requestedMarket:
+                return [], DataGap(
+                    "FEATURE_MARKET_MISMATCH",
+                    f"requested market {entityMarket.upper()}가 asset market {requestedMarket}와 다릅니다",
+                    descriptor.assetId,
+                    requested,
+                )
+            matches = tuple(entityId for entityId in availableEntities if entityId.casefold() == canonical.casefold())
+        elif requestedMarket is not None:
+            canonical = f"{requestedMarket}:{requested}"
+            matches = tuple(entityId for entityId in availableEntities if entityId.casefold() == canonical.casefold())
+        else:
+            return [], DataGap(
+                "FEATURE_MARKET_REQUIRED",
+                f"{requested}를 canonical entityId로 해소할 market이 없습니다",
+                descriptor.assetId,
+                requested,
+            )
+        # owner 가 종목마다 따로 도는 모드에서 결과가 한 종목뿐이면 그것이 곧 요청한 종목이다.
+        # 표기가 달라 매칭에 실패했을 뿐이라 그 하나를 집는다.
+        if not matches and descriptor.executionMode == "subjectFanout" and len(availableEntities) == 1:
+            ownerEntity = availableEntities[0]
+            ownerMarket, separator, _ownerId = ownerEntity.partition(":")
+            if separator and (requestedMarket is None or ownerMarket == requestedMarket):
+                matches = (ownerEntity,)
+        entityIds.extend(matches or (canonical,))
+    return entityIds, None
+
+
 def _featureObservationFrame(
     dataset: Any,
     descriptor: DataAssetDescriptor,
@@ -269,40 +345,14 @@ def _featureObservationFrame(
     declaredMarket = dict(descriptor.metadata).get("market")
     requestedMarket = (market or (str(declaredMarket) if declaredMarket is not None else "")).upper() or None
     requestedSubjects = (subject,) if subject is not None else query.subjects
-    entityIds: list[str] = []
-    for requested in requestedSubjects:
-        requested = str(requested).strip()
-        if ":" in requested:
-            entityMarket, _separator, entity = requested.partition(":")
-            canonical = f"{entityMarket.upper()}:{entity}"
-            if requestedMarket is not None and entityMarket.upper() != requestedMarket:
-                return None, (
-                    DataGap(
-                        "FEATURE_MARKET_MISMATCH",
-                        f"requested market {entityMarket.upper()}가 asset market {requestedMarket}와 다릅니다",
-                        descriptor.assetId,
-                        requested,
-                    ),
-                )
-            matches = tuple(entityId for entityId in availableEntities if entityId.casefold() == canonical.casefold())
-        elif requestedMarket is not None:
-            canonical = f"{requestedMarket}:{requested}"
-            matches = tuple(entityId for entityId in availableEntities if entityId.casefold() == canonical.casefold())
-        else:
-            return None, (
-                DataGap(
-                    "FEATURE_MARKET_REQUIRED",
-                    f"{requested}를 canonical entityId로 해소할 market이 없습니다",
-                    descriptor.assetId,
-                    requested,
-                ),
-            )
-        if not matches and descriptor.executionMode == "subjectFanout" and len(availableEntities) == 1:
-            ownerEntity = availableEntities[0]
-            ownerMarket, separator, _ownerId = ownerEntity.partition(":")
-            if separator and (requestedMarket is None or ownerMarket == requestedMarket):
-                matches = (ownerEntity,)
-        entityIds.extend(matches or (canonical,))
+    entityIds, resolveGap = _resolveEntityIds(
+        requestedSubjects,
+        availableEntities=availableEntities,
+        requestedMarket=requestedMarket,
+        descriptor=descriptor,
+    )
+    if resolveGap is not None:
+        return None, (resolveGap,)
     knownAt = query.time.knownAt if query.time else None
     validAt = query.time.validAt if query.time else None
     try:
@@ -327,26 +377,13 @@ def _featureObservationFrame(
         )
         for featureId, entityId in result.missing
     )
-    if not result.selections:
-        return None, gaps or (DataGap("FACTOR_EMPTY", "feature observation이 없습니다", descriptor.assetId),)
-    if projection.unit is not None and any(item.observation.unit != projection.unit for item in result.selections):
-        return None, gaps + (
-            DataGap(
-                "FACTOR_UNIT_MISMATCH",
-                "FeatureProjection.unit은 observation 의미를 덮어쓸 수 없습니다",
-                descriptor.assetId,
-            ),
-        )
-    if projection.frequency is not None and any(
-        item.observation.frequency != projection.frequency for item in result.selections
-    ):
-        return None, gaps + (
-            DataGap(
-                "FACTOR_FREQUENCY_MISMATCH",
-                "FeatureProjection.frequency는 observation 의미를 덮어쓸 수 없습니다",
-                descriptor.assetId,
-            ),
-        )
+    selectionGap = _selectionContractGap(result, projection, descriptor)
+    if selectionGap is not None:
+        if not result.selections:
+            # 고른 관측이 하나도 없을 때는 앞서 모은 결손이 이미 이유를 말한다. 그것이
+            # 비어 있을 때만 "비었다" 를 새로 적는다. 둘을 겹쳐 적으면 같은 사실이 두 번 나간다.
+            return None, gaps or (selectionGap,)
+        return None, gaps + (selectionGap,)
     if result.mode == "pointInTime":
         gaps += tuple(
             DataGap(
@@ -363,6 +400,8 @@ def _featureObservationFrame(
         observation = item.observation
         entityMarket, separator, _entity = observation.entityId.partition(":")
         if separator and requestedMarket is not None and entityMarket != requestedMarket:
+            # 돌려받은 관측이 요청한 시장과 다르면 그것은 다른 회사다. 붙여서 내보내면
+            # 사용자는 자기가 물어본 종목의 값으로 읽는다.
             return None, gaps + (
                 DataGap(
                     "FEATURE_MARKET_MISMATCH",
