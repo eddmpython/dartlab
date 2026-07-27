@@ -116,14 +116,22 @@ async def fetchInsiderTradingRaw(stockCode: str, *, limit: int | None = None) ->
         result: list[dict] = []
         for row in df.iter_rows(named=True):
             result.append(
+                # 필드명은 DART elestock.json 실제 응답 기준이다. 예전에는 응답에 없는
+                # `ofcps` 와 `ctr_motive` 를 읽어 직위와 사유가 언제나 빈 문자열이었고,
+                # 소유수와 증감수를 서로 바꿔 읽어 거래 방향 자체가 뒤집혀 있었다.
+                # 실측: 소유수 2,000 증감 1,000 인 행이 증감 2,000 보유 1,000 으로 나갔다.
                 {
                     "date": str(row.get("rcept_dt", "")),
-                    "name": str(row.get("repror", row.get("nm", ""))),
-                    "position": str(row.get("ofcps", "")),
-                    "tradeType": str(row.get("sp_stock_lmp_cnt", "")),
-                    "changeShares": _safeInt(row.get("sp_stock_lmp_cnt", 0)),
-                    "afterShares": _safeInt(row.get("sp_stock_lmp_irds_cnt", 0)),
-                    "reason": str(row.get("ctr_motive", "")),
+                    "name": str(row.get("repror", "")),
+                    "position": str(row.get("isu_exctv_ofcps", "")),
+                    # 거래 유형은 응답에 별도 필드가 없다. 증감 부호가 그 자체로 취득과
+                    # 처분을 가르므로 파생한다. 없는 필드를 읽어 빈 문자열을 내보내는
+                    # 것보다 있는 자료로 답하는 쪽이 맞다.
+                    "tradeType": _tradeTypeOf(_safeInt(row.get("sp_stock_lmp_irds_cnt", 0))),
+                    "changeShares": _safeInt(row.get("sp_stock_lmp_irds_cnt", 0)),
+                    "afterShares": _safeInt(row.get("sp_stock_lmp_cnt", 0)),
+                    # 사유 필드는 elestock 응답에 없다. 등기 여부는 있으므로 그것을 준다.
+                    "reason": str(row.get("isu_exctv_rgist_at", "")),
                     "source": "dart",
                 }
             )
@@ -210,12 +218,14 @@ async def fetchMajorShareholdersRaw(stockCode: str, *, limit: int | None = None)
         result: list[dict] = []
         for row in df.iter_rows(named=True):
             result.append(
+                # majorstock.json 실제 응답 기준. `report_nm` 과 `change_on` 은 응답에
+                # 없어서 보고자명과 보고구분이 언제나 빈 문자열이었다.
                 {
-                    "holderName": str(row.get("report_nm", row.get("nm", ""))),
+                    "holderName": str(row.get("repror", "")),
                     "shares": _safeInt(row.get("stkqy", 0)),
                     "ratio": _safeFloat(row.get("stkrt", 0)),
                     "changeDate": str(row.get("rcept_dt", "")),
-                    "changeType": str(row.get("change_on", "")),
+                    "changeType": str(row.get("report_tp", "")),
                     "source": "dart",
                 }
             )
@@ -347,6 +357,20 @@ async def iterMajorShareholdersRaw(stockCode: str, *, limit: int | None = None):
     rows = await fetchMajorShareholdersRaw(stockCode, limit=limit)
     for r in rows:
         yield r
+
+
+def _tradeTypeOf(changeShares: int) -> str:
+    """증감 주식수 부호로 거래 유형을 가른다.
+
+    DART elestock 응답에는 취득과 처분을 직접 적은 필드가 없다. 증감이 양수면 취득,
+    음수면 처분이고 0 이면 보유 주식수만 정정된 보고라 어느 쪽도 아니다.
+    """
+
+    if changeShares > 0:
+        return "취득"
+    if changeShares < 0:
+        return "처분"
+    return ""
 
 
 def _safeInt(val) -> int:
