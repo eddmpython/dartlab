@@ -54,8 +54,13 @@ _STANDARD_KEYS: frozenset[str] = _MINIMAL_KEYS | frozenset(
 )
 
 
-def _safeCall(fn: Callable):
-    """블록 빌드 실패 시 빈 list 반환 - 한 그룹 실패가 다른 그룹 영향 차단.
+def _makeSafeCall(failures: list[dict]):
+    """블록 빌드 실패를 기록하면서 빈 list 를 돌려주는 호출기를 만든다.
+
+    한 그룹의 실패가 다른 그룹을 무너뜨리지 않게 막는 것이 이 장치의 목적이고 그것은 옳다.
+    다만 예전에는 실패를 debug 로그로만 흘려서, 데이터가 없어 비어 있는 블록과 빌더가 터져서
+    비어 있는 블록이 결과만 봐서는 같아 보였다. 보고서는 멀쩡히 완성된 얼굴로 나갔다.
+    실패를 목록에 남겨 `Story.lensGaps` 로 올려 보낸다.
 
     잡는 예외 카테고리:
         KeyError/ValueError/TypeError/AttributeError - 데이터 누락 + 타입 mismatch
@@ -63,26 +68,39 @@ def _safeCall(fn: Callable):
         ImportError/RuntimeError - 외부 모듈 + 런타임 의존성 실패
         polars.exceptions.PolarsError - DataFrame 연산 실패
     """
-    try:
-        return fn()
-    except (
-        KeyError,
-        ValueError,
-        TypeError,
-        AttributeError,
-        ArithmeticError,
-        ImportError,
-        RuntimeError,
-        IndexError,
-        _POLARS_ERR,
-    ) as exc:
-        _LOG.debug(
-            "story block build 실패: %s - %s: %s",
-            getattr(fn, "__name__", "?"),
-            type(exc).__name__,
-            exc,
-        )
-        return []
+
+    def _safeCall(fn: Callable):
+        try:
+            return fn()
+        except (
+            KeyError,
+            ValueError,
+            TypeError,
+            AttributeError,
+            ArithmeticError,
+            ImportError,
+            RuntimeError,
+            IndexError,
+            _POLARS_ERR,
+        ) as exc:
+            name = getattr(fn, "__name__", "?")
+            _LOG.debug("story block build 실패: %s - %s: %s", name, type(exc).__name__, exc)
+            failures.append(
+                {
+                    "code": "BLOCK_BUILD_FAILED",
+                    "builder": name,
+                    "error": type(exc).__name__,
+                    "message": str(exc),
+                }
+            )
+            return []
+
+    return _safeCall
+
+
+def _safeCall(fn: Callable):
+    """기록 없이 실패를 흡수한다. 실패를 남길 곳이 없는 호출자용 얇은 래퍼."""
+    return _makeSafeCall([])(fn)
 
 
 def _resolvePresetKeys(keys: set[str] | None, preset: str) -> set[str] | None:
@@ -1467,7 +1485,8 @@ def buildBlocks(
     _setupCurrency(company)
     # buildBlocks 본체에서 사용하는 헬퍼 - 그룹 빌더 추출 시 인자로 전달.
     # 이전 inline 정의 (_safe/_need) 와 같은 이름 유지해 본체 호출 그대로.
-    _safe = _safeCall
+    buildFailures: list[dict] = []
+    _safe = _makeSafeCall(buildFailures)
     _need = _makeNeed(keys)
     b: dict = {}
 
@@ -1514,7 +1533,7 @@ def buildBlocks(
     from dartlab.story.blockMap import BlockMap
 
     gc.collect()
-    return BlockMap(b)
+    return BlockMap(b, buildFailures=buildFailures)
 
 
 def buildStory(
@@ -1570,6 +1589,8 @@ def buildStory(
     # ── ReportType 해석 ──
     reportType = resolveReportType(type)
 
+    blockBuildFailures: list[dict] = []
+
     def _attachLensProducts(story):
         from dartlab.story.lensProducts import collectLensProducts, enginesForReportType
 
@@ -1580,7 +1601,9 @@ def buildStory(
         )
         story.reportType = reportType.key
         story.lensProducts = bundle["products"]
-        story.lensGaps = bundle["gaps"]
+        # 블록 빌더가 터진 것도 결손이다. 렌즈 결손과 같은 자리에 실어야 보고서가
+        # 완전한 얼굴로 나가지 않는다.
+        story.lensGaps = list(bundle["gaps"]) + blockBuildFailures
         story._lensBundle = bundle
         return story
 
@@ -1710,6 +1733,7 @@ def buildStory(
             neededKeys = None  # 전체 빌드
 
         b = buildBlocks(company, keys=neededKeys, basePeriod=basePeriod)
+        blockBuildFailures.extend(getattr(b, "buildFailures", []))
 
         for tmplKey in templateKeys:
             tmpl = TEMPLATES[tmplKey]

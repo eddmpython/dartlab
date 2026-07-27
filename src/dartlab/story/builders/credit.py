@@ -58,11 +58,16 @@ def creditScoreBlock(data: dict) -> list:
 
     grade = data.get("grade", "?")
     desc = data.get("gradeDescription", "")
-    score = data.get("score", 0)
-    pd_est = data.get("pdEstimate", 0)
+    score = data.get("score")
+    pd_est = data.get("pdEstimate")
     ecr = data.get("eCR", "?")
     outlook = data.get("outlook", "N/A")
     sector = data.get("sector", "")
+    # 부도확률을 못 구했을 때 0 으로 채우면 "부도확률 0.00%" 가 찍힌다. 결측을 하필 가장
+    # 안심되는 값으로 바꾸는 셈이고, 이 숫자는 사람이 그대로 믿고 행동하는 자리다.
+    # 종합 점수는 반대로 0/100 이 되어 가장 나쁜 회사로 보인다. 둘 다 안 적는 게 맞다.
+    pdText = "미산출" if pd_est is None else f"{pd_est:.2f}%"
+    scoreText = "미산출" if score is None else f"{score:.1f}/100"
     inv = "투자적격" if data.get("investmentGrade") else "투기등급"
 
     blocks: list = []
@@ -70,15 +75,15 @@ def creditScoreBlock(data: dict) -> list:
         HeadingBlock(
             _meta("creditScore").label,
             level=2,
-            helper=f"등급 {grade} ({desc}) | {inv} | PD {pd_est:.2f}%",
+            helper=f"등급 {grade} ({desc}) | {inv} | PD {pdText}",
         )
     )
     blocks.append(
         MetricBlock(
             [
                 ("신용등급", f"{grade} ({desc})"),
-                ("종합 점수", f"{score:.1f}/100"),
-                ("부도확률(1Y)", f"{pd_est:.2f}%"),
+                ("종합 점수", scoreText),
+                ("부도확률(1Y)", pdText),
                 ("현금흐름등급", ecr),
                 ("등급 전망", outlook),
                 ("업종", sector),

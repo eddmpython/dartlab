@@ -723,7 +723,22 @@ def _cwChainRevMargin(seriesDelta) -> dict | None:
     opm_delta = seriesDelta("operatingMargin")
     if rev_yoy is None or opm_delta is None:
         return None
-    w = abs(opm_delta / rev_yoy) if rev_yoy != 0 else 0
+    # 영업 레버리지는 매출 변화 대비 마진 변화다. 매출이 그대로면 나눌 것이 없어 정의되지
+    # 않는다. 예전에는 그 자리에 0 을 넣어서 무조건 dampen 이 됐고, 밸류에이션이 터미널
+    # 성장률을 0.3%p 깎으면서 근거로 "매출→마진 dampen (+2.5%p)" 처럼 마진이 좋아진
+    # 숫자를 붙였다. 매출 보합은 흔한 결과지 감쇠 신호가 아니다.
+    if rev_yoy == 0:
+        return {
+            "from_act": "수익구조",
+            "to_act": "수익성",
+            "metric_from": "매출YoY",
+            "metric_to": "영업마진Δ",
+            "delta_from": 0.0,
+            "delta_to": round(opm_delta, 2),
+            "weight": None,
+            "direction": "undefined",
+        }
+    w = abs(opm_delta / rev_yoy)
     return {
         "from_act": "수익구조",
         "to_act": "수익성",

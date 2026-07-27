@@ -19,10 +19,13 @@ from __future__ import annotations
 class BlockMap:
     """dict-like 블록 사전 -- 한글 label 접근 + tab-complete + pretty repr."""
 
-    __slots__ = ("_data", "_labelToKey")
+    __slots__ = ("_data", "_labelToKey", "buildFailures")
 
-    def __init__(self, data: dict[str, list]):
+    def __init__(self, data: dict[str, list], buildFailures: list[dict] | None = None):
         self._data = data
+        # 빌더가 터져서 비어 있는 블록과 데이터가 없어 비어 있는 블록은 다른 사건이다.
+        # 여기 남겨 두면 보고서가 결손을 감추지 않고 `Story.lensGaps` 로 올려 보낸다.
+        self.buildFailures = list(buildFailures or [])
         from dartlab.story.catalog import _LABEL_TO_KEY
 
         self._labelToKey = _LABEL_TO_KEY

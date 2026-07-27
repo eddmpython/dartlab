@@ -120,14 +120,19 @@ def narrateStoryTree(tree: dict) -> str:
             parts.append(f"{entry['label']}: {entry['dFV']:,.0f}원")
 
     summary = tree["summary"]
-    spread_pct = summary.get("spreadPct", 0)
+    spread_pct = summary.get("spreadPct")
 
     narrative = " / ".join(parts)
+    # 격차를 못 구했을 때 0 으로 채우면 "격차 0%. 서사와 무관하게 안정" 이 붙는다.
+    # 바로 앞에 세 배 차이 나는 가격 셋을 나열해 놓고 결과가 서사와 무관하다고 말하는 셈이다.
+    # 모르면 그 문장을 아예 붙이지 않는다.
+    if spread_pct is None:
+        return narrative
     if spread_pct > 100:
-        narrative += f". 궤적 간 격차 {spread_pct:.0f}% — 서사 민감도 매우 높음."
+        narrative += f". 궤적 간 격차 {spread_pct:.0f}%. 서사 민감도 매우 높음."
     elif spread_pct > 50:
-        narrative += f". 궤적 간 격차 {spread_pct:.0f}% — 서사 선택이 중요."
+        narrative += f". 궤적 간 격차 {spread_pct:.0f}%. 서사 선택이 중요."
     else:
-        narrative += f". 궤적 간 격차 {spread_pct:.0f}% — 서사와 무관하게 안정."
+        narrative += f". 궤적 간 격차 {spread_pct:.0f}%. 서사와 무관하게 안정."
 
     return narrative
