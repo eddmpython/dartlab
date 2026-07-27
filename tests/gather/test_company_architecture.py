@@ -89,10 +89,15 @@ def test_public_docs_do_not_reference_legacy_company_names():
 def test_export_module_does_not_depend_on_root_company_internals():
     text = _read("src/dartlab/viz/export/excel.py")
     assert "from dartlab.company import _ALL_PROPERTIES" not in text
-    # F1.7 (commit f01c30ac6) — viz 가 providers 직접 import 안 함. FinanceDocAccessor
-    # Protocol 통해 위임 (정공법 B Protocol DIP). exportModules 도 accessor 메서드.
-    assert "getFinanceDocAccessor" in text
+    # viz 는 providers 를 직접 import 하지 않는다. 이것이 이 테스트가 지키는 불변식이다.
+    #
+    # 예전에는 그 위임을 `FinanceDocAccessor` seam 이 맡았고 이 테스트가 그 이름의 존재를
+    # 함께 요구했다. 그런데 그 seam 은 등록 대상 목록이 비어 언제나 None 을 돌려주는
+    # 죽은 뼈대였고, 소비자의 첫 분기가 실행되지 않는 코드로 남아 있었다. seam 을 걷어낸
+    # 지금 지켜야 할 것은 방향뿐이라 이름 조건은 뺀다. 특정 우회 장치의 존재가 아니라
+    # 계층 방향이 계약이다.
     assert "from dartlab.providers" not in text
+    assert "import dartlab.providers" not in text
 
 
 def test_ai_owned_helpers_do_not_live_in_src_root():

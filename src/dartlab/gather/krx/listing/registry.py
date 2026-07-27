@@ -16,7 +16,10 @@ from pathlib import Path
 import httpx
 import polars as pl
 
+from dartlab.core.logger import getLogger
 from dartlab.gather.infra.ttl import TTL_LISTING as CACHE_TTL
+
+_log = getLogger(__name__)
 
 
 def _cacheFile() -> Path:
@@ -213,8 +216,10 @@ def _fetchKind() -> pl.DataFrame:
             if len(parser._rows) >= 2:
                 rows = parser._rows
                 break
-        except (httpx.ConnectError, httpx.TimeoutException, httpx.RemoteProtocolError):
-            pass  # 전송 계층 일시 장애 — 재시도
+        except (httpx.ConnectError, httpx.TimeoutException, httpx.RemoteProtocolError) as exc:
+            # 전송 계층 일시 장애. 재시도하되 원인은 남긴다. 예전에는 삼켜서 재시도가
+            # 소진된 뒤에도 무엇 때문에 비었는지 알 수 없었다.
+            _log.warning("KIND 상장목록 조회 실패 (%d/%d): %s: %s", attempt + 1, _KIND_RETRIES, type(exc).__name__, exc)
         if attempt < _KIND_RETRIES - 1:
             time.sleep(_KIND_BACKOFF_SEC * (attempt + 1))
     if len(rows) < 2:
@@ -362,7 +367,14 @@ def getKindList(*, forceRefresh: bool = False) -> pl.DataFrame:
 
         emit("listing:download")
         df = _fetchKind()
-        _saveCache(df)
+        # 빈 결과는 캐시하지 않는다. KIND 가 잠깐 끊겨 나온 빈 목록을 24 시간짜리 파일
+        # 캐시에 굳히면 네트워크가 돌아와도 라이브러리가 하루 종일 회복하지 못한다.
+        # 그동안 KR 종목코드와 회사명 해석이 통째로 죽고, 사용자에게는 0 개 로드 완료라는
+        # 성공 문구가 나간다.
+        if df.height > 0:
+            _saveCache(df)
+        else:
+            _log.warning("상장목록이 비어 캐시에 저장하지 않는다. 다음 호출에서 다시 조회한다.")
         _memory = df
         _memoryTs = time.time()
         _invalidateSearchCache()
