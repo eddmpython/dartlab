@@ -13,13 +13,17 @@ identity 보존을 위해 revenueForecast.py 가 본 모듈에서 re-export 한�
 from __future__ import annotations
 
 import math
-from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from dartlab.analysis.forecast.revenueForecast import (
-        BacklogSignal,
-        SegmentForecast,
-    )
+# 두 타입은 실행 시점에도 필요하다. 예전에는 TYPE_CHECKING 안에서만 들여와서, 이 모듈이
+# `BacklogSignal(...)` 을 만드는 순간 NameError 가 났다. 모듈 수준 `__getattr__` 은 함수
+# 안의 전역 이름 조회를 대신해 주지 않는다. 게다가 그 자리를 감싼 except 가
+# (TypeError, ValueError, KeyError) 라 NameError 를 안 잡아서 호출자에게 그대로 터졌다.
+# 순환은 없다. 타입 모듈은 core 의 포매터 하나만 의존한다. 파사드가 아니라 타입 모듈에서
+# 직접 들여오는 이유가 그것이다.
+from dartlab.analysis.forecast._revenueForecastTypes import (
+    BacklogSignal,
+    SegmentForecast,
+)
 
 
 def _lazy(name):
@@ -35,10 +39,15 @@ def __getattr__(name: str) -> object:
 
 
 def forecastMetric(*args, **kwargs) -> dict | None:
-    """revenueForecast.forecastMetric lazy proxy — 본체로 위임.
+    """시계열 예측 본체로 위임한다.
+
+    예전에는 `revenueForecast` 파사드에서 이 이름을 찾았는데 그 파사드는 이 함수를
+    재내보내지 않는다. 진짜 거처는 `_forecastMetric` 이고 `forecast` 파사드가 내보낸다.
+    그래서 세그먼트 소스는 호출되는 순간 AttributeError 로 죽었다. 파사드를 한 번 더
+    거치지 않고 실제 거처를 직접 가리킨다.
 
     Requires:
-        dartlab.analysis.forecast.revenueForecast 모듈 import 가능.
+        dartlab.analysis.forecast._forecastMetric 모듈 import 가능.
 
     Raises:
         없음. 본체 함수의 예외 그대로 전파.
@@ -47,7 +56,9 @@ def forecastMetric(*args, **kwargs) -> dict | None:
         >>> forecastMetric(series, metric="revenue")
         ForecastResult(...)
     """
-    return _lazy("forecastMetric")(*args, **kwargs)
+    from dartlab.analysis.forecast._forecastMetric import forecastMetric as impl
+
+    return impl(*args, **kwargs)
 
 
 def _classifyLifecycle(*args, **kwargs):
