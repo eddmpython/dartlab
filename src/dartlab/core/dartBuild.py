@@ -16,6 +16,8 @@ from __future__ import annotations
 
 from typing import Any, Protocol, runtime_checkable
 
+from dartlab.core.pluginDiscovery import discoverOnce
+
 
 @runtime_checkable
 class DartBuildProvider(Protocol):
@@ -57,22 +59,15 @@ class DartBuildProvider(Protocol):
 _PROVIDER: DartBuildProvider | None = None
 
 _KNOWN_PROVIDER_MODULES: tuple[str, ...] = ("dartlab.providers.dart.build",)
-_DISCOVERED = False
 
 
 def _discover() -> None:
-    """알려진 DartBuildProvider 모듈을 한 번만 lazy import — register 트리거."""
-    global _DISCOVERED
-    if _DISCOVERED:
-        return
-    import importlib
+    """알려진 DartBuildProvider 모듈을 한 번만 lazy import . register 트리거.
 
-    for modPath in _KNOWN_PROVIDER_MODULES:
-        try:
-            importlib.import_module(modPath)
-        except ImportError:
-            continue
-    _DISCOVERED = True
+    한 번만 도는 규칙은 `core.pluginDiscovery` 가 갖는다. 예전에는 이 열세 줄이
+    core 안에 열한 벌 복사돼 있었다.
+    """
+    discoverOnce(__name__, _KNOWN_PROVIDER_MODULES)
 
 
 def registerDartBuildProvider(provider: DartBuildProvider) -> None:

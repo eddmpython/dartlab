@@ -12,6 +12,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Protocol, runtime_checkable
 
+from dartlab.core.pluginDiscovery import discoverOnce
+
 
 @dataclass(frozen=True)
 class CredentialStatus:
@@ -89,26 +91,14 @@ _KNOWN_PROVIDER_MODULES: tuple[str, ...] = (
     "dartlab.gather.dart.keys",  # DartKeyProvider (DART fetch 는 gather 전담)
 )
 
-_DISCOVERED = False
-
 
 def _discoverProviders() -> None:
-    """알려진 CredentialProvider 모듈을 한 번만 lazy import — register 트리거.
+    """알려진 CredentialProvider 모듈을 한 번만 lazy import . register 트리거.
 
-    PEP 562 lazy attribute 환경에서 dartlab 자체 import 가 providers 로드 안 함.
-    이 함수가 첫 CredentialManager 사용 시 호출돼 plugin 모듈을 명시 로드.
+    한 번만 도는 규칙은 `core.pluginDiscovery` 가 갖는다. 예전에는 이 열세 줄이
+    core 안에 열한 벌 복사돼 있었다.
     """
-    global _DISCOVERED
-    if _DISCOVERED:
-        return
-    import importlib
-
-    for modPath in _KNOWN_PROVIDER_MODULES:
-        try:
-            importlib.import_module(modPath)
-        except ImportError:
-            continue  # optional dep 미설치 graceful
-    _DISCOVERED = True
+    discoverOnce(__name__, _KNOWN_PROVIDER_MODULES)
 
 
 def registerCredentialProvider(provider: CredentialProvider) -> None:
