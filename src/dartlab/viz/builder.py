@@ -22,6 +22,7 @@ import importlib
 from datetime import datetime, timezone
 from typing import Any
 
+from dartlab.viz.adapterPlans import ADAPTER_PLANS, ALWAYS, NORM_ADAPTERS
 from dartlab.viz.catalog import CATALOG
 from dartlab.viz.data import _cache, normalize, ratios, statements  # noqa: F401 — _cache.getCompany + normalize 호환
 from dartlab.viz.display.finance._cache import getNormFinance, getTtmNorm
@@ -294,6 +295,58 @@ _NON_TREND_KINDS = frozenset(
 )
 
 
+def _adapterArgs(plan, company, stockCode, norm, periods):
+    """계획이 선언한 인자 모양대로 빌더 인자를 만든다."""
+    if plan.arg == "company":
+        return (company,)
+    if plan.arg == "stockCode":
+        return (stockCode,)
+    return (norm, periods)
+
+
+def _applyAdapterPlan(plan, result: dict, view: dict[str, Any]) -> None:
+    """빌더 결과를 계획대로 view 에 합친다."""
+    if plan.full:
+        view.update(result)
+    else:
+        for key, mode, default in plan.fields:
+            if mode == ALWAYS:
+                view[key] = result.get(key, default)
+            elif key in result:
+                view[key] = result[key]
+    if plan.mergeOptions and "options" in result:
+        view["options"] = {**view.get("options", {}), **result["options"]}
+
+
+def _buildSpecDrivenFields(adapterName: str, spec: dict, company: Any, norm, periods: list[str]) -> dict[str, Any]:
+    """표로 못 적는 네 어댑터. spec 을 읽거나 결과가 비면 다른 데이터로 대신한다.
+
+    나머지는 "빌더 하나 부르고 키 옮기기"라 표로 충분한데, 이 넷은 spec 의 내용에 따라
+    호출이 달라지거나 실패 시 다른 경로를 탄다. 표에 억지로 우겨넣으면 표가 표가 아니게
+    되므로 여기 남긴다.
+    """
+    from dartlab.viz.display import adapters
+
+    if adapterName in ("kpiFromNorm", "diffFromNorm"):
+        fields: dict[str, Any] = {"tiles": adapters.buildKpiTilesFromNorm(norm, periods, spec.get("tilePlans", []))}
+        if adapterName == "diffFromNorm":
+            fields["periodLabel"] = spec.get("periodLabel", "YoY")
+        return fields
+    if adapterName == "flagsTopList":
+        flags = adapters._safeCall(spec.get("module", ""), spec.get("fn", ""), company)
+        items = adapters.buildTopListFromFlags(flags)
+        # analysis 함수 결과 비면 norm 기반 fallback.
+        if not items:
+            items = adapters.buildAnomalyTopList(company)
+        return {"items": items, "direction": spec.get("direction", "desc")}
+    if adapterName == "snowflakeKpi":
+        return {"tiles": adapters.buildSnowflakeKpi(company, spec.get("tilePlans", []))}
+    return {"tiles": adapters.buildQuantComingSoon(spec.get("label", "준비 중")).get("tiles", [])}
+
+
+_SPEC_DRIVEN_ADAPTERS = frozenset({"kpiFromNorm", "diffFromNorm", "flagsTopList", "snowflakeKpi", "quantComingSoon"})
+
+
 def _buildKindSpecView(
     entry: CatalogEntry,
     company: Any,
@@ -305,33 +358,26 @@ def _buildKindSpecView(
     """kpiTile/diffView/topList/comparisonTable/gauge/phaseIndicator/sankey/scatter dispatch.
 
     entry.dataSpec 의 `adapter` 키로 어댑터 선택. None 반환 시 호출자가 trend fallback.
-    """
-    from dartlab.viz.display import adapters
 
+    어느 빌더를 어떤 인자로 부르고 결과를 어떻게 합칠지는 `viz.adapterPlans` 의 표가 정한다.
+    예전에는 여기 47 갈래 사슬이 있었는데, 갈래마다 하는 일이 같고 세 가지만 달라서 새 카드를
+    붙일 때 옆 갈래를 복사하게 됐고 그러다 options 병합 같은 것이 갈래마다 어긋났다.
+    """
     kind = entry.get("kind")
     spec = entry.get("dataSpec") or {}
-    adapter_name = spec.get("adapter", "")
+    adapterName = spec.get("adapter", "")
     # _NON_TREND_KINDS 외에도 trend kind 가 adapter 명시한 경우 처리.
     # (P-DASH-V1 D6: capitalAllocationBars 는 kind=trend 지만 adapter dispatch 필요.)
-    if kind not in _NON_TREND_KINDS and not adapter_name:
+    if kind not in _NON_TREND_KINDS and not adapterName:
         return None
 
-    # 공통: norm + periods (필요한 어댑터만 사용).
-    needsNorm = adapter_name in (
-        "kpiFromNorm",
-        "diffFromNorm",
-        "cashflowSankey",
-        "capitalAllocationBars",
-        "capitalAllocationWaterfall",
-        "duPontRadar",
-    )
     norm = None
     periods: list[str] = []
-    if needsNorm:
+    if adapterName in NORM_ADAPTERS:
         norm = _selectNorm(company, useTtm)
         periods = lastNPeriods(norm, nPeriods, periodKind)
 
-    base_view: dict[str, Any] = {
+    view: dict[str, Any] = {
         "kind": kind,
         "title": entry.get("title", ""),
         "categories": periods,
@@ -339,224 +385,28 @@ def _buildKindSpecView(
         "options": dict(entry.get("options") or {}),
     }
 
-    if adapter_name == "kpiFromNorm":
-        tilePlans = spec.get("tilePlans", [])
-        tiles = adapters.buildKpiTilesFromNorm(norm, periods, tilePlans)
-        base_view["tiles"] = tiles
-    elif adapter_name == "diffFromNorm":
-        tilePlans = spec.get("tilePlans", [])
-        tiles = adapters.buildKpiTilesFromNorm(norm, periods, tilePlans)
-        base_view["tiles"] = tiles
-        base_view["periodLabel"] = spec.get("periodLabel", "YoY")
-    elif adapter_name == "flagsTopList":
-        modPath = spec.get("module", "")
-        fnName = spec.get("fn", "")
-        flags = adapters._safeCall(modPath, fnName, company)
-        items = adapters.buildTopListFromFlags(flags)
-        # analysis 함수 결과 비면 norm 기반 fallback.
-        if not items:
-            items = adapters.buildAnomalyTopList(company)
-        base_view["items"] = items
-        base_view["direction"] = spec.get("direction", "desc")
-    elif adapter_name == "peerComparison":
-        base_view.update(adapters.buildPeerComparison(company))
-    elif adapter_name == "distressGauge":
-        base_view.update(adapters.buildDistressGauge(company))
-    elif adapter_name == "beneishGauge":
-        base_view.update(adapters.buildBeneishGauge(company))
-    elif adapter_name == "lifeCyclePhase":
-        base_view.update(adapters.buildLifeCyclePhase(company))
-    elif adapter_name == "cashflowSankey":
-        base_view.update(adapters.buildCashflowAllocationSankey(norm, periods))
-    elif adapter_name == "capitalAllocationBars":
-        result = adapters.buildCapitalAllocationBars(norm, periods)
-        if "series" in result:
-            base_view["series"] = result["series"]
-    elif adapter_name == "capitalAllocationWaterfall":
-        result = adapters.buildCapitalAllocationWaterfall(norm, periods)
-        if "categories" in result:
-            base_view["categories"] = result["categories"]
-        if "series" in result:
-            base_view["series"] = result["series"]
-    elif adapter_name == "distressDecomp":
-        base_view.update(adapters.buildDistressDecomp(company))
-    elif adapter_name == "scenarioSensitivity":
-        base_view.update(adapters.buildScenarioSensitivity(company))
-    elif adapter_name == "peerScatter":
-        base_view.update(adapters.buildPeerScatter(company))
-    elif adapter_name == "duPontRadar":
-        result = adapters.buildDuPontRadar(norm, periods)
-        base_view["categories"] = result.get("categories", [])
-        base_view["series"] = result.get("series", [])
-    elif adapter_name == "narrativeBridge":
-        base_view.update(adapters.buildNarrativeBridge(company))
-    elif adapter_name == "snowflakeAlert":
-        base_view.update(adapters.buildSnowflakeAlert(company))
-    elif adapter_name == "snowflakeRadar":
-        result = adapters.buildSnowflakeRadar(company)
-        base_view["categories"] = result.get("categories", [])
-        base_view["series"] = result.get("series", [])
-        if "options" in result:
-            base_view["options"] = {**base_view.get("options", {}), **result["options"]}
-    elif adapter_name == "snowflakeKpi":
-        tilePlans = spec.get("tilePlans", [])
-        base_view["tiles"] = adapters.buildSnowflakeKpi(company, tilePlans)
-    elif adapter_name == "scoreBadge":
-        base_view.update(adapters.buildScoreBadge(company))
-    elif adapter_name == "penmanRoeBars":
-        result = adapters.buildPenmanRoeBars(company)
-        if "categories" in result:
-            base_view["categories"] = result["categories"]
-        if "series" in result:
-            base_view["series"] = result["series"]
-    elif adapter_name == "roicWaccGap":
-        result = adapters.buildRoicWaccGap(company)
-        if "categories" in result:
-            base_view["categories"] = result["categories"]
-        if "series" in result:
-            base_view["series"] = result["series"]
-    elif adapter_name == "segmentBreakdown":
-        result = adapters.buildSegmentBreakdown(company)
-        if "categories" in result:
-            base_view["categories"] = result["categories"]
-        if "series" in result:
-            base_view["series"] = result["series"]
-    elif adapter_name == "segmentConcentration":
-        result = adapters.buildSegmentConcentration(company)
-        if "categories" in result:
-            base_view["categories"] = result["categories"]
-        if "series" in result:
-            base_view["series"] = result["series"]
-    elif adapter_name == "dolBreakeven":
-        result = adapters.buildDolBreakeven(company)
-        if "categories" in result:
-            base_view["categories"] = result["categories"]
-        if "series" in result:
-            base_view["series"] = result["series"]
-    elif adapter_name == "distressEnsembleGauge":
-        base_view.update(adapters.buildDistressEnsembleGauge(company))
-    # quant 탭 adapter — stockCode 만 받음 (가격 데이터는 quant 엔진이 자체 fetch).
-    elif adapter_name == "quantPriceTrend":
-        result = adapters.buildQuantPriceTrend(stockCode)
-        base_view["categories"] = result.get("categories", [])
-        base_view["series"] = result.get("series", [])
-        # candle 카드는 markers 도 options 안에 박아 frontend 가 setMarkers 호출.
-        if "options" in result:
-            base_view["options"] = {**base_view.get("options", {}), **result["options"]}
-    elif adapter_name == "quantRsiTrend":
-        result = adapters.buildQuantRsiTrend(stockCode)
-        base_view["categories"] = result.get("categories", [])
-        base_view["series"] = result.get("series", [])
-        if "options" in result:
-            base_view["options"] = {**base_view.get("options", {}), **result["options"]}
-    elif adapter_name == "quantMacdTrend":
-        result = adapters.buildQuantMacdTrend(stockCode)
-        base_view["categories"] = result.get("categories", [])
-        base_view["series"] = result.get("series", [])
-        if "options" in result:
-            base_view["options"] = {**base_view.get("options", {}), **result["options"]}
-    elif adapter_name == "quantVerdictKpi":
-        base_view["tiles"] = adapters.buildQuantVerdictKpi(stockCode).get("tiles", [])
-    elif adapter_name == "quantMomentumKpi":
-        base_view["tiles"] = adapters.buildQuantMomentumKpi(stockCode).get("tiles", [])
-    elif adapter_name == "quantVolatilityKpi":
-        base_view["tiles"] = adapters.buildQuantVolatilityKpi(stockCode).get("tiles", [])
-    elif adapter_name == "quantBetaKpi":
-        base_view["tiles"] = adapters.buildQuantBetaKpi(stockCode).get("tiles", [])
-    elif adapter_name == "quantForecastKpi":
-        base_view["tiles"] = adapters.buildQuantForecastKpi(stockCode).get("tiles", [])
-    elif adapter_name == "quantComingSoon":
-        label = (spec or {}).get("label", "준비 중")
-        base_view["tiles"] = adapters.buildQuantComingSoon(label).get("tiles", [])
-    # backtest 6 카드 — 8 style 일괄 backtest module-level cache 공유.
-    elif adapter_name == "quantEquityCurve":
-        result = adapters.buildQuantEquityCurve(stockCode)
-        base_view["categories"] = result.get("categories", [])
-        base_view["series"] = result.get("series", [])
-    elif adapter_name == "quantDrawdownChart":
-        result = adapters.buildQuantDrawdownChart(stockCode)
-        base_view["categories"] = result.get("categories", [])
-        base_view["series"] = result.get("series", [])
-        if "options" in result:
-            base_view["options"] = {**base_view.get("options", {}), **result["options"]}
-    elif adapter_name == "quantMonthlyHeatmap":
-        result = adapters.buildQuantMonthlyHeatmap(stockCode)
-        base_view["cells"] = result.get("cells", [])
-        base_view["rowOrder"] = result.get("rowOrder", [])
-        base_view["colOrder"] = result.get("colOrder", [])
-        base_view["tone"] = result.get("tone", "diverging")
-        if "options" in result:
-            base_view["options"] = {**base_view.get("options", {}), **result["options"]}
-    elif adapter_name == "quantStyleMatrix":
-        result = adapters.buildQuantStyleMatrix(stockCode)
-        base_view["rows"] = result.get("rows", [])
-        base_view["peerCount"] = result.get("peerCount", 0)
-        if "options" in result:
-            base_view["options"] = {**base_view.get("options", {}), **result["options"]}
-    elif adapter_name == "quantRollingSharpe":
-        result = adapters.buildQuantRollingSharpe(stockCode)
-        base_view["categories"] = result.get("categories", [])
-        base_view["series"] = result.get("series", [])
-        if "options" in result:
-            base_view["options"] = {**base_view.get("options", {}), **result["options"]}
-    elif adapter_name == "quantAnnualReturns":
-        result = adapters.buildQuantAnnualReturns(stockCode)
-        base_view["categories"] = result.get("categories", [])
-        base_view["series"] = result.get("series", [])
-    # risk 4 카드.
-    elif adapter_name == "quantBetaScatter":
-        result = adapters.buildQuantBetaScatter(stockCode)
-        for key in ("points", "xLabel", "yLabel", "xUnit", "yUnit", "xRef", "yRef"):
-            if key in result:
-                base_view[key] = result[key]
-        if "options" in result:
-            base_view["options"] = {**base_view.get("options", {}), **result["options"]}
-    elif adapter_name == "quantVolatilityTerm":
-        result = adapters.buildQuantVolatilityTerm(stockCode)
-        base_view["categories"] = result.get("categories", [])
-        base_view["series"] = result.get("series", [])
-    elif adapter_name == "quantDrawdownDistribution":
-        result = adapters.buildQuantDrawdownDistribution(stockCode)
-        base_view["categories"] = result.get("categories", [])
-        base_view["series"] = result.get("series", [])
-    elif adapter_name == "quantSnowflakeRadar":
-        result = adapters.buildQuantSnowflakeRadar(stockCode)
-        base_view["categories"] = result.get("categories", [])
-        base_view["series"] = result.get("series", [])
-        if "options" in result:
-            base_view["options"] = {**base_view.get("options", {}), **result["options"]}
-    # forecast 3 카드.
-    elif adapter_name == "quantForecastFan":
-        result = adapters.buildQuantForecastFan(stockCode)
-        base_view["categories"] = result.get("categories", [])
-        base_view["series"] = result.get("series", [])
-    elif adapter_name == "quantMonteCarloPaths":
-        result = adapters.buildQuantMonteCarloPaths(stockCode)
-        base_view["categories"] = result.get("categories", [])
-        base_view["series"] = result.get("series", [])
-        if "options" in result:
-            base_view["options"] = {**base_view.get("options", {}), **result["options"]}
-    elif adapter_name == "quantRegimePhase":
-        result = adapters.buildQuantRegimePhase(stockCode)
-        for key in ("phases", "current", "confidence", "subtitle"):
-            if key in result:
-                base_view[key] = result[key]
+    if adapterName in _SPEC_DRIVEN_ADAPTERS:
+        view.update(_buildSpecDrivenFields(adapterName, spec, company, norm, periods))
     else:
-        # adapter 미지정 — 빈 spec 으로라도 kind 보존.
-        pass
+        plan = ADAPTER_PLANS.get(adapterName)
+        if plan is not None:
+            from dartlab.viz.display import adapters
 
-    corpName = getattr(company, "corpName", None)
-    base_view["evidenceBinding"] = makeBinding(stockCode, entry.get("topic", "BS"), periodKind, periods or [])
-    base_view["meta"] = makeMeta(
+            builder = getattr(adapters, plan.builder)
+            _applyAdapterPlan(plan, builder(*_adapterArgs(plan, company, stockCode, norm, periods)), view)
+        # 표에 없는 이름은 빈 spec 으로라도 kind 를 보존한다.
+
+    view["evidenceBinding"] = makeBinding(stockCode, entry.get("topic", "BS"), periodKind, periods or [])
+    view["meta"] = makeMeta(
         stockCode,
-        corpName=corpName,
+        corpName=getattr(company, "corpName", None),
         periodKind=periodKind,
         periods=periods,
         generatedAt=datetime.now(timezone.utc).isoformat(),
     )
     if "layout" in entry:
-        base_view["layout"] = dict(entry["layout"])
-    return base_view  # type: ignore[return-value]
+        view["layout"] = dict(entry["layout"])
+    return view  # type: ignore[return-value]
 
 
 def buildView(
