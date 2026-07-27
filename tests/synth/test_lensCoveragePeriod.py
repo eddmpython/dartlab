@@ -21,7 +21,7 @@ from datetime import date
 
 import pytest
 
-from dartlab.synth.lensContract import _temporalLowerBound, _temporalUpperBound, _validateTime
+from dartlab.synth.lensTime import _temporalLowerBound, _temporalUpperBound, _validateTime
 
 pytestmark = [pytest.mark.unit]
 
