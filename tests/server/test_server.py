@@ -721,8 +721,12 @@ class TestAsk:
         assert resp.json()["answer"] == "core-answer"
         assert resp.json()["artifacts"][0]["format"] == "csv"
         assert captured["question"] == "안녕하세요"
-        assert "provider" not in captured["kwargs"]
-        assert "model" not in captured["kwargs"]
+        # provider/model 은 반드시 그대로 넘어가야 한다. 예전엔 여기서 떨어뜨려
+        # 비스트리밍 /api/ask 가 프로필 기본값으로 돌았고, 같은 질문이 스트리밍
+        # 경로와 서로 다른 모델로 답했다(c81e64232). 모델 고정이 안 되면 품질
+        # 측정 자체가 성립하지 않는다.
+        assert captured["kwargs"]["provider"] == "openai"
+        assert captured["kwargs"]["model"] == "gpt-5.4"
         assert captured["kwargs"]["use_tools"] is True
 
     def test_plain_chat_passes_company_as_stock_code_hint(self, client, monkeypatch):
