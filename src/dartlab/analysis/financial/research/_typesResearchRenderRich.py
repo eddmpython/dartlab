@@ -454,31 +454,89 @@ def _renderMarket(result, console) -> None:
     console.print(Panel(mt, title="[bold]Market Data[/bold]", border_style="blue"))
 
 
-def _renderFinancial(result, console) -> None:
-    """Financial Trends — 수익성·DuPont·효율성 종합 테이블."""
-    if not result.financial or not result.financial.periods:
+def _renderSummaryPanel(
+    console,
+    periods,
+    summary,
+    *,
+    gateKey: str,
+    tableTitle: str,
+    panelTitle: str,
+    labels: dict,
+    percentKeys: set | None = None,
+    ratioKeys: set | None = None,
+) -> None:
+    """라벨 표 하나를 기간 열 표로 그려 패널에 담는다. 자료가 없으면 아무 것도 안 그린다.
+
+    `gateKey` 가 비면 섹션 전체를 건너뛴다. 대표 항목이 없으면 나머지가 있어도 읽을 수 없는
+    표가 되기 때문이고, 이 규칙은 섹션마다 대표 항목이 달라 인자로 받는다.
+
+    값 표기는 세 가지다. 백분율, 배수, 큰 금액. 어느 것인지는 지표가 정하지 그리는 쪽이
+    정하지 않는다.
+    """
+    if not summary or not summary.get(gateKey):
         return
     from rich.panel import Panel
     from rich.table import Table
 
-    fa = result.financial
-    periods = fa.periods
+    table = Table(show_header=True, box=None, padding=(0, 2), title=tableTitle)
+    table.add_column("지표", style="dim")
+    for period in periods:
+        table.add_column(period, justify="right")
+    for key, label in labels.items():
+        values = summary.get(key)
+        if not values:
+            continue
+        if percentKeys and key in percentKeys:
+            table.add_row(label, *[_fmtNum(v, "%", precision=1) for v in values])
+        elif ratioKeys and key in ratioKeys:
+            table.add_row(label, *[_fmtNum(v, "배", precision=2) for v in values])
+        else:
+            table.add_row(label, *[_fmtBig(v) for v in values])
+    console.print(Panel(table, title=f"[bold]{panelTitle}[/bold]", border_style="cyan"))
+
+
+def _addTrendRows(table, trends: dict, rows: tuple, *, unit: str = "%", precision: int = 1, big: bool = False) -> None:
+    """값이 있는 지표만 골라 표에 행으로 붙인다.
+
+    없는 지표는 빈 행을 만들지 않고 건너뛴다. 자료가 없는 것과 값이 0 인 것이 표에서
+    같아 보이면 안 되기 때문이다.
+    """
+    for key, label in rows:
+        values = trends.get(key)
+        if not values:
+            continue
+        if big:
+            table.add_row(label, *[_fmtBig(v) for v in values])
+        else:
+            table.add_row(label, *[_fmtNum(v, unit, precision=precision) for v in values])
+
+
+def _renderTrendPanel(console, periods, fa) -> None:
+    """수익성부터 규모까지 다섯 구간을 한 표에 순서대로 쌓아 패널로 낸다.
+
+    다섯을 따로 그리지 않는 이유가 있다. 같은 기간 열을 공유하고 빈 줄로만 구분하는
+    한 덩어리라, 따로 그리면 열 너비가 구간마다 달라져 눈으로 세로 비교가 안 된다.
+    """
+    from rich.panel import Panel
+    from rich.table import Table
 
     # ── 1) 수익성 추이 ──
     ft = Table(show_header=True, box=None, padding=(0, 2), title="수익성 추이")
     ft.add_column("지표", style="dim")
     for p in periods:
         ft.add_column(p, justify="right")
-    if fa.marginTrends.get("grossMargin"):
-        ft.add_row("매출총이익률", *[_fmtNum(v, "%") for v in fa.marginTrends["grossMargin"]])
-    if fa.marginTrends.get("operatingMargin"):
-        ft.add_row("영업이익률", *[_fmtNum(v, "%") for v in fa.marginTrends["operatingMargin"]])
-    if fa.marginTrends.get("netMargin"):
-        ft.add_row("순이익률", *[_fmtNum(v, "%") for v in fa.marginTrends["netMargin"]])
-    if fa.marginTrends.get("costOfSalesRatio"):
-        ft.add_row("원가율", *[_fmtNum(v, "%") for v in fa.marginTrends["costOfSalesRatio"]])
-    if fa.marginTrends.get("sgaRatio"):
-        ft.add_row("판관비율", *[_fmtNum(v, "%") for v in fa.marginTrends["sgaRatio"]])
+    _addTrendRows(
+        ft,
+        fa.marginTrends,
+        (
+            ("grossMargin", "매출총이익률"),
+            ("operatingMargin", "영업이익률"),
+            ("netMargin", "순이익률"),
+            ("costOfSalesRatio", "원가율"),
+            ("sgaRatio", "판관비율"),
+        ),
+    )
 
     # ── 2) DuPont 분해 ──
     if fa.dupont and fa.dupont.roe:
@@ -504,14 +562,18 @@ def _renderFinancial(result, console) -> None:
     # ── 3) 효율성 추이 ──
     if fa.marginTrends.get("dso") or fa.marginTrends.get("ccc"):
         ft.add_row("")  # separator
-        if fa.marginTrends.get("dso"):
-            ft.add_row("매출채권회전일", *[_fmtNum(v, "일", precision=0) for v in fa.marginTrends["dso"]])
-        if fa.marginTrends.get("dio"):
-            ft.add_row("재고자산회전일", *[_fmtNum(v, "일", precision=0) for v in fa.marginTrends["dio"]])
-        if fa.marginTrends.get("dpo"):
-            ft.add_row("매입채무회전일", *[_fmtNum(v, "일", precision=0) for v in fa.marginTrends["dpo"]])
-        if fa.marginTrends.get("ccc"):
-            ft.add_row("[bold]CCC[/bold]", *[_fmtNum(v, "일", precision=0) for v in fa.marginTrends["ccc"]])
+        _addTrendRows(
+            ft,
+            fa.marginTrends,
+            (
+                ("dso", "매출채권회전일"),
+                ("dio", "재고자산회전일"),
+                ("dpo", "매입채무회전일"),
+                ("ccc", "[bold]CCC[/bold]"),
+            ),
+            unit="일",
+            precision=0,
+        )
 
     # ── 4) 성장률 ──
     if fa.marginTrends.get("salesGrowth"):
@@ -524,20 +586,34 @@ def _renderFinancial(result, console) -> None:
     if fa.marginTrends.get("sales"):
         ft.add_row("")
         ft.add_row("매출", *[_fmtBig(v) for v in fa.marginTrends["sales"]])
-    if fa.marginTrends.get("operatingProfit"):
-        ft.add_row("영업이익", *[_fmtBig(v) for v in fa.marginTrends["operatingProfit"]])
-    if fa.marginTrends.get("netProfit"):
-        ft.add_row("순이익", *[_fmtBig(v) for v in fa.marginTrends["netProfit"]])
+    _addTrendRows(ft, fa.marginTrends, (("operatingProfit", "영업이익"), ("netProfit", "순이익")), big=True)
 
     console.print(Panel(ft, title="[bold]Financial Analysis[/bold]", border_style="cyan"))
 
-    # ── 6) BS 요약 ──
-    if fa.bsSummary and fa.bsSummary.get("totalAssets"):
-        bt = Table(show_header=True, box=None, padding=(0, 2), title="재무상태표 요약")
-        bt.add_column("지표", style="dim")
-        for p in periods:
-            bt.add_column(p, justify="right")
-        bsLabels = {
+
+def _renderFinancial(result, console) -> None:
+    """Financial Trends — 수익성·DuPont·효율성 종합 테이블."""
+    if not result.financial or not result.financial.periods:
+        return
+    from rich.panel import Panel
+    from rich.table import Table
+
+    fa = result.financial
+    periods = fa.periods
+
+    _renderTrendPanel(console, periods, fa)
+
+    # ── 6~8) BS·CF·3표 연결 요약 ──
+    # 세 섹션이 "표 만들고, 라벨 표 돌며 행 추가하고, 패널로 출력" 하는 같은 모양이었다.
+    # 라벨과 단위 규칙만 다르므로 그것만 자료로 넘긴다.
+    _renderSummaryPanel(
+        console,
+        periods,
+        fa.bsSummary,
+        gateKey="totalAssets",
+        tableTitle="재무상태표 요약",
+        panelTitle="Balance Sheet Summary",
+        labels={
             "totalAssets": "자산총계",
             "currentAssets": "유동자산",
             "nonCurrentAssets": "비유동자산",
@@ -547,54 +623,36 @@ def _renderFinancial(result, console) -> None:
             "retainedEarnings": "이익잉여금",
             "debtRatio": "부채비율",
             "currentRatio": "유동비율",
-        }
-        for key, label in bsLabels.items():
-            vals = fa.bsSummary.get(key)
-            if not vals:
-                continue
-            if key in ("debtRatio", "currentRatio"):
-                bt.add_row(label, *[_fmtNum(v, "%", precision=1) for v in vals])
-            else:
-                bt.add_row(label, *[_fmtBig(v) for v in vals])
-        console.print(Panel(bt, title="[bold]Balance Sheet Summary[/bold]", border_style="cyan"))
-
-    # ── 7) CF 요약 ──
-    if fa.cfSummary and fa.cfSummary.get("operatingCf"):
-        ct = Table(show_header=True, box=None, padding=(0, 2), title="현금흐름표 요약")
-        ct.add_column("지표", style="dim")
-        for p in periods:
-            ct.add_column(p, justify="right")
-        cfLabels = {
+        },
+        percentKeys={"debtRatio", "currentRatio"},
+    )
+    _renderSummaryPanel(
+        console,
+        periods,
+        fa.cfSummary,
+        gateKey="operatingCf",
+        tableTitle="현금흐름표 요약",
+        panelTitle="Cash Flow Summary",
+        labels={
             "operatingCf": "영업CF",
             "investingCf": "투자CF",
             "financingCf": "재무CF",
             "capex": "CAPEX",
             "fcf": "FCF",
-        }
-        for key, label in cfLabels.items():
-            vals = fa.cfSummary.get(key)
-            if not vals:
-                continue
-            ct.add_row(label, *[_fmtBig(v) for v in vals])
-        console.print(Panel(ct, title="[bold]Cash Flow Summary[/bold]", border_style="cyan"))
-
-    # ── 8) 3표 연결 지표 ──
-    if fa.crossStatementMetrics and fa.crossStatementMetrics.get("ocfToNetIncome"):
-        xt = Table(show_header=True, box=None, padding=(0, 2), title="3표 연결 지표")
-        xt.add_column("지표", style="dim")
-        for p in periods:
-            xt.add_column(p, justify="right")
-        xLabels = {
+        },
+    )
+    _renderSummaryPanel(
+        console,
+        periods,
+        fa.crossStatementMetrics,
+        gateKey="ocfToNetIncome",
+        tableTitle="3표 연결 지표",
+        panelTitle="Cross-Statement Metrics",
+        labels={
             "ocfToNetIncome": "OCF/NI",
             "capexToDepreciation": "CAPEX/감가상각",
             "retainedEarningsGrowth": "이익잉여금 증가율",
-        }
-        for key, label in xLabels.items():
-            vals = fa.crossStatementMetrics.get(key)
-            if not vals:
-                continue
-            if key == "retainedEarningsGrowth":
-                xt.add_row(label, *[_fmtNum(v, "%", precision=1) for v in vals])
-            else:
-                xt.add_row(label, *[_fmtNum(v, "배", precision=2) for v in vals])
-        console.print(Panel(xt, title="[bold]Cross-Statement Metrics[/bold]", border_style="cyan"))
+        },
+        percentKeys={"retainedEarningsGrowth"},
+        ratioKeys={"ocfToNetIncome", "capexToDepreciation"},
+    )
