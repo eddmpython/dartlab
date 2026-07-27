@@ -57,6 +57,90 @@ _annualCols = annualColsFromPeriods
 # ═══════════════════════════════════════════════════════════
 
 
+_BS_ACCOUNTS = (
+    "자산총계",
+    "부채총계",
+    "자본총계",
+    "유동자산",
+    "유동부채",
+    "비유동부채",
+    "현금및현금성자산",
+    "단기차입금",
+    "장기차입금",
+    "차입금단기",  # short_term_borrowings 한국어 변형
+    "long_term_borrowings",  # 영문만 있는 회사
+    "short_term_borrowings",
+    "차입부채",  # Fallback: 통합 차입금만 공시하는 회사 (audit 04 #B)
+    "차입금",  # Fallback: 추가 변형
+    "장기차입부채",  # noncurrent_borrowings (LG에솔)
+    "유동성장기차입금",  # current_portion_of_longterm_borrowings
+    "사채",
+    "재고자산",
+    "이익잉여금",
+)
+_IS_ACCOUNTS = ("매출액", "영업이익", "당기순이익", "금융비용", "이자비용", "감가상각비", "매출총이익")
+_CF_ACCOUNTS = ("영업활동현금흐름", "유형자산의취득", "4.금융비용", "금융비용")
+
+
+def _flowValues(col: str, *, quarterlyMode: bool, allPeriods: set, rows: tuple):
+    """한 기간의 유량 항목을 뽑는다. 분기 fallback 이면 최근 네 분기를 합친다.
+
+    잔액 항목(자산, 부채)은 시점 값이라 그대로 읽으면 되지만 유량 항목(매출, 이익, 현금흐름)은
+    기간 합이라 분기 자료에서 연간을 만들려면 더해야 한다. 그 차이를 안 지키면 분기만 공시하는
+    회사의 매출이 네 배 작게 잡힌다.
+
+    이자비용은 손익계산서에 없는 회사가 있어 금융비용, 현금흐름표 금융비용 순으로 내려간다.
+    """
+    rev, oi, ni, dep, ocf, capex, intCost, finCost, cfFinCost = rows
+    if quarterlyMode:
+        revenue = _ttmSum(rev, col, allPeriods)
+        opIncome = _ttmSum(oi, col, allPeriods)
+        netIncome = _ttmSum(ni, col, allPeriods)
+        depreciation = _ttmSum(dep, col, allPeriods)
+        ocfVal = _ttmSum(ocf, col, allPeriods)
+        capexVal = _ttmSum(capex, col, allPeriods)
+        ie = (
+            _ttmSum(intCost, col, allPeriods)
+            or _ttmSum(finCost, col, allPeriods)
+            or _ttmSum(cfFinCost, col, allPeriods)
+        )
+    else:
+        revenue = rev.get(col)
+        opIncome = oi.get(col)
+        netIncome = ni.get(col)
+        depreciation = dep.get(col)
+        ocfVal = ocf.get(col)
+        capexVal = capex.get(col)
+        ie = intCost.get(col) or finCost.get(col) or cfFinCost.get(col)
+    if capexVal is not None:
+        capexVal = abs(capexVal)
+    return revenue, opIncome, netIncome, depreciation, ocfVal, capexVal, ie
+
+
+def _loadCreditStatements(company) -> tuple[dict, list, dict, dict] | None:
+    """신용 지표가 필요한 세 재무제표를 한 번에 읽는다. 필수 둘이 없으면 None.
+
+    재무상태표와 손익계산서는 없으면 지표를 하나도 못 만들지만, 현금흐름표는 없어도
+    나머지 축이 성립한다. 그 차이가 이 함수의 반환 규칙이다.
+
+    계정 목록을 상수로 빼 둔 이유는 회사마다 표기가 갈려 fallback 이 계속 늘기 때문이다.
+    목록이 본문 안에 있으면 새 표기를 더할 때 데이터 수집 로직을 지나며 읽게 된다.
+    """
+    bsParsed = _toDict(company.select("BS", list(_BS_ACCOUNTS)))
+    if bsParsed is None:
+        return None
+    bsData, bsPeriods = bsParsed
+
+    isParsed = _toDict(company.select("IS", list(_IS_ACCOUNTS)))
+    if isParsed is None:
+        return None
+    isData, _ = isParsed
+
+    cfParsed = _toDict(company.select("CF", list(_CF_ACCOUNTS)))
+    cfData: dict = cfParsed[0] if cfParsed is not None else {}
+    return bsData, bsPeriods, isData, cfData
+
+
 def calcAllMetrics(company, *, basePeriod: str | None = None) -> dict | None:
     """7 축 신용분석 30+ 지표 한 번에 산출 — credit engine 의 핵심 데이터 함수.
 
@@ -161,57 +245,10 @@ def calcAllMetrics(company, *, basePeriod: str | None = None) -> dict | None:
         TargetMarkets: KR (DART 표준), US (EDGAR — 일부 metric 부분 적용).
     """
     # ── 원본 데이터 수집 ──
-    bsResult = company.select(
-        "BS",
-        [
-            "자산총계",
-            "부채총계",
-            "자본총계",
-            "유동자산",
-            "유동부채",
-            "비유동부채",
-            "현금및현금성자산",
-            "단기차입금",
-            "장기차입금",
-            "차입금단기",  # short_term_borrowings 한국어 변형
-            "long_term_borrowings",  # 영문만 있는 회사
-            "short_term_borrowings",
-            "차입부채",  # Fallback: 통합 차입금만 공시하는 회사 (audit 04 #B)
-            "차입금",  # Fallback: 추가 변형
-            "장기차입부채",  # noncurrent_borrowings (LG에솔)
-            "유동성장기차입금",  # current_portion_of_longterm_borrowings
-            "사채",
-            "재고자산",
-            "이익잉여금",
-        ],
-    )
-    bsParsed = _toDict(bsResult)
-    if bsParsed is None:
+    statements = _loadCreditStatements(company)
+    if statements is None:
         return None
-    bsData, bsPeriods = bsParsed
-
-    isResult = company.select(
-        "IS",
-        [
-            "매출액",
-            "영업이익",
-            "당기순이익",
-            "금융비용",
-            "이자비용",
-            "감가상각비",
-            "매출총이익",
-        ],
-    )
-    isParsed = _toDict(isResult)
-    if isParsed is None:
-        return None
-    isData, _ = isParsed
-
-    cfResult = company.select("CF", ["영업활동현금흐름", "유형자산의취득", "4.금융비용", "금융비용"])
-    cfParsed = _toDict(cfResult)
-    cfData: dict = {}
-    if cfParsed is not None:
-        cfData, _ = cfParsed
+    bsData, bsPeriods, isData, cfData = statements
 
     yCols = _annualCols(bsPeriods, basePeriod, 9)
     if len(yCols) < 2:
@@ -221,16 +258,15 @@ def calcAllMetrics(company, *, basePeriod: str | None = None) -> dict | None:
     _quarterlyMode = _isQuarterlyFallback(yCols)
     _allPeriods = set(bsPeriods)
 
-    # 행 추출
+    # 행 추출. 차입금 fallback 은 col loop 안에서 sumBorrowingsKorean 에 위임한다.
+    # 예전에는 여기서 비유동부채, 이익잉여금, 매출총이익을 꺼내 놓고 이름에 담지 않아
+    # 그대로 버렸다. 세 줄은 아무 일도 하지 않으면서 "이 값을 쓴다" 고 읽히던 자리다.
     ta = bsData.get("자산총계", {})
     tl = bsData.get("부채총계", {})
     eq = bsData.get("자본총계", {})
     ca = bsData.get("유동자산", {})
     cl = bsData.get("유동부채", {})
-    bsData.get("비유동부채", {})
     cash = bsData.get("현금및현금성자산", {})
-    # 차입금 fallback 은 col loop 안에서 sumBorrowingsKorean 위임
-    bsData.get("이익잉여금", {})
 
     rev = isData.get("매출액", {})
     oi = isData.get("영업이익", {})
@@ -238,7 +274,6 @@ def calcAllMetrics(company, *, basePeriod: str | None = None) -> dict | None:
     finCost = isData.get("금융비용", {})
     intCost = isData.get("이자비용", {})
     dep = isData.get("감가상각비", {})
-    isData.get("매출총이익", {})
 
     ocf = cfData.get("영업활동현금흐름", {})
     capex = cfData.get("유형자산의취득", {})
@@ -263,33 +298,15 @@ def calcAllMetrics(company, *, basePeriod: str | None = None) -> dict | None:
         curLiab = cl.get(col)
         cashVal = cash.get(col)
 
-        # 차입금 분리/통합 fallback 위임 (analysis/_helpers.py::sumBorrowingsKorean)
+        # 차입금 분리/통합 fallback 위임 (analysis/_revenueComposition::sumBorrowingsKorean)
         stBorrow, ltBorrow, totalBorrowing = sumBorrowingsKorean(bsData, col)
-        bsData.get("사채", {}).get(col) or 0  # 사채 별도 노출 (회귀 호환)
 
-        # IS/CF 플로우 변수: Q4 fallback이면 TTM 합산
-        if _quarterlyMode:
-            revenue = _ttmSum(rev, col, _allPeriods)
-            opIncome = _ttmSum(oi, col, _allPeriods)
-            netIncome = _ttmSum(ni, col, _allPeriods)
-            depreciation = _ttmSum(dep, col, _allPeriods)
-            ocfVal = _ttmSum(ocf, col, _allPeriods)
-            capexVal = _ttmSum(capex, col, _allPeriods)
-            ie = (
-                _ttmSum(intCost, col, _allPeriods)
-                or _ttmSum(finCost, col, _allPeriods)
-                or _ttmSum(cfFinCost, col, _allPeriods)
-            )
-        else:
-            revenue = rev.get(col)
-            opIncome = oi.get(col)
-            netIncome = ni.get(col)
-            depreciation = dep.get(col)
-            ocfVal = ocf.get(col)
-            capexVal = capex.get(col)
-            ie = intCost.get(col) or finCost.get(col) or cfFinCost.get(col)
-        if capexVal is not None:
-            capexVal = abs(capexVal)
+        revenue, opIncome, netIncome, depreciation, ocfVal, capexVal, ie = _flowValues(
+            col,
+            quarterlyMode=_quarterlyMode,
+            allPeriods=_allPeriods,
+            rows=(rev, oi, ni, dep, ocf, capex, intCost, finCost, cfFinCost),
+        )
 
         # EBITDA
         ebitda = (opIncome + (depreciation or 0)) if opIncome is not None else None
