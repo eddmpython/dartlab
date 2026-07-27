@@ -518,7 +518,7 @@ def executeDataQuery(assetIds: Sequence[str], query: DataQuery) -> DataResult:
         if coverageRow is not None:
             universeCoverage.append(coverageRow)
 
-    succeeded = len(partitions)
+    producedPartitions = len(partitions)
     failures = len(gaps)
     # 성적표는 asset 단위 실패 수다. catalog discovery gap 은 데이터 실패가 아니고,
     # 한 asset 이 gap 을 여러 개 만들어도 실패는 하나다. gaps 개수를 그대로 쓰면
@@ -528,8 +528,13 @@ def executeDataQuery(assetIds: Sequence[str], query: DataQuery) -> DataResult:
     failedAssets = len({(gap.requestId, gap.assetId) for gap in dataGaps})
     if query.completeness == "requireComplete" and failures:
         status = "failed"
+        # 부분 결과를 안 받겠다고 한 요청이다. 행을 버리면 그 행에서 나온 성적표와 영수증도
+        # 같이 버려야 한다. 예전에는 개수를 먼저 세어 둬서 partitions 는 비었는데
+        # succeededPartitions 는 1 이고 영수증도 한 장 남는 결과가 나갔다. 같은 봉투 안에서
+        # 세 증적이 서로 다른 말을 했다.
         partitions = []
-    elif succeeded == 0:
+        receipts = []
+    elif producedPartitions == 0:
         status = "failed"
     elif any(gap.systemic for gap in gaps):
         # D09 장애 정직성. universe resolver 부재, provider discovery 실패, 빈 universe 같은
@@ -540,6 +545,7 @@ def executeDataQuery(assetIds: Sequence[str], query: DataQuery) -> DataResult:
         status = "partial"
     else:
         status = "ok"
+    succeeded = len(partitions)
     resolvedRefs = tuple(
         dict.fromkeys(AssetRef(descriptor.assetId, descriptor.assetVersionId) for _, descriptor, _ in resolved)
     )

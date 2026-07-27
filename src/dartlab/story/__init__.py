@@ -79,7 +79,7 @@ def blocks(company, *, basePeriod: str | None = None):
     Guide:
         - "블록 목록 보여줘" -> blocks(company) 호출 후 repr 출력
         - "매출 성장률만 보고 싶어" -> b = blocks(c); b["growth"]
-        - "내가 원하는 것만 골라서 보고서" -> Story([b["growth"], b["margin"]])
+        - "내가 원하는 것만 골라서 보고서" -> Story([b["growth"], b["marginTrend"]])
         - blocks()는 전체 블록 사전, story()는 템플릿 기반 보고서.
 
     SeeAlso:
@@ -170,7 +170,7 @@ class Story:
     >>> c.story(reportType="credit")           # 신용분석 보고서
     >>> from dartlab.story import blocks, Story
     >>> b = blocks(c)
-    >>> Story([b["growth"], b["margin"]])       # 자유 조립
+    >>> Story([b["growth"], b["marginTrend"]])  # 자유 조립
 
     Notes
     -----

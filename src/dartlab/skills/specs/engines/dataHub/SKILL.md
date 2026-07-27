@@ -217,7 +217,7 @@ from dartlab.dataHub import DataQuery, NativeProjection, QueryBudget
 
 result = dartlab.dataHub(
     "query",
-    assets=("analysis.수익성", "credit.overview"),
+    assets=("analysis.수익성", "credit.grade"),
     query=DataQuery(
         subjects=("005930",),
         projection=NativeProjection(),

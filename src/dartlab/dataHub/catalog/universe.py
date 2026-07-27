@@ -15,6 +15,16 @@ import polars as pl
 from dartlab.dataHub.catalog.discovery import discoverOwnerProviders
 from dartlab.dataHub.contracts import DataGap, UniverseSelection
 
+# resolver 가 자기 사정을 code 로 올려 보낼 수 있는 값은 이 셋뿐이다. 그 밖의 예외는
+# 전부 UNIVERSE_RESOLUTION_FAILED 로 모으고 사정은 message 로만 전한다.
+_UNIVERSE_GAP_CODES = frozenset(
+    {
+        "UNIVERSE_MARKET_UNSUPPORTED",
+        "UNIVERSE_MEMBERSHIP_UNSUPPORTED",
+        "UNIVERSE_PIT_UNSUPPORTED",
+    }
+)
+
 
 @dataclass(frozen=True, slots=True)
 class ResolvedMarket:
@@ -158,10 +168,18 @@ def _loadMembership(selection: UniverseSelection, market: str) -> tuple[Resolved
         frame = resolver(market=market, membership=selection.membership, asOf=selection.asOf)
     except Exception as exc:
         message = str(exc)
-        code = message if message.startswith("UNIVERSE_") else "UNIVERSE_RESOLUTION_FAILED"
+        # 예외 문구를 통째로 code 로 쓰면 code 공간이 무한해지고, 경로 같은 내부 사정이
+        # 공개 결과에 실려 나간다. 앞머리만 떼어 정해진 code 집합에 맞추고 나머지는
+        # message 에 남긴다. code 는 기계가 읽는 자리다.
+        head = message.split(":", 1)[0].strip()
+        code = head if head in _UNIVERSE_GAP_CODES else "UNIVERSE_RESOLUTION_FAILED"
         return None, DataGap(code, f"{market}: {type(exc).__name__}: {message}", systemic=True)
     if not isinstance(frame, pl.DataFrame) or "entityId" not in frame.columns:
-        return None, DataGap("UNIVERSE_RESOLUTION_FAILED", f"{market} resolver schema가 유효하지 않습니다")
+        # resolver 가 망가진 것은 한 종목의 결손이 아니라 그 시장 전체가 안 나오는 사건이다.
+        # systemic 을 안 달면 다른 asset 하나가 성공했다는 이유로 partial 로 내려간다.
+        return None, DataGap(
+            "UNIVERSE_RESOLUTION_FAILED", f"{market} resolver schema가 유효하지 않습니다", systemic=True
+        )
     provider = (
         str(frame["provider"][0])
         if frame.height and "provider" in frame.columns

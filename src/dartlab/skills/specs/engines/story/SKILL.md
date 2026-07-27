@@ -78,7 +78,7 @@ examples:
 procedure:
   - dartlab.Company(code).story() 가 가장 단순한 진입 - 자동 reportType + 기업유형 감지.
   - 명시 호출은 c.story(reportType="credit") 또는 c.story(section_name).
-  - 자유 조립은 from dartlab.story import blocks, Story; b = blocks(c); Story([b["growth"], b["margin"]]).
+  - 자유 조립은 from dartlab.story import blocks, Story; b = blocks(c); Story([b["growth"], b["marginTrend"]]).
   - 출력 형식 - story.render("markdown") / toHtml() / toMarkdown().
   - 하위 엔진 (analysis · credit · macro · industry) 결과의 ref 가 자동 묶임.
 linkedSkills:
@@ -128,7 +128,7 @@ revenue = c.story("수익구조")               # 수익구조 블록만
 # 4. 자유 조립 (블록 단위)
 from dartlab.story import blocks, Story
 b = blocks(c)
-custom = Story([b["growth"], b["margin"], b["cashflow"]])
+custom = Story([b["growth"], b["marginTrend"], b["cashFlowOverview"]])
 
 # 5. 출력 형식 변환
 print(custom.toMarkdown())
@@ -149,7 +149,7 @@ story 는 L3 조합기 - *자체 계산 0*. 모든 숫자는 하위 엔진 (anal
 
 ## 호출 동작
 
-`Company.story()` (인자 없음) → 자동 reportType 선택 + 기업유형 자동 감지 (template). reportType 후보: `full` · `executive` · `credit` · `valuation` · `governance` · `forecast` · `risk` 외 11 종.
+`Company.story()` (인자 없음) → 자동 reportType 선택 + 기업유형 자동 감지 (template). reportType 12 종: `full` · `executive` · `credit` · `valuation` · `growth` · `crisis` · `audit` · `dividend` · `governance` · `macro` · `thesis` · `dashboard`.
 
 기업유형 template: 일반 · 금융 · 지주 · 신생/성장 · 사이클 · 자원 · 플랫폼 7 종. analysis 의 `companyType` 함수로 판정.
 

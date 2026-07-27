@@ -27,6 +27,9 @@ _REPORT_ENGINES: dict[str, tuple[str, ...]] = {
     "governance": ("analysis", "industry"),
     "macro": ("analysis", "industry", "macro"),
     "thesis": _ENGINE_ORDER,
+    # 스냅샷 계열(요약, snapshot)의 착지점이다. 여기 없으면 fallback 이 렌즈 하나짜리로
+    # 조용히 내려앉아서, audit 처럼 일부러 좁힌 것과 등록을 빠뜨린 것이 구분되지 않는다.
+    "dashboard": _ENGINE_ORDER,
 }
 
 
