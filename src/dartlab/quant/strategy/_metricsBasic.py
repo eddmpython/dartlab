@@ -115,13 +115,17 @@ def sortino(returns: np.ndarray, rf: float = 0.0) -> float:
     r = r[~np.isnan(r)]
     if len(r) < 2:
         return 0.0
-    downside = r[r < 0]
-    if len(downside) == 0:
-        return 0.0
-    dd = float(np.std(downside, ddof=1))
+    # 하방편차는 목표 수익률 아래로 벗어난 정도를 전체 표본에 대해 재는 값이다.
+    # 예전에는 손실 구간만 골라 그 "표준편차" 를 썼는데, 그것은 손실이 자기 평균에서
+    # 얼마나 흩어졌는지를 잴 뿐 얼마나 아래인지는 재지 않는다. 그래서 매일 +2% 와
+    # -1% 를 반복해 평균 +0.5% 를 내는 전략이 0.0 을 받았다. 손실 크기가 모두 같아
+    # 흩어짐이 0 이기 때문이다. 좋은 전략이 최악으로 보이는 셈이다.
+    target = rf / TRADING_DAYS
+    shortfall = np.minimum(r - target, 0.0)
+    dd = float(np.sqrt(np.mean(shortfall**2)))
     if dd <= 0:
         return 0.0
-    mu = float(np.mean(r)) - rf / TRADING_DAYS
+    mu = float(np.mean(r)) - target
     return float(mu / dd * np.sqrt(TRADING_DAYS))
 
 

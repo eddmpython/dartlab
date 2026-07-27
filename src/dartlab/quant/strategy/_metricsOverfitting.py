@@ -147,7 +147,7 @@ def dsr(observedSharpe: float, returns: np.ndarray, nTrials: int = 1) -> float:
     return float(_normCdf(z_dsr))
 
 
-def pbo(inSample: np.ndarray, outOfSample: np.ndarray) -> float:
+def pbo(inSample: np.ndarray, outOfSample: np.ndarray) -> float | None:
     """Probability of Backtest Overfitting (Bailey-Borwein-López de Prado-Zhu 2015).
 
     Capabilities:
@@ -194,6 +194,12 @@ def pbo(inSample: np.ndarray, outOfSample: np.ndarray) -> float:
     nTrials, n_segments = is_arr.shape
     if n_segments < 2:
         return 0.0
+    # 시행이 하나뿐이면 "최고 시행" 이 자기 자신이라 OOS 순위가 언제나 1 이 되고,
+    # 결과가 무조건 1.0 으로 고정된다. OOS 성적이 정반대여도 같은 값이 나오므로
+    # 그 숫자는 과적합에 대해 아무 말도 하지 않는다. 최대 과적합이라고 단언하는
+    # 대신 판정 불가를 알린다. 이미 refit 경로가 같은 이유로 None 을 쓰고 있다.
+    if nTrials < 2:
+        return None
     overfit_count = 0
     for s in range(n_segments):
         best_trial = int(np.argmax(is_arr[:, s]))
