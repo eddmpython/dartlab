@@ -17,6 +17,17 @@ PRODUCT_RESULT_COLUMNS: tuple[str, ...] = (
     "fieldCards",
 )
 
+# 계약 컬럼이 실어 나르는 dtype. 아래 normalizeSearchResult 가 원본 스키마 위에 덮어쓴다.
+_CONTRACT_DTYPES: dict[str, Any] = {
+    "source": pl.Utf8,
+    "sourceRef": pl.Utf8,
+    "dataAsOf": pl.Utf8,
+    "snippet": pl.Utf8,
+    "answerable": pl.Boolean,
+    "notAnswerableReason": pl.Utf8,
+    "fieldCards": pl.Utf8,
+}
+
 
 def normalizeSearchResult(df: pl.DataFrame) -> pl.DataFrame:
     """Ensure search rows expose the product result contract.
@@ -54,7 +65,13 @@ def normalizeSearchResult(df: pl.DataFrame) -> pl.DataFrame:
         out["notAnswerableReason"] = str(out.get("notAnswerableReason") or "")
         out["fieldCards"] = str(out.get("fieldCards") or _fieldCardsJson(out))
         rows.append(out)
-    return pl.DataFrame(rows)
+    # dtype 은 추론에 맡기지 않고 원본 df 스키마를 물려준다.
+    # 추론(기본 infer_schema_length=100)은 앞 100 행만 보므로, 앞이 전부 null 이고
+    # 뒤에 값이 오는 컬럼(뉴스 문서만 채우는 docKey, 공시만 채우는 deleted 등)에서
+    # Null 로 확정한 뒤 실제 값을 못 받아 ComputeError 로 검색 전체가 죽었다.
+    # 원본 df 는 이미 올바른 dtype 을 들고 있으니 그것이 truth 다.
+    schema = {**df.schema, **_CONTRACT_DTYPES}
+    return pl.DataFrame(rows, schema=schema)
 
 
 def _inferSource(row: dict[str, Any]) -> str:
