@@ -373,10 +373,10 @@ def dcfValuation(
         없음.
 
     Example:
-        >>> from dartlab.frame.sector import SECTOR_PARAMS
-        >>> r = dcfValuation(series, shares=5e9, sectorParams=SECTOR_PARAMS["IT"],
-        ...                  currentPrice=75000)
-        >>> r.perShareValue, r.marginOfSafety
+        >>> from dartlab.frame.sector import getSectorParamsByName
+        >>> r = dcfValuation(series, shares=5e9, sectorParams=getSectorParamsByName("IT"),
+        ...                  currentPrice=75000)  # doctest: +SKIP
+        >>> r.perShareValue, r.marginOfSafety  # doctest: +SKIP
         (82000.0, 9.3)
 
     Guide:

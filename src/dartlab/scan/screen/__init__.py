@@ -245,7 +245,9 @@ def _screenRisk() -> pl.DataFrame:
             flags.append("감사")
         if code in liqRisk:
             flags.append("유동성")
-        rows.append({"stockCode": code, "위험플래그": "+".join(flags), "위험수": len(flags)})
+        # 형제 프리셋은 전부 '종목코드' 로 낸다. 이 자리만 'stockCode' 라서
+        # 통합 프리셋(all)이 컬럼을 못 찾고 매 호출 죽었다.
+        rows.append({"종목코드": code, "위험플래그": "+".join(flags), "위험수": len(flags)})
 
     if not rows:
         return pl.DataFrame()
@@ -355,16 +357,18 @@ def _screenCycleDefensive() -> pl.DataFrame:
         macro = pl.DataFrame()
 
     debt = _loadAxis("debt")
-    div_df = _loadAxis("dividend")
+    # 'dividend' 라는 축은 없다. 배당 패턴은 `dividendTrend` 가 '패턴' 컬럼으로 낸다.
+    # 예전에는 없는 축 이름을 불러 이 프리셋이 매 호출 ValueError 로 죽었다.
+    div_df = _loadAxis("dividendTrend")
 
     safeDbt = set(debt.filter(pl.col("위험등급").is_in(["안전", "관찰"]))["종목코드"].to_list())
 
     # 배당 안정 종목
     goodDiv = set()
     if not div_df.is_empty():
-        for col in ["분류", "유형"]:
+        for col in ["패턴", "분류", "유형"]:
             if col in div_df.columns:
-                goodDiv = set(div_df.filter(pl.col(col).is_in(["연속증가", "안정", "환원형"]))["종목코드"].to_list())
+                goodDiv = set(div_df.filter(pl.col(col).is_in(["연속증가", "안정", "증가"]))["종목코드"].to_list())
                 break
         if not goodDiv:
             goodDiv = set(div_df["종목코드"].to_list())
