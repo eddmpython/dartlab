@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dartlab.analysis.financial._revenueHelpers import (
+from dartlab.analysis.financial._revenueComposition import (
     _calcBreakdownHistoryFromDocs,
     _calcCompositionHistory,
 )

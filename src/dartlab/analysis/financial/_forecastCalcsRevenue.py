@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from dartlab.analysis.financial._forecastCalcsHelpers import _runForecastRevenue
+from dartlab.analysis.financial._forecastCalcsInputs import _runForecastRevenue
 from dartlab.core.memory import memoizedCalc
 
 

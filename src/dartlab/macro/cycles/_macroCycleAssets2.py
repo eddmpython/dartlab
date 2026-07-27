@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import math
 
-from dartlab.macro.cycles._macroCycleHelpers import _normCdf
+from dartlab.macro.cycles._macroCycleStats import _normCdf
 from dartlab.macro.cycles._macroCycleTypes import (
     FxDrivers,
     MarketValuation,

@@ -519,7 +519,7 @@ def residualAlphaIR(residualSeries: np.ndarray, *, annualize: bool = True) -> di
     }
 
 
-from dartlab.quant.factor._calcHelpers import (
+from dartlab.quant.factor._calcRegression import (
     _capmFallback,
     _interpret,
     _multiOls,

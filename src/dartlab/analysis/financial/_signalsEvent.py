@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import logging
 
-from dartlab.analysis.financial._predictionUtils import _DIRECTION_SCORES
+from dartlab.analysis.financial._predictionProbability import _DIRECTION_SCORES
 from dartlab.core.memory import memoizedCalc
 from dartlab.core.utils.calc import safeDiv as _safe
 from dartlab.core.utils.helpers import annualColsFromPeriods, toDictBySnakeId

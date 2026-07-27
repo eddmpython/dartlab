@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from dartlab.analysis.financial._valuationHelpers import (
+from dartlab.analysis.financial._valuationInputs import (
     _fetchPriceContext,
     _getSectorParams,
     _getSeriesAndShares,

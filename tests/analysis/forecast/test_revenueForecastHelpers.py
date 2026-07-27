@@ -37,7 +37,7 @@ class _FakeProvider:
 
 
 def test_consensus_fetch_does_not_close_shared_gather(monkeypatch):
-    from dartlab.analysis.forecast import _revenueForecastHelpers as helpers
+    from dartlab.analysis.forecast import _revenueForecastLifecycle as helpers
     from dartlab.core import di
 
     fake = _FakeGather()

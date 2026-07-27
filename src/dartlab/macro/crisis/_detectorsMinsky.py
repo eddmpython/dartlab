@@ -9,7 +9,7 @@ BC: detectors 모듈에서 4 detector 모두 import 가능 (re-export).
 
 from __future__ import annotations
 
-from dartlab.macro.crisis._detectorsHelpers import _oneSidedHpTrend
+from dartlab.macro.crisis._detectorsRegime import _oneSidedHpTrend
 from dartlab.macro.crisis._detectorTypes import (
     FisherDeflationResult,
     KooRecessionResult,

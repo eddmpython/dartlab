@@ -5,7 +5,7 @@ calcRevenueGrowth · calcConcentration · calcGrowthContribution · calcFlags.
 
 from __future__ import annotations
 
-from dartlab.analysis.financial._revenueHelpers import (
+from dartlab.analysis.financial._revenueComposition import (
     _calcDomesticExportRatio,
     _calcHhiHistory,
     _getDocsRevenueVals,

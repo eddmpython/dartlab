@@ -13,7 +13,7 @@ from __future__ import annotations
 import logging
 import math
 
-from dartlab.analysis.financial._predictionUtils import _DIRECTION_SCORES, _clamp
+from dartlab.analysis.financial._predictionProbability import _DIRECTION_SCORES, _clamp
 from dartlab.core.memory import memoizedCalc
 
 log = logging.getLogger(__name__)

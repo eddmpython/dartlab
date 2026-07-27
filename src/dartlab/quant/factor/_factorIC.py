@@ -254,7 +254,7 @@ def calcFactorIC(
     }
 
 
-from dartlab.quant.factor._calcHelpers import _interpretIC, _rank1d
+from dartlab.quant.factor._calcRegression import _interpretIC, _rank1d
 
 
 @withMemoryBudget(limitMb=500)

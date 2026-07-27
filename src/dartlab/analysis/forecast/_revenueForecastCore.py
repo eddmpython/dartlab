@@ -15,7 +15,7 @@ from dartlab.analysis.forecast._revenueForecastEnsemble import (
     _roicTimeseriesGap,
     _timeseriesGrowthRates,
 )
-from dartlab.analysis.forecast._revenueForecastHelpers import (
+from dartlab.analysis.forecast._revenueForecastLifecycle import (
     _classifyLifecycle,
     _computeWeights,
     _fetchConsensusRevenue,

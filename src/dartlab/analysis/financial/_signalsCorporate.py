@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import logging
 
-from dartlab.analysis.financial._predictionUtils import _DIRECTION_SCORES, _bayesUpdate, _clamp
+from dartlab.analysis.financial._predictionProbability import _DIRECTION_SCORES, _bayesUpdate, _clamp
 from dartlab.core.market import isKrStockCode
 from dartlab.core.memory import memoizedCalc
 from dartlab.core.utils.calc import safeDiv as _safe

@@ -18,7 +18,7 @@ from dartlab.analysis.forecast._revenueForecastCore import (
     _SEGMENT_WEIGHT,
     forecastRevenue,
 )
-from dartlab.analysis.forecast._revenueForecastHelpers import (
+from dartlab.analysis.forecast._revenueForecastLifecycle import (
     _classifyLifecycle,
     _computeWeights,
     _fetchConsensusRevenue,

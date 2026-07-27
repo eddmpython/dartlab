@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dartlab.analysis.financial.insight._gradingHelpers import (
+from dartlab.analysis.financial.insight._gradingScales import (
     _getGrowthYoY,
     _getVolatility,
     _predictabilityGrade,

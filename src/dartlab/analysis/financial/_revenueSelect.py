@@ -1,7 +1,7 @@
 """revenue.py 의 docs/select 헬퍼 + 공유 상수.
 
 revenue.py facade + _revenueSegment / _revenueGrowth / _revenueQuality 가 본 모듈을 import.
-순환 import 방지를 위해 _revenueHelpers 는 함수 내부에서 deferred import.
+순환 import 방지를 위해 _revenueComposition 는 함수 내부에서 deferred import.
 """
 
 from __future__ import annotations

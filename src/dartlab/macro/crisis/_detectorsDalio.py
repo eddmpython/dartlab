@@ -13,7 +13,7 @@ identity 보존을 위해 detectors.py 가 본 모듈에서 re-export 한다.
 
 from __future__ import annotations
 
-from dartlab.macro.crisis._detectorsHelpers import (
+from dartlab.macro.crisis._detectorsRegime import (
     _beautifulDeleveragingSubPhase,
     _dalioRegimeVariant,
 )

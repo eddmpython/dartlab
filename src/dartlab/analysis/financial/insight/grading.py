@@ -31,17 +31,17 @@ from dartlab.analysis.financial.insight._gradingGovernance import (
     analyzeGovernance,
 )
 from dartlab.analysis.financial.insight._gradingHealth import analyzeHealth
-from dartlab.analysis.financial.insight._gradingHelpers import (
+from dartlab.analysis.financial.insight._gradingPerformance import analyzePerformance
+from dartlab.analysis.financial.insight._gradingProfitability import (
+    _analyzeProfitabilityFinancial,
+    analyzeProfitability,
+)
+from dartlab.analysis.financial.insight._gradingScales import (
     _getGrowthYoY,
     _getVolatility,
     _predictabilityGrade,
     _scoreToGrade,
     _uncertaintyGrade,
-)
-from dartlab.analysis.financial.insight._gradingPerformance import analyzePerformance
-from dartlab.analysis.financial.insight._gradingProfitability import (
-    _analyzeProfitabilityFinancial,
-    analyzeProfitability,
 )
 
 

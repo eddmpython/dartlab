@@ -14,7 +14,7 @@ import math
 
 import pytest
 
-from dartlab.macro.cycles._macroCycleHelpers import _normCdf
+from dartlab.macro.cycles._macroCycleStats import _normCdf
 
 
 @pytest.mark.parametrize("z", [-3.0, -2.0, -1.0, -0.5, 0.0, 0.5, 1.0, 2.0, 3.0])

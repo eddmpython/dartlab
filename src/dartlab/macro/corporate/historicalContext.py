@@ -38,8 +38,8 @@ from dartlab.macro.corporate._historicalContextEvents import (  # noqa: F401
     yieldCurveInversionsToRecession,
 )
 
-# 헬퍼 (분리: _historicalContextHelpers.py SSOT, re-export 으로 BC 보존)
-from dartlab.macro.corporate._historicalContextHelpers import (
+# 헬퍼 (분리: _historicalContextSeries.py SSOT, re-export 으로 BC 보존)
+from dartlab.macro.corporate._historicalContextSeries import (
     _NBER_RECESSIONS,
     _deltaN,
     _isRecession,

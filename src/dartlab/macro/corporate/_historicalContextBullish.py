@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from dartlab.macro.corporate._historicalContextHelpers import (
+from dartlab.macro.corporate._historicalContextSeries import (
     _NBER_RECESSIONS,
     _deltaN,
     _isRecession,

@@ -27,8 +27,8 @@ from dartlab.analysis.valuation._dFVCalcs import (
     _triangulate,
 )
 
-# ── 헬퍼 (분리: _dFVHelpers.py SSOT, re-export 으로 BC 보존) ──
-from dartlab.analysis.valuation._dFVHelpers import (
+# ── 헬퍼 (분리: _dFVDispatch.py SSOT, re-export 으로 BC 보존) ──
+from dartlab.analysis.valuation._dFVDispatch import (
     _DFV_OVERRIDE_ALLOWED_KEYS,
     _MODEL_SENSITIVITY,
     _SELECTOR_IGNORE,

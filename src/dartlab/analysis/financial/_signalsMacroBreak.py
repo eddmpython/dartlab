@@ -9,7 +9,7 @@ from dartlab.analysis.financial._constants import (
     TREND_RSQUARED_MEDIUM,
 )
 from dartlab.analysis.financial._predictionMath import _fitOLS
-from dartlab.analysis.financial._predictionUtils import _clamp
+from dartlab.analysis.financial._predictionProbability import _clamp
 from dartlab.core.memory import memoizedCalc
 from dartlab.core.utils.calc import safeDiv as _safe
 from dartlab.core.utils.helpers import annualColsFromPeriods, toDictBySnakeId

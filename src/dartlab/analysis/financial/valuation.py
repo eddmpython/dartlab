@@ -1,4 +1,4 @@
-"""가치평가 축 -- facade. 본체는 `_valuationHelpers` / `_valuationDcf` / `_valuationOther`.
+"""가치평가 축 -- facade. 본체는 `_valuationInputs` / `_valuationDcf` / `_valuationOther`.
 
 calc 함수 9개: DCF, DDM, 상대가치, RIM, 목표주가, 역내재성장률, 민감도, 종합합성, 플래그.
 모든 함수는 ``(company) -> dict | None`` 시그니처.
@@ -20,7 +20,7 @@ from dartlab.analysis.financial._valuationDeep import (  # noqa: E402, F401
     calcValuationFlags,
     calcValuationSynthesis,
 )
-from dartlab.analysis.financial._valuationHelpers import (
+from dartlab.analysis.financial._valuationInputs import (
     _IG_TO_SECTOR_KEY,
     _fetchPriceContext,
     _getSectorParams,

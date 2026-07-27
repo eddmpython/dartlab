@@ -11,7 +11,7 @@ import logging
 import math
 
 from dartlab.analysis.financial._predictionMath import _fitOLS
-from dartlab.analysis.financial._predictionUtils import _DIRECTION_SCORES, _clamp
+from dartlab.analysis.financial._predictionProbability import _DIRECTION_SCORES, _clamp
 from dartlab.core.memory import memoizedCalc
 from dartlab.core.polarsUtil import isEmptyDf
 from dartlab.core.utils.calc import safeDiv as _safe

@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from dartlab.analysis.financial.insight._gradingHelpers import (
+from dartlab.analysis.financial.insight._gradingScales import (
     _predictabilityGrade,
     _scoreToGrade,
     _uncertaintyGrade,

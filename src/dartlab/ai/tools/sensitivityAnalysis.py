@@ -117,7 +117,7 @@ def sensitivityAnalysis(
         TargetMarkets:
             KR (DART) · US (EDGAR).
     """
-    from dartlab.analysis.valuation._dcfHelpers import _getNetDebt, _resolveBaseFcf
+    from dartlab.analysis.valuation._dcfInputs import _getNetDebt, _resolveBaseFcf
     from dartlab.analysis.valuation.dcf import multiStageDcf
 
     if not stockCode:

@@ -22,7 +22,7 @@ from dartlab.macro.crisis._detectorsDalio import (
 )
 
 # 결과 타입 (분리: _detectorTypes.py SSOT, re-export 으로 BC 보존)
-from dartlab.macro.crisis._detectorsHelpers import (
+from dartlab.macro.crisis._detectorsRegime import (
     _beautifulDeleveragingSubPhase,
     _dalioRegimeVariant,
     _oneSidedHpTrend,

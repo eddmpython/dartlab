@@ -20,7 +20,7 @@ from dartlab.analysis.financial._predictionMath import (
     _pearsonCorrelation,
     _quickCorr,
 )
-from dartlab.analysis.financial._predictionUtils import (
+from dartlab.analysis.financial._predictionProbability import (
     _DIRECTION_SCORES,
     _bayesUpdate,
     _calibrate,

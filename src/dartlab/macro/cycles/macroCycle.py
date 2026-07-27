@@ -20,7 +20,7 @@ from dartlab.macro.cycles._macroCycleAssets import (
 )
 
 # 결과 타입 (분리: _macroCycleTypes.py SSOT, re-export 으로 BC 보존)
-from dartlab.macro.cycles._macroCycleHelpers import (
+from dartlab.macro.cycles._macroCycleStats import (
     _SIGNAL_SERIES_MAP,
     _findFirstTriggerDates,
     _normCdf,

@@ -19,7 +19,7 @@ import numpy as np
 from dartlab.core.market import resolveMarket
 from dartlab.core.memory import withMemoryBudget
 from dartlab.core.polarsUtil import isEmptyDf
-from dartlab.quant.factor._calcHelpers import _interpretFactorSharpe, _interpretRiskDecomp
+from dartlab.quant.factor._calcRegression import _interpretFactorSharpe, _interpretRiskDecomp
 from dartlab.quant.screen.dataAccess import fetchOhlcv, ohlcvToArrays
 from dartlab.quant.strategy.metrics import TRADING_DAYS, calcIR, fundamentalLawIR
 

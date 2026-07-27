@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from typing import Optional
 
 from dartlab.analysis.valuation._dcfDdm import _annualDividends, ddmValuation
-from dartlab.analysis.valuation._dcfHelpers import (
+from dartlab.analysis.valuation._dcfInputs import (
     _computeExitMultipleTv,
     _epsGrowth3Y,
     _estimateSectorPsr,

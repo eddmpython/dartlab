@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dartlab.macro.cycles._macroCycleHelpers import _findFirstTriggerDates
+from dartlab.macro.cycles._macroCycleStats import _findFirstTriggerDates
 from dartlab.macro.cycles._macroCycleTypes import TransitionSignal
 
 # ══════════════════════════════════════

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dartlab.core.utils.helpers import annualColsFromPeriods, toDictBySnakeId
-from dartlab.credit.scoring._metricsHelpers import _cv, _div, _getRatios, _isQuarterlyFallback, _ttmSum
+from dartlab.credit.scoring._metricsArithmetic import _cv, _div, _getRatios, _isQuarterlyFallback, _ttmSum
 
 _toDict = toDictBySnakeId
 _annualCols = annualColsFromPeriods

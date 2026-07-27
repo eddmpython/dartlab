@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from dartlab.analysis.financial._forecastCalcsHelpers import (
+from dartlab.analysis.financial._forecastCalcsInputs import (
     _getSectorParams,
     _getSeriesAndMeta,
     _getShares,

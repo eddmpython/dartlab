@@ -28,7 +28,7 @@ caller (`run.py`) reads that as a `partial` quality status.
 Born-clean (§10): this module does NOT import the legacy simulation flow
 (`analysis/forecast/simulation.py`, `_applyMacroShock`, `_simScenario`). It imports forward only:
 L0 (`core.utils.extract`), L1.5 (`synth.scenario`), and L2 leafs
-(`analysis.financial.proforma.buildProforma`, the `analysis.financial._valuationHelpers` sector /
+(`analysis.financial.proforma.buildProforma`, the `analysis.financial._valuationInputs` sector /
 series / shares accessors). The FCFF discount in the `dcf` node is a faithful port of the legacy
 terminal-value formula, re-derived here so the `dcf` node reflects THIS scenario's proforma FCF.
 
@@ -40,7 +40,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from dartlab.analysis.financial._valuationHelpers import (
+from dartlab.analysis.financial._valuationInputs import (
     _getSeriesAndShares,
     _resolveSectorKey,
 )
@@ -253,7 +253,7 @@ def buildSnapshot(company: Any, *, asOf: str | None = None) -> dict:
 
     SeeAlso:
         - ``buildScenarioSheet``: wires a `DriverSheet` over this snapshot.
-        - ``dartlab.analysis.financial._valuationHelpers._getSeriesAndShares``: series + shares.
+        - ``dartlab.analysis.financial._valuationInputs._getSeriesAndShares``: series + shares.
         - ``dartlab.synth.scenario.getElasticity``: sector-key -> elasticity.
 
     Requires:

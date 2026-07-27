@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from dartlab.analysis.financial.insight._gradingHelpers import _scoreToGrade
+from dartlab.analysis.financial.insight._gradingScales import _scoreToGrade
 from dartlab.analysis.financial.insight.types import Flag, InsightResult
 
 if TYPE_CHECKING:

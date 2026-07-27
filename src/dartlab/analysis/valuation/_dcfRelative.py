@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Optional
 
-from dartlab.analysis.valuation._dcfHelpers import (
+from dartlab.analysis.valuation._dcfInputs import (
     _epsGrowth3Y,
     _estimateSectorPsr,
     _getNetDebt,

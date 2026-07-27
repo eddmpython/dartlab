@@ -37,7 +37,7 @@ EXPECTED_LAYOUT: dict[str, set[str]] = {
         "creditScorecard.py",
         "migration.py",
         "calcs.py",
-        "_metricsHelpers.py",
+        "_metricsArithmetic.py",
         "_metricsFetchers.py",
         "_metricsTrackB.py",
         "_calcsAdvanced.py",

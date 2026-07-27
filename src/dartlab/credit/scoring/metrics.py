@@ -29,6 +29,13 @@ def _sumBorrowingsKorean(*args, **kwargs):
 sumBorrowingsKorean = _sumBorrowingsKorean
 
 
+from dartlab.credit.scoring._metricsArithmetic import (
+    _cv,
+    _div,
+    _getRatios,
+    _isQuarterlyFallback,
+    _ttmSum,
+)
 from dartlab.credit.scoring._metricsFetchers import (
     _calcSegmentHHI,
     _fetchAuditOpinion,
@@ -37,13 +44,6 @@ from dartlab.credit.scoring._metricsFetchers import (
     _fetchProfile,
     _fetchRank,
     _fetchSegmentComposition,
-)
-from dartlab.credit.scoring._metricsHelpers import (
-    _cv,
-    _div,
-    _getRatios,
-    _isQuarterlyFallback,
-    _ttmSum,
 )
 
 # SSOT 위임: _toDict / _annualCols 는 analysis/_helpers 의 함수와 동일 로직.

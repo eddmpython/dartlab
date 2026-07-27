@@ -295,7 +295,7 @@ def issueRevenue(
                 annual = (annualByCode or {}).get(code) or {}
             else:
                 import dartlab
-                from dartlab.analysis.financial._forecastCalcsHelpers import _runForecastRevenue
+                from dartlab.analysis.financial._forecastCalcsInputs import _runForecastRevenue
 
                 with dartlab.Company(code) as company:  # 힙 가드: with = OomTripwire + cleanupCache
                     annual = _annualRevenueMap(company)
