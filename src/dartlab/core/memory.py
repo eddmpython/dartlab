@@ -7,10 +7,13 @@
 
 from __future__ import annotations
 
+import ctypes
 import functools
 import gc
 import logging
 import os
+import sys
+import threading
 import time
 from collections import OrderedDict
 from typing import Any, Callable, TypeVar
@@ -18,6 +21,13 @@ from typing import Any, Callable, TypeVar
 F = TypeVar("F", bound=Callable)
 
 log = logging.getLogger(__name__)
+
+# psapi 호출 준비를 프로세스당 한 번만 하고 붙들어 둔다. None 은 아직 안 해봤다는 뜻이고,
+# 준비에 실패하면 그 자리에 다시 None 이 아니라 실패를 담은 값이 들어가지 않으므로
+# `_buildWindowsMemoryReader` 가 None 을 돌려준 경우는 매번 다시 시도한다. 그 편이 낫다.
+# 실패는 보통 Windows 가 아닌 곳이고 그때는 `sys.platform` 검사에서 이미 걸린다.
+_winMemoryLock = threading.Lock()
+_winMemoryReader: tuple[Any, Any, Any] | None = None
 
 # ── 메모리 임계값 (MB) ──
 # Polars 네이티브 메모리 포함, 단일 프로세스 기준
@@ -45,18 +55,56 @@ PRESSURE_EMERGENCY_MB = 2500.0
 _CACHE_MISSING: Any = object()
 
 
-def getMemoryMb() -> float:
-    """현재 프로세스 RSS(Resident Set Size)를 MB로 반환.
+def _windowsCounters() -> Any | None:
+    """Windows 프로세스 메모리 카운터를 한 번 읽어 온다. 못 읽으면 None.
 
-    Polars Rust 힙을 포함한 실제 물리 메모리 사용량.
-    psutil 없이 OS API 직접 사용.
+    준비를 프로세스당 한 번만 하고 그 결과를 붙들어 둔다. 예전에는 이 함수 둘이 부를 때마다
+    구조체 class 를 **함수 안에서 새로 만들고** 그것으로 psapi 함수의 `argtypes` 를 덮어썼다.
+    `ctypes.windll` 이 프로세스 전역 캐시라 그 `argtypes` 는 process 안 모두가 공유한다.
+    그래서 이런 일이 났다.
+
+        스레드 A: argtypes 를 자기 구조체로 설정
+        스레드 B: argtypes 를 자기 구조체로 설정   <- A 것을 덮어씀
+        스레드 A: 자기 구조체 포인터로 호출        <- ArgumentError
+
+    OomTripwire 가 배경 스레드로 RSS 를 폴링하고 BoundedCache 는 본 스레드에서 같은 값을
+    읽으므로 두 스레드가 늘 함께 돈다. 실제로 `Company.story` 가 이 경쟁으로 죽었다.
+    `ArgumentError` 는 `ValueError` 라서 아래의 `except` 목록에도 안 걸려 그대로 새어 나갔다.
+
+    Returns:
+        `WorkingSetSize` 와 `PeakWorkingSetSize` 를 가진 구조체. Windows 가 아니거나
+        호출이 실패하면 None.
     """
+    global _winMemoryReader
+
+    if sys.platform != "win32":
+        return None
+    with _winMemoryLock:
+        if _winMemoryReader is None:
+            _winMemoryReader = _buildWindowsMemoryReader()
+        reader = _winMemoryReader
+    if reader is None:
+        return None
+    getCurrentProcess, getProcessMemoryInfo, counterType = reader
     try:
-        import ctypes
+        counters = counterType()
+        counters.cb = ctypes.sizeof(counterType)
+        if getProcessMemoryInfo(getCurrentProcess(), ctypes.byref(counters), counters.cb):
+            return counters
+    except (OSError, ValueError):
+        # ValueError 로 ctypes.ArgumentError 까지 받는다. 다른 라이브러리가 같은 psapi
+        # 함수의 argtypes 를 건드리면 여기로 온다. 메모리 관측 실패가 호출자를 죽이면 안 된다.
+        return None
+    return None
+
+
+def _buildWindowsMemoryReader() -> tuple[Any, Any, Any] | None:
+    """psapi 호출 준비. 실패하면 None 을 돌려 이후 시도를 접는다."""
+    try:
         import ctypes.wintypes
 
-        class PMC(ctypes.Structure):
-            """PMC — TODO 한국어 클래스 설명."""
+        class _WindowsMemoryCounters(ctypes.Structure):
+            """psapi 의 PROCESS_MEMORY_COUNTERS. 필드 순서가 곧 ABI 다."""
 
             _fields_ = [
                 ("cb", ctypes.wintypes.DWORD),
@@ -71,34 +119,48 @@ def getMemoryMb() -> float:
                 ("PeakPagefileUsage", ctypes.c_size_t),
             ]
 
-        GetCurrentProcess = ctypes.windll.kernel32.GetCurrentProcess  # type: ignore[attr-defined]
-        GetCurrentProcess.restype = ctypes.wintypes.HANDLE
-
-        GetProcessMemoryInfo = ctypes.windll.psapi.GetProcessMemoryInfo  # type: ignore[attr-defined]
-        GetProcessMemoryInfo.argtypes = [
+        # `ctypes.windll` 대신 자기 handle 을 연다. 그쪽은 전역 캐시라 거기 붙은 함수의
+        # argtypes 를 우리가 정하면 process 안 다른 코드까지 같이 끌려간다. 새 handle 은
+        # 우리 것이라 남과 부딪히지 않는다.
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        psapi = ctypes.WinDLL("psapi", use_last_error=True)
+        getCurrentProcess = kernel32.GetCurrentProcess
+        getCurrentProcess.argtypes = []
+        getCurrentProcess.restype = ctypes.wintypes.HANDLE
+        getProcessMemoryInfo = psapi.GetProcessMemoryInfo
+        getProcessMemoryInfo.argtypes = [
             ctypes.wintypes.HANDLE,
-            ctypes.POINTER(PMC),
+            ctypes.POINTER(_WindowsMemoryCounters),
             ctypes.wintypes.DWORD,
         ]
-        GetProcessMemoryInfo.restype = ctypes.wintypes.BOOL
-
-        pmc = PMC()
-        pmc.cb = ctypes.sizeof(PMC)
-        if GetProcessMemoryInfo(GetCurrentProcess(), ctypes.byref(pmc), pmc.cb):
-            return pmc.WorkingSetSize / (1024 * 1024)
+        getProcessMemoryInfo.restype = ctypes.wintypes.BOOL
     except (AttributeError, OSError, ImportError):
-        pass
+        return None
+    return getCurrentProcess, getProcessMemoryInfo, _WindowsMemoryCounters
 
-    # Linux/macOS fallback
+
+def _procStatusKb(field: str) -> float:
+    """Linux `/proc/self/status` 의 한 줄을 MB 로 읽는다. 없으면 -1.0."""
     try:
-        with open(f"/proc/{os.getpid()}/status") as f:
-            for line in f:
-                if line.startswith("VmRSS:"):
-                    return int(line.split()[1]) / 1024  # kB → MB
+        with open(f"/proc/{os.getpid()}/status") as handle:
+            for line in handle:
+                if line.startswith(field):
+                    return int(line.split()[1]) / 1024
     except (FileNotFoundError, PermissionError):
         pass
-
     return -1.0
+
+
+def getMemoryMb() -> float:
+    """현재 프로세스 RSS(Resident Set Size)를 MB로 반환.
+
+    Polars Rust 힙을 포함한 실제 물리 메모리 사용량.
+    psutil 없이 OS API 직접 사용.
+    """
+    counters = _windowsCounters()
+    if counters is not None:
+        return counters.WorkingSetSize / (1024 * 1024)
+    return _procStatusKb("VmRSS:")
 
 
 def getPeakRssMb() -> float:
@@ -110,52 +172,11 @@ def getPeakRssMb() -> float:
 
     Returns -1.0 — 측정 불가 시 (지원 안 되는 OS / API fail).
     """
-    try:
-        import ctypes
-        import ctypes.wintypes
-
-        class PMC(ctypes.Structure):
-            _fields_ = [
-                ("cb", ctypes.wintypes.DWORD),
-                ("PageFaultCount", ctypes.wintypes.DWORD),
-                ("PeakWorkingSetSize", ctypes.c_size_t),
-                ("WorkingSetSize", ctypes.c_size_t),
-                ("QuotaPeakPagedPoolUsage", ctypes.c_size_t),
-                ("QuotaPagedPoolUsage", ctypes.c_size_t),
-                ("QuotaPeakNonPagedPoolUsage", ctypes.c_size_t),
-                ("QuotaNonPagedPoolUsage", ctypes.c_size_t),
-                ("PagefileUsage", ctypes.c_size_t),
-                ("PeakPagefileUsage", ctypes.c_size_t),
-            ]
-
-        GetCurrentProcess = ctypes.windll.kernel32.GetCurrentProcess  # type: ignore[attr-defined]
-        GetCurrentProcess.restype = ctypes.wintypes.HANDLE
-
-        GetProcessMemoryInfo = ctypes.windll.psapi.GetProcessMemoryInfo  # type: ignore[attr-defined]
-        GetProcessMemoryInfo.argtypes = [
-            ctypes.wintypes.HANDLE,
-            ctypes.POINTER(PMC),
-            ctypes.wintypes.DWORD,
-        ]
-        GetProcessMemoryInfo.restype = ctypes.wintypes.BOOL
-
-        pmc = PMC()
-        pmc.cb = ctypes.sizeof(PMC)
-        if GetProcessMemoryInfo(GetCurrentProcess(), ctypes.byref(pmc), pmc.cb):
-            return pmc.PeakWorkingSetSize / (1024 * 1024)
-    except (AttributeError, OSError, ImportError):
-        pass
-
-    # Linux fallback — VmHWM (high water mark)
-    try:
-        with open(f"/proc/{os.getpid()}/status") as f:
-            for line in f:
-                if line.startswith("VmHWM:"):
-                    return int(line.split()[1]) / 1024
-    except (FileNotFoundError, PermissionError):
-        pass
-
-    return -1.0
+    counters = _windowsCounters()
+    if counters is not None:
+        return counters.PeakWorkingSetSize / (1024 * 1024)
+    # Linux 대체 경로. VmHWM 이 프로세스 수명 동안의 최고 수위다.
+    return _procStatusKb("VmHWM:")
 
 
 def _getTotalMemoryMb() -> float:

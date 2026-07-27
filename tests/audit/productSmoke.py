@@ -43,23 +43,51 @@ class _ProcessMemoryCounters(ctypes.Structure):
     ]
 
 
-def _rssMb() -> float:
-    if os.name == "nt":
+_winReader: tuple[Any, Any] | None = None
+
+
+def _winMemoryReader() -> tuple[Any, Any] | None:
+    """psapi 호출 준비를 한 번만 한다. 준비 못 하면 None.
+
+    `ctypes.windll` 은 프로세스 전역 캐시라 거기 붙은 함수의 `argtypes` 를 여기서 정하면
+    측정 대상인 dartlab 까지 같이 끌려간다. 실제로 그렇게 해서 `company.story` 가
+    ArgumentError 로 죽었다. 하니스가 대상을 망가뜨리면 그 측정은 측정이 아니다.
+    자기 handle 을 열어 남과 떨어뜨린다.
+    """
+    global _winReader
+
+    if _winReader is None:
         try:
-            getCurrentProcess = ctypes.windll.kernel32.GetCurrentProcess  # type: ignore[attr-defined]
+            kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+            psapi = ctypes.WinDLL("psapi", use_last_error=True)
+            getCurrentProcess = kernel32.GetCurrentProcess
+            getCurrentProcess.argtypes = []
             getCurrentProcess.restype = ctypes.wintypes.HANDLE
-            getProcessMemoryInfo = ctypes.windll.psapi.GetProcessMemoryInfo  # type: ignore[attr-defined]
+            getProcessMemoryInfo = psapi.GetProcessMemoryInfo
             getProcessMemoryInfo.argtypes = [
                 ctypes.wintypes.HANDLE,
                 ctypes.POINTER(_ProcessMemoryCounters),
                 ctypes.wintypes.DWORD,
             ]
             getProcessMemoryInfo.restype = ctypes.wintypes.BOOL
+        except (AttributeError, OSError):
+            return None
+        _winReader = (getCurrentProcess, getProcessMemoryInfo)
+    return _winReader
+
+
+def _rssMb() -> float:
+    if os.name == "nt":
+        reader = _winMemoryReader()
+        if reader is None:
+            return -1.0
+        getCurrentProcess, getProcessMemoryInfo = reader
+        try:
             pmc = _ProcessMemoryCounters()
             pmc.cb = ctypes.sizeof(_ProcessMemoryCounters)
             if getProcessMemoryInfo(getCurrentProcess(), ctypes.byref(pmc), pmc.cb):
                 return pmc.WorkingSetSize / (1024 * 1024)
-        except (AttributeError, OSError):
+        except (AttributeError, OSError, ValueError):
             return -1.0
     try:
         with open(f"/proc/{os.getpid()}/status", encoding="utf-8") as f:
