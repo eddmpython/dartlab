@@ -66,12 +66,18 @@ def testDifferentKeysDoNotShareOneSlot() -> None:
     assert cache.get("company", "005380") == "현대"
 
 
+# Windows 의 `time.monotonic` 해상도는 15 ms 안팎이라 그보다 짧게 자면 시계가 아예
+# 움직이지 않는다. 만료 판정이 경과 시간 비교라서, 짧은 sleep 은 테스트를 흔들리게 할
+# 뿐 제품을 검증하지 못한다.
+_PAST_TIMER_RESOLUTION = 0.05
+
+
 def testExpiredEntryIsTreatedAsAbsent() -> None:
     """만료된 값은 없는 것으로 본다. 남아 있으면 지난 값이 최신으로 읽힌다."""
 
     cache = TimeseriesCache(ttlDaily=60, ttlOther=0)
     cache.put("낡음", "series", "A")
-    time.sleep(0.01)
+    time.sleep(_PAST_TIMER_RESOLUTION)
 
     assert cache.get("series", "A") is None
 
@@ -82,7 +88,7 @@ def testDailyEntriesUseTheDailyTtl() -> None:
     cache = TimeseriesCache(ttlDaily=60, ttlOther=0)
     cache.put("일간", "series", "A", daily=True)
     cache.put("기타", "series", "B", daily=False)
-    time.sleep(0.01)
+    time.sleep(_PAST_TIMER_RESOLUTION)
 
     assert cache.get("series", "A") == "일간"
     assert cache.get("series", "B") is None

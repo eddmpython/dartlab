@@ -1157,12 +1157,15 @@ def _calcDebtToEbitda(r: RatioResult) -> None:
 def _calcCCC(r: RatioResult) -> None:
     """Cash Conversion Cycle + 영업순환주기."""
     if r.revenueTTM and r.revenueTTM > 0:
-        if r.receivables:
+        # 존재 여부로 본다. 매출채권이나 재고가 0 인 것은 값이 없는 것이 아니라
+        # 0 일이라는 값이다. 진리값으로 보면 재고를 거의 두지 않는 회사가 전부
+        # 미산출로 떨어지고, 그러면 CCC 자체가 사라진다.
+        if r.receivables is not None:
             r.dso = _safeRound(r.receivables / r.revenueTTM * 365, 1)
         cos = r.costOfSales or r.revenueTTM
-        if r.inventories and cos > 0:
+        if r.inventories is not None and cos > 0:
             r.dio = _safeRound(r.inventories / cos * 365, 1)
-        if r.payables and cos > 0:
+        if r.payables is not None and cos > 0:
             r.dpo = _safeRound(r.payables / cos * 365, 1)
         if r.dso is not None and r.dio is not None and r.dpo is not None:
             r.ccc = _safeRound(r.dso + r.dio - r.dpo, 1)
@@ -1996,13 +1999,19 @@ def _appendCCC(rs: RatioSeriesResult, i: int, S: dict[str, list]) -> None:
     pay_i = _sv(S["payables"], i)
 
     cos_for_days = cos_i if cos_i and cos_i > 0 else rev_i
-    dso_i = _safeRound(rec_i / rev_i * 365, 1) if rec_i and rev_i and rev_i > 0 else None
-    dio_i = _safeRound(inv_i / cos_for_days * 365, 1) if inv_i and cos_for_days and cos_for_days > 0 else None
-    dpo_i = _safeRound(pay_i / cos_for_days * 365, 1) if pay_i and cos_for_days and cos_for_days > 0 else None
+    hasCos = cos_for_days is not None and cos_for_days > 0
+    dso_i = _safeRound(rec_i / rev_i * 365, 1) if rec_i is not None and rev_i and rev_i > 0 else None
+    dio_i = _safeRound(inv_i / cos_for_days * 365, 1) if inv_i is not None and hasCos else None
+    dpo_i = _safeRound(pay_i / cos_for_days * 365, 1) if pay_i is not None and hasCos else None
     rs.dso.append(dso_i)
     rs.dio.append(dio_i)
     rs.dpo.append(dpo_i)
-    rs.ccc.append(_safeRound(dso_i + dio_i - dpo_i, 1) if dso_i and dio_i and dpo_i else None)
+    # 진리값이 아니라 존재 여부로 본다. 재고가 거의 없는 회사는 dio 가 0.0 으로
+    # 떨어지는데, 그것은 값이 없는 것이 아니라 0 일이라는 값이다. 바로 아래
+    # operatingCycle 은 이미 `is not None` 이라 같은 회사에서 두 지표의 판정이
+    # 엇갈렸고, 시점 경로의 CCC 와도 답이 달랐다.
+    hasCycleParts = dso_i is not None and dio_i is not None and dpo_i is not None
+    rs.ccc.append(_safeRound(dso_i + dio_i - dpo_i, 1) if hasCycleParts else None)
     rs.operatingCycle.append(_safeRound(dso_i + dio_i, 1) if dso_i is not None and dio_i is not None else None)
 
 

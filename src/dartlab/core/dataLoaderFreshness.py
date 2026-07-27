@@ -10,6 +10,10 @@ from typing import Callable
 from urllib.error import URLError
 from urllib.request import Request, urlopen
 
+from dartlab.core.logger import getLogger
+
+_log = getLogger(__name__)
+
 
 def _noRefreshEnv() -> bool:
     """``DARTLAB_NO_REFRESH=1`` 시 HF refresh 우회."""
@@ -193,9 +197,11 @@ def refreshFromHf(
     """ETag 비교 후 HF가 최신이면 다운로드로 갱신하고 실패 시 기존 파일을 유지한다."""
     stale = checkRemoteFreshness(stockCode, path, category)
     if stale is None:
-        etagPath = path.with_suffix(".parquet.etag")
-        if etagPath.exists():
-            etagPath.touch()
+        # 확인 실패를 "확인했고 최신" 으로 기록하지 않는다. etag 파일의 mtime 이 바로
+        # "마지막으로 확인한 시각" 이라, 여기서 touch 하면 TTL 동안 갱신 시도조차 하지
+        # 않는다. 오프라인이나 프록시 차단이 길어질수록 자료가 더 최신처럼 보이고,
+        # 실패할 때마다 그 침묵이 다시 연장된다.
+        _log.warning("원격 신선도 확인 실패로 로컬 자료를 그대로 쓴다 (%s, %s)", stockCode, category)
         return
     if stale is not True:
         etagPath = path.with_suffix(".parquet.etag")
