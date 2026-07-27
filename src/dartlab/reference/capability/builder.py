@@ -487,6 +487,45 @@ def _buildAnalysisGraph(entries: dict[str, dict[str, Any]]) -> dict[str, Any]:
     return payload
 
 
+def _appendContractSteps(contract: dict[str, Any], steps: list[dict[str, Any]]) -> None:
+    """계약 하나가 만드는 실행 단계를 누적 목록에 붙인다.
+
+    preflight 로 선언된 것이 있으면 그것이 곧 단계다. 하나도 없을 때만 도구 이름으로
+    후보 단계를 만든다. "없을 때만" 을 판정하려면 이미 쌓인 목록을 봐야 해서 함수가
+    누적 목록을 받는다. 반환값으로 바꾸면 그 판정이 호출부로 새어 나간다.
+    """
+    contractId = str(contract.get("contractId") or "")
+    for idx, action in enumerate(contract.get("preflightActions") or []):
+        if not isinstance(action, dict) or not action.get("tool"):
+            continue
+        steps.append(
+            {
+                "id": f"{contractId}.preflight.{idx + 1}",
+                "tool": action.get("tool"),
+                "argsTemplate": action.get("argsTemplate") or {},
+                "contractId": contractId,
+                "primaryEvidence": bool(action.get("primaryEvidence")),
+                "produces": "evidence",
+                "purpose": f"{contractId} primary evidence",
+            }
+        )
+    if any(step.get("contractId") == contractId for step in steps):
+        return
+    for tool in contract.get("toolNames") or ([contract.get("tool")] if contract.get("tool") else []):
+        if not tool:
+            continue
+        steps.append(
+            {
+                "id": f"{contractId}.{tool}",
+                "tool": tool,
+                "contractId": contractId,
+                "primaryEvidence": False,
+                "produces": "evidence",
+                "purpose": f"{contractId} evidence candidate",
+            }
+        )
+
+
 def _buildProcessMaps(contracts: dict[str, dict[str, Any]], routes: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
     """Build generated process maps from route contracts.
 
@@ -503,35 +542,7 @@ def _buildProcessMaps(contracts: dict[str, dict[str, Any]], routes: list[dict[st
             continue
         steps: list[dict[str, Any]] = []
         for contract in route_contracts:
-            contractId = str(contract.get("contractId") or "")
-            for idx, action in enumerate(contract.get("preflightActions") or []):
-                if not isinstance(action, dict) or not action.get("tool"):
-                    continue
-                steps.append(
-                    {
-                        "id": f"{contractId}.preflight.{idx + 1}",
-                        "tool": action.get("tool"),
-                        "argsTemplate": action.get("argsTemplate") or {},
-                        "contractId": contractId,
-                        "primaryEvidence": bool(action.get("primaryEvidence")),
-                        "produces": "evidence",
-                        "purpose": f"{contractId} primary evidence",
-                    }
-                )
-            if not any(step.get("contractId") == contractId for step in steps):
-                for tool in contract.get("toolNames") or ([contract.get("tool")] if contract.get("tool") else []):
-                    if not tool:
-                        continue
-                    steps.append(
-                        {
-                            "id": f"{contractId}.{tool}",
-                            "tool": tool,
-                            "contractId": contractId,
-                            "primaryEvidence": False,
-                            "produces": "evidence",
-                            "purpose": f"{contractId} evidence candidate",
-                        }
-                    )
+            _appendContractSteps(contract, steps)
         requiredEvidence = _unique(v for c in route_contracts for v in c.get("requiredEvidence") or [])
         artifactPolicy = _mergeDicts(c.get("artifactPolicy") for c in route_contracts)
         visualPolicy = _mergeDicts(c.get("visualPolicy") for c in route_contracts)
@@ -656,21 +667,107 @@ def _mergeQuestionTriggers(left: dict[str, Any], right: dict[str, Any]) -> dict[
     return merged
 
 
+_ENTRY_SECTION_KEYS = ("capabilities", "requires", "aicontext", "guide", "seealso", "returns", "args", "example")
+
+
+def _entryFromDoc(doc: str, kind: str) -> dict[str, Any]:
+    """docstring 하나를 카탈로그 entry 로 조립한다.
+
+    `__all__` 훑는 자리와 Company 메서드 훑는 자리가 이 열두 줄을 글자까지 똑같이 갖고
+    있었다. 카탈로그에 새 섹션을 하나 붙이려면 두 곳을 다 고쳐야 했고, 한 곳만 고치면
+    같은 카탈로그 안에서 항목 종류에 따라 섹션이 있다 없다 했다.
+    """
+    entry: dict[str, Any] = {"summary": doc.split("\n")[0].strip(), "kind": kind}
+    sections = _parseDocstringSections(doc)
+    for key in _ENTRY_SECTION_KEYS:
+        if value := sections.get(key):
+            entry[key if key != "seealso" else "seeAlso"] = value
+    if returnSchema := _parseReturnsSchema(sections.get("returns")):
+        entry["returnSchema"] = returnSchema
+    if llmSpecs := _parseLLMSpecs(sections.get("llmspecifications")):
+        entry["llmSpecs"] = llmSpecs
+    _applyAiContract(entry, sections)
+    return entry
+
+
+def _richestCallableDoc(obj: Any, name: str, doc: str | None) -> str | None:
+    """호출 가능한 모듈이나 클래스에서 가장 내용 많은 docstring 을 고른다.
+
+    `_CallableModule` 패턴(scan, macro, quant)은 모듈 docstring 보다 내부 `__call__` 쪽이
+    풍부하다. Returns 를 가진 쪽을 우선하고, 없으면 긴 쪽을 쓴다.
+    """
+    from dartlab.reference.capability.dataProducts import callableModuleTargets
+
+    callableModuleMap = callableModuleTargets()
+    candidates = [inspect.getdoc(getattr(type(obj), "__call__", None))]
+    if name in callableModuleMap:
+        modPath, className = callableModuleMap[name]
+        try:
+            import importlib as _importlib
+
+            module = _importlib.import_module(modPath)
+            if className:
+                cls = getattr(module, className, None)
+                if cls:
+                    candidates.append(inspect.getdoc(getattr(cls, "__call__", None)))
+            else:
+                fn = getattr(module, name, None)
+                if fn and callable(fn):
+                    candidates.append(inspect.getdoc(fn))
+        except ImportError:
+            pass
+    for callDoc in candidates:
+        if not callDoc:
+            continue
+        # Returns 있는 __call__ 우선 (모듈 docstring 이 길어도 Returns 없으면 교체)
+        if "Returns" in callDoc and "Returns" not in (doc or ""):
+            doc = callDoc
+        elif len(callDoc) > len(doc or ""):
+            doc = callDoc
+    return doc
+
+
+def _companyMemberDoc(companyClass: Any, memberName: str) -> tuple[str, str] | None:
+    """Company 멤버의 종류와 docstring 을 고른다. 문서가 없으면 None.
+
+    property 는 fget 의 docstring 이 빈약할 때 `_{name}Impl` 쪽을 쓴다. 9 섹션 규칙이
+    구현 함수에 붙어 있는 경우가 있어서다.
+    """
+    obj = getattr(companyClass, memberName, None)
+    if obj is None:
+        return None
+    # ⚠ `getattr` 로 꺼낸 값으로 검사한다. 클래스에서 꺼내면 staticmethod 는 맨 함수로,
+    # classmethod 는 바인딩된 메서드로 나와서 이 검사는 사실상 걸러 내지 못한다.
+    # `getattr_static` 으로 바꾸면 정확히 걸러지지만 그러면 카탈로그에서 일곱 항목
+    # (canHandle, codeName, listing, priority, resolve, search, status) 이 사라진다.
+    # 그 판단은 카탈로그 등재 정책이지 리팩터가 할 일이 아니라 원래 의미를 그대로 둔다.
+    if isinstance(obj, (staticmethod, classmethod)):
+        return None
+    static = inspect.getattr_static(companyClass, memberName)
+    if isinstance(static, property):
+        doc = inspect.getdoc(static.fget) if static.fget else None
+        implDoc = inspect.getdoc(getattr(companyClass, f"_{memberName}Impl", None))
+        if implDoc and len(implDoc) > len(doc or ""):
+            doc = implDoc
+        return ("property", doc) if doc else None
+    doc = inspect.getdoc(obj)
+    return ("method", doc) if doc else None
+
+
 def buildCapabilities() -> dict[str, Any]:
     """런타임 capabilities 카탈로그 dict 를 docstring 소스에서 라이브 빌드.
 
     ``__all__`` 함수 + Company 메서드 + scan/macro/gather 축 레지스트리를 하나의 dict 로.
-    사본(``_generated.py``) 없이 매 프로세스 첫 조회 시 1 회 빌드(loader 가 캐시) - docstring 이
+    사본(``_generated.py``) 없이 매 프로세스 첫 조회 시 1 회 빌드(loader 가 캐시). docstring 이
     유일 진실(operation.code §"CAPABILITIES 단일 진실의 원천"), drift 표면 0.
     """
     import dartlab
     from dartlab.providers.dart.company import Company as DartCompany
 
-    entries: dict[str, dict[str, str]] = {}
+    entries: dict[str, dict[str, Any]] = {}
 
     # 1) __all__ 함수/클래스
-    allNames = getattr(dartlab, "__all__", [])
-    for name in allNames:
+    for name in getattr(dartlab, "__all__", []):
         try:
             obj = getattr(dartlab, name, None)
         except (ImportError, ModuleNotFoundError, AttributeError):
@@ -679,93 +776,23 @@ def buildCapabilities() -> dict[str, Any]:
             continue
         kind = "class" if inspect.isclass(obj) else "function" if callable(obj) else "module"
         doc = inspect.getdoc(obj)
-        # callable class/module 의 __call__ docstring 이 더 풍부하면 fallback
-        # _CallableModule 패턴 (scan/macro/quant): 내부 class __call__ 탐색
         if hasattr(obj, "__call__") and not inspect.isfunction(obj):
-            from dartlab.reference.capability.dataProducts import callableModuleTargets
-
-            _CALLABLE_MODULE_MAP = callableModuleTargets()
-            candidates = [inspect.getdoc(getattr(type(obj), "__call__", None))]
-            if name in _CALLABLE_MODULE_MAP:
-                mod_path, cls_name = _CALLABLE_MODULE_MAP[name]
-                try:
-                    import importlib as _importlib
-
-                    mod = _importlib.import_module(mod_path)
-                    if cls_name:
-                        cls = getattr(mod, cls_name, None)
-                        if cls:
-                            candidates.append(inspect.getdoc(getattr(cls, "__call__", None)))
-                    else:
-                        fn = getattr(mod, name, None)
-                        if fn and callable(fn):
-                            candidates.append(inspect.getdoc(fn))
-                except ImportError:
-                    pass
-            for callDoc in candidates:
-                if not callDoc:
-                    continue
-                # Returns 있는 __call__ 우선 (모듈 docstring 이 길어도 Returns 없으면 교체)
-                docHasReturns = "Returns" in (doc or "")
-                callHasReturns = "Returns" in callDoc
-                if callHasReturns and not docHasReturns:
-                    doc = callDoc
-                elif len(callDoc) > len(doc or ""):
-                    doc = callDoc
-        summary = doc.split("\n")[0].strip() if doc else ""
-        sections = _parseDocstringSections(doc)
-        entry: dict[str, Any] = {"summary": summary, "kind": kind}
-        for key in ("capabilities", "requires", "aicontext", "guide", "seealso", "returns", "args", "example"):
-            if val := sections.get(key):
-                entry[key if key != "seealso" else "seeAlso"] = val
-        if return_schema := _parseReturnsSchema(sections.get("returns")):
-            entry["returnSchema"] = return_schema
-        if llm_specs := _parseLLMSpecs(sections.get("llmspecifications")):
-            entry["llmSpecs"] = llm_specs
-        _applyAiContract(entry, sections)
-        entries[name] = entry
+            doc = _richestCallableDoc(obj, name, doc)
+        entries[name] = _entryFromDoc(doc or "", kind)
 
     # 2) Company 공개 메서드/프로퍼티
     for memberName in sorted(dir(DartCompany)):
         if memberName.startswith("_"):
             continue
-        obj = getattr(DartCompany, memberName, None)
-        if obj is None:
+        resolved = _companyMemberDoc(DartCompany, memberName)
+        if resolved is None:
             continue
-        if isinstance(obj, (staticmethod, classmethod)):
-            continue
+        kind, doc = resolved
+        entries[f"Company.{memberName}"] = _entryFromDoc(doc, kind)
 
-        kind = "property" if isinstance(inspect.getattr_static(DartCompany, memberName), property) else "method"
-        doc = None
-        if kind == "property":
-            prop = inspect.getattr_static(DartCompany, memberName)
-            if prop.fget:
-                doc = inspect.getdoc(prop.fget)
-            # property fget docstring 이 빈약하면 _{name}Impl fallback (9섹션 규칙)
-            implDoc = inspect.getdoc(getattr(DartCompany, f"_{memberName}Impl", None))
-            if implDoc and len(implDoc) > (len(doc or "")):
-                doc = implDoc
-        else:
-            doc = inspect.getdoc(obj)
-        if doc is None:
-            continue
-
-        summary = doc.split("\n")[0].strip()
-        sections = _parseDocstringSections(doc)
-        entry = {"summary": summary, "kind": kind}
-        for key in ("capabilities", "requires", "aicontext", "guide", "seealso", "returns", "args", "example"):
-            if val := sections.get(key):
-                entry[key if key != "seealso" else "seeAlso"] = val
-        if return_schema := _parseReturnsSchema(sections.get("returns")):
-            entry["returnSchema"] = return_schema
-        if llm_specs := _parseLLMSpecs(sections.get("llmspecifications")):
-            entry["llmSpecs"] = llm_specs
-        _applyAiContract(entry, sections)
-        entries[f"Company.{memberName}"] = entry
-
-    # 3~6) scan/macro/gather 축 레지스트리 - 라이브 객체 introspection (install-robust,
+    # 3~6) scan/macro/gather 축 레지스트리. 라이브 객체 introspection (install-robust,
     # AST-소스파싱 X). 레지스트리가 모듈 이동해도 추종한다 (옛 AST 는 _AXIS_REGISTRY 가
-    # scan/__init__→router 로 이동하며 scan 19 축을 조용히 누락하던 버그).
+    # scan/__init__ 에서 router 로 이동하며 scan 19 축을 조용히 누락하던 버그).
     _injectAxisRegistriesLive(entries)
 
     _applyAiContractMetadata(entries)
