@@ -254,6 +254,114 @@ def analyzeUncertainty(
     return InsightResult(grade, summary, details)
 
 
+def _effectiveTaxRate(validTax: list[float], validPbt: list[float]) -> float:
+    """세전이익 대비 법인세로 실효세율을 추정. 근거 없으면 0.22.
+
+    Parameters
+    ----------
+    validTax, validPbt : list[float]
+        결측 제거된 법인세 / 세전이익 시계열.
+
+    Returns
+    -------
+    float
+        실효세율 (0.0~1.0).
+    """
+    import statistics
+
+    if not (validTax and validPbt):
+        return 0.22
+    taxRates = []
+    for t, p in zip(validTax, validPbt):
+        if p > 0 and t is not None:
+            taxRates.append(t / p)
+    return statistics.mean(taxRates) if taxRates else 0.22
+
+
+def _coreCvImprovement(coreCv: float, reportedCv: float, details: list[str]) -> int:
+    """핵심이익 CV 가 보고이익 CV 보다 낮은지.
+
+    Parameters
+    ----------
+    coreCv, reportedCv : float
+        변동계수.
+    details : list[str]
+        설명 누적. 제자리 변경.
+
+    Returns
+    -------
+    int
+        점수 증분.
+    """
+    if coreCv < reportedCv:
+        improvement = (1 - coreCv / reportedCv) * 100 if reportedCv > 0 else 0
+        details.append(f"핵심이익이 변동성 {improvement:.0f}% 개선")
+        return 2
+    details.append("비경상 항목 영향 미미")
+    return 0
+
+
+def _coreCvStability(coreCv: float, details: list[str]) -> int:
+    """핵심이익 CV 절대 수준으로 안정성 등급.
+
+    Parameters
+    ----------
+    coreCv : float
+        핵심이익 변동계수.
+    details : list[str]
+        설명 누적. 제자리 변경.
+
+    Returns
+    -------
+    int
+        점수 증분 (0~3).
+    """
+    if coreCv < 0.2:
+        details.append("핵심이익 매우 안정")
+        return 3
+    if coreCv < 0.4:
+        details.append("핵심이익 안정")
+        return 2
+    if coreCv < 0.7:
+        details.append("핵심이익 보통")
+        return 1
+    details.append("핵심이익 변동 큼")
+    return 0
+
+
+def _coreReportedGap(coreVals: list[float], validNi: list[float], details: list[str]) -> int:
+    """최신연도 보고이익과 핵심이익의 괴리.
+
+    Parameters
+    ----------
+    coreVals, validNi : list[float]
+        핵심이익 / 보고 순이익 시계열.
+    details : list[str]
+        설명 누적. 제자리 변경.
+
+    Returns
+    -------
+    int
+        점수 증분 (-1, 0, +1).
+    """
+    if not (coreVals and validNi):
+        return 0
+    latestCore = coreVals[-1]
+    latestReported = validNi[-1]
+    if latestCore == 0:
+        return 0
+    gap = (latestReported - latestCore) / abs(latestCore) * 100
+    if abs(gap) > 30:
+        details.append(f"보고이익 vs 핵심이익 괴리 {gap:+.0f}%")
+        if gap < -30:
+            return -1  # 비경상 손실
+        return 0
+    if abs(gap) < 10:
+        details.append("보고이익 ≈ 핵심이익")
+        return 1
+    return 0
+
+
 def analyzeCoreEarnings(
     aSeries: dict,
     aYears: list[str],
@@ -325,15 +433,7 @@ def analyzeCoreEarnings(
     details: list[str] = []
     score = 0
 
-    # 실효세율 추정
-    if validTax and validPbt:
-        taxRates = []
-        for t, p in zip(validTax, validPbt):
-            if p > 0 and t is not None:
-                taxRates.append(t / p)
-        effectiveTax = statistics.mean(taxRates) if taxRates else 0.22
-    else:
-        effectiveTax = 0.22
+    effectiveTax = _effectiveTaxRate(validTax, validPbt)
 
     # Core Earnings = 영업이익 × (1-세율)
     coreVals = [v * (1 - effectiveTax) for v in validOp]
@@ -346,40 +446,9 @@ def analyzeCoreEarnings(
 
     details.append(f"Core CV {coreCv:.2f} vs Reported CV {reportedCv:.2f}")
 
-    # CV 개선 여부
-    if coreCv < reportedCv:
-        improvement = (1 - coreCv / reportedCv) * 100 if reportedCv > 0 else 0
-        details.append(f"핵심이익이 변동성 {improvement:.0f}% 개선")
-        score += 2
-    else:
-        details.append("비경상 항목 영향 미미")
-
-    # 핵심이익 안정성 (Core CV 절대 수준)
-    if coreCv < 0.2:
-        details.append("핵심이익 매우 안정")
-        score += 3
-    elif coreCv < 0.4:
-        details.append("핵심이익 안정")
-        score += 2
-    elif coreCv < 0.7:
-        details.append("핵심이익 보통")
-        score += 1
-    else:
-        details.append("핵심이익 변동 큼")
-
-    # 핵심이익 대비 보고이익 괴리 (최신연도)
-    if coreVals and validNi:
-        latestCore = coreVals[-1]
-        latestReported = validNi[-1]
-        if latestCore != 0:
-            gap = (latestReported - latestCore) / abs(latestCore) * 100
-            if abs(gap) > 30:
-                details.append(f"보고이익 vs 핵심이익 괴리 {gap:+.0f}%")
-                if gap < -30:
-                    score -= 1  # 비경상 손실
-            elif abs(gap) < 10:
-                details.append("보고이익 ≈ 핵심이익")
-                score += 1
+    score += _coreCvImprovement(coreCv, reportedCv, details)
+    score += _coreCvStability(coreCv, details)
+    score += _coreReportedGap(coreVals, validNi, details)
 
     grade = _scoreToGrade(score, 6)
     summary = "이익 품질 " + ("우수" if score >= 5 else "양호" if score >= 3 else "보통" if score >= 1 else "주의")

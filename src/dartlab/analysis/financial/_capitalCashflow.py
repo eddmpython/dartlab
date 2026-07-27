@@ -18,6 +18,121 @@ _MAX_QUARTERS = 5
 _MAX_YEARS = 8
 
 
+def _cashFlowTableRows(
+    ocfRow: dict,
+    icfRow: dict | None,
+    fcfRow: dict | None,
+    capexRow: dict | None,
+    qCols: list[str],
+) -> list[dict]:
+    """영업/투자/재무 CF 와 FCF 행 조립. 없는 행은 넣지 않는다.
+
+    Parameters
+    ----------
+    ocfRow : dict
+        영업활동현금흐름 행.
+    icfRow, fcfRow, capexRow : dict | None
+        투자 / 재무 CF, 유형자산 취득 행.
+    qCols : list[str]
+        분기 컬럼 (최신 먼저).
+
+    Returns
+    -------
+    list[dict]
+        표 행 목록.
+    """
+    rawRows: list[dict] = []
+    rawRows.append({"": "영업CF", **{c: ocfRow.get(c) for c in qCols}})
+    if icfRow:
+        rawRows.append({"": "투자CF", **{c: icfRow.get(c) for c in qCols}})
+    if fcfRow:
+        rawRows.append({"": "재무CF", **{c: fcfRow.get(c) for c in qCols}})
+    if capexRow:
+        freeRow: dict = {"": "FCF"}
+        for c in qCols:
+            ocf = ocfRow.get(c)
+            capex = capexRow.get(c)
+            if ocf is not None and capex is not None:
+                freeRow[c] = ocf + capex if capex < 0 else ocf - capex
+            else:
+                freeRow[c] = None
+        rawRows.append(freeRow)
+    return rawRows
+
+
+def _resolveCfPattern(
+    ocfRow: dict,
+    icfRow: dict | None,
+    fcfRow: dict | None,
+    qCols: list[str],
+    allPeriods: list[str],
+) -> str | None:
+    """최신 분기 부호 조합으로 CF 패턴 분류. 실패하면 최근 Q4 세 개로 재시도.
+
+    Parameters
+    ----------
+    ocfRow : dict
+        영업활동현금흐름 행.
+    icfRow, fcfRow : dict | None
+        투자 / 재무 CF 행.
+    qCols : list[str]
+        분기 컬럼 (최신 먼저).
+    allPeriods : list[str]
+        전체 기간 컬럼.
+
+    Returns
+    -------
+    str | None
+        패턴 라벨.
+    """
+    latestCol = qCols[0]
+    ocfSign = _sign(ocfRow.get(latestCol))
+    icfSign = _sign((icfRow or {}).get(latestCol))
+    fcfSign = _sign((fcfRow or {}).get(latestCol))
+    pattern = _classifyCfPattern(ocfSign, icfSign, fcfSign)
+    if pattern is not None:
+        return pattern
+    # Q4 기준으로 재시도 (재무CF가 특정 분기에만 있는 기업 대응)
+    q4Cols = sorted([c for c in allPeriods if c.endswith("Q4")], reverse=True)
+    for qc in q4Cols[:3]:
+        pattern = _classifyCfPattern(
+            _sign(ocfRow.get(qc)),
+            _sign((icfRow or {}).get(qc)),
+            _sign((fcfRow or {}).get(qc)),
+        )
+        if pattern is not None:
+            break
+    return pattern
+
+
+def _cashFlowMetrics(ratios) -> list[tuple[str, str]] | None:
+    """비율 결과에서 CF 관련 보조 지표 3 종을 뽑는다.
+
+    Parameters
+    ----------
+    ratios : Any
+        RatioResult 또는 None.
+
+    Returns
+    -------
+    list[tuple[str, str]] | None
+        (라벨, 값) 쌍. 하나도 없으면 None.
+    """
+    if ratios is None:
+        return None
+    extra = []
+    ocfm = getattr(ratios, "operatingCfMargin", None)
+    if ocfm is not None:
+        extra.append(("영업CF 마진", f"{ocfm:.1f}%"))
+    cxr = getattr(ratios, "capexRatio", None)
+    if cxr is not None:
+        extra.append(("CAPEX/매출", f"{cxr:.1f}%"))
+    ftor = getattr(ratios, "fcfToOcfRatio", None)
+    if ftor is not None:
+        extra.append(("FCF/OCF", f"{ftor:.0f}%"))
+    return extra or None
+
+
 @memoizedCalc
 def calcCashFlowStructure(company, *, basePeriod: str | None = None) -> dict | None:
     """영업CF/투자CF/재무CF + FCF + CF 패턴.
@@ -87,57 +202,13 @@ def calcCashFlowStructure(company, *, basePeriod: str | None = None) -> dict | N
     if not qCols:
         return None
 
-    rawRows: list[dict] = []
-    rawRows.append({"": "영업CF", **{c: ocfRow.get(c) for c in qCols}})
-    if icfRow:
-        rawRows.append({"": "투자CF", **{c: icfRow.get(c) for c in qCols}})
-    if fcfRow:
-        rawRows.append({"": "재무CF", **{c: fcfRow.get(c) for c in qCols}})
-    if capexRow:
-        freeRow: dict = {"": "FCF"}
-        for c in qCols:
-            ocf = ocfRow.get(c)
-            capex = capexRow.get(c)
-            if ocf is not None and capex is not None:
-                free = ocf + capex if capex < 0 else ocf - capex
-                freeRow[c] = free
-            else:
-                freeRow[c] = None
-        rawRows.append(freeRow)
+    rawRows = _cashFlowTableRows(ocfRow, icfRow, fcfRow, capexRow, qCols)
 
     # CF 패턴 분류 (분기 우선, 분기 데이터 없으면 연간 fallback)
-    latestCol = qCols[0]
-    ocfSign = _sign(ocfRow.get(latestCol))
-    icfSign = _sign((icfRow or {}).get(latestCol))
-    fcfSign = _sign((fcfRow or {}).get(latestCol))
-    pattern = _classifyCfPattern(ocfSign, icfSign, fcfSign)
-    if pattern is None:
-        # Q4 기준으로 재시도 (재무CF가 특정 분기에만 있는 기업 대응)
-        q4Cols = sorted([c for c in allPeriods if c.endswith("Q4")], reverse=True)
-        for qc in q4Cols[:3]:
-            ocfA = _sign(ocfRow.get(qc))
-            icfA = _sign((icfRow or {}).get(qc))
-            fcfA = _sign((fcfRow or {}).get(qc))
-            pattern = _classifyCfPattern(ocfA, icfA, fcfA)
-            if pattern is not None:
-                break
+    pattern = _resolveCfPattern(ocfRow, icfRow, fcfRow, qCols, allPeriods)
 
     # 추가 지표
-    ratios = _getRatios(company)
-    metrics = None
-    if ratios is not None:
-        extra = []
-        ocfm = getattr(ratios, "operatingCfMargin", None)
-        if ocfm is not None:
-            extra.append(("영업CF 마진", f"{ocfm:.1f}%"))
-        cxr = getattr(ratios, "capexRatio", None)
-        if cxr is not None:
-            extra.append(("CAPEX/매출", f"{cxr:.1f}%"))
-        ftor = getattr(ratios, "fcfToOcfRatio", None)
-        if ftor is not None:
-            extra.append(("FCF/OCF", f"{ftor:.0f}%"))
-        if extra:
-            metrics = extra
+    metrics = _cashFlowMetrics(_getRatios(company))
 
     return {
         "tableRows": rawRows,

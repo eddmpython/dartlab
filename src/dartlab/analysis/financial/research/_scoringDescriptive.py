@@ -65,6 +65,121 @@ def _latestTwo(series: dict, sjDiv: str, snakeId: str) -> tuple[float | None, fl
 # ══════════════════════════════════════
 
 
+def _piotroskiProfitability(aSeries: dict, ta: float | None, taPrev: float | None) -> dict[str, bool]:
+    """F1~F4 수익성 신호 (ROA 양수 / OCF 양수 / ROA 개선 / CF > NI).
+
+    Parameters
+    ----------
+    aSeries : dict
+        연간 재무 시계열.
+    ta, taPrev : float | None
+        총자산 최신값과 직전값.
+
+    Returns
+    -------
+    dict[str, bool]
+        4 신호. 삽입 순서 F1 ~ F4.
+    """
+    ni = _latest(aSeries, "IS", "net_profit")
+    ocf = _latest(aSeries, "CF", "operating_cashflow")
+
+    roa = ni / ta if ni is not None and ta and ta > 0 else None
+    roaPrev = None
+    niPrev = _latestTwo(aSeries, "IS", "net_profit")[1]
+    if niPrev is not None and taPrev and taPrev > 0:
+        roaPrev = niPrev / taPrev
+
+    return {
+        # F1: ROA > 0
+        "roaPositive": roa is not None and roa > 0,
+        # F2: Operating CF > 0
+        "ocfPositive": ocf is not None and ocf > 0,
+        # F3: ROA increasing
+        "roaIncreasing": roa is not None and roaPrev is not None and roa > roaPrev,
+        # F4: CF > NI (accrual quality)
+        "cfGtNi": ocf is not None and ni is not None and ocf > ni,
+    }
+
+
+def _piotroskiHealth(aSeries: dict) -> dict[str, bool]:
+    """F5~F7 건전성 신호 (차입금 감소 / 유동비율 상승 / 무희석).
+
+    Parameters
+    ----------
+    aSeries : dict
+        연간 재무 시계열.
+
+    Returns
+    -------
+    dict[str, bool]
+        3 신호. 삽입 순서 F5 ~ F7.
+    """
+    ltd = _latest(aSeries, "BS", "long_term_borrowings")
+    ltdPrev = _latestTwo(aSeries, "BS", "long_term_borrowings")[1]
+    # fallback: total_liabilities
+    if ltd is None:
+        ltd = _latest(aSeries, "BS", "total_liabilities")
+        ltdPrev = _latestTwo(aSeries, "BS", "total_liabilities")[1]
+
+    ca = _latest(aSeries, "BS", "current_assets")
+    cl = _latest(aSeries, "BS", "current_liabilities")
+    caPrev = _latestTwo(aSeries, "BS", "current_assets")[1]
+    clPrev = _latestTwo(aSeries, "BS", "current_liabilities")[1]
+
+    cr = ca / cl if ca is not None and cl and cl > 0 else None
+    crPrev = caPrev / clPrev if caPrev is not None and clPrev and clPrev > 0 else None
+
+    out: dict[str, bool] = {
+        # F5: Long-term debt decreasing
+        "debtDecreasing": ltd is not None and ltdPrev is not None and ltd <= ltdPrev,
+        # F6: Current ratio increasing
+        "currentRatioUp": cr is not None and crPrev is not None and cr > crPrev,
+    }
+    # F7: No new shares issued (equity not diluted)
+    shares = _latest(aSeries, "BS", "issued_shares")
+    sharesPrev = _latestTwo(aSeries, "BS", "issued_shares")[1]
+    if shares is not None and sharesPrev is not None:
+        out["noNewShares"] = shares <= sharesPrev
+    else:
+        # 발행주식수 없으면 보수적으로 통과 (자본 변동으로 근사)
+        out["noNewShares"] = True
+    return out
+
+
+def _piotroskiEfficiency(aSeries: dict, ta: float | None, taPrev: float | None) -> dict[str, bool]:
+    """F8~F9 효율성 신호 (매출총이익률 상승 / 자산회전율 상승).
+
+    Parameters
+    ----------
+    aSeries : dict
+        연간 재무 시계열.
+    ta, taPrev : float | None
+        총자산 최신값과 직전값.
+
+    Returns
+    -------
+    dict[str, bool]
+        2 신호. 삽입 순서 F8 ~ F9.
+    """
+    gp = _latest(aSeries, "IS", "gross_profit")
+    gpPrev = _latestTwo(aSeries, "IS", "gross_profit")[1]
+    sales = _latest(aSeries, "IS", "sales")
+    salesPrev = _latestTwo(aSeries, "IS", "sales")[1]
+
+    gm = gp / sales if gp is not None and sales and sales > 0 else None
+    gmPrev = gpPrev / salesPrev if gpPrev is not None and salesPrev and salesPrev > 0 else None
+
+    at = sales / ta if sales is not None and ta and ta > 0 else None
+    atPrev = salesPrev / taPrev if salesPrev is not None and taPrev and taPrev > 0 else None
+
+    return {
+        # F8: Gross margin increasing
+        "grossMarginUp": gm is not None and gmPrev is not None and gm > gmPrev,
+        # F9: Asset turnover increasing
+        "assetTurnoverUp": at is not None and atPrev is not None and at > atPrev,
+    }
+
+
 def calcPiotroski(
     aSeries: dict[str, dict[str, list[float | None]]],
 ) -> PiotroskiScore:
@@ -110,75 +225,12 @@ def calcPiotroski(
     """
     components: dict[str, bool] = {}
 
-    # --- 수익성 (4 signals) ---
-    ni = _latest(aSeries, "IS", "net_profit")
     ta = _latest(aSeries, "BS", "total_assets")
     taPrev = _latestTwo(aSeries, "BS", "total_assets")[1]
-    ocf = _latest(aSeries, "CF", "operating_cashflow")
 
-    roa = ni / ta if ni is not None and ta and ta > 0 else None
-    roaPrev = None
-    niPrev = _latestTwo(aSeries, "IS", "net_profit")[1]
-    if niPrev is not None and taPrev and taPrev > 0:
-        roaPrev = niPrev / taPrev
-
-    # F1: ROA > 0
-    components["roaPositive"] = roa is not None and roa > 0
-    # F2: Operating CF > 0
-    components["ocfPositive"] = ocf is not None and ocf > 0
-    # F3: ROA increasing
-    components["roaIncreasing"] = roa is not None and roaPrev is not None and roa > roaPrev
-    # F4: CF > NI (accrual quality)
-    components["cfGtNi"] = ocf is not None and ni is not None and ocf > ni
-
-    # --- 건전성 (3 signals) ---
-    ltd = _latest(aSeries, "BS", "long_term_borrowings")
-    ltdPrev = _latestTwo(aSeries, "BS", "long_term_borrowings")[1]
-    # fallback: total_liabilities
-    if ltd is None:
-        ltd = _latest(aSeries, "BS", "total_liabilities")
-        ltdPrev = _latestTwo(aSeries, "BS", "total_liabilities")[1]
-
-    ca = _latest(aSeries, "BS", "current_assets")
-    cl = _latest(aSeries, "BS", "current_liabilities")
-    caPrev = _latestTwo(aSeries, "BS", "current_assets")[1]
-    clPrev = _latestTwo(aSeries, "BS", "current_liabilities")[1]
-
-    cr = ca / cl if ca is not None and cl and cl > 0 else None
-    crPrev = caPrev / clPrev if caPrev is not None and clPrev and clPrev > 0 else None
-
-    # F5: Long-term debt decreasing
-    components["debtDecreasing"] = ltd is not None and ltdPrev is not None and ltd <= ltdPrev
-    # F6: Current ratio increasing
-    components["currentRatioUp"] = cr is not None and crPrev is not None and cr > crPrev
-    # F7: No new shares issued (equity not diluted)
-    eq = _latest(aSeries, "BS", "total_stockholders_equity")
-    eqPrev = _latestTwo(aSeries, "BS", "total_stockholders_equity")[1]
-    shares = _latest(aSeries, "BS", "issued_shares")
-    sharesPrev = _latestTwo(aSeries, "BS", "issued_shares")[1]
-    if shares is not None and sharesPrev is not None:
-        components["noNewShares"] = shares <= sharesPrev
-    elif eq is not None and eqPrev is not None:
-        # 발행주식수 없으면 자본 변동으로 근사
-        components["noNewShares"] = True  # conservative
-    else:
-        components["noNewShares"] = True
-
-    # --- 효율성 (2 signals) ---
-    gp = _latest(aSeries, "IS", "gross_profit")
-    gpPrev = _latestTwo(aSeries, "IS", "gross_profit")[1]
-    sales = _latest(aSeries, "IS", "sales")
-    salesPrev = _latestTwo(aSeries, "IS", "sales")[1]
-
-    gm = gp / sales if gp is not None and sales and sales > 0 else None
-    gmPrev = gpPrev / salesPrev if gpPrev is not None and salesPrev and salesPrev > 0 else None
-
-    # F8: Gross margin increasing
-    components["grossMarginUp"] = gm is not None and gmPrev is not None and gm > gmPrev
-    # F9: Asset turnover increasing
-    at = sales / ta if sales is not None and ta and ta > 0 else None
-    atPrev = salesPrev / taPrev if salesPrev is not None and taPrev and taPrev > 0 else None
-    components["assetTurnoverUp"] = at is not None and atPrev is not None and at > atPrev
+    components.update(_piotroskiProfitability(aSeries, ta, taPrev))
+    components.update(_piotroskiHealth(aSeries))
+    components.update(_piotroskiEfficiency(aSeries, ta, taPrev))
 
     total = sum(1 for v in components.values() if v)
     if total >= 7:

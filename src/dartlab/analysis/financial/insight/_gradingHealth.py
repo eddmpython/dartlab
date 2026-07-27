@@ -17,6 +17,211 @@ from dartlab.core.utils.extract import getAnnualValues, getLatest
 from dartlab.frame.sector import Sector
 
 
+def _financialDebtSignal(dr: float, details: list[str], risks: list[Flag], opps: list[Flag]) -> int:
+    """금융업 부채비율 구간 판정 (1000/1500/2000%).
+
+    Parameters
+    ----------
+    dr : float
+        부채비율 (%).
+    details, risks, opps : list
+        누적 구조. 제자리 변경.
+
+    Returns
+    -------
+    int
+        점수 증분.
+    """
+    if dr < 1000:
+        details.append(f"부채비율 {dr:.0f}%. 금융업 양호")
+        opps.append(Flag("positive", "finance", f"금융업 부채비율 {dr:.0f}%"))
+        return 3
+    if dr < 1500:
+        details.append(f"부채비율 {dr:.0f}%. 금융업 보통")
+        return 1
+    if dr < 2000:
+        details.append(f"부채비율 {dr:.0f}%. 금융업 다소 높음")
+        return 0
+    details.append(f"부채비율 {dr:.0f}%. 금융업 과다")
+    risks.append(Flag("warning", "finance", f"금융업 부채비율 {dr:.0f}%"))
+    return -1
+
+
+def _usDebtSignal(dr: float, details: list[str], risks: list[Flag], opps: list[Flag]) -> int:
+    """US 기업 부채비율 구간 판정 (100/200/400/600%).
+
+    Parameters
+    ----------
+    dr : float
+        부채비율 (%).
+    details, risks, opps : list
+        누적 구조. 제자리 변경.
+
+    Returns
+    -------
+    int
+        점수 증분.
+    """
+    if dr < 100:
+        details.append(f"부채비율 매우 양호 ({dr:.0f}%)")
+        opps.append(Flag("strong", "finance", f"부채비율 {dr:.0f}%"))
+        return 3
+    if dr < 200:
+        details.append(f"부채비율 양호 ({dr:.0f}%)")
+        opps.append(Flag("positive", "finance", f"부채비율 {dr:.0f}%"))
+        return 2
+    if dr < 400:
+        details.append(f"부채비율 보통 ({dr:.0f}%)")
+        return 1
+    if dr < 600:
+        details.append(f"부채비율 다소 높음 ({dr:.0f}%)")
+        return 0
+    details.append(f"부채비율 과다 ({dr:.0f}%)")
+    risks.append(Flag("warning", "finance", f"부채비율 {dr:.0f}%"))
+    return -1
+
+
+def _usLiquiditySignal(cr: float, details: list[str], risks: list[Flag], opps: list[Flag]) -> int:
+    """US 기업 유동비율 구간 판정 (150/100/80%).
+
+    Parameters
+    ----------
+    cr : float
+        유동비율 (%).
+    details, risks, opps : list
+        누적 구조. 제자리 변경.
+
+    Returns
+    -------
+    int
+        점수 증분.
+    """
+    if cr > 150:
+        details.append(f"유동성 매우 충분 ({cr:.0f}%)")
+        opps.append(Flag("positive", "finance", f"유동비율 {cr:.0f}%"))
+        return 2
+    if cr > 100:
+        details.append(f"유동성 충분 ({cr:.0f}%)")
+        return 1
+    if cr > 80:
+        details.append(f"유동성 보통 ({cr:.0f}%)")
+        return 0
+    details.append(f"유동성 부족 ({cr:.0f}%)")
+    risks.append(Flag("warning", "finance", f"유동비율 {cr:.0f}%"))
+    return -1
+
+
+def _koreanDebtSignal(dr: float, details: list[str], risks: list[Flag], opps: list[Flag]) -> int:
+    """국내 기준 부채비율 구간 판정 (50/100/150/200%).
+
+    Parameters
+    ----------
+    dr : float
+        부채비율 (%).
+    details, risks, opps : list
+        누적 구조. 제자리 변경.
+
+    Returns
+    -------
+    int
+        점수 증분.
+    """
+    if dr < 50:
+        details.append(f"부채비율 매우 양호 ({dr:.0f}%)")
+        opps.append(Flag("strong", "finance", f"부채비율 {dr:.0f}%"))
+        return 3
+    if dr < 100:
+        details.append(f"부채비율 양호 ({dr:.0f}%)")
+        opps.append(Flag("positive", "finance", f"부채비율 {dr:.0f}%"))
+        return 2
+    if dr < 150:
+        details.append(f"부채비율 보통 ({dr:.0f}%)")
+        return 1
+    if dr < 200:
+        details.append(f"부채비율 다소 높음 ({dr:.0f}%)")
+        return 0
+    details.append(f"부채비율 과다 ({dr:.0f}%)")
+    risks.append(Flag("warning", "finance", f"부채비율 {dr:.0f}%"))
+    return -1
+
+
+def _koreanLiquiditySignal(cr: float, details: list[str], risks: list[Flag], opps: list[Flag]) -> int:
+    """국내 기준 유동비율 구간 판정 (200/150/100%). 정확히 100% 는 무판정.
+
+    Parameters
+    ----------
+    cr : float
+        유동비율 (%).
+    details, risks, opps : list
+        누적 구조. 제자리 변경.
+
+    Returns
+    -------
+    int
+        점수 증분.
+    """
+    if cr > 200:
+        details.append(f"유동성 매우 충분 ({cr:.0f}%)")
+        opps.append(Flag("positive", "finance", f"유동비율 {cr:.0f}%"))
+        return 2
+    if cr > 150:
+        details.append(f"유동성 충분 ({cr:.0f}%)")
+        return 1
+    if cr > 100:
+        details.append(f"유동성 보통 ({cr:.0f}%)")
+        return 0
+    if cr < 100:
+        details.append(f"유동성 부족 ({cr:.0f}%)")
+        risks.append(Flag("warning", "finance", f"유동비율 {cr:.0f}%"))
+        return -1
+    return 0
+
+
+def _distressModelSignal(ratios: RatioResult, details: list[str], risks: list[Flag]) -> int:
+    """O-Score 와 Altman Z''-Score 부실 신호.
+
+    Parameters
+    ----------
+    ratios : RatioResult
+        재무비율 계산 결과.
+    details, risks : list
+        누적 구조. 제자리 변경.
+
+    Returns
+    -------
+    int
+        점수 증분.
+    """
+    score = 0
+
+    # Ohlson O-Score: P(bankruptcy) 10% 초과면 경고
+    if ratios.ohlsonProbability is not None:
+        if ratios.ohlsonProbability > 20:
+            details.append(f"O-Score 부도확률 {ratios.ohlsonProbability:.1f}%. 고위험")
+            risks.append(Flag("danger", "distress", f"O-Score P(부도) {ratios.ohlsonProbability:.1f}%"))
+            score -= 2
+        elif ratios.ohlsonProbability > 10:
+            details.append(f"O-Score 부도확률 {ratios.ohlsonProbability:.1f}%. 주의")
+            risks.append(Flag("warning", "distress", f"O-Score P(부도) {ratios.ohlsonProbability:.1f}%"))
+            score -= 1
+
+    # Altman Z''-Score (금융업 포함 범용)
+    if ratios.altmanZppScore is not None:
+        if ratios.altmanZppScore < 1.1:
+            details.append(f"Z''-Score {ratios.altmanZppScore:.2f}. 부실 영역")
+            risks.append(Flag("danger", "distress", f"Z'' {ratios.altmanZppScore:.2f} (부실)"))
+            score -= 2
+        elif ratios.altmanZppScore < 2.6:
+            details.append(f"Z''-Score {ratios.altmanZppScore:.2f}. 회색 영역")
+            risks.append(Flag("warning", "distress", f"Z'' {ratios.altmanZppScore:.2f} (회색)"))
+            score -= 1
+        elif ratios.altmanZppScore > 5:
+            details.append(f"Z''-Score {ratios.altmanZppScore:.2f}. 안전")
+            score += 1
+
+    return score
+
+
 def analyzeHealth(ratios: RatioResult, isFinancial: bool = False, currency: str = "KRW") -> InsightResult:
     """재무건전성 분석 — 부채비율 + 유동비율 + O-Score + Z''-Score + Piotroski.
 
@@ -100,114 +305,23 @@ def analyzeHealth(ratios: RatioResult, isFinancial: bool = False, currency: str 
     if isFinancial:
         details.append("[금융업 기준 적용]")
         if dr is not None:
-            if dr < 1000:
-                details.append(f"부채비율 {dr:.0f}% — 금융업 양호")
-                opps.append(Flag("positive", "finance", f"금융업 부채비율 {dr:.0f}%"))
-                score += 3
-            elif dr < 1500:
-                details.append(f"부채비율 {dr:.0f}% — 금융업 보통")
-                score += 1
-            elif dr < 2000:
-                details.append(f"부채비율 {dr:.0f}% — 금융업 다소 높음")
-            else:
-                details.append(f"부채비율 {dr:.0f}% — 금융업 과다")
-                risks.append(Flag("warning", "finance", f"금융업 부채비율 {dr:.0f}%"))
-                score -= 1
+            score += _financialDebtSignal(dr, details, risks, opps)
     elif currency == "USD":
         # US 기업: 자사주매입으로 equity 축소가 일반적, 부채비율 높음이 정상
         if dr is not None:
-            if dr < 100:
-                details.append(f"부채비율 매우 양호 ({dr:.0f}%)")
-                opps.append(Flag("strong", "finance", f"부채비율 {dr:.0f}%"))
-                score += 3
-            elif dr < 200:
-                details.append(f"부채비율 양호 ({dr:.0f}%)")
-                opps.append(Flag("positive", "finance", f"부채비율 {dr:.0f}%"))
-                score += 2
-            elif dr < 400:
-                details.append(f"부채비율 보통 ({dr:.0f}%)")
-                score += 1
-            elif dr < 600:
-                details.append(f"부채비율 다소 높음 ({dr:.0f}%)")
-            else:
-                details.append(f"부채비율 과다 ({dr:.0f}%)")
-                risks.append(Flag("warning", "finance", f"부채비율 {dr:.0f}%"))
-                score -= 1
+            score += _usDebtSignal(dr, details, risks, opps)
 
         if cr is not None:
-            if cr > 150:
-                details.append(f"유동성 매우 충분 ({cr:.0f}%)")
-                opps.append(Flag("positive", "finance", f"유동비율 {cr:.0f}%"))
-                score += 2
-            elif cr > 100:
-                details.append(f"유동성 충분 ({cr:.0f}%)")
-                score += 1
-            elif cr > 80:
-                details.append(f"유동성 보통 ({cr:.0f}%)")
-            else:
-                details.append(f"유동성 부족 ({cr:.0f}%)")
-                risks.append(Flag("warning", "finance", f"유동비율 {cr:.0f}%"))
-                score -= 1
+            score += _usLiquiditySignal(cr, details, risks, opps)
     else:
         if dr is not None:
-            if dr < 50:
-                details.append(f"부채비율 매우 양호 ({dr:.0f}%)")
-                opps.append(Flag("strong", "finance", f"부채비율 {dr:.0f}%"))
-                score += 3
-            elif dr < 100:
-                details.append(f"부채비율 양호 ({dr:.0f}%)")
-                opps.append(Flag("positive", "finance", f"부채비율 {dr:.0f}%"))
-                score += 2
-            elif dr < 150:
-                details.append(f"부채비율 보통 ({dr:.0f}%)")
-                score += 1
-            elif dr < 200:
-                details.append(f"부채비율 다소 높음 ({dr:.0f}%)")
-            else:
-                details.append(f"부채비율 과다 ({dr:.0f}%)")
-                risks.append(Flag("warning", "finance", f"부채비율 {dr:.0f}%"))
-                score -= 1
+            score += _koreanDebtSignal(dr, details, risks, opps)
 
         if cr is not None:
-            if cr > 200:
-                details.append(f"유동성 매우 충분 ({cr:.0f}%)")
-                opps.append(Flag("positive", "finance", f"유동비율 {cr:.0f}%"))
-                score += 2
-            elif cr > 150:
-                details.append(f"유동성 충분 ({cr:.0f}%)")
-                score += 1
-            elif cr > 100:
-                details.append(f"유동성 보통 ({cr:.0f}%)")
-            elif cr < 100:
-                details.append(f"유동성 부족 ({cr:.0f}%)")
-                risks.append(Flag("warning", "finance", f"유동비율 {cr:.0f}%"))
-                score -= 1
+            score += _koreanLiquiditySignal(cr, details, risks, opps)
 
     # ── 부실 예측 모델 신호 (ratios에서 계산된 값 활용) ──
-    # Ohlson O-Score: P(bankruptcy) > 10% → 경고
-    if ratios.ohlsonProbability is not None:
-        if ratios.ohlsonProbability > 20:
-            details.append(f"O-Score 부도확률 {ratios.ohlsonProbability:.1f}% — 고위험")
-            risks.append(Flag("danger", "distress", f"O-Score P(부도) {ratios.ohlsonProbability:.1f}%"))
-            score -= 2
-        elif ratios.ohlsonProbability > 10:
-            details.append(f"O-Score 부도확률 {ratios.ohlsonProbability:.1f}% — 주의")
-            risks.append(Flag("warning", "distress", f"O-Score P(부도) {ratios.ohlsonProbability:.1f}%"))
-            score -= 1
-
-    # Altman Z''-Score (금융업 포함 범용)
-    if ratios.altmanZppScore is not None:
-        if ratios.altmanZppScore < 1.1:
-            details.append(f"Z''-Score {ratios.altmanZppScore:.2f} — 부실 영역")
-            risks.append(Flag("danger", "distress", f"Z'' {ratios.altmanZppScore:.2f} (부실)"))
-            score -= 2
-        elif ratios.altmanZppScore < 2.6:
-            details.append(f"Z''-Score {ratios.altmanZppScore:.2f} — 회색 영역")
-            risks.append(Flag("warning", "distress", f"Z'' {ratios.altmanZppScore:.2f} (회색)"))
-            score -= 1
-        elif ratios.altmanZppScore > 5:
-            details.append(f"Z''-Score {ratios.altmanZppScore:.2f} — 안전")
-            score += 1
+    score += _distressModelSignal(ratios, details, risks)
 
     grade = _scoreToGrade(score, 7)
     label = "금융업 재무건전성" if isFinancial else "재무건전성"

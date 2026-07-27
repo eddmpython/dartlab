@@ -29,6 +29,99 @@ def _isFinancialSector(*args, **kwargs):
     return _f(*args, **kwargs)
 
 
+def _waterfallSteps(col: str, r: float, rows: dict[str, dict], pctFn) -> list[dict]:
+    """한 연도의 매출에서 순이익까지 단계 목록. 없는 계정은 단계를 건너뛴다.
+
+    Parameters
+    ----------
+    col : str
+        연도 컬럼.
+    r : float
+        매출액 (0 아님이 보장됨).
+    rows : dict[str, dict]
+        cogs/gp/sga/op/finCost/finInc/pbt/tax/ni 행 dict.
+    pctFn : Callable
+        매출 대비 비율 계산 함수.
+
+    Returns
+    -------
+    list[dict]
+        label / amount / pct / cumPct 단계 목록.
+    """
+    steps = [{"label": "매출", "amount": r, "pct": 100.0, "cumPct": 100.0}]
+
+    cogsV = rows["cogs"].get(col)
+    gpV = rows["gp"].get(col)
+    if cogsV is not None:
+        steps.append(
+            {
+                "label": "매출원가",
+                "amount": cogsV,
+                "pct": -abs(pctFn(cogsV, r) or 0),
+                "cumPct": pctFn(gpV, r) or round(100 - abs(pctFn(cogsV, r) or 0), 2),
+            }
+        )
+    if gpV is not None:
+        steps.append({"label": "매출총이익", "amount": gpV, "pct": pctFn(gpV, r), "cumPct": pctFn(gpV, r)})
+
+    sgaV = rows["sga"].get(col)
+    opV = rows["op"].get(col)
+    if sgaV is not None:
+        steps.append(
+            {
+                "label": "판관비",
+                "amount": sgaV,
+                "pct": -abs(pctFn(sgaV, r) or 0),
+                "cumPct": pctFn(opV, r) or round((pctFn(gpV, r) or 0) - abs(pctFn(sgaV, r) or 0), 2),
+            }
+        )
+    if opV is not None:
+        steps.append({"label": "영업이익", "amount": opV, "pct": pctFn(opV, r), "cumPct": pctFn(opV, r)})
+
+    fcV = rows["finCost"].get(col)
+    fiV = rows["finInc"].get(col)
+    opPct = pctFn(opV, r) or 0
+    if fcV is not None:
+        steps.append(
+            {
+                "label": "금융비용",
+                "amount": fcV,
+                "pct": -abs(pctFn(fcV, r) or 0),
+                "cumPct": round(opPct - abs(pctFn(fcV, r) or 0), 2),
+            }
+        )
+    if fiV is not None:
+        steps.append(
+            {
+                "label": "금융수익",
+                "amount": fiV,
+                "pct": abs(pctFn(fiV, r) or 0),
+                "cumPct": round(opPct - abs(pctFn(fcV, r) or 0) + abs(pctFn(fiV, r) or 0), 2),
+            }
+        )
+
+    pbtV = rows["pbt"].get(col)
+    if pbtV is not None:
+        steps.append({"label": "세전이익", "amount": pbtV, "pct": pctFn(pbtV, r), "cumPct": pctFn(pbtV, r)})
+
+    taxV = rows["tax"].get(col)
+    if taxV is not None:
+        steps.append(
+            {
+                "label": "법인세",
+                "amount": taxV,
+                "pct": -abs(pctFn(taxV, r) or 0),
+                "cumPct": round((pctFn(pbtV, r) or 0) - abs(pctFn(taxV, r) or 0), 2),
+            }
+        )
+
+    niV = rows["ni"].get(col)
+    if niV is not None:
+        steps.append({"label": "순이익", "amount": niV, "pct": pctFn(niV, r), "cumPct": pctFn(niV, r)})
+
+    return steps
+
+
 @memoizedCalc
 def calcMarginWaterfall(company, *, basePeriod: str | None = None) -> dict | None:
     """매출 → 순이익 워터폴 분해 — 단계별 금액 + 매출 대비 비중.
@@ -134,84 +227,24 @@ def calcMarginWaterfall(company, *, basePeriod: str | None = None) -> dict | Non
             return None
         return round(val / r * 100, 2)
 
+    rows = {
+        "cogs": cogs,
+        "gp": gp,
+        "sga": sgaRow,
+        "op": opRow,
+        "finCost": finCost,
+        "finInc": finInc,
+        "pbt": pbt,
+        "tax": tax,
+        "ni": ni,
+    }
+
     history = []
     for col in yCols:
         r = rev.get(col)
         if r is None or r == 0:
             continue
-
-        steps = [{"label": "매출", "amount": r, "pct": 100.0, "cumPct": 100.0}]
-
-        cogsV = cogs.get(col)
-        gpV = gp.get(col)
-        if cogsV is not None:
-            steps.append(
-                {
-                    "label": "매출원가",
-                    "amount": cogsV,
-                    "pct": -abs(_pct(cogsV, r) or 0),
-                    "cumPct": _pct(gpV, r) or round(100 - abs(_pct(cogsV, r) or 0), 2),
-                }
-            )
-        if gpV is not None:
-            steps.append({"label": "매출총이익", "amount": gpV, "pct": _pct(gpV, r), "cumPct": _pct(gpV, r)})
-
-        sgaV = sgaRow.get(col)
-        opV = opRow.get(col)
-        if sgaV is not None:
-            steps.append(
-                {
-                    "label": "판관비",
-                    "amount": sgaV,
-                    "pct": -abs(_pct(sgaV, r) or 0),
-                    "cumPct": _pct(opV, r) or round((_pct(gpV, r) or 0) - abs(_pct(sgaV, r) or 0), 2),
-                }
-            )
-        if opV is not None:
-            steps.append({"label": "영업이익", "amount": opV, "pct": _pct(opV, r), "cumPct": _pct(opV, r)})
-
-        fcV = finCost.get(col)
-        fiV = finInc.get(col)
-        opPct = _pct(opV, r) or 0
-        if fcV is not None:
-            steps.append(
-                {
-                    "label": "금융비용",
-                    "amount": fcV,
-                    "pct": -abs(_pct(fcV, r) or 0),
-                    "cumPct": round(opPct - abs(_pct(fcV, r) or 0), 2),
-                }
-            )
-        if fiV is not None:
-            steps.append(
-                {
-                    "label": "금융수익",
-                    "amount": fiV,
-                    "pct": abs(_pct(fiV, r) or 0),
-                    "cumPct": round(opPct - abs(_pct(fcV, r) or 0) + abs(_pct(fiV, r) or 0), 2),
-                }
-            )
-
-        pbtV = pbt.get(col)
-        if pbtV is not None:
-            steps.append({"label": "세전이익", "amount": pbtV, "pct": _pct(pbtV, r), "cumPct": _pct(pbtV, r)})
-
-        taxV = tax.get(col)
-        if taxV is not None:
-            steps.append(
-                {
-                    "label": "법인세",
-                    "amount": taxV,
-                    "pct": -abs(_pct(taxV, r) or 0),
-                    "cumPct": round((_pct(pbtV, r) or 0) - abs(_pct(taxV, r) or 0), 2),
-                }
-            )
-
-        niV = ni.get(col)
-        if niV is not None:
-            steps.append({"label": "순이익", "amount": niV, "pct": _pct(niV, r), "cumPct": _pct(niV, r)})
-
-        history.append({"period": col, "steps": steps})
+        history.append({"period": col, "steps": _waterfallSteps(col, r, rows, _pct)})
 
     return {"history": history} if history else None
 

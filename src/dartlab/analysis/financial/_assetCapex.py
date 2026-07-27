@@ -19,6 +19,93 @@ from dartlab.core.utils.safe import get as _get
 _MAX_YEARS = 8
 
 
+def _flowValue(row: dict, col: str) -> float:
+    """CF/IS flow 행에서 값 추출. None 은 0.
+
+    Parameters
+    ----------
+    row : dict
+        기간 -> 값 행.
+    col : str
+        기간 컬럼.
+
+    Returns
+    -------
+    float
+        값 또는 0.
+    """
+    v = row.get(col)
+    return v if v is not None else 0
+
+
+def _capexEntry(col: str, rows: dict[str, dict], depMedian: float) -> dict:
+    """한 연도의 CAPEX / 감가상각 / 건설중인자산 비중.
+
+    Parameters
+    ----------
+    col : str
+        연도 컬럼.
+    rows : dict[str, dict]
+        cip/ppe/ta/capex/intCapex/dep 행 dict.
+    depMedian : float
+        감가상각 중앙값 (이상치 필터 기준).
+
+    Returns
+    -------
+    dict
+        history 항목 한 장.
+    """
+    cip = _get(rows["cip"], col)
+    ppe = _get(rows["ppe"], col)
+    ta = _get(rows["ta"], col)
+    # CAPEX 는 CF 에서 음수로 나오므로 abs
+    capex = abs(_flowValue(rows["capex"], col)) + abs(_flowValue(rows["intCapex"], col))
+    dep = abs(_flowValue(rows["dep"], col))
+    # 이상치 필터: 중앙값 대비 100배 이상 차이나면 스케일 오류로 판단
+    if dep > 0 and depMedian > 0:
+        if dep / depMedian > 100 or depMedian / dep > 100:
+            dep = 0  # 이상치 제거. 아래 fallback 으로 추정한다.
+    # 3순위 fallback: 감가상각 null 이면 유형자산/10 으로 추정
+    if dep == 0 and ppe is not None and ppe > 0:
+        dep = ppe / 10  # 평균 내용연수 10년 가정
+
+    ratio = capex / dep if dep > 0 else None
+    # CAPEX/감가상각 비율 상한: 10배 초과는 감가상각 추정 오류 가능성
+    if ratio is not None and ratio > 10:
+        ratio = None
+
+    return {
+        "period": col,
+        "capex": capex,
+        "depreciation": dep,
+        "capexToDepRatio": ratio,
+        "cip": cip,
+        "cipPct": _pct(cip, ta) if ta > 0 else 0,
+    }
+
+
+def _investmentType(ratio: float | None) -> str:
+    """CAPEX/감가상각 배수를 투자 성격 문구로.
+
+    Parameters
+    ----------
+    ratio : float | None
+        CAPEX / 감가상각.
+
+    Returns
+    -------
+    str
+        투자 성격 문구.
+    """
+    if ratio is not None and ratio > 1.5:
+        return "적극 투자. CAPEX가 감가상각의 1.5배 초과"
+    if ratio is not None and ratio > 1.0:
+        return "성장 투자. CAPEX > 감가상각"
+    if ratio is not None and ratio > 0:
+        return "유지 투자. CAPEX < 감가상각"
+    return "투자 정보 부족"
+
+
 @memoizedCalc
 def calcCapexPattern(company, *, basePeriod: str | None = None) -> dict | None:
     """CAPEX vs 감가상각 + 건설중인자산 추이.
@@ -105,67 +192,27 @@ def calcCapexPattern(company, *, basePeriod: str | None = None) -> dict | None:
     if not yCols:
         return None
 
-    def _getFlow2(row: dict, col: str) -> float:
-        """CF/IS flow 행에서 값 추출 (None → 0)."""
-        v = row.get(col)
-        return v if v is not None else 0
-
     history = []
     latest = None
 
     # 감가상각 이상치 필터용 중앙값 사전 계산
-    _rawDeps = [abs(_getFlow2(depRow, c)) for c in yCols]
-    _validDeps = [d for d in _rawDeps if d > 0]
-    _depMedian = sorted(_validDeps)[len(_validDeps) // 2] if _validDeps else 0
+    rawDeps = [abs(_flowValue(depRow, c)) for c in yCols]
+    validDeps = [d for d in rawDeps if d > 0]
+    depMedian = sorted(validDeps)[len(validDeps) // 2] if validDeps else 0
 
+    rows = {"cip": cipRow, "ppe": ppeRow, "ta": taRow, "capex": capexRow, "intCapex": intCapexRow, "dep": depRow}
     for col in yCols:
-        cip = _get(cipRow, col)
-        ppe = _get(ppeRow, col)
-        ta = _get(taRow, col)
-        # CAPEX는 CF에서 음수로 나옴 → abs
-        capex = abs(_getFlow2(capexRow, col)) + abs(_getFlow2(intCapexRow, col))
-        dep = abs(_getFlow2(depRow, col))
-        # 이상치 필터: 중앙값 대비 100배 이상 차이나면 스케일 오류로 판단
-        if dep > 0 and _depMedian > 0:
-            if dep / _depMedian > 100 or _depMedian / dep > 100:
-                dep = 0  # 이상치 제거 → 아래 fallback으로 추정
-        # 3순위 fallback: 감가상각 null이면 유형자산/10으로 추정
-        if dep == 0 and ppe is not None and ppe > 0:
-            dep = ppe / 10  # 평균 내용연수 10년 가정
-
-        ratio = capex / dep if dep > 0 else None
-        # CAPEX/감가상각 비율 상한: 10배 초과는 감가상각 추정 오류 가능성
-        if ratio is not None and ratio > 10:
-            ratio = None
-        cipPct = _pct(cip, ta) if ta > 0 else 0
-
-        entry = {
-            "period": col,
-            "capex": capex,
-            "depreciation": dep,
-            "capexToDepRatio": ratio,
-            "cip": cip,
-            "cipPct": cipPct,
-        }
+        entry = _capexEntry(col, rows, depMedian)
         history.append(entry)
 
         if latest is None:
-            if ratio is not None and ratio > 1.5:
-                investType = "적극 투자 — CAPEX가 감가상각의 1.5배 초과"
-            elif ratio is not None and ratio > 1.0:
-                investType = "성장 투자 — CAPEX > 감가상각"
-            elif ratio is not None and ratio > 0:
-                investType = "유지 투자 — CAPEX < 감가상각"
-            else:
-                investType = "투자 정보 부족"
-
             latest = {
-                "capex": capex,
-                "depreciation": dep,
-                "capexToDepRatio": ratio,
-                "cip": cip,
-                "cipPct": cipPct,
-                "investmentType": investType,
+                "capex": entry["capex"],
+                "depreciation": entry["depreciation"],
+                "capexToDepRatio": entry["capexToDepRatio"],
+                "cip": entry["cip"],
+                "cipPct": entry["cipPct"],
+                "investmentType": _investmentType(entry["capexToDepRatio"]),
             }
 
     if latest is None:

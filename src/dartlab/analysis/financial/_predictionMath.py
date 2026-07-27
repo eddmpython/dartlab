@@ -33,6 +33,76 @@ def _quickCorr(y: list[float | None], x: list[float | None]) -> float | None:
     return cov / (ystd * xstd)
 
 
+def _completeRows(
+    y: list[float | None],
+    macroData: dict[str, list[float | None]],
+    activeVars: list[str],
+    n: int,
+) -> tuple[list[float], list[list[float]]]:
+    """결측이 하나도 없는 행만 모은다 (listwise deletion).
+
+    Parameters
+    ----------
+    y : list[float | None]
+        종속변수 시계열.
+    macroData : dict[str, list[float | None]]
+        설명변수 시계열 묶음.
+    activeVars : list[str]
+        실제로 쓰는 설명변수 이름.
+    n : int
+        비교 가능한 최대 길이.
+
+    Returns
+    -------
+    tuple[list[float], list[list[float]]]
+        (validY, validX).
+    """
+    validY: list[float] = []
+    validX: list[list[float]] = []
+    for i in range(n):
+        yVal = y[i]
+        if yVal is None:
+            continue
+        xVals = []
+        skip = False
+        for v in activeVars:
+            val = macroData[v][i] if i < len(macroData[v]) else None
+            if val is None:
+                skip = True
+                break
+            xVals.append(val)
+        if not skip:
+            validY.append(yVal)
+            validX.append(xVals)
+    return validY, validX
+
+
+def _rSquared(X: list[list[float]], validY: list[float], beta: list[float], nObs: int, k: int) -> float:
+    """결정계수. 총변동이 0 이면 0.0.
+
+    Parameters
+    ----------
+    X : list[list[float]]
+        설계행렬 (절편 포함).
+    validY : list[float]
+        관측치.
+    beta : list[float]
+        추정 계수.
+    nObs, k : int
+        관측 수, 계수 수.
+
+    Returns
+    -------
+    float
+        R squared.
+    """
+    yMean = sum(validY) / nObs
+    ssTot = sum((y_ - yMean) ** 2 for y_ in validY)
+    yPred = [sum(X[r][j] * beta[j] for j in range(k)) for r in range(nObs)]
+    ssRes = sum((validY[r] - yPred[r]) ** 2 for r in range(nObs))
+    return 1 - ssRes / ssTot if ssTot > 0 else 0.0
+
+
 def _fitOLS(
     y: list[float | None], macroData: dict[str, list[float | None]], cols: list[str]
 ) -> tuple[dict[str, float] | None, float | None, int]:
@@ -50,29 +120,8 @@ def _fitOLS(
 
     n = min(len(y), *(len(macroData[v]) for v in varNames))
 
-    validY: list[float] = []
-    validX: list[list[float]] = []
-    activeVars: list[str] = []
-
-    for v in varNames:
-        if any(x is not None for x in macroData[v][:n]):
-            activeVars.append(v)
-
-    for i in range(n):
-        yVal = y[i]
-        if yVal is None:
-            continue
-        xVals = []
-        skip = False
-        for v in activeVars:
-            val = macroData[v][i] if i < len(macroData[v]) else None
-            if val is None:
-                skip = True
-                break
-            xVals.append(val)
-        if not skip:
-            validY.append(yVal)
-            validX.append(xVals)
+    activeVars = [v for v in varNames if any(x is not None for x in macroData[v][:n])]
+    validY, validX = _completeRows(y, macroData, activeVars, n)
 
     if len(validY) < 3 or not activeVars:
         return None, None, 0
@@ -91,11 +140,7 @@ def _fitOLS(
 
     beta = [sum(inv[i][j] * Xty[j] for j in range(k)) for i in range(k)]
 
-    yMean = sum(validY) / nObs
-    ssTot = sum((y_ - yMean) ** 2 for y_ in validY)
-    yPred = [sum(X[r][j] * beta[j] for j in range(k)) for r in range(nObs)]
-    ssRes = sum((validY[r] - yPred[r]) ** 2 for r in range(nObs))
-    rSquared = 1 - ssRes / ssTot if ssTot > 0 else 0.0
+    rSquared = _rSquared(X, validY, beta, nObs, k)
 
     betas = {activeVars[i]: round(beta[i + 1], 4) for i in range(len(activeVars))}
 

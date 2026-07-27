@@ -17,11 +17,9 @@ from __future__ import annotations
 
 from dartlab.core.memory import memoizedCalc
 
+
 # 레버 이름에 이미 나가 있는 긴 줄표 (U+2014). 문자열 내용이 곧 반환 계약이라 바꾸지 않고,
 # 소스에는 리터럴을 남기지 않으려 코드포인트로 고정한다 (신규 문구에는 쓰지 않는다).
-_OUTPUT_DASH = chr(0x2014)
-
-
 def _latestAnnualRow(company, topic: str, keys: list[str], *, basePeriod: str | None) -> dict | None:
     """최신 연간 컬럼 1 개에서 요청 계정 원값을 뽑는다.
 
@@ -504,9 +502,7 @@ def _breakevenLever(revenue, opIncome, opm, interestAbs) -> dict | None:
     breakevenRev = interestAbs / 0.05 if interestAbs > 0 else abs(opIncome) / 0.10  # OPM 5% 가정
     growthNeeded = (breakevenRev - revenue) / revenue * 100 if revenue > 0 else None
     return {
-        "name": f"흑자 전환 {_OUTPUT_DASH} 매출 {growthNeeded:+.0f}% 필요 (OPM 5% 가정)"
-        if growthNeeded
-        else "흑자 전환 경로",
+        "name": f"흑자 전환. 매출 {growthNeeded:+.0f}% 필요 (OPM 5% 가정)" if growthNeeded else "흑자 전환 경로",
         "driver": "breakeven_revenue",
         "impact": {
             "breakeven_revenue": round(breakevenRev),
@@ -557,7 +553,7 @@ def _cashRunwayLever(company, base, opm, fcf) -> dict | None:
         return None
     months = round(cash / abs(fcf) * 12)
     return {
-        "name": f"현금 소진까지 약 {months}개월 {_OUTPUT_DASH} 구조조정 시급",
+        "name": f"현금 소진까지 약 {months}개월. 구조조정 시급",
         "driver": "cash_runway",
         "impact": {"cashRunwayMonths": months, "currentCash": round(cash)},
         "difficulty": "critical",
@@ -603,7 +599,7 @@ def _reinvestmentLever(company, revenue, opm, equity) -> dict | None:
         capexToRev = capex / revenue * 100
         roic = opm * (revenue / equity) if equity and equity > 0 else None
         return {
-            "name": f"CAPEX/매출 {capexToRev:.1f}% {_OUTPUT_DASH} ROIC 대비 재투자 효율",
+            "name": f"CAPEX/매출 {capexToRev:.1f}%. ROIC 대비 재투자 효율",
             "driver": "reinvestment_efficiency",
             "impact": {
                 "capexToRevenue": round(capexToRev, 1),

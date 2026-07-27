@@ -12,6 +12,15 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from dartlab.analysis.financial.insight._gradingGovernanceSignals import (
+    _auditCommitteeSignal,
+    _auditOpinionSignal,
+    _auditorStabilitySignal,
+    _dividendSignal,
+    _governanceSummary,
+    _internalControlSignal,
+    _majorHolderSignal,
+)
 from dartlab.analysis.financial.insight._gradingScales import _scoreToGrade
 from dartlab.analysis.financial.insight.types import Flag, InsightResult
 
@@ -141,144 +150,25 @@ def analyzeGovernance(company: Company | None) -> InsightResult:
         return _analyzeGovernanceFromSections(company)
 
     rpt = company.report
-
-    major = rpt.majorHolder
-    if major is not None and major.totalShareRatio:
-        maxScore += 3
-        latest = None
-        for v in reversed(major.totalShareRatio):
-            if v is not None:
-                latest = v
-                break
-        if latest is not None:
-            if latest > 50:
-                details.append(f"최대주주 지분 {latest:.1f}% — 지배력 안정")
-                opps.append(Flag("positive", "governance", f"최대주주 {latest:.1f}%"))
-                score += 3
-            elif latest > 30:
-                details.append(f"최대주주 지분 {latest:.1f}% — 적정 수준")
-                score += 2
-            elif latest > 20:
-                details.append(f"최대주주 지분 {latest:.1f}%")
-                score += 1
-            else:
-                details.append(f"최대주주 지분 {latest:.1f}% — 경영권 분산")
-                risks.append(Flag("warning", "governance", f"최대주주 {latest:.1f}%"))
-
     audit = rpt.audit
-    if audit is not None and audit.opinions:
-        maxScore += 2
-        latest = None
-        for v in reversed(audit.opinions):
-            if v is not None:
-                latest = v
-                break
-        if latest is not None:
-            if "적정" in str(latest):
-                details.append("감사의견: 적정")
-                score += 2
-            else:
-                details.append(f"감사의견: {latest}")
-                risks.append(Flag("danger", "audit", f"감사의견 비적정: {latest}"))
-                score -= 2
 
-    # 감사인 안정성 (PCAOB AS 3101) — Big4 + 장기 유지
-    _big4_kw = ["삼일", "PwC", "삼정", "KPMG", "한영", "EY", "안진", "Deloitte"]
-    if audit is not None and audit.auditors:
-        maxScore += 2
-        uniqueAuditors = [a for a in audit.auditors if a is not None]
-        latestAuditor = uniqueAuditors[-1] if uniqueAuditors else None
-
-        if latestAuditor and any(kw in latestAuditor for kw in _big4_kw):
-            # Big4 판정
-            changeCount = sum(1 for i in range(1, len(uniqueAuditors)) if uniqueAuditors[i] != uniqueAuditors[i - 1])
-            if changeCount == 0 and len(uniqueAuditors) >= 3:
-                details.append(f"감사인: {latestAuditor} (Big4, 3년+ 유지)")
-                score += 2
-            elif changeCount == 0:
-                details.append(f"감사인: {latestAuditor} (Big4)")
-                score += 1
-            else:
-                details.append(f"감사인: {latestAuditor} (Big4, {changeCount}회 교체)")
-                score += 1
-        elif latestAuditor:
-            details.append(f"감사인: {latestAuditor} (비Big4)")
-            # 빈번 교체 시 감점
-            changeCount = sum(1 for i in range(1, len(uniqueAuditors)) if uniqueAuditors[i] != uniqueAuditors[i - 1])
-            if changeCount >= 2:
-                score -= 1
-                risks.append(Flag("warning", "audit", f"감사인 빈번 교체 ({changeCount}회)"))
-
-    # 내부통제 (SOX 302/404)
-    try:
-        ic = getattr(rpt, "internalControl", None)
-        if ic is not None:
-            controlDf = getattr(ic, "controlDf", None)
-            if controlDf is not None and len(controlDf) > 0:
-                maxScore += 2
-                latestRow = controlDf.row(-1, named=True)
-                hasWeakness = latestRow.get("hasWeakness", False)
-                opinion = latestRow.get("opinion", "")
-                if hasWeakness:
-                    score -= 2
-                    details.append(f"내부통제: 취약점 보고 ({opinion})")
-                    risks.append(Flag("danger", "governance", "내부통제 취약점"))
-                else:
-                    score += 2
-                    details.append(f"내부통제: {opinion or '적정'}")
-    except (AttributeError, IndexError):
-        pass
-
-    # 감사위원회 활동
-    try:
-        auditSys = getattr(rpt, "auditSystem", None)
-        if auditSys is not None:
-            activity = getattr(auditSys, "activity", None) or []
-            if activity:
-                maxScore += 1
-                score += 1
-                details.append(f"감사위원회: {len(activity)}건 활동")
-            elif getattr(auditSys, "committee", None):
-                maxScore += 1
-                details.append("감사위원회: 설치됨 (활동 미확인)")
-    except AttributeError:
-        pass
-
-    div = rpt.dividend
-    if div is not None and div.dps:
-        maxScore += 3
-        recentDps = [d for d in div.dps[-3:] if d is not None]
-        if recentDps and all(d > 0 for d in recentDps):
-            if len(recentDps) >= 3:
-                details.append(f"3년 연속 배당 (DPS: {recentDps[-1]:,.0f}원)")
-                opps.append(Flag("positive", "shareholder", "안정적 배당"))
-                score += 3
-            else:
-                details.append(f"배당 실시 (DPS: {recentDps[-1]:,.0f}원)")
-                score += 2
-        elif recentDps and recentDps[-1] > 0:
-            details.append(f"배당 재개 (DPS: {recentDps[-1]:,.0f}원)")
-            score += 1
-        else:
-            details.append("무배당")
-            risks.append(Flag("warning", "shareholder", "무배당"))
+    signals = [
+        _majorHolderSignal(rpt.majorHolder, details, risks, opps),
+        _auditOpinionSignal(audit, details, risks),
+        _auditorStabilitySignal(audit, details, risks),
+        _internalControlSignal(rpt, details, risks),
+        _auditCommitteeSignal(rpt, details),
+        _dividendSignal(rpt.dividend, details, risks, opps),
+    ]
+    for scoreDelta, maxDelta in signals:
+        score += scoreDelta
+        maxScore += maxDelta
 
     if maxScore == 0:
         return InsightResult("N", "지배구조 데이터 없음")
 
     grade = _scoreToGrade(score, maxScore)
-    summary = "지배구조 " + (
-        "우수"
-        if grade == "A"
-        else "안정"
-        if grade == "B"
-        else "보통"
-        if grade == "C"
-        else "주의"
-        if grade == "D"
-        else "위험"
-    )
-    return InsightResult(grade, summary, details, risks, opps)
+    return InsightResult(grade, _governanceSummary(grade), details, risks, opps)
 
 
 __all__ = ["_analyzeGovernanceFromSections", "analyzeGovernance"]

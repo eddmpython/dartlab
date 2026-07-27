@@ -17,6 +17,113 @@ from dartlab.core.utils.extract import getAnnualValues, getLatest
 from dartlab.frame.sector import Sector
 
 
+def _revenueGrowthSignal(
+    revGrowth: float,
+    revLabel: str,
+    details: list[str],
+    risks: list[Flag],
+    opps: list[Flag],
+) -> int:
+    """매출 성장률 구간별 설명 + 플래그.
+
+    Parameters
+    ----------
+    revGrowth : float
+        YoY 성장률 (%).
+    revLabel : str
+        '매출' 또는 금융업의 '영업이익'.
+    details, risks, opps : list
+        누적 구조. 제자리 변경.
+
+    Returns
+    -------
+    int
+        점수 증분.
+    """
+    if revGrowth > 20:
+        details.append(f"{revLabel} 고성장 (+{revGrowth:.1f}%)")
+        opps.append(Flag("strong", "growth", f"{revLabel} {revGrowth:.1f}% 성장"))
+        return 3
+    if revGrowth > 10:
+        details.append(f"{revLabel} 성장세 양호 (+{revGrowth:.1f}%)")
+        return 2
+    if revGrowth > 0:
+        details.append(f"{revLabel} 소폭 성장 (+{revGrowth:.1f}%)")
+        return 1
+    if revGrowth > -10:
+        details.append(f"{revLabel} 소폭 감소 ({revGrowth:.1f}%)")
+        return 0
+    details.append(f"{revLabel} 급감 ({revGrowth:.1f}%)")
+    risks.append(Flag("danger", "finance", f"{revLabel} {revGrowth:.1f}% 급감"))
+    return -2
+
+
+def _operatingGrowthSignal(
+    opGrowth: float,
+    details: list[str],
+    risks: list[Flag],
+    opps: list[Flag],
+) -> int:
+    """영업이익 성장률 구간별 설명 + 플래그.
+
+    Parameters
+    ----------
+    opGrowth : float
+        YoY 성장률 (%).
+    details, risks, opps : list
+        누적 구조. 제자리 변경.
+
+    Returns
+    -------
+    int
+        점수 증분.
+    """
+    if opGrowth > 50:
+        details.append(f"영업이익 급증 (+{opGrowth:.1f}%)")
+        opps.append(Flag("strong", "growth", f"영업이익 {opGrowth:.1f}% 급증"))
+        return 3
+    if opGrowth > 15:
+        details.append(f"영업이익 증가 (+{opGrowth:.1f}%)")
+        return 2
+    if opGrowth < -30:
+        details.append(f"영업이익 급감 ({opGrowth:.1f}%)")
+        risks.append(Flag("danger", "finance", f"영업이익 {opGrowth:.1f}% 급감"))
+        return -2
+    if opGrowth < -10:
+        details.append(f"영업이익 감소 ({opGrowth:.1f}%)")
+        risks.append(Flag("warning", "finance", f"영업이익 {opGrowth:.1f}% 감소"))
+        return -1
+    return 0
+
+
+def _performanceSummary(revGrowth: float | None, opGrowth: float | None, revLabel: str) -> str:
+    """성장률 조합을 한 줄 요약으로.
+
+    Parameters
+    ----------
+    revGrowth, opGrowth : float | None
+        매출 / 영업이익 YoY 성장률 (%).
+    revLabel : str
+        '매출' 또는 '영업이익'.
+
+    Returns
+    -------
+    str
+        요약 문장.
+    """
+    if revGrowth is None:
+        return "실적 데이터 부족"
+    if revGrowth > 20 and opGrowth and opGrowth > 30:
+        return f"{revLabel}·이익 고성장"
+    if revGrowth > 10 and opGrowth and opGrowth > 10:
+        return f"{revLabel}·이익 동반 성장"
+    if revGrowth > 0:
+        return f"{revLabel} 성장세 유지"
+    if revGrowth > -10:
+        return f"{revLabel} 정체"
+    return f"{revLabel} 감소 추세"
+
+
 def analyzePerformance(
     aSeries: dict,
     aYears: list[str],
@@ -132,39 +239,10 @@ def analyzePerformance(
         details.append(correctionNote)
 
     if revGrowth is not None:
-        if revGrowth > 20:
-            details.append(f"{revLabel} 고성장 (+{revGrowth:.1f}%)")
-            opps.append(Flag("strong", "growth", f"{revLabel} {revGrowth:.1f}% 성장"))
-            score += 3
-        elif revGrowth > 10:
-            details.append(f"{revLabel} 성장세 양호 (+{revGrowth:.1f}%)")
-            score += 2
-        elif revGrowth > 0:
-            details.append(f"{revLabel} 소폭 성장 (+{revGrowth:.1f}%)")
-            score += 1
-        elif revGrowth > -10:
-            details.append(f"{revLabel} 소폭 감소 ({revGrowth:.1f}%)")
-        else:
-            details.append(f"{revLabel} 급감 ({revGrowth:.1f}%)")
-            risks.append(Flag("danger", "finance", f"{revLabel} {revGrowth:.1f}% 급감"))
-            score -= 2
+        score += _revenueGrowthSignal(revGrowth, revLabel, details, risks, opps)
 
     if opGrowth is not None and not isFinancial:
-        if opGrowth > 50:
-            details.append(f"영업이익 급증 (+{opGrowth:.1f}%)")
-            opps.append(Flag("strong", "growth", f"영업이익 {opGrowth:.1f}% 급증"))
-            score += 3
-        elif opGrowth > 15:
-            details.append(f"영업이익 증가 (+{opGrowth:.1f}%)")
-            score += 2
-        elif opGrowth < -30:
-            details.append(f"영업이익 급감 ({opGrowth:.1f}%)")
-            risks.append(Flag("danger", "finance", f"영업이익 {opGrowth:.1f}% 급감"))
-            score -= 2
-        elif opGrowth < -10:
-            details.append(f"영업이익 감소 ({opGrowth:.1f}%)")
-            risks.append(Flag("warning", "finance", f"영업이익 {opGrowth:.1f}% 감소"))
-            score -= 1
+        score += _operatingGrowthSignal(opGrowth, details, risks, opps)
 
     if revVolatility is not None and revVolatility > 30:
         details.append(f"{revLabel} 변동성 높음 (분기 최대 {revVolatility:.1f}%)")
@@ -175,18 +253,7 @@ def analyzePerformance(
         risks.append(Flag("warning", "finance", f"영업이익 변동성 {opVolatility:.1f}%"))
 
     grade = _scoreToGrade(score, 6)
-    if revGrowth is None:
-        summary = "실적 데이터 부족"
-    elif revGrowth > 20 and opGrowth and opGrowth > 30:
-        summary = f"{revLabel}·이익 고성장"
-    elif revGrowth > 10 and opGrowth and opGrowth > 10:
-        summary = f"{revLabel}·이익 동반 성장"
-    elif revGrowth > 0:
-        summary = f"{revLabel} 성장세 유지"
-    elif revGrowth > -10:
-        summary = f"{revLabel} 정체"
-    else:
-        summary = f"{revLabel} 감소 추세"
+    summary = _performanceSummary(revGrowth, opGrowth, revLabel)
 
     return InsightResult(grade, summary, details, risks, opps)
 

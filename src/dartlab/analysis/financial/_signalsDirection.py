@@ -281,6 +281,215 @@ def calcFlowDirection(company, *, basePeriod: str | None = None) -> dict | None:
 # ══════════════════════════════════════
 
 
+def _quarterlyYoyDirections(revRow: dict, isPeriods: list[str], qCols: list[str]) -> list[dict]:
+    """최근 분기의 YoY 성장 방향 목록 (최신 먼저).
+
+    Parameters
+    ----------
+    revRow : dict
+        매출액 행 (period -> 값).
+    isPeriods : list[str]
+        IS 표의 기간 컬럼.
+    qCols : list[str]
+        분기 컬럼 (최신 먼저).
+
+    Returns
+    -------
+    list[dict]
+        period / yoyGrowth / positive 키를 가진 항목 목록.
+    """
+    directions: list[dict] = []
+    for col in qCols[:6]:
+        prevCol = f"{int(col[:4]) - 1}{col[-2:]}"
+        if prevCol not in isPeriods:
+            continue
+        cur = _get(revRow, col) or None
+        prev = _get(revRow, prevCol) or None
+        if cur is not None and prev is not None and prev != 0:
+            growth = (cur - prev) / abs(prev) * 100
+            directions.append({"period": col, "yoyGrowth": round(growth, 1), "positive": growth > 0})
+    return directions
+
+
+def _momentumStreak(directions: list[dict]) -> int:
+    """같은 방향이 연속된 분기 수 (최대 3).
+
+    Parameters
+    ----------
+    directions : list[dict]
+        _quarterlyYoyDirections 결과.
+
+    Returns
+    -------
+    int
+        1 ~ 3.
+    """
+    streak = 1
+    if len(directions) >= 2 and directions[0]["positive"] == directions[1]["positive"]:
+        streak = 2
+    if len(directions) >= 3 and streak == 2 and directions[1]["positive"] == directions[2]["positive"]:
+        streak = 3
+    return streak
+
+
+def _marginConfirmation(revRow: dict, oiRow: dict, latest: dict) -> tuple[float | None, bool | None]:
+    """확인1: 영업이익률 부호가 매출 방향과 일치하는지 (76.1%). API 불필요.
+
+    Parameters
+    ----------
+    revRow, oiRow : dict
+        매출액 / 영업이익 행.
+    latest : dict
+        최신 분기 방향 항목.
+
+    Returns
+    -------
+    tuple[float | None, bool | None]
+        (영업이익률 %, 방향 일치 여부).
+    """
+    latestRev = _get(revRow, latest["period"]) or None
+    latestOi = _get(oiRow, latest["period"]) or None
+    marginPositive = None
+    margin = None
+    if latestRev and latestOi and latestRev != 0:
+        margin = latestOi / latestRev * 100
+        marginPositive = margin > 0
+
+    marginAgree = None
+    if marginPositive is not None:
+        # 매출 성장(+) + 영업이익률 양(+) 이면 일치.
+        # 매출 하락(-) + 영업이익률 음(-) 이면 일치.
+        marginAgree = latest["positive"] == marginPositive
+    return margin, marginAgree
+
+
+def _olsConfirmation(company, basePeriod: str | None, latest: dict) -> bool | None:
+    """확인2: OLS 외생변수 방향이 매출 방향과 일치하는지.
+
+    Parameters
+    ----------
+    company : Any
+        기업 객체.
+    basePeriod : str | None
+        기준 기간.
+    latest : dict
+        최신 분기 방향 항목.
+
+    Returns
+    -------
+    bool | None
+        일치 여부. 회귀 실패 시 None.
+    """
+    from dartlab.analysis.financial.predictionSignals import calcMacroRegression  # noqa: PLC0415
+
+    macroReg = calcMacroRegression(company, basePeriod=basePeriod)
+    if not (macroReg and macroReg.get("betas")):
+        return None
+    olsDirection = macroReg.get("_predictedDirection")
+    if olsDirection is None:
+        return None
+    return (olsDirection == "up") == latest["positive"]
+
+
+def _industryOf(company) -> str | None:
+    """KIND 목록에서 업종 코드를 찾는다. 실패하면 None.
+
+    Parameters
+    ----------
+    company : Any
+        기업 객체.
+
+    Returns
+    -------
+    str | None
+        업종 키.
+    """
+    _getSectorKey(company)
+    try:
+        from dartlab.gather.mapping.exogenousAxes import _lookupFromKindList
+
+        industry, _ = _lookupFromKindList(_getStockCode(company) or "")
+        return industry
+    except (ImportError, TypeError):
+        return None
+
+
+def _directionPosterior(
+    prior: float,
+    streak: int,
+    margin: float | None,
+    latest: dict,
+    olsAgree: bool | None,
+) -> float:
+    """세 신호를 베이즈 갱신으로 누적한 사후확률.
+
+    Parameters
+    ----------
+    prior : float
+        업종별 사전확률.
+    streak : int
+        연속 동일 방향 분기 수.
+    margin : float | None
+        최신 영업이익률 (%).
+    latest : dict
+        최신 분기 방향 항목.
+    olsAgree : bool | None
+        OLS 일치 여부.
+
+    Returns
+    -------
+    float
+        갱신된 사후확률.
+    """
+    posterior = prior
+
+    # 신호 1: streak (2연속 74.7%, 3연속은 더 강함)
+    if streak >= 3:
+        posterior = _bayesUpdate(posterior, 0.78)
+    elif streak >= 2:
+        posterior = _bayesUpdate(posterior, 0.747)
+
+    # 신호 2: 영업이익률 (연속 값이라 크기를 반영)
+    if margin is not None:
+        if latest["positive"]:
+            # 매출 성장 + 마진 크기에 따라 차등 갱신
+            marginEvidence = min(0.85, 0.72 + margin * 0.003) if margin > 0 else max(0.55, 0.72 - abs(margin) * 0.005)
+        else:
+            # 매출 하락 + 마진 부정이면 하락 확신 강화
+            marginEvidence = max(0.55, 0.72 - margin * 0.003) if margin < 0 else min(0.85, 0.72 + abs(margin) * 0.003)
+        posterior = _bayesUpdate(posterior, marginEvidence)
+
+    # 신호 3: OLS 외생변수 (일치/불일치)
+    if olsAgree is True:
+        posterior = _bayesUpdate(posterior, 0.777)
+    elif olsAgree is False:
+        posterior = _bayesUpdate(posterior, 0.425)  # 불일치 시 하향 (OLS 가 42.5%)
+
+    return posterior
+
+
+def _directionConfidence(calibrated: float) -> str:
+    """보정 확률을 신뢰도 등급으로 매핑.
+
+    Parameters
+    ----------
+    calibrated : float
+        보정된 사후확률.
+
+    Returns
+    -------
+    str
+        'very_high' | 'high' | 'medium' | 'low'.
+    """
+    if calibrated >= 0.78:
+        return "very_high"
+    if calibrated >= 0.73:
+        return "high"
+    if calibrated >= 0.65:
+        return "medium"
+    return "low"
+
+
 @memoizedCalc
 def calcRevenueDirection(company, *, basePeriod: str | None = None) -> dict | None:
     """매출 방향 예측 — 모멘텀 + 영업이익률 확인 + OLS 확인.
@@ -355,16 +564,7 @@ def calcRevenueDirection(company, *, basePeriod: str | None = None) -> dict | No
     qCols = sorted([p for p in isPeriods if "Q" in p], reverse=True)
 
     # 최근 분기 YoY
-    directions: list[dict] = []
-    for col in qCols[:6]:
-        prevCol = f"{int(col[:4]) - 1}{col[-2:]}"
-        if prevCol not in isPeriods:
-            continue
-        cur = _get(revRow, col) or None
-        prev = _get(revRow, prevCol) or None
-        if cur is not None and prev is not None and prev != 0:
-            growth = (cur - prev) / abs(prev) * 100
-            directions.append({"period": col, "yoyGrowth": round(growth, 1), "positive": growth > 0})
+    directions = _quarterlyYoyDirections(revRow, isPeriods, qCols)
 
     if not directions:
         return None
@@ -374,84 +574,30 @@ def calcRevenueDirection(company, *, basePeriod: str | None = None) -> dict | No
     direction = "up" if latest["positive"] else "down"
 
     # 2연속 모멘텀 (74.7%)
-    streak = 1
-    if len(directions) >= 2 and directions[0]["positive"] == directions[1]["positive"]:
-        streak = 2
-    if len(directions) >= 3 and streak == 2 and directions[1]["positive"] == directions[2]["positive"]:
-        streak = 3
+    streak = _momentumStreak(directions)
 
-    # 확인1: 영업이익률 > 0 (76.1% — API 불필요, 가장 빠른 확인)
-    latestRev = _get(revRow, directions[0]["period"]) or None
-    latestOi = _get(oiRow, directions[0]["period"]) or None
-    marginPositive = None
-    margin = None
-    if latestRev and latestOi and latestRev != 0:
-        margin = latestOi / latestRev * 100
-        marginPositive = margin > 0
-
-    marginAgree = None
-    if marginPositive is not None:
-        # 매출 성장(+) + 영업이익률 양(+) → 일치
-        # 매출 하락(-) + 영업이익률 음(-) → 일치
-        marginAgree = latest["positive"] == marginPositive
+    margin, marginAgree = _marginConfirmation(revRow, oiRow, latest)
 
     # 확인2: OLS 외생변수 (lazy import 로 module 순환 회피)
-    from dartlab.analysis.financial.predictionSignals import calcMacroRegression  # noqa: PLC0415
+    olsAgree = _olsConfirmation(company, basePeriod, latest)
 
-    macroReg = calcMacroRegression(company, basePeriod=basePeriod)
-    olsAgree = None
-    if macroReg and macroReg.get("betas"):
-        olsDirection = macroReg.get("_predictedDirection")
-        if olsDirection is not None:
-            olsAgree = (olsDirection == "up") == latest["positive"]
-
-    # 베이즈 사후확률 갱신 — 업종별 사전확률에서 시작
+    # 베이즈 사후확률 갱신. 업종별 사전확률에서 시작한다.
     # 슈퍼예측가 원리: 사전확률이 정확할수록 사후확률도 정확
-    _getSectorKey(company)
-    industry = None
-    try:
-        from dartlab.gather.mapping.exogenousAxes import _lookupFromKindList
+    industry = _industryOf(company)
+    posterior = _directionPosterior(
+        _INDUSTRY_PRIOR.get(industry or "", _DEFAULT_PRIOR),
+        streak,
+        margin,
+        latest,
+        olsAgree,
+    )
 
-        industry, _ = _lookupFromKindList(_getStockCode(company) or "")
-    except (ImportError, TypeError):
-        pass
-    posterior = _INDUSTRY_PRIOR.get(industry or "", _DEFAULT_PRIOR)
-
-    # 신호 1: streak (2연속 → 74.7%, 3연속 → 더 강함)
-    if streak >= 3:
-        posterior = _bayesUpdate(posterior, 0.78)
-    elif streak >= 2:
-        posterior = _bayesUpdate(posterior, 0.747)
-
-    # 신호 2: 영업이익률 (연속 값 — 크기 반영)
-    if margin is not None:
-        if latest["positive"]:
-            # 매출 성장 + 마진 크기에 따라 차등 갱신
-            marginEvidence = min(0.85, 0.72 + margin * 0.003) if margin > 0 else max(0.55, 0.72 - abs(margin) * 0.005)
-        else:
-            # 매출 하락 + 마진 부정이면 하락 확신 강화
-            marginEvidence = max(0.55, 0.72 - margin * 0.003) if margin < 0 else min(0.85, 0.72 + abs(margin) * 0.003)
-        posterior = _bayesUpdate(posterior, marginEvidence)
-
-    # 신호 3: OLS 외생변수 (일치/불일치)
-    if olsAgree is True:
-        posterior = _bayesUpdate(posterior, 0.777)
-    elif olsAgree is False:
-        posterior = _bayesUpdate(posterior, 0.425)  # 불일치 시 하향 (OLS가 42.5%)
-
-    # 보정: 원시 posterior를 실측 기반으로 재보정
-    # 원시 78~85% → 실측 62~73%. 선형 보정으로 과신 제거.
+    # 보정: 원시 posterior 를 실측 기반으로 재보정.
+    # 원시 78~85% 가 실측 62~73%. 선형 보정으로 과신 제거.
     calibrated = _calibrate(posterior)
 
     # 신뢰도 등급 (보정된 확률 기준)
-    if calibrated >= 0.78:
-        confidence = "very_high"
-    elif calibrated >= 0.73:
-        confidence = "high"
-    elif calibrated >= 0.65:
-        confidence = "medium"
-    else:
-        confidence = "low"
+    confidence = _directionConfidence(calibrated)
 
     # 하위호환: confirms도 유지
     confirms = sum(1 for x in [marginAgree, olsAgree, streak >= 2] if x)

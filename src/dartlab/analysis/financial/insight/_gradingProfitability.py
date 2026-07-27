@@ -17,6 +17,159 @@ from dartlab.core.utils.extract import getAnnualValues, getLatest
 from dartlab.frame.sector import Sector
 
 
+def _operatingMarginSignal(om: float, details: list[str], risks: list[Flag], opps: list[Flag]) -> int:
+    """영업이익률 구간 판정 (20/10/5/0%).
+
+    Parameters
+    ----------
+    om : float
+        영업이익률 (%).
+    details, risks, opps : list
+        누적 구조. 제자리 변경.
+
+    Returns
+    -------
+    int
+        점수 증분.
+    """
+    if om > 20:
+        details.append(f"영업이익률 우수 ({om:.1f}%)")
+        opps.append(Flag("strong", "finance", f"영업이익률 {om:.1f}%"))
+        return 3
+    if om > 10:
+        details.append(f"영업이익률 양호 ({om:.1f}%)")
+        return 2
+    if om > 5:
+        details.append(f"영업이익률 보통 ({om:.1f}%)")
+        return 1
+    if om < 0:
+        details.append(f"영업적자 ({om:.1f}%)")
+        risks.append(Flag("danger", "finance", f"영업이익률 {om:.1f}%. 적자"))
+        return -2
+    details.append(f"영업이익률 저조 ({om:.1f}%)")
+    return -1
+
+
+def _marginGapSignal(om: float, nm: float, details: list[str], risks: list[Flag], opps: list[Flag]) -> None:
+    """영업이익률과 순이익률 괴리 해석. 점수에는 영향 없다.
+
+    Parameters
+    ----------
+    om, nm : float
+        영업이익률, 순이익률 (%).
+    details, risks, opps : list
+        누적 구조. 제자리 변경.
+    """
+    gap = nm - om
+    gapRatio = (gap / abs(om)) * 100
+    if abs(gapRatio) > 50:
+        if gap > 0:
+            details.append(f"영업외수익 발생 (순이익률 {nm:.1f}% > 영업이익률 {om:.1f}%)")
+            risks.append(Flag("warning", "finance", "본업 외 수익에 의존"))
+        else:
+            details.append(f"영업외비용 발생 (순이익률 {nm:.1f}% < 영업이익률 {om:.1f}%)")
+            risks.append(Flag("warning", "finance", "영업외비용 확인 필요"))
+    elif abs(gap) < 2 and nm > 0:
+        details.append("영업이익≈순이익. 본업 중심 수익구조")
+        opps.append(Flag("positive", "finance", "건전한 수익구조"))
+
+
+def _roeSignal(roe: float, details: list[str], opps: list[Flag]) -> int:
+    """ROE 구간 판정 (20/10/5%).
+
+    Parameters
+    ----------
+    roe : float
+        자기자본이익률 (%).
+    details, opps : list
+        누적 구조. 제자리 변경.
+
+    Returns
+    -------
+    int
+        점수 증분.
+    """
+    if roe > 20:
+        details.append(f"ROE 우수 ({roe:.1f}%)")
+        opps.append(Flag("strong", "finance", f"ROE {roe:.1f}%"))
+        return 2
+    if roe > 10:
+        details.append(f"ROE 양호 ({roe:.1f}%)")
+        return 1
+    if roe < 5:
+        details.append(f"ROE 저조 ({roe:.1f}%)")
+    return 0
+
+
+def _leverageSignal(
+    roe: float,
+    roa: float,
+    isFinancial: bool,
+    details: list[str],
+    risks: list[Flag],
+    opps: list[Flag],
+) -> None:
+    """ROE/ROA 배수로 레버리지 해석. 점수에는 영향 없다.
+
+    Parameters
+    ----------
+    roe, roa : float
+        자기자본이익률, 총자산이익률 (%). roa 는 양수 보장.
+    isFinancial : bool
+        금융업 여부.
+    details, risks, opps : list
+        누적 구조. 제자리 변경.
+    """
+    leverage = roe / roa
+    if isFinancial:
+        # 금융업은 구조적으로 레버리지가 높음 (예수부채). 경고 대상이 아님
+        details.append(f"금융업 레버리지 {leverage:.1f}x (구조적 특성)")
+    elif leverage > 4:
+        details.append(f"높은 레버리지로 ROE 달성 (ROE/ROA={leverage:.1f}x)")
+        risks.append(Flag("warning", "finance", f"ROE/ROA {leverage:.1f}x. 부채 활용 높음"))
+    elif leverage < 1.5 and roe > 15:
+        details.append("낮은 레버리지로 고ROE. 진성 수익성")
+        opps.append(Flag("strong", "finance", f"레버리지 {leverage:.1f}x로 ROE {roe:.1f}%"))
+
+
+def _sectorAdjustmentSignal(
+    om: float | None,
+    roe: float | None,
+    sector: Sector,
+    market: str,
+    details: list[str],
+) -> int:
+    """섹터 중앙값 대비 OM/ROE 보정.
+
+    Parameters
+    ----------
+    om, roe : float | None
+        영업이익률, ROE (%).
+    sector : Sector
+        업종.
+    market : str
+        시장 ('KR' | 'US').
+    details : list
+        누적 구조. 제자리 변경.
+
+    Returns
+    -------
+    int
+        점수 증분.
+    """
+    bm = getBenchmark(sector, market)
+    omAdj = sectorAdjustment(om, bm.omMedian, bm.omQ1, bm.omQ3)
+    roeAdj = sectorAdjustment(roe, bm.roeMedian, bm.roeQ1, bm.roeQ3)
+    adj = omAdj + roeAdj
+    if adj == 0:
+        return 0
+    direction = "상향" if adj > 0 else "하향"
+    omArrow = "↑" if omAdj > 0 else "↓" if omAdj < 0 else "→"
+    roeArrow = "↑" if roeAdj > 0 else "↓" if roeAdj < 0 else "→"
+    details.append(f"[섹터 보정 {direction}: {sector.value} 대비 OM{omArrow} ROE{roeArrow}]")
+    return adj
+
+
 def analyzeProfitability(
     ratios: RatioResult,
     aSeries: dict,
@@ -107,71 +260,18 @@ def analyzeProfitability(
     roa = ratios.roa
 
     if om is not None:
-        if om > 20:
-            details.append(f"영업이익률 우수 ({om:.1f}%)")
-            opps.append(Flag("strong", "finance", f"영업이익률 {om:.1f}%"))
-            score += 3
-        elif om > 10:
-            details.append(f"영업이익률 양호 ({om:.1f}%)")
-            score += 2
-        elif om > 5:
-            details.append(f"영업이익률 보통 ({om:.1f}%)")
-            score += 1
-        elif om < 0:
-            details.append(f"영업적자 ({om:.1f}%)")
-            risks.append(Flag("danger", "finance", f"영업이익률 {om:.1f}% — 적자"))
-            score -= 2
-        else:
-            details.append(f"영업이익률 저조 ({om:.1f}%)")
-            score -= 1
+        score += _operatingMarginSignal(om, details, risks, opps)
 
     if om is not None and nm is not None and om != 0:
-        gap = nm - om
-        gapRatio = (gap / abs(om)) * 100
-        if abs(gapRatio) > 50:
-            if gap > 0:
-                details.append(f"영업외수익 발생 (순이익률 {nm:.1f}% > 영업이익률 {om:.1f}%)")
-                risks.append(Flag("warning", "finance", "본업 외 수익에 의존"))
-            else:
-                details.append(f"영업외비용 발생 (순이익률 {nm:.1f}% < 영업이익률 {om:.1f}%)")
-                risks.append(Flag("warning", "finance", "영업외비용 확인 필요"))
-        elif abs(gap) < 2 and nm > 0:
-            details.append("영업이익≈순이익 — 본업 중심 수익구조")
-            opps.append(Flag("positive", "finance", "건전한 수익구조"))
+        _marginGapSignal(om, nm, details, risks, opps)
 
     if roe is not None:
-        if roe > 20:
-            details.append(f"ROE 우수 ({roe:.1f}%)")
-            opps.append(Flag("strong", "finance", f"ROE {roe:.1f}%"))
-            score += 2
-        elif roe > 10:
-            details.append(f"ROE 양호 ({roe:.1f}%)")
-            score += 1
-        elif roe < 5:
-            details.append(f"ROE 저조 ({roe:.1f}%)")
+        score += _roeSignal(roe, details, opps)
 
     if roe is not None and roa is not None and roa > 0:
-        leverage = roe / roa
-        if isFinancial:
-            # 금융업은 구조적으로 레버리지가 높음 (예수부채). 경고 대상이 아님
-            details.append(f"금융업 레버리지 {leverage:.1f}x (구조적 특성)")
-        elif leverage > 4:
-            details.append(f"높은 레버리지로 ROE 달성 (ROE/ROA={leverage:.1f}x)")
-            risks.append(Flag("warning", "finance", f"ROE/ROA {leverage:.1f}x — 부채 활용 높음"))
-        elif leverage < 1.5 and roe > 15:
-            details.append("낮은 레버리지로 고ROE — 진성 수익성")
-            opps.append(Flag("strong", "finance", f"레버리지 {leverage:.1f}x로 ROE {roe:.1f}%"))
+        _leverageSignal(roe, roa, isFinancial, details, risks, opps)
 
-    bm = getBenchmark(sector, market)
-    omAdj = sectorAdjustment(om, bm.omMedian, bm.omQ1, bm.omQ3)
-    roeAdj = sectorAdjustment(roe, bm.roeMedian, bm.roeQ1, bm.roeQ3)
-    adj = omAdj + roeAdj
-    if adj != 0:
-        score += adj
-        direction = "상향" if adj > 0 else "하향"
-        details.append(
-            f"[섹터 보정 {direction}: {sector.value} 대비 OM{'↑' if omAdj > 0 else '↓' if omAdj < 0 else '→'} ROE{'↑' if roeAdj > 0 else '↓' if roeAdj < 0 else '→'}]"
-        )
+    score += _sectorAdjustmentSignal(om, roe, sector, market, details)
 
     grade = _scoreToGrade(score, 5)
     summary = "수익성 " + ("우수" if score >= 4 else "양호" if score >= 2 else "보통" if score >= 0 else "개선 필요")

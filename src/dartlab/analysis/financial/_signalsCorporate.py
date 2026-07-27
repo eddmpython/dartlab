@@ -163,6 +163,106 @@ def calcDisclosureDelta(company, *, basePeriod: str | None = None) -> dict | Non
 # ══════════════════════════════════════
 
 
+def _workingCapitalEntry(i: int, col: str, yCols: list[str], rows: dict[str, dict]) -> dict:
+    """한 연도의 운전자본 지표 (DSO/DIO/성장률/괴리/NOA).
+
+    Parameters
+    ----------
+    i : int
+        yCols 안의 위치 (0 이 최신).
+    col : str
+        해당 연도 컬럼.
+    yCols : list[str]
+        연도 컬럼 목록 (최신 먼저).
+    rows : dict[str, dict]
+        inv/ar/ap/ta/rev/cogs 행 dict.
+
+    Returns
+    -------
+    dict
+        history 항목 한 장.
+    """
+    inv = _get(rows["inv"], col)
+    ar = _get(rows["ar"], col)
+    ap = _get(rows["ap"], col)
+    ta = _get(rows["ta"], col)
+    rev = _get(rows["rev"], col)
+    cogs = _get(rows["cogs"], col)
+
+    # DSO / DIO
+    dso = (ar / rev * 365) if rev > 0 else None
+    dio = (inv / cogs * 365) if cogs > 0 else None
+
+    # YoY 성장률
+    invGrowth = None
+    revGrowth = None
+    arGrowth = None
+    if i + 1 < len(yCols):
+        prevCol = yCols[i + 1]
+        prevInv = _get(rows["inv"], prevCol)
+        prevRev = _get(rows["rev"], prevCol)
+        prevAr = _get(rows["ar"], prevCol)
+        if prevInv > 0:
+            invGrowth = ((inv - prevInv) / prevInv) * 100
+        if prevRev > 0:
+            revGrowth = ((rev - prevRev) / prevRev) * 100
+        if prevAr > 0:
+            arGrowth = ((ar - prevAr) / prevAr) * 100
+
+    divergence = None
+    if invGrowth is not None and revGrowth is not None:
+        divergence = invGrowth - revGrowth
+
+    arDivergence = None
+    if arGrowth is not None and revGrowth is not None:
+        arDivergence = arGrowth - revGrowth
+
+    # NOA = (자산 - 현금) - (부채 - 금융부채). 간이로 자산 - 매입채무 - 현금.
+    noa = ta - ap if ta > 0 else None
+
+    return {
+        "period": col,
+        "inventory": inv,
+        "receivables": ar,
+        "revenue": rev,
+        "inventoryGrowth": round(invGrowth, 1) if invGrowth is not None else None,
+        "revenueGrowth": round(revGrowth, 1) if revGrowth is not None else None,
+        "divergence": round(divergence, 1) if divergence is not None else None,
+        "arDivergence": round(arDivergence, 1) if arDivergence is not None else None,
+        "dso": round(dso, 1) if dso is not None else None,
+        "dio": round(dio, 1) if dio is not None else None,
+        "noa": noa,
+    }
+
+
+def _divergenceSignal(history: list[dict], key: str, aboveLabel: str, belowLabel: str) -> str:
+    """최근 2 년 괴리 평균으로 신호 라벨을 고른다. 재고/매출채권 공통 모양.
+
+    Parameters
+    ----------
+    history : list[dict]
+        _workingCapitalEntry 결과 목록 (최신 먼저).
+    key : str
+        괴리 키 ('divergence' | 'arDivergence').
+    aboveLabel, belowLabel : str
+        +5 초과 / -5 미만일 때 라벨.
+
+    Returns
+    -------
+    str
+        신호 라벨. 근거 없으면 'stable'.
+    """
+    recent = [h[key] for h in history[:2] if h[key] is not None]
+    if not recent:
+        return "stable"
+    avg = sum(recent) / len(recent)
+    if avg > 5:
+        return aboveLabel
+    if avg < -5:
+        return belowLabel
+    return "stable"
+
+
 @memoizedCalc
 def calcInventoryDivergence(company, *, basePeriod: str | None = None) -> dict | None:
     """재고/매출채권 괴리 — 수요 둔화 선행 지표.
@@ -232,90 +332,17 @@ def calcInventoryDivergence(company, *, basePeriod: str | None = None) -> dict |
     if len(yCols) < 3:
         return None
 
-    history = []
-    for i, col in enumerate(yCols):
-        inv = _get(invRow, col)
-        ar = _get(arRow, col)
-        ap = _get(apRow, col)
-        ta = _get(taRow, col)
-        rev = _get(revRow, col)
-        cogs = _get(cogsRow, col)
-
-        # DSO / DIO
-        dso = (ar / rev * 365) if rev > 0 else None
-        dio = (inv / cogs * 365) if cogs > 0 else None
-
-        # YoY 성장률
-        invGrowth = None
-        revGrowth = None
-        arGrowth = None
-        if i + 1 < len(yCols):
-            prevCol = yCols[i + 1]
-            prevInv = _get(invRow, prevCol)
-            prevRev = _get(revRow, prevCol)
-            prevAr = _get(arRow, prevCol)
-            if prevInv > 0:
-                invGrowth = ((inv - prevInv) / prevInv) * 100
-            if prevRev > 0:
-                revGrowth = ((rev - prevRev) / prevRev) * 100
-            if prevAr > 0:
-                arGrowth = ((ar - prevAr) / prevAr) * 100
-
-        divergence = None
-        if invGrowth is not None and revGrowth is not None:
-            divergence = invGrowth - revGrowth
-
-        arDivergence = None
-        if arGrowth is not None and revGrowth is not None:
-            arDivergence = arGrowth - revGrowth
-
-        # NOA = (자산 - 현금) - (부채 - 금융부채) ≈ 자산 - 매입채무 - 현금 (간이)
-        noa = ta - ap if ta > 0 else None
-
-        history.append(
-            {
-                "period": col,
-                "inventory": inv,
-                "receivables": ar,
-                "revenue": rev,
-                "inventoryGrowth": round(invGrowth, 1) if invGrowth is not None else None,
-                "revenueGrowth": round(revGrowth, 1) if revGrowth is not None else None,
-                "divergence": round(divergence, 1) if divergence is not None else None,
-                "arDivergence": round(arDivergence, 1) if arDivergence is not None else None,
-                "dso": round(dso, 1) if dso is not None else None,
-                "dio": round(dio, 1) if dio is not None else None,
-                "noa": noa,
-            }
-        )
+    rows = {"inv": invRow, "ar": arRow, "ap": apRow, "ta": taRow, "rev": revRow, "cogs": cogsRow}
+    history = [_workingCapitalEntry(i, col, yCols, rows) for i, col in enumerate(yCols)]
 
     if not history:
         return None
 
     # 재고 신호 판단 (최근 2년)
-    recentDiv = [h["divergence"] for h in history[:2] if h["divergence"] is not None]
-    if recentDiv:
-        avgDiv = sum(recentDiv) / len(recentDiv)
-        if avgDiv > 5:
-            inventorySignal = "building"
-        elif avgDiv < -5:
-            inventorySignal = "liquidating"
-        else:
-            inventorySignal = "stable"
-    else:
-        inventorySignal = "stable"
+    inventorySignal = _divergenceSignal(history, "divergence", "building", "liquidating")
 
     # 매출채권 신호
-    recentArDiv = [h["arDivergence"] for h in history[:2] if h["arDivergence"] is not None]
-    if recentArDiv:
-        avgArDiv = sum(recentArDiv) / len(recentArDiv)
-        if avgArDiv > 5:
-            receivableSignal = "deteriorating"
-        elif avgArDiv < -5:
-            receivableSignal = "improving"
-        else:
-            receivableSignal = "stable"
-    else:
-        receivableSignal = "stable"
+    receivableSignal = _divergenceSignal(history, "arDivergence", "deteriorating", "improving")
 
     # NOA 성장률
     noaGrowth = None

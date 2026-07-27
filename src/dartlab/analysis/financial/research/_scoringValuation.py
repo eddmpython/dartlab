@@ -20,6 +20,105 @@ from dartlab.analysis.financial.research.types import (
 )
 
 
+def _qmjProfitability(aSeries: dict, ni: float | None, ta: float | None) -> float | None:
+    """QMJ 수익성 축. ROE/ROA/GM/CFOA 중 산정 가능한 것의 평균.
+
+    Parameters
+    ----------
+    aSeries : dict
+        연간 재무 시계열.
+    ni, ta : float | None
+        순이익, 총자산 최신값.
+
+    Returns
+    -------
+    float | None
+        평균 수익성. 산정 가능한 지표가 없으면 None.
+    """
+    eq = _latest(aSeries, "BS", "total_stockholders_equity")
+    sales = _latest(aSeries, "IS", "sales")
+    gp = _latest(aSeries, "IS", "gross_profit")
+    ocf = _latest(aSeries, "CF", "operating_cashflow")
+
+    roe = ni / eq if ni is not None and eq and eq > 0 else None
+    roa = ni / ta if ni is not None and ta and ta > 0 else None
+    gm = gp / sales if gp is not None and sales and sales > 0 else None
+    cfoa = ocf / ta if ocf is not None and ta and ta > 0 else None
+
+    profScores = [x for x in [roe, roa, gm, cfoa] if x is not None]
+    return sum(profScores) / len(profScores) if profScores else None
+
+
+def _qmjGrowth(aSeries: dict) -> float | None:
+    """QMJ 성장 축. 유효 매출 시계열의 CAGR.
+
+    Parameters
+    ----------
+    aSeries : dict
+        연간 재무 시계열.
+
+    Returns
+    -------
+    float | None
+        CAGR. 유효 매출이 3 개 미만이면 None.
+    """
+    salesList = aSeries.get("IS", {}).get("sales", [])
+    validSales = [v for v in salesList if v is not None and v > 0]
+    if len(validSales) < 3:
+        return None
+    n = len(validSales) - 1
+    return ((validSales[-1] / validSales[0]) ** (1 / n) - 1) if n > 0 else None
+
+
+def _qmjSafety(aSeries: dict, ta: float | None) -> float | None:
+    """QMJ 안전성 축. 부채비율 역수와 정규화 유동비율의 평균.
+
+    Parameters
+    ----------
+    aSeries : dict
+        연간 재무 시계열.
+    ta : float | None
+        총자산 최신값.
+
+    Returns
+    -------
+    float | None
+        안전성 점수. 산정 가능한 지표가 없으면 None.
+    """
+    tl = _latest(aSeries, "BS", "total_liabilities")
+    cl = _latest(aSeries, "BS", "current_liabilities")
+    ca = _latest(aSeries, "BS", "current_assets")
+    debtRatio = tl / ta if tl is not None and ta and ta > 0 else None
+    crRatio = ca / cl if ca is not None and cl and cl > 0 else None
+    safetyScores = []
+    if debtRatio is not None:
+        safetyScores.append(1 - debtRatio)  # 낮을수록 안전
+    if crRatio is not None:
+        safetyScores.append(min(crRatio / 2, 1))  # 정규화
+    return sum(safetyScores) / len(safetyScores) if safetyScores else None
+
+
+def _qmjPayout(aSeries: dict, ni: float | None) -> float | None:
+    """QMJ 배당 축. 배당지급액 절대값 / 순이익.
+
+    Parameters
+    ----------
+    aSeries : dict
+        연간 재무 시계열.
+    ni : float | None
+        순이익 최신값.
+
+    Returns
+    -------
+    float | None
+        배당성향. 순이익이 양수가 아니면 None.
+    """
+    div = _latest(aSeries, "CF", "dividends_paid")
+    if div is not None and ni is not None and ni > 0:
+        return abs(div) / ni
+    return None
+
+
 def calcQmj(
     aSeries: dict[str, dict[str, list[float | None]]],
     aYears: list[str],
@@ -68,48 +167,13 @@ def calcQmj(
     AIContext:
         QMJ composite 가 높은 종목은 quality 노출 강함.
     """
-    # --- Profitability ---
     ni = _latest(aSeries, "IS", "net_profit")
-    eq = _latest(aSeries, "BS", "total_stockholders_equity")
     ta = _latest(aSeries, "BS", "total_assets")
-    sales = _latest(aSeries, "IS", "sales")
-    gp = _latest(aSeries, "IS", "gross_profit")
-    ocf = _latest(aSeries, "CF", "operating_cashflow")
 
-    roe = ni / eq if ni is not None and eq and eq > 0 else None
-    roa = ni / ta if ni is not None and ta and ta > 0 else None
-    gm = gp / sales if gp is not None and sales and sales > 0 else None
-    cfoa = ocf / ta if ocf is not None and ta and ta > 0 else None
-
-    profScores = [x for x in [roe, roa, gm, cfoa] if x is not None]
-    profitability = sum(profScores) / len(profScores) if profScores else None
-
-    # --- Growth (5Y 성장률 평균) ---
-    salesList = aSeries.get("IS", {}).get("sales", [])
-    validSales = [v for v in salesList if v is not None and v > 0]
-    growth = None
-    if len(validSales) >= 3:
-        n = len(validSales) - 1
-        growth = ((validSales[-1] / validSales[0]) ** (1 / n) - 1) if n > 0 else None
-
-    # --- Safety (부채비율 역수 + 유동비율) ---
-    tl = _latest(aSeries, "BS", "total_liabilities")
-    cl = _latest(aSeries, "BS", "current_liabilities")
-    ca = _latest(aSeries, "BS", "current_assets")
-    debtRatio = tl / ta if tl is not None and ta and ta > 0 else None
-    crRatio = ca / cl if ca is not None and cl and cl > 0 else None
-    safetyScores = []
-    if debtRatio is not None:
-        safetyScores.append(1 - debtRatio)  # 낮을수록 안전
-    if crRatio is not None:
-        safetyScores.append(min(crRatio / 2, 1))  # 정규화
-    safety = sum(safetyScores) / len(safetyScores) if safetyScores else None
-
-    # --- Payout ---
-    div = _latest(aSeries, "CF", "dividends_paid")
-    payout = None
-    if div is not None and ni is not None and ni > 0:
-        payout = abs(div) / ni
+    profitability = _qmjProfitability(aSeries, ni, ta)
+    growth = _qmjGrowth(aSeries)
+    safety = _qmjSafety(aSeries, ta)
+    payout = _qmjPayout(aSeries, ni)
 
     # composite
     pillars = [profitability, growth, safety, payout]
@@ -286,6 +350,53 @@ def calcBuffettOwnerEarnings(
 # ══════════════════════════════════════
 
 
+def _duPontFactors(
+    ni: float | None,
+    s: float | None,
+    ta: float | None,
+    eq: float | None,
+    op: float | None,
+    ebt: float | None,
+    cl: float | None,
+    cash: float | None,
+) -> dict[str, float | None]:
+    """한 해의 DuPont 3 요소 + 5-factor 확장 + ROIC.
+
+    Parameters
+    ----------
+    ni, s, ta, eq : float | None
+        순이익, 매출, 총자산, 자본.
+    op, ebt : float | None
+        영업이익, 세전이익.
+    cl, cash : float | None
+        유동부채, 현금 (ROIC 의 투하자본 근사용).
+
+    Returns
+    -------
+    dict[str, float | None]
+        margin / turnover / leverage / roe / taxBurden / interestBurden / opMargin / roic.
+    """
+    # ROIC = NOPAT / IC, IC = TA - CL - Cash (근사)
+    roic = None
+    if op is not None and ta is not None:
+        ic = ta - (cl or 0) - (cash or 0)
+        if ic > 0:
+            nopat = op * (1 - 0.22)  # 법인세율 22% 근사
+            roic = nopat / ic
+
+    return {
+        "margin": ni / s if ni is not None and s and s > 0 else None,
+        "turnover": s / ta if s is not None and ta and ta > 0 else None,
+        "leverage": ta / eq if ta is not None and eq and eq > 0 else None,
+        "roe": ni / eq if ni is not None and eq and eq > 0 else None,
+        # 5-factor: taxBurden = NI/EBT, interestBurden = EBT/EBIT(=OP)
+        "taxBurden": ni / ebt if ni is not None and ebt is not None and ebt != 0 else None,
+        "interestBurden": ebt / op if ebt is not None and op is not None and op != 0 else None,
+        "opMargin": op / s if op is not None and s and s > 0 else None,
+        "roic": roic,
+    }
+
+
 def calcDuPont(
     aSeries: dict[str, dict[str, list[float | None]]],
     aYears: list[str],
@@ -362,41 +473,21 @@ def calcDuPont(
     n = min(len(niList), len(salesList), len(taList), len(eqList), len(aYears))
     start = max(0, n - 5)  # 최근 5년
     for i in range(start, n):
-        ni = niList[i]
-        s = salesList[i]
-        ta = taList[i]
-        eq = eqList[i]
         op = opList[i] if i < len(opList) else None
         ebt = ebtList[i] if i < len(ebtList) else None
         cl = clList[i] if i < len(clList) else None
         cash = cashList[i] if i < len(cashList) else None
 
-        margin = ni / s if ni is not None and s and s > 0 else None
-        turnover = s / ta if s is not None and ta and ta > 0 else None
-        lever = ta / eq if ta is not None and eq and eq > 0 else None
-        roe = ni / eq if ni is not None and eq and eq > 0 else None
+        f = _duPontFactors(niList[i], salesList[i], taList[i], eqList[i], op, ebt, cl, cash)
 
-        # 5-factor: taxBurden = NI/EBT, interestBurden = EBT/EBIT(=OP)
-        tb = ni / ebt if ni is not None and ebt is not None and ebt != 0 else None
-        ib = ebt / op if ebt is not None and op is not None and op != 0 else None
-        opm = op / s if op is not None and s and s > 0 else None
-
-        # ROIC = NOPAT / IC, IC = TA - CL - Cash (근사)
-        roic = None
-        if op is not None and ta is not None:
-            ic = ta - (cl or 0) - (cash or 0)
-            if ic > 0:
-                nopat = op * (1 - 0.22)  # 법인세율 22% 근사
-                roic = nopat / ic
-
-        margins.append(_round(margin))
-        turnovers.append(_round(turnover))
-        leverages.append(_round(lever))
-        roes.append(_round(roe))
-        taxBurdens.append(_round(tb))
-        interestBurdens.append(_round(ib))
-        opMargins.append(_round(opm))
-        roicList.append(_round(roic))
+        margins.append(_round(f["margin"]))
+        turnovers.append(_round(f["turnover"]))
+        leverages.append(_round(f["leverage"]))
+        roes.append(_round(f["roe"]))
+        taxBurdens.append(_round(f["taxBurden"]))
+        interestBurdens.append(_round(f["interestBurden"]))
+        opMargins.append(_round(f["opMargin"]))
+        roicList.append(_round(f["roic"]))
         periods.append(aYears[i])
 
     driver = _identifyDriver(margins, turnovers, leverages)

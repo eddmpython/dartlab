@@ -135,8 +135,6 @@ def calcStoryPrecedents(
 
 # 판정 문구에 이미 나가 있는 긴 줄표 (U+2014). 문구가 곧 반환 계약이라 바꾸지 않고,
 # 소스에는 리터럴을 남기지 않으려 코드포인트로 고정한다 (신규 문구에는 쓰지 않는다).
-_OUTPUT_DASH = chr(0x2014)
-
 # scan finance.parquet 에서 한 종목의 매출·영업이익을 찾을 때 쓰는 계정명 우선순위.
 _REVENUE_ACCOUNT_NAMES = ["매출액", "수익(매출액)", "영업수익"]
 _OPERATING_ACCOUNT_NAMES = ["영업이익", "영업이익(손실)"]
@@ -615,7 +613,7 @@ def _roicWaccPersistFlag(roicPct: float | None, waccPct: float | None) -> dict |
     return {
         "key": "roic_wacc_persist",
         "severity": "warn",
-        "reason": (f"ROIC {roicPct:.1f}% / WACC {waccPct:.1f}% = {ratio:.1f}x {_OUTPUT_DASH} 장기 경쟁 수렴 가정 위반"),
+        "reason": (f"ROIC {roicPct:.1f}% / WACC {waccPct:.1f}% = {ratio:.1f}x. 장기 경쟁 수렴 가정 위반"),
         "suggestedRetry": {"terminalGrowth": 2.0},
     }
 
@@ -642,7 +640,7 @@ def _storyNumbersGapFlag(valuation: dict[str, Any] | None) -> dict | None:
     return {
         "key": "story_numbers_gap",
         "severity": "info",
-        "reason": f"기업유형 미판정 {_OUTPUT_DASH} 서사 없는 숫자, Damodaran 원칙 위반",
+        "reason": "기업유형 미판정. 서사 없는 숫자, Damodaran 원칙 위반",
         "suggestedRetry": None,
     }
 
@@ -663,7 +661,7 @@ def _controlSynergyOverlapFlag(valuation: dict[str, Any] | None) -> dict | None:
         "severity": "critical",
         "reason": (
             f"Control premium {cp:,.0f} + Synergy {syn:,.0f} = {cp + syn:,.0f}"
-            f" 이 standalone {sq:,.0f} × 50% 초과 {_OUTPUT_DASH} 이중계산 위험"
+            f" 이 standalone {sq:,.0f} × 50% 초과. 이중계산 위험"
         ),
         "suggestedRetry": None,
     }

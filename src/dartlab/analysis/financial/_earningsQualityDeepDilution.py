@@ -130,6 +130,155 @@ def calcDilutionTrend(company, *, basePeriod: str | None = None) -> dict | None:
     }
 
 
+def _pickAccount(rowDict: dict, period: str, *keys: str) -> float | None:
+    """계정 별칭을 순서대로 훑어 첫 non-null 값.
+
+    Parameters
+    ----------
+    rowDict : dict
+        {계정키: {기간: 값}}.
+    period : str
+        기간 컬럼.
+    keys : str
+        시도할 계정 키 (snakeId 우선, 한국어 라벨 후순위).
+
+    Returns
+    -------
+    float | None
+        값. 없으면 None.
+    """
+    for k in keys:
+        row = rowDict.get(k) or {}
+        v = row.get(period)
+        if v is not None:
+            return float(v)
+    return None
+
+
+def _qualityInputs(isData: dict, bsData: dict, cfData: dict, t: str, t1: str) -> dict[str, float | None]:
+    """Beneish/Sloan 계산에 필요한 t·t1 계정을 한 번에 뽑는다.
+
+    Parameters
+    ----------
+    isData, bsData, cfData : dict
+        IS/BS/CF 파싱 결과.
+    t, t1 : str
+        당기 / 전기 연도.
+
+    Returns
+    -------
+    dict[str, float | None]
+        계정별 값 dict.
+    """
+    return {
+        "salesT": _pickAccount(isData, t, "sales", "매출액"),
+        "salesT1": _pickAccount(isData, t1, "sales", "매출액"),
+        "cogsT": _pickAccount(isData, t, "cost_of_sales", "매출원가"),
+        "cogsT1": _pickAccount(isData, t1, "cost_of_sales", "매출원가"),
+        "sgaT": _pickAccount(isData, t, "selling_and_administrative_expenses", "판매비와관리비"),
+        "sgaT1": _pickAccount(isData, t1, "selling_and_administrative_expenses", "판매비와관리비"),
+        "niT": _pickAccount(isData, t, "net_profit", "net_income", "당기순이익"),
+        "assetsT": _pickAccount(bsData, t, "total_assets", "자산총계"),
+        "assetsT1": _pickAccount(bsData, t1, "total_assets", "자산총계"),
+        "receivablesT": _pickAccount(bsData, t, "trade_receivables", "매출채권"),
+        "receivablesT1": _pickAccount(bsData, t1, "trade_receivables", "매출채권"),
+        "goodwillT": _pickAccount(bsData, t, "goodwill", "영업권"),
+        "liabilitiesT": _pickAccount(bsData, t, "total_liabilities", "부채총계"),
+        "liabilitiesT1": _pickAccount(bsData, t1, "total_liabilities", "부채총계"),
+        "ppeT": _pickAccount(bsData, t, "tangible_assets", "유형자산"),
+        "ppeT1": _pickAccount(bsData, t1, "tangible_assets", "유형자산"),
+        "ocfT": _pickAccount(cfData, t, "operating_cashflow"),
+    }
+
+
+def _beneishFromInputs(v: dict[str, float | None]):
+    """8 개 필수 계정이 모두 있을 때만 Beneish M-Score 산출.
+
+    Parameters
+    ----------
+    v : dict[str, float | None]
+        _qualityInputs 결과.
+
+    Returns
+    -------
+    Any | None
+        calcBeneishMScore 결과. 입력 부족 시 None.
+    """
+    required = (
+        v["salesT"],
+        v["salesT1"],
+        v["cogsT"],
+        v["cogsT1"],
+        v["sgaT"],
+        v["sgaT1"],
+        v["assetsT"],
+        v["assetsT1"],
+    )
+    if not all(x is not None for x in required):
+        return None
+    return calcBeneishMScore(
+        salesT=v["salesT"],
+        salesT1=v["salesT1"],
+        receivablesT=v["receivablesT"] or 0,
+        receivablesT1=v["receivablesT1"] or 0,
+        cogsT=v["cogsT"],
+        cogsT1=v["cogsT1"],
+        sgaT=v["sgaT"],
+        sgaT1=v["sgaT1"],
+        grossPropertyT=v["ppeT"] or 0,
+        grossPropertyT1=v["ppeT1"] or 0,
+        totalAssetsT=v["assetsT"],
+        totalAssetsT1=v["assetsT1"],
+        netIncomeT=v["niT"] or 0,
+        ocfT=v["ocfT"] or 0,
+        leverageT=(v["liabilitiesT"] / v["assetsT"]) if v["assetsT"] else 0,
+        leverageT1=(v["liabilitiesT1"] / v["assetsT1"]) if v["assetsT1"] else 0,
+        depreciationT=0,
+        depreciationT1=0,
+    )
+
+
+def _collectAuditFlags(company) -> list[dict]:
+    """감사의견 본문에서 red flag 키워드를 중복 없이 모은다.
+
+    Parameters
+    ----------
+    company : Any
+        기업 객체 (stockCode 사용).
+
+    Returns
+    -------
+    list[dict]
+        keyword 별 flag dict. 본문이 없으면 빈 목록.
+    """
+    auditFlags: list[dict] = []
+    try:
+        import polars as pl
+
+        from dartlab.providers.dart.panel.text import panelTableRows
+
+        code = getattr(company, "stockCode", None)
+        rows = (
+            (panelTableRows(code, sectionPattern="감사의견") or panelTableRows(code, sectionPattern="감사보고서"))
+            if code
+            else []
+        )
+        auditDf = pl.DataFrame(rows) if rows else None
+        if auditDf is not None and hasattr(auditDf, "to_dicts"):
+            seen: set = set()
+            for row in auditDf.to_dicts():
+                text = " ".join(str(x) for x in row.values() if isinstance(x, str))
+                for f in detectAuditFlags(text):
+                    key = f.get("keyword")
+                    if key and key not in seen:
+                        seen.add(key)
+                        auditFlags.append(f)
+    except (AttributeError, KeyError, TypeError, ValueError):
+        # 원본과 같은 자리에서 삼킨다. 이미 모은 flag 는 그대로 돌려준다.
+        pass
+    return auditFlags
+
+
 @memoizedCalc
 def calcQualityAnomalies(company, *, basePeriod: str | None = None) -> dict | None:
     """Damodaran Ch.4 + Beneish (1999) + Sloan (1996) 학술 표준 회계 품질.
@@ -199,90 +348,22 @@ def calcQualityAnomalies(company, *, basePeriod: str | None = None) -> dict | No
         return None
     t, t1 = annual_years[0], annual_years[1]
 
-    def _ga(rowDict: dict, period: str, *keys: str) -> float | None:
-        for k in keys:
-            row = rowDict.get(k) or {}
-            v = row.get(period)
-            if v is not None:
-                return float(v)
-        return None
-
-    sales_t = _ga(is_data, t, "sales", "매출액")
-    sales_t1 = _ga(is_data, t1, "sales", "매출액")
-    cogsT = _ga(is_data, t, "cost_of_sales", "매출원가")
-    cogs_t1 = _ga(is_data, t1, "cost_of_sales", "매출원가")
-    sgaT = _ga(is_data, t, "selling_and_administrative_expenses", "판매비와관리비")
-    sga_t1 = _ga(is_data, t1, "selling_and_administrative_expenses", "판매비와관리비")
-    ni_t = _ga(is_data, t, "net_profit", "net_income", "당기순이익")
-    assets_t = _ga(bs_data, t, "total_assets", "자산총계")
-    assets_t1 = _ga(bs_data, t1, "total_assets", "자산총계")
-    receivables_t = _ga(bs_data, t, "trade_receivables", "매출채권")
-    receivables_t1 = _ga(bs_data, t1, "trade_receivables", "매출채권")
-    goodwill_t = _ga(bs_data, t, "goodwill", "영업권")
-    liabilities_t = _ga(bs_data, t, "total_liabilities", "부채총계")
-    liabilities_t1 = _ga(bs_data, t1, "total_liabilities", "부채총계")
-    ppe_t = _ga(bs_data, t, "tangible_assets", "유형자산")
-    ppe_t1 = _ga(bs_data, t1, "tangible_assets", "유형자산")
-    ocfT = _ga(cf_data, t, "operating_cashflow")
+    v = _qualityInputs(is_data, bs_data, cf_data, t, t1)
 
     quality = _calcEarningsQualityFlagsBase(
-        salesT=sales_t or 0,
-        salesT1=sales_t1 or 0,
-        receivablesT=receivables_t or 0,
-        receivablesT1=receivables_t1 or 0,
-        netIncomeT=ni_t or 0,
-        ocfT=ocfT or 0,
-        totalAssetsT=assets_t or 0,
-        goodwillT=goodwill_t,
+        salesT=v["salesT"] or 0,
+        salesT1=v["salesT1"] or 0,
+        receivablesT=v["receivablesT"] or 0,
+        receivablesT1=v["receivablesT1"] or 0,
+        netIncomeT=v["niT"] or 0,
+        ocfT=v["ocfT"] or 0,
+        totalAssetsT=v["assetsT"] or 0,
+        goodwillT=v["goodwillT"],
     )
 
-    beneish = None
-    if all(v is not None for v in (sales_t, sales_t1, cogsT, cogs_t1, sgaT, sga_t1, assets_t, assets_t1)):
-        beneish = calcBeneishMScore(
-            salesT=sales_t,
-            salesT1=sales_t1,
-            receivablesT=receivables_t or 0,
-            receivablesT1=receivables_t1 or 0,
-            cogsT=cogsT,
-            cogsT1=cogs_t1,
-            sgaT=sgaT,
-            sgaT1=sga_t1,
-            grossPropertyT=ppe_t or 0,
-            grossPropertyT1=ppe_t1 or 0,
-            totalAssetsT=assets_t,
-            totalAssetsT1=assets_t1,
-            netIncomeT=ni_t or 0,
-            ocfT=ocfT or 0,
-            leverageT=(liabilities_t / assets_t) if assets_t else 0,
-            leverageT1=(liabilities_t1 / assets_t1) if assets_t1 else 0,
-            depreciationT=0,
-            depreciationT1=0,
-        )
+    beneish = _beneishFromInputs(v)
 
-    audit_flags: list[dict] = []
-    try:
-        import polars as pl
-
-        from dartlab.providers.dart.panel.text import panelTableRows
-
-        _code = getattr(company, "stockCode", None)
-        _r = (
-            (panelTableRows(_code, sectionPattern="감사의견") or panelTableRows(_code, sectionPattern="감사보고서"))
-            if _code
-            else []
-        )
-        audit_df = pl.DataFrame(_r) if _r else None
-        if audit_df is not None and hasattr(audit_df, "to_dicts"):
-            seen: set = set()
-            for row in audit_df.to_dicts():
-                text = " ".join(str(v) for v in row.values() if isinstance(v, str))
-                for f in detectAuditFlags(text):
-                    key = f.get("keyword")
-                    if key and key not in seen:
-                        seen.add(key)
-                        audit_flags.append(f)
-    except (AttributeError, KeyError, TypeError, ValueError):
-        pass
+    audit_flags = _collectAuditFlags(company)
 
     return {
         "score": quality["score"],

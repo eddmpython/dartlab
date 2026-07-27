@@ -114,6 +114,133 @@ def _estimateWacc(company) -> float | None:
 # ── ROIC (NOPAT / 투하자본) ──
 
 
+def _roicHistoryEntry(col: str, yCols: list[str], rows: dict[str, dict], bsData: dict) -> dict:
+    """한 연도의 NOPAT / 투하자본 / ROIC.
+
+    Parameters
+    ----------
+    col : str
+        연도 컬럼.
+    yCols : list[str]
+        연도 컬럼 목록 (자본 fallback 탐색용).
+    rows : dict[str, dict]
+        op/tax/pt/rev/eq/cash 행 dict.
+    bsData : dict
+        BS 전체 dict (차입금 합산용).
+
+    Returns
+    -------
+    dict
+        history 항목 한 장.
+    """
+    opIncome = _getF(rows["op"], col)
+    taxExpense = _getF(rows["tax"], col)
+    ptIncome = _getF(rows["pt"], col)
+    revenue = _getF(rows["rev"], col)
+
+    # 유효세율
+    effectiveTaxRate = abs(taxExpense) / abs(ptIncome) if ptIncome != 0 else 0.25
+    effectiveTaxRate = min(effectiveTaxRate, 0.5)
+
+    nopat = round(opIncome * (1 - effectiveTaxRate)) if opIncome != 0 else None
+
+    equity = _get(rows["eq"], col)
+    # equity 누락(0) 시 인접 기간 값으로 fallback (매핑 공백 대응)
+    if equity == 0:
+        for adjCol in yCols:
+            adjEq = _get(rows["eq"], adjCol)
+            if adjEq > 0:
+                equity = adjEq
+                break
+    # 차입금: 회사 키 패턴 무관 헬퍼
+    totalBorrowing = sumBorrowings(bsData, col)
+    cash = _get(rows["cash"], col)
+    investedCapital = equity + totalBorrowing - cash
+
+    roic = round(nopat / investedCapital * 100, 2) if nopat is not None and investedCapital > 0 else None
+
+    return {
+        "period": col,
+        "operatingIncome": opIncome if opIncome != 0 else None,
+        "effectiveTaxRate": round(effectiveTaxRate * 100, 2),
+        "nopat": nopat,
+        "revenue": revenue if revenue != 0 else None,
+        "equity": equity if equity != 0 else None,
+        "totalBorrowing": totalBorrowing if totalBorrowing > 0 else None,
+        "cash": cash if cash != 0 else None,
+        "investedCapital": investedCapital if investedCapital > 0 else None,
+        "roic": roic,
+        "roicYoy": _yoy(roic, None),  # 이전 기간 ROIC는 아래서 계산
+    }
+
+
+def _injectRoicDecomposition(history: list[dict]) -> None:
+    """Damodaran Excess Return 분해를 history 에 제자리 주입.
+
+    Parameters
+    ----------
+    history : list[dict]
+        _roicHistoryEntry 결과 목록.
+    """
+    from dartlab.core.utils.calc import decomposeRoic
+
+    for h in history:
+        op = h.get("operatingIncome")
+        rev = h.get("revenue")
+        ic = h.get("investedCapital")
+        etr = h.get("effectiveTaxRate")
+        if op is None or rev is None or ic is None:
+            h["decomposition"] = None
+            continue
+        h["decomposition"] = decomposeRoic(
+            operatingIncome=op,
+            revenue=rev,
+            investedCapital=ic,
+            effectiveTaxRate=etr / 100.0 if etr is not None else None,
+            wacc=h.get("waccEstimate"),
+        )
+
+
+def _injectRoicDrivers(history: list[dict]) -> None:
+    """ROIC 변화 driver 분해 (Margin x Turnover x Tax) 를 제자리 주입.
+
+    Parameters
+    ----------
+    history : list[dict]
+        decomposition 이 주입된 history.
+    """
+    try:
+        from dartlab.analysis.financial.attribution import decomposeRoicChange
+
+        for i in range(len(history) - 1):
+            cur = history[i]
+            prev = history[i + 1]
+            curD = cur.get("decomposition") or {}
+            prevD = prev.get("decomposition") or {}
+            roicT = cur.get("roic")
+            roicT1 = prev.get("roic")
+            marginT = curD.get("operatingMargin")
+            marginT1 = prevD.get("operatingMargin")
+            turnoverT = curD.get("assetTurnover")
+            turnoverT1 = prevD.get("assetTurnover")
+            if all(isinstance(v, (int, float)) for v in (roicT, roicT1, marginT, marginT1, turnoverT, turnoverT1)):
+                attribution = decomposeRoicChange(
+                    roicT=roicT,
+                    roicT1=roicT1,
+                    marginT=marginT,
+                    marginT1=marginT1,
+                    turnoverT=turnoverT,
+                    turnoverT1=turnoverT1,
+                    taxT=cur.get("effectiveTaxRate"),
+                    taxT1=prev.get("effectiveTaxRate"),
+                )
+                cur["drivers"] = attribution.get("drivers") or []
+                cur["driversExplained"] = attribution.get("explainedPct")
+    except (ImportError, AttributeError, TypeError, ValueError):
+        # 원본과 같은 자리에서 삼킨다. 이미 주입된 driver 는 그대로 둔다.
+        pass
+
+
 @memoizedCalc
 def calcRoicTimeline(company, *, basePeriod: str | None = None) -> dict | None:
     """ROIC 시계열 -- 투하자본 대비 실제 수익률.
@@ -201,50 +328,8 @@ def calcRoicTimeline(company, *, basePeriod: str | None = None) -> dict | None:
     if len(yCols) < 2:
         return None
 
-    history = []
-    for i, col in enumerate(yCols[:-1]):
-        yCols[i + 1] if i + 1 < len(yCols) else None
-        opIncome = _getF(opRow, col)
-        taxExpense = _getF(taxRow, col)
-        ptIncome = _getF(ptRow, col)
-        revenue = _getF(revRow, col)
-
-        # 유효세율
-        effectiveTaxRate = abs(taxExpense) / abs(ptIncome) if ptIncome != 0 else 0.25
-        effectiveTaxRate = min(effectiveTaxRate, 0.5)
-
-        nopat = round(opIncome * (1 - effectiveTaxRate)) if opIncome != 0 else None
-
-        equity = _get(eqRow, col)
-        # equity 누락(0) 시 인접 기간 값으로 fallback (매핑 공백 대응)
-        if equity == 0:
-            for adjCol in yCols:
-                adjEq = _get(eqRow, adjCol)
-                if adjEq > 0:
-                    equity = adjEq
-                    break
-        # 차입금: 회사 키 패턴 무관 헬퍼
-        totalBorrowing = sumBorrowings(bsData, col)
-        cash = _get(cashRow, col)
-        investedCapital = equity + totalBorrowing - cash
-
-        roic = round(nopat / investedCapital * 100, 2) if nopat is not None and investedCapital > 0 else None
-
-        history.append(
-            {
-                "period": col,
-                "operatingIncome": opIncome if opIncome != 0 else None,
-                "effectiveTaxRate": round(effectiveTaxRate * 100, 2),
-                "nopat": nopat,
-                "revenue": revenue if revenue != 0 else None,
-                "equity": equity if equity != 0 else None,
-                "totalBorrowing": totalBorrowing if totalBorrowing > 0 else None,
-                "cash": cash if cash != 0 else None,
-                "investedCapital": investedCapital if investedCapital > 0 else None,
-                "roic": roic,
-                "roicYoy": _yoy(roic, None),  # 이전 기간 ROIC는 아래서 계산
-            }
-        )
+    rows = {"op": opRow, "tax": taxRow, "pt": ptRow, "rev": revRow, "eq": eqRow, "cash": cashRow}
+    history = [_roicHistoryEntry(col, yCols, rows, bsData) for col in yCols[:-1]]
 
     # ROIC YoY 후처리 (history가 최신→과거 순)
     for i in range(len(history) - 1):
@@ -261,59 +346,10 @@ def calcRoicTimeline(company, *, basePeriod: str | None = None) -> dict | None:
             h["spread"] = round(roic - waccEstimate, 2) if roic is not None else None
 
     # Damodaran Excess Return 분해 주입
-    from dartlab.core.utils.calc import decomposeRoic
-
-    for h in history:
-        op = h.get("operatingIncome")
-        rev = h.get("revenue")
-        ic = h.get("investedCapital")
-        etr = h.get("effectiveTaxRate")
-        if op is None or rev is None or ic is None:
-            h["decomposition"] = None
-            continue
-        decomp = decomposeRoic(
-            operatingIncome=op,
-            revenue=rev,
-            investedCapital=ic,
-            effectiveTaxRate=etr / 100.0 if etr is not None else None,
-            wacc=h.get("waccEstimate"),
-        )
-        h["decomposition"] = decomp
+    _injectRoicDecomposition(history)
 
     # Phase 7 G24: ROIC 변화 driver 분해 (Margin × Turnover × Tax)
-    try:
-        from dartlab.analysis.financial.attribution import decomposeRoicChange
-
-        for i in range(len(history) - 1):
-            cur = history[i]
-            prev = history[i + 1]
-            cur_d = cur.get("decomposition") or {}
-            prev_d = prev.get("decomposition") or {}
-            roic_t = cur.get("roic")
-            roic_t1 = prev.get("roic")
-            margin_t = cur_d.get("operatingMargin")
-            margin_t1 = prev_d.get("operatingMargin")
-            turnover_t = cur_d.get("assetTurnover")
-            turnover_t1 = prev_d.get("assetTurnover")
-            tax_t = cur.get("effectiveTaxRate")
-            tax_t1 = prev.get("effectiveTaxRate")
-            if all(
-                isinstance(v, (int, float)) for v in (roic_t, roic_t1, margin_t, margin_t1, turnover_t, turnover_t1)
-            ):
-                attribution = decomposeRoicChange(
-                    roicT=roic_t,
-                    roicT1=roic_t1,
-                    marginT=margin_t,
-                    marginT1=margin_t1,
-                    turnoverT=turnover_t,
-                    turnoverT1=turnover_t1,
-                    taxT=tax_t,
-                    taxT1=tax_t1,
-                )
-                cur["drivers"] = attribution.get("drivers") or []
-                cur["driversExplained"] = attribution.get("explainedPct")
-    except (ImportError, AttributeError, TypeError, ValueError):
-        pass
+    _injectRoicDrivers(history)
 
     # Phase 8 A5
     from dartlab.synth.turningPoint import injectTurningPoints

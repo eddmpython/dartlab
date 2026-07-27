@@ -118,6 +118,155 @@ def liquidationValuation(
     }
 
 
+_MULT_KEYS = ["PER", "PBR", "EV/EBITDA", "PSR", "PEG"]
+_MULT_WEIGHTS = {"EV/EBITDA": 3.0, "PER": 2.5, "PBR": 1.5, "PSR": 1.0, "PEG": 1.0}
+
+
+def _currentMultiples(
+    marketCap: Optional[float],
+    netIncome: Optional[float],
+    equity: Optional[float],
+    revenue: Optional[float],
+) -> dict[str, Optional[float]]:
+    """시가총액 기준 현재 배수 (PER/PBR/PSR). 산정 불가 항목은 None 유지.
+
+    Parameters
+    ----------
+    marketCap : float | None
+        시가총액.
+    netIncome, equity, revenue : float | None
+        순이익 TTM, 자본 최신, 매출 TTM.
+
+    Returns
+    -------
+    dict[str, float | None]
+        5 배수 키가 모두 존재하는 dict. 삽입 순서는 _MULT_KEYS.
+    """
+    out: dict[str, Optional[float]] = dict.fromkeys(_MULT_KEYS)
+    if marketCap and marketCap > 0:
+        if netIncome and netIncome > 0:
+            out["PER"] = round(marketCap / netIncome, 1)
+        if equity and equity > 0:
+            out["PBR"] = round(marketCap / equity, 1)
+        if revenue and revenue > 0:
+            out["PSR"] = round(marketCap / revenue, 2)
+    return out
+
+
+def _impliedEvEbitda(
+    series: dict,
+    shares: int,
+    sp: SectorParams,
+    warnings: list[str],
+) -> Optional[float]:
+    """EV/EBITDA 배수로 역산한 주당 적정가. 감가상각 미확인 시 추정 후 경고 누적.
+
+    Parameters
+    ----------
+    series : dict
+        finance.timeseries dict.
+    shares : int
+        발행주식수 (양수 보장).
+    sp : SectorParams
+        업종 배수.
+    warnings : list[str]
+        경고 누적 리스트. 제자리 변경한다.
+
+    Returns
+    -------
+    float | None
+        주당 적정가. EBITDA 또는 지분가치가 0 이하면 None.
+    """
+    oi = getTTM(series, "IS", "operating_profit") or getTTM(series, "IS", "operating_income")
+    dep = getTTM(series, "CF", "depreciation_and_amortization")
+    if not (oi is not None and oi > 0):
+        return None
+    if dep is None:
+        ta = getLatest(series, "BS", "tangible_assets") or 0
+        ia = getLatest(series, "BS", "intangible_assets") or 0
+        dep = ta * 0.05 + ia * 0.1
+        warnings.append("감가상각 미확인 -> 추정치 적용")
+    ebitda = oi + (dep or 0)
+    if not (ebitda > 0):
+        return None
+    nd = _getNetDebt(series)
+    impliedEv = ebitda * sp.evEbitdaMultiple
+    impliedEq = impliedEv - nd
+    if impliedEq > 0:
+        return round(impliedEq / shares, 0)
+    return None
+
+
+def _impliedPeg(
+    series: dict,
+    shares: int,
+    netIncome: Optional[float],
+    currentMults: dict[str, Optional[float]],
+    sectorMults: dict[str, float],
+) -> Optional[float]:
+    """PEG 배수. currentMults['PEG'] 와 sectorMults['PEG'] 를 제자리 채운다.
+
+    Parameters
+    ----------
+    series : dict
+        finance.timeseries dict.
+    shares : int
+        발행주식수 (양수 보장).
+    netIncome : float | None
+        순이익 TTM (정규화 적용 후).
+    currentMults : dict[str, float | None]
+        현재 배수 dict. PEG 키를 채운다.
+    sectorMults : dict[str, float]
+        섹터 배수 dict. PEG 키를 추가한다.
+
+    Returns
+    -------
+    float | None
+        PEG 기반 주당 적정가.
+    """
+    epsGrowth = _epsGrowth3Y(series, shares)
+    if not (epsGrowth is not None and epsGrowth > 0 and currentMults.get("PER")):
+        return None
+    peg = round(currentMults["PER"] / epsGrowth, 2)
+    currentMults["PEG"] = peg
+    eps = netIncome / shares if netIncome and netIncome > 0 else 0
+    if eps > 0:
+        sectorMults["PEG"] = 1.0
+        return round(eps * epsGrowth, 0)
+    return None
+
+
+def _consensusValue(
+    implied: dict[str, Optional[float]],
+    currentPrice: Optional[float],
+) -> tuple[Optional[float], float]:
+    """멀티플별 implied 를 가중평균. 현재가 5 배 초과 outlier 는 제외.
+
+    Parameters
+    ----------
+    implied : dict[str, float | None]
+        멀티플별 주당 적정가.
+    currentPrice : float | None
+        현재 주가. 양수면 5 배를 outlier 상한으로 쓴다.
+
+    Returns
+    -------
+    tuple[float | None, float]
+        consensus : float | None. totalWeight : float (0 이면 추정 불가).
+    """
+    ivCap = currentPrice * 5 if currentPrice and currentPrice > 0 else float("inf")
+    weightedSum = 0.0
+    totalWeight = 0.0
+    for key in _MULT_KEYS:
+        iv = implied[key]
+        if iv is not None and 0 < iv < ivCap:
+            w = _MULT_WEIGHTS.get(key, 1.0)
+            weightedSum += iv * w
+            totalWeight += w
+    consensus = round(weightedSum / totalWeight, 0) if totalWeight > 0 else None
+    return consensus, totalWeight
+
+
 def relativeValuation(
     series: dict,
     sectorParams: Optional[SectorParams] = None,
@@ -202,18 +351,10 @@ def relativeValuation(
         netIncome = normNi
         warnings.append("정규화 수익 적용 (과거 평균 ROE x 현재 BPS)")
 
-    multKeys = ["PER", "PBR", "EV/EBITDA", "PSR", "PEG"]
-    currentMults: dict[str, Optional[float]] = {k: None for k in multKeys}
-    if marketCap and marketCap > 0:
-        if netIncome and netIncome > 0:
-            currentMults["PER"] = round(marketCap / netIncome, 1)
-        if equity and equity > 0:
-            currentMults["PBR"] = round(marketCap / equity, 1)
-        if revenue and revenue > 0:
-            currentMults["PSR"] = round(marketCap / revenue, 2)
+    currentMults = _currentMultiples(marketCap, netIncome, equity, revenue)
 
-    implied: dict[str, Optional[float]] = {k: None for k in multKeys}
-    premiumDisc: dict[str, Optional[float]] = {k: None for k in multKeys}
+    implied: dict[str, Optional[float]] = dict.fromkeys(_MULT_KEYS)
+    premiumDisc: dict[str, Optional[float]] = dict.fromkeys(_MULT_KEYS)
 
     if shares and shares > 0:
         if netIncome is not None and netIncome > 0:
@@ -224,21 +365,7 @@ def relativeValuation(
             bps = equity / shares
             implied["PBR"] = round(bps * sp.pbrMultiple, 0)
 
-        oi = getTTM(series, "IS", "operating_profit") or getTTM(series, "IS", "operating_income")
-        dep = getTTM(series, "CF", "depreciation_and_amortization")
-        if oi is not None and oi > 0:
-            if dep is None:
-                ta = getLatest(series, "BS", "tangible_assets") or 0
-                ia = getLatest(series, "BS", "intangible_assets") or 0
-                dep = ta * 0.05 + ia * 0.1
-                warnings.append("감가상각 미확인 -> 추정치 적용")
-            ebitda = oi + (dep or 0)
-            if ebitda > 0:
-                nd = _getNetDebt(series)
-                impliedEv = ebitda * sp.evEbitdaMultiple
-                impliedEq = impliedEv - nd
-                if impliedEq > 0:
-                    implied["EV/EBITDA"] = round(impliedEq / shares, 0)
+        implied["EV/EBITDA"] = _impliedEvEbitda(series, shares, sp, warnings)
 
         if revenue is not None and revenue > 0:
             sps = revenue / shares
@@ -246,32 +373,15 @@ def relativeValuation(
             sectorMults["PSR"] = sectorPsr
             implied["PSR"] = round(sps * sectorPsr, 0)
 
-        epsGrowth = _epsGrowth3Y(series, shares)
-        if epsGrowth is not None and epsGrowth > 0 and currentMults.get("PER"):
-            peg = round(currentMults["PER"] / epsGrowth, 2)
-            currentMults["PEG"] = peg
-            eps = netIncome / shares if netIncome and netIncome > 0 else 0
-            if eps > 0:
-                implied["PEG"] = round(eps * epsGrowth, 0)
-                sectorMults["PEG"] = 1.0
+        implied["PEG"] = _impliedPeg(series, shares, netIncome, currentMults, sectorMults)
 
     if currentPrice and currentPrice > 0:
-        for key in multKeys:
+        for key in _MULT_KEYS:
             iv = implied[key]
             if iv is not None and iv > 0:
                 premiumDisc[key] = round((currentPrice - iv) / iv * 100, 1)
 
-    multWeights = {"EV/EBITDA": 3.0, "PER": 2.5, "PBR": 1.5, "PSR": 1.0, "PEG": 1.0}
-    _ivCap = currentPrice * 5 if currentPrice and currentPrice > 0 else float("inf")
-    weightedSum = 0.0
-    totalWeight = 0.0
-    for key in multKeys:
-        iv = implied[key]
-        if iv is not None and 0 < iv < _ivCap:
-            w = multWeights.get(key, 1.0)
-            weightedSum += iv * w
-            totalWeight += w
-    consensus = round(weightedSum / totalWeight, 0) if totalWeight > 0 else None
+    consensus, totalWeight = _consensusValue(implied, currentPrice)
 
     if totalWeight == 0:
         warnings.append("상대가치 추정 불가 (재무 데이터 부족)")

@@ -371,6 +371,72 @@ def calcReturnTrend(company, *, basePeriod: str | None = None) -> dict | None:
 # ── 플래그 ──
 
 
+def _marginGapFlags(latest: dict, isFinancial: bool, flags: list[str]) -> None:
+    """순이익률과 영업이익률 괴리, 그리고 영업이익률 절대 크기 경고.
+
+    Parameters
+    ----------
+    latest : dict
+        calcMarginTrend history 최신 항목.
+    isFinancial : bool
+        금융업 여부. 임계와 문구가 달라진다.
+    flags : list[str]
+        경고 누적. 제자리 변경.
+    """
+    nm = latest.get("netMargin")
+    om = latest.get("operatingMargin")
+    if nm is not None and om is not None and om > 0:
+        ratio = nm / om
+        if isFinancial:
+            # 금융업: 금융이익은 순이자+수수료(매출총이익 성격)이므로
+            # 영업이익 > 금융이익은 구조적으로 정상.
+            # 순이익률이 영업이익률보다 훨씬 낮은 것은 금융비용/충당금 때문.
+            if ratio > 3.0:
+                flags.append(f"순이익률({nm:.1f}%)이 영업이익률({om:.1f}%)의 {ratio:.1f}배. 비영업이익 확인 필요")
+        elif ratio > 2.0:
+            flags.append(f"순이익률({nm:.1f}%)이 영업이익률({om:.1f}%)의 {ratio:.1f}배. 대규모 비영업이익 존재")
+        elif 0 < ratio < 0.3:
+            flags.append(f"순이익률이 영업이익률의 {ratio:.1f}배. 대규모 비영업손실")
+
+    if om is not None and abs(om) > 100:
+        if isFinancial:
+            flags.append(
+                f"금융업 IS 구조: 금융이익 대비 영업이익률 {om:.1f}% (금융이익=순금융수익, 수수료·보험 등 별도 합산)"
+            )
+        else:
+            # 지주사(로열티/지분법 수입 위주)는 영업이익률 100%+ 정상.
+            # "데이터 이상"이라고 하면 사용자에게 불필요한 공포 유발.
+            flags.append(f"영업이익률 {om:.1f}%. 매출 대비 영업이익이 크다 (지주사·로열티·지분법이익 구조일 수 있음)")
+
+
+def _returnTrendFlags(h: dict, isFinancial: bool, flags: list[str]) -> None:
+    """ROE/ROA/레버리지 조합 경고.
+
+    Parameters
+    ----------
+    h : dict
+        calcReturnTrend history 최신 항목.
+    isFinancial : bool
+        금융업 여부. 레버리지 임계가 달라진다.
+    flags : list[str]
+        경고 누적. 제자리 변경.
+    """
+    roe = h.get("roe")
+    roa = h.get("roa")
+    lev = h.get("leverage")
+    if roe is None or roa is None or lev is None:
+        return
+    if isFinancial:
+        # 금융업은 레버리지 10x+ 가 정상 (은행 자기자본비율 약 8%)
+        if roe > 8:
+            flags.append(f"양호한 ROE ({roe:.1f}%, 금융업 기준)")
+        return
+    if lev > 3:
+        flags.append(f"ROE의 레버리지 의존도 높음 (자산/자본 = {lev:.1f}배)")
+    if roe > 15 and roa > 5 and lev < 2:
+        flags.append(f"진성 고수익 (ROE {roe:.1f}%, 낮은 레버리지)")
+
+
 @memoizedCalc
 def calcProfitabilityFlags(company, *, basePeriod: str | None = None) -> list[str]:
     """수익성 경고/기회 플래그.
@@ -422,58 +488,16 @@ def calcProfitabilityFlags(company, *, basePeriod: str | None = None) -> list[st
         if oms[0] is not None and oms[0] < 0:
             flags.append(f"영업적자 ({oms[0]:.1f}%)")
 
-    # 마진 괴리 감지 — 순이익률 vs 영업이익률
+    # 마진 괴리 감지. 순이익률 vs 영업이익률
     if trend and trend["history"]:
-        latest = trend["history"][0]
-        nm = latest.get("netMargin")
-        om = latest.get("operatingMargin")
-        if nm is not None and om is not None and om > 0:
-            ratio = nm / om
-            if isFinancial:
-                # 금융업: 금융이익은 순이자+수수료(매출총이익 성격)이므로
-                # 영업이익 > 금융이익은 구조적으로 정상.
-                # 순이익률 << 영업이익률은 금융비용/충당금 때문.
-                if ratio > 3.0:
-                    flags.append(f"순이익률({nm:.1f}%)이 영업이익률({om:.1f}%)의 {ratio:.1f}배 — 비영업이익 확인 필요")
-            else:
-                if ratio > 2.0:
-                    flags.append(
-                        f"순이익률({nm:.1f}%)이 영업이익률({om:.1f}%)의 {ratio:.1f}배 — 대규모 비영업이익 존재"
-                    )
-                elif 0 < ratio < 0.3:
-                    flags.append(f"순이익률이 영업이익률의 {ratio:.1f}배 — 대규모 비영업손실")
-        if om is not None and abs(om) > 100:
-            if isFinancial:
-                flags.append(
-                    f"금융업 IS 구조: 금융이익 대비 영업이익률 {om:.1f}%"
-                    " (금융이익=순금융수익, 수수료·보험 등 별도 합산)"
-                )
-            else:
-                # 지주사(로열티/지분법 수입 위주)는 영업이익률 100%+ 정상.
-                # "데이터 이상"이라고 하면 사용자에게 불필요한 공포 유발.
-                flags.append(
-                    f"영업이익률 {om:.1f}% — 매출 대비 영업이익이 크다 (지주사·로열티·지분법이익 구조일 수 있음)"
-                )
+        _marginGapFlags(trend["history"][0], isFinancial, flags)
 
     if isFinancial:
         flags.append("금융업: ROE·ROA가 핵심 수익성 지표 (마진 분석은 참고용)")
 
     ret = calcReturnTrend(company, basePeriod=basePeriod)
     if ret and ret["history"]:
-        h = ret["history"][0]
-        roe = h.get("roe")
-        roa = h.get("roa")
-        lev = h.get("leverage")
-        if roe is not None and roa is not None and lev is not None:
-            if isFinancial:
-                # 금융업은 레버리지 10x+ 가 정상 (은행 자기자본비율 ~8%)
-                if roe > 8:
-                    flags.append(f"양호한 ROE ({roe:.1f}%, 금융업 기준)")
-            else:
-                if lev > 3:
-                    flags.append(f"ROE의 레버리지 의존도 높음 (자산/자본 = {lev:.1f}배)")
-                if roe > 15 and roa > 5 and lev < 2:
-                    flags.append(f"진성 고수익 (ROE {roe:.1f}%, 낮은 레버리지)")
+        _returnTrendFlags(ret["history"][0], isFinancial, flags)
 
     return flags
 

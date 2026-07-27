@@ -19,11 +19,17 @@ Merton 미제공 시 기존 4축(40/20/30/10) 그대로 동작 (하위호환 100
 
 from __future__ import annotations
 
+from dartlab.analysis.financial.insight._distressAxes import (
+    _auditAxis,
+    _distressLevel,
+    _earningsQualityAxis,
+    _marketAxis,
+    _quantAxis,
+    _trendAxis,
+)
 from dartlab.analysis.financial.insight.types import (
     Anomaly,
-    DistressAxis,
     DistressResult,
-    ModelScore,
 )
 from dartlab.analysis.financial.ratios import RatioResult
 
@@ -87,25 +93,7 @@ def _mapCreditGrade20(overall: float) -> tuple[str, str, float]:
     return mapTo20Grade(overall)
 
 
-# ── 개별 모델 해석/정규화 함수 → _distressModels.py 분리 ──
-
-from dartlab.analysis.financial.insight._distressModels import (  # noqa: E402
-    _interpretAltmanZ,
-    _interpretAltmanZpp,
-    _interpretAuditRedFlags,
-    _interpretBeneish,
-    _interpretMerton,
-    _interpretOhlson,
-    _interpretPiotroski,
-    _interpretSloan,
-    _normalizeBeneish,
-    _normalizeFScore,
-    _normalizeMerton,
-    _normalizeOhlson,
-    _normalizeSloan,
-    _normalizeZ,
-    _normalizeZpp,
-)
+# ── 개별 모델 해석/정규화 함수는 _distressModels.py, 축 조립은 _distressAxes.py ──
 
 # ── 유동성 경보 ──
 
@@ -290,182 +278,22 @@ def calcDistress(
     # Merton 사용 여부: 비금융 + 수렴된 결과만
     useMerton = mertonResult is not None and not isFinancial and mertonResult.get("converged", False)
 
-    # ── 1. 정량 축 ──
-    quant_models: list[ModelScore] = []
-    quant_norms: list[float] = []
+    quantAxis, quantModels = _quantAxis(ratios, useMerton)
+    eqAxis, eqModels = _earningsQualityAxis(ratios, useMerton)
+    trendAxis = _trendAxis(anomalies, useMerton)
+    auditAxis = _auditAxis(anomalies)
 
-    if ratios.ohlsonProbability is not None:
-        quant_models.append(_interpretOhlson(ratios.ohlsonProbability))
-        quant_norms.append(_normalizeOhlson(ratios.ohlsonProbability))
-
-    if ratios.altmanZppScore is not None:
-        quant_models.append(_interpretAltmanZpp(ratios.altmanZppScore))
-        quant_norms.append(_normalizeZpp(ratios.altmanZppScore))
-
-    if ratios.altmanZScore is not None:
-        quant_models.append(_interpretAltmanZ(ratios.altmanZScore))
-        quant_norms.append(_normalizeZ(ratios.altmanZScore))
-
-    quant_score = sum(quant_norms) / len(quant_norms) if quant_norms else 0
-    quant_zones = [m.zone for m in quant_models]
-    if not quant_models:
-        quant_summary = "정량 모델 데이터 부족."
-    elif all(z == "safe" for z in quant_zones):
-        quant_summary = f"{len(quant_models)}개 모델 모두 안전 영역."
-    elif any(z == "distress" for z in quant_zones):
-        n_distress = sum(1 for z in quant_zones if z == "distress")
-        quant_summary = f"{n_distress}/{len(quant_models)}개 모델 부실 영역. 즉각 점검 필요."
-    else:
-        quant_summary = f"{len(quant_models)}개 모델 회색 영역 포함. 모니터링 권고."
-
-    quant_axis = DistressAxis(
-        name="정량 분석",
-        score=round(quant_score, 1),
-        weight=0.30 if useMerton else 0.40,
-        models=quant_models,
-        summary=quant_summary,
-    )
-
-    # ── 2. 이익 품질 축 ──
-    eq_models: list[ModelScore] = []
-    eq_norms: list[float] = []
-
-    if ratios.beneishMScore is not None:
-        eq_models.append(_interpretBeneish(ratios.beneishMScore))
-        eq_norms.append(_normalizeBeneish(ratios.beneishMScore))
-
-    if ratios.sloanAccrualRatio is not None:
-        eq_models.append(_interpretSloan(ratios.sloanAccrualRatio))
-        eq_norms.append(_normalizeSloan(ratios.sloanAccrualRatio))
-
-    if ratios.piotroskiFScore is not None:
-        eq_models.append(_interpretPiotroski(ratios.piotroskiFScore))
-        eq_norms.append(_normalizeFScore(ratios.piotroskiFScore))
-
-    eq_score = sum(eq_norms) / len(eq_norms) if eq_norms else 0
-    if not eq_models:
-        eq_summary = "이익 품질 모델 데이터 부족."
-    elif all(m.zone == "safe" for m in eq_models):
-        eq_summary = f"{len(eq_models)}개 지표 모두 양호. 이익 품질 건전."
-    elif any(m.zone == "distress" for m in eq_models):
-        eq_summary = "이익 품질 의심 지표 존재. 회계 검토 권고."
-    else:
-        eq_summary = "이익 품질 보통. 일부 지표 모니터링 필요."
-
-    eq_axis = DistressAxis(
-        name="이익 품질",
-        score=round(eq_score, 1),
-        weight=0.15 if useMerton else 0.20,
-        models=eq_models,
-        summary=eq_summary,
-    )
-
-    # ── 3. 추세 축 ──
-    trend_score = 0.0
-    trend_anomalies = [a for a in anomalies if a.category in ("trendDeterioration", "cccDeterioration")]
-    for a in trend_anomalies:
-        if a.severity == "danger":
-            trend_score += 40
-        elif a.severity == "warning":
-            trend_score += 25
-        else:
-            trend_score += 10
-    trend_score = min(trend_score, 100)
-
-    if not trend_anomalies:
-        trend_summary = "시계열 악화 패턴 없음."
-    else:
-        n_danger = sum(1 for a in trend_anomalies if a.severity == "danger")
-        trend_summary = f"악화 패턴 {len(trend_anomalies)}건 탐지"
-        if n_danger:
-            trend_summary += f" (심각 {n_danger}건). 즉각 점검 필요."
-        else:
-            trend_summary += ". 모니터링 권고."
-
-    trend_axis = DistressAxis(
-        name="추세 분석",
-        score=round(trend_score, 1),
-        weight=0.25 if useMerton else 0.30,
-        summary=trend_summary,
-    )
-
-    # ── 4. 감사 축 ──
-    audit_score = 0.0
-    audit_anomalies = [a for a in anomalies if a.category in ("audit", "governance")]
-    audit_models: list[ModelScore] = []
-
-    # 감사 Red Flag 수 기반 점수
-    n_critical = sum(1 for a in audit_anomalies if a.severity == "danger")
-    n_total = len(audit_anomalies)
-
-    if n_total > 0:
-        audit_models.append(_interpretAuditRedFlags(n_total, n_critical > 0))
-
-    for a in audit_anomalies:
-        if a.severity == "danger":
-            audit_score += 50
-        elif a.severity == "warning":
-            audit_score += 25
-    audit_score = min(audit_score, 100)
-
-    if not audit_anomalies:
-        audit_summary = "감사 이상징후 없음."
-    elif n_critical > 0:
-        audit_summary = f"감사 Red Flag {n_total}건 (심각 {n_critical}건). 즉각 점검 필요."
-    else:
-        audit_summary = f"감사 이상 {n_total}건 탐지. 모니터링 권고."
-
-    audit_axis = DistressAxis(
-        name="감사 위험",
-        score=round(audit_score, 1),
-        weight=0.10,
-        models=audit_models,
-        summary=audit_summary,
-    )
-
-    # ── 5. 시장 기반 축 (Merton) ──
-    axes = [quant_axis]
-
+    axes = [quantAxis]
     if useMerton:
         assert mertonResult is not None  # type narrowing
-        merton_model = _interpretMerton(mertonResult)
-        merton_d2d = mertonResult["d2d"]
-        merton_norm = _normalizeMerton(merton_d2d)
-        merton_score = merton_norm
+        axes.append(_marketAxis(mertonResult))
 
-        if merton_d2d > 4:
-            merton_summary = f"D2D {merton_d2d:.2f} — 시장 기반 부도 거리 충분."
-        elif merton_d2d > 2:
-            merton_summary = f"D2D {merton_d2d:.2f} — 모니터링 필요."
-        elif merton_d2d > 1:
-            merton_summary = f"D2D {merton_d2d:.2f} — 부실 위험 영역."
-        else:
-            merton_summary = f"D2D {merton_d2d:.2f} — 부도 임박 영역."
-
-        market_axis = DistressAxis(
-            name="시장 기반",
-            score=round(merton_score, 1),
-            weight=0.20,
-            models=[merton_model],
-            summary=merton_summary,
-        )
-        axes.append(market_axis)
-
-    axes.extend([eq_axis, trend_axis, audit_axis])
+    axes.extend([eqAxis, trendAxis, auditAxis])
 
     # ── 종합 ──
     overall = sum(ax.score * ax.weight for ax in axes)
 
-    if overall >= 70:
-        level = "critical"
-    elif overall >= 50:
-        level = "danger"
-    elif overall >= 30:
-        level = "warning"
-    elif overall >= 15:
-        level = "watch"
-    else:
-        level = "safe"
+    level = _distressLevel(overall)
 
     creditGrade, creditDesc = _mapCreditGrade(overall)
 
@@ -478,7 +306,7 @@ def calcDistress(
         riskFactors.append(f"Merton D2D {mertonResult['d2d']:.2f} (부실 영역, PD={mertonResult['pd']:.1f}%)")
 
     # 모델 수 / 데이터 품질
-    modelCount = len(quant_models) + len(eq_models) + (1 if useMerton else 0)
+    modelCount = len(quantModels) + len(eqModels) + (1 if useMerton else 0)
     dataQuality = _assessDataQuality(modelCount)
 
     return DistressResult(

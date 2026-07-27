@@ -18,6 +18,138 @@ from dartlab.core.utils.ols import (
 from dartlab.frame.sector import SectorParams
 
 
+def _meanRevertPath(yVals: list[float], horizon: int) -> list[float]:
+    """평균 회귀 경로. 최근값에서 표본 평균으로 선형 blend.
+
+    Parameters
+    ----------
+    yVals : list[float]
+        과거 관측치.
+    horizon : int
+        예측 연수.
+
+    Returns
+    -------
+    list[float]
+        연도별 예측치.
+    """
+    meanVal = sum(yVals) / len(yVals)
+    projected = []
+    last = yVals[-1]
+    for yr in range(1, horizon + 1):
+        blend = yr / (horizon + 1)
+        projected.append(last * (1 - blend) + meanVal * blend)
+    return projected
+
+
+def _linearPath(
+    xVals: list[float],
+    yVals: list[float],
+    slope: float,
+    intercept: float,
+    horizon: int,
+    warnings: list[str],
+) -> list[float]:
+    """선형 추세 연장. 음수 예측은 최근값의 50% 로 대체하고 경고를 남긴다.
+
+    Parameters
+    ----------
+    xVals, yVals : list[float]
+        회귀 입력.
+    slope, intercept : float
+        OLS 계수.
+    horizon : int
+        예측 연수.
+    warnings : list[str]
+        경고 누적. 제자리 변경.
+
+    Returns
+    -------
+    list[float]
+        연도별 예측치.
+    """
+    lastX = xVals[-1]
+    projected = [slope * (lastX + yr) + intercept for yr in range(1, horizon + 1)]
+    for i, p in enumerate(projected):
+        if p < 0 and yVals[-1] > 0:
+            projected[i] = yVals[-1] * 0.5
+            warnings.append(f"+{i + 1}년 예측이 음수 → 최근값의 50%로 대체")
+    return projected
+
+
+def _cagrDecayPath(yVals: list[float], growth: float, sectorGrowth: float, horizon: int) -> list[float]:
+    """지수 fade 성장 경로 (임의 선형감속 폐기).
+
+    g(t)=gT+(g0-gT)*exp(-lambda*t). 초과성장 경쟁수렴 (Damodaran).
+    lambda 는 고성장(g0>15)일 때 0.35 (완만 수렴), 그 외 0.5.
+
+    Parameters
+    ----------
+    yVals : list[float]
+        과거 관측치.
+    growth : float
+        시작 성장률 (%). -10 ~ 25 로 이미 clip 된 값.
+    sectorGrowth : float
+        수렴 목표 성장률 (%).
+    horizon : int
+        예측 연수.
+
+    Returns
+    -------
+    list[float]
+        연도별 예측치.
+    """
+    terminal = sectorGrowth
+    fadeLambda = 0.35 if growth > 15 else 0.5
+    projected = []
+    last = yVals[-1]
+    for yr in range(1, horizon + 1):
+        g = terminal + (growth - terminal) * math.exp(-fadeLambda * yr)
+        proj = last * (1 + g / 100)
+        projected.append(proj)
+        last = proj
+    return projected
+
+
+def _forecastAssumptions(
+    method: str,
+    r2: float,
+    cagr: float,
+    sectorGrowth: float,
+    yVals: list[float],
+    n: int,
+) -> list[str]:
+    """방법론별 가정 문장 목록.
+
+    Parameters
+    ----------
+    method : str
+        'linear' | 'cagr_decay' | 'mean_revert'.
+    r2, cagr, sectorGrowth : float
+        결정계수, CAGR(%), 섹터 성장률(%).
+    yVals : list[float]
+        과거 관측치.
+    n : int
+        관측 개수.
+
+    Returns
+    -------
+    list[str]
+        가정 문장. 마지막은 항상 데이터 개년 수.
+    """
+    assumptions = []
+    if method == "linear":
+        assumptions.append(f"선형 추세 연장 (R²={r2:.2f})")
+    elif method == "cagr_decay":
+        lam = 0.35 if min(max(cagr, -10), 25) > 15 else 0.5
+        assumptions.append(f"CAGR {cagr:.1f}% → 섹터 {sectorGrowth:.1f}% 지수 fade (λ={lam}, 경쟁수렴)")
+    elif method == "mean_revert":
+        meanVal = sum(yVals) / n
+        assumptions.append(f"평균 {meanVal / 1e8:,.0f}억으로 회귀")
+    assumptions.append(f"과거 {n}개년 데이터 기반")
+    return assumptions
+
+
 def forecastMetric(
     series: dict,
     metric: str = "revenue",
@@ -146,38 +278,17 @@ def forecastMetric(
 
     if cv > 0.4:
         method = "mean_revert"
-        meanVal = sum(yVals) / n
-        projected = []
-        last = yVals[-1]
-        for yr in range(1, horizon + 1):
-            blend = yr / (horizon + 1)
-            proj = last * (1 - blend) + meanVal * blend
-            projected.append(proj)
+        projected = _meanRevertPath(yVals, horizon)
         growthRate = 0.0
         warnings.append("높은 변동성 → 평균 회귀 모델 적용")
     elif r2 > 0.7 and abs(cagr) < 30:
         method = "linear"
-        lastX = xVals[-1]
-        projected = [slope * (lastX + yr) + intercept for yr in range(1, horizon + 1)]
+        projected = _linearPath(xVals, yVals, slope, intercept, horizon, warnings)
         growthRate = cagr
-        for i, p in enumerate(projected):
-            if p < 0 and yVals[-1] > 0:
-                projected[i] = yVals[-1] * 0.5
-                warnings.append(f"+{i + 1}년 예측이 음수 → 최근값의 50%로 대체")
     else:
         method = "cagr_decay"
         growth = min(max(cagr, -10), 25)
-        terminal = sectorGrowth
-        # 지수 fade (임의 선형감속 폐기) — g(t)=gT+(g0−gT)·exp(−λt). 초과성장 경쟁수렴(Damodaran).
-        # λ: 고성장(g0>15)=0.35(완만 수렴, 성장 지속)·그 외 0.5. fadeLambda·terminal 은 assumptions 노출.
-        fadeLambda = 0.35 if growth > 15 else 0.5
-        projected = []
-        last = yVals[-1]
-        for yr in range(1, horizon + 1):
-            g = terminal + (growth - terminal) * math.exp(-fadeLambda * yr)
-            proj = last * (1 + g / 100)
-            projected.append(proj)
-            last = proj
+        projected = _cagrDecayPath(yVals, growth, sectorGrowth, horizon)
         growthRate = growth
 
     if r2 > 0.8 and n >= 5:
@@ -187,16 +298,7 @@ def forecastMetric(
     else:
         confidence = "low"
 
-    assumptions = []
-    if method == "linear":
-        assumptions.append(f"선형 추세 연장 (R²={r2:.2f})")
-    elif method == "cagr_decay":
-        _lam = 0.35 if min(max(cagr, -10), 25) > 15 else 0.5
-        assumptions.append(f"CAGR {cagr:.1f}% → 섹터 {sectorGrowth:.1f}% 지수 fade (λ={_lam}, 경쟁수렴)")
-    elif method == "mean_revert":
-        meanVal = sum(yVals) / n
-        assumptions.append(f"평균 {meanVal / 1e8:,.0f}억으로 회귀")
-    assumptions.append(f"과거 {n}개년 데이터 기반")
+    assumptions = _forecastAssumptions(method, r2, cagr, sectorGrowth, yVals, n)
 
     return ForecastResult(
         metric=metric,
@@ -211,6 +313,93 @@ def forecastMetric(
         assumptions=assumptions,
         warnings=warnings,
     )
+
+
+def _revGrowthMarginPairs(revVals: list, metricVals: list) -> list[tuple[float, float]]:
+    """(매출 성장률 %, 그 해 마진) 쌍 목록.
+
+    Parameters
+    ----------
+    revVals, metricVals : list
+        매출 / 대상 지표 연간 시계열.
+
+    Returns
+    -------
+    list[tuple[float, float]]
+        회귀 입력 쌍.
+    """
+    pairs = []
+    for i in range(1, len(revVals)):
+        r0, r1 = revVals[i - 1], revVals[i]
+        m1 = metricVals[i] if i < len(metricVals) else None
+        if r0 and r1 and m1 and r0 != 0 and r1 != 0:
+            pairs.append(((r1 / r0 - 1) * 100, m1 / r1))
+    return pairs
+
+
+def _leverageBeta(revGrowthPairs: list[tuple[float, float]]) -> float | None:
+    """영업레버리지 β. 점 4 개 미만이거나 회귀가 불안정하면 None.
+
+    Parameters
+    ----------
+    revGrowthPairs : list[tuple[float, float]]
+        _revGrowthMarginPairs 결과.
+
+    Returns
+    -------
+    float | None
+        β (%p/%p). r² 0.3 미만이거나 |β| 5.0 이상이면 None.
+    """
+    if len(revGrowthPairs) < 4:
+        return None
+    bslope, _bint, br2 = _ols([p[0] for p in revGrowthPairs], [p[1] * 100 for p in revGrowthPairs])
+    if br2 >= 0.3 and abs(bslope) < 5.0:
+        return bslope
+    return None
+
+
+def _leveragedMarginPath(
+    revResult: ForecastResult,
+    revVals: list,
+    revGrowthPairs: list[tuple[float, float]],
+    margins: list[float],
+    avgMargin: float,
+    leverageBeta: float,
+) -> list[float]:
+    """β 를 태운 마진으로 매출 전망을 이익 전망으로 옮긴다.
+
+    Parameters
+    ----------
+    revResult : ForecastResult
+        매출 전망.
+    revVals : list
+        과거 매출 시계열.
+    revGrowthPairs : list[tuple[float, float]]
+        회귀 입력 쌍 (정상 성장률 산출용).
+    margins : list[float]
+        과거 마진 (상·하한 산출용).
+    avgMargin : float
+        기준 마진.
+    leverageBeta : float
+        영업레버리지 β.
+
+    Returns
+    -------
+    list[float]
+        연도별 이익 예측치.
+    """
+    revGrowthNormal = sum(p[0] for p in revGrowthPairs) / len(revGrowthPairs)
+    mlo, mhi = min(margins), max(margins)
+    buf = 0.2 * (mhi - mlo) if mhi > mlo else 0.2 * abs(mhi or 0.05)
+    mlo, mhi = mlo - buf, mhi + buf
+    projected = []
+    prevRev = float(revVals[-1])
+    for rev in revResult.projected:
+        rg = (rev / prevRev - 1) * 100 if prevRev else 0.0
+        opm = max(mlo, min(avgMargin + (leverageBeta / 100.0) * (rg - revGrowthNormal), mhi))
+        projected.append(rev * opm)
+        prevRev = rev
+    return projected
 
 
 def _marginLinkedForecast(
@@ -253,31 +442,12 @@ def _marginLinkedForecast(
     weights = list(range(1, len(recent) + 1))
     avgMargin = sum(w * m for w, m in zip(weights, recent)) / sum(weights)
 
-    # 영업레버리지 마진 (고정 마진 폐기) — OPM(t)=OPM_base+β·(revGrowth−normal). β=ΔOPM%/ΔRevGrowth%
-    # 회귀(고정비 희석). 과거 OPM 범위±20% 상·하한. β 불안정(r²<0.3·<4점·폭주) 시 고정 fallback.
-    revGrowthPairs = []
-    for i in range(1, len(revVals)):
-        r0, r1 = revVals[i - 1], revVals[i]
-        m1 = metricVals[i] if i < len(metricVals) else None
-        if r0 and r1 and m1 and r0 != 0 and r1 != 0:
-            revGrowthPairs.append(((r1 / r0 - 1) * 100, m1 / r1))
-    leverageBeta = None
-    if len(revGrowthPairs) >= 4:
-        bslope, _bint, br2 = _ols([p[0] for p in revGrowthPairs], [p[1] * 100 for p in revGrowthPairs])
-        if br2 >= 0.3 and abs(bslope) < 5.0:
-            leverageBeta = bslope
+    # 영업레버리지 마진 (고정 마진 폐기). OPM(t)=OPM_base+β·(revGrowth-normal), β=ΔOPM%/ΔRevGrowth%
+    # 회귀(고정비 희석). 과거 OPM 범위 ±20% 상·하한. β 불안정(r²<0.3·<4점·폭주) 시 고정 fallback.
+    revGrowthPairs = _revGrowthMarginPairs(revVals, metricVals)
+    leverageBeta = _leverageBeta(revGrowthPairs)
     if leverageBeta is not None and revVals and revVals[-1]:
-        revGrowthNormal = sum(p[0] for p in revGrowthPairs) / len(revGrowthPairs)
-        mlo, mhi = min(margins), max(margins)
-        buf = 0.2 * (mhi - mlo) if mhi > mlo else 0.2 * abs(mhi or 0.05)
-        mlo, mhi = mlo - buf, mhi + buf
-        projected = []
-        prevRev = float(revVals[-1])
-        for rev in revResult.projected:
-            rg = (rev / prevRev - 1) * 100 if prevRev else 0.0
-            opm = max(mlo, min(avgMargin + (leverageBeta / 100.0) * (rg - revGrowthNormal), mhi))
-            projected.append(rev * opm)
-            prevRev = rev
+        projected = _leveragedMarginPath(revResult, revVals, revGrowthPairs, margins, avgMargin, leverageBeta)
         marginMethod = f"영업레버리지(β={leverageBeta:.2f}%p/%p)"
     else:
         projected = [rev * avgMargin for rev in revResult.projected]

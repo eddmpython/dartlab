@@ -12,8 +12,6 @@ from __future__ import annotations
 
 # 플래그 메시지에 이미 나가 있는 긴 줄표 (U+2014). 문구가 곧 반환 계약이라 바꾸지 않고,
 # 소스에는 리터럴을 남기지 않으려 코드포인트로 고정한다 (신규 문구에는 쓰지 않는다).
-_OUTPUT_DASH = chr(0x2014)
-
 _Flag = tuple[str, str]
 
 
@@ -23,11 +21,11 @@ def _momentumFlags(momentum) -> list[_Flag]:
         return []
     flags: list[_Flag] = []
     if momentum["momentum"] == "decelerating":
-        flags.append(("EARN_DECEL", f"이익 감속 추세 {_OUTPUT_DASH} 최근 3년 연속 감소"))
+        flags.append(("EARN_DECEL", "이익 감속 추세. 최근 3년 연속 감소"))
     if momentum["highAccrualWarning"]:
-        flags.append(("HIGH_ACCRUAL", f"높은 발생액 비율 {_OUTPUT_DASH} 이익의 현금 뒷받침 약함"))
+        flags.append(("HIGH_ACCRUAL", "높은 발생액 비율. 이익의 현금 뒷받침 약함"))
     if momentum["persistenceScore"] < 30:
-        flags.append(("LOW_PERSIST", f"낮은 이익 지속성 {_OUTPUT_DASH} OCF/NI 비율 낮음"))
+        flags.append(("LOW_PERSIST", "낮은 이익 지속성. OCF/NI 비율 낮음"))
     return flags
 
 
@@ -37,7 +35,7 @@ def _structuralFlags(structural) -> list[_Flag]:
         return []
     flags: list[_Flag] = []
     if structural["overallStability"] == "volatile":
-        flags.append(("STRUCT_VOLATILE", f"다수 지표에서 구조변화 감지 {_OUTPUT_DASH} 추세 추정 신뢰도 낮음"))
+        flags.append(("STRUCT_VOLATILE", "다수 지표에서 구조변화 감지. 추세 추정 신뢰도 낮음"))
     for m in structural["metrics"]:
         if m["hasBreak"] and m["name"] == "revenue":
             flags.append(("REV_BREAK", f"매출 구조변화 감지 ({m['breakYear']})"))
@@ -52,7 +50,7 @@ def _disclosureFlags(disclosure) -> list[_Flag]:
     if disclosure["riskChangeRate"] > 60:
         flags.append(("RISK_SURGE", f"리스크 공시 급변 ({disclosure['riskChangeRate']:.0f}%)"))
     if disclosure["signalDirection"] == "negative" and disclosure["signalStrength"] == "strong":
-        flags.append(("DISC_NEGATIVE", f"공시 변화 부정적 신호 {_OUTPUT_DASH} 리스크 섹션 대폭 확대"))
+        flags.append(("DISC_NEGATIVE", "공시 변화 부정적 신호. 리스크 섹션 대폭 확대"))
     return flags
 
 
@@ -105,7 +103,7 @@ def _inventoryFlags(inventory) -> list[_Flag]:
         div = h[0]["divergence"] if h and h[0].get("divergence") is not None else 0
         flags.append(("INV_DIVERGE", f"재고 급증 vs 매출 (괴리 {div:+.1f}%p)"))
     if inventory["receivableSignal"] == "deteriorating":
-        flags.append(("DSO_SPIKE", f"매출채권 회수 악화 {_OUTPUT_DASH} 매출 대비 채권 급증"))
+        flags.append(("DSO_SPIKE", "매출채권 회수 악화. 매출 대비 채권 급증"))
     if inventory["noaGrowth"] is not None and inventory["noaGrowth"] > 20:
         flags.append(("NOA_SURGE", f"순영업자산 급증 {inventory['noaGrowth']:+.1f}%"))
     return flags

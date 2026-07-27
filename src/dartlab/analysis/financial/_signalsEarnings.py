@@ -22,6 +22,101 @@ _MAX_YEARS = 8
 # ══════════════════════════════════════
 
 
+def _earningsHistoryEntry(col: str, rows: dict[str, dict], isPeriods: set, cfPeriods: set) -> dict:
+    """한 연도의 Sloan 분해 + DuPont 3 요소.
+
+    Parameters
+    ----------
+    col : str
+        연도 컬럼.
+    rows : dict[str, dict]
+        ni/ocf/ta/rev/oi/te 행 dict.
+    isPeriods, cfPeriods : set
+        IS/CF 전체 기간 집합 (분기 합산 fallback 용).
+
+    Returns
+    -------
+    dict
+        history 항목 한 장.
+    """
+    from dartlab.core.utils.flow import annualSumFlow
+
+    ni = annualSumFlow(rows["ni"], col, isPeriods, withFallback=True) or 0
+    ocf = annualSumFlow(rows["ocf"], col, cfPeriods, withFallback=True) or 0
+    ta = _get(rows["ta"], col)  # BS stock. Q4 가 연말잔액이라 그대로 쓴다.
+    rev = annualSumFlow(rows["rev"], col, isPeriods, withFallback=True) or 0
+    oi = annualSumFlow(rows["oi"], col, isPeriods, withFallback=True) or 0
+    te = _get(rows["te"], col)  # BS stock
+    accrual = ni - ocf
+
+    margin = _safe(oi, rev) if rev != 0 else None
+    turnover = _safe(rev, ta) if ta != 0 else None
+    leverage = _safe(ta, te) if te != 0 else None
+
+    return {
+        "period": col,
+        "netIncome": ni,
+        "ocf": ocf,
+        "accrual": accrual,
+        "sloanAccrualRatio": _safe(accrual, ta) if ta > 0 else None,
+        "ocfToNi": _safe(ocf, ni) if ni != 0 else None,
+        "margin": margin,
+        "turnover": turnover,
+        "leverage": leverage,
+    }
+
+
+def _earningsMomentumLabel(history: list[dict]) -> tuple[str, str]:
+    """최근 3 년 순이익 변화로 모멘텀과 방향을 고른다.
+
+    Parameters
+    ----------
+    history : list[dict]
+        _earningsHistoryEntry 결과 (최신 먼저).
+
+    Returns
+    -------
+    tuple[str, str]
+        (momentum, direction).
+    """
+    recentNi = [h["netIncome"] for h in history[:3]]
+    niChanges = [recentNi[i] - recentNi[i + 1] for i in range(len(recentNi) - 1)]
+
+    if all(d > 0 for d in niChanges):
+        return "accelerating", "up"
+    if all(d < 0 for d in niChanges):
+        return "decelerating", "down"
+    if len(niChanges) >= 2 and niChanges[0] > 0 and niChanges[1] < 0:
+        return "reversing", "up"
+    if len(niChanges) >= 2 and niChanges[0] < 0 and niChanges[1] > 0:
+        return "reversing", "down"
+    return "stable", "flat"
+
+
+def _persistenceScore(history: list[dict]) -> float:
+    """OCF/NI 평균으로 현금 지속성 점수를 낸다.
+
+    Parameters
+    ----------
+    history : list[dict]
+        _earningsHistoryEntry 결과 (최신 먼저).
+
+    Returns
+    -------
+    float
+        0~90 범위 점수. 근거 없으면 50.
+    """
+    ocfToNiVals = [h["ocfToNi"] for h in history[:5] if h["ocfToNi"] is not None]
+    if not ocfToNiVals:
+        return 50
+    avgOcfToNi = sum(ocfToNiVals) / len(ocfToNiVals)
+    if avgOcfToNi >= 1.0:
+        return min(90, 50 + avgOcfToNi * 20)
+    if avgOcfToNi >= 0.5:
+        return 30 + avgOcfToNi * 40
+    return max(10, avgOcfToNi * 60)
+
+
 @memoizedCalc
 def calcEarningsMomentum(company, *, basePeriod: str | None = None) -> dict | None:
     """Sloan 분해 + DuPont 추세 → 이익 모멘텀 가속/감속 판정.
@@ -125,75 +220,21 @@ def calcEarningsMomentum(company, *, basePeriod: str | None = None) -> dict | No
     if len(yCols) < 3:
         return None
 
-    # Phase 15 A1: Q4 함정 제거 — IS/CF flow 는 annualSumFlow (주석 실제 이행). BS 는 stock → 직접.
-    from dartlab.core.utils.flow import annualSumFlow
-
+    # Phase 15 A1: Q4 함정 제거. IS/CF flow 는 annualSumFlow (주석 실제 이행), BS 는 stock 이라 직접.
     allIsPeriods = set(isPeriods)
     allCfPeriods = set(cfPeriods)
 
-    history = []
-    for col in yCols:
-        ni = annualSumFlow(niRow, col, allIsPeriods, withFallback=True) or 0
-        ocf = annualSumFlow(ocfRow, col, allCfPeriods, withFallback=True) or 0
-        ta = _get(taRow, col)  # BS stock — Q4 가 연말잔액이라 그대로 OK
-        rev = annualSumFlow(revRow, col, allIsPeriods, withFallback=True) or 0
-        oi = annualSumFlow(oiRow, col, allIsPeriods, withFallback=True) or 0
-        te = _get(teRow, col)  # BS stock
-        accrual = ni - ocf
-
-        margin = _safe(oi, rev) if rev != 0 else None
-        turnover = _safe(rev, ta) if ta != 0 else None
-        leverage = _safe(ta, te) if te != 0 else None
-
-        history.append(
-            {
-                "period": col,
-                "netIncome": ni,
-                "ocf": ocf,
-                "accrual": accrual,
-                "sloanAccrualRatio": _safe(accrual, ta) if ta > 0 else None,
-                "ocfToNi": _safe(ocf, ni) if ni != 0 else None,
-                "margin": margin,
-                "turnover": turnover,
-                "leverage": leverage,
-            }
-        )
+    rows = {"ni": niRow, "ocf": ocfRow, "ta": taRow, "rev": revRow, "oi": oiRow, "te": teRow}
+    history = [_earningsHistoryEntry(col, rows, allIsPeriods, allCfPeriods) for col in yCols]
 
     if len(history) < 3:
         return None
 
     # 이익 방향성 판단 (최근 3년 추세)
-    recentNi = [h["netIncome"] for h in history[:3]]
-    niChanges = [recentNi[i] - recentNi[i + 1] for i in range(len(recentNi) - 1)]
-
-    if all(d > 0 for d in niChanges):
-        momentum = "accelerating"
-        direction = "up"
-    elif all(d < 0 for d in niChanges):
-        momentum = "decelerating"
-        direction = "down"
-    elif len(niChanges) >= 2 and niChanges[0] > 0 and niChanges[1] < 0:
-        momentum = "reversing"
-        direction = "up"
-    elif len(niChanges) >= 2 and niChanges[0] < 0 and niChanges[1] > 0:
-        momentum = "reversing"
-        direction = "down"
-    else:
-        momentum = "stable"
-        direction = "flat"
+    momentum, direction = _earningsMomentumLabel(history)
 
     # 현금 지속성 점수 (OCF/NI 비율 기반)
-    ocfToNiVals = [h["ocfToNi"] for h in history[:5] if h["ocfToNi"] is not None]
-    if ocfToNiVals:
-        avgOcfToNi = sum(ocfToNiVals) / len(ocfToNiVals)
-        if avgOcfToNi >= 1.0:
-            persistenceScore = min(90, 50 + avgOcfToNi * 20)
-        elif avgOcfToNi >= 0.5:
-            persistenceScore = 30 + avgOcfToNi * 40
-        else:
-            persistenceScore = max(10, avgOcfToNi * 60)
-    else:
-        persistenceScore = 50
+    persistenceScore = _persistenceScore(history)
 
     # 발생액 비율 기반 경고
     recentAccrual = [h["sloanAccrualRatio"] for h in history[:3] if h["sloanAccrualRatio"] is not None]
