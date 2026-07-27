@@ -10,10 +10,10 @@ MCP_INSTRUCTIONS = """\
 DartLab MCP의 기본 표면은 ask가 실행하는 Ask Workbench와 그 아래 데이터·분석 작업대 도구다
 (advertise 되는 전체 도구 목록·갯수는 tools/list 가 정본 — 본 문서는 핵심만 안내). 목적은 LLM이 DartLab을
 프롬프트 지식으로 외우게 하는 것이 아니라, 질문마다 먼저 skill을 고르고, capability docstring에서 호출 가능한 API를
-확인한 뒤 run_python으로 실행하고 ref 검증 후 답하게 하는 것이다.
+확인한 뒤 RunPython으로 실행하고 ref 검증 후 답하게 하는 것이다.
 
 ## 핵심 데이터 작업대 도구 (advertised 전체는 tools/list 참조)
-- ask: Workbench 5 패스 (BRIEF→WORK→CRITIQUE→COMPOSE→GATE→HARVEST) 일괄 실행.
+- ask: DartLab 공식 답변 진입점. 기본은 chat-native 자율 도구 호출이고, mode="analyze" 를 명시하면 작업대 경로로 간다.
 - ReadSkill: Skill OS 검색 + frontmatter (whenToUse, capabilityRefs, requiredEvidence) + 본문.
 - ReadCapability: dartlab 공개 API/docstring 검색.
 - EngineCall: 단일 capability 1 회 호출 (Company.panel, scan, macro 등). JSON `{apiRef, args}` 양식.
@@ -26,7 +26,7 @@ DartLab MCP의 기본 표면은 ask가 실행하는 Ask Workbench와 그 아래 
 - CompileVisual: 차트 spec codegen → visualRef (인라인 렌더).
 
 ## 전용 분석 도구 (단일 호출이면 EngineCall 보다 직접적 — tools/list 가 전체 정본)
-- PeerCompareN: 동종 N 사(2~6) 재무·밸류 비교 표.
+- PeerCompareN: 동종 N 사(2~12) 재무·밸류 비교 표.
 - DCFValuation / SensitivityAnalysis: 현금흐름 가치평가 + 민감도 격자.
 - ScenarioOverlay / ScenarioCompareN: 시나리오 리플레이·비교.
 - CreditScorecard: 신용 스코어카드. RegressionForecast: 회귀 예측.
@@ -139,18 +139,28 @@ def executeAskWorkbenchTool(name: str, args: dict[str, Any]) -> dict[str, Any]:
     Raises:
         RuntimeError: 하위 registry tool 실행이 실패할 때.
     """
+    from dartlab.ai.tools.formatting import wrapExternalInResult
     from dartlab.ai.tools.registry import CANONICAL_TOOL_NAMES as aiToolNames
     from dartlab.ai.tools.registry import executeTool as executeAiTool
 
     if name == "ask":
-        from dartlab.ai.kernel import ask
+        from dartlab.ai.kernel import AskFailedError, ask
 
         question = str(args.get("question") or "")
         kwargs = {key: value for key, value in args.items() if key != "question"}
-        return {"ok": True, "answer": ask(question, stream=False, **kwargs)}
+        # ok 를 리터럴로 박아 두면 완전 실패한 실행도 성공으로 나간다. 대표 진입점이라
+        # 클라이언트는 이 한 값을 보고 답의 유무를 판단한다.
+        try:
+            answer = ask(question, stream=False, **kwargs)
+        except AskFailedError as exc:
+            return {"ok": False, "answer": "", "error": str(exc)}
+        return {"ok": True, "answer": answer}
+    # 외부 본문에 untrusted 마커를 씌우는 것은 MCP 쪽에도 필요하다. 예전에는 이 경로가
+    # 통째로 빠져 있어서, MCP 클라이언트는 웹 검색 본문과 스킬 마켓 본문을 마커 없이 받았다.
+    # external ref 가 없으면 원본을 그대로 돌려주므로 나머지 도구에는 영향이 없다.
     if name in aiToolNames:
-        return executeAiTool(name, args)
-    return executeCompatAskTool(name, args)
+        return wrapExternalInResult(executeAiTool(name, args))
+    return wrapExternalInResult(executeCompatAskTool(name, args))
 
 
 def executeCompatAskTool(name: str, args: dict[str, Any]) -> dict[str, Any]:

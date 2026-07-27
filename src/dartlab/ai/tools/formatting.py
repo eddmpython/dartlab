@@ -27,6 +27,14 @@ _EXTERNAL_TEXT_KEYS: tuple[str, ...] = (
     "htmlContent",
     "headline",
     "excerpt",
+    # 커뮤니티 스킬 마켓 항목의 지시문 필드. 남이 쓴 절차와 기준이라 본문과 같은 무게로
+    # 다뤄야 한다. 이름 그대로 모델이 그대로 따라 하기 좋은 모양이라 더 그렇다.
+    "procedure",
+    "criteria",
+    "forbidden",
+    "completionCriteria",
+    "whenToUse",
+    "description",
 )
 
 _HTML_TAG_RE = re.compile(r"<[^<>]+>")
@@ -99,6 +107,13 @@ def _wrapDictTextFields(payload: Any) -> Any:
         for key, value in payload.items():
             if key in _EXTERNAL_TEXT_KEYS and isinstance(value, str) and value:
                 new_payload[key] = wrapExternal(value)
+            elif key in _EXTERNAL_TEXT_KEYS and isinstance(value, list):
+                # 문자열 목록도 본문이다. 절차나 기준처럼 지시문 모양을 한 필드가 하필
+                # 목록으로 오는데, 예전에는 목록 안 dict 만 훑고 문자열은 그대로 지나쳤다.
+                new_payload[key] = [
+                    wrapExternal(item) if isinstance(item, str) and item else _wrapDictTextFields(item)
+                    for item in value
+                ]
             elif isinstance(value, (dict, list)):
                 new_payload[key] = _wrapDictTextFields(value)
             else:
@@ -328,7 +343,13 @@ def wrapExternalInResult(resultDict: dict[str, Any]) -> dict[str, Any]:
     for ref in refs:
         if isinstance(ref, dict) and ref.get("sourceType") == "external":
             new_payload = _wrapDictTextFields(ref.get("payload") or {})
-            new_refs.append({**ref, "payload": new_payload})
+            newRef = {**ref, "payload": new_payload}
+            # 최상위 title 도 외부가 쓴 글이다. payload 만 감싸면 검색 결과 제목에 적어 둔
+            # 지시문이 마커 없이 모델에 그대로 간다. 제목은 짧아서 눈에 잘 띄지도 않는다.
+            title = ref.get("title")
+            if isinstance(title, str) and title:
+                newRef["title"] = wrapExternal(title)
+            new_refs.append(newRef)
         else:
             new_refs.append(ref)
     new_data = _wrapDictTextFields(resultDict.get("data") or {})

@@ -180,6 +180,18 @@ def _refTokenKinds(text: str) -> set[str]:
     return kinds
 
 
+def _prefixMatchesAtSegmentBoundary(refId: str, candidate: str) -> bool:
+    """`candidate` 가 `refId` 의 앞부분이되 세그먼트 경계에서 끝나는지 본다.
+
+    ref id 는 `value:005930:BS:총자산` 처럼 콜론으로 끊긴 구조라, 중간에서 아무렇게나 잘린
+    앞부분은 다른 것을 가리킬 수 있다. 경계를 요구하지 않으면 글자 하나짜리 token 이 실재하는
+    근거를 가리키는 것으로 통과한다.
+    """
+    if refId == candidate:
+        return True
+    return refId.startswith(f"{candidate}:")
+
+
 def _findFakeRefTokens(text: str, refs: list[Ref]) -> list[str]:
     """답안에 박힌 ref token 중 state.refs id 와 매칭 안 되는 fake/truncated token 목록.
 
@@ -211,7 +223,10 @@ def _findFakeRefTokens(text: str, refs: list[Ref]) -> list[str]:
             continue
         if id_part in state_ids:
             continue
-        if any(rid.startswith(candidate_with_prefix) or rid.startswith(id_part) for rid in state_ids):
+        # prefix 매칭은 세그먼트 경계(`:`)에서 끝나야 한다. 예전에는 아무 데서나 끊어도
+        # 받아 줘서, 실재하는 id 의 첫 글자 하나만 적은 `<valueRef:v>` 가 진짜 인용으로
+        # 통과했다. 모델이 받지도 않은 근거 표를 지어낼 수 있는 자리다.
+        if any(_prefixMatchesAtSegmentBoundary(rid, candidate_with_prefix) for rid in state_ids):
             continue
         full = f"{kind_short}:{id_part}"
         if full not in seen:

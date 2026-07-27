@@ -83,7 +83,6 @@ _SPECS: dict[str, ToolSpec] = {
                 "query": {"type": "string"},
                 "limit": {"type": "integer"},
                 "includeDraft": {"type": "boolean"},
-                "url": {"type": "string"},
             },
             "required": ["query"],
         },

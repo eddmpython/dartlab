@@ -22,6 +22,24 @@ _SAFE_ROOTS: tuple[Path, ...] = (
 _MAX_BYTES = 200_000  # 200 KB
 _MAX_LINES = 4000
 
+# 안전 경로 안에 있어도 절대 읽지 않는 것들. repo 루트와 `~/.dartlab` 이 허용 경로라
+# 예전에는 `.env` 와 `secrets.json` 이 그대로 읽혔다. 열일곱 개 서비스 자격증명이 한 번의
+# 도구 호출로 나왔다. 도구가 코드 실행을 이미 준다는 것은 이 구멍을 정당화하지 않는다.
+# 외부 본문으로 도구 선택을 흔들 수 있는 통로가 같은 도구 묶음 안에 있기 때문이다.
+_DENIED_NAMES = frozenset({"secrets.json", "credentials.json", "id_rsa", "id_ed25519", ".npmrc", ".netrc"})
+_DENIED_SUFFIXES = (".pem", ".key", ".p12", ".pfx")
+_DENIED_PARTS = frozenset({".git", ".ssh", ".aws", "node_modules"})
+
+
+def _isDeniedPath(path: Path) -> bool:
+    """자격증명 계열 파일인지 판정한다. 안전 경로 판정과 별개로 항상 먼저 본다."""
+    name = path.name
+    if name in _DENIED_NAMES or name == ".env" or name.startswith(".env."):
+        return True
+    if name.lower().endswith(_DENIED_SUFFIXES):
+        return True
+    return bool(_DENIED_PARTS.intersection(path.parts))
+
 
 def readFile(target: str, *, startLine: int | None = None, endLine: int | None = None) -> ToolResult:
     """안전 경로의 텍스트 파일을 읽는다.
@@ -40,6 +58,13 @@ def readFile(target: str, *, startLine: int | None = None, endLine: int | None =
         resolved = candidate.resolve(strict=False)
     except OSError as exc:
         return ToolResult(False, f"경로 해석 실패: {exc}", error="resolve_failed")
+
+    if _isDeniedPath(resolved):
+        return ToolResult(
+            False,
+            f"자격증명 계열 파일은 읽지 않는다: {resolved.name}",
+            error="denied_credential_path",
+        )
 
     if not _isUnderSafeRoot(resolved):
         return ToolResult(

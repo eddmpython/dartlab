@@ -104,4 +104,4 @@ def saveTemplate(name: str, *, content: str | None = None, file: str | None = No
     return {"name": name, "content": content, "file": file}
 
 
-__all__ = ["ask", "configure", "get_config", "templates", "saveTemplate"]
+__all__ = ["ask", "configure", "getConfig", "templates", "saveTemplate"]

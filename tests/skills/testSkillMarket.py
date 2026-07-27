@@ -122,12 +122,19 @@ def testReadSkillMarketToolIsRegistered() -> None:
     """AI 도구 registry 에 community market 조회 표면이 있다."""
 
     assert "ReadSkillMarket" in listToolNames()
-    result = executeTool(
-        "ReadSkillMarket",
-        {
-            "query": "매출채권",
-            "url": "file:///definitely/missing/marketIndex.json",
-        },
-    )
-    assert result["ok"] is False
+    result = executeTool("ReadSkillMarket", {"query": "매출채권"})
     assert result["data"]["builtinFirst"] is True
+
+
+@pytest.mark.unit
+def testReadSkillMarketDoesNotTakeACallerSuppliedUrl() -> None:
+    """모델이 열 주소를 고르게 두면 임의 주소 요청과 로컬 파일 읽기가 함께 열린다.
+
+    예전에는 `url` 이 도구 스키마에 광고돼 있어서 `file://` 도 그대로 열렸고, 돌아온 남의
+    절차문은 `internal` 로 표시돼 untrusted 마커도 안 붙었다. 운영자 변경은 환경변수로 한다.
+    """
+    import inspect
+
+    from dartlab.ai.tools.readSkillMarket import readSkillMarket
+
+    assert "url" not in inspect.signature(readSkillMarket).parameters

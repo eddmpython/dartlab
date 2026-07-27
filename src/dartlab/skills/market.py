@@ -81,7 +81,10 @@ def loadMarketIndex(
                 "User-Agent": "dartlab-skill-market/1",
             },
         )
-        with urllib.request.urlopen(request, timeout=timeout) as response:  # noqa: S310 - fixed user-visible URL.
+        # noqa 사유: target 은 운영자가 정하는 자리다. 예전 주석은 "fixed URL" 이라 적었는데
+        # 사실이 아니었다. 호출자가 넘긴 주소를 그대로 열었고 그 인자가 도구 스키마에
+        # 광고돼 있었다. 지금은 도구가 인자를 받지 않고 환경변수와 기본값만 쓴다.
+        with urllib.request.urlopen(request, timeout=timeout) as response:  # noqa: S310
             payload = response.read().decode("utf-8")
     except (urllib.error.URLError, TimeoutError, OSError, ValueError):
         return emptyMarketIndex()

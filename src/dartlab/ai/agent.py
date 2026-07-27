@@ -387,7 +387,9 @@ def _runAgentImpl(
             {
                 "refs": refs,
                 "artifacts": artifacts,
-                "verification": {"ok": True, "issues": [], "refId": "verify:answer"},
+                # chat-native 경로는 GATE 를 돌리지 않는다. 검증을 안 했는데 통과했다고
+                # 적으면 이 값을 읽는 쪽이 검증된 답으로 오해한다. 안 했으면 안 했다고 쓴다.
+                "verification": {"ok": None, "issues": [], "note": "chat-native 경로는 GATE 미실행"},
                 "responseMeta": {
                     "finalEvent": "answer",
                     "responseStatus": "ok",
@@ -514,7 +516,7 @@ def _finalize(
         {
             "refs": refs,
             "artifacts": artifacts,
-            "verification": {"ok": True, "issues": [reason], "refId": f"verify:{reason}"},
+            "verification": {"ok": None, "issues": [reason], "note": "chat-native 경로는 GATE 미실행"},
             "responseMeta": {
                 "finalEvent": "answer",
                 "responseStatus": _FINALIZE_STATUS.get(reason, "ok"),
@@ -641,9 +643,15 @@ class _ToolCallTracker:
         return self._cacheHits[key]
 
     def recordResult(self, key: tuple[str, str], name: str, result: dict[str, Any]) -> None:
-        """새 실행 결과 저장 + failure streak 갱신. limit 도달 시 자동 blocked 등록."""
-        self._cache[key] = result
+        """새 실행 결과 저장 + failure streak 갱신. limit 도달 시 자동 blocked 등록.
+
+        실패한 결과는 캐시에 넣지 않는다. 넣으면 같은 인자로 다시 부를 때 실행 대신 cache hit
+        으로 가로채이고, hit 한 번이면 곧바로 영구 차단이라 failure streak 이 둘까지 갈 일이
+        없다. 한 번의 일시적 실패가 그 세션 내내 그 도구를 막았다. streak 이 재시도를 맡는다.
+        """
         argsHash = key[1]
+        if result.get("ok"):
+            self._cache[key] = result
         if not result.get("ok"):
             errKey = str(result.get("error") or "unknown")
             streakKey = (name, errKey, argsHash)
@@ -772,15 +780,26 @@ _REF_PAYLOAD_KEYS = (
     "axis",
     "axisKr",
     "stmt",
+    # 외부 본문 키. 이것이 빠져 있어서 `wrapExternalInResult` 가 감싼 값이 세 줄 뒤에
+    # 통째로 잘려 나갔다. 결과가 두 가지였다. untrusted 마커가 모델에 한 번도 닿지 않았고,
+    # webSearch 는 제목과 URL 만 보내는 셈이라 본문이 아예 전달되지 않았다.
+    # 아래 키는 `tools.formatting._EXTERNAL_TEXT_KEYS` 와 같은 자리를 가리킨다.
+    "snippet",
+    "text",
+    "abstract",
+    "body",
+    "content",
+    "excerpt",
+    "headline",
 )
 
 
 def _trimRefPayload(payload: dict[str, Any]) -> dict[str, Any]:
-    """ref.payload 에서 LLM 인용에 필요한 핵심 키만 유지 — token 절약.
+    """ref.payload 에서 LLM 인용에 필요한 핵심 키만 유지. token 절약.
 
     핵심 키 (`stockCode` · `period` · `metric` · `value` · `docId` · `page` · `confidence` 등)
-    만 유지. 나머지 (예: 5MB raw DataFrame 직렬화) 는 drop. LLM 은 ref id 로 inline 인용,
-    상세 본문은 UI 가 별도 fetch.
+    와 외부 본문 키만 유지. 나머지 (예: 5MB raw DataFrame 직렬화) 는 drop. LLM 은 ref id 로
+    inline 인용, 상세 본문은 UI 가 별도 fetch.
     """
     return {k: payload[k] for k in _REF_PAYLOAD_KEYS if k in payload}
 
