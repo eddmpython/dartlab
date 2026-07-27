@@ -588,7 +588,12 @@ def scanAccount(
 
     # 최신 먼저 역순 정렬
     periodCols = list(reversed(periodCols))
-    result = result.select(["stockCode"] + periodCols)
+    # 행도 종목코드로 정렬한다. 위 group_by 와 pivot 은 polars 가 병렬로 처리해서 행 순서를
+    # 보장하지 않는다. 그래서 같은 질의를 두 번 돌리면 전종목 표가 매번 다른 순서로 나왔다.
+    # 사용자가 보는 표가 흔들리는 것도 문제지만, 그 위에 얹힌 content seal 이 같은 내용에
+    # 매번 다른 식별자를 붙이는 것이 더 크다. 여기가 전종목 축 대부분의 공통 원천이라
+    # 한 줄로 그 계열 전체가 결정적이 된다.
+    result = result.select(["stockCode"] + periodCols).sort("stockCode")
 
     _log.info(
         "scanAccount('%s'): %d종목 × %d기간",

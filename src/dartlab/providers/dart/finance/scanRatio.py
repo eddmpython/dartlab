@@ -240,7 +240,11 @@ def _calcSimpleRatio(defn: dict, fsPref: str, *, freq: str = "Q") -> pl.DataFram
         )
         resultExprs.append(expr)
 
-    return joined.select(resultExprs)
+    # 종목코드로 정렬해 돌려준다. polars 의 병렬 조인은 행 순서를 보장하지 않아서, 같은
+    # 질의를 두 번 돌리면 2,812 행이 매번 다른 순서로 나왔다. 사용자가 보는 표가 실행마다
+    # 섞이는 것도 문제지만, 그 위에 얹힌 content seal 이 같은 내용에 매번 다른 식별자를
+    # 붙이게 되는 것이 더 크다. 내용이 같으면 같은 식별자라는 것이 seal 의 존재 이유다.
+    return joined.select(resultExprs).sort("stockCode")
 
 
 def _calcYoyRatio(defn: dict, fsPref: str, *, freq: str = "Q") -> pl.DataFrame:
