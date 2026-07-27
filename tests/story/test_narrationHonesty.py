@@ -17,7 +17,14 @@ Damodaran 3-test 한 칸을 공짜로 가져갔고, 스무 검사가 전부 예�
 
 from __future__ import annotations
 
-from dartlab.story.narrate import _detectTrend, narrateCashQuality, narrateLeverage, narrateMargin
+from dartlab.story.narrate import (
+    _detectTrend,
+    narrateCashQuality,
+    narrateLeverage,
+    narrateMargin,
+    narrateTechnicalVerdict,
+    narrateTrend,
+)
 from dartlab.story.validators.validators import _INVARIANTS, _commonSenseTest
 
 
@@ -109,3 +116,48 @@ def testNormalRetailerIsNotFlaggedAsAnInvariantViolation() -> None:
     result = _commonSenseTest(None, {"opm": 3.0, "roe": 15.0})
 
     assert result.passed is True
+
+
+def _trendVerdict(**indicators) -> dict:
+    base = {
+        "ma_alignment": "혼조",
+        "ma_alignment_score": 0,
+        "adx": 12.0,
+        "adx_strong": False,
+        "supertrend": "long",
+        "psar": "long",
+    }
+    base.update(indicators)
+    label = "강한 상승" if indicators.get("label") == "강한 상승" else "횡보"
+    base.pop("label", None)
+    return {"categories": {"trend": {"label": label, "indicators": base}}}
+
+
+def testStrongDowntrendIsNotCalledDirectionless() -> None:
+    """quant 라벨은 2 분류라 '횡보' 는 '강한 상승이 아니다' 라는 뜻이다.
+
+    ADX 30 을 인쇄한 바로 그 문장이 방향성이 없다고 말하면 안 된다.
+    """
+
+    verdict = _trendVerdict(
+        ma_alignment="역배열", ma_alignment_score=-3, adx=30.0, adx_strong=True, supertrend="short", psar="short"
+    )
+
+    for text in (narrateTrend(verdict), narrateTechnicalVerdict(verdict)):
+        assert "방향성 약함" not in text
+        assert "하락" in text
+
+
+def testGenuinelyFlatTrendIsStillCalledWeak() -> None:
+    """진짜 방향 없는 구간까지 방향을 붙이면 안 된다."""
+
+    assert "방향성 약함" in narrateTrend(_trendVerdict())
+
+
+def testStrongUptrendIsUnchanged() -> None:
+    """audit 을 통과한 라벨의 서사는 건드리지 않는다."""
+
+    verdict = _trendVerdict(label="강한 상승", ma_alignment="정배열", ma_alignment_score=4, adx=32.0, adx_strong=True)
+
+    assert "강한 상승" in narrateTrend(verdict)
+    assert "t=7.63" in narrateTrend(verdict)

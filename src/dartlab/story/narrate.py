@@ -146,8 +146,29 @@ def _detectTrend(values: list, minCount: int = 3) -> str | None:
 # 5 분석 엔진 공통 패턴: 데이터 소비 → 분석기준·서사·관점·근거 → story 도구.
 
 
+def _describeNonBullishTrend(inds: dict) -> str:
+    """ "강한 상승" 이 아닌 추세를 관측된 지표대로 서술한다.
+
+    quant 의 추세 라벨은 12년 audit 을 통과한 둘만 남긴 2 분류라, "횡보" 는 방향이 없다는
+    뜻이 아니라 "강한 상승이 아니다" 라는 뜻이다. 예전에는 그것을 그대로 "방향성 약함" 이라
+    적어서, MA 역배열에 ADX 30 인 강한 하락 구간이 ADX 30 을 인쇄한 바로 그 문장 안에서
+    방향성이 없다고 부정당했다. 라벨이 못 나르는 방향은 지표에서 직접 읽는다.
+    """
+    ma = inds.get("ma_alignment", "")
+    adxStrong = inds.get("adx_strong")
+    bearish = inds.get("supertrend") == "short" and inds.get("psar") == "short"
+
+    if ma == "역배열" and (adxStrong or bearish):
+        return "하락"
+    if ma == "정배열":
+        return "상승이되 강도는 기준 미달"
+    if adxStrong:
+        return "방향은 뚜렷하나 상승 기준 미달"
+    return "방향성 약함"
+
+
 def narrateTrend(verdictData: dict | None) -> str:
-    """추세 서사 — MA 정배열 + ADX + 12년 audit 근거."""
+    """추세 서사. MA 정배열 + ADX + 12년 audit 근거."""
     if not verdictData:
         return "추세 데이터 없음."
     cats = verdictData.get("categories", {})
@@ -165,10 +186,10 @@ def narrateTrend(verdictData: dict | None) -> str:
         text = f"추세 강한 상승 (MA {ma} {ma_score}단계, ADX {adx:.0f})"
         if st == "long" and psar == "long":
             text += ". Supertrend + PSAR 모두 상승 확인"
-        text += ". 12년 audit t=7.63 검증 — 다음 20봉 수익률 통계 우위."
+        text += ". 12년 audit t=7.63 검증. 다음 20봉 수익률 통계 우위."
     else:
-        text = f"추세 횡보 (MA {ma}, ADX {adx:.0f})"
-        text += ". 방향성 약함 — 추세 전략 효과 제한적."
+        text = f"추세 {_describeNonBullishTrend(inds)} (MA {ma}, ADX {adx:.0f})"
+        text += ". 상승 추세 전략 대상은 아니다."
     return text
 
 
@@ -347,9 +368,9 @@ def narrateTechnicalVerdict(data: dict) -> str | None:
     parts: list[str] = []
 
     if label == "강한 상승":
-        parts.append(f"추세 강한 상승 (MA {ma}, ADX {adx:.0f}) — 12년 검증 유의미 (t=7.63)")
+        parts.append(f"추세 강한 상승 (MA {ma}, ADX {adx:.0f}). 12년 검증 유의미 (t=7.63)")
     else:
-        parts.append(f"추세 횡보 (MA {ma}, ADX {adx:.0f}) — 방향성 약함")
+        parts.append(f"추세 {_describeNonBullishTrend(inds)} (MA {ma}, ADX {adx:.0f})")
 
     # 참고 지표 (audit 미통과이지만 사실 데이터로 노출)
     ref = []
