@@ -229,6 +229,7 @@ def computeCompanyWacc(
 
     # beta: 1순위 외부 주입, 2순위 bottom-up peer Hamada, 3순위 섹터 파라미터, 4순위 1.0
     beta = betaOverride
+    betaSource = "override" if betaOverride is not None else None
     if beta is None and bottomUpBeta:
         try:
             from dartlab.synth.bottomUpBeta import calcBottomUpBeta
@@ -241,24 +242,33 @@ def computeCompanyWacc(
                 series, "BS", "owners_of_parent_equity"
             )
             de_bu = (debt_bu / equity_bu) if (equity_bu and equity_bu > 0) else 0.3
-            sector_name = sectorParams.name if sectorParams and hasattr(sectorParams, "name") else "Unknown"
+            # 섹터 이름은 `label` 이다. `name` 은 존재하지 않는 속성이라 언제나
+            # "Unknown" 으로 떨어졌고, 그러면 베타 조회가 반드시 실패해 1.0 이 나온다.
+            sector_name = getattr(sectorParams, "label", "") or "Unknown"
             bu_result = calcBottomUpBeta(
                 sector=sector_name,
                 debtToEquity=de_bu,
                 taxRate=0.22,
                 country=country or _resolveCountryFromCurrency(currency),
             )
-            if bu_result.get("leveredBeta"):
+            # method 를 확인한다. `bottom_up` 만 실제 peer 계산 결과이고 나머지는 대체값이다.
+            # 예전에는 값만 보고 받아서, 더 정교한 방법을 켰는데 섹터 베타 1.2 대신
+            # 대체값 1.0 이 들어가 할인율이 오히려 낮아지고 가치평가가 부풀었다.
+            betaSource = bu_result.get("method")
+            if betaSource == "bottom_up" and bu_result.get("leveredBeta"):
                 beta = bu_result["leveredBeta"]
         except (ImportError, AttributeError, ValueError, TypeError):
             pass
     if beta is None:
         if sectorParams and hasattr(sectorParams, "beta") and sectorParams.beta:
             beta = sectorParams.beta
+            betaSource = "sectorParams"
         elif sectorElasticity and hasattr(sectorElasticity, "revenueToGdp"):
             beta = max(0.5, min(sectorElasticity.revenueToGdp, 2.5))
+            betaSource = "sectorElasticity"
         else:
             beta = 1.0
+            betaSource = "fallbackOne"
 
     # 시가총액 기반 beta 감쇠 — 대형주는 시장 대비 변동성이 낮음
     if marketCap and marketCap > 0:
@@ -278,7 +288,13 @@ def computeCompanyWacc(
     equity_book = getLatest(series, "BS", "total_stockholders_equity") or getLatest(
         series, "BS", "owners_of_parent_equity"
     )
-    equity_value = marketCap if marketCap else (equity_book or 1)
+    # `or 1` 은 None 과 0 만 걸러내고 음수 장부가는 그대로 통과시켰다. 자본잠식 기업이
+    # 음수 자기자본으로 들어가면 가중치가 -200% 와 300% 처럼 뒤집히고, 그 조합이 하필
+    # WACC 하한 4% 에 걸려 가장 위험한 회사가 가장 싼 할인율을 받았다. 자본이 -200 억일
+    # 때 4%, -400 억일 때 11% 로 값이 튀기까지 한다.
+    equity_value = marketCap if marketCap else equity_book
+    if not equity_value or equity_value <= 0:
+        equity_value = None
 
     # Kd (타인자본비용) -- 실제 이자비용 역산
     fc = getTTM(series, "IS", "finance_costs") or getTTM(series, "IS", "interest_expense")
@@ -299,13 +315,20 @@ def computeCompanyWacc(
     else:
         tax_rate = mkt.defaultTaxRate / 100
 
-    # WACC
-    total_capital = equity_value + total_debt
-    if total_capital > 0:
-        e_weight = equity_value / total_capital
-        d_weight = total_debt / total_capital
-    else:
+    # WACC. 자기자본 가치를 세울 수 없으면 자본구조 가중을 만들 수 없다. 억지로 만들면
+    # 가중치가 구간을 벗어나고 결과가 자본 크기에 대해 단조롭지도 않게 된다.
+    if equity_value is None:
+        equityUnknown = True
         e_weight, d_weight = 1.0, 0.0
+        equity_value = 0.0
+    else:
+        equityUnknown = False
+        total_capital = equity_value + total_debt
+        if total_capital > 0:
+            e_weight = equity_value / total_capital
+            d_weight = total_debt / total_capital
+        else:
+            e_weight, d_weight = 1.0, 0.0
 
     wacc = e_weight * ke + d_weight * kd * (1 - tax_rate)
     # Phase 4 G12.1: 대기업 AA급 현실 (Rf 2.4% + 1.5%p ≈ 4%) 반영 — 하한 5→4
@@ -315,6 +338,11 @@ def computeCompanyWacc(
         "ke": ke,
         "kd": kd,
         "beta": beta,
+        # 베타가 계산 결과인지 대체값인지 소비자가 알아야 한다. 예전에는 구분이 없어
+        # 대체값 1.0 과 실제 섹터 베타가 같은 모양으로 나갔다.
+        "betaSource": betaSource,
+        # 자기자본 가치를 세우지 못해 자본구조 가중을 자기자본 100% 로 둔 경우를 알린다.
+        "equityValueUnknown": equityUnknown,
         "rf": rf,
         "erp": erp,
         "tax_rate": tax_rate * 100,
