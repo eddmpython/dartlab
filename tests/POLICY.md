@@ -188,7 +188,7 @@ $env:DARTLAB_TEST_LOCKED="1"; uv run python -X utf8 -m pytest tests/cli/test_out
 `tests/run.py` 의 `GATES` dict 가 SSOT. 아래 블록은 `uv run python -X utf8 tests/run.py docs --write` 가 렌더하며, 어긋나면 [tests/audit/test_runEntrypoint.py](audit/test_runEntrypoint.py)`::test_docsGatesBlockInSync` 가 CI Fast 에서 차단한다 (27↔34 류 드리프트 영구 0).
 
 <!-- gates:auto:start — `tests/run.py docs --write` 가 생성. 손으로 편집 금지 -->
-**합계 30 게이트 — fast 17 · full 6 · nightly 7. push 전 `preflight` 차단 게이트(fast·blocking) 13.**
+**합계 30 게이트 — fast 17 · full 6 · nightly 7. push 전 `preflight` 차단 게이트(fast·blocking) 14.**
 
 | 게이트 | tier | 차단 | matrix | timeout |
 |---|---|---|---|---|
@@ -199,7 +199,7 @@ $env:DARTLAB_TEST_LOCKED="1"; uv run python -X utf8 -m pytest tests/cli/test_out
 | `smoke` | fast | ✅ | - | 20m |
 | `test-fast` | fast | ✅ | - | 30m |
 | `wheel-smoke` | fast | ✅ | - | 20m |
-| `quality-gate` | fast | — | - | 20m |
+| `quality-gate` | fast | ✅ | - | 20m |
 | `security` | fast | — | - | 20m |
 | `deps-check` | fast | — | - | 20m |
 | `notebooks` | fast | ✅ | - | 20m |
