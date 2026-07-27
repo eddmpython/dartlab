@@ -1,9 +1,21 @@
-"""광범위 catch 가 원인을 버리고 대체값을 돌려주는 자리 lint.
+"""실패를 조용히 데이터로 바꾸는 자리 lint.
 
 `checkSilentFail.py` 는 2026-04-19 사고 class 인 "파일 부재 시 빈 값" 만 본다. 그런데
-라이브러리에서 실제로 지배적인 침묵 패턴은 다른 모양이다. `except Exception` 처럼
-넓게 잡고 `return None`, `return {}`, `return 0` 처럼 대체값을 돌려주면 호출자는 실패를
-데이터로 받는다. 잘못된 값과 "값 없음" 이 구분되지 않고, 원인은 traceback 째로 사라진다.
+라이브러리에서 실제로 지배적인 침묵 패턴은 다른 모양이다. 잡아 놓고 대체값을 흘려보내면
+호출자는 실패를 데이터로 받는다. 잘못된 값과 "값 없음" 이 구분되지 않고, 원인은
+traceback 째로 사라진다.
+
+세 모양을 본다. 처음에는 첫째만 봤는데, 일곱 계층 전수 검토에서 나머지 둘이 같은 무게로
+반복해 나왔다.
+
+1. 넓은 catch 가 `return None` / `return {}` / `return 0` 으로 대체값을 돌려주는 것.
+2. `except ...: renewed = False` 처럼 이름에 상수를 꽂고 흐름을 잇는 것. 일시적 오류와
+   진짜 실패가 같은 값이 되어 읽는 쪽이 둘을 구분할 수 없다.
+3. 모으는 반복문 안에서 `except ...: continue` 로 실패한 항목을 건너뛰는 것. 결과 목록만
+   보면 그 항목이 원래 없었는지 처리하다 실패했는지 알 수 없다. 스무 검사가 전부 예외로
+   죽어도 "20개 전부 통과" 가 찍히던 사고가 정확히 이 모양이었다.
+
+2 번과 3 번은 좁은 except 도 대상이다. 좁게 잡았다는 것이 원인을 버려도 된다는 뜻은 아니다.
 
 이 가드가 요구하는 것은 흐름 변경이 아니라 기록이다. 같은 자리에서 원인을 한 줄
 남기면(로거 호출 또는 `recordFailure`) 통과한다. 그래서 baseline 을 줄이는 작업이
@@ -93,6 +105,45 @@ def _isSilentSubstitute(handler: ast.ExceptHandler) -> bool:
     )
 
 
+def _isSilentAssign(handler: ast.ExceptHandler) -> bool:
+    """실패했을 때 이름에 상수를 꽂고 흐름을 잇는 자리인지 본다.
+
+    `return` 만 보던 규칙이 놓치던 모양이다. `except ...: renewed = False` 처럼 쓰면
+    일시적 오류와 진짜 실패가 같은 값이 되고, 그 이름을 읽는 쪽은 둘을 구분할 수 없다.
+    좁은 except 도 대상이다. 좁게 잡았다는 것이 원인을 버려도 된다는 뜻은 아니다.
+    """
+    if _recordsCause(handler):
+        return False
+    body = [stmt for stmt in handler.body if not isinstance(stmt, ast.Pass)]
+    if not body:
+        return False
+    return all(isinstance(stmt, ast.Assign) and _isSubstituteValue(stmt.value) for stmt in body)
+
+
+def _isSilentLoopSkip(handler: ast.ExceptHandler, loopHandlerIds: set[int]) -> bool:
+    """모으는 반복문 안에서 실패한 항목을 소리 없이 건너뛰는 자리인지 본다.
+
+    결과 목록만 보면 그 항목이 원래 없었는지 처리하다 실패했는지 알 수 없다. 스무 검사가
+    전부 예외로 죽어도 "전부 통과" 가 찍히던 사고가 정확히 이 모양이었다.
+    """
+    if id(handler) not in loopHandlerIds or _recordsCause(handler):
+        return False
+    body = [stmt for stmt in handler.body if not isinstance(stmt, ast.Pass)]
+    return bool(body) and all(isinstance(stmt, ast.Continue) for stmt in body)
+
+
+def _handlersInsideLoops(tree: ast.AST) -> set[int]:
+    """반복문 몸통 안에 있는 handler 의 id 집합."""
+    inside: set[int] = set()
+    for node in ast.walk(tree):
+        if not isinstance(node, (ast.For, ast.AsyncFor, ast.While)):
+            continue
+        for child in ast.walk(node):
+            if isinstance(child, ast.ExceptHandler):
+                inside.add(id(child))
+    return inside
+
+
 def _scan(target: Path) -> list[str]:
     found: set[str] = set()
     for path in sorted(target.rglob("*.py")):
@@ -103,11 +154,14 @@ def _scan(target: Path) -> list[str]:
         except (SyntaxError, UnicodeDecodeError, OSError):
             continue
         relative = path.relative_to(_REPO).as_posix()
+        loopHandlerIds = _handlersInsideLoops(tree)
         for node in ast.walk(tree):
             if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
                 continue
             for inner in ast.walk(node):
-                if isinstance(inner, ast.ExceptHandler) and _isSilentSubstitute(inner):
+                if not isinstance(inner, ast.ExceptHandler):
+                    continue
+                if _isSilentSubstitute(inner) or _isSilentAssign(inner) or _isSilentLoopSkip(inner, loopHandlerIds):
                     found.add(f"{relative}::{node.name}")
                     break
     return sorted(found)
@@ -138,7 +192,7 @@ def main() -> int:
 
     violations = _scan(target)
     print(f"=== silent substitute audit: {args.target} ===")
-    print(f"광범위 catch 가 원인 없이 대체값을 반환하는 함수: {len(violations)} 개")
+    print(f"실패를 원인 없이 대체값으로 바꾸는 함수: {len(violations)} 개")
 
     if args.update_baseline:
         baselinePath.parent.mkdir(parents=True, exist_ok=True)

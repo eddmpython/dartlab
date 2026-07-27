@@ -25,6 +25,7 @@ MCP 경로는 감싸는 호출 자체가 없었다. 외부 클라이언트는 �
 from __future__ import annotations
 
 import json
+import pathlib
 
 import pytest
 
@@ -172,11 +173,25 @@ def testCredentialFilesAreRefused(target: str) -> None:
     assert result.error == "denied_credential_path"
 
 
-@pytest.mark.parametrize("target", ["CLAUDE.md", "README.md"])
-def testOrdinaryFilesStillRead(target: str) -> None:
-    """막느라 도구를 못 쓰게 만들면 안 된다."""
+@pytest.mark.parametrize("name", ["CLAUDE.md", "README.md", "report.txt", "notes.env.md", "keyMetrics.py"])
+def testOrdinaryFilesAreNotDenied(name: str) -> None:
+    """막느라 도구를 못 쓰게 만들면 안 된다.
 
-    assert readFile(target).ok is True
+    실제 읽기 성공까지 확인하지 않는 이유가 있다. 안전 경로는 설치 형태에 따라 달라져서
+    (편집 설치와 아닌 설치의 저장소 루트가 다르다) 그 성공 여부는 환경 사실이지 이 변경이
+    지켜야 할 성질이 아니다. 여기서 고정할 것은 거절 목록이 평범한 파일을 안 삼키는 것이다.
+    """
+    from dartlab.ai.tools.readFile import _isDeniedPath
+
+    assert _isDeniedPath(pathlib.Path(name)) is False
+
+
+@pytest.mark.parametrize("name", [".env", ".env.local", ".env.production", "secrets.json", "server.pem", "id_rsa"])
+def testCredentialNamesAreDeniedRegardlessOfLocation(name: str) -> None:
+    """이름만으로 거절한다. 어느 경로에 있든 같은 판정이어야 한다."""
+    from dartlab.ai.tools.readFile import _isDeniedPath
+
+    assert _isDeniedPath(pathlib.Path(name)) is True
 
 
 def _refs() -> list[Ref]:

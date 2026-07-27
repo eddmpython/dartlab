@@ -16,6 +16,7 @@ import contract makes that structural (L2 cannot import L2.5).
 
 from __future__ import annotations
 
+import logging
 import statistics
 from datetime import datetime, timezone
 from pathlib import Path
@@ -35,6 +36,8 @@ from dartlab.synth.expectationSpec import (
     buildExpectationId,
     scoreExpectation,
 )
+
+_LOG = logging.getLogger(__name__)
 
 _Z = {5: -1.645, 25: -0.674, 50: 0.0, 75: 0.674, 95: 1.645}
 _ENGINE_MACRO = "macro.simulate.simulateMacro"
@@ -1003,7 +1006,11 @@ def scoreDue(
                         for m2, (s2, k2) in _METRIC_KEYS.items():  # 한 번 로드에 IS 지표 전부
                             if s2 == "IS":
                                 qtrCache[f"{code}.{m2}.{year}"] = _seriesQuarterValues(qSeries, qPeriods, k2, year)
-                    except (ValueError, KeyError, AttributeError, TypeError):
+                    except (ValueError, KeyError, AttributeError, TypeError) as exc:
+                        # 원인을 남긴다. 조용히 빈 값을 꽂으면 그 예측은 실제값 조회 실패로
+                        # 채점되고, 채점된 id 는 미채점 목록에서 빠져 다시 시도되지 않는다.
+                        # 일시적 오류 하나가 영구 오답으로 굳는다.
+                        _LOG.warning("분기 실제값 조회 실패 (%s, %s: %s)", cacheKey, type(exc).__name__, exc)
                         qtrCache[cacheKey] = {}
             actual = qtrCache.get(cacheKey, {}).get(row["targetPeriod"])
             if actual is None and _ymDiff(nowYm, dueYm) < _REV_GRACE_MONTHS:
@@ -1033,7 +1040,9 @@ def scoreDue(
                         with dartlab.Company(code) as company:  # 힙 가드: with = OomTripwire + cleanupCache
                             for m2, (s2, k2) in _METRIC_KEYS.items():  # 한 번 로드에 3 metric 전부
                                 fundCache[f"{code}.{m2}"] = _annualMetricMap(company, s2, k2)
-                    except (ValueError, KeyError, AttributeError, TypeError):
+                    except (ValueError, KeyError, AttributeError, TypeError) as exc:
+                        # 위 분기 경로와 같은 이유로 원인을 남긴다.
+                        _LOG.warning("연간 실제값 조회 실패 (%s, %s: %s)", cacheKey, type(exc).__name__, exc)
                         fundCache[cacheKey] = {}
             actual = fundCache.get(cacheKey, {}).get(fy)
             if actual is None and _ymDiff(nowYm, dueYm) < _REV_GRACE_MONTHS:

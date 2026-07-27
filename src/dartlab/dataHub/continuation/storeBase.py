@@ -101,7 +101,11 @@ class _LeaseHeartbeat:
         while not self.stopEvent.wait(interval):
             try:
                 renewed = self.store._renew(self.tokenDigestValue, self.ownerId)
-            except Exception:
+            except Exception as exc:  # noqa: BLE001
+                # 원인을 남긴다. 이 자리에서 조용히 False 를 꽂으면 일시적인 저장소 오류와
+                # 임차를 진짜로 잃은 것이 같은 값이 된다. 그다음 redeem 은 끝난 작업을
+                # CONTINUATION_CLAIM_LOST 로 버리는데, 왜 버렸는지가 아무 데도 안 남는다.
+                _log.warning("임차 갱신 실패로 소유권을 잃은 것으로 처리한다 (%s: %s)", type(exc).__name__, exc)
                 renewed = False
             if not renewed:
                 self.lost = True
