@@ -924,6 +924,191 @@ def _monthCloseViaGather(code: str, targetYm: str | None) -> float | None:
     return float(monthRows[-1]) if monthRows else None
 
 
+def _annualActual(
+    row: dict, nowYm: str, fundCache: dict, annualRevenueByCode, fundamentalsByCode
+) -> tuple[object, bool]:
+    """연간 실적 실제값을 찾는다. 사업보고서 마감이 지나야 기한이 온다.
+
+    실제값 정의가 봉인되지 않은 지표는 채점하지 않는다. 정의 없이 채점하면 무엇과 견줬는지
+    설명할 수 없는 성적이 남는다.
+
+    Returns:
+        ``(실제값, 보류여부)``.
+    """
+    fy = int(row["targetPeriod"][2:])  # "FY2026" -> 2026
+    dueYm = f"{fy + 1}-{_REV_DUE_MONTH:02d}"
+    if nowYm < dueYm:
+        return None, True  # 해당 회계연도 보고 전
+    code, metric = row["variable"].split(".", 1)
+    section, _key = _METRIC_KEYS.get(metric, (None, None))
+    if section is None:
+        return None, True  # actual 정의가 봉인되지 않은 metric 은 채점 불가 (P4b)
+    cacheKey = f"{code}.{metric}"
+    if cacheKey not in fundCache:
+        _fillAnnualCache(fundCache, code, metric, cacheKey, annualRevenueByCode, fundamentalsByCode)
+    actual = fundCache.get(cacheKey, {}).get(fy)
+    if actual is None and _ymDiff(nowYm, dueYm) < _REV_GRACE_MONTHS:
+        return None, True  # 공시와 연결 집계 지연. 유예 안이라 보류
+    return actual, False
+
+
+def _creditActual(row: dict, nowYm: str, historyByCode) -> tuple[object, bool]:
+    """신용등급 유지 여부의 실제값을 찾는다. 분기말 다음 달이 기한이다.
+
+    분기말 이후에 기록된 등급만 본다. 그 전 기록은 발행 시점에 이미 알던 것이라 채점 근거가
+    되지 못한다.
+
+    Returns:
+        ``(실제값, 보류여부)``.
+    """
+    import json as _json
+
+    dueYm = _ymAdd(_quarterEndYm(row["targetPeriod"]), 1)
+    if nowYm < dueYm:
+        return None, True
+    code = row["variable"].split(".", 1)[0]
+    fromGrade = (_json.loads(row["direction"]) or {}).get("fromGrade")
+    if historyByCode is not None:
+        hist = historyByCode.get(code) or []
+    else:
+        from dartlab.credit.monitoring.history import loadHistory
+
+        hist = loadHistory(code)
+    after = [
+        entry.get("grade") or (entry.get("result") or {}).get("grade")
+        for entry in hist
+        if str(entry.get("timestamp", entry.get("date", "")))[:7] >= _quarterEndYm(row["targetPeriod"])
+    ]
+    actual = None
+    if after and after[-1]:
+        actual = "stay" if after[-1] == fromGrade else "changed"
+    if actual is None and _ymDiff(nowYm, dueYm) < _CREDIT_GRACE_MONTHS:
+        return None, True  # 다음 분기 등급 미산출. 유예 안이라 보류
+    return actual, False
+
+
+def _quarterlyActual(row: dict, nowYm: str, qtrCache: dict, quarterlyByCode) -> tuple[object, bool]:
+    """분기 손익 실제값을 찾는다. 분기보고서 45 일 규정이라 분기말 두 달 뒤가 기한이다.
+
+    분기 발행은 손익계산서 지표만 다룬다. 그 밖의 지표는 실제값 정의가 봉인돼 있지 않아
+    채점할 수 없고, 억지로 채점하면 정의가 없는 것을 틀렸다고 기록하게 된다.
+
+    Returns:
+        ``(실제값, 보류여부)``.
+    """
+    dueYm = _ymAdd(_quarterEndYm(row["targetPeriod"]), _QTR_DUE_LAG_MONTHS)
+    if nowYm < dueYm:
+        return None, True
+    code, metric = row["variable"].split(".", 1)
+    section, _key = _METRIC_KEYS.get(metric, (None, None))
+    if section != "IS":
+        return None, True  # 분기 발행은 IS 지표 한정 (_QTR_METRICS)
+    year = row["targetPeriod"][:4]
+    cacheKey = f"{code}.{metric}.{year}"
+    if cacheKey not in qtrCache:
+        _fillQuarterCache(qtrCache, code, metric, year, cacheKey, quarterlyByCode)
+    actual = qtrCache.get(cacheKey, {}).get(row["targetPeriod"])
+    if actual is None and _ymDiff(nowYm, dueYm) < _REV_GRACE_MONTHS:
+        return None, True  # 공시와 집계 지연. 유예 안이라 보류
+    return actual, False
+
+
+def _macroActual(row: dict, nowYm: str, monthlyBySeries: dict) -> tuple[object, bool]:
+    """거시 지표의 실제값을 찾는다.
+
+    Returns:
+        ``(실제값, 보류여부)``. 보류면 채점하지 않고 원장에 그대로 남긴다. 발표 지연과
+        진짜 결측을 구분하려면 유예 기간이 지나야 하고, 그 전에 오류로 봉인하면 되돌릴 수 없다.
+    """
+    age = _ymDiff(nowYm, row["targetPeriod"])
+    if age < 1:
+        return None, True  # 아직 기한 전
+    sid = row["variable"].split(".", 1)[1]
+    actual = monthlyBySeries.get(sid, {}).get(row["targetPeriod"])
+    if actual is None and age < 1 + _SCORE_GRACE_MONTHS:
+        return None, True  # 발표 지연. 유예 안이라 보류
+    return actual, False
+
+
+def _priceActual(row: dict, nowYm: str, closeByCodeMonth) -> tuple[object, bool]:
+    """주가 방향의 실제값을 찾는다. 발행가 대비 종가로 상승과 하락을 가른다.
+
+    Returns:
+        ``(실제값, 보류여부)``. 시세를 못 구했고 유예 안이면 보류한다.
+    """
+    import json as _json
+
+    age = _ymDiff(nowYm, row["targetPeriod"])
+    if age < 1:
+        return None, True
+    code = row["variable"].split(".", 1)[0]
+    issuePrice = (_json.loads(row["direction"]) or {}).get("issuePrice")
+    if closeByCodeMonth is not None:
+        close = (closeByCodeMonth.get(code) or {}).get(row["targetPeriod"])
+    else:
+        close = _monthCloseViaGather(code, row["targetPeriod"])
+    actual = None
+    if close is not None and issuePrice:
+        actual = "up" if float(close) >= float(issuePrice) else "down"
+    if actual is None and age < 1 + _PRICE_GRACE_MONTHS:
+        return None, True  # 시세 조회 실패. 유예 안이라 보류
+    return actual, False
+
+
+def _fillQuarterCache(qtrCache: dict, code: str, metric: str, year: str, cacheKey: str, quarterlyByCode) -> None:
+    """분기 실제값을 캐시에 채운다. 주입값이 있으면 그것을 쓰고 없으면 회사에서 읽는다.
+
+    한 번 회사를 열 때 IS 지표를 전부 담는다. 같은 회사를 지표마다 다시 여는 것이 이 순환에서
+    가장 비싼 일이기 때문이다.
+
+    실제값은 `_buildFinanceSeries(freq="Q")` 로 읽는다. `panel("is")` 는 Q4 열이 없어 4 분기가
+    통째로 결측으로 잡힌다.
+    """
+    if quarterlyByCode is not None:
+        qtrCache[cacheKey] = (quarterlyByCode.get(code) or {}).get(metric, {})
+        return
+    import dartlab
+
+    try:
+        with dartlab.Company(code) as company:  # 힙 가드: with = OomTripwire + cleanupCache
+            ts = company._buildFinanceSeries(freq="Q")
+            qSeries = ts[0] if isinstance(ts, tuple) else ts
+            qPeriods = ts[1] if isinstance(ts, tuple) else []
+        for metricName, (section, key) in _METRIC_KEYS.items():
+            if section == "IS":
+                qtrCache[f"{code}.{metricName}.{year}"] = _seriesQuarterValues(qSeries, qPeriods, key, year)
+    except (ValueError, KeyError, AttributeError, TypeError) as exc:
+        # 원인을 남긴다. 조용히 빈 값을 꽂으면 그 예측은 실제값 조회 실패로 채점되고,
+        # 채점된 id 는 미채점 목록에서 빠져 다시 시도되지 않는다. 일시적 오류 하나가
+        # 영구 오답으로 굳는다.
+        _LOG.warning("분기 실제값 조회 실패 (%s, %s: %s)", cacheKey, type(exc).__name__, exc)
+        qtrCache[cacheKey] = {}
+
+
+def _fillAnnualCache(
+    fundCache: dict, code: str, metric: str, cacheKey: str, annualRevenueByCode, fundamentalsByCode
+) -> None:
+    """연간 실제값을 캐시에 채운다. 주입 경로가 둘이라 지표에 따라 갈린다."""
+    injected = None
+    if metric == "revenue" and annualRevenueByCode is not None:
+        injected = annualRevenueByCode.get(code, {})
+    elif fundamentalsByCode is not None:
+        injected = (fundamentalsByCode.get(code) or {}).get(metric, {})
+    if injected is not None:
+        fundCache[cacheKey] = injected
+        return
+    import dartlab
+
+    try:
+        with dartlab.Company(code) as company:  # 힙 가드: with = OomTripwire + cleanupCache
+            for metricName, (section, key) in _METRIC_KEYS.items():  # 한 번 로드에 3 metric 전부
+                fundCache[f"{code}.{metricName}"] = _annualMetricMap(company, section, key)
+    except (ValueError, KeyError, AttributeError, TypeError) as exc:
+        # 위 분기 경로와 같은 이유로 원인을 남긴다.
+        _LOG.warning("연간 실제값 조회 실패 (%s, %s: %s)", cacheKey, type(exc).__name__, exc)
+        fundCache[cacheKey] = {}
+
+
 def scoreDue(
     *,
     now: str | None = None,
@@ -973,122 +1158,25 @@ def scoreDue(
     qtrCache: dict[str, dict[str, float]] = {}  # f"{code}.{metric}.{year}" -> {"2026Q3": v}
     for row in due.iter_rows(named=True):
         if row["domain"] == "macro":
-            age = _ymDiff(nowYm, row["targetPeriod"])
-            if age < 1:
-                continue  # not due yet
-            sid = row["variable"].split(".", 1)[1]
-            actual = monthlyBySeries.get(sid, {}).get(row["targetPeriod"])
-            if actual is None and age < 1 + _SCORE_GRACE_MONTHS:
-                continue  # publication lag: stay pending, do not seal an error yet
+            actual, pending = _macroActual(row, nowYm, monthlyBySeries)
+            if pending:
+                continue
         elif row["domain"] in ("revenue", "earnings") and row["freq"] == "Q":
-            # 분기 IS 기대 (issueQuarterlyIs): 분기보고서 45일 규정 -> 분기말 +2개월 due
-            dueYm = _ymAdd(_quarterEndYm(row["targetPeriod"]), _QTR_DUE_LAG_MONTHS)
-            if nowYm < dueYm:
+            actual, pending = _quarterlyActual(row, nowYm, qtrCache, quarterlyByCode)
+            if pending:
                 continue
-            code, metric = row["variable"].split(".", 1)
-            section, key = _METRIC_KEYS.get(metric, (None, None))
-            if section != "IS":
-                continue  # 분기 발행은 IS 지표 한정 (_QTR_METRICS)
-            year = row["targetPeriod"][:4]
-            cacheKey = f"{code}.{metric}.{year}"
-            if cacheKey not in qtrCache:
-                if quarterlyByCode is not None:
-                    qtrCache[cacheKey] = (quarterlyByCode.get(code) or {}).get(metric, {})
-                else:
-                    import dartlab
-
-                    # 실제값 = _buildFinanceSeries(freq="Q") (panel("is") 는 Q4 열 부재로 Q4 가 전부 결측 처리됨)
-                    try:
-                        with dartlab.Company(code) as company:  # 힙 가드: with = OomTripwire + cleanupCache
-                            ts = company._buildFinanceSeries(freq="Q")
-                            qSeries = ts[0] if isinstance(ts, tuple) else ts
-                            qPeriods = ts[1] if isinstance(ts, tuple) else []
-                        for m2, (s2, k2) in _METRIC_KEYS.items():  # 한 번 로드에 IS 지표 전부
-                            if s2 == "IS":
-                                qtrCache[f"{code}.{m2}.{year}"] = _seriesQuarterValues(qSeries, qPeriods, k2, year)
-                    except (ValueError, KeyError, AttributeError, TypeError) as exc:
-                        # 원인을 남긴다. 조용히 빈 값을 꽂으면 그 예측은 실제값 조회 실패로
-                        # 채점되고, 채점된 id 는 미채점 목록에서 빠져 다시 시도되지 않는다.
-                        # 일시적 오류 하나가 영구 오답으로 굳는다.
-                        _LOG.warning("분기 실제값 조회 실패 (%s, %s: %s)", cacheKey, type(exc).__name__, exc)
-                        qtrCache[cacheKey] = {}
-            actual = qtrCache.get(cacheKey, {}).get(row["targetPeriod"])
-            if actual is None and _ymDiff(nowYm, dueYm) < _REV_GRACE_MONTHS:
-                continue  # 공시·집계 지연: grace 안 pending
         elif row["domain"] in ("revenue", "earnings"):
-            fy = int(row["targetPeriod"][2:])  # "FY2026" -> 2026
-            dueYm = f"{fy + 1}-{_REV_DUE_MONTH:02d}"  # annual report deadline passed
-            if nowYm < dueYm:
-                continue  # fiscal year not reported yet
-            code, metric = row["variable"].split(".", 1)
-            section, key = _METRIC_KEYS.get(metric, (None, None))
-            if section is None:
-                continue  # actual 정의가 봉인되지 않은 metric 은 채점 불가 (P4b)
-            cacheKey = f"{code}.{metric}"
-            if cacheKey not in fundCache:
-                injected = None
-                if metric == "revenue" and annualRevenueByCode is not None:
-                    injected = annualRevenueByCode.get(code, {})
-                elif fundamentalsByCode is not None:
-                    injected = (fundamentalsByCode.get(code) or {}).get(metric, {})
-                if injected is not None:
-                    fundCache[cacheKey] = injected
-                else:
-                    import dartlab
-
-                    try:
-                        with dartlab.Company(code) as company:  # 힙 가드: with = OomTripwire + cleanupCache
-                            for m2, (s2, k2) in _METRIC_KEYS.items():  # 한 번 로드에 3 metric 전부
-                                fundCache[f"{code}.{m2}"] = _annualMetricMap(company, s2, k2)
-                    except (ValueError, KeyError, AttributeError, TypeError) as exc:
-                        # 위 분기 경로와 같은 이유로 원인을 남긴다.
-                        _LOG.warning("연간 실제값 조회 실패 (%s, %s: %s)", cacheKey, type(exc).__name__, exc)
-                        fundCache[cacheKey] = {}
-            actual = fundCache.get(cacheKey, {}).get(fy)
-            if actual is None and _ymDiff(nowYm, dueYm) < _REV_GRACE_MONTHS:
-                continue  # filing/consolidation lag: stay pending inside the grace window
+            actual, pending = _annualActual(row, nowYm, fundCache, annualRevenueByCode, fundamentalsByCode)
+            if pending:
+                continue
         elif row["domain"] == "credit":
-            import json as _json
-
-            dueYm = _ymAdd(_quarterEndYm(row["targetPeriod"]), 1)
-            if nowYm < dueYm:
+            actual, pending = _creditActual(row, nowYm, historyByCode)
+            if pending:
                 continue
-            code = row["variable"].split(".", 1)[0]
-            fromGrade = (_json.loads(row["direction"]) or {}).get("fromGrade")
-            if historyByCode is not None:
-                hist = historyByCode.get(code) or []
-            else:
-                from dartlab.credit.monitoring.history import loadHistory
-
-                hist = loadHistory(code)
-            after = [
-                e.get("grade") or (e.get("result") or {}).get("grade")
-                for e in hist
-                if str(e.get("timestamp", e.get("date", "")))[:7] >= _quarterEndYm(row["targetPeriod"])
-            ]
-            actual = None
-            if after and after[-1]:
-                actual = "stay" if after[-1] == fromGrade else "changed"
-            if actual is None and _ymDiff(nowYm, dueYm) < _CREDIT_GRACE_MONTHS:
-                continue  # 다음 분기 등급 미산출: grace 안 pending
         elif row["domain"] == "price":
-            import json as _json
-
-            age = _ymDiff(nowYm, row["targetPeriod"])
-            if age < 1:
+            actual, pending = _priceActual(row, nowYm, closeByCodeMonth)
+            if pending:
                 continue
-            code = row["variable"].split(".", 1)[0]
-            d = _json.loads(row["direction"]) or {}
-            issuePrice = d.get("issuePrice")
-            if closeByCodeMonth is not None:
-                close = (closeByCodeMonth.get(code) or {}).get(row["targetPeriod"])
-            else:
-                close = _monthCloseViaGather(code, row["targetPeriod"])
-            actual = None
-            if close is not None and issuePrice:
-                actual = "up" if float(close) >= float(issuePrice) else "down"
-            if actual is None and age < 1 + _PRICE_GRACE_MONTHS:
-                continue  # 시세 조회 실패: grace 안 pending
         else:
             continue  # 미지원 domain 은 채점 보류 (원장에 그대로 남는다)
         scores.append(scoreExpectation(specFromRow(row), actual, scoredAt=scoredAt, actualAsOf=scoredAt[:10]))
