@@ -12,7 +12,9 @@ XBRL fiscal fy/fp 그대로 쓰지 않음 (회사별 결산월 차이로 cross-c
 
 from __future__ import annotations
 
+import re
 from datetime import date
+from typing import Any
 
 
 def formatPeriod(year: str | int, quarter: int) -> str:
@@ -400,3 +402,71 @@ def resolveLatestPeriod(periods: list[str] | set[str] | None) -> str | None:
         return (0, 0, 0)
 
     return max(pool, key=_sortKey)
+
+
+_ASOF_QUARTER_RE = re.compile(r"^(\d{4})[Qq]([1-4])$")
+_ASOF_DATE_RE = re.compile(r"^(\d{4})-(\d{1,2})-\d{1,2}$")
+_ASOF_YEAR_RE = re.compile(r"^(\d{4})$")
+
+
+def parseAsOfPeriod(value: str) -> tuple[int | None, int | None]:
+    """as-of 표기를 (연도, 분기) 로 읽는다. 못 읽으면 (None, None).
+
+    받는 표기는 셋이다. "2024Q3" 처럼 붙여 쓴 분기, "2024-06-30" 같은 ISO 날짜,
+    "2024" 같은 연도. 연도만 오면 분기는 None 이고, 그것은 "그 해 전체" 를 뜻한다.
+
+    `parsePeriod` 와 다르다. 그쪽은 이 모듈이 만드는 표준형 "2024-Q1" 을 읽는다.
+    이쪽은 사용자와 표 머리글에서 오는 흔들리는 표기를 받는다.
+
+    Args:
+        value: as-of 표기 또는 표 컬럼 머리글.
+
+    Returns:
+        (연도, 분기). 분기를 알 수 없으면 두 번째가 None. 표기를 못 읽으면 둘 다 None.
+    """
+    raw = str(value or "").strip()
+    if not raw:
+        return None, None
+    match = _ASOF_QUARTER_RE.match(raw)
+    if match:
+        return int(match.group(1)), int(match.group(2))
+    match = _ASOF_DATE_RE.match(raw)
+    if match:
+        month = int(match.group(2))
+        return int(match.group(1)), (month - 1) // 3 + 1
+    match = _ASOF_YEAR_RE.match(raw)
+    if match:
+        return int(match.group(1)), None
+    return None, None
+
+
+def dropPeriodsAfter(df: Any, asOf: str) -> Any:
+    """as-of 시점 이후의 기간 컬럼을 떨군다. 미래 정보 누설 차단.
+
+    가로형 재무 표는 컬럼 머리글이 곧 기간이다 ("2025Q4", "2024"). 시점 X 의 분석을
+    재현할 때 X 이후 컬럼이 그대로 남으면 그 답은 그때 알 수 없던 것을 본 답이 된다.
+
+    기간으로 읽히지 않는 머리글(항목명, snakeId 같은 것)은 그대로 둔다. as-of 자체를
+    못 읽으면 아무것도 떨구지 않는다. 못 읽은 것을 미래로 단정하면 멀쩡한 표가 빈다.
+
+    Args:
+        df: 가로형 polars DataFrame.
+        asOf: as-of 표기. `parseAsOfPeriod` 가 읽는 셋 중 하나.
+
+    Returns:
+        기간 컬럼이 걸러진 DataFrame. 떨굴 것이 없으면 입력 그대로.
+    """
+    asOfYear, asOfQuarter = parseAsOfPeriod(asOf)
+    if asOfYear is None:
+        return df
+    keepCols: list[str] = []
+    for col in df.columns:
+        colYear, colQuarter = parseAsOfPeriod(col)
+        if colYear is None:
+            keepCols.append(col)
+            continue
+        if colYear < asOfYear:
+            keepCols.append(col)
+        elif colYear == asOfYear and (colQuarter is None or asOfQuarter is None or colQuarter <= asOfQuarter):
+            keepCols.append(col)
+    return df.select(keepCols) if len(keepCols) < len(df.columns) else df

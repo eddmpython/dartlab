@@ -10,9 +10,15 @@ list 로 넘기므로 사용자에게 보이는 `dataAsOf.latestPeriod` 가 실�
 
 from __future__ import annotations
 
+import polars as pl
 import pytest
 
-from dartlab.core.utils.period import formatPeriod, resolveLatestPeriod
+from dartlab.core.utils.period import (
+    dropPeriodsAfter,
+    formatPeriod,
+    parseAsOfPeriod,
+    resolveLatestPeriod,
+)
 
 
 def testStandardFormatFromThisModuleResolvesCorrectly() -> None:
@@ -64,3 +70,56 @@ def testNonPeriodStringsDoNotWinOverRealPeriods() -> None:
     """알 수 없는 표기가 최신으로 뽑히면 위층이 엉뚱한 기간을 인용한다."""
 
     assert resolveLatestPeriod(["알수없음", "2025-Q3"]) == "2025-Q3"
+
+
+def testAsOfReadsTheThreeShapesUsersActuallyType() -> None:
+    """붙여 쓴 분기, ISO 날짜, 연도 셋을 다 읽어야 한다."""
+
+    assert parseAsOfPeriod("2024Q1") == (2024, 1)
+    assert parseAsOfPeriod("2024q3") == (2024, 3)
+    assert parseAsOfPeriod("2024-06-30") == (2024, 2)
+    assert parseAsOfPeriod("2024") == (2024, None)
+
+
+def testAsOfRefusesWhatItCannotRead() -> None:
+    """못 읽은 것을 연도로 넘겨짚으면 멀쩡한 표가 빈다."""
+
+    assert parseAsOfPeriod("garbage") == (None, None)
+    assert parseAsOfPeriod("") == (None, None)
+    assert parseAsOfPeriod("20240630") == (None, None)
+
+
+def testFutureColumnsAreDropped() -> None:
+    """as-of 이후 기간이 남으면 그 답은 그때 알 수 없던 것을 본 답이다."""
+
+    df = pl.DataFrame({"항목": ["매출액"], "2023": [1], "2024Q1": [2], "2024Q3": [3], "2025": [4]})
+
+    kept = dropPeriodsAfter(df, "2024Q1").columns
+
+    assert kept == ["항목", "2023", "2024Q1"]
+
+
+def testUnreadableAsOfDropsNothing() -> None:
+    """as-of 를 못 읽었다고 표를 비우면 안 된다. 그것은 조용한 자료 손실이다."""
+
+    df = pl.DataFrame({"2023": [1], "2024": [2]})
+
+    assert dropPeriodsAfter(df, "garbage").columns == ["2023", "2024"]
+
+
+def testYearOnlyAsOfKeepsEveryQuarterOfThatYear() -> None:
+    """연도만 준 as-of 는 그 해 전체를 뜻한다. 분기를 임의로 좁히지 않는다."""
+
+    df = pl.DataFrame({"2023": [1], "2024Q1": [2], "2024Q4": [3], "2025Q1": [4]})
+
+    assert dropPeriodsAfter(df, "2024").columns == ["2023", "2024Q1", "2024Q4"]
+
+
+def testBothProvidersShareTheOneGuard() -> None:
+    """dart 와 edgar 가 각자 규칙을 가지면 한쪽 시장만 조용히 미래를 본다."""
+
+    from dartlab.providers.dart.company import _filterPeriodColumnsByAsOf as dartFilter
+    from dartlab.providers.edgar.company import _filterPeriodColumnsByAsOf as edgarFilter
+
+    assert dartFilter is dropPeriodsAfter
+    assert edgarFilter is dropPeriodsAfter

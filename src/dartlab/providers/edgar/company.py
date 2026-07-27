@@ -30,6 +30,7 @@ import polars as pl
 
 from dartlab.core.edgarClient import SUPPORTED_REGULAR_FORMS
 from dartlab.core.polarsUtil import isEmptyDf
+from dartlab.core.utils.period import dropPeriodsAfter, parseAsOfPeriod
 from dartlab.providers._common.filingHelpers import (
     filingRecord,
     filterFilingsByKeyword,
@@ -405,44 +406,10 @@ def _isPeriodColumn(col: str) -> bool:
     return bool(_PERIOD_COLUMN_RE.fullmatch(col))
 
 
-def _filterPeriodColumnsByAsOf(df: "pl.DataFrame", asOf: str) -> "pl.DataFrame":
-    """asOf 이후 fiscal period 컬럼 drop - look-ahead bias 방지 (DART 와 동일 패턴).
-
-    EDGAR finance topic 의 horizontal view 는 컬럼명이 fiscal period
-    (예: "2024", "2024Q3"). asOf 이후 컬럼 drop 으로 미래 정보 누설 차단.
-    """
-    asof_year, asof_quarter = _parseAsof(asOf)
-    if asof_year is None:
-        return df
-    keepCols: list[str] = []
-    for col in df.columns:
-        col_year, col_quarter = _parseAsof(col)
-        if col_year is None:
-            keepCols.append(col)
-            continue
-        if col_year < asof_year:
-            keepCols.append(col)
-        elif col_year == asof_year and (col_quarter is None or asof_quarter is None or col_quarter <= asof_quarter):
-            keepCols.append(col)
-    return df.select(keepCols) if len(keepCols) < len(df.columns) else df
-
-
-def _parseAsof(value: str) -> tuple[int | None, int | None]:
-    """fiscal period or ISO date → (year, quarter or None). 미인식 → (None, None)."""
-    raw = str(value or "").strip()
-    if not raw:
-        return None, None
-    m = re.match(r"^(\d{4})[Qq]([1-4])$", raw)
-    if m:
-        return int(m.group(1)), int(m.group(2))
-    m = re.match(r"^(\d{4})-(\d{1,2})-\d{1,2}$", raw)
-    if m:
-        month = int(m.group(2))
-        return int(m.group(1)), (month - 1) // 3 + 1
-    m = re.match(r"^(\d{4})$", raw)
-    if m:
-        return int(m.group(1)), None
-    return None, None
+# 미래 정보 차단 규칙은 `core.utils.period` 가 정본이다. 예전에는 dart 와 edgar 가 같은
+# 열두 줄을 각자 갖고 있었다. 한쪽 경계만 느슨해지면 그 시장 답만 조용히 미래를 봤다.
+_filterPeriodColumnsByAsOf = dropPeriodsAfter
+_parseAsof = parseAsOfPeriod
 
 
 class Company:
