@@ -1,5 +1,6 @@
 // hfMedia 회사 이미지 런타임 매니페스트 클라이언트 · manifests/companies.json 1회 로드 + 객체 URL 해석.
 // 매니페스트/이미지 미게시(P0 운영자 publish 전)면 graceful null → 카드가 SVG/그라데이션 폴백(빈 화면 금지).
+import { isKrStockCode, normalizeKrCode } from '@dartlab/ui-contracts';
 import { originUrl } from '@dartlab/ui-runtime/data/origins/registry';
 import type { MediaIndex, MediaCompany } from './model';
 
@@ -15,9 +16,9 @@ export function loadMediaIndex(): Promise<MediaIndex | null> {
 	return _cache;
 }
 
-/** sym(6자리 코드 또는 티커) → canonical media key. 코드=그대로, 티커=대문자(build_index 와 동일 규칙). */
+/** sym(KRX 코드 또는 티커) → canonical media key. 코드=정규화 그대로, 티커=대문자(build_index 와 동일 규칙). */
 export function mediaKey(sym: string): string {
-	return /^\d{6}$/.test(sym) ? sym : sym.toUpperCase();
+	return isKrStockCode(sym) ? normalizeKrCode(sym) : sym.toUpperCase();
 }
 
 export function mediaCompany(index: MediaIndex | null, sym: string): MediaCompany | undefined {

@@ -1,5 +1,6 @@
 // Compare target normalization · browser-side equivalent of Python compare input guards.
 
+import { isKrStockCode, normalizeKrCode } from '@dartlab/ui-contracts';
 import { marketForCode, type Market } from '../dartUrl';
 
 export const MAX_COMPARE_TARGETS = 6;
@@ -46,7 +47,8 @@ export function normalizeCompareTargets(reference: string, rawVs: string[] | str
 	return { reference: ref, market, vs, rejected };
 }
 
+// KRX 종목코드(영숫자 포함)와 US 티커 모두 대문자 표기가 정본. 분기는 소속을 드러내려고 남긴다.
 function normalizeCode(code: string): string {
 	const c = code.trim();
-	return /^\d{6}$/.test(c) ? c : c.toUpperCase();
+	return isKrStockCode(c) ? normalizeKrCode(c) : c.toUpperCase();
 }

@@ -1,6 +1,6 @@
 // 정기공시 목록 · dart/panel/{code}.parquet 의 (period, rceptNo) 직독. 캐시·dedup 은 fetch 코어
 // (데이터 워크벤치 SSOT) · 자체 read·캐시 금지(hfRange 직접 import 금지, 가드 rule 6). 타입 정본 = contracts.
-import type { RegularFiling } from '@dartlab/ui-contracts';
+import { isKrStockCode, normalizeKrCode, type RegularFiling } from '@dartlab/ui-contracts';
 import type { DataCore } from '../../../data/fetch/request';
 
 interface DocsRow extends Record<string, unknown> {
@@ -15,8 +15,8 @@ export async function loadCompanyRegularFilings(
 	stockCode: string,
 	limit = 5
 ): Promise<RegularFiling[]> {
-	const code = stockCode.trim();
-	if (!/^\d{6}$/.test(code)) return [];
+	const code = normalizeKrCode(stockCode);
+	if (!isKrStockCode(code)) return []; // KRX 코드 모양(영숫자 포함)만 dart/ 정적 panel 보유
 	const rows = await core.requestParquetRows<DocsRow>({
 		origin: 'hfRange',
 		path: `dart/panel/${code}.parquet`,

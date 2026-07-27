@@ -8,6 +8,7 @@
 //
 // 윈도 정책: 연간(reprt_code 11011 = q4)만, 최신 maxYears 개 회계연도. 옛 bake 의 버그(최신 부분분기
 // 2026Q1 혼입·"최근 5개년" 표에 분기 섞임)를 구조적으로 배제.
+import { isKrStockCode, normalizeKrCode } from '@dartlab/ui-contracts';
 import { readParquetWholeFile, type FetchLike } from '../parquet/hfRange';
 import {
 	buildGrid,
@@ -178,8 +179,8 @@ export async function loadAnnualStatements(
 	code: string,
 	opts: { maxYears?: number; fetchFn?: FetchLike } = {}
 ): Promise<CompanyAnnualFinance | null> {
-	const c = (code || '').trim();
-	if (!/^\d{6}$/.test(c)) return null; // KR 상장사만 HF 정적 parquet 보유
+	const c = normalizeKrCode(code || '');
+	if (!isKrStockCode(c)) return null; // KR 상장사만 HF 정적 parquet 보유(영숫자 코드 0008Z0 포함)
 	let rows: RawRow[] | null = null;
 	try {
 		rows = await readParquetWholeFile<RawRow>(`dart/finance/${c}.parquet`, { columns: FINANCE_COLUMNS, fetchFn: opts.fetchFn });
@@ -306,8 +307,8 @@ export async function loadQuarterlyStatements(
 	code: string,
 	opts: { maxQuarters?: number; fetchFn?: FetchLike } = {}
 ): Promise<CompanyQuarterlyFinance | null> {
-	const c = (code || '').trim();
-	if (!/^\d{6}$/.test(c)) return null;
+	const c = normalizeKrCode(code || '');
+	if (!isKrStockCode(c)) return null;
 	let rows: RawRow[] | null = null;
 	try {
 		rows = await readParquetWholeFile<RawRow>(`dart/finance/${c}.parquet`, { columns: FINANCE_COLUMNS, fetchFn: opts.fetchFn });
@@ -328,8 +329,8 @@ export async function loadCompanyFinance(
 	code: string,
 	opts: { maxYears?: number; maxQuarters?: number; fetchFn?: FetchLike } = {}
 ): Promise<CompanyFinance> {
-	const c = (code || '').trim();
-	if (!/^\d{6}$/.test(c)) return { annual: null, quarterly: null };
+	const c = normalizeKrCode(code || '');
+	if (!isKrStockCode(c)) return { annual: null, quarterly: null };
 	let rows: RawRow[] | null = null;
 	try {
 		rows = await readParquetWholeFile<RawRow>(`dart/finance/${c}.parquet`, { columns: FINANCE_COLUMNS, fetchFn: opts.fetchFn });

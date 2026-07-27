@@ -6,11 +6,12 @@
 // Tier 0(집합)·Tier 1(절대시간 신선도, 소비처가 라이브 계산)은 영속 소실에 면역에 가깝다(집합 소실 = 재추가
 // 만으로 복원, 신선도는 무상태). Tier 2(재방문 델타)는 visited 타임스탬프에 의존하므로 정직 가드(기기·시점 명시,
 // "알림" 금지, 완결성 주장 금지) 충족 시에만 노출 · v1 은 토대만 저장하고 UI 미노출.
+import { isKrStockCode } from '@dartlab/ui-contracts';
 import { readStore, writeStore } from './termStore';
 
 const KEY = 'dlTerm.watch' as const;
 const CAP = 100; // 폭주 가드 (PRD 목표 10~30 · 명목 상한)
-const isCode = (c: unknown): c is string => typeof c === 'string' && /^\d{6}$/.test(c);
+const isCode = isKrStockCode; // KRX 단축코드 판정 정본(영숫자 코드 0008Z0 포함)
 
 interface WatchState {
 	codes: string[]; // 추가 순서 유지 (표시 정렬은 소비처가 신선도순으로 재배열)

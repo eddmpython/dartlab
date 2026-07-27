@@ -4,7 +4,7 @@
 // 파티션 생성: .github/scripts/sync/buildAllFilingsRecent.py (정기보고서는 이미 제외됨).
 // 타입 정본 = contracts (NonRegularFiling 승격 완료 · 중복 정의 금지).
 import type { MarketFiling, NonRegularFiling } from '@dartlab/ui-contracts';
-import { resolveMarket } from '@dartlab/ui-contracts';
+import { isKrStockCode, normalizeKrCode, resolveMarket } from '@dartlab/ui-contracts';
 import type { DataCore } from '../../../data/fetch/request';
 import { originConfigured } from '../../../data/origins/registry';
 
@@ -173,10 +173,10 @@ function loadLiveMarketFilings(core: DataCore): Promise<LiveFilingRow[]> {
 }
 
 export async function loadCompanyNonRegularFilings(core: DataCore, stockCode: string): Promise<NonRegularFiling[]> {
-	const code = stockCode.trim();
+	const code = normalizeKrCode(stockCode);
 	const m = resolveMarket(code);
 	if (m.market === 'US' && m.ticker) return loadEdgarCompanyFilings(core, m.ticker); // US = edgar/allFilings 직독
-	if (!/^\d{6}$/.test(code)) return [];
+	if (!isKrStockCode(code)) return [];
 	try {
 		// HF 누적(전 이력) + 라이브 당일 공시(이 종목분 필터) 동시 · 라이브가 배치 사이 갭(당일) 메움.
 		const [rows, live] = await Promise.all([
@@ -221,7 +221,7 @@ export async function loadRecentFilingsForCodes(
 	core: DataCore,
 	codes: string[]
 ): Promise<Record<string, NonRegularFiling[]>> {
-	const valid = [...new Set(codes.map((c) => String(c).trim()).filter((c) => /^\d{6}$/.test(c)))];
+	const valid = [...new Set(codes.map((c) => normalizeKrCode(String(c))).filter(isKrStockCode))];
 	if (!valid.length) return {};
 	try {
 		const rows = await loadKrRows(core, valid);

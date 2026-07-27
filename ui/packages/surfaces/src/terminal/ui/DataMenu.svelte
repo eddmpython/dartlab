@@ -3,7 +3,7 @@
 	// 선택분 → 단일 Excel 워크북(데이터셋별 시트 분할) 또는 CSV 묶음(zip). 브라우저 parquet/포트 직독→변환(서버 0).
 	// 전종목 180만행 횡단은 시트 한도 초과라 묶음 불가 → 개별 CSV. 뉴스는 언론사 저작권이라 다운로드 미제공.
 	import type { DartLabRuntime, StmtKind } from '@dartlab/ui-contracts';
-	import { KR_INDEX_PRESETS } from '@dartlab/ui-contracts';
+	import { KR_INDEX_PRESETS, resolveMarket } from '@dartlab/ui-contracts';
 	import { DOWNLOAD_CATALOG } from '@dartlab/ui-runtime/data/catalog/downloadCatalog';
 	import { readParquetRows } from '@dartlab/ui-runtime/data/parquet/hfRange';
 	import { objectsToWorkbook, downloadBlob, downloadCsv, toCsv, ZipStore, type ObjectSheet } from '../../downloadExport';
@@ -20,7 +20,7 @@
 	const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 	const en = $derived(lang === 'en');
 	const base = $derived(runtime?.env?.basePath ?? ''); // 데이터 센터 바로가기 base 경로
-	const isUs = $derived(!/^\d{6}$/.test(code));
+	const isUs = $derived(resolveMarket(code).market === 'US');
 	const termsUrl = $derived(
 		isUs ? 'https://www.sec.gov/os/accessing-edgar-data' : 'https://opendart.fss.or.kr/intro/terms.do'
 	);

@@ -5,6 +5,7 @@
 	// 발행된 슬롯만 렌더(없으면 숨김) · 카드/팟캐스트는 라이브 fetch 라 mount 후 채워진다(점진 노출).
 	import { base } from '$app/paths';
 	import { onMount } from 'svelte';
+	import { isKrStockCode } from '@dartlab/ui-contracts';
 	import { loadCarousels } from '$lib/cards/contract';
 	import { loadPodcastEpisodes, podcastFor } from '$lib/subjects/subjects';
 	import { Headphones, Images, Share2, Terminal, Check } from 'lucide-svelte';
@@ -23,8 +24,8 @@
 
 	const code = $derived(stockCode.trim());
 	const topic = $derived(topicSlug.trim());
-	// 터미널은 회사(6자리)만 · 딥링크는 즉시(동기) 노출.
-	const terminalHref = $derived(/^\d{6}$/.test(code) ? `${base}/terminal?sym=${code}` : '');
+	// 터미널은 회사(KRX 단축코드)만 · 딥링크는 즉시(동기) 노출.
+	const terminalHref = $derived(isKrStockCode(code) ? `${base}/terminal?sym=${code}` : '');
 
 	// 카드/팟캐스트는 라이브 인덱스 조인 → mount 후 채움.
 	let cardSlug = $state('');

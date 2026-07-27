@@ -4,7 +4,7 @@
 //
 // Svelte 5 주의: $state 배열의 원소는 프록시다. 대화·메시지 변형은 항상 스토어의 conversations 프록시를
 // 거친 참조(this.active, conv.messages[idx])로 해야 반응한다. 배열 재할당(new/delete/clearAll)만 = 로 교체.
-import type { AiCapabilities, AiPort, AiStreamEvent, EvidenceRef } from '@dartlab/ui-contracts';
+import { isKrStockCode, type AiCapabilities, type AiPort, type AiStreamEvent, type EvidenceRef } from '@dartlab/ui-contracts';
 
 /**
  * 작업대 블록. LLM 이 자율 호출한 도구 한 건 (입력 args + 결과 표/마크다운/stdout).
@@ -201,7 +201,7 @@ export class ChatStore {
 			for await (const ev of this.#ai.streamAsk({
 				prompt: text,
 				mode: 'chat',
-				code: /^\d{6}$/.test(code) ? code : undefined,
+				code: isKrStockCode(code) ? code : undefined,
 				history
 			})) {
 				this.#apply(conv, idx, ev);
