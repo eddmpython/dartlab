@@ -238,13 +238,12 @@ def calcBankDFV(company: Any, *, basePeriod: str | None = None, overrides: dict 
                     pass
         except (ImportError, AttributeError, ValueError, TypeError):
             pass
-    if not shares:
-        # 최후 fallback: book equity 의 PBR 0.8 가정 시 시총 추정 → shares
-        cur_p = _getCurrentPriceLight(company)
-        if cur_p and cur_p > 0:
-            estimated_market_cap = book_equity * 0.85  # 한국 은행 평균 PBR 0.85
-            shares = int(estimated_market_cap / cur_p)
-
+    # 주식수를 주가로 만들어 내던 fallback 을 없앤다. 가정 PBR 로 시총을 추정한 뒤
+    # 주가로 나눠 주식수를 얻으면, 그 주식수로 계산한 주당가치와 주가의 비율에서 주가가
+    # 약분된다. 그래서 상승여력이 주가와 무관한 상수가 됐다. 주가가 10 배 움직여도 같은
+    # 값이 나오는 목표가는 회사가 싼지 비싼지 영영 말할 수 없다.
+    #
+    # 판단 대상인 주가로 판단 근거를 만들지 않는다. 주식수를 모르면 값을 내지 않는다.
     if not shares or shares <= 0:
         return None
 
@@ -257,7 +256,9 @@ def calcBankDFV(company: Any, *, basePeriod: str | None = None, overrides: dict 
     upside = (per_share - currentPrice) / currentPrice * 100 if currentPrice and currentPrice > 0 else None
 
     opinion = _opinion(upside)
-    confidence = "medium" if abs(upside or 0) < 30 else "low"
+    # 상승여력을 못 구한 경우를 `abs(None or 0) < 30` 으로 처리하면 하필 'medium' 이
+    # 된다. 검증할 수 없을 때 가장 높은 신뢰도가 붙는 셈이라 반대로 둔다.
+    confidence = "low" if upside is None else ("medium" if abs(upside) < 30 else "low")
 
     bull = per_share * 1.15
     bear = per_share * 0.85
