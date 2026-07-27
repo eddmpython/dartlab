@@ -180,6 +180,145 @@ def _normalizePartItem(text: str) -> str:
     return text
 
 
+def _nonItemTitle(text: str) -> str:
+    """Item 접두어가 없는 제목을 정본 Item 으로 옮긴다. 못 옮기면 원문 그대로.
+
+    회사마다 같은 절을 자기 말로 적는다. "EXECUTIVE OFFICERS OF THE REGISTRANT" 와
+    "Executive" 가 같은 Item 4A 다. 순서가 뜻을 만든다. 넓게 잡는 규칙이 앞에 오면 좁은
+    규칙이 영영 안 걸리므로 원래 순서를 그대로 지킨다.
+    """
+    upper = text.upper().strip()
+    if "EXECUTIVE OFFICERS" in upper or upper == "EXECUTIVE":
+        return "Item 4A. Executive Officers of the Registrant"
+    if upper == "CONTROLS AND PROCEDURES":
+        return "Item 9A. Controls and Procedures"
+    if "CONSOLIDATED FINANCIAL STATEMENTS AND SUPPLEMENTARY" in upper:
+        return "Item 8. Financial Statements"
+    if "CONSOLIDATED FINANCIAL STATEMENTS AND OTHER" in upper:
+        return "Item 8. Financial Statements"
+    if upper.startswith("UNAUDITED SUPPLEMENTAL PRESENTATION"):
+        return "Item 8A. Supplemental Financial Information"
+    if upper.startswith("SUPPLEMENTAL FINANCIAL INFORMATION"):
+        return "Item 8A. Supplemental Financial Information"
+    if upper == "ANNUAL REPORT TO SECURITY HOLDERS":
+        return "Item 10J. Annual Report to Security Holders"
+    if "DISCLOSURE OF A REGISTRANT" in upper and "RECOVER" in upper:
+        return "Recovery Of Erroneously Awarded Compensation"
+    return text
+
+
+_ITEM_405_LOOSE_RE = re.compile(r"^Item\s+405\.\s+and\s+the\s+registrant", re.IGNORECASE)
+_PART_REG_RE = re.compile(r"^Part\s+\S+\s*-\s*Item\s+\d{3,}\.\s*(?:of\s+)?(?:SEC\s+)?Regulation", re.IGNORECASE)
+
+
+def _regulationSkTitle(text: str) -> str | None:
+    """Regulation S-K 참조를 정본 Item 제목으로 수렴시킨다. 해당 없으면 None.
+
+    SEC 제출서류는 같은 조항을 열 가지 넘는 표기로 적는다. Item 접두어가 없는 것, 조문
+    번호만 있는 것, Part-Item 안에 세 자리 조항이 박힌 것까지. 전부 한 제목으로 모아야
+    문서 목차가 회사마다 갈라지지 않는다.
+    """
+    # Item 접두어 없이 시작하는 Reg S-K 표기.
+    if _LOOSE_REG_RE.match(text) or _UNDER_REG_RE.match(text) or _OF_SK_RE.match(text):
+        return "Item 405. of Regulation S-K"
+    # "and the registrant, at the time of filing..." 로 시작하는 405 변형.
+    if _LOOSE_405_RE.match(text):
+        return "Item 405. of Regulation S-K"
+    if _REG_S_K_RE.match(text):
+        return "Item 405. of Regulation S-K"
+    if _ITEM_406_RE.match(text):
+        return "Item 406. of Regulation S-K"
+    if _ITEM_601_RE.match(text):
+        return "Item 15. Exhibits & Schedules"
+    regMatch = _REG_3DIGIT_RE.match(text)
+    if regMatch:
+        return f"Item {regMatch.group(1)}. of Regulation S-K"
+    if _ITEM_405_LOOSE_RE.match(text) or _PART_REG_RE.match(text):
+        return "Item 405. of Regulation S-K"
+    return None
+
+
+def _isExecutiveOfficerLabel(itemNum: str, itemLabel: str, upperLabel: str) -> bool:
+    """임원 정보 절인지 본다. 10-K 는 4A, 새 서식은 1D 로 같은 절을 적는다.
+
+    번호마다 인정 문구가 다르다. 4A 는 목차에 "Part I 참조" 만 적힌 경우까지 받고,
+    1D 는 EXECUTIVE 가 들어가면 받는다. 그 차이가 서식 차이라 한 조건으로 합치지 않는다.
+    """
+    if itemNum == "1D":
+        return "EXECUTIVE" in upperLabel or not itemLabel
+    return (
+        not itemLabel
+        or upperLabel == "ITEM 4A"
+        or "EXECUTIVE OFFICERS" in upperLabel
+        or upperLabel == "EXECUTIVE"
+        or "INFORMATION ABOUT OUR EXECUTIVE" in upperLabel
+        or "IN PART I OF THIS ANNUAL" in upperLabel
+    )
+
+
+def _isSupplementalLabel(itemNum: str, itemLabel: str, upperLabel: str) -> bool:
+    """보충 재무정보 절인지 본다. 회사마다 여섯 가지 문구로 적는다."""
+    return (
+        "CONSOLIDATED FINANCIAL STATEMENTS" in upperLabel
+        or "SUPPLEMENTARY DATA" in upperLabel
+        or "SUPPLEMENTAL FINANCIAL" in upperLabel
+        or "UNAUDITED SUPPLEMENTAL" in upperLabel
+        or "SUPPLEMENTAL PRESENTATION" in upperLabel
+        or upperLabel == f"ITEM {itemNum}"
+        or not itemLabel
+    )
+
+
+def _refineItemLabel(itemNum: str, itemLabel: str) -> tuple[str, str | None]:
+    """Item 번호별로 라벨을 정본 표기로 다듬는다.
+
+    같은 절이 서식(10-K, 10-Q, 20-F)마다 다른 번호와 다른 문구로 온다. 번호를 알면
+    라벨을 정할 수 있는 자리라 번호별로 모아 둔다.
+
+    Returns:
+        ``(라벨, 완결제목)``. 완결제목이 있으면 호출자는 그것을 그대로 돌려준다.
+        번호까지 바뀌는 경우가 있어서 라벨만으로는 표현할 수 없다.
+    """
+    upperLabel = itemLabel.upper()
+    # Item 1A in 10-Q: "UNAUDITED SUPPLEMENTAL" → Supplemental Financial
+    if itemNum == "1A" and "UNAUDITED SUPPLEMENTAL" in upperLabel:
+        return itemLabel, "Item 8A. Supplemental Financial Information"
+
+    if itemNum in {"4A", "1D"} and _isExecutiveOfficerLabel(itemNum, itemLabel, upperLabel):
+        itemLabel = "Executive Officers of the Registrant"
+
+    # Item 8A/8B: Supplemental Financial 또는 Controls
+    if itemNum in {"8A", "8B"}:
+        if _isSupplementalLabel(itemNum, itemLabel, upperLabel):
+            itemLabel = "Supplemental Financial Information"
+        elif "OTHER INFORMATION" in upperLabel:
+            return itemLabel, "Item 9B. Other Information"
+        elif "CONTROLS AND PROCEDURES" in upperLabel:
+            return itemLabel, "Item 9A. Controls and Procedures"
+
+    # Item 15A: Financial Statements (alias of Item 15)
+    if itemNum == "15A":
+        if not itemLabel or "FINANCIAL" in upperLabel or upperLabel == f"ITEM {itemNum}":
+            return itemLabel, "Item 15. Exhibits & Schedules"
+
+    # Item 4B: Mine Safety Disclosures (오타 포함)
+    if itemNum == "4B":
+        if "MINE" in upperLabel and "SAFETY" in upperLabel:
+            return itemLabel, "Item 4B. Mine Safety Disclosures"
+
+    # Item 5A (20-F): "of this report" 변형
+    if itemNum == "5A":
+        if "OF THIS REPORT" in upperLabel or not itemLabel:
+            itemLabel = "Operating and Financial Review and Prospects"
+
+    # Item 3D (20-F): "Risk Factors on pages..." 변형
+    if itemNum == "3D":
+        if "RISK FACTORS" in upperLabel:
+            itemLabel = "Risk Factors"
+
+    return itemLabel, None
+
+
 def normalizeSectionTitle(title: str) -> str:
     """SEC filing section title 을 정규화 (오타 보정, Part-Item 통합, Regulation S-K 수렴).
 
@@ -220,43 +359,9 @@ def normalizeSectionTitle(title: str) -> str:
     if innerBroken != text:
         text = _MULTISPACE_RE.sub(" ", innerBroken).strip()
 
-    # "of Regulation S-K ..." — Item prefix 없이 시작 → 일괄 Reg S-K disclosure
-    if _LOOSE_REG_RE.match(text) or _UNDER_REG_RE.match(text) or _OF_SK_RE.match(text):
-        return "Item 405. of Regulation S-K"
-
-    # "and the registrant, at the time of filing..." → Item 405 변형
-    if _LOOSE_405_RE.match(text):
-        return "Item 405. of Regulation S-K"
-
-    # Regulation S-K 계열 일괄 처리
-    if _REG_S_K_RE.match(text):
-        return "Item 405. of Regulation S-K"
-    if _ITEM_406_RE.match(text):
-        return "Item 406. of Regulation S-K"
-    if _ITEM_601_RE.match(text):
-        return "Item 15. Exhibits & Schedules"
-    regMatch = _REG_3DIGIT_RE.match(text)
-    if regMatch:
-        regNum = regMatch.group(1)
-        return f"Item {regNum}. of Regulation S-K"
-
-    # "Item 405. and the registrant..." 형태
-    item405Loose = re.match(
-        r"^Item\s+405\.\s+and\s+the\s+registrant",
-        text,
-        re.IGNORECASE,
-    )
-    if item405Loose:
-        return "Item 405. of Regulation S-K"
-
-    # Part-Item 형태에서 3자리+ Regulation S-K 참조 → Item 405 수렴
-    partRegMatch = re.match(
-        r"^Part\s+\S+\s*-\s*Item\s+\d{3,}\.\s*(?:of\s+)?(?:SEC\s+)?Regulation",
-        text,
-        re.IGNORECASE,
-    )
-    if partRegMatch:
-        return "Item 405. of Regulation S-K"
+    regulationTitle = _regulationSkTitle(text)
+    if regulationTitle is not None:
+        return regulationTitle
 
     partResult = _normalizePartItem(text)
     if partResult != text:
@@ -269,25 +374,7 @@ def normalizeSectionTitle(title: str) -> str:
 
     itemMatch = _ITEM_RE.match(text)
     if not itemMatch:
-        # Non-Item titles: "EXECUTIVE OFFICERS OF THE REGISTRANT" 등
-        upper = text.upper().strip()
-        if "EXECUTIVE OFFICERS" in upper or upper == "EXECUTIVE":
-            return "Item 4A. Executive Officers of the Registrant"
-        if upper == "CONTROLS AND PROCEDURES":
-            return "Item 9A. Controls and Procedures"
-        if "CONSOLIDATED FINANCIAL STATEMENTS AND SUPPLEMENTARY" in upper:
-            return "Item 8. Financial Statements"
-        if "CONSOLIDATED FINANCIAL STATEMENTS AND OTHER" in upper:
-            return "Item 8. Financial Statements"
-        if upper.startswith("UNAUDITED SUPPLEMENTAL PRESENTATION"):
-            return "Item 8A. Supplemental Financial Information"
-        if upper.startswith("SUPPLEMENTAL FINANCIAL INFORMATION"):
-            return "Item 8A. Supplemental Financial Information"
-        if upper == "ANNUAL REPORT TO SECURITY HOLDERS":
-            return "Item 10J. Annual Report to Security Holders"
-        if "DISCLOSURE OF A REGISTRANT" in upper and "RECOVER" in upper:
-            return "Recovery Of Erroneously Awarded Compensation"
-        return text
+        return _nonItemTitle(text)
 
     itemNum = itemMatch.group(1).upper()
     itemLabel = _MULTISPACE_RE.sub(" ", itemMatch.group(2).strip())
@@ -304,63 +391,9 @@ def normalizeSectionTitle(title: str) -> str:
     itemLabel = itemLabel.rstrip(".")
     upperLabel = itemLabel.upper()
 
-    # Item 1A in 10-Q: "UNAUDITED SUPPLEMENTAL" → Supplemental Financial
-    if itemNum == "1A" and "UNAUDITED SUPPLEMENTAL" in upperLabel:
-        return "Item 8A. Supplemental Financial Information"
-
-    # 10-K Item 4A: Executive Officers
-    if itemNum == "4A":
-        if (
-            not itemLabel
-            or upperLabel == "ITEM 4A"
-            or "EXECUTIVE OFFICERS" in upperLabel
-            or "EXECUTIVE" == upperLabel
-            or "INFORMATION ABOUT OUR EXECUTIVE" in upperLabel
-            or "IN PART I OF THIS ANNUAL" in upperLabel
-        ):
-            itemLabel = "Executive Officers of the Registrant"
-
-    # 10-K Item 1D: Executive Officers (newer 10-K format)
-    if itemNum == "1D":
-        if "EXECUTIVE" in upperLabel or not itemLabel:
-            itemLabel = "Executive Officers of the Registrant"
-
-    # Item 8A/8B: Supplemental Financial 또는 Controls
-    if itemNum in {"8A", "8B"}:
-        if (
-            "CONSOLIDATED FINANCIAL STATEMENTS" in upperLabel
-            or "SUPPLEMENTARY DATA" in upperLabel
-            or "SUPPLEMENTAL FINANCIAL" in upperLabel
-            or "UNAUDITED SUPPLEMENTAL" in upperLabel
-            or "SUPPLEMENTAL PRESENTATION" in upperLabel
-            or upperLabel == f"ITEM {itemNum}"
-            or not itemLabel
-        ):
-            itemLabel = "Supplemental Financial Information"
-        elif "OTHER INFORMATION" in upperLabel:
-            return "Item 9B. Other Information"
-        elif "CONTROLS AND PROCEDURES" in upperLabel:
-            return "Item 9A. Controls and Procedures"
-
-    # Item 15A: Financial Statements (alias of Item 15)
-    if itemNum == "15A":
-        if not itemLabel or "FINANCIAL" in upperLabel or upperLabel == f"ITEM {itemNum}":
-            return "Item 15. Exhibits & Schedules"
-
-    # Item 4B: Mine Safety Disclosures (오타 포함)
-    if itemNum == "4B":
-        if "MINE" in upperLabel and "SAFETY" in upperLabel:
-            return "Item 4B. Mine Safety Disclosures"
-
-    # Item 5A (20-F): "of this report" 변형
-    if itemNum == "5A":
-        if "OF THIS REPORT" in upperLabel or not itemLabel:
-            itemLabel = "Operating and Financial Review and Prospects"
-
-    # Item 3D (20-F): "Risk Factors on pages..." 변형
-    if itemNum == "3D":
-        if "RISK FACTORS" in upperLabel:
-            itemLabel = "Risk Factors"
+    itemLabel, finalTitle = _refineItemLabel(itemNum, itemLabel)
+    if finalTitle is not None:
+        return finalTitle
 
     return f"Item {itemNum}. {itemLabel}".strip()
 
