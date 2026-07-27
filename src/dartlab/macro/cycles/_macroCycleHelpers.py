@@ -34,20 +34,18 @@ _SIGNAL_SERIES_MAP: dict[str, tuple[str, str, float]] = {
 
 
 def _normCdf(z: float) -> float:
-    """표준정규분포 CDF 근사 (|오차| < 7.5e-8). Abramowitz & Stegun 26.2.17."""
-    if z < -6:
-        return 0.0
-    if z > 6:
-        return 1.0
-    a1, a2, a3, a4, a5 = 0.254829592, -0.284496736, 1.421413741, -1.453152027, 1.061405429
-    p = 0.3275911
-    sign = 1.0
-    if z < 0:
-        sign = -1.0
-        z = -z
-    t = 1.0 / (1.0 + p * z)
-    y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * math.exp(-z * z / 2)
-    return 0.5 * (1.0 + sign * y)
+    """표준정규분포 CDF.
+
+    예전에는 Abramowitz & Stegun 26.2.17 근사를 손으로 적어 두고 오차가 7.5e-8 이라고
+    문서에 밝혔는데, 지수항의 1/sqrt(2*pi) 계수가 빠져 있어 실제 최대 오차가 0.037 이었다.
+    문서가 주장한 것보다 50 만 배 크다. Φ(1) 이 0.8703 으로 나와 참값 0.8413 과 3 퍼센트
+    포인트 가까이 어긋났고, 그 값이 백분위와 국면 판정에 그대로 들어갔다.
+
+    표준 라이브러리의 `math.erf` 로 정확히 계산한다. 같은 저장소의 다른 구현
+    (`quant/strategy/_metricsOverfitting`)이 이미 이 방식을 쓴다.
+    """
+
+    return 0.5 * (1.0 + math.erf(z / math.sqrt(2.0)))
 
 
 def _findFirstTriggerDates(

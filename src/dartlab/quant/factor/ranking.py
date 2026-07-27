@@ -411,10 +411,15 @@ def calcRanking(
     else:
         composites = (m_rank + r_rank + d_rank) / 3
         factors_used = ["margin", "ROA", "debt"]
-    order = np.argsort(-composites)
+    # composite 는 0 이 최고다. 각 factor 를 `argsort(argsort(-x))` 로 만들었기 때문에
+    # 가장 좋은 종목이 0 순위를 받고 그 평균도 0 에 가깝다. 그런데 내림차순으로 정렬해
+    # 왔기 때문에 가장 나쁜 종목이 1 위로 올라갔다. 마진 -5%, ROA -3%, 부채비율 400%
+    # 짜리가 "상위 50 종목" 맨 앞에 서던 것이 그 결과다.
+    order = np.argsort(composites)
 
     for i, idx in enumerate(order):
-        ranked[idx]["compositeScore"] = round(float(composites[idx]), 4)
+        # 점수도 사람이 읽는 방향으로 뒤집는다. 1 에 가까울수록 좋다.
+        ranked[idx]["compositeScore"] = round(1.0 - float(composites[idx]), 4)
         ranked[idx]["rank"] = i + 1
 
     sorted_ranked = sorted(ranked, key=lambda x: x.get("rank", 9999))
