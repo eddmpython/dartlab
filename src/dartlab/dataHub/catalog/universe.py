@@ -151,21 +151,28 @@ def _resolverSpec(universeKind: str, market: str, membership: str) -> Mapping[st
     return None
 
 
-def _loadMembership(selection: UniverseSelection, market: str) -> tuple[ResolvedMarket | None, DataGap | None]:
-    spec = _resolverSpec("listedEquity", market, selection.membership)
-    if spec is None:
-        code = (
-            "UNIVERSE_PIT_UNSUPPORTED"
-            if selection.asOf is not None
-            else "UNIVERSE_MEMBERSHIP_UNSUPPORTED"
-            if selection.membership == "allKnown"
-            else "UNIVERSE_MARKET_UNSUPPORTED"
-        )
-        return None, DataGap(code, f"{market} {selection.membership} universe resolver가 없습니다", systemic=True)
+def _missingResolverGap(selection: UniverseSelection, market: str) -> DataGap:
+    """resolver 자체가 없을 때의 gap. 무엇이 없어서 없는지까지 code 로 구분한다."""
+    code = (
+        "UNIVERSE_PIT_UNSUPPORTED"
+        if selection.asOf is not None
+        else "UNIVERSE_MEMBERSHIP_UNSUPPORTED"
+        if selection.membership == "allKnown"
+        else "UNIVERSE_MARKET_UNSUPPORTED"
+    )
+    return DataGap(code, f"{market} {selection.membership} universe resolver가 없습니다", systemic=True)
+
+
+def _callResolver(spec: Mapping[str, Any], selection: UniverseSelection, market: str):
+    """resolver 를 불러 프레임을 받는다. 실패는 gap 으로 돌린다.
+
+    Returns:
+        ``(frame, gap)``. 둘 중 하나만 값이 있다.
+    """
     try:
         module = importlib.import_module(str(spec["module"]))
         resolver = getattr(module, str(spec["attribute"]))
-        frame = resolver(market=market, membership=selection.membership, asOf=selection.asOf)
+        return resolver(market=market, membership=selection.membership, asOf=selection.asOf), None
     except Exception as exc:
         message = str(exc)
         # 예외 문구를 통째로 code 로 쓰면 code 공간이 무한해지고, 경로 같은 내부 사정이
@@ -174,17 +181,45 @@ def _loadMembership(selection: UniverseSelection, market: str) -> tuple[Resolved
         head = message.split(":", 1)[0].strip()
         code = head if head in _UNIVERSE_GAP_CODES else "UNIVERSE_RESOLUTION_FAILED"
         return None, DataGap(code, f"{market}: {type(exc).__name__}: {message}", systemic=True)
-    if not isinstance(frame, pl.DataFrame) or "entityId" not in frame.columns:
-        # resolver 가 망가진 것은 한 종목의 결손이 아니라 그 시장 전체가 안 나오는 사건이다.
-        # systemic 을 안 달면 다른 asset 하나가 성공했다는 이유로 partial 로 내려간다.
-        return None, DataGap(
-            "UNIVERSE_RESOLUTION_FAILED", f"{market} resolver schema가 유효하지 않습니다", systemic=True
+
+
+def _entityParamsFromFrame(
+    normalized, paramColumns: tuple[str, ...], market: str
+) -> tuple[tuple[tuple[str, tuple[tuple[str, str], ...]], ...] | None, DataGap | None]:
+    """entity 별 파라미터를 모은다. 같은 entity 가 서로 다른 값을 들고 오면 gap.
+
+    한 종목이 두 벌의 파라미터를 갖는 것은 universe 정의 자체가 어긋난 것이라 부분 성공으로
+    넘기지 않는다.
+    """
+    paramsByEntity: dict[str, tuple[tuple[str, str], ...]] = {}
+    for row in normalized.select("entityId", *paramColumns).iter_rows(named=True):
+        entityId = str(row["entityId"])
+        params = tuple(
+            (column.removeprefix("param_"), str(row[column]))
+            for column in paramColumns
+            if row[column] is not None and str(row[column])
         )
-    provider = (
-        str(frame["provider"][0])
-        if frame.height and "provider" in frame.columns
-        else str(spec.get("provider") or "unknown")
-    )
+        previous = paramsByEntity.get(entityId)
+        if previous is not None and previous != params:
+            return None, DataGap(
+                "UNIVERSE_RESOLUTION_FAILED",
+                f"{market} entity parameter가 충돌합니다: {entityId}",
+                systemic=True,
+            )
+        paramsByEntity[entityId] = params
+    return tuple(sorted(paramsByEntity.items())), None
+
+
+def _readMembershipFrame(frame, market: str):
+    """resolver 프레임에서 식별자, 원천 식별자, entity 파라미터를 꺼낸다.
+
+    프레임을 읽는 일과 그 결과로 무엇을 고를지 정하는 일을 나눈다. 앞은 자료 모양을 알고
+    뒤는 선택 규칙을 안다. 한 함수에 있으면 열 이름 하나 늘 때마다 선택 규칙 쪽을 지나며
+    읽게 된다.
+
+    Returns:
+        ``(ids, sourceIds, entityParams, gap)``. gap 이 있으면 앞 셋은 쓰지 않는다.
+    """
     normalized = frame.with_columns(pl.col("entityId").cast(pl.Utf8))
     ids = tuple(sorted({str(value) for value in normalized["entityId"].drop_nulls().to_list() if str(value)}))
     sourceIds: tuple[tuple[str, str], ...] = ()
@@ -201,23 +236,33 @@ def _loadMembership(selection: UniverseSelection, market: str) -> tuple[Resolved
     paramColumns = tuple(sorted(column for column in normalized.columns if column.startswith("param_")))
     entityParams: tuple[tuple[str, tuple[tuple[str, str], ...]], ...] = ()
     if paramColumns:
-        paramsByEntity: dict[str, tuple[tuple[str, str], ...]] = {}
-        for row in normalized.select("entityId", *paramColumns).iter_rows(named=True):
-            entityId = str(row["entityId"])
-            params = tuple(
-                (column.removeprefix("param_"), str(row[column]))
-                for column in paramColumns
-                if row[column] is not None and str(row[column])
-            )
-            previous = paramsByEntity.get(entityId)
-            if previous is not None and previous != params:
-                return None, DataGap(
-                    "UNIVERSE_RESOLUTION_FAILED",
-                    f"{market} entity parameter가 충돌합니다: {entityId}",
-                    systemic=True,
-                )
-            paramsByEntity[entityId] = params
-        entityParams = tuple(sorted(paramsByEntity.items()))
+        entityParams, paramGap = _entityParamsFromFrame(normalized, paramColumns, market)
+        if paramGap is not None:
+            return (), (), (), paramGap
+    return ids, sourceIds, entityParams, None
+
+
+def _loadMembership(selection: UniverseSelection, market: str) -> tuple[ResolvedMarket | None, DataGap | None]:
+    spec = _resolverSpec("listedEquity", market, selection.membership)
+    if spec is None:
+        return None, _missingResolverGap(selection, market)
+    frame, callGap = _callResolver(spec, selection, market)
+    if callGap is not None:
+        return None, callGap
+    if not isinstance(frame, pl.DataFrame) or "entityId" not in frame.columns:
+        # resolver 가 망가진 것은 한 종목의 결손이 아니라 그 시장 전체가 안 나오는 사건이다.
+        # systemic 을 안 달면 다른 asset 하나가 성공했다는 이유로 partial 로 내려간다.
+        return None, DataGap(
+            "UNIVERSE_RESOLUTION_FAILED", f"{market} resolver schema가 유효하지 않습니다", systemic=True
+        )
+    provider = (
+        str(frame["provider"][0])
+        if frame.height and "provider" in frame.columns
+        else str(spec.get("provider") or "unknown")
+    )
+    ids, sourceIds, entityParams, paramGap = _readMembershipFrame(frame, market)
+    if paramGap is not None:
+        return None, paramGap
     explicit = tuple(value.split(":", 1)[1] for value in selection.explicitIds if value.startswith(f"{market}:"))
     missing = tuple(value for value in explicit if value not in set(ids))
     if explicit:
