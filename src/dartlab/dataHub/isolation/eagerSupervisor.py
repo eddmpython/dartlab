@@ -62,6 +62,7 @@ from dartlab.dataHub.isolation.eagerProcess import (
 )
 from dartlab.dataHub.isolation.ownerProcess import (
     _artifactPath,
+    _awaitChildExit,
     _ControlTracker,
     _createArtifact,
     _drainAvailable,
@@ -472,9 +473,9 @@ def runEagerSeal(
                 cleanupTrace += stopProcessGroup(pid, normalizedDeadline)
             elif (
                 tracker.resultFrame is not None
-                and not process.is_alive()
                 and childCompletedAt is not None
                 and childCompletedAt <= workDeadline
+                and _awaitChildExit(process, workDeadline)
             ):
                 cleanupTrace = _finishProcess(process, job, normalizedDeadline)
                 cleanupTrace += stopProcessGroup(pid, normalizedDeadline)

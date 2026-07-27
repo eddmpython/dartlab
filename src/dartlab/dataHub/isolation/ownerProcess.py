@@ -57,7 +57,7 @@ from dartlab.dataHub.paging.runtime import (
     MIN_OWNER_PROCESS_WORK_SECONDS,
     OWNER_PROCESS_CLEANUP_GRACE_SECONDS,
 )
-from dartlab.dataHub.telemetry import dataHubLogger
+from dartlab.dataHub.telemetry import dataHubLogger, recordFailure
 
 _log = dataHubLogger(__name__)
 
@@ -118,6 +118,31 @@ def _sentinelReady(process: Any, timeoutSeconds: float) -> bool:
     if timeoutSeconds <= 0:
         return not process.is_alive()
     return bool(wait([process.sentinel], timeout=timeoutSeconds))
+
+
+# 결과 프레임 도착 후 자식이 실제로 빠져나가기까지 봐 주는 여유.
+# 자식의 worker thread 는 non-daemon 이라 결과를 보낸 뒤에도 잠시 더 살아 있다.
+# 기한(workDeadline)에 견줘 짧게 잡아 실제 정지 감지를 늦추지 않는다.
+_CHILD_EXIT_GRACE_SECONDS = 5.0
+
+
+def _awaitChildExit(process: Any, workDeadline: float) -> bool:
+    """결과를 받은 자식이 실제로 종료했는지, 짧은 여유를 두고 판정한다.
+
+    그 순간의 ``is_alive()`` 만 보면 결과를 정상으로 보낸 실행도 childFailed 로
+    뒤집힌다. 자식은 결과 프레임을 보낸 직후 worker thread 를 정리하느라 수십 ms
+    더 살아 있고, 부모가 그 창을 이기면 성공이 실패로 기록된다. 기한을 넘기지
+    않는 선에서만 기다리므로 진짜로 멈춘 자식은 그대로 실패로 남는다.
+
+    Args:
+        process: 검사 대상 자식 프로세스.
+        workDeadline: 작업 기한 (perf_counter 절대값).
+
+    Returns:
+        bool: 자식이 종료했으면 True.
+    """
+    remaining = max(0.0, workDeadline - time.perf_counter())
+    return _sentinelReady(process, min(_CHILD_EXIT_GRACE_SECONDS, remaining))
 
 
 def _stopProcess(
@@ -517,9 +542,9 @@ def runOwnerPage(
                 cleanupTrace = _stopProcess(process, job, normalizedDeadline)
             elif (
                 tracker.resultFrame is not None
-                and not process.is_alive()
                 and childCompletedAt is not None
                 and childCompletedAt <= workDeadline
+                and _awaitChildExit(process, workDeadline)
             ):
                 cleanupTrace = _finishProcess(process, job, normalizedDeadline)
                 resultFrame = tracker.resultFrame
@@ -565,7 +590,20 @@ def runOwnerPage(
                 cleanupTrace = _stopProcess(process, job, normalizedDeadline)
             elif tracker.resultFrame is not None:
                 status = "childFailed"
-                errorCode = "OWNER_PROCESS_CHILD_DID_NOT_EXIT"
+                # 여유를 주고도 자식이 안 빠져나갔다. 자식이 typed 실패를 이미 보냈다면
+                # 그것이 부모의 추정보다 정확하다 (eagerSupervisor 와 동형).
+                reportedFrame = tracker.resultFrame
+                reportedCode = str(reportedFrame["errorCode"]) if reportedFrame["status"] == "failed" else None
+                errorCode = reportedCode or "OWNER_PROCESS_CHILD_DID_NOT_EXIT"
+                recordFailure(
+                    _log,
+                    "OWNER_PROCESS_CHILD_LINGERED",
+                    context={
+                        "reportedCode": reportedCode,
+                        "childCompleted": childCompletedAt is not None,
+                        "processAlive": process.is_alive(),
+                    },
+                )
                 cleanupTrace = _stopProcess(process, job, normalizedDeadline)
             else:
                 status = "childFailed"
