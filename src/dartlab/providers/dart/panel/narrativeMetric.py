@@ -21,7 +21,7 @@ from dartlab.core.extractionCatalog import getConcept
 from dartlab.core.utils.helpers import parseNumStr
 from dartlab.providers.dart.panel.build.grid import normLabel, tableToGrid
 
-_UNIT_SCALE = {"백만원": 1e6, "억원": 1e8, "천원": 1e3, "십억원": 1e9, "원": 1.0}
+_UNIT_SCALE = {"백만원": 1e6, "억원": 1e8, "천원": 1e3, "십억원": 1e9, "조원": 1e12, "원": 1.0}
 _AMOUNT_HINTS = ("금액", "가액")
 _QTY_HINTS = ("수량", "대수", "개수")
 _TOTAL_HINTS = ("합계", "합 계", "총계", "총 계", "소계")
@@ -66,11 +66,27 @@ def metricCatalog() -> list[dict]:
 
 
 def _detectUnit(xml: str) -> tuple[float, bool]:
-    """표 XML 내부에서 (단위:X) 탐지. (scale, found). 미발견 시 (1e6=백만원 기본, False)."""
-    m = re.search(r"\(단위\s*[:：]\s*([^\)/]{1,8})", xml)
-    if m:
-        return _UNIT_SCALE.get(normLabel(m.group(1)), 1e6), True
-    return 1e6, False
+    """표 XML 내부에서 (단위:X) 탐지. (scale, resolved) 를 돌려준다.
+
+    두 번째 값은 "캡션을 찾았는가" 가 아니라 "배율을 알아냈는가" 다. 예전에는 캡션을
+    찾기만 하면 True 였고, 알지 못하는 단위는 조용히 백만원으로 떨어졌다. 그래서
+    '(단위: 억원, %)' 같은 통상 표기가 100 배 낮게, '조원' 이 100 만 배 낮게 나오면서
+    호출부에서 confidence 'high' 까지 붙었다. 배율을 모르면 그 사실을 말해야 한다.
+
+    토큰 해석은 같은 provider 의 `dartXmlNormalize.detectUnit` 이 이미 정확하게 한다.
+    여러 토큰이 섞인 캡션도 앞머리로 맞추고, 모르는 단위에는 빈 문자열을 준다.
+    """
+
+    from dartlab.providers.dart.parse.dartXmlNormalize import detectUnit as _detectUnitToken
+
+    m = re.search(r"\(단위\s*[:：]\s*([^\)/]{1,16})", xml)
+    if not m:
+        return 1e6, False
+    token = _detectUnitToken(m.group(0))
+    scale = _UNIT_SCALE.get(token or normLabel(m.group(1)))
+    if scale is None:
+        return 1e6, False
+    return scale, True
 
 
 def _pickCol(colLabels: list[str], synonyms: list[str], *, amountPref: bool) -> int | None:
