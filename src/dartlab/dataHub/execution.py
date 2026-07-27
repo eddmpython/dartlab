@@ -16,8 +16,10 @@ from dartlab.dataHub.contracts import (
     AssetRef,
     Coverage,
     DataAssetDescriptor,
+    DataCatalogResult,
     DataGap,
     DataQuery,
+    DataRequest,
     DataResult,
     UniverseCoverage,
 )
@@ -70,6 +72,235 @@ def _systemicFailureResult(
         lineageRefs=(),
         executionReceipts=(),
     )
+
+
+def _resolvedIdentity(
+    resolved: Sequence[tuple[str, DataAssetDescriptor, DataQuery]], query: DataQuery
+) -> tuple[tuple[AssetRef, ...], str]:
+    """해결된 asset 집합의 참조 목록과 계약 해시를 만든다.
+
+    같은 두 줄이 네 자리에서 되풀이되고 있었다. 되풀이 자체보다, 그중 한 곳만 고치면 나머지
+    셋과 해시가 갈라진다는 것이 문제다. 계약 해시는 세대 재사용 판정에 쓰이므로 갈라지면
+    조용히 다른 세대를 집는다.
+    """
+    resolvedRefs = tuple(
+        dict.fromkeys(AssetRef(descriptor.assetId, descriptor.assetVersionId) for _, descriptor, _ in resolved)
+    )
+    contractHash = hashlib.sha256(_canonical({"assets": resolvedRefs, "query": query})).hexdigest()
+    return resolvedRefs, contractHash
+
+
+def _pageableEntryPoint(resourcePaging: tuple[bool, ...], ownerPaging: tuple[bool, ...]):
+    """페이징 레인 진입점을 고른다. 전부 eager 면 None.
+
+    세 갈래가 각자 같은 인자 묶음을 만들어 넘기고 있었고, 그 앞에서 계약 해시를 세 번 따로
+    계산했다. 갈리는 것은 어느 함수를 부르느냐 하나뿐이라 그것만 남긴다.
+
+    한 asset 이라도 페이징이면 섞어 쓸 수 없다. 레인이 서로 다른 이어받기 상태를 쓰기
+    때문에, 일부만 페이징인 경우는 composite 가 받아 하나로 묶는다.
+    """
+    if not (any(resourcePaging) or any(ownerPaging)):
+        return None
+    allResource = bool(resourcePaging) and all(resourcePaging)
+    allOwner = bool(ownerPaging) and all(ownerPaging)
+    if not (allResource or allOwner):
+        from dartlab.dataHub.paging.composite import executeInitialCompositePaging
+
+        return executeInitialCompositePaging
+    if any(resourcePaging):
+        from dartlab.dataHub.paging.resource import executeInitialResourcePaging
+
+        return executeInitialResourcePaging
+    from dartlab.dataHub.paging.owner import executeInitialOwnerPaging
+
+    return executeInitialOwnerPaging
+
+
+def _resolveAgainstCatalog(
+    requested: Sequence[tuple[str, DataRequest, DataQuery]], catalog: DataCatalogResult
+) -> tuple[list[tuple[str, DataAssetDescriptor, DataQuery]], list[DataGap]]:
+    """요청을 카탈로그 descriptor 로 해석하고, 못 찾거나 막힌 것은 gap 으로 돌린다."""
+    byId = {asset.assetId: asset for asset in catalog.assets}
+    resolved: list[tuple[str, DataAssetDescriptor, DataQuery]] = []
+    gaps: list[DataGap] = list(catalog.gaps)
+    for requestId, request, activeQuery in requested:
+        descriptor = byId.get(request.assetId)
+        if descriptor is None:
+            gaps.append(DataGap("ASSET_NOT_FOUND", request.assetId, request.assetId, requestId=requestId))
+            continue
+        if not descriptor.queryable:
+            gaps.append(
+                DataGap(
+                    "ASSET_NOT_QUERYABLE",
+                    "catalog-only 또는 policy 차단 asset",
+                    request.assetId,
+                    requestId=requestId,
+                )
+            )
+            continue
+        resolved.append((requestId, descriptor, activeQuery))
+    return resolved, gaps
+
+
+def _materializeComposite(
+    assetIds: Sequence[str],
+    query: DataQuery,
+    *,
+    catalog: DataCatalogResult,
+    requested: Sequence[tuple[str, DataRequest, DataQuery]],
+    resolved: Sequence[tuple[str, DataAssetDescriptor, DataQuery]],
+    gaps: Sequence[DataGap],
+    deadline: float,
+) -> DataResult:
+    """runtime 이 아닌 요청을 세대로 굽는 경로. 계획을 완전히 고정할 수 없으면 실패로 닫는다.
+
+    굽기는 재사용을 전제로 하므로 계획이 흔들리면 안 된다. 결손이 하나라도 있으면 그 세대는
+    나중에 다른 결과를 낼 수 있어, 부분 성공을 돌려주는 대신 이유를 적어 실패로 끝낸다.
+    """
+    resolvedRefs, contractHash = _resolvedIdentity(resolved, query)
+    if query.completeness == "requireComplete" or gaps or not resolved:
+        code = (
+            "PAGEABLE_REQUIRE_COMPLETE_UNSUPPORTED"
+            if query.completeness == "requireComplete"
+            else "PAGEABLE_PLAN_INCOMPLETE"
+        )
+        return DataResult(
+            status="failed",
+            partitions=(),
+            assets=resolvedRefs,
+            snapshotId=catalog.snapshotId,
+            contractHash=contractHash,
+            coverage=Coverage(len(requested), len(resolved), 0, 1),
+            gaps=(
+                DataGap(
+                    code,
+                    "materialization composite 계획을 완전하게 고정할 수 없습니다",
+                    systemic=False,
+                ),
+            ),
+            lineageRefs=(),
+            executionReceipts=(),
+        )
+    try:
+        from dartlab.dataHub.materialization.query import materializeCompositeQuery
+        from dartlab.dataHub.paging.composite import prepareCompositePaging
+
+        plan = prepareCompositePaging(
+            assetIds,
+            query,
+            requestedAssets=len(requested),
+            snapshotId=catalog.snapshotId,
+            contractHash=contractHash,
+            resolved=resolved,
+            deadline=deadline,
+        )
+        return materializeCompositeQuery(plan, query, deadline=deadline)
+    except (MaterializationError, ContinuationError) as error:
+        code = error.code
+        message = str(error)
+    except Exception:
+        recordFailure(_log, "MATERIALIZATION_NOT_READY")
+        code = "MATERIALIZATION_NOT_READY"
+        message = "materialization generation을 게시하지 못했습니다"
+    return _systemicFailureResult(
+        code,
+        message,
+        assets=resolvedRefs,
+        snapshotId=catalog.snapshotId,
+        contractHash=contractHash,
+        requestedAssets=len(requested),
+        resolvedAssets=len(resolved),
+    )
+
+
+def _planExecutionTasks(
+    resolved: Sequence[tuple[str, DataAssetDescriptor, DataQuery]],
+) -> tuple[list[_ExecutionTask], list[DataGap], set[str], list[UniverseCoverage]]:
+    """해결된 asset 을 실행 단위로 펼친다. universe 해석과 selector 전개가 여기서 끝난다.
+
+    실행 루프와 분리하는 이유는 둘이 서로 다른 실패를 다루기 때문이다. 여기서 나는 실패는
+    "무엇을 실행할지 정하지 못함"(시점 미지원, universe 해석 실패, selector 부재)이고,
+    실행 루프의 실패는 "정한 것을 못 가져옴"이다. 한 함수에 있으면 그 둘이 섞여 보인다.
+    """
+    tasks: list[_ExecutionTask] = []
+    gaps: list[DataGap] = []
+    universeCache: dict[object, ResolvedUniverse] = {}
+    universeSnapshots: set[str] = set()
+    universeCoverage: list[UniverseCoverage] = []
+    for requestId, descriptor, activeQuery in resolved:
+        temporalGap = _temporalGap(descriptor, activeQuery)
+        if temporalGap:
+            gaps.append(dataclasses.replace(temporalGap, requestId=requestId))
+            continue
+        resolvedUniverse = None
+        if activeQuery.universe is not None:
+            resolvedUniverse = universeCache.get(activeQuery.universe)
+            if resolvedUniverse is None:
+                resolvedUniverse = resolveUniverse(activeQuery.universe)
+                universeCache[activeQuery.universe] = resolvedUniverse
+            universeSnapshots.add(resolvedUniverse.snapshotId)
+            gaps.extend(
+                dataclasses.replace(gap, assetId=descriptor.assetId, requestId=requestId)
+                for gap in resolvedUniverse.gaps
+            )
+        selectors, selectorGaps = _selectors(descriptor, activeQuery)
+        gaps.extend(dataclasses.replace(gap, requestId=requestId) for gap in selectorGaps)
+        universeByMarket = resolvedUniverse.byMarket() if resolvedUniverse is not None else {}
+        if activeQuery.universe is not None:
+            selectors = tuple(selector for selector in selectors if selector.get("market") in universeByMarket)
+            universeCoverage.extend(
+                _uncoveredMarkets(requestId, descriptor, activeQuery, selectors, selectorGaps, resolvedUniverse)
+            )
+        for selector in selectors:
+            requestRef = _requestRef(descriptor, activeQuery, selector, requestId)
+            market = selector.get("market")
+            tasks.append(
+                _ExecutionTask(
+                    requestId,
+                    descriptor,
+                    activeQuery,
+                    selector,
+                    requestRef,
+                    universeByMarket.get(market) if market else None,
+                    resolvedUniverse.snapshotId if resolvedUniverse else None,
+                )
+            )
+    return tasks, gaps, universeSnapshots, universeCoverage
+
+
+def _uncoveredMarkets(
+    requestId: str,
+    descriptor: DataAssetDescriptor,
+    activeQuery: DataQuery,
+    selectors: Sequence[dict],
+    selectorGaps: Sequence[DataGap],
+    resolvedUniverse: ResolvedUniverse | None,
+) -> list[UniverseCoverage]:
+    """요청한 시장 중 실행 계획에 한 줄도 못 들어간 것을 적는다.
+
+    빠진 시장을 조용히 두면 결과가 그 시장을 다뤘는데 자료가 없었던 것처럼 읽힌다. 실제로는
+    계획 단계에서 통째로 빠진 것이다.
+    """
+    plannedMarkets = {selector["market"] for selector in selectors if "market" in selector}
+    selectorCodes = tuple(dict.fromkeys(gap.code for gap in selectorGaps))
+    resolverCodes = tuple(dict.fromkeys(gap.code for gap in resolvedUniverse.gaps)) if resolvedUniverse else ()
+    universeByMarket = resolvedUniverse.byMarket() if resolvedUniverse is not None else {}
+    rows: list[UniverseCoverage] = []
+    for market in activeQuery.universe.markets:
+        if market in plannedMarkets:
+            continue
+        codes = selectorCodes or resolverCodes or ("UNIVERSE_UNSUPPORTED",)
+        rows.append(
+            _failedUniverseCoverage(
+                requestId,
+                descriptor,
+                market,
+                resolvedUniverse.snapshotId if resolvedUniverse else None,
+                universeByMarket.get(market),
+                codes,
+            )
+        )
+    return rows
 
 
 def executeDataQuery(assetIds: Sequence[str], query: DataQuery) -> DataResult:
@@ -130,110 +361,28 @@ def executeDataQuery(assetIds: Sequence[str], query: DataQuery) -> DataResult:
 
     requested = _compiledRequests(assetIds, query)
     catalog = buildCatalog()
-    byId = {asset.assetId: asset for asset in catalog.assets}
-    resolved: list[tuple[str, DataAssetDescriptor, DataQuery]] = []
-    gaps: list[DataGap] = list(catalog.gaps)
-    for requestId, request, activeQuery in requested:
-        descriptor = byId.get(request.assetId)
-        if descriptor is None:
-            gaps.append(DataGap("ASSET_NOT_FOUND", request.assetId, request.assetId, requestId=requestId))
-            continue
-        if not descriptor.queryable:
-            gaps.append(
-                DataGap(
-                    "ASSET_NOT_QUERYABLE",
-                    "catalog-only 또는 policy 차단 asset",
-                    request.assetId,
-                    requestId=requestId,
-                )
-            )
-            continue
-        resolved.append((requestId, descriptor, activeQuery))
+    resolved, gaps = _resolveAgainstCatalog(requested, catalog)
 
     if materialization.mode != "runtime":
-        resolvedRefs = tuple(
-            dict.fromkeys(AssetRef(descriptor.assetId, descriptor.assetVersionId) for _, descriptor, _ in resolved)
-        )
-        contractHash = hashlib.sha256(_canonical({"assets": resolvedRefs, "query": query})).hexdigest()
-        if query.completeness == "requireComplete" or gaps or not resolved:
-            code = (
-                "PAGEABLE_REQUIRE_COMPLETE_UNSUPPORTED"
-                if query.completeness == "requireComplete"
-                else "PAGEABLE_PLAN_INCOMPLETE"
-            )
-            return DataResult(
-                status="failed",
-                partitions=(),
-                assets=resolvedRefs,
-                snapshotId=catalog.snapshotId,
-                contractHash=contractHash,
-                coverage=Coverage(len(requested), len(resolved), 0, 1),
-                gaps=(
-                    DataGap(
-                        code,
-                        "materialization composite 계획을 완전하게 고정할 수 없습니다",
-                        systemic=False,
-                    ),
-                ),
-                lineageRefs=(),
-                executionReceipts=(),
-            )
-        try:
-            from dartlab.dataHub.materialization.query import (
-                materializeCompositeQuery,
-            )
-            from dartlab.dataHub.paging.composite import prepareCompositePaging
-
-            plan = prepareCompositePaging(
-                assetIds,
-                query,
-                requestedAssets=len(requested),
-                snapshotId=catalog.snapshotId,
-                contractHash=contractHash,
-                resolved=resolved,
-                deadline=deadline,
-            )
-            return materializeCompositeQuery(
-                plan,
-                query,
-                deadline=deadline,
-            )
-        except MaterializationError as error:
-            code = error.code
-            message = str(error)
-        except ContinuationError as error:
-            code = error.code
-            message = str(error)
-        except Exception:
-            recordFailure(_log, "MATERIALIZATION_NOT_READY")
-            code = "MATERIALIZATION_NOT_READY"
-            message = "materialization generation을 게시하지 못했습니다"
-        return _systemicFailureResult(
-            code,
-            message,
-            assets=resolvedRefs,
-            snapshotId=catalog.snapshotId,
-            contractHash=contractHash,
-            requestedAssets=len(requested),
-            resolvedAssets=len(resolved),
+        return _materializeComposite(
+            assetIds,
+            query,
+            catalog=catalog,
+            requested=requested,
+            resolved=resolved,
+            gaps=gaps,
+            deadline=deadline,
         )
 
-    from dartlab.dataHub.paging.owner import executeInitialOwnerPaging, isPageableOwner
-    from dartlab.dataHub.paging.resource import executeInitialResourcePaging, isPageableResource
+    from dartlab.dataHub.paging.owner import isPageableOwner
+    from dartlab.dataHub.paging.resource import isPageableResource
 
     resourcePaging = tuple(isPageableResource(descriptor, activeQuery) for _, descriptor, activeQuery in resolved)
     ownerPaging = tuple(isPageableOwner(descriptor, activeQuery) for _, descriptor, activeQuery in resolved)
-    hasPageable = any(resourcePaging) or any(ownerPaging)
-    allResourcePaging = bool(resourcePaging) and all(resourcePaging)
-    allOwnerPaging = bool(ownerPaging) and all(ownerPaging)
-    if hasPageable and not (allResourcePaging or allOwnerPaging):
-        resolvedRefs = tuple(
-            dict.fromkeys(AssetRef(descriptor.assetId, descriptor.assetVersionId) for _, descriptor, _ in resolved)
-        )
-        contractHash = hashlib.sha256(_canonical({"assets": resolvedRefs, "query": query})).hexdigest()
-        from dartlab.dataHub.paging.composite import executeInitialCompositePaging
-
-        return executeInitialCompositePaging(
+    pagingEntry = _pageableEntryPoint(resourcePaging, ownerPaging)
+    if pagingEntry is not None:
+        _, contractHash = _resolvedIdentity(resolved, query)
+        return pagingEntry(
             assetIds,
             query,
             requestedAssets=len(requested),
@@ -244,95 +393,8 @@ def executeDataQuery(assetIds: Sequence[str], query: DataQuery) -> DataResult:
             deadline=deadline,
         )
 
-    if any(resourcePaging):
-        resolvedRefs = tuple(
-            dict.fromkeys(AssetRef(descriptor.assetId, descriptor.assetVersionId) for _, descriptor, _ in resolved)
-        )
-        contractHash = hashlib.sha256(_canonical({"assets": resolvedRefs, "query": query})).hexdigest()
-        return executeInitialResourcePaging(
-            assetIds,
-            query,
-            requestedAssets=len(requested),
-            snapshotId=catalog.snapshotId,
-            contractHash=contractHash,
-            resolved=resolved,
-            hasPlanningGaps=bool(gaps),
-            deadline=deadline,
-        )
-
-    if any(ownerPaging):
-        resolvedRefs = tuple(
-            dict.fromkeys(AssetRef(descriptor.assetId, descriptor.assetVersionId) for _, descriptor, _ in resolved)
-        )
-        contractHash = hashlib.sha256(_canonical({"assets": resolvedRefs, "query": query})).hexdigest()
-        return executeInitialOwnerPaging(
-            assetIds,
-            query,
-            requestedAssets=len(requested),
-            snapshotId=catalog.snapshotId,
-            contractHash=contractHash,
-            resolved=resolved,
-            hasPlanningGaps=bool(gaps),
-            deadline=deadline,
-        )
-
-    tasks: list[_ExecutionTask] = []
-    universeCache: dict[object, ResolvedUniverse] = {}
-    universeSnapshots: set[str] = set()
-    universeCoverage: list[UniverseCoverage] = []
-    for requestId, descriptor, activeQuery in resolved:
-        temporalGap = _temporalGap(descriptor, activeQuery)
-        if temporalGap:
-            gaps.append(dataclasses.replace(temporalGap, requestId=requestId))
-            continue
-        resolvedUniverse = None
-        if activeQuery.universe is not None:
-            resolvedUniverse = universeCache.get(activeQuery.universe)
-            if resolvedUniverse is None:
-                resolvedUniverse = resolveUniverse(activeQuery.universe)
-                universeCache[activeQuery.universe] = resolvedUniverse
-            universeSnapshots.add(resolvedUniverse.snapshotId)
-            gaps.extend(
-                dataclasses.replace(gap, assetId=descriptor.assetId, requestId=requestId)
-                for gap in resolvedUniverse.gaps
-            )
-        selectors, selectorGaps = _selectors(descriptor, activeQuery)
-        gaps.extend(dataclasses.replace(gap, requestId=requestId) for gap in selectorGaps)
-        universeByMarket = resolvedUniverse.byMarket() if resolvedUniverse is not None else {}
-        if activeQuery.universe is not None:
-            selectors = tuple(selector for selector in selectors if selector.get("market") in universeByMarket)
-        plannedMarkets = {selector["market"] for selector in selectors if "market" in selector}
-        if activeQuery.universe is not None:
-            selectorCodes = tuple(dict.fromkeys(gap.code for gap in selectorGaps))
-            resolverCodes = tuple(dict.fromkeys(gap.code for gap in resolvedUniverse.gaps)) if resolvedUniverse else ()
-            for market in activeQuery.universe.markets:
-                if market in plannedMarkets:
-                    continue
-                codes = selectorCodes or resolverCodes or ("UNIVERSE_UNSUPPORTED",)
-                universeCoverage.append(
-                    _failedUniverseCoverage(
-                        requestId,
-                        descriptor,
-                        market,
-                        resolvedUniverse.snapshotId if resolvedUniverse else None,
-                        universeByMarket.get(market),
-                        codes,
-                    )
-                )
-        for selector in selectors:
-            requestRef = _requestRef(descriptor, activeQuery, selector, requestId)
-            market = selector.get("market")
-            tasks.append(
-                _ExecutionTask(
-                    requestId,
-                    descriptor,
-                    activeQuery,
-                    selector,
-                    requestRef,
-                    universeByMarket.get(market) if market else None,
-                    resolvedUniverse.snapshotId if resolvedUniverse else None,
-                )
-            )
+    tasks, planGaps, universeSnapshots, universeCoverage = _planExecutionTasks(resolved)
+    gaps.extend(planGaps)
 
     partitions = []
     receipts: list[str] = []
@@ -507,6 +569,26 @@ def executeDataQuery(assetIds: Sequence[str], query: DataQuery) -> DataResult:
                     future.cancel()
             executor.shutdown(wait=not abandonWindow, cancel_futures=abandonWindow)
 
+    _appendUnexecutedCoverage(tasks, universeCoverage)
+    return _assembleEagerResult(
+        query,
+        catalog=catalog,
+        requested=requested,
+        resolved=resolved,
+        partitions=partitions,
+        receipts=receipts,
+        gaps=gaps,
+        universeSnapshots=universeSnapshots,
+        universeCoverage=universeCoverage,
+    )
+
+
+def _appendUnexecutedCoverage(tasks: Sequence[_ExecutionTask], universeCoverage: list[UniverseCoverage]) -> None:
+    """예산이나 기한 때문에 아예 안 돌아간 task 를 coverage 에 적는다.
+
+    안 적으면 그 시장이 조회됐는데 결과가 없었던 것으로 읽힌다. 실제로는 순서가 뒤라서
+    차례가 오지 않은 것이다.
+    """
     coveredTaskKeys = {(row.requestId, row.selector) for row in universeCoverage if row.selector}
     for task in tasks:
         if task.universeMarket is None:
@@ -518,68 +600,87 @@ def executeDataQuery(assetIds: Sequence[str], query: DataQuery) -> DataResult:
         if coverageRow is not None:
             universeCoverage.append(coverageRow)
 
-    producedPartitions = len(partitions)
-    failures = len(gaps)
+
+def _eagerStatus(query: DataQuery, *, producedPartitions: int, gaps: Sequence[DataGap]) -> tuple[str, bool]:
+    """실행 결과의 등급과 부분 결과를 버릴지 여부를 정한다.
+
+    Returns:
+        ``(status, discardPartials)``. 두 번째 값이 참이면 행과 영수증을 함께 버린다.
+    """
+    if query.completeness == "requireComplete" and gaps:
+        return "failed", True
+    if producedPartitions == 0:
+        return "failed", False
+    if any(gap.systemic for gap in gaps):
+        # D09 장애 정직성. universe resolver 부재, provider discovery 실패, 빈 universe 같은
+        # systemic gap 은 다른 asset 하나가 성공했다는 이유로 partial 로 내려가지 않는다.
+        # 단일 asset 의 정상 결손과 provider 전체 장애를 같은 등급으로 숨기지 않기 위함이다.
+        return "failed", False
+    if gaps:
+        return "partial", False
+    return "ok", False
+
+
+def _universeSnapshotId(universeSnapshots: set[str]) -> str | None:
+    """여러 universe 를 하나의 식별자로 접는다. 하나뿐이면 그대로 쓴다."""
+    if len(universeSnapshots) == 1:
+        return next(iter(universeSnapshots))
+    if not universeSnapshots:
+        return None
+    return f"universe-query:{hashlib.sha256(_canonical(tuple(sorted(universeSnapshots)))).hexdigest()}"
+
+
+def _assembleEagerResult(
+    query: DataQuery,
+    *,
+    catalog: DataCatalogResult,
+    requested: Sequence[tuple[str, DataRequest, DataQuery]],
+    resolved: Sequence[tuple[str, DataAssetDescriptor, DataQuery]],
+    partitions: list,
+    receipts: list[str],
+    gaps: list[DataGap],
+    universeSnapshots: set[str],
+    universeCoverage: list[UniverseCoverage],
+) -> DataResult:
+    """실행 산출물을 하나의 결과 봉투로 닫는다.
+
+    성적표, 영수증, lineage, 품질단언이 전부 같은 `partitions` 에서 나오도록 한 자리에
+    모아 둔다. 예전에는 개수를 먼저 세고 나중에 행을 버려서 세 증적이 서로 다른 말을 했다.
+    """
     # 성적표는 asset 단위 실패 수다. catalog discovery gap 은 데이터 실패가 아니고,
     # 한 asset 이 gap 을 여러 개 만들어도 실패는 하나다. gaps 개수를 그대로 쓰면
     # 두 방향 모두로 성적표가 부정확해진다.
     catalogGapKeys = {(gap.code, gap.assetId, gap.requestId) for gap in catalog.gaps}
     dataGaps = [gap for gap in gaps if (gap.code, gap.assetId, gap.requestId) not in catalogGapKeys]
     failedAssets = len({(gap.requestId, gap.assetId) for gap in dataGaps})
-    if query.completeness == "requireComplete" and failures:
-        status = "failed"
+
+    status, discardPartials = _eagerStatus(query, producedPartitions=len(partitions), gaps=gaps)
+    if discardPartials:
         # 부분 결과를 안 받겠다고 한 요청이다. 행을 버리면 그 행에서 나온 성적표와 영수증도
-        # 같이 버려야 한다. 예전에는 개수를 먼저 세어 둬서 partitions 는 비었는데
-        # succeededPartitions 는 1 이고 영수증도 한 장 남는 결과가 나갔다. 같은 봉투 안에서
-        # 세 증적이 서로 다른 말을 했다.
+        # 같이 버려야 한다.
         partitions = []
         receipts = []
-    elif producedPartitions == 0:
-        status = "failed"
-    elif any(gap.systemic for gap in gaps):
-        # D09 장애 정직성. universe resolver 부재, provider discovery 실패, 빈 universe 같은
-        # systemic gap 은 다른 asset 하나가 성공했다는 이유로 partial 로 내려가지 않는다.
-        # 단일 asset 의 정상 결손과 provider 전체 장애를 같은 등급으로 숨기지 않기 위함이다.
-        status = "failed"
-    elif failures:
-        status = "partial"
-    else:
-        status = "ok"
-    succeeded = len(partitions)
-    resolvedRefs = tuple(
-        dict.fromkeys(AssetRef(descriptor.assetId, descriptor.assetVersionId) for _, descriptor, _ in resolved)
-    )
-    contractHash = hashlib.sha256(_canonical({"assets": resolvedRefs, "query": query})).hexdigest()
-    lineageRefs = tuple(dict.fromkeys(ref for partition in partitions for ref in partition.lineageRefs))
-    continuation = None
-    assertions = tuple(assertion for partition in partitions for assertion in partition.qualityAssertions)
-    if len(universeSnapshots) == 1:
-        universeSnapshotId = next(iter(universeSnapshots))
-    elif universeSnapshots:
-        universeSnapshotId = (
-            f"universe-query:{hashlib.sha256(_canonical(tuple(sorted(universeSnapshots)))).hexdigest()}"
-        )
-    else:
-        universeSnapshotId = None
-    dataSnapshotId = resultSnapshotId(
-        catalogSnapshotId=catalog.snapshotId,
-        contractHash=contractHash,
-        partitions=partitions,
-        universeSnapshotId=universeSnapshotId,
-    )
+
+    resolvedRefs, contractHash = _resolvedIdentity(resolved, query)
+    universeSnapshotId = _universeSnapshotId(universeSnapshots)
     return DataResult(
         status=status,
         partitions=tuple(partitions),
         assets=resolvedRefs,
         snapshotId=catalog.snapshotId,
         contractHash=contractHash,
-        coverage=Coverage(len(requested), len(resolved), succeeded, failedAssets),
+        coverage=Coverage(len(requested), len(resolved), len(partitions), failedAssets),
         gaps=tuple(gaps),
-        lineageRefs=lineageRefs,
+        lineageRefs=tuple(dict.fromkeys(ref for partition in partitions for ref in partition.lineageRefs)),
         executionReceipts=tuple(receipts),
-        continuation=continuation,
-        qualityAssertions=assertions,
+        continuation=None,
+        qualityAssertions=tuple(assertion for partition in partitions for assertion in partition.qualityAssertions),
         universeSnapshotId=universeSnapshotId,
         universeCoverage=tuple(universeCoverage),
-        dataSnapshotId=dataSnapshotId,
+        dataSnapshotId=resultSnapshotId(
+            catalogSnapshotId=catalog.snapshotId,
+            contractHash=contractHash,
+            partitions=partitions,
+            universeSnapshotId=universeSnapshotId,
+        ),
     )
