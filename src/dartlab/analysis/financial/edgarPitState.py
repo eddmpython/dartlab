@@ -418,90 +418,21 @@ def _stockCandidates(
             & (pl.col("accn") == candidate["accn"])
             & (pl.col("__filed") == candidate["__filed"])
         )
-        evidence: dict[str, FactEvidence] = {}
         try:
-            imputed: list[str] = []
-            for conceptId, tags in _STOCK_TAGS.items():
-                selected = _pick(group, conceptId, tags, kind="stock")
-                if selected is None:
-                    if conceptId in _STOCK_ANCHOR_CONCEPTS:
-                        break
-                    # 미태깅 구성요소는 결측이 아니라 세분성 부족이다. 0 으로 두면 그 금액이
-                    # `otherNetAssets` 잔차 플러그로 흡수되고 대차 항등식은 그대로 닫힌다.
-                    # 재고 개념이 없는 소프트웨어, 서비스, 금융, REIT 를 실패로 처리하지 않는다.
-                    imputed.append(conceptId)
-                    continue
-                evidence[conceptId] = selected
-            else:
-                equity = evidence["equityIncludingNci"]
-                if equity.tag == "StockholdersEquity":
-                    # 지배주주 자본만 태깅됐다면 비지배지분을 더해야 항등식이 닫힌다.
-                    # 더하지 않으면 비지배지분이 있는 회사가 구조적으로 항등식 검사에 걸린다.
-                    noncontrolling = _pick(group, "noncontrollingInterest", _NONCONTROLLING_INTEREST_TAGS, kind="stock")
-                    if noncontrolling is not None:
-                        evidence["noncontrollingInterest"] = noncontrolling
-                        evidence["equityIncludingNci"] = _combinedEquity(equity, noncontrolling)
-                current = _pick(group, "currentTermDebt", _DEBT_CURRENT_TERM, kind="stock")
-                shortFunding = _pick(group, "shortTermFunding", _DEBT_SHORT_FUNDING, kind="stock")
-                noncurrent = _pick(group, "interestBearingDebtNoncurrent", _DEBT_NONCURRENT, kind="stock")
-                total = _pick(group, "reportedTotalDebt", _DEBT_TOTAL, kind="stock")
-                termComponents: tuple[FactEvidence, ...]
-                if current is not None and noncurrent is not None:
-                    termDebt = current.value + noncurrent.value
-                    termComponents = (current, noncurrent)
-                    evidence[current.conceptId] = current
-                    evidence[noncurrent.conceptId] = noncurrent
-                elif total is not None:
-                    termDebt = total.value
-                    termComponents = (total,)
-                    evidence[total.conceptId] = total
-                elif shortFunding is not None:
-                    # 리볼버나 기업어음만 쓰는 회사는 term debt 태그가 없다.
-                    termDebt = 0.0
-                    termComponents = ()
-                else:
-                    # 이자부부채 태그가 하나도 없다. 무차입이 실제로 흔하므로 실패로 보지 않고
-                    # 0 으로 두되 imputed 로 남긴다. 미태깅 차입금이면 그 금액은 플러그로 간다.
-                    termDebt = 0.0
-                    termComponents = ()
-                    imputed.append("totalDebt")
-                debt = termDebt + (shortFunding.value if shortFunding is not None else 0.0)
-                if shortFunding is not None:
-                    evidence[shortFunding.conceptId] = shortFunding
-                components = termComponents + ((shortFunding,) if shortFunding is not None else ())
-                debtEvidence = FactEvidence(
-                    conceptId="totalDebt",
-                    value=debt,
-                    unit="USD",
-                    currency="USD",
-                    kind="stock",
-                    fiscalStart=None,
-                    fiscalEnd=str(candidate["__end"]),
-                    filedAt=str(candidate["__filed"]),
-                    accession=str(candidate["accn"]),
-                    form=str(candidate["form"]),
-                    tag="+".join(item.tag for item in components) if components else "none",
-                    status="derived" if len(components) != 1 else "observed",
-                    derivation=(
-                        "no interest-bearing debt tagged in this accession"
-                        if not components
-                        else "term debt plus non-overlapping short-term funding; reported total excluded"
-                    ),
-                    derivationInputs=tuple(
-                        f"{item.accession}|{item.tag}|{item.fiscalStart}|{item.fiscalEnd}" for item in components
-                    ),
-                )
-                evidence["totalDebt"] = debtEvidence
-                values = {conceptId: item.value for conceptId, item in evidence.items()}
-                for conceptId in imputed:
-                    values.setdefault(conceptId, 0.0)
-                warnings = []
-                if str(candidate["__end"]) != latestCandidateEnd:
-                    warnings.append(f"latestIncompleteFiling:{latestCandidateEnd}")
-                if imputed:
-                    warnings.append(f"imputedZeroComponents:{','.join(sorted(imputed))}")
-                yield values, tuple(evidence.values()), str(candidate["__end"]), tuple(warnings)
+            picked = _stockConceptEvidence(group)
+            if picked is None:
                 continue
+            evidence, imputed = picked
+            evidence["totalDebt"] = _stockDebtEvidence(group, candidate, evidence, imputed)
+            values = {conceptId: item.value for conceptId, item in evidence.items()}
+            for conceptId in imputed:
+                values.setdefault(conceptId, 0.0)
+            warnings = []
+            if str(candidate["__end"]) != latestCandidateEnd:
+                warnings.append(f"latestIncompleteFiling:{latestCandidateEnd}")
+            if imputed:
+                warnings.append(f"imputedZeroComponents:{','.join(sorted(imputed))}")
+            yield values, tuple(evidence.values()), str(candidate["__end"]), tuple(warnings)
         except EdgarStateError as error:
             # 한 접수의 단위나 값 충돌이 회사 전체를 죽이지 않는다. 다음 후보 접수로 넘어가고,
             # 어떤 후보도 성립하지 않으면 마지막에 첫 충돌 원인을 그대로 올린다.
@@ -510,6 +441,100 @@ def _stockCandidates(
             continue
     if firstConflict is not None:
         raise firstConflict
+
+
+def _stockConceptEvidence(group: pl.DataFrame) -> tuple[dict[str, FactEvidence], list[str]] | None:
+    """한 접수의 대차 개념을 골라 evidence 와 imputed 목록을 만든다.
+
+    반환 ``None`` 은 앵커 개념(자산·부채·자본)이 없어 이 후보로는 상태를 세울 수 없다는 뜻이다.
+    dict 삽입 순서가 그대로 evidence tuple 순서가 되므로 키 교체와 추가 위치를 지킨다.
+    """
+    evidence: dict[str, FactEvidence] = {}
+    imputed: list[str] = []
+    for conceptId, tags in _STOCK_TAGS.items():
+        selected = _pick(group, conceptId, tags, kind="stock")
+        if selected is None:
+            if conceptId in _STOCK_ANCHOR_CONCEPTS:
+                return None
+            # 미태깅 구성요소는 결측이 아니라 세분성 부족이다. 0 으로 두면 그 금액이
+            # `otherNetAssets` 잔차 플러그로 흡수되고 대차 항등식은 그대로 닫힌다.
+            # 재고 개념이 없는 소프트웨어, 서비스, 금융, REIT 를 실패로 처리하지 않는다.
+            imputed.append(conceptId)
+            continue
+        evidence[conceptId] = selected
+
+    equity = evidence["equityIncludingNci"]
+    if equity.tag == "StockholdersEquity":
+        # 지배주주 자본만 태깅됐다면 비지배지분을 더해야 항등식이 닫힌다.
+        # 더하지 않으면 비지배지분이 있는 회사가 구조적으로 항등식 검사에 걸린다.
+        noncontrolling = _pick(group, "noncontrollingInterest", _NONCONTROLLING_INTEREST_TAGS, kind="stock")
+        if noncontrolling is not None:
+            evidence["noncontrollingInterest"] = noncontrolling
+            evidence["equityIncludingNci"] = _combinedEquity(equity, noncontrolling)
+    return evidence, imputed
+
+
+def _stockDebtEvidence(
+    group: pl.DataFrame,
+    candidate: dict,
+    evidence: dict[str, FactEvidence],
+    imputed: list[str],
+) -> FactEvidence:
+    """차입금 블록을 조립한다. 채택한 구성요소는 ``evidence`` 에 그 자리에서 얹는다.
+
+    term debt 는 유동+비유동 우선, 없으면 보고 총액, 둘 다 없으면 0 이다. 단기 조달은
+    term debt 와 겹치지 않으므로 항상 더한다.
+    """
+    current = _pick(group, "currentTermDebt", _DEBT_CURRENT_TERM, kind="stock")
+    shortFunding = _pick(group, "shortTermFunding", _DEBT_SHORT_FUNDING, kind="stock")
+    noncurrent = _pick(group, "interestBearingDebtNoncurrent", _DEBT_NONCURRENT, kind="stock")
+    total = _pick(group, "reportedTotalDebt", _DEBT_TOTAL, kind="stock")
+    termComponents: tuple[FactEvidence, ...]
+    if current is not None and noncurrent is not None:
+        termDebt = current.value + noncurrent.value
+        termComponents = (current, noncurrent)
+        evidence[current.conceptId] = current
+        evidence[noncurrent.conceptId] = noncurrent
+    elif total is not None:
+        termDebt = total.value
+        termComponents = (total,)
+        evidence[total.conceptId] = total
+    elif shortFunding is not None:
+        # 리볼버나 기업어음만 쓰는 회사는 term debt 태그가 없다.
+        termDebt = 0.0
+        termComponents = ()
+    else:
+        # 이자부부채 태그가 하나도 없다. 무차입이 실제로 흔하므로 실패로 보지 않고
+        # 0 으로 두되 imputed 로 남긴다. 미태깅 차입금이면 그 금액은 플러그로 간다.
+        termDebt = 0.0
+        termComponents = ()
+        imputed.append("totalDebt")
+    debt = termDebt + (shortFunding.value if shortFunding is not None else 0.0)
+    if shortFunding is not None:
+        evidence[shortFunding.conceptId] = shortFunding
+    components = termComponents + ((shortFunding,) if shortFunding is not None else ())
+    return FactEvidence(
+        conceptId="totalDebt",
+        value=debt,
+        unit="USD",
+        currency="USD",
+        kind="stock",
+        fiscalStart=None,
+        fiscalEnd=str(candidate["__end"]),
+        filedAt=str(candidate["__filed"]),
+        accession=str(candidate["accn"]),
+        form=str(candidate["form"]),
+        tag="+".join(item.tag for item in components) if components else "none",
+        status="derived" if len(components) != 1 else "observed",
+        derivation=(
+            "no interest-bearing debt tagged in this accession"
+            if not components
+            else "term debt plus non-overlapping short-term funding; reported total excluded"
+        ),
+        derivationInputs=tuple(
+            f"{item.accession}|{item.tag}|{item.fiscalStart}|{item.fiscalEnd}" for item in components
+        ),
+    )
 
 
 def _compileStock(
@@ -599,175 +624,237 @@ def _quarterEvidence(
     flowEnds = tuple(sorted(flowRowsByEnd, reverse=True))
     quarterSelectionCache: dict[str | None, dict[str, FactEvidence]] = {}
 
-    def selectLatest(
-        rows: list[dict],
-        *,
-        conflictKind: str,
-        fiscalEnd: str,
-        kind: str,
-    ) -> FactEvidence | None:
-        """태그 우선순위와 최신 filing 기준으로 한 관측을 선택한다.
-
-        Args:
-            rows: 동일 기간 후보 행.
-            conflictKind: 충돌 오류에 표시할 관측 종류.
-            fiscalEnd: 충돌 오류에 표시할 회계 기간말.
-            kind: 생성할 evidence 종류.
-
-        Returns:
-            최신 단일 관측. 후보가 없으면 ``None``.
-
-        Raises:
-            EdgarStateError: 최신 접수 안에 서로 다른 값이 있으면 발생한다.
-
-        Example:
-            ``selectLatest(rows, conflictKind="quarterly", fiscalEnd=end, kind="flowQuarter")``.
-        """
-
-        for tag in tags:
-            tagRows = [row for row in rows if row["tag"] == tag]
-            if not tagRows:
-                continue
-            latestFiled = max(str(row["__filed"]) for row in tagRows)
-            latest = [row for row in tagRows if str(row["__filed"]) == latestFiled]
-            values = {float(row["__value"]) for row in latest}
-            if len(values) != 1:
-                raise EdgarStateError(f"conflicting {conflictKind} values for {conceptId}:{fiscalEnd}")
-            return _rawEvidence(conceptId, latest[0], kind=kind)
-        return None
-
-    def selectQuarterFacts(filedThrough: str | None = None) -> dict[str, FactEvidence]:
-        """주어진 filing cutoff 안에서 분기별 최신 단독 흐름을 선택한다.
-
-        Args:
-            filedThrough: 포함할 최신 filing 날짜. ``None``이면 전체를 포함한다.
-
-        Returns:
-            분기말별 최신 ``FactEvidence`` 매핑.
-
-        Raises:
-            EdgarStateError: 같은 분기와 최신 접수에 서로 다른 값이 있으면 발생한다.
-
-        Example:
-            ``selectQuarterFacts("20250131")`` 로 cutoff 안의 분기 흐름을 선택한다.
-        """
-
-        cached = quarterSelectionCache.get(filedThrough)
-        if cached is not None:
-            return cached
-        selected: dict[str, FactEvidence] = {}
-        for end in flowEnds:
-            endRows = flowRowsByEnd[end]
-            if filedThrough is not None:
-                endRows = [row for row in endRows if str(row["__filed"]) <= filedThrough]
-            evidence = selectLatest(
-                endRows,
-                conflictKind="quarterly",
-                fiscalEnd=end,
-                kind="flowQuarter",
-            )
-            if evidence is not None:
-                selected[end] = evidence
-        quarterSelectionCache[filedThrough] = selected
-        return selected
-
-    out = dict(selectQuarterFacts())
+    out = dict(_selectQuarterFacts(flowEnds, flowRowsByEnd, quarterSelectionCache, tags, conceptId))
     for end in sorted(annualRowsByEnd, reverse=True):
         if end in out:
             continue
-        annual = selectLatest(
+        annual = _selectLatestRow(
             annualRowsByEnd[end],
+            tags,
+            conceptId,
             conflictKind="annual",
             fiscalEnd=end,
             kind="flowAnnual",
         )
         if annual is None or annual.fiscalStart is None:
             continue
-        ytdCandidates = [
-            row
-            for row in yearToDateRowsByStart.get(annual.fiscalStart, ())
-            if str(row["__end"]) < annual.fiscalEnd and str(row["__filed"]) <= annual.filedAt
-        ]
-        ytd: FactEvidence | None = None
-        if ytdCandidates:
-            latestEnd = max(str(row["__end"]) for row in ytdCandidates)
-            ytd = selectLatest(
-                [row for row in ytdCandidates if str(row["__end"]) == latestEnd],
-                conflictKind="year-to-date",
-                fiscalEnd=latestEnd,
-                kind="flowYearToDate",
+        # 4분기는 단독 공시가 드물어 두 경로로 유도한다. 연간에서 9개월 누계를 빼는 쪽이
+        # 우선이고, 누계가 없거나 기간이 안 맞으면 앞 세 분기 합을 빼는 쪽으로 넘어간다.
+        residual = _q4FromYearToDate(annual, yearToDateRowsByStart, tags, conceptId)
+        if residual is None:
+            asKnownAtAnnual = _selectQuarterFacts(
+                flowEnds,
+                flowRowsByEnd,
+                quarterSelectionCache,
+                tags,
+                conceptId,
+                filedThrough=annual.filedAt,
             )
-        if ytd is not None:
-            q4Start = (datetime.strptime(ytd.fiscalEnd, "%Y%m%d") + timedelta(days=1)).strftime("%Y%m%d")
-            q4Days = (datetime.strptime(annual.fiscalEnd, "%Y%m%d") - datetime.strptime(q4Start, "%Y%m%d")).days
-            if 60 <= q4Days <= 120:
-                out[str(end)] = FactEvidence(
-                    conceptId=conceptId,
-                    value=annual.value - ytd.value,
-                    unit=annual.unit,
-                    currency=annual.currency,
-                    kind="flowQuarter",
-                    fiscalStart=q4Start,
-                    fiscalEnd=annual.fiscalEnd,
-                    filedAt=annual.filedAt,
-                    accession=annual.accession,
-                    form=annual.form,
-                    tag=f"{annual.tag}:Q4Residual",
-                    status="derived",
-                    derivation="annual minus nine-month year-to-date flow",
-                    derivationInputs=tuple(
-                        f"{item.accession}|{item.tag}|{item.fiscalStart}|{item.fiscalEnd}" for item in (annual, ytd)
-                    ),
-                )
-                continue
-        asKnownAtAnnual = selectQuarterFacts(annual.filedAt)
-        firstThree = sorted(
-            (
-                item
-                for item in asKnownAtAnnual.values()
-                if item.fiscalStart is not None
-                and item.fiscalStart >= annual.fiscalStart
-                and item.fiscalEnd < annual.fiscalEnd
-            ),
-            key=lambda item: item.fiscalEnd,
-        )[:3]
-        if len(firstThree) != 3:
-            continue
-        annualStart = datetime.strptime(annual.fiscalStart, "%Y%m%d")
-        firstStart = datetime.strptime(str(firstThree[0].fiscalStart), "%Y%m%d")
-        gaps = [
-            (
-                datetime.strptime(str(current.fiscalStart), "%Y%m%d") - datetime.strptime(previous.fiscalEnd, "%Y%m%d")
-            ).days
-            for previous, current in zip(firstThree, firstThree[1:])
-        ]
-        if not 0 <= (firstStart - annualStart).days <= 14 or any(gap < 0 or gap > 14 for gap in gaps):
-            continue
-        q4Start = (datetime.strptime(firstThree[-1].fiscalEnd, "%Y%m%d") + timedelta(days=1)).strftime("%Y%m%d")
-        q4Days = (datetime.strptime(annual.fiscalEnd, "%Y%m%d") - datetime.strptime(q4Start, "%Y%m%d")).days
-        if q4Days < 60 or q4Days > 120:
-            continue
-        q4Value = annual.value - sum(item.value for item in firstThree)
-        derivationInputs = tuple(
-            f"{item.accession}|{item.tag}|{item.fiscalStart}|{item.fiscalEnd}" for item in (annual, *firstThree)
-        )
-        out[str(end)] = FactEvidence(
-            conceptId=conceptId,
-            value=q4Value,
-            unit=annual.unit,
-            currency=annual.currency,
-            kind="flowQuarter",
-            fiscalStart=q4Start,
-            fiscalEnd=annual.fiscalEnd,
-            filedAt=annual.filedAt,
-            accession=annual.accession,
-            form=annual.form,
-            tag=f"{annual.tag}:Q4Residual",
-            status="derived",
-            derivation="annual minus first three standalone fiscal quarters",
-            derivationInputs=derivationInputs,
-        )
+            residual = _q4FromFirstThreeQuarters(annual, asKnownAtAnnual, conceptId)
+        if residual is not None:
+            out[str(end)] = residual
     return out
+
+
+def _selectLatestRow(
+    rows: list[dict],
+    tags: tuple[str, ...],
+    conceptId: str,
+    *,
+    conflictKind: str,
+    fiscalEnd: str,
+    kind: str,
+) -> FactEvidence | None:
+    """태그 우선순위와 최신 filing 기준으로 한 관측을 선택한다.
+
+    Args:
+        rows: 동일 기간 후보 행.
+        tags: 우선순위 순 태그 목록.
+        conceptId: 생성할 evidence 의 개념 id.
+        conflictKind: 충돌 오류에 표시할 관측 종류.
+        fiscalEnd: 충돌 오류에 표시할 회계 기간말.
+        kind: 생성할 evidence 종류.
+
+    Returns:
+        최신 단일 관측. 후보가 없으면 ``None``.
+
+    Raises:
+        EdgarStateError: 최신 접수 안에 서로 다른 값이 있으면 발생한다.
+
+    Example:
+        ``_selectLatestRow(rows, tags, cid, conflictKind="quarterly", fiscalEnd=end, kind="flowQuarter")``.
+    """
+
+    for tag in tags:
+        tagRows = [row for row in rows if row["tag"] == tag]
+        if not tagRows:
+            continue
+        latestFiled = max(str(row["__filed"]) for row in tagRows)
+        latest = [row for row in tagRows if str(row["__filed"]) == latestFiled]
+        values = {float(row["__value"]) for row in latest}
+        if len(values) != 1:
+            raise EdgarStateError(f"conflicting {conflictKind} values for {conceptId}:{fiscalEnd}")
+        return _rawEvidence(conceptId, latest[0], kind=kind)
+    return None
+
+
+def _selectQuarterFacts(
+    flowEnds: tuple[str, ...],
+    flowRowsByEnd: dict[str, list[dict]],
+    cache: dict[str | None, dict[str, FactEvidence]],
+    tags: tuple[str, ...],
+    conceptId: str,
+    filedThrough: str | None = None,
+) -> dict[str, FactEvidence]:
+    """주어진 filing cutoff 안에서 분기별 최신 단독 흐름을 선택한다.
+
+    Args:
+        flowEnds: 최신순 분기말 목록.
+        flowRowsByEnd: 분기말별 후보 행.
+        cache: cutoff 별 선택 결과 캐시. 같은 cutoff 재계산을 막는다.
+        tags: 우선순위 순 태그 목록.
+        conceptId: 생성할 evidence 의 개념 id.
+        filedThrough: 포함할 최신 filing 날짜. ``None``이면 전체를 포함한다.
+
+    Returns:
+        분기말별 최신 ``FactEvidence`` 매핑.
+
+    Raises:
+        EdgarStateError: 같은 분기와 최신 접수에 서로 다른 값이 있으면 발생한다.
+
+    Example:
+        ``_selectQuarterFacts(ends, rows, cache, tags, cid, filedThrough="20250131")``.
+    """
+
+    cached = cache.get(filedThrough)
+    if cached is not None:
+        return cached
+    selected: dict[str, FactEvidence] = {}
+    for end in flowEnds:
+        endRows = flowRowsByEnd[end]
+        if filedThrough is not None:
+            endRows = [row for row in endRows if str(row["__filed"]) <= filedThrough]
+        evidence = _selectLatestRow(
+            endRows,
+            tags,
+            conceptId,
+            conflictKind="quarterly",
+            fiscalEnd=end,
+            kind="flowQuarter",
+        )
+        if evidence is not None:
+            selected[end] = evidence
+    cache[filedThrough] = selected
+    return selected
+
+
+def _q4FromYearToDate(
+    annual: FactEvidence,
+    yearToDateRowsByStart: dict[str, list[dict]],
+    tags: tuple[str, ...],
+    conceptId: str,
+) -> FactEvidence | None:
+    """연간에서 같은 접수의 9개월 누계를 빼 4분기 잔차를 만든다.
+
+    누계가 없거나 남은 구간이 한 분기(60~120 일) 를 벗어나면 ``None`` 을 돌려주고
+    호출자가 세 분기 합 경로로 넘어간다.
+    """
+
+    ytdCandidates = [
+        row
+        for row in yearToDateRowsByStart.get(annual.fiscalStart, ())
+        if str(row["__end"]) < annual.fiscalEnd and str(row["__filed"]) <= annual.filedAt
+    ]
+    if not ytdCandidates:
+        return None
+    latestEnd = max(str(row["__end"]) for row in ytdCandidates)
+    ytd = _selectLatestRow(
+        [row for row in ytdCandidates if str(row["__end"]) == latestEnd],
+        tags,
+        conceptId,
+        conflictKind="year-to-date",
+        fiscalEnd=latestEnd,
+        kind="flowYearToDate",
+    )
+    if ytd is None:
+        return None
+    q4Start = (datetime.strptime(ytd.fiscalEnd, "%Y%m%d") + timedelta(days=1)).strftime("%Y%m%d")
+    q4Days = (datetime.strptime(annual.fiscalEnd, "%Y%m%d") - datetime.strptime(q4Start, "%Y%m%d")).days
+    if not 60 <= q4Days <= 120:
+        return None
+    return FactEvidence(
+        conceptId=conceptId,
+        value=annual.value - ytd.value,
+        unit=annual.unit,
+        currency=annual.currency,
+        kind="flowQuarter",
+        fiscalStart=q4Start,
+        fiscalEnd=annual.fiscalEnd,
+        filedAt=annual.filedAt,
+        accession=annual.accession,
+        form=annual.form,
+        tag=f"{annual.tag}:Q4Residual",
+        status="derived",
+        derivation="annual minus nine-month year-to-date flow",
+        derivationInputs=tuple(
+            f"{item.accession}|{item.tag}|{item.fiscalStart}|{item.fiscalEnd}" for item in (annual, ytd)
+        ),
+    )
+
+
+def _q4FromFirstThreeQuarters(
+    annual: FactEvidence,
+    asKnownAtAnnual: dict[str, FactEvidence],
+    conceptId: str,
+) -> FactEvidence | None:
+    """연간에서 앞 세 단독 분기 합을 빼 4분기 잔차를 만든다.
+
+    세 분기가 회계연도 시작에 붙어 있고 서로 14 일 이내로 이어져야 같은 연도의 연속
+    구간으로 인정한다. 조건이 하나라도 어긋나면 유도하지 않는다.
+    """
+
+    firstThree = sorted(
+        (
+            item
+            for item in asKnownAtAnnual.values()
+            if item.fiscalStart is not None
+            and item.fiscalStart >= annual.fiscalStart
+            and item.fiscalEnd < annual.fiscalEnd
+        ),
+        key=lambda item: item.fiscalEnd,
+    )[:3]
+    if len(firstThree) != 3:
+        return None
+    annualStart = datetime.strptime(annual.fiscalStart, "%Y%m%d")
+    firstStart = datetime.strptime(str(firstThree[0].fiscalStart), "%Y%m%d")
+    gaps = [
+        (datetime.strptime(str(current.fiscalStart), "%Y%m%d") - datetime.strptime(previous.fiscalEnd, "%Y%m%d")).days
+        for previous, current in zip(firstThree, firstThree[1:])
+    ]
+    if not 0 <= (firstStart - annualStart).days <= 14 or any(gap < 0 or gap > 14 for gap in gaps):
+        return None
+    q4Start = (datetime.strptime(firstThree[-1].fiscalEnd, "%Y%m%d") + timedelta(days=1)).strftime("%Y%m%d")
+    q4Days = (datetime.strptime(annual.fiscalEnd, "%Y%m%d") - datetime.strptime(q4Start, "%Y%m%d")).days
+    if q4Days < 60 or q4Days > 120:
+        return None
+    return FactEvidence(
+        conceptId=conceptId,
+        value=annual.value - sum(item.value for item in firstThree),
+        unit=annual.unit,
+        currency=annual.currency,
+        kind="flowQuarter",
+        fiscalStart=q4Start,
+        fiscalEnd=annual.fiscalEnd,
+        filedAt=annual.filedAt,
+        accession=annual.accession,
+        form=annual.form,
+        tag=f"{annual.tag}:Q4Residual",
+        status="derived",
+        derivation="annual minus first three standalone fiscal quarters",
+        derivationInputs=tuple(
+            f"{item.accession}|{item.tag}|{item.fiscalStart}|{item.fiscalEnd}" for item in (annual, *firstThree)
+        ),
+    )
 
 
 def _lineageAccessions(item: FactEvidence) -> tuple[str, ...]:

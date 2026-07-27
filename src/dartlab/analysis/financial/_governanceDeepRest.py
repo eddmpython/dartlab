@@ -1,4 +1,4 @@
-"""governance.py 깊이 분석 — CEO 교체 + 특수관계자 + 법적 이벤트.
+"""governance.py 깊이 분석. CEO 교체 + 특수관계자 + 법적 이벤트.
 
 _governanceDeep.py 분할 추가: calcCEOTurnover · calcRelatedPartyIntensity ·
 calcLegalEventRisk 3 calc 약 445 줄. governance.py · _governanceDeep.py 의
@@ -11,9 +11,13 @@ _loadContingentLiability · _loadRelatedPartyTx 등을 함수 내부 import.
 
 from __future__ import annotations
 
+import logging
+
 from dartlab.core.memory import memoizedCalc
 from dartlab.core.polarsUtil import isEmptyDf
 from dartlab.core.utils.helpers import MAX_RATIO_YEARS, annualColsFromPeriods, toDictBySnakeId
+
+_log = logging.getLogger(__name__)
 
 CEO_TURNOVER_WINDOW_YEARS = 5
 RELATED_PARTY_PARSER_UNIT = 1_000_000
@@ -22,7 +26,7 @@ LEGAL_EVENT_WINDOW_YEARS = 3
 
 @memoizedCalc
 def calcCEOTurnover(company, *, basePeriod: str | None = None) -> dict | None:
-    """대표이사 교체 — 최근 5년 교체 건수·평균 재임·현 CEO.
+    """대표이사 교체. 최근 5년 교체 건수·평균 재임·현 CEO.
 
     사업보고서 「임원의 현황」 섹션 개인별 테이블에서 "대표이사" 담당업무
     문자열로 CEO 식별, 연도별 CEO 이름 집합 변동을 교체 이벤트로 카운트한다.
@@ -42,35 +46,35 @@ def calcCEOTurnover(company, *, basePeriod: str | None = None) -> dict | None:
         DART 사업보고서 임원의 현황 파서 결과 (_loadExecutiveDocs).
 
     AIContext:
-        turnoverCount 단독으로 경영 위기 단정 금지 — 재임·맥락 함께.
+        turnoverCount 단독으로 경영 위기 단정 금지. 재임·맥락 함께.
 
     Parameters
     ----------
     company : Company
         분석 대상 기업 (DART).
     basePeriod : str, optional
-        기준 기간. 현재 구현에서는 참고만 — 최근 5년 시계열 반환.
+        기준 기간. 현재 구현에서는 참고만. 최근 5년 시계열 반환.
 
     Returns
     -------
     dict | None
         None : executive docs 파서 데이터 없음 또는 DART 외 provider.
-        windowYears : int — 집계 윈도우 (년). 상수 5.
-        turnoverCount : int — 윈도우 내 CEO 교체 건수 (건). 전기에 없던
+        windowYears : int. 집계 윈도우 (년). 상수 5.
+        turnoverCount : int. 윈도우 내 CEO 교체 건수 (건). 전기에 없던
             새 CEO가 등장하거나 전기 CEO가 사라지면 1로 카운트한다.
-        currentCeos : list[str] — 최근 연도 대표이사 이름.
-        lastChangeYear : int | None — 마지막 교체가 감지된 연도.
-        avgTenureYears : float | None — 시계열에서 관찰된 평균 재임 (년).
+        currentCeos : list[str]. 최근 연도 대표이사 이름.
+        lastChangeYear : int | None. 마지막 교체가 감지된 연도.
+        avgTenureYears : float | None. 시계열에서 관찰된 평균 재임 (년).
             한 CEO의 첫·마지막 출현 연도 차이 + 1 의 평균.
-        history : list[dict] — 연도별 스냅샷
-            year : int — 연도
-            ceos : list[str] — 해당 연도 대표이사 이름
-            added : list[str] — 전기 대비 새로 등장
-            removed : list[str] — 전기 대비 빠진 이름
+        history : list[dict]. 연도별 스냅샷
+            year : int. 연도
+            ceos : list[str]. 해당 연도 대표이사 이름
+            added : list[str]. 전기 대비 새로 등장
+            removed : list[str]. 전기 대비 빠진 이름
 
     Raises
     ------
-    없음 — 데이터 없음은 None 반환.
+    없음. 데이터 없음은 None 반환.
 
     Examples
     --------
@@ -134,7 +138,7 @@ def calcCEOTurnover(company, *, basePeriod: str | None = None) -> dict | None:
         history.append({"year": y, "ceos": sorted(current), "added": added, "removed": removed})
         prev = current
 
-    # 평균 재임 — 윈도우 내 CEO별 (first, last) 연도 차이
+    # 평균 재임. 윈도우 내 CEO별 (first, last) 연도 차이
     tenures: list[int] = []
     for ceo in {c for s in ceosByYear.values() for c in s}:
         presentYears = [y for y, s in ceosByYear.items() if ceo in s]
@@ -157,7 +161,7 @@ def calcCEOTurnover(company, *, basePeriod: str | None = None) -> dict | None:
 
 @memoizedCalc
 def calcRelatedPartyIntensity(company, *, basePeriod: str | None = None) -> dict | None:
-    """특수관계자 거래 집중도 — 매출·매입·보증의 내부거래 비율 시계열.
+    """특수관계자 거래 집중도. 매출·매입·보증의 내부거래 비율 시계열.
 
     사업보고서 「X. 대주주 등과의 거래내용」에서 특수관계자 매출·매입·
     채무보증을 추출하고 전사 매출·자산 대비 비율을 산출한다. tunneling
@@ -190,26 +194,26 @@ def calcRelatedPartyIntensity(company, *, basePeriod: str | None = None) -> dict
     -------
     dict | None
         None : relatedPartyTx 데이터 없음 또는 DART 외 provider.
-        latest : dict — 최근 연도 비율
-            year : int — 연도
-            relatedSales : int — 특수관계 매출 (원)
-            relatedPurchases : int — 특수관계 매입 (원)
-            relatedGuarantee : int — 특수관계 보증 잔액 (원)
-            totalRevenue : int | None — 전사 매출 (원)
-            totalEquity : int | None — 자기자본 (원)
-            relatedRevenueRatio : float | None — 전사 매출 대비 매출 (%)
-            relatedPurchaseRatio : float | None — 전사 매출 대비 매입 (%)
-            relatedGuaranteeRatio : float | None — 자기자본 대비 보증 (%)
-        history : list[dict] — 연도별 추이 (최근 5년)
+        latest : dict. 최근 연도 비율
+            year : int. 연도
+            relatedSales : int. 특수관계 매출 (원)
+            relatedPurchases : int. 특수관계 매입 (원)
+            relatedGuarantee : int. 특수관계 보증 잔액 (원)
+            totalRevenue : int | None. 전사 매출 (원)
+            totalEquity : int | None. 자기자본 (원)
+            relatedRevenueRatio : float | None. 전사 매출 대비 매출 (%)
+            relatedPurchaseRatio : float | None. 전사 매출 대비 매입 (%)
+            relatedGuaranteeRatio : float | None. 자기자본 대비 보증 (%)
+        history : list[dict]. 연도별 추이 (최근 5년)
             year : int
-            relatedSales : int — 금액 (원)
-            relatedPurchases : int — 금액 (원)
-        trend : str — "increasing" | "stable" | "decreasing" | "unknown"
+            relatedSales : int. 금액 (원)
+            relatedPurchases : int. 금액 (원)
+        trend : str. "increasing" | "stable" | "decreasing" | "unknown"
             최근 3년 매출 비율 추이. 데이터 부족 시 "unknown".
 
     Raises
     ------
-    없음 — 데이터 없음은 None 반환.
+    없음. 데이터 없음은 None 반환.
 
     Examples
     --------
@@ -249,52 +253,14 @@ def calcRelatedPartyIntensity(company, *, basePeriod: str | None = None) -> dict
         return None
 
     # 연도별 매출·매입·보증 합계 (백만원 → 원 환산)
-    salesByYear: dict[int, int] = {}
-    purchasesByYear: dict[int, int] = {}
-    if rpt.revenueTxDf is not None and not rpt.revenueTxDf.is_empty():
-        for row in rpt.revenueTxDf.iter_rows(named=True):
-            y = row.get("year")
-            if y is None:
-                continue
-            y = int(y)
-            s = row.get("sales") or 0
-            p = row.get("purchases") or 0
-            salesByYear[y] = salesByYear.get(y, 0) + int(s) * RELATED_PARTY_PARSER_UNIT
-            purchasesByYear[y] = purchasesByYear.get(y, 0) + int(p) * RELATED_PARTY_PARSER_UNIT
-
-    guaranteeByYear: dict[int, int] = {}
-    if rpt.guaranteeDf is not None and not rpt.guaranteeDf.is_empty():
-        for row in rpt.guaranteeDf.iter_rows(named=True):
-            y = row.get("year")
-            if y is None:
-                continue
-            y = int(y)
-            amt = row.get("amount") or 0
-            guaranteeByYear[y] = guaranteeByYear.get(y, 0) + int(amt) * RELATED_PARTY_PARSER_UNIT
+    salesByYear, purchasesByYear = _amountsByYear(rpt.revenueTxDf, ("sales", "purchases"))
+    (guaranteeByYear,) = _amountsByYear(rpt.guaranteeDf, ("amount",))
 
     allYears = sorted(set(salesByYear) | set(purchasesByYear) | set(guaranteeByYear))
     if not allYears:
         return None
 
-    # 전사 매출 시계열
-    revenueMap: dict[int, int] = {}
-    try:
-        parsed = toDictBySnakeId(company.select("IS", ["sales"]))
-    except (AttributeError, ValueError, KeyError, TypeError):
-        parsed = None
-    if parsed is not None:
-        isData, periods = parsed
-        yCols = annualColsFromPeriods(periods, basePeriod=basePeriod, maxYears=10)
-        salesRow = isData.get("sales", {})
-        for col in yCols:
-            try:
-                yr = int(col[:4])
-            except (ValueError, TypeError):
-                continue
-            v = salesRow.get(col)
-            if v is not None:
-                revenueMap[yr] = int(v)
-
+    revenueMap = _annualRevenueMap(company, basePeriod)
     totalEquity = _fetchLatestEquity(company, basePeriod=basePeriod)
 
     history: list[dict] = []
@@ -322,22 +288,6 @@ def calcRelatedPartyIntensity(company, *, basePeriod: str | None = None) -> dict
     if totalEquity and totalEquity > 0:
         relatedGuaranteeRatio = round(relatedGuarantee / totalEquity * 100, 1)
 
-    # 추세 판정: 매출 비율 기준 최근 3년 변화
-    trend = "unknown"
-    ratios: list[float] = []
-    for h in history[-3:]:
-        rev = revenueMap.get(h["year"])
-        if rev and rev > 0:
-            ratios.append(h["relatedSales"] / rev * 100)
-    if len(ratios) >= 2:
-        delta = ratios[-1] - ratios[0]
-        if delta > 5:
-            trend = "increasing"
-        elif delta < -5:
-            trend = "decreasing"
-        else:
-            trend = "stable"
-
     return {
         "latest": {
             "year": latestYear,
@@ -351,13 +301,80 @@ def calcRelatedPartyIntensity(company, *, basePeriod: str | None = None) -> dict
             "relatedGuaranteeRatio": relatedGuaranteeRatio,
         },
         "history": history,
-        "trend": trend,
+        "trend": _relatedSalesTrend(history, revenueMap),
     }
+
+
+def _amountsByYear(df, fields: tuple[str, ...]) -> list[dict[int, int]]:
+    """연도별 금액 합계를 필드 수만큼 만들어 돌려준다 (백만원 → 원 환산).
+
+    매출·매입 테이블과 보증 테이블이 컬럼명만 다른 같은 누적을 하고 있었다.
+    반환 리스트 순서는 ``fields`` 순서와 같다. df 가 없거나 비면 전부 빈 dict.
+    """
+    totals: list[dict[int, int]] = [{} for _ in fields]
+    if df is None or df.is_empty():
+        return totals
+    for row in df.iter_rows(named=True):
+        y = row.get("year")
+        if y is None:
+            continue
+        y = int(y)
+        for slot, field in zip(totals, fields):
+            amount = row.get(field) or 0
+            slot[y] = slot.get(y, 0) + int(amount) * RELATED_PARTY_PARSER_UNIT
+    return totals
+
+
+def _annualRevenueMap(company, basePeriod: str | None) -> dict[int, int]:
+    """전사 매출 연간 시계열을 {연도: 금액} 으로. 조회 불가는 빈 dict."""
+    revenueMap: dict[int, int] = {}
+    try:
+        parsed = toDictBySnakeId(company.select("IS", ["sales"]))
+    except (AttributeError, ValueError, KeyError, TypeError) as exc:
+        # 원인을 남긴다. 조용히 빈 dict 을 돌려주면 "매출이 0 이었다" 와 "매출을 못 읽었다"
+        # 가 관계자 거래 비중 계산에서 같은 결과가 된다.
+        _log.debug("전사 매출 조회 실패로 관계자 거래 비중을 못 낸다 (%s: %s)", type(exc).__name__, exc)
+        parsed = None
+    if parsed is None:
+        return revenueMap
+
+    isData, periods = parsed
+    yCols = annualColsFromPeriods(periods, basePeriod=basePeriod, maxYears=10)
+    salesRow = isData.get("sales", {})
+    for col in yCols:
+        try:
+            yr = int(col[:4])
+        except (ValueError, TypeError) as exc:
+            # 연도를 못 읽는 기간 열은 건너뛰되 흔적은 남긴다. 결과 dict 만 보면 그 해가
+            # 원래 없었는지 열 이름을 못 읽어 빠졌는지 구분되지 않는다.
+            _log.debug("기간 열에서 연도를 못 읽어 건너뛴다 (%s, %s)", col, type(exc).__name__)
+            continue
+        v = salesRow.get(col)
+        if v is not None:
+            revenueMap[yr] = int(v)
+    return revenueMap
+
+
+def _relatedSalesTrend(history: list[dict], revenueMap: dict[int, int]) -> str:
+    """추세 판정: 전사 매출 대비 특수관계 매출 비율의 최근 3년 변화."""
+    ratios: list[float] = []
+    for h in history[-3:]:
+        rev = revenueMap.get(h["year"])
+        if rev and rev > 0:
+            ratios.append(h["relatedSales"] / rev * 100)
+    if len(ratios) < 2:
+        return "unknown"
+    delta = ratios[-1] - ratios[0]
+    if delta > 5:
+        return "increasing"
+    if delta < -5:
+        return "decreasing"
+    return "stable"
 
 
 @memoizedCalc
 def calcLegalEventRisk(company, *, basePeriod: str | None = None) -> dict | None:
-    """법적 이벤트 리스크 — 최근 3년 제재·소송 + 채무보증/자기자본 집계.
+    """법적 이벤트 리스크. 최근 3년 제재·소송 + 채무보증/자기자본 집계.
 
     사업보고서 「III. 제재 현황」· 「2. 우발부채」 섹션에서 제재 건수·금액,
     소송 건수·금액, 자기자본 대비 채무보증 비율을 추출한다. 이벤트 스터디
@@ -377,7 +394,7 @@ def calcLegalEventRisk(company, *, basePeriod: str | None = None) -> dict | None
         DART 「제재 현황」·「우발부채」 파서 결과 + 자기자본 (BS).
 
     AIContext:
-        이벤트 0 건은 None 아닌 count=0 — 미보고 가능성도 함께 언급.
+        이벤트 0 건은 None 아닌 count=0. 미보고 가능성도 함께 언급.
 
     Parameters
     ----------
@@ -390,25 +407,25 @@ def calcLegalEventRisk(company, *, basePeriod: str | None = None) -> dict | None
     -------
     dict | None
         None : sanction/contingent 데이터 없음 또는 DART 외 provider.
-        sanctionCount : int — 최근 3년 제재 건수 (건)
-        sanctionAmount : int — 최근 3년 제재 금액 합계 (원)
-        lawsuitCount : int — 최근 3년 소송 건수 (건)
-        lawsuitAmount : int — 최근 3년 소송 청구 금액 합계 (원)
-        guaranteeAmount : int | None — 최근연도 채무보증 총액 (원)
-        totalEquity : int | None — 최근연도 자기자본 (원)
-        guaranteeToEquity : float | None — 자기자본 대비 채무보증 비율 (%)
-        windowYears : int — 집계 윈도우 (년). 상수 3.
-        recentEvents : list[dict] — 최근 이벤트 상위 5건
-            year : int — 발생 연도
-            kind : str — "sanction" 또는 "lawsuit"
-            date : str — 발생일 (YYYY-MM-DD 또는 부분 문자열)
-            party : str — 제재 기관 또는 소송 당사자
-            description : str — 사건 내용·사유
-            amount : int | None — 금액 (원). 미기재 시 None.
+        sanctionCount : int. 최근 3년 제재 건수 (건)
+        sanctionAmount : int. 최근 3년 제재 금액 합계 (원)
+        lawsuitCount : int. 최근 3년 소송 건수 (건)
+        lawsuitAmount : int. 최근 3년 소송 청구 금액 합계 (원)
+        guaranteeAmount : int | None. 최근연도 채무보증 총액 (원)
+        totalEquity : int | None. 최근연도 자기자본 (원)
+        guaranteeToEquity : float | None. 자기자본 대비 채무보증 비율 (%)
+        windowYears : int. 집계 윈도우 (년). 상수 3.
+        recentEvents : list[dict]. 최근 이벤트 상위 5건
+            year : int. 발생 연도
+            kind : str. "sanction" 또는 "lawsuit"
+            date : str. 발생일 (YYYY-MM-DD 또는 부분 문자열)
+            party : str. 제재 기관 또는 소송 당사자
+            description : str. 사건 내용·사유
+            amount : int | None. 금액 (원). 미기재 시 None.
 
     Raises
     ------
-    없음 — 데이터 없음은 None 반환.
+    없음. 데이터 없음은 None 반환.
 
     Examples
     --------
@@ -434,8 +451,6 @@ def calcLegalEventRisk(company, *, basePeriod: str | None = None) -> dict | None
     """
     import datetime
 
-    import polars as pl
-
     from dartlab.analysis.financial._governanceDeep import (
         _fetchLatestEquity,
         _loadContingentLiability,
@@ -451,57 +466,25 @@ def calcLegalEventRisk(company, *, basePeriod: str | None = None) -> dict | None
     thisYear = datetime.datetime.now().year
     cutoff = thisYear - LEGAL_EVENT_WINDOW_YEARS
 
-    sanctionCount = 0
-    sanctionAmount = 0
-    sanctionEvents: list[dict] = []
-    if sanc is not None and sanc.sanctionDf is not None and not sanc.sanctionDf.is_empty():
-        recent = sanc.sanctionDf.filter(pl.col("year") >= cutoff)
-        sanctionCount = recent.height
-        if "amountValue" in recent.columns and recent.height > 0:
-            total = recent["amountValue"].sum()
-            sanctionAmount = int(total) if total is not None else 0
-        for row in recent.sort("year", descending=True).head(5).iter_rows(named=True):
-            amt = row.get("amountValue")
-            sanctionEvents.append(
-                {
-                    "year": row.get("year"),
-                    "kind": "sanction",
-                    "date": row.get("date") or "",
-                    "party": row.get("agency") or row.get("subject") or "",
-                    "description": row.get("action") or row.get("reason") or "",
-                    "amount": int(amt) if amt is not None else None,
-                }
-            )
+    # 제재와 소송은 컬럼명만 다른 같은 집계 (윈도우 필터 → 건수·금액 → 최근 5 건).
+    sanctionCount, sanctionAmount, sanctionEvents = _legalEventRows(
+        sanc.sanctionDf if sanc is not None else None,
+        cutoff,
+        kind="sanction",
+        dateKeys=("date",),
+        partyKeys=("agency", "subject"),
+        descriptionKeys=("action", "reason"),
+    )
+    lawsuitCount, lawsuitAmount, lawsuitEvents = _legalEventRows(
+        cont.lawsuitDf if cont is not None else None,
+        cutoff,
+        kind="lawsuit",
+        dateKeys=("filingDate",),
+        partyKeys=("parties",),
+        descriptionKeys=("description",),
+    )
 
-    lawsuitCount = 0
-    lawsuitAmount = 0
-    lawsuitEvents: list[dict] = []
-    if cont is not None and cont.lawsuitDf is not None and not cont.lawsuitDf.is_empty():
-        recent = cont.lawsuitDf.filter(pl.col("year") >= cutoff)
-        lawsuitCount = recent.height
-        if "amountValue" in recent.columns and recent.height > 0:
-            total = recent["amountValue"].sum()
-            lawsuitAmount = int(total) if total is not None else 0
-        for row in recent.sort("year", descending=True).head(5).iter_rows(named=True):
-            amt = row.get("amountValue")
-            lawsuitEvents.append(
-                {
-                    "year": row.get("year"),
-                    "kind": "lawsuit",
-                    "date": row.get("filingDate") or "",
-                    "party": row.get("parties") or "",
-                    "description": row.get("description") or "",
-                    "amount": int(amt) if amt is not None else None,
-                }
-            )
-
-    guaranteeAmount: int | None = None
-    if cont is not None and cont.guaranteeDf is not None and not cont.guaranteeDf.is_empty():
-        latest = cont.guaranteeDf.sort("year", descending=True).head(1)
-        if latest.height > 0 and "totalGuaranteeAmount" in latest.columns:
-            val = latest["totalGuaranteeAmount"].item()
-            guaranteeAmount = int(val) if val is not None else None
-
+    guaranteeAmount = _latestGuaranteeAmount(cont.guaranteeDf if cont is not None else None)
     totalEquity = _fetchLatestEquity(company, basePeriod=basePeriod)
 
     guaranteeToEquity: float | None = None
@@ -525,3 +508,66 @@ def calcLegalEventRisk(company, *, basePeriod: str | None = None) -> dict | None
         "windowYears": LEGAL_EVENT_WINDOW_YEARS,
         "recentEvents": recentEvents,
     }
+
+
+def _firstTruthy(row: dict, keys: tuple[str, ...]) -> str:
+    """키 후보를 순서대로 훑어 처음 참인 값. 전부 비면 빈 문자열."""
+    for key in keys:
+        value = row.get(key)
+        if value:
+            return value
+    return ""
+
+
+def _legalEventRows(
+    df,
+    cutoff: int,
+    *,
+    kind: str,
+    dateKeys: tuple[str, ...],
+    partyKeys: tuple[str, ...],
+    descriptionKeys: tuple[str, ...],
+) -> tuple[int, int, list[dict]]:
+    """윈도우 안 법적 이벤트를 건수·금액·최근 5 건으로 집계한다.
+
+    제재 표와 소송 표는 컬럼 이름만 다르고 집계 절차가 같아서, 이름 매핑을 인자로
+    받는 한 곳으로 합쳤다. 파서가 표 구조 차이로 금액을 못 뽑으면 amount 는 None 이고
+    건수만 남는다.
+    """
+    import polars as pl
+
+    if df is None or df.is_empty():
+        return 0, 0, []
+
+    recent = df.filter(pl.col("year") >= cutoff)
+    count = recent.height
+    amount = 0
+    if "amountValue" in recent.columns and recent.height > 0:
+        total = recent["amountValue"].sum()
+        amount = int(total) if total is not None else 0
+
+    events: list[dict] = []
+    for row in recent.sort("year", descending=True).head(5).iter_rows(named=True):
+        amt = row.get("amountValue")
+        events.append(
+            {
+                "year": row.get("year"),
+                "kind": kind,
+                "date": _firstTruthy(row, dateKeys),
+                "party": _firstTruthy(row, partyKeys),
+                "description": _firstTruthy(row, descriptionKeys),
+                "amount": int(amt) if amt is not None else None,
+            }
+        )
+    return count, amount, events
+
+
+def _latestGuaranteeAmount(df) -> int | None:
+    """최신 연도 채무보증 총액 (stock 기준). 표나 컬럼이 없으면 None."""
+    if df is None or df.is_empty():
+        return None
+    latest = df.sort("year", descending=True).head(1)
+    if latest.height == 0 or "totalGuaranteeAmount" not in latest.columns:
+        return None
+    val = latest["totalGuaranteeAmount"].item()
+    return int(val) if val is not None else None

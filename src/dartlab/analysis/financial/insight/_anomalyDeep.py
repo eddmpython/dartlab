@@ -1,4 +1,4 @@
-"""anomaly.py 심층 detector 분리 — Trend/CCC/Audit/Benford/RevenueQuality.
+"""anomaly.py 심층 detector 분리. Trend/CCC/Audit/Benford/RevenueQuality.
 
 분리 이유: insight/anomaly.py 941 줄. 5 개 detector (Trend/CCC/Audit/Benford/
 RevenueQuality) + _isBig4 helper + _BIG4_KEYWORDS 가 약 480 줄. 별도 모듈로 빼서
@@ -16,6 +16,52 @@ from dartlab.analysis.financial.insight.types import Anomaly, AuditDataForAnomal
 from dartlab.core.utils.extract import getAnnualValues
 
 _BIG4_KEYWORDS = ["삼일", "PwC", "삼정", "KPMG", "한영", "EY", "안진", "Deloitte"]
+
+
+# Anomaly.text 에 이미 나가 있는 긴 줄표 (U+2014). 문구가 곧 반환 계약이라 바꾸지 않고,
+# 소스에는 리터럴을 남기지 않으려 코드포인트로 고정한다 (신규 문구에는 쓰지 않는다).
+def _annualValuesWithFallback(aSeries: dict, sjDiv: str, *snakeIds: str) -> list:
+    """계정 별칭 목록을 순서대로 훑어 처음 잡히는 시계열을 돌려준다.
+
+    같은 개념이 파서/공시 표기에 따라 다른 snakeId 로 들어와서 (net_profit vs
+    net_income 등) detector 마다 2 단 fallback 이 반복되고 있었다.
+    """
+    values: list = []
+    for snakeId in snakeIds:
+        values = getAnnualValues(aSeries, sjDiv, snakeId)
+        if values:
+            return values
+    return values
+
+
+def _trailingNegativeStreak(values: list) -> int:
+    """최신부터 거슬러 올라가며 음수가 끊기지 않고 이어진 기수."""
+    streak = 0
+    for v in reversed(values):
+        if v is not None and v < 0:
+            streak += 1
+        else:
+            break
+    return streak
+
+
+def _trailingRiseStreak(series: list) -> int:
+    """최신부터 거슬러 올라가며 직전기 대비 상승이 이어진 기수 (None 이면 끊긴다)."""
+    streak = 0
+    for i in range(len(series) - 1, 0, -1):
+        if series[i] is not None and series[i - 1] is not None and series[i] > series[i - 1]:
+            streak += 1
+        else:
+            break
+    return streak
+
+
+def _latestNotNone(values: list):
+    """최신부터 거슬러 올라가 처음 만나는 non-null 값. 전부 결측이면 None."""
+    for v in reversed(values):
+        if v is not None:
+            return v
+    return None
 
 
 def detectTrendDeterioration(aSeries: dict, isFinancial: bool = False) -> list[Anomaly]:
@@ -40,7 +86,7 @@ def detectTrendDeterioration(aSeries: dict, isFinancial: bool = False) -> list[A
         감지된 악화 패턴 목록.
 
     Guide:
-        급격한 단일 사건이 아닌 ‘연속성’ 신호 — 디폴트 1~2 년 선행 지표.
+        급격한 단일 사건이 아닌 ‘연속성’ 신호. 디폴트 1~2 년 선행 지표.
 
     When:
         runAnomalyDetection 7 번째 룰. 비금융은 4 패턴, 금융은 2 패턴.
@@ -67,83 +113,68 @@ def detectTrendDeterioration(aSeries: dict, isFinancial: bool = False) -> list[A
     """
     anomalies: list[Anomaly] = []
 
-    # 순이익 연속 적자
-    niVals = getAnnualValues(aSeries, "IS", "net_profit")
-    if not niVals:
-        niVals = getAnnualValues(aSeries, "IS", "net_income")
-    streak = 0
-    for v in reversed(niVals):
-        if v is not None and v < 0:
-            streak += 1
-        else:
-            break
-    if streak >= 2:
-        sev = "danger" if streak >= 4 else "warning" if streak >= 3 else "info"
-        anomalies.append(Anomaly(sev, "trendDeterioration", f"순이익 {streak}기 연속 적자", float(streak)))
-
-    # 영업CF 연속 적자
-    cfVals = getAnnualValues(aSeries, "CF", "operating_cashflow")
-    streak = 0
-    for v in reversed(cfVals):
-        if v is not None and v < 0:
-            streak += 1
-        else:
-            break
-    if streak >= 2:
-        sev = "danger" if streak >= 4 else "warning" if streak >= 3 else "info"
-        anomalies.append(Anomaly(sev, "trendDeterioration", f"영업CF {streak}기 연속 적자", float(streak)))
+    # 순이익·영업CF 연속 적자는 계정과 라벨만 다른 같은 판정이라 한 루프로 묶는다.
+    for label, values in (
+        ("순이익", _annualValuesWithFallback(aSeries, "IS", "net_profit", "net_income")),
+        ("영업CF", getAnnualValues(aSeries, "CF", "operating_cashflow")),
+    ):
+        streak = _trailingNegativeStreak(values)
+        if streak >= 2:
+            sev = "danger" if streak >= 4 else "warning" if streak >= 3 else "info"
+            anomalies.append(Anomaly(sev, "trendDeterioration", f"{label} {streak}기 연속 적자", float(streak)))
 
     if isFinancial:
         return anomalies  # ICR, 부채비율 추이는 금융업 구조적 왜곡
 
-    # ICR < 1 연속 (금융업 제외)
-    opVals = getAnnualValues(aSeries, "IS", "operating_profit")
-    if not opVals:
-        opVals = getAnnualValues(aSeries, "IS", "operating_income")
-    fcVals = getAnnualValues(aSeries, "IS", "finance_costs")
-    if not fcVals:
-        fcVals = getAnnualValues(aSeries, "IS", "interest_expense")
-
-    if opVals and fcVals:
-        n = min(len(opVals), len(fcVals))
-        streak = 0
-        for i in range(n - 1, -1, -1):
-            op_v = opVals[i]
-            fc_v = fcVals[i]
-            if op_v is not None and fc_v is not None and fc_v > 0 and op_v / fc_v < 1:
-                streak += 1
-            else:
-                break
-        if streak >= 2:
-            sev = "danger" if streak >= 3 else "warning"
-            anomalies.append(Anomaly(sev, "trendDeterioration", f"ICR<1 {streak}기 연속", float(streak)))
-
-    # 부채비율 연속 상승 (3기+)
-    tlVals = getAnnualValues(aSeries, "BS", "total_liabilities")
-    eqVals = getAnnualValues(aSeries, "BS", "owners_of_parent_equity")
-    if not eqVals:
-        eqVals = getAnnualValues(aSeries, "BS", "total_stockholders_equity")
-
-    if tlVals and eqVals:
-        n = min(len(tlVals), len(eqVals))
-        drSeries = []
-        for i in range(n):
-            if tlVals[i] is not None and eqVals[i] is not None and eqVals[i] > 0:
-                drSeries.append(tlVals[i] / eqVals[i] * 100)
-            else:
-                drSeries.append(None)
-
-        streak = 0
-        for i in range(len(drSeries) - 1, 0, -1):
-            if drSeries[i] is not None and drSeries[i - 1] is not None and drSeries[i] > drSeries[i - 1]:
-                streak += 1
-            else:
-                break
-        if streak >= 3:
-            sev = "warning" if streak >= 4 else "info"
-            anomalies.append(Anomaly(sev, "trendDeterioration", f"부채비율 {streak}기 연속 상승", float(streak)))
+    for detected in (_interestCoverageStreak(aSeries), _debtRatioRiseStreak(aSeries)):
+        if detected is not None:
+            anomalies.append(detected)
 
     return anomalies
+
+
+def _interestCoverageStreak(aSeries: dict) -> Anomaly | None:
+    """ICR<1 이 2 기 이상 이어졌는지. 금융업은 호출자가 걸러낸다."""
+    opVals = _annualValuesWithFallback(aSeries, "IS", "operating_profit", "operating_income")
+    fcVals = _annualValuesWithFallback(aSeries, "IS", "finance_costs", "interest_expense")
+    if not (opVals and fcVals):
+        return None
+
+    n = min(len(opVals), len(fcVals))
+    streak = 0
+    for i in range(n - 1, -1, -1):
+        opV = opVals[i]
+        fcV = fcVals[i]
+        if opV is not None and fcV is not None and fcV > 0 and opV / fcV < 1:
+            streak += 1
+        else:
+            break
+    if streak < 2:
+        return None
+    sev = "danger" if streak >= 3 else "warning"
+    return Anomaly(sev, "trendDeterioration", f"ICR<1 {streak}기 연속", float(streak))
+
+
+def _debtRatioRiseStreak(aSeries: dict) -> Anomaly | None:
+    """부채비율이 3 기 이상 연속 상승했는지."""
+    tlVals = getAnnualValues(aSeries, "BS", "total_liabilities")
+    eqVals = _annualValuesWithFallback(aSeries, "BS", "owners_of_parent_equity", "total_stockholders_equity")
+    if not (tlVals and eqVals):
+        return None
+
+    n = min(len(tlVals), len(eqVals))
+    drSeries = []
+    for i in range(n):
+        if tlVals[i] is not None and eqVals[i] is not None and eqVals[i] > 0:
+            drSeries.append(tlVals[i] / eqVals[i] * 100)
+        else:
+            drSeries.append(None)
+
+    streak = _trailingRiseStreak(drSeries)
+    if streak < 3:
+        return None
+    sev = "warning" if streak >= 4 else "info"
+    return Anomaly(sev, "trendDeterioration", f"부채비율 {streak}기 연속 상승", float(streak))
 
 
 def detectCCCDeterioration(aSeries: dict, isFinancial: bool = False) -> list[Anomaly]:
@@ -198,9 +229,7 @@ def detectCCCDeterioration(aSeries: dict, isFinancial: bool = False) -> list[Ano
         return []
 
     anomalies: list[Anomaly] = []
-    revVals = getAnnualValues(aSeries, "IS", "sales")
-    if not revVals:
-        revVals = getAnnualValues(aSeries, "IS", "revenue")
+    revVals = _annualValuesWithFallback(aSeries, "IS", "sales", "revenue")
     recVals = getAnnualValues(aSeries, "BS", "trade_and_other_receivables")
     invVals = getAnnualValues(aSeries, "BS", "inventories")
     payVals = getAnnualValues(aSeries, "BS", "trade_and_other_payables")
@@ -231,12 +260,7 @@ def detectCCCDeterioration(aSeries: dict, isFinancial: bool = False) -> list[Ano
             cccSeries.append(None)
 
     # 연속 확대 탐지
-    streak = 0
-    for i in range(len(cccSeries) - 1, 0, -1):
-        if cccSeries[i] is not None and cccSeries[i - 1] is not None and cccSeries[i] > cccSeries[i - 1]:
-            streak += 1
-        else:
-            break
+    streak = _trailingRiseStreak(cccSeries)
 
     if streak >= 3:
         latest = cccSeries[-1]
@@ -272,7 +296,7 @@ def _isBig4(auditor: str | None) -> bool:
 
 
 def detectAuditRedFlags(auditData: AuditDataForAnomaly | None) -> list[Anomaly]:
-    """감사 Red Flag 탐지 — PCAOB AS 3101, ISA 570/701/705, SOX 302/404.
+    """감사 Red Flag 탐지. PCAOB AS 3101, ISA 570/701/705, SOX 302/404.
 
     Capabilities:
         - 감사인 교체 패턴 + 감사보수 ±30% + 계속기업/내부통제 약점 + 비적정 의견 +
@@ -320,87 +344,102 @@ def detectAuditRedFlags(auditData: AuditDataForAnomaly | None) -> list[Anomaly]:
     if auditData is None:
         return []
 
+    # 6 룰은 서로 독립이라 각자 자기 게이트를 들고 Anomaly 또는 None 을 낸다.
+    # 3·4 번은 플래그 한 줄이라 그대로 둔다. 나열 순서가 곧 반환 순서다.
     anomalies: list[Anomaly] = []
-
-    # 1. 감사인 비정상 교체 (PCAOB AS 3101)
-    auditors = auditData.auditors
-    if len(auditors) >= 2:
-        # 고유 감사인 수 (None 제외)
-        unique = [a for a in auditors if a is not None]
-        changes = []
-        for i in range(1, len(unique)):
-            if unique[i] != unique[i - 1]:
-                changes.append((i, unique[i - 1], unique[i]))
-
-        if len(changes) >= 3:
-            anomalies.append(
-                Anomaly(
-                    "danger",
-                    "audit",
-                    f"감사인 {len(changes)}회 교체 (5년 내) — 빈번 교체 Red Flag",
-                    float(len(changes)),
-                )
-            )
-        elif len(changes) >= 2:
-            anomalies.append(Anomaly("danger", "audit", "감사인 2년 이내 재교체 — Red Flag", float(len(changes))))
-        elif len(changes) == 1:
-            _, prev, curr = changes[0]
-            if _isBig4(prev) and not _isBig4(curr):
-                anomalies.append(Anomaly("warning", "audit", f"Big4→비Big4 교체 ({prev} → {curr})", 1.0))
-
-    # 2. 감사보수 급변 (ISA 260, ±30% YoY)
-    fees = auditData.fees
-    if len(fees) >= 2:
-        validFees = [(i, f) for i, f in enumerate(fees) if f is not None and f > 0]
-        if len(validFees) >= 2:
-            _, prevFee = validFees[-2]
-            _, currFee = validFees[-1]
-            feeChange = (currFee - prevFee) / prevFee * 100
-            if abs(feeChange) > 30:
-                direction = "급증" if feeChange > 0 else "급감"
-                anomalies.append(Anomaly("warning", "audit", f"감사보수 {direction} ({feeChange:+.0f}%)", feeChange))
+    for detected in (_auditorChangeFlag(auditData.auditors), _auditFeeSwingFlag(auditData.fees)):
+        if detected is not None:
+            anomalies.append(detected)
 
     # 3. 계속기업 불확실성 (ISA 570)
     if auditData.hasGoingConcern:
-        anomalies.append(Anomaly("danger", "audit", "계속기업 불확실성 — 감사인 보고 (ISA 570)", 1.0))
+        anomalies.append(Anomaly("danger", "audit", "계속기업 불확실성. 감사인 보고 (ISA 570)", 1.0))
 
     # 4. 내부통제 취약점 (SOX 302/404)
     if auditData.hasInternalControlWeakness:
         anomalies.append(Anomaly("danger", "audit", "내부회계관리제도 취약점 보고 (SOX 302/404)", 1.0))
 
-    # 5. 감사의견 비적정 (ISA 705)
-    opinions = auditData.opinions
-    if opinions:
-        latest = None
-        for v in reversed(opinions):
-            if v is not None:
-                latest = v
-                break
-        if latest is not None and "적정" not in str(latest):
-            anomalies.append(Anomaly("danger", "audit", f"감사의견 비적정: {latest} (ISA 705)", 1.0))
-
-    # 6. KAM 급증 (ISA 701)
-    kamCounts = auditData.kamCounts
-    if len(kamCounts) >= 2:
-        validKam = [(i, k) for i, k in enumerate(kamCounts) if k is not None]
-        if len(validKam) >= 2:
-            _, prevKam = validKam[-2]
-            _, currKam = validKam[-1]
-            if currKam > prevKam + 2:
-                anomalies.append(
-                    Anomaly(
-                        "info",
-                        "audit",
-                        f"KAM 급증 ({prevKam}건 → {currKam}건) — 감사인 위험 인식 확대",
-                        float(currKam - prevKam),
-                    )
-                )
+    for detected in (_auditOpinionFlag(auditData.opinions), _kamSurgeFlag(auditData.kamCounts)):
+        if detected is not None:
+            anomalies.append(detected)
 
     return anomalies
 
 
+def _auditorChangeFlag(auditors: list) -> Anomaly | None:
+    """룰 1: 감사인 비정상 교체 (PCAOB AS 3101)."""
+    if len(auditors) < 2:
+        return None
+    # 고유 감사인 수 (None 제외)
+    unique = [a for a in auditors if a is not None]
+    changes = []
+    for i in range(1, len(unique)):
+        if unique[i] != unique[i - 1]:
+            changes.append((i, unique[i - 1], unique[i]))
+
+    if len(changes) >= 3:
+        return Anomaly(
+            "danger",
+            "audit",
+            f"감사인 {len(changes)}회 교체 (5년 내). 빈번 교체 Red Flag",
+            float(len(changes)),
+        )
+    if len(changes) >= 2:
+        return Anomaly("danger", "audit", "감사인 2년 이내 재교체. Red Flag", float(len(changes)))
+    if len(changes) == 1:
+        _, prev, curr = changes[0]
+        if _isBig4(prev) and not _isBig4(curr):
+            return Anomaly("warning", "audit", f"Big4→비Big4 교체 ({prev} → {curr})", 1.0)
+    return None
+
+
+def _auditFeeSwingFlag(fees: list) -> Anomaly | None:
+    """룰 2: 감사보수 급변 (ISA 260, ±30% YoY)."""
+    if len(fees) < 2:
+        return None
+    validFees = [(i, f) for i, f in enumerate(fees) if f is not None and f > 0]
+    if len(validFees) < 2:
+        return None
+    _, prevFee = validFees[-2]
+    _, currFee = validFees[-1]
+    feeChange = (currFee - prevFee) / prevFee * 100
+    if abs(feeChange) <= 30:
+        return None
+    direction = "급증" if feeChange > 0 else "급감"
+    return Anomaly("warning", "audit", f"감사보수 {direction} ({feeChange:+.0f}%)", feeChange)
+
+
+def _auditOpinionFlag(opinions: list) -> Anomaly | None:
+    """룰 5: 감사의견 비적정 (ISA 705)."""
+    if not opinions:
+        return None
+    latest = _latestNotNone(opinions)
+    if latest is None or "적정" in str(latest):
+        return None
+    return Anomaly("danger", "audit", f"감사의견 비적정: {latest} (ISA 705)", 1.0)
+
+
+def _kamSurgeFlag(kamCounts: list) -> Anomaly | None:
+    """룰 6: KAM 급증 (ISA 701). 직전 대비 3 건 이상 늘면 감사인 위험 인식 확대."""
+    if len(kamCounts) < 2:
+        return None
+    validKam = [(i, k) for i, k in enumerate(kamCounts) if k is not None]
+    if len(validKam) < 2:
+        return None
+    _, prevKam = validKam[-2]
+    _, currKam = validKam[-1]
+    if currKam <= prevKam + 2:
+        return None
+    return Anomaly(
+        "info",
+        "audit",
+        f"KAM 급증 ({prevKam}건 → {currKam}건). 감사인 위험 인식 확대",
+        float(currKam - prevKam),
+    )
+
+
 def detectBenfordAnomaly(aSeries: dict) -> list[Anomaly]:
-    """Benford's Law 이상치 탐지 — 회계 조작 의심 신호.
+    """Benford's Law 이상치 탐지. 회계 조작 의심 신호.
 
     Capabilities:
         - 재무제표 모든 IS/BS/CF 값 첫 자릿수 분포 → Benford 기대분포 χ² 검정.
@@ -490,7 +529,7 @@ def detectBenfordAnomaly(aSeries: dict) -> list[Anomaly]:
             Anomaly(
                 "danger",
                 "earningsQuality",
-                f"Benford's Law 위반 (χ²={chi2:.1f}, p<0.01) — 회계 수치 분포 이상",
+                f"Benford's Law 위반 (χ²={chi2:.1f}, p<0.01). 회계 수치 분포 이상",
                 chi2,
             )
         )
@@ -499,7 +538,7 @@ def detectBenfordAnomaly(aSeries: dict) -> list[Anomaly]:
             Anomaly(
                 "warning",
                 "earningsQuality",
-                f"Benford's Law 이탈 (χ²={chi2:.1f}, p<0.05) — 회계 수치 분포 주의",
+                f"Benford's Law 이탈 (χ²={chi2:.1f}, p<0.05). 회계 수치 분포 주의",
                 chi2,
             )
         )
@@ -508,7 +547,7 @@ def detectBenfordAnomaly(aSeries: dict) -> list[Anomaly]:
 
 
 def detectRevenueQuality(aSeries: dict) -> list[Anomaly]:
-    """매출 품질 탐지 — Dechow & Dichev (2002).
+    """매출 품질 탐지. Dechow & Dichev (2002).
 
     Capabilities:
         - OCF/Revenue 비율 < 0 + 3 기 연속 하락 + AR 성장 vs 매출 성장 1.5× 초과
@@ -561,87 +600,102 @@ def detectRevenueQuality(aSeries: dict) -> list[Anomaly]:
     cfVals = getAnnualValues(aSeries, "CF", "operating_cashflow")
     arVals = getAnnualValues(aSeries, "BS", "trade_and_other_receivables")
 
-    # OCF/Revenue 비율 시계열
+    # OCF/Revenue 비율 시계열을 한 번 만들고 룰 1·2 가 함께 읽는다.
+    ocfRevRatios = _ocfRevenueRatios(revVals, cfVals)
+
+    # 룰 1: OCF/Revenue < 0 (최신기, 매출 흑자인데 영업CF 적자)
+    latest = _latestNotNone(ocfRevRatios)
+    if latest is not None and latest < 0:
+        anomalies.append(
+            Anomaly(
+                "danger",
+                "earningsQuality",
+                f"매출 대비 영업CF 적자 (OCF/Revenue={latest:.1%}). 매출 품질 의심",
+                latest * 100,
+            )
+        )
+
+    # 룰 2: OCF/Revenue 3기 연속 하락
+    validRatios = [r for r in ocfRevRatios if r is not None]
+    if len(validRatios) >= 3:
+        decline = _trailingDeclineStreak(validRatios)
+        if decline >= 3:
+            anomalies.append(
+                Anomaly(
+                    "warning",
+                    "earningsQuality",
+                    f"OCF/Revenue {decline}기 연속 하락. 매출 품질 악화 추세",
+                    float(decline),
+                )
+            )
+
+    # 룰 3: 매출채권 증가율 > 매출 증가율 × 1.5 (3기 연속)
+    receivable = _receivableGrowthFlag(arVals, revVals)
+    if receivable is not None:
+        anomalies.append(receivable)
+
+    return anomalies
+
+
+def _ocfRevenueRatios(revVals: list, cfVals: list) -> list:
+    """매출 대비 영업CF 비율 시계열. 분모가 없거나 0 이하면 그 기는 None."""
     n = min(len(revVals), len(cfVals)) if revVals and cfVals else 0
-    ocfRevRatios: list[float | None] = []
+    ratios: list[float | None] = []
     for i in range(n):
         rv = revVals[i]
         cf = cfVals[i]
         if rv is not None and cf is not None and rv > 0:
-            ocfRevRatios.append(cf / rv)
+            ratios.append(cf / rv)
         else:
-            ocfRevRatios.append(None)
+            ratios.append(None)
+    return ratios
 
-    # OCF/Revenue < 0 (최신기, 매출 흑자인데 영업CF 적자)
-    if ocfRevRatios:
-        latest = None
-        for v in reversed(ocfRevRatios):
-            if v is not None:
-                latest = v
-                break
-        if latest is not None and latest < 0:
-            anomalies.append(
-                Anomaly(
-                    "danger",
-                    "earningsQuality",
-                    f"매출 대비 영업CF 적자 (OCF/Revenue={latest:.1%}) — 매출 품질 의심",
-                    latest * 100,
-                )
-            )
 
-    # OCF/Revenue 3기 연속 하락
-    validRatios = [r for r in ocfRevRatios if r is not None]
-    if len(validRatios) >= 3:
-        consecutive_decline = 0
-        for i in range(len(validRatios) - 1, 0, -1):
-            if validRatios[i] < validRatios[i - 1]:
-                consecutive_decline += 1
-            else:
-                break
-        if consecutive_decline >= 3:
-            anomalies.append(
-                Anomaly(
-                    "warning",
-                    "earningsQuality",
-                    f"OCF/Revenue {consecutive_decline}기 연속 하락 — 매출 품질 악화 추세",
-                    float(consecutive_decline),
-                )
-            )
+def _trailingDeclineStreak(values: list) -> int:
+    """최신부터 거슬러 올라가며 직전기 대비 하락이 이어진 기수 (결측 없는 시계열 전제)."""
+    streak = 0
+    for i in range(len(values) - 1, 0, -1):
+        if values[i] < values[i - 1]:
+            streak += 1
+        else:
+            break
+    return streak
 
-    # 매출채권 증가율 > 매출 증가율 × 1.5 (3기 연속)
-    if arVals and revVals and len(arVals) >= 3 and len(revVals) >= 3:
-        n2 = min(len(arVals), len(revVals))
-        arGrowths: list[float | None] = []
-        revGrowths: list[float | None] = []
-        for i in range(1, n2):
-            ar_prev, ar_curr = arVals[i - 1], arVals[i]
-            rv_prev, rv_curr = revVals[i - 1], revVals[i]
-            if ar_prev and ar_prev > 0 and ar_curr is not None:
-                arGrowths.append((ar_curr - ar_prev) / ar_prev * 100)
-            else:
-                arGrowths.append(None)
-            if rv_prev and rv_prev > 0 and rv_curr is not None:
-                revGrowths.append((rv_curr - rv_prev) / rv_prev * 100)
-            else:
-                revGrowths.append(None)
 
-        # 최근 3기 매출채권 증가 > 매출 × 1.5
-        consecutive_ar = 0
-        for i in range(len(arGrowths) - 1, -1, -1):
-            ag = arGrowths[i]
-            rg = revGrowths[i]
-            if ag is not None and rg is not None and rg >= 0 and ag > rg * 1.5 and ag > 10:
-                consecutive_ar += 1
-            else:
-                break
-        if consecutive_ar >= 3:
-            anomalies.append(
-                Anomaly(
-                    "warning",
-                    "earningsQuality",
-                    f"매출채권 증가율 > 매출 증가율×1.5 {consecutive_ar}기 연속 — 수금 품질 의심",
-                    float(consecutive_ar),
-                )
-            )
+def _receivableGrowthFlag(arVals: list, revVals: list) -> Anomaly | None:
+    """룰 3: 매출채권 증가율이 매출 증가율의 1.5 배를 3 기 연속 넘었는지."""
+    if not (arVals and revVals and len(arVals) >= 3 and len(revVals) >= 3):
+        return None
 
-    return anomalies
+    n = min(len(arVals), len(revVals))
+    arGrowths: list[float | None] = []
+    revGrowths: list[float | None] = []
+    for i in range(1, n):
+        arPrev, arCurr = arVals[i - 1], arVals[i]
+        rvPrev, rvCurr = revVals[i - 1], revVals[i]
+        if arPrev and arPrev > 0 and arCurr is not None:
+            arGrowths.append((arCurr - arPrev) / arPrev * 100)
+        else:
+            arGrowths.append(None)
+        if rvPrev and rvPrev > 0 and rvCurr is not None:
+            revGrowths.append((rvCurr - rvPrev) / rvPrev * 100)
+        else:
+            revGrowths.append(None)
+
+    # 최근 3기 매출채권 증가 > 매출 × 1.5
+    streak = 0
+    for i in range(len(arGrowths) - 1, -1, -1):
+        ag = arGrowths[i]
+        rg = revGrowths[i]
+        if ag is not None and rg is not None and rg >= 0 and ag > rg * 1.5 and ag > 10:
+            streak += 1
+        else:
+            break
+    if streak < 3:
+        return None
+    return Anomaly(
+        "warning",
+        "earningsQuality",
+        f"매출채권 증가율 > 매출 증가율×1.5 {streak}기 연속. 수금 품질 의심",
+        float(streak),
+    )
