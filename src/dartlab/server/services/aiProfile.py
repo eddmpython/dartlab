@@ -128,7 +128,7 @@ def buildCodexDetail(*, probe: bool) -> dict[str, Any]:
 def buildOauthCodexDetail(*, probe: bool) -> dict[str, Any]:
     """OAuth Codex 인증/토큰 상태를 조회한다."""
     try:
-        from dartlab.ai.providers.support import oauth_token as oauthToken
+        from dartlab.ai.providers.support import oauthToken
     except (ImportError, OSError, RuntimeError):
         return {"authenticated": False, "tokenStored": False, "accountId": None, "checked": probe}
 

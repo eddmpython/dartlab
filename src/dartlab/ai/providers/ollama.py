@@ -245,8 +245,8 @@ class OllamaProvider(BaseProvider):
         choice = response.choices[0]
 
         toolCalls = []
-        if choice.message.toolCalls:
-            for tc in choice.message.toolCalls:
+        if choice.message.tool_calls:
+            for tc in choice.message.tool_calls:
                 toolCalls.append(
                     ToolCall(
                         id=tc.id,

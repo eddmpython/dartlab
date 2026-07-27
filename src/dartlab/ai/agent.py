@@ -158,7 +158,12 @@ def _runAgentImpl(
 ) -> Iterator[TraceEvent]:
     """runAgent 본체 — public alias 는 ``runAgent``."""
     history = history or []
-    systemPrompt = _injectPastContextIfAvailable(DARTLAB_CHAT_SYSTEM, _unused, history=history)
+    # ⚠ question 을 반드시 실어 보낸다. 예전엔 `_unused` 만 넘겨서 intent block 이 항상
+    # 빈 문자열이었고 (kwargs 에 question 키가 없다), 그 결과 DCFValuation·PeerCompareN 등
+    # 금융 primitive 8 종의 라우팅 힌트가 프로덕션에서 100% 죽어 있었다.
+    # 시스템 프롬프트의 static 매핑 표를 dynamic inline 으로 대체한 뒤라 순증 소실이었다.
+    intentKwargs = {**_unused, "question": str(question or "").strip()}
+    systemPrompt = _injectPastContextIfAvailable(DARTLAB_CHAT_SYSTEM, intentKwargs, history=history)
     messages: list[dict[str, Any]] = [{"role": "system", "content": systemPrompt}]
     for entry in history:
         if not isinstance(entry, dict):

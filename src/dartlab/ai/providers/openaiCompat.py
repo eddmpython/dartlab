@@ -112,7 +112,7 @@ class OpenAICompatProvider(BaseProvider):
                 model=self.resolvedModel,
                 messages=messages,
                 temperature=self.config.temperature,
-                maxTokens=self.config.maxTokens,
+                max_tokens=self.config.maxTokens,
             )
         except Exception as e:  # noqa: BLE001
             raise _wrapRateLimit(self.config.provider, e) from e
@@ -139,7 +139,7 @@ class OpenAICompatProvider(BaseProvider):
                 model=self.resolvedModel,
                 messages=messages,
                 temperature=self.config.temperature,
-                maxTokens=self.config.maxTokens,
+                max_tokens=self.config.maxTokens,
                 stream=True,
             )
         except Exception as e:  # noqa: BLE001
@@ -186,8 +186,8 @@ class OpenAICompatProvider(BaseProvider):
             }
 
         toolCalls = []
-        if choice.message.toolCalls:
-            for tc in choice.message.toolCalls:
+        if choice.message.tool_calls:
+            for tc in choice.message.tool_calls:
                 toolCalls.append(
                     ToolCall(
                         id=tc.id,

@@ -10,7 +10,7 @@ import shutil
 from typing import Generator
 
 from dartlab.ai.providers.base import BaseProvider
-from dartlab.ai.providers.support import codex_cli
+from dartlab.ai.providers.support import codexCli
 from dartlab.ai.types import LLMResponse
 
 
@@ -20,11 +20,11 @@ class CodexProvider(BaseProvider):
     @property
     def defaultModel(self) -> str:
         """codex CLI 설정 모델 또는 gpt-4.1 폴백."""
-        return codex_cli.getCodexConfiguredModel() or "gpt-4.1"
+        return codexCli.getCodexConfiguredModel() or "gpt-4.1"
 
     def checkAvailable(self) -> bool:
         """codex CLI 설치 + 로그인 동시 보유 여부."""
-        info = codex_cli.inspectCodexCli()
+        info = codexCli.inspectCodexCli()
         return bool(info.get("installed") and info.get("authenticated"))
 
     def _ensureAvailable(self) -> None:
@@ -33,7 +33,7 @@ class CodexProvider(BaseProvider):
 
             raise FileNotFoundError(f"Codex CLI를 찾을 수 없습니다.\n\n{getCodexInstallGuide()}")
 
-        info = codex_cli.inspectCodexCli()
+        info = codexCli.inspectCodexCli()
         if not info.get("installed"):
             from dartlab.ai.providers.support.cliSetup import getCodexInstallGuide
 
@@ -55,14 +55,14 @@ class CodexProvider(BaseProvider):
         return "\n\n".join(parts)
 
     def _selectSandbox(self, messages: list[dict[str, str]]) -> str:
-        return codex_cli.inferCodexSandbox(messages)
+        return codexCli.inferCodexSandbox(messages)
 
     def complete(self, messages: list[dict[str, str]]) -> LLMResponse:
         """messages → codex CLI 호출 (300s 타임아웃) → LLMResponse."""
         self._ensureAvailable()
         prompt = self._buildPrompt(messages)
         sandbox = self._selectSandbox(messages)
-        answer, usage = codex_cli.runCodexExec(
+        answer, usage = codexCli.runCodexExec(
             prompt,
             model=self.resolvedModel,
             sandbox=sandbox,
@@ -81,7 +81,7 @@ class CodexProvider(BaseProvider):
         self._ensureAvailable()
         prompt = self._buildPrompt(messages)
         sandbox = self._selectSandbox(messages)
-        full_text, _usage = codex_cli.runCodexExec(
+        full_text, _usage = codexCli.runCodexExec(
             prompt,
             model=self.resolvedModel,
             sandbox=sandbox,

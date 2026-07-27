@@ -168,17 +168,11 @@ def _isLLMProvider(obj: Any) -> bool:
         return False
     config = getattr(obj, "config", None)
     providerId = (getattr(config, "provider", None) or "").lower()
-    if providerId not in {
-        "oauth-codex",
-        "openai",
-        "gemini",
-        "codex",
-        "ollama",
-        "custom",
-        "groq",
-        "cerebras",
-        "mistral",
-    }:
+    # 리터럴 목록을 두면 새 provider 를 등록해도 여기서만 조용히 탈락한다 (anthropic 사고).
+    # kernel.py / workbench/loop.py 와 같은 SSOT (wiredProviderIds) 를 쓴다.
+    from dartlab.ai.settings.providerCatalog import wiredProviderIds
+
+    if providerId not in wiredProviderIds():
         return False
     try:
         return bool(obj.checkAvailable())

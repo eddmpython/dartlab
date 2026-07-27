@@ -304,11 +304,13 @@ class OpenAICompatibleProvider:
     def _generateResponses(
         self, client: Any, messages: list[dict[str, Any]], tools: list[dict[str, Any]]
     ) -> ProviderTurn:
+        # ⚠ SDK 경계는 snake_case 다. dartlab 내부 camelCase 규약을 여기 적용하면
+        # openai SDK 는 **kwargs 를 받지 않으므로 즉시 TypeError 로 죽는다.
         response = client.responses.create(
             model=self.resolvedModel,
             input=_responsesInput(messages),
             tools=_responsesTools(tools),
-            toolChoice="auto",
+            tool_choice="auto",
         )
         toolCalls: list[ToolCall] = []
         output_items = getattr(response, "output", None) or []
@@ -334,15 +336,16 @@ class OpenAICompatibleProvider:
     def _generateChatCompletions(
         self, client: Any, messages: list[dict[str, Any]], tools: list[dict[str, Any]]
     ) -> ProviderTurn:
+        # ⚠ SDK 경계는 snake_case (위 _generateResponses 주석 참조).
         response = client.chat.completions.create(
             model=self.resolvedModel,
             messages=messages,
             tools=tools,
-            toolChoice="auto",
+            tool_choice="auto",
         )
         message = response.choices[0].message
         toolCalls: list[ToolCall] = []
-        for call in message.toolCalls or []:
+        for call in message.tool_calls or []:
             rawArgs = getattr(call.function, "arguments", "") or "{}"
             args = _parseToolArgs(rawArgs)
             toolCalls.append(ToolCall(id=call.id, name=call.function.name, args=args))
