@@ -21,11 +21,15 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 _ROOT = Path(__file__).resolve().parents[2]
-_BASELINE_PATH = _ROOT / "scripts" / "audit" / "qualityBaseline.json"
-_HISTORY_PATH = _ROOT / "scripts" / "audit" / "qualityHistory.jsonl"
+# baseline 은 다른 감시들과 같은 자리에 둔다. 예전에는 repo 루트 `scripts/` 를 가리켰는데
+# 그 폴더는 강행규칙으로 금지돼 실재하지 않는다. 그래서 baseline 이 한 번도 안 읽혔고,
+# 아래 상수만 계속 쓰였다. 게이트는 non-blocking 이라 그 상태로 계속 빨간불이었다.
+_BASELINE_PATH = _ROOT / "tests" / "audit" / "_baselines" / "qualityGate.json"
+_HISTORY_PATH = _ROOT / "tests" / "audit" / "_baselines" / "qualityHistory.jsonl"
 _SRC = str(_ROOT / "src" / "dartlab")
 
 # ── baseline ────────────────────────────────────────────────────
+# baseline 파일이 없을 때만 쓰는 값. 실제 기준은 항상 파일이다.
 
 _DEFAULT_BASELINE = {
     "ef_count": 125,

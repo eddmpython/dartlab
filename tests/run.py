@@ -245,7 +245,10 @@ GATES: dict[str, Gate] = {
         deps=("radon", "vulture"),
         install_pkg="none",
         cmd=("python tests/audit/qualityGate.py && python -X utf8 src/dartlab/skills/measureProgress.py"),
-        blocking=False,
+        # baseline 이 실재하는 자리를 가리키게 된 뒤 blocking 으로 올린다. 예전에는 금지된
+        # `scripts/` 를 baseline 으로 봐서 늘 실패했고, non-blocking 이라 아무도 안 봤다.
+        # 이제 복잡도와 죽은 코드는 줄어드는 방향으로만 갱신된다.
+        blocking=True,
     ),
     "security": Gate(
         name="security",

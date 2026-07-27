@@ -3,8 +3,6 @@ import re
 
 import polars as pl
 
-from dartlab.core.utils.periodKey import parsePeriodKey
-
 _RE_YEAR_MONTH = re.compile(r"\((\d{4})\.(\d{2})\)")
 _RE_YEAR_ONLY = re.compile(r"\((\d{4})\.\d{2}\)")
 

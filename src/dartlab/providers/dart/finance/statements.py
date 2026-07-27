@@ -397,17 +397,46 @@ def statements(
     Raises:
         없음.
     """
-    return _statementsFromFinancePivot(stockCode, period=period)
+    return _statementsFromFinancePivot(stockCode, period=period, scope=scope, ifrsOnly=ifrsOnly)
 
 
-def _statementsFromFinancePivot(stockCode: str, *, period: str) -> StatementsResult | None:
-    """텍스트 section parquet 부재 시 finance pivot으로 StatementsResult 구성."""
+# 공개 scope 이름과 pivot 의 재무제표 구분 코드 사이 대응. 연결이 기본이고, 없으면 pivot 이
+# 알아서 별도로 내려간다.
+_SCOPE_TO_FS_DIV = {None: "CFS", "consolidated": "CFS", "separate": "OFS"}
+
+# K-IFRS 의무 적용 첫 해. 그 이전은 K-GAAP 이라 계정 구조가 달라 한 시계열에 섞으면 안 된다.
+_IFRS_FIRST_YEAR = 2011
+
+
+def _statementsFromFinancePivot(
+    stockCode: str, *, period: str, scope: str | None = None, ifrsOnly: bool = True
+) -> StatementsResult | None:
+    """finance pivot 으로 StatementsResult 를 구성한다.
+
+    예전에는 `stockCode` 와 `period` 만 넘기고 `scope` 와 `ifrsOnly` 를 통째로 버렸다. 그래서
+    `statements(code, scope="separate")` 가 연결 재무제표를 돌려주면서 결과에는 "consolidated"
+    라고 적었다. 문서의 "별도 재무제표 강제" 예제가 정확히 반대로 동작한 셈이다. 배선은
+    pivot 의 `fsDivPref` 로 이미 있었고 연결만 안 돼 있었다.
+    """
     from dartlab.providers.dart.finance.pivot import buildAnnual, buildTimeseries
 
-    result = buildAnnual(stockCode) if period == "y" else buildTimeseries(stockCode)
+    fsDivPref = _SCOPE_TO_FS_DIV.get(scope, "CFS")
+    result = (
+        buildAnnual(stockCode, fsDivPref=fsDivPref)
+        if period == "y"
+        else buildTimeseries(stockCode, fsDivPref=fsDivPref)
+    )
     if result is None:
         return None
     series, keys = result
+    if ifrsOnly:
+        keep = [i for i, key in enumerate(keys) if _isIfrsEraKey(key)]
+        if len(keep) != len(keys):
+            keys = [keys[i] for i in keep]
+            series = {
+                stmt: {name: [values[i] for i in keep if i < len(values)] for name, values in rows.items()}
+                for stmt, rows in series.items()
+            }
     bs = _buildSeriesDf(keys, series.get("BS", {}))
     is_ = _buildSeriesDf(keys, series.get("IS", {}))
     cf = _buildSeriesDf(keys, series.get("CF", {}))
@@ -416,12 +445,20 @@ def _statementsFromFinancePivot(stockCode: str, *, period: str) -> StatementsRes
     return StatementsResult(
         corpName=None,
         period=period,
-        scope="consolidated",
+        scope="separate" if fsDivPref == "OFS" else "consolidated",
         nYears=len(keys),
         BS=bs,
         IS=is_,
         CF=cf,
     )
+
+
+def _isIfrsEraKey(key: str) -> bool:
+    """기간 key 가 K-IFRS 시대(2011~)인지 본다. 연도를 못 읽으면 버리지 않는다."""
+    head = str(key)[:4]
+    if not head.isdigit():
+        return True
+    return int(head) >= _IFRS_FIRST_YEAR
 
 
 def _buildSeriesDf(sortedKeys: list[str], data: dict[str, list[float | None]]) -> pl.DataFrame:
