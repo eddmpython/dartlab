@@ -308,6 +308,103 @@ def emitGap(engine: str, axis: str, reason: str, observed: str) -> dict:
     }
 
 
+def _numericSplit(value: Any) -> tuple[float | None, str | None]:
+    """값을 (수치, 문자) 로 가른다. 무가드 float 은 금지다.
+
+    None 이나 "N/A" 같은 값에 그대로 float 을 씌우면 접기 전체가 죽는다. 수치가 아니면
+    valueText 로 남겨 무엇이 들어왔는지 보이게 한다.
+    """
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        return float(value), None
+    return None, str(value)
+
+
+def _foldScalar(raw: Any, *, label: str, asOf: str) -> list[dict]:
+    """단일 값을 한 행으로."""
+    value, text = _numericSplit(raw)
+    return [{"item": label, "entity": None, "entityName": None, "period": asOf, "value": value, "valueText": text}]
+
+
+def _foldEnvDict(raw: dict, *, asOf: str) -> list[dict]:
+    """지표 이름이 키인 dict. 키가 곧 item 이라 label 을 쓰지 않는다."""
+    rows = []
+    for key, value in raw.items():
+        numeric, text = _numericSplit(value)
+        rows.append(
+            {"item": key, "entity": None, "entityName": None, "period": asOf, "value": numeric, "valueText": text}
+        )
+    return rows
+
+
+def _foldScoreDict(raw: dict, *, label: str, asOf: str) -> list[dict]:
+    """종목별 점수 dict. None 은 valueText 도 비워 둔다. 값이 없는 것과 문자인 것은 다르다."""
+    rows = []
+    for entity, value in raw["scores"].items():
+        numeric, text = _numericSplit(value)
+        rows.append(
+            {
+                "item": label,
+                "entity": entity,
+                "entityName": None,
+                "period": asOf,
+                "value": numeric,
+                "valueText": None if value is None else text,
+            }
+        )
+    return rows
+
+
+def _foldEnvFrame(raw: pl.DataFrame, *, label: str) -> list[dict]:
+    """entity 가 없고 기간 열이 있는 표(macro 류).
+
+    yearWide 로직으로 접으면 기간이 item 으로 새고 period 가 asOf 로 소실되므로 따로 둔다.
+    """
+    pers = _periodCols(raw.columns)
+    labelCols = [c for c in raw.columns if c not in pers]
+    return _foldFrameRows(
+        raw,
+        labelCols,
+        pers,
+        lambda r: {
+            "item": " / ".join(str(r[c]) for c in labelCols) if labelCols else label,
+            "entity": None,
+            "entityName": None,
+            "period": str(r["_k"]),
+        },
+    )
+
+
+def _foldEntityFrame(
+    raw: pl.DataFrame, *, fam: str, label: str, asOf: str, engine: str, axis: str, gaps: list[dict]
+) -> list[dict]:
+    """entity 를 가진 표. yearWide 는 기간이 열이고 entityMetric 은 지표가 열이다.
+
+    역할을 못 정한 열은 조용히 버리지 않고 gap 으로 적는다. 버리면 그 열이 원래 없었는지
+    해석에 실패했는지 결과만 봐서는 알 수 없다.
+    """
+    cols = raw.columns
+    ent = _entityCol(cols)
+    nameCol = next((c for c in cols if c in ENTITY_NAME_KEYS), None)
+    pers = _periodCols(cols)
+    valueCols = pers if fam == "yearWide" else [c for c in cols if c not in (ent, nameCol)]
+    itemIsAxis = fam == "yearWide"
+    unknown = [c for c in cols if c not in valueCols and c not in (ent, nameCol)]
+    if unknown:
+        gaps.append(emitGap(engine, axis, "unknownColumnRole", ",".join(map(str, unknown))[:80]))
+    idx = [c for c in (ent, nameCol) if c]
+    return _foldFrameRows(
+        raw,
+        idx,
+        valueCols,
+        lambda r: {
+            "item": label if itemIsAxis else str(r["_k"]),
+            "entity": r.get(ent) if ent else None,
+            "entityName": r.get(nameCol) if nameCol else None,
+            "period": str(r["_k"]) if itemIsAxis else asOf,
+        },
+    )
+
+
 def foldToCanonical(
     raw: Any, *, engine: str, axis: str, item: str | None = None, declared: dict | None = None, asOf: str = "latest"
 ) -> tuple[pl.DataFrame, list[dict]]:
@@ -341,83 +438,15 @@ def foldToCanonical(
         return emptyCanonical(), gaps
 
     if fam == "scalar":
-        num = isinstance(raw, (int, float)) and not isinstance(raw, bool)
-        rows = [
-            {
-                "item": label,
-                "entity": None,
-                "entityName": None,
-                "period": asOf,
-                "value": float(raw) if num else None,
-                "valueText": None if num else str(raw),
-            }
-        ]
+        rows = _foldScalar(raw, label=label, asOf=asOf)
     elif fam == "envDict":
-        rows = [
-            {
-                "item": k,
-                "entity": None,
-                "entityName": None,
-                "period": asOf,
-                "value": float(v) if isinstance(v, (int, float)) and not isinstance(v, bool) else None,
-                "valueText": None if isinstance(v, (int, float)) and not isinstance(v, bool) else str(v),
-            }
-            for k, v in raw.items()
-        ]
+        rows = _foldEnvDict(raw, asOf=asOf)
     elif fam == "scoreDict":
-        # 점수는 무가드 float 금지: None·비수치(N/A 등)면 valueText 로 (다른 분기와 동일, 크래시 금지)
-        rows = []
-        for c, v in raw["scores"].items():
-            num = isinstance(v, (int, float)) and not isinstance(v, bool)
-            rows.append(
-                {
-                    "item": label,
-                    "entity": c,
-                    "entityName": None,
-                    "period": asOf,
-                    "value": float(v) if num else None,
-                    "valueText": None if num or v is None else str(v),
-                }
-            )
+        rows = _foldScoreDict(raw, label=label, asOf=asOf)
     elif fam == "envFrame":
-        # entity 없음, period 열 있음(macro 류): 비-period 열 = item 라벨, period 열 -> period.
-        # yearWide 로직으로 접으면 period 가 item 으로 새고 period 가 asOf 로 소실되므로 별도 분기.
-        cols = raw.columns
-        pers = _periodCols(cols)
-        labelCols = [c for c in cols if c not in pers]
-        rows = _foldFrameRows(
-            raw,
-            labelCols,
-            pers,
-            lambda r: {
-                "item": " / ".join(str(r[c]) for c in labelCols) if labelCols else label,
-                "entity": None,
-                "entityName": None,
-                "period": str(r["_k"]),
-            },
-        )
+        rows = _foldEnvFrame(raw, label=label)
     else:  # yearWide / entityMetric (entity 보유 DataFrame)
-        cols = raw.columns
-        ent = _entityCol(cols)
-        nameCol = next((c for c in cols if c in ENTITY_NAME_KEYS), None)
-        pers = _periodCols(cols)
-        valueCols = pers if fam == "yearWide" else [c for c in cols if c not in (ent, nameCol)]
-        itemIsAxis = fam == "yearWide"
-        unknown = [c for c in cols if c not in valueCols and c not in (ent, nameCol)]
-        if unknown:
-            gaps.append(emitGap(engine, axis, "unknownColumnRole", ",".join(map(str, unknown))[:80]))
-        idx = [c for c in (ent, nameCol) if c]
-        rows = _foldFrameRows(
-            raw,
-            idx,
-            valueCols,
-            lambda r: {
-                "item": label if itemIsAxis else str(r["_k"]),
-                "entity": r.get(ent) if ent else None,
-                "entityName": r.get(nameCol) if nameCol else None,
-                "period": str(r["_k"]) if itemIsAxis else asOf,
-            },
-        )
+        rows = _foldEntityFrame(raw, fam=fam, label=label, asOf=asOf, engine=engine, axis=axis, gaps=gaps)
 
     if not rows and not gaps:  # 빈 반환(envDict={}·scoreDict{scores:{}}·빈 프레임)도 gap 으로 계상 (도태 사각 방지)
         gaps.append(emitGap(engine, axis, "emptyReturn", fam))
