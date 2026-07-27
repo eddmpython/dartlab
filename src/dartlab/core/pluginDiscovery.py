@@ -15,7 +15,8 @@ from __future__ import annotations
 
 import importlib
 import logging
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
+from typing import Any
 
 _log = logging.getLogger(__name__)
 
@@ -61,3 +62,31 @@ def resetDiscovery() -> None:
 
 
 __all__ = ["discoverOnce", "resetDiscovery"]
+
+
+def lazyAttribute(moduleName: str, lazyMap: Mapping[str, str], name: str) -> Any:
+    """모듈 이름 하나를 접근 시점에 풀어 준다. 파사드의 ``__getattr__`` 전용.
+
+    파사드 `__init__` 이 무거운 하위 모듈을 위에서 import 하면 두 가지가 터진다. 쓰지도
+    않을 것을 매번 올려 시작이 느려지고, 파사드와 하위가 서로를 가리킬 때 순환이 된다.
+    그래서 이름과 모듈 경로만 표로 들고 있다가 실제로 꺼낼 때 올린다.
+
+    다섯 파사드가 이 다섯 줄을 각자 갖고 있었다. 없는 이름에 무엇을 던지느냐가 특히
+    중요하다. `AttributeError` 가 아니면 `hasattr` 과 `getattr(..., default)` 가
+    깨지고, 파사드가 없는 속성을 물어본 쪽이 예외로 죽는다.
+
+    Args:
+        moduleName: 부르는 모듈의 ``__name__``. 오류 문구에 그대로 들어간다.
+        lazyMap: 이름에서 모듈 경로로 가는 표.
+        name: 꺼내려는 속성 이름.
+
+    Returns:
+        해당 모듈에서 꺼낸 속성.
+
+    Raises:
+        AttributeError: 표에 없는 이름일 때. 파이썬이 기대하는 그 예외다.
+    """
+    modulePath = lazyMap.get(name)
+    if modulePath is None:
+        raise AttributeError(f"module {moduleName!r} has no attribute {name!r}")
+    return getattr(importlib.import_module(modulePath), name)

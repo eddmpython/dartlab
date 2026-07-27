@@ -23,6 +23,7 @@ from __future__ import annotations
 
 # core 재노출(경량) — gather 가 fetch 전담, providers 소비자 호환용 seam.
 from dartlab.core.dartClient import DartApiError, DartClient
+from dartlab.core.pluginDiscovery import lazyAttribute
 
 # NOTE: Dart/OpenDart/korColumns 는 아래 ``__getattr__`` 로 런타임 lazy 재노출
 # (``_LAZY`` 문자열 importlib) — providers↛gather 단방향 유지 위해 static import 는 두지 않는다.
@@ -48,9 +49,4 @@ _LAZY: dict[str, str] = {
 
 def __getattr__(name: str):
     """lazy re-export — facade/collector/korColumns 를 접근 시점에만 import (순환 회피)."""
-    import importlib
-
-    modPath = _LAZY.get(name)
-    if modPath is None:
-        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-    return getattr(importlib.import_module(modPath), name)
+    return lazyAttribute(__name__, _LAZY, name)

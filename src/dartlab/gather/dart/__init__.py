@@ -20,6 +20,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from dartlab.core.pluginDiscovery import lazyAttribute
+
 if TYPE_CHECKING:
     from .facade import Dart
     from .types import DartDocError, DartDocMeta, DocumentNotFoundError, InvalidRceptNoError
@@ -50,9 +52,4 @@ _LAZY: dict[str, str] = {
 
 def __getattr__(name: str):
     """lazy re-export — facade/viewer/types 를 접근 시점에만 import (순환·무거운 로딩 회피)."""
-    import importlib
-
-    modPath = _LAZY.get(name)
-    if modPath is None:
-        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-    return getattr(importlib.import_module(modPath), name)
+    return lazyAttribute(__name__, _LAZY, name)

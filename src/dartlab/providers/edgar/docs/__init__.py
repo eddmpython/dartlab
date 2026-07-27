@@ -9,6 +9,7 @@ lazy ``__getattr__`` re-export(providers↛gather module-level 회피). sections
 
 from __future__ import annotations
 
+from dartlab.core.pluginDiscovery import lazyAttribute
 from dartlab.providers.edgar.docs.sections import sections
 
 # NOTE: fetchEdgarDocs/downloadListedEdgarDocs 는 아래 ``__getattr__`` 로 런타임 lazy 재노출
@@ -24,9 +25,4 @@ _LAZY = {
 
 def __getattr__(name: str):
     """lazy re-export — SEC docs fetch 를 접근 시점에만 gather 에서 import."""
-    import importlib
-
-    modPath = _LAZY.get(name)
-    if modPath is None:
-        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-    return getattr(importlib.import_module(modPath), name)
+    return lazyAttribute(__name__, _LAZY, name)
