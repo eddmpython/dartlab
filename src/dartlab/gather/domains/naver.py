@@ -10,6 +10,8 @@ import asyncio
 import logging
 from datetime import date, datetime, timedelta, timezone
 
+from dartlab.core.market import isKrStockCode
+
 from ..types import (
     FlowData,
     GatherResult,
@@ -270,17 +272,17 @@ async def fetchPrice(
 
     Capabilities: KR Naver M-Stock API fetch + PriceSnapshot 변환.
     AIContext: gather.price KR primary source — 가장 풍부한 단건 스냅샷.
-    Guide: KR 종목코드 (6자리 숫자) 만. 외 티커는 None.
+    Guide: KR 종목코드 (KRX 단축코드) 만. 외 티커는 None.
     When: gather("price", stockCode, market="KR") 진입 시 첫 시도.
     How: m.stock.naver.com integration JSON → PriceSnapshot 매핑.
 
-    KR 종목코드(6자리 숫자)가 아니면 None 반환 — naver KR API에 잘못된
+    KR 종목코드(KRX 단축코드)가 아니면 None 반환. naver KR API에 잘못된
     티커를 보내 409 에러가 나는 것을 차단.
 
     Parameters
     ----------
     stock_code : str
-        종목코드 (예: ``"005930"``). 6자리 숫자만 처리.
+        종목코드 (예: ``"005930"``, ``"0008Z0"``). KRX 단축코드만 처리.
     client
         비동기 HTTP 클라이언트.
     limit : int | None
@@ -325,8 +327,8 @@ async def fetchPrice(
     fetchAll : 본 함수를 포함한 일괄 fetch.
     """
     del limit
-    # KR 종목코드 검증 — 6자리 숫자 아니면 차단 (US/글로벌 티커 → naver_global로)
-    if not (stockCode and stockCode.strip().isdigit() and len(stockCode.strip()) == 6):
+    # KR 종목코드 검증. KRX 단축코드 아니면 차단 (US/글로벌 티커 -> naver_global로)
+    if not isKrStockCode(stockCode or ""):
         return None
 
     # basic: 현재가, 등락
@@ -460,7 +462,7 @@ async def fetchFlow(
     fetchAll : 본 함수의 FlowData 변환 caller.
     """
     # KR 종목코드 검증
-    if not (stockCode and stockCode.strip().isdigit() and len(stockCode.strip()) == 6):
+    if not isKrStockCode(stockCode or ""):
         return None
 
     _normalizeDateToken(start)
@@ -603,7 +605,7 @@ async def fetchRevenueConsensus(
     analysis/forecast : 본 함수 결과의 caller (forward 추정 라인).
     """
     # KR 종목코드 검증
-    if not (stockCode and stockCode.strip().isdigit() and len(stockCode.strip()) == 6):
+    if not isKrStockCode(stockCode or ""):
         return []
 
     url = f"{_API_BASE}/{stockCode}/finance/annual"
@@ -714,7 +716,7 @@ async def fetchSectorPer(
     """
     del limit
     # KR 종목코드 검증
-    if not (stockCode and stockCode.strip().isdigit() and len(stockCode.strip()) == 6):
+    if not isKrStockCode(stockCode or ""):
         return None
 
     url = f"{_API_BASE}/{stockCode}/integration"
@@ -955,7 +957,7 @@ async def fetchIntraday(
         return []
     sc = stockCode.strip() if stockCode else ""
     # KR 종목코드 검증
-    if not (sc.isdigit() and len(sc) == 6):
+    if not isKrStockCode(sc):
         return []
 
     url = _INTRADAY_URL.format(code=sc)
@@ -1059,7 +1061,7 @@ async def fetchHistory(
         return []
     # KR 종목코드 검증 (지수 심볼 KOSPI/KOSDAQ 등도 허용)
     sc = stockCode.strip() if stockCode else ""
-    if not (sc.isdigit() and len(sc) == 6) and sc not in ("KOSPI", "KOSDAQ", "KPI200"):
+    if not isKrStockCode(sc) and sc not in ("KOSPI", "KOSDAQ", "KPI200"):
         return []
     import re
 

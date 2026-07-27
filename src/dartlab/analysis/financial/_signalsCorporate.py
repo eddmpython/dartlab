@@ -11,6 +11,7 @@ from __future__ import annotations
 import logging
 
 from dartlab.analysis.financial._predictionUtils import _DIRECTION_SCORES, _bayesUpdate, _clamp
+from dartlab.core.market import isKrStockCode
 from dartlab.core.memory import memoizedCalc
 from dartlab.core.utils.calc import safeDiv as _safe
 from dartlab.core.utils.helpers import annualColsFromPeriods, toDictBySnakeId
@@ -618,15 +619,10 @@ def _getLinkedCompanies(company, stockCode: str) -> list[dict]:
 
     # 2. 관계사 거래 (relatedPartyTx 파이프라인 직접 호출)
     # Company facade namespace 제거(Plan v10 P3) 후 getattr(company, "relatedPartyTx")
-    # 는 항상 None 반환하는 dead branch 였음. KRW 6자리 종목에만 호출.
+    # 는 항상 None 반환하는 dead branch 였음. KRW 상장 종목에만 호출.
     try:
         stockCode = getattr(company, "stockCode", None)
-        if (
-            isinstance(stockCode, str)
-            and len(stockCode) == 6
-            and stockCode.isdigit()
-            and getattr(company, "currency", None) == "KRW"
-        ):
+        if isinstance(stockCode, str) and isKrStockCode(stockCode) and getattr(company, "currency", None) == "KRW":
             from dartlab.analysis.financial.governance import _loadRelatedPartyTx
 
             rpt = _loadRelatedPartyTx(company)

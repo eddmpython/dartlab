@@ -160,9 +160,12 @@ def _apiRef(plan: dict[str, Any]) -> str:
 
 
 def _looksLikeStockOrTicker(token: str) -> bool:
+    from dartlab.core.market import isKrStockCode
+
     if not token:
         return False
-    if re.match(r"^\d{6}$", token):
+    # KRX 단축코드 (6자리 숫자 또는 숫자 선두 영숫자, 예 0008Z0)
+    if isKrStockCode(token):
         return True
     return bool(re.match(r"^[A-Z]{1,6}$", token))
 

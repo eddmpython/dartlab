@@ -7,7 +7,7 @@ from dataclasses import dataclass
 
 import polars as pl
 
-from dartlab.core.market import detectMarket
+from dartlab.core.market import detectMarket, isKrStockCode, normalizeKrCode
 
 from .canonical import canonicalRankExpr
 from .period import isPeriodColumn, sortPeriods
@@ -32,9 +32,8 @@ def _displayCodes(codes: list[str] | str | None) -> list[str]:
         codes = [codes]
     out: list[str] = []
     for c in codes or []:
-        c = str(c).strip()
-        if c and not re.fullmatch(r"\d{6}", c):
-            c = c.upper()
+        # KR 코드(영숫자 포함)·US ticker 모두 대문자 표기가 정본이라 분기 없이 정규화한다.
+        c = normalizeKrCode(c)
         if c:
             out.append(c)
     return out
@@ -43,7 +42,7 @@ def _displayCodes(codes: list[str] | str | None) -> list[str]:
 def _normCodes(codes: list[str] | str | None) -> list[str]:
     """codes 정규화·검증 — KR 6자리 또는 US ticker 만 허용."""
     out = _displayCodes(codes)
-    invalid = [c for c in out if not (re.fullmatch(r"\d{6}", c) or _US_TICKER_RE.fullmatch(c))]
+    invalid = [c for c in out if not (isKrStockCode(c) or _US_TICKER_RE.fullmatch(c))]
     if invalid:
         raise ValueError("codes 는 한국 6자리 종목코드 또는 미국 ticker 여야 합니다.")
     if len(out) != len(set(out)):

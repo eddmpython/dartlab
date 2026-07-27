@@ -18,11 +18,13 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 from dartlab.ai.memory.sessionIndex import sessionIndexPath
+from dartlab.core.market import KR_STOCK_CODE_TEXT_RE
 
 _CACHE_DEFAULT = Path.home() / ".dartlab" / "ai_memory" / "userProfile.cache.json"
 _CACHE_TTL_SECONDS = 7 * 24 * 3600
 
-_KR_STOCKCODE_RE = re.compile(r"(?<!\d)(\d{6})(?!\d)")
+# KRX 단축코드 정본 패턴 (영숫자 코드 0008Z0 포함, 기간 "2026Q1" 오탐 배제).
+_KR_STOCKCODE_RE = KR_STOCK_CODE_TEXT_RE
 _US_TICKER_RE = re.compile(r"\b([A-Z]{2,5})\b")
 _KO_TOKEN_RE = re.compile(r"[가-힣]{2,}")
 

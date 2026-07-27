@@ -14,7 +14,8 @@ from dartlab.core.logger import getLogger
 
 _log = getLogger(__name__)
 
-_CODE_RE = re.compile(r"\((\d{6})[/)\s]")
+# KRX 단축코드 (6자리 숫자 또는 숫자 선두 영숫자, 예 0008Z0).
+_CODE_RE = re.compile(r"\((\d[0-9A-Z]{5})[/)\s]")
 
 # 투자의견 화이트리스트 — '(코드/의견)' 패턴의 의견부만(날짜 '(6/29)' 등 오탐 차단).
 _OPINION_RE = re.compile(

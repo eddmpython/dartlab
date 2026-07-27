@@ -15,6 +15,7 @@ from typing import Any
 
 from dartlab.ai.contracts import Ref
 from dartlab.core.confidence import baseScore
+from dartlab.core.market import detectMarket
 
 from .companyResolve import resolveCompanyOrNone
 from .types import ToolResult
@@ -182,7 +183,7 @@ def creditScorecard(
     factor_data: dict[str, Any] | None = None
     if includeFactors:
         factor_data = {}
-        market = "KR" if stockCode.isdigit() and len(stockCode) == 6 else "US"
+        market = detectMarket(stockCode)
         try:
             from dartlab.quant.alphas.altman import calcAltmanFactor
 

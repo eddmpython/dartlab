@@ -243,8 +243,8 @@ def resolveStockCodeFromText(text: str) -> tuple[str | None, str]:
     if not text:
         return None, text
 
-    # 1) 6자리 종목코드 먼저
-    code_match = re.match(r"^(\d{6})\s+(.+)$", text)
+    # 1) KRX 단축코드 먼저 (6자리 숫자 또는 숫자 선두 영숫자, 예 0008Z0)
+    code_match = re.match(r"^(\d[0-9A-Z]{5})\s+(.+)$", text)
     if code_match:
         return code_match.group(1), code_match.group(2).strip()
 

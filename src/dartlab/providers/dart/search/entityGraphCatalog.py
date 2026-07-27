@@ -204,7 +204,8 @@ def seedCodesFromSearchCatalog(path: str | Path, *, maxSeeds: int = 100) -> list
         for code in (
             catalog.select(pl.col(column).cast(pl.Utf8).alias("stockCode"))
             .with_columns(pl.col("stockCode").map_elements(_stockCode, return_dtype=pl.Utf8))
-            .filter(pl.col("stockCode").str.contains(r"^\d{6}$"))
+            # KRX 단축코드 (6자리 숫자 또는 숫자 선두 영숫자, 예 0008Z0)
+            .filter(pl.col("stockCode").str.contains(r"^\d[0-9A-Z]{5}$"))
             .group_by("stockCode")
             .len()
             .sort("len", descending=True)

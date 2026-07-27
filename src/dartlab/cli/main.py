@@ -19,8 +19,11 @@ def _ensureUtf8() -> None:
 
 
 def _looksLikeCompany(token: str) -> bool:
-    """종목코드(6자리 숫자) 또는 한글 회사명처럼 보이는지."""
-    if token.isdigit() and len(token) == 6:
+    """KRX 단축코드 또는 한글 회사명처럼 보이는지."""
+    from dartlab.core.market import isKrStockCode
+
+    # 6자리 숫자 또는 숫자 선두 영숫자(예 0008Z0) 둘 다 KRX 단축코드다.
+    if isKrStockCode(token):
         return True
     if any("\uac00" <= ch <= "\ud7a3" for ch in token):
         return True

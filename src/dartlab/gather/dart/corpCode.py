@@ -16,6 +16,7 @@ from pathlib import Path
 import polars as pl
 
 from dartlab.core.dartClient import DartClient
+from dartlab.core.market import isKrStockCode, normalizeKrCode
 
 # 캐시 경로: ~/.dartlab/corpCode.parquet
 _CACHE_DIR = Path.home() / ".dartlab"
@@ -209,9 +210,9 @@ def findCorpCode(
     """
     df = loadCorpCodes(client, refresh=refresh)
 
-    # 종목코드로 검색 (6자리 숫자)
-    if query.isdigit() and len(query) == 6:
-        match = df.filter(pl.col("stock_code") == query)
+    # 종목코드로 검색 (KRX 단축코드. 6자리 숫자 또는 숫자 선두 영숫자, 예 0008Z0)
+    if isKrStockCode(query):
+        match = df.filter(pl.col("stock_code") == normalizeKrCode(query))
         if match.height > 0:
             return match["corp_code"][0]
         return None

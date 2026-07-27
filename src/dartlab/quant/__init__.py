@@ -26,6 +26,7 @@ from typing import Any
 
 import polars as pl
 
+from dartlab.core.market import isKrStockCode
 from dartlab.quant.signal.analyzer import enrichWithIndicators, technicalVerdict
 
 __all__ = ["Quant", "enrichWithIndicators", "technicalVerdict"]
@@ -72,8 +73,8 @@ def _isStockCode(value: str) -> bool:
     if not isinstance(value, str):
         return False
     s = value.strip()
-    # 6자리 숫자 (한국)
-    if re.match(r"^\d{6}$", s):
+    # KRX 단축코드 (6자리 숫자 또는 숫자 선두 영숫자, 예 0008Z0)
+    if isKrStockCode(s):
         return True
     # 알파벳 1-5자 (미국 ticker, US ticker 표준은 uppercase)
     if re.match(r"^[A-Z]{1,5}$", s) and s not in _AXIS_REGISTRY and s not in _ALIASES:

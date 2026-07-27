@@ -9,9 +9,12 @@ from __future__ import annotations
 
 import re
 
-# 정규식 — 질문에서 종목코드 / 티커 / 회사 분리 / show 주제 인식.
+from dartlab.core.market import KR_STOCK_CODE_TEXT_RE
+
+# 정규식. 질문에서 종목코드 / 티커 / 회사 분리 / show 주제 인식.
 _COMPANY_SPLIT_RE = re.compile(r"\s*(?:,|/|vs\.?|VS\.?|랑|하고|와|과)\s*")
-_STOCK_CODE_RE = re.compile(r"\b\d{6}\b")
+# KRX 단축코드 정본 패턴 (영숫자 코드 0008Z0 포함, 기간 "2026Q1" 오탐 배제).
+_STOCK_CODE_RE = KR_STOCK_CODE_TEXT_RE
 _TICKER_RE = re.compile(r"\b[A-Z]{1,5}\b")
 
 _SHOW_TOPIC_ALIASES: tuple[tuple[str, tuple[str, ...]], ...] = (

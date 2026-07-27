@@ -9,6 +9,7 @@ from __future__ import annotations
 import polars as pl
 
 from dartlab.core.logger import getLogger
+from dartlab.core.market import isKrStockCode, normalizeKrCode
 from dartlab.providers.dart.search.sourceIntent import detectSourceIntent
 
 _log = getLogger(__name__)
@@ -371,8 +372,8 @@ def _resolveCorp(corp: str | None) -> tuple[str | None, str | None]:
     """corp 파라미터 → (corpCode, stockCode) 변환."""
     if not corp:
         return None, None
-    if len(corp) == 6 and corp.isdigit():
-        return None, corp
+    if isKrStockCode(corp):
+        return None, normalizeKrCode(corp)
     if len(corp) == 8 and corp.isdigit():
         return corp, None
     try:

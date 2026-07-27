@@ -60,6 +60,8 @@ from typing import Any
 
 import polars as pl
 
+from dartlab.core.market import isKrStockCode
+
 from .dispatch import INDEX_SYMBOLS, _fetchNaverIndex
 
 log = logging.getLogger(__name__)
@@ -998,7 +1000,7 @@ def handleNarrative(
         - "pulse" : (date × topic) 격자 (buildNarrativePulse)
         - "score" : 12 번째 macro 축 dict → 1행 DataFrame (analyzeNarrative)
         - "topics" : top topic 랭킹 (volume + sentiment mean)
-        - 6자리 숫자 : 종목명 keyword 필터 (KRX codeToName)
+        - KRX 단축코드 : 종목명 keyword 필터 (KRX codeToName)
         - 그 외 : 자유 keyword title contains 필터
 
     Args:
@@ -1072,9 +1074,9 @@ def handleNarrative(
         )
         return agg.sort("volume_total", descending=True).head(top)
 
-    # target 이 6 자리 숫자 → 종목명 resolve → keyword 필터
+    # target 이 KRX 단축코드 → 종목명 resolve → keyword 필터
     keyword = target
-    if target.isdigit() and len(target) == 6:
+    if isKrStockCode(target):
         try:
             from dartlab.gather.krx.listing.registry import codeToName
 
@@ -1110,7 +1112,7 @@ def handleResearch(
 
     Args:
         g: Gather 싱글턴.
-        target: None=전체 · 6자리 숫자=종목코드 필터 · 그 외 문자열=제목 검색.
+        target: None=전체 · KRX 단축코드=종목코드 필터 · 그 외 문자열=제목 검색.
         market: 무시 (KR 게시판 전용).
         start/end: 발간일 범위 "YYYY-MM-DD".
         marketExplicit: 무시.
@@ -1136,9 +1138,9 @@ def handleResearch(
     """
     ticker = kwargs.pop("ticker", None)
     query = kwargs.pop("query", None)
-    # 위치 target: 6자리 숫자=종목코드, 그 외=제목 검색 (narrative axis 동형). 명시 kwarg 우선.
+    # 위치 target: KRX 단축코드=종목코드, 그 외=제목 검색 (narrative axis 동형). 명시 kwarg 우선.
     if target:
-        if target.isdigit() and len(target) == 6:
+        if isKrStockCode(target):
             ticker = ticker or target
         else:
             query = query or target

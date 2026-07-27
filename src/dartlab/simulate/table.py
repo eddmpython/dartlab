@@ -104,7 +104,8 @@ def scanFinanceGrid(baseDir: Path | None = None) -> pl.DataFrame:
             )
     out = (
         df.with_columns(
-            code=pl.col("fp").str.extract(r"(\d{6})\.parquet"),
+            # 파일명이 곧 KRX 단축코드 (6자리 숫자 또는 숫자 선두 영숫자, 예 0008Z0.parquet).
+            code=pl.col("fp").str.extract(r"(\d[0-9A-Z]{5})\.parquet"),
             rceptDate=pl.col("rcept_no").str.slice(0, 8),
             quarter=pl.col("reprt_code").replace_strict(_REPRT_Q, default=None),
             amount=pl.col("thstrm_amount").str.replace_all(",", "").cast(pl.Float64, strict=False),

@@ -17,6 +17,7 @@ from typing import Any
 
 from dartlab.ai.contracts import Ref
 from dartlab.core.confidence import baseScore
+from dartlab.core.market import detectMarket
 
 from .companyResolve import resolveCompanyOrNone
 from .types import ToolResult
@@ -275,7 +276,7 @@ def dcfValuationTool(
     # "dcf" subtype 라벨은 confidenceMethod 에만 노출, 점수는 forecast 사용.
     confidence = baseScore("forecast")
     corpName = str(getattr(company, "corpName", None) or "")
-    unit = "KRW" if stockCode.isdigit() and len(stockCode) == 6 else "USD"
+    unit = "KRW" if detectMarket(stockCode) == "KR" else "USD"
 
     payload: dict[str, Any] = {
         "stockCode": stockCode,

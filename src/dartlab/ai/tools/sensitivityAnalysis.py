@@ -15,6 +15,7 @@ from typing import Any
 
 from dartlab.ai.contracts import Ref
 from dartlab.core.confidence import baseScore
+from dartlab.core.market import detectMarket
 
 from .companyResolve import resolveCompanyOrNone
 from .dcfValuationTool import _resolveSectorParams, _resolveSeries, _resolveShares
@@ -195,7 +196,7 @@ def sensitivityAnalysis(
 
     confidence = baseScore("forecast")
     corpName = str(getattr(company, "corpName", None) or "")
-    unit = "KRW" if stockCode.isdigit() and len(stockCode) == 6 else "USD"
+    unit = "KRW" if detectMarket(stockCode) == "KR" else "USD"
 
     payload: dict[str, Any] = {
         "stockCode": stockCode,

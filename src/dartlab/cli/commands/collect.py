@@ -22,8 +22,11 @@ from __future__ import annotations
 
 
 def _isEdgarCode(code: str) -> bool:
-    """영문 ticker면 True, 숫자 종목코드면 False."""
-    return not code.isdigit()
+    """영문 ticker면 True, KR 종목코드면 False."""
+    from dartlab.core.market import isKrStockCode
+
+    # KRX 단축코드 (6자리 숫자 또는 숫자 선두 영숫자, 예 0008Z0) 는 DART 경로.
+    return not isKrStockCode(code) and not code.isdigit()
 
 
 def _detectSource(args) -> str:

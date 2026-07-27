@@ -24,6 +24,7 @@ from dartlab.core.dartBuild import (
 from dartlab.core.dartConstants import (
     QUARTER_TO_CODE as _QUARTER_TO_CODE,
 )
+from dartlab.core.market import isKrStockCode, normalizeKrCode
 from dartlab.gather.dart.corpCode import loadCorpCodes
 from dartlab.gather.dart.dartHelpers import _dataPath
 from dartlab.gather.dart.disclosure import _resolveCorpCode
@@ -401,8 +402,8 @@ class DartCompany:
 
     def _resolveStockCode(self) -> str:
         """종목코드 해석."""
-        if self._corp.isdigit() and len(self._corp) == 6:
-            return self._corp
+        if isKrStockCode(self._corp):
+            return normalizeKrCode(self._corp)
         df = loadCorpCodes(self._dart._client)
         match = df.filter(pl.col("corp_name") == self._corp)
         if match.height > 0:

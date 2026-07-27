@@ -48,6 +48,7 @@ from dartlab.core.dartConstants import (
 )
 from dartlab.core.dartDateUtil import defaultEnd, defaultStart, parseDate
 from dartlab.core.dataConfig import DATA_RELEASES
+from dartlab.core.market import isKrStockCode, normalizeKrCode
 from dartlab.gather.dart.corpCode import (
     findCorpCode,
     loadCorpCodes,
@@ -664,8 +665,8 @@ class Dart:
     def _resolveCorpName(self, corp: str) -> str:
         """progress bar 표시용 회사명 해석."""
         df = loadCorpCodes(self._client)
-        if corp.isdigit() and len(corp) == 6:
-            match = df.filter(pl.col("stock_code") == corp)
+        if isKrStockCode(corp):
+            match = df.filter(pl.col("stock_code") == normalizeKrCode(corp))
             if match.height > 0:
                 return match["corp_name"][0]
         elif corp.isdigit() and len(corp) == 8:

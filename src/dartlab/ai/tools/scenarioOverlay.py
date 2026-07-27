@@ -14,6 +14,7 @@ from typing import Any
 
 from dartlab.ai.contracts import Ref
 from dartlab.core.confidence import baseScore
+from dartlab.core.market import detectMarket
 
 from .companyResolve import resolveCompanyOrNone
 from .types import ToolResult
@@ -95,7 +96,7 @@ def scenarioOverlay(scenarioName: str, stockCode: str = "", severity: str = "", 
 
     if not scenarioName:
         return ToolResult(False, "scenarioName 필수 — preset 이름 (예: asia_crisis).", error="missing_scenario")
-    inferredMarket = market or ("KR" if stockCode.isdigit() and len(stockCode) == 6 else "US")
+    inferredMarket = market or detectMarket(stockCode)
     preset = getScenario(scenarioName, severity=severity or None, market=inferredMarket)
     if not preset:
         return ToolResult(False, f"preset 없음: {scenarioName}", error="scenario_not_found")

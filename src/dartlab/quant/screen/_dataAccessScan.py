@@ -218,10 +218,12 @@ def _looksLikeEdgarTicker(stockCode: str) -> bool:
     EDGAR ticker 의 일부는 dash (BRK.B / BRK-B) 또는 dot 포함 — 본 함수는 단순화 위해
     영문/숫자/dot/dash 만 허용, 길이 1~10.
     """
+    from dartlab.core.market import isKrStockCode
+
     if not stockCode:
         return False
-    if stockCode.isdigit():
-        return False  # KR stockCode
+    if isKrStockCode(stockCode):
+        return False  # KR stockCode (6자리 숫자 또는 숫자 선두 영숫자, 예 0008Z0)
     return 1 <= len(stockCode) <= 10 and all(c.isalnum() or c in "-." for c in stockCode)
 
 

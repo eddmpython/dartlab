@@ -20,6 +20,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from dartlab.core.market import KR_STOCK_CODE_TEXT_RE
+
 _DECISIONS_PATH = Path.home() / ".dartlab" / "ai_memory" / "decisions.jsonl"
 _TOKEN_RE = re.compile(r"[가-힣A-Za-z0-9_]+")
 
@@ -124,7 +126,8 @@ def _tokenize(text: str) -> set[str]:
     return {tok.lower() for tok in _TOKEN_RE.findall(text or "")}
 
 
-_STOCK_CODE_RE = re.compile(r"\b\d{6}\b")
+# KRX 단축코드 정본 패턴 (영숫자 코드 0008Z0 포함, 기간 "2026Q1" 오탐 배제).
+_STOCK_CODE_RE = KR_STOCK_CODE_TEXT_RE
 _RECIPE_TAG_PREFIXES = ("skill:recipes.", "skill:engines.recipe.")
 _TARGET_TAG_PREFIX = "target:"
 _METRIC_TAG_PREFIX = "metric:"

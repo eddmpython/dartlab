@@ -25,6 +25,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from dartlab.core.market import isKrStockCode
 from dartlab.providers.mappers.common import normalizeName
 
 log = logging.getLogger(__name__)
@@ -356,7 +357,8 @@ def scanAll(
         log.warning("panel 디렉토리 없음: %s", dataDir)
         return {"scanned": 0, "newItems": 0, "updatedItems": 0, "totalItems": len(existingItems)}
 
-    stockCodes = sorted(p.stem for p in dataDir.glob("*.parquet") if len(p.stem) == 6 and p.stem.isdigit())
+    # 파일명이 곧 KRX 단축코드 (6자리 숫자 또는 숫자 선두 영숫자, 예 0008Z0.parquet)
+    stockCodes = sorted(p.stem for p in dataDir.glob("*.parquet") if isKrStockCode(p.stem))
     if limit:
         stockCodes = stockCodes[:limit]
 
