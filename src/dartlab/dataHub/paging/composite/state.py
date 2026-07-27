@@ -43,7 +43,7 @@ from dartlab.dataHub.paging.composite.models import (
     _PAGE_KIND,
 )
 from dartlab.dataHub.paging.runtime import MAX_PAGE_BYTES, MAX_PAGE_ROWS, MAX_STATE_BYTES
-from dartlab.dataHub.paging.stateCodec import requireDigest, requireText, strictTree
+from dartlab.dataHub.paging.stateCodec import rejectDuplicateKeys, requireDigest, requireText, strictTree
 
 
 def _strictTree(value: Any, *, seen: set[int] | None = None) -> Any:
@@ -53,19 +53,13 @@ def _strictTree(value: Any, *, seen: set[int] | None = None) -> Any:
 
 
 def _jsonLoad(payload: bytes) -> Any:
-    """중복 key와 비정규 JSON을 거부하며 private state를 읽는다."""
+    """중복 key와 비정규 JSON을 거부하며 private state를 읽는다.
 
-    def pairsHook(pairs: Sequence[tuple[str, Any]]) -> dict[str, Any]:
-        """중복 JSON key를 거부하며 mapping을 조립한다."""
-        result: dict[str, Any] = {}
-        for key, value in pairs:
-            if key in result:
-                raise ContinuationError("CONTINUATION_CORRUPT")
-            result[key] = value
-        return result
-
+    중복 key 거부 규칙은 `stateCodec.rejectDuplicateKeys` 가 갖는다. 세 lane 이 같은 여섯
+    줄을 각자 갖고 있었다. canonical 왕복 검사는 lane 마다 자리가 달라 여기 남긴다.
+    """
     try:
-        value = json.loads(payload.decode("utf-8"), object_pairs_hook=pairsHook)
+        value = json.loads(payload.decode("utf-8"), object_pairs_hook=rejectDuplicateKeys)
     except ContinuationError:
         raise
     except (UnicodeDecodeError, json.JSONDecodeError):

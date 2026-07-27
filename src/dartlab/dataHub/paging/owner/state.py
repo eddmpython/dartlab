@@ -39,7 +39,13 @@ from dartlab.dataHub.paging.runtime import (
     MAX_PAGE_ROWS,
     MAX_STATE_BYTES,
 )
-from dartlab.dataHub.paging.stateCodec import requireDigest, requireOptionalText, requireText, strictTree
+from dartlab.dataHub.paging.stateCodec import (
+    rejectDuplicateKeys,
+    requireDigest,
+    requireOptionalText,
+    requireText,
+    strictTree,
+)
 
 
 def _strictTree(value: Any, *, seen: set[int] | None = None) -> Any:
@@ -49,52 +55,13 @@ def _strictTree(value: Any, *, seen: set[int] | None = None) -> Any:
 
 
 def _jsonLoad(payload: bytes) -> Any:
-    def pairsHook(pairs: Sequence[tuple[str, Any]]) -> dict[str, Any]:
-        """중복 JSON key를 거부하며 mapping을 복원한다.
+    """중복 key 를 거부하며 owner lane 의 private state 를 읽는다.
 
-        Capabilities:
-            중복 key가 private state의 앞선 값을 덮어쓰지 못하게 한다.
-
-        Args:
-            pairs: JSON decoder가 전달한 key와 value 순서쌍.
-
-        Returns:
-            중복 key가 없는 mapping.
-
-        Raises:
-            ContinuationError: 같은 key가 두 번 나타날 때.
-
-        Example:
-            ``pairsHook((("version", 1),))``.
-
-        Guide:
-            ``json.loads``의 ``object_pairs_hook``으로만 사용한다.
-
-        When:
-            Continuation query와 cursor JSON을 복원할 때 사용한다.
-
-        How:
-            입력 순서쌍을 한 번 순회하며 이미 본 key를 거부한다.
-
-        See Also:
-            ``_jsonLoad``.
-
-        Requires:
-            JSON decoder가 key와 value 순서쌍을 보존해야 한다.
-
-        AI Context:
-            중복 key는 일반 입력 오류가 아니라 continuation corruption이다.
-        """
-
-        result: dict[str, Any] = {}
-        for key, value in pairs:
-            if key in result:
-                raise ContinuationError("CONTINUATION_CORRUPT")
-            result[key] = value
-        return result
-
+    중복 key 규칙은 `stateCodec.rejectDuplicateKeys` 가 정본이다. 네 lane 이 같은 여섯 줄을
+    각자 갖고 있었다. 이 lane 은 canonical 왕복 검사를 부르는 쪽에서 하므로 여기 없다.
+    """
     try:
-        return json.loads(payload.decode("utf-8"), object_pairs_hook=pairsHook)
+        return json.loads(payload.decode("utf-8"), object_pairs_hook=rejectDuplicateKeys)
     except ContinuationError:
         raise
     except (UnicodeDecodeError, json.JSONDecodeError):

@@ -30,6 +30,7 @@ from dartlab.dataHub.paging.runtime import (
     continuationStore,
     requireDeadline,
 )
+from dartlab.dataHub.paging.stateCodec import rejectDuplicateKeys
 from dartlab.dataHub.telemetry import dataHubLogger, recordFailure
 
 from .contracts import (
@@ -48,19 +49,13 @@ _log = dataHubLogger(__name__)
 
 
 def jsonLoad(payload: bytes) -> Any:
-    """중복 key와 비정규 JSON을 거부하며 replay state를 읽는다."""
+    """중복 key와 비정규 JSON을 거부하며 replay state를 읽는다.
 
-    def pairsHook(pairs: Sequence[tuple[str, Any]]) -> dict[str, Any]:
-        """중복 JSON key를 거부하며 replay mapping을 조립한다."""
-        result: dict[str, Any] = {}
-        for key, value in pairs:
-            if key in result:
-                raise ContinuationError("CONTINUATION_CORRUPT")
-            result[key] = value
-        return result
-
+    중복 key 규칙은 `paging.stateCodec.rejectDuplicateKeys` 가 정본이다. 이 lane 은 실패를
+    telemetry 에 남긴 뒤 훼손으로 끝내는 점이 달라 바깥 try 는 여기 남긴다.
+    """
     try:
-        value = json.loads(payload.decode("utf-8"), object_pairs_hook=pairsHook)
+        value = json.loads(payload.decode("utf-8"), object_pairs_hook=rejectDuplicateKeys)
     except ContinuationError:
         raise
     except Exception:

@@ -238,3 +238,33 @@ __all__ = [
     "requireText",
     "strictTree",
 ]
+
+
+def rejectDuplicateKeys(pairs: Any) -> dict[str, Any]:
+    """중복 JSON key 를 거부하며 mapping 을 조립한다.
+
+    `json.loads` 의 `object_pairs_hook` 으로만 쓴다. 기본 동작은 뒤 값이 앞 값을 덮어쓰는
+    것인데, 이어보기 상태는 밖에서 온 바이트라 그 덮어쓰기가 곧 조작 통로가 된다. 같은 key 가
+    두 번 나오면 어느 쪽이 진짜인지 정할 방법이 없으므로 훼손으로 끝낸다.
+
+    네 lane 이 이 여섯 줄을 각자 갖고 있었다. `_jsonLoad` 자체는 canonical 왕복 검사 위치가
+    lane 마다 달라 올리지 않지만, 이 안쪽 규칙은 셋이 글자까지 같았다.
+
+    Args:
+        pairs: JSON decoder 가 전달한 key 와 value 순서쌍.
+
+    Returns:
+        중복 key 가 없는 mapping.
+
+    Raises:
+        ContinuationError: 같은 key 가 두 번 나타날 때.
+
+    Example:
+        ``json.loads(payload, object_pairs_hook=rejectDuplicateKeys)``
+    """
+    result: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in result:
+            raise ContinuationError("CONTINUATION_CORRUPT")
+        result[key] = value
+    return result

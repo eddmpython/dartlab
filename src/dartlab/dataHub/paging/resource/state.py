@@ -27,7 +27,7 @@ from dartlab.dataHub.paging.runtime import (
 from dartlab.dataHub.paging.runtime import (
     MAX_STATE_BYTES as _MAX_STATE_BYTES,
 )
-from dartlab.dataHub.paging.stateCodec import requireDigest, requireText, strictTree
+from dartlab.dataHub.paging.stateCodec import rejectDuplicateKeys, requireDigest, requireText, strictTree
 
 from .models import (
     _CURSOR_KEYS,
@@ -67,18 +67,13 @@ def _queryPayload(assetIds: Sequence[str], query: DataQuery) -> bytes:
 
 
 def _jsonLoad(payload: bytes) -> Any:
-    def pairsHook(pairs: Sequence[tuple[str, Any]]) -> dict[str, Any]:
-        """중복 키를 거부하며 이어읽기 JSON 객체를 복원한다."""
+    """중복 key 를 거부하며 resource lane 의 이어읽기 JSON 을 복원한다.
 
-        result: dict[str, Any] = {}
-        for key, value in pairs:
-            if key in result:
-                raise ContinuationError("CONTINUATION_CORRUPT")
-            result[key] = value
-        return result
-
+    중복 key 규칙은 `stateCodec.rejectDuplicateKeys` 가 정본이다. 네 lane 이 같은 여섯 줄을
+    각자 갖고 있었다.
+    """
     try:
-        return json.loads(payload.decode("utf-8"), object_pairs_hook=pairsHook)
+        return json.loads(payload.decode("utf-8"), object_pairs_hook=rejectDuplicateKeys)
     except ContinuationError:
         raise
     except (UnicodeDecodeError, json.JSONDecodeError):

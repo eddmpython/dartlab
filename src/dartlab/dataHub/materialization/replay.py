@@ -15,6 +15,7 @@ from dartlab.dataHub.continuation import (
     canonicalJsonBytes,
     validateArrowIpcPayload,
 )
+from dartlab.dataHub.paging.stateCodec import rejectDuplicateKeys
 from dartlab.dataHub.telemetry import dataHubLogger, recordFailure
 
 from .contracts import (
@@ -41,24 +42,20 @@ _log = dataHubLogger(__name__)
 
 
 def decodeCanonicalJson(payload: bytes) -> Any:
-    """중복 key와 비정규 JSON을 거부하며 CAS manifest를 decode한다."""
+    """중복 key와 비정규 JSON을 거부하며 CAS manifest를 decode한다.
 
-    def pairsHook(pairs: Sequence[tuple[str, Any]]) -> dict[str, Any]:
-        """중복 JSON key를 거부하며 CAS mapping을 조립한다."""
-        result: dict[str, Any] = {}
-        for key, value in pairs:
-            if key in result:
-                raise MaterializationError("MATERIALIZATION_CORRUPT")
-            result[key] = value
-        return result
-
+    중복 key 규칙은 `paging.stateCodec.rejectDuplicateKeys` 가 정본이다. 그쪽은 이어보기
+    어휘로 말하므로, 여기서는 `raiseFromContinuation` 으로 CAS 어휘로 옮겨 준다.
+    """
     try:
-        value = json.loads(payload.decode("utf-8"), object_pairs_hook=pairsHook)
+        value = json.loads(payload.decode("utf-8"), object_pairs_hook=rejectDuplicateKeys)
         if canonicalJsonBytes(value) != payload:
             raise MaterializationError("MATERIALIZATION_CORRUPT")
         return value
     except MaterializationError:
         raise
+    except ContinuationError as exc:
+        raiseFromContinuation(exc)
     except Exception:
         recordFailure(_log, "MATERIALIZATION_CORRUPT")
         raise MaterializationError("MATERIALIZATION_CORRUPT") from None
