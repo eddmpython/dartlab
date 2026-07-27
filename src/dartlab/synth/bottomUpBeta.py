@@ -10,14 +10,12 @@ scipy 무의존 — 평균/중앙값/난수만 사용.
 
 from __future__ import annotations
 
-import random
 from statistics import mean, median
 from typing import Any
 
 # 둘 다 L0 정의다. 예전에는 frame.sector 와 scan.io.parquet 이 재export 한 것을
 # 동적 import 로 가져와 L1.5 형제를 관통하는 모양이 됐다.
 from dartlab.core.sector import getSectorParamsByName
-from dartlab.core.utils.helpers import parseNumStr
 
 
 def calcBottomUpBeta(
@@ -182,93 +180,25 @@ def calcBottomUpBeta(
 
 
 def _extractKrPeers(sector: str, limit: int) -> list[dict[str, Any]]:
-    """scan/finance.parquet → 동일 섹터 peer 의 β + D/E 추출.
+    """섹터 peer 를 뽑을 수 없어 빈 목록을 돌려준다.
 
-    현재 sectorParams.json 에 개별 종목 매핑이 없으므로 단순화:
-    - 섹터별 대표 β 를 peer 각자에 동일 적용 (지금은 peer D/E 만 계산)
-    - 더 정교한 구현은 beta 수익률 회귀 (향후 개선)
+    예전 구현은 섹터 매핑 표가 없다는 이유로 전 종목에서 무작위 표본을 뽑고, 그 peer
+    전부에 같은 섹터 베타를 심은 뒤 결과를 `bottom_up` 으로 라벨했다. 문제가 두 겹이다.
 
-    반환: peer list [{code, betaLevered, de, betaUnlevered}]
+    첫째, 모든 peer 가 같은 베타를 들고 있으니 "peer 평균 무차입 베타" 에 횡단 정보가
+    하나도 없다. 남는 것은 무관한 회사들의 D/E 평균뿐인데 라벨은 이 모듈 자신이
+    "이것만 신뢰하라" 고 지목한 `bottom_up` 이었다.
+
+    둘째, 표본 seed 가 `hash(sector)` 라 실행마다 달랐다. `PYTHONHASHSEED` 가 고정돼
+    있지 않아 같은 회사가 호출할 때마다 다른 베타를 받았고, 그 seed 는 결과에 남지도
+    않는다.
+
+    그래서 뽑는 시늉을 멈춘다. 빈 목록은 호출부의 `len(peers) < 5` 분기를 타고
+    `sector_default` 로 떨어지며, 그것이 지금 실제로 가진 정보의 정직한 이름이다.
+    개별 종목 베타 회귀가 생기면 그때 이 자리를 채운다.
     """
-    try:
-        import importlib
 
-        import polars as pl
-
-        # `_ensureScanData` 는 scan 이 실제로 소유한 private 라 동적 import 를 유지한다.
-        # `parseNumStr` 은 core 정의를 scan 이 재export 한 것뿐이라 직접 내려 받는다.
-        _ensureScanData = importlib.import_module("dartlab.scan.io.parquet")._ensureScanData
-    except ImportError:
-        return []
-
-    scan_dir = _ensureScanData()
-    path = scan_dir / "finance.parquet"
-    if not path.exists():
-        return []
-
-    try:
-        lf = pl.scan_parquet(str(path))
-        needed = ["stockCode", "bsns_year", "sj_div", "account_nm", "thstrm_amount", "fs_nm", "reprt_nm"]
-        avail = lf.collect_schema().names()
-        cols = [c for c in needed if c in avail]
-        snap = (
-            lf.select(cols)
-            .filter(pl.col("fs_nm").str.contains("연결"))
-            .filter(pl.col("reprt_nm").str.contains("4분기"))
-            .collect(engine="streaming")
-        )
-    except (pl.exceptions.PolarsError, OSError):
-        return []
-    if snap.is_empty():
-        return []
-
-    years = sorted(snap["bsns_year"].unique().to_list(), reverse=True)
-    if not years:
-        return []
-    cur = snap.filter(pl.col("bsns_year") == years[0])
-
-    # 섹터 β 는 sectorParams 에서 조회 (없으면 1.0)
-    sector_beta = _sectorBetaFallback(sector)
-
-    # peer 추출: cur 의 모든 종목 (섹터 매핑 테이블 없으므로 일단 무작위 샘플)
-    # 향후: c.sector.industryGroup 기반 필터 개선
-    all_codes = cur["stockCode"].unique().to_list()
-    rng = random.Random(hash(sector) & 0xFFFFFFFF)
-    rng.shuffle(all_codes)
-
-    debt_nms = ["부채총계"]
-    equity_nms = ["자본총계"]
-
-    def _extract(df: pl.DataFrame, nms: list[str]) -> float | None:
-        for nm in nms:
-            r = df.filter(pl.col("account_nm") == nm)
-            if not r.is_empty():
-                return parseNumStr(r["thstrm_amount"][0])
-        return None
-
-    peers: list[dict[str, Any]] = []
-    for sc in all_codes:
-        if len(peers) >= limit:
-            break
-        stock = cur.filter(pl.col("stockCode") == sc)
-        if stock.is_empty():
-            continue
-        debt = _extract(stock, debt_nms)
-        eq = _extract(stock, equity_nms)
-        if not debt or not eq or eq <= 0:
-            continue
-        de = debt / eq
-        if de > 5.0 or de < 0:  # 자본잠식/극단값 제외
-            continue
-        peers.append(
-            {
-                "code": sc,
-                "betaLevered": sector_beta,  # 섹터 β (수익률 회귀 미구현 — 향후 개선)
-                "de": round(de, 3),
-            }
-        )
-
-    return peers
+    return []
 
 
 def _sectorBetaFallback(sector: str) -> float:

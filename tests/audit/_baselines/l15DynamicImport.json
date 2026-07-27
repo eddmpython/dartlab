@@ -1,7 +1,6 @@
 {
   "violations": [
-    "src/dartlab/synth/bottomUpBeta.py: synth->scan import_module(dartlab.scan.io.parquet)",
     "src/dartlab/synth/impliedERP.py: synth->scan import_module(dartlab.scan.io.parquet)"
   ],
-  "_note": "L1.5 importlib 동적 cross 부채 원장. 정적 AST 가드가 importlib 로 우회당해 못 보던 자리다. frame 관통 한 건과 두 파일의 parseNumStr 관통은 해소했다. 둘 다 L1.5 가 재export 한 L0 정의를 가져오고 있었을 뿐이라 core 에서 직접 받도록 내렸다. 남은 두 건은 scan 이 실제로 소유한 private `_ensureScanData` 라 해소 방법이 다르다. 호출자 inversion 또는 데이터 디렉토리 해석기의 core 승격이 필요하다. 신규 차단."
+  "_note": "L1.5 importlib 동적 cross 부채 원장. bottomUpBeta 의 scan 관통은 그것을 쓰던 무작위 peer 표본 코드를 통째로 걷어내면서 함께 사라졌다. 남은 하나는 impliedERP 가 scan 소유 private  를 부르는 자리다. 호출자 inversion 또는 데이터 디렉토리 해석기의 core 승격이 필요하다. 신규 차단."
 }
