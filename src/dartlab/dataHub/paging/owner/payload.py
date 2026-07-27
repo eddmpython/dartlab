@@ -154,6 +154,76 @@ def _encodePage(
     return payload
 
 
+def _validateRowShape(row: dict, identities: set[tuple[str, int]]):
+    """행 하나의 식별자와 gap 목록 모양을 본다. 어긋나면 훼손으로 끝낸다.
+
+    이어보기 상태는 밖에서 온 바이트라 모양을 먼저 못 박고 시작해야 한다. 같은 요청 안에서
+    entity 순번이 겹치는 것도 훼손으로 본다. 겹치면 어느 쪽이 진짜인지 정할 방법이 없다.
+    """
+    requestId = _requireText(row["requestId"])
+    entityOrdinal = row["entityOrdinal"]
+    status = _requireText(row["status"])
+    gapCodes = row["gapCodes"]
+    gapMessages = row["gapMessages"]
+    if (
+        type(entityOrdinal) is not int
+        or entityOrdinal < 0
+        or (requestId, entityOrdinal) in identities
+        or status not in {"ok", "failed"}
+        or not isinstance(gapCodes, list)
+        or not isinstance(gapMessages, list)
+        or len(gapCodes) != len(gapMessages)
+        or len(gapCodes) > 64
+        or any(type(item) is not str or not item for item in (*gapCodes, *gapMessages))
+    ):
+        raise ContinuationError("CONTINUATION_CORRUPT")
+    return requestId, entityOrdinal, status, gapCodes, gapMessages
+
+
+def _validateFailedRow(row: dict, payloadValue) -> None:
+    """실패한 행은 자료를 하나도 들고 있으면 안 된다.
+
+    실패라고 적어 놓고 값을 실어 보내면 그 값이 어디서 왔는지 설명할 근거가 없다.
+    """
+    if (
+        payloadValue is not None
+        or row["innerRowCount"] != 0
+        or row["innerEncodedByteCount"] != 0
+        or row["innerLogicalByteCount"] != 0
+        or any(
+            row[name] is not None
+            for name in ("receiptRef", "contentHash", "temporalStatus", "innerSchemaDigest", "innerPayloadDigest")
+        )
+    ):
+        raise ContinuationError("CONTINUATION_CORRUPT")
+
+
+def _validateOkRow(row: dict, payloadValue, *, maxLogicalBytes: int):
+    """성공한 행의 안쪽 payload 가 자기가 적은 값과 맞는지 본다.
+
+    바이트 수와 해시를 먼저 보고 그다음에 실제로 열어 본다. 순서가 중요하다. 해시가 다른
+    것을 열면 그 안에서 나는 오류가 훼손인지 다른 사정인지 구분되지 않는다.
+    """
+    if (
+        not isinstance(payloadValue, bytes)
+        or row["innerEncodedByteCount"] != len(payloadValue)
+        or row["innerPayloadDigest"] != hashlib.sha256(payloadValue).hexdigest()
+    ):
+        raise ContinuationError("CONTINUATION_CORRUPT")
+    facts, innerTable = _innerTable(payloadValue, logicalLimit=maxLogicalBytes)
+    if (
+        row["innerRowCount"] != facts.rowCount
+        or facts.rowCount <= 0
+        or row["innerLogicalByteCount"] != facts.logicalByteCount
+        or row["innerSchemaDigest"] != facts.schemaDigest
+        or not row["receiptRef"]
+        or not row["contentHash"]
+        or not row["temporalStatus"]
+    ):
+        raise ContinuationError("CONTINUATION_CORRUPT")
+    return facts, innerTable
+
+
 def _decodePage(
     payload: bytes,
     *,
@@ -186,62 +256,14 @@ def _decodePage(
     totalLogicalBytes = outerFacts.logicalByteCount
     identities: set[tuple[str, int]] = set()
     for row in rows:
-        requestId = _requireText(row["requestId"])
-        entityOrdinal = row["entityOrdinal"]
-        status = _requireText(row["status"])
-        gapCodes = row["gapCodes"]
-        gapMessages = row["gapMessages"]
-        if (
-            type(entityOrdinal) is not int
-            or entityOrdinal < 0
-            or (requestId, entityOrdinal) in identities
-            or status not in {"ok", "failed"}
-            or not isinstance(gapCodes, list)
-            or not isinstance(gapMessages, list)
-            or len(gapCodes) != len(gapMessages)
-            or len(gapCodes) > 64
-            or any(type(item) is not str or not item for item in (*gapCodes, *gapMessages))
-        ):
-            raise ContinuationError("CONTINUATION_CORRUPT")
+        requestId, entityOrdinal, status, gapCodes, gapMessages = _validateRowShape(row, identities)
         identities.add((requestId, entityOrdinal))
         payloadValue = row["innerPayload"]
         if status == "failed":
-            if (
-                payloadValue is not None
-                or row["innerRowCount"] != 0
-                or row["innerEncodedByteCount"] != 0
-                or row["innerLogicalByteCount"] != 0
-                or any(
-                    row[name] is not None
-                    for name in (
-                        "receiptRef",
-                        "contentHash",
-                        "temporalStatus",
-                        "innerSchemaDigest",
-                        "innerPayloadDigest",
-                    )
-                )
-            ):
-                raise ContinuationError("CONTINUATION_CORRUPT")
+            _validateFailedRow(row, payloadValue)
             innerTable = None
         else:
-            if (
-                not isinstance(payloadValue, bytes)
-                or row["innerEncodedByteCount"] != len(payloadValue)
-                or row["innerPayloadDigest"] != hashlib.sha256(payloadValue).hexdigest()
-            ):
-                raise ContinuationError("CONTINUATION_CORRUPT")
-            facts, innerTable = _innerTable(payloadValue, logicalLimit=maxLogicalBytes)
-            if (
-                row["innerRowCount"] != facts.rowCount
-                or facts.rowCount <= 0
-                or row["innerLogicalByteCount"] != facts.logicalByteCount
-                or row["innerSchemaDigest"] != facts.schemaDigest
-                or not row["receiptRef"]
-                or not row["contentHash"]
-                or not row["temporalStatus"]
-            ):
-                raise ContinuationError("CONTINUATION_CORRUPT")
+            facts, innerTable = _validateOkRow(row, payloadValue, maxLogicalBytes=maxLogicalBytes)
             totalRows += facts.rowCount
             totalLogicalBytes += facts.logicalByteCount
         entries.append(
