@@ -18,6 +18,7 @@ import logging
 import numpy as np
 import polars as pl
 
+from dartlab.quant.alphas.crossSection import percentileRank
 from dartlab.quant.factor.build import _latestYear
 from dartlab.quant.screen.dataAccess import extractAccount, loadScanParquet
 from dartlab.synth.scanBridge import extractAnnualConsolidated, isEdgarSchema
@@ -26,11 +27,12 @@ log = logging.getLogger(__name__)
 
 
 def _rank(values: list[float]) -> list[float]:
-    arr = np.asarray(values, dtype=np.float64)
-    order = arr.argsort()
-    ranks = np.empty_like(order, dtype=np.float64)
-    ranks[order] = np.arange(len(arr))
-    return list(ranks / max(len(arr) - 1, 1))
+    """값 목록을 0~1 백분위 순위로 바꾼다. 규칙은 `crossSection.percentileRank` 가 갖는다.
+
+    예전에는 이 다섯 줄이 알파 세 파일에 글자까지 똑같이 복사돼 있었다. 한 곳만 tie
+    처리를 바꾸면 같은 유니버스에서 팩터마다 다른 줄 세우기가 된다.
+    """
+    return percentileRank(values)
 
 
 def calcFundamentalMomentum(

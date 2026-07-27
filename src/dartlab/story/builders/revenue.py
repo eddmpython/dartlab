@@ -13,6 +13,7 @@ from dartlab.story.builders._shared import (
     _meta,
     _notesDetailBlocks,
     _quarterlyRevenueTable,
+    _tupleFlags,
     narrateConcentration,
     narrateGrowth,
     pl,
@@ -322,17 +323,12 @@ def growthContributionBlock(data: dict) -> list:
 
 
 def revenueFlagsBlock(flags: list[tuple[str, str]]) -> list:
-    """calcFlags 결과 → FlagBlock."""
-    if not flags:
-        return []
-    warnings = [f for f, k in flags if k == "warning"]
-    opportunities = [f for f, k in flags if k == "opportunity"]
-    blocks: list = []
-    if warnings:
-        blocks.append(FlagBlock(warnings, kind="warning"))
-    if opportunities:
-        blocks.append(FlagBlock(opportunities, kind="opportunity"))
-    return blocks
+    """calcFlags 결과 → FlagBlock.
+
+    조립 규칙은 `_shared._tupleFlags` 가 갖는다. 예전에는 같은 일곱 줄이 이 파일과
+    revenue 와 _shared 세 곳에 있었고, 공용 자리가 이미 있는데도 둘이 자기 사본을 썼다.
+    """
+    return _tupleFlags(flags)
 
 
 # ── 3-2 비용구조 ──

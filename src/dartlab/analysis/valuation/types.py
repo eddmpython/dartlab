@@ -94,3 +94,38 @@ class AnalystReport:
                 lines.append(f"    ⚠ {w}")
         lines.append(f"\n  {self.DISCLAIMER}")
         return "\n".join(lines)
+
+
+# 상승여력 구간을 투자의견 라벨로 바꾸는 기준. 세 곳(bankDFV, sotp, _dFVCalcs)이 이 표를
+# 글자까지 똑같이 복사해 갖고 있었다. 사용자에게 그대로 보이는 판정이라 한 곳에서만 정한다.
+# 셋 중 하나만 임계값을 옮기면 같은 회사가 화면마다 다른 의견을 받는다.
+_OPINION_BREAKPOINTS: tuple[tuple[float, str], ...] = (
+    (30.0, "강력매수"),
+    (10.0, "매수"),
+    (-10.0, "보유"),
+    (-30.0, "매도"),
+)
+
+
+def opinionFromUpside(upside: float | None) -> str:
+    """상승여력을 투자의견 라벨로 바꾼다.
+
+    Args:
+        upside: 적정가 대비 상승여력 (%). ``None`` 이면 판단하지 않는다.
+
+    Returns:
+        ``"강력매수"`` · ``"매수"`` · ``"보유"`` · ``"매도"`` · ``"강력매도"`` ·
+        ``"판단 불가"`` 중 하나.
+
+    Raises:
+        없음.
+
+    Example:
+        ``opinionFromUpside(35.0)`` 은 ``"강력매수"``.
+    """
+    if upside is None:
+        return "판단 불가"
+    for cutoff, label in _OPINION_BREAKPOINTS:
+        if upside > cutoff:
+            return label
+    return "강력매도"

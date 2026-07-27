@@ -20,6 +20,7 @@ from dartlab.analysis.valuation._dFVTsd import (
     _tsdResolveTerminalGrowth,
     _tsdResolveWacc,
 )
+from dartlab.analysis.valuation.types import opinionFromUpside
 
 
 def _collectAllValues(company: Any, basePeriod: str | None) -> dict:
@@ -129,24 +130,12 @@ def _getCurrentPrice(company: Any) -> float | None:
 
 
 def _calcOpinion(upside: float | None) -> str:
-    """upside 기반 투자 의견 산출.
+    """상승여력을 투자의견 라벨로 바꾼다. 기준표는 `types.opinionFromUpside` 가 갖는다.
 
-    Returns
-    -------
-    str
-        "강력매수" | "매수" | "보유" | "매도" | "강력매도" | "판단 불가".
+    예전에는 이 표를 세 파일이 글자까지 똑같이 복사해 갖고 있었다. 사용자에게 그대로
+    보이는 판정이라 하나만 임계값을 옮기면 같은 회사가 화면마다 다른 의견을 받는다.
     """
-    if upside is None:
-        return "판단 불가"
-    if upside > 30:
-        return "강력매수"
-    if upside > 10:
-        return "매수"
-    if upside > -10:
-        return "보유"
-    if upside > -30:
-        return "매도"
-    return "강력매도"
+    return opinionFromUpside(upside)
 
 
 def _calcLiquidationValue(company: Any, overrides: dict) -> float | None:
