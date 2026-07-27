@@ -28,7 +28,6 @@ from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 
-from dartlab.core.financeDocAccessor import getFinanceDocAccessor
 from dartlab.core.panelTableAccessor import PanelExportSheet, getPanelTableAccessor
 from dartlab.synth.ratioCategories import RATIO_CATEGORIES
 
@@ -106,8 +105,7 @@ _CATEGORY_LABELS: dict[str, str] = {
 
 def _buildAccountLabels() -> dict[str, str]:
     """mapper.labelMap() 기반 + override 합성."""
-    accessor = getFinanceDocAccessor()
-    labels = accessor.accountLabels() if accessor else {}
+    labels: dict[str, str] = {}
     labels.update(_ACCOUNT_LABELS_OVERRIDE)
     return labels
 
@@ -136,11 +134,6 @@ def _hasFinance(c: Company) -> bool:
 
 
 def _buildAnnualSeries(c: Company):
-    accessor = getFinanceDocAccessor()
-    if accessor is not None:
-        result = accessor.buildAnnual(c.stockCode)
-        if result:
-            return result
     builder = getattr(c, "_buildFinanceSeries", None)
     if callable(builder):
         result = builder(freq="Y")
@@ -314,7 +307,6 @@ def _writeDataFrameSheet(
 def _getAvailableModules(c: Company) -> list[tuple[str, str]]:
     from dartlab.core.registry import getEntries
 
-    accessor = getFinanceDocAccessor()
     available = [("IS", "손익계산서"), ("BS", "재무상태표"), ("CF", "현금흐름표")]
     known = {name for name, _ in available}
     for category in ("report", "disclosure"):
@@ -322,15 +314,6 @@ def _getAvailableModules(c: Company) -> list[tuple[str, str]]:
             if entry.name not in known:
                 available.append((entry.name, entry.label))
                 known.add(entry.name)
-    if accessor:
-        try:
-            accessorModules = accessor.exportModules()
-        except (RuntimeError, TypeError, ValueError):
-            accessorModules = []
-        for name, label in accessorModules:
-            if name not in known:
-                available.append((name, label))
-                known.add(name)
     if "ratios" not in known:
         available.append(("ratios", "재무비율"))
     return available

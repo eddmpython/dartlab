@@ -32,7 +32,6 @@ from dartlab.analysis.financial._predictionUtils import (
     _calibrate,
     _clamp,
 )
-from dartlab.core.financeDocAccessor import getFinanceDocAccessor
 from dartlab.core.memory import memoizedCalc
 from dartlab.core.utils.helpers import annualColsFromPeriods, toDictBySnakeId
 

@@ -6,7 +6,6 @@ calcRelatedPartyIntensity + calcLegalEventRisk 본체.
 
 from __future__ import annotations
 
-from dartlab.core.financeDocAccessor import getFinanceDocAccessor
 from dartlab.core.memory import memoizedCalc
 from dartlab.core.polarsUtil import isEmptyDf
 from dartlab.core.utils.helpers import MAX_RATIO_YEARS, annualColsFromPeriods, toDictBySnakeId

@@ -9,7 +9,6 @@ from dartlab.analysis.financial._valuationHelpers import (
     _getSectorParams,
     _getSeriesAndShares,
 )
-from dartlab.core.financeDocAccessor import getFinanceDocAccessor
 from dartlab.core.memory import memoizedCalc
 
 
@@ -208,9 +207,8 @@ def calcDdm(company: Any, *, basePeriod: str | None = None) -> dict | None:
 
     annualDivs: list[float] | None = None
     try:
-        accessor = getFinanceDocAccessor()
         stockCode = getattr(company, "stockCode", None)
-        divResult = accessor.pivotDividend(stockCode) if accessor and stockCode else None
+        divResult = None
         if divResult and divResult.dps:
             validDps = [d for d in divResult.dps if d is not None and d > 0]
             if validDps and shares and shares > 0:

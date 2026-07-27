@@ -23,7 +23,6 @@ from dartlab.analysis.financial.insight.grading import (
 from dartlab.analysis.financial.insight.summary import classifyProfile, generateSummary
 from dartlab.analysis.financial.insight.types import AnalysisResult, Anomaly, AuditDataForAnomaly, MarketDataForDistress
 from dartlab.analysis.financial.ratios import calcRatios
-from dartlab.core.financeDocAccessor import getFinanceDocAccessor
 from dartlab.frame.sector import Sector
 
 if TYPE_CHECKING:
@@ -208,20 +207,10 @@ def analyzeFinancial(
         AnalysisResult.summary 가 사용자 친화 텍스트. profile + distress.zone + risk.grade 3
         조합으로 대표 답변 구성.
     """
+    # 두 계열은 호출부가 넘겨야 한다. 예전에는 여기서 accessor 로 직접 만들어
+    # 채우는 길이 있었지만 그 accessor 는 등록 대상이 비어 영원히 None 이었다.
     if qSeriesPair is None or aSeriesPair is None:
-        accessor = getFinanceDocAccessor()
-        if accessor is None:
-            return None
-        if qSeriesPair is None:
-            qResult = accessor.buildTimeseries(stockCode)
-            if qResult is None:
-                return None
-            qSeriesPair = qResult
-        if aSeriesPair is None:
-            aResult = accessor.buildAnnual(stockCode)
-            if aResult is None:
-                return None
-            aSeriesPair = aResult
+        return None
 
     qSeries, qPeriods = qSeriesPair
     aSeries, aYears = aSeriesPair
