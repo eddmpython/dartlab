@@ -130,49 +130,58 @@ def _experienceTest(company) -> TestResult:
         )
 
 
-# ── Common Sense Invariants ──
-# 경제학적으로 항상 참이어야 하는 불변량 20개.
-# 위반 시 데이터 오류 또는 비현실적 가정.
+# ── Common Sense Checks ──
+# 회계 항등식과 위험 휴리스틱 20개. 항등식 위반은 데이터 오류를 뜻하고, 휴리스틱 위반은
+# 사람이 들여다볼 자리를 가리킨다. 둘을 싸잡아 "불변량" 이라 부르면 후자의 무게를 과장한다.
+#
+# 각 검사는 자기가 읽는 지표를 함께 등록한다. 그 지표가 없으면 검사는 통과가 아니라
+# 미적용이다. 예전에는 지표가 하나도 없어도 "20개 전부 통과" 가 찍혔다.
 
-_INVARIANTS: list[tuple[str, callable]] = []
+_INVARIANTS: list[tuple[str, tuple[str, ...], callable]] = []
 
 
-def _register(desc: str):
+def _register(desc: str, *keys: str):
+    """검사를 설명과 필요한 지표 이름과 함께 등록한다."""
+
     def deco(fn):
-        """deco — TODO 한국어 동작 설명."""
-        _INVARIANTS.append((desc, fn))
+        """검사 함수를 목록에 담고 그대로 돌려준다."""
+        _INVARIANTS.append((desc, keys, fn))
         return fn
 
     return deco
 
 
-@_register("영업이익 > 순이익이면 비영업손익 확인 필요")
+@_register("영업이익 < 순이익 (비영업손익 확인 필요)", "operatingIncome", "netIncome")
 def _invOpGtNi(m: dict) -> bool:
-    opm = m.get("opm")
-    roe = m.get("roe")
-    if opm is not None and roe is not None and opm > 0 and roe > opm * 2:
+    opi = m.get("operatingIncome")
+    ni = m.get("netIncome")
+    # 예전에는 ROE 와 OPM 을 비교했다. 분모가 자기자본과 매출로 서로 달라서 OPM 3%,
+    # ROE 15% 인 평범한 소매업이 위반으로 찍혔다. 설명대로 두 이익을 직접 비교한다.
+    if opi is not None and ni is not None and opi > 0 and ni > opi:
         return False
     return True
 
 
-@_register("ROE 음수인데 배당 지급이면 경고")
-def _invNegativeRoeDividend(m: dict) -> bool:
+@_register("ROE 음수 (자기자본 대비 손실)", "roe")
+def _invNegativeRoe(m: dict) -> bool:
     roe = m.get("roe")
     if roe is not None and roe < 0:
-        return False  # 세부 판단은 caller가 추가
+        return False
     return True
 
 
-@_register("부채비율 300% 초과 + 이자보상 2 미만 = 재무위기")
+@_register("부채비율 300% 초과 + 이자보상 2 미만 = 재무위기", "debtRatio", "interestCoverage")
 def _invDistressCombo(m: dict) -> bool:
     dr = m.get("debtRatio")
     ic = m.get("interestCoverage")
-    if dr and ic and dr > 300 and ic < 2:
+    # `dr and ic` 로 쓰면 이자보상배율 0.0 에서 검사가 꺼진다. 영업이익으로 이자를 한 푼도
+    # 못 갚는 상태가 바로 이 검사가 잡아야 할 최악인데, 하필 그때만 침묵했다.
+    if dr is not None and ic is not None and dr > 300 and ic < 2:
         return False
     return True
 
 
-@_register("OPM 50% 초과는 독과점 아니면 의심")
+@_register("OPM 50% 초과는 독과점 아니면 의심", "opm")
 def _invExtremeMargin(m: dict) -> bool:
     opm = m.get("opm")
     if opm is not None and opm > 50:
@@ -180,8 +189,8 @@ def _invExtremeMargin(m: dict) -> bool:
     return True
 
 
-@_register("FCF가 5년 연속 음수면 사업 모델 재검토")
-def _invPersistentNegativeFcf(m: dict) -> bool:
+@_register("FCF 음수", "fcf")
+def _invNegativeFcf(m: dict) -> bool:
     fcf = m.get("fcf")
     if fcf is not None and fcf < 0:
         return False
@@ -191,7 +200,7 @@ def _invPersistentNegativeFcf(m: dict) -> bool:
 # ── Phase 10 F2: 불변량 15개 추가 (총 20개) ──
 
 
-@_register("FCF = OCF - Capex (계산 일관성)")
+@_register("FCF = OCF - Capex (계산 일관성)", "fcf", "ocf", "capex")
 def _invFcfIdentity(m: dict) -> bool:
     fcf, ocf, capex = m.get("fcf"), m.get("ocf"), m.get("capex")
     if fcf is not None and ocf is not None and capex is not None:
@@ -201,7 +210,7 @@ def _invFcfIdentity(m: dict) -> bool:
     return True
 
 
-@_register("영업이익 = 매출 - COGS - SGA (decomposition)")
+@_register("영업이익 = 매출 - COGS - SGA (decomposition)", "revenue", "cogs", "sga", "operatingIncome")
 def _invOperatingIncomeDecomp(m: dict) -> bool:
     rev, cogs, sga, opi = m.get("revenue"), m.get("cogs"), m.get("sga"), m.get("operatingIncome")
     if all(x is not None for x in (rev, cogs, sga, opi)):
@@ -211,7 +220,7 @@ def _invOperatingIncomeDecomp(m: dict) -> bool:
     return True
 
 
-@_register("ROIC = NOPAT / InvestedCapital")
+@_register("ROIC = NOPAT / InvestedCapital", "roic", "nopat", "investedCapital")
 def _invRoicIdentity(m: dict) -> bool:
     roic, nopat, ic = m.get("roic"), m.get("nopat"), m.get("investedCapital")
     if all(x is not None for x in (roic, nopat, ic)) and ic != 0:
@@ -221,7 +230,7 @@ def _invRoicIdentity(m: dict) -> bool:
     return True
 
 
-@_register("ROE = NI / Equity")
+@_register("ROE = NI / Equity", "roe", "netIncome", "equity")
 def _invRoeIdentity(m: dict) -> bool:
     roe, ni, eq = m.get("roe"), m.get("netIncome"), m.get("equity")
     if all(x is not None for x in (roe, ni, eq)) and eq != 0:
@@ -231,7 +240,7 @@ def _invRoeIdentity(m: dict) -> bool:
     return True
 
 
-@_register("Interest Coverage = EBIT / Interest")
+@_register("Interest Coverage = EBIT / Interest", "interestCoverage", "ebit", "interestExpense")
 def _invInterestCoverage(m: dict) -> bool:
     ic, ebit, interest = m.get("interestCoverage"), m.get("ebit"), m.get("interestExpense")
     if all(x is not None for x in (ic, ebit, interest)) and interest != 0:
@@ -241,7 +250,9 @@ def _invInterestCoverage(m: dict) -> bool:
     return True
 
 
-@_register("Working Capital = CurrentAssets - CurrentLiabilities")
+@_register(
+    "Working Capital = CurrentAssets - CurrentLiabilities", "workingCapital", "currentAssets", "currentLiabilities"
+)
 def _invWorkingCapital(m: dict) -> bool:
     wc, ca, cl = m.get("workingCapital"), m.get("currentAssets"), m.get("currentLiabilities")
     if all(x is not None for x in (wc, ca, cl)):
@@ -251,16 +262,16 @@ def _invWorkingCapital(m: dict) -> bool:
     return True
 
 
-@_register("Debt/EBITDA 3배 초과 = leverage warning")
+@_register("Debt/EBITDA 3배 초과 = leverage warning", "totalDebt", "ebitda")
 def _invDebtEbitda(m: dict) -> bool:
     debt, ebitda = m.get("totalDebt"), m.get("ebitda")
-    if debt and ebitda and ebitda > 0:
+    if debt is not None and ebitda is not None and ebitda > 0:
         if debt / ebitda > 3:
             return False
     return True
 
 
-@_register("Free Float × 주가 = Market Cap (sanity)")
+@_register("Free Float × 주가 = Market Cap (sanity)", "marketCap", "price", "sharesOutstanding")
 def _invMarketCap(m: dict) -> bool:
     mc, px, shares = m.get("marketCap"), m.get("price"), m.get("sharesOutstanding")
     if all(x is not None for x in (mc, px, shares)):
@@ -270,16 +281,16 @@ def _invMarketCap(m: dict) -> bool:
     return True
 
 
-@_register("Goodwill / TotalAssets > 30% = M&A 집중 (goodwill impairment risk)")
+@_register("Goodwill / TotalAssets > 30% = M&A 집중 (goodwill impairment risk)", "goodwill", "totalAssets")
 def _invGoodwillRatio(m: dict) -> bool:
     gw, ta = m.get("goodwill"), m.get("totalAssets")
-    if gw and ta and ta > 0:
+    if gw is not None and ta is not None and ta > 0:
         if gw / ta > 0.30:
             return False
     return True
 
 
-@_register("Tax Rate 통상 범위 (5~40%)")
+@_register("Tax Rate 통상 범위 (5~40%)", "effectiveTaxRate")
 def _invTaxRate(m: dict) -> bool:
     tax_rate = m.get("effectiveTaxRate")
     if tax_rate is not None:
@@ -288,15 +299,15 @@ def _invTaxRate(m: dict) -> bool:
     return True
 
 
-@_register("NI > 0 인데 OCF < 0 (accrual 경고 — 이익품질)")
+@_register("NI > 0 인데 OCF < 0 (accrual 경고. 이익품질)", "netIncome", "ocf")
 def _invNiOcfBridge(m: dict) -> bool:
     ni, ocf = m.get("netIncome"), m.get("ocf")
-    if ni and ocf and ni > 0 and ocf < 0:
+    if ni is not None and ocf is not None and ni > 0 and ocf < 0:
         return False
     return True
 
 
-@_register("CCC (DSO + DIO - DPO) 업종 평균의 2배 초과")
+@_register("CCC (DSO + DIO - DPO) 200일 초과", "ccc")
 def _invCccReasonable(m: dict) -> bool:
     ccc = m.get("ccc")
     if ccc is not None and ccc > 200:  # 극단 case
@@ -304,7 +315,7 @@ def _invCccReasonable(m: dict) -> bool:
     return True
 
 
-@_register("매출채권회전 < 3회 (DSO > 120일) = 회수 부실")
+@_register("매출채권회전 < 3회 (DSO > 120일) = 회수 부실", "dso")
 def _invArTurnover(m: dict) -> bool:
     dso = m.get("dso")
     if dso is not None and dso > 120:
@@ -312,7 +323,7 @@ def _invArTurnover(m: dict) -> bool:
     return True
 
 
-@_register("재고회전 < 2회 (DIO > 180일) = 재고 과다")
+@_register("재고회전 < 2회 (DIO > 180일) = 재고 과다", "dio")
 def _invInventoryTurnover(m: dict) -> bool:
     dio = m.get("dio")
     if dio is not None and dio > 180:
@@ -320,7 +331,7 @@ def _invInventoryTurnover(m: dict) -> bool:
     return True
 
 
-@_register("ROIC < WACC (가치 파괴)")
+@_register("ROIC < WACC (가치 파괴)", "roic", "wacc")
 def _invRoicWaccSpread(m: dict) -> bool:
     roic, wacc = m.get("roic"), m.get("wacc")
     if roic is not None and wacc is not None and roic < wacc:
@@ -340,24 +351,40 @@ def _commonSenseTest(company, metrics: dict | None) -> TestResult:
             metrics = {}
 
     if not metrics:
-        return TestResult(name="CommonSense", passed=True, detail="검증 대상 지표 없음 (데이터 부족)")
+        # 검사할 자료가 없는 것은 통과가 아니다. 예전에는 여기서 passed=True 를 돌려줘서
+        # 지표를 하나도 못 구한 회사가 Damodaran 3-test 한 칸을 공짜로 가져갔다.
+        return TestResult(name="CommonSense", passed=False, detail="검증 대상 지표 없음 (데이터 부족)")
 
-    violations = []
-    for desc, check in _INVARIANTS:
+    violations: list[str] = []
+    evaluated = 0
+    errored = 0
+    for desc, keys, check in _INVARIANTS:
         try:
-            if not check(metrics):
-                violations.append(desc)
+            if any(metrics.get(key) is None for key in keys):
+                continue
+            passed = check(metrics)
         except (KeyError, TypeError, ValueError):
+            # 예전에는 조용히 넘어가서, 스무 개가 전부 터져도 "20개 전부 통과" 가 찍혔다.
+            errored += 1
             continue
+        evaluated += 1
+        if not passed:
+            violations.append(desc)
 
-    if not violations:
+    if not evaluated:
         return TestResult(
             name="CommonSense",
-            passed=True,
-            detail=f"{len(_INVARIANTS)}개 경제학 불변량 전부 통과",
+            passed=False,
+            detail=f"검사 가능한 항목 없음 (지표 부족 {len(_INVARIANTS) - errored}개, 오류 {errored}개)",
         )
-    return TestResult(
-        name="CommonSense",
-        passed=False,
-        detail=f"{len(violations)}개 위반: {'; '.join(violations[:3])}",
-    )
+    if violations:
+        return TestResult(
+            name="CommonSense",
+            passed=False,
+            detail=f"{evaluated}개 중 {len(violations)}개 위반: {'; '.join(violations[:3])}",
+        )
+    skipped = len(_INVARIANTS) - evaluated
+    detail = f"검사한 {evaluated}개 항목 전부 통과"
+    if skipped:
+        detail += f" (지표 부족 등으로 {skipped}개 미검사)"
+    return TestResult(name="CommonSense", passed=True, detail=detail)

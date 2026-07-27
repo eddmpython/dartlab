@@ -119,15 +119,21 @@ def _classify(value: float, key: str) -> str:
 
 
 def _detectTrend(values: list, minCount: int = 3) -> str | None:
-    """숫자 리스트에서 추세 감지. 최신이 앞(index 0)."""
+    """숫자 리스트에서 추세 감지. 최신이 앞(index 0).
+
+    비교는 등호 없이 한다. 예전에는 `>=` 로 판정하고 개선을 먼저 확인해서, 값이 하나도
+    움직이지 않은 계열이 "improving" 으로 나왔다. 부채비율 100% 가 네 기 내내 그대로인
+    회사가 "부채가 지속적으로 증가하는 추세" 로, 영업이익률 12% 가 그대로인 회사가
+    "(보합)" 이라 적고 곧바로 "4기 연속 개선 중" 이라 적혔다. 한 문장이 자기를 뒤집었다.
+    """
     valid = [v for v in values if v is not None]
     if len(valid) < minCount:
         return None
-    improving = all(valid[i] >= valid[i + 1] for i in range(len(valid) - 1))
-    declining = all(valid[i] <= valid[i + 1] for i in range(len(valid) - 1))
-    if improving:
+    if all(valid[i] == valid[i + 1] for i in range(len(valid) - 1)):
+        return "flat"
+    if all(valid[i] > valid[i + 1] for i in range(len(valid) - 1)):
         return "improving"
-    if declining:
+    if all(valid[i] < valid[i + 1] for i in range(len(valid) - 1)):
         return "declining"
     return "mixed"
 
@@ -403,6 +409,8 @@ def narrateMargin(data: dict) -> str | None:
         text += f"이며, {len(margins)}기 연속 개선 중이다"
     elif trend == "declining":
         text += f"이며, {len(margins)}기 연속 악화 추세다"
+    elif trend == "flat":
+        text += f"이며, {len(margins)}기 내내 같은 수준이다"
     else:
         text += "이다"
     text += "."
@@ -456,15 +464,28 @@ def narrateCashFlow(data: dict, fmtAmt=None) -> str | None:
 
 
 def narrateCashQuality(data: dict) -> str | None:
-    """이익의 현금 전환 해석."""
+    """이익의 현금 전환 해석.
+
+    비율만 보고 판정하면 안 된다. 영업현금흐름을 순이익으로 나눈 값이라 순손실을 낸 회사는
+    현금을 잘 벌어도 비율이 음수로 나온다. 예전에는 그것을 "영업현금흐름이 적자다" 라고
+    읽어서, 영업현금이 손실의 두 배만큼 들어온 회사가 현금이 마르고 있다고 보고됐다.
+    감액이나 초기 성장 국면에서 흔한 조합이고, 진짜 영업적자와 구분도 되지 않았다.
+    """
     history = data.get("history", [])
     if not history:
         return None
-    ratio = history[0].get("ocfToNi")
+    latest = history[0]
+    ratio = latest.get("ocfToNi")
     if ratio is None:
         return None
+
+    ocf = latest.get("ocf")
+    if ocf is not None and ocf < 0:
+        return f"영업CF/순이익 {ratio:.0f}%. 영업현금흐름이 적자다."
+    if ocf is not None and ratio < 0:
+        return f"영업CF/순이익 {ratio:.0f}%. 순손실이지만 영업에서는 현금이 들어온다."
     quality = _classify(ratio, "ocf_to_ni")
-    return f"영업CF/순이익 {ratio:.0f}% — {quality}."
+    return f"영업CF/순이익 {ratio:.0f}%. {quality}."
 
 
 def narrateLeverage(data: dict) -> str | None:
@@ -479,7 +500,7 @@ def narrateLeverage(data: dict) -> str | None:
         return None
 
     level = _classify(dr, "debt_ratio")
-    text = f"부채비율 {dr:.0f}% — {level}"
+    text = f"부채비율 {dr:.0f}%. {level}"
     if ndr is not None and ndr < 0:
         text += f". 순부채비율 {ndr:.0f}%로 순현금 상태다"
 
@@ -489,6 +510,8 @@ def narrateLeverage(data: dict) -> str | None:
         text += ". 부채가 지속적으로 증가하는 추세다"
     elif trend == "declining":
         text += ". 부채를 꾸준히 줄이고 있다"
+    elif trend == "flat":
+        text += f". {len(drs)}기 내내 같은 수준이다"
 
     return text + "."
 
