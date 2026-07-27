@@ -45,6 +45,7 @@ from dartlab.scan.io.parquet import (
     financeScanPath,
     lazyParquet,
     parquetColumns,
+    preferConsolidatedPerCompany,
 )
 
 _PROFITABILITY_SCHEMA = {
@@ -198,9 +199,9 @@ def _scanFromMerged(scanPath: Path) -> pl.DataFrame:
         return _emptyProfitabilityFrame()
 
     # 연결 우선
-    cfs = target.filter(pl.col("fs_nm").str.contains("연결"))
-    if not cfs.is_empty():
-        target = cfs
+    # 회사별 연결 우선. 유니버스 전체로 한 번에 좁히면 별도만 내는 회사가
+    # 다른 회사 때문에 사라진다.
+    target = preferConsolidatedPerCompany(target, scCol)
 
     return _computeProfitability(target, scCol)
 

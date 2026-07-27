@@ -31,6 +31,7 @@ from dartlab.scan.io.parquet import (
     extractAccount,
     financeScanPath,
     lazyParquet,
+    preferConsolidatedPerCompany,
 )
 
 _GROWTH_SCHEMA = {
@@ -218,9 +219,9 @@ def _scanFromMerged(scanPath: Path) -> pl.DataFrame:
         return _emptyGrowthFrame()
 
     # 연결 우선
-    cfs = target.filter(pl.col("fs_nm").str.contains("연결"))
-    if not cfs.is_empty():
-        target = cfs
+    # 회사별 연결 우선. 유니버스 전체로 한 번에 좁히면 별도만 내는 회사가
+    # 다른 회사 때문에 사라진다.
+    target = preferConsolidatedPerCompany(target, scCol)
 
     # 연도별로 분리하여 CAGR 계산
     return _computeGrowth(target, scCol)

@@ -6,7 +6,7 @@ from pathlib import Path
 
 import polars as pl
 
-from dartlab.scan.io.parquet import parseNumStr
+from dartlab.scan.io.parquet import parseNumStr, preferConsolidatedPerCompany
 
 # ── 영업이익 ──
 
@@ -62,9 +62,9 @@ def _scanIcrFromMerged(scanPath: Path) -> dict[str, float]:
         return {}
 
     # 연결 우선
-    cfs = target.filter(pl.col("fs_nm").str.contains("연결"))
-    if not cfs.is_empty():
-        target = cfs
+    # 회사별 연결 우선. 유니버스 전체로 한 번에 좁히면 별도만 내는 회사가
+    # 다른 회사 때문에 사라진다.
+    target = preferConsolidatedPerCompany(target, scCol)
 
     # 종목별 최신 연도만
     latestYear = target.group_by(scCol).agg(pl.col("bsns_year").max().alias("_maxYear"))

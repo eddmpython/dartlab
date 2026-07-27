@@ -317,6 +317,40 @@ def _ensureScanData(*, requireReports: bool = False) -> Path:
     return scanDir
 
 
+def preferConsolidatedPerCompany(frame: pl.DataFrame, stockCodeCol: str = "stockCode") -> pl.DataFrame:
+    """회사마다 연결재무제표를 우선하되, 없는 회사는 그 회사의 별도를 남긴다.
+
+    예전에는 유니버스 전체에 대해 한 번만 판정했다. 연결 행이 하나라도 있으면 전체를
+    연결로 좁혔기 때문에, 별도만 제출하는 회사가 "다른 회사가 연결을 냈다" 는 이유로
+    전종목 표에서 통째로 사라졌다. 같은 회사를 혼자 스캔하면 남고 함께 스캔하면
+    없어지는, 유니버스에 의존하는 삭제였다.
+
+    Args:
+        frame: `fs_nm` 과 종목코드 컬럼을 가진 재무 행 묶음.
+        stockCodeCol: 종목코드 컬럼 이름.
+
+    Returns:
+        회사별로 선호 재무제표만 남긴 프레임. 판정 컬럼이 없으면 원본 그대로.
+
+    Raises:
+        없음.
+
+    Example:
+        >>> preferConsolidatedPerCompany(frame).height <= frame.height
+        True
+    """
+
+    if frame.is_empty() or "fs_nm" not in frame.columns or stockCodeCol not in frame.columns:
+        return frame
+    ranked = frame.with_columns(pl.when(pl.col("fs_nm").str.contains("연결")).then(0).otherwise(1).alias("_fsRank"))
+    best = ranked.group_by(stockCodeCol).agg(pl.col("_fsRank").min().alias("_bestFsRank"))
+    return (
+        ranked.join(best, on=stockCodeCol)
+        .filter(pl.col("_fsRank") == pl.col("_bestFsRank"))
+        .drop("_fsRank", "_bestFsRank")
+    )
+
+
 def latestDataRows(group: pl.DataFrame, col: str) -> pl.DataFrame:
     """종목 group 에서 ``col`` 이 실값(null/'-'/공백 아님)인 행의 **최신 연도** 부분집합을 반환한다.
 

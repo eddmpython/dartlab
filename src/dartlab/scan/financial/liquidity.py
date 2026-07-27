@@ -13,6 +13,7 @@ from dartlab.scan.io.parquet import (
     financeScanPath,
     lazyParquet,
     parquetColumns,
+    preferConsolidatedPerCompany,
 )
 
 # ── 유동자산 ──
@@ -116,9 +117,9 @@ def _scanFromMerged(scanPath: Path) -> pl.DataFrame:
     if target.is_empty():
         return pl.DataFrame()
 
-    cfs = target.filter(pl.col("fs_nm").str.contains("연결"))
-    if not cfs.is_empty():
-        target = cfs
+    # 회사별 연결 우선. 유니버스 전체로 한 번에 좁히면 별도만 내는 회사가
+    # 다른 회사 때문에 사라진다.
+    target = preferConsolidatedPerCompany(target, scCol)
 
     latestYear = target.group_by(scCol).agg(pl.col("bsns_year").max().alias("_maxYear"))
     target = target.join(latestYear, on=scCol).filter(pl.col("bsns_year") == pl.col("_maxYear")).drop("_maxYear")
