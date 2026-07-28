@@ -20,8 +20,8 @@ _INDICATORS: dict[str, dict] = {
         "desc": "계절조정 실질 국내총생산",
     },
     "GNI": {
-        "table": "111Y055",
-        "item": "10601",
+        "table": "200Y104",
+        "item": "1800",
         "label": "실질GNI",
         "group": "국민계정",
         "freq": "Q",
@@ -48,8 +48,8 @@ _INDICATORS: dict[str, dict] = {
         "desc": "총지수 (모든 품목)",
     },
     "CORE_CPI": {
-        "table": "901Y009",
-        "item": "AD",
+        "table": "901Y010",
+        "item": "QB",
         "label": "근원물가지수",
         "group": "물가",
         "freq": "M",
@@ -462,7 +462,7 @@ _INDICATORS: dict[str, dict] = {
     # 설비투자
     "FACILITY_INV": {
         "table": "901Y066",
-        "item": "A00",
+        "item": "I15A",
         "label": "설비투자지수",
         "group": "산업/생산",
         "freq": "M",
@@ -472,7 +472,7 @@ _INDICATORS: dict[str, dict] = {
     # 신용 (Credit-to-GDP)
     "CREDIT_TOTAL": {
         "table": "104Y016",
-        "item": "BBGA11",
+        "item": "BDCA1",
         "label": "총국내신용",
         "group": "통화/금융",
         "freq": "M",
@@ -482,7 +482,7 @@ _INDICATORS: dict[str, dict] = {
     # 소비자기대지수 (선행 심리)
     "CSI_FUTURE": {
         "table": "513Y001",
-        "item": "FME",
+        "item": "E1000",
         "label": "소비자기대지수",
         "group": "경기/심리",
         "freq": "M",
@@ -492,7 +492,7 @@ _INDICATORS: dict[str, dict] = {
     # 경기후행지수
     "CLI_LAG": {
         "table": "901Y067",
-        "item": "I16G",
+        "item": "I16C",
         "label": "경기후행지수",
         "group": "경기/심리",
         "freq": "M",
