@@ -12,6 +12,10 @@ from dartlab.core.memory import memoizedCalc
 from dartlab.core.polarsUtil import isEmptyDf
 
 # 비교할 핵심 비율 목록 (scanRatio name → 표시 label)
+# 기준 기간으로 채택할 최소 채움 비율 (가장 잘 찬 기간 대비). scan/io/calendar 의
+# 연도 선택과 같은 문턱이다. 갓 시작한 분기는 이 선을 못 넘는다.
+_PERIOD_COMPLETENESS = 0.8
+
 _BENCHMARK_RATIOS = [
     ("roe", "ROE"),
     ("roa", "ROA"),
@@ -378,10 +382,24 @@ def _loadScanRatio(ratioName: str) -> pl.DataFrame:
 
 
 def _latestPeriodCol(df: pl.DataFrame) -> str | None:
-    """DataFrame에서 최신 기간 컬럼을 찾는다."""
+    """DataFrame 에서 값이 실제로 찬 최신 기간 컬럼을 찾는다.
+
+    이름만 보고 첫 열을 고르면 아직 공시가 거의 안 들어온 분기를 집는다. 2026 년 7 월
+    기준 ROE 표의 최신 열은 2026Q3 인데 2,812 종목 중 2 종목(0.1%) 만 값이 있었고,
+    삼성전자도 비어 있어 시장 백분위가 어느 회사에서도 나오지 않았다. 비교분석 축
+    셋이 통째로 None 이던 원인이다.
+
+    가장 잘 찬 열의 채움 수를 기준으로 문턱을 잡고, 그 이상 찬 열 중 최신을 고른다.
+    절대 비율이 아니라 상대 기준이라 표마다 다른 수집 진도를 그대로 따라간다.
+    """
     from dartlab.core.utils.helpers import periodCols
 
     cols = periodCols(df)
     if not cols:
         return None
-    return cols[0]
+    counts = {col: df[col].drop_nulls().len() for col in cols}
+    fullest = max(counts.values(), default=0)
+    if fullest == 0:
+        return None
+    floor = fullest * _PERIOD_COMPLETENESS
+    return next((col for col in cols if counts[col] >= floor), None)
