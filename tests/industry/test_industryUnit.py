@@ -184,3 +184,31 @@ def test_industryTopLevel_importsAllPublicSymbols():
     # MARKET_US, MARKET_PARAMS, classify, getParams, getMarketParams,
     # getThresholds, Industry, addOverride, ...
     assert len(publicSymbols) >= 10, f"공개 심볼 {len(publicSymbols)}개 — 예상 10+ 미달"
+
+
+def test_resolveIndustryTarget_mapsStockCodeToIndustry():
+    """종목코드로 온 target 은 그 회사의 산업 ID 로 바뀐다.
+
+    축 문서는 target 으로 industryId · themeId · stockCode 셋을 받는다고 적어 두었는데,
+    정작 종목코드를 해소하는 자리가 없었다. 핸들러가 종목코드를 industryId 로 그대로
+    받아 조회가 전부 빗나갔고, 예외 대신 빈 표가 나와서 어디서도 안 잡혔다.
+    """
+    from dartlab.industry import _resolveIndustryTarget
+    from dartlab.industry.build.pipeline import loadNodes
+
+    nodes = [n for n in loadNodes() if getattr(n, "stockCode", None) and getattr(n, "industry", None)]
+    if not nodes:
+        pytest.skip("industry 노드 데이터 없음")
+    node = nodes[0]
+
+    assert _resolveIndustryTarget(node.stockCode) == node.industry
+
+
+def test_resolveIndustryTarget_leavesNonStockCodeAlone():
+    """산업 ID·테마 ID·None 은 그대로 통과한다 (해소는 6자리 숫자에만)."""
+    from dartlab.industry import _resolveIndustryTarget
+
+    assert _resolveIndustryTarget("semiconductor") == "semiconductor"
+    assert _resolveIndustryTarget("secondaryBattery") == "secondaryBattery"
+    assert _resolveIndustryTarget(None) is None
+    assert _resolveIndustryTarget("12345") == "12345"

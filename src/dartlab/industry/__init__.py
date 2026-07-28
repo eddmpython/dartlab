@@ -84,7 +84,32 @@ class IndustryAxisEntry:
     hidden: bool = False
 
 
-# industry 축 SSOT — gather 표준(engine(axis, target)) 의 industry 판. 옛 플래그(summary 등)·
+def _resolveIndustryTarget(target: str | None) -> str | None:
+    """종목코드로 온 target 을 그 회사의 산업 ID 로 바꾼다. 아니면 그대로 둔다.
+
+    축 문서는 target 으로 industryId · themeId · stockCode 셋을 받는다고 적어 두었는데,
+    정작 종목코드를 해소하는 자리가 없었다. 핸들러가 종목코드를 industryId 로 그대로 받아
+    조회가 전부 빗나갔고, 예외 대신 빈 표가 나와서 어디서도 안 잡혔다. 실측으로 일곱 축
+    (summary·timeline·lifecycle·concentration·dynamics·polarization·map) 이 전부 그랬다.
+
+    노드 목록이 이미 종목코드와 산업을 함께 들고 있으므로 새 자료를 만들지 않는다.
+    """
+    if not target or not (len(target) == 6 and target.isdigit()):
+        return target
+    try:
+        from dartlab.industry.build.pipeline import loadNodes
+
+        for node in loadNodes():
+            if getattr(node, "stockCode", None) == target:
+                resolved = getattr(node, "industry", None)
+                if resolved:
+                    return resolved
+    except (ImportError, OSError, RuntimeError, ValueError):
+        return target
+    return target
+
+
+# industry 축 SSOT. gather 표준(engine(axis, target)) 의 industry 판. 옛 플래그(summary 등)·
 # 메서드(edges/map/theme) 를 축으로 통일. 기본 산업지도(industryId-first)는 backward-compat 브릿지.
 _AXIS_REGISTRY: dict[str, IndustryAxisEntry] = {
     "summary": IndustryAxisEntry("집계", "공정별 매출/영업이익 집계."),
@@ -243,6 +268,7 @@ class Industry:
         discover: bool = False,
     ) -> Any:
         """축 → 핸들러 위임 (axis-dispatch SSOT). edges/map/theme 메서드도 본 경로로 통일."""
+        target = _resolveIndustryTarget(target)
         if axis == "summary":
             return self._summary(target, year=year)
         if axis == "timeline":
