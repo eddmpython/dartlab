@@ -8,6 +8,11 @@ from __future__ import annotations
 
 from dartlab.cli.services.errors import CLIError
 from dartlab.cli.services.runtime import configureDartlab
+from dartlab.core.logger import getLogger
+
+_log = getLogger(__name__)
+# 조회 실패는 절 하나를 비우되 프로세스를 죽이지 않는다. 다만 이유는 로그에 남긴다.
+_FETCH_ERRORS = (AttributeError, KeyError, TypeError, ValueError)
 
 
 def configureParser(subparsers) -> None:
@@ -70,16 +75,14 @@ def run(args) -> int:
     return 0
 
 
-_FETCH_ERRORS = (AttributeError, KeyError, TypeError, ValueError)
-
-
 def _overviewText(company, limit: int = 2000) -> str:
     """회사 개요 절의 본문을 평문으로 뽑는다. 없으면 빈 문자열."""
     import re
 
     try:
         df = company.panel("회사의 개요")
-    except _FETCH_ERRORS:
+    except _FETCH_ERRORS as exc:
+        _log.debug("기업 개요 조회 실패: %s", exc)
         return ""
     if df is None or getattr(df, "height", 0) == 0:
         return ""
@@ -99,7 +102,8 @@ def _gradeRows(company) -> list[tuple[str, str]]:
     """종합평가 축의 영역별 등급. 없으면 빈 목록."""
     try:
         verdict = company.analysis("financial", "종합평가")
-    except _FETCH_ERRORS:
+    except _FETCH_ERRORS as exc:
+        _log.debug("종합평가 조회 실패: %s", exc)
         return []
     if not isinstance(verdict, dict):
         return []
@@ -127,7 +131,8 @@ def _buildReport(company, name: str, code: str, include: set | None) -> str:
         for axis, label in (("BS", "재무상태표"), ("IS", "손익계산서"), ("CF", "현금흐름표")):
             try:
                 df = company.panel(axis)
-            except _FETCH_ERRORS:
+            except _FETCH_ERRORS as exc:
+                _log.debug("재무제표 %s 조회 실패: %s", axis, exc)
                 continue
             if df is None or getattr(df, "height", 0) == 0:
                 continue
@@ -143,7 +148,8 @@ def _buildReport(company, name: str, code: str, include: set | None) -> str:
         for axis in ("수익성", "안정성", "효율성"):
             try:
                 result = company.analysis("financial", axis)
-            except _FETCH_ERRORS:
+            except _FETCH_ERRORS as exc:
+                _log.debug("재무비율 %s 조회 실패: %s", axis, exc)
                 continue
             if not isinstance(result, dict) or not result:
                 continue
