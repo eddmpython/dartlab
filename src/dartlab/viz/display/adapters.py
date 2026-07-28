@@ -13,9 +13,36 @@ from __future__ import annotations
 import importlib
 from typing import Any
 
-from dartlab.viz.data import normalize  # noqa: F401 — _cache.getNormFinance 호출 시 lazy 사용
+from dartlab.core.logger import getLogger
+from dartlab.viz.data import normalize  # noqa: F401 (_cache.getNormFinance 호출 시 lazy 사용)
 from dartlab.viz.display.finance._cache import getNormFinance
 from dartlab.viz.display.finance.accounts import extractSeries
+
+_log = getLogger(__name__)
+
+
+def _normAndPeriods(company: Any, count: int, freq: str = "annual") -> tuple[Any, list[Any]]:
+    """정규화 재무와 최근 `count` 기간을 함께 얻는다.
+
+    이 세 줄을 어댑터 여덟 곳이 그대로 복붙해 쓰고 있었다. 일곱 곳은 `except Exception`
+    으로 통째로 삼켜 빈 차트를 냈고 한 곳은 아예 감싸지 않았다. 같은 동작이 자리마다
+    다르게 실패하고 있었다는 뜻이라 한 자리로 모은다.
+
+    표현층은 화면 하나를 못 그려도 프로세스를 죽이지 않는 것이 맞다. 다만 조용히
+    지나가면 안 된다. 왜 비었는지가 로그에 남아야 빈 차트와 깨진 코드를 구분한다.
+
+    Returns:
+        `(norm, periods)`. 재무를 못 읽으면 `(None, [])`.
+    """
+    from dartlab.viz.display.finance.periods import lastNPeriods
+
+    try:
+        norm = getNormFinance(company)
+        periods = lastNPeriods(norm, count, freq)
+    except Exception as exc:  # noqa: BLE001
+        _log.debug("재무 기간 로드 실패 (count=%s, freq=%s): %s", count, freq, exc)
+        return None, []
+    return norm, list(periods or [])
 
 
 def _safeCall(modulePath: str, fnName: str, company: Any, *args: Any, **kwargs: Any) -> Any:
@@ -272,13 +299,7 @@ def buildDistressGauge(company: Any) -> dict[str, Any]:
 
     임계: Z' ≥ 2.9 안전 / 1.23~2.9 주의 / < 1.23 위험.
     """
-    try:
-        norm = getNormFinance(company)
-        from dartlab.viz.display.finance.periods import lastNPeriods
-
-        periods = lastNPeriods(norm, 4, "annual")
-    except Exception:  # noqa: BLE001
-        return {}
+    norm, periods = _normAndPeriods(company, 4)
     if not periods:
         return {}
     p = periods[-1]
@@ -323,13 +344,7 @@ def buildScenarioSensitivity(company: Any) -> dict[str, Any]:
 
     Returns: {cells, rowOrder, colOrder, tone}.
     """
-    try:
-        norm = getNormFinance(company)
-        from dartlab.viz.display.finance.periods import lastNPeriods
-
-        periods = lastNPeriods(norm, 4, "annual")
-    except Exception:  # noqa: BLE001
-        return {}
+    norm, periods = _normAndPeriods(company, 4)
     if not periods:
         return {}
     p = periods[-1]
@@ -373,13 +388,7 @@ def buildDistressDecomp(company: Any) -> dict[str, Any]:
         {items: [{label, value(인자값), unit, delta(가중 기여)}, ...]}
         기여도 절대값 내림차순 정렬.
     """
-    try:
-        norm = getNormFinance(company)
-        from dartlab.viz.display.finance.periods import lastNPeriods
-
-        periods = lastNPeriods(norm, 4, "annual")
-    except Exception:  # noqa: BLE001
-        return {}
+    norm, periods = _normAndPeriods(company, 4)
     if not periods:
         return {}
     p = periods[-1]
@@ -458,13 +467,7 @@ def buildLifeCyclePhase(company: Any) -> dict[str, Any]:
       CFO- CFI- CFF+  → 쇠퇴
       CFO+ CFI+ CFF+  → 회복 / 비정형
     """
-    try:
-        norm = getNormFinance(company)
-        from dartlab.viz.display.finance.periods import lastNPeriods
-
-        periods = lastNPeriods(norm, 8, "annual")
-    except Exception:  # noqa: BLE001
-        return {}
+    norm, periods = _normAndPeriods(company, 8)
     if len(periods) < 2:
         return {}
     p = periods[-1]
@@ -695,13 +698,7 @@ def buildPeerScatter(company: Any) -> dict[str, Any]:
     동종 데이터 wiring 은 후속 (peerBenchmark). 현재는 회사 자체 시간축 산점도.
     각 기간이 하나의 점, 최근 기간이 self (별표).
     """
-    try:
-        norm = getNormFinance(company)
-        from dartlab.viz.display.finance.periods import lastNPeriods
-
-        periods = lastNPeriods(norm, 12, "annual")
-    except Exception:  # noqa: BLE001
-        return {}
+    norm, periods = _normAndPeriods(company, 12)
     if len(periods) < 2:
         return {}
     points: list[dict[str, Any]] = []
@@ -737,13 +734,7 @@ def buildPeerComparison(company: Any) -> dict[str, Any]:
 
     동종 wiring 후속. 현재는 회사 시계열의 분포 (자신과 자기 중앙값 비교).
     """
-    try:
-        norm = getNormFinance(company)
-        from dartlab.viz.display.finance.periods import lastNPeriods
-
-        periods = lastNPeriods(norm, 12, "annual")
-    except Exception:  # noqa: BLE001
-        return {}
+    norm, periods = _normAndPeriods(company, 12)
     if len(periods) < 3:
         return {}
 
@@ -811,13 +802,7 @@ def buildAnomalyTopList(company: Any) -> list[dict[str, Any]]:
 
     경고성 (large change) + 정상 (small change) 모두 표시. 임계 기반 hard cut 폐기.
     """
-    try:
-        norm = getNormFinance(company)
-        from dartlab.viz.display.finance.periods import lastNPeriods
-
-        periods = lastNPeriods(norm, 4, "annual")
-    except Exception:  # noqa: BLE001
-        return []
+    norm, periods = _normAndPeriods(company, 4)
     if len(periods) < 2:
         return []
 
@@ -1369,10 +1354,8 @@ def buildSnowflakeRadar(company: Any) -> dict[str, Any]:
     회사 강·약점이 한 장에 보임.
     """
     from dartlab.viz.display.finance.accounts import extractSeries
-    from dartlab.viz.display.finance.periods import lastNPeriods
 
-    norm = getNormFinance(company)
-    periods = lastNPeriods(norm, 4, "quarterly")
+    norm, periods = _normAndPeriods(company, 4, "quarterly")
     if not periods:
         return {}
 
