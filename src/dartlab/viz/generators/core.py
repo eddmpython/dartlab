@@ -119,6 +119,74 @@ def _normalizePriceRows(rows: Any) -> list[dict[str, Any]]:
     return sorted(normalized, key=lambda item: item["date"])
 
 
+_FETCH_ERRORS = (AttributeError, KeyError, OSError, RuntimeError, TypeError, ValueError)
+
+
+def _annualBuild(company: Any):
+    """연간 재무 시계열 `(series, years)`. 없으면 None.
+
+    예전에는 `company.annual` 속성을 읽었다. 그 이름은 공개 표면에서 빠졌고
+    `getattr(..., None)` 이 늘 None 을 돌려줘서, 이 값에 기대는 생성기 셋이 회사 자료와
+    무관하게 항상 None 을 반환했다. 회사가 이미 갖고 있는 finance 빌드를 그대로 쓴다.
+    """
+    build = getattr(company, "_getFinanceBuild", None)
+    if build is None:
+        return None
+    try:
+        return build("y")
+    except _FETCH_ERRORS:
+        return None
+
+
+def _ratioBuild(company: Any):
+    """비율 시계열 `(seriesData, periods)`. 없으면 None.
+
+    옛 `company.ratioSeries` 속성 자리. 지금 공급원은 `companyContext.getRatioSeries` 다.
+    """
+    try:
+        from dartlab.analysis.financial.companyContext import getRatioSeries
+
+        return getRatioSeries(company)
+    except (ImportError, *_FETCH_ERRORS):
+        return None
+
+
+def _capitalFrame(company: Any):
+    """배당 지표를 생성기가 기대하는 `year`/`dps` 형태로 맞춘다. 없으면 None.
+
+    옛 `company.dividend` 속성 자리. 지금 남은 공급원은 `capital` 축의 현재 시점 한 행이라
+    연도별 시계열이 아니다. 없는 시계열을 지어내지 않고 현재 한 점만 같은 열 이름으로 준다.
+    """
+    import polars as pl
+
+    try:
+        df = company.capital()
+    except _FETCH_ERRORS:
+        return None
+    if df is None or getattr(df, "height", 0) == 0:
+        return None
+    row = df.row(0, named=True)
+    if row.get("DPS") is None:
+        return None
+    frame = {"year": ["현재"], "dps": [row["DPS"]]}
+    if row.get("배당수익률") is not None:
+        frame["dividendYield"] = [row["배당수익률"]]
+    return pl.DataFrame(frame)
+
+
+def _insightResult(company: Any):
+    """재무 인사이트 결과. 없으면 None.
+
+    옛 `company.insights` accessor 자리. 지금 산출 경로는 인사이트 파이프라인이다.
+    """
+    try:
+        from dartlab.analysis.financial.insight.pipeline import analyzeFinancial
+
+        return analyzeFinancial(getattr(company, "stockCode", ""), company)
+    except (ImportError, *_FETCH_ERRORS):
+        return None
+
+
 def _meta(company: Any, source: str) -> dict:
     """ChartSpec meta 블록 생성."""
     return {
@@ -154,7 +222,7 @@ def _withVisualContext(
 
 def specRevenueTrend(company: Any, *, nYears: int = 5) -> dict | None:
     """IS 매출·영업이익·순이익 combo 차트 ChartSpec."""
-    ann = getattr(company, "annual", None)
+    ann = _annualBuild(company)
     if not ann:
         return None
     ann_data, ann_years = ann
@@ -213,7 +281,7 @@ def specRevenueTrend(company: Any, *, nYears: int = 5) -> dict | None:
 
 def specCashflowWaterfall(company: Any) -> dict | None:
     """CF 워터폴 브릿지 ChartSpec."""
-    ann = getattr(company, "annual", None)
+    ann = _annualBuild(company)
     if not ann:
         return None
     ann_data, ann_years = ann
@@ -260,7 +328,7 @@ def specCashflowWaterfall(company: Any) -> dict | None:
 
 def specBalanceSheet(company: Any, *, nYears: int = 5) -> dict | None:
     """BS 유동/비유동 자산 stacked bar ChartSpec."""
-    ann = getattr(company, "annual", None)
+    ann = _annualBuild(company)
     if not ann:
         return None
     ann_data, ann_years = ann
@@ -312,7 +380,7 @@ def specBalanceSheet(company: Any, *, nYears: int = 5) -> dict | None:
 
 def specProfitability(company: Any, *, nYears: int = 5) -> dict | None:
     """수익성 비율 라인 ChartSpec (ratioSeries 기반)."""
-    rs = getattr(company, "ratioSeries", None)
+    rs = _ratioBuild(company)
     if rs is None:
         return None
     if isinstance(rs, tuple) and len(rs) == 2:
@@ -367,20 +435,11 @@ def specProfitability(company: Any, *, nYears: int = 5) -> dict | None:
 
 def specDividend(company: Any) -> dict | None:
     """배당 시계열 combo ChartSpec."""
-    div_df = None
-    report = getattr(company, "report", None)
-    if report is not None:
-        div_obj = getattr(report, "dividend", None)
-        if div_obj is not None:
-            if hasattr(div_obj, "df"):
-                div_df = div_obj.df
-            elif hasattr(div_obj, "columns"):
-                div_df = div_obj
-
+    # 예전에는 `report.dividend` 를 먼저 봤다. 그 경로는 폐기 예정이라 경고를 내고, 돌려주는
+    # 표도 DART 원본 열(se·thstrm·frmtrm)이라 아래가 기대하는 year/dps 형태가 아니다. 그래서
+    # 값이 있는데도 늘 형태 검사에서 걸려 None 이 됐고, `_capitalFrame` 까지 가지도 못했다.
+    div_df = _capitalFrame(company)
     if div_df is None:
-        div_df = getattr(company, "dividend", None)
-
-    if div_df is None or not hasattr(div_df, "columns"):
         return None
     if "year" not in div_df.columns or "dps" not in div_df.columns:
         return None
@@ -427,7 +486,7 @@ def specDividend(company: Any) -> dict | None:
 
 def specInsightRadar(company: Any) -> dict | None:
     """7영역 인사이트 레이더 ChartSpec."""
-    insights = getattr(company, "insights", None)
+    insights = _insightResult(company)
     if insights is None or not hasattr(insights, "performance"):
         return None
 
@@ -461,7 +520,7 @@ def specInsightRadar(company: Any) -> dict | None:
 
 def specRatioSparklines(company: Any) -> dict | None:
     """비율 스파크라인 배열 ChartSpec."""
-    rs = getattr(company, "ratioSeries", None)
+    rs = _ratioBuild(company)
     if rs is None:
         return None
     if isinstance(rs, tuple) and len(rs) == 2:

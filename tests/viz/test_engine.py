@@ -446,3 +446,38 @@ def test_financeCharts_buildFromContractCallsOnly(name):
     fig = getattr(charts, name)(_ContractCompany())
 
     assert getattr(fig, "data", None), f"{name} 차트에 trace 가 없다"
+
+
+# ── Company 기반 spec 생성기: 계약/내부 공급원이 살아 있는가 ──
+
+_SPEC_GENERATORS = [
+    "specRevenueTrend",
+    "specBalanceSheet",
+    "specCashflowWaterfall",
+    "specProfitability",
+    "specRatioSparklines",
+    "specInsightRadar",
+    "specDividend",
+]
+
+
+@pytest.mark.parametrize("name", _SPEC_GENERATORS)
+def test_specGenerators_dependOnLiveSources(name):
+    """Company 기반 spec 생성기는 살아 있는 공급원만 본다.
+
+    예전에는 `company.annual` · `ratioSeries` · `insights` · `dividend` 속성을 읽었다.
+    넷 다 표면에서 빠진 이름이라 `getattr(..., None)` 이 늘 None 을 돌려줬고, 여덟 생성기
+    중 일곱이 회사 자료와 무관하게 항상 None 을 반환했다. AI 런타임 차트 자동 emit 이
+    통째로 비어 있었다는 뜻이다.
+
+    여기서는 죽은 속성 이름을 다시 참조하지 않는지를 소스 수준에서 붙든다.
+    """
+    import inspect
+
+    from dartlab.viz.generators import core
+
+    src = inspect.getsource(getattr(core, name))
+    for dead in ('getattr(company, "annual"', 'getattr(company, "ratioSeries"'):
+        assert dead not in src, f"{name} 이 죽은 속성을 다시 참조한다: {dead}"
+    for dead in ('getattr(company, "insights"', 'getattr(company, "dividend"'):
+        assert dead not in src, f"{name} 이 죽은 속성을 다시 참조한다: {dead}"
