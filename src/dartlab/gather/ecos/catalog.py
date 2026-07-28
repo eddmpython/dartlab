@@ -29,8 +29,8 @@ _INDICATORS: dict[str, dict] = {
         "desc": "계절조정 실질 국민총소득",
     },
     "GROWTH": {
-        "table": "111Y055",
-        "item": "10101",
+        "table": "902Y015",
+        "item": "KOR",
         "label": "경제성장률",
         "group": "국민계정",
         "freq": "Q",
@@ -196,8 +196,8 @@ _INDICATORS: dict[str, dict] = {
         "desc": "광공업 생산지수",
     },
     "RETAIL": {
-        "table": "901Y049",
-        "item": "I16Y",
+        "table": "901Y100",
+        "item": "G0",
         "label": "소매판매지수",
         "group": "산업/생산",
         "freq": "M",
