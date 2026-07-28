@@ -68,6 +68,25 @@ def _stats(df) -> dict[str, object]:
     return {"rowCount": df.height, "startDate": str(dates.min()), "latestDate": str(dates.max())}
 
 
+def _gradeStatus(status: str, error: str, rowCount: int, source: str, seriesId: str) -> tuple[str, str]:
+    """받아온 행이 0 이면 성공으로 적지 않는다.
+
+    세 수집 단계 모두 `status = "ok"` 를 먼저 두고 예외가 날 때만 바꿨다. 그래서 호출이
+    멀쩡히 끝나고 0 행을 돌려주면 그대로 성공으로 기록됐다. 실측으로 ECOS 쉰세 지표 중
+    열여덟 개가 status ok 에 rowCount 0 이다. 국고채 3·5·10 년, 회사채, 코어 CPI, PPI,
+    고용, 소매판매, 실질 GDP 가 그 안에 있다. 소비자는 manifest 를 믿고 지표가 있는 줄
+    알았고, 거시 베타 축은 그 GDP 공백 하나 때문에 전종목 빈 표를 냈다.
+
+    Returns:
+        (status, error). 빈 수집이면 status 는 "empty" 이고 error 에 사유가 적힌다.
+    """
+    if status != "ok" or rowCount:
+        return status, error
+    reason = "수집은 성공했으나 관측 0 행"
+    print(f"[{source}] {seriesId}: empty ({reason})", flush=True)
+    return "empty", reason
+
+
 def _write(outDir: Path, observations: list, manifestRows: list[dict]) -> None:
     import polars as pl
 
@@ -110,6 +129,7 @@ def _buildFred(outDir: Path) -> None:
             print(f"[fred] {entry.id}: {status} ({err})", flush=True)
         observations.append(df)
         st = _stats(df)
+        status, err = _gradeStatus(status, err, int(st["rowCount"] or 0), "fred", entry.id)
         manifestRows.append(
             {
                 "source": "fred",
@@ -162,6 +182,7 @@ def _buildEcos(outDir: Path) -> None:
             print(f"[ecos] {seriesId}: {status} ({err})", flush=True)
         observations.append(df)
         st = _stats(df)
+        status, err = _gradeStatus(status, err, int(st["rowCount"] or 0), "ecos", entry.id)
         manifestRows.append(
             {
                 "source": "ecos",
@@ -209,6 +230,7 @@ def _buildCustoms(outDir: Path) -> None:
             print(f"[customs] {entry.id}: {status} ({err})", flush=True)
         observations.append(df)
         st = _stats(df)
+        status, err = _gradeStatus(status, err, int(st["rowCount"] or 0), "customs", entry.id)
         manifestRows.append(
             {
                 "source": "customs",
