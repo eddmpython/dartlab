@@ -400,3 +400,49 @@ def test_extract_mixed_valid_invalid():
     cleaned, specs = extractVizSpecs(stdout)
     assert len(specs) == 1
     assert specs[0]["ok"] is True
+
+
+# ── 재무 템플릿 차트: 계약 호출만으로 그려지는가 ──
+
+_IS_ROWS = {"항목": ["매출액", "영업이익", "당기순이익"], "2024": [100.0, 20.0, 15.0], "2025": [120.0, 25.0, 18.0]}
+_BS_ROWS = {
+    "항목": ["자산총계", "부채총계", "자본총계", "유동자산", "비유동자산"],
+    "2024": [200.0, 80.0, 120.0, 90.0, 110.0],
+    "2025": [220.0, 85.0, 135.0, 95.0, 125.0],
+}
+_CF_ROWS = {"항목": ["영업활동", "투자활동", "재무활동"], "2024": [30.0, -10.0, -5.0], "2025": [35.0, -12.0, -6.0]}
+_CAPITAL_ROWS = {"stockCode": ["999999"], "DPS": [372.0], "배당수익률": [0.3]}
+
+
+class _ContractCompany:
+    """공개 계약(`panel` · `capital`) 만 구현한 Company 대역."""
+
+    corpName = "테스트기업"
+    stockCode = "999999"
+
+    def panel(self, axis):
+        import polars as pl
+
+        rows = {"IS": _IS_ROWS, "BS": _BS_ROWS, "CF": _CF_ROWS}.get(axis)
+        return pl.DataFrame(rows) if rows else None
+
+    def capital(self):
+        import polars as pl
+
+        return pl.DataFrame(_CAPITAL_ROWS)
+
+
+@pytest.mark.parametrize("name", ["revenue", "cashflow", "balanceSheet", "profitability", "dividend"])
+def test_financeCharts_buildFromContractCallsOnly(name):
+    """재무 템플릿 차트가 공개 계약 호출만으로 그려진다.
+
+    예전에는 `company.IS` · `company.BS` · `company.CF` · `company.dividend` 속성을 읽었다.
+    그 이름들은 계약에서 빠져 존재하지 않으므로, 다섯 차트가 회사 자료와 무관하게 늘
+    데이터가 없다는 예외로 죽고 있었다.
+    """
+    pytest.importorskip("plotly")
+    from dartlab.viz import charts
+
+    fig = getattr(charts, name)(_ContractCompany())
+
+    assert getattr(fig, "data", None), f"{name} 차트에 trace 가 없다"

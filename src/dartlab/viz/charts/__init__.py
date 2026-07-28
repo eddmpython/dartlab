@@ -275,6 +275,22 @@ def waterfall(
 # ── 재무 템플릿 차트 ──
 
 
+def _statementFrame(company: Any, axis: str, label: str) -> pl.DataFrame:
+    """공개 계약 `panel` 로 재무제표 한 장을 얻는다. 없으면 ValueError.
+
+    예전에는 `company.IS` 처럼 속성으로 읽었다. 그 이름들은 공개 계약에서 빠졌고 지금은
+    존재하지 않는다. `getattr(..., None)` 이 늘 None 을 돌려주니 아래 차트 다섯이 전부
+    "데이터가 없습니다" 로 죽고 있었다. 회사에 자료가 있고 없고와 무관하게 항상 그랬다.
+    """
+    try:
+        df = company.panel(axis)
+    except (AttributeError, KeyError, TypeError, ValueError) as exc:
+        raise ValueError(f"{axis} ({label}) 데이터가 없습니다.") from exc
+    if df is None or getattr(df, "height", 0) == 0:
+        raise ValueError(f"{axis} ({label}) 데이터가 없습니다.")
+    return df
+
+
 def _extractAccountSeries(df: pl.DataFrame, keyword: str) -> dict[str, float | None]:
     """재무제표에서 항목 키워드로 연도별 값 추출."""
     labelCol = "항목" if "항목" in df.columns else None
@@ -298,9 +314,7 @@ def revenue(company: Any, *, nYears: int = 5) -> Any:
     go = _ensurePlotly()
     from plotly.subplots import make_subplots
 
-    isDf = getattr(company, "IS", None)
-    if isDf is None:
-        raise ValueError("IS (손익계산서) 데이터가 없습니다.")
+    isDf = _statementFrame(company, "IS", "손익계산서")
 
     rev = _extractAccountSeries(isDf, "매출액")
     oi = _extractAccountSeries(isDf, "영업이익")
@@ -352,9 +366,7 @@ def cashflow(company: Any, *, nYears: int = 5) -> Any:
     """영업CF/투자CF/재무CF 패턴 차트."""
     go = _ensurePlotly()
 
-    cf_df = getattr(company, "CF", None)
-    if cf_df is None:
-        raise ValueError("CF (현금흐름표) 데이터가 없습니다.")
+    cf_df = _statementFrame(company, "CF", "현금흐름표")
 
     op = _extractAccountSeries(cf_df, "영업활동")
     inv = _extractAccountSeries(cf_df, "투자활동")
@@ -380,46 +392,41 @@ def cashflow(company: Any, *, nYears: int = 5) -> Any:
 
 
 def dividend(company: Any) -> Any:
-    """DPS + 배당수익률 + 배당성향 차트."""
+    """DPS 와 배당수익률 차트 (현재 시점).
+
+    옛 구현은 `company.dividend` 속성에서 연도별 표를 기대했다. 그 이름은 공개 계약에서
+    빠졌고, 지금 남은 배당 공급원은 `capital` 축의 현재 시점 한 행이다 (DPS · 배당수익률).
+    연도별 시계열은 계약 표면에 아직 없다. 없는 것을 지어내지 않고 있는 것만 그린다.
+    """
     go = _ensurePlotly()
     from plotly.subplots import make_subplots
 
-    div_df = getattr(company, "dividend", None)
-    if div_df is None:
-        raise ValueError("dividend (배당) 데이터가 없습니다.")
+    try:
+        df = company.capital()
+    except (AttributeError, KeyError, TypeError, ValueError) as exc:
+        raise ValueError("배당 데이터가 없습니다.") from exc
+    if df is None or getattr(df, "height", 0) == 0:
+        raise ValueError("배당 데이터가 없습니다.")
 
-    if "year" not in div_df.columns:
-        raise ValueError("year 컬럼이 없습니다.")
-
-    df = div_df.sort("year")
+    row = df.row(0, named=True)
+    dps = row.get("DPS")
+    dividendYield = row.get("배당수익률")
+    if dps is None and dividendYield is None:
+        raise ValueError("배당 데이터가 없습니다.")
 
     fig = make_subplots(specs=[[{"secondary_y": True}]])
 
-    if "dps" in df.columns:
-        fig.add_trace(
-            go.Bar(x=df["year"].to_list(), y=df["dps"].to_list(), name="DPS(원)", marker_color=COLORS[2], opacity=0.7)
-        )
+    if dps is not None:
+        fig.add_trace(go.Bar(x=["현재"], y=[dps], name="DPS(원)", marker_color=COLORS[2], opacity=0.7))
 
-    if "dividendYield" in df.columns:
+    if dividendYield is not None:
         fig.add_trace(
             go.Scatter(
-                x=df["year"].to_list(),
-                y=df["dividendYield"].to_list(),
+                x=["현재"],
+                y=[dividendYield],
                 name="배당수익률(%)",
                 mode="lines+markers",
                 line=dict(color=COLORS[0], width=2),
-            ),
-            secondary_y=True,
-        )
-
-    if "payoutRatio" in df.columns:
-        fig.add_trace(
-            go.Scatter(
-                x=df["year"].to_list(),
-                y=df["payoutRatio"].to_list(),
-                name="배당성향(%)",
-                mode="lines+markers",
-                line=dict(color=COLORS[1], width=2, dash="dot"),
             ),
             secondary_y=True,
         )
@@ -436,9 +443,7 @@ def balanceSheet(company: Any, *, nYears: int = 5) -> Any:
     """자산/부채/자본 구성 누적 바 차트."""
     go = _ensurePlotly()
 
-    bs_df = getattr(company, "BS", None)
-    if bs_df is None:
-        raise ValueError("BS (재무상태표) 데이터가 없습니다.")
+    bs_df = _statementFrame(company, "BS", "재무상태표")
 
     ca = _extractAccountSeries(bs_df, "유동자산")
     nca = _extractAccountSeries(bs_df, "비유동자산")
@@ -465,10 +470,8 @@ def profitability(company: Any, *, nYears: int = 5) -> Any:
     """영업이익률·순이익률·ROE 추세 라인 차트."""
     go = _ensurePlotly()
 
-    bs_df = getattr(company, "BS", None)
-    isDf = getattr(company, "IS", None)
-    if bs_df is None or isDf is None:
-        raise ValueError("BS, IS 데이터가 필요합니다.")
+    bs_df = _statementFrame(company, "BS", "재무상태표")
+    isDf = _statementFrame(company, "IS", "손익계산서")
 
     ratios = _ratioTable(bs_df, isDf)
     if ratios.height == 0:
