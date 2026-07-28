@@ -272,8 +272,16 @@ def _loadMacroForScan(periodCols: list[str]) -> dict[str, list[float | None]] | 
         aligned = alignToFinancialPeriods(df, periodCols)
         result[key] = aligned.get_column("value").to_list()
 
-    hasData = any(any(v is not None for v in vals) for vals in result.values())
-    return result if hasData else None
+    # 회귀는 세 지표를 다 쓴다. 하나라도 통째로 비면 종목마다 관측이 모자라 전 종목이
+    # 탈락하고 결과가 빈 표가 된다. 예전에는 `any` 로 검사해서 셋 중 하나만 있어도 통과했고,
+    # 그래서 호출부의 "거시지표 캐시 없음" 경고가 안 울린 채 조용히 빈 표만 나왔다.
+    # 실측 예: ECOS manifest 의 GDP 가 status ok 인데 관측 0 행이라, 금리와 환율이 멀쩡한데도
+    # `scan("macroBeta")` 가 전종목 빈 표를 냈다. 어느 지표가 빈 것인지도 드러나지 않았다.
+    missing = [key for key, vals in result.items() if not any(v is not None for v in vals)]
+    if missing:
+        log.warning("거시지표 결측으로 베타 계산 불가: %s (나머지는 정상)", ", ".join(sorted(missing)))
+        return None
+    return result
 
 
 def _calcMacroChanges(macroData: dict[str, list[float | None]]) -> dict[str, list[float | None]]:
