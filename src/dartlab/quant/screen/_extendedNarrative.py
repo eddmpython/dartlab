@@ -355,7 +355,7 @@ def calcStrategySnapshot(company) -> dict | None:
     from dartlab.quant.screen.axStrategy import runEntry, runStyle
     from dartlab.quant.strategy.presets import STYLE_REGISTRY
 
-    code = getattr(company, "stockCode", None) or getattr(company, "stock_code", None)
+    code = getattr(company, "stockCode", None)
     if not code:
         return None
 

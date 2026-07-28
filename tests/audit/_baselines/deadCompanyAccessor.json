@@ -16,7 +16,6 @@
     "companyName@ai/workbench/heuristic.py",
     "currentPrice@analysis/valuation/_valuationInputAccess.py",
     "docs@analysis/financial/insight/_gradingGovernance.py",
-    "industryName@analysis/financial/sectorKpi/dispatcher.py",
     "name@ai/tools/engineCall.py",
     "name@analysis/forecast/scenarioSim.py",
     "name@analysis/valuation/analyst.py",
@@ -29,12 +28,7 @@
     "salesOrder@analysis/financial/_forecastCalcsInputs.py",
     "sectorInfo@analysis/forecast/prediction.py",
     "segments@analysis/financial/_forecastCalcsInputs.py",
-    "stock_code@analysis/financial/governance.py",
-    "stock_code@analysis/financial/macroExposure.py",
     "stock_code@analysis/valuation/analyst.py",
-    "stock_code@quant/screen/_extendedNarrative.py",
-    "stock_code@quant/strategy/styles/_common.py",
-    "stock_code@scan/builders/kr/extended.py",
     "timeseries@providers/edgar/report/employee.py"
   ]
 }

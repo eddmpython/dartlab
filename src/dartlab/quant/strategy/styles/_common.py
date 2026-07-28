@@ -37,7 +37,7 @@ def getArrays(company, *, start: str | None = None) -> dict:
         stockCode 추출 → start fallback → fetchOhlcv → ohlcvToArrays.
 
     Requires:
-        company.stockCode 또는 stock_code 속성.
+        company.stockCode 속성.
 
     Raises:
         없음 — fetch 실패 시 빈 dict.
@@ -54,7 +54,7 @@ def getArrays(company, *, start: str | None = None) -> dict:
     AIContext:
         Strategy 평가 체인의 첫 단계. AI 가 백테스트 답변 시 invisible 호출.
     """
-    code = getattr(company, "stockCode", None) or getattr(company, "stock_code", None)
+    code = getattr(company, "stockCode", None)
     if not code:
         return {}
     # company 객체에 _strategy_start 속성 있으면 그것도 사용 (옵션)
@@ -78,7 +78,7 @@ def isKr(company) -> bool:
     Raises:
         없음.
     """
-    code = getattr(company, "stockCode", None) or getattr(company, "stock_code", "")
+    code = getattr(company, "stockCode", "")
     return resolveMarket(code, "auto") == "KR"
 
 
@@ -100,12 +100,12 @@ def getStockCode(company) -> str:
         '005930'
 
     Requires:
-        company 가 stockCode 또는 stock_code 속성 보유.
+        company 가 stockCode 속성 보유.
 
     Raises:
         없음.
     """
-    return getattr(company, "stockCode", None) or getattr(company, "stock_code", "")
+    return getattr(company, "stockCode", "") or ""
 
 
 def safeQuantile(arr: np.ndarray, q: float) -> float:

@@ -376,7 +376,7 @@ def calcMacroSensitivity(company, *, basePeriod: str | None = None) -> dict | No
     if g is None:
         return None
 
-    stockCode = getattr(company, "stockCode", None) or getattr(company, "stock_code", None)
+    stockCode = getattr(company, "stockCode", None)
     if stockCode is None:
         return None
 

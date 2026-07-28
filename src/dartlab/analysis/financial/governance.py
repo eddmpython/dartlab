@@ -510,7 +510,7 @@ def _getDartStockCode(company) -> str | None:
     currency = getattr(company, "currency", None)
     if currency != "KRW":
         return None
-    code = getattr(company, "stockCode", None) or getattr(company, "stock_code", None)
+    code = getattr(company, "stockCode", None)
     # KRX 단축코드 (6자리 숫자 또는 숫자 선두 영숫자, 예 0008Z0)
     if not isinstance(code, str) or not isKrStockCode(code):
         return None

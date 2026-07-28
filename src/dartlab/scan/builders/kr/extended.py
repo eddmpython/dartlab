@@ -100,7 +100,7 @@ def calcPeerPosition(company, *, basePeriod: str | None = None) -> dict | None:
 
     from dartlab.scan.io.parquet import _ensureScanData, parseNumStr
 
-    code = getattr(company, "stockCode", None) or getattr(company, "stock_code", None)
+    code = getattr(company, "stockCode", None)
     if not code:
         return None
 
@@ -313,7 +313,7 @@ def calcGovernanceSummary(company) -> dict | None:
         - :func:`calcPeerPosition` — 본 함수의 재무 sibling
         - :mod:`dartlab.scan.governance` — `Company.governance()` 의 source axis
     """
-    code = getattr(company, "stockCode", None) or getattr(company, "stock_code", None)
+    code = getattr(company, "stockCode", None)
     if not code:
         return None
 
