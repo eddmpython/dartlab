@@ -21,8 +21,8 @@ from dartlab.viz.display.finance.accounts import extractSeries
 _log = getLogger(__name__)
 
 
-def _normAndPeriods(company: Any, count: int, freq: str = "annual") -> tuple[Any, list[Any]]:
-    """정규화 재무와 최근 `count` 기간을 함께 얻는다.
+def _normAndPeriods(company: Any, limit: int, freq: str = "annual") -> tuple[Any, list[Any]]:
+    """정규화 재무와 최근 `limit` 기간을 함께 얻는다.
 
     이 세 줄을 어댑터 여덟 곳이 그대로 복붙해 쓰고 있었다. 일곱 곳은 `except Exception`
     으로 통째로 삼켜 빈 차트를 냈고 한 곳은 아예 감싸지 않았다. 같은 동작이 자리마다
@@ -38,9 +38,9 @@ def _normAndPeriods(company: Any, count: int, freq: str = "annual") -> tuple[Any
 
     try:
         norm = getNormFinance(company)
-        periods = lastNPeriods(norm, count, freq)
+        periods = lastNPeriods(norm, limit, freq)
     except Exception as exc:  # noqa: BLE001
-        _log.debug("재무 기간 로드 실패 (count=%s, freq=%s): %s", count, freq, exc)
+        _log.debug("재무 기간 로드 실패 (limit=%s, freq=%s): %s", limit, freq, exc)
         return None, []
     return norm, list(periods or [])
 
