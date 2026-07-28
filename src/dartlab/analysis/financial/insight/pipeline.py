@@ -151,6 +151,21 @@ def _ratioArchetypeOverride(company: Company | None) -> str | None:
     return mapping.get(industryGroup)
 
 
+def _seriesPairsFromCompany(company) -> tuple[SeriesPair | None, SeriesPair | None]:
+    """Company 에서 분기·연간 시계열 짝을 얻는다. 못 얻으면 (None, None).
+
+    회사 객체가 이미 갖고 있는 finance 빌드를 그대로 쓴다 (캐시도 그쪽 것). 계열을 여기서
+    새로 조립하지 않는다. import 없이 메서드 유무만 보므로 계층을 건너뛰지 않는다.
+    """
+    build = getattr(company, "_getFinanceBuild", None)
+    if build is None:
+        return None, None
+    try:
+        return build("q"), build("y")
+    except (AttributeError, KeyError, OSError, RuntimeError, TypeError, ValueError):
+        return None, None
+
+
 def analyzeFinancial(
     stockCode: str,
     company: Company | None = None,
@@ -207,8 +222,14 @@ def analyzeFinancial(
         AnalysisResult.summary 가 사용자 친화 텍스트. profile + distress.zone + risk.grade 3
         조합으로 대표 답변 구성.
     """
-    # 두 계열은 호출부가 넘겨야 한다. 예전에는 여기서 accessor 로 직접 만들어
-    # 채우는 길이 있었지만 그 accessor 는 등록 대상이 비어 영원히 None 이었다.
+    # 두 계열은 호출부가 넘기거나 company 에서 얻는다. 예전에는 DI accessor 로 만드는 길이
+    # 있었는데 그 accessor 는 등록 대상이 비어 영원히 None 이었고, 그 길을 걷어낸 뒤로는
+    # 아무도 계열을 안 넘겨서 이 함수가 어디서도 결과를 못 냈다. 레포 전체에 `SeriesPair` 를
+    # 만드는 자리가 하나도 없었다. 그래서 scorecard 등급도 예측 확률 보정도 조용히 죽어 있었다.
+    if (qSeriesPair is None or aSeriesPair is None) and company is not None:
+        fromCompany = _seriesPairsFromCompany(company)
+        qSeriesPair = qSeriesPair or fromCompany[0]
+        aSeriesPair = aSeriesPair or fromCompany[1]
     if qSeriesPair is None or aSeriesPair is None:
         return None
 

@@ -74,6 +74,49 @@ def _make_series() -> tuple[dict, list[str], dict, list[str]]:
 # ── analyze() 호출 ──
 
 
+class _CompanyWithFinanceBuild:
+    """`_getFinanceBuild` 만 갖춘 최소 Company 대역."""
+
+    stockCode = "999999"
+    corpName = "테스트기업"
+    currency = "KRW"
+
+    def __init__(self, qPair, aPair):
+        self._pairs = {"q": qPair, "y": aPair}
+
+    def _getFinanceBuild(self, period: str = "q", fsDivPref: str = "CFS"):
+        return self._pairs.get(period)
+
+
+def test_analyze_buildsSeriesFromCompanyWhenPairsOmitted():
+    """계열을 안 넘겨도 company 가 갖고 있으면 결과를 낸다.
+
+    옛 DI accessor 경로를 걷어낸 뒤로 아무도 계열을 안 넘겨서, 레포 전체에 `SeriesPair` 를
+    만드는 자리가 하나도 없었다. 그래서 이 함수가 어디서도 결과를 못 냈고 scorecard 등급과
+    예측 확률 보정이 조용히 죽어 있었다. 회사 객체가 이미 갖고 있는 finance 빌드를 쓴다.
+    """
+    from dartlab.analysis.financial.insight import AnalysisResult
+    from dartlab.analysis.financial.insight import analyzeFinancial as analyze
+
+    qSeries, qPeriods, aSeries, aYears = _make_series()
+    company = _CompanyWithFinanceBuild((qSeries, qPeriods), (aSeries, aYears))
+
+    result = analyze("999999", company)
+
+    assert isinstance(result, AnalysisResult)
+    assert result.grades(), "등급이 비었다"
+
+
+def test_analyze_returnsNoneWhenCompanyHasNoFinanceBuild():
+    """계열도 없고 회사도 못 주면 그대로 None (조용히 지어내지 않는다)."""
+    from dartlab.analysis.financial.insight import analyzeFinancial as analyze
+
+    class _Bare:
+        stockCode = "999999"
+
+    assert analyze("999999", _Bare()) is None
+
+
 def test_analyze_returns_result():
     """mock 데이터로 analyze() 호출 시 AnalysisResult 반환."""
     from dartlab.analysis.financial.insight import AnalysisResult

@@ -4,6 +4,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from dartlab.core.logger import getLogger
+
+_log = getLogger(__name__)
+
 # ======================================
 # 데이터 구조
 # ======================================
@@ -114,16 +118,21 @@ def collectSignals(company, *, usePredictionAxis: bool = False) -> ContextSignal
     """
     signals = ContextSignals()
 
-    # 1. insight 등급 수집
+    # 1. insight 등급 수집.
+    # 예전에는 `company.insights` 를 읽었다. 그 accessor 는 사라졌는데 아래 except 가
+    # AttributeError 를 삼켜서, 등급이 늘 빈 dict 인 채로 조용히 남았다. 그래서 확률 보정
+    # 여덟 규칙 중 넷(수익성·건전성·기회·현금흐름)이 한 번도 발동하지 못했다. 지금 살아 있는
+    # 산출 경로는 재무 인사이트 파이프라인이고, 그 결과가 같은 영역 등급을 그대로 준다.
     try:
-        insights = company.insights
-        if insights:
-            for areaKey in ("profitability", "health", "cashflow", "governance", "risk", "opportunity", "performance"):
-                area = getattr(insights, areaKey, None)
-                if area and hasattr(area, "grade"):
-                    signals.insightGrades[areaKey] = area.grade
-    except (AttributeError, TypeError):
-        pass
+        from dartlab.analysis.financial.insight.pipeline import analyzeFinancial
+
+        result = analyzeFinancial(company.stockCode, company)
+        if result is not None:
+            wanted = ("profitability", "health", "cashflow", "governance", "risk", "opportunity", "performance")
+            grades = result.grades()
+            signals.insightGrades = {k: grades[k] for k in wanted if grades.get(k)}
+    except (AttributeError, FileNotFoundError, KeyError, RuntimeError, TypeError, ValueError) as exc:
+        _log.debug("insight 등급 수집 실패 (%s): %s", getattr(company, "stockCode", "?"), exc)
 
     # 2. diff 변화율 수집
     try:
