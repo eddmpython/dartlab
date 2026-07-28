@@ -12,6 +12,55 @@ from pathlib import Path
 import polars as pl
 import pytest
 
+# ── 공개 계약 엔진 호출체 ──────────────────────────────────
+
+
+@pytest.mark.unit
+def test_contract_engines_are_all_callable():
+    """`_CONTRACT_ENGINES` 에 실린 엔진은 전부 `dartlab.{engine}(...)` 로 불려야 한다.
+
+    배선이 세 곳(`_LAZY_ATTRS` · 모듈 `__getattr__` · `_makeCallableModule` 팩토리)에
+    흩어져 있던 동안, 계약 엔진이 통째로 빠져도 어느 쪽도 그걸 몰랐다. 실제로 강행규칙
+    계약 목록에 실려 있던 `frame`·`synth`·`reference`·`story` 넷은 호출체가 없었고
+    `reference` 는 속성 자체가 없어 AttributeError 였다.
+    """
+    import dartlab
+    from dartlab import _CONTRACT_ENGINES
+
+    broken = []
+    for name in _CONTRACT_ENGINES:
+        obj = getattr(dartlab, name, None)
+        if obj is None or not callable(obj):
+            broken.append(f"{name}({'없음' if obj is None else type(obj).__name__})")
+    assert not broken, "계약 엔진인데 호출체가 없다: " + ", ".join(broken)
+
+
+@pytest.mark.unit
+def test_contract_engine_aliases_resolve_to_same_object():
+    """엔진 별칭은 본체와 같은 것을 준다 (`data` 는 `dataHub` 의 옛 이름)."""
+    import dartlab
+    from dartlab import _ENGINE_ALIASES
+
+    for alias, target in _ENGINE_ALIASES.items():
+        assert getattr(dartlab, alias) is getattr(dartlab, target), f"별칭 {alias} 는 {target} 와 같아야 한다"
+
+
+@pytest.mark.unit
+def test_internal_l15_packages_have_no_call_surface():
+    """계약이 아닌 L1.5 가공층에는 호출 표면이 없어야 한다.
+
+    `frame`·`synth`·`reference` 는 분석엔진이 소비하는 내부 층이다 (engine spec 없음).
+    여기에 호출체가 생기면 강행규칙이 금지한 새 계약 표면이 몰래 는 것이다.
+    """
+    import dartlab
+    from dartlab import _CONTRACT_ENGINES
+
+    for name in ("frame", "synth", "reference"):
+        assert name not in _CONTRACT_ENGINES, f"{name} 은 계약 엔진이 아니다"
+        obj = getattr(dartlab, name, None)
+        assert obj is None or not callable(obj), f"dartlab.{name} 에 호출 표면이 생겼다"
+
+
 # ── 가이드 DF 표준 컬럼 ────────────────────────────────────
 
 
