@@ -129,6 +129,44 @@ def panelXmlTables(
     return tables
 
 
+def panelLatestPeriod(
+    code: str,
+    *,
+    sectionPattern: str | None = None,
+    marketNs: str = "kr",
+) -> str | None:
+    """해당 섹션에 본문이 실제로 있는 가장 최근 기간 라벨.
+
+    ``panelTableRows`` 를 기간 없이 부르면 모든 공시의 표가 한 덩어리로 붙어 나온다.
+    회사별 매출 구성처럼 한 시점 표를 봐야 하는 소비자는 여러 해가 섞이면 값이 뒤엉킨다.
+    이 헬퍼로 최신 기간을 먼저 정하고 그 기간만 읽으면 된다.
+
+    Args:
+        code: 6-digit DART stock code.
+        sectionPattern: optional regex applied to ``sectionLeaf``.
+        marketNs: panel namespace, normally ``"kr"``.
+
+    Returns:
+        ``"2026Q1"`` 꼴 기간 라벨. 해당 섹션 본문이 없으면 ``None``.
+
+    Raises:
+        No explicit exceptions; panel reader errors propagate from ``readLong``.
+
+    Example:
+        >>> panelLatestPeriod("005930", sectionPattern="제품") or "2026Q1"
+        '2026Q1'
+    """
+    from dartlab.providers.dart.panel.read import readLong
+
+    df = readLong(code, marketNs=marketNs)
+    if df is None or df.is_empty() or "period" not in df.columns:
+        return None
+    if sectionPattern:
+        df = df.filter(pl.col("sectionLeaf").str.contains(sectionPattern))
+    periods = [p for p in df["period"].to_list() if p]
+    return max(periods) if periods else None
+
+
 def panelTableRows(
     code: str,
     *,
