@@ -14,6 +14,7 @@ from typing import Any
 import polars as pl
 
 from dartlab.core.logger import getLogger
+from dartlab.providers.dart.search.coerce import _envFlag, _nameKey
 from dartlab.providers.dart.search.entityGraph import ENTITY_GRAPH_CATALOG_NAME
 
 _log = getLogger(__name__)
@@ -345,12 +346,6 @@ def _stockCode(value: Any) -> str:
     return text.zfill(6) if text.isdigit() and len(text) <= 6 else text
 
 
-def _nameKey(value: Any) -> str:
-    text = str(value or "").strip().lower()
-    removable = set(" \t\r\n()[]{}㈜주식회사,.-_")
-    return "".join(ch for ch in text if ch not in removable)
-
-
 def _safeFloat(value: Any) -> float | None:
     try:
         if value is None or value == "":
@@ -385,10 +380,3 @@ def _dedupe(values: Iterable[str]) -> list[str]:
 
 def _splitCodes(raw: str) -> list[str]:
     return [_stockCode(part) for part in str(raw or "").split(",") if str(part).strip()]
-
-
-def _envFlag(name: str, *, default: bool) -> bool:
-    raw = os.environ.get(name)
-    if raw is None or raw == "":
-        return default
-    return raw.strip().lower() not in {"0", "false", "no", "n"}

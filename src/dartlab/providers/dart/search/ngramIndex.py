@@ -22,6 +22,8 @@ import polars as pl
 
 import dartlab.config as _cfg
 from dartlab.core.dataConfig import DATA_RELEASES
+from dartlab.providers.dart.search.coerce import _periodToReportName
+from dartlab.providers.dart.search.ngramIndexSync import _stemIndexDir
 
 # ── 동의어 테이블 ──
 
@@ -121,12 +123,6 @@ def _tokenize(text: str) -> list[str]:
 # ── 경로 ──
 
 
-def _stemIndexDir() -> Path:
-    d = Path(_cfg.dataDir) / DATA_RELEASES["stemIndex"]["dir"]
-    d.mkdir(parents=True, exist_ok=True)
-    return d
-
-
 def _panelCodes() -> list[str]:
     """panel artifact 에서 사용 가능한 종목코드 목록."""
     panelDir = Path(_cfg.dataDir) / DATA_RELEASES["panel"]["dir"]
@@ -135,19 +131,6 @@ def _panelCodes() -> list[str]:
     flat = {p.stem for p in panelDir.glob("*.parquet") if not p.name.startswith("_")}
     nested = {p.name for p in panelDir.iterdir() if p.is_dir()}
     return sorted(flat | nested)
-
-
-def _periodToReportName(period: str) -> str:
-    """panel period(YYYYQn) → DART 정기보고서명 추정."""
-    if not period:
-        return ""
-    if period.endswith("Q4"):
-        return "사업보고서"
-    if period.endswith("Q2"):
-        return "반기보고서"
-    if period.endswith("Q1") or period.endswith("Q3"):
-        return "분기보고서"
-    return period
 
 
 # 캐시

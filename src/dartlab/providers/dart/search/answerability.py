@@ -7,6 +7,7 @@ from typing import Any
 
 import polars as pl
 
+from dartlab.providers.dart.search.coerce import _isFalse
 from dartlab.providers.dart.search.facetPlanner import QueryFacets, facetMismatchReason
 from dartlab.providers.dart.search.sourceIntent import SourceIntent, sourceMatchesIntent
 
@@ -125,16 +126,6 @@ def _rowAnswerability(
     if _isStaleSource(row, facets=facets, today=today):
         return False, "staleSource"
     return True, ""
-
-
-def _isFalse(value: Any) -> bool:
-    if isinstance(value, bool):
-        return not value
-    if value in (None, ""):
-        return False
-    if isinstance(value, str):
-        return value.strip().lower() in {"0", "false", "no", "n"}
-    return not bool(value)
 
 
 def _hasUsableSourceRef(row: dict[str, Any]) -> bool:

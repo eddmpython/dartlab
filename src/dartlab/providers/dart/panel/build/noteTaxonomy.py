@@ -39,6 +39,7 @@ import polars as pl
 import dartlab.config as _cfg
 
 from ..mapper import normalizeTitle as _norm  # 제목 정규화 단일 SSOT (build 검출·read 정렬 공유)
+from .codegen import _ruffFormat  # 생성물 ruff 정본화 단일 SSOT (spineBuilder 와 공유)
 
 _log = logging.getLogger(__name__)
 _STD_RE = r"^NT_D\d+$"  # 정부표준 scope-strip 코드만 (회사확장 NT_C_U*/DI*/DS* 노이즈 제외)
@@ -132,16 +133,6 @@ def renderModule(taxonomy: dict[str, str]) -> str:
     )
     body = "".join(f"    {_q(k)}: {_q(v)},\n" for k, v in taxonomy.items())
     return header + body + "}\n"
-
-
-def _ruffFormat(path: Path) -> None:
-    """생성 모듈 ruff format 정본화 (실패는 무시 — ruff 부재 안전)."""
-    import subprocess
-
-    try:
-        subprocess.run(["uv", "run", "ruff", "format", str(path)], check=False, capture_output=True, timeout=60)
-    except (OSError, subprocess.SubprocessError):
-        pass
 
 
 def buildAndWrite(*, outModulePath: Path | str | None = None, verbose: bool = True, **kw) -> dict[str, int]:

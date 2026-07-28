@@ -10,6 +10,7 @@ from typing import Any, Iterable, Mapping
 import numpy as np
 import polars as pl
 
+from dartlab.providers.dart.search.coerce import _dateOrdinal
 from dartlab.providers.dart.search.facetPlanner import QueryFacets, facetMismatchReason, planQueryFacets
 from dartlab.providers.dart.search.sourceIntent import SourceIntent
 
@@ -790,16 +791,3 @@ def _float(value: Any) -> float:
         return float(value or 0.0)
     except (TypeError, ValueError):
         return 0.0
-
-
-def _dateOrdinal(value: Any) -> int:
-    digits = "".join(ch for ch in str(value or "") if ch.isdigit())[:8]
-    if len(digits) != 8:
-        return 0
-    try:
-        year = int(digits[:4])
-        month = int(digits[4:6])
-        day = int(digits[6:8])
-    except ValueError:
-        return 0
-    return year * 372 + month * 31 + day

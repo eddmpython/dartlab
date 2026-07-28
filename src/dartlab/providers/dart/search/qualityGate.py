@@ -6,6 +6,8 @@ import json
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
+from dartlab.providers.dart.search.coerce import _ratio
+
 REAL_GOLD_ORIGINS = {"real", "operator", "operatorReal", "userLog", "production"}
 REVIEWED_STATUSES = {"reviewed", "approved", "accepted", "gold"}
 DEFAULT_REQUIRED_TARGETS = ("filing", "news", "noAnswer")
@@ -799,12 +801,6 @@ def _topResultFailureTypes(results: Sequence[Mapping[str, Any]]) -> list[str]:
         if reason == "staleSource":
             out.append("staleSource")
     return out
-
-
-def _ratio(numerator: float, denominator: int) -> float:
-    if denominator <= 0:
-        return 0.0
-    return float(numerator) / float(denominator)
 
 
 def _dedupe(values: Iterable[str]) -> list[str]:

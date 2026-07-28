@@ -11,7 +11,6 @@ import hashlib
 import html
 import json
 import math
-import os
 import re
 import time
 from pathlib import Path
@@ -22,6 +21,7 @@ import polars as pl
 import dartlab.config as _cfg
 from dartlab.core.dataConfig import DATA_RELEASES
 from dartlab.core.logger import getLogger
+from dartlab.providers.dart.search.coerce import _envFlag, _periodToReportName
 from dartlab.providers.dart.search.freshness import DEFAULT_DATE_COLUMNS, firstSearchDate, periodToDataAsOf
 
 # content_raw(DART XML/HTML) → 검색용 평문. 색인 토큰화엔 정밀 파서(BeautifulSoup, XML당 ~100ms)가
@@ -495,19 +495,6 @@ def _edgarPanelDir():
     from dartlab.core.dataLoader import _getDataRoot
 
     return _getDataRoot() / "edgar" / "panel"
-
-
-def _periodToReportName(period: str) -> str:
-    """panel period(YYYYQn) → DART 정기보고서명 추정."""
-    if not period:
-        return ""
-    if period.endswith("Q4"):
-        return "사업보고서"
-    if period.endswith("Q2"):
-        return "반기보고서"
-    if period.endswith("Q1") or period.endswith("Q3"):
-        return "분기보고서"
-    return period
 
 
 def _panelEntries(base: Path) -> list[tuple[str, list[Path]]]:
@@ -1252,13 +1239,6 @@ def pushContentIndex(token: str | None = None, *, tier: str = "full", promoteCur
         tier=tier,
         promoteCurrent=promoteCurrent,
     )
-
-
-def _envFlag(name: str, *, default: bool) -> bool:
-    raw = os.environ.get(name)
-    if raw is None or raw == "":
-        return default
-    return raw.strip().lower() not in {"0", "false", "no", "n"}
 
 
 def pullContentIndex(tier: str = "full") -> int:

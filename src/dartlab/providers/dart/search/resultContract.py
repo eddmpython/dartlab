@@ -6,6 +6,8 @@ import json
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
+from dartlab.providers.dart.search.coerce import _ratio
+
 PRODUCT_CONTRACT_FIELDS = ("source", "sourceRef", "dataAsOf", "snippet", "answerable", "fieldCards")
 
 
@@ -234,9 +236,3 @@ def _isAnswerable(row: Mapping[str, Any]) -> bool:
     if isinstance(value, str):
         return value.strip().lower() not in {"0", "false", "no", "n"}
     return bool(value)
-
-
-def _ratio(numerator: int, denominator: int) -> float:
-    if denominator <= 0:
-        return 0.0
-    return float(numerator) / float(denominator)

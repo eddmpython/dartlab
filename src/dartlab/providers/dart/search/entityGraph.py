@@ -9,6 +9,8 @@ from typing import Any, Mapping
 
 import polars as pl
 
+from dartlab.providers.dart.search.coerce import _nameKey
+
 ENTITY_GRAPH_CATALOG_NAME = "entityGraphCatalog.parquet"
 _CATALOG_FILENAMES: tuple[str, ...] = (
     ENTITY_GRAPH_CATALOG_NAME,
@@ -246,12 +248,6 @@ def _stockCode(value: Any) -> str:
     if text.isdigit() and len(text) <= 6:
         return text.zfill(6)
     return text
-
-
-def _nameKey(value: Any) -> str:
-    text = str(value or "").strip().lower()
-    removable = set(" \t\r\n()[]{}㈜주식회사,.-_")
-    return "".join(ch for ch in text if ch not in removable)
 
 
 def _jsonList(raw: Any) -> list[dict[str, Any]]:

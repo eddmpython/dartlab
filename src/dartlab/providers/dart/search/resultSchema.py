@@ -7,6 +7,8 @@ from typing import Any
 
 import polars as pl
 
+from dartlab.providers.dart.search.coerce import _asBool
+
 PRODUCT_RESULT_COLUMNS: tuple[str, ...] = (
     "source",
     "sourceRef",
@@ -111,13 +113,3 @@ def _fieldCardsJson(row: dict[str, Any]) -> str:
 
     cards = buildFieldCards(row)
     return json.dumps(cards, ensure_ascii=False, separators=(",", ":"))
-
-
-def _asBool(value: Any, *, default: bool) -> bool:
-    if isinstance(value, bool):
-        return value
-    if value in (None, ""):
-        return default
-    if isinstance(value, str):
-        return value.strip().lower() not in {"0", "false", "no", "n"}
-    return bool(value)

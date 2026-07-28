@@ -30,6 +30,10 @@ from typing import Any
 
 from lxml import etree
 
+# TR 순회는 sectionXml 이 정본 (같은 DART XML 표를 읽는 유일 구현). 여기서 재선언하면
+# 한쪽만 고쳐지는 표류가 생긴다.
+from dartlab.providers.dart.sectionXml import _findDirectTRs
+
 _MULTISPACE_RE = re.compile(r"\s+")
 
 
@@ -48,19 +52,6 @@ def _elemText(elem) -> str:
     """
     raw = "".join(elem.itertext())
     return _MULTISPACE_RE.sub(" ", raw).strip()
-
-
-def _findDirectTRs(table):
-    """``<TABLE>`` 직속 + ``<TBODY>``/``<THEAD>``/``<TFOOT>`` 안 TR 만 (nested TABLE 의 TR 제외)."""
-    for child in table:
-        if not isinstance(child.tag, str):
-            continue
-        if child.tag == "TR":
-            yield child
-        elif child.tag in ("TBODY", "THEAD", "TFOOT"):
-            for sub in child:
-                if isinstance(sub.tag, str) and sub.tag == "TR":
-                    yield sub
 
 
 def _escapeHtml(text: str) -> str:

@@ -9,6 +9,7 @@ from typing import Any, Iterable
 
 import polars as pl
 
+from dartlab.providers.dart.search.coerce import _int
 from dartlab.providers.dart.search.freshness import normalizeSearchDate, periodToDataAsOf
 
 CATALOG_COLUMNS: tuple[str, ...] = (
@@ -258,13 +259,6 @@ def _first(row: dict[str, Any], *keys: str) -> Any:
         if value not in (None, ""):
             return value
     return None
-
-
-def _int(value: Any, default: int) -> int:
-    try:
-        return int(value)
-    except (TypeError, ValueError):
-        return default
 
 
 def _truthy(value: Any) -> bool:

@@ -47,6 +47,7 @@ import dartlab.config as _cfg
 from ..mapper import canonicalKey, resolveBatch, rowIdentity
 from ..schema import PANEL_SCHEMA
 from .builder import _readZip, _xmlsToPeriodRows
+from .codegen import _ruffFormat  # 생성물 ruff 정본화 단일 SSOT (noteTaxonomy 와 공유)
 from .horizontalize import horizontalize
 from .refScan import extractAclassEntries, scanRefBaseline
 
@@ -292,28 +293,3 @@ def buildSpine(
     if verbose:
         _log.info("spine 생성: %s (code=%s, rows=%d)", outPath, code, len(rows))
     return {"code": 1 if rows else 0, "rows": len(rows)}
-
-
-def _ruffFormat(path: Path) -> None:
-    """생성 모듈을 ruff format 정본화 (실패는 무시 — ruff 부재 환경 안전).
-
-    Args:
-        path: 포맷할 .py 경로.
-
-    Returns:
-        None.
-
-    Raises:
-        없음 — subprocess 실패는 흡수 (생성물은 이미 valid python).
-    """
-    import subprocess
-
-    try:
-        subprocess.run(
-            ["uv", "run", "ruff", "format", str(path)],
-            check=False,
-            capture_output=True,
-            timeout=60,
-        )
-    except (OSError, subprocess.SubprocessError):
-        pass

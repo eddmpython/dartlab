@@ -6,6 +6,8 @@ import json
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
+from dartlab.providers.dart.search.coerce import _asBool, _int, _ratio
+
 
 def loadCanaryPack(path: str | Path) -> list[dict[str, Any]]:
     """Load a search canary pack from JSON or JSONL.
@@ -269,16 +271,6 @@ def _isAnswerable(row: Mapping[str, Any]) -> bool:
     return _asBool(row.get("answerable"), default=True)
 
 
-def _asBool(value: Any, *, default: bool) -> bool:
-    if isinstance(value, bool):
-        return value
-    if value in (None, ""):
-        return default
-    if isinstance(value, str):
-        return value.strip().lower() not in {"0", "false", "no", "n"}
-    return bool(value)
-
-
 def _toDictRows(raw: Any) -> list[dict[str, Any]]:
     if hasattr(raw, "to_dicts"):
         return [dict(row) for row in raw.to_dicts()]
@@ -294,16 +286,3 @@ def _policyCandidate(failure: str) -> str:
         "sourceMiss": "sourceIntentPolicy",
         "sourceRefMiss": "citationIntegrityPolicy",
     }.get(failure, "policyReview")
-
-
-def _ratio(numerator: float, denominator: int) -> float:
-    if denominator <= 0:
-        return 0.0
-    return float(numerator) / float(denominator)
-
-
-def _int(value: Any, default: int) -> int:
-    try:
-        return int(value)
-    except (TypeError, ValueError):
-        return default

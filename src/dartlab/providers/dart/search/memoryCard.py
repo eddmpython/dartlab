@@ -7,6 +7,8 @@ from typing import Any
 
 import polars as pl
 
+from dartlab.providers.dart.search.coerce import _isFalse
+
 
 def buildMemoryCards(df: pl.DataFrame, *, query: str = "", limit: int = 3) -> list[dict[str, Any]]:
     """Convert top answerable search rows into compact LLM memory cards.
@@ -98,13 +100,3 @@ def _dataAsOfBySource(cards: list[dict[str, Any]]) -> dict[str, str]:
         if source and dataAsOf:
             out[source] = max(out.get(source, ""), dataAsOf)
     return out
-
-
-def _isFalse(value: Any) -> bool:
-    if isinstance(value, bool):
-        return not value
-    if value in (None, ""):
-        return False
-    if isinstance(value, str):
-        return value.strip().lower() in {"0", "false", "no", "n"}
-    return not bool(value)

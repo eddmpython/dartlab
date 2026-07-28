@@ -14,6 +14,7 @@ from typing import Any, Iterable
 import polars as pl
 
 from dartlab.providers.dart.search.catalog import CATALOG_COLUMNS, diffCatalog, normalizeCatalogRows
+from dartlab.providers.dart.search.coerce import _int
 from dartlab.providers.dart.search.sourceManifest import loadSourceManifest, validateSourceManifest
 
 DELTA_CATALOG_COLUMNS: tuple[str, ...] = ("docKey", "source", "textHash", "metadataHash", "deleted")
@@ -409,13 +410,6 @@ def _sourceCounts(catalog: pl.DataFrame) -> dict[str, int]:
     for row in catalog.group_by("source").len().iter_rows(named=True):
         out[str(row.get("source") or "")] = int(row.get("len") or 0)
     return out
-
-
-def _int(value: Any, default: int) -> int:
-    try:
-        return int(value)
-    except (TypeError, ValueError):
-        return default
 
 
 def _normalizeSources(sources: Iterable[str] | None) -> list[str]:
