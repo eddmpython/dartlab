@@ -93,9 +93,17 @@ def synthesizeAnnualFromQuarters(
     for q in qPeriods:
         yearMap.setdefault(q[:4], []).append(q)
     isStock = topic == "BS"
+    # 값이 실제로 만들어진 해만 기간 목록에 싣는다. 4 분기가 안 찬 해는 아래 strict 규칙이
+    # 옳게 None 을 내는데, 예전에는 그 해 라벨을 그래도 실었다. 그러면 `annualColsFromPeriods`
+    # 가 그 해를 맨 앞으로 돌려주고 소비자는 최신 연간값 자리에서 None 을 받는다. 2026 년
+    # 1 분기만 나온 시점에 전 종목의 최신 연간 매출이 조용히 비었다. pivot 쪽 같은 계산은
+    # 이 상황을 "2026Q1" 로 라벨해 full year 와 구분한다. 여기만 그 구분이 없었다.
+    yearsWithValue: set[str] = set()
     for key, row in data.items():
         for yr, qs in yearMap.items():
             if yr in row:
+                if row[yr] is not None:
+                    yearsWithValue.add(yr)
                 continue
             if isStock:
                 annualVal = None
@@ -117,7 +125,9 @@ def synthesizeAnnualFromQuarters(
                 else:
                     annualVal = None
             row[yr] = annualVal
-    addedYears = [yr for yr in yearMap.keys() if yr not in periods]
+            if annualVal is not None:
+                yearsWithValue.add(yr)
+    addedYears = [yr for yr in yearMap if yr not in periods and yr in yearsWithValue]
     if not addedYears:
         return periods
     return sorted(periods + addedYears, key=lambda p: p if "Q" in p else p + "Q5", reverse=True)

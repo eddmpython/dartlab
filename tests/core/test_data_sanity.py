@@ -103,3 +103,39 @@ def test_safe_module_is_ssot():
     assert callable(get)
     assert callable(getFirst)
     assert callable(yoy)
+
+
+@pytest.mark.unit
+def test_synthesizeAnnual_doesNotAdvertisePartialYear():
+    """4 분기가 안 찬 해는 연간 열 목록에 싣지 않는다.
+
+    strict 규칙이 그 해 연간값을 옳게 None 으로 내는데, 예전에는 그 해 라벨을 그래도
+    실었다. 그러면 `annualColsFromPeriods` 가 그 해를 맨 앞으로 돌려주고 소비자는 최신
+    연간값 자리에서 None 을 받는다. 2026 년 1 분기만 나온 시점에 전 종목의 최신 연간
+    매출이 조용히 비었고, 그 회귀를 잡는 센티널이 있었지만 로컬 전수 검사가 메모리
+    천장에 걸려 거기까지 도달한 적이 없었다.
+    """
+    from dartlab.core.utils.flow import synthesizeAnnualFromQuarters
+    from dartlab.core.utils.helpers import annualColsFromPeriods
+
+    data = {"sales": {"2025Q1": 10, "2025Q2": 12, "2025Q3": 14, "2025Q4": 16, "2026Q1": 50}}
+    periods = ["2026Q1", "2025Q4", "2025Q3", "2025Q2", "2025Q1"]
+
+    out = synthesizeAnnualFromQuarters(data, periods, "IS")
+
+    assert "2025" in out, "네 분기가 다 찬 해는 연간 열로 나와야 한다"
+    assert "2026" not in out, "한 분기뿐인 해가 연간 열로 광고됐다"
+    assert annualColsFromPeriods(out)[0] == "2025"
+    assert data["sales"]["2025"] == 52
+
+
+@pytest.mark.unit
+def test_synthesizeAnnual_keepsFullYear():
+    """네 분기가 찬 해는 그대로 합성된다 (문서 예시 불변)."""
+    from dartlab.core.utils.flow import synthesizeAnnualFromQuarters
+
+    data = {"sales": {"2024Q1": 10, "2024Q2": 12, "2024Q3": 14, "2024Q4": 16}}
+    out = synthesizeAnnualFromQuarters(data, ["2024Q1", "2024Q2", "2024Q3", "2024Q4"], "IS")
+
+    assert out[0] == "2024"
+    assert data["sales"]["2024"] == 52
