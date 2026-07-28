@@ -151,6 +151,18 @@ REPORT_COL_KR: dict[str, str] = {
 _REPORT_COL_KR = REPORT_COL_KR
 
 
+def _deprecationHint(name: str, alternative: str) -> str:
+    """폐기 예정 접근자의 안내 문구. 실제로 도는 경로만 적는다.
+
+    예전 문구는 `report.dividend → panel('dividend')` 처럼 영문 축을 권했는데, 그 축은
+    존재하지 않아 `panel` 이 None 을 돌려준다. 실측으로 dividend·employee·majorHolder·
+    executive 넷 다 옛 접근자는 실데이터(40·84·167·8 행)를 주고 권장 경로는 None 이었다.
+    안내를 따르면 자료를 잃는다. panel 의 공시 본문과 이 API 표는 애초에 다른 것이라
+    옮겨 갈 자리가 아니었다.
+    """
+    return f"report.{name} 은 공개 계약이 아니다. {alternative} 로 옮겨라."
+
+
 def reportFrameInner(stockCode: str, apiType: str, topic: str, *, raw: bool = False) -> pl.DataFrame | None:
     """report apiType 의 정제된 DataFrame 반환 (메타 컬럼 제거, 한글 매핑).
 
@@ -432,7 +444,11 @@ class _ReportAccessor:
         """
         import warnings
 
-        warnings.warn("report.dividend → panel('dividend') 경로 권장", DeprecationWarning, stacklevel=2)
+        warnings.warn(
+            _deprecationHint("dividend", "c.capital() (DPS·배당수익률) 또는 dartlab.scan('dividendTrend')"),
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self._pivot("dividend")
 
     @property
@@ -451,7 +467,9 @@ class _ReportAccessor:
         """
         import warnings
 
-        warnings.warn("report.employee → panel('employee') 경로 권장", DeprecationWarning, stacklevel=2)
+        warnings.warn(
+            _deprecationHint("employee", "c.workforce() (직원수·평균급여·근속)"), DeprecationWarning, stacklevel=2
+        )
         return self._pivot("employee")
 
     @property
@@ -470,7 +488,11 @@ class _ReportAccessor:
         """
         import warnings
 
-        warnings.warn("report.majorHolder → panel('majorHolder') 경로 권장", DeprecationWarning, stacklevel=2)
+        warnings.warn(
+            _deprecationHint("majorHolder", "c.governance() (지분율) 또는 dartlab.scan('governance')"),
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self._pivot("majorHolder")
 
     @property
@@ -489,7 +511,11 @@ class _ReportAccessor:
         """
         import warnings
 
-        warnings.warn("report.executive → panel('executive') 경로 권장", DeprecationWarning, stacklevel=2)
+        warnings.warn(
+            _deprecationHint("executive", "c.governance() (사외이사비율·겸직) 또는 c.panel('임원')"),
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self._pivot("executive")
 
     @property
@@ -508,7 +534,9 @@ class _ReportAccessor:
         """
         import warnings
 
-        warnings.warn("report.audit → panel('audit') 경로 권장", DeprecationWarning, stacklevel=2)
+        warnings.warn(
+            _deprecationHint("audit", "c.panel('감사') 또는 dartlab.scan('audit')"), DeprecationWarning, stacklevel=2
+        )
         return self._pivot("audit")
 
     def __getattr__(self, name: str) -> Any:
