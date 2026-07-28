@@ -270,14 +270,9 @@ def _extractFromCompany(
 
     # 발행주식수
     if shares <= 0:
-        try:
-            df = company.capital()
-            if df is not None and getattr(df, "height", 0):
-                sharesVal = df.row(0, named=True).get("발행주식총수")
-                if sharesVal:
-                    shares = int(sharesVal)
-        except (AttributeError, KeyError, OSError, RuntimeError, TypeError, ValueError) as exc:
-            log.debug("%s 발행주식수 조회 실패: %s", stockCode or companyName, exc)
+        from dartlab.analysis.financial._companyLookup import _getSharesOutstanding
+
+        shares = _getSharesOutstanding(company) or 0
 
     # 재무 데이터 — EPS, BPS
     if financials is None:

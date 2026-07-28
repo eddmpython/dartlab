@@ -43,38 +43,34 @@ class TestBuildNetworkEgo:
             assert scanAggregator.buildNetworkEgo(_Company()) is None
 
 
-class TestMarketScanMemo:
-    def test_axis_scan_is_built_once_per_process(self):
-        """capital 축은 실측 회사당 8 초다. 회사가 바뀌어도 시장 전체를 다시 훑지 않아야 한다."""
-        scanAggregator._marketScan.cache_clear()
+class TestScanAxisCache:
+    def test_same_instance_scans_once(self):
         frame = object()
-        try:
-            with patch("dartlab.scan.capital.scanCapital", return_value=frame) as scanCapital:
-                first = scanAggregator._ensureCapital(_Company())
-                second = scanAggregator._ensureCapital(_Company())
+        company = _Company()
+        with patch("dartlab.scan.capital.scanCapital", return_value=frame) as scanCapital:
+            assert scanAggregator._ensureCapital(company) is frame
+            assert scanAggregator._ensureCapital(company) is frame
+        assert scanCapital.call_count == 1
 
-            assert first is frame
-            assert second is frame
-            assert scanCapital.call_count == 1
-        finally:
-            scanAggregator._marketScan.cache_clear()
+    def test_cache_is_per_instance_not_per_process(self):
+        """네 축이 붙드는 RSS 가 실측 3.9GB 다 (부채 축만 3,008MB). 프로세스 캐시로 올리면
+        그 메모리가 수명 내내 묶여 뒤따르는 작업을 굶긴다. 회사를 놓으면 놓이는 자리여야 한다.
+        """
+        with patch("dartlab.scan.debt.scanDebt", return_value=object()) as scanDebt:
+            scanAggregator._ensureDebt(_Company())
+            scanAggregator._ensureDebt(_Company())
+        assert scanDebt.call_count == 2
 
-    def test_axes_do_not_evict_each_other(self):
-        """축이 넷이라 캐시 칸도 넷이어야 한다. 한 칸이면 축을 번갈아 부를 때 매번 다시 훑는다."""
-        scanAggregator._marketScan.cache_clear()
-        try:
-            with (
-                patch("dartlab.scan.capital.scanCapital", return_value="capital") as scanCapital,
-                patch("dartlab.scan.debt.scanDebt", return_value="debt") as scanDebt,
-            ):
-                scanAggregator._ensureCapital(_Company())
-                scanAggregator._ensureDebt(_Company())
-                scanAggregator._ensureCapital(_Company())
-
-            assert scanCapital.call_count == 1
-            assert scanDebt.call_count == 1
-        finally:
-            scanAggregator._marketScan.cache_clear()
+    def test_axis_keys_do_not_collide(self):
+        """축마다 캐시 키가 달라야 한다. 겹치면 자본 자리에 부채가 들어간다."""
+        company = _Company()
+        with (
+            patch("dartlab.scan.capital.scanCapital", return_value="capital"),
+            patch("dartlab.scan.debt.scanDebt", return_value="debt"),
+        ):
+            assert scanAggregator._ensureCapital(company) == "capital"
+            assert scanAggregator._ensureDebt(company) == "debt"
+            assert scanAggregator._ensureCapital(company) == "capital"
 
     def test_every_axis_is_wired(self):
         """축 표와 _ensure 진입점이 어긋나면 KeyError 로 죽는다."""

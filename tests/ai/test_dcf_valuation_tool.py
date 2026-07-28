@@ -108,10 +108,9 @@ class _ContractCompany:
     def _getFinanceBuild(self, period: str = "q", fsDivPref: str = "CFS"):
         return ({"IS": {"sales": [1.0]}, "BS": {"total_assets": [2.0]}, "CF": {}}, ["2025Q4"])
 
-    def capital(self):
-        import polars as pl
-
-        return pl.DataFrame({"stockCode": ["999999"], "발행주식총수": [1000.0]})
+    def __init__(self) -> None:
+        # 주식수 공급원은 회사 자기 정기보고서다. 시장 전체를 훑는 capital 축이 아니다.
+        self._profileAccessor = type("Profile", (), {"sharesOutstanding": 1000})()
 
 
 def test_resolveSeries_usesFinanceBuild() -> None:
@@ -128,11 +127,24 @@ def test_resolveSeries_usesFinanceBuild() -> None:
     assert series and set(series) >= {"IS", "BS"}
 
 
-def test_resolveShares_usesCapitalAxis() -> None:
-    """발행주식수는 `capital` 축에서 나온다 (옛 세 후보 이름은 전부 표면에 없다)."""
+def test_resolveShares_usesCompanyOwnReport() -> None:
+    """발행주식수는 회사 자기 정기보고서에서 나온다.
+
+    옛 세 후보 이름(sharesOutstanding · shares · totalShares)은 전부 표면에 없었다. 한때
+    ``capital`` 축을 거쳤는데 그 축은 전종목 스캔이라 회사당 8 초에 시장 프레임을 통째로
+    메모리에 올린다. 한 회사의 주식수를 알자고 시장을 훑을 이유가 없다.
+    """
     from dartlab.ai.tools.dcfValuationTool import _resolveShares
 
     assert _resolveShares(_ContractCompany()) == 1000
+
+
+def test_resolveShares_withoutProfileIsNone() -> None:
+    """공급원이 없으면 None. 0 이나 추정치로 메우지 않는다."""
+    from dartlab.ai.tools.dcfValuationTool import _resolveShares
+
+    assert _resolveShares(object()) is None
+    assert _resolveShares(None) is None
 
 
 def test_resolveCurrentPrice_usesGatherContract(monkeypatch) -> None:

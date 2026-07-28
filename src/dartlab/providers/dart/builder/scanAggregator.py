@@ -116,27 +116,25 @@ _SCAN_AXES: dict[str, tuple[str, str]] = {
 }
 
 
-@lru_cache(maxsize=len(_SCAN_AXES))
-def _marketScan(axis: str) -> pl.DataFrame | None:
-    """축 하나의 전종목 스캔 결과. 프로세스 안에서 축마다 한 번만 만든다.
-
-    네 축 모두 회사 인자를 받지 않는 시장 단위 스캔이다. 결과를 회사별로 걸러 쓸 뿐인데
-    Company 인스턴스 캐시에만 담고 있어서 회사가 바뀌면 시장 전체를 다시 훑었다. capital
-    축은 실측 회사당 8 초라, 주당 지표가 필요한 밸류에이션 입력이 회사마다 그 값을 물었다.
-    로컬 parquet 를 읽는 순수 계산이라 프로세스 안에 들고 있어도 되며 굽는 산출물은 없다.
-    """
-    import importlib
-
-    module, fn = _SCAN_AXES[axis]
-    return getattr(importlib.import_module(module), fn)(verbose=False)
-
-
 def _ensureScanAxis(company: Company, axis: str) -> pl.DataFrame | None:
-    """축 스캔을 Company 캐시 뒤에 프로세스 캐시를 두고 가져온다."""
+    """축 스캔을 Company 캐시에 담아 가져온다.
+
+    캐시를 프로세스 단위로 올리면 회사가 바뀔 때 다시 훑는 비용(자본 축 실측 8 초)이
+    사라진다. 그런데 네 축이 붙드는 RSS 가 실측 3.9GB 다 (자본 165MB, 지배구조 21MB,
+    직원 602MB, 부채 3,008MB). Polars 네이티브 메모리는 놓아도 프로세스에 남으므로,
+    프로세스 캐시는 그 3.9GB 를 수명 내내 못 쓰게 묶어 뒤따르는 작업을 굶긴다.
+    그래서 인스턴스 캐시로 둔다. 회사를 놓으면 그 자리는 다음 할당이 재사용한다.
+
+    한 회사 값 하나가 필요할 뿐이라면 시장 전체를 훑지 않는 길을 먼저 찾아라. 발행주식수가
+    그런 경우였고 회사 자기 정기보고서로 옮겨 8 초가 0.03 초가 됐다.
+    """
     key = f"_{axis}"
     val = company._cache.get(key, _CACHE_MISSING)
     if val is _CACHE_MISSING:
-        val = _marketScan(axis)
+        import importlib
+
+        module, fn = _SCAN_AXES[axis]
+        val = getattr(importlib.import_module(module), fn)(verbose=False)
         company._cache[key] = val
     return val
 

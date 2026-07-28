@@ -78,18 +78,13 @@ def _resolveShares(company: Any) -> int | None:
     """Company → 발행주식수. 실패 시 None.
 
     옛 구현은 `sharesOutstanding` · `shares` · `totalShares` 세 이름을 차례로 봤는데 셋 다
-    표면에 없어서 늘 None 이었다. 지금 공급원은 `capital` 축의 발행주식총수다.
+    표면에 없어서 늘 None 이었다. 지금은 조회 primitive 에 위임한다.
     """
     if company is None:
         return None
-    try:
-        df = company.capital()
-    except (AttributeError, KeyError, OSError, RuntimeError, TypeError, ValueError):
-        return None
-    if df is None or getattr(df, "height", 0) == 0:
-        return None
-    value = df.row(0, named=True).get("발행주식총수")
-    return int(value) if value else None
+    from dartlab.analysis.financial._companyLookup import _getSharesOutstanding
+
+    return _getSharesOutstanding(company)
 
 
 def _resolveCurrentPrice(company: Any) -> float | None:

@@ -41,3 +41,30 @@ def _getSectorParams(company: Any):
         return getattr(company, "sectorParams", None)
     except AttributeError:
         return None
+
+
+def _getSharesOutstanding(company: Any) -> int | None:
+    """공시된 발행주식수를 얻는다. 못 얻으면 None.
+
+    주당 지표를 내는 자리 넷(애널리스트·밸류에이션 입력·매출 예측 입력·현금흐름 가치평가
+    도구)이 각자 주식수를 구하고 있었다. 옛 이름 ``company.profile.sharesOutstanding`` 은
+    표면에 없어 넷 다 늘 None 이었다.
+
+    공급원은 회사 자기 정기보고서의 주식총수 현황이고 값 컬럼은 ``istc_totqy`` (발행주식의
+    총수) 다. 이름이 비슷한 ``isu_stock_totqy`` 는 정관상 발행할 주식의 총수, 곧 수권주식수라
+    실제 발행량의 서너 배다.
+
+    한때 ``capital`` 축을 거쳤는데 그 축은 전종목 스캔이라 회사당 8 초가 들고 시장 프레임을
+    통째로 메모리에 올린다. 한 회사의 주식수를 알자고 시장을 훑을 이유가 없다.
+
+    Returns:
+        발행주식수 (유통 보통주). 보고서가 없거나 값이 비면 None.
+    """
+    accessor = getattr(company, "_profileAccessor", None)
+    if accessor is None:
+        return None
+    try:
+        value = accessor.sharesOutstanding
+    except (AttributeError, KeyError, OSError, RuntimeError, TypeError, ValueError):
+        return None
+    return int(value) if value else None
