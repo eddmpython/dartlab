@@ -56,6 +56,15 @@ trap cleanup EXIT INT TERM
 
 echo "[test-lock] lock 획득 (PID $$). pytest 시작."
 export DARTLAB_TEST_LOCKED=1
+# Polars 의 Rust 힙은 할당자가 해제한 페이지를 붙들고 있어 RSS 가 안 줄어든다. 회사를 여러 개
+# 순차로 돌리면 파이썬 객체가 모두 해제된 뒤에도(실측: 살아있는 Company 0 개) RSS 가 계속
+# 오른다. 그 상태로 단일 프로세스 전수 검사를 돌리면 1.5GB 천장에 걸려 백여 건에서 끊겼고,
+# 그래서 뒤쪽 테스트가 한 번도 안 돌았다. 할당자에 즉시 반환을 지시하면 같은 8 개 회사 부하의
+# 최대 RSS 가 1192·1243·1420MB 에서 867·722·819MB 로 내려간다(각 3 회 측정, 범위 안 겹침).
+# 이 설정은 프로세스 시작 전에 읽히므로 파이썬 안에서 켤 수 없다. 여기가 유일한 자리다.
+export MIMALLOC_PURGE_DELAY=${MIMALLOC_PURGE_DELAY:-0}
+export MIMALLOC_PURGE_DECOMMITS=${MIMALLOC_PURGE_DECOMMITS:-1}
+export MALLOC_CONF=${MALLOC_CONF:-dirty_decay_ms:0,muzzy_decay_ms:0}
 # repo venv가 있으면 우선 사용한다. Windows bash에서 `uv run`을 먼저 타면
 # pytest 쪽 환경변수 감지가 깨지는 경우가 있어 lock 경고가 잘못 출력된다.
 if [ -x ".venv/Scripts/python.exe" ]; then
