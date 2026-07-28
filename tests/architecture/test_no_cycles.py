@@ -26,6 +26,11 @@ def test_no_toplevel_cycles() -> None:
         [sys.executable, "-X", "utf8", str(script), "--strict-toplevel"],
         capture_output=True,
         text=True,
+        # 자식은 -X utf8 로 한글을 UTF-8 로 쓴다. 여기서 인코딩을 안 적으면 로케일
+        # (한국어 Windows 는 cp949) 로 디코드하다 읽기 스레드가 죽고 출력이 비어,
+        # 실패 메시지에 원인이 한 줄도 안 남는다.
+        encoding="utf-8",
+        errors="replace",
         cwd=str(REPO),
     )
     assert result.returncode == 0, (
