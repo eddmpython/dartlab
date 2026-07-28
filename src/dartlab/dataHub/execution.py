@@ -26,7 +26,6 @@ from dartlab.dataHub.contracts import (
 from dartlab.dataHub.executionSupport import (
     _activeQuery,
     _callableCall,
-    _canonical,
     _compiledRequests,
     _engineCall,
     _execute,
@@ -42,6 +41,7 @@ from dartlab.dataHub.executionSupport import (
     _universeCoverage,
 )
 from dartlab.dataHub.identity.contentSeal import resultSnapshotId
+from dartlab.dataHub.identity.digestInput import digestInputBytes
 from dartlab.dataHub.materialization import MaterializationDirective, MaterializationError
 from dartlab.dataHub.projection.output import projectOutput
 from dartlab.dataHub.telemetry import dataHubLogger, recordFailure
@@ -86,7 +86,7 @@ def _resolvedIdentity(
     resolvedRefs = tuple(
         dict.fromkeys(AssetRef(descriptor.assetId, descriptor.assetVersionId) for _, descriptor, _ in resolved)
     )
-    contractHash = hashlib.sha256(_canonical({"assets": resolvedRefs, "query": query})).hexdigest()
+    contractHash = hashlib.sha256(digestInputBytes({"assets": resolvedRefs, "query": query})).hexdigest()
     return resolvedRefs, contractHash
 
 
@@ -627,7 +627,7 @@ def _universeSnapshotId(universeSnapshots: set[str]) -> str | None:
         return next(iter(universeSnapshots))
     if not universeSnapshots:
         return None
-    return f"universe-query:{hashlib.sha256(_canonical(tuple(sorted(universeSnapshots)))).hexdigest()}"
+    return f"universe-query:{hashlib.sha256(digestInputBytes(tuple(sorted(universeSnapshots)))).hexdigest()}"
 
 
 def _assembleEagerResult(

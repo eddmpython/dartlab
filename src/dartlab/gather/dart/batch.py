@@ -28,6 +28,8 @@ import httpx
 import polars as pl
 
 from dartlab.core.dartClient import resolveDartKeys
+from dartlab.core.requestPacing import awaitMinInterval
+from dartlab.gather.batchProgress import buildWorkerTable
 
 BASE_URL = "https://opendart.fss.or.kr/api"
 _CLIENT_TIMEOUT = httpx.Timeout(60.0, connect=10.0, read=60.0, write=30.0, pool=10.0)
@@ -144,11 +146,7 @@ class AsyncDartClient:
 
     async def _throttle(self) -> None:
         """키당 rate limit."""
-        now = asyncio.get_event_loop().time()
-        elapsed = now - self._lastRequest
-        if elapsed < self._minInterval:
-            await asyncio.sleep(self._minInterval - elapsed)
-        self._lastRequest = asyncio.get_event_loop().time()
+        self._lastRequest = await awaitMinInterval(self._lastRequest, self._minInterval)
 
     async def _getWithRetry(
         self,
@@ -562,7 +560,6 @@ def batchCollect(
 
     from rich.live import Live
     from rich.table import Table
-    from rich.text import Text
 
     numWorkers = len(keys)
     workerLines = ["⏳ 대기 중..."] * numWorkers
@@ -575,20 +572,7 @@ def batchCollect(
 
     def _buildDisplay() -> Table:
         """워커 상태 + 전체 진행 bar를 rich Table로 구성."""
-        tbl = Table.grid(padding=(0, 1))
-        tbl.add_column(style="bold cyan", width=4)
-        tbl.add_column()
-
-        for i in range(numWorkers):
-            tbl.add_row(f"W{i}", workerLines[i])
-
-        # progress bar
-        pct = completedCount[0] / total * 100 if total else 0
-        filled = int(pct / 2)
-        barStr = "█" * filled + "░" * (50 - filled)
-        barText = Text(f"[{barStr}] {completedCount[0]}/{total} ({pct:.0f}%)")
-        tbl.add_row("", barText)
-        return tbl
+        return buildWorkerTable(numWorkers, workerLines, completedCount[0], total)
 
     def completeFn(corpName: str, catSummary: str) -> None:
         """worker callback — corp 처리 완료 시 workerLines 의 해당 행을 ``✓ {corp} ({summary})`` 로 갱신.

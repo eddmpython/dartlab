@@ -23,6 +23,7 @@ import httpx
 import polars as pl
 
 from dartlab.core.edgarClient import DEFAULT_BASE_URL, EdgarApiError
+from dartlab.gather.batchProgress import buildWorkerTable
 from dartlab.gather.edgar.asyncClient import AsyncEdgarClient
 
 _log = logging.getLogger(__name__)
@@ -432,7 +433,6 @@ def batchCollectEdgar(
     # ── Rich Live progress ──
     from rich.live import Live
     from rich.table import Table
-    from rich.text import Text
 
     workerLines = ["⏳ 대기 중..."] * numWorkers
     completedCount = [0]
@@ -443,19 +443,7 @@ def batchCollectEdgar(
     ", ".join(cats)
 
     def _buildDisplay() -> Table:
-        tbl = Table.grid(padding=(0, 1))
-        tbl.add_column(style="bold cyan", width=4)
-        tbl.add_column()
-
-        for i in range(numWorkers):
-            tbl.add_row(f"W{i}", workerLines[i])
-
-        pct = completedCount[0] / total * 100 if total else 0
-        filled = int(pct / 2)
-        barStr = "█" * filled + "░" * (50 - filled)
-        barText = Text(f"[{barStr}] {completedCount[0]}/{total} ({pct:.0f}%)")
-        tbl.add_row("", barText)
-        return tbl
+        return buildWorkerTable(numWorkers, workerLines, completedCount[0], total)
 
     def _completeFn(title: str, catSummary: str) -> None:
         with lock:

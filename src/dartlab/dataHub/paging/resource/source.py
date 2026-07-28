@@ -7,7 +7,6 @@
 
 from __future__ import annotations
 
-import hmac
 import importlib
 from collections.abc import Mapping
 from typing import Any
@@ -20,6 +19,7 @@ from dartlab.dataHub.continuation import (
     arrowSchemaDigest,
     bytesDigest,
     canonicalDigest,
+    requireCurrentPins,
 )
 from dartlab.dataHub.contracts import (
     DataAssetDescriptor,
@@ -116,16 +116,8 @@ def _pins(session: _ResourceSession, queryPayload: bytes, sourcePins: Mapping[st
     )
 
 
-def _requireCurrentPins(expected: ContinuationPins, current: ContinuationPins) -> None:
-    checks = (
-        (expected.sourceDigest, current.sourceDigest, "CONTINUATION_SOURCE_STALE"),
-        (expected.queryDigest, current.queryDigest, "CONTINUATION_QUERY_STALE"),
-        (expected.contractDigest, current.contractDigest, "CONTINUATION_CONTRACT_STALE"),
-        (expected.schemaDigest, current.schemaDigest, "CONTINUATION_SCHEMA_STALE"),
-    )
-    for expectedValue, currentValue, code in checks:
-        if not hmac.compare_digest(expectedValue, currentValue):
-            raise ContinuationError(code)
+# pin 네 축 비교 규칙은 pin 을 정의한 continuation 계약이 갖는다.
+_requireCurrentPins = requireCurrentPins
 
 
 def isPageableResource(descriptor: DataAssetDescriptor, query: DataQuery) -> bool:

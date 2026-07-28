@@ -13,7 +13,7 @@ from dartlab.dataHub.controlPlane.contracts import DataHubJob
 from dartlab.dataHub.controlPlane.errors import DataHubControlError
 from dartlab.dataHub.transport import decodeDataResult
 
-from .client import _jobFromTree
+from .client import _jobFromTree, _raise
 
 
 class AsyncDataHubClient:
@@ -49,21 +49,7 @@ class AsyncDataHubClient:
     async def __aexit__(self, *_args: Any) -> None:
         await self.close()
 
-    @staticmethod
-    def _raise(response: httpx.Response) -> None:
-        if response.is_success:
-            return
-        try:
-            detail = response.json().get("detail", {})
-            code = detail.get("code")
-        except (ValueError, AttributeError):
-            code = None
-        if isinstance(code, str):
-            try:
-                raise DataHubControlError(code)
-            except ValueError:
-                pass
-        raise DataHubControlError("DATA_HUB_CORRUPT")
+    _raise = staticmethod(_raise)
 
     async def catalog(self, query: Mapping[str, Any] | None = None) -> Mapping[str, Any]:
         """원격 metadata catalog를 비동기로 조회한다."""

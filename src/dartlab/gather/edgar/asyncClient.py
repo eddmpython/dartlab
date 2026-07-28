@@ -15,6 +15,7 @@ from dartlab.core.edgarClient import (
     DEFAULT_USER_AGENT,
     EdgarApiError,
 )
+from dartlab.core.requestPacing import awaitMinInterval
 
 # 이벤트 루프별 세마포어 (루프 간 공유 불가)
 _LOOP_SEMAPHORES: dict[int, asyncio.Semaphore] = {}
@@ -90,11 +91,7 @@ class AsyncEdgarClient:
 
     async def _throttle(self) -> None:
         """rate limit 준수."""
-        now = asyncio.get_event_loop().time()
-        elapsed = now - self._lastRequest
-        if elapsed < self._minInterval:
-            await asyncio.sleep(self._minInterval - elapsed)
-        self._lastRequest = asyncio.get_event_loop().time()
+        self._lastRequest = await awaitMinInterval(self._lastRequest, self._minInterval)
 
     async def _requestWithRetry(self, url: str, *, timeout: float | None = None) -> httpx.Response:
         """공용 재시도 로직. 429/5xx 시 exponential backoff."""

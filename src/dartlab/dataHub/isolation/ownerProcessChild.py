@@ -31,6 +31,7 @@ from dartlab.dataHub.isolation.ownerProcessModels import (
 from dartlab.dataHub.isolation.processLifecycle import (
     becomeProcessGroupLeader,
     describeStalledThread,
+    warmChildImports,
 )
 from dartlab.dataHub.telemetry import dataHubLogger, recordFailure
 
@@ -114,31 +115,6 @@ def _pageWorker(
         )
 
 
-def _warmChildImports() -> None:
-    """무거운 모듈을 main thread 에서 먼저 import 한다.
-
-    worker 는 별도 thread 에서 돌고, 자식은 fresh spawn 이라 polars 와 pyarrow 같은
-    C 확장을 그 thread 에서 최초로 import 하게 된다. POSIX 에서 비-main thread 의
-    C 확장 최초 import 는 확장이 설치하는 thread pool 이나 lock 때문에 교착할 수 있고,
-    그러면 자식이 자기 기한을 꽉 채우고도 끝나지 않는다.
-
-    sandbox 를 이미 설치한 뒤 호출하므로 write 와 network 차단은 그대로 유지된다.
-    실패는 삼키지 않고 worker 가 같은 import 를 다시 시도해 typed 오류로 보고하게 둔다.
-    """
-
-    for moduleName in (
-        "polars",
-        "pyarrow",
-        "dartlab.dataHub.paging.owner",
-        "dartlab.dataHub.paging.composite",
-        "dartlab.dataHub.execution",
-    ):
-        try:
-            importlib.import_module(moduleName)
-        except Exception:
-            recordFailure(_log, "CHILD_WARM_IMPORT_FAILED", context={"module": moduleName})
-
-
 def _pageChildMain(
     sendConnection: Connection,
     startGate: Any,
@@ -187,7 +163,7 @@ def _pageChildMain(
         # ready 를 먼저 보낸 뒤 main thread 에서 무거운 모듈을 데운다. ready 는 자식이
         # 살아 있다는 신호이고 import 는 work 이므로 준비 창을 잡아먹으면 안 된다.
         # workerGate 를 아직 열지 않았으므로 worker 와 동시 import 경합도 없다.
-        _warmChildImports()
+        warmChildImports(_log)
         workerGate.set()
         # join 에 기한이 없으면 worker 가 멈출 때 자식이 영원히 살아남는다. 부모의 kill
         # 경로가 결국 회수하지만 그때까지 실행 슬롯을 통째로 붙잡고, 실패 원인도 남지

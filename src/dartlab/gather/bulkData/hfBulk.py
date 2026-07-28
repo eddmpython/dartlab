@@ -24,6 +24,8 @@ from typing import Literal
 
 import polars as pl
 
+from dartlab.gather.bulkData.dateKey import parseDateKey
+
 log = logging.getLogger(__name__)
 
 # dartlab 표준 카테고리 (DATA_RELEASES["govPrices"] SSOT — gov/prices/date 샤딩).
@@ -40,18 +42,6 @@ _COL_BUSINESS_TIME = "business_time"  # 실제 발생일 (event)
 _COL_KNOWLEDGE_TIME = "knowledge_time"  # 우리가 알게 된 일 (수집 시각)
 
 
-def _toDate(d: str | _date) -> _date:
-    """YYYY-MM-DD / YYYYMMDD / date → date."""
-    if isinstance(d, _date):
-        return d
-    s = str(d).replace("-", "").strip()
-    if len(s) >= 8:
-        return _date(int(s[:4]), int(s[4:6]), int(s[6:8]))
-    if len(s) == 4:
-        return _date(int(s), 1, 1)
-    raise ValueError(f"날짜 포맷 오류: {d!r}")
-
-
 def _resolveYears(
     year: int | None,
     start: str | _date | None,
@@ -62,8 +52,8 @@ def _resolveYears(
         return [int(year)]
     if start is None and end is None:
         return list(range(1995, datetime.now().year + 1))
-    s = _toDate(start) if start else _date(1995, 1, 1)
-    e = _toDate(end) if end else _date.today()
+    s = parseDateKey(start) if start else _date(1995, 1, 1)
+    e = parseDateKey(end) if end else _date.today()
     if s > e:
         s, e = e, s
     return list(range(s.year, e.year + 1))
@@ -190,10 +180,10 @@ def loadFiltered(
         if stockCode is not None:
             df = df.filter(pl.col(_COL_CODE) == stockCode)
         if start is not None:
-            sd = _toDate(start).strftime("%Y%m%d")
+            sd = parseDateKey(start).strftime("%Y%m%d")
             df = df.filter(pl.col(_COL_DATE) >= sd)
         if end is not None:
-            ed = _toDate(end).strftime("%Y%m%d")
+            ed = parseDateKey(end).strftime("%Y%m%d")
             df = df.filter(pl.col(_COL_DATE) <= ed)
         if not df.is_empty():
             frames.append(df)
@@ -222,7 +212,7 @@ def loadFiltered(
 
         # bitemporal 컬럼 미존재 시 fallback — BAS_DD (string YYYYMMDD) 를 business_time 으로 간주.
         # applyAsOf 의 fallbackCol 인자 사용 + str cast 매개.
-        cutoff_yyyymmdd = _toDate(asof).strftime("%Y%m%d")
+        cutoff_yyyymmdd = parseDateKey(asof).strftime("%Y%m%d")
         if _COL_BUSINESS_TIME in result.columns and _COL_KNOWLEDGE_TIME in result.columns:
             result = applyAsOf(result, asof)
         elif _COL_DATE in result.columns:

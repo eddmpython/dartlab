@@ -44,23 +44,13 @@ from typing import Literal
 
 import polars as pl
 
+from dartlab.gather.bulkData.dateKey import parseDateKey
+
 log = logging.getLogger(__name__)
 
 _CATEGORY = "govIndices"  # DATA_RELEASES["govIndices"] SSOT — gov/indices/date 샤딩
 _COL_DATE = "BAS_DD"
 _COL_MARKET = "MARKET_GROUP"
-
-
-def _toDate(d: str | _date) -> _date:
-    """YYYY-MM-DD / YYYYMMDD / date → date."""
-    if isinstance(d, _date):
-        return d
-    s = str(d).replace("-", "").strip()
-    if len(s) >= 8:
-        return _date(int(s[:4]), int(s[4:6]), int(s[6:8]))
-    if len(s) == 4:
-        return _date(int(s), 1, 1)
-    raise ValueError(f"날짜 포맷 오류: {d!r}")
 
 
 def _resolveYears(
@@ -73,8 +63,8 @@ def _resolveYears(
         return [int(year)]
     if start is None and end is None:
         return list(range(2010, datetime.now().year + 1))
-    s = _toDate(start) if start else _date(2010, 1, 1)
-    e = _toDate(end) if end else _date.today()
+    s = parseDateKey(start) if start else _date(2010, 1, 1)
+    e = parseDateKey(end) if end else _date.today()
     if s > e:
         s, e = e, s
     return list(range(s.year, e.year + 1))
@@ -202,9 +192,9 @@ def loadFiltered(
         if market is not None and _COL_MARKET in df.columns:
             df = df.filter(pl.col(_COL_MARKET) == market)
         if start is not None:
-            df = df.filter(pl.col(_COL_DATE) >= _toDate(start).strftime("%Y%m%d"))
+            df = df.filter(pl.col(_COL_DATE) >= parseDateKey(start).strftime("%Y%m%d"))
         if end is not None:
-            df = df.filter(pl.col(_COL_DATE) <= _toDate(end).strftime("%Y%m%d"))
+            df = df.filter(pl.col(_COL_DATE) <= parseDateKey(end).strftime("%Y%m%d"))
         if not df.is_empty():
             frames.append(df)
 

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import dataclasses
-import hmac
 import importlib
 from collections.abc import Mapping, Sequence
 from typing import Any
@@ -15,6 +14,7 @@ from dartlab.dataHub.continuation import (
     arrowSchemaDigest,
     bytesDigest,
     canonicalDigest,
+    requireCurrentPins,
 )
 from dartlab.dataHub.paging.owner.entity import _entityParamMap
 from dartlab.dataHub.paging.owner.models import (
@@ -186,13 +186,5 @@ def _pins(
     )
 
 
-def _requireCurrentPins(expected: ContinuationPins, current: ContinuationPins) -> None:
-    checks = (
-        (expected.sourceDigest, current.sourceDigest, "CONTINUATION_SOURCE_STALE"),
-        (expected.queryDigest, current.queryDigest, "CONTINUATION_QUERY_STALE"),
-        (expected.contractDigest, current.contractDigest, "CONTINUATION_CONTRACT_STALE"),
-        (expected.schemaDigest, current.schemaDigest, "CONTINUATION_SCHEMA_STALE"),
-    )
-    for expectedValue, currentValue, code in checks:
-        if not hmac.compare_digest(expectedValue, currentValue):
-            raise ContinuationError(code)
+# pin 네 축 비교 규칙은 pin 을 정의한 continuation 계약이 갖는다.
+_requireCurrentPins = requireCurrentPins

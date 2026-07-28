@@ -7,7 +7,6 @@
 
 from __future__ import annotations
 
-import json
 from collections.abc import Mapping, Sequence
 from typing import Any
 
@@ -27,7 +26,7 @@ from dartlab.dataHub.paging.runtime import (
 from dartlab.dataHub.paging.runtime import (
     MAX_STATE_BYTES as _MAX_STATE_BYTES,
 )
-from dartlab.dataHub.paging.stateCodec import rejectDuplicateKeys, requireDigest, requireText, strictTree
+from dartlab.dataHub.paging.stateCodec import loadStateJson, requireDigest, requireText, strictTree
 
 from .models import (
     _CURSOR_KEYS,
@@ -66,18 +65,8 @@ def _queryPayload(assetIds: Sequence[str], query: DataQuery) -> bytes:
     return payload
 
 
-def _jsonLoad(payload: bytes) -> Any:
-    """중복 key 를 거부하며 resource lane 의 이어읽기 JSON 을 복원한다.
-
-    중복 key 규칙은 `stateCodec.rejectDuplicateKeys` 가 정본이다. 네 lane 이 같은 여섯 줄을
-    각자 갖고 있었다.
-    """
-    try:
-        return json.loads(payload.decode("utf-8"), object_pairs_hook=rejectDuplicateKeys)
-    except ContinuationError:
-        raise
-    except (UnicodeDecodeError, json.JSONDecodeError):
-        raise ContinuationError("CONTINUATION_CORRUPT") from None
+# canonical 왕복 검사를 부르는 쪽에서 하는 lane 이라 공유 codec 을 그대로 쓴다.
+_jsonLoad = loadStateJson
 
 
 def _cursorMapping(value: Any) -> dict[str, int]:

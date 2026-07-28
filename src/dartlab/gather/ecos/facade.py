@@ -7,6 +7,8 @@ from __future__ import annotations
 
 import polars as pl
 
+from dartlab.gather.catalogGroups import resolveGroupIds
+
 from . import catalog as _catalog
 from .client import EcosClient
 from .series import fetchMulti, fetchSeries
@@ -273,10 +275,7 @@ class Ecos:
         --------
         catalog · compare.
         """
-        ids = _catalog.getGroupIds(name)
-        if not ids:
-            available = ", ".join(_catalog.getGroups())
-            raise ValueError(f"그룹 '{name}'을 찾을 수 없습니다. 사용 가능: {available}")
+        ids = resolveGroupIds(_catalog, name)
         return fetchMulti(self._client, ids, start=start, end=end)
 
     # ── 정리 ──

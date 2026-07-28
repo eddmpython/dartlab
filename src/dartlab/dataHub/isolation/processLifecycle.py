@@ -1,4 +1,4 @@
-"""Owner 와 eager 자식 프로세스가 공유하는 POSIX process group 봉쇄.
+"""Owner 와 eager 자식 프로세스가 공유하는 수명 주기 봉쇄.
 
 Windows 는 Job Object 가 kill-on-close 로 손자 프로세스까지 회수한다. POSIX 에는
 대응물이 없으므로 자식이 `os.setsid()` 로 새 session leader 가 되고 부모가 그 group
@@ -6,10 +6,15 @@ Windows 는 Job Object 가 kill-on-close 로 손자 프로세스까지 회수한
 
 이 봉쇄가 없으면 자식이 손자를 남겨도 `multiprocessing.active_children()` 이 직속
 자식만 훑기 때문에 zero-live 가 참으로 보고된다.
+
+자식이 태어난 직후 무거운 C 확장을 main thread 에서 먼저 여는 것(`warmChildImports`)도
+같은 수명 주기의 일부라 여기 둔다. owner lane 과 eager lane 이 그 목록까지 같았다.
 """
 
 from __future__ import annotations
 
+import importlib
+import logging
 import os
 import signal
 import sys
@@ -17,7 +22,49 @@ import time
 import traceback
 from pathlib import Path
 
+from dartlab.dataHub.telemetry import recordFailure
+
 _STALL_FRAME_LIMIT = 6
+
+# 자식이 main thread 에서 먼저 열어 두는 무거운 모듈. worker thread 최초 import 교착 회피.
+_WARM_MODULES = (
+    "polars",
+    "pyarrow",
+    "dartlab.dataHub.paging.owner",
+    "dartlab.dataHub.paging.composite",
+    "dartlab.dataHub.execution",
+)
+
+
+def warmChildImports(log: logging.Logger) -> None:
+    """무거운 모듈을 main thread 에서 먼저 import 한다.
+
+    worker 는 별도 thread 에서 돌고, 자식은 fresh spawn 이라 polars 와 pyarrow 같은
+    C 확장을 그 thread 에서 최초로 import 하게 된다. POSIX 에서 비-main thread 의
+    C 확장 최초 import 는 확장이 설치하는 thread pool 이나 lock 때문에 교착할 수 있고,
+    그러면 자식이 자기 기한을 꽉 채우고도 끝나지 않는다.
+
+    sandbox 를 이미 설치한 뒤 호출하므로 write 와 network 차단은 그대로 유지된다.
+    실패는 삼키지 않고 worker 가 같은 import 를 다시 시도해 typed 오류로 보고하게 둔다.
+
+    Args:
+        log: 부르는 lane 의 logger. 실패 기록이 어느 lane 에서 났는지 남긴다.
+
+    Returns:
+        None.
+
+    Raises:
+        없음. 개별 import 실패는 ``CHILD_WARM_IMPORT_FAILED`` 로 기록만 한다.
+
+    Example:
+        ``warmChildImports(_log)``
+    """
+
+    for moduleName in _WARM_MODULES:
+        try:
+            importlib.import_module(moduleName)
+        except Exception:
+            recordFailure(log, "CHILD_WARM_IMPORT_FAILED", context={"module": moduleName})
 
 
 def describeStalledThread(threadIdent: int | None) -> str:

@@ -13,6 +13,27 @@ from dartlab.dataHub.controlPlane.errors import DataHubControlError
 from dartlab.dataHub.transport import decodeDataResult
 
 
+def _raise(response: httpx.Response) -> None:
+    """실패 응답을 typed control 오류로 올린다. 성공이면 아무것도 하지 않는다.
+
+    동기 client 와 async client 가 같은 HTTP 계약을 쓰므로 판정도 한 자리에 둔다.
+    본문에서 code 를 못 읽거나 아는 code 가 아니면 훼손으로 끝낸다.
+    """
+    if response.is_success:
+        return
+    try:
+        detail = response.json().get("detail", {})
+        code = detail.get("code")
+    except (ValueError, AttributeError):
+        code = None
+    if isinstance(code, str):
+        try:
+            raise DataHubControlError(code)
+        except ValueError:
+            pass
+    raise DataHubControlError("DATA_HUB_CORRUPT")
+
+
 def _jobFromTree(value: Any) -> DataHubJob:
     if not isinstance(value, dict):
         raise DataHubControlError("DATA_HUB_CORRUPT")
@@ -58,21 +79,7 @@ class DataHubClient:
     def __exit__(self, *_args: Any) -> None:
         self.close()
 
-    @staticmethod
-    def _raise(response: httpx.Response) -> None:
-        if response.is_success:
-            return
-        try:
-            detail = response.json().get("detail", {})
-            code = detail.get("code")
-        except (ValueError, AttributeError):
-            code = None
-        if isinstance(code, str):
-            try:
-                raise DataHubControlError(code)
-            except ValueError:
-                pass
-        raise DataHubControlError("DATA_HUB_CORRUPT")
+    _raise = staticmethod(_raise)
 
     def catalog(self, query: Mapping[str, Any] | None = None) -> Mapping[str, Any]:
         """원격 metadata catalog를 조회한다."""

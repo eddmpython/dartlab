@@ -6,7 +6,6 @@ import dataclasses
 import hashlib
 import hmac
 import importlib
-import json
 import marshal
 import math
 import types
@@ -40,7 +39,8 @@ from dartlab.dataHub.paging.runtime import (
     MAX_STATE_BYTES,
 )
 from dartlab.dataHub.paging.stateCodec import (
-    rejectDuplicateKeys,
+    loadStateJson,
+    queryPayloadBytes,
     requireDigest,
     requireOptionalText,
     requireText,
@@ -54,19 +54,8 @@ def _strictTree(value: Any, *, seen: set[int] | None = None) -> Any:
     return strictTree(value, context="query", seen=seen)
 
 
-def _jsonLoad(payload: bytes) -> Any:
-    """중복 key 를 거부하며 owner lane 의 private state 를 읽는다.
-
-    중복 key 규칙은 `stateCodec.rejectDuplicateKeys` 가 정본이다. 네 lane 이 같은 여섯 줄을
-    각자 갖고 있었다. 이 lane 은 canonical 왕복 검사를 부르는 쪽에서 하므로 여기 없다.
-    """
-    try:
-        return json.loads(payload.decode("utf-8"), object_pairs_hook=rejectDuplicateKeys)
-    except ContinuationError:
-        raise
-    except (UnicodeDecodeError, json.JSONDecodeError):
-        raise ContinuationError("CONTINUATION_CORRUPT") from None
-
+# canonical 왕복 검사를 부르는 쪽에서 하는 lane 이라 공유 codec 을 그대로 쓴다.
+_jsonLoad = loadStateJson
 
 _requireText = requireText
 _requireOptionalText = requireOptionalText
@@ -311,17 +300,14 @@ def _decodeSelection(value: Any) -> UniverseSelection:
 
 
 def _queryPayload(assetIds: Sequence[str], query: DataQuery) -> bytes:
-    payload = canonicalJsonBytes(
-        {
-            "version": _FORMAT_VERSION,
-            "pageKind": _PAGE_KIND,
-            "assetIds": list(assetIds),
-            "query": _strictTree(query),
-        }
+    return queryPayloadBytes(
+        assetIds,
+        query,
+        formatVersion=_FORMAT_VERSION,
+        pageKind=_PAGE_KIND,
+        context="query",
+        maxBytes=MAX_STATE_BYTES,
     )
-    if len(payload) > MAX_STATE_BYTES:
-        raise ContinuationError("CONTINUATION_STATE_BUDGET")
-    return payload
 
 
 def _validateQueryPayload(payload: bytes) -> None:

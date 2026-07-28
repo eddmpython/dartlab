@@ -14,6 +14,7 @@ from dartlab.core.edgarClient import (
     EdgarApiError,
     registerEdgarFetchProvider,
 )
+from dartlab.core.requestPacing import waitMinInterval
 
 
 class EdgarClient:
@@ -80,12 +81,7 @@ class EdgarClient:
         return {"User-Agent": self.userAgent}
 
     def _wait(self) -> None:
-        if self.minInterval <= 0:
-            return
-        now = time.monotonic()
-        elapsed = now - self._lastRequestAt
-        if elapsed < self.minInterval:
-            time.sleep(self.minInterval - elapsed)
+        waitMinInterval(self._lastRequestAt, self.minInterval)
 
     def getJson(self, url: str) -> dict[str, Any]:
         """URL 에서 JSON 을 가져오고, 속도 제한과 재시도를 자동 처리.

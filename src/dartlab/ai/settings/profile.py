@@ -21,13 +21,7 @@ from dartlab.ai.settings.providerCatalog import (
 )
 from dartlab.ai.settings.routing import AI_ROLES, DEFAULT_ROLE, normalizeRole
 from dartlab.ai.settings.secrets import SecretStore, getSecretStore
-
-
-def _dartlabHome() -> Path:
-    raw = os.environ.get("DARTLAB_HOME")
-    if raw:
-        return Path(raw)
-    return Path.home() / ".dartlab"
+from dartlab.core.providers.secrets import dartlabHome
 
 
 def _utcNow() -> str:
@@ -75,7 +69,7 @@ class AiProfileManager:
     """AI 프로필 로드/저장/업데이트 관리자."""
 
     def __init__(self, path: Path | None = None, secretStore: SecretStore | None = None) -> None:
-        self.path = path or (_dartlabHome() / "ai_profile.json")
+        self.path = path or (dartlabHome() / "ai_profile.json")
         self.secretStore = secretStore or getSecretStore()
 
     def _bootstrap(self) -> AiProfile:

@@ -16,7 +16,22 @@ from pathlib import Path
 from typing import Any
 
 
-def _dartlabHome() -> Path:
+def dartlabHome() -> Path:
+    """dartlab 사용자 상태 디렉터리. ``DARTLAB_HOME`` 이 있으면 그것, 없으면 ``~/.dartlab``.
+
+    Args:
+        없음.
+
+    Returns:
+        Path. 존재 여부는 확인하지 않는다. 만드는 것은 쓰는 쪽 몫이다.
+
+    Raises:
+        없음.
+
+    Example:
+        >>> dartlabHome().name
+        '.dartlab'
+    """
     raw = os.environ.get("DARTLAB_HOME")
     if raw:
         return Path(raw)
@@ -39,7 +54,7 @@ class SecretStore:
     """파일 기반 비밀 저장소 — Windows DPAPI 또는 plain base64."""
 
     def __init__(self, path: Path | None = None) -> None:
-        self.path = path or (_dartlabHome() / "secrets.json")
+        self.path = path or (dartlabHome() / "secrets.json")
 
     def _load(self) -> dict[str, dict[str, str]]:
         if not self.path.exists():

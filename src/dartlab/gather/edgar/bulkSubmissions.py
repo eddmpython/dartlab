@@ -20,8 +20,8 @@ from pathlib import Path
 
 import httpx
 
-from dartlab.core.edgarBulkFreshness import isBulkFresh, touchBulkFreshness
-from dartlab.gather.edgar.bulk import _UA, _bulkDir
+from dartlab.core.edgarBulkFreshness import bulkDir, isBulkFresh, touchBulkFreshness
+from dartlab.gather.edgar.bulk import _UA
 
 _log = logging.getLogger(__name__)
 
@@ -65,7 +65,7 @@ def downloadSubmissionsBulk(*, force: bool = False, ttlHours: int = 24) -> Path:
         edgarFilingsSync cron(주 1회) 첫 단계. 로컬 dev 눈검수 시 1회.
 
     How:
-        ``_bulkDir()/submissions.zip`` 대상. ``isBulkFresh`` TTL 통과 시 즉시 반환, 아니면 httpx 스트림
+        ``bulkDir()/submissions.zip`` 대상. ``isBulkFresh`` TTL 통과 시 즉시 반환, 아니면 httpx 스트림
         (1MB 청크)으로 ``.tmp`` 기록 후 atomic replace + ``touchBulkFreshness``.
 
     Requires:
@@ -77,7 +77,7 @@ def downloadSubmissionsBulk(*, force: bool = False, ttlHours: int = 24) -> Path:
         - :func:`iterSubmissionsBulk` — 받은 zip 스트리밍 순회
         - :func:`dartlab.gather.edgar.bulk.downloadCompanyfactsBulk` — companyfacts 동형 벌크
     """
-    zipPath = _bulkDir() / "submissions.zip"
+    zipPath = bulkDir() / "submissions.zip"
     if not force and zipPath.exists() and isBulkFresh(_TAG, ttlHours=ttlHours):
         _log.info("submissions.zip fresh (TTL=%dh) — 다운로드 스킵", ttlHours)
         return zipPath

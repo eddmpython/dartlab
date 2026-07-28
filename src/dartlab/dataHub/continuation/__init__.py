@@ -18,6 +18,7 @@ from .contracts import (
     bytesDigest,
     canonicalDigest,
     canonicalJsonBytes,
+    requireCurrentPins,
 )
 from .queryState import decodeQueryState, encodeQueryState
 
@@ -42,5 +43,6 @@ __all__ = [
     "decodeQueryState",
     "encodeQueryState",
     "inspectArrowIpcPayload",
+    "requireCurrentPins",
     "validateArrowIpcPayload",
 ]

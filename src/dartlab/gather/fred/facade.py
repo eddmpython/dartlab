@@ -7,6 +7,8 @@ from __future__ import annotations
 
 import polars as pl
 
+from dartlab.gather.catalogGroups import resolveGroupIds
+
 from . import catalog as _catalog
 from . import transform as _transform
 from .client import FredClient
@@ -325,10 +327,7 @@ class Fred:
         catalog : 사전정의 그룹 카탈로그.
         compare : 임의 시리즈 list 비교.
         """
-        ids = _catalog.getGroupIds(name)
-        if not ids:
-            available = ", ".join(_catalog.getGroups())
-            raise ValueError(f"그룹 '{name}'을 찾을 수 없습니다. 사용 가능: {available}")
+        ids = resolveGroupIds(_catalog, name)
         return fetchMulti(self._client, ids, start=start, end=end)
 
     def catalog(self, group: str | None = None) -> pl.DataFrame:

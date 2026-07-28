@@ -2,19 +2,20 @@
 
 세 paging lane 은 각자 다른 state 스키마를 쓰지만 그 스키마를 담는 JSON tree 규칙과
 문자열, digest 검증은 같다. 이 모듈은 그 공통분만 갖는다. lane 마다 다른 것은 남긴다.
-``_jsonLoad`` 는 canonical 왕복 검사 위치가 lane 마다 다르고 ``_validateQueryPayload`` 는
-state 스키마 자체가 달라 여기로 올리지 않는다.
+``_validateQueryPayload`` 는 state 스키마 자체가 달라 여기로 올리지 않고, composite lane 의
+``_jsonLoad`` 는 canonical 왕복 검사를 같은 자리에서 하므로 ``loadStateJson`` 을 쓰지 않는다.
 """
 
 from __future__ import annotations
 
 import dataclasses
+import json
 import math
 import re
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from typing import Any
 
-from dartlab.dataHub.continuation import ContinuationError
+from dartlab.dataHub.continuation import ContinuationError, canonicalJsonBytes
 
 DIGEST_PATTERN = re.compile(r"^[0-9a-f]{64}$")
 
@@ -231,8 +232,124 @@ def requireDigest(value: Any) -> str:
     return text
 
 
+def loadStateJson(payload: bytes) -> Any:
+    """중복 key 를 거부하며 lane 의 private state JSON 을 복원한다.
+
+    Capabilities:
+        UTF-8 디코드, JSON 파싱, 중복 key 거부를 한 묶음으로 처리하고 어느 단계에서
+        깨져도 같은 continuation 오류로 올린다.
+
+    Args:
+        payload: continuation state 로 받은 raw bytes.
+
+    Returns:
+        복원한 JSON 값. 검증은 호출자가 자기 스키마로 이어서 한다.
+
+    Raises:
+        ContinuationError: UTF-8 이 아니거나 JSON 이 아니거나 중복 key 가 있을 때.
+
+    Example:
+        ``loadStateJson(b'{"version":2}')``
+
+    Guide:
+        canonical 왕복 검사가 필요한 lane 은 이 함수 밖에서 따로 한다. 검사 자리가
+        lane 마다 달라 여기 넣으면 안 하는 lane 이 조용히 규칙을 얻는다.
+
+    When:
+        owner, resource lane 이 private state 나 query payload 를 읽을 때.
+
+    How:
+        ``json.loads`` 에 ``rejectDuplicateKeys`` 를 ``object_pairs_hook`` 으로 건다.
+
+    SeeAlso:
+        ``rejectDuplicateKeys``.
+
+    Requires:
+        payload 는 밖에서 온 바이트로 취급한다. 신뢰하지 않는다.
+
+    AI Context:
+        훼손과 정상 부재를 같은 값으로 만들지 않는다.
+    """
+
+    try:
+        return json.loads(payload.decode("utf-8"), object_pairs_hook=rejectDuplicateKeys)
+    except ContinuationError:
+        raise
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        raise ContinuationError("CONTINUATION_CORRUPT") from None
+
+
+def queryPayloadBytes(
+    assetIds: Sequence[str],
+    query: Any,
+    *,
+    formatVersion: int,
+    pageKind: str,
+    context: str,
+    maxBytes: int,
+) -> bytes:
+    """lane 의 query identity 를 canonical bytes 로 굽고 state 예산을 지킨다.
+
+    Capabilities:
+        version, pageKind, assetIds, query 네 항목을 정해진 순서로 담아 canonical
+        bytes 를 만들고 예산 초과를 fail-closed 로 끝낸다.
+
+    Args:
+        assetIds: 이 페이지가 묶은 asset ID 목록.
+        query: canonical tree 로 펼 query.
+        formatVersion: lane 의 state format 버전.
+        pageKind: lane 식별자. 다른 lane 의 state 를 잘못 읽는 것을 막는다.
+        context: ``strictTree`` 오류 문장에 쓸 lane 이름.
+        maxBytes: state 한 벌의 바이트 상한.
+
+    Returns:
+        canonical JSON bytes. queryDigest 도 이 bytes 에서 뜬다.
+
+    Raises:
+        ContinuationError: 결과가 ``maxBytes`` 를 넘을 때.
+        ValueError: query tree 에 유한하지 않은 float 나 cycle 이 있을 때.
+        TypeError: strict JSON 으로 표현할 수 없는 값이 있을 때.
+
+    Example:
+        ``queryPayloadBytes(ids, query, formatVersion=2, pageKind="owner-subject-fanout",
+        context="query", maxBytes=MAX_STATE_BYTES)``
+
+    Guide:
+        lane 마다 다른 것은 인자로만 들어온다. 굽는 순서와 예산 검사는 lane 이 못 바꾼다.
+
+    When:
+        owner, composite lane 이 continuation 을 발급하거나 이어읽기 요청을 검증할 때.
+
+    How:
+        ``strictTree`` 로 query 를 펴고 ``canonicalJsonBytes`` 로 굽는다.
+
+    SeeAlso:
+        ``strictTree``, ``dartlab.dataHub.continuation.canonicalJsonBytes``.
+
+    Requires:
+        같은 query 는 프로세스가 달라도 같은 bytes 여야 한다.
+
+    AI Context:
+        query identity 가 흔들리면 이어읽기가 다른 질문의 페이지를 잇는다.
+    """
+
+    payload = canonicalJsonBytes(
+        {
+            "version": formatVersion,
+            "pageKind": pageKind,
+            "assetIds": list(assetIds),
+            "query": strictTree(query, context=context),
+        }
+    )
+    if len(payload) > maxBytes:
+        raise ContinuationError("CONTINUATION_STATE_BUDGET")
+    return payload
+
+
 __all__ = [
     "DIGEST_PATTERN",
+    "loadStateJson",
+    "queryPayloadBytes",
     "requireDigest",
     "requireOptionalText",
     "requireText",

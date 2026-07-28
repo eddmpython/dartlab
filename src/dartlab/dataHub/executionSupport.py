@@ -5,7 +5,6 @@ from __future__ import annotations
 import dataclasses
 import hashlib
 import importlib
-import json
 from collections.abc import Mapping, Sequence
 from typing import Any
 
@@ -21,6 +20,7 @@ from dartlab.dataHub.contracts import (
     UniverseCoverage,
     projectionKind,
 )
+from dartlab.dataHub.identity.digestInput import digestInputBytes
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -67,23 +67,6 @@ def _executionWindows(
     return tuple(windows)
 
 
-def _canonical(value: Any) -> bytes:
-    def serializeDefault(item: Any) -> Any:
-        """실행 영수증 입력을 결정적 JSON 표현으로 변환한다."""
-
-        if dataclasses.is_dataclass(item):
-            return {field.name: getattr(item, field.name) for field in dataclasses.fields(item)}
-        if isinstance(item, Mapping):
-            return dict(item)
-        if isinstance(item, (tuple, set, frozenset)):
-            return list(item)
-        return str(item)
-
-    return json.dumps(
-        value, ensure_ascii=False, sort_keys=True, separators=(",", ":"), default=serializeDefault
-    ).encode()
-
-
 def _requestRef(
     descriptor: DataAssetDescriptor,
     query: DataQuery,
@@ -96,7 +79,7 @@ def _requestRef(
         "requestId": requestId,
         "selector": dict(selector),
     }
-    return f"data-request:{hashlib.sha256(_canonical(payload)).hexdigest()}"
+    return f"data-request:{hashlib.sha256(digestInputBytes(payload)).hexdigest()}"
 
 
 def _temporalGap(descriptor: DataAssetDescriptor, query: DataQuery) -> DataGap | None:

@@ -111,7 +111,6 @@
     "src/dartlab/dataHub/isolation/eagerProcess.py::eagerCodePin",
     "src/dartlab/dataHub/isolation/processLifecycle.py::describeStalledThread",
     "src/dartlab/dataHub/materialization/paging.py::isMaterializedPagingState",
-    "src/dartlab/dataHub/remote/asyncClient.py::_raise",
     "src/dartlab/dataHub/remote/client.py::_raise",
     "src/dartlab/frame/resolve.py::searchSuggestions",
     "src/dartlab/gather/customs/series.py::_aggregateMonthly",

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import hmac
 import json
 import math
 import re
@@ -250,6 +251,38 @@ class ContinuationPins:
             value = getattr(self, name)
             if not isinstance(value, str) or _DIGEST_RE.fullmatch(value) is None:
                 raise ValueError(f"{name}는 lowercase SHA-256이어야 합니다")
+
+
+def requireCurrentPins(expected: ContinuationPins, current: ContinuationPins) -> None:
+    """이어읽기가 든 pin 과 지금 실행의 pin 이 네 축 모두 같은지 확인한다.
+
+    Args:
+        expected: 이어읽기 token 이 들고 온 pin.
+        current: 지금 실행에서 다시 계산한 pin.
+
+    Returns:
+        None. 네 축이 모두 같으면 조용히 돌아간다.
+
+    Raises:
+        ContinuationError: 어긋난 첫 축의 코드로 끝낸다. source, query, contract,
+            schema 순으로 본다.
+
+    Example:
+        ``requireCurrentPins(context.pins, currentPins)``
+
+    Guide:
+        어느 축이 어긋났는지가 곧 오류 코드다. 하나로 뭉뚱그리면 부르는 쪽이 무엇을
+        다시 해야 하는지 알 수 없다. 비교는 ``hmac.compare_digest`` 로 한다.
+    """
+    checks = (
+        (expected.sourceDigest, current.sourceDigest, "CONTINUATION_SOURCE_STALE"),
+        (expected.queryDigest, current.queryDigest, "CONTINUATION_QUERY_STALE"),
+        (expected.contractDigest, current.contractDigest, "CONTINUATION_CONTRACT_STALE"),
+        (expected.schemaDigest, current.schemaDigest, "CONTINUATION_SCHEMA_STALE"),
+    )
+    for expectedValue, currentValue, code in checks:
+        if not hmac.compare_digest(expectedValue, currentValue):
+            raise ContinuationError(code)
 
 
 @dataclass(frozen=True, slots=True)

@@ -2,10 +2,8 @@
 
 from __future__ import annotations
 
-import dataclasses
 import hashlib
 import importlib
-import json
 from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
@@ -14,6 +12,7 @@ import polars as pl
 
 from dartlab.dataHub.catalog.discovery import discoverOwnerProviders
 from dartlab.dataHub.contracts import DataGap, UniverseSelection
+from dartlab.dataHub.identity.digestInput import digestInputBytes
 
 # resolver 가 자기 사정을 code 로 올려 보낼 수 있는 값은 이 셋뿐이다. 그 밖의 예외는
 # 전부 UNIVERSE_RESOLUTION_FAILED 로 모으고 사정은 message 로만 전한다.
@@ -100,40 +99,6 @@ class ResolvedUniverse:
         """
 
         return {item.market: item for item in self.markets}
-
-
-def _canonical(value: Any) -> bytes:
-    def serializeDefault(item: Any) -> Any:
-        """Universe snapshot 값을 결정적 JSON 표현으로 변환한다.
-
-        Args:
-            item: JSON encoder가 직접 처리하지 못한 값.
-
-        Returns:
-            Dataclass, mapping 또는 collection의 결정적 표현.
-
-        Raises:
-            없음.
-
-        Example:
-            ``serializeDefault(selection)``.
-        """
-
-        if dataclasses.is_dataclass(item):
-            return {field.name: getattr(item, field.name) for field in dataclasses.fields(item)}
-        if isinstance(item, Mapping):
-            return dict(item)
-        if isinstance(item, (tuple, set, frozenset)):
-            return list(item)
-        return str(item)
-
-    return json.dumps(
-        value,
-        ensure_ascii=False,
-        sort_keys=True,
-        separators=(",", ":"),
-        default=serializeDefault,
-    ).encode()
 
 
 def _resolverSpec(universeKind: str, market: str, membership: str) -> Mapping[str, Any] | None:
@@ -271,7 +236,7 @@ def _loadMembership(selection: UniverseSelection, market: str) -> tuple[Resolved
         sourceIds = tuple(item for item in sourceIds if item[0] in selected)
         entityParams = tuple(item for item in entityParams if item[0] in selected)
     digest = hashlib.sha256(
-        _canonical(
+        digestInputBytes(
             {
                 "market": market,
                 "provider": provider,
@@ -300,7 +265,7 @@ def _explicitMarket(selection: UniverseSelection, market: str) -> ResolvedMarket
     ids = tuple(value.split(":", 1)[1] for value in selection.explicitIds if value.startswith(f"{market}:"))
     provider = "dart" if market == "KR" else "edgar" if market == "US" else "explicit"
     digest = hashlib.sha256(
-        _canonical({"market": market, "provider": provider, "membership": "explicit", "ids": ids})
+        digestInputBytes({"market": market, "provider": provider, "membership": "explicit", "ids": ids})
     ).hexdigest()
     return ResolvedMarket(market, provider, ids, digest)
 
@@ -339,7 +304,7 @@ def resolveUniverse(selection: UniverseSelection) -> ResolvedUniverse:
         "selection": selection,
         "markets": tuple(markets),
     }
-    snapshotId = f"universe-snapshot:{hashlib.sha256(_canonical(payload)).hexdigest()}"
+    snapshotId = f"universe-snapshot:{hashlib.sha256(digestInputBytes(payload)).hexdigest()}"
     return ResolvedUniverse(snapshotId, selection, tuple(markets), tuple(gaps))
 
 

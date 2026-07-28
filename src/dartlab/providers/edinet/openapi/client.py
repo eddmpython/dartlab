@@ -26,6 +26,8 @@ from typing import Any
 
 import httpx
 
+from dartlab.core.requestPacing import waitMinInterval
+
 BASE_URL = "https://api.edinet-fsa.go.jp/api/v2"
 
 # 서류 유형 코드 (docTypeCode)
@@ -75,12 +77,7 @@ class EdinetClient:
         self._lastRequestAt = 0.0
 
     def _wait(self) -> None:
-        if self.minInterval <= 0:
-            return
-        now = time.monotonic()
-        elapsed = now - self._lastRequestAt
-        if elapsed < self.minInterval:
-            time.sleep(self.minInterval - elapsed)
+        waitMinInterval(self._lastRequestAt, self.minInterval)
 
     @property
     def _headers(self) -> dict[str, str]:

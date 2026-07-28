@@ -27,6 +27,7 @@ import httpx
 import polars as pl
 
 from dartlab.core.edgarBulkFreshness import (
+    bulkDir,
     isBulkFresh,
     readSavedEtag,
     touchBulkFreshness,
@@ -45,14 +46,6 @@ _BULK_URL = "https://www.sec.gov/Archives/edgar/daily-index/xbrl/companyfacts.zi
 _UA = "dartlab eddmpython@gmail.com"
 
 _DEFAULT_TIMEOUT = httpx.Timeout(60.0, read=None, write=60.0, connect=30.0)
-
-
-def _bulkDir() -> Path:
-    from dartlab.core.dataLoader import _getDataRoot
-
-    d = _getDataRoot() / "edgar" / "_bulk"
-    d.mkdir(parents=True, exist_ok=True)
-    return d
 
 
 def _financeDir() -> Path:
@@ -99,7 +92,7 @@ def downloadCompanyfactsBulk(
     Returns:
         Path — 결과.
     """
-    zipPath = _bulkDir() / "companyfacts.zip"
+    zipPath = bulkDir() / "companyfacts.zip"
     tag = "companyfacts"
 
     if not force and zipPath.exists() and isBulkFresh(tag, ttlHours=ttlHours):

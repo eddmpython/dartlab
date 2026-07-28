@@ -43,7 +43,13 @@ from dartlab.dataHub.paging.composite.models import (
     _PAGE_KIND,
 )
 from dartlab.dataHub.paging.runtime import MAX_PAGE_BYTES, MAX_PAGE_ROWS, MAX_STATE_BYTES
-from dartlab.dataHub.paging.stateCodec import rejectDuplicateKeys, requireDigest, requireText, strictTree
+from dartlab.dataHub.paging.stateCodec import (
+    queryPayloadBytes,
+    rejectDuplicateKeys,
+    requireDigest,
+    requireText,
+    strictTree,
+)
 
 
 def _strictTree(value: Any, *, seen: set[int] | None = None) -> Any:
@@ -167,17 +173,14 @@ def _samePins(expected: ContinuationPins, current: ContinuationPins) -> None:
 
 
 def _queryPayload(assetIds: Sequence[str], query: DataQuery) -> bytes:
-    payload = canonicalJsonBytes(
-        {
-            "version": _FORMAT_VERSION,
-            "pageKind": _PAGE_KIND,
-            "assetIds": list(assetIds),
-            "query": _strictTree(query),
-        }
+    return queryPayloadBytes(
+        assetIds,
+        query,
+        formatVersion=_FORMAT_VERSION,
+        pageKind=_PAGE_KIND,
+        context="composite state",
+        maxBytes=MAX_STATE_BYTES,
     )
-    if len(payload) > MAX_STATE_BYTES:
-        raise ContinuationError("CONTINUATION_STATE_BUDGET")
-    return payload
 
 
 def _validateQueryPayload(payload: bytes) -> None:

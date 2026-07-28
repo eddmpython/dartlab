@@ -28,7 +28,22 @@ class BulkFreshness:
     ageHours: float | None
 
 
-def _bulkDir() -> Path:
+def bulkDir() -> Path:
+    """EDGAR 벌크 zip 과 freshness 사이드카가 사는 디렉터리. 없으면 만든다.
+
+    Args:
+        없음.
+
+    Returns:
+        ``<dataRoot>/edgar/_bulk`` 경로.
+
+    Raises:
+        OSError: 디렉터리 생성 실패.
+
+    Example:
+        >>> bulkDir().name
+        '_bulk'
+    """
     from dartlab.core.dataLoader import _getDataRoot
 
     d = _getDataRoot() / "edgar" / "_bulk"
@@ -37,11 +52,11 @@ def _bulkDir() -> Path:
 
 
 def _freshnessPath(tag: str) -> Path:
-    return _bulkDir() / f"{tag}.freshness"
+    return bulkDir() / f"{tag}.freshness"
 
 
 def _etagPath(tag: str) -> Path:
-    return _bulkDir() / f"{tag}.etag"
+    return bulkDir() / f"{tag}.etag"
 
 
 def touchBulkFreshness(tag: str, *, etag: str | None = None) -> None:
