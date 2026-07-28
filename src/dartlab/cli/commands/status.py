@@ -5,6 +5,36 @@ from __future__ import annotations
 from dartlab.cli.context import PROVIDERS
 from dartlab.cli.services.runtime import configureDartlab
 
+
+def _providerStatus(providerName: str) -> dict:
+    """provider 하나의 연결 상태. 예전 `dartlab.llm.status` 자리.
+
+    그 이름은 표면에서 빠졌고 `dartlab.ai` 에 `status` 속성이 없다. 그래서 `dartlab status`
+    를 치면 첫 provider 에서 AttributeError 로 죽었다. 표 머리만 찍히고 본문이 없었다.
+    지금 살아 있는 조각은 설정 모듈의 가용 판정과 모델 해소기 둘이라 여기서 합친다.
+
+    Returns:
+        ``{"available": bool, "model": str}``. ollama 는 설치·구동 정보를 덧붙인다.
+    """
+    from dartlab.ai.settings.aiSetup import _checkProviderAvailable
+    from dartlab.ai.settings.modelResolver import resolveDefaultModel
+
+    available = bool(_checkProviderAvailable(providerName))
+    try:
+        model = resolveDefaultModel(providerName, allowFetch=False) or "-"
+    except (AttributeError, KeyError, OSError, TypeError, ValueError):
+        model = "-"
+    status: dict = {"available": available, "model": model}
+    if providerName == "ollama":
+        try:
+            from dartlab.ai.providers.support.ollamaSetup import detectOllama
+
+            status["ollama"] = detectOllama()
+        except (ImportError, AttributeError, OSError, RuntimeError):
+            pass
+    return status
+
+
 _SETUP_HINTS = {
     "oauth-codex": "dartlab setup oauth-codex",
     "codex": "dartlab setup codex",
@@ -38,7 +68,7 @@ def run(args) -> int:
         print("  ──────────────────┼────────┼──────────────────┼─────────────────────")
 
     for providerName in providers:
-        status = dartlab.llm.status(provider=providerName)
+        status = _providerStatus(providerName)
         available = status["available"]
 
         if single:
@@ -50,7 +80,7 @@ def run(args) -> int:
             print(f"  {providerName:<18s} │ {marker:<5s}  │ {model:<16s} │ {hint}")
 
     if not single:
-        avail = sum(1 for p in providers if dartlab.llm.status(provider=p)["available"])
+        avail = sum(1 for p in providers if _providerStatus(p)["available"])
         print(f"\n  {avail}/{len(providers)} provider 사용 가능")
         if avail == 0:
             print("  시작하려면: dartlab setup\n")

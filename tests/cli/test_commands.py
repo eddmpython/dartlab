@@ -352,3 +352,41 @@ def test_report_markdown_unchanged_without_model_flag(monkeypatch, capsys):
     assert rc == 0
     assert "MD" in capsys.readouterr().out
     co.reportModel.assert_not_called()
+
+
+# ── 17. statement / status: 계약 호출로 실제 값을 내는가 ──
+
+
+def test_statement_usesPanelContract(monkeypatch, capsys):
+    """재무제표 명령이 `panel` 계약으로 표를 낸다.
+
+    예전에는 `company.BS` 처럼 속성으로 읽었다. 그 이름들은 계약에서 빠져 존재하지
+    않으므로 AttributeError 로 죽었고, 제목 두 줄만 찍히고 표가 안 나왔다.
+    """
+    import polars as pl
+
+    co = _mock_company()
+    frame = pl.DataFrame({"snakeId": ["sales"], "항목": ["매출액"], "2025Q4": [100.0]})
+    co.panel = MagicMock(return_value=frame)
+    _patch_dartlab(monkeypatch, company=co)
+    from dartlab.cli.commands.statement import run
+
+    rc = run(_ns(company="999999", name="IS", periods=6))
+
+    assert rc == 0
+    co.panel.assert_called_once_with("IS")
+    assert "매출액" in capsys.readouterr().out
+
+
+def test_providerStatus_returnsAvailabilityAndModel():
+    """provider 상태가 가용 여부와 모델을 돌려준다.
+
+    예전에는 `dartlab.llm.status` 를 불렀는데 그 이름이 표면에서 빠져 `dartlab status`
+    가 첫 provider 에서 AttributeError 로 죽었다. 표 머리만 찍히고 본문이 없었다.
+    """
+    from dartlab.cli.commands.status import _providerStatus
+
+    st = _providerStatus("openai")
+
+    assert set(st) >= {"available", "model"}
+    assert isinstance(st["available"], bool)
