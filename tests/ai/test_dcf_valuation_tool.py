@@ -94,3 +94,54 @@ def test_dcfValuation_confidence_uses_forecast_method() -> None:
     from dartlab.core.confidence import baseScore
 
     assert baseScore("forecast") == 30
+
+
+# ── 입력 해석기: 살아 있는 공급원을 보는가 ──
+
+
+class _ContractCompany:
+    """DCF 입력 세 갈래를 계약/내부 공급원으로만 제공하는 Company 대역."""
+
+    stockCode = "999999"
+    corpName = "테스트기업"
+
+    def _getFinanceBuild(self, period: str = "q", fsDivPref: str = "CFS"):
+        return ({"IS": {"sales": [1.0]}, "BS": {"total_assets": [2.0]}, "CF": {}}, ["2025Q4"])
+
+    def capital(self):
+        import polars as pl
+
+        return pl.DataFrame({"stockCode": ["999999"], "발행주식총수": [1000.0]})
+
+
+def test_resolveSeries_usesFinanceBuild() -> None:
+    """재무 시계열은 회사의 finance 빌드에서 나온다.
+
+    예전에는 `company.finance.timeseries` 를 읽었다. `finance` 는 표면에서 빠진 이름이라
+    늘 None 이었고, 호출부가 곧바로 series_unavailable 로 끝내서 이 도구가 어느 회사에서도
+    결과를 못 냈다.
+    """
+    from dartlab.ai.tools.dcfValuationTool import _resolveSeries
+
+    series = _resolveSeries(_ContractCompany())
+
+    assert series and set(series) >= {"IS", "BS"}
+
+
+def test_resolveShares_usesCapitalAxis() -> None:
+    """발행주식수는 `capital` 축에서 나온다 (옛 세 후보 이름은 전부 표면에 없다)."""
+    from dartlab.ai.tools.dcfValuationTool import _resolveShares
+
+    assert _resolveShares(_ContractCompany()) == 1000
+
+
+def test_resolveCurrentPrice_usesGatherContract(monkeypatch) -> None:
+    """현재 주가는 공개 계약 `dartlab.gather("price", 코드)` 에서 나온다."""
+    import polars as pl
+
+    import dartlab
+    from dartlab.ai.tools.dcfValuationTool import _resolveCurrentPrice
+
+    monkeypatch.setattr(dartlab, "gather", lambda axis, code: pl.DataFrame({"close": [100.0, 220.0]}))
+
+    assert _resolveCurrentPrice(_ContractCompany()) == 220.0

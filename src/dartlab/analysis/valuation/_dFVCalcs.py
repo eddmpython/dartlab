@@ -118,19 +118,22 @@ def _getCurrentPrice(company: Any) -> float | None:
     float | None
         현재 주가 (원). 조회 실패 시 None.
     """
+    # 두 갈래가 다 죽어 있었다. `currentPrice` 는 표면에서 빠진 이름이라 늘 None 이고,
+    # `getDefaultGather()` 가 돌려주는 객체는 호출할 수 없어 TypeError 로 떨어졌다. 둘 다
+    # except 가 삼켜서 이 함수는 어느 회사에서도 주가를 못 냈다. 공개 계약으로 부른다.
+    code = getattr(company, "stockCode", "")
+    if not code:
+        return None
     try:
-        price = getattr(company, "currentPrice", None)
-        if price:
-            return float(price)
-        from dartlab.core.di import getMacroProvider
+        import dartlab
 
-        g = getMacroProvider().getDefaultGather()
-        p = g("price", getattr(company, "stockCode", ""))
-        if p is not None and hasattr(p, "height") and p.height > 0:
-            return float(p["close"][-1])
-    except (ImportError, AttributeError, ValueError, TypeError, KeyError):
-        pass
-    return None
+        rows = dartlab.gather("price", code)
+    except (ImportError, AttributeError, ValueError, TypeError, KeyError, OSError, RuntimeError):
+        return None
+    if rows is None or getattr(rows, "height", 0) == 0 or "close" not in getattr(rows, "columns", []):
+        return None
+    last = rows["close"][-1]
+    return float(last) if last is not None else None
 
 
 def _calcOpinion(upside: float | None) -> str:

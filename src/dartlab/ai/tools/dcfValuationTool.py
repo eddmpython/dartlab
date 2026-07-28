@@ -53,50 +53,66 @@ def _resolveSectorParams(company: Any) -> Any:
 
 
 def _resolveSeries(company: Any) -> dict | None:
-    """Company → finance.timeseries dict (BS/IS/CF). 실패 시 None."""
+    """Company → 재무 시계열 dict (BS/IS/CF). 실패 시 None.
+
+    예전에는 `company.finance.timeseries` 를 읽었다. `finance` 는 표면에서 빠진 이름이라
+    늘 None 이었고, 호출부가 그 자리에서 곧바로 "series_unavailable" 로 끝냈다. 그래서
+    이 도구가 어느 회사에서도 결과를 못 냈다. 회사가 이미 갖고 있는 finance 빌드를 쓴다.
+    """
     if company is None:
         return None
+    build = getattr(company, "_getFinanceBuild", None)
+    if build is None:
+        return None
     try:
-        fin = getattr(company, "finance", None)
-        if fin is not None:
-            ts = getattr(fin, "timeseries", None)
-            if isinstance(ts, dict) and ts:
-                return ts
-    except Exception:  # noqa: BLE001
-        pass
-    return None
+        pair = build("q")
+    except (AttributeError, KeyError, OSError, RuntimeError, TypeError, ValueError):
+        return None
+    if not pair:
+        return None
+    series = pair[0]
+    return series if isinstance(series, dict) and series else None
 
 
 def _resolveShares(company: Any) -> int | None:
-    """Company → 발행주식수. 여러 attr 후보 순차 시도."""
+    """Company → 발행주식수. 실패 시 None.
+
+    옛 구현은 `sharesOutstanding` · `shares` · `totalShares` 세 이름을 차례로 봤는데 셋 다
+    표면에 없어서 늘 None 이었다. 지금 공급원은 `capital` 축의 발행주식총수다.
+    """
     if company is None:
         return None
-    for attr in ("sharesOutstanding", "shares", "totalShares"):
-        try:
-            v = getattr(company, attr, None)
-            if callable(v):
-                v = v()
-            if v:
-                return int(v)
-        except Exception:  # noqa: BLE001
-            continue
-    return None
+    try:
+        df = company.capital()
+    except (AttributeError, KeyError, OSError, RuntimeError, TypeError, ValueError):
+        return None
+    if df is None or getattr(df, "height", 0) == 0:
+        return None
+    value = df.row(0, named=True).get("발행주식총수")
+    return int(value) if value else None
 
 
 def _resolveCurrentPrice(company: Any) -> float | None:
-    """Company → 현재 주가. 여러 attr 후보 순차 시도."""
+    """Company → 현재 주가. 실패 시 None.
+
+    옛 구현은 `currentPrice` · `price` 두 이름을 봤는데 둘 다 표면에 없어서 늘 None 이었다.
+    지금 공급원은 공개 계약 `dartlab.gather("price", 종목코드)` 의 종가 마지막 값이다.
+    """
     if company is None:
         return None
-    for attr in ("currentPrice", "price"):
-        try:
-            v = getattr(company, attr, None)
-            if callable(v):
-                v = v()
-            if v:
-                return float(v)
-        except Exception:  # noqa: BLE001
-            continue
-    return None
+    code = getattr(company, "stockCode", "")
+    if not code:
+        return None
+    try:
+        import dartlab
+
+        rows = dartlab.gather("price", code)
+    except (ImportError, AttributeError, KeyError, OSError, RuntimeError, TypeError, ValueError):
+        return None
+    if rows is None or getattr(rows, "height", 0) == 0 or "close" not in getattr(rows, "columns", []):
+        return None
+    last = rows["close"][-1]
+    return float(last) if last is not None else None
 
 
 def _scenarioDict(dcf: Any, name: str) -> dict[str, Any]:
