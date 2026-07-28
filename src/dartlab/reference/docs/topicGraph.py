@@ -60,6 +60,27 @@ TOPIC_KEYWORDS: dict[str, list[str]] = {
 }
 
 
+def _topicKeyFor(sectionName: str, topicKeywords: dict[str, list[str]]) -> str:
+    """공시 섹션 이름을 topic 키로 맞춘다. 못 맞추면 이름 그대로 둔다.
+
+    인접 행렬의 출발점과 도착점은 같은 이름 공간이어야 그래프를 따라갈 수 있다. 그런데
+    `panelTextWide` 는 `topic` 열에 공시 섹션 제목("4. 매출 및 수주상황")을 그대로 싣고,
+    도착점은 `TOPIC_KEYWORDS` 의 영문 키("productService")다. 그대로 두면 출발점 여든둘과
+    도착점 서른셋이 섞인 그래프가 나오고, 화면에서는 어느 간선도 이어지지 않는다.
+
+    가장 긴 키워드가 이긴다. 섹션 제목 하나에 여러 키워드가 걸릴 때 (예 "매출 및 수주상황")
+    더 구체적인 쪽을 고르기 위해서다.
+    """
+    if sectionName in topicKeywords:
+        return sectionName
+    best, bestLen = sectionName, 0
+    for key, keywords in topicKeywords.items():
+        for keyword in keywords:
+            if keyword in sectionName and len(keyword) > bestLen:
+                best, bestLen = key, len(keyword)
+    return best
+
+
 def buildMentionMatrix(
     sections: pl.DataFrame,
     topicKeywords: dict[str, list[str]] | None = None,
@@ -82,16 +103,25 @@ def buildMentionMatrix(
 
     latest = sorted(periods, reverse=True)[0]
 
-    # topic별 텍스트 합치기
+    # topic별 텍스트 합치기.
+    # 표와 본문을 가르는 `blockType` 은 있을 때만 본다. `panelTextWide` 처럼 XML 을 이미 벗겨
+    # 평문으로 주는 생산자는 그 열을 내지 않는다. 예전에는 열이 없으면 polars 가
+    # ColumnNotFoundError 를 던져 topic 그래프가 통째로 죽었다. 없는 열을 요구하는 쪽이 아니라
+    # 있을 때만 좁히는 쪽이 맞다.
+    hasBlockType = "blockType" in sections.columns
     topic_texts: dict[str, str] = {}
     for topic in sections["topic"].unique().to_list():
-        rows = sections.filter((pl.col("topic") == topic) & (pl.col("blockType") == "text"))
+        rows = sections.filter(pl.col("topic") == topic)
+        if hasBlockType:
+            rows = rows.filter(pl.col("blockType") == "text")
         if rows.height == 0:
             continue
         texts = rows[latest].drop_nulls().to_list()
         text = "\n".join(str(t) for t in texts if t)
-        if len(text) > 50:
-            topic_texts[topic] = text
+        if len(text) <= 50:
+            continue
+        key = _topicKeyFor(str(topic), topicKeywords)
+        topic_texts[key] = f"{topic_texts[key]}\n{text}" if key in topic_texts else text
 
     # 인접 행렬
     adjacency: dict[tuple[str, str], int] = {}

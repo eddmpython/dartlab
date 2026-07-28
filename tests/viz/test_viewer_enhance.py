@@ -163,6 +163,40 @@ class TestTopicGraph(unittest.TestCase):
             }
         )
 
+    def test_mention_matrix_worksWithoutBlockTypeColumn(self):
+        """`blockType` 열이 없어도 돈다.
+
+        `panelTextWide` 는 XML 을 이미 벗겨 평문으로 주므로 그 열을 내지 않는다. 예전에는
+        열이 없으면 polars 가 ColumnNotFoundError 를 던져, 서버의 topic 그래프 엔드포인트가
+        회사마다 통째로 죽었다.
+        """
+        from dartlab.reference.docs.topicGraph import buildMentionMatrix
+
+        sections = self._make_sections().drop("blockType")
+        result = buildMentionMatrix(sections)
+
+        self.assertGreater(len(result["adjacency"]), 0)
+
+    def test_mention_matrix_normalizesSectionTitlesToTopicKeys(self):
+        """공시 섹션 제목이 출발점으로 들어와도 topic 키로 모인다.
+
+        인접 행렬의 출발점과 도착점이 같은 이름 공간이어야 그래프를 따라갈 수 있다.
+        예전에는 출발점이 한글 섹션 제목이고 도착점이 영문 키라 어느 간선도 이어지지 않았다.
+        """
+        from dartlab.reference.docs.topicGraph import TOPIC_KEYWORDS, buildMentionMatrix
+
+        sections = self._make_sections().with_columns(
+            pl.Series("topic", ["1. 사업의 개요", "2. 배당에 관한 사항", "3. 직원 등의 현황"])
+        )
+        result = buildMentionMatrix(sections)
+
+        sources = {src for src, _ in result["adjacency"]}
+        self.assertTrue(sources, "간선이 하나도 없다")
+        self.assertTrue(
+            sources <= set(TOPIC_KEYWORDS),
+            f"topic 키로 안 모인 출발점: {sorted(sources - set(TOPIC_KEYWORDS))}",
+        )
+
     def test_mention_matrix_structure(self):
         from dartlab.reference.docs.topicGraph import buildMentionMatrix
 
