@@ -77,6 +77,43 @@ if not _IS_PYODIDE:
     )
 
 
+# ── 공개 계약 엔진 SSOT ──────────────────────────────────────────
+# `dartlab.{engine}(...)` 계약의 정본 표. 엔진 배선은 오직 여기서만 나온다.
+# 예전에는 같은 배선이 세 곳(`_LAZY_ATTRS` · `_Module.__getattr__` if 사슬 ·
+# `_makeCallableModule` 전용 팩토리 여덟 개)에 흩어져 있었고, 그래서 엔진이 통째로
+# 빠져도 어느 쪽도 그걸 몰랐다. 소비처는 둘(pyodide 는 `__getattr__`, 데스크톱은
+# 모듈 패치)이고 둘 다 이 표만 읽는다.
+#
+# 값 = (호출체가 사는 모듈, 심볼, callable 로 패치할 모듈들).
+# 심볼이 클래스면 인스턴스가 호출체이고, 이미 함수면 그대로 호출체다.
+# 패치 목록이 비면 모듈을 건드리지 않고 호출체를 바로 붙인다(credit 은 함수 그 자체).
+_CONTRACT_ENGINES: dict[str, tuple[str, str, tuple[str, ...]]] = {
+    "gather": ("dartlab.gather.entry", "GatherEntry", ("dartlab.gather",)),
+    "scan": ("dartlab.scan", "Scan", ("dartlab.scan",)),
+    "analysis": (
+        "dartlab.analysis.financial",
+        "Analysis",
+        ("dartlab.analysis", "dartlab.analysis.financial"),
+    ),
+    "credit": ("dartlab.credit", "credit", ()),
+    "macro": ("dartlab.macro", "Macro", ("dartlab.macro",)),
+    "quant": ("dartlab.quant", "Quant", ("dartlab.quant",)),
+    "industry": ("dartlab.industry", "Industry", ("dartlab.industry",)),
+    "dataHub": ("dartlab.dataHub", "DataHub", ("dartlab.dataHub",)),
+    "simulate": ("dartlab.simulate.entry", "simulate", ("dartlab.simulate",)),
+}
+
+# 계약 엔진 별칭. `data` 는 `dataHub` 로 이름이 바뀌기 전의 옛 이름이라 계속 받는다.
+_ENGINE_ALIASES: dict[str, str] = {"data": "dataHub"}
+
+
+def _buildEngine(name: str):
+    """계약 엔진 이름 하나를 호출체로 만든다."""
+    modPath, symbol, _ = _CONTRACT_ENGINES[name]
+    obj = getattr(importlib.import_module(modPath), symbol)
+    return obj() if isinstance(obj, type) else obj
+
+
 async def prefetch(*stockCodes: str, categories: list[str] | None = None):
     """[하위호환] 종목 하나면 그 ``Company`` 를 반환. 새 코드는 ``Company`` 를 직접 쓴다.
 
@@ -788,52 +825,13 @@ class _Module(sys.modules[__name__].__class__):
             obj = mod if attr is None else getattr(mod, attr)
             setattr(self, name, obj)
             return obj
-        if name == "scan":
-            Scan = importlib.import_module("dartlab.scan").Scan
-            instance = Scan()
-            setattr(self, name, instance)
-            return instance
-        if name in {"data", "dataHub"}:
-            DataHub = importlib.import_module("dartlab.dataHub").DataHub
-            instance = DataHub()
-            setattr(self, name, instance)
-            return instance
-        if name == "analysis":
-            from dartlab.analysis.financial import Analysis
-
-            instance = Analysis()
-            setattr(self, name, instance)
-            return instance
-        if name == "credit":
-            from dartlab.credit import credit
-
-            setattr(self, name, credit)
-            return credit
-        if name == "quant":
-            from dartlab.quant import Quant
-
-            instance = Quant()
-            setattr(self, name, instance)
-            return instance
-        if name == "macro":
-            from dartlab.macro import Macro
-
-            instance = Macro()
-            setattr(self, name, instance)
-            return instance
-        if name == "industry":
-            from dartlab.industry import Industry
-
-            instance = Industry()
-            setattr(self, name, instance)
-            return instance
-        if name == "viz":
-            import dartlab.viz as _viz
-
-            setattr(self, name, _viz)
-            return _viz
-        if name == "chart":
-            # 하위호환: dartlab.chart → dartlab.viz
+        engineName = _ENGINE_ALIASES.get(name, name)
+        if engineName in _CONTRACT_ENGINES:
+            obj = _buildEngine(engineName)
+            setattr(self, name, obj)
+            return obj
+        if name in ("viz", "chart"):
+            # `chart` 는 `viz` 의 하위호환 이름이다.
             import dartlab.viz as _viz
 
             setattr(self, name, _viz)
@@ -884,79 +882,31 @@ if not _IS_PYODIDE:
 
         mod.__class__ = _CallableModule
 
-    def _gatherFactory():
-        from dartlab.gather.entry import GatherEntry
+    def _engineFactory(engineName: str):
+        """엔진 이름을 캡처한 무인자 팩토리. `_makeCallableModule` 이 lazy 호출한다."""
+        return lambda: _buildEngine(engineName)
 
-        return GatherEntry()
-
-    def _scanFactory():
-        Scan = importlib.import_module("dartlab.scan").Scan
-
-        return Scan()
-
-    def _dataHubFactory():
-        DataHub = importlib.import_module("dartlab.dataHub").DataHub
-
-        return DataHub()
-
-    def _analysisFactory():
-        from dartlab.analysis.financial import Analysis
-
-        return Analysis()
-
-    def _quantFactory():
-        from dartlab.quant import Quant
-
-        return Quant()
-
-    def _macroFactory():
-        from dartlab.macro import Macro
-
-        return Macro()
-
-    def _industryFactory():
-        from dartlab.industry import Industry
-
-        return Industry()
-
-    def _simulateFactory():
-        # `dartlab.simulate` 는 서브패키지(L2.5 엔진)이자 톱레벨 verb 다. 어떤 import 체인이
-        # 서브모듈을 먼저 로드하면 PEP 562 lazy attr 가 가려지므로 (scan/macro 와 동일 회귀),
-        # 모듈 자체를 callable 로 패치해 verb 함수로 위임한다. instance = verb 함수 그 자체.
-        from dartlab.simulate.entry import simulate as _simulate
-
-        return _simulate
-
-    # scan/analysis/quant/macro/industry — 모듈 자체를 callable 로 변환.
+    # 계약 엔진 배선. 대상·심볼·패치 목록 전부 `_CONTRACT_ENGINES` 한 장에서 나온다.
     # importlib 동적 import 로 import-linter 의 정적 cycle 검사 우회 (top-level
     # dartlab → L2 import 가 단방향 정책 위반으로 잡히는 것 방지).
+    # `simulate` 처럼 서브패키지이면서 톱레벨 verb 인 엔진은, 어떤 import 체인이 서브모듈을
+    # 먼저 로드하면 PEP 562 lazy attr 가 가려진다. 그래서 모듈 자체를 callable 로 패치한다.
+    for _engineName, _engineSpec in _CONTRACT_ENGINES.items():
+        _patchTargets = _engineSpec[2]
+        if not _patchTargets:
+            # 모듈을 패치하지 않는 엔진(credit)은 이미 함수라 호출체를 그대로 붙인다.
+            setattr(sys.modules[__name__], _engineName, _buildEngine(_engineName))
+            continue
+        for _target in _patchTargets:
+            importlib.import_module(_target)
+            _makeCallableModule(_target, _engineFactory(_engineName))
+        setattr(sys.modules[__name__], _engineName, sys.modules[_patchTargets[0]])
 
-    importlib.import_module("dartlab.gather")
-    importlib.import_module("dartlab.dataHub")
-    importlib.import_module("dartlab.analysis.financial")
-    importlib.import_module("dartlab.industry")
-    importlib.import_module("dartlab.macro")
-    importlib.import_module("dartlab.quant")
-    importlib.import_module("dartlab.scan")
-    importlib.import_module("dartlab.simulate")
-
-    _makeCallableModule("dartlab.gather", _gatherFactory)
-    _makeCallableModule("dartlab.dataHub", _dataHubFactory)
-    _makeCallableModule("dartlab.scan", _scanFactory)
-    _makeCallableModule("dartlab.analysis", _analysisFactory)
-    _makeCallableModule("dartlab.analysis.financial", _analysisFactory)
-    _makeCallableModule("dartlab.quant", _quantFactory)
-    _makeCallableModule("dartlab.macro", _macroFactory)
-    _makeCallableModule("dartlab.industry", _industryFactory)
-    _makeCallableModule("dartlab.simulate", _simulateFactory)
-    sys.modules[__name__].gather = sys.modules["dartlab.gather"]
-    sys.modules[__name__].dataHub = sys.modules["dartlab.dataHub"]
-    sys.modules[__name__].data = sys.modules["dartlab.dataHub"]
-
-    # credit은 함수형 (이미 callable)
-    from dartlab.credit import credit as _credit_callable
-
-    sys.modules[__name__].credit = _credit_callable
+    # 별칭은 같은 모듈 객체를 가리킨다. `import dartlab.data` 형태는 실물 호환 패키지
+    # (`dartlab/data/__init__.py`) 가 받는다. pyodide 는 아래 배선을 타지 않으므로
+    # sys.modules 를 여기서 덮어쓰면 환경마다 다른 객체가 나온다.
+    for _alias, _aliasTarget in _ENGINE_ALIASES.items():
+        setattr(sys.modules[__name__], _alias, sys.modules[_CONTRACT_ENGINES[_aliasTarget][2][0]])
 
 
 __all__ = [
