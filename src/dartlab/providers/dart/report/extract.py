@@ -123,6 +123,16 @@ def extractRaw(
     sub = sub.with_columns(
         pl.col("year").cast(pl.Utf8).str.extract(r"(\d{4})", 1).cast(pl.Int32, strict=False).alias("year")
     )
+    # 일부 apiType 은 사업연도 자리에 "제57기 1분기" 처럼 기수 라벨을 담는다. 네 자리 숫자가
+    # 없으니 연도가 null 이 되고 바로 아래 필터가 그 apiType 을 통째로 버렸다. 감사의견이
+    # 그래서 93 행을 갖고도 0 행으로 나왔다. 결산일이 그 보고서 기간의 끝이라 연도를 준다.
+    if "stlm_dt" in sub.columns:
+        sub = sub.with_columns(
+            pl.when(pl.col("year").is_null())
+            .then(pl.col("stlm_dt").cast(pl.Utf8).str.extract(r"(\d{4})", 1).cast(pl.Int32, strict=False))
+            .otherwise(pl.col("year"))
+            .alias("year")
+        )
     sub = sub.filter(pl.col("year").is_not_null())
     sub = sub.with_columns(pl.col("quarter").replace(QUARTER_MAP).cast(pl.Int32).alias("quarterNum"))
 
