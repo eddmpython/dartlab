@@ -120,6 +120,63 @@ def _decodeUserDefined(text: str) -> bytes:
         return bytes(ord(c) & 0xFF for c in text)
 
 
+def _fetchBytesPyodide(url: str, *, allowOpenUrl: bool = False) -> bytes:
+    """브라우저에서 URL 하나를 바이트로 받는다. tier 를 순서대로 시도한다.
+
+    tier 1 (opportunistic): JSPI stack-switching 되는 브라우저(Chrome 137+)면 sync 로
+    async fetch. tier 2 (reliable): 동기 XMLHttpRequest. 웹워커에서 항상 동작한다
+    (webloop 실행 중이라 run_until_complete 경로는 죽어 제거함). 동기 XHR 은 arraybuffer 를
+    못 받으므로 텍스트로 받아 바이트로 되돌린다. charset 은 x-user-defined 여야 무손실이다
+    (iso-8859-1 라벨은 브라우저가 windows-1252 로 해석해 0x8A 가 U+0160 이 되고 latin-1
+    인코딩이 깨진다. 실측 확인). tier 3 (optional): ``open_url``. HTTP status 를 검사하지
+    않아 404 본문을 그대로 돌려주므로, 호출부가 parquet magic 으로 걸러낼 때만 켠다.
+
+    이 사슬이 두 함수에 통째로 복붙돼 있었고 양쪽 다 tier 별 실패 사유를 버렸다. 그래서
+    브라우저에서 데이터가 안 나올 때 CORS 인지 404 인지 JSPI 미지원인지 구분할 방법이
+    없었다. 이제 사유를 모아 예외 메시지에 싣는다. 브라우저는 붙어서 디버깅하기 어려운
+    자리라 이 정보가 유일한 단서다.
+
+    Raises:
+        RuntimeError: 모든 tier 실패. 메시지에 tier 별 사유가 줄 단위로 들어간다.
+    """
+    reasons: list[str] = []
+
+    try:
+        from pyodide.ffi import run_sync  # type: ignore[import-not-found]
+        from pyodide.http import pyfetch  # type: ignore[import-not-found]
+
+        resp = run_sync(pyfetch(url))
+        if resp.status == 200:
+            return bytes(run_sync(resp.bytes()))
+        reasons.append(f"pyfetch: HTTP {resp.status}")
+    except Exception as exc:  # noqa: BLE001
+        reasons.append(f"pyfetch: {type(exc).__name__}: {exc}")
+
+    try:
+        from js import XMLHttpRequest  # type: ignore[import-not-found]
+
+        xhr = XMLHttpRequest.new()
+        xhr.open("GET", url, False)
+        xhr.overrideMimeType("text/plain; charset=x-user-defined")
+        xhr.send()
+        if xhr.status == 200:
+            return _decodeUserDefined(xhr.responseText)
+        reasons.append(f"XHR: HTTP {xhr.status}")
+    except Exception as exc:  # noqa: BLE001
+        reasons.append(f"XHR: {type(exc).__name__}: {exc}")
+
+    if allowOpenUrl:
+        try:
+            from pyodide.http import open_url  # type: ignore[import-not-found]
+
+            raw = open_url(url).read()
+            return raw.encode("latin-1") if isinstance(raw, str) else raw
+        except Exception as exc:  # noqa: BLE001
+            reasons.append(f"open_url: {type(exc).__name__}: {exc}")
+
+    raise RuntimeError("Pyodide fetch 실패: " + url + "\n  " + "\n  ".join(reasons))
+
+
 def loadCorpListPyodide() -> pl.DataFrame:
     """Pyodide: HF ``metadata/corpList.parquet`` (gov 발행 상장사 목록)을 직독한다.
 
@@ -131,36 +188,7 @@ def loadCorpListPyodide() -> pl.DataFrame:
     from io import BytesIO
 
     url = f"{HF_BASE_URL}/metadata/corpList.parquet"
-    buf = None
-
-    # tier 1 (opportunistic): JSPI stack-switching 브라우저면 sync 로 async fetch.
-    try:
-        from pyodide.ffi import run_sync  # type: ignore[import-not-found]
-        from pyodide.http import pyfetch  # type: ignore[import-not-found]
-
-        resp = run_sync(pyfetch(url))
-        if resp.status == 200:
-            buf = bytes(run_sync(resp.bytes()))
-    except Exception:
-        pass
-
-    # tier 2 (reliable): 동기 XHR. 웹워커 항상 동작. x-user-defined 텍스트 → 바이트(벡터 복원).
-    if buf is None:
-        try:
-            from js import XMLHttpRequest  # type: ignore[import-not-found]
-
-            xhr = XMLHttpRequest.new()
-            xhr.open("GET", url, False)
-            xhr.overrideMimeType("text/plain; charset=x-user-defined")
-            xhr.send()
-            if xhr.status == 200:
-                buf = _decodeUserDefined(xhr.responseText)
-        except Exception:
-            pass
-
-    if buf is None:
-        raise RuntimeError(f"corpList fetch 실패: {url}")
-    return pl.read_parquet(BytesIO(buf))
+    return pl.read_parquet(BytesIO(_fetchBytesPyodide(url)))
 
 
 def pyodideFetchToFS(stockCode: str, category: str, dirPath: str, path: Path) -> None:
@@ -168,56 +196,18 @@ def pyodideFetchToFS(stockCode: str, category: str, dirPath: str, path: Path) ->
     url = f"{hfBaseUrl(category)}/{stockCode}.parquet"
     path.parent.mkdir(parents=True, exist_ok=True)
 
-    buf = None
-
-    # tier 1 (opportunistic): JSPI stack-switching 되는 브라우저(Chrome 137+)면 sync 로 async fetch.
     try:
-        from pyodide.ffi import run_sync  # type: ignore[import-not-found]
-        from pyodide.http import pyfetch  # type: ignore[import-not-found]
-
-        resp = run_sync(pyfetch(url))
-        if resp.status == 200:
-            buf = bytes(run_sync(resp.bytes()))
-    except Exception:
-        pass
-
-    # tier 2 (reliable): 동기 XMLHttpRequest. 웹워커에서 항상 동작(webloop 실행 중이라 run_until_complete
-    # 경로는 죽어 제거함). 동기 XHR 은 arraybuffer 를 못 받으므로 텍스트로 받아 바이트로 되돌린다.
-    # charset 은 x-user-defined 여야 무손실이다(iso-8859-1 라벨은 브라우저가 windows-1252 로 해석해
-    # 0x8A 가 U+0160 이 되고 latin-1 인코딩이 깨진다. 실측 확인).
-    if buf is None:
-        try:
-            from js import XMLHttpRequest  # type: ignore[import-not-found]
-
-            xhr = XMLHttpRequest.new()
-            xhr.open("GET", url, False)
-            xhr.overrideMimeType("text/plain; charset=x-user-defined")
-            xhr.send()
-            if xhr.status == 200:
-                buf = _decodeUserDefined(xhr.responseText)
-        except Exception:
-            pass
-
-    if buf is None:
-        try:
-            from pyodide.http import open_url  # type: ignore[import-not-found]
-
-            resp = open_url(url)
-            raw = resp.read()
-            buf = raw.encode("latin-1") if isinstance(raw, str) else raw
-        except Exception:
-            pass
-
-    if buf is None:
+        buf = _fetchBytesPyodide(url, allowOpenUrl=True)
+    except RuntimeError as exc:
         raise RuntimeError(
-            f"Pyodide fetch 실패: {url}\n"
+            f"{exc}\n"
             "데이터를 수동으로 로드하세요:\n"
             "  from pyodide.http import pyfetch\n"
             f"  resp = await pyfetch('{url}')\n"
             f"  buf = await resp.bytes()\n"
-            "  import os; os.makedirs('/data/{dirPath}', exist_ok=True)\n"
+            f"  import os; os.makedirs('/data/{dirPath}', exist_ok=True)\n"
             f"  open('/data/{dirPath}/{stockCode}.parquet', 'wb').write(buf)"
-        )
+        ) from exc
 
     # open_url tier 는 HTTP status 를 검사하지 않아 404 등의 에러 본문(HTML/JSON)을 buf 로 반환할 수 있다.
     # 그 garbage 를 FS 에 쓰면 이후 pyarrow read_table 이 ArrowInvalid(ValueError)로 크래시하는데,

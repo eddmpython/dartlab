@@ -11,7 +11,7 @@ import random
 
 import pytest
 
-from dartlab.core.dataLoaderPyodide import _decodeUserDefined
+from dartlab.core.dataLoaderPyodide import _decodeUserDefined, _fetchBytesPyodide
 
 pytestmark = [pytest.mark.unit]
 
@@ -46,3 +46,35 @@ def test_decodeUserDefined_matchesLegacyLoop() -> None:
     text = _asUserDefinedText(raw)
     legacy = bytes(ord(c) & 0xFF for c in text)
     assert _decodeUserDefined(text) == legacy
+
+
+def test_fetchBytes_reportsEveryTierReason() -> None:
+    """모든 tier 가 실패하면 tier 별 사유가 예외 메시지에 남는다.
+
+    예전에는 tier 마다 `except Exception: pass` 로 사유를 버리고 마지막에 "fetch 실패"
+    한 줄만 던졌다. 브라우저는 붙어서 디버깅하기 어려운 자리라, CORS 인지 404 인지
+    JSPI 미지원인지 구분할 단서가 그 사유뿐이다.
+
+    데스크톱에서는 pyodide·js module 이 없어 전 tier 가 ImportError 로 떨어지므로,
+    사유가 실려 오는지를 여기서 그대로 검증할 수 있다.
+    """
+    url = "https://example.invalid/none.parquet"
+    with pytest.raises(RuntimeError) as caught:
+        _fetchBytesPyodide(url, allowOpenUrl=True)
+
+    message = str(caught.value)
+    assert url in message, "실패한 URL 이 메시지에 없다"
+    for tier in ("pyfetch", "XHR", "open_url"):
+        assert tier in message, f"tier {tier} 사유가 메시지에 없다"
+
+
+def test_fetchBytes_openUrlTierIsOptional() -> None:
+    """`allowOpenUrl` 이 꺼져 있으면 그 tier 를 아예 시도하지 않는다.
+
+    `open_url` 은 HTTP status 를 안 봐서 404 본문을 성공처럼 돌려준다. parquet magic 으로
+    걸러내는 호출부에서만 켜야 하고, 그렇지 않은 곳(corpList)에서는 켜지면 안 된다.
+    """
+    with pytest.raises(RuntimeError) as caught:
+        _fetchBytesPyodide("https://example.invalid/none.parquet")
+
+    assert "open_url" not in str(caught.value)
