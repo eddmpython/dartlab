@@ -12,6 +12,8 @@ GATES ↔ YAML matrix drift 차단. 한쪽에만 게이트 추가 시 PR fail.
 
 from __future__ import annotations
 
+import os
+import pathlib
 import re
 import sys
 from pathlib import Path
@@ -192,3 +194,56 @@ def test_docsGatesBlockInSync(rel):
     )
     inner = text[start + len(GATES_BLOCK_START) : end].strip("\n")
     assert inner == renderGatesBlock(), f"{rel}: gates:auto 블록이 GATES 와 어긋남 — `tests/run.py docs --write` 실행"
+
+
+@pytest.mark.unit
+def testGateCommandsRunUnderPosixShell():
+    """게이트 명령은 반드시 POSIX shell 로 돌아야 한다.
+
+    명령 문자열은 CI 의 bash 를 전제로 쓰여 있다. 작은따옴표로 감싼 인자, `&&`,
+    `$(...)`, 파이프가 그대로 들어 있다. 그런데 `subprocess.run(shell=True)` 는
+    Windows 에서 `cmd.exe` 를 쓴다. `cmd.exe` 는 작은따옴표를 인용부호로 보지 않으므로
+
+        pip install 'pandera[polars]>=0.29.0,<0.33'
+
+    의 `>` 가 리다이렉션이 되어 repo 루트에 `0.29.0` 이라는 빈 파일이 생기고,
+    `pytest -m 'unit and not requires_data'` 는 마커 표현식이 네 조각으로 쪼개져 죽는다.
+    그래서 이 도구가 운영자 기계에서 늘 빨간불이었다. 강행규칙이 가리키는 "CI 게이트
+    SSOT" 가 정작 로컬에서 못 도는 상태였고, 그 침묵이 회귀를 CI 까지 흘려보냈다.
+
+    여기 고정하는 것은 Windows 에서 bash 를 명시해 부른다는 것 하나다.
+    """
+    import runpy
+
+    module = runpy.run_path(str(REPO_ROOT / "tests" / "run.py"))
+    invocation = module["_shellInvocation"]
+
+    args, kwargs = invocation("echo hi")
+
+    if os.name == "nt":
+        assert kwargs == {}, "Windows 에서는 shell=True 를 쓰지 않는다"
+        assert isinstance(args[0], list) and args[0][0].lower().endswith(("bash", "bash.exe")), (
+            f"POSIX shell 이 아니다: {args[0]!r}"
+        )
+        assert args[0][1] == "-c"
+    else:
+        assert kwargs.get("shell") is True
+
+
+@pytest.mark.unit
+def testQuotedGateArgsSurviveTheShell():
+    """따옴표 안의 부등호가 리다이렉션으로 새지 않는지 실제로 돌려서 본다."""
+    import runpy
+    import subprocess
+    import tempfile
+
+    module = runpy.run_path(str(REPO_ROOT / "tests" / "run.py"))
+    invocation = module["_shellInvocation"]
+
+    with tempfile.TemporaryDirectory() as work:
+        args, kwargs = invocation("python -c \"import sys; print(sys.argv[1])\" 'pkg>=1.2,<3'")
+        proc = subprocess.run(*args, cwd=work, capture_output=True, text=True, **kwargs)
+
+        assert proc.returncode == 0, proc.stderr
+        assert proc.stdout.strip() == "pkg>=1.2,<3", proc.stdout
+        assert not list(pathlib.Path(work).iterdir()), "리다이렉션으로 잔재 파일이 생겼다"

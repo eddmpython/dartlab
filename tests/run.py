@@ -42,6 +42,7 @@ from __future__ import annotations
 import argparse
 import os
 import shlex
+import shutil
 import subprocess
 import sys
 from dataclasses import dataclass, field
@@ -528,6 +529,38 @@ GATES: dict[str, Gate] = {
 # ──────────────────────────────────────────────────────────────────────────
 
 
+def _shellInvocation(shellCmd: str) -> tuple[list[str] | str, dict[str, object]]:
+    """조합한 POSIX 명령을 실제로 POSIX shell 로 돌리게 만든다.
+
+    게이트 명령은 CI 의 bash 를 전제로 쓰여 있다. 작은따옴표로 감싼 인자,
+    `&&`, `$(...)`, 파이프가 그대로 들어 있다. 그런데 `shell=True` 는 Windows 에서
+    `cmd.exe` 를 쓴다. `cmd.exe` 는 작은따옴표를 인용부호로 보지 않으므로 이런 일이 났다.
+
+        pip install 'pandera[polars]>=0.29.0,<0.33'
+
+    여기서 `>` 가 리다이렉션이 되어 repo 루트에 `0.29.0` 이라는 빈 파일이 생기고,
+    pip 은 망가진 인자를 받는다. `pytest -m 'unit and not requires_data'` 도 마커
+    표현식이 네 조각으로 쪼개져 죽는다. 그래서 이 도구가 로컬에서 늘 빨간불이었고,
+    강행규칙이 가리키는 "CI 27 게이트 SSOT" 가 정작 운영자 기계에서 못 돌았다.
+
+    Windows 에서는 bash 를 명시해 부른다. 그 밖에서는 `shell=True` 그대로다.
+
+    Args:
+        shellCmd: 조합된 POSIX shell 명령 한 줄.
+
+    Returns:
+        `subprocess.run` 에 넘길 (위치 인자 목록, 키워드 인자) 짝.
+    """
+    if os.name != "nt":
+        return [shellCmd], {"shell": True}
+    bash = shutil.which("bash")
+    if bash is None:
+        raise SystemExit(
+            "게이트 명령은 POSIX shell 을 전제로 한다. bash 를 못 찾았다. Git for Windows 의 bash 를 PATH 에 넣어라."
+        )
+    return [[bash, "-c", shellCmd]], {}
+
+
 def buildShellCommand(gate: Gate, mp: dict[str, str]) -> str:
     """deps + setup + cmd 를 단일 shell 명령으로 조합. CI 와 로컬 동일.
 
@@ -620,8 +653,9 @@ def runGate(name: str, *, dry_run: bool, mp: dict[str, str]) -> int:
 
     full_env = os.environ.copy()
     full_env.update(env_local)
+    runArgs, runKwargs = _shellInvocation(shell_cmd)
     proc = subprocess.run(  # noqa: S603 - CI dispatcher; cmd 는 본 파일 내부 dict 에서만 옴
-        shell_cmd, shell=True, env=full_env, cwd=REPO_ROOT
+        *runArgs, env=full_env, cwd=REPO_ROOT, **runKwargs
     )
     if proc.returncode != 0 and not gate.blocking:
         print(f"[run.py] {gate.name} fail (blocking=False) → 통과로 처리", file=sys.stderr)
