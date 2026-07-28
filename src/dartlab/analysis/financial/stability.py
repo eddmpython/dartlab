@@ -44,7 +44,7 @@ from dartlab.core.utils.calc import safePct as _pctOf  # noqa: E402
 
 @memoizedCalc
 def calcLeverageTrend(company, *, basePeriod: str | None = None) -> dict | None:
-    """레버리지 구조 시계열 — 부채로 얼마나 버티는가.
+    """레버리지 구조 시계열: 부채로 얼마나 버티는가.
 
     Capabilities:
         부채총계/자본총계/자산총계/현금/총차입금 원본 + 부채비율/자기자본
@@ -96,13 +96,13 @@ def calcLeverageTrend(company, *, basePeriod: str | None = None) -> dict | None:
 
     AIContext:
         debtRatio + netDebt 부호 함께 인용. netDebt < 0 (순현금) 회사는
-        부채비율 높아도 안전 — netDebt 부호 우선 판단. turningPoints 있으면
+        부채비율 높아도 안전. netDebt 부호 우선 판단. turningPoints 있으면
         구조 변화 시점 (M&A·구조조정) 시그널로 활용.
 
     LLM Specifications:
         AntiPatterns:
-            - 부채비율 단독 인용 — netDebt 부호 함께 (순현금 회사 오판 방지).
-            - 단기·장기 차입금 별도 합산 시도 — sumBorrowings 가 12 키 모두
+            - 부채비율 단독 인용. netDebt 부호 함께 (순현금 회사 오판 방지).
+            - 단기·장기 차입금 별도 합산 시도. sumBorrowings 가 12 키 모두
               합산 (회사별 키 패턴 무관).
         OutputSchema:
             ``{history: list[dict 12키], turningPoints: list, notesDetail?: dict}``.
@@ -113,7 +113,7 @@ def calcLeverageTrend(company, *, basePeriod: str | None = None) -> dict | None:
         Dataflow:
             BS → 부채/자본/자산/현금/차입금 → 3 비율 + netDebt →
             injectTurningPoints + fetchNotesDetail enrichment.
-        TargetMarkets: KR (DART), US (EDGAR — 표준).
+        TargetMarkets: KR (DART), US (EDGAR, 표준).
     """
     bsResult = company.select(
         "BS",
@@ -190,7 +190,7 @@ def calcLeverageTrend(company, *, basePeriod: str | None = None) -> dict | None:
 
     result["turningPoints"] = injectTurningPoints(history, seriesKey="debtRatio", minDeltaPct=25.0)
 
-    # notes enrichment — 차입금 구성 + 리스부채
+    # notes enrichment: 차입금 구성 + 리스부채
     from dartlab.analysis.financial.companyContext import fetchNotesDetail
 
     notesDetail = fetchNotesDetail(company, ["borrowings", "lease"])
@@ -205,7 +205,7 @@ def calcLeverageTrend(company, *, basePeriod: str | None = None) -> dict | None:
 
 @memoizedCalc
 def calcCoverageTrend(company, *, basePeriod: str | None = None) -> dict | None:
-    """이자보상배율 시계열 — 영업이익으로 이자를 몇 배 커버하는가.
+    """이자보상배율 시계열: 영업이익으로 이자를 몇 배 커버하는가.
 
     Capabilities:
         영업이익 / 이자비용 시계열 + 이자비용 소스 추적 (IS 이자비용 → CF
@@ -229,7 +229,7 @@ def calcCoverageTrend(company, *, basePeriod: str | None = None) -> dict | None:
     Example:
         >>> r = calcCoverageTrend(Company("005930"))
         >>> r["history"][0]["interestCoverage"]
-        18.5  # 이자 18.5 배 커버 — AA 등급 매핑
+        18.5  # 이자 18.5 배 커버, AA 등급 매핑
 
     Guide:
         Damodaran 신용등급 매핑 (대기업):
@@ -256,13 +256,13 @@ def calcCoverageTrend(company, *, basePeriod: str | None = None) -> dict | None:
     AIContext:
         IC 절대값 + source + YoY 함께 인용. source = "금융비용" 일 때는
         과대계상 가능성 명시. 순현금 회사 (netDebt < 0) 는 IC 낮아도
-        문제 없음 — calcLeverageTrend 함께 확인.
+        문제 없음. calcLeverageTrend 함께 확인.
 
     LLM Specifications:
         AntiPatterns:
-            - source 무시하고 IC 인용 — "금융비용" 폴백은 외환손실 포함
+            - source 무시하고 IC 인용. "금융비용" 폴백은 외환손실 포함
               과대계상.
-            - 순현금 회사에 IC < 3 → "이자 부담" 단정 — netDebt 함께 확인.
+            - 순현금 회사에 IC < 3 → "이자 부담" 단정. netDebt 함께 확인.
         OutputSchema:
             ``{history: list[dict 5키]}``.
         Prerequisites:
@@ -272,7 +272,7 @@ def calcCoverageTrend(company, *, basePeriod: str | None = None) -> dict | None:
         Dataflow:
             IS → 영업이익 + (이자비용 또는 금융비용) + CF (interest_paid
             폴백) → 우선순위 분기 → IC = 영업이익 / |이자비용|.
-        TargetMarkets: KR (DART), US (EDGAR — Interest Expense 표준).
+        TargetMarkets: KR (DART), US (EDGAR, Interest Expense 표준).
     """
     isResult = company.select("IS", ["영업이익", "금융비용", "이자비용"])
     parsed = toDictBySnakeId(isResult)
@@ -349,7 +349,7 @@ from dartlab.analysis.financial._stabilityDistress import (  # noqa: E402
 
 @memoizedCalc
 def calcDebtMaturity(company, *, basePeriod: str | None = None) -> dict | None:
-    """부채 만기 구조 — 단기/장기/사채 + 차환 리스크.
+    """부채 만기 구조: 단기/장기/사채 + 차환 리스크.
 
     Capabilities:
         단기차입금/장기차입금/사채 분해 + 단기차입금 비중 + 유동부채/부채총계
@@ -371,12 +371,12 @@ def calcDebtMaturity(company, *, basePeriod: str | None = None) -> dict | None:
     Example:
         >>> r = calcDebtMaturity(Company("005930"))
         >>> r["history"][0]["refinancingRisk"]
-        0.8  # OCF 가 단기차입 1.25 배 — 양호
+        0.8  # OCF 가 단기차입 1.25 배, 양호
 
     Guide:
         - 단기차입금 비중 > 50% + refinancingRisk > 2 = 차환 위기 신호.
         - 사채 (회사채) 만기 도래 시 시장 환경 (금리/스프레드) 함께 확인.
-        - 금융업/바이오는 차입 구조 다름 — 자동 폴백 분기.
+        - 금융업/바이오는 차입 구조 다름. 자동 폴백 분기.
 
     When:
         차환 리스크 진단·만기 구조 분석 시.
@@ -401,8 +401,8 @@ def calcDebtMaturity(company, *, basePeriod: str | None = None) -> dict | None:
 
     LLM Specifications:
         AntiPatterns:
-            - 단기차입금 비중만으로 위험 판정 — OCF 와 비교 필수.
-            - 금융업/바이오에 제조업 폴백 기대 — 본 함수가 자동 분기.
+            - 단기차입금 비중만으로 위험 판정. OCF 와 비교 필수.
+            - 금융업/바이오에 제조업 폴백 기대. 본 함수가 자동 분기.
         OutputSchema:
             ``{history: list[dict 8키]}``.
         Prerequisites:
@@ -607,7 +607,7 @@ def calcStabilityFlags(company, *, basePeriod: str | None = None) -> dict:
             elif ic < 3 and not (isNetCash and source == "금융비용"):
                 flags.append(f"이자보상배율 {ic:.1f}배 -- 이자 부담 과다")
 
-    # Altman Z-Score (제조업 기반 모형 — 금융/지주사는 구조적 왜곡)
+    # Altman Z-Score (제조업 기반 모형, 금융/지주사는 구조적 왜곡)
     if not isFinancial:
         distress = calcDistressScore(company, basePeriod=basePeriod)
         if distress and distress.get("latestScore") is not None:
@@ -623,7 +623,7 @@ def calcStabilityFlags(company, *, basePeriod: str | None = None) -> dict:
                         "precision": meta.get("precision"),
                         "baseRate": meta.get("marketNote", ""),
                         "reference": meta.get("reference", ""),
-                        "sectorNote": "금융업/지주회사 부채 구조 왜곡 — Z-Score 부적합" if isFinancial else "",
+                        "sectorNote": "금융업/지주회사 부채 구조 왜곡으로 Z-Score 부적합" if isFinancial else "",
                     }
                 )
 

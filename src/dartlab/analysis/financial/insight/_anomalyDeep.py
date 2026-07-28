@@ -19,8 +19,6 @@ from dartlab.core.utils.extract import getAnnualValues
 _BIG4_KEYWORDS = ["삼일", "PwC", "삼정", "KPMG", "한영", "EY", "안진", "Deloitte"]
 
 
-# Anomaly.text 에 이미 나가 있는 긴 줄표 (U+2014). 문구가 곧 반환 계약이라 바꾸지 않고,
-# 소스에는 리터럴을 남기지 않으려 코드포인트로 고정한다 (신규 문구에는 쓰지 않는다).
 def _annualValuesWithFallback(aSeries: dict, sjDiv: str, *snakeIds: str) -> list:
     """계정 별칭 목록을 순서대로 훑어 처음 잡히는 시계열을 돌려준다.
 

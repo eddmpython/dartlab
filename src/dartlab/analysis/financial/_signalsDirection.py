@@ -1,6 +1,6 @@
-"""3 방향성 신호 — Consensus / Flow / Revenue (Zacks 연구 기반).
+"""3 방향성 신호: Consensus / Flow / Revenue (Zacks 연구 기반).
 
-calcConsensusDirection / calcFlowDirection / calcRevenueDirection — 애널리스트 컨센서스 / 자금
+calcConsensusDirection / calcFlowDirection / calcRevenueDirection. 애널리스트 컨센서스 / 자금
 흐름 / 매출 방향 3 신호. predictionSignals.py 의 calc 10-12 분리.
 
 Zacks: 컨센서스 방향이 실적 방향의 단일 최강 예측자 (70%).
@@ -54,7 +54,7 @@ _DEFAULT_PRIOR: float = _SECTOR_DATA.get("_metadata", {}).get("defaultPrior", 0.
 
 @memoizedCalc
 def calcConsensusDirection(company, *, basePeriod: str | None = None) -> dict | None:
-    """컨센서스 매출 방향 — 애널리스트 추정 매출 vs 직전 실적.
+    """컨센서스 매출 방향: 애널리스트 추정 매출 vs 직전 실적.
 
     네이버 finance/annual에서 isConsensus="Y" 기간의 매출 추정치를 가져와서
     직전 실적 대비 성장/하락 방향을 판단한다.
@@ -67,13 +67,13 @@ def calcConsensusDirection(company, *, basePeriod: str | None = None) -> dict | 
     Returns
     -------
     dict
-        consensusRevenue : float — 컨센서스 추정 매출 (원)
-        lastActualRevenue : float — 직전 실적 매출 (원)
-        consensusPeriod : str — 컨센서스 기간
-        actualPeriod : str — 실적 기간
-        expectedGrowthPct : float — 예상 성장률 (%)
-        direction : str — 방향 ("up" | "down" | "flat")
-        confidence : str — 신뢰도 ("high" | "medium" | "low")
+        consensusRevenue : float - 컨센서스 추정 매출 (원)
+        lastActualRevenue : float - 직전 실적 매출 (원)
+        consensusPeriod : str - 컨센서스 기간
+        actualPeriod : str - 실적 기간
+        expectedGrowthPct : float - 예상 성장률 (%)
+        direction : str - 방향 ("up" | "down" | "flat")
+        confidence : str - 신뢰도 ("high" | "medium" | "low")
 
     Guide:
         성장률 절대값 ≥ 10% 면 high, 3~10% medium.
@@ -88,7 +88,7 @@ def calcConsensusDirection(company, *, basePeriod: str | None = None) -> dict | 
         stockCode 매핑, httpx 네트워크 접근.
 
     Raises:
-        없음 — 네트워크/파싱 실패 시 None.
+        없음. 네트워크/파싱 실패 시 None.
 
     Example:
         >>> calcConsensusDirection(company)
@@ -175,7 +175,7 @@ def calcConsensusDirection(company, *, basePeriod: str | None = None) -> dict | 
 
 @memoizedCalc
 def calcFlowDirection(company, *, basePeriod: str | None = None) -> dict | None:
-    """수급 누적 방향 — 기관/외국인 순매수 분기 집계.
+    """수급 누적 방향: 기관/외국인 순매수 분기 집계.
 
     최근 60거래일 기관+외국인 순매수 합계가 양이면 실적 개선 기대.
     "스마트머니는 실적을 안다" (Park et al., MDPI 2020).
@@ -186,12 +186,12 @@ def calcFlowDirection(company, *, basePeriod: str | None = None) -> dict | None:
     Returns
     -------
     dict
-        foreignNet60d : int — 외국인 60거래일 순매수 (주)
-        institutionNet60d : int — 기관 60거래일 순매수 (주)
-        smartMoneyNet : int — 스마트머니 합계 (주)
-        direction : str — 방향 ("up" | "down" | "flat")
-        days : int — 집계 거래일 수 (일)
-        confidence : str — 신뢰도 ("high" | "medium" | "low")
+        foreignNet60d : int - 외국인 60거래일 순매수 (주)
+        institutionNet60d : int - 기관 60거래일 순매수 (주)
+        smartMoneyNet : int - 스마트머니 합계 (주)
+        direction : str - 방향 ("up" | "down" | "flat")
+        days : int - 집계 거래일 수 (일)
+        confidence : str - 신뢰도 ("high" | "medium" | "low")
 
     Guide:
         스마트머니 합 > 100만 주 면 medium, 1000만 주 high.
@@ -206,7 +206,7 @@ def calcFlowDirection(company, *, basePeriod: str | None = None) -> dict | None:
         stockCode 매핑, httpx 네트워크 접근.
 
     Raises:
-        없음 — 네트워크 실패 시 None.
+        없음. 네트워크 실패 시 None.
 
     Example:
         >>> calcFlowDirection(company)
@@ -480,7 +480,7 @@ def _directionConfidence(calibrated: float) -> str:
 
 @memoizedCalc
 def calcRevenueDirection(company, *, basePeriod: str | None = None) -> dict | None:
-    """매출 방향 예측 — 모멘텀 + 영업이익률 확인 + OLS 확인.
+    """매출 방향 예측: 모멘텀 + 영업이익률 확인 + OLS 확인.
 
     검증 결과:
     - 모멘텀 단독: 72.1% (4825건, 172종목)
@@ -490,11 +490,11 @@ def calcRevenueDirection(company, *, basePeriod: str | None = None) -> dict | No
 
     방법론:
     1. 기본: 전분기 YoY 방향 유지 (72.1%)
-    2. 확인1: 영업이익률 > 0이면 신뢰도 상승 (76.1%) — API 불필요
+    2. 확인1: 영업이익률 > 0이면 신뢰도 상승 (76.1%). API 불필요
     3. 확인2: OLS 외생변수와 일치하면 추가 상승 (77.7%)
     4. 2연속 같은 방향이면 74.7%
 
-    학술 근거: M4/M5 Competition — 단순 방법이 최강.
+    학술 근거: M4/M5 Competition. 단순 방법이 최강.
 
     Capabilities:
         - 모멘텀+마진+OLS 결합 베이즈 사후확률 산출.
@@ -502,19 +502,19 @@ def calcRevenueDirection(company, *, basePeriod: str | None = None) -> dict | No
     Returns
     -------
     dict
-        latestPeriod : str — 최신 분기
-        latestYoyGrowth : float — 최신 분기 YoY 성장률 (%)
-        direction : str — 예측 방향 ("up" | "down")
-        streak : int — 연속 동일 방향 분기 수
-        margin : float | None — 최신 영업이익률 (%)
-        marginAgree : bool | None — 마진 방향 일치 여부
-        olsAgree : bool | None — OLS 외생변수 방향 일치 여부
-        confirms : int — 확인 신호 수 (0-3)
-        probability : float — 보정된 베이즈 사후확률 (0.0-1.0)
-        rawPosterior : float — 원시 사후확률 (0.0-1.0)
-        industryPrior : float — 업종별 모멘텀 사전확률 (0.0-1.0)
-        confidence : str — 신뢰도 ("very_high" | "high" | "medium" | "low")
-        history : list[dict] — 최근 4분기 YoY 방향 이력
+        latestPeriod : str - 최신 분기
+        latestYoyGrowth : float - 최신 분기 YoY 성장률 (%)
+        direction : str - 예측 방향 ("up" | "down")
+        streak : int - 연속 동일 방향 분기 수
+        margin : float | None - 최신 영업이익률 (%)
+        marginAgree : bool | None - 마진 방향 일치 여부
+        olsAgree : bool | None - OLS 외생변수 방향 일치 여부
+        confirms : int - 확인 신호 수 (0-3)
+        probability : float - 보정된 베이즈 사후확률 (0.0-1.0)
+        rawPosterior : float - 원시 사후확률 (0.0-1.0)
+        industryPrior : float - 업종별 모멘텀 사전확률 (0.0-1.0)
+        confidence : str - 신뢰도 ("very_high" | "high" | "medium" | "low")
+        history : list[dict] - 최근 4분기 YoY 방향 이력
 
     Guide:
         confirms 2 이상 + streak 2 면 high confidence.
@@ -529,7 +529,7 @@ def calcRevenueDirection(company, *, basePeriod: str | None = None) -> dict | No
         IS 분기 6 개 이상, 업종 prior 매핑.
 
     Raises:
-        없음 — 데이터 부족 시 None.
+        없음. 데이터 부족 시 None.
 
     Example:
         >>> calcRevenueDirection(company)

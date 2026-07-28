@@ -47,7 +47,7 @@ def _collectAllValues(company: Any, basePeriod: str | None) -> dict:
 
 
 def _getBaseWACC(company: Any) -> float:
-    """기본 WACC 추출 — Phase 4 G12: CAPM 기반 우선, 섹터 fallback.
+    """기본 WACC 추출. Phase 4 G12: CAPM 기반 우선, 섹터 fallback.
 
     기존은 sectorParams.discountRate (대기업 10% 고정) 만 사용 → 삼성 AA급에 과도.
     Phase 4: `_estimateWacc` (CAPM + 시총 감쇠 + country) 우선 → 하한 4% 경계 반영.
@@ -75,7 +75,7 @@ def _getBaseWACC(company: Any) -> float:
 
 
 def _triangulate(primaryKey: str, primaryValue: float, secondaryKeys: list[str], allMethods: dict) -> dict:
-    """삼각검증 — primary와 secondary 괴리 체크."""
+    """삼각검증: primary와 secondary 괴리 체크."""
     checks = []
     for key in secondaryKeys:
         sec_value = allMethods.get(key)
@@ -111,7 +111,7 @@ def _triangulate(primaryKey: str, primaryValue: float, secondaryKeys: list[str],
 
 
 def _getCurrentPrice(company: Any) -> float | None:
-    """현재 주가 추출 — currentPrice 속성 우선, 없으면 gather 경유.
+    """현재 주가 추출. currentPrice 속성 우선, 없으면 gather 경유.
 
     Returns
     -------
@@ -143,7 +143,7 @@ def _calcOpinion(upside: float | None) -> str:
 
 
 def _calcLiquidationValue(company: Any, overrides: dict) -> float | None:
-    """Simple 청산가치 — survival weighting 용 (book × (1-discount))."""
+    """Simple 청산가치. survival weighting 용 (book × (1-discount))."""
     from dartlab.synth.overrides import applyOverride
 
     explicit = applyOverride(None, "liquidationValue", overrides)
@@ -237,7 +237,7 @@ def _calcLiquidationDetail(company: Any, overrides: dict) -> dict | None:
 def _calcTwoStageDcf(
     company: Any, lifePhase: str | None, overrides: dict, basePeriod: str | None = None
 ) -> dict | None:
-    """Damodaran Multi-stage DCF (Ch.12) — lifeCycle 별 phase 자동 구성.
+    """Damodaran Multi-stage DCF (Ch.12). lifeCycle 별 phase 자동 구성.
 
     - earlyGrowth → 3-phase: [5, 3, 2]년 × [g_high, g_high×0.5, g_high×0.2]
     - highGrowth → 3-phase: [5, 3, 2]년 × [g_high, g_high×0.7, g_high×0.4]
@@ -261,7 +261,7 @@ def _calcTwoStageDcf(
     reinvestment_path = applyOverride(None, "reinvestmentPath", overrides)
     rates_override = applyOverride(None, "growthRates", overrides)
 
-    # de-gate (P1a): 성장을 매출 CAGR 외삽이 아니라 펀더멘털 anchor 로 — g=reinvest×ROIC,
+    # de-gate (P1a): 성장을 매출 CAGR 외삽이 아니라 펀더멘털 anchor 로. g=reinvest×ROIC,
     # ROIC→WACC fade. growthRates override·ROIC 추정 실패 시 기존 phase 로 폴백(가정 명시).
     drivers = None
     if rates_override is None:
@@ -301,7 +301,7 @@ def _calcTwoStageDcf(
     )
     if result is None:
         return None
-    # 드라이버 시나리오(±12% 산술밴드 폐기) + 펀더멘털 진단 부착 — 펀더멘털 path 일 때만
+    # 드라이버 시나리오(±12% 산술밴드 폐기) + 펀더멘털 진단 부착. 펀더멘털 path 일 때만
     # (phase 폴백은 per-year 가 아니라 buildDriverScenarios 가정 위반).
     if drivers:
         result["reinvestmentDrivers"] = drivers
@@ -324,7 +324,7 @@ def _calcTwoStageDcf(
 
 
 def _applySurvivalAdjustment(company: Any, primaryValue: float, overrides: dict) -> dict | None:
-    """Dark Side of Valuation — Going-Concern × pSurvival 가중.
+    """Dark Side of Valuation: Going-Concern × pSurvival 가중.
 
     CHS 부도확률 (12M PD) 을 chsFeatures 경로로 실제 추출. 실패 시 safe_default 폴백.
     """
@@ -343,7 +343,7 @@ def _applySurvivalAdjustment(company: Any, primaryValue: float, overrides: dict)
             liquidationDiscount=discount_override,
         )
     else:
-        # CHS 실추출 — chsFeatures SSOT 경유
+        # CHS 실추출: chsFeatures SSOT 경유
         chs_result = computeChsProbability(company)
         if chs_result:
             survival_dict = calcSurvivalWeight(
@@ -359,7 +359,7 @@ def _applySurvivalAdjustment(company: Any, primaryValue: float, overrides: dict)
                 liquidationDiscount=discount_override,
             )
 
-    # liquidation 값 — Damodaran 자산별 회수 detail 의 perShare 우선, 없으면 book × (1-discount)
+    # liquidation 값: Damodaran 자산별 회수 detail 의 perShare 우선, 없으면 book × (1-discount)
     liq_detail = _calcLiquidationDetail(company, overrides)
     liq_per_share = None
     if liq_detail and liq_detail.get("perShare"):
@@ -384,7 +384,7 @@ def _buildConsistency(
     wacc: float | None,
     overrides: dict,
 ) -> dict | None:
-    """Cash Flow Consistency 검증 — dFV 결과에 consistencyFlags 주입용."""
+    """Cash Flow Consistency 검증. dFV 결과에 consistencyFlags 주입용."""
     try:
         from dartlab.analysis.valuation.consistency import calcCashFlowConsistency
         from dartlab.synth.overrides import applyOverride

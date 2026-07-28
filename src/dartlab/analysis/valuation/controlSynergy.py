@@ -24,7 +24,7 @@ def calcControlValue(
     basePeriod: str | None = None,
     overrides: dict | None = None,
 ) -> dict[str, Any] | None:
-    """Status Quo vs Restructured — 최적 자본배분 시나리오의 추가 가치.
+    """Status Quo vs Restructured: 최적 자본배분 시나리오의 추가 가치.
 
     Capabilities:
         - calcDFV (status quo) + multiStageDcf (restructured) 차이 = Control Value
@@ -48,12 +48,12 @@ def calcControlValue(
     Returns
     -------
     dict | None
-        statusQuoValue : float — 현재 경영 시나리오 DCF perShare
-        restructuredValue : float — 최적 시나리오 DCF perShare
-        controlPremium : float — restructured - statusQuo
-        premiumPct : float — % 기준
-        optimalROIC : float — 가정 ROIC (%)
-        optimalReinvestment : float — 가정 재투자율 (%)
+        statusQuoValue : float - 현재 경영 시나리오 DCF perShare
+        restructuredValue : float - 최적 시나리오 DCF perShare
+        controlPremium : float - restructured - statusQuo
+        premiumPct : float - % 기준
+        optimalROIC : float - 가정 ROIC (%)
+        optimalReinvestment : float - 가정 재투자율 (%)
         method : "sector_p75"
         warnings : list[str]
 
@@ -62,7 +62,7 @@ def calcControlValue(
         {"controlPremium": 12000, "premiumPct": 18.5, ...}
 
     Guide:
-        Synergy 와 동시 합산 금지 — 이중계산. storyValidation 이 경고.
+        Synergy 와 동시 합산 금지 (이중계산). storyValidation 이 경고.
 
     When:
         M&A 시나리오 분석 또는 행동주의/지배구조 개선 가치 답변 시.
@@ -74,7 +74,7 @@ def calcControlValue(
         calcDFV + multiStageDcf + calcRoicTimeline + synth.overrides + riskPremiums.
 
     Raises:
-        없음 — 데이터 부족 시 None 또는 controlPremium=0.
+        없음. 데이터 부족 시 None 또는 controlPremium=0.
 
     See Also:
         - calcSynergyValue : M&A 시너지 (본 함수와 독립 계산)
@@ -116,12 +116,12 @@ def calcControlValue(
     if current_wacc is None:
         current_wacc = 9.0
 
-    # Optimal ROIC = 섹터 p75 (scan 필요) — 미구현 시 현재 × 1.3 근사
+    # Optimal ROIC = 섹터 p75 (scan 필요). 미구현 시 현재 × 1.3 근사
     optimal_roic_pct = applyOverride(None, "optimalROIC", overrides)
     if optimal_roic_pct is None:
         if current_roic and current_roic > 0:
             optimal_roic_pct = min(current_roic * 1.3, current_wacc * 2.5)
-            warnings.append("섹터 p75 ROIC 미수집 — 현재 × 1.3 근사")
+            warnings.append("섹터 p75 ROIC 미수집으로 현재 × 1.3 근사")
         else:
             optimal_roic_pct = current_wacc * 1.5  # default 50% spread
 
@@ -130,11 +130,11 @@ def calcControlValue(
     optimal_reinvest = 0.6
     optimal_g = optimal_roic_pct * optimal_reinvest / 100.0 * 100  # %
 
-    # Restructured — multiStageDcf 재실행
+    # Restructured: multiStageDcf 재실행
     ts = status_quo.get("twoStage", {})
     baseFcf = _estimateBaseFcf(company)
     if not baseFcf or baseFcf <= 0:
-        warnings.append("baseFcf 추출 실패 — 기본 DCF 사용")
+        warnings.append("baseFcf 추출 실패로 기본 DCF 사용")
         return {
             "statusQuoValue": status_quo_value,
             "restructuredValue": status_quo_value,
@@ -187,7 +187,7 @@ def calcSynergyValue(
     synergyType: str = "cost",
     overrides: dict | None = None,
 ) -> dict[str, Any] | None:
-    """합병 시너지 계산 — cost / revenue / financial.
+    """합병 시너지 계산: cost / revenue / financial.
 
     Capabilities:
         - standalone A + B 의 calcDFV 결과 합 대비 combined 가치 차이 = synergy
@@ -201,9 +201,9 @@ def calcSynergyValue(
     target : Company
         피인수 회사.
     synergyType :
-        "cost" — 합병 후 운영비 절감 (opex ×0.95)
-        "revenue" — 교차 판매 성장 (g +2%p)
-        "financial" — 자본 효율 (WACC -50bps)
+        "cost": 합병 후 운영비 절감 (opex ×0.95)
+        "revenue": 교차 판매 성장 (g +2%p)
+        "financial": 자본 효율 (WACC -50bps)
     overrides : dict, optional
         가정 override.
 
@@ -218,7 +218,7 @@ def calcSynergyValue(
         {"synergy": 8e10, "netSynergy": 7.2e10, ...}
 
     Guide:
-        Control Value 와 합산 금지 — 이중계산. 시너지 multiplier 는 단순 휴리스틱.
+        Control Value 와 합산 금지 (이중계산). 시너지 multiplier 는 단순 휴리스틱.
 
     When:
         M&A 시나리오 분석 시 시너지 가치 인용.
@@ -227,10 +227,10 @@ def calcSynergyValue(
         calcSynergyValue(acquirer, target, synergyType="cost"|"revenue"|"financial").
 
     Requires:
-        calcDFV — acquirer/target 양쪽 dFV 산출 가능해야 함.
+        calcDFV: acquirer/target 양쪽 dFV 산출 가능해야 함.
 
     Raises:
-        없음 — calcDFV 실패 시 None.
+        없음. calcDFV 실패 시 None.
 
     See Also:
         - calcControlValue : 단일 기업 지배구조 가치
@@ -256,7 +256,7 @@ def calcSynergyValue(
     standalone_b = b["dFV"]
     standalone_total = standalone_a + standalone_b
 
-    # Synergy multiplier — 유형별
+    # Synergy multiplier: 유형별
     synergy_mult = {
         "cost": 0.05,  # 5% combined uplift
         "revenue": 0.08,  # 8%
@@ -267,7 +267,7 @@ def calcSynergyValue(
     synergy = combined - standalone_total
     synergy_pct = synergy / standalone_total * 100 if standalone_total > 0 else 0
 
-    # Integration cost — 관습 10% of synergy
+    # Integration cost: 관습 10% of synergy
     integration_cost = synergy * 0.10
     net_synergy = synergy - integration_cost
 
@@ -311,7 +311,7 @@ def _estimateBaseFcf(company: Any) -> float | None:
 
 
 def _estimateNetDebt(company: Any) -> float | None:
-    """순차입금 추정 — 단기+장기차입금+사채 - 현금.
+    """순차입금 추정: 단기+장기차입금+사채 - 현금.
 
     Returns
     -------

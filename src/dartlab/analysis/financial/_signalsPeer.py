@@ -1,4 +1,4 @@
-"""피어 예측 신호 — calcPeerPrediction + _extractPeerFeatures + _getHistoricalRevenueGrowth.
+"""피어 예측 신호: calcPeerPrediction + _extractPeerFeatures + _getHistoricalRevenueGrowth.
 
 Cross-section + panel 회귀로 동종 업종 피어 기반의 매출 성장률 예측 + 본 회사 괴리.
 
@@ -84,14 +84,14 @@ def calcPeerPrediction(company, *, basePeriod: str | None = None) -> dict | None
         scan 사전 적합 모델 (year-1 ~ year-3 탐색) + Company 재무 시계열.
 
     AIContext:
-        ensemblePredicted 단독 인용 금지 — modelR2 와 divergence 함께. R²
+        ensemblePredicted 단독 인용 금지. modelR2 와 divergence 함께. R²
         낮은 (<0.3) 모델 예측은 informative 가 아니라 noise 신호.
 
     LLM Specifications:
         AntiPatterns:
-            - 모델이 없는 신규 산업/IPO 종목 — None 반환, 호출자 fallback
+            - 모델이 없는 신규 산업/IPO 종목. None 반환, 호출자 fallback
               로직 필요.
-            - divergence 부호 해석 오류 — divergence>0 = 실제가 낮음 (peer
+            - divergence 부호 해석 오류. divergence>0 = 실제가 낮음 (peer
               하회), <0 = outperform.
         OutputSchema:
             상기 6 키 dict.
@@ -146,7 +146,7 @@ def calcPeerPrediction(company, *, basePeriod: str | None = None) -> dict | None
     if panelModel is not None:
         panelPredicted = panelModel.predict(stockCode, features)
 
-    # 앙상블 (단순 평균 — 학술적 최적)
+    # 앙상블 (단순 평균, 학술적 최적)
     preds = [p for p in [csPredicted, panelPredicted] if p is not None]
     if not preds:
         return None
@@ -200,7 +200,7 @@ def _extractPeerFeatures(company) -> dict[str, float] | None:
             if mc and mc > 0:
                 features["lnMarketCap"] = math.log(mc)
 
-        # capexRatio, foreignHoldingRatio, revenueGrowthLag — 없으면 기본값
+        # capexRatio, foreignHoldingRatio, revenueGrowthLag: 없으면 기본값
         features.setdefault("capexRatio", 0.0)
         features.setdefault("foreignHoldingRatio", 0.0)
         features.setdefault("revenueGrowthLag", 0.0)

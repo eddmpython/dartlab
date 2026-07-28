@@ -1,4 +1,4 @@
-"""_signalsMacro 의 calcStructuralBreak — Chow Test 기반 구조변화 감지."""
+"""_signalsMacro 의 calcStructuralBreak: Chow Test 기반 구조변화 감지."""
 
 from __future__ import annotations
 
@@ -26,7 +26,7 @@ def _getStockCode(company) -> str | None:
 
 
 def _getRatioValues(company, ratioName: str, maxYears: int) -> list[float | None]:
-    """Lazy proxy — _signalsMacroSensitivity 의 동명 함수 호출 (cycle 회피)."""
+    """Lazy proxy: _signalsMacroSensitivity 의 동명 함수 호출 (cycle 회피)."""
     from dartlab.analysis.financial._signalsMacroSensitivity import (
         _getRatioValues as _f,
     )
@@ -35,7 +35,7 @@ def _getRatioValues(company, ratioName: str, maxYears: int) -> list[float | None
 
 
 def _avgGrowth(vals: list[float]) -> float | None:
-    """Lazy proxy — _signalsMacroSensitivity 의 동명 함수 호출 (cycle 회피)."""
+    """Lazy proxy: _signalsMacroSensitivity 의 동명 함수 호출 (cycle 회피)."""
     from dartlab.analysis.financial._signalsMacroSensitivity import (
         _avgGrowth as _f,
     )
@@ -85,7 +85,7 @@ def calcStructuralBreak(company, *, basePeriod: str | None = None) -> dict | Non
 
     Guide:
         Chow Test 임계: F > 5 = high break. preBreakGrowth vs postBreakGrowth
-        부호 반전 시 reversing trend — DCF/forecastRevenue 의 horizon 단축
+        부호 반전 시 reversing trend. DCF/forecastRevenue 의 horizon 단축
         권장 (break 이후 데이터만 사용). 6 년 미만 회사는 break 탐지 불가.
 
     When:
@@ -104,13 +104,13 @@ def calcStructuralBreak(company, *, basePeriod: str | None = None) -> dict | Non
     AIContext:
         ``overallStability="volatile"`` 회사는 모든 forecast 결과 신뢰도
         하향. break year 가 외부 충격 (코로나/금융위기) 과 일치하면
-        natural break — 회사 fundamentals 변화로 해석 금지.
+        natural break. 회사 fundamentals 변화로 해석 금지.
 
     LLM Specifications:
         AntiPatterns:
-            - hasBreak=True 만 보고 즉시 "트렌드 깨짐" 단정 금지 — preBreak
+            - hasBreak=True 만 보고 즉시 "트렌드 깨짐" 단정 금지. preBreak
               vs postBreak 평균 비교 후 가속/감속/reversal 분류.
-            - 6 년 미만 회사에 본 함수 호출 → None — 호출자 분기 필요.
+            - 6 년 미만 회사에 본 함수 호출 → None. 호출자 분기 필요.
         OutputSchema:
             ``{metrics: list[dict 7키], overallStability: str}``.
         Prerequisites:
@@ -194,7 +194,7 @@ def calcStructuralBreak(company, *, basePeriod: str | None = None) -> dict | Non
                 }
             )
         else:
-            # 변화점 없음 — 추세 일관
+            # 변화점 없음. 추세 일관
             _, _, r2 = ols(list(range(len(clean))), clean)
             reliability = "high" if r2 > TREND_RSQUARED_HIGH else ("medium" if r2 > TREND_RSQUARED_MEDIUM else "low")
             metrics.append(

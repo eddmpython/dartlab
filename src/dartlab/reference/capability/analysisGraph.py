@@ -19,7 +19,7 @@ class QuestionProfile:
     types: tuple[str, ...] = ()
 
     def has(self, name: str) -> bool:
-        """has — TODO 한국어 동작 설명."""
+        """has: TODO 한국어 동작 설명."""
         return name in self.types
 
 
@@ -55,7 +55,7 @@ class CapabilityContract:
     toolNames: tuple[str, ...] = ()
 
     def toDict(self) -> dict[str, Any]:
-        """toDict — TODO 한국어 동작 설명."""
+        """toDict: TODO 한국어 동작 설명."""
         return {
             "contractId": self.contractId,
             "tool": self.tool,
@@ -85,7 +85,7 @@ class CapabilityContract:
 
 
 def graphStatus() -> dict[str, Any]:
-    """graphStatus — TODO 한국어 동작 설명."""
+    """graphStatus: TODO 한국어 동작 설명."""
     graph = loadAnalysisGraph()
     return {
         "graphVersion": graph.get("graphVersion"),
@@ -99,7 +99,7 @@ def graphStatus() -> dict[str, Any]:
 
 
 def loadAnalysisGraph() -> dict[str, Any]:
-    """Analysis Graph payload — capability 카탈로그에서 라이브 컴파일 (사본 없음)."""
+    """Analysis Graph payload. capability 카탈로그에서 라이브 컴파일 (사본 없음)."""
     try:
         from dartlab.reference.capability.builder import loadAnalysisGraph as _liveGraph
 
@@ -186,7 +186,7 @@ def allContracts() -> dict[str, CapabilityContract]:
 
 
 def contractsForQuestion(question: str | None) -> list[CapabilityContract]:
-    """contractsForQuestion — TODO 한국어 동작 설명."""
+    """contractsForQuestion: TODO 한국어 동작 설명."""
     profile = inferQuestionProfile(question)
     if not profile.types:
         return []
@@ -196,18 +196,18 @@ def contractsForQuestion(question: str | None) -> list[CapabilityContract]:
 
 
 def contractIdsForQuestion(question: str | None) -> list[str]:
-    """contractIdsForQuestion — TODO 한국어 동작 설명."""
+    """contractIdsForQuestion: TODO 한국어 동작 설명."""
     return [contract.contractId for contract in contractsForQuestion(question)]
 
 
 def allProcessMaps() -> dict[str, dict[str, Any]]:
-    """allProcessMaps — TODO 한국어 동작 설명."""
+    """allProcessMaps: TODO 한국어 동작 설명."""
     maps = loadAnalysisGraph().get("processMaps") or {}
     return {str(k): v for k, v in maps.items() if isinstance(v, dict)}
 
 
 def processMapsForQuestion(question: str | None) -> list[dict[str, Any]]:
-    """processMapsForQuestion — TODO 한국어 동작 설명."""
+    """processMapsForQuestion: TODO 한국어 동작 설명."""
     profile = inferQuestionProfile(question)
     ids = _processMapIdsForProfile(profile)
     maps = allProcessMaps()
@@ -304,7 +304,7 @@ def listDartlabProcesses() -> list[dict[str, Any]]:
 
 
 def contractForTool(name: str, arguments: dict[str, Any] | None = None) -> CapabilityContract | None:
-    """contractForTool — TODO 한국어 동작 설명."""
+    """contractForTool: TODO 한국어 동작 설명."""
     args = arguments or {}
     for contract in sorted(allContracts().values(), key=lambda item: item.priority, reverse=True):
         raw = _rawContract(contract.contractId)
@@ -350,7 +350,7 @@ def preflightActionsForQuestion(
     intent: str | None,
     stockCode: str | None = None,
 ) -> list[tuple[str, dict[str, Any], CapabilityContract]]:
-    """preflightActionsForQuestion — TODO 한국어 동작 설명."""
+    """preflightActionsForQuestion: TODO 한국어 동작 설명."""
     if category != "finance":
         return []
     route = routeQuestion(question, category=category, intent=intent, stockCode=stockCode)
@@ -374,7 +374,7 @@ def preflightActionsForQuestion(
 
 
 def toolBudgetForQuestion(question: str | None, intent: str | None) -> dict[str, Any]:
-    """toolBudgetForQuestion — TODO 한국어 동작 설명."""
+    """toolBudgetForQuestion: TODO 한국어 동작 설명."""
     route = routeQuestion(question, intent=intent)
     budget: dict[str, Any] = {}
     for contractId in route["contractIds"]:
@@ -385,12 +385,12 @@ def toolBudgetForQuestion(question: str | None, intent: str | None) -> dict[str,
 
 
 def toolNamesForQuestion(question: str | None, *, intent: str | None = None) -> list[str]:
-    """toolNamesForQuestion — TODO 한국어 동작 설명."""
+    """toolNamesForQuestion: TODO 한국어 동작 설명."""
     return [str(v) for v in routeQuestion(question, intent=intent).get("toolNames") or []]
 
 
 def requiresVisualExplanation(question: str | None) -> bool:
-    """requiresVisualExplanation — TODO 한국어 동작 설명."""
+    """requiresVisualExplanation: TODO 한국어 동작 설명."""
     for contract in contractsForQuestion(question):
         policy = contract.visualPolicy or {}
         if policy.get("requiredFor"):

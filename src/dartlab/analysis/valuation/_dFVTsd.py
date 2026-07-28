@@ -4,13 +4,13 @@ dFV.py 가 853 줄 god module 이라 _tsd* 7 helper 분리.
 identity 보존을 위해 dFV.py 가 본 모듈에서 re-export 한다.
 
 함수 (Damodaran Multi-stage DCF resolver chain):
-- _tsdResolveWacc — WACC override chain
-- _tsdResolveHighGrowth — high-growth rate 해결
-- _tsdBuildPhases — life phase → years/growth list 구성
-- _tsdResolveTerminalGrowth — terminal growth (life phase + country)
-- _tsdExtractBaseFcf — base FCF 추출
-- _tsdMaybeNormalizeFcf — 정규화 (early-life 회사 음수 FCF 보정)
-- _tsdExtractNetDebtShares — net debt + shares 추출
+- _tsdResolveWacc: WACC override chain
+- _tsdResolveHighGrowth: high-growth rate 해결
+- _tsdBuildPhases: life phase → years/growth list 구성
+- _tsdResolveTerminalGrowth: terminal growth (life phase + country)
+- _tsdExtractBaseFcf: base FCF 추출
+- _tsdMaybeNormalizeFcf: 정규화 (early-life 회사 음수 FCF 보정)
+- _tsdExtractNetDebtShares: net debt + shares 추출
 """
 
 from __future__ import annotations
@@ -21,19 +21,19 @@ from dartlab.analysis.valuation._valuationInputAccess import _balanceValue
 
 
 def _lazy(name):
-    """dFV 본체 lazy lookup — 순환 import 회피."""
+    """dFV 본체 lazy lookup. 순환 import 회피."""
     import importlib
 
     return getattr(importlib.import_module("dartlab.analysis.valuation.dFV"), name)
 
 
 def _inferShares(company):
-    """dFV._inferShares lazy proxy — 본체로 위임."""
+    """dFV._inferShares lazy proxy. 본체로 위임."""
     return _lazy("_inferShares")(company)
 
 
 def _tsdResolveWacc(company: Any, overrides: dict) -> float:
-    """WACC 해결 — override chain (forced/implied/bottomUp/country) → roic fallback → 9.0.
+    """WACC 해결: override chain (forced/implied/bottomUp/country) → roic fallback → 9.0.
 
     Returns
     -------
@@ -92,7 +92,7 @@ def _tsdResolveWacc(company: Any, overrides: dict) -> float:
 
 
 def _tsdResolveHighGrowth(company: Any) -> float:
-    """매출 CAGR 기반 고성장률 — 기본 8.0%, clamp [-5%, 25%].
+    """매출 CAGR 기반 고성장률. 기본 8.0%, clamp [-5%, 25%].
 
     Returns
     -------
@@ -149,7 +149,7 @@ def _tsdBuildPhases(lifePhase: str | None, highG: float, overrides: dict) -> tup
 
 
 def _tsdResolveTerminalGrowth(lifePhase: str | None, company: Any, overrides: dict) -> float:
-    """영구성장률 — Phase 4 G12.3 phase 별 Rf 감쇠 매핑 + terminalGrowth override.
+    """영구성장률. Phase 4 G12.3 phase 별 Rf 감쇠 매핑 + terminalGrowth override.
 
     Returns
     -------
@@ -214,7 +214,7 @@ def _tsdExtractBaseFcf(company: Any) -> float | None:
 
 
 def _tsdMaybeNormalizeFcf(baseFcf: float, lifePhase: str | None, company: Any) -> float:
-    """Phase 5 G16 — 사이클/회복/적자 이력 기업은 Normalized FCF 로 교체 (Damodaran Ch.22).
+    """Phase 5 G16: 사이클/회복/적자 이력 기업은 Normalized FCF 로 교체 (Damodaran Ch.22).
 
     Returns
     -------

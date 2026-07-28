@@ -76,8 +76,8 @@ def _baseMetrics(series: dict) -> dict[str, float | None]:
     """Extract the base revenue / margin / net debt the simulate snapshot needs (born-clean).
 
     Capabilities:
-        Reads the minimal base metrics the driver DAG consumes — TTM revenue, operating margin,
-        and net debt — directly from a finance series using L0 extract helpers. Replicates the
+        Reads the minimal base metrics the driver DAG consumes (TTM revenue, operating margin,
+        and net debt) directly from a finance series using L0 extract helpers. Replicates the
         same accounts the legacy `_extractBaseMetrics` reads (sales/operating_profit and the
         debt/cash balance-sheet lines) without importing the legacy simulation flow.
 
@@ -90,7 +90,7 @@ def _baseMetrics(series: dict) -> dict[str, float | None]:
         the underlying accounts are absent (honest-gap, never 0).
 
     Raises:
-        None — every lookup is None-tolerant.
+        None. Every lookup is None-tolerant.
 
     Example:
         >>> _baseMetrics({"IS": {"sales": [None]}})["revenue"] is None
@@ -205,9 +205,9 @@ def buildSnapshot(company: Any, *, asOf: str | None = None) -> dict:
     """Read a company's frozen base metrics ONCE into a simulate snapshot (§13b-5).
 
     Capabilities:
-        Loads the read-once inputs the deterministic driver DAG consumes — the finance series,
+        Loads the read-once inputs the deterministic driver DAG consumes (the finance series,
         base revenue / operating margin / net debt, shares outstanding, sector elasticity, and
-        base WACC — into a flat dict the registry fns read during evaluation. After this call no
+        base WACC) into a flat dict the registry fns read during evaluation. After this call no
         node reloads data, so an `evaluateSheet` re-run over the snapshot is byte-identical.
 
     Args:
@@ -224,7 +224,7 @@ def buildSnapshot(company: Any, *, asOf: str | None = None) -> dict:
         (honest-gap), never 0.
 
     Raises:
-        None — every accessor is failure-tolerant; absence becomes a None field, not an error.
+        None. Every accessor is failure-tolerant; absence becomes a None field, not an error.
 
     Example:
         >>> snap = buildSnapshot(Company("005930"))  # doctest: +SKIP
@@ -245,13 +245,13 @@ def buildSnapshot(company: Any, *, asOf: str | None = None) -> dict:
         A `Company` exposing `_buildFinanceSeries`, `sector`, and `sectorParams`.
 
     AIContext:
-        The snapshot is frozen assumptions, not a forecast — surface `sectorKey`, `elasticity`,
+        The snapshot is frozen assumptions, not a forecast. Surface `sectorKey`, `elasticity`,
         and `asOf` so the scenario is auditable; a None revenue means "data absent", not zero.
 
     LLM Specifications:
         AntiPatterns:
-            - Re-reading the company inside a node fn — breaks snapshot determinism (§13b-5).
-            - Treating a None baseRevenue as 0 — it is an honest data gap.
+            - Re-reading the company inside a node fn. Breaks snapshot determinism (§13b-5).
+            - Treating a None baseRevenue as 0. It is an honest data gap.
         OutputSchema: ``dict`` with the keys listed under Returns.
         Prerequisites: a constructed `Company`.
         Freshness: inherits the company's latest finance period as `asOf`/`latestAsOf`.
@@ -342,12 +342,12 @@ def validateScenarioSpec(scenario: str, horizon: int, *, market: str = "KR") -> 
 
 
 # ──────────────────────────────────────────────────────────────────────
-# §5 deterministic node fns — each matches the evaluateSheet 7-tuple contract
+# §5 deterministic node fns. Each matches the evaluateSheet 7-tuple contract
 # ──────────────────────────────────────────────────────────────────────
 
 
 def _fnMacroPath(node: DriverNode, sheet: DriverSheet, depValues: dict):
-    """`macro.path` node — preset GDP/rate/FX vector for the node's scenario (§5).
+    """`macro.path` node: preset GDP/rate/FX vector for the node's scenario (§5).
 
     Capabilities:
         Emits the preset macro path for the scenario named by ``node.scenarioId`` from
@@ -387,7 +387,7 @@ def _fnMacroPath(node: DriverNode, sheet: DriverSheet, depValues: dict):
 
 
 def _fnRevPath(node: DriverNode, sheet: DriverSheet, depValues: dict):
-    """`rev.path` node — the owned macro->fundamentals edge over the horizon (§2/§5).
+    """`rev.path` node: the owned macro->fundamentals edge over the horizon (§2/§5).
 
     Capabilities:
         Chains `simulate.transfer.transferRevenuePath` over the macro paths (from the macro.path
@@ -399,7 +399,7 @@ def _fnRevPath(node: DriverNode, sheet: DriverSheet, depValues: dict):
     Args:
         node: the rev.path DriverNode (depends on the scenario's macro.path).
         sheet: the DriverSheet whose snapshot holds base revenue / margin / elasticity / WACC.
-        depValues: ``{macroNodeId: NodeValue}`` — the macro.path output (GDP vector + frozen
+        depValues: ``{macroNodeId: NodeValue}`` - the macro.path output (GDP vector + frozen
             rate/FX paths).
 
     Returns:
@@ -445,7 +445,7 @@ def _fnRevPath(node: DriverNode, sheet: DriverSheet, depValues: dict):
 
 
 def _fnProforma(node: DriverNode, sheet: DriverSheet, depValues: dict):
-    """`proforma` node — call the L2 leaf buildProforma over the scenario growth path (§2/§5).
+    """`proforma` node: call the L2 leaf buildProforma over the scenario growth path (§2/§5).
 
     Capabilities:
         Converts the rev.path absolute-revenue vector into the year-over-year growth path
@@ -457,14 +457,14 @@ def _fnProforma(node: DriverNode, sheet: DriverSheet, depValues: dict):
     Args:
         node: the proforma DriverNode (depends on rev.path).
         sheet: the DriverSheet whose snapshot holds the finance series + base revenue.
-        depValues: ``{revNodeId: NodeValue}`` — the rev.path absolute revenue vector.
+        depValues: ``{revNodeId: NodeValue}`` - the rev.path absolute revenue vector.
 
     Returns:
         tuple: ``(terminalRevenue, fcfVector, provenance, refs, frozenInputs, asOf, latestAsOf)``
         with ``provenance = "proforma:cashplug,wacc=..,years=.."``; value/vector None on gap.
 
     Raises:
-        None — leaf failure is contained and reported as a gap value.
+        None. Leaf failure is contained and reported as a gap value.
 
     Example:
         >>> # wired by buildScenarioSheet; not called directly.
@@ -501,7 +501,7 @@ def _fnProforma(node: DriverNode, sheet: DriverSheet, depValues: dict):
 
 
 def _fnDcf(node: DriverNode, sheet: DriverSheet, depValues: dict):
-    """`dcf` node — FCFF discount off the proforma FCF path -> per-share value (§5).
+    """`dcf` node: FCFF discount off the proforma FCF path -> per-share value (§5).
 
     Capabilities:
         Discounts the proforma node's per-year FCF vector at the proforma WACC, adds a Gordon
@@ -515,7 +515,7 @@ def _fnDcf(node: DriverNode, sheet: DriverSheet, depValues: dict):
     Args:
         node: the dcf DriverNode (depends on proforma).
         sheet: the DriverSheet whose snapshot holds netDebt / shares / WACC / terminalGrowth.
-        depValues: ``{proformaNodeId: NodeValue}`` — the proforma FCF vector + WACC frozen input.
+        depValues: ``{proformaNodeId: NodeValue}`` - the proforma FCF vector + WACC frozen input.
 
     Returns:
         tuple: ``(perShare, scalarVector, provenance, refs, frozenInputs, asOf, latestAsOf)``.
@@ -607,7 +607,7 @@ def buildScenarioSheet(snapshot: dict, *, scenario: str, horizon: int) -> Driver
 
     Args:
         snapshot: the frozen base-metric snapshot from `buildSnapshot`.
-        scenario: the scenario id (e.g. ``"baseline"`` / ``"adverse"``) — selects the macro preset
+        scenario: the scenario id (e.g. ``"baseline"`` / ``"adverse"``) - selects the macro preset
             and stamps every node's `scenarioId`.
         horizon: number of forecast years (paths are truncated to this length).
 
@@ -616,7 +616,7 @@ def buildScenarioSheet(snapshot: dict, *, scenario: str, horizon: int) -> Driver
         `evaluateSheet` to fill each node's `det`.
 
     Raises:
-        None — wiring validity (cycle / missing dep) is enforced later by `buildOrder` inside
+        None. Wiring validity (cycle / missing dep) is enforced later by `buildOrder` inside
         `evaluateSheet`.
 
     Example:
@@ -639,13 +639,13 @@ def buildScenarioSheet(snapshot: dict, *, scenario: str, horizon: int) -> Driver
         A snapshot dict from `buildSnapshot` (so the nodes have base metrics + asOf).
 
     AIContext:
-        The sheet is the audit object — each node's `det.provenance`/`refs` tells the user which
+        The sheet is the audit object. Each node's `det.provenance`/`refs` tells the user which
         L2 leaf produced it; never blend a (future) lens opinion into `det`.
 
     LLM Specifications:
         AntiPatterns:
-            - Reusing one sheet across scenarios — each scenario gets its own macro preset / ids.
-            - Mutating the snapshot per node — breaks re-run determinism.
+            - Reusing one sheet across scenarios. Each scenario gets its own macro preset / ids.
+            - Mutating the snapshot per node. Breaks re-run determinism.
         OutputSchema: ``DriverSheet`` with 4 nodes + a 4-entry registry.
         Prerequisites: a `buildSnapshot` result.
         Freshness: inherits the snapshot's `asOf`/`latestAsOf`.

@@ -1,4 +1,4 @@
-"""forecastCalcs.py 의 공통 헬퍼 — series/meta/shares/sectorParams/dataBundle/runForecast."""
+"""forecastCalcs.py 의 공통 헬퍼: series/meta/shares/sectorParams/dataBundle/runForecast."""
 
 from __future__ import annotations
 

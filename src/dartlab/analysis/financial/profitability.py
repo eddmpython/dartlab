@@ -41,7 +41,7 @@ def _isFinancialSector(company) -> bool:
 
 @memoizedCalc
 def calcMarginTrend(company, *, basePeriod: str | None = None) -> dict | None:
-    """이익 구조 시계열 — 매출 → 매출원가 → 매출총이익 → 판관비 → 영업이익 → 순이익.
+    """이익 구조 시계열: 매출 → 매출원가 → 매출총이익 → 판관비 → 영업이익 → 순이익.
 
     Capabilities:
         IS 의 5 마진 단계 (매출 → COGS → GP → SG&A → OP → NI) 시계열을 산출.
@@ -88,13 +88,13 @@ def calcMarginTrend(company, *, basePeriod: str | None = None) -> dict | None:
 
     AIContext:
         history list 의 첫 dict 가 최신 (latest), [1] = 전년. YoY 변화 분석시
-        주의 — 일회성 영업외 (자산매각 등) 가 netMargin 만 영향. 마진 5
+        주의. 일회성 영업외 (자산매각 등) 가 netMargin 만 영향. 마진 5
         단계 함께 보면 영업 구조 + 영업외 영향 분리 가능.
 
     LLM Specifications:
         AntiPatterns:
-            - 매출액 (revenue) 만 보고 성장 단정 — 영업이익 동반 확인 필수.
-            - 금융업 (은행/보험) 에 일반 마진 적용 — isFinancial 자동 분기
+            - 매출액 (revenue) 만 보고 성장 단정. 영업이익 동반 확인 필수.
+            - 금융업 (은행/보험) 에 일반 마진 적용. isFinancial 자동 분기
               되지만 결과 dict 의 cogs/sga 가 0 일 수 있음.
         OutputSchema:
             ``{history: list[dict], displayHints: dict}``.
@@ -104,7 +104,7 @@ def calcMarginTrend(company, *, basePeriod: str | None = None) -> dict | None:
             최신 분기 + 5 년 시계열 (annualColsFromPeriods).
         Dataflow:
             IS → 5 마진 단계 추출 → YoY 계산 → displayHints 메타 합성.
-        TargetMarkets: KR (DART 표준), US (EDGAR — 일부 표준 계정 매핑 필요).
+        TargetMarkets: KR (DART 표준), US (EDGAR, 일부 표준 계정 매핑 필요).
     """
     isFinancial = _isFinancialSector(company)
 
@@ -181,7 +181,7 @@ def calcMarginTrend(company, *, basePeriod: str | None = None) -> dict | None:
     if isFinancial:
         result["isFinancial"] = True
 
-    # Phase 7 G24: 영업마진 변화 driver 분해 — 각 history entry 에 drivers 주입
+    # Phase 7 G24: 영업마진 변화 driver 분해. 각 history entry 에 drivers 주입
     # 이전기 대비 원가율/판관비/환율 driver 자동 분해 (McKinsey + Damodaran Ch.11)
     if not isFinancial:
         try:
@@ -220,7 +220,7 @@ def calcMarginTrend(company, *, basePeriod: str | None = None) -> dict | None:
         "core": ["period", "revenue", "operatingMargin", "netMargin", "grossMargin"],
         "note": "수익성 응답 시 operatingMargin/netMargin/grossMargin 컬럼을 표에 반드시 포함",
     }
-    # Phase 15 C1: _showKey 힌트 — AI 가 자율적으로 `panel("IS")` 재검증 호출 가능
+    # Phase 15 C1: _showKey 힌트. AI 가 자율적으로 `panel("IS")` 재검증 호출 가능
     result["_showKey"] = "IS"
     result["_showFields"] = ["매출액", "영업이익", "당기순이익"]
     return result
@@ -231,7 +231,7 @@ def calcMarginTrend(company, *, basePeriod: str | None = None) -> dict | None:
 
 @memoizedCalc
 def calcReturnTrend(company, *, basePeriod: str | None = None) -> dict | None:
-    """ROE 5 요소 듀퐁 분해 시계열 — 수익을 어떻게 만드는가.
+    """ROE 5 요소 듀퐁 분해 시계열: 수익을 어떻게 만드는가.
 
     Capabilities:
         ROE = 세금부담 × 이자부담 × 영업마진 × 자산회전 × 레버리지 5 요소
@@ -257,7 +257,7 @@ def calcReturnTrend(company, *, basePeriod: str | None = None) -> dict | None:
 
     Guide:
         ROE 동일 (15%) 이라도 (영업마진 10% × 자산회전 1.5 × 레버리지 1.0)
-        vs (영업마진 5% × 자산회전 1.5 × 레버리지 2.0) 는 질이 다르다 —
+        vs (영업마진 5% × 자산회전 1.5 × 레버리지 2.0) 는 질이 다르다.
         후자는 레버리지 의존. 듀퐁 attribution 으로 ROE 변화 원인 추적.
 
     When:
@@ -281,8 +281,8 @@ def calcReturnTrend(company, *, basePeriod: str | None = None) -> dict | None:
 
     LLM Specifications:
         AntiPatterns:
-            - ROE 단독 인용 — 듀퐁 5 요소 분해로 질 분리 필요.
-            - 금융업에 일반 듀퐁 적용 — NIM/리스크가중자산이익률 별도.
+            - ROE 단독 인용. 듀퐁 5 요소 분해로 질 분리 필요.
+            - 금융업에 일반 듀퐁 적용. NIM/리스크가중자산이익률 별도.
         OutputSchema:
             ``{history: list[dict 11키]}``.
         Prerequisites:
@@ -292,7 +292,7 @@ def calcReturnTrend(company, *, basePeriod: str | None = None) -> dict | None:
         Dataflow:
             IS → 매출/영업이익/PBT/NI → BS → 자산/자본 → 듀퐁 5 요소 =
             (NI/PBT) × (PBT/OP) × (OP/Rev) × (Rev/TA) × (TA/Eq).
-        TargetMarkets: KR (DART), US (EDGAR — 듀퐁 원형 최적).
+        TargetMarkets: KR (DART), US (EDGAR, 듀퐁 원형 최적).
     """
     isResult = company.select("IS", ["매출액", "영업이익", "법인세차감전순이익", "당기순이익"])
     bsResult = company.select("BS", ["자산총계", "자본총계"])

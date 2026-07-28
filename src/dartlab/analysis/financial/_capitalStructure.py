@@ -119,7 +119,7 @@ def _latestAnnualVal(company, stmt: str, accountName: str) -> float | None:
 
 
 def _calcNetDebtEbitda(company, finDebt: float) -> float | None:
-    """순차입금/EBITDA — 차입 감당 능력.
+    """순차입금/EBITDA: 차입 감당 능력.
 
     Parameters
     ----------
@@ -147,7 +147,7 @@ def _calcNetDebtEbitda(company, finDebt: float) -> float | None:
 
 
 def _calcImpliedBorrowingRate(company, finDebt: float) -> float | None:
-    """암묵적 차입금리 — 금융비용/금융부채.
+    """암묵적 차입금리: 금융비용/금융부채.
 
     Parameters
     ----------
@@ -541,7 +541,7 @@ def calcInterestBurden(company, *, basePeriod: str | None = None) -> dict | None
 
     Example:
         >>> calcInterestBurden(Company("005930"))
-        {"metrics": [("이자보상배율", "12.5배 — 우수"), ...]}
+        {"metrics": [("이자보상배율", "12.5배 (우수)"), ...]}
 
     SeeAlso:
         - ``calcDebtTimeline``: 부채 시계열
@@ -566,7 +566,7 @@ def calcInterestBurden(company, *, basePeriod: str | None = None) -> dict | None
             quality = "주의"
         else:
             quality = "위험"
-        metrics.append(("이자보상배율", f"{ic:.1f}배 — {quality}"))
+        metrics.append(("이자보상배율", f"{ic:.1f}배 ({quality})"))
 
     ie = getattr(ratios, "interestExpense", None)
     if ie is not None:

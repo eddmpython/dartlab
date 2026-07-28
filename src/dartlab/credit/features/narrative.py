@@ -65,7 +65,7 @@ def _fmtTril(v) -> str:
 
 
 def narrateProfile(profile: dict | None, segments: dict | None, rank: dict | None) -> str:
-    """기업 개요 서사 — 이 회사가 뭘 하는 회사인가.
+    """기업 개요 서사: 이 회사가 뭘 하는 회사인가.
 
     Capabilities:
         섹터 + 주요사업 + 부문 구성 (상위 3, share > 5%) + 업종 내 매출
@@ -112,8 +112,8 @@ def narrateProfile(profile: dict | None, segments: dict | None, rank: dict | Non
 
     LLM Specifications:
         AntiPatterns:
-            - margin/share 값 변형 인용 — 원문 그대로.
-            - 부문 4 개 이상 나열 — 본 함수가 상위 3 만 반환.
+            - margin/share 값 변형 인용. 원문 그대로.
+            - 부문 4 개 이상 나열. 본 함수가 상위 3 만 반환.
         OutputSchema:
             ``str``.
         Prerequisites:
@@ -166,7 +166,7 @@ def narrateProfile(profile: dict | None, segments: dict | None, rank: dict | Non
 
 
 def narrateTrend(history: list[dict]) -> str:
-    """전기 대비 추세 해석 orchestrator — 핵심 지표 개선/악화 (Q3.1f split).
+    """전기 대비 추세 해석 orchestrator: 핵심 지표 개선/악화 (Q3.1f split).
 
     Capabilities:
         metricsHistory 시계열에서 최신 vs 전기를 비교해 매출/영업이익/Debt-EBITDA/부채비율
@@ -179,7 +179,7 @@ def narrateTrend(history: list[dict]) -> str:
         str: 추세 해석 1 줄 (마침표 포함) 또는 빈 문자열.
 
     Raises:
-        없음 — history 2 개 미만이면 빈 문자열.
+        없음. history 2 개 미만이면 빈 문자열.
 
     Example:
         >>> narrateTrend(metricsHistory)
@@ -229,7 +229,7 @@ def narrateTrend(history: list[dict]) -> str:
 
 
 def narrateBorrowings(borrowingsDetail: list[dict] | None, latest: dict | None) -> str:
-    """차입금 구성 분석 — 만기/종류별 + 현금 대비.
+    """차입금 구성 분석: 만기/종류별 + 현금 대비.
 
     Capabilities:
         총차입금 + 단기/장기 비중 (금액 명시) + 현금/차입금 비율 기반 차환
@@ -277,8 +277,8 @@ def narrateBorrowings(borrowingsDetail: list[dict] | None, latest: dict | None) 
 
     LLM Specifications:
         AntiPatterns:
-            - 차입금 0 회사에 본 함수 호출 — 자동 "불필요" 메시지.
-            - 단기 비중 단독 인용 — 현금/차입 함께.
+            - 차입금 0 회사에 본 함수 호출. 자동 "불필요" 메시지.
+            - 단기 비중 단독 인용. 현금/차입 함께.
         OutputSchema:
             ``str``.
         Prerequisites:
@@ -329,7 +329,7 @@ def narrateBorrowings(borrowingsDetail: list[dict] | None, latest: dict | None) 
 
 
 def narrateCausalChain(latest: dict, result: dict) -> str:
-    """6막 인과 연결 — dartlab 핵심 사상을 credit에 적용.
+    """6막 인과 연결: dartlab 핵심 사상을 credit에 적용.
 
     Capabilities:
         매출 → 이익 → 현금 → 안정성 → 등급 인과 체인을 한 줄로 합성. 지주사 (holding=True) /
@@ -355,7 +355,7 @@ def narrateCausalChain(latest: dict, result: dict) -> str:
         '인과 요약: 매출 300조원 → 영업이익 60조원 (20%) → OCF 80조원 → 순현금 → dCR-AA+.'
 
     Guide:
-        지주사는 자체 매출보다 자회사 배당 OCF 가 핵심 — 별도 분기 처리.
+        지주사는 자체 매출보다 자회사 배당 OCF 가 핵심. 별도 분기 처리.
 
     When:
         보고서의 한 줄 인과 요약. 보고서 도입/결론에 모두 적용 가능.
@@ -450,7 +450,7 @@ def buildOverallNarrative(
     holding: bool = False,
     separateMetrics: dict | None = None,
 ) -> str:
-    """등급 근거 종합 서사 — 인과 체인 통합.
+    """등급 근거 종합 서사: 인과 체인 통합.
 
     Capabilities:
         7 축 narrative + 인과 체인 + 강점/약점 + captive/holding 구조 단서를 합성한 등급 근거
@@ -482,7 +482,7 @@ def buildOverallNarrative(
         하나의 흐름으로 연결한 문장이며, 강점·약점·구조적 참고가 포함된다.
 
     Raises:
-        없음 — narratives 비면 grade 인용만 가능.
+        없음. narratives 비면 grade 인용만 가능.
 
     Example:
         >>> from dartlab.credit.features.narrative import buildOverallNarrative

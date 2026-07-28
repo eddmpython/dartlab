@@ -36,7 +36,7 @@ def _cagrFromList(values: list[float | None], periods: int) -> float | None:
 
 @memoizedCalc
 def calcGrowthTrend(company, *, basePeriod: str | None = None) -> dict | None:
-    """성장 추이 — 매출/영업이익/순이익/자산 금액 + YoY + 3 년 CAGR.
+    """성장 추이: 매출/영업이익/순이익/자산 금액 + YoY + 3 년 CAGR.
 
     Capabilities:
         IS + BS 의 4 핵심 지표 (revenue, operatingIncome, netIncome,
@@ -86,8 +86,8 @@ def calcGrowthTrend(company, *, basePeriod: str | None = None) -> dict | None:
 
     LLM Specifications:
         AntiPatterns:
-            - YoY 1 년 변화만 보고 추세 단정 — CAGR 3 년 함께 확인 필수.
-            - revenue CAGR 음수 단정 → "쇠퇴" — turnaround 시기 가능, 3 년
+            - YoY 1 년 변화만 보고 추세 단정. CAGR 3 년 함께 확인 필수.
+            - revenue CAGR 음수 단정 → "쇠퇴". turnaround 시기 가능, 3 년
               vs 5 년 CAGR 비교.
         OutputSchema:
             ``{history: list[dict 9키], cagr: dict 3키}``.
@@ -176,7 +176,7 @@ def calcGrowthTrend(company, *, basePeriod: str | None = None) -> dict | None:
 
 @memoizedCalc
 def calcGrowthQuality(company, *, basePeriod: str | None = None) -> dict | None:
-    """성장 품질 — 매출 성장이 이익으로 이어지는가.
+    """성장 품질: 매출 성장이 이익으로 이어지는가.
 
     Capabilities:
         매출 CAGR vs 영업이익 CAGR 비교 → 품질 판정 (균형/내실/외형/개선/
@@ -228,8 +228,8 @@ def calcGrowthQuality(company, *, basePeriod: str | None = None) -> dict | None:
 
     LLM Specifications:
         AntiPatterns:
-            - quality 라벨 단독 인용 — CAGR 절대값 함께.
-            - "외형 위주" 단년도 판정 — 본 함수가 3 년 CAGR 기반 자동.
+            - quality 라벨 단독 인용. CAGR 절대값 함께.
+            - "외형 위주" 단년도 판정. 본 함수가 3 년 CAGR 기반 자동.
         OutputSchema:
             ``{quality: str, cagr: dict, leverageEffect: list[dict 4키]}``.
         Prerequisites:
@@ -239,7 +239,7 @@ def calcGrowthQuality(company, *, basePeriod: str | None = None) -> dict | None:
         Dataflow:
             calcGrowthTrend → CAGR + YoY → 매출 vs 이익 비교 → quality 라벨 +
             op-leverage 시계열.
-        TargetMarkets: KR (DART), US (EDGAR — IS 표준).
+        TargetMarkets: KR (DART), US (EDGAR, IS 표준).
     """
     trend = calcGrowthTrend(company, basePeriod=basePeriod)
     if trend is None or len(trend["history"]) < 2:
@@ -298,7 +298,7 @@ def calcGrowthQuality(company, *, basePeriod: str | None = None) -> dict | None:
 
 @memoizedCalc
 def calcSustainableGrowthRate(company, *, basePeriod: str | None = None) -> dict | None:
-    """지속가능성장률 (SGR) vs 실제 매출성장률 갭 — 외부 자본 필요 여부 판정.
+    """지속가능성장률 (SGR) vs 실제 매출성장률 갭: 외부 자본 필요 여부 판정.
 
     Capabilities:
         Higgins (1981) SGR = ROE × (1 - payout). 내부 retained 만으로 가능
@@ -326,7 +326,7 @@ def calcSustainableGrowthRate(company, *, basePeriod: str | None = None) -> dict
 
     Guide:
         gap > 5%p = 외부 자본 강한 필요 (보통 유상증자 or 신규 차입 발생).
-        gap < -5%p = 누적 현금 — 자사주매입 (조용한 환원) 또는 배당 확대
+        gap < -5%p = 누적 현금. 자사주매입 (조용한 환원) 또는 배당 확대
         가능. KR 우량 회사 (삼성/현대) 는 보통 gap 음수.
 
     When:
@@ -345,12 +345,12 @@ def calcSustainableGrowthRate(company, *, basePeriod: str | None = None) -> dict
         IS (매출/순이익) + BS (자본총계) + CF (배당) ≥ 2 년.
 
     AIContext:
-        gap 부호 함께 노출 — "외부 자본 필요" vs "여유" 라벨로 직관적 설명.
+        gap 부호 함께 노출. "외부 자본 필요" vs "여유" 라벨로 직관적 설명.
         ROE 가 낮은 (5% 미만) 회사는 SGR 도 낮아 gap 양수 흔함.
 
     LLM Specifications:
         AntiPatterns:
-            - 단년도 gap 만 보고 "유상증자 임박" 단정 — 3 년 추세 + 차입금
+            - 단년도 gap 만 보고 "유상증자 임박" 단정. 3 년 추세 + 차입금
               증가율 함께 확인.
             - 무배당 (payoutRatio=0) 회사 → SGR = ROE 그대로. 정상.
         OutputSchema:
@@ -509,7 +509,7 @@ from dartlab.core.utils.calc import cagr as _cagr  # noqa: E402
 
 @memoizedCalc
 def calcCagrComparison(company, *, basePeriod: str | None = None) -> dict | None:
-    """계정별 CAGR 비교 — 장기 구조 변화 감지.
+    """계정별 CAGR 비교: 장기 구조 변화 감지.
 
     Capabilities:
         매출/영업이익/자산/부채/자본 5 계정의 CAGR (Compound Annual Growth
@@ -557,14 +557,14 @@ def calcCagrComparison(company, *, basePeriod: str | None = None) -> dict | None
         IS (매출/영업이익) + BS (자산/부채/자본) ≥ 3 년.
 
     AIContext:
-        gap + signal 함께 인용. 단년도 비교 아님 — 장기 (3+ 년) 구조 변화
-        진단. 산업 사이클 (반도체/조선) 회사는 단기 CAGR 왜곡 가능 — 사이클
+        gap + signal 함께 인용. 단년도 비교 아님. 장기 (3+ 년) 구조 변화
+        진단. 산업 사이클 (반도체/조선) 회사는 단기 CAGR 왜곡 가능. 사이클
         포함 7~10 년 권장.
 
     LLM Specifications:
         AntiPatterns:
-            - 1~2 년 CAGR 인용 — 사이클 왜곡, 최소 3 년 (본 함수가 강제).
-            - signal "경고" 단독 인용 — gap 절대값 + 산업 평균 함께.
+            - 1~2 년 CAGR 인용. 사이클 왜곡, 최소 3 년 (본 함수가 강제).
+            - signal "경고" 단독 인용. gap 절대값 + 산업 평균 함께.
         OutputSchema:
             ``{comparisons: list[dict 7키], period: str}``.
         Prerequisites:
@@ -574,7 +574,7 @@ def calcCagrComparison(company, *, basePeriod: str | None = None) -> dict | None
         Dataflow:
             IS/BS → 매출/영업이익/자산/부채/자본 → CAGR 5 종 → 3 쌍 비교 →
             gap → signal 라벨.
-        TargetMarkets: KR (DART), US (EDGAR — 표준).
+        TargetMarkets: KR (DART), US (EDGAR, 표준).
     """
     isResult = company.select("IS", ["매출액", "영업이익"])
     bsResult = company.select("BS", ["자산총계", "부채총계", "자본총계"])

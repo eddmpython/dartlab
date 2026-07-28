@@ -60,14 +60,14 @@ def isFinancialCompany(company: Any) -> bool:
         company.sector + (optional) industryGroup + corpName/name.
 
     Raises:
-        없음 — 누락 속성은 falsy 처리.
+        없음. 누락 속성은 falsy 처리.
 
     See Also:
         - calcBankDFV : 본 함수 True 시 호출되는 금융업 dFV
         - calcDFV : 분기 진입점
 
     AIContext:
-        금융업 분기 근거 — 사용자 회사가 금융인지 설명 시 인용.
+        금융업 분기 근거. 사용자 회사가 금융인지 설명 시 인용.
     """
     sector = getattr(company, "sector", None)
     if sector is None:
@@ -88,7 +88,7 @@ def isFinancialCompany(company: Any) -> bool:
 
 
 def calcBankDFV(company: Any, *, basePeriod: str | None = None, overrides: dict | None = None) -> dict | None:
-    """은행 전용 dFV — Excess Return Model.
+    """은행 전용 dFV: Excess Return Model.
 
     Capabilities:
         - Book Equity + ROE + CoE → Damodaran Excess Return Model
@@ -100,7 +100,7 @@ def calcBankDFV(company: Any, *, basePeriod: str | None = None, overrides: dict 
     company : Company
         대상 금융업 회사.
     basePeriod : str, optional
-        기준 기간 (미사용 — BS 최신 자동).
+        기준 기간 (미사용, BS 최신 자동).
     overrides : dict, optional
         countryCode/terminalGrowth 등 override.
 
@@ -130,7 +130,7 @@ def calcBankDFV(company: Any, *, basePeriod: str | None = None, overrides: dict 
         bankValuation.calcBankExcessReturn + synth.overrides + riskPremiums.
 
     Raises:
-        없음 — ImportError/속성 누락은 None 반환.
+        없음. ImportError/속성 누락은 None 반환.
 
     See Also:
         - calcBankExcessReturn : Excess Return 본 수식
@@ -200,7 +200,7 @@ def calcBankDFV(company: Any, *, basePeriod: str | None = None, overrides: dict 
     bank_beta = 0.95  # Damodaran 한국 은행 평균
     ke = rf + bank_beta * market_erp
 
-    # 영구성장률 — Damodaran 권고 GDP 근접 2%
+    # 영구성장률: Damodaran 권고 GDP 근접 2%
     g = applyOverride(2.0, "terminalGrowth", overrides)
 
     # Excess Return Model 호출
@@ -215,7 +215,7 @@ def calcBankDFV(company: Any, *, basePeriod: str | None = None, overrides: dict 
     if bank.get("method") == "skip" or not bank.get("equityValue"):
         return None
 
-    # shares 역산 — calcDcf 우선, 실패 시 calcRelativeValuation/시가총액
+    # shares 역산: calcDcf 우선, 실패 시 calcRelativeValuation/시가총액
     try:
         from dartlab.analysis.financial.valuation import calcDcf
 

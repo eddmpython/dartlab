@@ -46,7 +46,7 @@ def _days(revenue, balance) -> float | None:
 
 @memoizedCalc
 def calcTurnoverTrend(company, *, basePeriod: str | None = None) -> dict | None:
-    """자산 회전 시계열 — 회전율 4 종 + DSO/DIO/DPO + CCC (현금전환주기).
+    """자산 회전 시계열: 회전율 4 종 + DSO/DIO/DPO + CCC (현금전환주기).
 
     Capabilities:
         자산 효율성 4 종 (총자산회전율, 매출채권/재고/매입채무 회전율) 시계열
@@ -92,15 +92,15 @@ def calcTurnoverTrend(company, *, basePeriod: str | None = None) -> dict | None:
         IS (매출/매출원가) + BS (자산/채권/재고/매입채무) ≥ 2 년.
 
     AIContext:
-        CCC 시계열 추세 함께 노출 — 단년도 절대값 < 추세 변화가 더 informative.
+        CCC 시계열 추세 함께 노출. 단년도 절대값 < 추세 변화가 더 informative.
         매출채권/재고 YoY 도 함께 (revenue YoY 보다 빠르게 증가 시 운전자본
         부담 신호).
 
     LLM Specifications:
         AntiPatterns:
-            - DSO 단독 인용 — DPO 와 함께 확인 (큰 회사는 supplier 협상력으로
+            - DSO 단독 인용. DPO 와 함께 확인 (큰 회사는 supplier 협상력으로
               DPO 늘려 CCC 단축).
-            - 단년도 CCC 비교 — 동종 업종 평균 (calcCagrComparison) 필요.
+            - 단년도 CCC 비교. 동종 업종 평균 (calcCagrComparison) 필요.
         OutputSchema:
             ``{history: list[dict 14키]}``.
         Prerequisites:

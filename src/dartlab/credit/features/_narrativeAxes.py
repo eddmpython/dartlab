@@ -33,7 +33,7 @@ def _fmtTril(v) -> str:
 
 
 def narrateLiquidity(latest: dict, axisScore: float | None) -> AxisNarrative:
-    """축 3: 유동성 서사 — 유동비율 + 단기차입금 + 현금비율 + 모순 진단.
+    """축 3: 유동성 서사. 유동비율 + 단기차입금 + 현금비율 + 모순 진단.
 
     Capabilities:
         유동비율/단기차입금/현금비율 3 지표를 결합해 단기 유동성 진단 + 모순
@@ -58,7 +58,7 @@ def narrateLiquidity(latest: dict, axisScore: float | None) -> AxisNarrative:
 
     Guide:
         유동비율 > 200 = 매우 우수, > 150 = 양호, > 100 = 적정, < 100 =
-        부족. 모순 케이스 (CR>150 + STDR>50) 는 차환 의존도 큰 회사 — KR
+        부족. 모순 케이스 (CR>150 + STDR>50) 는 차환 의존도 큰 회사. KR
         대기업 자주 등장 (단기 만기 회전).
 
     SeeAlso:
@@ -76,13 +76,13 @@ def narrateLiquidity(latest: dict, axisScore: float | None) -> AxisNarrative:
 
     AIContext:
         단기차입금 비중 50%+ 회사는 신용경색 시 즉시 위험. summary 만 인용
-        금지 — details 의 모순 진단 라인 함께 노출.
+        금지. details 의 모순 진단 라인 함께 노출.
 
     LLM Specifications:
         AntiPatterns:
-            - 유동비율만 보고 "유동성 우수" 결론 — STDR (단기차입금 비중)
+            - 유동비율만 보고 "유동성 우수" 결론. STDR (단기차입금 비중)
               병행 확인 필수.
-            - cashRatio 가 매우 높은 (50%+) 회사 — 안전이지만 자본배분
+            - cashRatio 가 매우 높은 (50%+) 회사. 안전이지만 자본배분
               비효율 (배당/투자 부진) 신호 가능.
         OutputSchema:
             AxisNarrative ``{axisName, summary, details, severity}``.
@@ -93,7 +93,7 @@ def narrateLiquidity(latest: dict, axisScore: float | None) -> AxisNarrative:
         Dataflow:
             currentRatio/STDR/cashRatio → 분기 룰 → 모순 탐지 → details →
             severity (axisScore).
-        TargetMarkets: KR (DART), US (EDGAR — current ratio 표준 동일).
+        TargetMarkets: KR (DART), US (EDGAR, current ratio 표준 동일).
     """
     details = []
     sev = _severity(axisScore)
@@ -169,10 +169,10 @@ def narrateCashFlow(
     Returns
     -------
     AxisNarrative
-        axisName : str — 축 이름 (``"현금흐름"``)
-        summary : str — 한 줄 요약 문장
-        details : list[str] — 세부 해석 문장 목록
-        severity : str — 심각도 (``"strong"`` / ``"moderate"`` / ``"weak"`` / ``"critical"``)
+        axisName : str - 축 이름 (``"현금흐름"``)
+        summary : str - 한 줄 요약 문장
+        details : list[str] - 세부 해석 문장 목록
+        severity : str - 심각도 (``"strong"`` / ``"moderate"`` / ``"weak"`` / ``"critical"``)
 
     Raises:
         없음.
@@ -201,7 +201,7 @@ def narrateCashFlow(
         - ``dartlab.credit.features._narrativeAxes.buildNarratives`` : 본 함수 사용자
 
     AIContext:
-        OCF 단독 인용 금지 — FCF / 패턴 / captive 단서까지 함께. 음수 OCF 는 "영업현금유출"
+        OCF 단독 인용 금지. FCF / 패턴 / captive 단서까지 함께. 음수 OCF 는 "영업현금유출"
         명시.
     """
     details = []
@@ -261,7 +261,7 @@ def narrateCashFlow(
 
 
 def narrateBusinessStability(biz: dict, axisScore: float | None) -> AxisNarrative:
-    """축 5: 사업 안정성 서사 — 매출 변동계수 + 규모 + 사업 다각화 (HHI).
+    """축 5: 사업 안정성 서사. 매출 변동계수 + 규모 + 사업 다각화 (HHI).
 
     Capabilities:
         매출 변동계수 (3~5 년 CV) + 매출 규모 + 세그먼트 HHI (Herfindahl)
@@ -306,14 +306,14 @@ def narrateBusinessStability(biz: dict, axisScore: float | None) -> AxisNarrativ
         biz dict 의 revenueCV 필수, latestRevenue/segmentHHI 옵션.
 
     AIContext:
-        시클리컬 (조선/철강/화학) 회사의 revenueCV 30%+ 는 정상 — 무조건
+        시클리컬 (조선/철강/화학) 회사의 revenueCV 30%+ 는 정상. 무조건
         "변동성 크다" 부정 인용 금지. 업종 맥락 함께 노출.
 
     LLM Specifications:
         AntiPatterns:
-            - HHI 만으로 다각화 평가 — 다각화가 신용에 항상 + 가 아님 (관련
+            - HHI 만으로 다각화 평가. 다각화가 신용에 항상 + 가 아님 (관련
               없는 사업 다각화는 비효율).
-            - 매출 규모 1 조원 미만 회사를 "소형" 으로 negative 인용 — 우량
+            - 매출 규모 1 조원 미만 회사를 "소형" 으로 negative 인용. 우량
               중소기업도 안정 가능.
         OutputSchema:
             AxisNarrative ``{axisName, summary, details, severity}``.
@@ -409,7 +409,7 @@ def narrateReliability(
         - ``dartlab.credit.features._narrativeAxes.buildNarratives`` : 본 함수 사용자
 
     AIContext:
-        F-Score 단독 인용 금지 — M-Score / 감사의견 결합. 감사의견 "한정" 이상은 답변에 명시.
+        F-Score 단독 인용 금지. M-Score / 감사의견 결합. 감사의견 "한정" 이상은 답변에 명시.
     """
     details = []
     sev = _severity(axisScore)
@@ -488,7 +488,7 @@ def narrateDisclosureRisk(dr: dict | None, axisScore: float | None) -> AxisNarra
         - ``dartlab.credit.features._narrativeAxes.buildNarratives`` : 본 함수 사용자
 
     AIContext:
-        키워드 검출은 자동 — 답변 시 "공시 리스크 N 건 감지" 같이 수량만 명시, 단정 ("횡령
+        키워드 검출은 자동. 답변 시 "공시 리스크 N 건 감지" 같이 수량만 명시, 단정 ("횡령
         있음") 금지.
     """
     details = []
@@ -552,10 +552,10 @@ def buildNarratives(
         별도 재무제표 지표. captive일 때 연결/별도 대비 참고 문장에 사용한다.
 
     Returns:
-        list[AxisNarrative] (7 개) — 각 ``{axisName, summary, details, severity}``.
+        list[AxisNarrative] (7 개). 각 ``{axisName, summary, details, severity}``.
 
     Raises:
-        없음 — 입력 result 누락 키는 빈 dict 폴백.
+        없음. 입력 result 누락 키는 빈 dict 폴백.
 
     Example:
         >>> from dartlab.credit.features._narrativeAxes import buildNarratives
@@ -582,7 +582,7 @@ def buildNarratives(
 
     AIContext:
         AI 가 신용 narrative 답변 생성 시 본 결과의 ``details`` 직접 인용. severity 별 색상 /
-        강조 가능 — 답변에 severity 단서도 함께.
+        강조 가능. 답변에 severity 단서도 함께.
     """
     axes = result.get("axes", [])
     latest = {}

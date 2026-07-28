@@ -1,4 +1,4 @@
-"""investmentAnalysis 의 ROIC + Intensity cluster — calcRoicTimeline · calcInvestmentIntensity + 헬퍼."""
+"""investmentAnalysis 의 ROIC + Intensity cluster: calcRoicTimeline · calcInvestmentIntensity + 헬퍼."""
 
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ _MAX_YEARS = 8
 def _estimateWacc(company) -> float | None:
     """company에서 WACC 추정 (compute_company_wacc 래퍼).
 
-    [성능] 자체 캐시 (None 결과도 캐싱) — review에서 5개 calc가 각자 호출하는데
+    [성능] 자체 캐시 (None 결과도 캐싱). review에서 5개 calc가 각자 호출하는데
     매번 fetch_price + fetchBeta 외부 API 호출 발생 (각 ~2.6s = 13s).
     None 결과도 캐시해야 외부 API 재호출 방지.
     memoized_calc은 None 결과를 캐시 안 함 → 자체 sentinel 캐시 사용.

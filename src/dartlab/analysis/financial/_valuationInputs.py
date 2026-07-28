@@ -1,4 +1,4 @@
-"""valuation.py 공통 헬퍼 — sectorKey 매핑 / price fetch / series + shares 추출."""
+"""valuation.py 공통 헬퍼: sectorKey 매핑 / price fetch / series + shares 추출."""
 
 from __future__ import annotations
 

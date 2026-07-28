@@ -26,7 +26,7 @@ def calcSotpNav(
     holdingDiscount: float = _DEFAULT_HOLDING_DISCOUNT,
     overrides: dict | None = None,
 ) -> dict | None:
-    """SOTP NAV — Damodaran Ch.16.
+    """SOTP NAV: Damodaran Ch.16.
 
     Capabilities:
         - investedCompany (자회사 장부가) 합산 + 모회사 별도 자산 - 부채
@@ -45,11 +45,11 @@ def calcSotpNav(
     Returns
     -------
     dict | None
-        rawNav : float — discount 전 합계 (자회사 장부가 합 + 모회사 자산 - 부채)
-        adjustedNav : float — × (1 - holdingDiscount)
+        rawNav : float - discount 전 합계 (자회사 장부가 합 + 모회사 자산 - 부채)
+        adjustedNav : float - × (1 - holdingDiscount)
         affiliates : list[{name, shareRatio, bookValue, listingFlag}]
         affiliateBookSum : float
-        parentNetAsset : float — 모회사 잉여현금 + 투자부동산 - 부채 (별도 추정)
+        parentNetAsset : float - 모회사 잉여현금 + 투자부동산 - 부채 (별도 추정)
         listedCount, unlistedCount, totalCount
         holdingDiscount, perShare, method
         warnings : list[str]
@@ -63,7 +63,7 @@ def calcSotpNav(
         역산 실패 시 한국 지주 평균 PBR 0.5 기반 fallback.
 
     When:
-        지주사 (SK/LG/CJ 등) dFV 산출 시점 — calcHoldingDFV 가 호출.
+        지주사 (SK/LG/CJ 등) dFV 산출 시점. calcHoldingDFV 가 호출.
 
     How:
         calcSotpNav(company) 또는 holdingDiscount=0.5 강제.
@@ -72,7 +72,7 @@ def calcSotpNav(
         company.panel("investedCompany") + company.select("BS", ["자본총계"]).
 
     Raises:
-        없음 — 데이터 부족은 None.
+        없음. 데이터 부족은 None.
 
     See Also:
         - calcHoldingDFV : 본 함수의 dFV 진입점 wrapper
@@ -157,7 +157,7 @@ def calcSotpNav(
     discount = max(0.0, min(0.7, float(holdingDiscount)))
     adjusted_nav = raw_nav * (1.0 - discount)
 
-    # Sanity cap — DART investedCompany 데이터 중복/단위 혼재 보정
+    # Sanity cap: DART investedCompany 데이터 중복/단위 혼재 보정
     # 한국 지주사 평균 시장 NAV ≈ 시가총액 × 1.5~2.5 (50% discount 가정)
     cur_price = _getCurrentPriceLight(company)
     if cur_price and cur_price > 0:
@@ -184,7 +184,7 @@ def calcSotpNav(
         except (AttributeError, KeyError, TypeError, ValueError):
             pass
 
-    # shares 역산 — calcDcf 우선, 실패 시 시가총액 / 현재가
+    # shares 역산: calcDcf 우선, 실패 시 시가총액 / 현재가
     shares: int | None = None
     try:
         from dartlab.analysis.financial.valuation import calcDcf
@@ -240,7 +240,7 @@ def calcSotpNav(
 
 
 def calcHoldingDFV(company: Any, *, basePeriod: str | None = None, overrides: dict | None = None) -> dict | None:
-    """지주사 전용 dFV — SOTP NAV 우선.
+    """지주사 전용 dFV: SOTP NAV 우선.
 
     Capabilities:
         - calcSotpNav 결과 → calcDFV 호환 스키마 변환

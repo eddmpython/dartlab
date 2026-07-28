@@ -36,10 +36,10 @@ def _getStockCode(company) -> str | None:
 
 @memoizedCalc
 def calcDisclosureDelta(company, *, basePeriod: str | None = None) -> dict | None:
-    """공시 변화 신호 — diff 결과를 예측 신호로 변환.
+    """공시 변화 신호: diff 결과를 예측 신호로 변환.
 
     공시 텍스트 변화량을 방향성 신호로 해석한다.
-    FinBERT 등 톤 분석은 미적용 — 변화 크기만 사용.
+    FinBERT 등 톤 분석은 미적용. 변화 크기만 사용.
 
     Capabilities:
         - 공시 텍스트 변화율을 방향성 신호로 환산.
@@ -47,13 +47,13 @@ def calcDisclosureDelta(company, *, basePeriod: str | None = None) -> dict | Non
     Returns
     -------
     dict
-        overallChangeRate : float — 전체 공시 변화율 (%)
-        riskChangeRate : float — 리스크 관련 토픽 변화율 (%)
-        businessChangeRate : float — 사업 관련 토픽 변화율 (%)
-        revenueRelatedChange : float — 매출 관련 토픽 변화율 (%)
-        signalDirection : str — 방향성 ("positive" | "negative" | "neutral")
-        signalStrength : str — 신호 강도 ("strong" | "moderate" | "weak")
-        topChangedTopics : list[dict] — 변화율 상위 5개 토픽 (topic, changeRate)
+        overallChangeRate : float - 전체 공시 변화율 (%)
+        riskChangeRate : float - 리스크 관련 토픽 변화율 (%)
+        businessChangeRate : float - 사업 관련 토픽 변화율 (%)
+        revenueRelatedChange : float - 매출 관련 토픽 변화율 (%)
+        signalDirection : str - 방향성 ("positive" | "negative" | "neutral")
+        signalStrength : str - 신호 강도 ("strong" | "moderate" | "weak")
+        topChangedTopics : list[dict] - 변화율 상위 5개 토픽 (topic, changeRate)
 
     Guide:
         리스크 토픽 변화율 우선, 사업 토픽 변화는 보조.
@@ -68,7 +68,7 @@ def calcDisclosureDelta(company, *, basePeriod: str | None = None) -> dict | Non
         company.diff() 가능 (텍스트 diff 캐시).
 
     Raises:
-        없음 — 데이터 부재 시 None.
+        없음. 데이터 부재 시 None.
 
     Example:
         >>> calcDisclosureDelta(company)
@@ -253,7 +253,7 @@ def _divergenceSignal(history: list[dict], key: str, aboveLabel: str, belowLabel
 
 @memoizedCalc
 def calcInventoryDivergence(company, *, basePeriod: str | None = None) -> dict | None:
-    """재고/매출채권 괴리 — 수요 둔화 선행 지표.
+    """재고/매출채권 괴리: 수요 둔화 선행 지표.
 
     재고 증가율 > 매출 증가율 = 수요 둔화 (NYU Stern).
     매출채권 증가율 > 매출 증가율 = 회수 악화.
@@ -265,11 +265,11 @@ def calcInventoryDivergence(company, *, basePeriod: str | None = None) -> dict |
     Returns
     -------
     dict
-        history : list[dict] — 연도별 시계열 (inventory, receivables, revenue, inventoryGrowth(%), revenueGrowth(%), divergence(%p), arDivergence(%p), dso(일), dio(일), noa(원))
-        inventorySignal : str — 재고 신호 ("building" | "liquidating" | "stable")
-        receivableSignal : str — 매출채권 신호 ("deteriorating" | "improving" | "stable")
-        noaGrowth : float | None — NOA 성장률 (%)
-        riskScore : int — 리스크 점수 (점, 0-100)
+        history : list[dict] - 연도별 시계열 (inventory, receivables, revenue, inventoryGrowth(%), revenueGrowth(%), divergence(%p), arDivergence(%p), dso(일), dio(일), noa(원))
+        inventorySignal : str - 재고 신호 ("building" | "liquidating" | "stable")
+        receivableSignal : str - 매출채권 신호 ("deteriorating" | "improving" | "stable")
+        noaGrowth : float | None - NOA 성장률 (%)
+        riskScore : int - 리스크 점수 (점, 0-100)
 
     Guide:
         괴리 폭 ≥ 10%p 면 명확 신호, 5~10%p 면 약신호.
@@ -284,7 +284,7 @@ def calcInventoryDivergence(company, *, basePeriod: str | None = None) -> dict |
         BS·IS 다년치 (최소 2 기), snake_id 매핑 완료.
 
     Raises:
-        없음 — 결측 시 None.
+        없음. 결측 시 None.
 
     Example:
         >>> calcInventoryDivergence(company)
@@ -363,10 +363,10 @@ def calcInventoryDivergence(company, *, basePeriod: str | None = None) -> dict |
 
 @memoizedCalc
 def calcAnnouncementTiming(company, *, basePeriod: str | None = None) -> dict | None:
-    """동종업계 공시 타이밍 — 선발 기업 실적으로 후발 예측.
+    """동종업계 공시 타이밍: 선발 기업 실적으로 후발 예측.
 
     같은 업종에서 이미 실적을 발표한 기업들의 성장 방향을 집계한다.
-    Ramnath 2002, Thomas & Zhang 2008 — 20년+ 검증된 anomaly.
+    Ramnath 2002, Thomas & Zhang 2008: 20년+ 검증된 anomaly.
 
     Capabilities:
         - 선발 발표 피어의 성장 방향을 후발 예측 신호로 변환.
@@ -374,13 +374,13 @@ def calcAnnouncementTiming(company, *, basePeriod: str | None = None) -> dict | 
     Returns
     -------
     dict
-        sectorKey : str — 업종 키
-        sectorPeersReported : int — 실적 발표 동종 기업 수
-        sectorPeersTotal : int — 동종 업종 전체 기업 수
-        reportedDirection : dict — 방향별 기업 수 (up, down, flat)
-        bellwetherSignal : str — 벨웨더 신호 ("positive" | "negative" | "neutral")
-        peerConsensus : float — 피어 합의 점수 (-1.0 ~ +1.0)
-        confidence : str — 신뢰도 ("high" | "medium" | "low")
+        sectorKey : str - 업종 키
+        sectorPeersReported : int - 실적 발표 동종 기업 수
+        sectorPeersTotal : int - 동종 업종 전체 기업 수
+        reportedDirection : dict - 방향별 기업 수 (up, down, flat)
+        bellwetherSignal : str - 벨웨더 신호 ("positive" | "negative" | "neutral")
+        peerConsensus : float - 피어 합의 점수 (-1.0 ~ +1.0)
+        confidence : str - 신뢰도 ("high" | "medium" | "low")
 
     Guide:
         피어 발표 수 5 이상일 때 신뢰도 medium, 10 이상 high.
@@ -395,7 +395,7 @@ def calcAnnouncementTiming(company, *, basePeriod: str | None = None) -> dict | 
         Scan 사용 가능, 업종 분류 매핑.
 
     Raises:
-        없음 — Scan 실패 시 None.
+        없음. Scan 실패 시 None.
 
     Example:
         >>> calcAnnouncementTiming(company)
@@ -509,9 +509,9 @@ def calcAnnouncementTiming(company, *, basePeriod: str | None = None) -> dict | 
 
 @memoizedCalc
 def calcSupplyChainSignal(company, *, basePeriod: str | None = None) -> dict | None:
-    """공급망 모멘텀 — 관계사 실적이 이 회사를 선행.
+    """공급망 모멘텀: 관계사 실적이 이 회사를 선행.
 
-    Cohen & Frazzini 2008 (J. Finance) — 고객사 실적이 공급사를 1-2분기 선행.
+    Cohen & Frazzini 2008 (J. Finance): 고객사 실적이 공급사를 1-2분기 선행.
     DART 투자관계 + 관계사 거래에서 연결 기업을 식별하고,
     상장 관계사의 성장률로 이 회사에 대한 전파 신호를 계산.
 
@@ -521,11 +521,11 @@ def calcSupplyChainSignal(company, *, basePeriod: str | None = None) -> dict | N
     Returns
     -------
     dict
-        linkedCompanies : list[dict] — 상장 관계사 목록 (code, name, relationship, revenueGrowth(%))
-        networkMomentum : float — 정규화 모멘텀 (-1.0 ~ +1.0)
-        nLinkedListed : int — 상장 관계사 수
-        supplyChainRisk : str — 공급망 리스크 ("high" | "moderate" | "low")
-        confidence : str — 신뢰도 ("high" | "medium" | "low")
+        linkedCompanies : list[dict] - 상장 관계사 목록 (code, name, relationship, revenueGrowth(%))
+        networkMomentum : float - 정규화 모멘텀 (-1.0 ~ +1.0)
+        nLinkedListed : int - 상장 관계사 수
+        supplyChainRisk : str - 공급망 리스크 ("high" | "moderate" | "low")
+        confidence : str - 신뢰도 ("high" | "medium" | "low")
 
     Guide:
         상장 관계사 3 개 이상일 때 medium, 5 개 이상 high.
@@ -540,7 +540,7 @@ def calcSupplyChainSignal(company, *, basePeriod: str | None = None) -> dict | N
         Scan growth 사용 가능, 관계사 매핑 데이터.
 
     Raises:
-        없음 — 관계사 결측 시 None.
+        없음. 관계사 결측 시 None.
 
     Example:
         >>> calcSupplyChainSignal(company)
@@ -658,7 +658,7 @@ def _getLinkedCompanies(company, stockCode: str) -> list[dict]:
         TypeError,
         AttributeError,
         FileNotFoundError,
-        RuntimeError,  # DART 다운로드 실패 (404 등) — mock/신규 종목에서 발생
+        RuntimeError,  # DART 다운로드 실패 (404 등). mock/신규 종목에서 발생
         OSError,  # 네트워크 단절
     ):
         pass
