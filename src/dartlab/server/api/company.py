@@ -641,13 +641,13 @@ async def apiCompanyTopicSummary(
     except HANDLED_API_ERRORS as exc:
         raise HTTPException(status_code=404, detail=guideDetail(exc)) from exc
 
+    # 예전에는 `panel` 이 실패하면 `show` 로 한 번 더 시도했다. `show` 는 공개 계약에서
+    # 빠진 이름이라 부르면 AttributeError 로 떨어지고, 그것도 여기서 삼켜져 결과가 늘
+    # 같았다. 있어 보이기만 하는 폴백이라 걷어낸다.
     try:
         overview = company.panel(topic)
     except (AttributeError, KeyError, TypeError, ValueError):
-        try:
-            overview = company.show(topic)
-        except (AttributeError, KeyError, TypeError, ValueError):
-            overview = None
+        overview = None
     if overview is None:
         raise HTTPException(status_code=404, detail=f"topic '{topic}' 데이터 없음")
 

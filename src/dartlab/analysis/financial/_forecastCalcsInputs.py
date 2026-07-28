@@ -31,13 +31,20 @@ def _getSeriesAndMeta(company: Any) -> tuple[dict, str | None, str | None, str, 
 
 
 def _getShares(company: Any) -> int | None:
-    """발행주식수 추출."""
-    profile = getattr(company, "profile", None)
-    if profile:
-        sharesVal = getattr(profile, "sharesOutstanding", None)
-        if sharesVal:
-            return int(sharesVal)
-    return None
+    """발행주식수 추출. 없으면 None.
+
+    예전에는 `company.profile.sharesOutstanding` 을 읽었다. `profile` 은 표면에서 빠진
+    이름이라 늘 None 이었고, 이 함수가 어느 회사에서도 주식수를 못 냈다. 지금 공급원은
+    `capital` 축의 발행주식총수다.
+    """
+    try:
+        df = company.capital()
+    except (AttributeError, KeyError, OSError, RuntimeError, TypeError, ValueError):
+        return None
+    if df is None or getattr(df, "height", 0) == 0:
+        return None
+    value = df.row(0, named=True).get("발행주식총수")
+    return int(value) if value else None
 
 
 def _buildCompanyDataBundle(company: Any):
