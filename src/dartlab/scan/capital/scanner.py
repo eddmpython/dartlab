@@ -319,6 +319,12 @@ def scanShareTotal() -> dict[str, dict]:
     산출한다. ``se`` 구분행 중 합계(없으면 보통주)를 채택. 발행주식총수는 희석 baseline,
     자기주식비율은 잠재 환원 여력.
 
+    값 컬럼은 ``istc_totqy`` (발행주식의 총수) 다. 이름이 비슷한 ``isu_stock_totqy`` 는
+    정관상 *발행할* 주식의 총수, 곧 수권주식수라 실제 발행량이 아니다. 삼성전자 2025 년
+    기준으로 전자는 6,735,612,586 주, 후자는 25,000,000,000 주다. 후자를 쓰면 주식수가
+    3.7 배 부풀고 자기주식비율은 같은 배수만큼 축소된다. 컬럼 의미는 이 repo 의
+    ``providers.dart.accessor.reportAccessor`` 한글 매핑표가 정본이다.
+
     Returns
     -------
     dict[str, dict]
@@ -337,7 +343,8 @@ def scanShareTotal() -> dict[str, dict]:
         ``scanCapital`` 진행 단계 안에서.
 
     How:
-        report parquet 종목별 최신연도 group 후 se 구분행 선택, isu_stock_totqy + tesstk_co 파싱.
+        report parquet 종목별 최신연도 group 후 접수번호 내림차순 정렬, se 구분행 선택,
+        istc_totqy + tesstk_co 파싱.
 
     Requires:
         - 로컬 ``data/dart/scan/report/stockTotal.parquet`` (``buildReport``)
@@ -355,21 +362,25 @@ def scanShareTotal() -> dict[str, dict]:
     >>> from dartlab.scan.capital.scanner import scanShareTotal
     >>> scanShareTotal().get("005930", {}).get("발행주식총수")
     """
-    raw = scanParquets("stockTotal", ["stockCode", "year", "se", "isu_stock_totqy", "tesstk_co"])
-    if raw.is_empty() or "isu_stock_totqy" not in raw.columns:
+    raw = scanParquets("stockTotal", ["stockCode", "year", "rcept_no", "se", "istc_totqy", "tesstk_co"])
+    if raw.is_empty() or "istc_totqy" not in raw.columns:
         return {}
     result: dict[str, dict] = {}
     for code, group in raw.group_by("stockCode"):
         codeVal = code[0]
-        latest = latestDataRows(group, "isu_stock_totqy")
+        latest = latestDataRows(group, "istc_totqy")
         if latest.is_empty():
             continue
+        if "rcept_no" in latest.columns:
+            # 한 해에 반기보고서와 사업보고서가 겹치면 같은 구분에 자기주식수가 서로 다른
+            # 행이 둘 이상 남는다. 접수번호가 큰 쪽이 나중 공시다.
+            latest = latest.sort("rcept_no", descending=True)
         issued: float | None = None
         treasury: float | None = None
         for pref in ("합계", "보통주"):
             rows = latest.filter(pl.col("se").cast(pl.Utf8).fill_null("").str.contains(pref, literal=True))
             for row in rows.iter_rows(named=True):
-                v = parseNumStr(row.get("isu_stock_totqy"))
+                v = parseNumStr(row.get("istc_totqy"))
                 if v and v > 0:
                     issued = v
                     t = parseNumStr(row.get("tesstk_co"))

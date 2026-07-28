@@ -75,8 +75,9 @@ def test_scan_share_total_prefers_total(monkeypatch):
         {
             "stockCode": ["A", "A"],
             "year": ["2025", "2025"],
+            "rcept_no": ["20250315000001", "20250315000001"],
             "se": ["보통주", "합계"],
-            "isu_stock_totqy": ["800", "1,000"],
+            "istc_totqy": ["800", "1,000"],
             "tesstk_co": ["50", "100"],
         }
     )
@@ -84,6 +85,51 @@ def test_scan_share_total_prefers_total(monkeypatch):
     r = m.scanShareTotal()
     assert r["A"]["발행주식총수"] == 1000.0  # 합계 우선
     assert r["A"]["자기주식비율"] == 10.0
+
+
+def test_scan_share_total_ignores_authorized_shares(monkeypatch):
+    """수권주식수를 발행주식수로 읽지 않는다.
+
+    ``isu_stock_totqy`` 는 정관상 *발행할* 주식의 총수고 ``istc_totqy`` 가 실제 발행량이다.
+    값은 삼성전자 2025 년 합계 행 실측치다. 둘을 바꿔 읽으면 주식수가 3.7 배 부풀고
+    자기주식비율은 1.57 이 아니라 0.42 로 나온다.
+    """
+    import dartlab.scan.capital.scanner as m
+
+    df = pl.DataFrame(
+        {
+            "stockCode": ["A"],
+            "year": ["2025"],
+            "rcept_no": ["20250311000001"],
+            "se": ["합계"],
+            "isu_stock_totqy": ["25,000,000,000"],
+            "istc_totqy": ["6,735,612,586"],
+            "tesstk_co": ["105,432,448"],
+        }
+    )
+    monkeypatch.setattr(m, "scanParquets", lambda a, c: df)
+    r = m.scanShareTotal()
+    assert r["A"]["발행주식총수"] == 6735612586.0
+    assert r["A"]["자기주식비율"] == 1.57
+
+
+def test_scan_share_total_takes_latest_filing(monkeypatch):
+    """한 해에 반기·사업보고서가 겹치면 접수번호가 큰 공시를 쓴다."""
+    import dartlab.scan.capital.scanner as m
+
+    df = pl.DataFrame(
+        {
+            "stockCode": ["A", "A"],
+            "year": ["2025", "2025"],
+            "rcept_no": ["20250814000001", "20260311000001"],
+            "se": ["합계", "합계"],
+            "istc_totqy": ["1,000", "1,000"],
+            "tesstk_co": ["100", "40"],
+        }
+    )
+    monkeypatch.setattr(m, "scanParquets", lambda a, c: df)
+    r = m.scanShareTotal()
+    assert r["A"]["자기주식비율"] == 4.0
 
 
 def test_scan_offering_usage_accumulates_and_flags(monkeypatch):
