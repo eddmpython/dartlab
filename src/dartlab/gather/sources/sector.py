@@ -79,10 +79,14 @@ async def fetch(
     del limit
     if market != "KR":
         return None
-    try:
-        from .domains.krx import fetchSectorInfo
+    # domains 는 gather 바로 아래다 (`..domains`). 이 줄만 점이 하나라 없는 경로
+    # `gather.sources.domains` 를 가리켰고, ModuleNotFoundError 가 아래 ImportError 로
+    # 잡혀 warning 한 줄만 남기고 None 이 됐다. 업종 축이 어느 회사에서도 비었고,
+    # 업종코드로 피어를 찾는 축까지 같이 죽었다.
+    from ..domains.krx import fetchSectorInfo
 
+    try:
         return await fetchSectorInfo(stockCode, client)
-    except (SourceUnavailableError, ImportError, OSError) as exc:
+    except (SourceUnavailableError, OSError) as exc:
         log.warning("sector KR 실패 (%s): %s", stockCode, exc)
         return None
