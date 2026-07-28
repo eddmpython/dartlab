@@ -113,12 +113,15 @@ def getFinanceAmounts(company, period: str) -> dict[str, float]:
     if re.match(r"^\d{4}$", period):
         candidates.append(f"{period}Q4")
 
+    # 예전에는 `company.finance` 에서 세 장을 꺼냈다. `finance` 는 표면에서 빠진 이름이라
+    # 매 회전이 except 로 continue 했고, 이 함수가 어느 회사에서도 빈 dict 만 냈다. 그래서
+    # 공시 본문 금액과 재무제표를 대조하는 검증이 통째로 무력했다. 공개 계약으로 부른다.
     for stmt_name in ("IS", "BS", "CF"):
         try:
-            stmt = getattr(company.finance, stmt_name)
-        except (AttributeError, FileNotFoundError, RuntimeError):
+            stmt = company.panel(stmt_name)
+        except (AttributeError, FileNotFoundError, KeyError, RuntimeError, TypeError, ValueError):
             continue
-        if stmt is None:
+        if stmt is None or getattr(stmt, "height", 0) == 0:
             continue
 
         target_period = None

@@ -142,6 +142,10 @@ GATES: dict[str, Gate] = {
             # 실제로 지배적인 침묵은 광범위 catch 가 원인을 버리고 대체값을 돌려주는
             # 모양이라 별도로 센다. 통과 조건은 흐름 변경이 아니라 원인 한 줄 기록이다.
             "python -X utf8 tests/audit/silentSubstitute.py && "
+            # 계약을 좁히면서 옛 이름을 부르던 소비처를 같이 안 고치면, 넓은 catch 가 그
+            # AttributeError 를 지워 사용자 표면이 통째로 죽은 채 초록불이 된다. 2026-07-28
+            # 하루에 열두 번 나왔다(보고서 백지 · 차트 다섯 · spec 생성기 일곱 · DCF 도구).
+            "python -X utf8 tests/audit/deadCompanyAccessor.py && "
             "python tests/audit/stale_references.py && "
             "python -X utf8 tests/audit/lint_camelcase_ast.py --changed --strict && "
             # baseline 은 2-cycle 목록이다. 예전에는 개수만 적고 늘어나도 WARN 만 찍은
