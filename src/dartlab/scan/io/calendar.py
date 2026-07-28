@@ -4,14 +4,25 @@ from __future__ import annotations
 
 import polars as pl
 
+# 어떤 해가 "다 찬 해" 인지 가르는 상대 기준. 가장 두꺼운 해 대비 이 비율에 못 미치면
+# 아직 보고서가 덜 들어온 해로 본다. 절대 하한(minCount) 만으로는 진행 중인 해를 못 거른다.
+_YEAR_COMPLETENESS = 0.8
+
 
 def findLatestYear(raw: pl.DataFrame, checkCol: str, minCount: int = 500) -> str | None:
-    """checkCol에 유효 데이터가 minCount 이상인 가장 최근 연도 반환.
+    """checkCol 에 유효 데이터가 충분히 찬 가장 최근 연도 반환.
+
+    "충분히" 는 두 조건을 함께 본다. 절대 하한 ``minCount`` 이상이고, 동시에 가장 두꺼운
+    해의 80 % 이상이어야 한다. 절대 하한만 보면 아직 진행 중인 해가 이미 끝난 해를 이긴다.
+    실측 예로 employee 의 ``jan_salary_am`` 은 2025 년에 2,655 종목인데 2026 년은 1 분기
+    보고서뿐이라 1,674 종목이다. 둘 다 500 을 넘어서 옛 규칙은 2026 을 골랐고, 그 해에 아직
+    보고서를 안 낸 약 1,000 종목이 단면에서 통째로 빠졌다. 빠진 자리는 값이 없는 것이 아니라
+    아예 행이 없어서, 소비자 쪽에서는 "그 회사는 원래 자료가 없다" 와 구분되지 않았다.
 
     Parameters:
         raw: year 컬럼을 포함한 전종목 데이터.
         checkCol: 유효성 검사 대상 컬럼명.
-        minCount: 해당 연도에 필요한 최소 유효 행 수.
+        minCount: 해당 연도에 필요한 최소 유효 행 수 (절대 하한).
 
     Returns:
         가장 최근 유효 연도 문자열. 없으면 None.
@@ -27,7 +38,8 @@ def findLatestYear(raw: pl.DataFrame, checkCol: str, minCount: int = 500) -> str
         최신 연도 단면을 만들 때 데이터가 거의 없는 조기 제출 연도를 건너뛴다.
 
     Capabilities:
-        연도별 non-null/non-empty count 계산 후 minCount 이상인 첫 최신 연도 선택.
+        연도별 non-null/non-empty count 계산 후, 절대 하한과 상대 완성도(가장 두꺼운 해의
+        80 %) 를 함께 넘는 첫 최신 연도 선택.
 
     AIContext:
         scan axis 가 횡단 비교용 최신 연도 단면을 고를 때 사용하는 기준.
@@ -36,7 +48,7 @@ def findLatestYear(raw: pl.DataFrame, checkCol: str, minCount: int = 500) -> str
         governance/workforce/capital 등 연 단위 단면 분석 직전.
 
     How:
-        years_desc 순회 + 유효 행 카운트.
+        연도별 유효 행 카운트 → 최대값 대비 완성도 하한 계산 → years_desc 순회.
 
     Requires:
         ``raw["year"]`` 컬럼과 ``checkCol`` 컬럼.
@@ -45,10 +57,30 @@ def findLatestYear(raw: pl.DataFrame, checkCol: str, minCount: int = 500) -> str
         ``pickBestQuarter`` · ``filterLatestPerStock``.
     """
     years_desc = sorted(raw["year"].unique().to_list(), reverse=True)
+    # 단면의 넓이는 행수가 아니라 종목수다. 한 종목이 성별·구분별로 여러 행을 내므로 행수로 세면
+    # 종목이 더 많은 해가 도리어 얇아 보인다 (employee 실측: 2025 년이 2024 년보다 종목은 많고
+    # 행은 적다). stockCode 가 없는 입력만 행수로 물러선다.
+    hasCode = "stockCode" in raw.columns
+    counts: dict[str, int] = {}
     for y in years_desc:
-        sub = raw.filter(pl.col("year") == y)
-        ok = sub.filter(pl.col(checkCol).is_not_null() & (pl.col(checkCol) != "-") & (pl.col(checkCol) != "")).shape[0]
-        if ok >= minCount:
+        valid = raw.filter(
+            (pl.col("year") == y)
+            & pl.col(checkCol).is_not_null()
+            & (pl.col(checkCol) != "-")
+            & (pl.col(checkCol) != "")
+        )
+        counts[y] = valid["stockCode"].n_unique() if hasCode else valid.height
+    if not counts:
+        return None
+
+    # 절대 하한만 보면 진행 중인 해가 끝난 해를 이긴다. 실측 예: employee 의 jan_salary_am 은
+    # 2025 년 2,655 종목인데 2026 년은 1 분기 보고서뿐이라 1,674 종목이다. 둘 다 500 을 넘으므로
+    # 옛 규칙은 2026 을 골랐고, 그 해에 아직 안 낸 약 1,000 종목이 단면에서 통째로 빠졌다.
+    # 그래서 상대 기준을 함께 본다. 가장 두꺼운 해의 일정 비율에 못 미치면 아직 덜 찬 해로 본다.
+    fullest = max(counts.values())
+    floor = max(minCount, int(fullest * _YEAR_COMPLETENESS))
+    for y in years_desc:
+        if counts[y] >= floor:
             return y
     return None
 

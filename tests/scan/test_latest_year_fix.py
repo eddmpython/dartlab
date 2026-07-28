@@ -247,3 +247,45 @@ def test_scanGrowth_perFileFallbackNormalizesStockCode(tmp_path, monkeypatch):
 
     assert result.height == 1
     assert result.item(0, "stockCode") == "005930"
+
+
+def _yearRows(year: str, companies: int, rowsEach: int, value: str = "100") -> list[dict]:
+    """한 해에 `companies` 종목이 각각 `rowsEach` 행씩 낸 mock 데이터."""
+    return [{"stockCode": f"{i:06d}", "year": year, "val": value} for i in range(companies) for _ in range(rowsEach)]
+
+
+def test_findLatestYear_skipsYearStillBeingFiled():
+    """진행 중인 해가 절대 하한을 넘어도, 이미 끝난 해보다 얇으면 고르지 않는다.
+
+    실측 사고: employee 의 급여 항목이 2025 년 2,655 종목인데 2026 년은 1 분기 보고서뿐이라
+    1,674 종목이었다. 둘 다 하한 500 을 넘어서 옛 규칙이 2026 을 골랐고, 그 해에 아직 안 낸
+    약 1,000 종목이 단면에서 통째로 빠졌다. 소비자 쪽에서는 값이 없는 것과 회사가 원래
+    자료를 안 내는 것이 구분되지 않았다.
+    """
+    from dartlab.scan.io.parquet import findLatestYear
+
+    raw = pl.DataFrame(_yearRows("2025", 1000, 1) + _yearRows("2026", 600, 1))
+
+    assert findLatestYear(raw, "val", 500) == "2025"
+
+
+def test_findLatestYear_measuresCompaniesNotRows():
+    """단면의 넓이는 행수가 아니라 종목수로 잰다.
+
+    한 종목이 성별·구분별로 여러 행을 내므로 행수로 세면 종목이 더 많은 해가 도리어 얇아
+    보인다. 여기서 2025 는 종목이 더 많고(800 대 700) 행은 더 적다(800 대 2100).
+    """
+    from dartlab.scan.io.parquet import findLatestYear
+
+    raw = pl.DataFrame(_yearRows("2024", 700, 3) + _yearRows("2025", 800, 1))
+
+    assert findLatestYear(raw, "val", 500) == "2025"
+
+
+def test_findLatestYear_stillHonorsAbsoluteFloor():
+    """모든 해가 절대 하한에 못 미치면 None (상대 기준이 하한을 무르게 만들지 않는다)."""
+    from dartlab.scan.io.parquet import findLatestYear
+
+    raw = pl.DataFrame(_yearRows("2024", 100, 1) + _yearRows("2025", 90, 1))
+
+    assert findLatestYear(raw, "val", 500) is None
