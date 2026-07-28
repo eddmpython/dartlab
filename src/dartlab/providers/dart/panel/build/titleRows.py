@@ -133,55 +133,6 @@ def _tableToMarkdown(table) -> str:
     return "\n".join(out)
 
 
-# Phase B-5: DART XML 의 `<P>` word-wrap 분할 결함 복원. 한 시각적 line 의 단어들이
-# 다수 `<P>` 로 부서져 있는 패턴 (예: <P>사업부문별</P><P>현황</P>) 을 같은 line 으로
-# 합침. 회귀 사례: "사업부문별" / "현황" 두 P 가 legacy parser layer 의 textPath build 에서
-# "사업부문별 > " (현황 잘림) 으로 잘려나가던 것을 "사업부문별현황" 한 단위로 복원.
-_SENTENCE_END_SUFFIX = ("다.", "요.", "니다.", ".", "?", "!", ")", "]", ":", ";", "다", "요")
-_P_MERGE_MAX_LEN = 20
-
-
-def _mergeShortPs(parts: list[str], maxLen: int = _P_MERGE_MAX_LEN) -> list[str]:
-    """인접한 짧은 P 들을 같은 line 으로 합침 (DART XML word-wrap 결함 복원).
-
-    조건 모두 만족 시 prev + curr 합침 (공백 0):
-    1. prev 와 curr 둘 다 ``maxLen`` 이하 (default 20 chars).
-    2. prev 가 sentence-end (다./요./니다././?/!/)/].).) 가 아님.
-    3. prev 와 curr 둘 다 markdown heading prefix (``## ``) 아님.
-    4. prev 와 curr 둘 다 markdown table prefix (``|``) 아님.
-
-    word-wrap 인 경우 source XML 에 공백 의도가 없으므로 ``join("")`` 사용 — Phase B-4
-    의 SPAN concat 과 동일 원칙.
-    """
-    if len(parts) <= 1:
-        return parts
-    result: list[str] = []
-    buf = parts[0]
-    for nxt in parts[1:]:
-        if _canMergePs(buf, nxt, maxLen):
-            buf = buf + nxt
-        else:
-            result.append(buf)
-            buf = nxt
-    result.append(buf)
-    return result
-
-
-def _canMergePs(prev: str, nxt: str, maxLen: int) -> bool:
-    """두 P 가 word-wrap 결함으로 분할된 case 인지 판정."""
-    if not prev or not nxt:
-        return False
-    if len(prev) > maxLen or len(nxt) > maxLen:
-        return False
-    if prev.startswith("## ") or nxt.startswith("## "):
-        return False
-    if prev.startswith("|") or nxt.startswith("|"):
-        return False
-    if prev.endswith(_SENTENCE_END_SUFFIX):
-        return False
-    return True
-
-
 def parseSectionsByTitle(xmlContent: str) -> list[dict[str, Any]]:
     """DART document.xml → ``<TITLE>`` 별 섹션 row list.
 
