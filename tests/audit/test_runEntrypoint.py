@@ -247,3 +247,24 @@ def testQuotedGateArgsSurviveTheShell():
         assert proc.returncode == 0, proc.stderr
         assert proc.stdout.strip() == "pkg>=1.2,<3", proc.stdout
         assert not list(pathlib.Path(work).iterdir()), "리다이렉션으로 잔재 파일이 생겼다"
+
+
+@pytest.mark.unit
+def testWheelSmokeVerifiesOnlyTheFreshlyBuiltWheel():
+    """wheel 검증 게이트가 낡은 산출물을 검사하지 못하게 못 박는다.
+
+    예전 명령은 `dist` 에 바로 굽고 사전순 첫 파일을 골랐다. CI 는 폴더가 비어 있어 늘
+    갓 구운 것을 집었지만, 로컬에는 옛 wheel 이 남아 있어 몇 버전 전 pyodide wheel 을
+    검사했다. 그 낡은 wheel 에는 이후 추가된 엔진이 없어 공개 표면 검사가 실패했고,
+    그제서야 게이트가 엉뚱한 파일을 보고 있었음이 드러났다.
+
+    릴리즈를 막아 서는 게이트가 낡은 산출물을 통과시키면 그것은 게이트가 아니다.
+    빈 폴더에 굽고, 거기 wheel 이 정확히 하나임을 확인한 뒤 그것만 검사한다.
+    """
+    gate = GATES["wheel-smoke"]
+    setup = " ".join(gate.setup)
+
+    assert "--outdir dist/wheelSmoke" in setup, "전용 폴더에 굽지 않는다"
+    assert "dist/wheelSmoke" in setup.split("&&")[0] or setup.startswith("rm"), "굽기 전에 폴더를 비우지 않는다"
+    assert "head -n1" not in gate.cmd, "사전순 첫 파일을 집으면 낡은 산출물을 검사한다"
+    assert "wc -l" in gate.cmd and "-eq 1" in gate.cmd, "wheel 이 정확히 하나인지 확인하지 않는다"

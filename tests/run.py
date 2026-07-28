@@ -237,8 +237,20 @@ GATES: dict[str, Gate] = {
         tier="fast",
         deps=("uv",),
         install_pkg="none",
-        setup=("uv run --with build python -m build --wheel --outdir dist",),
-        cmd=('WHL=$(ls dist/*.whl | head -n1) && python -X utf8 .github/scripts/verifyWheel.py "$WHL"'),
+        # 갓 구운 것만 남는 빈 폴더에 짓는다. 예전에는 `dist` 에 바로 굽고
+        # `ls dist/*.whl | head -n1` 로 골랐다. CI 는 폴더가 비어 있어 문제가 없었지만
+        # 로컬에는 옛 wheel 이 남아 있어 사전순 첫 파일, 즉 몇 버전 전 pyodide wheel 을
+        # 검사했다. 릴리즈를 막아 서는 게이트가 낡은 산출물을 검사하고 통과시키면
+        # 그것은 게이트가 아니다. 실제로 그 낡은 wheel 에는 없는 엔진이 있어 잡혔다.
+        setup=(
+            "rm -rf dist/wheelSmoke",
+            "uv run --with build python -m build --wheel --outdir dist/wheelSmoke",
+        ),
+        cmd=(
+            "WHL=$(ls dist/wheelSmoke/*.whl) && "
+            'test "$(echo "$WHL" | wc -l)" -eq 1 && '
+            'python -X utf8 .github/scripts/verifyWheel.py "$WHL"'
+        ),
     ),
     "quality-gate": Gate(
         name="quality-gate",
