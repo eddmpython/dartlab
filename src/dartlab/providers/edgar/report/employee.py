@@ -81,16 +81,11 @@ def extractEmployee(company: "Company") -> pl.DataFrame | None:
     rows: list[dict] = []
 
     # 1순위: XBRL
-    try:
-        ts, periods = company.timeseries or (None, None)
-        if ts is not None and periods:
-            # XBRL facts에서 직접 탐색
-            facts = _getEmployeeFacts(company)
-            if facts:
-                for record in facts:
-                    rows.append(record)
-    except (AttributeError, TypeError):
-        pass
+    #
+    # 예전에는 company.timeseries 가 있을 때만 아래로 갔다. 그 이름은 Company 표면에 없어
+    # 매번 AttributeError 였고 except 가 그것을 지워, XBRL 경로가 한 번도 실행되지 않았다.
+    # _getEmployeeFacts 는 cik 와 로컬 parquet 만 보므로 그 가드가 애초에 필요 없다.
+    rows.extend(_getEmployeeFacts(company))
 
     # 2순위: 10-K 텍스트 파싱
     if not rows:

@@ -41,7 +41,10 @@ def _inferShares(company: Any) -> int | None:
 
 
 def _getCurrentPriceLight(company: Any) -> float | None:
-    """현재 주가 추출. currentPrice 속성 우선, 없으면 gather 경유.
+    """현재 주가 추출. gather price 축의 종가 마지막 값.
+
+    예전에는 ``company.currentPrice`` 를 먼저 봤는데 그 이름은 Company 표면에 없어 한 번도
+    타지 않았다. 실제로 값을 내던 것은 아래 gather 경로 하나뿐이라 그것만 남겼다.
 
     Returns
     -------
@@ -49,9 +52,6 @@ def _getCurrentPriceLight(company: Any) -> float | None:
         현재 주가 (원). 조회 실패 시 None.
     """
     try:
-        price = getattr(company, "currentPrice", None)
-        if price:
-            return float(price)
         from dartlab.core.di import getMacroProvider
 
         g = getMacroProvider().getDefaultGather()

@@ -59,13 +59,9 @@ def _tsdResolveWacc(company: Any, overrides: dict) -> float:
         try:
             from dartlab.analysis.financial.proforma import computeCompanyWacc
 
-            series = None
-            try:
-                series = getattr(company, "_series", None)
-                if series is None and hasattr(company, "_finance"):
-                    series = getattr(company._finance, "series", None)
-            except (AttributeError, ValueError):
-                series = None
+            # 예전에는 company._series 를 먼저 봤는데 그 이름은 Company 에 없어 늘
+            # 건너뛰었다. 실제 공급원은 재무 accessor 하나다.
+            series = getattr(getattr(company, "_finance", None), "series", None)
 
             if series:
                 wacc_val, _details = computeCompanyWacc(

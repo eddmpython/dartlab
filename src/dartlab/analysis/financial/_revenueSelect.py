@@ -6,6 +6,7 @@ revenue.py facade + _revenueSegment / _revenueGrowth / _revenueQuality 가 본 �
 
 from __future__ import annotations
 
+import logging
 import re
 
 from dartlab.core.utils.helpers import (
@@ -17,6 +18,8 @@ from dartlab.core.utils.helpers import (
 
 # 영업부문 axisPath/라벨 파싱 SSOT 는 panel(L1) 로 이관 — 본 모듈은 하향 재사용(L2→L1).
 from dartlab.providers.dart.panel.cell import _isRevenueLabel, _segNameFromAxis
+
+log = logging.getLogger(__name__)
 
 _MAX_SEGMENTS = 8
 _MAX_YEARS = 8
@@ -189,15 +192,24 @@ def _selectDocsOpIncome(company, yCols: list[str]) -> dict[str, dict[str, float]
 def _selectDocsSalesOrder(company, keyword: str | None = None):
     """salesOrder에서 항목별 매출 시계열을 추출.
 
+    ``salesOrder`` 는 지금 select topic 에 없다. 그래서 이 함수는 None 대신 ValueError 를
+    올렸고, 부르는 세 자리가 모두 ``if result is None`` 만 보고 있어 예외가 그대로
+    빠져나갔다. 매출 집중도(``calcConcentration``) 가 어느 회사에서나 그 예외로 죽었다.
+    문서가 정한 실패 규약은 None 이므로 그것을 지킨다.
+
+    원문 자체는 ``panel("수주")`` 의 "4. 매출 및 수주상황" 섹션에 남아 있다. 다만 그것은
+    항목x기간 표가 아니라 원시 long 형태라, 여기서 쓰려면 표 파싱이 따로 필요하다. 그
+    추출은 이 수정의 범위가 아니며 지금은 데이터 없음으로 정직하게 처리한다.
+
     Returns
     -------
     SelectResult | None
         select() 결과 객체. 데이터 없으면 None.
     """
-    if keyword:
-        result = company.select("salesOrder", [keyword])
-    else:
-        result = company.select("salesOrder", colList=None)
-    if result is None:
+    try:
+        if keyword:
+            return company.select("salesOrder", [keyword])
+        return company.select("salesOrder", colList=None)
+    except (AttributeError, KeyError, TypeError, ValueError) as exc:
+        log.debug("salesOrder 조회 실패: %s", exc)
         return None
-    return result

@@ -290,7 +290,7 @@ def _forensicsMemo(args: dict[str, Any]) -> ToolResult:
     memo = buildEvidenceForensicsMemo(
         target=target,
         market=str(getattr(company, "market", "KR")),
-        companyName=str(getattr(company, "corpName", getattr(company, "companyName", target))),
+        companyName=str(getattr(company, "corpName", None) or target),
         statements=statements,
         panelTextRows=section_texts,
         events=events,

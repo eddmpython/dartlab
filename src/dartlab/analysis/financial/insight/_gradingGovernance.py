@@ -45,7 +45,9 @@ def _analyzeGovernanceFromSections(company: Company) -> InsightResult:
     """
     import polars as pl
 
-    docs = getattr(company, "docs", None)
+    # 예전 이름은 company.docs 였다. 공개 namespace 정리 때 _docs 로 바뀌었는데 여기가
+    # 안 따라와서 EDGAR 지배구조 분석이 어느 회사에서나 "데이터 없음" 을 돌려주었다.
+    docs = getattr(company, "_docs", None)
     if docs is None:
         return InsightResult("N", "지배구조 데이터 없음")
     sec = getattr(docs, "sections", None)

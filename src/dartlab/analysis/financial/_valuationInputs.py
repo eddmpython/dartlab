@@ -113,12 +113,18 @@ def _getSeriesAndShares(company: Any) -> tuple[dict | None, int | None, str]:
     except (ValueError, KeyError, AttributeError):
         return None, None, getattr(company, "currency", "KRW") or "KRW"
 
+    # 예전에는 company.profile.sharesOutstanding 을 읽었다. profile 은 Company 표면에
+    # 없어서 늘 건너뛰고 아래 시총 나누기 추정으로만 갔다. 공시된 주식수가 있으면 그것이
+    # 먼저다.
     shares = None
-    profile = getattr(company, "profile", None)
-    if profile:
-        sharesVal = getattr(profile, "sharesOutstanding", None)
-        if sharesVal:
-            shares = int(sharesVal)
+    try:
+        df = company.capital()
+        if df is not None and getattr(df, "height", 0):
+            sharesVal = df.row(0, named=True).get("발행주식총수")
+            if sharesVal:
+                shares = int(sharesVal)
+    except (AttributeError, KeyError, OSError, RuntimeError, TypeError, ValueError) as exc:
+        log.debug("발행주식수 조회 실패: %s", exc)
 
     if shares is None:
         price = _fetchPriceContext(company)

@@ -265,9 +265,9 @@ def reverseDcfExhibit(
         return None
     if marketCap is None or marketCap <= 0:
         return None
-    series = getattr(company, "_series", None)
-    if series is None and hasattr(company, "_finance"):
-        series = getattr(company._finance, "series", None)
+    # 예전에는 company._series 를 먼저 봤는데 그 이름은 Company 에 없어 늘 건너뛰었다.
+    # 실제 공급원은 재무 accessor 하나다.
+    series = getattr(getattr(company, "_finance", None), "series", None)
     if not series:
         return None
     try:

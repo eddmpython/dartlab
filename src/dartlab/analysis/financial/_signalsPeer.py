@@ -13,6 +13,7 @@ import math
 from dartlab.analysis.financial._companyLookup import _getSectorKey
 from dartlab.analysis.financial._predictionMath import _fitOLS
 from dartlab.analysis.financial._predictionProbability import _DIRECTION_SCORES, _clamp
+from dartlab.analysis.financial._valuationInputs import _fetchPriceContext
 from dartlab.core.memory import memoizedCalc
 from dartlab.core.polarsUtil import isEmptyDf
 from dartlab.core.utils.calc import safeDiv as _safe
@@ -193,12 +194,12 @@ def _extractPeerFeatures(company) -> dict[str, float] | None:
         if debtRatio is not None:
             features["debtRatio"] = debtRatio
 
-        # lnMarketCap
-        profile = getattr(company, "profile", None)
-        if profile:
-            mc = getattr(profile, "marketCap", None)
-            if mc and mc > 0:
-                features["lnMarketCap"] = math.log(mc)
+        # lnMarketCap. 예전에는 company.profile.marketCap 을 읽었는데 profile 은 Company
+        # 표면에 없어 이 피처가 한 번도 채워지지 않았다. 시총 공급원은 가격 컨텍스트다.
+        price = _fetchPriceContext(company)
+        mc = (price or {}).get("marketCap")
+        if mc and mc > 0:
+            features["lnMarketCap"] = math.log(mc)
 
         # capexRatio, foreignHoldingRatio, revenueGrowthLag: 없으면 기본값
         features.setdefault("capexRatio", 0.0)

@@ -83,7 +83,7 @@ def isFinancialCompany(company: Any) -> bool:
         if kw in grp_str:
             return True
     # 종목명 fallback
-    name = getattr(company, "corpName", "") or getattr(company, "name", "") or ""
+    name = getattr(company, "corpName", "") or ""
     return any(kw in name for kw in ("금융", "은행", "증권", "보험", "카드"))
 
 

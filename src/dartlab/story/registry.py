@@ -1783,7 +1783,7 @@ def buildStory(
         # ── 6막 전환 인과 문장 ──
         from dartlab.story.narrative import buildActTransitions
 
-        story.actTransitions = buildActTransitions(company, b)
+        story.actTransitions = buildActTransitions(company)
 
         # ── 요약 카드 생성 ──
         from dartlab.story.summary import buildSectionSummary, buildSummaryCard

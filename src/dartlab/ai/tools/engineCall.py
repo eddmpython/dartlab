@@ -218,7 +218,7 @@ def _companyShow(plan: dict[str, Any]) -> ToolResult:
             "(plan root 가 아닌 args 안에).",
             error="company_not_resolved",
         )
-    companyName = str(getattr(company, "corpName", None) or getattr(company, "name", None) or "")
+    companyName = str(getattr(company, "corpName", None) or "")
     stockCode = str(getattr(company, "stockCode", None) or target or "")
     table, autoGatherUsed = _fetchTableWithAutoGather(company, topic)
     if not isinstance(table, pl.DataFrame) or table.height == 0:

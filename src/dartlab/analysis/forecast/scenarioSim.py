@@ -541,7 +541,7 @@ def createSimulation(
 
     sim = ScenarioSimulation(
         stockCode=company.stockCode,
-        companyName=getattr(company, "name", company.stockCode),
+        companyName=getattr(company, "corpName", None) or company.stockCode,
         scenarioName=scenarioName,
         baseYear=baseYear,
         targetYear=targetYear,

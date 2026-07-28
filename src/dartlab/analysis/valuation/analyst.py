@@ -253,31 +253,31 @@ def _extractFromCompany(
     shares: int,
     financials: dict | None,
 ) -> tuple[str, str, int, dict | None]:
-    """Company 객체에서 필요한 정보 추출."""
+    """Company 객체에서 필요한 정보 추출.
+
+    회사명은 ``company.name``, 주식수는 ``company.profile.sharesOutstanding`` 을 읽고 있었다.
+    두 이름 다 Company 표면에 없어서 삼성전자를 넣어도 ``('005930', '', 0)`` 이 나왔다.
+    애널리스트 보고서가 회사명 없이, 주당 지표 없이 만들어지고 있었다는 뜻이다.
+    지금은 ``corpName`` 과 ``capital`` 축의 발행주식총수를 쓴다.
+    """
     # 종목코드
     if not stockCode:
-        try:
-            stockCode = getattr(company, "stockCode", "") or getattr(company, "stock_code", "")
-        except AttributeError:
-            pass
+        stockCode = getattr(company, "stockCode", "") or ""
 
     # 회사명
     if not companyName:
-        try:
-            companyName = getattr(company, "name", "") or ""
-        except AttributeError:
-            pass
+        companyName = getattr(company, "corpName", "") or ""
 
     # 발행주식수
     if shares <= 0:
         try:
-            profile = getattr(company, "profile", None)
-            if profile:
-                shares_val = getattr(profile, "sharesOutstanding", 0)
-                if shares_val:
-                    shares = int(shares_val)
-        except (AttributeError, TypeError, ValueError):
-            pass
+            df = company.capital()
+            if df is not None and getattr(df, "height", 0):
+                sharesVal = df.row(0, named=True).get("발행주식총수")
+                if sharesVal:
+                    shares = int(sharesVal)
+        except (AttributeError, KeyError, OSError, RuntimeError, TypeError, ValueError) as exc:
+            log.debug("%s 발행주식수 조회 실패: %s", stockCode or companyName, exc)
 
     # 재무 데이터 — EPS, BPS
     if financials is None:

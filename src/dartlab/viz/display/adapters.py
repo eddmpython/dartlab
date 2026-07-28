@@ -865,8 +865,7 @@ def buildNarrativeBridge(company: Any) -> dict[str, Any]:
     try:
         from dartlab.story import narrative as _narr
 
-        blockMap = getattr(company, "_blockMap", None) or {}
-        tdict = _narr.buildActTransitions(company, blockMap) or {}
+        tdict = _narr.buildActTransitions(company) or {}
         for i in range(1, 6):
             key = f"{i}→{i + 1}"
             text = tdict.get(key, "")
@@ -880,7 +879,9 @@ def buildNarrativeBridge(company: Any) -> dict[str, Any]:
                 }
             )
         try:
-            threads = _narr.detectThreads(company, blockMap) or []
+            # 여기서는 블록맵이 없다. 예전 코드도 company._blockMap 을 읽었지만 그 이름이
+            # Company 에 없어 늘 빈 dict 였다. 블록을 보는 detector 는 그대로 건너뛴다.
+            threads = _narr.detectThreads(company, {}) or []
             summary = _narr.buildCirculationSummary(threads) or ""
         except (AttributeError, ValueError, TypeError):
             summary = ""

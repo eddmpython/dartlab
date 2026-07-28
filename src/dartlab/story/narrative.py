@@ -625,7 +625,7 @@ def detectThreads(company, blockMap, sections: set[str] | None = None) -> list[N
     return threads
 
 
-def buildActTransitions(company, blockMap: dict) -> dict[str, str]:
+def buildActTransitions(company) -> dict[str, str]:
     """6막 전환 시점의 인과 문장 생성.
 
     각 막의 핵심 숫자를 뽑아서 다음 막으로 연결하는 한 문장.

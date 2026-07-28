@@ -153,7 +153,7 @@ def collectSignals(company, *, usePredictionAxis: bool = False) -> ContextSignal
 
     # 3. rank (규모, 성장 순위)
     try:
-        rankInfo = getattr(company, "rank", None) or getattr(company, "rankInfo", None)
+        rankInfo = getattr(company, "rank", None)
         if rankInfo:
             if hasattr(rankInfo, "sizeClass"):
                 signals.sizeClass = rankInfo.sizeClass or "Mid"
@@ -163,24 +163,19 @@ def collectSignals(company, *, usePredictionAxis: bool = False) -> ContextSignal
         pass
 
     # 4. sector 경기민감도
+    #
+    # 예전에는 company.sectorInfo 를 보고 없으면 company.profile.sectorName 을 봤다. 두
+    # 이름 다 Company 표면에 없어서 업종 키가 늘 None 이었고 경기민감도가 한 번도 채워지지
+    # 않았다. 업종 키 해소는 _getSectorKey 가 정본이다.
     try:
+        from dartlab.analysis.financial._companyLookup import _getSectorKey
         from dartlab.synth.scenario import getElasticity as get_elasticity
 
-        sectorKey = None
-        # sectorInfo dict에서 가져오기
-        sectorInfo = getattr(company, "sectorInfo", None)
-        if sectorInfo and isinstance(sectorInfo, dict):
-            sectorKey = sectorInfo.get("sector")
-        # profile.sectorName fallback
-        if not sectorKey:
-            profile = getattr(company, "profile", None)
-            if profile and hasattr(profile, "sectorName"):
-                sectorKey = profile.sectorName
+        sectorKey = _getSectorKey(company)
         if sectorKey:
-            elasticity = get_elasticity(sectorKey)
-            signals.sectorCyclicality = elasticity.cyclicality
-    except (ImportError, AttributeError, TypeError):
-        pass
+            signals.sectorCyclicality = get_elasticity(sectorKey).cyclicality
+    except (ImportError, AttributeError, TypeError) as exc:
+        _log.debug("업종 경기민감도 해소 실패: %s", exc)
 
     # 5. 예측신호 축 enrichment (선택적)
     if usePredictionAxis:

@@ -46,6 +46,14 @@ _SURFACE_FILES = (
 # 표면 파일 밖에서 붙는 이름. 정적 수집이 못 보는 것만 최소로 둔다.
 _EXTRA_SURFACE = frozenset({"_cache", "_hintedKeys"})
 
+# Company 가 아니라 stub/wrapper 에 실려 오는 이름. 부르는 쪽 변수명이 `company` 일 뿐이라
+# 정적으로는 구분이 안 된다. 붙이는 자리를 확인하고 등재한다.
+#
+#   benchmark · benchmarkMode : quant/screen/axTechnical.py 가 wrapper 에 대입
+#   _strategy_start           : quant/screen/axStrategy.py 의 _StubCompany 생성 인자
+#   _storyLensProducts        : story/lensProducts.py 가 같은 함수에서 setattr 로 심는다
+_INJECTED_ATTRS = frozenset({"benchmark", "benchmarkMode", "_strategy_start", "_storyLensProducts"})
+
 # `company` / `comp` 라는 이름이 Company 가 아닌 자리. 여기서 나온 속성은 세지 않는다.
 _NON_COMPANY_ATTRS = frozenset(
     {
@@ -99,6 +107,8 @@ class _Visitor(ast.NodeVisitor):
 
     def _record(self, attr: str, lineno: int) -> None:
         if attr.startswith("__") or attr in self.surface or attr in _NON_COMPANY_ATTRS:
+            return
+        if attr in _INJECTED_ATTRS:
             return
         self.hits.append((attr, self.rel, lineno))
 

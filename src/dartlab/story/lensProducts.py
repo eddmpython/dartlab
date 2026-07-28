@@ -87,7 +87,7 @@ def collectLensProducts(
         status = str(product.get("status") or "unknown")
         statusCounts[status] = statusCounts.get(status, 0) + 1
 
-    target = str(getattr(company, "stockCode", "") or getattr(company, "code", "") or "")
+    target = str(getattr(company, "stockCode", "") or "")
     market = str(getattr(company, "market", "") or "").upper()
     tensions = classifyLensTensions(products)
     return {
