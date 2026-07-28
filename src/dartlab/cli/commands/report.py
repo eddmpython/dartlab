@@ -70,70 +70,127 @@ def run(args) -> int:
     return 0
 
 
-def _buildReport(company, name: str, code: str, include: set | None) -> str:
-    """Company 데이터를 수집하여 Markdown 보고서를 조립한다."""
-    import polars as pl
+_FETCH_ERRORS = (AttributeError, KeyError, TypeError, ValueError)
 
+
+def _overviewText(company, limit: int = 2000) -> str:
+    """회사 개요 절의 본문을 평문으로 뽑는다. 없으면 빈 문자열."""
+    import re
+
+    try:
+        df = company.panel("회사의 개요")
+    except _FETCH_ERRORS:
+        return ""
+    if df is None or getattr(df, "height", 0) == 0:
+        return ""
+    periodCols = [c for c in df.columns if re.fullmatch(r"\d{4}(Q[1-4])?", c)]
+    if not periodCols:
+        return ""
+    latest = sorted(periodCols, reverse=True)[0]
+    for value in df[latest].drop_nulls().to_list():
+        plain = re.sub(r"<[^>]+>", " ", str(value))
+        plain = re.sub(r"\s+", " ", plain).strip()
+        if len(plain) > 50:
+            return plain[:limit]
+    return ""
+
+
+def _gradeRows(company) -> list[tuple[str, str]]:
+    """종합평가 축의 영역별 등급. 없으면 빈 목록."""
+    try:
+        verdict = company.analysis("financial", "종합평가")
+    except _FETCH_ERRORS:
+        return []
+    if not isinstance(verdict, dict):
+        return []
+    items = (verdict.get("scorecard") or {}).get("items") or []
+    return [(str(i.get("area")), str(i.get("grade"))) for i in items if i.get("area") and i.get("grade")]
+
+
+def _buildReport(company, name: str, code: str, include: set | None) -> str:
+    """Company 데이터를 수집하여 Markdown 보고서를 조립한다.
+
+    호출은 전부 공개 계약(`panel` · `analysis`)으로만 한다. 예전에는 `company.BS` ·
+    `company.ratios` · `company.insights` 처럼 계약에서 빠진 이름을 불렀고, 그 실패를
+    `getattr(..., None)` 과 넓은 except 가 삼켜서 절 제목만 남고 본문이 통째로 비었다.
+    보고서 네 절이 전부 빈 채로 출력되고 있었는데 아무 데서도 안 잡혔다.
+    """
     parts: list[str] = [f"# {name} ({code}) 분석 보고서\n"]
 
-    # ── 기업 개요 ──
     if include is None or "overview" in include:
         parts.append("## 기업 개요\n")
-        try:
-            overview = company.panel("companyOverview")
-            if isinstance(overview, pl.DataFrame) and overview.height > 0:
-                for row in overview.iter_rows(named=True):
-                    text = row.get("text") or row.get("content") or ""
-                    if text:
-                        parts.append(str(text)[:2000])
-                        break
-            elif isinstance(overview, str):
-                parts.append(overview[:2000])
-        except (AttributeError, KeyError, ValueError):
-            parts.append("기업 개요 데이터가 없습니다.\n")
+        parts.append(_overviewText(company) or "기업 개요 데이터가 없습니다.")
 
-    # ── 재무제표 ──
     if include is None or "finance" in include:
         parts.append("\n## 재무제표\n")
-        for stmt_name, label in [("BS", "재무상태표"), ("IS", "손익계산서"), ("CF", "현금흐름표")]:
+        wrote = False
+        for axis, label in (("BS", "재무상태표"), ("IS", "손익계산서"), ("CF", "현금흐름표")):
             try:
-                df = getattr(company, stmt_name, None)
-                if isinstance(df, pl.DataFrame) and df.height > 0:
-                    parts.append(f"### {label}\n")
-                    # 최근 4개 기간만
-                    cols = df.columns[:1] + [c for c in df.columns[1:5]]
-                    preview = df.select(cols).head(15)
-                    parts.append(_dfToMd(preview))
-            except (AttributeError, KeyError, ValueError):
-                pass
+                df = company.panel(axis)
+            except _FETCH_ERRORS:
+                continue
+            if df is None or getattr(df, "height", 0) == 0:
+                continue
+            parts.append(f"### {label}\n")
+            parts.append(_dfToMd(df.select(df.columns[:5]).head(15)))
+            wrote = True
+        if not wrote:
+            parts.append("재무제표 데이터가 없습니다.")
 
-    # ── 재무비율 ──
     if include is None or "ratios" in include:
         parts.append("\n## 재무비율\n")
-        try:
-            ratios = getattr(company, "ratios", None)
-            if isinstance(ratios, pl.DataFrame) and ratios.height > 0:
-                parts.append(_dfToMd(ratios.head(20)))
-        except (AttributeError, KeyError, ValueError):
-            parts.append("재무비율 데이터가 없습니다.\n")
+        wrote = False
+        for axis in ("수익성", "안정성", "효율성"):
+            try:
+                result = company.analysis("financial", axis)
+            except _FETCH_ERRORS:
+                continue
+            if not isinstance(result, dict) or not result:
+                continue
+            parts.append(f"### {axis}\n")
+            parts.append(_ratioLines(result))
+            wrote = True
+        if not wrote:
+            parts.append("재무비율 데이터가 없습니다.")
 
-    # ── 인사이트 ──
     if include is None or "insights" in include:
         parts.append("\n## 인사이트 등급\n")
-        try:
-            insights = getattr(company, "insights", None)
-            if insights is not None:
-                grades = insights.grades() if callable(getattr(insights, "grades", None)) else {}
-                if grades:
-                    parts.append("| 영역 | 등급 |")
-                    parts.append("| --- | --- |")
-                    for area, grade in grades.items():
-                        parts.append(f"| {area} | {grade} |")
-        except (AttributeError, KeyError, ValueError):
-            parts.append("인사이트 데이터가 없습니다.\n")
+        rows = _gradeRows(company)
+        if rows:
+            parts.append("| 영역 | 등급 |")
+            parts.append("| --- | --- |")
+            parts.extend(f"| {area} | {grade} |" for area, grade in rows)
+        else:
+            parts.append("인사이트 데이터가 없습니다.")
 
     parts.append("")
     return "\n".join(parts)
+
+
+def _ratioLines(result: dict, limit: int = 6) -> str:
+    """분석 축 결과 dict 에서 최근 시점 지표를 한 줄씩 뽑는다."""
+    lines: list[str] = []
+    for block, payload in result.items():
+        if not isinstance(payload, dict):
+            continue
+        history = payload.get("history")
+        if not isinstance(history, list) or not history:
+            continue
+        # 마지막 항목이 곧 최신은 아니다. 블록마다 정렬이 달라 2018 과 2025 가 섞여 나온다.
+        entries = [h for h in history if isinstance(h, dict)]
+        if not entries:
+            continue
+        latest = max(entries, key=lambda h: str(h.get("period") or ""))
+        shown = []
+        for key, value in latest.items():
+            if key == "period" or value is None or isinstance(value, (dict, list)):
+                continue
+            shown.append(f"{key} {value:,.1f}" if isinstance(value, (int, float)) else f"{key} {value}")
+            if len(shown) >= limit:
+                break
+        if shown:
+            lines.append(f"- **{block}** ({latest.get('period', '')}): " + ", ".join(shown))
+    return "\n".join(lines) + "\n" if lines else ""
 
 
 def _dfToMd(df) -> str:

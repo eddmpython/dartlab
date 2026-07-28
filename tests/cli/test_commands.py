@@ -268,6 +268,54 @@ def test_mcp_import():
 # ── 16. report ──
 
 
+class _ContractCompany:
+    """공개 계약(`panel` · `analysis`) 만 구현한 Company 대역."""
+
+    corpName = "테스트기업"
+    stockCode = "999999"
+
+    def panel(self, axis):
+        import polars as pl
+
+        if axis == "회사의 개요":
+            return pl.DataFrame({"sectionLeaf": ["개요"], "2025Q4": ["<P>" + "테스트 본문 " * 12 + "</P>"]})
+        if axis in ("BS", "IS", "CF"):
+            return pl.DataFrame({"snakeId": ["total_assets"], "항목": ["자산총계"], "2025Q4": [1000.0]})
+        return None
+
+    def analysis(self, engine, axis):
+        if axis == "종합평가":
+            return {"scorecard": {"items": [{"area": "수익성", "grade": "A"}]}}
+        return {"trend": {"history": [{"period": "2024", "roe": 5.0}, {"period": "2025", "roe": 7.0}]}}
+
+
+def test_buildReport_fillsEverySection():
+    """보고서 네 절이 전부 본문을 갖는다.
+
+    예전에는 `company.BS` · `company.ratios` · `company.insights` 처럼 계약에서 빠진 이름을
+    불렀고 그 실패를 넓은 except 가 삼켜서, 절 제목만 남고 본문이 통째로 비었다. 기존
+    테스트가 `_buildReport` 를 통째로 patch 해 버려서 그 사실이 안 잡혔다.
+    """
+    from dartlab.cli.commands.report import _buildReport
+
+    report = _buildReport(_ContractCompany(), "테스트기업", "999999", None)
+
+    assert "데이터가 없습니다" not in report, f"빈 절이 있다:\n{report}"
+    for header in ("## 기업 개요", "## 재무제표", "## 재무비율", "## 인사이트 등급"):
+        assert header in report
+    assert "자산총계" in report, "재무제표 본문 없음"
+    assert "| 수익성 | A |" in report, "인사이트 등급 표 없음"
+
+
+def test_buildReport_ratioLinesPickLatestPeriod():
+    """지표 줄은 시점 최대값을 고른다 (목록 마지막이 최신이라는 보장이 없다)."""
+    from dartlab.cli.commands.report import _buildReport
+
+    report = _buildReport(_ContractCompany(), "테스트기업", "999999", {"ratios"})
+
+    assert "(2025)" in report and "(2024)" not in report
+
+
 def test_report_stdout(monkeypatch, capsys):
     _patch_dartlab(monkeypatch)
     with patch("dartlab.cli.commands.report._buildReport", return_value="# Report\n"):
