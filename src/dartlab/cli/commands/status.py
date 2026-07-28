@@ -4,6 +4,9 @@ from __future__ import annotations
 
 from dartlab.cli.context import PROVIDERS
 from dartlab.cli.services.runtime import configureDartlab
+from dartlab.core.logger import getLogger
+
+_log = getLogger(__name__)
 
 
 def _providerStatus(providerName: str) -> dict:
@@ -22,7 +25,8 @@ def _providerStatus(providerName: str) -> dict:
     available = bool(_checkProviderAvailable(providerName))
     try:
         model = resolveDefaultModel(providerName, allowFetch=False) or "-"
-    except (AttributeError, KeyError, OSError, TypeError, ValueError):
+    except (AttributeError, KeyError, OSError, TypeError, ValueError) as exc:
+        _log.debug("%s 기본 모델 해소 실패: %s", providerName, exc)
         model = "-"
     status: dict = {"available": available, "model": model}
     if providerName == "ollama":
@@ -30,8 +34,8 @@ def _providerStatus(providerName: str) -> dict:
             from dartlab.ai.providers.support.ollamaSetup import detectOllama
 
             status["ollama"] = detectOllama()
-        except (ImportError, AttributeError, OSError, RuntimeError):
-            pass
+        except (ImportError, AttributeError, OSError, RuntimeError) as exc:
+            _log.debug("ollama 상태 조회 실패: %s", exc)
     return status
 
 

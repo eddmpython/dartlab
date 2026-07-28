@@ -8,7 +8,9 @@ import polars as pl
 
 from dartlab.cli.services.errors import CLIError
 from dartlab.cli.services.runtime import configureDartlab
+from dartlab.core.logger import getLogger
 
+_log = getLogger(__name__)
 _STATEMENTS = ("BS", "IS", "CIS", "CF", "SCE")
 _PERIOD_RE = re.compile(r"\d{4}(Q[1-4])?")
 
@@ -51,7 +53,8 @@ def run(args) -> int:
     # 존재하지 않아 AttributeError 로 죽었다. 제목 두 줄만 찍히고 표가 안 나왔다.
     try:
         value = company.panel(args.name)
-    except (AttributeError, KeyError, TypeError, ValueError):
+    except (AttributeError, KeyError, TypeError, ValueError) as exc:
+        _log.debug("재무제표 %s 조회 실패: %s", args.name, exc)
         value = None
     if value is None:
         console.print(f"[dim]{company.corpName} {label} 데이터가 없습니다.[/]")
