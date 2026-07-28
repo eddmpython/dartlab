@@ -404,12 +404,18 @@ class TestIntegrationReal(unittest.TestCase):
         self.assertGreater(len(related), 0)
 
     def test_scan_payload_real(self):
+        """삼성전자는 scan 4 축이 전부 채워진다.
+
+        예전 기대치는 11 영역 중 5 개 이상이었다. 그중 7 개는 사라진 `Company.insights`
+        accessor 에 달려 있어 영원히 0 개였고, 그 사실이 호출부의 넓은 except 에 가려져
+        있었다. 죽은 가지를 걷어낸 지금 최대치는 scan 4 축이라, 그 4 축이 전부 차는지를
+        본다. 개수 하한보다 이쪽이 더 조인 기대치다.
+        """
         from dartlab.scan.builders.kr.payload import buildUnifiedPayload
 
         unified = buildUnifiedPayload(self.c)
-        # 삼성전자는 최소 5개 이상 영역 유효
-        valid = sum(1 for v in unified.values() if v is not None)
-        self.assertGreaterEqual(valid, 5)
+        empty = sorted(k for k, v in unified.items() if v is None)
+        self.assertEqual(empty, [], f"삼성전자인데 빈 축이 있다: {empty}")
 
     def test_scan_position_real(self):
         from dartlab.scan.builders.kr.snapshot import getScanPosition

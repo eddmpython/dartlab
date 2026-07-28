@@ -1,8 +1,8 @@
 """scan 4축 → InsightResult 호환 페이로드 변환.
 
-scan 엔진(governance/workforce/capital/debt) 결과를 insight 7영역과
-동일한 dict 구조로 변환하여 11영역 통합 대시보드를 구성한다.
-075-001 실험으로 검증 (3사 11/11영역 유효, 3.2~4.0KB, null 0개).
+scan 엔진(governance/workforce/capital/debt) 결과를 InsightResult 와
+동일한 dict 구조로 변환해 대시보드 4 축을 구성한다.
+축 하나가 실패해도 나머지는 그대로 나온다 (축마다 격리).
 
 사용법::
 
@@ -18,7 +18,7 @@ from __future__ import annotations
 
 
 def governanceToInsight(row: dict) -> dict | None:
-    """governance scan 1 행 → InsightResult 호환 dict (대시보드 11 영역의 1 영역).
+    """governance scan 1 행 → InsightResult 호환 dict (대시보드 4 축의 1 축).
 
     Parameters
     ----------
@@ -51,9 +51,9 @@ def governanceToInsight(row: dict) -> dict | None:
           / 감사의견 임계 분기로 risks · opportunities 자동 생성. summary 한 줄 narrative.
 
     AIContext:
-        ``buildScanPayload`` 호출 시 4 axis 중 첫 번째 변환. 11 영역 통합 대시보드 (insight 7 +
-        scan 4) 에서 "지배구조" 카드 본문을 채우는 source. AI 가 narrative 합성 시 details +
-        risks·opportunities 텍스트를 그대로 인용 가능.
+        ``buildScanPayload`` 호출 시 4 axis 중 첫 번째 변환. 4 축 대시보드에서 "지배구조" 카드
+        본문을 채우는 source. AI 가 narrative 합성 시 details + risks·opportunities 텍스트를
+        그대로 인용 가능.
 
     Guide:
         - 임계 정책: 최대주주 > 50 % (warning) · < 20 % (warning) · 사외이사 ≥ 40 % (positive) ·
@@ -74,7 +74,7 @@ def governanceToInsight(row: dict) -> dict | None:
     SeeAlso:
         - :func:`workforceToInsight` · :func:`capitalToInsight` · :func:`debtToInsight` — 동료 변환
         - :func:`buildScanPayload` — 4 ToInsight 통합 호출
-        - :func:`buildUnifiedPayload` — scan 4 + insight 7 통합 11 영역
+        - :func:`buildUnifiedPayload` . scan 4 축 대시보드 payload
     """
     grade = row.get("등급")
     score = row.get("총점")
@@ -125,7 +125,7 @@ def governanceToInsight(row: dict) -> dict | None:
 
 
 def workforceToInsight(row: dict) -> dict | None:
-    """workforce scan 1 행 → InsightResult 호환 dict (대시보드 11 영역의 1 영역).
+    """workforce scan 1 행 → InsightResult 호환 dict (대시보드 4 축의 1 축).
 
     Parameters
     ----------
@@ -342,7 +342,7 @@ def capitalToInsight(row: dict) -> dict | None:
 
 
 def debtToInsight(row: dict) -> dict | None:
-    """debt scan 1 행 → InsightResult 호환 dict (대시보드 11 영역의 1 영역).
+    """debt scan 1 행 → InsightResult 호환 dict (대시보드 4 축의 1 축).
 
     Parameters
     ----------
@@ -479,8 +479,8 @@ def buildScanPayload(company) -> dict[str, dict | None]:
         - 각 axis 호출 실패는 isolation — 한 axis 가 fail 해도 다른 3 axis 는 정상 반환.
 
     AIContext:
-        Server API (Company 페이로드 엔드포인트) 가 호출하는 메인 진입점. ``buildUnifiedPayload``
-        가 본 함수 결과 + insight 7 영역을 합쳐 대시보드 11 영역 통합 페이로드를 만든다.
+        Server API (Company 페이로드 엔드포인트) 가 호출하는 메인 진입점.
+        ``buildUnifiedPayload`` 가 본 함수를 그대로 위임한다.
 
     Guide:
         - company 가 axis method 없으면 silent None (NotImplemented 대신 빈 슬롯).
@@ -500,7 +500,7 @@ def buildScanPayload(company) -> dict[str, dict | None]:
     SeeAlso:
         - :func:`governanceToInsight` · :func:`workforceToInsight` · :func:`capitalToInsight` ·
           :func:`debtToInsight`
-        - :func:`buildUnifiedPayload` — 본 함수 결과를 insight 7 + scan 4 = 11 영역 통합 페이로드로
+        - :func:`buildUnifiedPayload` . 본 함수를 그대로 위임하는 대시보드 진입점
     """
     result: dict[str, dict | None] = {}
     for axis, converter in _SCAN_CONVERTERS.items():
@@ -521,7 +521,15 @@ def buildScanPayload(company) -> dict[str, dict | None]:
 
 
 def buildUnifiedPayload(company) -> dict[str, dict | None]:
-    """insight 7 영역 + scan 4 축 = 대시보드 11 영역 통합 payload (3.2~4.0 KB, null 0).
+    """scan 4 축 대시보드 payload. 현재는 ``buildScanPayload`` 와 같은 것을 돌려준다.
+
+    예전에는 여기서 ``Company.insights`` 의 7 영역을 함께 붙여 11 영역을 만들었다. 그 accessor
+    는 사라졌는데 호출부가 `except (AttributeError, ...)` 로 통째로 삼키고 있어서, 7 영역이
+    조용히 0 개가 된 채로 남았다. 문서는 11 키를 약속하는데 실제로는 4 키만 나왔고 그 사실이
+    어디에도 드러나지 않았다. 죽은 가지를 걷어내고 실제로 주는 것만 적는다.
+
+    같은 능력이 필요하면 계약 호출로 얻는다. 재무 분석 영역은 ``c.analysis("financial", 축)``
+    이고 축 목록은 ``dartlab.analysis("financial")`` 로 본다.
 
     Parameters
     ----------
@@ -531,21 +539,14 @@ def buildUnifiedPayload(company) -> dict[str, dict | None]:
     Returns
     -------
     dict[str, dict | None]
-        performance : dict | None — 실적 insight
-        profitability : dict | None — 수익성 insight
-        health : dict | None — 재무건전성 insight
-        cashflow : dict | None — 현금흐름 insight
-        governance : dict | None — 지배구조 insight (insight 기준)
-        risk : dict | None — 리스크 insight
-        opportunity : dict | None — 기회 insight
-        scanGovernance : dict | None — scan 지배구조 (insight와 키 충돌 시)
-        workforce : dict | None — 인력 insight
-        capital : dict | None — 주주환원 insight
-        debt : dict | None — 부채구조 insight
+        governance : dict | None. 지배구조
+        workforce : dict | None. 인력
+        capital : dict | None. 주주환원
+        debt : dict | None. 부채구조
 
     Raises
     ------
-    없음 — insight 및 scan 호출 실패는 내부 흡수.
+    없음. scan 축 호출 실패는 축마다 격리되어 None 으로 떨어진다.
 
     Examples
     --------
@@ -553,77 +554,33 @@ def buildUnifiedPayload(company) -> dict[str, dict | None]:
     >>> import dartlab
     >>> c = dartlab.Company("005930")
     >>> payload = buildUnifiedPayload(c)
-    >>> set(payload.keys()) >= {"profitability", "governance", "workforce"}
+    >>> set(payload.keys()) == {"governance", "workforce", "capital", "debt"}
     True
 
     Capabilities:
-        - insight 7 영역 (performance / profitability / health / cashflow / governance / risk
-          / opportunity) + scan 4 축 (workforce / capital / debt / scanGovernance) 통합.
-        - 075-001 실험에서 3 사 11/11 영역 유효 + 3.2~4.0 KB 페이로드 + null 0 검증.
-        - governance 키 충돌 시 ``scanGovernance`` 로 자동 rename.
+        - scan 4 축 (governance / workforce / capital / debt) 을 InsightResult 호환 dict 로 통합.
+        - 축 하나가 실패해도 나머지 3 축은 정상 반환 (키는 항상 4 개).
 
     AIContext:
         Server API 대시보드 엔드포인트 (e.g. ``/api/company/{code}/payload``) 의 메인 출력.
-        프론트 대시보드가 11 카드를 그릴 source. AI agent 가 1 사 분석 시 본 페이로드만 받아도
-        주요 11 영역 종합 narrative 합성 가능.
+        프론트 대시보드가 카드를 그릴 source.
 
     Guide:
-        - scan 4 축 중 일부가 None 이어도 dict 키는 항상 11 개 (front-end 안전성).
-        - insight 7 영역은 ``Company.insights`` 의존 — 미구현 환경에서 7 영역 모두 빠지지만
-          scan 4 만으로도 부분 응답.
+        - 축이 None 이어도 dict 키는 항상 4 개 (front-end 안전성).
+        - 이름은 옛 통합 시절 것이 남아 있다. 호출부 호환 때문에 유지한다.
 
     When:
         Server API 페이로드 빌드 시. Story builder 에서 다영역 비교 narrative 추출 시.
 
     How:
-        (1) ``company.insights.{area}`` 7 영역 추출 (실패 silent) → (2) ``buildScanPayload``
-        (4 axis 통합) → (3) governance 키 collision 처리 → (4) 11 키 unified dict 반환.
+        ``buildScanPayload`` 위임.
 
     Requires:
-        - ``Company.insights`` accessor (선택)
         - ``Company.{governance, workforce, capital, debt}`` 메서드
         - :func:`buildScanPayload`
 
     SeeAlso:
-        - :func:`buildScanPayload` — scan 4 axis 통합
-        - :mod:`dartlab.providers.dart.company` — 본 함수 호출자
+        - :func:`buildScanPayload`. scan 4 axis 통합
+        - :mod:`dartlab.providers.dart.company`. 본 함수 호출자
     """
-    # insight 7영역
-    insight_areas: dict[str, dict] = {}
-    try:
-        insights = company.insights
-        if insights and hasattr(insights, "grades"):
-            for area_name in (
-                "performance",
-                "profitability",
-                "health",
-                "cashflow",
-                "governance",
-                "risk",
-                "opportunity",
-            ):
-                area = getattr(insights, area_name, None)
-                if area:
-                    insight_areas[area_name] = {
-                        "grade": area.grade,
-                        "summary": area.summary,
-                        "details": area.details,
-                        "risks": [{"level": r.level, "category": r.category, "text": r.text} for r in area.risks],
-                        "opportunities": [
-                            {"level": o.level, "category": o.category, "text": o.text} for o in area.opportunities
-                        ],
-                    }
-    except (AttributeError, FileNotFoundError, KeyError, RuntimeError, ValueError):
-        pass
-
-    # scan 4축
-    scan_areas = buildScanPayload(company)
-
-    # 통합 (insight.governance와 scan.governance 충돌 -> scanGovernance)
-    unified: dict[str, dict | None] = {}
-    unified.update(insight_areas)
-    for axis, data in scan_areas.items():
-        key = f"scan{axis[:1].upper()}{axis[1:]}" if axis in insight_areas else axis
-        unified[key] = data
-
-    return unified
+    return buildScanPayload(company)
