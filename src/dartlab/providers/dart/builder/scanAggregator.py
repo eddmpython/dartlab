@@ -18,6 +18,7 @@ Module-level builders:
 
 from __future__ import annotations
 
+from functools import lru_cache
 from typing import TYPE_CHECKING
 
 import polars as pl
@@ -35,21 +36,76 @@ if TYPE_CHECKING:
 # 5 질문 batch audit 의 ``tool debt failed: '_debt'`` race window fix.
 
 
+@lru_cache(maxsize=1)
+def _marketGraph() -> tuple[dict, dict]:
+    """시장 전체 출자 관계 그래프 (data, full). 프로세스 안에서 한 번만 만든다.
+
+    입력이 회사와 무관한 시장 단위 파이프라인이고 실측 737 초가 걸린다 (노드 1,289,
+    순환출자 49). 회사별로 다시 만들 이유가 없다. 로컬 parquet 를 읽어 만드는 순수
+    계산이라 결과를 프로세스 안에 들고 있어도 되며 굽는 산출물은 남기지 않는다.
+    """
+    import importlib
+
+    network = importlib.import_module("dartlab.scan.network")
+    data = network.buildGraph(verbose=False)
+    return data, network.exportFull(data)
+
+
 def _ensureNetwork(company: Company) -> tuple[dict, dict] | None:
-    """network 파이프라인 캐싱 → (data, full)."""
+    """network 파이프라인 캐싱 → (data, full).
+
+    Company 캐시는 같은 인스턴스 안에서의 재조회를 막고, 그 아래 프로세스 캐시가 회사가
+    바뀔 때의 재빌드를 막는다. 예전에는 앞엣것만 있어 회사마다 12 분씩 다시 만들었다.
+    """
     data = company._cache.get("_network_data", _CACHE_MISSING)
     full = company._cache.get("_network_full", _CACHE_MISSING)
     if data is _CACHE_MISSING or full is _CACHE_MISSING:
-        import importlib
-
-        _network = importlib.import_module("dartlab.scan.network")
-        buildGraph = _network.buildGraph
-        exportFull = _network.exportFull
-        data = buildGraph(verbose=False)
-        full = exportFull(data)
+        data, full = _marketGraph()
         company._cache["_network_data"] = data
         company._cache["_network_full"] = full
     return data, full
+
+
+def buildNetworkEgo(company: Company, *, hops: int = 1) -> dict | None:
+    """회사 중심 ego 관계망을 직렬화 가능한 dict 로 낸다. 그래프가 없으면 None.
+
+    ``_ensureNetwork`` 는 이 모듈 안쪽 캐시 헬퍼다. 예전에는 Company 메서드였고 서버
+    엔드포인트가 ``company._ensureNetwork()`` 로 불렀는데, 모듈 함수로 옮겨진 뒤 그 자리가
+    안 고쳐졌다. 서버는 AttributeError 를 흡수해 모든 회사에 관계망 없음을 돌려주었다.
+    그래프 쌍의 주인이 여기이므로 이름 있는 진입점을 두어 소비자가 안쪽을 짚지 않게 한다.
+
+    Capabilities:
+        - 그래프 prebuild 캐시 후 exportEgo 로 노드/엣지 dict 산출.
+
+    Args:
+        company: Company 인스턴스.
+        hops: ego 깊이. 기본 1.
+
+    Returns:
+        ``exportEgo`` 결과 dict. 그래프 prebuild 가 없으면 ``None``.
+
+    Raises:
+        없음이 보장되지는 않는다. 그래프 빌드 예외는 그대로 올라간다.
+
+    Example:
+        >>> buildNetworkEgo(company, hops=2) is None or True
+        True
+
+    SeeAlso:
+        - :func:`dartlab.scan.network.export.exportEgo` : ego 뷰 본체.
+        - :func:`buildScanNetwork` : 같은 그래프의 사람용 view.
+
+    AIContext:
+        관계망 질문의 JSON 응답 source. 서버 ``/api/company/{code}/network`` 가 소비.
+    """
+    import importlib
+
+    result = _ensureNetwork(company)
+    if result is None:
+        return None
+    data, full = result
+    exportEgo = importlib.import_module("dartlab.scan.network").exportEgo
+    return exportEgo(data, full, company.stockCode, hops=hops)
 
 
 def _ensureGovernance(company: Company) -> pl.DataFrame | None:

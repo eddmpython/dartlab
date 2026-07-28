@@ -741,14 +741,14 @@ def apiCompanyNetwork(code: str, hops: int = 1):
         raise HTTPException(status_code=404, detail=guideDetail(exc)) from exc
 
     try:
-        result = company._ensureNetwork()
-        if result is None:
+        # 예전에는 company._ensureNetwork() 였다. 그 헬퍼는 모듈 함수로 옮겨졌고 Company 에
+        # 남지 않아 AttributeError 가 났는데, 아래 except 가 그것을 흡수해 모든 회사가
+        # available False 로 나왔다.
+        from dartlab.providers.dart.builder.scanAggregator import buildNetworkEgo
+
+        ego = buildNetworkEgo(company, hops=hops)
+        if ego is None:
             return {"stockCode": company.stockCode, "corpName": company.corpName, "available": False}
-        data, full = result
-
-        from dartlab.scan.network.export import exportEgo
-
-        ego = exportEgo(data, full, company.stockCode, hops=hops)
         return {
             "stockCode": company.stockCode,
             "corpName": company.corpName,
