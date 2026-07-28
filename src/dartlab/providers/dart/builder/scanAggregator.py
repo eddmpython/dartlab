@@ -108,48 +108,53 @@ def buildNetworkEgo(company: Company, *, hops: int = 1) -> dict | None:
     return exportEgo(data, full, company.stockCode, hops=hops)
 
 
-def _ensureGovernance(company: Company) -> pl.DataFrame | None:
-    val = company._cache.get("_governance", _CACHE_MISSING)
-    if val is _CACHE_MISSING:
-        import importlib
+_SCAN_AXES: dict[str, tuple[str, str]] = {
+    "governance": ("dartlab.scan.governance", "scanGovernance"),
+    "workforce": ("dartlab.scan.workforce", "scanWorkforce"),
+    "capital": ("dartlab.scan.capital", "scanCapital"),
+    "debt": ("dartlab.scan.debt", "scanDebt"),
+}
 
-        scanGovernance = importlib.import_module("dartlab.scan.governance").scanGovernance
-        val = scanGovernance(verbose=False)
-        company._cache["_governance"] = val
+
+@lru_cache(maxsize=len(_SCAN_AXES))
+def _marketScan(axis: str) -> pl.DataFrame | None:
+    """축 하나의 전종목 스캔 결과. 프로세스 안에서 축마다 한 번만 만든다.
+
+    네 축 모두 회사 인자를 받지 않는 시장 단위 스캔이다. 결과를 회사별로 걸러 쓸 뿐인데
+    Company 인스턴스 캐시에만 담고 있어서 회사가 바뀌면 시장 전체를 다시 훑었다. capital
+    축은 실측 회사당 8 초라, 주당 지표가 필요한 밸류에이션 입력이 회사마다 그 값을 물었다.
+    로컬 parquet 를 읽는 순수 계산이라 프로세스 안에 들고 있어도 되며 굽는 산출물은 없다.
+    """
+    import importlib
+
+    module, fn = _SCAN_AXES[axis]
+    return getattr(importlib.import_module(module), fn)(verbose=False)
+
+
+def _ensureScanAxis(company: Company, axis: str) -> pl.DataFrame | None:
+    """축 스캔을 Company 캐시 뒤에 프로세스 캐시를 두고 가져온다."""
+    key = f"_{axis}"
+    val = company._cache.get(key, _CACHE_MISSING)
+    if val is _CACHE_MISSING:
+        val = _marketScan(axis)
+        company._cache[key] = val
     return val
+
+
+def _ensureGovernance(company: Company) -> pl.DataFrame | None:
+    return _ensureScanAxis(company, "governance")
 
 
 def _ensureWorkforce(company: Company) -> pl.DataFrame | None:
-    val = company._cache.get("_workforce", _CACHE_MISSING)
-    if val is _CACHE_MISSING:
-        import importlib
-
-        scanWorkforce = importlib.import_module("dartlab.scan.workforce").scanWorkforce
-        val = scanWorkforce(verbose=False)
-        company._cache["_workforce"] = val
-    return val
+    return _ensureScanAxis(company, "workforce")
 
 
 def _ensureCapital(company: Company) -> pl.DataFrame | None:
-    val = company._cache.get("_capital", _CACHE_MISSING)
-    if val is _CACHE_MISSING:
-        import importlib
-
-        scanCapital = importlib.import_module("dartlab.scan.capital").scanCapital
-        val = scanCapital(verbose=False)
-        company._cache["_capital"] = val
-    return val
+    return _ensureScanAxis(company, "capital")
 
 
 def _ensureDebt(company: Company) -> pl.DataFrame | None:
-    val = company._cache.get("_debt", _CACHE_MISSING)
-    if val is _CACHE_MISSING:
-        import importlib
-
-        scanDebt = importlib.import_module("dartlab.scan.debt").scanDebt
-        val = scanDebt(verbose=False)
-        company._cache["_debt"] = val
-    return val
+    return _ensureScanAxis(company, "debt")
 
 
 # ── view 공통 헬퍼 ─────────────────────────────────────────────────
