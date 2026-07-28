@@ -6,12 +6,12 @@ import calendar
 import json
 from collections.abc import Sequence
 from dataclasses import dataclass
-from datetime import date
 from hashlib import sha256
 from typing import Any
 
 import polars as pl
 
+from dartlab.analysis.financial._filingEvidence import _dateText
 from dartlab.providers.dart.finance.frameTimeseries import buildTimeseriesFromFrame
 
 DART_FINANCIAL_FEATURE_NORMALIZATION_HASH = sha256(b"dartlab.dart-quarterly-financial-state-adapter.v1").hexdigest()
@@ -137,17 +137,6 @@ DART_FINANCIAL_FEATURE_MAPPINGS: tuple[DartFinancialFeatureMapping, ...] = (
         None,
     ),
 )
-
-
-def _dateText(value: str, label: str) -> str:
-    text = str(value).replace("-", "")
-    if len(text) != 8 or not text.isdigit():
-        raise ValueError(f"invalid {label}: {value}")
-    try:
-        date(int(text[:4]), int(text[4:6]), int(text[6:8]))
-    except ValueError as error:
-        raise ValueError(f"invalid {label}: {value}") from error
-    return text
 
 
 def _canonicalHash(value: Any) -> str:

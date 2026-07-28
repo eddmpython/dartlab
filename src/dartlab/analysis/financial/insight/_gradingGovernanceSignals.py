@@ -8,28 +8,10 @@ details/risks/opps 에 문장을 더하고 score/maxScore 를 올린다" 는 같
 
 from __future__ import annotations
 
+from dartlab.analysis.financial._seriesMath import _latestNotNone
 from dartlab.analysis.financial.insight.types import Flag
 
 _BIG4_KEYWORDS = ["삼일", "PwC", "삼정", "KPMG", "한영", "EY", "안진", "Deloitte"]
-
-
-def _latestNotNone(values):
-    """뒤에서부터 첫 non-None 값. 없으면 None.
-
-    Parameters
-    ----------
-    values : list
-        시계열 값 목록.
-
-    Returns
-    -------
-    Any | None
-        가장 최근 non-None 값.
-    """
-    for v in reversed(values):
-        if v is not None:
-            return v
-    return None
 
 
 def _majorHolderSignal(

@@ -11,6 +11,7 @@ from typing import Mapping
 
 import polars as pl
 
+from dartlab.analysis.financial._filingEvidence import _sourceRefs
 from dartlab.analysis.financial.filingFeatures import (
     EDGAR_FINANCIAL_FEATURE_MAPPINGS as _FINANCIAL_STATE_VARIABLES,
 )
@@ -300,14 +301,6 @@ def buildEdgarQuarterlyFinancialStateRegistry() -> StateVariableRegistry:
             for item in _FINANCIAL_STATE_VARIABLES
         )
     )
-
-
-def _sourceRefs(compiled: CompiledQuarterlyFinancialState) -> tuple[str, ...]:
-    refs = set()
-    for item in compiled.evidence:
-        refs.add(f"{item.accession}|{item.tag}|{item.fiscalStart}|{item.fiscalEnd}|{item.status}")
-        refs.update(item.derivationInputs)
-    return tuple(sorted(refs))
 
 
 def _latestSelectedFilingDate(compiled: CompiledQuarterlyFinancialState) -> str:

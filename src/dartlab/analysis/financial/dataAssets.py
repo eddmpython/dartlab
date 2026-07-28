@@ -15,6 +15,14 @@ _PERIOD_RE = re.compile(r"^(?P<year>\d{4})(?:-?Q(?P<quarter>[1-4]))?$")
 
 
 def _periodKey(period: str) -> tuple[int, int]:
+    """재무 기간 문자열을 비교 가능한 ``(year, quarter)`` 로 정규화한다.
+
+    연도만 있으면 연말 Q4 로 취급한다. 공개 ``asOf`` 는 ``YYYY`` 또는 ``YYYY[-]Qn`` 만
+    허용해 날짜 라벨이 데이터 vintage 인 것처럼 보이는 오해를 차단한다.
+
+    simulate 의 driver registry 가 같은 본문을 갖고 있었다. 판정 기준이 갈리면 같은
+    ``asOf`` 가 한쪽에서는 통과하고 다른 쪽에서는 범위 밖이 된다.
+    """
     match = _PERIOD_RE.fullmatch(str(period).strip().upper())
     if not match:
         raise ValueError(f"asOf/period 형식 오류: {period!r} (YYYY 또는 YYYY-Qn)")

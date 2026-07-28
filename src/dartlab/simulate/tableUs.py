@@ -10,10 +10,11 @@ Layer: L2.5 simulate. 원천 = data/edgar (prices·finance·allFilings). Company
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
 
 import polars as pl
+
+from dartlab.simulate.dataStore import dataDir
 
 # XBRL 태그 → 계정 (첫 매칭 우선). 흐름(netIncome·revenue)·잔고(asset·equity·debt·shares).
 _US_ACCOUNT_TAGS: dict[str, tuple[str, ...]] = {
@@ -42,14 +43,6 @@ _US_FORM_EVENT: dict[str, str] = {
     "424B2": "securitiesOffering",
     "424B5": "securitiesOffering",
 }
-
-
-def dataDir(baseDir: Path | None = None) -> Path:
-    """데이터 루트: 명시 baseDir > DARTLAB_DATA_DIR env > ./data."""
-    if baseDir is not None:
-        return baseDir
-    root = os.environ.get("DARTLAB_DATA_DIR")
-    return Path(root) if root else Path("data")
 
 
 _EMPTY_PX = {

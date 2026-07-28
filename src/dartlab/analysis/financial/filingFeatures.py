@@ -5,12 +5,12 @@ from __future__ import annotations
 import json
 from collections.abc import Sequence
 from dataclasses import asdict, dataclass
-from datetime import date
 from hashlib import sha256
 from typing import Any
 
 import polars as pl
 
+from dartlab.analysis.financial._filingEvidence import _dateText, _sourceRefs
 from dartlab.analysis.financial.edgarPitState import (
     CompiledQuarterlyFinancialState,
     CompiledQuarterlyFlowState,
@@ -160,30 +160,9 @@ _FLOW_ONLY_MEASURES = frozenset(
 )
 
 
-def _dateText(value: str, label: str) -> str:
-    text = str(value).replace("-", "")
-    if len(text) != 8 or not text.isdigit():
-        raise ValueError(f"invalid {label}: {value}")
-    try:
-        date(int(text[:4]), int(text[4:6]), int(text[6:8]))
-    except ValueError as error:
-        raise ValueError(f"invalid {label}: {value}") from error
-    return text
-
-
 def _canonicalHash(value: Any) -> str:
     payload = json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"), default=str)
     return sha256(payload.encode("utf-8")).hexdigest()
-
-
-def _sourceRefs(
-    compiled: (CompiledQuarterlyFinancialState | CompiledQuarterlyFlowState | CompiledQuarterlyRevenueState),
-) -> tuple[str, ...]:
-    refs = set()
-    for item in compiled.evidence:
-        refs.add(f"{item.accession}|{item.tag}|{item.fiscalStart}|{item.fiscalEnd}|{item.status}")
-        refs.update(item.derivationInputs)
-    return tuple(sorted(refs))
 
 
 def _mappingValue(

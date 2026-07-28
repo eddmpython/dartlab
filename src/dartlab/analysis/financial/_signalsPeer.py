@@ -10,6 +10,7 @@ from __future__ import annotations
 import logging
 import math
 
+from dartlab.analysis.financial._companyLookup import _getSectorKey
 from dartlab.analysis.financial._predictionMath import _fitOLS
 from dartlab.analysis.financial._predictionProbability import _DIRECTION_SCORES, _clamp
 from dartlab.core.memory import memoizedCalc
@@ -26,19 +27,6 @@ _MAX_YEARS = 8
 
 def _getStockCode(company) -> str | None:
     return getattr(company, "stockCode", None)
-
-
-def _getSectorKey(company) -> str | None:
-    try:
-        from dartlab.analysis.financial.valuation import _IG_TO_SECTOR_KEY
-
-        sectorInfo = company.sector
-        if sectorInfo is not None:
-            igName = sectorInfo.industryGroup.name
-            return _IG_TO_SECTOR_KEY.get(igName)
-    except (AttributeError, ValueError, ImportError):
-        pass
-    return None
 
 
 # ══════════════════════════════════════

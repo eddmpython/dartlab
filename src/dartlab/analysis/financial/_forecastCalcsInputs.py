@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from dartlab.analysis.financial._companyLookup import _getSectorParams
 from dartlab.analysis.financial.valuation import _IG_TO_SECTOR_KEY
 from dartlab.analysis.forecast.revenueForecast import CompanyDataBundle, forecastRevenue
 
@@ -37,14 +38,6 @@ def _getShares(company: Any) -> int | None:
         if sharesVal:
             return int(sharesVal)
     return None
-
-
-def _getSectorParams(company: Any):
-    """SectorParams 추출."""
-    try:
-        return getattr(company, "sectorParams", None)
-    except AttributeError:
-        return None
 
 
 def _buildCompanyDataBundle(company: Any):

@@ -9,6 +9,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
+from dartlab.reference.capability._contractMerge import _mergeDicts, _unique
+
 
 @dataclass(frozen=True)
 class QuestionProfile:
@@ -598,23 +600,6 @@ def _coerceToolList(value: list[str] | str) -> list[str]:
     if isinstance(value, str):
         return [part.strip() for part in value.replace(">", ",").replace("→", ",").split(",") if part.strip()]
     return [str(v).strip() for v in value if str(v).strip()]
-
-
-def _unique(values: Any) -> list[str]:
-    out: list[str] = []
-    for value in values:
-        text = str(value)
-        if text and text not in out:
-            out.append(text)
-    return out
-
-
-def _mergeDicts(values: Any) -> dict[str, Any]:
-    out: dict[str, Any] = {}
-    for value in values:
-        if isinstance(value, dict):
-            out.update(value)
-    return out
 
 
 def _dropEmpty(data: dict[str, Any]) -> dict[str, Any]:

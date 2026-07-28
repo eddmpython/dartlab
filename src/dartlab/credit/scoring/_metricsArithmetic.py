@@ -1,17 +1,23 @@
-"""credit/scoring/metrics 작은 헬퍼 — 안전 나눗셈·변동계수·분기 fallback·TTM 합산.
+"""credit/scoring/metrics 작은 헬퍼: 안전 나눗셈·변동계수·분기 fallback·TTM 합산.
 
 credit/scoring/metrics.py 가 999 줄 god module 이라 작은 헬퍼 분리.
 identity 보존을 위해 metrics.py 가 본 모듈에서 re-export 한다.
 
 함수:
-- _div(a, b, pct) — 안전 나눗셈 (None/0 가드, 절대값 분모)
-- _cv(values) — 변동계수 (CV % = std / |mean| × 100)
-- _isQuarterlyFallback(cols) — _annualCols 결과 Q4 fallback 여부
-- _ttmSum(flowData, qCol, allPeriods) — credit 차입금 TTM 합산
-- _getRatios(company) — company._finance.ratios 안전 접근
+- _div(a, b, pct): 안전 나눗셈 (None/0 가드, 절대값 분모)
+- _cv(values): 변동계수 (CV % = std / |mean| × 100)
+- _isQuarterlyFallback(cols): _annualCols 결과 Q4 fallback 여부
+- _ttmSum(flowData, qCol, allPeriods): credit 차입금 TTM 합산
+- _getRatios(company): company._finance.ratios 안전 접근
+
+``_getRatios`` 본체는 L1.5 ``synth.companyAccess.ratiosOf`` 로 내려갔다. analysis 의
+자본구조 축이 같은 세 줄을 따로 갖고 있었는데 L2 형제끼리는 import 하지 못하기 때문이다.
+여기서는 기존 re-export 경로를 지키려고 옛 이름으로 받아 둔다.
 """
 
 from __future__ import annotations
+
+from dartlab.synth.companyAccess import ratiosOf as _getRatios
 
 
 def _div(a, b, pct: bool = False) -> float | None:
@@ -46,18 +52,10 @@ def _isQuarterlyFallback(cols: list[str]) -> bool:
 
 
 def _ttmSum(flowData: dict, qCol: str, allPeriods: list[str]) -> float | None:
-    """credit 차입금 산출용 TTM 합산 — annualSumFlow credit 모드 alias."""
+    """credit 차입금 산출용 TTM 합산. annualSumFlow credit 모드 alias."""
     from dartlab.core.utils.flow import annualSumFlow
 
     return annualSumFlow(flowData, qCol, allPeriods, withFallback=False)
-
-
-def _getRatios(company):
-    """company._finance.ratios 안전 접근."""
-    try:
-        return company._finance.ratios
-    except (ValueError, KeyError, AttributeError):
-        return None
 
 
 __all__ = [

@@ -10,6 +10,8 @@ from __future__ import annotations
 from datetime import date
 from typing import Any
 
+from dartlab.synth.rowAccess import strictFloat as _number
+
 
 def buildDivergenceResult(
     stockCode: str,
@@ -446,12 +448,6 @@ def _direction(score: float | None) -> str:
 
 def _clamp(value: float) -> float:
     return max(-1.0, min(1.0, float(value)))
-
-
-def _number(value: Any) -> float | None:
-    if isinstance(value, bool) or not isinstance(value, (int, float)):
-        return None
-    return float(value)
 
 
 __all__ = ["buildDivergenceResult"]

@@ -1,8 +1,8 @@
-"""Sum-of-the-Parts NAV — Damodaran *Investment Valuation* Ch.16.
+"""Sum-of-the-Parts NAV. Damodaran *Investment Valuation* Ch.16.
 
 지주사 (SK/LG/CJ 등) 전용:
 1. c.panel("investedCompany") → 자회사 + 지분율 + 장부가
-2. 자회사 장부가액 합산 (보수적 근사 — 상장사 시가총액 반영은 별도 인프라 필요)
+2. 자회사 장부가액 합산 (보수적 근사: 상장사 시가총액 반영은 별도 인프라 필요)
 3. + 모회사 별도 자산 (잉여현금 / 투자부동산)
 4. - 모회사 별도 부채
 5. × (1 - holdingDiscount)  # 한국 평균 0.40~0.50
@@ -14,6 +14,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from dartlab.analysis.valuation._valuationInputAccess import _getCurrentPriceLight
 from dartlab.analysis.valuation.types import opinionFromUpside
 
 _DEFAULT_HOLDING_DISCOUNT = 0.40  # 한국 시장 평균 (Damodaran 0.20 + 한국 갭)
@@ -313,29 +314,6 @@ def calcHoldingDFV(company: Any, *, basePeriod: str | None = None, overrides: di
         "allMethods": {"sotp": round(per_share)},
         "triangulation": {"checks": [], "confidence": "medium"},
     }
-
-
-def _getCurrentPriceLight(company: Any) -> float | None:
-    """현재 주가 추출 — currentPrice 속성 우선, 없으면 gather 경유.
-
-    Returns
-    -------
-    float | None
-        현재 주가 (원). 조회 실패 시 None.
-    """
-    try:
-        price = getattr(company, "currentPrice", None)
-        if price:
-            return float(price)
-        from dartlab.core.di import getMacroProvider
-
-        g = getMacroProvider().getDefaultGather()
-        p = g("price", getattr(company, "stockCode", ""))
-        if p is not None and hasattr(p, "height") and p.height > 0:
-            return float(p["close"][-1])
-    except (ImportError, AttributeError, ValueError, TypeError, KeyError):
-        pass
-    return None
 
 
 def _opinion(upside: float | None) -> str:

@@ -1,8 +1,11 @@
-"""dFV (dartlab Fair Value) 계산 헬퍼 11 종 — calcDFV 가 호출.
+"""dFV (dartlab Fair Value) 계산 헬퍼 11 종. calcDFV 가 호출한다.
 
 _collectAllValues, _getBaseWACC, _triangulate, _getCurrentPrice, _calcOpinion,
 _calcLiquidationValue, _inferShares, _calcLiquidationDetail, _calcTwoStageDcf,
-_applySurvivalAdjustment, _buildConsistency — 모두 inline import 로 외부 함수 호출.
+_applySurvivalAdjustment, _buildConsistency. 모두 inline import 로 외부 함수 호출.
+
+_inferShares 본체는 `_valuationInputAccess` 로 옮겼다 (controlSynergy 와 공유).
+호출 경로 보존을 위해 여기서 re-export 한다.
 
 dFV.py god module 분리 일환.
 """
@@ -20,6 +23,7 @@ from dartlab.analysis.valuation._dFVTsd import (
     _tsdResolveTerminalGrowth,
     _tsdResolveWacc,
 )
+from dartlab.analysis.valuation._valuationInputAccess import _inferShares
 from dartlab.analysis.valuation.types import opinionFromUpside
 
 
@@ -166,25 +170,6 @@ def _calcLiquidationValue(company: Any, overrides: dict) -> float | None:
         return (equity * (1 - discount)) / shares
     except (ImportError, AttributeError, KeyError, TypeError, ValueError):
         return None
-
-
-def _inferShares(company: Any) -> int | None:
-    """기존 calcDcf 결과의 equityValue / perShareValue 로 주식수 역산.
-
-    BS 에 outstanding_shares 가 없는 경우 대응 (KRX 메타 의존 회피).
-    """
-    try:
-        from dartlab.analysis.financial.valuation import calcDcf
-
-        r = calcDcf(company)
-        if isinstance(r, dict):
-            eq = r.get("equityValue")
-            ps = r.get("perShareValue")
-            if eq and ps and ps > 0:
-                return int(eq / ps)
-    except (ImportError, AttributeError, ValueError, TypeError):
-        pass
-    return None
 
 
 def _calcLiquidationDetail(company: Any, overrides: dict) -> dict | None:

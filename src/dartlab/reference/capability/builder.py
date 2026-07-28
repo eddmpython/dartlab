@@ -27,6 +27,7 @@ from typing import Any
 # ─── 런타임 capability 카탈로그 생성 ──────────────────────────
 # axis-engine 라이브 축 레지스트리 - 모듈 이동 추종 (AST-소스 의존 0, install-robust).
 # gather 표준(engine(axis, target)) 전 엔진을 {engine}.{axis} 로 카탈로그 등록.
+from dartlab.reference.capability._contractMerge import _mergeDicts, _unique
 from dartlab.reference.capability.dataProducts import axisRegistryTargets
 from dartlab.reference.capability.docstringSections import (
     _applyAiContract,
@@ -361,23 +362,6 @@ def _buildAcceptanceCriteria(
     if any(c.get("comparisonCompleteness") for c in contracts):
         out.setdefault("sameAxisComparison", True)
     out.setdefault("claimSupportRateMin", 0.9)
-    return out
-
-
-def _unique(values: Any) -> list[str]:
-    out: list[str] = []
-    for value in values:
-        text = str(value)
-        if text and text not in out:
-            out.append(text)
-    return out
-
-
-def _mergeDicts(values: Any) -> dict[str, Any]:
-    out: dict[str, Any] = {}
-    for value in values:
-        if isinstance(value, dict):
-            out.update(value)
     return out
 
 

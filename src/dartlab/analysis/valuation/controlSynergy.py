@@ -1,4 +1,4 @@
-"""Value of Control vs Synergy — Damodaran Dark Side Ch.17.
+"""Value of Control vs Synergy. Damodaran Dark Side Ch.17.
 
 Control Value = Restructured Value − Status Quo Value
   (최적 자본배분 시나리오에서 얻을 수 있는 추가 가치)
@@ -6,12 +6,14 @@ Control Value = Restructured Value − Status Quo Value
 Synergy Value = Combined NPV − (A standalone + B standalone)
   (합병 시 발생하는 추가 가치: cost / revenue / financial)
 
-이중계산 방지 — Control 과 Synergy 는 독립 계산, 합산 시 storyValidation 이 경고.
+이중계산 방지: Control 과 Synergy 는 독립 계산, 합산 시 storyValidation 이 경고.
 """
 
 from __future__ import annotations
 
 from typing import Any
+
+from dartlab.analysis.valuation._valuationInputAccess import _balanceValue, _inferShares
 
 _DEFAULT_TAX = 0.22
 
@@ -328,38 +330,11 @@ def _estimateNetDebt(company: Any) -> float | None:
             return None
         latest = periods[0]
 
-        def _g(*keys):
-            """BS 다중 키에서 첫 번째 유효 값 추출 (None → 0)."""
-            for k in keys:
-                v = (data.get(k) or {}).get(latest)
-                if v:
-                    return float(v)
-            return 0.0
-
         return (
-            _g("shortterm_borrowings") + _g("longterm_borrowings") + _g("debentures") - _g("cash_and_cash_equivalents")
+            _balanceValue(data, latest, "shortterm_borrowings")
+            + _balanceValue(data, latest, "longterm_borrowings")
+            + _balanceValue(data, latest, "debentures")
+            - _balanceValue(data, latest, "cash_and_cash_equivalents")
         )
     except (ImportError, AttributeError, KeyError, TypeError, ValueError):
         return None
-
-
-def _inferShares(company: Any) -> int | None:
-    """calcDcf 결과에서 발행주식수 역산.
-
-    Returns
-    -------
-    int | None
-        추정 발행주식수. 역산 실패 시 None.
-    """
-    try:
-        from dartlab.analysis.financial.valuation import calcDcf
-
-        r = calcDcf(company)
-        if isinstance(r, dict):
-            eq = r.get("equityValue")
-            ps = r.get("perShareValue")
-            if eq and ps and ps > 0:
-                return int(eq / ps)
-    except (ImportError, AttributeError, ValueError, TypeError):
-        pass
-    return None

@@ -65,6 +65,7 @@ _COMMODITY_SECTORS = set(_sensitivity.get("commodity", []))
 # ── 공통 헬퍼 ──
 
 
+from dartlab.analysis.financial._companyLookup import _getSectorKey
 from dartlab.analysis.financial._constants import (
     FX_SENSITIVITY_HIGH,
     FX_SENSITIVITY_MODERATE,
@@ -82,20 +83,6 @@ from dartlab.core.utils.calc import safeDiv as _safe
 def _getStockCode(company) -> str | None:
     """Company 객체에서 종목코드 추출."""
     return getattr(company, "stockCode", None)
-
-
-def _getSectorKey(company) -> str | None:
-    """업종 키 추출 (scenario.py와 동일 경로)."""
-    try:
-        from dartlab.analysis.financial.valuation import _IG_TO_SECTOR_KEY
-
-        sectorInfo = company.sector
-        if sectorInfo is not None:
-            igName = sectorInfo.industryGroup.name
-            return _IG_TO_SECTOR_KEY.get(igName)
-    except (AttributeError, ValueError, ImportError):
-        pass
-    return None
 
 
 # ══════════════════════════════════════

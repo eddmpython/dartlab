@@ -12,24 +12,12 @@ _getF = _getF2 = _getF3 = _getF4 = _get
 
 from typing import Any
 
+from dartlab.analysis.financial._seriesMath import _yoy
 from dartlab.analysis.financial.accountSums import sumBorrowings
 from dartlab.core.memory import memoizedCalc
 from dartlab.core.utils.helpers import MAX_RATIO_YEARS, annualColsFromPeriods, toDictBySnakeId
 
 _MAX_YEARS = MAX_RATIO_YEARS
-
-
-def _yoy(cur, prev) -> float | None:
-    """전기대비 증감률 계산.
-
-    Returns
-    -------
-    float | None
-        YoY 변화율 (%). 계산 불가 시 None.
-    """
-    if cur is None or prev is None or prev == 0:
-        return None
-    return round((cur - prev) / abs(prev) * 100, 2)
 
 
 from dartlab.core.utils.calc import safePct as _pctOf  # noqa: E402

@@ -6,6 +6,8 @@ from collections import Counter
 from datetime import date
 from typing import Any, Callable
 
+from dartlab.synth.rowAccess import strictFloat as _number
+
 _EXPECTED_ERRORS = (
     KeyError,
     ValueError,
@@ -497,12 +499,6 @@ def _safeCall(function: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
         return function(*args, **kwargs)
     except _EXPECTED_ERRORS:
         return None
-
-
-def _number(value: Any) -> float | None:
-    if isinstance(value, bool) or not isinstance(value, (int, float)):
-        return None
-    return float(value)
 
 
 __all__ = ["blockedIndustryResult", "buildIndustryProduct", "companyIndustryResult"]

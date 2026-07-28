@@ -54,6 +54,7 @@ EXPECTED_LAYOUT: dict[str, set[str]] = {
         "_narrativeBuilders.py",
         "_narrativeAxes.py",
         "_narrativeAxesA.py",
+        "_narrativeSeverity.py",
     },
 }
 

@@ -1,4 +1,4 @@
-"""행 접근과 수치 강제변환 primitive SSOT. rowsOf, firstValue, toFloat, safeDiv.
+"""행 접근과 수치 강제변환 primitive SSOT. rowsOf, firstValue, toFloat, strictFloat, safeDiv.
 
 L1.5 synth 본체. 엔진 결과는 polars DataFrame, dict 목록, 단일 dict 중 아무 모양으로나 온다.
 그것을 dict 목록 하나로 펴고, 대소문자가 흔들리는 key 에서 값을 꺼내고, 무엇이 들어오든
@@ -10,6 +10,11 @@ thesisKillChain 과 evidenceForensics 가 같은 본문을 각자 갖고 있었�
 - 나눗셈은 분모가 None 또는 0 이면 None. 예외를 던지지 않는다.
 - NaN 은 float 이 아니라 None 으로 본다 (`number != number`).
 - 강제변환 실패도 None. 어느 쪽인지 구분이 필요하면 부르는 쪽이 미리 검사한다.
+
+강제변환은 규칙이 다른 둘이다. `toFloat` 은 숫자로 읽히는 문자열까지 받아들이고,
+`strictFloat` 은 int 와 float 만 받고 bool 과 문자열은 거부한다. 렌즈 제품이 계약대로
+숫자 자리에 숫자만 왔는지 판정할 때는 후자라야 한다. 전자를 쓰면 "12" 같은 문자열이
+검증을 통과해 버린다.
 
 `stats.py` 와 형제다. 그쪽은 numpy 배열 통계, 이쪽은 행과 스칼라 접근이다.
 """
@@ -123,6 +128,25 @@ def toFloat(value: Any) -> float | None:
     if number != number:
         return None
     return number
+
+
+def strictFloat(value: Any) -> float | None:
+    """int 와 float 만 float 으로 받는다. bool 과 문자열과 그 밖은 전부 None.
+
+    `toFloat` 과 규칙이 다르다. 그쪽은 "12" 같은 문자열도 12.0 으로 읽지만 이쪽은
+    거부한다. bool 을 막는 이유는 파이썬에서 True 가 int 라 1.0 으로 통과해 버려서,
+    "값 있음" 플래그가 점수 1 점으로 둔갑하기 때문이다. NaN 은 float 이므로 그대로
+    통과한다 (걸러야 하면 부르는 쪽이 `toFloat` 을 쓴다).
+
+    Args:
+        value: 판정할 값.
+
+    Returns:
+        float 로 좁힌 값. 숫자가 아니면 None.
+    """
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return None
+    return float(value)
 
 
 def safeDiv(numerator: float | None, denominator: float | None) -> float | None:

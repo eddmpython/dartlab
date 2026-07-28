@@ -11,11 +11,11 @@ Layer: L2.5 simulate. 원천은 벌크 데이터 SSOT (gov/prices·dart/finance�
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
 
 import polars as pl
 
+from dartlab.simulate.dataStore import dataDir
 from dartlab.simulate.surfaces import normalizeEventType
 
 # account_id(IFRS 표준) 우선, account_nm 부분일치 폴백. (표준 id 목록, nm 키워드 목록)
@@ -30,14 +30,6 @@ _ACCOUNT_MAP: dict[str, tuple[tuple[str, ...], tuple[str, ...]]] = {
 _REPRT_Q = {"11013": "Q1", "11012": "Q2", "11014": "Q3", "11011": "Q4"}
 _PRICE_YEARS = range(2015, 2027)
 _EVENT_YEARS_PREFIX = "2"
-
-
-def dataDir(baseDir: Path | None = None) -> Path:
-    """데이터 루트: 명시 baseDir > DARTLAB_DATA_DIR env > ./data."""
-    if baseDir is not None:
-        return baseDir
-    root = os.environ.get("DARTLAB_DATA_DIR")
-    return Path(root) if root else Path("data")
 
 
 def weekCalendar(baseDir: Path | None = None) -> tuple[pl.DataFrame, pl.DataFrame]:

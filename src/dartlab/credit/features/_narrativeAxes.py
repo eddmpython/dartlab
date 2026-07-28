@@ -4,31 +4,22 @@ credit/features/narrative.py 가 823 줄 god module 이라 7 축 서사 함수�
 identity 보존을 위해 narrative.py 가 본 모듈에서 re-export 한다.
 
 축별 narrate 함수:
-- narrateRepayment — 채무상환능력 (이자보상배율 + Debt/EBITDA)
-- narrateCapitalStructure — 자본구조 (부채비율 + 차입금의존도)
-- narrateLiquidity — 유동성 (current/quick ratio)
-- narrateCashFlow — 현금흐름 (OCF + FCF + CFO 안정성)
-- narrateBusinessStability — 사업안정성 (매출 변동성)
-- narrateReliability — 재무신뢰성 (감사의견 + 발생주의 비율)
-- narrateDisclosureRisk — 공시리스크 (정정공시 + Beneish M-Score)
+- narrateRepayment: 채무상환능력 (이자보상배율 + Debt/EBITDA)
+- narrateCapitalStructure: 자본구조 (부채비율 + 차입금의존도)
+- narrateLiquidity: 유동성 (current/quick ratio)
+- narrateCashFlow: 현금흐름 (OCF + FCF + CFO 안정성)
+- narrateBusinessStability: 사업안정성 (매출 변동성)
+- narrateReliability: 재무신뢰성 (감사의견 + 발생주의 비율)
+- narrateDisclosureRisk: 공시리스크 (정정공시 + Beneish M-Score)
+
+``_severity`` 임계표 본체는 `_narrativeSeverity` 로 옮겼다 (narrative.py 와 공유).
 """
 
 from __future__ import annotations
 
 from dartlab.core.formatting import formatDecimal, formatKr
+from dartlab.credit.features._narrativeSeverity import _severity
 from dartlab.credit.features._narrativeTypes import AxisNarrative
-
-
-def _severity(score: float | None) -> str:
-    if score is None:
-        return "adequate"
-    if score < 10:
-        return "strong"
-    if score < 25:
-        return "adequate"
-    if score < 45:
-        return "weak"
-    return "critical"
 
 
 def _fmt(v, suffix="", decimals=1) -> str:

@@ -12,12 +12,12 @@ Storage: ``{DARTLAB_DATA_DIR|data}/readings/{readings|readingScores}_{yyyy}.parq
 
 from __future__ import annotations
 
-import os
 from dataclasses import asdict
 from pathlib import Path
 
 import polars as pl
 
+from dartlab.simulate.dataStore import _readAll, dataDir
 from dartlab.simulate.reading import Reading
 
 LEDGER_SUBDIR = "readings"
@@ -55,8 +55,7 @@ def ledgerDir(baseDir: Path | None = None) -> Path:
     """판독 원장 루트: 명시 baseDir > DARTLAB_DATA_DIR env > ./data."""
     if baseDir is not None:
         return baseDir
-    root = os.environ.get("DARTLAB_DATA_DIR")
-    return (Path(root) if root else Path("data")) / LEDGER_SUBDIR
+    return dataDir() / LEDGER_SUBDIR
 
 
 def _writeShard(path: Path, new: pl.DataFrame) -> None:
@@ -169,13 +168,6 @@ def appendReadingScores(rows: list[dict], *, baseDir: Path | None = None) -> lis
         _writeShard(path, part)
         written.append(path)
     return written
-
-
-def _readAll(base: Path, table: str) -> pl.DataFrame | None:
-    files = sorted(base.glob(f"{table}_*.parquet"))
-    if not files:
-        return None
-    return pl.concat([pl.read_parquet(f) for f in files], how="vertical")
 
 
 def readReadings(

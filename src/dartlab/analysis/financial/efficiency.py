@@ -7,24 +7,12 @@ select()로 IS/BS 원본 계정을 가져와서
 
 from __future__ import annotations
 
+from dartlab.analysis.financial._seriesMath import _yoy
 from dartlab.core.memory import memoizedCalc
 from dartlab.core.utils.helpers import MAX_RATIO_YEARS, toDictBySnakeId
 from dartlab.core.utils.helpers import annualColsFromPeriods as _annualColsFromPeriods
 
 _MAX_YEARS = MAX_RATIO_YEARS
-
-
-def _yoy(cur, prev) -> float | None:
-    """전기대비 증감률 계산.
-
-    Returns
-    -------
-    float | None
-        YoY 변화율 (%). 계산 불가 시 None.
-    """
-    if cur is None or prev is None or prev == 0:
-        return None
-    return round((cur - prev) / abs(prev) * 100, 2)
 
 
 def _turnover(revenue, balance) -> float | None:

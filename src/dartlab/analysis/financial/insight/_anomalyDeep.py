@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import math
 
+from dartlab.analysis.financial._seriesMath import _latestNotNone
 from dartlab.analysis.financial.insight.types import Anomaly, AuditDataForAnomaly
 from dartlab.core.utils.extract import getAnnualValues
 
@@ -54,14 +55,6 @@ def _trailingRiseStreak(series: list) -> int:
         else:
             break
     return streak
-
-
-def _latestNotNone(values: list):
-    """최신부터 거슬러 올라가 처음 만나는 non-null 값. 전부 결측이면 None."""
-    for v in reversed(values):
-        if v is not None:
-            return v
-    return None
 
 
 def detectTrendDeterioration(aSeries: dict, isFinancial: bool = False) -> list[Anomaly]:

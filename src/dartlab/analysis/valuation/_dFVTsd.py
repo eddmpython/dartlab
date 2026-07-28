@@ -17,6 +17,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from dartlab.analysis.valuation._valuationInputAccess import _balanceValue
+
 
 def _lazy(name):
     """dFV 본체 lazy lookup — 순환 import 회피."""
@@ -287,19 +289,11 @@ def _tsdExtractNetDebtShares(company: Any) -> tuple[float, float] | None:
             return None
         latest = periods[0]
 
-        def _g(*keys: str) -> float:
-            """BS 다중 키에서 차입금 값 추출 (None → 0)."""
-            for k in keys:
-                v = (data.get(k) or {}).get(latest)
-                if v:
-                    return float(v)
-            return 0.0
-
         net_debt = (
-            _g("shortterm_borrowings", "short_term_borrowings", "short_term_debt")
-            + _g("longterm_borrowings", "long_term_borrowings", "long_term_debt")
-            + _g("debentures", "corporate_bonds", "사채")
-            - _g("cash_and_cash_equivalents", "cash_and_equivalents")
+            _balanceValue(data, latest, "shortterm_borrowings", "short_term_borrowings", "short_term_debt")
+            + _balanceValue(data, latest, "longterm_borrowings", "long_term_borrowings", "long_term_debt")
+            + _balanceValue(data, latest, "debentures", "corporate_bonds", "사채")
+            - _balanceValue(data, latest, "cash_and_cash_equivalents", "cash_and_equivalents")
         )
         shares = _inferShares(company)
         return net_debt, shares

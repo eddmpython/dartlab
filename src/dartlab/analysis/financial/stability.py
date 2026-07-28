@@ -7,6 +7,7 @@ select()로 BS/IS/CF 원본 계정을 가져와서
 
 from __future__ import annotations
 
+from dartlab.analysis.financial._seriesMath import _yoy
 from dartlab.analysis.financial.accountSums import sumBorrowings
 from dartlab.analysis.financial.companyContext import getRatios
 from dartlab.core.memory import memoizedCalc
@@ -34,19 +35,6 @@ def _isHoldingOrFinancial(company) -> bool:
     except (AttributeError, ImportError):
         pass
     return False
-
-
-def _yoy(cur, prev) -> float | None:
-    """전기대비 증감률 계산.
-
-    Returns
-    -------
-    float | None
-        YoY 변화율 (%). 계산 불가 시 None.
-    """
-    if cur is None or prev is None or prev == 0:
-        return None
-    return round((cur - prev) / abs(prev) * 100, 2)
 
 
 from dartlab.core.utils.calc import safePct as _pctOf  # noqa: E402

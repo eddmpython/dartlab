@@ -1,4 +1,4 @@
-"""은행/금융지주 전용 dFV — Damodaran Ch.21 Bank Excess Return 통합.
+"""은행/금융지주 전용 dFV. Damodaran Ch.21 Bank Excess Return 통합.
 
 detection: c.sector.sector == "금융" 또는 industryGroup in {"은행","금융지주","증권","보험"}
 """
@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from dartlab.analysis.valuation._valuationInputAccess import _getCurrentPriceLight
 from dartlab.analysis.valuation.types import opinionFromUpside
 
 _FINANCIAL_SECTOR_KEYWORDS = ("금융", "Financial", "FINANCIALS", "Bank")
@@ -289,29 +290,6 @@ def calcBankDFV(company: Any, *, basePeriod: str | None = None, overrides: dict 
         "allMethods": {"bankExcessReturn": round(per_share)},
         "triangulation": {"checks": [], "confidence": confidence},
     }
-
-
-def _getCurrentPriceLight(company: Any) -> float | None:
-    """현재 주가 추출 — currentPrice 속성 우선, 없으면 gather 경유.
-
-    Returns
-    -------
-    float | None
-        현재 주가 (원). 조회 실패 시 None.
-    """
-    try:
-        price = getattr(company, "currentPrice", None)
-        if price:
-            return float(price)
-        from dartlab.core.di import getMacroProvider
-
-        g = getMacroProvider().getDefaultGather()
-        p = g("price", getattr(company, "stockCode", ""))
-        if p is not None and hasattr(p, "height") and p.height > 0:
-            return float(p["close"][-1])
-    except (ImportError, AttributeError, ValueError, TypeError, KeyError):
-        pass
-    return None
 
 
 def _opinion(upside: float | None) -> str:

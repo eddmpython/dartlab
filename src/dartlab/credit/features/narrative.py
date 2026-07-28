@@ -27,6 +27,7 @@ from dartlab.credit.features._narrativeBuilders import (
     _trendOpIncomeLine,
     _trendRevenueLine,
 )
+from dartlab.credit.features._narrativeSeverity import _severity
 from dartlab.credit.features._narrativeTypes import AxisNarrative
 
 __all_helpers__ = [
@@ -46,18 +47,6 @@ __all_helpers__ = [
     "narrateReliability",
     "narrateRepayment",
 ]
-
-
-def _severity(score: float | None) -> str:
-    if score is None:
-        return "adequate"
-    if score < 10:
-        return "strong"
-    if score < 25:
-        return "adequate"
-    if score < 45:
-        return "weak"
-    return "critical"
 
 
 def _fmt(v, suffix="", decimals=1) -> str:

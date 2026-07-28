@@ -16,12 +16,12 @@ Storage: ``{DARTLAB_DATA_DIR|data}/expectations/{expectations|scores}_{yyyy}.par
 from __future__ import annotations
 
 import json
-import os
 from dataclasses import asdict
 from pathlib import Path
 
 import polars as pl
 
+from dartlab.simulate.dataStore import _readAll, dataDir
 from dartlab.synth.expectationSpec import ExpectationScore, ExpectationSpec
 
 LEDGER_SUBDIR = "expectations"
@@ -86,8 +86,7 @@ def ledgerDir(baseDir: Path | None = None) -> Path:
     """Resolve the ledger root: explicit baseDir > DARTLAB_DATA_DIR env > ./data."""
     if baseDir is not None:
         return baseDir
-    root = os.environ.get("DARTLAB_DATA_DIR")
-    return (Path(root) if root else Path("data")) / LEDGER_SUBDIR
+    return dataDir() / LEDGER_SUBDIR
 
 
 def _flatten(row: ExpectationSpec | ExpectationScore) -> dict:
@@ -170,13 +169,6 @@ def readProforma(*, baseDir: Path | None = None, code: str | None = None) -> pl.
     if df is None or code is None:
         return df
     return df.filter(pl.col("code") == code)
-
-
-def _readAll(base: Path, table: str) -> pl.DataFrame | None:
-    files = sorted(base.glob(f"{table}_*.parquet"))
-    if not files:
-        return None
-    return pl.concat([pl.read_parquet(f) for f in files], how="vertical")
 
 
 def readExpectations(*, baseDir: Path | None = None, unscoredOnly: bool = False) -> pl.DataFrame | None:

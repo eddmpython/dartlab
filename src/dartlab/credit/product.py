@@ -9,6 +9,8 @@ from __future__ import annotations
 from datetime import date
 from typing import Any
 
+from dartlab.synth.rowAccess import strictFloat as _number
+
 
 def attachCreditProduct(
     company: Any,
@@ -418,12 +420,6 @@ def _gradeHistory(company: Any, result: dict[str, Any]) -> list[dict[str, Any]]:
             }
         )
     return rows
-
-
-def _number(value: Any) -> float | None:
-    if isinstance(value, bool) or not isinstance(value, (int, float)):
-        return None
-    return float(value)
 
 
 __all__ = ["attachCreditProduct", "blockedCreditResult", "buildCreditProduct"]

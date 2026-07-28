@@ -5,6 +5,8 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+from dartlab.analysis.financial._companyLookup import _getSectorParams
+
 log = logging.getLogger(__name__)
 
 
@@ -128,11 +130,3 @@ def _getSeriesAndShares(company: Any) -> tuple[dict | None, int | None, str]:
 
     currency = getattr(company, "currency", "KRW") or "KRW"
     return series, shares, currency
-
-
-def _getSectorParams(company: Any):
-    """company에서 sectorParams 추출."""
-    try:
-        return getattr(company, "sectorParams", None)
-    except AttributeError:
-        return None

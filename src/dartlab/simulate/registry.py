@@ -37,13 +37,13 @@ Layer: L2.5. Forward imports: L0 (core), L1.5 (synth), L2 (analysis.financial).
 
 from __future__ import annotations
 
-import re
 from typing import Any
 
 from dartlab.analysis.financial._valuationInputs import (
     _getSeriesAndShares,
     _resolveSectorKey,
 )
+from dartlab.analysis.financial.dataAssets import _periodKey
 from dartlab.analysis.financial.proforma import buildProforma
 from dartlab.core.utils.extract import getLatest, getTTM
 from dartlab.simulate.sheet import DriverNode, DriverSheet
@@ -113,21 +113,6 @@ def _baseMetrics(series: dict) -> dict[str, float | None]:
     )
 
     return {"revenue": rev, "margin": margin, "netDebt": netDebt}
-
-
-_PERIOD_RE = re.compile(r"^(?P<year>\d{4})(?:-?Q(?P<quarter>[1-4]))?$")
-
-
-def _periodKey(period: str) -> tuple[int, int]:
-    """재무 기간 문자열을 비교 가능한 ``(year, quarter)`` 로 정규화한다.
-
-    연도만 있으면 연말 Q4 로 취급한다. 공개 ``asOf`` 는 ``YYYY`` 또는 ``YYYY[-]Qn`` 만
-    허용해 날짜 라벨이 데이터 vintage 인 것처럼 보이는 오해를 차단한다.
-    """
-    match = _PERIOD_RE.fullmatch(str(period).strip().upper())
-    if not match:
-        raise ValueError(f"asOf/period 형식 오류: {period!r} (YYYY 또는 YYYY-Qn)")
-    return int(match.group("year")), int(match.group("quarter") or 4)
 
 
 def _periodLabel(key: tuple[int, int]) -> str:

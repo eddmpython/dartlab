@@ -1,10 +1,16 @@
-"""capital.py 의 자본/부채 구조 cluster — Overview/Timeline/DebtTimeline/InterestBurden."""
+"""capital.py 의 자본/부채 구조 cluster: Overview/Timeline/DebtTimeline/InterestBurden.
+
+``_getRatios`` 본체는 L1.5 ``synth.companyAccess.ratiosOf`` 로 내려갔다. credit 엔진이
+같은 세 줄을 따로 갖고 있었는데 L2 형제끼리는 import 하지 못하기 때문이다. 여기서는
+기존 호출 경로를 지키려고 옛 이름으로 받아 둔다.
+"""
 
 from __future__ import annotations
 
 from dartlab.analysis.financial.accountSums import sumBorrowings
 from dartlab.core.memory import memoizedCalc
 from dartlab.core.utils.helpers import annualColsFromPeriods, toDictBySnakeId
+from dartlab.synth.companyAccess import ratiosOf as _getRatios
 
 _MAX_QUARTERS = 5
 _MAX_YEARS = 8
@@ -30,20 +36,6 @@ def _quarterlyCols(periods: list[str], maxQ: int = _MAX_QUARTERS) -> list[str]:
         return quarterly
     # EDGAR fallback: 연간 데이터 (2024, 2023, ...)
     return sorted([c for c in periods if c.isdigit() and len(c) == 4], reverse=True)[:maxQ]
-
-
-def _getRatios(company):
-    """RatioResult 객체 — 내부 compute 전용 (attribute access).
-
-    Returns
-    -------
-    RatioResult | None
-        회사의 재무비율 객체. 데이터 없으면 None.
-    """
-    try:
-        return company._finance.ratios
-    except (ValueError, KeyError, AttributeError):
-        return None
 
 
 import contextvars

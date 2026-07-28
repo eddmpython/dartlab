@@ -11,6 +11,7 @@ from datetime import date
 from typing import Any
 
 from dartlab.core.memory import memoizedCalc
+from dartlab.synth.rowAccess import strictFloat as _number
 
 _COMPONENTS = (
     ("earnings", "marginTrend", "dartlab.analysis.financial.profitability", "calcMarginTrend", True),
@@ -390,12 +391,6 @@ def _latestHistoryValue(
         return None
     period, value = max(candidates, key=lambda row: row[0])
     return value, period or None
-
-
-def _number(value: Any) -> float | None:
-    if isinstance(value, bool) or not isinstance(value, (int, float)):
-        return None
-    return float(value)
 
 
 def _productGaps(value: Any) -> list[dict[str, str]]:

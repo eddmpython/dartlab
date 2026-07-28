@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import logging
 
+from dartlab.analysis.financial._companyLookup import _getSectorKey
 from dartlab.analysis.financial._predictionProbability import _DIRECTION_SCORES, _bayesUpdate, _calibrate
 from dartlab.core.memory import memoizedCalc
 from dartlab.core.utils.calc import safeDiv as _safe
@@ -40,19 +41,6 @@ _SECTOR_DATA = json.loads(
 )
 _INDUSTRY_PRIOR: dict[str, float] = _SECTOR_DATA.get("priors", {})
 _DEFAULT_PRIOR: float = _SECTOR_DATA.get("_metadata", {}).get("defaultPrior", 0.721)
-
-
-def _getSectorKey(company) -> str | None:
-    try:
-        from dartlab.analysis.financial.valuation import _IG_TO_SECTOR_KEY
-
-        sectorInfo = company.sector
-        if sectorInfo is not None:
-            igName = sectorInfo.industryGroup.name
-            return _IG_TO_SECTOR_KEY.get(igName)
-    except (AttributeError, ValueError, ImportError):
-        pass
-    return None
 
 
 # calc 6: 다중 신호 종합
