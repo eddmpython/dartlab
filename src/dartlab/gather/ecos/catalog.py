@@ -11,8 +11,8 @@ from .types import CatalogEntry
 _INDICATORS: dict[str, dict] = {
     # 국민계정
     "GDP": {
-        "table": "111Y055",
-        "item": "10101",
+        "table": "200Y108",
+        "item": "10601",
         "label": "실질GDP",
         "group": "국민계정",
         "freq": "Q",
@@ -57,7 +57,7 @@ _INDICATORS: dict[str, dict] = {
         "desc": "농산물 및 석유류 제외",
     },
     "PPI": {
-        "table": "901Y010",
+        "table": "404Y014",
         "item": "*AA",
         "label": "생산자물가지수",
         "group": "물가",
@@ -76,7 +76,7 @@ _INDICATORS: dict[str, dict] = {
         "desc": "한국은행 기준금리",
     },
     "TREASURY_3Y": {
-        "table": "721Y001",
+        "table": "817Y002",
         "item": "010200000",
         "label": "국고채(3년)",
         "group": "금리",
@@ -85,7 +85,7 @@ _INDICATORS: dict[str, dict] = {
         "desc": "국고채 3년물 수익률",
     },
     "TREASURY_5Y": {
-        "table": "721Y001",
+        "table": "817Y002",
         "item": "010200001",
         "label": "국고채(5년)",
         "group": "금리",
@@ -94,8 +94,8 @@ _INDICATORS: dict[str, dict] = {
         "desc": "국고채 5년물 수익률",
     },
     "TREASURY_10Y": {
-        "table": "721Y001",
-        "item": "010200002",
+        "table": "817Y002",
+        "item": "010210000",
         "label": "국고채(10년)",
         "group": "금리",
         "freq": "D",
@@ -103,7 +103,7 @@ _INDICATORS: dict[str, dict] = {
         "desc": "국고채 10년물 수익률",
     },
     "CORP_BOND_3Y": {
-        "table": "721Y001",
+        "table": "817Y002",
         "item": "010300000",
         "label": "회사채(3년,AA-)",
         "group": "금리",
@@ -112,17 +112,17 @@ _INDICATORS: dict[str, dict] = {
         "desc": "회사채 AA- 등급 3년물 수익률",
     },
     "CORP_BOND_BBB_5Y": {
-        "table": "721Y001",
-        "item": "010400000",
-        "label": "회사채(5년,BBB-)",
+        "table": "817Y002",
+        "item": "010320000",
+        "label": "회사채(3년,BBB-)",
         "group": "금리",
         "freq": "D",
         "unit": "%",
         "desc": "회사채 BBB- 등급 5년물 수익률",
     },
     "CD_91D": {
-        "table": "721Y001",
-        "item": "010100000",
+        "table": "817Y002",
+        "item": "010502000",
         "label": "CD(91일)",
         "group": "금리",
         "freq": "D",
@@ -158,8 +158,8 @@ _INDICATORS: dict[str, dict] = {
         "desc": "유로화 매매기준율",
     },
     "CNYKRW": {
-        "table": "731Y004",
-        "item": "0000159",
+        "table": "731Y003",
+        "item": "0000007",
         "label": "원/위안 환율",
         "group": "환율",
         "freq": "D",
@@ -273,7 +273,7 @@ _INDICATORS: dict[str, dict] = {
     # 고용
     "EMPLOYED": {
         "table": "901Y027",
-        "item": "I35Y",
+        "item": "I61BA",
         "label": "취업자수",
         "group": "고용",
         "freq": "M",
