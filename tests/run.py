@@ -223,6 +223,14 @@ GATES: dict[str, Gate] = {
             "DARTLAB_DATA_DIR": "${{ github.workspace }}/tests/fixtures",
             "PYTEST_MEMORY_LIMIT_MB": "1900",
             "DARTLAB_TEST_LOCKED": "1",
+            # Polars 네이티브 할당자가 놓은 페이지를 바로 OS 로 돌려주게 한다. 이 셋이
+            # 없으면 워커가 파일을 이어 돌면서 RSS 가 단조 증가해 1900MB 가드에 걸려
+            # 죽는다. 죽는 자리는 그때그때 다른 파일이라 결함처럼 보이지만 원인은 누적이다.
+            # tests/test-lock.sh 가 같은 셋을 export 하는데 이 게이트는 그 스크립트를
+            # 거치지 않아 못 받고 있었다.
+            "MIMALLOC_PURGE_DELAY": "0",
+            "MIMALLOC_PURGE_DECOMMITS": "1",
+            "MALLOC_CONF": "dirty_decay_ms:0,muzzy_decay_ms:0",
         },
         cmd=(
             "pytest tests/ -n auto --dist loadfile --tb=short "
