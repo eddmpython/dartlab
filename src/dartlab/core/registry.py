@@ -1,8 +1,4 @@
-"""L0 데이터 엔트리 메타데이터 레지스트리.
-
-``core._entries``의 내장 카탈로그와 런타임 플러그인 엔트리를 하나의 불변 snapshot으로
-조회한다. Company, notes, API, CLI 같은 소비자별 필터와 표현은 각 호출자가 소유한다.
-"""
+"""L0 내장 DataEntry 카탈로그와 runtime plugin의 불변 snapshot registry."""
 
 from __future__ import annotations
 
@@ -11,8 +7,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from types import MappingProxyType
 
-from dartlab.core._entries import _ENTRIES as _BUILTIN_ENTRIES
-from dartlab.core.dataEntry import DataEntry
+from dartlab.core.dataEntry import _BUILTIN_ENTRIES, DataEntry
 
 _BUILTIN_SOURCE = "builtin:dartlab"
 

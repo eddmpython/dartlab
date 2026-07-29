@@ -55,7 +55,6 @@ _DENYLIST: tuple[tuple[str, str, str], ...] = (
 # architecture.md L0 정의 + 현재 SSOT 데이터 구조.
 _ALLOWED_DIRS: frozenset[str] = frozenset(
     {
-        "_entries",  # 여러 하위·상위 호출자가 공유하는 불변 DataEntry metadata SSOT
         "accounts",  # DART/EDGAR 공용 계정 정규화 SSOT
         "cache",  # L0 cache infra
         "capability",  # capability infra (generated 만 denylist)

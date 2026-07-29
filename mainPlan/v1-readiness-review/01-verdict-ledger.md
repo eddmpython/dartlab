@@ -35,13 +35,13 @@ L4 소비자, ai, mcp. 아래층 결함이 위층 전부를 오염시키므로 �
 ### 세션 인계
 
 - 현재 계층: L0 core
-- 마지막 완료 항목: L0-13 중앙 dataLoader 요청·artifact·IPC 복구 경계
-- 진행 중인 단일 항목: L0-14 `core/_entries` 372 LoC 과분할
-- 다음 첫 행동: `core/_entries` 7개 모듈과 `core/dataEntry.py`, 모든 직접 import와
-  re-export, builtin 등록 순서, provider-import-free 불변을 census한다. L0-08에서 확정한
-  residency와 registry 행동을 다시 설계하지 않고, 372 LoC를 7개 파일로 나눈 물리 구조가
-  실제 import 비용·순환 위험·수정 분산으로 이어지는지 먼저 재현한다. 아직 합치거나
-  다른 core 대형 파일을 분할하지 않는다.
+- 마지막 완료 항목: L0-14 DataEntry 내장 카탈로그 과분할 제거
+- 진행 중인 단일 항목: L0-15 `core/extractionCatalog.py` 1,256 LoC 분할 부족
+- 다음 첫 행동: `ExtractionConcept`, `DartSource`, `EdgarSource`, `HonestNull`의 모든
+  생산·감사 호출자와 import-time catalog 조립 순서를 census한다. US-only concept의
+  `dart=HonestNull`이 현재 타입 선언과 `toDict()` projection에 맞지 않는 결함을 제품
+  호출로 먼저 재현하고, 파일을 자르기 전에 schema/manifest/조회 owner와 분할 경계를
+  확정한다. 다른 core 대형 파일이나 L1 이상은 건드리지 않는다.
 - 금지: L0 완료 판정 전 L1 이상 감사나 수정 착수
 
 ## L0 순차 안정화 원장 (2026-07-29)
@@ -742,6 +742,59 @@ owner를 분리했다. 이 판정은 DART viewer와 공용 표 변환 경계만 
    계층에서 별도 실측해야 한다. 전역 folderSize에는 `core/_entries` 372 LoC 과분할과
    core 대형 파일 부채가 남는다. 다음 단일 항목은 기존 순서대로 `core/_entries`
    과분할이며, 따라서 L0-13만 완료이고 **L0 전체는 미달**이다.
+
+### L0-14 DataEntry 내장 카탈로그 과분할 제거
+
+**상태: 완료.** L0-08에서 확정한 DataEntry residency와 registry 동작은 바꾸지 않고,
+축소된 내장 metadata의 낡은 물리 과분할과 재도입 경계만 닫았다.
+
+1. **범위와 실제 호출자.** 범위는 `core/_entries` 7개 모듈, `core/dataEntry.py`,
+   `core/registry.py`, 직접 import·재수출·활성 설계 문서다. 생산에서 `_entries`를
+   직접 읽는 곳은 registry 하나뿐이고, Company, DART notes, plugin, CLI, server,
+   viz는 모두 registry snapshot을 소비한다. runtime plugin이 먼저 registry를
+   import해도 builtin 초기화 뒤에 등록되며, `registry.DataEntry` 재수출도 공개된
+   기존 표면이다. 독립 전문 검토가 전체 소비자와 등록 순서를 다시 대조해 누락 0,
+   P0/P1/P2 잔여 0으로 판정했다.
+2. **제품·구조 결함 재현.** `_entries`는 1,098 LoC·69개 entry였을 때 7파일 분할됐지만,
+   공개 표면 정리 뒤 372 LoC·29개 entry로 줄었어도 7개 category 모듈과 합산 모듈,
+   dataclass, registry의 9모듈 구조가 남았다. L0-08 한 변경이 이 9파일을 함께 건드린
+   것이 수정 분산의 실제 증거였고, `folderSize --strict`도 유일한 over-split으로
+   보고했다. 15개 cold subprocess에서 catalog+registry chain 중앙값은 `9.043 ms`,
+   관련 module residency는 9개였다.
+3. **owner와 SSOT.** `dataEntry.py`는 frozen `DataEntry` 타입과 provider-import-free
+   선언형 builtin tuple만 소유하고, `registry.py`는 validation, provenance,
+   immutable snapshot, atomic source replacement, builtin·alias 충돌 보호만 소유한다.
+   둘을 registry 한 파일로 합치면 약 570 LoC에서 선언과 transaction이 다시 섞이므로
+   2파일이 최소 clean boundary다. 빈 disclosure tuple은 원래도 snapshot에 entry를
+   추가하지 않았으므로 삭제 대상이다.
+4. **수정과 테스트.** finance 6, report 3, notes 12, raw 2, analysis 6의 29개 entry를
+   기존 순서 그대로 `_BUILTIN_ENTRIES` 한 tuple로 옮기고 category 파일 6개와 합산
+   `__init__`을 삭제했다. 모든 DataEntry 필드와 extractor attribute target을 HEAD와
+   직접 비교해 29/29 exact semantic equal을 확인했다. 이름·순서·category 수와
+   routing 필드, extractor target의 compact fingerprint, `registry.DataEntry`
+   identity를 회귀로 고정했다. `coreBoundary`의 `_entries` allowlist를 제거해 같은
+   과분할 재도입을 차단했고, source와 활성 extraction PRD의 경로 설명도 새 SSOT로
+   갱신했다.
+5. **공개 행동, 속도, 메모리.** Company, panel, notes, plugin을 포함한 직접 소비자
+   100개 회귀가 모두 통과했고 이름·순서·source·alias·runtime transaction 행동은
+   동일하다. 15회 cold 실측에서 catalog+registry chain 중앙값은 `9.043 ms`에서
+   `4.500 ms`로 약 50.2% 줄고 관련 module은 9개에서 2개로 줄었다. isolated retained
+   allocation은 `139,194 B`에서 `122,068 B`로 약 17 KB, module shallow size는
+   `5,560 B`에서 `1,440 B`로 줄었다. registry 조회는 L0-08의 `0.161 µs/call`에서
+   `0.084 µs/call`, list copy는 `0.222 µs/call`에서 `0.152 µs/call`로 줄었다.
+   전체 `import dartlab` 시간과 RSS 차이는 변동폭 안이므로 개선으로 주장하지 않는다.
+6. **Guard와 회귀.** 관련 회귀 `100 passed`, 최종 catalog 집중 회귀 `34 passed`,
+   구현 source Pyright 0 errors, Ruff/formatter, Bandit, Vulture, compileall,
+   camelCase, diff whitespace, quality gate가 통과했다. core `silentSubstitute`는
+   actual·baseline 모두 0이고 `coreBoundary --strict` 위반 0, top-level cycle 0이다.
+   `folderSize`의 over-split은 1건에서 0건이 됐다. 최종 diff 뒤 실행한 공식 Guard
+   `strict --scope l0-l15 --providers dart,edgar`는 1,762개 파일, 7/7 규칙과 cycle,
+   architecture, folder mirror, gather, provider, public API 여섯 외부 gate를 모두
+   통과했다.
+7. **남은 부채와 판정.** 전역 folderSize에는 기존 under-split 네 건
+   `extractionCatalog.py` 1,256 LoC, `memory.py` 862 LoC, `ratios.py` 1,900 LoC,
+   `schemas.py` 848 LoC가 정확히 남는다. 다음 단일 항목은 출력 순서의 첫 항목인
+   `extractionCatalog.py`다. 따라서 L0-14만 완료이고 **L0 전체는 미달**이다.
 
 ## 정량 판정 (2026-07-27 실측)
 

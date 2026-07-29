@@ -3,7 +3,7 @@
 
 이 모듈은 show topic 매핑이 호출하는 내부 추출 함수들을 묶는다.
 
-주석 항목 추가 시 ``core/_entries.py`` 의 notes 카테고리에 DataEntry 한 줄 추가
+주석 항목 추가 시 ``core/dataEntry.py`` 의 내장 카탈로그에 DataEntry 한 줄 추가
 (extractor + notesDispatch 명시) 하면 자동 반영. 별도 하드코딩 dispatch dict 없음.
 """
 
@@ -152,7 +152,7 @@ class Notes:
             OutputSchema:
                 - pl.DataFrame 또는 None.
             Prerequisites:
-                - 본 회사 docs notes 본문 + core/_entries.py 등록.
+                - 본 회사 docs notes 본문 + core/dataEntry.py 등록.
             Freshness:
                 - docs 갱신 시점.
             Dataflow:
@@ -187,7 +187,7 @@ class Notes:
             OutputSchema:
                 - pl.DataFrame 또는 None.
             Prerequisites:
-                - 본 회사 docs notes 본문 + core/_entries.py 등록.
+                - 본 회사 docs notes 본문 + core/dataEntry.py 등록.
             Freshness:
                 - docs 갱신 시점.
             Dataflow:
@@ -219,7 +219,7 @@ class Notes:
             OutputSchema:
                 - pl.DataFrame 또는 None.
             Prerequisites:
-                - 본 회사 docs notes 본문 + core/_entries.py 등록.
+                - 본 회사 docs notes 본문 + core/dataEntry.py 등록.
             Freshness:
                 - docs 갱신 시점.
             Dataflow:
@@ -251,7 +251,7 @@ class Notes:
             OutputSchema:
                 - pl.DataFrame 또는 None.
             Prerequisites:
-                - 본 회사 docs notes 본문 + core/_entries.py 등록.
+                - 본 회사 docs notes 본문 + core/dataEntry.py 등록.
             Freshness:
                 - docs 갱신 시점.
             Dataflow:

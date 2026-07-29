@@ -2,14 +2,15 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 from concurrent.futures import ThreadPoolExecutor
 
 import pytest
 
-from dartlab.core._entries import _ENTRIES
+from dartlab.core.dataEntry import _BUILTIN_ENTRIES, DataEntry
 from dartlab.core.registry import (
     BuiltinEntryMutationError,
-    DataEntry,
     PluginNameCollisionError,
     getEntries,
     getEntry,
@@ -21,8 +22,43 @@ from dartlab.core.registry import (
     unregisterEntriesBySource,
     unregisterEntry,
 )
+from dartlab.core.registry import (
+    DataEntry as RegistryDataEntry,
+)
 
 pytestmark = [pytest.mark.unit]
+
+_EXPECTED_BUILTIN_NAMES = (
+    "annual.IS",
+    "annual.BS",
+    "annual.CF",
+    "timeseries.IS",
+    "timeseries.BS",
+    "timeseries.CF",
+    "BS",
+    "IS",
+    "CF",
+    "notes.receivables",
+    "notes.inventory",
+    "notes.tangibleAsset",
+    "notes.intangibleAsset",
+    "notes.investmentProperty",
+    "notes.affiliates",
+    "notes.borrowings",
+    "notes.provisions",
+    "notes.eps",
+    "notes.lease",
+    "notes.segments",
+    "notes.costByNature",
+    "rawFinance",
+    "rawReport",
+    "ratios",
+    "insight",
+    "sector",
+    "rank",
+    "keywordTrend",
+    "news",
+)
 
 
 def _entry(name: str, *, aliases: tuple[str, ...] = ()) -> DataEntry:
@@ -39,13 +75,58 @@ def _entry(name: str, *, aliases: tuple[str, ...] = ()) -> DataEntry:
 
 def testBuiltinCatalogIsImmutableAndProtected() -> None:
     """내장 tuple과 엔트리는 runtime 제거 API로 훼손할 수 없다."""
-    assert isinstance(_ENTRIES, tuple)
+    assert isinstance(_BUILTIN_ENTRIES, tuple)
     assert getEntrySource("annual.IS") == "builtin:dartlab"
 
     with pytest.raises(BuiltinEntryMutationError, match="제거할 수 없습니다"):
         unregisterEntry("annual.IS")
 
     assert getEntry("annual.IS") is not None
+
+
+def testBuiltinCatalogOrderAndCategoriesRemainStable() -> None:
+    """물리 구조 변경이 내장 이름·순서·category projection을 바꾸지 않는다."""
+    assert tuple(entry.name for entry in _BUILTIN_ENTRIES) == _EXPECTED_BUILTIN_NAMES
+    assert tuple(entry.name for entry in getEntries()) == _EXPECTED_BUILTIN_NAMES
+    assert {
+        category: sum(entry.category == category for entry in _BUILTIN_ENTRIES)
+        for category in ("finance", "report", "notes", "raw", "analysis")
+    } == {
+        "finance": 6,
+        "report": 3,
+        "notes": 12,
+        "raw": 2,
+        "analysis": 6,
+    }
+
+
+def testBuiltinRoutingContractAndDataEntryReExportRemainStable() -> None:
+    """물리 통합이 routing metadata나 registry의 기존 type 표면을 바꾸지 않는다."""
+    routingProjection = [
+        {
+            "name": entry.name,
+            "category": entry.category,
+            "dataType": entry.dataType,
+            "modulePath": entry.modulePath,
+            "funcName": entry.funcName,
+            "apiType": entry.apiType,
+            "notesDispatch": entry.notesDispatch,
+            "aliases": entry.aliases,
+            "requires": entry.requires,
+            "unit": entry.unit,
+            "extractorTarget": (None if entry.extractor is None else entry.extractor.__code__.co_names),
+        }
+        for entry in _BUILTIN_ENTRIES
+    ]
+    payload = json.dumps(
+        routingProjection,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode()
+
+    assert RegistryDataEntry is DataEntry
+    assert hashlib.sha256(payload).hexdigest() == ("d62a954fbac4c5a8b68cd29c7e9ee6a867b4932be786fa38e124d80b46c2988a")
 
 
 def testAliasCannotHijackCanonicalName() -> None:

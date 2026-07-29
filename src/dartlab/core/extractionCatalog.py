@@ -1,7 +1,7 @@
 """추출 개념 카탈로그 SSOT (L0 정적 매니페스트).
 
 provider panel/report 에서 빼먹을 수 있는 모든 정보를 EDGAR·DART 동급으로 한 곳에 카테고리화한다.
-흩어진 레지스트리(core/_entries notes 12 + report 28 apiType + edgar `_CATEGORY_TAGS` 12)를 참조하고
+흩어진 레지스트리(core/dataEntry notes 12 + report 28 apiType + edgar `_CATEGORY_TAGS` 12)를 참조하고
 EDGAR 열 + parity 판정 + narrativeAnchor 를 ADD 한 단일 진실의 원천이다.
 
 **계층 정합 (L0)**: 순수 데이터(dataclass + 문자열 상수)만 보유하고 provider import 가 0 이라 core(L0)에
@@ -79,7 +79,7 @@ class ExtractionConcept:
     conceptId 는 안정 식별자, category 는 9 대분류, dart/edgar 는 양 provider 표면 또는 부재.
     axisType 는 single|multiAxis|movement|text, valueType 는 amount|rate|text.
     narrativeAnchor 는 (chapterCanonical, sectionCore) 로 narrative 개념만 보유.
-    registered 는 first-class 이름 접근 가능 여부(노트 개념만 의미). 레거시 core/_entries notes 12 또는
+    registered 는 first-class 이름 접근 가능 여부(노트 개념만 의미). core/dataEntry notes 12 또는
     catalog 라우팅(`resolveNoteKey` -> panel canonicalKey 폴백)으로 `c.panel(이름)` 도달 가능하면 True.
     """
 
@@ -374,7 +374,7 @@ _STATEMENTS: list[ExtractionConcept] = [
 ]
 
 _NOTES: list[ExtractionConcept] = [
-    # registered 12 (core/_entries/notes.py). EDGAR 태그는 _EDGAR_NOTE_TAGS 정본.
+    # registered 12 (core/dataEntry.py). EDGAR 태그는 _EDGAR_NOTE_TAGS 정본.
     _note("note.inventory", "재고자산", "NT_D826380", _EDGAR_NOTE_TAGS["inventory"], registered=True),
     _note("note.receivables", "매출채권", "NT_D822420", _EDGAR_NOTE_TAGS["receivables"], registered=True),
     _note(

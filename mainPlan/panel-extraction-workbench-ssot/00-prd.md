@@ -14,7 +14,7 @@
    구동 워크벤치 표면, (d) 성공을 판정하는 coverage census. 넷 다 신설이 아니라 기존 자산 정합.
 2. **새 모놀리식 워크벤치 엔진은 거부한다.** 수집(L1)·정리(L1.5)·예측(L2)을 한 엔진에 담으면 4계층 단방향·
    도메인 격리·런타임-SSOT 무bake 를 동시에 깬다. 예측은 워크벤치가 소유가 아니라 위임이 맞다.
-3. **정공법 = 3 조각 분배**: 카탈로그 SSOT 는 `core/_entries`(L0, 기존 seed 확장), 조립 view 는
+3. **정공법 = 3 조각 분배**: 카탈로그 SSOT 는 `core/dataEntry.py`(L0, 기존 seed 확장), 조립 view 는
    `frame/`(L1.5, "raw 결합" 헌장 정합), 표면은 Company·root facade(카탈로그 구동) + 예측은 기존 L2 위임.
 4. **성공 TODO = coverage census 원장.** 카탈로그 매니페스트 vs 실제 추출을 전종목·양 provider 로 대조하여
    개념별 `추출됨?(DART/EDGAR)·커버리지%·honest-null 사유` 산출. 성공 = 전 개념이 (추출됨) 또는 (기록된 정직-null).
@@ -39,7 +39,7 @@
 
 ### 1.2 개념 레지스트리 (분산 · 통합 SSOT 부재)
 
-- `core/_entries/notes.py`: DataEntry 12종 (표준 IFRS ~32 중). `notesDispatch`+`extractor` 구동.
+- `core/dataEntry.py`: DataEntry 12종 (표준 IFRS ~32 중). `notesDispatch`+`extractor` 구동.
 - `providers/dart/report/spec.py::buildSpec`: DART 28 apiType self-describing 카탈로그 (EDGAR 대응 spec 없음).
 - `scan/builders/kr/{report,}/fieldCatalog.py`: screening 필드 SSOT (KR 한정).
 - `providers/mappers/mapperData/notesStructure.json`: 499KB, 2877사 스캔, `lastScan 2026-04-10`(stale, 미동결).
@@ -84,16 +84,16 @@ proxy/EX-21 HTML 재구성(적중률 부분). 이 비대칭 자체가 카탈로�
 
 | 조각 | 위치 | 계층 | import 정합 |
 |---|---|---|---|
-| 개념 카탈로그 (매니페스트) | `core/_entries/` 확장 (기존 notes.py seed) | L0 | 모든 계층 import 가능. 데이터+dispatch 키+parity 메타만 보유(provider import 0 → L0 유지). |
+| 개념 카탈로그 (매니페스트) | `core/dataEntry.py` 확장 (기존 notes seed) | L0 | 모든 계층 import 가능. 데이터+dispatch 키+parity 메타만 보유(provider import 0 → L0 유지). |
 | 조립 view (정리/가공준비) | `frame/workbench.py` (신규) | L1.5 | frame 이 core(카탈로그)·providers(추출)·gather 전부 import OK. frame↛reference 회피가 카탈로그를 core 에 둔 이유. |
 | coverage census (성공 TODO) | `tests/audit/extractionCoverageCensus.py` (신규) | audit | 최상위 감사도구. Guard Index 형제. |
 | 단일사 표면 | `Company.workbench`(프로퍼티) + root `dartlab.workbench(code)` | facade | frame 조립 위임. Company frozen surface 계약 유지(additive). |
 | 횡단 표면 | `scan`(기존) | L1.5 | 이미 횡단 워크벤치. 변경 0. |
 | 예측 | `analysis.forecast`·`quant`·`macro` | L2 | facade 가 위임(예: `c.workbench.forecast()` 가 analysis 호출). 워크벤치는 재료만, 예측은 L2. |
 
-> **핵심 정합**: 카탈로그를 `reference/` 가 아니라 `core/_entries` 에 두는 것이 결정적. frame(조립)이 catalog 를
+> **핵심 정합**: 카탈로그를 `reference/` 가 아니라 `core/dataEntry.py` 에 두는 것이 결정적. frame(조립)이 catalog 를
 > 읽어야 하는데 `frame↛reference` 4형제 cross 금지라 reference 면 배선 불가. core(L0)면 frame·providers·scan·L2 모두
-> 합법 소비. 게다가 `core/_entries/notes.py` 가 이미 그 패턴(DataEntry+notesDispatch+extractor)이라 확장이 정공.
+> 합법 소비. 게다가 `core/dataEntry.py` 가 이미 그 패턴(DataEntry+notesDispatch+extractor)이라 확장이 정공.
 
 ### 2.3 덕지덕지 제거 원칙 (정성 추출)
 
@@ -116,7 +116,7 @@ panel SPINE(canonical 14챕터·sectionLeaf 수렴, 이미 빌드) ─anchor→ 
 
 ## 3. 4 기둥 설계 (스키마·영향 파일·함수)
 
-### 기둥 A · 개념 카탈로그 SSOT (`core/_entries/extractionCatalog.py` 신규 + notes.py 확장)
+### 기둥 A · 개념 카탈로그 SSOT (`core/extractionCatalog.py` + `core/dataEntry.py` 확장)
 
 단일 매니페스트. 개념 1건 =
 
@@ -133,7 +133,7 @@ ExtractionConcept(
 )
 ```
 
-- 흡수 대상(중복 제거): report `spec.py` apiTypes, `fieldCatalog.py`, `notesStructure.json` note-type, `core/_entries/*`.
+- 흡수 대상(중복 제거): report `spec.py` apiTypes, `fieldCatalog.py`, `notesStructure.json` note-type, `core/dataEntry.py`.
 - ADD: EDGAR 열 + parity 판정 + narrativeAnchor. 기존 12 노트는 dart+edgar 둘 다 채움(EDGAR `_CATEGORY_TAGS` 가
   같은 12 카테고리 미러라 즉시 parity green).
 - L0 유지 증명: 문자열·dispatch 키·lambda(제네릭 result 대상)만. provider import 0.
@@ -175,7 +175,7 @@ workforce.avgSalary    │ workforce │ 89%   │ -      │ DART-only │ US �
 
 ### P0 · 카탈로그 SSOT + census (성공 원장 백본) · 최우선·최저위험
 
-- 영향: `core/_entries/extractionCatalog.py`(신규), `notes.py`(edgar 열 보강), `tests/audit/extractionCoverageCensus.py`(신규),
+- 영향: `core/extractionCatalog.py`, `core/dataEntry.py`(edgar 열 보강), `tests/audit/extractionCoverageCensus.py`,
   `_baselines/extractionCoverage.json`(신규).
 - 추출 변경 0. 통합+측정만. 즉시 진짜 갭 원장 산출.
 - 테스트: `tests/providers/mappers/test_extractionCatalog.py`(스키마·parity 불변식), census smoke(표본 20사).
