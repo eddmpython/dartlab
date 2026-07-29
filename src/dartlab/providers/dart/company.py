@@ -24,7 +24,6 @@ pl.Config.set_tbl_width_chars(200)
 
 from dartlab.core.dataLoader import (
     buildIndex,
-    extractCorpName,
     loadData,
 )
 from dartlab.core.logger import getLogger
@@ -1378,14 +1377,15 @@ class Company:
         """로컬에 보유한 전체 종목 인덱스.
 
         Capabilities:
-            - 로컬 데이터 현황 (종목별 panel/finance/report 보유 여부)
-            - 최종 업데이트 일시
+            - 로컬 DART panel의 종목별 행 수, 기간 범위, 공시 수 집계.
+            - 본문 전체를 적재하지 않는 parquet column projection.
 
         Returns:
-            pl.DataFrame - 종목코드, 회사명, panel/finance/report 유무, 최종일시.
+            pl.DataFrame - ``stockCode, corpName, rows, yearFrom, yearTo, nDocs``.
+            현행 panel은 회사명을 저장하지 않으므로 ``corpName``은 null이다.
 
         Raises:
-            없음.
+            DataIndexError: 손상된 panel parquet 또는 projection 집계 실패.
 
         Example:
             >>> Company("005930").status()
@@ -1395,13 +1395,14 @@ class Company:
                 - 전체 status DataFrame LLM 컨텍스트 → 수천 row.
                 - 보유 == 최신 가정 X - update() 미실행 시 stale 가능.
             OutputSchema:
-                - pl.DataFrame [stockCode, corpName, panel:bool, finance:bool, report:bool, lastUpdated].
+                - pl.DataFrame [stockCode:str, corpName:str|null, rows:i64,
+                  yearFrom:str|null, yearTo:str|null, nDocs:i64].
             Prerequisites:
-                - 로컬 data/ 디렉토리 인덱스 build.
+                - 로컬 ``data/dart/panel/*.parquet``.
             Freshness:
                 - 호출 시점 디스크 스캔.
             Dataflow:
-                - data/{docs,finance,report}/*.parquet → buildIndex → 본 staticmethod.
+                - data/dart/panel/*.parquet → buildIndex projection → 본 staticmethod.
             TargetMarkets:
                 - KR - 로컬 보유 종목 카탈로그.
         """

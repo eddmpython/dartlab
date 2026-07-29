@@ -11,12 +11,15 @@ from pathlib import Path
 
 import polars as pl
 
+import dartlab.core.dataLoaderIndex as dataLoaderIndex
 from dartlab.core.dataConfig import (
     DATA_RELEASES,
     hfBaseUrl,
     repoFor,
     resolveDataCategory,
 )
+
+DataIndexError = dataLoaderIndex.DataIndexError
 
 _IS_PYODIDE = sys.platform == "emscripten"
 
@@ -486,63 +489,36 @@ DART_VIEWER = "https://dart.fss.or.kr/dsaf001/main.do?rcpNo="
 
 
 def buildIndex(category: str = "panel") -> pl.DataFrame:
-    """로컬 parquet 전체를 스캔해서 종목 인덱스 생성.
+    """로컬 parquet를 projection 집계해 종목 인덱스를 생성한다.
 
     Returns:
-        DataFrame (stockCode, corpName, rows, yearFrom, yearTo, nDocs)
-        로컬에 파일이 없으면 빈 DataFrame.
+        고정 스키마 DataFrame
+        ``(stockCode, corpName, rows, yearFrom, yearTo, nDocs)``.
+        원본에 회사명 컬럼이 없으면 ``corpName``은 null이며, 로컬 파일이 없으면
+        같은 스키마의 빈 DataFrame이다.
+
+    Raises:
+        DataIndexError: parquet가 손상됐거나 projection 집계에 실패한 경우.
+        KeyError: 등록되지 않은 데이터 카테고리인 경우.
     """
     category = resolveDataCategory(category)
     dataDir = _dataDir(category)
     files = sorted(dataDir.glob("*.parquet"))
     if not files:
-        return pl.DataFrame(
-            schema={
-                "stockCode": pl.Utf8,
-                "corpName": pl.Utf8,
-                "rows": pl.Int64,
-                "yearFrom": pl.Utf8,
-                "yearTo": pl.Utf8,
-                "nDocs": pl.Int64,
-            }
-        )
+        return dataLoaderIndex.buildDataIndex(files, category, pyodide=_IS_PYODIDE)
 
     from rich.progress import Progress
 
     from dartlab.core.logger import getConsole
 
-    records = []
     with Progress(console=getConsole()) as progress:
-        _task = progress.add_task("종목 스캔", total=len(files))
-        for f in files:
-            df = _normalizeLoadedFrame(pl.read_parquet(str(f)), category)
-            code = f.stem
-            name = extractCorpName(df)
-            if name is None and "corp" in df.columns:
-                name = str(df["corp"][0] or "") if df.height else None
-            if "year" in df.columns:
-                years = sorted(df["year"].unique().to_list())
-            elif "period" in df.columns:
-                years = sorted({str(p)[:4] for p in df["period"].to_list() if p})
-            else:
-                years = []
-            docIdCol = _docIdColumn(df)
-            if docIdCol is None and "rceptNo" in df.columns:
-                docIdCol = "rceptNo"
-            nDocs = df[docIdCol].n_unique() if docIdCol else 0
-            records.append(
-                {
-                    "stockCode": code,
-                    "corpName": name,
-                    "rows": df.height,
-                    "yearFrom": years[0] if years else None,
-                    "yearTo": years[-1] if years else None,
-                    "nDocs": nDocs,
-                }
-            )
-            progress.advance(_task)
-
-    return pl.DataFrame(records)
+        task = progress.add_task("종목 스캔", total=len(files))
+        return dataLoaderIndex.buildDataIndex(
+            files,
+            category,
+            pyodide=_IS_PYODIDE,
+            onProgress=lambda: progress.advance(task),
+        )
 
 
 def updateEdgarListedUniverse(*, force: bool = False) -> Path:
@@ -661,13 +637,6 @@ def yearsDesc(df: pl.DataFrame | None, *, limit: int | None = None) -> list:
     return ordered[:limit] if limit is not None else ordered
 
 
-def _docIdColumn(df: pl.DataFrame) -> str | None:
-    for col in ("rcept_no", "rceptNo", "accession_no"):
-        if col in df.columns:
-            return col
-    return None
-
-
 def _isLocalCacheExpired(path: Path, ttlHours: int) -> bool:
     if not path.exists():
         return True
@@ -675,50 +644,13 @@ def _isLocalCacheExpired(path: Path, ttlHours: int) -> bool:
     return ageSeconds > ttlHours * 3600
 
 
-# ── 메모리 최적화 + docs 표준화 ────────────────────────────────────
-
-
-def _optimizeMemory(df: pl.DataFrame) -> pl.DataFrame:
-    """Categorical 전환 + Int 다운캐스트로 메모리 절감."""
-    from dartlab.core.dataLoaderNormalize import optimizeMemory
-
-    return optimizeMemory(df)
+# ── 로드 결과 표준화 ───────────────────────────────────────────────
 
 
 def _normalizeLoadedFrame(df: pl.DataFrame, category: str) -> pl.DataFrame:
     from dartlab.core.dataLoaderNormalize import normalizeLoadedFrame
 
     return normalizeLoadedFrame(df, category)
-
-
-def _normalizeDartDocs(df: pl.DataFrame) -> pl.DataFrame:
-    from dartlab.core.dataLoaderNormalize import normalizeDartDocs
-
-    return normalizeDartDocs(df)
-
-
-def _normalizeEdgarDocs(df: pl.DataFrame) -> pl.DataFrame:
-    from dartlab.core.dataLoaderNormalize import normalizeEdgarDocs
-
-    return normalizeEdgarDocs(df)
-
-
-def _edgarReportTypeFromRow(row: dict) -> str | None:
-    from dartlab.core.dataLoaderNormalize import edgarReportTypeFromRow
-
-    return edgarReportTypeFromRow(row)
-
-
-def _applyEdgarPeriodKeys(df: pl.DataFrame) -> pl.DataFrame:
-    from dartlab.core.dataLoaderNormalize import applyEdgarPeriodKeys
-
-    return applyEdgarPeriodKeys(df)
-
-
-def _inferEdgarPeriodKeyMap(filings: list[dict]) -> dict[str, str | None]:
-    from dartlab.core.dataLoaderNormalize import inferEdgarPeriodKeyMap
-
-    return inferEdgarPeriodKeyMap(filings)
 
 
 # ── Pyodide (emscripten) 전용 경로 ──────────────────────────────────

@@ -35,10 +35,10 @@ L4 ai, mcp. 아래층 결함이 위층 전부를 오염시키므로 순서를 �
 ### 세션 인계
 
 - 현재 계층: L0 core
-- 마지막 완료 항목: L0-04 SecretStore 트랜잭션·보안 backend 계약
-- 진행 중인 단일 항목: L0-05 Company.status parquet projection 안전성
-- 다음 첫 행동: Company.status의 실제 호출자와 projection 경계를 확정하고 누락·손상 parquet의
-  제품 행동, 반복 I/O, 오류 대체 여부를 재현한다.
+- 마지막 완료 항목: L0-05 Company.status parquet projection 안전성
+- 진행 중인 단일 항목: L0-06 Pyodide dataLoader 읽기·fetch 무결성
+- 다음 첫 행동: `core/dataLoaderPyodide.py`의 실제 호출자와 브라우저 파일 경계를 확정하고
+  404 HTML, 잘린 parquet, projection, 반복 fetch, 대형 파일 메모리 행동을 재현한다.
 - 금지: L0 완료 판정 전 L1 이상 감사나 수정 착수
 
 ## L0 순차 안정화 원장 (2026-07-29)
@@ -220,6 +220,63 @@ L4 ai, mcp. 아래층 결함이 위층 전부를 오염시키므로 순서를 �
    항목에 이월하며 전체 제품의 OAuth 안전을 아직 선언하지 않는다. Company.status parquet
    projection, Pyodide loader, 동적 상향 import 감시도 남아 있으므로 **L0 전체는 미달**이다.
 
+### L0-05 Company.status parquet projection 안전성
+
+**상태: 완료.** 로컬 종목 인덱스의 정확성·오류·속도·메모리 계약을 닫았다. 현행 panel이
+회사명을 저장하지 않는 문제를 다른 레이어에서 추측값으로 메웠다는 뜻은 아니다.
+
+1. **범위와 실제 호출자.** 정본은 `core/dataLoader.py::buildIndex`와 새로 분리한
+   `core/dataLoaderIndex.py`다. 공개 호출자는 `providers/dart/company.py::Company.status`,
+   직접 카테고리 호출자는 EDGAR docs 기반 테스트다. DART panel뿐 아니라 같은 로더를 쓰는
+   finance, report, edgarDocs, edgarPanel 실데이터를 함께 확인했다. 검색 엔진의 동명
+   `buildIndex`는 별도 소유자라 범위에서 제외했다.
+2. **제품 결함 재현.** 현 구현은 50,993,120-byte panel 한 파일을 인덱싱하면서 본문
+   `contentRaw`까지 전부 풀어 `1.5551 s`, RSS 약 `1,484,935,168 bytes`를 썼다.
+   현재 로컬 panel은 2,930파일, 약 11.78GB라 공개 status가 전체 본문을 회사별로 반복
+   디코딩했다. `corp`는 회사명이 아니라 종목코드인데 `corpName`으로 반환했고, 결측만 있는
+   결과는 `Null` dtype으로 공개 스키마가 변했다. `year`에 null이 섞이면 정렬
+   `TypeError`, 실제 report의 `제8기 1분기` 같은 값은 연도 범위로 노출됐다. 손상 parquet은
+   원인 예외를 내지만 카테고리와 파일 경로가 없었다. 공개 docstring은 실제로 존재하지 않는
+   panel/finance/report 보유 bool과 lastUpdated를 반환한다고 적고 있었다.
+3. **근본 원인과 SSOT.** 인덱스 집계가 일반 `loadData` 정규화 경로를 재사용하면서
+   `pl.read_parquet` 전체 적재, 스키마 추론, alias 선택, 진행 표시를 한 함수에 섞었다.
+   최초 개선안도 후보 컬럼의 존재만 보고 결측 alias를 고정했고, `executor.map`이 전 파일의
+   Future를 선제 생성했으며, Pyodide는 projection 전에 `read_bytes()`로 압축 파일 전체를
+   Python heap에 복사했다. 인덱스 고정 스키마와 projection 표현식, bounded 실행, 오류
+   타입을 `dataLoaderIndex.py` 하나가 소유하게 했다.
+4. **수정과 테스트.** native는 `scan_parquet`에서 회사명·연도·문서 ID와 row count만
+   streaming 집계한다. 최대 네 Future만 유지하는 rolling window가 입력 순서와 즉시 오류
+   전파를 보장하고 부분 결과를 반환하지 않는다. 회사명, `year/period/bsns_year`, 세 문서 ID
+   alias는 값 단위 nonempty coalesce를 쓰며 연도는 정규 4자리만 허용한다. `corp` 식별자는
+   회사명으로 쓰지 않는다. Pyodide는 seekable file stream에서 pyarrow schema와 projection을
+   읽는다. 모든 결과와 빈 결과는 같은 6-column dtype이고, `DataIndexError`가 category,
+   path, chained cause를 보존한다. 오래전에 분리된 정규화 함수의 호출자 0 wrapper와
+   Company의 미사용 import도 제거했다. 새 core 회귀 9건과 공개 caller 회귀 1건을 추가했다.
+5. **공개 행동, 정확성, 속도, 메모리.** 최종 실데이터 전수 결과는 panel
+   `2,930파일/9.7130s/104,761 docs/2005~2026`, finance
+   `2,932/6.9320s/87,299/2015~2026`, report
+   `2,939/7.6362s/91,854/2015~2026`, edgarDocs
+   `7,070/17.4117s/244,812/2009~2026`, edgarPanel
+   `1,261/6.1266s/41,377/2008~2026`다. 최대 panel 한 파일의 최종 native 경로는
+   `0.065710s`, RSS 증가 약 `26,722,304 bytes`로 구 구현보다 약 23.7배 빠르고 피크
+   증가는 약 55.6배 작았다. 같은 파일의 Pyodide projection은 `0.0399s`, RSS 증가 약
+   `22,695,936 bytes`였다. 20,000개 합성 파일의 bounded scheduler peak는 전문 검토에서
+   구 `executor.map` 36.74MiB 대비 6.25MiB로 줄었다.
+6. **Guard와 회귀.** 집중 공개·core 회귀 `11 passed`, 인접 loadData cache/predicate/IPC
+   회귀 `15 passed`다. Ruff, formatter, compileall, 변경 파일 Pyright 0, wheel build와
+   신규 모듈 포함, lockfile, diff whitespace가 통과했다. 변경된 세 소스의
+   `silentSubstitute --strict`는 각각 0개다. Guard Index
+   `strict --scope l0-l15 --providers dart,edgar`는 1,766개 파일, 7개 규칙과 cycle,
+   architecture, folder mirror, gather, provider, public API 여섯 외부 게이트를 모두
+   통과했다. 전문 에이전트의 최초 major 3건을 수정한 뒤 재검토 blocker/major는 0개다.
+7. **남은 부채와 판정.** 현행 panel schema의 `corp`는 종목코드이므로
+   `Company.status().corpName`은 거짓 이름 대신 null이다. 회사명 결합은 L1 공개 제품
+   계약에서 로컬·오프라인 source를 명시해 결정한다. heavy EDGAR fixture는 별도 데이터
+   의존이라 합성 회귀로 같은 계약을 검증했다. 저장소 전체 Pyright는 이번 파일 밖의 기존
+   전 레이어 부채 `1,801 errors/96 warnings`로 실패하며 해당 레이어 순서에 기록해
+   처리한다. 일반 Pyodide fetch/read 무결성과 동적 상향 import 감시가 남아 있으므로
+   이 항목만 완료이고 **L0 전체는 미달**이다.
+
 ## 정량 판정 (2026-07-27 실측)
 
 체크리스트 여섯 중 셋을 지금 잴 수 있다. 셋 다 미달이다.
@@ -254,13 +311,13 @@ Q1(routing SSOT 통합), Q4(realData 30% 단축), Q6(외부 venv 종합 smoke)�
 
 | 계층 | 상태 |
 |---|---|
-| L0 core | 검토 완료. 미달 |
-| L1 gather, providers | 검토 완료. 미달 |
-| L1.5 scan, frame, synth, reference | 검토 완료. 미달 |
-| L2 analysis, macro, quant, industry, credit | 검토 완료. 미달 |
-| L2.5 data | 검토 완료. 미달 |
-| L3 story, simulate | 검토 완료. 미달 |
-| L4 ai, mcp | 검토 완료. 미달 |
+| L0 core | 순차 안정화 진행 중. 미달 |
+| L1 gather, providers | L0 완료 전 재검토 대기 (과거 판정 미달) |
+| L1.5 scan, frame, synth, reference | L0 완료 전 재검토 대기 (과거 판정 미달) |
+| L2 analysis, macro, quant, industry, credit | L0 완료 전 재검토 대기 (과거 판정 미달) |
+| L2.5 data | L0 완료 전 재검토 대기 (과거 판정 미달) |
+| L3 story, simulate | L0 완료 전 재검토 대기 (과거 판정 미달) |
+| L4 ai, mcp | L0 완료 전 재검토 대기 (과거 판정 미달) |
 
 ## 현재 판정
 
