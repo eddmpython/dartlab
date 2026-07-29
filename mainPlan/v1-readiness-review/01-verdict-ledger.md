@@ -59,10 +59,10 @@ Guard는 현재 레이어의 source를 동결한 뒤 한 번 실행한다. Guard
   데이터 계약·오류 투명성·SSOT·속도·메모리 기준으로 전수 대조한다. 네 형제 간
   cross import 없이 결함 수정과 집중 회귀를 끝내고 source 동결 뒤 공식 Guard, 원장,
   커밋, push까지 닫는다.
-- 다음 첫 행동: 네 패키지 전체 tree와 공개 `dartlab.scan(...)`, 하위 L2·L3 소비자를
-  호출 그래프로 대조한다. scan 공통 의미 계약 체크포인트 다음에는 실제 panel에서
-  총자본을 유실하는 reference alias 의미 충돌을 같은 L1.5 SSOT 경계에서 먼저 닫고,
-  scan의 one-pass 집계와 EDGAR 공통 기간 batch를 성능·메모리 기준으로 고친다.
+- 다음 첫 행동: reference 계정 별칭 의미 계약까지 닫은 현재 체크포인트를 push한 뒤,
+  scan의 회사별 반복 filter를 one-pass 집계로 바꾸고 EDGAR 공통 기간 batch를
+  속도·메모리 기준으로 고친다. 이어 frame, synth, reference의 남은 전체 src와
+  공개 호출자 대조를 계속한다.
 - 금지: axis나 파일 하나만 끝내고 완료 보고, L2 이상 수정 선행,
   중간 source에서 공식 Guard 반복
 
@@ -95,9 +95,27 @@ Guard는 현재 레이어의 source를 동결한 뒤 한 번 실행한다. Guard
    아니라 다음 최적화의 차단 근거다. profitability 실데이터도 약 5.3초와 RSS 약
    955MB가 관찰되어 one-pass group/pivot 전환 전에는 scan을 완료 판정하지 않는다.
 
-다음 순서는 reference alias 의미 충돌과 다단계 병합을 닫은 뒤, scan 집계를 회사별
-반복 filter가 없는 one-pass 경로로 바꾸고 EDGAR 계정 batch와 공통 period를 확정하는 것이다.
-frame, synth, reference 전체와 실제 소비자, 최종 Guard가 남았으므로 **L1.5 판정은 미완료**다.
+### 진행 증거 2. reference 계정 별칭 의미 계약
+
+**상태: L1.5 진행 중. 레이어 완료 아님.** 실제 DART 재무 패널에서 서로 다른 경제적
+의미를 가진 총자본과 지배주주지분이 하나로 합쳐지던 값 유실을 reference SSOT에서 닫았다.
+
+1. 기존 `total_equity -> owners_of_parent_equity` 연쇄는 비지배지분을 포함하는
+   총자본을 지배기업 소유주지분으로 축소했다. `total_stockholders_equity`를 총자본의
+   terminal canonical로 확정하고 두 계정을 별도로 보존했다.
+2. 계정 별칭은 로드 시 terminal까지 평탄화한다. self edge는 제거하고 빈 key·value와
+   다중 노드 순환은 즉시 `ValueError`로 드러내어 병합 순서에 따른 값 유실을 막았다.
+3. 운영 SSOT 교정은 `mappingPromote.py`의 `set`과 `delete`로만 수행한다. 둘 다
+   `expected` 이전 값이 실제 값과 일치할 때만 atomic write하므로 임의 JSON 수정과
+   stale overwrite를 허용하지 않는다.
+4. `Company("000210").panel("BS", freq="Y")` 실데이터에서 2025년 자본총계
+   `4,921,075,694,028`과 지배주주지분 `4,021,543,844,050`이 별도 행으로 확인됐다.
+5. mapping CLI, AccountMapper golden·구조·무결성, DART panel cell·finance fixture,
+   EDGAR finance를 묶은 집중 회귀 `145 passed`와 변경 범위 Ruff가 통과했다.
+
+다음 순서는 scan 집계를 회사별 반복 filter가 없는 one-pass 경로로 바꾸고 EDGAR 계정
+batch와 공통 period를 확정하는 것이다. frame, synth, reference의 남은 전체 범위와
+실제 소비자, 최종 Guard가 남았으므로 **L1.5 판정은 미완료**다.
 
 ## L1 gather, providers 순차 안정화 원장 (2026-07-30)
 

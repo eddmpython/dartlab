@@ -12,6 +12,7 @@ from __future__ import annotations
 import pytest
 
 from dartlab.core.accounts import SNAKEID_ALIASES, mergeAliasRows
+from dartlab.core.accounts.aliases import _compileAliasGraph
 
 pytestmark = pytest.mark.unit
 
@@ -82,3 +83,37 @@ def test_snakeid_aliases_single_object_identity() -> None:
     from dartlab.providers.edgar.finance.mapper import EDGAR_TO_DART_ALIASES as fromEdgar
 
     assert fromOwner is fromLabels is fromEdgar
+
+
+def test_alias_graph_compiles_transitive_chain_to_terminal() -> None:
+    """다단계 alias는 중간 행 삭제 순서와 무관하게 terminal로 평탄화한다."""
+
+    compiled = _compileAliasGraph({"a": "b", "b": "c"})
+
+    assert compiled == {"a": "c", "b": "c"}
+
+
+def test_alias_graph_rejects_cycle() -> None:
+    """서로를 가리키는 alias는 import 시점에 명시적으로 실패해야 한다."""
+
+    with pytest.raises(ValueError, match="순환 참조"):
+        _compileAliasGraph({"a": "b", "b": "a"})
+
+
+def test_total_equity_and_parent_equity_remain_distinct() -> None:
+    """총자본은 비지배지분을 포함하므로 지배주주지분과 합치면 안 된다."""
+
+    assert SNAKEID_ALIASES.get("total_equity") == "total_stockholders_equity"
+    assert SNAKEID_ALIASES.get("equity_including_nci") == "total_stockholders_equity"
+    assert "total_stockholders_equity" not in SNAKEID_ALIASES
+    assert "owners_of_parent_equity" not in SNAKEID_ALIASES
+
+    rowMap = {
+        "total_stockholders_equity": {"2025": 4_921.0},
+        "owners_of_parent_equity": {"2025": 4_021.0},
+    }
+    merged = mergeAliasRows(rowMap, metaCols=set())
+
+    assert not merged
+    assert rowMap["total_stockholders_equity"]["2025"] == 4_921.0
+    assert rowMap["owners_of_parent_equity"]["2025"] == 4_021.0

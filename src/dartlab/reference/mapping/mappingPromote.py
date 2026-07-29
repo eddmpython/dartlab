@@ -13,10 +13,13 @@ hard check (ghost 차단) 적용. edgarLearnedTags 는 EDGAR canonical snakeId �
 서브커맨드:
     dryrun    confirmed 행 → 추가 예정 diff 미리보기 (파일 미수정)
     apply     atomic write + _metadata 갱신 + AccountMapper.release() + lru_cache 무효화
+    set       expected 값 확인 후 기존 항목 교정
+    delete    expected 값 확인 후 기존 항목 제거
     rollback  --to=<gitsha>  이전 commit 의 accountMappings.json 복원
 
 규약:
-    - 추가만 (overwrite reject). 기존 한글명 충돌 시 자세히 stdout 노출, 미적용.
+    - apply는 추가만 허용한다. 기존 계약 교정은 expected가 필수인 set/delete만 허용한다.
+    - 기존 한글명 충돌 시 자세히 stdout 노출, 미적용.
     - `_metadata.lastUpdate` / `_metadata.addedCount` / `_metadata.promoteCommit` 갱신.
     - apply 후 동일 프로세스의 AccountMapper 싱글턴 캐시 무효화.
 """
@@ -205,6 +208,60 @@ def _resetMapperCache() -> None:
         pass
 
 
+def _touchMetadata(data: dict) -> None:
+    """SSOT 수정 시 공통 provenance metadata를 갱신한다."""
+
+    meta = data.setdefault("_metadata", {})
+    meta["lastUpdate"] = date.today().isoformat()
+    meta["promoteCommit"] = _gitHead() or meta.get("promoteCommit", "")
+
+
+def _checkedExistingValue(existing: dict[str, str], key: str, expected: str) -> bool:
+    """동시 수정과 잘못된 repair 대상을 막는 compare-and-set 검사."""
+
+    current = existing.get(key)
+    if current != expected:
+        print(f"[mappingPromote] {key!r} 현재값 불일치: expected={expected!r}, actual={current!r}")
+        return False
+    return True
+
+
+def cmdSet(args: argparse.Namespace) -> int:
+    """기존 layer 값을 expected 비교 뒤 명시적으로 교정한다."""
+
+    data = _loadJson(args.json)
+    node, key = _targetNode(data, args.layer)
+    existing = node.get(key, {})
+    if not _checkedExistingValue(existing, args.key, args.expected):
+        return 1
+    standardAccounts = _ghostCheckAccounts(data, args.layer)
+    if standardAccounts is not None and args.value not in standardAccounts:
+        print(f"[mappingPromote set] standardAccounts 부재 snakeId: {args.value!r}")
+        return 1
+    existing[args.key] = args.value
+    _touchMetadata(data)
+    _writeJsonAtomic(args.json, data)
+    _resetMapperCache()
+    print(f"[mappingPromote set] layer={args.layer} {args.key!r}: {args.expected!r} -> {args.value!r}")
+    return 0
+
+
+def cmdDelete(args: argparse.Namespace) -> int:
+    """기존 layer 값을 expected 비교 뒤 명시적으로 제거한다."""
+
+    data = _loadJson(args.json)
+    node, key = _targetNode(data, args.layer)
+    existing = node.get(key, {})
+    if not _checkedExistingValue(existing, args.key, args.expected):
+        return 1
+    del existing[args.key]
+    _touchMetadata(data)
+    _writeJsonAtomic(args.json, data)
+    _resetMapperCache()
+    print(f"[mappingPromote delete] layer={args.layer} {args.key!r} 제거")
+    return 0
+
+
 def cmdDryrun(args: argparse.Namespace) -> int:
     """dryrun 서브커맨드 — diff 만 출력, 파일 미수정.
 
@@ -286,9 +343,8 @@ def cmdApply(args: argparse.Namespace) -> int:
     merged.update(additions)
     node[key] = merged
     meta = data.setdefault("_metadata", {})
-    meta["lastUpdate"] = date.today().isoformat()
+    _touchMetadata(data)
     meta["addedCount"] = int(meta.get("addedCount", 0)) + len(additions)
-    meta["promoteCommit"] = _gitHead() or meta.get("promoteCommit", "")
 
     _writeJsonAtomic(args.json, data)
     _resetMapperCache()
@@ -343,7 +399,7 @@ def _gitHead() -> str | None:
 
 
 def _buildParser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(description=__doc__.split("\n", 1)[0])
+    p = argparse.ArgumentParser(description=(__doc__ or "").split("\n", 1)[0])
     p.add_argument("--staging", type=Path, default=_DEFAULT_STAGING)
     p.add_argument("--json", type=Path, default=_DEFAULT_JSON)
     p.add_argument(
@@ -369,6 +425,17 @@ def _buildParser() -> argparse.ArgumentParser:
     pr = sub.add_parser("rollback")
     pr.add_argument("--to", required=True)
     pr.set_defaults(func=cmdRollback)
+
+    ps = sub.add_parser("set")
+    ps.add_argument("--key", required=True)
+    ps.add_argument("--expected", required=True)
+    ps.add_argument("--value", required=True)
+    ps.set_defaults(func=cmdSet)
+
+    pdel = sub.add_parser("delete")
+    pdel.add_argument("--key", required=True)
+    pdel.add_argument("--expected", required=True)
+    pdel.set_defaults(func=cmdDelete)
 
     return p
 

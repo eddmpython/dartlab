@@ -15,9 +15,39 @@ from dartlab.core.accounts.data import loadAccounts
 SNAKEID_ALIASES: dict[str, str] = {}
 
 
+def _compileAliasGraph(aliases: dict[str, str]) -> dict[str, str]:
+    """alias graph를 terminal canonical로 평탄화하고 순환을 거부한다.
+
+    Args:
+        aliases: ``alias -> canonical`` 원본 매핑.
+
+    Returns:
+        self edge를 제외하고 모든 target이 terminal인 새 매핑.
+
+    Raises:
+        ValueError: 두 개 이상 노드가 순환하거나 빈 key 또는 value가 있을 때.
+    """
+
+    compiled: dict[str, str] = {}
+    for source in aliases:
+        if not source or not aliases[source]:
+            raise ValueError("snakeAlias에는 빈 key 또는 value를 둘 수 없습니다.")
+        path = [source]
+        target = aliases[source]
+        while target in aliases and aliases[target] != target:
+            if target in path:
+                cycle = " -> ".join([*path, target])
+                raise ValueError(f"snakeAlias 순환 참조: {cycle}")
+            path.append(target)
+            target = aliases[target]
+        if source != target:
+            compiled[source] = target
+    return compiled
+
+
 def _populate() -> None:
     SNAKEID_ALIASES.clear()
-    SNAKEID_ALIASES.update(loadAccounts()["layers"]["snakeAlias"])
+    SNAKEID_ALIASES.update(_compileAliasGraph(loadAccounts()["layers"]["snakeAlias"]))
 
 
 _populate()
@@ -33,7 +63,7 @@ def reset() -> None:
         None.
 
     Raises:
-        없음.
+        ValueError: SSOT alias graph에 순환이나 빈 key 또는 value가 있을 때.
 
     Example:
         >>> from dartlab.core.accounts import aliases

@@ -101,6 +101,7 @@ def jsonFile(tmp_path: Path) -> Path:
         },
         "standardAccounts": {
             "total_assets": {"korName": "자산총계"},
+            "total_stockholders_equity": {"korName": "자본총계"},
             "other_financial_assets": {"korName": "기타금융자산"},
             "different_value": {"korName": "다른가치"},
             "different_snake_id": {"korName": "다른snake"},
@@ -354,6 +355,80 @@ def test_apply_to_edgar_learned_tags(promoteMod, stagingFile: Path, jsonFile: Pa
     data = json.loads(jsonFile.read_text(encoding="utf-8"))
     assert data["edgar"]["learnedTags"]["기타의금융자산"] == "other_financial_assets"
     assert "기타의금융자산" not in data.get("mappings", {})  # DART 미오염
+
+
+def test_set_repairs_existing_alias_with_compare_and_set(promoteMod, jsonFile: Path) -> None:
+    data = json.loads(jsonFile.read_text(encoding="utf-8"))
+    data.setdefault("layers", {})["snakeAlias"] = {"old_equity": "owners_of_parent_equity"}
+    jsonFile.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+
+    rc = promoteMod.main(
+        [
+            "--json",
+            str(jsonFile),
+            "--layer",
+            "snakeAlias",
+            "set",
+            "--key",
+            "old_equity",
+            "--expected",
+            "owners_of_parent_equity",
+            "--value",
+            "total_stockholders_equity",
+        ]
+    )
+
+    result = json.loads(jsonFile.read_text(encoding="utf-8"))
+    assert rc == 0
+    assert result["layers"]["snakeAlias"]["old_equity"] == "total_stockholders_equity"
+
+
+def test_delete_removes_only_expected_alias(promoteMod, jsonFile: Path) -> None:
+    data = json.loads(jsonFile.read_text(encoding="utf-8"))
+    data.setdefault("layers", {})["snakeAlias"] = {"total_stockholders_equity": "total_equity"}
+    jsonFile.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+
+    rc = promoteMod.main(
+        [
+            "--json",
+            str(jsonFile),
+            "--layer",
+            "snakeAlias",
+            "delete",
+            "--key",
+            "total_stockholders_equity",
+            "--expected",
+            "total_equity",
+        ]
+    )
+
+    result = json.loads(jsonFile.read_text(encoding="utf-8"))
+    assert rc == 0
+    assert "total_stockholders_equity" not in result["layers"]["snakeAlias"]
+
+
+def test_set_rejects_stale_expected_value(promoteMod, jsonFile: Path) -> None:
+    data = json.loads(jsonFile.read_text(encoding="utf-8"))
+    data.setdefault("layers", {})["snakeAlias"] = {"old_equity": "owners_of_parent_equity"}
+    jsonFile.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+
+    rc = promoteMod.main(
+        [
+            "--json",
+            str(jsonFile),
+            "--layer",
+            "snakeAlias",
+            "set",
+            "--key",
+            "old_equity",
+            "--expected",
+            "stale_value",
+            "--value",
+            "total_stockholders_equity",
+        ]
+    )
+
+    assert rc == 1
 
 
 def test_rollback_restores_previous_file(promoteMod, monkeypatch, tmp_path: Path) -> None:
