@@ -1,6 +1,5 @@
 """데이터 로딩 및 공통 유틸."""
 
-import json
 import os
 import socket
 import sys
@@ -15,9 +14,15 @@ import dartlab.core.dataLoaderIndex as dataLoaderIndex
 from dartlab.core.dataConfig import (
     DATA_RELEASES,
     hfBaseUrl,
-    repoFor,
     resolveDataCategory,
 )
+from dartlab.core.dataLoaderContract import (
+    DataArtifactError,
+    resolveShardPath,
+    validateRefreshPolicy,
+    validateShardKey,
+)
+from dartlab.core.dataLoaderNative import readNativeWithRecovery, validateParquetArtifact
 
 DataIndexError = dataLoaderIndex.DataIndexError
 
@@ -213,10 +218,22 @@ def _fetchRemoteEtagAndSize(url: str) -> tuple[str, int]:
 
 
 def _download(stockCode: str, dest: Path, category: str = "panel") -> None:
-    """HuggingFace 데이터셋에서 단건 다운로드."""
+    """HuggingFace 단건을 staging 검증 후 canonical 경로에 원자 확정한다."""
     category = resolveDataCategory(category)
     hfUrl = f"{hfBaseUrl(category)}/{stockCode}.parquet"
-    _downloadWithRetry(hfUrl, dest)
+    staged = dest.with_name(f".{dest.name}.{os.getpid()}.{time.time_ns()}.download")
+    try:
+        _downloadWithRetry(hfUrl, staged)
+        validateParquetArtifact(staged)
+        staged.replace(dest)
+    except BaseException as exc:
+        try:
+            staged.unlink(missing_ok=True)
+        except OSError as cleanupExc:
+            error = DataArtifactError("임시 artifact 정리", staged, cleanupExc)
+            error.add_note(f"선행 다운로드 실패: {type(exc).__name__}: {exc}")
+            raise error from cleanupExc
+        raise
     _saveEtag(stockCode, dest, category)
 
 
@@ -257,12 +274,12 @@ def _shouldRefreshHfCategory(path: Path, category: str, refresh: str) -> bool:
     )
 
 
-def _refreshFromHf(stockCode: str, path: Path, category: str) -> None:
+def _refreshFromHf(stockCode: str, path: Path, category: str) -> bool:
     """ETag 비교 후 HF가 최신이면 다운로드로 갱신. 실패 시 기존 파일 유지."""
     from dartlab.core.dataLoaderFreshness import refreshFromHf
 
     category = resolveDataCategory(category)
-    refreshFromHf(
+    return refreshFromHf(
         stockCode,
         path,
         category,
@@ -271,6 +288,7 @@ def _refreshFromHf(stockCode: str, path: Path, category: str) -> None:
         checkRemoteFreshness=_checkRemoteFreshness,
         downloadWithRetry=_downloadWithRetry,
         saveEtag=_saveEtag,
+        validateParquet=validateParquetArtifact,
     )
 
 
@@ -313,8 +331,10 @@ def repairLocalCache(category: str = "finance", *, dryRun: bool = False) -> dict
         if dryRun:
             continue
         try:
-            _refreshFromHf(stockCode, parquet, category)
-            stats["repaired"] += 1
+            if _refreshFromHf(stockCode, parquet, category):
+                stats["repaired"] += 1
+            else:
+                stats["failed"] += 1
         except (URLError, socket.timeout, OSError):
             stats["failed"] += 1
     return stats
@@ -334,14 +354,23 @@ def loadData(
 
     Phase D 에서 `_LOAD_CACHE` 폐기 — 매 호출 disk 재로드. cache 역할은
     BoundedCache (accessor 결과) + IPC mmap (`.arrow` mirror, OS page cache
-    위임) 가 분담. `refresh="force"` 는 ETag 기반 HF refresh 만 강제.
+    위임) 가 분담. `refresh="force_check"` 는 원격 freshness 확인만 강제한다.
 
     ``predicate`` 는 polars expression — 전달 시 ``scan_parquet().filter(
     predicate).collect(streaming)`` 으로 predicate pushdown 활성 (Phase A
     의 row group sort 가 skipping 동행). caller (single-statement fast path)
     가 ``pl.col("sj_div").is_in([...])`` 형식으로 디스크 디코드량 축소.
+
+    ``refresh`` 는 일반 category에서 ``auto``/``force_check``/``local_only``만
+    허용한다. native ``edgarDocs``만 ``force_rebuild``를 추가 지원한다.
+    ``local_only``는 모든 category에서 network 0회를 보장하고 cache 부재 시
+    ``FileNotFoundError``를 낸다. ``stockCode``의 ``MARKET/day`` 중첩 shard는
+    허용하지만 절대 경로와 ``..``는 거부한다. 요청 ``columns``가 전부 schema에
+    없으면 전체 frame으로 강등하지 않고 ``ValueError``를 낸다.
     """
     category = resolveDataCategory(category)
+    validateShardKey(stockCode)
+    validateRefreshPolicy(category, refresh, pyodide=_IS_PYODIDE)
     effectiveSinceYear = 2009 if category == "edgarDocs" and sinceYear is None else sinceYear
     if _IS_PYODIDE:
         return _loadDataPyodide(
@@ -356,21 +385,51 @@ def loadData(
     from dartlab.core.memory import checkMemoryAndGc
 
     dataDir = _dataDir(category)
-    path = dataDir / f"{stockCode}.parquet"
-
-    # KRX daily bulk data is updated after market close. In long-lived server
-    # processes, the in-memory LRU must not pin yesterday's parquet after the
-    # short KRX freshness TTL expires.
-    krxShouldRefresh: bool | None = None
-    if (
-        category in {"krxPrices", "krxIndices", "govPrices", "govPriceCompany", "govIndices", "govIndexPerIndex"}
-        and refresh == "auto"
-    ):
-        krxShouldRefresh = _shouldRefreshHfCategory(path, category, refresh)
-
+    path = resolveShardPath(dataDir, stockCode)
     checkMemoryAndGc(f"loadData({stockCode},{category})")
+    _ensureNativeArtifact(
+        stockCode,
+        path,
+        category,
+        sinceYear=effectiveSinceYear,
+        asOf=asOf,
+        refresh=refresh,
+    )
+    df = readNativeWithRecovery(
+        stockCode,
+        path,
+        category,
+        sinceYear=effectiveSinceYear,
+        refresh=refresh,
+        columns=columns,
+        predicate=predicate,
+        reacquire=lambda: _ensureNativeArtifact(
+            stockCode,
+            path,
+            category,
+            sinceYear=effectiveSinceYear,
+            asOf=asOf,
+            refresh=refresh,
+        ),
+    )
+    return _normalizeLoadedFrame(df, category)
+
+
+def _ensureNativeArtifact(
+    stockCode: str,
+    path: Path,
+    category: str,
+    *,
+    sinceYear: int | None,
+    asOf: str | None,
+    refresh: str,
+) -> None:
+    """정규화된 정책을 보존해 category별 canonical parquet을 보장한다."""
+    if refresh == "local_only":
+        if not path.is_file():
+            raise FileNotFoundError(f"로컬 parquet 없음: {path}")
+        return
     if category == "edgarDocs":
-        # registry dispatch (정공법 B — DIP). providers/edgar 가 EdgarDocsLoader 등록.
         from dartlab.core.loaders import getLoader
 
         loader = getLoader("edgarDocs")
@@ -379,78 +438,38 @@ def loadData(
         loader.ensure(
             stockCode,
             path,
-            sinceYear=effectiveSinceYear or 2009,
+            sinceYear=sinceYear or 2009,
             asOf=asOf,
             refresh=refresh,
         )
-    else:
-        shouldRefresh = (
-            krxShouldRefresh if krxShouldRefresh is not None else _shouldRefreshHfCategory(path, category, refresh)
-        )
-        _ensureLocalParquet(stockCode, path, category, shouldRefresh=shouldRefresh)
-    # Phase D — .arrow IPC mirror 가 옆에 있고 더 새것이면 mmap 경로 우선 (OS page cache 위임).
-    # Phase A 가 빌드한 mirror 파일. mmap path 는 useLazy 와 무관 — predicate 도 lazy filter.
-    ipcPath = path.with_suffix(".arrow")
-    useIpcMmap = not _IS_PYODIDE and ipcPath.exists() and ipcPath.stat().st_mtime >= path.stat().st_mtime
-
-    # lazy scan: sinceYear · columns · predicate 중 하나라도 있으면 scan_parquet 경로
-    yearColCandidates = ("year", "bsns_year")
-    useLazy = sinceYear is not None or columns is not None or predicate is not None
-    if useIpcMmap and (useLazy or True):
-        # IPC mmap — 결과 buffer 가 mmap pages 백킹, RSS 기여 = touched pages.
-        # predicate / sinceYear / columns 도 동일하게 적용 (lazy 가능).
-        lf = pl.scan_ipc(str(ipcPath), memory_map=True)
-        schemaNames = lf.collect_schema().names()
-        if sinceYear is not None:
-            for colName in yearColCandidates:
-                if colName in schemaNames:
-                    yearCol = pl.col(colName)
-                    if str(lf.collect_schema()[colName]) == "String":
-                        yearCol = yearCol.cast(pl.Int32, strict=False)
-                    lf = lf.filter(yearCol >= sinceYear)
-                    break
-        if predicate is not None:
-            lf = lf.filter(predicate)
-        if columns:
-            available = [c for c in columns if c in schemaNames]
-            if available:
-                lf = lf.select(available)
-        df = lf.collect(engine="streaming") if useLazy else pl.read_ipc(str(ipcPath), memory_map=True)
-        return _normalizeLoadedFrame(df, category)
-
-    if useLazy:
-        lf = pl.scan_parquet(str(path))
-        schemaNames = lf.collect_schema().names()
-        # sinceYear 필터 (year 또는 bsns_year 컬럼)
-        if sinceYear is not None:
-            for colName in yearColCandidates:
-                if colName in schemaNames:
-                    yearCol = pl.col(colName)
-                    if str(lf.collect_schema()[colName]) == "String":
-                        yearCol = yearCol.cast(pl.Int32, strict=False)
-                    lf = lf.filter(yearCol >= sinceYear)
-                    break
-        # caller predicate (single-statement fast path 등) — row group skipping 활성화
-        if predicate is not None:
-            lf = lf.filter(predicate)
-        # 컬럼 프로젝션
-        if columns:
-            available = [c for c in columns if c in schemaNames]
-            if available:
-                lf = lf.select(available)
-        # M2: streaming engine 명시 — filter + select 만 있는 단순 chain 은 호환 + O(batch) 메모리
-        df = lf.collect(engine="streaming")
-    else:
-        df = pl.read_parquet(str(path))
-    return _normalizeLoadedFrame(df, category)
+        return
+    shouldRefresh = False if category == "edgar" else _shouldRefreshHfCategory(path, category, refresh)
+    _ensureLocalParquet(
+        stockCode,
+        path,
+        category,
+        shouldRefresh=shouldRefresh,
+        refresh=refresh,
+    )
 
 
-def _ensureLocalParquet(stockCode: str, path: Path, category: str, *, shouldRefresh: bool) -> None:
+def _ensureLocalParquet(
+    stockCode: str,
+    path: Path,
+    category: str,
+    *,
+    shouldRefresh: bool,
+    refresh: str = "auto",
+) -> None:
     """카테고리별 로컬 parquet 보장 (최초 로드 + refresh 통합 라우터).
 
     - ``edgar`` → SEC 벌크 (companyfacts.zip) 자동 다운로드·변환, HF 미러링 없음
     - 그 외 → HF 다운로드 + ETag 기반 증분 갱신
     """
+    if refresh == "local_only":
+        if not path.is_file():
+            raise FileNotFoundError(f"로컬 parquet 없음: {path}")
+        return
     if category == "edgar":
         # registry dispatch (정공법 B — DIP). providers/edgar 가 EdgarBulkLoader 등록.
         from dartlab.core.loaders import getLoader
@@ -458,7 +477,7 @@ def _ensureLocalParquet(stockCode: str, path: Path, category: str, *, shouldRefr
         loader = getLoader("edgar")
         if loader is None:
             raise RuntimeError("edgar LoaderProvider 미등록 — providers.edgar 모듈 로드 실패")
-        loader.ensure(stockCode, path, refresh=shouldRefresh)
+        loader.ensure(stockCode, path, refresh=refresh)
         return
 
     if not path.exists():

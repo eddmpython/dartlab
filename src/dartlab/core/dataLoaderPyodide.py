@@ -11,6 +11,12 @@ from typing import Any, Iterator, cast
 import polars as pl
 
 from dartlab.core.dataConfig import DATA_RELEASES, HF_BASE_URL, hfBaseUrl, resolveDataCategory
+from dartlab.core.dataLoaderContract import (
+    applyEagerQuery,
+    projectedColumns,
+    validateRefreshPolicy,
+    validateShardKey,
+)
 
 
 class PyodideParquetError(OSError):
@@ -92,10 +98,9 @@ def loadDataPyodide(
     """Pyodide 환경에서 HF cache parquet을 무결성 복구와 projection으로 읽는다."""
     import pyarrow as pa
 
-    if refresh not in {"auto", "force_check", "local_only"}:
-        raise ValueError(f"Pyodide에서 지원하지 않는 refresh 정책: {refresh}")
-
     category = resolveDataCategory(category)
+    validateShardKey(stockCode)
+    validateRefreshPolicy(category, refresh, pyodide=True)
     dirPath = DATA_RELEASES[category]["dir"]
     path = _dataPath(stockCode, dirPath)
     downloadAllowed = refresh != "local_only"
@@ -187,22 +192,12 @@ def loadDataPyodide(
             cause = ValueError(f"HF snapshot의 최신 filing_date가 요청 asOf {asOf}에 미달")
             raise PyodideParquetError("asOf 신선도 검증", path, cause) from cause
 
-    if sinceYear is not None:
-        for colName in ("year", "bsns_year"):
-            if colName in df.columns:
-                yearCol = pl.col(colName)
-                if df.schema[colName] == pl.Utf8:
-                    yearCol = yearCol.cast(pl.Int32, strict=False)
-                df = df.filter(yearCol >= sinceYear)
-                break
-
-    if predicate is not None:
-        df = df.filter(predicate)
-
-    if columns:
-        available = [c for c in columns if c in df.columns]
-        if available:
-            df = df.select(available)
+    df = applyEagerQuery(
+        df,
+        sinceYear=sinceYear,
+        columns=columns,
+        predicate=predicate,
+    )
 
     from dartlab.core.dataLoaderNormalize import normalizeLoadedFrame
 
@@ -257,28 +252,14 @@ def _projectedColumns(
     predicate: pl.Expr | None,
 ) -> list[str] | None:
     """최종 반환열과 필터 보조열을 합쳐 parquet projection을 만든다."""
-    if not columns:
-        return None
-
-    schemaSet = set(schemaNames)
-    requested = [column for column in columns if column in schemaSet]
-    if not requested:
-        return None
-
-    needed = set(requested)
-    if sinceYear is not None:
-        needed.update(column for column in ("year", "bsns_year") if column in schemaSet)
-    if category == "edgarDocs" and asOf is not None and "filing_date" in schemaSet:
-        needed.add("filing_date")
-    if predicate is not None:
-        try:
-            predicateColumns = predicate.meta.root_names()
-        except (AttributeError, pl.exceptions.PolarsError):
-            return None
-        if not predicateColumns:
-            return None
-        needed.update(predicateColumns)
-    return [column for column in schemaNames if column in needed]
+    return projectedColumns(
+        schemaNames,
+        category=category,
+        sinceYear=sinceYear,
+        asOf=asOf,
+        columns=columns,
+        predicate=predicate,
+    )
 
 
 def _isFreshAsOf(df: pl.DataFrame, asOf: str) -> bool:

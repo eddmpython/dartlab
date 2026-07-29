@@ -9,10 +9,12 @@ P0 버그 (2026-04-06): etag 사이드카가 없을 때 현재 HF ETag를 그대
 
 from __future__ import annotations
 
+import logging
 from contextlib import nullcontext
 from pathlib import Path
 from unittest.mock import patch
 
+import polars as pl
 import pytest
 
 from dartlab.core.dataLoader import (
@@ -22,7 +24,29 @@ from dartlab.core.dataLoader import (
     _fetchRemoteEtagAndSize,
     _refreshFromHf,
 )
-from dartlab.core.dataLoaderFreshness import downloadWithRetry
+from dartlab.core.dataLoaderFreshness import downloadWithRetry, saveEtag
+
+
+def _corruptFirstParquetDataPage(tmp_path: Path) -> bytes:
+    """Footer/schema는 유지하고 첫 data-page header만 손상한 payload를 만든다."""
+    import pyarrow.parquet as pq
+
+    healthy = tmp_path / "partial-corruption-source.parquet"
+    pl.DataFrame(
+        {
+            "id": range(20_000),
+            "text": [f"row-{index}-" + "abcdef0123456789" * 4 for index in range(20_000)],
+        }
+    ).write_parquet(
+        healthy,
+        compression="zstd",
+        row_group_size=10_000,
+    )
+    metadata = pq.ParquetFile(healthy).metadata
+    pageOffset = metadata.row_group(0).column(1).data_page_offset
+    raw = bytearray(healthy.read_bytes())
+    raw[pageOffset] ^= 0xFF
+    return bytes(raw)
 
 
 @pytest.mark.unit
@@ -64,6 +88,44 @@ def test_download_with_retry_uses_hf_token(monkeypatch, tmp_path):
 
     assert seen["authorization"] == "Bearer token-123"
     assert dest.read_bytes() == b"abc"
+
+
+@pytest.mark.unit
+def test_saveEtagFailureIsObservable(tmp_path, caplog):
+    """best-effort ETag 실패도 원인을 완전히 삼키지 않고 경고로 남긴다."""
+    dest = tmp_path / "005930.parquet"
+
+    def failFetch(_url):
+        raise OSError("sidecar unavailable")
+
+    with caplog.at_level(logging.WARNING, logger="dartlab.core.dataLoaderFreshness"):
+        saveEtag(
+            "005930",
+            dest,
+            "finance",
+            hfBaseUrl=lambda _category: "https://example.com",
+            fetchRemoteEtag=failFetch,
+        )
+
+    assert "ETag" in caplog.text
+    assert "OSError" in caplog.text
+
+
+@pytest.mark.unit
+def test_downloadWithRetryRejectsNonHttpsBeforeFilesystem(tmp_path):
+    """공개 download helper는 custom/file scheme을 열기 전에 거부한다."""
+    dest = tmp_path / "payload.parquet"
+
+    with pytest.raises(ValueError, match="HTTPS"):
+        downloadWithRetry(
+            "file:///tmp/payload.parquet",
+            dest,
+            maxRetries=1,
+            socketTimeout=nullcontext,
+            urlretrieve=lambda *_args: None,
+        )
+
+    assert not dest.exists()
 
 
 def _load_sync_recent_module():
@@ -273,7 +335,7 @@ def test_download_keepsPayloadWhenOnlySizeHeaderIsInvalid(tmp_path, monkeypatch)
     dest = tmp_path / "005930.parquet"
 
     def writePayload(_url, path):
-        path.write_bytes(b"downloaded")
+        pl.DataFrame({"value": ["downloaded"]}).write_parquet(path)
 
     monkeypatch.setattr("dartlab.core.dataLoader._downloadWithRetry", writePayload)
     monkeypatch.setattr(
@@ -283,7 +345,7 @@ def test_download_keepsPayloadWhenOnlySizeHeaderIsInvalid(tmp_path, monkeypatch)
 
     _download("005930", dest, "finance")
 
-    assert dest.read_bytes() == b"downloaded"
+    assert pl.read_parquet(dest)["value"].to_list() == ["downloaded"]
     assert dest.with_suffix(".parquet.etag").read_text(encoding="utf-8") == "etag-123"
 
 
@@ -291,10 +353,10 @@ def test_download_keepsPayloadWhenOnlySizeHeaderIsInvalid(tmp_path, monkeypatch)
 def test_refresh_keepsPayloadWhenOnlySizeHeaderIsInvalid(tmp_path, monkeypatch):
     """refresh replace 뒤 ETag 저장도 size 오류와 독립적으로 완료한다."""
     dest = tmp_path / "005930.parquet"
-    dest.write_bytes(b"old")
+    pl.DataFrame({"value": ["old"]}).write_parquet(dest)
 
     def writePayload(_url, path):
-        path.write_bytes(b"refreshed")
+        pl.DataFrame({"value": ["refreshed"]}).write_parquet(path)
 
     monkeypatch.setattr("dartlab.core.dataLoader._checkRemoteFreshness", lambda *_args: True)
     monkeypatch.setattr("dartlab.core.dataLoader._downloadWithRetry", writePayload)
@@ -305,8 +367,61 @@ def test_refresh_keepsPayloadWhenOnlySizeHeaderIsInvalid(tmp_path, monkeypatch):
 
     _refreshFromHf("005930", dest, "finance")
 
-    assert dest.read_bytes() == b"refreshed"
+    assert pl.read_parquet(dest)["value"].to_list() == ["refreshed"]
     assert dest.with_suffix(".parquet.etag").read_text(encoding="utf-8") == "etag-123"
+
+
+@pytest.mark.unit
+def test_downloadRejectsInvalidParquetWithoutPublishingIt(tmp_path, monkeypatch):
+    """신규 payload가 parquet이 아니면 canonical 경로에 확정하지 않는다."""
+    dest = tmp_path / "005930.parquet"
+
+    monkeypatch.setattr(
+        "dartlab.core.dataLoader._downloadWithRetry",
+        lambda _url, path: path.write_bytes(b"invalid parquet"),
+    )
+
+    with pytest.raises(OSError, match="parquet"):
+        _download("005930", dest, "finance")
+
+    assert not dest.exists()
+
+
+@pytest.mark.unit
+def test_downloadInvalidReplacementPreservesExistingParquet(tmp_path, monkeypatch):
+    """footer가 유효한 부분 손상 payload도 기존 정상 canonical을 덮지 않는다."""
+    dest = tmp_path / "005930.parquet"
+    pl.DataFrame({"value": ["old"]}).write_parquet(dest)
+    corruptPayload = _corruptFirstParquetDataPage(tmp_path)
+
+    monkeypatch.setattr(
+        "dartlab.core.dataLoader._downloadWithRetry",
+        lambda _url, path: path.write_bytes(corruptPayload),
+    )
+
+    with pytest.raises(OSError, match="parquet"):
+        _download("005930", dest, "finance")
+
+    assert pl.read_parquet(dest)["value"].to_list() == ["old"]
+
+
+@pytest.mark.unit
+def test_refreshInvalidReplacementPreservesExistingParquet(tmp_path, monkeypatch):
+    """자동 refresh도 부분 손상을 끝까지 decode하고 기존 canonical을 유지한다."""
+    dest = tmp_path / "005930.parquet"
+    pl.DataFrame({"value": ["old"]}).write_parquet(dest)
+    corruptPayload = _corruptFirstParquetDataPage(tmp_path)
+
+    monkeypatch.setattr("dartlab.core.dataLoader._checkRemoteFreshness", lambda *_args: True)
+    monkeypatch.setattr(
+        "dartlab.core.dataLoader._downloadWithRetry",
+        lambda _url, path: path.write_bytes(corruptPayload),
+    )
+
+    refreshed = _refreshFromHf("005930", dest, "finance")
+
+    assert refreshed is False
+    assert pl.read_parquet(dest)["value"].to_list() == ["old"]
 
 
 @pytest.mark.unit

@@ -8,6 +8,7 @@ import time
 from pathlib import Path
 from typing import Callable
 from urllib.error import URLError
+from urllib.parse import urlsplit
 from urllib.request import Request, urlopen
 
 from dartlab.core.logger import getLogger
@@ -29,9 +30,12 @@ def downloadWithRetry(
     urlretrieve,
 ) -> None:
     """URL → dest 다운로드. 실패 시 지수 backoff로 재시도한다."""
+    parsedUrl = urlsplit(url)
+    if parsedUrl.scheme != "https" or not parsedUrl.hostname:
+        raise ValueError(f"download URL은 HTTPS여야 합니다: {url!r}")
     dest.parent.mkdir(parents=True, exist_ok=True)
     tmp = dest.with_suffix(dest.suffix + ".tmp")
-    lastErr = None
+    lastErr: OSError | None = None
     token = os.environ.get("HF_TOKEN", "").strip()
     for attempt in range(maxRetries):
         try:
@@ -39,7 +43,7 @@ def downloadWithRetry(
                 if token:
                     req = Request(url)
                     req.add_header("Authorization", f"Bearer {token}")
-                    with urlopen(req) as resp, tmp.open("wb") as f:
+                    with urlopen(req) as resp, tmp.open("wb") as f:  # nosec B310
                         while chunk := resp.read(1 << 20):
                             f.write(chunk)
                 else:
@@ -52,6 +56,8 @@ def downloadWithRetry(
                 tmp.unlink()
             if attempt < maxRetries - 1:
                 time.sleep(2 ** (attempt + 1))
+    if lastErr is None:
+        raise RuntimeError("download retry가 오류 원인 없이 종료되었습니다")
     raise lastErr
 
 
@@ -99,8 +105,15 @@ def saveEtag(
         etag = fetchRemoteEtag(hfUrl)
         if etag:
             etagPath.write_text(etag, encoding="utf-8")
-    except (URLError, socket.timeout, OSError):
-        pass
+    except (URLError, socket.timeout, OSError) as exc:
+        _log.warning(
+            "HF ETag sidecar 저장 실패 (category=%s, stockCode=%s, path=%s, error=%s): %s",
+            category,
+            stockCode,
+            etagPath,
+            type(exc).__name__,
+            exc,
+        )
 
 
 def maybeWarnStale(path: Path, *, warnedPaths: set[str], staleWarnDays: int) -> None:
@@ -193,7 +206,8 @@ def refreshFromHf(
     checkRemoteFreshness: Callable[[str, Path, str], bool | None],
     downloadWithRetry: Callable[[str, Path], None],
     saveEtag: Callable[[str, Path, str], None],
-) -> None:
+    validateParquet: Callable[[Path], None] | None = None,
+) -> bool:
     """ETag 비교 후 HF가 최신이면 다운로드로 갱신하고 실패 시 기존 파일을 유지한다."""
     stale = checkRemoteFreshness(stockCode, path, category)
     if stale is None:
@@ -202,29 +216,47 @@ def refreshFromHf(
         # 않는다. 오프라인이나 프록시 차단이 길어질수록 자료가 더 최신처럼 보이고,
         # 실패할 때마다 그 침묵이 다시 연장된다.
         _log.warning("원격 신선도 확인 실패로 로컬 자료를 그대로 쓴다 (%s, %s)", stockCode, category)
-        return
+        return False
     if stale is not True:
         etagPath = path.with_suffix(".parquet.etag")
         if etagPath.exists():
             etagPath.touch()
-        return
+        return True
     from dartlab.core.messaging import emit
 
     label = dataReleases[category]["label"]
-    tmpPath = path.with_suffix(".tmp")
+    tmpPath = path.with_name(f".{path.name}.{os.getpid()}.{time.time_ns()}.refresh")
     try:
         emit("download:start", stockCode=stockCode, label=label)
         hfUrl = f"{hfBaseUrl(category)}/{stockCode}.parquet"
         downloadWithRetry(hfUrl, tmpPath)
+        if validateParquet is not None:
+            validateParquet(tmpPath)
         tmpPath.replace(path)
         saveEtag(stockCode, path, category)
         size = path.stat().st_size
         sizeStr = f"{size / 1024:.0f}KB" if size < 1024 * 1024 else f"{size / 1024 / 1024:.1f}MB"
         emit("download:done_short", sizeStr=sizeStr)
+        return True
     except (URLError, socket.timeout, OSError) as exc:
-        if tmpPath.exists():
-            tmpPath.unlink()
+        try:
+            tmpPath.unlink(missing_ok=True)
+        except OSError as cleanupExc:
+            _log.error(
+                "refresh 임시 artifact 정리 실패 (%s, prior=%s): %s",
+                tmpPath,
+                type(exc).__name__,
+                cleanupExc,
+            )
+        _log.warning(
+            "refresh payload 검증·교체 실패로 기존 parquet을 유지한다 (category=%s, stockCode=%s, error=%s): %s",
+            category,
+            stockCode,
+            type(exc).__name__,
+            exc,
+        )
         emit("download:failed_single", stockCode=stockCode, label=label, error=str(exc))
+        return False
 
 
 __all__ = [

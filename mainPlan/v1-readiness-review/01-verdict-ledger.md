@@ -35,12 +35,13 @@ L4 소비자, ai, mcp. 아래층 결함이 위층 전부를 오염시키므로 �
 ### 세션 인계
 
 - 현재 계층: L0 core
-- 마지막 완료 항목: L0-12 core 정상 부재와 실패 경계
-- 진행 중인 단일 항목: L0-13 `dataLoader.loadData` orchestration 복잡도
-- 다음 첫 행동: `core/dataLoader.py::loadData`의 모든 직접·간접 호출자, category와
-  runtime별 branch, cache·refresh·download owner, 기존 단위·통합 테스트를 먼저 census한다.
-  아직 수정하지 않고 복잡도 37이 실제 제품 오류, 중복 I/O, 불필요 materialization으로
-  이어지는 행동부터 재현한다. 이번 항목에서는 `loadData` orchestration만 다룬다.
+- 마지막 완료 항목: L0-13 중앙 dataLoader 요청·artifact·IPC 복구 경계
+- 진행 중인 단일 항목: L0-14 `core/_entries` 372 LoC 과분할
+- 다음 첫 행동: `core/_entries` 7개 모듈과 `core/dataEntry.py`, 모든 직접 import와
+  re-export, builtin 등록 순서, provider-import-free 불변을 census한다. L0-08에서 확정한
+  residency와 registry 행동을 다시 설계하지 않고, 372 LoC를 7개 파일로 나눈 물리 구조가
+  실제 import 비용·순환 위험·수정 분산으로 이어지는지 먼저 재현한다. 아직 합치거나
+  다른 core 대형 파일을 분할하지 않는다.
 - 금지: L0 완료 판정 전 L1 이상 감사나 수정 착수
 
 ## L0 순차 안정화 원장 (2026-07-29)
@@ -668,6 +669,79 @@ owner를 분리했다. 이 판정은 DART viewer와 공용 표 변환 경계만 
    `core/_entries` over-split과 core 미테스트 공개 표면도 남아 있다. 다음 단일 항목은
    중앙 I/O 경계인 `loadData` orchestration을 호출자부터 조사한다. 따라서 L0-12만
    완료이고 **L0 전체는 미달**이다.
+
+### L0-13 중앙 dataLoader 요청·artifact·IPC 복구 경계
+
+**상태: 완료.** `loadData` orchestration과 native/Pyodide 요청 계약, canonical parquet
+확정·복구 경계를 닫았다. 이 항목은 데이터 artifact를 읽고 확보하는 L0 경계만 다뤘으며,
+각 provider가 만드는 재무·문서 내용의 의미 품질까지 승인한 것은 아니다.
+
+1. **범위와 실제 호출자.** 공개 진입점은 `core/dataLoader.py::loadData`이고
+   `newsRss`의 `MARKET/day` 중첩 shard, DART `finance/report/panel`, SEC bulk
+   `edgar`, SEC 문서 `edgarDocs`, KRX·정부·거시 HF category와 native/Pyodide runtime이
+   같은 경계를 쓴다. 직접 소비자는 news·macro bulk gather, DART report accessor와
+   finance pivot, EDGAR identity/docs accessor·loader·section pipeline이고, 위의
+   Company·panel·ratio 소비자는 여기서 반환한 frame을 사용한다. category 확보 호출자는
+   generic HF downloader, `EdgarBulkLoader`, `EdgarDocsLoader` 세 갈래다. 독립 전문 검토가
+   같은 호출 그래프와 실패 경계를 읽기 전용으로 재검토했다.
+2. **제품 결함 재현.** `stockCode="../outside"`가 category 밖 parquet을 읽었고,
+   native `local_only`는 cache 부재에도 generic download 또는 EDGAR provider를
+   호출했다. 미지원 refresh가 runtime마다 다르게 auto로 강등됐고, 요청 projection 열이
+   전부 없으면 전체 frame을 반환했다. 정상 canonical보다 최신인 손상 `.arrow`가
+   읽기를 막았으며, 다운로드·refresh payload는 parquet 검증 전에 canonical로 확정돼
+   손상 파일이 기존 정상본을 덮을 수 있었다. 첫 보강 뒤 독립 재검토에서는 footer와
+   schema가 살아 있는 zstd data-page 손상이 publish gate를 통과하고, schema가 다른
+   유효 IPC가 canonical 열을 누락하거나 전체 frame을 대체하며, 잘못된 predicate의 손상
+   판별이 108 MB·100만 행 canonical 전체를 eager materialize하는 세 P1을 추가 재현했다.
+   재조달 공급자가 임의 예외를 내면 최초 손상 원인이 사라졌고 ETag 저장 실패도
+   `pass`로 무관측이었다.
+3. **owner와 SSOT.** `dataLoaderContract.py`가 refresh 행렬, shard containment,
+   year filter와 projection 계약을 native/Pyodide 공통으로 소유한다. 일반 category는
+   `auto | force_check | local_only`, native `edgarDocs`만 `force_rebuild`를 추가하며
+   정책을 core에서 bool로 축약하지 않는다. `dataLoaderNative.py`는 IPC 선택, schema
+   parity, physical query, canonical 무결성 판별과 정확히 한 번의 재조달을 소유한다.
+   `dataLoader.py`는 category별 확보 orchestration만 맡고, 다운로드 artifact는 고유
+   staging 경로에서 검증된 뒤에만 atomic replace한다. canonical parquet가 정본이고
+   `.arrow`는 언제든 폐기할 수 있는 파생 가속물이다.
+4. **근본 수정과 테스트.** 절대·drive·`..`·비정규 segment는 데이터 경로 생성 전에
+   거부하고 합법 중첩 shard만 category root 아래로 resolve한다. `local_only`는 모든
+   category에서 network 0회이며 cache 부재를 `FileNotFoundError`로 낸다. all-missing
+   또는 빈 projection과 year 열 없는 `sinceYear`는 `DataQueryError`로 실패한다.
+   download·refresh는 process/time 고유 staging을 쓰고 Polars 65,536행 batch iterator로
+   모든 row group과 data page를 끝까지 decode한 후 replace해 기존 canonical을 보존한다.
+   IPC는 canonical과 schema가 완전히 같을 때만 쓰며 손상·불일치·query 실패에서는 같은
+   query plan을 canonical에 한 번 적용하고, 성공하면 경고와 함께 mirror를 제거한다.
+   두 artifact가 실패하면 두 원인을 note로 보존하고, canonical 손상은 무효화 후
+   network 허용 시 한 번만 재조달한다. 재조달의 모든 일반 예외는 최초 손상 note를
+   붙인 원형 그대로 전파한다. ETag sidecar 실패는 best-effort 흐름을 유지하되 category,
+   stockCode, path, 예외 종류를 경고로 남긴다.
+5. **공개 행동, 정확성, 속도, 메모리.** 실제 로컬 projection median은 finance
+   `13,074 x 5`가 `4.772 ms`, report `5,839 x 3`이 `3.808 ms`, 경량 panel
+   `67,993 x 3`이 `4.065 ms`, EDGAR docs `919 x 6`이 `29.805 ms`였다.
+   50만 행 synthetic에서 predicate+projection parquet query는 median `13.763 ms`,
+   p95 `22.883 ms`, Python 추적 peak `0.0045 MiB`; full-decode publish 검증은
+   median `9.527 ms`, p95 `16.296 ms`, peak `0.0066 MiB`였다. 검증과 query 오류
+   판별은 결과 전체를 만들지 않고 최대 65,536행 batch만 유지한다. 같은 synthetic의
+   zstd IPC 전체 읽기는 median `47.070 ms`, p95 `54.479 ms`, peak `0.0046 MiB`로
+   측정했다.
+6. **Guard와 회귀.** request·freshness·IPC·Pyodide·EDGAR provider 집중 회귀
+   `98 passed`, 실제 직접 소비자 회귀 `43 passed`, import-direction `5 passed`,
+   core 상향 import `2 passed`다. 변경 source Pyright 0 errors, Ruff/formatter,
+   Bandit, Vulture, compileall, camelCase, diff whitespace가 통과했다.
+   `loadData` 복잡도는 37에서 `A(4)`로 낮아졌고 새 모듈 최대는 12다. 변경 source
+   7개·공개 함수 38개의 coverage gate 신규 누락은 0, core boundary 위반은 0,
+   전역 `silentSubstitute` 262건은 기존 baseline 안이다. 공식 Guard
+   `strict --scope l0-l15 --providers dart,edgar`는 1,769개 파일, 7/7 규칙과
+   cycle, architecture, folder mirror, gather, provider, public API 여섯 외부 gate를
+   모두 통과했다.
+7. **남은 부채와 판정.** 전체 `testCoverageGate --all`은 공개 함수마다 모든 테스트를
+   다시 읽는 전수 알고리즘 때문에 10분 이상 CPU를 사용해 중단했고, 변경 source 한정
+   동일 `runGate`로 38개 공개 함수의 신규 누락 0을 확인했다. 저장소 전체 coverage
+   baseline 노후화는 기존 Q5 부채다. zstd 압축 IPC는 실제 mmap으로 열리지 않아 Polars가
+   일반 read로 강등하므로, artifact 생성기의 압축·배포·저장공간 계약은 해당 owner
+   계층에서 별도 실측해야 한다. 전역 folderSize에는 `core/_entries` 372 LoC 과분할과
+   core 대형 파일 부채가 남는다. 다음 단일 항목은 기존 순서대로 `core/_entries`
+   과분할이며, 따라서 L0-13만 완료이고 **L0 전체는 미달**이다.
 
 ## 정량 판정 (2026-07-27 실측)
 

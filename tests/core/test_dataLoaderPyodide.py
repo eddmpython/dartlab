@@ -347,6 +347,55 @@ def test_loadDataPyodide_localOnlyNeverFetchesMissingFile(tmp_path: Path, monkey
         dataLoaderPyodide.loadDataPyodide("005930", "finance", refresh="local_only")
 
 
+def test_arrowToPolarsDirectConversion() -> None:
+    """공개 Arrow 변환 helper가 pyarrow table을 동일한 Polars 값으로 보존한다."""
+    import pyarrow as pa
+
+    from dartlab.core.dataLoaderPyodide import arrowToPolars
+
+    result = arrowToPolars(pa.table({"year": [2024], "value": [7]}))
+
+    assert result.to_dict(as_series=False) == {"year": [2024], "value": [7]}
+
+
+def test_loadDataPyodide_rejectsEscapingShardBeforePath(monkeypatch) -> None:
+    """Pyodide 직접 진입도 상위 경로 shard를 FS path로 해석하지 않는다."""
+    from dartlab.core import dataLoaderPyodide
+
+    def pathForbidden(*_args, **_kwargs):
+        raise AssertionError("invalid shard의 data path 생성 금지")
+
+    monkeypatch.setattr(dataLoaderPyodide, "_dataPath", pathForbidden)
+
+    with pytest.raises(ValueError, match="stockCode"):
+        dataLoaderPyodide.loadDataPyodide("../outside", "finance", refresh="local_only")
+
+
+def test_loadDataPyodide_missingProjectionFailsExplicitly(tmp_path: Path, monkeypatch) -> None:
+    """요청 열 전부 부재를 full parquet read로 조용히 강등하지 않는다."""
+    from dartlab.core import dataLoaderPyodide
+
+    path = tmp_path / "finance.parquet"
+    path.write_bytes(_parquetBytes({"year": [2024], "value": [1]}))
+    monkeypatch.setattr(dataLoaderPyodide, "_dataPath", lambda *_args: path)
+
+    with pytest.raises(ValueError, match="요청 열"):
+        dataLoaderPyodide.loadDataPyodide(
+            "005930",
+            "finance",
+            refresh="local_only",
+            columns=["missing"],
+        )
+
+
+def test_loadDataPyodide_rejectsNativeOnlyForceRebuild() -> None:
+    """SEC API rebuild가 없는 Pyodide에서 force_rebuild를 auto로 강등하지 않는다."""
+    from dartlab.core import dataLoaderPyodide
+
+    with pytest.raises(ValueError, match="refresh"):
+        dataLoaderPyodide.loadDataPyodide("AAPL", "edgarDocs", refresh="force_rebuild")
+
+
 def test_loadDataPyodide_localOnlyRemovesKnownCorruption(tmp_path: Path, monkeypatch) -> None:
     """local_only도 네트워크만 금지할 뿐 손상 판정 cache를 고정하지 않는다."""
     from dartlab.core import dataLoaderPyodide

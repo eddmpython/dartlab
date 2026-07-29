@@ -123,3 +123,45 @@ def test_predicate_with_columns(tmp_path: Path, monkeypatch) -> None:
     assert sliced.height == 2
     assert set(sliced.columns) == {"sj_div", "account_id"}
     assert set(sliced.get_column("sj_div").to_list()) == {"IS"}
+
+
+def test_missingProjectionDoesNotMaterializeFullFrame(tmp_path: Path, monkeypatch) -> None:
+    """요청 열이 전부 없으면 대형 전체 frame으로 조용히 강등하지 않는다."""
+    from dartlab.core import dataLoader
+
+    parquetPath = tmp_path / "dart" / "finance" / "005930.parquet"
+    _writeSampleFinanceParquet(parquetPath)
+
+    monkeypatch.setattr(dataLoader, "_dataDir", lambda _cat: tmp_path / "dart" / "finance")
+    monkeypatch.setattr(dataLoader, "_ensureLocalParquet", lambda *args, **kwargs: None)
+    monkeypatch.setattr(dataLoader, "_shouldRefreshHfCategory", lambda *args, **kwargs: False)
+
+    with pytest.raises(ValueError, match="요청 열"):
+        dataLoader.loadData("005930", category="finance", columns=["missing"])
+
+
+def test_lazyQueryCollectsSchemaOnce(tmp_path: Path, monkeypatch) -> None:
+    """sinceYear query가 같은 parquet schema를 중복 조회하지 않는다."""
+    from dartlab.core import dataLoader
+
+    parquetPath = tmp_path / "dart" / "finance" / "005930.parquet"
+    _writeSampleFinanceParquet(parquetPath)
+
+    monkeypatch.setattr(dataLoader, "_dataDir", lambda _cat: tmp_path / "dart" / "finance")
+    monkeypatch.setattr(dataLoader, "_ensureLocalParquet", lambda *args, **kwargs: None)
+    monkeypatch.setattr(dataLoader, "_shouldRefreshHfCategory", lambda *args, **kwargs: False)
+
+    original = pl.LazyFrame.collect_schema
+    calls = 0
+
+    def counted(self, *args, **kwargs):
+        nonlocal calls
+        calls += 1
+        return original(self, *args, **kwargs)
+
+    monkeypatch.setattr(pl.LazyFrame, "collect_schema", counted)
+
+    result = dataLoader.loadData("005930", category="finance", sinceYear=2023)
+
+    assert result.height == 5
+    assert calls == 1

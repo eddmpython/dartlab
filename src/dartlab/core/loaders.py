@@ -41,7 +41,7 @@ class LoaderProvider(Protocol):
         *,
         sinceYear: int | None = None,
         asOf: str | None = None,
-        refresh: str | bool = "auto",
+        refresh: str = "auto",
     ) -> None:
         """카테고리에 맞는 데이터 보장 (다운로드 또는 검증)."""
         ...

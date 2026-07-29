@@ -6,6 +6,7 @@ import 시점에 registerLoader 호출하여 자동 등록.
 
 from __future__ import annotations
 
+from dartlab.core.dataLoaderContract import validateRefreshPolicy
 from dartlab.core.edgarClient import ensureFinanceParquet
 
 
@@ -22,15 +23,21 @@ class EdgarBulkLoader:
             path: 결과 parquet 경로.
             sinceYear: 시작 연도 (현재 미사용).
             asOf: 신선도 기준 시점 (현재 미사용).
-            refresh: ``"auto"`` 외 truthy 면 강제 재변환.
+            refresh: ``auto``/``force_check``/``local_only``.
 
         Raises:
-            FileNotFoundError: 변환 후에도 CIK parquet 부재.
+            ValueError: 미지원 refresh 정책.
+            FileNotFoundError: ``local_only`` cache 부재 또는 변환 후 CIK parquet 부재.
 
         Example:
             >>> EdgarBulkLoader().ensure("AAPL", Path("..."))
         """
-        ensureFinanceParquet(stockCode, path, refresh=bool(refresh and refresh != "auto"))
+        validateRefreshPolicy("edgar", refresh, pyodide=False)
+        if refresh == "local_only":
+            if not path.is_file():
+                raise FileNotFoundError(f"로컬 EDGAR finance 없음: {path}")
+            return
+        ensureFinanceParquet(stockCode, path, refresh=refresh == "force_check")
 
 
 def registerEdgarBulkLoader() -> None:
