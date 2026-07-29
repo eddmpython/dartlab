@@ -85,3 +85,34 @@ def test_parquetColumns_readsNamesWithoutBody(monkeypatch: pytest.MonkeyPatch, s
 
     monkeypatch.setattr("dartlab.core.dataLoader._IS_PYODIDE", False)
     assert parquetIo.parquetColumns(sampleParquet) == ["stockCode", "sj_div", "thstrm_amount"]
+
+
+def test_scanParquets_existing_corrupt_prebuild_raises(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """존재하는 report prebuild 손상을 raw 데이터 부재로 바꾸지 않는다."""
+
+    scanDir = tmp_path / "scan"
+    reportDir = scanDir / "report"
+    reportDir.mkdir(parents=True)
+    (reportDir / "majorHolder.parquet").write_bytes(b"not parquet")
+    monkeypatch.setattr(parquetIo, "_ensureScanData", lambda **_kwargs: scanDir)
+
+    with pytest.raises(parquetIo.ScanDataError, match="stage=report_prebuild_read"):
+        parquetIo.scanParquets(
+            "majorHolder",
+            ["stockCode", "year", "name"],
+        )
+
+
+def test_scanFinanceParquets_existing_corrupt_prebuild_raises(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """존재하는 finance prebuild 손상을 빈 계정 map으로 바꾸지 않는다."""
+
+    scanDir = tmp_path / "scan"
+    scanDir.mkdir()
+    (scanDir / "finance.parquet").write_bytes(b"not parquet")
+    monkeypatch.setattr(parquetIo, "_ensureScanData", lambda **_kwargs: scanDir)
+
+    with pytest.raises(parquetIo.ScanDataError, match="stage=finance_prebuild_read"):
+        parquetIo.scanFinanceParquets("IS", {"Revenue"}, {"매출액"})

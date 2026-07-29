@@ -59,9 +59,10 @@ Guard는 현재 레이어의 source를 동결한 뒤 한 번 실행한다. Guard
   데이터 계약·오류 투명성·SSOT·속도·메모리 기준으로 전수 대조한다. 네 형제 간
   cross import 없이 결함 수정과 집중 회귀를 끝내고 source 동결 뒤 공식 Guard, 원장,
   커밋, push까지 닫는다.
-- 다음 첫 행동: EDGAR 계정 batch와 공통 기간 체크포인트를 push한 뒤 scan의 남은
-  공개 축, raw tag 경로, dispatcher와 실제 호출자를 전수 대조한다. 이어 frame,
-  synth, reference의 남은 전체 src와 공개 호출자 대조를 계속한다.
+- 다음 첫 행동: scan 공통 I/O와 남은 KR 재무 축 체크포인트를 push한 뒤 공개
+  `network` 축의 panel 전수 순회와 이차 복잡도 병목을 제거한다. 이어 US audit,
+  EDGAR prebuild, universe와 dispatcher를 포함한 scan의 남은 공개 계약을 닫고
+  frame, synth, reference 순서로 계속한다.
 - 금지: axis나 파일 하나만 끝내고 완료 보고, L2 이상 수정 선행,
   중간 source에서 공식 Guard 반복
 
@@ -188,6 +189,49 @@ bounded batch와 회사별 기간 정렬로 닫았다.
    나뉘며 이는 256MB 상한을 지키기 위한 의도된 속도·메모리 절충이다. scan의 남은
    공개 축과 raw tag 경로, frame, synth, reference 전체 범위와 실제 소비자,
    source 동결 뒤 공식 Guard가 남았다. 따라서 **L1.5 판정은 미완료**다.
+
+### 진행 증거 5. scan 공통 I/O와 남은 KR 재무 축
+
+**상태: L1.5 진행 중. 레이어 완료 아님.** 공통 scan artifact를 읽는 길목과
+현금흐름, 품질, 유동성, 효율성, 배당추세, 밸류에이션 축을 한 응집 흐름으로 닫았다.
+
+1. **범위와 실제 호출자.** prebuild 확보와 검증, report와 finance parquet,
+   DuckDB fallback, docs cross scan, 최신 계정 집계, 여섯 공개 재무 축과
+   `Scan.docsSections` 호출자를 함께 대조했다.
+2. **제품 결함 재현.** 다운로드 실패와 존재하는 손상 artifact가 빈 DataFrame으로
+   바뀌었고, cache 플래그가 실제 파일 유실을 가렸다. DuckDB fallback은 schema와
+   query 실패도 자료 부재처럼 반환했다. cross scan의 DuckDB 엔진은 먼저 Polars로
+   전체 수집한 뒤 다시 DuckDB에 올려 out-of-core가 아니었다. 남은 재무 축은 같은
+   finance source를 계정마다 반복 읽고, 배당추세는 회사별 Python filter를 반복했다.
+   효율성은 재고회전율 분자에 매출원가 대신 매출액을 사용했다.
+3. **근본 원인과 SSOT.** 정상 부재와 손상, 공급 실패의 상태가 구분되지 않았고
+   latest account와 연결 우선 규칙이 축마다 흩어져 있었다. artifact 실패는
+   `ScanDataError`, 회사별 연결 우선과 최신 exact period는 `scan.io.accounts`,
+   finance projection과 lazy aggregation은 `scan.io.parquet`, cross query 계약은
+   `CrossScanQuery`를 단일 owner로 고정했다.
+4. **수정과 테스트.** cache hit도 required artifact를 재검증하고 Pyodide lite
+   artifact 생성까지 확인한다. 두 다운로드 공급자가 모두 실패하면
+   `ExceptionGroup`으로 두 원인을 보존한다. 존재하는 손상 prebuild, raw parquet,
+   DuckDB import, query, schema 오류는 typed failure로 전파한다. cross scan은
+   Polars와 DuckDB가 parquet를 직접 읽고 predicate와 limit를 source에 push down한다.
+   현금흐름, 품질, 유동성, 효율성은 단일 projection과 lazy group 집계로 전환했고
+   효율성 공식은 매출원가 기준으로 교정했다. 배당추세는 회사별 최신 연도를 exact
+   join하는 벡터 경로로 바꿨다. 밸류에이션은 일부 공급 실패를 표본 로그로 남기고
+   전부 실패하거나 listing이 비면 명시적으로 실패하며 알려진 0 값은 보존한다.
+5. **공개 행동, 정확성, 속도, 메모리.** 실제 공개 scan에서 현금흐름은
+   2,811종목 `1.255초`, RSS 증가 `231.5MB`, 품질은 2,800종목 `1.305초`,
+   `211.6MB`, 유동성은 2,709종목 `1.257초`, `207.7MB`, 효율성은
+   2,629종목 `1.358초`, `226.7MB`다. 배당추세는 2,071종목 `0.093초`,
+   RSS 증가 `155.1MB`다. eager 중간판보다 약간 느린 대신 재무 축의 RSS 증가를
+   기존 약 347MB에서 514MB 범위보다 크게 낮춘 의도된 절충이다.
+6. **Guard와 회귀.** 회사별 최신 기간, 연결 우선, exact 공식, 다운로드 실패,
+   cache 재검증, 손상 artifact, DuckDB 직접 scan, 엔진 동치와 literal filter를
+   회귀로 고정했다. 집중 및 공개 축 회귀 `133 passed`, 변경 source Pyright
+   `0 errors, 0 warnings`, Ruff가 통과했다.
+7. **남은 부채와 판정.** 공개 `network`가 모든 panel을 읽고 회사 쌍을 이차
+   비교하는 병목, US audit의 raw finance 선행 scan, EDGAR prebuild 미사용,
+   universe와 dispatcher 계약이 남았다. frame, synth, reference와 최종 Guard도
+   남았으므로 **L1.5 판정은 미완료**다.
 
 ## L1 gather, providers 순차 안정화 원장 (2026-07-30)
 

@@ -7,13 +7,11 @@ from pathlib import Path
 import polars as pl
 
 from dartlab.scan.io.parquet import (
+    ScanDataError,
     _ensureScanData,
-    collectScan,
     extractAccount,
     financeScanPath,
-    lazyParquet,
-    parquetColumns,
-    preferConsolidatedPerCompany,
+    scanLatestAccountValues,
 )
 
 # ── 유동자산 ──
@@ -101,132 +99,59 @@ def _scanFromMerged(scanPath: Path) -> pl.DataFrame:
             grade : str — 유동성 등급
         빈 DataFrame — 데이터 없음
     """
-    schema = parquetColumns(scanPath)
-    scCol = "stockCode"
-
-    allIds = list(CA_IDS | CL_IDS | INV_IDS)
-    allNms = list(CA_NMS | CL_NMS | INV_NMS)
-
-    target = collectScan(
-        lazyParquet(scanPath).filter(
-            (pl.col("sj_div") == "BS")
-            & (pl.col("fs_nm").str.contains("연결") | pl.col("fs_nm").str.contains("재무제표"))
-            & (pl.col("account_id").is_in(allIds) | pl.col("account_nm").is_in(allNms))
-        )
+    values = scanLatestAccountValues(
+        scanPath,
+        {
+            "currentAssets": (CA_IDS, CA_NMS, {"BS"}),
+            "currentLiabilities": (CL_IDS, CL_NMS, {"BS"}),
+            "inventories": (INV_IDS, INV_NMS, {"BS"}),
+        },
     )
-    if target.is_empty():
+    if values.is_empty():
         return pl.DataFrame()
 
-    # 회사별 연결 우선. 유니버스 전체로 한 번에 좁히면 별도만 내는 회사가
-    # 다른 회사 때문에 사라진다.
-    target = preferConsolidatedPerCompany(target, scCol)
-
-    latestYear = target.group_by(scCol).agg(pl.col("bsns_year").max().alias("_maxYear"))
-    target = target.join(latestYear, on=scCol).filter(pl.col("bsns_year") == pl.col("_maxYear")).drop("_maxYear")
-
-    rows: list[dict] = []
-    for code in target[scCol].unique().to_list():
-        sub = target.filter(pl.col(scCol) == code)
-
-        ca = _extractVal(sub, CA_IDS, CA_NMS)
-        cl = _extractVal(sub, CL_IDS, CL_NMS)
-        inv = _extractVal(sub, INV_IDS, INV_NMS)
-
-        if ca is None or cl is None or cl == 0:
-            continue
-
-        currentRatio = ca / cl * 100
-        quickAssets = ca - inv if inv is not None else None
-        quickRatio = quickAssets / cl * 100 if quickAssets is not None and cl > 0 else None
-
-        rows.append(
-            {
-                "stockCode": code,
-                "currentAssets": round(ca),
-                "currentLiabilities": round(cl),
-                "inventories": round(inv) if inv is not None else None,
-                "currentRatio": round(currentRatio, 1),
-                "quickRatio": round(quickRatio, 1) if quickRatio is not None else None,
-                "grade": _gradeLiquidity(currentRatio),
-            }
+    currentRatio = pl.col("currentAssets") / pl.col("currentLiabilities") * 100
+    quickRatio = (pl.col("currentAssets") - pl.col("inventories")) / pl.col("currentLiabilities") * 100
+    return (
+        values.filter(
+            pl.col("currentAssets").is_not_null()
+            & pl.col("currentLiabilities").is_not_null()
+            & (pl.col("currentLiabilities") != 0)
         )
-
-    return pl.DataFrame(rows) if rows else pl.DataFrame()
-
-
-def _scanPerFile() -> pl.DataFrame:
-    """종목별 finance parquet 개별 순회 fallback.
-
-    프리빌드 finance.parquet이 없을 때 종목별 parquet 파일을 하나씩 읽어
-    유동성 지표를 산출한다. 반환 구조는 ``_scanFromMerged``와 동일.
-
-    Returns
-    -------
-    pl.DataFrame
-        컬럼:
-            stockCode : str — 종목코드
-            currentAssets : int — 유동자산 (원)
-            currentLiabilities : int — 유동부채 (원)
-            inventories : int | None — 재고자산 (원)
-            currentRatio : float — 유동비율 (%)
-            quickRatio : float | None — 당좌비율 (%)
-            grade : str — 유동성 등급
-        빈 DataFrame — 데이터 없음
-    """
-    from dartlab.core.dataLoader import _dataDir
-
-    financeDir = Path(_dataDir("finance"))
-    parquetFiles = sorted(financeDir.glob("*.parquet"))
-
-    rows: list[dict] = []
-    for pf in parquetFiles:
-        code = pf.stem
-        try:
-            df = (
-                pl.scan_parquet(str(pf))
-                .filter(
-                    (pl.col("sj_div") == "BS")
-                    & (pl.col("fs_nm").str.contains("연결") | pl.col("fs_nm").str.contains("재무제표"))
-                )
-                .collect(engine="streaming")
-            )
-        except (pl.exceptions.PolarsError, OSError):
-            continue
-        if df.is_empty() or "account_id" not in df.columns:
-            continue
-
-        cfs = df.filter(pl.col("fs_nm").str.contains("연결"))
-        target = cfs if not cfs.is_empty() else df
-
-        years = sorted(target["bsns_year"].unique().to_list(), reverse=True)
-        if not years:
-            continue
-        latest = target.filter(pl.col("bsns_year") == years[0])
-
-        ca = _extractVal(latest, CA_IDS, CA_NMS)
-        cl = _extractVal(latest, CL_IDS, CL_NMS)
-        inv = _extractVal(latest, INV_IDS, INV_NMS)
-
-        if ca is None or cl is None or cl == 0:
-            continue
-
-        currentRatio = ca / cl * 100
-        quickAssets = ca - inv if inv is not None else None
-        quickRatio = quickAssets / cl * 100 if quickAssets is not None and cl > 0 else None
-
-        rows.append(
-            {
-                "stockCode": code,
-                "currentAssets": round(ca),
-                "currentLiabilities": round(cl),
-                "inventories": round(inv) if inv is not None else None,
-                "currentRatio": round(currentRatio, 1),
-                "quickRatio": round(quickRatio, 1) if quickRatio is not None else None,
-                "grade": _gradeLiquidity(currentRatio),
-            }
+        .with_columns(
+            currentRatio.alias("_currentRatio"),
+            pl.when(pl.col("inventories").is_not_null() & (pl.col("currentLiabilities") > 0))
+            .then(quickRatio)
+            .otherwise(None)
+            .alias("_quickRatio"),
         )
-
-    return pl.DataFrame(rows) if rows else pl.DataFrame()
+        .with_columns(
+            pl.col("currentAssets").round(0).cast(pl.Int64),
+            pl.col("currentLiabilities").round(0).cast(pl.Int64),
+            pl.col("inventories").round(0).cast(pl.Int64),
+            pl.col("_currentRatio").round(1).alias("currentRatio"),
+            pl.col("_quickRatio").round(1).alias("quickRatio"),
+            pl.when(pl.col("_currentRatio") >= 200)
+            .then(pl.lit("우수"))
+            .when(pl.col("_currentRatio") >= 150)
+            .then(pl.lit("양호"))
+            .when(pl.col("_currentRatio") >= 100)
+            .then(pl.lit("보통"))
+            .when(pl.col("_currentRatio") >= 50)
+            .then(pl.lit("주의"))
+            .otherwise(pl.lit("위험"))
+            .alias("grade"),
+        )
+        .select(
+            "stockCode",
+            "currentAssets",
+            "currentLiabilities",
+            "inventories",
+            "currentRatio",
+            "quickRatio",
+            "grade",
+        )
+    )
 
 
 def scanLiquidity(*, verbose: bool = True) -> pl.DataFrame:
@@ -289,6 +214,10 @@ def scanLiquidity(*, verbose: bool = True) -> pl.DataFrame:
     """
     scanDir = _ensureScanData()
     scanPath = financeScanPath(scanDir)
-    if scanPath.exists():
-        return _scanFromMerged(scanPath)
-    return _scanPerFile()
+    if not scanPath.exists():
+        raise ScanDataError(
+            "finance_prebuild_missing",
+            "finance prebuild is required after _ensureScanData",
+            source=scanPath,
+        )
+    return _scanFromMerged(scanPath)

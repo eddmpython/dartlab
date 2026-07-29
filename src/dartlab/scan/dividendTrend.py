@@ -5,11 +5,12 @@ from __future__ import annotations
 import polars as pl
 
 from dartlab.core.logger import getLogger
+from dartlab.scan.io.accounts import amountExpr
 
 _log = getLogger(__name__)
 
 
-from dartlab.scan.io.parquet import parseNumStr, scanParquets
+from dartlab.scan.io.parquet import scanParquets
 
 
 def _classifyPattern(
@@ -45,6 +46,7 @@ def _classifyPattern(
     if not has0 and has1:
         return "중단"
     if has0 and has1 and has2:
+        assert dps0 is not None and dps1 is not None and dps2 is not None
         if dps0 > dps1 > dps2:
             return "연속증가"
         if dps0 < dps1 < dps2:
@@ -56,6 +58,7 @@ def _classifyPattern(
             return "증가"
         return "감소"
     if has0 and has1:
+        assert dps0 is not None and dps1 is not None
         if dps0 > dps1:
             return "증가"
         if dps0 < dps1:
@@ -165,114 +168,125 @@ def scanDividendTrend(*, verbose: bool = True) -> pl.DataFrame:
     if verbose:
         _log.info(f"배당 추이 스캔: {raw.shape[0]}행 로드")
 
-    # 보통주 + 주당 현금배당금 + Q4 우선
-    dpsRows = raw.filter((pl.col("se") == "주당 현금배당금(원)") & (pl.col("stock_knd") == "보통주"))
-
-    # 배당수익률
-    yieldRows = raw.filter((pl.col("se") == "현금배당수익률(%)") & (pl.col("stock_knd") == "보통주"))
-
-    # 배당성향 (연결 우선)
-    payoutRows = raw.filter(pl.col("se") == "(연결)현금배당성향(%)")
-
-    # 최신 연도 기준
-    years = sorted(
-        [y for y in dpsRows["year"].unique().to_list() if str(y).strip().isdigit()],
-        reverse=True,
+    normalized = raw.with_columns(
+        pl.col("year").cast(pl.Utf8).str.strip_chars().cast(pl.Int32, strict=False).alias("_year"),
+        pl.when(pl.col("quarter") == "4분기").then(1).otherwise(0).alias("_quarterRank"),
     )
-    if not years:
+    dpsRows = normalized.filter(
+        (pl.col("se") == "주당 현금배당금(원)") & (pl.col("stock_knd") == "보통주") & pl.col("_year").is_not_null()
+    )
+    if dpsRows.is_empty():
         return pl.DataFrame()
 
-    # Q4 기준 유효 데이터 500종목 이상인 최신 연도 (결산 완료 연도)
-    latestYear = None
-    for y in years:
-        q4sub = dpsRows.filter((pl.col("year") == y) & (pl.col("quarter") == "4분기"))
-        if q4sub["stockCode"].n_unique() >= 500:
-            latestYear = y
-            break
+    yearCoverage = (
+        dpsRows.filter(pl.col("_quarterRank") == 1)
+        .group_by("_year")
+        .agg(pl.col("stockCode").n_unique().alias("_companyCount"))
+        .sort("_year", descending=True)
+    )
+    completed = yearCoverage.filter(pl.col("_companyCount") >= 500)
+    latestYear = completed["_year"][0] if not completed.is_empty() else dpsRows.select(pl.col("_year").max()).item()
     if latestYear is None:
-        latestYear = years[0]
+        return pl.DataFrame()
 
     if verbose:
         _log.info(f"  기준 연도: {latestYear}")
 
-    rows: list[dict] = []
-    allCodes = dpsRows["stockCode"].unique().to_list()
+    selectedYears = (
+        dpsRows.group_by("stockCode")
+        .agg(
+            pl.col("_year").max().alias("_companyLatestYear"),
+            (pl.col("_year") == latestYear).any().alias("_hasMarketYear"),
+        )
+        .with_columns(
+            pl.when(pl.col("_hasMarketYear"))
+            .then(pl.lit(latestYear))
+            .otherwise(pl.col("_companyLatestYear"))
+            .alias("_selectedYear")
+        )
+        .select("stockCode", "_selectedYear")
+    )
 
-    for code in allCodes:
-        codeDps = dpsRows.filter(pl.col("stockCode") == code)
-
-        # Q4 우선, 최신 연도
-        yearSub = codeDps.filter(pl.col("year") == latestYear)
-        if yearSub.is_empty():
-            # 해당 연도 없으면 가장 최근 데이터 사용
-            codeYears = sorted(codeDps["year"].unique().to_list(), reverse=True)
-            if not codeYears:
-                continue
-            yearSub = codeDps.filter(pl.col("year") == codeYears[0])
-
-        q4 = yearSub.filter(pl.col("quarter") == "4분기")
-        best = q4 if not q4.is_empty() else yearSub
-        row = best.row(0, named=True)
-
-        dps0 = parseNumStr(row.get("thstrm"))
-        dps1 = parseNumStr(row.get("frmtrm"))
-        dps2 = parseNumStr(row.get("lwfr"))
-
-        # 배당수익률
-        yieldVal = None
-        yieldSub = yieldRows.filter((pl.col("stockCode") == code) & (pl.col("year") == latestYear))
-        if not yieldSub.is_empty():
-            yq4 = yieldSub.filter(pl.col("quarter") == "4분기")
-            yBest = yq4 if not yq4.is_empty() else yieldSub
-            yieldVal = parseNumStr(yBest.row(0, named=True).get("thstrm"))
-
-        # 배당성향
-        payoutVal = None
-        payoutSub = payoutRows.filter((pl.col("stockCode") == code) & (pl.col("year") == latestYear))
-        if not payoutSub.is_empty():
-            pq4 = payoutSub.filter(pl.col("quarter") == "4분기")
-            pBest = pq4 if not pq4.is_empty() else payoutSub
-            payoutVal = parseNumStr(pBest.row(0, named=True).get("thstrm"))
-
-        # DPS 성장률
-        dpsGrowth = None
-        if dps0 is not None and dps1 is not None and dps1 > 0:
-            dpsGrowth = round((dps0 - dps1) / dps1 * 100, 1)
-
-        pattern = _classifyPattern(dps0, dps1, dps2)
-
-        rows.append(
-            {
-                "stockCode": code,
-                "dpsCurrent": dps0,
-                "dpsPrev": dps1,
-                "dpsPrev2": dps2,
-                "dpsGrowth": dpsGrowth,
-                "payoutRatio": payoutVal,
-                "yieldCurrent": yieldVal,
-                "pattern": pattern,
-                "grade": _gradeDividend(pattern, dpsGrowth),
-            }
+    def _bestValueRows(source: pl.DataFrame, valueName: str) -> pl.DataFrame:
+        return (
+            source.join(selectedYears, on="stockCode")
+            .filter(pl.col("_year") == pl.col("_selectedYear"))
+            .sort(["stockCode", "_quarterRank"], descending=[False, True])
+            .group_by("stockCode", maintain_order=True)
+            .agg(amountExpr("thstrm").first().alias(valueName))
         )
 
+    dps = (
+        dpsRows.join(selectedYears, on="stockCode")
+        .filter(pl.col("_year") == pl.col("_selectedYear"))
+        .sort(["stockCode", "_quarterRank"], descending=[False, True])
+        .group_by("stockCode", maintain_order=True)
+        .agg(
+            amountExpr("thstrm").first().alias("dpsCurrent"),
+            amountExpr("frmtrm").first().alias("dpsPrev"),
+            amountExpr("lwfr").first().alias("dpsPrev2"),
+        )
+    )
+    yieldValues = _bestValueRows(
+        normalized.filter((pl.col("se") == "현금배당수익률(%)") & (pl.col("stock_knd") == "보통주")),
+        "yieldCurrent",
+    )
+    payoutValues = _bestValueRows(
+        normalized.filter(pl.col("se") == "(연결)현금배당성향(%)"),
+        "payoutRatio",
+    )
+
+    result = (
+        dps.join(yieldValues, on="stockCode", how="left")
+        .join(payoutValues, on="stockCode", how="left")
+        .with_columns(
+            pl.when(pl.col("dpsCurrent").is_not_null() & (pl.col("dpsPrev") > 0))
+            .then((pl.col("dpsCurrent") - pl.col("dpsPrev")) / pl.col("dpsPrev") * 100)
+            .otherwise(None)
+            .round(1)
+            .alias("dpsGrowth"),
+            pl.struct("dpsCurrent", "dpsPrev", "dpsPrev2")
+            .map_elements(
+                lambda row: _classifyPattern(
+                    row["dpsCurrent"],
+                    row["dpsPrev"],
+                    row["dpsPrev2"],
+                ),
+                return_dtype=pl.Utf8,
+            )
+            .alias("pattern"),
+        )
+        .with_columns(
+            pl.when(pl.col("pattern") == "무배당")
+            .then(pl.lit("무배당"))
+            .when(pl.col("pattern") == "연속증가")
+            .then(pl.lit("우수"))
+            .when(pl.col("pattern").is_in(["안정", "증가", "시작"]))
+            .then(pl.lit("양호"))
+            .when(pl.col("pattern").is_in(["감소", "연속감소"]))
+            .then(pl.lit("주의"))
+            .when(pl.col("pattern") == "중단")
+            .then(pl.lit("위험"))
+            .otherwise(pl.lit("보통"))
+            .alias("grade")
+        )
+        .select(
+            "stockCode",
+            "dpsCurrent",
+            "dpsPrev",
+            "dpsPrev2",
+            "dpsGrowth",
+            "payoutRatio",
+            "yieldCurrent",
+            "pattern",
+            "grade",
+        )
+        .sort("stockCode")
+    )
+
     if verbose:
-        _log.info(f"배당 추이 스캔 완료: {len(rows)}종목")
-
-    if not rows:
-        return pl.DataFrame()
-
-    schema = {
-        "stockCode": pl.Utf8,
-        "dpsCurrent": pl.Float64,
-        "dpsPrev": pl.Float64,
-        "dpsPrev2": pl.Float64,
-        "dpsGrowth": pl.Float64,
-        "payoutRatio": pl.Float64,
-        "yieldCurrent": pl.Float64,
-        "pattern": pl.Utf8,
-        "grade": pl.Utf8,
-    }
-    return pl.DataFrame(rows, schema=schema)
+        _log.info(f"배당 추이 스캔 완료: {result.height}종목")
+    return result
 
 
 __all__ = ["scanDividendTrend"]

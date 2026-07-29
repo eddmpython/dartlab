@@ -85,9 +85,9 @@ def test_loadValuationSnapshot_reads_valid_parquet(_isolateScanDir):
     assert snapshotAt == ts
 
 
-def test_loadValuationSnapshot_missing_required_column_returns_none(_isolateScanDir):
-    """스키마 불일치 parquet (필수 컬럼 누락) 이면 None 반환."""
-    from dartlab.scan.io.parquet import loadValuationSnapshot
+def test_loadValuationSnapshot_missing_required_column_raises(_isolateScanDir):
+    """존재하는 snapshot의 schema 손상을 정상 부재로 위장하지 않는다."""
+    from dartlab.scan.io.parquet import ScanDataError, loadValuationSnapshot
 
     # current 컬럼 누락
     bad = pl.DataFrame(
@@ -95,9 +95,8 @@ def test_loadValuationSnapshot_missing_required_column_returns_none(_isolateScan
     )
     bad.write_parquet(str(_isolateScanDir / "valuation.parquet"))
 
-    frame, snapshotAt = loadValuationSnapshot()
-    assert frame is None
-    assert snapshotAt is None
+    with pytest.raises(ScanDataError, match="stage=valuation_snapshot_schema"):
+        loadValuationSnapshot()
 
 
 def test_scanValuation_prebuild_path_skips_naver(_isolateScanDir, monkeypatch):
@@ -202,3 +201,29 @@ def test_scanValuation_refresh_true_bypasses_prebuild(_isolateScanDir, monkeypat
     assert len(fetchCalls) == 1, "refresh=True 이면 네이버 호출 정확히 1회"
     assert result.height == 1
     assert result["snapshotAt"][0] == ts_new  # 새로 수집된 시각
+
+
+def test_fetchValuationRaw_all_failures_raise(monkeypatch):
+    """전 종목 수집 실패를 정상적인 빈 snapshot으로 반환하지 않는다."""
+
+    import dartlab.scan.financial.valuation as vmod
+
+    async def failAll(_codes, _verbose):
+        return {}, {"005930": "HTTPError: rate limited"}
+
+    monkeypatch.setattr(vmod, "_fetchAll", failAll)
+
+    with pytest.raises(vmod.ValuationFetchError, match="수집 결과가 없습니다"):
+        vmod.fetchValuationRaw(["005930"], verbose=False)
+
+
+def test_scanValuation_empty_listing_raises(_isolateScanDir, monkeypatch):
+    """수집 대상 상장사 부재를 빈 밸류에이션 결과로 위장하지 않는다."""
+
+    import dartlab as dartlabModule
+    import dartlab.scan.financial.valuation as vmod
+
+    monkeypatch.setattr(dartlabModule, "listing", lambda: pl.DataFrame())
+
+    with pytest.raises(vmod.ValuationFetchError, match="수집 대상 종목"):
+        vmod.scanValuation(refresh=True, verbose=False)

@@ -1,17 +1,15 @@
-"""M6: CrossScanEngine Protocol + Polars/DuckDB 양 구현 동치 검증.
-
-dartlab.scan.docsSections() 의 cross-company aggregation 엔진 dispatcher.
-PolarsCrossScan (기본, streaming engine) 와 DuckDbCrossScan (OOC SQL 위임)
-이 동일 LazyFrame 입력에 대해 동일 결과를 반환해야 한다.
-"""
+"""CrossScanQuery와 Polars, DuckDB parquet engine 동치 회귀."""
 
 from __future__ import annotations
+
+from pathlib import Path
 
 import polars as pl
 import pytest
 
 from dartlab.scan.io.cross import (
     CrossScanEngine,
+    CrossScanQuery,
     DuckDbCrossScan,
     PolarsCrossScan,
     pickCrossScanEngine,
@@ -20,78 +18,84 @@ from dartlab.scan.io.cross import (
 pytestmark = pytest.mark.unit
 
 
-def _fixtureLf() -> pl.LazyFrame:
-    """3 회사 × 3 row LazyFrame — 단순 fixture."""
-    return pl.LazyFrame(
+@pytest.fixture
+def docsIndex(tmp_path: Path) -> Path:
+    """3개 회사의 최소 docs index parquet."""
+
+    path = tmp_path / "docsIndex.parquet"
+    pl.DataFrame(
         {
             "stockCode": ["005930", "005930", "000660", "000660", "035420"],
             "year": [2023, 2024, 2023, 2024, 2024],
-            "sectionTitle": ["BS", "IS", "BS", "IS", "BS"],
-            "contentLength": [1000, 2000, 1500, 2500, 3000],
+            "sectionTitle": ["BS", "IS[별도]", "BS", "IS", "BS"],
+            "contentLength": [1000, 2000, 0, 2500, 3000],
         }
+    ).write_parquet(path)
+    return path
+
+
+def test_engines_implement_protocol() -> None:
+    assert isinstance(PolarsCrossScan(), CrossScanEngine)
+    assert isinstance(DuckDbCrossScan(), CrossScanEngine)
+
+
+@pytest.mark.parametrize(
+    "queryArgs, expectedRows",
+    [
+        ({}, 5),
+        ({"year": 2024}, 3),
+        ({"stockCodes": ("005930", "035420")}, 3),
+        ({"onlyWithContent": True}, 4),
+        ({"limit": 2}, 2),
+        ({"sectionTitle": "IS["}, 1),
+    ],
+)
+def test_polars_and_duckdb_are_equivalent(
+    docsIndex: Path,
+    queryArgs: dict,
+    expectedRows: int,
+) -> None:
+    """두 엔진은 literal filter와 limit에서 같은 결과를 반환한다."""
+
+    query = CrossScanQuery(path=docsIndex, **queryArgs)
+    polarsResult = PolarsCrossScan().execute(query)
+    duckDbResult = DuckDbCrossScan().execute(query)
+
+    assert polarsResult.height == duckDbResult.height == expectedRows
+    assert set(polarsResult.columns) == set(duckDbResult.columns)
+    assert polarsResult.sort(polarsResult.columns).equals(duckDbResult.sort(duckDbResult.columns))
+
+
+def test_duckdb_reads_parquet_without_polars_collect(
+    docsIndex: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """DuckDB 경로는 Polars LazyFrame을 먼저 materialize하지 않는다."""
+
+    monkeypatch.setattr(
+        pl.LazyFrame,
+        "collect",
+        lambda *_args, **_kwargs: pytest.fail("DuckDB engine must not collect a Polars LazyFrame"),
     )
 
+    result = DuckDbCrossScan(memoryLimitMb=64, threads=1).execute(CrossScanQuery(path=docsIndex, year=2024))
 
-class TestProtocolImplements:
-    """PolarsCrossScan / DuckDbCrossScan 가 CrossScanEngine Protocol 만족."""
-
-    def test_polars_implements_protocol(self):
-        assert isinstance(PolarsCrossScan(), CrossScanEngine)
-
-    def test_duckdb_implements_protocol(self):
-        assert isinstance(DuckDbCrossScan(), CrossScanEngine)
+    assert result.height == 3
 
 
-class TestEquivalence:
-    """양 엔진 동일 결과 — Protocol contract."""
+def test_dispatcher_validates_engine(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("DARTLAB_CROSS_SCAN_ENGINE", raising=False)
+    assert isinstance(pickCrossScanEngine(), PolarsCrossScan)
 
-    def test_no_filter_same_result(self):
-        """필터 없음 — 전체 5 row 동일."""
-        lf = _fixtureLf()
-        pdf = PolarsCrossScan().aggregate(lf)
-        ddf = DuckDbCrossScan().aggregate(lf)
-        # 같은 행 수, 같은 컬럼 set
-        assert pdf.height == ddf.height == 5
-        assert set(pdf.columns) == set(ddf.columns)
+    monkeypatch.setenv("DARTLAB_CROSS_SCAN_ENGINE", "duckdb")
+    assert isinstance(pickCrossScanEngine(), DuckDbCrossScan)
+    assert isinstance(pickCrossScanEngine(engine="polars"), PolarsCrossScan)
 
-    def test_filter_year_2024(self):
-        """year=2024 필터 — 3 row 동일."""
-        lf = _fixtureLf().filter(pl.col("year") == 2024)
-        pdf = PolarsCrossScan().aggregate(lf)
-        ddf = DuckDbCrossScan().aggregate(lf)
-        assert pdf.height == ddf.height == 3
-
-    def test_limit_applied(self):
-        """limit=2 동일 적용."""
-        lf = _fixtureLf()
-        pdf = PolarsCrossScan().aggregate(lf, limit=2)
-        ddf = DuckDbCrossScan().aggregate(lf, limit=2)
-        assert pdf.height == ddf.height == 2
+    with pytest.raises(ValueError, match="지원하지 않는 cross scan engine"):
+        pickCrossScanEngine(engine="dukdb")
 
 
-class TestDispatcher:
-    """pickCrossScanEngine 토글."""
-
-    def test_default_is_polars(self, monkeypatch):
-        """env 미설정 시 기본 PolarsCrossScan."""
-        monkeypatch.delenv("DARTLAB_CROSS_SCAN_ENGINE", raising=False)
-        engine = pickCrossScanEngine()
-        assert isinstance(engine, PolarsCrossScan)
-
-    def test_env_duckdb(self, monkeypatch):
-        """``DARTLAB_CROSS_SCAN_ENGINE=duckdb`` 환경변수 시 DuckDbCrossScan."""
-        monkeypatch.setenv("DARTLAB_CROSS_SCAN_ENGINE", "duckdb")
-        engine = pickCrossScanEngine()
-        assert isinstance(engine, DuckDbCrossScan)
-
-    def test_explicit_duckdb_overrides_env(self, monkeypatch):
-        """``engine="duckdb"`` 명시 시 env 와 무관 DuckDbCrossScan."""
-        monkeypatch.setenv("DARTLAB_CROSS_SCAN_ENGINE", "polars")
-        engine = pickCrossScanEngine(engine="duckdb")
-        assert isinstance(engine, DuckDbCrossScan)
-
-    def test_explicit_polars_overrides_env(self, monkeypatch):
-        """``engine="polars"`` 명시 시 env 와 무관 PolarsCrossScan."""
-        monkeypatch.setenv("DARTLAB_CROSS_SCAN_ENGINE", "duckdb")
-        engine = pickCrossScanEngine(engine="polars")
-        assert isinstance(engine, PolarsCrossScan)
+@pytest.mark.parametrize("limit", [0, -1])
+def test_query_rejects_non_positive_limit(docsIndex: Path, limit: int) -> None:
+    with pytest.raises(ValueError, match="limit"):
+        CrossScanQuery(path=docsIndex, limit=limit)

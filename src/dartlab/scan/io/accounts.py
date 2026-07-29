@@ -5,6 +5,7 @@ from __future__ import annotations
 import polars as pl
 
 from dartlab.core.utils.helpers import parseNumStr
+from dartlab.scan.io.calendar import filterLatestPeriodPerStock
 
 # 같은 회계 개념의 snake_id / 표시명 변형을 한 곳에 통합.
 # 신규 변형 발견 시 여기서만 추가 → scan/{efficiency,growth,profitability,valuation} 자동 반영.
@@ -45,7 +46,7 @@ LIABILITY_IDS = {"Liabilities", "ifrs-full_Liabilities", "ifrs_Liabilities", "da
 LIABILITY_NMS = {"부채총계", "총부채", "부채 총계"}
 
 
-def _amountExpr(amtCol: str) -> pl.Expr:
+def amountExpr(amtCol: str) -> pl.Expr:
     """회계 숫자 문자열을 Polars 식 하나로 정규화한다."""
 
     raw = pl.col(amtCol).cast(pl.Utf8).str.strip_chars()
@@ -59,6 +60,9 @@ def _amountExpr(amtCol: str) -> pl.Expr:
         .cast(pl.Float64, strict=False)
     )
     return pl.when(negative).then(-numeric.abs()).otherwise(numeric)
+
+
+_amountExpr = amountExpr
 
 
 def aggregateAccountValues(
@@ -76,16 +80,19 @@ def aggregateAccountValues(
     """
 
     required = {*groupCols, "account_id", "account_nm", amtCol}
-    if target.is_empty() or not required.issubset(target.columns):
+    if target.is_empty():
         return pl.DataFrame(
             schema={
                 **{col: target.schema.get(col, pl.Utf8) for col in groupCols},
                 **{name: pl.Float64 for name in accountSpecs},
             }
         )
+    missing = sorted(required - set(target.columns))
+    if missing:
+        raise ValueError(f"account aggregation에 필요한 컬럼이 없습니다: {', '.join(missing)}")
 
     amountCol = "_scanAmount"
-    work = target.with_columns(_amountExpr(amtCol).alias(amountCol))
+    work = target.with_columns(amountExpr(amtCol).alias(amountCol))
     expressions: list[pl.Expr] = []
     for name, (ids, names, statementDivs) in accountSpecs.items():
         matched = pl.col("account_id").is_in(ids) | pl.col("account_nm").is_in(names)
@@ -93,6 +100,77 @@ def aggregateAccountValues(
             matched &= pl.col("sj_div").is_in(statementDivs)
         expressions.append(pl.col(amountCol).filter(matched & pl.col(amountCol).is_not_null()).first().alias(name))
     return work.group_by(groupCols).agg(expressions)
+
+
+def preferConsolidatedPerCompany(
+    frame: pl.DataFrame,
+    stockCodeCol: str = "stockCode",
+) -> pl.DataFrame:
+    """회사마다 연결재무제표를 우선하고 없는 회사는 별도를 남긴다."""
+
+    if frame.is_empty() or "fs_nm" not in frame.columns or stockCodeCol not in frame.columns:
+        return frame
+    ranked = frame.with_columns(pl.when(pl.col("fs_nm").str.contains("연결")).then(0).otherwise(1).alias("_fsRank"))
+    best = ranked.group_by(stockCodeCol).agg(pl.col("_fsRank").min().alias("_bestFsRank"))
+    return (
+        ranked.join(best, on=stockCodeCol)
+        .filter(pl.col("_fsRank") == pl.col("_bestFsRank"))
+        .drop("_fsRank", "_bestFsRank")
+    )
+
+
+def preferConsolidatedPerCompanyLazy(
+    frame: pl.LazyFrame,
+    stockCodeCol: str = "stockCode",
+) -> pl.LazyFrame:
+    """LazyFrame에 회사별 연결 우선 규칙을 적용한다."""
+
+    columns = set(frame.collect_schema().names())
+    if "fs_nm" not in columns or stockCodeCol not in columns:
+        return frame
+    ranked = frame.with_columns(pl.when(pl.col("fs_nm").str.contains("연결")).then(0).otherwise(1).alias("_fsRank"))
+    best = ranked.group_by(stockCodeCol).agg(pl.col("_fsRank").min().alias("_bestFsRank"))
+    return (
+        ranked.join(best, on=stockCodeCol)
+        .filter(pl.col("_fsRank") == pl.col("_bestFsRank"))
+        .drop("_fsRank", "_bestFsRank")
+    )
+
+
+def aggregateLatestAccountValues(
+    target: pl.DataFrame,
+    accountSpecs: dict[str, tuple[set[str], set[str], set[str] | None]],
+    *,
+    stockCodeCol: str = "stockCode",
+    yearCol: str = "bsns_year",
+    amtCol: str = "thstrm_amount",
+) -> pl.DataFrame:
+    """회사별 선호 재무제표의 최신연도 계정을 한 번에 집계한다."""
+
+    outputSchema = {
+        stockCodeCol: target.schema.get(stockCodeCol, pl.Utf8),
+        yearCol: target.schema.get(yearCol, pl.Utf8),
+        **{name: pl.Float64 for name in accountSpecs},
+    }
+    if target.is_empty():
+        return pl.DataFrame(schema=outputSchema)
+
+    required = {stockCodeCol, yearCol, "fs_nm", "account_id", "account_nm", amtCol}
+    missing = sorted(required - set(target.columns))
+    if missing:
+        raise ValueError(f"latest account aggregation에 필요한 컬럼이 없습니다: {', '.join(missing)}")
+
+    latest = filterLatestPeriodPerStock(
+        preferConsolidatedPerCompany(target, stockCodeCol),
+        stockCodeCol,
+        yearCol,
+    )
+    return aggregateAccountValues(
+        latest,
+        [stockCodeCol, yearCol],
+        accountSpecs,
+        amtCol=amtCol,
+    )
 
 
 def extractAccount(sub: pl.DataFrame, ids: set[str], nms: set[str], amtCol: str = "thstrm_amount") -> float | None:

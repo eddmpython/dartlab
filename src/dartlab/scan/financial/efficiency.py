@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import polars as pl
 
 from dartlab.core.logger import getLogger
@@ -27,9 +29,7 @@ from dartlab.scan.io.parquet import (
 from dartlab.scan.io.parquet import (
     TA_NMS as _TA_NMS,
 )
-from dartlab.scan.io.parquet import (
-    scanFinanceParquets,
-)
+from dartlab.scan.io.parquet import ScanDataError, _ensureScanData, financeScanPath, scanLatestAccountValues
 
 # ── 계정 매핑 (모듈 고유) ──
 
@@ -81,6 +81,97 @@ def _gradeEfficiency(ccc: float | None) -> str:
     if ccc < 365:
         return "보통"
     return "비효율"
+
+
+def _scanFromMerged(scanPath: Path) -> pl.DataFrame:
+    """finance prebuild 1회 scan으로 최신 기간 운영 효율을 계산한다."""
+
+    values = scanLatestAccountValues(
+        scanPath,
+        {
+            "revenue": (_REVENUE_IDS, _REVENUE_NMS, {"IS", "CIS"}),
+            "totalAssets": (_TA_IDS, _TA_NMS, {"BS"}),
+            "inventories": (_INV_IDS, _INV_NMS, {"BS"}),
+            "receivables": (_AR_IDS, _AR_NMS, {"BS"}),
+            "ppe": (_PPE_IDS, _PPE_NMS, {"BS"}),
+            "costOfSales": (_COGS_IDS, _COGS_NMS, {"IS", "CIS"}),
+            "payables": (_AP_IDS, _AP_NMS, {"BS"}),
+        },
+    )
+    if values.is_empty():
+        return pl.DataFrame()
+
+    revenue = pl.col("revenue")
+    assets = pl.col("totalAssets")
+    inventory = pl.col("inventories")
+    receivables = pl.col("receivables")
+    ppe = pl.col("ppe")
+    cogs = pl.col("costOfSales")
+    payables = pl.col("payables")
+
+    assetTurnover = pl.when(assets > 0).then(revenue / assets).otherwise(None)
+    invTurnover = pl.when((inventory > 0) & (cogs > 0)).then(cogs / inventory).otherwise(None)
+    arTurnover = pl.when(receivables > 0).then(revenue / receivables).otherwise(None)
+    ppeTurnover = pl.when(ppe > 0).then(revenue / ppe).otherwise(None)
+    invDays = pl.when((inventory >= 0) & (cogs > 0)).then(365 * inventory / cogs).otherwise(None)
+    arDays = pl.when(receivables >= 0).then(365 * receivables / revenue).otherwise(None)
+    apDays = pl.when((payables >= 0) & (cogs > 0)).then(365 * payables / cogs).otherwise(None)
+
+    return (
+        values.filter(revenue.is_not_null() & (revenue >= _MIN_REVENUE))
+        .with_columns(
+            assetTurnover.alias("_assetTurnover"),
+            invTurnover.alias("_invTurnover"),
+            arTurnover.alias("_arTurnover"),
+            ppeTurnover.alias("_ppeTurnover"),
+            invDays.alias("_invDays"),
+            arDays.alias("_arDays"),
+            apDays.alias("_apDays"),
+        )
+        .with_columns(
+            pl.when(
+                pl.col("_invDays").is_not_null() & pl.col("_arDays").is_not_null() & pl.col("_apDays").is_not_null()
+            )
+            .then(
+                (pl.col("_invDays") + pl.col("_arDays") - pl.col("_apDays")).clip(
+                    -_CCC_CAP,
+                    _CCC_CAP,
+                )
+            )
+            .otherwise(None)
+            .alias("_ccc")
+        )
+        .with_columns(
+            pl.col("_assetTurnover").round(2).alias("assetTurnover"),
+            pl.col("_invTurnover").round(2).alias("invTurnover"),
+            pl.col("_arTurnover").round(2).alias("arTurnover"),
+            pl.col("_ppeTurnover").round(2).alias("ppeTurnover"),
+            pl.col("_invDays").round(0).alias("invDays"),
+            pl.col("_arDays").round(0).alias("arDays"),
+            pl.col("_ccc").round(0).alias("ccc"),
+            pl.when(pl.col("_ccc").is_null())
+            .then(pl.lit("해당없음"))
+            .when(pl.col("_ccc") < 90)
+            .then(pl.lit("우수"))
+            .when(pl.col("_ccc") < 180)
+            .then(pl.lit("양호"))
+            .when(pl.col("_ccc") < 365)
+            .then(pl.lit("보통"))
+            .otherwise(pl.lit("비효율"))
+            .alias("grade"),
+        )
+        .select(
+            "stockCode",
+            "assetTurnover",
+            "invTurnover",
+            "arTurnover",
+            "ppeTurnover",
+            "invDays",
+            "arDays",
+            "ccc",
+            "grade",
+        )
+    )
 
 
 def scanEfficiency(*, verbose: bool = True) -> pl.DataFrame:
@@ -146,75 +237,19 @@ def scanEfficiency(*, verbose: bool = True) -> pl.DataFrame:
     if verbose:
         _log.info("효율성 스캔: 계정 수집 중...")
 
-    revMap = scanFinanceParquets("IS", _REVENUE_IDS, _REVENUE_NMS)
-    taMap = scanFinanceParquets("BS", _TA_IDS, _TA_NMS)
-    invMap = scanFinanceParquets("BS", _INV_IDS, _INV_NMS)
-    arMap = scanFinanceParquets("BS", _AR_IDS, _AR_NMS)
-    ppeMap = scanFinanceParquets("BS", _PPE_IDS, _PPE_NMS)
-    cogsMap = scanFinanceParquets("IS", _COGS_IDS, _COGS_NMS)
-    apMap = scanFinanceParquets("BS", _AP_IDS, _AP_NMS)
-
-    allCodes = set(revMap) | set(taMap) | set(invMap) | set(arMap)
-
-    rows: list[dict] = []
-    for code in allCodes:
-        rev = revMap.get(code)
-        if not rev or rev < _MIN_REVENUE:
-            continue
-
-        ta = taMap.get(code)
-        inv = invMap.get(code)
-        ar = arMap.get(code)
-        ppe = ppeMap.get(code)
-        cogs = cogsMap.get(code)
-        ap = apMap.get(code)
-
-        assetTurnover = round(rev / ta, 2) if ta and ta > 0 else None
-        invTurnover = round(rev / inv, 2) if inv and inv > 0 else None
-        arTurnover = round(rev / ar, 2) if ar and ar > 0 else None
-        ppeTurnover = round(rev / ppe, 2) if ppe and ppe > 0 else None
-
-        invDays = round(365 / invTurnover) if invTurnover and invTurnover > 0 else None
-        arDays = round(365 / arTurnover) if arTurnover and arTurnover > 0 else None
-        apDays = round(365 * ap / cogs) if ap is not None and ap >= 0 and cogs is not None and cogs > 0 else None
-
-        ccc = None
-        if invDays is not None and arDays is not None and apDays is not None:
-            rawCcc = invDays + arDays - apDays
-            ccc = max(-_CCC_CAP, min(_CCC_CAP, rawCcc))
-
-        rows.append(
-            {
-                "stockCode": code,
-                "assetTurnover": assetTurnover,
-                "invTurnover": invTurnover,
-                "arTurnover": arTurnover,
-                "ppeTurnover": ppeTurnover,
-                "invDays": invDays,
-                "arDays": arDays,
-                "ccc": ccc,
-                "grade": _gradeEfficiency(ccc),
-            }
+    scanDir = _ensureScanData()
+    scanPath = financeScanPath(scanDir)
+    if not scanPath.exists():
+        raise ScanDataError(
+            "finance_prebuild_missing",
+            "finance prebuild is required after _ensureScanData",
+            source=scanPath,
         )
+    result = _scanFromMerged(scanPath)
 
     if verbose:
-        _log.info(f"효율성 스캔 완료: {len(rows)}종목")
-
-    if not rows:
-        return pl.DataFrame()
-
-    schema = {
-        "stockCode": pl.Utf8,
-        "assetTurnover": pl.Float64,
-        "invTurnover": pl.Float64,
-        "arTurnover": pl.Float64,
-        "ppeTurnover": pl.Float64,
-        "invDays": pl.Float64,
-        "arDays": pl.Float64,
-        "ccc": pl.Float64,
-        "grade": pl.Utf8,
-    }
-    return pl.DataFrame(rows, schema=schema)
+        _log.info(f"효율성 스캔 완료: {result.height}종목")
+    return result
 
 
 __all__ = ["scanEfficiency"]

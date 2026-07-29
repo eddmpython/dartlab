@@ -12,12 +12,10 @@ from pathlib import Path
 import polars as pl
 
 from dartlab.scan.io.parquet import (
+    ScanDataError,
     _ensureScanData,
-    collectScan,
     financeScanPath,
-    lazyParquet,
-    parseNumStr,
-    preferConsolidatedPerCompany,
+    scanLatestAccountValues,
 )
 
 # ── 영업활동CF ──
@@ -100,6 +98,31 @@ def _classifyPattern(ocf: float | None, icf: float | None, finCf: float | None) 
     return _PATTERNS.get(key, "미분류")
 
 
+def _patternExpr() -> pl.Expr:
+    """세 현금흐름 부호를 pattern label로 바꾸는 벡터식."""
+
+    complete = pl.col("ocf").is_not_null() & pl.col("icf").is_not_null() & pl.col("finCf").is_not_null()
+    return (
+        pl.when(~complete)
+        .then(pl.lit("자료부족"))
+        .when((pl.col("ocf") >= 0) & (pl.col("icf") < 0) & (pl.col("finCf") < 0))
+        .then(pl.lit("성장투자형"))
+        .when((pl.col("ocf") >= 0) & (pl.col("icf") < 0) & (pl.col("finCf") >= 0))
+        .then(pl.lit("공격성장형"))
+        .when((pl.col("ocf") >= 0) & (pl.col("icf") >= 0) & (pl.col("finCf") < 0))
+        .then(pl.lit("구조재편형"))
+        .when((pl.col("ocf") >= 0) & (pl.col("icf") >= 0) & (pl.col("finCf") >= 0))
+        .then(pl.lit("현금축적형"))
+        .when((pl.col("ocf") < 0) & (pl.col("icf") < 0) & (pl.col("finCf") >= 0))
+        .then(pl.lit("외부의존형"))
+        .when((pl.col("ocf") < 0) & (pl.col("icf") >= 0) & (pl.col("finCf") < 0))
+        .then(pl.lit("축소정리형"))
+        .when((pl.col("ocf") < 0) & (pl.col("icf") >= 0) & (pl.col("finCf") >= 0))
+        .then(pl.lit("위기대응형"))
+        .otherwise(pl.lit("현금위기형"))
+    )
+
+
 def _scanFromMerged(scanPath: Path) -> pl.DataFrame:
     """프리빌드 finance.parquet → 종목별 CF 패턴.
 
@@ -118,140 +141,31 @@ def _scanFromMerged(scanPath: Path) -> pl.DataFrame:
         fcf : int — 잉여현금흐름, OCF + ICF (원)
         pattern : str — 라이프사이클 패턴명
     """
-    scCol = "stockCode"
-
-    allIds = list(OCF_IDS | ICF_IDS | FINCF_IDS)
-    allNms = list(OCF_NMS | ICF_NMS | FINCF_NMS)
-
-    target = collectScan(
-        lazyParquet(scanPath).filter(
-            pl.col("sj_div").is_in(["CF"])
-            & (pl.col("fs_nm").str.contains("연결") | pl.col("fs_nm").str.contains("재무제표"))
-            & (pl.col("account_id").is_in(allIds) | pl.col("account_nm").is_in(allNms))
-        )
+    values = scanLatestAccountValues(
+        scanPath,
+        {
+            "ocf": (OCF_IDS, OCF_NMS, {"CF"}),
+            "icf": (ICF_IDS, ICF_NMS, {"CF"}),
+            "finCf": (FINCF_IDS, FINCF_NMS, {"CF"}),
+        },
     )
-    if target.is_empty():
+    if values.is_empty():
         return pl.DataFrame()
 
-    # 연결 우선
-    # 회사별 연결 우선. 유니버스 전체로 한 번에 좁히면 별도만 내는 회사가
-    # 다른 회사 때문에 사라진다.
-    target = preferConsolidatedPerCompany(target, scCol)
-
-    # 종목별 최신 연도
-    latestYear = target.group_by(scCol).agg(pl.col("bsns_year").max().alias("_maxYear"))
-    target = target.join(latestYear, on=scCol).filter(pl.col("bsns_year") == pl.col("_maxYear")).drop("_maxYear")
-
-    rows: list[dict] = []
-    for code in target[scCol].unique().to_list():
-        sub = target.filter(pl.col(scCol) == code)
-        ocf, icf, finCf = None, None, None
-        for row in sub.iter_rows(named=True):
-            aid = row.get("account_id", "")
-            anm = row.get("account_nm", "")
-            val = parseNumStr(row.get("thstrm_amount"))
-            if val is None:
-                continue
-            if (aid in OCF_IDS or anm in OCF_NMS) and ocf is None:
-                ocf = val
-            elif (aid in ICF_IDS or anm in ICF_NMS) and icf is None:
-                icf = val
-            elif (aid in FINCF_IDS or anm in FINCF_NMS) and finCf is None:
-                finCf = val
-
-        if ocf is None:
-            continue
-
-        fcf = ocf + icf if icf is not None else None
-        rows.append(
-            {
-                "stockCode": code,
-                "ocf": round(ocf),
-                "icf": round(icf) if icf is not None else None,
-                "finCf": round(finCf) if finCf is not None else None,
-                "fcf": round(fcf) if fcf is not None else None,
-                "pattern": _classifyPattern(ocf, icf, finCf),
-            }
+    return (
+        values.filter(pl.col("ocf").is_not_null())
+        .with_columns(
+            pl.when(pl.col("icf").is_not_null()).then(pl.col("ocf") + pl.col("icf")).otherwise(None).alias("fcf"),
+            _patternExpr().alias("pattern"),
         )
-
-    return pl.DataFrame(rows) if rows else pl.DataFrame()
-
-
-def _scanPerFile() -> pl.DataFrame:
-    """종목별 finance parquet 순회 fallback.
-
-    프리빌드 finance.parquet가 없을 때 개별 종목 parquet을 순회하여
-    최신 연도 CF 데이터를 추출한다.
-
-    Returns
-    -------
-    pl.DataFrame
-        stockCode : str — 종목코드
-        ocf : int — 영업활동현금흐름 (원)
-        icf : int | None — 투자활동현금흐름 (원)
-        finCf : int | None — 재무활동현금흐름 (원)
-        fcf : int — 잉여현금흐름, OCF + ICF (원)
-        pattern : str — 라이프사이클 패턴명
-    """
-    from dartlab.core.dataLoader import _dataDir
-
-    financeDir = Path(_dataDir("finance"))
-    parquetFiles = sorted(financeDir.glob("*.parquet"))
-
-    rows: list[dict] = []
-    for pf in parquetFiles:
-        code = pf.stem
-        try:
-            cfDf = (
-                pl.scan_parquet(str(pf))
-                .filter(
-                    pl.col("sj_div").is_in(["CF"])
-                    & (pl.col("fs_nm").str.contains("연결") | pl.col("fs_nm").str.contains("재무제표"))
-                )
-                .collect(engine="streaming")
-            )
-        except (pl.exceptions.PolarsError, OSError):
-            continue
-        if cfDf.is_empty() or "account_id" not in cfDf.columns:
-            continue
-        cfs = cfDf.filter(pl.col("fs_nm").str.contains("연결"))
-        target = cfs if not cfs.is_empty() else cfDf
-
-        years = sorted(target["bsns_year"].unique().to_list(), reverse=True)
-        if not years:
-            continue
-        latest = target.filter(pl.col("bsns_year") == years[0])
-
-        ocf, icf, finCf = None, None, None
-        for row in latest.iter_rows(named=True):
-            aid = row.get("account_id", "")
-            anm = row.get("account_nm", "")
-            val = parseNumStr(row.get("thstrm_amount"))
-            if val is None:
-                continue
-            if (aid in OCF_IDS or anm in OCF_NMS) and ocf is None:
-                ocf = val
-            elif (aid in ICF_IDS or anm in ICF_NMS) and icf is None:
-                icf = val
-            elif (aid in FINCF_IDS or anm in FINCF_NMS) and finCf is None:
-                finCf = val
-
-        if ocf is None:
-            continue
-
-        fcf = ocf + icf if icf is not None else None
-        rows.append(
-            {
-                "stockCode": code,
-                "ocf": round(ocf),
-                "icf": round(icf) if icf is not None else None,
-                "finCf": round(finCf) if finCf is not None else None,
-                "fcf": round(fcf) if fcf is not None else None,
-                "pattern": _classifyPattern(ocf, icf, finCf),
-            }
+        .with_columns(
+            pl.col("ocf").round(0).cast(pl.Int64),
+            pl.col("icf").round(0).cast(pl.Int64),
+            pl.col("finCf").round(0).cast(pl.Int64),
+            pl.col("fcf").round(0).cast(pl.Int64),
         )
-
-    return pl.DataFrame(rows) if rows else pl.DataFrame()
+        .select("stockCode", "ocf", "icf", "finCf", "fcf", "pattern")
+    )
 
 
 def scanCashflow(*, verbose: bool = True) -> pl.DataFrame:
@@ -310,6 +224,10 @@ def scanCashflow(*, verbose: bool = True) -> pl.DataFrame:
     """
     scanDir = _ensureScanData()
     scanPath = financeScanPath(scanDir)
-    if scanPath.exists():
-        return _scanFromMerged(scanPath)
-    return _scanPerFile()
+    if not scanPath.exists():
+        raise ScanDataError(
+            "finance_prebuild_missing",
+            "finance prebuild is required after _ensureScanData",
+            source=scanPath,
+        )
+    return _scanFromMerged(scanPath)

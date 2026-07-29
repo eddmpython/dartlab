@@ -375,10 +375,17 @@ class Scan:
             - :func:`dartlab.scan.builders.kr.docsIndex.buildDocsIndex` — source 빌더
         """
         from dartlab.core.dataLoader import _dataDir, _getDataRoot
-        from dartlab.scan.io.cross import pickCrossScanEngine
+        from dartlab.scan.io.cross import CrossScanQuery, pickCrossScanEngine
 
         if market not in ("KR", "US", "JP"):
             raise ValueError(f"지원 안 함 market: {market}. KR/US/JP 만.")
+        if not isinstance(limit, int) or isinstance(limit, bool) or limit < 0:
+            raise ValueError(f"limit은 0 이상의 정수여야 합니다: {limit!r}")
+        if sectionTitle is not None and not isinstance(sectionTitle, str):
+            raise ValueError(f"sectionTitle은 문자열이어야 합니다: {sectionTitle!r}")
+        normalizedCodes = tuple(stockCodes or ())
+        if any(not isinstance(code, str) or not code for code in normalizedCodes):
+            raise ValueError("stockCodes는 비어 있지 않은 문자열만 포함해야 합니다")
 
         # market 별 인덱스 path (P3 KR, P3.5 US/JP)
         if market == "KR":
@@ -394,19 +401,15 @@ class Scan:
                 "uv run python -X utf8 .github/scripts/prebuildData.py --target docsIndex 실행 필요."
             )
 
-        lf = pl.scan_parquet(str(indexPath))
-        if sectionTitle:
-            lf = lf.filter(pl.col("sectionTitle").str.contains(sectionTitle))
-        if year is not None:
-            lf = lf.filter(pl.col("year") == year)
-        if stockCodes:
-            lf = lf.filter(pl.col("stockCode").is_in(stockCodes))
-        if onlyWithContent:
-            lf = lf.filter(pl.col("contentLength") > 0)
-        # M6: cross-scan engine dispatcher — polars (streaming) 또는 duckdb (OOC)
-        return pickCrossScanEngine(engine=engine).aggregate(  # type: ignore[arg-type]
-            lf, limit=limit if limit and limit > 0 else None
+        query = CrossScanQuery(
+            path=indexPath,
+            sectionTitle=sectionTitle,
+            year=year,
+            stockCodes=normalizedCodes,
+            onlyWithContent=onlyWithContent,
+            limit=limit or None,
         )
+        return pickCrossScanEngine(engine=engine).execute(query)
 
     def iterDocsSections(
         self,

@@ -12,6 +12,7 @@ import polars as pl
 import pytest
 
 from dartlab.scan.io.parquet import (
+    ScanDataError,
     _loadRawFinanceViaDuckDb,
     _sqlEscapeLiteral,
 )
@@ -36,6 +37,16 @@ def test_loadRawFinance_emptyDir_returnsNone(tmp_path):
 def test_loadRawFinance_nonexistentDir_returnsNone(tmp_path):
     """존재하지 않는 디렉토리 None."""
     assert _loadRawFinanceViaDuckDb(tmp_path / "noexist") is None
+
+
+@pytest.mark.unit
+def test_loadRawFinance_corruptParquet_raises(tmp_path):
+    """raw finance 손상을 데이터 부재로 위장하지 않는다."""
+
+    (tmp_path / "005930.parquet").write_bytes(b"not parquet")
+
+    with pytest.raises(ScanDataError, match="stage=finance_duckdb_query"):
+        _loadRawFinanceViaDuckDb(tmp_path)
 
 
 @pytest.mark.unit

@@ -31,6 +31,10 @@ from dartlab.scan.io.parquet import (
 _CONCURRENCY = 50  # 동시 요청 제한
 
 
+class ValuationFetchError(RuntimeError):
+    """전종목 시세 수집이 유효한 snapshot을 만들지 못한 경우."""
+
+
 def _gradeValuation(pbr: float | None) -> str:
     """PBR 기준 밸류에이션 등급 분류.
 
@@ -62,7 +66,10 @@ def _gradeValuation(pbr: float | None) -> str:
     return "과열"
 
 
-async def _fetchAll(codes: list[str], verbose: bool) -> dict[str, dict]:
+async def _fetchAll(
+    codes: list[str],
+    verbose: bool,
+) -> tuple[dict[str, dict], dict[str, str]]:
     """네이버 API 에서 종목별 시세·밸류에이션 지표를 비동기 배치 수집.
 
     Parameters
@@ -74,8 +81,9 @@ async def _fetchAll(codes: list[str], verbose: bool) -> dict[str, dict]:
 
     Returns
     -------
-    dict[str, dict]
-        종목코드를 키로 하는 dict. 각 값은 다음 키를 가진 dict:
+    tuple[dict[str, dict], dict[str, str]]
+        종목코드별 snapshot과 종목코드별 수집 오류 dict.
+        snapshot의 각 값은 다음 키를 가진 dict:
 
         - marketCap : int — 시가총액 (원)
         - per : float | None — 주가수익비율 (배)
@@ -88,6 +96,7 @@ async def _fetchAll(codes: list[str], verbose: bool) -> dict[str, dict]:
     from dartlab.gather.domains.naver import fetchPrice
 
     result: dict[str, dict] = {}
+    failures: dict[str, str] = {}
     sem = asyncio.Semaphore(_CONCURRENCY)
 
     async def _fetch(code: str, client: httpx.AsyncClient) -> None:
@@ -97,13 +106,13 @@ async def _fetchAll(codes: list[str], verbose: bool) -> dict[str, dict]:
                 if snap and snap.marketCap and snap.marketCap > 0:
                     result[code] = {
                         "marketCap": snap.marketCap,
-                        "per": snap.per if snap.per else None,
-                        "pbr": snap.pbr if snap.pbr else None,
-                        "dividendYield": snap.dividend_yield if snap.dividend_yield else None,
+                        "per": snap.per if snap.per is not None else None,
+                        "pbr": snap.pbr if snap.pbr is not None else None,
+                        "dividendYield": (snap.dividend_yield if snap.dividend_yield is not None else None),
                         "current": snap.current,
                     }
-            except (httpx.HTTPError, ValueError, AttributeError):
-                pass
+            except (httpx.HTTPError, ValueError, AttributeError) as exc:
+                failures[code] = f"{type(exc).__name__}: {exc}"
 
     async with httpx.AsyncClient(timeout=10) as client:
         total = len(codes)
@@ -115,10 +124,10 @@ async def _fetchAll(codes: list[str], verbose: bool) -> dict[str, dict]:
             if verbose:
                 _log.info(f"  {min(i + batch, total)}/{total} 수집...")
 
-    return result
+    return result, failures
 
 
-_RAW_SCHEMA: dict[str, pl.DataType] = {
+_RAW_SCHEMA = {
     "stockCode": pl.Utf8,
     "marketCap": pl.Float64,
     "per": pl.Float64,
@@ -128,7 +137,7 @@ _RAW_SCHEMA: dict[str, pl.DataType] = {
     "snapshotAt": pl.Datetime("ms"),
 }
 
-_FINAL_SCHEMA: dict[str, pl.DataType] = {
+_FINAL_SCHEMA = {
     "stockCode": pl.Utf8,
     "marketCap": pl.Float64,
     "per": pl.Float64,
@@ -159,8 +168,8 @@ def fetchValuationRaw(codes: list[str], *, verbose: bool = True) -> pl.DataFrame
 
     Raises
     ------
-    RuntimeError
-        네이버 rate-limit / 네트워크 실패로 모든 종목 수집 실패 시 빈 DataFrame 반환 (예외 없음).
+    ValuationFetchError
+        네이버 rate-limit, 네트워크 실패 또는 유효 snapshot 부재로 전 종목 수집이 실패한 경우.
 
     Examples
     --------
@@ -170,7 +179,7 @@ def fetchValuationRaw(codes: list[str], *, verbose: bool = True) -> pl.DataFrame
 
     Capabilities:
         - 네이버 finance API 병렬 호출 (asyncio) → marketCap/per/pbr/dividendYield/current/
-          snapshotAt 6 컬럼 raw DataFrame. 실패 종목 silent 제외.
+          snapshotAt 6 컬럼 raw DataFrame. 일부 실패는 경고하고 전부 실패하면 예외.
 
     AIContext:
         ``buildValuation`` cron + ``scanValuation(refresh=True)`` 둘 다 본 함수로 raw 수집.
@@ -178,7 +187,7 @@ def fetchValuationRaw(codes: list[str], *, verbose: bool = True) -> pl.DataFrame
 
     Guide:
         - rate-limit 의식 — 1 호출당 ~50 초 (KR ~2700 종목). 짧은 시간 반복 호출 금지.
-        - 빈 DataFrame 반환 = 전부 실패 (예외 안 던짐).
+        - 전부 실패하면 ``ValuationFetchError``. 일부 실패는 종목 수와 원인 sample을 warning.
 
     When:
         ``buildValuation`` cron (KST 04:00) 또는 ``scanValuation(refresh=True)`` 경로.
@@ -198,11 +207,23 @@ def fetchValuationRaw(codes: list[str], *, verbose: bool = True) -> pl.DataFrame
     if not codes:
         return pl.DataFrame(schema=_RAW_SCHEMA)
 
-    priceMap = asyncio.run(_fetchAll(codes, verbose))
+    priceMap, failures = asyncio.run(_fetchAll(codes, verbose))
+    if failures:
+        sample = ", ".join(f"{code}={reason}" for code, reason in list(failures.items())[:3])
+        _log.warning(
+            "밸류에이션 수집 일부 실패: %d/%d종목, sample=%s",
+            len(failures),
+            len(codes),
+            sample,
+        )
     if verbose:
         _log.info(f"  수집 완료: {len(priceMap)}종목")
     if not priceMap:
-        return pl.DataFrame(schema=_RAW_SCHEMA)
+        detail = ", ".join(f"{code}={reason}" for code, reason in list(failures.items())[:3])
+        raise ValuationFetchError(
+            f"밸류에이션 수집 결과가 없습니다: requested={len(codes)}, "
+            f"failed={len(failures)}, sample={detail or 'no usable snapshot'}"
+        )
 
     now = datetime.now(timezone.utc).replace(tzinfo=None)
     rows = [
@@ -355,10 +376,10 @@ def scanValuation(*, refresh: bool = False, verbose: bool = True) -> pl.DataFram
 
     import dartlab as _dl
 
-    listing = _dl.listing()
+    listing = getattr(_dl, "listing")()
     codes = listing["종목코드"].to_list() if "종목코드" in listing.columns else []
     if not codes:
-        return pl.DataFrame(schema=_FINAL_SCHEMA)
+        raise ValuationFetchError("상장사 목록에서 밸류에이션 수집 대상 종목을 찾지 못했습니다")
 
     if verbose:
         _log.info(f"  {len(codes)}종목 → 네이버 API 수집 시작")

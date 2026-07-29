@@ -7,13 +7,11 @@ from pathlib import Path
 import polars as pl
 
 from dartlab.scan.io.parquet import (
+    ScanDataError,
     _ensureScanData,
-    collectScan,
     extractAccount,
     financeScanPath,
-    lazyParquet,
-    parquetColumns,
-    preferConsolidatedPerCompany,
+    scanLatestAccountValues,
 )
 
 # ── 순이익 ──
@@ -105,152 +103,57 @@ def _scanFromMerged(scanPath: Path) -> pl.DataFrame:
         - cfToNi : float — 영업CF / 순이익 (배). 극단값(|x|>20) 은 None
         - grade : str — 이익의 질 등급 (우수/양호/보통/주의/위험)
     """
-    schema = parquetColumns(scanPath)
-    scCol = "stockCode"
-
-    allIds = list(NI_IDS | OCF_IDS | TA_IDS)
-    allNms = list(NI_NMS | OCF_NMS | TA_NMS)
-
-    target = collectScan(
-        lazyParquet(scanPath).filter(
-            pl.col("sj_div").is_in(["IS", "CIS", "CF", "BS"])
-            & (pl.col("fs_nm").str.contains("연결") | pl.col("fs_nm").str.contains("재무제표"))
-            & (pl.col("account_id").is_in(allIds) | pl.col("account_nm").is_in(allNms))
-        )
+    values = scanLatestAccountValues(
+        scanPath,
+        {
+            "netIncome": (NI_IDS, NI_NMS, {"IS", "CIS"}),
+            "operatingCf": (OCF_IDS, OCF_NMS, {"CF"}),
+            "totalAssets": (TA_IDS, TA_NMS, {"BS"}),
+        },
     )
-    if target.is_empty():
+    if values.is_empty():
         return pl.DataFrame()
 
-    # 연결 우선
-    # 회사별 연결 우선. 유니버스 전체로 한 번에 좁히면 별도만 내는 회사가
-    # 다른 회사 때문에 사라진다.
-    target = preferConsolidatedPerCompany(target, scCol)
-
-    # 종목별 최신 연도
-    latestYear = target.group_by(scCol).agg(pl.col("bsns_year").max().alias("_maxYear"))
-    target = target.join(latestYear, on=scCol).filter(pl.col("bsns_year") == pl.col("_maxYear")).drop("_maxYear")
-
-    rows: list[dict] = []
-    for code in target[scCol].unique().to_list():
-        sub = target.filter(pl.col(scCol) == code)
-
-        # IS/CIS에서 순이익
-        isSub = sub.filter(pl.col("sj_div").is_in(["IS", "CIS"]))
-        ni = _extractVal(isSub, NI_IDS, NI_NMS)
-
-        # CF에서 영업CF
-        cfSub = sub.filter(pl.col("sj_div") == "CF")
-        ocf = _extractVal(cfSub, OCF_IDS, OCF_NMS)
-
-        # BS에서 총자산
-        bsSub = sub.filter(pl.col("sj_div") == "BS")
-        ta = _extractVal(bsSub, TA_IDS, TA_NMS)
-
-        if ni is None or ocf is None or ta is None or ta == 0:
-            continue
-
-        accrualRatio = (ni - ocf) / abs(ta)
-        cfToNi = ocf / ni if ni != 0 else None
-        # cfToNi 극단값 cap: ±5 초과는 분모(NI) 극소 신호 — None 처리해야 AI 가 "우수"로 오판하지 않음.
-        # 일반 회사의 CF/NI 는 0.5~2배. 5배 이상은 일회성 이익/적자 직후 등 비정상.
-        if cfToNi is not None and abs(cfToNi) > 5:
-            cfToNi = None
-
-        rows.append(
-            {
-                "stockCode": code,
-                "netIncome": round(ni),
-                "operatingCf": round(ocf),
-                "totalAssets": round(ta),
-                "accrualRatio": round(accrualRatio, 4),
-                "cfToNi": round(cfToNi, 4) if cfToNi is not None else None,
-                "grade": _gradeQuality(accrualRatio),
-            }
+    accrualRatio = (pl.col("netIncome") - pl.col("operatingCf")) / pl.col("totalAssets").abs()
+    cfToNi = pl.col("operatingCf") / pl.col("netIncome")
+    return (
+        values.filter(
+            pl.col("netIncome").is_not_null()
+            & pl.col("operatingCf").is_not_null()
+            & pl.col("totalAssets").is_not_null()
+            & (pl.col("totalAssets") != 0)
         )
-
-    return pl.DataFrame(rows) if rows else pl.DataFrame()
-
-
-def _scanPerFile() -> pl.DataFrame:
-    """종목별 finance parquet 파일을 순회하여 이익의 질 계산 (fallback).
-
-    ``finance.parquet`` 통합 파일이 없을 때 개별 종목 parquet 을 순회한다.
-
-    Returns
-    -------
-    pl.DataFrame
-        ``_scanFromMerged`` 와 동일한 스키마. 컬럼:
-
-        - stockCode : str — 종목코드
-        - netIncome : float — 당기순이익 (원)
-        - operatingCf : float — 영업활동 현금흐름 (원)
-        - totalAssets : float — 총자산 (원)
-        - accrualRatio : float — 발생액 비율 (비율)
-        - cfToNi : float — 영업CF / 순이익 (배). 극단값(|x|>20) 은 None
-        - grade : str — 이익의 질 등급 (우수/양호/보통/주의/위험)
-    """
-    from dartlab.core.dataLoader import _dataDir
-
-    financeDir = Path(_dataDir("finance"))
-    parquetFiles = sorted(financeDir.glob("*.parquet"))
-
-    rows: list[dict] = []
-    for pf in parquetFiles:
-        code = pf.stem
-        try:
-            df = (
-                pl.scan_parquet(str(pf))
-                .filter(
-                    pl.col("sj_div").is_in(["IS", "CIS", "CF", "BS"])
-                    & (pl.col("fs_nm").str.contains("연결") | pl.col("fs_nm").str.contains("재무제표"))
-                )
-                .collect(engine="streaming")
-            )
-        except (pl.exceptions.PolarsError, OSError):
-            continue
-        if df.is_empty() or "account_id" not in df.columns:
-            continue
-
-        cfs = df.filter(pl.col("fs_nm").str.contains("연결"))
-        target = cfs if not cfs.is_empty() else df
-
-        years = sorted(target["bsns_year"].unique().to_list(), reverse=True)
-        if not years:
-            continue
-        latest = target.filter(pl.col("bsns_year") == years[0])
-
-        isSub = latest.filter(pl.col("sj_div").is_in(["IS", "CIS"]))
-        ni = _extractVal(isSub, NI_IDS, NI_NMS)
-
-        cfSub = latest.filter(pl.col("sj_div") == "CF")
-        ocf = _extractVal(cfSub, OCF_IDS, OCF_NMS)
-
-        bsSub = latest.filter(pl.col("sj_div") == "BS")
-        ta = _extractVal(bsSub, TA_IDS, TA_NMS)
-
-        if ni is None or ocf is None or ta is None or ta == 0:
-            continue
-
-        accrualRatio = (ni - ocf) / abs(ta)
-        cfToNi = ocf / ni if ni != 0 else None
-        # cfToNi 극단값 cap: ±5 초과는 분모(NI) 극소 신호 — None 처리해야 AI 가 "우수"로 오판하지 않음.
-        # 일반 회사의 CF/NI 는 0.5~2배. 5배 이상은 일회성 이익/적자 직후 등 비정상.
-        if cfToNi is not None and abs(cfToNi) > 5:
-            cfToNi = None
-
-        rows.append(
-            {
-                "stockCode": code,
-                "netIncome": round(ni),
-                "operatingCf": round(ocf),
-                "totalAssets": round(ta),
-                "accrualRatio": round(accrualRatio, 4),
-                "cfToNi": round(cfToNi, 4) if cfToNi is not None else None,
-                "grade": _gradeQuality(accrualRatio),
-            }
+        .with_columns(
+            accrualRatio.alias("_accrualRatio"),
+            pl.when((pl.col("netIncome") != 0) & (cfToNi.abs() <= 5)).then(cfToNi).otherwise(None).alias("_cfToNi"),
         )
-
-    return pl.DataFrame(rows) if rows else pl.DataFrame()
+        .with_columns(
+            pl.col("netIncome").round(0).cast(pl.Int64),
+            pl.col("operatingCf").round(0).cast(pl.Int64),
+            pl.col("totalAssets").round(0).cast(pl.Int64),
+            pl.col("_accrualRatio").round(4).alias("accrualRatio"),
+            pl.col("_cfToNi").round(4).alias("cfToNi"),
+            pl.when(pl.col("_accrualRatio") <= -0.05)
+            .then(pl.lit("우수"))
+            .when(pl.col("_accrualRatio") <= 0.05)
+            .then(pl.lit("양호"))
+            .when(pl.col("_accrualRatio") <= 0.15)
+            .then(pl.lit("보통"))
+            .when(pl.col("_accrualRatio") <= 0.25)
+            .then(pl.lit("주의"))
+            .otherwise(pl.lit("위험"))
+            .alias("grade"),
+        )
+        .select(
+            "stockCode",
+            "netIncome",
+            "operatingCf",
+            "totalAssets",
+            "accrualRatio",
+            "cfToNi",
+            "grade",
+        )
+    )
 
 
 def scanQuality(*, verbose: bool = True) -> pl.DataFrame:
@@ -317,6 +220,10 @@ def scanQuality(*, verbose: bool = True) -> pl.DataFrame:
     """
     scanDir = _ensureScanData()
     scanPath = financeScanPath(scanDir)
-    if scanPath.exists():
-        return _scanFromMerged(scanPath)
-    return _scanPerFile()
+    if not scanPath.exists():
+        raise ScanDataError(
+            "finance_prebuild_missing",
+            "finance prebuild is required after _ensureScanData",
+            source=scanPath,
+        )
+    return _scanFromMerged(scanPath)

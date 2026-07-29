@@ -45,8 +45,15 @@ from dartlab.scan.io.accounts import (
 from dartlab.scan.io.accounts import (
     TA_NMS as TA_NMS,
 )
+from dartlab.scan.io.accounts import amountExpr
 from dartlab.scan.io.accounts import (
     extractAccount as extractAccount,
+)
+from dartlab.scan.io.accounts import (
+    preferConsolidatedPerCompany as preferConsolidatedPerCompany,
+)
+from dartlab.scan.io.accounts import (
+    preferConsolidatedPerCompanyLazy as preferConsolidatedPerCompanyLazy,
 )
 from dartlab.scan.io.calendar import (
     QUARTER_ORDER as QUARTER_ORDER,
@@ -97,6 +104,17 @@ from dartlab.scan.io.lite import (
 _log = getLogger(__name__)
 
 _scanDownloaded = False
+
+
+class ScanDataError(RuntimeError):
+    """scan 공용 데이터의 다운로드, 저장소, schema 또는 실행 실패."""
+
+    def __init__(self, stage: str, message: str, *, source: str | Path | None = None) -> None:
+        self.stage = stage
+        self.source = str(source) if source is not None else None
+        sourceLabel = f", source={self.source}" if self.source else ""
+        super().__init__(f"scan data failed: stage={stage}{sourceLabel}: {message}")
+
 
 # scan 프리빌드 루트 필수 파일 — HF `dart/scan/` 루트에 있어야 하는 산출물.
 # 과거 `allow_patterns="dart/scan/**/*.parquet"` 버그로 루트 파일이 누락된
@@ -175,9 +193,15 @@ def _downloadScanFile(scanDir: Path, relativePath: str) -> None:
             )
         )
         shutil.copyfile(downloaded, tmp)
-    except Exception as hubError:  # noqa: BLE001 — hub 경로 실패 시 기존 resolve URL fallback
+    except Exception as hubError:  # noqa: BLE001 - hub 실패 원인은 fallback 실패 시 함께 보존
         _log.warning("scan prebuild HF hub download failed for %s: %s", rel, hubError)
-        _downloadWithRetry(f"{hfBaseUrl('scan')}/{rel}", tmp)
+        try:
+            _downloadWithRetry(f"{hfBaseUrl('scan')}/{rel}", tmp)
+        except Exception as resolveError:  # noqa: BLE001 - 서로 다른 공급 경로의 원인을 함께 보존
+            raise ExceptionGroup(
+                f"scan prebuild download failed: {rel}",
+                [hubError, resolveError],
+            ) from resolveError
 
     if not tmp.exists() or tmp.stat().st_size <= 0:
         if tmp.exists():
@@ -262,6 +286,68 @@ def collectScan(lz: pl.LazyFrame) -> pl.DataFrame:
     return lz.collect(engine="streaming")
 
 
+def scanLatestAccountValues(
+    scanPath: Path,
+    accountSpecs: dict[str, tuple[set[str], set[str], set[str] | None]],
+    *,
+    amountCol: str = "thstrm_amount",
+) -> pl.DataFrame:
+    """finance prebuild를 한 번 읽어 회사별 최신 기간 계정을 wide로 집계한다."""
+
+    if not accountSpecs:
+        raise ValueError("accountSpecs는 비어 있을 수 없습니다")
+
+    sourceColumns = set(parquetColumns(scanPath))
+    required = {
+        "stockCode",
+        "bsns_year",
+        "sj_div",
+        "fs_nm",
+        "account_id",
+        "account_nm",
+        amountCol,
+    }
+    missing = sorted(required - sourceColumns)
+    if missing:
+        raise ScanDataError(
+            "finance_schema",
+            f"missing columns: {', '.join(missing)}",
+            source=scanPath,
+        )
+
+    projected = [*sorted(required), *(["reprt_nm"] if "reprt_nm" in sourceColumns else [])]
+    accountIds: set[str] = set()
+    accountNms: set[str] = set()
+    statementDivs: set[str] = set()
+    for ids, names, divisions in accountSpecs.values():
+        accountIds.update(ids)
+        accountNms.update(names)
+        if divisions is not None:
+            statementDivs.update(divisions)
+
+    matched = pl.col("account_id").is_in(accountIds) | pl.col("account_nm").is_in(accountNms)
+    if statementDivs:
+        matched &= pl.col("sj_div").is_in(statementDivs)
+    validStatement = pl.col("fs_nm").str.contains("연결") | pl.col("fs_nm").str.contains("재무제표")
+    source = lazyParquet(scanPath, columns=projected).select(projected).filter(validStatement & matched)
+    latest = filterLatestPeriodPerStockLazy(
+        preferConsolidatedPerCompanyLazy(source),
+    ).with_columns(amountExpr(amountCol).alias("_scanAmount"))
+
+    expressions: list[pl.Expr] = []
+    for name, (ids, names, divisions) in accountSpecs.items():
+        accountMatched = pl.col("account_id").is_in(ids) | pl.col("account_nm").is_in(names)
+        if divisions is not None:
+            accountMatched &= pl.col("sj_div").is_in(divisions)
+        expressions.append(
+            pl.col("_scanAmount").filter(accountMatched & pl.col("_scanAmount").is_not_null()).first().alias(name)
+        )
+
+    return collectScan(
+        latest.group_by(["stockCode", "bsns_year"]).agg(expressions),
+    )
+
+
 def _ensureScanData(*, requireReports: bool = False) -> Path:
     """scan 프리빌드 디렉토리 확인.
 
@@ -282,22 +368,39 @@ def _ensureScanData(*, requireReports: bool = False) -> Path:
     scanDir = Path(_dataDir("scan"))
 
     global _scanDownloaded
-    if _scanDownloaded and (not requireReports or _isScanReportComplete(scanDir)):
-        return scanDir
 
     # Pyodide: finance-lite.parquet 단일 파일만 요구 (전체 프리빌드는 용량상 불가).
     # 없으면 HF 에서 받는다. 예전엔 여기서 다운로드를 안 하고 곧장 반환해, 브라우저의 scan 이
     # 늘 프리빌드 없는 상태로 돌아 조용히 0 행을 냈다(전용 로더가 있는데도 호출되지 않았다).
     if _IS_PYODIDE:
         liteParquet = scanDir / "finance-lite.parquet"
+        if _scanDownloaded and liteParquet.exists():
+            return scanDir
         if liteParquet.exists():
             _scanDownloaded = True
             return scanDir
         emit("scan:prebuild_download_lite")
         from dartlab.core.dataLoaderPyodide import pyodideFetchScanLite
 
-        pyodideFetchScanLite(_dataDir)
+        try:
+            pyodideFetchScanLite(_dataDir)
+        except (OSError, RuntimeError, ValueError) as exc:
+            emit("scan:prebuild_failed", error=str(exc))
+            raise ScanDataError(
+                "prebuild_download",
+                f"{type(exc).__name__}: {exc}",
+                source=liteParquet,
+            ) from exc
+        if not liteParquet.exists() or liteParquet.stat().st_size <= 0:
+            raise ScanDataError(
+                "prebuild_incomplete",
+                "finance-lite.parquet was not created",
+                source=liteParquet,
+            )
         _scanDownloaded = True
+        return scanDir
+
+    if _scanDownloaded and not _missingScanFiles(scanDir, requireReports=requireReports):
         return scanDir
 
     if not _missingScanFiles(scanDir, requireReports=requireReports):
@@ -310,81 +413,28 @@ def _ensureScanData(*, requireReports: bool = False) -> Path:
     try:
         for rel in missing:
             _downloadScanFile(scanDir, rel)
-    except (OSError, RuntimeError, ValueError) as e:
+    except (ExceptionGroup, OSError, RuntimeError, ValueError) as e:
         emit("scan:prebuild_failed", error=str(e))
-        return scanDir
+        raise ScanDataError(
+            "prebuild_download",
+            f"{type(e).__name__}: {e}",
+            source=scanDir,
+        ) from e
 
     missingAfter = _missingScanFiles(scanDir, requireReports=requireReports)
     if missingAfter:
         emit("scan:prebuild_incomplete", missing=", ".join(missingAfter[:8]))
-        return scanDir
+        raise ScanDataError(
+            "prebuild_incomplete",
+            f"missing artifacts: {', '.join(missingAfter)}",
+            source=scanDir,
+        )
 
     _scanDownloaded = True
     fileCount = len(_REQUIRED_SCAN_ROOT_FILES) + (len(_REQUIRED_REPORT_FILES) if requireReports else 0)
     emit("scan:prebuild_ready", fileCount=fileCount)
 
     return scanDir
-
-
-def preferConsolidatedPerCompany(frame: pl.DataFrame, stockCodeCol: str = "stockCode") -> pl.DataFrame:
-    """회사마다 연결재무제표를 우선하되, 없는 회사는 그 회사의 별도를 남긴다.
-
-    예전에는 유니버스 전체에 대해 한 번만 판정했다. 연결 행이 하나라도 있으면 전체를
-    연결로 좁혔기 때문에, 별도만 제출하는 회사가 "다른 회사가 연결을 냈다" 는 이유로
-    전종목 표에서 통째로 사라졌다. 같은 회사를 혼자 스캔하면 남고 함께 스캔하면
-    없어지는, 유니버스에 의존하는 삭제였다.
-
-    Args:
-        frame: `fs_nm` 과 종목코드 컬럼을 가진 재무 행 묶음.
-        stockCodeCol: 종목코드 컬럼 이름.
-
-    Returns:
-        회사별로 선호 재무제표만 남긴 프레임. 판정 컬럼이 없으면 원본 그대로.
-
-    Raises:
-        없음.
-
-    Example:
-        >>> preferConsolidatedPerCompany(frame).height <= frame.height
-        True
-    """
-
-    if frame.is_empty() or "fs_nm" not in frame.columns or stockCodeCol not in frame.columns:
-        return frame
-    ranked = frame.with_columns(pl.when(pl.col("fs_nm").str.contains("연결")).then(0).otherwise(1).alias("_fsRank"))
-    best = ranked.group_by(stockCodeCol).agg(pl.col("_fsRank").min().alias("_bestFsRank"))
-    return (
-        ranked.join(best, on=stockCodeCol)
-        .filter(pl.col("_fsRank") == pl.col("_bestFsRank"))
-        .drop("_fsRank", "_bestFsRank")
-    )
-
-
-def preferConsolidatedPerCompanyLazy(
-    frame: pl.LazyFrame,
-    stockCodeCol: str = "stockCode",
-) -> pl.LazyFrame:
-    """LazyFrame에서도 회사별 연결 우선 규칙을 동일하게 적용한다.
-
-    Args:
-        frame: ``fs_nm``과 종목코드 컬럼을 가진 재무 LazyFrame.
-        stockCodeCol: 종목코드 컬럼 이름.
-
-    Returns:
-        회사마다 연결 행을 우선하고, 연결이 없는 회사는 별도를 남긴 LazyFrame.
-        판정 컬럼이 없으면 입력을 그대로 반환한다.
-    """
-
-    columns = set(frame.collect_schema().names())
-    if "fs_nm" not in columns or stockCodeCol not in columns:
-        return frame
-    ranked = frame.with_columns(pl.when(pl.col("fs_nm").str.contains("연결")).then(0).otherwise(1).alias("_fsRank"))
-    best = ranked.group_by(stockCodeCol).agg(pl.col("_fsRank").min().alias("_bestFsRank"))
-    return (
-        ranked.join(best, on=stockCodeCol)
-        .filter(pl.col("_fsRank") == pl.col("_bestFsRank"))
-        .drop("_fsRank", "_bestFsRank")
-    )
 
 
 def latestDataRows(group: pl.DataFrame, col: str) -> pl.DataFrame:
@@ -431,7 +481,8 @@ def scanParquets(apiType: str, keepCols: list[str]) -> pl.DataFrame:
 
     Raises
     ------
-    없음 — polars.PolarsError · OSError 는 내부에서 흡수해 빈 DataFrame 반환.
+    ScanDataError
+        존재하는 prebuild 또는 raw report parquet가 손상됐거나 schema 계약이 깨진 경우.
 
     Examples
     --------
@@ -483,8 +534,19 @@ def scanParquets(apiType: str, keepCols: list[str]) -> pl.DataFrame:
             non_meta = [c for c in available if c not in ("stockCode", "year", "quarter")]
             if non_meta:
                 return lf.select(available).collect(engine="streaming")
-        except (pl.exceptions.PolarsError, OSError):
-            pass  # fallback to per-file scan
+            raise ScanDataError(
+                "report_prebuild_schema",
+                f"none of the requested value columns exist: {keepCols}",
+                source=scan_path,
+            )
+        except ScanDataError:
+            raise
+        except (pl.exceptions.PolarsError, OSError) as exc:
+            raise ScanDataError(
+                "report_prebuild_read",
+                f"{type(exc).__name__}: {exc}",
+                source=scan_path,
+            ) from exc
 
     # 2순위: 종목별 순회 (fallback)
     from dartlab.core.dataLoader import _dataDir
@@ -511,8 +573,12 @@ def scanParquets(apiType: str, keepCols: list[str]) -> pl.DataFrame:
                 continue
             lf = lf.filter(pl.col("apiType") == apiType).select(available)
             frames.append(lf)
-        except (pl.exceptions.ComputeError, OSError):
-            continue
+        except (pl.exceptions.PolarsError, OSError) as exc:
+            raise ScanDataError(
+                "report_raw_read",
+                f"{type(exc).__name__}: {exc}",
+                source=pf,
+            ) from exc
 
     if not frames:
         return pl.DataFrame()
@@ -527,7 +593,14 @@ def scanParquets(apiType: str, keepCols: list[str]) -> pl.DataFrame:
             lf = lf.with_columns([pl.lit(None).alias(c) for c in missing])
         unified.append(lf.select(sorted(all_cols)))
 
-    return pl.concat(unified).collect(engine="streaming")
+    try:
+        return pl.concat(unified).collect(engine="streaming")
+    except (pl.exceptions.PolarsError, OSError) as exc:
+        raise ScanDataError(
+            "report_raw_collect",
+            f"{type(exc).__name__}: {exc}",
+            source=report_dir,
+        ) from exc
 
 
 def loadListing():
@@ -628,8 +701,12 @@ def _loadRawFinanceViaDuckDb(
     Returns
     -------
     pl.LazyFrame | None
-        합본 스키마 (``stockCode`` 포함) LazyFrame. raw 디렉토리 비었거나 DuckDB
-        미설치/실패 시 None.
+        합본 스키마 (``stockCode`` 포함) LazyFrame. raw 디렉토리가 없거나 비었으면 None.
+
+    Raises
+    ------
+    ScanDataError
+        DuckDB를 불러오지 못했거나 raw parquet query가 실패한 경우.
 
     Notes
     -----
@@ -647,8 +724,12 @@ def _loadRawFinanceViaDuckDb(
 
     try:
         import duckdb
-    except ImportError:
-        return None
+    except ImportError as exc:
+        raise ScanDataError(
+            "finance_duckdb_import",
+            f"{type(exc).__name__}: {exc}",
+            source=financeDir,
+        ) from exc
 
     pattern = str(financeDir / "*.parquet").replace("\\", "/")
     where: list[str] = []
@@ -668,26 +749,63 @@ def _loadRawFinanceViaDuckDb(
             clauses.append(f"account_nm IN ({anList})")
         where.append("(" + " OR ".join(clauses) + ")")
 
-    # SELECT 절: 필수 컬럼만 (메모리 절감 — raw 30 컬럼 → 10 컬럼).
-    # stock_code (snake) → stockCode (camel) alias 로 일관화.
-    selectCols = list(columns) if columns else list(_RAW_FINANCE_DEFAULT_COLS)
-    selectExprs = []
-    for c in selectCols:
-        if c == "stockCode":
-            selectExprs.append("stock_code AS stockCode")
-        else:
-            selectExprs.append(c)
-    selectSql = ", ".join(selectExprs)
-
-    whereSql = (" WHERE " + " AND ".join(where)) if where else ""
-    sql = f"SELECT {selectSql} FROM read_parquet('{pattern}', union_by_name=true){whereSql}"
-
     con = duckdb.connect(":memory:")
     try:
+        escapedPattern = _sqlEscapeLiteral(pattern)
+        schemaRows = con.sql(f"DESCRIBE SELECT * FROM read_parquet('{escapedPattern}', union_by_name=true)").fetchall()
+        sourceColumns = {str(row[0]) for row in schemaRows}
+        filterColumns = {
+            *(["sj_div"] if sjDivs else []),
+            *(["bsns_year"] if sinceYear is not None else []),
+            *(["account_id"] if accountIds else []),
+            *(["account_nm"] if accountNms else []),
+        }
+        missingFilters = sorted(filterColumns - sourceColumns)
+        if missingFilters:
+            raise ScanDataError(
+                "finance_raw_schema",
+                f"missing filter columns: {', '.join(missingFilters)}",
+                source=financeDir,
+            )
+
+        selectCols = list(columns) if columns else list(_RAW_FINANCE_DEFAULT_COLS)
+        if columns:
+            normalizedSource = sourceColumns | ({"stockCode"} if "stock_code" in sourceColumns else set())
+            missingSelect = sorted(set(selectCols) - normalizedSource)
+            if missingSelect:
+                raise ScanDataError(
+                    "finance_raw_schema",
+                    f"missing selected columns: {', '.join(missingSelect)}",
+                    source=financeDir,
+                )
+        selectExprs: list[str] = []
+        for column in selectCols:
+            if column == "stockCode":
+                if "stock_code" in sourceColumns:
+                    selectExprs.append('"stock_code" AS "stockCode"')
+                elif "stockCode" in sourceColumns:
+                    selectExprs.append('"stockCode"')
+                else:
+                    raise ScanDataError(
+                        "finance_raw_schema",
+                        "missing stock_code or stockCode",
+                        source=financeDir,
+                    )
+            elif column in sourceColumns:
+                selectExprs.append(f'"{column}"')
+
+        selectSql = ", ".join(selectExprs)
+        whereSql = (" WHERE " + " AND ".join(where)) if where else ""
+        sql = f"SELECT {selectSql} FROM read_parquet('{escapedPattern}', union_by_name=true){whereSql}"
         df = con.sql(sql).pl()
-    except Exception as e:
-        _log.warning("[scan/io] DuckDB raw glob 실패: %s", e)
-        return None
+    except ScanDataError:
+        raise
+    except Exception as exc:
+        raise ScanDataError(
+            "finance_duckdb_query",
+            f"{type(exc).__name__}: {exc}",
+            source=financeDir,
+        ) from exc
     finally:
         con.close()
 
@@ -734,8 +852,12 @@ def _scanFinanceFromLazy(
     scCol = "stockCode"
     schemaNames = set(lz.collect_schema().names())
     required = [scCol, "bsns_year", "fs_nm", "account_id", "account_nm", amountCol]
-    if any(col not in schemaNames for col in required):
-        return {}
+    missing = [col for col in required if col not in schemaNames]
+    if missing:
+        raise ScanDataError(
+            "finance_schema",
+            f"missing columns: {', '.join(missing)}",
+        )
 
     base = lz.select(required).filter(
         (pl.col("fs_nm").str.contains("연결") | pl.col("fs_nm").str.contains("재무제표"))
@@ -809,7 +931,8 @@ def loadValuationSnapshot() -> tuple[pl.DataFrame | None, datetime | None]:
 
     Raises
     ------
-    없음 — polars.PolarsError · OSError 는 내부에서 흡수해 ``(None, None)`` 반환.
+    ScanDataError
+        존재하는 valuation snapshot이 손상됐거나 필수 schema 계약을 어긴 경우.
 
     Examples
     --------
@@ -858,11 +981,19 @@ def loadValuationSnapshot() -> tuple[pl.DataFrame | None, datetime | None]:
         return None, None
     try:
         frame = pl.read_parquet(str(path))
-    except (pl.exceptions.PolarsError, OSError):
-        return None, None
+    except (pl.exceptions.PolarsError, OSError) as exc:
+        raise ScanDataError(
+            "valuation_snapshot_read",
+            f"{type(exc).__name__}: {exc}",
+            source=path,
+        ) from exc
     missing = [c for c in _VALUATION_REQUIRED_COLS if c not in frame.columns]
     if missing:
-        return None, None
+        raise ScanDataError(
+            "valuation_snapshot_schema",
+            f"missing columns: {', '.join(missing)}",
+            source=path,
+        )
     if frame.is_empty():
         return None, None
     first = frame["snapshotAt"][0]
@@ -906,7 +1037,8 @@ def scanFinanceParquets(
 
     Raises
     ------
-    없음 — polars.PolarsError · OSError 는 내부에서 흡수해 per-file fallback 으로 전환.
+    ScanDataError
+        존재하는 prebuild, raw finance parquet 또는 필수 schema가 손상된 경우.
 
     Examples
     --------
@@ -959,8 +1091,14 @@ def scanFinanceParquets(
     if scan_path.exists():
         try:
             return _scanFinanceFromMerged(scan_path, sj_divs, accountIds, accountNms, amountCol)
-        except (pl.exceptions.PolarsError, OSError):
-            pass  # fallback
+        except ScanDataError:
+            raise
+        except (pl.exceptions.PolarsError, OSError) as exc:
+            raise ScanDataError(
+                "finance_prebuild_read",
+                f"{type(exc).__name__}: {exc}",
+                source=scan_path,
+            ) from exc
 
     # 2순위: raw glob → DuckDB streaming SQL (fallback)
     from dartlab.core.dataLoader import _dataDir
@@ -978,5 +1116,11 @@ def scanFinanceParquets(
     _log.info("scanFinanceParquets: DuckDB raw glob fallback 사용")
     try:
         return _scanFinanceFromLazy(lz, accountIds, accountNms, amountCol)
-    except (pl.exceptions.PolarsError, OSError):
-        return {}
+    except ScanDataError:
+        raise
+    except (pl.exceptions.PolarsError, OSError) as exc:
+        raise ScanDataError(
+            "finance_raw_transform",
+            f"{type(exc).__name__}: {exc}",
+            source=finance_dir,
+        ) from exc
