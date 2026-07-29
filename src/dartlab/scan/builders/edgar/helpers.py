@@ -56,7 +56,7 @@ def scanEdgarAccounts(snakeIds: list[str], *, annual: bool = True) -> pl.DataFra
 
     Parameters
     ----------
-    snake_ids : list[str]
+    snakeIds : list[str]
         스캔할 계정 snakeId 목록 (예: ["sales", "operating_profit"]).
     annual : bool
         연간(10-K) 데이터 사용 여부.
@@ -72,7 +72,7 @@ def scanEdgarAccounts(snakeIds: list[str], *, annual: bool = True) -> pl.DataFra
     Raises
     ------
     polars.PolarsError
-        EDGAR scanAccount 가 반환한 DataFrame join 실패 시.
+        EDGAR scanAccounts batch 또는 기간 정렬 실패 시.
 
     Examples
     --------
@@ -81,9 +81,10 @@ def scanEdgarAccounts(snakeIds: list[str], *, annual: bool = True) -> pl.DataFra
     >>> df.filter(pl.col("operating_profit") > 1e9).head()
 
     Capabilities:
-        - 여러 snakeId 계정을 차례로 `scanAccount` 호출 → 종목별 단면 dataFrame 들을 outer join
-          으로 wide 합산. 각 계정마다 "데이터가 가장 많은 기간" 컬럼 자동 선택 + prev (전기) 추가.
-        - corpName 충돌 시 coalesce 로 단일화.
+        - 여러 snakeId 계정을 `scanAccounts` 1회 호출로 source scan하고 종목별 단면을
+          wide 합산한다.
+        - 회사마다 모든 계정에 동일한 최신·전기 기간을 적용한다. 최신 기간에 없는
+          계정은 과거값으로 대체하지 않고 null로 남긴다.
 
     AIContext:
         EDGAR 11 scan axis (`_scanProfitability`/`_scanGrowth`/...) 모두가 본 함수로 종목별 wide
@@ -99,8 +100,8 @@ def scanEdgarAccounts(snakeIds: list[str], *, annual: bool = True) -> pl.DataFra
         EDGAR scan axis 함수가 종목별 계정 단면을 wide 로 모을 때. 직접 호출은 prototype.
 
     How:
-        ``snakeIds`` iterate → ``scanAccount`` 호출 → most-non-null period column 선택 → narrow
-        select (stockCode/corpName + {sid} + {sid}_prev) → 첫 base 또는 outer join 누적.
+        ``scanAccounts`` batch → 계정별 wide를 long 변환 → 회사별 기간 rank →
+        최신·전기 두 기간만 account wide로 pivot.
 
     Requires:
         - 로컬 ``data/edgar/finance/{ticker}.parquet`` (EDGAR Data Sync)
@@ -111,36 +112,83 @@ def scanEdgarAccounts(snakeIds: list[str], *, annual: bool = True) -> pl.DataFra
         - :func:`scanEdgarRawTags` — XBRL 태그 직접 (snakeId 매핑 없이)
         - :func:`safeDiv` · :func:`pct` · :func:`gradeByValue` — 비율/등급 계산 헬퍼
     """
-    from dartlab.providers.edgar.finance.scanAccount import scanAccount
+    from dartlab.providers.edgar.finance.scanAccount import scanAccounts
 
-    base: pl.DataFrame | None = None
-    for sid in snakeIds:
-        # scanAccount 계약은 freq("Q"/"Y") keyword — annual bool 이 아니다. annual→freq 변환.
-        df = scanAccount(sid, freq="Y" if annual else "Q")
-        if df.is_empty():
+    frames = scanAccounts(snakeIds, freq="Y" if annual else "Q")
+    return _alignAccountPeriods(snakeIds, frames)
+
+
+def _alignAccountPeriods(
+    snakeIds: list[str],
+    frames: dict[str, pl.DataFrame],
+) -> pl.DataFrame:
+    """회사별 최신·전기 한 쌍에 여러 계정 값을 정확히 맞춘다."""
+
+    longFrames: list[pl.DataFrame] = []
+    nameFrames: list[pl.DataFrame] = []
+    for snakeId in snakeIds:
+        frame = frames.get(snakeId)
+        if frame is None or frame.is_empty() or "stockCode" not in frame.columns:
             continue
-        # 가장 데이터가 많은 기간을 선택 (non-null 최다)
-        period_cols = [c for c in df.columns if c not in ("stockCode", "corpName")]
-        if len(period_cols) < 1:
+        if "corpName" in frame.columns:
+            nameFrames.append(frame.select("stockCode", "corpName"))
+        periodCols = [column for column in frame.columns if column not in ("stockCode", "corpName")]
+        if not periodCols:
             continue
-        best_col = max(period_cols, key=lambda c: df[c].drop_nulls().len())
-        prev_idx = period_cols.index(best_col) + 1
-        prev_col = period_cols[prev_idx] if prev_idx < len(period_cols) else None
-        select_cols = ["stockCode", "corpName", pl.col(best_col).alias(f"{sid}")]
-        if prev_col:
-            select_cols.append(pl.col(prev_col).alias(f"{sid}_prev"))
-        narrow = df.select(select_cols)
-        if base is None:
-            base = narrow
-        else:
-            # full + coalesce=True: join 키(stockCode) 를 한 컬럼으로 병합 — 누락 시 stockCode_{sid}
-            # 누출 + 키 불일치 행 stockCode null 방지. corpName 은 키가 아니라 별도 coalesce.
-            base = base.join(narrow, on="stockCode", how="full", coalesce=True, suffix=f"_{sid}")
-            if f"corpName_{sid}" in base.columns:
-                base = base.with_columns(
-                    pl.coalesce(pl.col("corpName"), pl.col(f"corpName_{sid}")).alias("corpName")
-                ).drop(f"corpName_{sid}")
-    return base if base is not None else pl.DataFrame({"stockCode": []})
+        longFrames.append(
+            frame.unpivot(
+                index="stockCode",
+                on=periodCols,
+                variable_name="_period",
+                value_name="_value",
+            )
+            .filter(pl.col("_value").is_not_null())
+            .with_columns(pl.lit(snakeId).alias("_snakeId"))
+        )
+
+    if not longFrames:
+        return pl.DataFrame({"stockCode": []})
+
+    long = pl.concat(longFrames, how="vertical_relaxed")
+    periods = (
+        long.select("stockCode", "_period")
+        .unique()
+        .with_columns(pl.col("_period").rank("dense", descending=True).over("stockCode").alias("_periodRank"))
+        .filter(pl.col("_periodRank") <= 2)
+    )
+    selected = (
+        long.join(periods, on=["stockCode", "_period"], how="inner")
+        .with_columns(
+            pl.when(pl.col("_periodRank") == 1)
+            .then(pl.col("_snakeId"))
+            .otherwise(pl.col("_snakeId") + pl.lit("_prev"))
+            .alias("_column")
+        )
+        .select("stockCode", "_column", "_value")
+        .pivot(
+            on="_column",
+            index="stockCode",
+            values="_value",
+            aggregate_function="first",
+        )
+    )
+
+    if nameFrames:
+        names = (
+            pl.concat(nameFrames, how="vertical_relaxed")
+            .filter(pl.col("corpName").is_not_null())
+            .group_by("stockCode")
+            .agg(pl.col("corpName").first())
+        )
+        selected = selected.join(names, on="stockCode", how="left")
+    else:
+        selected = selected.with_columns(pl.lit(None, dtype=pl.Utf8).alias("corpName"))
+
+    expected = [name for snakeId in snakeIds for name in (snakeId, f"{snakeId}_prev")]
+    missing = [name for name in expected if name not in selected.columns]
+    if missing:
+        selected = selected.with_columns(pl.lit(None, dtype=pl.Float64).alias(name) for name in missing)
+    return selected.select("stockCode", "corpName", *expected).sort("stockCode")
 
 
 def safeDiv(num: pl.Expr, den: pl.Expr) -> pl.Expr:
@@ -357,10 +405,7 @@ def gradeByValue(val: pl.Expr, thresholds: list[tuple[float, str]], default: str
         - :func:`safeDiv` · :func:`pct` — 같은 모듈 helpers
         - EDGAR `_scan*` 함수들이 본 함수 사용 패턴 (스캔.py)
     """
-    expr = val
-    for i, (threshold, label) in enumerate(thresholds):
-        if i == 0:
-            expr = pl.when(val >= threshold).then(pl.lit(label))
-        else:
-            expr = expr.when(val >= threshold).then(pl.lit(label))
-    return expr.otherwise(pl.lit(default))
+    result = pl.lit(default)
+    for threshold, label in reversed(thresholds):
+        result = pl.when(val >= threshold).then(pl.lit(label)).otherwise(result)
+    return result

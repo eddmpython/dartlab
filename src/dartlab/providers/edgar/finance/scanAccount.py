@@ -24,16 +24,33 @@ from dartlab.providers.edgar.finance.mapper import EDGAR_TO_DART_ALIASES, EdgarM
 _log = logging.getLogger(__name__)
 
 _DUCKDB_THREADS = 4
-_DUCKDB_MEMORY_LIMIT_MB = 64
+_DUCKDB_MEMORY_LIMIT_MB = 192
+_DUCKDB_BATCH_THREADS = 2
+_DUCKDB_BATCH_MEMORY_LIMIT_MB = 256
+_DUCKDB_BATCH_ACCOUNT_LIMIT = 3
 _DUCKDB_YEAR_SQL = """
     WITH matched AS (
         SELECT
             regexp_extract(filename, '([0-9]{10})[.]parquet$', 1) AS fileCik,
             namespace,
+            lower(tag) AS tag,
             val,
             fy,
             fp,
+            start,
+            "end",
+            filed,
             file_row_number,
+            CASE namespace
+                WHEN 'us-gaap' THEN list_position(?, lower(tag))
+                ELSE list_position(?, lower(tag))
+            END AS tagPriority,
+            CASE namespace
+                WHEN 'us-gaap' THEN
+                    CASE WHEN lower(tag) IN (SELECT unnest(?)) THEN 0 ELSE 1 END
+                ELSE
+                    CASE WHEN lower(tag) IN (SELECT unnest(?)) THEN 0 ELSE 1 END
+            END AS fallbackRank,
             min(CASE namespace WHEN 'us-gaap' THEN 0 ELSE 1 END)
                 OVER (PARTITION BY filename) AS selectedNamespace
         FROM read_parquet(?, filename = true, file_row_number = true)
@@ -45,30 +62,233 @@ _DUCKDB_YEAR_SQL = """
           AND starts_with(unit, 'USD')
           AND fy BETWEEN 2000 AND 2030
           AND fp IN ('FY', 'Q1', 'Q2', 'Q3')
+    ),
+    deduped AS (
+        SELECT *
+        FROM matched
+        QUALIFY row_number() OVER (
+            PARTITION BY fileCik, fy, fp, namespace, tag, start, "end"
+            ORDER BY (val IS NULL), filed DESC, file_row_number
+        ) = 1
     )
     SELECT
         fileCik,
         fy,
-        first(val ORDER BY file_row_number)
-            FILTER (WHERE fp = 'FY') AS fyFirst,
-        arg_min(val, file_row_number)
+        arg_min(
+            val,
+            struct_pack(
+                durationInvalid := CASE
+                    WHEN start IS NULL THEN 0
+                    WHEN date_diff('day', start, "end") BETWEEN 250 AND 450 THEN 0
+                    ELSE 1
+                END,
+                endRank := -epoch(coalesce("end", DATE '1900-01-01')),
+                fallbackRank := fallbackRank,
+                absRank := -abs(val),
+                tagPriority := tagPriority,
+                filedRank := -epoch(coalesce(filed, DATE '1900-01-01')),
+                rowNum := file_row_number
+            )
+        ) FILTER (WHERE fp = 'FY') AS fyFirst,
+        arg_min(
+            val,
+            struct_pack(
+                durationInvalid := CASE
+                    WHEN start IS NULL THEN 0
+                    WHEN date_diff('day', start, "end") BETWEEN 250 AND 450 THEN 0
+                    ELSE 1
+                END,
+                endRank := -epoch(coalesce("end", DATE '1900-01-01')),
+                fallbackRank := fallbackRank,
+                absRank := -abs(val),
+                tagPriority := tagPriority,
+                filedRank := -epoch(coalesce(filed, DATE '1900-01-01')),
+                rowNum := file_row_number
+            )
+        )
             FILTER (WHERE fp = 'FY') AS fyVal,
         arg_min(
             val,
-            struct_pack(absVal := abs(val), tieVal := val, rowNum := file_row_number)
+            struct_pack(
+                durationInvalid := CASE
+                    WHEN start IS NULL THEN 0
+                    WHEN date_diff('day', start, "end") BETWEEN 45 AND 140 THEN 0
+                    ELSE 1
+                END,
+                endRank := -epoch(coalesce("end", DATE '1900-01-01')),
+                fallbackRank := fallbackRank,
+                absRank := -abs(val),
+                tagPriority := tagPriority,
+                tieVal := val,
+                filedRank := -epoch(coalesce(filed, DATE '1900-01-01')),
+                rowNum := file_row_number
+            )
         ) FILTER (WHERE fp = 'Q1') AS q1,
         arg_min(
             val,
-            struct_pack(absVal := abs(val), tieVal := val, rowNum := file_row_number)
+            struct_pack(
+                durationInvalid := CASE
+                    WHEN start IS NULL THEN 0
+                    WHEN date_diff('day', start, "end") BETWEEN 45 AND 140 THEN 0
+                    ELSE 1
+                END,
+                endRank := -epoch(coalesce("end", DATE '1900-01-01')),
+                fallbackRank := fallbackRank,
+                absRank := -abs(val),
+                tagPriority := tagPriority,
+                tieVal := val,
+                filedRank := -epoch(coalesce(filed, DATE '1900-01-01')),
+                rowNum := file_row_number
+            )
         ) FILTER (WHERE fp = 'Q2') AS q2,
         arg_min(
             val,
-            struct_pack(absVal := abs(val), tieVal := val, rowNum := file_row_number)
+            struct_pack(
+                durationInvalid := CASE
+                    WHEN start IS NULL THEN 0
+                    WHEN date_diff('day', start, "end") BETWEEN 45 AND 140 THEN 0
+                    ELSE 1
+                END,
+                endRank := -epoch(coalesce("end", DATE '1900-01-01')),
+                fallbackRank := fallbackRank,
+                absRank := -abs(val),
+                tagPriority := tagPriority,
+                tieVal := val,
+                filedRank := -epoch(coalesce(filed, DATE '1900-01-01')),
+                rowNum := file_row_number
+            )
         ) FILTER (WHERE fp = 'Q3') AS q3
-    FROM matched
+    FROM deduped
     WHERE (namespace = 'us-gaap' AND selectedNamespace = 0)
        OR (namespace = 'ifrs-full' AND selectedNamespace = 1)
     GROUP BY fileCik, fy
+"""
+_DUCKDB_BATCH_YEAR_SQL = """
+    WITH matched AS (
+        SELECT
+            batchTags.snakeId,
+            regexp_extract(facts.filename, '([0-9]{10})[.]parquet$', 1) AS fileCik,
+            facts.namespace,
+            lower(facts.tag) AS tag,
+            facts.val,
+            facts.fy,
+            facts.fp,
+            facts.start,
+            facts."end",
+            facts.filed,
+            facts.file_row_number,
+            batchTags.priority AS tagPriority,
+            batchTags.fallbackRank AS fallbackRank,
+            min(CASE facts.namespace WHEN 'us-gaap' THEN 0 ELSE 1 END)
+                OVER (PARTITION BY facts.filename, batchTags.snakeId) AS selectedNamespace
+        FROM read_parquet(?, filename = true, file_row_number = true) AS facts
+        INNER JOIN batchTags
+            ON facts.namespace = batchTags.namespace
+           AND lower(facts.tag) = batchTags.tag
+        WHERE starts_with(facts.unit, 'USD')
+          AND facts.fy BETWEEN 2000 AND 2030
+          AND facts.fp IN ('FY', 'Q1', 'Q2', 'Q3')
+    ),
+    deduped AS (
+        SELECT *
+        FROM matched
+        QUALIFY row_number() OVER (
+            PARTITION BY snakeId, fileCik, fy, fp, namespace, tag, start, "end"
+            ORDER BY (val IS NULL), filed DESC, file_row_number
+        ) = 1
+    )
+    SELECT
+        snakeId,
+        fileCik,
+        fy,
+        arg_min(
+            val,
+            struct_pack(
+                durationInvalid := CASE
+                    WHEN start IS NULL THEN 0
+                    WHEN date_diff('day', start, "end") BETWEEN 250 AND 450 THEN 0
+                    ELSE 1
+                END,
+                endRank := -epoch(coalesce("end", DATE '1900-01-01')),
+                fallbackRank := fallbackRank,
+                absRank := -abs(val),
+                tagPriority := tagPriority,
+                filedRank := -epoch(coalesce(filed, DATE '1900-01-01')),
+                rowNum := file_row_number
+            )
+        ) FILTER (WHERE fp = 'FY') AS fyFirst,
+        arg_min(
+            val,
+            struct_pack(
+                durationInvalid := CASE
+                    WHEN start IS NULL THEN 0
+                    WHEN date_diff('day', start, "end") BETWEEN 250 AND 450 THEN 0
+                    ELSE 1
+                END,
+                endRank := -epoch(coalesce("end", DATE '1900-01-01')),
+                fallbackRank := fallbackRank,
+                absRank := -abs(val),
+                tagPriority := tagPriority,
+                filedRank := -epoch(coalesce(filed, DATE '1900-01-01')),
+                rowNum := file_row_number
+            )
+        )
+            FILTER (WHERE fp = 'FY') AS fyVal,
+        arg_min(
+            val,
+            struct_pack(
+                durationInvalid := CASE
+                    WHEN start IS NULL THEN 0
+                    WHEN date_diff('day', start, "end") BETWEEN 45 AND 140 THEN 0
+                    ELSE 1
+                END,
+                endRank := -epoch(coalesce("end", DATE '1900-01-01')),
+                fallbackRank := fallbackRank,
+                absRank := -abs(val),
+                tagPriority := tagPriority,
+                tieVal := val,
+                filedRank := -epoch(coalesce(filed, DATE '1900-01-01')),
+                rowNum := file_row_number
+            )
+        ) FILTER (WHERE fp = 'Q1') AS q1,
+        arg_min(
+            val,
+            struct_pack(
+                durationInvalid := CASE
+                    WHEN start IS NULL THEN 0
+                    WHEN date_diff('day', start, "end") BETWEEN 45 AND 140 THEN 0
+                    ELSE 1
+                END,
+                endRank := -epoch(coalesce("end", DATE '1900-01-01')),
+                fallbackRank := fallbackRank,
+                absRank := -abs(val),
+                tagPriority := tagPriority,
+                tieVal := val,
+                filedRank := -epoch(coalesce(filed, DATE '1900-01-01')),
+                rowNum := file_row_number
+            )
+        ) FILTER (WHERE fp = 'Q2') AS q2,
+        arg_min(
+            val,
+            struct_pack(
+                durationInvalid := CASE
+                    WHEN start IS NULL THEN 0
+                    WHEN date_diff('day', start, "end") BETWEEN 45 AND 140 THEN 0
+                    ELSE 1
+                END,
+                endRank := -epoch(coalesce("end", DATE '1900-01-01')),
+                fallbackRank := fallbackRank,
+                absRank := -abs(val),
+                tagPriority := tagPriority,
+                tieVal := val,
+                filedRank := -epoch(coalesce(filed, DATE '1900-01-01')),
+                rowNum := file_row_number
+            )
+        ) FILTER (WHERE fp = 'Q3') AS q3
+    FROM deduped
+    WHERE (namespace = 'us-gaap' AND selectedNamespace = 0)
+       OR (namespace = 'ifrs-full' AND selectedNamespace = 1)
+    GROUP BY snakeId, fileCik, fy
 """
 
 
@@ -107,8 +327,10 @@ class EdgarScanExecutionError(EdgarScanError):
 
 @dataclass(frozen=True)
 class _TaxonomyTagKeys:
-    usGaap: frozenset[str]
-    ifrsFull: frozenset[str]
+    usGaap: tuple[str, ...]
+    ifrsFull: tuple[str, ...]
+    usGaapCommon: frozenset[str] = frozenset()
+    ifrsFullCommon: frozenset[str] = frozenset()
 
     @property
     def empty(self) -> bool:
@@ -124,7 +346,7 @@ class _TaxonomyTagKeys:
             없음.
 
         Example:
-            >>> _TaxonomyTagKeys(frozenset(), frozenset()).empty
+            >>> _TaxonomyTagKeys((), ()).empty
             True
         """
         return not self.usGaap and not self.ifrsFull
@@ -178,7 +400,30 @@ def _buildEdgarTagKeys(dartSnakeId: str) -> _TaxonomyTagKeys:
         ):
             ifrsFull.add(concept.lower())
 
-    return _TaxonomyTagKeys(frozenset(usGaap), frozenset(ifrsFull))
+    preferred: list[str] = []
+    for account in loadAccounts().get("edgar", {}).get("accounts", []):
+        if _canonicalSnakeId(str(account.get("snakeId", ""))) != target:
+            continue
+        for tag in account.get("commonTags", []):
+            tagLower = str(tag).lower()
+            if tagLower not in preferred:
+                preferred.append(tagLower)
+    usGaap.update(preferred)
+    ifrsFull.update(preferred)
+
+    def prioritized(tags: set[str]) -> tuple[str, ...]:
+        """common tag를 먼저 두고 learned tag를 결정적으로 뒤에 둔다."""
+
+        primary = [tag for tag in preferred if tag in tags]
+        return tuple([*primary, *sorted(tags - set(primary))])
+
+    common = frozenset(preferred)
+    return _TaxonomyTagKeys(
+        prioritized(usGaap),
+        prioritized(ifrsFull),
+        common,
+        common,
+    )
 
 
 def _loadTickerUniverse() -> _TickerUniverse:
@@ -298,7 +543,18 @@ class _EdgarFileProcessor:
                     & (pl.col("fy") >= 2000)
                     & (pl.col("fy") <= 2030)
                 )
-                .select(["namespace", "tag", "val", "fy", "fp"])
+                .select(
+                    [
+                        "namespace",
+                        "tag",
+                        "val",
+                        "fy",
+                        "fp",
+                        "start",
+                        "end",
+                        "filed",
+                    ]
+                )
                 .collect(engine="streaming")
             )
         except (pl.exceptions.PolarsError, OSError) as exc:
@@ -313,8 +569,21 @@ class _EdgarFileProcessor:
         namespaces = df["namespace"].unique().to_list() if "namespace" in df.columns else []
         if "us-gaap" in namespaces:
             df = df.filter(pl.col("namespace") == "us-gaap")
+            priority = {tag: index for index, tag in enumerate(self.tagKeys.usGaap)}
+            common = self.tagKeys.usGaapCommon
         elif "ifrs-full" in namespaces:
             df = df.filter(pl.col("namespace") == "ifrs-full")
+            priority = {tag: index for index, tag in enumerate(self.tagKeys.ifrsFull)}
+            common = self.tagKeys.ifrsFullCommon
+        else:
+            return None
+        df = df.with_columns(
+            pl.col("tag")
+            .str.to_lowercase()
+            .replace_strict(priority, default=len(priority), return_dtype=pl.Int32)
+            .alias("_tagPriority"),
+            pl.when(pl.col("tag").str.to_lowercase().is_in(common)).then(0).otherwise(1).alias("_fallbackRank"),
+        )
 
         if self.freq == "Y":
             return self._parseAnnual(df, ticker)
@@ -326,16 +595,18 @@ class _EdgarFileProcessor:
         if fy.is_empty():
             return None
 
-        # 연도별 첫 값
-        agg = fy.group_by("fy").agg(pl.col("val").first()).sort("fy")
         rows = []
-        for row in agg.iter_rows(named=True):
-            if row["val"] is not None:
+        for year in fy["fy"].unique().sort().to_list():
+            value = self._bestContextValue(
+                fy.filter(pl.col("fy") == year),
+                annual=True,
+            )
+            if value is not None:
                 rows.append(
                     {
                         "stockCode": ticker,
-                        "period": str(row["fy"]),
-                        "amount": float(row["val"]),
+                        "period": str(year),
+                        "amount": value,
                     }
                 )
         return pl.DataFrame(rows) if rows else None
@@ -353,23 +624,23 @@ class _EdgarFileProcessor:
                 fpDf = yearDf.filter(pl.col("fp") == fp)
                 if fpDf.is_empty():
                     continue
-                # standalone 선택: 기간이 짧은(~90일) 행 우선
-                vals = fpDf["val"].drop_nulls().to_list()
-                if vals:
-                    # 가장 작은 양수값이 standalone일 가능성 높음 (YTD > standalone)
-                    absVals = [(abs(v), v) for v in vals if v is not None]
-                    if absVals:
-                        standalone = min(absVals)[1]
-                        qNum = fp[1]
-                        qVals[f"Q{qNum}"] = standalone
-                        rows.append({"stockCode": ticker, "period": f"{fy}Q{qNum}", "amount": standalone})
+                standalone = self._bestContextValue(fpDf, annual=False)
+                if standalone is not None:
+                    qNum = fp[1]
+                    qVals[f"Q{qNum}"] = standalone
+                    rows.append(
+                        {
+                            "stockCode": ticker,
+                            "period": f"{fy}Q{qNum}",
+                            "amount": standalone,
+                        }
+                    )
 
             # Q4 = FY - Q1 - Q2 - Q3
             fyDf = yearDf.filter(pl.col("fp") == "FY")
             if not fyDf.is_empty():
-                fyVal = fyDf["val"].drop_nulls().to_list()
-                if fyVal:
-                    fyAmount = fyVal[0]
+                fyAmount = self._bestContextValue(fyDf, annual=True)
+                if fyAmount is not None:
                     if self.isInstant:
                         rows.append({"stockCode": ticker, "period": f"{fy}Q4", "amount": fyAmount})
                     elif len(qVals) == 3:
@@ -377,6 +648,39 @@ class _EdgarFileProcessor:
                         rows.append({"stockCode": ticker, "period": f"{fy}Q4", "amount": q4})
 
         return pl.DataFrame(rows) if rows else None
+
+    @staticmethod
+    def _bestContextValue(df: pl.DataFrame, *, annual: bool) -> float | None:
+        """정상 duration과 최신 종료일을 우선해 단일 fact 값을 고른다."""
+
+        work = df.filter(pl.col("val").is_not_null())
+        if work.is_empty():
+            return None
+        work = work.sort("filed", descending=True).unique(
+            subset=["tag", "start", "end"],
+            keep="first",
+            maintain_order=True,
+        )
+        duration = (pl.col("end") - pl.col("start")).dt.total_days()
+        lower, upper = (250, 450) if annual else (45, 140)
+        work = work.with_columns(
+            pl.when(pl.col("start").is_null() | duration.is_between(lower, upper))
+            .then(0)
+            .otherwise(1)
+            .alias("_durationInvalid")
+        )
+        work = work.with_columns(pl.col("val").abs().alias("_absVal"))
+        sortCols = [
+            "_durationInvalid",
+            "end",
+            "_fallbackRank",
+            "_absVal",
+            "_tagPriority",
+            "filed",
+        ]
+        descending = [False, True, False, True, False, True]
+        selected = work.sort(sortCols, descending=descending)
+        return float(selected["val"][0])
 
 
 def _listedParquetFiles(edgarDir: Path, cikToTicker: dict[str, str]) -> list[Path]:
@@ -427,10 +731,10 @@ def _resultFromYearRows(
 
     if freq == "Y":
         longFrame = (
-            yearRows.filter(pl.col("fyFirst").is_not_null())
+            yearRows.filter(pl.col("fyFirst").is_not_null() | pl.col("fyVal").is_not_null())
             .with_columns(
                 pl.col("fy").cast(pl.Utf8).alias("period"),
-                pl.col("fyFirst").alias("amount"),
+                pl.coalesce("fyFirst", "fyVal").alias("amount"),
             )
             .select(["fileCik", "period", "amount"])
         )
@@ -487,9 +791,13 @@ def _scanAccountDuckDb(
         yearRows = connection.execute(
             _DUCKDB_YEAR_SQL,
             [
+                list(tagKeys.usGaap),
+                list(tagKeys.ifrsFull),
+                sorted(tagKeys.usGaapCommon),
+                sorted(tagKeys.ifrsFullCommon),
                 [str(path) for path in parquetFiles],
-                sorted(tagKeys.usGaap),
-                sorted(tagKeys.ifrsFull),
+                list(tagKeys.usGaap),
+                list(tagKeys.ifrsFull),
             ],
         ).pl()
     except duckdb.Error as exc:
@@ -512,6 +820,92 @@ def _scanAccountDuckDb(
         raise EdgarScanExecutionError(
             "duckdb_transform",
             f"result transform failed: {type(exc).__name__}: {exc}",
+        ) from exc
+
+
+def _scanAccountsDuckDb(
+    parquetFiles: list[Path],
+    tagKeysBySnakeId: dict[str, _TaxonomyTagKeys],
+    tickerUniverse: _TickerUniverse,
+    *,
+    freq: str,
+    instantBySnakeId: dict[str, bool],
+) -> dict[str, pl.DataFrame]:
+    """여러 계정을 한 DuckDB source scan으로 조회한다."""
+
+    try:
+        import duckdb
+    except ImportError as exc:
+        raise EdgarScanExecutionError("duckdb_import", f"{type(exc).__name__}: {exc}") from exc
+
+    empty = {snakeId: pl.DataFrame({"stockCode": []}) for snakeId in tagKeysBySnakeId}
+    if not parquetFiles or not tagKeysBySnakeId:
+        return empty
+
+    tagRows: list[tuple[str, str, str, int, int]] = []
+    for snakeId, tagKeys in tagKeysBySnakeId.items():
+        tagRows.extend(
+            (
+                snakeId,
+                "us-gaap",
+                tag,
+                priority,
+                0 if tag in tagKeys.usGaapCommon else 1,
+            )
+            for priority, tag in enumerate(tagKeys.usGaap)
+        )
+        tagRows.extend(
+            (
+                snakeId,
+                "ifrs-full",
+                tag,
+                priority,
+                0 if tag in tagKeys.ifrsFullCommon else 1,
+            )
+            for priority, tag in enumerate(tagKeys.ifrsFull)
+        )
+    if not tagRows:
+        return empty
+
+    try:
+        connection = duckdb.connect(":memory:")
+        connection.execute(f"PRAGMA threads={_DUCKDB_BATCH_THREADS}")
+        connection.execute(f"PRAGMA memory_limit='{_DUCKDB_BATCH_MEMORY_LIMIT_MB}MB'")
+        connection.execute("PRAGMA preserve_insertion_order=false")
+        connection.execute(
+            "CREATE TEMP TABLE batchTags "
+            "(snakeId VARCHAR, namespace VARCHAR, tag VARCHAR, priority INTEGER, "
+            "fallbackRank INTEGER)"
+        )
+        connection.executemany("INSERT INTO batchTags VALUES (?, ?, ?, ?, ?)", tagRows)
+        yearRows = connection.execute(
+            _DUCKDB_BATCH_YEAR_SQL,
+            [[str(path) for path in parquetFiles]],
+        ).pl()
+    except duckdb.Error as exc:
+        raise EdgarScanExecutionError("duckdb_batch_query", f"{type(exc).__name__}: {exc}") from exc
+    finally:
+        if "connection" in locals():
+            connection.close()
+
+    try:
+        results = dict(empty)
+        for snakeId in tagKeysBySnakeId:
+            accountRows = yearRows.filter(pl.col("snakeId") == snakeId).drop("snakeId")
+            results[snakeId] = _resultFromYearRows(
+                accountRows,
+                tickerUniverse.cikToTicker,
+                tickerUniverse.tickerToTitle,
+                freq=freq,
+                isInstant=instantBySnakeId[snakeId],
+            )
+        return results
+    except EdgarScanError:
+        raise
+    except (OSError, RuntimeError, pl.exceptions.PolarsError) as exc:
+        raise EdgarScanExecutionError(
+            "duckdb_batch_transform",
+            f"batch result transform failed: {type(exc).__name__}: {exc}",
         ) from exc
 
 
@@ -550,6 +944,103 @@ def _scanAccountFileLoop(
         ) from exc
 
 
+def scanAccounts(
+    dartSnakeIds: list[str],
+    *,
+    freq: str = "Q",
+) -> dict[str, pl.DataFrame]:
+    """전종목 EDGAR 여러 계정을 bounded source batch로 반환한다.
+
+    Args:
+        dartSnakeIds: 서로 함께 비교할 DART canonical snakeId 목록.
+        freq: ``"Q"`` 분기 또는 ``"Y"`` 연간.
+
+    Returns:
+        입력 snakeId를 key로 하고 각 계정 wide DataFrame을 값으로 갖는 dict.
+        메모리 피크를 제한하기 위해 최대 3계정씩 같은 source scan을 공유한다.
+
+    Raises:
+        ValueError: 계정 목록이나 freq가 잘못된 경우.
+        EdgarScanError: ticker, parquet 또는 batch 실행 실패.
+
+    Example:
+        >>> frames = scanAccounts(["sales", "operating_profit"], freq="Y")
+        >>> sorted(frames)
+        ['operating_profit', 'sales']
+    """
+
+    if not isinstance(dartSnakeIds, list) or not dartSnakeIds:
+        raise ValueError("dartSnakeIds는 비어 있지 않은 문자열 list여야 합니다")
+    if any(not isinstance(snakeId, str) or not snakeId.strip() for snakeId in dartSnakeIds):
+        raise ValueError("dartSnakeIds는 비어 있지 않은 문자열만 포함해야 합니다")
+    snakeIds = list(dict.fromkeys(snakeId.strip() for snakeId in dartSnakeIds))
+    freq = str(freq).upper()
+    if freq not in {"Q", "Y"}:
+        raise ValueError(f"freq는 'Q' 또는 'Y'여야 합니다: {freq!r}")
+
+    from dartlab.core.dataLoader import _dataDir
+
+    edgarDir = Path(_dataDir("edgar"))
+    parquetFiles = sorted(edgarDir.glob("*.parquet"))
+    empty = {snakeId: pl.DataFrame({"stockCode": []}) for snakeId in snakeIds}
+    if not parquetFiles:
+        _log.warning("EDGAR finance parquet 없음: %s", edgarDir)
+        return empty
+
+    tagKeysBySnakeId: dict[str, _TaxonomyTagKeys] = {}
+    for snakeId in snakeIds:
+        tagKeys = _buildEdgarTagKeys(snakeId)
+        if tagKeys.empty:
+            _log.warning("EDGAR에서 '%s'에 매핑되는 tag 없음", snakeId)
+            continue
+        tagKeysBySnakeId[snakeId] = tagKeys
+    if not tagKeysBySnakeId:
+        return empty
+
+    tickerUniverse = _loadTickerUniverse()
+    listedFiles = _listedParquetFiles(edgarDir, tickerUniverse.cikToTicker)
+    if not listedFiles:
+        raise EdgarScanMappingError(
+            "listed_shard_join",
+            f"local parquet {len(parquetFiles)}개 중 ticker universe와 연결된 shard가 없습니다",
+            source=str(edgarDir),
+        )
+    instantBySnakeId = {snakeId: EdgarMapper.getAccountStmt(snakeId) == "BS" for snakeId in tagKeysBySnakeId}
+
+    batch: dict[str, pl.DataFrame] = {}
+    tagItems = list(tagKeysBySnakeId.items())
+    for offset in range(0, len(tagItems), _DUCKDB_BATCH_ACCOUNT_LIMIT):
+        chunk = dict(tagItems[offset : offset + _DUCKDB_BATCH_ACCOUNT_LIMIT])
+        try:
+            batch.update(
+                _scanAccountsDuckDb(
+                    listedFiles,
+                    chunk,
+                    tickerUniverse,
+                    freq=freq,
+                    instantBySnakeId=instantBySnakeId,
+                )
+            )
+        except EdgarScanExecutionError as batchError:
+            _log.warning(
+                "scanAccounts(edgar) %d계정 batch 실패, 단일 계정 fallback: %s",
+                len(chunk),
+                batchError,
+            )
+            try:
+                for snakeId in chunk:
+                    batch[snakeId] = scanAccount(snakeId, freq=freq)
+            except (EdgarScanError, OSError, RuntimeError, pl.exceptions.PolarsError) as fallbackError:
+                raise EdgarScanExecutionError(
+                    "batch_fallback",
+                    f"single-account fallback failed: {type(fallbackError).__name__}: {fallbackError}",
+                    source=str(edgarDir),
+                    primaryError=batchError,
+                ) from fallbackError
+
+    return {snakeId: batch.get(snakeId, empty[snakeId]) for snakeId in snakeIds}
+
+
 def scanAccount(
     dartSnakeId: str,
     *,
@@ -563,7 +1054,7 @@ def scanAccount(
 
     parquet source-native 처리:
       - ticker map에 존재하는 filename CIK 파일만 source manifest에 포함.
-      - DuckDB 4 threads, 64 MiB limit로 filter와 company-year aggregation.
+      - DuckDB threads와 memory limit를 명시해 filter와 company-year aggregation.
       - DuckDB 비가용 또는 실패 시 검증된 ThreadPool file-loop로 fallback.
       - fallback도 실패하면 DuckDB 원인과 shard 원인을 ``EdgarScanExecutionError``에 보존.
       - period pivot wide → ``stockCode + 기간 컬럼들`` (최신 period 좌측).
@@ -722,8 +1213,9 @@ def scanRatio(
 
 def _calcSimpleRatio(defn: dict, *, freq: str = "Q") -> pl.DataFrame:
     """분자/분모 비율 계산."""
-    numer = scanAccount(defn["numer"], freq=freq)
-    denom = scanAccount(defn["denom"], freq=freq)
+    accountFrames = scanAccounts([defn["numer"], defn["denom"]], freq=freq)
+    numer = accountFrames[defn["numer"]]
+    denom = accountFrames[defn["denom"]]
 
     numerCols = [c for c in numer.columns if c not in ("stockCode", "corpName")]
     denomCols = [c for c in denom.columns if c not in ("stockCode", "corpName")]

@@ -107,10 +107,20 @@ def _scanProfitability(**_kw) -> pl.DataFrame:
     if df.is_empty():
         return df
     result = df.with_columns(
-        pct(pl.col("operating_profit"), pl.col("sales")).alias("opMargin"),
-        pct(pl.col("net_profit"), pl.col("sales")).alias("netMargin"),
-        pct(pl.col("net_profit"), pl.col("total_stockholders_equity")).alias("roe"),
-        pct(pl.col("net_profit"), pl.col("total_assets")).alias("roa"),
+        pl.when(pl.col("sales") > 1_000_000).then(pct(pl.col("operating_profit"), pl.col("sales"))).alias("opMargin"),
+        pl.when(pl.col("sales") > 1_000_000).then(pct(pl.col("net_profit"), pl.col("sales"))).alias("netMargin"),
+        pl.when(pl.col("total_stockholders_equity") > 1_000_000)
+        .then(pct(pl.col("net_profit"), pl.col("total_stockholders_equity")))
+        .alias("roe"),
+        pl.when(pl.col("total_assets") > 1_000_000)
+        .then(pct(pl.col("net_profit"), pl.col("total_assets")))
+        .alias("roa"),
+    )
+    result = result.with_columns(
+        pl.when(pl.col("opMargin").abs() <= 100).then(pl.col("opMargin")).alias("opMargin"),
+        pl.when(pl.col("netMargin").abs() <= 500).then(pl.col("netMargin")).alias("netMargin"),
+        pl.when(pl.col("roe").abs() <= 500).then(pl.col("roe")).alias("roe"),
+        pl.when(pl.col("roa").abs() <= 100).then(pl.col("roa")).alias("roa"),
     )
     result = result.with_columns(
         pl.when(pl.max_horizontal("opMargin", "roe").is_null())
@@ -157,11 +167,30 @@ def _scanGrowth(**_kw) -> pl.DataFrame:
     if df.is_empty():
         return df
     result = df.with_columns(
-        pct(pl.col("sales") - pl.col("sales_prev"), pl.col("sales_prev")).alias("revenueYoy"),
-        pct(pl.col("operating_profit") - pl.col("operating_profit_prev"), pl.col("operating_profit_prev")).alias(
-            "opYoy"
-        ),
-        pct(pl.col("net_profit") - pl.col("net_profit_prev"), pl.col("net_profit_prev")).alias("niYoy"),
+        pl.when((pl.col("sales_prev") > 1_000_000) & (pl.col("sales") >= 0))
+        .then(pct(pl.col("sales") - pl.col("sales_prev"), pl.col("sales_prev")))
+        .alias("revenueYoy"),
+        pl.when(pl.col("operating_profit_prev") > 1_000_000)
+        .then(
+            pct(
+                pl.col("operating_profit") - pl.col("operating_profit_prev"),
+                pl.col("operating_profit_prev"),
+            )
+        )
+        .alias("opYoy"),
+        pl.when(pl.col("net_profit_prev") > 1_000_000)
+        .then(
+            pct(
+                pl.col("net_profit") - pl.col("net_profit_prev"),
+                pl.col("net_profit_prev"),
+            )
+        )
+        .alias("niYoy"),
+    )
+    result = result.with_columns(
+        pl.when(pl.col("revenueYoy").abs() <= 1000).then(pl.col("revenueYoy")).alias("revenueYoy"),
+        pl.when(pl.col("opYoy").abs() <= 1000).then(pl.col("opYoy")).alias("opYoy"),
+        pl.when(pl.col("niYoy").abs() <= 1000).then(pl.col("niYoy")).alias("niYoy"),
     )
     result = result.with_columns(
         pl.when(pl.col("revenueYoy").is_null())

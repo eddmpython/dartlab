@@ -59,9 +59,9 @@ Guard는 현재 레이어의 source를 동결한 뒤 한 번 실행한다. Guard
   데이터 계약·오류 투명성·SSOT·속도·메모리 기준으로 전수 대조한다. 네 형제 간
   cross import 없이 결함 수정과 집중 회귀를 끝내고 source 동결 뒤 공식 Guard, 원장,
   커밋, push까지 닫는다.
-- 다음 첫 행동: scan one-pass 집계 체크포인트를 push한 뒤 EDGAR 공통 기간 batch를
-  속도·메모리 기준으로 고친다. 이어 frame, synth, reference의 남은 전체 src와
-  공개 호출자 대조를 계속한다.
+- 다음 첫 행동: EDGAR 계정 batch와 공통 기간 체크포인트를 push한 뒤 scan의 남은
+  공개 축, raw tag 경로, dispatcher와 실제 호출자를 전수 대조한다. 이어 frame,
+  synth, reference의 남은 전체 src와 공개 호출자 대조를 계속한다.
 - 금지: axis나 파일 하나만 끝내고 완료 보고, L2 이상 수정 선행,
   중간 source에서 공식 Guard 반복
 
@@ -142,6 +142,52 @@ DataFrame을 다시 필터하고 계정 행을 반복 순회하던 병목을 공
 다음 순서는 EDGAR 계정 batch와 공통 period를 확정하는 것이다. frame, synth,
 reference의 남은 전체 범위와 실제 소비자, 최종 Guard가 남았으므로
 **L1.5 판정은 미완료**다.
+
+### 진행 증거 4. EDGAR 계정 batch와 회사별 기간 정합성
+
+**상태: L1.5 진행 중. 레이어 완료 아님.** EDGAR scan 축이 필요한 계정을 각각
+전종목 재조회하고, 계정별 최신 열을 같은 회사의 같은 기간인 것처럼 붙이던 결함을
+bounded batch와 회사별 기간 정렬로 닫았다.
+
+1. **범위와 실제 호출자.** provider의 `scanAccount`, 단순 비율 계산과 새 다계정
+   primitive, scan builder의 `scanEdgarAccounts`, profitability와 growth 공개 축을
+   한 흐름으로 대조했다. 분자와 분모, 수익성 5계정, 성장성 3계정이 같은 EDGAR
+   companyfacts source를 반복 읽던 경로를 실제 전종목 호출로 재현했다.
+2. **제품 결함 재현.** 계정마다 전역 최신 열을 고르면 어떤 회사에는 그 기간 값이
+   없어 오래된 값이 최신값 자리에 대입됐다. 학습된 fallback tag가 공통 taxonomy
+   tag보다 먼저 오거나 segment context가 연결 합계보다 먼저 선택됐고, 같은 FY filing의
+   과거 비교 context도 현재 연간값으로 오인됐다. General Mills의 2024 매출은 실제
+   약 `19.857B` 대신 component `2.038B`가 선택되어 매출 성장률이 약 `856%`로
+   왜곡됐다. 5계정 단일 시도는 256MB와 384MB 모두 OOM 뒤 계정별 fallback으로
+   내려가 `134.861초`가 걸렸다.
+3. **근본 원인과 SSOT.** DART canonical 계정과 EDGAR taxonomy tag 우선순위,
+   정상 annual 또는 quarter duration, 최신 종료일, filing 개정본, 회사별 현재와
+   직전 기간의 owner가 분리되어 있었다. `accountMappings`의 공통 tag를 최우선
+   SSOT로 삼고, provider가 context를 고른 계정 wide를 builder의 회사별 period
+   rank가 정렬하도록 책임을 고정했다.
+4. **수정과 테스트.** `scanAccounts`는 tag table을 한 번 만든 뒤 최대 3계정씩
+   DuckDB source scan을 공유한다. 5계정은 처음부터 3+2 bounded batch로 실행해 OOM을
+   유발하는 실패 시도를 없애고, 실패한 chunk만 검증된 단일 경로로 복구하며 두 원인을
+   보존한다. SQL과 file-loop 모두 정상 duration, 최신 end, 공통 tag, segment fallback,
+   최신 filed 순서를 적용한다. `scanEdgarAccounts`는 계정 wide를 long으로 바꿔
+   회사별 최신·직전 기간에 exact join하고, 없는 최신값을 과거값으로 대체하지 않는다.
+   profitability와 growth는 `1M USD` 미만 분모·기준값과 비현실적 비율을 결측으로
+   분류해 작은 분모 artifact를 상위 종목으로 내보내지 않는다.
+5. **공개 행동, 정확성, 속도, 메모리.** 실제 growth는 6,105종목을 `18.684초`,
+   RSS 증가 약 `168.6MB`에 만들었다. profitability는 6,111종목을 fallback 없이
+   `52.075초`, RSS 증가 약 `207.9MB`에 만들며 직전 `134.861초`보다 약 61% 짧다.
+   결과의 절대 최대치는 영업이익률 `99.4`, 순이익률 `496.81`, ROE `488.5`,
+   ROA `99.59`로 명시한 품질 상한 안이다. General Mills의 연간 매출은
+   `2025 19.487B`, `2024 19.857B`, `2023 20.094B`, `2022 18.993B`로 복구됐고,
+   매출 YoY `-1.87%`, 영업이익 YoY `-3.70%`, 순이익 YoY `-7.93%`다.
+6. **Guard와 회귀.** 실제 DuckDB 다계정 SQL, batch 분할과 실패 fallback, context와
+   tag 우선순위, 회사별 기간 정렬, 단순 비율 단일 batch, 이상치 거절을 회귀로 고정했다.
+   provider와 scan 관련 집중 회귀 `62 passed`, 변경 source Pyright 오류 0,
+   Ruff format과 lint가 통과했다.
+7. **남은 부채와 판정.** EDGAR batch의 source scan은 계정 수에 따라 최대 3개씩
+   나뉘며 이는 256MB 상한을 지키기 위한 의도된 속도·메모리 절충이다. scan의 남은
+   공개 축과 raw tag 경로, frame, synth, reference 전체 범위와 실제 소비자,
+   source 동결 뒤 공식 Guard가 남았다. 따라서 **L1.5 판정은 미완료**다.
 
 ## L1 gather, providers 순차 안정화 원장 (2026-07-30)
 
