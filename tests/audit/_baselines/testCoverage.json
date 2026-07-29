@@ -1554,21 +1554,6 @@
       "line": 81
     },
     {
-      "path": "core/memory.py",
-      "func": "checkMemoryAndGc",
-      "line": 145
-    },
-    {
-      "path": "core/memory.py",
-      "func": "memoryGuard",
-      "line": 459
-    },
-    {
-      "path": "core/memory.py",
-      "func": "memoizedCalc",
-      "line": 490
-    },
-    {
       "path": "core/messagingContext.py",
       "func": "hasDartKey",
       "line": 63

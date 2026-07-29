@@ -276,8 +276,9 @@ class _ReportAccessor:
         self._cache: BoundedCache = BoundedCache(maxEntries=50, pressureMb=1200.0)
 
     def _pivot(self, name: str) -> Any:
-        if name in self._cache:
-            return self._cache[name]
+        cacheHit, cached = self._cache.lookup(name)
+        if cacheHit:
+            return cached
         from dartlab.providers.dart.report import (
             pivotAudit,
             pivotDividend,
@@ -317,8 +318,9 @@ class _ReportAccessor:
               내부 backing namespace.
         """
         cacheKey = f"_extract_{apiType}"
-        if cacheKey in self._cache:
-            return self._cache[cacheKey]
+        cacheHit, cached = self._cache.lookup(cacheKey)
+        if cacheHit:
+            return cached
         from dartlab.providers.dart.report import extractClean
 
         try:
@@ -346,8 +348,9 @@ class _ReportAccessor:
               내부 backing namespace.
         """
         cacheKey = f"_annual_{apiType}_{quarterNum}"
-        if cacheKey in self._cache:
-            return self._cache[cacheKey]
+        cacheHit, cached = self._cache.lookup(cacheKey)
+        if cacheHit:
+            return cached
         from dartlab.providers.dart.report import extractAnnual as _extractAnnual
 
         try:
@@ -375,8 +378,9 @@ class _ReportAccessor:
               내부 backing namespace.
         """
         cacheKey = f"_result_{apiType}_{quarterNum}"
-        if cacheKey in self._cache:
-            return self._cache[cacheKey]
+        cacheHit, cached = self._cache.lookup(cacheKey)
+        if cacheHit:
+            return cached
 
         if apiType in self._PIVOT_NAMES:
             result = getattr(self, apiType)
@@ -601,8 +605,9 @@ class _ReportAccessor:
               내부 backing namespace.
         """
         cacheKey = "_availableApiTypes"
-        if cacheKey in self._cache:
-            return self._cache[cacheKey]
+        cacheHit, cached = self._cache.lookup(cacheKey)
+        if cacheHit:
+            return cached
         from dartlab.providers.dart.report.types import API_TYPES
 
         try:

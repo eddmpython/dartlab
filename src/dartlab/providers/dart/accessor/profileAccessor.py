@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any
 
 import polars as pl
 
+from dartlab.core.memory import lookupCache
 from dartlab.core.polarsUtil import isEmptyDf
 from dartlab.providers.dart.checks import _isPeriodColumn
 
@@ -153,8 +154,9 @@ class _ProfileAccessor:
             없음.
         """
         cacheKey = "_profileFacts"
-        if cacheKey in self._company._cache:
-            return self._company._cache[cacheKey]
+        cacheHit, cached = lookupCache(self._company._cache, cacheKey)
+        if cacheHit:
+            return cached
 
         frames: list[pl.DataFrame] = []
 
@@ -585,8 +587,9 @@ class _ProfileAccessor:
             없음.
         """
         cacheKey = "_sharesOutstanding"
-        if cacheKey in self._company._cache:
-            return self._company._cache[cacheKey]
+        cacheHit, cached = lookupCache(self._company._cache, cacheKey)
+        if cacheHit:
+            return cached
 
         result = None
         try:

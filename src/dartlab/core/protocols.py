@@ -143,22 +143,23 @@ class RawProviderCompanyProtocol(Protocol):
             self.
 
         Raises:
-            없음.
+            RuntimeError: 같은 Company context에 중첩 진입할 때.
         """
         ...
 
     def __exit__(self, _excType: Any, _excVal: Any, _excTb: Any) -> None:
-        """context manager 종료 — BoundedCache evict + RSS 회수.
+        """context manager 종료 — cache evict + Python GC + RSS 관측.
 
-        룰 11 만족. Polars 네이티브 힙 누수 차단.
+        룰 11 만족. provider가 소유한 cache 수명주기를 종료한다.
 
         Args:
-            _excType: 예외 type (정상 종료 시 None) — 미사용.
-            _excVal: 예외 인스턴스 — 미사용.
-            _excTb: traceback — 미사용.
+            _excType: 예외 type (정상 종료 시 None).
+            _excVal: 예외 인스턴스. 정리 실패와 함께 보존한다.
+            _excTb: traceback.
 
         Raises:
-            없음 (cleanup 실패 시 silent — 정상 종료 우선).
+            BaseExceptionGroup: 본문 예외와 정리 실패가 함께 발생했을 때.
+            Exception: tripwire 정지 또는 cache 정리가 실패했을 때.
         """
         ...
 
@@ -627,13 +628,13 @@ class MemorySafeProvider(Protocol):
     """공통 — 모든 provider 가 만족해야 하는 메모리-safe surface (룰 11)."""
 
     def cleanupCache(self) -> int:
-        """BoundedCache evict + Polars 힙 회수.
+        """provider 소유 cache evict + Python 순환 참조 회수.
 
         Returns:
             evict 된 entry 수.
 
         Raises:
-            없음 (cleanup 실패는 silent).
+            Exception: cache clear 또는 Python GC가 낸 예외를 그대로 전달한다.
         """
         ...
 

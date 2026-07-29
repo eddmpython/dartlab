@@ -189,8 +189,9 @@ def buildNewsSentimentUniverse(
         _date.today() if asOf is None else (asOf if isinstance(asOf, _date) else _date.fromisoformat(_toIso(asOf)))
     )
     cacheKey = f"_news_sentiment_universe_{market}_{asOfDate.isoformat()}_{lookbackDays}_{minHeadlines}"
-    if cacheKey in _CACHE:
-        return _CACHE[cacheKey]
+    cacheHit, cached = _CACHE.lookup(cacheKey)
+    if cacheHit:
+        return cached
 
     startDate = asOfDate - timedelta(days=lookbackDays)
 

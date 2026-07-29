@@ -29,6 +29,7 @@ _log = getLogger(__name__)
 import polars as pl
 
 from dartlab.core.edgarClient import SUPPORTED_REGULAR_FORMS
+from dartlab.core.memory import lookupCache
 from dartlab.core.polarsUtil import isEmptyDf
 from dartlab.core.utils.period import dropPeriodsAfter, parseAsOfPeriod
 from dartlab.providers._common.filingHelpers import (
@@ -571,7 +572,7 @@ class Company:
                 - 회사명 입력 X - EDGAR 는 ticker / CIK strict ("Apple" → ValueError).
                 - SEC User-Agent header 미설정 → HTTP 403 (dartlab.core.http 가 처리하나 환경 변수 ``DARTLAB_USER_AGENT`` 권장).
                 - ``Company(t)`` 한 인스턴스 다종목 재사용 X - 종목당 신규 Company 강제.
-                - ``with`` 누락 다종목 루프 → Polars Rust heap 누적 → OOM.
+                - ``with`` 누락 다종목 루프 → Company cache와 임시 IPC 누적.
                 - 11 자리 이상 CIK 호출 → 포맷 위반 ValueError.
             OutputSchema:
                 - Company 인스턴스 - ``ticker`` (str upper) / ``cik`` (str zero-padded 10)
@@ -599,9 +600,12 @@ class Company:
         if not (cleaned.isdigit() and len(cleaned) <= 10) and not re.match(r"^[A-Z][A-Z0-9./-]{0,9}$", cleaned):
             raise ValueError(f"올바르지 않은 ticker/CIK: '{ticker}' (예: 'AAPL', '0000320193')")
         self.ticker = cleaned
-        from dartlab.core.memory import BoundedCache
+        from dartlab.core.memory import BoundedCache, CachePolicy
 
-        self._cache: BoundedCache = BoundedCache(maxEntries=30)
+        self._cache: BoundedCache = BoundedCache(
+            maxEntries=30,
+            policy=CachePolicy(ipcBackedKeys=frozenset({"_sections"})),
+        )
 
         tickerRow = self._resolveTickerRow(self.ticker)
         if tickerRow is None:
@@ -709,12 +713,15 @@ class Company:
             self.
 
         Raises:
-            없음.
+            RuntimeError: 같은 Company context에 중첩 진입할 때.
         """
-        from dartlab.core.memory import OomTripwire
+        from dartlab.core.memory import MemoryScope
 
-        self._oomTripwire = OomTripwire()
-        self._oomTripwire.start()
+        scope = getattr(self, "_memoryScope", None)
+        if scope is None:
+            scope = MemoryScope()
+            self._memoryScope = scope
+        scope.enter()
         return self
 
     def __exit__(self, _excType: object, _excVal: object, _excTb: object) -> None:
@@ -726,18 +733,19 @@ class Company:
             excTb: traceback.
 
         Raises:
-            없음.
+            BaseExceptionGroup: 본문 예외와 정리 실패가 함께 발생했을 때.
+            Exception: tripwire 정지 또는 cache 정리가 실패했을 때.
         """
-        try:
-            tw = getattr(self, "_oomTripwire", None)
-            if tw is not None:
-                tw.stop()
-        except (AttributeError, RuntimeError):
-            pass
-        try:
-            self.cleanupCache()
-        except (AttributeError, KeyError, RuntimeError):
-            pass
+        from dartlab.core.memory import MemoryScope
+
+        scope = getattr(self, "_memoryScope", None)
+        if not isinstance(scope, MemoryScope):
+            raise RuntimeError("Company memory scope가 시작되지 않았습니다")
+        bodyError = _excVal if isinstance(_excVal, BaseException) else None
+        scope.exit(
+            cleanup=self.cleanupCache,
+            bodyError=bodyError,
+        )
 
     def cleanupCache(self) -> int:
         """BoundedCache evict + cleanupBetweenCompanies.
@@ -751,20 +759,20 @@ class Company:
             >>> n = c.cleanupCache()
 
         Raises:
-            없음.
+            Exception: cache clear 또는 Python GC가 낸 예외를 그대로 전달한다.
 
         SeeAlso:
             - ``__exit__`` - context manager 종료 시 본 함수 자동 호출.
             - ``memorySnapshot`` - 호출 전/후 RSS 비교.
-            - ``dartlab.core.memory.cleanupBetweenCompanies`` - Polars Rust heap 회수 트리거.
+            - ``dartlab.core.memory.cleanupBetweenCompanies`` - Python 순환 참조 회수와 RSS 관측.
 
         Requires:
             - dartlab
             - polars
 
         Capabilities:
-            - 인스턴스 ``self._cache`` (BoundedCache) 의 모든 entry evict + Polars 네이티브 힙
-              `cleanupBetweenCompanies` 호출. multi-company loop 사이에 호출 의무.
+            - 인스턴스 ``self._cache`` (BoundedCache)의 모든 entry와 임시 IPC를 evict하고
+              `cleanupBetweenCompanies`를 호출한다. multi-company loop 사이에 호출 의무.
 
         Guide:
             - "다음 회사 진입 전 메모리 정리" → 본 함수 또는 ``with Company(c):`` 컨텍스트.
@@ -772,12 +780,12 @@ class Company:
 
         AIContext:
             AI 가 다종목 batch 처리 (`for ticker in tickers:`) 안에서 본 함수 호출 의무.
-            누락 시 Polars Rust heap 누적으로 OOM.
+            누락 시 Company가 소유한 DataFrame과 IPC 수명이 다음 종목까지 연장된다.
 
         LLM Specifications:
             AntiPatterns:
-                - 호출 없이 다종목 순회 → Rust heap 누적 → OOM.
-                - ``gc.collect()`` 만 호출 → Polars 힙은 Python gc 회수 X. 본 함수 의무.
+                - 호출 없이 다종목 순회 → Company cache와 임시 IPC 누적.
+                - cache를 비우지 않고 ``gc.collect()``만 호출.
             OutputSchema:
                 - int - evict 된 cache entry 수 (0 가능).
             Prerequisites:
@@ -785,7 +793,7 @@ class Company:
             Freshness:
                 - 호출 시점 즉시.
             Dataflow:
-                - self._cache → clear → cleanupBetweenCompanies → Rust heap 회수.
+                - self._cache → clear와 IPC 회수 → cleanupBetweenCompanies → Python GC와 RSS 관측.
             TargetMarkets:
                 - US (SEC EDGAR) - 본 클래스의 cache 정리.
         """
@@ -812,7 +820,7 @@ class Company:
 
         SeeAlso:
             - ``cleanupCache`` - 본 함수가 보여준 RSS 회수.
-            - ``dartlab.core.memory.getMemoryMb`` - psutil 기반 RSS 추정.
+            - ``dartlab.core.memory.getMemoryMb`` - OS 기반 RSS 관측.
 
         Requires:
             - dartlab
@@ -833,15 +841,15 @@ class Company:
         LLM Specifications:
             AntiPatterns:
                 - RSS 값을 절대값으로 비교 시 환경 차이 (Windows vs WSL) - 추세만 사용.
-                - cacheSize 0 == 메모리 정리 완료 X. Polars Rust heap 은 별도 영역.
+                - cacheSize 0을 프로세스 RSS 0으로 해석.
             OutputSchema:
                 - dict {"cacheSize": int, "rssMb": int}.
             Prerequisites:
-                - psutil (`getMemoryMb` 의존).
+                - Windows psapi 또는 Linux procfs (`getMemoryMb` 의존).
             Freshness:
                 - 호출 시점 즉시.
             Dataflow:
-                - psutil RSS + self._cache len → 본 함수 → dict.
+                - OS RSS 관측 + self._cache len → 본 함수 → dict.
             TargetMarkets:
                 - US (SEC EDGAR) - 본 클래스 인스턴스 추적.
         """
@@ -906,8 +914,9 @@ class Company:
                 - US (SEC EDGAR) - XBRL 회계 연도 SSOT.
         """
         cacheKey = "_fiscalYearEnd"
-        if cacheKey in self._cache:
-            return self._cache[cacheKey]
+        cacheHit, cached = lookupCache(self._cache, cacheKey)
+        if cacheHit:
+            return cached
         try:
             from pathlib import Path
 
@@ -1135,9 +1144,10 @@ class Company:
         """
         from dartlab.core.dualAccess import CallableAccessor
 
-        if "_quantAccessor" not in self._cache:
-            self._cache["_quantAccessor"] = CallableAccessor(self._quantImpl, name="quant")
-        return self._cache["_quantAccessor"]
+        return self._cache.getOrCreate(
+            "_quantAccessor",
+            lambda: CallableAccessor(self._quantImpl, name="quant"),
+        )
 
     def _quantImpl(self, axis=None, *, metric=None, **kwargs):
         """주가 기술적 분석 - 30축 (내부 구현)."""
@@ -1689,9 +1699,10 @@ class Company:
         """
         from dartlab.core.dualAccess import CallableAccessor
 
-        if "_reportModelAccessor" not in self._cache:
-            self._cache["_reportModelAccessor"] = CallableAccessor(self._reportModelImpl, name="reportModel")
-        return self._cache["_reportModelAccessor"]
+        return self._cache.getOrCreate(
+            "_reportModelAccessor",
+            lambda: CallableAccessor(self._reportModelImpl, name="reportModel"),
+        )
 
     def _reportModelImpl(self, perspective: str = "full", *, basePeriod: str | None = None) -> dict:
         """reportModel 실제 구현 - buildReportModel(L3) 에 위임."""
@@ -1741,9 +1752,10 @@ class Company:
         """
         from dartlab.core.dualAccess import CallableAccessor
 
-        if "_storyAccessor" not in self._cache:
-            self._cache["_storyAccessor"] = CallableAccessor(self._storyImpl, name="story")
-        return self._cache["_storyAccessor"]
+        return self._cache.getOrCreate(
+            "_storyAccessor",
+            lambda: CallableAccessor(self._storyImpl, name="story"),
+        )
 
     def _storyImpl(
         self,
@@ -1857,9 +1869,10 @@ class Company:
         """
         from dartlab.core.dualAccess import CallableAccessor
 
-        if "_analysisAccessor" not in self._cache:
-            self._cache["_analysisAccessor"] = CallableAccessor(self._analysisImpl, name="analysis")
-        return self._cache["_analysisAccessor"]
+        return self._cache.getOrCreate(
+            "_analysisAccessor",
+            lambda: CallableAccessor(self._analysisImpl, name="analysis"),
+        )
 
     def _analysisImpl(self, axis: str | None = None, sub: str | None = None, **kwargs):
         """분석 엔진 실행 - analysis()에 self를 바인딩 (내부 구현).
@@ -2029,9 +2042,10 @@ class Company:
         """
         from dartlab.core.dualAccess import CallableAccessor
 
-        if "_creditAccessor" not in self._cache:
-            self._cache["_creditAccessor"] = CallableAccessor(self._creditImpl, name="credit")
-        return self._cache["_creditAccessor"]
+        return self._cache.getOrCreate(
+            "_creditAccessor",
+            lambda: CallableAccessor(self._creditImpl, name="credit"),
+        )
 
     def _creditImpl(self, axis: str | None = None, *, detail: bool = False, basePeriod: str | None = None):
         """독립 신용평가 - dCR 20단계 등급 (내부 구현)."""
@@ -2445,8 +2459,9 @@ class Company:
         startDate, endDate = resolveDateWindow(start, end, days=days)
         normalizedForms = tuple(forms or SUPPORTED_REGULAR_FORMS)
         cacheKey = f"liveFilings:{startDate}:{endDate}:{limit}:{keyword}:{normalizedForms}"
-        if cacheKey in self._cache:
-            return self._cache[cacheKey]
+        cacheHit, cached = lookupCache(self._cache, cacheKey)
+        if cacheHit:
+            return cached
 
         from dartlab.core.edgarClient import openEdgar
         from dartlab.core.messaging import progress
@@ -2692,8 +2707,9 @@ class Company:
                 - US (SEC EDGAR) 10-K/10-Q topic 카탈로그.
         """
         cacheKey = "_topicsDataFrame"
-        if cacheKey in self._cache:
-            return self._cache[cacheKey]
+        cacheHit, cached = lookupCache(self._cache, cacheKey)
+        if cacheHit:
+            return cached
 
         ordered: list[str] = []
         seen: set[str] = set()
@@ -2955,9 +2971,10 @@ class Company:
         """
         from dartlab.core.dualAccess import CallableAccessor
 
-        if "_selectAccessor" not in self._cache:
-            self._cache["_selectAccessor"] = CallableAccessor(self._selectImpl, name="select")
-        return self._cache["_selectAccessor"]
+        return self._cache.getOrCreate(
+            "_selectAccessor",
+            lambda: CallableAccessor(self._selectImpl, name="select"),
+        )
 
     def _selectImpl(
         self,
@@ -3249,8 +3266,9 @@ class Company:
                 - US (SEC EDGAR) topic 메타 보드.
         """
         cacheKey = "_index"
-        if cacheKey in self._cache:
-            return self._cache[cacheKey]
+        cacheHit, cached = lookupCache(self._cache, cacheKey)
+        if cacheHit:
+            return cached
 
         rows: list[dict[str, Any]] = []
         for topic in self.topics["topic"].to_list():
@@ -3848,13 +3866,10 @@ class Company:
         AIContext:
             workbench 가 재무제표 footnote 질문 받을 때 본 함수 entry - DART c.notes 와 동일 API.
         """
-        from dartlab.core.memory import _CACHE_MISSING
-
-        val = self._cache.get("_notes_wrapper", _CACHE_MISSING)
-        if val is _CACHE_MISSING:
-            val = _EdgarNotesWrapper(self)
-            self._cache["_notes_wrapper"] = val
-        return val
+        return self._cache.getOrCreate(
+            "_notes_wrapper",
+            lambda: _EdgarNotesWrapper(self),
+        )
 
     @property
     def facts(self) -> pl.DataFrame | None:

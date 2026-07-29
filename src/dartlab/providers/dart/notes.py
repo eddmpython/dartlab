@@ -83,8 +83,9 @@ class Notes:
 
     def _get(self, name: str, period: str = "y") -> pl.DataFrame | None:
         cacheKey = f"{name}:{period}"
-        if cacheKey in self._cache:
-            return self._cache[cacheKey]
+        cacheHit, cached = self._cache.lookup(cacheKey)
+        if cacheHit:
+            return cached
 
         spec = _REGISTRY[name]
         module, krName, extractor = spec

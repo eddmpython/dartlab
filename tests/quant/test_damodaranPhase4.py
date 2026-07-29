@@ -1,6 +1,6 @@
 """Phase 4 Production 리프트 테스트.
 
-G11 accessor pin / G12 dFV baseline / G13 override chain /
+G11 bounded accessor cache / G12 dFV baseline / G13 override chain /
 G14 validateStory + _suggest / G15 buildBlocks preset + scan lazy.
 """
 
@@ -8,17 +8,21 @@ from __future__ import annotations
 
 import pytest
 
-# ── G11 BoundedCache accessor pin ──────────────────────
+# ── G11 BoundedCache accessor bound ────────────────────
 
 
 @pytest.mark.unit
-def test_boundedCache_accessor_pinned():
-    """accessor prefix 가 _pinned_prefixes 에 포함."""
+def test_boundedCache_accessors_share_bounded_atomic_policy():
+    """accessor도 예외 pin 없이 동일한 bounded·atomic cache 계약을 따른다."""
     from dartlab.core.memory import BoundedCache
 
-    cache = BoundedCache()
-    for key in ("_showAccessor", "_selectAccessor", "_storyAccessor", "_creditAccessor", "_analysisAccessor"):
-        assert cache._isPinned(key), f"{key} not pinned"
+    cache = BoundedCache(maxEntries=2, memorySampler=lambda: 0.0)
+    keys = ("_showAccessor", "_selectAccessor", "_storyAccessor", "_creditAccessor", "_analysisAccessor")
+    for key in keys:
+        assert cache.getOrCreate(key, lambda key=key: key) == key
+
+    assert cache.keys() == list(keys[-2:])
+    assert len(cache) == 2
 
 
 # ── G14b BlockMap _suggest int 방어 ────────────────────
@@ -57,11 +61,12 @@ def test_validateStory_tool_schema_has_description():
 @pytest.mark.requires_data
 def test_dFV_samsung_within_realistic_range():
     """삼성전자 dFV 140K~230K (현재가 211K 근접, Phase 3 61K → 개선)."""
-    import dartlab
     from dartlab.analysis.valuation.dFV import calcDFV
+    from dartlab.providers.dart.company import Company
 
-    c = dartlab.Company("005930")
+    c = Company("005930")
     r = calcDFV(c)
+    assert r is not None
     dfv = r["dFV"]
     assert 140_000 < dfv < 230_000, f"dFV {dfv:,} out of realistic range"
 
@@ -73,11 +78,12 @@ def test_dFV_yangyang_regression_within_3pct():
 
     Phase 3: 1,055K → Phase 5 의도된 상향 (highGrowth phases [5,3,2] 확장).
     """
-    import dartlab
     from dartlab.analysis.valuation.dFV import calcDFV
+    from dartlab.providers.dart.company import Company
 
-    c = dartlab.Company("003230")
+    c = Company("003230")
     r = calcDFV(c)
+    assert r is not None
     dfv = r["dFV"]
     # Phase 5 기준 1,383K ±10%
     assert 1_245_000 < dfv < 1_525_000, f"regression: {dfv:,}"
@@ -90,12 +96,14 @@ def test_dFV_yangyang_regression_within_3pct():
 @pytest.mark.requires_data
 def test_override_chain_country_propagates():
     """countryCode override 주입 시 dFV 경로 변화 (chain 전파 증거)."""
-    import dartlab
     from dartlab.analysis.valuation.dFV import calcDFV
+    from dartlab.providers.dart.company import Company
 
-    c = dartlab.Company("003230")
+    c = Company("003230")
     r_base = calcDFV(c)
     r_us = calcDFV(c, overrides={"countryCode": "US"})
+    assert r_base is not None
+    assert r_us is not None
     # country 전파 시 dFV 변화 (Rf 차이 반영)
     assert r_base["dFV"] != r_us["dFV"], "country override 미전파"
 

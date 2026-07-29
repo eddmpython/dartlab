@@ -24,6 +24,7 @@ from dartlab.core.dataLoader import (
     loadData,
 )
 from dartlab.core.logger import getLogger
+from dartlab.core.memory import lookupCache
 from dartlab.core.polarsUtil import isEmptyDf
 from dartlab.core.registry import DataEntry
 from dartlab.core.registry import getEntries as _getEntries
@@ -855,7 +856,7 @@ class Company:
             AntiPatterns:
                 - 4 자리/7 자리/8 자리 코드 호출 → ValueError. KR stockCode 는 6 자리 strict.
                 - ``Company(code)`` 한 인스턴스로 다종목 처리 시도 - 종목당 신규 Company 강제.
-                - ``with`` 누락 다종목 루프 → Polars Rust heap 누적 → OOM (cleanupCache 미호출).
+                - ``with`` 누락 다종목 루프 → Company cache와 DataFrame 참조 누적.
                 - 한글 외 다국어 회사명 (Samsung/サムスン) → KIND 미매치 → ValueError.
             OutputSchema:
                 - Company 인스턴스 - ``stockCode`` (str 6 upper) / ``corpName`` (str)
@@ -993,18 +994,21 @@ class Company:
             self.
 
         Raises:
-            없음.
+            RuntimeError: 같은 Company context에 중첩 진입할 때.
         """
-        from dartlab.core.memory import OomTripwire
+        from dartlab.core.memory import MemoryScope
 
-        self._oomTripwire = OomTripwire()
-        self._oomTripwire.start()
+        scope = getattr(self, "_memoryScope", None)
+        if scope is None:
+            scope = MemoryScope()
+            self._memoryScope = scope
+        scope.enter()
         return self
 
     def __exit__(self, _excType: object, _excVal: object, _excTb: object) -> None:
         """context manager 종료 - OomTripwire 정지 + BoundedCache evict + RSS 회수.
 
-        룰 11 만족. Polars 네이티브 힙 누수 차단.
+        룰 11 만족. Company가 소유한 cache 수명주기를 종료한다.
 
         Args:
             excType: 예외 type (정상 종료 시 None).
@@ -1012,18 +1016,19 @@ class Company:
             excTb: traceback.
 
         Raises:
-            없음 (cleanup 실패 silent).
+            BaseExceptionGroup: 본문 예외와 정리 실패가 함께 발생했을 때.
+            Exception: tripwire 정지 또는 cache 정리가 실패했을 때.
         """
-        try:
-            tw = getattr(self, "_oomTripwire", None)
-            if tw is not None:
-                tw.stop()
-        except (AttributeError, RuntimeError):
-            pass  # tripwire 정지 실패 silent
-        try:
-            self.cleanupCache()
-        except (AttributeError, KeyError, RuntimeError):
-            pass  # cleanup 실패는 silent - 정상 종료 우선
+        from dartlab.core.memory import MemoryScope
+
+        scope = getattr(self, "_memoryScope", None)
+        if not isinstance(scope, MemoryScope):
+            raise RuntimeError("Company memory scope가 시작되지 않았습니다")
+        bodyError = _excVal if isinstance(_excVal, BaseException) else None
+        scope.exit(
+            cleanup=self.cleanupCache,
+            bodyError=bodyError,
+        )
 
     def cleanupCache(self) -> int:
         """BoundedCache 전체 evict + cleanupBetweenCompanies 실행.
@@ -1040,31 +1045,32 @@ class Company:
             >>> print(f"evicted {n} entries")
 
         Raises:
-            없음 (cleanupBetweenCompanies 가 내부 silent).
+            Exception: cache clear 또는 Python GC가 낸 예외를 그대로 전달한다.
 
         SeeAlso:
             - ``memorySnapshot`` - 호출 전/후 RSS 비교.
             - ``__exit__`` - context manager 종료 시 본 함수 자동 호출.
-            - ``dartlab.core.memory.cleanupBetweenCompanies`` - Polars Rust heap 회수.
+            - ``dartlab.core.memory.cleanupBetweenCompanies`` - Python 순환 참조 회수와 RSS 관측.
 
         Requires:
             - dartlab
             - polars
 
         Capabilities:
-            - 인스턴스 ``self._cache`` (BoundedCache) 의 모든 entry evict + Polars 네이티브 힙
-              ``cleanupBetweenCompanies`` 호출. KR multi-company loop 사이 회수.
+            - 인스턴스 ``self._cache`` (BoundedCache)의 모든 entry evict +
+              ``cleanupBetweenCompanies`` 호출. KR multi-company loop 사이 Python 참조 회수.
 
         Guide:
             - "다음 종목 진입 전 메모리 회수" → 본 함수 또는 ``with Company(c):`` 컨텍스트.
 
         AIContext:
-            AI 가 다종목 batch (50+ 종목 분석) 안 본 함수 의무 호출. 누락 시 Rust heap 누적 OOM.
+            AI 가 다종목 batch (50+ 종목 분석) 안 본 함수 의무 호출. Company가 소유한
+            DataFrame과 accessor 참조를 다음 종목 전 해제한다.
 
         LLM Specifications:
             AntiPatterns:
-                - 호출 없이 다종목 순회 → Polars 힙 누적 → OOM.
-                - ``gc.collect()`` 만 호출 → Rust heap 회수 X. 본 함수 필수.
+                - 호출 없이 다종목 순회 → Company cache가 보유한 DataFrame 참조 누적.
+                - cache를 비우지 않고 ``gc.collect()``만 호출.
             OutputSchema:
                 - int - evict 된 entry 수.
             Prerequisites:
@@ -1072,7 +1078,7 @@ class Company:
             Freshness:
                 - 호출 시점 즉시.
             Dataflow:
-                - self._cache → clear → cleanupBetweenCompanies(label) → Rust heap.
+                - self._cache → clear → cleanupBetweenCompanies(label) → Python GC와 RSS 관측.
             TargetMarkets:
                 - KR - 본 클래스 인스턴스.
         """
@@ -1101,7 +1107,7 @@ class Company:
 
         SeeAlso:
             - ``cleanupCache`` - 본 함수가 보여준 RSS 회수.
-            - ``dartlab.core.memory.getMemoryMb`` - psutil 기반 RSS.
+            - ``dartlab.core.memory.getMemoryMb`` - OS 기반 RSS 관측.
 
         Requires:
             - dartlab
@@ -1120,15 +1126,15 @@ class Company:
         LLM Specifications:
             AntiPatterns:
                 - RSS 절대값 환경 간 비교 X (Windows vs WSL 차이) - 동일 환경 내 추세만.
-                - cacheSize 0 == 메모리 정리 완료 X. Polars Rust heap 별도 영역.
+                - cacheSize 0을 프로세스 RSS 0으로 해석.
             OutputSchema:
                 - dict {"cacheSize": int, "rssMb": int}.
             Prerequisites:
-                - psutil (getMemoryMb 의존).
+                - Windows psapi 또는 Linux procfs (getMemoryMb 의존).
             Freshness:
                 - 호출 시점.
             Dataflow:
-                - psutil RSS + self._cache len → 본 함수.
+                - OS RSS 관측 + self._cache len → 본 함수.
             TargetMarkets:
                 - KR - 본 클래스 인스턴스 추적.
         """
@@ -1189,8 +1195,9 @@ class Company:
                 - KR.
         """
         cacheKey = "_topicSummaries"
-        if cacheKey in self._cache:
-            return self._cache[cacheKey]
+        cacheHit, cached = lookupCache(self._cache, cacheKey)
+        if cacheHit:
+            return cached
 
         summaries: dict[str, str] = {}
 
@@ -1245,8 +1252,9 @@ class Company:
         if not self._hasPanel:
             return None
         cacheKey = f"{name}:{sorted(kwargs.items())}" if kwargs else name
-        if cacheKey in self._cache:
-            return self._cache[cacheKey]
+        cacheHit, cached = lookupCache(self._cache, cacheKey)
+        if cacheHit:
+            return cached
         idx = _getModuleIndex()[name]
         entry = _getModuleRegistry()[idx]
         result = _importAndCall(entry[0], entry[1], self.stockCode, **kwargs)
@@ -1262,7 +1270,8 @@ class Company:
         entry = _getModuleRegistry()[idx]
         label = entry[2]
 
-        if config.verbose and cacheKey not in self._cache:
+        cacheHit, _ = lookupCache(self._cache, cacheKey)
+        if config.verbose and not cacheHit:
             _log.info("  ▶ %s · %s", self.corpName, label)
 
         result = self._callModule(name, **kwargs)
@@ -1838,8 +1847,9 @@ class Company:
             self._hintOnce("rawFinance", "rawFinance", "finance")
             return None
         cacheKey = "_rawFinance"
-        if cacheKey in self._cache:
-            return self._cache[cacheKey]
+        cacheHit, cached = lookupCache(self._cache, cacheKey)
+        if cacheHit:
+            return cached
         df = loadData(self.stockCode, category="finance")
         self._cache[cacheKey] = df
         return df
@@ -1892,8 +1902,9 @@ class Company:
             self._hintOnce("rawReport", "rawReport", "report")
             return None
         cacheKey = "_rawReport"
-        if cacheKey in self._cache:
-            return self._cache[cacheKey]
+        cacheHit, cached = lookupCache(self._cache, cacheKey)
+        if cacheHit:
+            return cached
         df = loadData(self.stockCode, category="report")
         self._cache[cacheKey] = df
         return df
@@ -2349,9 +2360,10 @@ class Company:
         """
         from dartlab.core.dualAccess import CallableAccessor
 
-        if "_selectAccessor" not in self._cache:
-            self._cache["_selectAccessor"] = CallableAccessor(self._selectImpl, name="select")
-        return self._cache["_selectAccessor"]
+        return self._cache.getOrCreate(
+            "_selectAccessor",
+            lambda: CallableAccessor(self._selectImpl, name="select"),
+        )
 
     def _selectImpl(
         self,
@@ -2886,9 +2898,10 @@ class Company:
         """
         from dartlab.core.dualAccess import CallableAccessor
 
-        if "_reportModelAccessor" not in self._cache:
-            self._cache["_reportModelAccessor"] = CallableAccessor(self._reportModelImpl, name="reportModel")
-        return self._cache["_reportModelAccessor"]
+        return self._cache.getOrCreate(
+            "_reportModelAccessor",
+            lambda: CallableAccessor(self._reportModelImpl, name="reportModel"),
+        )
 
     def _reportModelImpl(self, perspective: str = "full", *, basePeriod: str | None = None) -> dict:
         """reportModel 실제 구현 - buildReportModel(L3) 에 위임."""
@@ -2939,9 +2952,10 @@ class Company:
         """
         from dartlab.core.dualAccess import CallableAccessor
 
-        if "_storyAccessor" not in self._cache:
-            self._cache["_storyAccessor"] = CallableAccessor(self._storyImpl, name="story")
-        return self._cache["_storyAccessor"]
+        return self._cache.getOrCreate(
+            "_storyAccessor",
+            lambda: CallableAccessor(self._storyImpl, name="story"),
+        )
 
     def _storyImpl(
         self,
@@ -3091,9 +3105,10 @@ class Company:
         """
         from dartlab.core.dualAccess import CallableAccessor
 
-        if "_analysisAccessor" not in self._cache:
-            self._cache["_analysisAccessor"] = CallableAccessor(self._analysisImpl, name="analysis")
-        return self._cache["_analysisAccessor"]
+        return self._cache.getOrCreate(
+            "_analysisAccessor",
+            lambda: CallableAccessor(self._analysisImpl, name="analysis"),
+        )
 
     def _analysisImpl(self, axis: str | None = None, sub: str | None = None, **kwargs):
         """재무제표 완전 분석 - 22축, 단일 종목 심층 (내부 구현).
@@ -3315,9 +3330,10 @@ class Company:
         """
         from dartlab.core.dualAccess import CallableAccessor
 
-        if "_creditAccessor" not in self._cache:
-            self._cache["_creditAccessor"] = CallableAccessor(self._creditImpl, name="credit")
-        return self._cache["_creditAccessor"]
+        return self._cache.getOrCreate(
+            "_creditAccessor",
+            lambda: CallableAccessor(self._creditImpl, name="credit"),
+        )
 
     def _creditImpl(
         self,
@@ -3609,8 +3625,9 @@ class Company:
             없음.
         """
         cacheKey = "_topicsDataFrame"
-        if cacheKey in self._cache:
-            return self._cache[cacheKey]
+        cacheHit, cached = lookupCache(self._cache, cacheKey)
+        if cacheHit:
+            return cached
 
         # panel topic catalog - panel text wide 에서 유도 (docs topicManifest 은퇴).
         rows, seen = _buildPanelTopicRows(self._panelTextWide())
@@ -3762,8 +3779,9 @@ class Company:
                 panel / finance / report 다운로드 시점.
         """
         cacheKey = "_lazyIndex"
-        if cacheKey in self._cache:
-            return self._cache[cacheKey]
+        cacheHit, cached = lookupCache(self._cache, cacheKey)
+        if cacheHit:
+            return cached
 
         rows: list[dict[str, Any]] = []
 
@@ -3900,8 +3918,9 @@ class Company:
             fsDivPref: "CFS" (연결) 또는 "OFS" (별도).
         """
         cacheKey = f"_finance_{period}_{fsDivPref}"
-        if cacheKey in self._cache:
-            return self._cache[cacheKey]
+        cacheHit, cached = lookupCache(self._cache, cacheKey)
+        if cacheHit:
+            return cached
 
         from dartlab.providers.dart.finance.pivot import (
             _aggregateAnnual,
@@ -3929,8 +3948,9 @@ class Company:
     def _getRatiosInternal(self, fsDivPref: str = "CFS"):
         """내부용 재무비율 계산 (deprecation 없음)."""
         cacheKey = f"_ratios_{fsDivPref}"
-        if cacheKey in self._cache:
-            return self._cache[cacheKey]
+        cacheHit, cached = lookupCache(self._cache, cacheKey)
+        if cacheHit:
+            return cached
         from dartlab.analysis.financial.ratios import calcRatios
 
         archetypeOverride = _ratioArchetypeOverrideForIndustryGroup(getattr(self.sector, "industryGroup", None))
@@ -4040,8 +4060,9 @@ class Company:
             없음.
         """
         cacheKey = "_sector"
-        if cacheKey in self._cache:
-            return self._cache[cacheKey]
+        cacheHit, cached = lookupCache(self._cache, cacheKey)
+        if cacheHit:
+            return cached
         from dartlab.core.sector import classify
 
         kindDf = getKindList()
@@ -4088,8 +4109,9 @@ class Company:
             없음.
         """
         cacheKey = "_sectorParams"
-        if cacheKey in self._cache:
-            return self._cache[cacheKey]
+        cacheHit, cached = lookupCache(self._cache, cacheKey)
+        if cacheHit:
+            return cached
         from dartlab.core.sector import getParams
 
         result = getParams(self.sector)
@@ -4157,8 +4179,9 @@ class Company:
             없음.
         """
         cacheKey = "_rank"
-        if cacheKey in self._cache:
-            return self._cache[cacheKey]
+        cacheHit, cached = lookupCache(self._cache, cacheKey)
+        if cacheHit:
+            return cached
         import importlib
 
         getRank = importlib.import_module("dartlab.scan.screen.rank").getRank
@@ -4972,9 +4995,10 @@ class Company:
         """
         from dartlab.core.dualAccess import CallableAccessor
 
-        if "_quantAccessor" not in self._cache:
-            self._cache["_quantAccessor"] = CallableAccessor(self._quantImpl, name="quant")
-        return self._cache["_quantAccessor"]
+        return self._cache.getOrCreate(
+            "_quantAccessor",
+            lambda: CallableAccessor(self._quantImpl, name="quant"),
+        )
 
     def _quantImpl(self, axis=None, *, overrides: dict | None = None, metric=None, **kwargs):
         """주가 기술적 분석 - 30축 (내부 구현).

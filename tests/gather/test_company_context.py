@@ -80,6 +80,27 @@ def test_provider_companies_have_context_manager() -> None:
     assert not new_missing, f"Company context manager 누락 회귀: {new_missing}. P7 에서 추가."
 
 
+@pytest.mark.parametrize("providerName", ["dart", "edgar", "edinet"])
+def test_provider_company_rejects_nested_memory_scope(providerName: str) -> None:
+    """동일 Company 재진입이 watcher 참조를 덮어쓰지 않고 즉시 실패한다."""
+    from dartlab.core.memory import MemoryScope, OomTripwire
+
+    mod = importlib.import_module(f"dartlab.providers.{providerName}.company")
+    CompanyCls = mod.Company
+    company = CompanyCls.__new__(CompanyCls)
+    scope = MemoryScope(OomTripwire(intervalSec=0.01, sampler=lambda: 0.0))
+    company._memoryScope = scope
+
+    assert CompanyCls.__enter__(company) is company
+    try:
+        with pytest.raises(RuntimeError, match="중첩"):
+            CompanyCls.__enter__(company)
+        assert company._memoryScope is scope
+        assert scope.active
+    finally:
+        scope.exit(cleanup=lambda: None, bodyError=None)
+
+
 @pytest.mark.skip(reason="P7 후 활성 — Company.__enter__/__exit__ 구현 후 RSS 회수 검증")
 def test_rss_recovered_after_context_exit() -> None:
     """`with Company(c):` 종료 후 RSS 가 회수되는지 검증.

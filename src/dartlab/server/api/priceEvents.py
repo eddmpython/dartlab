@@ -200,8 +200,9 @@ def buildPriceEventsPayload(
     startDate = _date.fromisoformat(_toIso(start)) if start else (endDate - timedelta(days=365))
 
     cacheKey = f"_price_events_{market}_{stockCode}_{startDate.isoformat()}_{endDate.isoformat()}_{sources}_{discType}_{keyword or ''}_{includeShocks}_{includeRegime}"
-    if cacheKey in _CACHE:
-        return _CACHE[cacheKey]
+    cacheHit, cached = _CACHE.lookup(cacheKey)
+    if cacheHit:
+        return cached
 
     try:
         from dartlab.gather.krx.listing.registry import codeToName

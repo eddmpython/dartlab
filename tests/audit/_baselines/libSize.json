@@ -29,7 +29,6 @@
     "src/dartlab/ai/workbench/heuristic.py",
     "src/dartlab/analysis/financial/edgarPitState.py",
     "src/dartlab/core/extractionCatalog.py",
-    "src/dartlab/core/memory.py",
     "src/dartlab/core/ratios.py",
     "src/dartlab/core/schemas.py",
     "src/dartlab/gather/accessors.py",

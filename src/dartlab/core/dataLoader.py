@@ -34,9 +34,9 @@ _IS_PYODIDE = sys.platform == "emscripten"
 #   1. BoundedCache (`Company._cache`) 가 이미 _financeStmt_* / _sections 등 결과 캐시.
 #   2. Phase A 의 IPC mirror + Phase D 의 mmap path 가 disk 재읽기를 ms 단위로 단축.
 #   3. _LOAD_CACHE 는 *원본 parquet → DataFrame* 을 영구 heap 점유 — BoundedCache 와 이중.
-#   4. *_finance_* pinned 가 BoundedCache 안 in-memory 재사용을 *이미* 잡음.
+#   4. Company BoundedCache 가 변환 결과의 in-memory 재사용을 이미 담당.
 # 폐기 효과: heap 점유 ↓ (8 × DataFrame × ~수백MB = 수 GB 잠재 회수).
-# 잔존: `_clearLoadCache` 는 호환 위해 no-op stub 으로 유지 (memory.py 가 EMERGENCY 시 호출).
+# 잔존: `_clearLoadCache` 는 외부·테스트 하위호환을 위해 no-op stub 으로 유지.
 _LOAD_CACHE: "OrderedDict[tuple, pl.DataFrame]" = OrderedDict()  # 항상 empty — backward-compat alias
 _LOAD_CACHE_MAX = 0  # backward-compat 상수 — 폐기 신호
 

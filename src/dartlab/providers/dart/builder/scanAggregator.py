@@ -23,7 +23,7 @@ from typing import TYPE_CHECKING
 
 import polars as pl
 
-from dartlab.core.memory import _CACHE_MISSING
+from dartlab.core.memory import lookupCache
 from dartlab.core.polarsUtil import isEmptyDf
 
 if TYPE_CHECKING:
@@ -57,9 +57,9 @@ def _ensureNetwork(company: Company) -> tuple[dict, dict] | None:
     Company 캐시는 같은 인스턴스 안에서의 재조회를 막고, 그 아래 프로세스 캐시가 회사가
     바뀔 때의 재빌드를 막는다. 예전에는 앞엣것만 있어 회사마다 12 분씩 다시 만들었다.
     """
-    data = company._cache.get("_network_data", _CACHE_MISSING)
-    full = company._cache.get("_network_full", _CACHE_MISSING)
-    if data is _CACHE_MISSING or full is _CACHE_MISSING:
+    dataHit, data = lookupCache(company._cache, "_network_data")
+    fullHit, full = lookupCache(company._cache, "_network_full")
+    if not dataHit or not fullHit:
         data, full = _marketGraph()
         company._cache["_network_data"] = data
         company._cache["_network_full"] = full
@@ -129,8 +129,8 @@ def _ensureScanAxis(company: Company, axis: str) -> pl.DataFrame | None:
     그런 경우였고 회사 자기 정기보고서로 옮겨 8 초가 0.03 초가 됐다.
     """
     key = f"_{axis}"
-    val = company._cache.get(key, _CACHE_MISSING)
-    if val is _CACHE_MISSING:
+    cacheHit, val = lookupCache(company._cache, key)
+    if not cacheHit:
         import importlib
 
         module, fn = _SCAN_AXES[axis]
@@ -300,7 +300,7 @@ def buildScanNetwork(company: Company, view: str | None = None, *, hops: int = 1
         - polars — DataFrame.
         - dartlab.scan.network — 그래프 prebuild (lazy import).
         - dartlab.core.htmlRenderer — HTML 시각화 (view=None 시).
-        - dartlab.core.memory._CACHE_MISSING — cache sentinel.
+        - dartlab.core.memory.BoundedCache — company-local bounded cache.
 
     AIContext:
         Workbench "삼성그룹/LG그룹 어떤 회사 있냐" / "순환출자 있냐" 질문 entry. view=None 은

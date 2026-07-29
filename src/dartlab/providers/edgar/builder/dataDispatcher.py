@@ -19,7 +19,7 @@ from typing import TYPE_CHECKING, Any
 
 import polars as pl
 
-from dartlab.core.memory import _CACHE_MISSING
+from dartlab.core.memory import lookupCache
 from dartlab.core.polarsUtil import isEmptyDf
 
 if TYPE_CHECKING:
@@ -100,16 +100,16 @@ def buildFinanceSeries(company: Company, *, freq: str = "Q", scope: str = "conso
     # atomic lazy build (cache.get + 로컬 var) — set 직후 EMERGENCY clear 가 evict 해도
     # 로컬 var 는 영향 없음. R9 audit 의 race window fix.
     if freq == "Q":
-        val = company._cache.get("_ts", _CACHE_MISSING)
-        if val is _CACHE_MISSING:
+        cacheHit, val = lookupCache(company._cache, "_ts")
+        if not cacheHit:
             from dartlab.providers.edgar.finance.pivot import buildTimeseries
 
             val = buildTimeseries(company.cik)
             company._cache["_ts"] = val
         return val
     # Y / YTD → annual
-    val = company._cache.get("_annual", _CACHE_MISSING)
-    if val is _CACHE_MISSING:
+    cacheHit, val = lookupCache(company._cache, "_annual")
+    if not cacheHit:
         from dartlab.providers.edgar.finance.pivot import buildAnnual
 
         val = buildAnnual(company.cik)

@@ -187,12 +187,15 @@ class Company:
             self.
 
         Raises:
-            없음.
+            RuntimeError: 같은 Company context에 중첩 진입할 때.
         """
-        from dartlab.core.memory import OomTripwire
+        from dartlab.core.memory import MemoryScope
 
-        self._oomTripwire = OomTripwire()
-        self._oomTripwire.start()
+        scope = getattr(self, "_memoryScope", None)
+        if scope is None:
+            scope = MemoryScope()
+            self._memoryScope = scope
+        scope.enter()
         return self
 
     def __exit__(self, _excType: object, _excVal: object, _excTb: object) -> None:
@@ -204,18 +207,19 @@ class Company:
             excTb: traceback.
 
         Raises:
-            없음.
+            BaseExceptionGroup: 본문 예외와 정리 실패가 함께 발생했을 때.
+            Exception: tripwire 정지 또는 cache 정리가 실패했을 때.
         """
-        try:
-            tw = getattr(self, "_oomTripwire", None)
-            if tw is not None:
-                tw.stop()
-        except (AttributeError, RuntimeError):
-            pass
-        try:
-            self.cleanupCache()
-        except (AttributeError, KeyError, RuntimeError):
-            pass
+        from dartlab.core.memory import MemoryScope
+
+        scope = getattr(self, "_memoryScope", None)
+        if not isinstance(scope, MemoryScope):
+            raise RuntimeError("Company memory scope가 시작되지 않았습니다")
+        bodyError = _excVal if isinstance(_excVal, BaseException) else None
+        scope.exit(
+            cleanup=self.cleanupCache,
+            bodyError=bodyError,
+        )
 
     def cleanupCache(self) -> int:
         """캐시 evict + cleanupBetweenCompanies.
@@ -231,20 +235,21 @@ class Company:
             0
 
         Raises:
-            없음.
+            Exception: Python GC가 낸 예외를 그대로 전달한다.
 
         Capabilities:
-            - ``self._financeTimeseries`` (dict) 비우기 + Polars 네이티브 힙 cleanup. dart/edgar 와 동일 패턴.
+            - ``self._financeTimeseries`` 참조 해제와 Python 순환 참조 회수. dart/edgar와
+              같은 명시적 회사 수명주기 경계.
 
         Guide:
             - "다음 회사 진입 전 메모리 회수" → 본 함수 또는 ``with Company(c):``.
 
         AIContext:
-            JP 다종목 batch 안 본 함수 의무 호출. Polars Rust heap 누적 회피.
+            JP 다종목 batch 안 본 함수 의무 호출. 다음 회사 전 DataFrame 참조 수명을 끝낸다.
 
         LLM Specifications:
             AntiPatterns:
-                - 호출 없이 다종목 순회 → Rust heap 누적 → OOM.
+                - 호출 없이 다종목 순회 → Company가 보유한 DataFrame 참조 누적.
             OutputSchema:
                 - int — 비운 entry 수 (0 또는 1).
             Prerequisites:
@@ -299,11 +304,11 @@ class Company:
             OutputSchema:
                 - dict {"cacheSize": int, "rssMb": int}.
             Prerequisites:
-                - psutil.
+                - Windows psapi 또는 Linux procfs.
             Freshness:
                 - 호출 시점.
             Dataflow:
-                - psutil RSS + _financeTimeseries 상태 → 본 함수.
+                - OS RSS 관측 + _financeTimeseries 상태 → 본 함수.
             TargetMarkets:
                 - JP (EDINET).
 

@@ -27,6 +27,7 @@ import threading
 import pytest
 
 from dartlab.core import memory
+from dartlab.core.memory import metrics as memoryMetrics
 
 pytestmark = [pytest.mark.unit]
 
@@ -85,8 +86,28 @@ def testForeignArgtypesDoNotBreakUs() -> None:
 def testUnreadableCountersGiveMinusOneNotAnException(monkeypatch: pytest.MonkeyPatch) -> None:
     """관측 실패는 -1.0 이어야 한다. 예외면 부르는 쪽이 같이 죽는다."""
 
-    monkeypatch.setattr(memory, "_windowsCounters", lambda: None)
-    monkeypatch.setattr(memory, "_procStatusKb", lambda field: -1.0)
+    monkeypatch.setattr(memoryMetrics, "_windowsCounters", lambda: None)
+    monkeypatch.setattr(memoryMetrics, "_procStatusKb", lambda field: -1.0)
+
+    assert memory.getMemoryMb() == -1.0
+    assert memory.getPeakRssMb() == -1.0
+
+
+def testCtypesArgumentErrorDoesNotEscapeMemoryObservation(monkeypatch: pytest.MonkeyPatch) -> None:
+    """ctypes signature 오류도 관측 호출자를 죽이지 않고 측정 불가로 표현한다."""
+
+    class _Counters(ctypes.Structure):
+        _fields_ = [
+            ("cb", ctypes.c_uint32),
+            ("WorkingSetSize", ctypes.c_size_t),
+            ("PeakWorkingSetSize", ctypes.c_size_t),
+        ]
+
+    def brokenReader(*_args) -> int:
+        raise ctypes.ArgumentError("foreign signature")
+
+    monkeypatch.setattr(memoryMetrics.sys, "platform", "win32")
+    monkeypatch.setattr(memoryMetrics, "_winMemoryReader", (lambda: None, brokenReader, _Counters))
 
     assert memory.getMemoryMb() == -1.0
     assert memory.getPeakRssMb() == -1.0

@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 
 import polars as pl
 
+from dartlab.core.memory import lookupCache
 from dartlab.core.ratios import calcRatioSeries, toSeriesDict
 from dartlab.providers.dart.checks import _isPeriodColumn
 from dartlab.providers.dart.financeMappers import (
@@ -82,8 +83,9 @@ def sceMatrix(company: Company):
     if not company._hasFinance:
         return None
     cacheKey = "_sceMatrix_CFS"
-    if cacheKey in company._cache:
-        return company._cache[cacheKey]
+    cacheHit, cached = lookupCache(company._cache, cacheKey)
+    if cacheHit:
+        return cached
     from dartlab.providers.dart.finance.pivot import buildSceMatrix
 
     result = buildSceMatrix(company.stockCode)
@@ -141,8 +143,9 @@ def sceSeriesAnnual(company: Company):
     if not company._hasFinance:
         return None
     cacheKey = "_sceAnnual_CFS"
-    if cacheKey in company._cache:
-        return company._cache[cacheKey]
+    cacheHit, cached = lookupCache(company._cache, cacheKey)
+    if cacheHit:
+        return cached
     from dartlab.providers.dart.finance.pivot import buildSceAnnual
 
     result = buildSceAnnual(company.stockCode)
@@ -205,8 +208,9 @@ def sce(company: Company) -> pl.DataFrame | None:
         없음.
     """
     cacheKey = "_sceDataFrame_CFS"
-    if cacheKey in company._cache:
-        return company._cache[cacheKey]
+    cacheHit, cached = lookupCache(company._cache, cacheKey)
+    if cacheHit:
+        return cached
     result = sceSeriesAnnual(company)
     if result is None:
         company._cache[cacheKey] = None
@@ -275,8 +279,9 @@ def financeCisAnnual(company: Company):
     if not company._hasFinance:
         return None
     cacheKey = "_financeCISAnnual_CFS"
-    if cacheKey in company._cache:
-        return company._cache[cacheKey]
+    cacheHit, cached = lookupCache(company._cache, cacheKey)
+    if cacheHit:
+        return cached
     result = _financeCisAnnual(company.stockCode, "CFS")
     company._cache[cacheKey] = result
     return result
@@ -332,8 +337,9 @@ def financeCisQuarterly(company: Company):
     if not company._hasFinance:
         return None
     cacheKey = "_financeCISQuarterly_CFS"
-    if cacheKey in company._cache:
-        return company._cache[cacheKey]
+    cacheHit, cached = lookupCache(company._cache, cacheKey)
+    if cacheHit:
+        return cached
     result = _financeCisQuarterly(company.stockCode, "CFS")
     company._cache[cacheKey] = result
     return result
@@ -462,8 +468,9 @@ def ratioSeries(company: Company):
     if not company._hasFinance:
         return None
     cacheKey = "_ratioSeries_Q_CFS"
-    if cacheKey in company._cache:
-        return company._cache[cacheKey]
+    cacheHit, cached = lookupCache(company._cache, cacheKey)
+    if cacheHit:
+        return cached
     qResult = buildFinanceSeries(company, freq="Q")
     if qResult is None:
         return None
@@ -613,8 +620,9 @@ def financeStmt(company: Company, sjDiv: str, *, freq: str = "Q", scope: str = "
         없음.
     """
     cacheKey = f"_financeStmt_{sjDiv}_{freq}_{scope}"
-    if cacheKey in company._cache:
-        return company._cache[cacheKey]
+    cacheHit, cached = lookupCache(company._cache, cacheKey)
+    if cacheHit:
+        return cached
     qResult = buildFinanceSeries(company, freq=freq, scope=scope)
     if qResult is None:
         return None

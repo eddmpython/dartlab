@@ -35,12 +35,12 @@ L4 소비자, ai, mcp. 아래층 결함이 위층 전부를 오염시키므로 �
 ### 세션 인계
 
 - 현재 계층: L0 core
-- 마지막 완료 항목: L0-15 추출 카탈로그 계약·SSOT·분할 부족 안정화
-- 진행 중인 단일 항목: L0-16 `core/memory.py` 862 LoC 분할 부족
-- 다음 첫 행동: `memory.py`의 공개 타입·함수, 실제 생산 호출자, 캐시 수명주기,
-  eviction·pinning·동시성·메모리 상한을 전수 census한다. 제품 행동과 시간·메모리
-  baseline을 먼저 재현하고 owner와 최소 분할 경계를 확정하기 전에는 코드를 자르지
-  않는다. `ratios.py`, `schemas.py`나 L1 이상은 건드리지 않는다.
+- 마지막 완료 항목: L0-16 메모리 cache·IPC·memoization·OOM 수명주기 안정화
+- 진행 중인 단일 항목: L0-17 `core/ratios.py` 1,900 LoC 분할 부족과 잔여 공식 계약
+- 다음 첫 행동: `ratios.py`의 공개 함수, DART·EDGAR·panel·analysis 직접 호출자,
+  시점값과 시계열 공식의 중복·불일치, 결측·통화·기간 계약을 전수 census한다.
+  현재 제품값과 시간·메모리 baseline을 먼저 고정하고 공식 owner와 최소 분할 경계를
+  확정하기 전에는 수정하지 않는다. `schemas.py`나 L1 이상은 건드리지 않는다.
 - 금지: L0 완료 판정 전 L1 이상 감사나 수정 착수
 
 ## L0 순차 안정화 원장 (2026-07-29)
@@ -859,6 +859,82 @@ owner를 분리했다. 이 판정은 DART viewer와 공용 표 변환 경계만 
    상향 수정하지 않았다. 전역 folderSize에는 `memory.py` 862 LoC, `ratios.py`
    1,900 LoC, `schemas.py` 848 LoC 세 under-split이 남는다. 다음 단일 항목은 출력
    순서의 첫 항목인 `memory.py`다. 따라서 L0-15만 완료이고 **L0 전체는 미달**이다.
+
+### L0-16 메모리 cache·IPC·memoization·OOM 수명주기 안정화
+
+**상태: 완료.** 옛 862 LoC 단일 파일의 공개 import 호환성은 유지하면서 cache,
+OS RSS 관측, 계산 memoization, OOM guard를 최소 책임 경계로 분리하고 실제 호출자의
+원자성·상한·오류 전파 계약을 닫았다.
+
+1. **범위와 실제 호출자.** 옛 `core/memory.py`는 OS RSS 측정, `BoundedCache`,
+   `memoizedCalc`, 함수 예산, background OOM 감시와 죽은 profiling API를 한 파일에
+   섞었다. 생산 import census는 87파일 99곳, `memoizedCalc` 소비 61파일과 실제
+   decorator 144개, 직접 `BoundedCache` 생성 8곳, DART·EDGAR·EDINET Company context
+   3곳이다. 직접 생성자는 core TTL cache, DART·EDGAR Company, DART Notes·Report,
+   event study, news sentiment, server price event이며 모든 생성자와 2단계 조회 호출자를
+   추적했다. 전문 검토는 실제 특수 signature와 Company 재진입까지 독립 재현했다.
+2. **제품·안전 결함 재현.** `memoizedCalc`가 추가 위치 인자를 거부해
+   `_latestAnnualVal(company, stmt, accountName)`와
+   `calcBreakdown(company, sub, basePeriod=...)`가 `TypeError`였고, 서로 다른 module의
+   동명 `calcMacroSensitivity`가 같은 key를 썼다. cache 조회가 `in` 뒤 item을 읽어
+   eviction race가 있었고, 기존 key 갱신은 pressure를 검사하지 않았다. `pressureMb`를
+   무시하고 작은 max를 pressure에서 키웠으며 pinning은 resident 상한을 깨뜨렸다.
+   emergency 직후 `clear`하면 1초 cooldown 동안 max가 30으로 복구되어 지속 3,000MB
+   표본에서 resident 20개가 다시 쌓였다. IPC는 disk 값을 읽지 않거나 pop·clear 뒤
+   부활했고, DataFrame을 일반 값으로 바꿔도 stale 파일이 남았으며 정규화 path 충돌과
+   zstd의 가짜 mmap이 있었다. cache 생성만으로 임시 폴더를 만들던 결과 이 환경에는
+   과거 `dartlab-cache-*` 폴더 10,156개가 남아 있었다. OomTripwire join timeout은
+   살아 있는 thread 참조를 잃었고 sampler·exiter 실패와 Company cleanup 실패를
+   삼켰다. 같은 Company 중첩 진입은 첫 watcher를 덮어써 영구 daemon thread를 남겼다.
+3. **owner와 SSOT.** `memory/cache.py`는 generic `CachePolicy`, bounded LRU, exact-key
+   IPC와 atomic lookup/build를, `metrics.py`는 Windows psapi와 Linux procfs RSS를,
+   `memoization.py`는 signature·owner·semantic key를, `guards.py`는 retained RSS
+   budget, OomTripwire, `MemoryScope`와 종료 오류 보존을 소유한다. `memory/__init__.py`는
+   기존 공개 경로의 facade다. core의 EDGAR 전용 상수는 최종 제거했고 EDGAR Company만
+   generic policy에 정확한 `_sections` key를 주입한다. DART와 일반 cache는 빈 정책이다.
+4. **수정과 테스트.** `BoundedCache.lookup`과 `lookupCache`로 저장된 `None`과 miss를
+   한 번의 조회로 구분하고, accessor 생성과 memoized 계산은 key별 `getOrCreate`
+   single-flight를 쓴다. pressure는 insert·update·IPC reload 모두에서 주입 임계와
+   절대 fatal/emergency tier를 적용하고 max를 절대 늘리지 않는다. cooldown은 GC만
+   제한하며 축소 max와 eviction은 항상 적용한다. IPC 폴더는 최초 exact-key DataFrame
+   때만 만들고 digest filename, uncompressed Arrow, staging 뒤 atomic replace,
+   mmap reload, pop·clear·타입 변경 무효화를 사용한다. `memoizedCalc`는 임의 signature,
+   truthy overrides 우회, owner namespace와 의미 인자 digest를 보존한다. `MemoryScope`는
+   Company별 watcher 하나를 소유해 중첩 진입을 fail-fast하고 정상 종료 뒤 순차 재사용,
+   종료 실패 뒤 active 유지와 재시도를 강제한다. 본문·tripwire·cleanup 예외는 단일
+   예외 또는 `BaseExceptionGroup`으로 모두 보존한다. 죽은 `profileCall`,
+   `memoryGuard`와 그 전용 property test를 제거하고 protocol·README·logger의 거짓
+   silent/native-heap 계약을 현재 행동으로 맞췄다.
+5. **공개 행동, 정확성, 속도, 메모리.** 실제 특수 decorator 둘과 동명 함수 둘은
+   올바른 값과 분리 key를 내며, `None` cache, dict 주입, IPC write/reload/pop/clear,
+   손상 fallback, path 충돌, Company 중첩·순차·종료 실패 행동을 회귀로 고정했다.
+   지속 3,000MB 표본에서 emergency clear 직후에도 `_max=3`, resident 3 이하이다.
+   같은 process의 옛 구현 대비 median은 `get 0.60066 -> 0.59275 µs`,
+   item `0.61143 -> 0.50805 µs`, 10만 set `383.910 -> 267.775 ms`,
+   IPC write `83.243 -> 52.140 ms`, IPC read
+   `592.795 -> 26.262 ms`로 read가 약 22.6배 빨라졌다. lazy constructor 별도 실측은
+   `649.622 -> 5.434 µs/instance`로 약 119.5배 줄었다. 대신 50만 행 임시 IPC는
+   `1,091,940 -> 8,001,428 B`로 약 7.33배 커졌다. 이 파일은 EDGAR Company의 exact
+   `_sections` 한 세대만 소유하며 speed와 임시 저장공간의 명시적 tradeoff다.
+6. **Guard와 회귀.** 최종 집중 회귀는 `64 passed, 1 skipped, 3 deselected`이고,
+   직접 변경 호출자 묶음은 DART 112, EDGAR·EDINET 26, 분석·소비자 49,
+   cache·context 24로 `211 passed, 1 skipped`다. 변경 테스트와 memory package
+   Pyright 0 errors, Ruff, compileall, Vulture, diff whitespace가 통과했고 Radon
+   평균은 A(3.32), C 이상 block은 0이다. 정확 coverage gate는 공개 함수·method
+   19개 중 누락 0, `checkSilentFail` 위반 0, `coreBoundary --strict` 위반 0이다.
+   core folderSize는 over-split 0이며 기존 under-split은 `ratios.py`,
+   `schemas.py` 두 건만 남는다. 전문 최종 검토는 차단 결함 0과 wheel의 memory
+   5모듈 포함을 확인했다. 동결된 최종 diff 뒤 공식 Guard
+   `strict --scope l0-l15 --providers dart,edgar`는 1,770파일, 7/7 규칙과 cycle,
+   architecture, folder mirror, gather, provider, public API 여섯 외부 gate를 모두
+   통과했다. 알려진 부채 47건은 active 9, protected Company 38로 원장과 일치한다.
+7. **남은 부채와 판정.** Windows에서 외부가 기존 mmap DataFrame을 보유한 채 같은
+   IPC를 덮어쓰면 `os.replace`가 실패할 수 있으며 이때 warning 뒤 정확한 heap 값으로
+   fallback해 그 세대의 disk 성능 이점만 잃는다. macOS RSS는 현재 지원하지 않아
+   `-1.0`으로 측정 불가를 명시하며 release platform CI 증빙으로 남긴다. 과거 버전이
+   만든 10,156개 임시 폴더는 소유권을 추측해 삭제하지 않았고 새 구현은 생성과 회수를
+   정확히 제한한다. 다음 단일 항목은 `ratios.py` 1,900 LoC이고 그 뒤가
+   `schemas.py` 848 LoC다. 따라서 L0-16만 완료이며 **L0 전체는 미달**이다.
 
 ## 정량 판정 (2026-07-27 실측)
 

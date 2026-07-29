@@ -20,6 +20,7 @@ from typing import TYPE_CHECKING, Any
 import polars as pl
 
 from dartlab.core.dataLoader import DART_VIEWER
+from dartlab.core.memory import lookupCache
 from dartlab.core.polarsUtil import isEmptyDf
 from dartlab.providers._common.filingHelpers import (
     filingRecord,
@@ -391,8 +392,9 @@ def buildLiveFilings(
 
     startDate, endDate = resolveDateWindow(start, end, days=days)
     cacheKey = f"liveFilings:{startDate}:{endDate}:{limit}:{keyword}:{finalOnly}"
-    if cacheKey in company._cache:
-        return company._cache[cacheKey]
+    cacheHit, cached = lookupCache(company._cache, cacheKey)
+    if cacheHit:
+        return cached
 
     from dartlab.core.dartClient import openDart
     from dartlab.core.messaging import progress

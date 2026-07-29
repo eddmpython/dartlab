@@ -80,8 +80,9 @@ def priceShockNews(
     """
     asOfDate = _toDate(asOf)
     cacheKey = f"_price_shock_{market}_{stockCode}_{asOfDate.isoformat()}_{periodDays}_{thresholdSigma}_{computeImpact}"
-    if cacheKey in _CACHE:
-        return _CACHE[cacheKey]
+    cacheHit, cached = _CACHE.lookup(cacheKey)
+    if cacheHit:
+        return cached
 
     if ohlcvFetcher is None:
         from dartlab.synth.marketDataAccess import fetchOhlcv as _default_o

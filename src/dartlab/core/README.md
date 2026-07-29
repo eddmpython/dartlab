@@ -10,8 +10,8 @@
 | 모듈 | 역할 |
 |------|------|
 | `core/logger.py` | 중앙 로거 + Rich handler + `logEvent` 구조화 이벤트 (T1-1) |
-| `core/memory.py` | RSS budget + `profileCall` decorator + OomTripwire (T3-4) |
-| `core/cache.py` | `BoundedCache` LRU + 디스크 캐시 |
+| `core/memory/` | RSS 관측 + provider 주입형 bounded LRU/IPC 정책 + 계산 memoization + OomTripwire |
+| `core/cache.py` | gather 시계열용 TTL cache |
 | `core/decimal.py` | 회계 정합 Decimal 헬퍼 (toDecimal / roundDecimal / isClose / safeDivide) (T7-4) |
 | `core/dataAudit.py` | sync/prebuild data lineage 추적 (T7-2) |
 | `core/secrets.py` | SecretStore Protocol + EnvSecretStore backend (T2-3) |

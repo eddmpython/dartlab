@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 import polars as pl
 
-from dartlab.core.memory import _CACHE_MISSING
+from dartlab.core.memory import lookupCache
 from dartlab.core.polarsUtil import isEmptyDf
 
 if TYPE_CHECKING:
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 class _DocsAccessor:
     """EDGAR docs namespace. sections 수평화가 유일한 기초 경로.
 
-    lazy-build 는 atomic 패턴 — ``cache.get(key, _CACHE_MISSING)`` 로 한 번만 cache 접
+    lazy-build 는 atomic 패턴 — ``lookupCache(cache, key)`` 로 한 번만 cache 접
     근, 결과는 로컬 var 에 저장. ``cache[key] = val`` 직후 BoundedCache 의 FATAL/
     EMERGENCY clear 가 발동해 evict 되어도 ``return val`` 은 영향 없음. R9 인텔 audit
     의 ``KeyError: '_docs_sections'`` 결함 (2026-04-27) 의 근본 fix.
@@ -72,8 +72,8 @@ class _DocsAccessor:
                 - US (SEC EDGAR) 한정.
         """
         key = "_docs_sections"
-        val = self._company._cache.get(key, _CACHE_MISSING)
-        if val is _CACHE_MISSING:
+        cacheHit, val = lookupCache(self._company._cache, key)
+        if not cacheHit:
             from dartlab.providers.edgar.docs.sections.pipeline import sections
 
             val = sections(self._company.ticker)
@@ -127,8 +127,8 @@ class _DocsAccessor:
                 - US (SEC EDGAR) 한정.
         """
         key = "_docs_retrievalBlocks"
-        val = self._company._cache.get(key, _CACHE_MISSING)
-        if val is _CACHE_MISSING:
+        cacheHit, val = lookupCache(self._company._cache, key)
+        if not cacheHit:
             from dartlab.providers.edgar.docs.sections.views import retrievalBlocks
 
             val = retrievalBlocks(self._company.ticker)
@@ -182,8 +182,8 @@ class _DocsAccessor:
                 - US (SEC EDGAR) 한정.
         """
         key = "_docs_contextSlices"
-        val = self._company._cache.get(key, _CACHE_MISSING)
-        if val is _CACHE_MISSING:
+        cacheHit, val = lookupCache(self._company._cache, key)
+        if not cacheHit:
             from dartlab.providers.edgar.docs.sections.views import contextSlices
 
             val = contextSlices(self._company.ticker)
@@ -391,8 +391,8 @@ class _DocsAccessor:
                 - US (SEC EDGAR) 한정.
         """
         key = "_docs_freq"
-        val = self._company._cache.get(key, _CACHE_MISSING)
-        if val is _CACHE_MISSING:
+        cacheHit, val = lookupCache(self._company._cache, key)
+        if not cacheHit:
             from dartlab.providers.edgar.docs.sections.views import freq
 
             val = freq(self._company.ticker)
@@ -445,8 +445,8 @@ class _DocsAccessor:
                 - US (SEC EDGAR) 한정.
         """
         key = "_docs_coverage"
-        val = self._company._cache.get(key, _CACHE_MISSING)
-        if val is _CACHE_MISSING:
+        cacheHit, val = lookupCache(self._company._cache, key)
+        if not cacheHit:
             from dartlab.providers.edgar.docs.sections.views import coverage
 
             val = coverage(self._company.ticker)
@@ -499,8 +499,9 @@ class _DocsAccessor:
                 - US (SEC EDGAR) 한정.
         """
         key = "_docs_filings"
-        if key in self._company._cache:
-            return self._company._cache[key]
+        cacheHit, cached = lookupCache(self._company._cache, key)
+        if cacheHit:
+            return cached
 
         from dartlab.core.dataLoader import loadData
 

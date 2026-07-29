@@ -95,15 +95,21 @@ def calcScorecard(company, *, basePeriod: str | None = None) -> dict | None:
     # insights — analyze() 직접 호출 (c.insights 는 P3 에서 제거됨)
     insights = None
     cacheKey = "_insights_analyze"
-    if hasattr(company, "_cache") and cacheKey in company._cache:
-        insights = company._cache[cacheKey]
-    else:
+    cache = getattr(company, "_cache", None)
+    cacheHit = False
+    if cache is not None:
+        lookup = getattr(cache, "lookup", None)
+        if callable(lookup):
+            cacheHit, insights = lookup(cacheKey)
+        elif cacheKey in cache:
+            cacheHit, insights = True, cache[cacheKey]
+    if not cacheHit:
         try:
             from dartlab.analysis.financial.insight.pipeline import analyzeFinancial
 
             insights = analyzeFinancial(company.stockCode, company=company)
-            if hasattr(company, "_cache"):
-                company._cache[cacheKey] = insights
+            if cache is not None:
+                cache[cacheKey] = insights
         except (ImportError, ValueError, KeyError, AttributeError, TypeError, RuntimeError, OSError):
             insights = None
 

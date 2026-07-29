@@ -288,7 +288,8 @@ def logEvent(level: int | str, event: str, /, **fields: object) -> None:
         logger.info(...) 호출은 점진 마이그레이션 (T1-1 트랙, 50+ call site).
     SeeAlso:
         getLogger: 표준 logging.Logger 반환.
-        profileCall (T3-4 후속): 메모리/시간 자동 wrap.
+        withMemoryBudget: 함수 반환 시점 RSS delta 검증.
+        OomTripwire: 절대 RSS background 감시.
     Requires:
         없음. logging 표준 모듈만.
     Raises:

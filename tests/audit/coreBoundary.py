@@ -64,6 +64,7 @@ _ALLOWED_DIRS: frozenset[str] = frozenset(
         "extractionCatalog",  # DART·EDGAR 공용 추출 concept manifest와 immutable 조회
         "indicators",  # gather/synth 공용 vectorized primitive
         "mappers",  # SSOT mapper
+        "memory",  # RSS 관측·bounded cache·OOM guard
         "naming",  # SSOT naming
         "providers",  # credential/secret 공용 보안 primitive
         "render",  # render protocol

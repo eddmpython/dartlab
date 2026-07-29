@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any
 import polars as pl
 
 from dartlab.core.logger import getLogger
-from dartlab.core.memory import _CACHE_MISSING
+from dartlab.core.memory import lookupCache
 from dartlab.core.ratios import calcRatios, calcRatioSeries, toSeriesDict
 
 _log = getLogger(__name__)
@@ -40,8 +40,9 @@ class _FinanceAccessor:
             >>> c._finance._stmtDf("BS")
         """
         cacheKey = f"_finance_{stmtKey}_{freq}"
-        if cacheKey in self._company._cache:
-            return self._company._cache[cacheKey]
+        cacheHit, cached = lookupCache(self._company._cache, cacheKey)
+        if cacheHit:
+            return cached
 
         if sys.platform == "emscripten":
             result = self._stmtDfFromPublishedArtifact(stmtKey, freq=freq)
@@ -304,8 +305,8 @@ class _FinanceAccessor:
         AIContext:
             internal accessor — AI 가 직접 호출 X.
         """
-        val = self._company._cache.get("_ratios", _CACHE_MISSING)
-        if val is _CACHE_MISSING:
+        cacheHit, val = lookupCache(self._company._cache, "_ratios")
+        if not cacheHit:
             annual = self._company._buildFinanceSeries(freq="Y")
             if annual is None:
                 val = None
@@ -347,8 +348,9 @@ class _FinanceAccessor:
             internal accessor — AI 가 직접 호출 X.
         """
         cacheKey = "_ratioSeries"
-        if cacheKey in self._company._cache:
-            return self._company._cache[cacheKey]
+        cacheHit, cached = lookupCache(self._company._cache, cacheKey)
+        if cacheHit:
+            return cached
         annual = self._company._buildFinanceSeries(freq="Y")
         if annual is None:
             return None
@@ -405,8 +407,9 @@ class _FinanceAccessor:
                 - US (SEC EDGAR XBRL) 한정.
         """
         cacheKey = "_finance_SCE"
-        if cacheKey in self._company._cache:
-            return self._company._cache[cacheKey]
+        cacheHit, cached = lookupCache(self._company._cache, cacheKey)
+        if cacheHit:
+            return cached
         from dartlab.providers.edgar.finance.pivot import buildSce
 
         result = buildSce(self._company.cik)
