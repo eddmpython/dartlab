@@ -101,7 +101,7 @@ def loadNewsArchive(
         date desc + url 정렬. 빈 결과도 동일 schema.
 
     Raises:
-        없음 — 미존재 일자/소스는 silent skip.
+        SourceUnavailableError: 로컬 archive 손상 또는 public HF 로드 실패.
 
     Example::
 

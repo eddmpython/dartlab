@@ -13,6 +13,7 @@ import polars as pl
 import pytest
 
 from dartlab.gather.sources import gdelt
+from dartlab.gather.types import SourceUnavailableError
 
 pytestmark = pytest.mark.unit
 
@@ -264,6 +265,62 @@ def test_fetch_gdelt_404_returns_empty(monkeypatch: pytest.MonkeyPatch) -> None:
     assert "description" in df.columns  # canonical 17컬럼 통일
 
 
+def test_fetch_gdelt_transport_failure_raises(monkeypatch: pytest.MonkeyPatch) -> None:
+    """슬롯 공급 장애는 정상 0행으로 위장하지 않는다."""
+    import httpx as _httpx
+
+    upstream = OSError("network down")
+
+    class FakeClient:
+        def __init__(self, **kw):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+        def get(self, url):
+            raise upstream
+
+    monkeypatch.setattr(_httpx, "Client", FakeClient)
+
+    with pytest.raises(SourceUnavailableError, match="GDELT GKG") as excInfo:
+        gdelt.fetchGdeltGkg(datetime(2026, 5, 27, 12, 0, tzinfo=timezone.utc))
+    assert excInfo.value.__cause__ is upstream
+
+
+def test_fetch_gdelt_corrupt_zip_raises(monkeypatch: pytest.MonkeyPatch) -> None:
+    """깨진 ZIP은 빈 슬롯이 아니라 artifact 오류다."""
+    import httpx as _httpx
+
+    class FakeResp:
+        status_code = 200
+        content = b"not zip"
+
+        def raise_for_status(self):
+            pass
+
+    class FakeClient:
+        def __init__(self, **kw):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+        def get(self, url):
+            return FakeResp()
+
+    monkeypatch.setattr(_httpx, "Client", FakeClient)
+
+    with pytest.raises(SourceUnavailableError, match="ZIP"):
+        gdelt.fetchGdeltGkg(datetime(2026, 5, 27, 12, 0, tzinfo=timezone.utc))
+
+
 # ── GDELT DOC 2.0 (질의 기반 뉴스) — sync 별도빌드에서 gather 로 환원 ────────────────
 
 
@@ -313,3 +370,29 @@ def test_fetch_gdelt_doc_parses_articles(monkeypatch: pytest.MonkeyPatch) -> Non
     assert row["market"] == "KR"
     assert row["query"] == "삼성전자"
     assert row["description"] == ""  # DOC 트랙은 스니펫 없음
+
+
+def test_fetch_gdelt_doc_failure_raises(monkeypatch: pytest.MonkeyPatch) -> None:
+    """DOC 질의 장애는 회사별 정상 무결과로 강등하지 않는다."""
+    import httpx as _httpx
+
+    class _Resp:
+        status_code = 503
+
+    class _Client:
+        def __init__(self, *a, **k): ...
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+        def get(self, *a, **k):
+            return _Resp()
+
+    monkeypatch.setattr(_httpx, "Client", _Client)
+    monkeypatch.setattr(gdelt.time, "sleep", lambda *_a, **_k: None)
+
+    with pytest.raises(SourceUnavailableError, match="status=503"):
+        gdelt.fetchGdeltDoc({"삼성전자": "005930"}, years=1)

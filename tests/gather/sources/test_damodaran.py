@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 
 from dartlab.gather.sources import damodaran
+from dartlab.gather.types import SourceUnavailableError
 
 pytestmark = pytest.mark.unit
 
@@ -45,6 +46,19 @@ def test_fetch_country_erp_delegates_and_structures(monkeypatch: pytest.MonkeyPa
     assert out["countries"]["Korea"]["rawNumbers"] == [0.60, 5.20]
 
 
-def test_fetch_country_erp_none_on_fetch_failure(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(damodaran, "_fetchHtml", lambda *a, **k: None)
-    assert damodaran.getDamodaranCountryErp() is None
+def test_fetch_country_erp_propagates_fetch_failure(monkeypatch: pytest.MonkeyPatch) -> None:
+    upstream = OSError("network down")
+
+    def failFetch(*_args, **_kwargs):
+        raise SourceUnavailableError("fetch failed") from upstream
+
+    monkeypatch.setattr(damodaran, "_fetchHtml", failFetch)
+    with pytest.raises(SourceUnavailableError, match="fetch failed") as excInfo:
+        damodaran.getDamodaranCountryErp()
+    assert excInfo.value.__cause__ is upstream
+
+
+def test_fetch_country_erp_rejects_changed_page_schema(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(damodaran, "_fetchHtml", lambda *a, **k: "<html>changed</html>")
+    with pytest.raises(SourceUnavailableError, match="schema"):
+        damodaran.getDamodaranCountryErp()

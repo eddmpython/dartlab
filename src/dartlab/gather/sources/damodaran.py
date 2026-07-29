@@ -12,13 +12,15 @@ import logging
 import re
 import urllib.request
 
+from ..types import SourceUnavailableError
+
 log = logging.getLogger(__name__)
 
 DAMODARAN_ERP_URL = "https://pages.stern.nyu.edu/~adamodar/New_Home_Page/datafile/ctryprem.html"
 
 
-def _fetchHtml(timeout: float = 30.0) -> str | None:
-    """Damodaran ctryprem.html 원문 다운로드 (인코딩 자동 감지). 실패 시 None."""
+def _fetchHtml(timeout: float = 30.0) -> str:
+    """Damodaran ctryprem.html 원문 다운로드 (인코딩 자동 감지)."""
     try:
         req = urllib.request.Request(DAMODARAN_ERP_URL, headers={"User-Agent": "dartlab/1.0 (research)"})
         with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310 — 고정 https 도메인
@@ -30,8 +32,7 @@ def _fetchHtml(timeout: float = 30.0) -> str | None:
                     continue
             return raw.decode("utf-8", errors="replace")
     except (OSError, ValueError) as exc:
-        log.warning("Damodaran ERP fetch 실패: %s", exc)
-        return None
+        raise SourceUnavailableError("Damodaran ERP 원문을 가져올 수 없습니다") from exc
 
 
 def _extractMatureMarketERP(html: str) -> float | None:
@@ -75,7 +76,7 @@ def _extractCountries(html: str) -> dict[str, dict]:
     return out
 
 
-def getDamodaranCountryErp(*, timeout: float = 30.0) -> dict | None:
+def getDamodaranCountryErp(*, timeout: float = 30.0) -> dict:
     """Damodaran ctryprem.html → 구조화 국가 ERP dict. 외부 fetch=gather SSOT.
 
     Capabilities: Damodaran 국가 ERP 페이지 다운로드 + mature market ERP·국가별 raw 숫자 파싱 → dict.
@@ -88,11 +89,10 @@ def getDamodaranCountryErp(*, timeout: float = 30.0) -> dict | None:
         timeout: HTTP 타임아웃(초).
 
     Returns:
-        ``{"matureMarketERP": float | None, "countries": {name: {"rawNumbers": [float]}}}`` —
-        fetch/디코드 실패 시 None. matureMarketERP 미발견 시 None(호출자가 fallback).
+        ``{"matureMarketERP": float, "countries": {name: {"rawNumbers": [float]}}}``.
 
     Raises:
-        없음 — 네트워크/디코드 실패는 None 으로 흡수.
+        SourceUnavailableError: 네트워크, 디코드 또는 페이지 schema 실패.
 
     Example:
         >>> out = getDamodaranCountryErp()  # doctest: +SKIP
@@ -107,9 +107,11 @@ def getDamodaranCountryErp(*, timeout: float = 30.0) -> dict | None:
         .github/scripts/sync/updateDamodaranERP : 본 fetch 를 위임 호출하는 sink.
     """
     html = _fetchHtml(timeout=timeout)
-    if not html:
-        return None
+    matureMarketErp = _extractMatureMarketERP(html)
+    countries = _extractCountries(html)
+    if matureMarketErp is None or not countries:
+        raise SourceUnavailableError("Damodaran ERP 페이지 schema를 해석할 수 없습니다")
     return {
-        "matureMarketERP": _extractMatureMarketERP(html),
-        "countries": _extractCountries(html),
+        "matureMarketERP": matureMarketErp,
+        "countries": countries,
     }

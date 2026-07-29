@@ -24,6 +24,7 @@ from urllib.parse import urlparse
 
 import polars as pl
 
+from ..types import SourceUnavailableError
 from .newsSchema import NEWS_ARCHIVE_SCHEMA
 
 log = logging.getLogger(__name__)
@@ -224,7 +225,7 @@ def fetchGdeltGkg(
         title·description 은 None (GKG 미보유).
 
     Raises:
-        없음 — HTTP/parse 실패 시 빈 DataFrame.
+        SourceUnavailableError: HTTP, ZIP 또는 CSV 파싱 실패.
 
     Example::
 
@@ -256,19 +257,19 @@ def fetchGdeltGkg(
             resp.raise_for_status()
             data = resp.content
     except Exception as exc:
-        log.warning("GDELT 다운로드 실패 %s: %s", tsStr, exc)
-        return pl.DataFrame(schema=NEWS_ARCHIVE_SCHEMA)
+        raise SourceUnavailableError(f"GDELT GKG 슬롯을 가져올 수 없습니다: {tsStr}") from exc
 
     # unzip in-memory
     try:
         with zipfile.ZipFile(io.BytesIO(data)) as zf:
             names = zf.namelist()
             if not names:
-                return pl.DataFrame(schema=NEWS_ARCHIVE_SCHEMA)
+                raise SourceUnavailableError(f"GDELT GKG ZIP이 비어 있습니다: {tsStr}")
             csvBytes = zf.read(names[0])
+    except SourceUnavailableError:
+        raise
     except (zipfile.BadZipFile, OSError) as exc:
-        log.warning("GDELT zip 파싱 실패 %s: %s", tsStr, exc)
-        return pl.DataFrame(schema=NEWS_ARCHIVE_SCHEMA)
+        raise SourceUnavailableError(f"GDELT GKG ZIP을 해석할 수 없습니다: {tsStr}") from exc
 
     # parse CSV — tab-separated, no header
     try:
@@ -282,8 +283,7 @@ def fetchGdeltGkg(
             schema_overrides={c: pl.Utf8 for c in _GKG_COLUMNS},
         )
     except Exception as exc:
-        log.warning("GDELT CSV 파싱 실패 %s: %s", tsStr, exc)
-        return pl.DataFrame(schema=NEWS_ARCHIVE_SCHEMA)
+        raise SourceUnavailableError(f"GDELT GKG CSV를 해석할 수 없습니다: {tsStr}") from exc
 
     if rawDf.is_empty():
         return pl.DataFrame(schema=NEWS_ARCHIVE_SCHEMA)
@@ -411,7 +411,7 @@ def _docDomain(url: str) -> str:
 
 
 def _docFetchOne(client, name: str, year: int) -> list[dict]:
-    """회사명×연도 1 질의 → article dict 리스트 (실패·빈 결과는 []). 방어적 파싱."""
+    """회사명×연도 1 질의 → article dict 리스트. 정상 무결과는 빈 목록."""
     start, end = _docYearWindow(year)
     params = {
         "query": f'"{name}" sourcecountry:southkorea',
@@ -425,15 +425,25 @@ def _docFetchOne(client, name: str, year: int) -> list[dict]:
     try:
         resp = client.get(_DOC_URL, params=params)
         if resp.status_code != 200:
-            return []
+            raise SourceUnavailableError(
+                f"GDELT DOC 응답 상태가 올바르지 않습니다: name={name}, year={year}, status={resp.status_code}"
+            )
         try:
             payload = resp.json()  # 결과 0 일 때 빈 본문/비-JSON 가능 → 방어
-        except Exception:  # noqa: BLE001
-            return []
+        except Exception as exc:  # noqa: BLE001
+            raise SourceUnavailableError(f"GDELT DOC JSON을 해석할 수 없습니다: name={name}, year={year}") from exc
+    except SourceUnavailableError:
+        raise
     except Exception as exc:  # noqa: BLE001 — 네트워크/타임아웃은 그 질의만 skip
-        log.debug("GDELT DOC 질의 실패 %s/%d: %s", name, year, exc)
+        raise SourceUnavailableError(f"GDELT DOC 질의에 실패했습니다: name={name}, year={year}") from exc
+    if not isinstance(payload, dict):
+        raise SourceUnavailableError(f"GDELT DOC 응답 schema가 객체가 아닙니다: name={name}, year={year}")
+    articles = payload.get("articles")
+    if articles is None:
         return []
-    return payload.get("articles") or []
+    if not isinstance(articles, list):
+        raise SourceUnavailableError(f"GDELT DOC articles가 배열이 아닙니다: name={name}, year={year}")
+    return articles
 
 
 def fetchGdeltDoc(
@@ -468,7 +478,7 @@ def fetchGdeltDoc(
         pl.DataFrame — gdelt 트랙 뉴스(빈 결과면 빈 df, ``__code`` 컬럼 포함). url 기준 중복 제거.
 
     Raises:
-        없음 — 질의별 네트워크/파싱 실패는 그 질의만 skip(빈 결과 흡수).
+        SourceUnavailableError: 질의별 네트워크, 응답 상태 또는 JSON schema 실패.
 
     Example:
         >>> import polars as pl

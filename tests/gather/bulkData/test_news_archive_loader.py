@@ -15,6 +15,7 @@ from dartlab.gather.bulkData import newsHeadlines
 from dartlab.gather.sources import newsIo
 from dartlab.gather.sources.newsSchema import NEWS_ARCHIVE_SCHEMA
 from dartlab.gather.sources.newsSources import getNewsSource
+from dartlab.gather.types import SourceUnavailableError
 
 pytestmark = pytest.mark.unit
 
@@ -207,3 +208,15 @@ def test_loader_includes_naver_and_sources_filter(isolatedArchive: Path) -> None
     # sources=["rss"] — naver 제외
     rssOnly = newsHeadlines.loadNewsArchive("2026-05-01", "2026-05-01", "KR", sources=["rss"])
     assert rssOnly["url"].to_list() == ["u-rss"]
+
+
+def test_loader_propagates_source_failure(isolatedArchive: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """기간 로더도 소스 장애를 빈 archive로 바꾸지 않는다."""
+
+    def failLoad(*_args, **_kwargs):
+        raise SourceUnavailableError("rss failed")
+
+    monkeypatch.setattr(newsHeadlines, "loadSourceDay", failLoad)
+
+    with pytest.raises(SourceUnavailableError, match="rss failed"):
+        newsHeadlines.loadNewsArchive("2026-05-01", "2026-05-01", "KR", sources=["rss"])

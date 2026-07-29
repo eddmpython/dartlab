@@ -14,6 +14,7 @@ import pytest
 from dartlab.gather.sources import newsIo
 from dartlab.gather.sources.newsIo import loadSourceDay, writeDailyParquet
 from dartlab.gather.sources.newsSchema import NEWS_ARCHIVE_SCHEMA
+from dartlab.gather.types import SourceUnavailableError
 
 pytestmark = pytest.mark.unit
 
@@ -72,6 +73,33 @@ def test_load_private_source_local_only() -> None:
     loadSourceDay.cache_clear()
     out = loadSourceDay("naver", "KR", "2026-06-08")
     assert out is not None and out["url"][0] == "n1"
+
+
+def test_load_corrupt_local_source_raises_with_context(tmp_path) -> None:
+    """존재하는 로컬 artifact 손상은 정상 부재로 강등하지 않는다."""
+    local = tmp_path / "news" / "public" / "rss" / "KR" / "2026-06-08.parquet"
+    local.parent.mkdir(parents=True)
+    local.write_bytes(b"not parquet")
+
+    with pytest.raises(SourceUnavailableError, match="source=rss") as excInfo:
+        loadSourceDay("rss", "KR", "2026-06-08")
+
+    assert isinstance(excInfo.value.__cause__, (OSError, pl.exceptions.ComputeError))
+
+
+def test_load_public_hf_failure_raises_with_cause(monkeypatch: pytest.MonkeyPatch) -> None:
+    """public HF 장애는 해당 일자의 정상 무데이터로 위장하지 않는다."""
+    upstream = RuntimeError("hf unavailable")
+
+    def failLoad(*_args, **_kwargs):
+        raise upstream
+
+    monkeypatch.setattr("dartlab.core.dataLoader.loadData", failLoad)
+
+    with pytest.raises(SourceUnavailableError, match="source=rss") as excInfo:
+        loadSourceDay("rss", "KR", "2026-06-08")
+
+    assert excInfo.value.__cause__ is upstream
 
 
 def test_load_unknown_source_raises() -> None:

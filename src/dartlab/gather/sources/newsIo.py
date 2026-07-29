@@ -23,6 +23,7 @@ from pathlib import Path
 
 import polars as pl
 
+from ..types import SourceUnavailableError
 from .newsSchema import coerceToCanonical
 from .newsSources import getNewsSource
 
@@ -134,7 +135,7 @@ def loadSourceDay(sourceId: str, market: str, dayIso: str) -> pl.DataFrame | Non
         dataLoader.loadData HF 폴백 → 그 외 None.
 
     Requires:
-        없음 — 로컬 우선. public 소스 HF 폴백 경로만 네트워크 (실패 시 None).
+        없음 — 로컬 우선. public 소스 HF 폴백 경로만 네트워크.
 
     Args:
         sourceId: 레지스트리 소스 id (``"rss"``|``"gdelt"``|``"naver"``).
@@ -146,6 +147,7 @@ def loadSourceDay(sourceId: str, market: str, dayIso: str) -> pl.DataFrame | Non
 
     Raises:
         KeyError: 미등록 sourceId (getNewsSource 경유).
+        SourceUnavailableError: 로컬 artifact 손상 또는 public HF 로드 실패.
 
     Example:
         >>> # loadSourceDay("rss", "KR", "2026-06-08")
@@ -161,8 +163,10 @@ def loadSourceDay(sourceId: str, market: str, dayIso: str) -> pl.DataFrame | Non
         try:
             return pl.read_parquet(local)
         except (OSError, pl.exceptions.ComputeError) as exc:
-            log.debug("news %s local read 실패 %s: %s", sourceId, local, exc)
-            return None
+            raise SourceUnavailableError(
+                f"news local artifact를 읽을 수 없습니다: source={sourceId}, "
+                f"market={marketU}, day={dayIso}, path={local}"
+            ) from exc
 
     if spec.visibility != "public":
         return None  # private = 로컬 only (저작권 비공개 캐시)
@@ -171,9 +175,10 @@ def loadSourceDay(sourceId: str, market: str, dayIso: str) -> pl.DataFrame | Non
         from dartlab.core.dataLoader import loadData
 
         return loadData(f"{marketU}/{dayIso}", category=spec.hfCategory)
-    except Exception as exc:  # noqa: BLE001 — 미가용은 None
-        log.debug("news %s/%s/%s 미가용: %s", sourceId, marketU, dayIso, type(exc).__name__)
-        return None
+    except Exception as exc:  # noqa: BLE001
+        raise SourceUnavailableError(
+            f"news public artifact를 가져올 수 없습니다: source={sourceId}, market={marketU}, day={dayIso}"
+        ) from exc
 
 
 __all__ = ["loadSourceDay", "writeDailyParquet"]
