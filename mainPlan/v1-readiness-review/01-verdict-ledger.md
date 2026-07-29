@@ -49,20 +49,80 @@ Guard는 현재 레이어의 source를 동결한 뒤 한 번 실행한다. Guard
 
 ### 세션 인계
 
-- 현재 계층: **L1 gather, providers**
-- 최근 완료한 레이어: **L0 core 전체 완료**. L0-01부터 L0-16까지의 증거와 최종
-  재무비율·schema·직접 호출자 횡단 검증을 한 판정으로 봉인했다.
-- 현재 작업 단위: **L1 gather/providers 전체 마감**. DART·EDGAR 파일이나 endpoint를
-  별도 완료 단위로 쪼개지 않는다.
-- L1 완료 조건: 모든 gather Extract와 provider Transform/Load, DART·EDGAR panel,
-  finance accessor, 공개 Company 호출자를 실제 데이터 계약·오류 투명성·SSOT·속도·메모리
-  기준으로 전수 대조한다. 결함 수정과 집중 회귀 뒤 source를 동결하고 공식 Guard, 원장,
+- 현재 계층: **L1.5 scan, frame, synth, reference**
+- 최근 완료한 레이어: **L1 gather/providers 전체 완료**. 모든 gather Extract와
+  DART·EDGAR provider Transform/Load, panel, finance/report accessor, 공개 Company
+  호출자를 실제 데이터와 최종 Guard로 봉인했다.
+- 현재 작업 단위: **L1.5 네 형제 전체 마감**. scan 파일이나 axis 하나를 별도 완료
+  단위로 쪼개지 않는다.
+- L1.5 완료 조건: scan, frame, synth, reference의 전체 src와 실제 호출자를
+  데이터 계약·오류 투명성·SSOT·속도·메모리 기준으로 전수 대조한다. 네 형제 간
+  cross import 없이 결함 수정과 집중 회귀를 끝내고 source 동결 뒤 공식 Guard, 원장,
   커밋, push까지 닫는다.
-- 다음 첫 행동: 기존 L1 미달 원장과 현재 gather/provider 전체 tree를 하나의 호출 그래프로
-  다시 대조하고, DART·EDGAR finance raw가 panel·ratio까지 이어지는 대표 공개 행동부터
-  재현한다.
-- 금지: endpoint나 provider 파일 하나만 끝내고 완료 보고, L1.5 이상 수정 선행,
+- 다음 첫 행동: 네 패키지 전체 tree와 공개 `dartlab.scan(...)`, 하위 L2·L3 소비자를
+  호출 그래프로 대조한다. 기존 미달 증거인 연결 우선 필터 11곳, 결손 입력의 등급화,
+  `asOf` 무시, 0을 결측으로 바꾸는 `or`를 실제 제품 행동으로 먼저 재현한다.
+- 금지: axis나 파일 하나만 끝내고 완료 보고, L2 이상 수정 선행,
   중간 source에서 공식 Guard 반복
+
+## L1 gather, providers 순차 안정화 원장 (2026-07-30)
+
+### L1 gather/providers 전체 마감
+
+**상태: 완료.** gather의 모든 Extract와 DART·EDGAR provider의 Transform/Load,
+panel, finance/report accessor, 공개 Company 호출자를 하나의 하단 데이터 흐름으로
+검증했다. 파일이나 endpoint별 수정은 이 판정의 증거일 뿐 별도 완료 단위가 아니다.
+
+1. **범위와 실제 호출자.** gather의 공개 축, source, domain fallback, DART·EDGAR
+   원문과 정형 수집, DART·EDGAR Company의 `panel`, `select`, `filings`, finance와
+   report dispatcher/accessor를 범위로 잡았다. 아래 생산자에서 Company를 거쳐
+   scan, analysis, credit, story로 이어지는 호출을 함께 대조했다. DART finance와
+   report artifact, EDGAR companyfacts와 panel native payload가 ratios까지 이어지는
+   경로를 한국 삼성전자와 미국 AAPL 실제 데이터로 호출했다.
+2. **제품 결함 재현.** 뉴스·GDELT·Damodaran 공급 실패가 빈 자료처럼 보였고,
+   allFilings는 원문 추출과 월별 수집 책임이 한 파일에 엉켜 재시도 가능한 실패를
+   잘못 캐시했다. report topic이 panel dispatcher에 도달하지 않았고 `stockTotal`
+   다중 측정값은 period를 잃었다. 존재하지 않는 기간 요청이 전체 표를 반환했으며,
+   EDGAR `select`는 `freq`와 `scope`를 버렸다. DART finance artifact 실패는 docs로
+   내려가 원인을 숨겼고 report accessor는 손상과 부재를 구분하지 않았다. 같은 Company의
+   panel을 반복 조회할 때 DART·EDGAR 모두 무거운 artifact를 매번 다시 읽었다.
+3. **근본 원인과 SSOT.** 네트워크 성공·정상 무데이터·공급 실패의 상태 계약이 source마다
+   달랐고, panel dispatch와 기간 필터가 강한 topic registry를 사용하지 않았다.
+   allFilings 문서 해석과 수집 orchestration도 owner가 분리되지 않았다. 공급 상태는
+   gather typed error, 원문 해석은 `allFilingsDocument`, report routing은 공통 registry와
+   API type, 기간 선택은 panel period helper, Company 단위 재사용은 `BoundedCache`를
+   각 단일 정본으로 고정했다.
+4. **수정과 테스트.** 뉴스 archive, GDELT, NewsIO, Damodaran은 정상 무데이터와 실패를
+   구분해 원인을 보존한다. DART allFilings 원문 해석을 새 모듈로 분리하고 collector는
+   수집과 저장만 소유하게 했다. DART·EDGAR report dispatcher와 accessor는 강한 topic을
+   panel에 연결하고 artifact 손상을 원형 예외로 전달한다. `stockTotal`은 period를
+   보존하고, 없는 기간은 `None` 또는 빈 결과만 반환한다. EDGAR `select`는 `freq`와
+   `scope`를 끝까지 전달한다. 두 Company의 panel 재사용은 수명주기와 함께 정리되는
+   bounded cache로 만들었다. source 동결 전 집중 회귀는 `134 passed`, 최종 환경 격리
+   회귀는 `4 passed`다.
+5. **공개 행동, 정확성, 속도, 메모리.** 삼성전자 실제 panel은 IS `36x43`, BS `63x43`,
+   CF `64x43`, ratios `16x52`, dividend `2x41`, stockTotal `140x12`이며 없는
+   `1900` 기간은 `None`이다. AAPL의 IS, BS, CF, ratios도 모두 비어 있지 않고
+   `freq="Y"` 선택은 연간 열만 반환했다. 같은 Company에서 panel identity가 유지됐다.
+   DART BS 중앙값은 `2.267 s`에서 `0.002 s`, companyOverview는 `1.859 s`에서
+   `0.001 s`로 줄었다. 실데이터 작업의 process peak는 `947 MB`에서 `523.3 MB`로
+   줄었고 Python heap peak는 `27.2 MB`다.
+6. **Guard와 회귀.** 변경 source Ruff, formatter, compileall과 Pyright
+   `0 errors, 0 warnings`가 통과했다. gather gate `8/8`, provider gate `11/11`,
+   Skill OS 검증과 관련 skill 회귀 `35 passed`다. 최종 공식 Guard strict는
+   1,778파일, 규칙 7/7과 cycle, architecture, folder mirror, gather, provider,
+   public API 외부 게이트 6개를 모두 통과했다. 공식 preflight의 단위 테스트는
+   `7076 passed, 31 skipped, 3 xfailed`, wheel 2,226파일과 설치 product smoke 4/4,
+   notebook 11개, snapshot 5개, schema 16개, eval 13개, mutation 7/7이 통과했다.
+   preflight 집계의 유일한 실패는 작업 전부터 있던 사용자 소유 블로그 media staging
+   두 폴더를 잡은 workspace hygiene다.
+7. **남은 부채와 판정.** Guard known debt 47건은 active 9건과 보호된 Company facade
+   38건이다. provider/gather strict 상세 경고의 큰 Company와 handler, init, docstring
+   부채는 baseline을 늘리지 않았고 일반 gate는 통과했다. EDGAR Q1~Q3 standalone 선택의
+   최소 절대값 휴리스틱은 반례가 재현되지 않은 정확도 부채로 남긴다. 전역 Skill artifact
+   drift는 L4 Skill OS 순서, 블로그 media staging 두 폴더는 최종 release hygiene 순서에서
+   처리한다. L1 공개 데이터 흐름의 P0/P1 결함, 침묵 실패, 반복 panel 병목은 0이므로
+   **L1 gather/providers를 완료 판정하고 L1.5 scan/frame/synth/reference로 이동한다.**
 
 ## L0 순차 안정화 원장 (2026-07-29)
 
