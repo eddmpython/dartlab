@@ -1103,7 +1103,7 @@ def _calcComposite(
     _calcSloanAccrual(r)
     _calcBeneish(r, series, annual)
     _calcAltmanZpp(r)
-    _calcOhlsonO(r, series)
+    _calcOhlsonO(r, series, annual)
     _calcSpringate(r)
     _calcZmijewski(r)
 
@@ -1222,57 +1222,41 @@ def _calcPiotroski(
     r: RatioResult,
     series: dict[str, dict[str, list[float | None]]],
 ) -> None:
-    """Piotroski F-Score (9점 만점)."""
+    """Piotroski F-Score (9점 만점).
+
+    아홉 신호 중 하나라도 계산할 수 없으면 부분 점수를 완전한 F-Score처럼
+    노출하지 않는다.
+    """
     ts = _piotroskiTimeSeries(series)
-    score = 0
-
-    # 1. ROA > 0
-    if r.roa is not None and r.roa > 0:
-        score += 1
-    # 2. Operating CF > 0
-    if r.operatingCashflowTTM is not None and r.operatingCashflowTTM > 0:
-        score += 1
-    # 3. ROA 개선
     roaImp = _piotroskiImprovement(ts["np"], ts["ta"], "ROA", increasing=True)
-    if roaImp == 1:
-        score += 1
-    # 4. Operating CF > Net Income
-    if r.operatingCashflowTTM is not None and r.netIncomeTTM is not None and r.operatingCashflowTTM > r.netIncomeTTM:
-        score += 1
-    # 5. 부채비율 감소
     drImp = _piotroskiImprovement(ts["tl"], ts["te"], "DR", increasing=False)
-    if drImp == 1:
-        score += 1
-    elif drImp == -1 and r.debtRatio is not None and r.debtRatio < 100:
-        score += 1
-    # 6. 유동비율 개선
     crImp = _piotroskiImprovement(ts["ca"], ts["cl"], "CR", increasing=True)
-    if crImp == 1:
-        score += 1
-    elif crImp == -1 and r.currentRatio is not None and r.currentRatio > 100:
-        score += 1
-    # 7. 신주 미발행
-    if len(ts["cap"]) >= 2:
-        cur_cap = ts["cap"][-1]
-        prev_cap = ts["cap"][-2]
-        if cur_cap is not None and prev_cap is not None and cur_cap <= prev_cap:
-            score += 1
-    else:
-        score += 1  # 데이터 없으면 보수적으로 1점
-    # 8. 매출총이익률 개선
     gmImp = _piotroskiImprovement(ts["gp"], ts["rev"], "GM", increasing=True)
-    if gmImp == 1:
-        score += 1
-    elif gmImp == -1 and r.grossMargin is not None and r.grossMargin > 0:
-        score += 1
-    # 9. 총자산회전율 개선
     tatImp = _piotroskiImprovement(ts["rev"], ts["ta"], "TAT", increasing=True)
-    if tatImp == 1:
-        score += 1
-    elif tatImp == -1 and r.totalAssetTurnover is not None and r.totalAssetTurnover > 0:
-        score += 1
+    if (
+        r.roa is None
+        or r.operatingCashflowTTM is None
+        or r.netIncomeTTM is None
+        or -1 in (roaImp, drImp, crImp, gmImp, tatImp)
+        or len(ts["cap"]) < 2
+        or ts["cap"][-1] is None
+        or ts["cap"][-2] is None
+    ):
+        return
 
-    r.piotroskiFScore = score
+    r.piotroskiFScore = sum(
+        (
+            r.roa > 0,
+            r.operatingCashflowTTM > 0,
+            roaImp == 1,
+            r.operatingCashflowTTM > r.netIncomeTTM,
+            drImp == 1,
+            crImp == 1,
+            ts["cap"][-1] <= ts["cap"][-2],
+            gmImp == 1,
+            tatImp == 1,
+        )
+    )
 
 
 def _calcAltmanZ(r: RatioResult) -> None:
@@ -1280,19 +1264,30 @@ def _calcAltmanZ(r: RatioResult) -> None:
 
     marketCap 유무로 분기. Z'': Z''-Score 함수 별도.
     """
-    if not (r.totalAssets and r.totalAssets > 0 and r.totalLiabilities and r.totalLiabilities > 0):
+    if not (
+        r.totalAssets
+        and r.totalAssets > 0
+        and r.totalLiabilities
+        and r.totalLiabilities > 0
+        and r.currentAssets is not None
+        and r.currentLiabilities is not None
+        and r.retainedEarnings is not None
+        and r.operatingIncomeTTM is not None
+        and r.revenueTTM is not None
+        and (r.marketCap is not None or r.totalEquity is not None)
+    ):
         return
-    wc = (r.currentAssets or 0) - (r.currentLiabilities or 0)
+    wc = r.currentAssets - r.currentLiabilities
     a = wc / r.totalAssets
-    b = (r.retainedEarnings or 0) / r.totalAssets
-    c = (r.operatingIncomeTTM or 0) / r.totalAssets
-    e = (r.revenueTTM or 0) / r.totalAssets
+    b = r.retainedEarnings / r.totalAssets
+    c = r.operatingIncomeTTM / r.totalAssets
+    e = r.revenueTTM / r.totalAssets
     if r.marketCap is not None:
         d = r.marketCap / r.totalLiabilities
         z = 1.2 * a + 1.4 * b + 3.3 * c + 0.6 * d + 1.0 * e
         r.altmanZScore = _safeRound(z, 2)
     else:
-        dPrime = (r.totalEquity or 0) / r.totalLiabilities
+        dPrime = r.totalEquity / r.totalLiabilities
         zPrime = 0.717 * a + 0.847 * b + 3.107 * c + 0.420 * dPrime + 0.998 * e
         r.altmanZScore = _safeRound(zPrime, 2)
 
@@ -1309,51 +1304,80 @@ def _calcSloanAccrual(r: RatioResult) -> None:
 
 def _calcAltmanZpp(r: RatioResult) -> None:
     """Altman Z'' (1995 비제조업/신흥시장). Sales/TA 제거 — 금융/서비스업도 적용."""
-    if not (r.totalAssets and r.totalAssets > 0 and r.totalLiabilities and r.totalLiabilities > 0):
+    if not (
+        r.totalAssets
+        and r.totalAssets > 0
+        and r.totalLiabilities
+        and r.totalLiabilities > 0
+        and r.currentAssets is not None
+        and r.currentLiabilities is not None
+        and r.retainedEarnings is not None
+        and r.operatingIncomeTTM is not None
+        and r.totalEquity is not None
+    ):
         return
-    wc = (r.currentAssets or 0) - (r.currentLiabilities or 0)
+    wc = r.currentAssets - r.currentLiabilities
     zpp = (
         6.56 * (wc / r.totalAssets)
-        + 3.26 * ((r.retainedEarnings or 0) / r.totalAssets)
-        + 6.72 * ((r.operatingIncomeTTM or 0) / r.totalAssets)
-        + 1.05 * ((r.totalEquity or 0) / r.totalLiabilities)
+        + 3.26 * (r.retainedEarnings / r.totalAssets)
+        + 6.72 * (r.operatingIncomeTTM / r.totalAssets)
+        + 1.05 * (r.totalEquity / r.totalLiabilities)
     )
     r.altmanZppScore = _safeRound(zpp, 2)
+
+
+def _ohlsonIncomePeriods(
+    series: dict[str, dict[str, list[float | None]]],
+    annual: bool,
+) -> tuple[float, float] | None:
+    """Ohlson의 현재·전기 연환산 순이익을 완전한 기간에서만 반환."""
+    values = _pickSeries(series, "IS", ["net_profit", "net_income"])
+    if annual:
+        if len(values) < 2 or values[-1] is None or values[-2] is None:
+            return None
+        return values[-1], values[-2]
+
+    if len(values) < 8 or any(value is None for value in values[-8:]):
+        return None
+    return sum(values[-4:]), sum(values[-8:-4])
 
 
 def _calcOhlsonO(
     r: RatioResult,
     series: dict[str, dict[str, list[float | None]]],
+    annual: bool,
 ) -> None:
     """Ohlson O-Score (1980) — 9변수 로지스틱. 금융업 포함 범용."""
-    if not (r.totalAssets and r.totalAssets > 0):
+    incomePeriods = _ohlsonIncomePeriods(series, annual)
+    if not (
+        r.totalAssets
+        and r.totalAssets > 0
+        and r.totalLiabilities
+        and r.totalLiabilities > 0
+        and r.currentAssets
+        and r.currentAssets > 0
+        and r.currentLiabilities is not None
+        and r.operatingCashflowTTM is not None
+        and incomePeriods is not None
+    ):
         return
-    ni = r.netIncomeTTM or 0
-    tl = r.totalLiabilities or 0
-    ca = r.currentAssets or 0
-    cl = r.currentLiabilities or 0
+    ni, priorNi = incomePeriods
+    tl = r.totalLiabilities
+    ca = r.currentAssets
+    cl = r.currentLiabilities
 
     size = math.log(max(r.totalAssets / 1e6, 1))
     tlta = tl / r.totalAssets
     wcta = (ca - cl) / r.totalAssets
-    clca = cl / ca if ca > 0 else 0
+    clca = cl / ca
     oeneg = 1 if tl > r.totalAssets else 0
     nita = ni / r.totalAssets
-    futl = 0  # FFO 간이 대체 (보수적)
-
-    npSeries = _pickSeries(series, "IS", ["net_profit", "net_income"])
-    intwo = 0
-    if len(npSeries) >= 2:
-        n1 = npSeries[-1]
-        n2 = npSeries[-2]
-        if n1 is not None and n2 is not None and n1 < 0 and n2 < 0:
-            intwo = 1
-
-    chin = 0
-    if len(npSeries) >= 2 and npSeries[-1] is not None and npSeries[-2] is not None:
-        denom = abs(npSeries[-1]) + abs(npSeries[-2])
-        if denom > 0:
-            chin = (npSeries[-1] - npSeries[-2]) / denom
+    futl = r.operatingCashflowTTM / tl
+    intwo = 1 if ni < 0 and priorNi < 0 else 0
+    incomeScale = abs(ni) + abs(priorNi)
+    if incomeScale == 0:
+        return
+    chin = (ni - priorNi) / incomeScale
 
     o = (
         -1.32
@@ -1368,22 +1392,33 @@ def _calcOhlsonO(
         - 0.521 * chin
     )
     r.ohlsonOScore = _safeRound(o, 4)
-    r.ohlsonProbability = _safeRound(1 / (1 + math.exp(-o)) * 100, 2)
+    if o >= 0:
+        probability = 1 / (1 + math.exp(-o))
+    else:
+        expO = math.exp(o)
+        probability = expO / (1 + expO)
+    r.ohlsonProbability = _safeRound(probability * 100, 2)
 
 
 def _calcSpringate(r: RatioResult) -> None:
     """Springate S-Score (1978). S < 0.862 → 부실 위험."""
-    if not (r.totalAssets and r.totalAssets > 0 and r.currentLiabilities and r.currentLiabilities > 0):
+    if not (
+        r.totalAssets
+        and r.totalAssets > 0
+        and r.currentLiabilities
+        and r.currentLiabilities > 0
+        and r.currentAssets is not None
+        and r.operatingIncomeTTM is not None
+        and r.profitBeforeTax is not None
+        and r.revenueTTM is not None
+    ):
         return
-    wc = (r.currentAssets or 0) - (r.currentLiabilities or 0)
-    ebit = r.operatingIncomeTTM or 0
-    ebt = r.profitBeforeTax if r.profitBeforeTax is not None else (r.netIncomeTTM or 0)
-    rev = r.revenueTTM or 0
+    wc = r.currentAssets - r.currentLiabilities
     s = (
         1.03 * (wc / r.totalAssets)
-        + 3.07 * (ebit / r.totalAssets)
-        + 0.66 * (ebt / r.currentLiabilities)
-        + 0.40 * (rev / r.totalAssets)
+        + 3.07 * (r.operatingIncomeTTM / r.totalAssets)
+        + 0.66 * (r.profitBeforeTax / r.currentLiabilities)
+        + 0.40 * (r.revenueTTM / r.totalAssets)
     )
     r.springateSScore = _safeRound(s, 4)
 
@@ -1397,11 +1432,12 @@ def _calcZmijewski(r: RatioResult) -> None:
         and r.currentAssets is not None
         and r.currentLiabilities
         and r.currentLiabilities > 0
+        and r.netIncomeTTM is not None
     ):
         return
     x = (
         -4.336
-        - 4.513 * ((r.netIncomeTTM or 0) / r.totalAssets)
+        - 4.513 * (r.netIncomeTTM / r.totalAssets)
         + 5.679 * (r.totalLiabilities / r.totalAssets)
         + 0.004 * (r.currentAssets / r.currentLiabilities)
     )
@@ -1860,90 +1896,69 @@ def _piotroskiSeriesImproved(series: list, prevSeries: list, i: int, yoyLag: int
     return 1 if (cur > prev if increasing else cur < prev) else 0
 
 
-def _piotroskiProfitPoints(i: int, S: dict[str, list], yoyLag: int) -> int:
+def _piotroskiProfitPoints(i: int, S: dict[str, list], yoyLag: int) -> int | None:
     """Piotroski 1~4: ROA>0, OCF>0, ROA 개선, OCF>NI."""
     np_i = _sv(S["netProfit"], i)
     ta_i = _sv(S["totalAssets"], i)
     opcf_i = _sv(S["opCf"], i)
+    roaImp = _piotroskiSeriesImproved(S["netProfit"], S["totalAssets"], i, yoyLag, increasing=True)
+    if np_i is None or not ta_i or ta_i <= 0 or opcf_i is None or roaImp == -1:
+        return None
     score = 0
-    if np_i is not None and ta_i and ta_i > 0 and np_i / ta_i > 0:
+    if np_i / ta_i > 0:
         score += 1
-    if opcf_i is not None and opcf_i > 0:
+    if opcf_i > 0:
         score += 1
-    if _piotroskiSeriesImproved(S["netProfit"], S["totalAssets"], i, yoyLag, increasing=True) == 1:
+    if roaImp == 1:
         score += 1
-    if opcf_i is not None and np_i is not None and opcf_i > np_i:
+    if opcf_i > np_i:
         score += 1
     return score
 
 
-def _piotroskiLeveragePoints(i: int, S: dict[str, list], yoyLag: int) -> int:
+def _piotroskiLeveragePoints(i: int, S: dict[str, list], yoyLag: int) -> int | None:
     """Piotroski 5~6: 부채비율 감소, 유동비율 개선."""
-    tl_i = _sv(S["totalLiab"], i)
-    te_i = _sv(S["totalEquity"], i)
-    ca_i = _sv(S["curAssets"], i)
-    cl_i = _sv(S["curLiab"], i)
-    score = 0
     drImp = _piotroskiSeriesImproved(S["totalLiab"], S["totalEquity"], i, yoyLag, increasing=False)
-    if drImp == 1:
-        score += 1
-    elif drImp == -1 and tl_i is not None and te_i and te_i > 0 and (tl_i / te_i * 100) < 100:
-        score += 1
     crImp = _piotroskiSeriesImproved(S["curAssets"], S["curLiab"], i, yoyLag, increasing=True)
-    if crImp == 1:
-        score += 1
-    elif crImp == -1 and ca_i and cl_i and cl_i > 0 and (ca_i / cl_i * 100) > 100:
-        score += 1
-    return score
+    if drImp == -1 or crImp == -1:
+        return None
+    return (1 if drImp == 1 else 0) + (1 if crImp == 1 else 0)
 
 
-def _piotroskiShareIssuePoint(i: int, yoyLag: int, annualSeries: dict) -> int:
+def _piotroskiShareIssuePoint(i: int, yoyLag: int, annualSeries: dict) -> int | None:
     """Piotroski 7: 신주 미발행 (자본금 감소 or 동일)."""
     issuedCap = _get(annualSeries, "BS", "issued_capital")
     if not any(v is not None for v in issuedCap):
         issuedCap = _get(annualSeries, "BS", "capital_stock")
     if i < yoyLag or i >= len(issuedCap) or (i - yoyLag) >= len(issuedCap):
-        return 1  # 데이터 없으면 보수적
+        return None
     cur_cap_i = issuedCap[i]
     prev_cap_i = issuedCap[i - yoyLag]
-    if cur_cap_i is not None and prev_cap_i is not None and cur_cap_i <= prev_cap_i:
-        return 1
-    if cur_cap_i is None and prev_cap_i is None:
-        return 1
-    return 0
+    if cur_cap_i is None or prev_cap_i is None:
+        return None
+    return 1 if cur_cap_i <= prev_cap_i else 0
 
 
-def _piotroskiEfficiencyPoints(i: int, S: dict[str, list], yoyLag: int) -> int:
+def _piotroskiEfficiencyPoints(i: int, S: dict[str, list], yoyLag: int) -> int | None:
     """Piotroski 8~9: 매출총이익률 개선, 총자산회전율 개선."""
-    gp_i = _sv(S["grossProfit"], i)
-    rev_i = _sv(S["revenue"], i)
-    ta_i = _sv(S["totalAssets"], i)
-    score = 0
     gmImp = _piotroskiSeriesImproved(S["grossProfit"], S["revenue"], i, yoyLag, increasing=True)
-    if gmImp == 1:
-        score += 1
-    elif gmImp == -1:
-        gm = _safePct(gp_i, rev_i)
-        if gm is not None and gm > 0:
-            score += 1
     tatImp = _piotroskiSeriesImproved(S["revenue"], S["totalAssets"], i, yoyLag, increasing=True)
-    if tatImp == 1:
-        score += 1
-    elif tatImp == -1:
-        tat = _safeDiv(rev_i, ta_i)
-        if tat is not None and tat > 0:
-            score += 1
-    return score
+    if gmImp == -1 or tatImp == -1:
+        return None
+    return (1 if gmImp == 1 else 0) + (1 if tatImp == 1 else 0)
 
 
-def _piotroskiScoreSeries(i: int, S: dict[str, list], yoyLag: int, annualSeries: dict) -> int:
+def _piotroskiScoreSeries(i: int, S: dict[str, list], yoyLag: int, annualSeries: dict) -> int | None:
     """calcRatioSeries 의 Piotroski F-Score (9점 만점) — 4 sub 합산."""
-    return (
-        _piotroskiProfitPoints(i, S, yoyLag)
-        + _piotroskiLeveragePoints(i, S, yoyLag)
-        + _piotroskiShareIssuePoint(i, yoyLag, annualSeries)
-        + _piotroskiEfficiencyPoints(i, S, yoyLag)
+    parts = (
+        _piotroskiProfitPoints(i, S, yoyLag),
+        _piotroskiLeveragePoints(i, S, yoyLag),
+        _piotroskiShareIssuePoint(i, yoyLag, annualSeries),
+        _piotroskiEfficiencyPoints(i, S, yoyLag),
     )
+    if any(part is None for part in parts):
+        return None
+    return sum(parts)
 
 
 def _appendRoicDupontDebt(rs: RatioSeriesResult, i: int, S: dict[str, list]) -> None:
@@ -2027,16 +2042,27 @@ def _appendAltmanSloan(rs: RatioSeriesResult, i: int, S: dict[str, list], annual
     cl_i = _sv(S["curLiab"], i)
     opcf_i = _sv(S["opCf"], i)
 
-    if ta_i and ta_i > 0 and tl_i and tl_i > 0:
-        wc_i = (ca_i or 0) - (cl_i or 0)
-        re_i = _sv(_get(annualSeries, "BS", "retained_earnings"), i)
-        dPrime = (te_i or 0) / tl_i
+    re_i = _sv(_get(annualSeries, "BS", "retained_earnings"), i)
+    if (
+        ta_i
+        and ta_i > 0
+        and tl_i
+        and tl_i > 0
+        and ca_i is not None
+        and cl_i is not None
+        and re_i is not None
+        and op_i is not None
+        and te_i is not None
+        and rev_i is not None
+    ):
+        wc_i = ca_i - cl_i
+        dPrime = te_i / tl_i
         zPrime = (
             0.717 * (wc_i / ta_i)
-            + 0.847 * ((re_i or 0) / ta_i)
-            + 3.107 * ((op_i or 0) / ta_i)
+            + 0.847 * (re_i / ta_i)
+            + 3.107 * (op_i / ta_i)
             + 0.420 * dPrime
-            + 0.998 * ((rev_i or 0) / ta_i)
+            + 0.998 * (rev_i / ta_i)
         )
         rs.altmanZScore.append(_safeRound(zPrime, 2))
     else:

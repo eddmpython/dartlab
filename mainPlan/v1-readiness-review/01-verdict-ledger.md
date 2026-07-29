@@ -35,11 +35,49 @@ L4 ai, mcp. 아래층 결함이 위층 전부를 오염시키므로 순서를 �
 ### 세션 인계
 
 - 현재 계층: L0 core
-- 마지막 완료 항목: 기존 2026-07-28 원장 기록까지
-- 진행 중인 단일 항목: L0 현상태 재검과 남은 부채의 실제 호출자 재확정
-- 다음 첫 행동: L0 공개 primitive와 소비 그래프를 기준으로 남은 SSOT 중복, 오류 삼킴,
-  성능과 메모리 결함을 하나씩 재현하고 원장에 닫는다.
+- 마지막 완료 항목: L0-01 복합 재무 점수 입력 완전성
+- 진행 중인 단일 항목: L0 재무비율 시점값과 시계열 경로의 계약 일치
+- 다음 첫 행동: 자본잠식 ROE와 부채비율의 시계열 오답, 차입금·현금·감가상각 결측의
+  가짜 순부채와 EBITDA를 제품 행동으로 재현한다.
 - 금지: L0 완료 판정 전 L1 이상 감사나 수정 착수
+
+## L0 순차 안정화 원장 (2026-07-29)
+
+### L0-01 복합 재무 점수 입력 완전성
+
+**상태: 완료.** 이 항목은 복합 점수의 필수 입력 결측만 닫았다. 아래 남은 재무비율 부채와
+추정 문제까지 닫았다는 뜻은 아니다.
+
+1. **범위와 실제 호출자.** SSOT는 `core/ratios.py`다. DART의
+   `providers/dart/company.py`, `builder/financeStatementBuilder.py`, `panel/cell.py`와
+   EDGAR의 `accessor/financeAccessor.py`, `panel/native.py`가 같은 계산기를 쓴다.
+   `analysis.financial`, `credit`, `story`, `viz`는 이미 계산된 점수를 소비하므로 위층에서
+   원래 결측을 복구할 수 없다.
+2. **제품 결함 재현.** 자산과 부채만 주면 Piotroski `1`, Altman `0.0`, Ohlson
+   `2.298`과 부도확률 `90.87%`가 나왔다. 유동자산과 유동부채만 더 주고 손익을 전부
+   비워도 Piotroski `2`, Altman `0.24`, Altman Z'' `1.73`, Ohlson 부도확률
+   `87.88%`, Springate `0.2154`, Zmijewski `-0.972`가 생성됐다.
+3. **근본 원인과 SSOT.** 각 공식이 필수 입력을 선언하지 않고 `or 0`으로 치환했다.
+   Piotroski는 비교 기간과 자본금이 없어도 현재 수준값으로 대체하거나 1점을 공짜로
+   줬다. 시점값과 시계열 계산기에 같은 대체가 두 벌로 복제돼 있었다.
+4. **수정과 테스트.** Altman Z와 Z'', Ohlson, Springate, Zmijewski, Piotroski는
+   공식의 필수 입력이 하나라도 없으면 `None`을 반환하게 했다. Ohlson은 영업현금흐름을
+   FFO 대용치로 명시적으로 사용하고, 연간은 2개 연도, 분기는 완전한 8개 분기로 현재와
+   전기 TTM을 만든다. Piotroski 시계열도 비교 기간 전에는 `None`이고 아홉 신호가
+   완전할 때만 점수를 낸다. `tests/core/test_ratiosCompleteness.py`에 6개 계약 회귀를
+   추가했고 기존 golden fixture에는 실제 신주 미발행 판정에 필요한 자본금을 넣었다.
+5. **공개 행동, 정확성, 속도, 메모리.** 같은 희소 입력의 일곱 복합 출력은 수정 후 모두
+   `None`이다. 완전 입력에서는 일곱 출력이 모두 유지되고, 분기 Ohlson은 8개 분기가
+   완전할 때만 나온다. 5,000회 격리 실측에서 단일 시점은 호출당 `0.1804 ms`,
+   3개년 시계열은 `0.3542 ms`였고 `tracemalloc` peak는 각각 `0.006 MiB`,
+   `0.009 MiB`였다. 새 캐시나 누적 상태는 없다.
+6. **Guard와 회귀.** 관련 단위 회귀 `63 passed`, Ruff와 compileall 통과,
+   `silentSubstitute.py src/dartlab/core/ratios.py --strict` 신규 위반 0이다.
+   Guard Index `strict --scope l0-l15`는 1,765개 파일, 7개 규칙과 cycle, architecture,
+   folder mirror, gather, provider, public API 여섯 외부 게이트가 모두 통과했다.
+7. **남은 부채와 판정.** 차입금과 현금 결측을 0으로 만드는 순부채, 감가상각 결측을
+   무표시 추정으로 만드는 EBITDA, 시점값과 시계열 공식 중복, 시계열 자본잠식 ROE,
+   Ohlson의 통화별 규모 보정은 남아 있다. 따라서 이 항목만 완료이며 **L0 전체는 미달**이다.
 
 ## 정량 판정 (2026-07-27 실측)
 

@@ -51,6 +51,7 @@ _SERIES_ANNUAL = {
         "tangible_assets": [60_000, 62_000, 65_000],
         "intangible_assets": [5_000, 5_000, 5_000],
         "retained_earnings": [50_000, 55_000, 60_000],
+        "issued_capital": [10_000, 10_000, 10_000],
         "noncurrent_assets": [130_000, 135_000, 140_000],
         "noncurrent_liabilities": [40_000, 40_000, 40_000],
     },
