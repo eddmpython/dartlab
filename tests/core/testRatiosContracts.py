@@ -83,9 +83,31 @@ def testSeriesTaxFallsBackFromAllNullPrimaryAccount() -> None:
     series["IS"]["income_tax_expense"] = [None] * 4
     series["IS"]["income_taxes"] = [10.0, 20.0, 30.0, 40.0]
 
-    result = calcRatioSeries(series, ["2021", "2022", "2023", "2024"], yoyLag=1)
+    result = calcRatioSeries(series, ["2021", "2022", "2023", "2024"], annual=True, yoyLag=1)
 
     assert result.effectiveTaxRate == [10.0, 20.0, 30.0, 40.0]
+
+
+def testQuarterlyRatioSeriesUsesTrailingFourQuarterFlows() -> None:
+    """분기 series는 최신 한 분기가 아니라 최근 네 분기 flow를 사용한다."""
+    series = _baseAnnualSeries()
+    for statement in series.values():
+        for snakeId, values in statement.items():
+            statement[snakeId] = values + values
+
+    quarterly = calcRatioSeries(
+        series, [f"202{year}Q{quarter}" for year in (3, 4) for quarter in range(1, 5)], annual=False, yoyLag=4
+    )
+    annual = calcRatioSeries(series, [str(year) for year in range(2017, 2025)], annual=True, yoyLag=1)
+
+    assert quarterly.revenue[-1] == 400.0
+    assert annual.revenue[-1] == 100.0
+
+
+def testRatioSeriesRequiresExplicitInputGranularity() -> None:
+    """호출자가 연간과 분기를 명시하지 않으면 조용히 연간으로 계산하지 않는다."""
+    with pytest.raises(TypeError, match="annual"):
+        calcRatioSeries(_baseAnnualSeries(), ["2024"], yoyLag=1)
 
 
 @pytest.mark.parametrize("override", ["", "industrial", "unknown"])
@@ -99,4 +121,4 @@ def testInvalidArchetypeOverrideRaises(override: str) -> None:
 def testInvalidYoyLagRaises(yoyLag: object) -> None:
     """시계열 성장률 간격은 양의 정수여야 한다."""
     with pytest.raises(ValueError, match="yoyLag"):
-        calcRatioSeries(_baseAnnualSeries(), ["2024"], yoyLag=yoyLag)
+        calcRatioSeries(_baseAnnualSeries(), ["2024"], annual=True, yoyLag=yoyLag)

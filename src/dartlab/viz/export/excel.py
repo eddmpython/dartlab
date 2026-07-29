@@ -216,7 +216,7 @@ def _writeRatiosSheet(wb: Workbook, c: Company, *, label: str = "") -> None:
     annualSeries, years = annualResult
     if not annualSeries or not years:
         return
-    rs = calcRatioSeries(annualSeries, years, yoyLag=1)
+    rs = calcRatioSeries(annualSeries, years, annual=True, yoyLag=1)
     ratioSeriesDict, _ = toSeriesDict(rs)
     ratioData = ratioSeriesDict.get("RATIO", {})
     if not ratioData:

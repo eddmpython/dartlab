@@ -89,7 +89,12 @@ def _censusOne(code: str) -> dict:
         if asm is None:
             continue
         series, years = asm
-        rs = calcRatioSeries(series, years, yoyLag=(4 if fr in {"quarter", "ytd"} else 1))
+        rs = calcRatioSeries(
+            series,
+            years,
+            annual=fr != "quarter",
+            yoyLag=(4 if fr in {"quarter", "ytd"} else 1),
+        )
         wide = _ratiosToWide(rs, years)
         if wide is not None and not wide.is_empty():
             rec["ratioRows"] = wide.height

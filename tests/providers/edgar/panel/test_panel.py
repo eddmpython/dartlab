@@ -49,6 +49,51 @@ def test_panel_us_dispatch_native_lower_finance_upper() -> None:
     assert p("Risk") is None  # 약한 소스 → board(artifact 없어 None)
 
 
+def test_panel_upper_ratios_reaches_real_dispatch(monkeypatch: pytest.MonkeyPatch) -> None:
+    from dartlab.providers.edgar.builder import dataDispatcher
+    from dartlab.providers.edgar.panel import Panel
+
+    expected = pl.DataFrame({"항목": ["영업이익률"], "2024": [20.0]})
+    monkeypatch.setattr(dataDispatcher, "buildRatios", lambda company: expected)
+    company = object()
+    panel = Panel("000000nonexistent")
+    panel._showFn = lambda topic, **kwargs: dataDispatcher.showImpl(company, topic, **kwargs)
+    panel._strongFn = dataDispatcher.isStrongTopic
+
+    assert panel("RATIOS").equals(expected)
+
+
+def test_show_finance_forwards_scope_and_period_list_options() -> None:
+    from dartlab.providers.edgar.builder.dataDispatcher import showImpl
+
+    calls: list[tuple[str, str, str]] = []
+
+    class Finance:
+        SCE = None
+
+        def _stmtDf(self, topic: str, *, freq: str, scope: str):
+            calls.append((topic, freq, scope))
+            return pl.DataFrame({"snakeId": ["sales"], "항목": ["매출액"], "2024Q1": [10.0]})
+
+    class Company:
+        _finance = Finance()
+
+        def _showImpl(self, topic: str, block=None, **kwargs):
+            return showImpl(self, topic, block, **kwargs)
+
+    result = showImpl(Company(), "IS", period=["2024Q1"], freq="Y", scope="separate")
+
+    assert result is not None
+    assert calls == [("IS", "Y", "separate")]
+
+
+def test_edgar_ytd_is_rejected_instead_of_returning_annual() -> None:
+    from dartlab.providers.edgar.builder.dataDispatcher import buildFinanceSeries
+
+    with pytest.raises(ValueError, match="YTD"):
+        buildFinanceSeries(object(), freq="YTD")
+
+
 def test_is_strong_topic_edgar() -> None:
     from dartlab.providers.edgar.builder.dataDispatcher import isStrongTopic
 

@@ -5,10 +5,15 @@ GatherEntry 클래스 (main.py) 가 의존하는 공유 데이터 + 헬퍼.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
-from typing import Literal
+from datetime import date
+from typing import TYPE_CHECKING, Literal
 
 import polars as pl
+
+if TYPE_CHECKING:
+    from dartlab.gather.infra.http import GatherHttpClient
 
 # targetType — gather contract 명세 (axis 별 target 의 의미).
 #   stockCode  : 종목코드/티커 (예: "005930", "AAPL")
@@ -292,15 +297,36 @@ INDEX_SYMBOLS: dict[str, str] = {
 }
 
 
-def _fetchNaverIndex(symbol: str, limit: int = 500) -> pl.DataFrame:
+def _parseIndexDate(value: str | None, *, name: str) -> date | None:
+    """공개 지수 조회 날짜를 ISO date로 검증한다."""
+    if value is None:
+        return None
+    try:
+        return date.fromisoformat(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{name}는 YYYY-MM-DD 형식이어야 합니다: {value!r}") from exc
+
+
+def _fetchNaverIndex(
+    symbol: str,
+    limit: int | None = None,
+    *,
+    start: str | None = None,
+    end: str | None = None,
+    client: GatherHttpClient | None = None,
+) -> pl.DataFrame:
     """네이버 차트 API로 시장 지수 OHLCV 수집.
 
     Parameters
     ----------
     symbol : str
         지수 심볼 (예: ``"KOSPI"``, ``"KOSDAQ"``, ``"KPI200"``).
-    limit : int
-        요청 거래일 수 (일). 기본 500.
+    limit : int | None
+        요청 거래일 수. None이면 기간 조회는 최대 6000일, 무기간 조회는 500일.
+    start, end : str | None
+        반환 기간 경계 (YYYY-MM-DD, 양 끝 포함).
+    client : GatherHttpClient | None
+        공통 rate limit/retry/proxy 클라이언트. None이면 호출 동안만 생성한다.
 
     Returns
     -------
@@ -311,23 +337,46 @@ def _fetchNaverIndex(symbol: str, limit: int = 500) -> pl.DataFrame:
         low : float — 저가 (포인트)
         close : float — 종가 (포인트)
         volume : int — 거래량 (주)
-        데이터 없으면 빈 DataFrame.
+        데이터 없으면 빈 DataFrame. 네트워크·응답 파싱 오류는 호출자에게 전파한다.
     """
-    import re
+    from dartlab.gather.infra.http import GatherHttpClient, runAsync
 
-    import httpx
+    startDate = _parseIndexDate(start, name="start")
+    endDate = _parseIndexDate(end, name="end")
+    if startDate is not None and endDate is not None and startDate > endDate:
+        raise ValueError(f"start({start})는 end({end})보다 늦을 수 없습니다")
+    requestLimit = limit if limit is not None else (6000 if startDate is not None else 500)
+    if requestLimit <= 0 or requestLimit > 6000:
+        raise ValueError("limit은 1 이상 6000 이하이어야 합니다")
 
-    url = f"https://fchart.stock.naver.com/sise.nhn?symbol={symbol}&timeframe=day&count={limit}&requestType=0"
-    r = httpx.get(url, timeout=15)
+    ownedClient = client is None
+    httpClient = client or GatherHttpClient()
+    url = "https://fchart.stock.naver.com/sise.nhn"
+    try:
+        r = runAsync(
+            httpClient.get(
+                url,
+                params={
+                    "symbol": symbol,
+                    "timeframe": "day",
+                    "count": requestLimit,
+                    "requestType": 0,
+                },
+                timeout=15,
+            )
+        )
+    finally:
+        if ownedClient:
+            runAsync(httpClient.close())
     items = re.findall(r'data="([^"]+)"', r.text)
     if not items:
         return pl.DataFrame()
 
     rows = []
-    for item in items:
+    for rowNumber, item in enumerate(items, start=1):
         parts = item.split("|")
         if len(parts) < 6:
-            continue
+            raise ValueError(f"네이버 지수 응답 {rowNumber}행의 필드가 부족합니다")
         try:
             rows.append(
                 {
@@ -339,12 +388,17 @@ def _fetchNaverIndex(symbol: str, limit: int = 500) -> pl.DataFrame:
                     "volume": int(parts[5]),
                 }
             )
-        except (ValueError, IndexError):
-            continue
+        except (ValueError, IndexError) as exc:
+            raise ValueError(f"네이버 지수 응답 {rowNumber}행을 해석할 수 없습니다") from exc
 
-    if not rows:
-        return pl.DataFrame()
-    return pl.DataFrame(rows).with_columns(pl.col("date").str.to_date("%Y-%m-%d"))
+    result = pl.DataFrame(rows).with_columns(pl.col("date").str.to_date("%Y-%m-%d")).sort("date")
+    if startDate is not None and len(items) == requestLimit and result["date"].min() > startDate:
+        raise ValueError(f"{symbol} 지수 요청 기간이 공급자 최대 {requestLimit}거래일을 초과했습니다: start={start}")
+    if startDate is not None:
+        result = result.filter(pl.col("date") >= startDate)
+    if endDate is not None:
+        result = result.filter(pl.col("date") <= endDate)
+    return result
 
 
 def _resolveAxis(axis: str) -> str:

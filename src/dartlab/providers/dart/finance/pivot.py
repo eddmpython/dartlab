@@ -121,6 +121,7 @@ def _loadAndNormalize(
         "fs_div",
         "account_id",
         "account_nm",
+        "account_detail",
         "bsns_year",
         "reprt_nm",
         "thstrm_amount",
@@ -385,12 +386,24 @@ def _normalizeQ4(df: pl.DataFrame) -> pl.DataFrame:
         else:
             df = df.with_columns(pl.lit(None).cast(pl.Float64).alias(col))
 
-    groupKey = ["bsns_year", "sj_div", "account_id"]
-    df = df.sort(groupKey + ["_qOrd"])
+    accountId = pl.col("account_id").fill_null("").str.strip_chars()
+    if "account_nm" in df.columns:
+        detail = (
+            pl.col("account_detail").fill_null("").str.strip_chars() if "account_detail" in df.columns else pl.lit("")
+        )
+        df = df.with_columns(
+            pl.when(accountId.is_in(["", "-표준계정코드 미사용-"]))
+            .then(
+                pl.concat_str([accountId, pl.col("account_nm").fill_null("").str.strip_chars(), detail], separator="|")
+            )
+            .otherwise(accountId)
+            .alias("_accountIdentity")
+        )
+    else:
+        df = df.with_columns(accountId.alias("_accountIdentity"))
 
-    df = df.with_columns(
-        pl.col("thstrm_add_amount").shift(1).over(groupKey).alias("_prevAdd")
-    )  # polars-streaming-unsupported: over
+    groupKey = ["bsns_year", "sj_div", "_accountIdentity"]
+    df = df.sort(groupKey + ["_qOrd"])
 
     # Q4 IS/CIS: thstrm_add_amount가 null이면 thstrm_amount를 연간 누적으로 간주
     df = df.with_columns(
@@ -404,12 +417,22 @@ def _normalizeQ4(df: pl.DataFrame) -> pl.DataFrame:
         .alias("thstrm_add_amount")
     )
 
-    # prevAdd/prevAmount 재계산 (Q4 fallback 적용 후)
+    # 실제 직전 분기만 차감한다. 존재하는 바로 앞 행을 사용하면 Q2 결손 시
+    # Q3에서 Q1을 빼는 잘못된 standalone 값이 만들어진다.
     df = df.with_columns(
-        pl.col("thstrm_add_amount").shift(1).over(groupKey).alias("_prevAdd")
+        pl.col("_qOrd").shift(1).over(groupKey).alias("_prevQOrd"),
+        pl.col("thstrm_add_amount").shift(1).over(groupKey).alias("_previousAddCandidate"),
+        pl.col("thstrm_amount").shift(1).over(groupKey).alias("_previousAmountCandidate"),
     )  # polars-streaming-unsupported: over
     df = df.with_columns(
-        pl.col("thstrm_amount").shift(1).over(groupKey).alias("_prevAmount")
+        pl.when(pl.col("_prevQOrd") == pl.col("_qOrd") - 1)
+        .then(pl.col("_previousAddCandidate"))
+        .otherwise(None)
+        .alias("_prevAdd"),
+        pl.when(pl.col("_prevQOrd") == pl.col("_qOrd") - 1)
+        .then(pl.col("_previousAmountCandidate"))
+        .otherwise(None)
+        .alias("_prevAmount"),
     )  # polars-streaming-unsupported: over
 
     df = df.with_columns(
@@ -444,7 +467,18 @@ def _normalizeQ4(df: pl.DataFrame) -> pl.DataFrame:
         .alias("_normalized_amount")
     )
 
-    df = df.drop(["_prevAdd", "_prevAmount", "thstrm_add_amount", "_qOrd"])
+    df = df.drop(
+        [
+            "_prevQOrd",
+            "_previousAddCandidate",
+            "_previousAmountCandidate",
+            "_prevAdd",
+            "_prevAmount",
+            "thstrm_add_amount",
+            "_qOrd",
+            "_accountIdentity",
+        ]
+    )
 
     return df
 

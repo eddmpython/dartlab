@@ -165,19 +165,21 @@ class _GatherPriceMixin(GatherMixinContext):
 
         from dartlab.core.market import resolveMarket
 
+        from ..infra.cache import buildCacheSlot
         from ..infra.telemetry import emitGatherFetch
 
         t0 = time.monotonic()
         cacheHit = False
         market = resolveMarket(stockCode, market)
+        cacheSlot = buildCacheSlot("price", market=market)
         try:
-            cached = self._cache.getTyped(stockCode, "price")
+            cached = self._cache.getTyped(stockCode, cacheSlot)
             if cached is not None:
                 cacheHit = True
                 return cached  # type: ignore[return-value]
             result = runAsync(_price.fetch(stockCode, market=market, client=self._client))
             if result:
-                self._cache.putTyped(stockCode, "price", result)
+                self._cache.putTyped(stockCode, cacheSlot, result)
             return result
         finally:
             emitGatherFetch("price", (time.monotonic() - t0) * 1000, cacheHit=cacheHit, market=market)
@@ -216,9 +218,11 @@ class _GatherPriceMixin(GatherMixinContext):
         """
         import polars as pl
 
+        from ..infra.cache import buildCacheSlot
+
         minutes = _intervalMinutes(interval) or 1
-        cacheKey = f"{stockCode}:intraday:{interval}:{start}:{end}"
-        cached = self._cache.get(cacheKey)
+        cacheSlot = buildCacheSlot("price", market=market, interval=interval, start=start, end=end)
+        cached = self._cache.getTyped(stockCode, cacheSlot)
         if cached is not None:
             return cached  # type: ignore[return-value]
         raw = runAsync(
@@ -237,9 +241,7 @@ class _GatherPriceMixin(GatherMixinContext):
             df = df.with_columns(pl.col("datetime").str.to_datetime("%Y-%m-%dT%H:%M:%S").alias("datetime"))
         if minutes > 1:
             df = _resampleMinutes(df, minutes)
-        from ..infra.cache import TTL_PRICE
-
-        self._cache.put(cacheKey, df, TTL_PRICE)
+        self._cache.putTyped(stockCode, cacheSlot, df)
         return df
 
     def flow(
@@ -517,8 +519,10 @@ class _GatherPriceMixin(GatherMixinContext):
 
         import polars as pl
 
-        cache_key = f"{stockCode}:history:{start}:{end}"
-        cached = self._cache.get(cache_key)
+        from ..infra.cache import buildCacheSlot
+
+        cacheSlot = buildCacheSlot("history", market=market, start=start, end=end)
+        cached = self._cache.getTyped(stockCode, cacheSlot)
         if cached is not None:
             return cached  # type: ignore[return-value]
         raw = runAsync(
@@ -535,7 +539,5 @@ class _GatherPriceMixin(GatherMixinContext):
         df = pl.DataFrame(raw)
         if "date" in df.columns and df["date"].dtype == pl.Utf8:
             df = df.with_columns(pl.col("date").str.to_date("%Y-%m-%d").alias("date"))
-        from ..infra.cache import TTL_HISTORY
-
-        self._cache.put(cache_key, df, TTL_HISTORY)
+        self._cache.putTyped(stockCode, cacheSlot, df)
         return df

@@ -85,3 +85,11 @@ def test_isFinalized_future_blocks() -> None:
 
     assert _isFinalized(past) is True
     assert _isFinalized(future) is False
+
+
+def test_gatherKrx_unknown_market_raises_before_loading() -> None:
+    """오타 market을 ALL로 확대하지 않고 즉시 거부한다."""
+    from dartlab.gather.krx.krxApi import gatherKrx
+
+    with pytest.raises(ValueError, match="알 수 없는 market"):
+        gatherKrx(start="2026-01-01", end="2026-01-02", market="KRXX")

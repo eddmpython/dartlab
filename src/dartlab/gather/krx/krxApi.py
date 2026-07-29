@@ -523,7 +523,11 @@ def gatherKrx(
         "STK": "STK",
         "KSQ": "KSQ",
     }
-    mkt = mktMap.get(market.upper(), "ALL")
+    marketKey = market.upper()
+    if marketKey not in mktMap:
+        allowed = ", ".join(mktMap)
+        raise ValueError(f"알 수 없는 market={market!r}. 허용값: {allowed}")
+    mkt = mktMap[marketKey]
 
     # 1. long DataFrame 확보 (HF or KRX OpenAPI). start/end 단일 경로 (date 폐기).
     # target="raw" 면 KRX 원본 그대로 (adjustment 적용 X), 그 외엔 split-adj 적용.

@@ -226,3 +226,54 @@ def test_pivot_empty_input() -> None:
     assert new["BS"] == {}
     assert new["IS"] == {}
     assert new["CF"] == {}
+
+
+@pytest.mark.parametrize(
+    "rows",
+    [
+        [
+            {
+                "sj_div": "BS",
+                "account_id": "ifrs-full_Assets",
+                "account_nm": "자산총계",
+                "bsns_year": 2024,
+                "reprt_nm": "1분기",
+                "_normalized_amount": None,
+            },
+            {
+                "sj_div": "BS",
+                "account_id": "dart_AssetsTotal",
+                "account_nm": "자산총계",
+                "bsns_year": 2024,
+                "reprt_nm": "1분기",
+                "_normalized_amount": 900.0,
+            },
+        ],
+        [
+            {
+                "sj_div": "BS",
+                "account_id": "ifrs-full_Assets",
+                "account_nm": "자산총계",
+                "bsns_year": 2024,
+                "reprt_nm": "1분기",
+                "_normalized_amount": None,
+            },
+            {
+                "sj_div": "BS",
+                "account_id": "ifrs-full_Assets",
+                "account_nm": "자산총계",
+                "bsns_year": 2024,
+                "reprt_nm": "1분기",
+                "_normalized_amount": 800.0,
+            },
+        ],
+    ],
+)
+def test_pivot_prefers_real_value_over_null_before_priority(rows: list[dict]) -> None:
+    """legacy처럼 우선순위가 높은 null보다 실제 값을 보존한다."""
+    from dartlab.providers.dart.finance.pivot import _pivotToSeries, _pivotToSeriesLegacy
+
+    frame = pl.DataFrame(rows, infer_schema_length=None)
+    periods = ["2024-Q1"]
+
+    assert _pivotToSeries(frame, periods) == _pivotToSeriesLegacy(frame, periods)

@@ -159,7 +159,10 @@ def _runDuckdbPivot(augmented: pl.DataFrame) -> "pl.DataFrame":
                 SELECT *,
                     ROW_NUMBER() OVER (
                         PARTITION BY sj_div_norm, snake_id, period_key
-                        ORDER BY priority ASC, _ingestion_order ASC
+                        ORDER BY
+                            CASE WHEN amount IS NULL THEN 1 ELSE 0 END ASC,
+                            priority ASC,
+                            _ingestion_order ASC
                     ) AS rn
                 FROM tagged
             )

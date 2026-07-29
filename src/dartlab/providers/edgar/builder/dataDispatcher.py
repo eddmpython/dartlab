@@ -42,11 +42,11 @@ def buildFinanceSeries(company: Company, *, freq: str = "Q", scope: str = "conso
 
     사용자 진입점은 ``c.panel("IS", freq=, scope=)`` 만이다 (api-contract).
     EDGAR 는 ``scope="separate"`` 미지원 (SEC 는 연결만 보고).
-    ``freq="YTD"`` 도 미지원 — annual 로 fallback.
+    ``freq="YTD"`` 도 미지원하며 명시적으로 거부한다.
 
     Args:
         company: EDGAR Company 인스턴스.
-        freq: ``"Q"`` (분기, 기본) / ``"Y"`` (연간) / ``"YTD"`` (annual fallback).
+        freq: ``"Q"`` (분기, 기본) / ``"Y"`` (연간).
         scope: ``"consolidated"`` (기본) — separate 는 raise.
 
     Returns:
@@ -90,8 +90,8 @@ def buildFinanceSeries(company: Company, *, freq: str = "Q", scope: str = "conso
         TargetMarkets:
             - US (SEC EDGAR) show dispatch.
     """
-    if freq not in ("Q", "Y", "YTD"):
-        raise ValueError(f"freq 는 'Q' / 'Y' / 'YTD' 중 하나 (받음: {freq!r})")
+    if freq not in ("Q", "Y"):
+        raise ValueError(f"freq 는 'Q' / 'Y' 중 하나이며 EDGAR YTD는 지원하지 않습니다 (받음: {freq!r})")
     if scope == "separate":
         raise ValueError("EDGAR 는 scope='separate' 미지원 — SEC 는 연결만 보고")
     if scope != "consolidated":
@@ -107,7 +107,7 @@ def buildFinanceSeries(company: Company, *, freq: str = "Q", scope: str = "conso
             val = buildTimeseries(company.cik)
             company._cache["_ts"] = val
         return val
-    # Y / YTD → annual
+    # Y → annual
     cacheHit, val = lookupCache(company._cache, "_annual")
     if not cacheHit:
         from dartlab.providers.edgar.finance.pivot import buildAnnual
@@ -711,20 +711,21 @@ def showImpl(
 
     # period가 리스트면 세로 뷰
     if isinstance(period, list):
-        wide = company._showImpl(topic, block)
+        wide = company._showImpl(topic, block, raw=raw, **_kw)
         if wide is None or not isinstance(wide, pl.DataFrame):
             return None
         return transposeToVertical(wide, period)
 
     # Finance topic(IS/BS/CF/CIS/SCE/ratios) — sections 거치지 않고 직접
-    if topic in _SHOW_FINANCE_TOPICS:
+    if topic in _SHOW_FINANCE_TOPICS or topic == "ratios":
         freq = _kw.get("freq", "Q")
+        scope = _kw.get("scope", "consolidated")
         if topic == "ratios":
             df = buildRatios(company)
         elif topic == "SCE":
             df = company._finance.SCE
         else:
-            df = company._finance._stmtDf(topic, freq=freq)
+            df = company._finance._stmtDf(topic, freq=freq, scope=scope)
         return applyPeriodFilter(df, period) if df is not None else None
 
     # Notes 12 항목 — DART panel("inventory") 와 동일 패턴 (XBRL 수치 태그 기반)

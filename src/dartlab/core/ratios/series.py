@@ -34,17 +34,19 @@ def _sliceSeries(
 
 
 def calcRatioSeries(
-    annualSeries: dict[str, dict[str, list[float | None]]],
+    series: dict[str, dict[str, list[float | None]]],
     years: list[str],
     *,
+    annual: bool,
     yoyLag: int,
     archetypeOverride: str | None = None,
 ) -> RatioSeriesResult:
     """재무비율 시계열을 단일 공식으로 계산한다.
 
     Args:
-        annualSeries: 연간 또는 분기 statement series.
+        series: 연간 또는 분기 statement series.
         years: 입력 값과 같은 순서의 기간 식별자.
+        annual: 연간 series면 True, standalone 분기 series면 False.
         yoyLag: 전년 비교 간격. 연간은 1, 분기는 4.
         archetypeOverride: 명시적 업종 정책. None이면 계정에서 판별한다.
 
@@ -58,11 +60,11 @@ def calcRatioSeries(
         raise ValueError("yoyLag must be a positive integer")
 
     result = RatioSeriesResult(years=list(years))
-    archetype = _resolveArchetype(annualSeries, archetypeOverride)
+    archetype = _resolveArchetype(series, archetypeOverride)
     for index in range(len(years)):
         point = calcRatios(
-            _sliceSeries(annualSeries, index + 1),
-            annual=True,
+            _sliceSeries(series, index + 1),
+            annual=annual,
             archetypeOverride=archetype,
             yoyLag=yoyLag,
         )

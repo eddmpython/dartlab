@@ -118,7 +118,7 @@ class TestBuildTimeseries:
 
         series, periods = result
         rev = series["IS"]["sales"]
-        idx = periods.index("2024-Q1")
+        idx = periods.index("2023-Q4")
         assert rev[idx] == pytest.approx(119_575_000_000, rel=1e-6)
 
     def test_aaplNetIncome(self):
@@ -127,7 +127,7 @@ class TestBuildTimeseries:
         result = buildTimeseries(AAPL_CIK, edgarDir=EDGAR_DIR)
         series, periods = result
         ni = series["IS"]["net_profit"]
-        idx = periods.index("2024-Q4")
+        idx = periods.index("2024-Q3")
         assert ni[idx] == pytest.approx(14_736_000_000, rel=1e-6)
 
     def test_msftRevenue(self):
@@ -136,7 +136,7 @@ class TestBuildTimeseries:
         result = buildTimeseries(MSFT_CIK, edgarDir=EDGAR_DIR)
         series, periods = result
         rev = series["IS"]["sales"]
-        idx = periods.index("2024-Q2")
+        idx = periods.index("2023-Q4")
         assert rev[idx] == pytest.approx(62_020_000_000, rel=1e-6)
 
     def test_nvdaRevenue(self):
@@ -145,7 +145,7 @@ class TestBuildTimeseries:
         result = buildTimeseries(NVDA_CIK, edgarDir=EDGAR_DIR)
         series, periods = result
         rev = series["IS"]["sales"]
-        idx = periods.index("2025-Q4")
+        idx = periods.index("2024-Q4")
         assert rev[idx] == pytest.approx(39_331_000_000, rel=1e-6)
 
     def test_l2Coverage(self):

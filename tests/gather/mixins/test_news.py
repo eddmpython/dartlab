@@ -44,3 +44,26 @@ def test_news_emits_gather_fetch(monkeypatch: pytest.MonkeyPatch) -> None:
 
     fetchEmits = [c for c in captured if c[0] == "gather:fetch:done"]
     assert any(kw["axis"] == "news" for _, kw in fetchEmits)
+
+
+def test_news_cache_isolated_by_days(monkeypatch: pytest.MonkeyPatch) -> None:
+    from dartlab.gather.engine import Gather
+    from dartlab.gather.sources import news as newsMod
+
+    calls: list[int] = []
+
+    async def fakeFetchAsync(query, *, market, days, client):
+        calls.append(days)
+        return [{"days": days}]
+
+    monkeypatch.setattr(newsMod, "_fetchAsync", fakeFetchAsync)
+    monkeypatch.setattr(newsMod, "toDataFrame", lambda items: pl.DataFrame(items))
+    gather = Gather()
+
+    thirty = gather.news("Apple", market="US", days=30)
+    one = gather.news("Apple", market="US", days=1)
+    thirtyAgain = gather.news("Apple", market="US", days=30)
+
+    assert calls == [30, 1]
+    assert thirty["days"][0] == thirtyAgain["days"][0] == 30
+    assert one["days"][0] == 1

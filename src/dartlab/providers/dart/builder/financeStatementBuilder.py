@@ -478,7 +478,7 @@ def ratioSeries(company: Company):
     # 2016-Q1 → 2016Q1 포맷 통일
     normalizedPeriods = [p.replace("-", "") for p in periods]
     archetypeOverride = _ratioArchetypeOverrideForIndustryGroup(getattr(company.sector, "industryGroup", None))
-    rs = calcRatioSeries(qSeries, normalizedPeriods, archetypeOverride=archetypeOverride, yoyLag=4)
+    rs = calcRatioSeries(qSeries, normalizedPeriods, annual=False, archetypeOverride=archetypeOverride, yoyLag=4)
     result = toSeriesDict(rs)
     company._cache[cacheKey] = result
     return result

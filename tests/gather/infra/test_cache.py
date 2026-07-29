@@ -137,3 +137,21 @@ def test_cache_stats_reset_isolation() -> None:
 
     resetCacheStats()
     assert getCacheStatsSnapshot() == {"hit": 0, "miss": 0, "evicted": 0}
+
+
+def test_cache_slot_is_deterministic_and_market_sensitive() -> None:
+    from dartlab.gather.infra.cache import buildCacheSlot
+
+    kr = buildCacheSlot("history", end="2026-01-31", market="kr", start="2026-01-01")
+    us = buildCacheSlot("history", start="2026-01-01", market="US", end="2026-01-31")
+
+    assert kr == "history|end=2026-01-31|market=KR|start=2026-01-01"
+    assert us == "history|end=2026-01-31|market=US|start=2026-01-01"
+    assert kr != us
+
+
+def test_cache_slot_rejects_empty_type() -> None:
+    from dartlab.gather.infra.cache import buildCacheSlot
+
+    with pytest.raises(ValueError, match="dataType"):
+        buildCacheSlot("")

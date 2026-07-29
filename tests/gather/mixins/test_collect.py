@@ -5,6 +5,7 @@ _GatherCollectMixin 의 collect() emit wrap 검증.
 
 from __future__ import annotations
 
+import asyncio
 import importlib
 
 import pytest
@@ -46,3 +47,67 @@ def test_collect_emits_gather_fetch(monkeypatch: pytest.MonkeyPatch) -> None:
 
     fetchEmits = [c for c in captured if c[0] == "gather:fetch:done"]
     assert any(kw["axis"] == "collect" for _, kw in fetchEmits)
+
+
+def test_collect_timeout_preserves_completed_results(monkeypatch: pytest.MonkeyPatch) -> None:
+    from types import SimpleNamespace
+
+    from dartlab.gather.engine import Gather
+    from dartlab.gather.mixins import collect as collectMod
+    from dartlab.gather.types import GatherResult, PriceSnapshot
+
+    monkeypatch.setattr(collectMod, "_COLLECT_TIMEOUT_SECONDS", 0.01)
+    monkeypatch.setattr(collectMod, "getMarketConfig", lambda market: SimpleNamespace(fallback_chain=["fast", "slow"]))
+
+    async def fakeDomain(self, domainName, stockCode, market):
+        if domainName == "slow":
+            await asyncio.sleep(1)
+        return GatherResult(domain=domainName, price=PriceSnapshot(current=100.0, source=domainName))
+
+    async def emptyList(*args, **kwargs):
+        return []
+
+    async def emptySector(*args, **kwargs):
+        return None
+
+    monkeypatch.setattr(collectMod._GatherCollectMixin, "_fetchDomainAsync", fakeDomain)
+    monkeypatch.setattr(collectMod._news, "_fetchAsync", emptyList)
+    monkeypatch.setattr(collectMod._sector, "fetch", emptySector)
+    monkeypatch.setattr(collectMod._insider, "fetchInsiderTrading", emptyList)
+
+    snapshot = Gather().collect("005930", market="KR")
+
+    assert snapshot.results["fast"].price is not None
+    assert snapshot.results["slow"].error == "timeout"
+    assert snapshot.sourcesAvailable == ["fast"]
+    assert snapshot.sourcesFailed == ["slow"]
+
+
+def test_collect_records_auxiliary_failures(monkeypatch: pytest.MonkeyPatch) -> None:
+    from types import SimpleNamespace
+
+    from dartlab.gather.engine import Gather
+    from dartlab.gather.mixins import collect as collectMod
+    from dartlab.gather.types import GatherResult
+
+    monkeypatch.setattr(collectMod, "getMarketConfig", lambda market: SimpleNamespace(fallback_chain=["only"]))
+
+    async def domain(self, domainName, stockCode, market):
+        return GatherResult(domain=domainName)
+
+    async def fail(*args, **kwargs):
+        raise RuntimeError("source down")
+
+    monkeypatch.setattr(collectMod._GatherCollectMixin, "_fetchDomainAsync", domain)
+    monkeypatch.setattr(collectMod._news, "_fetchAsync", fail)
+    monkeypatch.setattr(collectMod._sector, "fetch", fail)
+    monkeypatch.setattr(collectMod._insider, "fetchInsiderTrading", fail)
+
+    snapshot = Gather().collect("005930", market="KR")
+
+    assert snapshot.errors == {
+        "news": "source down",
+        "sector": "source down",
+        "insider": "source down",
+    }
+    assert snapshot.sourcesAvailable == []

@@ -108,3 +108,25 @@ def test_price_routes_interval_to_intraday_else_daily() -> None:
     seen.clear()
     _GatherPriceMixin.price(Dummy(), "005930")
     assert seen["path"] == "daily"
+
+
+def test_history_cache_isolated_by_resolved_market(monkeypatch: pytest.MonkeyPatch) -> None:
+    from dartlab.gather.engine import Gather
+    from dartlab.gather.mixins import price as priceMixin
+
+    calls: list[str] = []
+
+    async def fakeFetch(stockCode, *, start, end, market, client):
+        calls.append(market)
+        return [{"date": "2026-01-02", "close": 1.0 if market == "KR" else 2.0}]
+
+    monkeypatch.setattr(priceMixin._history, "fetch", fakeFetch)
+    gather = Gather()
+
+    kr = gather.history("005930", start="2026-01-01", end="2026-01-31", market="KR")
+    us = gather.history("005930", start="2026-01-01", end="2026-01-31", market="US")
+    krAgain = gather.history("005930", start="2026-01-01", end="2026-01-31", market="KR")
+
+    assert calls == ["KR", "US"]
+    assert kr["close"][0] == krAgain["close"][0] == 1.0
+    assert us["close"][0] == 2.0

@@ -414,7 +414,7 @@ class TestComposite:
     def test_ratio_series_uses_z_prime_coefficients(self):
         from dartlab.analysis.financial.ratios import calcRatioSeries
 
-        rs = calcRatioSeries(_SERIES_ANNUAL, ["2022", "2023", "2024"], yoyLag=1)
+        rs = calcRatioSeries(_SERIES_ANNUAL, ["2022", "2023", "2024"], annual=True, yoyLag=1)
         assert rs.altmanZScore[-1] == pytest.approx(1.77, abs=0.1)
 
 

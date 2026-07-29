@@ -1649,10 +1649,10 @@ class Company:
 
         사용자 진입점은 ``c.panel("IS", freq=, scope=)`` 만이다 (api-contract).
         EDGAR 는 ``scope="separate"`` 미지원 (SEC 는 연결만 보고).
-        ``freq="YTD"`` 도 미지원 - annual 로 fallback.
+        ``freq="YTD"`` 도 미지원하며 ValueError로 거부한다.
 
         Args:
-            freq: ``"Q"`` (분기, 기본) / ``"Y"`` (연간) / ``"YTD"`` (annual fallback).
+            freq: ``"Q"`` (분기, 기본) / ``"Y"`` (연간).
             scope: ``"consolidated"`` (기본) - separate 는 raise.
 
         Returns:

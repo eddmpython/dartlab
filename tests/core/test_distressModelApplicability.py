@@ -33,13 +33,13 @@ _ANNUAL_SERIES = {
 
 def test_generic_provider_series_does_not_publish_noncanonical_beneish():
     annualPoint = calcRatios(_ANNUAL_SERIES, annual=True)
-    annualSeries = calcRatioSeries(_ANNUAL_SERIES, ["2023", "2024"], yoyLag=1)
+    annualSeries = calcRatioSeries(_ANNUAL_SERIES, ["2023", "2024"], annual=True, yoyLag=1)
 
     quarterly = {
         statement: {field: values * 4 for field, values in rows.items()} for statement, rows in _ANNUAL_SERIES.items()
     }
     quarterlyPoint = calcRatios(quarterly, annual=False)
-    quarterlySeries = calcRatioSeries(quarterly, [f"Q{index}" for index in range(8)], yoyLag=4)
+    quarterlySeries = calcRatioSeries(quarterly, [f"Q{index}" for index in range(8)], annual=False, yoyLag=4)
 
     assert annualPoint.beneishMScore is None
     assert annualSeries.beneishMScore == [None, None]

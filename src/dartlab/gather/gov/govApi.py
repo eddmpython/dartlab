@@ -165,10 +165,32 @@ def _parseItems(data: dict) -> list[dict]:
 
 def _totalCount(data: dict) -> int:
     body = (data or {}).get("response", {}).get("body", {}) or {}
+    raw = body.get("totalCount")
+    if raw is None:
+        raise ValueError("gov 응답에 totalCount가 없습니다")
     try:
-        return int(body.get("totalCount") or 0)
-    except (TypeError, ValueError):
-        return 0
+        total = int(raw)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"gov 응답 totalCount가 정수가 아닙니다: {raw!r}") from exc
+    if total < 0:
+        raise ValueError(f"gov 응답 totalCount가 음수입니다: {total}")
+    return total
+
+
+def _validatePaging(numOfRows: int, maxPages: int) -> None:
+    if isinstance(numOfRows, bool) or not isinstance(numOfRows, int) or numOfRows <= 0:
+        raise ValueError("numOfRows는 양의 정수여야 합니다")
+    if isinstance(maxPages, bool) or not isinstance(maxPages, int) or maxPages <= 0:
+        raise ValueError("maxPages는 양의 정수여야 합니다")
+
+
+def _assertPageComplete(*, totalCount: int, fetchedPages: int, numOfRows: int, maxPages: int) -> None:
+    if fetchedPages * numOfRows < totalCount:
+        raise RuntimeError(
+            "gov 페이지 상한으로 응답이 잘렸습니다: "
+            f"totalCount={totalCount}, fetchedPages={fetchedPages}, "
+            f"numOfRows={numOfRows}, maxPages={maxPages}"
+        )
 
 
 def _rawFrame(rows: list[dict]) -> pl.DataFrame:
@@ -229,14 +251,19 @@ def fetchGovStock(
     """
     if not apiKey:
         raise ValueError("apiKey 필수 — 공공데이터포털 호출에는 디코딩 인증키가 필요합니다")
+    _validatePaging(numOfRows, maxPages)
     code = str(code).strip()
     rows: list[dict] = []
     seen: set[str] = set()
+    totalCount = 0
+    fetchedPages = 0
     for page in range(1, maxPages + 1):
         data = _get({"numOfRows": numOfRows, "pageNo": page, "likeSrtnCd": code}, apiKey=apiKey, client=client)
         items = _parseItems(data)
+        totalCount = _totalCount(data)
         if not items:
             break
+        fetchedPages = page
         for r in items:
             if str(r.get("srtnCd")) != code:
                 continue
@@ -245,8 +272,14 @@ def fetchGovStock(
                 continue
             seen.add(key)
             rows.append(r)
-        if page * numOfRows >= _totalCount(data):
+        if page * numOfRows >= totalCount:
             break
+    _assertPageComplete(
+        totalCount=totalCount,
+        fetchedPages=fetchedPages,
+        numOfRows=numOfRows,
+        maxPages=maxPages,
+    )
     return _rawFrame(rows)
 
 
@@ -285,16 +318,27 @@ def fetchGovBydd(
     """
     if not apiKey:
         raise ValueError("apiKey 필수 — 공공데이터포털 호출에는 디코딩 인증키가 필요합니다")
+    _validatePaging(numOfRows, maxPages)
     basDt = str(basDt).replace("-", "").strip()
     rows: list[dict] = []
+    totalCount = 0
+    fetchedPages = 0
     for page in range(1, maxPages + 1):
         data = _get({"numOfRows": numOfRows, "pageNo": page, "basDt": basDt}, apiKey=apiKey, client=client)
         items = _parseItems(data)
+        totalCount = _totalCount(data)
         if not items:
             break
+        fetchedPages = page
         rows.extend(items)
-        if page * numOfRows >= _totalCount(data):
+        if page * numOfRows >= totalCount:
             break
+    _assertPageComplete(
+        totalCount=totalCount,
+        fetchedPages=fetchedPages,
+        numOfRows=numOfRows,
+        maxPages=maxPages,
+    )
     return _rawFrame(rows)
 
 
@@ -418,8 +462,11 @@ def fetchGovIndex(
     """
     if not apiKey:
         raise ValueError("apiKey 필수 — 공공데이터포털 호출에는 디코딩 인증키가 필요합니다")
+    _validatePaging(numOfRows, maxPages)
     basDt = str(basDt).replace("-", "").strip()
     rows: list[dict] = []
+    totalCount = 0
+    fetchedPages = 0
     for page in range(1, maxPages + 1):
         data = _get(
             {"numOfRows": numOfRows, "pageNo": page, "basDt": basDt},
@@ -428,11 +475,19 @@ def fetchGovIndex(
             endpoint=_GOV_INDEX_ENDPOINT,
         )
         items = _parseItems(data)
+        totalCount = _totalCount(data)
         if not items:
             break
+        fetchedPages = page
         rows.extend(items)
-        if page * numOfRows >= _totalCount(data):
+        if page * numOfRows >= totalCount:
             break
+    _assertPageComplete(
+        totalCount=totalCount,
+        fetchedPages=fetchedPages,
+        numOfRows=numOfRows,
+        maxPages=maxPages,
+    )
     if not rows:
         return pl.DataFrame()
     df = pl.DataFrame(rows)

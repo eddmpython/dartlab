@@ -236,7 +236,17 @@ def handlePrice(
     target, market = _maybeResolveAssetId(target, market, marketExplicit)
 
     if target and target in INDEX_SYMBOLS:
-        result = _fetchNaverIndex(INDEX_SYMBOLS[target])
+        if isIntraday:
+            raise ValueError("시장 지수는 일봉(interval='1d')만 지원합니다")
+        from dartlab.gather.infra.cache import buildCacheSlot
+
+        symbol = INDEX_SYMBOLS[target]
+        cacheSlot = buildCacheSlot("history", market="KR", source="naverIndex", start=start, end=end)
+        result = g._cache.getTyped(symbol, cacheSlot)
+        if result is None:
+            result = _fetchNaverIndex(symbol, start=start, end=end, client=g._client)
+            if not result.is_empty():
+                g._cache.putTyped(symbol, cacheSlot, result)
     else:
         result = g.price(target, market=market, start=start, end=end, interval=interval)
     if result is None or (hasattr(result, "shape") and result.shape == (0, 0)):

@@ -70,8 +70,10 @@ class _GatherNewsMixin(GatherMixinContext):
         t0 = time.monotonic()
         cacheHit = False
         try:
-            cache_key = f"{query}:{market}:news"
-            cached = self._cache.getTyped(cache_key, "news")
+            from ..infra.cache import buildCacheSlot
+
+            cacheSlot = buildCacheSlot("news", market=market, days=days)
+            cached = self._cache.getTyped(query, cacheSlot)
             if cached is not None:
                 cacheHit = True
                 return cached  # type: ignore[return-value]
@@ -83,7 +85,7 @@ class _GatherNewsMixin(GatherMixinContext):
                 items = runAsync(_news._fetchAsync(query, market=market, days=days, client=self._client))
             df = _news.toDataFrame(items)
             if not df.is_empty():
-                self._cache.putTyped(cache_key, "news", df)
+                self._cache.putTyped(query, cacheSlot, df)
             return df
         finally:
             emitGatherFetch("news", (time.monotonic() - t0) * 1000, cacheHit=cacheHit, market=market)

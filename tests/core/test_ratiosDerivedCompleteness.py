@@ -38,7 +38,7 @@ _COMPLETE_SERIES = {
 
 def test_complete_inputs_keep_point_and_series_derived_values_aligned():
     point = calcRatios(_COMPLETE_SERIES, annual=True, marketCap=300.0)
-    series = calcRatioSeries(_COMPLETE_SERIES, ["2024"], yoyLag=1)
+    series = calcRatioSeries(_COMPLETE_SERIES, ["2024"], annual=True, yoyLag=1)
 
     assert point.netDebt == 30.0
     assert point.netDebtRatio == 30.0
@@ -72,7 +72,7 @@ def test_incomplete_debt_inputs_do_not_become_zero(statement, field):
     incomplete[statement].pop(field)
 
     point = calcRatios(incomplete, annual=True, marketCap=300.0)
-    series = calcRatioSeries(incomplete, ["2024"], yoyLag=1)
+    series = calcRatioSeries(incomplete, ["2024"], annual=True, yoyLag=1)
 
     assert point.netDebt is None
     assert point.netDebtRatio is None
@@ -88,7 +88,7 @@ def test_missing_depreciation_does_not_turn_ebitda_into_ebit():
     incomplete["CF"].pop("depreciation_and_amortization")
 
     point = calcRatios(incomplete, annual=True, marketCap=300.0)
-    series = calcRatioSeries(incomplete, ["2024"], yoyLag=1)
+    series = calcRatioSeries(incomplete, ["2024"], annual=True, yoyLag=1)
 
     assert point.ebitdaMargin is None
     assert point.debtToEbitda is None
@@ -103,7 +103,7 @@ def test_missing_capex_does_not_turn_fcf_into_operating_cashflow():
     incomplete["CF"].pop("purchase_of_property_plant_and_equipment")
 
     point = calcRatios(incomplete, annual=True)
-    series = calcRatioSeries(incomplete, ["2024"], yoyLag=1)
+    series = calcRatioSeries(incomplete, ["2024"], annual=True, yoyLag=1)
 
     assert point.fcf is None
     assert point.capexRatio is None
@@ -121,7 +121,7 @@ def test_explicit_zero_is_data_not_missing():
     zero["CF"]["depreciation_and_amortization"] = [0.0]
 
     point = calcRatios(zero, annual=True)
-    series = calcRatioSeries(zero, ["2024"], yoyLag=1)
+    series = calcRatioSeries(zero, ["2024"], annual=True, yoyLag=1)
 
     assert point.netDebt == 0.0
     assert point.netDebtRatio == 0.0

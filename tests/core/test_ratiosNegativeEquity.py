@@ -114,7 +114,7 @@ def testSeriesPathUsesTheSamePositiveDenominatorContract() -> None:
         "CF": {},
     }
 
-    result = calcRatioSeries(series, ["2024"], yoyLag=1)
+    result = calcRatioSeries(series, ["2024"], annual=True, yoyLag=1)
 
     assert result.roe == [None]
     assert result.debtRatio == [None]

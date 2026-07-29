@@ -374,7 +374,7 @@ class TestRatioQuality:
         }
 
         latest = calcRatios(series, annual=True)
-        ratioSeries = calcRatioSeries(series, ["2023", "2024", "2025"], yoyLag=1)
+        ratioSeries = calcRatioSeries(series, ["2023", "2024", "2025"], annual=True, yoyLag=1)
 
         assert latest.operatingIncomeTTM == 144
         assert latest.netIncomeTTM == 96
@@ -412,7 +412,7 @@ class TestRatioQuality:
         }
 
         latest = calcRatios(series, annual=True)
-        ratioSeries = calcRatioSeries(series, ["2023", "2024", "2025"], yoyLag=1)
+        ratioSeries = calcRatioSeries(series, ["2023", "2024", "2025"], annual=True, yoyLag=1)
 
         assert latest.roe is not None
         assert latest.roa is not None
@@ -452,6 +452,7 @@ class TestRatioQuality:
         ratioSeries = calcRatioSeries(
             series,
             ["2023", "2024", "2025"],
+            annual=True,
             yoyLag=1,
             archetypeOverride="bank",
         )

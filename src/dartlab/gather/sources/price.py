@@ -106,6 +106,9 @@ async def fetch(
         ``dartlab.gather.domains.fallback.healthTracker``.
     """
     config = getMarketConfig(market)
+    from ..infra.cache import buildCacheSlot
+
+    cacheSlot = buildCacheSlot("price", market=market)
     chain = getPriceFallback(market)
     chain = healthTracker.reorder(chain)
 
@@ -136,7 +139,7 @@ async def fetch(
                 circuitBreaker.recordSuccess(source_name)
                 healthTracker.record(source_name, success=True, latency=latency)
                 # stale cache에도 저장 (fallback용)
-                _staleCache.putTyped(stockCode, "price", result)
+                _staleCache.putTyped(stockCode, cacheSlot, result)
 
                 # Sprint 1 PR3 — 정확도 drift 감지 (consolidate=True 시만)
                 if consolidate:
@@ -158,7 +161,7 @@ async def fetch(
             continue
 
     # 모든 소스 실패 → stale cache 시도
-    stale = _staleCache.getTyped(stockCode, "price", allowStale=True)
+    stale = _staleCache.getTyped(stockCode, cacheSlot, allowStale=True)
     if stale is not None and isinstance(stale, PriceSnapshot):
         stale_copy = copy.copy(stale)
         stale_copy.is_stale = True

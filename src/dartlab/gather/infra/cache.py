@@ -51,6 +51,23 @@ _TTL_MAP: dict[str, int] = {
 }
 
 
+def buildCacheSlot(dataType: str, **dimensions: object) -> str:
+    """데이터 종류와 결과를 바꾸는 인자를 정규화한 캐시 슬롯을 만든다."""
+    base = str(dataType).strip()
+    if not base:
+        raise ValueError("dataType은 비어 있을 수 없습니다")
+    parts = [base]
+    for name in sorted(dimensions):
+        value = dimensions[name]
+        if value is None:
+            continue
+        normalized = str(value).strip()
+        if name == "market":
+            normalized = normalized.upper()
+        parts.append(f"{name}={normalized}")
+    return "|".join(parts)
+
+
 @dataclass(slots=True)
 class _CacheEntry:
     value: object
@@ -327,7 +344,7 @@ class GatherCache:
         getTyped : 동행 read.
         put : 위임 대상.
         """
-        ttl = _TTL_MAP.get(dataType, TTL_DEFAULT)
+        ttl = _TTL_MAP.get(dataType.partition("|")[0], TTL_DEFAULT)
         self.put(f"{stockCode}:{dataType}", value, ttl)
 
     def invalidate(self, stockCode: str) -> None:

@@ -8,6 +8,7 @@ import time
 from datetime import datetime, timezone
 
 from ..domains import loadDomain
+from ..infra.cache import buildCacheSlot
 from ..infra.http import runAsync
 from ..infra.telemetry import emitGatherFetch
 from ..marketConfig import getMarketConfig
@@ -18,6 +19,7 @@ from ..types import GatherResult, GatherSnapshot, SectorInfo
 from .context import GatherMixinContext
 
 log = logging.getLogger(__name__)
+_COLLECT_TIMEOUT_SECONDS = 10.0
 
 
 class _GatherCollectMixin(GatherMixinContext):
@@ -73,16 +75,17 @@ class _GatherCollectMixin(GatherMixinContext):
         from dartlab.core.market import resolveMarket
 
         market = resolveMarket(stockCode, market)
+        cacheSlot = buildCacheSlot("snapshot", market=market)
         t0 = time.monotonic()
         cacheHit = False
         try:
-            cached = self._cache.getTyped(stockCode, "snapshot")
+            cached = self._cache.getTyped(stockCode, cacheSlot)
             if cached is not None:
                 cacheHit = True
                 return cached  # type: ignore[return-value]
 
             snapshot = runAsync(self._collectAsync(stockCode, market))
-            self._cache.putTyped(stockCode, "snapshot", snapshot)
+            self._cache.putTyped(stockCode, cacheSlot, snapshot)
             return snapshot
         finally:
             emitGatherFetch("collect", (time.monotonic() - t0) * 1000, cacheHit=cacheHit, market=market)
@@ -115,20 +118,25 @@ class _GatherCollectMixin(GatherMixinContext):
         sectorTask = _sector.fetch(stockCode, market=market, client=self._client)
         insiderTask = _insider.fetchInsiderTrading(stockCode, market=market, client=self._client)
 
-        try:
-            allResults = await asyncio.wait_for(
-                asyncio.gather(
-                    *domainTasks,
-                    newsTask,
-                    sectorTask,
-                    insiderTask,
-                    return_exceptions=True,
-                ),
-                timeout=10.0,
-            )
-        except asyncio.TimeoutError:
-            log.warning("collect 10초 타임아웃 — 부분 결과 사용")
-            allResults = [GatherResult(domain=d, error="timeout") for d in domains] + [[], None, []]
+        tasks = [asyncio.create_task(coro) for coro in [*domainTasks, newsTask, sectorTask, insiderTask]]
+        done, pending = await asyncio.wait(tasks, timeout=_COLLECT_TIMEOUT_SECONDS)
+        if pending:
+            log.warning("collect %.1f초 타임아웃, 완료된 부분 결과 보존", _COLLECT_TIMEOUT_SECONDS)
+            for task in pending:
+                task.cancel()
+            await asyncio.gather(*pending, return_exceptions=True)
+
+        allResults: list[object] = []
+        for task in tasks:
+            if task in pending:
+                allResults.append(TimeoutError("timeout"))
+                continue
+            try:
+                allResults.append(task.result())
+            except asyncio.CancelledError:
+                allResults.append(RuntimeError("cancelled"))
+            except Exception as exc:
+                allResults.append(exc)
 
         nDomains = len(domains)
         domainResults = allResults[:nDomains]
@@ -144,17 +152,29 @@ class _GatherCollectMixin(GatherMixinContext):
             else:
                 results[name] = raw
 
+        errors: dict[str, str] = {}
         newsItems: list = []
         if isinstance(newsResult, list):
             newsItems = newsResult
+        elif isinstance(newsResult, BaseException):
+            errors["news"] = str(newsResult)
+
+        sectorInfo = sectorResult if isinstance(sectorResult, SectorInfo) else None
+        if isinstance(sectorResult, BaseException):
+            errors["sector"] = str(sectorResult)
+
+        insiderTrades = insiderResult if isinstance(insiderResult, list) else []
+        if isinstance(insiderResult, BaseException):
+            errors["insider"] = str(insiderResult)
 
         return GatherSnapshot(
             stockCode=stockCode,
             results=results,
             collected_at=datetime.now(timezone.utc).isoformat(),
             _news=newsItems,
-            _sectorInfo=sectorResult if isinstance(sectorResult, SectorInfo) else None,
-            _insiderTrades=insiderResult if isinstance(insiderResult, list) else [],
+            _sectorInfo=sectorInfo,
+            _insiderTrades=insiderTrades,
+            errors=errors,
         )
 
     async def _fetchDomainAsync(self, domainName: str, stockCode: str, market: str) -> GatherResult:

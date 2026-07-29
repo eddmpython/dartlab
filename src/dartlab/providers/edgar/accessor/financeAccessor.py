@@ -23,7 +23,13 @@ class _FinanceAccessor:
     def __init__(self, company: Company):
         self._company = company
 
-    def _stmtDf(self, stmtKey: str, *, freq: str = "Q") -> pl.DataFrame | None:
+    def _stmtDf(
+        self,
+        stmtKey: str,
+        *,
+        freq: str = "Q",
+        scope: str = "consolidated",
+    ) -> pl.DataFrame | None:
         """재무제표 DataFrame. ``freq="Q"`` (분기, 기본) 또는 ``"Y"`` (연간).
 
         Args:
@@ -39,7 +45,7 @@ class _FinanceAccessor:
         Example:
             >>> c._finance._stmtDf("BS")
         """
-        cacheKey = f"_finance_{stmtKey}_{freq}"
+        cacheKey = f"_finance_{stmtKey}_{freq}_{scope}"
         cacheHit, cached = lookupCache(self._company._cache, cacheKey)
         if cacheHit:
             return cached
@@ -50,7 +56,7 @@ class _FinanceAccessor:
                 self._company._cache[cacheKey] = result
                 return result
 
-        result = self._company._buildFinanceSeries(freq=freq)
+        result = self._company._buildFinanceSeries(freq=freq, scope=scope)
         if result is None:
             self._company._cache[cacheKey] = None
             return None
@@ -152,6 +158,22 @@ class _FinanceAccessor:
         periodCols = sorted([c for c in wide.columns if c not in ("snakeId", "항목")], reverse=True)
         if not periodCols:
             return None
+
+        if freqKey != "Y" and stmtKey in {"IS", "CF", "CI"}:
+            years = sorted({period[:4] for period in periodCols if len(period) == 6 and period.endswith("Q4")})
+            for year in years:
+                q4 = f"{year}Q4"
+                prior = [f"{year}Q{quarter}" for quarter in range(1, 4)]
+                if all(column in wide.columns for column in prior):
+                    complete = pl.all_horizontal([pl.col(column).is_not_null() for column in [q4, *prior]])
+                    wide = wide.with_columns(
+                        pl.when(complete)
+                        .then(pl.col(q4) - pl.sum_horizontal([pl.col(column) for column in prior]))
+                        .otherwise(None)
+                        .alias(q4)
+                    )
+                else:
+                    wide = wide.with_columns(pl.lit(None).cast(wide.schema[q4]).alias(q4))
         return wide.select(["snakeId", "항목"] + periodCols)
 
     @property
@@ -359,7 +381,7 @@ class _FinanceAccessor:
         if annual is None:
             return None
         aSeries, years = annual
-        rs = calcRatioSeries(aSeries, years, yoyLag=1)
+        rs = calcRatioSeries(aSeries, years, annual=True, yoyLag=1)
         result = toSeriesDict(rs)
         self._company._cache[cacheKey] = result
         return result

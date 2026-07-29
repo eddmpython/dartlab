@@ -18,6 +18,36 @@ from dartlab.core.utils.period import extractYear, formatPeriod, parsePeriod
 from dartlab.providers.edgar.finance.mapper import EdgarMapper
 
 
+def _calendarizePeriodColumns(pivoted: pl.DataFrame, fiscalToCalendar: dict[str, str]) -> pl.DataFrame:
+    """Fiscal period 열을 한 번에 calendar period 열로 변환한다.
+
+    순차 ``rename``은 목표 이름이 아직 원본 열로 존재할 때 변환을 건너뛴다.
+    예를 들어 AAPL의 ``2024-Q1 -> 2023-Q4``는 ``2023-Q4`` 원본 열 때문에
+    실패한다. select alias는 모든 열 이름을 동시에 바꾼다.
+
+    결산월 전환으로 여러 fiscal 열이 같은 calendar quarter를 가리키면 더
+    최근 fiscal label의 non-null 값을 우선하고 나머지는 결손 보충에만 쓴다.
+    """
+    if pivoted.is_empty() or not fiscalToCalendar:
+        return pivoted
+
+    targetSources: dict[str, list[str]] = {}
+    for source in pivoted.columns:
+        if source == "tag":
+            continue
+        target = fiscalToCalendar.get(source, source)
+        targetSources.setdefault(target, []).append(source)
+
+    expressions: list[pl.Expr] = [pl.col("tag")]
+    for target, sources in targetSources.items():
+        ordered = sorted(sources, reverse=True)
+        if len(ordered) == 1:
+            expressions.append(pl.col(ordered[0]).alias(target))
+        else:
+            expressions.append(pl.coalesce([pl.col(source) for source in ordered]).alias(target))
+    return pivoted.select(expressions)
+
+
 def _pivotTimeseries(selected: pl.DataFrame) -> pl.DataFrame:
     if selected.height == 0:
         return pl.DataFrame()

@@ -118,3 +118,51 @@ def test_normalize_empty_input_safe():
 
     assert normalizeGovIndexFrame(pl.DataFrame()).is_empty()
     assert normalizeGovToKrxRaw(pl.DataFrame()).is_empty()
+
+
+def _govResponse(*, totalCount: int, rows: list[dict]) -> dict:
+    return {
+        "response": {
+            "body": {
+                "totalCount": totalCount,
+                "items": {"item": rows},
+            }
+        }
+    }
+
+
+def test_fetchGovBydd_rejects_silent_page_truncation(monkeypatch: pytest.MonkeyPatch) -> None:
+    from dartlab.gather.gov import govApi
+
+    monkeypatch.setattr(
+        govApi,
+        "_get",
+        lambda *args, **kwargs: _govResponse(totalCount=3, rows=[{"basDt": "20260101", "srtnCd": "000001"}]),
+    )
+
+    with pytest.raises(RuntimeError, match="페이지 상한"):
+        govApi.fetchGovBydd("20260101", apiKey="key", numOfRows=1, maxPages=1)
+
+
+@pytest.mark.parametrize("name", ["fetchGovStock", "fetchGovBydd", "fetchGovIndex"])
+def test_gov_fetch_rejects_invalid_paging(name: str) -> None:
+    from dartlab.gather.gov import govApi
+
+    fetch = getattr(govApi, name)
+    firstArg = "005930" if name == "fetchGovStock" else "20260101"
+
+    with pytest.raises(ValueError, match="maxPages"):
+        fetch(firstArg, apiKey="key", maxPages=0)
+
+
+def test_fetchGovBydd_requires_totalCount(monkeypatch: pytest.MonkeyPatch) -> None:
+    from dartlab.gather.gov import govApi
+
+    monkeypatch.setattr(
+        govApi,
+        "_get",
+        lambda *args, **kwargs: {"response": {"body": {"items": {"item": [{"basDt": "20260101"}]}}}},
+    )
+
+    with pytest.raises(ValueError, match="totalCount"):
+        govApi.fetchGovBydd("20260101", apiKey="key")

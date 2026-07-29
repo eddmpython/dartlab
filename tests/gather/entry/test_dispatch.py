@@ -1,12 +1,13 @@
 """dartlab.gather.entry.dispatch real unit test (A 트랙 T1).
 
 AXIS_REGISTRY 일관성 + AXIS_ALIASES + _resolveAxis + INDEX_SYMBOLS self-map +
-_fetchNaverIndex HTTP 실패 빈 DataFrame 검증.
+_fetchNaverIndex 공통 HTTP 경로·기간·파싱 오류 검증.
 """
 
 from __future__ import annotations
 
 import importlib
+from datetime import date
 
 import polars as pl
 import pytest
@@ -58,15 +59,66 @@ def test_INDEX_SYMBOLS_self_map() -> None:
     assert INDEX_SYMBOLS["코스닥"] == "KOSDAQ"
 
 
-def test_fetchNaverIndex_empty_on_http_fail(monkeypatch: pytest.MonkeyPatch) -> None:
-    """_fetchNaverIndex — httpx response 가 빈 텍스트면 빈 DataFrame."""
+def test_fetchNaverIndex_empty_response() -> None:
+    """_fetchNaverIndex — 정상 HTTP 응답에 항목이 없으면 빈 DataFrame."""
     from dartlab.gather.entry import dispatch as dispatchMod
 
     class FakeResp:
         text = ""
 
-    monkeypatch.setattr("httpx.get", lambda *a, **kw: FakeResp())
+    class FakeClient:
+        async def get(self, *args, **kwargs):
+            return FakeResp()
 
-    df = dispatchMod._fetchNaverIndex("KOSPI", limit=10)
+    df = dispatchMod._fetchNaverIndex("KOSPI", limit=10, client=FakeClient())
     assert isinstance(df, pl.DataFrame)
     assert df.is_empty()
+
+
+def test_fetchNaverIndex_uses_common_client_and_filters_period() -> None:
+    """지수 가격은 공통 클라이언트로 조회하고 start/end를 양 끝 포함 적용한다."""
+    from dartlab.gather.entry import dispatch as dispatchMod
+
+    class FakeResp:
+        text = (
+            '<item data="20260101|100|110|90|105|1000"/>'
+            '<item data="20260102|105|115|95|110|1100"/>'
+            '<item data="20260103|110|120|100|115|1200"/>'
+        )
+
+    class FakeClient:
+        def __init__(self) -> None:
+            self.params = None
+
+        async def get(self, url, *, params, timeout):
+            assert url == "https://fchart.stock.naver.com/sise.nhn"
+            assert timeout == 15
+            self.params = params
+            return FakeResp()
+
+    client = FakeClient()
+    df = dispatchMod._fetchNaverIndex(
+        "KOSPI",
+        start="2026-01-02",
+        end="2026-01-02",
+        client=client,
+    )
+
+    assert client.params["count"] == 6000
+    assert df["date"].to_list() == [date(2026, 1, 2)]
+    assert df["close"].to_list() == [110.0]
+
+
+def test_fetchNaverIndex_malformed_row_raises() -> None:
+    """공급자 응답 손상은 빈 결과로 삼키지 않는다."""
+    from dartlab.gather.entry import dispatch as dispatchMod
+
+    class FakeResp:
+        text = '<item data="20260101|bad|110|90|105|1000"/>'
+
+    class FakeClient:
+        async def get(self, *args, **kwargs):
+            return FakeResp()
+
+    with pytest.raises(ValueError, match="해석할 수 없습니다"):
+        dispatchMod._fetchNaverIndex("KOSPI", client=FakeClient())

@@ -82,14 +82,14 @@ def test_ratio_series_keeps_incomplete_scores_as_none():
     incomplete["BS"].pop("current_assets")
     years = ["2022", "2023", "2024"]
 
-    result = calcRatioSeries(incomplete, years, yoyLag=1)
+    result = calcRatioSeries(incomplete, years, annual=True, yoyLag=1)
 
     assert result.piotroskiFScore == [None, None, None]
     assert result.altmanZScore == [None, None, None]
 
 
 def test_ratio_series_publishes_score_only_after_comparison_period_exists():
-    result = calcRatioSeries(_COMPLETE_SERIES, ["2022", "2023", "2024"], yoyLag=1)
+    result = calcRatioSeries(_COMPLETE_SERIES, ["2022", "2023", "2024"], annual=True, yoyLag=1)
 
     assert result.piotroskiFScore[0] is None
     assert all(score is not None for score in result.piotroskiFScore[1:])

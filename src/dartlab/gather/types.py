@@ -476,6 +476,20 @@ class GatherResult:
     shortSelling: ShortSellingData | None = None
     error: str | None = None
 
+    @property
+    def hasData(self) -> bool:
+        """분석에 넘길 실제 값이 하나라도 있는지 판정한다."""
+        return any(
+            (
+                self.price is not None,
+                self.flow is not None,
+                self.sector_per is not None,
+                self.sectorInfo is not None,
+                bool(self.insiderTrades),
+                self.shortSelling is not None,
+            )
+        )
+
 
 @dataclass
 class GatherSnapshot:
@@ -488,6 +502,7 @@ class GatherSnapshot:
     _sectorInfo: SectorInfo | None = None
     _insiderTrades: list[InsiderTrade] = field(default_factory=list)
     _shortSelling: ShortSellingData | None = None
+    errors: dict[str, str] = field(default_factory=dict)
 
     @property
     def price(self) -> PriceSnapshot | None:
@@ -736,7 +751,7 @@ class GatherSnapshot:
         --------
         sourcesFailed : 짝 — 실패 소스 list.
         """
-        return [d for d, r in self.results.items() if r.error is None]
+        return [d for d, r in self.results.items() if r.error is None and r.hasData]
 
     @property
     def sourcesFailed(self) -> list[str]:

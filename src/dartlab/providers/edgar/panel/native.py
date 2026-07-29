@@ -271,5 +271,10 @@ def _readRatios(ticker: str, *, freq: str, scope: str, periods: list[str] | None
             series[sj] = bucket
     if not series:
         return None
-    rs = calcRatioSeries(series, years, yoyLag=(4 if freq in {"quarter", "ytd"} else 1))
+    rs = calcRatioSeries(
+        series,
+        years,
+        annual=freq != "quarter",
+        yoyLag=(4 if freq in {"quarter", "ytd"} else 1),
+    )
     return _ratiosToWide(rs, years)

@@ -76,6 +76,8 @@ def buildTimeseries(
 
 def _buildTimeseriesFromFacts(
     df: pl.DataFrame,
+    *,
+    calendarize: bool = True,
 ) -> tuple[dict[str, dict[str, list[Optional[float]]]], list[str]]:
     stmtDfs = _splitStmtFacts(df)
 
@@ -84,7 +86,7 @@ def _buildTimeseriesFromFacts(
     # 12월 결산 기업(MNST/INTC/CPNG/OKLO 등) 은 identity — 효과 없음.
     # 비-12월 결산(UAA 3월·NKE 5월·AAPL 9월) 은 fy/fp → end-month CY 매핑.
     # 4 비교 가능성 (회사간 비교) 의 근본 — DART(Dec) ↔ EDGAR cross-company join 가능.
-    fiscalToCal = buildFiscalToCalendarMap(df)
+    fiscalToCal = buildFiscalToCalendarMap(df) if calendarize else {}
 
     series: dict[str, dict[str, dict[str, float]]] = {"BS": {}, "IS": {}, "CF": {}, "CI": {}}
     sidSource: dict[str, dict[str, dict[str, str]]] = {"BS": {}, "IS": {}, "CF": {}, "CI": {}}
@@ -97,21 +99,10 @@ def _buildTimeseriesFromFacts(
 
         pivoted = _pivotTimeseries(selected)
         pivoted = _computeQ4(pivoted, stmt)
-        # post-pivot column rename: fiscal → calendar
+        # 분기 공개 panel은 달력 분기로 비교 가능하게 만든다. 모든 fiscal 열을
+        # 동시에 변환해야 2024-Q1 -> 2023-Q4 같은 연쇄 rename이 빠지지 않는다.
         if fiscalToCal:
-            # NVDA 같이 결산월 변경 이력 있는 기업은 fiscal `2010-Q2` / `2010-Q3`
-            # 가 같은 calendar 로 중복 매핑될 수 있음. 먼저 등장한 fiscal 만 rename.
-            existingCols = set(pivoted.columns)
-            claimedTargets: set[str] = set()
-            renameMap: dict[str, str] = {}
-            for c in pivoted.columns:
-                tgt = fiscalToCal.get(c)
-                if tgt is None or tgt == c or tgt in existingCols or tgt in claimedTargets:
-                    continue
-                renameMap[c] = tgt
-                claimedTargets.add(tgt)
-            if renameMap:
-                pivoted = pivoted.rename(renameMap)
+            pivoted = _calendarizePeriodColumns(pivoted, fiscalToCal)
 
         periodCols = [c for c in pivoted.columns if c != "tag"]
 
@@ -215,7 +206,9 @@ def buildAnnual(
     if df is None or df.height == 0:
         return None
 
-    qResult = _buildTimeseriesFromFacts(df)
+    # annual은 SEC의 fiscal year 계약이다. quarterly 공개 panel의 calendar
+    # label을 여기 재사용하면 비12월 결산 기업의 네 분기가 두 연도에 갈라진다.
+    qResult = _buildTimeseriesFromFacts(df, calendarize=False)
     qSeries, qPeriods = qResult
 
     # FY 직접값 맵 구축 (분기 합산 실패 시 폴백)
@@ -621,6 +614,7 @@ from dartlab.providers.edgar.finance.pivotFactsLoad import (  # noqa: E402  re-e
     _storeMappedValue,
 )
 from dartlab.providers.edgar.finance.pivotPost import (  # noqa: E402  re-export
+    _calendarizePeriodColumns,
     _computeDerived,
     _computeEquity,
     _computeQ4,

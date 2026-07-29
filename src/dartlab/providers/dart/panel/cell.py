@@ -986,5 +986,10 @@ def readRatios(
     if assembled is None:
         return None
     series, years = assembled
-    rs = calcRatioSeries(series, years, yoyLag=(4 if freq in {"quarter", "ytd"} else 1))
+    rs = calcRatioSeries(
+        series,
+        years,
+        annual=freq != "quarter",
+        yoyLag=(4 if freq in {"quarter", "ytd"} else 1),
+    )
     return _ratiosToWide(rs, years)
