@@ -27,6 +27,61 @@ def test_scan_empty_string_raises_value_error():
         dartlab.scan("")
 
 
+def test_scan_rejects_unknown_market_instead_of_using_kr_data():
+    """알 수 없는 시장을 KR 결과로 대체하면 시장 간 데이터가 섞인다."""
+    import dartlab
+
+    with pytest.raises(ValueError, match="지원하지 않는 market"):
+        dartlab.scan("profitability", market="MARS")
+
+
+def test_scan_rejects_us_for_kr_only_axis():
+    """US 미지원 축은 KR 구현으로 fallback하지 않는다."""
+    import dartlab
+
+    with pytest.raises(ValueError, match="지원하지 않습니다"):
+        dartlab.scan("governance", market="US")
+
+
+def test_scan_rejects_unsupported_as_of_instead_of_returning_current_data():
+    """과거 시점 요청에 현재 자료를 반환하면 결과의 기준일을 오인한다."""
+    import dartlab
+
+    with pytest.raises(ValueError, match="asOf 시점 고정"):
+        dartlab.scan("profitability", asOf="2024-12-31")
+
+
+def test_scan_rejects_unknown_us_option_instead_of_swallowing_typo(monkeypatch):
+    """EDGAR 구현의 ``**kwargs``가 옵션 오타를 삼키지 않는다."""
+    import dartlab
+
+    with pytest.raises(ValueError, match="지원하지 않는 옵션"):
+        dartlab.scan("profitability", market="US", typoOption=True)
+
+
+def test_us_result_uses_common_target_filter_and_column_contract(monkeypatch):
+    """US dispatcher도 공통 target 필터와 공개 한글 컬럼 후처리를 거친다."""
+    import polars as pl
+
+    import dartlab
+    import dartlab.scan.scanClass as scan_class
+
+    raw = pl.DataFrame(
+        {
+            "stockCode": ["AAPL", "MSFT"],
+            "corpName": ["Apple Inc.", "Microsoft Corp."],
+            "opMargin": [30.0, 40.0],
+        }
+    )
+    monkeypatch.setattr(scan_class, "_edgarDispatch", lambda _axis, _kwargs: raw)
+
+    result = dartlab.scan("profitability", "MSFT", market="US")
+
+    assert result["종목코드"].to_list() == ["MSFT"]
+    assert result["종목명"].to_list() == ["Microsoft Corp."]
+    assert result["영업이익률"].to_list() == [40.0]
+
+
 def test_scan_none_returns_guide():
     """None 입력 = 무인자 = 가이드 DataFrame."""
     import polars as pl

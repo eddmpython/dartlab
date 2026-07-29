@@ -231,6 +231,59 @@ def filterLatestPerStock(target: pl.DataFrame, scCol: str = "stockCode", yearCol
     return target.join(latest, on=scCol).filter(pl.col(yearCol) == pl.col("_maxYear")).drop("_maxYear")
 
 
+_FINANCE_PERIOD_RANK = {
+    "Q1": 1,
+    "1분기": 1,
+    "Q2": 2,
+    "2분기": 2,
+    "Q3": 3,
+    "3분기": 3,
+    "Q4": 4,
+    "4분기": 4,
+    "annual": 4,
+    "연간": 4,
+    "사업보고서": 4,
+}
+
+
+def filterLatestPeriodPerStock(
+    target: pl.DataFrame,
+    scCol: str = "stockCode",
+    yearCol: str = "bsns_year",
+    periodCol: str = "reprt_nm",
+) -> pl.DataFrame:
+    """종목별 최신 연도 안에서 가장 늦은 재무 기간의 행만 남긴다.
+
+    같은 사업연도에 Q1부터 Q4까지 함께 있는 합본에서 행 순서에 따라 서로 다른
+    계정값을 고르는 문제를 막는다. 기간 컬럼이 없으면 연도 선택만 적용한다.
+
+    Args:
+        target: scan 대상 재무 DataFrame.
+        scCol: 종목코드 컬럼명.
+        yearCol: 사업연도 컬럼명.
+        periodCol: 분기 또는 연간 보고기간 컬럼명.
+
+    Returns:
+        회사별 최신 연도와 그 연도의 가장 늦은 기간에 속한 모든 계정 행.
+    """
+
+    latest = filterLatestPerStock(target, scCol, yearCol)
+    if latest.is_empty() or periodCol not in latest.columns:
+        return latest
+    ranked = latest.with_columns(
+        pl.col(periodCol)
+        .cast(pl.Utf8)
+        .replace_strict(_FINANCE_PERIOD_RANK, default=0, return_dtype=pl.Int8)
+        .alias("_periodRank")
+    )
+    best = ranked.group_by(scCol).agg(pl.col("_periodRank").max().alias("_bestPeriodRank"))
+    return (
+        ranked.join(best, on=scCol)
+        .filter(pl.col("_periodRank") == pl.col("_bestPeriodRank"))
+        .drop("_periodRank", "_bestPeriodRank")
+    )
+
+
 def _calendarizeWithFmMap(df: pl.DataFrame) -> pl.DataFrame:
     """raw 합본 DataFrame 에 결산월 SSOT 기반 캘린더 환원 적용.
 

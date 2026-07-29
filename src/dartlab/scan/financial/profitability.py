@@ -41,7 +41,7 @@ from dartlab.scan.io.parquet import (
     _loadRawFinanceViaDuckDb,
     collectScan,
     extractAccount,
-    filterLatestPerStock,
+    filterLatestPeriodPerStock,
     financeScanPath,
     lazyParquet,
     parquetColumns,
@@ -83,7 +83,10 @@ def _gradeProfitability(opMargin: float | None, roe: float | None) -> str:
         - ``"저수익"`` : 0 <= best < 5 (%)
         - ``"적자"``   : best < 0 (%)
     """
-    best = max(opMargin or -999, roe or -999)
+    values = [value for value in (opMargin, roe) if value is not None]
+    if not values:
+        return "자료부족"
+    best = max(values)
     if best >= 20:
         return "우수"
     if best >= 10:
@@ -239,8 +242,7 @@ def _scanPerFile() -> pl.DataFrame:
         except (pl.exceptions.PolarsError, OSError):
             target = _emptyProfitabilityFrame()
         if not target.is_empty() and scCol in target.columns:
-            cfs = target.filter(pl.col("fs_nm").str.contains("연결"))
-            return _computeProfitability(cfs if not cfs.is_empty() else target, scCol)
+            return _computeProfitability(preferConsolidatedPerCompany(target, scCol), scCol)
 
     parquetFiles = sorted(financeDir.glob("*.parquet"))
 
@@ -304,7 +306,7 @@ def _computeProfitability(target: pl.DataFrame, scCol: str) -> pl.DataFrame:
 
     # 종목별 최신 연도 — 글로벌 max 버그 방지 (2026 Q1 조기 제출 3 종목 때문에
     # 2025 자 2895 종목이 전부 버려지던 현상 수정, 2026-04-23).
-    latest = filterLatestPerStock(target, scCol)
+    latest = filterLatestPeriodPerStock(target, scCol)
     if latest.is_empty():
         return _emptyProfitabilityFrame()
 

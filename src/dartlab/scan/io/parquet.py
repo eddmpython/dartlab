@@ -55,6 +55,9 @@ from dartlab.scan.io.calendar import (
     _calendarizeWithFmMap,
 )
 from dartlab.scan.io.calendar import (
+    filterLatestPeriodPerStock as filterLatestPeriodPerStock,
+)
+from dartlab.scan.io.calendar import (
     filterLatestPerStock as filterLatestPerStock,
 )
 from dartlab.scan.io.calendar import (
@@ -341,6 +344,33 @@ def preferConsolidatedPerCompany(frame: pl.DataFrame, stockCodeCol: str = "stock
     """
 
     if frame.is_empty() or "fs_nm" not in frame.columns or stockCodeCol not in frame.columns:
+        return frame
+    ranked = frame.with_columns(pl.when(pl.col("fs_nm").str.contains("연결")).then(0).otherwise(1).alias("_fsRank"))
+    best = ranked.group_by(stockCodeCol).agg(pl.col("_fsRank").min().alias("_bestFsRank"))
+    return (
+        ranked.join(best, on=stockCodeCol)
+        .filter(pl.col("_fsRank") == pl.col("_bestFsRank"))
+        .drop("_fsRank", "_bestFsRank")
+    )
+
+
+def preferConsolidatedPerCompanyLazy(
+    frame: pl.LazyFrame,
+    stockCodeCol: str = "stockCode",
+) -> pl.LazyFrame:
+    """LazyFrame에서도 회사별 연결 우선 규칙을 동일하게 적용한다.
+
+    Args:
+        frame: ``fs_nm``과 종목코드 컬럼을 가진 재무 LazyFrame.
+        stockCodeCol: 종목코드 컬럼 이름.
+
+    Returns:
+        회사마다 연결 행을 우선하고, 연결이 없는 회사는 별도를 남긴 LazyFrame.
+        판정 컬럼이 없으면 입력을 그대로 반환한다.
+    """
+
+    columns = set(frame.collect_schema().names())
+    if "fs_nm" not in columns or stockCodeCol not in columns:
         return frame
     ranked = frame.with_columns(pl.when(pl.col("fs_nm").str.contains("연결")).then(0).otherwise(1).alias("_fsRank"))
     best = ranked.group_by(stockCodeCol).agg(pl.col("_fsRank").min().alias("_bestFsRank"))
@@ -715,10 +745,9 @@ def _scanFinanceFromLazy(
             .collect(engine="streaming")
         )
 
-    # 연결 우선. 연결 매칭이 하나도 없을 때만 별도 재무제표까지 fallback.
-    matched = _collectLatest(base.filter(pl.col("fs_nm").str.contains("연결")))
-    if matched.is_empty():
-        matched = _collectLatest(base)
+    # 연결 우선은 유니버스 전체가 아니라 회사별로 판정한다. 다른 회사가 연결
+    # 재무제표를 냈다는 이유로 별도만 내는 회사가 사라지면 안 된다.
+    matched = _collectLatest(preferConsolidatedPerCompanyLazy(base, scCol))
 
     result: dict[str, float] = {}
     for row in matched.iter_rows(named=True):

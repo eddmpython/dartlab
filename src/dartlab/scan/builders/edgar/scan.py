@@ -113,7 +113,9 @@ def _scanProfitability(**_kw) -> pl.DataFrame:
         pct(pl.col("net_profit"), pl.col("total_assets")).alias("roa"),
     )
     result = result.with_columns(
-        pl.when(pl.max_horizontal("opMargin", "roe") >= 20)
+        pl.when(pl.max_horizontal("opMargin", "roe").is_null())
+        .then(pl.lit("자료부족"))
+        .when(pl.max_horizontal("opMargin", "roe") >= 20)
         .then(pl.lit("우수"))
         .when(pl.max_horizontal("opMargin", "roe") >= 10)
         .then(pl.lit("양호"))
@@ -162,7 +164,9 @@ def _scanGrowth(**_kw) -> pl.DataFrame:
         pct(pl.col("net_profit") - pl.col("net_profit_prev"), pl.col("net_profit_prev")).alias("niYoy"),
     )
     result = result.with_columns(
-        pl.when(pl.col("revenueYoy") >= 20)
+        pl.when(pl.col("revenueYoy").is_null())
+        .then(pl.lit("자료부족"))
+        .when(pl.col("revenueYoy") >= 20)
         .then(pl.lit("고성장"))
         .when(pl.col("revenueYoy") >= 5)
         .then(pl.lit("성장"))
@@ -215,7 +219,9 @@ def _scanQuality(**_kw) -> pl.DataFrame:
         pl.when(pl.col("cfToNi").abs() > 20).then(None).otherwise(pl.col("cfToNi")).alias("cfToNi"),
     )
     result = result.with_columns(
-        pl.when((pl.col("cfToNi") >= 0.8) & (pl.col("accrualRatio").abs() < 0.05))
+        pl.when(pl.col("cfToNi").is_null() | pl.col("accrualRatio").is_null())
+        .then(pl.lit("자료부족"))
+        .when((pl.col("cfToNi") >= 0.8) & (pl.col("accrualRatio").abs() < 0.05))
         .then(pl.lit("우수"))
         .when((pl.col("cfToNi") >= 0.5) & (pl.col("accrualRatio").abs() < 0.10))
         .then(pl.lit("양호"))
@@ -256,12 +262,14 @@ def _scanLiquidity(**_kw) -> pl.DataFrame:
     result = df.with_columns(
         pct(pl.col("current_assets"), pl.col("current_liabilities")).alias("currentRatio"),
         pct(
-            pl.col("current_assets") - pl.col("inventories").fill_null(0),
+            pl.col("current_assets") - pl.col("inventories"),
             pl.col("current_liabilities"),
         ).alias("quickRatio"),
     )
     result = result.with_columns(
-        pl.when(pl.col("currentRatio") >= 200)
+        pl.when(pl.col("currentRatio").is_null())
+        .then(pl.lit("자료부족"))
+        .when(pl.col("currentRatio") >= 200)
         .then(pl.lit("우수"))
         .when(pl.col("currentRatio") >= 150)
         .then(pl.lit("양호"))
@@ -311,15 +319,17 @@ def _scanEfficiency(**_kw) -> pl.DataFrame:
         safeDiv(pl.col("sales"), pl.col("total_assets")).round(2).alias("assetTurnover"),
         # CCC = 재고일수 + 매출채권일수 - 매입채무일수
         (
-            safeDiv(pl.col("inventories").fill_null(0) * 365, pl.col("sales"))
-            + safeDiv(pl.col("trade_and_other_receivables").fill_null(0) * 365, pl.col("sales"))
-            - safeDiv(pl.col("trade_and_other_payables").fill_null(0) * 365, pl.col("sales"))
+            safeDiv(pl.col("inventories") * 365, pl.col("sales"))
+            + safeDiv(pl.col("trade_and_other_receivables") * 365, pl.col("sales"))
+            - safeDiv(pl.col("trade_and_other_payables") * 365, pl.col("sales"))
         )
         .round(0)
         .alias("ccc"),
     )
     result = result.with_columns(
-        pl.when(pl.col("assetTurnover") >= 1.5)
+        pl.when(pl.col("assetTurnover").is_null())
+        .then(pl.lit("자료부족"))
+        .when(pl.col("assetTurnover") >= 1.5)
         .then(pl.lit("우수"))
         .when(pl.col("assetTurnover") >= 1.0)
         .then(pl.lit("양호"))
@@ -366,7 +376,7 @@ def _scanCashflow(**_kw) -> pl.DataFrame:
     if df.is_empty():
         return df
     result = df.with_columns(
-        (pl.col("operating_cashflow") + pl.col("capex").fill_null(0)).alias("fcf"),
+        (pl.col("operating_cashflow") + pl.col("capex")).alias("fcf"),
     )
     result = result.with_columns(
         pct(pl.col("operating_cashflow"), pl.col("sales")).alias("ocfMargin"),
@@ -374,6 +384,12 @@ def _scanCashflow(**_kw) -> pl.DataFrame:
     # 현금흐름 패턴 분류 (OCF+/-, ICF+/-, FCF+/-)
     result = result.with_columns(
         pl.when(
+            pl.col("operating_cashflow").is_null()
+            | pl.col("investing_cashflow").is_null()
+            | pl.col("financing_cash_flow").is_null()
+        )
+        .then(pl.lit("자료부족"))
+        .when(
             (pl.col("operating_cashflow") > 0)
             & (pl.col("investing_cashflow") < 0)
             & (pl.col("financing_cash_flow") < 0)
@@ -436,7 +452,9 @@ def _scanDividendTrend(**_kw) -> pl.DataFrame:
         pl.when(pl.col("payoutRatio").abs() > 200).then(None).otherwise(pl.col("payoutRatio")).alias("payoutRatio"),
     )
     result = result.with_columns(
-        pl.when(pl.col("dividendAmount").is_null() | (pl.col("dividendAmount") == 0))
+        pl.when(pl.col("dividendAmount").is_null())
+        .then(pl.lit("자료부족"))
+        .when(pl.col("dividendAmount") == 0)
         .then(pl.lit("무배당"))
         .when(pl.col("payoutRatio").is_not_null() & (pl.col("payoutRatio") >= 30))
         .then(pl.lit("양호"))
@@ -483,7 +501,9 @@ def _scanCapital(**_kw) -> pl.DataFrame:
         pl.when(pl.col("payoutRatio").abs() > 200).then(None).otherwise(pl.col("payoutRatio")).alias("payoutRatio"),
     )
     result = result.with_columns(
-        pl.when(
+        pl.when(pl.col("dividendAmount").is_null() & pl.col("treasury_stock").is_null())
+        .then(pl.lit("자료부족"))
+        .when(
             (pl.col("dividendAmount") > 0)
             & (pl.col("treasury_stock").is_not_null())
             & (pl.col("treasury_stock").abs() > 0)
@@ -537,13 +557,26 @@ def _scanDebt(**_kw) -> pl.DataFrame:
     result = df.with_columns(
         pct(pl.col("total_liabilities"), pl.col("total_stockholders_equity")).alias("debtRatio"),
         safeDiv(pl.col("operating_profit"), pl.col("interest_expense").abs()).round(2).alias("icr"),
-        pct(
-            pl.col("shortterm_borrowings").fill_null(0),
-            pl.col("shortterm_borrowings").fill_null(0) + pl.col("longterm_borrowings").fill_null(0),
-        ).alias("shortTermRatio"),
+        pl.when(
+            pl.col("shortterm_borrowings").is_not_null()
+            & pl.col("longterm_borrowings").is_not_null()
+            & ((pl.col("shortterm_borrowings") + pl.col("longterm_borrowings")) == 0)
+        )
+        .then(pl.lit(0.0))
+        .otherwise(
+            pct(
+                pl.col("shortterm_borrowings"),
+                pl.col("shortterm_borrowings") + pl.col("longterm_borrowings"),
+            )
+        )
+        .alias("shortTermRatio"),
     )
     result = result.with_columns(
-        pl.when(pl.col("debtRatio") < 100)
+        # 현재 위험등급 경계는 부채비율만 사용한다. 무차입이나 무이자 때문에 ICR이
+        # 정의되지 않는 회사를 자료부족으로 오분류하지 않는다.
+        pl.when(pl.col("debtRatio").is_null())
+        .then(pl.lit("자료부족"))
+        .when(pl.col("debtRatio") < 100)
         .then(pl.lit("안전"))
         .when(pl.col("debtRatio") < 200)
         .then(pl.lit("주의"))
@@ -593,7 +626,7 @@ def _scanValuation(**_kw) -> pl.DataFrame:
 
     # shares outstanding 추가
     result = df.with_columns(
-        (pl.col("operating_profit").fill_null(0) + pl.col("depreciation_amortization").fill_null(0)).alias("ebitda"),
+        (pl.col("operating_profit") + pl.col("depreciation_amortization")).alias("ebitda"),
     )
 
     # PER/PBR은 시가총액 필요 — 현재는 기본 재무비율만 제공

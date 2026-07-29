@@ -6,7 +6,12 @@ from pathlib import Path
 
 import polars as pl
 
-from dartlab.scan.io.parquet import latestDataRows, parseNumStr, scanParquets
+from dartlab.scan.io.parquet import (
+    latestDataRows,
+    parseNumStr,
+    preferConsolidatedPerCompany,
+    scanParquets,
+)
 
 
 def scanBonds() -> dict[str, dict]:
@@ -404,8 +409,7 @@ def _debtMixFromMerged(scanPath: Path) -> dict[str, dict]:
     if bs.is_empty() or "account_id" not in bs.columns:
         return {}
 
-    cfs = bs.filter(pl.col("fs_nm").str.contains("연결"))
-    target = cfs if not cfs.is_empty() else bs
+    target = preferConsolidatedPerCompany(bs, scCol)
 
     # 종목별 최신 연도
     latestYear = target.group_by(scCol).agg(pl.col("bsns_year").max().alias("_maxYear"))

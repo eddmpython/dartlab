@@ -136,8 +136,8 @@ def _scanFromMerged(scanPath: Path) -> pl.DataFrame:
             continue
 
         currentRatio = ca / cl * 100
-        quickAssets = ca - (inv or 0)
-        quickRatio = quickAssets / cl * 100 if cl > 0 else None
+        quickAssets = ca - inv if inv is not None else None
+        quickRatio = quickAssets / cl * 100 if quickAssets is not None and cl > 0 else None
 
         rows.append(
             {
@@ -211,8 +211,8 @@ def _scanPerFile() -> pl.DataFrame:
             continue
 
         currentRatio = ca / cl * 100
-        quickAssets = ca - (inv or 0)
-        quickRatio = quickAssets / cl * 100 if cl > 0 else None
+        quickAssets = ca - inv if inv is not None else None
+        quickRatio = quickAssets / cl * 100 if quickAssets is not None and cl > 0 else None
 
         rows.append(
             {

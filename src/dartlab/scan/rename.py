@@ -11,6 +11,7 @@ import polars as pl
 
 _COLUMN_RENAME = {
     "stockCode": "종목코드",
+    "corpName": "종목명",
     "opMargin": "영업이익률",
     "netMargin": "순이익률",
     "roe": "ROE",
@@ -84,7 +85,7 @@ def _enrichWithKorean(df: pl.DataFrame) -> pl.DataFrame:
         (기존 영문 컬럼) — _COLUMN_RENAME 매핑에 따라 한글로 rename
     """
     # 종목명 매핑
-    if "stockCode" in df.columns:
+    if "stockCode" in df.columns and "corpName" not in df.columns:
         try:
             # F5: root facade 우회 → _listingDispatch 직접 (정공법 D + submodule 명 충돌 회피)
             from dartlab._listingDispatch import listing as _listing

@@ -413,6 +413,12 @@ def _edgarDispatch(axis: str, kwargs: dict) -> pl.DataFrame | None:
     pl.DataFrame | None
         EDGAR 축 결과 DataFrame. 구현 없는 축이면 None.
     """
+    allowed = {"snakeId", "freq"} if axis == "account" else {"ratioName", "freq"} if axis == "ratio" else set()
+    unexpected = sorted(set(kwargs) - allowed)
+    if unexpected:
+        names = ", ".join(unexpected)
+        raise ValueError(f"scan 축 '{axis}'의 US 구현이 지원하지 않는 옵션입니다: {names}")
+
     # XBRL 기반 11 축 — edgarScan._DISPATCH 와 1:1. 미라우팅 시 scanClass 가 DART 구현
     # (valuation=네이버 실시간가, audit=DART 감사데이터)으로 잘못 fallback 하므로 전 축을 라우팅한다.
     if axis in _EDGAR_UNIVERSE_AXES - {"account", "ratio"}:

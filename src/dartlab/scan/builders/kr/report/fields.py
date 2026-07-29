@@ -7,6 +7,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
@@ -196,8 +197,16 @@ def executeScreenSpec(spec: dict[str, Any]) -> pl.DataFrame:
     scanFields : 사용 가능한 필드 검색.
     dartlab.search : docs 조건 후보 생성.
     """
-    if not isinstance(spec, dict):
-        raise ValueError("screen spec 은 dict 여야 합니다.")
+    return _executeScreenSpec(spec, applyLimit=True)
+
+
+def _executeScreenSpec(spec: dict[str, Any], *, applyLimit: bool) -> pl.DataFrame:
+    """screen spec을 실행하고 필요할 때만 반환 행 제한을 적용한다.
+
+    공개 경로는 항상 ``applyLimit=True``다. 설명 경로는 같은 실행 결과 전체에서
+    실제 멤버 수를 센 뒤 공개 ``limit``만큼만 payload에 싣는다.
+    """
+    _validateScreenScope(spec)
 
     where = _ensureConditionList(spec.get("where", []), key="where")
     any_conditions = _ensureConditionList(spec.get("any", []), key="any")
@@ -262,7 +271,7 @@ def executeScreenSpec(spec: dict[str, Any]) -> pl.DataFrame:
         if sort_field in result.columns:
             result = result.sort(sort_field, descending=bool(sort.get("desc", False)), nulls_last=True)
 
-    return result.head(limit)
+    return result.head(limit) if applyLimit else result
 
 
 def executeScreenSpecDetailed(spec: dict[str, Any]) -> dict[str, Any]:
@@ -277,9 +286,10 @@ def executeScreenSpecDetailed(spec: dict[str, Any]) -> dict[str, Any]:
 
     from dartlab.scan.screen.verdict import summarizeVerdicts
 
-    if not isinstance(spec, dict):
-        raise ValueError("screen spec 은 dict 여야 합니다.")
-    members = executeScreenSpec(spec)
+    _validateScreenScope(spec)
+    allMembers = _executeScreenSpec(spec, applyLimit=False)
+    limit = int(spec.get("limit", 50))
+    members = allMembers.head(limit)
     workSpec = {**spec, "_axisCache": {}}
     derivedValues, derivedUnits = _computeDerived(workSpec)
     if derivedValues:
@@ -312,7 +322,7 @@ def executeScreenSpecDetailed(spec: dict[str, Any]) -> dict[str, Any]:
                 kinds[field] = str(meta["kind"])
             targetConditions.append(publicCondition)
 
-    conditions: list[dict[str, Any]] = normalizedWhere.copy()
+    conditions: list[Mapping[str, Any]] = normalizedWhere.copy()
     if normalizedAny:
         conditions.append({"field": "__any__", "op": "any", "alternatives": normalizedAny})
 
@@ -328,11 +338,11 @@ def executeScreenSpecDetailed(spec: dict[str, Any]) -> dict[str, Any]:
     summary = summarizeVerdicts(rawRows, conditions, kinds=kinds)
     nearMissCodes = set(summary.pop("nearMissCodes", []))
     byCode = {str(row.get("stockCode") or ""): row for row in rawRows}
-    memberCodes = _stockCodes(members)
+    memberCodes = _stockCodes(allMembers)
     summary["memberCodes"] = memberCodes
     summary["memberCount"] = len(memberCodes)
 
-    datasetAsOf = spec.get("asOf")
+    datasetAsOf = None
     gaps = []
     if datasetAsOf is None:
         gaps.append(
@@ -357,7 +367,9 @@ def executeScreenSpecDetailed(spec: dict[str, Any]) -> dict[str, Any]:
         "datasetAsOf": datasetAsOf,
         "executedAt": datetime.now(timezone.utc).date().isoformat(),
         "members": members.to_dicts(),
-        "memberCount": members.height,
+        "memberCount": allMembers.height,
+        "returnedMemberCount": members.height,
+        "membersTruncated": members.height < allMembers.height,
         "coverage": summary["coverage"],
         "funnel": summary["funnel"],
         "excluded": summary["excluded"],
@@ -369,6 +381,20 @@ def executeScreenSpecDetailed(spec: dict[str, Any]) -> dict[str, Any]:
             "specVersion": spec.get("schemaVersion", 1),
         },
     }
+
+
+def _validateScreenScope(spec: dict[str, Any]) -> None:
+    """현재 screen이 실제로 지키는 시장과 시점 계약만 허용한다."""
+    if not isinstance(spec, dict):
+        raise ValueError("screen spec 은 dict 여야 합니다.")
+    market = str(spec.get("market") or "KR").strip().upper()
+    if market not in {"KR", "DART"}:
+        raise ValueError("screen spec은 현재 KR 시장만 지원합니다. US 결과를 KR 데이터로 대체하지 않습니다.")
+    if spec.get("asOf") is not None:
+        raise ValueError(
+            "screen spec의 asOf 시점 고정은 아직 지원하지 않습니다. "
+            "최신 prebuild를 사용하거나 시점 보존 데이터 경로를 먼저 제공하세요."
+        )
 
 
 def _screenUniverse() -> pl.DataFrame:

@@ -13,7 +13,11 @@ from __future__ import annotations
 
 import polars as pl
 
-from dartlab.scan.io.parquet import preferConsolidatedPerCompany
+from dartlab.scan.io.parquet import (
+    _scanFinanceFromLazy,
+    preferConsolidatedPerCompany,
+    preferConsolidatedPerCompanyLazy,
+)
 
 
 def _frame() -> pl.DataFrame:
@@ -94,3 +98,71 @@ def testCustomStockCodeColumnIsHonored() -> None:
 
     assert sorted(result["corp"].unique().to_list()) == ["A", "B"]
     assert result.filter(pl.col("corp") == "A")["fs_nm"].to_list() == ["연결재무제표"]
+
+
+def testLazyPreferenceKeepsStandaloneOnlyCompany() -> None:
+    """합본과 raw glob이 쓰는 lazy 경로에서도 회사별 판정이어야 한다."""
+
+    result = preferConsolidatedPerCompanyLazy(_frame().lazy()).collect()
+
+    assert sorted(result["stockCode"].unique().to_list()) == ["CONS01", "SOLO01"]
+
+
+def testFinanceLazyConsumerKeepsStandaloneOnlyCompany() -> None:
+    """실제 계정 스캔 소비자가 혼합 유니버스에서 별도 회사를 잃지 않는다."""
+
+    frame = pl.DataFrame(
+        {
+            "stockCode": ["CONS01", "CONS01", "SOLO01"],
+            "bsns_year": ["2025", "2025", "2025"],
+            "fs_nm": ["연결재무제표", "재무제표", "재무제표"],
+            "account_id": ["Revenue", "Revenue", "Revenue"],
+            "account_nm": ["매출액", "매출액", "매출액"],
+            "thstrm_amount": ["100", "90", "50"],
+        }
+    )
+
+    result = _scanFinanceFromLazy(frame.lazy(), {"Revenue"}, {"매출액"}, "thstrm_amount")
+
+    assert result == {"CONS01": 100.0, "SOLO01": 50.0}
+
+
+def testDebtMergedConsumerKeepsStandaloneOnlyCompany(tmp_path) -> None:
+    """부채 합본 소비자도 유니버스 전체 연결 판정을 쓰지 않는다."""
+    from dartlab.scan.debt.scanner import _debtMixFromMerged
+
+    rows = []
+    for code, fs_name, liabilities, equity in [
+        ("CONS01", "연결재무제표", "100", "50"),
+        ("CONS01", "재무제표", "90", "45"),
+        ("SOLO01", "재무제표", "40", "20"),
+    ]:
+        rows.extend(
+            [
+                {
+                    "stockCode": code,
+                    "bsns_year": "2025",
+                    "sj_div": "BS",
+                    "fs_nm": fs_name,
+                    "account_id": "Liabilities",
+                    "account_nm": "부채총계",
+                    "thstrm_amount": liabilities,
+                },
+                {
+                    "stockCode": code,
+                    "bsns_year": "2025",
+                    "sj_div": "BS",
+                    "fs_nm": fs_name,
+                    "account_id": "Equity",
+                    "account_nm": "자본총계",
+                    "thstrm_amount": equity,
+                },
+            ]
+        )
+    path = tmp_path / "finance.parquet"
+    pl.DataFrame(rows).write_parquet(path)
+
+    result = _debtMixFromMerged(path)
+
+    assert result["CONS01"]["부채비율"] == 200.0
+    assert result["SOLO01"]["부채비율"] == 200.0

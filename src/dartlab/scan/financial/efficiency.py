@@ -176,11 +176,11 @@ def scanEfficiency(*, verbose: bool = True) -> pl.DataFrame:
 
         invDays = round(365 / invTurnover) if invTurnover and invTurnover > 0 else None
         arDays = round(365 / arTurnover) if arTurnover and arTurnover > 0 else None
-        apDays = round(365 * ap / cogs) if ap and cogs and cogs > 0 else None
+        apDays = round(365 * ap / cogs) if ap is not None and ap >= 0 and cogs is not None and cogs > 0 else None
 
         ccc = None
-        if invDays is not None and arDays is not None:
-            rawCcc = invDays + arDays - (apDays or 0)
+        if invDays is not None and arDays is not None and apDays is not None:
+            rawCcc = invDays + arDays - apDays
             ccc = max(-_CCC_CAP, min(_CCC_CAP, rawCcc))
 
         rows.append(

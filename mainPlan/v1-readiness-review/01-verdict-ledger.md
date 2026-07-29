@@ -60,10 +60,44 @@ Guard는 현재 레이어의 source를 동결한 뒤 한 번 실행한다. Guard
   cross import 없이 결함 수정과 집중 회귀를 끝내고 source 동결 뒤 공식 Guard, 원장,
   커밋, push까지 닫는다.
 - 다음 첫 행동: 네 패키지 전체 tree와 공개 `dartlab.scan(...)`, 하위 L2·L3 소비자를
-  호출 그래프로 대조한다. 기존 미달 증거인 연결 우선 필터 11곳, 결손 입력의 등급화,
-  `asOf` 무시, 0을 결측으로 바꾸는 `or`를 실제 제품 행동으로 먼저 재현한다.
+  호출 그래프로 대조한다. scan 공통 의미 계약 체크포인트 다음에는 실제 panel에서
+  총자본을 유실하는 reference alias 의미 충돌을 같은 L1.5 SSOT 경계에서 먼저 닫고,
+  scan의 one-pass 집계와 EDGAR 공통 기간 batch를 성능·메모리 기준으로 고친다.
 - 금지: axis나 파일 하나만 끝내고 완료 보고, L2 이상 수정 선행,
   중간 source에서 공식 Guard 반복
+
+## L1.5 scan, frame, synth, reference 순차 안정화 원장 (2026-07-30)
+
+### 진행 증거 1. scan 공통 의미 계약
+
+**상태: L1.5 진행 중. 레이어 완료 아님.** 공개 scan 진입점과 KR·EDGAR 재무 축의
+공통 의미 계약을 첫 응집 변경으로 닫았다.
+
+1. `market` 오타와 US 미지원 축은 더 이상 KR 자료로 내려가지 않는다. 구현하지 않은
+   `asOf`는 현재 자료를 반환하지 않고 명시적으로 거절하며, EDGAR의 `**kwargs`도 알 수
+   없는 옵션을 삼키지 않는다. US 결과도 공통 target 필터와 공개 컬럼 정규화를 거친다.
+2. screen 상세 결과는 전체 멤버 수와 반환 수를 분리하고 `membersTruncated`를 남긴다.
+   KR 외 시장과 지키지 못하는 `asOf`를 거절한다.
+3. 연결 우선 규칙을 eager와 lazy 모두 회사별 SSOT로 만들었다. 실제 합본 계정 스캔,
+   profitability DuckDB fallback, debt 합본에서 다른 회사의 연결 공시 때문에 별도만
+   내는 회사가 사라지지 않는다.
+4. 같은 연도 Q1과 Q4가 함께 있을 때 입력 행 순서에 따라 profitability와 growth가
+   달라지던 비결정성을 공통 최신 기간 선택기로 막았다. growth는 최신 분기와 같은
+   분기의 과거값만 CAGR로 비교한다.
+5. KR과 EDGAR의 결측 계정을 0으로 바꾸던 유동성, 효율성, 현금흐름, 성장성, 수익성,
+   부채, 밸류에이션, 배당, 자본 분류를 수정했다. 알려진 0 차입은 결측과 구분한다.
+6. 집중 회귀 `53 passed`, 추가 scan builder 분리 실행 `45 passed`, 다음 묶음
+   `73 passed`다. Ruff format과 변경 범위 lint가 통과했다. 공식 format gate도
+   통과했고 lint gate는 제품 검사 전부 통과 후 기존 사용자 소유 블로그 asset 두 폴더의
+   workspace hygiene에서만 실패했다.
+7. 전 scan 단일 프로세스 실행은 테스트 실패 없이 118개 뒤 RSS `4,623 MB`, 더 작은
+   묶음도 73개 뒤 `3,275 MB`에서 메모리 안전장치가 종료했다. 이는 L1.5 완료 증거가
+   아니라 다음 최적화의 차단 근거다. profitability 실데이터도 약 5.3초와 RSS 약
+   955MB가 관찰되어 one-pass group/pivot 전환 전에는 scan을 완료 판정하지 않는다.
+
+다음 순서는 reference alias 의미 충돌과 다단계 병합을 닫은 뒤, scan 집계를 회사별
+반복 filter가 없는 one-pass 경로로 바꾸고 EDGAR 계정 batch와 공통 period를 확정하는 것이다.
+frame, synth, reference 전체와 실제 소비자, 최종 Guard가 남았으므로 **L1.5 판정은 미완료**다.
 
 ## L1 gather, providers 순차 안정화 원장 (2026-07-30)
 

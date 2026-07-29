@@ -29,6 +29,7 @@ from dartlab.scan.io.parquet import (
     _ensureScanData,
     collectScan,
     extractAccount,
+    filterLatestPeriodPerStock,
     financeScanPath,
     lazyParquet,
     preferConsolidatedPerCompany,
@@ -70,7 +71,10 @@ def _gradeGrowth(revCagr: float | None, opCagr: float | None) -> str:
         - ``"역성장"`` : -10 <= best < 0 (%)
         - ``"급감"``   : best < -10 (%)
     """
-    best = max(revCagr or -999, opCagr or -999)
+    values = [value for value in (revCagr, opCagr) if value is not None]
+    if not values:
+        return "자료부족"
+    best = max(values)
     if best >= 20:
         return "고성장"
     if best >= 10:
@@ -88,11 +92,11 @@ def _classifyPattern(revCagr: float | None, opCagr: float | None, niCagr: float 
     Parameters
     ----------
     revCagr : float | None
-        매출액 CAGR (%). None 이면 0 으로 취급.
+        매출액 CAGR (%). None 이면 자료부족으로 취급.
     opCagr : float | None
-        영업이익 CAGR (%). None 이면 0 으로 취급.
+        영업이익 CAGR (%). None 이면 자료부족으로 취급.
     niCagr : float | None
-        순이익 CAGR (%). None 이면 0 으로 취급.
+        순이익 CAGR (%). None 이면 필요한 판정에서 자료부족으로 취급.
 
     Returns
     -------
@@ -105,11 +109,13 @@ def _classifyPattern(revCagr: float | None, opCagr: float | None, niCagr: float 
         - ``"전면역성장"`` : 매출·영업이익 모두 < -5 %
         - ``"혼합"``       : 위 패턴에 해당하지 않는 경우
     """
-    r = revCagr or 0
-    o = opCagr or 0
-    n = niCagr or 0
+    if revCagr is None or opCagr is None:
+        return "자료부족"
+    r = revCagr
+    o = opCagr
+    n = niCagr
 
-    if r > 5 and o > 5 and n > 5:
+    if n is not None and r > 5 and o > 5 and n > 5:
         return "균형성장"
     if r > 5 and o > r:
         return "수익개선"
@@ -119,7 +125,7 @@ def _classifyPattern(revCagr: float | None, opCagr: float | None, niCagr: float 
         return "구조조정"
     if r < -5 and o < -5:
         return "전면역성장"
-    return "혼합"
+    return "혼합" if n is not None else "자료부족"
 
 
 def scanGrowth(*, verbose: bool = True) -> pl.DataFrame:
@@ -309,6 +315,14 @@ def _computeGrowth(target: pl.DataFrame, scCol: str) -> pl.DataFrame:
     rows: list[dict] = []
     for code in target[scCol].unique().to_list():
         sub = target.filter(pl.col(scCol) == code)
+        # 최신 기간을 먼저 고르고, CAGR 기준연도도 같은 분기끼리 비교한다.
+        # Q1 최신값과 과거 Q4 누계값을 섞으면 행 순서와 공시 구성에 따라 성장률이 바뀐다.
+        if "reprt_nm" in sub.columns:
+            latestPeriodRows = filterLatestPeriodPerStock(sub, scCol)
+            if latestPeriodRows.is_empty():
+                continue
+            latestPeriod = latestPeriodRows["reprt_nm"][0]
+            sub = sub.filter(pl.col("reprt_nm") == latestPeriod)
         yrs = sorted(sub["bsns_year"].unique().to_list(), reverse=True)
         if len(yrs) < 2:
             continue
@@ -337,9 +351,9 @@ def _computeGrowth(target: pl.DataFrame, scCol: str) -> pl.DataFrame:
         niNow = extractAccount(latSub, _NI_IDS, _NI_NMS)
         niOld = extractAccount(baseSub, _NI_IDS, _NI_NMS)
 
-        revCagr = _cagr(revOld, revNow, nYears) if revOld and revOld > 0 else None
-        opCagr = _cagr(opOld, opNow, nYears) if opOld and opOld > 0 else None
-        niCagr = _cagr(niOld, niNow, nYears) if niOld and niOld > 0 else None
+        revCagr = _cagr(revOld, revNow, nYears) if revOld is not None and revOld > 0 and revNow is not None else None
+        opCagr = _cagr(opOld, opNow, nYears) if opOld is not None and opOld > 0 and opNow is not None else None
+        niCagr = _cagr(niOld, niNow, nYears) if niOld is not None and niOld > 0 and niNow is not None else None
 
         if revCagr is None and opCagr is None and niCagr is None:
             continue
@@ -347,7 +361,7 @@ def _computeGrowth(target: pl.DataFrame, scCol: str) -> pl.DataFrame:
         rows.append(
             {
                 "stockCode": code,
-                "revenue": round(revNow) if revNow else None,
+                "revenue": round(revNow) if revNow is not None else None,
                 "revenueCagr": revCagr,
                 "opIncomeCagr": opCagr,
                 "netIncomeCagr": niCagr,

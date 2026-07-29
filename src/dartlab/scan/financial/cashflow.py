@@ -71,7 +71,7 @@ _PATTERNS = {
 }
 
 
-def _classifyPattern(ocf: float, icf: float, finCf: float) -> str:
+def _classifyPattern(ocf: float | None, icf: float | None, finCf: float | None) -> str:
     """OCF/ICF/FINCF 부호 조합 → 라이프사이클 패턴 라벨.
 
     Parameters
@@ -90,6 +90,8 @@ def _classifyPattern(ocf: float, icf: float, finCf: float) -> str:
         성장투자형 / 공격성장형 / 구조재편형 / 현금축적형 /
         외부의존형 / 축소정리형 / 위기대응형 / 현금위기형 / 미분류.
     """
+    if ocf is None or icf is None or finCf is None:
+        return "자료부족"
     key = (
         "P" if ocf >= 0 else "N",
         "P" if icf >= 0 else "N",
@@ -160,15 +162,15 @@ def _scanFromMerged(scanPath: Path) -> pl.DataFrame:
         if ocf is None:
             continue
 
-        fcf = ocf + (icf or 0)
+        fcf = ocf + icf if icf is not None else None
         rows.append(
             {
                 "stockCode": code,
                 "ocf": round(ocf),
                 "icf": round(icf) if icf is not None else None,
                 "finCf": round(finCf) if finCf is not None else None,
-                "fcf": round(fcf),
-                "pattern": _classifyPattern(ocf, icf or 0, finCf or 0),
+                "fcf": round(fcf) if fcf is not None else None,
+                "pattern": _classifyPattern(ocf, icf, finCf),
             }
         )
 
@@ -237,15 +239,15 @@ def _scanPerFile() -> pl.DataFrame:
         if ocf is None:
             continue
 
-        fcf = ocf + (icf or 0)
+        fcf = ocf + icf if icf is not None else None
         rows.append(
             {
                 "stockCode": code,
                 "ocf": round(ocf),
                 "icf": round(icf) if icf is not None else None,
                 "finCf": round(finCf) if finCf is not None else None,
-                "fcf": round(fcf),
-                "pattern": _classifyPattern(ocf, icf or 0, finCf or 0),
+                "fcf": round(fcf) if fcf is not None else None,
+                "pattern": _classifyPattern(ocf, icf, finCf),
             }
         )
 

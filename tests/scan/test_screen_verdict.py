@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 
 import polars as pl
+import pytest
 
 from dartlab.scan.screen.verdict import evaluateValue, summarizeVerdicts
 
@@ -74,7 +75,11 @@ def test_any_group_uses_pass_then_unknown_then_fail_precedence():
 def test_detailed_result_preserves_executor_members_and_explains_gaps(monkeypatch):
     import dartlab.scan.builders.kr.report.fields as fields
 
-    monkeypatch.setattr(fields, "executeScreenSpec", lambda spec: pl.DataFrame({"stockCode": ["A"], "roe": [20.0]}))
+    monkeypatch.setattr(
+        fields,
+        "_executeScreenSpec",
+        lambda spec, applyLimit: pl.DataFrame({"stockCode": ["A"], "roe": [20.0]}),
+    )
     monkeypatch.setattr(fields, "_computeDerived", lambda spec: ({}, {}))
     monkeypatch.setattr(
         fields,
@@ -94,11 +99,45 @@ def test_detailed_result_preserves_executor_members_and_explains_gaps(monkeypatc
 
     result = fields.executeScreenSpecDetailed({"where": [{"field": "roe", "op": ">=", "value": 10}], "limit": 20})
     assert result["memberCount"] == 1
+    assert result["returnedMemberCount"] == 1
+    assert result["membersTruncated"] is False
     assert result["members"][0]["stockCode"] == "A"
     assert result["universe"]["count"] == 3
     assert result["coverage"][0]["valid"] == 2
     assert result["excluded"] == {"failed": 1, "missingOnly": 1}
     assert result["gaps"][0]["code"] == "datasetAsOfUnavailable"
+
+
+def test_detailed_result_counts_all_members_before_payload_limit(monkeypatch):
+    import dartlab.scan.builders.kr.report.fields as fields
+
+    field = "finance.ratio.roe"
+    all_members = pl.DataFrame({"stockCode": ["A", "B", "C", "D", "E"], field: [50, 40, 30, 20, 10]})
+    monkeypatch.setattr(fields, "_executeScreenSpec", lambda spec, applyLimit: all_members)
+    monkeypatch.setattr(fields, "_computeDerived", lambda spec: ({}, {}))
+    monkeypatch.setattr(fields, "_screenUniverse", lambda: all_members.select("stockCode"))
+    monkeypatch.setattr(
+        fields,
+        "_fieldMeta",
+        lambda field, spec=None: {"kind": "number", "unit": "%", "operatorSet": ">,>=,<,<=,==,!=,between"},
+    )
+    monkeypatch.setattr(fields, "_loadFieldValues", lambda field, spec: all_members.select("stockCode", field))
+
+    result = fields.executeScreenSpecDetailed({"where": [{"field": field, "op": ">=", "value": 10}], "limit": 2})
+
+    assert result["memberCount"] == 5
+    assert result["returnedMemberCount"] == 2
+    assert result["membersTruncated"] is True
+    assert [row["stockCode"] for row in result["members"]] == ["A", "B"]
+
+
+def test_screen_rejects_unimplemented_point_in_time_and_market_scope():
+    import dartlab.scan.builders.kr.report.fields as fields
+
+    with pytest.raises(ValueError, match="asOf 시점 고정"):
+        fields.executeScreenSpec({"where": [], "asOf": "2024-12-31"})
+    with pytest.raises(ValueError, match="KR 시장만"):
+        fields.executeScreenSpec({"where": [], "market": "US"})
 
 
 def test_scan_engine_call_forwards_screen_spec_and_explain(monkeypatch):

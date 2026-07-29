@@ -248,18 +248,39 @@ class Scan:
         if resolved in ("account", "ratio"):
             callKwargs["freq"] = freq
 
-        # EDGAR market 디스패치 — XBRL 기반 축은 EDGAR 전용 구현으로 분기
-        market = callKwargs.pop("market", None)
-        if market in ("edgar", "us", "US"):
-            result = _edgarDispatch(resolved, callKwargs)
-            if result is not None:
-                return result
-            # fallback: EDGAR 전용 구현 없으면 기본 함수 호출 (account/ratio 등)
+        # 현재 공개 scan 축은 과거 시점 고정을 구현하지 않는다. 예전에는 EDGAR의
+        # ``**kwargs`` 경로가 asOf를 받아 놓고 현재 자료를 반환해 시점이 맞는 것처럼
+        # 보였다. 지원 전까지는 어느 시장에서도 명시적으로 거부한다.
+        if callKwargs.get("asOf") is not None:
+            raise ValueError(f"scan 축 '{resolved}'은(는) asOf 시점 고정을 지원하지 않습니다.")
 
-        # lazy import + 호출
-        mod = importlib.import_module(entry.module)
-        fn = getattr(mod, entry.fn)
-        result = fn(**callKwargs)
+        # 시장은 registry 계약에 있는 값만 받는다. 예전에는 알 수 없는 값이나
+        # US 미지원 축도 KR 구현으로 조용히 떨어져 다른 시장 결과를 반환했다.
+        market = callKwargs.pop("market", None)
+        normalizedMarket: str | None = None
+        if market is not None:
+            if not isinstance(market, str):
+                raise ValueError(f"market 은 문자열이어야 합니다: {market!r}")
+            marketAliases = {"KR": "KR", "DART": "KR", "US": "US", "EDGAR": "US"}
+            normalizedMarket = marketAliases.get(market.strip().upper())
+            if normalizedMarket is None:
+                raise ValueError(f"지원하지 않는 market: {market!r}. KR 또는 US 만 사용하세요.")
+            if normalizedMarket not in entry.universeMarkets:
+                supported = ", ".join(entry.universeMarkets) or "없음"
+                raise ValueError(
+                    f"scan 축 '{resolved}'은(는) market={normalizedMarket}을 지원하지 않습니다. 지원: {supported}"
+                )
+
+        # EDGAR market 디스패치 — XBRL 기반 축은 EDGAR 전용 구현으로 분기
+        if normalizedMarket == "US":
+            result = _edgarDispatch(resolved, callKwargs)
+            if result is None:
+                raise RuntimeError(f"scan 축 '{resolved}'의 US dispatcher가 등록되지 않았습니다.")
+        else:
+            # lazy import + 호출
+            mod = importlib.import_module(entry.module)
+            fn = getattr(mod, entry.fn)
+            result = fn(**callKwargs)
 
         # stockCode 필터 (target이 있고 targetParam이 None인 축)
         if target and entry.targetParam is None and isinstance(result, pl.DataFrame):

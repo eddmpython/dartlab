@@ -60,6 +60,80 @@ def test_filterLatestPerStock_missingColumnReturnsAsIs():
     assert result.equals(df)
 
 
+def test_filterLatestPeriodPerStock_selects_latest_quarter_independent_of_row_order():
+    from dartlab.scan.io.parquet import filterLatestPeriodPerStock
+
+    frame = pl.DataFrame(
+        {
+            "stockCode": ["A", "A", "A", "A"],
+            "bsns_year": ["2025"] * 4,
+            "reprt_nm": ["1분기", "4분기", "1분기", "4분기"],
+            "account_id": ["Revenue", "Revenue", "Equity", "Equity"],
+            "thstrm_amount": [100, 400, 50, 200],
+        }
+    )
+
+    forward = filterLatestPeriodPerStock(frame)
+    reverse = filterLatestPeriodPerStock(frame.reverse())
+
+    assert forward["reprt_nm"].unique().to_list() == ["4분기"]
+    assert forward.sort("account_id").equals(reverse.sort("account_id"))
+
+
+def test_computeProfitability_uses_one_deterministic_period():
+    from dartlab.scan.financial.profitability import _computeProfitability
+
+    rows = []
+    for quarter, revenue, op, net, assets, equity in [
+        ("1분기", 10_000_000, 1_000_000, 800_000, 50_000_000, 5_000_000),
+        ("4분기", 50_000_000, 10_000_000, 6_000_000, 100_000_000, 40_000_000),
+    ]:
+        for sj, aid, name, amount in [
+            ("IS", "Revenue", "매출액", revenue),
+            ("IS", "ProfitLossFromOperatingActivities", "영업이익", op),
+            ("IS", "ProfitLoss", "당기순이익", net),
+            ("BS", "Assets", "자산총계", assets),
+            ("BS", "Equity", "자본총계", equity),
+        ]:
+            row = _mockFinanceRow("A", 2025, aid, name, amount, sj_div=sj)
+            row["reprt_nm"] = quarter
+            rows.append(row)
+
+    forward = _computeProfitability(pl.DataFrame(rows), "stockCode")
+    reverse = _computeProfitability(pl.DataFrame(list(reversed(rows))), "stockCode")
+
+    assert forward.equals(reverse)
+    assert forward.item(0, "opMargin") == 20.0
+    assert forward.item(0, "roe") == 15.0
+
+
+def test_computeGrowth_compares_the_same_quarter_across_years():
+    from dartlab.scan.financial.growth import _computeGrowth
+
+    rows = []
+    for year, quarter, revenue in [
+        (2022, "1분기", 100_000_000),
+        (2022, "4분기", 400_000_000),
+        (2025, "1분기", 200_000_000),
+        (2025, "4분기", 800_000_000),
+    ]:
+        for aid, name, amount in [
+            ("Revenue", "매출액", revenue),
+            ("ProfitLossFromOperatingActivities", "영업이익", revenue // 10),
+            ("ProfitLoss", "당기순이익", revenue // 12),
+        ]:
+            row = _mockFinanceRow("A", year, aid, name, amount)
+            row["reprt_nm"] = quarter
+            rows.append(row)
+
+    forward = _computeGrowth(pl.DataFrame(rows), "stockCode")
+    reverse = _computeGrowth(pl.DataFrame(list(reversed(rows))), "stockCode")
+
+    assert forward.equals(reverse)
+    assert forward.item(0, "revenue") == 800_000_000
+    assert forward.item(0, "revenueCagr") == 26.0
+
+
 def test_computeProfitability_noLongerDroppedByGlobalLatestYear():
     """엔진 버그: 전 샘플 중 단 1 종목만 2026, 나머지는 2025 자. 결과는 전종목이어야 함 (수정 전엔 1건만 남음)."""
     from dartlab.scan.financial.profitability import _computeProfitability
