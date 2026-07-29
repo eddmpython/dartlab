@@ -11,12 +11,9 @@ schema (InsiderTrade/MajorHolder) 로 변환. gather/domains/dartApi.py 의 본�
 from __future__ import annotations
 
 import asyncio
-import logging
+import math
 
 from dartlab.core.polarsUtil import isEmptyDf
-
-log = logging.getLogger(__name__)
-
 
 # 자체 raw dataclass — providers/dart 가 gather.types 의존 없이 dict 반환.
 # gather/insider.py 가 dict → gather.types.InsiderTrade/MajorHolder 변환 책임.
@@ -24,14 +21,13 @@ log = logging.getLogger(__name__)
 
 
 def _getDart():
-    """Dart OpenAPI 클라이언트 lazy 생성. API 키 미설정 시 None."""
-    try:
-        from dartlab.core.dartClient import dartCollector
+    """Dart OpenAPI 클라이언트 lazy 생성.
 
-        return dartCollector()
-    except (ImportError, ValueError, OSError) as exc:
-        log.debug("DART API 사용 불가: %s", exc)
-        return None
+    API 키·composition 오류는 데이터 0건이 아니므로 호출자에게 전달한다.
+    """
+    from dartlab.core.dartClient import dartCollector
+
+    return dartCollector()
 
 
 async def fetchInsiderTradingRaw(stockCode: str, *, limit: int | None = None) -> list[dict]:
@@ -41,7 +37,7 @@ async def fetchInsiderTradingRaw(stockCode: str, *, limit: int | None = None) ->
         - DART OpenAPI elestock (임원·주요주주 특정증권등 소유상황보고) 호출.
         - 응답 row 를 표준화된 dict (date/name/position/tradeType/changeShares/afterShares
           /reason/source) 로 정규화. gather.types 의존성 없이 raw dict 만 반환 (cycle 회피).
-        - DART API key 미설정 또는 호출 실패 시 silent — 빈 list 반환 + log.warning.
+        - 정상 빈 응답만 빈 list. API key 부재·호출·변환 실패는 예외 전달.
 
     Args:
         stockCode: 종목코드 (6 자리, 예 "005930").
@@ -51,7 +47,7 @@ async def fetchInsiderTradingRaw(stockCode: str, *, limit: int | None = None) ->
         list[dict] — 각 거래 dict 의 표준 key: ``date`` (rcept_dt, 접수일) ·
         ``name`` (보고자) · ``position`` (직책 ofcps) · ``tradeType`` (장내/장외 거래 구분)
         · ``changeShares`` (변동 주식수) · ``afterShares`` (변동 후 보유) · ``reason``
-        (변동 사유 ctr_motive) · ``source`` ("dart"). API key 부재 또는 빈 응답 시 ``[]``.
+        (변동 사유 ctr_motive) · ``source`` ("dart"). 정상 빈 응답 시 ``[]``.
 
     Example:
         >>> import asyncio
@@ -77,17 +73,15 @@ async def fetchInsiderTradingRaw(stockCode: str, *, limit: int | None = None) ->
         - 네트워크 — opendart.fss.or.kr 도메인 접근.
 
     AIContext:
-        Ask Workbench 의 "내부자 거래" / "임원 매매" 토픽 추론 시 호출. API key 부재 환경
-        (test fixture / pyodide) 에서는 빈 list 반환이므로 caller 는 evidence 부재 메시지
-        준비. 결과 dict 의 ``date`` 는 str (rcept_dt 8자리) — caller 가 date 객체 변환 필요.
+        Ask Workbench 의 "내부자 거래" / "임원 매매" 토픽 추론 시 호출. API key 부재는
+        조회 실패로 전달된다. 결과 dict 의 ``date`` 는 str (rcept_dt 8자리).
 
     LLM Specifications:
         AntiPatterns:
             - 본 함수를 동기 컨텍스트에서 호출 → coroutine 미실행. 반드시 ``await``.
             - 무제한 limit (limit=None) 으로 분석 파이프라인에서 호출 → 룰 8 위반.
               분석 용 호출은 명시 limit 권장.
-            - API key 부재 환경에서 결과 empty 를 "거래 0 건" 으로 해석 금지 — log
-              메시지로 키 부재 확인.
+            - API key 부재·호출 실패를 빈 거래 목록으로 바꾸지 않는다.
         OutputSchema:
             - row: 거래 1 건.
             - column: 8 key dict (위 Returns 명시).
@@ -104,43 +98,40 @@ async def fetchInsiderTradingRaw(stockCode: str, *, limit: int | None = None) ->
             - KR (DART). 미국 Form 4 은 ``providers/edgar/disclosure/form4`` (P-PR7).
 
     Raises:
-        없음.
+        ValueError: DART API key가 없거나 응답 필드를 숫자로 변환할 수 없는 경우.
+        OSError: DART 호출 또는 provider 초기화 실패.
+        DartApiError: OpenDART가 정상 빈 결과(013) 외 오류 상태를 반환한 경우.
     """
+    _validateLimit(limit)
     dart = _getDart()
-    if dart is None:
+    df = await asyncio.to_thread(dart.executiveShares, stockCode)
+    if isEmptyDf(df):
         return []
-    try:
-        df = await asyncio.to_thread(dart.executiveShares, stockCode)
-        if isEmptyDf(df):
-            return []
-        result: list[dict] = []
-        for row in df.iter_rows(named=True):
-            result.append(
-                # 필드명은 DART elestock.json 실제 응답 기준이다. 예전에는 응답에 없는
-                # `ofcps` 와 `ctr_motive` 를 읽어 직위와 사유가 언제나 빈 문자열이었고,
-                # 소유수와 증감수를 서로 바꿔 읽어 거래 방향 자체가 뒤집혀 있었다.
-                # 실측: 소유수 2,000 증감 1,000 인 행이 증감 2,000 보유 1,000 으로 나갔다.
-                {
-                    "date": str(row.get("rcept_dt", "")),
-                    "name": str(row.get("repror", "")),
-                    "position": str(row.get("isu_exctv_ofcps", "")),
-                    # 거래 유형은 응답에 별도 필드가 없다. 증감 부호가 그 자체로 취득과
-                    # 처분을 가르므로 파생한다. 없는 필드를 읽어 빈 문자열을 내보내는
-                    # 것보다 있는 자료로 답하는 쪽이 맞다.
-                    "tradeType": _tradeTypeOf(_safeInt(row.get("sp_stock_lmp_irds_cnt", 0))),
-                    "changeShares": _safeInt(row.get("sp_stock_lmp_irds_cnt", 0)),
-                    "afterShares": _safeInt(row.get("sp_stock_lmp_cnt", 0)),
-                    # 사유 필드는 elestock 응답에 없다. 등기 여부는 있으므로 그것을 준다.
-                    "reason": str(row.get("isu_exctv_rgist_at", "")),
-                    "source": "dart",
-                }
-            )
-        if limit is not None:
-            result = result[:limit]
-        return result
-    except (ValueError, OSError, KeyError, TypeError) as exc:
-        log.warning("DART executiveShares 실패 (%s): %s", stockCode, exc)
-        return []
+    result: list[dict] = []
+    for row in df.iter_rows(named=True):
+        result.append(
+            # 필드명은 DART elestock.json 실제 응답 기준이다. 예전에는 응답에 없는
+            # `ofcps` 와 `ctr_motive` 를 읽어 직위와 사유가 언제나 빈 문자열이었고,
+            # 소유수와 증감수를 서로 바꿔 읽어 거래 방향 자체가 뒤집혀 있었다.
+            # 실측: 소유수 2,000 증감 1,000 인 행이 증감 2,000 보유 1,000 으로 나갔다.
+            {
+                "date": str(row.get("rcept_dt", "")),
+                "name": str(row.get("repror", "")),
+                "position": str(row.get("isu_exctv_ofcps", "")),
+                # 거래 유형은 응답에 별도 필드가 없다. 증감 부호가 그 자체로 취득과
+                # 처분을 가르므로 파생한다. 없는 필드를 읽어 빈 문자열을 내보내는
+                # 것보다 있는 자료로 답하는 쪽이 맞다.
+                "tradeType": _tradeTypeOf(_safeInt(row.get("sp_stock_lmp_irds_cnt", 0))),
+                "changeShares": _safeInt(row.get("sp_stock_lmp_irds_cnt", 0)),
+                "afterShares": _safeInt(row.get("sp_stock_lmp_cnt", 0)),
+                # 사유 필드는 elestock 응답에 없다. 등기 여부는 있으므로 그것을 준다.
+                "reason": str(row.get("isu_exctv_rgist_at", "")),
+                "source": "dart",
+            }
+        )
+    if limit is not None:
+        result = result[:limit]
+    return result
 
 
 async def fetchMajorShareholdersRaw(stockCode: str, *, limit: int | None = None) -> list[dict]:
@@ -206,35 +197,32 @@ async def fetchMajorShareholdersRaw(stockCode: str, *, limit: int | None = None)
             - KR (DART). SC 13D/G (미국) 은 ``providers/edgar`` 별도 (P-PR7+ 후속).
 
     Raises:
-        없음.
+        ValueError: DART API key가 없거나 응답 필드를 숫자로 변환할 수 없는 경우.
+        OSError: DART 호출 또는 provider 초기화 실패.
+        DartApiError: OpenDART가 정상 빈 결과(013) 외 오류 상태를 반환한 경우.
     """
+    _validateLimit(limit)
     dart = _getDart()
-    if dart is None:
+    df = await asyncio.to_thread(dart.majorShareholders, stockCode)
+    if isEmptyDf(df):
         return []
-    try:
-        df = await asyncio.to_thread(dart.majorShareholders, stockCode)
-        if isEmptyDf(df):
-            return []
-        result: list[dict] = []
-        for row in df.iter_rows(named=True):
-            result.append(
-                # majorstock.json 실제 응답 기준. `report_nm` 과 `change_on` 은 응답에
-                # 없어서 보고자명과 보고구분이 언제나 빈 문자열이었다.
-                {
-                    "holderName": str(row.get("repror", "")),
-                    "shares": _safeInt(row.get("stkqy", 0)),
-                    "ratio": _safeFloat(row.get("stkrt", 0)),
-                    "changeDate": str(row.get("rcept_dt", "")),
-                    "changeType": str(row.get("report_tp", "")),
-                    "source": "dart",
-                }
-            )
-        if limit is not None:
-            result = result[:limit]
-        return result
-    except (ValueError, OSError, KeyError, TypeError) as exc:
-        log.warning("DART majorShareholders 실패 (%s): %s", stockCode, exc)
-        return []
+    result: list[dict] = []
+    for row in df.iter_rows(named=True):
+        result.append(
+            # majorstock.json 실제 응답 기준. `report_nm` 과 `change_on` 은 응답에
+            # 없어서 보고자명과 보고구분이 언제나 빈 문자열이었다.
+            {
+                "holderName": str(row.get("repror", "")),
+                "shares": _safeInt(row.get("stkqy", 0)),
+                "ratio": _safeFloat(row.get("stkrt", 0)),
+                "changeDate": str(row.get("rcept_dt", "")),
+                "changeType": str(row.get("report_tp", "")),
+                "source": "dart",
+            }
+        )
+    if limit is not None:
+        result = result[:limit]
+    return result
 
 
 async def iterInsiderTradingRaw(stockCode: str, *, limit: int | None = None):
@@ -293,7 +281,7 @@ async def iterInsiderTradingRaw(stockCode: str, *, limit: int | None = None):
             - KR (DART).
 
     Raises:
-        없음.
+        ValueError / OSError / DartApiError — 원본 조회 실패 그대로.
     """
     rows = await fetchInsiderTradingRaw(stockCode, limit=limit)
     for r in rows:
@@ -352,7 +340,7 @@ async def iterMajorShareholdersRaw(stockCode: str, *, limit: int | None = None):
             - KR (DART).
 
     Raises:
-        없음.
+        ValueError / OSError / DartApiError — 원본 조회 실패 그대로.
     """
     rows = await fetchMajorShareholdersRaw(stockCode, limit=limit)
     for r in rows:
@@ -373,24 +361,35 @@ def _tradeTypeOf(changeShares: int) -> str:
     return ""
 
 
+def _validateLimit(limit: int | None) -> None:
+    """조회 상한 계약을 검증한다."""
+    if limit is not None and limit < 0:
+        raise ValueError(f"limit은 0 이상이어야 합니다: {limit}")
+
+
 def _safeInt(val) -> int:
-    """안전한 int 변환 — 콤마/기호 제거. None/실패 시 0."""
-    if val is None:
+    """DART 정수 필드 변환. 진짜 빈 값은 0, malformed 값은 ValueError."""
+    if val is None or str(val).strip() in {"", "-"}:
         return 0
+    cleaned = str(val).replace(",", "").replace("+", "").strip()
     try:
-        return int(str(val).replace(",", "").replace("+", "").strip() or "0")
-    except (ValueError, TypeError):
-        return 0
+        return int(cleaned)
+    except (ValueError, TypeError) as exc:
+        raise ValueError(f"invalid DART integer field: {val!r}") from exc
 
 
 def _safeFloat(val) -> float:
-    """안전한 float 변환 — 콤마/기호 제거. None/실패 시 0.0."""
-    if val is None:
+    """DART 실수 필드 변환. 진짜 빈 값은 0.0, malformed 값은 ValueError."""
+    if val is None or str(val).strip() in {"", "-"}:
         return 0.0
+    cleaned = str(val).replace(",", "").replace("+", "").strip()
     try:
-        return float(str(val).replace(",", "").replace("+", "").strip() or "0")
-    except (ValueError, TypeError):
-        return 0.0
+        number = float(cleaned)
+    except (ValueError, TypeError) as exc:
+        raise ValueError(f"invalid DART float field: {val!r}") from exc
+    if not math.isfinite(number):
+        raise ValueError(f"non-finite DART float field: {val!r}")
+    return number
 
 
 class _ModuleInsiderRawProvider:
@@ -422,7 +421,7 @@ class _ModuleInsiderRawProvider:
             list[dict] — module 함수 결과 그대로.
 
         Raises:
-            없음 — module 함수가 흡수.
+            ValueError / OSError / DartApiError — module 함수의 조회 실패 그대로.
 
         Example:
             >>> # await provider.fetchInsiderTradingRaw("005930", limit=20)
@@ -441,7 +440,7 @@ class _ModuleInsiderRawProvider:
             list[dict] — module 함수 결과 그대로.
 
         Raises:
-            없음 — module 함수가 흡수.
+            ValueError / OSError / DartApiError — module 함수의 조회 실패 그대로.
 
         Example:
             >>> # await provider.fetchMajorShareholdersRaw("005930", limit=10)

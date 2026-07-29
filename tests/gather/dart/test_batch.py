@@ -81,11 +81,137 @@ def test_get_json_retries_transient_read_error(monkeypatch) -> None:
     assert fakeClient.calls == 2
 
 
+def test_get_json_throttles_once_per_http_attempt(monkeypatch) -> None:
+    """공개 요청과 retry helper가 같은 HTTP 시도를 이중 throttle 하지 않는다."""
+    import asyncio
+
+    from dartlab.gather.dart import batch
+    from dartlab.gather.dart.batch import AsyncDartClient
+
+    class FakeResponse:
+        status_code = 200
+
+        def raise_for_status(self) -> None:
+            return None
+
+        def json(self) -> dict[str, object]:
+            return {"status": "000", "list": []}
+
+    class FakeAsyncClient:
+        async def get(self, *args, **kwargs):
+            return FakeResponse()
+
+        async def aclose(self) -> None:
+            return None
+
+    monkeypatch.setattr(batch.httpx, "AsyncClient", lambda *args, **kwargs: FakeAsyncClient())
+    client = AsyncDartClient("key")
+    throttleCalls = 0
+
+    async def fakeThrottle() -> None:
+        nonlocal throttleCalls
+        throttleCalls += 1
+
+    monkeypatch.setattr(client, "_throttle", fakeThrottle)
+
+    asyncio.run(client.getJson("list.json"))
+
+    assert throttleCalls == 1
+
+
+def test_get_json_raises_unknown_api_status(monkeypatch) -> None:
+    """013 외 API 오류를 빈 결과로 위장하지 않는다."""
+    import asyncio
+
+    import pytest
+
+    from dartlab.core.dartClient import DartApiError
+    from dartlab.gather.dart import batch
+    from dartlab.gather.dart.batch import AsyncDartClient
+
+    class FakeResponse:
+        status_code = 200
+
+        def raise_for_status(self) -> None:
+            return None
+
+        def json(self) -> dict[str, object]:
+            return {"status": "800", "message": "시스템 점검"}
+
+    class FakeAsyncClient:
+        async def get(self, *args, **kwargs):
+            return FakeResponse()
+
+        async def aclose(self) -> None:
+            return None
+
+    monkeypatch.setattr(batch.httpx, "AsyncClient", lambda *args, **kwargs: FakeAsyncClient())
+    client = AsyncDartClient("key")
+
+    with pytest.raises(DartApiError, match=r"\[800\] 시스템 점검"):
+        asyncio.run(client.getDf("fnlttSinglAcntAll.json"))
+
+
+def test_get_json_marks_quota_exhausted_and_raises(monkeypatch) -> None:
+    """020은 중단 상태를 남기고 구조화 예외로 호출자에게 전달한다."""
+    import asyncio
+
+    import pytest
+
+    from dartlab.core.dartClient import DartApiError
+    from dartlab.gather.dart import batch
+    from dartlab.gather.dart.batch import AsyncDartClient
+
+    class FakeResponse:
+        status_code = 200
+
+        def raise_for_status(self) -> None:
+            return None
+
+        def json(self) -> dict[str, object]:
+            return {"status": "020", "message": "요청 제한 초과"}
+
+    class FakeAsyncClient:
+        async def get(self, *args, **kwargs):
+            return FakeResponse()
+
+        async def aclose(self) -> None:
+            return None
+
+    monkeypatch.setattr(batch.httpx, "AsyncClient", lambda *args, **kwargs: FakeAsyncClient())
+    client = AsyncDartClient("key")
+
+    with pytest.raises(DartApiError, match=r"\[020\] 요청 제한 초과"):
+        asyncio.run(client.getJson("list.json"))
+
+    assert client.exhausted is True
+
+
 def test_batch_collect_callable() -> None:
     """batchCollect() callable smoke."""
     from dartlab.gather.dart.batch import batchCollect
 
     assert callable(batchCollect)
+
+
+def test_batch_collect_rejects_non_positive_worker_count() -> None:
+    """0개 worker로 pending만 남기는 무작동 실행을 허용하지 않는다."""
+    import pytest
+
+    from dartlab.gather.dart.batch import batchCollect
+
+    with pytest.raises(ValueError, match="1 이상"):
+        batchCollect(["005930"], maxWorkers=0, showProgress=False)
+
+
+def test_batch_collect_all_rejects_unknown_mode() -> None:
+    """오타 mode가 전체 수집으로 확대되는 것을 막는다."""
+    import pytest
+
+    from dartlab.gather.dart.batch import batchCollectAll
+
+    with pytest.raises(ValueError, match="'new' 또는 'all'"):
+        batchCollectAll(mode="typo", showProgress=False)
 
 
 def test_batch_collect_all_callable() -> None:
@@ -247,6 +373,64 @@ def test_collect_finance_target_period_refreshes_existing_period(tmp_path, monke
     assert "old-cfs" not in rcepts
     assert "old-ofs" in rcepts
     assert "old-annual" in rcepts
+
+
+def test_collect_finance_api_failure_preserves_existing_file(tmp_path, monkeypatch) -> None:
+    """한 요청이라도 실패하면 앞서 받은 frame을 부분 저장하지 않는다."""
+    import asyncio
+
+    import polars as pl
+    import pytest
+
+    import dartlab
+    from dartlab.core.dartClient import DartApiError
+    from dartlab.gather.dart.batch import _collectFinance
+
+    monkeypatch.setattr(dartlab.config, "dataDir", str(tmp_path))
+    financePath = tmp_path / "dart" / "finance" / "005930.parquet"
+    financePath.parent.mkdir(parents=True)
+    original = pl.DataFrame(
+        {
+            "bsns_year": ["2024"],
+            "reprt_code": ["11011"],
+            "fs_div": ["CFS"],
+            "rcept_no": ["old"],
+            "account_nm": ["매출액"],
+        }
+    )
+    original.write_parquet(financePath)
+
+    class FakeClient:
+        exhausted = False
+        calls = 0
+
+        async def getDf(self, endpoint, params, listKey="list"):
+            self.calls += 1
+            if self.calls == 2:
+                raise DartApiError("800", "시스템 점검")
+            return pl.DataFrame(
+                {
+                    "corp_code": [params["corp_code"]],
+                    "bsns_year": [params["bsns_year"]],
+                    "reprt_code": [params["reprt_code"]],
+                    "fs_div": [params["fs_div"]],
+                    "rcept_no": ["new"],
+                    "account_nm": ["매출액"],
+                }
+            )
+
+    with pytest.raises(DartApiError, match=r"\[800\] 시스템 점검"):
+        asyncio.run(
+            _collectFinance(
+                "005930",
+                "00126380",
+                "삼성전자",
+                FakeClient(),
+                targetPeriods=[("2025", "11013")],
+            )
+        )
+
+    assert pl.read_parquet(financePath).to_dicts() == original.to_dicts()
 
 
 def test_collect_report_target_period_refreshes_existing_api_type(tmp_path, monkeypatch) -> None:

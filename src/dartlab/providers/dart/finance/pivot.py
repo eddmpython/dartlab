@@ -39,6 +39,7 @@ from dartlab.core.polarsUtil import isEmptyDf
 from dartlab.core.utils.ordering import sortSeries
 from dartlab.core.utils.period import extractYear, formatPeriod, parsePeriod
 from dartlab.providers.dart.finance.mapper import AccountMapper
+from dartlab.providers.dart.parse.amount import parseAmountExpr
 
 _log = logging.getLogger(__name__)
 
@@ -99,6 +100,7 @@ def _fillSnakeIdGaps(
             continue
         if pVals is None:
             # primary 자체가 없으면 fallback을 primary로 승격
+            assert fVals is not None
             stmt[primary] = list(fVals)
             continue
         if fVals is None:
@@ -307,11 +309,11 @@ def buildCumulative(
 
 
 def _applyCfsPriority(df: pl.DataFrame, pref: str) -> pl.DataFrame:
-    """시트(연도×분기×재무제표) 단위 CFS/OFS 선택. pref 우선.
+    """시트(연도×분기×재무제표) 단위 CFS/OFS 선택.
 
-    같은 시트에서 CFS가 1행이라도 있으면 CFS만 사용하고,
-    CFS가 없는 시트는 OFS 전체로 폴백한다.
-    행 단위 혼합은 합계 불일치를 유발하므로 금지한다.
+    선호 source가 있으면 기본적으로 그 시트 전체를 사용한다. 다만 fallback의
+    유효 계정 coverage가 선호 source를 strict superset으로 포함하면 선호 시트가
+    불완전하다고 판정해 fallback 시트 전체를 사용한다. 행 단위 혼합은 하지 않는다.
     """
     if "fs_div" not in df.columns:
         return df
@@ -320,27 +322,77 @@ def _applyCfsPriority(df: pl.DataFrame, pref: str) -> pl.DataFrame:
     if len(available) <= 1:
         return df
 
-    # 시트별(연도, 분기, 재무제표) 소스 결정
     groupCols = ["bsns_year", "reprt_nm", "sj_div"]
     if not all(c in df.columns for c in groupCols):
         return df
 
-    sheetSources = df.group_by(groupCols).agg(pl.col("fs_div").drop_nulls().unique().alias("_sources"))
-
-    def _pickSource(sources: list[str]) -> str:
-        """시트별 선택할 fs_div 결정."""
-        sourceSet = set(sources)
-        if pref in sourceSet:
-            return pref
-        fallback = "OFS" if pref == "CFS" else "CFS"
-        if fallback in sourceSet:
-            return fallback
-        return sources[0]
-
-    sheetSources = sheetSources.with_columns(
-        pl.col("_sources").map_elements(_pickSource, return_dtype=pl.Utf8).alias("_targetFs")
+    fallback = "OFS" if pref == "CFS" else "CFS"
+    accountId = (
+        pl.col("account_id").fill_null("").cast(pl.Utf8).str.strip_chars() if "account_id" in df.columns else pl.lit("")
+    )
+    accountName = (
+        pl.col("account_nm").fill_null("").cast(pl.Utf8).str.strip_chars() if "account_nm" in df.columns else pl.lit("")
+    )
+    coverageKey = (
+        pl.when(accountId.is_in(["", "-표준계정코드 미사용-"]))
+        .then(pl.concat_str([pl.lit("name"), accountName], separator=":"))
+        .otherwise(pl.concat_str([pl.lit("id"), accountId], separator=":"))
     )
 
+    amountCols = [c for c in ("thstrm_amount", "thstrm_add_amount") if c in df.columns]
+    if amountCols:
+        usableAmount = pl.any_horizontal(
+            [pl.col(c).is_not_null() & ~pl.col(c).cast(pl.Utf8).str.strip_chars().is_in(["", "-"]) for c in amountCols]
+        )
+    else:
+        usableAmount = pl.lit(True)
+
+    coverageRows = (
+        df.with_columns(coverageKey.alias("_coverageKey"), usableAmount.alias("_usableAmount"))
+        .filter(pl.col("_usableAmount") & ~pl.col("_coverageKey").is_in(["id:", "name:"]))
+        .select([*groupCols, "fs_div", "_coverageKey"])
+        .unique()
+    )
+    coverageBySheet: dict[tuple[str, str, str, str], set[str]] = {}
+    for row in coverageRows.iter_rows():
+        sheetKey = (str(row[0]), str(row[1]), str(row[2]))
+        source = str(row[3])
+        coverageBySheet.setdefault((*sheetKey, source), set()).add(str(row[4]))
+
+    sourceRows = df.select([*groupCols, "fs_div"]).drop_nulls("fs_div").unique()
+    sourcesBySheet: dict[tuple[str, str, str], set[str]] = {}
+    for row in sourceRows.iter_rows():
+        sheetKey = (str(row[0]), str(row[1]), str(row[2]))
+        sourcesBySheet.setdefault(sheetKey, set()).add(str(row[3]))
+
+    decisionRows: list[dict[str, object]] = []
+    for rawSheet in df.select(groupCols).unique().iter_rows():
+        sheetKey = (str(rawSheet[0]), str(rawSheet[1]), str(rawSheet[2]))
+        sources = sourcesBySheet.get(sheetKey, set())
+        if not sources:
+            continue
+        if pref not in sources:
+            target = fallback if fallback in sources else min(sources)
+        else:
+            preferredCoverage = coverageBySheet.get((*sheetKey, pref), set())
+            fallbackCoverage = coverageBySheet.get((*sheetKey, fallback), set())
+            fallbackDominates = bool(fallbackCoverage) and preferredCoverage < fallbackCoverage
+            target = fallback if fallbackDominates else pref
+            if fallbackDominates:
+                _log.warning(
+                    "finance source fallback: sheet=%s preferred=%s coverage=%d fallback=%s coverage=%d",
+                    "/".join(sheetKey),
+                    pref,
+                    len(preferredCoverage),
+                    fallback,
+                    len(fallbackCoverage),
+                )
+        decisionRows.append({**dict(zip(groupCols, rawSheet, strict=True)), "_targetFs": target})
+
+    sheetSources = pl.DataFrame(
+        decisionRows,
+        schema={**{col: df.schema[col] for col in groupCols}, "_targetFs": pl.Utf8},
+    )
     df = df.join(sheetSources.select(groupCols + ["_targetFs"]), on=groupCols, how="left")
     df = df.filter(pl.col("fs_div") == pl.col("_targetFs"))
     df = df.drop("_targetFs")
@@ -373,16 +425,7 @@ def _normalizeQ4(df: pl.DataFrame) -> pl.DataFrame:
     # 문자열 금액 → Float64 변환 (빈 문자열, "-" → null)
     for col in ["thstrm_amount", "thstrm_add_amount"]:
         if col in df.columns:
-            df = df.with_columns(
-                pl.when(
-                    pl.col(col).is_not_null()
-                    & (pl.col(col).str.strip_chars() != "")
-                    & (pl.col(col).str.strip_chars() != "-")
-                )
-                .then(pl.col(col).str.strip_chars().str.replace_all(",", "").cast(pl.Float64, strict=False))
-                .otherwise(pl.lit(None).cast(pl.Float64))
-                .alias(col)
-            )
+            df = df.with_columns(parseAmountExpr(col).alias(col))
         else:
             df = df.with_columns(pl.lit(None).cast(pl.Float64).alias(col))
 
@@ -726,6 +769,19 @@ def _pivotToSeriesLegacy(
     return result
 
 
+def _sumComplete(values: list[float | None], indices: list[int]) -> float | None:
+    """요청한 모든 위치가 존재하고 유효할 때만 합계를 반환한다."""
+    selected: list[float] = []
+    for index in indices:
+        if index >= len(values):
+            return None
+        value = values[index]
+        if value is None:
+            return None
+        selected.append(value)
+    return sum(selected)
+
+
 def _aggregateAnnual(
     qSeries: dict[str, dict[str, list[float | None]]],
     qPeriods: list[str],
@@ -736,10 +792,10 @@ def _aggregateAnnual(
     예: 2026 에 Q1 만 있으면 label = "2026Q1" (full year "2026" 와 구분).
     LLM 이 표에서 partial 데이터를 full-year 와 혼동하는 것을 차단.
     """
-    yearSet: dict[str, list[int]] = {}
+    yearSet: dict[str, dict[int, int]] = {}
     for i, p in enumerate(qPeriods):
-        year = extractYear(p)
-        yearSet.setdefault(year, []).append(i)
+        year, quarter = parsePeriod(p)
+        yearSet.setdefault(year, {})[quarter] = i
 
     years = sorted(yearSet.keys())
     nYears = len(years)
@@ -747,11 +803,11 @@ def _aggregateAnnual(
 
     yearLabels: list[str] = []
     for y in years:
-        qIndices = yearSet[y]
-        if len(qIndices) >= 4:
+        quarterIndices = yearSet[y]
+        if set(quarterIndices) == {1, 2, 3, 4}:
             yearLabels.append(y)
         else:
-            maxQ = max(parsePeriod(qPeriods[i])[1] for i in qIndices)
+            maxQ = max(quarterIndices)
             yearLabels.append(f"{y}Q{maxQ}")
 
     result: dict[str, dict[str, list[float | None]]] = {"BS": {}, "IS": {}, "CF": {}}
@@ -760,15 +816,19 @@ def _aggregateAnnual(
         for snakeId, vals in qSeries[sjDiv].items():
             annual: list[float | None] = [None] * nYears
 
-            for year, qIndices in yearSet.items():
+            for year, quarterIndices in yearSet.items():
                 yIdx = yearIdx[year]
 
                 if sjDiv == "BS":
-                    lastIdx = max(qIndices)
+                    lastIdx = quarterIndices[max(quarterIndices)]
                     annual[yIdx] = vals[lastIdx] if lastIdx < len(vals) else None
                 else:
-                    qVals = [vals[qi] for qi in qIndices if qi < len(vals) and vals[qi] is not None]
-                    annual[yIdx] = sum(qVals) if qVals else None
+                    maxQuarter = max(quarterIndices)
+                    expectedQuarters = range(1, maxQuarter + 1)
+                    if not all(q in quarterIndices for q in expectedQuarters):
+                        continue
+                    valueIndices = [quarterIndices[q] for q in expectedQuarters]
+                    annual[yIdx] = _sumComplete(vals, valueIndices)
 
             result[sjDiv][snakeId] = annual
 
@@ -780,11 +840,10 @@ def _aggregateCumulative(
     qPeriods: list[str],
 ) -> tuple[dict[str, dict[str, list[float | None]]], list[str]]:
     """분기별 standalone → 분기별 누적."""
-    yearStarts: dict[str, int] = {}
+    quarterIndicesByYear: dict[str, dict[int, int]] = {}
     for i, p in enumerate(qPeriods):
-        year = extractYear(p)
-        if year not in yearStarts:
-            yearStarts[year] = i
+        year, quarter = parsePeriod(p)
+        quarterIndicesByYear.setdefault(year, {})[quarter] = i
 
     result: dict[str, dict[str, list[float | None]]] = {"BS": {}, "IS": {}, "CF": {}}
     nPeriods = len(qPeriods)
@@ -797,10 +856,13 @@ def _aggregateCumulative(
                 cum = list(vals)
             else:
                 for i, p in enumerate(qPeriods):
-                    year = extractYear(p)
-                    startIdx = yearStarts[year]
-                    qVals = [vals[j] for j in range(startIdx, i + 1) if j < len(vals) and vals[j] is not None]
-                    cum[i] = sum(qVals) if qVals else None
+                    year, quarter = parsePeriod(p)
+                    quarterIndices = quarterIndicesByYear[year]
+                    expectedQuarters = range(1, quarter + 1)
+                    if not all(q in quarterIndices for q in expectedQuarters):
+                        continue
+                    valueIndices = [quarterIndices[q] for q in expectedQuarters]
+                    cum[i] = _sumComplete(vals, valueIndices)
 
             result[sjDiv][snakeId] = cum
 

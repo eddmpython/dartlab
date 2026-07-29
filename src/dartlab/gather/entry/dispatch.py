@@ -40,6 +40,7 @@ class GatherAxisEntry:
     example: str
     targetRequired: bool = True
     targetType: TargetType = "stockCode"
+    options: tuple[str, ...] = ()
     hidden: bool = False
     queryable: bool = True
 
@@ -55,12 +56,26 @@ AXIS_REGISTRY: dict[str, GatherAxisEntry] = {
         ),
         example='gather("price", "005930") / gather("price", "AAPL") / gather("price", "005930", interval="1m")',
         targetType="stockCode",
+        options=("start", "end", "interval", "indicators"),
     ),
     "flow": GatherAxisEntry(
         label="수급",
         description="외국인/기관 순매수 시계열 (KR 전용, Naver).",
         example='gather("flow", "005930") / gather("flow", targets=["005930", "000660"], parallel=2)',
         targetType="stockCode",
+        options=(
+            "limit",
+            "start",
+            "end",
+            "pageSize",
+            "sleepSec",
+            "marketType",
+            "maxPages",
+            "full",
+            "all",
+            "targets",
+            "parallel",
+        ),
     ),
     "macro": GatherAxisEntry(
         label="거시지표",
@@ -72,16 +87,18 @@ AXIS_REGISTRY: dict[str, GatherAxisEntry] = {
         example='gather("macro", "CPI") / gather("macro", "FEDFUNDS") / gather("macro", "ECB_HICP") / gather("macro", "IMF_OIL_BRENT")',
         targetRequired=False,
         targetType="indicator",
+        options=("start", "end", "apiKey", "scope"),
     ),
     "news": GatherAxisEntry(
         label="뉴스",
         description="Google News RSS 뉴스 수집 (기본 최근 30일).",
         example='gather("news", "삼성전자", days=7)',
         targetType="keyword",
+        options=("days",),
     ),
     "sector": GatherAxisEntry(
         label="업종",
-        description="업종 분류 (KR KIND+Naver / US sectorCode).",
+        description="업종 분류 (KR KIND+Naver 전용).",
         example='gather("sector", "005930")',
         targetType="stockCode",
     ),
@@ -115,6 +132,7 @@ AXIS_REGISTRY: dict[str, GatherAxisEntry] = {
         example='gather("krx", "close", start=, end=) / gather("krx", "rsi14", start=, end=) / gather("krx", "marketCap", date=)',
         targetRequired=False,
         targetType="columnName",
+        options=("start", "end", "apiKey", "stockCodes", "date"),
     ),
     # 공개 축 (hidden=False) — HF SSOT 일별 지수 패키지. 정식 표기 krxIndex
     # (camelCase, dartlab 표준 — 모듈/함수명과 일관). 직접 KRX idx OpenAPI 경로는
@@ -131,6 +149,7 @@ AXIS_REGISTRY: dict[str, GatherAxisEntry] = {
         example='gather("krxIndex", "close", market="KOSPI", start=, end=)',
         targetRequired=False,
         targetType="columnName",
+        options=("start", "end", "apiKey", "indexFilter", "indicators", "indexMarket"),
     ),
     "narrative": GatherAxisEntry(
         label="뉴스 내러티브 archive",
@@ -145,6 +164,7 @@ AXIS_REGISTRY: dict[str, GatherAxisEntry] = {
         example='gather("narrative", market="KR", days=30) / gather("narrative", "score") / gather("narrative", "005930", days=30)',
         targetRequired=False,
         targetType="keyword",
+        options=("start", "end", "days", "asof", "sentimentModel", "top"),
     ),
     "research": GatherAxisEntry(
         label="증권사 리서치",
@@ -159,6 +179,7 @@ AXIS_REGISTRY: dict[str, GatherAxisEntry] = {
         ),
         targetRequired=False,
         targetType="keyword",
+        options=("start", "end", "ticker", "query", "broker", "reportType", "brokers"),
     ),
     "naverTheme": GatherAxisEntry(
         label="네이버 테마 분류 (KR, 로컬 개인용)",
@@ -171,6 +192,7 @@ AXIS_REGISTRY: dict[str, GatherAxisEntry] = {
         example='gather("naverTheme") / gather("naverTheme", "list") / gather("naverTheme", "2차전지")',
         targetRequired=False,
         targetType="keyword",
+        options=("progress", "maxAgeDays", "refresh"),
     ),
     "naverIndustry": GatherAxisEntry(
         label="네이버 업종 분류 (KR, 로컬 개인용)",
@@ -183,6 +205,7 @@ AXIS_REGISTRY: dict[str, GatherAxisEntry] = {
         example='gather("naverIndustry") / gather("naverIndustry", "list") / gather("naverIndustry", "반도체")',
         targetRequired=False,
         targetType="keyword",
+        options=("progress", "maxAgeDays", "refresh"),
     ),
     "naverEtf": GatherAxisEntry(
         label="네이버 ETF 목록 (KR, 로컬 개인용)",
@@ -392,8 +415,14 @@ def _fetchNaverIndex(
             raise ValueError(f"네이버 지수 응답 {rowNumber}행을 해석할 수 없습니다") from exc
 
     result = pl.DataFrame(rows).with_columns(pl.col("date").str.to_date("%Y-%m-%d")).sort("date")
-    if startDate is not None and len(items) == requestLimit and result["date"].min() > startDate:
-        raise ValueError(f"{symbol} 지수 요청 기간이 공급자 최대 {requestLimit}거래일을 초과했습니다: start={start}")
+    if startDate is not None and len(items) == requestLimit:
+        earliestDate = result["date"].min()
+        if not isinstance(earliestDate, date):
+            raise TypeError(f"{symbol} 지수 응답의 date 컬럼이 날짜 형식이 아닙니다")
+        if earliestDate > startDate:
+            raise ValueError(
+                f"{symbol} 지수 요청 기간이 공급자 최대 {requestLimit}거래일을 초과했습니다: start={start}"
+            )
     if startDate is not None:
         result = result.filter(pl.col("date") >= startDate)
     if endDate is not None:

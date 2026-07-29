@@ -73,16 +73,9 @@ def _buildSceMatrixFromDf(
     sce = _applyCfsPriority(sce, fsDivPref)
 
     if "thstrm_amount" in sce.columns:
-        sce = sce.with_columns(
-            pl.when(
-                pl.col("thstrm_amount").is_not_null()
-                & (pl.col("thstrm_amount").str.strip_chars() != "")
-                & (pl.col("thstrm_amount").str.strip_chars() != "-")
-            )
-            .then(pl.col("thstrm_amount").str.strip_chars().str.replace_all(",", "").cast(pl.Float64, strict=False))
-            .otherwise(pl.lit(None).cast(pl.Float64))
-            .alias("thstrm_amount")
-        )
+        from dartlab.providers.dart.parse.amount import parseAmountExpr
+
+        sce = sce.with_columns(parseAmountExpr("thstrm_amount").alias("thstrm_amount"))
 
     from dartlab.providers.dart.finance.pivot import QUARTER_ORDER, _preserveUnmapped
 

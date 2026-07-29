@@ -13,7 +13,7 @@ import polars as pl
 
 from ..infra.resilience import circuitBreaker as _circuit_breaker
 from ..infra.resilience import healthTracker as _health_tracker
-from ..types import NewsItem
+from ..types import CircuitOpenError, NewsItem, SourceUnavailableError
 from .newsSchema import coerceToCanonical
 
 log = logging.getLogger(__name__)
@@ -30,10 +30,12 @@ _EMPTY_SCHEMA = {
     "source": pl.Utf8,
     "url": pl.Utf8,
     "description": pl.Utf8,
+    "provider": pl.Utf8,
+    "fetchedAt": pl.Utf8,
 }
 
 
-def _parseDate(dateStr: str) -> datetime | None:
+def _parseDate(dateStr: str) -> datetime:
     """RSS pubDate 문자열을 datetime으로 파싱.
 
     RFC 822 형식 두 가지(timezone 약어 / offset)를 순서대로 시도한다.
@@ -45,22 +47,27 @@ def _parseDate(dateStr: str) -> datetime | None:
 
     Returns
     -------
-    datetime | None
-        파싱 성공 시 datetime 객체, 모든 포맷 실패 시 None.
+    datetime
+        파싱 성공 시 datetime 객체.
+
+    Raises
+    ------
+    ValueError
+        지원하는 RFC 822 형식이 아닐 때.
     """
     for fmt in ("%a, %d %b %Y %H:%M:%S %Z", "%a, %d %b %Y %H:%M:%S %z"):
         try:
             return datetime.strptime(dateStr, fmt)
         except ValueError:
             continue
-    return None
+    raise ValueError(f"지원하지 않는 RSS pubDate 형식: {dateStr!r}")
 
 
 def _parseRss(data: str, *, days: int = 30) -> list[NewsItem]:
     """RSS XML 문자열을 파싱하여 NewsItem 리스트로 변환.
 
     cutoff(현재 시각 - days) 이전 기사는 제외한다.
-    XML 파싱 실패 시 빈 리스트를 반환한다.
+    XML 파싱 실패는 ValueError로 전달한다.
 
     Parameters
     ----------
@@ -80,8 +87,8 @@ def _parseRss(data: str, *, days: int = 30) -> list[NewsItem]:
     items: list[NewsItem] = []
     try:
         root = ET.fromstring(data)
-    except ET.ParseError:
-        return items
+    except ET.ParseError as exc:
+        raise ValueError("Google News RSS XML을 해석할 수 없습니다") from exc
 
     cutoff = datetime.now() - timedelta(days=days)
     for item in root.iter("item"):
@@ -90,7 +97,7 @@ def _parseRss(data: str, *, days: int = 30) -> list[NewsItem]:
         pubDate = item.findtext("pubDate", "")
         source = item.findtext("source", "")
         dt = _parseDate(pubDate)
-        if dt and dt.replace(tzinfo=None) >= cutoff:
+        if dt.replace(tzinfo=None) >= cutoff:
             items.append(
                 NewsItem(
                     date=str(dt.date()),
@@ -129,11 +136,24 @@ async def _fetchAsync(
         title : str — 기사 제목
         source : str — 언론사명
         url : str — 기사 링크
-        circuit breaker open 또는 수집 실패 시 빈 리스트.
+        정상 응답에 기사가 없으면 빈 리스트.
+
+    Raises
+    ------
+    ValueError
+        market/days 입력 계약 위반.
+    CircuitOpenError
+        Google News circuit이 열려 있을 때.
+    SourceUnavailableError
+        네트워크, HTTP 또는 RSS 해석 실패.
     """
+    market = market.upper()
+    if market not in {"KR", "US"}:
+        raise ValueError(f"news market은 KR/US만 지원합니다: {market!r}")
+    if days < 1:
+        raise ValueError(f"days는 1 이상이어야 합니다: {days}")
     if _circuit_breaker.isOpen(_SOURCE_NAME):
-        log.debug("news circuit breaker open — skip")
-        return []
+        raise CircuitOpenError(f"{_SOURCE_NAME} circuit이 open 상태입니다")
 
     template = _KR_RSS if market == "KR" else _US_RSS
     url = template.format(query=query, days=days)
@@ -156,19 +176,19 @@ async def _fetchAsync(
         _circuit_breaker.recordSuccess(_SOURCE_NAME)
         _health_tracker.record(_SOURCE_NAME, success=True, latency=latency)
         return items
-    except (ImportError, OSError, TimeoutError, ValueError, ConnectionError) as exc:
+    except Exception as exc:
         latency = time.monotonic() - t0
         _circuit_breaker.recordFailure(_SOURCE_NAME)
         _health_tracker.record(_SOURCE_NAME, success=False, latency=latency)
-        log.debug("news fetch 실패: %s", exc)
-        return []
+        raise SourceUnavailableError(f"{_SOURCE_NAME} 조회 실패: {query!r}") from exc
 
 
-def toDataFrame(items: list[NewsItem]) -> pl.DataFrame:
+def toDataFrame(items: list[NewsItem], *, provider: str = _SOURCE_NAME) -> pl.DataFrame:
     """NewsItem 리스트 → pl.DataFrame 변환.
 
     Capabilities:
         - 빈 리스트도 동일 스키마 빈 DataFrame 반환 (consistency)
+        - provider/fetchedAt provenance 동행
         - 최신순 정렬 (date desc)
 
     AIContext:
@@ -215,6 +235,7 @@ def toDataFrame(items: list[NewsItem]) -> pl.DataFrame:
     """
     if not items:
         return pl.DataFrame(schema=_EMPTY_SCHEMA)
+    fetchedAt = datetime.now(timezone.utc).isoformat()
     rows = [
         {
             "date": i.date,
@@ -222,6 +243,8 @@ def toDataFrame(items: list[NewsItem]) -> pl.DataFrame:
             "source": i.source,
             "url": i.url,
             "description": i.description,
+            "provider": provider,
+            "fetchedAt": fetchedAt,
         }
         for i in items
     ]
@@ -281,7 +304,7 @@ def fetchNews(
     from ..infra.http import runAsync
 
     items = runAsync(_fetchAsync(query, market=market, days=days))
-    df = toDataFrame(items)
+    df = toDataFrame(items, provider=_SOURCE_NAME)
     if limit is not None and limit > 0:
         return df.head(limit)
     return df

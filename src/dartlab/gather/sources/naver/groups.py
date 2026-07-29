@@ -17,6 +17,7 @@ from __future__ import annotations
 import logging
 import re
 from dataclasses import dataclass
+from datetime import datetime, timezone
 
 import polars as pl
 
@@ -34,13 +35,21 @@ _STOCK_RE = re.compile(r'<a href="/item/main\.naver\?code=(\d+)">(.*?)</a>')
 _REASON_RE = re.compile(r'<p class="info_txt">(.*?)</p>', re.DOTALL)
 _TAG_RE = re.compile(r"<[^>]+>")
 
-_LIST_SCHEMA: dict[str, pl.DataType] = {"groupNo": pl.Int64, "groupName": pl.Utf8, "url": pl.Utf8}
-_STOCKS_SCHEMA: dict[str, pl.DataType] = {
+_LIST_SCHEMA = {
+    "groupNo": pl.Int64,
+    "groupName": pl.Utf8,
+    "url": pl.Utf8,
+    "source": pl.Utf8,
+    "fetchedAt": pl.Utf8,
+}
+_STOCKS_SCHEMA = {
     "groupNo": pl.Int64,
     "groupName": pl.Utf8,
     "stockCode": pl.Utf8,
     "stockName": pl.Utf8,
     "reason": pl.Utf8,
+    "source": pl.Utf8,
+    "fetchedAt": pl.Utf8,
 }
 
 
@@ -115,10 +124,10 @@ async def fetchGroupList(client: GatherHttpClient, groupKey: str, *, limit: int 
         limit: 반환 그룹 수 상한 (None=전체).
 
     Returns:
-        list[dict] — {groupNo:int, groupName:str, url:str}.
+        list[dict] — {groupNo, groupName, url, source, fetchedAt}.
 
     Raises:
-        없음 — 빈 결과는 collectGroup 이 흡수.
+        ValueError — 응답에서 그룹 목록을 해석할 수 없을 때.
 
     Example::
 
@@ -134,6 +143,10 @@ async def fetchGroupList(client: GatherHttpClient, groupKey: str, *, limit: int 
     spec = _GROUP_SPECS[groupKey]
     resp = await client.get(_LIST_URL, params={"type": spec.typeParam}, headers=_HEADERS)
     groups = _parseGroupListHtml(resp.text, spec.typeParam)
+    if not groups:
+        raise ValueError(f"Naver {spec.noun} 목록 응답을 해석할 수 없습니다")
+    fetchedAt = datetime.now(timezone.utc).isoformat()
+    groups = [{**group, "source": "naver", "fetchedAt": fetchedAt} for group in groups]
     return groups if limit is None else groups[:limit]
 
 
@@ -153,10 +166,10 @@ async def fetchGroupStocks(client: GatherHttpClient, groupKey: str, no: int, *, 
         limit: 반환 종목 수 상한 (None=전체).
 
     Returns:
-        list[dict] — {stockCode:str, stockName:str, reason:str}.
+        list[dict] — {stockCode, stockName, reason, source, fetchedAt}.
 
     Raises:
-        없음.
+        ValueError — 응답에서 편입 종목을 해석할 수 없을 때.
 
     Example::
 
@@ -172,6 +185,10 @@ async def fetchGroupStocks(client: GatherHttpClient, groupKey: str, no: int, *, 
     spec = _GROUP_SPECS[groupKey]
     resp = await client.get(_DETAIL_URL, params={"type": spec.typeParam, "no": no}, headers=_HEADERS)
     rows = _parseGroupDetailHtml(resp.text)
+    if not rows:
+        raise ValueError(f"Naver {spec.noun} {no} 상세 응답을 해석할 수 없습니다")
+    fetchedAt = datetime.now(timezone.utc).isoformat()
+    rows = [{**row, "source": "naver", "fetchedAt": fetchedAt} for row in rows]
     return rows if limit is None else rows[:limit]
 
 
@@ -232,7 +249,8 @@ async def collectGroup(
         refresh: True 면 강제 재크롤.
 
     Returns:
-        pl.DataFrame — "list"=_LIST_SCHEMA, 전수=_STOCKS_SCHEMA+collectedAt, 부분=_STOCKS_SCHEMA.
+        pl.DataFrame — source/fetchedAt 동행. "list"=_LIST_SCHEMA,
+        전수=_STOCKS_SCHEMA+collectedAt, 부분=_STOCKS_SCHEMA.
 
     Raises:
         KeyError — 미등록 groupKey.

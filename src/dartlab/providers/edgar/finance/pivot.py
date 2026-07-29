@@ -79,6 +79,8 @@ def _buildTimeseriesFromFacts(
     *,
     calendarize: bool = True,
 ) -> tuple[dict[str, dict[str, list[Optional[float]]]], list[str]]:
+    df = _selectFinanceNamespace(df)
+    namespace = _financeNamespace(df)
     stmtDfs = _splitStmtFacts(df)
 
     # period 라벨 = end_date 기반 캘린더 앵커링 (Capital IQ 규칙).
@@ -108,7 +110,7 @@ def _buildTimeseriesFromFacts(
 
         for row in pivoted.iter_rows(named=True):
             tag = row["tag"]
-            dartSid = EdgarMapper.mapToDart(tag, stmt)
+            dartSid = _mapFactTag(tag, stmt, namespace)
             if dartSid is None:
                 continue
 
@@ -123,7 +125,7 @@ def _buildTimeseriesFromFacts(
                 if canonStmt and canonStmt in ("BS", "IS", "CF", "CI", "EQ", "NT") and canonStmt != stmt:
                     continue
 
-            isCommon = EdgarMapper.isCommonTag(tag)
+            isCommon = _isCommonFactTag(tag, namespace)
 
             for p in periodCols:
                 if "-FY" in p:
@@ -185,7 +187,7 @@ def buildAnnual(
 
     IS/CF: 해당 연도 분기별 standalone 합산 (4분기 필수).
            4분기 미만이면 FY 직접값 폴백.
-    BS: 해당 연도 마지막 분기 시점잔액.
+    BS: 해당 연도 Q4 시점잔액. Q4가 없으면 연간값을 만들지 않음.
 
     Args:
         cik: SEC CIK 번호.
@@ -249,13 +251,20 @@ def buildAnnual(
                 yIdx = yearIdx[year]
 
                 if sjDiv == "BS":
-                    if qIndices:
-                        lastIdx = max(qIndices)
-                        annual[yIdx] = vals[lastIdx] if lastIdx < len(vals) else None
+                    q4Indices = [index for index in qIndices if qPeriods[index].endswith("-Q4")]
+                    if q4Indices:
+                        q4Index = q4Indices[0]
+                        annual[yIdx] = vals[q4Index] if q4Index < len(vals) else None
                 else:
-                    qVals = [vals[qi] for qi in qIndices if qi < len(vals) and vals[qi] is not None]
-                    if len(qVals) >= 4:
-                        annual[yIdx] = sum(qVals)
+                    qVals: dict[str, float] = {}
+                    for index in qIndices:
+                        if index >= len(vals):
+                            continue
+                        value = vals[index]
+                        if value is not None:
+                            qVals[qPeriods[index].rsplit("-Q", 1)[-1]] = value
+                    if set(qVals) == {"1", "2", "3", "4"}:
+                        annual[yIdx] = sum(qVals.values())
                     else:
                         # FY 직접값 폴백
                         fyVal = fyMap.get(sjDiv, {}).get(snakeId, {}).get(year)
@@ -270,6 +279,8 @@ def _buildFyMap(
     df: pl.DataFrame,
 ) -> dict[str, dict[str, dict[str, float]]]:
     """raw companyfacts에서 FY 직접값을 annual 폴백 맵으로 구축."""
+    df = _selectFinanceNamespace(df)
+    namespace = _financeNamespace(df)
     stmtDfs = _splitStmtFacts(df)
     fyMap: dict[str, dict[str, dict[str, float]]] = {"IS": {}, "CF": {}, "CI": {}}
     sidSource: dict[str, dict[str, dict[str, str]]] = {"IS": {}, "CF": {}, "CI": {}}
@@ -288,7 +299,7 @@ def _buildFyMap(
 
         for row in annualRows.iter_rows(named=True):
             tag = row["tag"]
-            dartSid = EdgarMapper.mapToDart(tag, stmt)
+            dartSid = _mapFactTag(tag, stmt, namespace)
             if dartSid is None:
                 continue
             period = row["period"]
@@ -296,7 +307,14 @@ def _buildFyMap(
             val = row["val"]
             if val is None:
                 continue
-            _storeMappedValue(fyMap[stmt], sidSource[stmt], dartSid, year, val, EdgarMapper.isCommonTag(tag))
+            _storeMappedValue(
+                fyMap[stmt],
+                sidSource[stmt],
+                dartSid,
+                year,
+                val,
+                _isCommonFactTag(tag, namespace),
+            )
 
     return fyMap
 
@@ -583,7 +601,7 @@ def _ytdDeaccumulate(tagDf: pl.DataFrame, missingPeriods: pl.DataFrame) -> pl.Da
             if q1Rows.height > 0:
                 q1Val = q1Rows.row(0, named=True)["val"]
                 if q1Val is not None and ytdVal is not None:
-                    standalone = ytdVal - q1Val
+                    standalone = float(ytdVal) - float(q1Val)
                     if standalone < 0 and tag in revTags:
                         continue
                     rows.append({"tag": tag, "period": period, "val": standalone})
@@ -595,7 +613,7 @@ def _ytdDeaccumulate(tagDf: pl.DataFrame, missingPeriods: pl.DataFrame) -> pl.Da
             if q2YtdRows.height > 0:
                 q2YtdVal = q2YtdRows.row(0, named=True)["val"]
                 if q2YtdVal is not None and ytdVal is not None:
-                    standalone = ytdVal - q2YtdVal
+                    standalone = float(ytdVal) - float(q2YtdVal)
                     if standalone < 0 and tag in revTags:
                         continue
                     rows.append({"tag": tag, "period": period, "val": standalone})
@@ -608,8 +626,12 @@ def _ytdDeaccumulate(tagDf: pl.DataFrame, missingPeriods: pl.DataFrame) -> pl.Da
 # ── 재내보내기 (분리: pivotFactsLoad.py · pivotPost.py) ──────────
 from dartlab.providers.edgar.finance.pivotFactsLoad import (  # noqa: E402  re-export
     _autoDownloadEdgarFinance,
+    _financeNamespace,
     _guessStmt,
+    _isCommonFactTag,
     _loadFacts,
+    _mapFactTag,
+    _selectFinanceNamespace,
     _splitStmtFacts,
     _storeMappedValue,
 )

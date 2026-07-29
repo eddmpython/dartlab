@@ -11,6 +11,8 @@ from typing import TYPE_CHECKING
 import httpx
 import polars as pl
 
+from dartlab.core.dartClient import DartApiError
+
 # batch ↔ batchCollectors 양방향 import 회피 — AsyncDartClient 는 type annotation
 # (`from __future__ import annotations` 효과로 string lazy), 10 상수/helper 는 함수 본문
 # 안만 사용 → 각 함수 시작 lazy import.
@@ -67,14 +69,14 @@ async def _collectFinance(
     totalPeriods = len(periods)
     for pIdx, (bsnsYear, reprtCode) in enumerate(periods):
         if client.exhausted:
-            break
+            raise DartApiError("020", "요청 제한 초과로 finance 수집이 완료되지 않았습니다")
         quarter = _CODE_TO_QUARTER.get(reprtCode, "Q4")
         if onPeriod:
             onPeriod(f"finance {pIdx + 1}/{totalPeriods} {bsnsYear}{quarter}")
         # CFS (연결) + OFS (별도) 양쪽 수집
         for fsDiv in ("CFS", "OFS"):
             if client.exhausted:
-                break
+                raise DartApiError("020", "요청 제한 초과로 finance 수집이 완료되지 않았습니다")
             df = await client.getDf(
                 "fnlttSinglAcntAll.json",
                 {
@@ -85,13 +87,15 @@ async def _collectFinance(
                 },
             )
             if df is None:
-                break
+                raise RuntimeError(f"finance 응답 상태가 없습니다: {stockCode} {bsnsYear}/{reprtCode}/{fsDiv}")
             if df.height > 0:
                 # API 응답에 fs_div가 없으므로 요청한 값을 직접 부여
                 if "fs_div" not in df.columns:
                     df = df.with_columns(pl.lit(fsDiv).alias("fs_div"))
                 frames.append(df)
 
+    if client.exhausted:
+        raise DartApiError("020", "요청 제한 초과로 finance 수집이 완료되지 않았습니다")
     if not frames:
         return 0
 
@@ -152,7 +156,7 @@ async def _collectReport(
             onPeriod(f"report {catIdx + 1}/{totalCats} {cat}")
         for bsnsYear, reprtCode in allPeriods:
             if client.exhausted:
-                break
+                raise DartApiError("020", "요청 제한 초과로 report 수집이 완료되지 않았습니다")
             quarterKr = _CODE_TO_QUARTER_KR.get(reprtCode, "4분기")
             engApiType = _KR_TO_ENG_API_TYPE.get(cat, cat)
             # 증분: parquet 실제 포맷(year, "N분기", engApiType)으로 비교
@@ -164,13 +168,15 @@ async def _collectReport(
                 {"corp_code": corpCode, "bsns_year": bsnsYear, "reprt_code": reprtCode},
             )
             if df is None:
-                break
+                raise RuntimeError(f"report 응답 상태가 없습니다: {stockCode} {bsnsYear}/{reprtCode}/{cat}")
             if df.height > 0:
                 enriched = enrichReport(df, stockCode, corpCode, cat, endpoint)
                 frames.append(enriched)
         if client.exhausted:
-            break
+            raise DartApiError("020", "요청 제한 초과로 report 수집이 완료되지 않았습니다")
 
+    if client.exhausted:
+        raise DartApiError("020", "요청 제한 초과로 report 수집이 완료되지 않았습니다")
     if not frames:
         return 0
 

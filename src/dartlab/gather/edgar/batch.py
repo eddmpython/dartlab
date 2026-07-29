@@ -17,6 +17,7 @@ import logging
 import os
 import threading
 import uuid
+from dataclasses import dataclass
 from pathlib import Path
 
 import httpx
@@ -35,6 +36,30 @@ _MAX_WORKERS = 3
 # ticker-level lock: 동일 ticker 동시 쓰기 방지
 _TICKER_LOCKS: dict[str, asyncio.Lock] = {}
 _TICKER_LOCK_GUARD = asyncio.Lock()
+
+
+@dataclass(frozen=True)
+class _StagedArtifact:
+    """검증을 마쳤지만 아직 공개 경로에 반영하지 않은 단일 산출물."""
+
+    category: str
+    destination: Path
+    tempPath: Path | None
+    rows: int
+
+
+class EdgarBatchCollectionError(RuntimeError):
+    """EDGAR batch 일부 ticker가 실패했음을 원인과 함께 전달."""
+
+    def __init__(
+        self,
+        failures: dict[str, dict[str, str]],
+        partialResults: dict[str, dict[str, int]],
+    ) -> None:
+        self.failures = failures
+        self.partialResults = partialResults
+        failedTickers = ", ".join(sorted(failures))
+        super().__init__(f"EDGAR batch collection failed for {len(failures)} ticker(s): {failedTickers}")
 
 
 async def _getTickerLock(key: str) -> asyncio.Lock:
@@ -117,12 +142,12 @@ async def _collectEdgarFinance(
     *,
     incremental: bool = True,
     onPeriod=None,
-) -> int:
-    """companyfacts API → parquet 저장. 반환: 행 수."""
+) -> _StagedArtifact:
+    """companyfacts API 결과를 검증된 임시 parquet으로 준비."""
     from dartlab.core.edgarClient import companyFactsToRows
 
     if not cik:
-        return 0
+        raise ValueError(f"EDGAR ticker에 CIK가 없습니다: {ticker}")
 
     path = _edgarDataPath("edgar", cik)
 
@@ -135,7 +160,7 @@ async def _collectEdgarFinance(
             try:
                 filedDate = date.fromisoformat(latestFiled)
                 if (date.today() - filedDate).days < 7:
-                    return 0
+                    return _StagedArtifact("finance", path, None, 0)
             except (ValueError, TypeError):
                 pass
 
@@ -143,27 +168,25 @@ async def _collectEdgarFinance(
         onPeriod(f"finance {ticker}")
 
     url = f"{DEFAULT_BASE_URL}/api/xbrl/companyfacts/CIK{cik}.json"
-    try:
-        payload = await client.getJson(url)
-    except EdgarApiError as exc:
-        _log.warning("finance %s (CIK %s): API 오류 — %s", ticker, cik, exc)
-        return 0
+    payload = await client.getJson(url)
 
     df = companyFactsToRows(payload)
     if df.height == 0:
-        return 0
+        raise ValueError(f"EDGAR companyfacts가 비어 있습니다: ticker={ticker}, cik={cik}")
 
-    lock = await _getTickerLock(f"finance:{cik}")
-    async with lock:
-        tmpPath = path.with_name(f"{path.stem}.tmp-{uuid.uuid4().hex[:8]}{path.suffix}")
-        try:
-            df.write_parquet(tmpPath)
-            os.replace(tmpPath, path)
-        finally:
-            if tmpPath.exists():
-                tmpPath.unlink(missing_ok=True)
+    tmpPath = path.with_name(f"{path.stem}.tmp-{uuid.uuid4().hex[:8]}{path.suffix}")
+    try:
+        df.write_parquet(tmpPath)
+        saved = pl.read_parquet(tmpPath)
+        if saved.height != df.height or saved.width == 0:
+            raise ValueError(
+                f"EDGAR finance 임시 산출물 검증 실패: ticker={ticker}, expected={df.height}, actual={saved.height}"
+            )
+    except BaseException:
+        tmpPath.unlink(missing_ok=True)
+        raise
 
-    return df.height
+    return _StagedArtifact("finance", path, tmpPath, df.height)
 
 
 async def _collectEdgarDocs(
@@ -173,42 +196,76 @@ async def _collectEdgarDocs(
     *,
     incremental: bool = True,
     onPeriod=None,
-) -> int:
-    """SEC submissions → 10-K/10-Q HTML fetch → parquet. 반환: 섹션 수."""
+) -> _StagedArtifact:
+    """SEC submissions 결과를 검증된 임시 parquet으로 준비."""
     from dartlab.gather.edgar.docs.fetch import fetchEdgarDocs
 
     if not cik:
-        return 0
+        raise ValueError(f"EDGAR ticker에 CIK가 없습니다: {ticker}")
 
     path = _edgarDataPath("edgarDocs", ticker)
 
     # incremental: 파일이 있으면 스킵
     if incremental and path.exists():
-        return 0
+        return _StagedArtifact("docs", path, None, 0)
 
     if onPeriod:
         onPeriod(f"docs {ticker}")
 
-    lock = await _getTickerLock(f"docs:{ticker}")
-    async with lock:
-        # lock 획득 후 다시 확인 (다른 워커가 이미 완료했을 수 있음)
-        if incremental and path.exists():
-            return 0
+    tmpPath = path.with_name(f"{path.stem}.tmp-{uuid.uuid4().hex[:8]}{path.suffix}")
+    try:
+        fetchEdgarDocs(ticker, tmpPath, showProgress=False)
+        if not tmpPath.exists() or tmpPath.stat().st_size == 0:
+            raise ValueError(f"EDGAR docs 임시 산출물이 없습니다: ticker={ticker}")
+        df = pl.read_parquet(tmpPath)
+        if df.height == 0:
+            raise ValueError(f"EDGAR docs 임시 산출물이 비어 있습니다: ticker={ticker}")
+    except BaseException:
+        tmpPath.unlink(missing_ok=True)
+        raise
 
-        tmpPath = path.with_name(f"{path.stem}.tmp-{uuid.uuid4().hex[:8]}{path.suffix}")
-        try:
-            fetchEdgarDocs(ticker, tmpPath, showProgress=False)
-            if tmpPath.exists() and tmpPath.stat().st_size > 0:
-                os.replace(tmpPath, path)
-                df = pl.read_parquet(path)
-                return df.height
-            return 0
-        except (ValueError, KeyError, RuntimeError, OSError, TimeoutError, AttributeError) as exc:
-            _log.warning("docs %s: 수집 실패 — %s: %s", ticker, type(exc).__name__, exc)
-            return 0
-        finally:
-            if tmpPath.exists():
-                tmpPath.unlink(missing_ok=True)
+    return _StagedArtifact("docs", path, tmpPath, df.height)
+
+
+def _cleanupStagedArtifacts(artifacts: list[_StagedArtifact]) -> None:
+    for artifact in artifacts:
+        if artifact.tempPath is not None:
+            artifact.tempPath.unlink(missing_ok=True)
+
+
+def _commitStagedArtifacts(artifacts: list[_StagedArtifact]) -> None:
+    """ticker의 모든 임시 산출물을 함께 교체하고 실패 시 이전 상태로 복원."""
+    pending = [artifact for artifact in artifacts if artifact.tempPath is not None]
+    if not pending:
+        return
+
+    backups: dict[Path, Path] = {}
+    committed: list[Path] = []
+    transactionId = uuid.uuid4().hex[:8]
+    try:
+        for artifact in pending:
+            destination = artifact.destination
+            if destination.exists():
+                backup = destination.with_name(f"{destination.name}.bak-{transactionId}")
+                os.replace(destination, backup)
+                backups[destination] = backup
+
+        for artifact in pending:
+            assert artifact.tempPath is not None
+            os.replace(artifact.tempPath, artifact.destination)
+            committed.append(artifact.destination)
+    except BaseException:
+        for destination in reversed(committed):
+            destination.unlink(missing_ok=True)
+        for destination, backup in backups.items():
+            if backup.exists():
+                os.replace(backup, destination)
+        raise
+    else:
+        for backup in backups.values():
+            backup.unlink(missing_ok=True)
+    finally:
+        _cleanupStagedArtifacts(pending)
 
 
 # ── asyncio 유틸 ──
@@ -229,14 +286,15 @@ async def _workerLoop(
     client: AsyncEdgarClient,
     queue: asyncio.Queue,
     categories: list[str],
-    results: dict,
+    results: dict[str, dict[str, int]],
+    failures: dict[str, dict[str, str]],
     tickerMap: dict[str, dict[str, str]],
     incremental: bool,
     onComplete,
     onStatus,
     onPeriod,
 ) -> None:
-    """워커: 큐에서 ticker 꺼내서 수집. rate limit 시 종료."""
+    """워커: ticker별 모든 category를 준비한 뒤 하나의 트랜잭션으로 반영."""
     while not client.exhausted:
         try:
             ticker = queue.get_nowait()
@@ -248,7 +306,8 @@ async def _workerLoop(
         info = tickerMap.get(ticker, {"cik": "", "title": ticker})
         cik = info["cik"]
         title = info["title"]
-        result: dict[str, int] = {}
+        artifacts: list[_StagedArtifact] = []
+        activeCategory = ""
 
         if onStatus:
             onStatus(workerIndex, ticker, title)
@@ -257,43 +316,66 @@ async def _workerLoop(
             if onPeriod:
                 onPeriod(workerIndex, title, msg)
 
-        for cat in categories:
-            if client.exhausted:
-                await queue.put(ticker)
-                return
-            try:
-                if cat == "finance":
-                    count = await _collectEdgarFinance(
-                        ticker,
-                        cik,
-                        client,
-                        incremental=incremental,
-                        onPeriod=_periodCb,
-                    )
-                elif cat == "docs":
-                    count = await _collectEdgarDocs(
-                        ticker,
-                        cik,
-                        client,
-                        incremental=incremental,
-                        onPeriod=_periodCb,
-                    )
-                else:
-                    count = 0
-                result[cat] = count
-            except asyncio.CancelledError:
-                return
-            except (httpx.HTTPError, OSError, ValueError, KeyError, RuntimeError, EdgarApiError) as exc:
-                _log.warning("worker %d: %s/%s 실패 — %s: %s", workerIndex, ticker, cat, type(exc).__name__, exc)
-                result[cat] = 0
+        try:
+            lock = await _getTickerLock(f"ticker:{ticker}")
+            async with lock:
+                for cat in categories:
+                    activeCategory = cat
+                    if client.exhausted:
+                        raise RuntimeError("SEC client rate budget exhausted")
+                    if cat == "finance":
+                        artifact = await _collectEdgarFinance(
+                            ticker,
+                            cik,
+                            client,
+                            incremental=incremental,
+                            onPeriod=_periodCb,
+                        )
+                    elif cat == "docs":
+                        artifact = await _collectEdgarDocs(
+                            ticker,
+                            cik,
+                            client,
+                            incremental=incremental,
+                            onPeriod=_periodCb,
+                        )
+                    else:
+                        raise ValueError(f"지원하지 않는 EDGAR category: {cat}")
+                    artifacts.append(artifact)
+                _commitStagedArtifacts(artifacts)
 
-        if not client.exhausted:
+            result = {artifact.category: artifact.rows for artifact in artifacts}
             results[ticker] = result
             if onComplete:
                 catSummary = " ".join(f"{k}:{v}" for k, v in result.items() if v > 0)
                 onComplete(title, catSummary)
-
-        queue.task_done()
+        except asyncio.CancelledError:
+            raise
+        except (
+            httpx.HTTPError,
+            OSError,
+            ValueError,
+            KeyError,
+            RuntimeError,
+            EdgarApiError,
+            pl.exceptions.PolarsError,
+        ) as exc:
+            _cleanupStagedArtifacts(artifacts)
+            failures[ticker] = {
+                "category": activeCategory or "worker",
+                "errorType": type(exc).__name__,
+                "message": str(exc),
+            }
+            _log.warning(
+                "worker %d: %s/%s 실패: %s: %s",
+                workerIndex,
+                ticker,
+                activeCategory or "worker",
+                type(exc).__name__,
+                exc,
+            )
+        finally:
+            queue.task_done()
 
 
 def batchCollectEdgar(
@@ -317,7 +399,8 @@ def batchCollectEdgar(
         ``{"AAPL": {"finance": 12000, "docs": 450}, ...}`` dict.
 
     Raises:
-        없음 (KeyboardInterrupt 는 정상 종료).
+        EdgarBatchCollectionError: 하나 이상의 ticker 수집 또는 저장 실패.
+        ValueError: 지원하지 않는 category 또는 잘못된 worker 수.
 
     Example:
         >>> batchCollectEdgar(["AAPL", "MSFT"], categories=["finance"])
@@ -360,29 +443,52 @@ def batchCollectEdgar(
 
     from dartlab.core.messaging import emit
 
-    cats = categories or ["finance", "docs"]
+    cats = list(dict.fromkeys(categories or ["finance", "docs"]))
+    unsupported = sorted(set(cats) - {"finance", "docs"})
+    if unsupported:
+        raise ValueError(f"지원하지 않는 EDGAR category: {', '.join(unsupported)}")
+    if maxWorkers is not None and maxWorkers < 1:
+        raise ValueError("maxWorkers는 1 이상이어야 합니다")
     numWorkers = min(maxWorkers or _MAX_WORKERS, _MAX_WORKERS)
+    normalizedTickers = list(dict.fromkeys(t.upper() for t in tickers))
 
     # ticker → cik/title 맵 사전 로드
-    tickerMap = _resolveTickerMap(tickers)
-    total = len(tickers)
+    tickerMap = _resolveTickerMap(normalizedTickers)
+    total = len(normalizedTickers)
 
     kindLabel = "+".join(cats)
     emit("edgar:bulk_start", kind=kindLabel, total=total)
     _bulkStart = _time.time()
 
-    async def _run(completeFn, statusFn, periodFn) -> dict[str, dict[str, int]]:
+    async def _run(
+        completeFn,
+        statusFn,
+        periodFn,
+    ) -> tuple[dict[str, dict[str, int]], dict[str, dict[str, str]]]:
         clients = [AsyncEdgarClient() for _ in range(numWorkers)]
         queue: asyncio.Queue = asyncio.Queue()
-        for t in tickers:
-            await queue.put(t.upper())
+        for ticker in normalizedTickers:
+            await queue.put(ticker)
 
         results: dict[str, dict[str, int]] = {}
+        failures: dict[str, dict[str, str]] = {}
 
         try:
             workers = [
                 asyncio.create_task(
-                    _workerLoop(i, c, queue, cats, results, tickerMap, incremental, completeFn, statusFn, periodFn)
+                    _workerLoop(
+                        i,
+                        c,
+                        queue,
+                        cats,
+                        results,
+                        failures,
+                        tickerMap,
+                        incremental,
+                        completeFn,
+                        statusFn,
+                        periodFn,
+                    )
                 )
                 for i, c in enumerate(clients)
             ]
@@ -393,17 +499,24 @@ def batchCollectEdgar(
             # ticker lock 정리 (메모리 누수 방지)
             _TICKER_LOCKS.clear()
 
-        remaining = queue.qsize()
-        if remaining > 0:
-            from dartlab.core.messaging import emit
-
+        missing = set(normalizedTickers) - set(results) - set(failures)
+        for ticker in missing:
+            failures[ticker] = {
+                "category": "worker",
+                "errorType": "EdgarClientExhausted",
+                "message": "SEC client rate budget exhausted before ticker processing",
+            }
+        if missing:
             emit("edgar:collect_exhausted")
 
-        return results
+        return results, failures
 
-    def _emitDone(res: dict[str, dict[str, int]]) -> None:
-        success = sum(1 for v in res.values() if any(c > 0 for c in v.values()))
-        failed = total - success
+    def _emitDone(
+        res: dict[str, dict[str, int]],
+        failures: dict[str, dict[str, str]],
+    ) -> None:
+        success = len(res)
+        failed = len(failures)
         elapsedSec = _time.time() - _bulkStart
         if failed > 0 and success > 0:
             emit(
@@ -421,11 +534,18 @@ def batchCollectEdgar(
             elapsedSec=elapsedSec,
         )
 
+    def _finish(
+        outcome: tuple[dict[str, dict[str, int]], dict[str, dict[str, str]]],
+    ) -> dict[str, dict[str, int]]:
+        res, failures = outcome
+        _emitDone(res, failures)
+        if failures:
+            raise EdgarBatchCollectionError(failures, res)
+        return res
+
     if not showProgress:
         try:
-            res = _runAsync(_run(None, None, None))
-            _emitDone(res)
-            return res
+            return _finish(_runAsync(_run(None, None, None)))
         except KeyboardInterrupt:
             _log.info("\n[EDGAR 배치] 사용자 중단.")
             return {}
@@ -437,7 +557,7 @@ def batchCollectEdgar(
     workerLines = ["⏳ 대기 중..."] * numWorkers
     completedCount = [0]
     lock = threading.Lock()
-    result: dict[str, dict[str, int]] = {}
+    outcome: tuple[dict[str, dict[str, int]], dict[str, dict[str, str]]] = ({}, {})
     runError: list[BaseException] = []
 
     ", ".join(cats)
@@ -464,8 +584,8 @@ def batchCollectEdgar(
 
     def _threadTarget():
         try:
-            nonlocal result
-            result = asyncio.run(_run(_completeFn, _statusFn, _periodFn))
+            nonlocal outcome
+            outcome = asyncio.run(_run(_completeFn, _statusFn, _periodFn))
         except KeyboardInterrupt:
             pass
         except BaseException as exc:
@@ -490,8 +610,7 @@ def batchCollectEdgar(
     if runError and not isinstance(runError[0], KeyboardInterrupt):
         raise runError[0]
 
-    _emitDone(result)
-    return result
+    return _finish(outcome)
 
 
 def batchCollectEdgarAll(

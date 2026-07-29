@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from types import MappingProxyType
+from typing import Iterable, Mapping
 
 # ══════════════════════════════════════
 # 도메인 설정
@@ -891,6 +893,38 @@ class GatherError(Exception):
 
 class SourceUnavailableError(GatherError):
     """소스 접근 불가."""
+
+
+class SourceAttemptsExhaustedError(SourceUnavailableError):
+    """Fallback source가 모두 실패했음을 원인별로 보존하는 예외.
+
+    Parameters
+    ----------
+    operation : str
+        실패한 수집 작업 이름.
+    attempts : Iterable[tuple[str, Exception]]
+        시도한 source 이름과 해당 실패 원인의 순서쌍.
+
+    Attributes
+    ----------
+    operation : str
+        실패한 수집 작업 이름.
+    attempts : tuple[tuple[str, Exception], ...]
+        fallback 순서대로 보존한 source별 실패 원인.
+    failures : Mapping[str, Exception]
+        source 이름으로 실패 원인을 조회하는 읽기 전용 매핑.
+    """
+
+    def __init__(self, operation: str, attempts: Iterable[tuple[str, Exception]]) -> None:
+        self.operation = operation
+        self.attempts = tuple(attempts)
+        self.failures: Mapping[str, Exception] = MappingProxyType(dict(self.attempts))
+
+        if self.attempts:
+            detail = ", ".join(f"{source}={type(exc).__name__}" for source, exc in self.attempts)
+        else:
+            detail = "설정된 source 없음"
+        super().__init__(f"{operation} fallback source가 모두 실패했습니다 ({detail})")
 
 
 class RateLimitExceededError(GatherError):

@@ -139,28 +139,6 @@ def normalizeDartXml(value: str) -> str:
     return _TAG_RE.sub(_sub, value)
 
 
-# ── 단위 감지 (감지만, 환산 0 — xml-native-truth) ──
-# "(단위: 백만원)" / "단위 : 천원" / "(단위:원)" 등. 콜론 뒤 단위 토큰 캡처.
-_UNIT_RE = re.compile(r"단위\s*[:：]?\s*([^)\]\n]+)")
-# 알려진 한국 회계 단위 토큰 — 검증용. 미지 토큰 → "" (추측 0).
-_KNOWN_UNITS: dict[str, str] = {
-    "원": "원",
-    "천원": "천원",
-    "백만원": "백만원",
-    "십억원": "십억원",
-    "억원": "억원",
-    "조원": "조원",
-    "주": "주",
-    "%": "%",
-    "달러": "달러",
-    "천달러": "천달러",
-    "백만달러": "백만달러",
-    "usd": "USD",
-    "천usd": "천USD",
-    "백만usd": "백만USD",
-}
-
-
 def detectUnit(caption: str) -> str:
     """단위 캡션("(단위: 백만원)") 감지 → 단위 토큰 반환, 환산 0.
 
@@ -213,21 +191,9 @@ def detectUnit(caption: str) -> str:
         TargetMarkets:
             - KR (한국 회계 단위).
     """
-    if not caption:
-        return ""
-    m = _UNIT_RE.search(caption)
-    if not m:
-        return ""
-    raw = m.group(1).strip().rstrip(")] ").strip()
-    # 후행 ")"/"]"·공백 제거, ascii 는 소문자 정규화.
-    key = raw.lower()
-    if key in _KNOWN_UNITS:
-        return _KNOWN_UNITS[key]
-    # "백만원, 주" 식 다중 단위 — 접두 매칭으로 첫 알려진 토큰.
-    for token, canon in _KNOWN_UNITS.items():
-        if raw.startswith(token):
-            return canon
-    return ""  # 미지 단위 → 빈칸, 추측 0
+    from dartlab.providers.dart.parse.amount import detectUnitLabel
+
+    return detectUnitLabel(caption) or ""
 
 
 # ── 셀 값 정합 정규화 (PRD §5) ──

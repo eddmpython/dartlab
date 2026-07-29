@@ -29,3 +29,27 @@ def test_default_gather_has_macro_method() -> None:
         "getDefaultGather 반환 객체에 .macro 메서드가 없다 — GatherEntry(축 callable)로 "
         "바꾸면 L2 macro(seriesFetch·cycle·quadrant)가 예외 흡수 아래 침묵 사망한다 (2026-06-12 실측)."
     )
+
+
+def test_apply_as_of_requires_date_column() -> None:
+    import polars as pl
+
+    from dartlab.gather.macroProvider import DefaultMacroProvider
+
+    with pytest.raises(KeyError, match="date"):
+        DefaultMacroProvider().applyAsOf(pl.DataFrame({"value": [1.0]}), "2026-01-01")
+
+
+def test_latest_propagates_provider_failure(monkeypatch: pytest.MonkeyPatch) -> None:
+    from dartlab.gather.macroProvider import DefaultMacroProvider
+
+    class BrokenGather:
+        @staticmethod
+        def macro(series_id: str):
+            raise RuntimeError(f"{series_id} unavailable")
+
+    provider = DefaultMacroProvider()
+    monkeypatch.setattr(provider, "getDefaultGather", lambda: BrokenGather())
+
+    with pytest.raises(RuntimeError, match="GDP unavailable"):
+        provider.fetchSeriesLatest("GDP")

@@ -74,7 +74,7 @@ class DefaultMacroProvider:
 
         Capabilities: ``date`` 컬럼 cutoff 필터 — look-ahead bias 차단.
         AIContext: macro 회귀 분석 시 분석 시점 이후 데이터 누출 방지.
-        Guide: ISO 형식 (YYYY-MM-DD) 권장. date 컬럼 없으면 원본 통과.
+        Guide: ISO 형식 (YYYY-MM-DD) 권장. date 컬럼은 필수다.
         When: 백테스트 / pseudo-prophet 분석 시.
         How: ``df.filter(pl.col('date') <= asOf)``.
 
@@ -83,10 +83,10 @@ class DefaultMacroProvider:
             asOf: 컷오프 날짜 (ISO 형식).
 
         Returns:
-            ``date`` 컬럼이 있으면 필터링한 새 DataFrame, 없으면 원본 그대로.
+            컷오프를 적용한 새 DataFrame.
 
         Raises:
-            없음 — ``date`` 컬럼 부재면 silent 반환.
+            KeyError: ``date`` 컬럼이 없을 때.
 
         Requires:
             dataFrame 의 ``date`` 컬럼 (있을 때만 적용).
@@ -99,13 +99,13 @@ class DefaultMacroProvider:
             fetchSeriesLatest · fetchSeriesYoy : asOf 미적용 단건 fetch.
         """
         if "date" not in dataFrame.columns:
-            return dataFrame
+            raise KeyError("macro as-of 필터에 필요한 'date' 컬럼이 없습니다.")
         return dataFrame.filter(pl.col("date") <= asOf)
 
     def fetchSeriesLatest(self, seriesId: str, *, limit: int | None = None) -> float | None:
         """seriesId 의 최신 값.
 
-        Capabilities: gather.macro 시계열에서 최신 non-null value 추출 + 예외 흡수.
+        Capabilities: gather.macro 시계열에서 최신 non-null value 추출.
         AIContext: 단건 매크로 값 표시 (UI tile, narrative 단순 인용).
         Guide: 실패 시 None — caller 가 None check.
         When: 단일 시점 매크로 값 표시 / KPI 대시보드 / narrative 인용 시.
@@ -116,10 +116,10 @@ class DefaultMacroProvider:
             limit: 단건 float 반환 함수라 무시된다. 인터페이스 호환 목적.
 
         Returns:
-            최신 관측치 (float). fetch 실패 시 None.
+            최신 관측치 (float). 유효 관측치가 없으면 None.
 
         Raises:
-            없음 — ValueError/RuntimeError/KeyError 는 내부에서 흡수.
+            Exception: gather/provider 호출 실패와 잘못된 schema를 원인 그대로 전달.
 
         Requires:
             GatherEntry.macro(seriesId)가 ``value`` 컬럼을 가진 DataFrame 반환.
@@ -134,15 +134,12 @@ class DefaultMacroProvider:
         """
         del limit
 
-        try:
-            return _latestValue(self.getDefaultGather().macro(seriesId))
-        except (ValueError, RuntimeError, KeyError, TypeError, AttributeError):
-            return None
+        return _latestValue(self.getDefaultGather().macro(seriesId))
 
     def fetchSeriesYoy(self, seriesId: str, *, limit: int | None = None) -> float | None:
         """seriesId 의 YoY 변화율.
 
-        Capabilities: gather.macro 시계열에서 12개월 전 대비 YoY 계산 + 예외 흡수.
+        Capabilities: gather.macro 시계열에서 12개월 전 대비 YoY 계산.
         AIContext: 인플레이션/생산 YoY 비교 분석 진입 (CPI/IPI/PPI 등).
         Guide: 단건 float — 시계열 필요 시 macro entry.
         When: 단일 YoY 값 표시 / regime classifier 입력 시.
@@ -153,10 +150,10 @@ class DefaultMacroProvider:
             limit: 단건 float 반환 함수라 무시된다. 인터페이스 호환 목적.
 
         Returns:
-            전년 동기 대비 변화율 (%, float). fetch 실패 시 None.
+            전년 동기 대비 변화율 (%, float). 관측치가 부족하거나 기준값이 0이면 None.
 
         Raises:
-            없음 — ValueError/RuntimeError/KeyError 는 내부에서 흡수.
+            Exception: gather/provider 호출 실패와 잘못된 schema를 원인 그대로 전달.
 
         Requires:
             GatherEntry.macro(seriesId)가 ``value`` 컬럼을 가진 DataFrame 반환.
@@ -170,7 +167,4 @@ class DefaultMacroProvider:
         """
         del limit
 
-        try:
-            return _yoyValue(self.getDefaultGather().macro(seriesId))
-        except (ValueError, RuntimeError, KeyError, TypeError, AttributeError):
-            return None
+        return _yoyValue(self.getDefaultGather().macro(seriesId))

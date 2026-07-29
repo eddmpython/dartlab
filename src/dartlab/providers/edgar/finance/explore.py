@@ -52,8 +52,14 @@ def explore(
     if df.is_empty():
         return None
 
-    # us-gaap namespace만
-    df = df.filter(pl.col("namespace") == "us-gaap")
+    from dartlab.providers.edgar.finance.pivotFactsLoad import (
+        _financeNamespace,
+        _mapFactTag,
+        _selectFinanceNamespace,
+    )
+
+    df = _selectFinanceNamespace(df)
+    namespace = _financeNamespace(df)
 
     # query로 태그 필터 (대소문자 무시 부분 매칭)
     queryLower = query.lower()
@@ -63,12 +69,10 @@ def explore(
         return None
 
     # snakeId 매핑
-    from dartlab.providers.edgar.finance.mapper import EdgarMapper
-
     tags = df["tag"].unique().to_list()
     tagToSnake = {}
     for tag in tags:
-        mapped = EdgarMapper.map(tag)
+        mapped = _mapFactTag(tag, "", namespace)
         tagToSnake[tag] = mapped if mapped else tag
 
     # 정리된 DataFrame 구성
@@ -102,7 +106,7 @@ def listTags(
     edgarDir: Path | None = None,
     limit: int | None = None,
 ) -> pl.DataFrame | None:
-    """SEC companyfacts 의 모든 us-gaap 태그 목록과 빈도.
+    """SEC companyfacts 의 선택된 재무 taxonomy 태그 목록과 빈도.
 
     Args:
         cik: SEC CIK.
@@ -131,7 +135,14 @@ def listTags(
     if df.is_empty():
         return None
 
-    df = df.filter(pl.col("namespace") == "us-gaap")
+    from dartlab.providers.edgar.finance.pivotFactsLoad import (
+        _financeNamespace,
+        _mapFactTag,
+        _selectFinanceNamespace,
+    )
+
+    df = _selectFinanceNamespace(df)
+    namespace = _financeNamespace(df)
 
     tagCounts = df.group_by("tag").agg(pl.len().alias("count")).sort("count", descending=True)
 
@@ -139,15 +150,13 @@ def listTags(
 
     tags = tagCounts["tag"].to_list()
     tagToSnake = {}
-    stmtMap = EdgarMapper.classifyTagsByStmt()
     tagToStmt: dict[str, str] = {}
-    for stmt, tagSet in stmtMap.items():
-        for t in tagSet:
-            tagToStmt[t] = stmt
 
     for tag in tags:
-        mapped = EdgarMapper.map(tag)
+        mapped = _mapFactTag(tag, "", namespace)
         tagToSnake[tag] = mapped if mapped else ""
+        if mapped is not None:
+            tagToStmt[tag] = EdgarMapper.getAccountStmt(mapped) or ""
 
     tagCounts = tagCounts.with_columns(
         pl.col("tag").replace_strict(tagToSnake, default=pl.lit("")).alias("snakeId"),

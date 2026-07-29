@@ -1,8 +1,7 @@
 """GatherEntry — 외부 시장 데이터 통합 수집 콜러블 (axis dispatch).
 
-dartlab.gather() callable 의 본체. 공개 11 축 (price·flow·macro·news·sector·
-insider·ownership·peers·krx·krxIndex·narrative) + 베타 2 축 (dartDoc·calendar,
-hidden) = 13 축. 축 정의 SSOT 는 ``dispatch.AXIS_REGISTRY`` 한 곳 — 본 docstring
+dartlab.gather() callable 의 본체. 공개 16축 + hidden 2축. 축 정의 SSOT는
+``dispatch.AXIS_REGISTRY`` 한 곳이며 본 docstring
 은 설명용이며 가용 축의 정본은 ``dartlab.gather()`` 가이드 / ``AXIS_REGISTRY``.
 
 축별 위임은 getDefaultGather() 의 Gather 싱글턴 메서드 또는 정적 헬퍼
@@ -12,7 +11,7 @@ hidden) = 13 축. 축 정의 SSOT 는 ``dispatch.AXIS_REGISTRY`` 한 곳 — 본
 from __future__ import annotations
 
 import contextlib
-from typing import Any
+from typing import Any, cast
 
 import polars as pl
 
@@ -68,9 +67,11 @@ _AXIS_DISPATCH: dict[str, Any] = {
     "dartDoc": handleDartDoc,
 }
 
+_COMMON_OPTIONS = frozenset({"market", "proxy", "proxies"})
+
 
 class GatherEntry:
-    """외부 시장 데이터 통합 수집 — 공개 11축, 전부 Polars DataFrame.
+    """외부 시장 데이터 통합 수집 — 공개 16축, 전부 Polars DataFrame.
 
     Capabilities (가용 축의 정본 = ``dispatch.AXIS_REGISTRY`` / ``dartlab.gather()`` 가이드):
         - price: OHLCV 시계열 (KR Naver/US Yahoo, 기본 1년, 최대 6000거래일)
@@ -177,7 +178,7 @@ class GatherEntry:
         target: str | None = None,
         **kwargs: Any,
     ) -> pl.DataFrame:
-        """외부 시장 데이터 수집 — 공개 11 축 (핵심 4: 주가·수급·거시·뉴스 + 보조 7).
+        """외부 시장 데이터 수집 — 공개 16축 (핵심 4축 + 보조 12축).
 
         Parameters
         ----------
@@ -217,21 +218,28 @@ class GatherEntry:
                 date : date — 날짜
                 지표별 컬럼 : float — ECOS/FRED 거시지표 값
             axis="news":
+                date : date — 발행일
                 title : str — 뉴스 제목
-                link : str — 기사 URL
-                pubDate : str — 발행일
+                source : str — 매체
+                url : str — 기사 URL
+                provider : str — 수집 공급자
+                fetchedAt : str — 수집 시각
             axis="sector":
                 sectorCode : str — 업종코드
                 sectorName : str — 업종명
                 industryCode : str — 산업코드
                 industryName : str — 산업명
-                market : str — 시장 (KR/US)
+                market : str — 시장 (KR)
+                source : str — 실제 공급자
             axis="insider":
                 date : str — 거래일
                 name : str — 거래자명
                 position : str — 직위
                 tradeType : str — 거래유형
                 changeShares : int — 변동 주수
+                afterShares : int — 변동 후 보유 주수
+                reason : str — 사유
+                source : str — 실제 공급자
 
         Raises
         ------
@@ -283,6 +291,15 @@ class GatherEntry:
             kwargs["targets"] = list(target)
             target = None
 
+        if "targets" in kwargs and resolved != "flow":
+            raise ValueError('다중 targets 병렬 수집은 현재 gather("flow", targets=[...]) 에서만 지원합니다.')
+
+        unknownOptions = set(kwargs) - _COMMON_OPTIONS - set(entry.options)
+        if unknownOptions:
+            names = ", ".join(sorted(unknownOptions))
+            allowed = ", ".join(sorted(_COMMON_OPTIONS | set(entry.options)))
+            raise TypeError(f'gather("{resolved}")가 지원하지 않는 옵션: {names}. 허용 옵션: {allowed}')
+
         if entry.targetRequired and target is None and "targets" not in kwargs:
             raise ValueError(f'gather("{resolved}")에는 대상이 필요합니다.\n  예: {entry.example}')
 
@@ -329,10 +346,12 @@ class GatherEntry:
         # 프록시 공통배선 — proxies=[...] 풀(회전) 우선, 없으면 단일 proxy, 둘 다 없으면 안전 직렬(기존).
         client = getattr(g, "_client", None)
         proxies = kwargs.pop("proxies", None)
-        if proxies and callable(getattr(client, "useProxyPool", None)):
-            proxyContext = client.useProxyPool(proxies)
-        elif callable(getattr(client, "useProxy", None)):
-            proxyContext = client.useProxy(kwargs.get("proxy"))
+        useProxyPool = getattr(client, "useProxyPool", None)
+        useProxy = getattr(client, "useProxy", None)
+        if proxies and callable(useProxyPool):
+            proxyContext = cast(contextlib.AbstractContextManager[Any], useProxyPool(proxies))
+        elif callable(useProxy):
+            proxyContext = cast(contextlib.AbstractContextManager[Any], useProxy(kwargs.get("proxy")))
         else:
             proxyContext = contextlib.nullcontext()
 

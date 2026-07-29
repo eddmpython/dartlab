@@ -248,15 +248,9 @@ def parseAmount(text: str) -> float | None:
     AIContext:
         AI 직접 호출 없음.
     """
-    if not text:
-        return None
-    cleaned = text.replace(",", "").replace(" ", "").strip()
-    if not cleaned or cleaned == "-":
-        return None
-    try:
-        return float(cleaned)
-    except ValueError:
-        return None
+    from dartlab.providers.dart.parse.amount import parseAmount as parseDartAmount
+
+    return parseDartAmount(text)
 
 
 def parsePercent(text: str) -> float | None:

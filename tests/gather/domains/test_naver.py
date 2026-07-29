@@ -89,6 +89,7 @@ def test_fetch_flow_trend_paginates_by_bizdate() -> None:
         )
     )
 
+    assert rows is not None
     assert [row["date"] for row in rows] == ["20200131", "20200130", "20200129"]
     assert rows[0]["foreignNet"] == -3776715.0
     assert client.calls[0][0] == naver._FLOW_TREND_URL
@@ -140,6 +141,7 @@ def test_fetch_flow_trend_auto_pages_historical_range() -> None:
         )
     )
 
+    assert rows is not None
     assert [row["date"] for row in rows] == ["20200131", "20200130"]
     assert client.calls[0][1]["bizdate"] == "20200201"
     assert client.calls[0][1]["pageSize"] == 50
@@ -176,6 +178,7 @@ def test_fetch_flow_default_latest_stays_small() -> None:
     client = FakeClient()
     rows = asyncio.run(naver.fetchFlow("005930", client))
 
+    assert rows is not None
     assert len(rows) == 5
     assert len(client.calls) == 1
     assert client.calls[0][1]["pageSize"] == 5
@@ -211,6 +214,7 @@ def test_fetch_flow_trend_passes_proxy_to_http_client() -> None:
     client = FakeClient()
     rows = asyncio.run(naver.fetchFlow("005930", client, proxy="http://proxy.example:8080"))
 
+    assert rows is not None
     assert len(rows) == 1
     assert client.calls[0][1]["proxy"] == "http://proxy.example:8080"
 
@@ -251,6 +255,7 @@ def test_fetch_flow_trend_large_page_size_splits_to_server_cap() -> None:
     client = FakeClient()
     rows = asyncio.run(naver.fetchFlow("005930", client, pageSize=75))
 
+    assert rows is not None
     assert len(rows) == 75
     assert len(client.calls) == 2
     assert [call[1]["pageSize"] for call in client.calls] == [50, 50]
@@ -297,9 +302,129 @@ def test_fetch_flow_all_history_runs_until_source_exhausted() -> None:
     client = FakeClient()
     rows = asyncio.run(naver.fetchFlow("005930", client, full=True))
 
+    assert rows is not None
     assert len(rows) == 110
     assert len(client.calls) == 3
     assert [call[1]["pageSize"] for call in client.calls] == [50, 50, 50]
+
+
+def test_fetch_flow_network_failure_is_not_empty_data() -> None:
+    """trend와 integration 요청이 모두 실패하면 typed source 오류를 전달한다."""
+    from dartlab.gather.domains import naver
+    from dartlab.gather.types import SourceUnavailableError
+
+    class FailingClient:
+        async def get(self, *args, **kwargs):
+            raise SourceUnavailableError("network down")
+
+    with pytest.raises(SourceUnavailableError) as excInfo:
+        asyncio.run(naver.fetchFlow("005930", FailingClient()))
+
+    assert isinstance(excInfo.value.__cause__, SourceUnavailableError)
+
+
+def test_fetch_flow_valid_empty_response_returns_none() -> None:
+    """두 endpoint가 유효한 빈 schema를 반환하면 정상 무데이터로 판정한다."""
+    from dartlab.gather.domains import naver
+
+    class FakeResponse:
+        def __init__(self, data):
+            self._data = data
+
+        def json(self):
+            return self._data
+
+    class FakeClient:
+        def __init__(self):
+            self.calls = 0
+
+        async def get(self, *args, **kwargs):
+            self.calls += 1
+            if self.calls == 1:
+                return FakeResponse({"isSuccess": True, "result": []})
+            return FakeResponse({"dealTrendInfos": []})
+
+    assert asyncio.run(naver.fetchFlow("005930", FakeClient())) is None
+
+
+def test_fetch_flow_malformed_number_raises() -> None:
+    """유효하지 않은 수급 숫자를 0으로 바꾸지 않는다."""
+    from dartlab.gather.domains import naver
+    from dartlab.gather.types import SourceUnavailableError
+
+    class FakeResponse:
+        def __init__(self, data):
+            self._data = data
+
+        def json(self):
+            return self._data
+
+    class FakeClient:
+        def __init__(self):
+            self.calls = 0
+
+        async def get(self, *args, **kwargs):
+            self.calls += 1
+            if self.calls == 1:
+                return FakeResponse(
+                    {
+                        "isSuccess": True,
+                        "result": [
+                            {
+                                "bizdate": "20260102",
+                                "foreignerPureBuyQuant": "broken",
+                                "organPureBuyQuant": "1",
+                                "individualPureBuyQuant": "-1",
+                                "foreignerHoldRatio": "50%",
+                            }
+                        ],
+                    }
+                )
+            return FakeResponse({"dealTrendInfos": []})
+
+    with pytest.raises(SourceUnavailableError) as excInfo:
+        asyncio.run(naver.fetchFlow("005930", FakeClient()))
+
+    assert isinstance(excInfo.value.__cause__, SourceUnavailableError)
+
+
+def test_fetch_history_network_and_schema_failures_raise() -> None:
+    """Naver history의 네트워크 장애와 손상 행은 빈 list로 바뀌지 않는다."""
+    from dartlab.gather.domains import naver
+    from dartlab.gather.types import SourceUnavailableError
+
+    class FailingClient:
+        async def get(self, *args, **kwargs):
+            raise SourceUnavailableError("network down")
+
+    with pytest.raises(SourceUnavailableError) as networkError:
+        asyncio.run(naver.fetchHistory("005930", FailingClient()))
+    assert isinstance(networkError.value.__cause__, SourceUnavailableError)
+
+    class BadResponse:
+        text = '<protocol><chartdata><item data="20260101|bad|110|90|105|1000" /></chartdata></protocol>'
+
+    class BadClient:
+        async def get(self, *args, **kwargs):
+            return BadResponse()
+
+    with pytest.raises(SourceUnavailableError) as schemaError:
+        asyncio.run(naver.fetchHistory("005930", BadClient()))
+    assert isinstance(schemaError.value.__cause__, ValueError)
+
+
+def test_fetch_history_valid_empty_envelope_returns_empty() -> None:
+    """유효한 chart envelope에 item이 없으면 정상 무데이터다."""
+    from dartlab.gather.domains import naver
+
+    class EmptyResponse:
+        text = "<protocol><chartdata></chartdata></protocol>"
+
+    class EmptyClient:
+        async def get(self, *args, **kwargs):
+            return EmptyResponse()
+
+    assert asyncio.run(naver.fetchHistory("005930", EmptyClient())) == []
 
 
 # --- fetchIntraday (당일 + 과거 세션 + 최근 거래일 폴백) ---

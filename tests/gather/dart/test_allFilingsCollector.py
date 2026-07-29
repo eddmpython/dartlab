@@ -48,6 +48,25 @@ def test_fill_content_all_callable() -> None:
     assert callable(fillContentAll)
 
 
+def test_fill_content_all_preserves_failure_type_and_date_provenance(monkeypatch) -> None:
+    """부분 완료 건수를 반환해 실패를 숨기지 않고 원래 예외와 실패 일자를 전달한다."""
+    from dartlab.gather.dart import allFilingsCollector as mod
+
+    monkeypatch.setattr(mod, "pendingDates", lambda: ["20260527", "20260528"])
+
+    def failOnSecondDate(date, **_kwargs):
+        if date == "20260528":
+            raise OSError("DART disconnected")
+        return pl.DataFrame({"rcept_no": ["R1"]})
+
+    monkeypatch.setattr(mod, "fillContent", failOnSecondDate)
+
+    with pytest.raises(OSError, match="DART disconnected") as excInfo:
+        mod.fillContentAll(client=object(), showProgress=False)
+
+    assert any("date=20260528, completedDates=1" in note for note in getattr(excInfo.value, "__notes__", []))
+
+
 def test_load_all_callable() -> None:
     """loadAll() callable smoke."""
     from dartlab.gather.dart.allFilingsCollector import loadAll

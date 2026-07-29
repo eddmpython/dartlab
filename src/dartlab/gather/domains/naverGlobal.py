@@ -88,7 +88,7 @@ def _cleanNumber(val) -> float | None:
         return None
 
 
-async def _resolveReutersCode(ticker: str, client) -> str | None:
+async def _resolveReutersCode(ticker: str, client, *, raiseOnFailure: bool = False) -> str | None:
     """ticker → 네이버 Reuters Code (캐시 우선).
 
     Parameters
@@ -106,6 +106,7 @@ async def _resolveReutersCode(ticker: str, client) -> str | None:
     if ticker in _REUTERS_CACHE:
         return _REUTERS_CACHE[ticker]
 
+    failures: list[Exception] = []
     for suffix in _SUFFIXES:
         await _throttle()
         code = f"{ticker}{suffix}"
@@ -113,12 +114,19 @@ async def _resolveReutersCode(ticker: str, client) -> str | None:
         try:
             resp = await client.get(url, headers={"Accept": "application/json"})
             data = resp.json()
+            if not isinstance(data, dict):
+                raise SourceUnavailableError("Naver global Reuters 응답 schema가 객체가 아닙니다")
             if data.get("stockName") and not data.get("code", "").startswith("Stock"):
                 _REUTERS_CACHE[ticker] = code
                 return code
-        except (SourceUnavailableError, ValueError, KeyError):
+        except (SourceUnavailableError, ValueError, KeyError) as exc:
+            failures.append(exc)
             continue
 
+    if failures and raiseOnFailure:
+        raise SourceUnavailableError(f"Naver global Reuters code 확인 실패: {ticker}") from failures[-1]
+    if failures:
+        return None
     _REUTERS_CACHE[ticker] = None
     return None
 
@@ -288,12 +296,12 @@ async def fetchHistory(
         - close : float — 종가 (USD)
         - volume : int — 거래량 (주)
 
-        매핑 실패 또는 조회 실패 시 빈 리스트.
+        정상 응답에서 Reuters code 또는 가격 데이터가 없으면 빈 리스트.
 
     Raises
     ------
-    없음
-        Naver global chart API 내부 예외 (SourceUnavailableError/ValueError) 는 흡수.
+    SourceUnavailableError
+        Reuters code 확인, 네트워크, 응답 형식 또는 행 파싱에 실패한 경우.
 
     Example
     -------
@@ -309,26 +317,23 @@ async def fetchHistory(
     sources/history.fetch : 호출 체인 (Yahoo primary → naverGlobal fallback).
     yahooChart.fetchHistory · fdr.fetchHistory · fmp.fetchHistory : 동행 source.
     """
-    code = await _resolveReutersCode(stockCode, client)
+    code = await _resolveReutersCode(stockCode, client, raiseOnFailure=True)
     if not code:
         return []
 
     # 요청 기간 길이로 periodType 자동 선택
     period_type = "dayCandle"
     if start:
-        try:
-            from datetime import date
-            from datetime import datetime as _dt
+        from datetime import date
+        from datetime import datetime as _dt
 
-            start_dt = _dt.strptime(start, "%Y-%m-%d").date()
-            end_dt = _dt.strptime(end, "%Y-%m-%d").date() if end else date.today()
-            span_days = (end_dt - start_dt).days
-            if span_days > 730:
-                period_type = "monthCandle"
-            elif span_days > 365:
-                period_type = "weekCandle"
-        except (ValueError, TypeError):
-            pass
+        start_dt = _dt.strptime(start, "%Y-%m-%d").date()
+        end_dt = _dt.strptime(end, "%Y-%m-%d").date() if end else date.today()
+        span_days = (end_dt - start_dt).days
+        if span_days > 730:
+            period_type = "monthCandle"
+        elif span_days > 365:
+            period_type = "weekCandle"
 
     # 페이징: dayCandle 110개 제한 → endTime으로 이전 데이터 반복 요청
     all_rows: list[dict] = []
@@ -344,26 +349,40 @@ async def fetchHistory(
             resp = await client.get(url, headers={"Accept": "application/json"})
             data = resp.json()
         except (SourceUnavailableError, ValueError) as exc:
-            log.warning("naver_global history 실패 (%s): %s", stockCode, exc)
-            break
+            raise SourceUnavailableError(f"Naver global history 요청 실패: {stockCode}") from exc
 
-        infos = data.get("priceInfos", [])
+        if not isinstance(data, dict):
+            raise SourceUnavailableError("Naver global history 응답 schema가 객체가 아닙니다")
+        if "priceInfos" not in data:
+            raise SourceUnavailableError("Naver global history 응답에 priceInfos가 없습니다")
+        infos = data["priceInfos"]
+        if not isinstance(infos, list):
+            raise SourceUnavailableError("Naver global history priceInfos가 배열이 아닙니다")
         if not infos:
             break
 
         page_rows: list[dict] = []
         for p in infos:
-            dateStr = p.get("localDate", "")
-            if len(dateStr) == 8:
-                dateStr = f"{dateStr[:4]}-{dateStr[4:6]}-{dateStr[6:8]}"
+            if not isinstance(p, dict):
+                raise SourceUnavailableError("Naver global history 행이 객체가 아닙니다")
+            rawDate = str(p.get("localDate") or "")
+            if len(rawDate) != 8 or not rawDate.isdigit():
+                raise SourceUnavailableError(f"Naver global history 거래일이 올바르지 않습니다: {rawDate!r}")
+            requiredFields = ("openPrice", "highPrice", "lowPrice", "closePrice", "accumulatedTradingVolume")
+            if any(field not in p or p[field] is None for field in requiredFields):
+                raise SourceUnavailableError(f"Naver global history {rawDate} 행에 OHLCV가 누락되었습니다")
+            dateStr = f"{rawDate[:4]}-{rawDate[4:6]}-{rawDate[6:8]}"
+            numericValues = {field: _cleanNumber(p[field]) for field in requiredFields}
+            if any(value is None for value in numericValues.values()):
+                raise SourceUnavailableError(f"Naver global history {rawDate} 행의 OHLCV를 해석할 수 없습니다")
             page_rows.append(
                 {
                     "date": dateStr,
-                    "open": p.get("openPrice"),
-                    "high": p.get("highPrice"),
-                    "low": p.get("lowPrice"),
-                    "close": p.get("closePrice"),
-                    "volume": p.get("accumulatedTradingVolume"),
+                    "open": numericValues["openPrice"],
+                    "high": numericValues["highPrice"],
+                    "low": numericValues["lowPrice"],
+                    "close": numericValues["closePrice"],
+                    "volume": int(numericValues["accumulatedTradingVolume"] or 0),
                 }
             )
 

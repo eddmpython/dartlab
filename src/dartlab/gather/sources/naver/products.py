@@ -13,6 +13,7 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime, timezone
 
 import polars as pl
 
@@ -54,10 +55,26 @@ async def _fetchProducts(client: GatherHttpClient, url: str, listKey: str, colum
     """JSON API(euc-kr) → 정리 컬럼 DataFrame, target 있으면 name contains 필터."""
     resp = await client.get(url, headers=_HEADERS)
     data = json.loads(resp.content.decode("euc-kr"))
-    rows = data.get("result", {}).get(listKey, [])
+    if not isinstance(data, dict) or not isinstance(data.get("result"), dict):
+        raise TypeError("Naver 상품 응답의 result는 JSON object여야 합니다")
+    result = data["result"]
+    if listKey not in result:
+        raise KeyError(f"Naver 상품 응답에 {listKey}가 없습니다")
+    rows = result[listKey]
+    if not isinstance(rows, list):
+        raise TypeError(f"Naver 상품 응답의 {listKey}는 list여야 합니다")
+    provenanceSchema = {"source": pl.Utf8, "fetchedAt": pl.Utf8}
     if not rows:
-        return pl.DataFrame(schema={v: pl.Utf8 if v in ("code", "name") else pl.Float64 for v in columns.values()})
-    df = pl.DataFrame(rows).select([pl.col(k).alias(v) for k, v in columns.items()])
+        valueSchema = {v: pl.Utf8 if v in ("code", "name") else pl.Float64 for v in columns.values()}
+        return pl.DataFrame(schema={**valueSchema, **provenanceSchema})
+    df = (
+        pl.DataFrame(rows)
+        .select([pl.col(k).alias(v) for k, v in columns.items()])
+        .with_columns(
+            pl.lit("naver").alias("source"),
+            pl.lit(datetime.now(timezone.utc).isoformat()).alias("fetchedAt"),
+        )
+    )
     if target:
         df = df.filter(pl.col("name").str.contains(str(target), literal=True))
     return df
@@ -77,10 +94,10 @@ async def collectEtf(client: GatherHttpClient, target: str | None = None) -> pl.
         target: 종목명 부분 일치 필터 (None=전체).
 
     Returns:
-        pl.DataFrame — code/name/price/changeRate/nav/return3m/volume/amount/marketCap/tabCode.
+        pl.DataFrame — 가격 필드 + source/fetchedAt.
 
     Raises:
-        없음 — 빈 결과는 빈 DataFrame.
+        ValueError / TypeError / KeyError — JSON 또는 응답 schema 오류.
 
     Example::
 
@@ -110,10 +127,10 @@ async def collectEtn(client: GatherHttpClient, target: str | None = None) -> pl.
         target: 종목명 부분 일치 필터 (None=전체).
 
     Returns:
-        pl.DataFrame — code/name/price/changeRate/volume/amount/marketCap/listedShares/prevClose/high/low.
+        pl.DataFrame — 가격 필드 + source/fetchedAt.
 
     Raises:
-        없음 — 빈 결과는 빈 DataFrame.
+        ValueError / TypeError / KeyError — JSON 또는 응답 schema 오류.
 
     Example::
 

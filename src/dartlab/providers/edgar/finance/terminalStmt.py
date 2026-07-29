@@ -22,10 +22,6 @@ from __future__ import annotations
 
 import polars as pl
 
-from dartlab.core.logger import getLogger
-
-_log = getLogger(__name__)
-
 # DART dart/finance 와 동형 — 터미널 financeSource 가 읽는 컬럼(`accounts.ts FINANCE_COLUMNS`).
 FINANCE_COLUMNS: tuple[str, ...] = (
     "sj_div",
@@ -46,6 +42,10 @@ _Q_TO_REPRT: dict[int, str] = {1: "11013", 2: "11012", 3: "11014", 4: "11011"}
 
 # 파사드가 표준화하는 손익표는 IS 단일(EDGAR 은 CIS 분리 없음) — 터미널 sj_div 와 동형 3 종.
 _STMTS: tuple[str, ...] = ("IS", "BS", "CF")
+
+
+class TerminalFinanceBuildError(RuntimeError):
+    """terminal finance 원천 statement 조회 또는 변환 실패."""
 
 
 def _stdIdIndex() -> dict[tuple[str, str], str]:
@@ -89,19 +89,12 @@ def _stmtWide(company, stmt: str):
     로드를 우회한다. ``_finance`` 부재(테스트 mock·비표준 company)면 ``panel(stmt)`` 폴백.
 
     Returns:
-        pl.DataFrame(snakeId/항목/period) 또는 None(데이터 없음·실패).
+        pl.DataFrame(snakeId/항목/period) 또는 None(데이터 없음).
     """
     fin = getattr(company, "_finance", None)
     if fin is not None:
-        try:
-            return getattr(fin, stmt, None)
-        except Exception:  # noqa: BLE001 — 그 표만 결측 처리
-            return None
-    try:
-        return company.panel(stmt)
-    except Exception as exc:  # noqa: BLE001
-        _log.warning("panel 조회 실패로 None 반환: %s: %s", type(exc).__name__, exc)
-        return None
+        return getattr(fin, stmt, None)
+    return company.panel(stmt)
 
 
 def bakeTerminalFinance(ticker: str, *, company=None) -> pl.DataFrame | None:
@@ -169,7 +162,21 @@ def bakeTerminalFinance(ticker: str, *, company=None) -> pl.DataFrame | None:
     ordCounter = 0
 
     for stmt in _STMTS:
-        wide = _stmtWide(company, stmt)
+        try:
+            wide = _stmtWide(company, stmt)
+        except (
+            AttributeError,
+            KeyError,
+            OSError,
+            RuntimeError,
+            TypeError,
+            ValueError,
+            pl.exceptions.PolarsError,
+        ) as exc:
+            raise TerminalFinanceBuildError(
+                f"EDGAR terminal finance source failed: ticker={ticker}, statement={stmt}, "
+                f"error={type(exc).__name__}: {exc}"
+            ) from exc
         if wide is None or not hasattr(wide, "columns") or "항목" not in wide.columns:
             continue
         periodCols = [c for c in wide.columns if c not in ("snakeId", "항목")]
@@ -214,11 +221,9 @@ def bakeTerminalFinance(ticker: str, *, company=None) -> pl.DataFrame | None:
 
 
 def _annualValue(stmt: str, qmap: dict[int, float]) -> float | None:
-    """연간 slot 값 — flow(IS/CF)=4 분기 합(완전 연도만), BS=회계연말(Q4, 없으면 최신 분기)."""
+    """연간 slot 값. flow는 완전한 4분기 합, BS는 Q4 시점값만 허용."""
     if stmt == "BS":
-        if 4 in qmap:
-            return qmap[4]
-        return qmap[max(qmap)] if qmap else None
+        return qmap.get(4)
     # flow — 4 분기 모두 있을 때만 연간(부분 연도는 DART 사업보고서 부재와 동형으로 미발행)
     if all(q in qmap for q in (1, 2, 3, 4)):
         return qmap[1] + qmap[2] + qmap[3] + qmap[4]

@@ -27,7 +27,7 @@ _log = getLogger(__name__)
 import httpx
 import polars as pl
 
-from dartlab.core.dartClient import resolveDartKeys
+from dartlab.core.dartClient import DartApiError, resolveDartKeys
 from dartlab.core.requestPacing import awaitMinInterval
 from dartlab.gather.batchProgress import buildWorkerTable
 
@@ -183,8 +183,8 @@ class AsyncDartClient:
         params: dict[str, Any] | None = None,
         *,
         emptyOn013: bool = False,
-    ) -> dict[str, Any] | None:
-        """비동기 JSON 요청. 한도 초과 시 None + exhausted=True.
+    ) -> dict[str, Any]:
+        """비동기 JSON 요청.
 
         Args:
             endpoint: 인자.
@@ -192,16 +192,15 @@ class AsyncDartClient:
             emptyOn013: 인자.
 
         Raises:
-            없음.
+            DartApiError: 조회 결과 없음으로 명시 허용한 013 외 OpenDART 오류.
 
         Example:
             >>> getJson(...)
 
         Returns:
-            dict[str, Any] 또는 None — 결과 dict.
+            dict[str, Any] — 정상 응답 또는 ``emptyOn013=True`` 인 013의 빈 dict.
 
         """
-        await self._throttle()
         merged = {"crtfc_key": self._key}
         if params:
             merged.update(params)
@@ -215,16 +214,16 @@ class AsyncDartClient:
             return {}
         if status == "020":
             self.exhausted = True
-            return None
-        return {} if emptyOn013 else None
+        message = str(data.get("message") or "OpenDART API 오류")
+        raise DartApiError(str(status), message)
 
     async def getDf(
         self,
         endpoint: str,
         params: dict[str, Any] | None = None,
         listKey: str = "list",
-    ) -> pl.DataFrame | None:
-        """비동기 JSON → DataFrame. 한도 초과 시 None.
+    ) -> pl.DataFrame:
+        """비동기 JSON → DataFrame.
 
         Args:
             endpoint: 인자.
@@ -232,39 +231,36 @@ class AsyncDartClient:
             listKey: 인자.
 
         Raises:
-            없음.
+            DartApiError: 013 이외 OpenDART 응답 오류.
 
         Example:
             >>> getDf(...)
 
         Returns:
-            pl.DataFrame 또는 None — 결과.
+            pl.DataFrame — 정상 행 또는 013의 빈 frame.
 
         """
         data = await self.getJson(endpoint, params, emptyOn013=True)
-        if data is None:
-            return None
         rows = data.get(listKey, [])
         return pl.DataFrame(rows) if rows else pl.DataFrame()
 
-    async def getBytes(self, endpoint: str, params: dict[str, Any] | None = None) -> bytes | None:
-        """비동기 바이너리 요청. 한도 초과 시 None.
+    async def getBytes(self, endpoint: str, params: dict[str, Any] | None = None) -> bytes:
+        """비동기 바이너리 요청.
 
         Args:
             endpoint: 인자.
             params: 인자.
 
         Raises:
-            없음.
+            DartApiError: OpenDART가 바이너리 대신 오류 JSON을 반환한 경우.
 
         Example:
             >>> getBytes(...)
 
         Returns:
-            bytes 또는 None — 응답 본문.
+            bytes — 응답 본문.
 
         """
-        await self._throttle()
         merged = {"crtfc_key": self._key}
         if params:
             merged.update(params)
@@ -273,9 +269,12 @@ class AsyncDartClient:
         ct = resp.headers.get("Content-Type", "")
         if "application/json" in ct or "text/json" in ct:
             data = resp.json()
-            if data.get("status") == "020":
+            status = str(data.get("status", "000"))
+            if status == "020":
                 self.exhausted = True
-                return None
+            if status != "000":
+                message = str(data.get("message") or "OpenDART API 오류")
+                raise DartApiError(status, message)
         return resp.content
 
     async def close(self) -> None:
@@ -438,7 +437,8 @@ def batchCollect(
             지정하면 _collectFinance/_collectReport가 88분기 차집합 우회.
 
     Raises:
-        없음.
+        ValueError: DART API 키가 없거나 지원하지 않는 category인 경우.
+        BaseException: progress 실행 thread의 예기치 못한 최상위 실패.
 
     Example:
         >>> batchCollect(...)
@@ -446,6 +446,8 @@ def batchCollect(
     cats = _activeDartCategories(categories)
     if not cats:
         return {sc: {} for sc in stockCodes}
+    if maxWorkers is not None and maxWorkers <= 0:
+        raise ValueError(f"maxWorkers는 1 이상이어야 합니다: {maxWorkers}")
     keys = resolveDartKeys()
     if not keys:
         raise ValueError("DART API 키가 필요합니다. DART_API_KEYS 환경변수를 설정하세요.")
@@ -686,7 +688,8 @@ def batchCollectAll(
         dict[str, dict[str, int]] — 종목 × 카테고리 별 수집 통계.
 
     Raises:
-        없음 — 개별 종목 실패는 통계로 흡수.
+        ValueError: DART API 키가 없거나 mode/category가 유효하지 않은 경우.
+        BaseException: progress 실행 thread의 예기치 못한 최상위 실패.
 
     Example:
         >>> batchCollectAll(mode="new")  # doctest: +SKIP
@@ -711,6 +714,9 @@ def batchCollectAll(
         - 배치 수집 — 운영자/CLI 전용(무겁다). 분석 파이프라인에서 호출 금지.
     """
     from dartlab.core.listingResolver import getListingResolver
+
+    if mode not in {"new", "all"}:
+        raise ValueError(f"mode는 'new' 또는 'all'이어야 합니다: {mode!r}")
 
     resolver = getListingResolver()
     if resolver is None:

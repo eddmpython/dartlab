@@ -107,6 +107,77 @@ def test_flow_handler_accepts_all_alias() -> None:
     assert seen["proxy"] == "http://proxy.example:8080"
 
 
+def test_info_handlers_preserve_complete_rows_and_provenance() -> None:
+    """정보 축 변환은 source와 원본 필드를 버리지 않는다."""
+    from dartlab.gather.entry.handlers import handleInsider, handleOwnership, handleSector
+    from dartlab.gather.types import InsiderTrade, InstitutionOwnership, SectorInfo
+
+    class FakeGather:
+        @staticmethod
+        def sector(target, *, market):
+            return SectorInfo(
+                sectorCode="278",
+                sectorName="반도체",
+                industryCode="261",
+                industryName="반도체 제조업",
+                market="코스피",
+                source="kind+naver",
+            )
+
+        @staticmethod
+        def insiderTrading(target, *, market):
+            return [
+                InsiderTrade(
+                    date="20260701",
+                    name="홍길동",
+                    position="사내이사",
+                    tradeType="취득",
+                    changeShares=100,
+                    afterShares=1_000,
+                    reason="등기임원",
+                    source="dart",
+                )
+            ]
+
+        @staticmethod
+        def ownership(target, *, market):
+            return [
+                InstitutionOwnership(
+                    holderName="외국인 합계",
+                    shares=1_000,
+                    ratio=20.0,
+                    value=50_000.0,
+                    changeShares=10,
+                    source="naver",
+                )
+            ]
+
+    common = {"market": "KR", "start": None, "end": None, "marketExplicit": False}
+    sector = handleSector(FakeGather(), "005930", **common)
+    insider = handleInsider(FakeGather(), "005930", **common)
+    ownership = handleOwnership(FakeGather(), "005930", **common)
+
+    assert sector.row(0, named=True)["source"] == "kind+naver"
+    assert insider.row(0, named=True) == {
+        "date": "20260701",
+        "name": "홍길동",
+        "position": "사내이사",
+        "tradeType": "취득",
+        "changeShares": 100,
+        "afterShares": 1_000,
+        "reason": "등기임원",
+        "source": "dart",
+    }
+    assert ownership.row(0, named=True) == {
+        "holderName": "외국인 합계",
+        "ratio": 20.0,
+        "shares": 1_000,
+        "value": 50_000.0,
+        "changeShares": 10,
+        "source": "naver",
+    }
+
+
 def test_naverTheme_handler_routesToThemeGroup(monkeypatch: pytest.MonkeyPatch) -> None:
     """handleNaverTheme → groups.collectGroup(groupKey='theme') + progress/maxAgeDays/refresh 전달."""
     import polars as pl

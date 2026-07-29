@@ -19,7 +19,7 @@ from __future__ import annotations
 import re
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from dartlab.core.logger import getLogger
 
@@ -861,7 +861,7 @@ class Company:
     def fiscalYearEnd(self) -> str | None:
         """회계연도 종료 월-일 (예: AAPL → '09-26', MSFT → '06-30').
 
-        XBRL companyfacts 의 fp='FY' end 날짜에서 가장 자주 등장하는 month-day 추출.
+        XBRL companyfacts 의 최신 fp='FY' end 날짜에서 month-day 추출.
         DART 종목은 12-31 표준 (한국 회계 관습).
 
         calendar year vs fiscal year 매칭 명시. 회사 간 연도 비교 시 fiscal
@@ -871,7 +871,7 @@ class Company:
             "MM-DD" 형식 문자열, 데이터 없으면 None.
 
         Raises:
-            없음 (내부 IO 예외는 잡아서 None 반환).
+            RuntimeError: companyfacts 파일이 존재하지만 읽기 또는 계산에 실패.
 
         Example::
 
@@ -887,8 +887,8 @@ class Company:
             - polars
 
         Capabilities:
-            - companyfacts.parquet 의 fp='FY' 분기 row 들에서 (1) fy 별 mode end 추출
-              (2) mode 들의 month-day 다시 mode → 진짜 회계 연말일. 토요일 변형 (52/53 week) 포함.
+            - companyfacts.parquet 의 fp='FY' 행에서 fy 별 대표 end를 고른 뒤 최신 FY의 실제
+              month-day 반환. 토요일 변형 (52/53 week)을 임의의 과거 날짜로 평탄화하지 않음.
 
         Guide:
             - "이 회사 회계연말이 언제냐" → 본 property.
@@ -917,18 +917,17 @@ class Company:
         cacheHit, cached = lookupCache(self._cache, cacheKey)
         if cacheHit:
             return cached
+        import polars as pl
+
+        from dartlab.core.dataLoader import _dataDir
+
+        cik = str(self.cik).zfill(10)
+        path = _dataDir("edgar") / f"{cik}.parquet"
+        if not path.exists():
+            self._cache[cacheKey] = None
+            return None
         try:
-            from pathlib import Path
-
-            import polars as pl
-
-            cik = str(self.cik).zfill(10)
-            path = Path(f"data/edgar/finance/{cik}.parquet")
-            if not path.exists():
-                self._cache[cacheKey] = None
-                return None
-            # fy 별 mode (가장 많이 등장하는) end 가 진짜 FY 종료일.
-            # 그 중에서 가장 흔한 month-day 가 fiscal year-end.
+            # fy 별 mode end로 중복 fact를 접은 뒤 최신 FY의 실제 종료일을 사용한다.
             lf = pl.scan_parquet(str(path))
             modeEnds = (
                 lf.filter(pl.col("fp") == "FY")
@@ -940,26 +939,16 @@ class Company:
                 .group_by("fy")
                 .head(1)
             )
-            df = (
-                modeEnds.with_columns(
-                    (pl.col("end").dt.month().cast(pl.Int32) * 100 + pl.col("end").dt.day().cast(pl.Int32)).alias("md")
-                )
-                .group_by("md")
-                .len()
-                .sort("len", descending=True)
-                .head(1)
-                .collect(engine="streaming")
-            )
+            df = modeEnds.sort(["fy", "end"], descending=[True, True]).head(1).select("end").collect(engine="streaming")
             if df.height == 0:
                 self._cache[cacheKey] = None
                 return None
-            md = df.row(0)[0]
-            result = f"{md // 100:02d}-{md % 100:02d}"
+            endDate = df.row(0)[0]
+            result = f"{endDate.month:02d}-{endDate.day:02d}"
             self._cache[cacheKey] = result
             return result
-        except (FileNotFoundError, OSError, ValueError):
-            self._cache[cacheKey] = None
-            return None
+        except (OSError, ValueError, pl.exceptions.PolarsError) as exc:
+            raise RuntimeError(f"EDGAR fiscalYearEnd 계산 실패: cik={cik}, path={path}") from exc
 
     @property
     def stockCode(self) -> str:
@@ -2269,10 +2258,10 @@ class Company:
             - filings: 현재 보유 공시 목록 확인
 
         Returns:
-            저장된 parquet 행 수. 실패 시 0.
+            저장된 parquet 행 수.
 
         Raises:
-            없음 (내부 IO 예외는 잡아서 0 반환).
+            RuntimeError: SEC 수집, 원자적 저장 또는 저장 결과 검증 실패.
 
         Example::
 
@@ -2282,9 +2271,8 @@ class Company:
         LLM Specifications:
             AntiPatterns:
                 - 자동 파이프라인 안에서 호출 → SEC rate limit 위반. 사용자 즉시 새로고침만.
-                - 본 함수 반환 0 = 실패 - caller 가 분기. exception 던지지 않음.
             OutputSchema:
-                - int - 저장된 parquet 행 수 (성공) 또는 0 (실패).
+                - int - 저장 및 재검증된 parquet 행 수.
             Prerequisites:
                 - 인터넷 + data.sec.gov 접근 + SEC 표준 User-Agent.
             Freshness:
@@ -2302,8 +2290,8 @@ class Company:
         client = EdgarClient()
         try:
             path = saveFinance(cik, client=client)
-        except (OSError, ValueError, RuntimeError):
-            return 0
+        except (OSError, ValueError, RuntimeError) as exc:
+            raise RuntimeError(f"EDGAR companyfacts 갱신 실패: cik={cik}, error={type(exc).__name__}: {exc}") from exc
 
         for key in list(self._cache.keys()):
             if key.startswith("_finance_") or key in ("_ratios", "_ratioSeries"):
@@ -2311,8 +2299,8 @@ class Company:
 
         try:
             return _pl.read_parquet(path).height
-        except (OSError, _pl.exceptions.PolarsError):
-            return 0
+        except (OSError, _pl.exceptions.PolarsError) as exc:
+            raise RuntimeError(f"EDGAR companyfacts 저장 검증 실패: cik={cik}, path={path}") from exc
 
     def disclosure(
         self,
@@ -3159,13 +3147,15 @@ class Company:
             rs = self._finance.ratioSeries
             if rs is None:
                 return None
-            series, years = rs
+            ratioSeries, ratioYears = rs
+            series = cast(dict[str, dict[str, list[Any | None]]], ratioSeries)
+            years = cast(list[str], ratioYears)
             df = _ratioSeriesToDataFrame(series, years)
             rowCount = df.height if df is not None else None
             yearCount = len(years)
-            if df is not None and rowCount >= 20 and yearCount >= 5:
+            if df is not None and df.height >= 20 and yearCount >= 5:
                 coverage = "full"
-            elif df is not None and rowCount > 0:
+            elif df is not None and df.height > 0:
                 coverage = "partial"
             else:
                 coverage = "missing"
@@ -3293,8 +3283,10 @@ class Company:
             elif topic == "ratios":
                 rs = self._finance.ratioSeries
                 if rs is not None:
-                    _, years = rs
-                    df = _ratioSeriesToDataFrame(*rs)
+                    ratioSeries, ratioYears = rs
+                    series = cast(dict[str, dict[str, list[Any | None]]], ratioSeries)
+                    years = cast(list[str], ratioYears)
+                    df = _ratioSeriesToDataFrame(series, years)
                     rows.append(
                         {
                             "chapter": chapter,
@@ -3532,7 +3524,7 @@ class Company:
             kws = keywords
         return keywordFrequency(docsSections, keywords=kws)
 
-    def news(self, *, days: int = 30) -> pl.DataFrame:
+    def news(self, *, days: int = 30) -> pl.DataFrame | None:
         """최근 뉴스 수집 - 종목 관련 뉴스 DataFrame.
 
         Capabilities:
@@ -3558,7 +3550,7 @@ class Company:
             days: 수집 기간 일수 (기본 30).
 
         Returns:
-            pl.DataFrame - 뉴스 제목, 날짜, URL 등 포함.
+            pl.DataFrame - 뉴스 제목, 날짜, URL 등 포함. provider 부재 시 None.
 
         Raises:
             httpx.HTTPError: 외부 뉴스 API 호출 실패.
@@ -3587,7 +3579,12 @@ class Company:
         from dartlab.core.gatherProvider import getGatherProvider
 
         provider = getGatherProvider()
-        return provider.news(self.ticker, market="US", days=days) if provider else None
+        if provider is None:
+            return None
+        result = provider.news(self.ticker, market="US", days=days)
+        if result is not None and not isinstance(result, pl.DataFrame):
+            raise TypeError(f"EDGAR news provider가 DataFrame이 아닌 값을 반환했습니다: {type(result).__name__}")
+        return result
 
     def watch(
         self,

@@ -33,8 +33,8 @@ import re
 from collections.abc import Iterator
 from pathlib import Path
 
+import lxml.etree as etree
 import polars as pl
-from lxml import etree
 
 import dartlab.config as _cfg
 
@@ -48,13 +48,6 @@ CELL_STATEMENTS: frozenset[str] = frozenset({"BS", "IS1", "IS2", "IS3", "CF", "E
 
 # statement → 흐름(d=duration)/시점(e=instant). 옛 표(태그 없음)는 statement 로 ctxFlow 도출.
 _STMT_FLOW: dict[str, str] = {"BS": "e", "IS1": "d", "IS2": "d", "IS3": "d", "CF": "d", "EF": "e"}
-
-# 금액 단위 → 배율(원 기준). DART 재무제표 표준은 백만원.
-_UNIT_RE = re.compile(r"단위\s*[:：]\s*(백만원|천원|원)")
-_UNIT_SCALE = {"백만원": 1_000_000, "천원": 1_000, "원": 1}
-# 음수 표기: △/▲/(괄호). (주N) 주석번호는 금액 아님.
-_NUM_RE = re.compile(r"^[△▲\-(]?\s*[\d,]+\.?\d*\s*\)?$")
-_NOTE_RE = re.compile(r"^\(?주[\s\d,]")
 
 # ACONTEXT period 토큰: prefix(당기/전기/전전기) + FY + 4자리연도 + 흐름/시점(d|e) + marker.
 # marker = FY(연간) / FQ?(1분기) / HY?(반기·2분기) / TQ?(3분기), 접미 A(누적)·Q(단독)·∅(시점).
@@ -249,34 +242,44 @@ def _parseAmount(text: str) -> float | None:
         >>> _parseAmount("매출액") is None
         True
     """
-    t = (text or "").strip()
-    if not t or _NOTE_RE.match(t) or not _NUM_RE.match(t):
-        return None
-    neg = t[0] in "△▲-" or (t.startswith("(") and t.endswith(")"))
-    digits = re.sub(r"[^\d.]", "", t)
-    if not digits or digits == ".":
-        return None
-    try:
-        val = float(digits)
-    except ValueError:
-        return None
-    return -val if neg else val
+    from dartlab.providers.dart.parse.amount import parseAmount
+
+    return parseAmount(text)
 
 
 def _detectUnit(text: str) -> int:
     """본문에서 ``단위 : 백만원|천원|원`` → 원 기준 배율. 미발견 시 백만원(기본 1_000_000)."""
-    m = _UNIT_RE.search(text or "")
-    return _UNIT_SCALE.get(m.group(1), 1_000_000) if m else 1_000_000
+    from dartlab.providers.dart.parse.amount import detectUnitScale
+
+    return detectUnitScale(text, defaultUnit="백만원") or 1_000_000
 
 
-def _parseFragment(contentRaw: str):
-    """panel.parquet 의 contentRaw(요소 concat) → ``<root>`` 래핑 lxml parse. 실패 시 None."""
+def _parseFragment(contentRaw: str, *, provenance: str | None = None):
+    """panel.parquet contentRaw를 파싱하고 복구·실패를 provenance와 함께 기록한다."""
     if not contentRaw:
+        if provenance is not None:
+            _log.warning("panel cell XML empty: %s", provenance)
         return None
+    parser = etree.XMLParser(recover=True, huge_tree=True)
     try:
-        return etree.fromstring(f"<root>{contentRaw}</root>".encode(), etree.XMLParser(recover=True, huge_tree=True))
-    except (etree.XMLSyntaxError, ValueError):
+        root = etree.fromstring(f"<root>{contentRaw}</root>".encode(), parser)
+    except (etree.XMLSyntaxError, ValueError) as exc:
+        _log.warning(
+            "panel cell XML parse failed: %s error=%s: %s",
+            provenance or "unknown",
+            type(exc).__name__,
+            exc,
+        )
         return None
+    if parser.error_log:
+        first = parser.error_log[0]
+        _log.warning(
+            "panel cell XML recovered: %s errors=%d first=%s",
+            provenance or "unknown",
+            len(parser.error_log),
+            first.message,
+        )
+    return root
 
 
 def cellsFromContent(
@@ -305,7 +308,8 @@ def cellsFromContent(
         >>> list(cellsFromContent("<TABLE>...</TABLE>", statement="IS2", scope="consolidated",
         ...                       period="2025Q4", code="005930", rcept="R1"))  # doctest: +SKIP
     """
-    root = _parseFragment(contentRaw)
+    provenance = f"code={code} period={period} statement={statement} rcept={rcept or '-'}"
+    root = _parseFragment(contentRaw, provenance=provenance)
     if root is None:
         return
     if root.find(".//TE[@ACONTEXT]") is not None:

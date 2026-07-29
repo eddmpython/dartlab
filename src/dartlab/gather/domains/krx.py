@@ -57,8 +57,8 @@ async def fetchSectorInfo(
 
     Raises
     ------
-    없음
-        KIND/Naver 내부 예외 (SourceUnavailableError/KeyError/ValueError/TypeError) 는 흡수.
+    SourceUnavailableError
+        KIND 정보도 없고 Naver 요청도 실패한 경우.
 
     Example
     -------
@@ -83,31 +83,42 @@ async def fetchSectorInfo(
     naverIndustryCode = None
     naverIndustryName = None
     market = ""
+    naverError: Exception | None = None
+    naverAvailable = False
     try:
         url = _NAVER_INTEGRATION.format(code=stockCode)
         resp = await client.get(url)
         data = resp.json()
+        if not isinstance(data, dict):
+            raise TypeError("Naver integration 응답은 JSON object여야 합니다")
+        naverAvailable = True
         naverIndustryCode = str(data.get("industryCode", ""))
         exchange = data.get("stockExchangeType", {})
         if isinstance(exchange, dict):
             market = exchange.get("nameKor", "")
         elif isinstance(data.get("sosok"), str):
             market = "코스피" if data["sosok"] == "0" else "코스닥"
-    except (SourceUnavailableError, KeyError, ValueError, TypeError) as exc:
-        log.debug("Naver integration 실패 (%s): %s", stockCode, exc)
+    except (SourceUnavailableError, OSError, KeyError, ValueError, TypeError) as exc:
+        naverError = exc
 
     # 3) 업종코드로 업종명 확인
     if naverIndustryCode:
         naverIndustryName = await _getIndustryName(naverIndustryCode, client)
 
     sectorName = kindSector or naverIndustryName or ""
+    resolvedMarket = market or _getKindMarket(stockCode)
+    if not any((sectorName, naverIndustryCode, resolvedMarket)):
+        if naverError is not None:
+            raise SourceUnavailableError(f"sector 공급자를 사용할 수 없습니다: {stockCode}") from naverError
+        return None
+    source = "kind+naver" if kindSector and naverAvailable else "kind" if kindSector else "naver"
     return SectorInfo(
         sectorCode=naverIndustryCode or "",
         sectorName=sectorName,
         industryCode=naverIndustryCode or "",
         industryName=naverIndustryName or "",
-        market=market or _getKindMarket(stockCode),
-        source="kind+naver",
+        market=resolvedMarket,
+        source=source,
     )
 
 
@@ -146,12 +157,12 @@ async def fetchIndustryPeers(
         - fluctuationsRatio : float — 등락률 (%)
         - market : str — ``"KOSPI"`` | ``"KOSDAQ"``
 
-        조회 실패 시 빈 리스트.
+        정상 응답에 종목이 없으면 빈 리스트.
 
     Raises
     ------
-    없음
-        Naver API 내부 예외 (SourceUnavailableError/KeyError/ValueError/TypeError) 는 흡수.
+    SourceUnavailableError
+        Naver 요청 또는 응답 해석 실패.
 
     Example
     -------
@@ -172,7 +183,11 @@ async def fetchIndustryPeers(
         url = _NAVER_INDUSTRY_DETAIL.format(code=industryCode)
         resp = await client.get(url)
         data = resp.json()
+        if not isinstance(data, dict):
+            raise TypeError("Naver industry 응답은 JSON object여야 합니다")
         stocks = data.get("stocks", [])
+        if not isinstance(stocks, list):
+            raise TypeError("Naver industry stocks는 list여야 합니다")
         result = []
         for s in stocks:
             code = s.get("itemCode", "")
@@ -191,9 +206,10 @@ async def fetchIndustryPeers(
         if limit is not None and limit > 0:
             return result[:limit]
         return result
-    except (SourceUnavailableError, KeyError, ValueError, TypeError) as exc:
-        log.warning("fetchIndustryPeers 실패 (%s): %s", industryCode, exc)
-        return []
+    except SourceUnavailableError:
+        raise
+    except (OSError, KeyError, ValueError, TypeError) as exc:
+        raise SourceUnavailableError(f"industry peers 응답 해석 실패: {industryCode}") from exc
 
 
 async def fetchIndustryList(
@@ -226,12 +242,12 @@ async def fetchIndustryList(
         - totalCount : int — 소속 종목 수 (개)
         - changeRate : float — 업종 등락률 (%)
 
-        조회 실패 시 빈 리스트.
+        정상 응답에 업종이 없으면 빈 리스트.
 
     Raises
     ------
-    없음
-        Naver API 내부 예외 (SourceUnavailableError/KeyError/ValueError/TypeError) 는 흡수.
+    SourceUnavailableError
+        Naver 요청 또는 응답 해석 실패.
 
     Example
     -------
@@ -250,7 +266,11 @@ async def fetchIndustryList(
     try:
         resp = await client.get(_NAVER_INDUSTRY_LIST)
         data = resp.json()
+        if not isinstance(data, dict):
+            raise TypeError("Naver industry list 응답은 JSON object여야 합니다")
         groups = data.get("groups", [])
+        if not isinstance(groups, list):
+            raise TypeError("Naver industry groups는 list여야 합니다")
         rows = [
             {
                 "industryCode": str(g.get("no", "")),
@@ -264,9 +284,10 @@ async def fetchIndustryList(
         if limit is not None and limit > 0:
             return rows[:limit]
         return rows
-    except (SourceUnavailableError, KeyError, ValueError, TypeError) as exc:
-        log.warning("fetchIndustryList 실패: %s", exc)
-        return []
+    except SourceUnavailableError:
+        raise
+    except (OSError, KeyError, ValueError, TypeError) as exc:
+        raise SourceUnavailableError("industry list 응답 해석 실패") from exc
 
 
 # ── 내부 헬퍼 ──
@@ -367,16 +388,13 @@ def _cleanNumber(text) -> int:
 
     Returns
     -------
-    int
-        변환된 정수. 빈 값이거나 변환 불가 시 0.
+        int
+        변환된 정수. 빈 값이면 0.
     """
     if not text:
         return 0
     cleaned = str(text).replace(",", "").replace("+", "").strip()
-    try:
-        return int(cleaned)
-    except ValueError:
-        return 0
+    return int(cleaned)
 
 
 def _cleanFloat(text) -> float:
@@ -389,13 +407,10 @@ def _cleanFloat(text) -> float:
 
     Returns
     -------
-    float
-        변환된 실수. 빈 값이거나 변환 불가 시 0.0.
+        float
+        변환된 실수. 빈 값이면 0.0.
     """
     if not text:
         return 0.0
     cleaned = str(text).replace(",", "").replace("+", "").strip()
-    try:
-        return float(cleaned)
-    except ValueError:
-        return 0.0
+    return float(cleaned)

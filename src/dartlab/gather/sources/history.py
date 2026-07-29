@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Awaitable, Callable
+from datetime import datetime, timezone
+from typing import cast
 
 from ..domains import HISTORY_FALLBACK, loadDomain
 from ..infra.resilience import circuitBreaker
-from ..types import GatherError
+from ..types import CircuitOpenError, SourceAttemptsExhaustedError, SourceUnavailableError
 
 log = logging.getLogger(__name__)
 
@@ -67,13 +70,15 @@ async def fetch(
         - low : float — 저가 (원)
         - close : float — 종가 (원)
         - volume : int — 거래량 (주)
+        - source : str. 실제 응답을 제공한 fallback source
+        - fetchedAt : str. facade 수집 완료 시각 (UTC ISO 형식)
 
-        전체 fallback 실패 시 빈 리스트 [].
+        하나 이상의 source가 정상 응답했지만 데이터가 없으면 빈 리스트.
 
     Raises
     ------
-    없음
-        fallback 체인 내부 예외 (GatherError/ImportError/OSError/ValueError/AttributeError) 는 흡수.
+    SourceAttemptsExhaustedError
+        모든 fallback source가 실패하거나 circuit open으로 차단된 경우.
 
     Example
     -------
@@ -100,28 +105,51 @@ async def fetch(
 
         client = GatherHttpClient()
 
+    attempts: list[tuple[str, Exception]] = []
+    hadSuccessfulResponse = False
+
     for source_name in chain:
         if circuitBreaker.isOpen(source_name):
+            attempts.append((source_name, CircuitOpenError(f"{source_name} circuit이 open 상태입니다")))
             continue
 
         try:
             module = loadDomain(source_name)
+            fetchHistory = getattr(module, "fetchHistory", None)
+            if not callable(fetchHistory):
+                raise AttributeError(f"{source_name} source에 fetchHistory callable이 없습니다")
 
-            if hasattr(module, "fetchHistory"):
-                result = await module.fetchHistory(
-                    stockCode,
-                    client,
-                    start=start,
-                    end=end,
-                    market=market,
-                )
-                if result:
-                    if limit is not None and limit > 0:
-                        return result[-limit:]
-                    return result
+            fetchHistoryAsync = cast(Callable[..., Awaitable[list[dict] | None]], fetchHistory)
+            result = await fetchHistoryAsync(
+                stockCode,
+                client,
+                start=start,
+                end=end,
+                market=market,
+            )
+            if result is None:
+                result = []
+            if not isinstance(result, list) or any(not isinstance(row, dict) for row in result):
+                raise TypeError(f"{source_name} fetchHistory는 list[dict]를 반환해야 합니다")
 
-        except (GatherError, ImportError, OSError, ValueError, AttributeError) as exc:
+            circuitBreaker.recordSuccess(source_name)
+            hadSuccessfulResponse = True
+            if result:
+                fetchedAt = datetime.now(timezone.utc).isoformat()
+                rows = [{**row, "source": source_name, "fetchedAt": fetchedAt} for row in result]
+                if limit is not None and limit > 0:
+                    return rows[-limit:]
+                return rows
+
+        except Exception as exc:
+            circuitBreaker.recordFailure(source_name)
+            attempts.append((source_name, exc))
             log.debug("history fallback %s 실패: %s", source_name, exc)
-            continue
 
-    return []
+    if hadSuccessfulResponse:
+        return []
+
+    if not attempts:
+        attempts.append(("<fallback-chain>", SourceUnavailableError("설정된 history source가 없습니다")))
+    error = SourceAttemptsExhaustedError("history", attempts)
+    raise error from attempts[-1][1]

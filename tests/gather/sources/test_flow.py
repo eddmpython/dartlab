@@ -20,16 +20,16 @@ def test_smoke_import() -> None:
     importlib.import_module("dartlab.gather.sources.flow")
 
 
-def test_flow_non_kr_returns_none() -> None:
-    """market != "KR" → 즉시 None."""
+def test_flow_non_kr_raises_value_error() -> None:
+    """KR 외 시장은 지원하지 않음을 명시한다."""
     from dartlab.gather.sources import flow as flowMod
 
-    result = asyncio.run(flowMod.fetch("AAPL", market="US"))
-    assert result is None
+    with pytest.raises(ValueError, match="KR 시장만 지원"):
+        asyncio.run(flowMod.fetch("AAPL", market="US"))
 
 
 def test_flow_fallback_chain_first_success(monkeypatch: pytest.MonkeyPatch) -> None:
-    """fallback chain 의 첫 성공 source 결과 반환."""
+    """fallback chain 첫 성공 결과에 실제 source와 수집 시각을 붙인다."""
     from dartlab.gather.sources import flow as flowMod
 
     fakeRows = [
@@ -43,15 +43,24 @@ def test_flow_fallback_chain_first_success(monkeypatch: pytest.MonkeyPatch) -> N
     fakeModule = types.SimpleNamespace(fetchFlow=fakeFetchFlow)
     monkeypatch.setattr(flowMod, "FLOW_FALLBACK", ["naver"])
     monkeypatch.setattr(flowMod, "loadDomain", lambda name: fakeModule)
+    monkeypatch.setattr(
+        flowMod,
+        "circuitBreaker",
+        types.SimpleNamespace(isOpen=lambda src: False, recordFailure=lambda src: None, recordSuccess=lambda src: None),
+    )
 
     result = asyncio.run(flowMod.fetch("005930", market="KR"))
-    assert result == fakeRows
+    assert [row["date"] for row in result] == ["2026-01-01", "2026-01-02"]
+    assert {row["source"] for row in result} == {"naver"}
+    assert all(isinstance(row["fetchedAt"], str) and row["fetchedAt"] for row in result)
+    assert result[0] is not fakeRows[0]
+    assert "source" not in fakeRows[0]
 
 
-def test_flow_all_fail_returns_none(monkeypatch: pytest.MonkeyPatch) -> None:
-    """모든 fallback source 실패 시 None."""
+def test_flow_all_fail_preserves_causes(monkeypatch: pytest.MonkeyPatch) -> None:
+    """모든 fallback 실패 시 source별 원인을 보존한 typed aggregate를 raise한다."""
     from dartlab.gather.sources import flow as flowMod
-    from dartlab.gather.types import GatherError
+    from dartlab.gather.types import GatherError, SourceAttemptsExhaustedError
 
     async def boom(stockCode, client, **kwargs):
         raise GatherError("source down")
@@ -59,9 +68,43 @@ def test_flow_all_fail_returns_none(monkeypatch: pytest.MonkeyPatch) -> None:
     fakeModule = types.SimpleNamespace(fetchFlow=boom)
     monkeypatch.setattr(flowMod, "FLOW_FALLBACK", ["naver", "anotherSource"])
     monkeypatch.setattr(flowMod, "loadDomain", lambda name: fakeModule)
+    failures = []
+    monkeypatch.setattr(
+        flowMod,
+        "circuitBreaker",
+        types.SimpleNamespace(
+            isOpen=lambda src: False,
+            recordFailure=lambda src: failures.append(src),
+            recordSuccess=lambda src: None,
+        ),
+    )
 
-    result = asyncio.run(flowMod.fetch("005930", market="KR"))
-    assert result is None
+    with pytest.raises(SourceAttemptsExhaustedError) as excInfo:
+        asyncio.run(flowMod.fetch("005930", market="KR"))
+
+    assert tuple(excInfo.value.failures) == ("naver", "anotherSource")
+    assert all(isinstance(cause, GatherError) for cause in excInfo.value.failures.values())
+    assert failures == ["naver", "anotherSource"]
+    assert isinstance(excInfo.value.__cause__, GatherError)
+
+
+def test_flow_successful_empty_is_not_provider_failure(monkeypatch: pytest.MonkeyPatch) -> None:
+    """정상 빈 응답이 하나라도 있으면 provider 전멸 예외 대신 빈 list를 반환한다."""
+    from dartlab.gather.sources import flow as flowMod
+
+    async def fakeFetchFlow(stockCode, client, **kwargs):
+        return None
+
+    fakeModule = types.SimpleNamespace(fetchFlow=fakeFetchFlow)
+    monkeypatch.setattr(flowMod, "FLOW_FALLBACK", ["naver"])
+    monkeypatch.setattr(flowMod, "loadDomain", lambda name: fakeModule)
+    monkeypatch.setattr(
+        flowMod,
+        "circuitBreaker",
+        types.SimpleNamespace(isOpen=lambda src: False, recordFailure=lambda src: None, recordSuccess=lambda src: None),
+    )
+
+    assert asyncio.run(flowMod.fetch("005930", market="KR")) == []
 
 
 def test_flow_limit_slices(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -76,10 +119,16 @@ def test_flow_limit_slices(monkeypatch: pytest.MonkeyPatch) -> None:
     fakeModule = types.SimpleNamespace(fetchFlow=fakeFetchFlow)
     monkeypatch.setattr(flowMod, "FLOW_FALLBACK", ["naver"])
     monkeypatch.setattr(flowMod, "loadDomain", lambda name: fakeModule)
+    monkeypatch.setattr(
+        flowMod,
+        "circuitBreaker",
+        types.SimpleNamespace(isOpen=lambda src: False, recordFailure=lambda src: None, recordSuccess=lambda src: None),
+    )
 
     result = asyncio.run(flowMod.fetch("005930", market="KR", limit=3))
     assert len(result) == 3
     assert result[0]["date"] == "2026-01-01"
+    assert result[0]["source"] == "naver"
 
 
 def test_flow_passes_backfill_options(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -95,6 +144,11 @@ def test_flow_passes_backfill_options(monkeypatch: pytest.MonkeyPatch) -> None:
     fakeModule = types.SimpleNamespace(fetchFlow=fakeFetchFlow)
     monkeypatch.setattr(flowMod, "FLOW_FALLBACK", ["naver"])
     monkeypatch.setattr(flowMod, "loadDomain", lambda name: fakeModule)
+    monkeypatch.setattr(
+        flowMod,
+        "circuitBreaker",
+        types.SimpleNamespace(isOpen=lambda src: False, recordFailure=lambda src: None, recordSuccess=lambda src: None),
+    )
 
     result = asyncio.run(
         flowMod.fetch(
@@ -111,7 +165,10 @@ def test_flow_passes_backfill_options(monkeypatch: pytest.MonkeyPatch) -> None:
         )
     )
 
-    assert result == [{"date": "20200131", "foreignNet": -1.0}]
+    assert result[0]["date"] == "20200131"
+    assert result[0]["foreignNet"] == -1.0
+    assert result[0]["source"] == "naver"
+    assert result[0]["fetchedAt"]
     assert seen["start"] == "2020-01-01"
     assert seen["end"] == "2020-01-31"
     assert seen["pageSize"] == 50

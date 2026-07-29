@@ -39,14 +39,16 @@ class TestSectorFetch:
         assert out is info
         backend.assert_awaited_once()
 
-    def test_non_kr_market_is_none(self):
-        assert runAsync(fetch("AAPL", market="US", client=object())) is None
+    def test_non_kr_market_raises(self):
+        with pytest.raises(ValueError, match="KR 시장만"):
+            runAsync(fetch("AAPL", market="US", client=object()))
 
-    def test_source_failure_is_none(self):
-        """공급원 장애는 None. 이것만 흡수하고 import 오류는 흡수하지 않는다."""
+    def test_source_failure_propagates(self):
+        """공급원 장애는 미분류 결과로 바꾸지 않는다."""
         boom = AsyncMock(side_effect=SourceUnavailableError("krx down"))
         with patch("dartlab.gather.domains.krx.fetchSectorInfo", new=boom):
-            assert runAsync(fetch("000660", market="KR", client=object())) is None
+            with pytest.raises(SourceUnavailableError, match="krx down"):
+                runAsync(fetch("000660", market="KR", client=object()))
 
 
 def test_sources_do_not_use_single_dot_domains():

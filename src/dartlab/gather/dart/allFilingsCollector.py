@@ -32,15 +32,20 @@ import os
 import zipfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import polars as pl
 
 import dartlab.config as _cfg
-from dartlab.core.dartClient import DartClient
 from dartlab.core.dataConfig import DATA_RELEASES
 from dartlab.core.logger import getLogger
 from dartlab.core.memory import withMemoryBudget
 from dartlab.gather.dart.disclosure import listFilings
+
+if TYPE_CHECKING:
+    from dartlab.gather.dart.client import DartClient
+else:
+    from dartlab.core.dartClient import DartClient
 
 _log = getLogger(__name__)
 
@@ -538,10 +543,11 @@ def fillContentAll(
             result = fillContent(date, client=client, showProgress=showProgress)
             if result is not None:
                 filled += 1
-        except Exception as e:  # noqa: BLE001
+        except Exception as exc:
             if showProgress:
-                _log.warning("[%s] 에러: %s", date, e)
-            break  # API 한도 초과 등이면 중단
+                _log.warning("[%s] 에러: %s", date, exc)
+            exc.add_note(f"allFilings 원문 채우기 실패: date={date}, completedDates={filled}")
+            raise
 
     if showProgress:
         _log.info("원문 수집 완료: %d일", filled)

@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-import logging
 import time
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Protocol
 
 if TYPE_CHECKING:
     import polars as pl
@@ -12,7 +11,21 @@ if TYPE_CHECKING:
 from ..infra.telemetry import emitGatherFetch
 from .context import GatherMixinContext
 
-log = logging.getLogger(__name__)
+
+class _SdmxFacade(Protocol):
+    def series(
+        self,
+        indicatorId: str,
+        *,
+        startPeriod: str | None = None,
+        endPeriod: str | None = None,
+    ) -> "pl.DataFrame":
+        """정규화된 지표 ID의 SDMX 시계열을 반환한다."""
+        ...
+
+    def close(self) -> None:
+        """provider가 보유한 HTTP 자원을 닫는다."""
+        ...
 
 
 class _GatherMacroMixin(GatherMixinContext):
@@ -104,7 +117,7 @@ class _GatherMacroMixin(GatherMixinContext):
         end: str | None = None,
         apiKey: str | None = None,
         scope: str = "default",
-    ) -> "pl.DataFrame | None":
+    ) -> "pl.DataFrame":
         """거시경제 지표 시계열 조회.
 
         Capabilities:
@@ -138,7 +151,7 @@ class _GatherMacroMixin(GatherMixinContext):
             scope: "default" (기존 핵심 지표) 또는 "catalog" (전체 카탈로그).
 
         Returns:
-            pl.DataFrame | None — wide DataFrame (전체) 또는 (date, value) (단일).
+            pl.DataFrame — wide DataFrame (전체) 또는 (date, value) (단일).
 
         Requires:
             기본 HF 경로: 불필요.
@@ -202,13 +215,10 @@ class _GatherMacroMixin(GatherMixinContext):
             return "EU"
         if indicator.startswith(("BIS_", "OECD_", "IMF_")):
             return "GLOBAL"
-        try:
-            from dartlab.gather.ecos.catalog import getEntry
+        from dartlab.gather.ecos.catalog import getEntry
 
-            if getEntry(indicator):
-                return "KR"
-        except ImportError:
-            pass
+        if getEntry(indicator):
+            return "KR"
         return "US"
 
     def _macroEU(
@@ -217,7 +227,7 @@ class _GatherMacroMixin(GatherMixinContext):
         *,
         start: str | None,
         end: str | None,
-    ):
+    ) -> "pl.DataFrame":
         """EU 거시지표 — ECB SDMX live fetch.
 
         Sig: ``_macroEU(indicator, *, start, end) -> pl.DataFrame | None``
@@ -234,10 +244,11 @@ class _GatherMacroMixin(GatherMixinContext):
             end: ``endPeriod``. None 가능.
 
         Returns:
-            pl.DataFrame | None — SDMX 응답. 실패 시 logger.warning + None.
+            pl.DataFrame — SDMX 응답.
 
         Raises:
-            없음 — 모든 예외 흡수.
+            ImportError: ECB 모듈을 불러올 수 없을 때.
+            SdmxClientError: ECB 호출 또는 응답 해석에 실패할 때.
 
         Example:
             >>> g.macro("EU", "ECB_M3")
@@ -247,33 +258,23 @@ class _GatherMacroMixin(GatherMixinContext):
         """
         t0 = time.monotonic()
         try:
-            try:
-                from dartlab.gather.ecb import Ecb
-                from dartlab.gather.infra.sdmxClient import SdmxClientError
-            except ImportError:
-                log.debug("ecb 모듈 없음 — EU macro 수집 생략")
-                return None
+            from dartlab.gather.ecb import Ecb
+
             e = Ecb()
             try:
                 if indicator:
                     return e.series(indicator, startPeriod=start, endPeriod=end)
-                # 전체 — _MACRO_EU 8 지표 wide
                 import polars as pl
 
                 out: pl.DataFrame | None = None
                 for ind in self._MACRO_EU:
-                    try:
-                        df = e.series(ind, startPeriod=start, endPeriod=end)
-                        df = df.select(["date", pl.col("value").alias(ind)])
-                        out = df if out is None else out.join(df, on="date", how="full", coalesce=True)
-                    except SdmxClientError as exc:
-                        log.debug("macro EU %s 실패: %s", ind, exc)
-                return out.sort("date") if out is not None else None
+                    df = e.series(ind, startPeriod=start, endPeriod=end)
+                    df = df.select(["date", pl.col("value").alias(ind)])
+                    out = df if out is None else out.join(df, on="date", how="full", coalesce=True)
+                assert out is not None
+                return out.sort("date")
             finally:
                 e.close()
-        except Exception as exc:  # noqa: BLE001 — silent observer
-            log.warning("macro EU 실패: %s", exc)
-            return None
         finally:
             emitGatherFetch("macroEU", (time.monotonic() - t0) * 1000, cacheHit=False, market="EU")
 
@@ -283,7 +284,7 @@ class _GatherMacroMixin(GatherMixinContext):
         *,
         start: str | None,
         end: str | None,
-    ):
+    ) -> "pl.DataFrame":
         """GLOBAL 거시지표 — BIS/OECD/IMF SDMX live fetch.
 
         Sig: ``_macroGlobal(indicator, *, start, end) -> pl.DataFrame | None``
@@ -300,10 +301,12 @@ class _GatherMacroMixin(GatherMixinContext):
             end: ``endPeriod``.
 
         Returns:
-            pl.DataFrame | None — wide (전체) 또는 단일 series.
+            pl.DataFrame — wide (전체) 또는 단일 series.
 
         Raises:
-            없음 — 모든 예외 흡수.
+            ImportError: SDMX provider 모듈을 불러올 수 없을 때.
+            ValueError: 단일 지표 prefix가 지원 범위 밖일 때.
+            SdmxClientError: provider 호출 또는 응답 해석에 실패할 때.
 
         Example:
             >>> g.macro("GLOBAL", "BIS_POLICY_RATE_US")
@@ -313,62 +316,45 @@ class _GatherMacroMixin(GatherMixinContext):
         """
         t0 = time.monotonic()
         try:
-            from dartlab.gather.infra.sdmxClient import SdmxClientError
+            from dartlab.gather.bis import Bis
+            from dartlab.gather.imf import Imf
+            from dartlab.gather.oecd import Oecd
 
-            try:
-                from dartlab.gather.bis import Bis
-                from dartlab.gather.imf import Imf
-                from dartlab.gather.oecd import Oecd
-            except ImportError:
-                log.debug("bis/oecd/imf 일부 모듈 없음 — GLOBAL macro 부분 생략")
-                return None
-
-            def _factoryFor(ind: str):
+            def _factoryFor(ind: str) -> _SdmxFacade:
                 if ind.startswith("BIS_"):
                     return Bis()
                 if ind.startswith("OECD_"):
                     return Oecd()
                 if ind.startswith("IMF_"):
                     return Imf()
-                return None
+                raise ValueError(f"지원하지 않는 GLOBAL macro 지표 prefix: {ind}")
 
             if indicator:
                 facade = _factoryFor(indicator)
-                if facade is None:
-                    log.warning("macro GLOBAL prefix 미인식: %s", indicator)
-                    return None
                 try:
                     return facade.series(indicator, startPeriod=start, endPeriod=end)
-                except SdmxClientError as exc:
-                    log.warning("macro GLOBAL %s 실패: %s", indicator, exc)
-                    return None
                 finally:
                     facade.close()
 
-            # 전체 — _MACRO_GLOBAL wide
             import polars as pl
 
-            facades: dict[str, object] = {}
+            facades: dict[str, _SdmxFacade] = {}
             try:
                 out: pl.DataFrame | None = None
                 for ind in self._MACRO_GLOBAL:
                     prov = ind.split("_", 1)[0]
-                    if prov not in facades:
-                        f = _factoryFor(ind)
-                        if f is None:
-                            continue
-                        facades[prov] = f
-                    try:
-                        df = facades[prov].series(ind, startPeriod=start, endPeriod=end)  # type: ignore[attr-defined]
-                        df = df.select(["date", pl.col("value").alias(ind)])
-                        out = df if out is None else out.join(df, on="date", how="full", coalesce=True)
-                    except SdmxClientError as exc:
-                        log.debug("macro GLOBAL %s 실패: %s", ind, exc)
-                return out.sort("date") if out is not None else None
+                    facade = facades.get(prov)
+                    if facade is None:
+                        facade = _factoryFor(ind)
+                        facades[prov] = facade
+                    df = facade.series(ind, startPeriod=start, endPeriod=end)
+                    df = df.select(["date", pl.col("value").alias(ind)])
+                    out = df if out is None else out.join(df, on="date", how="full", coalesce=True)
+                assert out is not None
+                return out.sort("date")
             finally:
-                for f in facades.values():
-                    if hasattr(f, "close"):
-                        f.close()  # type: ignore[attr-defined]
+                for facade in facades.values():
+                    facade.close()
         finally:
             emitGatherFetch("macroGlobal", (time.monotonic() - t0) * 1000, cacheHit=False, market="GLOBAL")
 
@@ -380,7 +366,7 @@ class _GatherMacroMixin(GatherMixinContext):
         end: str | None,
         apiKey: str | None = None,
         scope: str = "default",
-    ):
+    ) -> "pl.DataFrame":
         """KR 거시지표 — ECOS (한국은행) API 조회.
 
         Parameters
@@ -394,69 +380,45 @@ class _GatherMacroMixin(GatherMixinContext):
 
         Returns
         -------
-        pl.DataFrame | None
+        pl.DataFrame
             단일 지표: date (Date), value (Float64) 컬럼.
             전체 지표: date + 각 지표명 컬럼 (wide DataFrame).
-            None — HF 데이터셋/ECOS 모듈 미가용 또는 직접 API 실패 시.
 
         Raises
         ------
+        ImportError
+            ECOS 또는 HF 모듈을 불러올 수 없는 경우.
         ValueError
             HF 카탈로그 밖 지표를 apiKey 없이 요청한 경우.
+        EcosError
+            ECOS 직접 API 호출 또는 응답 해석에 실패한 경우.
         """
         t0 = time.monotonic()
         try:
             if apiKey is None:
-                try:
-                    from dartlab.gather.bulkData import macroHf
-                    from dartlab.gather.ecos import catalog as ecos_catalog
+                from dartlab.gather.bulkData import macroHf
+                from dartlab.gather.ecos import catalog as ecos_catalog
 
-                    indicator = ecos_catalog.resolveId(indicator)
-                    ids = ecos_catalog.getAllIds() if scope == "catalog" else self._MACRO_KR
-                    if indicator:
-                        return macroHf.fetchSeries("ecos", indicator, start=start, end=end)
-                    return macroHf.fetchMulti("ecos", ids, start=start, end=end)
-                except Exception as exc:
-                    if isinstance(exc, ValueError):
-                        raise
-                    log.warning("macro KR HF 실패: %s", exc)
-                    return None
+                indicator = ecos_catalog.resolveId(indicator)
+                ids = ecos_catalog.getAllIds() if scope == "catalog" else self._MACRO_KR
+                if indicator:
+                    return macroHf.fetchSeries("ecos", indicator, start=start, end=end)
+                return macroHf.fetchMulti("ecos", ids, start=start, end=end)
 
-            try:
-                from dartlab.gather.ecos import Ecos
-                from dartlab.gather.ecos.types import EcosError
-            except ImportError:
-                log.debug("ecos 모듈 없음 — KR macro 수집 생략")
-                return None
-            try:
-                ecos = Ecos(apiKey=apiKey)
-            except EcosError:
-                from dartlab.core.env import promptAndSave
+            from dartlab.gather.ecos import Ecos
 
-                key = promptAndSave(
-                    "ECOS_API_KEY",
-                    label="한국은행 ECOS API 키가 필요합니다.",
-                    guide="무료 발급: https://ecos.bok.or.kr/api/#/",
-                )
-                if not key:
-                    log.info("ECOS_API_KEY 미설정 — KR macro 조회 불가")
-                    return None
-                ecos = Ecos(apiKey=key)
-            kwargs: dict = {}
-            if start:
-                kwargs["start"] = start
-            if end:
-                kwargs["end"] = end
+            ecos = Ecos(apiKey=apiKey)
             try:
                 if indicator:
                     from dartlab.gather.ecos import catalog as ecos_catalog
 
-                    indicator = ecos_catalog.resolveId(indicator)
-                    return ecos.series(indicator, **kwargs)
-                return ecos.compare(self._MACRO_KR, **kwargs)
-            except (KeyError, ValueError, OSError, EcosError) as exc:
-                log.warning("macro KR 실패: %s", exc)
-                return None
+                    normalizedIndicator = ecos_catalog.resolveId(indicator)
+                    if normalizedIndicator is None:
+                        raise ValueError("ECOS macro indicator가 비어 있습니다.")
+                    return ecos.series(normalizedIndicator, start=start, end=end)
+                return ecos.compare(self._MACRO_KR, start=start, end=end)
+            finally:
+                ecos.close()
         finally:
             emitGatherFetch("macroKR", (time.monotonic() - t0) * 1000, cacheHit=False, market="KR")
 
@@ -468,7 +430,7 @@ class _GatherMacroMixin(GatherMixinContext):
         end: str | None,
         apiKey: str | None = None,
         scope: str = "default",
-    ):
+    ) -> "pl.DataFrame":
         """US 거시지표 — FRED API 조회.
 
         Parameters
@@ -482,64 +444,38 @@ class _GatherMacroMixin(GatherMixinContext):
 
         Returns
         -------
-        pl.DataFrame | None
+        pl.DataFrame
             단일 지표: date (Date), value (Float64) 컬럼.
             전체 지표: date + 각 지표명 컬럼 (wide DataFrame).
-            None — HF 데이터셋/FRED 모듈 미가용 또는 직접 API 실패 시.
 
         Raises
         ------
+        ImportError
+            FRED 또는 HF 모듈을 불러올 수 없는 경우.
         ValueError
             HF 카탈로그 밖 지표를 apiKey 없이 요청한 경우.
+        FredError
+            FRED 직접 API 호출 또는 응답 해석에 실패한 경우.
         """
         t0 = time.monotonic()
         try:
             if apiKey is None:
-                try:
-                    from dartlab.gather.bulkData import macroHf
-                    from dartlab.gather.fred import catalog as fred_catalog
+                from dartlab.gather.bulkData import macroHf
+                from dartlab.gather.fred import catalog as fred_catalog
 
-                    ids = fred_catalog.getAllIds() if scope == "catalog" else self._MACRO_US
-                    if indicator:
-                        return macroHf.fetchSeries("fred", indicator, start=start, end=end)
-                    return macroHf.fetchMulti("fred", ids, start=start, end=end)
-                except Exception as exc:
-                    if isinstance(exc, ValueError):
-                        raise
-                    log.warning("macro US HF 실패 (indicator=%s): %s", indicator or "ALL", exc)
-                    return None
+                ids = fred_catalog.getAllIds() if scope == "catalog" else self._MACRO_US
+                if indicator:
+                    return macroHf.fetchSeries("fred", indicator, start=start, end=end)
+                return macroHf.fetchMulti("fred", ids, start=start, end=end)
 
-            try:
-                from dartlab.gather.fred import Fred
-                from dartlab.gather.fred.types import FredError
-            except ImportError:
-                log.debug("fred 모듈 없음 — US macro 수집 생략")
-                return None
-            try:
-                fred = Fred(apiKey=apiKey)
-            except FredError:
-                from dartlab.core.env import promptAndSave
+            from dartlab.gather.fred import Fred
 
-                key = promptAndSave(
-                    "FRED_API_KEY",
-                    label="FRED API 키가 필요합니다.",
-                    guide="무료 발급: https://fred.stlouisfed.org/docs/api/api_key.html",
-                )
-                if not key:
-                    log.info("FRED_API_KEY 미설정 — US macro 조회 불가")
-                    return None
-                fred = Fred(apiKey=key)
-            kwargs: dict = {}
-            if start:
-                kwargs["start"] = start
-            if end:
-                kwargs["end"] = end
+            fred = Fred(apiKey=apiKey)
             try:
                 if indicator:
-                    return fred.series(indicator, **kwargs)
-                return fred.compare(self._MACRO_US, **kwargs)
-            except (KeyError, ValueError, OSError, FredError) as exc:
-                log.warning("macro US 실패 (indicator=%s): %s", indicator or "ALL", exc)
-                return None
+                    return fred.series(indicator, start=start, end=end)
+                return fred.compare(self._MACRO_US, start=start, end=end)
+            finally:
+                fred.close()
         finally:
             emitGatherFetch("macroUS", (time.monotonic() - t0) * 1000, cacheHit=False, market="US")

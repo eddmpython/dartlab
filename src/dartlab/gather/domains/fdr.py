@@ -6,9 +6,12 @@ fallback 체인에서 naver 다음 순서로 사용.
 
 from __future__ import annotations
 
+import importlib
 import logging
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
+
+from ..types import SourceUnavailableError
 
 log = logging.getLogger(__name__)
 
@@ -25,11 +28,10 @@ def _available() -> bool:
         ``False`` — 미설치.
     """
     try:
-        import FinanceDataReader  # noqa: F401
-
-        return True
+        importlib.import_module("FinanceDataReader")
     except ImportError:
         return False
+    return True
 
 
 async def fetchHistory(
@@ -60,7 +62,7 @@ async def fetchHistory(
         [{"date": ..., "open": ..., "high": ..., "low": ..., "close": ..., "volume": ...}, ...]
 
     Raises:
-        없음 — FDR 내부 예외 (ImportError/OSError/ValueError/KeyError/TypeError) 는 흡수.
+        SourceUnavailableError: optional dependency, provider 호출 또는 응답 schema가 유효하지 않은 경우.
 
     Example:
         >>> rows = await fetchHistory("005930", start="2024-01-01", end="2024-12-31")
@@ -74,10 +76,12 @@ async def fetchHistory(
         yahooChart.fetchHistory · naverGlobal.fetchHistory · fmp.fetchHistory : 동행 source.
     """
     if not _available():
-        log.debug("FDR 미설치 — skip")
-        return []
+        raise SourceUnavailableError("FinanceDataReader optional dependency가 설치되지 않았습니다")
 
-    import FinanceDataReader as fdr
+    try:
+        fdr = importlib.import_module("FinanceDataReader")
+    except ImportError as exc:
+        raise SourceUnavailableError("FinanceDataReader를 import할 수 없습니다") from exc
 
     startDate = start or "1990-01-01"
     endDate = end or (date.today() + timedelta(days=1)).isoformat()
@@ -85,8 +89,20 @@ async def fetchHistory(
     # Parquet 캐시 확인
     cached = _loadCache(stockCode, market)
     if cached is not None:
-        # 캐시 필터링
-        filtered = [r for r in cached if (not start or r["date"] >= start) and (not end or r["date"] <= end)]
+        try:
+            requiredFields = ("date", "open", "high", "low", "close", "volume")
+            for row in cached:
+                if not isinstance(row, dict) or any(field not in row for field in requiredFields):
+                    raise ValueError("필수 OHLCV 필드가 없습니다")
+                datetime.strptime(str(row["date"])[:10], "%Y-%m-%d")
+                float(row["open"])
+                float(row["high"])
+                float(row["low"])
+                float(row["close"])
+                int(row["volume"])
+            filtered = [r for r in cached if (not start or r["date"] >= start) and (not end or r["date"] <= end)]
+        except (KeyError, TypeError, ValueError) as exc:
+            raise SourceUnavailableError("FDR history 캐시 schema가 올바르지 않습니다") from exc
         if filtered:
             if limit is not None and limit > 0:
                 return filtered[-limit:]
@@ -95,25 +111,35 @@ async def fetchHistory(
     try:
         df = fdr.DataReader(stockCode, startDate, endDate)
     except (ImportError, OSError, ValueError, KeyError, TypeError) as exc:
-        log.warning("FDR fetch 실패 (%s): %s", stockCode, exc)
-        return []
+        raise SourceUnavailableError(f"FDR history 요청 실패: {stockCode}") from exc
 
     if df.empty:
         return []
 
+    requiredColumns = {"Open", "High", "Low", "Close"}
+    columns = set(getattr(df, "columns", ()))
+    missingColumns = requiredColumns - columns
+    if missingColumns:
+        missing = ", ".join(sorted(missingColumns))
+        raise SourceUnavailableError(f"FDR history 응답에 필수 열이 없습니다: {missing}")
+
     rows: list[dict] = []
-    for idx, row in df.iterrows():
-        dateStr = idx.strftime("%Y-%m-%d") if hasattr(idx, "strftime") else str(idx)[:10]
-        rows.append(
-            {
-                "date": dateStr,
-                "open": float(row.get("Open", 0)),
-                "high": float(row.get("High", 0)),
-                "low": float(row.get("Low", 0)),
-                "close": float(row.get("Close", 0)),
-                "volume": int(row.get("Volume", 0)),
-            }
-        )
+    try:
+        for idx, row in df.iterrows():
+            dateStr = idx.strftime("%Y-%m-%d") if hasattr(idx, "strftime") else str(idx)[:10]
+            datetime.strptime(dateStr, "%Y-%m-%d")
+            rows.append(
+                {
+                    "date": dateStr,
+                    "open": float(row["Open"]),
+                    "high": float(row["High"]),
+                    "low": float(row["Low"]),
+                    "close": float(row["Close"]),
+                    "volume": int(row.get("Volume", 0)),
+                }
+            )
+    except (KeyError, TypeError, ValueError) as exc:
+        raise SourceUnavailableError("FDR history 행을 해석할 수 없습니다") from exc
 
     # Parquet 캐시 저장
     _saveCache(stockCode, market, rows)

@@ -48,14 +48,14 @@ class _GatherNewsMixin(GatherMixinContext):
             days: 최근 N일 뉴스 (Google 경로). 기본 30.
 
         Returns:
-            pl.DataFrame — date, title, source, url, description 컬럼.
+            pl.DataFrame — date, title, source, url, description, provider, fetchedAt 컬럼.
             결과 없으면 빈 DataFrame.
 
         Requires:
             없음 (네이버 키 없으면 자동 Google 폴백 — 기존 동작 보존).
 
         Raises:
-            없음 — fetch 실패는 빈 DataFrame.
+            ValueError / SourceUnavailableError — 입력 또는 최종 fallback 공급자 실패.
 
         Example::
 
@@ -81,9 +81,13 @@ class _GatherNewsMixin(GatherMixinContext):
                 items = runAsync(_naver._fetchAsync(query, market=market, client=self._client))
                 if not items:
                     items = runAsync(_news._fetchAsync(query, market=market, days=days, client=self._client))
+                    provider = "google_news"
+                else:
+                    provider = "naver_news"
             else:
                 items = runAsync(_news._fetchAsync(query, market=market, days=days, client=self._client))
-            df = _news.toDataFrame(items)
+                provider = "google_news"
+            df = _news.toDataFrame(items, provider=provider)
             if not df.is_empty():
                 self._cache.putTyped(query, cacheSlot, df)
             return df

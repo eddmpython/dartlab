@@ -37,7 +37,7 @@ def test_news_emits_gather_fetch(monkeypatch: pytest.MonkeyPatch) -> None:
 
     monkeypatch.setattr(naverMod, "_fetchAsync", fakeNaver)
     monkeypatch.setattr(newsMod, "_fetchAsync", fakeFetchAsync)
-    monkeypatch.setattr(newsMod, "toDataFrame", lambda items: pl.DataFrame())
+    monkeypatch.setattr(newsMod, "toDataFrame", lambda items, **kwargs: pl.DataFrame())
 
     g = Gather()
     g.news("삼성전자", market="KR", days=7)
@@ -57,7 +57,7 @@ def test_news_cache_isolated_by_days(monkeypatch: pytest.MonkeyPatch) -> None:
         return [{"days": days}]
 
     monkeypatch.setattr(newsMod, "_fetchAsync", fakeFetchAsync)
-    monkeypatch.setattr(newsMod, "toDataFrame", lambda items: pl.DataFrame(items))
+    monkeypatch.setattr(newsMod, "toDataFrame", lambda items, **kwargs: pl.DataFrame(items))
     gather = Gather()
 
     thirty = gather.news("Apple", market="US", days=30)

@@ -218,7 +218,10 @@ def _noteCellsFromAligned(aligned: pl.DataFrame | None, ntCode: str, code: str) 
                 bn, best = n, r
         if best is None or bn < 2:
             continue
-        root = _parseFragment(best["contentRaw"])
+        root = _parseFragment(
+            best["contentRaw"],
+            provenance=f"code={code} period={period} statement={ntCode} rcept={best.get('rceptNo') or '-'}",
+        )
         if root is None:
             continue
         rcept = best.get("rceptNo") or ""

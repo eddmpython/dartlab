@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
+from typing import cast
 
 import polars as pl
 
@@ -66,15 +67,9 @@ def _resolveSjDiv(snakeId: str) -> str:
 
 def _parseAmount(val: str | None) -> float | None:
     """문자열 금액 → float. 쉼표 제거, 빈값 → None."""
-    if val is None:
-        return None
-    cleaned = str(val).replace(",", "").strip()
-    if not cleaned or cleaned == "-":
-        return None
-    try:
-        return float(cleaned)
-    except ValueError:
-        return None
+    from dartlab.providers.dart.parse.amount import parseAmount
+
+    return parseAmount(val)
 
 
 def _buildFastKeys(snakeId: str) -> set[str]:
@@ -106,14 +101,9 @@ def _buildFastKeys(snakeId: str) -> set[str]:
 
 def _parseAmountCol(col: str) -> pl.Expr:
     """금액 문자열 컬럼 → Float64."""
-    return (
-        pl.col(col)
-        .cast(pl.Utf8)
-        .str.replace_all(",", "")
-        .str.strip_chars()
-        .pipe(lambda s: pl.when(s == "").then(None).when(s == "-").then(None).otherwise(s))
-        .cast(pl.Float64, strict=False)
-    )
+    from dartlab.providers.dart.parse.amount import parseAmountExpr
+
+    return parseAmountExpr(col)
 
 
 def _resolveSnakeId(nameOrId: str) -> str:
@@ -186,7 +176,8 @@ def _scanAccountFromMerged(
             schemaNames = pq.read_schema(str(scanPath)).names
             scCol = "stockCode" if "stockCode" in schemaNames else "stock_code"
             tbl = pq.read_table(str(scanPath), columns=_scanAccountColumns(schemaNames, scCol))
-            df = pl.from_arrow(tbl).filter(
+            pyodideFrame = cast(pl.DataFrame, pl.from_arrow(tbl))
+            df = pyodideFrame.filter(
                 pl.col("sj_div").is_in(filterDivs)
                 & (pl.col("account_nm").is_in(fastKeysList) | pl.col("account_id").is_in(fastKeysList))
             )

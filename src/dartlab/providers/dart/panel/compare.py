@@ -107,8 +107,9 @@ def _detectUnitScalesByStatement(
 ) -> dict[str, dict[str, int]]:
     """statement×period caption 단위 → 원 배율 map. 미발견=백만원."""
     from dartlab.core.dataLoader import readParquetSafe  # WASM 세이프 read (pyodide=pyarrow 경유)
+    from dartlab.providers.dart.panel.build.cell import CELL_STATEMENTS
+    from dartlab.providers.dart.parse.amount import detectUnitScale
 
-    from .build.cell import _UNIT_RE, _UNIT_SCALE, CELL_STATEMENTS  # 단위 배율 SSOT (재정의 금지)
     from .read import _panelDir, ensurePanelFromHf
 
     ensurePanelFromHf(code, marketNs)
@@ -134,9 +135,9 @@ def _detectUnitScalesByStatement(
             )
             scale = 1_000_000
             for r in cap.iter_rows(named=True):
-                m = _UNIT_RE.search(r["contentRaw"] or "")
-                if m:
-                    scale = _UNIT_SCALE[m.group(1)]
+                detectedScale = detectUnitScale(r["contentRaw"])
+                if detectedScale is not None:
+                    scale = detectedScale
                     break
             byPeriod[period] = scale
         out[statement] = byPeriod

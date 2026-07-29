@@ -227,7 +227,7 @@ async def fetchHistory(
             low : float — 저가
             close : float — 종가 (수정주가, 액면분할/배당 반영)
             volume : int — 거래량 (주)
-        API 실패 시 빈 리스트 → fallback 진행.
+        정상 응답에 데이터가 없으면 빈 리스트.
 
     Notes
     -----
@@ -237,8 +237,8 @@ async def fetchHistory(
 
     Raises
     ------
-    없음
-        Yahoo v8 API 내부 예외 (SourceUnavailableError/ValueError/OSError) 는 흡수.
+    SourceUnavailableError
+        네트워크, JSON, 응답 schema 또는 OHLCV 행 파싱에 실패한 경우.
 
     Example
     -------
@@ -281,55 +281,96 @@ async def fetchHistory(
         resp = await client.get(url, params=params)
         data = resp.json()
     except (SourceUnavailableError, ValueError, OSError) as exc:
-        log.debug("yahoo_chart history 실패 (%s): %s", stockCode, exc)
-        return []
+        raise SourceUnavailableError(f"Yahoo history 요청 실패: {stockCode}") from exc
 
-    result = data.get("chart", {}).get("result")
-    if not result:
+    if not isinstance(data, dict):
+        raise SourceUnavailableError("Yahoo history 응답 schema가 객체가 아닙니다")
+    chart = data.get("chart")
+    if not isinstance(chart, dict):
+        raise SourceUnavailableError("Yahoo history 응답에 chart 객체가 없습니다")
+    providerError = chart.get("error")
+    if providerError:
+        raise SourceUnavailableError(f"Yahoo history API 오류: {providerError}")
+    result = chart.get("result")
+    if result is None or result == []:
         return []
+    if not isinstance(result, list) or not isinstance(result[0], dict):
+        raise SourceUnavailableError("Yahoo history result schema가 올바르지 않습니다")
 
     timestamps = result[0].get("timestamp", [])
-    quotes = result[0].get("indicators", {}).get("quote", [{}])[0]
-    adj_close_data = result[0].get("indicators", {}).get("adjclose", [{}])
+    indicators = result[0].get("indicators")
+    if not isinstance(timestamps, list):
+        raise SourceUnavailableError("Yahoo history timestamp가 배열이 아닙니다")
+    if not timestamps:
+        return []
+    if not isinstance(indicators, dict):
+        raise SourceUnavailableError("Yahoo history indicators가 객체가 아닙니다")
+    quoteData = indicators.get("quote")
+    if not isinstance(quoteData, list) or not quoteData or not isinstance(quoteData[0], dict):
+        raise SourceUnavailableError("Yahoo history quote schema가 올바르지 않습니다")
+    quotes = quoteData[0]
+    adj_close_data = indicators.get("adjclose", [])
+    if not isinstance(adj_close_data, list):
+        raise SourceUnavailableError("Yahoo history adjclose가 배열이 아닙니다")
+    if adj_close_data and not isinstance(adj_close_data[0], dict):
+        raise SourceUnavailableError("Yahoo history adjclose 행이 객체가 아닙니다")
     adj_closes = adj_close_data[0].get("adjclose", []) if adj_close_data else []
 
-    opens = quotes.get("open", [])
-    highs = quotes.get("high", [])
-    lows = quotes.get("low", [])
-    closes = quotes.get("close", [])
-    volumes = quotes.get("volume", [])
+    requiredQuoteFields = ("open", "high", "low", "close", "volume")
+    missingQuoteFields = [field for field in requiredQuoteFields if field not in quotes]
+    if missingQuoteFields:
+        missing = ", ".join(missingQuoteFields)
+        raise SourceUnavailableError(f"Yahoo history quote에 필수 series가 없습니다: {missing}")
+    opens = quotes["open"]
+    highs = quotes["high"]
+    lows = quotes["low"]
+    closes = quotes["close"]
+    volumes = quotes["volume"]
+    series = {
+        "open": opens,
+        "high": highs,
+        "low": lows,
+        "close": closes,
+        "volume": volumes,
+        "adjclose": adj_closes,
+    }
+    if any(not isinstance(values, list) for values in series.values()):
+        raise SourceUnavailableError("Yahoo history OHLCV series가 배열이 아닙니다")
 
     rows: list[dict] = []
-    for i, ts in enumerate(timestamps):
-        if ts is None:
-            continue
+    try:
+        for i, ts in enumerate(timestamps):
+            if ts is None:
+                continue
 
-        dt_str = _dt.fromtimestamp(ts, tz=timezone.utc).strftime("%Y-%m-%d")
+            dt_str = _dt.fromtimestamp(ts, tz=timezone.utc).strftime("%Y-%m-%d")
 
-        o = opens[i] if i < len(opens) and opens[i] is not None else None
-        h = highs[i] if i < len(highs) and highs[i] is not None else None
-        lo = lows[i] if i < len(lows) and lows[i] is not None else None
-        # 수정주가 우선, 없으면 종가
-        c = (
-            adj_closes[i]
-            if i < len(adj_closes) and adj_closes[i] is not None
-            else (closes[i] if i < len(closes) else None)
-        )
-        v = volumes[i] if i < len(volumes) and volumes[i] is not None else 0
+            o = opens[i] if i < len(opens) and opens[i] is not None else None
+            h = highs[i] if i < len(highs) and highs[i] is not None else None
+            lo = lows[i] if i < len(lows) and lows[i] is not None else None
+            # 수정주가 우선, 없으면 종가
+            c = (
+                adj_closes[i]
+                if i < len(adj_closes) and adj_closes[i] is not None
+                else (closes[i] if i < len(closes) else None)
+            )
+            v = volumes[i] if i < len(volumes) and volumes[i] is not None else 0
 
-        if o is None or c is None:
-            continue
+            if o is None or c is None:
+                continue
 
-        rows.append(
-            {
-                "date": dt_str,
-                "open": round(float(o), 4),
-                "high": round(float(h), 4) if h else round(float(o), 4),
-                "low": round(float(lo), 4) if lo else round(float(o), 4),
-                "close": round(float(c), 4),
-                "volume": int(v),
-            }
-        )
+            rows.append(
+                {
+                    "date": dt_str,
+                    "open": round(float(o), 4),
+                    "high": round(float(h), 4) if h else round(float(o), 4),
+                    "low": round(float(lo), 4) if lo else round(float(o), 4),
+                    "close": round(float(c), 4),
+                    "volume": int(v),
+                }
+            )
+    except (IndexError, TypeError, ValueError, OSError, OverflowError) as exc:
+        raise SourceUnavailableError("Yahoo history OHLCV 행을 해석할 수 없습니다") from exc
 
     if limit is not None and limit > 0:
         return rows[-limit:]

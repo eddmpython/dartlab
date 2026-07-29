@@ -18,6 +18,7 @@ HF 벌크는 공공데이터포털(data.go.kr) gov 축이 publish (date 샤딩, 
 from __future__ import annotations
 
 import logging
+from collections.abc import Sequence
 from datetime import date as _date
 from datetime import datetime
 from typing import Literal
@@ -103,6 +104,8 @@ def _loadEvents(stockCode: str | None) -> pl.DataFrame | None:
 def loadFiltered(
     *,
     stockCode: str | None = None,
+    stockCodes: Sequence[str] | None = None,
+    columns: Sequence[str] | None = None,
     year: int | None = None,
     start: str | _date | None = None,
     end: str | _date | None = None,
@@ -138,6 +141,9 @@ def loadFiltered(
 
     Args:
         stockCode: 단일 종목 필터 (None 이면 전종목).
+        stockCodes: 다종목 필터. ``stockCode`` 와 동시에 지정할 수 없다.
+        columns: 반환할 원본/파생 컬럼. 다종목 결과 해석에 필요한
+            ``ISU_CD``와 ``BAS_DD``는 자동 보존한다.
         year: 단일 연도 (start/end 와 동시 사용 불가).
         start: 기간 시작 (YYYY-MM-DD). year 없을 때 사용.
         end: 기간 종료. year 없을 때 사용.
@@ -157,7 +163,9 @@ def loadFiltered(
         df = loadFiltered(stockCode="005930", year=2024, adjustment="tr")  # Total Return
 
     Raises:
-        ValueError: year 와 start/end 동시 지정.
+        ValueError: year 와 start/end 동시 지정, 단일/다종목 필터 충돌,
+            비어 있는 ``stockCodes``.
+        KeyError: 요청한 ``columns``가 결과 스키마에 없을 때.
 
     When:
         엔진 내부 (quant/scan/analysis/gather.krxApi.gatherKrx) 가 KR 시계열 필요 시
@@ -169,6 +177,15 @@ def loadFiltered(
     """
     if year is not None and (start is not None or end is not None):
         raise ValueError("year 와 start/end 는 동시 사용 불가")
+    if stockCode is not None and stockCodes is not None:
+        raise ValueError("stockCode 와 stockCodes 는 동시에 지정할 수 없습니다")
+
+    codeFilter: tuple[str, ...] | None = None
+    if stockCodes is not None:
+        codeFilter = tuple(dict.fromkeys(code.strip() for code in stockCodes if code.strip()))
+        if not codeFilter:
+            raise ValueError("stockCodes 는 비어 있을 수 없습니다")
+    selectedColumns = tuple(dict.fromkeys(columns)) if columns is not None else None
 
     years = _resolveYears(year, start, end)
     frames: list[pl.DataFrame] = []
@@ -179,6 +196,8 @@ def loadFiltered(
         # loadData 는 eager 반환 — 필터는 lazy 보다 단순 (yearly 파일 ~50MB 한도라 메모리 부담 X)
         if stockCode is not None:
             df = df.filter(pl.col(_COL_CODE) == stockCode)
+        elif codeFilter is not None:
+            df = df.filter(pl.col(_COL_CODE).is_in(codeFilter))
         if start is not None:
             sd = parseDateKey(start).strftime("%Y%m%d")
             df = df.filter(pl.col(_COL_DATE) >= sd)
@@ -214,7 +233,13 @@ def loadFiltered(
         # applyAsOf 의 fallbackCol 인자 사용 + str cast 매개.
         cutoff_yyyymmdd = parseDateKey(asof).strftime("%Y%m%d")
         if _COL_BUSINESS_TIME in result.columns and _COL_KNOWLEDGE_TIME in result.columns:
-            result = applyAsOf(result, asof)
+            result = applyAsOf(result, parseDateKey(asof).isoformat())
         elif _COL_DATE in result.columns:
             result = result.filter(pl.col(_COL_DATE) <= cutoff_yyyymmdd)
+    if selectedColumns is not None:
+        outputColumns = tuple(dict.fromkeys((_COL_CODE, _COL_DATE, *selectedColumns)))
+        missing = [column for column in outputColumns if column not in result.columns]
+        if missing:
+            raise KeyError(f"HF 가격 패널에 없는 컬럼: {', '.join(missing)}")
+        result = result.select(outputColumns)
     return result

@@ -4,16 +4,70 @@ from __future__ import annotations
 
 import logging
 import time
+from typing import Any
 
 from ..infra.http import runAsync
 from ..infra.telemetry import emitGatherFetch
 from ..sources import insider as _insider
 from ..sources import ownership as _ownership
 from ..sources import sector as _sector
-from ..types import InsiderTrade, InstitutionOwnership, MajorHolder, SectorInfo, SourceUnavailableError
+from ..types import (
+    CircuitOpenError,
+    InsiderTrade,
+    InstitutionOwnership,
+    MajorHolder,
+    SectorInfo,
+    SourceAttemptsExhaustedError,
+    SourceUnavailableError,
+)
 from .context import GatherMixinContext
 
 log = logging.getLogger(__name__)
+
+
+def _fetchCorporateActions(
+    stockCode: str,
+    *,
+    market: str,
+    client: Any,
+    operation: str,
+    methodName: str,
+) -> list[dict]:
+    """배당/분할 fallback의 정상 빈 응답과 source 전멸을 구분한다."""
+    from ..domains import DIVIDENDS_FALLBACK, loadDomain
+    from ..infra.resilience import circuitBreaker
+
+    attempts: list[tuple[str, Exception]] = []
+    hadSuccessfulResponse = False
+    for source in DIVIDENDS_FALLBACK:
+        if circuitBreaker.isOpen(source):
+            attempts.append((source, CircuitOpenError(f"{source} circuit이 open 상태입니다")))
+            continue
+        try:
+            module = loadDomain(source)
+            fetcher = getattr(module, methodName, None)
+            if not callable(fetcher):
+                raise AttributeError(f"{source} source에 {methodName} callable이 없습니다")
+            result = runAsync(fetcher(stockCode, client, market=market))
+            if result is None:
+                result = []
+            if not isinstance(result, list) or any(not isinstance(row, dict) for row in result):
+                raise TypeError(f"{source} {methodName}은 list[dict]를 반환해야 합니다")
+            circuitBreaker.recordSuccess(source)
+            hadSuccessfulResponse = True
+            if result:
+                return result
+        except Exception as exc:
+            circuitBreaker.recordFailure(source)
+            attempts.append((source, exc))
+            log.warning("%s %s 실패 (%s): %s", operation, source, stockCode, exc)
+
+    if hadSuccessfulResponse:
+        return []
+    if not attempts:
+        attempts.append(("<fallback-chain>", SourceUnavailableError(f"설정된 {operation} source가 없습니다")))
+    error = SourceAttemptsExhaustedError(operation, attempts)
+    raise error from attempts[-1][1]
 
 
 class _GatherInfoMixin(GatherMixinContext):
@@ -51,7 +105,7 @@ class _GatherInfoMixin(GatherMixinContext):
             없음 (공개 API).
 
         Raises:
-            없음 — fallback 체인 내부 예외는 흡수.
+            SourceAttemptsExhaustedError — 모든 fallback source가 실패한 경우.
 
         Example::
 
@@ -70,26 +124,16 @@ class _GatherInfoMixin(GatherMixinContext):
             if cached is not None:
                 cacheHit = True
                 return cached  # type: ignore[return-value]
-            from ..domains import DIVIDENDS_FALLBACK, loadDomain
-            from ..infra.resilience import circuitBreaker as _cb
-
-            for source in DIVIDENDS_FALLBACK:
-                if _cb.isOpen(source):
-                    continue
-                try:
-                    module = loadDomain(source)
-                    if not hasattr(module, "fetchDividends"):
-                        continue
-                    result = runAsync(module.fetchDividends(stockCode, self._client, market=market))
-                    if result:
-                        _cb.recordSuccess(source)
-                        self._cache.putTyped(cache_key, "dividends", result)
-                        return result
-                except (SourceUnavailableError, ImportError, OSError, AttributeError) as exc:
-                    _cb.recordFailure(source)
-                    log.warning("dividends %s 실패 (%s): %s", source, stockCode, exc)
-                    continue
-            return []
+            result = _fetchCorporateActions(
+                stockCode,
+                market=market,
+                client=self._client,
+                operation="dividends",
+                methodName="fetchDividends",
+            )
+            if result:
+                self._cache.putTyped(cache_key, "dividends", result)
+            return result
         finally:
             emitGatherFetch("dividends", (time.monotonic() - t0) * 1000, cacheHit=cacheHit, market=market)
 
@@ -125,7 +169,7 @@ class _GatherInfoMixin(GatherMixinContext):
             없음 (공개 API).
 
         Raises:
-            없음 — fallback 체인 내부 예외는 흡수.
+            SourceAttemptsExhaustedError — 모든 fallback source가 실패한 경우.
 
         Example::
 
@@ -145,35 +189,24 @@ class _GatherInfoMixin(GatherMixinContext):
             if cached is not None:
                 cacheHit = True
                 return cached  # type: ignore[return-value]
-            from ..domains import DIVIDENDS_FALLBACK, loadDomain
-            from ..infra.resilience import circuitBreaker as _cb
-
-            for source in DIVIDENDS_FALLBACK:
-                if _cb.isOpen(source):
-                    continue
-                try:
-                    module = loadDomain(source)
-                    if not hasattr(module, "fetchSplits"):
-                        continue
-                    result = runAsync(module.fetchSplits(stockCode, self._client, market=market))
-                    if result:
-                        _cb.recordSuccess(source)
-                        self._cache.putTyped(cache_key, "splits", result)
-                        return result
-                except (SourceUnavailableError, ImportError, OSError, AttributeError) as exc:
-                    _cb.recordFailure(source)
-                    log.warning("splits %s 실패 (%s): %s", source, stockCode, exc)
-                    continue
-            return []
+            result = _fetchCorporateActions(
+                stockCode,
+                market=market,
+                client=self._client,
+                operation="splits",
+                methodName="fetchSplits",
+            )
+            if result:
+                self._cache.putTyped(cache_key, "splits", result)
+            return result
         finally:
             emitGatherFetch("splits", (time.monotonic() - t0) * 1000, cacheHit=cacheHit, market=market)
 
     def sector(self, stockCode: str, *, market: str = "KR") -> SectorInfo | None:
-        """업종 분류 조회 -- KR(KIND+Naver) / US(Yahoo assetProfile).
+        """업종 분류 조회 -- KR KIND+Naver.
 
         Capabilities:
             - KR: KIND 등록부 + Naver 업종 자동 매핑
-            - US: Yahoo assetProfile sectorCode
             - 단일 SectorInfo 객체 (industry/sector 1:1)
             - TTL 캐시 (DARTLAB_TTL_SECTOR override)
 
@@ -191,22 +224,21 @@ class _GatherInfoMixin(GatherMixinContext):
 
         Args:
             stock_code: 종목코드 ("005930") 또는 티커 ("AAPL").
-            market: "KR" 또는 "US". 기본 "KR".
+            market: 현재 "KR"만 지원.
 
         Returns:
             SectorInfo | None -- 업종코드, 업종명, 시장구분.
 
         Requires:
-            네트워크 (KIND/Naver/Yahoo). KIND 캐시 우선.
+            네트워크 (KIND/Naver). KIND 캐시 우선.
 
         Raises:
-            없음 — provider 내부 예외는 None 반환으로 흡수.
+            ValueError / SourceUnavailableError — 시장 또는 공급자 오류.
 
         Example::
 
             g = getDefaultGather()
             g.sector("005930")              # 삼성전자 업종
-            g.sector("AAPL", market="US")   # Apple 업종
 
         See Also:
             ``industryPeers`` — 같은 업종 종목 리스트.
@@ -232,7 +264,6 @@ class _GatherInfoMixin(GatherMixinContext):
 
         Capabilities:
             - KR: DART 임원거래 공시 (DART_API_KEY 필요)
-            - US: SEC Form 4 (EDGAR)
             - InsiderTrade dataclass 리스트
             - TTL 캐시 (DARTLAB_TTL_INSIDER)
 
@@ -240,7 +271,7 @@ class _GatherInfoMixin(GatherMixinContext):
             - 내부자 매수/매도 신호 — informed trading 분석
 
         Guide:
-            KR 의 경우 DART_API_KEY 필수. 미설정 시 빈 리스트.
+            KR 전용. DART_API_KEY 미설정과 조회 실패는 예외로 전달된다.
 
         When:
             informed trading / 경영진 신뢰도 / 매수 시그널 분석 시.
@@ -250,22 +281,21 @@ class _GatherInfoMixin(GatherMixinContext):
 
         Args:
             stock_code: 종목코드 ("005930") 또는 티커 ("AAPL").
-            market: "KR" 또는 "US". 기본 "KR".
+            market: 현재 "KR"만 지원.
 
         Returns:
             list[InsiderTrade] -- 내부자 거래 내역. 없으면 빈 리스트.
 
         Requires:
-            KR: DART_API_KEY env. US: 없음.
+            KR: DART_API_KEY env.
 
         Raises:
-            없음 — provider 내부 예외는 빈 리스트로 흡수.
+            ValueError / RuntimeError / OSError / DartApiError — 조회 실패 그대로.
 
         Example::
 
             g = getDefaultGather()
             g.insiderTrading("005930")              # 삼성전자 임원 거래
-            g.insiderTrading("AAPL", market="US")   # Apple 내부자 거래
 
         See Also:
             ``majorShareholders`` — 5% 이상 대량보유 (KR 전용).
@@ -319,7 +349,7 @@ class _GatherInfoMixin(GatherMixinContext):
             DART_API_KEY env.
 
         Raises:
-            없음 — provider 내부 예외는 빈 리스트로 흡수.
+            ValueError / RuntimeError / OSError / DartApiError — 조회 실패 그대로.
 
         Example::
 
@@ -349,7 +379,6 @@ class _GatherInfoMixin(GatherMixinContext):
 
         Capabilities:
             - KR: Naver 외국인 비율 + 기관 보유
-            - US: Yahoo institutionOwners
             - InstitutionOwnership 리스트
             - TTL 캐시 (DARTLAB_TTL_OWNERSHIP)
 
@@ -367,22 +396,21 @@ class _GatherInfoMixin(GatherMixinContext):
 
         Args:
             stock_code: 종목코드 ("005930") 또는 티커 ("AAPL").
-            market: "KR" 또는 "US". 기본 "KR".
+            market: 현재 "KR"만 지원.
 
         Returns:
             list[InstitutionOwnership] -- 지분 보유 목록.
 
         Requires:
-            네트워크 (Naver/Yahoo).
+            네트워크 (Naver).
 
         Raises:
-            없음 — provider 내부 예외는 빈 리스트로 흡수.
+            ValueError / SourceUnavailableError — 시장 또는 공급자 오류.
 
         Example::
 
             g = getDefaultGather()
             g.ownership("005930")              # 삼성전자 외국인 보유
-            g.ownership("AAPL", market="US")   # Apple 기관 보유
 
         See Also:
             ``flow`` — 일별 매매 동향.
@@ -437,7 +465,7 @@ class _GatherInfoMixin(GatherMixinContext):
             sector() 가 먼저 정상 결과. KRX 카테고리 데이터.
 
         Raises:
-            없음 — sector 부재 또는 KR 외 시장은 빈 리스트.
+            ValueError / SourceUnavailableError — KR 외 시장 또는 업종 source 실패.
 
         Example::
 
@@ -450,12 +478,14 @@ class _GatherInfoMixin(GatherMixinContext):
         t0 = time.monotonic()
         try:
             sectorInfo = self.sector(stockCode, market=market)
-            if not sectorInfo or not sectorInfo.industryCode:
+            if not sectorInfo:
                 return []
+            if not sectorInfo.industryCode:
+                raise SourceUnavailableError(f"피어 조회에 필요한 industryCode가 없습니다: {stockCode}")
             if market == "KR":
                 from ..domains.krx import fetchIndustryPeers
 
                 return runAsync(fetchIndustryPeers(sectorInfo.industryCode, self._client))
-            return []
+            raise ValueError(f"industryPeers는 KR 시장만 지원합니다: {market!r}")
         finally:
             emitGatherFetch("peers", (time.monotonic() - t0) * 1000, cacheHit=False, market=market)

@@ -1,5 +1,8 @@
 """providers/edgar/company.py mirror smoke — P6."""
 
+from datetime import date
+
+import polars as pl
 import pytest
 
 pytestmark = pytest.mark.unit
@@ -262,3 +265,92 @@ def test_update_callable() -> None:
     from dartlab.providers.edgar.company import Company
 
     assert hasattr(Company, "update")
+
+
+def test_fiscal_year_end_uses_configured_edgar_directory(tmp_path, monkeypatch) -> None:
+    from dartlab.core import dataLoader
+    from dartlab.providers.edgar.company import Company
+
+    cik = "0000000001"
+    pl.DataFrame(
+        {
+            "fp": ["FY", "FY", "FY"],
+            "fy": [2022, 2023, 2024],
+            "end": [date(2022, 9, 24), date(2023, 9, 30), date(2024, 9, 28)],
+        }
+    ).write_parquet(tmp_path / f"{cik}.parquet")
+    monkeypatch.setattr(dataLoader, "_dataDir", lambda category: tmp_path)
+
+    company = Company.__new__(Company)
+    company.cik = cik
+    company._cache = {}
+
+    assert company.fiscalYearEnd == "09-28"
+
+
+def test_refresh_from_api_preserves_collection_failure(monkeypatch) -> None:
+    from dartlab.core import edgarClient
+    from dartlab.providers.edgar.company import Company
+
+    def _failSave(cik, *, client):
+        raise OSError("disk full")
+
+    monkeypatch.setattr(edgarClient, "saveFinance", _failSave)
+    company = Company.__new__(Company)
+    company.cik = "0000000001"
+    company._cache = {}
+
+    with pytest.raises(RuntimeError, match=r"cik=0000000001, error=OSError") as excInfo:
+        company.refreshFromApi()
+
+    assert isinstance(excInfo.value.__cause__, OSError)
+
+
+def test_public_company_panel_builds_ifrs_full_finance(tmp_path, monkeypatch) -> None:
+    from dartlab.core import dataLoader
+    from dartlab.providers.edgar import panel as panelModule
+    from dartlab.providers.edgar.company import Company
+
+    cik = "0000000001"
+    pl.DataFrame(
+        {
+            "cik": [cik],
+            "entityName": ["Foreign Issuer"],
+            "namespace": ["ifrs-full"],
+            "tag": ["ProfitLoss"],
+            "label": ["Profit loss"],
+            "unit": ["USD"],
+            "val": [25.0],
+            "fy": [2024],
+            "fp": ["Q1"],
+            "form": ["6-K"],
+            "filed": [date(2024, 5, 1)],
+            "frame": [None],
+            "start": [date(2024, 1, 1)],
+            "end": [date(2024, 3, 31)],
+            "accn": ["0000000001-24-000001"],
+        }
+    ).write_parquet(tmp_path / f"{cik}.parquet")
+    monkeypatch.setattr(dataLoader, "_dataDir", lambda category: tmp_path)
+    monkeypatch.setattr(
+        Company,
+        "_resolveTickerRow",
+        lambda self, ticker: {"ticker": ticker, "cik": cik, "title": "Foreign Issuer"},
+    )
+
+    class _PublicPanel:
+        def __init__(self, ticker):
+            self.ticker = ticker
+
+        def __call__(self, topic, *args, **kwargs):
+            return self._showFn(topic, *args, **kwargs)
+
+    monkeypatch.setattr(panelModule, "Panel", _PublicPanel)
+
+    company = Company("TEST")
+    result = company.panel("IS")
+
+    assert result is not None
+    row = result.filter(pl.col("snakeId") == "net_income")
+    assert row.height == 1
+    assert row["2024Q1"][0] == pytest.approx(25.0)

@@ -20,8 +20,8 @@ import re
 from dartlab.core.extractionCatalog import getConcept
 from dartlab.core.utils.helpers import parseNumStr
 from dartlab.providers.dart.panel.build.grid import normLabel, tableToGrid
+from dartlab.providers.dart.parse.amount import detectUnitLabel, unitScaleToWon
 
-_UNIT_SCALE = {"백만원": 1e6, "억원": 1e8, "천원": 1e3, "십억원": 1e9, "조원": 1e12, "원": 1.0}
 _AMOUNT_HINTS = ("금액", "가액")
 _QTY_HINTS = ("수량", "대수", "개수")
 _TOTAL_HINTS = ("합계", "합 계", "총계", "총 계", "소계")
@@ -77,16 +77,10 @@ def _detectUnit(xml: str) -> tuple[float, bool]:
     여러 토큰이 섞인 캡션도 앞머리로 맞추고, 모르는 단위에는 빈 문자열을 준다.
     """
 
-    from dartlab.providers.dart.parse.dartXmlNormalize import detectUnit as _detectUnitToken
-
-    m = re.search(r"\(단위\s*[:：]\s*([^\)/]{1,16})", xml)
-    if not m:
-        return 1e6, False
-    token = _detectUnitToken(m.group(0))
-    scale = _UNIT_SCALE.get(token or normLabel(m.group(1)))
+    scale = unitScaleToWon(detectUnitLabel(xml))
     if scale is None:
         return 1e6, False
-    return scale, True
+    return float(scale), True
 
 
 def _pickCol(colLabels: list[str], synonyms: list[str], *, amountPref: bool) -> int | None:
@@ -292,11 +286,9 @@ def _resolveMetricOnPanel(p, metricId: str) -> dict | None:
     # 한 leaf 에 백만원 표와 원 표가 섞이면 오선택(백만배 오류) 나므로 충돌 시 저신뢰로 강등.
     scales: set[float] = set()
     for u in re.findall(r"\(단위\s*[:：]\s*([^\)/]{1,12})", allText):
-        un = normLabel(u)
-        for unit in ("십억원", "억원", "백만원", "천원", "원"):  # 긴 단위 우선(원 이 백만원 부분매칭 방지)
-            if unit in un:
-                scales.add(_UNIT_SCALE[unit])
-                break
+        scale = unitScaleToWon(detectUnitLabel(f"(단위:{u})"))
+        if scale is not None:
+            scales.add(float(scale))
     leafScale = next(iter(scales)) if len(scales) == 1 else None
     syns = mdef.get("synonyms", mdef.get("direct", []))
     for i in range(leaf.height):

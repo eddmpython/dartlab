@@ -2,12 +2,8 @@
 
 from __future__ import annotations
 
-import logging
-
 from ..infra.http import GatherHttpClient
-from ..types import SectorInfo, SourceUnavailableError
-
-log = logging.getLogger(__name__)
+from ..types import SectorInfo
 
 
 async def fetch(
@@ -28,7 +24,7 @@ async def fetch(
         - mixin.sector 의 backend — industry 분석의 진짜 진입점
 
     Guide:
-        US 등 다른 시장은 None. KR 만 작동.
+        KR 외 시장은 ValueError. KR만 작동.
 
     When:
         gather.sector() 호출 시.
@@ -44,7 +40,7 @@ async def fetch(
     stockCode : str
         종목코드 (예: "005930").
     market : str
-        시장 코드. "KR"만 지원, 그 외 None 반환.
+        시장 코드. "KR"만 지원.
     client : GatherHttpClient
         HTTP 클라이언트.
     limit : int | None
@@ -62,12 +58,14 @@ async def fetch(
         - market : str — 시장 구분 (KOSPI/KOSDAQ)
         - source : str — 데이터 출처
 
-        KR 외 시장이거나 조회 실패 시 None.
+        정상 응답에 분류 정보가 없으면 None.
 
     Raises
     ------
-    없음
-        provider 내부 예외 (SourceUnavailableError/ImportError/OSError) 는 흡수.
+    ValueError
+        KR 외 시장.
+    SourceUnavailableError
+        KIND/Naver 공급자 장애.
 
     Example
     -------
@@ -78,15 +76,11 @@ async def fetch(
     """
     del limit
     if market != "KR":
-        return None
+        raise ValueError(f"sector는 KR 시장만 지원합니다: {market!r}")
     # domains 는 gather 바로 아래다 (`..domains`). 이 줄만 점이 하나라 없는 경로
     # `gather.sources.domains` 를 가리켰고, ModuleNotFoundError 가 아래 ImportError 로
     # 잡혀 warning 한 줄만 남기고 None 이 됐다. 업종 축이 어느 회사에서도 비었고,
     # 업종코드로 피어를 찾는 축까지 같이 죽었다.
     from ..domains.krx import fetchSectorInfo
 
-    try:
-        return await fetchSectorInfo(stockCode, client)
-    except (SourceUnavailableError, OSError) as exc:
-        log.warning("sector KR 실패 (%s): %s", stockCode, exc)
-        return None
+    return await fetchSectorInfo(stockCode, client)

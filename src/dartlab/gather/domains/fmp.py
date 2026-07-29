@@ -10,7 +10,7 @@ import os
 from datetime import datetime, timezone
 
 from ..marketConfig import resolveTicker
-from ..types import GatherError, PriceSnapshot
+from ..types import GatherError, PriceSnapshot, SourceUnavailableError
 
 log = logging.getLogger(__name__)
 
@@ -180,12 +180,12 @@ async def fetchHistory(
         - close : float — 종가
         - volume : int — 거래량 (주)
 
-        API 키 미설정이거나 조회 실패 시 빈 리스트.
+        정상 응답에 이력이 없으면 빈 리스트.
 
     Raises
     ------
-    없음
-        GatherError 등 내부 예외는 빈 리스트로 흡수.
+    SourceUnavailableError
+        API 키, 네트워크, JSON, 응답 schema 또는 OHLCV 행 파싱에 실패한 경우.
 
     Example
     -------
@@ -203,7 +203,7 @@ async def fetchHistory(
     """
     key = _getApiKey()
     if not key:
-        return []
+        raise SourceUnavailableError("FMP_API_KEY가 설정되지 않았습니다")
 
     ticker = resolveTicker(stockCode, market, "fmp")
 
@@ -212,30 +212,49 @@ async def fetchHistory(
             f"{_BASE}/historical-price-full/{ticker}",
             params={"apikey": key, "from": start, "to": end},
         )
-    except GatherError:
-        return []
+    except GatherError as exc:
+        raise SourceUnavailableError(f"FMP history 요청 실패: {stockCode}") from exc
 
     try:
         data = resp.json()
-    except ValueError:
-        return []
+    except ValueError as exc:
+        raise SourceUnavailableError("FMP history JSON을 해석할 수 없습니다") from exc
 
-    historical = data.get("historical", [])
+    if not isinstance(data, dict):
+        raise SourceUnavailableError("FMP history 응답 schema가 객체가 아닙니다")
+    providerError = data.get("Error Message") or data.get("Error") or data.get("error")
+    if providerError:
+        raise SourceUnavailableError(f"FMP history API 오류: {providerError}")
+    if "historical" not in data:
+        raise SourceUnavailableError("FMP history 응답에 historical이 없습니다")
+    historical = data["historical"]
+    if not isinstance(historical, list):
+        raise SourceUnavailableError("FMP history historical이 배열이 아닙니다")
     if not historical:
         return []
 
-    rows = []
-    for h in reversed(historical):  # FMP는 최신→과거 순 → 역순
-        rows.append(
-            {
-                "date": h.get("date", ""),
-                "open": h.get("open", 0.0),
-                "high": h.get("high", 0.0),
-                "low": h.get("low", 0.0),
-                "close": h.get("close", 0.0),
-                "volume": h.get("volume", 0),
-            }
-        )
+    rows: list[dict] = []
+    try:
+        for h in reversed(historical):
+            if not isinstance(h, dict):
+                raise TypeError("FMP historical 행이 객체가 아닙니다")
+            requiredFields = ("date", "open", "high", "low", "close", "volume")
+            if any(field not in h or h[field] is None for field in requiredFields):
+                raise ValueError("FMP historical 행에 OHLCV가 누락되었습니다")
+            dateToken = str(h["date"])
+            datetime.strptime(dateToken, "%Y-%m-%d")
+            rows.append(
+                {
+                    "date": dateToken,
+                    "open": float(h["open"]),
+                    "high": float(h["high"]),
+                    "low": float(h["low"]),
+                    "close": float(h["close"]),
+                    "volume": int(h["volume"]),
+                }
+            )
+    except (TypeError, ValueError) as exc:
+        raise SourceUnavailableError("FMP history 행을 해석할 수 없습니다") from exc
 
     if limit is not None and limit > 0:
         return rows[-limit:]

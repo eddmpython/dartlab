@@ -123,6 +123,25 @@ def test_parse_old_statement_table() -> None:
     assert "제 47 기" not in {r["label"] for r in rows}
 
 
+def test_malformed_content_logs_source_provenance(caplog) -> None:
+    """recover 파싱도 조용히 삼키지 않고 종목·기간·statement·접수번호를 남긴다."""
+    from dartlab.providers.dart.panel.build.cell import cellsFromContent
+
+    list(
+        cellsFromContent(
+            "<TABLE><TR><TD>",
+            statement="IS2",
+            scope="consolidated",
+            period="2025Q1",
+            code="005930",
+            rcept="R-BAD",
+        )
+    )
+
+    assert "panel cell XML recovered" in caplog.text
+    assert "code=005930 period=2025Q1 statement=IS2 rcept=R-BAD" in caplog.text
+
+
 # 주석 옛표 — 총계행이 rowspan 으로 `합계|라벨|값` 3+셀 병합(naive 5표파서면 라벨=합계·값 한칸밀림 phantom)
 _NOTE_MERGED_CONTENT = """<TABLE><TR>
   <TD><P>원재료 등의 사용액</P></TD>

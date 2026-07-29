@@ -110,9 +110,10 @@ class _FinanceAccessor:
             from dartlab.core.dataLoader import loadData
 
             df = loadData(self._company.ticker, category="edgarFinanceStmt")
-        except Exception as exc:  # noqa: BLE001
-            _log.warning("발행 재무 artifact 로드 실패로 None 반환: %s: %s", type(exc).__name__, exc)
-            return None
+        except (ImportError, KeyError, OSError, RuntimeError, ValueError, pl.exceptions.PolarsError) as exc:
+            raise RuntimeError(
+                f"EDGAR 발행 재무 artifact 로드 실패: ticker={self._company.ticker}, error={type(exc).__name__}: {exc}"
+            ) from exc
         if df is None or df.is_empty() or "sj_div" not in df.columns:
             return None
 
@@ -495,7 +496,7 @@ class _FinanceAccessor:
         return explore(self._company.cik, query)
 
     def listTags(self, *, limit: int | None = None) -> pl.DataFrame | None:
-        """보고된 모든 us-gaap 태그 목록.
+        """보고된 주 재무 taxonomy 태그 목록.
 
         Args:
             limit: 최대 행 수. None 이면 무제한.

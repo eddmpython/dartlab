@@ -82,6 +82,8 @@ def test_collectEtf_parsesAndRenames():
         "amount",
         "marketCap",
         "tabCode",
+        "source",
+        "fetchedAt",
     ]
     assert df.height == 2
     assert df["name"].to_list() == ["KODEX 200", "KODEX 코스닥150"]
@@ -109,6 +111,8 @@ def test_collectEtn_parses():
         "prevClose",
         "high",
         "low",
+        "source",
+        "fetchedAt",
     ]
     assert df["code"].to_list() == ["530036"]
     assert "원유" in df["name"][0]
@@ -124,3 +128,15 @@ def test_collectProducts_emptyResult():
     df = runAsync(products.collectEtf(_Empty()))
     assert df.is_empty()
     assert "code" in df.columns
+    assert {"source", "fetchedAt"} <= set(df.columns)
+
+
+def test_collectProducts_missing_list_key_is_schema_failure():
+    """응답 key 소실을 빈 상품 목록으로 위장하지 않는다."""
+
+    class _Malformed(_FakeClient):
+        async def get(self, url, *, headers=None, **kwargs):
+            return _FakeResp(json.dumps({"result": {}}, ensure_ascii=False).encode("euc-kr"))
+
+    with pytest.raises(KeyError, match="etfItemList"):
+        runAsync(products.collectEtf(_Malformed()))

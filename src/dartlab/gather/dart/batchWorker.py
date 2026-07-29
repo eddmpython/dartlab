@@ -12,6 +12,8 @@ from typing import TYPE_CHECKING
 import httpx
 import polars as pl
 
+from dartlab.core.dartClient import DartApiError
+
 # batch ↔ batchWorker 양방향 import 회피 — AsyncDartClient 는 type annotation 만 사용
 # (`from __future__ import annotations` 효과로 string lazy). runtime 사용 0.
 if TYPE_CHECKING:
@@ -120,6 +122,7 @@ async def _workerLoop(
             except asyncio.CancelledError:
                 return
             except (
+                DartApiError,
                 httpx.HTTPError,
                 OSError,
                 ValueError,
@@ -138,6 +141,10 @@ async def _workerLoop(
                 )
                 if failures is not None:
                     failures.setdefault(stockCode, {})[cat] = errMsg
+                if client.exhausted:
+                    await queue.put(stockCode)
+                    queue.task_done()
+                    return
 
         if not client.exhausted:
             results[stockCode] = result

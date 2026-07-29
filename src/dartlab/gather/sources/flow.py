@@ -3,9 +3,13 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Awaitable, Callable
+from datetime import datetime, timezone
+from typing import cast
 
 from ..domains import FLOW_FALLBACK, loadDomain
-from ..types import GatherError
+from ..infra.resilience import circuitBreaker
+from ..types import CircuitOpenError, SourceAttemptsExhaustedError, SourceUnavailableError
 
 log = logging.getLogger(__name__)
 
@@ -24,7 +28,7 @@ async def fetch(
     maxPages: int | None = None,
     full: bool = False,
     proxy: str | None = None,
-) -> list[dict] | None:
+) -> list[dict]:
     """수급 시계열 — fallback 체인 (async). KR만 지원.
 
     Capabilities:
@@ -35,7 +39,7 @@ async def fetch(
         - mixin.flow 의 backend — KR 수급 axis 의 source-level 진입점
 
     Guide:
-        market 인자가 "KR" 외이면 None. provider 가 KR 한정.
+        market 인자가 "KR" 외이면 ValueError. provider 가 KR 한정.
 
     When:
         gather.flow() 호출 시 (lazy fallback chain).
@@ -48,7 +52,7 @@ async def fetch(
     stock_code : str
         종목코드 (예: "005930").
     market : str
-        시장 코드. "KR"만 지원, 그 외 None 반환.
+        시장 코드. "KR"만 지원.
     client : httpx.AsyncClient | None
         HTTP 클라이언트. None이면 도메인 내부에서 생성.
     start, end : str | None
@@ -66,23 +70,27 @@ async def fetch(
 
     Returns
     -------
-    list[dict] | None
+    list[dict]
         수급 시계열 리스트. 각 dict 키:
 
         - date : str — 거래일 (YYYY-MM-DD)
         - foreignNet : float — 외국인 순매수 (주)
         - institutionNet : float — 기관 순매수 (주)
         - individualNet : float — 개인 순매수 (주)
+        - source : str. 실제 응답을 제공한 fallback source
+        - fetchedAt : str. facade 수집 완료 시각 (UTC ISO 형식)
 
-        KR 외 시장이거나 전체 fallback 실패 시 None.
+        하나 이상의 source가 정상 응답했지만 데이터가 없으면 빈 리스트.
 
     Requires:
         네트워크 (KR Naver 직접 호출).
 
     Raises
     ------
-    없음
-        fallback 체인 내부 예외는 GatherError/ImportError/OSError 로 흡수.
+    ValueError
+        market이 "KR"이 아닌 경우.
+    SourceAttemptsExhaustedError
+        모든 fallback source가 실패하거나 circuit open으로 차단된 경우.
 
     Example
     -------
@@ -92,12 +100,23 @@ async def fetch(
         ``dartlab.gather.domains.naver.fetchFlow`` — primary fallback target.
     """
     if market != "KR":
-        return None
+        raise ValueError(f"flow는 KR 시장만 지원합니다: {market!r}")
 
+    attempts: list[tuple[str, Exception]] = []
+    hadSuccessfulResponse = False
     for domainName in FLOW_FALLBACK:
+        if circuitBreaker.isOpen(domainName):
+            attempts.append((domainName, CircuitOpenError(f"{domainName} circuit이 open 상태입니다")))
+            continue
+
         try:
             module = loadDomain(domainName)
-            result = await module.fetchFlow(
+            fetchFlow = getattr(module, "fetchFlow", None)
+            if not callable(fetchFlow):
+                raise AttributeError(f"{domainName} source에 fetchFlow callable이 없습니다")
+
+            fetchFlowAsync = cast(Callable[..., Awaitable[list[dict] | None]], fetchFlow)
+            result = await fetchFlowAsync(
                 stockCode,
                 client,
                 start=start,
@@ -110,11 +129,28 @@ async def fetch(
                 full=full,
                 proxy=proxy,
             )
+            if result is None:
+                result = []
+            if not isinstance(result, list) or any(not isinstance(row, dict) for row in result):
+                raise TypeError(f"{domainName} fetchFlow는 list[dict]를 반환해야 합니다")
+
+            circuitBreaker.recordSuccess(domainName)
+            hadSuccessfulResponse = True
             if result:
+                fetchedAt = datetime.now(timezone.utc).isoformat()
+                rows = [{**row, "source": domainName, "fetchedAt": fetchedAt} for row in result]
                 if limit is not None and limit > 0:
-                    return result[:limit]
-                return result
-        except (GatherError, ImportError, OSError) as exc:
+                    return rows[:limit]
+                return rows
+        except Exception as exc:
+            circuitBreaker.recordFailure(domainName)
+            attempts.append((domainName, exc))
             log.debug("flow fallback %s 실패: %s", domainName, exc)
-            continue
-    return None
+
+    if hadSuccessfulResponse:
+        return []
+
+    if not attempts:
+        attempts.append(("<fallback-chain>", SourceUnavailableError("설정된 flow source가 없습니다")))
+    error = SourceAttemptsExhaustedError("flow", attempts)
+    raise error from attempts[-1][1]

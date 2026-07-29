@@ -14,6 +14,47 @@ import polars as pl
 
 from dartlab.providers.edgar.finance.mapper import EdgarMapper
 
+_SUPPORTED_FINANCE_NAMESPACES: tuple[str, ...] = ("us-gaap", "ifrs-full")
+
+
+def _selectFinanceNamespace(df: pl.DataFrame) -> pl.DataFrame:
+    """statement fact에 사용할 단일 taxonomy를 선택한다."""
+    if "namespace" not in df.columns:
+        raise ValueError("EDGAR companyfacts에 namespace 컬럼이 없습니다")
+    available = sorted(str(value) for value in df["namespace"].drop_nulls().unique().to_list())
+    for namespace in _SUPPORTED_FINANCE_NAMESPACES:
+        if namespace in available:
+            return df.filter(pl.col("namespace") == namespace)
+    availableLabel = ", ".join(available) if available else "<empty>"
+    supportedLabel = ", ".join(_SUPPORTED_FINANCE_NAMESPACES)
+    raise ValueError(f"지원하는 EDGAR 재무 taxonomy가 없습니다: available={availableLabel}, supported={supportedLabel}")
+
+
+def _financeNamespace(df: pl.DataFrame) -> str:
+    """선택이 끝난 fact frame의 단일 taxonomy를 반환한다."""
+    values = df["namespace"].drop_nulls().unique().to_list()
+    if len(values) != 1:
+        raise ValueError(f"EDGAR 재무 fact는 단일 taxonomy여야 합니다: namespaces={values}")
+    return str(values[0])
+
+
+def _mapFactTag(tag: str, stmt: str, namespace: str) -> str | None:
+    """taxonomy별 XBRL concept를 공통 snakeId SSOT로 정규화한다."""
+    if namespace == "us-gaap":
+        return EdgarMapper.mapToDart(tag, stmt)
+
+    from dartlab.core.accounts.aliases import SNAKEID_ALIASES
+    from dartlab.core.accounts.normalize import AccountNormalizer
+
+    snakeId = AccountNormalizer.get().normalize(f"{namespace}_{tag}", tag)
+    if snakeId is None:
+        snakeId = EdgarMapper.mapToDart(tag, stmt)
+    return SNAKEID_ALIASES.get(snakeId, snakeId) if snakeId is not None else None
+
+
+def _isCommonFactTag(tag: str, namespace: str) -> bool:
+    return namespace == "us-gaap" and EdgarMapper.isCommonTag(tag)
+
 
 def _splitStmtFacts(df: pl.DataFrame) -> dict[str, pl.DataFrame]:
     """XBRL fact 를 sj_div (BS/IS/CF/CI) 로 분류 + USD only 필터.
@@ -22,6 +63,11 @@ def _splitStmtFacts(df: pl.DataFrame) -> dict[str, pl.DataFrame]:
     다른 unit 의 entry 가 있을 경우 (소수) 잘못된 합산 위험. 통화성 stmt (BS/IS/CF/CI)
     는 USD only 로 필터링.
     """
+    if df.height == 0:
+        return {}
+    df = _selectFinanceNamespace(df)
+    namespace = _financeNamespace(df)
+
     # XBRL unit 정규화 (USD only).
     # USD/shares(EPS)·shares·pure 등 은 통화 재무제표에 섞이면 스케일 오염 →
     # 별도 경로로 처리 (pivot 밖). test_l2Coverage 의 basic/diluted_earnings_per_share
@@ -48,6 +94,10 @@ def _splitStmtFacts(df: pl.DataFrame) -> dict[str, pl.DataFrame]:
                 if tag in stmtTags.get(stmt, set()):
                     tagToStmt[tag] = stmt
                     break
+        elif (snakeId := _mapFactTag(tag, "", namespace)) is not None:
+            mappedStmt = EdgarMapper.getAccountStmt(snakeId)
+            if mappedStmt in ("IS", "BS", "CF", "CI"):
+                tagToStmt[tag] = mappedStmt
         # 3순위: 휴리스틱 (None이면 제외)
         else:
             guessed = _guessStmt(tag)
@@ -90,13 +140,16 @@ def _loadFacts(edgarDir: Path, cik: str) -> Optional[pl.DataFrame]:
         if path is None:
             return None
     df = pl.read_parquet(path)
-    return df.filter(pl.col("namespace") == "us-gaap")
+    if df.height == 0:
+        return df
+    return _selectFinanceNamespace(df)
 
 
 def _autoDownloadEdgarFinance(cik: str, dest: Path) -> Optional[Path]:
     """SEC EDGAR companyfacts API에서 재무 데이터를 자동 다운로드."""
     from urllib.error import URLError
 
+    from dartlab.core.edgarClient import EdgarApiError
     from dartlab.core.messaging import emit
 
     emit("edgar:sec_download", cik=cik)
@@ -115,9 +168,15 @@ def _autoDownloadEdgarFinance(cik: str, dest: Path) -> Optional[Path]:
         df.write_parquet(dest)
         emit("edgar:save_done", path=str(dest))
         return dest
+    except EdgarApiError as e:
+        emit("edgar:download_failed", cik=cik, error=str(e))
+        response = getattr(e.__cause__, "response", None)
+        if getattr(response, "status_code", None) == 404:
+            return None
+        raise RuntimeError(f"EDGAR companyfacts 자동 다운로드 실패: cik={cik}, error={type(e).__name__}: {e}") from e
     except (URLError, OSError, RuntimeError) as e:
         emit("edgar:download_failed", cik=cik, error=str(e))
-        return None
+        raise RuntimeError(f"EDGAR companyfacts 자동 다운로드 실패: cik={cik}, error={type(e).__name__}: {e}") from e
 
 
 def _guessStmt(tag: str) -> str | None:

@@ -297,8 +297,67 @@ class TestBuildAnnual:
         assert years == ["2024"]
         assert series["CF"]["operating_cashflow"] == [40.0]
 
+    def test_partial_bs_year_is_not_labeled_annual(self, monkeypatch):
+        from dartlab.providers.edgar.finance import pivot as pivotMod
+
+        monkeypatch.setattr(
+            pivotMod,
+            "_loadFacts",
+            lambda edgarDir, cik: _factsDf(
+                [
+                    {
+                        "tag": "Assets",
+                        "val": 100.0,
+                        "fy": 2025,
+                        "fp": "Q1",
+                        "end": date(2025, 3, 31),
+                    }
+                ]
+            ),
+        )
+
+        result = pivotMod.buildAnnual("0000000000", edgarDir=Path("."))
+        assert result is not None
+
+        series, years = result
+        assert years == ["2025"]
+        assert series["BS"]["assets"] == [None]
+
 
 class TestEdgarPivotEdgeCases:
+    def test_ifrs_full_facts_build_statement_series(self):
+        from dartlab.providers.edgar.finance.pivot import _buildTimeseriesFromFacts
+
+        facts = _factsDf(
+            [
+                {
+                    "namespace": "ifrs-full",
+                    "tag": "Assets",
+                    "val": 500.0,
+                    "fy": 2024,
+                    "fp": "Q1",
+                    "form": "6-K",
+                    "end": date(2024, 3, 31),
+                },
+                {
+                    "namespace": "ifrs-full",
+                    "tag": "ProfitLoss",
+                    "val": 25.0,
+                    "fy": 2024,
+                    "fp": "Q1",
+                    "form": "6-K",
+                    "start": date(2024, 1, 1),
+                    "end": date(2024, 3, 31),
+                },
+            ]
+        )
+
+        series, periods = _buildTimeseriesFromFacts(facts, calendarize=False)
+
+        periodIndex = periods.index("2024-Q1")
+        assert series["BS"]["assets"][periodIndex] == pytest.approx(500.0)
+        assert series["IS"]["net_income"][periodIndex] == pytest.approx(25.0)
+
     def test_deaccumulate_cf_skips_negative_revenue_quarters(self):
         from dartlab.providers.edgar.finance.pivot import _deaccumulateCF
 

@@ -1,5 +1,8 @@
 """providers/edgar/finance/explore.py mirror smoke — P6."""
 
+from pathlib import Path
+
+import polars as pl
 import pytest
 
 pytestmark = pytest.mark.unit
@@ -31,3 +34,19 @@ def test_list_tags_callable() -> None:
     from dartlab.providers.edgar.finance.explore import listTags
 
     assert callable(listTags)
+
+
+def test_list_tags_maps_ifrs_full_taxonomy(tmp_path: Path) -> None:
+    from dartlab.providers.edgar.finance.explore import listTags
+
+    pl.DataFrame(
+        {
+            "namespace": ["ifrs-full", "ifrs-full"],
+            "tag": ["ProfitLoss", "ProfitLoss"],
+        }
+    ).write_parquet(tmp_path / "0000000001.parquet")
+
+    result = listTags("0000000001", edgarDir=tmp_path)
+
+    assert result is not None
+    assert result.to_dicts() == [{"tag": "ProfitLoss", "count": 2, "snakeId": "net_profit", "stmt": "IS"}]

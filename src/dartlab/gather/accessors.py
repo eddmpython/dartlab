@@ -9,6 +9,7 @@ core.protocols 의 4 Protocol 의 default 구현을 한 곳에 모아 둔다. ca
 
 from __future__ import annotations
 
+from dataclasses import asdict
 from typing import TYPE_CHECKING, Any, Iterator
 
 import polars as pl
@@ -74,13 +75,13 @@ class DefaultFinanceAccessor:
             limit: 반환 행수 상한 (가장 위 N). None이면 전체.
 
         Returns:
-            OHLCV DataFrame. fetch 실패 시 None.
+            OHLCV DataFrame.
 
         Requires:
             네트워크 (gather("price") 가 외부 API 호출). API 키 불필요.
 
         Raises:
-            없음 — ValueError/RuntimeError/KeyError 는 내부에서 흡수.
+            ValueError / GatherError — 입력 또는 공급자 실패 그대로.
 
         Example:
             >>> a = DefaultFinanceAccessor()
@@ -93,13 +94,10 @@ class DefaultFinanceAccessor:
         from dartlab.gather.entry import GatherEntry
 
         g = GatherEntry()
-        try:
-            df = g("price", stockCode, market=market, start=start, end=end)
-            if df is not None and limit is not None and limit > 0 and hasattr(df, "head"):
-                return df.head(limit)
-            return df
-        except (ValueError, RuntimeError, KeyError):
-            return None
+        df = g("price", stockCode, market=market, start=start, end=end)
+        if df is not None and limit is not None and limit > 0 and hasattr(df, "head"):
+            return df.head(limit)
+        return df
 
     def fetchMacroSeries(
         self,
@@ -135,13 +133,13 @@ class DefaultFinanceAccessor:
             limit: 반환 행수 상한 (가장 최근 N). None이면 전체.
 
         Returns:
-            ``(date, value)`` DataFrame. fetch 실패 시 None.
+            ``(date, value)`` DataFrame. 정상 무데이터면 None.
 
         Requires:
             네트워크 (FRED / ECOS 호출). FRED_API_KEY / ECOS_API_KEY env 권장.
 
         Raises:
-            없음 — ValueError/RuntimeError/KeyError 는 내부에서 흡수.
+            ValueError / GatherError — source 계약 또는 공급자 실패 그대로.
 
         Example:
             >>> a = DefaultFinanceAccessor()
@@ -153,14 +151,15 @@ class DefaultFinanceAccessor:
         """
         from dartlab.gather.entry import GatherEntry
 
+        sourceMarket = {"fred": "US", "ecos": "KR"}
+        sourceKey = source.strip().lower()
+        if sourceKey not in sourceMarket:
+            raise ValueError(f"source는 'fred' 또는 'ecos'여야 합니다: {source!r}")
         g = GatherEntry()
-        try:
-            df = g("macro", seriesId, source=source, start=start)
-            if df is not None and limit is not None and limit > 0 and hasattr(df, "tail"):
-                return df.tail(limit)
-            return df
-        except (ValueError, RuntimeError, KeyError):
-            return None
+        df = g("macro", seriesId, market=sourceMarket[sourceKey], start=start)
+        if df is not None and limit is not None and limit > 0 and hasattr(df, "tail"):
+            return df.tail(limit)
+        return df
 
     def fetchExogenousAxes(self, stockCode: str, *, limit: int | None = None) -> list[tuple[str, str]]:
         """종목별 매크로 축 매핑 — gather.mapping.exogenousAxes 위임.
@@ -170,29 +169,25 @@ class DefaultFinanceAccessor:
             limit: 반환 항목 상한. None이면 전체.
 
         Returns:
-            ``[(seriesId, source), ...]`` 리스트. 매핑 없거나 실패 시 빈 리스트.
+            ``[(seriesId, source), ...]`` 리스트.
 
         Requires:
             ``dartlab.gather.mapping.exogenousAxes`` 모듈 — 매핑 사전 (parquet).
 
         Raises:
-            없음 — ImportError/ValueError/RuntimeError/KeyError 는 내부에서 흡수.
+            내부 매핑 계약 오류를 그대로 전달.
 
         Example:
             >>> a = DefaultFinanceAccessor()
             >>> axes = a.fetchExogenousAxes("005930", limit=5)
         """
-        try:
-            from dartlab.gather.mapping.exogenousAxes import getExogenousAxes
-        except ImportError:
-            return []
-        try:
-            result = getExogenousAxes(stockCode) or []
-            if limit is not None and limit > 0:
-                return result[:limit]
-            return result
-        except (ValueError, RuntimeError, KeyError):
-            return []
+        from dartlab.gather.mapping.exogenousAxes import getExogenousIndicators
+
+        indicators = getExogenousIndicators(stockCode=stockCode)
+        result = [(indicator.seriesId, indicator.source) for indicator in indicators]
+        if limit is not None and limit > 0:
+            return result[:limit]
+        return result
 
     def fetchAlignedMacro(
         self,
@@ -209,29 +204,34 @@ class DefaultFinanceAccessor:
             limit: 반환 행수 상한 (가장 최근 N). None이면 전체.
 
         Returns:
-            패널 DataFrame. parquet 없거나 실패 시 None.
+            패널 DataFrame. 가용한 외생변수 캐시가 없으면 None.
 
         Requires:
             ``data/<provider>/macro/aligned/*.parquet`` 사전 빌드.
 
         Raises:
-            없음 — ImportError/ValueError/RuntimeError/KeyError 는 내부에서 흡수.
+            parquet/period 계약 오류를 그대로 전달.
 
         Example:
             >>> a = DefaultFinanceAccessor()
             >>> panel = a.fetchAlignedMacro("005930", ["2024Q1", "2024Q2"], limit=10)
         """
-        try:
-            from dartlab.gather.transforms.macro import loadMacroParquet
-        except ImportError:
+        from dartlab.gather.transforms.macro import alignToFinancialPeriods, loadMacroParquet
+
+        frames: list[pl.DataFrame] = []
+        for seriesId, source in self.fetchExogenousAxes(stockCode):
+            series = loadMacroParquet(seriesId, source=source)
+            if series is None or series.is_empty():
+                continue
+            frames.append(alignToFinancialPeriods(series, periods).rename({"value": seriesId}))
+        if not frames:
             return None
-        try:
-            df = loadMacroParquet(stockCode=stockCode, periods=periods)
-            if df is not None and limit is not None and limit > 0 and hasattr(df, "tail"):
-                return df.tail(limit)
-            return df
-        except (ValueError, RuntimeError, KeyError):
-            return None
+        panel = frames[0]
+        for frame in frames[1:]:
+            panel = panel.join(frame, on="period", how="full", coalesce=True)
+        if limit is not None and limit > 0:
+            return panel.tail(limit)
+        return panel
 
     def lookupCompany(self, stockCode: str) -> CompanyProtocol | None:
         """종목코드 → Company.
@@ -320,7 +320,7 @@ class DefaultFinanceAccessor:
         """내부자 거래 내역 DataFrame — gather.insiderTrading 위임 (A 트랙 I1).
 
         Capabilities:
-            - KR: DART 임원거래 공시 / US: SEC Form 4 (EDGAR)
+            - KR: DART 임원거래 공시
             - InsiderTrade dataclass list → pl.DataFrame 변환
             - 빈 결과는 None (caller 가 None 분기)
 
@@ -339,16 +339,16 @@ class DefaultFinanceAccessor:
 
         Args:
             stockCode: 종목코드 ("005930") 또는 티커 ("AAPL").
-            market: "KR" 또는 "US". 기본 "KR".
+            market: 현재 "KR"만 지원.
 
         Returns:
             pl.DataFrame | None — 거래 내역. 없으면 None.
 
         Requires:
-            KR: DART_API_KEY env. US: 없음.
+            DART_API_KEY.
 
         Raises:
-            없음 — provider 내부 예외는 빈 list/None 으로 흡수.
+            ValueError / RuntimeError / provider 오류를 그대로 전달.
 
         Example::
 
@@ -364,7 +364,7 @@ class DefaultFinanceAccessor:
         trades = Gather().insiderTrading(stockCode, market=market)
         if not trades:
             return None
-        rows = [t.__dict__ if hasattr(t, "__dict__") else dict(t) for t in trades]
+        rows = [asdict(trade) for trade in trades]
         df = pl.DataFrame(rows)
         return df.head(limit) if limit is not None else df
 
@@ -400,7 +400,7 @@ class DefaultFinanceAccessor:
         """기관/외국인 지분 보유 DataFrame — gather.ownership 위임 (A 트랙 I1).
 
         Capabilities:
-            - KR: Naver 외국인 비율 + 기관 보유 / US: Yahoo institutionOwners
+            - KR: Naver 외국인 비율 + 기관 보유
             - InstitutionOwnership list → pl.DataFrame
             - 빈 결과는 None
 
@@ -418,7 +418,7 @@ class DefaultFinanceAccessor:
 
         Args:
             stockCode: 종목코드 또는 티커.
-            market: "KR" 또는 "US". 기본 "KR".
+            market: 현재 "KR"만 지원.
 
         Returns:
             pl.DataFrame | None — 지분 보유. 없으면 None.
@@ -427,7 +427,7 @@ class DefaultFinanceAccessor:
             네트워크.
 
         Raises:
-            없음.
+            ValueError / SourceUnavailableError를 그대로 전달.
 
         Example::
 
@@ -443,7 +443,7 @@ class DefaultFinanceAccessor:
         owners = Gather().ownership(stockCode, market=market)
         if not owners:
             return None
-        rows = [o.__dict__ if hasattr(o, "__dict__") else dict(o) for o in owners]
+        rows = [asdict(owner) for owner in owners]
         df = pl.DataFrame(rows)
         return df.head(limit) if limit is not None else df
 
@@ -662,23 +662,22 @@ class DefaultQuantAccessor:
             ``data/<provider>/bulk/*.parquet`` (HF SSOT 미러).
 
         Raises:
-            없음 — ImportError/ValueError/RuntimeError/KeyError 는 내부에서 흡수.
+            ValueError / KeyError — 잘못된 필터 또는 없는 컬럼.
 
         Example:
             >>> a = DefaultQuantAccessor()
             >>> df = a.fetchUniverseBulk(["005930", "000660"], columns=["close"], limit=100)
         """
-        try:
-            from dartlab.gather.bulkData.hfBulk import loadFiltered
-        except ImportError:
+        if not stockCodes:
             return None
-        try:
-            df = loadFiltered(stockCodes=stockCodes, columns=columns)
-            if df is not None and limit is not None and limit > 0 and hasattr(df, "head"):
-                return df.head(limit)
-            return df
-        except (ValueError, RuntimeError, KeyError):
+        from dartlab.gather.bulkData.hfBulk import loadFiltered
+
+        df = loadFiltered(stockCodes=stockCodes, columns=columns)
+        if df.is_empty():
             return None
+        if limit is not None and limit > 0:
+            return df.head(limit)
+        return df
 
     def fetchTechnicalIndicators(
         self,

@@ -93,6 +93,8 @@ def test_fetchGroupList_directAndLimit():
     client = _FakeClient({"theme": _THEME_LIST}, {})
     rows = runAsync(groups.fetchGroupList(client, "theme"))
     assert [r["groupNo"] for r in rows] == [523, 449]
+    assert {r["source"] for r in rows} == {"naver"}
+    assert all(r["fetchedAt"] for r in rows)
     limited = runAsync(groups.fetchGroupList(client, "theme", limit=1))
     assert [r["groupNo"] for r in limited] == [523]
 
@@ -103,6 +105,8 @@ def test_fetchGroupStocks_directReasonAndLimit():
     rows = runAsync(groups.fetchGroupStocks(client, "theme", 523))
     assert [r["stockCode"] for r in rows] == ["270520", "290670"]
     assert rows[0]["reason"] == "리튬 사업 추진."
+    assert rows[0]["source"] == "naver"
+    assert rows[0]["fetchedAt"]
     assert len(runAsync(groups.fetchGroupStocks(client, "theme", 523, limit=1))) == 1
 
 
@@ -129,7 +133,7 @@ def test_collectGroup_list():
     """target 'list' → 그룹 목록만 (groupNo/groupName/url)."""
     client = _FakeClient({"theme": _THEME_LIST}, {})
     df = runAsync(groups.collectGroup(client, "theme", "list"))
-    assert df.columns == ["groupNo", "groupName", "url"]
+    assert df.columns == ["groupNo", "groupName", "url", "source", "fetchedAt"]
     assert df["groupNo"].to_list() == [523, 449]
 
 
@@ -164,5 +168,15 @@ def test_collectGroup_noMatchEmpty():
     client = _FakeClient({"theme": _THEME_LIST}, {})
     df = runAsync(groups.collectGroup(client, "theme", "005930"))
     assert df.is_empty()
-    assert df.columns == ["groupNo", "groupName", "stockCode", "stockName", "reason"]
+    assert df.columns == ["groupNo", "groupName", "stockCode", "stockName", "reason", "source", "fetchedAt"]
     assert df.schema["groupNo"] == pl.Int64
+
+
+def test_empty_group_provider_page_is_schema_failure():
+    """목록/상세 markup 소실을 유효한 0건으로 위장하지 않는다."""
+    client = _FakeClient({"theme": ""}, {523: ""})
+    with pytest.raises(ValueError, match="목록 응답"):
+        runAsync(groups.fetchGroupList(client, "theme"))
+
+    with pytest.raises(ValueError, match="상세 응답"):
+        runAsync(groups.fetchGroupStocks(client, "theme", 523))

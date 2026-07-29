@@ -93,12 +93,10 @@ def test_GatherEntry_proxy_scope_is_common(
 
     monkeypatch.setattr(gatherPkg, "getDefaultGather", lambda: FakeGather())
 
-    GatherEntry()(
-        axis,
-        target,
-        proxy="http://proxy.example:8080",
-        indicators=False,
-    )
+    kwargs = {"proxy": "http://proxy.example:8080"}
+    if axis == "price":
+        kwargs["indicators"] = False
+    GatherEntry()(axis, target, **kwargs)
 
     assert events == [
         ("enter", "http://proxy.example:8080"),
@@ -119,3 +117,27 @@ def test_GatherEntry_targets_only_supported_for_flow(monkeypatch: pytest.MonkeyP
 
     with pytest.raises(ValueError, match='gather\\("flow", targets='):
         GatherEntry()("price", ["005930", "000660"])
+
+
+def test_GatherEntry_rejects_unknown_axis_option_before_dispatch() -> None:
+    """축별 미등록 옵션은 오타를 삼키지 않고 호출 경계에서 거부한다."""
+    from dartlab.gather.entry.main import GatherEntry
+
+    with pytest.raises(TypeError, match="지원하지 않는 옵션: indicatr"):
+        GatherEntry()("price", "005930", indicatr="rsi14")
+
+    with pytest.raises(TypeError, match="지원하지 않는 옵션: days"):
+        GatherEntry()("sector", "005930", days=7)
+
+    with pytest.raises(TypeError, match="지원하지 않는 옵션: start"):
+        GatherEntry()("sector", "005930", start="2024-01-01")
+
+
+def test_axis_option_contract_has_no_duplicate_names() -> None:
+    """axis 옵션 tuple은 문서·검증 SSOT이므로 중복 이름을 허용하지 않는다."""
+    from dartlab.gather.entry.dispatch import AXIS_REGISTRY
+    from dartlab.gather.entry.main import _COMMON_OPTIONS
+
+    for axis, entry in AXIS_REGISTRY.items():
+        assert len(entry.options) == len(set(entry.options)), axis
+        assert not (_COMMON_OPTIONS & set(entry.options)), axis

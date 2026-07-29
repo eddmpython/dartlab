@@ -84,20 +84,34 @@ def _nextDateToken(token: str | None) -> str | None:
     return (d + timedelta(days=1)).strftime("%Y%m%d")
 
 
+def _parseFlowNumber(value, field: str) -> float | None:
+    """Naver flow 숫자를 파싱하고 손상된 값은 source 오류로 구분한다."""
+    token = str(value).strip().replace("%", "") if value is not None else ""
+    if token in ("", "N/A", "-"):
+        return None
+    parsed = _cleanNumber(token)
+    if parsed is None:
+        raise SourceUnavailableError(f"Naver flow {field} 값을 해석할 수 없습니다: {value!r}")
+    return parsed
+
+
 def _parseFlowTrendRows(items: list[dict]) -> list[dict]:
     """Naver flow raw row → dartlab 표준 flow row."""
     result = []
     for item in items:
-        fn = _cleanNumber(item.get("foreignerPureBuyQuant"))
-        on = _cleanNumber(item.get("organPureBuyQuant"))
-        ind = _cleanNumber(item.get("individualPureBuyQuant"))
-        ratio_str = item.get("foreignerHoldRatio", "")
-        ratio = None
-        if ratio_str:
-            ratio = _cleanNumber(str(ratio_str).replace("%", ""))
+        if not isinstance(item, dict):
+            raise ValueError("Naver flow result 행이 객체가 아닙니다")
+        bizdate = str(item.get("bizdate") or "")
+        if len(bizdate) != 8 or not bizdate.isdigit():
+            raise ValueError(f"Naver flow bizdate가 올바르지 않습니다: {bizdate!r}")
+
+        fn = _parseFlowNumber(item.get("foreignerPureBuyQuant"), "foreignerPureBuyQuant")
+        on = _parseFlowNumber(item.get("organPureBuyQuant"), "organPureBuyQuant")
+        ind = _parseFlowNumber(item.get("individualPureBuyQuant"), "individualPureBuyQuant")
+        ratio = _parseFlowNumber(item.get("foreignerHoldRatio"), "foreignerHoldRatio")
         result.append(
             {
-                "date": item.get("bizdate", ""),
+                "date": bizdate,
                 "foreignNet": fn or 0.0,
                 "institutionNet": on or 0.0,
                 "individualNet": ind or 0.0,
@@ -158,13 +172,33 @@ async def _fetchFlowTrend(
             },
             proxy=proxy,
         )
-        data = resp.json()
-        rows = data.get("result") if isinstance(data, dict) else data
-        if not rows or not isinstance(rows, list):
+        try:
+            data = resp.json()
+        except ValueError as exc:
+            raise SourceUnavailableError("Naver flow trend JSON을 해석할 수 없습니다") from exc
+
+        if isinstance(data, dict):
+            if data.get("isSuccess") is False:
+                raise SourceUnavailableError("Naver flow trend API가 실패 응답을 반환했습니다")
+            if "result" not in data:
+                raise SourceUnavailableError("Naver flow trend 응답에 result가 없습니다")
+            rows = data["result"]
+        elif isinstance(data, list):
+            rows = data
+        else:
+            raise SourceUnavailableError("Naver flow trend 응답 schema가 올바르지 않습니다")
+
+        if not isinstance(rows, list):
+            raise SourceUnavailableError("Naver flow trend result가 배열이 아닙니다")
+        if not rows:
             break
 
         pages += 1
-        for row in _parseFlowTrendRows(rows):
+        try:
+            parsedRows = _parseFlowTrendRows(rows)
+        except (TypeError, ValueError) as exc:
+            raise SourceUnavailableError("Naver flow trend 행을 해석할 수 없습니다") from exc
+        for row in parsedRows:
             rowDate = row.get("date") or ""
             if endToken is not None and rowDate > endToken:
                 continue
@@ -463,10 +497,11 @@ async def fetchFlow(
     """
     # KR 종목코드 검증
     if not isKrStockCode(stockCode or ""):
-        return None
+        raise ValueError(f"Naver flow는 KR 종목코드만 지원합니다: {stockCode!r}")
 
     _normalizeDateToken(start)
     _normalizeDateToken(end)
+    trendFailure: Exception | None = None
     try:
         trend = await _fetchFlowTrend(
             stockCode,
@@ -485,19 +520,27 @@ async def fetchFlow(
             return trend
     except (SourceUnavailableError, ValueError, KeyError, TypeError) as exc:
         log.warning("naver flow trend API 실패 (%s): %s", stockCode, exc)
+        trendFailure = exc
 
     url = f"{_API_BASE}/{stockCode}/integration"
     try:
         resp = await client.get(url, headers={"Accept": "application/json"}, proxy=proxy)
         data = resp.json()
     except (SourceUnavailableError, ValueError) as exc:
-        log.warning("naver flow API 실패 (%s): %s", stockCode, exc)
-        return None
+        raise SourceUnavailableError(f"Naver flow integration 요청 실패: {stockCode}") from exc
+
+    if not isinstance(data, dict):
+        raise SourceUnavailableError("Naver flow integration 응답 schema가 객체가 아닙니다")
 
     # v2: dealTrendInfos 배열 전체 활용 (최신순)
-    deal_trends = data.get("dealTrendInfos") or []
-    if deal_trends and isinstance(deal_trends, list):
-        result = _parseFlowTrendRows(deal_trends)
+    deal_trends = data.get("dealTrendInfos", [])
+    if not isinstance(deal_trends, list):
+        raise SourceUnavailableError("Naver flow dealTrendInfos가 배열이 아닙니다")
+    if deal_trends:
+        try:
+            result = _parseFlowTrendRows(deal_trends)
+        except (TypeError, ValueError) as exc:
+            raise SourceUnavailableError("Naver flow integration 행을 해석할 수 없습니다") from exc
         if result:
             if limit is not None and limit > 0:
                 return result[:limit]
@@ -509,16 +552,22 @@ async def fetchFlow(
     foreign_holding_ratio = 0.0
 
     foreign_info = data.get("foreignSummary")
+    if foreign_info is not None and not isinstance(foreign_info, dict):
+        raise SourceUnavailableError("Naver flow foreignSummary가 객체가 아닙니다")
     if foreign_info:
-        ratio = _cleanNumber(foreign_info.get("foreignOwnershipRatio"))
+        ratio = _parseFlowNumber(foreign_info.get("foreignOwnershipRatio"), "foreignOwnershipRatio")
         if ratio is not None:
             foreign_holding_ratio = ratio
 
     investor_info = data.get("dealTrendByInvestor")
-    if investor_info and isinstance(investor_info, list):
+    if investor_info is not None and not isinstance(investor_info, list):
+        raise SourceUnavailableError("Naver flow dealTrendByInvestor가 배열이 아닙니다")
+    if investor_info:
         for item in investor_info:
+            if not isinstance(item, dict):
+                raise SourceUnavailableError("Naver flow 투자자 행이 객체가 아닙니다")
             investor_type = item.get("investorType", "")
-            net_buy = _cleanNumber(item.get("accumulatedNetBuyVolume"))
+            net_buy = _parseFlowNumber(item.get("accumulatedNetBuyVolume"), "accumulatedNetBuyVolume")
             if net_buy is None:
                 continue
             if "외국인" in investor_type or investor_type == "FOREIGNER":
@@ -527,6 +576,12 @@ async def fetchFlow(
                 institution_net = net_buy
 
     if foreign_net == 0.0 and institution_net == 0.0 and foreign_holding_ratio == 0.0:
+        if trendFailure is not None:
+            raise SourceUnavailableError(
+                "Naver flow trend가 실패했고 integration에도 데이터가 없습니다"
+            ) from trendFailure
+        if not any(key in data for key in ("dealTrendInfos", "foreignSummary", "dealTrendByInvestor")):
+            raise SourceUnavailableError("Naver flow integration 응답에 수급 필드가 없습니다")
         return None
 
     snapshot = [
@@ -1035,12 +1090,12 @@ async def fetchHistory(
         - close : float — 종가 (원)
         - volume : int — 거래량 (주)
 
-        KR 외 시장이거나 조회 실패 시 빈 리스트.
+        KR 외 시장 또는 정상 응답에 데이터가 없으면 빈 리스트.
 
     Raises
     ------
-    없음
-        Naver chart API 내부 예외 (SourceUnavailableError/OSError) 는 흡수.
+    SourceUnavailableError
+        네트워크, 응답 형식 또는 행 파싱에 실패한 경우.
 
     Example
     -------
@@ -1077,38 +1132,49 @@ async def fetchHistory(
         )
         text = resp.text
     except (SourceUnavailableError, OSError) as exc:
-        log.debug("naver chart API 실패: %s", exc)
-        return []
+        raise SourceUnavailableError(f"Naver history 요청 실패: {stockCode}") from exc
 
-    items = re.findall(r'<item data="(.*?)" />', text)
+    if not isinstance(text, str) or not text.strip():
+        raise SourceUnavailableError("Naver history 응답 본문이 비어 있습니다")
+
+    items = re.findall(r'<item\s+data="(.*?)"\s*/>', text)
     if not items:
-        return []
+        if "<protocol" in text and "<chartdata" in text:
+            return []
+        raise SourceUnavailableError("Naver history 응답 schema를 확인할 수 없습니다")
 
     rows: list[dict] = []
-    for item in items:
-        parts = item.split("|")
-        if len(parts) < 6:
-            continue
-        d = parts[0]
-        dt = f"{d[:4]}-{d[4:6]}-{d[6:8]}"
-        if start and dt < start:
-            continue
-        if end and dt > end:
-            continue
-        o = float(parts[1]) if parts[1] else 0.0
-        # 거래정지일 (open=0) 건너뛰기
-        if o == 0.0:
-            continue
-        rows.append(
-            {
-                "date": dt,
-                "open": o,
-                "high": float(parts[2]) if parts[2] else 0.0,
-                "low": float(parts[3]) if parts[3] else 0.0,
-                "close": float(parts[4]) if parts[4] else 0.0,
-                "volume": int(parts[5]) if parts[5] else 0,
-            }
-        )
+    try:
+        for item in items:
+            parts = item.split("|")
+            if len(parts) < 6:
+                raise ValueError("OHLCV 필드 수가 6개보다 적습니다")
+            d = parts[0]
+            if len(d) != 8 or not d.isdigit():
+                raise ValueError(f"거래일 형식이 올바르지 않습니다: {d!r}")
+            dt = f"{d[:4]}-{d[4:6]}-{d[6:8]}"
+            if start and dt < start:
+                continue
+            if end and dt > end:
+                continue
+            if not all(parts[index] for index in (1, 2, 3, 4)):
+                raise ValueError(f"OHLC 필드가 비어 있습니다: {d}")
+            o = float(parts[1])
+            # 거래정지일 (open=0) 건너뛰기
+            if o == 0.0:
+                continue
+            rows.append(
+                {
+                    "date": dt,
+                    "open": o,
+                    "high": float(parts[2]),
+                    "low": float(parts[3]),
+                    "close": float(parts[4]),
+                    "volume": int(parts[5]) if parts[5] else 0,
+                }
+            )
+    except (TypeError, ValueError) as exc:
+        raise SourceUnavailableError("Naver history 행을 해석할 수 없습니다") from exc
     if limit is not None and limit > 0:
         return rows[-limit:]  # 날짜 오름차순 (수정주가)
     return rows  # 날짜 오름차순 (수정주가)

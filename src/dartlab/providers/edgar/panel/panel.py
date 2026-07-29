@@ -8,6 +8,8 @@ native 로 분해한다. 대문자 finance/report 위임은 ``Company.panel`` fa
 
 from __future__ import annotations
 
+from typing import Any
+
 from dartlab.providers.dart.panel.panel import Panel as _DartPanel
 
 
@@ -18,6 +20,9 @@ def _panelCode(code: str, marketNs: str) -> str:
 
 class Panel(_DartPanel):
     """한 회사 EDGAR 공시 수평화 wide — DART ``Panel`` 과 같은 표면, US 기본."""
+
+    _showFn: Any
+    _strongFn: Any
 
     def __init__(
         self,

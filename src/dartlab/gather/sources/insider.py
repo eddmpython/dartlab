@@ -2,13 +2,9 @@
 
 from __future__ import annotations
 
-import logging
-
-from dartlab.core.insiderRawProvider import getInsiderRawProvider
+from dartlab.core.insiderRawProvider import InsiderRawProvider, getInsiderRawProvider
 
 from ..types import InsiderTrade, MajorHolder
-
-log = logging.getLogger(__name__)
 
 
 async def fetchInsiderTrading(
@@ -22,30 +18,31 @@ async def fetchInsiderTrading(
 
     Capabilities:
         - DART OpenAPI elestock raw → ``InsiderTrade`` dataclass 변환.
-        - KR 외 시장은 빈 list (provider 부재).
+        - KR 외 시장은 지원하지 않으므로 ValueError.
         - DIP — ``core.insiderRawProvider`` 통해 ``providers/dart/ops/insiderTrades``
           호출. gather → providers 직접 의존 0.
 
     Args:
         stockCode: 종목코드 (예: "005930").
-        market: 시장 코드. "KR" 외엔 빈 리스트.
+        market: 시장 코드. "KR"만 지원.
         limit: 반환 행수 상한 (가장 최근 N건). None 이면 전체.
         **_kwargs: 미사용 — facade signature 일관성.
 
     Returns:
         list[InsiderTrade] — 거래 내역. 필드 (date / name / position / tradeType /
-        changeShares / afterShares / reason). KR 외 시장이거나 provider 부재 / 조회
-        실패 시 빈 리스트 [].
+        changeShares / afterShares / reason). 정상 빈 응답만 빈 리스트 [].
 
     Raises:
-        없음 — provider 내부 예외 (OSError/TypeError) 는 흡수.
+        ValueError: KR 외 시장 또는 DART API key 부재/변환 실패.
+        RuntimeError: DART insider provider가 등록되지 않은 경우.
+        OSError / DartApiError: provider 조회 실패.
 
     Example:
         >>> trades = await fetchInsiderTrading("005930", market="KR", limit=10)
 
     Guide:
         - "삼성전자 내부자 매매" → ``await fetchInsiderTrading("005930", limit=20)``.
-        - DART API key 부재 환경 (CI / pyodide) 에서는 silent 빈 list.
+        - DART API key 부재는 조회 실패로 호출자에게 전달.
 
     When:
         - gather pipeline 의 internal-trades axis 호출 시점.
@@ -63,12 +60,12 @@ async def fetchInsiderTrading(
 
     AIContext:
         Ask Workbench 의 "내부자 거래" / "임원 매매" 토픽 추론 시 호출. KR 한정이라
-        US (Form 4) 회사는 빈 list — caller 가 evidence 부재 메시지 준비.
+        US (Form 4) 회사는 지원하지 않으며 ValueError로 계약 위반을 알린다.
 
     LLM Specifications:
         AntiPatterns:
-            - market 미지정 호출 → KR 기본 — US 종목은 빈 list 반환. caller 가 market
-              명시 권장.
+            - US 종목을 KR 기본값으로 호출하지 않는다. market은 명시하고 US 전용
+              provider를 사용한다.
             - 무제한 limit (limit=None) 으로 분석 파이프라인에서 호출 → 룰 8 위반.
         OutputSchema:
             - list[InsiderTrade] — 빈 list 가능.
@@ -81,20 +78,10 @@ async def fetchInsiderTrading(
         TargetMarkets:
             - KR (DART). US (Form 4) 은 별도 트랙.
     """
-    if market != "KR":
-        return []
-    provider = getInsiderRawProvider()
-    if provider is None:
-        return []
-    try:
-        rawRows = await provider.fetchInsiderTradingRaw(stockCode)
-        rows = [InsiderTrade(**row) for row in rawRows]
-        if limit is not None and limit > 0:
-            return rows[:limit]
-        return rows
-    except (OSError, TypeError) as exc:
-        log.warning("insider KR 실패 (%s): %s", stockCode, exc)
-        return []
+    provider = _requireProvider(market, operation="insider trading")
+    _validateLimit(limit)
+    rawRows = await provider.fetchInsiderTradingRaw(stockCode, limit=limit)
+    return [InsiderTrade(**row) for row in rawRows]
 
 
 async def fetchMajorShareholders(
@@ -113,24 +100,25 @@ async def fetchMajorShareholders(
 
     Args:
         stockCode: 종목코드 (예: "005930").
-        market: 시장 코드. "KR" 외엔 빈 리스트.
+        market: 시장 코드. "KR"만 지원.
         limit: 반환 행수 상한 (가장 최근 N건). None 이면 전체.
         **_kwargs: 미사용 — facade signature 일관성.
 
     Returns:
         list[MajorHolder] — 보유 변동. 필드 (holderName / shares / ratio /
-        changeDate / changeType). KR 외 시장이거나 provider 부재 / 조회 실패
-        시 빈 리스트 [].
+        changeDate / changeType). 정상 빈 응답만 빈 리스트 [].
 
     Raises:
-        없음 — provider 내부 예외 (OSError/TypeError) 는 흡수.
+        ValueError: KR 외 시장 또는 DART API key 부재/변환 실패.
+        RuntimeError: DART insider provider가 등록되지 않은 경우.
+        OSError / DartApiError: provider 조회 실패.
 
     Example:
         >>> holders = await fetchMajorShareholders("005930", market="KR", limit=10)
 
     Guide:
         - "삼성전자 외국인/대주주 변동" → ``await fetchMajorShareholders("005930")``.
-        - DART API key 부재 시 silent 빈 list.
+        - DART API key 부재는 조회 실패로 호출자에게 전달.
 
     When:
         - gather pipeline 의 major-holders axis 호출 시점.
@@ -164,20 +152,26 @@ async def fetchMajorShareholders(
         TargetMarkets:
             - KR (DART). US SC 13D/G 는 별도 트랙.
     """
+    provider = _requireProvider(market, operation="major shareholders")
+    _validateLimit(limit)
+    rawRows = await provider.fetchMajorShareholdersRaw(stockCode, limit=limit)
+    return [MajorHolder(**row) for row in rawRows]
+
+
+def _requireProvider(market: str, *, operation: str) -> InsiderRawProvider:
+    """KR 시장 계약과 DART provider 등록 상태를 검증한다."""
     if market != "KR":
-        return []
+        raise ValueError(f"{operation}은 KR만 지원합니다: market={market!r}")
     provider = getInsiderRawProvider()
     if provider is None:
-        return []
-    try:
-        rawRows = await provider.fetchMajorShareholdersRaw(stockCode)
-        rows = [MajorHolder(**row) for row in rawRows]
-        if limit is not None and limit > 0:
-            return rows[:limit]
-        return rows
-    except (OSError, TypeError) as exc:
-        log.warning("majorShareholders 실패 (%s): %s", stockCode, exc)
-        return []
+        raise RuntimeError("DART insider raw provider가 등록되지 않았습니다")
+    return provider
+
+
+def _validateLimit(limit: int | None) -> None:
+    """조회 상한 계약을 검증한다."""
+    if limit is not None and limit < 0:
+        raise ValueError(f"limit은 0 이상이어야 합니다: {limit}")
 
 
 def iterFetchInsiderTrading(
@@ -203,7 +197,7 @@ def iterFetchInsiderTrading(
         list[InsiderTrade] — 각 batch.
 
     Raises:
-        없음.
+        ValueError / RuntimeError / OSError / DartApiError — 조회 실패 그대로.
 
     Example::
 
@@ -244,7 +238,7 @@ def iterFetchMajorShareholders(
         list[MajorHolder] — 각 batch.
 
     Raises:
-        없음.
+        ValueError / RuntimeError / OSError / DartApiError — 조회 실패 그대로.
 
     Example::
 

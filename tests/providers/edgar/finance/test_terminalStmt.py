@@ -44,6 +44,7 @@ def _bs_panel() -> pl.DataFrame:
         {
             "snakeId": ["assets", "current_assets", "noncurrent_assets"],
             "항목": ["자산총계", "유동자산", "비유동자산"],
+            "2025Q1": [210.0, 125.0, 85.0],
             "2024Q4": [200.0, 120.0, 80.0],
             "2024Q1": [180.0, 110.0, 70.0],
         }
@@ -109,6 +110,10 @@ def test_bs_annual_is_year_end() -> None:
     )
     assert annual.height == 1
     assert annual["thstrm_amount"][0] == pytest.approx(200.0)  # Q4 값, 200+180 합산 아님
+    partial = df.filter(
+        (pl.col("account_nm") == "자산총계") & (pl.col("bsns_year") == "2025") & (pl.col("reprt_code") == "11011")
+    )
+    assert partial.height == 0
 
 
 def test_synonym_dedup() -> None:
@@ -128,3 +133,22 @@ def test_empty_returns_none() -> None:
 
     empty = _FakeCompany({"IS": pl.DataFrame(), "BS": pl.DataFrame(), "CF": pl.DataFrame()})
     assert bakeTerminalFinance("FAKE", company=empty) is None
+
+
+def test_statement_failure_aborts_bake_with_source_provenance() -> None:
+    from dartlab.providers.edgar.finance.terminalStmt import TerminalFinanceBuildError, bakeTerminalFinance
+
+    class _BrokenFinance:
+        IS = _is_panel()
+
+        @property
+        def BS(self):
+            raise OSError("corrupt BS source")
+
+    class _BrokenCompany:
+        _finance = _BrokenFinance()
+
+    with pytest.raises(TerminalFinanceBuildError, match=r"ticker=FAKE, statement=BS, error=OSError") as excInfo:
+        bakeTerminalFinance("FAKE", company=_BrokenCompany())
+
+    assert isinstance(excInfo.value.__cause__, OSError)

@@ -5,7 +5,9 @@ iterFetchNews generator + fetchNews 본문 검증.
 
 from __future__ import annotations
 
+import asyncio
 import importlib
+import types
 
 import polars as pl
 import pytest
@@ -38,3 +40,59 @@ def test_iterFetchNews_empty_df(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(newsMod, "fetchNews", lambda *a, **kw: pl.DataFrame())
     batches = list(newsMod.iterFetchNews("nothing"))
     assert batches == []
+
+
+def test_toDataFrame_preserves_provider_and_fetch_time() -> None:
+    """뉴스 매체 source와 수집 provider를 구분하고 수집 시각을 동행한다."""
+    from dartlab.gather.sources import news as newsMod
+    from dartlab.gather.types import NewsItem
+
+    df = newsMod.toDataFrame(
+        [NewsItem(date="2026-07-01", title="t", source="publisher", url="https://example.com")],
+        provider="google_news",
+    )
+
+    assert df.row(0, named=True)["source"] == "publisher"
+    assert df.row(0, named=True)["provider"] == "google_news"
+    assert df.row(0, named=True)["fetchedAt"]
+
+
+def test_google_news_failure_and_invalid_input_are_not_empty_results(monkeypatch: pytest.MonkeyPatch) -> None:
+    """입력 오류와 provider 장애를 기사 0건으로 바꾸지 않는다."""
+    from dartlab.gather.sources import news as newsMod
+    from dartlab.gather.types import CircuitOpenError, SourceUnavailableError
+
+    with pytest.raises(ValueError, match="KR/US"):
+        asyncio.run(newsMod._fetchAsync("query", market="XX"))
+    with pytest.raises(ValueError, match="1 이상"):
+        asyncio.run(newsMod._fetchAsync("query", days=0))
+
+    monkeypatch.setattr(
+        newsMod,
+        "_circuit_breaker",
+        types.SimpleNamespace(isOpen=lambda source: True),
+    )
+    with pytest.raises(CircuitOpenError):
+        asyncio.run(newsMod._fetchAsync("query"))
+
+    class BadClient:
+        @staticmethod
+        async def get(url, timeout):
+            raise OSError("network down")
+
+    monkeypatch.setattr(
+        newsMod,
+        "_circuit_breaker",
+        types.SimpleNamespace(
+            isOpen=lambda source: False,
+            recordSuccess=lambda source: None,
+            recordFailure=lambda source: None,
+        ),
+    )
+    monkeypatch.setattr(
+        newsMod,
+        "_health_tracker",
+        types.SimpleNamespace(record=lambda *args, **kwargs: None),
+    )
+    with pytest.raises(SourceUnavailableError, match="조회 실패"):
+        asyncio.run(newsMod._fetchAsync("query", client=BadClient()))

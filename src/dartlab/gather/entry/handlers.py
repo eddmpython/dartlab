@@ -56,7 +56,7 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Any
+from typing import Any, Literal, cast
 
 import polars as pl
 
@@ -303,7 +303,7 @@ def handleFlow(
         pl.DataFrame — 외국인/기관 순매수 시계열.
 
     Raises:
-        없음 — 빈 결과는 빈 DataFrame.
+        ValueError / SourceAttemptsExhaustedError — 시장 또는 공급자 실패.
 
     Example::
 
@@ -525,7 +525,8 @@ def handleMacro(
         pl.DataFrame — 거시지표 시계열.
 
     Raises:
-        없음 — 외부 API 실패 시 빈 DataFrame.
+        ValueError: 명시한 market이 지원 범위 밖일 때.
+        Exception: 외부 provider 호출 또는 응답 해석 실패를 원인 그대로 전달.
 
     Example::
 
@@ -542,6 +543,8 @@ def handleMacro(
     apiKey = kwargs.pop("apiKey", None)
     scope = kwargs.pop("scope", "default")
     if target is None:
+        if marketExplicit and market not in g._KNOWN_MARKETS:
+            raise ValueError(f"지원하지 않는 macro market: {market}")
         return g.macro(market, start=start, end=end, apiKey=apiKey, scope=scope)
     if marketExplicit:
         return g.macro(market, target, start=start, end=end, apiKey=apiKey, scope=scope)
@@ -574,10 +577,10 @@ def handleNews(
         **kwargs: days (default 30).
 
     Returns:
-        pl.DataFrame — (title, link, pubDate) 행.
+        pl.DataFrame — date/title/source/url/description/provider/fetchedAt 행.
 
     Raises:
-        없음 — 외부 RSS 실패 시 빈 DataFrame.
+        ValueError / SourceUnavailableError — 입력 또는 최종 공급자 실패.
 
     Example::
 
@@ -616,14 +619,14 @@ def handleSector(
     Args:
         g: Gather 싱글턴.
         target: 종목코드.
-        market: "KR" | "US".
+        market: 현재 "KR"만 지원.
         start/end/marketExplicit/**kwargs: 무시.
 
     Returns:
-        pl.DataFrame (1 행) — sectorCode/sectorName/industryCode/industryName/market.
+        pl.DataFrame (1행) — sectorCode/sectorName/industryCode/industryName/market/source.
 
     Raises:
-        없음 — sector 미확인 시 빈 DataFrame.
+        ValueError / SourceUnavailableError — 시장 또는 공급자 실패.
 
     Example::
 
@@ -648,6 +651,7 @@ def handleSector(
                 "industryCode": result.industryCode,
                 "industryName": result.industryName,
                 "market": result.market,
+                "source": result.source,
             }
         ]
     )
@@ -678,10 +682,10 @@ def handleInsider(
         start/end/marketExplicit/**kwargs: 무시.
 
     Returns:
-        pl.DataFrame — 거래일/거래자/직위/거래유형/변동주수.
+        pl.DataFrame — 거래일/거래자/직위/거래유형/변동주수/보유주수/사유/source.
 
     Raises:
-        없음 — API 실패 또는 거래 없음 시 빈 DataFrame.
+        ValueError / RuntimeError / provider 오류 — 조회 실패 그대로.
 
     Example::
 
@@ -706,6 +710,9 @@ def handleInsider(
                 "position": t.position,
                 "tradeType": t.tradeType,
                 "changeShares": t.changeShares,
+                "afterShares": t.afterShares,
+                "reason": t.reason,
+                "source": t.source,
             }
             for t in trades
         ]
@@ -729,28 +736,28 @@ def handleOwnership(
 
     Capabilities: target → g.ownership → InstitutionOwnership list → DataFrame.
     AIContext: gather("ownership", ...) 본체. 기관/외국인 보유 분포 진입.
-    Guide: KR/US 모두 지원. 빈 list 면 빈 DataFrame.
+    Guide: 현재 KR만 지원. 정상 빈 list면 빈 DataFrame.
     When: GatherEntry._run("ownership", stockCode, ...) lookup 시.
     How: g.ownership(target, market) → list[InstitutionOwnership] → DataFrame.
 
     Args:
         g: Gather 싱글턴.
         target: 종목코드.
-        market: "KR" (Naver) | "US".
+        market: 현재 "KR"만 지원.
         start/end/marketExplicit/**kwargs: 무시.
 
     Returns:
-        pl.DataFrame — holderName/ratio/shares/value.
+        pl.DataFrame — holderName/ratio/shares/value/changeShares/source.
 
     Raises:
-        없음 — fetch 실패 시 빈 DataFrame.
+        ValueError / SourceUnavailableError — 시장 또는 공급자 실패.
 
     Example::
 
         df = handleOwnership(g, "005930", market="KR", start=None, end=None, marketExplicit=False)
 
     Requires:
-        Gather 인스턴스 + 시장별 ownership source (KR: Naver, US: SEC 13F).
+        Gather 인스턴스 + KR Naver ownership source.
 
     See Also:
         main.GatherEntry._run : dispatch caller.
@@ -767,6 +774,8 @@ def handleOwnership(
                 "ratio": o.ratio,
                 "shares": o.shares,
                 "value": o.value,
+                "changeShares": o.changeShares,
+                "source": o.source,
             }
             for o in owners
         ]
@@ -801,7 +810,7 @@ def handlePeers(
         pl.DataFrame — 피어 종목 (종목코드+시총).
 
     Raises:
-        없음 — peer 미발견 시 빈 DataFrame.
+        ValueError / SourceUnavailableError — KR 외 시장 또는 업종 공급자 실패.
 
     Example::
 
@@ -935,7 +944,10 @@ def handleKrxIndex(
     apiKey = kwargs.pop("apiKey", None)
     indexFilter = kwargs.pop("indexFilter", None)
     indicators = kwargs.pop("indicators", "basic")
-    idxMarket = kwargs.pop("indexMarket", None) or ("KOSPI" if market in ("KR", "KOSPI") else market)
+    rawMarket = str(kwargs.pop("indexMarket", None) or ("KOSPI" if market in ("KR", "KOSPI") else market)).upper()
+    if rawMarket not in {"KRX", "KOSPI", "KOSDAQ"}:
+        raise ValueError(f"krxIndex market은 KRX/KOSPI/KOSDAQ만 지원합니다: {rawMarket}")
+    idxMarket = cast(Literal["KRX", "KOSPI", "KOSDAQ"], rawMarket)
     return gatherKrxIndex(
         target or "close",
         market=idxMarket,
@@ -1050,6 +1062,8 @@ def handleNarrative(
         start = (_date.fromisoformat(end) - timedelta(days=days)).isoformat() if end else None
     elif end is None:
         end = _date.today().isoformat()
+    if start is None or end is None:
+        raise ValueError("narrative start/end 날짜 범위를 결정할 수 없습니다")
 
     from dartlab.gather.bulkData.newsHeadlines import loadNewsArchive
 
