@@ -3981,6 +3981,22 @@
     "blog/09-investment-stories/05-overseas-stock-return-exchange-rate/assets/exchange-counter-spread.webp": "303be96aa34903ca6bfc5c3eed6848d3618b36179e409582213672c37fa6d33c",
     "blog/09-investment-stories/05-overseas-stock-return-exchange-rate/assets/overseas-return-two-prices.webp": "129b68b9453ef1494e7f7f6cd0bc900f74804f629e04c9818a71ec2664ad2fd4",
     "blog/09-investment-stories/05-overseas-stock-return-exchange-rate/assets/same-stock-two-exits.webp": "f21d7b43bc369cee0e975a5c68e125719f2231514dbbed5f49c7e599ddeceee5",
+    "blog/09-investment-stories/06-stock-market-sidecar-program-trading/assets/futures-basket-clutch.webp": "9a95ef13152413edd1e48afc471d6df195b5f945331ad5d0b9b510c39aeef30e",
+    "blog/09-investment-stories/06-stock-market-sidecar-program-trading/assets/kospi-kosdaq-sidecar-rules.svg": "f315496a1c6778ed0d9a1a59d327bd1c761f96480cc98ae01556b8a5cb4e3c8a",
+    "blog/09-investment-stories/06-stock-market-sidecar-program-trading/assets/market-brake-scales.webp": "c6812b0fd200b9f3369c8bbce48029a1424ebfad3a1335c9cdb8ff15cfbab1b8",
+    "blog/09-investment-stories/06-stock-market-sidecar-program-trading/assets/sidecar-order-path.svg": "1e99155212034de51eac8cbe43b8ef3567854bff3e149f00dabe5b761e863d68",
+    "blog/09-investment-stories/06-stock-market-sidecar-program-trading/assets/sidecar-selective-gate.webp": "4b22f52d8cda14b7e4844e43ca3a053cde5747169dc223c8f256e7865e9f06b6",
+    "blog/09-investment-stories/06-stock-market-sidecar-program-trading/assets/three-market-brakes.svg": "477e44423471005e725187bc74caf796ffec2d006d3fe02d2c70338ef6277d6d",
+    "blog/09-investment-stories/07-order-book-price-time-priority/assets/amend-vs-partial-cancel.svg": "a77b5ba65a75d11cc9e44ba960ba519788765bf22e81798488ae1716b3bffc4f",
+    "blog/09-investment-stories/07-order-book-price-time-priority/assets/call-auction-clearing-chamber.webp": "b09aa812a077e24c58b0df5ef729d1882084a6201db7269fc77e91a5f1c43596",
+    "blog/09-investment-stories/07-order-book-price-time-priority/assets/continuous-vs-call-auction.svg": "8ad88fbd8034c67547fdc763decbbfc747a3894d27d1bf6706ffbc6eb2f363ea",
+    "blog/09-investment-stories/07-order-book-price-time-priority/assets/last-price-waiting-order.webp": "155a2579c8ded01ce1878105a38e1e1b9bf242417bd8130def99c7ebd77a0688",
+    "blog/09-investment-stories/07-order-book-price-time-priority/assets/market-order-slippage.svg": "fff9343abb5270cbc6905f3d018c5cedcf8c2d2cbee1b712ff8a71fdea199949",
+    "blog/09-investment-stories/07-order-book-price-time-priority/assets/market-order-sweeps-book.webp": "189478683503a42f1dfe2084dc8a15fb614eaba2cd89086002773165d665950f",
+    "blog/09-investment-stories/07-order-book-price-time-priority/assets/order-book-ladder.svg": "48983afc0c57c5a6c839d247beb2b3b4fa2cf2d00c7aca13aed56ea0c13091fa",
+    "blog/09-investment-stories/07-order-book-price-time-priority/assets/price-time-order-queue.webp": "7a4d5a66f0530b764685667ae87653214b1a8c2be880500108745b1d1755e7ea",
+    "blog/09-investment-stories/07-order-book-price-time-priority/assets/price-time-queue.svg": "ff721155b3e738aea61e3f4c50e6ff3c3c76759d28233d2011fb2cd782d254d0",
+    "blog/09-investment-stories/07-order-book-price-time-priority/assets/smart-order-router-two-venues.webp": "4ff818c1ae7d4715c1ed33d31fa783642a530c16513c55fd89af4232771e58c9",
     "blog/_issues/2026-06-korea-macro/assets/closing.webp": "b21be12d1e03cb97810fc7ed3e885076026eb08bd85211b71f679587320a2847",
     "blog/_issues/2026-06-korea-macro/assets/cover.webp": "d2538a4d77bc08326cd836f0981d320dacd4da39e8e8b3a721aafe84aceba6a3",
     "blog/_issues/2026-06-korea-macro/assets/fx.webp": "c05d1c9455e9881c744274ce7e3e0b26699a715b35b729dcfb570c35c3b4b613",
@@ -4246,6 +4262,8 @@
     "landing/static/thumbnails/058470-rino-industrial.webp": "d967a1963619c2f07687f6d9c1e66c06ac53fe12b460754f65dddddd95cfc265",
     "landing/static/thumbnails/06-how-far-to-trust-new-business-plans-card.webp": "8a2da917f9d8461530f05bdf2c2803159bb4d0d8e17669d7cabe537fec70fa85",
     "landing/static/thumbnails/06-how-far-to-trust-new-business-plans.webp": "0651753757d4c065f57aac0b6c73244d6b1d399893e70cec8e1e6dc7cab0cdd7",
+    "landing/static/thumbnails/06-stock-market-sidecar-program-trading-card.webp": "f079ab2aa6ac3983d8443e8b4f91a871d945ee89c23e4db8145707c399d6e969",
+    "landing/static/thumbnails/06-stock-market-sidecar-program-trading.webp": "08d1768cf41d0da92c9d9c6cef7d2c284d124eab19332dfdf826994d8c542d03",
     "landing/static/thumbnails/064350-hyundai-rotem-card.webp": "161d57b9500f8bc7312cdcb9d2c19ec684523bf52790c2efebeee039f5da5ab6",
     "landing/static/thumbnails/064350-hyundai-rotem.webp": "13781f1bb5a6b4f79b9625ecd81214ef53c3f3b44ee268be73e774e5dadb82f5",
     "landing/static/thumbnails/066570-lg-electronics-card.webp": "c7a41a1fa8d445656594231747c8458b8c07dbbdb36d1e1105b7abb43fab5a88",
@@ -4254,6 +4272,8 @@
     "landing/static/thumbnails/068270-celltrion.webp": "30862532121ec9e616c9745fc48e05b182c4b4ec452ed8bc136574b20271acaf",
     "landing/static/thumbnails/07-audit-report-and-kam-card.webp": "768bea71f9b1bfb5a3cf4ce7bf347ee17d2abecc4152f341299627c76dea7b1a",
     "landing/static/thumbnails/07-audit-report-and-kam.webp": "358e13085408edc6c49d25f32228a1941ed1a8a3edec7492e0efe118a10bb366",
+    "landing/static/thumbnails/07-order-book-price-time-priority-card.webp": "e3ff881ba97e4a52df185c4857ac132e6bd018f3a9936809e7126de9c3604b3a",
+    "landing/static/thumbnails/07-order-book-price-time-priority.webp": "906537f841fe18253b7cfd4646f961f9e240b74079bbd0130d89540fc24fbae2",
     "landing/static/thumbnails/079550-lig-nexone-cash-clock-card.webp": "72f2d24b67ae5079fe1b36253f30e627044f6ddf26a5a92d1c6e3143b7ed0580",
     "landing/static/thumbnails/079550-lig-nexone-cash-clock.webp": "556ca5afacdd56b77f2ced1623cbd3c66ba0e5b0d7a80c9fa460b578eb468736",
     "landing/static/thumbnails/08-clean-audit-opinion-but-still-risky-card.webp": "7c8aca705d1661c0c35754929586ca93f51e1e135360eb0852df9016da7c086a",
@@ -5306,6 +5326,10 @@
       "textNodes": 13,
       "viewBox": "0 0 1080 680"
     },
+    "08d1768cf41d0da92c9d9c6cef7d2c284d124eab19332dfdf826994d8c542d03": {
+      "bytes": 66300,
+      "path": "objects/sha256/08/08d1768cf41d0da92c9d9c6cef7d2c284d124eab19332dfdf826994d8c542d03.webp"
+    },
     "08fdd81e378ba35c7cfca9724d84b519b05625786115ddeb48f2afd4ac0e60c6": {
       "bytes": 2219,
       "colorCount": 8,
@@ -6182,6 +6206,10 @@
       "textNodes": 15,
       "viewBox": "0 0 1200 675"
     },
+    "155a2579c8ded01ce1878105a38e1e1b9bf242417bd8130def99c7ebd77a0688": {
+      "bytes": 106374,
+      "path": "objects/sha256/15/155a2579c8ded01ce1878105a38e1e1b9bf242417bd8130def99c7ebd77a0688.webp"
+    },
     "155ad1ed8fd94bdf8b144d82e9a1be0bfec92640ea38e96bbef01d560628cd23": {
       "bytes": 112608,
       "path": "objects/sha256/15/155ad1ed8fd94bdf8b144d82e9a1be0bfec92640ea38e96bbef01d560628cd23.webp"
@@ -6449,6 +6477,10 @@
     "1879c275fc3df3fc12b7a0d28c07c9ab817079115247c2fddbd8a92052ed098f": {
       "bytes": 187684,
       "path": "objects/sha256/18/1879c275fc3df3fc12b7a0d28c07c9ab817079115247c2fddbd8a92052ed098f.webp"
+    },
+    "189478683503a42f1dfe2084dc8a15fb614eaba2cd89086002773165d665950f": {
+      "bytes": 127910,
+      "path": "objects/sha256/18/189478683503a42f1dfe2084dc8a15fb614eaba2cd89086002773165d665950f.webp"
     },
     "18a98672c5f5ea3bff090dcf58cb7d9ebcaf511bedb5523e86e669599292f315": {
       "bytes": 73634,
@@ -6849,6 +6881,14 @@
     "1e80e422c7113c17a1bbb0a54610db909887b4a45adc39af0916edca7d65cbfb": {
       "bytes": 52538,
       "path": "objects/sha256/1e/1e80e422c7113c17a1bbb0a54610db909887b4a45adc39af0916edca7d65cbfb.webp"
+    },
+    "1e99155212034de51eac8cbe43b8ef3567854bff3e149f00dabe5b761e863d68": {
+      "bytes": 5059,
+      "colorCount": 24,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/1e/1e99155212034de51eac8cbe43b8ef3567854bff3e149f00dabe5b761e863d68.svg",
+      "textNodes": 15,
+      "viewBox": "0 0 1200 675"
     },
     "1eba587effdfcd1886a76e1cca350806c784698d173b5ffb93679fda99500f34": {
       "bytes": 2386,
@@ -10070,6 +10110,14 @@
       "textNodes": 13,
       "viewBox": "0 0 1200 720"
     },
+    "477e44423471005e725187bc74caf796ffec2d006d3fe02d2c70338ef6277d6d": {
+      "bytes": 4840,
+      "colorCount": 22,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/47/477e44423471005e725187bc74caf796ffec2d006d3fe02d2c70338ef6277d6d.svg",
+      "textNodes": 21,
+      "viewBox": "0 0 1200 675"
+    },
     "4786f4f107d74095e6f99c07c87de883e7bc3f28564ebd4007b303f72dfe56a2": {
       "bytes": 5196,
       "colorCount": 19,
@@ -10149,6 +10197,14 @@
       "path": "objects/sha256/48/488227e57ae27b4bbaf8cc723e8d8bc7d9f9769441af4ade7f5df62811a68d22.svg",
       "textNodes": 38,
       "viewBox": "0 0 1200 720"
+    },
+    "48983afc0c57c5a6c839d247beb2b3b4fa2cf2d00c7aca13aed56ea0c13091fa": {
+      "bytes": 5048,
+      "colorCount": 28,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/48/48983afc0c57c5a6c839d247beb2b3b4fa2cf2d00c7aca13aed56ea0c13091fa.svg",
+      "textNodes": 21,
+      "viewBox": "0 0 1600 900"
     },
     "48a566dbc3d16ec3935c4a37249246e931176a0dac06d3a657521f36bb7538c5": {
       "bytes": 194502,
@@ -10329,6 +10385,10 @@
       "path": "objects/sha256/4a/4ae254b1b200a6745f8336e3fba56605785a54518aac1ba3b7910d2eeea3edbc.svg",
       "textNodes": 21,
       "viewBox": "0 0 1080 540"
+    },
+    "4b22f52d8cda14b7e4844e43ca3a053cde5747169dc223c8f256e7865e9f06b6": {
+      "bytes": 185454,
+      "path": "objects/sha256/4b/4b22f52d8cda14b7e4844e43ca3a053cde5747169dc223c8f256e7865e9f06b6.webp"
     },
     "4b354165222967bd7be5dcc53de0142206629c4e81aaa67d7a0e53a01dfa3f17": {
       "bytes": 98232,
@@ -10653,6 +10713,10 @@
     "4ff5d49cf694ca0c4d6871a7f36f58346333ec3e6160ab8ebb752347d58ac383": {
       "bytes": 179420,
       "path": "objects/sha256/4f/4ff5d49cf694ca0c4d6871a7f36f58346333ec3e6160ab8ebb752347d58ac383.webp"
+    },
+    "4ff818c1ae7d4715c1ed33d31fa783642a530c16513c55fd89af4232771e58c9": {
+      "bytes": 146472,
+      "path": "objects/sha256/4f/4ff818c1ae7d4715c1ed33d31fa783642a530c16513c55fd89af4232771e58c9.webp"
     },
     "50125de86c4b71b53953be884f43c2cee8c17766c0f69b47fabee483dadcb1dd": {
       "bytes": 73274,
@@ -13678,6 +13742,10 @@
       "bytes": 85334,
       "path": "objects/sha256/7a/7a46240840fa0b0632cc28f856473e1c090b5bc4cb82c4b353fb3c9b410b48f5.webp"
     },
+    "7a4d5a66f0530b764685667ae87653214b1a8c2be880500108745b1d1755e7ea": {
+      "bytes": 144014,
+      "path": "objects/sha256/7a/7a4d5a66f0530b764685667ae87653214b1a8c2be880500108745b1d1755e7ea.webp"
+    },
     "7a52630dd3c431a749836783b968a0c560cc735bf1f12e73c0b8a36403ffef0d": {
       "bytes": 69278,
       "path": "objects/sha256/7a/7a52630dd3c431a749836783b968a0c560cc735bf1f12e73c0b8a36403ffef0d.webp"
@@ -15006,6 +15074,14 @@
       "textNodes": 11,
       "viewBox": "0 0 900 506"
     },
+    "8ad88fbd8034c67547fdc763decbbfc747a3894d27d1bf6706ffbc6eb2f363ea": {
+      "bytes": 4301,
+      "colorCount": 18,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/8a/8ad88fbd8034c67547fdc763decbbfc747a3894d27d1bf6706ffbc6eb2f363ea.svg",
+      "textNodes": 19,
+      "viewBox": "0 0 1600 900"
+    },
     "8b0055929a8fc06c983f236e41013723d2487117f8bdfa332617eed759e40c43": {
       "bytes": 56134,
       "path": "objects/sha256/8b/8b0055929a8fc06c983f236e41013723d2487117f8bdfa332617eed759e40c43.webp"
@@ -15369,6 +15445,10 @@
       "path": "objects/sha256/90/9057ac570f5cb6109cfef2765535d8739a111b21334ca289fe59e3d359733ed7.svg",
       "textNodes": 43,
       "viewBox": "0 0 1200 720"
+    },
+    "906537f841fe18253b7cfd4646f961f9e240b74079bbd0130d89540fc24fbae2": {
+      "bytes": 54114,
+      "path": "objects/sha256/90/906537f841fe18253b7cfd4646f961f9e240b74079bbd0130d89540fc24fbae2.webp"
     },
     "906c5666633eef8c84437b5e565f56df9d9ee354f561f4d978169e34eb571a8b": {
       "bytes": 113294,
@@ -16081,6 +16161,10 @@
     "9a6098c72e2c4e2b350b7656f035c774d8fcdfbc560298d3487a9fa61243b1fd": {
       "bytes": 136774,
       "path": "objects/sha256/9a/9a6098c72e2c4e2b350b7656f035c774d8fcdfbc560298d3487a9fa61243b1fd.webp"
+    },
+    "9a95ef13152413edd1e48afc471d6df195b5f945331ad5d0b9b510c39aeef30e": {
+      "bytes": 206184,
+      "path": "objects/sha256/9a/9a95ef13152413edd1e48afc471d6df195b5f945331ad5d0b9b510c39aeef30e.webp"
     },
     "9a9ca56592e38ac30c4b4f4351f42d603763a2f0ba0bb5ac479e110aa42c4704": {
       "bytes": 11729,
@@ -16978,6 +17062,14 @@
       "textNodes": 44,
       "viewBox": "0 0 1080 820"
     },
+    "a77b5ba65a75d11cc9e44ba960ba519788765bf22e81798488ae1716b3bffc4f": {
+      "bytes": 4625,
+      "colorCount": 21,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/a7/a77b5ba65a75d11cc9e44ba960ba519788765bf22e81798488ae1716b3bffc4f.svg",
+      "textNodes": 21,
+      "viewBox": "0 0 1600 900"
+    },
     "a791ad56b61cb43af335e6c134c70dd1e554c611a7bd505cc408c99de0c9d204": {
       "bytes": 100264,
       "path": "objects/sha256/a7/a791ad56b61cb43af335e6c134c70dd1e554c611a7bd505cc408c99de0c9d204.webp"
@@ -17681,6 +17773,10 @@
     "b04890f95f0d38f71b111ea1a329461771adc4e727140fc4e0570b41422e6fef": {
       "bytes": 76074,
       "path": "objects/sha256/b0/b04890f95f0d38f71b111ea1a329461771adc4e727140fc4e0570b41422e6fef.webp"
+    },
+    "b09aa812a077e24c58b0df5ef729d1882084a6201db7269fc77e91a5f1c43596": {
+      "bytes": 255760,
+      "path": "objects/sha256/b0/b09aa812a077e24c58b0df5ef729d1882084a6201db7269fc77e91a5f1c43596.webp"
     },
     "b0ae07ccfc4d0f95f5d7f2dc4c889e494c18e8b34ed8e6f41ac0e4c9fccc03cb": {
       "bytes": 124612,
@@ -19345,6 +19441,10 @@
       "path": "objects/sha256/c6/c6768da5ad2f09f811003d835f2752ef9daaa4c057c631474223e1d478aa8274.svg",
       "textNodes": 27,
       "viewBox": "0 0 1200 720"
+    },
+    "c6812b0fd200b9f3369c8bbce48029a1424ebfad3a1335c9cdb8ff15cfbab1b8": {
+      "bytes": 268878,
+      "path": "objects/sha256/c6/c6812b0fd200b9f3369c8bbce48029a1424ebfad3a1335c9cdb8ff15cfbab1b8.webp"
     },
     "c688e1974fa7816ca01e1b6f32006c82e80691341ca5f8f21f586a986aa64313": {
       "bytes": 4951,
@@ -21494,6 +21594,10 @@
       "bytes": 75108,
       "path": "objects/sha256/e3/e3e4d1483d3fa46e8ef8765fd9a217678e79682aaed57156fe89b818b84e9244.webp"
     },
+    "e3ff881ba97e4a52df185c4857ac132e6bd018f3a9936809e7126de9c3604b3a": {
+      "bytes": 51678,
+      "path": "objects/sha256/e3/e3ff881ba97e4a52df185c4857ac132e6bd018f3a9936809e7126de9c3604b3a.webp"
+    },
     "e40f39bc4a00cf2a32b86efb1dbf9890124757374d6bc56e8c666b61b04e5896": {
       "bytes": 147799,
       "path": "objects/sha256/e4/e40f39bc4a00cf2a32b86efb1dbf9890124757374d6bc56e8c666b61b04e5896.gif"
@@ -22426,6 +22530,10 @@
       "bytes": 53938,
       "path": "objects/sha256/f0/f05b126d38b8d214288c8ecd03c8071dbfe93c851af7f0110c66d511c39fae9a.webp"
     },
+    "f079ab2aa6ac3983d8443e8b4f91a871d945ee89c23e4db8145707c399d6e969": {
+      "bytes": 76462,
+      "path": "objects/sha256/f0/f079ab2aa6ac3983d8443e8b4f91a871d945ee89c23e4db8145707c399d6e969.webp"
+    },
     "f07c7a6f47c3800ba3cdb6dba6611cce89319ba95895f001b823fc2927265304": {
       "bytes": 5465,
       "colorCount": 10,
@@ -22601,6 +22709,14 @@
       "path": "objects/sha256/f2/f2edbe7d8e20c4d01c328b4f48e24116abed0e1f9c96dee71fe9fb38cd4d494c.svg",
       "textNodes": 20,
       "viewBox": "0 0 1080 540"
+    },
+    "f315496a1c6778ed0d9a1a59d327bd1c761f96480cc98ae01556b8a5cb4e3c8a": {
+      "bytes": 4057,
+      "colorCount": 25,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/f3/f315496a1c6778ed0d9a1a59d327bd1c761f96480cc98ae01556b8a5cb4e3c8a.svg",
+      "textNodes": 17,
+      "viewBox": "0 0 1200 675"
     },
     "f31be21fc90e2e20b004aa6fd0e4e3367b28e885713dc75bdaccdb972f20d67d": {
       "bytes": 3850,
@@ -23622,6 +23738,14 @@
       "bytes": 58040,
       "path": "objects/sha256/ff/ff687cbe4b7f87e3b56a908a1dd98b52fde7c0da9772d5ce4ac2ea31db30cdd6.webp"
     },
+    "ff721155b3e738aea61e3f4c50e6ff3c3c76759d28233d2011fb2cd782d254d0": {
+      "bytes": 5110,
+      "colorCount": 20,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/ff/ff721155b3e738aea61e3f4c50e6ff3c3c76759d28233d2011fb2cd782d254d0.svg",
+      "textNodes": 29,
+      "viewBox": "0 0 1600 900"
+    },
     "ff93681515228e9200c7d48282bba7eb74634304cb3ab249af3cd229d5cdc73a": {
       "bytes": 1052,
       "colorCount": 9,
@@ -23637,6 +23761,14 @@
     "fff2ad0155fec7b8bc2af134b01eac8a2766e5d2e8f007ab8a396fabd3ce8bc8": {
       "bytes": 135812,
       "path": "objects/sha256/ff/fff2ad0155fec7b8bc2af134b01eac8a2766e5d2e8f007ab8a396fabd3ce8bc8.webp"
+    },
+    "fff9343abb5270cbc6905f3d018c5cedcf8c2d2cbee1b712ff8a71fdea199949": {
+      "bytes": 3839,
+      "colorCount": 22,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/ff/fff9343abb5270cbc6905f3d018c5cedcf8c2d2cbee1b712ff8a71fdea199949.svg",
+      "textNodes": 17,
+      "viewBox": "0 0 1600 900"
     },
     "fffc3fea379a4b7dc43ceb90f1d982ba7d9d08fd6ff088582e152fd0833e0d71": {
       "bytes": 5781,
@@ -31105,6 +31237,60 @@
         "blog/09-investment-stories/05-overseas-stock-return-exchange-rate/assets/overseas-return-two-prices.webp",
         "blog/09-investment-stories/05-overseas-stock-return-exchange-rate/assets/same-stock-two-exits.webp",
         "landing/static/thumbnails/overseas-stock-return-exchange-rate-card.webp"
+      ]
+    },
+    "09-investment-stories/06-stock-market-sidecar-program-trading": {
+      "assets": {
+        "futures-basket-clutch": "blog/09-investment-stories/06-stock-market-sidecar-program-trading/assets/futures-basket-clutch.webp",
+        "market-brake-scales": "blog/09-investment-stories/06-stock-market-sidecar-program-trading/assets/market-brake-scales.webp",
+        "sidecar-selective-gate": "blog/09-investment-stories/06-stock-market-sidecar-program-trading/assets/sidecar-selective-gate.webp"
+      },
+      "card": "landing/static/thumbnails/06-stock-market-sidecar-program-trading-card.webp",
+      "diagrams": {
+        "kospi-kosdaq-sidecar-rules": "blog/09-investment-stories/06-stock-market-sidecar-program-trading/assets/kospi-kosdaq-sidecar-rules.svg",
+        "sidecar-order-path": "blog/09-investment-stories/06-stock-market-sidecar-program-trading/assets/sidecar-order-path.svg",
+        "three-market-brakes": "blog/09-investment-stories/06-stock-market-sidecar-program-trading/assets/three-market-brakes.svg"
+      },
+      "og": "landing/static/thumbnails/06-stock-market-sidecar-program-trading.webp",
+      "staging": [
+        "blog/09-investment-stories/06-stock-market-sidecar-program-trading/assets/futures-basket-clutch.webp",
+        "blog/09-investment-stories/06-stock-market-sidecar-program-trading/assets/kospi-kosdaq-sidecar-rules.svg",
+        "blog/09-investment-stories/06-stock-market-sidecar-program-trading/assets/market-brake-scales.webp",
+        "blog/09-investment-stories/06-stock-market-sidecar-program-trading/assets/sidecar-order-path.svg",
+        "blog/09-investment-stories/06-stock-market-sidecar-program-trading/assets/sidecar-selective-gate.webp",
+        "blog/09-investment-stories/06-stock-market-sidecar-program-trading/assets/three-market-brakes.svg",
+        "landing/static/thumbnails/06-stock-market-sidecar-program-trading-card.webp"
+      ]
+    },
+    "09-investment-stories/07-order-book-price-time-priority": {
+      "assets": {
+        "call-auction-clearing-chamber": "blog/09-investment-stories/07-order-book-price-time-priority/assets/call-auction-clearing-chamber.webp",
+        "last-price-waiting-order": "blog/09-investment-stories/07-order-book-price-time-priority/assets/last-price-waiting-order.webp",
+        "market-order-sweeps-book": "blog/09-investment-stories/07-order-book-price-time-priority/assets/market-order-sweeps-book.webp",
+        "price-time-order-queue": "blog/09-investment-stories/07-order-book-price-time-priority/assets/price-time-order-queue.webp",
+        "smart-order-router-two-venues": "blog/09-investment-stories/07-order-book-price-time-priority/assets/smart-order-router-two-venues.webp"
+      },
+      "card": "landing/static/thumbnails/07-order-book-price-time-priority-card.webp",
+      "diagrams": {
+        "amend-vs-partial-cancel": "blog/09-investment-stories/07-order-book-price-time-priority/assets/amend-vs-partial-cancel.svg",
+        "continuous-vs-call-auction": "blog/09-investment-stories/07-order-book-price-time-priority/assets/continuous-vs-call-auction.svg",
+        "market-order-slippage": "blog/09-investment-stories/07-order-book-price-time-priority/assets/market-order-slippage.svg",
+        "order-book-ladder": "blog/09-investment-stories/07-order-book-price-time-priority/assets/order-book-ladder.svg",
+        "price-time-queue": "blog/09-investment-stories/07-order-book-price-time-priority/assets/price-time-queue.svg"
+      },
+      "og": "landing/static/thumbnails/07-order-book-price-time-priority.webp",
+      "staging": [
+        "blog/09-investment-stories/07-order-book-price-time-priority/assets/amend-vs-partial-cancel.svg",
+        "blog/09-investment-stories/07-order-book-price-time-priority/assets/call-auction-clearing-chamber.webp",
+        "blog/09-investment-stories/07-order-book-price-time-priority/assets/continuous-vs-call-auction.svg",
+        "blog/09-investment-stories/07-order-book-price-time-priority/assets/last-price-waiting-order.webp",
+        "blog/09-investment-stories/07-order-book-price-time-priority/assets/market-order-slippage.svg",
+        "blog/09-investment-stories/07-order-book-price-time-priority/assets/market-order-sweeps-book.webp",
+        "blog/09-investment-stories/07-order-book-price-time-priority/assets/order-book-ladder.svg",
+        "blog/09-investment-stories/07-order-book-price-time-priority/assets/price-time-order-queue.webp",
+        "blog/09-investment-stories/07-order-book-price-time-priority/assets/price-time-queue.svg",
+        "blog/09-investment-stories/07-order-book-price-time-priority/assets/smart-order-router-two-venues.webp",
+        "landing/static/thumbnails/07-order-book-price-time-priority-card.webp"
       ]
     }
   },
