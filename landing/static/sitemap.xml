@@ -3330,4 +3330,16 @@
     <priority>0.8</priority>
     <lastmod>2026-07-17</lastmod>
   </url>
+  <url>
+    <loc>https://eddmpython.github.io/dartlab/blog/stock-market-sidecar-program-trading</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2026-07-29</lastmod>
+  </url>
+  <url>
+    <loc>https://eddmpython.github.io/dartlab/blog/order-book-price-time-priority</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2026-07-29</lastmod>
+  </url>
 </urlset>

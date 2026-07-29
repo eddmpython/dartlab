@@ -304,6 +304,8 @@ DART, EDGAR, 사업보고서 읽기, 재무 해석, 데이터 자동화에 관�
 - [주가와 시가총액은 왜 다를까](https://eddmpython.github.io/dartlab/blog/price-vs-market-cap) - 주가와 시가총액의 차이를 1주 가격, 발행주식수, 주식분할, 증자, 자사주, PER와 PBR까지 연결해 초보자 눈높이로 깊게 설명한다. | Markdown: https://eddmpython.github.io/dartlab/markdown/blog/price-vs-market-cap.md
 - [수급이란 무엇인가: 개인, 기관, 외국인](https://eddmpython.github.io/dartlab/blog/investor-flow-retail-institution-foreign) - 수급을 개인, 기관, 외국인의 순매수 신호가 아니라 가격, 거래량, 거래대금, 기간과 함께 읽는 체결 흔적으로 설명한다. | Markdown: https://eddmpython.github.io/dartlab/markdown/blog/investor-flow-retail-institution-foreign.md
 - [미국 주식은 올랐는데 왜 내 수익률은 다를까](https://eddmpython.github.io/dartlab/blog/overseas-stock-return-exchange-rate) - 미국 주식이 10% 올라도 내 원화 수익률은 다를 수 있다. 100달러짜리 주식으로 주가와 원달러 환율이 함께 만드는 해외주식 수익률을 쉽게 계산한다. | Markdown: https://eddmpython.github.io/dartlab/markdown/blog/overseas-stock-return-exchange-rate.md
+- [사이드카가 발동되면 주식 거래가 모두 멈출까](https://eddmpython.github.io/dartlab/blog/stock-market-sidecar-program-trading) - 사이드카는 시장 전체를 세우지 않는다. 선물 급변이 현물 바스켓 주문으로 번지는 연결부를 5분간 늦추는 원리와 서킷브레이커와의 차이를 설명한다. | Markdown: https://eddmpython.github.io/dartlab/markdown/blog/stock-market-sidecar-program-trading.md
+- [현재가가 10,000원인데 왜 내 주문은 체결되지 않을까](https://eddmpython.github.io/dartlab/blog/order-book-price-time-priority) - 현재가는 방금 끝난 거래의 가격이지 다음 체결을 보장하는 가격이 아니다. 10,000원 주문 하나로 가격 우선, 시간 우선, 부분 체결, 시장가 슬리피지, 단일가매매와 KRX·NXT 주문 경로를 설명한다. | Markdown: https://eddmpython.github.io/dartlab/markdown/blog/order-book-price-time-priority.md
 
 ## Skills
 사람과 LLM이 같은 절차로 작업하는 실행 문서. 각 skill 은 직접 링크·인용·인덱싱이 가능한 전용 페이지를 가진다.
