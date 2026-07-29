@@ -13,12 +13,11 @@
 - 효율성: 총자산회전율, 유형자산회전율, 재고자산회전율, 매출채권회전율, 매입채무회전율, 영업순환주기
 - 현금흐름: FCF, 영업CF마진, 영업CF/순이익, 영업CF/유동부채, CAPEX비율, 배당성향, FCF/OCF비율
 - 주당지표: EPS, BPS (시가총액 필요: PER, PBR, PSR, EV/EBITDA)
-- 부실예측: Ohlson O-Score, Altman Z''-Score, Springate S-Score, Zmijewski X-Score
+- 부실예측: Altman Z''-Score, Springate S-Score, Zmijewski X-Score
 """
 
 from __future__ import annotations
 
-import math
 from dataclasses import dataclass, field
 from typing import ClassVar
 
@@ -127,11 +126,14 @@ class RatioResult:
     piotroskiMaxScore: int = 9
     altmanZScore: float | None = None
 
-    # 이익 품질 지표
+    # 이익 품질 지표. Beneish는 호환 슬롯이다. 공용 입력은 원식의 LTD,
+    # current maturities, income tax payable, 순수 감가상각을 공급자 간
+    # 같은 의미로 보장하지 못하므로 계산하지 않는다.
     beneishMScore: float | None = None
     sloanAccrualRatio: float | None = None
 
-    # 부실 예측 모델
+    # 부실 예측 모델. Ohlson 두 필드는 호환 슬롯이다. 공용 다통화 입력에는
+    # 원식의 GNP price-level index로 보정한 SIZE가 없어 계산하지 않는다.
     ohlsonOScore: float | None = None
     ohlsonProbability: float | None = None
     altmanZppScore: float | None = None
@@ -748,7 +750,7 @@ def calcRatios(
       - **Stability**: 부채비율 / 자기자본비율 / 유동비율 / 당좌비율 / 이자보상.
       - **Efficiency**: 자산회전율 / 재고회전 / 매출채권회전 / CCC.
       - **Cashflow**: OCF / FCF / Capex 비율 / 배당성향.
-      - **Composite**: Altman Z / Altman Z'' / Piotroski F / Ohlson O / Beneish M / Springate / Zmijewski / Sloan Accrual.
+      - **Composite**: Altman Z / Altman Z'' / Piotroski F / Springate / Zmijewski / Sloan Accrual.
       - **PerShare**: EPS / BPS / DPS (shares 제공 시).
       - **Valuation**: PER / PBR / PSR / EV/EBITDA (marketCap 제공 시).
       - **Archetype Policy**: detected archetype (industrial/bank/insurance/holding/etc.) 별
@@ -785,7 +787,7 @@ def calcRatios(
         - ``_detectArchetype`` — archetype 자동 감지 룰.
         - ``_applyArchetypePolicyResult`` — archetype 별 N/A 처리.
         - ``_calcProfitability`` / ``_calcStability`` / ``_calcEfficiency`` / ``_calcCashflow``
-          / ``_calcComposite`` / ``_calcPiotroski`` / ``_calcAltmanZ`` / ``_calcBeneish`` 등 helper.
+          / ``_calcComposite`` / ``_calcPiotroski`` / ``_calcAltmanZ`` 등 helper.
         - ``getTTM`` / ``getLatest`` — flow vs stock 추출 헬퍼.
 
     Requires:
@@ -796,7 +798,7 @@ def calcRatios(
         - DART KR + EDGAR US 공통 재무비율 60+ 계산 백엔드.
         - Archetype-aware — 업종별 부적용 ratio 자동 None.
         - TTM / Annual mode 양방향 — 분기 시계열 + 연간 시계열 모두.
-        - Composite score (Piotroski/Altman/Beneish/Ohlson/Springate/Zmijewski/Sloan) 5+ 종.
+        - Composite score (Piotroski/Altman/Springate/Zmijewski/Sloan) 5+ 종.
 
     Guide:
         - 사용자 API 는 ``c.panel("ratios")`` — 본 함수는 backend.
@@ -820,7 +822,7 @@ def calcRatios(
               ``roic`` / ``debtRatio`` / ``currentRatio`` / ``quickRatio`` /
               ``operatingMargin`` / ``netMargin`` / ``grossMargin`` / ``assetTurnover`` /
               ``inventoryTurnover`` / ``ccc`` / ``fcf`` / ``payoutRatio`` /
-              ``altmanZ`` / ``piotroskiF`` / ``beneishM`` / ``ohlsonO`` / ``springate`` /
+              ``altmanZ`` / ``piotroskiF`` / ``springate`` /
               ``zmijewski`` / ``sloanAccrual`` / ``eps`` / ``bps`` / ``per`` / ``pbr`` / ``psr`` /
               ``evEbitda`` 등) + ``currency`` (str) + ``warnings`` (list).
         Prerequisites:
@@ -834,8 +836,8 @@ def calcRatios(
             - series (raw 시계열) → archetype 감지 → ``getTTM`` / ``getLatest`` 분기
             - → ``_calcProfitability`` / ``_calcStability`` / ``_calcEfficiency`` / ``_calcCashflow``
             - → ``_calcComposite`` / ``_calcRoic`` / ``_calcDupont`` / ``_calcDebtToEbitda`` / ``_calcCCC``
-            - → ``_calcPiotroski`` / ``_calcAltmanZ`` / ``_calcSloanAccrual`` / ``_calcOhlsonO``
-              / ``_calcSpringate`` / ``_calcZmijewski`` / ``_calcBeneish``
+            - → ``_calcPiotroski`` / ``_calcAltmanZ`` / ``_calcSloanAccrual``
+              / ``_calcSpringate`` / ``_calcZmijewski``
             - → ``_calcPerShare`` (shares 있을 때) / ``_calcValuation`` (marketCap 있을 때)
             - → ``_applyArchetypePolicyResult`` (부적용 field None 처리)
             - → RatioResult dataclass.
@@ -954,7 +956,7 @@ def calcRatios(
     _calcStability(r)
     _calcEfficiency(r)
     _calcCashflow(r, series)
-    _calcComposite(r, series, annual=annual, maxTrailingNones=ttmMaxTrailingNones)
+    _calcComposite(r, series, maxTrailingNones=ttmMaxTrailingNones)
 
     if shares and shares > 0:
         r.sharesOutstanding = shares
@@ -1109,13 +1111,12 @@ def _calcCashflow(
 def _calcComposite(
     r: RatioResult,
     series: dict[str, dict[str, list[float | None]]],
-    annual: bool = False,
     maxTrailingNones: int | None = None,
 ) -> None:
-    """복합 지표 (11개) orchestrator — 각 블록은 별도 함수로 분리 (Q3.1).
+    """복합 지표 orchestrator — 각 블록은 별도 함수로 분리 (Q3.1).
 
-    ROIC / DuPont / Debt/EBITDA / CCC / Piotroski / Altman Z / Sloan / Beneish /
-    Altman Z'' / Ohlson / Springate / Zmijewski.
+    ROIC / DuPont / Debt/EBITDA / CCC / Piotroski / Altman Z / Sloan /
+    Altman Z'' / Springate / Zmijewski.
     """
     _calcRoic(r, series, maxTrailingNones)
     _calcDupont(r)
@@ -1124,9 +1125,7 @@ def _calcComposite(
     _calcPiotroski(r, series)
     _calcAltmanZ(r)
     _calcSloanAccrual(r)
-    _calcBeneish(r, series, annual)
     _calcAltmanZpp(r)
-    _calcOhlsonO(r, series, annual)
     _calcSpringate(r)
     _calcZmijewski(r)
 
@@ -1345,80 +1344,6 @@ def _calcAltmanZpp(r: RatioResult) -> None:
     r.altmanZppScore = _safeRound(zpp, 2)
 
 
-def _ohlsonIncomePeriods(
-    series: dict[str, dict[str, list[float | None]]],
-    annual: bool,
-) -> tuple[float, float] | None:
-    """Ohlson의 현재·전기 연환산 순이익을 완전한 기간에서만 반환."""
-    values = _pickSeries(series, "IS", ["net_profit", "net_income"])
-    if annual:
-        if len(values) < 2 or values[-1] is None or values[-2] is None:
-            return None
-        return values[-1], values[-2]
-
-    if len(values) < 8 or any(value is None for value in values[-8:]):
-        return None
-    return sum(values[-4:]), sum(values[-8:-4])
-
-
-def _calcOhlsonO(
-    r: RatioResult,
-    series: dict[str, dict[str, list[float | None]]],
-    annual: bool,
-) -> None:
-    """Ohlson O-Score (1980) — 9변수 로지스틱. 금융업 포함 범용."""
-    incomePeriods = _ohlsonIncomePeriods(series, annual)
-    if not (
-        r.totalAssets
-        and r.totalAssets > 0
-        and r.totalLiabilities
-        and r.totalLiabilities > 0
-        and r.currentAssets
-        and r.currentAssets > 0
-        and r.currentLiabilities is not None
-        and r.operatingCashflowTTM is not None
-        and incomePeriods is not None
-    ):
-        return
-    ni, priorNi = incomePeriods
-    tl = r.totalLiabilities
-    ca = r.currentAssets
-    cl = r.currentLiabilities
-
-    size = math.log(max(r.totalAssets / 1e6, 1))
-    tlta = tl / r.totalAssets
-    wcta = (ca - cl) / r.totalAssets
-    clca = cl / ca
-    oeneg = 1 if tl > r.totalAssets else 0
-    nita = ni / r.totalAssets
-    futl = r.operatingCashflowTTM / tl
-    intwo = 1 if ni < 0 and priorNi < 0 else 0
-    incomeScale = abs(ni) + abs(priorNi)
-    if incomeScale == 0:
-        return
-    chin = (ni - priorNi) / incomeScale
-
-    o = (
-        -1.32
-        - 0.407 * size
-        + 6.03 * tlta
-        - 1.43 * wcta
-        + 0.0757 * clca
-        - 1.72 * oeneg
-        - 2.37 * nita
-        - 1.83 * futl
-        + 0.285 * intwo
-        - 0.521 * chin
-    )
-    r.ohlsonOScore = _safeRound(o, 4)
-    if o >= 0:
-        probability = 1 / (1 + math.exp(-o))
-    else:
-        expO = math.exp(o)
-        probability = expO / (1 + expO)
-    r.ohlsonProbability = _safeRound(probability * 100, 2)
-
-
 def _calcSpringate(r: RatioResult) -> None:
     """Springate S-Score (1978). S < 0.862 → 부실 위험."""
     if not (
@@ -1461,172 +1386,6 @@ def _calcZmijewski(r: RatioResult) -> None:
         + 0.004 * (r.currentAssets / r.currentLiabilities)
     )
     r.zmijewskiXScore = _safeRound(x, 4)
-
-
-def _beneishDsri(revT: float | None, recT: float | None, revP: float | None, recP: float | None) -> float | None:
-    if recT is None or recP is None or not revT or revT <= 0 or not revP or revP == 0:
-        return None
-    dsr_t = recT / revT
-    dsr_p = recP / revP
-    return dsr_t / dsr_p if dsr_p > 0 else None
-
-
-def _beneishGmi(revT: float, cogsT: float | None, revP: float, cogsP: float | None) -> float | None:
-    if cogsT is None or cogsP is None or revT <= 0 or revP == 0:
-        return None
-    gm_t = (revT - cogsT) / revT
-    gm_p = (revP - cogsP) / revP
-    return gm_p / gm_t if gm_t > 0 and gm_p > 0 else None
-
-
-def _beneishAqi(
-    taT: float,
-    caT: float | None,
-    tanT: float | None,
-    taP: float,
-    caP: float | None,
-    tanP: float | None,
-) -> float | None:
-    if caT is None or caP is None or taT <= 0 or taP <= 0:
-        return None
-    aq_t = 1 - (caT + (tanT or 0)) / taT
-    aq_p = 1 - (caP + (tanP or 0)) / taP
-    return aq_t / aq_p if aq_p != 0 else None
-
-
-def _beneishDepi(depT: float | None, tanT: float | None, depP: float | None, tanP: float | None) -> float | None:
-    if depT is None or depP is None:
-        return None
-    ppe_t = (tanT or 0) + depT
-    ppe_p = (tanP or 0) + depP
-    if ppe_t <= 0 or ppe_p <= 0:
-        return None
-    dr_t = depT / ppe_t
-    dr_p = depP / ppe_p
-    return dr_p / dr_t if dr_t > 0 else None
-
-
-def _beneishSgai(revT: float, sgaT: float | None, revP: float, sgaP: float | None) -> float | None:
-    if sgaT is None or sgaP is None or revT <= 0 or revP <= 0:
-        return None
-    sga_r_t = sgaT / revT
-    sga_r_p = sgaP / revP
-    return sga_r_t / sga_r_p if sga_r_p > 0 else None
-
-
-def _beneishTata(npT: float | None, ocfT: float | None, taT: float) -> float | None:
-    if npT is None or ocfT is None or taT <= 0:
-        return None
-    return (npT - ocfT) / taT
-
-
-def _beneishLvgi(tlT: float | None, taT: float, tlP: float | None, taP: float) -> float | None:
-    if tlT is None or tlP is None or taT <= 0 or taP <= 0:
-        return None
-    lev_t = tlT / taT
-    lev_p = tlP / taP
-    return lev_t / lev_p if lev_p > 0 else None
-
-
-def _calcBeneishForPeriod(
-    *,
-    revT: float | None,
-    revP: float | None,
-    recT: float | None,
-    recP: float | None,
-    cogsT: float | None,
-    cogsP: float | None,
-    taT: float | None,
-    taP: float | None,
-    caT: float | None,
-    caP: float | None,
-    sgaT: float | None,
-    sgaP: float | None,
-    depT: float | None,
-    depP: float | None,
-    tanT: float | None,
-    tanP: float | None,
-    npT: float | None,
-    ocfT: float | None,
-    tlT: float | None,
-    tlP: float | None,
-) -> float | None:
-    """Beneish M-Score 단일 기간 계산 (현재 t vs 전기 p). 8 sub-index orchestrator."""
-    if revT is None or revP is None or revP == 0:
-        return None
-    if taT is None or taP is None or taP == 0:
-        return None
-
-    dsri = _beneishDsri(revT, recT, revP, recP)
-    gmi = _beneishGmi(revT, cogsT, revP, cogsP)
-    aqi = _beneishAqi(taT, caT, tanT, taP, caP, tanP)
-    sgi = revT / revP
-    depi = _beneishDepi(depT, tanT, depP, tanP)
-    sgai = _beneishSgai(revT, sgaT, revP, sgaP)
-    tata = _beneishTata(npT, ocfT, taT)
-    lvgi = _beneishLvgi(tlT, taT, tlP, taP)
-
-    vs = [dsri, gmi, aqi, sgi, depi, sgai, tata, lvgi]
-    if any(v is None for v in vs):
-        return None
-    m = (
-        -4.84
-        + 0.920 * dsri
-        + 0.528 * gmi
-        + 0.404 * aqi
-        + 0.892 * sgi
-        + 0.115 * depi
-        - 0.172 * sgai
-        + 4.679 * tata
-        - 0.327 * lvgi
-    )
-    return _safeRound(m, 2)
-
-
-def _calcBeneish(
-    r: RatioResult,
-    series: dict[str, dict[str, list[float | None]]],
-    annual: bool = False,
-) -> None:
-    """Beneish M-Score 8변수 모델 — _calcBeneishForPeriod에 위임."""
-    revSeries = _pickSeries(series, "IS", ["sales", "revenue"])
-    taSeries = _get(series, "BS", "total_assets")
-
-    if len(revSeries) < 2 or len(taSeries) < 2:
-        return
-
-    t, p = len(revSeries) - 1, len(revSeries) - 2
-
-    def _val(s: list, i: int) -> float | None:
-        return s[i] if i < len(s) and s[i] is not None else None
-
-    depSeries = _pickSeries(series, "CF", ["depreciation_and_amortization", "depreciation_cf", "depreciation"])
-    npSeries = _pickSeries(series, "IS", ["net_profit", "net_income"])
-    tlSeries = _get(series, "BS", "total_liabilities")
-    tanSeries = _get(series, "BS", "tangible_assets")
-
-    r.beneishMScore = _calcBeneishForPeriod(
-        revT=_val(revSeries, t),
-        revP=_val(revSeries, p),
-        recT=_val(_get(series, "BS", "trade_and_other_receivables"), t),
-        recP=_val(_get(series, "BS", "trade_and_other_receivables"), p),
-        cogsT=_val(_get(series, "IS", "cost_of_sales"), t),
-        cogsP=_val(_get(series, "IS", "cost_of_sales"), p),
-        taT=_val(taSeries, t),
-        taP=_val(taSeries, p),
-        caT=_val(_get(series, "BS", "current_assets"), t),
-        caP=_val(_get(series, "BS", "current_assets"), p),
-        sgaT=_val(_get(series, "IS", "selling_and_administrative_expenses"), t),
-        sgaP=_val(_get(series, "IS", "selling_and_administrative_expenses"), p),
-        depT=_val(depSeries, t),
-        depP=_val(depSeries, p),
-        tanT=_val(tanSeries, t),
-        tanP=_val(tanSeries, p),
-        npT=_val(npSeries, t),
-        ocfT=_val(_get(series, "CF", "operating_cashflow"), t),
-        tlT=_val(tlSeries, t),
-        tlP=_val(tlSeries, p),
-    )
 
 
 def _calcPerShare(r: RatioResult) -> None:
@@ -2073,36 +1832,6 @@ def _appendAltmanSloan(rs: RatioSeriesResult, i: int, S: dict[str, list], annual
         rs.sloanAccrualRatio.append(None)
 
 
-def _appendBeneishSeries(rs: RatioSeriesResult, i: int, S: dict[str, list]) -> None:
-    """Beneish M-Score 기간별 (2년 이상 필요)."""
-    if i < 1:
-        rs.beneishMScore.append(None)
-        return
-    m = _calcBeneishForPeriod(
-        revT=_sv(S["revenue"], i),
-        revP=_sv(S["revenue"], i - 1),
-        recT=_sv(S["receivables"], i),
-        recP=_sv(S["receivables"], i - 1),
-        cogsT=_sv(S["costOfSales"], i),
-        cogsP=_sv(S["costOfSales"], i - 1),
-        taT=_sv(S["totalAssets"], i),
-        taP=_sv(S["totalAssets"], i - 1),
-        caT=_sv(S["curAssets"], i),
-        caP=_sv(S["curAssets"], i - 1),
-        sgaT=_sv(S["sga"], i),
-        sgaP=_sv(S["sga"], i - 1),
-        depT=_sv(S["depreciation"], i),
-        depP=_sv(S["depreciation"], i - 1),
-        tanT=_sv(S["tangible"], i),
-        tanP=_sv(S["tangible"], i - 1),
-        npT=_sv(S["netProfit"], i),
-        ocfT=_sv(S["opCf"], i),
-        tlT=_sv(S["totalLiab"], i),
-        tlP=_sv(S["totalLiab"], i - 1),
-    )
-    rs.beneishMScore.append(m)
-
-
 def _appendComposite(
     rs: RatioSeriesResult,
     i: int,
@@ -2115,7 +1844,8 @@ def _appendComposite(
     _appendCCC(rs, i, S)
     rs.piotroskiFScore.append(_piotroskiScoreSeries(i, S, yoyLag, annualSeries))
     _appendAltmanSloan(rs, i, S, annualSeries)
-    _appendBeneishSeries(rs, i, S)
+    # 공용 다공급자 입력으로는 원식의 Beneish 계정을 보장할 수 없다.
+    rs.beneishMScore.append(None)
 
 
 def calcRatioSeries(

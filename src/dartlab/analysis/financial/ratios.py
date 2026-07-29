@@ -11,7 +11,6 @@ from dartlab.core.ratios import (  # noqa: F401
     RATIO_CATEGORIES,
     RatioResult,
     RatioSeriesResult,
-    _calcBeneishForPeriod,
     _detectArchetype,
     _safeDiv,
     _safePct,

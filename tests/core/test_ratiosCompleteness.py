@@ -36,8 +36,6 @@ _COMPOSITE_FIELDS = (
     "piotroskiFScore",
     "altmanZScore",
     "altmanZppScore",
-    "ohlsonOScore",
-    "ohlsonProbability",
     "springateSScore",
     "zmijewskiXScore",
 )
@@ -74,25 +72,7 @@ def test_each_required_signal_is_present_before_publishing_score():
     result = calcRatios(missingOperatingCashflow, annual=True)
 
     assert result.piotroskiFScore is None
-    assert result.ohlsonOScore is None
-    assert result.ohlsonProbability is None
     assert result.altmanZScore is not None
-
-
-def test_quarterly_ohlson_requires_two_complete_ttm_periods():
-    quarterly = {
-        statement: {field: [values[-1]] * 8 for field, values in rows.items()}
-        for statement, rows in _COMPLETE_SERIES.items()
-    }
-    complete = calcRatios(quarterly)
-
-    quarterly["IS"]["net_profit"] = quarterly["IS"]["net_profit"][-7:]
-    incomplete = calcRatios(quarterly)
-
-    assert complete.ohlsonOScore is not None
-    assert complete.ohlsonProbability is not None
-    assert incomplete.ohlsonOScore is None
-    assert incomplete.ohlsonProbability is None
 
 
 def test_ratio_series_keeps_incomplete_scores_as_none():

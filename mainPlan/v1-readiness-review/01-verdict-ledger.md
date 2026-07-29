@@ -35,10 +35,10 @@ L4 ai, mcp. 아래층 결함이 위층 전부를 오염시키므로 순서를 �
 ### 세션 인계
 
 - 현재 계층: L0 core
-- 마지막 완료 항목: L0-02 파생 재무비율 결측과 시점·시계열 일치
-- 진행 중인 단일 항목: L0 부실 예측 모델의 잔여 입력과 적용 범위 검증
-- 다음 첫 행동: Beneish의 유형자산 결측 대체와 Ohlson의 통화별 규모 항 적용 가능성을
-  공식 계약과 제품 출력으로 재현한다.
+- 마지막 완료 항목: L0-03 비정규 부실·조작 모델 비발행 계약
+- 진행 중인 단일 항목: L0 SecretStore의 원자성, 오류 투명성, 교차 플랫폼 안전성
+- 다음 첫 행동: SecretStore의 실제 호출자를 확정하고 동시 갱신 유실, 비 Windows 평문 저장,
+  암복호화 실패 삼킴을 제품 행동으로 재현한다.
 - 금지: L0 완료 판정 전 L1 이상 감사나 수정 착수
 
 ## L0 순차 안정화 원장 (2026-07-29)
@@ -112,6 +112,52 @@ L4 ai, mcp. 아래층 결함이 위층 전부를 오염시키므로 순서를 �
 7. **남은 부채와 판정.** Beneish의 유형자산 결측 대체, Ohlson의 통화별 규모 보정,
    시점과 시계열 계산기 전체 중복은 남아 있다. 따라서 이 항목만 완료이며
    **L0 전체는 미달**이다.
+
+### L0-03 비정규 부실·조작 모델 비발행 계약
+
+**상태: 완료.** 이름만 원모형인 변형 점수를 계속 보정하지 않고, 공용 입력으로 원식을
+재현할 수 없는 두 모델을 명시적으로 비발행하게 했다. 호환 필드는 남기되 항상 `None`이다.
+
+1. **범위와 실제 호출자.** SSOT는 `core/ratios.py`의 `calcRatios`와
+   `calcRatioSeries`다. DART와 EDGAR의 panel/accessor가 이 계산기를 함께 쓰고,
+   `analysis.financial.ratios`는 옛 import 경로만 보존한다. 위층 `analysis`, `credit`,
+   `story` 소비자는 두 필드가 `None`이면 신호를 내지 않는 구조이므로 공용 계산기의
+   잘못된 숫자가 전 소비면으로 퍼지는 것이 핵심 위험이었다.
+2. **제품 결함 재현.** 수정 전 Beneish는 완전 연간 입력에서 `-2.39`, 필수 PPE를
+   제거해도 `-2.38`, 금융 archetype 강제에서도 `-2.39`를 냈다. 분기 네 개만으로도
+   인접 분기를 회계연도처럼 비교해 `-2.39`를 냈다. Ohlson은 경제적으로 같은 기업을
+   USD 단위로 넣으면 점수 `-1.4315`, 확률 `19.29%`, KRW 단위로 넣으면 `-4.2429`,
+   `1.42%`를 내 표시 통화만으로 위험도가 뒤집혔다.
+3. **근본 원인과 SSOT.** [Ohlson 1980](https://doi.org/10.2307/2490395)의 SIZE는
+   `ln(total assets / GNP price-level index)`인데 구현은 통화와 연도를 무시한
+   `ln(total assets / 1e6)`이었다. [Beneish 1999 원문](https://www.calctopia.com/papers/beneish1999.pdf)의
+   TATA는 비현금 운전자본 증감에서 감가상각을 빼지만 구현은
+   `(net profit - operating cash flow) / total assets`였다. LVGI도 원문의
+   `(LTD + current liabilities) / total assets`가 아니라 총부채를 썼고,
+   DEPI는 순수 감가상각 대신 감가·상각 합산값을 썼다. 원문은 회계연도 두 개와 비금융
+   상장사를 대상으로 하지만 구현은 분기 TTM과 금융업에도 같은 이름을 붙였다.
+4. **수정과 테스트.** 잘못된 공식과 중복 기간 조립 코드 300여 줄을 제거했다.
+   `beneishMScore`, `ohlsonOScore`, `ohlsonProbability`는 소비자 호환 슬롯으로
+   보존하되 공용 계산기와 시계열은 값을 발행하지 않는다. 옛 private Beneish 계산
+   re-export도 제거했고 docstring의 지원 모델 목록을 실제 동작과 맞췄다.
+   `tests/core/test_distressModelApplicability.py`는 완전 연간, 완전 분기, KRW, USD에서도
+   비정규 점수를 내지 않는 계약을 고정한다.
+5. **공개 행동, 정확성, 속도, 메모리.** 앞의 모든 재현에서 세 필드는 수정 후
+   `None`이다. 나머지 복합 점수와 ratio panel은 그대로 유지된다. 5,000회 격리 실측에서
+   완전 3개년 입력의 단일 시점은 `0.0767 ms/call`, 시계열은 `0.1257 ms/call`이고,
+   `tracemalloc` peak는 각각 `0.0068 MiB`, `0.0120 MiB`였다. 잘못된 계산과 중복
+   시계열 조립 제거로 추가 캐시나 메모리 상태도 생기지 않았다.
+6. **Guard와 회귀.** core, golden, finance fixture, panel facade 범위 `134 passed`.
+   Ruff, formatter, compileall, diff whitespace 검사가 통과했고 `silentSubstitute` 위반은
+   0개다. Guard Index `strict --scope l0-l15 --providers dart,edgar`는 1,765개 파일,
+   7개 규칙, cycle, architecture, folder mirror, gather, provider, public API 여섯
+   외부 게이트를 모두 통과했다.
+7. **남은 부채와 판정.** Ohlson 재활성화에는 자산 단위, 통화, 보고일, 해당 연도의
+   물가지수와 모델 horizon이 필요하다. Beneish 재활성화에는 공급자 공통 의미가 보장된
+   LTD, current maturities of LTD, income tax payable, 순수 감가상각, 연간 basis가
+   필요하다. 이 계약 없이 같은 필드를 다시 계산하면 회귀다. SecretStore 원자성과
+   교차 플랫폼 저장, Company status parquet projection, Pyodide loader, 동적 상향
+   import 감시가 남아 있으므로 **L0 전체는 미달**이다.
 
 ## 정량 판정 (2026-07-27 실측)
 

@@ -417,33 +417,6 @@ class TestComposite:
         rs = calcRatioSeries(_SERIES_ANNUAL, ["2022", "2023", "2024"])
         assert rs.altmanZScore[-1] == pytest.approx(1.77, abs=0.1)
 
-    def test_beneish_returns_none_when_prior_gross_margin_is_nonpositive(self):
-        from dartlab.analysis.financial.ratios import _calcBeneishForPeriod
-
-        score = _calcBeneishForPeriod(
-            revT=100.0,
-            revP=100.0,
-            recT=10.0,
-            recP=10.0,
-            cogsT=60.0,
-            cogsP=120.0,
-            taT=200.0,
-            taP=180.0,
-            caT=50.0,
-            caP=45.0,
-            sgaT=10.0,
-            sgaP=9.0,
-            depT=5.0,
-            depP=4.0,
-            tanT=70.0,
-            tanP=65.0,
-            npT=10.0,
-            ocfT=8.0,
-            tlT=80.0,
-            tlP=75.0,
-        )
-        assert score is None
-
 
 # ══════════════════════════════════════
 # BS 항등식 검증
