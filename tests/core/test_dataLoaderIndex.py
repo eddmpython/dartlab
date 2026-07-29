@@ -5,6 +5,7 @@ from __future__ import annotations
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import contextmanager
 from pathlib import Path
 
 import polars as pl
@@ -298,3 +299,20 @@ def test_pyodide_index_path_uses_projected_arrow_columns(tmp_path: Path) -> None
             "nDocs": 2,
         }
     ]
+
+
+def test_pyodide_index_never_wraps_arrow_oom(monkeypatch) -> None:
+    """Arrow OOM은 손상 파일 오류로 위장하지 않고 MemoryError로 전파한다."""
+    import pyarrow as pa
+
+    from dartlab.core import dataLoaderIndex, dataLoaderPyodide
+
+    @contextmanager
+    def outOfMemory(_source):
+        raise pa.ArrowMemoryError("wasm heap exhausted")
+        yield
+
+    monkeypatch.setattr(dataLoaderPyodide, "openParquetFile", outOfMemory)
+
+    with pytest.raises(MemoryError, match="wasm heap exhausted"):
+        dataLoaderIndex._readPyodideRecord(Path("sample.parquet"), "panel")

@@ -215,6 +215,8 @@ def ensurePanelFromHf(code: str, marketNs: str = "kr") -> None:
 
         try:
             pyodideFetchToFS(code, category, DATA_RELEASES[category]["dir"], flat)
+        except MemoryError:
+            raise
         except Exception as exc:  # noqa: BLE001 (부재/네트워크: 빈 결과 저하, 다음 호출 재시도)
             _log.warning("panel %s 브라우저 다운로드 실패(재시도 가능): %s", code, exc)
         return
@@ -922,6 +924,8 @@ def readLong(code: str, *, marketNs: str = "kr", periods: list[str] | None = Non
         from dartlab.core.memory import checkMemoryAndGc
 
         checkMemoryAndGc(f"panel:{code}")
+    except MemoryError:
+        raise
     except Exception:  # noqa: BLE001 — 가드 자체 실패는 read 막지 않음
         pass
     code = code.upper() if marketNs == "us" else code  # EDGAR ticker 대소문자 무관 (build 가 upper 저장)

@@ -8,10 +8,22 @@
 from __future__ import annotations
 
 import random
+import sys
+from contextlib import contextmanager
+from io import BytesIO
+from pathlib import Path
+from types import SimpleNamespace
 
+import polars as pl
+import pyarrow as pa
+import pyarrow.parquet as pq
 import pytest
 
-from dartlab.core.dataLoaderPyodide import _decodeUserDefined, _fetchBytesPyodide
+from dartlab.core.dataLoaderPyodide import (
+    PyodideParquetError,
+    _decodeUserDefined,
+    _fetchBytesPyodide,
+)
 
 pytestmark = [pytest.mark.unit]
 
@@ -19,6 +31,13 @@ pytestmark = [pytest.mark.unit]
 def _asUserDefinedText(raw: bytes) -> str:
     """브라우저가 ``charset=x-user-defined`` 로 넘겨주는 문자열 재현 (0x80+ 는 U+F780~U+F7FF)."""
     return "".join(chr(b) if b < 0x80 else chr(0xF700 + b) for b in raw)
+
+
+def _parquetBytes(data: dict) -> bytes:
+    """테스트용 parquet payload를 메모리에서 만든다."""
+    sink = BytesIO()
+    pq.write_table(pa.table(data), sink)
+    return sink.getvalue()
 
 
 def test_decodeUserDefined_roundTrip_allByteValues() -> None:
@@ -46,6 +65,19 @@ def test_decodeUserDefined_matchesLegacyLoop() -> None:
     text = _asUserDefinedText(raw)
     legacy = bytes(ord(c) & 0xFF for c in text)
     assert _decodeUserDefined(text) == legacy
+
+
+def test_decodeUserDefined_doesNotRetryAfterMemoryError(monkeypatch) -> None:
+    """벡터 복원이 OOM이면 더 큰 파이썬 객체 루프로 재시도하지 않는다."""
+
+    def outOfMemory(*_args, **_kwargs):
+        raise MemoryError("heap exhausted")
+
+    fakeNumpy = SimpleNamespace(frombuffer=outOfMemory, uint8=object())
+    monkeypatch.setitem(sys.modules, "numpy", fakeNumpy)
+
+    with pytest.raises(MemoryError, match="heap exhausted"):
+        _decodeUserDefined("payload")
 
 
 def test_fetchBytes_reportsEveryTierReason() -> None:
@@ -78,3 +110,431 @@ def test_fetchBytes_openUrlTierIsOptional() -> None:
         _fetchBytesPyodide("https://example.invalid/none.parquet")
 
     assert "open_url" not in str(caught.value)
+
+
+def test_fetchToFs_rejectsMagicOnlyTruncationWithoutReplacingCache(tmp_path: Path, monkeypatch) -> None:
+    """head/tail magic만 닮은 손상 payload는 기존 정상 cache를 덮지 않는다."""
+    from dartlab.core import dataLoaderPyodide
+
+    dest = tmp_path / "sample.parquet"
+    original = _parquetBytes({"year": [2024], "value": [1]})
+    dest.write_bytes(original)
+    truncated = b"PAR1" + b"not-a-real-parquet" + b"PAR1"
+    monkeypatch.setattr(dataLoaderPyodide, "_fetchBytesPyodide", lambda *_args, **_kwargs: truncated)
+
+    with pytest.raises(PyodideParquetError, match="다운로드 저장 검증"):
+        dataLoaderPyodide.pyodideFetchToFS("sample", "panel", "dart/panel", dest)
+
+    assert dest.read_bytes() == original
+    assert not list(dest.parent.glob(f".{dest.name}.*.tmp"))
+
+
+def test_fetchToFs_validatesThenAtomicallyStores(tmp_path: Path, monkeypatch) -> None:
+    """정상 parquet만 최종 경로에 저장하고 임시 파일을 남기지 않는다."""
+    from dartlab.core import dataLoaderPyodide
+
+    dest = tmp_path / "sample.parquet"
+    payload = _parquetBytes({"year": [2023, 2024], "value": [1, 2]})
+    monkeypatch.setattr(dataLoaderPyodide, "_fetchBytesPyodide", lambda *_args, **_kwargs: payload)
+
+    dataLoaderPyodide.pyodideFetchToFS("sample", "panel", "dart/panel", dest)
+
+    assert pq.read_table(dest).to_pydict() == {"year": [2023, 2024], "value": [1, 2]}
+    assert not list(dest.parent.glob(f".{dest.name}.*.tmp"))
+
+
+def test_readParquetSafe_streamsPathAndProjectsColumns(tmp_path: Path, monkeypatch) -> None:
+    """공용 Pyodide reader가 path.read_bytes 없이 요청 열만 읽는다."""
+    from dartlab.core import dataLoader
+
+    path = tmp_path / "wide.parquet"
+    pl.DataFrame({"year": [2023, 2024], "wide": ["x" * 1000, "y" * 1000]}).write_parquet(path)
+    monkeypatch.setattr(dataLoader, "_IS_PYODIDE", True)
+
+    def fullReadForbidden(_self):
+        raise AssertionError("path.read_bytes 전체 복사 금지")
+
+    monkeypatch.setattr(Path, "read_bytes", fullReadForbidden)
+    result = dataLoader.readParquetSafe(path, columns=["year"])
+
+    assert result.to_dict(as_series=False) == {"year": [2023, 2024]}
+
+
+def test_readParquetSafe_doesNotReclassifyArrowCapacityAsCorruption(monkeypatch) -> None:
+    """비손상 Arrow 오류를 OSError 계열 손상 오류로 바꾸지 않는다."""
+    from dartlab.core import dataLoader, dataLoaderPyodide
+
+    monkeypatch.setattr(dataLoader, "_IS_PYODIDE", True)
+
+    def capacityFailure(*_args, **_kwargs):
+        raise pa.ArrowCapacityError("offset capacity exceeded")
+
+    monkeypatch.setattr(dataLoaderPyodide, "readParquetFrame", capacityFailure)
+
+    with pytest.raises(pa.ArrowCapacityError, match="offset capacity exceeded"):
+        dataLoader.readParquetSafe("sample.parquet")
+
+
+def test_loadDataPyodide_pushesProjectionAndHonorsFilters(tmp_path: Path, monkeypatch) -> None:
+    """반환열과 필터 보조열만 읽고 sinceYear·predicate를 모두 적용한다."""
+    from dartlab.core import dataLoaderPyodide
+
+    path = tmp_path / "finance.parquet"
+    pl.DataFrame(
+        {
+            "year": [2023, 2024, 2024],
+            "sj_div": ["BS", "IS", "BS"],
+            "wide": ["x" * 1000, "y" * 1000, "z" * 1000],
+        }
+    ).write_parquet(path)
+    monkeypatch.setattr(dataLoaderPyodide, "_dataPath", lambda *_args: path)
+    realOpen = dataLoaderPyodide.openParquetFile
+    readColumns: list[list[str] | None] = []
+
+    @contextmanager
+    def spyOpen(source):
+        with realOpen(source) as parquet:
+
+            class SpyParquet:
+                schema_arrow = parquet.schema_arrow
+                metadata = parquet.metadata
+
+                @staticmethod
+                def read(*, columns=None):
+                    readColumns.append(columns)
+                    return parquet.read(columns=columns)
+
+            yield SpyParquet()
+
+    monkeypatch.setattr(dataLoaderPyodide, "openParquetFile", spyOpen)
+    result = dataLoaderPyodide.loadDataPyodide(
+        "005930",
+        "finance",
+        sinceYear=2024,
+        columns=["year"],
+        predicate=pl.col("sj_div") == "BS",
+    )
+
+    assert readColumns == [["year", "sj_div"]]
+    assert result.to_dict(as_series=False) == {"year": [2024]}
+
+
+def test_loadDataPyodide_repairsCorruptCacheExactlyOnce(tmp_path: Path, monkeypatch) -> None:
+    """손상된 기존 cache는 정상 payload로 한 번만 재조달한다."""
+    from dartlab.core import dataLoaderPyodide
+
+    path = tmp_path / "finance.parquet"
+    path.write_bytes(b"PAR1brokenPAR1")
+    payload = _parquetBytes({"year": [2024], "value": [7]})
+    fetchCalls = 0
+
+    def repair(_stockCode, _category, _dirPath, target):
+        nonlocal fetchCalls
+        fetchCalls += 1
+        target.write_bytes(payload)
+
+    monkeypatch.setattr(dataLoaderPyodide, "_dataPath", lambda *_args: path)
+    monkeypatch.setattr(dataLoaderPyodide, "pyodideFetchToFS", repair)
+
+    result = dataLoaderPyodide.loadDataPyodide("005930", "finance")
+
+    assert fetchCalls == 1
+    assert result.to_dict(as_series=False) == {"year": [2024], "value": [7]}
+
+
+def test_loadDataPyodide_doesNotLoopAfterInvalidFreshFetch(tmp_path: Path, monkeypatch) -> None:
+    """최초 다운로드가 손상이면 같은 호출 안에서 무한 재요청하지 않는다."""
+    from dartlab.core import dataLoaderPyodide
+
+    path = tmp_path / "finance.parquet"
+    fetchCalls = 0
+
+    def brokenFetch(_stockCode, _category, _dirPath, target):
+        nonlocal fetchCalls
+        fetchCalls += 1
+        target.write_bytes(b"PAR1brokenPAR1")
+
+    monkeypatch.setattr(dataLoaderPyodide, "_dataPath", lambda *_args: path)
+    monkeypatch.setattr(dataLoaderPyodide, "pyodideFetchToFS", brokenFetch)
+
+    with pytest.raises(PyodideParquetError, match="읽기"):
+        dataLoaderPyodide.loadDataPyodide("005930", "finance")
+
+    assert fetchCalls == 1
+    assert not path.exists()
+
+
+def test_loadDataPyodide_removesCorruptCacheWhenRepairFetchFails(tmp_path: Path, monkeypatch) -> None:
+    """손상 cache 재조달이 실패해도 같은 손상 파일을 다음 호출에 남기지 않는다."""
+    from dartlab.core import dataLoaderPyodide
+
+    path = tmp_path / "finance.parquet"
+    path.write_bytes(b"PAR1brokenPAR1")
+    monkeypatch.setattr(dataLoaderPyodide, "_dataPath", lambda *_args: path)
+
+    def failedFetch(*_args, **_kwargs):
+        raise RuntimeError("network unavailable")
+
+    monkeypatch.setattr(dataLoaderPyodide, "pyodideFetchToFS", failedFetch)
+
+    with pytest.raises(PyodideParquetError, match="손상 cache 재조달"):
+        dataLoaderPyodide.loadDataPyodide("005930", "finance")
+
+    assert not path.exists()
+
+
+def test_loadDataPyodide_neverTreatsArrowOomAsCorruption(tmp_path: Path, monkeypatch) -> None:
+    """Arrow OOM은 cache 삭제나 네트워크 재조달 없이 그대로 전파한다."""
+    from dartlab.core import dataLoaderPyodide
+
+    path = tmp_path / "finance.parquet"
+    path.write_bytes(_parquetBytes({"year": [2024]}))
+    monkeypatch.setattr(dataLoaderPyodide, "_dataPath", lambda *_args: path)
+
+    def outOfMemory(*_args, **_kwargs):
+        raise pa.ArrowMemoryError("wasm heap exhausted")
+
+    monkeypatch.setattr(dataLoaderPyodide, "_readDataFrame", outOfMemory)
+
+    def fetchForbidden(*_args, **_kwargs):
+        raise AssertionError("OOM 뒤 fetch 금지")
+
+    monkeypatch.setattr(dataLoaderPyodide, "pyodideFetchToFS", fetchForbidden)
+
+    with pytest.raises(MemoryError, match="wasm heap exhausted"):
+        dataLoaderPyodide.loadDataPyodide("005930", "finance")
+
+    assert path.exists()
+
+
+def test_loadDataPyodide_doesNotRefetchOtherArrowFailures(tmp_path: Path, monkeypatch) -> None:
+    """용량·미지원 같은 비손상 Arrow 오류는 cache 삭제나 재조달 대상으로 오인하지 않는다."""
+    from dartlab.core import dataLoaderPyodide
+
+    path = tmp_path / "finance.parquet"
+    path.write_bytes(_parquetBytes({"year": [2024]}))
+    monkeypatch.setattr(dataLoaderPyodide, "_dataPath", lambda *_args: path)
+
+    def capacityFailure(*_args, **_kwargs):
+        raise pa.ArrowCapacityError("offset capacity exceeded")
+
+    monkeypatch.setattr(dataLoaderPyodide, "_readDataFrame", capacityFailure)
+
+    def fetchForbidden(*_args, **_kwargs):
+        raise AssertionError("비손상 Arrow 오류 뒤 fetch 금지")
+
+    monkeypatch.setattr(dataLoaderPyodide, "pyodideFetchToFS", fetchForbidden)
+
+    with pytest.raises(PyodideParquetError, match="offset capacity exceeded"):
+        dataLoaderPyodide.loadDataPyodide("005930", "finance")
+
+    assert path.exists()
+
+
+def test_loadDataPyodide_localOnlyNeverFetchesMissingFile(tmp_path: Path, monkeypatch) -> None:
+    """local_only는 cache 부재를 네트워크로 조용히 우회하지 않는다."""
+    from dartlab.core import dataLoaderPyodide
+
+    path = tmp_path / "missing.parquet"
+    monkeypatch.setattr(dataLoaderPyodide, "_dataPath", lambda *_args: path)
+
+    def fetchForbidden(*_args, **_kwargs):
+        raise AssertionError("local_only fetch 금지")
+
+    monkeypatch.setattr(dataLoaderPyodide, "pyodideFetchToFS", fetchForbidden)
+
+    with pytest.raises(FileNotFoundError, match="로컬 parquet 없음"):
+        dataLoaderPyodide.loadDataPyodide("005930", "finance", refresh="local_only")
+
+
+def test_loadDataPyodide_localOnlyRemovesKnownCorruption(tmp_path: Path, monkeypatch) -> None:
+    """local_only도 네트워크만 금지할 뿐 손상 판정 cache를 고정하지 않는다."""
+    from dartlab.core import dataLoaderPyodide
+
+    path = tmp_path / "finance.parquet"
+    path.write_bytes(b"PAR1brokenPAR1")
+    monkeypatch.setattr(dataLoaderPyodide, "_dataPath", lambda *_args: path)
+
+    def fetchForbidden(*_args, **_kwargs):
+        raise AssertionError("local_only fetch 금지")
+
+    monkeypatch.setattr(dataLoaderPyodide, "pyodideFetchToFS", fetchForbidden)
+
+    with pytest.raises(PyodideParquetError, match="읽기"):
+        dataLoaderPyodide.loadDataPyodide("005930", "finance", refresh="local_only")
+
+    assert not path.exists()
+
+
+def test_noRefreshStillAllowsInitialDownload(tmp_path: Path, monkeypatch) -> None:
+    """DARTLAB_NO_REFRESH는 cache 갱신만 막고 최초 다운로드는 허용한다."""
+    from dartlab.core import dataLoaderPyodide
+
+    path = tmp_path / "finance.parquet"
+    payload = _parquetBytes({"year": [2024], "value": [3]})
+    fetchCalls = 0
+
+    def fetch(_stockCode, _category, _dirPath, target):
+        nonlocal fetchCalls
+        fetchCalls += 1
+        target.write_bytes(payload)
+
+    monkeypatch.setenv("DARTLAB_NO_REFRESH", "1")
+    monkeypatch.setattr(dataLoaderPyodide, "_dataPath", lambda *_args: path)
+    monkeypatch.setattr(dataLoaderPyodide, "pyodideFetchToFS", fetch)
+
+    result = dataLoaderPyodide.loadDataPyodide("005930", "finance", refresh="force_check")
+
+    assert fetchCalls == 1
+    assert result["value"].to_list() == [3]
+
+
+def test_noRefreshSkipsForceCheckForExistingCache(tmp_path: Path, monkeypatch) -> None:
+    """DARTLAB_NO_REFRESH가 켜진 기존 cache는 force_check도 네트워크를 열지 않는다."""
+    from dartlab.core import dataLoaderPyodide
+
+    path = tmp_path / "finance.parquet"
+    path.write_bytes(_parquetBytes({"year": [2024], "value": [5]}))
+    monkeypatch.setenv("DARTLAB_NO_REFRESH", "1")
+    monkeypatch.setattr(dataLoaderPyodide, "_dataPath", lambda *_args: path)
+
+    def fetchForbidden(*_args, **_kwargs):
+        raise AssertionError("NO_REFRESH force fetch 금지")
+
+    monkeypatch.setattr(dataLoaderPyodide, "pyodideFetchToFS", fetchForbidden)
+    result = dataLoaderPyodide.loadDataPyodide("005930", "finance", refresh="force_check")
+
+    assert result["value"].to_list() == [5]
+
+
+def test_projectionFallsBackToFullReadForRootlessPredicate() -> None:
+    """root 열을 확정할 수 없는 selector predicate에서는 제한 projection을 하지 않는다."""
+    from dartlab.core.dataLoaderPyodide import _projectedColumns
+
+    projected = _projectedColumns(
+        ["year", "value"],
+        category="finance",
+        sinceYear=None,
+        asOf=None,
+        columns=["year"],
+        predicate=pl.all().is_not_null(),
+    )
+
+    assert projected is None
+
+
+def test_loadDataPyodide_asOfRefreshesStaleEdgarSnapshot(tmp_path: Path, monkeypatch) -> None:
+    """EDGAR snapshot이 asOf보다 오래되면 한 번 재조달하고 신선도를 다시 확인한다."""
+    from dartlab.core import dataLoaderPyodide
+
+    path = tmp_path / "docs.parquet"
+    path.write_bytes(
+        _parquetBytes(
+            {
+                "accession_no": ["old"],
+                "filing_date": ["2023-01-01"],
+            }
+        )
+    )
+    refreshed = _parquetBytes(
+        {
+            "accession_no": ["new"],
+            "filing_date": ["2025-01-01"],
+        }
+    )
+    fetchCalls = 0
+
+    def refresh(_stockCode, _category, _dirPath, target):
+        nonlocal fetchCalls
+        fetchCalls += 1
+        target.write_bytes(refreshed)
+
+    monkeypatch.setattr(dataLoaderPyodide, "_dataPath", lambda *_args: path)
+    monkeypatch.setattr(dataLoaderPyodide, "pyodideFetchToFS", refresh)
+
+    result = dataLoaderPyodide.loadDataPyodide(
+        "AAPL",
+        "edgarDocs",
+        asOf="2024-01-01",
+        columns=["accession_no"],
+    )
+
+    assert fetchCalls == 1
+    assert result["accession_no"].to_list() == ["new"]
+
+
+def test_loadDataPyodide_removesCorruptAsOfReplacement(tmp_path: Path, monkeypatch) -> None:
+    """asOf 재조달 결과가 손상이면 최종 cache에 고정하지 않는다."""
+    from dartlab.core import dataLoaderPyodide
+
+    path = tmp_path / "docs.parquet"
+    path.write_bytes(
+        _parquetBytes(
+            {
+                "accession_no": ["old"],
+                "filing_date": ["2023-01-01"],
+            }
+        )
+    )
+
+    def corruptRefresh(_stockCode, _category, _dirPath, target):
+        target.write_bytes(b"PAR1brokenPAR1")
+
+    monkeypatch.setattr(dataLoaderPyodide, "_dataPath", lambda *_args: path)
+    monkeypatch.setattr(dataLoaderPyodide, "pyodideFetchToFS", corruptRefresh)
+
+    with pytest.raises(PyodideParquetError, match="asOf 재조달 후 읽기"):
+        dataLoaderPyodide.loadDataPyodide("AAPL", "edgarDocs", asOf="2024-01-01")
+
+    assert not path.exists()
+
+
+def test_loadCorpListPyodide_usesArrowReader(monkeypatch) -> None:
+    """회사 목록도 비활성인 Polars WASM parquet reader 대신 공용 Arrow 경로를 쓴다."""
+    from dartlab.core import dataLoaderPyodide
+
+    payload = _parquetBytes({"회사명": ["삼성전자"], "종목코드": ["005930"]})
+    monkeypatch.setattr(dataLoaderPyodide, "_fetchBytesPyodide", lambda *_args, **_kwargs: payload)
+
+    def polarsReaderForbidden(*_args, **_kwargs):
+        raise AssertionError("pl.read_parquet 사용 금지")
+
+    monkeypatch.setattr(dataLoaderPyodide.pl, "read_parquet", polarsReaderForbidden)
+    result = dataLoaderPyodide.loadCorpListPyodide()
+
+    assert result.to_dict(as_series=False) == {"회사명": ["삼성전자"], "종목코드": ["005930"]}
+
+
+def test_publicLoadData_forwardsPyodideOptionsAndEdgarDefault(monkeypatch) -> None:
+    """공개 loadData가 Pyodide 분기에서 옵션을 버리지 않고 EDGAR 기본 연도를 맞춘다."""
+    from dartlab.core import dataLoader
+
+    captured = {}
+
+    def fakeLoad(stockCode, category, **kwargs):
+        captured.update(stockCode=stockCode, category=category, **kwargs)
+        return pl.DataFrame({"ok": [True]})
+
+    predicate = pl.col("form_type") == "10-K"
+    monkeypatch.setattr(dataLoader, "_IS_PYODIDE", True)
+    monkeypatch.setattr(dataLoader, "_loadDataPyodide", fakeLoad)
+
+    result = dataLoader.loadData(
+        "AAPL",
+        "edgarDocs",
+        asOf="2025-01-01",
+        refresh="local_only",
+        columns=["form_type"],
+        predicate=predicate,
+    )
+
+    assert result["ok"].to_list() == [True]
+    assert captured == {
+        "stockCode": "AAPL",
+        "category": "edgarDocs",
+        "sinceYear": 2009,
+        "asOf": "2025-01-01",
+        "refresh": "local_only",
+        "columns": ["form_type"],
+        "predicate": predicate,
+    }

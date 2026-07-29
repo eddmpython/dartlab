@@ -10,6 +10,7 @@
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 import httpx
@@ -92,3 +93,46 @@ def testTransportFailureIsRecordedNotSwallowed(monkeypatch: pytest.MonkeyPatch, 
 
     assert result.height == 0
     assert any("KIND" in record.message for record in caplog.records)
+
+
+def testPyodideFailureIsLoggedAndNotPinnedInMemory(monkeypatch: pytest.MonkeyPatch, caplog) -> None:
+    """Pyodide HF 장애의 빈 결과는 세션 cache에 고정하지 않고 다음 호출에서 회복한다."""
+    from dartlab.core import dataLoaderPyodide
+
+    calls = 0
+
+    def load() -> pl.DataFrame:
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            raise OSError("일시적 HF 장애")
+        return _ROWS
+
+    monkeypatch.setattr(sys, "platform", "emscripten")
+    monkeypatch.setattr(registry, "_memory", None, raising=False)
+    monkeypatch.setattr(dataLoaderPyodide, "loadCorpListPyodide", load)
+
+    with caplog.at_level("WARNING"):
+        first = registry.getKindList()
+    second = registry.getKindList()
+
+    assert first.height == 0
+    assert second.equals(_ROWS)
+    assert calls == 2
+    assert any("다음 호출 재시도" in record.message for record in caplog.records)
+
+
+def testPyodideMemoryErrorIsNeverDowngraded(monkeypatch: pytest.MonkeyPatch) -> None:
+    """브라우저 OOM을 빈 상장목록으로 위장하지 않는다."""
+    from dartlab.core import dataLoaderPyodide
+
+    monkeypatch.setattr(sys, "platform", "emscripten")
+    monkeypatch.setattr(registry, "_memory", None, raising=False)
+    monkeypatch.setattr(
+        dataLoaderPyodide,
+        "loadCorpListPyodide",
+        lambda: (_ for _ in ()).throw(MemoryError("heap exhausted")),
+    )
+
+    with pytest.raises(MemoryError, match="heap exhausted"):
+        registry.getKindList()

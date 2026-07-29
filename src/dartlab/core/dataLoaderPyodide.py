@@ -2,11 +2,24 @@
 
 from __future__ import annotations
 
+import os
+import tempfile
+from contextlib import contextmanager
 from pathlib import Path
+from typing import Any, Iterator, cast
 
 import polars as pl
 
-from dartlab.core.dataConfig import DATA_RELEASES, HF_BASE_URL, hfBaseUrl
+from dartlab.core.dataConfig import DATA_RELEASES, HF_BASE_URL, hfBaseUrl, resolveDataCategory
+
+
+class PyodideParquetError(OSError):
+    """Pyodide parquet 읽기·검증·저장 실패."""
+
+    def __init__(self, operation: str, target: str | Path, cause: BaseException):
+        self.operation = operation
+        self.target = str(target)
+        super().__init__(f"Pyodide parquet {operation} 실패: {self.target} ({type(cause).__name__}: {cause})")
 
 
 def arrowToPolars(arrowTable) -> pl.DataFrame:
@@ -18,21 +31,52 @@ def arrowToPolars(arrowTable) -> pl.DataFrame:
     readParquetSafe 와 loadDataPyodide 가 공유하는 변환 SSOT.
     """
     try:
-        return pl.from_arrow(arrowTable)
+        return cast(pl.DataFrame, pl.from_arrow(arrowTable))
     except (ModuleNotFoundError, ImportError):
+        import importlib
+
         import pyarrow as _pa  # noqa: F811
 
         try:
-            import polars.dependencies as _pdeps
+            _pdeps = cast(Any, importlib.import_module("polars.dependencies"))
 
-            _pdeps._lazy_import.cache_clear() if hasattr(_pdeps._lazy_import, "cache_clear") else None
-            _pdeps.pyarrow = _pa  # type: ignore[attr-defined]
+            lazyImport = getattr(_pdeps, "_lazy_import", None)
+            cacheClear = getattr(lazyImport, "cache_clear", None)
+            if callable(cacheClear):
+                cacheClear()
+            setattr(_pdeps, "pyarrow", _pa)
         except (AttributeError, TypeError):
             pass
         try:
-            return pl.from_arrow(arrowTable)
+            return cast(pl.DataFrame, pl.from_arrow(arrowTable))
         except (ModuleNotFoundError, ImportError):
             return pl.DataFrame(arrowTable.to_pydict())
+
+
+@contextmanager
+def openParquetFile(source: str | Path | bytes | bytearray | memoryview) -> Iterator[Any]:
+    """경로는 seekable stream으로, 메모리 payload는 BytesIO로 parquet을 연다."""
+    import io
+
+    import pyarrow.parquet as pq
+
+    if isinstance(source, (bytes, bytearray, memoryview)):
+        with io.BytesIO(source) as stream:
+            yield pq.ParquetFile(stream)
+        return
+
+    with Path(source).open("rb") as stream:
+        yield pq.ParquetFile(stream)
+
+
+def readParquetFrame(
+    source: str | Path | bytes | bytearray | memoryview,
+    *,
+    columns: list[str] | None = None,
+) -> pl.DataFrame:
+    """Pyodide parquet을 projection read한 뒤 Polars로 변환한다."""
+    with openParquetFile(source) as parquet:
+        return arrowToPolars(parquet.read(columns=columns))
 
 
 def loadDataPyodide(
@@ -40,23 +84,108 @@ def loadDataPyodide(
     category: str,
     *,
     sinceYear: int | None = None,
+    asOf: str | None = None,
+    refresh: str = "auto",
     columns: list[str] | None = None,
+    predicate: pl.Expr | None = None,
 ) -> pl.DataFrame:
-    """Pyodide 환경: pre-fetched FS 파일 → pyarrow → polars."""
-    import io
+    """Pyodide 환경에서 HF cache parquet을 무결성 복구와 projection으로 읽는다."""
+    import pyarrow as pa
 
-    import pyarrow.parquet as pq
+    if refresh not in {"auto", "force_check", "local_only"}:
+        raise ValueError(f"Pyodide에서 지원하지 않는 refresh 정책: {refresh}")
 
+    category = resolveDataCategory(category)
     dirPath = DATA_RELEASES[category]["dir"]
-    path = Path(f"/data/{dirPath}/{stockCode}.parquet")
+    path = _dataPath(stockCode, dirPath)
+    downloadAllowed = refresh != "local_only"
+    refreshAllowed = downloadAllowed and os.environ.get("DARTLAB_NO_REFRESH") != "1"
+    fetched = False
 
     if not path.exists():
+        if not downloadAllowed:
+            raise FileNotFoundError(f"Pyodide 로컬 parquet 없음: {path}")
         pyodideFetchToFS(stockCode, category, dirPath, path)
+        fetched = True
+    elif refresh == "force_check" and refreshAllowed:
+        pyodideFetchToFS(stockCode, category, dirPath, path)
+        fetched = True
 
-    # read_table 대신 저수준 ParquetFile.read: 첫 호출에 pyarrow.dataset + pandas 를 lazy import 하는
-    # read_table 을 피한다(브라우저 첫 로드 수 초 절감). 단일 파일이라 dataset 스캐너 불요, table 은 동일.
-    arrowTable = pq.ParquetFile(io.BytesIO(path.read_bytes())).read()
-    df = arrowToPolars(arrowTable)
+    try:
+        df = _readDataFrame(
+            path,
+            category=category,
+            sinceYear=sinceYear,
+            asOf=asOf,
+            columns=columns,
+            predicate=predicate,
+        )
+    except MemoryError:
+        raise
+    except (OSError, pa.ArrowInvalid) as exc:
+        if fetched:
+            _discardCorruptCache(path, prior=exc)
+            raise PyodideParquetError("읽기", path, exc) from exc
+        if not downloadAllowed:
+            _discardCorruptCache(path, prior=exc)
+            raise PyodideParquetError("읽기", path, exc) from exc
+        try:
+            pyodideFetchToFS(stockCode, category, dirPath, path)
+            fetched = True
+        except MemoryError:
+            raise
+        except (RuntimeError, OSError) as fetchExc:
+            _discardCorruptCache(path, prior=fetchExc)
+            error = PyodideParquetError("손상 cache 재조달", path, fetchExc)
+            error.add_note(f"최초 읽기 실패: {type(exc).__name__}: {exc}")
+            raise error from fetchExc
+        try:
+            df = _readDataFrame(
+                path,
+                category=category,
+                sinceYear=sinceYear,
+                asOf=asOf,
+                columns=columns,
+                predicate=predicate,
+            )
+        except MemoryError:
+            raise
+        except (OSError, pa.ArrowInvalid) as retryExc:
+            _discardCorruptCache(path, prior=retryExc)
+            error = PyodideParquetError("손상 cache 재조달", path, retryExc)
+            error.add_note(f"최초 읽기 실패: {type(exc).__name__}: {exc}")
+            raise error from retryExc
+        except pa.ArrowException as retryExc:
+            error = PyodideParquetError("재조달 후 읽기", path, retryExc)
+            error.add_note(f"최초 읽기 실패: {type(exc).__name__}: {exc}")
+            raise error from retryExc
+    except pa.ArrowException as exc:
+        raise PyodideParquetError("읽기", path, exc) from exc
+
+    if category == "edgarDocs" and asOf is not None and not _isFreshAsOf(df, asOf):
+        if fetched or not refreshAllowed:
+            cause = ValueError(f"최신 filing_date가 요청 asOf {asOf}에 미달")
+            raise PyodideParquetError("asOf 신선도 검증", path, cause) from cause
+        pyodideFetchToFS(stockCode, category, dirPath, path)
+        try:
+            df = _readDataFrame(
+                path,
+                category=category,
+                sinceYear=sinceYear,
+                asOf=asOf,
+                columns=columns,
+                predicate=predicate,
+            )
+        except MemoryError:
+            raise
+        except (OSError, pa.ArrowInvalid) as exc:
+            _discardCorruptCache(path, prior=exc)
+            raise PyodideParquetError("asOf 재조달 후 읽기", path, exc) from exc
+        except pa.ArrowException as exc:
+            raise PyodideParquetError("asOf 재조달 후 읽기", path, exc) from exc
+        if not _isFreshAsOf(df, asOf):
+            cause = ValueError(f"HF snapshot의 최신 filing_date가 요청 asOf {asOf}에 미달")
+            raise PyodideParquetError("asOf 신선도 검증", path, cause) from cause
 
     if sinceYear is not None:
         for colName in ("year", "bsns_year"):
@@ -67,6 +196,9 @@ def loadDataPyodide(
                 df = df.filter(yearCol >= sinceYear)
                 break
 
+    if predicate is not None:
+        df = df.filter(predicate)
+
     if columns:
         available = [c for c in columns if c in df.columns]
         if available:
@@ -75,6 +207,86 @@ def loadDataPyodide(
     from dartlab.core.dataLoaderNormalize import normalizeLoadedFrame
 
     return normalizeLoadedFrame(df, category)
+
+
+def _dataPath(stockCode: str, dirPath: str) -> Path:
+    """Pyodide 가 공유하는 고정 데이터 cache 경로를 만든다."""
+    return Path(f"/data/{dirPath}/{stockCode}.parquet")
+
+
+def _discardCorruptCache(path: Path, *, prior: BaseException) -> None:
+    """손상 판정 cache를 제거하고 정리 실패도 원인과 함께 드러낸다."""
+    try:
+        path.unlink(missing_ok=True)
+    except OSError as cleanupExc:
+        error = PyodideParquetError("손상 cache 정리", path, cleanupExc)
+        error.add_note(f"선행 읽기 실패: {type(prior).__name__}: {prior}")
+        raise error from cleanupExc
+
+
+def _readDataFrame(
+    path: Path,
+    *,
+    category: str,
+    sinceYear: int | None,
+    asOf: str | None,
+    columns: list[str] | None,
+    predicate: pl.Expr | None,
+) -> pl.DataFrame:
+    """필터 보조열을 포함한 최소 projection으로 로컬 parquet을 읽는다."""
+    with openParquetFile(path) as parquet:
+        schemaNames = parquet.schema_arrow.names
+        projected = _projectedColumns(
+            schemaNames,
+            category=category,
+            sinceYear=sinceYear,
+            asOf=asOf,
+            columns=columns,
+            predicate=predicate,
+        )
+        return arrowToPolars(parquet.read(columns=projected))
+
+
+def _projectedColumns(
+    schemaNames: list[str],
+    *,
+    category: str,
+    sinceYear: int | None,
+    asOf: str | None,
+    columns: list[str] | None,
+    predicate: pl.Expr | None,
+) -> list[str] | None:
+    """최종 반환열과 필터 보조열을 합쳐 parquet projection을 만든다."""
+    if not columns:
+        return None
+
+    schemaSet = set(schemaNames)
+    requested = [column for column in columns if column in schemaSet]
+    if not requested:
+        return None
+
+    needed = set(requested)
+    if sinceYear is not None:
+        needed.update(column for column in ("year", "bsns_year") if column in schemaSet)
+    if category == "edgarDocs" and asOf is not None and "filing_date" in schemaSet:
+        needed.add("filing_date")
+    if predicate is not None:
+        try:
+            predicateColumns = predicate.meta.root_names()
+        except (AttributeError, pl.exceptions.PolarsError):
+            return None
+        if not predicateColumns:
+            return None
+        needed.update(predicateColumns)
+    return [column for column in schemaNames if column in needed]
+
+
+def _isFreshAsOf(df: pl.DataFrame, asOf: str) -> bool:
+    """EDGAR frame이 요청 asOf 이상의 filing을 포함하는지 판정한다."""
+    if "filing_date" not in df.columns or df.is_empty():
+        return False
+    latest = df.select(pl.col("filing_date").cast(pl.String, strict=False).drop_nulls().max()).item()
+    return latest is not None and str(latest) >= asOf
 
 
 def pyodideFetchScanLite(dataDirForCategory) -> None:
@@ -115,8 +327,8 @@ def _decodeUserDefined(text: str) -> bytes:
         import numpy as _np
 
         codes = _np.frombuffer(text.encode("utf-16-le"), dtype="<u2")
-        return (codes & 0xFF).astype(_np.uint8).tobytes()
-    except Exception:  # noqa: BLE001 (numpy 부재/메모리 등: 느리지만 정확한 경로)
+        return codes.astype(_np.uint8).tobytes()
+    except (ImportError, ModuleNotFoundError, AttributeError, TypeError, ValueError, UnicodeError):
         return bytes(ord(c) & 0xFF for c in text)
 
 
@@ -149,6 +361,8 @@ def _fetchBytesPyodide(url: str, *, allowOpenUrl: bool = False) -> bytes:
         if resp.status == 200:
             return bytes(run_sync(resp.bytes()))
         reasons.append(f"pyfetch: HTTP {resp.status}")
+    except MemoryError:
+        raise
     except Exception as exc:  # noqa: BLE001
         reasons.append(f"pyfetch: {type(exc).__name__}: {exc}")
 
@@ -162,6 +376,8 @@ def _fetchBytesPyodide(url: str, *, allowOpenUrl: bool = False) -> bytes:
         if xhr.status == 200:
             return _decodeUserDefined(xhr.responseText)
         reasons.append(f"XHR: HTTP {xhr.status}")
+    except MemoryError:
+        raise
     except Exception as exc:  # noqa: BLE001
         reasons.append(f"XHR: {type(exc).__name__}: {exc}")
 
@@ -171,6 +387,8 @@ def _fetchBytesPyodide(url: str, *, allowOpenUrl: bool = False) -> bytes:
 
             raw = open_url(url).read()
             return raw.encode("latin-1") if isinstance(raw, str) else raw
+        except MemoryError:
+            raise
         except Exception as exc:  # noqa: BLE001
             reasons.append(f"open_url: {type(exc).__name__}: {exc}")
 
@@ -185,10 +403,15 @@ def loadCorpListPyodide() -> pl.DataFrame:
     ``Company("삼성전자")`` 이름 해석이 되게 한다. fetch 는 데이터 로더와 동일한 tier(JSPI pyfetch →
     동기 XHR + ``_decodeUserDefined``) 를 쓴다. 실패 시 예외를 던져 호출부가 빈 목록으로 저하한다.
     """
-    from io import BytesIO
+    import pyarrow as pa
 
     url = f"{HF_BASE_URL}/metadata/corpList.parquet"
-    return pl.read_parquet(BytesIO(_fetchBytesPyodide(url)))
+    try:
+        return readParquetFrame(_fetchBytesPyodide(url))
+    except MemoryError:
+        raise
+    except (OSError, pa.ArrowException) as exc:
+        raise PyodideParquetError("회사 목록 읽기", url, exc) from exc
 
 
 def pyodideFetchToFS(stockCode: str, category: str, dirPath: str, path: Path) -> None:
@@ -209,14 +432,85 @@ def pyodideFetchToFS(stockCode: str, category: str, dirPath: str, path: Path) ->
             f"  open('/data/{dirPath}/{stockCode}.parquet', 'wb').write(buf)"
         ) from exc
 
-    # open_url tier 는 HTTP status 를 검사하지 않아 404 등의 에러 본문(HTML/JSON)을 buf 로 반환할 수 있다.
-    # 그 garbage 를 FS 에 쓰면 이후 pyarrow read_table 이 ArrowInvalid(ValueError)로 크래시하는데,
-    # 호출부(readLong)의 except 가 그걸 못 잡아 c.panel 까지 전파된다. parquet magic(PAR1 head+tail)으로
-    # 거부해 부재/404 를 RuntimeError 로 승격 → 호출부가 graceful(빈 결과)로 저하하게 한다.
+    # open_url tier 는 HTTP status 를 검사하지 않으므로 magic을 먼저 확인하고, 임시 파일의 footer와
+    # column chunk 경계까지 검증한 뒤에만 최종 cache를 원자 교체한다.
     if len(buf) < 8 or buf[:4] != b"PAR1" or buf[-4:] != b"PAR1":
-        raise RuntimeError(f"Pyodide fetch: parquet 아님 (부재/404 의심): {url} (size={len(buf)}, head={buf[:4]!r})")
+        cause = ValueError(f"size={len(buf)}, head={buf[:4]!r}")
+        raise PyodideParquetError("다운로드 형식 검증", url, cause) from cause
 
-    path.write_bytes(buf)
+    _storeParquetAtomic(buf, path, url=url)
 
 
-__all__ = ["arrowToPolars", "loadDataPyodide", "pyodideFetchScanLite", "pyodideFetchToFS"]
+def _storeParquetAtomic(buf: bytes, path: Path, *, url: str) -> None:
+    """다운로드 payload를 임시 파일에서 구조 검증한 뒤 최종 경로로 교체한다."""
+    import pyarrow as pa
+
+    tmp: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="wb",
+            prefix=f".{path.name}.",
+            suffix=".tmp",
+            dir=path.parent,
+            delete=False,
+        ) as stream:
+            tmp = Path(stream.name)
+            written = stream.write(buf)
+            if written != len(buf):
+                raise OSError(f"부분 쓰기: {written}/{len(buf)} bytes")
+        _validateParquetStructure(tmp)
+        tmp.replace(path)
+    except MemoryError as exc:
+        if tmp is not None:
+            try:
+                tmp.unlink(missing_ok=True)
+            except OSError as cleanupExc:
+                exc.add_note(
+                    f"Pyodide parquet OOM 후 임시 파일 정리 실패: {tmp} ({type(cleanupExc).__name__}: {cleanupExc})"
+                )
+        raise
+    except (OSError, pa.ArrowException, ValueError) as exc:
+        try:
+            if tmp is not None:
+                tmp.unlink(missing_ok=True)
+        except OSError as cleanupExc:
+            error = PyodideParquetError("임시 파일 정리", tmp or path.parent, cleanupExc)
+            error.add_note(f"선행 저장 실패: {type(exc).__name__}: {exc}")
+            raise error from cleanupExc
+        raise PyodideParquetError("다운로드 저장 검증", url, exc) from exc
+
+
+def _validateParquetStructure(path: Path) -> None:
+    """footer와 모든 column chunk가 실제 파일 경계 안에 있는지 확인한다."""
+    size = path.stat().st_size
+    with openParquetFile(path) as parquet:
+        metadata = parquet.metadata
+        footerStart = size - 8 - metadata.serialized_size
+        if footerStart < 4:
+            raise ValueError(f"잘못된 parquet footer 경계: {footerStart}")
+        for rowGroupIndex in range(metadata.num_row_groups):
+            rowGroup = metadata.row_group(rowGroupIndex)
+            for columnIndex in range(rowGroup.num_columns):
+                column = rowGroup.column(columnIndex)
+                offsets = [
+                    offset
+                    for offset in (column.dictionary_page_offset, column.data_page_offset)
+                    if offset is not None and offset >= 0
+                ]
+                start = min(offsets) if offsets else column.file_offset
+                end = start + column.total_compressed_size
+                if start < 4 or end > footerStart:
+                    raise ValueError(
+                        f"column chunk 경계 초과: {column.path_in_schema} [{start}, {end}) > footer {footerStart}"
+                    )
+
+
+__all__ = [
+    "PyodideParquetError",
+    "arrowToPolars",
+    "loadDataPyodide",
+    "openParquetFile",
+    "pyodideFetchScanLite",
+    "pyodideFetchToFS",
+    "readParquetFrame",
+]

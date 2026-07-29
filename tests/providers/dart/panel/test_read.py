@@ -356,6 +356,44 @@ def test_ensure_panel_from_hf_transient_vs_absent(monkeypatch, tmp_path) -> None
     assert "kr:000660" in R._HF_PANEL_ATTEMPTED
 
 
+def test_ensure_panel_from_hf_never_swallows_pyodide_oom(monkeypatch, tmp_path) -> None:
+    """Pyodide fetch OOM은 graceful empty로 위장하지 않는다."""
+    import dartlab.config as cfg
+    from dartlab.core import dataLoaderPyodide
+    from dartlab.providers.dart.panel import read as R
+
+    monkeypatch.setattr(cfg, "dataDir", str(tmp_path))
+    monkeypatch.setattr(R, "_IS_PYODIDE", True)
+    monkeypatch.setattr(R, "_HF_PANEL_ATTEMPTED", set())
+    monkeypatch.delenv("DARTLAB_NO_HF_DOWNLOAD", raising=False)
+
+    def outOfMemory(*_args, **_kwargs):
+        raise MemoryError("wasm heap exhausted")
+
+    monkeypatch.setattr(dataLoaderPyodide, "pyodideFetchToFS", outOfMemory)
+
+    with pytest.raises(MemoryError, match="wasm heap exhausted"):
+        R.ensurePanelFromHf("005930")
+
+
+def test_readWide_never_swallows_memory_guard_oom(monkeypatch, tmp_path) -> None:
+    """메모리 가드가 낸 OOM을 artifact 부재 None으로 바꾸지 않는다."""
+    import dartlab.config as cfg
+    from dartlab.core import memory
+    from dartlab.providers.dart.panel import read as R
+
+    monkeypatch.setattr(cfg, "dataDir", str(tmp_path))
+    monkeypatch.setenv("DARTLAB_NO_HF_DOWNLOAD", "1")
+
+    def outOfMemory(*_args, **_kwargs):
+        raise MemoryError("guard heap exhausted")
+
+    monkeypatch.setattr(memory, "checkMemoryAndGc", outOfMemory)
+
+    with pytest.raises(MemoryError, match="guard heap exhausted"):
+        R.readWide("005930")
+
+
 def test_readlong_corrupt_parquet_recovers(monkeypatch, tmp_path) -> None:
     """readLong — 손상 parquet → None + 손상파일 삭제 + 시도마킹 해제(다음 호출 재다운로드).
 
@@ -374,3 +412,28 @@ def test_readlong_corrupt_parquet_recovers(monkeypatch, tmp_path) -> None:
     assert R.readLong("005930") is None
     assert not flat.exists()  # 손상 파일 삭제됨
     assert "kr:005930" not in R._HF_PANEL_ATTEMPTED  # 마킹 해제 → 재다운로드 가능
+
+
+def test_readlong_preservesCacheForNonCorruptionArrowFailure(monkeypatch, tmp_path) -> None:
+    """Arrow 용량 오류를 손상으로 오인해 정상 cache를 삭제하지 않는다."""
+    import pyarrow as pa
+
+    import dartlab.config as cfg
+    from dartlab.core import dataLoader
+    from dartlab.providers.dart.panel import read as R
+
+    monkeypatch.setattr(cfg, "dataDir", str(tmp_path))
+    monkeypatch.setenv("DARTLAB_NO_HF_DOWNLOAD", "1")
+    flat = tmp_path / "dart" / "panel" / "005930.parquet"
+    flat.parent.mkdir(parents=True)
+    flat.write_bytes(b"preserve-me")
+
+    def capacityFailure(*_args, **_kwargs):
+        raise pa.ArrowCapacityError("offset capacity exceeded")
+
+    monkeypatch.setattr(dataLoader, "readParquetSafe", capacityFailure)
+
+    with pytest.raises(pa.ArrowCapacityError, match="offset capacity exceeded"):
+        R.readLong("005930")
+
+    assert flat.exists()

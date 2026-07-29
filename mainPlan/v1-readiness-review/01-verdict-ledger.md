@@ -35,10 +35,10 @@ L4 ai, mcp. 아래층 결함이 위층 전부를 오염시키므로 순서를 �
 ### 세션 인계
 
 - 현재 계층: L0 core
-- 마지막 완료 항목: L0-05 Company.status parquet projection 안전성
-- 진행 중인 단일 항목: L0-06 Pyodide dataLoader 읽기·fetch 무결성
-- 다음 첫 행동: `core/dataLoaderPyodide.py`의 실제 호출자와 브라우저 파일 경계를 확정하고
-  404 HTML, 잘린 parquet, projection, 반복 fetch, 대형 파일 메모리 행동을 재현한다.
+- 마지막 완료 항목: L0-06 Pyodide dataLoader 읽기·fetch 무결성
+- 진행 중인 단일 항목: L0-07 동적 상향 import 감시와 L0 구조 경계
+- 다음 첫 행동: 현재 architecture/cycle 가드가 `importlib`, `__import__`, 지연 문자열 import로
+  생기는 `core -> 상위 레이어` 간선을 실제로 잡는지 구현과 호출자를 대조하고 누락을 재현한다.
 - 금지: L0 완료 판정 전 L1 이상 감사나 수정 착수
 
 ## L0 순차 안정화 원장 (2026-07-29)
@@ -276,6 +276,63 @@ L4 ai, mcp. 아래층 결함이 위층 전부를 오염시키므로 순서를 �
    전 레이어 부채 `1,801 errors/96 warnings`로 실패하며 해당 레이어 순서에 기록해
    처리한다. 일반 Pyodide fetch/read 무결성과 동적 상향 import 감시가 남아 있으므로
    이 항목만 완료이고 **L0 전체는 미달**이다.
+
+### L0-06 Pyodide dataLoader 읽기·fetch 무결성
+
+**상태: 완료.** 브라우저 cache의 projection, 무결성, 원자 교체, 오류 분류와 공개 옵션
+전달을 닫았다. 브라우저 밖의 gather 수집이나 상위 엔진 품질까지 닫았다는 뜻은 아니다.
+
+1. **범위와 실제 호출자.** 정본은 `core/dataLoaderPyodide.py`와 공개 dispatch인
+   `core/dataLoader.py::loadData/readParquetSafe`다. L0의 `dataLoaderIndex`도 같은 seekable
+   parquet open SSOT를 재사용한다. 현재 L0 계약을 실제로 소비하는 직접 경계만 확인했다.
+   DART/EDGAR panel의 `providers/dart/panel/read.py`, scan prebuild, KRX 회사명 목록의
+   `gather/krx/listing/registry.py`이며, 상위 레이어 일반 감사로 범위를 넓히지 않았다.
+2. **제품 결함 재현.** `PAR1...PAR1`만 닮은 26-byte 손상 payload가 정상 cache로
+   저장됐고 PyArrow는 곧바로 `ArrowInvalid`를 냈다. 이미 손상된 cache는 fetch를 한 번도
+   시도하지 않은 채 파일을 계속 남겼다. `columns=["year"]`도 parquet read에는 projection이
+   전달되지 않았다. 50,993,120-byte 실제 panel에서 전체 `read_bytes + read()`는
+   `3.3925s`, RSS peak 증가 `3,092.9MiB`였다. 공개 `loadData`의 Pyodide 분기는
+   `predicate`, `refresh`, `asOf`를 버렸고 EDGAR 기본 `sinceYear=2009`도 적용하지 않았다.
+   회사명 목록은 Pyodide에서 비활성인 `pl.read_parquet` 경로를 썼으며 실패를 로그 없이
+   빈 목록으로 바꿔 세션 cache에 고정했다. broad Arrow/Exception catch는 OOM도 손상으로
+   오인해 재다운로드하거나 빈 결과로 낮출 수 있었다.
+3. **근본 원인과 SSOT.** path parquet open이 세 군데서 `read_bytes()`와 `BytesIO`로
+   복제됐고 fetch는 magic 8 bytes만 본 뒤 최종 경로에 직접 썼다. 구조 손상,
+   네트워크 실패, Arrow 용량·미지원, OOM의 예외 의미가 분리되지 않았다. 공개 함수의
+   네이티브와 Pyodide 인자 계약도 dispatch에서 갈라졌다. seekable open/projection,
+   구조 검증·동일 디렉터리 원자 교체, 손상만 1회 복구하는 정책을
+   `dataLoaderPyodide.py` 하나의 SSOT로 모았다.
+4. **수정과 테스트.** `openParquetFile/readParquetFrame`이 path는 file stream으로,
+   메모리 payload만 `BytesIO`로 열고 요청 열과 필터 보조열만 읽는다. 다운로드는 고유한
+   sibling temp에 쓴 뒤 footer와 모든 column chunk 경계를 검증하고 `replace`한다.
+   기존 정상 cache는 검증 실패 때 그대로 보존한다. `ArrowInvalid/OSError`만 손상으로
+   분류해 최대 한 번 재조달하고, 재실패·`local_only`의 손상 cache는 제거한다.
+   `ArrowMemoryError/MemoryError`와 `ArrowCapacityError` 등 비손상 오류는 fetch·삭제 없이
+   전파한다. `predicate`, `refresh`, `asOf`, EDGAR 기본 연도를 공개 dispatch에서 보존하고,
+   root 열을 확정할 수 없는 predicate는 정확성을 위해 full read로 강등한다.
+   `DARTLAB_NO_REFRESH`는 기존 cache 갱신만 막고 최초 다운로드는 허용한다. 회사명 목록은
+   Arrow SSOT를 쓰며 실패를 기록하고 빈 결과를 cache하지 않는다. core, index, registry,
+   panel 직접 호출자에 26개 회귀를 추가했다.
+5. **공개 행동, 정확성, 속도, 메모리.** 같은 50,993,120-byte 실제 panel의 최종 공개
+   Pyodide loader projection은 `45,822 x 1`을 `0.0261s`, RSS peak 증가 `8.8MiB`로
+   읽었다. 구 경로보다 약 130배 빠르고 peak 증가는 약 351배 작다. 전체 구조 검증은
+   `0.02304s`였다. Node Pyodide `0.27.5`에 이번 wheel을 실제 설치해 Emscripten FS에서
+   정상 원자 저장, 손상 replacement 거부와 기존 cache byte 보존, temp 정리,
+   `local_only + sinceYear + columns + predicate`를 실행했고 `(1, 1, Int32)`로 통과했다.
+   전문 검토의 6개 실제 데이터 범주 30개 표본에서도 구조 validator 오탐은 0이었다.
+6. **Guard와 회귀.** dataLoader, index, freshness, cache, predicate, IPC, scan parquet,
+   scan prebuild, panel, KRX registry 인접 범위 `98 passed`다. Ruff, formatter,
+   compileall, 변경 파일 Pyright `0 errors`, wheel build, `uv lock --check`, diff whitespace가
+   통과했고 변경 소스 5개의 `silentSubstitute --strict` 신규 위반은 각각 0개다.
+   Guard Index `strict --scope l0-l15 --providers dart,edgar`는 1,766개 파일, 7개 규칙과
+   cycle, architecture, folder mirror, gather, provider, public API 여섯 외부 게이트를
+   모두 통과했다. 전문 재검토 결과 blocker/major는 0개다.
+7. **남은 부채와 판정.** 실제 Pyodide FS와 Arrow 경로는 확인했지만 browser의
+   `pyfetch -> XHR -> open_url` 네트워크 tier는 JSPI·CORS가 있는 실제 Chromium
+   release smoke에서 다시 확인해야 한다. `IDBFS syncfs`는 이 로더가 아니라 runtime
+   영속화 계층 책임이다. 동시 fetch는 고유 temp로 충돌을 막았으나 기본 Pyodide가
+   단일 스레드라 별도 병렬 E2E는 두지 않았다. 동적 상향 import 감시와 기존 L0 구조
+   부채가 남아 있으므로 이 항목만 완료이며 **L0 전체는 미달**이다.
 
 ## 정량 판정 (2026-07-27 실측)
 

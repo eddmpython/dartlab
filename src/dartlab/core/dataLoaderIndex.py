@@ -94,13 +94,11 @@ def _readLazyRecord(path: Path, category: str) -> dict:
 def _readPyodideRecord(path: Path, category: str) -> dict:
     """Pyodide에서 pyarrow projection과 parquet row metadata로 같은 통계를 만든다."""
     import pyarrow as pa
-    import pyarrow.parquet as pq
 
-    from dartlab.core.dataLoaderPyodide import arrowToPolars
+    from dartlab.core.dataLoaderPyodide import arrowToPolars, openParquetFile
 
     try:
-        with path.open("rb") as source:
-            parquet = pq.ParquetFile(source)
+        with openParquetFile(path) as parquet:
             columns = set(parquet.schema_arrow.names)
             rows = parquet.metadata.num_rows
             projected = sorted(columns.intersection((*_COMPANY_NAME_COLUMNS, *_YEAR_COLUMNS, *_DOC_ID_COLUMNS)))
@@ -124,6 +122,8 @@ def _readPyodideRecord(path: Path, category: str) -> dict:
                         "nDocs": pl.Int64,
                     },
                 )
+    except MemoryError:
+        raise
     except (OSError, pa.ArrowException, pl.exceptions.PolarsError) as exc:
         raise DataIndexError(category, path, exc) from exc
     return _record(path, stats.row(0, named=True), rows=rows)

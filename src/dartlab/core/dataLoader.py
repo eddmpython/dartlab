@@ -56,18 +56,21 @@ def readParquetSafe(path, *, columns: list[str] | None = None) -> pl.DataFrame:
     """
     if not _IS_PYODIDE:
         return pl.read_parquet(path, columns=columns)
-    import io
+    import pyarrow as pa
 
-    import pyarrow.parquet as pq
-
-    from dartlab.core.dataLoaderPyodide import arrowToPolars
+    from dartlab.core.dataLoaderPyodide import PyodideParquetError, readParquetFrame
 
     paths = list(path) if isinstance(path, (list, tuple)) else [path]
     frames: list[pl.DataFrame] = []
     for p in paths:
-        data = Path(p).read_bytes() if not isinstance(p, bytes) else p
-        arrow_table = pq.ParquetFile(io.BytesIO(data)).read(columns=columns)
-        frames.append(arrowToPolars(arrow_table))
+        try:
+            frames.append(readParquetFrame(p, columns=columns))
+        except MemoryError:
+            raise
+        except (OSError, pa.ArrowInvalid) as exc:
+            raise PyodideParquetError("읽기", "<bytes>" if isinstance(p, bytes) else p, exc) from exc
+        except pa.ArrowException:
+            raise
     return frames[0] if len(frames) == 1 else pl.concat(frames, how="vertical_relaxed")
 
 
@@ -315,8 +318,18 @@ def loadData(
     의 row group sort 가 skipping 동행). caller (single-statement fast path)
     가 ``pl.col("sj_div").is_in([...])`` 형식으로 디스크 디코드량 축소.
     """
+    category = resolveDataCategory(category)
+    effectiveSinceYear = 2009 if category == "edgarDocs" and sinceYear is None else sinceYear
     if _IS_PYODIDE:
-        return _loadDataPyodide(stockCode, category, sinceYear=sinceYear, columns=columns)
+        return _loadDataPyodide(
+            stockCode,
+            category,
+            sinceYear=effectiveSinceYear,
+            asOf=asOf,
+            refresh=refresh,
+            columns=columns,
+            predicate=predicate,
+        )
     from dartlab.core.memory import checkMemoryAndGc
 
     dataDir = _dataDir(category)
@@ -333,9 +346,6 @@ def loadData(
         krxShouldRefresh = _shouldRefreshHfCategory(path, category, refresh)
 
     checkMemoryAndGc(f"loadData({stockCode},{category})")
-    effectiveSinceYear = sinceYear
-    if category == "edgarDocs" and effectiveSinceYear is None:
-        effectiveSinceYear = 2009
     if category == "edgarDocs":
         # registry dispatch (정공법 B — DIP). providers/edgar 가 EdgarDocsLoader 등록.
         from dartlab.core.loaders import getLoader
@@ -661,7 +671,10 @@ def _loadDataPyodide(
     category: str,
     *,
     sinceYear: int | None = None,
+    asOf: str | None = None,
+    refresh: str = "auto",
     columns: list[str] | None = None,
+    predicate: pl.Expr | None = None,
 ) -> pl.DataFrame:
     """Pyodide 환경: pre-fetched FS 파일 → pyarrow → polars.
 
@@ -671,7 +684,15 @@ def _loadDataPyodide(
     """
     from dartlab.core.dataLoaderPyodide import loadDataPyodide
 
-    return loadDataPyodide(stockCode, category, sinceYear=sinceYear, columns=columns)
+    return loadDataPyodide(
+        stockCode,
+        category,
+        sinceYear=sinceYear,
+        asOf=asOf,
+        refresh=refresh,
+        columns=columns,
+        predicate=predicate,
+    )
 
 
 def _pyodideFetchToFS(stockCode: str, category: str, dirPath: str, path: Path) -> None:

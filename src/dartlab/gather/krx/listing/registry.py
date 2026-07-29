@@ -341,8 +341,15 @@ def getKindList(*, forceRefresh: bool = False) -> pl.DataFrame:
                 from dartlab.core.dataLoaderPyodide import loadCorpListPyodide
 
                 _memory = loadCorpListPyodide()
-            except Exception:
-                _memory = pl.DataFrame({"회사명": [], "종목코드": []})
+            except MemoryError:
+                raise
+            except Exception as exc:
+                _log.warning(
+                    "Pyodide 상장목록 조회 실패(다음 호출 재시도): %s: %s",
+                    type(exc).__name__,
+                    exc,
+                )
+                return pl.DataFrame({"회사명": [], "종목코드": []})
         return _memory
 
     if not forceRefresh and _memory is not None:
