@@ -340,10 +340,12 @@ class TestGatherFacade:
         mock_client = _make_facade_client(
             {
                 "closePrice": "200,000",
-                "per": "12.50",
-                "pbr": "1.30",
-                "high52wPrice": "250,000",
-                "low52wPrice": "150,000",
+                "totalInfos": [
+                    {"code": "per", "value": "12.50배"},
+                    {"code": "pbr", "value": "1.30배"},
+                    {"code": "highPriceOf52Weeks", "value": "250,000원"},
+                    {"code": "lowPriceOf52Weeks", "value": "150,000원"},
+                ],
             }
         )
 
@@ -387,6 +389,10 @@ class TestGatherFacade:
                 resp = MagicMock()
                 resp.json.return_value = {"closePrice": "200000"}
                 return resp
+            if "integration" in url:
+                resp = MagicMock()
+                resp.json.return_value = {"totalInfos": []}
+                return resp
             raise SourceUnavailableError("mock failure")
 
         mock_client = MagicMock(spec=GatherHttpClient)
@@ -419,7 +425,7 @@ class TestGatherFacade:
         mock_client = _make_facade_client(
             {
                 "closePrice": "200,000",
-                "per": "12.50",
+                "totalInfos": [{"code": "per", "value": "12.50배"}],
             }
         )
 

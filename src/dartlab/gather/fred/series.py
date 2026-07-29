@@ -8,7 +8,7 @@ import polars as pl
 
 from . import cache as _cache
 from .client import FredClient
-from .types import SeriesMeta
+from .types import FredError, SeriesMeta
 
 
 def fetchSeries(
@@ -89,15 +89,23 @@ def fetchSeries(
         params["aggregation_method"] = aggregation
 
     data = client.get("/series/observations", **params)
-    observations = data.get("observations", [])
+    if not isinstance(data, dict):
+        raise FredError("FRED series 응답 schema가 객체가 아닙니다")
+    if "observations" not in data:
+        raise FredError("FRED series 응답에 observations가 없습니다")
+    observations = data["observations"]
+    if not isinstance(observations, list):
+        raise FredError("FRED observations가 배열이 아닙니다")
 
     dates: list[date] = []
     values: list[float | None] = []
     for obs in observations:
+        if not isinstance(obs, dict):
+            raise FredError("FRED observation 행이 객체가 아닙니다")
         try:
             d = datetime.strptime(obs["date"], "%Y-%m-%d").date()
-        except (ValueError, KeyError):
-            continue
+        except (TypeError, ValueError, KeyError) as exc:
+            raise FredError(f"FRED observation date를 해석할 수 없습니다: {obs.get('date')!r}") from exc
         val_str = obs.get("value", ".")
         if val_str == "." or val_str is None:
             dates.append(d)
@@ -106,9 +114,8 @@ def fetchSeries(
             try:
                 dates.append(d)
                 values.append(float(val_str))
-            except ValueError:
-                dates.append(d)
-                values.append(None)
+            except (TypeError, ValueError) as exc:
+                raise FredError(f"FRED observation value를 해석할 수 없습니다: {val_str!r}") from exc
 
     df = pl.DataFrame({"date": dates, "value": values}).with_columns(
         pl.col("date").cast(pl.Date),

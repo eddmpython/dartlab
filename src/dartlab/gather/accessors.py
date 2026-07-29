@@ -265,6 +265,13 @@ class DefaultFinanceAccessor:
         panel = frames[0]
         for frame in frames[1:]:
             panel = panel.join(frame, on="period", how="full", coalesce=True)
+        periodOrder = pl.DataFrame(
+            {
+                "period": periods,
+                "__periodOrder": range(len(periods)),
+            }
+        )
+        panel = periodOrder.join(panel, on="period", how="left").sort("__periodOrder").drop("__periodOrder")
         if limit is not None and limit > 0:
             return panel.tail(limit)
         return panel

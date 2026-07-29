@@ -320,6 +320,24 @@ def test_refresh_from_api_preserves_collection_failure(monkeypatch) -> None:
     assert isinstance(excInfo.value.__cause__, OSError)
 
 
+def test_pyodide_ticker_artifact_failure_is_not_unknown_ticker(monkeypatch) -> None:
+    """브라우저 ticker artifact 고장을 정상적인 미등록 ticker None으로 위장하지 않는다."""
+    from dartlab.core import dataLoader
+    from dartlab.providers.edgar import company as companyModule
+    from dartlab.providers.edgar.company import Company
+
+    def _failLoad(*_args, **_kwargs):
+        raise OSError("ticker artifact corrupt")
+
+    company = Company.__new__(Company)
+    monkeypatch.setattr(company, "_getTickerPath", lambda: None)
+    monkeypatch.setattr(companyModule.sys, "platform", "emscripten")
+    monkeypatch.setattr(dataLoader, "loadData", _failLoad)
+
+    with pytest.raises(OSError, match="ticker artifact corrupt"):
+        company._resolveTickerRow("AAPL")
+
+
 def test_public_company_panel_builds_ifrs_full_finance(tmp_path, monkeypatch) -> None:
     from dartlab.core import dataLoader
     from dartlab.providers.edgar import panel as panelModule

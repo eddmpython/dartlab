@@ -10,7 +10,7 @@ import polars as pl
 from . import cache as _cache
 from . import catalog as _catalog
 from .client import EcosClient
-from .types import SeriesNotFoundError
+from .types import EcosError, SeriesNotFoundError
 
 log = logging.getLogger(__name__)
 
@@ -216,9 +216,12 @@ def fetchSeries(
     dates: list[date] = []
     values: list[float | None] = []
     for row in rows:
-        d = _parseDate(row.get("TIME", ""), entry.frequency)
+        if not isinstance(row, dict):
+            raise EcosError("ECOS observation 행이 객체가 아닙니다")
+        timeValue = str(row.get("TIME") or "")
+        d = _parseDate(timeValue, entry.frequency)
         if d is None:
-            continue
+            raise EcosError(f"ECOS TIME 값을 해석할 수 없습니다: {timeValue!r}")
         valStr = row.get("DATA_VALUE", "")
         if not valStr or valStr == "-":
             dates.append(d)
@@ -226,10 +229,9 @@ def fetchSeries(
         else:
             try:
                 dates.append(d)
-                values.append(float(valStr.replace(",", "")))
-            except ValueError:
-                dates.append(d)
-                values.append(None)
+                values.append(float(str(valStr).replace(",", "")))
+            except (TypeError, ValueError) as exc:
+                raise EcosError(f"ECOS DATA_VALUE를 해석할 수 없습니다: {valStr!r}") from exc
 
     df = pl.DataFrame({"date": dates, "value": values}).with_columns(
         pl.col("date").cast(pl.Date),

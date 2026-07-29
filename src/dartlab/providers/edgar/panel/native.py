@@ -136,14 +136,11 @@ def _cellsFromPanel(ticker: str, periods: list[str] | None = None) -> pl.DataFra
 
 def _accountColumn(df: pl.DataFrame, statement: str) -> pl.DataFrame:
     """concept(us-gaap local-name) → snakeId account 컬럼."""
-    try:
-        from dartlab.providers.edgar.finance.mapper import EdgarMapper
+    from dartlab.providers.edgar.finance.mapper import EdgarMapper
 
-        mapper = EdgarMapper()
-        concepts = df["concept"].unique().to_list()
-        mp = {c: (mapper.mapToDart(c, statement) or c) for c in concepts if c}
-    except Exception:  # noqa: BLE001 . 매퍼 실패 시 concept 그대로 반환
-        return df.with_columns(pl.col("concept").alias("account"))
+    mapper = EdgarMapper()
+    concepts = df["concept"].unique().to_list()
+    mp = {c: (mapper.mapToDart(c, statement) or c) for c in concepts if c}
     return df.with_columns(pl.col("concept").replace(mp).alias("account"))
 
 

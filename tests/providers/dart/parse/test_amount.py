@@ -54,6 +54,7 @@ def test_parse_amount_expr_matches_scalar_contract() -> None:
         ("(단위: 억원, %)", "억원", 100_000_000),
         ("(단위: 십억원)", "십억원", 1_000_000_000),
         ("(단위: 조원)", "조원", 1_000_000_000_000),
+        ("<TABLE>단위 : 원</TABLE>", "원", 1),
     ],
 )
 def test_unit_label_and_scale_share_one_mapping(caption: str, label: str, scale: int) -> None:

@@ -86,3 +86,18 @@ def test_load_entity_graph_catalog_uses_env_path(monkeypatch, tmp_path) -> None:
 
     assert loaded is not None
     assert loaded.height == 1
+
+
+def test_load_entity_graph_catalog_corruption_is_visible(monkeypatch, tmp_path, caplog) -> None:
+    """optional enrichment 저하는 허용하되 손상 원인을 침묵시키지 않는다."""
+    from dartlab.providers.dart.search import entityGraph
+
+    path = tmp_path / "entityGraphCatalog.parquet"
+    path.write_bytes(b"not parquet")
+    monkeypatch.setenv("DARTLAB_SEARCH_ENTITY_GRAPH_CATALOG", str(path))
+    entityGraph._CATALOG_CACHE.clear()
+    caplog.set_level("WARNING")
+
+    assert entityGraph.loadEntityGraphCatalog() is None
+    assert str(path) in caplog.text
+    assert "비활성화" in caplog.text

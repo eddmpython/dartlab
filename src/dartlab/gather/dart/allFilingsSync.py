@@ -18,6 +18,10 @@ from dartlab.core.logger import getLogger
 from dartlab.gather.dart.allFilingsCollector import (
     _ALLFILINGS_DIR_KEY,
     _META_SUFFIX,
+    AllFilingsHfDownloadError,
+    AllFilingsHfListingError,
+    AllFilingsHfUnavailableError,
+    AllFilingsHfUploadError,
     _allFilingsDir,
     collectedDates,
 )
@@ -42,7 +46,8 @@ def pushAllFilings(periods: list[str] | None = None, *, token: str | None = None
         int — 업로드 성공 파일 수(성공 commit 에 포함된 파일 합).
 
     Raises:
-        없음 — 배치 commit 실패는 warning 로그 후 다음 배치 진행(멱등 — 다음 reconcile 이어감).
+        AllFilingsHfUnavailableError: 업로드 대상이 있지만 HF token/dependency를 사용할 수 없는 경우.
+        AllFilingsHfUploadError: 배치 commit이 실패한 경우. 성공한 파일 수를 예외가 보존한다.
 
     Example:
         >>> pushAllFilings(["20260527", "20260528"], token=os.environ["HF_TOKEN"])  # doctest: +SKIP
@@ -68,11 +73,6 @@ def pushAllFilings(periods: list[str] | None = None, *, token: str | None = None
     """
     import os as _os
 
-    hfToken = token or _os.environ.get("HF_TOKEN", "")
-    if not hfToken:
-        _log.warning("[HF↑] HF_TOKEN 없음 — 업로드 skip")
-        return 0
-
     outDir = _allFilingsDir()
     if periods is None:
         files = sorted(f for f in outDir.glob("*.parquet") if _META_SUFFIX not in f.stem)
@@ -84,14 +84,35 @@ def pushAllFilings(periods: list[str] | None = None, *, token: str | None = None
         _log.info("[HF↑] 업로드 대상 0")
         return 0
 
-    from huggingface_hub import CommitOperationAdd, HfApi
+    hfToken = token or _os.environ.get("HF_TOKEN", "")
+    if not hfToken:
+        raise AllFilingsHfUnavailableError(
+            "allFilings HF 업로드에 필요한 HF_TOKEN이 없습니다",
+            period=None,
+        )
+
+    try:
+        from huggingface_hub import CommitOperationAdd, HfApi
+        from huggingface_hub.errors import LocalEntryNotFoundError, OfflineModeIsEnabled
+    except ImportError as exc:
+        raise AllFilingsHfUnavailableError(
+            "huggingface_hub optional dependency가 없어 allFilings HF 업로드를 사용할 수 없습니다",
+            period=None,
+        ) from exc
 
     from dartlab.core.dataConfig import repoFor
     from dartlab.core.hfRetry import retryHfCall
 
-    relDir = DATA_RELEASES[_ALLFILINGS_DIR_KEY]["dir"]
-    repo = repoFor(_ALLFILINGS_DIR_KEY)
-    api = HfApi(token=hfToken)
+    try:
+        relDir = DATA_RELEASES[_ALLFILINGS_DIR_KEY]["dir"]
+        repo = repoFor(_ALLFILINGS_DIR_KEY)
+        api = HfApi(token=hfToken)
+    except Exception as exc:  # noqa: BLE001 — 원인을 typed boundary error로 보존
+        raise AllFilingsHfUploadError(
+            "allFilings HF 업로드 초기화에 실패했습니다",
+            uploadedFiles=0,
+            totalFiles=len(files),
+        ) from exc
 
     batchSize = 300  # hfUpload 와 동일 — commit 당 파일 수 상한(128 commit/hr 한도 회피)
     total = (len(files) + batchSize - 1) // batchSize
@@ -99,8 +120,8 @@ def pushAllFilings(periods: list[str] | None = None, *, token: str | None = None
     for i in range(0, len(files), batchSize):
         batch = files[i : i + batchSize]
         n = i // batchSize + 1
-        ops = [CommitOperationAdd(path_in_repo=f"{relDir}/{f.name}", path_or_fileobj=str(f)) for f in batch]
         try:
+            ops = [CommitOperationAdd(path_in_repo=f"{relDir}/{f.name}", path_or_fileobj=str(f)) for f in batch]
             retryHfCall(
                 api.create_commit,
                 repo_id=repo,
@@ -110,8 +131,17 @@ def pushAllFilings(periods: list[str] | None = None, *, token: str | None = None
             )
             ok += len(batch)
             _log.info("[HF↑] %d/%d 파일 commit (배치 %d/%d)", ok, len(files), n, total)
-        except Exception as exc:  # noqa: BLE001 — 배치 실패 격리(멱등, 다음 reconcile 이어감)
-            _log.warning("[HF↑] 배치 %d/%d (%d 파일) 실패: %s", n, total, len(batch), exc)
+        except (LocalEntryNotFoundError, OfflineModeIsEnabled) as exc:
+            raise AllFilingsHfUnavailableError(
+                "offline/cache 상태에서 allFilings HF 업로드를 사용할 수 없습니다",
+                period=None,
+            ) from exc
+        except Exception as exc:  # noqa: BLE001 — 원인을 typed boundary error로 보존
+            raise AllFilingsHfUploadError(
+                f"allFilings HF 업로드 배치가 실패했습니다: batch={n}/{total}, files={len(batch)}",
+                uploadedFiles=ok,
+                totalFiles=len(files),
+            ) from exc
     _log.info("[HF↑] 완료: %d/%d 파일", ok, len(files))
     return ok
 
@@ -127,11 +157,12 @@ def _remoteDates(*, token: str | None = None) -> set[str]:
         token: HF 토큰. None 이면 env ``HF_TOKEN``.
 
     Returns:
-        set[str] — 본문 완료 일자 집합 (예: ``{"20260603", "20260604"}``). HF 호출
-        실패(네트워크/인증/부재)면 빈 set.
+        set[str] — 본문 완료 일자 집합 (예: ``{"20260603", "20260604"}``).
+        원격 경로가 정상적으로 비어 있으면 빈 set.
 
     Raises:
-        없음 — 모든 예외는 warning 로그 후 빈 set 으로 흡수.
+        AllFilingsHfUnavailableError: optional HF dependency를 사용할 수 없는 경우.
+        AllFilingsHfListingError: 원격 목록 조회·인증이 실패한 경우.
 
     Example:
         >>> _remoteDates()  # doctest: +SKIP
@@ -143,7 +174,18 @@ def _remoteDates(*, token: str | None = None) -> set[str]:
     relDir = DATA_RELEASES[_ALLFILINGS_DIR_KEY]["dir"]
     try:
         from huggingface_hub import HfApi
+        from huggingface_hub.errors import (
+            EntryNotFoundError,
+            LocalEntryNotFoundError,
+            OfflineModeIsEnabled,
+        )
+    except ImportError as exc:
+        raise AllFilingsHfUnavailableError(
+            "huggingface_hub optional dependency가 없어 allFilings HF 목록을 조회할 수 없습니다",
+            period=None,
+        ) from exc
 
+    try:
         from dartlab.core.dataConfig import repoFor
         from dartlab.core.hfRetry import retryHfCall
 
@@ -161,9 +203,18 @@ def _remoteDates(*, token: str | None = None) -> set[str]:
             )
 
         entries = retryHfCall(_listTree)
-    except Exception as exc:  # noqa: BLE001 — 원격 목록 실패는 빈 set(로컬 우선 fallback)
-        _log.warning("[HF] allFilings 원격 목록 조회 실패: %s", exc)
+    except (LocalEntryNotFoundError, OfflineModeIsEnabled) as exc:
+        raise AllFilingsHfUnavailableError(
+            "offline/cache 상태에서 allFilings HF 목록을 조회할 수 없습니다",
+            period=None,
+        ) from exc
+    except EntryNotFoundError:
         return set()
+    except Exception as exc:  # noqa: BLE001 — 원인을 typed boundary error로 보존
+        raise AllFilingsHfListingError(
+            "allFilings HF 원격 목록 조회에 실패했습니다",
+            period=None,
+        ) from exc
 
     dates: set[str] = set()
     for item in entries:
@@ -186,10 +237,11 @@ def _pullDates(dates: list[str], *, token: str | None = None) -> int:
         token: HF 토큰. None 이면 env ``HF_TOKEN``.
 
     Returns:
-        int — 실제로 로컬에 떨어진(존재 확인) 일자 수. 빈 입력/실패면 0.
+        int — 실제로 로컬에 떨어진 일자 수. 빈 입력이면 0.
 
     Raises:
-        없음 — HF 실패는 warning 후 0.
+        AllFilingsHfUnavailableError: optional HF dependency를 사용할 수 없는 경우.
+        AllFilingsHfDownloadError: 원격 다운로드 실패 또는 요청 artifact 누락.
 
     Example:
         >>> _pullDates(["20260601", "20260602"])  # doctest: +SKIP
@@ -204,7 +256,14 @@ def _pullDates(dates: list[str], *, token: str | None = None) -> int:
     relDir = DATA_RELEASES[_ALLFILINGS_DIR_KEY]["dir"]
     try:
         from huggingface_hub import snapshot_download
+        from huggingface_hub.errors import LocalEntryNotFoundError, OfflineModeIsEnabled
+    except ImportError as exc:
+        raise AllFilingsHfUnavailableError(
+            "huggingface_hub optional dependency가 없어 allFilings HF pull을 사용할 수 없습니다",
+            period=None,
+        ) from exc
 
+    try:
         from dartlab.core.dataConfig import repoFor
         from dartlab.core.hfRetry import retryHfCall
 
@@ -216,12 +275,25 @@ def _pullDates(dates: list[str], *, token: str | None = None) -> int:
             local_dir=str(Path(_cfg.dataDir)),
             token=tok,
         )
-    except Exception as exc:  # noqa: BLE001 — pull 실패는 격리(다음 reconcile 자연 회복)
-        _log.warning("[HF↓] allFilings reconcile pull 실패 (%d일): %s", len(dates), exc)
-        return 0
+    except (LocalEntryNotFoundError, OfflineModeIsEnabled) as exc:
+        raise AllFilingsHfUnavailableError(
+            "offline/cache 상태에서 allFilings HF pull을 사용할 수 없습니다",
+            period=None,
+        ) from exc
+    except Exception as exc:  # noqa: BLE001 — 원인을 typed boundary error로 보존
+        raise AllFilingsHfDownloadError(
+            f"allFilings HF reconcile pull에 실패했습니다: requested={len(dates)}",
+            period=None,
+        ) from exc
 
     outDir = _allFilingsDir()
-    return sum(1 for d in dates if (outDir / f"{d}.parquet").exists())
+    missing = [date for date in dates if not (outDir / f"{date}.parquet").is_file()]
+    if missing:
+        raise AllFilingsHfDownloadError(
+            f"allFilings HF pull 완료 후 artifact가 누락되었습니다: {missing}",
+            period=None,
+        )
+    return len(dates)
 
 
 def reconcileAllFilings(
@@ -248,7 +320,10 @@ def reconcileAllFilings(
         "pushed", "localAfter", "inSync"}``. ``inSync`` 는 활성 방향 기준 처리 대상 0 여부.
 
     Raises:
-        없음 — HF 호출 실패는 _remoteDates/_pullDates/pushAllFilings 내부에서 격리.
+        AllFilingsHfUnavailableError: HF dependency/token을 사용할 수 없는 경우.
+        AllFilingsHfListingError: 원격 목록 조회 실패.
+        AllFilingsHfDownloadError: pull 실패 또는 artifact 누락.
+        AllFilingsHfUploadError: push 실패. 부분 업로드 수는 예외 속성에 보존.
 
     Example:
         >>> reconcileAllFilings()  # doctest: +SKIP

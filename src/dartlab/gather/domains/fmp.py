@@ -28,6 +28,16 @@ def _getApiKey() -> str | None:
     return os.environ.get("FMP_API_KEY")
 
 
+def _parsePriceNumber(value: object, field: str) -> float | None:
+    """FMP quote 숫자의 정상 결측과 schema 손상을 구분한다."""
+    if value is None or value == "":
+        return None
+    try:
+        return float(str(value))
+    except (TypeError, ValueError) as exc:
+        raise SourceUnavailableError(f"FMP price {field} 값을 해석할 수 없습니다: {value!r}") from exc
+
+
 async def fetchPrice(
     stockCode: str,
     client,
@@ -69,12 +79,12 @@ async def fetchPrice(
         - per : float | None — PER (배)
         - source : str — ``"fmp"``
 
-        API 키 미설정이거나 조회 실패 시 None.
+        유효한 quote 빈 응답 또는 현재가가 없으면 None.
 
     Raises
     ------
-    없음
-        GatherError/ValueError 등 내부 예외는 None 반환으로 흡수.
+    SourceUnavailableError
+        API 키 미설정, 요청, JSON, schema 또는 숫자 파싱 실패.
 
     Example
     -------
@@ -82,7 +92,7 @@ async def fetchPrice(
 
     Requires
     --------
-    ``FMP_API_KEY`` 환경변수 + 무료 플랜 250 req/day rate limit. 키 미설정 시 None.
+    ``FMP_API_KEY`` 환경변수 + 무료 플랜 250 req/day rate limit.
 
     See Also
     --------
@@ -92,7 +102,7 @@ async def fetchPrice(
     del limit
     key = _getApiKey()
     if not key:
-        return None  # 키 없으면 skip
+        raise SourceUnavailableError("FMP_API_KEY가 설정되지 않았습니다")
 
     ticker = resolveTicker(stockCode, market, "fmp")
 
@@ -101,31 +111,43 @@ async def fetchPrice(
             f"{_BASE}/quote/{ticker}",
             params={"apikey": key},
         )
-    except GatherError:
-        return None
+    except GatherError as exc:
+        raise SourceUnavailableError(f"FMP price 요청 실패: {ticker}") from exc
 
     try:
         data = resp.json()
-    except ValueError:
-        return None
+    except ValueError as exc:
+        raise SourceUnavailableError(f"FMP price JSON을 해석할 수 없습니다: {ticker}") from exc
 
-    if not data or not isinstance(data, list) or len(data) == 0:
+    if not isinstance(data, list):
+        raise SourceUnavailableError("FMP price 응답 schema가 배열이 아닙니다")
+    if not data:
         return None
 
     q = data[0]
-    current = q.get("price", 0.0)
+    if not isinstance(q, dict):
+        raise SourceUnavailableError("FMP price quote 행이 객체가 아닙니다")
+    current = _parsePriceNumber(q.get("price"), "price")
     if not current:
         return None
 
+    change = _parsePriceNumber(q.get("change"), "change") or 0.0
+    changePct = _parsePriceNumber(q.get("changesPercentage"), "changesPercentage") or 0.0
+    high52w = _parsePriceNumber(q.get("yearHigh"), "yearHigh") or 0.0
+    low52w = _parsePriceNumber(q.get("yearLow"), "yearLow") or 0.0
+    volume = _parsePriceNumber(q.get("volume"), "volume") or 0.0
+    marketCap = _parsePriceNumber(q.get("marketCap"), "marketCap") or 0.0
+    per = _parsePriceNumber(q.get("pe"), "pe")
+
     return PriceSnapshot(
         current=current,
-        change=q.get("change", 0.0),
-        change_pct=q.get("changesPercentage", 0.0),
-        high_52w=q.get("yearHigh", 0.0),
-        low_52w=q.get("yearLow", 0.0),
-        volume=q.get("volume", 0),
-        marketCap=q.get("marketCap", 0.0),
-        per=q.get("pe") if q.get("pe") else None,
+        change=change,
+        change_pct=changePct,
+        high_52w=high52w,
+        low_52w=low52w,
+        volume=int(volume),
+        marketCap=marketCap,
+        per=per,
         pbr=None,
         dividend_yield=None,
         source="fmp",

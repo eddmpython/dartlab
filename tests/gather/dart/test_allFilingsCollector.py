@@ -102,14 +102,17 @@ def test_ensure_from_hf_callable() -> None:
     assert callable(_ensureFromHf)
 
 
-def test_ensure_from_hf_env_skip(monkeypatch) -> None:
-    """DARTLAB_NO_HF_DOWNLOAD=1 환경에서 즉시 False — 외부 호출 없음."""
+def test_ensure_from_hf_env_skip_is_explicit_unavailable(monkeypatch) -> None:
+    """의도적으로 끈 remote를 원격 정상 부재와 같은 False로 표현하지 않는다."""
     from dartlab.gather.dart import allFilingsCollector as mod
 
     monkeypatch.setenv("DARTLAB_NO_HF_DOWNLOAD", "1")
     mod._HF_DOWNLOAD_ATTEMPTED.clear()
-    result = mod._ensureFromHf("20990101")
-    assert result is False
+
+    with pytest.raises(mod.AllFilingsHfUnavailableError, match="비활성화") as excInfo:
+        mod._ensureFromHf("20990101")
+
+    assert excInfo.value.period == "20990101"
 
 
 def test_ensure_from_hf_local_exists_short_circuit(monkeypatch, tmp_path) -> None:
@@ -129,7 +132,129 @@ def test_ensure_from_hf_local_exists_short_circuit(monkeypatch, tmp_path) -> Non
 
     monkeypatch.setattr(huggingface_hub, "snapshot_download", shouldNotBeCalled)
     mod._HF_DOWNLOAD_ATTEMPTED.clear()
-    assert mod._ensureFromHf("20260527") is True
+    assert mod._ensureFromHf("20260527") is mod.HfFallbackStatus.LOCAL
+
+
+def test_ensure_from_hf_normal_remote_absence_is_not_found(monkeypatch, tmp_path) -> None:
+    """원격 호출은 성공했지만 요청 artifact가 없으면 정상 NOT_FOUND다."""
+    import dartlab.config as _cfg
+    from dartlab.gather.dart import allFilingsCollector as mod
+
+    monkeypatch.setattr(_cfg, "dataDir", str(tmp_path))
+    monkeypatch.delenv("DARTLAB_NO_HF_DOWNLOAD", raising=False)
+    mod._HF_DOWNLOAD_ATTEMPTED.clear()
+
+    import huggingface_hub
+
+    from dartlab.core import hfRetry
+
+    calls = 0
+
+    def noMatchingArtifact(*_args, **_kwargs):
+        nonlocal calls
+        calls += 1
+        return str(tmp_path)
+
+    monkeypatch.setattr(huggingface_hub, "snapshot_download", noMatchingArtifact)
+    monkeypatch.setattr(hfRetry, "retryHfCall", lambda fn, *args, **kwargs: fn(*args, **kwargs))
+
+    assert mod._ensureFromHf("20990101") is mod.HfFallbackStatus.NOT_FOUND
+    assert mod._ensureFromHf("20990101") is mod.HfFallbackStatus.NOT_FOUND
+    assert calls == 1
+
+
+def test_ensure_from_hf_download_success_requires_local_artifact(monkeypatch, tmp_path) -> None:
+    """snapshot 호출 성공만으로 성공 처리하지 않고 실제 artifact를 검증한다."""
+    import dartlab.config as _cfg
+    from dartlab.gather.dart import allFilingsCollector as mod
+
+    monkeypatch.setattr(_cfg, "dataDir", str(tmp_path))
+    monkeypatch.delenv("DARTLAB_NO_HF_DOWNLOAD", raising=False)
+    mod._HF_DOWNLOAD_ATTEMPTED.clear()
+
+    import huggingface_hub
+
+    from dartlab.core import hfRetry
+
+    def writeArtifact(*_args, **_kwargs):
+        path = mod._allFilingsDir() / "20260527.parquet"
+        pl.DataFrame({"rcept_no": ["R1"]}).write_parquet(path)
+        return str(tmp_path)
+
+    monkeypatch.setattr(huggingface_hub, "snapshot_download", writeArtifact)
+    monkeypatch.setattr(hfRetry, "retryHfCall", lambda fn, *args, **kwargs: fn(*args, **kwargs))
+
+    assert mod._ensureFromHf("20260527") is mod.HfFallbackStatus.DOWNLOADED
+
+
+def test_ensure_from_hf_remote_failure_preserves_cause(monkeypatch, tmp_path) -> None:
+    """실제 원격 실패는 typed error로 전파하고 원인을 연결한다."""
+    import dartlab.config as _cfg
+    from dartlab.gather.dart import allFilingsCollector as mod
+
+    monkeypatch.setattr(_cfg, "dataDir", str(tmp_path))
+    monkeypatch.delenv("DARTLAB_NO_HF_DOWNLOAD", raising=False)
+    mod._HF_DOWNLOAD_ATTEMPTED.clear()
+
+    import huggingface_hub
+
+    from dartlab.core import hfRetry
+
+    def failDownload(*_args, **_kwargs):
+        raise OSError("network down")
+
+    monkeypatch.setattr(huggingface_hub, "snapshot_download", failDownload)
+    monkeypatch.setattr(hfRetry, "retryHfCall", lambda fn, *args, **kwargs: fn(*args, **kwargs))
+
+    with pytest.raises(mod.AllFilingsHfDownloadError, match="20260527") as excInfo:
+        mod._ensureFromHf("20260527")
+
+    assert isinstance(excInfo.value.__cause__, OSError)
+    assert excInfo.value.period == "20260527"
+    assert "20260527" not in mod._HF_DOWNLOAD_ATTEMPTED
+
+
+def test_load_day_returns_none_only_for_normal_remote_absence(monkeypatch, tmp_path) -> None:
+    """loadDay의 None은 정상적인 artifact 부재만 뜻한다."""
+    import dartlab.config as _cfg
+    from dartlab.gather.dart import allFilingsCollector as mod
+
+    monkeypatch.setattr(_cfg, "dataDir", str(tmp_path))
+    monkeypatch.setattr(mod, "_ensureFromHf", lambda _period: mod.HfFallbackStatus.NOT_FOUND)
+
+    assert mod.loadDay("20990101") is None
+
+
+def test_load_all_returns_empty_only_for_normal_remote_absence(monkeypatch, tmp_path) -> None:
+    """loadAll의 빈 frame은 정상적인 원격 artifact 부재만 뜻한다."""
+    import dartlab.config as _cfg
+    from dartlab.gather.dart import allFilingsCollector as mod
+
+    monkeypatch.setattr(_cfg, "dataDir", str(tmp_path))
+    monkeypatch.setattr(mod, "_ensureFromHf", lambda: mod.HfFallbackStatus.NOT_FOUND)
+
+    assert mod.loadAll().is_empty()
+
+
+@pytest.mark.parametrize("loaderArgs", [("day", "20990101"), ("all", None)])
+def test_loaders_propagate_typed_hf_failure(monkeypatch, tmp_path, loaderArgs) -> None:
+    """사용자-facing loader가 typed remote 실패를 빈 결과로 다시 삼키지 않는다."""
+    import dartlab.config as _cfg
+    from dartlab.gather.dart import allFilingsCollector as mod
+
+    monkeypatch.setattr(_cfg, "dataDir", str(tmp_path))
+    kind, period = loaderArgs
+
+    def failEnsure(_period=None):
+        raise mod.AllFilingsHfDownloadError("remote failed", period=_period)
+
+    monkeypatch.setattr(mod, "_ensureFromHf", failEnsure)
+
+    with pytest.raises(mod.AllFilingsHfDownloadError, match="remote failed"):
+        if kind == "day":
+            mod.loadDay(period)
+        else:
+            mod.loadAll()
 
 
 _STUB_DART_014 = (

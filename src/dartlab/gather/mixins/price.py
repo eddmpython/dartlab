@@ -110,7 +110,8 @@ class _GatherPriceMixin(GatherMixinContext):
             없음 (공개 API).
 
         Raises:
-            없음 — fallback 체인 내부 예외는 흡수.
+            ValueError — stockCode, interval 또는 시장 입력 계약 위반.
+            SourceAttemptsExhaustedError — 선택한 가격 source가 모두 실패한 경우.
 
         Example::
 
@@ -124,6 +125,9 @@ class _GatherPriceMixin(GatherMixinContext):
             ``history`` — start/end 명시 시계열.
             ``dartlab.gather.transforms.indicatorDispatch.addIndicators`` — 보조지표.
         """
+        if not isinstance(stockCode, str) or not stockCode.strip():
+            raise ValueError("price stockCode는 비어 있지 않은 문자열이어야 합니다")
+
         # market 자동 감지 (core SSOT)
         from dartlab.core.market import resolveMarket
 
@@ -131,8 +135,11 @@ class _GatherPriceMixin(GatherMixinContext):
 
         if snapshot:
             return self._priceSnapshot(stockCode, market=market)
-        if _intervalMinutes(interval) is not None:
+        minutes = _intervalMinutes(interval)
+        if minutes is not None:
             return self._intradayFrame(stockCode, market=market, interval=interval, start=start, end=end)
+        if interval not in ("", "1d", "d", "day", "daily"):
+            raise ValueError(f"지원하지 않는 price interval입니다: {interval!r}")
         from datetime import date, timedelta
 
         if start is None:
@@ -203,7 +210,7 @@ class _GatherPriceMixin(GatherMixinContext):
         stock_code : str
             종목코드 ("005930").
         market : str
-            "KR" 만 지원. 외 시장은 빈 DataFrame.
+            "KR" 만 지원. 외 시장은 ValueError.
         interval : str
             "1m"/"3m"/"5m" 등 분봉 단위.
         start : str | None
@@ -272,7 +279,7 @@ class _GatherPriceMixin(GatherMixinContext):
             - 외국인/기관 매매 동향 — sentiment / 시장 압력 신호로 분석
 
         Guide:
-            US 시장은 Naver 미지원 → None. KR 만 작동.
+            US 시장은 Naver 미지원이므로 ValueError. KR 만 작동.
 
         When:
             "외국인 매매 동향" 같은 KR 종목 수급 분석 의도 시.
@@ -298,7 +305,8 @@ class _GatherPriceMixin(GatherMixinContext):
             없음 (공개 API).
 
         Raises:
-            없음 — fallback 체인 내부 예외는 흡수.
+            ValueError — KR 외 시장 또는 잘못된 입력.
+            SourceAttemptsExhaustedError — flow source가 모두 실패한 경우.
 
         Example::
 
@@ -326,7 +334,7 @@ class _GatherPriceMixin(GatherMixinContext):
 
         try:
             if market != "KR":
-                return None
+                raise ValueError(f"flow는 KR 시장만 지원합니다: {market!r}")
             cache_key = (
                 f"{stockCode}:flow_series:"
                 f"{start or ''}:{end or ''}:{limit or ''}:{pageSize}:{marketType}:{maxPages or ''}:{int(fullHistory)}"
@@ -381,7 +389,7 @@ class _GatherPriceMixin(GatherMixinContext):
             None — KR 외 시장이거나 데이터 없을 때.
         """
         df = self.flow(stockCode, market=market)
-        if isEmptyDf(df):
+        if df is None or isEmptyDf(df):
             return None
         row = df.row(0, named=True)
         return FlowData(
@@ -401,7 +409,6 @@ class _GatherPriceMixin(GatherMixinContext):
 
         Capabilities:
             - KR: 네이버 금융 (연간 매출/영업이익/순이익 추정)
-            - US: Yahoo Finance quoteSummary
             - 연도별 RevenueConsensus 리스트
             - TTL 캐시
 
@@ -409,7 +416,7 @@ class _GatherPriceMixin(GatherMixinContext):
             - 미래 컨센서스 fetch — story/analysis 가 future 매출 전망에 사용
 
         Guide:
-            KR 만 본격 지원 (Naver). US 는 빈 리스트 (provider 미연결).
+            KR Naver만 지원. 미배선 시장은 ValueError로 호출자에게 드러낸다.
 
         When:
             매출/이익 컨센서스 시계열 (분석가 추정) 필요 시.
@@ -422,13 +429,14 @@ class _GatherPriceMixin(GatherMixinContext):
             market: "KR" 또는 "US". 기본 "KR".
 
         Returns:
-            list[RevenueConsensus] — 연도별 매출/이익 추정치. 실패 시 빈 리스트.
+            list[RevenueConsensus] — 연도별 매출/이익 추정치. 정상 무데이터면 빈 리스트.
 
         Requires:
             없음 (공개 API).
 
         Raises:
-            없음 — fallback 체인 내부 예외는 흡수.
+            ValueError — 잘못된 종목코드 또는 미지원 시장.
+            SourceUnavailableError — Naver 요청·JSON·schema 실패.
 
         Example::
 
@@ -441,20 +449,21 @@ class _GatherPriceMixin(GatherMixinContext):
         """
         from ..domains import loadDomain
 
-        cache_key = f"{stockCode}_{market}"
+        if not isinstance(stockCode, str) or not stockCode.strip():
+            raise ValueError("revenueConsensus stockCode는 비어 있지 않은 문자열이어야 합니다")
+        normalizedMarket = market.upper()
+        if normalizedMarket != "KR":
+            raise ValueError(f"revenueConsensus는 KR 시장만 지원합니다: {market!r}")
+
+        cache_key = f"{stockCode}_{normalizedMarket}"
         cached = self._cache.getTyped(cache_key, "revenue_consensus")
         if cached is not None:
             return cached  # type: ignore[return-value]
-        try:
-            if market == "KR":
-                module = loadDomain("naver")
-                result = runAsync(module.fetchRevenueConsensus(stockCode, self._client))
-            else:
-                # US/글로벌: revenue consensus 소스 없음 (네이버 KR 전용)
-                result = []
-        except (SourceUnavailableError, ImportError, OSError, AttributeError) as exc:
-            log.warning("revenue_consensus 실패 (%s, %s): %s", stockCode, market, exc)
-            result = []
+        module = loadDomain("naver")
+        fetchRevenueConsensus = getattr(module, "fetchRevenueConsensus", None)
+        if not callable(fetchRevenueConsensus):
+            raise SourceUnavailableError("naver에 fetchRevenueConsensus 구현이 없습니다")
+        result = runAsync(fetchRevenueConsensus(stockCode, self._client))
         if result:
             self._cache.putTyped(cache_key, "revenue_consensus", result)
         return result

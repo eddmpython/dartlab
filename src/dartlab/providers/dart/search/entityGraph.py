@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 from pathlib import Path
 from typing import Any, Mapping
@@ -10,6 +11,8 @@ from typing import Any, Mapping
 import polars as pl
 
 from dartlab.providers.dart.search.coerce import _nameKey
+
+_log = logging.getLogger(__name__)
 
 ENTITY_GRAPH_CATALOG_NAME = "entityGraphCatalog.parquet"
 _CATALOG_FILENAMES: tuple[str, ...] = (
@@ -97,7 +100,13 @@ def loadEntityGraphCatalog(path: str | Path | None = None) -> pl.DataFrame | Non
         return cached[1]
     try:
         catalog = pl.read_parquet(catalogPath)
-    except Exception:
+    except (OSError, pl.exceptions.PolarsError) as exc:
+        _log.warning(
+            "entity graph catalog 비활성화: path=%s, error=%s: %s",
+            catalogPath,
+            type(exc).__name__,
+            exc,
+        )
         catalog = None
     _CATALOG_CACHE[cacheKey] = (mtime, catalog)
     return catalog

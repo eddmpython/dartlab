@@ -62,6 +62,35 @@ _TAG_RE = r"<[^>]+>"
 _WS_RE = r"\s+"
 
 
+class PanelArtifactFetchError(RuntimeError):
+    """원격 panel artifact 조달 실패."""
+
+    def __init__(self, code: str, marketNs: str, category: str, cause: BaseException):
+        self.code = code
+        self.marketNs = marketNs
+        self.category = category
+        super().__init__(
+            f"panel artifact fetch 실패: code={code}, market={marketNs}, "
+            f"category={category}, error={type(cause).__name__}: {cause}"
+        )
+
+
+class PanelArtifactReadError(RuntimeError):
+    """로컬 panel artifact 읽기 또는 정리 실패."""
+
+    def __init__(self, code: str, marketNs: str, operation: str, cause: BaseException):
+        self.code = code
+        self.marketNs = marketNs
+        self.operation = operation
+        super().__init__(
+            f"panel artifact {operation} 실패: code={code}, market={marketNs}, error={type(cause).__name__}: {cause}"
+        )
+
+
+class PanelSchemaError(ValueError):
+    """panel artifact schema 또는 수평화 계약 위반."""
+
+
 def _stripExpr(col: str) -> pl.Expr:
     """contentRaw(태그 포함) → plain 텍스트 strip Expr (태그 제거 + 공백 정리).
 
@@ -170,11 +199,11 @@ def _panelDir(code: str, marketNs: str = "kr") -> Path:
 _HF_PANEL_ATTEMPTED: set[str] = set()
 
 
-def ensurePanelFromHf(code: str, marketNs: str = "kr") -> None:
+def ensurePanelFromHf(code: str, marketNs: str = "kr") -> bool:
     """panel.parquet 부재 시 HF lazy 다운로드 — 한 종목만, 1회 시도 (단일 artifact 자동로드).
 
     sections ``_ensureFromHf`` 미러. 로컬 우선 — 파일 있으면 즉시 반환. offline/
-    ``DARTLAB_NO_HF_DOWNLOAD=1`` skip. 실패는 graceful(빈 결과). KR(panel) + US(edgarPanel) 둘 다.
+    ``DARTLAB_NO_HF_DOWNLOAD=1`` skip. KR(panel) + US(edgarPanel) 둘 다.
     native is/bs/cf/ratios(셀)도 이 한 artifact 에서 파생되므로 panel.parquet 만 받으면 충분.
 
     Args:
@@ -182,34 +211,36 @@ def ensurePanelFromHf(code: str, marketNs: str = "kr") -> None:
         marketNs: 시장 namespace. ``"kr"`` → panel repo, ``"us"`` → edgarPanel repo. 그 외 즉시 반환.
 
     Returns:
-        None — 부작용으로 ``data/{dart|edgar}/panel/{code}.parquet`` 를 채운다. 이미 있으면 무동작.
+        로컬 또는 다운로드 artifact가 준비됐으면 ``True``. 다운로드 비활성 또는 원격에
+        실제 artifact가 없으면 ``False``.
 
     Example:
         >>> ensurePanelFromHf("005930")              # doctest: +SKIP — KR (dart/panel)
         >>> ensurePanelFromHf("AAPL", marketNs="us") # doctest: +SKIP — US (edgar/panel)
 
     Raises:
-        없음 — 모든 예외를 graceful 흡수 (다운로드 실패는 빈 결과로 저하).
+        ValueError: 지원하지 않는 ``marketNs``.
+        PanelArtifactFetchError: 원격 요청·인증·저장·검증 실패.
     """
     import os as _os
 
     if marketNs not in ("kr", "us"):
-        return
+        raise ValueError(f"marketNs는 'kr' 또는 'us'여야 합니다: {marketNs!r}")
     code = code.upper() if marketNs == "us" else code  # EDGAR ticker 대소문자 무관 (build 가 upper 저장)
     flat = _panelDir(code, marketNs).parent / f"{code}.parquet"
     if flat.exists():  # flat 파일만 — 옛 nested 폴더는 flat 다운로드를 막지 않음(stale 서빙 방지)
-        return
+        return True
     if _os.environ.get("DARTLAB_NO_HF_DOWNLOAD", "").strip() in ("1", "true", "True"):
-        return
+        return False
     attemptKey = f"{marketNs}:{code}"
     if attemptKey in _HF_PANEL_ATTEMPTED:
-        return
+        return False
 
     category = "panel" if marketNs == "kr" else "edgarPanel"
 
     if _IS_PYODIDE:
         # 브라우저: huggingface_hub 부재. 로더 공용 pyodide fetch(pyfetch/XHR)로 flat parquet 조달.
-        # 부재(404)나 네트워크 실패는 graceful(빈 결과 저하, readWide 가 None 처리). 영구 마킹 안 함(재시도 가능).
+        # Pyodide fetch 실패는 typed error로 전파하고 영구 마킹하지 않아 재시도 가능하게 둔다.
         from dartlab.core.dataConfig import DATA_RELEASES
         from dartlab.core.dataLoaderPyodide import pyodideFetchToFS
 
@@ -217,45 +248,44 @@ def ensurePanelFromHf(code: str, marketNs: str = "kr") -> None:
             pyodideFetchToFS(code, category, DATA_RELEASES[category]["dir"], flat)
         except MemoryError:
             raise
-        except Exception as exc:  # noqa: BLE001 (부재/네트워크: 빈 결과 저하, 다음 호출 재시도)
-            _log.warning("panel %s 브라우저 다운로드 실패(재시도 가능): %s", code, exc)
-        return
+        except (OSError, RuntimeError, ValueError) as exc:
+            raise PanelArtifactFetchError(code, marketNs, category, exc) from exc
+        return flat.exists()
 
     try:
         from huggingface_hub import snapshot_download
+        from huggingface_hub.errors import HfHubHTTPError
+    except ImportError as exc:
+        raise PanelArtifactFetchError(code, marketNs, category, exc) from exc
 
+    try:
         from dartlab.core.dataConfig import DATA_RELEASES, repoFor
         from dartlab.core.hfRetry import retryHfCall
 
+        repoId = repoFor(category)
         patterns = [f"{DATA_RELEASES[category]['dir']}/{code}.parquet"]  # flat 회사당 1파일 (us 는 보드+셀)
         retryHfCall(  # HF read SSOT(core.hfRetry). 429/503/504 단일 백오프
             snapshot_download,
-            repo_id=repoFor(category),
+            repo_id=repoId,
             repo_type="dataset",
             allow_patterns=patterns,  # flat 회사당 1파일 (us 는 보드+셀)
             local_dir=str(Path(_cfg.dataDir)),
         )
-    except Exception as exc:  # noqa: BLE001 — 일시 실패(네트워크/429): 영구 마킹 안 함(다음 호출 재시도)
-        _log.warning("panel %s HF 다운로드 일시 실패(재시도 가능): %s", code, exc)
-        return
+    except (HfHubHTTPError, OSError, RuntimeError, ValueError) as exc:
+        raise PanelArtifactFetchError(code, marketNs, category, exc) from exc
     # snapshot_download 는 allow_patterns 가 HF 에 없어도 *예외 없이* 0 파일로 '성공'한다 — 이게
     # 옛 silent-empty(reader flat ↔ HF nested 불일치)의 근본. 다운로드 후 파일 존재를 확인해
     # 부재면 1회 가시 경고 + 영구 마킹(genuinely absent ≠ 일시 실패).
     if flat.exists():
-        return
+        return True
     _HF_PANEL_ATTEMPTED.add(attemptKey)
-    try:
-        from dartlab.core.dataConfig import repoFor as _repoFor
-
-        _log.warning(
-            "panel %s: HF artifact 부재 — 빈 결과(repo=%s, pattern=%s). 데이터 미발행/오경로 가능.",
-            code,
-            _repoFor("panel" if marketNs == "kr" else "edgarPanel"),
-            patterns,
-        )
-    except Exception:  # noqa: BLE001 — 경고 자체 실패는 무시
-        pass
-    return
+    _log.warning(
+        "panel %s: HF artifact 부재 — 빈 결과(repo=%s, pattern=%s). 데이터 미발행/오경로 가능.",
+        code,
+        repoId,
+        patterns,
+    )
+    return False
 
 
 def scopeExpr(col: str = "xbrlClass") -> pl.Expr:
@@ -878,7 +908,9 @@ def readLong(code: str, *, marketNs: str = "kr", periods: list[str] | None = Non
         long DataFrame (14-col + disclosureKey) 또는 None (artifact 없음/빈/read 실패).
 
     Raises:
-        없음 — read 실패는 None.
+        PanelArtifactFetchError: 부재 artifact의 원격 조달 실패.
+        PanelArtifactReadError: 손상 parquet 읽기 또는 정리 실패.
+        PanelSchemaError: artifact 컬럼 계약 위반.
 
     Example:
         >>> df = readLong("005930", periods=["2025Q4"])  # doctest: +SKIP
@@ -920,14 +952,9 @@ def readLong(code: str, *, marketNs: str = "kr", periods: list[str] | None = Non
             - KR + US.
     """
     # 다회사 루프 OOM 가드 — panel 은 회사당 통째 read(Polars Rust 힙 누수). 로드 전 RSS 확인 + 임계 시 GC.
-    try:
-        from dartlab.core.memory import checkMemoryAndGc
+    from dartlab.core.memory import checkMemoryAndGc
 
-        checkMemoryAndGc(f"panel:{code}")
-    except MemoryError:
-        raise
-    except Exception:  # noqa: BLE001 — 가드 자체 실패는 read 막지 않음
-        pass
+    checkMemoryAndGc(f"panel:{code}")
     code = code.upper() if marketNs == "us" else code  # EDGAR ticker 대소문자 무관 (build 가 upper 저장)
     ensurePanelFromHf(code, marketNs)  # artifact 부재 시 HF lazy 다운로드 (로컬 우선, 단일 자동로드)
     d = _panelDir(code, marketNs)
@@ -958,9 +985,11 @@ def readLong(code: str, *, marketNs: str = "kr", periods: list[str] | None = Non
             if flat.exists():
                 flat.unlink()
             _HF_PANEL_ATTEMPTED.discard(f"{marketNs}:{code}")
-        except OSError:
-            pass
-        return None
+        except OSError as cleanupExc:
+            error = PanelArtifactReadError(code, marketNs, "손상 cache 정리", cleanupExc)
+            error.add_note(f"선행 읽기 실패: {type(exc).__name__}: {exc}")
+            raise error from cleanupExc
+        raise PanelArtifactReadError(code, marketNs, "읽기", exc) from exc
     if df.is_empty():
         return None
     if "disclosureKey" not in df.columns or df["disclosureKey"].null_count() == df.height:
@@ -993,7 +1022,9 @@ def readWide(
         열 = period (cell = 본문). 또는 None (artifact 없음/빈/pivot 실패).
 
     Raises:
-        없음 — pivot 실패는 None.
+        PanelArtifactFetchError: 부재 artifact의 원격 조달 실패.
+        PanelArtifactReadError: parquet 읽기 실패.
+        PanelSchemaError: 필수 컬럼 누락 또는 pivot 실패.
 
     Example:
         >>> readWide("005930", tag=False, periods=["2025Q4", "2024Q4"])  # doctest: +SKIP
@@ -1043,8 +1074,10 @@ def readWide(
     from .mapper import dedupKeyed
 
     long = readLong(code, marketNs=marketNs, periods=periods)
-    if long is None or long.is_empty() or "contentRaw" not in long.columns:
+    if long is None or long.is_empty():
         return None
+    if "contentRaw" not in long.columns:
+        raise PanelSchemaError(f"panel {code}: 필수 컬럼 누락: contentRaw")
     long = alignNotes(long)  # 옛 split 주석행(null key) → 회사 최근 XBRL 뼈대 NT_ 정렬 (read-time, 재빌드 무관)
     long = anchorLatest(long)
     long = dedupKeyed(long)  # 본문+첨부 중복 keyed 행 → (key,scope,leafType,period) 당 1개 (collapse 증식 차단)
@@ -1086,7 +1119,8 @@ def readWide(
     if "leafSeq" in long.columns:
         indexCols = [*indexCols, "leafSeq"]
     if not indexCols or "period" not in long.columns:
-        return None
+        missing = [*missingIdx, *(["period"] if "period" not in long.columns else [])]
+        raise PanelSchemaError(f"panel {code}: 수평화 필수 컬럼 누락: {sorted(set(missing))}")
     # collapse 는 항상 raw join (태그 무손실). strip(tag=False)은 pivot·정렬 후 wide 셀에 1회
     # — 작은 fragment 수천개 정규식보다 큰 셀 1회가 2.8x 빠름(byte-identical 실측), raw wide
     # 2중 materialize 도 회피(strip 은 같은 wide 를 in-place with_columns).
@@ -1115,8 +1149,7 @@ def readWide(
         )
         wide = wide.join(skelOrder, on=indexCols, how="left").join(skelOld, on=indexCols, how="left")
     except (pl.exceptions.ComputeError, pl.exceptions.ShapeError) as exc:
-        _log.warning("panel pivot 실패 %s: %s", code, exc)
-        return None
+        raise PanelSchemaError(f"panel {code}: pivot 실패: {type(exc).__name__}: {exc}") from exc
     wide = orderBySpine(wide, indexCols)
     if not tag:
         periodCols = [c for c in wide.columns if c not in indexCols]

@@ -658,14 +658,11 @@ class Company:
                 return r
 
         if sys.platform == "emscripten":
-            try:
-                from dartlab.core.dataLoader import loadData
+            from dartlab.core.dataLoader import loadData
 
-                r = _pickRow(loadData("tickers", "edgarTickers"))
-                if r is not None:
-                    return r
-            except Exception:  # noqa: BLE001
-                return None
+            r = _pickRow(loadData("tickers", "edgarTickers"))
+            if r is not None:
+                return r
             return None
 
         try:

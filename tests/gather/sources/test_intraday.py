@@ -55,8 +55,8 @@ def test_intraday_delegates_to_naver(monkeypatch) -> None:
     assert fake.calls[0]["start"] == "2026-07-03"
 
 
-def test_intraday_non_kr_returns_empty(monkeypatch) -> None:
-    """KR 외 시장은 네트워크/도메인 접근 없이 빈 리스트."""
+def test_intraday_non_kr_raises(monkeypatch) -> None:
+    """KR 외 시장은 네트워크 접근 없이 명시적 입력 오류."""
     from dartlab.gather.sources import intraday
 
     def _forbidden(name):
@@ -64,12 +64,14 @@ def test_intraday_non_kr_returns_empty(monkeypatch) -> None:
 
     monkeypatch.setattr(intraday, "loadDomain", _forbidden)
 
-    assert asyncio.run(intraday.fetch("AAPL", market="US", client=object())) == []
+    with pytest.raises(ValueError, match="KR 시장"):
+        asyncio.run(intraday.fetch("AAPL", market="US", client=object()))
 
 
-def test_intraday_circuit_open_returns_empty(monkeypatch) -> None:
-    """naver 서킷이 열려 있으면 도메인 호출 없이 빈 리스트."""
+def test_intraday_circuit_open_raises_with_cause(monkeypatch) -> None:
+    """naver 서킷이 열려 있으면 source 실패 원인을 보존한다."""
     from dartlab.gather.sources import intraday
+    from dartlab.gather.types import CircuitOpenError, SourceAttemptsExhaustedError
 
     def _forbidden(name):
         raise AssertionError("서킷 open 시 loadDomain 호출 금지")
@@ -77,4 +79,22 @@ def test_intraday_circuit_open_returns_empty(monkeypatch) -> None:
     monkeypatch.setattr(intraday, "circuitBreaker", _FakeBreaker(True))
     monkeypatch.setattr(intraday, "loadDomain", _forbidden)
 
-    assert asyncio.run(intraday.fetch("005930", client=object())) == []
+    with pytest.raises(SourceAttemptsExhaustedError) as excInfo:
+        asyncio.run(intraday.fetch("005930", client=object()))
+
+    assert isinstance(excInfo.value.failures["naver"], CircuitOpenError)
+
+
+def test_intraday_invalid_code_value_error_is_not_aggregated(monkeypatch) -> None:
+    """도메인 입력 ValueError는 source 실패 aggregate로 감싸지 않는다."""
+    from dartlab.gather.sources import intraday
+
+    class InvalidNaver:
+        async def fetchIntraday(self, *args, **kwargs):
+            raise ValueError("invalid stock code")
+
+    monkeypatch.setattr(intraday, "loadDomain", lambda name: InvalidNaver())
+    monkeypatch.setattr(intraday, "circuitBreaker", _FakeBreaker(False))
+
+    with pytest.raises(ValueError, match="invalid stock code"):
+        asyncio.run(intraday.fetch("bad", client=object()))

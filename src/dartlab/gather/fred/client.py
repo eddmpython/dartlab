@@ -104,7 +104,13 @@ class FredClient:
                 continue
 
             if resp.status_code == 200:
-                return resp.json()
+                try:
+                    data = resp.json()
+                except ValueError as exc:
+                    raise FredError("FRED 응답 JSON을 해석할 수 없습니다") from exc
+                if not isinstance(data, dict):
+                    raise FredError("FRED 응답 schema가 객체가 아닙니다")
+                return data
 
             if resp.status_code == 429:
                 log.warning("FRED rate limit hit, backing off (attempt %d)", attempt + 1)
@@ -127,7 +133,11 @@ class FredClient:
                 raise AuthenticationError("FRED API 키가 유효하지 않습니다.")
             raise FredError(f"FRED API 오류 {resp.status_code}: {body[:200]}")
 
-        raise last_exc or FredError("FRED API 요청 실패 (3회 재시도 초과)")
+        if isinstance(last_exc, FredError):
+            raise last_exc
+        if last_exc is not None:
+            raise FredError("FRED API 요청 실패 (3회 재시도 초과)") from last_exc
+        raise FredError("FRED API 요청 실패 (3회 재시도 초과)")
 
     def close(self) -> None:
         """세션 닫기.

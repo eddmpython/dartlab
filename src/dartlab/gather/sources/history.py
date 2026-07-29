@@ -141,6 +141,8 @@ async def fetch(
                     return rows[-limit:]
                 return rows
 
+        except ValueError:
+            raise
         except Exception as exc:
             circuitBreaker.recordFailure(source_name)
             attempts.append((source_name, exc))

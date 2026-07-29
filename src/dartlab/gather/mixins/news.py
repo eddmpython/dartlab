@@ -12,6 +12,7 @@ from ..infra.http import runAsync
 from ..infra.telemetry import emitGatherFetch
 from ..sources import naverNews as _naver
 from ..sources import news as _news
+from ..types import SourceAttemptsExhaustedError
 from .context import GatherMixinContext
 
 
@@ -70,22 +71,66 @@ class _GatherNewsMixin(GatherMixinContext):
         t0 = time.monotonic()
         cacheHit = False
         try:
+            if not isinstance(query, str) or not query.strip():
+                raise ValueError("news query는 비어 있지 않은 문자열이어야 합니다")
+            normalizedMarket = market.upper()
+            if normalizedMarket not in {"KR", "US"}:
+                raise ValueError(f"news market은 KR/US만 지원합니다: {market!r}")
+            if days < 1:
+                raise ValueError(f"news days는 1 이상이어야 합니다: {days}")
+
             from ..infra.cache import buildCacheSlot
 
-            cacheSlot = buildCacheSlot("news", market=market, days=days)
+            cacheSlot = buildCacheSlot("news", market=normalizedMarket, days=days)
             cached = self._cache.getTyped(query, cacheSlot)
             if cached is not None:
                 cacheHit = True
                 return cached  # type: ignore[return-value]
-            if market.upper() == "KR":
-                items = runAsync(_naver._fetchAsync(query, market=market, client=self._client))
+            if normalizedMarket == "KR":
+                attempts: list[tuple[str, Exception]] = []
+                naverSucceeded = False
+                try:
+                    items = runAsync(_naver._fetchAsync(query, market=normalizedMarket, client=self._client))
+                    naverSucceeded = True
+                except ValueError:
+                    raise
+                except Exception as exc:
+                    attempts.append(("naver_news", exc))
+                    items = []
                 if not items:
-                    items = runAsync(_news._fetchAsync(query, market=market, days=days, client=self._client))
+                    try:
+                        items = runAsync(
+                            _news._fetchAsync(
+                                query,
+                                market=normalizedMarket,
+                                days=days,
+                                client=self._client,
+                            )
+                        )
+                    except ValueError:
+                        raise
+                    except Exception as exc:
+                        attempts.append(("google_news", exc))
+                        if not naverSucceeded:
+                            raise SourceAttemptsExhaustedError("news", attempts) from exc
+                        items = []
                     provider = "google_news"
                 else:
                     provider = "naver_news"
             else:
-                items = runAsync(_news._fetchAsync(query, market=market, days=days, client=self._client))
+                try:
+                    items = runAsync(
+                        _news._fetchAsync(
+                            query,
+                            market=normalizedMarket,
+                            days=days,
+                            client=self._client,
+                        )
+                    )
+                except ValueError:
+                    raise
+                except Exception as exc:
+                    raise SourceAttemptsExhaustedError("news", [("google_news", exc)]) from exc
                 provider = "google_news"
             df = _news.toDataFrame(items, provider=provider)
             if not df.is_empty():

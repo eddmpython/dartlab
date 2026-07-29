@@ -69,6 +69,16 @@ def _buildSymbol(stockCode: str, market: str) -> str:
     return f"{stockCode}{suffix}"
 
 
+def _parsePriceNumber(value: object, field: str) -> float | None:
+    """Yahoo price 숫자의 정상 결측과 schema 손상을 구분한다."""
+    if value is None or value == "":
+        return None
+    try:
+        return float(str(value))
+    except (TypeError, ValueError) as exc:
+        raise SourceUnavailableError(f"Yahoo price {field} 값을 해석할 수 없습니다: {value!r}") from exc
+
+
 async def fetchPrice(
     stockCode: str,
     client,
@@ -85,8 +95,8 @@ async def fetchPrice(
     How: query2.finance.yahoo.com/v8/chart 최근 5일 → regularMarketPrice.
 
     최근 5거래일 데이터를 요청하여 최신 regularMarketPrice를 추출한다.
-    429 rate limit 시 http.py가 자동 재시도하며, 3회 실패 시 None 반환 →
-    fallback 체인에서 naver_global이 이어받는다.
+    429 rate limit 시 http.py가 자동 재시도하며, 최종 실패는 source 오류로
+    fallback caller에 전달된다.
 
     Parameters
     ----------
@@ -113,8 +123,8 @@ async def fetchPrice(
 
     Raises
     ------
-    없음
-        Yahoo v8 API 내부 예외 (SourceUnavailableError/ValueError/OSError) 는 흡수.
+    SourceUnavailableError
+        Yahoo 요청, JSON, API error, schema 또는 숫자 파싱 실패.
 
     Example
     -------
@@ -143,24 +153,36 @@ async def fetchPrice(
     try:
         resp = await client.get(url, params=params)
         data = resp.json()
-    except (SourceUnavailableError, ValueError, OSError) as exc:
-        log.debug("yahoo_chart price 실패 (%s): %s", stockCode, exc)
-        return None
-
-    result = data.get("chart", {}).get("result")
+    except Exception as exc:
+        raise SourceUnavailableError(f"Yahoo price 요청 실패: {stockCode}") from exc
+    if not isinstance(data, dict):
+        raise SourceUnavailableError("Yahoo price 응답 schema가 객체가 아닙니다")
+    chart = data.get("chart")
+    if not isinstance(chart, dict):
+        raise SourceUnavailableError("Yahoo price 응답에 chart 객체가 없습니다")
+    if chart.get("error"):
+        raise SourceUnavailableError(f"Yahoo price API 오류: {chart['error']!r}")
+    result = chart.get("result")
     if not result:
         return None
+    if not isinstance(result, list) or not isinstance(result[0], dict):
+        raise SourceUnavailableError("Yahoo price result schema가 올바르지 않습니다")
 
     meta = result[0].get("meta", {})
-    current = meta.get("regularMarketPrice")
-    prev_close = meta.get("chartPreviousClose") or meta.get("previousClose")
+    if not isinstance(meta, dict):
+        raise SourceUnavailableError("Yahoo price meta가 객체가 아닙니다")
+    current = _parsePriceNumber(meta.get("regularMarketPrice"), "regularMarketPrice")
+    previousRaw = meta.get("chartPreviousClose")
+    if previousRaw is None:
+        previousRaw = meta.get("previousClose")
+    prev_close = _parsePriceNumber(previousRaw, "previousClose")
 
     if not current:
         return None
 
     change = round(current - prev_close, 4) if prev_close else 0.0
     change_pct = round((change / prev_close) * 100, 2) if prev_close and prev_close != 0 else 0.0
-    volume = meta.get("regularMarketVolume", 0)
+    volume = _parsePriceNumber(meta.get("regularMarketVolume"), "regularMarketVolume") or 0.0
 
     return PriceSnapshot(
         current=float(current),

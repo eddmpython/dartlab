@@ -5,6 +5,7 @@ from __future__ import annotations
 import copy
 import logging
 import time
+from typing import Awaitable, Callable, cast
 
 from ..domains import getPriceFallback, loadDomain
 from ..infra.cache import GatherCache
@@ -12,7 +13,13 @@ from ..infra.consolidation import checkDiff as _checkConsolidation
 from ..infra.resilience import circuitBreaker, healthTracker
 from ..infra.telemetry import emitGatherFallback
 from ..marketConfig import getMarketConfig
-from ..types import GatherError, PriceSnapshot
+from ..types import (
+    CircuitOpenError,
+    GatherError,
+    PriceSnapshot,
+    SourceAttemptsExhaustedError,
+    SourceUnavailableError,
+)
 
 log = logging.getLogger(__name__)
 
@@ -90,12 +97,14 @@ async def fetch(
         - currency : str — 통화 코드 ("KRW", "USD" 등)
         - is_stale : bool — stale cache 반환 여부
 
-        전체 fallback + stale cache 모두 실패 시 None.
+        하나 이상의 source가 정상 무데이터를 반환하면 None.
 
     Raises
     ------
-    없음
-        fallback 체인 내부 예외 (GatherError/ImportError/OSError) 는 흡수.
+    ValueError
+        종목코드와 시장 입력 계약 위반.
+    SourceAttemptsExhaustedError
+        모든 fallback source가 실패하고 stale cache도 없는 경우.
 
     Example
     -------
@@ -118,22 +127,33 @@ async def fetch(
 
         client = GatherHttpClient()
 
+    attempts: list[tuple[str, Exception]] = []
+    hadSuccessfulResponse = False
+
     for i, source_name in enumerate(chain):
         if circuitBreaker.isOpen(source_name):
             log.debug("price skip %s (circuit open)", source_name)
+            attempts.append((source_name, CircuitOpenError(f"{source_name} circuit breaker가 열려 있습니다")))
             continue
 
         t0 = time.monotonic()
         try:
             module = loadDomain(source_name)
-            if not hasattr(module, "fetchPrice"):
-                continue
+            fetchPrice = getattr(module, "fetchPrice", None)
+            if not callable(fetchPrice):
+                raise SourceUnavailableError(f"{source_name}에 fetchPrice 구현이 없습니다")
 
-            result = await module.fetchPrice(stockCode, client, market=market)
+            fetchPriceFn = cast(Callable[..., Awaitable[PriceSnapshot | None]], fetchPrice)
+            result = await fetchPriceFn(stockCode, client, market=market)
 
             latency = time.monotonic() - t0
+            hadSuccessfulResponse = True
 
-            if result:
+            if result is not None:
+                if not isinstance(result, PriceSnapshot):
+                    raise TypeError(
+                        f"{source_name}.fetchPrice가 PriceSnapshot이 아닌 {type(result).__name__}을 반환했습니다"
+                    )
                 result.currency = config.currency
                 result.market = market
                 circuitBreaker.recordSuccess(source_name)
@@ -150,11 +170,14 @@ async def fetch(
             # None 반환 = 데이터 없음 (에러는 아님)
             healthTracker.record(source_name, success=True, latency=latency)
 
-        except (GatherError, ImportError, OSError) as exc:
+        except ValueError:
+            raise
+        except Exception as exc:
             latency = time.monotonic() - t0
             circuitBreaker.recordFailure(source_name)
             healthTracker.record(source_name, success=False, latency=latency)
             log.debug("price fallback %s 실패: %s", source_name, exc)
+            attempts.append((source_name, exc))
             # fallback 신호 — 다음 source 가 chain 에 존재할 때만 (A 트랙 O2)
             if i + 1 < len(chain):
                 emitGatherFallback("price", primary=source_name, fallback=chain[i + 1])
@@ -168,7 +191,9 @@ async def fetch(
         log.info("price %s: stale cache 반환", stockCode)
         return stale_copy
 
-    return None
+    if hadSuccessfulResponse:
+        return None
+    raise SourceAttemptsExhaustedError("price", attempts)
 
 
 async def _verifyConsolidation(
@@ -215,9 +240,11 @@ async def _verifyConsolidation(
             continue
         try:
             module = loadDomain(source_name)
-            if not hasattr(module, "fetchPrice"):
+            fetchPrice = getattr(module, "fetchPrice", None)
+            if not callable(fetchPrice):
                 continue
-            secondary = await module.fetchPrice(stockCode, client, market=market)
+            fetchPriceFn = cast(Callable[..., Awaitable[PriceSnapshot | None]], fetchPrice)
+            secondary = await fetchPriceFn(stockCode, client, market=market)
             if secondary is None:
                 continue
             secondary.currency = config.currency

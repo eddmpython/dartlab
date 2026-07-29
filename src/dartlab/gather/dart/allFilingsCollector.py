@@ -31,6 +31,7 @@ import io
 import os
 import zipfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from enum import Enum
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -614,7 +615,56 @@ def pendingDates() -> list[str]:
 _HF_DOWNLOAD_ATTEMPTED: set[str] = set()
 
 
-def _ensureFromHf(period: str | None = None) -> bool:
+class HfFallbackStatus(str, Enum):
+    """allFilings HF fallback의 정상 결과."""
+
+    LOCAL = "local"
+    DOWNLOADED = "downloaded"
+    NOT_FOUND = "not_found"
+
+
+class AllFilingsHfError(RuntimeError):
+    """allFilings HF fallback 기반 오류."""
+
+    def __init__(self, message: str, *, period: str | None) -> None:
+        self.period = period
+        super().__init__(message)
+
+
+class AllFilingsHfUnavailableError(AllFilingsHfError):
+    """HF fallback을 현재 실행 환경에서 사용할 수 없음."""
+
+
+class AllFilingsHfDownloadError(AllFilingsHfError):
+    """HF fallback 원격 조회·다운로드가 실패함."""
+
+
+class AllFilingsHfListingError(AllFilingsHfError):
+    """HF 원격 artifact 목록 조회가 실패함."""
+
+
+class AllFilingsHfUploadError(AllFilingsHfError):
+    """HF artifact 업로드가 일부 또는 전부 실패함."""
+
+    def __init__(self, message: str, *, uploadedFiles: int, totalFiles: int) -> None:
+        self.uploadedFiles = uploadedFiles
+        self.totalFiles = totalFiles
+        super().__init__(message, period=None)
+
+
+def _bodyParquetFiles(outDir: Path) -> list[Path]:
+    """allFilings 본문 parquet만 정렬해 반환한다."""
+    return sorted(f for f in outDir.glob("*.parquet") if _META_SUFFIX not in f.stem)
+
+
+def _hasBodyArtifact(outDir: Path, period: str | None) -> bool:
+    """요청한 본문 artifact가 로컬에 존재하는지 확인한다."""
+    if period is not None:
+        return (outDir / f"{period}.parquet").is_file()
+    return bool(_bodyParquetFiles(outDir))
+
+
+def _ensureFromHf(period: str | None = None) -> HfFallbackStatus:
     """artifact 부재 시 HF dataset 에서 lazy 다운로드.
 
     panel sync `_ensureFromHf` 동일 패턴 — `huggingface_hub.snapshot_download`
@@ -624,31 +674,45 @@ def _ensureFromHf(period: str | None = None) -> bool:
         period: 특정 일자만 (YYYYMMDD) 받기. None 이면 디렉토리 전체.
 
     Returns:
-        bool — 다운로드 성공 (또는 이미 로컬에 있음).
+        HfFallbackStatus — 로컬 존재, 다운로드 완료, 원격 정상 부재.
 
     Raises:
-        없음 — 네트워크 / 인증 / 부재 실패는 warning 로그 후 False.
+        AllFilingsHfUnavailableError: 환경 설정 또는 optional dependency 때문에 HF를
+            사용할 수 없는 경우.
+        AllFilingsHfDownloadError: 원격 조회·인증·다운로드가 실패한 경우.
 
     환경변수 `DARTLAB_NO_HF_DOWNLOAD=1` 시 즉시 skip. 한 (period or "_ALL_") 1 회만 시도.
     """
     import os as _os
 
     outDir = _allFilingsDir()
-    if period is not None:
-        if (outDir / f"{period}.parquet").exists():
-            return True
+    if _hasBodyArtifact(outDir, period):
+        return HfFallbackStatus.LOCAL
 
     if _os.environ.get("DARTLAB_NO_HF_DOWNLOAD", "").strip() in ("1", "true", "True"):
-        return False
+        raise AllFilingsHfUnavailableError(
+            "DARTLAB_NO_HF_DOWNLOAD 설정으로 allFilings HF fallback이 비활성화되었습니다",
+            period=period,
+        )
 
     key = period or "_ALL_"
     if key in _HF_DOWNLOAD_ATTEMPTED:
-        return False
-    _HF_DOWNLOAD_ATTEMPTED.add(key)
+        return HfFallbackStatus.NOT_FOUND
 
     try:
         from huggingface_hub import snapshot_download
+        from huggingface_hub.errors import (
+            EntryNotFoundError,
+            LocalEntryNotFoundError,
+            OfflineModeIsEnabled,
+        )
+    except ImportError as exc:
+        raise AllFilingsHfUnavailableError(
+            "huggingface_hub optional dependency가 없어 allFilings HF fallback을 사용할 수 없습니다",
+            period=period,
+        ) from exc
 
+    try:
         from dartlab.core.dataConfig import repoFor
         from dartlab.core.hfRetry import retryHfCall
 
@@ -661,10 +725,24 @@ def _ensureFromHf(period: str | None = None) -> bool:
             allow_patterns=[pattern],
             local_dir=str(Path(_cfg.dataDir)),
         )
-        return True
+    except (LocalEntryNotFoundError, OfflineModeIsEnabled) as exc:
+        raise AllFilingsHfUnavailableError(
+            f"offline/cache 상태에서 allFilings HF artifact를 사용할 수 없습니다: {period or 'ALL'}",
+            period=period,
+        ) from exc
+    except EntryNotFoundError:
+        _HF_DOWNLOAD_ATTEMPTED.add(key)
+        return HfFallbackStatus.NOT_FOUND
     except Exception as exc:  # noqa: BLE001
-        _log.warning("[HF↓] allFilings 다운로드 실패 (%s): %s", period or "ALL", exc)
-        return False
+        raise AllFilingsHfDownloadError(
+            f"allFilings HF 다운로드에 실패했습니다: {period or 'ALL'}",
+            period=period,
+        ) from exc
+
+    _HF_DOWNLOAD_ATTEMPTED.add(key)
+    if _hasBodyArtifact(outDir, period):
+        return HfFallbackStatus.DOWNLOADED
+    return HfFallbackStatus.NOT_FOUND
 
 
 def loadDay(period: str) -> pl.DataFrame | None:
@@ -674,7 +752,9 @@ def loadDay(period: str) -> pl.DataFrame | None:
         period: YYYYMMDD.
 
     Raises:
-        없음.
+        AllFilingsHfUnavailableError: 로컬 파일이 없고 HF fallback을 사용할 수 없는 경우.
+        AllFilingsHfDownloadError: 로컬 파일이 없고 HF 원격 다운로드가 실패한 경우.
+        OSError: parquet 파일 읽기 실패.
 
     Example:
         >>> loadDay("20260527")  # doctest: +SKIP
@@ -684,9 +764,14 @@ def loadDay(period: str) -> pl.DataFrame | None:
     """
     path = _allFilingsDir() / f"{period}.parquet"
     if not path.exists():
-        _ensureFromHf(period)
+        status = _ensureFromHf(period)
+        if status is HfFallbackStatus.NOT_FOUND:
+            return None
     if not path.exists():
-        return None
+        raise AllFilingsHfDownloadError(
+            f"HF 다운로드 완료 후 allFilings artifact가 없습니다: {period}",
+            period=period,
+        )
     return pl.read_parquet(path)
 
 
@@ -698,7 +783,9 @@ def loadAll() -> pl.DataFrame:
         (인자 자동 생성).
 
     Raises:
-        없음.
+        AllFilingsHfUnavailableError: 로컬 파일이 없고 HF fallback을 사용할 수 없는 경우.
+        AllFilingsHfDownloadError: 로컬 파일이 없고 HF 원격 다운로드가 실패한 경우.
+        OSError: parquet 파일 읽기 실패.
 
     Example:
         >>> loadAll()  # doctest: +SKIP
@@ -707,12 +794,17 @@ def loadAll() -> pl.DataFrame:
         pl.DataFrame — 결과.
     """
     outDir = _allFilingsDir()
-    files = sorted(f for f in outDir.glob("*.parquet") if _META_SUFFIX not in f.stem)
+    files = _bodyParquetFiles(outDir)
     if not files:
-        _ensureFromHf()
-        files = sorted(f for f in outDir.glob("*.parquet") if _META_SUFFIX not in f.stem)
+        status = _ensureFromHf()
+        if status is HfFallbackStatus.NOT_FOUND:
+            return pl.DataFrame()
+        files = _bodyParquetFiles(outDir)
     if not files:
-        return pl.DataFrame()
+        raise AllFilingsHfDownloadError(
+            "HF 다운로드 완료 후 allFilings artifact가 없습니다: ALL",
+            period=None,
+        )
     return pl.scan_parquet(files).collect(engine="streaming")
 
 

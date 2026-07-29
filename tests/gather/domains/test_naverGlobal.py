@@ -107,3 +107,25 @@ def test_fetch_history_valid_empty_page_returns_empty(monkeypatch: pytest.Monkey
     monkeypatch.setattr(naverGlobal, "_throttle", noThrottle)
 
     assert asyncio.run(naverGlobal.fetchHistory("AAPL", EmptyClient())) == []
+
+
+def test_fetch_price_reuters_failure_raises(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Naver global price의 Reuters 확인 장애를 매핑 없음으로 위장하지 않는다."""
+    from dartlab.gather.domains import naverGlobal
+    from dartlab.gather.types import SourceUnavailableError
+
+    async def noThrottle():
+        return None
+
+    class FailingClient:
+        async def get(self, *args, **kwargs):
+            raise SourceUnavailableError("network down")
+
+    naverGlobal._REUTERS_CACHE.clear()
+    monkeypatch.setattr(naverGlobal, "_SUFFIXES", [""])
+    monkeypatch.setattr(naverGlobal, "_throttle", noThrottle)
+
+    with pytest.raises(SourceUnavailableError) as excInfo:
+        asyncio.run(naverGlobal.fetchPrice("AAPL", FailingClient()))
+
+    assert isinstance(excInfo.value.__cause__, SourceUnavailableError)

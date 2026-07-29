@@ -42,7 +42,7 @@ _CANONICAL_UNITS: dict[str, str] = {
     "천usd": "천USD",
     "백만usd": "백만USD",
 }
-_UNIT_RE = re.compile(r"단위\s*[:：]?\s*([^)\]\n]+)", re.IGNORECASE)
+_UNIT_RE = re.compile(r"단위\s*[:：]?\s*([^)\]\n<]+)", re.IGNORECASE)
 _NOTE_RE = re.compile(r"^\(?\s*주\s*[\d,\s]+\)?$")
 _PLAIN_NUMBER_RE = re.compile(r"^(?:(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?|\.\d+)$")
 

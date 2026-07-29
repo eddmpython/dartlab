@@ -19,6 +19,78 @@ def test_smoke_import() -> None:
     importlib.import_module("dartlab.gather.domains.naver")
 
 
+def test_revenue_consensus_failure_is_not_empty_data() -> None:
+    """요청 실패를 정상 컨센서스 0건으로 위장하지 않는다."""
+    from dartlab.gather.domains import naver
+    from dartlab.gather.types import SourceUnavailableError
+
+    class FailingClient:
+        async def get(self, *_args, **_kwargs):
+            raise OSError("network down")
+
+    with pytest.raises(SourceUnavailableError, match="요청 실패") as excInfo:
+        asyncio.run(naver.fetchRevenueConsensus("005930", FailingClient()))
+
+    assert isinstance(excInfo.value.__cause__, OSError)
+
+
+def test_revenue_consensus_schema_failure_is_explicit() -> None:
+    """존재하는 응답의 schema 손상은 빈 목록이 아니다."""
+    from dartlab.gather.domains import naver
+    from dartlab.gather.types import SourceUnavailableError
+
+    class Response:
+        def json(self):
+            return {"financeInfo": {"trTitleList": {}, "rowList": []}}
+
+    class Client:
+        async def get(self, *_args, **_kwargs):
+            return Response()
+
+    with pytest.raises(SourceUnavailableError, match="title/row schema"):
+        asyncio.run(naver.fetchRevenueConsensus("005930", Client()))
+
+
+def test_revenue_consensus_does_not_publish_missing_revenue_as_zero() -> None:
+    """영업이익만 있는 기간에 가짜 매출 0.0을 발행하지 않는다."""
+    from dartlab.gather.domains import naver
+
+    class Response:
+        def json(self):
+            return {
+                "financeInfo": {
+                    "trTitleList": [{"key": "2026", "isConsensus": "Y"}],
+                    "rowList": [
+                        {
+                            "title": "영업이익",
+                            "columns": {"2026": {"value": "100"}},
+                        }
+                    ],
+                }
+            }
+
+    class Client:
+        async def get(self, *_args, **_kwargs):
+            return Response()
+
+    assert asyncio.run(naver.fetchRevenueConsensus("005930", Client())) == []
+
+
+def test_sector_per_failure_is_not_missing_data() -> None:
+    """업종 PER endpoint 실패를 정상 업종정보 부재 None으로 위장하지 않는다."""
+    from dartlab.gather.domains import naver
+    from dartlab.gather.types import SourceUnavailableError
+
+    class FailingClient:
+        async def get(self, *_args, **_kwargs):
+            raise OSError("network down")
+
+    with pytest.raises(SourceUnavailableError, match="요청 실패") as excInfo:
+        asyncio.run(naver.fetchSectorPer("005930", FailingClient()))
+
+    assert isinstance(excInfo.value.__cause__, OSError)
+
+
 def test_fetch_flow_trend_paginates_by_bizdate() -> None:
     """Naver front-api flow 는 end+1 cursor 로 시작해 start 전에서 멈춘다."""
     from dartlab.gather.domains import naver
@@ -475,20 +547,24 @@ def test_intraday_stamp_fills_and_normalizes() -> None:
     assert naver._intradayStamp("bad", isEnd=False) == ""
 
 
-def test_intraday_parse_rows_sorts_and_skips_bad() -> None:
-    """list 파싱 + datetime 오름차순 + 결측/비-dict 스킵."""
+def test_intraday_parse_rows_sorts_and_rejects_bad_schema() -> None:
+    """정상 행은 정렬하고 결측/비-dict/schema 손상은 명시적으로 거부한다."""
     from dartlab.gather.domains import naver
+    from dartlab.gather.types import SourceUnavailableError
 
     rows = naver._parseIntradayRows(
         [
             _minute_item("20260703091500", 71000.0),
             _minute_item("20260703090000", 70000.0),
-            {"localDateTime": "20260703093000", "currentPrice": None},  # close 결측 스킵
-            "not-a-dict",
         ]
     )
     assert [r["datetime"] for r in rows] == ["2026-07-03T09:00:00", "2026-07-03T09:15:00"]
-    assert naver._parseIntradayRows({"not": "list"}) == []
+    with pytest.raises(SourceUnavailableError, match="currentPrice"):
+        naver._parseIntradayRows([{"localDateTime": "20260703093000", "currentPrice": None}])
+    with pytest.raises(SourceUnavailableError, match="객체"):
+        naver._parseIntradayRows(["not-a-dict"])
+    with pytest.raises(SourceUnavailableError, match="배열"):
+        naver._parseIntradayRows({"not": "list"})
 
 
 def test_intraday_default_uses_plain_call() -> None:
@@ -555,6 +631,40 @@ def test_intraday_market_and_code_guards() -> None:
     from dartlab.gather.domains import naver
 
     client = _MinuteClient([[_minute_item("20260706090000", 70000.0)]])
-    assert asyncio.run(naver.fetchIntraday("005930", client, market="US")) == []
-    assert asyncio.run(naver.fetchIntraday("12", client)) == []
+    with pytest.raises(ValueError, match="KR 시장"):
+        asyncio.run(naver.fetchIntraday("005930", client, market="US"))
+    with pytest.raises(ValueError, match="KR 종목코드"):
+        asyncio.run(naver.fetchIntraday("12", client))
     assert len(client.calls) == 0
+
+
+def test_fetch_price_network_failure_preserves_cause() -> None:
+    """Naver price 요청 장애를 정상 무데이터로 바꾸지 않는다."""
+    from dartlab.gather.domains import naver
+    from dartlab.gather.types import SourceUnavailableError
+
+    class FailingClient:
+        async def get(self, *args, **kwargs):
+            raise SourceUnavailableError("network down")
+
+    with pytest.raises(SourceUnavailableError) as excInfo:
+        asyncio.run(naver.fetchPrice("005930", FailingClient()))
+
+    assert isinstance(excInfo.value.__cause__, SourceUnavailableError)
+
+
+def test_fetch_price_malformed_basic_schema_raises() -> None:
+    """Naver basic JSON root 손상을 정상 무데이터로 바꾸지 않는다."""
+    from dartlab.gather.domains import naver
+    from dartlab.gather.types import SourceUnavailableError
+
+    class BadResponse:
+        def json(self):
+            return []
+
+    class BadClient:
+        async def get(self, *args, **kwargs):
+            return BadResponse()
+
+    with pytest.raises(SourceUnavailableError, match="schema"):
+        asyncio.run(naver.fetchPrice("005930", BadClient()))

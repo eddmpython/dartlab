@@ -25,14 +25,14 @@ def test_ensure_content_index_local_noop(tmp_path, monkeypatch):
     """로컬 main.postings.bin(sidecar SSOT) 존재 → 다운로드 시도 없이 즉시 반환(no-op)."""
     (tmp_path / "main.postings.bin").write_bytes(b"\x00")
     fir = _patch(monkeypatch, tmp_path)
-    fir.ensureContentIndex()  # 예외 없이 즉시 반환(로컬 우선)
+    assert fir.ensureContentIndex() is True  # 예외 없이 즉시 반환(로컬 우선)
 
 
 def test_ensure_content_index_offline_skip(tmp_path, monkeypatch):
     """DARTLAB_NO_HF_DOWNLOAD=1 → 빈 인덱스라도 다운로드 skip(graceful)."""
     monkeypatch.setenv("DARTLAB_NO_HF_DOWNLOAD", "1")
     fir = _patch(monkeypatch, tmp_path)
-    fir.ensureContentIndex()  # 네트워크 미접근, 예외 없음
+    assert fir.ensureContentIndex() is False  # 네트워크 미접근, 예외 없음
     assert not (tmp_path / "main.postings.bin").exists()
 
 

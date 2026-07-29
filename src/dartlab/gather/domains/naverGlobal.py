@@ -88,6 +88,19 @@ def _cleanNumber(val) -> float | None:
         return None
 
 
+def _parsePriceNumber(value: object, field: str) -> float | None:
+    """Naver global price 숫자의 정상 결측과 schema 손상을 구분한다."""
+    if isinstance(value, bool):
+        raise SourceUnavailableError(f"Naver global price {field} 값이 bool입니다")
+    token = str(value).replace(",", "").strip() if value is not None else ""
+    if token in ("", "N/A", "-"):
+        return None
+    parsed = _cleanNumber(value)
+    if parsed is None:
+        raise SourceUnavailableError(f"Naver global price {field} 값을 해석할 수 없습니다: {value!r}")
+    return parsed
+
+
 async def _resolveReutersCode(ticker: str, client, *, raiseOnFailure: bool = False) -> str | None:
     """ticker → 네이버 Reuters Code (캐시 우선).
 
@@ -166,12 +179,14 @@ async def fetchPrice(
         volume : int — 누적 거래량 (주)
         market_cap : float — 시가총액 (USD)
         source : str — ``"naver_global"``
-        매핑 실패 또는 API 오류 시 None.
+        유효한 응답에서 Reuters 매핑 또는 현재가가 없으면 None.
 
     Raises
     ------
-    없음
-        Naver global API 내부 예외 (SourceUnavailableError/ValueError) 는 흡수.
+    ValueError
+        종목코드가 비어 있는 경우.
+    SourceUnavailableError
+        Reuters 확인, 요청, JSON, schema 또는 숫자 파싱 실패.
 
     Example
     -------
@@ -189,9 +204,10 @@ async def fetchPrice(
     fmp.fetchPrice : 다음 fallback.
     """
     del limit
-    code = await _resolveReutersCode(stockCode, client)
+    if not stockCode or not stockCode.strip():
+        raise ValueError("Naver global price 종목코드가 비어 있습니다")
+    code = await _resolveReutersCode(stockCode, client, raiseOnFailure=True)
     if not code:
-        log.warning("naver_global: %s 매핑 실패", stockCode)
         return None
 
     await _throttle()
@@ -199,31 +215,33 @@ async def fetchPrice(
     try:
         resp = await client.get(url, headers={"Accept": "application/json"})
         data = resp.json()
-    except (SourceUnavailableError, ValueError) as exc:
-        log.warning("naver_global price 실패 (%s): %s", stockCode, exc)
-        return None
+    except Exception as exc:
+        raise SourceUnavailableError(f"Naver global price 요청 실패: {stockCode}") from exc
+    if not isinstance(data, dict):
+        raise SourceUnavailableError("Naver global price 응답 schema가 객체가 아닙니다")
 
-    current = _cleanNumber(data.get("closePrice"))
+    current = _parsePriceNumber(data.get("closePrice"), "closePrice")
     if not current:
         return None
 
-    change = _cleanNumber(data.get("compareToPreviousClosePrice")) or 0.0
-    change_pct = _cleanNumber(data.get("fluctuationsRatio")) or 0.0
-    volume = int(_cleanNumber(data.get("accumulatedTradingVolume")) or 0)
+    change = _parsePriceNumber(data.get("compareToPreviousClosePrice"), "compareToPreviousClosePrice") or 0.0
+    change_pct = _parsePriceNumber(data.get("fluctuationsRatio"), "fluctuationsRatio") or 0.0
+    volume = int(_parsePriceNumber(data.get("accumulatedTradingVolume"), "accumulatedTradingVolume") or 0)
 
     # 시가총액 (억 달러 → 달러)
     marketCap = 0.0
     market_cap_raw = data.get("marketValue")
     if market_cap_raw:
-        mc = _cleanNumber(market_cap_raw)
+        mc = _parsePriceNumber(market_cap_raw, "marketValue")
         if mc:
             marketCap = mc  # 네이버 API가 원단위로 줄 수 있음
 
     # 52주 고저, PER 등은 별도 API 필요 — 기본값
     exchange_name = ""
     ex_type = data.get("stockExchangeType", {})
-    if isinstance(ex_type, dict):
-        exchange_name = ex_type.get("name", "")
+    if not isinstance(ex_type, dict):
+        raise SourceUnavailableError("Naver global price stockExchangeType이 객체가 아닙니다")
+    exchange_name = str(ex_type.get("name") or "")
 
     return PriceSnapshot(
         current=current,

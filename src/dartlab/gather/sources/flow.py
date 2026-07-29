@@ -142,6 +142,8 @@ async def fetch(
                 if limit is not None and limit > 0:
                     return rows[:limit]
                 return rows
+        except ValueError:
+            raise
         except Exception as exc:
             circuitBreaker.recordFailure(domainName)
             attempts.append((domainName, exc))

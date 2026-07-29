@@ -245,7 +245,16 @@ def _parseInfos(infos: list[dict]) -> dict[str, str]:
         code를 키, value를 값으로 하는 매핑.
         예: ``{"per": "12.5배", "pbr": "1.2배", "marketValue": "100조"}``.
     """
-    return {item.get("code", ""): item.get("value", "") for item in infos if item.get("code")}
+    if not isinstance(infos, list):
+        raise SourceUnavailableError("Naver price totalInfos가 배열이 아닙니다")
+    parsed: dict[str, str] = {}
+    for item in infos:
+        if not isinstance(item, dict):
+            raise SourceUnavailableError("Naver price totalInfos 행이 객체가 아닙니다")
+        code = item.get("code", "")
+        if code:
+            parsed[str(code)] = str(item.get("value") or "")
+    return parsed
 
 
 def _parseMarketCap(text: str) -> float:
@@ -265,34 +274,39 @@ def _parseMarketCap(text: str) -> float:
         return 0.0
     total = 0.0
     text = text.replace(",", "")
+    if "조" not in text and "억" not in text:
+        parsed = _cleanNumber(text)
+        if parsed is None:
+            raise SourceUnavailableError(f"Naver price marketValue를 해석할 수 없습니다: {text!r}")
+        return parsed
     if "조" in text:
         parts = text.split("조")
-        total += (_cleanNumber(parts[0]) or 0.0) * 1_0000_0000_0000
+        trillions = _cleanNumber(parts[0])
+        if trillions is None:
+            raise SourceUnavailableError(f"Naver price marketValue를 해석할 수 없습니다: {text!r}")
+        total += trillions * 1_0000_0000_0000
         text = parts[1] if len(parts) > 1 else ""
     if "억" in text:
         parts = text.split("억")
-        total += (_cleanNumber(parts[0]) or 0.0) * 1_0000_0000
+        hundredMillions = _cleanNumber(parts[0])
+        if hundredMillions is None:
+            raise SourceUnavailableError(f"Naver price marketValue를 해석할 수 없습니다: {text!r}")
+        total += hundredMillions * 1_0000_0000
     return total
 
 
-def _cleanSuffix(text: str, *suffixes: str) -> str:
-    """숫자 텍스트에서 한글 단위 접미사를 제거.
-
-    Parameters
-    ----------
-    text : str
-        단위가 붙은 숫자 문자열. 예: ``"27.38배"``, ``"6,564원"``.
-    *suffixes : str
-        제거할 접미사 목록. 예: ``"배"``, ``"원"``, ``"%"``.
-
-    Returns
-    -------
-    str
-        접미사 제거 후 strip된 문자열. 예: ``"27.38"``, ``"6,564"``.
-    """
+def _parsePriceNumber(value: object, field: str, *suffixes: str) -> float | None:
+    """Naver price 숫자 필드의 정상 결측과 손상된 값을 구분한다."""
+    token = str(value).strip() if value is not None else ""
     for suffix in suffixes:
-        text = text.replace(suffix, "")
-    return text.strip()
+        token = token.replace(suffix, "")
+    token = token.strip()
+    if token in ("", "N/A", "-"):
+        return None
+    parsed = _cleanNumber(token)
+    if parsed is None:
+        raise SourceUnavailableError(f"Naver price {field} 값을 해석할 수 없습니다: {value!r}")
+    return parsed
 
 
 async def fetchPrice(
@@ -306,11 +320,11 @@ async def fetchPrice(
 
     Capabilities: KR Naver M-Stock API fetch + PriceSnapshot 변환.
     AIContext: gather.price KR primary source — 가장 풍부한 단건 스냅샷.
-    Guide: KR 종목코드 (KRX 단축코드) 만. 외 티커는 None.
+    Guide: KR 종목코드 (KRX 단축코드) 만. 외 티커는 ValueError.
     When: gather("price", stockCode, market="KR") 진입 시 첫 시도.
     How: m.stock.naver.com integration JSON → PriceSnapshot 매핑.
 
-    KR 종목코드(KRX 단축코드)가 아니면 None 반환. naver KR API에 잘못된
+    KR 종목코드(KRX 단축코드)가 아니면 ValueError. naver KR API에 잘못된
     티커를 보내 409 에러가 나는 것을 차단.
 
     Parameters
@@ -339,12 +353,14 @@ async def fetchPrice(
         - dividend_yield : float | None — 배당수익률 (%)
         - source : str — ``"naver"``
 
-        API 실패 또는 현재가 없으면 None.
+        유효한 응답에 현재가가 없으면 None.
 
     Raises
     ------
-    없음
-        Naver API 내부 예외 (SourceUnavailableError/ValueError 등) 는 흡수.
+    ValueError
+        KR 종목코드가 아닌 입력.
+    SourceUnavailableError
+        Naver 요청, JSON, schema 또는 숫자 파싱 실패.
 
     Example
     -------
@@ -363,18 +379,19 @@ async def fetchPrice(
     del limit
     # KR 종목코드 검증. KRX 단축코드 아니면 차단 (US/글로벌 티커 -> naver_global로)
     if not isKrStockCode(stockCode or ""):
-        return None
+        raise ValueError(f"Naver price는 KR 종목코드만 지원합니다: {stockCode!r}")
 
     # basic: 현재가, 등락
     url = f"{_API_BASE}/{stockCode}/basic"
     try:
         resp = await client.get(url, headers={"Accept": "application/json"})
         data = resp.json()
-    except (SourceUnavailableError, ValueError) as exc:
-        log.warning("naver price API 실패 (%s): %s", stockCode, exc)
-        return None
+    except Exception as exc:
+        raise SourceUnavailableError(f"Naver price basic 요청 실패: {stockCode}") from exc
+    if not isinstance(data, dict):
+        raise SourceUnavailableError("Naver price basic 응답 schema가 객체가 아닙니다")
 
-    current = _cleanNumber(data.get("closePrice"))
+    current = _parsePriceNumber(data.get("closePrice"), "closePrice")
     if not current:
         return None
 
@@ -384,29 +401,39 @@ async def fetchPrice(
     pbr = None
     high52w = 0.0
     low52w = 0.0
-    volume = int(_cleanNumber(data.get("accumulatedTradingVolume")) or 0)
+    volume = int(_parsePriceNumber(data.get("accumulatedTradingVolume"), "accumulatedTradingVolume") or 0)
     dividendYield = None
 
     try:
         intUrl = f"{_API_BASE}/{stockCode}/integration"
         intResp = await client.get(intUrl, headers={"Accept": "application/json"})
         intData = intResp.json()
-        infos = _parseInfos(intData.get("totalInfos", []))
+    except Exception as exc:
+        raise SourceUnavailableError(f"Naver price integration 요청 실패: {stockCode}") from exc
+    if not isinstance(intData, dict):
+        raise SourceUnavailableError("Naver price integration 응답 schema가 객체가 아닙니다")
+    if "totalInfos" not in intData:
+        raise SourceUnavailableError("Naver price integration 응답에 totalInfos가 없습니다")
+    infos = _parseInfos(intData["totalInfos"])
 
-        marketCap = _parseMarketCap(infos.get("marketValue", ""))
-        per = _cleanNumber(_cleanSuffix(infos.get("per", ""), "배"))
-        pbr = _cleanNumber(_cleanSuffix(infos.get("pbr", ""), "배"))
-        high52w = _cleanNumber(_cleanSuffix(infos.get("highPriceOf52Weeks", ""), "원")) or 0.0
-        low52w = _cleanNumber(_cleanSuffix(infos.get("lowPriceOf52Weeks", ""), "원")) or 0.0
-        volume = int(_cleanNumber(infos.get("accumulatedTradingVolume", "").replace("백만", "")) or volume)
-        dividendYield = _cleanNumber(_cleanSuffix(infos.get("dividendYieldRatio", ""), "%"))
-    except (SourceUnavailableError, ValueError, KeyError):
-        log.debug("naver integration fallback 실패 (%s)", stockCode)
+    marketCap = _parseMarketCap(infos.get("marketValue", ""))
+    per = _parsePriceNumber(infos.get("per", ""), "per", "배")
+    pbr = _parsePriceNumber(infos.get("pbr", ""), "pbr", "배")
+    high52w = _parsePriceNumber(infos.get("highPriceOf52Weeks", ""), "highPriceOf52Weeks", "원") or 0.0
+    low52w = _parsePriceNumber(infos.get("lowPriceOf52Weeks", ""), "lowPriceOf52Weeks", "원") or 0.0
+    infoVolume = _parsePriceNumber(
+        infos.get("accumulatedTradingVolume", ""),
+        "accumulatedTradingVolume",
+        "백만",
+    )
+    if infoVolume is not None:
+        volume = int(infoVolume)
+    dividendYield = _parsePriceNumber(infos.get("dividendYieldRatio", ""), "dividendYieldRatio", "%")
 
     return PriceSnapshot(
         current=current,
-        change=_cleanNumber(data.get("compareToPreviousClosePrice")) or 0.0,
-        change_pct=_cleanNumber(data.get("fluctuationsRatio")) or 0.0,
+        change=_parsePriceNumber(data.get("compareToPreviousClosePrice"), "compareToPreviousClosePrice") or 0.0,
+        change_pct=_parsePriceNumber(data.get("fluctuationsRatio"), "fluctuationsRatio") or 0.0,
         high_52w=high52w,
         low_52w=low52w,
         volume=volume,
@@ -634,7 +661,7 @@ async def fetchRevenueConsensus(
         - per_est : float | None — PER 추정치 (배)
         - source : str — ``"naver_consensus"`` 또는 ``"naver_actual"``
 
-        API 실패 또는 데이터 없으면 빈 리스트.
+        정상적으로 컨센서스 데이터가 없으면 빈 리스트.
 
     Other Parameters
     ----------------
@@ -643,8 +670,10 @@ async def fetchRevenueConsensus(
 
     Raises
     ------
-    없음
-        Naver finance/annual API 내부 예외 (SourceUnavailableError/ValueError) 는 흡수.
+    ValueError
+        KR 종목코드 입력 계약 위반.
+    SourceUnavailableError
+        Naver 요청, JSON 또는 응답 schema 실패.
 
     Example
     -------
@@ -661,41 +690,55 @@ async def fetchRevenueConsensus(
     """
     # KR 종목코드 검증
     if not isKrStockCode(stockCode or ""):
-        return []
+        raise ValueError(f"Naver revenue consensus는 KR 종목코드만 지원합니다: {stockCode!r}")
 
     url = f"{_API_BASE}/{stockCode}/finance/annual"
     try:
         resp = await client.get(url, headers={"Accept": "application/json"})
         data = resp.json()
-    except (SourceUnavailableError, ValueError) as exc:
-        log.warning("naver finance/annual API 실패 (%s): %s", stockCode, exc)
-        return []
+    except Exception as exc:
+        raise SourceUnavailableError(f"Naver revenue consensus 요청 실패: {stockCode}") from exc
+    if not isinstance(data, dict):
+        raise SourceUnavailableError("Naver revenue consensus 응답 schema가 객체가 아닙니다")
 
     fi = data.get("financeInfo")
-    if not fi:
+    if fi is None:
         return []
+    if not isinstance(fi, dict):
+        raise SourceUnavailableError("Naver revenue consensus financeInfo가 객체가 아닙니다")
 
-    titles = fi.get("trTitleList", [])
-    rows = fi.get("rowList", [])
+    titles = fi.get("trTitleList")
+    rows = fi.get("rowList")
+    if titles is None and rows is None:
+        return []
+    if not isinstance(titles, list) or not isinstance(rows, list):
+        raise SourceUnavailableError("Naver revenue consensus title/row schema가 배열이 아닙니다")
     if not titles or not rows:
         return []
 
     # 항목별 dict 구축
     row_map: dict[str, dict] = {}
     for row in rows:
+        if not isinstance(row, dict):
+            raise SourceUnavailableError("Naver revenue consensus row가 객체가 아닙니다")
         title = row.get("title", "")
         cols = row.get("columns")
         if title and isinstance(cols, dict):
-            row_map[title] = cols
+            row_map[str(title)] = cols
 
     results: list[RevenueConsensus] = []
     for t in titles:
-        key = t.get("key", "")
+        if not isinstance(t, dict):
+            raise SourceUnavailableError("Naver revenue consensus title이 객체가 아닙니다")
+        key = str(t.get("key") or "")
         is_consensus = t.get("isConsensus") == "Y"
         if not key or len(key) < 4:
-            continue
+            raise SourceUnavailableError(f"Naver revenue consensus period key가 올바르지 않습니다: {key!r}")
 
-        fiscal_year = int(key[:4])
+        try:
+            fiscal_year = int(key[:4])
+        except ValueError as exc:
+            raise SourceUnavailableError(f"Naver revenue consensus fiscal year를 해석할 수 없습니다: {key!r}") from exc
 
         revenue = _cleanNumber(row_map.get("매출액", {}).get(key, {}).get("value"))
         op_profit = _cleanNumber(row_map.get("영업이익", {}).get(key, {}).get("value"))
@@ -703,13 +746,13 @@ async def fetchRevenueConsensus(
         eps = _cleanNumber(row_map.get("EPS", {}).get(key, {}).get("value"))
         per = _cleanNumber(row_map.get("PER", {}).get(key, {}).get("value"))
 
-        if revenue is None and op_profit is None:
+        if revenue is None:
             continue
 
         results.append(
             RevenueConsensus(
                 fiscal_year=fiscal_year,
-                revenue_est=revenue or 0.0,
+                revenue_est=revenue,
                 operating_profit_est=op_profit,
                 net_income_est=net_income,
                 eps_est=eps,
@@ -749,12 +792,14 @@ async def fetchSectorPer(
     Returns
     -------
     float | None
-        동종업종 평균 PER (배). API 실패 또는 데이터 없으면 None.
+        동종업종 평균 PER (배). 정상적으로 업종 데이터가 없으면 None.
 
     Raises
     ------
-    없음
-        Naver integration API 내부 예외 (SourceUnavailableError/ValueError) 는 흡수.
+    ValueError
+        KR 종목코드 입력 계약 위반.
+    SourceUnavailableError
+        Naver 요청, JSON 또는 응답 schema 실패.
 
     Example
     -------
@@ -772,21 +817,24 @@ async def fetchSectorPer(
     del limit
     # KR 종목코드 검증
     if not isKrStockCode(stockCode or ""):
-        return None
+        raise ValueError(f"Naver sector PER는 KR 종목코드만 지원합니다: {stockCode!r}")
 
     url = f"{_API_BASE}/{stockCode}/integration"
     try:
         resp = await client.get(url, headers={"Accept": "application/json"})
         data = resp.json()
-    except (SourceUnavailableError, ValueError) as exc:
-        log.warning("naver sector PER API 실패 (%s): %s", stockCode, exc)
-        return None
+    except Exception as exc:
+        raise SourceUnavailableError(f"Naver sector PER 요청 실패: {stockCode}") from exc
+    if not isinstance(data, dict):
+        raise SourceUnavailableError("Naver sector PER 응답 schema가 객체가 아닙니다")
 
     industry_info = data.get("industryInfo")
-    if not industry_info:
+    if industry_info is None:
         return None
+    if not isinstance(industry_info, dict):
+        raise SourceUnavailableError("Naver sector PER industryInfo가 객체가 아닙니다")
 
-    return _cleanNumber(industry_info.get("per"))
+    return _parsePriceNumber(industry_info.get("per"), "industryInfo.per", "배")
 
 
 # ══════════════════════════════════════
@@ -887,42 +935,44 @@ def _parseIntradayRows(data: object) -> list[dict]:
     ``datetime[:10]`` (날짜) 로 구분된다.
     """
     if not isinstance(data, list):
-        return []
+        raise SourceUnavailableError("Naver intraday 응답 schema가 배열이 아닙니다")
     rows: list[dict] = []
     for item in data:
         if not isinstance(item, dict):
-            continue
-        dt = item.get("localDateTime", "")
-        if len(dt) < 14:
-            continue
+            raise SourceUnavailableError("Naver intraday 행이 객체가 아닙니다")
+        dt = str(item.get("localDateTime") or "")
+        if len(dt) < 14 or not dt[:14].isdigit():
+            raise SourceUnavailableError(f"Naver intraday localDateTime이 올바르지 않습니다: {dt!r}")
         close = item.get("currentPrice")
         if close is None:
-            continue
-        rows.append(
-            {
-                "datetime": f"{dt[:4]}-{dt[4:6]}-{dt[6:8]}T{dt[8:10]}:{dt[10:12]}:{dt[12:14]}",
-                "open": float(item.get("openPrice") or 0.0),
-                "high": float(item.get("highPrice") or 0.0),
-                "low": float(item.get("lowPrice") or 0.0),
-                "close": float(close),
-                "volume": int(item.get("accumulatedTradingVolume") or 0),
-            }
-        )
+            raise SourceUnavailableError("Naver intraday currentPrice가 없습니다")
+        try:
+            rows.append(
+                {
+                    "datetime": f"{dt[:4]}-{dt[4:6]}-{dt[6:8]}T{dt[8:10]}:{dt[10:12]}:{dt[12:14]}",
+                    "open": float(item.get("openPrice") or 0.0),
+                    "high": float(item.get("highPrice") or 0.0),
+                    "low": float(item.get("lowPrice") or 0.0),
+                    "close": float(close),
+                    "volume": int(item.get("accumulatedTradingVolume") or 0),
+                }
+            )
+        except (TypeError, ValueError) as exc:
+            raise SourceUnavailableError("Naver intraday 숫자 필드를 해석할 수 없습니다") from exc
     rows.sort(key=lambda r: r["datetime"])
     return rows
 
 
 async def _requestIntraday(url: str, client, *, params: dict | None) -> list[dict]:
-    """분봉 엔드포인트 1 회 호출 → 파싱 rows. 내부 예외는 흡수하고 빈 리스트."""
+    """분봉 엔드포인트 1 회 호출 → 파싱 rows."""
     try:
         if params:
             resp = await client.get(url, params=params, headers={"Accept": "application/json"})
         else:
             resp = await client.get(url, headers={"Accept": "application/json"})
         data = resp.json()
-    except (SourceUnavailableError, ValueError) as exc:
-        log.warning("naver intraday API 실패 (%s %s): %s", url, params or {}, exc)
-        return []
+    except Exception as exc:
+        raise SourceUnavailableError(f"Naver intraday 요청 실패: {url}") from exc
     return _parseIntradayRows(data)
 
 
@@ -963,7 +1013,7 @@ async def fetchIntraday(
     client
         비동기 HTTP 클라이언트.
     market : str
-        시장 코드. ``"KR"`` 외에는 빈 리스트 반환.
+        시장 코드. ``"KR"`` 외에는 ValueError.
     start : str
         시작 시각. ``"2026-07-03"`` (날짜만이면 0900) 또는
         ``"2026-07-03T09:30"``/``"202607030930"``. 빈 문자열이면 당일 모드.
@@ -986,12 +1036,14 @@ async def fetchIntraday(
         - close : float. 종가 (원)
         - volume : int. 누적 거래량 (주)
 
-        KR 외 시장이거나 조회 실패 시 빈 리스트.
+        유효한 응답에 분봉이 없으면 빈 리스트.
 
     Raises
     ------
-    없음
-        Naver intraday API 내부 예외 (SourceUnavailableError/ValueError) 는 흡수.
+    ValueError
+        KR 외 시장 또는 잘못된 종목코드.
+    SourceUnavailableError
+        Naver 요청, JSON, schema 또는 행 파싱 실패.
 
     Example
     -------
@@ -1009,11 +1061,11 @@ async def fetchIntraday(
     transforms/indicatorDispatch : 분봉 리샘플 + 보조지표.
     """
     if market != "KR":
-        return []
+        raise ValueError(f"Naver intraday는 KR 시장만 지원합니다: {market!r}")
     sc = stockCode.strip() if stockCode else ""
     # KR 종목코드 검증
     if not isKrStockCode(sc):
-        return []
+        raise ValueError(f"Naver intraday는 KR 종목코드만 지원합니다: {stockCode!r}")
 
     url = _INTRADAY_URL.format(code=sc)
 

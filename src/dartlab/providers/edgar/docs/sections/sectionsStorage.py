@@ -46,6 +46,31 @@ _log = logging.getLogger(__name__)
 _SECTIONS_REL = "edgar/sections"
 
 
+class SectionsArtifactFetchError(RuntimeError):
+    """EDGAR sections 원격 artifact 조달 실패."""
+
+    def __init__(self, ticker: str, cause: BaseException) -> None:
+        self.ticker = ticker.upper()
+        super().__init__(
+            f"EDGAR sections artifact fetch 실패: ticker={self.ticker}, error={type(cause).__name__}: {cause}"
+        )
+
+
+class SectionsArtifactReadError(RuntimeError):
+    """EDGAR sections 로컬 artifact 읽기 실패."""
+
+    def __init__(self, ticker: str, operation: str, cause: BaseException) -> None:
+        self.ticker = ticker.upper()
+        self.operation = operation
+        super().__init__(
+            f"EDGAR sections artifact {operation} 실패: ticker={self.ticker}, error={type(cause).__name__}: {cause}"
+        )
+
+
+class SectionsSchemaError(ValueError):
+    """EDGAR sections artifact schema 또는 pivot 계약 위반."""
+
+
 def sectionsDir(ticker: str) -> Path:
     """ticker 별 sections artifact 디렉터리 path.
 
@@ -181,7 +206,7 @@ def _ensureFromHf(ticker: str) -> bool:
         bool — 다운로드 성공 또는 이미 존재 시 True.
 
     Raises:
-        없음 — 네트워크 / 모듈 / KeyError 모두 warning + False.
+        SectionsArtifactFetchError: 원격 요청·인증·설정·저장 실패.
     """
     if hasSectionsArtifact(ticker):
         return True
@@ -192,7 +217,7 @@ def _ensureFromHf(ticker: str) -> bool:
     tickerUpper = ticker.upper()
     if tickerUpper in _HF_DOWNLOAD_ATTEMPTED:
         return False
-    _HF_DOWNLOAD_ATTEMPTED.add(tickerUpper)
+
     try:
         from huggingface_hub import snapshot_download
 
@@ -200,7 +225,7 @@ def _ensureFromHf(ticker: str) -> bool:
         from dartlab.core.hfRetry import retryHfCall
 
         if "edgarSections" not in DATA_RELEASES:
-            return False
+            raise KeyError("DATA_RELEASES에 edgarSections category가 없습니다")
         sectionsDirRel = DATA_RELEASES["edgarSections"]["dir"]
         retryHfCall(  # HF read SSOT(core.hfRetry) — 429/503/504 단일 백오프
             snapshot_download,
@@ -209,10 +234,13 @@ def _ensureFromHf(ticker: str) -> bool:
             allow_patterns=[f"{sectionsDirRel}/{tickerUpper}/*.parquet"],
             local_dir=str(Path(_cfg.dataDir)),
         )
-        return hasSectionsArtifact(tickerUpper)
-    except Exception as exc:  # noqa: BLE001 — HF/네트워크 silent (fallback path 진행)
-        _log.warning("edgar sections artifact HF 다운로드 실패 (%s): %s", tickerUpper, exc)
-        return False
+    except Exception as exc:  # noqa: BLE001 — optional dependency와 원격 원인을 typed 경계로 보존
+        raise SectionsArtifactFetchError(tickerUpper, exc) from exc
+
+    available = hasSectionsArtifact(tickerUpper)
+    if not available:
+        _HF_DOWNLOAD_ATTEMPTED.add(tickerUpper)
+    return available
 
 
 def loadSectionsIndex(ticker: str) -> pl.DataFrame | None:
@@ -228,7 +256,8 @@ def loadSectionsIndex(ticker: str) -> pl.DataFrame | None:
         index DataFrame 또는 None (artifact 부재).
 
     Raises:
-        없음.
+        SectionsArtifactFetchError: 부재 artifact의 원격 조달 실패.
+        SectionsArtifactReadError: index parquet 읽기 실패.
 
     Example:
         >>> df = loadSectionsIndex("AAPL")  # doctest: +SKIP
@@ -243,8 +272,7 @@ def loadSectionsIndex(ticker: str) -> pl.DataFrame | None:
     try:
         return pl.read_parquet(str(p))
     except (OSError, pl.exceptions.ComputeError) as exc:
-        _log.warning("edgar sections _index read 실패 (%s): %s", ticker, exc)
-        return None
+        raise SectionsArtifactReadError(ticker, "index 읽기", exc) from exc
 
 
 def loadSectionsLong(
@@ -268,7 +296,9 @@ def loadSectionsLong(
         long format DataFrame 또는 None (artifact 부재).
 
     Raises:
-        없음.
+        SectionsArtifactFetchError: 부재 artifact의 원격 조달 실패.
+        SectionsArtifactReadError: period parquet 읽기 실패.
+        SectionsSchemaError: 요청 projection이 artifact schema와 맞지 않음.
 
     Example:
         >>> df = loadSectionsLong("AAPL", periods=["2024Q4"], columns=["topic", "content_plain"])  # doctest: +SKIP
@@ -288,17 +318,13 @@ def loadSectionsLong(
             availableSchema = set(scan.collect_schema().names())
             wantedCols = [c for c in columns if c in availableSchema]
             if not wantedCols:
-                _log.warning(
-                    "edgar sectionsLong (%s): 요청 columns %s 모두 schema 부재 — None",
-                    ticker,
-                    columns,
+                raise SectionsSchemaError(
+                    f"EDGAR sections {ticker.upper()}: 요청 컬럼이 모두 schema에 없습니다: {columns}"
                 )
-                return None
             scan = scan.select(wantedCols)
         return scan.collect()
     except (OSError, pl.exceptions.ComputeError, pl.exceptions.ShapeError) as exc:
-        _log.warning("edgar sectionsLong load 실패 (%s): %s", ticker, exc)
-        return None
+        raise SectionsArtifactReadError(ticker, "long 읽기", exc) from exc
 
 
 # EDGAR sections schema 의 meta 컬럼 — wide pivot 시 index. DART 와 schema 다름:
@@ -334,7 +360,9 @@ def loadSectionsWide(
         wide format DataFrame 또는 None.
 
     Raises:
-        없음.
+        SectionsArtifactFetchError: 부재 artifact의 원격 조달 실패.
+        SectionsArtifactReadError: period parquet 읽기 실패.
+        SectionsSchemaError: 필수 컬럼 또는 pivot 계약 위반.
 
     Example:
         >>> df = loadSectionsWide("AAPL")  # doctest: +SKIP
@@ -346,13 +374,15 @@ def loadSectionsWide(
     if long is None or long.is_empty():
         return None
     if valueColumn not in long.columns:
-        _log.warning(
-            "edgar sectionsWide: valueColumn '%s' 부재 (사용 가능: %s)",
-            valueColumn,
-            long.columns,
+        raise SectionsSchemaError(
+            f"EDGAR sections {ticker.upper()}: valueColumn {valueColumn!r} 부재 (사용 가능: {long.columns})"
         )
-        return None
     metaCols = [c for c in long.columns if c not in ("period", valueColumn)]
+    if "period" not in long.columns or not metaCols:
+        raise SectionsSchemaError(
+            f"EDGAR sections {ticker.upper()}: pivot 필수 컬럼이 없습니다 "
+            f"(period={'period' in long.columns}, meta={metaCols})"
+        )
     try:
         return long.pivot(
             values=valueColumn,
@@ -361,5 +391,4 @@ def loadSectionsWide(
             aggregate_function="first",
         )
     except (pl.exceptions.ComputeError, pl.exceptions.ShapeError) as exc:
-        _log.warning("edgar sectionsWide pivot 실패 (%s): %s", ticker, exc)
-        return None
+        raise SectionsSchemaError(f"EDGAR sections {ticker.upper()}: pivot 실패: {type(exc).__name__}: {exc}") from exc

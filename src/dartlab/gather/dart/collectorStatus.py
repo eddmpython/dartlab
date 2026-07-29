@@ -7,14 +7,19 @@ list / iter / stats helpers that inspect local panel parquet coverage.
 from __future__ import annotations
 
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import polars as pl
 
 import dartlab.config as _cfg
-from dartlab.core.dartClient import DartClient
 from dartlab.core.dataConfig import DATA_RELEASES
 from dartlab.core.logger import getLogger
 from dartlab.gather.dart.corpCode import loadCorpCodes
+
+if TYPE_CHECKING:
+    from dartlab.gather.dart.client import DartClient
+else:
+    from dartlab.core.dartClient import DartClient
 
 _log = getLogger(__name__)
 

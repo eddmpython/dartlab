@@ -30,7 +30,7 @@ from dartlab.core.providers.dataCredentials import getKey
 
 from ..infra.resilience import circuitBreaker as _circuit_breaker
 from ..infra.resilience import healthTracker as _health_tracker
-from ..types import NewsItem
+from ..types import CircuitOpenError, NewsItem, SourceUnavailableError
 from .newsSchema import coerceToCanonical
 
 log = logging.getLogger(__name__)
@@ -55,18 +55,29 @@ def _parsePubDate(s: str) -> str | None:
         return None
 
 
-def _parseItems(data: dict) -> list[NewsItem]:
+def _parseItems(data: object) -> list[NewsItem]:
     """네이버 검색 응답 JSON → list[NewsItem] (url=originallink, description=스니펫)."""
+    if not isinstance(data, dict):
+        raise SourceUnavailableError("Naver news 응답 schema가 객체가 아닙니다")
+    rawItems = data.get("items")
+    if not isinstance(rawItems, list):
+        raise SourceUnavailableError("Naver news items가 배열이 아닙니다")
     items: list[NewsItem] = []
-    for it in data.get("items", []):
+    for it in rawItems:
+        if not isinstance(it, dict):
+            raise SourceUnavailableError("Naver news item이 객체가 아닙니다")
         link = (it.get("originallink") or it.get("link") or "").strip()
         if not link:
             continue
+        pubDate = str(it.get("pubDate") or "")
+        parsedDate = _parsePubDate(pubDate)
+        if pubDate and parsedDate is None:
+            raise SourceUnavailableError(f"Naver news pubDate를 해석할 수 없습니다: {pubDate!r}")
         netloc = urlparse(link).netloc
         source = netloc[4:] if netloc.startswith("www.") else netloc
         items.append(
             NewsItem(
-                date=_parsePubDate(it.get("pubDate", "")) or "",
+                date=parsedDate or "",
                 title=_clean(it.get("title")),
                 source=source or "naver",
                 url=link,
@@ -97,7 +108,7 @@ async def _fetchAsync(
     query : str
         검색어 (기업명/키워드).
     market : str
-        시장. ``"KR"`` 외에는 빈 리스트 (네이버=국내 전용).
+        시장. ``"KR"`` 외에는 ValueError (네이버=국내 전용).
     display : int
         페이지당 건수 (1~100, 네이버 상한 100).
     sort : str
@@ -111,18 +122,33 @@ async def _fetchAsync(
     Returns
     -------
     list[NewsItem]
-        date·title·source·url·description (url dedup). 키 미설정/실패/circuit open 시 빈 리스트.
+        date·title·source·url·description (url dedup). 정상 무데이터면 빈 리스트.
+
+    Raises
+    ------
+    ValueError
+        query, market, display, sort 또는 pages 입력 계약 위반.
+    CircuitOpenError
+        Naver news circuit이 open인 경우.
+    SourceUnavailableError
+        자격증명 미설정, 요청, JSON 또는 schema 실패.
     """
-    if market.upper() != "KR":
-        return []
+    if not isinstance(query, str) or not query.strip():
+        raise ValueError("Naver news query는 비어 있지 않은 문자열이어야 합니다")
+    if not isinstance(market, str) or market.upper() != "KR":
+        raise ValueError(f"Naver news는 KR 시장만 지원합니다: {market!r}")
+    if not isinstance(display, int) or display < 1:
+        raise ValueError(f"Naver news display는 1 이상의 정수여야 합니다: {display!r}")
+    if sort not in {"date", "sim"}:
+        raise ValueError(f"Naver news sort는 date/sim만 지원합니다: {sort!r}")
+    if not isinstance(pages, int) or pages < 1:
+        raise ValueError(f"Naver news pages는 1 이상의 정수여야 합니다: {pages!r}")
     clientId = getKey("naver")
     clientSecret = getKey("naverSecret")
     if not clientId or not clientSecret:
-        log.debug("naver 자격증명 미설정 — skip")
-        return []
+        raise SourceUnavailableError("Naver news 자격증명이 설정되지 않았습니다")
     if _circuit_breaker.isOpen(_SOURCE_NAME):
-        log.debug("naver circuit breaker open — skip")
-        return []
+        raise CircuitOpenError("naver_news circuit breaker가 열려 있습니다")
 
     disp = min(max(display, 1), 100)
     headers = {"X-Naver-Client-Id": clientId, "X-Naver-Client-Secret": clientSecret}
@@ -149,6 +175,8 @@ async def _fetchAsync(
                             await asyncio.sleep(_RATE_BACKOFF * (attempt + 1))
                             continue
                     break
+                if resp is None:
+                    raise SourceUnavailableError("Naver news 응답을 받지 못했습니다")
                 resp.raise_for_status()
                 batch = _parseItems(resp.json())
                 if not batch:
@@ -163,12 +191,14 @@ async def _fetchAsync(
         _circuit_breaker.recordSuccess(_SOURCE_NAME)
         _health_tracker.record(_SOURCE_NAME, success=True, latency=latency)
         return out
-    except Exception as exc:  # noqa: BLE001 — 네트워크/인증(401)/rate(429)/파싱은 graceful (모은 만큼 반환)
+    except Exception as exc:
         latency = time.monotonic() - t0
         _circuit_breaker.recordFailure(_SOURCE_NAME)
         _health_tracker.record(_SOURCE_NAME, success=False, latency=latency)
         log.debug("naver fetch 실패 (page 누적 %d): %s", len(out), exc)
-        return out
+        if isinstance(exc, SourceUnavailableError):
+            raise
+        raise SourceUnavailableError(f"Naver news 요청 실패: {query!r}") from exc
 
 
 def fetchHeadlinesForArchive(
@@ -222,7 +252,7 @@ def fetchHeadlinesForArchive(
         pl.DataFrame — newsSchema.NEWS_ARCHIVE_SCHEMA canonical 17컬럼. 빈 결과 동일 schema.
 
     Raises:
-        없음 — 개별 쿼리 실패는 빈 결과로 흡수 (circuit breaker).
+        ValueError / CircuitOpenError / SourceUnavailableError — 입력 또는 개별 쿼리 실패.
 
     Example:
         >>> # fetchHeadlinesForArchive(["삼성전자","SK하이닉스"], market="KR", days=1)
@@ -231,8 +261,10 @@ def fetchHeadlinesForArchive(
         ``gather.sources.news.fetchHeadlinesForArchive``: rss 동형 진입점.
         ``gather.sources.newsIo.writeDailyParquet``: 적재 공유 IO.
     """
-    if not queries or market.upper() != "KR":
+    if not queries:
         return coerceToCanonical(None)
+    if not isinstance(market, str) or market.upper() != "KR":
+        raise ValueError(f"Naver news archive는 KR 시장만 지원합니다: {market!r}")
 
     from ..infra.http import runAsync
 

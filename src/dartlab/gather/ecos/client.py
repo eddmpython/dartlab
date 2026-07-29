@@ -106,7 +106,11 @@ class EcosClient:
                 continue
 
             if resp.status_code == 200:
-                return self._parseResponse(resp.json())
+                try:
+                    data = resp.json()
+                except ValueError as exc:
+                    raise EcosError("ECOS 응답 JSON을 해석할 수 없습니다") from exc
+                return self._parseResponse(data)
 
             if resp.status_code == 429:
                 log.warning("ECOS rate limit hit, backing off (attempt %d)", attempt + 1)
@@ -123,7 +127,11 @@ class EcosClient:
             # 4xx 기타
             raise EcosError(f"HTTP {resp.status_code}: {resp.text[:200]}")
 
-        raise last_exc or EcosError("요청 실패 (최대 재시도 초과)")
+        if isinstance(last_exc, EcosError):
+            raise last_exc
+        if last_exc is not None:
+            raise EcosError("ECOS 요청 실패 (최대 재시도 초과)") from last_exc
+        raise EcosError("ECOS 요청 실패 (최대 재시도 초과)")
 
     def close(self) -> None:
         """HTTP 세션 종료.
@@ -161,7 +169,7 @@ class EcosClient:
     # ── private ──
 
     @staticmethod
-    def _parseResponse(data: dict) -> list[dict]:
+    def _parseResponse(data: object) -> list[dict]:
         """ECOS JSON 응답 파싱.
 
         Parameters
@@ -179,20 +187,34 @@ class EcosClient:
         EcosError
             ECOS 에러 코드가 INFO-000/INFO-200 이외일 때.
         """
+        if not isinstance(data, dict):
+            raise EcosError("ECOS 응답 schema가 객체가 아닙니다")
+
         # 에러 응답 체크
         if "RESULT" in data:
-            code = data["RESULT"].get("CODE", "")
-            msg = data["RESULT"].get("MESSAGE", "")
+            resultInfo = data["RESULT"]
+            if not isinstance(resultInfo, dict):
+                raise EcosError("ECOS RESULT가 객체가 아닙니다")
+            code = resultInfo.get("CODE", "")
+            msg = resultInfo.get("MESSAGE", "")
             if code == "INFO-200":
                 return []  # 데이터 없음
             if code != "INFO-000":
                 raise EcosError(f"[{code}] {msg}")
 
         if "StatisticSearch" not in data:
-            return []
+            raise EcosError("ECOS 응답에 StatisticSearch가 없습니다")
 
-        rows = data["StatisticSearch"].get("row", [])
-        return rows if isinstance(rows, list) else [rows]
+        search = data["StatisticSearch"]
+        if not isinstance(search, dict):
+            raise EcosError("ECOS StatisticSearch가 객체가 아닙니다")
+        if "row" not in search:
+            raise EcosError("ECOS StatisticSearch에 row가 없습니다")
+        rawRows = search["row"]
+        rows = rawRows if isinstance(rawRows, list) else [rawRows]
+        if not all(isinstance(row, dict) for row in rows):
+            raise EcosError("ECOS StatisticSearch row가 객체가 아닙니다")
+        return rows
 
     def _rateLimit(self) -> None:
         """슬라이딩 윈도우 레이트 리밋 (30 RPM).

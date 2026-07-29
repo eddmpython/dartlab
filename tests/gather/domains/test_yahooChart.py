@@ -68,3 +68,40 @@ def test_fetch_history_malformed_quote_raises() -> None:
 
     with pytest.raises(SourceUnavailableError, match="필수 series"):
         asyncio.run(yahooChart.fetchHistory("AAPL", BadClient()))
+
+
+def test_fetch_price_network_failure_preserves_cause() -> None:
+    """Yahoo price 요청 장애 원인이 fallback caller까지 전달된다."""
+    from dartlab.gather.domains import yahooChart
+    from dartlab.gather.types import SourceUnavailableError
+
+    class FailingClient:
+        async def get(self, *args, **kwargs):
+            raise SourceUnavailableError("network down")
+
+    with pytest.raises(SourceUnavailableError) as excInfo:
+        asyncio.run(yahooChart.fetchPrice("AAPL", FailingClient()))
+
+    assert isinstance(excInfo.value.__cause__, SourceUnavailableError)
+
+
+def test_fetch_price_malformed_meta_raises() -> None:
+    """Yahoo price meta 숫자 손상을 정상 무데이터로 바꾸지 않는다."""
+    from dartlab.gather.domains import yahooChart
+    from dartlab.gather.types import SourceUnavailableError
+
+    class BadResponse:
+        def json(self):
+            return {
+                "chart": {
+                    "result": [{"meta": {"regularMarketPrice": "broken"}}],
+                    "error": None,
+                }
+            }
+
+    class BadClient:
+        async def get(self, *args, **kwargs):
+            return BadResponse()
+
+    with pytest.raises(SourceUnavailableError, match="regularMarketPrice"):
+        asyncio.run(yahooChart.fetchPrice("AAPL", BadClient()))

@@ -122,9 +122,13 @@ def test_panel_dir_path_market_namespace() -> None:
     assert _panelDir("AAPL", "us").as_posix().endswith("edgar/panel/AAPL")
 
 
-def test_read_long_and_wide_none_when_absent() -> None:
+def test_read_long_and_wide_none_when_absent(monkeypatch, tmp_path) -> None:
     """artifact 없는 종목 → readLong/readWide 모두 None (데이터 로드 0)."""
+    import dartlab.config as cfg
     from dartlab.providers.dart.panel.read import readLong, readWide
+
+    monkeypatch.setattr(cfg, "dataDir", str(tmp_path))
+    monkeypatch.setenv("DARTLAB_NO_HF_DOWNLOAD", "1")
 
     assert readLong("000000nonexistent") is None
     assert readWide("000000nonexistent") is None
@@ -340,8 +344,10 @@ def test_ensure_panel_from_hf_transient_vs_absent(monkeypatch, tmp_path) -> None
         raise RuntimeError("429 transient")  # 파일 안 만듦
 
     monkeypatch.setattr(huggingface_hub, "snapshot_download", transientDownload)
-    R.ensurePanelFromHf("005930")
-    R.ensurePanelFromHf("005930")  # 영구 마킹 안 됐으면 다시 시도
+    with pytest.raises(R.PanelArtifactFetchError, match="429 transient"):
+        R.ensurePanelFromHf("005930")
+    with pytest.raises(R.PanelArtifactFetchError, match="429 transient"):
+        R.ensurePanelFromHf("005930")  # 영구 마킹 안 됐으면 다시 시도
     assert calls["n"] == 2  # 재시도됨(일시실패 비영구)
     assert "kr:005930" not in R._HF_PANEL_ATTEMPTED
 
@@ -350,8 +356,8 @@ def test_ensure_panel_from_hf_transient_vs_absent(monkeypatch, tmp_path) -> None
 
     monkeypatch.setattr(huggingface_hub, "snapshot_download", absentDownload)
     before = calls["n"]
-    R.ensurePanelFromHf("000660")
-    R.ensurePanelFromHf("000660")  # 부재 마킹 → 2번째는 호출 안 됨
+    assert not R.ensurePanelFromHf("000660")
+    assert not R.ensurePanelFromHf("000660")  # 부재 마킹 → 2번째는 호출 안 됨
     assert calls["n"] == before + 1  # 1회만(부재 영구 마킹)
     assert "kr:000660" in R._HF_PANEL_ATTEMPTED
 
@@ -409,9 +415,25 @@ def test_readlong_corrupt_parquet_recovers(monkeypatch, tmp_path) -> None:
     flat.parent.mkdir(parents=True)
     flat.write_bytes(b"not a parquet at all")  # 손상
 
-    assert R.readLong("005930") is None
+    with pytest.raises(R.PanelArtifactReadError, match="panel artifact 읽기 실패"):
+        R.readLong("005930")
     assert not flat.exists()  # 손상 파일 삭제됨
     assert "kr:005930" not in R._HF_PANEL_ATTEMPTED  # 마킹 해제 → 재다운로드 가능
+
+
+def test_readwide_rejects_nonempty_artifact_without_content(monkeypatch, tmp_path) -> None:
+    """비어 있지 않은 잘못된 schema를 정상 무데이터 None으로 위장하지 않는다."""
+    import dartlab.config as cfg
+    from dartlab.providers.dart.panel import read as R
+
+    monkeypatch.setattr(cfg, "dataDir", str(tmp_path))
+    monkeypatch.setenv("DARTLAB_NO_HF_DOWNLOAD", "1")
+    flat = tmp_path / "dart" / "panel" / "005930.parquet"
+    flat.parent.mkdir(parents=True)
+    pl.DataFrame({"period": ["2024Q4"], "chapter": ["III"]}).write_parquet(flat)
+
+    with pytest.raises(R.PanelSchemaError, match="contentRaw"):
+        R.readWide("005930")
 
 
 def test_readlong_preservesCacheForNonCorruptionArrowFailure(monkeypatch, tmp_path) -> None:

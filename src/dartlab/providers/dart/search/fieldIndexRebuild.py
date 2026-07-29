@@ -749,8 +749,16 @@ def _feedNews(builder, metaRecs, newsLimit, showProgress, *, sinceDate=None) -> 
 _HF_CONTENTINDEX_ATTEMPTED = False
 
 
-def ensureContentIndex(tier: str | None = None) -> None:
-    """content 인덱스(main.*) 부재 시 HF lazy 다운로드 — 1회, graceful. (panel ensurePanelFromHf 미러)
+class ContentIndexFetchError(RuntimeError):
+    """검색 content index 원격 조달 실패."""
+
+    def __init__(self, tier: str, cause: BaseException) -> None:
+        self.tier = tier
+        super().__init__(f"content index fetch 실패: tier={tier}, error={type(cause).__name__}: {cause}")
+
+
+def ensureContentIndex(tier: str | None = None) -> bool:
+    """content 인덱스(main.*) 부재 시 HF lazy 다운로드 — 정상 부재와 실패를 분리한다.
 
     pip 사용자 진입점: `dartlab.search()` 첫 호출 시 인덱스를 HF 에서 자동 fetch. 배포 전략:
     - flat ``contentIndex/main.postings.bin`` 가 로컬에 있으면(sidecar SSOT) 즉시 반환(no-op).
@@ -763,10 +771,11 @@ def ensureContentIndex(tier: str | None = None) -> None:
         tier: 받을 tier ("lite"/"full"). None 이면 env ``DARTLAB_SEARCH_TIER`` 또는 "lite".
 
     Returns:
-        None — 부작용으로 `data/dart/contentIndex/[{tier}/]` 를 채운다. 이미 있으면 무동작.
+        로컬 또는 다운로드 index가 준비됐으면 ``True``. 다운로드 비활성 또는 원격 정상
+        부재면 ``False``.
 
     Raises:
-        없음 — 모든 예외 graceful 흡수.
+        ContentIndexFetchError: 원격 요청·인증·설정·저장 실패.
 
     Example:
         >>> ensureContentIndex()  # doctest: +SKIP
@@ -779,18 +788,17 @@ def ensureContentIndex(tier: str | None = None) -> None:
 
     base = _contentIndexDir()
     if resolveActiveIndexDir(base) is not None:
-        return
+        return True
     if _hasMainPostings(base):
-        return  # flat 로컬 존재(sidecar SSOT) — no-op
+        return True  # flat 로컬 존재(sidecar SSOT) — no-op
     if os.environ.get("DARTLAB_NO_HF_DOWNLOAD", "").strip() in ("1", "true", "True"):
-        return
+        return False
     if _HF_CONTENTINDEX_ATTEMPTED:
-        return
-    _HF_CONTENTINDEX_ATTEMPTED = True
+        return False
     tier = (tier or os.environ.get("DARTLAB_SEARCH_TIER") or "lite").strip()
     result = downloadAndActivateContentIndex(tier=tier, baseDir=base)
     if result.get("activated"):
-        return
+        return True
     try:
         from huggingface_hub import snapshot_download
 
@@ -808,7 +816,7 @@ def ensureContentIndex(tier: str | None = None) -> None:
             local_dir=str(Path(_cfg.dataDir)),
         )
         if _hasMainPostings(base / tier):
-            return
+            return True
         # 2) 전환기 fallback — tier 미배포 시 flat(legacy full) pull (기존 사용자 동작 보호).
         retryHfCall(
             snapshot_download,
@@ -817,8 +825,13 @@ def ensureContentIndex(tier: str | None = None) -> None:
             allow_patterns=[f"{ciDir}/*"],
             local_dir=str(Path(_cfg.dataDir)),
         )
-    except Exception:  # noqa: BLE001 — 자동로드 실패는 빈 결과(graceful)
-        pass
+    except Exception as exc:  # noqa: BLE001 — optional dependency와 원격 원인을 typed 경계로 보존
+        raise ContentIndexFetchError(tier, exc) from exc
+
+    if _hasMainPostings(base) or _hasMainPostings(base / tier):
+        return True
+    _HF_CONTENTINDEX_ATTEMPTED = True
+    return False
 
 
 def indexInfo() -> dict:
@@ -1150,7 +1163,8 @@ def _loadSourceManifestSet(path: Path) -> dict:
 
 
 def _sourceManifestSetSummary(payload: dict) -> dict:
-    sources = payload.get("sources") if isinstance(payload.get("sources"), list) else []
+    rawSources = payload.get("sources")
+    sources: list = rawSources if isinstance(rawSources, list) else []
     return {
         "schemaVersion": payload.get("schemaVersion", ""),
         "sourceManifestSetId": payload.get("sourceManifestSetId", ""),

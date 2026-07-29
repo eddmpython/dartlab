@@ -12,10 +12,13 @@ from __future__ import annotations
 import logging
 import os
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass
 from pathlib import Path
 
 import polars as pl
 
+from dartlab.core.accounts.aliases import SNAKEID_ALIASES
+from dartlab.core.accounts.data import loadAccounts
 from dartlab.providers.edgar.finance.mapper import EDGAR_TO_DART_ALIASES, EdgarMapper
 
 _log = logging.getLogger(__name__)
@@ -23,8 +26,28 @@ _log = logging.getLogger(__name__)
 _DUCKDB_THREADS = 4
 _DUCKDB_MEMORY_LIMIT_MB = 64
 _DUCKDB_YEAR_SQL = """
+    WITH matched AS (
+        SELECT
+            regexp_extract(filename, '([0-9]{10})[.]parquet$', 1) AS fileCik,
+            namespace,
+            val,
+            fy,
+            fp,
+            file_row_number,
+            min(CASE namespace WHEN 'us-gaap' THEN 0 ELSE 1 END)
+                OVER (PARTITION BY filename) AS selectedNamespace
+        FROM read_parquet(?, filename = true, file_row_number = true)
+        WHERE (
+                (namespace = 'us-gaap' AND lower(tag) IN (SELECT unnest(?)))
+                OR
+                (namespace = 'ifrs-full' AND lower(tag) IN (SELECT unnest(?)))
+              )
+          AND starts_with(unit, 'USD')
+          AND fy BETWEEN 2000 AND 2030
+          AND fp IN ('FY', 'Q1', 'Q2', 'Q3')
+    )
     SELECT
-        regexp_extract(filename, '([0-9]{10})[.]parquet$', 1) AS fileCik,
+        fileCik,
         fy,
         first(val ORDER BY file_row_number)
             FILTER (WHERE fp = 'FY') AS fyFirst,
@@ -42,84 +65,256 @@ _DUCKDB_YEAR_SQL = """
             val,
             struct_pack(absVal := abs(val), tieVal := val, rowNum := file_row_number)
         ) FILTER (WHERE fp = 'Q3') AS q3
-    FROM read_parquet(?, filename = true, file_row_number = true)
-    WHERE namespace = 'us-gaap'
-      AND lower(tag) IN (SELECT unnest(?))
-      AND starts_with(unit, 'USD')
-      AND fy BETWEEN 2000 AND 2030
-      AND fp IN ('FY', 'Q1', 'Q2', 'Q3')
+    FROM matched
+    WHERE (namespace = 'us-gaap' AND selectedNamespace = 0)
+       OR (namespace = 'ifrs-full' AND selectedNamespace = 1)
     GROUP BY fileCik, fy
 """
 
 
-def _buildEdgarTagKeys(dartSnakeId: str) -> set[str]:
-    """dartSnakeId에 매핑되는 모든 EDGAR XBRL tag를 수집."""
-    tagMap = EdgarMapper.tagMap()
+class EdgarScanError(RuntimeError):
+    """EDGAR bulk finance scan의 원천 또는 실행 실패."""
 
-    # DART alias → EDGAR snakeId 역매핑
-    edgarIds = {dartSnakeId}
+    def __init__(self, stage: str, message: str, *, source: str | None = None) -> None:
+        self.stage = stage
+        self.source = source
+        sourceLabel = f", source={source}" if source else ""
+        super().__init__(f"EDGAR scan failed: stage={stage}{sourceLabel}: {message}")
+
+
+class EdgarScanMappingError(EdgarScanError):
+    """CIK, ticker, company title universe 계약 실패."""
+
+
+class EdgarScanStorageError(EdgarScanError):
+    """listed companyfacts shard 읽기 또는 schema 실패."""
+
+
+class EdgarScanExecutionError(EdgarScanError):
+    """DuckDB와 검증 fallback 실행 실패."""
+
+    def __init__(
+        self,
+        stage: str,
+        message: str,
+        *,
+        source: str | None = None,
+        primaryError: BaseException | None = None,
+    ) -> None:
+        self.primaryError = primaryError
+        super().__init__(stage, message, source=source)
+
+
+@dataclass(frozen=True)
+class _TaxonomyTagKeys:
+    usGaap: frozenset[str]
+    ifrsFull: frozenset[str]
+
+    @property
+    def empty(self) -> bool:
+        """두 taxonomy 모두 concept가 없는지 반환.
+
+        Args:
+            없음.
+
+        Returns:
+            US GAAP과 IFRS concept set이 모두 비었으면 True.
+
+        Raises:
+            없음.
+
+        Example:
+            >>> _TaxonomyTagKeys(frozenset(), frozenset()).empty
+            True
+        """
+        return not self.usGaap and not self.ifrsFull
+
+
+@dataclass(frozen=True)
+class _TickerUniverse:
+    cikToTicker: dict[str, str]
+    tickerToTitle: dict[str, str]
+
+
+def _canonicalSnakeId(snakeId: str) -> str:
+    seen: set[str] = set()
+    current = snakeId
+    while current not in seen and current in SNAKEID_ALIASES:
+        seen.add(current)
+        current = SNAKEID_ALIASES[current]
+    return current
+
+
+def _buildEdgarTagKeys(dartSnakeId: str) -> _TaxonomyTagKeys:
+    """snakeId에 대응하는 US GAAP과 IFRS concept key를 SSOT에서 파생."""
+    try:
+        tagMap = EdgarMapper.tagMap()
+        mappings = loadAccounts().get("mappings", {})
+    except (KeyError, OSError, RuntimeError, ValueError) as exc:
+        raise EdgarScanMappingError(
+            "account_mapping",
+            f"account SSOT load failed: {type(exc).__name__}: {exc}",
+        ) from exc
+    target = _canonicalSnakeId(dartSnakeId)
+
+    edgarIds = {dartSnakeId, target}
     for edgarSid, dartSid in EDGAR_TO_DART_ALIASES.items():
-        if dartSid == dartSnakeId:
+        if _canonicalSnakeId(dartSid) == target:
             edgarIds.add(edgarSid)
 
-    tags: set[str] = set()
+    usGaap: set[str] = set()
     for tag, sid in tagMap.items():
-        if sid in edgarIds:
-            tags.add(tag)
+        if sid in edgarIds or _canonicalSnakeId(sid) == target:
+            usGaap.add(tag.lower())
 
-    return tags
+    ifrsFull: set[str] = set()
+    for concept, sid in mappings.items():
+        if (
+            concept
+            and concept[0].isupper()
+            and concept.isascii()
+            and concept.isalnum()
+            and _canonicalSnakeId(str(sid)) == target
+        ):
+            ifrsFull.add(concept.lower())
+
+    return _TaxonomyTagKeys(frozenset(usGaap), frozenset(ifrsFull))
 
 
-def _joinCorpName(df: pl.DataFrame) -> pl.DataFrame:
-    """ticker에 회사명(corpName) 매핑."""
+def _loadTickerUniverse() -> _TickerUniverse:
+    """SEC ticker universe를 검증하고 CIK 기준 대표 ticker로 정규화."""
     try:
         from dartlab.core.edgarClient import loadTickers
 
-        tickers = loadTickers().select(
-            pl.col("ticker").alias("stockCode"),
-            pl.col("title").alias("corpName"),
+        tickerFrame = loadTickers()
+    except (ImportError, OSError, RuntimeError, pl.exceptions.PolarsError) as exc:
+        raise EdgarScanMappingError(
+            "ticker_universe",
+            f"ticker universe load failed: {type(exc).__name__}: {exc}",
+        ) from exc
+
+    if not isinstance(tickerFrame, pl.DataFrame):
+        raise EdgarScanMappingError(
+            "ticker_universe",
+            f"ticker universe must be DataFrame, got {type(tickerFrame).__name__}",
         )
-        periodCols = [c for c in df.columns if c != "stockCode"]
-        return df.join(tickers, on="stockCode", how="left").select(["stockCode", "corpName"] + periodCols)
-    except (ImportError, OSError, pl.exceptions.PolarsError):
+    required = {"ticker", "cik", "title"}
+    missing = sorted(required - set(tickerFrame.columns))
+    if missing:
+        raise EdgarScanMappingError("ticker_universe", f"missing columns: {missing}")
+    if tickerFrame.is_empty():
+        raise EdgarScanMappingError("ticker_universe", "ticker universe is empty")
+
+    cikToTicker: dict[str, str] = {}
+    tickerToTitle: dict[str, str] = {}
+    for rowIndex, row in enumerate(tickerFrame.select("ticker", "cik", "title").iter_rows(named=True)):
+        ticker = str(row["ticker"] or "").strip().upper()
+        cikRaw = str(row["cik"] or "").strip()
+        if not ticker or not cikRaw.isdigit() or len(cikRaw) > 10:
+            raise EdgarScanMappingError(
+                "ticker_universe",
+                f"invalid row={rowIndex}, ticker={ticker!r}, cik={cikRaw!r}",
+            )
+        cik = cikRaw.zfill(10)
+        title = str(row["title"] or ticker).strip() or ticker
+        cikToTicker.setdefault(cik, ticker)
+        tickerToTitle.setdefault(ticker, title)
+
+    return _TickerUniverse(cikToTicker, tickerToTitle)
+
+
+def _joinCorpName(
+    df: pl.DataFrame,
+    tickerToTitle: dict[str, str] | None = None,
+) -> pl.DataFrame:
+    """검증된 ticker universe로 corpName을 추가."""
+    if df.is_empty():
         return df
+    if "stockCode" not in df.columns:
+        raise EdgarScanMappingError("corp_name_join", "result has no stockCode column")
+    if tickerToTitle is None:
+        tickerToTitle = _loadTickerUniverse().tickerToTitle
+
+    missing = sorted(set(df["stockCode"].drop_nulls().to_list()) - set(tickerToTitle))
+    if missing:
+        raise EdgarScanMappingError(
+            "corp_name_join",
+            f"result tickers are absent from ticker universe: {missing[:10]}",
+        )
+    titles = pl.DataFrame(
+        {
+            "stockCode": list(tickerToTitle),
+            "corpName": list(tickerToTitle.values()),
+        }
+    )
+    periodCols = [column for column in df.columns if column != "stockCode"]
+    return df.join(titles, on="stockCode", how="left").select(["stockCode", "corpName", *periodCols])
 
 
 class _EdgarFileProcessor:
     """EDGAR parquet 파일별 처리."""
 
-    __slots__ = ("tagKeys", "freq", "cikToTicker")
+    __slots__ = ("tagKeys", "freq", "cikToTicker", "isInstant")
 
-    def __init__(self, tagKeys: set[str], *, freq: str, cikToTicker: dict[str, str]):
-        self.tagKeys = list(tagKeys)
+    def __init__(
+        self,
+        tagKeys: _TaxonomyTagKeys,
+        *,
+        freq: str,
+        cikToTicker: dict[str, str],
+        isInstant: bool,
+    ):
+        self.tagKeys = tagKeys
         self.freq = freq
         self.cikToTicker = cikToTicker
+        self.isInstant = isInstant
 
     def __call__(self, pf: Path) -> pl.DataFrame | None:
         cik = pf.stem
         ticker = self.cikToTicker.get(cik)
         if ticker is None:
-            return None
+            raise EdgarScanMappingError(
+                "file_loop_mapping",
+                f"listed shard CIK has no ticker mapping: {cik}",
+                source=str(pf),
+            )
 
         try:
             df = (
                 pl.scan_parquet(str(pf))
                 .filter(
-                    (pl.col("namespace") == "us-gaap")
-                    & pl.col("tag").str.to_lowercase().is_in(self.tagKeys)
+                    (
+                        (
+                            (pl.col("namespace") == "us-gaap")
+                            & pl.col("tag").str.to_lowercase().is_in(self.tagKeys.usGaap)
+                        )
+                        | (
+                            (pl.col("namespace") == "ifrs-full")
+                            & pl.col("tag").str.to_lowercase().is_in(self.tagKeys.ifrsFull)
+                        )
+                    )
                     & pl.col("unit").str.starts_with("USD")
                     & pl.col("fy").is_not_null()
                     & (pl.col("fy") >= 2000)
                     & (pl.col("fy") <= 2030)
                 )
-                .select(["tag", "val", "fy", "fp"])
+                .select(["namespace", "tag", "val", "fy", "fp"])
                 .collect(engine="streaming")
             )
-        except (pl.exceptions.PolarsError, OSError):
-            return None
+        except (pl.exceptions.PolarsError, OSError) as exc:
+            raise EdgarScanStorageError(
+                "file_loop_read",
+                f"companyfacts shard read failed: {type(exc).__name__}: {exc}",
+                source=str(pf),
+            ) from exc
 
         if df.is_empty():
             return None
+        namespaces = df["namespace"].unique().to_list() if "namespace" in df.columns else []
+        if "us-gaap" in namespaces:
+            df = df.filter(pl.col("namespace") == "us-gaap")
+        elif "ifrs-full" in namespaces:
+            df = df.filter(pl.col("namespace") == "ifrs-full")
 
         if self.freq == "Y":
             return self._parseAnnual(df, ticker)
@@ -175,11 +370,11 @@ class _EdgarFileProcessor:
                 fyVal = fyDf["val"].drop_nulls().to_list()
                 if fyVal:
                     fyAmount = fyVal[0]
-                    if len(qVals) == 3:
+                    if self.isInstant:
+                        rows.append({"stockCode": ticker, "period": f"{fy}Q4", "amount": fyAmount})
+                    elif len(qVals) == 3:
                         q4 = fyAmount - sum(qVals.values())
                         rows.append({"stockCode": ticker, "period": f"{fy}Q4", "amount": q4})
-                    else:
-                        rows.append({"stockCode": ticker, "period": f"{fy}Q4", "amount": fyAmount})
 
         return pl.DataFrame(rows) if rows else None
 
@@ -189,7 +384,11 @@ def _listedParquetFiles(edgarDir: Path, cikToTicker: dict[str, str]) -> list[Pat
     return [path for cik in sorted(cikToTicker) if (path := edgarDir / f"{cik}.parquet").is_file()]
 
 
-def _resultFromLong(longFrame: pl.DataFrame, cikToTicker: dict[str, str]) -> pl.DataFrame:
+def _resultFromLong(
+    longFrame: pl.DataFrame,
+    cikToTicker: dict[str, str],
+    tickerToTitle: dict[str, str],
+) -> pl.DataFrame:
     """filename CIK long rows를 기존 wide 반환 계약으로 변환한다."""
     if longFrame.is_empty():
         return pl.DataFrame({"stockCode": []})
@@ -211,14 +410,16 @@ def _resultFromLong(longFrame: pl.DataFrame, cikToTicker: dict[str, str]) -> pl.
 
     result = values.pivot(on="period", index="stockCode", values="amount")
     periodCols = sorted((name for name in result.columns if name != "stockCode"), reverse=True)
-    return _joinCorpName(result.select(["stockCode", *periodCols]))
+    return _joinCorpName(result.select(["stockCode", *periodCols]), tickerToTitle)
 
 
 def _resultFromYearRows(
     yearRows: pl.DataFrame,
     cikToTicker: dict[str, str],
+    tickerToTitle: dict[str, str],
     *,
     freq: str,
+    isInstant: bool,
 ) -> pl.DataFrame:
     """DuckDB company-year rows에 기존 annual과 quarterly 규칙을 적용한다."""
     if yearRows.is_empty():
@@ -233,7 +434,7 @@ def _resultFromYearRows(
             )
             .select(["fileCik", "period", "amount"])
         )
-        return _resultFromLong(longFrame, cikToTicker)
+        return _resultFromLong(longFrame, cikToTicker, tickerToTitle)
 
     quarters = (
         yearRows.select(["fileCik", "fy", "q1", "q2", "q3"])
@@ -247,72 +448,106 @@ def _resultFromYearRows(
         .with_columns((pl.col("fy").cast(pl.Utf8) + pl.col("quarter").str.to_uppercase()).alias("period"))
         .select(["fileCik", "period", "amount"])
     )
-    fourth = (
-        yearRows.filter(pl.col("fyVal").is_not_null())
-        .with_columns(
-            (pl.col("fy").cast(pl.Utf8) + pl.lit("Q4")).alias("period"),
-            pl.when(
-                pl.all_horizontal(
-                    pl.col("q1").is_not_null(),
-                    pl.col("q2").is_not_null(),
-                    pl.col("q3").is_not_null(),
-                )
-            )
-            .then(pl.col("fyVal") - (pl.col("q1") + pl.col("q2") + pl.col("q3")))
-            .otherwise(pl.col("fyVal"))
-            .alias("amount"),
-        )
-        .select(["fileCik", "period", "amount"])
+    if isInstant:
+        fourth = yearRows.filter(pl.col("fyVal").is_not_null()).with_columns(pl.col("fyVal").alias("amount"))
+    else:
+        fourth = yearRows.filter(
+            pl.col("fyVal").is_not_null()
+            & pl.col("q1").is_not_null()
+            & pl.col("q2").is_not_null()
+            & pl.col("q3").is_not_null()
+        ).with_columns((pl.col("fyVal") - (pl.col("q1") + pl.col("q2") + pl.col("q3"))).alias("amount"))
+    fourth = fourth.with_columns((pl.col("fy").cast(pl.Utf8) + pl.lit("Q4")).alias("period")).select(
+        ["fileCik", "period", "amount"]
     )
-    return _resultFromLong(pl.concat([quarters, fourth]), cikToTicker)
+    return _resultFromLong(pl.concat([quarters, fourth]), cikToTicker, tickerToTitle)
 
 
 def _scanAccountDuckDb(
     parquetFiles: list[Path],
-    tagKeys: set[str],
-    cikToTicker: dict[str, str],
+    tagKeys: _TaxonomyTagKeys,
+    tickerUniverse: _TickerUniverse,
     *,
     freq: str,
+    isInstant: bool,
 ) -> pl.DataFrame:
     """listed EDGAR parquet를 bounded DuckDB source aggregation으로 조회한다."""
-    import duckdb
+    try:
+        import duckdb
+    except ImportError as exc:
+        raise EdgarScanExecutionError("duckdb_import", f"{type(exc).__name__}: {exc}") from exc
 
     if not parquetFiles:
         return pl.DataFrame({"stockCode": []})
 
-    connection = duckdb.connect(":memory:")
     try:
+        connection = duckdb.connect(":memory:")
         connection.execute(f"PRAGMA threads={_DUCKDB_THREADS}")
         connection.execute(f"PRAGMA memory_limit='{_DUCKDB_MEMORY_LIMIT_MB}MB'")
         yearRows = connection.execute(
             _DUCKDB_YEAR_SQL,
-            [[str(path) for path in parquetFiles], sorted(tagKeys)],
+            [
+                [str(path) for path in parquetFiles],
+                sorted(tagKeys.usGaap),
+                sorted(tagKeys.ifrsFull),
+            ],
         ).pl()
+    except duckdb.Error as exc:
+        raise EdgarScanExecutionError("duckdb_query", f"{type(exc).__name__}: {exc}") from exc
     finally:
-        connection.close()
+        if "connection" in locals():
+            connection.close()
 
-    return _resultFromYearRows(yearRows, cikToTicker, freq=freq)
+    try:
+        return _resultFromYearRows(
+            yearRows,
+            tickerUniverse.cikToTicker,
+            tickerUniverse.tickerToTitle,
+            freq=freq,
+            isInstant=isInstant,
+        )
+    except EdgarScanError:
+        raise
+    except (OSError, RuntimeError, pl.exceptions.PolarsError) as exc:
+        raise EdgarScanExecutionError(
+            "duckdb_transform",
+            f"result transform failed: {type(exc).__name__}: {exc}",
+        ) from exc
 
 
 def _scanAccountFileLoop(
     parquetFiles: list[Path],
-    tagKeys: set[str],
-    cikToTicker: dict[str, str],
+    tagKeys: _TaxonomyTagKeys,
+    tickerUniverse: _TickerUniverse,
     *,
     freq: str,
+    isInstant: bool,
 ) -> pl.DataFrame:
     """기존 파일별 ThreadPool 구현을 fallback으로 실행한다."""
-    processor = _EdgarFileProcessor(tagKeys, freq=freq, cikToTicker=cikToTicker)
-    with ThreadPoolExecutor(max_workers=min(os.cpu_count() or 4, 8)) as pool:
-        chunks = [result for result in pool.map(processor, parquetFiles) if result is not None]
+    try:
+        processor = _EdgarFileProcessor(
+            tagKeys,
+            freq=freq,
+            cikToTicker=tickerUniverse.cikToTicker,
+            isInstant=isInstant,
+        )
+        with ThreadPoolExecutor(max_workers=min(os.cpu_count() or 4, 8)) as pool:
+            chunks = [result for result in pool.map(processor, parquetFiles) if result is not None]
 
-    if not chunks:
-        return pl.DataFrame({"stockCode": []})
+        if not chunks:
+            return pl.DataFrame({"stockCode": []})
 
-    allDf = pl.concat(chunks).group_by(["stockCode", "period"]).agg(pl.col("amount").first())
-    result = allDf.pivot(on="period", index="stockCode", values="amount")
-    periodCols = sorted((name for name in result.columns if name != "stockCode"), reverse=True)
-    return _joinCorpName(result.select(["stockCode", *periodCols]))
+        allDf = pl.concat(chunks).group_by(["stockCode", "period"]).agg(pl.col("amount").first())
+        result = allDf.pivot(on="period", index="stockCode", values="amount")
+        periodCols = sorted((name for name in result.columns if name != "stockCode"), reverse=True)
+        return _joinCorpName(result.select(["stockCode", *periodCols]), tickerUniverse.tickerToTitle)
+    except EdgarScanError:
+        raise
+    except (OSError, RuntimeError, pl.exceptions.PolarsError) as exc:
+        raise EdgarScanExecutionError(
+            "file_loop_transform",
+            f"result transform failed: {type(exc).__name__}: {exc}",
+        ) from exc
 
 
 def scanAccount(
@@ -323,13 +558,14 @@ def scanAccount(
     """전종목 EDGAR 단일 계정 시계열. US 패리티 atomic primitive.
 
     DART ``scanAccount`` 와 동치다. 동일 snakeId 호출 시 동일 schema 의 wide DataFrame
-    반환. 내부적으로 ``_buildEdgarTagKeys`` 가 DART snakeId → us-gaap concept set
-    매핑 (``sales`` → ``{"Revenues", "RevenueFromContractWithCustomer*", "SalesRevenueNet"}`` 등).
+    반환. 내부적으로 ``_buildEdgarTagKeys`` 가 DART snakeId를 US GAAP과 IFRS concept set으로
+    분리 매핑한다.
 
     parquet source-native 처리:
       - ticker map에 존재하는 filename CIK 파일만 source manifest에 포함.
       - DuckDB 4 threads, 64 MiB limit로 filter와 company-year aggregation.
-      - DuckDB 비가용 또는 실패 시 기존 ThreadPool file-loop로 안전하게 fallback.
+      - DuckDB 비가용 또는 실패 시 검증된 ThreadPool file-loop로 fallback.
+      - fallback도 실패하면 DuckDB 원인과 shard 원인을 ``EdgarScanExecutionError``에 보존.
       - period pivot wide → ``stockCode + 기간 컬럼들`` (최신 period 좌측).
       - ``_joinCorpName`` 으로 corpName 추가.
 
@@ -344,7 +580,10 @@ def scanAccount(
         (``"2025Q4"`` / ... / ``"2019Q1"``, 최신 좌측). row ~10K (SEC 등록 ticker 전체).
 
     Raises:
-        없음. parquet 부재 또는 tagKeys 매칭 0 시 빈 DataFrame.
+        ValueError: freq 또는 snakeId 입력이 잘못된 경우.
+        EdgarScanMappingError: ticker universe schema 또는 CIK 연결 실패.
+        EdgarScanStorageError: listed companyfacts shard 손상.
+        EdgarScanExecutionError: DuckDB와 file-loop fallback이 모두 실패.
 
     Example:
         >>> df = scanAccount("sales", freq="Y")
@@ -354,13 +593,13 @@ def scanAccount(
             - 빈 DataFrame: parquet 부재 또는 tagKeys 매칭 0.
         Prerequisites:
             - ``edgar/*.parquet`` (companyfacts XBRL 정규화본).
-            - ``_buildEdgarTagKeys`` 의 us-gaap concept 매핑 사전.
+            - ``_buildEdgarTagKeys`` 의 US GAAP 및 IFRS concept 매핑 사전.
             - SEC tickers.parquet 또는 SEC API origin (CIK ↔ ticker).
         Freshness:
             - SEC EDGAR XBRL 분기 마감 후 ~45 일 (10-Q) / ~60 일 (10-K).
             - parquet 은 SEC ``data.sec.gov/api/xbrl/companyfacts`` nightly pull.
         Dataflow:
-            - dartSnakeId → ``_buildEdgarTagKeys`` (us-gaap concept set)
+            - dartSnakeId → ``_buildEdgarTagKeys`` (US GAAP 및 IFRS concept set)
             - → ticker map filename CIK pruning
             - → DuckDB source-native filter + company-year aggregation
             - → 실패 시 ``_EdgarFileProcessor`` ThreadPool fallback
@@ -370,6 +609,12 @@ def scanAccount(
     """
     from dartlab.core.dataLoader import _dataDir
 
+    if not isinstance(dartSnakeId, str) or not dartSnakeId.strip():
+        raise ValueError("dartSnakeId는 비어 있지 않은 문자열이어야 합니다")
+    freq = str(freq).upper()
+    if freq not in {"Q", "Y"}:
+        raise ValueError(f"freq는 'Q' 또는 'Y'여야 합니다: {freq!r}")
+
     edgarDir = Path(_dataDir("edgar"))
     parquetFiles = sorted(edgarDir.glob("*.parquet"))
 
@@ -377,39 +622,59 @@ def scanAccount(
         _log.warning("EDGAR finance parquet 없음: %s", edgarDir)
         return pl.DataFrame({"stockCode": []})
 
-    # CIK → ticker 매핑
-    try:
-        from dartlab.core.edgarClient import loadTickers
-
-        tickerDf = loadTickers()
-        cikToTicker = dict(
-            zip(
-                tickerDf["cik"].to_list(),
-                tickerDf["ticker"].to_list(),
-            )
-        )
-    except (ImportError, OSError):
-        cikToTicker = {}
-
     tagKeys = _buildEdgarTagKeys(dartSnakeId)
-    if not tagKeys:
+    if tagKeys.empty:
         _log.warning("EDGAR에서 '%s'에 매핑되는 tag 없음", dartSnakeId)
         return pl.DataFrame({"stockCode": []})
 
-    listedFiles = _listedParquetFiles(edgarDir, cikToTicker)
+    tickerUniverse = _loadTickerUniverse()
+    listedFiles = _listedParquetFiles(edgarDir, tickerUniverse.cikToTicker)
+    if not listedFiles:
+        raise EdgarScanMappingError(
+            "listed_shard_join",
+            f"local parquet {len(parquetFiles)}개 중 ticker universe와 연결된 shard가 없습니다",
+            source=str(edgarDir),
+        )
+    stmt = EdgarMapper.getAccountStmt(dartSnakeId)
+    isInstant = stmt == "BS"
     _log.info(
-        "scanAccount(edgar, '%s', freq=%s): listed %d/%d 파일 source-native scan",
+        "scanAccount(edgar, '%s', freq=%s, stmt=%s): listed %d/%d 파일 source-native scan",
         dartSnakeId,
         freq,
+        stmt or "unknown",
         len(listedFiles),
         len(parquetFiles),
     )
 
     try:
-        result = _scanAccountDuckDb(listedFiles, tagKeys, cikToTicker, freq=freq)
-    except Exception as exc:
-        _log.warning("scanAccount(edgar) DuckDB 실패, file-loop fallback: %s", exc)
-        result = _scanAccountFileLoop(parquetFiles, tagKeys, cikToTicker, freq=freq)
+        result = _scanAccountDuckDb(
+            listedFiles,
+            tagKeys,
+            tickerUniverse,
+            freq=freq,
+            isInstant=isInstant,
+        )
+    except EdgarScanExecutionError as duckError:
+        _log.warning(
+            "scanAccount(edgar) DuckDB 실패, file-loop fallback: %s: %s",
+            type(duckError.__cause__).__name__ if duckError.__cause__ else type(duckError).__name__,
+            duckError,
+        )
+        try:
+            result = _scanAccountFileLoop(
+                listedFiles,
+                tagKeys,
+                tickerUniverse,
+                freq=freq,
+                isInstant=isInstant,
+            )
+        except (EdgarScanError, OSError, RuntimeError, pl.exceptions.PolarsError) as fallbackError:
+            raise EdgarScanExecutionError(
+                "fallback",
+                f"file-loop failed after DuckDB failure: {type(fallbackError).__name__}: {fallbackError}",
+                source=str(edgarDir),
+                primaryError=duckError,
+            ) from fallbackError
 
     periodCount = len([name for name in result.columns if name not in ("stockCode", "corpName")])
     _log.info("scanAccount(edgar): %d종목 × %d기간", result.height, periodCount)
@@ -438,6 +703,7 @@ def scanRatio(
 
     Raises:
         ValueError: 지원하지 않는 ratioName.
+        EdgarScanError: 구성 계정의 ticker universe, 저장소 또는 scan 실행 실패.
 
     Example:
         >>> scanRatio("debt_ratio", freq="Y")

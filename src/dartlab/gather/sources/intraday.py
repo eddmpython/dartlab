@@ -7,10 +7,15 @@
 from __future__ import annotations
 
 import logging
+from typing import Awaitable, Callable, cast
 
 from ..domains import loadDomain
 from ..infra.resilience import circuitBreaker
-from ..types import GatherError
+from ..types import (
+    CircuitOpenError,
+    SourceAttemptsExhaustedError,
+    SourceUnavailableError,
+)
 
 log = logging.getLogger(__name__)
 
@@ -28,7 +33,7 @@ async def fetch(
 
     Capabilities: KR Naver 1분봉 (당일 + start/end 과거 세션 + 휴장일 폴백).
     AIContext: mixin.price(interval=...) 의 backend. 분 단위 가격 원천.
-    Guide: KR 전용. market 이 "KR" 아니면 빈 리스트 (Naver 만 분봉 제공).
+    Guide: KR 전용. market 이 "KR" 아니면 ValueError.
     When: gather("price", ..., interval="1m") 호출 시.
     How: loadDomain("naver").fetchIntraday 로 list[dict].
 
@@ -37,7 +42,7 @@ async def fetch(
     stock_code : str
         종목코드 (예: ``"005930"``).
     market : str
-        시장 코드. ``"KR"`` 외에는 빈 리스트.
+        시장 코드. ``"KR"`` 외에는 ValueError.
     start : str
         시작 시각 (``"2026-07-03"`` 또는 ``"202607030930"``). 빈 문자열이면 당일.
     end : str
@@ -59,12 +64,14 @@ async def fetch(
         - close : float. 종가 (원)
         - volume : int. 누적 거래량 (주)
 
-        KR 외 시장이거나 조회 실패 시 빈 리스트.
+        유효한 응답에 분봉이 없으면 빈 리스트.
 
     Raises
     ------
-    없음
-        내부 예외 (GatherError/ImportError/OSError/ValueError/AttributeError) 는 흡수.
+    ValueError
+        KR 외 시장 또는 잘못된 종목코드.
+    SourceAttemptsExhaustedError
+        Naver source가 실패하거나 circuit open인 경우.
 
     Example
     -------
@@ -82,7 +89,7 @@ async def fetch(
     dartlab.gather.sources.history.fetch : 일봉 fallback 체인.
     """
     if market != "KR":
-        return []
+        raise ValueError(f"intraday는 KR 시장만 지원합니다: {market!r}")
 
     if client is None:
         from ..infra.http import GatherHttpClient
@@ -90,19 +97,28 @@ async def fetch(
         client = GatherHttpClient()
 
     if circuitBreaker.isOpen("naver"):
-        return []
+        error = CircuitOpenError("naver circuit breaker가 열려 있습니다")
+        raise SourceAttemptsExhaustedError("intraday", [("naver", error)])
 
     try:
         module = loadDomain("naver")
-        if hasattr(module, "fetchIntraday"):
-            return await module.fetchIntraday(
-                stockCode,
-                client,
-                market=market,
-                start=start,
-                end=end,
-                limit=limit,
-            )
-    except (GatherError, ImportError, OSError, ValueError, AttributeError) as exc:
+        fetchIntraday = getattr(module, "fetchIntraday", None)
+        if not callable(fetchIntraday):
+            raise SourceUnavailableError("naver에 fetchIntraday 구현이 없습니다")
+        fetchIntradayFn = cast(Callable[..., Awaitable[list[dict]]], fetchIntraday)
+        rows = await fetchIntradayFn(
+            stockCode,
+            client,
+            market=market,
+            start=start,
+            end=end,
+            limit=limit,
+        )
+        if not isinstance(rows, list):
+            raise TypeError(f"naver.fetchIntraday가 list가 아닌 {type(rows).__name__}을 반환했습니다")
+        return rows
+    except ValueError:
+        raise
+    except Exception as exc:
         log.warning("intraday source 실패 (%s): %s", stockCode, exc)
-    return []
+        raise SourceAttemptsExhaustedError("intraday", [("naver", exc)]) from exc

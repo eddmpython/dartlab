@@ -146,3 +146,30 @@ def test_history_circuit_open_is_preserved(monkeypatch: pytest.MonkeyPatch) -> N
         asyncio.run(historyMod.fetch("005930", start="2026-01-01", end="2026-01-02"))
 
     assert all(isinstance(cause, CircuitOpenError) for cause in excInfo.value.failures.values())
+
+
+def test_history_invalid_input_is_not_fallback_failure(monkeypatch: pytest.MonkeyPatch) -> None:
+    """호출자 입력 ValueError는 다른 source 장애로 오인하지 않고 즉시 전달한다."""
+    from dartlab.gather.sources import history as historyMod
+
+    calls: list[str] = []
+
+    async def invalid(*args, **kwargs):
+        raise ValueError("invalid stock code")
+
+    monkeypatch.setattr(historyMod, "HISTORY_FALLBACK", ["naver", "fdr"])
+    monkeypatch.setattr(
+        historyMod,
+        "loadDomain",
+        lambda name: calls.append(name) or types.SimpleNamespace(fetchHistory=invalid),
+    )
+    monkeypatch.setattr(
+        historyMod,
+        "circuitBreaker",
+        types.SimpleNamespace(isOpen=lambda src: False, recordFailure=lambda src: None, recordSuccess=lambda src: None),
+    )
+
+    with pytest.raises(ValueError, match="invalid stock code"):
+        asyncio.run(historyMod.fetch("bad", start="2026-01-01", end="2026-01-02"))
+
+    assert calls == ["naver"]

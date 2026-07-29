@@ -25,7 +25,7 @@ def _panelCode(code: str, marketNs: str) -> str:
     return code.upper() if marketNs == "us" else code
 
 
-def ensurePanelFromHf(code: str, marketNs: str = "us") -> None:
+def ensurePanelFromHf(code: str, marketNs: str = "us") -> bool:
     """panel artifact lazy load — EDGAR 기본 repo(``edgarPanel``) 사용.
 
     Args:
@@ -33,10 +33,11 @@ def ensurePanelFromHf(code: str, marketNs: str = "us") -> None:
         marketNs: panel namespace. 기본은 ``"us"``.
 
     Returns:
-        None.
+        artifact가 준비됐으면 ``True``. 다운로드 비활성 또는 원격 부재면 ``False``.
 
     Raises:
-        없음 — 하위 DART facade 계약을 따른다.
+        ValueError: 지원하지 않는 ``marketNs``.
+        PanelArtifactFetchError: 원격 조달 실패.
 
     Example:
         >>> ensurePanelFromHf("AAPL")  # doctest: +SKIP

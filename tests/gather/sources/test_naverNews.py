@@ -25,15 +25,35 @@ def test_clean_strips_tags_and_entities() -> None:
     assert _clean("  plain  ") == "plain"
 
 
-def test_fetch_non_kr_market_empty() -> None:
-    """market != KR → 빈 리스트 (네이버=국내 전용, 네트워크 미접근)."""
-    assert asyncio.run(naverNews._fetchAsync("query", market="US")) == []
+def test_fetch_non_kr_market_raises() -> None:
+    """market != KR → 명시적 입력 오류."""
+    with pytest.raises(ValueError, match="KR 시장"):
+        asyncio.run(naverNews._fetchAsync("query", market="US"))
 
 
-def test_fetch_missing_credentials_graceful(monkeypatch: pytest.MonkeyPatch) -> None:
-    """자격증명 미설정 → 빈 리스트 (네트워크 미접근)."""
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"query": ""},
+        {"query": "query", "display": 0},
+        {"query": "query", "sort": "bad"},
+        {"query": "query", "pages": 0},
+    ],
+)
+def test_fetch_invalid_input_raises_before_credentials(kwargs: dict) -> None:
+    """입력 오류는 자격증명/source 실패로 오인하지 않는다."""
+    query = kwargs.pop("query")
+    with pytest.raises(ValueError):
+        asyncio.run(naverNews._fetchAsync(query, **kwargs))
+
+
+def test_fetch_missing_credentials_raises(monkeypatch: pytest.MonkeyPatch) -> None:
+    """자격증명 미설정은 정상 무데이터가 아닌 source 설정 오류."""
+    from dartlab.gather.types import SourceUnavailableError
+
     monkeypatch.setattr(naverNews, "getKey", lambda *a, **k: None)
-    assert asyncio.run(naverNews._fetchAsync("query", market="KR")) == []
+    with pytest.raises(SourceUnavailableError, match="자격증명"):
+        asyncio.run(naverNews._fetchAsync("query", market="KR"))
 
 
 def test_parse_items() -> None:
@@ -60,6 +80,14 @@ def test_parse_items() -> None:
     assert it.date == "2026-06-08"
 
 
+def test_parse_items_rejects_malformed_schema() -> None:
+    """items schema 손상을 정상 빈 뉴스로 바꾸지 않는다."""
+    from dartlab.gather.types import SourceUnavailableError
+
+    with pytest.raises(SourceUnavailableError, match="items"):
+        _parseItems({"items": "broken"})
+
+
 def test_archive_canonical_columns(monkeypatch: pytest.MonkeyPatch) -> None:
     """fetchHeadlinesForArchive → canonical 17컬럼 + description 채움."""
     item = NewsItem(
@@ -81,11 +109,10 @@ def test_archive_canonical_columns(monkeypatch: pytest.MonkeyPatch) -> None:
     assert df["market"][0] == "KR"
 
 
-def test_archive_non_kr_empty_canonical() -> None:
-    """market != KR → 빈 canonical DataFrame (17컬럼)."""
-    df = naverNews.fetchHeadlinesForArchive(["q"], market="US")
-    assert df.height == 0
-    assert set(df.columns) == set(NEWS_ARCHIVE_SCHEMA.keys())
+def test_archive_non_kr_raises() -> None:
+    """market != KR은 정상 무데이터가 아니라 입력 오류다."""
+    with pytest.raises(ValueError, match="KR 시장"):
+        naverNews.fetchHeadlinesForArchive(["q"], market="US")
 
 
 class _FakeResp:
@@ -202,3 +229,55 @@ def test_fetch_retries_on_429(monkeypatch: pytest.MonkeyPatch) -> None:
     items = asyncio.run(naverNews._fetchAsync("삼성전자", market="KR", pages=1))
     assert len(attempts) == 2  # 429 1회 + 재시도 1회
     assert len(items) == 1  # 재시도에서 수집
+
+
+def test_fetch_partial_page_failure_is_not_returned(monkeypatch: pytest.MonkeyPatch) -> None:
+    """첫 페이지를 모았어도 다음 페이지 장애를 부분 성공으로 반환하지 않는다."""
+    import types
+
+    import httpx
+
+    from dartlab.gather.types import SourceUnavailableError
+
+    class PartialClient:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *args):
+            return None
+
+        async def get(self, url, *, params, headers, timeout):
+            if params["start"] == 1:
+                return _FakeResp(
+                    [
+                        {
+                            "title": f"t{i}",
+                            "originallink": f"https://x/{i}",
+                            "pubDate": "Mon, 08 Jun 2026 00:00:00 +0900",
+                        }
+                        for i in range(100)
+                    ]
+                )
+            raise OSError("second page down")
+
+    monkeypatch.setattr(naverNews, "getKey", lambda *args, **kwargs: "key")
+    monkeypatch.setattr(
+        naverNews,
+        "_circuit_breaker",
+        types.SimpleNamespace(
+            isOpen=lambda *args, **kwargs: False,
+            recordSuccess=lambda *args, **kwargs: None,
+            recordFailure=lambda *args, **kwargs: None,
+        ),
+    )
+    monkeypatch.setattr(
+        naverNews,
+        "_health_tracker",
+        types.SimpleNamespace(record=lambda *args, **kwargs: None),
+    )
+    monkeypatch.setattr(httpx, "AsyncClient", lambda *args, **kwargs: PartialClient())
+
+    with pytest.raises(SourceUnavailableError) as excInfo:
+        asyncio.run(naverNews._fetchAsync("삼성전자", market="KR", pages=2))
+
+    assert isinstance(excInfo.value.__cause__, OSError)

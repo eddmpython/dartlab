@@ -6,6 +6,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import polars as pl
 
 from dartlab.core.logger import getLogger
@@ -427,7 +429,7 @@ def _recordQueryLogCandidate(
         _log.info("search query-log write skipped: %s", exc)
 
 
-def buildIndex(parquetPaths: list[str] | None = None, *, includePanel: bool = False, **kwargs) -> int:
+def buildIndex(parquetPaths: list[str | Path] | None = None, *, includePanel: bool = False, **kwargs) -> int:
     """Ngram (title) 인덱스 빌드 — allFilings parquet + (옵션) panel 통합.
           시 default allFilings.parquet 1 종 처리.
         - ``includePanel=True`` → panel 도 인덱싱 (제목 + sectionLeaf ngram).
@@ -525,7 +527,7 @@ def prefetch(tier: str | None = None) -> dict:
         dict — indexInfo() 결과 (available/dataAsOf/nDocs/hasMeaning/hasDelta/schemaVersion/compatible).
 
     Raises:
-        없음 (다운로드 실패는 graceful).
+        ContentIndexFetchError: 검색 index 원격 조달 실패.
 
     Example:
         >>> # dartlab.search.prefetch()  # 또는 prefetch(tier="full")

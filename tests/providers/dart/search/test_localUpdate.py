@@ -499,5 +499,39 @@ def test_ensure_content_index_activates_manifest_download(tmp_path, monkeypatch)
         fakeDownloadAndActivate,
     )
 
-    fieldIndexRebuild.ensureContentIndex(tier="lite")
+    assert fieldIndexRebuild.ensureContentIndex(tier="lite") is True
     assert calls
+
+
+def test_ensure_content_index_failure_is_typed_and_retryable(tmp_path, monkeypatch):
+    """원격 실패를 정상 index 부재로 삼키거나 영구 캐시하지 않는다."""
+    import huggingface_hub
+
+    import dartlab.config as cfg
+    from dartlab.core import hfRetry
+    from dartlab.providers.dart.search import fieldIndexRebuild
+
+    calls = 0
+
+    def failSnapshot(*_args, **_kwargs):
+        nonlocal calls
+        calls += 1
+        raise OSError("network down")
+
+    monkeypatch.setattr(cfg, "dataDir", str(tmp_path))
+    monkeypatch.delenv("DARTLAB_NO_HF_DOWNLOAD", raising=False)
+    monkeypatch.setattr(fieldIndexRebuild, "_HF_CONTENTINDEX_ATTEMPTED", False)
+    monkeypatch.setattr(
+        "dartlab.providers.dart.search.localUpdate.downloadAndActivateContentIndex",
+        lambda **_kwargs: {"activated": False, "errors": ["download:missing"]},
+    )
+    monkeypatch.setattr(huggingface_hub, "snapshot_download", failSnapshot)
+    monkeypatch.setattr(hfRetry, "retryHfCall", lambda fn, *args, **kwargs: fn(*args, **kwargs))
+
+    for _ in range(2):
+        with pytest.raises(fieldIndexRebuild.ContentIndexFetchError, match="network down") as excInfo:
+            fieldIndexRebuild.ensureContentIndex(tier="lite")
+        assert isinstance(excInfo.value.__cause__, OSError)
+
+    assert calls == 2
+    assert fieldIndexRebuild._HF_CONTENTINDEX_ATTEMPTED is False

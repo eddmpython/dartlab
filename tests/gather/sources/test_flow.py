@@ -177,3 +177,22 @@ def test_flow_passes_backfill_options(monkeypatch: pytest.MonkeyPatch) -> None:
     assert seen["maxPages"] == 2
     assert seen["full"] is True
     assert seen["proxy"] == "http://proxy.example:8080"
+
+
+def test_flow_invalid_input_is_not_fallback_failure(monkeypatch: pytest.MonkeyPatch) -> None:
+    """도메인의 호출자 입력 ValueError는 aggregate로 감싸지 않는다."""
+    from dartlab.gather.sources import flow as flowMod
+
+    async def invalid(*args, **kwargs):
+        raise ValueError("invalid stock code")
+
+    monkeypatch.setattr(flowMod, "FLOW_FALLBACK", ["naver", "other"])
+    monkeypatch.setattr(flowMod, "loadDomain", lambda name: types.SimpleNamespace(fetchFlow=invalid))
+    monkeypatch.setattr(
+        flowMod,
+        "circuitBreaker",
+        types.SimpleNamespace(isOpen=lambda src: False, recordFailure=lambda src: None, recordSuccess=lambda src: None),
+    )
+
+    with pytest.raises(ValueError, match="invalid stock code"):
+        asyncio.run(flowMod.fetch("bad", market="KR"))
