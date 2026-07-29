@@ -2,13 +2,13 @@
 
 CLI 가 모든 사용자 접점 (cli/commands/*, cli/main) 에서 호출하는 에러 변환기
 ``wrapError`` 와 feature 추론기 ``inferFeature`` 를 제공한다. 원본 에러 메시지
-뒤에 ``core.messaging.handleError`` 가 만든 친절 안내를 덧붙여 반환한다.
+뒤에 ``core.messagingErrors.handleError`` 가 만든 친절 안내를 덧붙여 반환한다.
 """
 
 from __future__ import annotations
 
 from dartlab.cli.context import EXIT_RUNTIME
-from dartlab.core.messaging import inferFeature as inferFeature
+from dartlab.core.messagingErrors import inferFeature as inferFeature
 
 __all__ = ["CLIError", "inferFeature", "wrapError"]
 
@@ -38,7 +38,7 @@ def wrapError(error: Exception, *, feature: str | None = None, stockCode: str | 
     str — 원본 에러 메시지 + 친절 안내가 합쳐진 문자열.
     """
     try:
-        from dartlab.core.messaging import handleError
+        from dartlab.core.messagingErrors import handleError
 
         resolvedFeature = feature or inferFeature(error)
         guideMsg = handleError(error, feature=resolvedFeature)

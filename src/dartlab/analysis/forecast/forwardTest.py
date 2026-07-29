@@ -243,7 +243,7 @@ def evaluate(
     AIContext:
         AI 답변 시 사후 정확도 MAPE/방향 정확도 표로 인용.
     """
-    from dartlab.core.messaging import missingDataHint
+    from dartlab.core.messagingHandlers import missingDataHint
 
     projected = record.projected
     n = min(len(projected), len(actualRevenue))

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from dartlab.core.messaging import apiKeyMissingHint, missingDataHint
+from dartlab.core.messagingHandlers import apiKeyMissingHint, missingDataHint
 
 pytestmark = pytest.mark.unit
 

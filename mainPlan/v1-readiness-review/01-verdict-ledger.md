@@ -35,12 +35,12 @@ L4 소비자, ai, mcp. 아래층 결함이 위층 전부를 오염시키므로 �
 ### 세션 인계
 
 - 현재 계층: L0 core
-- 마지막 완료 항목: L0-08 `core/_entries` residency와 registry 호출자 경계
-- 진행 중인 단일 항목: L0-09 `core/messaging.py` residency와 전송 경계
-- 다음 첫 행동: `core/messaging.py`의 생성자와 실제 CLI/server 소비자를 전수 대조하고,
-  L0에 남을 수 있는 범용 event primitive와 상위 전송·표현 정책을 분리해 제품 결함부터
-  재현한다. 이번 항목에서는 `messaging.py`만 다루고 `observability/`, `parse/`,
-  기존 `silentSubstitute` baseline은 건드리지 않는다.
+- 마지막 완료 항목: L0-09 `core/messaging.py` residency와 전송 경계
+- 진행 중인 단일 항목: L0-10 `core/observability/` residency와 관측 경계
+- 다음 첫 행동: `core/observability/`의 생성자와 실제 소비자를 전수 대조해 L0에 필요한
+  범용 계측 primitive와 운영·서버 정책을 분리하고, 제품 행동에서 오류 은폐와 중복 기록을
+  먼저 재현한다. 이번 항목에서는 `observability/`만 다루고 `parse/`와 기존
+  `silentSubstitute` baseline은 건드리지 않는다.
 - 금지: L0 완료 판정 전 L1 이상 감사나 수정 착수
 
 ## L0 순차 안정화 원장 (2026-07-29)
@@ -446,6 +446,54 @@ lifecycle과 상위 소비자의 오류 정책까지 닫았다는 뜻은 아니�
    기존 8건도 이번에 새로 만든 경계 밖의 L1 원장 대상이다. 다음 단일 항목은
    `core/messaging.py`이고 그 뒤 `observability/`, `parse/`, core 무음 대체 baseline
    7건을 각각 따로 닫는다. 따라서 L0-08만 완료이며 **L0 전체는 미달**이다.
+
+### L0-09 `core/messaging.py` residency와 전송 경계
+
+**상태: 완료.** L0에는 계층 공통 메시지의 format, emit, progress primitive만 남기고
+도메인 안내와 오류 해석은 기존 소유 모듈을 호출자가 직접 사용하게 했다. 메시징 하위
+모듈 전체와 관측 계층까지 완료했다는 뜻은 아니다.
+
+1. **범위와 실제 호출자.** 범위는 `core/messaging.py`, catalog와 직접 import하는
+   외부 source 29개 파일이다. L0 data loader, L1 gather와 DART·EDGAR provider,
+   L1.5 scan, Company와 CLI·server·viz가 같은 표면을 썼다. 2026-05-11에 추가된
+   `messaging.py = 상위 계층` denylist와 이후 facade 분리 이력도 시간순으로 대조했다.
+   전문 독립 검토는 공통 primitive의 L0 잔류와 상위 정책의 직접 소유 import가 맞으며,
+   native의 이중 로그는 완료 전 막아야 한다고 판정했다.
+2. **제품 결함 재현.** 기존 `emit()` 한 번은 사용자 문구 뒤에 `message_emit`라는
+   두 번째 가시 로그를 남겼다. catalog 세 문구가 이미 `[dartlab]`을 포함해 logger
+   prefix와 중복됐고, 구조화 발행 import 실패는 성공으로 삼켰다. focused split 뒤에도
+   facade는 format·emit·progress 외에 Company 안내, provider key, share, exception
+   정책까지 19개 이름을 재수출해 메시징 모듈 7개를 즉시 적재했다. 오래된 denylist와
+   상향 import 예외도 이미 사라진 facade 구조를 계속 부채로 기록했다.
+3. **근본 원인과 SSOT.** 사용자 메시지와 관측 이벤트를 별도 로그 두 건으로 표현했고,
+   표현 prefix를 catalog와 transport가 함께 소유했다. focused owner로 분리된 함수도
+   호환 facade에서 다시 합쳐 경계가 복원되지 않았다. 문구 정본은 catalog의 prefix 없는
+   template, L0 전송 정본은 `messaging.py`의 세 primitive, 안내·오류 정책 정본은 각각
+   `messagingHandlers.py`, `messagingErrors.py`로 확정했다.
+4. **수정과 테스트.** facade의 공개 이름을 `emit`, `format`, `progress` 셋으로 줄이고
+   내부 formatter만 비공개 이름으로 참조한다. analysis·CLI·server·viz와 guide 테스트는
+   필요한 owner를 직접 import한다. native 구조화 정보는 별도 이벤트를 발행하지 않고
+   사용자 로그 한 레코드의 `extra`에 `event`와 `fields`로 붙이며 Pyodide에는 일반
+   레코드만 남긴다. 전송 실패를 잡지 않아 원인 예외를 그대로 전달한다. catalog의 중복
+   prefix 세 건, stale core denylist와 상향 import 예외 두 건도 제거했다.
+5. **공개 행동, 정확성, 속도, 메모리.** 실제 native `emit()`은
+   `[dartlab] ✓ 다운로드 완료 (1MB)` 한 건만 기록했고 같은 레코드에
+   `event=message_emit`, key와 kind가 붙었다. Pyodide도 사용자 레코드 한 건이며 관측
+   필드는 없다. 공개 이름은 19개에서 3개, 즉시 적재 messaging 모듈은 7개에서 4개로
+   줄었다. `format()` 100만 회는 `1.031 µs/call`, 결과를 보유하지 않은 10만 회
+   `tracemalloc` peak는 `9.15 KiB`였고 새 cache나 누적 상태는 없다.
+6. **Guard와 회귀.** 메시징·guide·architecture·server 범위 `62 passed`, L0 loader
+   직접 소비자 `58 passed`, analysis·CLI·viz 직접 소비자 `20 passed`, 최종 메시징
+   계약 `7 passed`다. Ruff, formatter, core Pyright 0 errors, compileall, Bandit,
+   diff whitespace, camelCase/docstring, changed-only quality gate가 통과했다.
+   `messaging.py`의 `silentSubstitute`는 0건이다. 공식 Guard는 1,768파일, 7/7 규칙과
+   cycle, architecture, folder mirror, gather, provider, public API 여섯 gate를 모두
+   통과했다. `coreBoundary`에는 다음 순서인 `observability/`, `parse/` 두 건만 남는다.
+7. **남은 부채와 판정.** 1.0.0 전 facade의 옛 상위 re-export를 쓰던 외부 사용자는
+   owner 모듈로 옮겨야 하는 clean break다. 호환 재수출을 되살리면 L0 경계 회귀다.
+   `messagingContext.hasDartKey`의 기존 무음 대체는 별도 L0 항목에서 다룬다. 다음 단일
+   항목은 `core/observability/`이고 그 완료 전 `parse/`로 넘어가지 않는다. 따라서
+   L0-09만 완료이며 **L0 전체는 미달**이다.
 
 ## 정량 판정 (2026-07-27 실측)
 

@@ -9,7 +9,7 @@
     1. 상위 layer import 금지 — 정적 import와 동적 import를 같은 Guard Index로 검사.
        concrete 상위 대상은 예외 없이 차단하고 caller-owned generic loader만 허용.
     2. denylist — 명시적으로 core 가 아닌 경로
-       (cross/, show.py, select.py, messaging.py).
+       (cross/, show.py, select.py).
     3. 디렉터리 화이트리스트 — 정의 외 신규 디렉터리 신설 차단. baseline 갱신 시 PR
        으로만 변경 (CHANGELOG + architecture.md 동시 갱신 강제).
 
@@ -49,7 +49,6 @@ _DENYLIST: tuple[tuple[str, str, str], ...] = (
     ("cross", "L2 도메인 조합 (architecture #4 — story 가 단독 부담)", "story/cross/ 또는 skills"),
     ("show.py", "Company.show() API = L4", "company/show.py 또는 dartlab/"),
     ("select.py", "Company.select() API = L4", "company/select.py 또는 dartlab/"),
-    ("messaging.py", "cli/server messaging = ≥ L1", "cli/messaging.py 또는 server/messaging.py"),
 )
 
 # 정의된 (= 허용된) 1 차 디렉터리 — 이 외 신규 디렉터리 신설은 PR 필요.

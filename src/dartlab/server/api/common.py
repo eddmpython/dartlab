@@ -42,7 +42,7 @@ def guideDetail(exc: BaseException, *, feature: str | None = None) -> str:
     """sanitize_error + 친절 안내 포함. Server API 에러 응답 표준."""
     detail = sanitizeError(exc)
     try:
-        from dartlab.core.messaging import handleError, inferFeature
+        from dartlab.core.messagingErrors import handleError, inferFeature
 
         resolvedFeature = feature or inferFeature(exc)  # type: ignore[arg-type]
         guideMsg = handleError(exc, feature=resolvedFeature)  # type: ignore[arg-type]

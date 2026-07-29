@@ -60,11 +60,12 @@ class TestMessaging:
             emit("error:no_data", stockCode="005930", raiseAs=ValueError)
 
     def test_progress_silent_when_not_verbose(self, capsys):
-        from dartlab.core.messaging import _ctx, progress
+        from dartlab.core.messaging import progress
+        from dartlab.core.messagingContext import ctx
 
         # Ensure verbose is off
-        original = _ctx._verbose
-        _ctx._verbose = False
+        original = ctx._verbose
+        ctx._verbose = False
         try:
             progress("테스트 메시지")
             captured = capsys.readouterr()
@@ -72,16 +73,16 @@ class TestMessaging:
             assert captured.out == ""
             assert captured.err == ""
         finally:
-            _ctx._verbose = original
+            ctx._verbose = original
 
     def test_context_reset(self):
-        from dartlab.core.messaging import _ctx
+        from dartlab.core.messagingContext import ctx
 
-        _ctx._dart_key = True
-        _ctx._verbose = True
-        _ctx.reset()
-        assert _ctx._dart_key is None
-        assert _ctx._verbose is None
+        ctx._dart_key = True
+        ctx._verbose = True
+        ctx.reset()
+        assert ctx._dart_key is None
+        assert ctx._verbose is None
 
 
 # ── 3. hints (onCompanyCreated, nextSteps, onAnalysisRequested) ──
@@ -89,7 +90,7 @@ class TestMessaging:
 
 class TestHints:
     def test_on_company_created_no_hints(self):
-        from dartlab.core.messaging import onCompanyCreated
+        from dartlab.core.messagingHandlers import onCompanyCreated
 
         company = MagicMock()
         company._hasPanel = True
@@ -102,7 +103,7 @@ class TestHints:
         assert hints == []
 
     def test_on_company_created_missing_finance(self):
-        from dartlab.core.messaging import onCompanyCreated
+        from dartlab.core.messagingHandlers import onCompanyCreated
 
         company = MagicMock()
         company._hasPanel = True
@@ -115,7 +116,7 @@ class TestHints:
         assert any("finance" in h for h in hints)
 
     def test_on_company_created_stale_data(self):
-        from dartlab.core.messaging import onCompanyCreated
+        from dartlab.core.messagingHandlers import onCompanyCreated
 
         company = MagicMock()
         company._hasPanel = True
@@ -131,7 +132,7 @@ class TestHints:
         assert any("120일" in h for h in hints)
 
     def test_next_steps_with_finance(self):
-        from dartlab.core.messaging import nextSteps
+        from dartlab.core.messagingHandlers import nextSteps
 
         company = MagicMock()
         company._hasFinanceParquet = True
@@ -142,7 +143,7 @@ class TestHints:
         assert any("panel" in s for s in steps)
 
     def test_next_steps_without_finance(self):
-        from dartlab.core.messaging import nextSteps
+        from dartlab.core.messagingHandlers import nextSteps
 
         company = MagicMock()
         company._hasFinanceParquet = False
@@ -154,13 +155,13 @@ class TestHints:
         assert any("panel" in s for s in steps)
 
     def test_on_analysis_requested_with_axis(self):
-        from dartlab.core.messaging import onAnalysisRequested
+        from dartlab.core.messagingHandlers import onAnalysisRequested
 
         result = onAnalysisRequested("수익성")
         assert result is None
 
     def test_on_analysis_requested_without_axis(self):
-        from dartlab.core.messaging import onAnalysisRequested
+        from dartlab.core.messagingHandlers import onAnalysisRequested
 
         result = onAnalysisRequested(None)
         assert result is not None

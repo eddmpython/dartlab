@@ -200,7 +200,7 @@ def calcForecastFlags(company: Any, *, basePeriod: str | None = None) -> dict | 
         flags.append(("LOW_CONFIDENCE", "예측 신뢰도 낮음 -- 데이터 부족 또는 변동성 과다"))
 
     if result.method == "timeseries_only":
-        from dartlab.core.messaging import missingDataHint
+        from dartlab.core.messagingHandlers import missingDataHint
 
         flags.append(("TIMESERIES_ONLY", f"시계열만 사용 -- {missingDataHint('컨센서스')}"))
 

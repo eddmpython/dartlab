@@ -1,23 +1,23 @@
-"""Public messaging facade for DartLab.
+"""L0 user-facing message formatting and emission primitives.
 
 Capabilities:
-    - Emits user-facing ``[dartlab]`` messages through one stable public import path.
-    - Re-exports guidance, formatting, sharing, and error helpers from focused modules.
+    - Formats catalog messages without a transport side effect.
+    - Emits user-facing ``[dartlab]`` logs with native structured metadata.
+    - Emits verbose-aware one-line progress logs.
 
 Args:
-    Public functions accept message keys, text, or domain context.
+    Public functions accept catalog keys, template fields, or progress text.
 
 Returns:
-    Formatted strings, guidance lists, or ``None`` depending on the helper.
+    Formatted strings or ``None`` depending on the primitive.
 
 Example:
     >>> from dartlab.core.messaging import emit, progress, format
     >>> msg = format("download:done_short", sizeStr="1MB")
 
 Guide:
-    Keep this module as the compatibility surface. Implementation belongs in
-    ``messagingContext``, ``messagingFormatting``, ``messagingHandlers``,
-    ``messagingShare``, and ``messagingErrors``.
+    Keep this facade limited to ``emit``, ``format``, and ``progress``. Domain guidance
+    belongs to ``messagingHandlers`` and exception guidance to ``messagingErrors``.
 
 SeeAlso:
     ``messagingCatalog`` and ``messagingFormatting``.
@@ -26,12 +26,11 @@ Requires:
     Core logger and message catalog modules.
 
 AIContext:
-    Stable import surface for CLI, providers, server, and notebooks while internal
-    messaging responsibilities remain split and testable.
+    Stable lower-layer message boundary shared by core, providers, CLI, server, and notebooks.
 
 LLM Specifications:
-    AntiPatterns: Do not add large handler branches or template catalogs here.
-    OutputSchema: Public messaging helper outputs.
+    AntiPatterns: Do not re-export Company, provider, share, or exception guidance.
+    OutputSchema: Formatted text or ``None``.
     Prerequisites: Message keys exist in the catalog for ``emit``/``format``.
     Freshness: Template freshness follows ``messagingCatalog``.
     Dataflow: caller -> public facade -> focused helper module -> text/log output.
@@ -46,24 +45,7 @@ from typing import Any
 from dartlab.core.logger import getLogger
 from dartlab.core.messagingCatalog import STRUCTURED as _STRUCTURED
 from dartlab.core.messagingContext import ctx as _ctx
-from dartlab.core.messagingErrors import handleError, inferFeature
-from dartlab.core.messagingFormatting import formatMessage, suggest
-from dartlab.core.messagingHandlers import (
-    apiKeyMissingHint,
-    missingDataHint,
-    nextSteps,
-    onAnalysisRequested,
-    onCompanyCreated,
-    onKeyRequired,
-    onScanRequested,
-    promptKeyIfMissing,
-)
-from dartlab.core.messagingShare import (
-    onCloudflaredMissing,
-    onCloudflareLoginRequired,
-    onShareSecurityWarning,
-    onTunnelStartFailed,
-)
+from dartlab.core.messagingFormatting import formatMessage as _formatMessage
 
 _PREFIX = "[dartlab]"
 _log = getLogger(__name__)
@@ -79,7 +61,7 @@ _ALWAYS_SHOW_PREFIXES = (
 )
 
 
-def emit(key: str, *, raiseAs: type | None = None, **kwargs: Any) -> str:
+def emit(key: str, *, raiseAs: type[Exception] | None = None, **kwargs: Any) -> str:
     """Format and emit a user-facing message.
 
     Parameters
@@ -128,36 +110,32 @@ def emit(key: str, *, raiseAs: type | None = None, **kwargs: Any) -> str:
     SeeAlso:
         :func:`format`, :func:`progress`.
     """
-    text = formatMessage(key, **kwargs)
+    text = _formatMessage(key, **kwargs)
 
     if raiseAs is not None:
         raise raiseAs(text)
 
     if key in _STRUCTURED or any(key.startswith(prefix) for prefix in _ALWAYS_SHOW_PREFIXES):
-        _log.info("%s %s", _PREFIX, text)
-        _emitStructured("message_emit", key=key, kind="structured")
+        _logMessage(text, key=key, kind="structured")
     elif _ctx.verbose:
-        _log.info("%s %s", _PREFIX, text)
-        _emitStructured("message_emit", key=key, kind="verbose")
+        _logMessage(text, key=key, kind="verbose")
 
     return text
 
 
-def _emitStructured(event: str, **fields: object) -> None:
-    """T1-1 structured log 발급. emit/format 동행.
+def _logMessage(text: str, *, key: str, kind: str) -> None:
+    """사용자 메시지 한 건에 native 구조화 메타데이터를 함께 기록한다.
 
-    브라우저(pyodide)에서는 내보내지 않는다. 이벤트 이름을 메시지 본문으로 찍는 구조라
-    stderr 를 그대로 셀 출력에 담는 노트북에서는 ``message_emit`` 이라는 날문자열이
-    사용자에게 보인다. 그 이벤트를 소비할 메트릭 수집기도 브라우저에는 없다.
+    브라우저에는 소비할 메트릭 수집기가 없으므로 일반 로그만 남긴다. native에서는
+    별도 이벤트 로그를 추가하지 않고 같은 레코드의 ``extra``에 관측 메타데이터를 넣는다.
     """
-    if sys.platform == "emscripten":
-        return
-    try:
-        from dartlab.core.logger import logEvent
-
-        logEvent("info", event, **fields)
-    except ImportError:
-        pass
+    extra = None
+    if sys.platform != "emscripten":
+        extra = {
+            "event": "message_emit",
+            "fields": {"key": key, "kind": kind},
+        }
+    _log.info("%s %s", _PREFIX, text, extra=extra)
 
 
 def format(key: str, **kwargs: Any) -> str:
@@ -179,7 +157,7 @@ def format(key: str, **kwargs: Any) -> str:
         >>> format("download:done_short", sizeStr="1MB")
         '✓ 다운로드 완료 (1MB)'
     """
-    return formatMessage(key, **kwargs)
+    return _formatMessage(key, **kwargs)
 
 
 def progress(text: str) -> None:
@@ -204,23 +182,7 @@ def progress(text: str) -> None:
 
 
 __all__ = [
-    "_ctx",
-    "apiKeyMissingHint",
     "emit",
     "format",
-    "handleError",
-    "inferFeature",
-    "missingDataHint",
-    "nextSteps",
-    "onAnalysisRequested",
-    "onCloudflareLoginRequired",
-    "onCloudflaredMissing",
-    "onCompanyCreated",
-    "onKeyRequired",
-    "onScanRequested",
-    "onShareSecurityWarning",
-    "onTunnelStartFailed",
     "progress",
-    "promptKeyIfMissing",
-    "suggest",
 ]
