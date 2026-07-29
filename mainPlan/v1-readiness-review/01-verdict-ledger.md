@@ -35,12 +35,13 @@ L4 소비자, ai, mcp. 아래층 결함이 위층 전부를 오염시키므로 �
 ### 세션 인계
 
 - 현재 계층: L0 core
-- 마지막 완료 항목: L0-10 매핑 관측 writer와 후보 평가 경계
-- 진행 중인 단일 항목: L0-11 `core/parse/` residency와 parsing 경계
-- 다음 첫 행동: `core/parse/`의 생산 호출자와 소비자를 전수 대조해 L0에 남아야 할
-  provider 독립 parsing primitive인지 확인하고, 손상 입력 무음 대체, 중복 parser,
-  불필요한 materialization을 제품 행동에서 먼저 재현한다. 이번 항목에서는 `parse/`만
-  다루고 기존 core `silentSubstitute` baseline 6건은 건드리지 않는다.
+- 마지막 완료 항목: L0-11 DART viewer parser residency와 HTML evidence 경계
+- 진행 중인 단일 항목: L0-12 core 무음 대체 baseline 6건
+- 다음 첫 행동: `credentialLifecycle.checkLifecycle`, `credentials.snapshot`,
+  `dataAudit.readLineage`, `dataLoader._fetchRemoteEtagAndSize`,
+  `messagingContext.hasDartKey`, `progress.track`의 생산 호출자와 정상 부재 semantic을
+  전수 대조한다. 아직 수정하지 않고 각 함수의 손상 파일, 권한 오류, provider 탐색 실패가
+  빈 값이나 대체값으로 사라지는 제품 행동부터 재현한다. 이번 항목에서는 이 6건만 다룬다.
 - 금지: L0 완료 판정 전 L1 이상 감사나 수정 착수
 
 ## L0 순차 안정화 원장 (2026-07-29)
@@ -546,6 +547,64 @@ lifecycle과 상위 소비자의 오류 정책까지 닫았다는 뜻은 아니�
    transaction과 review/promote 전체 안정화는 해당 reference 소유 항목에서 다시 본다.
    다음 단일 항목은 `core/parse/`이고 그 완료 전 기존 core 무음 대체 6건으로 넘어가지
    않는다. 따라서 L0-10만 완료이며 **L0 전체는 미달**이다.
+
+### L0-11 DART viewer parser residency와 HTML evidence 경계
+
+**상태: 완료.** `core/parse/`를 없애고 DART 전용 parser와 provider 독립 표 renderer의
+owner를 분리했다. 이 판정은 DART viewer와 공용 표 변환 경계만 닫았다는 뜻이며 gather
+전체 HTTP 수집을 완료했다는 뜻은 아니다.
+
+1. **범위와 호출자.** `core/parse/dartViewerPage.py`의 실제 생산 호출자는
+   `gather/dart/viewer.py` 한 곳뿐이었고 stable/public 호출자는 0이었다. 주석이 주장한
+   providers caller는 존재하지 않았다. `tableToMarkdown`만 EDGAR docs에 거의 같은
+   구현이 있었고, DART index의 node/viewDoc 해석은 KR viewer 전용이었다. 따라서 DART
+   parser는 `gather/dart/viewerPage.py`, 공용 표 grid는 `core/htmlMarkdown.py`가
+   owner다. 기존 `core/render.py`와 이름이 충돌하는 package 안은 교차 검토에서
+   차단했고 top-level 단일 모듈로 확정했다.
+2. **실제 결함 재현.** 필드가 일부만 있는 node와 double-quote `viewDoc`는 둘 다
+   `[]`로 사라졌다. node 응답 접수번호와 요청 접수번호 불일치도 검사하지 않았다.
+   viewer URL은 HTTP였고, 중첩 표는 내부 행과 cell을 다시 읽어 중복 출력했으며
+   `colspan=5000`을 그대로 materialize했다. inline text는 단어가 붙었다.
+   `limit=1`도 index 뒤 모든 section을 fetch한 후 한 행만 잘랐고, `docMeta`도 모든
+   본문을 받은 뒤 height만 읽었다. index 오류는 `DocumentNotFoundError`로 오분류되고
+   section 오류는 warning 후 continue, 50자 미만 본문은 무음 삭제됐다. 깨진 decoding도
+   replacement 문자로 진행했다.
+3. **owner와 SSOT.** node/viewDoc tokenizer, 접수번호 검증, URL 조립, DART HTML 정제는
+   gather DART 소유로 이동했다. span 확장, 중첩 행 제외, pipe escape, 256열과 100만
+   cell 안전 한계는 `core/htmlMarkdown.py` 한 곳이 소유하며 BeautifulSoup와 lxml은
+   같은 grid renderer에 연결되는 얇은 adapter만 가진다. EDGAR는 iXBRL 정제 정책을
+   그대로 유지하면서 공용 BeautifulSoup adapter를 사용한다. 옛 core import shim은
+   stable caller가 없어 만들지 않았다.
+4. **근본 수정.** bounded assignment tokenizer가 node1/node2 순서와 single-quote,
+   double-quote, escape를 처리한다. 구조 흔적이 있는데 필드가 없거나 중복되고, node가
+   충돌하거나 접수번호가 다르면 `ViewerPageParseError`로 즉시 실패한다. URL은 HTTPS와
+   `urlencode`로 조립한다. 표는 rowspan과 colspan을 bounded grid로 만들고 중첩 행을
+   한 번만 읽는다. DART section은 lxml tree로 변환한다. index와 section의
+   `SourceUnavailableError`를 원형 전파하고, 빈 section은 title, order, URL이 있는
+   typed error로 실패시킨다. 짧은 정상 본문은 보존한다. `limit`은 section GET 전에
+   자르고 `docMeta`는 index 한 번만 읽는다. 자체 생성 client는 성공과 실패 모두 닫는다.
+5. **공개 행동, 정확성, 속도, 메모리.** 2026-05-15 삼성전자 분기보고서
+   `20260515002181`의 105,493-byte index를 58개 section으로 안정적으로 해석했고 URL
+   전부가 HTTPS였다. 최대 section은 HTTP 1,249,851 bytes였고 정규 text 224,990자를
+   만들었다. 옛 중첩 표 중복 출력은 3,085,996자였으므로 13.7배 팽창을 제거했다.
+   대형 section 변환 median은 `2.1504 s`에서 `0.6625 s`로 약 3.25배 빨라졌고 Python
+   추적 peak는 `42.8183 MiB`에서 `1.9963 MiB`로 약 21.4배 줄었다. index parser는
+   median `4.8141 ms`, p95 `6.6446 ms`였다. 같은 58-section 문서에서 `limit=1`의
+   요청 수는 59회에서 2회, `docMeta`는 59회에서 1회가 된다.
+6. **Guard와 회귀.** public gather axis, DART facade/viewer, 공용 표, EDGAR docs와
+   기존 EDGAR HTML golden을 포함한 광범위 회귀 `163 passed`, mirror 분리 뒤 최종
+   focused 회귀 `63 passed`다. 새 모듈 Pyright 0 errors, Ruff, formatter, Bandit,
+   docstring 4-section과 gather 9-section, 변경 파일 silent-fail, diff whitespace가
+   통과했다. `core.parse` stale import는 0이며 `coreBoundary`도 위반 0이다. 공식 Guard는
+   1,767파일, 7/7 규칙과 cycle, architecture, folder mirror, gather 8/8,
+   provider 11/11, public API 여섯 외부 gate를 모두 통과했다.
+7. **남은 부채와 판정.** 전체 문서의 `limit=None`은 DART rate policy 아래 section을
+   순차 fetch한다. 병렬화와 retry 비용은 L1 gather 전체 순서에서 실측한다. 광범위 EDGAR
+   foundation 파일의 별도 21실패는 누락 fixture, 삭제된 experiment, 기존 API 불일치로
+   재현됐으며 이번 표 golden 두 건은 통과했다. 전역 folderSize는 기존
+   `core/_entries` over-split 한 건을 별도로 보고하므로 숨기지 않고 L0 잔여 판정에
+   보존한다. 다음 단일 항목은 core 무음 대체 baseline 6건이다. 따라서 L0-11만 완료이며
+   **L0 전체는 미달**이다.
 
 ## 정량 판정 (2026-07-27 실측)
 

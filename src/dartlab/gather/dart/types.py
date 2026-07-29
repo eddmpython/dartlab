@@ -13,10 +13,14 @@ class InvalidRceptNoError(DartDocError):
     """rcept_no 형식이 잘못된 경우 (14자리 숫자 아님)."""
 
 
+class ViewerPageParseError(DartDocError):
+    """viewer index 또는 section HTML 구조가 손상된 경우."""
+
+
 class DocumentNotFoundError(DartDocError):
     """rcept_no 가 존재하지만 viewer 가 sub-doc 을 반환하지 않은 경우.
 
-    비공개 공시 (정정 전 원본) · 잘못된 번호 · viewer 페이지 형식 변경 등이 원인.
+    비공개 공시 (정정 전 원본) 또는 잘못된 번호가 원인.
     """
 
 

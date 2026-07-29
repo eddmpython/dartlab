@@ -4,7 +4,6 @@
     "src/dartlab/ai/agents",
     "src/dartlab/ai/lenses",
     "src/dartlab/cli/services",
-    "src/dartlab/core/parse",
     "src/dartlab/credit/models",
     "src/dartlab/dataHub/remote",
     "src/dartlab/dataHub/transport",

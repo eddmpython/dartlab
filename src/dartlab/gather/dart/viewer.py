@@ -20,29 +20,27 @@ untrusted 본문:
 
 from __future__ import annotations
 
-import asyncio
-import logging
 import re
 
 import polars as pl
 
-from dartlab.core.parse.dartViewerPage import DART_MAIN_BASE, htmlToText, parseSubDocs
-
 from ..infra.http import GatherHttpClient, runAsync
-from .types import DartDocMeta, DocumentNotFoundError, InvalidRceptNoError
-
-# DART viewer 페이지 파서는 L0 core 공유 자산 — providers/dart/openapi/collector 와
-# 본 모듈이 동시에 import 해도 cross 없음.
-
-log = logging.getLogger(__name__)
+from .types import DartDocMeta, DocumentNotFoundError, InvalidRceptNoError, ViewerPageParseError
+from .viewerPage import DART_MAIN_BASE, ViewerSubDocument, htmlToText, parseSubDocs
 
 _RCEPT_NO_RE = re.compile(r"^\d{14}$")
-_MIN_TEXT_LENGTH = 50
 
 
 def _validateRceptNo(rceptNo: str) -> None:
     if not _RCEPT_NO_RE.fullmatch(rceptNo):
         raise InvalidRceptNoError(f"rcept_no 는 14자리 숫자: {rceptNo!r}")
+
+
+def _validateLimit(limit: int | None) -> None:
+    if limit is None:
+        return
+    if isinstance(limit, bool) or not isinstance(limit, int) or limit <= 0:
+        raise ValueError(f"limit은 양의 정수 또는 None이어야 합니다: {limit!r}")
 
 
 def _decodeKorean(resp) -> str:
@@ -52,12 +50,25 @@ def _decodeKorean(resp) -> str:
     케이스가 있다. httpx 가 utf-8 으로 가정해 깨지는 경우 euc-kr 강제 재해석.
     """
     text = resp.text
-    if "�" in text or "<title>" not in text.lower():
-        try:
-            return resp.content.decode("euc-kr", errors="replace")
-        except (UnicodeDecodeError, AttributeError):
-            return text
+    if "�" in text:
+        lastError: UnicodeDecodeError | None = None
+        raw = resp.content
+        for encoding in ("utf-8", "cp949", "euc-kr"):
+            try:
+                return raw.decode(encoding)
+            except UnicodeDecodeError as exc:
+                lastError = exc
+        raise ViewerPageParseError("DART viewer 응답을 UTF-8 또는 한국어 인코딩으로 해석하지 못했습니다") from lastError
     return text
+
+
+async def _loadSubDocs(client: GatherHttpClient, rceptNo: str) -> list[ViewerSubDocument]:
+    indexUrl = f"{DART_MAIN_BASE}?rcpNo={rceptNo}"
+    indexResponse = await client.get(indexUrl)
+    subDocs = parseSubDocs(_decodeKorean(indexResponse), rceptNo)
+    if not subDocs:
+        raise DocumentNotFoundError(f"rcept_no {rceptNo} 에 sub-doc 없음 (비공개 공시 또는 잘못된 번호)")
+    return subDocs
 
 
 async def fetchAsync(
@@ -104,53 +115,44 @@ async def fetchAsync(
         rceptNo 가 14자리 숫자 아님.
     DocumentNotFoundError
         viewer 가 sub-doc 을 반환하지 않음 (비공개 / 잘못된 번호).
+    ViewerPageParseError
+        viewer index 구조가 손상됐거나 요청 접수번호와 응답이 다름.
+    SourceUnavailableError
+        index 또는 section HTTP 요청이 실패함.
 
     Example
     -------
     >>> df = await fetchAsync("20240315000123")
     """
     _validateRceptNo(rceptNo)
+    _validateLimit(limit)
 
     ownClient = client is None
     if client is None:
         client = GatherHttpClient()
 
     try:
-        indexUrl = f"{DART_MAIN_BASE}?rcpNo={rceptNo}"
-        try:
-            indexResp = await client.get(indexUrl)
-        except Exception as exc:  # noqa: BLE001 — gather infra raise SourceUnavailable etc.
-            raise DocumentNotFoundError(f"viewer 인덱스 fetch 실패 ({rceptNo}): {exc}") from exc
-
-        subDocs = parseSubDocs(_decodeKorean(indexResp), rceptNo)
-        if not subDocs:
-            raise DocumentNotFoundError(f"rcept_no {rceptNo} 에 sub-doc 없음 (비공개 공시 또는 잘못된 번호)")
+        subDocs = await _loadSubDocs(client, rceptNo)
+        if limit is not None:
+            subDocs = subDocs[:limit]
 
         rows: list[dict] = []
-        for sd in subDocs:
-            try:
-                sectionResp = await client.get(sd["url"])
-            except Exception as exc:  # noqa: BLE001 — partial 실패 허용
-                log.warning("섹션 fetch 실패 (%s, %s): %s", rceptNo, sd["title"], exc)
-                continue
-            html = _decodeKorean(sectionResp)
-            text = htmlToText(html)
-            if len(text.strip()) < _MIN_TEXT_LENGTH:
-                continue
+        for subDoc in subDocs:
+            sectionResponse = await client.get(subDoc.url)
+            text = htmlToText(_decodeKorean(sectionResponse))
+            if not text:
+                raise ViewerPageParseError(
+                    f"viewer section 본문이 비었습니다: rceptNo={rceptNo}, "
+                    f"order={subDoc.order}, title={subDoc.title!r}, url={subDoc.url}"
+                )
             rows.append(
                 {
-                    "section_order": sd["order"],
-                    "title": sd["title"],
-                    "url": sd["url"],
+                    "section_order": subDoc.order,
+                    "title": subDoc.title,
+                    "url": subDoc.url,
                     "text": text,
                 }
             )
-
-        if not rows:
-            raise DocumentNotFoundError(f"rcept_no {rceptNo} 의 모든 섹션이 빈 응답 또는 fetch 실패")
-
-        if limit is not None and limit > 0:
-            rows = rows[:limit]
 
         return pl.DataFrame(rows).with_columns(
             pl.col("section_order").cast(pl.Int64),
@@ -212,14 +214,36 @@ def fetch(
     return runAsync(fetchAsync(rceptNo, limit=limit))
 
 
-def docMeta(rceptNo: str, *, client: GatherHttpClient | None = None) -> DartDocMeta:
-    """viewer fetch + 메타 요약 (sectionCount 만 필요할 때).
+async def _docMetaAsync(
+    rceptNo: str,
+    *,
+    client: GatherHttpClient | None = None,
+) -> DartDocMeta:
+    _validateRceptNo(rceptNo)
+    ownClient = client is None
+    if client is None:
+        client = GatherHttpClient()
 
-    Capabilities: rcept_no → 본문 fetch → sectionCount + indexUrl 메타 추출.
+    try:
+        subDocs = await _loadSubDocs(client, rceptNo)
+        return DartDocMeta(
+            rceptNo=rceptNo,
+            indexUrl=f"{DART_MAIN_BASE}?rcpNo={rceptNo}",
+            sectionCount=len(subDocs),
+        )
+    finally:
+        if ownClient:
+            await client.close()
+
+
+def docMeta(rceptNo: str, *, client: GatherHttpClient | None = None) -> DartDocMeta:
+    """viewer index fetch + 메타 요약.
+
+    Capabilities: rcept_no → index 한 번 fetch → sectionCount + indexUrl 메타 추출.
     AIContext: 공시 인덱싱 / staleness 검증 / size 사전 확인 진입.
-    Guide: 본문 fetch 비용 그대로 — 본문도 필요하면 fetch() 사용.
+    Guide: section 본문은 내려받지 않는다. 본문도 필요하면 fetch()를 사용한다.
     When: 공시 size/sectionCount 만 필요한 가벼운 메타 조회 시.
-    How: fetch(rceptNo) → DataFrame.height → DartDocMeta 패킹.
+    How: parseSubDocs(index HTML) → len → DartDocMeta 패킹.
 
     Args:
         rceptNo: 14자리 접수번호.
@@ -231,24 +255,17 @@ def docMeta(rceptNo: str, *, client: GatherHttpClient | None = None) -> DartDocM
     Raises:
         InvalidRceptNoError: rceptNo 가 14자리 숫자 아님.
         DocumentNotFoundError: viewer 가 sub-doc 을 반환하지 않음.
+        ViewerPageParseError: viewer index 구조가 손상됨.
+        SourceUnavailableError: index HTTP 요청이 실패함.
 
     Requires:
-        fetch 의 요구사항 (네트워크 + GatherHttpClient).
+        네트워크와 GatherHttpClient.
 
     Example:
         >>> m = docMeta("20240315000123")
 
     See Also:
-        fetch : 본 함수가 내부 호출 — 본문까지 추출.
+        fetch : 같은 index 경계에서 section 본문까지 추출.
         facade.Dart.meta : 클래스 facade 진입점.
     """
-    df = fetch(rceptNo, client=client)
-    return DartDocMeta(
-        rceptNo=rceptNo,
-        indexUrl=f"{DART_MAIN_BASE}?rcpNo={rceptNo}",
-        sectionCount=df.height,
-    )
-
-
-# fetchAsync 가 사용 안 하는 import 제거 방어
-_ = asyncio
+    return runAsync(_docMetaAsync(rceptNo, client=client))

@@ -12,7 +12,7 @@ untrusted 본문:
     viewer 본문은 외부 1차 출처지만 호출자가 외부 untrusted 마커로 감싸는 책임.
 
 NOTE: facade/viewer/types 는 lazy ``__getattr__`` 노출 — client/keys/콜렉터 서브모듈
-import 시 무거운 viewer 로딩 + 순환 import(facade↔infra↔core.parse) 회피. client/keys/
+import 시 무거운 viewer 로딩과 facade/infra 순환 import를 회피. client/keys/
 콜렉터(allFilingsCollector/batch 등)는 서브모듈로 직접 import 한다.
 """
 
@@ -24,7 +24,7 @@ from dartlab.core.pluginDiscovery import lazyAttribute
 
 if TYPE_CHECKING:
     from .facade import Dart
-    from .types import DartDocError, DartDocMeta, DocumentNotFoundError, InvalidRceptNoError
+    from .types import DartDocError, DartDocMeta, DocumentNotFoundError, InvalidRceptNoError, ViewerPageParseError
     from .viewer import docMeta, fetch, fetchAsync
 
 __all__ = [
@@ -33,6 +33,7 @@ __all__ = [
     "DartDocMeta",
     "DocumentNotFoundError",
     "InvalidRceptNoError",
+    "ViewerPageParseError",
     "docMeta",
     "fetch",
     "fetchAsync",
@@ -44,6 +45,7 @@ _LAZY: dict[str, str] = {
     "DartDocMeta": "dartlab.gather.dart.types",
     "DocumentNotFoundError": "dartlab.gather.dart.types",
     "InvalidRceptNoError": "dartlab.gather.dart.types",
+    "ViewerPageParseError": "dartlab.gather.dart.types",
     "docMeta": "dartlab.gather.dart.viewer",
     "fetch": "dartlab.gather.dart.viewer",
     "fetchAsync": "dartlab.gather.dart.viewer",

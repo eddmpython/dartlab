@@ -10,79 +10,51 @@ import pytest
 pytestmark = pytest.mark.unit
 
 
-# ══════════════════════════════════════
-# _viewerParse 공용 헬퍼 — providers/dart 측
-# ══════════════════════════════════════
+def _nodeRecord(
+    *,
+    node: str = "node1",
+    title: str = "1. 회사의 개요",
+    rceptNo: str = "20240315000123",
+    dcmNo: str = "9999999",
+    eleId: str = "1",
+    offset: str = "0",
+    length: str = "12345",
+    dtd: str = "dart4.xsd",
+) -> str:
+    return "\n".join(
+        [
+            f" {node}['text'] = \"{title}\";",
+            f" {node}['dtd'] = \"{dtd}\";",
+            f" {node}['length'] = \"{length}\";",
+            f" {node}['offset'] = \"{offset}\";",
+            f" {node}['eleId'] = \"{eleId}\";",
+            f" {node}['dcmNo'] = \"{dcmNo}\";",
+            f" {node}['rcpNo'] = \"{rceptNo}\";",
+        ]
+    )
 
 
-class TestViewerParseHelpers:
-    """providers/dart/_viewerParse 의 4 헬퍼 + 2 정규식 단위 테스트."""
+class _Response:
+    def __init__(self, text: str) -> None:
+        self.text = text
+        self.content = text.encode("utf-8")
 
-    def test_tableToMarkdown_simple_table(self):
-        from bs4 import BeautifulSoup
 
-        from dartlab.core.parse.dartViewerPage import tableToMarkdown
+class _StubClient:
+    def __init__(self, responses: list[str | Exception]) -> None:
+        self.responses = list(responses)
+        self.urls: list[str] = []
+        self.closed = False
 
-        html = "<table><tr><th>회사명</th><th>코드</th></tr><tr><td>삼성</td><td>005930</td></tr></table>"
-        table = BeautifulSoup(html, "lxml").find("table")
-        md = tableToMarkdown(table)
-        assert "| 회사명 | 코드 |" in md
-        assert "| --- | --- |" in md
-        assert "| 삼성 | 005930 |" in md
+    async def get(self, url: str):
+        self.urls.append(url)
+        response = self.responses.pop(0)
+        if isinstance(response, Exception):
+            raise response
+        return _Response(response)
 
-    def test_tableToMarkdown_empty_returns_empty(self):
-        from bs4 import BeautifulSoup
-
-        from dartlab.core.parse.dartViewerPage import tableToMarkdown
-
-        table = BeautifulSoup("<table></table>", "lxml").find("table")
-        assert tableToMarkdown(table) == ""
-
-    def test_htmlToText_preserves_table_markdown(self):
-        from dartlab.core.parse.dartViewerPage import htmlToText
-
-        html = "<p>단락 1</p><table><tr><th>A</th><th>B</th></tr><tr><td>1</td><td>2</td></tr></table><p>단락 2</p>"
-        text = htmlToText(html)
-        assert "단락 1" in text
-        assert "단락 2" in text
-        assert "| A | B |" in text
-
-    def test_htmlToText_strips_script_style(self):
-        from dartlab.core.parse.dartViewerPage import htmlToText
-
-        html = "<script>alert(1)</script><style>p{color:red}</style><p>본문</p>"
-        text = htmlToText(html)
-        assert "본문" in text
-        assert "alert" not in text
-        assert "color" not in text
-
-    def test_parseSubDocs_multi_page(self):
-        from dartlab.core.parse.dartViewerPage import parseSubDocs
-
-        # MULTI_PAGE_RE 가 매칭되는 viewer 페이지 인덱스 구조 mock
-        content = (
-            " node1['text'] = \"1. 회사의 개요\";\n"
-            " node1['id'] = \"01\";\n"
-            " node1['rcpNo'] = \"20240315000123\";\n"
-            " node1['dcmNo'] = \"9999999\";\n"
-            " node1['eleId'] = \"0\";\n"
-            " node1['offset'] = \"0\";\n"
-            " node1['length'] = \"12345\";\n"
-            " node1['dtd'] = \"dart3.xsd\";\n"
-            " node1['tocNo'] = \"01\";\n"
-        )
-        result = parseSubDocs(content, "20240315000123")
-        assert len(result) == 1
-        assert result[0]["title"] == "1. 회사의 개요"
-        assert result[0]["order"] == 0
-        assert result[0]["rcept_no"] == "20240315000123"
-        assert "rcpNo=20240315000123" in result[0]["url"]
-        assert "report/viewer.do" in result[0]["url"]
-
-    def test_parseSubDocs_empty_when_no_match(self):
-        from dartlab.core.parse.dartViewerPage import parseSubDocs
-
-        assert parseSubDocs("<html><body>no nodes</body></html>", "20240315000123") == []
+    async def close(self) -> None:
+        self.closed = True
 
 
 # ══════════════════════════════════════
@@ -120,6 +92,162 @@ class TestRceptNoValidation:
             _validateRceptNo("123456789012345")
 
 
+class TestViewerFetchBoundary:
+    """index parse와 section fetch의 요청 수 및 오류 투명성."""
+
+    def test_decodeKorean_uses_strict_cp949_fallback(self):
+        from dartlab.gather.dart.viewer import _decodeKorean
+
+        response = _Response("")
+        response.text = "�"
+        response.content = "본문".encode("cp949")
+        assert _decodeKorean(response) == "본문"
+
+    def test_decodeKorean_rejects_undecodable_bytes(self):
+        from dartlab.gather.dart.types import ViewerPageParseError
+        from dartlab.gather.dart.viewer import _decodeKorean
+
+        response = _Response("")
+        response.text = "�"
+        response.content = b"\xff"
+        with pytest.raises(ViewerPageParseError, match="인코딩"):
+            _decodeKorean(response)
+
+    @pytest.mark.asyncio
+    async def test_limit_slices_before_section_fetch(self):
+        from dartlab.gather.dart.viewer import fetchAsync
+
+        client = _StubClient(
+            [
+                _nodeRecord(title="첫째", eleId="1")
+                + "\n"
+                + _nodeRecord(
+                    node="node2",
+                    title="둘째",
+                    eleId="2",
+                ),
+                "<p>짧음</p>",
+            ]
+        )
+
+        frame = await fetchAsync("20240315000123", client=client, limit=1)
+
+        assert frame.height == 1
+        assert frame["text"].to_list() == ["짧음"]
+        assert len(client.urls) == 2
+        assert "dsaf001/main.do" in client.urls[0]
+        assert "eleId=1" in client.urls[1]
+
+    @pytest.mark.asyncio
+    async def test_limit_none_fetches_all_sections(self):
+        from dartlab.gather.dart.viewer import fetchAsync
+
+        client = _StubClient(
+            [
+                _nodeRecord(title="첫째", eleId="1")
+                + "\n"
+                + _nodeRecord(
+                    node="node2",
+                    title="둘째",
+                    eleId="2",
+                ),
+                "<p>첫째</p>",
+                "<p>둘째</p>",
+            ]
+        )
+
+        frame = await fetchAsync("20240315000123", client=client)
+
+        assert frame.height == 2
+        assert frame["text"].to_list() == ["첫째", "둘째"]
+        assert len(client.urls) == 3
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("limit", [0, -1, True, 1.5])
+    async def test_invalid_limit_fails_before_http(self, limit):
+        from dartlab.gather.dart.viewer import fetchAsync
+
+        client = _StubClient([])
+        with pytest.raises(ValueError, match="limit"):
+            await fetchAsync("20240315000123", client=client, limit=limit)
+        assert client.urls == []
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("failureAt", ["index", "section"])
+    async def test_source_error_propagates_without_partial_frame(self, failureAt: str):
+        from dartlab.gather.dart.viewer import fetchAsync
+        from dartlab.gather.types import SourceUnavailableError
+
+        failure = SourceUnavailableError(f"{failureAt} unavailable")
+        responses: list[str | Exception]
+        if failureAt == "index":
+            responses = [failure]
+        else:
+            responses = [
+                _nodeRecord(title="첫째", eleId="1") + "\n" + _nodeRecord(node="node2", title="둘째", eleId="2"),
+                "<p>첫째</p>",
+                failure,
+            ]
+        client = _StubClient(responses)
+
+        with pytest.raises(SourceUnavailableError, match=failureAt):
+            await fetchAsync("20240315000123", client=client)
+
+    @pytest.mark.asyncio
+    async def test_empty_section_is_typed_parse_error(self):
+        from dartlab.gather.dart.types import ViewerPageParseError
+        from dartlab.gather.dart.viewer import fetchAsync
+
+        client = _StubClient([_nodeRecord(title="빈 본문"), "<html><body></body></html>"])
+        with pytest.raises(ViewerPageParseError, match="빈 본문"):
+            await fetchAsync("20240315000123", client=client)
+
+    @pytest.mark.asyncio
+    async def test_owned_client_closes_on_failure(self, monkeypatch: pytest.MonkeyPatch):
+        from dartlab.gather.dart import viewer
+        from dartlab.gather.types import SourceUnavailableError
+
+        client = _StubClient([SourceUnavailableError("index unavailable")])
+        monkeypatch.setattr(viewer, "GatherHttpClient", lambda: client)
+
+        with pytest.raises(SourceUnavailableError):
+            await viewer.fetchAsync("20240315000123")
+        assert client.closed is True
+
+    def test_docMeta_fetches_only_index(self):
+        from dartlab.gather.dart.viewer import docMeta
+
+        client = _StubClient(
+            [
+                _nodeRecord(title="첫째", eleId="1")
+                + "\n"
+                + _nodeRecord(
+                    node="node2",
+                    title="둘째",
+                    eleId="2",
+                )
+            ]
+        )
+
+        meta = docMeta("20240315000123", client=client)
+
+        assert meta.sectionCount == 2
+        assert len(client.urls) == 1
+        assert "dsaf001/main.do" in client.urls[0]
+
+    @pytest.mark.asyncio
+    async def test_docMeta_owned_client_closes(self, monkeypatch: pytest.MonkeyPatch):
+        from dartlab.gather.dart import viewer
+
+        client = _StubClient([_nodeRecord()])
+        monkeypatch.setattr(viewer, "GatherHttpClient", lambda: client)
+
+        meta = await viewer._docMetaAsync("20240315000123")
+
+        assert meta.sectionCount == 1
+        assert client.closed is True
+
+
 # ══════════════════════════════════════
 # gather/dart/__init__ + GatherEntry 통합
 # ══════════════════════════════════════
@@ -134,6 +262,11 @@ class TestPublicSurface:
         d = Dart()
         assert callable(d.doc)
         assert callable(d.meta)
+
+    def test_viewer_parse_error_is_public(self):
+        from dartlab.gather.dart import DartDocError, ViewerPageParseError
+
+        assert issubclass(ViewerPageParseError, DartDocError)
 
     def test_gather_entry_axis_registered(self):
         from dartlab.gather.entry import API_KEY_INFO, AXIS_REGISTRY

@@ -10,8 +10,10 @@ import time
 import warnings
 
 import httpx
-from bs4 import BeautifulSoup, NavigableString, XMLParsedAsHTMLWarning
+from bs4 import BeautifulSoup, XMLParsedAsHTMLWarning
+from bs4.element import NavigableString
 
+from dartlab.core.htmlMarkdown import tableToMarkdown as _tableToMarkdown
 from dartlab.gather.edgar.docs._const import HEADERS, REQUEST_INTERVAL
 
 warnings.filterwarnings("ignore", category=XMLParsedAsHTMLWarning)
@@ -150,37 +152,6 @@ def _split40FPrimaryText(text: str) -> list[dict]:
             }
         )
     return sections
-
-
-def _tableToMarkdown(table) -> str:
-    rows = []
-    for tr in table.find_all("tr"):
-        cells = []
-        for cell in tr.find_all(["td", "th"]):
-            colspan = int(cell.get("colspan", 1))
-            text = cell.get_text(" ", strip=True)
-            text = re.sub(r"\s+", " ", text)
-            text = text.replace("|", "｜")
-            cells.append(text)
-            for _ in range(colspan - 1):
-                cells.append("")
-        if cells and any(cell.strip() for cell in cells):
-            rows.append(cells)
-
-    if not rows:
-        return ""
-
-    maxCols = max(len(r) for r in rows)
-    for row in rows:
-        while len(row) < maxCols:
-            row.append("")
-
-    lines = []
-    lines.append("| " + " | ".join(rows[0]) + " |")
-    lines.append("| " + " | ".join(["---"] * maxCols) + " |")
-    for row in rows[1:]:
-        lines.append("| " + " | ".join(row) + " |")
-    return "\n".join(lines)
 
 
 def _extractItemHeaders(soup) -> None:
