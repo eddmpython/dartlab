@@ -20,7 +20,7 @@ tqdm 의 강점(어디서나 표시·iterable 한 줄 감싸기)을 흡수한다
 from __future__ import annotations
 
 import sys
-from collections.abc import Iterable, Iterator
+from collections.abc import Iterable, Iterator, Sized
 from contextlib import contextmanager
 from typing import Any
 
@@ -175,11 +175,8 @@ def track(iterable: Iterable, *, desc: str = "진행", total: int | None = None,
         for no, name in track(selected, desc="테마"):
             await fetchStocks(no)
     """
-    if total is None:
-        try:
-            total = len(iterable)  # type: ignore[arg-type]
-        except TypeError:
-            total = None
+    if total is None and isinstance(iterable, Sized):
+        total = len(iterable)
     with progressBar(total, desc=desc, detailed=detailed) as p:
         for item in iterable:
             yield item

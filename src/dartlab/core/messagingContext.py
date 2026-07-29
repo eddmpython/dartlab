@@ -48,7 +48,7 @@ class Context:
         Instance exposing ``hasDartKey`` and ``verbose`` properties.
 
     Raises:
-        Import errors from optional credential/config paths are handled by properties.
+        Credential 또는 config 내부 오류를 원인 그대로 전파한다.
 
     Example:
         >>> c = Context()
@@ -70,7 +70,7 @@ class Context:
                 ``True`` when the credential registry reports a configured DART key.
 
         Raises:
-            No public exception; missing credential provider import is treated as ``False``.
+            Credential registry import 또는 provider check 오류를 원인 그대로 전파한다.
         Requires:
             선택적으로 ``dartlab.core.credentials``가 import 가능하면 credential registry를 확인한다.
 
@@ -79,13 +79,10 @@ class Context:
                 True
         """
         if self._dart_key is None:
-            try:
-                from dartlab.core.credentials import getCredentialProvider
+            from dartlab.core.credentials import getCredentialProvider
 
-                provider = getCredentialProvider("dart_api_key")
-                self._dart_key = bool(provider and provider.check().configured)
-            except ImportError:
-                self._dart_key = False
+            provider = getCredentialProvider("dart_api_key")
+            self._dart_key = bool(provider and provider.check().configured)
         return self._dart_key
 
     @property

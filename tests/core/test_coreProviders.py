@@ -135,6 +135,52 @@ def test_credentialManager_reads_ai_secret_through_provider_id(tmp_path: Path, m
     assert loads == 2  # 전체 key index 1회 + 실제 존재하는 openai 값 복호화 1회
 
 
+def test_credentialManager_snapshotUsesInstalledVersion(monkeypatch: pytest.MonkeyPatch) -> None:
+    """설치 metadata가 있으면 snapshot version으로 그대로 사용한다."""
+    import dartlab.core.credentials as credentials
+    from dartlab.core.credentials import CredentialManager, CredentialStatus
+
+    manager = CredentialManager()
+    dartStatus = CredentialStatus(name="dart_api_key", configured=False, source="none")
+    monkeypatch.setattr(
+        credentials, "distributions", lambda **_kwargs: iter([type("Dist", (), {"version": "1.2.3"})()])
+    )
+    monkeypatch.setattr(manager, "getCredential", lambda _name: dartStatus)
+    monkeypatch.setattr(manager, "_checkAiProviders", lambda: {})
+    monkeypatch.setattr(manager, "_getDefaultProvider", lambda: None)
+
+    assert manager.snapshot().version == "1.2.3"
+
+
+def test_credentialManager_snapshotMarksMissingMetadataUnknown(monkeypatch: pytest.MonkeyPatch) -> None:
+    """source 실행처럼 배포 metadata가 없는 정상 상태는 unknown으로 명시한다."""
+    import dartlab.core.credentials as credentials
+    from dartlab.core.credentials import CredentialManager, CredentialStatus
+
+    manager = CredentialManager()
+    dartStatus = CredentialStatus(name="dart_api_key", configured=False, source="none")
+    monkeypatch.setattr(credentials, "distributions", lambda **_kwargs: iter(()))
+    monkeypatch.setattr(manager, "getCredential", lambda _name: dartStatus)
+    monkeypatch.setattr(manager, "_checkAiProviders", lambda: {})
+    monkeypatch.setattr(manager, "_getDefaultProvider", lambda: None)
+
+    assert manager.snapshot().version == "unknown"
+
+
+def test_credentialManager_snapshotPropagatesMetadataFailure(monkeypatch: pytest.MonkeyPatch) -> None:
+    """정상적인 배포 metadata 부재 외의 조회 오류는 원인 그대로 전파한다."""
+    import dartlab.core.credentials as credentials
+    from dartlab.core.credentials import CredentialManager
+
+    def failDistributions(**_kwargs):
+        raise RuntimeError("simulated metadata failure")
+
+    monkeypatch.setattr(credentials, "distributions", failDistributions)
+
+    with pytest.raises(RuntimeError, match="simulated metadata failure"):
+        CredentialManager().snapshot()
+
+
 def test_getDefaultProviderMissingProfile(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     """ai_profile.json 미존재 → None (loud-fail 아닌 silent return)."""
     monkeypatch.setenv("DARTLAB_HOME", str(tmp_path))

@@ -38,8 +38,73 @@ from __future__ import annotations
 import datetime as dt
 import json
 import os
+import stat
+from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
+
+from dartlab.core.logger import logEvent
+
+
+class LineageReadError(RuntimeError):
+    """lineage 저장소를 완전하게 읽거나 검증하지 못한 경우."""
+
+    def __init__(self, message: str, *, path: Path, lineNumber: int | None = None) -> None:
+        location = f"{path}:{lineNumber}" if lineNumber is not None else str(path)
+        super().__init__(f"{message}: {location}")
+        self.path = path
+        self.lineNumber = lineNumber
+
+
+def _parseRecordedAt(value: object) -> dt.datetime:
+    if not isinstance(value, str) or not value.strip():
+        raise TypeError("recordedAt must be a non-empty string")
+    recorded = dt.datetime.fromisoformat(value.replace("Z", "+00:00"))
+    if recorded.tzinfo is None or recorded.utcoffset() is None:
+        raise ValueError("recordedAt must include a timezone")
+    return recorded
+
+
+def _lineageFiles(baseDir: Path) -> list[Path]:
+    try:
+        directoryStat = baseDir.stat()
+    except FileNotFoundError:
+        return []
+    except OSError as exc:
+        raise LineageReadError("lineage 디렉터리 접근 실패", path=baseDir) from exc
+    if not stat.S_ISDIR(directoryStat.st_mode):
+        raise LineageReadError("lineage 경로가 디렉터리가 아닙니다", path=baseDir)
+    try:
+        return sorted(baseDir.glob("*.jsonl"))
+    except OSError as exc:
+        raise LineageReadError("lineage 파일 목록 조회 실패", path=baseDir) from exc
+
+
+def _parseLineageRecord(line: str, *, path: Path, lineNumber: int) -> tuple[dt.datetime, dict[str, Any]]:
+    try:
+        record = json.loads(line)
+    except json.JSONDecodeError as exc:
+        raise LineageReadError("lineage JSON 파싱 실패", path=path, lineNumber=lineNumber) from exc
+    if not isinstance(record, dict):
+        raise LineageReadError("lineage record가 object가 아닙니다", path=path, lineNumber=lineNumber)
+    try:
+        recorded = _parseRecordedAt(record.get("recordedAt"))
+    except (TypeError, ValueError) as exc:
+        raise LineageReadError("lineage recordedAt 파싱 실패", path=path, lineNumber=lineNumber) from exc
+    return recorded, record
+
+
+def _readLineageFile(path: Path) -> Iterator[tuple[dt.datetime, dict[str, Any]]]:
+    try:
+        with path.open(encoding="utf-8") as stream:
+            for lineNumber, line in enumerate(stream, start=1):
+                stripped = line.strip()
+                if stripped:
+                    yield _parseLineageRecord(stripped, path=path, lineNumber=lineNumber)
+    except LineageReadError:
+        raise
+    except (OSError, UnicodeDecodeError) as exc:
+        raise LineageReadError("lineage 파일 읽기 실패", path=path) from exc
 
 
 def _defaultLineageDir() -> Path:
@@ -62,18 +127,13 @@ def _todayFile(baseDir: Path | None = None) -> Path:
 
 def _emitLineageEvent(record: dict[str, Any]) -> None:
     """T1-1 logEvent 통합 — lineage 기록 시 구조화 이벤트 발급."""
-    try:
-        from dartlab.core.logger import logEvent
-
-        logEvent(
-            "info",
-            "data_lineage_recorded",
-            source=record.get("source", ""),
-            version=record.get("version", ""),
-            row_count=record.get("rowCount", -1),
-        )
-    except ImportError:
-        pass
+    logEvent(
+        "info",
+        "data_lineage_recorded",
+        source=record.get("source", ""),
+        version=record.get("version", ""),
+        row_count=record.get("rowCount", -1),
+    )
 
 
 def appendLineage(record: dict[str, Any], *, baseDir: Path | None = None) -> Path:
@@ -109,8 +169,13 @@ def appendLineage(record: dict[str, Any], *, baseDir: Path | None = None) -> Pat
 
     Raises:
         OSError: 디스크 쓰기 실패.
+        ValueError: 명시한 recordedAt이 timezone-aware ISO datetime이 아닌 경우.
     """
     record = {"recordedAt": dt.datetime.now(dt.UTC).isoformat(), **record}
+    try:
+        _parseRecordedAt(record["recordedAt"])
+    except (TypeError, ValueError) as exc:
+        raise ValueError("recordedAt must be a timezone-aware ISO datetime") from exc
     filePath = _todayFile(baseDir)
     filePath.parent.mkdir(parents=True, exist_ok=True)
     with filePath.open("a", encoding="utf-8") as fh:
@@ -229,37 +294,26 @@ def readLineage(
         T7-2 데이터 거버넌스 트랙. metrics workflow 통합.
 
     Raises:
-        없음 — invalid jsonl line silent skip.
+        TypeError: sinceDays가 정수가 아닌 경우.
+        ValueError: sinceDays가 음수인 경우.
+        LineageReadError: lineage 경로, 파일, JSON 또는 timestamp가 손상된 경우.
     """
-    baseDir = baseDir or _defaultLineageDir()
-    if not baseDir.is_dir():
-        return []
+    if isinstance(sinceDays, bool) or not isinstance(sinceDays, int):
+        raise TypeError("sinceDays must be an integer")
+    if sinceDays < 0:
+        raise ValueError("sinceDays must be greater than or equal to zero")
+    resolvedBaseDir = baseDir or _defaultLineageDir()
     cutoff = dt.datetime.now(dt.UTC) - dt.timedelta(days=sinceDays)
-    records: list[dict[str, Any]] = []
-    for jsonlFile in sorted(baseDir.glob("*.jsonl")):
-        try:
-            with jsonlFile.open(encoding="utf-8") as fh:
-                for line in fh:
-                    line = line.strip()
-                    if not line:
-                        continue
-                    try:
-                        rec = json.loads(line)
-                    except json.JSONDecodeError:
-                        continue
-                    try:
-                        recorded = dt.datetime.fromisoformat(rec["recordedAt"].replace("Z", "+00:00"))
-                    except (KeyError, ValueError):
-                        continue
-                    if recorded < cutoff:
-                        continue
-                    if source and rec.get("source") != source:
-                        continue
-                    records.append(rec)
-        except OSError:
-            continue
-    records.sort(key=lambda r: r.get("recordedAt", ""))
-    return records
+    records: list[tuple[dt.datetime, dict[str, Any]]] = []
+    for jsonlFile in _lineageFiles(resolvedBaseDir):
+        for recorded, record in _readLineageFile(jsonlFile):
+            if recorded < cutoff:
+                continue
+            if source and record.get("source") != source:
+                continue
+            records.append((recorded, record))
+    records.sort(key=lambda item: item[0])
+    return [record for _, record in records]
 
 
-__all__ = ["appendLineage", "recordLineage", "readLineage"]
+__all__ = ["LineageReadError", "appendLineage", "recordLineage", "readLineage"]

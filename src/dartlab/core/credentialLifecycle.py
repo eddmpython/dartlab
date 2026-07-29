@@ -18,9 +18,13 @@ from __future__ import annotations
 
 import datetime as dt
 import json
+import math
 import os
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
+
+from dartlab.core.logger import logEvent
 
 
 def _defaultLifecycleFile() -> Path:
@@ -42,14 +46,71 @@ class CredentialAlert:
     severity: str  # "ok" / "warning" / "critical" / "expired"
 
 
-def _loadLifecycle(path: Path | None = None) -> dict:
-    path = path or _defaultLifecycleFile()
-    if not path.exists():
-        return {}
+class CredentialLifecycleError(RuntimeError):
+    """credential lifecycle 저장소 접근 또는 내용 오류."""
+
+
+class CredentialLifecycleReadError(CredentialLifecycleError):
+    """존재하는 lifecycle 파일을 읽지 못한 경우."""
+
+
+class CredentialLifecycleCorruptError(CredentialLifecycleError):
+    """lifecycle JSON 또는 entry schema가 손상된 경우."""
+
+
+def _corrupt(path: Path, message: str, *, key: str | None = None) -> CredentialLifecycleCorruptError:
+    location = f"{path} [{key}]" if key is not None else str(path)
+    return CredentialLifecycleCorruptError(f"credential lifecycle 손상: {location}: {message}")
+
+
+def _parseStoredExpiry(path: Path, key: str, entry: object) -> dt.datetime:
+    if not isinstance(entry, dict):
+        raise _corrupt(path, "entry가 object가 아닙니다", key=key)
+    expiresAt = entry.get("expiresAt")
+    if not isinstance(expiresAt, str) or not expiresAt.strip():
+        raise _corrupt(path, "expiresAt이 문자열이 아닙니다", key=key)
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return {}
+        expires = dt.datetime.fromisoformat(expiresAt.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise _corrupt(path, "expiresAt이 ISO datetime이 아닙니다", key=key) from exc
+    if expires.tzinfo is None or expires.utcoffset() is None:
+        raise _corrupt(path, "expiresAt에 timezone이 없습니다", key=key)
+    issuedAt = entry.get("issuedAt")
+    if not isinstance(issuedAt, str) or not issuedAt.strip():
+        raise _corrupt(path, "issuedAt이 문자열이 아닙니다", key=key)
+    try:
+        issued = dt.datetime.fromisoformat(issuedAt.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise _corrupt(path, "issuedAt이 ISO datetime이 아닙니다", key=key) from exc
+    if issued.tzinfo is None or issued.utcoffset() is None:
+        raise _corrupt(path, "issuedAt에 timezone이 없습니다", key=key)
+    if issued > expires:
+        raise _corrupt(path, "issuedAt이 expiresAt보다 늦습니다", key=key)
+    return expires
+
+
+def _loadLifecycle(path: Path | None = None) -> tuple[dict[str, dict[str, Any]], dict[str, dt.datetime]]:
+    resolvedPath = path or _defaultLifecycleFile()
+    try:
+        raw = resolvedPath.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        return {}, {}
+    except UnicodeDecodeError as exc:
+        raise _corrupt(resolvedPath, "UTF-8 decoding 실패") from exc
+    except OSError as exc:
+        raise CredentialLifecycleReadError(f"credential lifecycle 읽기 실패: {resolvedPath}") from exc
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise _corrupt(resolvedPath, "JSON 파싱 실패") from exc
+    if not isinstance(data, dict):
+        raise _corrupt(resolvedPath, "root가 object가 아닙니다")
+    expiries: dict[str, dt.datetime] = {}
+    for key, entry in data.items():
+        if not isinstance(key, str):
+            raise _corrupt(resolvedPath, "key가 문자열이 아닙니다")
+        expiries[key] = _parseStoredExpiry(resolvedPath, key, entry)
+    return data, expiries
 
 
 def _saveLifecycle(data: dict, path: Path | None = None) -> None:
@@ -98,13 +159,21 @@ def recordIssuance(
 
     Raises:
         OSError: 디스크 쓰기 실패.
-        ValueError: issuedAt 형식 오류.
+        TypeError: lifetimeDays가 정수가 아닌 경우.
+        ValueError: issuedAt 형식 또는 lifetimeDays 범위 오류.
+        CredentialLifecycleError: 기존 lifecycle 파일이 손상되었거나 읽기 실패한 경우.
     """
+    if isinstance(lifetimeDays, bool) or not isinstance(lifetimeDays, int):
+        raise TypeError("lifetimeDays must be an integer")
+    if lifetimeDays <= 0:
+        raise ValueError("lifetimeDays must be greater than zero")
     issued = issuedAt or dt.datetime.now(dt.UTC).isoformat()
     issuedDt = dt.datetime.fromisoformat(issued.replace("Z", "+00:00"))
+    if issuedDt.tzinfo is None or issuedDt.utcoffset() is None:
+        raise ValueError("issuedAt must include a timezone")
     expires = (issuedDt + dt.timedelta(days=lifetimeDays)).isoformat()
 
-    data = _loadLifecycle(path)
+    data, _ = _loadLifecycle(path)
     data[key] = {
         "issuedAt": issued,
         "expiresAt": expires,
@@ -112,13 +181,7 @@ def recordIssuance(
         "recordedAt": dt.datetime.now(dt.UTC).isoformat(),
     }
     _saveLifecycle(data, path)
-    # T1-1 structured log 발급
-    try:
-        from dartlab.core.logger import logEvent
-
-        logEvent("info", "credential_issuance_recorded", key=key, lifetime_days=lifetimeDays)
-    except ImportError:
-        pass
+    logEvent("info", "credential_issuance_recorded", key=key, lifetime_days=lifetimeDays)
 
 
 def daysUntilExpiry(key: str, *, path: Path | None = None) -> int | None:
@@ -150,15 +213,15 @@ def daysUntilExpiry(key: str, *, path: Path | None = None) -> int | None:
         T2-4 보안 트랙. dashboard / setup CLI 에서 갱신 알람.
 
     Raises:
-        없음 — invalid entry None 반환.
+        CredentialLifecycleError: lifecycle 파일 또는 등록 entry가 손상된 경우.
     """
-    data = _loadLifecycle(path)
+    data, expiries = _loadLifecycle(path)
     entry = data.get(key)
     if not entry:
         return None
-    expires = dt.datetime.fromisoformat(entry["expiresAt"].replace("Z", "+00:00"))
+    expires = expiries[key]
     delta = expires - dt.datetime.now(dt.UTC)
-    return int(delta.total_seconds() / 86400)
+    return math.floor(delta.total_seconds() / 86400)
 
 
 def checkLifecycle(*, thresholdDays: int = 14, path: Path | None = None) -> list[CredentialAlert]:
@@ -194,16 +257,20 @@ def checkLifecycle(*, thresholdDays: int = 14, path: Path | None = None) -> list
         T2-4 보안 트랙. INCIDENTS 자동 알람 통합 후속.
 
     Raises:
-        없음 — invalid entry silent skip.
+        TypeError: thresholdDays가 정수가 아닌 경우.
+        ValueError: thresholdDays가 음수인 경우.
+        CredentialLifecycleError: lifecycle 파일 또는 등록 entry가 손상된 경우.
     """
-    data = _loadLifecycle(path)
+    if isinstance(thresholdDays, bool) or not isinstance(thresholdDays, int):
+        raise TypeError("thresholdDays must be an integer")
+    if thresholdDays < 0:
+        raise ValueError("thresholdDays must be greater than or equal to zero")
+    resolvedPath = path or _defaultLifecycleFile()
+    data, expiries = _loadLifecycle(resolvedPath)
     alerts: list[CredentialAlert] = []
     for key, entry in data.items():
-        try:
-            expires = dt.datetime.fromisoformat(entry["expiresAt"].replace("Z", "+00:00"))
-        except (KeyError, ValueError):
-            continue
-        days = int((expires - dt.datetime.now(dt.UTC)).total_seconds() / 86400)
+        expires = expiries[key]
+        days = math.floor((expires - dt.datetime.now(dt.UTC)).total_seconds() / 86400)
         if days < 0:
             severity = "expired"
         elif days < 3:
@@ -223,22 +290,24 @@ def checkLifecycle(*, thresholdDays: int = 14, path: Path | None = None) -> list
                     severity=severity,
                 )
             )
-    # T1-1 structured log 발급
     if alerts:
-        try:
-            from dartlab.core.logger import logEvent
-
-            for a in alerts:
-                logEvent(
-                    "warning",
-                    "credential_lifecycle_alert",
-                    key=a.key,
-                    severity=a.severity,
-                    days_remaining=a.daysRemaining,
-                )
-        except ImportError:
-            pass
+        for alert in alerts:
+            logEvent(
+                "warning",
+                "credential_lifecycle_alert",
+                key=alert.key,
+                severity=alert.severity,
+                days_remaining=alert.daysRemaining,
+            )
     return alerts
 
 
-__all__ = ["CredentialAlert", "recordIssuance", "daysUntilExpiry", "checkLifecycle"]
+__all__ = [
+    "CredentialAlert",
+    "CredentialLifecycleCorruptError",
+    "CredentialLifecycleError",
+    "CredentialLifecycleReadError",
+    "checkLifecycle",
+    "daysUntilExpiry",
+    "recordIssuance",
+]

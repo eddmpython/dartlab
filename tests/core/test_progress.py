@@ -72,3 +72,30 @@ def test_track_totalFromLenless(monkeypatch):
     monkeypatch.setattr(progress, "_detectEnv", lambda: "terminal")
     gen = (i for i in range(3))
     assert list(progress.track(gen, desc="t")) == [0, 1, 2]
+
+
+def test_track_propagatesBrokenSizedLength():
+    """Sized 구현체 내부의 TypeError를 unsized iterable로 오인하지 않는다."""
+
+    class BrokenLength:
+        def __iter__(self):
+            return iter([1, 2])
+
+        def __len__(self):
+            raise TypeError("broken length")
+
+    with pytest.raises(TypeError, match="broken length"):
+        list(progress.track(BrokenLength(), desc="t"))
+
+
+def test_track_explicitTotalDoesNotInspectLength():
+    """호출자가 total을 주면 iterable의 길이 구현에 의존하지 않는다."""
+
+    class BrokenLength:
+        def __iter__(self):
+            return iter([1, 2])
+
+        def __len__(self):
+            raise TypeError("broken length")
+
+    assert list(progress.track(BrokenLength(), desc="t", total=2)) == [1, 2]

@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
+from importlib.metadata import distributions
 from typing import Protocol, runtime_checkable
 
 from dartlab.core.pluginDiscovery import bootstrap
@@ -189,15 +190,10 @@ class CredentialManager:
             getCredential: 단일 credential 상태 조회.
             saveKey: credential 저장.
         """
-        from importlib.metadata import PackageNotFoundError
-        from importlib.metadata import version as _pkgVersion
-
         from dartlab import config
 
-        try:
-            __version__ = _pkgVersion("dartlab")
-        except PackageNotFoundError:
-            __version__ = "unknown"
+        packageDistribution = next(iter(distributions(name="dartlab")), None)
+        packageVersion = packageDistribution.version if packageDistribution is not None else "unknown"
 
         dartStatus = self.getCredential("dart_api_key")
         aiStatuses = self._checkAiProviders()
@@ -209,7 +205,7 @@ class CredentialManager:
             dartKey=dartStatus,
             aiProviders=aiStatuses,
             aiDefaultProvider=defaultProvider,
-            version=__version__,
+            version=packageVersion,
         )
 
     def getCredential(self, name: str) -> CredentialStatus:

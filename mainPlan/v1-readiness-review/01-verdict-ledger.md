@@ -35,13 +35,12 @@ L4 소비자, ai, mcp. 아래층 결함이 위층 전부를 오염시키므로 �
 ### 세션 인계
 
 - 현재 계층: L0 core
-- 마지막 완료 항목: L0-11 DART viewer parser residency와 HTML evidence 경계
-- 진행 중인 단일 항목: L0-12 core 무음 대체 baseline 6건
-- 다음 첫 행동: `credentialLifecycle.checkLifecycle`, `credentials.snapshot`,
-  `dataAudit.readLineage`, `dataLoader._fetchRemoteEtagAndSize`,
-  `messagingContext.hasDartKey`, `progress.track`의 생산 호출자와 정상 부재 semantic을
-  전수 대조한다. 아직 수정하지 않고 각 함수의 손상 파일, 권한 오류, provider 탐색 실패가
-  빈 값이나 대체값으로 사라지는 제품 행동부터 재현한다. 이번 항목에서는 이 6건만 다룬다.
+- 마지막 완료 항목: L0-12 core 정상 부재와 실패 경계
+- 진행 중인 단일 항목: L0-13 `dataLoader.loadData` orchestration 복잡도
+- 다음 첫 행동: `core/dataLoader.py::loadData`의 모든 직접·간접 호출자, category와
+  runtime별 branch, cache·refresh·download owner, 기존 단위·통합 테스트를 먼저 census한다.
+  아직 수정하지 않고 복잡도 37이 실제 제품 오류, 중복 I/O, 불필요 materialization으로
+  이어지는 행동부터 재현한다. 이번 항목에서는 `loadData` orchestration만 다룬다.
 - 금지: L0 완료 판정 전 L1 이상 감사나 수정 착수
 
 ## L0 순차 안정화 원장 (2026-07-29)
@@ -605,6 +604,70 @@ owner를 분리했다. 이 판정은 DART viewer와 공용 표 변환 경계만 
    `core/_entries` over-split 한 건을 별도로 보고하므로 숨기지 않고 L0 잔여 판정에
    보존한다. 다음 단일 항목은 core 무음 대체 baseline 6건이다. 따라서 L0-11만 완료이며
    **L0 전체는 미달**이다.
+
+### L0-12 core 정상 부재와 실패 경계
+
+**상태: 완료.** core의 실제 무음 대체 6건을 전수 판정해 정상 부재 2건과 제품 실패
+4건을 분리했다. 이 판정은 core 전체 복잡도와 미테스트 공개 표면까지 닫았다는 뜻이
+아니다.
+
+1. **범위와 실제 호출자.** 범위는 `credentialLifecycle.checkLifecycle`,
+   `credentials.snapshot`, `dataAudit.readLineage`,
+   `dataLoader._fetchRemoteEtagAndSize`, `messagingContext.hasDartKey`,
+   `progress.track` 여섯 함수와 lifecycle loader다. `checkLifecycle`,
+   `snapshot`, `readLineage`, `track`은 저장소 안 생산 호출자가 없는 operator/public
+   utility이고, lineage writer는 KRX sync가 사용한다. remote metadata는 freshness,
+   ETag sidecar, 최초 다운로드와 refresh가 소비한다. `hasDartKey`는
+   `messagingFormatting`의 key 유무별 안내 선택을 결정한다. 독립 전문 검토도 같은
+   호출 그래프와 판정에 합의했다.
+2. **제품 결함 재현.** 손상 lifecycle JSON과 손상 lineage line은 각각 `[]`가 됐고,
+   malformed `Content-Length`는 `("same", 0)`으로 바뀌어 ETag가 같으면 손상 파일을
+   fresh로 오판할 수 있었다. 필수 `core.credentials` import 실패도 `False`로 cache돼
+   패키징 오류가 "DART key 없음" 안내가 됐다. 하루 미만 전에 만료된 key는 정수 절삭
+   때문에 expired가 아니었다. 후속 호출자 검토에서는 엄격한 size parser가 ETag-only
+   저장까지 막아 성공한 최초·refresh payload를 삭제할 수 있는 회귀도 구현 완료 전에
+   발견해 차단했다. 반면 배포 metadata 부재의 `unknown`과 길이 없는 iterable의
+   `total=None`은 정상 optional 상태였다.
+3. **owner와 SSOT.** 공통 원칙은 "부재는 데이터, 실패는 제어 흐름"이다. lifecycle
+   loader와 expiry parser가 JSON, UTF-8, root, `issuedAt`, `expiresAt`, timezone,
+   발급·만료 순서를 한 번 검증한다. lineage는 `_parseRecordedAt` 하나를 writer와
+   reader가 공유하고, reader가 file·line 위치를 보존한다. remote HEAD의 HTTPS,
+   Authorization, response close는 `_fetchRemoteHeaders`가 한 번 소유하고 ETag
+   projection과 strict size projection을 분리한다. provider 미등록만 정상 `False`이고
+   내부 import와 check 실패는 원형 전파한다.
+4. **근본 수정과 테스트.** lifecycle 파일 부재만 빈 상태로 두고 read·decode·JSON·entry
+   손상은 `CredentialLifecycleReadError` 또는 `CredentialLifecycleCorruptError`로
+   실패시켰다. `math.floor`로 최근 만료를 `-1/expired`로 고쳤다. lineage 디렉터리
+   부재만 빈 목록이고 파일·UTF-8·JSON·timestamp 손상은 `LineageReadError`로 실패하며
+   부분 목록을 반환하지 않는다. offset이 다른 timestamp도 실제 instant로 정렬하고
+   명시한 historical `recordedAt`은 보존하되 writer에서 먼저 검증한다. 원격 size는
+   ASCII decimal만 허용하고 빈 `X-Linked-Size`는 `Content-Length`로 내려간다. ETag-only
+   저장은 size 오류와 독립시켜 성공 payload를 보존한다. HEAD 응답은 성공·파싱 실패 모두
+   닫고 non-HTTPS URL은 요청 전에 거부한다. snapshot은 conditional distribution 조회,
+   track은 `Sized` protocol로 정상 부재를 예외 없이 표현한다. hasDartKey는 성공한 bool만
+   cache한다.
+5. **공개 행동, 정확성, 속도, 메모리.** 같은 재현은 이제 각각 path·key·line이 있는
+   typed error, strict size `ValueError`, 원형 `ImportError`, broken `__len__`
+   `TypeError`로 끝난다. 최초와 refresh payload 보존, ETag sidecar, explicit
+   recordedAt roundtrip을 회귀로 고정했다. 유효 lineage 20,000건은 median
+   `193.766 ms`, Python 추적 peak `10.770 MiB`; 유효 credential 2,000건은
+   `11.606 ms`, `1.071 MiB`였다. 이전 permissive 구현보다 각각 `66.139 ms`와
+   `2.019 MiB`, `3.767 ms`와 `0.092 MiB`가 늘었으며, fail-closed 검증 비용은
+   lineage record당 약 `3.31 µs`, credential당 약 `1.88 µs`다. file별 임시 목록은
+   만들지 않고 line streaming을 유지한다.
+6. **Guard와 회귀.** core·메시징·Pyodide loader·KRX sync writer까지 직접 소비자
+   회귀 `200 passed`다. 변경 source Pyright 0 errors, Ruff, formatter, Bandit,
+   compileall, camelCase, 변경 파일 silent-fail, diff whitespace가 통과했다.
+   `readLineage` 복잡도는 25에서 11로 낮췄고 core `silentSubstitute` 실제 위반과
+   baseline은 모두 0이다. 전역에는 상위 레이어의 실제 262건과 이미 고쳐졌지만 해당
+   레이어 순서를 기다리는 stale baseline 11건이 남는다. 공식 Guard는 1,767파일,
+   7/7 규칙과 cycle, architecture, folder mirror, gather, provider, public API 여섯
+   외부 gate를 모두 통과했다.
+7. **남은 부채와 판정.** changed-only quality gate는 이번 함수가 아니라 기존
+   `dataLoader.loadData` 복잡도 37 하나로 실패한다. 전역 folderSize의 기존
+   `core/_entries` over-split과 core 미테스트 공개 표면도 남아 있다. 다음 단일 항목은
+   중앙 I/O 경계인 `loadData` orchestration을 호출자부터 조사한다. 따라서 L0-12만
+   완료이고 **L0 전체는 미달**이다.
 
 ## 정량 판정 (2026-07-27 실측)
 

@@ -15,7 +15,13 @@ from unittest.mock import patch
 
 import pytest
 
-from dartlab.core.dataLoader import _checkRemoteFreshness
+from dartlab.core.dataLoader import (
+    _checkRemoteFreshness,
+    _download,
+    _fetchRemoteEtag,
+    _fetchRemoteEtagAndSize,
+    _refreshFromHf,
+)
 from dartlab.core.dataLoaderFreshness import downloadWithRetry
 
 
@@ -163,6 +169,156 @@ def test_remote_etag_unavailable_returns_none(tmp_path):
     with patch(
         "dartlab.core.dataLoader._fetchRemoteEtagAndSize",
         return_value=("", 0),
+    ):
+        stale = _checkRemoteFreshness("test", parquet, "finance")
+
+    assert stale is None
+
+
+@pytest.mark.unit
+def test_fetchRemoteEtagAndSize_missingSizeIsUnknown(monkeypatch):
+    """size header 부재는 ETag만 유효한 정상 응답으로 처리한다."""
+
+    class Response:
+        headers = {"ETag": '"etag-123"'}
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+    monkeypatch.setattr("dartlab.core.dataLoader.urlopen", lambda _request: Response())
+
+    assert _fetchRemoteEtagAndSize("https://example.invalid/a.parquet") == ("etag-123", 0)
+
+
+@pytest.mark.unit
+def test_fetchRemoteEtagAndSize_rejectsNonHttpsBeforeRequest(monkeypatch):
+    """원격 metadata reader가 local file이나 평문 HTTP scheme을 열지 않는다."""
+
+    def failUrlopen(_request):
+        raise AssertionError("invalid URL must fail before urlopen")
+
+    monkeypatch.setattr("dartlab.core.dataLoader.urlopen", failUrlopen)
+
+    with pytest.raises(ValueError, match="HTTPS"):
+        _fetchRemoteEtagAndSize("http://example.invalid/a.parquet")
+    with pytest.raises(ValueError, match="HTTPS"):
+        _fetchRemoteEtagAndSize("file:///tmp/a.parquet")
+
+
+@pytest.mark.unit
+def test_fetchRemoteEtagAndSize_invalidSizeRaisesAndCloses(monkeypatch):
+    """존재하는 malformed size를 0으로 바꾸지 않고 응답도 닫는다."""
+
+    class Response:
+        headers = {"ETag": '"etag-123"', "Content-Length": "broken"}
+        closed = False
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            self.closed = True
+            return False
+
+    response = Response()
+    monkeypatch.setattr("dartlab.core.dataLoader.urlopen", lambda _request: response)
+
+    with pytest.raises(ValueError, match="Content-Length"):
+        _fetchRemoteEtagAndSize("https://example.invalid/a.parquet")
+    assert response.closed is True
+
+
+@pytest.mark.unit
+def test_fetchRemoteEtag_ignoresUnneededInvalidSize(monkeypatch):
+    """ETag projection은 사용하지 않는 size header 오류 때문에 실패하지 않는다."""
+
+    class Response:
+        headers = {"ETag": '"etag-123"', "Content-Length": "broken"}
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+    monkeypatch.setattr("dartlab.core.dataLoader.urlopen", lambda _request: Response())
+
+    assert _fetchRemoteEtag("https://example.invalid/a.parquet") == "etag-123"
+
+
+@pytest.mark.unit
+def test_fetchRemoteEtagAndSize_blankLinkedSizeUsesContentLength(monkeypatch):
+    """빈 LFS size가 유효한 Content-Length를 가리지 않는다."""
+
+    class Response:
+        headers = {"ETag": '"etag-123"', "X-Linked-Size": "   ", "Content-Length": "123"}
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+    monkeypatch.setattr("dartlab.core.dataLoader.urlopen", lambda _request: Response())
+
+    assert _fetchRemoteEtagAndSize("https://example.invalid/a.parquet") == ("etag-123", 123)
+
+
+@pytest.mark.unit
+def test_download_keepsPayloadWhenOnlySizeHeaderIsInvalid(tmp_path, monkeypatch):
+    """최초 다운로드 성공 payload를 ETag와 무관한 size 오류로 삭제하지 않는다."""
+    dest = tmp_path / "005930.parquet"
+
+    def writePayload(_url, path):
+        path.write_bytes(b"downloaded")
+
+    monkeypatch.setattr("dartlab.core.dataLoader._downloadWithRetry", writePayload)
+    monkeypatch.setattr(
+        "dartlab.core.dataLoader._fetchRemoteHeaders",
+        lambda _url: ("etag-123", "broken", None),
+    )
+
+    _download("005930", dest, "finance")
+
+    assert dest.read_bytes() == b"downloaded"
+    assert dest.with_suffix(".parquet.etag").read_text(encoding="utf-8") == "etag-123"
+
+
+@pytest.mark.unit
+def test_refresh_keepsPayloadWhenOnlySizeHeaderIsInvalid(tmp_path, monkeypatch):
+    """refresh replace 뒤 ETag 저장도 size 오류와 독립적으로 완료한다."""
+    dest = tmp_path / "005930.parquet"
+    dest.write_bytes(b"old")
+
+    def writePayload(_url, path):
+        path.write_bytes(b"refreshed")
+
+    monkeypatch.setattr("dartlab.core.dataLoader._checkRemoteFreshness", lambda *_args: True)
+    monkeypatch.setattr("dartlab.core.dataLoader._downloadWithRetry", writePayload)
+    monkeypatch.setattr(
+        "dartlab.core.dataLoader._fetchRemoteHeaders",
+        lambda _url: ("etag-123", "broken", None),
+    )
+
+    _refreshFromHf("005930", dest, "finance")
+
+    assert dest.read_bytes() == b"refreshed"
+    assert dest.with_suffix(".parquet.etag").read_text(encoding="utf-8") == "etag-123"
+
+
+@pytest.mark.unit
+def test_remote_invalidSizeIsUnavailable(tmp_path):
+    """malformed remote metadata는 fresh가 아니라 판단 불가로 올라간다."""
+    parquet = tmp_path / "test.parquet"
+    parquet.write_bytes(b"x")
+    parquet.with_suffix(".parquet.etag").write_text("etag-123", encoding="utf-8")
+
+    with patch(
+        "dartlab.core.dataLoader._fetchRemoteEtagAndSize",
+        side_effect=ValueError("invalid Content-Length"),
     ):
         stale = _checkRemoteFreshness("test", parquet, "finance")
 

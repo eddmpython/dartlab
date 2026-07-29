@@ -76,6 +76,7 @@ def readParquetSafe(path, *, columns: list[str] | None = None) -> pl.DataFrame:
 
 if not _IS_PYODIDE:
     from urllib.error import URLError
+    from urllib.parse import urlsplit
     from urllib.request import Request, urlopen, urlretrieve
 
 
@@ -164,8 +165,40 @@ def _saveEtag(stockCode: str, dest: Path, category: str = "panel") -> None:
 
 def _fetchRemoteEtag(url: str) -> str:
     """HTTP HEAD로 원격 ETag 조회. 없으면 빈 문자열."""
-    etag, _ = _fetchRemoteEtagAndSize(url)
+    etag, _, _ = _fetchRemoteHeaders(url)
     return etag
+
+
+def _fetchRemoteHeaders(url: str) -> tuple[str, str | None, str | None]:
+    """검증된 HTTPS HEAD 응답에서 freshness header를 한 번 읽는다."""
+    parsedUrl = urlsplit(url)
+    if parsedUrl.scheme != "https" or not parsedUrl.hostname:
+        raise ValueError(f"remote metadata URL must use HTTPS: {url!r}")
+    req = Request(url, method="HEAD")
+    token = os.environ.get("HF_TOKEN", "").strip()
+    if token:
+        req.add_header("Authorization", f"Bearer {token}")
+    # urlsplit 검사로 HTTPS와 netloc이 확인된 Request만 연다.
+    with _socketTimeout(10), urlopen(req) as resp:  # nosec B310
+        etag = resp.headers.get("ETag", "").strip('" ')
+        linkedSize = resp.headers.get("X-Linked-Size")
+        contentLength = resp.headers.get("Content-Length")
+    return etag, linkedSize, contentLength
+
+
+def _remoteSize(linkedSize: str | None, contentLength: str | None) -> int:
+    for header, value in (("X-Linked-Size", linkedSize), ("Content-Length", contentLength)):
+        if value is None:
+            continue
+        if not isinstance(value, str):
+            raise ValueError(f"invalid remote {header}: {value!r}")
+        normalized = value.strip()
+        if not normalized:
+            continue
+        if not normalized.isascii() or not normalized.isdecimal():
+            raise ValueError(f"invalid remote {header}: {value!r}")
+        return int(normalized)
+    return 0
 
 
 def _fetchRemoteEtagAndSize(url: str) -> tuple[str, int]:
@@ -174,18 +207,8 @@ def _fetchRemoteEtagAndSize(url: str) -> tuple[str, int]:
     HF는 LFS 파일에 대해 X-Linked-Size 헤더로 실제 파일 크기를 제공.
     일반 파일은 Content-Length. 둘 중 하나라도 있으면 사용.
     """
-    req = Request(url, method="HEAD")
-    token = os.environ.get("HF_TOKEN", "").strip()
-    if token:
-        req.add_header("Authorization", f"Bearer {token}")
-    with _socketTimeout(10):
-        resp = urlopen(req)
-    etag = resp.headers.get("ETag", "").strip('" ')
-    sizeStr = resp.headers.get("X-Linked-Size") or resp.headers.get("Content-Length") or "0"
-    try:
-        size = int(sizeStr)
-    except (ValueError, TypeError):
-        size = 0
+    etag, linkedSize, contentLength = _fetchRemoteHeaders(url)
+    size = _remoteSize(linkedSize, contentLength)
     return etag, size
 
 
