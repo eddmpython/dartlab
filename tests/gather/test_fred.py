@@ -60,10 +60,12 @@ class TestClient:
         from dartlab.gather.fred.client import FredClient
         from dartlab.gather.fred.types import AuthenticationError
 
-        with patch.dict("os.environ", {}, clear=True):
-            # 환경변수도 없고 인자도 없으면 에러
-            with pytest.raises(AuthenticationError):
-                FredClient(apiKey="")
+        with (
+            patch.dict("os.environ", {}, clear=True),
+            patch("dartlab.gather.fred.client.getKey", return_value=""),
+            pytest.raises(AuthenticationError),
+        ):
+            FredClient(apiKey="")
 
     def test_multi_key_parsing(self):
         from dartlab.gather.fred.client import FredClient

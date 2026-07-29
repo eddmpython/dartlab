@@ -93,24 +93,23 @@ def test_every_axis_in_registry(mock_company):
 # ── 빈 데이터 안전성 ──
 
 
-def test_all_axes_with_empty_company(empty_mock_company):
+def test_all_axes_with_empty_company(empty_mock_company, monkeypatch: pytest.MonkeyPatch):
     """빈 회사 데이터로도 crash 없음.
 
-    일부 축(가치평가 등)은 report 데이터 다운로드를 시도하므로
-    RuntimeError(네트워크)도 허용한다.
+    가치평가 축의 현재가 조회는 명시적으로 정상 무데이터로 격리한다.
     """
-    from dartlab.analysis.financial import _AXIS_REGISTRY, Analysis
+    from unittest.mock import AsyncMock
 
+    from dartlab.analysis.financial import _AXIS_REGISTRY, Analysis
+    from dartlab.gather.sources import price
+
+    monkeypatch.setattr(price, "fetch", AsyncMock(return_value=None))
     analysis = Analysis()
 
     for axis_name in _AXIS_REGISTRY:
         empty_mock_company._cache.clear()
-        try:
-            result = analysis(axis_name, company=empty_mock_company)
-            assert result is None or isinstance(result, dict), f"{axis_name} with empty data returned {type(result)}"
-        except RuntimeError:
-            # 네트워크 요청 실패 (빈 종목코드로 데이터 다운로드 시도) — 허용
-            pass
+        result = analysis(axis_name, company=empty_mock_company)
+        assert result is None or isinstance(result, dict), f"{axis_name} with empty data returned {type(result)}"
 
 
 # ── 개별 calc 함수 직접 실행 ──

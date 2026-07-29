@@ -75,10 +75,14 @@ def test_buildBlocks_capital_keys(mock_company):
 # ── 빈 데이터 안전성 ──
 
 
-def test_buildBlocks_empty_company(empty_mock_company):
+def test_buildBlocks_empty_company(empty_mock_company, monkeypatch: pytest.MonkeyPatch):
     """빈 회사 데이터로도 crash 없음."""
+    from unittest.mock import AsyncMock
+
+    from dartlab.gather.sources import price
     from dartlab.story.registry import buildBlocks
 
+    monkeypatch.setattr(price, "fetch", AsyncMock(return_value=None))
     empty_mock_company._cache.clear()
     blocks = buildBlocks(empty_mock_company)
     assert isinstance(blocks, (dict, BlockMap))

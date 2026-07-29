@@ -277,17 +277,22 @@ class TestCircuitOpenError:
 class TestPriceFallback:
     """시장별 동적 fallback — mock 기반."""
 
-    def test_kr_uses_naver_first(self):
+    def test_kr_uses_naver_first(self, monkeypatch: pytest.MonkeyPatch):
         import asyncio
         from unittest.mock import AsyncMock, MagicMock
 
+        from dartlab.gather.infra.resilience import CircuitBreaker, SourceHealthTracker
         from dartlab.gather.sources import price
 
+        monkeypatch.setattr(price, "circuitBreaker", CircuitBreaker())
+        monkeypatch.setattr(price, "healthTracker", SourceHealthTracker())
+        price._staleCache.clear()
+
         mock_resp = MagicMock()
-        mock_resp.json.return_value = {
-            "closePrice": "200,000",
-            "per": "12.50",
-        }
+        mock_resp.json.side_effect = [
+            {"closePrice": "200,000"},
+            {"totalInfos": [{"code": "per", "value": "12.50배"}]},
+        ]
         mock_client = MagicMock()
         mock_client.get = AsyncMock(return_value=mock_resp)
 
