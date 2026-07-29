@@ -27,9 +27,7 @@ parser 의 `get_text()` 등으로 변환 (lxml 은 XML/HTML 양쪽 안전). sect
 
 from __future__ import annotations
 
-import io
 import os
-import zipfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from enum import Enum
 from pathlib import Path
@@ -41,6 +39,7 @@ import dartlab.config as _cfg
 from dartlab.core.dataConfig import DATA_RELEASES
 from dartlab.core.logger import getLogger
 from dartlab.core.memory import withMemoryBudget
+from dartlab.gather.dart.allFilingsDocument import collectOneRaw as _collectOneRaw
 from dartlab.gather.dart.disclosure import listFilings
 
 if TYPE_CHECKING:
@@ -75,75 +74,6 @@ def _allFilingsDir() -> Path:
     d = root / DATA_RELEASES[_ALLFILINGS_DIR_KEY]["dir"]
     d.mkdir(parents=True, exist_ok=True)
     return d
-
-
-def _collectOneRaw(client: DartClient, rceptNo: str) -> tuple[str | None, str]:
-    """단일 공시 원문 raw 본문 반환 — 생긴 그대로, 모든 태그·attribute 보존.
-
-    DART 가 반환하는 zip 안 largest 파일은 공시 종류별로 dart4.xsd XML 또는 xforms
-    HTML 두 포맷 중 하나. utf-8/euc-kr/cp949 순으로 디코딩만 한다. 후처리 0.
-
-    Returns:
-        (content_raw, fetch_status) tuple.
-        fetch_status:
-            - ``"ok"``: 정상 본문 수집 — content_raw 는 raw XML/HTML.
-            - ``"no_body"``: DART 명시 데이터 truth (행정 통지 / 첨부정정 / 접수번호
-              오류). 영원히 retry 불가. status 013 (접수번호 오류) 또는 014 (파일
-              부재) 응답. content_raw 는 None.
-            - ``"error"``: API 장애 (network · 한도 · 시스템 점검 · decode 실패).
-              retry 대상. content_raw 는 None.
-
-    DART API 응답 구조:
-        정상: ``b'PK\\x03\\x04'`` ZIP magic prefix → zip 내 largest 파일 디코딩.
-        본문 부재: 147 bytes XML ``<result><status>014</status><message>파일이
-        존재하지 않습니다</message></result>``.
-        접수번호 오류: 147 bytes XML ``<status>013</status><message>접수번호 오류
-        ...``.
-        기타 에러: status 010/011/012 (API key) · 020 (한도) · 800 (점검) · 900
-        (불명) → "error".
-    """
-    try:
-        raw = client.getBytes("document.xml", {"rcept_no": rceptNo})
-    except (RuntimeError, OSError):
-        return (None, "error")
-
-    if raw is None or len(raw) == 0:
-        return (None, "error")
-
-    # 정상 응답 — ZIP magic prefix
-    if raw[:4] == b"PK\x03\x04":
-        try:
-            zf = zipfile.ZipFile(io.BytesIO(raw))
-        except zipfile.BadZipFile:
-            return (None, "error")
-
-        names = zf.namelist()
-        if not names:
-            return (None, "error")
-
-        largest = max(names, key=lambda n: zf.getinfo(n).file_size)
-        content = zf.read(largest)
-
-        rawContent: str | None = None
-        for enc in ("utf-8", "euc-kr", "cp949"):
-            try:
-                rawContent = content.decode(enc)
-                break
-            except (UnicodeDecodeError, LookupError):
-                continue
-        if rawContent is None:
-            rawContent = content.decode("utf-8", errors="replace")
-
-        if not rawContent.strip():
-            return (None, "error")
-
-        return (rawContent, "ok")
-
-    # status XML 응답 — DART 명시 결과
-    text = raw[:300].decode("utf-8", errors="replace")
-    if "<status>014" in text or "<status>013" in text:
-        return (None, "no_body")
-    return (None, "error")
 
 
 def _allFilingsWorkers(client: DartClient) -> int:
