@@ -116,7 +116,7 @@ panel SPINE(canonical 14챕터·sectionLeaf 수렴, 이미 빌드) ─anchor→ 
 
 ## 3. 4 기둥 설계 (스키마·영향 파일·함수)
 
-### 기둥 A · 개념 카탈로그 SSOT (`core/extractionCatalog.py` + `core/dataEntry.py` 확장)
+### 기둥 A · 개념 카탈로그 SSOT (`core/extractionCatalog/` + `core/dataEntry.py` 확장)
 
 단일 매니페스트. 개념 1건 =
 
@@ -175,7 +175,7 @@ workforce.avgSalary    │ workforce │ 89%   │ -      │ DART-only │ US �
 
 ### P0 · 카탈로그 SSOT + census (성공 원장 백본) · 최우선·최저위험
 
-- 영향: `core/extractionCatalog.py`, `core/dataEntry.py`(edgar 열 보강), `tests/audit/extractionCoverageCensus.py`,
+- 영향: `core/extractionCatalog/`, `core/dataEntry.py`(edgar 열 보강), `tests/audit/extractionCoverageCensus.py`,
   `_baselines/extractionCoverage.json`(신규).
 - 추출 변경 0. 통합+측정만. 즉시 진짜 갭 원장 산출.
 - 테스트: `tests/providers/mappers/test_extractionCatalog.py`(스키마·parity 불변식), census smoke(표본 20사).
@@ -225,7 +225,7 @@ breaking 0(전부 additive·frozen surface 보존). 위험 = (a) census 전종�
 
 | 단계 | 산출 | commit | 검증 |
 |---|---|---|---|
-| P0 | `core/extractionCatalog.py`(개념 64종 SSOT) + `tests/audit/extractionCoverageCensus.py`(성공 원장) + baseline + 미러 테스트 12 | 2ba5cb33a | census rollup parity-ok 33·narrative-P2 11·dartOnly-ok 9·honestNull-ok 5 |
+| P0 | `core/extractionCatalog/`(개념 64종 SSOT) + `tests/audit/extractionCoverageCensus.py`(성공 원장) + baseline + 미러 테스트 12 | 2ba5cb33a | census rollup parity-ok 33·narrative-P2 11·dartOnly-ok 9·honestNull-ok 5 |
 | P1 | 고가치 노트 10종 first-class 이름 접근. `resolveNoteKey` + panel `__call__` 카탈로그 폴백(additive) | fa936f568 | 005930 10종 전부 이름 추출(지역별매출 2·법인세 24·종업원급여 19·특수관계자 27) |
 | P2 | `frame/narrative.py` 앵커 구동 단일 메커니즘(덕지덕지 sectionTopic 대체) | c96ea7af8 | 수주 31·생산능력 37·위험 21·경영진단 46·연구개발 17. table-only(backlog) 20 |
 | P3 | `frame/workbench.py` 데이터 공동작업대 + root `dartlab.dossier(code)`. 예측 L2 위임 | 80e8dde7c | 조직맵(재무6/6·노트21/23·거버넌스8/8) + 라우팅 추출(배당 612·최대주주 911) |
@@ -287,7 +287,7 @@ inventory 가 안 읽었고, workbench get 이 dart panel 을 하드코딩해 US
 - `providers/edgar/docs/sections/topicUnits.py`: 경량 열거기(topic 컬럼만 projection, 본문 무접촉, OOM 안전).
 - `frame/inventory.py`: US 는 `_itemUnits`(docs Item) + 재무 5표. handle 을 데이터에서 열거(고정 dict 아님)라
   round-trip by construction. `frame/workbench.py`: `_loadBoard` dart/edgar 스위치 SSOT + item handle sections slice.
-- `core/extractionCatalog.py`: EDGAR Item first-class(28 category map + reverse index + US 전용 8 edgarOnly) +
+- `core/extractionCatalog/`: EDGAR Item first-class(28 category map + reverse index + US 전용 8 edgarOnly) +
   `edgarItemCoverage`(US side 대칭 측정) + 실측 고빈도 신규 노트 2. `tests/audit/inventoryUniverseCensus.py`:
   전 종목 unit 전수 census(2-tier 완전성 measured, baseline 부채원장).
 

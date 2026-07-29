@@ -6,12 +6,19 @@
 
 from __future__ import annotations
 
+import dataclasses
+import hashlib
+import json
+
+import pytest
+
 from dartlab.core.extractionCatalog import (
     AXIS_TYPES,
     CATEGORIES,
     VALUE_TYPES,
     DartSource,
     EdgarSource,
+    ExtractionConcept,
     HonestNull,
     catalogSummary,
     conceptsByCategory,
@@ -21,12 +28,72 @@ from dartlab.core.extractionCatalog import (
     parityMatrix,
     resolveNoteKey,
 )
+from dartlab.core.extractionCatalog.catalog import _buildIndex, _buildNoteAliases
+from dartlab.core.extractionCatalog.models import DartSource as ModelDartSource
 
 
 def test_conceptIdUnique():
     """conceptId 는 전역 유일."""
     ids = [c.conceptId for c in getExtractionConcepts()]
     assert len(ids) == len(set(ids)), "중복 conceptId 존재"
+
+
+def test_manifestOrderContentAndPublicTypeIdentityRemainStable():
+    """물리 분할이 88개 manifest 값·순서와 public type identity를 바꾸지 않는다."""
+    concepts = getExtractionConcepts()
+    payload = json.dumps(
+        [dataclasses.asdict(concept) for concept in concepts],
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode()
+
+    assert hashlib.sha256(payload).hexdigest() == ("3f4e8d14b2be6b3bd7b6c3158d28b281857a2c36e6f1ac674c1579fd1c824d09")
+    assert DartSource is ModelDartSource
+    assert all(getConcept(concept.conceptId) is concept for concept in concepts)
+
+
+def test_manifestAssemblyRejectsSilentLastWrite():
+    """중복 conceptId와 서로 다른 note alias canonical key를 fail-fast한다."""
+    concept = getExtractionConcepts()[0]
+    with pytest.raises(ValueError, match="중복 extraction conceptId"):
+        _buildIndex((concept, concept))
+
+    first = ExtractionConcept(
+        "note.first",
+        "note",
+        "충돌라벨",
+        DartSource("note", "NT_FIRST"),
+        HonestNull("EDGAR 구조 부재"),
+        registered=True,
+    )
+    second = ExtractionConcept(
+        "note.second",
+        "note",
+        "충돌라벨",
+        DartSource("note", "NT_FIRST"),
+        HonestNull("EDGAR 구조 부재"),
+        registered=True,
+    )
+    with pytest.raises(ValueError, match="note alias 충돌"):
+        _buildNoteAliases((first, second))
+
+
+def test_modelRejectsInvalidManifestRows():
+    """빈 HonestNull과 미등록 source/category를 wheel import 전에 거부한다."""
+    with pytest.raises(ValueError, match="reason"):
+        HonestNull(" ")
+    with pytest.raises(ValueError, match="DART surface"):
+        DartSource("unknown", "key")
+    with pytest.raises(ValueError, match="registered"):
+        ExtractionConcept(
+            "not.note",
+            "capital",
+            "잘못된 등록",
+            DartSource("report", "capital"),
+            HonestNull("EDGAR 구조 부재"),
+            registered=True,
+        )
 
 
 def test_categoriesValid():
@@ -74,10 +141,17 @@ def test_registeredNotesResolveByName():
     reg = [c for c in getExtractionConcepts(category="note") if c.registered]
     assert len(reg) >= 22, f"등록 노트 22+ 기대, 실제 {len(reg)}"
     for c in reg:
+        assert isinstance(c.dart, DartSource)
         key = c.dart.key
         assert resolveNoteKey(c.conceptId) == key, f"{c.conceptId} conceptId 해소 실패"
         assert resolveNoteKey(c.conceptId.removeprefix("note.")) == key, f"{c.conceptId} bareName 해소 실패"
         assert resolveNoteKey(c.label) == key, f"{c.conceptId} label({c.label}) 해소 실패"
+
+    unregistered = [c for c in getExtractionConcepts(category="note") if not c.registered]
+    for c in unregistered:
+        assert resolveNoteKey(c.conceptId) is None
+        assert resolveNoteKey(c.conceptId.removeprefix("note.")) is None
+        assert resolveNoteKey(c.label) is None
 
 
 def test_resolveNoteKeyUnknownReturnsNone():
@@ -88,10 +162,29 @@ def test_resolveNoteKeyUnknownReturnsNone():
 
 def test_toDictRoundtrip():
     """toDict 는 parity 포함 직렬화 dict 를 낸다."""
-    d = getConcept("note.tax").toDict()
+    concept = getConcept("note.tax")
+    assert concept is not None
+    d = concept.toDict()
     assert d["conceptId"] == "note.tax"
-    assert d["parity"] in ("both", "dartOnly", "edgarOnly", "narrative", "none")
+    assert d["parity"] in ("both", "dartOnly", "edgarOnly", "none")
+    assert d["edgar"] is not None
     assert d["edgar"]["surface"] == "xbrlTag"
+
+
+def test_toDictSerializesHonestNullOnEitherProvider():
+    """구조적 부재는 provider 어느 쪽이든 사유를 잃거나 예외를 내지 않는다."""
+    for concept in getExtractionConcepts():
+        payload = concept.toDict()
+        if isinstance(concept.dart, HonestNull):
+            assert payload["dart"] == {
+                "surface": "honestNull",
+                "reason": concept.dart.reason,
+            }
+        if isinstance(concept.edgar, HonestNull):
+            assert payload["edgar"] == {
+                "surface": "honestNull",
+                "reason": concept.edgar.reason,
+            }
 
 
 def test_summaryAndParityConsistent():
@@ -100,6 +193,9 @@ def test_summaryAndParityConsistent():
     assert s["total"] == sum(s["byCategory"].values())
     assert s["total"] == sum(s["parity"].values())
     assert s["total"] == len(getExtractionConcepts())
+    assert len(s["honestNull"]) == 28
+    assert len(s["dartHonestNull"]) == 8
+    assert len(s["edgarHonestNull"]) == 20
 
 
 def test_conceptsByCategoryKeysAreCategories():
@@ -126,6 +222,12 @@ def test_parityMatrixCoversAll():
     pm = parityMatrix()
     total = sum(len(v) for v in pm.values())
     assert total == len(getExtractionConcepts())
+    assert {key: len(value) for key, value in pm.items()} == {
+        "both": 60,
+        "dartOnly": 20,
+        "edgarOnly": 8,
+        "none": 0,
+    }
 
 
 def test_edgarItemTaxonomyDriftGuard():
@@ -180,6 +282,8 @@ def test_conceptForEdgarItemResolves():
     """conceptForEdgarItem 은 topicId 를 대표 개념으로 해소(inventory Item enrich)."""
     from dartlab.core.extractionCatalog import conceptForEdgarItem
 
-    assert conceptForEdgarItem("item7Mdna").conceptId == "narrative.mdna"
-    assert conceptForEdgarItem("item1CCybersecurity").conceptId == "edgar.cybersecurity"
+    mdna = conceptForEdgarItem("item7Mdna")
+    cybersecurity = conceptForEdgarItem("item1CCybersecurity")
+    assert mdna is not None and mdna.conceptId == "narrative.mdna"
+    assert cybersecurity is not None and cybersecurity.conceptId == "edgar.cybersecurity"
     assert conceptForEdgarItem("item999NonStandard") is None

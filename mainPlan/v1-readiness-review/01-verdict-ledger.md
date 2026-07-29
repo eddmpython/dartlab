@@ -35,13 +35,12 @@ L4 소비자, ai, mcp. 아래층 결함이 위층 전부를 오염시키므로 �
 ### 세션 인계
 
 - 현재 계층: L0 core
-- 마지막 완료 항목: L0-14 DataEntry 내장 카탈로그 과분할 제거
-- 진행 중인 단일 항목: L0-15 `core/extractionCatalog.py` 1,256 LoC 분할 부족
-- 다음 첫 행동: `ExtractionConcept`, `DartSource`, `EdgarSource`, `HonestNull`의 모든
-  생산·감사 호출자와 import-time catalog 조립 순서를 census한다. US-only concept의
-  `dart=HonestNull`이 현재 타입 선언과 `toDict()` projection에 맞지 않는 결함을 제품
-  호출로 먼저 재현하고, 파일을 자르기 전에 schema/manifest/조회 owner와 분할 경계를
-  확정한다. 다른 core 대형 파일이나 L1 이상은 건드리지 않는다.
+- 마지막 완료 항목: L0-15 추출 카탈로그 계약·SSOT·분할 부족 안정화
+- 진행 중인 단일 항목: L0-16 `core/memory.py` 862 LoC 분할 부족
+- 다음 첫 행동: `memory.py`의 공개 타입·함수, 실제 생산 호출자, 캐시 수명주기,
+  eviction·pinning·동시성·메모리 상한을 전수 census한다. 제품 행동과 시간·메모리
+  baseline을 먼저 재현하고 owner와 최소 분할 경계를 확정하기 전에는 코드를 자르지
+  않는다. `ratios.py`, `schemas.py`나 L1 이상은 건드리지 않는다.
 - 금지: L0 완료 판정 전 L1 이상 감사나 수정 착수
 
 ## L0 순차 안정화 원장 (2026-07-29)
@@ -795,6 +794,71 @@ owner를 분리했다. 이 판정은 DART viewer와 공용 표 변환 경계만 
    `extractionCatalog.py` 1,256 LoC, `memory.py` 862 LoC, `ratios.py` 1,900 LoC,
    `schemas.py` 848 LoC가 정확히 남는다. 다음 단일 항목은 출력 순서의 첫 항목인
    `extractionCatalog.py`다. 따라서 L0-14만 완료이고 **L0 전체는 미달**이다.
+
+### L0-15 추출 카탈로그 계약·SSOT·분할 부족 안정화
+
+**상태: 완료.** 88개 concept의 순서와 metadata는 보존하면서 provider 대칭 타입,
+직렬화, parity, alias, 중복 거부 계약을 바로잡고 1,256 LoC 정적 manifest를 최소
+책임 경계로 분리했다.
+
+1. **범위와 실제 호출자.** 범위는 옛 `core/extractionCatalog.py`와 직접 생산 호출자
+   8곳이다. `frame/inventory.py`, `frame/narrative.py`, `simulate/profile.py`,
+   `dataHub/catalog/discovery.py`, DART panel의 `narrativeMetric.py`와 `panel.py`,
+   KR scan builder의 `notes.py`와 `report/build.py`가 조회 API를 소비한다. 88개
+   concept은 financialStatement 6, note 35, governance 10, capital 4, workforce 7,
+   debt 6, segment 2, narrative 11, filingMeta 7이고, 상위 호출자는 census만 했으며
+   이번 L0 항목에서 행동을 수정하지 않았다. 독립 전문 검토도 생산 호출자와 manifest
+   identity를 재검증해 P0/P1/P2 잔여를 모두 0으로 판정했다.
+2. **제품·구조 결함 재현.** `ExtractionConcept.dart`는 `DartSource | None`인데
+   US-only 8개 row에는 `HonestNull`이 들어가 Pyright가 오류를 냈고, 이 8개 모두의
+   `toDict()`는 `surface` 접근에서 `AttributeError`로 실패했다. parity는 provider
+   지원 상태에 `"narrative"`를 섞어 `both 56 / dartOnly 14 / narrative 11 /
+   edgarOnly 7`로 분류했고 `edgar.cybersecurity`도 잘못 셌다. `catalogSummary()`는
+   EDGAR-side HonestNull 20개만 보고 DART-side 8개를 누락했다. 미등록
+   `note.shareBasedComp`도 alias로 공개됐고 conceptId와 alias index는 중복을
+   마지막 값으로 조용히 덮었다. `DartSource.dispatch`는 생산·소비가 한 곳도 없고
+   모든 row에서 `None`인 죽은 schema였다.
+3. **owner와 SSOT.** `models.py`가 provider 대칭 source·HonestNull·concept 타입과
+   validation·직렬화를, `noteManifest.py`가 재무제표·note·EDGAR tag 선언을,
+   `disclosureManifest.py`가 공시·서사 선언을, `catalog.py`가 SEC Item taxonomy,
+   manifest 조립, fail-fast index와 immutable 조회를 소유한다. `__init__.py`는 기존
+   public symbol만 재수출한다. 이 경계로 선언과 조회 로직을 분리하되 5모듈 이상으로
+   잘게 쪼개지 않았고, 소비되지 않는 `dispatch`는 호환 hack 없이 제거했다.
+4. **수정과 테스트.** DART와 EDGAR 양쪽에 같은 `source | HonestNull | None`
+   계약을 적용하고 허용 surface, 빈 key/reason, category, axis, value type,
+   registered/narrative 제약을 import 시점에 검증한다. provider parity는
+   `both | dartOnly | edgarOnly | none` 네 상태만 사용한다. category·parity·concept·
+   alias index는 `MappingProxyType`과 tuple로 고정하고 conceptId나 서로 다른
+   canonical alias의 중복은 즉시 `ValueError`로 실패한다. alias는 registered note만
+   소유한다. 옛 manifest에서 죽은 `dispatch`만 제외한 88개 모든 필드와 순서를 exact
+   비교했고 digest `3f4e8d14b2be6b3bd7b6c3158d28b281857a2c36e6f1ac674c1579fd1c824d09`,
+   public type identity, 동일 객체 조회를 회귀로 고정했다. 활성 설계 문서의 옛 파일
+   경로도 새 SSOT로 갱신했다.
+5. **공개 행동, 정확성, 속도, 메모리.** 모든 88개 concept이 예외 없이 provider
+   대칭 dict로 직렬화되고 parity는 `60 / 20 / 8 / 0`, HonestNull은 DART 8,
+   EDGAR 20, 합집합 28로 정확히 공개된다. 미등록 note alias는 이제 `None`이고
+   등록 alias와 SEC Item 역색인은 보존된다. 100만 회 단독 실측에서 전체 list 조회는
+   `0.458 -> 0.286 µs`, category 조회는 `2.344 -> 0.159 µs`로 약 14.7배 빨라졌다.
+   `getConcept`은 `0.053 -> 0.072 µs`, alias 조회는 `0.053 -> 0.073 µs`로 각각
+   약 0.02 µs 느려졌으나 절대값은 0.1 µs 미만이다. catalog 추적 retained allocation은
+   약 `89.3 KiB -> 76.3 KiB`로 줄었다. 12회 cold import 중앙값은
+   `5.249 -> 7.589 ms`로 약 2.34 ms 느려졌고 facade self time은 `0.574 ms`다.
+   manifest 검증과 모듈 경계의 import 비용을 숨기지 않으며 lazy 전역이나 캐시 hack은
+   추가하지 않았다.
+6. **Guard와 회귀.** catalog와 직접 소비자 회귀 `55 passed`, L0 import-direction
+   회귀 `2 passed`, Pyright 0 errors, Ruff/formatter, compileall, Bandit, Vulture,
+   camelCase, 엄격 4·9-section docstring, quality gate, `silentSubstitute`,
+   diff whitespace가 통과했다. `coreBoundary --strict` 위반 0이고 `folderSize`의
+   over-split은 0, under-split은 기존 3개만 남는다. 최종 diff 뒤 전문 에이전트가
+   읽기 전용으로 완주한 공식 Guard
+   `strict --scope l0-l15 --providers dart,edgar`는 1,766개 파일, 7/7 규칙과 cycle,
+   architecture, folder mirror, gather, provider, public API 여섯 외부 gate를 모두
+   통과했다. 알려진 부채 47건은 active 9, protected Company 38로 기존 원장과 일치한다.
+7. **남은 부채와 판정.** provider의 `_CATEGORY_TAGS`와 SEC Item taxonomy mirror가
+   L0 catalog를 직접 소비하도록 수렴하는 작업은 L1 owner 순서로 이월하며 이번에
+   상향 수정하지 않았다. 전역 folderSize에는 `memory.py` 862 LoC, `ratios.py`
+   1,900 LoC, `schemas.py` 848 LoC 세 under-split이 남는다. 다음 단일 항목은 출력
+   순서의 첫 항목인 `memory.py`다. 따라서 L0-15만 완료이고 **L0 전체는 미달**이다.
 
 ## 정량 판정 (2026-07-27 실측)
 

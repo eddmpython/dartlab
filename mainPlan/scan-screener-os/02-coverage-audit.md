@@ -9,7 +9,7 @@
 
 ## 정량 사실 (3 조사 확정)
 
-- 추출 카탈로그 = **88 개념**(DART-side 80, US-only 8). 9 카테고리: financialStatement 6·note 35·governance 8·capital 4·workforce 7·debt 6·segment 2·narrative 10·filingMeta 2. (`core/extractionCatalog.py`)
+- 추출 카탈로그 = **88 개념**(DART-side 80, US-only 8). 9 카테고리: financialStatement 6·note 35·governance 8·capital 4·workforce 7·debt 6·segment 2·narrative 10·filingMeta 2. (`core/extractionCatalog/`)
 - scan 노출 ≈ **53**: note 29 + 재무5표 6 + report 17 apiType + segment(salesByProduct). 실효 ~51(매트릭스 탈락).
 - **손 게이트 3겹**: ① note `registered=True AND valueType∈(amount,rate)`(notes.py:89) → 35→29 ② report `SCAN_API_TYPES` 17/28 하드리스트(build.py:59) ③ panel `readNoteStatements` `~axisPath.contains("|")` depth-1 단일축만(cell.py:789) → 매트릭스 노트 셀0.
 - **자기기만 신호**: notes.py:74 주석은 "카탈로그 SSOT 라 손 선별 0"이라 자칭하나 :89 술어가 text를 배제. SSOT 도출과 손 필터 부재는 별개 (술어 자체가 큐레이션). [[feedback_exhaustive_no_curation]] "등재 게이트가 아니라 사후 태그로 도태" 위반.
@@ -45,7 +45,7 @@
 
 ## 핵심 파일
 
-`core/extractionCatalog.py` · `scan/builders/kr/notes.py:89` · `scan/builders/kr/report/build.py:59` · `providers/dart/report/types.py:10` · `providers/dart/panel/cell.py:789` · `scan/io/parquet.py:107`(다운로드 가드, 노출 게이트 아님) · `frame/narrative.py`·`frame/inventory.py`(회사별 전수 열거, round-trip 100%) · `scan/salesByProduct.py`(매트릭스 신호 선례) · `tests/audit/extractionCoverageCensus.py`(성적표).
+`core/extractionCatalog/` · `scan/builders/kr/notes.py:89` · `scan/builders/kr/report/build.py:59` · `providers/dart/report/types.py:10` · `providers/dart/panel/cell.py:789` · `scan/io/parquet.py:107`(다운로드 가드, 노출 게이트 아님) · `frame/narrative.py`·`frame/inventory.py`(회사별 전수 열거, round-trip 100%) · `scan/salesByProduct.py`(매트릭스 신호 선례) · `tests/audit/extractionCoverageCensus.py`(성적표).
 
 ## 남은 결정 (운영자)
 

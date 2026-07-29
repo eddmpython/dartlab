@@ -61,6 +61,7 @@ _ALLOWED_DIRS: frozenset[str] = frozenset(
         "cross",  # denylist 에 있지만 디렉터리 자체는 존재 인정 (이전 전까지)
         "data",  # parser data
         "docs",  # denylist 에 있지만 디렉터리 자체는 존재 인정 (이전 전까지)
+        "extractionCatalog",  # DART·EDGAR 공용 추출 concept manifest와 immutable 조회
         "indicators",  # gather/synth 공용 vectorized primitive
         "mappers",  # SSOT mapper
         "naming",  # SSOT naming

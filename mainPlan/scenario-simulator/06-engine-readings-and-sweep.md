@@ -37,7 +37,7 @@ class Reading:
 extractionCatalog 개념(사업보고서·재무제표가 주연: 분기 도착 이벤트 + 재무x가격 괴리는 매주
 재발화) · gather 축(price·flow·news·narrative·research) · L2 verb(analysis·credit·industry·macro).
 
-**panel·사업보고서 탈탈털기 카탈로그의 실체 (2026-07-05 가동 확인)**: ① `core/extractionCatalog.py`
+**panel·사업보고서 탈탈털기 카탈로그의 실체 (2026-07-05 가동 확인)**: ① `core/extractionCatalog/`
 (L0) = 개념 카탈로그 SSOT 88개념·9카테고리(financialStatement·note·governance·capital·workforce·
 debt·segment·narrative·filingMeta), `getExtractionConcepts()/getConcept()/resolveNoteKey()`.
 ② `frame/inventory.py` (L1.5) = 회사별 전 단위 전수 열거 `reportInventory(code)` (정규화 Panel
