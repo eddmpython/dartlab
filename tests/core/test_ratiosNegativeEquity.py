@@ -14,6 +14,8 @@ import pytest
 
 from dartlab.core.utils.calc import safePct, safePctPositive
 
+pytestmark = pytest.mark.unit
+
 
 def testNegativeDenominatorInvertsThePercentageSign() -> None:
     """왜 막아야 하는지부터 고정한다. 이 성질이 결함의 원인이다."""
@@ -68,6 +70,7 @@ def testInsolventCompanyGetsNoProfitabilityOrLeverageRatio() -> None:
         totalEquity=-5e9,
         totalAssets=200e9,
         totalLiabilities=1000e9,
+        cash=0,
     )
 
     assert result.roe is None
@@ -90,3 +93,29 @@ def testHealthyCompanyKeepsItsRatios() -> None:
     assert result.roe == 10.0
     assert result.debtRatio == 100.0
     assert result.equityRatio == 50.0
+
+
+def testSeriesPathUsesTheSamePositiveDenominatorContract() -> None:
+    """공개 ratio panel의 시계열 경로도 시점값과 같은 자본잠식 계약을 지킨다."""
+    from dartlab.core.ratios import calcRatioSeries
+
+    series = {
+        "IS": {"net_profit": [-10.0]},
+        "BS": {
+            "total_assets": [100.0],
+            "total_liabilities": [105.0],
+            "total_stockholders_equity": [-5.0],
+            "owners_of_parent_equity": [-5.0],
+            "shortterm_borrowings": [0.0],
+            "longterm_borrowings": [0.0],
+            "debentures": [0.0],
+            "cash_and_cash_equivalents": [0.0],
+        },
+        "CF": {},
+    }
+
+    result = calcRatioSeries(series, ["2024"])
+
+    assert result.roe == [None]
+    assert result.debtRatio == [None]
+    assert result.netDebtRatio == [None]

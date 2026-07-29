@@ -149,7 +149,7 @@ class RatioResult:
     evEbitda: float | None = None
     marketCap: float | None = None
     sharesOutstanding: int | None = None
-    ebitdaEstimated: bool = True
+    ebitdaEstimated: bool | None = None
 
     currency: str = "KRW"
     warnings: list[str] = field(default_factory=list)
@@ -464,6 +464,36 @@ def _safeRound(v: float | None, n: int = 2) -> float | None:
     if v is None:
         return None
     return round(v, n)
+
+
+def _sumComplete(*values: float | None) -> float | None:
+    """모든 구성값이 있을 때만 합계를 반환한다."""
+    if any(value is None for value in values):
+        return None
+    return sum(value for value in values if value is not None)
+
+
+def _calcNetDebt(
+    shortTermBorrowings: float | None,
+    longTermBorrowings: float | None,
+    bonds: float | None,
+    cash: float | None,
+) -> float | None:
+    """공시된 차입금 세 항목과 현금이 모두 있을 때만 순차입금을 계산한다."""
+    totalBorrowings = _sumComplete(shortTermBorrowings, longTermBorrowings, bonds)
+    if totalBorrowings is None or cash is None:
+        return None
+    return totalBorrowings - cash
+
+
+def _calcEbitdaValue(
+    operatingIncome: float | None,
+    depreciationExpense: float | None,
+) -> float | None:
+    """보고된 영업이익과 감가상각비로만 EBITDA를 계산한다."""
+    if operatingIncome is None or depreciationExpense is None:
+        return None
+    return operatingIncome + depreciationExpense
 
 
 def yoyPct(cur: float | None, prev: float | None) -> float | None:
@@ -890,9 +920,9 @@ def calcRatios(
     r.currentAssets = getLatest(series, "BS", "current_assets")
     r.currentLiabilities = getLatest(series, "BS", "current_liabilities")
     r.cash = getLatest(series, "BS", "cash_and_cash_equivalents")
-    r.shortTermBorrowings = getLatest(series, "BS", "shortterm_borrowings") or 0
-    r.longTermBorrowings = getLatest(series, "BS", "longterm_borrowings") or 0
-    r.bonds = getLatest(series, "BS", "debentures") or 0
+    r.shortTermBorrowings = getLatest(series, "BS", "shortterm_borrowings")
+    r.longTermBorrowings = getLatest(series, "BS", "longterm_borrowings")
+    r.bonds = getLatest(series, "BS", "debentures")
     r.inventories = getLatest(series, "BS", "inventories")
     r.receivables = getLatest(series, "BS", "trade_and_other_receivables")
     r.payables = getLatest(series, "BS", "trade_and_other_payables")
@@ -994,14 +1024,9 @@ def _calcProfitability(r: RatioResult) -> None:
     if r.operatingCashflowTTM is not None and r.netIncomeTTM and r.netIncomeTTM > 0:
         r.incomeQualityRatio = _safeRound((r.operatingCashflowTTM / r.netIncomeTTM) * 100, 2)
 
-    if r.operatingIncomeTTM is not None and r.revenueTTM and r.revenueTTM > 0:
-        depreciation = r.depreciationExpense
-        if depreciation is None:
-            depreciation = (r.tangibleAssets or 0) * 0.05 + (r.intangibleAssets or 0) * 0.1
-            r.ebitdaEstimated = True
-        else:
-            r.ebitdaEstimated = False
-        ebitda = r.operatingIncomeTTM + depreciation
+    ebitda = _calcEbitdaValue(r.operatingIncomeTTM, r.depreciationExpense)
+    if ebitda is not None and r.revenueTTM and r.revenueTTM > 0:
+        r.ebitdaEstimated = False
         r.ebitdaMargin = _safeRound((ebitda / r.revenueTTM) * 100, 2)
 
 
@@ -1028,9 +1053,7 @@ def _calcStability(r: RatioResult) -> None:
     if r.operatingIncomeTTM is not None and r.financeCosts and r.financeCosts > 0:
         r.interestCoverage = _safeRound(r.operatingIncomeTTM / r.financeCosts, 2)
 
-    totalBorrowings = r.shortTermBorrowings + r.longTermBorrowings + r.bonds
-    r.netDebt = totalBorrowings - (r.cash or 0)
-
+    r.netDebt = _calcNetDebt(r.shortTermBorrowings, r.longTermBorrowings, r.bonds, r.cash)
     r.netDebtRatio = _safePctPositive(r.netDebt, r.totalEquity)
 
     if r.noncurrentAssets is not None and r.totalEquity and r.totalEquity > 0:
@@ -1060,8 +1083,8 @@ def _calcCashflow(
     series: dict[str, dict[str, list[float | None]]],
 ) -> None:
     """현금흐름 비율 (7개)."""
-    capexAmt = abs(r.capex) if r.capex else 0
-    if r.operatingCashflowTTM is not None:
+    if r.operatingCashflowTTM is not None and r.capex is not None:
+        capexAmt = abs(r.capex)
         r.fcf = r.operatingCashflowTTM - capexAmt
 
     r.operatingCfMargin = _safePct(r.operatingCashflowTTM, r.revenueTTM)
@@ -1070,10 +1093,10 @@ def _calcCashflow(
     # 영업CF/유동부채: 단기 채무를 영업현금흐름으로 상환할 수 있는 능력
     r.operatingCfToCurrentLiab = _safePct(r.operatingCashflowTTM, r.currentLiabilities)
 
-    if r.capex and r.revenueTTM and r.revenueTTM > 0:
+    if r.capex is not None and r.revenueTTM and r.revenueTTM > 0:
         r.capexRatio = _safeRound((abs(r.capex) / r.revenueTTM) * 100, 2)
 
-    if r.dividendsPaid and r.netIncomeTTM and r.netIncomeTTM > 0:
+    if r.dividendsPaid is not None and r.netIncomeTTM and r.netIncomeTTM > 0:
         r.dividendPayoutRatio = _safeRound((abs(r.dividendsPaid) / r.netIncomeTTM) * 100, 2)
 
     # FCF/OCF비율: FCF가 영업CF의 몇 %인지 (CAPEX 부담 측정)
@@ -1142,16 +1165,12 @@ def _calcDupont(r: RatioResult) -> None:
 
 
 def _calcDebtToEbitda(r: RatioResult) -> None:
-    """Debt / EBITDA. 감가상각 누락 시 유형/무형 자산 비율로 추정."""
-    if r.operatingIncomeTTM is None:
+    """Debt / EBITDA. 차입금 구성과 보고된 감가상각비가 모두 필요하다."""
+    totalBorrowings = _sumComplete(r.shortTermBorrowings, r.longTermBorrowings, r.bonds)
+    ebitda = _calcEbitdaValue(r.operatingIncomeTTM, r.depreciationExpense)
+    if totalBorrowings is None or ebitda is None or ebitda <= 0:
         return
-    dep = r.depreciationExpense
-    if dep is None:
-        dep = (r.tangibleAssets or 0) * 0.05 + (r.intangibleAssets or 0) * 0.1
-    ebitda = r.operatingIncomeTTM + dep
-    totalBorr = r.shortTermBorrowings + r.longTermBorrowings + r.bonds
-    if ebitda > 0:
-        r.debtToEbitda = _safeRound(totalBorr / ebitda, 2)
+    r.debtToEbitda = _safeRound(totalBorrowings / ebitda, 2)
 
 
 def _calcCCC(r: RatioResult) -> None:
@@ -1640,17 +1659,9 @@ def _calcValuation(r: RatioResult) -> None:
     if r.revenueTTM and r.revenueTTM > 0:
         r.psr = round(mc / r.revenueTTM, 2)
 
-    totalDebt = r.shortTermBorrowings + r.longTermBorrowings + r.bonds
-    netDebt = totalDebt - (r.cash or 0)
-    ev = mc + netDebt
-
-    if r.operatingIncomeTTM and r.operatingIncomeTTM > 0:
-        depreciation = r.depreciationExpense
-        if depreciation is None:
-            depreciation = (r.tangibleAssets or 0) * 0.05 + (r.intangibleAssets or 0) * 0.1
-        ebitda = r.operatingIncomeTTM + depreciation
-        if ebitda > 0:
-            r.evEbitda = round(ev / ebitda, 2)
+    ebitda = _calcEbitdaValue(r.operatingIncomeTTM, r.depreciationExpense)
+    if r.netDebt is not None and ebitda is not None and ebitda > 0:
+        r.evEbitda = round((mc + r.netDebt) / ebitda, 2)
 
 
 def _sv(lst: list, i: int) -> float | None:
@@ -1721,9 +1732,6 @@ def _appendBasicAndProfitability(rs: RatioSeriesResult, i: int, S: dict[str, lis
     oe_i = _sv(S["ownersEquity"], i)
     cl_i = _sv(S["curLiab"], i)
     opcf_i = _sv(S["opCf"], i)
-    tan_i = _sv(S["tangible"], i)
-    int_i = _sv(S["intangible"], i)
-
     rs.revenue.append(rev_i)
     rs.operatingProfit.append(op_i)
     rs.netProfit.append(np_i)
@@ -1731,8 +1739,8 @@ def _appendBasicAndProfitability(rs: RatioSeriesResult, i: int, S: dict[str, lis
     rs.totalEquity.append(te_i)
     rs.operatingCashflow.append(opcf_i)
 
-    rs.roe.append(_safePct(np_i, oe_i))
-    rs.roa.append(_safePct(np_i, ta_i))
+    rs.roe.append(_safePctPositive(np_i, oe_i))
+    rs.roa.append(_safePctPositive(np_i, ta_i))
 
     if op_i is not None and ta_i and cl_i is not None:
         ce_i = ta_i - cl_i
@@ -1762,10 +1770,7 @@ def _appendBasicAndProfitability(rs: RatioSeriesResult, i: int, S: dict[str, lis
     else:
         rs.incomeQualityRatio.append(None)
 
-    dep = _sv(S["depreciation"], i)
-    if dep is None:
-        dep = (tan_i or 0) * 0.05 + (int_i or 0) * 0.1
-    ebitda = (op_i + dep) if op_i is not None else None
+    ebitda = _calcEbitdaValue(op_i, _sv(S["depreciation"], i))
     rs.ebitdaMargin.append(_safePct(ebitda, rev_i))
 
 
@@ -1781,11 +1786,11 @@ def _appendStability(rs: RatioSeriesResult, i: int, S: dict[str, list]) -> None:
     nca_i = _sv(S["ncAssets"], i)
     op_i = _sv(S["opProfit"], i)
     fc_i = _sv(S["finCosts"], i)
-    stb_i = _sv(S["stBorrow"], i) or 0
-    ltb_i = _sv(S["ltBorrow"], i) or 0
-    bnd_i = _sv(S["bonds"], i) or 0
+    stb_i = _sv(S["stBorrow"], i)
+    ltb_i = _sv(S["ltBorrow"], i)
+    bnd_i = _sv(S["bonds"], i)
 
-    rs.debtRatio.append(_safePct(tl_i, te_i))
+    rs.debtRatio.append(_safePctPositive(tl_i, te_i))
     rs.currentRatio.append(_safePct(ca_i, cl_i))
 
     if ca_i is not None and inv_i is not None and cl_i and cl_i > 0:
@@ -1794,15 +1799,15 @@ def _appendStability(rs: RatioSeriesResult, i: int, S: dict[str, list]) -> None:
         rs.quickRatio.append(None)
 
     rs.cashRatio.append(_safePct(cash_i, cl_i))
-    rs.equityRatio.append(_safePct(te_i, ta_i))
+    rs.equityRatio.append(_safePctPositive(te_i, ta_i))
 
     if op_i is not None and fc_i and fc_i > 0:
         rs.interestCoverage.append(_safeRound(op_i / fc_i, 2))
     else:
         rs.interestCoverage.append(None)
 
-    nd = stb_i + ltb_i + bnd_i - (cash_i or 0)
-    rs.netDebtRatio.append(_safePct(nd, te_i))
+    netDebt = _calcNetDebt(stb_i, ltb_i, bnd_i, cash_i)
+    rs.netDebtRatio.append(_safePctPositive(netDebt, te_i))
 
     if nca_i is not None and te_i and te_i > 0:
         rs.noncurrentRatio.append(_safeRound((nca_i / te_i) * 100, 2))
@@ -1850,10 +1855,9 @@ def _appendCashflow(rs: RatioSeriesResult, i: int, S: dict[str, list]) -> None:
     cap_i = _sv(S["capex"], i)
     div_i = _sv(S["divPaid"], i)
 
-    capAmt = abs(cap_i) if cap_i and cap_i > 0 else 0
     fcf_i: float | None
-    if opcf_i is not None:
-        fcf_i = opcf_i - capAmt
+    if opcf_i is not None and cap_i is not None:
+        fcf_i = opcf_i - abs(cap_i)
     else:
         fcf_i = None
     rs.fcf.append(fcf_i)
@@ -1862,12 +1866,12 @@ def _appendCashflow(rs: RatioSeriesResult, i: int, S: dict[str, list]) -> None:
     rs.operatingCfToNetIncome.append(_safePctPositive(opcf_i, np_i))
     rs.operatingCfToCurrentLiab.append(_safePct(opcf_i, cl_i))
 
-    if cap_i and rev_i and rev_i > 0:
+    if cap_i is not None and rev_i and rev_i > 0:
         rs.capexRatio.append(_safeRound((abs(cap_i) / rev_i) * 100, 2))
     else:
         rs.capexRatio.append(None)
 
-    if div_i and np_i and np_i > 0:
+    if div_i is not None and np_i and np_i > 0:
         rs.dividendPayoutRatio.append(_safeRound((abs(div_i) / np_i) * 100, 2))
     else:
         rs.dividendPayoutRatio.append(None)
@@ -1969,11 +1973,9 @@ def _appendRoicDupontDebt(rs: RatioSeriesResult, i: int, S: dict[str, list]) -> 
     ta_i = _sv(S["totalAssets"], i)
     te_i = _sv(S["totalEquity"], i)
     cash_i = _sv(S["cash"], i)
-    tan_i = _sv(S["tangible"], i)
-    int_i = _sv(S["intangible"], i)
-    stb_i = _sv(S["stBorrow"], i) or 0
-    ltb_i = _sv(S["ltBorrow"], i) or 0
-    bnd_i = _sv(S["bonds"], i) or 0
+    stb_i = _sv(S["stBorrow"], i)
+    ltb_i = _sv(S["ltBorrow"], i)
+    bnd_i = _sv(S["bonds"], i)
 
     # ROIC
     pbt_i = _sv(S["profitBeforeTax"], i)
@@ -1984,9 +1986,9 @@ def _appendRoicDupontDebt(rs: RatioSeriesResult, i: int, S: dict[str, list]) -> 
         if 0 <= _et_i <= 0.5:
             et_i = _et_i
     nopat_i = op_i * (1 - et_i) if op_i is not None else None
-    nd_i = stb_i + ltb_i + bnd_i - (cash_i or 0)
-    invested_i = (te_i or 0) + max(nd_i, 0) if te_i is not None else None
-    rs.roic.append(_safePct(nopat_i, invested_i))
+    netDebt_i = _calcNetDebt(stb_i, ltb_i, bnd_i, cash_i)
+    invested_i = te_i + max(netDebt_i, 0) if te_i is not None and netDebt_i is not None else None
+    rs.roic.append(_safePctPositive(nopat_i, invested_i))
 
     # DuPont
     rs.dupontMargin.append(_safePct(np_i, rev_i))
@@ -1994,13 +1996,10 @@ def _appendRoicDupontDebt(rs: RatioSeriesResult, i: int, S: dict[str, list]) -> 
     rs.dupontLeverage.append(_safeRound(_safeDiv(ta_i, te_i), 2) if te_i and te_i > 0 else None)
 
     # Debt/EBITDA
-    dep_i = _sv(S["depreciation"], i)
-    if dep_i is None:
-        dep_i = (tan_i or 0) * 0.05 + (int_i or 0) * 0.1
-    ebitda_i = (op_i + dep_i) if op_i is not None else None
-    totalBorr_i = stb_i + ltb_i + bnd_i
-    if ebitda_i and ebitda_i > 0:
-        rs.debtToEbitda.append(_safeRound(totalBorr_i / ebitda_i, 2))
+    ebitda_i = _calcEbitdaValue(op_i, _sv(S["depreciation"], i))
+    totalBorrowings_i = _sumComplete(stb_i, ltb_i, bnd_i)
+    if ebitda_i is not None and ebitda_i > 0 and totalBorrowings_i is not None:
+        rs.debtToEbitda.append(_safeRound(totalBorrowings_i / ebitda_i, 2))
     else:
         rs.debtToEbitda.append(None)
 
