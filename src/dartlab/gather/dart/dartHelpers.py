@@ -1,4 +1,4 @@
-"""dart/openapi dart 헬퍼 — dart.py 분할 (규칙 3 LoC).
+"""dart/openapi dart 헬퍼 . dart.py 분할 (규칙 3 LoC).
 
 _dataPath / _buildPeriods / _periodLabel / _maybeValidateFinance / _fetchSeries.
 """
@@ -6,11 +6,11 @@ _dataPath / _buildPeriods / _periodLabel / _maybeValidateFinance / _fetchSeries.
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Protocol
 
 import polars as pl
 
 import dartlab.config as _dartlabConfig
-from dartlab.core.dartClient import DartClient
 from dartlab.core.dartConstants import (
     CODE_TO_LABEL as _CODE_TO_LABEL,
 )
@@ -18,6 +18,27 @@ from dartlab.core.dartConstants import (
     QUARTER_TO_CODE as _QUARTER_TO_CODE,
 )
 from dartlab.core.dataConfig import DATA_RELEASES
+
+
+class _DartFrameClient(Protocol):
+    """연속 DART 조회에 필요한 최소 클라이언트 계약."""
+
+    def getDf(self, endpoint: str, params: dict[str, str]) -> pl.DataFrame:
+        """DART endpoint를 DataFrame으로 조회한다.
+
+        Args:
+            endpoint: `.json`을 포함한 OpenDART endpoint.
+            params: endpoint query parameter.
+        Returns:
+            정규화 전 OpenDART 응답 frame.
+        Requires:
+            등록된 DART fetch provider의 실제 client.
+        Raises:
+            Exception: 실제 client의 네트워크·API 오류를 그대로 전달한다.
+        Example:
+            >>> client.getDf("fnlttSinglAcntAll.json", {"corp_code": "00126380"})
+        """
+        ...
 
 
 def _dataPath(category: str, stockCode: str) -> Path:
@@ -64,26 +85,28 @@ def _periodLabel(bsnsYear: str, reprtCode: str) -> str:
 
 
 def _maybeValidateFinance(df: pl.DataFrame) -> None:
-    """opt-in finance schema 검증 — DARTLAB_VALIDATE_SCHEMA=1 일 때만 동작.
+    """opt-in finance schema 검증. DARTLAB_VALIDATE_SCHEMA=1 일 때만 동작.
 
     Capabilities:
-        production path 의 데이터 drift 차단 — DART API 응답 schema 가 silent
-        하게 바뀌면 즉시 warning 로그. 환경변수 OFF (기본) 면 0 비용.
+        production path 의 데이터 drift 차단. DART API 응답 schema 가 바뀌면
+        검증 예외를 호출자에게 그대로 전달한다. 환경변수 OFF (기본) 면 0 비용.
     Args:
         df: Dart.finance 결과 frame.
     Returns:
-        None. validate 실패 시 logger.warning, raise 안 함 (production 무중단).
+        None.
     Example:
         >>> _maybeValidateFinance(df)  # env OFF → no-op
         >>> import os; os.environ['DARTLAB_VALIDATE_SCHEMA'] = '1'
-        >>> _maybeValidateFinance(df)  # schema 위반 시 logger.warning
+        >>> _maybeValidateFinance(df)  # schema 위반 시 SchemaErrors
     Guide:
         CI / dev 에서 ON (catch drift), production wheel 사용자는 default OFF.
     SeeAlso:
-        dartlab.core.schemas.FinanceSchema.
+        dartlab.gather.dart.schemas.FinanceSchema.
     Requires:
-        dev 환경 — pandera[polars] 설치. production wheel 은 default OFF 라 무영향.    Raises:
-        없음. validate 실패는 warning 으로만 보고.
+        dev 환경에서 pandera[polars] 설치. production wheel 은 default OFF 라 무영향.
+    Raises:
+        ModuleNotFoundError: 검증을 켰지만 pandera가 설치되지 않은 경우.
+        pandera.errors.SchemaErrors: finance schema가 어긋난 경우.
     """
     import os
 
@@ -91,21 +114,13 @@ def _maybeValidateFinance(df: pl.DataFrame) -> None:
         return
     if df is None or df.is_empty():
         return
-    try:
-        from dartlab.core.logger import getLogger
-        from dartlab.core.schemas import FinanceSchema
+    from dartlab.gather.dart.schemas import FinanceSchema
 
-        FinanceSchema.validate(df, lazy=True)
-    except ImportError:
-        return
-    except Exception as exc:  # noqa: BLE001 — schema validation drift는 모든 예외 흡수
-        from dartlab.core.logger import getLogger
-
-        getLogger(__name__).warning("FinanceSchema drift: %s", str(exc)[:200])
+    FinanceSchema.validate(df, lazy=True)
 
 
 def _fetchSeries(
-    client: DartClient,
+    client: _DartFrameClient,
     endpoint: str,
     corpCode: str,
     corpName: str,

@@ -1,6 +1,6 @@
-"""Pandera FinanceSchema/ReportSchema — fixture + drift 회귀.
+"""Pandera FinanceSchema와 ReportSchema fixture 및 drift mirror 회귀.
 
-본 SSOT 통합 PR (Phase 2b) — Pandera schema 가 raw fetch 결과를 *데이터 계약*
+본 SSOT 통합 PR (Phase 2b). Pandera schema가 raw fetch 결과를 데이터 계약
 으로 못박는 1 차 방어선. 실 production 데이터 snapshot 전수 통과 + 의도적 drift
 (컬럼 삭제) 시 에러 발생 확인.
 """
@@ -12,11 +12,11 @@ from pathlib import Path
 import polars as pl
 import pytest
 
-from dartlab.core.schemas import FinanceSchema, ReportSchema
+from dartlab.gather.dart.schemas import FinanceSchema, ReportSchema
 
 pytestmark = pytest.mark.unit
 
-_FIXTURE_DIR = Path(__file__).resolve().parent.parent / "fixtures"
+_FIXTURE_DIR = Path(__file__).resolve().parents[2] / "fixtures"
 
 _FINANCE_FIXTURES = [
     "000660.finance.parquet",
@@ -34,7 +34,7 @@ _FINANCE_FIXTURES = [
 
 @pytest.mark.parametrize("filename", _FINANCE_FIXTURES)
 def test_FinanceSchema_acceptsFixture(filename: str) -> None:
-    """fixture 10 종이 FinanceSchema 통과 — 실 production snapshot 회귀 가드."""
+    """fixture 10 종이 FinanceSchema 통과 . 실 production snapshot 회귀 가드."""
     df = pl.read_parquet(_FIXTURE_DIR / filename)
     FinanceSchema.validate(df, lazy=True)
 
@@ -46,7 +46,7 @@ def test_ReportSchema_acceptsFixture() -> None:
 
 
 def test_FinanceSchema_rejectsMissingRequiredColumn() -> None:
-    """필수 컬럼 (rcept_no) 누락 시 SchemaError — drift 차단 회귀."""
+    """필수 컬럼 (rcept_no) 누락 시 SchemaError . drift 차단 회귀."""
     import pandera.errors
 
     df = pl.read_parquet(_FIXTURE_DIR / "005930.finance.parquet")
@@ -77,19 +77,19 @@ def test_maybeValidateFinance_envGateOff_noOp() -> None:
     _maybeValidateFinance(bad)  # no raise
 
 
-def test_maybeValidateFinance_envGateOn_logsWarning(caplog) -> None:
-    """DARTLAB_VALIDATE_SCHEMA=1 + 깨진 데이터 → warning 로그, raise 안 함."""
-    import logging
+def test_maybeValidateFinance_envGateOn_raisesSchemaErrors() -> None:
+    """검증 활성화 상태의 깨진 데이터는 SchemaErrors를 호출자에게 전달한다."""
     import os
+
+    import pandera.errors
 
     from dartlab.gather.dart.dart import _maybeValidateFinance
 
     os.environ["DARTLAB_VALIDATE_SCHEMA"] = "1"
     try:
-        with caplog.at_level(logging.WARNING, logger="dartlab.gather.dart.dart"):
+        with pytest.raises(pandera.errors.SchemaErrors):
             bad = pl.DataFrame({"not_a_column": ["x"]})
-            _maybeValidateFinance(bad)  # 위반이지만 raise 안 함
-        assert any("drift" in r.getMessage().lower() for r in caplog.records)
+            _maybeValidateFinance(bad)
     finally:
         os.environ.pop("DARTLAB_VALIDATE_SCHEMA", None)
 

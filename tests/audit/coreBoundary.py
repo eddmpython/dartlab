@@ -68,6 +68,7 @@ _ALLOWED_DIRS: frozenset[str] = frozenset(
         "naming",  # SSOT naming
         "providers",  # credential/secret 공용 보안 primitive
         "render",  # render protocol
+        "ratios",  # DART/EDGAR 공용 순수 재무비율 계산
         "search",  # L0 search infra
         "sector",  # SSOT sector classification
         "utils",  # L0 utils

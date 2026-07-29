@@ -42,7 +42,7 @@ dartlab 의 **모든 테스트는 한 가지 질문에 답한다: "다음 PR 이
 | `src/dartlab/ai/**` (L4) | `tests/ai/` + AI eval set (`tests/_evals/`) 갱신 | `unit` 또는 `eval` |
 | `src/dartlab/cli/**` (L4) | `tests/cli/test_output_snapshots.py` snapshot 추가 | `unit` |
 | `src/dartlab/mcp/**` (L4) | `tests/mcp/` + Schemathesis (Phase 3) | `unit` |
-| Pandera schema 변경 (`core/schemas.py`) | `tests/_schemas/test_finance_schema.py` fixture 통과 | `unit` |
+| Pandera schema 변경 (`gather/dart/schemas.py`) | `tests/gather/dart/test_schemas.py` fixture 통과 | `unit` |
 | AI agent 동작 변경 (prompt/tool) | `tests/_evals/eval_set.jsonl` 항목 추가 + judge 통과 | `eval` |
 
 **테스트 없이 src/ 만 바꾼 PR → CI fail** (Track 5 자동 게이트, 2026-Q3 활성화 예정).
@@ -256,8 +256,8 @@ $env:DARTLAB_TEST_LOCKED="1"; uv run python -X utf8 -m pytest tests/cli/test_out
 
 | 항목 | 위치 |
 |---|---|
-| 스키마 | `src/dartlab/core/schemas.py` (FinanceSchema · ReportSchema) |
-| 회귀 | `tests/_schemas/test_finance_schema.py` (fixture 12 종 + drift reject) |
+| 스키마 | `src/dartlab/gather/dart/schemas.py` (FinanceSchema · ReportSchema) |
+| 회귀 | `tests/gather/dart/test_schemas.py` (fixture 10 종 + report + drift reject) |
 | Production 게이트 | `DARTLAB_VALIDATE_SCHEMA=1` 환경변수 (production default OFF) |
 
 **언제 추가**:
@@ -472,7 +472,7 @@ git diff tests/audit/_baselines/testCoverage.json
 | 트랙 | 발견 | 보강 | 차단 |
 |---|---|---|---|
 | T1 snapshot | `--snapshot-update` 후 diff 검토 | snapshot 동결 | CI `snapshot-regression` job |
-| T2 schema | 새 fixture parquet 추가 | `core/schemas.py` 컬럼 갱신 | CI `schema-drift` job |
+| T2 schema | 새 fixture parquet 추가 | `gather/dart/schemas.py` 컬럼 갱신 | CI `schema-drift` job |
 | T3 eval | live 호출 점수 baseline 미달 | prompt/tool 수정 | nightly + baseline_score 갱신 |
 | T4 metamorphic | 새 수치 함수 추가 | 변환 속성 검증 추가 | CI `test-fast` (unit 마커) |
 | T5 mutation | mutationSmoke survived | oracle test 추가 | CI `mutation-smoke` job |
@@ -546,7 +546,7 @@ uv run python -X utf8 tests/audit/testCoverageGate.py --all --json > tests/audit
 |---|---|---|
 | **mutation-smoke job fail (survived 발견)** | `mutationSmoke` 출력 detail 확인 — 어느 패턴 살아남았나 | oracle test 추가 → 재실행 100% 회복 |
 | **VCR replay fail (CannotOverwriteExistingCassette)** | DART 응답이 카세트와 다름 → API 변경 가능성 | 분석 후 의도된 변경이면 카세트 re-record + commit |
-| **schema-drift fail** | Pandera schema 가 fixture 거부 | DART API 응답 변경 → `core/schemas.py` 컬럼 갱신 + fixture 재캡처 |
+| **schema-drift fail** | Pandera schema 가 fixture 거부 | DART API 응답 변경 → `gather/dart/schemas.py` 컬럼 갱신 + fixture 재캡처 |
 | **snapshot-regression fail** | Rich 출력 diff 발견 | 사람 눈 검토 → 의도된 변경이면 `--snapshot-update` |
 | **test-coverage-gate fail (new_missing > 0)** | 새 함수 + tests 누락 | tests/ 에 함수 참조 추가 또는 `_` prefix 의도 확인 |
 | **eval-rule fail** | mock 출력이 6 신호 통과 못 함 | 채점 룰 변경 vs 테스트 데이터 정합 — judge.py 확인 |

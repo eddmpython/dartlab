@@ -1,4 +1,4 @@
-"""panel native 전수 census — panel.parquet 단일 artifact 에서 native is/bs/cf/ratios 가 나오는지 검사.
+"""panel native 전수 census . panel.parquet 단일 artifact 에서 native is/bs/cf/ratios 가 나오는지 검사.
 
 panelCell 별 artifact 없이 ``c.panel("is")``/``c.panel("ratios")`` 는 panel.parquet 의 5표 contentRaw 를
 read-time 분해(``cell._cellsFromPanel``)한다. 본 census 는 ``data/dart/panel/{code}/`` 종목별로:
@@ -37,7 +37,7 @@ _INCOME = {"IS1", "IS2", "IS3"}
 
 
 def _censusOne(code: str) -> dict:
-    """종목 1개 census — _cellsFromPanel 1회 파싱 후 순수 함수 재사용 (손익/비율)."""
+    """종목 1개 census . _cellsFromPanel 1회 파싱 후 순수 함수 재사용 (손익/비율)."""
     import polars as pl
 
     from dartlab.core.ratios import calcRatioSeries
@@ -89,7 +89,7 @@ def _censusOne(code: str) -> dict:
         if asm is None:
             continue
         series, years = asm
-        rs = calcRatioSeries(series, years, yoyLag=(4 if fr == "quarter" else 1))
+        rs = calcRatioSeries(series, years, yoyLag=(4 if fr in {"quarter", "ytd"} else 1))
         wide = _ratiosToWide(rs, years)
         if wide is not None and not wide.is_empty():
             rec["ratioRows"] = wide.height

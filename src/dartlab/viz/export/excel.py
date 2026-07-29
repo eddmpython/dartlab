@@ -216,7 +216,7 @@ def _writeRatiosSheet(wb: Workbook, c: Company, *, label: str = "") -> None:
     annualSeries, years = annualResult
     if not annualSeries or not years:
         return
-    rs = calcRatioSeries(annualSeries, years)
+    rs = calcRatioSeries(annualSeries, years, yoyLag=1)
     ratioSeriesDict, _ = toSeriesDict(rs)
     ratioData = ratioSeriesDict.get("RATIO", {})
     if not ratioData:
@@ -342,7 +342,7 @@ def _resolveData(c: Company, moduleName: str) -> pl.DataFrame | None:
     return None
 
 
-# ── 공시 panel 표 (병합 보존 격자) export — provider 격자(DIP)를 openpyxl 로 쓴다 ──
+# ── 공시 panel 표 (병합 보존 격자) export . provider 격자(DIP)를 openpyxl 로 쓴다 ──
 
 _NOTE_FMT = Font(italic=True, size=9, color="808080")
 
@@ -351,7 +351,7 @@ def _writeGridSheet(wb: Workbook, label: str, sheet: PanelExportSheet) -> None:
     """PanelExportSheet(앵커 셀+병합+단위/노트) → openpyxl 시트.
 
     값 = 정합값(Number/text/None), 병합 = anchor 1회 쓰기 + merge_cells. 결손(None)은
-    셀을 안 써 빈셀(0 금지 — honest-gap). 단위/노트는 상단 라벨 행(값 환산 0).
+    셀을 안 써 빈셀(0 금지 . honest-gap). 단위/노트는 상단 라벨 행(값 환산 0).
 
     Args:
         wb: openpyxl Workbook.
@@ -359,7 +359,7 @@ def _writeGridSheet(wb: Workbook, label: str, sheet: PanelExportSheet) -> None:
         sheet: provider 가 만든 PanelExportSheet (앵커 셀 + 병합 span).
 
     Returns:
-        None — wb 에 시트 추가 (빈 격자는 시트 생성 안 함).
+        None . wb 에 시트 추가 (빈 격자는 시트 생성 안 함).
 
     Example:
         >>> _writeGridSheet(wb, "개요표", sheet)  # doctest: +SKIP
@@ -396,7 +396,7 @@ def _writeGridSheet(wb: Workbook, label: str, sheet: PanelExportSheet) -> None:
             align = "right" if (pc.align == "right" or isNum) else (pc.align or "left")
             wrap = isinstance(pc.value, str) and "\n" in pc.value
             oc.alignment = Alignment(horizontal=align, vertical="center", wrap_text=wrap)
-        # 극단 rowspan(683) 포함 — 단일 merge 범위 1개.
+        # 극단 rowspan(683) 포함 . 단일 merge 범위 1개.
         if pc.rowspan > 1 or pc.colspan > 1:
             ws.merge_cells(
                 start_row=xlRow,
@@ -410,7 +410,7 @@ def _writeGridSheet(wb: Workbook, label: str, sheet: PanelExportSheet) -> None:
 def _writePanelTableSheet(wb: Workbook, spec: PanelTableSource, c: Company, *, label: str) -> None:
     """PanelTableSource → 시트. provider 격자(DIP, getPanelTableAccessor)를 openpyxl 로.
 
-    viz 는 provider 직접 import 금지(F1.7) — core PanelTableAccessor 경유. accessor/행/기간
+    viz 는 provider 직접 import 금지(F1.7) . core PanelTableAccessor 경유. accessor/행/기간
     부재는 graceful skip(회귀 0). asFiled/horizontalized 분기·격자 빌드는 provider 가 처리.
 
     Args:
@@ -420,7 +420,7 @@ def _writePanelTableSheet(wb: Workbook, spec: PanelTableSource, c: Company, *, l
         label: 시트 라벨.
 
     Returns:
-        None — wb 에 시트 추가 또는 graceful skip.
+        None . wb 에 시트 추가 또는 graceful skip.
 
     Example:
         >>> _writePanelTableSheet(wb, spec, c, label="개요표")  # doctest: +SKIP
@@ -535,12 +535,12 @@ def exportWithTemplate(
     for spec in template.sheets:
         source = spec.source
 
-        # 공시 panel 표 — 병합 보존 격자 (회귀 0: ModuleSource 경로는 아래 그대로).
+        # 공시 panel 표 . 병합 보존 격자 (회귀 0: ModuleSource 경로는 아래 그대로).
         if isinstance(source, PanelTableSource):
             _writePanelTableSheet(wb, source, c, label=spec.label)
             continue
 
-        # ModuleSource (또는 하위호환 정규화된 문자열 source) — 모듈명으로 분기.
+        # ModuleSource (또는 하위호환 정규화된 문자열 source) . 모듈명으로 분기.
         name = source.name
 
         if name in _FINANCE_SHEETS:

@@ -2,13 +2,21 @@
 
 - **무엇**: DataFrame 스키마 검사기. pydantic 이 dict/JSON 을 검증하듯 Pandera 는 polars/pandas 표의 컬럼 이름·존재·타입·값 제약을 선언적으로 검증하고, 어긋나면 SchemaError 를 낸다.
 - **우리 현재 사용**: 예, 단 dev 전용. pin `pandera[polars]>=0.29.0,<0.32`. 위치는 pyproject `[dependency-groups] dev` (line 398), main `dependencies` 아님. 즉 `pip install dartlab` 사용자는 pandera 를 받지 않는다.
-- **주 사용처**: `src/dartlab/core/schemas.py` (스키마 SSOT). 실제 배선은 `src/dartlab/gather/dart/dartHelpers.py::_maybeValidateFinance` (env 게이트, production 기본 OFF, 실패 시 warning 만 raise 안 함) + `tests/_schemas/test_finance_schema.py` (fixture 10 종 회귀).
-- **마지막 조사일**: 2026-07-06
-- **현재 결정**: 채택 (개념, CI/dev 데이터 계약 게이트 한정). 의존성 승격 금지(dev-only 유지, 사용자 부담 0). 실배선은 finance·report 2 개뿐이고 나머지 49 개는 미배선 장식. not-null 강화는 실데이터 오탐으로 기각, dtype 강화는 무의미(전부 String), enum 강화만 실질 증분(옵션). 49 개 삭제는 불필요(청소 반사, 값어치 대비 안 맞음).
+- **주 사용처**: `src/dartlab/gather/dart/schemas.py` (DART raw 계약 SSOT). 실제 배선은 `src/dartlab/gather/dart/dartHelpers.py::_maybeValidateFinance`와 `tests/gather/dart/test_schemas.py`.
+- **마지막 조사일**: 2026-07-29
+- **현재 결정**: 채택 (CI/dev 데이터 계약 게이트 한정). dev-only 의존성은 유지한다. 실제 생산자와 일치하는 `FinanceSchema`, `ReportSchema`만 남기고 호출자 없는 49개 장식 스키마는 삭제했다. 검증을 켠 상태에서는 import 실패와 `SchemaErrors`를 호출자에게 그대로 전달한다. 기본 OFF는 사용자 설치에 Pandera를 강제하지 않기 위한 0비용 계약이다.
 
 ---
 
-## 핵심 사실 (실측, 2026-07-06)
+## 2026-07-29 L0 폐쇄 결정
+
+- 스키마 소유권을 범용 `core`에서 실제 생산자인 `gather/dart`로 옮겼다.
+- 실제 생산자 출력과 맞지 않고 호출자도 없는 49개 정의를 삭제했다.
+- 검증 활성화 상태의 warning-only 예외 삼킴을 제거했다.
+- finance fixture 10종, report fixture, 필수 컬럼 drift, 환경변수 ON/OFF 계약을 회귀로 고정했다.
+- 아래 2026-07-06의 "49개 삭제 불필요" 판단은 L0 전체 호출자 재검토 결과로 폐기되었다.
+
+## 핵심 사실 (실측, 2026-07-06, 역사 기록)
 
 이번 조사는 웹이 아니라 우리 코드 실측 + fixture 실험으로 판정했다.
 
@@ -37,7 +45,7 @@
 
 ## 조사 이력
 
-### 2026-07-06 (pandera[polars] 0.29~0.31 라인, 우리 pin `<0.32`)
+### 2026-07-06 (pandera[polars] 0.29~0.31 라인, 우리 pin `<0.32`, 2026-07-29 결정으로 대체됨)
 
 **카테고리별 관찰**
 
@@ -68,7 +76,7 @@
 
 **본 자료 (sources)**
 
-- 코드: `src/dartlab/core/schemas.py`, `src/dartlab/gather/dart/dartHelpers.py`, `tests/_schemas/test_finance_schema.py`, `pyproject.toml` (line 51 main deps vs line 382~398 dev group).
+- 당시 코드: `src/dartlab/core/schemas.py`, `src/dartlab/gather/dart/dartHelpers.py`, `tests/_schemas/test_finance_schema.py`, `pyproject.toml` (line 51 main deps vs line 382~398 dev group).
 - 실험: finance fixture 10 종(`tests/fixtures/*.finance.parquet`) 에 강한 제약(not-null·enum) 주입 + drift 3 종 탐지 테스트. 결과는 위 "핵심 사실" 참조.
 - 외부 공식(pin 근거 재확인용): pandera polars 백엔드 isin 이슈. 상세는 pyproject 주석이 SSOT.
 
@@ -77,4 +85,4 @@
 - 채택 유지(개념, CI/dev 게이트). 변경 없음.
 - 안 할 것: 의존성 하드 승격, not-null 강화, dtype 강화, 49 개 삭제. 모두 값어치 대비 안 맞거나 실측으로 기각됨.
 - 옵션(미착수, 착수 시 소): enum 제약 추가(sj_div·fs_div·reprt_code), CI fail 로 조이기, schemas.py 상단 정직 주석 한 줄.
-- 다음에 "pandera 뭐지"로 재조사 금지. 결론 바뀔 새 근거 = pandera[polars] 메이저 변화 또는 엔진 출력 검증을 실제로 배선하기로 결정할 때뿐.
+- 이 절의 결론은 역사 기록이며 현재 결정이 아니다. 현재 SSOT는 문서 상단의 2026-07-29 L0 폐쇄 결정이다.

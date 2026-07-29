@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from dartlab.analysis.financial.insight.anomaly import detectAuditRedFlags, runAnomalyDetection
 from dartlab.analysis.financial.insight.detector import detectFinancialSector
@@ -28,7 +28,8 @@ from dartlab.frame.sector import Sector
 if TYPE_CHECKING:
     from dartlab.core.protocols import CompanyProtocol as Company
 
-SeriesPair = tuple[dict, list[str]]
+FinancialSeries = dict[str, dict[str, list[float | None]]]
+SeriesPair = tuple[FinancialSeries, list[str]]
 
 
 def _extractAuditData(company: Company | None) -> AuditDataForAnomaly | None:
@@ -143,6 +144,8 @@ def _ratioArchetypeOverride(company: Company | None) -> str | None:
 
     sectorInfo = getattr(company, "sector", None)
     industryGroup = getattr(sectorInfo, "industryGroup", None)
+    if not isinstance(industryGroup, IndustryGroup):
+        return None
     mapping = {
         IndustryGroup.BANK: "bank",
         IndustryGroup.INSURANCE: "insurance",
@@ -151,19 +154,39 @@ def _ratioArchetypeOverride(company: Company | None) -> str | None:
     return mapping.get(industryGroup)
 
 
-def _seriesPairsFromCompany(company) -> tuple[SeriesPair | None, SeriesPair | None]:
-    """Company 에서 분기·연간 시계열 짝을 얻는다. 못 얻으면 (None, None).
+def _validatedSeriesPair(value: object, *, source: str) -> SeriesPair | None:
+    """Provider builder 반환값을 analysis 입력 계약으로 검증한다."""
+    if value is None:
+        return None
+    if not isinstance(value, tuple) or len(value) != 2:
+        raise TypeError(f"{source} must return (series, periods) or None")
+    series, periods = value
+    if not isinstance(series, dict) or not isinstance(periods, list) or not all(isinstance(p, str) for p in periods):
+        raise TypeError(f"{source} returned an invalid finance series pair")
+    return cast(SeriesPair, value)
 
-    회사 객체가 이미 갖고 있는 finance 빌드를 그대로 쓴다 (캐시도 그쪽 것). 계열을 여기서
-    새로 조립하지 않는다. import 없이 메서드 유무만 보므로 계층을 건너뛰지 않는다.
+
+def _seriesPairsFromCompany(company) -> tuple[SeriesPair | None, SeriesPair | None]:
+    """Company에서 분기·연간 시계열 짝을 얻는다.
+
+    DART와 EDGAR Company가 가진 내부 series builder를 호출자 adapter 한 곳에서
+    해소한다. builder 실행 오류는 데이터 부재로 바꾸지 않고 그대로 전달한다.
     """
     build = getattr(company, "_getFinanceBuild", None)
-    if build is None:
-        return None, None
-    try:
-        return build("q"), build("y")
-    except (AttributeError, KeyError, OSError, RuntimeError, TypeError, ValueError):
-        return None, None
+    if callable(build):
+        return (
+            _validatedSeriesPair(build("q"), source="_getFinanceBuild('q')"),
+            _validatedSeriesPair(build("y"), source="_getFinanceBuild('y')"),
+        )
+
+    build = getattr(company, "_buildFinanceSeries", None)
+    if callable(build):
+        return (
+            _validatedSeriesPair(build(freq="Q"), source="_buildFinanceSeries(freq='Q')"),
+            _validatedSeriesPair(build(freq="Y"), source="_buildFinanceSeries(freq='Y')"),
+        )
+
+    return None, None
 
 
 def analyzeFinancial(
@@ -208,7 +231,7 @@ def analyzeFinancial(
         FinanceDocAccessor (DART/EDGAR pivot 캐시). marketData 는 옵션.
 
     Raises:
-        없음 — 데이터 부족 시 None.
+        Company의 finance builder가 낸 오류를 그대로 전달한다.
 
     Example:
         >>> analyzeFinancial("005930")
@@ -238,10 +261,16 @@ def analyzeFinancial(
 
     # currency 자동 추출: company에서 가져오거나 기본 KRW
     if currency is None:
-        currency = getattr(company, "currency", "KRW")
+        companyCurrency = getattr(company, "currency", None)
+        currency = companyCurrency if isinstance(companyCurrency, str) and companyCurrency else "KRW"
     market = "US" if currency == "USD" else "KR"
 
-    ratios = calcRatios(aSeries, archetypeOverride=_ratioArchetypeOverride(company), currency=currency)
+    ratios = calcRatios(
+        aSeries,
+        annual=True,
+        archetypeOverride=_ratioArchetypeOverride(company),
+        currency=currency,
+    )
 
     if company is None and corpName is None:
         # F5: company 직접 import 제거 → FinanceDataAccessor.lookupCompany (정공법 B)

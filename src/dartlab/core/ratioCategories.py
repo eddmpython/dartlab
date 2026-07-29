@@ -124,7 +124,7 @@ RATIO_FIELD_LABELS: dict[str, str] = {
     "netDebtRatio": "순차입금비율 (%)",
     "noncurrentRatio": "비유동비율 (%)",
     "workingCapital": "운전자본",
-    "debtToEbitda": "순차입금/EBITDA (배)",
+    "debtToEbitda": "총차입금/EBITDA (배)",
     # 성장성
     "revenueGrowth": "매출 YoY (%)",
     "operatingProfitGrowth": "영업이익 YoY (%)",

@@ -1,4 +1,4 @@
-"""EDGAR panel native 재무 read — panel row payload → 계정×기간 wide.
+"""EDGAR panel native 재무 read . panel row payload → 계정×기간 wide.
 
 소문자 ``c.panel("is"/"bs"/"cf"/"ratios")`` 는 DART 처럼 native 경로다. EDGAR 는 별도
 셀 parquet 를 만들지 않고, build 시 fact/context 결합 결과를 같은 ``edgar/panel`` row
@@ -22,7 +22,7 @@ _log = logging.getLogger(__name__)
 _PAYLOAD_TAG = "DARTLAB_EDGAR_NATIVE_CELLS"
 _PAYLOAD_RE = re.compile(r"<!--DARTLAB_EDGAR_NATIVE_CELLS:([A-Za-z0-9+/=]+)-->", re.DOTALL)
 
-NATIVE_CELL_SCHEMA: dict[str, pl.DataType] = {
+NATIVE_CELL_SCHEMA = {
     "corp": pl.Utf8,
     "rceptNo": pl.Utf8,
     "filingPeriod": pl.Utf8,
@@ -39,12 +39,12 @@ NATIVE_CELL_SCHEMA: dict[str, pl.DataType] = {
     "cellOrder": pl.UInt32,
 }
 
-# 논리 키 → 물리 statement 후보(우선순위). DART ``panel.cell.STATEMENT_VARIANTS`` 의 EDGAR 미러 —
+# 논리 키 → 물리 statement 후보(우선순위). DART ``panel.cell.STATEMENT_VARIANTS`` 의 EDGAR 미러 .
 # 미국 회사가 손익을 단일 손익(IS) 또는 포괄손익(CIS) 한 표로만 내는 표현 변형을 한 곳에서 흡수한다
 # (폴백을 코드에 흩지 않음). BS/CF/EF 는 단일 후보.
 STATEMENT_VARIANTS: dict[str, tuple[str, ...]] = {
-    "is": ("IS", "CIS"),  # 손익 — 손익 우선, 없으면 포괄손익
-    "cis": ("CIS", "IS"),  # 포괄손익 — 포괄 우선, 없으면 손익
+    "is": ("IS", "CIS"),  # 손익 . 손익 우선, 없으면 포괄손익
+    "cis": ("CIS", "IS"),  # 포괄손익 . 포괄 우선, 없으면 손익
     "bs": ("BS",),
     "cf": ("CF",),
     "sce": ("EF",),
@@ -62,7 +62,7 @@ def encodeNativeCellsPayload(cells: list[dict]) -> str:
         base64 JSON HTML comment payload. 입력이 비면 빈 문자열.
 
     Raises:
-        없음 — JSON 직렬화 가능한 cell dict 를 builder 입력 계약으로 받는다.
+        없음 . JSON 직렬화 가능한 cell dict 를 builder 입력 계약으로 받는다.
 
     Example:
         >>> encodeNativeCellsPayload([])
@@ -85,7 +85,7 @@ def decodeNativeCellsPayload(contentRaw: str | None) -> list[dict]:
         native cell row dict 목록. payload 부재/손상 시 빈 list.
 
     Raises:
-        없음 — 손상 payload 는 warning 후 skip.
+        없음 . 손상 payload 는 warning 후 skip.
 
     Example:
         >>> decodeNativeCellsPayload(None)
@@ -142,7 +142,7 @@ def _accountColumn(df: pl.DataFrame, statement: str) -> pl.DataFrame:
         mapper = EdgarMapper()
         concepts = df["concept"].unique().to_list()
         mp = {c: (mapper.mapToDart(c, statement) or c) for c in concepts if c}
-    except Exception:  # noqa: BLE001 — 매퍼 실패 시 concept 그대로 반환
+    except Exception:  # noqa: BLE001 . 매퍼 실패 시 concept 그대로 반환
         return df.with_columns(pl.col("concept").alias("account"))
     return df.with_columns(pl.col("concept").replace(mp).alias("account"))
 
@@ -171,7 +171,7 @@ def _statementWide(df: pl.DataFrame, *, statement: str, freq: str, scope: str) -
 def _statementWideVariants(df: pl.DataFrame, *, logical: str, freq: str, scope: str) -> pl.DataFrame | None:
     """논리 키 → ``STATEMENT_VARIANTS`` 물리 후보를 순서대로 시도, 첫 비어있지 않은 wide 반환.
 
-    DART ``panel.cell._resolveStatement`` 의 EDGAR 미러 — is/cis 처럼 표현 변형(손익/포괄손익)이
+    DART ``panel.cell._resolveStatement`` 의 EDGAR 미러 . is/cis 처럼 표현 변형(손익/포괄손익)이
     있는 논리 키를 한 후보씩 떨어뜨려 본다. 단일 후보(bs/cf/sce)는 ``_statementWide`` 와 동치.
 
     Args:
@@ -184,7 +184,7 @@ def _statementWideVariants(df: pl.DataFrame, *, logical: str, freq: str, scope: 
         ``[account, label, *period]`` wide 또는 후보 전부 빈 경우 None.
 
     Raises:
-        없음 — 미지원 논리 키는 None.
+        없음 . 미지원 논리 키는 None.
 
     Example:
         >>> _statementWideVariants(df, logical="is", freq="year", scope="consolidated")  # doctest: +SKIP
@@ -204,7 +204,7 @@ def readNative(
     scope: str = "consolidated",
     periods: list[str] | None = None,
 ) -> pl.DataFrame | None:
-    """EDGAR native 재무제표/비율 — panel 단일 artifact 에서 read-time 분해.
+    """EDGAR native 재무제표/비율 . panel 단일 artifact 에서 read-time 분해.
 
     Args:
         ticker: US ticker.
@@ -217,7 +217,7 @@ def readNative(
         native wide DataFrame 또는 payload/statement 부재 시 None.
 
     Raises:
-        없음 — panel 부재와 미지원 statement 는 None 으로 표현한다.
+        없음 . panel 부재와 미지원 statement 는 None 으로 표현한다.
 
     Example:
         >>> readNative("AAPL", statement="is")  # doctest: +SKIP
@@ -234,7 +234,7 @@ def readNative(
 
 
 def _readRatios(ticker: str, *, freq: str, scope: str, periods: list[str] | None) -> pl.DataFrame | None:
-    """native 재무비율 — panel native bs/is/cf 셀 → core ratios (DART ``readRatios`` 미러).
+    """native 재무비율 . panel native bs/is/cf 셀 → core ratios (DART ``readRatios`` 미러).
 
     bs/is/cf statement 항목을 snakeId series 로 조립 → ``core.ratios.calcRatioSeries`` (공식 SSOT)
     → DART ``panel.cell._ratiosToWide`` (시계열 wide 조립 SSOT) 로 마감한다. 비율 wide 조립 로직은
@@ -271,5 +271,5 @@ def _readRatios(ticker: str, *, freq: str, scope: str, periods: list[str] | None
             series[sj] = bucket
     if not series:
         return None
-    rs = calcRatioSeries(series, years, yoyLag=(4 if freq == "quarter" else 1))
+    rs = calcRatioSeries(series, years, yoyLag=(4 if freq in {"quarter", "ytd"} else 1))
     return _ratiosToWide(rs, years)

@@ -1,6 +1,6 @@
 """밸류에이션 + 예측 엔진 단위 테스트.
 
-순수 dict 기반 테스트 — Company 로딩 없이 실행 가능.
+순수 dict 기반 테스트 . Company 로딩 없이 실행 가능.
 """
 
 from __future__ import annotations
@@ -404,7 +404,7 @@ class TestPerShareMetrics:
     def test_eps_bps_dps(self):
         from dartlab.analysis.financial.ratios import calcRatios
 
-        result = calcRatios(HEALTHY_SERIES, shares=1_000_000)
+        result = calcRatios(HEALTHY_SERIES, annual=False, shares=1_000_000)
         assert result.eps is not None
         assert result.bps is not None
         assert result.dps is not None
@@ -413,7 +413,7 @@ class TestPerShareMetrics:
     def test_no_shares(self):
         from dartlab.analysis.financial.ratios import calcRatios
 
-        result = calcRatios(HEALTHY_SERIES)
+        result = calcRatios(HEALTHY_SERIES, annual=False)
         assert result.eps is None
         assert result.bps is None
         assert result.dps is None

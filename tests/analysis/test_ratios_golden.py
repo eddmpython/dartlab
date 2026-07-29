@@ -121,7 +121,7 @@ def test_calcRatios_skips_stale_cf_net_profit_cross_check():
         },
     }
 
-    r = calcRatios(series)
+    r = calcRatios(series, annual=False)
     assert r.netIncomeTTM == 380
     assert not any("IS-CF 순이익 불일치" in w for w in r.warnings)
 
@@ -135,14 +135,14 @@ class TestProfitability:
     """수익성 비율 교과서 공식 검증."""
 
     def test_roe(self):
-        """ROE = 순이익 / 자기자본 × 100 = 15000/120000 × 100 = 12.5%."""
+        """ROE = 순이익 / 평균 자기자본 × 100 = 15000/115000 × 100 = 13.04%."""
         r = _calc()
-        assert r.roe == pytest.approx(12.5, abs=0.1)
+        assert r.roe == pytest.approx(13.04, abs=0.1)
 
     def test_roa(self):
-        """ROA = 순이익 / 총자산 × 100 = 15000/200000 × 100 = 7.5%."""
+        """ROA = 순이익 / 평균 총자산 × 100 = 15000/195000 × 100 = 7.69%."""
         r = _calc()
-        assert r.roa == pytest.approx(7.5, abs=0.1)
+        assert r.roa == pytest.approx(7.69, abs=0.1)
 
     def test_operating_margin(self):
         """영업이익률 = 영업이익 / 매출 × 100 = 20000/100000 × 100 = 20%."""
@@ -234,24 +234,24 @@ class TestEfficiency:
     """효율성 비율 교과서 공식 검증."""
 
     def test_total_asset_turnover(self):
-        """총자산회전율 = 매출 / 총자산 = 100000/200000 = 0.5."""
+        """총자산회전율 = 매출 / 평균 총자산 = 100000/195000 = 0.51."""
         r = _calc()
-        assert r.totalAssetTurnover == pytest.approx(0.5, abs=0.01)
+        assert r.totalAssetTurnover == pytest.approx(0.51, abs=0.01)
 
     def test_inventory_turnover(self):
-        """재고회전율 = 매출 / 재고 = 100000/10000 = 10.0."""
+        """재고회전율 = 매출 / 평균 재고 = 100000/9500 = 10.53."""
         r = _calc()
-        assert r.inventoryTurnover == pytest.approx(10.0, abs=0.1)
+        assert r.inventoryTurnover == pytest.approx(10.53, abs=0.1)
 
     def test_receivables_turnover(self):
-        """매출채권회전율 = 매출 / 매출채권 = 100000/12000 ≈ 8.33."""
+        """매출채권회전율 = 매출 / 평균 매출채권 = 100000/11500 = 8.70."""
         r = _calc()
-        assert r.receivablesTurnover == pytest.approx(8.33, abs=0.1)
+        assert r.receivablesTurnover == pytest.approx(8.70, abs=0.1)
 
     def test_payables_turnover(self):
-        """매입채무회전율 = 매출원가 / 매입채무 = 60000/9000 ≈ 6.67."""
+        """매입채무회전율 = 매출원가 / 평균 매입채무 = 60000/8750 = 6.86."""
         r = _calc()
-        assert r.payablesTurnover == pytest.approx(6.67, abs=0.1)
+        assert r.payablesTurnover == pytest.approx(6.86, abs=0.1)
 
 
 # ══════════════════════════════════════
@@ -299,21 +299,21 @@ class TestComposite:
     def test_roic(self):
         """ROIC = NOPAT / 투하자본 × 100.
 
-        annual=True + 3개 값 → getTTM 실패(4개 필요) → 기본 세율 22%.
-        NOPAT = 20000 × (1 - 0.22) = 15600
-        순차입금 = 20000, 투하자본 = 120000 + 20000 = 140000
-        ROIC = 15600/140000 × 100 ≈ 11.14%
+        최신 연간 유효세율 = 5000 / 20000 = 25%.
+        NOPAT = 20000 × (1 - 0.25) = 15000.
+        평균 자기자본 = 115000, 평균 순차입금 = 20000.
+        ROIC = 15000 / 135000 × 100 = 11.11%.
         """
         r = _calc()
-        assert r.roic == pytest.approx(11.14, abs=0.1)
+        assert r.roic == pytest.approx(11.11, abs=0.1)
 
     def test_roic_dynamic_tax(self):
         """ROIC 동적 세율: IS에 4개 값 제공 → getTTM 성공 → 실제 유효세율 적용.
 
         유효세율 = 5000/20000 = 25%
         NOPAT = 20000 × (1 - 0.25) = 15000
-        투하자본 = 120000 + 20000 = 140000
-        ROIC = 15000/140000 × 100 ≈ 10.71%
+        평균 자기자본 = 115000, 평균 순차입금 = 20500
+        ROIC = 15000/135500 × 100 ≈ 11.07%
         """
         from dartlab.analysis.financial.ratios import calcRatios
 
@@ -337,10 +337,10 @@ class TestComposite:
         # effective_tax = 17450/69800 ≈ 0.25
         # operatingIncomeTTM = getLatest = 20000 (annual=True)
         # NOPAT = 20000 * (1-0.25) = 15000
-        # invested = 120000 + 20000 = 140000
-        # ROIC = 15000/140000 * 100 ≈ 10.71%
+        # average invested capital = 115000 + 20500 = 135500
+        # ROIC = 15000/135500 * 100 ≈ 11.07%
         r = calcRatios(series_4q, annual=True)
-        assert r.roic == pytest.approx(10.71, abs=0.1)
+        assert r.roic == pytest.approx(11.07, abs=0.1)
 
     def test_dupont_margin(self):
         """DuPont 순이익률 = 순이익 / 매출 × 100 = 15%."""
@@ -348,14 +348,14 @@ class TestComposite:
         assert r.dupontMargin == pytest.approx(15.0, abs=0.1)
 
     def test_dupont_turnover(self):
-        """DuPont 자산회전율 = 매출 / 총자산 = 0.5."""
+        """DuPont 자산회전율 = 매출 / 평균 총자산 = 100000/195000 = 0.51."""
         r = _calc()
-        assert r.dupontTurnover == pytest.approx(0.5, abs=0.01)
+        assert r.dupontTurnover == pytest.approx(0.51, abs=0.01)
 
     def test_dupont_leverage(self):
-        """DuPont 레버리지 = 총자산 / 자본 = 200000/120000 ≈ 1.67."""
+        """DuPont 레버리지 = 평균 총자산 / 평균 자본 = 195000/115000 = 1.70."""
         r = _calc()
-        assert r.dupontLeverage == pytest.approx(1.67, abs=0.01)
+        assert r.dupontLeverage == pytest.approx(1.70, abs=0.01)
 
     def test_dupont_decomposition(self):
         """DuPont: ROE ≈ 순이익률 × 자산회전율 × 레버리지."""
@@ -364,24 +364,24 @@ class TestComposite:
         assert r.roe == pytest.approx(reconstructed, abs=0.5)
 
     def test_dso(self):
-        """DSO = 매출채권 / 매출 × 365 = 12000/100000 × 365 = 43.8일."""
+        """DSO = 평균 매출채권 / 매출 × 365 = 11500/100000 × 365 = 42.0일."""
         r = _calc()
-        assert r.dso == pytest.approx(43.8, abs=0.5)
+        assert r.dso == pytest.approx(42.0, abs=0.5)
 
     def test_dio(self):
-        """DIO = 재고 / 매출원가 × 365 = 10000/60000 × 365 ≈ 60.8일."""
+        """DIO = 평균 재고 / 매출원가 × 365 = 9500/60000 × 365 = 57.8일."""
         r = _calc()
-        assert r.dio == pytest.approx(60.8, abs=0.5)
+        assert r.dio == pytest.approx(57.8, abs=0.5)
 
     def test_dpo(self):
-        """DPO = 매입채무 / 매출원가 × 365 = 9000/60000 × 365 = 54.75일."""
+        """DPO = 평균 매입채무 / 매출원가 × 365 = 8750/60000 × 365 = 53.2일."""
         r = _calc()
-        assert r.dpo == pytest.approx(54.75, abs=0.5)
+        assert r.dpo == pytest.approx(53.2, abs=0.5)
 
     def test_ccc(self):
-        """CCC = DSO + DIO - DPO ≈ 43.8 + 60.8 - 54.75 = 49.85일."""
+        """CCC = DSO + DIO - DPO ≈ 42.0 + 57.8 - 53.2 = 46.6일."""
         r = _calc()
-        assert r.ccc == pytest.approx(49.9, abs=1.0)
+        assert r.ccc == pytest.approx(46.6, abs=1.0)
 
     def test_piotroski_f_score(self):
         """Piotroski F-Score: 건강한 기업 → 고점수 (9점 만점)."""
@@ -414,7 +414,7 @@ class TestComposite:
     def test_ratio_series_uses_z_prime_coefficients(self):
         from dartlab.analysis.financial.ratios import calcRatioSeries
 
-        rs = calcRatioSeries(_SERIES_ANNUAL, ["2022", "2023", "2024"])
+        rs = calcRatioSeries(_SERIES_ANNUAL, ["2022", "2023", "2024"], yoyLag=1)
         assert rs.altmanZScore[-1] == pytest.approx(1.77, abs=0.1)
 
 

@@ -1,7 +1,7 @@
 """CI용 fixture 기반 finance 파서 테스트.
 
 tests/fixtures/005930.finance.parquet 사용.
-로컬 데이터 불필요 — CI에서 항상 실행.
+로컬 데이터 불필요 . CI에서 항상 실행.
 """
 
 from pathlib import Path
@@ -374,13 +374,13 @@ class TestRatioQuality:
         }
 
         latest = calcRatios(series, annual=True)
-        ratioSeries = calcRatioSeries(series, ["2023", "2024", "2025"])
+        ratioSeries = calcRatioSeries(series, ["2023", "2024", "2025"], yoyLag=1)
 
         assert latest.operatingIncomeTTM == 144
         assert latest.netIncomeTTM == 96
         assert latest.revenueTTM == 1200
-        assert latest.roe == 8.73
-        assert latest.roa == 1.78
+        assert latest.roe == 8.93  # 96 / average(1050, 1100)
+        assert latest.roa == 1.81  # 96 / average(5200, 5400)
         assert ratioSeries.operatingMargin[-1] == 12.0
         assert ratioSeries.netMargin[-1] == 8.0
 
@@ -412,7 +412,7 @@ class TestRatioQuality:
         }
 
         latest = calcRatios(series, annual=True)
-        ratioSeries = calcRatioSeries(series, ["2023", "2024", "2025"])
+        ratioSeries = calcRatioSeries(series, ["2023", "2024", "2025"], yoyLag=1)
 
         assert latest.roe is not None
         assert latest.roa is not None
@@ -449,7 +449,12 @@ class TestRatioQuality:
         }
 
         latest = calcRatios(series, annual=True, archetypeOverride="bank")
-        ratioSeries = calcRatioSeries(series, ["2023", "2024", "2025"], archetypeOverride="bank")
+        ratioSeries = calcRatioSeries(
+            series,
+            ["2023", "2024", "2025"],
+            yoyLag=1,
+            archetypeOverride="bank",
+        )
 
         assert latest.roe is not None
         assert latest.debtRatio is None

@@ -1,4 +1,4 @@
-"""EDGAR finance namespace — XBRL 정규화 재무 데이터."""
+"""EDGAR finance namespace . XBRL 정규화 재무 데이터."""
 
 from __future__ import annotations
 
@@ -156,7 +156,7 @@ class _FinanceAccessor:
 
     @property
     def BS(self) -> pl.DataFrame | None:
-        """재무상태표 (Balance Sheet) — XBRL companyfacts 기반.
+        """재무상태표 (Balance Sheet) . XBRL companyfacts 기반.
 
         Returns:
             wide DataFrame 또는 None.
@@ -165,12 +165,12 @@ class _FinanceAccessor:
             없음.
 
         Example:
-            >>> c._finance.BS  # 내부 — 사용자는 c.panel("BS")
+            >>> c._finance.BS  # 내부 . 사용자는 c.panel("BS")
 
         LLM Specifications:
             AntiPatterns:
                 - finance 부재 회사 → None. caller None 분기 의무.
-                - 본 namespace 직접 호출 X — 사용자 API 는 ``c.panel("BS"/"IS"/"CF"/"CIS"/"ratios")``.
+                - 본 namespace 직접 호출 X . 사용자 API 는 ``c.panel("BS"/"IS"/"CF"/"CIS"/"ratios")``.
             OutputSchema:
                 - pl.DataFrame [snakeId, 항목, period...] 또는 None.
             Prerequisites:
@@ -186,7 +186,7 @@ class _FinanceAccessor:
 
     @property
     def IS(self) -> pl.DataFrame | None:
-        """손익계산서 (Income Statement) — XBRL companyfacts 기반.
+        """손익계산서 (Income Statement) . XBRL companyfacts 기반.
 
         Returns:
             wide DataFrame 또는 None.
@@ -195,12 +195,12 @@ class _FinanceAccessor:
             없음.
 
         Example:
-            >>> c._finance.IS  # 내부 — 사용자는 c.panel("IS")
+            >>> c._finance.IS  # 내부 . 사용자는 c.panel("IS")
 
         LLM Specifications:
             AntiPatterns:
                 - finance 부재 회사 → None. caller None 분기 의무.
-                - 본 namespace 직접 호출 X — 사용자 API 는 ``c.panel("BS"/"IS"/"CF"/"CIS"/"ratios")``.
+                - 본 namespace 직접 호출 X . 사용자 API 는 ``c.panel("BS"/"IS"/"CF"/"CIS"/"ratios")``.
             OutputSchema:
                 - pl.DataFrame [snakeId, 항목, period...] 또는 None.
             Prerequisites:
@@ -216,7 +216,7 @@ class _FinanceAccessor:
 
     @property
     def CF(self) -> pl.DataFrame | None:
-        """현금흐름표 (Cash Flow) — XBRL companyfacts 기반.
+        """현금흐름표 (Cash Flow) . XBRL companyfacts 기반.
 
         Returns:
             wide DataFrame 또는 None.
@@ -225,12 +225,12 @@ class _FinanceAccessor:
             없음.
 
         Example:
-            >>> c._finance.CF  # 내부 — 사용자는 c.panel("CF")
+            >>> c._finance.CF  # 내부 . 사용자는 c.panel("CF")
 
         LLM Specifications:
             AntiPatterns:
                 - finance 부재 회사 → None. caller None 분기 의무.
-                - 본 namespace 직접 호출 X — 사용자 API 는 ``c.panel("BS"/"IS"/"CF"/"CIS"/"ratios")``.
+                - 본 namespace 직접 호출 X . 사용자 API 는 ``c.panel("BS"/"IS"/"CF"/"CIS"/"ratios")``.
             OutputSchema:
                 - pl.DataFrame [snakeId, 항목, period...] 또는 None.
             Prerequisites:
@@ -246,7 +246,7 @@ class _FinanceAccessor:
 
     @property
     def CIS(self) -> pl.DataFrame | None:
-        """포괄손익계산서 (Comprehensive IS) — IS + OCI.
+        """포괄손익계산서 (Comprehensive IS) . IS + OCI.
 
         Returns:
             wide DataFrame 또는 None.
@@ -255,12 +255,12 @@ class _FinanceAccessor:
             없음.
 
         Example:
-            >>> c._finance.CIS  # 내부 — 사용자는 c.panel("CIS")
+            >>> c._finance.CIS  # 내부 . 사용자는 c.panel("CIS")
 
         LLM Specifications:
             AntiPatterns:
                 - finance 부재 회사 → None. caller None 분기 의무.
-                - 본 namespace 직접 호출 X — 사용자 API 는 ``c.panel("BS"/"IS"/"CF"/"CIS"/"ratios")``.
+                - 본 namespace 직접 호출 X . 사용자 API 는 ``c.panel("BS"/"IS"/"CF"/"CIS"/"ratios")``.
             OutputSchema:
                 - pl.DataFrame [snakeId, 항목, period...] 또는 None.
             Prerequisites:
@@ -276,7 +276,7 @@ class _FinanceAccessor:
 
     @property
     def ratios(self):
-        """재무비율 snapshot — 연간 base.
+        """재무비율 snapshot . 연간 base.
 
         Returns:
             ``RatioResult`` dataclass 또는 None.
@@ -285,11 +285,11 @@ class _FinanceAccessor:
             없음.
 
         Example:
-            >>> c._finance.ratios  # 내부 — 사용자는 c.panel("ratios")
+            >>> c._finance.ratios  # 내부 . 사용자는 c.panel("ratios")
 
         SeeAlso:
-            - ``_stmtDf`` — 본 property 의 backend.
-            - ``Company.panel("ratios")`` / ``Company.panel("BS"/"IS"/"CF"/"CIS")`` — public surface.
+            - ``_stmtDf`` . 본 property 의 backend.
+            - ``Company.panel("ratios")`` / ``Company.panel("BS"/"IS"/"CF"/"CIS")`` . public surface.
 
         Requires:
             - dartlab
@@ -300,10 +300,10 @@ class _FinanceAccessor:
               결과를 snakeId × period wide DataFrame 으로 노출. cache 통합.
 
         Guide:
-            - 사용자 API 는 ``c.panel("BS"/"IS"/"CF"/"CIS"/"ratios")`` — 본 namespace 직접 호출 X.
+            - 사용자 API 는 ``c.panel("BS"/"IS"/"CF"/"CIS"/"ratios")`` . 본 namespace 직접 호출 X.
 
         AIContext:
-            internal accessor — AI 가 직접 호출 X.
+            internal accessor . AI 가 직접 호출 X.
         """
         cacheHit, val = lookupCache(self._company._cache, "_ratios")
         if not cacheHit:
@@ -312,13 +312,17 @@ class _FinanceAccessor:
                 val = None
             else:
                 aSeries, _ = annual
-                val = calcRatios(aSeries, annual=True)
+                val = calcRatios(
+                    aSeries,
+                    annual=True,
+                    currency=getattr(self._company, "currency", "USD"),
+                )
             self._company._cache["_ratios"] = val
         return val
 
     @property
     def ratioSeries(self):
-        """재무비율 시계열 — 연간 series.
+        """재무비율 시계열 . 연간 series.
 
         Returns:
             ``{ratio: [년도별 값...], ...}`` dict 또는 None.
@@ -327,11 +331,11 @@ class _FinanceAccessor:
             없음.
 
         Example:
-            >>> c._finance.ratioSeries  # 내부 — 사용자는 c.panel("ratioSeries")
+            >>> c._finance.ratioSeries  # 내부 . 사용자는 c.panel("ratioSeries")
 
         SeeAlso:
-            - ``_stmtDf`` — 본 property 의 backend.
-            - ``Company.panel("ratios")`` / ``Company.panel("BS"/"IS"/"CF"/"CIS")`` — public surface.
+            - ``_stmtDf`` . 본 property 의 backend.
+            - ``Company.panel("ratios")`` / ``Company.panel("BS"/"IS"/"CF"/"CIS")`` . public surface.
 
         Requires:
             - dartlab
@@ -342,10 +346,10 @@ class _FinanceAccessor:
               결과를 snakeId × period wide DataFrame 으로 노출. cache 통합.
 
         Guide:
-            - 사용자 API 는 ``c.panel("BS"/"IS"/"CF"/"CIS"/"ratios")`` — 본 namespace 직접 호출 X.
+            - 사용자 API 는 ``c.panel("BS"/"IS"/"CF"/"CIS"/"ratios")`` . 본 namespace 직접 호출 X.
 
         AIContext:
-            internal accessor — AI 가 직접 호출 X.
+            internal accessor . AI 가 직접 호출 X.
         """
         cacheKey = "_ratioSeries"
         cacheHit, cached = lookupCache(self._company._cache, cacheKey)
@@ -355,7 +359,7 @@ class _FinanceAccessor:
         if annual is None:
             return None
         aSeries, years = annual
-        rs = calcRatioSeries(aSeries, years)
+        rs = calcRatioSeries(aSeries, years, yoyLag=1)
         result = toSeriesDict(rs)
         self._company._cache[cacheKey] = result
         return result
@@ -371,11 +375,11 @@ class _FinanceAccessor:
             없음.
 
         Example:
-            >>> c._finance.SCE  # 내부 — 사용자는 c.panel("SCE")
+            >>> c._finance.SCE  # 내부 . 사용자는 c.panel("SCE")
 
         SeeAlso:
-            - ``_stmtDf`` — 본 property 의 backend.
-            - ``Company.panel("ratios")`` / ``Company.panel("BS"/"IS"/"CF"/"CIS")`` — public surface.
+            - ``_stmtDf`` . 본 property 의 backend.
+            - ``Company.panel("ratios")`` / ``Company.panel("BS"/"IS"/"CF"/"CIS")`` . public surface.
 
         Requires:
             - dartlab
@@ -386,15 +390,15 @@ class _FinanceAccessor:
               결과를 snakeId × period wide DataFrame 으로 노출. cache 통합.
 
         Guide:
-            - 사용자 API 는 ``c.panel("BS"/"IS"/"CF"/"CIS"/"ratios")`` — 본 namespace 직접 호출 X.
+            - 사용자 API 는 ``c.panel("BS"/"IS"/"CF"/"CIS"/"ratios")`` . 본 namespace 직접 호출 X.
 
         AIContext:
-            internal accessor — AI 가 직접 호출 X.
+            internal accessor . AI 가 직접 호출 X.
 
         LLM Specifications:
             AntiPatterns:
                 - finance 부재 회사 → None. caller None 분기 의무.
-                - 본 namespace 직접 호출 X — 사용자 API 는 ``c.panel("BS"/"IS"/"CF"/"CIS"/"ratios")``.
+                - 본 namespace 직접 호출 X . 사용자 API 는 ``c.panel("BS"/"IS"/"CF"/"CIS"/"ratios")``.
             OutputSchema:
                 - pl.DataFrame [snakeId, 항목, period...] 또는 None.
             Prerequisites:
@@ -417,7 +421,7 @@ class _FinanceAccessor:
         return result
 
     def explore(self, query: str) -> pl.DataFrame | None:
-        """XBRL 태그 검색 — 전 기간 값 탐색.
+        """XBRL 태그 검색 . 전 기간 값 탐색.
 
         Args:
             query: 태그 패턴 (정규식 또는 substring).
@@ -432,8 +436,8 @@ class _FinanceAccessor:
             >>> c._finance.explore("Revenue")
 
         SeeAlso:
-            - ``_stmtDf`` — 본 property 의 backend.
-            - ``Company.panel("ratios")`` / ``Company.panel("BS"/"IS"/"CF"/"CIS")`` — public surface.
+            - ``_stmtDf`` . 본 property 의 backend.
+            - ``Company.panel("ratios")`` / ``Company.panel("BS"/"IS"/"CF"/"CIS")`` . public surface.
 
         Requires:
             - dartlab
@@ -444,15 +448,15 @@ class _FinanceAccessor:
               결과를 snakeId × period wide DataFrame 으로 노출. cache 통합.
 
         Guide:
-            - 사용자 API 는 ``c.panel("BS"/"IS"/"CF"/"CIS"/"ratios")`` — 본 namespace 직접 호출 X.
+            - 사용자 API 는 ``c.panel("BS"/"IS"/"CF"/"CIS"/"ratios")`` . 본 namespace 직접 호출 X.
 
         AIContext:
-            internal accessor — AI 가 직접 호출 X.
+            internal accessor . AI 가 직접 호출 X.
 
         LLM Specifications:
             AntiPatterns:
                 - finance 부재 회사 → None. caller None 분기 의무.
-                - 본 namespace 직접 호출 X — 사용자 API 는 ``c.panel("BS"/"IS"/"CF"/"CIS"/"ratios")``.
+                - 본 namespace 직접 호출 X . 사용자 API 는 ``c.panel("BS"/"IS"/"CF"/"CIS"/"ratios")``.
             OutputSchema:
                 - pl.DataFrame [snakeId, 항목, period...] 또는 None.
             Prerequisites:
@@ -484,8 +488,8 @@ class _FinanceAccessor:
             >>> c._finance.listTags(limit=50)
 
         SeeAlso:
-            - ``_stmtDf`` — 본 property 의 backend.
-            - ``Company.panel("ratios")`` / ``Company.panel("BS"/"IS"/"CF"/"CIS")`` — public surface.
+            - ``_stmtDf`` . 본 property 의 backend.
+            - ``Company.panel("ratios")`` / ``Company.panel("BS"/"IS"/"CF"/"CIS")`` . public surface.
 
         Requires:
             - dartlab
@@ -496,15 +500,15 @@ class _FinanceAccessor:
               결과를 snakeId × period wide DataFrame 으로 노출. cache 통합.
 
         Guide:
-            - 사용자 API 는 ``c.panel("BS"/"IS"/"CF"/"CIS"/"ratios")`` — 본 namespace 직접 호출 X.
+            - 사용자 API 는 ``c.panel("BS"/"IS"/"CF"/"CIS"/"ratios")`` . 본 namespace 직접 호출 X.
 
         AIContext:
-            internal accessor — AI 가 직접 호출 X.
+            internal accessor . AI 가 직접 호출 X.
 
         LLM Specifications:
             AntiPatterns:
                 - finance 부재 회사 → None. caller None 분기 의무.
-                - 본 namespace 직접 호출 X — 사용자 API 는 ``c.panel("BS"/"IS"/"CF"/"CIS"/"ratios")``.
+                - 본 namespace 직접 호출 X . 사용자 API 는 ``c.panel("BS"/"IS"/"CF"/"CIS"/"ratios")``.
             OutputSchema:
                 - pl.DataFrame [snakeId, 항목, period...] 또는 None.
             Prerequisites:
@@ -537,8 +541,8 @@ class _FinanceAccessor:
             ...     print(row["tag"], row["count"])
 
         SeeAlso:
-            - ``_stmtDf`` — 본 property 의 backend.
-            - ``Company.panel("ratios")`` / ``Company.panel("BS"/"IS"/"CF"/"CIS")`` — public surface.
+            - ``_stmtDf`` . 본 property 의 backend.
+            - ``Company.panel("ratios")`` / ``Company.panel("BS"/"IS"/"CF"/"CIS")`` . public surface.
 
         Requires:
             - dartlab
@@ -549,15 +553,15 @@ class _FinanceAccessor:
               결과를 snakeId × period wide DataFrame 으로 노출. cache 통합.
 
         Guide:
-            - 사용자 API 는 ``c.panel("BS"/"IS"/"CF"/"CIS"/"ratios")`` — 본 namespace 직접 호출 X.
+            - 사용자 API 는 ``c.panel("BS"/"IS"/"CF"/"CIS"/"ratios")`` . 본 namespace 직접 호출 X.
 
         AIContext:
-            internal accessor — AI 가 직접 호출 X.
+            internal accessor . AI 가 직접 호출 X.
 
         LLM Specifications:
             AntiPatterns:
                 - finance 부재 회사 → None. caller None 분기 의무.
-                - 본 namespace 직접 호출 X — 사용자 API 는 ``c.panel("BS"/"IS"/"CF"/"CIS"/"ratios")``.
+                - 본 namespace 직접 호출 X . 사용자 API 는 ``c.panel("BS"/"IS"/"CF"/"CIS"/"ratios")``.
             OutputSchema:
                 - pl.DataFrame [snakeId, 항목, period...] 또는 None.
             Prerequisites:

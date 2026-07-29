@@ -49,21 +49,71 @@ Guard는 현재 레이어의 source를 동결한 뒤 한 번 실행한다. Guard
 
 ### 세션 인계
 
-- 현재 계층: L0 core
-- 최근 완료한 증거 묶음: L0-16 메모리 cache·IPC·memoization·OOM 수명주기 안정화
-- 현재 작업 단위: **L0 core 전체 마감**. `ratios.py`와 `schemas.py`는 남은 내부
-  구조·계약 묶음이지 별도 세션 완료 단위가 아니다.
-- L0 남은 완료 조건: `ratios.py`의 공식·결측·기간·호출자 계약과 `schemas.py`의
-  schema owner·중복·공개 타입 계약을 닫고, 나머지 core src 전체를 정확성, 오류 투명성,
-  SSOT, 모듈 경계, 속도, 메모리 기준으로 최종 횡단 검증한다. source 동결 뒤 공식 Guard,
-  L0 전체 판정, 원장, 커밋, push를 한 번에 닫는다.
-- 다음 첫 행동: `ratios.py`와 `schemas.py`의 공개 함수·타입 및 DART·EDGAR·panel·analysis
-  실제 호출자를 함께 census하고 현재 제품값과 시간·메모리 baseline을 고정한다.
-- L0 완료 직후: 사용자 `계속` 대기 없이 L1 gather/providers 전체 마감으로 즉시 이동
-- 금지: `ratios.py` 또는 `schemas.py` 하나만 끝내고 멈추기, 파일별 공식 Guard 반복,
-  L0 완료 판정 전 L1 이상 수정 착수
+- 현재 계층: **L1 gather, providers**
+- 최근 완료한 레이어: **L0 core 전체 완료**. L0-01부터 L0-16까지의 증거와 최종
+  재무비율·schema·직접 호출자 횡단 검증을 한 판정으로 봉인했다.
+- 현재 작업 단위: **L1 gather/providers 전체 마감**. DART·EDGAR 파일이나 endpoint를
+  별도 완료 단위로 쪼개지 않는다.
+- L1 완료 조건: 모든 gather Extract와 provider Transform/Load, DART·EDGAR panel,
+  finance accessor, 공개 Company 호출자를 실제 데이터 계약·오류 투명성·SSOT·속도·메모리
+  기준으로 전수 대조한다. 결함 수정과 집중 회귀 뒤 source를 동결하고 공식 Guard, 원장,
+  커밋, push까지 닫는다.
+- 다음 첫 행동: 기존 L1 미달 원장과 현재 gather/provider 전체 tree를 하나의 호출 그래프로
+  다시 대조하고, DART·EDGAR finance raw가 panel·ratio까지 이어지는 대표 공개 행동부터
+  재현한다.
+- 금지: endpoint나 provider 파일 하나만 끝내고 완료 보고, L1.5 이상 수정 선행,
+  중간 source에서 공식 Guard 반복
 
 ## L0 순차 안정화 원장 (2026-07-29)
+
+### L0 core 전체 마감
+
+**상태: 완료.** 아래 L0-01부터 L0-16까지의 증거와 마지막 재무비율·schema 횡단 검증을
+합쳐 L0를 하나의 레이어로 닫았다. 내부 번호는 이 판정의 증거일 뿐 별도 완료 단위가 아니다.
+
+1. **범위와 실제 호출자.** 기존 L0 원장 전체에 더해 마지막 범위는
+   `core/ratios`의 모든 공개 계산·결과 모델과 DART·EDGAR Company, finance accessor,
+   native panel, analysis pipeline, Excel 소비자다. DART raw schema는 실제 생산자
+   `gather/dart`와 fixture 소비자까지 함께 추적했다. AST 전수 검사에서
+   `calcRatios` 26개 호출 파일은 `annual`, `calcRatioSeries` 호출은 `yoyLag`를 모두
+   명시했다.
+2. **제품 결함 재현.** analysis 연간 4개년 값이 TTM처럼 합산됐고 EDGAR analysis는
+   존재하지 않는 DART builder만 찾아 항상 자료 없음으로 끝났다. 시점과 시계열 계산이
+   공식을 따로 구현해 세율, 감가상각, 성장률, 업종 마스킹이 달랐다. YTD와 분기의 비교
+   간격, EDGAR 통화, 기초·기말 평균잔액이 묵시적이었고, 값이 전부 `None`인 금융 계정도
+   업종 신호로 오인했다. schema 51개 중 실제 생산 경로와 맞는 것은 둘뿐이며 검증을
+   켜도 예외를 warning으로 삼켰다.
+3. **근본 원인과 SSOT.** 기간 basis와 비교 lag를 호출 계약에 넣지 않았고
+   `calcRatios`와 `calcRatioSeries`가 같은 공식을 두 벌 소유했다. raw 계약도 실제
+   생산자가 아닌 범용 core가 미래 희망 schema를 소유했다. 재무비율 공식은 단일 시점
+   계산기로, DART raw 계약은 `gather/dart/schemas.py`로 소유권을 고정했다.
+4. **수정과 테스트.** 1,900줄 단일 파일을 `models`, `common`, `point`, `series`,
+   `market` 책임으로 분리하고 public re-export는 보존했다. 시계열은 기간별 prefix를
+   같은 단일 시점 계산기에 넣어 두 번째 공식 구현을 제거했다. `annual`과 `yoyLag`,
+   업종 override를 검증하고 DART·EDGAR 호출자가 통화와 기간 basis를 명시한다.
+   ROE·ROA·ROIC·회전율·CCC·DuPont·Sloan은 가능한 경우 평균잔액을 쓰며, 0과 결측을
+   구분하고 Piotroski 장기차입 신호와 금융업 부적용 정책을 바로잡았다. analysis는
+   DART와 EDGAR builder 반환 계약을 검증하고 오류를 전파한다. schema는 실제
+   `FinanceSchema`, `ReportSchema` 둘만 남기고 검증 활성화 시 import와 drift 오류를
+   그대로 전달한다.
+5. **공개 행동, 정확성, 속도, 메모리.** core 공식, golden oracle, DART·EDGAR finance
+   accessor와 native panel까지 최종 집중 회귀 `238 passed`다. 합성 완전 입력의
+   `calcRatioSeries` 실측 중앙값은 40기간 `20.11 ms`, 100기간 `72.76 ms`,
+   200기간 `322.79 ms`이고 Python 추적 peak는 각각 `0.08`, `0.20`, `0.38 MiB`다.
+   기간 수에 따라 메모리가 선형 증가하고 실제 연간·분기 이력 범위에는 별도 캐시나
+   누적 전역 상태가 없다.
+6. **Guard와 회귀.** 변경 범위 Ruff, formatter, compileall, diff hygiene가 통과했고
+   Pyright는 `0 errors, 0 warnings`다. `checkSilentFail`은 1,714파일 신규 위반 0,
+   core folderSize는 over-split 0·under-split 0, core 상향 import와 디렉터리 경계도
+   0이다. 최종 공식 Guard
+   `strict --scope l0-l15 --providers dart,edgar`는 1,775파일, 7/7 규칙과 cycle,
+   architecture, folder mirror, gather, provider, public API 외부 게이트를 모두
+   통과했다.
+7. **남은 부채와 판정.** Guard의 known debt 47건은 L1 provider 상향 관계 9건과
+   보호된 Company facade 38건으로 다음 레이어 소유다. 전역 silent substitute 262건,
+   저장소 전체 타입 부채, 3개 OS release matrix는 각 소유 레이어와 최종 릴리스 검증에
+   남긴다. L0 내부 구조·정확성·호출 계약·오류 투명성의 차단 부채는 0이므로
+   **L0 core를 완료 판정하고 L1 gather/providers로 이동한다.**
 
 ### L0-01 복합 재무 점수 입력 완전성
 
@@ -1040,8 +1090,8 @@ Q1(routing SSOT 통합), Q4(realData 30% 단축), Q6(외부 venv 종합 smoke)�
 두 plugin 체계가 같은 entry point group 을 각자 읽는 문제는 외부 플러그인 계약을 바꾸는
 일이라 운영자 결정 사안이다.
 
-`core/schemas.py` 의 Pandera 클래스 47 개(약 700 줄)가 호출자 0 이지만, 삭제하지 않기로
-한 기존 결정이 `mainPlan/innovation-stack-research/tech/pandera.md` 에 있다.
+당시에는 `core/schemas.py`의 호출자 없는 Pandera 클래스를 보존하기로 했지만, 이 결정은
+2026-07-29 L0 전체 마감에서 실제 생산자 계약과 어긋난다는 근거로 폐기했다.
 
 `.dartlab.yml` 프로젝트 설정은 `loadProjectConfig` 호출자가 0 이라 문서화된 기능이 아예
 동작하지 않는다. 배선하든 지우든 사용자에게 보이는 변화라 운영자 결정 사안이다.

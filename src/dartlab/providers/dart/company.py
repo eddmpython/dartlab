@@ -3958,7 +3958,7 @@ class Company:
         result = None
         if ts is not None:
             series, _ = ts
-            result = calcRatios(series, archetypeOverride=archetypeOverride)
+            result = calcRatios(series, annual=False, archetypeOverride=archetypeOverride)
 
         if _shouldFallbackToAnnualRatios(result, archetypeOverride):
             annual = self._getFinanceBuild("y", fsDivPref)
