@@ -18,7 +18,7 @@ from typing import Any, Protocol, runtime_checkable
 
 import polars as pl
 
-from dartlab.core.pluginDiscovery import discoverOnce
+from dartlab.core.pluginDiscovery import bootstrap
 
 DEFAULT_USER_AGENT = "DartLab eddmpython@gmail.com"
 DEFAULT_BASE_URL = "https://data.sec.gov"
@@ -71,16 +71,10 @@ class EdgarFetchProvider(Protocol):
 
 _PROVIDER: EdgarFetchProvider | None = None
 
-_KNOWN_PROVIDER_MODULES: tuple[str, ...] = ("dartlab.gather.edgar.client",)
-
 
 def _discover() -> None:
-    """알려진 EdgarFetchProvider 모듈을 한 번만 lazy import . register 트리거.
-
-    한 번만 도는 규칙은 `core.pluginDiscovery` 가 갖는다. 예전에는 이 열세 줄이
-    core 안에 열한 벌 복사돼 있었다.
-    """
-    discoverOnce(__name__, _KNOWN_PROVIDER_MODULES)
+    """root composition이 등록한 EdgarFetchProvider bootstrap을 실행한다."""
+    bootstrap(__name__)
 
 
 def registerEdgarFetchProvider(provider: EdgarFetchProvider) -> None:
@@ -98,7 +92,7 @@ def getEdgarFetchProvider() -> EdgarFetchProvider | None:
 def _provider() -> EdgarFetchProvider:
     provider = getEdgarFetchProvider()
     if provider is None:
-        raise RuntimeError("EdgarFetchProvider 미등록 — dartlab.gather.edgar.client import 실패 (gather 미설치/오류)")
+        raise RuntimeError("EdgarFetchProvider가 composition root에 등록되지 않았습니다")
     return provider
 
 

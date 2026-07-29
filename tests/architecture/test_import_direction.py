@@ -1,138 +1,45 @@
-"""4 계층 단방향 import 검사 (역방향 금지 강제).
-
-룰: L0 ← L1 ← L1.5 ← L2 ← L3 ← L4. 역방향 import 0.
-"""
+"""선언 계층 단방향 import의 얇은 Guard Index 접점."""
 
 from __future__ import annotations
 
-import ast
+import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2] / "src" / "dartlab"
+REPO_ROOT = Path(__file__).resolve().parents[2]
+AUDIT_ROOT = REPO_ROOT / "tests" / "audit"
+if str(AUDIT_ROOT) not in sys.path:
+    sys.path.insert(0, str(AUDIT_ROOT))
 
-LAYER_OF: dict[str, float] = {
-    "core": 0.0,
-    "gather": 1.0,
-    "providers": 1.0,
-    "scan": 1.5,
-    "frame": 1.5,
-    "synth": 1.5,
-    "reference": 1.5,
-    "analysis": 2.0,
-    "macro": 2.0,
-    "quant": 2.0,
-    "industry": 2.0,
-    "credit": 2.0,
-    "data": 2.5,
-    "simulate": 2.5,
-    "story": 3.0,
-    "ai": 4.0,
-    "mcp": 4.0,
-}
-# sink 헬퍼 — CLAUDE.md "표현/전송 헬퍼: 모든 계층 결과를 다른 매체로". 호출 방향 룰 예외.
-# 어디서도 import 가능 (L0~L3 → viz/cli/server/channel OK). 단 sink 끼리 cross 는 별 룰 미적용.
-# pipeline = 수집 오케스트레이션 sink (gather fetch + providers build 합법 조합, 패키지밖 sync 정공 대체).
-SINK_HELPERS = {"viz", "cli", "server", "channel", "pipeline"}
-STRICT_L0_L15 = {
-    "core",
-    "gather",
-    "providers",
-    "scan",
-    "frame",
-    "synth",
-    "reference",
-}
+from guard.indexer import LAYER_OF, ROOT_FACADE, buildIndex  # noqa: E402
+from guard.rules import checkCoreImportBoundary, checkImportDirection  # noqa: E402
 
-
-def _assertRealSourceRoot() -> None:
-    assert ROOT.exists(), f"dartlab source root not found: {ROOT}"
-    assert any(ROOT.rglob("*.py")), f"dartlab source root has no Python files: {ROOT}"
-
-
-def _topLevel(modName: str) -> str | None:
-    """dartlab.X.Y → X (top-level package)."""
-    parts = modName.split(".")
-    if len(parts) >= 2 and parts[0] == "dartlab":
-        return parts[1]
-    return None
+L0_L15 = {"core", "gather", "providers", "scan", "frame", "synth", "reference"}
 
 
 def test_import_direction_downward_only() -> None:
-    """상위 계층이 하위만 import — 역방향 0 건."""
-    _assertRealSourceRoot()
-    violations: list[str] = []
-    for ownerName, ownerLayer in LAYER_OF.items():
-        ownerDir = ROOT / ownerName
-        if not ownerDir.exists():
-            continue
-        for pyFile in ownerDir.rglob("*.py"):
-            # lazy DI import (di.py) known exception
-            if pyFile.name == "di.py":
-                continue
-            try:
-                tree = ast.parse(pyFile.read_text(encoding="utf-8"))
-            except SyntaxError:
-                continue
-            # module-level imports 만 검사 — function body 안 lazy import 는 cycle 회피
-            # 의도된 패턴 (Company facade → analysis 등) 이라 통과시킨다.
-            for node in tree.body:
-                names: list[str] = []
-                if isinstance(node, ast.ImportFrom):
-                    names = [node.module or ""]
-                elif isinstance(node, ast.Import):
-                    names = [a.name for a in node.names]
-                for n in names:
-                    target = _topLevel(n)
-                    if target is None or target in SINK_HELPERS or target not in LAYER_OF:
-                        continue
-                    targetLayer = LAYER_OF[target]
-                    if targetLayer > ownerLayer:
-                        rel = pyFile.relative_to(ROOT.parent.parent)
-                        violations.append(f"{rel}:{node.lineno}: L{ownerLayer} {ownerName} → L{targetLayer} {target}")
-    # baseline 300 → 0 도달 (D1~D5 완료):
-    #   D1: dataLoader/dataConfig/loaders → core 복귀
-    #   D2: show.py → providers, reference/providers → core/providers
-    #   D3: SINK helpers (viz/cli/server/channel) 검사 제외
-    #   D4: reference/mappers/{common,parserMapper,notesMapper,scanner} → providers/mappers,
-    #        reference/mappers/engine → core/mapperEngine,
-    #        reference/htmlRenderer → core, reference/viewer → providers,
-    #        reference/docs/diff → providers/docs
-    #   D5: module-level imports 만 검사 (lazy import 는 Company facade 패턴 허용),
-    #        frame/market → core (모든 엔진 SSOT)
-    BASELINE = 0
-    assert len(violations) <= BASELINE, f"역방향 import 신규 위반 ({len(violations)} > {BASELINE}):\n" + "\n".join(
-        violations[:20]
-    )
+    """모든 선언 계층에서 module-eager 역방향 import가 없어야 한다."""
+    assert checkImportDirection(buildIndex(REPO_ROOT)) == []
 
 
 def test_l0_l15_import_direction_strict() -> None:
-    """L0~L1.5 완료 게이트 — 상위 계층 직접 import 금지."""
-    _assertRealSourceRoot()
-    violations: list[str] = []
-    for ownerName in STRICT_L0_L15:
-        ownerLayer = LAYER_OF[ownerName]
-        ownerDir = ROOT / ownerName
-        if not ownerDir.exists():
-            continue
-        for pyFile in ownerDir.rglob("*.py"):
-            if pyFile.name == "di.py":
-                continue
-            try:
-                tree = ast.parse(pyFile.read_text(encoding="utf-8"))
-            except SyntaxError:
-                continue
-            for node in tree.body:
-                names: list[str] = []
-                if isinstance(node, ast.ImportFrom):
-                    names = [node.module or ""]
-                elif isinstance(node, ast.Import):
-                    names = [a.name for a in node.names]
-                for n in names:
-                    target = _topLevel(n)
-                    if target is None or target in SINK_HELPERS or target not in LAYER_OF:
-                        continue
-                    targetLayer = LAYER_OF[target]
-                    if targetLayer > ownerLayer:
-                        rel = pyFile.relative_to(ROOT.parent.parent)
-                        violations.append(f"{rel}:{node.lineno}: L{ownerLayer} {ownerName} → L{targetLayer} {target}")
-    assert not violations, "L0~L1.5 import direction 위반:\n" + "\n".join(violations[:30])
+    """현재 완료 게이트인 L0~L1.5는 core의 동적 경계까지 함께 닫는다."""
+    records = [record for record in buildIndex(REPO_ROOT) if record.topPackage in L0_L15]
+    assert checkCoreImportBoundary(records) == []
+    assert checkImportDirection(records) == []
+
+
+def test_layer_order_matchesArchitectureSsot() -> None:
+    """레이어 별칭을 포함한 실행 계층표가 현재 architecture SSOT와 일치한다."""
+    assert LAYER_OF["core"] == 0.0
+    assert {LAYER_OF[name] for name in ("gather", "providers")} == {1.0}
+    assert {LAYER_OF[name] for name in ("scan", "frame", "synth", "reference")} == {1.5}
+    assert {LAYER_OF[name] for name in ("analysis", "macro", "quant", "industry", "credit")} == {2.0}
+    assert LAYER_OF["dataHub"] == LAYER_OF["data"] == 2.5
+    assert LAYER_OF["story"] == LAYER_OF["simulate"] == 3.0
+    assert LAYER_OF["ai"] == LAYER_OF["mcp"] == 4.0
+
+
+def test_everySourceModuleHasDeclaredLayer() -> None:
+    """새 최상위 source가 계층 판정 밖으로 조용히 빠질 수 없어야 한다."""
+    topPackages = {record.topPackage for record in buildIndex(REPO_ROOT)}
+    assert topPackages <= set(LAYER_OF) | {ROOT_FACADE}

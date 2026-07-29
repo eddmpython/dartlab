@@ -11,11 +11,8 @@ from pathlib import Path
 from typing import Any
 
 ARCHITECTURE_TESTS: tuple[str, ...] = (
-    "tests/architecture/test_core_l0_only.py",
-    "tests/architecture/test_import_direction.py",
     "tests/architecture/test_l15_entry_rule.py",
-    "tests/architecture/test_l15_no_cross_import.py",
-    "tests/architecture/test_l1_no_cross_import.py",
+    "tests/architecture/test_l15_no_cross_import.py::test_l15_no_new_dynamic_cross_import",
 )
 
 

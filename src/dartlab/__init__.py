@@ -32,7 +32,12 @@ del _os
 
 _IS_PYODIDE = sys.platform == "emscripten"
 
-from dartlab import config, core, skills  # noqa: F401 — 공용 분석 절차 런타임
+from dartlab import config, core  # noqa: F401 — 공용 분석 절차 런타임
+from dartlab.composition import configureBuiltins as _configureBuiltins
+
+_configureBuiltins()
+del _configureBuiltins
+from dartlab import skills  # noqa: E402, F401 — composition 등록 후 Skill OS 로드
 
 # T8-2 — dartlab.help 자연어 API 발견 노출
 from dartlab.help import help  # noqa: F401, A004

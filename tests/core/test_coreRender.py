@@ -52,18 +52,20 @@ def test_registerOverwritesPrevious(_resetRegistry):
     assert getRenderer() is second
 
 
-def test_getRendererSkipsLazyLoadOnce(_resetRegistry, monkeypatch: pytest.MonkeyPatch):
-    """미등록 + dartlab.viz import 실패 → None.
-
-    monkeypatch 로 importlib.import_module 차단 (실제 plotly 미설치 환경 모방).
-    """
+def test_getRendererPropagatesBootstrapFailure(_resetRegistry, monkeypatch: pytest.MonkeyPatch):
+    """renderer bootstrap 실패를 ``None``으로 삼키지 않고 원인 그대로 전파한다."""
     import importlib
+
+    from dartlab.core import pluginDiscovery
 
     def _fakeImport(name: str):
         raise ImportError(f"simulated missing: {name}")
 
+    pluginDiscovery._COMPLETED.discard("dartlab.core.render")
     monkeypatch.setattr(importlib, "import_module", _fakeImport)
-    assert getRenderer() is None
+    with pytest.raises(ImportError, match="simulated missing: dartlab.viz"):
+        getRenderer()
+    assert "dartlab.core.render" not in pluginDiscovery._COMPLETED
 
 
 def test_htmlFromSpecRoundTrip(_resetRegistry):

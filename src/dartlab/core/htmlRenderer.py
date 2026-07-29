@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from typing import Any, Protocol, runtime_checkable
 
-from dartlab.core.pluginDiscovery import discoverOnce
+from dartlab.core.pluginDiscovery import bootstrap
 
 
 @runtime_checkable
@@ -49,16 +49,10 @@ class HtmlRenderer(Protocol):
 
 _RENDERER: HtmlRenderer | None = None
 
-_KNOWN_RENDERER_MODULES: tuple[str, ...] = ("dartlab.viz.display.htmlRenderer",)
-
 
 def _discover() -> None:
-    """알려진 HtmlRenderer 모듈을 한 번만 lazy import . register 트리거.
-
-    한 번만 도는 규칙은 `core.pluginDiscovery` 가 갖는다. 예전에는 이 열세 줄이
-    core 안에 열한 벌 복사돼 있었다.
-    """
-    discoverOnce(__name__, _KNOWN_RENDERER_MODULES)
+    """root composition이 등록한 HtmlRenderer bootstrap을 실행한다."""
+    bootstrap(__name__)
 
 
 def registerHtmlRenderer(renderer: HtmlRenderer) -> None:

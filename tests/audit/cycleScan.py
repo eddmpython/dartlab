@@ -36,6 +36,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 SRC = ROOT / "src" / "dartlab"
+_AUDIT_DIR = Path(__file__).resolve().parent
+if str(_AUDIT_DIR) not in sys.path:
+    sys.path.insert(0, str(_AUDIT_DIR))
+
+from guard.indexer import extractImports as _extractImportRecords  # noqa: E402
 
 
 # dartlab 1 차 패키지 (dartlab.<X> 단위 노드)
@@ -91,57 +96,19 @@ def _toPrimary(modName: str) -> str | None:
 
 
 def _extractImports(source: str, *, toplevelOnly: bool = False) -> set[str]:
-    """AST 에서 dartlab.* 1 차 패키지 set 추출.
+    """Guard Index 정본에서 dartlab.* 1 차 패키지 set을 추출한다.
 
-    toplevelOnly=False (기본): 전수 — top-level + lazy (함수 내부) import 모두.
-    toplevelOnly=True: top-level (모듈 직속) 만. 함수/클래스 내부 import 면제.
+    정적 import, ``import_module``/``__import__`` 리터럴, 과거 ``discoverOnce`` 상수
+    목록이 같은 의미로 처리된다. ``toplevelOnly=True``는 함수·클래스 내부와
+    TYPE_CHECKING 분기를 제외한다.
     """
-    try:
-        tree = ast.parse(source)
-    except SyntaxError:
-        return set()
-    out: set[str] = set()
-
-    if toplevelOnly:
-        # 모듈 직속 노드만 순회 (ast.walk 대신 tree.body)
-        for node in tree.body:
-            _addImports(node, out)
-            # if 블록 — TYPE_CHECKING (런타임 실행 X) 만 면제, 나머지는 추적
-            if isinstance(node, ast.If):
-                if _isTypeCheckingGuard(node.test):
-                    continue
-                for inner in ast.walk(node):
-                    _addImports(inner, out)
-        return out
-
-    for node in ast.walk(tree):
-        _addImports(node, out)
-    return out
-
-
-def _isTypeCheckingGuard(test: ast.expr) -> bool:
-    """if TYPE_CHECKING / typing.TYPE_CHECKING 분기 식별."""
-    if isinstance(test, ast.Name) and test.id == "TYPE_CHECKING":
-        return True
-    if isinstance(test, ast.Attribute) and test.attr == "TYPE_CHECKING":
-        return True
-    return False
-
-
-def _addImports(node: ast.AST, out: set[str]) -> None:
-    """단일 노드에서 dartlab.* import 추출 후 set 에 추가."""
-    if isinstance(node, ast.Import):
-        for alias in node.names:
-            pkg = _toPrimary(alias.name)
-            if pkg:
-                out.add(pkg)
-    elif isinstance(node, ast.ImportFrom):
-        if node.level and node.level > 0:
-            return
-        mod = node.module or ""
-        pkg = _toPrimary(mod)
-        if pkg:
-            out.add(pkg)
+    tree = ast.parse(source)
+    return {
+        package
+        for record in _extractImportRecords(tree)
+        if (not toplevelOnly or record.isTopLevel)
+        if (package := _toPrimary(record.module)) is not None
+    }
 
 
 def _buildGraph(*, toplevelOnly: bool = False) -> dict[str, set[str]]:
@@ -153,10 +120,7 @@ def _buildGraph(*, toplevelOnly: bool = False) -> dict[str, set[str]]:
         src = _modulePath(py)
         if not src:
             continue
-        try:
-            source = py.read_text(encoding="utf-8")
-        except (OSError, UnicodeDecodeError):
-            continue
+        source = py.read_text(encoding="utf-8")
         for dst in _extractImports(source, toplevelOnly=toplevelOnly):
             if dst == src:
                 continue
@@ -166,25 +130,22 @@ def _buildGraph(*, toplevelOnly: bool = False) -> dict[str, set[str]]:
 
 def _findCycles(graph: dict[str, set[str]]) -> tuple[list[tuple[str, str]], list[tuple[str, ...]]]:
     """양방향 cycle (2-cycle) + 3+ 모듈 cycle 추출. 3+ 는 sorted-key dedup."""
+    import networkx as nx
+
     twoCycles: set[tuple[str, str]] = set()
     for src, dsts in graph.items():
         for dst in dsts:
             if src in graph.get(dst, set()):
-                pair = tuple(sorted([src, dst]))
+                pair = (src, dst) if src < dst else (dst, src)
                 twoCycles.add(pair)
     longerSet: set[tuple[str, ...]] = set()
-    try:
-        import networkx as nx
-
-        G = nx.DiGraph()
-        for src, dsts in graph.items():
-            for dst in dsts:
-                G.add_edge(src, dst)
-        for cyc in nx.simple_cycles(G):
-            if len(cyc) > 2:
-                longerSet.add(tuple(sorted(cyc)))
-    except ImportError:
-        pass
+    graphObject = nx.DiGraph()
+    for src, dsts in graph.items():
+        for dst in dsts:
+            graphObject.add_edge(src, dst)
+    for cycle in nx.simple_cycles(graphObject):
+        if len(cycle) > 2:
+            longerSet.add(tuple(sorted(cycle)))
     return sorted(twoCycles), sorted(longerSet)
 
 
@@ -211,16 +172,19 @@ def _baselineFile() -> Path:
 
 
 def _loadBaseline() -> dict:
-    """T9-3 — baseline JSON 로드. 형식: {twoCycleCount, longerCycleCount, measuredAt}."""
+    """cycle baseline JSON을 읽고 손상·부재를 즉시 실패시킨다."""
     import json as _json
 
     path = _baselineFile()
     if not path.exists():
-        return {}
+        raise FileNotFoundError(f"cycle baseline 부재: {path}")
     try:
-        return _json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, _json.JSONDecodeError):
-        return {}
+        data = _json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, _json.JSONDecodeError) as exc:
+        raise ValueError(f"cycle baseline 읽기 실패: {path}: {type(exc).__name__}: {exc}") from exc
+    if not isinstance(data, dict):
+        raise ValueError(f"cycle baseline은 JSON object여야 합니다: {path}")
+    return data
 
 
 def _cycleKey(cycle: tuple[str, ...]) -> str:
@@ -267,6 +231,7 @@ def main(argv: list[str]) -> int:
     graph = _buildGraph(toplevelOnly=toplevelOnly)
     twoCycles, longerCycles = _findCycles(graph)
     mode = "top-level only" if toplevelOnly else "전수 (lazy 포함)"
+    baseline = {} if toplevelOnly else _loadBaseline()
 
     if updateBaseline:
         _saveBaseline(twoCycles, len(longerCycles))
@@ -281,7 +246,6 @@ def main(argv: list[str]) -> int:
     _printLongerCycles(longerCycles)
 
     # T9-3 — baseline 비교
-    baseline = _loadBaseline()
     freshCycles: list[str] = []
     if baseline and not toplevelOnly:
         allowed = set(baseline.get("twoCycles", ()))

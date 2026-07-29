@@ -16,6 +16,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Protocol, runtime_checkable
 
+from dartlab.core.pluginDiscovery import bootstrap
+
 
 @runtime_checkable
 class LoaderProvider(Protocol):
@@ -47,29 +49,10 @@ class LoaderProvider(Protocol):
 
 _LOADERS: dict[str, LoaderProvider] = {}
 
-# Auto-discovery — providers 가 자동 등록될 모듈 path.
-# core 는 providers 직접 import 0, plugin 패턴으로 위치만 식별.
-_KNOWN_LOADER_MODULES: tuple[str, ...] = (
-    "dartlab.providers.edgar.docs.loader",  # EdgarDocsLoader
-    "dartlab.providers.edgar.bulk",  # EdgarBulkLoader
-)
-
-_DISCOVERED = False
-
 
 def _discoverLoaders() -> None:
-    """알려진 LoaderProvider 모듈을 한 번만 lazy import — register 트리거."""
-    global _DISCOVERED
-    if _DISCOVERED:
-        return
-    import importlib
-
-    for modPath in _KNOWN_LOADER_MODULES:
-        try:
-            importlib.import_module(modPath)
-        except ImportError:
-            continue
-    _DISCOVERED = True
+    """root composition이 등록한 LoaderProvider bootstrap을 실행한다."""
+    bootstrap(__name__)
 
 
 def registerLoader(loader: LoaderProvider) -> None:

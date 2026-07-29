@@ -74,6 +74,35 @@ def test_extractImportsCatchesLazyImport():
     assert result == {"dartlab.gather"}
 
 
+def test_extractImportsCatchesDynamicImportApis():
+    """import_module alias와 __import__ 리터럴도 같은 import graph에 들어간다."""
+    cs = _loadCycleScan()
+    src = (
+        "import importlib as il\n"
+        "from importlib import import_module as im\n"
+        'il.import_module("dartlab.credit.scoring")\n'
+        'im("dartlab.macro.rates")\n'
+        '__import__("dartlab.analysis.financial")\n'
+    )
+    assert cs._extractImports(src) == {
+        "dartlab.analysis",
+        "dartlab.credit",
+        "dartlab.macro",
+    }
+
+
+def test_extractImportsTopLevelModeExcludesFunctionDynamicImport():
+    """strict top-level cycle gate는 함수 내부 지연 import를 실제 실행시점대로 제외한다."""
+    cs = _loadCycleScan()
+    src = (
+        "import importlib\n"
+        'importlib.import_module("dartlab.providers.dart")\n'
+        "def fetchData():\n"
+        '    return importlib.import_module("dartlab.gather.entry")\n'
+    )
+    assert cs._extractImports(src, toplevelOnly=True) == {"dartlab.providers"}
+
+
 def test_toPrimaryNormalizesDeepPath():
     """dartlab.analysis.financial.proforma → dartlab.analysis (1 차 패키지)."""
     cs = _loadCycleScan()
@@ -86,3 +115,23 @@ def test_toPrimaryRejectsUnknownPackage():
     cs = _loadCycleScan()
     assert cs._toPrimary("dartlab.foo.bar") is None
     assert cs._toPrimary("notdartlab.x") is None
+
+
+def test_cycleBaselineMissingFailsClosed(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    """cycle 원장이 없으면 부채 0으로 오인하지 않는다."""
+    cs = _loadCycleScan()
+    monkeypatch.setattr(cs, "_baselineFile", lambda: tmp_path / "missing.json")
+
+    with pytest.raises(FileNotFoundError, match="cycle baseline 부재"):
+        cs._loadBaseline()
+
+
+def test_cycleBaselineMalformedFailsClosed(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    """손상된 cycle 원장을 빈 원장으로 바꾸지 않는다."""
+    cs = _loadCycleScan()
+    baseline = tmp_path / "cycle.json"
+    baseline.write_text("{broken", encoding="utf-8")
+    monkeypatch.setattr(cs, "_baselineFile", lambda: baseline)
+
+    with pytest.raises(ValueError, match="cycle baseline 읽기 실패"):
+        cs._loadBaseline()

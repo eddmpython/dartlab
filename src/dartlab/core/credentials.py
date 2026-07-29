@@ -13,7 +13,7 @@ import os
 from dataclasses import dataclass
 from typing import Protocol, runtime_checkable
 
-from dartlab.core.pluginDiscovery import discoverOnce
+from dartlab.core.pluginDiscovery import bootstrap
 
 
 @dataclass(frozen=True)
@@ -85,21 +85,10 @@ class CredentialProvider(Protocol):
 
 _PROVIDERS: dict[str, CredentialProvider] = {}
 
-# Auto-discovery — alpha 모듈 path list. CredentialManager 첫 사용 시 lazy load.
-# core 가 providers 직접 import 하지 않고 plugin 패턴으로 위치를 식별만.
-# 새 provider 추가 시 path 만 add (FastAPI startup tasks 와 동등 패턴).
-_KNOWN_PROVIDER_MODULES: tuple[str, ...] = (
-    "dartlab.gather.dart.keys",  # DartKeyProvider (DART fetch 는 gather 전담)
-)
-
 
 def _discoverProviders() -> None:
-    """알려진 CredentialProvider 모듈을 한 번만 lazy import . register 트리거.
-
-    한 번만 도는 규칙은 `core.pluginDiscovery` 가 갖는다. 예전에는 이 열세 줄이
-    core 안에 열한 벌 복사돼 있었다.
-    """
-    discoverOnce(__name__, _KNOWN_PROVIDER_MODULES)
+    """root composition이 등록한 CredentialProvider bootstrap을 실행한다."""
+    bootstrap(__name__)
 
 
 def registerCredentialProvider(provider: CredentialProvider) -> None:
@@ -129,9 +118,9 @@ def listCredentialProviders() -> dict[str, CredentialProvider]:
     """등록된 모든 CredentialProvider 반환 (dict 사본). auto-discovery 트리거.
 
     Requires:
-        알려진 provider module path가 import 가능하면 등록을 수행한다. optional import 실패는 무시한다.
+        root composition이 credential provider bootstrap을 등록해야 한다.
     Raises:
-        없음. auto-discovery의 ImportError는 내부에서 흡수한다.
+        provider bootstrap 오류를 원인 그대로 전파한다.
     Returns:
         provider name을 key로 하는 registry 사본.
     Example:
@@ -148,7 +137,7 @@ def getCredentialProvider(name: str) -> CredentialProvider | None:
     Requires:
         name은 registry에 등록된 provider name과 같은 문자열이어야 hit가 가능하다.
     Raises:
-        없음. auto-discovery의 ImportError는 내부에서 흡수한다.
+        provider bootstrap 오류를 원인 그대로 전파한다.
     Args:
         name: 조회할 credential provider 이름.
     Returns:

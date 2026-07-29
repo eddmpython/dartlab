@@ -7,8 +7,8 @@
 ## 진행 방식
 
 계층 아래에서 위로 순차 검토한다. L0 core -> L1 gather, providers -> L1.5 scan, frame, synth,
-reference -> L2 analysis, macro, quant, industry, credit -> L2.5 data -> L3 story, simulate ->
-L4 ai, mcp. 아래층 결함이 위층 전부를 오염시키므로 순서를 지킨다.
+reference -> L2 analysis, macro, quant, industry, credit -> L2.5 dataHub -> L3 story, simulate ->
+L4 소비자, ai, mcp. 아래층 결함이 위층 전부를 오염시키므로 순서를 지킨다.
 
 각 계층은 네 기준으로 본다. 혁신성, 완성도, 모듈화와 구조화, 클린코드. 미달이면 리팩터링을
 검토하고 추진한다.
@@ -35,10 +35,10 @@ L4 ai, mcp. 아래층 결함이 위층 전부를 오염시키므로 순서를 �
 ### 세션 인계
 
 - 현재 계층: L0 core
-- 마지막 완료 항목: L0-06 Pyodide dataLoader 읽기·fetch 무결성
-- 진행 중인 단일 항목: L0-07 동적 상향 import 감시와 L0 구조 경계
-- 다음 첫 행동: 현재 architecture/cycle 가드가 `importlib`, `__import__`, 지연 문자열 import로
-  생기는 `core -> 상위 레이어` 간선을 실제로 잡는지 구현과 호출자를 대조하고 누락을 재현한다.
+- 마지막 완료 항목: L0-07 동적 상향 import 감시와 composition 경계
+- 진행 중인 단일 항목: L0-08 `core/_entries` residency와 registry 호출자 경계
+- 다음 첫 행동: `core/_entries`의 모든 생성자와 소비자를 정적·제품 호출로 대조하고,
+  L0 metadata primitive와 L4 Company/API entry를 분리할 수 있는 최소 소유 경계를 재현한다.
 - 금지: L0 완료 판정 전 L1 이상 감사나 수정 착수
 
 ## L0 순차 안정화 원장 (2026-07-29)
@@ -334,6 +334,63 @@ L4 ai, mcp. 아래층 결함이 위층 전부를 오염시키므로 순서를 �
    단일 스레드라 별도 병렬 E2E는 두지 않았다. 동적 상향 import 감시와 기존 L0 구조
    부채가 남아 있으므로 이 항목만 완료이며 **L0 전체는 미달**이다.
 
+### L0-07 동적 상향 import 감시와 composition 경계
+
+**상태: 완료.** L0가 구체 상위 구현을 문자열로 알고 있던 경로와 Guard 사각을 닫았다.
+core 내부 배치 부채까지 이전했다는 뜻은 아니며 다음 항목부터 하나씩 처리한다.
+
+1. **범위와 실제 호출자.** 범위는 113개 `core` 모듈의 정적·동적 import graph,
+   `pluginDiscovery`와 13개 module registry seam, DI factory 4개, root
+   `composition.py`, palette·renderer·plugin loader다. 실제 호출자는 credential,
+   DART/EDGAR fetch·build, disclosure, gather, HTML/chart renderer, insider, listing,
+   loader, panel table과 finance/quant/industry/macro accessor의 getter다. 위층 구현
+   자체는 수정하지 않고 이 L0 seam과 root 배선까지만 확인했다.
+2. **제품 결함 재현.** `importlib.import_module`, alias `import_module`,
+   `__import__`, `_KNOWN_*` 상수 목록으로 만든 최소 core source를 기존 Guard와
+   coreBoundary가 모두 0건으로 통과시켰다. 실제 core에는 실행 가능한 상위 모듈 문자열
+   22개, 고유 concrete 대상 18개가 있었다. `discoverOnce`는 callback 성공 전 완료를
+   표시하고 내부 `ImportError`를 선택 의존성처럼 삼켜, 한 번 실패한 registry가 다음
+   호출에서도 복구되지 않았다. 조건문 아래 함수 본문을 module eager로 오인해 이미
+   존재하던 L1 상향 관계 10개·22호출점도 숨겼다.
+3. **근본 원인과 SSOT.** 구현 모듈 표가 core seam마다 복제됐고, 정적 import 전용 AST
+   검사·cycle 검사·별도 계층표가 서로 다른 정책을 가졌다. `di.py`, sink, 변수 경로를
+   예외로 두면 concrete dependency를 숨겨도 통과하는 구조였다. 구체 구현 경로는 root
+   composition 한 곳, import 의미와 실행 phase는 Guard Index 한 곳이 소유하도록 했다.
+4. **수정과 테스트.** `composition.py`의 module/factory 표가 17개 registry key를
+   주입하고 core seam은 자기 key만 요청한다. bootstrap은 성공 뒤에만 완료되고, 실패
+   예외를 그대로 전파해 재시도하며, 재진입은 종료하고 동시 최초 호출은 같은 한 번의
+   성공을 기다린다. 실행 중 callback 교체·reset은 거부한다. caller-owned generic
+   동적 loader는 `pluginDiscovery.py`, `plugins.py` 두 경로만 허용한다. palette는
+   순수 L0 SSOT로 내리고 viz는 동일 객체를 재수출한다. logger는 외부 패키지를 강제
+   import하지 않고 handler를 선등록한다. 사용되지 않던 BS/IS/CF concrete DataEntry
+   경로도 제거했다. Guard는 alias·상수·`__import__`, eager/lazy/type-only,
+   composition 선언 표를 인덱싱하고 source·baseline parse 실패를 fail-closed로 바꿨다.
+5. **공개 행동, 정확성, 속도, 메모리.** 새 process에서 13개 module registry와
+   4개 DI factory를 전부 호출해 구현체 17/17이 등록됐다. palette 호환 경로는 L0의
+   list/dict/function 객체와 identity가 같다. root 등록은 구현을 강제 import하지 않으며
+   기존 root 경로가 이미 올리는 2개를 제외한 concrete target 12개는 최초 getter까지
+   지연된다. registry 17개의 얕은 크기는 약 `4,577 bytes`다. 1,768파일 Guard Index
+   첫 parse `17.988116s` 뒤 같은 process 재사용은 `0.000507s`로 약 35,472배 빨랐다.
+   동일 strict pytest 접점은 중복 AST subprocess 제거 전 `225.99s`, 최종 `122.07s`로
+   약 46% 단축됐고 공식 CLI strict는 `113.3s`였다.
+6. **Guard와 회귀.** 실제 core 동적 기록은 승인된 caller-owned unresolved 2건뿐이고
+   concrete 상향 위반 0, 전체 module-eager 역방향 0, composition concrete edge 14건,
+   top-level cycle 0이다. 관련 architecture/core/provider/CLI/viz 회귀는
+   `102 passed, 1 skipped`, strict JSON 회귀 `1 passed`다. 공식 Guard는
+   1,768파일, 7개 규칙과 cycle, architecture, folder mirror, gather, provider,
+   public API 여섯 gate를 모두 통과했다. 변경 파일 Pyright는 0 errors이고 Ruff,
+   compileall, diff whitespace도 통과했다. core 전수 `silentSubstitute`는 기존 baseline
+   7건과 정확히 일치해 신규 위반은 0건이다.
+7. **남은 부채와 판정.** coreBoundary에는 숨기지 않은 residency 4건이 남는다:
+   `_entries`, `messaging.py`, `observability/`, `parse/`. 다음 단일 항목은
+   `_entries`만 다룬다. 정확한 phase 판정으로 새로 보인 상위 구현 부채 4관계
+   (`gather/accessors -> company`, DART `scanAggregator -> scan`,
+   DART `scanAccount -> scan`, EDGAR `terminalStmt -> viz`)는 9호출점으로 baseline에
+   기록했으며 L1 순서 전에는 수정하지 않는다. Company 공개 파사드의 추가 6관계도
+   보호 원장에 기록했다. `silentSubstitute` 기존 7건은 residency 4건 뒤 별도 L0 단일
+   항목으로 닫으며 이번 경계 변경에 섞지 않는다. 따라서 L0-07만 완료이고
+   **L0 전체는 미달**이다.
+
 ## 정량 판정 (2026-07-27 실측)
 
 체크리스트 여섯 중 셋을 지금 잴 수 있다. 셋 다 미달이다.
@@ -372,9 +429,9 @@ Q1(routing SSOT 통합), Q4(realData 30% 단축), Q6(외부 venv 종합 smoke)�
 | L1 gather, providers | L0 완료 전 재검토 대기 (과거 판정 미달) |
 | L1.5 scan, frame, synth, reference | L0 완료 전 재검토 대기 (과거 판정 미달) |
 | L2 analysis, macro, quant, industry, credit | L0 완료 전 재검토 대기 (과거 판정 미달) |
-| L2.5 data | L0 완료 전 재검토 대기 (과거 판정 미달) |
+| L2.5 dataHub | L0 완료 전 재검토 대기 (과거 판정 미달) |
 | L3 story, simulate | L0 완료 전 재검토 대기 (과거 판정 미달) |
-| L4 ai, mcp | L0 완료 전 재검토 대기 (과거 판정 미달) |
+| L4 소비자, ai, mcp | L0 완료 전 재검토 대기 (과거 판정 미달) |
 
 ## 현재 판정
 

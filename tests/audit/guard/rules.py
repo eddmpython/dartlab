@@ -7,13 +7,24 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
-from guard.indexer import LAYER_OF, ROOT_FACADE, ModuleRecord
+from guard.indexer import (
+    CALLER_OWNED_IMPORT,
+    DYNAMIC_UNKNOWN,
+    EAGER_PHASE,
+    LAYER_OF,
+    LAZY_PHASE,
+    ROOT_FACADE,
+    STATIC_IMPORT,
+    ModuleRecord,
+)
 
-SINK_HELPERS = {"viz", "cli", "server", "channel"}
-STRICT_L0_L15 = {"core", "gather", "providers", "scan", "frame", "synth", "reference"}
 L1_PEERS = {"gather", "providers"}
 L15_PEERS = {"scan", "frame", "synth", "reference"}
 L2_PEERS = {"analysis", "macro", "quant", "industry", "credit"}
+CORE_CALLER_OWNED_DYNAMIC_FILES = {
+    "src/dartlab/core/pluginDiscovery.py",
+    "src/dartlab/core/plugins.py",
+}
 PROVIDER_COMPANY_FILES = {
     "src/dartlab/providers/dart/company.py": "dart",
     "src/dartlab/providers/edgar/company.py": "edgar",
@@ -163,6 +174,7 @@ class Violation:
 def evaluateL0L15(records: list[ModuleRecord]) -> list[Violation]:
     """L0~L1.5 architecture rule 전수 평가."""
     violations: list[Violation] = []
+    violations.extend(checkCoreImportBoundary(records))
     violations.extend(checkImportDirection(records))
     violations.extend(checkL1CrossImport(records))
     violations.extend(checkL15SiblingImport(records))
@@ -171,22 +183,58 @@ def evaluateL0L15(records: list[ModuleRecord]) -> list[Violation]:
     return sorted(violations, key=lambda item: (item.rule, item.path, item.line, item.message))
 
 
-def checkImportDirection(records: list[ModuleRecord]) -> list[Violation]:
-    """L0~L1.5 상위 계층 직접 import 금지."""
+def checkCoreImportBoundary(records: list[ModuleRecord]) -> list[Violation]:
+    """core의 정적·동적 상향 import와 미해결 동적 호출을 함께 차단한다."""
     violations: list[Violation] = []
     for record in records:
-        if record.topPackage not in STRICT_L0_L15:
+        if record.topPackage != "core":
             continue
-        if record.path.endswith("/di.py") or record.path.endswith("\\di.py"):
+        for importRecord in record.imports:
+            if importRecord.module == DYNAMIC_UNKNOWN:
+                if importRecord.kind != CALLER_OWNED_IMPORT or record.path not in CORE_CALLER_OWNED_DYNAMIC_FILES:
+                    violations.append(
+                        makeViolation(
+                            "architecture.coreUnresolvedDynamicImport",
+                            record.path,
+                            importRecord.line,
+                            "core has unresolved dynamic import target",
+                            importKind=importRecord.kind,
+                        )
+                    )
+                continue
+            target = importRecord.topPackage
+            targetLayer = LAYER_OF.get(target) if target is not None else None
+            if targetLayer is None or targetLayer <= LAYER_OF["core"]:
+                continue
+            violations.append(
+                makeViolation(
+                    "architecture.coreUpperImport",
+                    record.path,
+                    importRecord.line,
+                    f"L0 core imports L{targetLayer} {target}",
+                    importKind=importRecord.kind,
+                    subject=f"{target}:{importRecord.module}",
+                )
+            )
+    return violations
+
+
+def checkImportDirection(records: list[ModuleRecord]) -> list[Violation]:
+    """모든 선언 계층의 module-eager 상향 import를 차단한다."""
+    violations: list[Violation] = []
+    for record in records:
+        if record.topPackage == "core":
             continue
         ownerLayer = LAYER_OF.get(record.topPackage)
         if ownerLayer is None:
             continue
         for importRecord in record.imports:
-            if not importRecord.isTopLevel:
+            if importRecord.kind != STATIC_IMPORT:
+                continue
+            if importRecord.phase != EAGER_PHASE:
                 continue
             target = importRecord.topPackage
-            if target is None or target in SINK_HELPERS or target not in LAYER_OF:
+            if target is None or target not in LAYER_OF:
                 continue
             targetLayer = LAYER_OF[target]
             if targetLayer > ownerLayer:
@@ -208,6 +256,8 @@ def checkL1CrossImport(records: list[ModuleRecord]) -> list[Violation]:
         if record.topPackage not in L1_PEERS:
             continue
         for importRecord in record.imports:
+            if importRecord.kind != STATIC_IMPORT:
+                continue
             if not importRecord.isTopLevel:
                 continue
             target = importRecord.topPackage
@@ -230,6 +280,8 @@ def checkL15SiblingImport(records: list[ModuleRecord]) -> list[Violation]:
         if record.topPackage not in L15_PEERS:
             continue
         for importRecord in record.imports:
+            if importRecord.kind != STATIC_IMPORT:
+                continue
             target = importRecord.topPackage
             if target in L15_PEERS and target != record.topPackage:
                 violations.append(
@@ -255,10 +307,10 @@ def checkLazyBoundaryDebt(records: list[ModuleRecord]) -> list[Violation]:
         if record.topPackage not in L1_PEERS:
             continue
         for importRecord in record.imports:
-            if importRecord.isTopLevel:
+            if importRecord.phase != LAZY_PHASE:
                 continue
             target = importRecord.topPackage
-            if target is None or target in SINK_HELPERS:
+            if target is None:
                 continue
             if target == ROOT_FACADE:
                 violations.append(
@@ -356,8 +408,8 @@ def checkProviderCompanyFile(path: Path, providerName: str) -> list[Violation]:
     """provider company.py 1개를 frozen public surface와 비교한다."""
     try:
         tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
-    except (OSError, UnicodeDecodeError, SyntaxError):
-        return []
+    except (OSError, UnicodeDecodeError, SyntaxError) as exc:
+        raise ValueError(f"provider Company surface 검사 실패: {path}: {type(exc).__name__}: {exc}") from exc
     companyClass = next(
         (node for node in tree.body if isinstance(node, ast.ClassDef) and node.name == "Company"),
         None,

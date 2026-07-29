@@ -2,16 +2,14 @@
 
 정책 SSOT:
     - `src/dartlab/skills/specs/operation/architecture.md` §L0 정의
-      "L0 (core) = 타입·유틸·SSOT 데이터 (sector classification, mapper, registry, parser)"
-    - `memory/core_boundary.md`
+      "L0 (core) = 타입·유틸·SSOT 데이터·공용 보안/관측 primitive"
       "core 는 L0 primitive 만. 상위 계층 import 금지."
-      "generated capability/analysis graph 는 core 루트에 두지 않고 별도 계층."
-      "provider/profile/secret/model 설정은 ai 또는 제품 설정 계층 소유."
 
 세 가드:
-    1. 상위 layer import 금지 — core 안 .py 가 dartlab.{L1+} import 시 fail.
-    2. denylist — 명시적으로 core 가 아닌 경로 (cross/, _entries/, capability/_generated*,
-       providers/secrets, docs/, show.py, select.py, messaging.py).
+    1. 상위 layer import 금지 — 정적 import와 동적 import를 같은 Guard Index로 검사.
+       concrete 상위 대상은 예외 없이 차단하고 caller-owned generic loader만 허용.
+    2. denylist — 명시적으로 core 가 아닌 경로
+       (cross/, _entries/, show.py, select.py, messaging.py).
     3. 디렉터리 화이트리스트 — 정의 외 신규 디렉터리 신설 차단. baseline 갱신 시 PR
        으로만 변경 (CHANGELOG + architecture.md 동시 갱신 강제).
 
@@ -31,38 +29,19 @@ F4 "정공법 A (core 강등)" 만능 회귀를 차단하는 게 본 lint 의 �
 from __future__ import annotations
 
 import argparse
-import ast
 import sys
-from collections import defaultdict
 from pathlib import Path
 
-if hasattr(sys.stdout, "reconfigure"):
-    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-if hasattr(sys.stderr, "reconfigure"):
-    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+from guard.indexer import buildIndex
+from guard.rules import checkCoreImportBoundary
+
+for _stream in (sys.stdout, sys.stderr):
+    _reconfigure = getattr(_stream, "reconfigure", None)
+    if callable(_reconfigure):
+        _reconfigure(encoding="utf-8", errors="replace")
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _CORE = _REPO_ROOT / "src" / "dartlab" / "core"
-
-# core 가 import 하면 위반인 상위 layer 들 (memory/core_boundary.md).
-_FORBIDDEN_UPSTREAM_PREFIXES: tuple[str, ...] = (
-    "dartlab.analysis",
-    "dartlab.credit",
-    "dartlab.macro",
-    "dartlab.quant",
-    "dartlab.industry",
-    "dartlab.scan",
-    "dartlab.search",
-    "dartlab.story",
-    "dartlab.viz",
-    "dartlab.gather",
-    "dartlab.company",
-    "dartlab.providers",
-    "dartlab.server",
-    "dartlab.ai",
-    "dartlab.mcp",
-    "dartlab.cli",
-)
 
 # 명시적 denylist — architecture.md / core_boundary.md 정의에 따른 확정 위반.
 # 각 항목: (core 기준 상대 경로, 위반 사유, 가야 할 곳)
@@ -72,26 +51,23 @@ _DENYLIST: tuple[tuple[str, str, str], ...] = (
     ("show.py", "Company.show() API = L4", "company/show.py 또는 dartlab/"),
     ("select.py", "Company.select() API = L4", "company/select.py 또는 dartlab/"),
     ("messaging.py", "cli/server messaging = ≥ L1", "cli/messaging.py 또는 server/messaging.py"),
-    (
-        "providers/secrets.py",
-        "secret 설정 (core_boundary.md 명시 — ai 또는 제품 설정 계층)",
-        "ai/providers/secrets.py",
-    ),
 )
 
 # 정의된 (= 허용된) 1 차 디렉터리 — 이 외 신규 디렉터리 신설은 PR 필요.
 # architecture.md L0 정의 + 현재 SSOT 데이터 구조.
 _ALLOWED_DIRS: frozenset[str] = frozenset(
     {
-        "_entries",  # denylist 에 있지만 디렉터리 자체는 존재 인정 (이전 전까지)
+        "_entries",  # denylist에 있지만 이전 전까지 존재를 추적
+        "accounts",  # DART/EDGAR 공용 계정 정규화 SSOT
         "cache",  # L0 cache infra
         "capability",  # capability infra (generated 만 denylist)
         "cross",  # denylist 에 있지만 디렉터리 자체는 존재 인정 (이전 전까지)
         "data",  # parser data
         "docs",  # denylist 에 있지만 디렉터리 자체는 존재 인정 (이전 전까지)
+        "indicators",  # gather/synth 공용 vectorized primitive
         "mappers",  # SSOT mapper
         "naming",  # SSOT naming
-        "providers",  # provider 메타 (secrets 만 denylist)
+        "providers",  # credential/secret 공용 보안 primitive
         "render",  # render protocol
         "search",  # L0 search infra
         "sector",  # SSOT sector classification
@@ -104,41 +80,10 @@ def _isPyFile(p: Path) -> bool:
     return p.suffix == ".py" and not p.name.endswith(".pyc")
 
 
-def _scanImports(file: Path) -> list[tuple[int, str]]:
-    """파일 내 모든 import 의 (line, module name) 추출. ast 사용 (lazy 포함)."""
-    try:
-        source = file.read_text(encoding="utf-8")
-    except (OSError, UnicodeDecodeError):
-        return []
-    try:
-        tree = ast.parse(source, filename=str(file))
-    except SyntaxError:
-        return []
-    out: list[tuple[int, str]] = []
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Import):
-            for alias in node.names:
-                out.append((node.lineno, alias.name))
-        elif isinstance(node, ast.ImportFrom):
-            if node.module is None or node.level != 0:
-                continue
-            out.append((node.lineno, node.module))
-    return out
-
-
 def _checkUpstreamImports() -> list[str]:
-    """가드 1 — core 안 .py 가 상위 layer 를 import 하는지."""
-    violations: list[str] = []
-    for f in _CORE.rglob("*.py"):
-        if "__pycache__" in f.parts:
-            continue
-        for lineno, mod in _scanImports(f):
-            for forbidden in _FORBIDDEN_UPSTREAM_PREFIXES:
-                if mod == forbidden or mod.startswith(forbidden + "."):
-                    rel = f.relative_to(_REPO_ROOT)
-                    violations.append(f"{rel}:{lineno}  import {mod}  (상위 layer)")
-                    break
-    return violations
+    """가드 1 — Guard Index와 같은 정적·동적 core import 경계를 적용한다."""
+    violations = checkCoreImportBoundary(buildIndex(_REPO_ROOT))
+    return [f"{item.path}:{item.line}  {item.message}  ({item.rule})" for item in violations]
 
 
 def _checkDenylist() -> list[str]:

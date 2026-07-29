@@ -5,6 +5,8 @@ from __future__ import annotations
 import sys
 from typing import Protocol, runtime_checkable
 
+from dartlab.core.pluginDiscovery import bootstrap
+
 
 @runtime_checkable
 class ChartHtmlRenderer(Protocol):
@@ -76,10 +78,10 @@ def register(renderer: ChartHtmlRenderer) -> None:
 
 
 def getRenderer() -> ChartHtmlRenderer | None:
-    """등록된 렌더러를 반환한다. 미등록이면 viz lazy load 를 한 번 시도한다.
+    """등록된 렌더러를 반환한다. 미등록이면 composition bootstrap을 실행한다.
 
     Capabilities:
-        현재 등록된 chart renderer를 조회하고, 없으면 ``dartlab.viz`` lazy import를 시도한다.
+        현재 등록된 chart renderer를 조회하고, 없으면 root composition에 초기화를 요청한다.
     AIContext:
         core/chart 호출자가 viz backend 존재 여부를 안전하게 확인하는 단일 진입점이다.
     Guide:
@@ -87,29 +89,23 @@ def getRenderer() -> ChartHtmlRenderer | None:
     When:
         chart HTML 렌더링 직전.
     How:
-        ``_renderer``가 비어 있으면 importlib로 ``dartlab.viz``를 불러 registry 등록을 유도한다.
+        ``_renderer``가 비어 있으면 ``bootstrap(__name__)``으로 등록을 유도한다.
     Args:
         None.
     Returns:
         등록된 renderer 또는 미등록/미설치 시 ``None``.
     Requires:
-        optional viz backend가 설치되어 있으면 ``dartlab.viz`` import 가능.
+        root composition이 renderer bootstrap을 등록해야 한다.
     Raises:
-        ``dartlab.viz`` import 중 ImportError가 아닌 예외는 전파될 수 있다.
+        renderer bootstrap 오류를 원인 그대로 전파한다.
     Example:
         >>> getRenderer() is None or hasattr(getRenderer(), "htmlFromSpec")
         True
     SeeAlso:
         ``register`` and ``ChartHtmlRenderer``.
     """
-    global _renderer
     if _renderer is None:
-        try:
-            import importlib
-
-            importlib.import_module("dartlab.viz")
-        except ImportError:
-            return None
+        bootstrap(__name__)
     return _renderer
 
 

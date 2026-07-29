@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Protocol, runtime_checkable
 
-from dartlab.core.pluginDiscovery import discoverOnce
+from dartlab.core.pluginDiscovery import bootstrap
 
 if TYPE_CHECKING:
     import polars as pl
@@ -46,17 +46,10 @@ class ListingResolver(Protocol):
 
 _RESOLVER: ListingResolver | None = None
 
-# Auto-discovery — gather/krx/listing.py 가 register 하도록 lazy 로드.
-_KNOWN_RESOLVER_MODULES: tuple[str, ...] = ("dartlab.gather.krx.listing",)
-
 
 def _discover() -> None:
-    """알려진 ListingResolver 모듈을 한 번만 lazy import . register 트리거.
-
-    한 번만 도는 규칙은 `core.pluginDiscovery` 가 갖는다. 예전에는 이 열세 줄이
-    core 안에 열한 벌 복사돼 있었다.
-    """
-    discoverOnce(__name__, _KNOWN_RESOLVER_MODULES)
+    """root composition이 등록한 ListingResolver bootstrap을 실행한다."""
+    bootstrap(__name__)
 
 
 def registerListingResolver(resolver: ListingResolver) -> None:

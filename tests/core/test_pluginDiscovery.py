@@ -1,116 +1,139 @@
-"""플러그인 탐색 SSOT 회귀.
-
-"알려진 모듈을 한 번만 import 해서 스스로 등록하게 한다"는 열세 줄이 core 안에 열한 벌
-복사돼 있었다. 다른 것은 모듈 목록 상수 이름 하나뿐이고 나머지는 글자까지 같았다.
-
-그렇게 두면 셋째 사본을 만들 때 옆에서 복사하게 되고, 한 곳에서 예외 처리를 넓히거나 로그를
-붙여도 나머지 열은 그대로 남는다. 실제로 그중 하나는 재진입 순서가 달라 무한 재귀에 걸릴
-수 있는 모양이었다. 먼저 표시하고 나중에 import 하는 순서가 아니면, import 대상 모듈이 같은
-탐색을 다시 부를 때 같은 목록을 계속 돈다.
-
-여기서 고정하는 것은 셋이다. 레지스트리마다 한 번만 돈다, 선택 의존성이 없어도 나머지는
-등록된다, 재진입해도 무한히 돌지 않는다.
-"""
+"""L0 bootstrap registry와 caller-owned module loader 회귀."""
 
 from __future__ import annotations
 
+import threading
+from concurrent.futures import ThreadPoolExecutor
+
 import pytest
 
-from dartlab.core.pluginDiscovery import _DISCOVERED, discoverOnce, resetDiscovery
+from dartlab.core import pluginDiscovery
+from dartlab.core.pluginDiscovery import (
+    bootstrap,
+    importCallerModule,
+    lazyAttribute,
+    registerBootstrap,
+)
 
 pytestmark = [pytest.mark.unit]
 
 
 @pytest.fixture(autouse=True)
-def _isolateDiscovery():
-    """전역 기록을 건드리므로 앞뒤로 되돌린다."""
-    saved = set(_DISCOVERED)
-    resetDiscovery()
+def _isolateBootstrapRegistry():
+    """전역 bootstrap 상태를 테스트 전후의 정확한 snapshot으로 되돌린다."""
+    savedBootstraps = dict(pluginDiscovery._BOOTSTRAPS)
+    savedCompleted = set(pluginDiscovery._COMPLETED)
+    savedInProgress = dict(pluginDiscovery._IN_PROGRESS)
     yield
-    resetDiscovery()
-    _DISCOVERED.update(saved)
+    pluginDiscovery._BOOTSTRAPS.clear()
+    pluginDiscovery._BOOTSTRAPS.update(savedBootstraps)
+    pluginDiscovery._COMPLETED.clear()
+    pluginDiscovery._COMPLETED.update(savedCompleted)
+    pluginDiscovery._IN_PROGRESS.clear()
+    pluginDiscovery._IN_PROGRESS.update(savedInProgress)
 
 
-def testRunsOnlyOncePerRegistry(monkeypatch: pytest.MonkeyPatch) -> None:
-    """두 번째 호출은 아무 것도 import 하지 않아야 한다."""
-
+def testBootstrapRunsOnlyOnceAfterSuccess() -> None:
+    """성공한 callback은 같은 registry key에서 한 번만 실행된다."""
     calls: list[str] = []
-    monkeypatch.setattr(
-        "dartlab.core.pluginDiscovery.importlib.import_module", lambda name: calls.append(name) or object()
-    )
+    registerBootstrap("test.once", lambda: calls.append("called"))
 
-    discoverOnce("registry.a", ["mod.one", "mod.two"])
-    discoverOnce("registry.a", ["mod.one", "mod.two"])
-
-    assert calls == ["mod.one", "mod.two"]
+    assert bootstrap("test.once") is True
+    assert bootstrap("test.once") is True
+    assert calls == ["called"]
 
 
-def testDifferentRegistriesAreIndependent(monkeypatch: pytest.MonkeyPatch) -> None:
-    """한 레지스트리가 돌았다고 다른 레지스트리가 건너뛰면 안 된다."""
-
+def testDifferentBootstrapKeysAreIndependent() -> None:
+    """한 registry 완료 상태가 다른 registry를 건너뛰게 하지 않는다."""
     calls: list[str] = []
-    monkeypatch.setattr(
-        "dartlab.core.pluginDiscovery.importlib.import_module", lambda name: calls.append(name) or object()
-    )
+    registerBootstrap("test.a", lambda: calls.append("a"))
+    registerBootstrap("test.b", lambda: calls.append("b"))
 
-    discoverOnce("registry.a", ["mod.one"])
-    discoverOnce("registry.b", ["mod.two"])
-
-    assert calls == ["mod.one", "mod.two"]
+    assert bootstrap("test.a") is True
+    assert bootstrap("test.b") is True
+    assert calls == ["a", "b"]
 
 
-def testMissingOptionalModuleDoesNotStopTheRest(monkeypatch: pytest.MonkeyPatch) -> None:
-    """선택 의존성이 빠진 설치에서도 나머지 provider 는 등록돼야 한다."""
-
-    loaded: list[str] = []
-
-    def _fake(name: str):
-        if name == "mod.missing":
-            raise ImportError(name)
-        loaded.append(name)
-        return object()
-
-    monkeypatch.setattr("dartlab.core.pluginDiscovery.importlib.import_module", _fake)
-
-    discoverOnce("registry.a", ["mod.missing", "mod.present"])
-
-    assert loaded == ["mod.present"]
+def testMissingBootstrapReturnsFalse() -> None:
+    """composition이 등록하지 않은 key는 조용한 성공으로 오인하지 않는다."""
+    assert bootstrap("test.missing") is False
 
 
-def testBrokenModuleIsNotSwallowed(monkeypatch: pytest.MonkeyPatch) -> None:
-    """의존성 부재와 모듈 자체의 고장은 다른 사건이다. 뒤엣것은 올려 보낸다."""
+def testBootstrapFailurePropagatesAndRetries() -> None:
+    """내부 ImportError를 삼키거나 완료 처리하지 않고 다음 호출에서 재시도한다."""
+    attempts = 0
 
-    def _fake(name: str):
-        raise ValueError("모듈 안에서 터짐")
+    def flaky() -> None:
+        nonlocal attempts
+        attempts += 1
+        if attempts == 1:
+            raise ImportError("implementation import failed")
 
-    monkeypatch.setattr("dartlab.core.pluginDiscovery.importlib.import_module", _fake)
+    registerBootstrap("test.retry", flaky)
 
-    with pytest.raises(ValueError):
-        discoverOnce("registry.a", ["mod.broken"])
-
-
-def testReentrantDiscoveryTerminates(monkeypatch: pytest.MonkeyPatch) -> None:
-    """import 대상이 같은 탐색을 다시 불러도 무한히 돌지 않아야 한다."""
-
-    calls: list[str] = []
-
-    def _fake(name: str):
-        calls.append(name)
-        discoverOnce("registry.a", ["mod.one"])
-        return object()
-
-    monkeypatch.setattr("dartlab.core.pluginDiscovery.importlib.import_module", _fake)
-
-    discoverOnce("registry.a", ["mod.one"])
-
-    assert calls == ["mod.one"]
+    with pytest.raises(ImportError, match="implementation import failed"):
+        bootstrap("test.retry")
+    assert "test.retry" not in pluginDiscovery._COMPLETED
+    assert bootstrap("test.retry") is True
+    assert attempts == 2
 
 
-def testRealRegistryStillResolves() -> None:
-    """실제 레지스트리가 여전히 provider 를 찾아야 한다. 배선이 끊기면 조용히 None 이 된다."""
+def testReentrantBootstrapTerminates() -> None:
+    """같은 callback의 재진입은 무한 재귀 없이 현재 호출에 제어를 돌려준다."""
+    nested: list[bool] = []
 
-    from dartlab.core import listingResolver
+    def callback() -> None:
+        nested.append(bootstrap("test.reentrant"))
 
-    listingResolver._discover()
+    registerBootstrap("test.reentrant", callback)
 
-    assert listingResolver._RESOLVER is not None
+    assert bootstrap("test.reentrant") is True
+    assert nested == [False]
+
+
+def testConcurrentBootstrapWaitsForSingleSuccessfulCallback() -> None:
+    """동시 최초 호출도 미등록 상태를 반환하지 않고 같은 성공 결과를 기다린다."""
+    entered = threading.Event()
+    release = threading.Event()
+    calls = 0
+
+    def callback() -> None:
+        nonlocal calls
+        calls += 1
+        entered.set()
+        assert release.wait(timeout=2)
+
+    registerBootstrap("test.concurrent", callback)
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        first = executor.submit(bootstrap, "test.concurrent")
+        assert entered.wait(timeout=2)
+        second = executor.submit(bootstrap, "test.concurrent")
+        release.set()
+        assert first.result(timeout=2) is True
+        assert second.result(timeout=2) is True
+    assert calls == 1
+
+
+def testCallerOwnedModuleLoaderPropagatesImportError(monkeypatch: pytest.MonkeyPatch) -> None:
+    """caller-owned 동적 경계도 import 실패를 원인 그대로 전파한다."""
+
+    def fail(modulePath: str):
+        raise ImportError(f"cannot import {modulePath}")
+
+    monkeypatch.setattr(pluginDiscovery.importlib, "import_module", fail)
+
+    with pytest.raises(ImportError, match="cannot import plugin.example"):
+        importCallerModule("plugin.example")
+
+
+def testLazyAttributeKeepsPythonAttributeContract(monkeypatch: pytest.MonkeyPatch) -> None:
+    """정의된 이름은 해석하고 정의되지 않은 이름은 AttributeError를 낸다."""
+
+    class Loaded:
+        value = 42
+
+    monkeypatch.setattr(pluginDiscovery.importlib, "import_module", lambda _: Loaded)
+
+    assert lazyAttribute("facade", {"value": "plugin.example"}, "value") == 42
+    with pytest.raises(AttributeError, match="has no attribute"):
+        lazyAttribute("facade", {"value": "plugin.example"}, "missing")

@@ -26,10 +26,11 @@ Example::
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from importlib import import_module
 from importlib.metadata import entry_points
 from types import ModuleType
 from typing import Any
+
+from dartlab.core.pluginDiscovery import importCallerModule
 
 _ENTRY_GROUP = "dartlab.plugins"
 
@@ -190,7 +191,7 @@ def loadPlugin(name: str) -> ModuleType:  # noqa: N802
     """
     for d in discoverPlugins():
         if d.name == name:
-            module = import_module(d.moduleName)
+            module = importCallerModule(d.moduleName)
             # 메타 보강 — docstring + schema (선택)
             d.docstring = (getattr(module, "__doc__", "") or "").strip()[:200]
             if hasattr(module, "PLUGIN_KIND"):

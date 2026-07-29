@@ -57,8 +57,9 @@ def _ensureUtf8Stream() -> None:
     for stream in (sys.stdout, sys.stderr):
         try:
             enc = (getattr(stream, "encoding", "") or "").lower()
-            if enc and enc not in {"utf-8", "utf8"}:
-                stream.reconfigure(encoding="utf-8", errors="backslashreplace")
+            reconfigure = getattr(stream, "reconfigure", None)
+            if enc and enc not in {"utf-8", "utf8"} and callable(reconfigure):
+                reconfigure(encoding="utf-8", errors="backslashreplace")
         except (AttributeError, OSError, ValueError):
             # 리다이렉트된 스트림·서브프로세스 파이프 등 reconfigure 불가 — 무시.
             pass
@@ -236,20 +237,17 @@ def installRichHandler(*, level: int = logging.INFO) -> None:
     # huggingface_hub.utils 의 self-attach (StreamHandler 추가) 가 먼저 끝나도록 한다.
     os.environ.setdefault("HF_HUB_DISABLE_PROGRESS_BARS", "1")
     try:
-        from huggingface_hub.utils import disable_progress_bars
-
+        from huggingface_hub.utils.tqdm import disable_progress_bars
+    except ModuleNotFoundError as exc:
+        if not (exc.name or "").startswith("huggingface_hub"):
+            raise
+    else:
         disable_progress_bars()
-    except ImportError:
-        pass
 
-    # (3) 외부 로거 — 같은 handler 부착 + propagate 차단 (중복 출력 방지).
-    # 라이브러리가 import 시점에 자체 StreamHandler 를 추가하므로, 부착 전에
-    # 명시적으로 import 해 self-attach 를 끝낸 뒤 [handler] 로 덮어쓴다.
+    # (3) 외부 로거 — import 없이 handler를 먼저 부착한다. 대부분의 라이브러리는
+    # handler가 이미 있으면 자체 StreamHandler를 추가하지 않으므로 cold import 비용과
+    # 선택 의존성 오류를 만들지 않으면서 중복 출력을 막는다.
     for extName in _EXTERNAL_LOGGERS:
-        try:
-            __import__(extName)
-        except ImportError:
-            pass
         extLog = logging.getLogger(extName)
         extLog.handlers = [handler]
         extLog.propagate = False

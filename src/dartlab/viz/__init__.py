@@ -34,7 +34,7 @@ from dartlab.core.logger import getLogger
 _log = getLogger(__name__)
 
 
-# ── 팔레트 (SSOT 는 dartlab.viz.palette) ──
+# ── 팔레트 (SSOT는 dartlab.core.palette, viz.palette는 호환 표면) ──
 # core/select.py 가 viz 의존 없이 HTML 렌더 — viz import 시점에 자동 등록.
 # pyodide 등 plotly 미설치 환경은 viz import 자체가 실패해 register 도 안 됨.
 from dartlab.reference.render import register as _registerRenderer

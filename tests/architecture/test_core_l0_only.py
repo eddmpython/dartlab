@@ -1,58 +1,19 @@
-"""core/ 잔존 모듈이 L0 primitive 만 (상위 계층 import 금지) 강제."""
+"""core L0 import 경계의 얇은 Guard Index 접점."""
 
 from __future__ import annotations
 
-import ast
+import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2] / "src" / "dartlab"
-UPPER_LAYERS = (
-    "gather",
-    "providers",
-    "scan",
-    "frame",
-    "synth",
-    "reference",
-    "analysis",
-    "macro",
-    "quant",
-    "industry",
-    "credit",
-    "story",
-    "viz",
-    "server",
-    "ai",
-    "mcp",
-)
+REPO_ROOT = Path(__file__).resolve().parents[2]
+AUDIT_ROOT = REPO_ROOT / "tests" / "audit"
+if str(AUDIT_ROOT) not in sys.path:
+    sys.path.insert(0, str(AUDIT_ROOT))
 
-
-def _assertRealSourceRoot() -> None:
-    assert ROOT.exists(), f"dartlab source root not found: {ROOT}"
-    assert any(ROOT.rglob("*.py")), f"dartlab source root has no Python files: {ROOT}"
+from guard.indexer import buildIndex  # noqa: E402
+from guard.rules import checkCoreImportBoundary  # noqa: E402
 
 
 def test_core_l0_only_no_upper_import() -> None:
-    """core/ 의 모듈이 상위 계층 import 시 위반."""
-    _assertRealSourceRoot()
-    violations: list[str] = []
-    coreDir = ROOT / "core"
-    for pyFile in coreDir.rglob("*.py"):
-        try:
-            tree = ast.parse(pyFile.read_text(encoding="utf-8"))
-        except SyntaxError:
-            continue
-        for node in ast.walk(tree):
-            names: list[str] = []
-            if isinstance(node, ast.ImportFrom):
-                names = [node.module or ""]
-            elif isinstance(node, ast.Import):
-                names = [a.name for a in node.names]
-            for n in names:
-                for upper in UPPER_LAYERS:
-                    if n == f"dartlab.{upper}" or n.startswith(f"dartlab.{upper}."):
-                        # lazy DI import (di.py) 는 known exception
-                        if pyFile.name == "di.py":
-                            continue
-                        rel = pyFile.relative_to(ROOT.parent.parent)
-                        violations.append(f"{rel}:{node.lineno}: {n}")
-    assert not violations, "core L0 only 위반 (상위 계층 import):\n" + "\n".join(violations)
+    """core의 정적·동적 concrete 상향 import가 모두 없어야 한다."""
+    assert checkCoreImportBoundary(buildIndex(REPO_ROOT)) == []

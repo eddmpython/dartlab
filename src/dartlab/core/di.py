@@ -11,10 +11,10 @@ L2 엔진은 `getXxxAccessor()` 로 default 인스턴스를 받거나, 테스트
 
 from __future__ import annotations
 
-import importlib
 from typing import TYPE_CHECKING, Any, Callable
 
 from dartlab.core.logger import getLogger
+from dartlab.core.pluginDiscovery import bootstrap, resetBootstrapState
 
 _log = getLogger(__name__)
 
@@ -49,6 +49,10 @@ _quantAccessor: "QuantDataAccessor | None" = None
 _industryAccessor: "IndustryDataAccessor | None" = None
 _macroProvider: "MacroDataProvider | None" = None
 _capabilityCatalogProvider: Callable[[], dict[str, Any]] | None = None
+_FINANCE_BOOTSTRAP = f"{__name__}:finance"
+_QUANT_BOOTSTRAP = f"{__name__}:quant"
+_INDUSTRY_BOOTSTRAP = f"{__name__}:industry"
+_MACRO_BOOTSTRAP = f"{__name__}:macro"
 
 
 def getFinanceAccessor() -> "FinanceDataAccessor":
@@ -63,13 +67,13 @@ def getFinanceAccessor() -> "FinanceDataAccessor":
     When:
         analysis/scan/story 등 상위 엔진이 재무 데이터 accessor가 필요할 때.
     How:
-        저장된 override가 없으면 ``dartlab.gather.accessors.DefaultFinanceAccessor``를 동적 import한다.
+        저장된 override가 없으면 composition bootstrap에 기본 구현 주입을 요청한다.
     Args:
         None.
     Returns:
         ``FinanceDataAccessor`` 구현체.
     Requires:
-        기본 구현 사용 시 ``dartlab.gather.accessors`` import 가능.
+        root composition에 finance accessor bootstrap이 등록되어야 한다.
     Raises:
         기본 구현 import 또는 생성 예외를 전파한다.
     Example:
@@ -80,8 +84,9 @@ def getFinanceAccessor() -> "FinanceDataAccessor":
     """
     global _financeAccessor
     if _financeAccessor is None:
-        DefaultFinanceAccessor = importlib.import_module("dartlab.gather.accessors").DefaultFinanceAccessor
-        _financeAccessor = DefaultFinanceAccessor()
+        bootstrap(_FINANCE_BOOTSTRAP)
+    if _financeAccessor is None:
+        raise RuntimeError("FinanceDataAccessor가 composition root에 등록되지 않았습니다")
     return _financeAccessor
 
 
@@ -112,6 +117,8 @@ def setFinanceAccessor(impl: "FinanceDataAccessor | None") -> None:
         ``getFinanceAccessor``.
     """
     global _financeAccessor
+    if impl is None:
+        resetBootstrapState(_FINANCE_BOOTSTRAP)
     _financeAccessor = impl
 
 
@@ -127,13 +134,13 @@ def getQuantAccessor() -> "QuantDataAccessor":
     When:
         quant/analysis 기능이 시장 데이터 accessor가 필요할 때.
     How:
-        저장된 override가 없으면 ``DefaultQuantAccessor``를 동적 import해 생성한다.
+        저장된 override가 없으면 composition bootstrap에 기본 구현 주입을 요청한다.
     Args:
         None.
     Returns:
         ``QuantDataAccessor`` 구현체.
     Requires:
-        기본 구현 사용 시 ``dartlab.gather.accessors`` import 가능.
+        root composition에 quant accessor bootstrap이 등록되어야 한다.
     Raises:
         기본 구현 import 또는 생성 예외를 전파한다.
     Example:
@@ -144,8 +151,9 @@ def getQuantAccessor() -> "QuantDataAccessor":
     """
     global _quantAccessor
     if _quantAccessor is None:
-        DefaultQuantAccessor = importlib.import_module("dartlab.gather.accessors").DefaultQuantAccessor
-        _quantAccessor = DefaultQuantAccessor()
+        bootstrap(_QUANT_BOOTSTRAP)
+    if _quantAccessor is None:
+        raise RuntimeError("QuantDataAccessor가 composition root에 등록되지 않았습니다")
     return _quantAccessor
 
 
@@ -176,6 +184,8 @@ def setQuantAccessor(impl: "QuantDataAccessor | None") -> None:
         ``getQuantAccessor``.
     """
     global _quantAccessor
+    if impl is None:
+        resetBootstrapState(_QUANT_BOOTSTRAP)
     _quantAccessor = impl
 
 
@@ -191,13 +201,13 @@ def getIndustryAccessor() -> "IndustryDataAccessor":
     When:
         산업/피어 데이터 접근이 필요할 때.
     How:
-        저장된 override가 없으면 ``DefaultIndustryAccessor``를 동적 import해 생성한다.
+        저장된 override가 없으면 composition bootstrap에 기본 구현 주입을 요청한다.
     Args:
         None.
     Returns:
         ``IndustryDataAccessor`` 구현체.
     Requires:
-        기본 구현 사용 시 ``dartlab.gather.accessors`` import 가능.
+        root composition에 industry accessor bootstrap이 등록되어야 한다.
     Raises:
         기본 구현 import 또는 생성 예외를 전파한다.
     Example:
@@ -208,8 +218,9 @@ def getIndustryAccessor() -> "IndustryDataAccessor":
     """
     global _industryAccessor
     if _industryAccessor is None:
-        DefaultIndustryAccessor = importlib.import_module("dartlab.gather.accessors").DefaultIndustryAccessor
-        _industryAccessor = DefaultIndustryAccessor()
+        bootstrap(_INDUSTRY_BOOTSTRAP)
+    if _industryAccessor is None:
+        raise RuntimeError("IndustryDataAccessor가 composition root에 등록되지 않았습니다")
     return _industryAccessor
 
 
@@ -240,6 +251,8 @@ def setIndustryAccessor(impl: "IndustryDataAccessor | None") -> None:
         ``getIndustryAccessor``.
     """
     global _industryAccessor
+    if impl is None:
+        resetBootstrapState(_INDUSTRY_BOOTSTRAP)
     _industryAccessor = impl
 
 
@@ -255,13 +268,13 @@ def getMacroProvider() -> "MacroDataProvider":
     When:
         거시경제 시계열이나 지표 provider가 필요할 때.
     How:
-        저장된 override가 없으면 ``DefaultMacroProvider``를 동적 import해 생성한다.
+        저장된 override가 없으면 composition bootstrap에 기본 구현 주입을 요청한다.
     Args:
         None.
     Returns:
         ``MacroDataProvider`` 구현체.
     Requires:
-        기본 구현 사용 시 ``dartlab.gather.macroProvider`` import 가능.
+        root composition에 macro provider bootstrap이 등록되어야 한다.
     Raises:
         기본 구현 import 또는 생성 예외를 전파한다.
     Example:
@@ -272,8 +285,9 @@ def getMacroProvider() -> "MacroDataProvider":
     """
     global _macroProvider
     if _macroProvider is None:
-        DefaultMacroProvider = importlib.import_module("dartlab.gather.macroProvider").DefaultMacroProvider
-        _macroProvider = DefaultMacroProvider()
+        bootstrap(_MACRO_BOOTSTRAP)
+    if _macroProvider is None:
+        raise RuntimeError("MacroDataProvider가 composition root에 등록되지 않았습니다")
     return _macroProvider
 
 
@@ -304,6 +318,8 @@ def setMacroProvider(impl: "MacroDataProvider | None") -> None:
         ``getMacroProvider``.
     """
     global _macroProvider
+    if impl is None:
+        resetBootstrapState(_MACRO_BOOTSTRAP)
     _macroProvider = impl
 
 
