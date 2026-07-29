@@ -11,7 +11,7 @@ API:
 
 저장: `data/_credentials/lifecycle.json` (gitignored, 로컬 추적).
 
-CLAUDE.md `feedback_no_extras_install` 정합 — keyring optional, base 부담 0.
+SecretStore의 암호화 backend와 독립된 만료 메타데이터이며 비밀 값은 기록하지 않는다.
 """
 
 from __future__ import annotations

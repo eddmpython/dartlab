@@ -7,13 +7,27 @@
 from dartlab.core.providers.secrets import (  # noqa: F401
     SecretEntry,
     SecretStore,
+    SecretStoreBackendError,
+    SecretStoreCompositeError,
+    SecretStoreCorruptError,
+    SecretStoreDecryptError,
     SecretStoreError,
+    SecretStoreLockError,
+    SecretStoreReadError,
+    SecretStoreWriteError,
     getSecretStore,
 )
 
 __all__ = [
     "SecretEntry",
+    "SecretStoreBackendError",
+    "SecretStoreCompositeError",
+    "SecretStoreCorruptError",
+    "SecretStoreDecryptError",
     "SecretStore",
     "SecretStoreError",
+    "SecretStoreLockError",
+    "SecretStoreReadError",
+    "SecretStoreWriteError",
     "getSecretStore",
 ]

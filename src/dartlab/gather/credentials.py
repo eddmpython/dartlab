@@ -24,6 +24,7 @@ from pathlib import Path
 from dartlab.core.providers.dataCredentials import (
     CredentialError,
     CredentialStatus,
+    CredentialWriteError,
     DataProviderSpec,
     allSpecs,
     credentialStatus,
@@ -81,6 +82,7 @@ def _main() -> int:
 __all__ = [
     "CredentialError",
     "CredentialStatus",
+    "CredentialWriteError",
     "DataProviderSpec",
     "allSpecs",
     "credentialStatus",

@@ -11,6 +11,7 @@ from pathlib import Path
 
 import pytest
 
+import dartlab.core.providers.secrets as secretModule
 from dartlab.core.providers import (
     _PROVIDERS,
     AI_ROLES,
@@ -86,8 +87,11 @@ def test_buildProviderCatalogJsonSafe():
     assert all("id" in item for item in decoded)
 
 
-def test_secretStoreRoundTrip(tmp_path: Path):
+def test_secretStoreRoundTrip(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     """SecretStore — set/get/has/delete 기본 round-trip."""
+    monkeypatch.setattr(secretModule, "_usesDpapi", lambda: True)
+    monkeypatch.setattr(secretModule, "_protectWindows", lambda raw: raw)
+    monkeypatch.setattr(secretModule, "_unprotectWindows", lambda raw: raw)
     store = SecretStore(path=tmp_path / "secrets.json")
     store.set("test-key", "test-value")
     assert store.has("test-key") is True
@@ -101,6 +105,34 @@ def test_getSecretStoreReturnsInstance():
     """getSecretStore — 기본 경로의 SecretStore 인스턴스 반환."""
     store = getSecretStore()
     assert isinstance(store, SecretStore)
+
+
+def test_credentialManager_reads_ai_secret_through_provider_id(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """CredentialManager의 public 단건 조회가 provider id keyed 상태표를 정확히 찾는다."""
+    from dartlab.core.credentials import CredentialManager
+
+    monkeypatch.setenv("DARTLAB_HOME", str(tmp_path))
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.setattr(secretModule, "_usesDpapi", lambda: True)
+    monkeypatch.setattr(secretModule, "_protectWindows", lambda raw: raw)
+    monkeypatch.setattr(secretModule, "_unprotectWindows", lambda raw: raw)
+    getSecretStore().set(apiKeySecretName("openai"), "stored-openai-key")
+    originalLoad = secretModule.SecretStore._load
+    loads = 0
+
+    def countedLoad(store):
+        nonlocal loads
+        loads += 1
+        return originalLoad(store)
+
+    monkeypatch.setattr(secretModule.SecretStore, "_load", countedLoad)
+
+    status = CredentialManager().getCredential("openai_api_key")
+
+    assert status.configured is True
+    assert status.name == "openai_api_key"
+    assert status.source == "secret_store"
+    assert loads == 2  # 전체 key index 1회 + 실제 존재하는 openai 값 복호화 1회
 
 
 def test_getDefaultProviderMissingProfile(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):

@@ -35,10 +35,10 @@ L4 ai, mcp. 아래층 결함이 위층 전부를 오염시키므로 순서를 �
 ### 세션 인계
 
 - 현재 계층: L0 core
-- 마지막 완료 항목: L0-03 비정규 부실·조작 모델 비발행 계약
-- 진행 중인 단일 항목: L0 SecretStore의 원자성, 오류 투명성, 교차 플랫폼 안전성
-- 다음 첫 행동: SecretStore의 실제 호출자를 확정하고 동시 갱신 유실, 비 Windows 평문 저장,
-  암복호화 실패 삼킴을 제품 행동으로 재현한다.
+- 마지막 완료 항목: L0-04 SecretStore 트랜잭션·보안 backend 계약
+- 진행 중인 단일 항목: L0-05 Company.status parquet projection 안전성
+- 다음 첫 행동: Company.status의 실제 호출자와 projection 경계를 확정하고 누락·손상 parquet의
+  제품 행동, 반복 I/O, 오류 대체 여부를 재현한다.
 - 금지: L0 완료 판정 전 L1 이상 감사나 수정 착수
 
 ## L0 순차 안정화 원장 (2026-07-29)
@@ -158,6 +158,67 @@ L4 ai, mcp. 아래층 결함이 위층 전부를 오염시키므로 순서를 �
    필요하다. 이 계약 없이 같은 필드를 다시 계산하면 회귀다. SecretStore 원자성과
    교차 플랫폼 저장, Company status parquet projection, Pyodide loader, 동적 상향
    import 감시가 남아 있으므로 **L0 전체는 미달**이다.
+
+### L0-04 SecretStore 트랜잭션·보안 backend 계약
+
+**상태: 완료.** core 저장 계약과 L0 직접 호출자의 오류·상태 계약을 닫았다. 상위 AI
+소비자의 OAuth 평문 중복 저장까지 안전해졌다는 뜻은 아니다.
+
+1. **범위와 실제 호출자.** 정본은 `core/providers/secrets.py` 하나이며
+   `ai/settings/secrets.py`는 동일 객체를 재수출하는 호환 shim이다. L0 직접 호출자는
+   `core/providers/dataCredentials.py`, `core/credentials.py`이고, gather 공개 facade,
+   AI profile, OAuth token, server API가 위에서 소비한다. `CredentialManager`의 AI
+   단건 상태 조회와 데이터 공급자의 `getKey`, `setCredential`, `credentialStatus`까지
+   같은 저장 실패가 어떤 공개 예외와 상태로 보이는지 범위에 포함했다.
+2. **제품 결함 재현.** 수정 전 두 writer가 같은 파일을 동시에 갱신하면 한 키가 사라졌고
+   Windows에서는 임시 파일 교체 `PermissionError`도 발생했다. 비 Windows backend는
+   base64만 씌운 평문이었고, 손상 엔트리와 복호화 실패를 데이터 자격증명 호출자가
+   `None`으로 삼켰다. `CredentialManager.getCredential("openai_api_key")`는 provider id로
+   만든 상태표를 전체 credential 이름으로 찾아 항상 미설정으로 돌려줬다. 1차 보강본도
+   keyring master 유실 후 새 값을 쓰거나 다른 빈 store를 만들면 새 master가 기존 account를
+   덮어 기존 암호문을 복호화 불능으로 만들었고, 추가 필드가 있는 엔트리는 raw `TypeError`,
+   저장 뒤 lock release 실패는 커밋 여부 없는 예외로 나왔다.
+3. **근본 원인과 SSOT.** 파일 갱신이 잠금 없는 load-mutate-save였고 원자 교체 전에
+   file fsync가 없었다. 안전한 OS backend 부재를 평문으로 낮췄으며 schema, 예외 종류,
+   namespace commit 여부가 하나의 계약으로 정의되지 않았다. per-path 또는 단일 keyring
+   account만으로는 master 삭제와 store 이동을 구분할 수 없었다. 저장 파일, OS master,
+   bootstrap fingerprint의 세 상태를 하나의 트랜잭션 불변식으로 묶는 것이 SSOT다.
+4. **수정과 테스트.** 직접 의존으로 선언한 `filelock`이 경로 정규화된 process lock과
+   10초 timeout을 맡고, 쓰기는 같은 디렉터리의 임시 파일을 flush/fsync한 뒤
+   `os.replace`, POSIX `0600`, directory fsync 순으로 끝낸다. read/corrupt/decrypt/backend/
+   lock/write/composite typed error와 `committed`를 공개하고 이중 실패도 두 원인을 잃지
+   않는다. Windows DPAPI ctypes signature는 한 번만 초기화하며 `LocalFree` 실패도 검사한다.
+   macOS/Linux는 신뢰한 native keyring의 앱 전역 Fernet master를 쓰고 headless만
+   `DARTLAB_SECRET_KEY`를 쓴다. master SHA-256 bootstrap sentinel을 같은 원자 저장 경로로
+   남겨 sentinel 존재+master 부재 또는 fingerprint 불일치에서는 어떤 store도 새 master를
+   만들지 않는다. 구버전 plain은 안전한 backend가 있을 때만 잠금 안에서 한 번에 이관한다.
+   자격증명 상태는 한 번 읽고 실제 복호화 가능한 키만 표시하며, 저장 후 후처리 실패는
+   `CredentialWriteError.committed`로 호출자에게 전달한다.
+5. **공개 행동, 정확성, 속도, 메모리.** thread와 실제 spawn process의 서로 다른 키
+   갱신은 모두 보존됐고, 별도 process가 lock을 잡은 timeout도 typed error로 끝났다.
+   Windows 실제 DPAPI 32개 병렬 roundtrip이 32/32 성공했고 암호문 파일에 원문은 없었다.
+   master 삭제 뒤 같은 store 쓰기·plain 이관, 다른 빈 store 쓰기·plain 이관은 store,
+   sentinel, keyring account를 한 바이트도 바꾸지 않고 실패했다. 100개 암호문
+   42,893 bytes 조건에서 실제 DPAPI 쓰기는 평균 `85.4848 ms`, `keys()`는
+   `2.0759 ms`, 공급자 상태표는 `1.9828 ms`, `tracemalloc` peak는 `758.59 KiB`였다.
+   일반적인 10~25개 store의 쓰기는 평균 `28.37~30.30 ms`였고 상태표는 공급자 수만큼
+   파일을 다시 읽지 않는다.
+6. **Guard와 회귀.** SecretStore, core provider, data credential, gather facade 범위
+   `55 passed`, Windows에서 POSIX 전용 권한 회귀 `1 skipped`; 계층 import와 plugin
+   범위 `7 passed`다. 실제 Windows DPAPI 병렬, process lock timeout, keyring 유실,
+   plain 이관, atomic replace/fsync/release/cleanup 이중 실패, exact schema,
+   committed 전달을 회귀로 고정했다. Ruff, Pyright 0 errors, compileall, wheel build,
+   lockfile check, diff whitespace가 통과했고 변경된 세 L0 파일의 `silentSubstitute`
+   위반은 각각 0개다. Guard Index `strict --scope l0-l15 --providers dart,edgar`는
+   1,765개 파일, 7개 규칙, cycle, architecture, folder mirror, gather, provider,
+   public API 여섯 외부 게이트를 모두 통과했다.
+7. **남은 부채와 판정.** macOS Keychain과 Linux Secret Service, POSIX `0600` 및
+   directory fsync 회귀는 조건부 테스트로 넣었지만 현재 Windows 세션에서는 실행하지
+   못했으므로 3-OS 릴리스 CI 증빙이 남는다. `ai/providers/support/oauthToken.py`는
+   SecretStore 저장 직후 access/refresh token 전체를 legacy JSON에 다시 평문 저장하고
+   삭제 오류도 삼키며, server 로그아웃도 삭제 실패를 성공으로 반환한다. 이는 L4 소비자
+   항목에 이월하며 전체 제품의 OAuth 안전을 아직 선언하지 않는다. Company.status parquet
+   projection, Pyodide loader, 동적 상향 import 감시도 남아 있으므로 **L0 전체는 미달**이다.
 
 ## 정량 판정 (2026-07-27 실측)
 

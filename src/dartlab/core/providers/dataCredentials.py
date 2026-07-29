@@ -31,6 +31,14 @@ class CredentialError(RuntimeError):
     """데이터 공급자 자격증명 누락 또는 미등록 공급자."""
 
 
+class CredentialWriteError(CredentialError):
+    """자격증명 쓰기 실패 — ``committed``로 저장 완료 여부를 구분."""
+
+    def __init__(self, message: str, *, committed: bool) -> None:
+        super().__init__(message)
+        self.committed = committed
+
+
 @dataclass(frozen=True)
 class DataProviderSpec:
     """단일 데이터 공급자의 자격증명 메타 — 레지스트리 항목.
@@ -191,13 +199,13 @@ def allSpecs() -> list[DataProviderSpec]:
 
 
 def _fromSecretStore(envKey: str) -> str | None:
-    """SecretStore(암호화 파일)에서 키 조회 — 실패는 조용히 None."""
+    """SecretStore(암호화 파일)에서 키 조회 — 저장소 실패는 CredentialError."""
     try:
-        from dartlab.core.providers.secrets import getSecretStore
+        from dartlab.core.providers.secrets import SecretStoreError, getSecretStore
 
         value = getSecretStore().get(envKey)
-    except Exception:  # noqa: BLE001 — 저장소 부재/복호화 실패는 미설정과 동일 취급
-        return None
+    except SecretStoreError as exc:
+        raise CredentialError(f"{envKey}: SecretStore 조회 실패") from exc
     return value.strip() if value and value.strip() else None
 
 
@@ -215,7 +223,7 @@ def getKey(providerId: str, explicit: str | None = None) -> str | None:
         해석된 키 문자열, 또는 미설정 시 None.
 
     Raises:
-        CredentialError: 미등록 공급자 id (getSpec 경유).
+        CredentialError: 미등록 공급자 id 또는 SecretStore 조회 실패.
 
     Example:
         >>> import os; os.environ["DATA_GO_KR_KEY"] = "abc"
@@ -242,7 +250,7 @@ def isConfigured(providerId: str) -> bool:
         bool — 환경변수 또는 SecretStore 에 키가 있으면 True.
 
     Raises:
-        CredentialError: 미등록 공급자 id (getSpec 경유).
+        CredentialError: 미등록 공급자 id 또는 SecretStore 조회 실패.
 
     Example:
         >>> isConfigured("dataGoKr")  # doctest: +SKIP
@@ -296,7 +304,7 @@ def resolveKey(providerId: str, explicit: str | None = None) -> str:
         해석된 키 문자열 (비어있지 않음 보장).
 
     Raises:
-        CredentialError: 키 미설정 (missingKeyMessage 안내 포함) 또는 미등록 공급자.
+        CredentialError: 키 미설정, 미등록 공급자 또는 SecretStore 조회 실패.
 
     Example:
         >>> import os; os.environ["DATA_GO_KR_KEY"] = "abc"
@@ -323,7 +331,7 @@ def setCredential(providerId: str, value: str) -> None:
         None.
 
     Raises:
-        CredentialError: 미등록 공급자 id 또는 빈 값.
+        CredentialError: 미등록 공급자 id, 빈 값, 저장 또는 만료 메타데이터 기록 실패.
 
     Example:
         >>> setCredential("dataGoKr", "mykey")  # doctest: +SKIP
@@ -331,16 +339,24 @@ def setCredential(providerId: str, value: str) -> None:
     spec = getSpec(providerId)
     if not value or not value.strip():
         raise CredentialError(f"{spec.label}: 빈 키는 저장할 수 없습니다.")
-    from dartlab.core.providers.secrets import getSecretStore
+    from dartlab.core.providers.secrets import SecretStoreError, getSecretStore
 
-    getSecretStore().set(spec.envKey, value.strip())
+    try:
+        getSecretStore().set(spec.envKey, value.strip())
+    except SecretStoreError as exc:
+        committed = bool(getattr(exc, "committed", False))
+        state = "저장은 완료됐지만 마무리 실패" if committed else "SecretStore 저장 실패"
+        raise CredentialWriteError(f"{spec.label}: {state}", committed=committed) from exc
     if spec.id == "dart":
         try:
             from dartlab.core.credentialLifecycle import recordIssuance
 
             recordIssuance(spec.envKey, lifetimeDays=90)
-        except Exception:  # noqa: BLE001 — 만료 추적 실패는 저장 성공을 막지 않음
-            pass
+        except Exception as exc:
+            raise CredentialWriteError(
+                f"{spec.label}: 키 저장은 완료됐지만 만료 메타데이터 기록에 실패했습니다",
+                committed=True,
+            ) from exc
 
 
 @dataclass(frozen=True)
@@ -355,11 +371,11 @@ class CredentialStatus:
     purpose: str = field(default="")
 
 
-def _sourceOf(spec: DataProviderSpec) -> str:
+def _sourceOf(spec: DataProviderSpec, secretNames: set[str]) -> str:
     for env in (spec.envKey, *spec.altEnvKeys):
         if os.environ.get(env, "").strip():
             return "env"
-    if _fromSecretStore(spec.envKey):
+    if spec.envKey in secretNames:
         return "secret"
     return "missing"
 
@@ -371,15 +387,23 @@ def credentialStatus() -> list[CredentialStatus]:
         list[CredentialStatus] — 공급자별 configured/source.
 
     Raises:
-        없음.
+        CredentialError: SecretStore 조회 실패.
 
     Example:
         >>> isinstance(credentialStatus(), list)
         True
     """
+    try:
+        from dartlab.core.providers.secrets import SecretStoreError, getSecretStore
+
+        specs = allSpecs()
+        secretNames = getSecretStore().usableKeys(spec.envKey for spec in specs)
+    except SecretStoreError as exc:
+        raise CredentialError("자격증명 상태용 SecretStore 조회 실패") from exc
+
     out: list[CredentialStatus] = []
-    for spec in allSpecs():
-        src = _sourceOf(spec)
+    for spec in specs:
+        src = _sourceOf(spec, secretNames)
         out.append(
             CredentialStatus(
                 id=spec.id,
@@ -400,7 +424,7 @@ def formatStatus() -> str:
         str — 공급자별 ✓/✗ + 출처 + 미설정 시 발급 힌트.
 
     Raises:
-        없음.
+        CredentialError: SecretStore 조회 실패.
 
     Example:
         >>> "공급자" in formatStatus()
@@ -459,6 +483,7 @@ def envTemplate() -> str:
 __all__ = [
     "CredentialError",
     "CredentialStatus",
+    "CredentialWriteError",
     "DataProviderSpec",
     "allSpecs",
     "credentialStatus",

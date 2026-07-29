@@ -11,7 +11,11 @@
 
 from __future__ import annotations
 
+import json
+
 import pytest
+
+import dartlab.core.providers.secrets as secretModule
 
 pytestmark = pytest.mark.unit
 
@@ -33,6 +37,9 @@ def cleanEnv(monkeypatch: pytest.MonkeyPatch, tmp_path):
     for key in _PROVIDER_ENVS:
         monkeypatch.delenv(key, raising=False)
     monkeypatch.setenv("DARTLAB_HOME", str(tmp_path))
+    monkeypatch.setattr(secretModule, "_usesDpapi", lambda: True)
+    monkeypatch.setattr(secretModule, "_protectWindows", lambda raw: raw)
+    monkeypatch.setattr(secretModule, "_unprotectWindows", lambda raw: raw)
     return tmp_path
 
 
@@ -82,6 +89,51 @@ def test_setCredential_rejects_empty(cleanEnv) -> None:
         setCredential("dataGoKr", "   ")
 
 
+def test_setCredential_reports_lifecycle_failure_after_secret_commit(cleanEnv, monkeypatch: pytest.MonkeyPatch) -> None:
+    from dartlab.core import credentialLifecycle
+    from dartlab.core.providers.dataCredentials import CredentialWriteError, getKey, setCredential
+
+    def failLifecycle(*_args, **_kwargs) -> None:
+        raise OSError("metadata unavailable")
+
+    monkeypatch.setattr(credentialLifecycle, "recordIssuance", failLifecycle)
+
+    with pytest.raises(CredentialWriteError, match="키 저장은 완료") as exc:
+        setCredential("dart", "storedSecret")
+
+    assert isinstance(exc.value.__cause__, OSError)
+    assert exc.value.committed is True
+    assert getKey("dart") == "storedSecret"
+
+
+def test_setCredential_preserves_secret_store_commit_state(cleanEnv, monkeypatch: pytest.MonkeyPatch) -> None:
+    from dartlab.core.providers.dataCredentials import CredentialWriteError, setCredential
+    from dartlab.core.providers.secrets import SecretStoreLockError
+
+    class CommittedFailureStore:
+        def set(self, _name: str, _value: str) -> None:
+            raise SecretStoreLockError("release failed", committed=True)
+
+    monkeypatch.setattr(secretModule, "getSecretStore", lambda: CommittedFailureStore())
+
+    with pytest.raises(CredentialWriteError, match="저장은 완료") as exc:
+        setCredential("dataGoKr", "storedSecret")
+
+    assert exc.value.committed is True
+    assert isinstance(exc.value.__cause__, SecretStoreLockError)
+
+
+def test_corrupt_secret_store_is_not_treated_as_missing(cleanEnv) -> None:
+    from dartlab.core.providers.dataCredentials import CredentialError, getKey
+
+    (cleanEnv / "secrets.json").write_text(json.dumps({"DATA_GO_KR_KEY": {"backend": "dpapi"}}), encoding="utf-8")
+
+    with pytest.raises(CredentialError, match="SecretStore 조회 실패") as exc:
+        getKey("dataGoKr")
+
+    assert exc.value.__cause__ is not None
+
+
 def test_credentialStatus_source_classification(cleanEnv, monkeypatch: pytest.MonkeyPatch) -> None:
     from dartlab.core.providers.dataCredentials import credentialStatus, setCredential
 
@@ -92,6 +144,41 @@ def test_credentialStatus_source_classification(cleanEnv, monkeypatch: pytest.Mo
     assert statuses["dataGoKr"].source == "secret"
     assert statuses["ecos"].source == "missing"
     assert statuses["fred"].configured and not statuses["ecos"].configured
+
+
+def test_credentialStatus_reads_secret_store_once(cleanEnv, monkeypatch: pytest.MonkeyPatch) -> None:
+    from dartlab.core.providers.dataCredentials import credentialStatus, setCredential
+
+    setCredential("dataGoKr", "y")
+    originalLoad = secretModule.SecretStore._load
+    calls = 0
+
+    def countedLoad(store):
+        nonlocal calls
+        calls += 1
+        return originalLoad(store)
+
+    monkeypatch.setattr(secretModule.SecretStore, "_load", countedLoad)
+
+    credentialStatus()
+
+    assert calls == 1
+
+
+def test_credentialStatus_rejects_present_but_unusable_secret(cleanEnv, monkeypatch: pytest.MonkeyPatch) -> None:
+    from dartlab.core.providers.dataCredentials import CredentialError, credentialStatus, setCredential
+
+    setCredential("dataGoKr", "y")
+
+    def failDecrypt(_raw: bytes) -> bytes:
+        raise OSError("decrypt failed")
+
+    monkeypatch.setattr(secretModule, "_unprotectWindows", failDecrypt)
+
+    with pytest.raises(CredentialError, match="상태용 SecretStore 조회 실패") as exc:
+        credentialStatus()
+
+    assert exc.value.__cause__ is not None
 
 
 def test_envTemplate_covers_all_providers(cleanEnv) -> None:

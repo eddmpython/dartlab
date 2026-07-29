@@ -9,6 +9,7 @@ Protocol + Registry 패턴 (정공법 B — DIP). core 는 ai/providers 직접 i
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from typing import Protocol, runtime_checkable
 
@@ -259,7 +260,8 @@ class CredentialManager:
         # AI provider 는 별도 로직 (auth_kind=api_key|oauth) 유지
         if name.endswith("_api_key") or name.endswith("_oauth"):
             aiStatuses = self._checkAiProviders()
-            return aiStatuses.get(name, CredentialStatus(name=name, configured=False, source="none"))
+            providerId = name.removesuffix("_api_key").removesuffix("_oauth")
+            return aiStatuses.get(providerId, CredentialStatus(name=name, configured=False, source="none"))
         return CredentialStatus(name=name, configured=False, source="none")
 
     def saveKey(self, name: str, value: str) -> None:
@@ -306,49 +308,43 @@ class CredentialManager:
     def _checkAiProviders(self) -> dict[str, CredentialStatus]:
         """AI provider 자격 (api_key + oauth) 일괄 검사 — core/providers registry."""
         results: dict[str, CredentialStatus] = {}
-        try:
-            import os
+        from dartlab.core.providers import (
+            _PROVIDERS as _AI_PROVIDERS,
+        )
+        from dartlab.core.providers import (
+            apiKeySecretName,
+            getSecretStore,
+            oauthSecretName,
+        )
 
-            from dartlab.core.providers import (
-                _PROVIDERS as _AI_PROVIDERS,
-            )
-            from dartlab.core.providers import (
-                apiKeySecretName,
-                getSecretStore,
-                oauthSecretName,
-            )
-
-            store = getSecretStore()
-            for pid, spec in _AI_PROVIDERS.items():
-                if spec.auth_kind == "api_key" and spec.env_key:
-                    envVal = os.environ.get(spec.env_key)
-                    secretVal = store.get(apiKeySecretName(pid))
-                    configured = bool(envVal or secretVal)
-                    source = "env" if envVal else ("secret_store" if secretVal else "none")
-                    val = envVal or secretVal
-                    masked = (val[:4] + "..." + val[-4:]) if val and len(val) > 8 else None
-                    results[pid] = CredentialStatus(
-                        name=f"{pid}_api_key",
-                        configured=configured,
-                        source=source,
-                        maskedValue=masked if configured else None,
-                    )
-                elif spec.auth_kind == "oauth":
-                    configured = store.has(oauthSecretName(pid))
-                    results[pid] = CredentialStatus(
-                        name=f"{pid}_oauth",
-                        configured=configured,
-                        source="oauth" if configured else "none",
-                    )
-        except ImportError:
-            pass
+        store = getSecretStore()
+        secretNames = store.keys()
+        for pid, spec in _AI_PROVIDERS.items():
+            if spec.auth_kind == "api_key" and spec.env_key:
+                envVal = os.environ.get(spec.env_key)
+                secretName = apiKeySecretName(pid)
+                secretVal = store.get(secretName) if not envVal and secretName in secretNames else None
+                configured = bool(envVal or secretVal)
+                source = "env" if envVal else ("secret_store" if secretVal else "none")
+                val = envVal or secretVal
+                masked = (val[:4] + "..." + val[-4:]) if val and len(val) > 8 else None
+                results[pid] = CredentialStatus(
+                    name=f"{pid}_api_key",
+                    configured=configured,
+                    source=source,
+                    maskedValue=masked if configured else None,
+                )
+            elif spec.auth_kind == "oauth":
+                configured = oauthSecretName(pid) in secretNames
+                results[pid] = CredentialStatus(
+                    name=f"{pid}_oauth",
+                    configured=configured,
+                    source="oauth" if configured else "none",
+                )
         return results
 
     def _getDefaultProvider(self) -> str | None:
         """ai_profile.json 의 defaultProvider 만 직접 조회 (core/providers thin 헬퍼)."""
-        try:
-            from dartlab.core.providers import getDefaultProvider
+        from dartlab.core.providers import getDefaultProvider
 
-            return getDefaultProvider()
-        except ImportError:
-            return None
+        return getDefaultProvider()
