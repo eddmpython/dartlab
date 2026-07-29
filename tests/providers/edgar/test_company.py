@@ -50,6 +50,58 @@ def test_panel_property_exists() -> None:
     assert isinstance(getattr(Company, "panel", None), property)
 
 
+def test_panel_accessor_is_bounded_per_company(monkeypatch: pytest.MonkeyPatch) -> None:
+    """같은 Company가 무거운 panel artifact를 한 번만 읽는다."""
+    from dartlab.core.memory import BoundedCache
+    from dartlab.providers.edgar import panel as panelModule
+    from dartlab.providers.edgar.company import Company
+
+    builds: list[str] = []
+
+    class PublicPanel:
+        def __init__(self, ticker: str):
+            builds.append(ticker)
+
+    monkeypatch.setattr(panelModule, "Panel", PublicPanel)
+    company = Company.__new__(Company)
+    company.ticker = "AAPL"
+    company._cache = BoundedCache(memorySampler=lambda: 0.0)
+
+    first = company.panel
+    second = company.panel
+
+    assert first is second
+    assert builds == ["AAPL"]
+
+
+def test_select_forwards_finance_frequency_and_scope() -> None:
+    """공개 select의 freq/scope가 panel finance dispatch까지 보존된다."""
+    from dartlab.providers.edgar.company import Company
+
+    calls: list[tuple[str, str, str]] = []
+
+    class PublicCompany:
+        stockCode = "AAPL"
+        ticker = "AAPL"
+        corpName = "Apple"
+        currency = "USD"
+
+        def _showImpl(self, topic: str, *, freq: str, scope: str):
+            calls.append((topic, freq, scope))
+            return pl.DataFrame({"snakeId": ["sales"], "항목": ["매출액"], "2024": [100.0]})
+
+    result = Company._selectImpl(
+        PublicCompany(),
+        "IS",
+        freq="Y",
+        scope="separate",
+    )
+
+    assert result is not None
+    assert result.df.columns == ["snakeId", "항목", "2024"]
+    assert calls == [("IS", "Y", "separate")]
+
+
 def test_capital_callable() -> None:
     """capital() callable smoke."""
     from dartlab.providers.edgar.company import Company

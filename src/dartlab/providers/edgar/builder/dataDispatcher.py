@@ -15,7 +15,7 @@ Module-level functions:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 import polars as pl
 
@@ -190,7 +190,8 @@ def applyPeriodFilter(payload: Any, period: str | None) -> Any:
         period: 단일 period (예: ``"2024"``, ``"2024Q3"``). None 이면 noop.
 
     Returns:
-        period 단일 컬럼만 남은 DataFrame, 또는 원본 그대로.
+        period 단일 컬럼만 남은 DataFrame, period 미지정 시 원본, 요청 기간이 wide 표에
+        없으면 None.
 
     Raises:
         없음.
@@ -246,7 +247,7 @@ def applyPeriodFilter(payload: Any, period: str | None) -> Any:
         if exactPeriod != requestedPeriod:
             result = result.rename({exactPeriod: requestedPeriod})
         return result
-    return payload
+    return None
 
 
 def transposeToVertical(wide: pl.DataFrame, periods: list[str]) -> pl.DataFrame | None:
@@ -513,6 +514,7 @@ def previewFinance(df: pl.DataFrame | None) -> str:
     """
     if isEmptyDf(df):
         return "-"
+    assert df is not None
     return f"{df.height} accounts"
 
 
@@ -733,7 +735,7 @@ def showImpl(
         from dartlab.providers.edgar.docs.notesParsers import availableCategories
 
         if topic in availableCategories():
-            return company._docs.notesByCategory(topic)
+            return cast(pl.DataFrame | None, company._docs.notesByCategory(topic))
     except (ImportError, AttributeError):
         pass
 

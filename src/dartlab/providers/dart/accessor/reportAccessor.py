@@ -179,7 +179,9 @@ def reportFrameInner(stockCode: str, apiType: str, topic: str, *, raw: bool = Fa
         정제 DataFrame 또는 None (데이터 부재).
 
     Raises:
-        없음 (예외는 ``extractClean`` 내부에서 잡힘).
+        OSError: report artifact 로드 실패.
+        ValueError: report artifact 값 또는 변환 계약 위반.
+        polars.exceptions.PolarsError: report artifact schema 위반.
 
     Example:
         >>> reportFrameInner("005930", "stockTotal", "stockTotal")
@@ -188,7 +190,7 @@ def reportFrameInner(stockCode: str, apiType: str, topic: str, *, raw: bool = Fa
     from dartlab.providers.dart.report.extract import extractClean
 
     df = extractClean(stockCode, apiType)
-    if isEmptyDf(df):
+    if df is None or df.is_empty():
         return None
 
     # 2015년 제외 (sections/finance와 통일)
@@ -202,11 +204,17 @@ def reportFrameInner(stockCode: str, apiType: str, topic: str, *, raw: bool = Fa
         if not common.is_empty():
             df = common
 
-    # se(항목) 컬럼이 있으면 se × period 수평화
-    if "se" in df.columns:
+    # thstrm 단일 값 구조만 se × period 수평화한다. stockTotal처럼 se와 여러 측정 컬럼을
+    # 함께 가진 report를 thstrm 표로 가정하면 ColumnNotFoundError가 나거나 값이 유실된다.
+    if "se" in df.columns and "thstrm" in df.columns:
         return reportPivotBySe(df, raw=raw)
 
-    # se 없는 apiType → 행 기반 반환
+    # 여러 측정 컬럼을 가진 apiType은 기간을 한 컬럼으로 보존한 행 기반 표로 반환한다.
+    if {"year", "quarterNum"}.issubset(df.columns):
+        df = df.with_columns(
+            (pl.col("year").cast(pl.Utf8) + "Q" + pl.col("quarterNum").cast(pl.Utf8)).alias("period")
+        ).sort("period", descending=True)
+
     _META_COLS = {"stlm_dt", "apiType", "stockCode", "year", "quarter", "quarterNum", "stock_knd"}
     dropCols = [c for c in df.columns if c in _META_COLS]
     if dropCols:
@@ -311,7 +319,9 @@ class _ReportAccessor:
             정제 DataFrame 또는 None.
 
         Raises:
-            없음 (KeyError/ValueError/TypeError/FileNotFoundError 모두 None 반환).
+            OSError: report artifact 로드 실패.
+            ValueError: report artifact 값 또는 변환 계약 위반.
+            polars.exceptions.PolarsError: report artifact schema 위반.
 
         Example:
             >>> c._report.extract("dividend")
@@ -323,10 +333,7 @@ class _ReportAccessor:
             return cached
         from dartlab.providers.dart.report import extractClean
 
-        try:
-            result = extractClean(self._company.stockCode, apiType, baseDf=self._company.rawReport)
-        except (KeyError, ValueError, TypeError, FileNotFoundError):
-            result = None
+        result = extractClean(self._company.stockCode, apiType, baseDf=self._company.rawReport)
         self._cache[cacheKey] = result
         return result
 
@@ -341,7 +348,9 @@ class _ReportAccessor:
             연간 DataFrame 또는 None.
 
         Raises:
-            없음 (모든 예외 None 반환).
+            OSError: report artifact 로드 실패.
+            ValueError: report artifact 값 또는 변환 계약 위반.
+            polars.exceptions.PolarsError: report artifact schema 위반.
 
         Example:
             >>> c._report.extractAnnual("stockTotal")
@@ -353,10 +362,7 @@ class _ReportAccessor:
             return cached
         from dartlab.providers.dart.report import extractAnnual as _extractAnnual
 
-        try:
-            result = _extractAnnual(self._company.stockCode, apiType, quarterNum, baseDf=self._company.rawReport)
-        except (KeyError, ValueError, TypeError, FileNotFoundError):
-            result = None
+        result = _extractAnnual(self._company.stockCode, apiType, quarterNum, baseDf=self._company.rawReport)
         self._cache[cacheKey] = result
         return result
 
@@ -371,7 +377,9 @@ class _ReportAccessor:
             ``DividendResult/EmployeeResult/...`` 또는 generic Result 또는 None.
 
         Raises:
-            없음.
+            OSError: report artifact 로드 실패.
+            ValueError: report artifact 값 또는 변환 계약 위반.
+            polars.exceptions.PolarsError: report artifact schema 위반.
 
         Example:
             >>> c._report.result("dividend")
@@ -389,10 +397,7 @@ class _ReportAccessor:
 
         from dartlab.providers.dart.report import extractResult
 
-        try:
-            result = extractResult(self._company.stockCode, apiType, quarterNum, baseDf=self._company.rawReport)
-        except (KeyError, ValueError, TypeError, FileNotFoundError):
-            result = None
+        result = extractResult(self._company.stockCode, apiType, quarterNum, baseDf=self._company.rawReport)
         self._cache[cacheKey] = result
         return result
 
@@ -598,7 +603,8 @@ class _ReportAccessor:
             존재하는 apiType 키 리스트 (API_TYPES 순서 보존).
 
         Raises:
-            없음 (parquet 부재 시 빈 리스트).
+            OSError: report artifact 로드 실패.
+            ValueError: report artifact 값 또는 schema 계약 위반.
 
         Example:
             >>> c._report.availableApiTypes
@@ -610,10 +616,7 @@ class _ReportAccessor:
             return cached
         from dartlab.providers.dart.report.types import API_TYPES
 
-        try:
-            raw = loadData(self._company.stockCode, category="report", columns=["apiType"])
-        except (FileNotFoundError, RuntimeError, ValueError, TypeError):
-            raw = None
+        raw = loadData(self._company.stockCode, category="report", columns=["apiType"])
 
         if isEmptyDf(raw) or "apiType" not in raw.columns:
             result: list[str] = []

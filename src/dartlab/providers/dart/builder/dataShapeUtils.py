@@ -226,7 +226,8 @@ def applyPeriodFilter(payload: Any, period: str | None) -> Any:
         period: 필터 period (``"2024"`` / ``"2024Q4"`` / None).
 
     Returns:
-        필터된 DataFrame 또는 원본 payload (period 미지정 시).
+        필터된 DataFrame 또는 원본 payload (period 미지정 시). 요청 기간이 wide 표에 없으면
+        None.
 
     Raises:
         없음.
@@ -293,7 +294,10 @@ def applyPeriodFilter(payload: Any, period: str | None) -> Any:
         return result
 
     if "period" in payload.columns:
-        return payload.filter(pl.col("period") == normalizedPeriod)
+        result = payload.filter(pl.col("period") == normalizedPeriod)
+        if result.is_empty() and "Q" not in normalizedPeriod:
+            result = payload.filter(pl.col("period") == f"{normalizedPeriod}Q4")
+        return result
     if "year" in payload.columns:
         return payload.filter(pl.col("year").cast(pl.Utf8) == normalizedPeriod)
-    return payload
+    return None

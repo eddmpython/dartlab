@@ -122,7 +122,7 @@ class _ReportAccessor:
         return available
 
     def extract(self, apiType: str) -> pl.DataFrame | None:
-        """apiType 별 데이터 추출. 개별 extractor 실패 시 None 반환.
+        """apiType 별 데이터 추출.
 
         Args:
             apiType: 14 종 apiType 중 하나.
@@ -131,7 +131,9 @@ class _ReportAccessor:
             DataFrame 또는 None.
 
         Raises:
-            없음 (개별 extractor 예외는 None 으로 흡수).
+            OSError: report artifact 로드 실패.
+            ValueError: report extractor 값 계약 위반.
+            polars.exceptions.PolarsError: report artifact schema 또는 변환 실패.
 
         Example:
             >>> c._report.extract("dividend")
@@ -174,10 +176,7 @@ class _ReportAccessor:
         fn = _SUPPORTED.get(apiType)
         if fn is None:
             return None
-        try:
-            result = fn(self._company)
-        except (ValueError, KeyError, TypeError, AttributeError, OSError, pl.exceptions.ComputeError):
-            result = None
+        result = fn(self._company)
         self._cache[apiType] = result
         return result
 

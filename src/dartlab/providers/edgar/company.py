@@ -2791,7 +2791,7 @@ class Company:
             - ``c.panel`` 잡으면 wide. ``c.panel("Risk")`` 섹션 검색. 재무는 소문자 native, 대문자 finance.
 
         AIContext:
-            - 상태 없는 lazy read - 매 접근 새 Panel (누적 0). contentRaw 는 외부 untrusted.
+            - Company 수명 동안 BoundedCache가 Panel 한 개를 재사용한다. contentRaw 는 외부 untrusted.
 
         When:
             - 한 회사의 공시 수평화 보드가 EDGAR Company 흐름에서 필요할 때.
@@ -2801,16 +2801,17 @@ class Company:
 
         LLM Specifications:
             AntiPatterns:
-                - c.panel 결과 캐싱 강제 금지 - 상태 없는 lazy(누적 0).
+                - 같은 Company에서 panel artifact를 매 호출 다시 읽기.
+                - 디스크 artifact 갱신 뒤 cleanupCache 없이 이전 Panel을 계속 사용.
                 - native is/bs/cf 를 별도 셀 artifact 로 기대 금지 - panel 단일 artifact payload 에서 분해.
             OutputSchema:
                 - ``Panel`` (wide DataFrame subclass + callable 검색).
             Prerequisites:
                 - edgar panel artifact.
             Freshness:
-                - 매 접근 read.
+                - Company 첫 panel 접근 시 read. artifact 갱신 뒤 cleanupCache 호출 시 재read.
             Dataflow:
-                - self.ticker → Panel(wide, us) + _nativeFn/_showFn/_strongFn 주입.
+                - self.ticker → Panel(wide, us) + _nativeFn/_showFn/_strongFn 주입 → BoundedCache.
             TargetMarkets:
                 - US (EDGAR).
         """
@@ -2818,21 +2819,35 @@ class Company:
         from dartlab.providers.edgar.panel import Panel as _Panel
         from dartlab.providers.edgar.panel.native import readNative
 
-        p = _Panel(self.ticker)
-        # facade 주입 (DI, cycle 0) - panel 패키지는 finance 를 import 안 하고 주입된 callable 만 호출.
-        #   _nativeFn : is/bs/cf/ratios = panel 단일 artifact payload read-time 분해.
-        #   _showFn   : IS/BS/CF/RATIOS = finance(companyfacts) 위임 (내부 _showImpl).
-        #   _strongFn : finance 강한 소스 판정(isStrongTopic).
-        p._nativeFn = lambda statement, freq, scope, periods: readNative(
-            self.ticker,
-            statement=statement,
-            freq=freq,
-            scope=scope,
-            periods=periods,
-        )
-        p._showFn = self._showImpl
-        p._strongFn = isStrongTopic
-        return p
+        def buildPanel():
+            """Company 의 native·finance source가 결합된 Panel cache value를 만든다.
+
+            Args:
+                없음.
+
+            Returns:
+                EDGAR Panel 인스턴스.
+
+            Example:
+                ``self._cache.getOrCreate("_panelAccessor", buildPanel)``.
+
+            Raises:
+                Panel artifact 읽기·schema 오류를 그대로 전달한다.
+            """
+            p = _Panel(self.ticker)
+            # facade 주입 (DI, cycle 0). panel 패키지는 finance 를 import하지 않는다.
+            p._nativeFn = lambda statement, freq, scope, periods: readNative(
+                self.ticker,
+                statement=statement,
+                freq=freq,
+                scope=scope,
+                periods=periods,
+            )
+            p._showFn = self._showImpl
+            p._strongFn = isStrongTopic
+            return p
+
+        return self._cache.getOrCreate("_panelAccessor", buildPanel)
 
     def _showImpl(
         self,
@@ -3013,9 +3028,10 @@ class Company:
         from dartlab.frame.select import SelectResult
         from dartlab.providers._common.show import selectFromShow
 
-        # show() 가 ValueError 발생하면 그대로 propagate (silent None 차단)
+        # panel 과 같은 finance 옵션을 그대로 전달한다. 이 위임이 빠지면 freq="Y" 요청도
+        # 기본 분기표를 반환해 호출자가 연간값으로 오인한다.
         try:
-            df = self._showImpl(topic)
+            df = self._showImpl(topic, freq=freq, scope=scope)
         except (ValueError, KeyError):
             if strict:
                 raise

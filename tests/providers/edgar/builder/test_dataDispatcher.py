@@ -1,5 +1,6 @@
 """providers/edgar/builder/dataDispatcher.py mirror smoke — P6."""
 
+import polars as pl
 import pytest
 
 pytestmark = pytest.mark.unit
@@ -17,6 +18,15 @@ def test_apply_period_filter_callable() -> None:
     from dartlab.providers.edgar.builder.dataDispatcher import applyPeriodFilter
 
     assert callable(applyPeriodFilter)
+
+
+def test_apply_period_filter_rejects_missing_wide_period() -> None:
+    """없는 기간 요청이 전체 재무표로 되돌아가지 않는다."""
+    from dartlab.providers.edgar.builder.dataDispatcher import applyPeriodFilter
+
+    wide = pl.DataFrame({"snakeId": ["sales"], "2024": [100.0], "2023": [90.0]})
+
+    assert applyPeriodFilter(wide, "1900") is None
 
 
 def test_build_block_index_callable() -> None:

@@ -1,9 +1,8 @@
-"""DART Company 의 finance 통계표 dispatch core.
+"""DART Company 의 finance/report 통계표 dispatch core.
 
 공개 ``c.show`` + docs 농장 은퇴 후 finance-only — ``_showImpl`` 은 panel facade(``c.panel``)
-가 주입하는 강한 소스 callable 이며 BS/IS/CF/CIS/SCE/ratios 만 dispatch. 정형 비재무·sections
-토픽은 panel raw 공시 검색이 표면(facade 폴백). report/finance source 는 viewer(textDocument)
-가 ``showReportTopic``/``showFinanceTopic`` 으로 직접 소비.
+가 주입하는 강한 소스 callable 이며 BS/IS/CF/CIS/SCE/ratios 와 정형 report 를 dispatch한다.
+sections 토픽은 panel raw 공시 검색이 표면이다.
 
 Module-level functions:
     showImpl              — 강한 소스 진입점 (panel facade 주입 callable)
@@ -213,7 +212,8 @@ def reportFrame(company: Company, topic: str, *, raw: bool = False) -> pl.DataFr
         정제 DataFrame 또는 None (apiType 미존재 / report 부재).
 
     Raises:
-        없음 (Polars exception 모두 None 반환).
+        RuntimeError: report artifact 로드 실패.
+        polars.exceptions.PolarsError: report artifact schema 또는 변환 실패.
 
     Example:
         >>> reportFrame(c, "dividend")
@@ -223,17 +223,9 @@ def reportFrame(company: Company, topic: str, *, raw: bool = False) -> pl.DataFr
     from dartlab.providers.dart.company import _apiTypeForTopic
 
     apiType = _apiTypeForTopic(topic)
-    try:
-        if apiType not in company._report.apiTypes:
-            return None
-        return reportFrameInner(company, apiType, topic, raw=raw)
-    except (
-        pl.exceptions.ColumnNotFoundError,
-        pl.exceptions.InvalidOperationError,
-        pl.exceptions.SchemaError,
-        RuntimeError,
-    ):
+    if apiType not in company._report.apiTypes:
         return None
+    return reportFrameInner(company, apiType, topic, raw=raw)
 
 
 def reportFrameInner(company: Company, apiType: str, topic: str, *, raw: bool = False) -> pl.DataFrame | None:
@@ -298,8 +290,8 @@ def showImpl(
     from dartlab.providers.dart.builder.dataShapeUtils import transposeToVertical
     from dartlab.providers.dart.company import _resolveTopic
 
-    # 공개 show/docs 농장 은퇴 — showImpl 은 finance 통계표(BS/IS/CF/CIS/SCE/ratios)만 dispatch.
-    # 정형 비재무·report·sections·notes·segments 토픽은 panel raw 공시 검색이 표면(facade 폴백) → None.
+    # 공개 show/docs 농장 은퇴. showImpl 은 panel facade 의 강한 source callable 로만 남는다.
+    # finance 와 정형 report 는 여기서 dispatch하고 sections 는 panel raw 검색이 맡는다.
     topic = _resolveTopic(topic)
 
     if isinstance(period, list):
@@ -310,6 +302,12 @@ def showImpl(
 
     if topic in SHOW_FINANCE_TOPICS:
         return showFinanceStatement(company, topic, block, period=period, freq=freq, scope=scope)
+
+    from dartlab.providers.dart.company import _apiTypeForTopic
+
+    apiType = _apiTypeForTopic(topic)
+    if company._report is not None and apiType in company._report.apiTypes:
+        return showReportTopic(company, topic, period=period, raw=raw)
 
     return None
 
@@ -408,11 +406,12 @@ def isStrongTopic(topic: str) -> bool:
         TargetMarkets:
             - KR (DART). US 후속.
     """
-    from dartlab.providers.dart.company import _getModuleEntries, _resolveTopic
+    from dartlab.providers.dart.company import _apiTypeForTopic, _getModuleEntries, _resolveTopic
     from dartlab.providers.dart.notes import _NOTES_DISPATCH
+    from dartlab.providers.dart.report.types import API_TYPES
 
     t = _resolveTopic(topic)
-    if t in SHOW_FINANCE_TOPICS or t in _NOTES_DISPATCH:
+    if t in SHOW_FINANCE_TOPICS or t in _NOTES_DISPATCH or _apiTypeForTopic(t) in API_TYPES:
         return True
     # report/notes/finance category = 정규화된 강한 소스 (dividend 등 정형 공시). disclosure(서술
     # docs)·canonicalKey·한글 섹션명은 raw 공시(panel 본분) → False.

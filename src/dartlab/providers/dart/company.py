@@ -15,7 +15,7 @@
 from __future__ import annotations
 
 import re
-from typing import Any
+from typing import Any, cast
 
 import polars as pl
 
@@ -1325,7 +1325,7 @@ class Company:
         return getKindList(forceRefresh=forceRefresh)
 
     @staticmethod
-    def search(keyword: str, *, limit: int | None = None) -> pl.DataFrame:
+    def search(keyword: str, *, limit: int | None = None) -> pl.DataFrame | None:
         """회사명 부분 검색 (KIND 목록 기준).
 
         Args:
@@ -2160,7 +2160,7 @@ class Company:
               레벨 `compare` (`dartlab.compare(codes, topic=...)`, 회사 단위 facade 밖).
 
         AIContext:
-            - 상태 없는 lazy read - 매 접근 새 Panel (누적 0). contentRaw 는 외부 untrusted.
+            - Company 수명 동안 BoundedCache가 Panel 한 개를 재사용한다. contentRaw 는 외부 untrusted.
 
         When:
             - 한 회사의 공시 수평화 보드가 Company 흐름에서 필요할 때.
@@ -2170,29 +2170,46 @@ class Company:
 
         LLM Specifications:
             AntiPatterns:
-                - c.panel 결과 캐싱 강제 금지 - 상태 없는 lazy(누적 0).
+                - 같은 Company에서 panel artifact를 매 호출 다시 읽기.
+                - 디스크 artifact 갱신 뒤 cleanupCache 없이 이전 Panel을 계속 사용.
                 - canonicalKey 추측 금지 - board 로 확인 후 show.
             OutputSchema:
                 - ``Panel`` (board/show/wide/long/periods 메서드).
             Prerequisites:
                 - panel artifact.
             Freshness:
-                - 매 접근 read.
+                - Company 첫 panel 접근 시 read. artifact 갱신 뒤 cleanupCache 호출 시 재read.
             Dataflow:
-                - self.stockCode → Panel(wide) + _showFn/_strongFn 주입.
+                - self.stockCode → Panel(wide) + _showFn/_strongFn 주입 → BoundedCache.
             TargetMarkets:
                 - KR (DART). US 는 marketNs="us" (EDGAR panel, 후속).
         """
         from dartlab.providers.dart.builder.dataDispatcher import isStrongTopic
         from dartlab.providers.dart.panel import Panel as _Panel
 
-        p = _Panel(self.stockCode, marketNs="kr")
-        # facade 주입 - c.panel("IS") 강한 소스는 finance/report 모듈(_showImpl 내부 dispatch)에 직접
-        # 붙는다(공개 c.show property 우회). finance 모듈은 삭제 대상이 아님 - panel 이 그 표면이 된다.
-        # panel 패키지는 finance 를 import 안 함 - 주입된 callable 만 호출(layer 격리, cycle 0).
-        p._showFn = self._showImpl
-        p._strongFn = isStrongTopic
-        return p
+        def buildPanel():
+            """Company 의 강한 source가 결합된 Panel cache value를 만든다.
+
+            Args:
+                없음.
+
+            Returns:
+                DART Panel 인스턴스.
+
+            Example:
+                ``self._cache.getOrCreate("_panelAccessor", buildPanel)``.
+
+            Raises:
+                Panel artifact 읽기·schema 오류를 그대로 전달한다.
+            """
+            p = _Panel(self.stockCode, marketNs="kr")
+            # facade 주입 - c.panel("IS") 강한 소스는 finance/report 모듈(_showImpl 내부 dispatch)에 직접
+            # 붙는다(공개 c.show property 우회). panel 패키지는 finance 를 import 안 함.
+            setattr(p, "_showFn", self._showImpl)
+            setattr(p, "_strongFn", isStrongTopic)
+            return p
+
+        return self._cache.getOrCreate("_panelAccessor", buildPanel)
 
     def _showImpl(
         self,
@@ -2467,7 +2484,7 @@ class Company:
             },
         )
 
-    def trace(self, topic: str, period: str | None = None) -> dict[str, Any] | None:
+    def trace(self, topic: str, period: str | None = None) -> pl.DataFrame | dict[str, Any] | None:
         """topic 데이터의 출처 (panel/finance/report) 와 선택 근거 추적.
 
         Capabilities:
@@ -2540,13 +2557,13 @@ class Company:
             coverage = "missing"
             if ratioSeries is not None:
                 series, years = ratioSeries
-                fieldNames = _RATIO_TEMPLATE_FIELDS.get(templateKey)
+                fieldNames = _RATIO_TEMPLATE_FIELDS.get(templateKey) if templateKey is not None else None
                 ratioFrame = _ratioSeriesToDataFrame(series, years, fieldNames=fieldNames)
                 rowCount = None if ratioFrame is None else ratioFrame.height
                 yearCount = len(years)
-                if ratioFrame is not None and rowCount >= 30 and yearCount >= 5:
+                if ratioFrame is not None and ratioFrame.height >= 30 and yearCount >= 5:
                     coverage = "full"
-                elif ratioFrame is not None and rowCount > 0:
+                elif ratioFrame is not None and ratioFrame.height > 0:
                     coverage = "partial"
             return {
                 "topic": topic,
@@ -2737,7 +2754,7 @@ class Company:
             kws = keywords
         return keywordFrequency(docsSections, keywords=kws)
 
-    def news(self, *, days: int = 30) -> pl.DataFrame:
+    def news(self, *, days: int = 30) -> pl.DataFrame | None:
         """최근 뉴스 수집.
 
         Capabilities:
@@ -2792,7 +2809,7 @@ class Company:
         from dartlab.core.gatherProvider import getGatherProvider
 
         provider = getGatherProvider()
-        return provider.news(self.corpName, market="KR", days=days) if provider else None
+        return cast(pl.DataFrame | None, provider.news(self.corpName, market="KR", days=days)) if provider else None
 
     def watch(
         self,
@@ -3886,29 +3903,20 @@ class Company:
         """lazy finance: 첫 접근 시 buildTimeseries 실행."""
         if self._financeChecked:
             return
-        self._financeChecked = True
         if not self._hasFinanceParquet:
+            self._financeChecked = True
             return
         from dartlab.providers.dart.finance.pivot import buildTimeseries
 
         try:
             ts = buildTimeseries(self.stockCode)
-        except (OSError, ValueError, KeyError, RuntimeError, pl.exceptions.ComputeError) as e:  # noqa: BLE001
-            # finance parquet 로딩/파싱 실패 → 이유 노출 후 docs fallback 허용.
-            # silent 실패 시 panel("IS") 가 docs 기반으로 잘못된 결과 반환하는 사례 방지.
-            # (IO / 형식 오류 / 컬럼 부재 / polars 변환 실패 - 다양한 정상 fallback 분기)
-            import warnings
-
-            warnings.warn(
-                f"finance parquet 로딩 실패 ({self.stockCode}): {type(e).__name__}: {e}. "
-                f"docs fallback 으로 전환됩니다 - 수치 정합성이 떨어질 수 있습니다.",
-                stacklevel=2,
-            )
-            ts = None
+        except (OSError, ValueError, KeyError, RuntimeError, pl.exceptions.ComputeError) as exc:
+            raise RuntimeError(f"DART finance artifact 로드 실패: stockCode={self.stockCode}") from exc
         if ts is not None:
             self._cache["_finance_q_CFS"] = ts
         else:
             self._hasFinanceParquet = False
+        self._financeChecked = True
 
     def _getFinanceBuild(self, period: str = "q", fsDivPref: str = "CFS"):
         """finance parquet 시계열 빌드 (캐싱).

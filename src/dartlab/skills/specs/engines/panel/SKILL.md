@@ -403,8 +403,10 @@ python .github/scripts/sync/buildEdgarPanel.py --all --overwrite
 ## 호출 동작
 
 `Panel(code, *, marketNs="kr", periods=None, tag=False)` — 한 회사의 panel artifact 를 read 해
-wide `pl.DataFrame` 으로 materialize. 상태 없음(누적 0) — multi-company 루프는 매 회사 새 Panel
-(Polars Rust heap OOM 가드). `c.panel` 매 접근도 새 인스턴스.
+wide `pl.DataFrame` 으로 materialize. standalone `Panel` 은 상태 없음(누적 0). Company facade 의
+`c.panel` 은 Company 수명 동안 같은 Panel 한 개를 `BoundedCache` 로 재사용하며,
+`cleanupCache()` 또는 context manager 종료 시 폐기한다. multi-company 루프는 회사마다 새 Company 를
+context manager 로 열어 Polars Rust heap 누적을 막는다.
 
 - `Panel(code)` 자체 = wide DataFrame. 행 identity = (chapter, sectionLeaf, blockLeaf,
   disclosureKey, scope), 열 = period, cell = 본문(tag=False plain / tag=True raw XML).
@@ -416,8 +418,10 @@ wide `pl.DataFrame` 으로 materialize. 상태 없음(누적 0) — multi-compan
   - finance/report 주입은 **facade(`c.panel`) 전용** — standalone `Panel(code)` 는 주입 없어 항상
     raw 검색 (panel 패키지는 finance 를 import 안 함, cycle 0).
 
-artifact 부재·빈 결과는 빈 DataFrame / None (예외 없음). disclosureKey(=canonicalKey)는 build 가
-부착하며, 옛 artifact(전부 null)만 read 시점 canonicalKey fallback resolve.
+정상 artifact 부재와 조회 조건에 맞는 행이 없는 경우는 빈 DataFrame / None 이다. 존재하는 artifact 의
+손상·읽기 실패·schema 위반은 정상 무데이터로 바꾸지 않고 원인 예외를 호출자에게 전달한다.
+disclosureKey(=canonicalKey)는 build 가 부착하며, 옛 artifact(전부 null)만 read 시점 canonicalKey
+fallback resolve.
 
 ## 대표 반환 형태
 
@@ -486,6 +490,7 @@ canonicalKey/섹션명은 `Panel(code)` wide 의 행 식별 컬럼으로 확인�
 ## 기본 실행 순서
 
 1. `Panel(code)` / `c.panel` 으로 wide 확보 — 그 자체가 DataFrame (shape/columns 확인).
+   같은 Company 의 `c.panel` 은 bounded cache hit이며, artifact 갱신 뒤에는 `cleanupCache()` 후 재접근.
 2. 항목 분석은 `panel("재고")`(섹션명) 또는 `panel("NT_D826380")`(canonicalKey). 원본 태그는 `tag=True`.
 3. 재무제표·정형 공시는 facade `c.panel("IS")` (finance/report 주입) — raw 강제는 `source="raw"`.
 4. 빌드는 운영자/CI — read 는 사전빌드 artifact 만 소비.
@@ -498,8 +503,9 @@ canonicalKey scope-strip·rowIdentity 는 `tests/providers/dart/panel/test_mappe
 무결성은 `test_read.py`(orderBySpine)·`test_spine.py`·`build/test_spineBuilder.py`, build 무손실은
 `tests/panel/test_build_lossless.py`, Panel subclass·callable·tag 는 `test_panel.py` +
 `tests/panel/test_panel_intra.py`(requires_data), 자급 격리·import 분리(R1·R2)는
-`tests/architecture/test_panel_layer.py` · `test_panel_no_network_lxml.py` 가 강제. 실패는 None /
-빈 DataFrame (예외 없음). EDGAR(US) 미러 — SEC text 메모리 fetch·submission/linkbase/walker/
+`tests/architecture/test_panel_layer.py` · `test_panel_no_network_lxml.py` 가 강제. 정상 artifact
+부재·무매칭은 None / 빈 DataFrame, 손상·읽기·schema 실패는 원인 예외를 전달한다. EDGAR(US) 미러 —
+SEC text 메모리 fetch·submission/linkbase/walker/
 mapper·role→disclosureKey 앵커링·Panel(us) 보드·finance 라우팅 계약은
 `tests/providers/edgar/panel/`(test_submission·instance·linkbase·walker·mapper·builder·panel).
 

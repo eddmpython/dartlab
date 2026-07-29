@@ -1,5 +1,6 @@
 """providers/dart/company.py mirror smoke — P6."""
 
+import polars as pl
 import pytest
 
 pytestmark = pytest.mark.unit
@@ -180,6 +181,75 @@ def test_panel_property() -> None:
     from dartlab.providers.dart.company import Company
 
     assert isinstance(inspect.getattr_static(Company, "panel"), property)
+
+
+def test_panel_routes_structured_report_through_company_facade(monkeypatch: pytest.MonkeyPatch) -> None:
+    """정형 report는 private accessor에 갇히지 않고 공개 panel에서 조회된다."""
+    from types import SimpleNamespace
+
+    from dartlab.core.memory import BoundedCache
+    from dartlab.providers.dart import panel as panelModule
+    from dartlab.providers.dart.accessor import reportAccessor
+    from dartlab.providers.dart.company import Company
+
+    seen: dict[str, object] = {}
+    expected = pl.DataFrame({"항목": ["현금배당금"], "2024": [1446.0]})
+
+    class PublicPanel:
+        def __init__(self, code: str, *, marketNs: str):
+            seen["code"] = code
+            seen["marketNs"] = marketNs
+
+        def __call__(self, topic: str, **kwargs):
+            return self._showFn(topic, **kwargs) if self._strongFn(topic) else None
+
+    def reportFrame(stockCode: str, apiType: str, topic: str, *, raw: bool = False):
+        seen.update(stockCode=stockCode, apiType=apiType, topic=topic, raw=raw)
+        return expected
+
+    monkeypatch.setattr(panelModule, "Panel", PublicPanel)
+    monkeypatch.setattr(reportAccessor, "reportFrameInner", reportFrame)
+
+    company = Company.__new__(Company)
+    company.stockCode = "005930"
+    company._report = SimpleNamespace(apiTypes=["dividend"])
+    company._cache = BoundedCache(memorySampler=lambda: 0.0)
+
+    panel = company.panel
+    result = panel("dividend", period="2024")
+
+    assert result is not None and result.equals(expected)
+    assert company.panel is panel
+    assert seen == {
+        "code": "005930",
+        "marketNs": "kr",
+        "stockCode": "005930",
+        "apiType": "dividend",
+        "topic": "dividend",
+        "raw": False,
+    }
+
+
+def test_finance_artifact_failure_is_not_docs_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
+    """finance 손상을 단순 미수집으로 바꿔 docs 수치에 조용히 폴백하지 않는다."""
+    from dartlab.providers.dart.company import Company
+    from dartlab.providers.dart.finance import pivot
+
+    def failBuild(_stockCode):
+        raise ValueError("finance parquet corrupt")
+
+    monkeypatch.setattr(pivot, "buildTimeseries", failBuild)
+    company = Company.__new__(Company)
+    company.stockCode = "005930"
+    company._financeChecked = False
+    company._hasFinanceParquet = True
+
+    with pytest.raises(RuntimeError, match="stockCode=005930") as excInfo:
+        company._ensureFinanceLoaded()
+
+    assert isinstance(excInfo.value.__cause__, ValueError)
+    assert company._financeChecked is False
+    assert company._hasFinanceParquet is True
 
 
 def test_priority_callable() -> None:

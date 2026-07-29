@@ -49,7 +49,7 @@ def test_is_strong_topic_classification() -> None:
 
     assert isStrongTopic("IS") is True  # finance
     assert isStrongTopic("BS") is True  # finance
-    assert isStrongTopic("dividend") is False  # 농장 은퇴 — report 항목 제거 → raw panel
+    assert isStrongTopic("dividend") is True  # 정형 report는 공개 panel의 강한 source
     assert isStrongTopic("NT_D826380") is False  # canonicalKey → raw panel
     assert isStrongTopic("재고") is False  # 한글 섹션명 → raw panel
 
