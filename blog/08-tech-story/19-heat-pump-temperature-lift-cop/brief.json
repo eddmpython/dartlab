@@ -1,0 +1,856 @@
+{
+  "contractVersion": 2,
+  "passed": true,
+  "topicSlug": "heat-pump-temperature-lift-cop",
+  "seriesOrder": 19,
+  "title": "전기 1로 열 3을 만든다는데, 히트펌프는 왜 추울수록 힘들까",
+  "description": "히트펌프의 냉매 순환과 온도 리프트부터 한파 용량, 제상, 보조히터, 난방수 온도, 계절성능, 냉매 전환, 전기요금과 HVAC 기업 공시까지 한 시스템으로 해부한다.",
+  "readerQuestion": "히트펌프는 어떻게 소비한 전기보다 많은 열을 내며, 왜 같은 COP 제품도 한파와 노후 주택에서는 전기요금과 체감 성능이 크게 달라질까?",
+  "titleContract": {
+    "selectedTitle": "전기 1로 열 3을 만든다는데, 히트펌프는 왜 추울수록 힘들까",
+    "hookQuestion": "열역학 법칙을 어기지 않고 전기 1로 열 3을 보내는 장치가 왜 가장 열이 필요한 날 가장 불리해지는가?",
+    "readerGap": "독자는 COP를 효율 퍼센트로 읽거나, 제품 카탈로그의 한 시험점과 실제 집의 계절 성능을 같은 숫자로 읽기 쉽다.",
+    "promise": "에너지 장부, 냉매의 네 단계, 온도 리프트, 한파와 제상, 건물 배관, 냉매, 비용과 공시를 하나의 인과선으로 연결한다.",
+    "whySelected": "핵심 검색어인 히트펌프와 대표 효율 약속을 담으면서 글의 반전인 한파 성능 저하를 질문으로 제시한다.",
+    "candidates": [
+      {
+        "title": "전기 1로 열 3을 만든다는데, 히트펌프는 왜 추울수록 힘들까",
+        "strength": "원리와 현장 실패 조건을 동시에 건드린다."
+      },
+      {
+        "title": "COP 4의 함정: 히트펌프는 온도 차를 먹고 산다",
+        "strength": "핵심 렌즈가 선명하지만 입문 독자에게 COP가 낯설다."
+      },
+      {
+        "title": "보일러를 떼고 히트펌프만 달면 끝일까",
+        "strength": "개조 문제를 잘 드러내지만 냉매와 산업용 범위가 좁아 보인다."
+      }
+    ]
+  },
+  "insight": {
+    "commonBelief": "히트펌프는 전기 효율이 300%가 넘는 마법의 전기히터이므로 어느 집에서나 전기요금과 탄소를 같은 비율로 줄인다고 생각한다.",
+    "twistFact": "히트펌프는 열을 만들기보다 옮기며, 필요한 압축기 일은 냉매가 넘어야 할 증발온도와 응축온도의 차이인 온도 리프트에 따라 커진다. 한파일수록 열원 온도는 내려가고 건물은 더 높은 출력을 요구해 양쪽 조건이 동시에 나빠진다.",
+    "whatToWatch": "명목 COP 하나보다 설계 외기온도에서의 용량 유지율과 COP, 공급수온, 열부하, 제상과 보조열 비중, 전체 시스템 계절성능, 냉매와 설치 품질을 본다.",
+    "freshnessArgument": "2026년 7월 29일 기준 IEA Heat Pump Monitor 2026, DOE 냉한지 사양, Fraunhofer 2024 현장 측정, 2026년 제상 연구, 2025년 DART와 EDGAR 공시를 맞췄다.",
+    "evidenceRefs": [
+      "E1",
+      "E2",
+      "E4",
+      "E5",
+      "E7",
+      "E8",
+      "E10",
+      "E14",
+      "E16",
+      "E18"
+    ]
+  },
+  "acts": [
+    {
+      "order": 1,
+      "heading": "전기 1과 바깥 열 2의 장부를 맞춘다",
+      "purpose": "열을 생산한다는 오해를 열 이동으로 바꾼다.",
+      "scene": "눈 내린 집 바깥에서 실외기가 열을 모아 실내 바닥으로 보낸다.",
+      "causalBridge": "열을 낮은 온도에서 높은 온도로 밀어 올리는 데 왜 일이 필요한지 냉매 순환으로 이동한다."
+    },
+    {
+      "order": 2,
+      "heading": "냉매의 네 상태와 온도 리프트를 해부한다",
+      "purpose": "증발기, 압축기, 응축기, 팽창밸브와 카르노 상한을 설명한다.",
+      "scene": "냉매 한 덩어리가 저압 증기에서 고압 증기, 액체, 저압 혼합물로 한 바퀴 돈다.",
+      "causalBridge": "온도 차가 커질수록 이론 상한과 실제 용량이 함께 낮아지는 한파 장면으로 넘어간다."
+    },
+    {
+      "order": 3,
+      "heading": "가장 추운 날의 용량, 제상과 보조열을 본다",
+      "purpose": "효율 문제와 난방 능력 문제를 분리한다.",
+      "scene": "건물 열부하선과 히트펌프 용량선이 교차하고 서리 낀 코일이 잠시 냉방 방향으로 뒤집힌다.",
+      "causalBridge": "장비가 아니라 집의 방열기와 배관이 온도 리프트를 다시 결정한다."
+    },
+    {
+      "order": 4,
+      "heading": "노후 주택의 진짜 변수는 건축 연도가 아니라 공급수온이다",
+      "purpose": "외피, 방열면적, 유량, 제어와 계절성능 경계를 연결한다.",
+      "scene": "오래된 집의 큰 라디에이터와 바닥난방, 버퍼탱크를 같은 시스템으로 조정한다.",
+      "causalBridge": "같은 제품도 측정 경계에 따라 COP, SCOP, HSPF2와 SPF가 달라지는 문제로 이동한다."
+    },
+    {
+      "order": 5,
+      "heading": "냉매 전환과 비용, 탄소의 임계점을 계산한다",
+      "purpose": "냉매의 기후 영향과 안전, 운전비와 배출의 지역별 조건을 분리한다.",
+      "scene": "R-410A에서 저GWP 냉매로의 전환과 전기, 가스 가격 및 계통 배출계수를 나란히 둔다.",
+      "causalBridge": "기술 조건을 계산했으니 그 가치가 기업 손익에 어디까지 보이는지 공시로 넘어간다."
+    },
+    {
+      "order": 6,
+      "heading": "기업 공시의 빈칸을 확인하고 네 시나리오로 닫는다",
+      "purpose": "HVAC 부문 숫자와 히트펌프 전용 증거를 분리하고 반증 가능한 관전 기준을 남긴다.",
+      "scene": "Carrier와 Trane의 EDGAR 10-K, LG전자의 DART 검산값을 기술 성숙도 사다리와 함께 놓는다.",
+      "causalBridge": "제품 광고가 아니라 다음 겨울에 확인할 지표와 공시, 틀리는 조건으로 결론을 닫는다."
+    }
+  ],
+  "sections": [
+    {
+      "order": 1,
+      "heading": "전기 1로 열 3을 만드는 장부에는 바깥 열 2가 있다",
+      "subtitle": "효율 300%가 아니라 열 이동의 에너지 보존",
+      "visualAnchor": "19-hero와 19-energy-ledger가 전기, 외기열과 실내열의 합을 보여 준다.",
+      "explanation": "먼저 Q_hot = Q_cold + W와 난방 COP = Q_hot / W를 정의해 에너지 장부를 맞춘다.",
+      "example": "전기 1kWh가 압축기와 팬에 들어가고 외기에서 2kWh를 가져오면 실내에 3kWh가 간다.",
+      "support": "주의할 점은 외기열이 공짜여도 장비, 설치와 전력망 비용까지 공짜라는 뜻은 아니라는 것이다.",
+      "transition": "그래서 다음에는 열을 온도 경사 반대 방향으로 옮기는 냉매의 네 단계로 이동한다.",
+      "evaluation": "독자가 전기히터와 히트펌프의 에너지 장부를 구분해야 한다."
+    },
+    {
+      "order": 2,
+      "heading": "냉매 한 바퀴는 압력과 끓는점을 바꾸는 과정이다",
+      "subtitle": "증발, 압축, 응축과 팽창",
+      "visualAnchor": "19-cycle-cutaway와 19-vapor-cycle이 실제 부품과 상태 변화를 연결한다.",
+      "explanation": "먼저 냉매가 실외 증발기에서 끓으며 열을 받고, 압축 뒤 실내 응축기에서 액화하며 열을 주는 순서를 본다.",
+      "example": "네 단계 표에서 팽창밸브는 냉매를 차갑게 만드는 동력기가 아니라 압력을 떨어뜨려 다음 증발 조건을 만든다.",
+      "support": "주의할 점은 배관의 빨강과 파랑이 냉매의 화학 종류가 아니라 상태와 온도 구간을 뜻한다는 것이다.",
+      "transition": "그래서 다음에는 두 열교환기의 온도 차가 압축기가 넘어야 할 높이가 되는 이유를 본다.",
+      "evaluation": "독자가 네 부품의 역할과 냉매 상태를 순서대로 설명할 수 있어야 한다."
+    },
+    {
+      "order": 3,
+      "heading": "히트펌프는 온도 차를 먹고 산다",
+      "subtitle": "카르노 상한과 실제 압축기의 거리",
+      "visualAnchor": "19-temperature-lift가 응축온도와 증발온도의 차이에 따른 이론 COP 상한을 비교한다.",
+      "explanation": "먼저 난방 카르노 COP = T_hot / (T_hot - T_cold)를 켈빈으로 계산하고 실제 손실을 분리한다.",
+      "example": "증발 0도, 응축 35도와 증발 -15도, 응축 60도의 두 가상 조건을 계산한다.",
+      "support": "주의할 점은 실외 공기와 실내 공기 온도를 그대로 넣지 않고 열교환을 위한 접근온도까지 봐야 한다는 것이다.",
+      "transition": "그래서 다음에는 외기가 내려가고 건물 부하가 오르는 한파의 교차점으로 이동한다.",
+      "evaluation": "독자가 낮은 공급수온과 따뜻한 열원이 COP를 높이는 이유를 설명해야 한다."
+    },
+    {
+      "order": 4,
+      "heading": "추울수록 효율과 용량은 서로 다른 이유로 나빠진다",
+      "subtitle": "열부하선, 용량선과 열적 균형점",
+      "visualAnchor": "19-balance-point가 외기온도 하락 때 건물 부하는 오르고 장비 용량은 내려가는 교차를 보여 준다.",
+      "explanation": "먼저 COP 저하와 최대 난방능력 부족을 구분하고 열적 균형점 아래의 보조열을 설명한다.",
+      "example": "DOE 냉한지 과제의 5화씨 COP 2.1-2.4와 47화씨 대비 용량 100% 목표를 읽는다.",
+      "support": "주의할 점은 영하 운전 가능 최저온도가 그 온도에서 집 전체 부하를 감당한다는 뜻은 아니라는 것이다.",
+      "transition": "그래서 다음에는 한파보다 습한 영하 부근에서 자주 나타나는 제상 문제로 이동한다.",
+      "evaluation": "독자가 운전 가능 온도, COP와 용량 유지율을 분리해야 한다."
+    },
+    {
+      "order": 5,
+      "heading": "서리를 녹이는 몇 분이 계절성능을 바꾼다",
+      "subtitle": "역사이클 제상과 베이스팬 히터",
+      "visualAnchor": "19-defrost와 19-defrost-timeline이 서리 성장, 역사이클, 보조열과 재가동을 시간순으로 보여 준다.",
+      "explanation": "먼저 젖은 외기가 차가운 코일에서 얼어 공기 흐름과 열전달을 막는 과정을 설명한다.",
+      "example": "2026년 알래스카 현장 연구가 제상과 팬 바닥 히터 제어만 바꿔 효율 개선 여지를 확인한 사례를 쓴다.",
+      "support": "주의할 점은 하얀 수증기를 고장 연기라고 오해하지 않되, 반복 과다 제상도 정상으로 넘기지 않는 것이다.",
+      "transition": "그래서 다음에는 제상 뒤에도 집이 높은 물 온도를 요구하면 온도 리프트가 왜 다시 커지는지 본다.",
+      "evaluation": "독자가 기후, 코일, 배수와 제어가 제상 손실을 결정함을 이해해야 한다."
+    },
+    {
+      "order": 6,
+      "heading": "노후 주택의 진짜 질문은 몇 도의 물이 필요한가다",
+      "subtitle": "열손실, 방열면적, 유량과 버퍼탱크",
+      "visualAnchor": "19-retrofit과 19-emitter-temperature가 바닥난방, 큰 라디에이터와 작은 고온 라디에이터를 비교한다.",
+      "explanation": "먼저 건물 열손실을 줄이거나 방열면적과 유량을 늘리면 같은 실내온도를 더 낮은 공급수온으로 낼 수 있음을 설명한다.",
+      "example": "2024년 Fraunhofer 현장 연구에서 건축 연도와 SPF 상관이 없고 필요한 난방온도가 핵심 변수였던 결과를 쓴다.",
+      "support": "주의할 점은 전면 단열만이 유일한 해법도, 장비만 교체하는 것이 충분한 해법도 아니라는 것이다.",
+      "transition": "그래서 다음에는 제품 성적표와 설치된 집의 계절 장부가 왜 다른지 측정 경계를 본다.",
+      "evaluation": "독자가 노후 주택 적합성을 건축 연도 하나로 판정하지 않아야 한다."
+    },
+    {
+      "order": 7,
+      "heading": "COP, SCOP, HSPF2와 SPF는 같은 질문이 아니다",
+      "subtitle": "시험점, 기후 구간과 현장 계량기의 경계",
+      "visualAnchor": "19-rating-boundaries가 단일 시험점에서 전체 시스템 전력까지 포함 범위를 넓혀 보여 준다.",
+      "explanation": "먼저 COP는 순간 운전점, SCOP와 HSPF2는 표준 기후 가중치, SPF는 현장 기간과 계량 경계의 비율로 구분한다.",
+      "example": "Fraunhofer의 공기열 49대가 SPF 2.6-4.9, 평균 3.4로 퍼진 결과를 명목 COP와 비교한다.",
+      "support": "주의할 점은 펌프, 팬, 제어, 보조히터를 분모에서 뺀 수치를 집 전체 전기요금으로 외삽하지 않는 것이다.",
+      "transition": "그래서 다음에는 측정 경계를 정한 뒤 공기, 땅, 물과 폐열이라는 열원 선택으로 이동한다.",
+      "evaluation": "독자가 효율 숫자를 볼 때 시험조건과 포함 전력을 먼저 물어야 한다."
+    },
+    {
+      "order": 8,
+      "heading": "공기열, 지열과 폐열은 온도 리프트를 사는 방식이 다르다",
+      "subtitle": "기존 자산을 살리는 전환 경로",
+      "visualAnchor": "19-transition-paths와 19-industrial이 공기열, 지중열, 하이브리드와 산업 폐열 경로를 비교한다.",
+      "explanation": "먼저 공기열은 설치가 쉽고 열원이 흔하지만 변동성이 크며, 지열은 안정적이지만 천공비가 높고, 폐열은 공정 통합이 핵심이라고 설명한다.",
+      "example": "전환 비교표에서 현재 보일러 단독, 전환기 하이브리드와 저온 방열기 개조, 장기 전기식 시스템의 세 경로를 나란히 둔다.",
+      "support": "주의할 점은 하이브리드를 무조건 실패나 영구 해법으로 규정하지 않고 피크부하와 기존 자산 조건으로 읽는 것이다.",
+      "transition": "그래서 다음에는 같은 압축 사이클에서 냉매 선택이 안전과 규제, 서비스 구조를 바꾸는 문제로 이동한다.",
+      "evaluation": "독자가 열원의 온도 안정성과 초기 공사비를 교환 관계로 이해해야 한다."
+    },
+    {
+      "order": 9,
+      "heading": "냉매의 숫자가 낮아지면 안전 설계가 더 중요해질 수 있다",
+      "subtitle": "R-410A, R-32, R-290과 가연성 등급",
+      "visualAnchor": "19-refrigerant-tradeoff가 GWP, 안전등급, 충전량과 설치 경계를 함께 보여 준다.",
+      "explanation": "먼저 고GWP HFC에서 A2L과 A3 냉매로 이동할 때 기후 영향, 가연성, 충전량과 정비 자격의 교환 관계를 설명한다.",
+      "example": "EPA의 R-410A GWP 2,088과 EU 표의 R-32 675 A2L, R-290 0.02 A3를 평가체계와 함께 쓴다.",
+      "support": "주의할 점은 GWP 숫자가 평가보고서와 시간지평에 따라 달라질 수 있으며 낮은 GWP가 무위험을 뜻하지 않는다는 것이다.",
+      "transition": "그래서 다음에는 운전 전력과 냉매 누출을 비용과 탄소 장부에 함께 넣는다.",
+      "evaluation": "독자가 냉매를 GWP 한 숫자로만 순위 매기지 않아야 한다."
+    },
+    {
+      "order": 10,
+      "heading": "전기요금과 탄소는 COP가 아니라 비율의 임계값에서 갈린다",
+      "subtitle": "전기와 가스 가격, 계통 배출계수와 피크부하",
+      "visualAnchor": "19-cost-carbon-threshold가 비용과 탄소의 두 부등식을 보여 준다.",
+      "explanation": "먼저 전기 단가/COP와 가스 단가/보일러효율, 계통 배출계수/COP와 연료 배출계수/보일러효율을 비교한다.",
+      "example": "COP 3, 보일러 90%일 때 전기 단가가 가스의 약 3.33배 아래여야 운전비가 유리하다는 가상 계산을 쓴다.",
+      "support": "주의할 점은 고정 평균 배출계수만으로 한파 시간의 한계전원과 피크 설비를 지우지 않는 것이다.",
+      "transition": "그래서 다음에는 기술의 이익이 압축기 회사, 완제품사, 설치와 서비스 중 어디에 남는지 공시로 이동한다.",
+      "evaluation": "독자가 지역 가격과 계통 조건 없이 절대적인 경제성 결론을 내리지 않아야 한다."
+    },
+    {
+      "order": 11,
+      "heading": "히트펌프 매출은 HVAC 사업부 안에 숨어 있다",
+      "subtitle": "Carrier, Trane과 LG의 직접 증거와 공개 결손",
+      "visualAnchor": "19-company-evidence가 부품, 완제품, 설치, 제어와 서비스에 회사를 배치하고 공시 범위를 표시한다.",
+      "explanation": "먼저 제품 발표와 기술 사양, HVAC 부문 매출과 회사 전체 현금흐름을 서로 다른 증거 칸에 둔다.",
+      "example": "Carrier의 Viessmann 인수, Trane의 지역별 HVAC 매출, LG ES의 매출과 영업이익을 공시 범위 그대로 읽는다.",
+      "support": "주의할 점은 세 회사 모두 공개하지 않은 히트펌프 전용 매출과 이익률을 HVAC 숫자에서 역산하지 않는 것이다.",
+      "transition": "그래서 다음에는 유망 기술이라는 말보다 사업 성숙도를 판정할 증거 사다리로 이동한다.",
+      "evaluation": "독자가 회사 전체 성장과 히트펌프 자체 성장을 구분해야 한다."
+    },
+    {
+      "order": 12,
+      "heading": "기술 성숙도는 높지만 시스템 통합은 아직 지역 산업이다",
+      "subtitle": "제품 인증보다 설치자와 서비스망",
+      "visualAnchor": "19-company-evidence와 초반 가치사슬 표를 다시 참조한다.",
+      "explanation": "먼저 증기압축 원리는 성숙했지만 냉한지, 주택형태, 배관, 냉매와 전력요금에 따라 현장 해법이 달라짐을 설명한다.",
+      "example": "IEA가 2024년 주요 시장 건물용 판매의 70% 이상을 지역 내 공급으로 집계하고 설치 인력 부족을 병목으로 든 점을 쓴다.",
+      "support": "주의할 점은 글로벌 출하량 증가를 모든 지역의 동일 제품과 동일 마진으로 번역하지 않는 것이다.",
+      "transition": "그래서 마지막에는 다음 겨울에 확인할 네 조건과 반증 신호를 둔다.",
+      "evaluation": "독자가 성숙한 원리와 미완성된 설치 생태계를 동시에 볼 수 있어야 한다."
+    },
+    {
+      "order": 13,
+      "heading": "관전 포인트는 COP 광고보다 네 가지 교차점이다",
+      "subtitle": "한파, 공급수온, 냉매와 사업 증거",
+      "visualAnchor": "19-scenario-map이 네 시나리오의 조건, 결과와 반증을 비교한다.",
+      "explanation": "먼저 하나의 낙관 전망 대신 관측 가능한 기술, 설치, 규제와 재무 조건으로 나눈다.",
+      "example": "설계온도 용량, 공급수온 분포, 저GWP 서비스 비용, 히트펌프 전용 매출 공개를 추적한다.",
+      "support": "주의할 점은 판매 대수만 늘었다고 계절성능과 기업 수익성이 동시에 개선됐다고 결론내리지 않는 것이다.",
+      "transition": "그래서 독자는 다음 제품 발표에서 명목 COP보다 시스템 경계를 먼저 확인하게 된다.",
+      "evaluation": "독자가 각 시나리오를 강화하거나 무효화하는 지표를 말할 수 있어야 한다."
+    }
+  ],
+  "visuals": [
+    {
+      "title": "겨울 주택으로 이동하는 외기열",
+      "kind": "hero-raster",
+      "proves": "히트펌프는 바깥의 열과 전기를 합쳐 실내로 보낸다.",
+      "placement": "도입부 첫 문제 제기 문단 직후",
+      "insertAfter": "기술이야기 메타데이터 뒤",
+      "narrativeUse": "글의 에너지 장부를 한 장면으로 연다."
+    },
+    {
+      "title": "전기 1과 외기열 2의 에너지 장부",
+      "kind": "energy-flow-diagram",
+      "proves": "실내열은 외기열과 압축기 일의 합이다.",
+      "placement": "첫 에너지 보존 공식 설명 직후",
+      "insertAfter": "Q_hot = Q_cold + W 설명 뒤",
+      "narrativeUse": "300% 효율 오해를 걷는다."
+    },
+    {
+      "title": "증기압축 부품 절개 장면",
+      "kind": "scientific-raster",
+      "proves": "실제 시스템은 두 열교환기, 압축기와 팽창장치로 닫힌 고리를 만든다.",
+      "placement": "냉매 순환을 여는 두 번째 절 첫 문단 뒤",
+      "insertAfter": "냉매 한 바퀴 H2 뒤",
+      "narrativeUse": "추상 순환을 실제 부품에 착지한다."
+    },
+    {
+      "title": "냉매의 네 상태 순환",
+      "kind": "process-diagram",
+      "proves": "압력과 상변화가 열 흡수와 방출 위치를 정한다.",
+      "placement": "냉매 네 단계와 부품 역할을 설명한 뒤",
+      "insertAfter": "팽창밸브가 압력을 낮추는 설명 문단 뒤",
+      "narrativeUse": "냉매 상태를 순서로 고정한다."
+    },
+    {
+      "title": "온도 리프트와 COP 상한",
+      "kind": "physics-chart",
+      "proves": "증발과 응축 온도 차가 커질수록 카르노 COP 상한도 낮아진다.",
+      "placement": "카르노 상한 공식과 가상 계산 사이",
+      "insertAfter": "카르노 COP 공식을 제시한 문단 바로 뒤",
+      "narrativeUse": "글 전체의 핵심 렌즈를 수치화한다."
+    },
+    {
+      "title": "건물 부하와 히트펌프 용량의 교차점",
+      "kind": "capacity-chart",
+      "proves": "한파에서는 건물 수요와 장비 공급이 반대 방향으로 움직인다.",
+      "placement": "열부하선과 용량선의 교차를 설명한 뒤",
+      "insertAfter": "열적 균형점을 정의한 설명 문단 뒤",
+      "narrativeUse": "보조열이 필요한 조건을 보여 준다."
+    },
+    {
+      "title": "서리와 역사이클 제상 장면",
+      "kind": "field-raster",
+      "proves": "코일의 서리는 공기 흐름과 열전달을 동시에 막는다.",
+      "placement": "제상 원리를 여는 다섯 번째 절 첫 문단 뒤",
+      "insertAfter": "제상 절의 첫 설명 문단 바로 뒤",
+      "narrativeUse": "제상 손실을 현장 장면으로 바꾼다."
+    },
+    {
+      "title": "제상 한 주기의 시간표",
+      "kind": "timeline-diagram",
+      "proves": "감지, 역사이클, 보조열, 배수와 재가동이 한 제어 문제다.",
+      "placement": "제상 제어와 베이스팬 히터를 설명한 뒤",
+      "insertAfter": "베이스팬 히터 제어를 설명한 문단 뒤",
+      "narrativeUse": "연속 효율이 아닌 간헐 손실을 보여 준다."
+    },
+    {
+      "title": "노후 주택의 저온 난방 개조",
+      "kind": "retrofit-raster",
+      "proves": "방열기, 바닥난방, 배관과 제어가 장비 성능을 결정한다.",
+      "placement": "기존 주택 개조를 여는 여섯 번째 절 직후",
+      "insertAfter": "노후 주택 절의 첫 설명 문단 바로 뒤",
+      "narrativeUse": "박스 교체가 아니라 시스템 개조임을 보여 준다."
+    },
+    {
+      "title": "방열면적과 공급수온의 교환",
+      "kind": "system-comparison",
+      "proves": "같은 열량은 더 큰 방열면적과 낮은 물 온도로도 낼 수 있다.",
+      "placement": "공급수온을 낮추는 세 방법을 설명한 뒤",
+      "insertAfter": "공급수온을 낮추는 세 방법 문단 뒤",
+      "narrativeUse": "건물 쪽 온도 리프트를 설명한다."
+    },
+    {
+      "title": "효율 지표의 측정 경계",
+      "kind": "measurement-diagram",
+      "proves": "COP, SCOP, HSPF2와 SPF는 시간과 포함 전력이 다르다.",
+      "placement": "효율 지표의 측정 경계 비교표를 읽은 뒤",
+      "insertAfter": "효율 지표 비교표를 해설한 문단 뒤",
+      "narrativeUse": "숫자의 분모를 시각화한다."
+    },
+    {
+      "title": "난방 인프라의 세 전환 경로",
+      "kind": "transition-map",
+      "proves": "기존 보일러, 하이브리드 개조와 장기 전기화는 서로 다른 자산을 보존한다.",
+      "placement": "현재와 전환기, 장기 전환 경로 표를 읽은 뒤",
+      "insertAfter": "현재와 전환기, 장기 경로 비교표 뒤",
+      "narrativeUse": "기존 자산의 강화와 약화를 연결한다."
+    },
+    {
+      "title": "산업 폐열을 끌어올리는 고온 히트펌프",
+      "kind": "industrial-raster",
+      "proves": "공장에서는 열원과 공정 요구 온도의 통합이 제품 자체보다 중요하다.",
+      "placement": "산업 폐열의 공정 통합 문단을 설명한 뒤",
+      "insertAfter": "산업 폐열의 온도 리프트 설명 문단 뒤",
+      "narrativeUse": "주택 밖의 같은 원리를 확장한다."
+    },
+    {
+      "title": "저GWP 냉매의 기후와 안전 교환",
+      "kind": "risk-matrix",
+      "proves": "GWP 감소와 가연성, 충전량, 서비스 조건을 함께 봐야 한다.",
+      "placement": "세 냉매의 GWP와 안전등급 비교표를 읽은 뒤",
+      "insertAfter": "R-410A, R-32, R-290 비교표 해설 뒤",
+      "narrativeUse": "냉매 순위를 설계 문제로 바꾼다."
+    },
+    {
+      "title": "비용과 탄소의 두 임계식",
+      "kind": "threshold-diagram",
+      "proves": "지역 가격과 배출계수를 COP로 나눈 값이 비교의 출발점이다.",
+      "placement": "비용과 탄소 임계식 두 개를 설명한 뒤",
+      "insertAfter": "비용과 탄소 부등식을 계산한 문단 뒤",
+      "narrativeUse": "절대 결론 대신 조건식을 남긴다."
+    },
+    {
+      "title": "히트펌프 가치사슬과 공시 증거",
+      "kind": "company-evidence-map",
+      "proves": "부품, 완제품, 설치, 제어와 서비스의 회사와 공시 범위가 다르다.",
+      "placement": "기업별 공시 범위와 결손 표를 읽은 뒤",
+      "insertAfter": "Carrier, Trane, LG 공시 비교표 뒤",
+      "narrativeUse": "제품 발표와 재무 귀속 오류를 막는다."
+    },
+    {
+      "title": "다음 겨울의 네 관전 시나리오",
+      "kind": "scenario-matrix",
+      "proves": "한파, 공급수온, 냉매와 재무는 서로 다른 조건과 반증을 가진다.",
+      "placement": "마지막 관전 포인트 절의 도입 문단 직후",
+      "insertAfter": "마지막 관전 포인트 H2 제목 바로 뒤",
+      "narrativeUse": "예언을 검증 가능한 관전판으로 바꾼다."
+    }
+  ],
+  "imagePlan": [
+    {
+      "assetKey": "19-hero",
+      "sourcePolicy": "auto",
+      "slot": "hero",
+      "subject": "겨울 주택 절개와 공기열 히트펌프, 외기에서 실내 바닥난방으로 이동하는 열",
+      "query": "winter house air source heat pump cutaway heat flow editorial no logo",
+      "keywords": [
+        "heat pump",
+        "winter house",
+        "energy transfer"
+      ],
+      "placement": "도입부 첫 문제 제기 문단 직후",
+      "narrativeUse": "외기열과 전기의 합이라는 첫 장부를 보여 준다."
+    },
+    {
+      "assetKey": "19-cycle-cutaway",
+      "sourcePolicy": "auto",
+      "slot": "inline",
+      "subject": "증발기, 압축기, 응축기와 팽창밸브가 연결된 실험실 절개 장치",
+      "query": "vapor compression heat pump components cutaway laboratory no labels",
+      "keywords": [
+        "compressor",
+        "heat exchanger",
+        "refrigeration cycle"
+      ],
+      "placement": "냉매 순환을 여는 두 번째 절 첫 문단 뒤",
+      "narrativeUse": "냉매 순환을 실제 부품으로 보여 준다."
+    },
+    {
+      "assetKey": "19-defrost",
+      "sourcePolicy": "auto",
+      "slot": "inline",
+      "subject": "습한 겨울에 서리가 낀 실외 코일과 제상 중인 히트펌프",
+      "query": "air source heat pump defrost frost coil meltwater winter documentary",
+      "keywords": [
+        "defrost",
+        "frosted coil",
+        "cold humid"
+      ],
+      "placement": "제상 원리를 여는 다섯 번째 절 첫 문단 뒤",
+      "narrativeUse": "제상 손실과 배수 문제를 현장화한다."
+    },
+    {
+      "assetKey": "19-retrofit",
+      "sourcePolicy": "auto",
+      "slot": "inline",
+      "subject": "오래된 주택의 큰 라디에이터, 바닥난방, 버퍼탱크와 공기물 히트펌프 개조",
+      "query": "old house air to water heat pump retrofit radiator underfloor buffer tank cutaway",
+      "keywords": [
+        "retrofit",
+        "radiator",
+        "underfloor heating"
+      ],
+      "placement": "기존 주택 개조를 여는 여섯 번째 절 직후",
+      "narrativeUse": "장비 교체가 아니라 수온과 유량 설계임을 보여 준다."
+    },
+    {
+      "assetKey": "19-industrial",
+      "sourcePolicy": "auto",
+      "slot": "inline",
+      "subject": "식품 또는 제지 공장의 폐열 회수 고온 히트펌프 스키드",
+      "query": "industrial high temperature heat pump waste heat recovery factory editorial",
+      "keywords": [
+        "industrial heat pump",
+        "waste heat",
+        "process integration"
+      ],
+      "placement": "산업 폐열의 공정 통합 문단을 설명한 뒤",
+      "narrativeUse": "같은 원리가 공정 통합 문제로 확장됨을 보여 준다."
+    }
+  ],
+  "relatedPosts": {
+    "searches": [
+      "경동나비엔 보일러 설치 채널",
+      "LG전자 HVAC 사업부",
+      "반도체 냉각 냉동 사이클",
+      "전력망 피크부하",
+      "교류 직류 전환"
+    ],
+    "placementRule": "설치와 기업 공시 뒤에는 회사이야기를, 열 이동과 전력 피크 뒤에는 관련 기술이야기를 연결한다.",
+    "links": [
+      {
+        "path": "/blog/009450-kyungdong-navien",
+        "title": "경동나비엔 난방 산업 분석",
+        "reason": "난방 장비의 기술보다 설치업자 채널이 시장을 여는 사례다.",
+        "placement": "6절 설치 품질 설명 뒤"
+      },
+      {
+        "path": "/blog/066570-lg-electronics",
+        "title": "LG전자 HVAC 사업 분석",
+        "reason": "HVAC 사업부가 전사 손익 안에서 어떻게 보이는지 이어 본다.",
+        "placement": "11절 LG ES 설명 뒤"
+      },
+      {
+        "path": "/blog/semiconductor-cooling-network",
+        "title": "AI 칩의 다음 병목은 열이다",
+        "reason": "열을 버리는 냉각과 열을 끌어올리는 히트펌프가 같은 압축 사이클을 공유한다.",
+        "placement": "2절 냉매 순환 설명 뒤"
+      },
+      {
+        "path": "/blog/ai-power-transformer-supercycle",
+        "title": "AI 전력망은 어디서 막히나",
+        "reason": "겨울 피크 전기화가 배전망과 변압기 용량에 미치는 영향을 이어 본다.",
+        "placement": "10절 피크부하 설명 뒤"
+      },
+      {
+        "path": "/blog/tesla-ac-grid-dc-return",
+        "title": "테슬라가 이긴 교류는 왜 다시 직류를 부르나",
+        "reason": "전기화 기술은 최종 장비뿐 아니라 계통과 보호 인프라를 함께 바꾼다.",
+        "placement": "8절 전환 경로 설명 뒤"
+      }
+    ]
+  },
+  "honestyGuards": [
+    "카탈로그의 한 운전점 COP를 한겨울 계절성능이나 전기요금 절감률로 쓰지 않는다.",
+    "운전 가능 최저온도를 그 온도에서 건물 부하를 전부 감당하는 용량으로 쓰지 않는다.",
+    "Fraunhofer 77개 현장 결과를 모든 국가, 모든 노후 주택과 모든 겨울의 대표값으로 일반화하지 않는다.",
+    "R-410A, R-32와 R-290의 GWP는 평가보고서와 규정 기준을 명시하고 서로 다른 기준의 숫자를 한 표에서 무설명 비교하지 않는다.",
+    "Carrier, Trane과 LG의 HVAC 부문 매출과 이익을 히트펌프 전용 재무로 귀속하지 않는다.",
+    "LG의 냉한지 제품 회사 발표를 독립 현장 성능이나 누적 판매의 증거로 올려 쓰지 않는다.",
+    "전기와 가스 가격, 계통 배출계수 없이 모든 지역에서 운전비와 탄소가 낮다고 단정하지 않는다."
+  ],
+  "evidenceMap": [
+    {
+      "id": "E1",
+      "claim": "IEA는 전형적인 가정용 히트펌프의 COP를 약 4로 설명하고, 열 대부분을 생산하지 않고 열원에서 옮긴다고 정의한다.",
+      "sourceType": "intergovernmental",
+      "sourceRef": "IEA How a heat pump works",
+      "period": "2022",
+      "unit": "COP",
+      "scope": "대표 설명값이며 특정 제품, 기후와 설치의 보증값 아님",
+      "url": "https://www.iea.org/reports/the-future-of-heat-pumps/how-a-heat-pump-works"
+    },
+    {
+      "id": "E2",
+      "claim": "DOE 냉한지 과제는 5화씨에서 최소 COP 2.1-2.4, 47화씨 대비 5화씨 용량비 100%, GWP 750 이하를 성능 요구로 제시했다.",
+      "sourceType": "government",
+      "sourceRef": "DOE Residential Cold-Climate Heat Pump Technology Challenge factsheet",
+      "period": "2022 revision",
+      "unit": "COP, capacity ratio, GWP",
+      "scope": "도전 과제 사양이며 전체 시장 제품의 실측 평균 아님",
+      "url": "https://www.energy.gov/cmei/buildings/articles/residential-cold-climate-heat-pump-technology-challenge-fact-sheet"
+    },
+    {
+      "id": "E3",
+      "claim": "NREL의 2023년 냉한지 현장 연구는 가변속 중앙식 공기열 장치의 용량, COP, 제상과 보조열을 5초 간격으로 측정했다.",
+      "sourceType": "national-laboratory",
+      "sourceRef": "Field Validation of Air-Source Heat Pumps for Cold Climates",
+      "period": "2023",
+      "unit": "field measurement",
+      "scope": "미국 북서부 중심의 선정된 고효율 장치 현장",
+      "url": "https://research-hub.nlr.gov/en/publications/field-validation-of-air-source-heat-pumps-for-cold-climates/"
+    },
+    {
+      "id": "E4",
+      "claim": "DOE 가이드는 건물 난방부하선과 히트펌프 용량선의 교차를 열적 균형점으로 정의하고 그 아래에서 보조열이 필요하다고 설명한다.",
+      "sourceType": "government",
+      "sourceRef": "Decarbonizing Building Thermal Systems",
+      "period": "2024",
+      "unit": "design method",
+      "scope": "설계 개념이며 개별 제품의 균형점은 건물과 용량선에 따라 다름",
+      "url": "https://betterbuildingssolutioncenter.energy.gov/sites/default/files/attachments/87812.pdf"
+    },
+    {
+      "id": "E5",
+      "claim": "Fraunhofer ISE가 2024년을 중심으로 측정한 49대 공기물 히트펌프의 SPF는 2.6-4.9, 평균 3.4였고 건축 연도와 SPF의 상관은 없었다.",
+      "sourceType": "research-institute",
+      "sourceRef": "WP-QS im Bestand field project",
+      "period": "2024 measurement, 2025 publication",
+      "unit": "SPF",
+      "scope": "독일의 선정된 기존 단독주택, 일부는 평균보다 개보수 수준이 높음",
+      "url": "https://www.ise.fraunhofer.de/en/research-projects/wp-qs-im-bestand.html"
+    },
+    {
+      "id": "E6",
+      "claim": "Fraunhofer 연구는 평균 히트펌프 온도를 1K 낮출 때 SPF가 0.10-0.13포인트 높아지는 선형 상관을 보고했다.",
+      "sourceType": "research-paper",
+      "sourceRef": "Performance of air and ground source heat pumps retrofitted to radiator heating systems",
+      "period": "2022",
+      "unit": "SPF point per K",
+      "scope": "해당 현장 데이터와 시스템 시뮬레이션 범위",
+      "url": "https://publica.fraunhofer.de/entities/publication/30ff8733-b37b-4943-889e-3bd2e40056f5"
+    },
+    {
+      "id": "E7",
+      "claim": "2026년 알래스카 현장 연구는 공격적인 제상과 베이스팬 히터 제어를 조정해 효율을 개선할 여지가 있음을 확인했다.",
+      "sourceType": "research-paper",
+      "sourceRef": "Cold Climate Field Study of the Effect of Defrost Controls",
+      "period": "2023-2024 measurement, 2026 publication",
+      "unit": "integrated performance",
+      "scope": "페어뱅크스의 덕트리스 장치 한 현장과 해당 제어 변경",
+      "url": "https://research-hub.nlr.gov/en/publications/cold-climate-field-study-of-the-effect-of-defrost-controls-on-the/"
+    },
+    {
+      "id": "E8",
+      "claim": "IEA는 히트펌프가 2024년 세계 난방 수요의 약 5%, 건물 공간난방의 약 12%를 공급했으며 2025년 판매는 안정됐다고 집계한다.",
+      "sourceType": "intergovernmental",
+      "sourceRef": "IEA Heat Pump Monitor 2026",
+      "period": "2024-2026Q1",
+      "unit": "share and sales trend",
+      "scope": "세계 집계와 주요 시장, 지역별 편차가 큼",
+      "url": "https://www.iea.org/reports/heat-pump-monitor-2026/key-findings"
+    },
+    {
+      "id": "E9",
+      "claim": "IEA는 2024년 주요 시장 건물용 히트펌프 판매의 70% 이상이 지역 내 공급이었고 설치와 유지보수 기술자 부족이 병목이라고 설명한다.",
+      "sourceType": "intergovernmental",
+      "sourceRef": "IEA Heat Pump Monitor 2026 supply chain",
+      "period": "2024",
+      "unit": "percent and workforce",
+      "scope": "주요 시장 건물용 판매 집계",
+      "url": "https://www.iea.org/reports/heat-pump-monitor-2026/key-findings"
+    },
+    {
+      "id": "E10",
+      "claim": "EU 집행위원회 표는 가정용 히트펌프 대안 냉매로 R-32 GWP100 675와 A2L, R-290 GWP100 0.02와 A3를 제시한다.",
+      "sourceType": "government",
+      "sourceRef": "European Commission Climate-friendly alternatives to F-gases",
+      "period": "EU Regulation 2024/573 basis",
+      "unit": "GWP100 and safety group",
+      "scope": "EU 규정의 평가 기준과 적용 범위",
+      "url": "https://climate.ec.europa.eu/eu-action/fluorinated-greenhouse-gases/climate-friendly-alternatives-f-gases/air-conditioning_en"
+    },
+    {
+      "id": "E11",
+      "claim": "EPA 기술전환 GWP 표는 R-410A 2,088과 R-290 3.3을 제시하며 사용한 평가 출처를 함께 표시한다.",
+      "sourceType": "government",
+      "sourceRef": "EPA Technology Transitions GWP Reference Table",
+      "period": "2026 update",
+      "unit": "GWP",
+      "scope": "미국 규정용 표이며 EU의 최신 비불소 냉매 계산값과 평가 기준이 다름",
+      "url": "https://www.epa.gov/hfcs/technology-transitions-gwp-reference-table"
+    },
+    {
+      "id": "E12",
+      "claim": "IEA의 지역별 운전 배출 비교는 히트펌프 SPF 2.4-4와 고효율 가스보일러 98%를 가정한다.",
+      "sourceType": "intergovernmental",
+      "sourceRef": "IEA relative CO2 emissions chart",
+      "period": "2023 update",
+      "unit": "SPF and efficiency",
+      "scope": "운전단계 CO2와 지역 전력믹스, 냉매와 설비 제조는 별도",
+      "url": "https://www.iea.org/data-and-statistics/charts/relative-co2-emissions-from-the-operation-of-air-source-heat-pumps-compared-with-the-most-efficient-condensing-gas-boilers-by-region-in-the-net-zero-scenario-2010-2030-2"
+    },
+    {
+      "id": "E13",
+      "claim": "EIA는 천연가스 연소 배출계수를 1MMBtu당 52.91kg CO2로 제시한다.",
+      "sourceType": "government",
+      "sourceRef": "EIA Carbon Dioxide Emissions Coefficients",
+      "period": "2024",
+      "unit": "kg CO2 per MMBtu",
+      "scope": "연료 직접 연소 CO2, 상류 메탄과 보일러 효율은 별도",
+      "url": "https://www.eia.gov/environment/emissions/co2_vol_mass.php"
+    },
+    {
+      "id": "E14",
+      "claim": "Carrier 2025 10-K는 매출 217억4,700만달러, Climate Solutions Europe 매출 50억4,400만달러와 부문이익 4억4,400만달러를 공시했다.",
+      "sourceType": "company-filing",
+      "sourceRef": "Carrier 2025 10-K",
+      "period": "FY2025",
+      "unit": "USD",
+      "scope": "HVAC와 서비스가 섞인 지역 부문, 히트펌프 전용 매출 아님",
+      "url": "https://www.sec.gov/Archives/edgar/data/1783180/000178318026000008/carr-20251231.htm"
+    },
+    {
+      "id": "E15",
+      "claim": "Carrier는 2024년 Viessmann Climate Solutions를 총 141억5,700만달러에 인수했으며 대상 사업은 히트펌프, 보일러, 태양광, 배터리와 디지털을 포함한다.",
+      "sourceType": "company-filing",
+      "sourceRef": "Carrier 2025 10-K Note 19",
+      "period": "2024 acquisition, 2025 filing",
+      "unit": "USD",
+      "scope": "복합 기후솔루션 사업 인수, 히트펌프만의 가치 아님",
+      "url": "https://www.sec.gov/Archives/edgar/data/1783180/000178318026000008/carr-20251231.htm"
+    },
+    {
+      "id": "E16",
+      "claim": "Trane Technologies 2025 10-K는 매출 213억2,190만달러, 영업이익 39억6,740만달러와 지역별 HVAC 중심 사업을 공시했다.",
+      "sourceType": "company-filing",
+      "sourceRef": "Trane Technologies 2025 10-K",
+      "period": "FY2025",
+      "unit": "USD",
+      "scope": "상업·주거 HVAC와 운송냉동이 섞인 회사 전체, 히트펌프 전용 아님",
+      "url": "https://www.sec.gov/Archives/edgar/data/1466258/000162828026005731/tt-20251231.htm"
+    },
+    {
+      "id": "E17",
+      "claim": "LG전자 공식 실적은 2025년 ES 사업 매출 9조3,200억원과 영업이익 6,473억원을 제시한다.",
+      "sourceType": "company-official",
+      "sourceRef": "LG Electronics full-year 2025 results",
+      "period": "FY2025",
+      "unit": "KRW",
+      "scope": "에어컨, 히트펌프, 칠러 등 ES 전체, 히트펌프 전용 아님",
+      "url": "https://www.lg.com/global/newsroom/news/corporate/lg-electronics-releases-fourth-quarter-and-full-year-2025-financial-results/"
+    },
+    {
+      "id": "E18",
+      "claim": "LG는 냉한지 제품이 -25도에서 정격 난방용량 100%, -35도에서 70%를 유지한다고 발표했고 R-32 압축기 GWP 675를 설명했다.",
+      "sourceType": "company-official",
+      "sourceRef": "LG HVAC electrification release",
+      "period": "2025",
+      "unit": "temperature, capacity ratio and GWP",
+      "scope": "회사 발표 제품 사양, 독립 현장 계절성능과 판매량 아님",
+      "url": "https://www.lg.com/global/newsroom/lg-story/beyond-news/lgs-innovative-hvac-solutions-highlight-commitment-to-decarbonization-and-electrification/"
+    },
+    {
+      "id": "E19",
+      "claim": "DartLab Company.panel로 Carrier, Trane Technologies와 LG전자의 2025 회사 전체 매출, 영업이익과 현금흐름을 검산했다.",
+      "sourceType": "dartlab-runtime",
+      "sourceRef": "Company.panel IS and CF",
+      "period": "FY2025 and 2026Q1 where available",
+      "unit": "USD and KRW",
+      "scope": "회사 전체 재무와 공시 매핑, 히트펌프 전용 재무 아님",
+      "url": "https://github.com/eddmpython/dartlab"
+    },
+    {
+      "id": "E20",
+      "claim": "DOE의 냉한지 개조 프로젝트는 흔한 현장 연간 COP 범위를 2.3-2.5로 보고 설치 손실을 줄여 4.0을 목표로 한다.",
+      "sourceType": "government-research",
+      "sourceRef": "Reducing Applied Losses in Heat Pumps in Cold Climates",
+      "period": "2025 anticipated completion",
+      "unit": "annual COP",
+      "scope": "뉴욕 시러큐스 개조 프로젝트의 문제정의와 목표",
+      "url": "https://www.energy.gov/cmei/buildings/reducing-applied-losses-heat-pumps-cold-climates"
+    },
+    {
+      "id": "E21",
+      "claim": "IEA는 건물 효율등급을 두 단계 높이는 예에서 난방에너지 수요를 절반으로 줄이고 필요한 히트펌프 크기와 피크수요 증가를 낮출 수 있다고 설명한다.",
+      "sourceType": "intergovernmental",
+      "sourceRef": "IEA Future of Heat Pumps executive summary",
+      "period": "2022",
+      "unit": "scenario effect",
+      "scope": "유럽 효율등급 예시를 포함한 시나리오 분석, 개별 주택 보증값 아님",
+      "url": "https://www.iea.org/reports/the-future-of-heat-pumps/executive-summary"
+    },
+    {
+      "id": "E22",
+      "claim": "IEA는 상용 산업용 히트펌프가 현재 세계 산업 열수요의 약 20%를 기술적으로 공급할 수 있으나 공정 통합과 경제성이 장벽이라고 본다.",
+      "sourceType": "intergovernmental",
+      "sourceRef": "IEA Heat Pump Monitor 2026 industry",
+      "period": "2026",
+      "unit": "technical potential share",
+      "scope": "저온·중온 공정 중심의 기술적 잠재량, 실제 경제적 설치량 아님",
+      "url": "https://www.iea.org/reports/heat-pump-monitor-2026/key-findings"
+    }
+  ],
+  "watchScenarios": [
+    {
+      "id": "cold-capacity-closes-gap",
+      "condition": "설계 외기온도에서 정격 용량 유지율과 COP가 함께 높아지고 현장 보조열 비중이 낮아진다면",
+      "mechanism": "가변속 압축기, 열교환기 면적과 제어 개선이 한파의 용량 부족과 비효율을 동시에 줄인다.",
+      "outcome": "단독 히트펌프로 감당할 수 있는 기후와 주택 범위가 넓어진다.",
+      "watchMetric": "설계온도 용량, COP, 균형점, 보조히터 kWh와 제상 비중을 확인한다.",
+      "invalidatedBy": "운전 최저온도만 낮아지고 같은 온도에서 용량과 COP, 보조열 데이터가 없으면 강화 증거가 아니다.",
+      "evidenceRefs": [
+        "E2",
+        "E3",
+        "E4",
+        "E18"
+      ]
+    },
+    {
+      "id": "retrofit-temperature-falls",
+      "condition": "기존 주택의 실제 공급수온 분포와 SPF가 낮은 온도 쪽으로 이동한다면",
+      "mechanism": "열손실 개선, 방열기 크기와 유량 조정이 온도 리프트와 압축기 일을 줄인다.",
+      "outcome": "건축 연도와 무관하게 경제적인 개조 사례가 늘어난다.",
+      "watchMetric": "설계일 공급수온, 평균 공급수온, SPF, 압축기 기동횟수와 버퍼 손실을 확인한다.",
+      "invalidatedBy": "제품 교체 대수만 늘고 공급수온, 전체 시스템 전력과 실내 쾌적 데이터가 없으면 시스템 개선 증거가 아니다.",
+      "evidenceRefs": [
+        "E5",
+        "E6",
+        "E20",
+        "E21"
+      ]
+    },
+    {
+      "id": "refrigerant-transition-costs-shift",
+      "condition": "저GWP 냉매 장비가 늘면서 누출과 서비스 비용이 안정되고 설치자 교육이 따라온다면",
+      "mechanism": "새 냉매의 가연성, 충전량과 회수 절차가 표준 설계와 작업 관행에 흡수된다.",
+      "outcome": "직접 냉매 배출 위험이 줄고 규제 전환 비용이 낮아진다.",
+      "watchMetric": "냉매별 출하 비중, 누출률, 회수율, 설치 시간, 보험과 서비스 비용을 확인한다.",
+      "invalidatedBy": "낮은 GWP 제품 발표만 늘고 누출, 회수, 교육과 현장 사고 데이터가 없으면 전환 완성 증거가 아니다.",
+      "evidenceRefs": [
+        "E2",
+        "E10",
+        "E11",
+        "E18"
+      ]
+    },
+    {
+      "id": "financial-evidence-separates",
+      "condition": "기업이 히트펌프 출하, 매출, 서비스와 마진을 HVAC 전체에서 분리해 반복 공시한다면",
+      "mechanism": "제품 수요가 설치와 서비스까지 독립 사업 단위로 커져 경영진이 별도 성과관리 지표로 사용한다.",
+      "outcome": "기술 성장과 회사 수익성의 귀속을 더 정확히 검증할 수 있다.",
+      "watchMetric": "히트펌프 전용 매출, 출하, 설치 기반, 서비스 비중, 보증비용과 부문 마진을 확인한다.",
+      "invalidatedBy": "HVAC 부문 성장과 인수 시너지 문구만 있고 히트펌프 전용 숫자가 계속 없으면 재무 귀속은 여전히 불가능하다.",
+      "evidenceRefs": [
+        "E14",
+        "E15",
+        "E16",
+        "E17",
+        "E19"
+      ]
+    }
+  ],
+  "reviewGate": {
+    "status": "passed",
+    "finalScore": 96,
+    "requiredRounds": [
+      {
+        "id": "titleHook",
+        "status": "passed"
+      },
+      {
+        "id": "writerPanel",
+        "status": "passed"
+      },
+      {
+        "id": "honestyEvidence",
+        "status": "passed"
+      },
+      {
+        "id": "sectionFlow",
+        "status": "passed"
+      },
+      {
+        "id": "visualStoryPlan",
+        "status": "passed"
+      },
+      {
+        "id": "imageFit",
+        "status": "passed"
+      },
+      {
+        "id": "assetSsot",
+        "status": "passed"
+      },
+      {
+        "id": "scenarioWatch",
+        "status": "passed"
+      },
+      {
+        "id": "readerFit",
+        "status": "passed"
+      },
+      {
+        "id": "reevaluation",
+        "status": "passed"
+      }
+    ],
+    "loopEvidence": {
+      "workflow": "blog_plan_loop.workflow.js",
+      "rounds": [
+        {
+          "round": "principle-r1",
+          "planner": "관통선을 전기 1로 열 3을 만드는 증기압축 원리와 COP 설명으로 잡았다.",
+          "evaluator": "원리 설명은 정확하지만 냉장고 비유와 COP 정의만으로는 기존 설명과 차별성이 약하고 현장 실패 조건이 뒤에 붙는다고 평가했다.",
+          "skeptic": "카탈로그 COP, 한파 용량, 제상, 보조히터와 노후 주택 수온이 같은 시스템에서 어떻게 연결되는지 하나의 변수로 묶으라고 지적했다.",
+          "decision": "revise",
+          "evaluatorScore": 87
+        },
+        {
+          "round": "temperature-lift-r2",
+          "planner": "관통선을 온도 리프트로 바꾸고 냉매의 증발·응축온도에서 한파, 공급수온과 산업 폐열까지 연결했다.",
+          "evaluator": "기술 인과와 독자성은 통과했지만 제품 시험점, 현장 SPF, 회사 HVAC 매출의 증거 경계와 냉매 평가기준 차이가 부족해 보류했다.",
+          "skeptic": "DOE 사양을 현장 평균으로 쓰지 말고 Fraunhofer 표본 범위, GWP 기준, 기업별 공개 결손과 반증 조건을 명시하라고 요구했다.",
+          "decision": "revise",
+          "evaluatorScore": 92
+        },
+        {
+          "round": "system-boundary-r3",
+          "planner": "제품, 설치 시스템과 기업 재무의 세 경계를 고정하고 22개 공식 근거, 17개 시각물, 네 조건형 시나리오로 닫았다.",
+          "evaluator": "기술 정확성 35/36, 증거 경계 36/36, 완결성 25/28로 관통선과 발행 설계가 충분하다고 평가했다.",
+          "skeptic": "히트펌프 전용 매출, 장기 냉매 누출과 지역별 한계전원은 공개 결손으로 남겨야 한다는 최종 위험을 확인했다.",
+          "plannerRevision": "공개되지 않은 전용 매출과 현장 성능을 역산하지 않고 마지막 관전 지표와 반증 조건으로 남겼다.",
+          "decision": "passed",
+          "evaluatorScore": 96
+        }
+      ]
+    }
+  },
+  "_editorNote": "기술이야기 19편. 온도 리프트를 중심으로 냉매 순환, 한파, 제상, 건물 수온, 계절성능, 냉매, 비용과 기업 공시를 연결한다. 생성 장면 5장과 SVG 12장을 사용하고 발행 뒤 Hugging Face 미디어 SSOT만 남긴다."
+}

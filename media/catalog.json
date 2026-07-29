@@ -3947,6 +3947,23 @@
     "blog/08-tech-story/18-perovskite-silicon-tandem/assets/18-spectrum-cutaway.png": "5dd948578211db2f48c9989248f5e9a5ea85ebe97c368f793e854a4d85fe642e",
     "blog/08-tech-story/18-perovskite-silicon-tandem/assets/18-spectrum-split.svg": "f1c275dc79db409afb2ec82e6a40328e63948952a5959ebfca9c552a2eba2c4e",
     "blog/08-tech-story/18-perovskite-silicon-tandem/assets/18-stress-test.png": "701f8e7318328410ca3be8a04b757d3510ca4be679fe687473fb030cf72214b4",
+    "blog/08-tech-story/19-heat-pump-temperature-lift-cop/assets/19-balance-point.svg": "6901da2c684db53f98a52db5249c7c6e110f7b667cfc98c1194b1a8cc293f670",
+    "blog/08-tech-story/19-heat-pump-temperature-lift-cop/assets/19-company-evidence.svg": "8c0001b5d83fbabefb30c8310ba81637b36637cfa63d5445f4dfa9a3b405da0c",
+    "blog/08-tech-story/19-heat-pump-temperature-lift-cop/assets/19-cost-carbon-threshold.svg": "6726845c4be1e423c69549b891df1f42cae4ba1ba8bdb3a466855ad4ccc5141f",
+    "blog/08-tech-story/19-heat-pump-temperature-lift-cop/assets/19-cycle-cutaway.webp": "5e7386586b1124af49e488dd140975b4301085040b298a086de67cfbe9c100eb",
+    "blog/08-tech-story/19-heat-pump-temperature-lift-cop/assets/19-defrost-timeline.svg": "a5f2f6abdaa2b52ddbed3963c42d8bf417af0d7d15c30d5b6aaa8189c79a703d",
+    "blog/08-tech-story/19-heat-pump-temperature-lift-cop/assets/19-defrost.webp": "151dbdf8846211563bdbf023721a5cd01cc08952030490234cf6a1a1a19cbbcd",
+    "blog/08-tech-story/19-heat-pump-temperature-lift-cop/assets/19-emitter-temperature.svg": "4a652221da4990598facde7f6ca5fc5bbc4e5c6c2cc116b8e1ca64dc07c629e1",
+    "blog/08-tech-story/19-heat-pump-temperature-lift-cop/assets/19-energy-ledger.svg": "cdf2e0dca42af23961d8c50879e94c13ebded262e0eabf39e4f27f7838c17978",
+    "blog/08-tech-story/19-heat-pump-temperature-lift-cop/assets/19-hero.webp": "6cf5178c018ec879e0495fab925ac709737839444495e7bf2bb0c602875ed92a",
+    "blog/08-tech-story/19-heat-pump-temperature-lift-cop/assets/19-industrial.webp": "7dd713af198c617667590c0d7a53540dc36b18f40035bb4503c6ab9a6e6ebeb6",
+    "blog/08-tech-story/19-heat-pump-temperature-lift-cop/assets/19-rating-boundaries.svg": "0dd5378019510bc72698ab1a5cd00dcff74a0f6280075dcc913004e5e5bc92a7",
+    "blog/08-tech-story/19-heat-pump-temperature-lift-cop/assets/19-refrigerant-tradeoff.svg": "b824cff6cb228e1ce1b3c5539c56d07389ba3acf5f43a7123d7f59b4a572b55f",
+    "blog/08-tech-story/19-heat-pump-temperature-lift-cop/assets/19-retrofit.webp": "9ba056f8f6add474620f61ba56c874a4fb964693a0b80b9a0941b7853157de7c",
+    "blog/08-tech-story/19-heat-pump-temperature-lift-cop/assets/19-scenario-map.svg": "300d9e7f7033ab484f3265b1e79a2c22d0b5d957dfd3d195a2cc3e7621016c34",
+    "blog/08-tech-story/19-heat-pump-temperature-lift-cop/assets/19-temperature-lift.svg": "2978022346aaa33af94d34e1d1bfba0bcec2f4fb9e77c3eda9fea8b8573d8e80",
+    "blog/08-tech-story/19-heat-pump-temperature-lift-cop/assets/19-transition-paths.svg": "5ae206f1be1cb47931c971ae97516bd9cef2599415a03fd1d1f14d8978fb18b0",
+    "blog/08-tech-story/19-heat-pump-temperature-lift-cop/assets/19-vapor-cycle.svg": "fb11cb35ce21185f65550ccc3069c23d97cac1b17d6a08adc7db801efc316aaf",
     "blog/09-investment-stories/01-technical-investing-price-indicators/assets/01-price-indicator-workbench.webp": "486b12c36cd4319a408b1706e006e969fcd9f76a9ba13691bde49613d1caba6e",
     "blog/09-investment-stories/01-technical-investing-price-indicators/assets/01-thumbnail-bg.webp": "486b12c36cd4319a408b1706e006e969fcd9f76a9ba13691bde49613d1caba6e",
     "blog/09-investment-stories/01-technical-investing-price-indicators/assets/02-indicator-panels.webp": "f7af37afbad715ca79873cb16abc1452a0e67ea090e4b94a5999c8c8682778b5",
@@ -4642,6 +4659,8 @@
     "landing/static/thumbnails/data-treasury-stock-not-cancelled.webp": "0a9e31bd737777c0814b7b488b5b2ae952671833c7efe51e956ebc3bf257c005",
     "landing/static/thumbnails/hd-hyundai-marine-engine-factory-clock-card.webp": "838da92c73733b2418e5c3cd3f057e4da0335486c8257eb4613f9eb567745f12",
     "landing/static/thumbnails/hd-hyundai-marine-engine-factory-clock.webp": "94b8b6e350c877da3de7aa313083d11850522f982ef2633c28fb5adf2a1cc25b",
+    "landing/static/thumbnails/heat-pump-temperature-lift-cop-card.webp": "6c4d254602562a0417a82eb795f56f77e875f7875bdb2a6d84aeeb8ae095b4c8",
+    "landing/static/thumbnails/heat-pump-temperature-lift-cop.webp": "dc0957fbcb7955432429f550cd97b242e111f67b795ec593f79c23fadf451cbf",
     "landing/static/thumbnails/investment-investor-flow-retail-institution-foreign-card.webp": "081103c7f22bb3e399c8d823a18fe6171eddacf85df323ec6c27d319ba2f6096",
     "landing/static/thumbnails/investment-investor-flow-retail-institution-foreign.webp": "63fd70387e29ff062e664ffbb5d3163ba37856fbf9651d80925f9e2198572c52",
     "landing/static/thumbnails/investment-price-vs-market-cap-card.webp": "672cb690d520b1908dad93fbf82df5b04db2ee8d9ff90e1c0d2897161ac6f391",
@@ -5718,6 +5737,14 @@
       "bytes": 264144,
       "path": "objects/sha256/0d/0dad0ac967325fd45ec0b289da6c649ab0c77fafe181d39423ae644b88568585.webp"
     },
+    "0dd5378019510bc72698ab1a5cd00dcff74a0f6280075dcc913004e5e5bc92a7": {
+      "bytes": 4051,
+      "colorCount": 21,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/0d/0dd5378019510bc72698ab1a5cd00dcff74a0f6280075dcc913004e5e5bc92a7.svg",
+      "textNodes": 18,
+      "viewBox": "0 0 1200 675"
+    },
     "0ddda7242ee9c394279bdbffa92c9aeaa71a3944db39f2338b2c49374b774667": {
       "bytes": 3674,
       "colorCount": 14,
@@ -6189,6 +6216,10 @@
     "151076e31bf14585f1eea6b78b0ddbf993485093deaeff9260ed8e5b9e26cc03": {
       "bytes": 226596,
       "path": "objects/sha256/15/151076e31bf14585f1eea6b78b0ddbf993485093deaeff9260ed8e5b9e26cc03.webp"
+    },
+    "151dbdf8846211563bdbf023721a5cd01cc08952030490234cf6a1a1a19cbbcd": {
+      "bytes": 256422,
+      "path": "objects/sha256/15/151dbdf8846211563bdbf023721a5cd01cc08952030490234cf6a1a1a19cbbcd.webp"
     },
     "154ef90bbc461e6243afd9523a919d145af8c282a057b8b83caed1a6300331b9": {
       "bytes": 4720,
@@ -7782,6 +7813,14 @@
       "bytes": 48272,
       "path": "objects/sha256/29/295ff3dd44e95581d01e997e06f1ff6865db4cc8db69afe208b94360c904d36b.webp"
     },
+    "2978022346aaa33af94d34e1d1bfba0bcec2f4fb9e77c3eda9fea8b8573d8e80": {
+      "bytes": 3695,
+      "colorCount": 16,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/29/2978022346aaa33af94d34e1d1bfba0bcec2f4fb9e77c3eda9fea8b8573d8e80.svg",
+      "textNodes": 15,
+      "viewBox": "0 0 1200 675"
+    },
     "29832aaceed39525be16e981719e0ef9dad374d1b3e6fb92afc9e2193b98ce9a": {
       "bytes": 87868,
       "path": "objects/sha256/29/29832aaceed39525be16e981719e0ef9dad374d1b3e6fb92afc9e2193b98ce9a.webp"
@@ -8181,6 +8220,14 @@
     "2ff89b3f89643f3d8a713e75169bf6e8b0c517cf2511d6baf7f86397bf968f59": {
       "bytes": 249996,
       "path": "objects/sha256/2f/2ff89b3f89643f3d8a713e75169bf6e8b0c517cf2511d6baf7f86397bf968f59.webp"
+    },
+    "300d9e7f7033ab484f3265b1e79a2c22d0b5d957dfd3d195a2cc3e7621016c34": {
+      "bytes": 3868,
+      "colorCount": 22,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/30/300d9e7f7033ab484f3265b1e79a2c22d0b5d957dfd3d195a2cc3e7621016c34.svg",
+      "textNodes": 19,
+      "viewBox": "0 0 1200 675"
     },
     "3012429e9d5df6349f7002065d051be35601799bff1ffbd4887c3b20ae36771d": {
       "bytes": 2345,
@@ -10314,6 +10361,14 @@
       "textNodes": 26,
       "viewBox": "0 0 800 420"
     },
+    "4a652221da4990598facde7f6ca5fc5bbc4e5c6c2cc116b8e1ca64dc07c629e1": {
+      "bytes": 3620,
+      "colorCount": 19,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/4a/4a652221da4990598facde7f6ca5fc5bbc4e5c6c2cc116b8e1ca64dc07c629e1.svg",
+      "textNodes": 12,
+      "viewBox": "0 0 1200 675"
+    },
     "4a6c80aeff1596bebdd8b1b2e3316a92db7b0b82c6a3b3d8391419072169a8be": {
       "bytes": 108708,
       "path": "objects/sha256/4a/4a6c80aeff1596bebdd8b1b2e3316a92db7b0b82c6a3b3d8391419072169a8be.webp"
@@ -11514,6 +11569,14 @@
       "textNodes": 36,
       "viewBox": "0 0 1200 720"
     },
+    "5ae206f1be1cb47931c971ae97516bd9cef2599415a03fd1d1f14d8978fb18b0": {
+      "bytes": 4079,
+      "colorCount": 26,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/5a/5ae206f1be1cb47931c971ae97516bd9cef2599415a03fd1d1f14d8978fb18b0.svg",
+      "textNodes": 14,
+      "viewBox": "0 0 1200 675"
+    },
     "5b47a453d9ada29a509210cdbf7e4a03098054dbef8b875b70046cb49fc1b7a1": {
       "bytes": 134186,
       "path": "objects/sha256/5b/5b47a453d9ada29a509210cdbf7e4a03098054dbef8b875b70046cb49fc1b7a1.webp"
@@ -11809,6 +11872,10 @@
       "path": "objects/sha256/5e/5e6b4f863cac8a7c9cfb1a54085bb98200b7ef874cf7ebbc1b374658f3c37d20.svg",
       "textNodes": 22,
       "viewBox": "0 0 1200 720"
+    },
+    "5e7386586b1124af49e488dd140975b4301085040b298a086de67cfbe9c100eb": {
+      "bytes": 231476,
+      "path": "objects/sha256/5e/5e7386586b1124af49e488dd140975b4301085040b298a086de67cfbe9c100eb.webp"
     },
     "5ea77a29895f8a8271ae8bacccd138a3e2c83151d312fdf6d41c664852de5f61": {
       "bytes": 6125,
@@ -12434,6 +12501,14 @@
       "bytes": 276674,
       "path": "objects/sha256/67/672502f24dc86a327caf0c9146f75d9a51505aa4d97723bec288f3599906215c.webp"
     },
+    "6726845c4be1e423c69549b891df1f42cae4ba1ba8bdb3a466855ad4ccc5141f": {
+      "bytes": 3210,
+      "colorCount": 17,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/67/6726845c4be1e423c69549b891df1f42cae4ba1ba8bdb3a466855ad4ccc5141f.svg",
+      "textNodes": 13,
+      "viewBox": "0 0 1200 675"
+    },
     "672cb690d520b1908dad93fbf82df5b04db2ee8d9ff90e1c0d2897161ac6f391": {
       "bytes": 47902,
       "path": "objects/sha256/67/672cb690d520b1908dad93fbf82df5b04db2ee8d9ff90e1c0d2897161ac6f391.webp"
@@ -12537,6 +12612,14 @@
       "path": "objects/sha256/68/68d6bfd968645e6be01e9a0229134ece2a61236480d5b2df46b150ca8baf21a3.svg",
       "textNodes": 45,
       "viewBox": "0 0 1200 820"
+    },
+    "6901da2c684db53f98a52db5249c7c6e110f7b667cfc98c1194b1a8cc293f670": {
+      "bytes": 3125,
+      "colorCount": 16,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/69/6901da2c684db53f98a52db5249c7c6e110f7b667cfc98c1194b1a8cc293f670.svg",
+      "textNodes": 12,
+      "viewBox": "0 0 1200 675"
     },
     "690762fee57f23bae917163fd5c8877cdc2e2bb377b631981ae4930209951845": {
       "bytes": 1785,
@@ -12734,6 +12817,10 @@
       "bytes": 67668,
       "path": "objects/sha256/6c/6c3ec3c6dfdcd042561559d7b009e52ed361e98267622872f2002931404d1c28.webp"
     },
+    "6c4d254602562a0417a82eb795f56f77e875f7875bdb2a6d84aeeb8ae095b4c8": {
+      "bytes": 96048,
+      "path": "objects/sha256/6c/6c4d254602562a0417a82eb795f56f77e875f7875bdb2a6d84aeeb8ae095b4c8.webp"
+    },
     "6c6f5d8d94fe0f97fcda270397ed9384d46074ecbe46dcc450e3e5ede4fb3e61": {
       "bytes": 96166,
       "path": "objects/sha256/6c/6c6f5d8d94fe0f97fcda270397ed9384d46074ecbe46dcc450e3e5ede4fb3e61.webp"
@@ -12777,6 +12864,10 @@
     "6ce3f58bc7b3b17b875b93113c73bea57627a60543d81c5d825dd8b68d459adc": {
       "bytes": 219158,
       "path": "objects/sha256/6c/6ce3f58bc7b3b17b875b93113c73bea57627a60543d81c5d825dd8b68d459adc.webp"
+    },
+    "6cf5178c018ec879e0495fab925ac709737839444495e7bf2bb0c602875ed92a": {
+      "bytes": 187448,
+      "path": "objects/sha256/6c/6cf5178c018ec879e0495fab925ac709737839444495e7bf2bb0c602875ed92a.webp"
     },
     "6d1571d4e4c86cf58a01aee4f2b58b71bfd86b374c1c56eb1cbf129f41144858": {
       "bytes": 84168,
@@ -14014,6 +14105,10 @@
       "textNodes": 12,
       "viewBox": "0 0 1000 540"
     },
+    "7dd713af198c617667590c0d7a53540dc36b18f40035bb4503c6ab9a6e6ebeb6": {
+      "bytes": 355666,
+      "path": "objects/sha256/7d/7dd713af198c617667590c0d7a53540dc36b18f40035bb4503c6ab9a6e6ebeb6.webp"
+    },
     "7dd92bca435d2181241d2847cf08a1a779ba02f0ca116098425265128b4144cf": {
       "bytes": 50890,
       "path": "objects/sha256/7d/7dd92bca435d2181241d2847cf08a1a779ba02f0ca116098425265128b4144cf.webp"
@@ -15122,6 +15217,14 @@
       "bytes": 304408,
       "path": "objects/sha256/8b/8bfd04d9d93bf96bc7f620e33bbe993f26c2623e0e5147c2562da64d671fbd4a.webp"
     },
+    "8c0001b5d83fbabefb30c8310ba81637b36637cfa63d5445f4dfa9a3b405da0c": {
+      "bytes": 4828,
+      "colorCount": 30,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/8c/8c0001b5d83fbabefb30c8310ba81637b36637cfa63d5445f4dfa9a3b405da0c.svg",
+      "textNodes": 23,
+      "viewBox": "0 0 1200 675"
+    },
     "8c19072e8325584723764ab491e6ded82c231e5b6380a5bfeaf4677c74db9429": {
       "bytes": 6406,
       "colorCount": 9,
@@ -16218,6 +16321,10 @@
       "textNodes": 38,
       "viewBox": "0 0 1200 720"
     },
+    "9ba056f8f6add474620f61ba56c874a4fb964693a0b80b9a0941b7853157de7c": {
+      "bytes": 249450,
+      "path": "objects/sha256/9b/9ba056f8f6add474620f61ba56c874a4fb964693a0b80b9a0941b7853157de7c.webp"
+    },
     "9ba239befdd37591205d66ba21bfa5503d2e29920e865f81fdf359b0099547ad": {
       "bytes": 4892,
       "colorCount": 15,
@@ -16993,6 +17100,14 @@
     "a5e5db7b5045ea352ab8fb0da9d8196df454c44488832bfaa85869051ecf475d": {
       "bytes": 55596,
       "path": "objects/sha256/a5/a5e5db7b5045ea352ab8fb0da9d8196df454c44488832bfaa85869051ecf475d.webp"
+    },
+    "a5f2f6abdaa2b52ddbed3963c42d8bf417af0d7d15c30d5b6aaa8189c79a703d": {
+      "bytes": 4333,
+      "colorCount": 31,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/a5/a5f2f6abdaa2b52ddbed3963c42d8bf417af0d7d15c30d5b6aaa8189c79a703d.svg",
+      "textNodes": 14,
+      "viewBox": "0 0 1200 675"
     },
     "a6092e4ba9409ed238f7dfd984a141a98f50eff91de89684a3da987368d6b503": {
       "bytes": 4895,
@@ -18425,6 +18540,14 @@
       "path": "objects/sha256/b8/b814768a4266d92f4777ebf59b17d57943f99a6ef9b8bb2246281d0d649482b8.svg",
       "textNodes": 19,
       "viewBox": "0 0 1080 740"
+    },
+    "b824cff6cb228e1ce1b3c5539c56d07389ba3acf5f43a7123d7f59b4a572b55f": {
+      "bytes": 4092,
+      "colorCount": 24,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/b8/b824cff6cb228e1ce1b3c5539c56d07389ba3acf5f43a7123d7f59b4a572b55f.svg",
+      "textNodes": 18,
+      "viewBox": "0 0 1200 675"
     },
     "b82c12a62e2221a1b9dd901f962d390f5e7fa7deecb13b0de2b5cad9270f7f40": {
       "bytes": 4388,
@@ -19946,6 +20069,14 @@
       "bytes": 242978,
       "path": "objects/sha256/cd/cd817dce0d95c3a8c80d56fba0e06d38d1b7e8f86482686160aa25ce25411b15.webp"
     },
+    "cdf2e0dca42af23961d8c50879e94c13ebded262e0eabf39e4f27f7838c17978": {
+      "bytes": 3591,
+      "colorCount": 19,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/cd/cdf2e0dca42af23961d8c50879e94c13ebded262e0eabf39e4f27f7838c17978.svg",
+      "textNodes": 10,
+      "viewBox": "0 0 1200 675"
+    },
     "ce22cce389c2d415a3f3ea23e82cb9b82234cbbb84d2f734ba722bfd2ca38a1e": {
       "bytes": 224598,
       "path": "objects/sha256/ce/ce22cce389c2d415a3f3ea23e82cb9b82234cbbb84d2f734ba722bfd2ca38a1e.webp"
@@ -20937,6 +21068,10 @@
       "path": "objects/sha256/db/dbfb396cee373c3dbf7e5b2bcdf506e1fa0a24215b39b551536e20d68706e667.svg",
       "textNodes": 55,
       "viewBox": "0 0 1200 720"
+    },
+    "dc0957fbcb7955432429f550cd97b242e111f67b795ec593f79c23fadf451cbf": {
+      "bytes": 70528,
+      "path": "objects/sha256/dc/dc0957fbcb7955432429f550cd97b242e111f67b795ec593f79c23fadf451cbf.webp"
     },
     "dc167c8a46537d6d31c0763e9ec53d6094add728d4875fce069c596ad75d669b": {
       "bytes": 3598,
@@ -23341,6 +23476,14 @@
     "fb05ef2a573fd8d39f4546b82505853c395ebefe9e46dacff0e5d3e4fd765c5a": {
       "bytes": 162492,
       "path": "objects/sha256/fb/fb05ef2a573fd8d39f4546b82505853c395ebefe9e46dacff0e5d3e4fd765c5a.webp"
+    },
+    "fb11cb35ce21185f65550ccc3069c23d97cac1b17d6a08adc7db801efc316aaf": {
+      "bytes": 4067,
+      "colorCount": 22,
+      "mediaType": "image/svg+xml",
+      "path": "objects/sha256/fb/fb11cb35ce21185f65550ccc3069c23d97cac1b17d6a08adc7db801efc316aaf.svg",
+      "textNodes": 13,
+      "viewBox": "0 0 1200 675"
     },
     "fb249b5d3ab79803e2cefeca46479f20c3b9c6f6c5be77fc7bc159e4825614c0": {
       "bytes": 2483,
@@ -31119,6 +31262,51 @@
         "blog/08-tech-story/18-perovskite-silicon-tandem/assets/18-spectrum-split.svg",
         "blog/08-tech-story/18-perovskite-silicon-tandem/assets/18-stress-test.png",
         "landing/static/thumbnails/perovskite-silicon-tandem-card.webp"
+      ]
+    },
+    "08-tech-story/19-heat-pump-temperature-lift-cop": {
+      "assets": {
+        "19-cycle-cutaway": "blog/08-tech-story/19-heat-pump-temperature-lift-cop/assets/19-cycle-cutaway.webp",
+        "19-defrost": "blog/08-tech-story/19-heat-pump-temperature-lift-cop/assets/19-defrost.webp",
+        "19-hero": "blog/08-tech-story/19-heat-pump-temperature-lift-cop/assets/19-hero.webp",
+        "19-industrial": "blog/08-tech-story/19-heat-pump-temperature-lift-cop/assets/19-industrial.webp",
+        "19-retrofit": "blog/08-tech-story/19-heat-pump-temperature-lift-cop/assets/19-retrofit.webp"
+      },
+      "card": "landing/static/thumbnails/heat-pump-temperature-lift-cop-card.webp",
+      "diagrams": {
+        "19-balance-point": "blog/08-tech-story/19-heat-pump-temperature-lift-cop/assets/19-balance-point.svg",
+        "19-company-evidence": "blog/08-tech-story/19-heat-pump-temperature-lift-cop/assets/19-company-evidence.svg",
+        "19-cost-carbon-threshold": "blog/08-tech-story/19-heat-pump-temperature-lift-cop/assets/19-cost-carbon-threshold.svg",
+        "19-defrost-timeline": "blog/08-tech-story/19-heat-pump-temperature-lift-cop/assets/19-defrost-timeline.svg",
+        "19-emitter-temperature": "blog/08-tech-story/19-heat-pump-temperature-lift-cop/assets/19-emitter-temperature.svg",
+        "19-energy-ledger": "blog/08-tech-story/19-heat-pump-temperature-lift-cop/assets/19-energy-ledger.svg",
+        "19-rating-boundaries": "blog/08-tech-story/19-heat-pump-temperature-lift-cop/assets/19-rating-boundaries.svg",
+        "19-refrigerant-tradeoff": "blog/08-tech-story/19-heat-pump-temperature-lift-cop/assets/19-refrigerant-tradeoff.svg",
+        "19-scenario-map": "blog/08-tech-story/19-heat-pump-temperature-lift-cop/assets/19-scenario-map.svg",
+        "19-temperature-lift": "blog/08-tech-story/19-heat-pump-temperature-lift-cop/assets/19-temperature-lift.svg",
+        "19-transition-paths": "blog/08-tech-story/19-heat-pump-temperature-lift-cop/assets/19-transition-paths.svg",
+        "19-vapor-cycle": "blog/08-tech-story/19-heat-pump-temperature-lift-cop/assets/19-vapor-cycle.svg"
+      },
+      "og": "landing/static/thumbnails/heat-pump-temperature-lift-cop.webp",
+      "staging": [
+        "blog/08-tech-story/19-heat-pump-temperature-lift-cop/assets/19-balance-point.svg",
+        "blog/08-tech-story/19-heat-pump-temperature-lift-cop/assets/19-company-evidence.svg",
+        "blog/08-tech-story/19-heat-pump-temperature-lift-cop/assets/19-cost-carbon-threshold.svg",
+        "blog/08-tech-story/19-heat-pump-temperature-lift-cop/assets/19-cycle-cutaway.webp",
+        "blog/08-tech-story/19-heat-pump-temperature-lift-cop/assets/19-defrost-timeline.svg",
+        "blog/08-tech-story/19-heat-pump-temperature-lift-cop/assets/19-defrost.webp",
+        "blog/08-tech-story/19-heat-pump-temperature-lift-cop/assets/19-emitter-temperature.svg",
+        "blog/08-tech-story/19-heat-pump-temperature-lift-cop/assets/19-energy-ledger.svg",
+        "blog/08-tech-story/19-heat-pump-temperature-lift-cop/assets/19-hero.webp",
+        "blog/08-tech-story/19-heat-pump-temperature-lift-cop/assets/19-industrial.webp",
+        "blog/08-tech-story/19-heat-pump-temperature-lift-cop/assets/19-rating-boundaries.svg",
+        "blog/08-tech-story/19-heat-pump-temperature-lift-cop/assets/19-refrigerant-tradeoff.svg",
+        "blog/08-tech-story/19-heat-pump-temperature-lift-cop/assets/19-retrofit.webp",
+        "blog/08-tech-story/19-heat-pump-temperature-lift-cop/assets/19-scenario-map.svg",
+        "blog/08-tech-story/19-heat-pump-temperature-lift-cop/assets/19-temperature-lift.svg",
+        "blog/08-tech-story/19-heat-pump-temperature-lift-cop/assets/19-transition-paths.svg",
+        "blog/08-tech-story/19-heat-pump-temperature-lift-cop/assets/19-vapor-cycle.svg",
+        "landing/static/thumbnails/heat-pump-temperature-lift-cop-card.webp"
       ]
     },
     "09-investment-stories/01-technical-investing-price-indicators": {
