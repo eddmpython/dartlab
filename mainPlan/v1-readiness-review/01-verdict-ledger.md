@@ -35,12 +35,12 @@ L4 소비자, ai, mcp. 아래층 결함이 위층 전부를 오염시키므로 �
 ### 세션 인계
 
 - 현재 계층: L0 core
-- 마지막 완료 항목: L0-09 `core/messaging.py` residency와 전송 경계
-- 진행 중인 단일 항목: L0-10 `core/observability/` residency와 관측 경계
-- 다음 첫 행동: `core/observability/`의 생성자와 실제 소비자를 전수 대조해 L0에 필요한
-  범용 계측 primitive와 운영·서버 정책을 분리하고, 제품 행동에서 오류 은폐와 중복 기록을
-  먼저 재현한다. 이번 항목에서는 `observability/`만 다루고 `parse/`와 기존
-  `silentSubstitute` baseline은 건드리지 않는다.
+- 마지막 완료 항목: L0-10 매핑 관측 writer와 후보 평가 경계
+- 진행 중인 단일 항목: L0-11 `core/parse/` residency와 parsing 경계
+- 다음 첫 행동: `core/parse/`의 생산 호출자와 소비자를 전수 대조해 L0에 남아야 할
+  provider 독립 parsing primitive인지 확인하고, 손상 입력 무음 대체, 중복 parser,
+  불필요한 materialization을 제품 행동에서 먼저 재현한다. 이번 항목에서는 `parse/`만
+  다루고 기존 core `silentSubstitute` baseline 6건은 건드리지 않는다.
 - 금지: L0 완료 판정 전 L1 이상 감사나 수정 착수
 
 ## L0 순차 안정화 원장 (2026-07-29)
@@ -494,6 +494,58 @@ lifecycle과 상위 소비자의 오류 정책까지 닫았다는 뜻은 아니�
    `messagingContext.hasDartKey`의 기존 무음 대체는 별도 L0 항목에서 다룬다. 다음 단일
    항목은 `core/observability/`이고 그 완료 전 `parse/`로 넘어가지 않는다. 따라서
    L0-09만 완료이며 **L0 전체는 미달**이다.
+
+### L0-10 매핑 관측 writer와 후보 평가 경계
+
+**상태: 완료.** L0에는 account SSOT가 생산하는 관측 append와 writer-reader 공통 lock만
+남기고, 후보 평가와 staging 소비는 `reference/mapping` 소유로 확정했다. 매핑 승격
+권한은 기존 review와 promote 절차에 그대로 남겼다. `core/parse`나 기존 core 무음 대체
+부채까지 닫았다는 뜻은 아니다.
+
+1. **범위와 실제 호출자.** 기존 `core/observability` 두 모듈의 생산 호출자는 DART
+   finance의 legacy pivot과 Arrow pivot 둘뿐이고, 유일한 소비자는
+   `reference/mapping/mappingLedgerCompact.py`였다. stable/public API 호출자는 0이며
+   호환 facade도 없었다. 독립 검토와 git 이력 대조 결과 범용 observability가 아니라
+   account mapping 학습 sidecar였으므로 writer는 `core/accounts/mappingLedger.py`,
+   신호와 strict reader는 `reference/mapping`이 맞다고 확정했다.
+2. **제품 결함 재현.** 기존 `readAll`은 정상 JSON, 손상 JSON, scalar `42` 세 줄에서
+   손상 줄을 조용히 버리고 scalar를 `list[dict]`에 섞었다. 후반 record가 잘못된 batch는
+   앞 record만 파일에 남길 수 있었다. `mappings`가 존재하지 않는 `ghost_snake`를
+   가리키면 `autoEligible=True`가 됐다. 표준계정 3,143개와 mappings 34,622개에서 신호
+   평가는 그룹당 `386.829 ms`, 10만 행 `readAll`은 peak `75.06 MiB`였다. ENV ON의
+   append OSError는 두 pivot 모두 warning으로 바꿔 데이터 성공처럼 반환했다.
+3. **근본 원인과 SSOT.** writer와 reader가 process lock 없이 같은 NDJSON을 다뤘고,
+   reader가 전체 파일 materialize와 광범위 JSON 오류 무시를 함께 수행했다. S3와 S5는
+   그룹마다 표준계정 전부를 다시 정규화하고 완전 Levenshtein을 돌렸다. S4는 결과
+   snakeId가 standardAccounts에 존재하는지 확인하지 않았다. 관측, 후보 판정, prod 승격의
+   세 권한이 잘못된 core 폴더에 섞여 있던 것이 공통 원인이었다.
+4. **수정과 테스트.** append는 파일을 열기 전에 batch 전체 schema와 JSON 직렬화를
+   검증하고, writer-reader 공통 `filelock` 뒤에 append, flush, fsync를 수행한다. lock
+   timeout은 `MappingLedgerLockError`로 전파한다. compactor는 경로와 줄 번호를 보존하는
+   strict iterator로 JSON object, 필수 문자열, timezone ISO8601, 양의 정수를 검증한다.
+   stockCode와 sjDiv는 set으로 집계한다. 평가기는 korName, NFD jamo, suffix, 정규화 mapping
+   index를 한 번 만들고 bounded Levenshtein만 계산한다. ghost S4는 별도 breakdown에
+   남기되 제안과 auto eligibility에서 hard reject한다. 두 pivot의 OSError catch를 제거했다.
+   옛 core 경로와 shim은 삭제하고 테스트도 실제 owner로 이동했다.
+5. **공개 행동, 정확성, 속도, 메모리.** ENV OFF는 append 0과 기존 pivot 결과를 그대로
+   보존한다. ENV ON 저장 실패는 legacy와 Arrow 모두 원인 OSError를 호출자에게 전달한다.
+   10만 행, `15.068 MiB` ledger를 strict streaming group할 때 `2.379 s`, tracemalloc
+   peak `0.038 MiB`였고 결과는 한 그룹으로 정확히 집계됐다. 재사용 index 생성은
+   `51.086 ms`, 이후 평가는 그룹당 `0.400457 ms`로 기존보다 약 966배 빨랐다. comparable
+   10만 행 Python 추적 peak는 약 1,975배 줄었다.
+6. **Guard와 회귀.** writer, 신호, compactor, 두 pivot 오류 경계 `67 passed`, DART
+   pivot parity와 account SSOT golden `40 passed`, Skill artifact 회귀 `35 passed`다.
+   새 세 모듈 docstring 4-section strict, Ruff, formatter, 변경 모듈 Pyright 0 errors,
+   Bandit, camelCase, diff whitespace가 통과했다. `checkSilentFail`은 1,707파일 신규
+   위반 0, `silentSubstitute`는 baseline 안 통과했고 옛 `readAll` 항목을 삭제했다.
+   공식 Guard는 1,767파일, 7/7 규칙과 cycle, architecture, folder mirror, gather,
+   provider, public API 여섯 gate를 모두 통과했다. `coreBoundary` 잔여는
+   `observability/`, `parse/` 두 건에서 `parse/` 한 건으로 줄었다.
+7. **남은 부채와 판정.** prod `accountMappings.json`의 기존 ghost mapping 자체를
+   정리한 것은 아니며 이번 변경은 새 ghost 제안만 차단한다. staging parquet의 write
+   transaction과 review/promote 전체 안정화는 해당 reference 소유 항목에서 다시 본다.
+   다음 단일 항목은 `core/parse/`이고 그 완료 전 기존 core 무음 대체 6건으로 넘어가지
+   않는다. 따라서 L0-10만 완료이며 **L0 전체는 미달**이다.
 
 ## 정량 판정 (2026-07-27 실측)
 

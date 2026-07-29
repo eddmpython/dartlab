@@ -15,6 +15,7 @@ import polars as pl
 import pytest
 
 from dartlab.providers.dart.finance import pivot as pivotMod
+from dartlab.providers.dart.finance import pivotArrow as pivotArrowMod
 
 pytestmark = pytest.mark.unit
 
@@ -52,7 +53,7 @@ def test_env_off_no_ledger_call(monkeypatch: pytest.MonkeyPatch) -> None:
     df = _fixtureFrame()
     with (
         patch.object(pivotMod.AccountMapper, "get", return_value=_StubMapper()),
-        patch.object(pivotMod.mapping_ledger, "append") as appendMock,
+        patch.object(pivotMod.mappingLedger, "append") as appendMock,
     ):
         result = pivotMod._pivotToSeries(df, ["2024-Q1"], stockCode="005930")
 
@@ -95,3 +96,38 @@ def test_pivot_result_identical_with_and_without_ledger(monkeypatch: pytest.Monk
         onResult = pivotMod._pivotToSeries(df, ["2024-Q1"], stockCode="005930")
 
     assert offResult == onResult
+
+
+def test_env_on_propagates_ledger_write_failure(monkeypatch: pytest.MonkeyPatch) -> None:
+    """명시적으로 켠 관측 저장 실패를 데이터 성공으로 위장하지 않는다."""
+    monkeypatch.setenv("DARTLAB_MAPPING_LEDGER", "1")
+    frame = _fixtureFrame()
+
+    with (
+        patch.object(pivotMod.AccountMapper, "get", return_value=_StubMapper()),
+        patch.object(pivotMod.mappingLedger, "append", side_effect=OSError("disk full")),
+        pytest.raises(OSError, match="disk full"),
+    ):
+        pivotMod._pivotToSeries(frame, ["2024-Q1"], stockCode="005930")
+
+
+def test_arrow_env_on_propagates_ledger_write_failure(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Arrow 경로도 명시적으로 켠 관측 실패를 삼키지 않는다."""
+    monkeypatch.setenv("DARTLAB_MAPPING_LEDGER", "1")
+    attached = (pl.DataFrame(), {}, 0, [("", "미매핑계정", "BS", 1)])
+
+    with (
+        patch.object(pivotArrowMod, "_attachMappingColumns", return_value=attached),
+        patch.object(pivotArrowMod, "_buildPeriodKeyColumn", return_value=pl.DataFrame()),
+        patch.object(pivotArrowMod, "_runDuckdbPivot", return_value=pl.DataFrame()),
+        patch.object(pivotArrowMod.mappingLedger, "append", side_effect=OSError("disk full")),
+        pytest.raises(OSError, match="disk full"),
+    ):
+        pivotArrowMod.pivotToSeriesArrow(
+            pl.DataFrame(),
+            [],
+            accountIdPriority=lambda _: 3,
+            fallbackSnakeId=lambda _: None,
+            ifrsTopLevelIds=frozenset(),
+            stockCode="005930",
+        )

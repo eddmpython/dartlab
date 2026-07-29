@@ -34,7 +34,7 @@ from typing import Any
 
 import polars as pl
 
-from dartlab.core.observability import mapping_ledger
+from dartlab.core.accounts import mappingLedger
 from dartlab.core.polarsUtil import isEmptyDf
 from dartlab.core.utils.ordering import sortSeries
 from dartlab.core.utils.period import extractYear, formatPeriod, parsePeriod
@@ -557,6 +557,9 @@ def _pivotToSeries(
 
     Legacy (구 Python iter_rows 본체) 는 ``_pivotToSeriesLegacy`` 로 보존 —
     parity test 와 pyodide WASM fallback 에서 사용.
+
+    Raises:
+        OSError: mapping ledger를 명시적으로 켠 상태에서 관측 저장이 실패한 경우.
     """
     # pyodide WASM: DuckDB 미가용 → legacy fallback.
     import sys
@@ -672,7 +675,7 @@ def _pivotToSeriesLegacy(
             _log.info("  표준화 후보: %s (%d회)", acct, cnt)
 
     # ENV gated — ledger append (옵트인). ENV OFF 기본 = no-op.
-    if ledgerKeys and mapping_ledger.isEnabled():
+    if ledgerKeys and mappingLedger.isEnabled():
         records = [
             {
                 "accountId": aId,
@@ -682,10 +685,7 @@ def _pivotToSeriesLegacy(
             }
             for (aId, aNm, sj), cnt in ledgerKeys.items()
         ]
-        try:
-            mapping_ledger.append(records, stockCode=stockCode)
-        except OSError as exc:  # pragma: no cover - 디스크/권한 실패 시 prod 영향 0
-            _log.warning("mapping_ledger append 실패: %s", exc)
+        mappingLedger.append(records, stockCode=stockCode)
 
     _fillSnakeIdGaps(result)
     sortSeries(result)

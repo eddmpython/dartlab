@@ -1,4 +1,4 @@
-"""mappingLedgerCompact CLI — ndjson → 평가된 parquet 단위 테스트."""
+"""mappingLedgerCompact CLI의 strict NDJSON 소비와 평가 parquet 단위 테스트."""
 
 from __future__ import annotations
 
@@ -50,6 +50,19 @@ def _writeNdjson(path: Path, rows: list[dict]) -> None:
     with path.open("w", encoding="utf-8") as f:
         for r in rows:
             f.write(json.dumps(r, ensure_ascii=False) + "\n")
+
+
+def _validRow(**overrides) -> dict:
+    row = {
+        "observedAt": "2026-05-15T00:00:00+00:00",
+        "stockCode": "005930",
+        "accountId": "-표준계정코드 미사용-",
+        "accountNm": "기타의금융자산",
+        "sjDiv": "BS",
+        "occurrenceCount": 1,
+    }
+    row.update(overrides)
+    return row
 
 
 def test_compact_groups_and_evaluates(compactMod, tmp_path: Path, fakeMappingsFile: Path) -> None:
@@ -151,3 +164,78 @@ def test_compact_raises_when_mappings_missing(compactMod, tmp_path: Path) -> Non
 
     with pytest.raises(FileNotFoundError):
         compactMod.compact(raw, out, missing)
+
+
+def test_groupRows_accepts_one_pass_iterator(compactMod) -> None:
+    rows = (_validRow(stockCode=code) for code in ["005930", "000660"])
+
+    grouped = compactMod._groupRows(rows)
+
+    assert grouped[("-표준계정코드 미사용-", "기타의금융자산")]["occurrenceCount"] == 2
+
+
+def test_compact_raises_when_raw_ledger_missing(
+    compactMod,
+    tmp_path: Path,
+    fakeMappingsFile: Path,
+) -> None:
+    missing = tmp_path / "missing.ndjson"
+
+    with pytest.raises(FileNotFoundError, match="mapping ledger 부재"):
+        compactMod.compact(missing, tmp_path / "out.parquet", fakeMappingsFile)
+
+
+def test_compact_reports_malformed_json_line(
+    compactMod,
+    tmp_path: Path,
+    fakeMappingsFile: Path,
+) -> None:
+    raw = tmp_path / "malformed.ndjson"
+    raw.write_text(json.dumps(_validRow(), ensure_ascii=False) + "\n{broken\n", encoding="utf-8")
+    out = tmp_path / "out.parquet"
+
+    with pytest.raises(ValueError, match=r"malformed\.ndjson:2: invalid JSON"):
+        compactMod.compact(raw, out, fakeMappingsFile)
+
+    assert not out.exists()
+
+
+@pytest.mark.parametrize(
+    "payload,message",
+    [
+        ("42\n", "ledger row must be a JSON object"),
+        (
+            json.dumps(_validRow(occurrenceCount=0), ensure_ascii=False) + "\n",
+            "occurrenceCount must be greater than zero",
+        ),
+        (
+            json.dumps(_validRow(observedAt="not-a-date"), ensure_ascii=False) + "\n",
+            "observedAt must be ISO8601",
+        ),
+    ],
+)
+def test_compact_rejects_invalid_row_schema(
+    compactMod,
+    tmp_path: Path,
+    fakeMappingsFile: Path,
+    payload: str,
+    message: str,
+) -> None:
+    raw = tmp_path / "invalid.ndjson"
+    raw.write_text(payload, encoding="utf-8")
+
+    with pytest.raises(ValueError, match=message):
+        compactMod.compact(raw, tmp_path / "out.parquet", fakeMappingsFile)
+
+
+def test_compact_rejects_invalid_mappings_schema(compactMod, tmp_path: Path) -> None:
+    mappingsPath = tmp_path / "invalid-mappings.json"
+    mappingsPath.write_text(
+        json.dumps({"standardAccounts": [], "mappings": {}}, ensure_ascii=False),
+        encoding="utf-8",
+    )
+    raw = tmp_path / "raw.ndjson"
+    raw.write_text("", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="standardAccounts must be an object"):
+        compactMod.compact(raw, tmp_path / "out.parquet", mappingsPath)

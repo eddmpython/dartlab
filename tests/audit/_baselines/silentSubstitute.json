@@ -100,7 +100,6 @@
     "src/dartlab/core/listingResolver.py::_discover",
     "src/dartlab/core/loaders.py::_discoverLoaders",
     "src/dartlab/core/messagingContext.py::hasDartKey",
-    "src/dartlab/core/observability/mapping_ledger.py::readAll",
     "src/dartlab/core/panelTableAccessor.py::_discover",
     "src/dartlab/core/progress.py::track",
     "src/dartlab/core/providers/dataCredentials.py::_fromSecretStore",

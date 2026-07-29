@@ -1,4 +1,4 @@
-"""mapping_signals — 5 신호 평가 단위 테스트.
+"""mappingSignals 5 신호 평가 단위 테스트.
 
 사용자 보고 예시 5 계정을 fixture 로 사용해, autoEligible 합성이
 실제 자동 적용 가능 케이스만 통과시키고 오타·noise 는 거부하는지 검증.
@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import pytest
 
-from dartlab.core.observability import mapping_signals as ms
+from dartlab.reference.mapping import mappingSignals as ms
 
 pytestmark = pytest.mark.unit
 
@@ -176,6 +176,46 @@ class TestEvaluate:
         assert r.suggestedSnakeId == "total_assets"
         assert r.s4IfrsSynonymSnakeId == "total_assets"
         assert r.autoEligible is True
+        assert r.confidence == 1.0
+
+    def test_ghost_mapping_is_hard_rejected(self) -> None:
+        r = ms.evaluate(
+            accountId="",
+            accountNm="알수없는계정",
+            occurrenceCount=5,
+            stockCodes=["005930", "000660", "035720"],
+            standardAccounts=_STANDARD_ACCOUNTS,
+            mappings={"알수없는계정": "ghost_snake"},
+        )
+
+        assert r.s4IfrsSynonymSnakeId is None
+        assert r.s4GhostSnakeId == "ghost_snake"
+        assert r.suggestedSnakeId is None
+        assert r.autoEligible is False
+        assert r.breakdown()["s4GhostSnake"] == "ghost_snake"
+
+    def test_prebuilt_index_reuses_same_results(self) -> None:
+        index = ms.buildSignalIndex(_STANDARD_ACCOUNTS, _MAPPINGS)
+
+        indexed = ms.evaluate(
+            accountId="",
+            accountNm="자산 총계",
+            occurrenceCount=5,
+            stockCodes=["005930", "000660", "035720"],
+            standardAccounts=_STANDARD_ACCOUNTS,
+            mappings=_MAPPINGS,
+            signalIndex=index,
+        )
+        direct = ms.evaluate(
+            accountId="",
+            accountNm="자산 총계",
+            occurrenceCount=5,
+            stockCodes=["005930", "000660", "035720"],
+            standardAccounts=_STANDARD_ACCOUNTS,
+            mappings=_MAPPINGS,
+        )
+
+        assert indexed == direct
 
     def test_breakdown_dict(self) -> None:
         r = ms.evaluate(

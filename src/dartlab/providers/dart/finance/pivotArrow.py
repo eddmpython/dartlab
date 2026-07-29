@@ -23,7 +23,7 @@ from typing import TYPE_CHECKING
 
 import polars as pl
 
-from dartlab.core.observability import mapping_ledger
+from dartlab.core.accounts import mappingLedger
 from dartlab.core.utils.period import formatPeriod
 from dartlab.providers.dart.finance.mapper import AccountMapper
 
@@ -199,7 +199,7 @@ def pivotToSeriesArrow(
         ``_fillSnakeIdGaps`` / ``sortSeries`` post-process 는 caller 가 수행.
 
     Raises:
-        없음.
+        OSError: mapping ledger를 명시적으로 켠 상태에서 관측 저장이 실패한 경우.
 
     Example:
         >>> pivotToSeriesArrow(df, ["2024", "2023"], ...)  # doctest: +SKIP
@@ -257,14 +257,11 @@ def pivotToSeriesArrow(
             _log.info("  표준화 후보: %s (%d회)", acct, cnt)
 
     # ENV gated ledger
-    if ledgerEntries and mapping_ledger.isEnabled():
+    if ledgerEntries and mappingLedger.isEnabled():
         records = [
             {"accountId": aId, "accountNm": aNm, "sjDiv": sj, "occurrenceCount": cnt}
             for (aId, aNm, sj, cnt) in ledgerEntries
         ]
-        try:
-            mapping_ledger.append(records, stockCode=stockCode)
-        except OSError as exc:  # pragma: no cover
-            _log.warning("mapping_ledger append 실패: %s", exc)
+        mappingLedger.append(records, stockCode=stockCode)
 
     return result

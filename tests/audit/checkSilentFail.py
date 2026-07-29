@@ -46,7 +46,6 @@ _ALLOWLIST_FILES: frozenset[str] = frozenset(
         "server/api/company.py",
         # 런타임 데이터 캐시 (HF/API 응답 파일) — 없으면 빈 결과가 정상
         "synth/bottomUpBeta.py",  # peer 추출 헬퍼 — finance.parquet 없으면 peer 0 정상
-        "core/observability/mapping_ledger.py",  # 옵트인 ledger — 파일 없으면 비어있는게 정상
         "gather/domains/naver.py",
         "gather/domains/yahooChart.py",
         "providers/dart/openapi/allFilingsCollector.py",

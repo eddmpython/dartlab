@@ -228,8 +228,8 @@ prod JSON 을 직접
 
 ### 안전 자동학습의 정의 (5 신호)
 
-"자동 적용 가능" 의 객관 기준은 `mapping_signals.evaluate` 의 5 신호 모두
-통과 (`autoEligible: true`):
+"자동 제안 가능" 의 객관 기준은 `mappingSignals.evaluate` 의
+`S1 ∧ S2 ∧ (S3 ∨ 유효 S4) ∧ ¬S5` (`autoEligible: true`):
 
 | 신호 | 기준 | 거부 시그널 |
 |---|---|---|
