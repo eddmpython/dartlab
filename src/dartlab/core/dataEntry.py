@@ -1,4 +1,4 @@
-"""DataEntry / ColumnMeta — dartlab 데이터 레지스트리 최소 단위 (L0 dataclass).
+"""DataEntry — dartlab 데이터 레지스트리 최소 단위 (L0 dataclass).
 
 원래 core/registry.py 의 일부였으나 registry ↔ _entries 양방향 import 로
 circular 발생. dataclass 만 별도 모듈로 분리 → _entries 가 본 모듈만 import,
@@ -9,15 +9,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Any
-
-
-@dataclass(frozen=True)
-class ColumnMeta:
-    """DataFrame 컬럼 메타데이터 (LLM 컨텍스트용)."""
-
-    name: str
-    description: str
-    unit: str = ""
 
 
 @dataclass(frozen=True)
@@ -51,13 +42,3 @@ class DataEntry:
 
     requires: str | None = None
     unit: str = "백만원"
-    columns: tuple[ColumnMeta, ...] = ()
-    analysisHints: tuple[str, ...] = ()
-    relatedModules: tuple[str, ...] = ()
-    maxRows: int = 30
-
-    aiExposed: bool = True
-    aiCategory: str = "data"
-    aiHint: str = ""
-    aiQuestionTypes: tuple[str, ...] = ()
-    aiKeywords: tuple[str, ...] = ()

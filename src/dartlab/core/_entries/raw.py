@@ -5,9 +5,9 @@
 
 from __future__ import annotations
 
-from dartlab.core.dataEntry import ColumnMeta, DataEntry  # noqa: F401
+from dartlab.core.dataEntry import DataEntry
 
-_RAW_ENTRIES: list[DataEntry] = [
+_RAW_ENTRIES: tuple[DataEntry, ...] = (
     # raw — 원본 parquet
     # ═══════════════════════════════════════════════════════
     DataEntry(
@@ -27,4 +27,4 @@ _RAW_ENTRIES: list[DataEntry] = [
         requires="report",
     ),
     # ═══════════════════════════════════════════════════════
-]
+)

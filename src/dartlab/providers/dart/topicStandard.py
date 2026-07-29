@@ -36,6 +36,46 @@ import re
 # notes sub-topic key 패턴 — `{parent}_NN_slug` (NN = zero-padded 2 자리).
 _NOTES_SUB_TOPIC_RE = re.compile(r"^(?:financialNotes|consolidatedNotes)_(?P<num>\d{2})_[A-Za-z]\w*$")
 
+# Company topic 단축어 → provider canonical topic.
+# 레지스트리 엔트리 alias와 달리 raw panel topic 및 notes dispatch까지 해소하므로
+# DART topic owner가 소유한다.
+TOPIC_ALIASES: dict[str, str] = {
+    "articles": "articlesOfIncorporation",
+    "board": "boardOfDirectors",
+    "capital": "shareCapital",
+    "cashflow": "CF",
+    "cashflows": "CF",
+    "cf": "CF",
+    "comprehensiveincome": "CIS",
+    "contingent": "contingentLiability",
+    "control": "internalControl",
+    "cost": "costByNature",
+    "directors": "boardOfDirectors",
+    "equitychanges": "SCE",
+    "history": "companyHistory",
+    "holder": "majorHolder",
+    "holders": "holderOverview",
+    "incomestatement": "IS",
+    "investment": "investmentInOther",
+    "is": "IS",
+    "material": "rawMaterial",
+    "meeting": "shareholderMeeting",
+    "overview": "companyOverview",
+    "pay": "executivePay",
+    "pl": "IS",
+    "product": "productService",
+    "profitloss": "IS",
+    "relatedParty": "relatedPartyTx",
+    "risk": "riskDerivative",
+    "sales": "salesOrder",
+    "summary": "fsSummary",
+    "tangible": "tangibleAsset",
+    "bs": "BS",
+    "balancesheet": "BS",
+    "cis": "CIS",
+    "sce": "SCE",
+}
+
 # ── chapter 1 ── topic → canonical chapter (Roman)
 # DART 사업보고서 최신 표준 위치. 분기보고서가 stub 을 다른 chapter 에 두는 케이스가
 # 있어 데이터 분포 (mode/first-seen) 추론 불가 — 명시 매핑이 단일 진실값.
@@ -216,6 +256,25 @@ TOPIC_DISPLAY_LABEL: dict[str, str] = {
     "rndDetail": "연구개발 상세",
     "subsidiaryDetail": "종속회사 상세",
 }
+
+
+def resolveTopicAlias(topic: str) -> str:
+    """Company topic 단축어를 DART canonical topic으로 해소한다.
+
+    Args:
+        topic: 사용자가 전달한 canonical topic 또는 단축어.
+
+    Returns:
+        등록된 단축어면 canonical topic, 아니면 입력 그대로.
+
+    Raises:
+        없음.
+
+    Example:
+        >>> resolveTopicAlias("board")
+        'boardOfDirectors'
+    """
+    return TOPIC_ALIASES.get(topic, topic)
 
 
 # ── chapter 3 ── Roman chapter → DART 표준 한글 풀네임

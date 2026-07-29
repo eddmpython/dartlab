@@ -9,9 +9,9 @@ executive/audit/boardOfDirectors/sanction/relatedPartyTx/… ~35종)은 panel(c.
 
 from __future__ import annotations
 
-from dartlab.core.dataEntry import ColumnMeta, DataEntry  # noqa: F401
+from dartlab.core.dataEntry import DataEntry
 
-_REPORT_ENTRIES: list[DataEntry] = [
+_REPORT_ENTRIES: tuple[DataEntry, ...] = (
     # ═══════════════════════════════════════════════════════
     # report — 재무제표 (finance XBRL — docs 농장 은퇴 후 단일 소스)
     # ═══════════════════════════════════════════════════════
@@ -24,15 +24,6 @@ _REPORT_ENTRIES: list[DataEntry] = [
         extractor=None,
         requires="finance",
         unit="원",
-        columns=(ColumnMeta("항목", "K-IFRS 재무상태표 계정과목 (snakeId → 한글명)"),),
-        analysisHints=(
-            "부채비율(부채총계/자본총계) 추이",
-            "유동비율(유동자산/유동부채) 확인",
-            "자산 구성 변화 (유형 vs 무형 비중)",
-            "IFRS 16 리스부채 영향 고려",
-        ),
-        relatedModules=("IS", "CF"),
-        maxRows=50,
     ),
     DataEntry(
         name="IS",
@@ -43,15 +34,6 @@ _REPORT_ENTRIES: list[DataEntry] = [
         extractor=None,
         requires="finance",
         unit="원",
-        columns=(ColumnMeta("항목", "K-IFRS 손익계산서 계정과목 (snakeId → 한글명)"),),
-        analysisHints=(
-            "매출 성장률(YoY) 계산",
-            "영업이익률(영업이익/매출액) 추이",
-            "순이익률(당기순이익/매출액) 추이",
-            "매출원가율 변동 확인",
-        ),
-        relatedModules=("BS", "CF"),
-        maxRows=50,
     ),
     DataEntry(
         name="CF",
@@ -62,14 +44,5 @@ _REPORT_ENTRIES: list[DataEntry] = [
         extractor=None,
         requires="finance",
         unit="원",
-        columns=(ColumnMeta("항목", "K-IFRS 현금흐름표 계정과목 (snakeId → 한글명)"),),
-        analysisHints=(
-            "영업활동CF가 양수인지 확인 (음수 = 위험)",
-            "FCF = 영업활동CF - 자본적지출",
-            "재무활동CF로 차입/상환 패턴 파악",
-            "영업CF > 순이익이면 이익의 질 양호",
-        ),
-        relatedModules=("BS", "IS"),
-        maxRows=50,
     ),
-]
+)

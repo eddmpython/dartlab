@@ -28,9 +28,9 @@ pytestmark = [pytest.mark.integration, requires_samsung]
 
 def _registeredTopics() -> list[str]:
     """registry 에 등록된 report/disclosure topic 전수."""
-    from dartlab.core.registry import getModuleEntries
+    from dartlab.providers.dart.company import _getModuleEntries
 
-    return sorted(e.funcName for e in getModuleEntries() if e.category in ("report", "disclosure"))
+    return sorted(e.funcName for e in _getModuleEntries() if e.category in ("report", "disclosure"))
 
 
 REGISTERED_TOPICS = _registeredTopics()

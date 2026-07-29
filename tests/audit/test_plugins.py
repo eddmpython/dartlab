@@ -183,7 +183,6 @@ class TestPluginContext:
             category="plugin",
             dataType="dataframe",
             description="PluginContext 테스트",
-            aiExposed=True,
         )
         ctx = PluginContext()
         try:

@@ -408,8 +408,7 @@ def isStrongTopic(topic: str) -> bool:
         TargetMarkets:
             - KR (DART). US 후속.
     """
-    from dartlab.core.registry import getModuleEntries
-    from dartlab.providers.dart.company import _resolveTopic
+    from dartlab.providers.dart.company import _getModuleEntries, _resolveTopic
     from dartlab.providers.dart.notes import _NOTES_DISPATCH
 
     t = _resolveTopic(topic)
@@ -418,4 +417,4 @@ def isStrongTopic(topic: str) -> bool:
     # report/notes/finance category = 정규화된 강한 소스 (dividend 등 정형 공시). disclosure(서술
     # docs)·canonicalKey·한글 섹션명은 raw 공시(panel 본분) → False.
     strongCats = {"finance", "report", "notes"}
-    return any(e.name == t and getattr(e, "category", None) in strongCats for e in getModuleEntries())
+    return any(e.name == t and getattr(e, "category", None) in strongCats for e in _getModuleEntries())

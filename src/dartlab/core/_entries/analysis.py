@@ -5,9 +5,9 @@
 
 from __future__ import annotations
 
-from dartlab.core.dataEntry import ColumnMeta, DataEntry  # noqa: F401
+from dartlab.core.dataEntry import DataEntry
 
-_ANALYSIS_ENTRIES: list[DataEntry] = [
+_ANALYSIS_ENTRIES: tuple[DataEntry, ...] = (
     # analysis — L2 분석 엔진
     # ═══════════════════════════════════════════════════════
     DataEntry(
@@ -49,10 +49,6 @@ _ANALYSIS_ENTRIES: list[DataEntry] = [
         dataType="dataframe",
         description="공시 텍스트 키워드 빈도 추이 (topic × period × keyword). 54개 내장 키워드 또는 사용자 지정.",
         requires="panel",
-        aiCategory="analysis",
-        aiHint="키워드 빈도 변화를 추적하여 기업의 전략·리스크 방향 변화를 감지",
-        aiQuestionTypes=("리스크", "성장성", "공시"),
-        aiKeywords=("키워드", "트렌드", "빈도", "변화"),
     ),
     DataEntry(
         name="news",
@@ -60,9 +56,5 @@ _ANALYSIS_ENTRIES: list[DataEntry] = [
         category="analysis",
         dataType="dataframe",
         description="최근 뉴스 수집 (KR: Google News 한국어, US: Google News 영어). 날짜/제목/출처/URL.",
-        aiCategory="data",
-        aiHint="최근 뉴스 헤드라인으로 시장 분위기와 이벤트 파악",
-        aiQuestionTypes=("종합", "리스크"),
-        aiKeywords=("뉴스", "기사", "news", "최근"),
     ),
-]
+)

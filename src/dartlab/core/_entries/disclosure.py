@@ -5,8 +5,8 @@
 
 from __future__ import annotations
 
-from dartlab.core.dataEntry import ColumnMeta, DataEntry  # noqa: F401
+from dartlab.core.dataEntry import DataEntry
 
 # docs 농장 은퇴 — disclosure 서술형 공시(business/companyOverview/mdna/rawMaterial/sections)는
 # panel(c.panel raw 공시 검색)이 단일 표면. 정형 docs entry 전부 제거(§영구소실).
-_DISCLOSURE_ENTRIES: list[DataEntry] = []
+_DISCLOSURE_ENTRIES: tuple[DataEntry, ...] = ()

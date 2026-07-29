@@ -1,7 +1,7 @@
-"""레지스트리 DataEntry 카탈로그 — 카테고리별 분할 (Cut 8).
+"""L0 DataEntry 메타데이터 카탈로그 — 카테고리별 분할.
 
-단일 진실의 원천은 각 카테고리 모듈의 list. 본 ``__init__`` 은 합산만 한다.
-로직은 ``core/registry.py``.
+단일 진실의 원천은 각 카테고리 모듈의 불변 tuple이다. 본 모듈은 합산만 하며
+Company/API 라우팅과 런타임 변경 로직은 소유하지 않는다.
 """
 
 from __future__ import annotations
@@ -14,41 +14,11 @@ from dartlab.core._entries.raw import _RAW_ENTRIES
 from dartlab.core._entries.report import _REPORT_ENTRIES
 from dartlab.core.dataEntry import DataEntry
 
-_ENTRIES: list[DataEntry] = [
+_ENTRIES: tuple[DataEntry, ...] = (
     *_FINANCE_ENTRIES,
     *_REPORT_ENTRIES,
     *_DISCLOSURE_ENTRIES,
     *_NOTES_ENTRIES,
     *_RAW_ENTRIES,
     *_ANALYSIS_ENTRIES,
-]
-
-# Q1.4 (2026-04-21): business alias 를 entry 별로 쪼개지 않고 단일 맵으로 관리.
-# 이 맵은 registry 인덱스 빌드 시 해당 entry 의 `aliases` 튜플과 병합됨.
-# 새 alias 추가 = 이 dict 한 줄 추가. DataEntry 선언 수정 불필요.
-#
-# 과거 company.py 의 하드코딩 dict `_TOPIC_ALIASES` 에서 이관 (26개 중 22개).
-# 나머지 4개 (intangible/stock/treasury/invested → intangibleAsset/stockTotal/
-# treasuryStock/investedCompany) 는 target entry 가 없어 제외.
-_BUSINESS_ALIASES: dict[str, tuple[str, ...]] = {
-    "boardOfDirectors": ("board", "directors"),
-    "executivePay": ("pay",),
-    "majorHolder": ("holder",),
-    "holderOverview": ("holders",),
-    "shareholderMeeting": ("meeting",),
-    "contingentLiability": ("contingent",),
-    "relatedPartyTx": ("relatedParty",),
-    "riskDerivative": ("risk",),
-    "internalControl": ("control",),
-    "tangibleAsset": ("tangible",),
-    "rawMaterial": ("material",),
-    "costByNature": ("cost",),
-    "salesOrder": ("sales",),
-    "productService": ("product",),
-    "investmentInOther": ("investment",),
-    "companyOverview": ("overview",),
-    "companyHistory": ("history",),
-    "articlesOfIncorporation": ("articles",),
-    "shareCapital": ("capital",),
-    "fsSummary": ("summary",),
-}
+)

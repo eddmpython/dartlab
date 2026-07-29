@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Any
 
 from dartlab.core.logger import getLogger
 from dartlab.core.memory import BoundedCache
-from dartlab.core.registry import getNotesEntries
+from dartlab.core.registry import getEntries
 
 _log = getLogger(__name__)
 
@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 # `category="notes"` 엔트리 중 `notesDispatch` + `extractor` 가 설정된 것만 포함.
 def _buildDispatch() -> "OrderedDict[str, tuple[str, str, Any]]":
     dispatch: OrderedDict[str, tuple[str, str, Any]] = OrderedDict()
-    for e in getNotesEntries():
+    for e in getEntries(category="notes"):
         if e.notesDispatch is None or e.extractor is None:
             continue
         # "notes.receivables" → "receivables" bare name
@@ -60,6 +60,9 @@ class Notes:
         - notes: 파싱된 정규화 DataFrame. AI/코드 분석용 최적.
         - show: 원문 마크다운. 사용자 원문 확인용.
     """
+
+    _company: Any
+    _cache: BoundedCache
 
     def __init__(self, company: Any):
         object.__setattr__(self, "_company", company)

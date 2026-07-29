@@ -13,9 +13,9 @@ import pytest
 
 def _allTopics() -> list[str]:
     """registry 에서 자동 수집된 모든 topic 이름."""
-    from dartlab.core.registry import getModuleEntries
+    from dartlab.providers.dart.company import _getModuleEntries
 
-    return sorted({e.funcName for e in getModuleEntries()})
+    return sorted({e.funcName for e in _getModuleEntries()})
 
 
 ALL_TOPICS = _allTopics()

@@ -19,22 +19,37 @@ from typing import Any
 
 import polars as pl
 
-pl.Config.set_fmt_str_lengths(80)
-pl.Config.set_tbl_width_chars(200)
-
 from dartlab.core.dataLoader import (
     buildIndex,
     loadData,
 )
 from dartlab.core.logger import getLogger
 from dartlab.core.polarsUtil import isEmptyDf
+from dartlab.core.registry import DataEntry
+from dartlab.core.registry import getEntries as _getEntries
+
+pl.Config.set_fmt_str_lengths(80)
+pl.Config.set_tbl_width_chars(200)
 
 _log = getLogger(__name__)
 
-# ── 모듈 레지스트리 (core/registry.py에서 자동 생성) ──
+# ── 모듈 레지스트리 (L0 metadata를 DART Company route로 투영) ──
 # (모듈 import 경로, 함수명, 한글 라벨, primary DataFrame 추출)
 # fsSummary/statements는 내부 디스패치 전용 (BS/IS/CF property가 statements를 호출)
-from dartlab.core.registry import getModuleEntries as _getModuleEntries
+_MODULE_ENTRY_CATEGORIES = frozenset({"report", "disclosure"})
+_MODULE_ENTRY_SKIP = frozenset({"BS", "IS", "CF", "fsSummary", "holderOverview"})
+
+
+def _getModuleEntries() -> list[DataEntry]:
+    """DART Company의 실행 가능한 report/disclosure 엔트리만 투영한다."""
+    return [
+        entry
+        for entry in _getEntries()
+        if entry.modulePath is not None
+        and entry.funcName is not None
+        and entry.category in _MODULE_ENTRY_CATEGORIES
+        and entry.name not in _MODULE_ENTRY_SKIP
+    ]
 
 
 # listing 함수는 ListingResolver registry 경유 (정공법 B - DIP).
@@ -288,13 +303,21 @@ _ALL_PROPERTIES: list[tuple[str, str]] | None = None
 def _getModuleRegistry() -> list[tuple[str, str, str, Any]]:
     """lazy 모듈 레지스트리 - 최초 접근 시 구축."""
     global _MODULE_REGISTRY, _MODULE_INDEX
-    if _MODULE_REGISTRY is None:
-        _MODULE_REGISTRY = [
+    registry = _MODULE_REGISTRY
+    if registry is None:
+        registry = [
             # finance 재무제표 - panel-only 전환 후 finance/ 경로가 XBRL 재무 SSOT.
             ("dartlab.providers.dart.finance.statements", "statements", "재무제표", None),
-        ] + [(e.modulePath, e.funcName, e.label, e.extractor) for e in _getModuleEntries()]
-        _MODULE_INDEX = {entry[1]: i for i, entry in enumerate(_MODULE_REGISTRY)}
-    return _MODULE_REGISTRY
+        ]
+        for entry in _getModuleEntries():
+            modulePath = entry.modulePath
+            funcName = entry.funcName
+            if modulePath is None or funcName is None:
+                continue
+            registry.append((modulePath, funcName, entry.label, entry.extractor))
+        _MODULE_REGISTRY = registry
+        _MODULE_INDEX = {entry[1]: i for i, entry in enumerate(registry)}
+    return registry
 
 
 def _getModuleIndex() -> dict[str, int]:
@@ -371,6 +394,72 @@ _CHAPTER_TITLES: dict[str, str] = {
 }
 
 _CHAPTER_ORDER: dict[str, int] = {chapter: idx for idx, chapter in enumerate(_CHAPTER_TITLES, start=1)}
+_TOPIC_META_COLUMNS = frozenset({"chapter", "sectionLeaf", "blockLeaf", "topic", "source", "disclosureKey", "scope"})
+_FINANCE_TOPICS = ("BS", "IS", "CIS", "CF", "SCE", "ratios")
+
+
+def _buildPanelTopicRows(textWide: pl.DataFrame | None) -> tuple[list[dict[str, Any]], set[str]]:
+    """panel text wide에서 topic 요약 행과 중복 방지 집합을 만든다."""
+    rows: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    if textWide is None or textWide.is_empty():
+        return rows, seen
+
+    topicCol = next((name for name in ("topic", "sectionLeaf") if name in textWide.columns), None)
+    if topicCol is None:
+        return rows, seen
+
+    periodCols = [name for name in textWide.columns if name not in _TOPIC_META_COLUMNS]
+    for row in textWide.iter_rows(named=True):
+        topic = row.get(topicCol)
+        if not isinstance(topic, str) or not topic.strip() or topic in seen:
+            continue
+        seen.add(topic)
+        chapterRaw = str(row.get("chapter") or "").strip()
+        rows.append(
+            {
+                "order": len(rows),
+                "chapter": chapterRaw.split(".", 1)[0].split()[0] if chapterRaw else "",
+                "topic": topic,
+                "source": "panel",
+                "blocks": 1,
+                "periods": sum(1 for period in periodCols if row.get(period) not in (None, "")),
+                "latestPeriod": None,
+            }
+        )
+    return rows, seen
+
+
+def _buildFinanceTopicRows(
+    stockCode: str,
+    *,
+    available: bool,
+    seen: set[str],
+) -> list[dict[str, Any]]:
+    """finance parquet에서 panel에 없는 재무 topic 요약 행을 만든다."""
+    if not available:
+        return []
+
+    raw = loadData(stockCode, category="finance", columns=["bsns_year"])
+    years = (
+        sorted({str(year) for year in raw["bsns_year"].drop_nulls().to_list() if str(year) != "2015"})
+        if raw is not None and not raw.is_empty() and "bsns_year" in raw.columns
+        else []
+    )
+    latestPeriod = years[-1] if years else None
+    return [
+        {
+            "order": 3000 + index,
+            "chapter": "III",
+            "topic": topic,
+            "source": "finance",
+            "blocks": 1,
+            "periods": len(years),
+            "latestPeriod": latestPeriod,
+        }
+        for index, topic in enumerate(_FINANCE_TOPICS)
+        if topic not in seen
+    ]
 
 
 # Q1.1 (2026-04-21): `_REPORT_TOPIC_TO_API_TYPE` / `_API_TYPE_TO_TOPIC` 하드코딩
@@ -393,9 +482,7 @@ def _topicForApiType(apiType: str) -> str:
 
     registry 에서 apiType 필드가 매치되는 entry 찾아 name 리턴. 없으면 apiType 그대로.
     """
-    from dartlab.core.registry import getModuleEntries
-
-    for e in getModuleEntries():
+    for e in _getModuleEntries():
         if e.apiType and e.apiType == apiType:
             return e.name
     return apiType
@@ -403,35 +490,11 @@ def _topicForApiType(apiType: str) -> str:
 
 # ── 재무제표 약칭 (AI-친화 layer) ──────────────────────────────────
 # AI 가 흔히 시도하는 영문 lower-case / 복수형 / 합성어 → canonical 재무제표 topic.
-# Business alias (board/pay/tangible 등 → 해당 topic) 는 registry.resolveAlias() 로
-# 이관 (2026-04-21 Q1.4). 여기는 핵심 4 재무제표의 case-insensitive 변형만 유지.
-_AI_CASE_ALIAS: dict[str, str] = {
-    "cashflow": "CF",
-    "cashflows": "CF",
-    "cf": "CF",
-    "incomestatement": "IS",
-    "is": "IS",
-    "pl": "IS",
-    "profitloss": "IS",
-    "balancesheet": "BS",
-    "bs": "BS",
-    "comprehensiveincome": "CIS",
-    "cis": "CIS",
-    "equitychanges": "SCE",
-    "sce": "SCE",
-}
-
-
 def _resolveTopic(topic: str) -> str:
-    """topic 또는 alias → canonical topic name.
+    """topic 또는 Company alias를 DART canonical topic으로 해소한다."""
+    from dartlab.providers.dart.topicStandard import resolveTopicAlias
 
-    순서: (1) AI-친화 lowercase 변형, (2) registry business alias, (3) 그대로.
-    """
-    if topic in _AI_CASE_ALIAS:
-        return _AI_CASE_ALIAS[topic]
-    from dartlab.core.registry import resolveAlias
-
-    return resolveAlias(topic)
+    return resolveTopicAlias(topic)
 
 
 _TOPIC_LABELS: dict[str, str] = {
@@ -3550,59 +3613,12 @@ class Company:
             return self._cache[cacheKey]
 
         # panel topic catalog - panel text wide 에서 유도 (docs topicManifest 은퇴).
-        textWide = self._panelTextWide()
-        rows: list[dict[str, Any]] = []
-        seen: set[str] = set()
-        if textWide is not None and not textWide.is_empty():
-            topicCol = next((c for c in ("topic", "sectionLeaf") if c in textWide.columns), None)
-            metaCols = {"chapter", "sectionLeaf", "blockLeaf", "topic", "source", "disclosureKey", "scope"}
-            periodCols = [c for c in textWide.columns if c not in metaCols]
-            if topicCol is not None:
-                for row in textWide.iter_rows(named=True):
-                    topic = row.get(topicCol)
-                    if not isinstance(topic, str) or not topic.strip() or topic in seen:
-                        continue
-                    seen.add(topic)
-                    nPeriods = sum(1 for pc in periodCols if row.get(pc) not in (None, ""))
-                    chapterRaw = str(row.get("chapter") or "").strip()
-                    chapter = chapterRaw.split(".", 1)[0].split()[0] if chapterRaw else ""
-                    rows.append(
-                        {
-                            "order": len(rows),
-                            "chapter": chapter,
-                            "topic": topic,
-                            "source": "panel",
-                            "blocks": 1,
-                            "periods": nPeriods,
-                            "latestPeriod": None,
-                        }
-                    )
-
-        financeRows: list[dict[str, Any]] = []
-        if self._hasFinanceParquet:
-            raw = loadData(self.stockCode, category="finance", columns=["bsns_year"])
-            years = (
-                sorted({str(year) for year in raw["bsns_year"].drop_nulls().to_list() if str(year) != "2015"})
-                if raw is not None and not raw.is_empty() and "bsns_year" in raw.columns
-                else []
-            )
-            latestPeriod = years[-1] if years else None
-            for idx, topic in enumerate(("BS", "IS", "CIS", "CF", "SCE", "ratios")):
-                if topic in seen:
-                    continue
-                financeRows.append(
-                    {
-                        "order": 3000 + idx,
-                        "chapter": "III",
-                        "topic": topic,
-                        "source": "finance",
-                        "blocks": 1,
-                        "periods": len(years),
-                        "latestPeriod": latestPeriod,
-                    }
-                )
-
-        combined = rows + financeRows
+        rows, seen = _buildPanelTopicRows(self._panelTextWide())
+        combined = rows + _buildFinanceTopicRows(
+            self.stockCode,
+            available=self._hasFinanceParquet,
+            seen=seen,
+        )
         if not combined:
             result = pl.DataFrame(
                 schema={

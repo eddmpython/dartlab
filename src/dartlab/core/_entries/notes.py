@@ -5,9 +5,9 @@
 
 from __future__ import annotations
 
-from dartlab.core.dataEntry import ColumnMeta, DataEntry  # noqa: F401
+from dartlab.core.dataEntry import DataEntry
 
-_NOTES_ENTRIES: list[DataEntry] = [
+_NOTES_ENTRIES: tuple[DataEntry, ...] = (
     # notes — K-IFRS 주석
     # ═══════════════════════════════════════════════════════
     # Q1.2 (2026-04-21): notes entry 에 notesDispatch + extractor 추가 — notes.py 의
@@ -133,4 +133,4 @@ _NOTES_ENTRIES: list[DataEntry] = [
         requires="panel",
     ),
     # ═══════════════════════════════════════════════════════
-]
+)

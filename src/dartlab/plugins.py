@@ -114,8 +114,6 @@ class PluginContext:
             description=description or meta.description,
             modulePath=analyzeFunc.__module__,
             funcName=analyzeFunc.__name__,
-            aiExposed=True,
-            aiHint=description or meta.description,
         )
         registerEntry(entry, source=f"plugin:{meta.name}")
         _trackPlugin(meta)

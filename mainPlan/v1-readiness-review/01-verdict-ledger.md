@@ -35,10 +35,12 @@ L4 소비자, ai, mcp. 아래층 결함이 위층 전부를 오염시키므로 �
 ### 세션 인계
 
 - 현재 계층: L0 core
-- 마지막 완료 항목: L0-07 동적 상향 import 감시와 composition 경계
-- 진행 중인 단일 항목: L0-08 `core/_entries` residency와 registry 호출자 경계
-- 다음 첫 행동: `core/_entries`의 모든 생성자와 소비자를 정적·제품 호출로 대조하고,
-  L0 metadata primitive와 L4 Company/API entry를 분리할 수 있는 최소 소유 경계를 재현한다.
+- 마지막 완료 항목: L0-08 `core/_entries` residency와 registry 호출자 경계
+- 진행 중인 단일 항목: L0-09 `core/messaging.py` residency와 전송 경계
+- 다음 첫 행동: `core/messaging.py`의 생성자와 실제 CLI/server 소비자를 전수 대조하고,
+  L0에 남을 수 있는 범용 event primitive와 상위 전송·표현 정책을 분리해 제품 결함부터
+  재현한다. 이번 항목에서는 `messaging.py`만 다루고 `observability/`, `parse/`,
+  기존 `silentSubstitute` baseline은 건드리지 않는다.
 - 금지: L0 완료 판정 전 L1 이상 감사나 수정 착수
 
 ## L0 순차 안정화 원장 (2026-07-29)
@@ -390,6 +392,60 @@ core 내부 배치 부채까지 이전했다는 뜻은 아니며 다음 항목�
    보호 원장에 기록했다. `silentSubstitute` 기존 7건은 residency 4건 뒤 별도 L0 단일
    항목으로 닫으며 이번 경계 변경에 섞지 않는다. 따라서 L0-07만 완료이고
    **L0 전체는 미달**이다.
+
+### L0-08 `core/_entries` residency와 registry 호출자 경계
+
+**상태: 완료.** provider import가 없는 공용 metadata catalog는 L0에 남기고, DART와
+Company에만 의미가 있는 alias·filter·routing을 실제 소유자로 내보냈다. 플러그인 전체
+lifecycle과 상위 소비자의 오류 정책까지 닫았다는 뜻은 아니다.
+
+1. **범위와 실제 호출자.** 범위는 `core/_entries` 7개 모듈, `core/dataEntry.py`,
+   `core/registry.py`와 직접 호출자인 DART Company·notes·builder, plugin 등록,
+   CLI module 목록, server data API, Excel/viz source다. 2026-05-11의
+   `_entries = L4` denylist와 다음 날의 L0 복귀 커밋, 활성 panel extraction PRD까지
+   시간순으로 대조했다. 전문 독립 검토도 같은 결론을 냈다.
+2. **제품 결함 재현.** 기존 registry는 plugin alias `annual.IS`가 내장 canonical 이름을
+   가로챘고 `unregisterEntry("annual.IS")`가 내장 catalog를 29개에서 28개로 지웠다.
+   `source` 인자는 버려졌고 여러 mutable 전역 index를 lock 없이 순차 재구축했다.
+   Company 전용 `getModuleEntries()`는 실제 내장 route를 0개 돌려주면서도 L0가 그
+   filter를 소유했고, DART business alias 21개는 registry에 없는 이름을 가리켰다.
+   호출자 0인 AI index builder와 `DataEntry` 필드도 함께 상주했다.
+3. **근본 원인과 SSOT.** 오래된 denylist는 공유 metadata를 L4 UI entry로 오인했고,
+   불변 선언, runtime mutation, DART alias, Company/notes filter, AI 표현을 한 registry에
+   섞었다. 파생 index 각각이 상태여서 어느 하나도 전체 registry의 원자 snapshot이
+   아니었다. L0의 정본은 provider-import-free 선언과 consumer-neutral typed snapshot,
+   DART 이름 정본은 `providers/dart/topicStandard.py`, Company 실행 filter는
+   `providers/dart/company.py`로 확정했다.
+4. **수정과 테스트.** category catalog와 합산 catalog를 모두 tuple로 만들고,
+   frozen `_RegistryState` 하나가 entry·category·alias·source의 `MappingProxyType`
+   index를 함께 게시하게 했다. 쓰기는 `RLock` 아래 전체 후보 검증 후 한 번에 교체하고
+   읽기는 한 snapshot을 lock 없이 본다. batch 등록, source 단위 원자 교체·제거,
+   provenance 조회, 내장 제거 차단, canonical/alias 충돌 차단을 추가했다. Company·notes
+   filter와 DART alias를 소유자로 옮기고, 호출자 0인 `ColumnMeta`, AI·column·relation
+   필드와 AI builder를 제거했다. 직접 호출자 품질 훅이 드러낸 기존 `Company.topics`
+   복잡도 27은 동작을 바꾸지 않는 두 조립 helper로 분리해 본체 3, helper 16/10으로
+   낮췄다. 원자 rollback·동시 등록·불변 조회·소유 경계 회귀를 새로 추가했다.
+5. **공개 행동, 정확성, 속도, 메모리.** 내장 entry 29개와 category 5개,
+   notes key 12개, 내장 Company 동적 module 0개가 전과 같다. Company finance는 기존
+   명시 route를 유지하고 `board/cashflow/tangible/relatedParty`는 각각 기존 canonical로
+   해소된다. 100만 회 `getEntry`는 `0.161 µs/call`로 구 구현 `0.459 µs`보다 약
+   2.85배 빨랐고, 29개 list 사본은 `0.222 µs/call`, registry 전체 근사 상주 크기는
+   `20.08 KiB`다.
+6. **Guard와 회귀.** registry·plugin·architecture 범위 `43 passed, 1 skipped`,
+   Company·CLI·server 직접 소비자 범위 `132 passed, 2 skipped`, 최종 Company helper
+   포함 재검증 `77 passed, 1 skipped`다. 변경 L0와 새 경계 파일 Pyright 0 errors,
+   Ruff, formatter, compileall, diff whitespace, camelCase/docstring, changed-only
+   quality gate가 통과했다. `registry.py`와 `_entries`의 `silentSubstitute` 신규 위반은
+   0개다. 공식 Guard는 1,768파일, 7/7 규칙과 cycle, architecture, folder mirror,
+   gather, provider, public API 여섯 gate를 모두 통과했다. `coreBoundary`의 `_entries`
+   부채는 제거됐고 다음 세 경로만 정직하게 남는다.
+7. **남은 부채와 판정.** plugin rediscover는 data entry·tool·engine·loaded metadata를
+   하나의 transaction으로 아직 묶지 않아 stale 상태와 공개 약속 불일치가 남으며 L4에서
+   닫는다. notes dispatch의 runtime 확장 계약과 `notes.py`의 넓은 예외→`None`은 L1,
+   server extractor 실패 삼킴은 해당 소비자 순서로 이월한다. `company.py` 전체 Pyright
+   기존 8건도 이번에 새로 만든 경계 밖의 L1 원장 대상이다. 다음 단일 항목은
+   `core/messaging.py`이고 그 뒤 `observability/`, `parse/`, core 무음 대체 baseline
+   7건을 각각 따로 닫는다. 따라서 L0-08만 완료이며 **L0 전체는 미달**이다.
 
 ## 정량 판정 (2026-07-27 실측)
 
@@ -826,4 +882,3 @@ GroundingCheck 가 주장 속 숫자를 근거의 값과 대조하지 않는다(
 | `viz/builder.py` | 85 | 10 | 49 어댑터 전수 스텁, 불일치 0 |
 
 **현재 판정: 1.0.0 선언 불가.** Q3 와 Q5 가 미달이다.
-

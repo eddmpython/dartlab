@@ -9,7 +9,7 @@
     1. 상위 layer import 금지 — 정적 import와 동적 import를 같은 Guard Index로 검사.
        concrete 상위 대상은 예외 없이 차단하고 caller-owned generic loader만 허용.
     2. denylist — 명시적으로 core 가 아닌 경로
-       (cross/, _entries/, show.py, select.py, messaging.py).
+       (cross/, show.py, select.py, messaging.py).
     3. 디렉터리 화이트리스트 — 정의 외 신규 디렉터리 신설 차단. baseline 갱신 시 PR
        으로만 변경 (CHANGELOG + architecture.md 동시 갱신 강제).
 
@@ -47,7 +47,6 @@ _CORE = _REPO_ROOT / "src" / "dartlab" / "core"
 # 각 항목: (core 기준 상대 경로, 위반 사유, 가야 할 곳)
 _DENYLIST: tuple[tuple[str, str, str], ...] = (
     ("cross", "L2 도메인 조합 (architecture #4 — story 가 단독 부담)", "story/cross/ 또는 skills"),
-    ("_entries", "Company API entry = L4 표면 (architecture L4)", "dartlab/_entries/ 또는 company/"),
     ("show.py", "Company.show() API = L4", "company/show.py 또는 dartlab/"),
     ("select.py", "Company.select() API = L4", "company/select.py 또는 dartlab/"),
     ("messaging.py", "cli/server messaging = ≥ L1", "cli/messaging.py 또는 server/messaging.py"),
@@ -57,7 +56,7 @@ _DENYLIST: tuple[tuple[str, str, str], ...] = (
 # architecture.md L0 정의 + 현재 SSOT 데이터 구조.
 _ALLOWED_DIRS: frozenset[str] = frozenset(
     {
-        "_entries",  # denylist에 있지만 이전 전까지 존재를 추적
+        "_entries",  # 여러 하위·상위 호출자가 공유하는 불변 DataEntry metadata SSOT
         "accounts",  # DART/EDGAR 공용 계정 정규화 SSOT
         "cache",  # L0 cache infra
         "capability",  # capability infra (generated 만 denylist)
