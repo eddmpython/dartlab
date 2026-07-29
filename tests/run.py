@@ -320,7 +320,7 @@ GATES: dict[str, Gate] = {
         deps=(*PYTEST_CORE, "pandera[polars]>=0.29.0,!=0.32.0,<0.33"),
         install_pkg="editable",
         env={"DARTLAB_TEST_LOCKED": "1"},
-        cmd="pytest tests/_schemas/ -v --tb=short --no-cov",
+        cmd="pytest tests/gather/dart/test_schemas.py -v --tb=short --no-cov",
         timeout_minutes=5,
     ),
     "eval-rule": Gate(

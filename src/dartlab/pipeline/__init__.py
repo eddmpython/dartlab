@@ -6,7 +6,7 @@
 
 ⛔ 레이어: 본 패키지는 ``gather/``·``providers/`` 폴더 *밖*의 L4 sink 라 둘을 동시
 import 하는 게 합법(`test_l1_no_cross_import` 무위반). sink 자격은 두 가드에 등록돼
-보장된다 — ``tests/architecture/test_import_direction.py`` SINK_HELPERS +
+보장된다 — Guard Index ``LAYER_OF`` 의 L4 선언 +
 ``tests/audit/cycleScan.py`` PRIMARY_PACKAGES. 단방향: ``cli → pipeline`` 만,
 ``pipeline ↛ cli``.
 

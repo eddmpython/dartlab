@@ -68,9 +68,9 @@ def _buildSceMatrixFromDf(
     if sce.is_empty():
         return None
 
-    from dartlab.providers.dart.finance.pivot import _applyCfsPriority
+    from dartlab.providers.dart.finance.sourcePriority import applyCfsPriority
 
-    sce = _applyCfsPriority(sce, fsDivPref)
+    sce = applyCfsPriority(sce, fsDivPref)
 
     if "thstrm_amount" in sce.columns:
         from dartlab.providers.dart.parse.amount import parseAmountExpr

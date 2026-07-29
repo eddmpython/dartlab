@@ -324,7 +324,7 @@ def test_read_ratios_wide(monkeypatch) -> None:
     monkeypatch.setattr(C, "_cellsFromPanel", lambda code, *a, **k: pl.DataFrame({"_": [1]}))
     monkeypatch.setattr(C, "_resolveStatement", lambda df, *, variants, **k: table.get(variants[0]))
 
-    w = C.readRatios("X")
+    w = C.readRatios("X", freq="year")
     assert w is not None
     assert w.columns[:2] == ["ratio", "label"]
     pcols = [c for c in w.columns if c not in ("ratio", "label")]

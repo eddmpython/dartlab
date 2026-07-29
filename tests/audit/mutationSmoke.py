@@ -30,7 +30,7 @@ if hasattr(sys.stdout, "reconfigure"):
 
 _REPO = Path(__file__).resolve().parents[2]
 _FORMATTING = _REPO / "src" / "dartlab" / "core" / "formatting.py"
-_RATIOS = _REPO / "src" / "dartlab" / "core" / "ratios.py"
+_RATIOS = _REPO / "src" / "dartlab" / "core" / "ratios" / "common.py"
 
 
 @dataclass

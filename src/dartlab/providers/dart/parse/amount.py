@@ -60,6 +60,19 @@ def detectUnitLabel(text: str | None) -> str | None:
 
     ``억원, %`` 같은 복합 캡션은 첫 단위를 사용한다. 미지·부재 단위는
     추측하지 않고 ``None`` 을 반환한다.
+
+    Args:
+        text: ``(단위: 백만원)`` 형태의 원문 캡션.
+
+    Returns:
+        canonical 단위 라벨. 단위를 확정할 수 없으면 ``None``.
+
+    Raises:
+        없음.
+
+    Example:
+        >>> detectUnitLabel("(단위: 백만원)")
+        '백만원'
     """
     if not text:
         return None
@@ -78,7 +91,21 @@ def detectUnitLabel(text: str | None) -> str | None:
 
 
 def unitScaleToWon(unitLabel: str | None) -> int | None:
-    """canonical 금액 단위의 원 환산 배율. 비금액·미지 단위는 ``None``."""
+    """canonical 금액 단위의 원 환산 배율을 반환한다.
+
+    Args:
+        unitLabel: ``detectUnitLabel`` 이 반환한 canonical 단위.
+
+    Returns:
+        원 환산 배율. 비금액·미지 단위는 ``None``.
+
+    Raises:
+        없음.
+
+    Example:
+        >>> unitScaleToWon("백만원")
+        1000000
+    """
     if unitLabel is None:
         return None
     return UNIT_SCALE_TO_WON.get(unitLabel)
@@ -88,6 +115,20 @@ def detectUnitScale(text: str | None, *, defaultUnit: str | None = None) -> int 
     """본문 단위의 원 환산 배율.
 
     단위가 없거나 미지이면 ``defaultUnit`` 을 명시한 호출자만 기본값을 받는다.
+
+    Args:
+        text: 단위 캡션 원문.
+        defaultUnit: 원문에서 단위를 찾지 못했을 때 사용할 canonical 단위.
+
+    Returns:
+        원 환산 배율. 단위를 확정할 수 없으면 ``None``.
+
+    Raises:
+        없음.
+
+    Example:
+        >>> detectUnitScale("단위: 억원")
+        100000000
     """
     scale = unitScaleToWon(detectUnitLabel(text))
     if scale is not None:
@@ -100,6 +141,19 @@ def parseAmount(value: Any) -> float | None:
 
     콤마·공백과 ``△``/``▲``/괄호/부호 음수를 지원한다. 주석번호와
     숫자 외 문자가 섞인 셀은 숫자를 이어 붙이지 않고 ``None`` 으로 둔다.
+
+    Args:
+        value: DART 표에서 읽은 숫자 셀.
+
+    Returns:
+        배율을 적용하지 않은 숫자. 유효한 숫자가 아니면 ``None``.
+
+    Raises:
+        없음.
+
+    Example:
+        >>> parseAmount("(1,234)")
+        -1234.0
     """
     if value is None or isinstance(value, bool):
         return None
@@ -126,7 +180,22 @@ def parseAmount(value: Any) -> float | None:
 
 
 def parseAmountExpr(column: str | pl.Expr) -> pl.Expr:
-    """``parseAmount`` 와 같은 계약의 Polars Float64 표현식."""
+    """``parseAmount`` 와 같은 계약의 Polars Float64 표현식을 만든다.
+
+    Args:
+        column: 변환할 컬럼 이름 또는 Polars 표현식.
+
+    Returns:
+        유효하지 않은 숫자를 null로 두는 Float64 표현식.
+
+    Raises:
+        Polars가 입력 표현식을 구성하지 못하면 해당 예외를 전달한다.
+
+    Example:
+        >>> import polars as pl
+        >>> pl.DataFrame({"v": ["1,000"]}).select(parseAmountExpr("v")).item()
+        1000.0
+    """
     import polars as pl
 
     expr = pl.col(column) if isinstance(column, str) else column

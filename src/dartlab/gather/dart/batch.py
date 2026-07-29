@@ -576,7 +576,7 @@ def batchCollect(
         """워커 상태 + 전체 진행 bar를 rich Table로 구성."""
         return buildWorkerTable(numWorkers, workerLines, completedCount[0], total)
 
-    def completeFn(corpName: str, catSummary: str) -> None:
+    def _completeFn(corpName: str, catSummary: str) -> None:
         """worker callback — corp 처리 완료 시 workerLines 의 해당 행을 ``✓ {corp} ({summary})`` 로 갱신.
 
         Args:
@@ -587,7 +587,7 @@ def batchCollect(
             없음.
 
         Example:
-            >>> completeFn("삼성전자", "f:5,r:3")
+            >>> _completeFn("삼성전자", "f:5,r:3")
         """
         with lock:
             completedCount[0] += 1
@@ -597,7 +597,7 @@ def batchCollect(
                     workerLines[wIdx] = f"✓ {corpName}{summary}"
                     break
 
-    def statusFn(workerIdx: int, stockCode: str, corpName: str) -> None:
+    def _statusFn(workerIdx: int, stockCode: str, corpName: str) -> None:
         """worker callback — 처리 시작 시 workerLines 에 ``{corp} ({code})`` 표시.
 
         Args:
@@ -609,12 +609,12 @@ def batchCollect(
             없음.
 
         Example:
-            >>> statusFn(0, "005930", "삼성전자")
+            >>> _statusFn(0, "005930", "삼성전자")
         """
         with lock:
             workerLines[workerIdx] = f"{corpName} ({stockCode})"
 
-    def periodFn(workerIdx: int, corpName: str, detail: str) -> None:
+    def _periodFn(workerIdx: int, corpName: str, detail: str) -> None:
         """worker callback — period 진행 상황 표시 (``{corp} | {detail}``).
 
         Args:
@@ -626,7 +626,7 @@ def batchCollect(
             없음.
 
         Example:
-            >>> periodFn(0, "삼성전자", "2024Q3 fetching")
+            >>> _periodFn(0, "삼성전자", "2024Q3 fetching")
         """
         with lock:
             workerLines[workerIdx] = f"{corpName} | {detail}"
@@ -634,7 +634,7 @@ def batchCollect(
     def _threadTarget():
         try:
             nonlocal result
-            result = asyncio.run(_run(completeFn, statusFn, periodFn))
+            result = asyncio.run(_run(_completeFn, _statusFn, _periodFn))
         except KeyboardInterrupt:
             pass
         except BaseException as exc:

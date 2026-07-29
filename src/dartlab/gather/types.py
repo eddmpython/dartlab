@@ -480,7 +480,21 @@ class GatherResult:
 
     @property
     def hasData(self) -> bool:
-        """분석에 넘길 실제 값이 하나라도 있는지 판정한다."""
+        """분석에 넘길 실제 값이 하나라도 있는지 판정한다.
+
+        Returns:
+            가격·수급·업종·내부자·공매도 값 중 하나라도 있으면 ``True``.
+
+        Requires:
+            없음.
+
+        Raises:
+            없음.
+
+        Example:
+            >>> GatherResult(sector_per=0.0).hasData
+            True
+        """
         return any(
             (
                 self.price is not None,
@@ -724,18 +738,18 @@ class GatherSnapshot:
 
     @property
     def sourcesAvailable(self) -> list[str]:
-        """정상 응답한 소스 목록.
+        """실제 데이터를 하나라도 제공한 소스 목록.
 
-        Capabilities: results dict filter → error None 인 source name list.
+        Capabilities: results dict filter → 실제 값이 있는 source name list.
         AIContext: gather.collect 의 partial success 추적 — 어느 source 가 살아있나.
-        Guide: error 가 None 인 것만. sourcesFailed 와 짝.
+        Guide: 일부 축이 실패해 error가 있어도 다른 실제 값이 있으면 포함. sourcesFailed와 중복 가능.
         When: collect 결과의 source-level diagnostic 필요 시.
-        How: ``[d for d, r in results.items() if r.error is None]``.
+        How: ``[d for d, r in results.items() if r.hasData]``.
 
         Returns
         -------
         list[str]
-            오류 없이 수집 완료된 소스 이름 리스트.
+            실제 값을 하나라도 제공한 소스 이름 리스트.
 
         Raises
         ------
@@ -751,9 +765,9 @@ class GatherSnapshot:
 
         See Also
         --------
-        sourcesFailed : 짝 — 실패 소스 list.
+        sourcesFailed : 전체 또는 일부 축이 실패한 소스 list.
         """
-        return [d for d, r in self.results.items() if r.error is None and r.hasData]
+        return [d for d, r in self.results.items() if r.hasData]
 
     @property
     def sourcesFailed(self) -> list[str]:

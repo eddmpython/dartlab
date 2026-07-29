@@ -267,6 +267,20 @@ def test_update_callable() -> None:
     assert hasattr(Company, "update")
 
 
+def test_notes_keys_kr_maps_known_categories_and_preserves_unknown() -> None:
+    """표시 라벨은 알려진 카테고리만 번역하고 확장 카테고리는 원본 ID를 보존한다."""
+    from types import SimpleNamespace
+
+    from dartlab.providers.edgar.company import _EdgarNotesWrapper
+    from dartlab.providers.edgar.docs.notesParsers import CATEGORY_LABELS
+
+    known = next(iter(CATEGORY_LABELS))
+    docs = SimpleNamespace(noteCategories=lambda: [known, "future_category"])
+    wrapper = _EdgarNotesWrapper(SimpleNamespace(docs=docs))
+
+    assert wrapper.keysKr() == [CATEGORY_LABELS[known], "future_category"]
+
+
 def test_fiscal_year_end_uses_configured_edgar_directory(tmp_path, monkeypatch) -> None:
     from dartlab.core import dataLoader
     from dartlab.providers.edgar.company import Company

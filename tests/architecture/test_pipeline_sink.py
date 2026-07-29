@@ -1,8 +1,8 @@
 """dartlab.pipeline = L4 sink 자격 가드 — 등록 누락 시 가드 무력화 차단.
 
 ``pipeline`` 은 gather fetch + providers build 를 동시에 import 하는 오케스트레이션
-sink 다. 그 합법성은 두 곳 등록에 의존한다 — 빠지면 cycleScan/import_direction 가
-pipeline 을 일반 계층으로 오인해 거짓 통과(가드 무력화)한다. 본 테스트가 그 등록과
+sink 다. 그 합법성은 Guard Index 계층표와 source package 발견에 의존한다. 빠지면
+cycleScan/import_direction 가 pipeline 을 일반 계층으로 오인한다. 본 테스트가 그 등록과
 단방향(``pipeline ↛ cli``)을 영구 lock 한다.
 """
 
@@ -20,11 +20,11 @@ _REPO = Path(__file__).resolve().parents[2]
 _PIPELINE = _REPO / "src" / "dartlab" / "pipeline"
 
 
-def _sinkHelpers() -> set[str]:
+def _declaredLayer() -> float | None:
     sys.path.insert(0, str(_REPO / "tests" / "architecture"))
     import test_import_direction as t  # noqa: PLC0415
 
-    return set(t.SINK_HELPERS)
+    return t.LAYER_OF.get("pipeline")
 
 
 def _primaryPackages() -> tuple[str, ...]:
@@ -35,8 +35,8 @@ def _primaryPackages() -> tuple[str, ...]:
 
 
 def test_pipeline_registered_as_sink() -> None:
-    """pipeline 이 SINK_HELPERS + PRIMARY_PACKAGES 양쪽에 등재돼 있다."""
-    assert "pipeline" in _sinkHelpers(), "test_import_direction.SINK_HELPERS 에 'pipeline' 누락"
+    """pipeline 이 L4 계층표와 실제 source package 양쪽에 등재돼 있다."""
+    assert _declaredLayer() == 4.0, "Guard Index LAYER_OF 에 pipeline L4 선언 누락"
     assert "pipeline" in _primaryPackages(), "cycleScan.PRIMARY_PACKAGES 에 'pipeline' 누락"
 
 

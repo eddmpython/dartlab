@@ -119,9 +119,10 @@ def test_streaming_unsupported_annotated() -> None:
                     counts["over"] += 1
                 elif ": asof" in line:
                     counts["asof"] += 1
-    # docs 농장 은퇴와 EDGAR scanAccount pivot 제거로 호출부 3곳 삭제 — 임계 11→8 하향.
+    # docs 농장 은퇴와 EDGAR scanAccount pivot 제거로 pivot 임계가 줄었고,
+    # 정규화 window 단순화로 over 호출부도 현재 5곳이 SSOT다.
     assert counts["pivot"] >= 8, f"pivot 마커 부족: {counts['pivot']}/8"
-    assert counts["over"] >= 6, f"over 마커 부족: {counts['over']}/6"
+    assert counts["over"] >= 5, f"over 마커 부족: {counts['over']}/5"
     assert counts["asof"] >= 4, f"asof 마커 부족: {counts['asof']}/4"
 
 

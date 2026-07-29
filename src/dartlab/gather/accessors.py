@@ -164,6 +164,21 @@ class DefaultFinanceAccessor:
     def fetchExogenousAxes(self, stockCode: str, *, limit: int | None = None) -> list[tuple[str, str]]:
         """종목별 매크로 축 매핑 — gather.mapping.exogenousAxes 위임.
 
+        Capabilities:
+            종목에 연결된 외생 지표 ID와 source를 호출 순서대로 반환한다.
+
+        AIContext:
+            재무 분석 도구가 임의의 거시지표를 고르지 않고 사전 정의된 종목 매핑을 사용하게 한다.
+
+        Guide:
+            시계열 값이 필요하면 반환된 매핑을 ``fetchMacroSeries`` 에 전달한다.
+
+        When:
+            종목별 거시 민감도 분석에 사용할 입력 축을 결정할 때 호출한다.
+
+        How:
+            ``getExogenousIndicators`` 결과를 ``(seriesId, source)`` 튜플로 투영하고 limit을 적용한다.
+
         Args:
             stockCode: 종목코드.
             limit: 반환 항목 상한. None이면 전체.
@@ -180,6 +195,9 @@ class DefaultFinanceAccessor:
         Example:
             >>> a = DefaultFinanceAccessor()
             >>> axes = a.fetchExogenousAxes("005930", limit=5)
+
+        SeeAlso:
+            ``fetchAlignedMacro`` 는 이 매핑의 실제 시계열을 재무 기간에 맞춘다.
         """
         from dartlab.gather.mapping.exogenousAxes import getExogenousIndicators
 
@@ -198,6 +216,21 @@ class DefaultFinanceAccessor:
     ) -> pl.DataFrame | None:
         """period 기준 정렬된 매크로 패널 — transforms.macro.loadMacroParquet 위임.
 
+        Capabilities:
+            종목에 매핑된 여러 거시 시계열을 재무 period 기준 단일 패널로 결합한다.
+
+        AIContext:
+            분석 도구가 서로 다른 빈도와 날짜 축을 직접 정렬하지 않고 검증된 period 패널을 받게 한다.
+
+        Guide:
+            ``periods`` 는 재무제표 축과 같은 순서로 전달하고, 값이 전혀 없을 때는 ``None`` 을 처리한다.
+
+        When:
+            재무 시계열과 외생변수를 같은 관측 축에서 회귀·비교할 때 사용한다.
+
+        How:
+            종목 매핑 조회 후 각 parquet를 재무 period로 정렬하고 ``period`` 컬럼으로 full join한다.
+
         Args:
             stockCode: 종목코드.
             periods: 정렬 대상 period 리스트.
@@ -215,6 +248,9 @@ class DefaultFinanceAccessor:
         Example:
             >>> a = DefaultFinanceAccessor()
             >>> panel = a.fetchAlignedMacro("005930", ["2024Q1", "2024Q2"], limit=10)
+
+        SeeAlso:
+            ``fetchExogenousAxes`` 는 결합할 지표 목록의 SSOT다.
         """
         from dartlab.gather.transforms.macro import alignToFinancialPeriods, loadMacroParquet
 
@@ -650,6 +686,21 @@ class DefaultQuantAccessor:
     ) -> pl.DataFrame | None:
         """다종목 bulk 패널 — bulkData.hfBulk.loadFiltered 위임.
 
+        Capabilities:
+            여러 종목과 필요한 컬럼만 한 번에 필터링해 bulk 패널을 반환한다.
+
+        AIContext:
+            스크리닝 도구가 종목별 파일을 반복 로드하지 않고 제한된 입력 집합을 읽게 한다.
+
+        Guide:
+            빈 종목 목록은 ``None`` 이며, ``columns`` 에 실제 분석에 필요한 필드만 명시한다.
+
+        When:
+            동일 컬럼을 여러 종목에 걸쳐 비교하거나 스크리닝할 때 호출한다.
+
+        How:
+            ``loadFiltered`` 에 종목과 컬럼을 전달한 뒤 선택적으로 선두 행 limit을 적용한다.
+
         Args:
             stockCodes: 대상 종목코드 리스트.
             columns: 추출 컬럼 리스트.
@@ -667,6 +718,9 @@ class DefaultQuantAccessor:
         Example:
             >>> a = DefaultQuantAccessor()
             >>> df = a.fetchUniverseBulk(["005930", "000660"], columns=["close"], limit=100)
+
+        SeeAlso:
+            ``dartlab.gather.bulkData.hfBulk.loadFiltered`` 가 필터 실행을 소유한다.
         """
         if not stockCodes:
             return None

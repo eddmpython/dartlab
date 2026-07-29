@@ -52,7 +52,43 @@ _TTL_MAP: dict[str, int] = {
 
 
 def buildCacheSlot(dataType: str, **dimensions: object) -> str:
-    """데이터 종류와 결과를 바꾸는 인자를 정규화한 캐시 슬롯을 만든다."""
+    """데이터 종류와 결과를 바꾸는 인자를 정규화한 캐시 슬롯을 만든다.
+
+    Capabilities:
+        같은 요청은 같은 문자열 키가 되도록 차원 이름을 정렬하고 시장 코드를 대문자로 맞춘다.
+
+    AIContext:
+        gather 도구가 요청 차원을 누락해 다른 결과를 같은 캐시에 섞지 않도록 식별자를 만든다.
+
+    Guide:
+        결과를 바꾸는 모든 인자를 ``dimensions`` 로 넘기고, 관측 목적 인자는 제외한다.
+
+    When:
+        종목·시장·기간처럼 복합 차원을 가진 수집 결과를 캐시에 저장하거나 조회할 때 사용한다.
+
+    How:
+        데이터 종류 뒤에 정렬된 ``name=value`` 차원을 결합하고 ``None`` 차원은 생략한다.
+
+    Args:
+        dataType: ``history`` 같은 데이터 종류.
+        **dimensions: 결과를 구분하는 이름 있는 차원.
+
+    Returns:
+        결정적으로 정규화된 캐시 슬롯 문자열.
+
+    Requires:
+        없음.
+
+    Raises:
+        ValueError: ``dataType`` 이 비어 있는 경우.
+
+    Example:
+        >>> buildCacheSlot("history", market="kr", start="2026-01-01")
+        'history|market=KR|start=2026-01-01'
+
+    SeeAlso:
+        ``GatherCache.getTyped`` 와 ``GatherCache.putTyped`` 가 이 슬롯을 소비한다.
+    """
     base = str(dataType).strip()
     if not base:
         raise ValueError("dataType은 비어 있을 수 없습니다")

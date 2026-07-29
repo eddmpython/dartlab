@@ -14,6 +14,7 @@ from dartlab.providers.dart.panel.narrativeMetric import (
     _resolveRate,
     metricCatalog,
     readMetric,
+    readMetrics,
 )
 
 pytestmark = pytest.mark.unit
@@ -72,6 +73,37 @@ def test_resolve_rate_out_of_range_gap():
 def test_readMetric_unknown_raises():
     with pytest.raises(ValueError, match="미등록 metricId"):
         readMetric("005930", "존재하지않는지표")
+
+
+def test_readMetrics_loads_panel_once_and_keeps_only_resolved_metrics(monkeypatch):
+    """배치 진입점은 panel을 한 번만 읽고 실제로 추출된 지표만 반환한다."""
+    from dartlab.providers.dart.panel import narrativeMetric as metricModule
+
+    panel = object()
+    loads: list[tuple[str, str]] = []
+    monkeypatch.setattr(
+        metricModule,
+        "_loadPanel",
+        lambda code, marketNs: loads.append((code, marketNs)) or panel,
+    )
+    monkeypatch.setattr(
+        metricModule,
+        "_resolveMetricOnPanel",
+        lambda loaded, metricId: {"value": 1.0} if metricId == "backlog" else None,
+    )
+
+    assert readMetrics("005930", ["backlog", "utilizationRate"]) == {"backlog": {"value": 1.0}}
+    assert loads == [("005930", "kr")]
+
+
+def test_readMetrics_unknown_raises_before_loading_panel(monkeypatch):
+    """미등록 지표를 조용히 제외하지 않고 호출자 입력 오류로 드러낸다."""
+    from dartlab.providers.dart.panel import narrativeMetric as metricModule
+
+    monkeypatch.setattr(metricModule, "_loadPanel", lambda *args: pytest.fail("invalid input must fail before I/O"))
+
+    with pytest.raises(ValueError, match="미등록 metricId"):
+        readMetrics("005930", ["unknown"])
 
 
 def test_metricCatalog():

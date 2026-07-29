@@ -235,13 +235,16 @@ def readMetrics(code: str, metricIds: list[str] | None = None, *, marketNs: str 
         ``{metricId: {value, unit, confidence, period, provenance}}``. 추출 실패 지표는 키 없음.
 
     Raises:
-        없음. 미등록 metricId 는 조용히 제외.
+        ValueError: ``metricIds`` 에 미등록 지표가 포함된 경우.
 
     Example:
         >>> readMetrics("042660", ["backlog"])  # doctest: +SKIP
         {'backlog': {'value': 3.5e+16, 'confidence': 'high', ...}}
     """
-    ids = [m for m in (metricIds or list(METRIC_DEFS)) if m in METRIC_DEFS]
+    ids = metricIds or list(METRIC_DEFS)
+    unknown = sorted(set(ids) - set(METRIC_DEFS))
+    if unknown:
+        raise ValueError(f"미등록 metricId: {unknown!r}. 가용: {sorted(METRIC_DEFS)}")
     p = _loadPanel(code, marketNs)
     if p is None:
         return {}

@@ -134,6 +134,26 @@ class TestGatherHttpClient:
 class TestDataTypes:
     """데이터 타입 repr + 기본값."""
 
+    def test_gather_result_has_data_distinguishes_error_only_result(self):
+        """오류 문자열만 있는 결과는 실제 데이터가 아니고, 값 하나가 있으면 데이터다."""
+        assert not GatherResult(domain="naver", error="source down").hasData
+        assert GatherResult(domain="naver", sector_per=0.0).hasData
+
+    def test_partial_source_is_both_available_and_failed(self):
+        """일부 축 성공과 일부 축 실패를 서로 지우지 않고 양쪽 진단에 보존한다."""
+        snap = GatherSnapshot(
+            results={
+                "naver": GatherResult(
+                    domain="naver",
+                    price=PriceSnapshot(current=100.0),
+                    error="flow source down",
+                )
+            }
+        )
+
+        assert snap.sourcesAvailable == ["naver"]
+        assert snap.sourcesFailed == ["naver"]
+
     def test_price_snapshot_repr(self):
         p = PriceSnapshot(current=200000, per=12.5, pbr=1.3, source="naver")
         r = repr(p)

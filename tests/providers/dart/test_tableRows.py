@@ -12,10 +12,12 @@ import pytest
 
 from dartlab.providers.dart.tableRows import (
     extractCorpNames,
+    extractTables,
     findTableByHeaders,
     normalizeCorpName,
     parseAmount,
     parsePercent,
+    tableToRowDicts,
 )
 
 
@@ -47,6 +49,26 @@ def testParseAmountKeepsZeroDistinctFromAbsent() -> None:
 
     assert parseAmount("0") == 0.0
     assert parseAmount("") is None
+
+
+def testExtractTablesSeparatesBlocksAndDropsSeparatorRows() -> None:
+    """서로 떨어진 표는 분리하고 마크다운 구분선은 데이터로 내보내지 않는다."""
+    content = "|회사|금액|\n|---|---|\n|삼성전자|100|\n\n본문\n|회사|금액|\n|---|---|\n|LG전자|80|"
+
+    assert extractTables(content) == [
+        [["회사", "금액"], ["삼성전자", "100"]],
+        [["회사", "금액"], ["LG전자", "80"]],
+    ]
+
+
+def testTableToRowDictsInheritsMergedCellsWithoutInventingColumns() -> None:
+    """빈 병합 셀은 직전 값을 상속하고 짧은 행은 헤더 길이에 맞춘다."""
+    table = [["사업", "회사", "금액"], ["반도체", "삼성전자", "100"], ["", "SK하이닉스"]]
+
+    assert tableToRowDicts(table) == [
+        {"사업": "반도체", "회사": "삼성전자", "금액": "100"},
+        {"사업": "반도체", "회사": "SK하이닉스", "금액": "100"},
+    ]
 
 
 @pytest.mark.parametrize(

@@ -39,6 +39,7 @@ from dartlab.core.polarsUtil import isEmptyDf
 from dartlab.core.utils.ordering import sortSeries
 from dartlab.core.utils.period import extractYear, formatPeriod, parsePeriod
 from dartlab.providers.dart.finance.mapper import AccountMapper
+from dartlab.providers.dart.finance.sourcePriority import applyCfsPriority
 from dartlab.providers.dart.parse.amount import parseAmountExpr
 
 _log = logging.getLogger(__name__)
@@ -154,7 +155,7 @@ def _normalizeFinanceFrame(
     if df.is_empty():
         return None
 
-    df = _applyCfsPriority(df, fsDivPref)
+    df = applyCfsPriority(df, fsDivPref)
     df = _normalizeQ4(df)
 
     periods = _buildPeriods(df)
@@ -308,97 +309,6 @@ def buildCumulative(
     return _aggregateCumulative(qSeries, qPeriods)
 
 
-def _applyCfsPriority(df: pl.DataFrame, pref: str) -> pl.DataFrame:
-    """시트(연도×분기×재무제표) 단위 CFS/OFS 선택.
-
-    선호 source가 있으면 기본적으로 그 시트 전체를 사용한다. 다만 fallback의
-    유효 계정 coverage가 선호 source를 strict superset으로 포함하면 선호 시트가
-    불완전하다고 판정해 fallback 시트 전체를 사용한다. 행 단위 혼합은 하지 않는다.
-    """
-    if "fs_div" not in df.columns:
-        return df
-
-    available = set(df["fs_div"].drop_nulls().unique().to_list())
-    if len(available) <= 1:
-        return df
-
-    groupCols = ["bsns_year", "reprt_nm", "sj_div"]
-    if not all(c in df.columns for c in groupCols):
-        return df
-
-    fallback = "OFS" if pref == "CFS" else "CFS"
-    accountId = (
-        pl.col("account_id").fill_null("").cast(pl.Utf8).str.strip_chars() if "account_id" in df.columns else pl.lit("")
-    )
-    accountName = (
-        pl.col("account_nm").fill_null("").cast(pl.Utf8).str.strip_chars() if "account_nm" in df.columns else pl.lit("")
-    )
-    coverageKey = (
-        pl.when(accountId.is_in(["", "-표준계정코드 미사용-"]))
-        .then(pl.concat_str([pl.lit("name"), accountName], separator=":"))
-        .otherwise(pl.concat_str([pl.lit("id"), accountId], separator=":"))
-    )
-
-    amountCols = [c for c in ("thstrm_amount", "thstrm_add_amount") if c in df.columns]
-    if amountCols:
-        usableAmount = pl.any_horizontal(
-            [pl.col(c).is_not_null() & ~pl.col(c).cast(pl.Utf8).str.strip_chars().is_in(["", "-"]) for c in amountCols]
-        )
-    else:
-        usableAmount = pl.lit(True)
-
-    coverageRows = (
-        df.with_columns(coverageKey.alias("_coverageKey"), usableAmount.alias("_usableAmount"))
-        .filter(pl.col("_usableAmount") & ~pl.col("_coverageKey").is_in(["id:", "name:"]))
-        .select([*groupCols, "fs_div", "_coverageKey"])
-        .unique()
-    )
-    coverageBySheet: dict[tuple[str, str, str, str], set[str]] = {}
-    for row in coverageRows.iter_rows():
-        sheetKey = (str(row[0]), str(row[1]), str(row[2]))
-        source = str(row[3])
-        coverageBySheet.setdefault((*sheetKey, source), set()).add(str(row[4]))
-
-    sourceRows = df.select([*groupCols, "fs_div"]).drop_nulls("fs_div").unique()
-    sourcesBySheet: dict[tuple[str, str, str], set[str]] = {}
-    for row in sourceRows.iter_rows():
-        sheetKey = (str(row[0]), str(row[1]), str(row[2]))
-        sourcesBySheet.setdefault(sheetKey, set()).add(str(row[3]))
-
-    decisionRows: list[dict[str, object]] = []
-    for rawSheet in df.select(groupCols).unique().iter_rows():
-        sheetKey = (str(rawSheet[0]), str(rawSheet[1]), str(rawSheet[2]))
-        sources = sourcesBySheet.get(sheetKey, set())
-        if not sources:
-            continue
-        if pref not in sources:
-            target = fallback if fallback in sources else min(sources)
-        else:
-            preferredCoverage = coverageBySheet.get((*sheetKey, pref), set())
-            fallbackCoverage = coverageBySheet.get((*sheetKey, fallback), set())
-            fallbackDominates = bool(fallbackCoverage) and preferredCoverage < fallbackCoverage
-            target = fallback if fallbackDominates else pref
-            if fallbackDominates:
-                _log.warning(
-                    "finance source fallback: sheet=%s preferred=%s coverage=%d fallback=%s coverage=%d",
-                    "/".join(sheetKey),
-                    pref,
-                    len(preferredCoverage),
-                    fallback,
-                    len(fallbackCoverage),
-                )
-        decisionRows.append({**dict(zip(groupCols, rawSheet, strict=True)), "_targetFs": target})
-
-    sheetSources = pl.DataFrame(
-        decisionRows,
-        schema={**{col: df.schema[col] for col in groupCols}, "_targetFs": pl.Utf8},
-    )
-    df = df.join(sheetSources.select(groupCols + ["_targetFs"]), on=groupCols, how="left")
-    df = df.filter(pl.col("fs_div") == pl.col("_targetFs"))
-    df = df.drop("_targetFs")
-    return df
-
-
 def _normalizeQ4(df: pl.DataFrame) -> pl.DataFrame:
     """IS/CIS/CF 누적값 → standalone(분기 단독) 변환.
 
@@ -429,15 +339,20 @@ def _normalizeQ4(df: pl.DataFrame) -> pl.DataFrame:
         else:
             df = df.with_columns(pl.lit(None).cast(pl.Float64).alias(col))
 
-    accountId = pl.col("account_id").fill_null("").str.strip_chars()
+    accountId = pl.col("account_id").cast(pl.Utf8).fill_null("").str.strip_chars()
     if "account_nm" in df.columns:
         detail = (
-            pl.col("account_detail").fill_null("").str.strip_chars() if "account_detail" in df.columns else pl.lit("")
+            pl.col("account_detail").cast(pl.Utf8).fill_null("").str.strip_chars()
+            if "account_detail" in df.columns
+            else pl.lit("")
         )
         df = df.with_columns(
             pl.when(accountId.is_in(["", "-표준계정코드 미사용-"]))
             .then(
-                pl.concat_str([accountId, pl.col("account_nm").fill_null("").str.strip_chars(), detail], separator="|")
+                pl.concat_str(
+                    [accountId, pl.col("account_nm").cast(pl.Utf8).fill_null("").str.strip_chars(), detail],
+                    separator="|",
+                )
             )
             .otherwise(accountId)
             .alias("_accountIdentity")

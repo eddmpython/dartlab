@@ -110,7 +110,7 @@ testUniverse:
 | **L2.5 데이터 플랫폼** | `dataHub` | L1, L1.5, L2 owner의 metadata와 공개 callable을 자동 발견해 catalog, bounded query, typed projection, PIT gate, lineage를 제공. source와 계산을 복제하지 않는다. `simulate`, `story`, `ai` 역참조 금지 |
 | **L3 조합기와 시뮬레이터** | `story` · `simulate` | story는 하위 결과를 보고서로 조합한다. simulate는 `dataHub` snapshot을 소비해 조건부 경로를 계산한다. 둘 다 dataHub보다 위에 있고 dataHub가 이들을 import하지 않는다 |
 | L4 소비자 | `ai` · `mcp` | dartlab 라이브러리 직접 호출 — AI 자율 추론 + tool 사용 (ai) · 외부 LLM 진입 (mcp). 엔진 결과를 의심·검증·재계산 |
-| 표현/전송 헬퍼 (sink) | `viz` · `cli` · `server` · `channel` · `pipeline` | 비즈니스 로직 0 — 모든 계층 결과를 다른 매체로 표현/조합. viz=차트·excel·html 렌더, cli=CLI wrapper, server=HTTP host, channel=외부 공유, **pipeline=수집 오케스트레이션**(gather fetch + providers build + HF upload 합법 조합 — 흩어진 sync 스크립트의 in-library SSOT, `dartlab sync`·`python -m dartlab.pipeline`). import 룰은 L4 와 동일(모든 하위 OK)이지만 책임 분리. sink 자격은 `SINK_HELPERS`+`PRIMARY_PACKAGES` 등록(`test_pipeline_sink`)으로 강제 |
+| 표현/전송 헬퍼 (sink) | `viz` · `cli` · `server` · `channel` · `pipeline` | 비즈니스 로직 0 — 모든 계층 결과를 다른 매체로 표현/조합. viz=차트·excel·html 렌더, cli=CLI wrapper, server=HTTP host, channel=외부 공유, **pipeline=수집 오케스트레이션**(gather fetch + providers build + HF upload 합법 조합 — 흩어진 sync 스크립트의 in-library SSOT, `dartlab sync`·`python -m dartlab.pipeline`). import 룰은 L4 와 동일(모든 하위 OK)이지만 책임 분리. sink 자격은 Guard Index `LAYER_OF`의 L4 선언과 `PRIMARY_PACKAGES` 등록(`test_pipeline_sink`)으로 강제 |
 
 import 정책 (P-CORE B 정리 결과):
 

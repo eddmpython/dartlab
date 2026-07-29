@@ -113,6 +113,13 @@ def _iterFiles() -> list[Path]:
     return files
 
 
+def _containsBannedFixed(text: str, pattern: str) -> bool:
+    """고정 금지어를 식별자 경계까지 포함해 정확히 찾는다."""
+    if pattern == "downloadAll":
+        return re.search(r"\bdownloadAll\b", text) is not None
+    return pattern in text
+
+
 def collectViolations() -> list[str]:
     """Collect DART KR docs/sections residue violations."""
 
@@ -125,7 +132,7 @@ def collectViolations() -> list[str]:
         text = path.read_text(encoding="utf-8", errors="ignore")
         rel = path.relative_to(ROOT).as_posix()
         for pattern in BANNED_FIXED:
-            if pattern in text:
+            if _containsBannedFixed(text, pattern):
                 violations.append(f"{rel}: banned pattern {pattern!r}")
         if path not in ALLOW_DOCS_CATEGORY and DOCS_CATEGORY_RE.search(text):
             violations.append(f"{rel}: category='docs' load path is retired; use panel")

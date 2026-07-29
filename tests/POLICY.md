@@ -80,7 +80,7 @@ tests/
 ├── benchmarks/          # 성능 (pytest-benchmark)
 ├── skills/              # Skill OS 검증
 ├── audit/               # 메타 검증 (AST · docstring · baseline)
-├── _schemas/            # Pandera schema 회귀 (private)
+├── gather/dart/test_schemas.py  # Pandera DART 원본 schema 회귀
 ├── _drafts/             # ghostwriter 자동 draft (default collection 제외)
 ├── _evals/              # AI agent eval set + judge (Track 3)
 ├── _fixtures/           # fixture 선언 분리

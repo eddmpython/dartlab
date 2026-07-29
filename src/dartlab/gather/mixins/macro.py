@@ -20,11 +20,39 @@ class _SdmxFacade(Protocol):
         startPeriod: str | None = None,
         endPeriod: str | None = None,
     ) -> "pl.DataFrame":
-        """정규화된 지표 ID의 SDMX 시계열을 반환한다."""
+        """정규화된 지표 ID의 SDMX 시계열을 반환한다.
+
+        Args:
+            indicatorId: provider가 지원하는 정규화 지표 ID.
+            startPeriod: 조회 시작 기간.
+            endPeriod: 조회 종료 기간.
+
+        Returns:
+            날짜와 값이 정규화된 시계열 DataFrame.
+
+        Requires:
+            provider별 네트워크 연결과 공개 데이터 endpoint.
+
+        Raises:
+            provider 요청 또는 응답 계약 오류를 그대로 전달한다.
+
+        Example:
+            >>> provider.series("ECB_HICP")  # doctest: +SKIP
+        """
         ...
 
     def close(self) -> None:
-        """provider가 보유한 HTTP 자원을 닫는다."""
+        """provider가 보유한 HTTP 자원을 닫는다.
+
+        Returns:
+            없음.
+
+        Raises:
+            자원 해제에 실패하면 provider 예외를 그대로 전달한다.
+
+        Example:
+            >>> provider.close()  # doctest: +SKIP
+        """
         ...
 
 
