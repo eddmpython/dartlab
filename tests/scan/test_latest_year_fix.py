@@ -80,6 +80,24 @@ def test_filterLatestPeriodPerStock_selects_latest_quarter_independent_of_row_or
     assert forward.sort("account_id").equals(reverse.sort("account_id"))
 
 
+def test_filterLatestPeriodPerStockLazy_matches_eager():
+    from dartlab.scan.io.parquet import filterLatestPeriodPerStock, filterLatestPeriodPerStockLazy
+
+    frame = pl.DataFrame(
+        {
+            "stockCode": ["A", "A", "A", "B", "B"],
+            "bsns_year": ["2024", "2025", "2025", "2024", "2024"],
+            "reprt_nm": ["4분기", "1분기", "4분기", "1분기", "3분기"],
+            "value": [1, 2, 3, 4, 5],
+        }
+    )
+
+    eager = filterLatestPeriodPerStock(frame).sort(["stockCode", "value"])
+    lazy = filterLatestPeriodPerStockLazy(frame.lazy()).collect().sort(["stockCode", "value"])
+
+    assert lazy.equals(eager)
+
+
 def test_computeProfitability_uses_one_deterministic_period():
     from dartlab.scan.financial.profitability import _computeProfitability
 

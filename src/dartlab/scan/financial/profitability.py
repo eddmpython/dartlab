@@ -6,6 +6,7 @@ from pathlib import Path
 
 import polars as pl
 
+from dartlab.scan.io.accounts import aggregateAccountValues
 from dartlab.scan.io.parquet import (
     EQ_IDS as _EQ_IDS,
 )
@@ -40,12 +41,13 @@ from dartlab.scan.io.parquet import (
     _ensureScanData,
     _loadRawFinanceViaDuckDb,
     collectScan,
-    extractAccount,
     filterLatestPeriodPerStock,
+    filterLatestPeriodPerStockLazy,
     financeScanPath,
     lazyParquet,
     parquetColumns,
     preferConsolidatedPerCompany,
+    preferConsolidatedPerCompanyLazy,
 )
 
 _PROFITABILITY_SCHEMA = {
@@ -191,20 +193,28 @@ def _scanFromMerged(scanPath: Path) -> pl.DataFrame:
     allIds = list(_REVENUE_IDS | _OP_IDS | _NI_IDS | _TA_IDS | _EQ_IDS)
     allNms = list(_REVENUE_NMS | _OP_NMS | _NI_NMS | _TA_NMS | _EQ_NMS)
 
-    target = collectScan(
-        lazyParquet(scanPath).filter(
+    source = (
+        lazyParquet(scanPath)
+        .filter(
             pl.col("sj_div").is_in(["IS", "CIS", "BS"])
             & (pl.col("fs_nm").str.contains("연결") | pl.col("fs_nm").str.contains("재무제표"))
             & (pl.col("account_id").is_in(allIds) | pl.col("account_nm").is_in(allNms))
         )
+        .select(
+            "stockCode",
+            "bsns_year",
+            "reprt_nm",
+            "sj_div",
+            "fs_nm",
+            "account_id",
+            "account_nm",
+            "thstrm_amount",
+        )
     )
+    source = preferConsolidatedPerCompanyLazy(source, scCol)
+    target = collectScan(filterLatestPeriodPerStockLazy(source, scCol))
     if target.is_empty() or scCol not in target.columns:
         return _emptyProfitabilityFrame()
-
-    # 연결 우선
-    # 회사별 연결 우선. 유니버스 전체로 한 번에 좁히면 별도만 내는 회사가
-    # 다른 회사 때문에 사라진다.
-    target = preferConsolidatedPerCompany(target, scCol)
 
     return _computeProfitability(target, scCol)
 
@@ -310,57 +320,78 @@ def _computeProfitability(target: pl.DataFrame, scCol: str) -> pl.DataFrame:
     if latest.is_empty():
         return _emptyProfitabilityFrame()
 
-    rows: list[dict] = []
-    for code in latest[scCol].unique().to_list():
-        sub = latest.filter(pl.col(scCol) == code)
-        # sj_div 앵커 — 자본·자산은 BS(stock), 매출·이익은 IS/CIS(flow)에서만 추출.
-        # (자본명 "지배기업 소유주지분"이 CIS 포괄손익 흐름행과 충돌해 ROE 폭주하던 버그 차단)
-        hasSj = "sj_div" in sub.columns
-        bs = sub.filter(pl.col("sj_div") == "BS") if hasSj else sub
-        flow = sub.filter(pl.col("sj_div").is_in(["IS", "CIS"])) if hasSj else sub
-
-        rev = extractAccount(flow, _REVENUE_IDS, _REVENUE_NMS)
-        op = extractAccount(flow, _OP_IDS, _OP_NMS)
-        ni = extractAccount(flow, _NI_IDS, _NI_NMS)
-        ta = extractAccount(bs, _TA_IDS, _TA_NMS)
-        eq = extractAccount(bs, _EQ_IDS, _EQ_NMS)
-
-        # 분모 양수·비자명 가드 — 0/음수 자본·매출은 비율 무의미(음수자본 ROE 폭주) → None
-        opMargin = round(op / rev * 100, 1) if rev and rev > 1e6 and op is not None else None
-        netMargin = round(ni / rev * 100, 1) if rev and rev > 1e6 and ni is not None else None
-        roe = round(ni / eq * 100, 1) if eq and eq > 1e6 and ni is not None else None
-        roa = round(ni / ta * 100, 1) if ta and ta > 1e6 and ni is not None else None
-        # 영업이익률 |값|>100% = 수학적 불가(op ≤ rev) → 매출 추출 artifact → None
-        if opMargin is not None and abs(opMargin) > 100:
-            opMargin = None
-
-        if opMargin is None and netMargin is None and roe is None and roa is None:
-            continue
-
-        # netMargin이 opMargin 대비 극단적으로 크면 비경상 이익 의심
-        hasNonRecurring = (
-            netMargin is not None
-            and opMargin is not None
-            and abs(netMargin) > abs(opMargin) * 3
-            and abs(netMargin) > 50
-        )
-
-        rows.append(
-            {
-                "stockCode": code,
-                "opMargin": opMargin,
-                "netMargin": netMargin,
-                "roe": roe,
-                "roa": roa,
-                "grade": _gradeProfitability(opMargin, roe),
-                "nonRecurring": hasNonRecurring,
-            }
-        )
-
-    if not rows:
+    values = aggregateAccountValues(
+        latest,
+        [scCol],
+        {
+            "_revenue": (_REVENUE_IDS, _REVENUE_NMS, {"IS", "CIS"}),
+            "_operatingIncome": (_OP_IDS, _OP_NMS, {"IS", "CIS"}),
+            "_netIncome": (_NI_IDS, _NI_NMS, {"IS", "CIS"}),
+            "_assets": (_TA_IDS, _TA_NMS, {"BS"}),
+            "_equity": (_EQ_IDS, _EQ_NMS, {"BS"}),
+        },
+    )
+    if values.is_empty():
         return _emptyProfitabilityFrame()
 
-    return pl.DataFrame(rows, schema=_PROFITABILITY_SCHEMA)
+    validRevenue = pl.col("_revenue") > 1e6
+    validEquity = pl.col("_equity") > 1e6
+    validAssets = pl.col("_assets") > 1e6
+    result = values.with_columns(
+        pl.when(validRevenue & pl.col("_operatingIncome").is_not_null())
+        .then((pl.col("_operatingIncome") / pl.col("_revenue") * 100).round(1))
+        .alias("opMargin"),
+        pl.when(validRevenue & pl.col("_netIncome").is_not_null())
+        .then((pl.col("_netIncome") / pl.col("_revenue") * 100).round(1))
+        .alias("netMargin"),
+        pl.when(validEquity & pl.col("_netIncome").is_not_null())
+        .then((pl.col("_netIncome") / pl.col("_equity") * 100).round(1))
+        .alias("roe"),
+        pl.when(validAssets & pl.col("_netIncome").is_not_null())
+        .then((pl.col("_netIncome") / pl.col("_assets") * 100).round(1))
+        .alias("roa"),
+    ).with_columns(
+        pl.when(pl.col("opMargin").abs() > 100)
+        .then(None)
+        .otherwise(pl.col("opMargin"))
+        .cast(pl.Float64)
+        .alias("opMargin")
+    )
+    best = pl.max_horizontal("opMargin", "roe")
+    result = (
+        result.with_columns(
+            pl.when(best.is_null())
+            .then(pl.lit("자료부족"))
+            .when(best >= 20)
+            .then(pl.lit("우수"))
+            .when(best >= 10)
+            .then(pl.lit("양호"))
+            .when(best >= 5)
+            .then(pl.lit("보통"))
+            .when(best >= 0)
+            .then(pl.lit("저수익"))
+            .otherwise(pl.lit("적자"))
+            .alias("grade"),
+            (
+                pl.col("netMargin").is_not_null()
+                & pl.col("opMargin").is_not_null()
+                & (pl.col("netMargin").abs() > pl.col("opMargin").abs() * 3)
+                & (pl.col("netMargin").abs() > 50)
+            ).alias("nonRecurring"),
+        )
+        .filter(
+            pl.any_horizontal(
+                pl.col("opMargin").is_not_null(),
+                pl.col("netMargin").is_not_null(),
+                pl.col("roe").is_not_null(),
+                pl.col("roa").is_not_null(),
+            )
+        )
+        .select(*_PROFITABILITY_SCHEMA)
+        .with_columns(pl.col(name).cast(dtype) for name, dtype in _PROFITABILITY_SCHEMA.items())
+        .sort("stockCode")
+    )
+    return result
 
 
 __all__ = ["scanProfitability"]

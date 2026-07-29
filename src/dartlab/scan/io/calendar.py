@@ -231,6 +231,20 @@ def filterLatestPerStock(target: pl.DataFrame, scCol: str = "stockCode", yearCol
     return target.join(latest, on=scCol).filter(pl.col(yearCol) == pl.col("_maxYear")).drop("_maxYear")
 
 
+def filterLatestPerStockLazy(
+    target: pl.LazyFrame,
+    scCol: str = "stockCode",
+    yearCol: str = "bsns_year",
+) -> pl.LazyFrame:
+    """LazyFrame에서 회사별 최신 연도 필터를 수집 전에 적용한다."""
+
+    columns = set(target.collect_schema().names())
+    if scCol not in columns or yearCol not in columns:
+        return target
+    latest = target.group_by(scCol).agg(pl.col(yearCol).max().alias("_maxYear"))
+    return target.join(latest, on=scCol).filter(pl.col(yearCol) == pl.col("_maxYear")).drop("_maxYear")
+
+
 _FINANCE_PERIOD_RANK = {
     "Q1": 1,
     "1분기": 1,
@@ -269,6 +283,32 @@ def filterLatestPeriodPerStock(
 
     latest = filterLatestPerStock(target, scCol, yearCol)
     if latest.is_empty() or periodCol not in latest.columns:
+        return latest
+    ranked = latest.with_columns(
+        pl.col(periodCol)
+        .cast(pl.Utf8)
+        .replace_strict(_FINANCE_PERIOD_RANK, default=0, return_dtype=pl.Int8)
+        .alias("_periodRank")
+    )
+    best = ranked.group_by(scCol).agg(pl.col("_periodRank").max().alias("_bestPeriodRank"))
+    return (
+        ranked.join(best, on=scCol)
+        .filter(pl.col("_periodRank") == pl.col("_bestPeriodRank"))
+        .drop("_periodRank", "_bestPeriodRank")
+    )
+
+
+def filterLatestPeriodPerStockLazy(
+    target: pl.LazyFrame,
+    scCol: str = "stockCode",
+    yearCol: str = "bsns_year",
+    periodCol: str = "reprt_nm",
+) -> pl.LazyFrame:
+    """회사별 최신 연도와 기간을 LazyFrame 수집 전에 결정한다."""
+
+    latest = filterLatestPerStockLazy(target, scCol, yearCol)
+    columns = set(latest.collect_schema().names())
+    if periodCol not in columns:
         return latest
     ranked = latest.with_columns(
         pl.col(periodCol)

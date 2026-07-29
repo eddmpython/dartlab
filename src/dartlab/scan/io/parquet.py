@@ -58,7 +58,13 @@ from dartlab.scan.io.calendar import (
     filterLatestPeriodPerStock as filterLatestPeriodPerStock,
 )
 from dartlab.scan.io.calendar import (
+    filterLatestPeriodPerStockLazy as filterLatestPeriodPerStockLazy,
+)
+from dartlab.scan.io.calendar import (
     filterLatestPerStock as filterLatestPerStock,
+)
+from dartlab.scan.io.calendar import (
+    filterLatestPerStockLazy as filterLatestPerStockLazy,
 )
 from dartlab.scan.io.calendar import (
     findLatestYear as findLatestYear,

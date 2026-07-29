@@ -45,6 +45,56 @@ LIABILITY_IDS = {"Liabilities", "ifrs-full_Liabilities", "ifrs_Liabilities", "da
 LIABILITY_NMS = {"부채총계", "총부채", "부채 총계"}
 
 
+def _amountExpr(amtCol: str) -> pl.Expr:
+    """회계 숫자 문자열을 Polars 식 하나로 정규화한다."""
+
+    raw = pl.col(amtCol).cast(pl.Utf8).str.strip_chars()
+    negative = raw.str.contains(r"^[△▲]") | (raw.str.starts_with("(") & raw.str.ends_with(")"))
+    numeric = (
+        raw.str.replace(r"^[△▲]", "")
+        .str.strip_chars("() ")
+        .str.replace_all(",", "")
+        .str.replace_all("%", "")
+        .str.strip_chars()
+        .cast(pl.Float64, strict=False)
+    )
+    return pl.when(negative).then(-numeric.abs()).otherwise(numeric)
+
+
+def aggregateAccountValues(
+    target: pl.DataFrame,
+    groupCols: list[str],
+    accountSpecs: dict[str, tuple[set[str], set[str], set[str] | None]],
+    *,
+    amtCol: str = "thstrm_amount",
+) -> pl.DataFrame:
+    """여러 계정 값을 그룹별로 한 번에 집계한다.
+
+    ``accountSpecs`` 값은 ``(account_ids, account_names, sj_divs)``다.
+    ``sj_divs``가 지정돼도 입력에 ``sj_div``가 없으면 계정 식별자만 사용한다.
+    각 계정은 첫 유효 금액을 선택해 기존 :func:`extractAccount` 계약을 보존한다.
+    """
+
+    required = {*groupCols, "account_id", "account_nm", amtCol}
+    if target.is_empty() or not required.issubset(target.columns):
+        return pl.DataFrame(
+            schema={
+                **{col: target.schema.get(col, pl.Utf8) for col in groupCols},
+                **{name: pl.Float64 for name in accountSpecs},
+            }
+        )
+
+    amountCol = "_scanAmount"
+    work = target.with_columns(_amountExpr(amtCol).alias(amountCol))
+    expressions: list[pl.Expr] = []
+    for name, (ids, names, statementDivs) in accountSpecs.items():
+        matched = pl.col("account_id").is_in(ids) | pl.col("account_nm").is_in(names)
+        if statementDivs is not None and "sj_div" in target.columns:
+            matched &= pl.col("sj_div").is_in(statementDivs)
+        expressions.append(pl.col(amountCol).filter(matched & pl.col(amountCol).is_not_null()).first().alias(name))
+    return work.group_by(groupCols).agg(expressions)
+
+
 def extractAccount(sub: pl.DataFrame, ids: set[str], nms: set[str], amtCol: str = "thstrm_amount") -> float | None:
     """DataFrame에서 account_id/account_nm 매칭 → 금액 추출.
 

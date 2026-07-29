@@ -6,7 +6,7 @@ from pathlib import Path
 
 import polars as pl
 
-from dartlab.core.utils.calc import cagr as _cagr  # noqa: E402
+from dartlab.scan.io.accounts import aggregateAccountValues
 from dartlab.scan.io.parquet import (
     NI_IDS as _NI_IDS,
 )
@@ -28,11 +28,12 @@ from dartlab.scan.io.parquet import (
 from dartlab.scan.io.parquet import (
     _ensureScanData,
     collectScan,
-    extractAccount,
     filterLatestPeriodPerStock,
+    filterLatestPeriodPerStockLazy,
     financeScanPath,
     lazyParquet,
-    preferConsolidatedPerCompany,
+    parquetColumns,
+    preferConsolidatedPerCompanyLazy,
 )
 
 _GROWTH_SCHEMA = {
@@ -214,22 +215,33 @@ def _scanFromMerged(scanPath: Path) -> pl.DataFrame:
     allIds = list(_REVENUE_IDS | _OP_IDS | _NI_IDS)
     allNms = list(_REVENUE_NMS | _OP_NMS | _NI_NMS)
 
-    target = collectScan(
-        lazyParquet(scanPath).filter(
+    schema = parquetColumns(scanPath)
+    source = (
+        lazyParquet(scanPath)
+        .filter(
             pl.col("sj_div").is_in(["IS", "CIS"])
             & (pl.col("fs_nm").str.contains("연결") | pl.col("fs_nm").str.contains("재무제표"))
             & (pl.col("account_id").is_in(allIds) | pl.col("account_nm").is_in(allNms))
         )
+        .select(
+            "stockCode",
+            "bsns_year",
+            *(["reprt_nm"] if "reprt_nm" in schema else []),
+            "sj_div",
+            "fs_nm",
+            "account_id",
+            "account_nm",
+            "thstrm_amount",
+        )
     )
+    source = preferConsolidatedPerCompanyLazy(source, scCol)
+    if "reprt_nm" in schema:
+        latestPeriods = filterLatestPeriodPerStockLazy(source, scCol).select(scCol, "reprt_nm").unique()
+        source = source.join(latestPeriods, on=[scCol, "reprt_nm"], how="inner")
+    target = collectScan(source)
     if target.is_empty() or scCol not in target.columns:
         return _emptyGrowthFrame()
 
-    # 연결 우선
-    # 회사별 연결 우선. 유니버스 전체로 한 번에 좁히면 별도만 내는 회사가
-    # 다른 회사 때문에 사라진다.
-    target = preferConsolidatedPerCompany(target, scCol)
-
-    # 연도별로 분리하여 CAGR 계산
     return _computeGrowth(target, scCol)
 
 
@@ -310,71 +322,125 @@ def _computeGrowth(target: pl.DataFrame, scCol: str) -> pl.DataFrame:
     if target.is_empty() or not required.issubset(set(target.columns)):
         return _emptyGrowthFrame()
 
-    # 종목별 최신·기준 연도 (CAGR 은 pair 필요) — 글로벌 years[0] 버그 방지 (2026-04-23).
-    # 한 종목의 2026 Q1 조기 제출 때문에 전종목이 2025 로 커트되던 현상 수정.
-    rows: list[dict] = []
-    for code in target[scCol].unique().to_list():
-        sub = target.filter(pl.col(scCol) == code)
-        # 최신 기간을 먼저 고르고, CAGR 기준연도도 같은 분기끼리 비교한다.
-        # Q1 최신값과 과거 Q4 누계값을 섞으면 행 순서와 공시 구성에 따라 성장률이 바뀐다.
-        if "reprt_nm" in sub.columns:
-            latestPeriodRows = filterLatestPeriodPerStock(sub, scCol)
-            if latestPeriodRows.is_empty():
-                continue
-            latestPeriod = latestPeriodRows["reprt_nm"][0]
-            sub = sub.filter(pl.col("reprt_nm") == latestPeriod)
-        yrs = sorted(sub["bsns_year"].unique().to_list(), reverse=True)
-        if len(yrs) < 2:
-            continue
-        latestYear = yrs[0]
-        # 3년 전 연도 찾기, 없으면 가장 오래된 연도
-        baseYear = None
-        nYears = 0
-        for y in yrs:
-            if int(latestYear) - int(y) >= 3:
-                baseYear = y
-                nYears = int(latestYear) - int(y)
-                break
-        if baseYear is None:
-            baseYear = yrs[-1]
-            nYears = int(latestYear) - int(baseYear)
-        if nYears == 0:
-            continue
+    # 최신 기간을 회사별로 한 번만 결정하고 과거에도 같은 분기만 남긴다.
+    if "reprt_nm" in target.columns:
+        latestPeriods = filterLatestPeriodPerStock(target, scCol).select(scCol, "reprt_nm").unique()
+        target = target.join(latestPeriods, on=[scCol, "reprt_nm"], how="inner")
 
-        latSub = sub.filter(pl.col("bsns_year") == latestYear)
-        baseSub = sub.filter(pl.col("bsns_year") == baseYear)
-
-        revNow = extractAccount(latSub, _REVENUE_IDS, _REVENUE_NMS)
-        revOld = extractAccount(baseSub, _REVENUE_IDS, _REVENUE_NMS)
-        opNow = extractAccount(latSub, _OP_IDS, _OP_NMS)
-        opOld = extractAccount(baseSub, _OP_IDS, _OP_NMS)
-        niNow = extractAccount(latSub, _NI_IDS, _NI_NMS)
-        niOld = extractAccount(baseSub, _NI_IDS, _NI_NMS)
-
-        revCagr = _cagr(revOld, revNow, nYears) if revOld is not None and revOld > 0 and revNow is not None else None
-        opCagr = _cagr(opOld, opNow, nYears) if opOld is not None and opOld > 0 and opNow is not None else None
-        niCagr = _cagr(niOld, niNow, nYears) if niOld is not None and niOld > 0 and niNow is not None else None
-
-        if revCagr is None and opCagr is None and niCagr is None:
-            continue
-
-        rows.append(
-            {
-                "stockCode": code,
-                "revenue": round(revNow) if revNow is not None else None,
-                "revenueCagr": revCagr,
-                "opIncomeCagr": opCagr,
-                "netIncomeCagr": niCagr,
-                "years": nYears,
-                "grade": _gradeGrowth(revCagr, opCagr),
-                "pattern": _classifyPattern(revCagr, opCagr, niCagr),
-            }
-        )
-
-    if not rows:
+    work = target.with_columns(pl.col("bsns_year").cast(pl.Int32, strict=False).alias("_year"))
+    work = work.filter(pl.col("_year").is_not_null())
+    values = aggregateAccountValues(
+        work,
+        [scCol, "_year"],
+        {
+            "_revenue": (_REVENUE_IDS, _REVENUE_NMS, {"IS", "CIS"}),
+            "_operatingIncome": (_OP_IDS, _OP_NMS, {"IS", "CIS"}),
+            "_netIncome": (_NI_IDS, _NI_NMS, {"IS", "CIS"}),
+        },
+    )
+    if values.is_empty():
         return _emptyGrowthFrame()
 
-    return pl.DataFrame(rows, schema=_GROWTH_SCHEMA)
+    bounds = values.group_by(scCol).agg(
+        pl.col("_year").max().alias("_latestYear"),
+        pl.col("_year").min().alias("_oldestYear"),
+        pl.len().alias("_yearCount"),
+    )
+    baseCandidates = (
+        values.join(bounds.select(scCol, "_latestYear"), on=scCol)
+        .filter(pl.col("_year") <= pl.col("_latestYear") - 3)
+        .group_by(scCol)
+        .agg(pl.col("_year").max().alias("_threeYearBase"))
+    )
+    bounds = (
+        bounds.join(baseCandidates, on=scCol, how="left")
+        .with_columns(pl.coalesce("_threeYearBase", "_oldestYear").alias("_baseYear"))
+        .with_columns((pl.col("_latestYear") - pl.col("_baseYear")).alias("years"))
+        .filter((pl.col("_yearCount") >= 2) & (pl.col("years") > 0))
+    )
+    if bounds.is_empty():
+        return _emptyGrowthFrame()
+
+    latestValues = values.rename(
+        {
+            "_year": "_latestYear",
+            "_revenue": "_revenueNow",
+            "_operatingIncome": "_operatingIncomeNow",
+            "_netIncome": "_netIncomeNow",
+        }
+    )
+    baseValues = values.rename(
+        {
+            "_year": "_baseYear",
+            "_revenue": "_revenueOld",
+            "_operatingIncome": "_operatingIncomeOld",
+            "_netIncome": "_netIncomeOld",
+        }
+    )
+    result = bounds.join(latestValues, on=[scCol, "_latestYear"]).join(baseValues, on=[scCol, "_baseYear"])
+
+    exponent = pl.lit(1.0) / pl.col("years")
+
+    def cagrExpr(old: str, new: str) -> pl.Expr:
+        """양수인 시작값과 종료값에만 CAGR 벡터식을 적용한다."""
+
+        valid = (pl.col(old) > 0) & (pl.col(new) > 0)
+        return pl.when(valid).then(((pl.col(new) / pl.col(old)).pow(exponent) - 1).mul(100).round(1))
+
+    result = result.with_columns(
+        pl.col("_revenueNow").round(0).alias("revenue"),
+        cagrExpr("_revenueOld", "_revenueNow").alias("revenueCagr"),
+        cagrExpr("_operatingIncomeOld", "_operatingIncomeNow").alias("opIncomeCagr"),
+        cagrExpr("_netIncomeOld", "_netIncomeNow").alias("netIncomeCagr"),
+    )
+    best = pl.max_horizontal("revenueCagr", "opIncomeCagr")
+    result = result.with_columns(
+        pl.when(best.is_null())
+        .then(pl.lit("자료부족"))
+        .when(best >= 20)
+        .then(pl.lit("고성장"))
+        .when(best >= 10)
+        .then(pl.lit("성장"))
+        .when(best >= 0)
+        .then(pl.lit("정체"))
+        .when(best >= -10)
+        .then(pl.lit("역성장"))
+        .otherwise(pl.lit("급감"))
+        .alias("grade"),
+        pl.when(pl.col("revenueCagr").is_null() | pl.col("opIncomeCagr").is_null())
+        .then(pl.lit("자료부족"))
+        .when(
+            pl.col("netIncomeCagr").is_not_null()
+            & (pl.col("revenueCagr") > 5)
+            & (pl.col("opIncomeCagr") > 5)
+            & (pl.col("netIncomeCagr") > 5)
+        )
+        .then(pl.lit("균형성장"))
+        .when((pl.col("revenueCagr") > 5) & (pl.col("opIncomeCagr") > pl.col("revenueCagr")))
+        .then(pl.lit("수익개선"))
+        .when((pl.col("revenueCagr") > 5) & (pl.col("opIncomeCagr") < 0))
+        .then(pl.lit("외형성장"))
+        .when((pl.col("revenueCagr") < -5) & (pl.col("opIncomeCagr") > 0))
+        .then(pl.lit("구조조정"))
+        .when((pl.col("revenueCagr") < -5) & (pl.col("opIncomeCagr") < -5))
+        .then(pl.lit("전면역성장"))
+        .when(pl.col("netIncomeCagr").is_not_null())
+        .then(pl.lit("혼합"))
+        .otherwise(pl.lit("자료부족"))
+        .alias("pattern"),
+    )
+    return (
+        result.filter(
+            pl.any_horizontal(
+                pl.col("revenueCagr").is_not_null(),
+                pl.col("opIncomeCagr").is_not_null(),
+                pl.col("netIncomeCagr").is_not_null(),
+            )
+        )
+        .select(*_GROWTH_SCHEMA)
+        .with_columns(pl.col(name).cast(dtype) for name, dtype in _GROWTH_SCHEMA.items())
+        .sort("stockCode")
+    )
 
 
 __all__ = ["scanGrowth"]

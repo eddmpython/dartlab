@@ -59,8 +59,7 @@ Guard는 현재 레이어의 source를 동결한 뒤 한 번 실행한다. Guard
   데이터 계약·오류 투명성·SSOT·속도·메모리 기준으로 전수 대조한다. 네 형제 간
   cross import 없이 결함 수정과 집중 회귀를 끝내고 source 동결 뒤 공식 Guard, 원장,
   커밋, push까지 닫는다.
-- 다음 첫 행동: reference 계정 별칭 의미 계약까지 닫은 현재 체크포인트를 push한 뒤,
-  scan의 회사별 반복 filter를 one-pass 집계로 바꾸고 EDGAR 공통 기간 batch를
+- 다음 첫 행동: scan one-pass 집계 체크포인트를 push한 뒤 EDGAR 공통 기간 batch를
   속도·메모리 기준으로 고친다. 이어 frame, synth, reference의 남은 전체 src와
   공개 호출자 대조를 계속한다.
 - 금지: axis나 파일 하나만 끝내고 완료 보고, L2 이상 수정 선행,
@@ -116,6 +115,33 @@ Guard는 현재 레이어의 source를 동결한 뒤 한 번 실행한다. Guard
 다음 순서는 scan 집계를 회사별 반복 filter가 없는 one-pass 경로로 바꾸고 EDGAR 계정
 batch와 공통 period를 확정하는 것이다. frame, synth, reference의 남은 전체 범위와
 실제 소비자, 최종 Guard가 남았으므로 **L1.5 판정은 미완료**다.
+
+### 진행 증거 3. scan 재무 one-pass 집계
+
+**상태: L1.5 진행 중. 레이어 완료 아님.** 수익성과 성장성이 회사마다 전종목
+DataFrame을 다시 필터하고 계정 행을 반복 순회하던 병목을 공통 벡터 집계로 교체했다.
+
+1. 회계 숫자 정규화와 `sj_div` 계정 구분을 `aggregateAccountValues` 한 곳에 모았다.
+   콤마, 괄호 음수, 삼각형 음수, 퍼센트, 결측을 Polars 식으로 처리하고 회사별 계정
+   묶음을 한 번의 group 집계로 만든다.
+2. 수익성의 네 비율, 비경상 의심, 등급과 성장성의 기간 pair, 세 CAGR, 등급, 패턴을
+   Python 회사별 loop 없이 벡터식으로 계산한다.
+3. 합본 parquet는 필요한 여덟 컬럼만 projection하고 연결 우선, 회사별 최신 연도와
+   기간, 성장성의 동일 분기 join을 LazyFrame 수집 전에 수행한다. 불필요한 전체 연도와
+   전체 컬럼을 Python 프로세스에 올리지 않는다.
+4. 직전 구현과 동일 입력을 직접 대조했다. 수익성은 2,811개 종목과 네 비율 모두
+   `0 mismatch`, 성장성은 2,493개 종목과 최신 매출, 세 CAGR, 기간 모두
+   `0 mismatch`다.
+5. 실데이터 수익성은 약 `5.3초 -> 1.80초`, RSS 증가는 약
+   `955MB -> 224MB`로 줄었다. 성장성은 약 `6.7초 -> 2.65초`, 최종 RSS 증가는
+   약 `207MB`다.
+6. 숫자·계정·기간·연결 우선·DuckDB fallback·parquet 회귀 `51 passed`, 공개 scan
+   축과 streaming 계약 회귀 `106 passed`, 변경 source Pyright 오류 0과 Ruff를
+   통과했다.
+
+다음 순서는 EDGAR 계정 batch와 공통 period를 확정하는 것이다. frame, synth,
+reference의 남은 전체 범위와 실제 소비자, 최종 Guard가 남았으므로
+**L1.5 판정은 미완료**다.
 
 ## L1 gather, providers 순차 안정화 원장 (2026-07-30)
 
