@@ -1753,3 +1753,38 @@ L1.5 전체는 아직 완료가 아니다. 다음 체크포인트는 scan의 남
 prebuild, universe, dispatcher와 KR report 구조 부채를 같은 방식으로 닫는 것이다.
 그 뒤 frame, synth, reference 순서로 진행한다. 공식 Guard는 L1.5 형제 전체 동결 뒤
 한 번 실행하며 L2 이상은 그 전 착수하지 않는다.
+
+### L1.5 US coverage audit harness 체크포인트: 완료
+
+EDGAR coverage 감사가 source 불변과 loader/network 0만 확인해 상장 universe와 finance
+source, 성공 결과가 모두 0이어도 `passedSafetyGate=true`를 내던 release blocker를 닫았다.
+schema v2는 빈 audited/source/success 집합을 각각 fail-closed하고, full audit에는 unique
+CIK source coverage 90%와 공식 strict/flow/revenue 성공률 하한 30%/40%/50%를 적용한다.
+임의 measure와 제한 표본은 성공·source가 하나 이상이어야 하며 full 하한을 수치처럼
+오용하지 않는다. 실패 원인은 machine-readable code로 남긴다.
+
+감사 guard도 프로세스 전역 영구 변조에서 구간 context로 바꿨다. Python audit hook은 한
+번만 설치하되 감사 구간 밖에서는 비활성이고, dataLoader 함수는 실행 성공·실패와 무관하게
+원본 identity로 복구된다. 같은 프로세스에서 감사 두 번 실행과 감사 종료 뒤
+`socket.connect` audit event를 재현해 잔존 차단이 0임을 확인했다. revenue-only의
+`four standalone revenue quarters`도 일반 실패로 뭉개지지 않고
+`FEATURE_NO_COHERENT_FOUR_QUARTER_WINDOW`로 분류한다.
+
+최종 코드 상태의 실제 7,683 ticker/6,069 unique CIK 전수에서 revenue-only는 4,038
+성공(52.5576%), 189.837초, p50 87.916ms, p95 224.096ms였다. flow-only는 3,256
+성공(42.3793%), 347.917초, p50 125.802ms, p95 453.128ms였다. 두 실행 모두 unique
+source 5,662/6,069(93.2938%), missing 407, loader 0, network 0, listing과 source-set
+digest 불변으로 새 gate를 통과했다. revenue는 수정 전 실행과 성공 4,038 및 source-set
+digest가 같아 결정성도 확인했고, 최종 분류에서 `FEATURE_OTHER_FAILURE`는 0이다.
+
+full-state strict는 최종 코드 100 ticker 표본에서 28 성공, 33.325초, source 73/75,
+loader/network 0, source 불변을 통과했다. 전수는 15분 운영 한도를 넘겨 중단했으며 원인은
+상위 `analysis/financial/edgarPitState`가 한 회사 반례에서 Polars collect 7,197회와 stock
+candidate 119회를 반복하는 것이다. L1.5 audit harness 결함으로 숨기거나 성공을 주장하지
+않고 해당 owner 레이어의 성능 차단 항목으로 원장에 남긴다. 하위 순서를 깨고 지금 상위
+compiler를 수정하지 않는다.
+
+회귀는 audit unit 12 passed, Pyright 0, Ruff, formatter, diff check를 통과했다. 독립
+EDGAR 감사에서 확인된 다음 P0는 같은 L1.5의 다음 체크포인트인 EDGAR prebuild가 소유한다:
+finance의 ticker/CIK 혼합, identity/prior/price 실패 뒤 빈·부분 scan 전체 덮어쓰기, 비원자
+발행이다. 그다음 universe와 dispatcher를 닫으며 L2 이상은 여전히 착수하지 않는다.

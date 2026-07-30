@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 import polars as pl
@@ -16,6 +17,7 @@ from tests.audit.edgarCoverageAudit import (
     NetworkAccessError,
     _digestFile,
     _loadUniverse,
+    auditEdgarCoverage,
     classifyError,
     validateEnvelope,
 )
@@ -78,6 +80,10 @@ def testClassifyErrorKeepsPitAndFeatureFailuresSeparate() -> None:
     )
     assert (
         classifyError(ValueError("four common standalone revenue quarters are required"))
+        == "FEATURE_NO_COHERENT_FOUR_QUARTER_WINDOW"
+    )
+    assert (
+        classifyError(ValueError("four standalone revenue quarters are required"))
         == "FEATURE_NO_COHERENT_FOUR_QUARTER_WINDOW"
     )
     assert classifyError(ValueError("EDGAR facts missing columns: ['tag']")) == "SOURCE_SCHEMA_MISSING"
@@ -154,3 +160,93 @@ def testDigestFileReturnsExactBytesIdentity(tmp_path: Path) -> None:
 
     assert digest == "5c9c784359cfb0585ad3b4708aef518720b26a516a71d59337f21ff488584346"
     assert size == 12
+
+
+def _writeListedUniverse(path: Path) -> None:
+    pl.DataFrame(
+        {
+            "cik": ["1"],
+            "ticker": ["AAA"],
+            "title": ["AAA Inc"],
+            "exchange": ["NYSE"],
+            "is_exchange_listed": [True],
+            "is_otc": [False],
+        }
+    ).write_parquet(path)
+
+
+def testCoverageGateRejectsUniverseWithNoSourceOrSuccess(tmp_path: Path) -> None:
+    """원천과 성공이 모두 0인 full audit는 무결성만으로 통과하지 못한다."""
+
+    listing = tmp_path / "listedUniverse.parquet"
+    finance = tmp_path / "finance"
+    finance.mkdir()
+    _writeListedUniverse(listing)
+
+    report = auditEdgarCoverage(
+        listingPath=listing,
+        financeRoot=finance,
+        knownAt="20260723",
+        workers=1,
+        limit=None,
+        progressEvery=0,
+    )
+
+    assert report["passedSafetyGate"] is False
+    assert report["coverageGate"]["failures"] == [
+        "SOURCE_SET_EMPTY",
+        "SUCCESS_SET_EMPTY",
+        "SOURCE_COVERAGE_BELOW_MINIMUM",
+        "SUCCESS_RATE_BELOW_MINIMUM",
+    ]
+
+
+def testCoverageGateAcceptsCompleteSuccessfulAudit(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """원천·identity·성공률·무결성이 모두 닫힌 full audit만 통과한다."""
+
+    listing = tmp_path / "listedUniverse.parquet"
+    finance = tmp_path / "finance"
+    finance.mkdir()
+    _writeListedUniverse(listing)
+    (finance / "0000000001.parquet").write_bytes(b"exact-source")
+
+    monkeypatch.setattr(
+        "tests.audit.edgarCoverageAudit.edgarFinancialFeatures",
+        lambda **_kwargs: _envelope(signalIds=("financial.revenue",)),
+    )
+    report = auditEdgarCoverage(
+        listingPath=listing,
+        financeRoot=finance,
+        knownAt="20260723",
+        workers=1,
+        limit=None,
+        progressEvery=0,
+    )
+
+    assert report["passedSafetyGate"] is True
+    assert report["schemaVersion"] == "edgar-coverage-audit-v2"
+    assert report["coverageGate"]["failures"] == []
+
+
+def testAuditGuardsRestoreDataLoaderAndAllowRepeatedRuns(tmp_path: Path) -> None:
+    """감사가 끝난 뒤 dataLoader 함수와 비활성 network hook을 남기지 않는다."""
+
+    from dartlab.core import dataLoader
+
+    listing = tmp_path / "listedUniverse.parquet"
+    finance = tmp_path / "finance"
+    finance.mkdir()
+    _writeListedUniverse(listing)
+    original = dataLoader.loadEdgarListedUniverse
+
+    for _ in range(2):
+        auditEdgarCoverage(
+            listingPath=listing,
+            financeRoot=finance,
+            knownAt="20260723",
+            workers=1,
+            limit=1,
+            progressEvery=0,
+        )
+        assert dataLoader.loadEdgarListedUniverse is original
+        sys.audit("socket.connect", None)

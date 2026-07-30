@@ -23,6 +23,7 @@ import threading
 import time
 from collections import Counter, defaultdict
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -47,7 +48,16 @@ _DIGEST_LENGTH = 64
 _SAMPLE_LIMIT = 8
 _MAX_WORKERS = 8
 _FLOW_MEASURES = ("financial.revenue", "financial.operatingMargin")
+_MIN_SOURCE_COVERAGE = 0.90
+_MIN_SUCCESS_RATE_BY_MEASURES = {
+    (): 0.30,
+    _FLOW_MEASURES: 0.40,
+    ("financial.revenue",): 0.50,
+}
 _guardLock = threading.Lock()
+_guardLifecycleLock = threading.Lock()
+_guardActive = False
+_auditHookInstalled = False
 _loaderCalls = 0
 _networkCalls = 0
 
@@ -85,28 +95,45 @@ class _CompanyResult:
 
 def _networkAuditHook(event: str, _args: tuple[Any, ...]) -> None:
     global _networkCalls
-    if event not in {"socket.connect", "socket.getaddrinfo", "http.client.connect"}:
+    if not _guardActive or event not in {"socket.connect", "socket.getaddrinfo", "http.client.connect"}:
         return
     with _guardLock:
         _networkCalls += 1
     raise NetworkAccessError(f"network audit event가 차단됐습니다: {event}")
 
 
-def _installGuards() -> None:
-    """네트워크와 dataLoader 함수 실행을 감사 프로세스 수준에서 차단한다."""
+@contextmanager
+def _auditGuards():
+    """감사 구간에서만 network와 dataLoader를 차단하고 원상 복구한다."""
 
-    sys.addaudithook(_networkAuditHook)
-    from dartlab.core import dataLoader
+    global _auditHookInstalled, _guardActive, _loaderCalls, _networkCalls
+    with _guardLifecycleLock:
+        from dartlab.core import dataLoader
 
-    def blocked(*_args: Any, **_kwargs: Any) -> Any:
-        global _loaderCalls
-        with _guardLock:
-            _loaderCalls += 1
-        raise LoaderAccessError("EDGAR coverage audit에서 dataLoader 호출은 금지됩니다")
+        if not _auditHookInstalled:
+            sys.addaudithook(_networkAuditHook)
+            _auditHookInstalled = True
+        originals: dict[str, Any] = {}
 
-    for name, value in tuple(vars(dataLoader).items()):
-        if inspect.isfunction(value) and value.__module__ == dataLoader.__name__:
-            setattr(dataLoader, name, blocked)
+        def blocked(*_args: Any, **_kwargs: Any) -> Any:
+            global _loaderCalls
+            with _guardLock:
+                _loaderCalls += 1
+            raise LoaderAccessError("EDGAR coverage audit에서 dataLoader 호출은 금지됩니다")
+
+        _loaderCalls = 0
+        _networkCalls = 0
+        for name, value in tuple(vars(dataLoader).items()):
+            if inspect.isfunction(value) and value.__module__ == dataLoader.__name__:
+                originals[name] = value
+                setattr(dataLoader, name, blocked)
+        _guardActive = True
+        try:
+            yield
+        finally:
+            _guardActive = False
+            for name, value in originals.items():
+                setattr(dataLoader, name, value)
 
 
 def _readBytes(path: Path) -> bytes:
@@ -202,7 +229,12 @@ def classifyError(error: Exception) -> str:
         return "FEATURE_BALANCE_IDENTITY_FAILED"
     if "revenue must be positive" in lowered:
         return "FEATURE_NONPOSITIVE_REVENUE"
-    if "four common standalone" in lowered or "ttm flow quarters" in lowered or "ttm quarters" in lowered:
+    if (
+        "four common standalone" in lowered
+        or "four standalone revenue quarters" in lowered
+        or "ttm flow quarters" in lowered
+        or "ttm quarters" in lowered
+    ):
         return "FEATURE_NO_COHERENT_FOUR_QUARTER_WINDOW"
     if "share one accession" in lowered or "share one filing lineage" in lowered:
         return "FEATURE_FLOW_LINEAGE_MISMATCH"
@@ -387,7 +419,7 @@ def _verifySources(
     }
 
 
-def auditEdgarCoverage(
+def _auditEdgarCoverage(
     *,
     listingPath: Path,
     financeRoot: Path,
@@ -441,10 +473,6 @@ def auditEdgarCoverage(
         `mainPlan/unified-data-workbench/04-verification-progress-ledger.md` 실측 원장.
     """
 
-    global _loaderCalls, _networkCalls
-    _loaderCalls = 0
-    _networkCalls = 0
-    _installGuards()
     listingPayload = _readBytes(listingPath)
     listingDigest = _digestBytes(listingPayload)
     entities = _loadUniverse(listingPath)
@@ -506,15 +534,44 @@ def auditEdgarCoverage(
     elapsedPresent = [item.elapsedMs for item in results if item.status != "SOURCE_FILE_MISSING"]
     membershipDigest, syntheticSourcePin, entityRefMatch = _membershipDigest(entities)
     successCount = len(successful)
+    auditedCount = len(results)
+    uniqueCikCount = len({item.cik for item in entities})
+    successRate = 0.0 if not results else successCount / auditedCount
+    verifiedSourceCount = int(sourceIntegrity["verifiedUniqueSourceFiles"])
+    sourceCoverage = 0.0 if uniqueCikCount == 0 else verifiedSourceCount / uniqueCikCount
+    isFullAudit = limit is None
+    minimumSuccessRate = _MIN_SUCCESS_RATE_BY_MEASURES.get(measures)
+    gateFailures: list[str] = []
+    if auditedCount == 0:
+        gateFailures.append("AUDITED_UNIVERSE_EMPTY")
+    if verifiedSourceCount == 0:
+        gateFailures.append("SOURCE_SET_EMPTY")
+    if successCount == 0:
+        gateFailures.append("SUCCESS_SET_EMPTY")
+    if isFullAudit and auditedCount != fullUniverseCount:
+        gateFailures.append("FULL_UNIVERSE_INCOMPLETE")
+    if isFullAudit and sourceCoverage < _MIN_SOURCE_COVERAGE:
+        gateFailures.append("SOURCE_COVERAGE_BELOW_MINIMUM")
+    if isFullAudit and minimumSuccessRate is not None and successRate < minimumSuccessRate:
+        gateFailures.append("SUCCESS_RATE_BELOW_MINIMUM")
+    if _loaderCalls != 0:
+        gateFailures.append("LOADER_ACCESS_ATTEMPT")
+    if _networkCalls != 0:
+        gateFailures.append("NETWORK_ACCESS_ATTEMPT")
+    if not bool(sourceIntegrity["unchanged"]):
+        gateFailures.append("SOURCE_CHANGED_DURING_AUDIT")
+    if not entityRefMatch:
+        gateFailures.append("ENTITY_IDENTITY_MISMATCH")
+
     report = {
-        "schemaVersion": "edgar-coverage-audit-v1",
+        "schemaVersion": "edgar-coverage-audit-v2",
         "knownAt": knownAt,
         "requestedMeasures": list(measures),
         "fullListedUniverseEntities": fullUniverseCount,
-        "auditedEntities": len(results),
-        "uniqueCiks": len({item.cik for item in entities}),
+        "auditedEntities": auditedCount,
+        "uniqueCiks": uniqueCikCount,
         "successEntities": successCount,
-        "successRate": 0.0 if not results else successCount / len(results),
+        "successRate": successRate,
         "statusCounts": dict(sorted(statusCounts.items())),
         "observationCountDistribution": {str(key): value for key, value in sorted(observationCounts.items())},
         "latestEventAt": max(
@@ -542,6 +599,13 @@ def auditEdgarCoverage(
         "loaderCalls": _loaderCalls,
         "networkCalls": _networkCalls,
         "sourceIntegrity": sourceIntegrity,
+        "coverageGate": {
+            "fullAudit": isFullAudit,
+            "sourceCoverage": sourceCoverage,
+            "minimumSourceCoverage": _MIN_SOURCE_COVERAGE if isFullAudit else None,
+            "minimumSuccessRate": minimumSuccessRate if isFullAudit else None,
+            "failures": gateFailures,
+        },
         "productionPinSemantics": {
             "membershipDigest": membershipDigest,
             "syntheticSourcePin": syntheticSourcePin,
@@ -550,10 +614,32 @@ def auditEdgarCoverage(
             "sourcePayloadIdentity": "sha256-full-parquet-bytes",
         },
     }
-    report["passedSafetyGate"] = (
-        _loaderCalls == 0 and _networkCalls == 0 and bool(sourceIntegrity["unchanged"]) and entityRefMatch
-    )
+    report["passedSafetyGate"] = not gateFailures
     return report
+
+
+def auditEdgarCoverage(
+    *,
+    listingPath: Path,
+    financeRoot: Path,
+    knownAt: str,
+    workers: int,
+    limit: int | None,
+    measures: tuple[str, ...] = (),
+    progressEvery: int = 250,
+) -> dict[str, Any]:
+    """격리 가능한 guard와 coverage floor를 적용해 EDGAR 전수 감사를 실행한다."""
+
+    with _auditGuards():
+        return _auditEdgarCoverage(
+            listingPath=listingPath,
+            financeRoot=financeRoot,
+            knownAt=knownAt,
+            workers=workers,
+            limit=limit,
+            measures=measures,
+            progressEvery=progressEvery,
+        )
 
 
 def main() -> int:
