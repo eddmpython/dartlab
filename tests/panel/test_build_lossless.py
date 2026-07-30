@@ -29,9 +29,9 @@ _REF_PATH = Path(_cfg.dataDir) / "dart" / "panelXbrlRef.parquet"
 
 
 def _hasInputs(code: str) -> bool:
-    art = _PANEL_DIR / code
+    art = _PANEL_DIR / f"{code}.parquet"
     zips = _ZIP_DIR / code
-    return art.exists() and any(art.glob("*.parquet")) and zips.exists() and any(zips.glob("*.zip"))
+    return art.is_file() and zips.exists() and any(zips.glob("*.zip"))
 
 
 requires_inputs = pytest.mark.skipif(not _hasInputs(_BASE), reason="panel artifact 없음 (005930)")
@@ -41,7 +41,7 @@ def _sourceTotals(code: str) -> tuple[int, int]:
     """zip → walker element rows 의 (contentRaw 글자 합, `<` 태그 합). build 와 동일 경로."""
     from lxml import etree
 
-    from dartlab.providers.dart.panel.build.builder import _readZip
+    from dartlab.providers.dart.panel.build.documentSource import _readZip
     from dartlab.providers.dart.panel.build.refScan import scanRefBaseline
     from dartlab.providers.dart.panel.build.refScan.refMatcher import (
         _REF_TOKENS,
@@ -78,8 +78,7 @@ def _sourceTotals(code: str) -> tuple[int, int]:
 
 def _artifactTotals(code: str) -> tuple[int, int]:
     """빌드 artifact 전 period 의 (contentRaw 글자 합, `<` 태그 합)."""
-    files = [str(f) for f in sorted((_PANEL_DIR / code).glob("*.parquet")) if f.name != "_index.parquet"]
-    art = pl.read_parquet(files)
+    art = pl.read_parquet(_PANEL_DIR / f"{code}.parquet")
     chars = art.select(pl.col("contentRaw").str.len_chars().sum()).item() or 0
     tags = art.select(pl.col("contentRaw").str.count_matches("<", literal=True).sum()).item() or 0
     return int(chars), int(tags)
@@ -105,7 +104,7 @@ def test_build_tag_lossless() -> None:
 
 def _latestAnnualZip(code: str) -> Path | None:
     """가장 최신 사업보고서(dFY·IS_C2 보유) zip — Revenue 직접 파싱용."""
-    from dartlab.providers.dart.panel.build.builder import _readZip
+    from dartlab.providers.dart.panel.build.documentSource import _readZip
 
     for zp in sorted((_ZIP_DIR / code).glob("*.zip"), reverse=True):
         _rcept, xmls = _readZip(zp)
@@ -128,7 +127,7 @@ def test_cell_roundtrip_revenue() -> None:
 
     from lxml import etree
 
-    from dartlab.providers.dart.panel.build.builder import _readZip
+    from dartlab.providers.dart.panel.build.documentSource import _readZip
     from dartlab.providers.dart.panel.cell import readCellWide
 
     # 1) read — readCellWide 가 panel.parquet 5표 contentRaw 를 read-time 분해 (별 panelCell 0)

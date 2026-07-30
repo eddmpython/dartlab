@@ -86,7 +86,7 @@ def main() -> int:
     if "DARTLAB_DATA_DIR" not in os.environ:
         os.environ["DARTLAB_DATA_DIR"] = os.path.join(os.getcwd(), "data")
     dataDir = os.environ["DARTLAB_DATA_DIR"]
-    numWorkers = int(os.environ.get("PANEL_WORKERS", "8"))
+    numWorkers = int(os.environ.get("PANEL_WORKERS", "2"))
 
     if args.codes:
         codes: list[str] | None = [c.strip() for c in args.codes.split(",") if c.strip()]

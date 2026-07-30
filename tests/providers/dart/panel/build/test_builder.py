@@ -1,9 +1,8 @@
-"""panel builder mirror — 순수 헬퍼 + artifact 부재 빈 dict (데이터 0).
+"""panel builder mirror — 순수 헬퍼와 공개 빌드 API.
 
 ``providers/dart/panel/build/builder.py`` 의 1:1 mirror. 순수 _prevYear·panelXbrlRefPath 와
-zip 없는 종목의 빈 dict 경로를 검증. 실 zip→14col 빌드(손실0/dup0)는
-tests/panel/test_build_lossless.py (requires_data, heavy) 담당. 전종목 multiprocessing fan-out
-은 test_batch.py 담당.
+공개표면을 검증한다. 실 zip→16-col 빌드와 영수증 격리는 test_build_lossless.py 및
+test_artifactWriter.py가 맡고, bounded 회사 fan-out은 test_batch.py가 맡는다.
 """
 
 from __future__ import annotations

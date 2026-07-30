@@ -39,15 +39,16 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
+import lxml.etree as etree
 import polars as pl
-from lxml import etree
 
 import dartlab.config as _cfg
 
 from ..mapper import canonicalKey, resolveBatch, rowIdentity
 from ..schema import PANEL_SCHEMA
-from .builder import _readZip, _xmlsToPeriodRows
+from .builder import _xmlsToPeriodRows
 from .codegen import _ruffFormat  # 생성물 ruff 정본화 단일 SSOT (noteTaxonomy 와 공유)
+from .documentSource import _readZip
 from .horizontalize import horizontalize
 from .refScan import extractAclassEntries, scanRefBaseline
 
@@ -173,7 +174,8 @@ def _companySpine(
         if ident in seen:
             continue
         seen.add(ident)
-        parentKey = parentTree.get(r.get("disclosureKey")) if r.get("disclosureKey") else None
+        disclosureKey = r.get("disclosureKey")
+        parentKey = parentTree.get(disclosureKey) if isinstance(disclosureKey, str) and disclosureKey else None
         out.append((ident, order, parentKey, chapterRankOf.get(r.get("chapter") or "", 0)))
         order += 1
     return out

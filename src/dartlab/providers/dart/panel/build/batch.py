@@ -1,22 +1,22 @@
-"""panel 전종목 batch 빌드 (L1 build, multiprocessing) — builder 단일 빌드의 fan-out.
+"""panel 전종목 batch 빌드. builder의 격리 프로세스 단일 빌드를 bounded fan-out한다.
 
-``builder.buildPanel`` 을 종목별 worker 로 병렬 실행 (strict per-corp, memory 무관). ref table 은
-``_initWorker`` 가 worker 당 1회 load + token pre-compute → 매 row matchToRef 의 row iter 회피.
-단일 빌드(buildPanel/buildPanelBaseline)는 ``builder`` 에, 본 모듈은 병렬 fan-out + CLI entry 만.
+각 회사 build가 공시 변환 자식 프로세스를 직접 관리하므로 본 batch는 최대 2개 회사만 thread로
+오케스트레이션한다. 단일 빌드는 ``builder``, 기준선은 ``baseline``에 있고 본 모듈은
+bounded fan-out과 CLI만 소유한다.
 
 LLM Specifications:
     AntiPatterns:
-        - Pool.map 금지 — large input memory 폭발. imap_unordered chunk.
-        - worker 간 ref 재로드 금지 — _initWorker 1회 load.
+        - 회사 전체 future 선제 제출 금지. 실행 worker 수만큼만 pending.
+        - 변환을 batch thread 안에서 재구현 금지. builder.buildPanel 위임.
         - 단일 빌드 로직 중복 금지 — builder.buildPanel 위임.
     OutputSchema:
         - ``buildPanelAll(*, refPath, outBaseDir, codes, numWorkers) -> dict[code, (periodCount, totalRow)]``.
     Prerequisites:
-        - 전종목 zip + ref parquet. multiprocessing.
+        - 전종목 zip + ref parquet.
     Freshness:
         - 분기 incremental — changed code 만.
     Dataflow:
-        - codes → Pool(_initWorker) → _buildOne(builder.buildPanel) → 집계.
+        - codes → bounded threads → _buildOne(builder.buildPanel) → 공시 격리 process → 집계.
     TargetMarkets:
         - KR (DART).
 """
@@ -24,75 +24,51 @@ LLM Specifications:
 from __future__ import annotations
 
 import logging
-import multiprocessing as mp
 import time
+from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 import polars as pl
 
 import dartlab.config as _cfg
 
-from .builder import buildPanel, buildPanelBaseline, panelXbrlRefPath
+from .baseline import buildPanelBaseline
+from .builder import buildPanel, panelXbrlRefPath
 
 _log = logging.getLogger(__name__)
 
-_GLOBAL_REF: pl.DataFrame | None = None
 
+def _buildOneWithRef(
+    args: tuple[str, str, str],
+    refDf: pl.DataFrame,
+) -> tuple[str, int, int, float]:
+    """단일 회사 builder에 위임하고 통계만 붙인다."""
 
-def _initWorker(refPath: str) -> None:
-    """multiprocessing worker init — ref table load + token pre-compute.
-
-    refMatcher token set 을 worker 시작 시 한 번 계산 → 매 row matchToRef 의 row iter 회피.
-
-    Args:
-        refPath: ref parquet 경로.
-
-    Returns:
-        None.
-
-    Raises:
-        없음.
-
-    Example:
-        >>> _initWorker("data/dart/panelXbrlRef.parquet")  # doctest: +SKIP
-    """
-    global _GLOBAL_REF
-    _GLOBAL_REF = pl.read_parquet(refPath)
-    from .refScan.refMatcher import precomputeRefTokens, setGlobalRefTokens
-
-    setGlobalRefTokens(precomputeRefTokens(_GLOBAL_REF))
+    code, _refPath, outBaseDir = args
+    t0 = time.perf_counter()
+    result = buildPanel(code, refDf=refDf, outBaseDir=Path(outBaseDir), overwrite=True, verbose=False)
+    return (code, len(result), sum(result.values()), time.perf_counter() - t0)
 
 
 def _buildOne(args: tuple[str, str, str]) -> tuple[str, int, int, float]:
-    """worker entry — (code, refPath, outBaseDir) → (code, periodCount, totalRow, elapsed).
+    """독립 호출용 단일 회사 entry. ref를 읽고 builder 실패를 그대로 전파한다.
 
     Args:
-        args: ``(code, refPath, outBaseDir)`` 튜플. pickleable.
+        args: ``(code, refPath, outBaseDir)``.
 
     Returns:
-        ``(code, periodCount, totalRow, elapsed)``. 실패 시 (code, 0, 0, elapsed).
+        ``(code, periodCount, totalRow, elapsedSeconds)``.
 
     Raises:
-        없음 — 빌드 실패 흡수.
+        FileNotFoundError: ref 또는 회사 source가 없을 때.
+        PanelBuildError: 회사 변환 또는 publish 실패.
 
     Example:
         >>> _buildOne(("005930", "ref.parquet", "data/dart/panel"))  # doctest: +SKIP
     """
-    code, refPath, outBaseDir = args
-    global _GLOBAL_REF
-    t0 = time.perf_counter()
-    try:
-        ref = _GLOBAL_REF
-        if ref is None:
-            ref = pl.read_parquet(refPath)
-        result = buildPanel(code, refDf=ref, outBaseDir=Path(outBaseDir), overwrite=True, verbose=False)
-        return (code, len(result), sum(result.values()), time.perf_counter() - t0)
-    except (OSError, ValueError, RuntimeError, MemoryError, pl.exceptions.PolarsError) as exc:
-        # MemoryError 포함 — 거대 회사(금융지주 등 대용량 XML)가 worker 를 죽여 전체 Pool 을 깨지 않게 흡수.
-        # 실패(failed) 로 기록 → resumable 재실행(skipExisting)이 메모리 여유 시 재시도. maxtasksperchild 가
-        # 누적 힙을 주기 방출하므로 후속 종목은 정상 진행.
-        _log.warning("buildPanel 실패 %s: %s", code, type(exc).__name__)
-        return (code, 0, 0, time.perf_counter() - t0)
+
+    _code, refPath, _outBaseDir = args
+    return _buildOneWithRef(args, pl.read_parquet(refPath))
 
 
 def buildPanelAll(
@@ -100,18 +76,18 @@ def buildPanelAll(
     refPath: str | Path | None = None,  # None = 패키지 동봉 panelXbrlRefPath() (data/ 아님)
     outBaseDir: str | Path = "data/dart/panel",
     codes: list[str] | None = None,
-    numWorkers: int = 8,
+    numWorkers: int = 2,
     skipExisting: bool = True,  # resumable — 이미 빌드된 {code}.parquet 건너뜀 (크래시 후 재실행 이어감)
     progressEvery: int = 50,
     verbose: bool = True,
 ) -> dict[str, tuple[int, int]]:
-    """전종목 panel 빌드 — multiprocessing.
+    """전종목 panel 빌드. 최대 2개 회사의 격리 빌드를 병렬 오케스트레이션한다.
 
     Args:
         refPath: panelXbrlRef ref parquet.
         outBaseDir: 출력 base dir.
         codes: 종목 list. None = ``data/original/dart/docs/`` 의 모든 종목.
-        numWorkers: Pool workers (IO heavy, 기본 8).
+        numWorkers: 동시 회사 수. 기본 2, 최대 2.
         progressEvery: 진행 로그 빈도.
         verbose: 진행 로그.
 
@@ -119,37 +95,38 @@ def buildPanelAll(
         ``{code: (periodCount, totalRow)}`` dict.
 
     Raises:
-        없음 — 종목별 실패 흡수.
+        FileNotFoundError: ref 또는 회사 source가 없을 때.
+        PanelBuildError: 종목별 변환 또는 발행 실패.
 
     Example:
         >>> buildPanelAll(codes=["005930", "005380"])  # doctest: +SKIP
 
     SeeAlso:
         - ``builder.buildPanel`` — 단일 종목 빌드 (worker 가 위임).
-        - ``builder.buildPanelBaseline`` — 5 baseline 검증.
+        - ``baseline.buildPanelBaseline`` — 5 baseline 검증.
 
     Requires:
-        - data/original/dart/docs/{code}/*.zip 전종목. multiprocessing.
+        - data/original/dart/docs/{code}/*.zip 전종목.
 
     Capabilities:
-        - 전종목(~2,900) panel artifact 일괄 생산 (8코어 ~2.6h).
+        - 전종목 panel artifact를 allocator 누적 없이 재개 가능한 형태로 생산.
 
     Guide:
-        - CI sync 잡 또는 운영자. memory 무관(strict per-corp worker).
+        - CI sync 잡 또는 운영자. 최대 2개 회사만 동시 실행.
 
     AIContext:
-        - imap_unordered chunk=4 — IO/CPU 균형.
+        - thread는 회사 오케스트레이션만 하고 변환은 builder의 제한 수명 process가 담당.
 
     When:
         - 전종목(또는 changed codes) 을 일괄 빌드할 때 (CI sync / 운영자).
 
     How:
-        - Pool(_initWorker) 로 종목별 builder.buildPanel 병렬 실행 → 통계 집계.
+        - bounded thread window로 builder.buildPanel 실행 → 통계 집계.
 
     LLM Specifications:
         AntiPatterns:
-            - Pool.map 금지 — large input memory 폭발. imap_unordered.
-            - worker 간 ref 재로드 금지 — _initWorker 1회 load.
+            - 전종목 future를 한꺼번에 제출하지 않는다.
+            - 2개를 넘는 회사 동시 변환 금지.
         OutputSchema:
             - ``dict[str, tuple[int, int]]``.
         Prerequisites:
@@ -157,7 +134,7 @@ def buildPanelAll(
         Freshness:
             - 분기 incremental — changed code 만.
         Dataflow:
-            - codes → Pool(_initWorker) → _buildOne → 집계.
+            - codes → bounded threads → _buildOne → 격리 process → 집계.
         TargetMarkets:
             - KR (DART).
     """
@@ -168,6 +145,8 @@ def buildPanelAll(
     refPathStr = str(refPath if refPath is not None else panelXbrlRefPath())  # 패키지 동봉 ref (data/ 아님)
     outBaseStr = str(outBaseDir)
     Path(outBaseStr).mkdir(parents=True, exist_ok=True)
+    if numWorkers < 1 or numWorkers > 2:
+        raise ValueError("panel batch numWorkers는 메모리 안전을 위해 1 또는 2여야 합니다")
 
     if skipExisting:  # resumable — 이미 빌드 산출 있는 종목 제외 (크래시·중단 후 재실행이 이어감)
         total = len(codes)
@@ -181,35 +160,65 @@ def buildPanelAll(
     args = [(c, refPathStr, outBaseStr) for c in codes]
     result: dict[str, tuple[int, int]] = {}
     processed = 0
-    failed = 0
     totalRows = 0
     t0 = time.perf_counter()
-    # maxtasksperchild — worker 를 N 종목마다 재시작해 Polars Rust 힙 누적(gc.collect 회수 0, OOM 가드) 방출.
-    # ref token pre-compute 재로드(~1s)는 종목 8개당 1회라 무시 가능. 전수(2928) 빌드 메모리 안전 필수
-    # (free RAM 15GB 환경: workers 2 + per-child 8 권장 — 거대 금융지주 XML spike OOM 회피).
-    with mp.Pool(processes=numWorkers, initializer=_initWorker, initargs=(refPathStr,), maxtasksperchild=8) as pool:
-        for code, pcount, rowCount, _elapsed in pool.imap_unordered(_buildOne, args, chunksize=4):
+    refDf = pl.read_parquet(refPathStr)
+    argsIterator = iter(args)
+    executor = ThreadPoolExecutor(max_workers=numWorkers, thread_name_prefix="panel-company")
+    pending: dict[Future[tuple[str, int, int, float]], tuple[str, str, str]] = {}
+
+    def submitNext() -> bool:
+        """다음 회사 하나만 executor에 제출한다.
+
+        Args:
+            없음.
+
+        Returns:
+            제출했으면 True, 입력이 소진됐으면 False.
+
+        Raises:
+            없음.
+
+        Example:
+            >>> submitNext()  # doctest: +SKIP
+        """
+
+        try:
+            nextArgs = next(argsIterator)
+        except StopIteration:
+            return False
+        pending[executor.submit(_buildOneWithRef, nextArgs, refDf)] = nextArgs
+        return True
+
+    for _ in range(numWorkers):
+        if not submitNext():
+            break
+    try:
+        while pending:
+            future = next(as_completed(pending))
+            pending.pop(future)
+            code, pcount, rowCount, _elapsed = future.result()
             result[code] = (pcount, rowCount)
             processed += 1
             totalRows += rowCount
-            if pcount == 0:
-                failed += 1
             if verbose and processed % progressEvery == 0:
                 wall = time.perf_counter() - t0
                 rate = processed / wall if wall > 0 else 0
                 eta = (len(codes) - processed) / rate if rate > 0 else 0
                 _log.info(
-                    "[%d/%d] %.1f code/s, ETA %.1f min, totalRows=%d, failed=%d",
+                    "[%d/%d] %.1f code/s, ETA %.1f min, totalRows=%d",
                     processed,
                     len(codes),
                     rate,
                     eta / 60,
                     totalRows,
-                    failed,
                 )
+            submitNext()
+    finally:
+        executor.shutdown(wait=True, cancel_futures=True)
     if verbose:
         wall = time.perf_counter() - t0
-        _log.info("완료: %d codes, %d failed, %d totalRows, %.1f min", len(codes), failed, totalRows, wall / 60)
+        _log.info("완료: %d codes, %d totalRows, %.1f min", len(codes), totalRows, wall / 60)
     return result
 
 
@@ -235,7 +244,7 @@ def _main() -> None:
     ap.add_argument("--codes", type=str, default="", help="콤마구분 종목코드. 빈값=5 baseline")
     ap.add_argument("--ref", type=str, default=str(panelXbrlRefPath()), help="ref parquet (기본=패키지 동봉)")
     ap.add_argument("--out", type=str, default="data/dart/panel", help="출력 base dir")
-    ap.add_argument("--all", action="store_true", help="전종목 빌드 (multiprocessing)")
+    ap.add_argument("--all", action="store_true", help="전종목 빌드")
     ap.add_argument("--spine", action="store_true", help="정부 서식 뼈대(spineData.py) 생성 — 기준 종목 1개")
     ap.add_argument(
         "--noteTaxonomy", action="store_true", help="주석 뼈대(noteTaxonomyData.py) 생성 — 전 corpus XBRL 학습"
@@ -244,7 +253,7 @@ def _main() -> None:
     ap.add_argument(
         "--dominanceRatio", type=float, default=0.8, help="noteTaxonomy 최빈코드 지배비율 하한 (모호제목 제외)"
     )
-    ap.add_argument("--workers", type=int, default=8, help="Pool workers (OOM 가드: polars 힙 200~500MB/종목, ≤4 권장)")
+    ap.add_argument("--workers", type=int, default=2, choices=(1, 2), help="동시 회사 수 (메모리 가드, 기본 2)")
     ap.add_argument("--rebuild", action="store_true", help="--all 시 이미 빌드된 종목도 재빌드 (기본=resumable skip)")
     args = ap.parse_args()
 

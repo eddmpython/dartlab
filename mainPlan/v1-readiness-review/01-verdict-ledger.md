@@ -1669,3 +1669,38 @@ GroundingCheck 가 주장 속 숫자를 근거의 값과 대조하지 않는다(
 | `viz/builder.py` | 85 | 10 | 49 어댑터 전수 스텁, 불일치 0 |
 
 **현재 판정: 1.0.0 선언 불가.** Q3 와 Q5 가 미달이다.
+
+## 하단 우선 안정화 원장 (2026-07-30)
+
+진행 방식은 레이어를 아래에서 위로 하나씩 닫는 것이다. 하위 레이어에서 실호출로 드러난
+결함은 해당 owner를 재개방해 한 체크포인트로 닫고, 근거·회귀·성능·잔존물 0을 기록한 뒤
+커밋·푸시한다. 완료되지 않은 레이어를 둔 채 상위 레이어로 이동하거나 공식 Guard를 반복
+실행하지 않는다. 공식 Guard는 L1.5 형제 전체가 동결된 뒤 한 번 실행한다.
+
+### L1 panel 재개방 체크포인트: 완료
+
+L1.5 network 실호출에서 드러난 DART panel 대형 회사 빌드 결함을 L1 owner에서 닫았다.
+회사 전체 materialization과 실패 삼킴을 제거하고, 최대 2개 회사 fan-out, 공시 묶음별
+짧은 수명 spawn process, pipe와 process sentinel 동시 대기, 48MiB expanded budget,
+receipt 단위 stage/upsert를 적용했다. stage는 PyArrow 단일 writer로 임시 파일에 기록한 뒤
+fsync·footer 검증·atomic replace하고, 부모가 모든 row group과 identity를 bounded 완독한다.
+최종 artifact는 정확한 `PANEL_SCHEMA`, 최대 4,096행 row group, receipt provenance를 강제하며
+실패와 cleanup이 함께 깨지면 `BaseExceptionGroup`으로 둘 다 보존한다.
+
+구조는 zip 경로·메모리 입력과 해제 크기 검증을 `documentSource`, process 수명주기를
+`documentProcess`, stage·artifact 발행을 `artifactWriter`, 기준선 오케스트레이션을
+`baseline`이 소유하게 분리했다. 공개 API와 레이어는 추가하지 않았다. builder는
+927 LoC에서 780 LoC로 내려가 새 folder-size 부채가 0이다.
+
+동결 후보 실측은 000880 67공시를 337.34초에 빌드했고 process-tree peak는 767.29MiB다.
+산출물은 62,830,889 bytes, 51,024행, 68 row groups, 최대 4,096행, 42기간이다.
+16-col schema와 순서, corp, rceptNo→period, 정렬, receipt/blockOrder 유일성, content와
+provenance가 모두 통과했다. 같은 artifact의 network bounded reader는 3.91초,
+peak 148.16MiB로 통과했다. source hash는 실행 전후 동일했고 PID·stage·temp 잔존은 0이다.
+
+회귀는 panel unit 77 passed, 실제 디스크·stream 동등성 2 passed, 손실·ratio 소비 4 passed,
+Pyright 0, Ruff, formatter, compileall, docstring strict, silent-fail, camelCase,
+public API coverage, folder baseline을 통과했다. 기존 생성 데이터 `noteTaxonomyData.py`
+under-split 1건은 baseline 안이며 이번 변경으로 늘지 않았다.
+
+다음 작업은 L1.5 scan network 체크포인트다. L2 이상은 L1.5 전체 완료 전 착수하지 않는다.

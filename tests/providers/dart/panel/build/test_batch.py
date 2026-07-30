@@ -1,11 +1,13 @@
-"""panel batch mirror — multiprocessing fan-out 공개표면 (데이터 0).
+"""panel batch mirror — bounded 회사 thread fan-out 공개표면 (데이터 0).
 
 ``providers/dart/panel/build/batch.py`` 의 1:1 mirror. buildPanelAll/_main 공개표면 존재와
-_buildOne 의 실패 흡수(빈 ref·없는 종목 → (code, 0, 0, elapsed)) 순수 경로 검증. 실 전종목
-빌드(multiprocessing heavy)는 운영자/CI sync 담당.
+_buildOne 의 source failure 전파를 순수 경로에서 검증한다. 실 전종목
+빌드와 공시별 child process 검증은 운영자/CI sync 및 documentProcess mirror가 담당한다.
 """
 
 from __future__ import annotations
+
+from pathlib import Path
 
 import pytest
 
@@ -23,12 +25,23 @@ def test_batch_callables_public() -> None:
     assert callable(_main)
 
 
-def test_build_one_absorbs_missing_code() -> None:
-    """_buildOne: 없는 종목/없는 ref → 실패 흡수, (code, 0, 0, elapsed) 반환 (예외 전파 0)."""
+def test_build_one_propagates_missing_reference() -> None:
+    """_buildOne은 없는 ref를 성공 모양의 0행 결과로 바꾸지 않는다."""
     from dartlab.providers.dart.panel.build.batch import _buildOne
 
-    code, pcount, rows, elapsed = _buildOne(("000000nonexistent", "data/__no_such_ref__.parquet", "/tmp/__no_out__"))
-    assert code == "000000nonexistent"
-    assert pcount == 0
-    assert rows == 0
-    assert elapsed >= 0.0
+    with pytest.raises(FileNotFoundError):
+        _buildOne(("000000nonexistent", "data/__no_such_ref__.parquet", "data/__no_out__"))
+
+
+def test_batch_rejects_more_than_two_concurrent_companies(tmp_path: Path) -> None:
+    """회사 병렬도는 자식 변환 process를 합쳐 최대 2개로 제한한다."""
+    from dartlab.providers.dart.panel.build.batch import buildPanelAll
+
+    with pytest.raises(ValueError, match="1 또는 2"):
+        buildPanelAll(
+            refPath="data/__no_such_ref__.parquet",
+            outBaseDir=tmp_path,
+            codes=[],
+            numWorkers=3,
+            verbose=False,
+        )

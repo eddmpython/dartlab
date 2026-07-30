@@ -1,4 +1,4 @@
-"""panel BUILD 공개표면 (L1 gather, write) — zip → 14-col parquet 생산.
+"""panel BUILD 공개표면. zip을 16-col parquet로 생산한다.
 
 caller 는 ``from dartlab.providers.dart.panel.build import buildPanel`` 만 (deep leaf
 import 금지, R6). lxml·zipfile 사용은 본 build 패키지에 격리 (reader 는 scan_parquet 만, R2).
@@ -14,10 +14,11 @@ import 금지, R6). lxml·zipfile 사용은 본 build 패키지에 격리 (reade
 
 from __future__ import annotations
 
+from .baseline import buildPanelBaseline
 from .batch import buildPanelAll
 from .builder import (
+    PanelBuildError,
     buildPanel,
-    buildPanelBaseline,
     buildPanelFromStream,
     panelXbrlRefPath,
 )
@@ -27,6 +28,7 @@ from .spineBuilder import buildSpine
 from .walker import detectSchemaEra, walkSections
 
 __all__ = [
+    "PanelBuildError",
     "buildPanel",
     "buildPanelAll",
     "buildPanelBaseline",

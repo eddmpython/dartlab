@@ -1,8 +1,8 @@
 """panel online 1패스 동등성 (P6 design-in) — plan snazzy-wibbling-origami.
 
 build core 입력원-중립 리팩터(P2) 검증: 같은 zip 입력을 (A) 디스크 경로 ``buildPanel`` 과
-(B) 메모리 bytes 스트림 ``buildPanelFromStream`` 으로 빌드하면 **회사당 flat 17-col parquet 가
-row 동형**이어야 한다. 둘 다 동일 코어(``_xmlsToPeriodRows`` → ``_writeCompanyFile``)를 거치고
+(B) 메모리 bytes 스트림 ``buildPanelFromStream`` 으로 빌드하면 **회사당 flat 16-col parquet 가
+row 동형**이어야 한다. 둘 다 동일 코어(``_xmlsToPeriodRows`` → 격리 공시 process)를 거치고
 입력원만 zip(Path) vs zip(bytes) 로 다르다 — 동등성이 곧 online 트랙의 무손실 보장. (빈 tmp dir 라
 disk=merge False·stream=merge True 모두 clean write → 동등.)
 
@@ -57,7 +57,7 @@ def test_disk_and_stream_builds_are_identical(tmp_path: Path) -> None:
 
     diskRes = buildPanel(_BASE, refDf=ref, outBaseDir=diskBase, overwrite=True)
     # 디스크와 동일 zip 순서(sorted glob) 로 bytes 스트림 구성 — rcept = 파일 stem(14자리).
-    stream = [(zp.stem, zp.read_bytes()) for zp in zps]
+    stream = ((zp.stem, zp.read_bytes()) for zp in zps)
     streamRes = buildPanelFromStream(_BASE, stream, refDf=ref, outBaseDir=streamBase, overwrite=True)
 
     assert diskRes == streamRes, f"period→rowCount 불일치: disk {diskRes} vs stream {streamRes}"
@@ -76,7 +76,7 @@ def test_disk_and_stream_builds_are_identical(tmp_path: Path) -> None:
 @requires_zips
 def test_read_zip_bytes_matches_disk() -> None:
     """_readZipBytes(bytes) ≡ _readZip(Path) — 동일 zip 의 decoded XML 동일."""
-    from dartlab.providers.dart.panel.build.builder import _readZip, _readZipBytes
+    from dartlab.providers.dart.panel.build.documentSource import _readZip, _readZipBytes
 
     zp = sorted((_ZIP_DIR / _BASE).glob("*.zip"))[0]
     rceptDisk, xmlsDisk = _readZip(zp)
