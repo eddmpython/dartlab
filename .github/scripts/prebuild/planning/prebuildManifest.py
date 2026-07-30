@@ -14,6 +14,7 @@ SCAN_BASE_ARTIFACTS: tuple[str, ...] = (
     "finance.parquet",
     "finance-lite.parquet",
     "sharesOutstanding.parquet",
+    "network/affiliateDocs.parquet",
     "salesByProduct.parquet",
     "narrativeMetrics.parquet",
     "valuation.parquet",

@@ -102,6 +102,30 @@ def test_ensureScanData_revalidates_cached_artifacts(monkeypatch: pytest.MonkeyP
     assert downloaded == [parquet._REQUIRED_SCAN_ROOT_FILES[0]]
 
 
+def test_ensureScanArtifact_downloads_only_requested_file(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    import dartlab.scan.io.parquet as parquet
+
+    scanDir = tmp_path / "scan"
+    downloaded: list[str] = []
+    monkeypatch.setattr(parquet, "_ensureScanData", lambda: scanDir)
+
+    def fakeDownload(targetDir: Path, relativePath: str) -> None:
+        downloaded.append(relativePath)
+        destination = targetDir / relativePath
+        destination.parent.mkdir(parents=True)
+        destination.write_bytes(b"parquet")
+
+    monkeypatch.setattr(parquet, "_downloadScanFile", fakeDownload)
+
+    result = parquet.ensureScanArtifact("network/affiliateDocs.parquet")
+
+    assert result == scanDir / "network" / "affiliateDocs.parquet"
+    assert downloaded == ["network/affiliateDocs.parquet"]
+
+
 def test_prepareRealdataScanCache_builds_from_fixture_sources(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     import importlib.util
 
@@ -136,6 +160,11 @@ def test_prepareRealdataScanCache_builds_from_fixture_sources(monkeypatch: pytes
     )
     monkeypatch.setattr(core, "buildReport", lambda **_kwargs: calls.append("report") or [])
     monkeypatch.setattr(
+        core,
+        "buildAffiliateDocs",
+        lambda **_kwargs: calls.append("affiliate-docs") or scan_dir / "network" / "affiliateDocs.parquet",
+    )
+    monkeypatch.setattr(
         shares,
         "buildSharesOutstandingSafe",
         lambda **_kwargs: calls.append("shares") or scan_dir / "sharesOutstanding.parquet",
@@ -144,7 +173,7 @@ def test_prepareRealdataScanCache_builds_from_fixture_sources(monkeypatch: pytes
     monkeypatch.setattr(parquet, "_missingScanFiles", lambda *_args, **_kwargs: write_required_outputs() or [])
 
     assert mod.main() == 0
-    assert calls == ["changes", "finance", "finance-lite", "report", "shares"]
+    assert calls == ["changes", "finance", "finance-lite", "report", "shares", "affiliate-docs"]
 
 
 def test_prepareRealdataScanCache_preserves_existing_report_prebuilds(
@@ -169,6 +198,27 @@ def test_prepareRealdataScanCache_preserves_existing_report_prebuilds(
     for name in parquet._REQUIRED_SCAN_ROOT_FILES:
         (scan_dir / name).write_bytes(b"parquet")
     (scan_dir / "finance-lite.parquet").write_bytes(b"parquet")
+    affiliate_docs = scan_dir / "network" / "affiliateDocs.parquet"
+    affiliate_docs.parent.mkdir(parents=True)
+    import polars as pl
+
+    from dartlab.scan.network.affiliates import (
+        AFFILIATE_DOCS_SCHEMA,
+        AFFILIATE_DOCS_SCHEMA_VERSION,
+    )
+
+    pl.DataFrame(
+        {
+            "sourceStockCode": ["000001"],
+            "affiliateStockCode": ["000001"],
+            "sourcePeriod": ["2024Q4"],
+            "sourceRceptNo": ["20250319000001"],
+            "groupName": [None],
+            "datasetAsOf": ["20250319"],
+            "schemaVersion": [AFFILIATE_DOCS_SCHEMA_VERSION],
+        },
+        schema=AFFILIATE_DOCS_SCHEMA,
+    ).write_parquet(affiliate_docs)
     missing_report = "commercialPaper.parquet"
     for name in parquet._REQUIRED_REPORT_FILES:
         if name != missing_report:
@@ -191,6 +241,11 @@ def test_prepareRealdataScanCache_preserves_existing_report_prebuilds(
     )
     monkeypatch.setattr(core, "buildReport", build_missing_reports)
     monkeypatch.setattr(
+        core,
+        "buildAffiliateDocs",
+        lambda **_kwargs: pytest.fail("current affiliateDocs must be preserved"),
+    )
+    monkeypatch.setattr(
         shares,
         "buildSharesOutstandingSafe",
         lambda **_kwargs: pytest.fail("existing sharesOutstanding must be preserved"),
@@ -200,3 +255,19 @@ def test_prepareRealdataScanCache_preserves_existing_report_prebuilds(
     assert built_report_api_types == [("commercialPaper",)]
     assert (report_dir / missing_report).read_bytes() == b"built"
     assert (report_dir / "majorHolder.parquet").read_bytes() == b"preserve"
+
+    legacy = pl.read_parquet(affiliate_docs).with_columns(pl.lit(1, dtype=pl.Int16).alias("schemaVersion"))
+    legacy.write_parquet(affiliate_docs)
+    affiliate_rebuilds: list[bool] = []
+
+    def rebuild_affiliates(**_kwargs) -> Path:
+        affiliate_rebuilds.append(True)
+        legacy.with_columns(pl.lit(AFFILIATE_DOCS_SCHEMA_VERSION, dtype=pl.Int16).alias("schemaVersion")).write_parquet(
+            affiliate_docs
+        )
+        return affiliate_docs
+
+    monkeypatch.setattr(core, "buildAffiliateDocs", rebuild_affiliates)
+
+    assert mod.main() == 0
+    assert affiliate_rebuilds == [True]

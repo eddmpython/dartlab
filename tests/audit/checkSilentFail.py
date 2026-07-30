@@ -72,8 +72,8 @@ _ALLOWLIST_FILES: frozenset[str] = frozenset(
         # scan builder — 프리빌드 runtime 상태 (데이터 없으면 스킵)
         "scan/builder/core.py",
         "scan/builders/edgar/builder.py",
-        # corpProfile.parquet 는 선택 prebuild 데이터. 없으면 raw finance 추정으로 보강.
-        "scan/builders/kr/fiscal.py",
+        # corpProfile 결산월은 선택 보강. identity loader는 같은 파일에서 별도로 loud-fail한다.
+        "scan/builders/kr/corpProfile.py",
         # _scanBuildState.json 증분 ledger 로더 — 부재 = 부트스트랩(전량 seed 회피) semantic, loud-fail 부적합.
         "scan/builders/kr/common.py",
         # note 횡단 프리빌드 빌더. panel 디렉토리·parquet 부재 = 빌드 대상 0 = 빈 결과 정상(scan 빌더 동형, batch-safe skip).

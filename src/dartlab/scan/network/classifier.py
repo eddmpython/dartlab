@@ -481,7 +481,7 @@ def classifyBalanced(
 
     SeeAlso:
         - :func:`dartlab.scan.network.buildGraph` — 본 함수 호출자
-        - :func:`dartlab.scan.network.scanner.scanAffiliateDocs` — docs ground truth source
+        - :func:`dartlab.scan.network.affiliates.loadAffiliateGroups` — docs ground truth source
     """
     codeToGroup: dict[str, str] = {}
     locked: set[str] = set()

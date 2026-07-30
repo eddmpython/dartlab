@@ -57,6 +57,11 @@ def test_company_panel_uses_bounded_row_groups(tmp_path: Path) -> None:
     metadata = pq.read_metadata(destination)
     assert metadata.num_row_groups == 2
     assert max(metadata.row_group(index).num_rows for index in range(metadata.num_row_groups)) <= _ROW_GROUP_SIZE
+    contentIndex = metadata.schema.names.index("contentRaw")
+    assert all(
+        metadata.row_group(index).column(contentIndex).dictionary_page_offset is None
+        for index in range(metadata.num_row_groups)
+    )
 
 
 def test_company_panel_creates_destination_parent_before_lock(tmp_path: Path) -> None:

@@ -57,7 +57,7 @@ class Scan:
         데이터: 축별로 다름 (prebuild 또는 collect 데이터)
         - governance/workforce/capital/debt/audit/insider: report
         - account/ratio: finance
-        - network: panel; disclosureRisk: changes; orders: allFilings(런타임 직독)
+        - network: report + network prebuild; disclosureRisk: changes; orders: allFilings(런타임 직독)
 
     AIContext:
         시장 전체 비교/순위 질문에 사용. 개별 종목 분석은 Company 메서드 사용.

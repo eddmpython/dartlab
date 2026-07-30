@@ -18,6 +18,7 @@ _log = getLogger(__name__)
 
 import polars as pl
 
+from dartlab.scan.network.affiliates import loadAffiliateGroups
 from dartlab.scan.network.classifier import classifyBalanced
 from dartlab.scan.network.edges import (
     buildHolderEdges,
@@ -34,9 +35,6 @@ from dartlab.scan.network.scanner import (
     loadListing,
     scanInvested,
     scanMajorHolders,
-)
-from dartlab.scan.network.scanner import (
-    scanAffiliateDocs as _scan_affiliate_docs_fn,
 )
 
 
@@ -83,7 +81,7 @@ def buildGraph(*, verbose: bool = True) -> dict:
     Guide:
         - 6 단계 sequential — 한 단계 실패 시 후속도 불가 (try/except 없음, fail-fast).
         - cycles max_length=6 — 6 단계 초과 순환은 noise 로 제외.
-        - docs ground truth (affiliateDocs) 가 분류 정확도 향상.
+        - 계열회사 ground truth는 작은 prebuild artifact만 읽으며 raw panel을 순회하지 않는다.
 
     When:
         대시보드 network 시각화 빌드 시. 재벌/그룹 관계 분석 시. 매 prebuild 사이클은 아니고
@@ -91,11 +89,12 @@ def buildGraph(*, verbose: bool = True) -> dict:
 
     How:
         loadListing → scanInvested → buildInvestEdges + deduplicateEdges → scanMajorHolders →
-        buildHolderEdges → all_node_ids 수집 (listing 교집합) → scanAffiliateDocs ground truth →
+        buildHolderEdges → all_node_ids 수집 (listing 교집합) → affiliate membership ground truth →
         classifyBalanced → detectCycles → data dict 반환.
 
     Requires:
-        - 로컬 ``data/dart/scan/report/{investedCompany,majorHolder,affiliateDocs?}.parquet``
+        - 로컬 ``data/dart/scan/report/{investedCompany,majorHolder}.parquet``
+        - 로컬 ``data/dart/scan/network/affiliateDocs.parquet``
         - KRX listing (``loadListing``)
 
     SeeAlso:
@@ -135,11 +134,11 @@ def buildGraph(*, verbose: bool = True) -> dict:
         allNodeIds.add(row["from_code"])
         allNodeIds.add(row["to_code"])
     allNodeIds = allNodeIds & listing_codes
-    _say(f"   → {len(allNodeIds)} 상장사 노드")
 
-    _say("4. docs ground truth...")
-    docs_gt = _scan_affiliate_docs_fn(nameToCode, codeToName)
-    _say(f"   → {len(docs_gt)} 종목 매핑")
+    _say("4. 계열회사 prebuild...")
+    docs_gt = loadAffiliateGroups()
+    allNodeIds.update(set(docs_gt) & listing_codes)
+    _say(f"   → {len(docs_gt)} 종목 매핑, 총 {len(allNodeIds)} 상장사 노드")
 
     _say("5. 균형 분류...")
     codeToGroup = classifyBalanced(

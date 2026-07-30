@@ -20,6 +20,11 @@ from dartlab.providers.dart.build.saver import _ROW_GROUP_SIZE
 from dartlab.providers.dart.panel.schema import PANEL_SCHEMA
 
 _PANEL_ARROW_SCHEMA = pl.DataFrame(schema=PANEL_SCHEMA).to_arrow().schema
+# PyArrow runtime은 column 목록을 지원하지만 현재 type stub은 bool만 선언한다.
+_PANEL_DICTIONARY_OPTION = cast(
+    bool,
+    [column for column in _PANEL_ARROW_SCHEMA.names if column != "contentRaw"],
+)
 
 
 class PanelArtifactLayoutError(RuntimeError):
@@ -122,7 +127,7 @@ def writePanelStage(frame: pl.DataFrame, path: Path) -> int:
             frame.select(PANEL_SCHEMA.keys()).to_arrow(),
             temporary,
             compression="zstd",
-            use_dictionary=True,
+            use_dictionary=_PANEL_DICTIONARY_OPTION,
             write_statistics=True,
             row_group_size=_ROW_GROUP_SIZE,
         )
@@ -407,7 +412,7 @@ class PanelArtifactAssembler:
                             temporary,
                             _PANEL_ARROW_SCHEMA,
                             compression="zstd",
-                            use_dictionary=True,
+                            use_dictionary=_PANEL_DICTIONARY_OPTION,
                             write_statistics=True,
                         )
                     elif not parquet.schema_arrow.equals(_PANEL_ARROW_SCHEMA):

@@ -1,25 +1,43 @@
-"""DART report parquet 스캔 — investedCompany, majorHolder, 계열회사 현황."""
+"""한국 상장사 관계 그래프의 listing과 report prebuild 입력 로더."""
 
 from __future__ import annotations
 
 import re
-from collections import defaultdict
-from pathlib import Path
 
 import polars as pl
 
-_SCAN_CORP_RE = re.compile(r"[\(（]주[\)）]|㈜|주식회사")
-_SCAN_REGNUM_RE = re.compile(r"\d{6}-?\d{7}")
+from dartlab.scan.io.calendar import filterLatestPeriodPerStock
+from dartlab.scan.io.parquet import scanParquets
 
-# ── 공통 유틸 ──────────────────────────────────────────────
+_INVESTED_COLUMNS = [
+    "stockCode",
+    "year",
+    "quarter",
+    "inv_prm",
+    "invstmnt_purps",
+    "trmend_blce_qota_rt",
+    "trmend_blce_acntbk_amount",
+    "trmend_blce_qy",
+]
+
+_MAJOR_HOLDER_COLUMNS = [
+    "stockCode",
+    "year",
+    "quarter",
+    "nm",
+    "relate",
+    "trmend_posesn_stock_co",
+    "trmend_posesn_stock_qota_rt",
+]
 
 
 def _normalizeCompanyName(name: str) -> str:
-    """법인명 정규화: 접두/접미사 제거."""
+    """회사명의 법인 표기를 제거해 listing 이름과 비교할 수 있게 한다."""
+
     if not name:
         return name
-    s = name.strip()
-    for pat in [
+    normalized = name.strip()
+    for pattern in (
         r"^\(주\)\s*",
         r"^㈜\s*",
         r"^주식회사\s*",
@@ -31,632 +49,223 @@ def _normalizeCompanyName(name: str) -> str:
         r"\s*유한회사$",
         r"\s*㈜",
         r"\(주\)",
-    ]:
-        s = re.sub(pat, "", s)
-    return s.strip()
+    ):
+        normalized = re.sub(pattern, "", normalized)
+    return normalized.strip()
 
 
 def loadListing() -> tuple[dict[str, str], dict[str, str], set[str], dict[str, dict]]:
-    """상장사 목록 로드.
-
-    Returns
-    -------
-    tuple
-        (name_to_code, code_to_name, listing_codes, listing_meta)
-        name_to_code : dict — 회사명 (정규화 포함) → 종목코드
-        code_to_name : dict — 종목코드 → 회사명
-        listing_codes : set[str] — 전체 상장사 종목코드
-        listing_meta : dict — 종목코드 → {name, market, industry}
+    """상장사 이름과 종목코드의 양방향 mapping 및 표시 metadata를 만든다.
 
     Capabilities:
-        - report 카테고리 (investedCompany / majorHolder / affiliateDocs) raw → 정제 DataFrame
-          또는 회사명↔코드 매핑 dict.
+        회사명 alias와 종목코드의 양방향 mapping 및 시장 metadata를 만든다.
 
     AIContext:
-        ``buildGraph`` 의 첫 4 단계가 본 함수들을 sequential 호출. AI agent 는 통상 buildGraph
-        만 호출하면 됨 (본 함수들은 implementation detail).
+        network edge와 panel 회사명을 현재 상장 종목코드로 정규화하는 기준이다.
 
     Guide:
-        - loadListing 결과 (nameToCode/codeToName/listing_codes/listing_meta) 가 후속 매핑의 핵심.
-        - 법인명 정규화 (접두 (주)/㈜ 제거 + 사업자번호 strip) 가 매핑 정확도 핵심.
+        listing 필수 컬럼이 없으면 불완전 mapping을 반환하지 않고 즉시 실패한다.
 
     When:
-        ``buildGraph`` 진행 단계 안에서.
+        network graph 또는 affiliateDocs prebuild 시작 시 한 번 호출한다.
 
     How:
-        report parquet → 정제 → dict/DataFrame 변환.
+        listing 행마다 원문 회사명, 정규화명, 법인 표기 alias를 같은 코드에 연결한다.
 
     Requires:
-        - 로컬 ``data/dart/scan/report/{apiType}.parquet`` (``buildReport``) + KRX listing.
+        정상적인 KR listing 공급자와 회사명, 종목코드 컬럼.
+
+    Args:
+        없음.
+
+    Returns:
+        ``(nameToCode, codeToName, listingCodes, listingMeta)``.
+
+    Raises:
+        polars.exceptions.ColumnNotFoundError: listing 필수 컬럼이 없을 때.
+
+    Example:
+        >>> _, codeToName, _, _ = loadListing()  # doctest: +SKIP
+        >>> codeToName["005930"]
+        '삼성전자'
 
     SeeAlso:
-        - :func:`dartlab.scan.network.buildGraph` — 본 함수들 호출자
-
-    Raises
-    ------
-    KeyError
-        listing DataFrame 에 "회사명" · "종목코드" 컬럼 누락 시.
-
-    Examples
-    --------
-    >>> from dartlab.scan.network.scanner import loadListing
-    >>> n2c, c2n, codes, meta = loadListing()
-    >>> c2n["005930"]
-    '삼성전자'
+        ``scanInvested`` · ``scanMajorHolders``.
     """
-    import dartlab
 
-    listing = dartlab.listing()
+    from dartlab._listingDispatch import listing as loadMarketListing
+
+    listing = loadMarketListing()
+    required = {"회사명", "종목코드"}
+    missing = sorted(required - set(listing.columns))
+    if missing:
+        raise pl.exceptions.ColumnNotFoundError(f"listing 필수 컬럼 누락: {', '.join(missing)}")
+
     nameToCode: dict[str, str] = {}
     codeToName: dict[str, str] = {}
-    listing_meta: dict[str, dict] = {}
+    listingMeta: dict[str, dict] = {}
 
     for row in listing.iter_rows(named=True):
         name = row["회사명"]
         code = row["종목코드"]
         codeToName[code] = name
-        nameToCode[name] = code
-        norm = _normalizeCompanyName(name)
-        if norm != name:
-            nameToCode[norm] = code
-        for prefix in ["㈜", "(주)", "주식회사 ", "주식회사"]:
-            nameToCode[f"{prefix}{name}"] = code
-        for suffix in [" ㈜", "㈜", " (주)", "(주)", " 주식회사", "주식회사"]:
-            nameToCode[f"{name}{suffix}"] = code
-        listing_meta[code] = {
+        aliases = {
+            name,
+            _normalizeCompanyName(name),
+            *(f"{prefix}{name}" for prefix in ("㈜", "(주)", "주식회사 ", "주식회사")),
+            *(f"{name}{suffix}" for suffix in (" ㈜", "㈜", " (주)", "(주)", " 주식회사", "주식회사")),
+        }
+        nameToCode.update({alias: code for alias in aliases if alias})
+        listingMeta[code] = {
             "name": name,
             "market": row.get("시장구분", ""),
             "industry": row.get("업종", ""),
         }
 
-    listing_codes = set(listing["종목코드"].to_list())
-    return nameToCode, codeToName, listing_codes, listing_meta
-
-
-# ── parquet 스캔 ───────────────────────────────────────────
-
-
-def _scanParquets(apiType: str, keepCols: list[str]) -> pl.DataFrame:
-    """report parquet에서 특정 apiType만 LazyFrame 스캔."""
-    from dartlab.core.dataLoader import _dataDir
-
-    report_dir = Path(_dataDir("report"))
-    parquet_files = sorted(report_dir.glob("*.parquet"))
-
-    frames: list[pl.LazyFrame] = []
-    for pf in parquet_files:
-        try:
-            lf = pl.scan_parquet(str(pf))
-            if "apiType" not in lf.collect_schema().names():
-                continue
-            lf = lf.filter(pl.col("apiType") == apiType)
-            available = [c for c in keepCols if c in lf.collect_schema().names()]
-            lf = lf.select(available)
-            frames.append(lf)
-        except (pl.exceptions.ComputeError, OSError):
-            continue
-
-    all_cols: set[str] = set()
-    for lf in frames:
-        all_cols.update(lf.collect_schema().names())
-    unified: list[pl.LazyFrame] = []
-    for lf in frames:
-        missing = all_cols - set(lf.collect_schema().names())
-        if missing:
-            lf = lf.with_columns([pl.lit(None).alias(c) for c in missing])
-        unified.append(lf.select(sorted(all_cols)))
-
-    if not unified:
-        return pl.DataFrame(schema={c: pl.Utf8 for c in keepCols})
-
-    return pl.concat(unified).collect(engine="streaming")
+    return nameToCode, codeToName, set(codeToName), listingMeta
 
 
 def scanInvested() -> pl.DataFrame:
-    """전종목 investedCompany 스캔.
+    """회사별 최신 공시의 타법인 출자 report 행을 읽는다.
 
-    Returns
-    -------
-    pl.DataFrame
-        report parquet 의 investedCompany apiType 행 (stockCode/year/inv_prm/
-        invstmnt_purps/trmend_blce_qota_rt/trmend_blce_acntbk_amount/trmend_blce_qy).
+    공통 report prebuild 로더가 정상 부재와 artifact 손상을 구분한다. 최신 기간은
+    회사별로 고르므로 일부 회사가 전역 최신 연도에 공시하지 않았다는 이유로 사라지지 않는다.
 
-    Capabilities:
-        - report 카테고리 (investedCompany / majorHolder / affiliateDocs) raw → 정제 DataFrame
-          또는 회사명↔코드 매핑 dict.
+    Args:
+        없음.
 
-    AIContext:
-        ``buildGraph`` 의 첫 4 단계가 본 함수들을 sequential 호출. AI agent 는 통상 buildGraph
-        만 호출하면 됨 (본 함수들은 implementation detail).
+    Returns:
+        회사별 최신 타법인 출자 report 행.
 
-    Guide:
-        - loadListing 결과 (nameToCode/codeToName/listing_codes/listing_meta) 가 후속 매핑의 핵심.
-        - 법인명 정규화 (접두 (주)/㈜ 제거 + 사업자번호 strip) 가 매핑 정확도 핵심.
-
-    When:
-        ``buildGraph`` 진행 단계 안에서.
-
-    How:
-        report parquet → 정제 → dict/DataFrame 변환.
+    Raises:
+        ScanDataError: report artifact가 없거나 손상됐을 때.
 
     Requires:
-        - 로컬 ``data/dart/scan/report/{apiType}.parquet`` (``buildReport``) + KRX listing.
+        ``scan/report/investedCompany.parquet``와 공통 scan data root.
+
+    Example:
+        >>> scanInvested()  # doctest: +SKIP
+
+    Capabilities:
+        타법인 출자 report를 회사별 최신 기간 단면으로 축약한다.
+
+    AIContext:
+        network 투자 edge의 runtime 입력을 준비한다.
+
+    Guide:
+        전역 최신 연도가 아니라 각 회사의 최신 연도와 분기를 유지한다.
+
+    When:
+        ``buildGraph``의 투자 edge 단계.
+
+    How:
+        공통 parquet loader와 calendar filter를 순서대로 적용한다.
 
     SeeAlso:
-        - :func:`dartlab.scan.network.buildGraph` — 본 함수들 호출자
-
-    Raises
-    ------
-    polars.PolarsError
-        report parquet 손상 또는 schema 불일치 시.
-
-    Examples
-    --------
-    >>> from dartlab.scan.network.scanner import scanInvested
-    >>> df = scanInvested()
-    >>> df.height > 0
-    True
+        ``scanMajorHolders`` · ``dartlab.scan.network.edges.buildInvestEdges``.
     """
-    return _scanParquets(
-        "investedCompany",
-        [
-            "stockCode",
-            "year",
-            "inv_prm",
-            "invstmnt_purps",
-            "trmend_blce_qota_rt",
-            "trmend_blce_acntbk_amount",
-            "trmend_blce_qy",
-        ],
+
+    raw = scanParquets("investedCompany", _INVESTED_COLUMNS)
+    return filterLatestPeriodPerStock(
+        raw,
+        scCol="stockCode",
+        yearCol="year",
+        periodCol="quarter",
     )
 
 
 def scanMajorHolders() -> pl.DataFrame:
-    """전종목 majorHolder 스캔.
+    """회사별 최신 공시의 최대주주 report 행을 읽는다.
 
-    Returns
-    -------
-    pl.DataFrame
-        report parquet 의 majorHolder apiType 행 (stockCode/year/nm/relate/
-        trmend_posesn_stock_co/trmend_posesn_stock_qota_rt).
+    report artifact 오류는 공통 ``ScanDataError``로 전파하며 정상적인 0행만 빈
+    DataFrame으로 유지한다.
 
-    Capabilities:
-        - report 카테고리 (investedCompany / majorHolder / affiliateDocs) raw → 정제 DataFrame
-          또는 회사명↔코드 매핑 dict.
+    Args:
+        없음.
 
-    AIContext:
-        ``buildGraph`` 의 첫 4 단계가 본 함수들을 sequential 호출. AI agent 는 통상 buildGraph
-        만 호출하면 됨 (본 함수들은 implementation detail).
+    Returns:
+        회사별 최신 최대주주 report 행.
 
-    Guide:
-        - loadListing 결과 (nameToCode/codeToName/listing_codes/listing_meta) 가 후속 매핑의 핵심.
-        - 법인명 정규화 (접두 (주)/㈜ 제거 + 사업자번호 strip) 가 매핑 정확도 핵심.
-
-    When:
-        ``buildGraph`` 진행 단계 안에서.
-
-    How:
-        report parquet → 정제 → dict/DataFrame 변환.
+    Raises:
+        ScanDataError: report artifact가 없거나 손상됐을 때.
 
     Requires:
-        - 로컬 ``data/dart/scan/report/{apiType}.parquet`` (``buildReport``) + KRX listing.
+        ``scan/report/majorHolder.parquet``와 공통 scan data root.
+
+    Example:
+        >>> scanMajorHolders()  # doctest: +SKIP
+
+    Capabilities:
+        최대주주 report를 회사별 최신 기간 단면으로 축약한다.
+
+    AIContext:
+        network 법인 및 개인 보유 edge의 runtime 입력을 준비한다.
+
+    Guide:
+        정상적인 0행과 artifact 오류를 구분한다.
+
+    When:
+        ``buildGraph``의 최대주주 edge 단계.
+
+    How:
+        공통 parquet loader로 좁은 컬럼만 읽고 calendar filter를 적용한다.
 
     SeeAlso:
-        - :func:`dartlab.scan.network.buildGraph` — 본 함수들 호출자
-
-    Raises
-    ------
-    polars.PolarsError
-        report parquet 손상 또는 schema 불일치 시.
-
-    Examples
-    --------
-    >>> from dartlab.scan.network.scanner import scanMajorHolders
-    >>> df = scanMajorHolders()
-    >>> df.height > 0
-    True
+        ``scanInvested`` · ``dartlab.scan.network.edges.buildHolderEdges``.
     """
-    return _scanParquets(
-        "majorHolder",
-        [
-            "stockCode",
-            "year",
-            "nm",
-            "relate",
-            "trmend_posesn_stock_co",
-            "trmend_posesn_stock_qota_rt",
-        ],
+
+    raw = scanParquets("majorHolder", _MAJOR_HOLDER_COLUMNS)
+    return filterLatestPeriodPerStock(
+        raw,
+        scCol="stockCode",
+        yearCol="year",
+        periodCol="quarter",
     )
-
-
-# ── docs 계열회사 ground truth ─────────────────────────────
-
-
-class UnionFind:
-    """서로소 집합 자료구조 — 경로 압축 + 랭크 기반 합침.
-
-    계열회사 그룹핑에 사용. find/union/components 3개 연산 제공.
-    """
-
-    def __init__(self) -> None:
-        self.parent: dict[str, str] = {}
-        self.rank: dict[str, int] = {}
-
-    def find(self, x: str) -> str:
-        """루트 노드 탐색 (경로 압축 적용).
-
-        Parameters
-        ----------
-        x : str
-            대상 노드.
-
-        Returns
-        -------
-        str
-            루트 노드.
-
-        Capabilities:
-            - UnionFind (DSU) 표준 연산. 경로 압축 / rank 가중 union.
-
-        AIContext:
-            계열회사 그룹핑 (균형 분류 phase) 의 내부 자료구조. 호출자는 ``UnionFind`` 인스턴스만.
-
-        Guide:
-            -
-
-        When:
-            호출 컨텍스트.
-
-        How:
-            계열 그룹핑 시. find = 루트 + 경로 압축, union = rank 비교 후 작은 트리를 큰 트리에 attach.
-
-        Requires:
-            - UnionFind 인스턴스 (parent/rank dict)
-
-        SeeAlso:
-            - :func:`components` — 본 클래스 연산의 결과 컬렉션
-
-        Raises
-        ------
-        없음.
-
-        Examples
-        --------
-        >>> uf = UnionFind()
-        >>> uf.find("A")
-        'A'
-        """
-        if x not in self.parent:
-            self.parent[x] = x
-            self.rank[x] = 0
-        if self.parent[x] != x:
-            self.parent[x] = self.find(self.parent[x])
-        return self.parent[x]
-
-    def union(self, a: str, b: str) -> None:
-        """두 노드를 같은 집합으로 병합.
-
-        Parameters
-        ----------
-        a, b : str
-            병합할 노드 쌍.
-
-        Returns
-        -------
-        None — 내부 상태 변경.
-
-        Capabilities:
-            - UnionFind (DSU) 표준 연산. 경로 압축 / rank 가중 union.
-
-        AIContext:
-            계열회사 그룹핑 (균형 분류 phase) 의 내부 자료구조. 호출자는 ``UnionFind`` 인스턴스만.
-
-        Guide:
-            -
-
-        When:
-            호출 컨텍스트.
-
-        How:
-            계열 그룹핑 시. find = 루트 + 경로 압축, union = rank 비교 후 작은 트리를 큰 트리에 attach.
-
-        Requires:
-            - UnionFind 인스턴스 (parent/rank dict)
-
-        SeeAlso:
-            - :func:`components` — 본 클래스 연산의 결과 컬렉션
-
-        Raises
-        ------
-        없음.
-
-        Examples
-        --------
-        >>> uf = UnionFind()
-        >>> uf.union("A", "B")
-        """
-        ra, rb = self.find(a), self.find(b)
-        if ra == rb:
-            return
-        if self.rank[ra] < self.rank[rb]:
-            ra, rb = rb, ra
-        self.parent[rb] = ra
-        if self.rank[ra] == self.rank[rb]:
-            self.rank[ra] += 1
-
-    def components(self) -> dict[str, list[str]]:
-        """연결 요소별 노드 목록 반환.
-
-        Returns
-        -------
-        dict[str, list[str]]
-            루트 노드 → 자식 노드 list.
-
-        Capabilities:
-            - UnionFind (DSU) 표준 연산. 경로 압축 / rank 가중 union.
-
-        AIContext:
-            계열회사 그룹핑 (균형 분류 phase) 의 내부 자료구조. 호출자는 ``UnionFind`` 인스턴스만.
-
-        Guide:
-            -
-
-        When:
-            호출 컨텍스트.
-
-        How:
-            계열 그룹핑 시. find = 루트 + 경로 압축, union = rank 비교 후 작은 트리를 큰 트리에 attach.
-
-        Requires:
-            - UnionFind 인스턴스 (parent/rank dict)
-
-        SeeAlso:
-            - :func:`components` — 본 클래스 연산의 결과 컬렉션
-
-        Raises
-        ------
-        없음.
-
-        Examples
-        --------
-        >>> uf = UnionFind()
-        >>> uf.union("A", "B")
-        >>> uf.components()
-        {'A': ['A', 'B']}
-        """
-        groups: dict[str, list[str]] = defaultdict(list)
-        for x in self.parent:
-            groups[self.find(x)].append(x)
-        return dict(groups)
 
 
 def scanAffiliateDocs(
     nameToCode: dict[str, str],
     codeToName: dict[str, str],
 ) -> dict[str, str]:
-    """panel '계열회사 현황' 표에서 ground truth 그룹 매핑 추출 (panel SSOT).
-
-    Parameters
-    ----------
-    nameToCode : dict[str, str]
-        회사명 → 종목코드 매핑.
-    codeToName : dict[str, str]
-        종목코드 → 회사명 매핑.
-
-    Returns
-    -------
-    dict[str, str]
-        종목코드 → 그룹명 매핑 (계열회사 표 ground truth 기반).
+    """기존 scanner 호출 계약을 유지하며 prebuild 계열회사 mapping을 읽는다.
 
     Capabilities:
-        - report 카테고리 (investedCompany / majorHolder / affiliateDocs) raw → 정제 DataFrame
-          또는 회사명↔코드 매핑 dict.
+        과거 scanner 표면을 raw panel 순회 없는 bounded artifact loader에 연결한다.
 
     AIContext:
-        ``buildGraph`` 의 첫 4 단계가 본 함수들을 sequential 호출. AI agent 는 통상 buildGraph
-        만 호출하면 됨 (본 함수들은 implementation detail).
+        ``scanAffiliateDocs``를 직접 부르던 소비자가 1.0 전환 후에도 같은 dict를 받게 한다.
 
     Guide:
-        - loadListing 결과 (nameToCode/codeToName/listing_codes/listing_meta) 가 후속 매핑의 핵심.
-        - 법인명 정규화 (접두 (주)/㈜ 제거 + 사업자번호 strip) 가 매핑 정확도 핵심.
+        새 코드는 ``loadAffiliateGroups``를 직접 사용하고 이 함수는 호환 호출에만 둔다.
 
     When:
-        ``buildGraph`` 진행 단계 안에서.
+        기존 소비자가 회사명 mapping 인자와 함께 이 함수를 직접 호출할 때.
 
     How:
-        panel 섹션 본문(``panelTextRows``) → '계열회사' 섹션 표(``parsePanelXmlTables``) → 회사명 추출 →
-        Union-Find 클러스터링 → 그룹명 라벨링.
+        이전 인자는 호환 목적으로 받고 canonical prebuild loader에 위임한다.
 
     Requires:
-        - 로컬 ``data/dart/panel/{code}.parquet`` (panel 섹션 본문) + KRX listing.
+        유효한 ``network/affiliateDocs.parquet`` 또는 이를 받을 scan data source.
+
+    Args:
+        nameToCode: 이전 호출자가 전달하던 회사명별 종목코드 mapping.
+        codeToName: 이전 호출자가 전달하던 종목코드별 회사명 mapping.
+
+    Returns:
+        affiliate 종목코드별 기업집단 label.
+
+    Raises:
+        ScanDataError: artifact 다운로드, read 또는 schema 검증이 실패했을 때.
+
+    Example:
+        >>> scanAffiliateDocs({}, {})  # doctest: +SKIP
+        {'005930': '삼성'}
 
     SeeAlso:
-        - :func:`dartlab.scan.network.buildGraph` — 본 함수들 호출자
-        - :func:`dartlab.providers.dart.panel.text.panelXmlTables` — 동일 표 추출 헬퍼
-
-    Raises
-    ------
-    polars.PolarsError
-        panel parquet 손상 또는 schema 불일치 시.
-
-    Examples
-    --------
-    >>> from dartlab.scan.network.scanner import loadListing, scanAffiliateDocs
-    >>> n2c, c2n, _, _ = loadListing()
-    >>> gt = scanAffiliateDocs(n2c, c2n)
-    >>> gt.get("005930")
+        ``dartlab.scan.network.affiliates.loadAffiliateGroups``.
     """
-    from dartlab.providers.dart.panel.text import panelTextRows, parsePanelXmlTables
-    from dartlab.scan.builders.kr.common import panelDir
 
-    panelRoot = panelDir()
-    # panel 루트 부재(데이터 미수집) 시 glob 가 빈 이터레이터 → codes=[] → 빈 그래프 자연 반환.
-    codes = sorted(p.stem for p in panelRoot.glob("*.parquet"))
+    del nameToCode, codeToName
+    from dartlab.scan.network.affiliates import loadAffiliateGroups
 
-    _TABLE_NOISE = {
-        "상장",
-        "비상장",
-        "합계",
-        "소계",
-        "---",
-        "기업명",
-        "회사수",
-        "법인등록번호",
-        "상장여부",
-        "비고",
-        "단위",
-        "기준일",
-        "☞",
-        "본문",
-    }
-
-    def _extractCompanies(tables: list[list[list[str]]]) -> list[str]:
-        companies: list[str] = []
-        # 사업자/법인등록번호 셀을 가진 행(회사 행)에서 회사명 셀만 수집.
-        for table in tables:
-            for row in table:
-                if not any(_SCAN_REGNUM_RE.search(c) for c in row):
-                    continue
-                for cell in row:
-                    if _SCAN_REGNUM_RE.search(cell):
-                        continue
-                    if re.match(r"^[\d,.\-\s]+$", cell):
-                        continue
-                    if cell in _TABLE_NOISE or len(cell) < 2:
-                        continue
-                    companies.append(cell)
-        # 등록번호 컬럼이 없는 표는 법인 접미사(주)·(유) 등 패턴으로 fallback.
-        if not companies:
-            for table in tables:
-                for row in table:
-                    for cell in row:
-                        if _SCAN_CORP_RE.search(cell) and len(cell) >= 3:
-                            if not re.match(r"^[\d,.\-\s]+$", cell):
-                                companies.append(cell)
-        return companies
-
-    def _normalizeCorp(name: str) -> str:
-        name = re.sub(r"[\(（]주[\)）]", "", name)
-        return name.replace("㈜", "").replace("주식회사", "").strip()
-
-    code_to_affiliate_set: dict[str, set[str]] = {}
-    for code in codes:
-        try:
-            df = panelTextRows(code)
-        except (pl.exceptions.PolarsError, OSError):
-            continue
-        if df is None or df.is_empty():
-            continue
-        # '계열회사' 섹션 중 표(<TR>)를 실제로 담은 행만 — 분기보고서엔 표가 빠진다.
-        aff = df.filter(pl.col("sectionLeaf").str.contains("계열회사") & pl.col("contentRaw").str.contains("<TR"))
-        if aff.is_empty():
-            continue
-        aff = aff.filter(pl.col("period") == aff["period"].max())
-        tables: list[list[list[str]]] = []
-        for cr in aff["contentRaw"].to_list():
-            if cr:
-                tables.extend(parsePanelXmlTables(cr))
-        if not tables:
-            continue
-        companies = _extractCompanies(tables)
-        matched: set[str] = {code}
-        for comp in companies:
-            norm = _normalizeCorp(comp)
-            c = nameToCode.get(comp) or nameToCode.get(norm)
-            if c:
-                matched.add(c)
-        code_to_affiliate_set[code] = matched
-
-    # Union-Find 클러스터링 (상장사 3개+ 겹침)
-    uf = UnionFind()
-    codes_list = list(code_to_affiliate_set.keys())
-    for i in range(len(codes_list)):
-        for j in range(i + 1, len(codes_list)):
-            ci, cj = codes_list[i], codes_list[j]
-            if len(code_to_affiliate_set[ci] & code_to_affiliate_set[cj]) >= 3:
-                uf.union(ci, cj)
-
-    _GROUP_ALIASES = {
-        "에스케이": "SK",
-        "엘지": "LG",
-        "지에스": "GS",
-        "씨제이": "CJ",
-        "에이치디현대": "HD현대",
-        "케이씨씨": "KCC",
-    }
-    _WELL_KNOWN_LABELS = {
-        "005930": "삼성",
-        "006400": "삼성",
-        "032830": "삼성",
-        "005380": "현대차",
-        "000270": "현대차",
-        "012330": "현대차",
-        "034730": "SK",
-        "000660": "SK",
-        "017670": "SK",
-        "003550": "LG",
-        "066570": "LG",
-        "051910": "LG",
-        "023530": "롯데",
-        "004990": "롯데",
-        "000880": "한화",
-        "009830": "한화",
-        "078930": "GS",
-        "006360": "GS",
-        "005490": "포스코",
-        "047050": "포스코",
-        "001040": "CJ",
-        "097950": "CJ",
-        "000150": "두산",
-        "042670": "두산",
-        "329180": "HD현대",
-        "267250": "HD현대",
-        "035720": "카카오",
-        "293490": "카카오",
-        "035420": "네이버",
-        "004800": "효성",
-        "298040": "효성",
-        "004150": "한솔",
-        "213500": "한솔",
-        "003490": "대한항공",
-        "180640": "한진칼",
-        "069960": "현대백화점",
-        "005440": "현대백화점",
-        "010120": "LS",
-        "006260": "LS",
-        "105560": "KB",
-        "055550": "신한",
-        "086790": "하나",
-        "138930": "BNK",
-        "316140": "우리",
-    }
-
-    codeToGroup: dict[str, str] = {}
-    for _root, members in uf.components().items():
-        all_affiliates: set[str] = set()
-        for m in members:
-            all_affiliates.update(code_to_affiliate_set.get(m, set()))
-        if len(all_affiliates) < 2:
-            continue
-
-        group_name = None
-        for c in all_affiliates:
-            if c in _WELL_KNOWN_LABELS:
-                group_name = _WELL_KNOWN_LABELS[c]
-                break
-        if not group_name:
-            names = sorted(codeToName.get(c, "") for c in all_affiliates if c in codeToName)
-            if len(names) >= 2:
-                prefix = names[0]
-                for n in names[1:]:
-                    while prefix and not n.startswith(prefix):
-                        prefix = prefix[:-1]
-                if len(prefix) >= 2:
-                    group_name = prefix.rstrip()
-            if not group_name:
-                group_name = codeToName.get(members[0], members[0])
-
-        for c in all_affiliates:
-            codeToGroup[c] = group_name
-
-    return codeToGroup
+    return loadAffiliateGroups()

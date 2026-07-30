@@ -13,9 +13,16 @@ def _missingReportApiTypes(scan_dir: Path, required: tuple[str, ...]) -> tuple[s
 
 def main() -> int:
     from dartlab.scan.builders.kr.common import scanDir
-    from dartlab.scan.builders.kr.core import buildChanges, buildFinance, buildFinanceLite, buildReport
+    from dartlab.scan.builders.kr.core import (
+        buildAffiliateDocs,
+        buildChanges,
+        buildFinance,
+        buildFinanceLite,
+        buildReport,
+    )
     from dartlab.scan.builders.kr.shares import buildSharesOutstandingSafe
     from dartlab.scan.io import parquet as scan_parquet
+    from dartlab.scan.network.affiliates import isCurrentAffiliateDocsArtifact
 
     scan_dir = Path(scanDir())
     scan_dir.mkdir(parents=True, exist_ok=True)
@@ -48,6 +55,12 @@ def main() -> int:
         buildSharesOutstandingSafe(verbose=True)
     else:
         print("[prepareRealdataScanCache] preserve existing sharesOutstanding.parquet")
+
+    affiliate_docs = scan_dir / "network" / "affiliateDocs.parquet"
+    if not isCurrentAffiliateDocsArtifact(affiliate_docs):
+        buildAffiliateDocs(verbose=True)
+    else:
+        print("[prepareRealdataScanCache] preserve existing network/affiliateDocs.parquet")
 
     missing = scan_parquet._missingScanFiles(scan_dir, requireReports=True)
     if missing:

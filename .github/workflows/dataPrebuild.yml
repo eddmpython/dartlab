@@ -6,7 +6,8 @@ name: Data Prebuild (DART)
 #
 # 증분(기본): panel 변경 종목만 다운로드 → changes/sharesOutstanding/docsIndex 변경분만
 #   재계산 후 기존 parquet 에 종목 단위 머지. 전 92K panel(11GB) seed 금지 = OOM/디스크
-#   고갈 근본원인 제거. finance/report 는 캐시 full 입력이라 full 빌드.
+#   고갈 근본원인 제거. finance/report 는 캐시 full 입력이라 full 빌드. 단 새 필수 baseline이
+#   원격과 cache에 모두 없으면 최초 한 번 full bootstrap으로 자동 승격한다.
 # full(일요일 cron / dispatch full=true): 디스크 확보 후 전 종목 panel seed → 전체 재생성.
 #   빌더 변경·backfill drift 교정 안전망. _scanBuildState ledger 가 두 경로를 잇는다.
 #
@@ -39,7 +40,7 @@ jobs:
   prebuild-scan:
     if: ${{ (github.event_name == 'workflow_run' && (github.event.workflow_run.conclusion == 'success' || github.event.workflow_run.conclusion == 'failure')) || (github.event_name == 'workflow_dispatch' && github.event.inputs.full != 'true') }}
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 180
 
     steps:
       - uses: actions/checkout@v6

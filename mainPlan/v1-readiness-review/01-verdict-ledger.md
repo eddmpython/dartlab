@@ -1704,3 +1704,52 @@ public API coverage, folder baseline을 통과했다. 기존 생성 데이터 `n
 under-split 1건은 baseline 안이며 이번 변경으로 늘지 않았다.
 
 다음 작업은 L1.5 scan network 체크포인트다. L2 이상은 L1.5 전체 완료 전 착수하지 않는다.
+
+### L1.5 scan network 체크포인트: 완료
+
+공개 `scan("network")`가 전 회사 panel을 runtime에 다시 읽고 source 쌍을 전부 비교하던
+구조를 닫았다. runtime은 `network/affiliateDocs.parquet`만 읽고, prebuild가 panel의
+계열회사 표를 회사별 최신 revision으로 해석해 membership과 기업집단 label을 발행한다.
+공유 affiliate 역색인과 union-find를 써서 source 전쌍 비교를 없앴고, full과 incremental,
+changed-to-empty, removed source와 affiliate 제거를 같은 artifact 계약으로 묶었다. 기존
+artifact가 없거나 schema가 구형이면 full bootstrap으로 승격하며, realData CI와 정규
+prebuild 모두 같은 validator를 사용한다.
+
+회사명은 identity 근거로 쓰지 않는다. `corpProfile` v2의 13자리 ASCII 법인등록번호와
+정확히 일치할 때만 상장 affiliate를 확정하고, name-only와 미확인·충돌 법인번호는 진단에
+남긴다. 이 과정에서 종목 110990 디아이티가 이름이 같은 별도 법인 때문에 노루·사조 계열로
+오분류되던 실제 오류를 제거했다. 최종 artifact에서 110990은 자기 source 한 행만 남고
+000320을 포함한 잘못된 source 연결은 0이다. profile 3,981행은 v2 100%, 유효 jurir
+3,943, 중복 jurir 0이며 원격 `Update KindList` run 30512166076과 HuggingFace 발행이
+성공했다. 원격 artifact를 다시 받아 exact schema, v2 단일 version, 같은 행수와 identity
+수를 확인했다.
+
+구형 panel은 `contentRaw` 전체가 하나의 거대한 Parquet dictionary인 파일이 있어
+batch 크기만 줄여도 dictionary 전체를 반복 decode했다. 105560의 content column은
+비압축 576,758,445 bytes, 000880은 676.4MiB였다. `parquetContent`가 작은 dictionary
+index page만 해독하고 필요한 dictionary id만 zstd stream에서 보존한다. null, 손상
+varint, 길이 bomb와 multi-page를 fail-loud로 구분하고, 합법적인 oversized multi-page는
+DuckDB single-thread와 전역 lock으로 직렬 처리한다. 신규 panel writer는
+`contentRaw` dictionary를 만들지 않고 최대 4,096행 row group을 유지한다. PLAIN 경로는
+선택 row group만 읽고 32MiB 초과 read를 직렬화한다. 신규 writer 재현은 기존 선택
+222행과 byte-exact, 0.2872초, read RSS +75.67MiB, retained +1.08MiB였다.
+
+최종 실제 corpus 2,930 panel, 2,931 row group full build는 494.938초, peak RSS
+210.07MiB에 완료됐다. 산출은 51,527 bytes, 5,956행, source 2,431사, affiliate
+2,604사, group 120개, schema v2다. 직전 완주 후보 811.734초와 1,784.93MiB보다
+시간은 약 39%, peak는 약 88% 줄었다. 중복 source-affiliate, null identity, group
+충돌, temp 잔존은 모두 0이다. no-change incremental은 0.141초이고 전후 SHA256이
+같아 byte와 logical 결과가 모두 결정적이다. 최종 exact-state 단독 공개 product smoke는
+3.515초, RSS delta 346.4MiB, peak 413.4MiB로 예산을 통과했다.
+
+회귀는 network·prebuild·offline·EDGAR edge·profile·calendar·panel writer를 합쳐
+132 passed, 최종 decoder와 writer focused 41 passed이며 audit rule을 포함한 최종
+exact-state 묶음은 145 passed다. 변경 파일 Pyright 0,
+Ruff, compileall, public API coverage, memory budget, camelCase, silent-fail,
+docstring 4/9-section strict, provider mirror와 변경 모듈 folder-size strict를
+통과했다. 독립 전문 재검토의 최종 잔여는 P0 0, P1 0, P2 0이다.
+
+L1.5 전체는 아직 완료가 아니다. 다음 체크포인트는 scan의 남은 US audit, EDGAR
+prebuild, universe, dispatcher와 KR report 구조 부채를 같은 방식으로 닫는 것이다.
+그 뒤 frame, synth, reference 순서로 진행한다. 공식 Guard는 L1.5 형제 전체 동결 뒤
+한 번 실행하며 L2 이상은 그 전 착수하지 않는다.

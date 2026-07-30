@@ -50,10 +50,22 @@ SCAN_OUTPUT_KEYS = (
 # 일일 증분 변경분 다운로드 상한 — 초과분은 다음 사이클로 drain (대량 변경 시 디스크/시간 폭주
 # 방지, OOM 근본원인 재발 차단). 정상 일일 변경은 수십~수백이라 거의 닿지 않는다.
 INCREMENTAL_DOWNLOAD_CAP = DEFAULT_INCREMENTAL_DOWNLOAD_CAP
+AFFILIATE_DOCS_RELATIVE_PATH = "network/affiliateDocs.parquet"
 
 
 def _isFullMode() -> bool:
     return os.environ.get("PREBUILD_FULL", "").strip().lower() in ("1", "true", "yes")
+
+
+def _requiresAffiliateDocsBootstrap(dataDir: str, scanDir: str, *, incremental: bool) -> bool:
+    """Return whether an incremental run must promote itself to the first full network baseline."""
+
+    if not incremental:
+        return False
+    artifact = Path(dataDir) / scanDir / AFFILIATE_DOCS_RELATIVE_PATH
+    from dartlab.scan.network.affiliates import isCurrentAffiliateDocsArtifact
+
+    return not isCurrentAffiliateDocsArtifact(artifact)
 
 
 def _categoryFileCount(dataDir: str, category: str) -> int:
@@ -113,8 +125,8 @@ def _seedKindAndCorpProfile(dataDir: str) -> None:
     """KIND/dartList/corpProfile 메타를 HF 에서 로컬 캐시 위치로 seed (retryHfCall SSOT 경유).
 
     buildScan 이 KIND HTTP 호출 시 OfflineViolation 이므로 kindlist.yml 이 HF push 한 결과를
-    오프라인 가드 아래 다운로드해 둔다. 결산월 SSOT(corpProfile) 도 함께. best-effort —
-    부재/일시실패는 다음 빌드 단계가 raw 추정으로 보강하므로 빌드를 막지 않는다.
+    오프라인 가드 아래 다운로드해 둔다. KIND와 dartList는 보강 source지만 corpProfile의
+    v2 legal identity는 network 필수 입력이라 seed 직후 별도 strict gate가 검증한다.
     """
     from huggingface_hub import hf_hub_download
 
@@ -122,19 +134,32 @@ def _seedKindAndCorpProfile(dataDir: str) -> None:
 
     root = Path(dataDir)
     seeds = [
-        ("metadata/corpList.parquet", root / "kindList" / "corpList.parquet"),
-        ("metadata/dartList.parquet", root / "dartList" / "dartList.parquet"),
-        ("dart/scan/corpProfile.parquet", root / "dart" / "scan" / "corpProfile.parquet"),
+        ("metadata/corpList.parquet", root / "kindList" / "corpList.parquet", False),
+        ("metadata/dartList.parquet", root / "dartList" / "dartList.parquet", False),
+        ("dart/scan/corpProfile.parquet", root / "dart" / "scan" / "corpProfile.parquet", True),
     ]
     token = os.environ.get("HF_TOKEN") or None
-    for src, dst in seeds:
+    for src, dst, required in seeds:
         try:
             cached = retryHfCall(hf_hub_download, repo_id=HF_REPO, repo_type="dataset", filename=src, token=token)
             dst.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy(cached, dst)
             print(f"[prebuild] KIND seed: {src} -> {dst}")
-        except Exception as exc:  # noqa: BLE001 — best-effort: 부재/일시실패는 빌드 단계가 보강
+        except Exception as exc:  # noqa: BLE001 — HF error를 local cache 보존 정책으로 변환
+            if required and not dst.exists():
+                raise RuntimeError(f"필수 corpProfile seed 실패: {type(exc).__name__}: {exc}") from exc
             print(f"[prebuild] KIND seed skip ({src}): {type(exc).__name__}: {exc}")
+
+
+def _validateCorpProfileIdentity(dataDir: str) -> int:
+    """Full panel seed 전에 v2 legal identity profile을 fail-fast 검증한다."""
+
+    from dartlab.scan.builders.kr.corpProfile import _loadJurirStockMap
+
+    profilePath = Path(dataDir) / "dart" / "scan" / "corpProfile.parquet"
+    identities = _loadJurirStockMap(profilePath)
+    print(f"[prebuild] corpProfile legal identity: {len(identities):,}개")
+    return len(identities)
 
 
 def _seedFullPanel(dataDir: str) -> dict[str, int]:
@@ -242,11 +267,24 @@ def _validateInputCoverage(counts: dict[str, int], *, incremental: bool) -> None
             sys.exit(1)
 
 
-def _buildScan(dataDir: str, *, incremental: bool) -> dict[str, Path | list[Path] | None]:
+def _buildScan(
+    dataDir: str,
+    *,
+    incremental: bool,
+    changedCodes: list[str],
+    removedCodes: list[str],
+) -> dict[str, Path | list[Path] | None]:
     """scan 프리빌드 실행 (incremental=True 면 panel 빌더는 변경분만 재계산·머지)."""
     from dartlab.scan.builders.kr import buildScan
 
-    return buildScan(sinceYear=2021, reportSinceYear=2016, verbose=True, incremental=incremental)
+    return buildScan(
+        sinceYear=2021,
+        reportSinceYear=2016,
+        verbose=True,
+        incremental=incremental,
+        changedCodes=changedCodes,
+        removedCodes=removedCodes,
+    )
 
 
 def _buildDocsIndex(dataDir: str, *, incremental: bool) -> Path | None:
@@ -266,7 +304,7 @@ def _buildDocsIndex(dataDir: str, *, incremental: bool) -> Path | None:
         >>> _buildDocsIndex("./data", incremental=False)  # doctest: +SKIP
     """
     try:
-        from dartlab.scan.builders.kr.docsIndex import buildDocsIndex
+        from dartlab.scan.builders.kr.docs.index import buildDocsIndex
 
         return buildDocsIndex(sinceYear=2016, batchSize=100, verbose=True, incremental=incremental)
     except (FileNotFoundError, RuntimeError) as exc:
@@ -380,7 +418,14 @@ def main():
 
     # 1단계: base seed (finance/report full + scan 직전 산출물/ledger) + KIND/corpProfile 메타
     _seedBaseInputs(dataDir)
+    if _requiresAffiliateDocsBootstrap(dataDir, DATA_RELEASES["scan"]["dir"], incremental=incremental):
+        fullMode = True
+        incremental = False
+        os.environ["PREBUILD_FULL"] = "1"
+        print("[prebuild] network baseline 부재: 이번 사이클을 full bootstrap으로 승격")
     _seedKindAndCorpProfile(dataDir)
+    if "scan" in targets:
+        _validateCorpProfileIdentity(dataDir)
 
     # 2단계: panel 변경 감지 (증분) 또는 전량 seed (full)
     if fullMode:
@@ -397,7 +442,12 @@ def main():
     # 3단계: scan 프리빌드 (외부 API 호출 0)
     if "scan" in targets:
         start = time.time()
-        results = _buildScan(dataDir, incremental=incremental)
+        results = _buildScan(
+            dataDir,
+            incremental=incremental,
+            changedCodes=changedCodes,
+            removedCodes=removedCodes,
+        )
         elapsed = time.time() - start
         print(f"[prebuild] scan 빌드 완료: {elapsed:.0f}초")
 

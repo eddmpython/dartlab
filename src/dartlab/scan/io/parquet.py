@@ -210,10 +210,34 @@ def _downloadScanFile(scanDir: Path, relativePath: str) -> None:
     tmp.replace(dest)
 
 
+def ensureScanArtifact(relativePath: str) -> Path:
+    """공통 root 외 선택 artifact 하나를 확보하고 존재와 크기를 검증한다."""
+
+    scanDir = _ensureScanData()
+    destination = scanDir / relativePath
+    if destination.exists() and destination.stat().st_size > 0:
+        return destination
+    try:
+        _downloadScanFile(scanDir, relativePath)
+    except Exception as exc:
+        raise ScanDataError(
+            "artifact_download",
+            f"{type(exc).__name__}: {exc}",
+            source=destination,
+        ) from exc
+    if not destination.exists() or destination.stat().st_size <= 0:
+        raise ScanDataError(
+            "artifact_incomplete",
+            "download did not create a non-empty artifact",
+            source=destination,
+        )
+    return destination
+
+
 def _isScanComplete(scanDir: Path) -> bool:
     """scan 프리빌드 루트 + report/ 필수 파일 모두 존재 확인.
 
-    root 3 개 (_REQUIRED_SCAN_ROOT_FILES) + report 15 개 (_REQUIRED_REPORT_FILES) 모두
+    root artifact (_REQUIRED_SCAN_ROOT_FILES)와 report prebuild (_REQUIRED_REPORT_FILES)가 모두
     있어야 True. 둘 중 하나 누락 시 _ensureScanData() 가 재다운로드 강제.
     """
     return _isScanRootComplete(scanDir) and _isScanReportComplete(scanDir)

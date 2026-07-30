@@ -205,7 +205,7 @@ def test_data_prebuild_workflow_keeps_long_runs_observable():
     """prebuild 장기 실행은 버퍼링/무로그 실패 없이 heartbeat 와 HF retry cap 을 갖는다."""
     text = (ROOT / ".github/workflows/dataPrebuild.yml").read_text(encoding="utf-8")
 
-    assert "timeout-minutes: 120" in text
+    assert text.count("timeout-minutes: 180") == 2
     assert text.count("Free disk space") == 2
     assert text.count("df -h /") >= 7
     assert text.count("free -h || true") >= 6

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import Any
 
@@ -20,6 +21,7 @@ CORP_PROFILE_SCHEMA = {
     "corp_cls": pl.Utf8,
     "profileSchemaVersion": pl.Int16,
 }
+_JURIR_NO = re.compile(r"\s*([0-9]{6})-?([0-9]{7})\s*")
 
 
 class CorpProfileIdentityError(RuntimeError):
@@ -27,14 +29,44 @@ class CorpProfileIdentityError(RuntimeError):
 
 
 def normalizeJurirNo(value: object) -> str | None:
-    """법인등록번호를 13자리 숫자로 정규화하고 다른 값은 거부한다."""
+    """법인등록번호를 13자리 숫자로 정규화하고 다른 값은 거부한다.
 
-    normalized = "".join(character for character in str(value or "") if character.isdigit())
-    return normalized if len(normalized) == 13 else None
+    Args:
+        value: 원본 법인등록번호.
+
+    Returns:
+        13자리 숫자 문자열 또는 유효하지 않을 때 None.
+
+    Raises:
+        없음.
+
+    Example:
+        >>> normalizeJurirNo("123456-1234567")
+        '1234561234567'
+    """
+
+    matched = _JURIR_NO.fullmatch(str(value or ""))
+    if matched is None:
+        return None
+    return "".join(matched.groups())
 
 
 def normalizeCorpProfileRow(row: dict[str, Any]) -> dict[str, str | int]:
-    """legacy와 최신 companyInfo 행을 canonical profile schema로 정규화한다."""
+    """legacy와 최신 companyInfo 행을 canonical profile schema로 정규화한다.
+
+    Args:
+        row: 기존 또는 신규 corpProfile 행.
+
+    Returns:
+        누락 필드와 row version을 채운 canonical 행.
+
+    Raises:
+        없음.
+
+    Example:
+        >>> normalizeCorpProfileRow({"corp_code": "A"})["profileSchemaVersion"]
+        1
+    """
 
     versionValue = row.get("profileSchemaVersion", 1)
     try:

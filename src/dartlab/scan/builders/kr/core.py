@@ -40,6 +40,7 @@ LLM Specifications:
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from pathlib import Path
 
 from dartlab.scan.builders.kr.common import BATCH_SIZE as _BATCH
@@ -61,6 +62,7 @@ from dartlab.scan.builders.kr.fiscal import _fiscalMonthMap as _fiscalMonthMap
 from dartlab.scan.builders.kr.fiscal import _loadCorpProfileMap as _loadCorpProfileMap
 from dartlab.scan.builders.kr.fiscal import _toCalendarPeriod as _toCalendarPeriod
 from dartlab.scan.builders.kr.narrativeMetrics import buildNarrativeMetricsSafe as _buildNarrativeMetricsSafe
+from dartlab.scan.builders.kr.network import buildAffiliateDocs as buildAffiliateDocs
 from dartlab.scan.builders.kr.notes import buildNotesSafe as _buildNotesSafe
 from dartlab.scan.builders.kr.report.build import SCAN_API_TYPES as SCAN_API_TYPES
 from dartlab.scan.builders.kr.report.build import buildReport as buildReport
@@ -70,9 +72,15 @@ from dartlab.scan.builders.kr.valuationBuild import buildValuation as buildValua
 
 
 def buildScan(
-    *, sinceYear: int = 2021, reportSinceYear: int = 2016, verbose: bool = True, incremental: bool = False
+    *,
+    sinceYear: int = 2021,
+    reportSinceYear: int = 2016,
+    verbose: bool = True,
+    incremental: bool = False,
+    changedCodes: Iterable[str] | None = None,
+    removedCodes: Iterable[str] = (),
 ) -> dict[str, Path | list[Path] | None]:
-    """scan 프리빌드 통합 (changes + finance + finance-lite + report + sharesOutstanding + salesByProduct).
+    """scan 프리빌드 통합 (finance, report, panel 파생 artifact).
 
     ``.github/scripts/prebuildData.py`` 가 매 prebuild 사이클 (KST 03:00 / 15:00) 에 호출하는
     파사드. 하위 6 단계를 순서대로 실행하며, ``buildValuation`` 은 별도 cron 이므로 본 함수에
@@ -103,6 +111,7 @@ def buildScan(
         - finance : Path | None — ``finance.parquet`` 경로
         - finance_lite : Path | None — ``finance-lite.parquet`` 경로
         - report : list[Path] — apiType별 parquet 경로 목록
+        - affiliateDocs : Path — 계열회사 ground truth 경로
         - sharesOutstanding : Path | None — ``sharesOutstanding.parquet`` 경로
 
     Raises
@@ -167,6 +176,13 @@ def buildScan(
     _releaseNativeMemory()
     results["report"] = buildReport(sinceYear=reportSinceYear, verbose=verbose)
     _releaseNativeMemory()
+    results["affiliateDocs"] = buildAffiliateDocs(
+        verbose=verbose,
+        incremental=incremental,
+        changedCodes=changedCodes,
+        removedCodes=removedCodes,
+    )
+    _releaseNativeMemory()
     results["sharesOutstanding"] = _buildSharesOutstandingSafe(verbose=verbose, incremental=incremental)
     _releaseNativeMemory()
     results["salesByProduct"] = _buildSalesByProductSafe(verbose=verbose, incremental=incremental)
@@ -211,6 +227,7 @@ __all__ = [
     "_scanDir",
     "_say",
     "_toCalendarPeriod",
+    "buildAffiliateDocs",
     "buildChanges",
     "buildFinance",
     "buildFinanceLite",

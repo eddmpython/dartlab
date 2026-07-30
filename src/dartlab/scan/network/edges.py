@@ -7,6 +7,7 @@ from collections import defaultdict
 
 import polars as pl
 
+from dartlab.scan.io.calendar import filterLatestPeriodPerStock, filterLatestPerStock
 from dartlab.scan.network.scanner import _normalizeCompanyName
 
 # ── investedCompany 엣지 ───────────────────────────────────
@@ -220,11 +221,9 @@ def deduplicateEdges(edges: pl.DataFrame) -> pl.DataFrame:
     >>> dedup.height < edges.height
     True
     """
-    latest_year = edges["year"].max()
-    return (
-        edges.filter(pl.col("year") == latest_year)
-        .sort("ownership_pct", descending=True, nulls_last=True)
-        .unique(subset=["from_code", "to_name_norm"], keep="first")
+    latest = filterLatestPerStock(edges, scCol="from_code", yearCol="year")
+    return latest.sort("ownership_pct", descending=True, nulls_last=True).unique(
+        subset=["from_code", "to_name_norm"], keep="first"
     )
 
 
@@ -342,8 +341,12 @@ def buildHolderEdges(
     >>> corp.height, person.height
     """
     df = raw.filter(pl.col("nm").is_not_null() & ~pl.col("nm").is_in(list(_NOISE_NAMES)))
-    latest_year = df["year"].max()
-    df = df.filter(pl.col("year") == latest_year)
+    df = filterLatestPeriodPerStock(
+        df,
+        scCol="stockCode",
+        yearCol="year",
+        periodCol="quarter",
+    )
 
     # 지분율
     if df["trmend_posesn_stock_qota_rt"].dtype == pl.Utf8:

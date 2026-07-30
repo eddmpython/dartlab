@@ -14,6 +14,14 @@ pytestmark = pytest.mark.unit
 ROOT = Path(__file__).resolve().parents[2]
 
 
+def test_normalizeJurirNo_accepts_only_ascii_legal_id() -> None:
+    from dartlab.scan.builders.kr.corpProfile import normalizeJurirNo
+
+    assert normalizeJurirNo("123456-1234567") == "1234561234567"
+    assert normalizeJurirNo("１２３４５６-１２３４５６７") is None
+    assert normalizeJurirNo("법인 123456-1234567") is None
+
+
 def _loadScript():
     path = ROOT / ".github" / "scripts" / "meta" / "buildCorpProfile.py"
     spec = importlib.util.spec_from_file_location("buildCorpProfileTest", path)

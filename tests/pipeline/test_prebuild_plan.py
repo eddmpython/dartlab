@@ -82,5 +82,87 @@ def test_prebuild_scan_manifest_uses_fixed_artifacts():
 
     assert "dart/scan/finance.parquet" in rels
     assert "dart/scan/_scanBuildState.json" in rels
+    assert "dart/scan/network/affiliateDocs.parquet" in rels
     assert "dart/scan/report/dividend.parquet" in rels
     assert "dart/scan/report/employee.parquet" in rels
+
+
+def test_prebuild_missing_network_baseline_promotes_incremental_to_full(tmp_path: Path):
+    """The first rollout must not enter incremental mode without a complete baseline."""
+    import polars as pl
+
+    from dartlab.scan.network.affiliates import (
+        AFFILIATE_DOCS_SCHEMA,
+        AFFILIATE_DOCS_SCHEMA_VERSION,
+    )
+
+    mod = _loadScript(".github/scripts/prebuild/prebuildData.py")
+
+    assert mod._requiresAffiliateDocsBootstrap(str(tmp_path), "dart/scan", incremental=True)
+
+    artifact = tmp_path / "dart" / "scan" / mod.AFFILIATE_DOCS_RELATIVE_PATH
+    artifact.parent.mkdir(parents=True)
+    pl.DataFrame(
+        {
+            "sourceStockCode": ["000001"],
+            "affiliateStockCode": ["000001"],
+            "sourcePeriod": ["2024Q4"],
+            "sourceRceptNo": ["20250319000001"],
+            "groupName": [None],
+            "datasetAsOf": ["20250319"],
+            "schemaVersion": [AFFILIATE_DOCS_SCHEMA_VERSION],
+        },
+        schema=AFFILIATE_DOCS_SCHEMA,
+    ).write_parquet(artifact)
+
+    assert not mod._requiresAffiliateDocsBootstrap(str(tmp_path), "dart/scan", incremental=True)
+    assert not mod._requiresAffiliateDocsBootstrap(str(tmp_path), "dart/scan", incremental=False)
+
+    pl.DataFrame(
+        {
+            "sourceStockCode": ["000001"],
+            "affiliateStockCode": ["000001"],
+            "sourcePeriod": ["2024Q4"],
+            "sourceRceptNo": ["20250319000001"],
+            "groupName": [None],
+            "datasetAsOf": ["20250319"],
+            "schemaVersion": [1],
+        },
+        schema=AFFILIATE_DOCS_SCHEMA,
+    ).write_parquet(artifact)
+    assert mod._requiresAffiliateDocsBootstrap(str(tmp_path), "dart/scan", incremental=True)
+
+
+def test_prebuild_validates_profile_identity_before_panel_seed(tmp_path: Path):
+    """scan prebuild는 legacy profile로 full panel seed를 시작하지 않는다."""
+    import polars as pl
+
+    from dartlab.scan.builders.kr.corpProfile import (
+        CORP_PROFILE_SCHEMA,
+        CORP_PROFILE_SCHEMA_VERSION,
+        CorpProfileIdentityError,
+    )
+
+    mod = _loadScript(".github/scripts/prebuild/prebuildData.py")
+    profile = tmp_path / "dart" / "scan" / "corpProfile.parquet"
+    profile.parent.mkdir(parents=True)
+    row = {
+        "corp_code": ["A"],
+        "stockCode": ["100001"],
+        "corp_name": ["알파"],
+        "jurir_no": ["1234561234567"],
+        "bizr_no": [""],
+        "acc_mt": ["12"],
+        "induty_code": [""],
+        "est_dt": [""],
+        "corp_cls": ["K"],
+        "profileSchemaVersion": [CORP_PROFILE_SCHEMA_VERSION],
+    }
+    pl.DataFrame(row, schema=CORP_PROFILE_SCHEMA).write_parquet(profile)
+
+    assert mod._validateCorpProfileIdentity(str(tmp_path)) == 1
+
+    row["profileSchemaVersion"] = [1]
+    pl.DataFrame(row, schema=CORP_PROFILE_SCHEMA).write_parquet(profile)
+    with pytest.raises(CorpProfileIdentityError, match="backfill 미완료"):
+        mod._validateCorpProfileIdentity(str(tmp_path))

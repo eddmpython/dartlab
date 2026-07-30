@@ -34,7 +34,13 @@ LLM Specifications:
     TargetMarkets: KR scan builder public surface.
 """
 
-from dartlab.scan.builders.kr.core import buildChanges, buildFinance, buildReport, buildScan  # noqa: F401
+from dartlab.scan.builders.kr.core import (  # noqa: F401
+    buildAffiliateDocs,
+    buildChanges,
+    buildFinance,
+    buildReport,
+    buildScan,
+)
 from dartlab.scan.builders.kr.docs.index import (  # noqa: F401
     buildDocsIndex,
     buildEdgarDocsIndex,
