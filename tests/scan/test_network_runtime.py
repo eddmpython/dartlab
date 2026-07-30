@@ -946,6 +946,23 @@ def test_dictionary_length_bomb_is_rejected_before_value_read(
         parquet.close()
 
 
+def test_panel_content_serial_gate_uses_footer_size_and_accepts_empty_parquet(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    from dartlab.scan.builders.kr import network as builder
+
+    populated = tmp_path / "populated.parquet"
+    empty = tmp_path / "empty.parquet"
+    _panelFrame("<P>본문</P>").write_parquet(populated)
+    _panelFrame("<P>본문</P>").head(0).write_parquet(empty)
+
+    monkeypatch.setattr(builder, "_SERIAL_ARROW_CONTENT_BYTES", 0)
+
+    assert builder.panelContentRequiresSerialRead(populated) is True
+    assert builder.panelContentRequiresSerialRead(empty) is False
+
+
 def test_affiliate_membership_builder_limits_company_parallelism(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,

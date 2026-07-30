@@ -1788,3 +1788,48 @@ compiler를 수정하지 않는다.
 EDGAR 감사에서 확인된 다음 P0는 같은 L1.5의 다음 체크포인트인 EDGAR prebuild가 소유한다:
 finance의 ticker/CIK 혼합, identity/prior/price 실패 뒤 빈·부분 scan 전체 덮어쓰기, 비원자
 발행이다. 그다음 universe와 dispatcher를 닫으며 L2 이상은 여전히 착수하지 않는다.
+
+### L1.5 EDGAR prebuild 체크포인트: 완료
+
+finance, valuation, report 6종의 생산과 배포를 하나의 `buildEdgarPrebuild` 진입점으로
+고정했다. 상장 universe의 canonical CIK와 ticker만 사용하며 CIK fallback, OTC와
+비상장 혼입을 금지했다. finance는 10-K, 20-F, 40-F와 각 정정본을 포함하고 필요한 열만
+12개 bounded worker로 읽는다. valuation 가격, employee와 auditor 직전 발행본, listed
+원천과 SIC 원천의 손상은 빈 값이나 부분 성공으로 바꾸지 않고 원인을 포함해 실패한다.
+모든 parquet는 같은 volume의 임시 파일에 zstd로 쓰고 footer의 행수와 schema를 확인한
+뒤 fsync와 atomic replace로 교체한다. write와 cleanup이 함께 실패하면 두 원인을 모두
+보존한다.
+
+employee와 auditor는 1,108개 listed panel을 두 번 읽지 않고 같은 bounded pass에서
+만들었다. 32MiB 초과 content chunk는 직렬화하고 작은 panel만 최대 2개 겹치며, 큰
+파일을 먼저 처리해 allocator 잔류와 동시 peak를 제한했다. 실제 전수 실행은
+1,982.777초, process peak 925.1MiB였고 employee 25,478행, 3,246종목과 auditor
+32,900행, 3,890종목을 만들었다. 두 artifact 모두 stockCode/year 중복 0, exact schema,
+listed identity를 통과했다.
+
+실제 8종 cohort는 finance 23,683행, valuation 4,963행, shareholderReturn 35,610행,
+debtMaturity 18,828행, execComp 6,500행, capitalChanges 23,219행, employee
+25,478행, auditor 32,900행이다. finance는 5,423 ticker, listed 6,069 CIK 대비
+89.3557%이며 source coverage는 5,662/6,069, 93.2938%다. 숫자 ticker, CIK/ticker
+불일치와 stockCode/fy 중복은 모두 0이다. valuation은 4,963 ticker, 81.7762%이며
+가격 snapshot의 원래 builtAt을 보존한다. XBRL report 4종도 listed identity와
+stockCode/year 중복 0을 확인했다.
+
+validator가 8종의 exact schema, nonempty, listed identity, key uniqueness, finance
+CIK/ticker pair와 75% coverage 하한을 fail-closed로 확인한다. 통과 결과는 8개
+artifact의 path, rows, bytes, SHA-256을 담은 결정적 `prebuild-manifest.json`으로
+원자 봉인한다. provider 배포자는 상위 scan을 import하지 않고 manifest digest를
+재검증한다. scan parquet, manifest, finance-us.json, search-index-us.json은 원격
+head를 parent commit으로 건 단일 CAS commit에 같이 발행되며 HF transient 호출만
+공용 retry를 사용한다. 배포 실패와 누락은 0건 성공으로 바꾸지 않는다.
+
+최종 집중 회귀는 110 passed다. 변경 Python은 Pyright 0, Ruff, formatter,
+camelCase strict, YAML parse와 diff check를 통과했다. L0-L1.5 Guard의 cycleScan,
+architecturePytest, folderMirror, gatherGate와 public API smoke도 통과했다. 전체
+providerGate에 남은 실패는 이번 diff가 아닌 기존 `company.py`, `dataDispatcher.py`,
+`scanAccount.py` 크기와 `scanAccount.py` docstring 기준선 부채다. 공식 preflight의
+Bash 실행은 현재 Windows에 WSL 배포판이 없어 시작할 수 없었으며, L1.5 형제 전체 동결
+뒤 공식 Guard를 한 번 실행한다는 순서는 유지한다.
+
+다음 체크포인트는 L1.5 universe다. 이후 dispatcher, KR report structure, frame,
+synth, reference 순서로 하나씩 닫는다. L2 이상은 L1.5 전체 완료 전 착수하지 않는다.

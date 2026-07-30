@@ -159,13 +159,8 @@ jobs:
       - name: Build EDGAR scan prebuild (finance + valuation + report)
         run: |
           uv run python -X utf8 -c "
-          from dartlab.scan.builders.edgar import buildEdgarFinance, buildEdgarValuation
-          from dartlab.scan.builders.edgar.report import buildEdgarReport, buildEdgarEmployee, buildEdgarAuditor
-          buildEdgarFinance(sinceYear=2021, verbose=True)
-          buildEdgarValuation(verbose=True)
-          buildEdgarReport(verbose=True)
-          buildEdgarEmployee(verbose=True)
-          buildEdgarAuditor(verbose=True)
+          from dartlab.scan.builders.edgar import buildEdgarPrebuild
+          print(buildEdgarPrebuild(sinceYear=2021, verbose=True))
           "
         env:
           DARTLAB_DATA_DIR: ${{ github.workspace }}/data
@@ -188,29 +183,6 @@ jobs:
           uv run python -X utf8 .github/scripts/prebuild/buildSearchIndexUs.py
         env:
           DARTLAB_DATA_DIR: ${{ github.workspace }}/data
-      - name: Publish US terminal aggregates to HF
-        run: |
-          uv run python -X utf8 -c "
-          import os
-          from huggingface_hub import HfApi
-          from dartlab.core.hfRetry import retryHfCall
-          api = HfApi(token=os.environ['HF_TOKEN'])
-          pairs = [
-              ('landing/static/dashboards/finance-us.json', 'landing/dashboards/finance-us.json'),
-              ('landing/static/map/search-index-us.json', 'landing/map/search-index-us.json'),
-          ]
-          for local, repoPath in pairs:
-              if not os.path.exists(local):
-                  print('skip (missing):', local)
-                  continue
-              retryHfCall(api.upload_file, path_or_fileobj=local, path_in_repo=repoPath,
-                          repo_id='eddmpython/dartlab-data', repo_type='dataset',
-                          commit_message=f'갱신: {repoPath}')
-              print('published', repoPath)
-          "
-        env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}
-
       # ── 5. HF 업로드 (dartlab 파생물만) ──
       # finance / meta 는 SEC 벌크가 원본이므로 HF 미러링 없음 (사용자 PC 자동 다운로드).
       # HF 업로드 대상: scan 프리빌드 + docs 섹션 파싱 결과 + sections SSOT (PR-E3).
@@ -229,6 +201,8 @@ jobs:
               cats.append('sections')
               # EDGAR panel 은 위 edgarPanel stage 가 변경 파일만 업로드한다.
           result = deployEdgarToHF(categories=cats)
+          if result.get('scan', 0) < 10:
+              raise RuntimeError(f'EDGAR scan cohort 배포 건수 미달: {result}')
           print(result)
           "
         env:

@@ -63,6 +63,7 @@ def test_employee_rows_empty_without_match():
 def test_build_merges_prior_seed(tmp_path, monkeypatch):
     """누적 병합: 기존 발행본 시드 + 로컬 panel 추출 합산. 충돌은 로컬 우선, 시드 전용 종목 유지."""
     import dartlab.config as cfg
+    from dartlab.scan.builders.edgar import helpers
     from dartlab.scan.builders.edgar.report import employeeBuild
 
     # 로컬 panel 1종(NEWCO) 합성
@@ -76,6 +77,7 @@ def test_build_merges_prior_seed(tmp_path, monkeypatch):
         }
     ).write_parquet(panelDir / "NEWCO.parquet")
     monkeypatch.setattr(cfg, "dataDir", str(tmp_path))
+    monkeypatch.setattr(helpers, "edgarCikToTicker", lambda: {"0000000001": "NEWCO", "0000000002": "OLDCO"})
 
     # 시드: OLDCO(로컬에 없음) + NEWCO 2024(로컬이 덮어써야 함, 9999 -> 5000)
     seed = pl.DataFrame(

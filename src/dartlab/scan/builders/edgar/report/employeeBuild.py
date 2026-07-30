@@ -12,11 +12,16 @@ downward import 로 공유한다(중복 0). KR 정기보고서 직원현황(성�
 
 from __future__ import annotations
 
+from collections.abc import Iterable
+from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 import polars as pl
+import pyarrow as pa
+import pyarrow.parquet as pq
 
 from dartlab.core.logger import getLogger
+from dartlab.scan.builders.edgar.helpers import _writeParquetAtomic
 
 _log = getLogger(__name__)
 
@@ -27,36 +32,35 @@ EMPLOYEE_COLS = {
     "source": pl.Utf8,
 }
 
-# buildEdgarEmployee 가 panel 에서 읽는 최소 컬럼(메모리. contentRaw 가 전 10-K 텍스트라 무겁다).
-_READ_COLS = ["chapter", "period", "contentRaw"]
-
 _HF_REPO = "eddmpython/dartlab-data"
 _HF_EMPLOYEE_PATH = "edgar/scan/report/employee.parquet"
+_ANNUAL_PANEL_CHAPTERS = ("10-K", "10-K/A", "20-F", "20-F/A", "40-F", "40-F/A")
+_PANEL_METADATA_BATCH_ROWS = 4096
+_PANEL_READ_WORKERS = 2
 
 
-def _loadPriorEmployee() -> pl.DataFrame | None:
-    """기존 발행본 employee.parquet(HF)을 시드로 로드. 누적 병합용. 실패 시 None.
+def _loadPriorEmployee() -> pl.DataFrame:
+    """기존 발행본 employee.parquet(HF)을 누적 병합 시드로 로드한다.
 
     panel 텍스트는 30GB(7,300+)라 CI 로컬 캐시는 일부만 보유한다. 매 run 이 로컬 추출분만 쓰면 직원수
     커버리지가 줄어든다. 기존 발행본을 시드로 병합해 한 번 채운 종목이 유지되게 한다(panel backfill 동형 누적).
 
     Returns:
-        pl.DataFrame | None. 기존 발행본(없거나 로드 실패면 None).
+        pl.DataFrame. exact schema 기존 발행본.
     """
-    try:
-        import os
+    import os
 
-        from huggingface_hub import hf_hub_download
+    from huggingface_hub import hf_hub_download
 
-        from dartlab.core.hfRetry import retryHfCall
+    from dartlab.core.hfRetry import retryHfCall
 
-        fp = retryHfCall(
-            hf_hub_download, _HF_REPO, _HF_EMPLOYEE_PATH, repo_type="dataset", token=os.environ.get("HF_TOKEN")
-        )
-        return pl.read_parquet(fp)
-    except Exception as exc:  # noqa: BLE001
-        _log.warning("직전 임직원 스냅샷 로드 실패로 None 반환: %s: %s", type(exc).__name__, exc)
-        return None
+    fp = retryHfCall(
+        hf_hub_download, _HF_REPO, _HF_EMPLOYEE_PATH, repo_type="dataset", token=os.environ.get("HF_TOKEN")
+    )
+    prior = pl.read_parquet(fp)
+    if prior.schema != pl.Schema(EMPLOYEE_COLS):
+        raise ValueError(f"직전 임직원 스냅샷 schema 불일치: {prior.schema}")
+    return prior
 
 
 def employeeRowsFromPanel(panel: pl.DataFrame, ticker: str) -> list[dict]:
@@ -72,11 +76,19 @@ def employeeRowsFromPanel(panel: pl.DataFrame, ticker: str) -> list[dict]:
     Returns:
         list[dict]. 연도별 직원수 행(stockCode·year·employeeCount·source).
     """
-    # 파싱 SSOT 는 providers(L1) employee.parseEmployeeCount. scan(L1.5)이 downward lazy import 로 공유.
+    return _employeeRowsFromTexts(
+        zip(panel["period"].to_list(), panel["contentRaw"].to_list()),
+        ticker,
+    )
+
+
+def _employeeRowsFromTexts(texts: Iterable[tuple[object, object]], ticker: str) -> list[dict]:
+    """Python text pair stream에서 연도별 직원수를 추출한다."""
+
     from dartlab.providers.edgar.report.employee import parseEmployeeCount
 
     byYear: dict[str, int] = {}
-    for period, text in zip(panel["period"].to_list(), panel["contentRaw"].to_list()):
+    for period, text in texts:
         year = str(period or "")[:4]
         if not year.isdigit() or year in byYear:
             continue
@@ -86,12 +98,95 @@ def employeeRowsFromPanel(panel: pl.DataFrame, ticker: str) -> list[dict]:
     return [{"stockCode": ticker, "year": y, "employeeCount": c, "source": "10-K"} for y, c in sorted(byYear.items())]
 
 
+def _readAnnualPanelTexts(path: Path, keywords: tuple[str, ...]) -> list[tuple[str, str]]:
+    """metadata 선필터 뒤 bounded reader로 annual form 선택 content만 읽는다."""
+
+    from dartlab.scan.builders.kr.network import _readSelectedContents
+
+    if not keywords:
+        raise ValueError("EDGAR panel content keyword가 비어 있습니다")
+    contents: dict[int, str] = {}
+    periods: dict[int, str] = {}
+    try:
+        with pq.ParquetFile(path, memory_map=False, pre_buffer=False) as parquet:
+            required = {"chapter", "period", "contentRaw"}
+            missing = sorted(required - set(parquet.schema_arrow.names))
+            if missing:
+                raise ValueError(f"EDGAR panel 필수 컬럼 누락: path={path}, columns={missing}")
+            rowOffset = 0
+            for batch in parquet.iter_batches(
+                batch_size=_PANEL_METADATA_BATCH_ROWS,
+                columns=["chapter", "period"],
+                use_threads=False,
+            ):
+                chapters = batch.column("chapter").to_pylist()
+                batchPeriods = batch.column("period").to_pylist()
+                for localIndex, chapter in enumerate(chapters):
+                    if chapter in _ANNUAL_PANEL_CHAPTERS and batchPeriods[localIndex]:
+                        periods[rowOffset + localIndex] = str(batchPeriods[localIndex])
+                rowOffset += batch.num_rows
+            contents = _readSelectedContents(path, parquet, set(periods))
+        loweredKeywords = tuple(keyword.casefold() for keyword in keywords)
+        return [
+            (periods[index], content)
+            for index, content in contents.items()
+            if any(keyword in content.casefold() for keyword in loweredKeywords)
+        ]
+    finally:
+        contents.clear()
+        pa.default_memory_pool().release_unused()
+
+
+def _iterAnnualPanelTexts(
+    paths: list[Path],
+    keywords: tuple[str, ...],
+) -> Iterable[tuple[Path, list[tuple[str, str]]]]:
+    """작은 panel은 2개까지 겹치고 큰 content 파일군은 완전히 직렬화한다."""
+
+    from dartlab.scan.builders.kr.network import panelContentRequiresSerialRead
+
+    parallelPaths: list[Path] = []
+    serialPaths: list[Path] = []
+    for path in paths:
+        try:
+            target = serialPaths if panelContentRequiresSerialRead(path) else parallelPaths
+        except (OSError, ValueError, RuntimeError) as exc:
+            raise RuntimeError(f"EDGAR panel footer 읽기 실패: ticker={path.stem.upper()}, path={path}") from exc
+        target.append(path)
+
+    for path in serialPaths:
+        try:
+            yield path, _readAnnualPanelTexts(path, keywords)
+        except (OSError, ValueError, RuntimeError, pl.exceptions.PolarsError) as exc:
+            raise RuntimeError(f"EDGAR listed panel 읽기 실패: ticker={path.stem.upper()}, path={path}") from exc
+
+    with ThreadPoolExecutor(max_workers=_PANEL_READ_WORKERS, thread_name_prefix="edgar-panel-report") as executor:
+        futureToPath = {executor.submit(_readAnnualPanelTexts, path, keywords): path for path in parallelPaths}
+        try:
+            for future in as_completed(futureToPath):
+                path = futureToPath[future]
+                yield path, _panelTextResult(future, path)
+        except BaseException:
+            for future in futureToPath:
+                future.cancel()
+            raise
+
+
+def _panelTextResult(future: Future[list[tuple[str, str]]], path: Path) -> list[tuple[str, str]]:
+    """parallel panel future의 실패에 source identity를 붙인다."""
+
+    try:
+        return future.result()
+    except (OSError, ValueError, RuntimeError, pl.exceptions.PolarsError) as exc:
+        raise RuntimeError(f"EDGAR listed panel 읽기 실패: ticker={path.stem.upper()}, path={path}") from exc
+
+
 def buildEdgarEmployee(*, verbose: bool = False) -> Path:
     """전종목 edgar/panel 에서 edgar/scan/report/employee.parquet 생성. 10-K 직원수 순수 텍스트 추출.
 
-    edgar/panel/{ticker}.parquet 만 순회하며 10-K 본문에서 직원수를 regex 추출한다. 별도 수집 0. lazy
-    pushdown(chapter='10-K' + 'employ' 포함)으로 직원 무관 텍스트는 안 읽어 메모리를 절약한다. edgarSync 의
-    edgarPanel 갱신 직후 호출(로컬 panel 재사용).
+    edgar/panel/{ticker}.parquet 만 순회하며 annual form 본문에서 직원수를 regex 추출한다. 별도 수집 0.
+    metadata를 먼저 읽고 bounded content reader로 선택 행만 해독한다. edgarSync의 edgarPanel 갱신 직후
+    호출해 로컬 panel을 재사용한다.
 
     Parameters
     ----------
@@ -105,7 +200,7 @@ def buildEdgarEmployee(*, verbose: bool = False) -> Path:
 
     Raises
     ------
-    없음. panel 부재/공백이면 빈 parquet 을 쓴다(보조 소스, scan 빌드 무중단).
+    기존 발행본 또는 listed panel 로드와 검증이 실패하면 원인을 포함해 전파한다.
 
     Examples
     --------
@@ -130,8 +225,8 @@ def buildEdgarEmployee(*, verbose: bool = False) -> Path:
         edgarSync scan 프리빌드 단계(buildEdgarReport 직후). 직접 호출은 드물다.
 
     How:
-        panel 마다 lazy scan + chapter='10-K' & contentRaw~'employ' 푸시다운 후 employeeRowsFromPanel
-        (연도별 첫 유효 regex 매칭)로 누적해 단일 parquet 으로 쓴다.
+        panel metadata에서 annual form 행 번호를 고르고 bounded content reader로 선택 본문만 읽은 뒤
+        연도별 첫 유효 regex 매칭을 누적한다.
 
     Requires:
         - edgar/panel/{ticker}.parquet (edgarPanel stage 산출)
@@ -151,31 +246,48 @@ def buildEdgarEmployee(*, verbose: bool = False) -> Path:
         _log.info("[edgarReport] employee: edgar/panel 부재. 빈 parquet 생성")
 
     rows: list[dict] = []
-    for fp in parquets:
-        ticker = fp.stem.upper()
-        try:
-            sub = (
-                pl.scan_parquet(fp)
-                .filter((pl.col("chapter") == "10-K") & pl.col("contentRaw").str.contains("(?i)employ"))
-                .select(["period", "contentRaw"])
-                .collect()
-            )
-        except (OSError, pl.exceptions.PolarsError):
-            continue
-        if sub.is_empty():
-            continue
-        rows.extend(employeeRowsFromPanel(sub, ticker))
+    from dartlab.scan.builders.edgar.helpers import edgarCikToTicker
+
+    listedTickers = set(edgarCikToTicker().values())
+    listedPanels = [path for path in parquets if path.stem.upper() in listedTickers]
+
+    matchedTickers = 0
+    for index, (path, texts) in enumerate(_iterAnnualPanelTexts(listedPanels, ("employ",)), start=1):
+        ticker = path.stem.upper()
+        if texts:
+            matchedTickers += 1
+        rows.extend(_employeeRowsFromTexts(texts, ticker))
+        if verbose and (index % 100 == 0 or index == len(listedPanels)):
+            _log.info("[edgarReport] employee panel: %s/%s", index, len(listedPanels))
+    if verbose:
+        _log.info(
+            "[edgarReport] employee panel filter: files=%s, matchedTickers=%s",
+            len(listedPanels),
+            matchedTickers,
+        )
+
+    out = _employeeFrame(rows, listedTickers)
+    return _writeEmployeeFrame(out, outDir, verbose=verbose)
+
+
+def _employeeFrame(rows: list[dict], listedTickers: set[str]) -> pl.DataFrame:
+    """로컬 직원수 행과 exact-schema prior를 listed identity로 병합한다."""
 
     out = pl.DataFrame(rows, schema=EMPLOYEE_COLS) if rows else pl.DataFrame(schema=EMPLOYEE_COLS)
     # 누적 병합: 기존 발행본을 시드로 합치고 (stockCode, year) 충돌은 로컬 신규 우선(keep=first).
     # CI panel 캐시가 일부라 매 run 로컬분만 쓰면 커버리지가 줄어든다. 시드 병합으로 한 번 채운 종목 유지.
     prior = _loadPriorEmployee()
-    if prior is not None and not prior.is_empty():
-        prior = prior.select(list(EMPLOYEE_COLS.keys())).cast(EMPLOYEE_COLS)  # 스키마 정합
+    if not prior.is_empty():
+        prior = prior.filter(pl.col("stockCode").is_in(listedTickers))
         out = pl.concat([out, prior], how="vertical_relaxed").unique(subset=["stockCode", "year"], keep="first")
-    out = out.sort(["stockCode", "year"])
+    return out.sort(["stockCode", "year"])
+
+
+def _writeEmployeeFrame(out: pl.DataFrame, outDir: Path, *, verbose: bool) -> Path:
+    """검증된 employee frame을 원자 교체한다."""
+
     outPath = outDir / "employee.parquet"
-    out.write_parquet(str(outPath), compression="zstd")
+    _writeParquetAtomic(out, outPath)
     if verbose:
         _log.info(f"[edgarReport] employee: {out.height}행 ({out['stockCode'].n_unique()}종목) 생성 {outPath}")
     return outPath

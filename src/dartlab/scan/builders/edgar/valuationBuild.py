@@ -17,12 +17,19 @@ prices-snapshot-us.json 의 marketCap=null 도 채울 수 있다 (snapshot 게�
 from __future__ import annotations
 
 import json
+import math
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from pathlib import Path
 
 import polars as pl
 
 from dartlab.core.logger import getLogger
+from dartlab.scan.builders.edgar.helpers import (
+    EDGAR_PREBUILD_READ_WORKERS,
+    _writeParquetAtomic,
+    edgarListedFinanceSources,
+)
 
 _log = getLogger(__name__)
 
@@ -31,6 +38,15 @@ _SHARES_TAG = "EntityCommonStockSharesOutstanding"  # namespace=dei, unit=shares
 _NETINCOME_TAG = "NetIncomeLoss"  # namespace=us-gaap, unit=USD
 _EQUITY_TAGS = ("StockholdersEquity", "StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest")
 _EPS_TAG = "EarningsPerShareDiluted"  # namespace=us-gaap, unit≈USD/shares
+VALUATION_SCHEMA = {
+    "stockCode": pl.Utf8,
+    "marketCap": pl.Float64,
+    "per": pl.Float64,
+    "pbr": pl.Float64,
+    "current": pl.Float64,
+    "dividendYield": pl.Float64,
+    "snapshotAt": pl.Utf8,
+}
 
 
 def _latestVal(df: pl.DataFrame, *, namespace: str, tags: tuple[str, ...], annualOnly: bool = False) -> float | None:
@@ -97,29 +113,49 @@ def computeValuationRow(facts: pl.DataFrame, ticker: str, price: float | None, *
     }
 
 
-def _loadPriceSnapshot() -> dict[str, float]:
-    """prices-snapshot-us.json(HF) → {ticker: currentPrice}. 부재 시 빈 dict(가격 없는 밸류는 pbr 만)."""
-    try:
-        from huggingface_hub import hf_hub_download
+def _loadPriceSnapshot() -> tuple[dict[str, float], str]:
+    """prices-snapshot-us.json(HF)의 가격과 생성 시각을 검증해 반환한다."""
 
-        from dartlab.core.hfRetry import retryHfCall
+    from huggingface_hub import hf_hub_download
 
-        p = retryHfCall(
-            hf_hub_download,
-            "eddmpython/dartlab-data",
-            "landing/map/prices-snapshot-us.json",
-            repo_type="dataset",
+    from dartlab.core.hfRetry import retryHfCall
+
+    path = retryHfCall(
+        hf_hub_download,
+        "eddmpython/dartlab-data",
+        "landing/map/prices-snapshot-us.json",
+        repo_type="dataset",
+    )
+    payload = json.loads(Path(path).read_text(encoding="utf-8"))
+    builtAt = payload.get("builtAt")
+    data = payload.get("data")
+    if not isinstance(builtAt, str) or not builtAt.strip():
+        raise ValueError("EDGAR price snapshot builtAt 누락")
+    if not isinstance(data, dict) or not data:
+        raise ValueError("EDGAR price snapshot data가 비어 있습니다")
+    out: dict[str, float] = {}
+    unavailableTickers: list[str] = []
+    for ticker, row in data.items():
+        current = row.get("currentPrice") if isinstance(row, dict) else None
+        if current is None:
+            continue
+        value = float(current)
+        if not math.isfinite(value) or value <= 0:
+            unavailableTickers.append(str(ticker))
+            continue
+        normalizedTicker = str(ticker).strip().upper()
+        if not normalizedTicker:
+            raise ValueError("EDGAR price snapshot ticker가 비어 있습니다")
+        out[normalizedTicker] = value
+    if not out:
+        raise ValueError("EDGAR price snapshot에 유효한 현재가가 없습니다")
+    if unavailableTickers:
+        _log.warning(
+            "[edgarValuation] 0 이하 또는 비유한 현재가 제외: count=%s, sample=%s",
+            len(unavailableTickers),
+            unavailableTickers[:10],
         )
-        data = json.loads(Path(p).read_text(encoding="utf-8")).get("data") or {}
-        out: dict[str, float] = {}
-        for tk, row in data.items():
-            cur = row.get("currentPrice") if isinstance(row, dict) else None
-            if cur is not None:
-                out[str(tk).upper()] = float(cur)
-        return out
-    except Exception as exc:  # noqa: BLE001 — 스냅샷 부재/네트워크 → 가격 없이(pbr 만) 진행
-        _log.warning(f"[edgarValuation] price snapshot 로드 실패(가격 없이 진행): {exc}")
-        return {}
+    return out, builtAt
 
 
 def buildEdgarValuation(*, priceSnapshot: dict[str, float] | None = None, verbose: bool = False) -> Path:
@@ -185,46 +221,52 @@ def buildEdgarValuation(*, priceSnapshot: dict[str, float] | None = None, verbos
     if not parquets:
         raise FileNotFoundError("EDGAR finance parquet 없음")
 
-    try:
-        from dartlab.scan.builders.edgar.helpers import edgarCikToTicker
+    from dartlab.scan.builders.edgar.helpers import edgarCikToTicker
 
-        cikToTicker = edgarCikToTicker()  # 대표 보통주 티커 우선(finance 와 동일 키)
-    except (OSError, ValueError, KeyError):
-        cikToTicker = {}
+    cikToTicker = edgarCikToTicker()  # 대표 보통주 티커 우선(finance 와 동일 키)
 
-    prices = priceSnapshot if priceSnapshot is not None else _loadPriceSnapshot()
-    asOf = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    if priceSnapshot is None:
+        prices, asOf = _loadPriceSnapshot()
+    else:
+        prices = priceSnapshot
+        asOf = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    if not prices:
+        raise ValueError("EDGAR valuation price snapshot이 비어 있습니다")
     if verbose:
         _log.info(f"[edgarValuation] {len(parquets)} CIK → valuation (현재가 {len(prices)}종목)")
 
-    rows: list[dict] = []
-    for fp in parquets:
-        cik = fp.stem.zfill(10)
-        ticker = cikToTicker.get(cik)
-        if not ticker:
-            continue
+    sources = edgarListedFinanceSources(edgarDir, cikToTicker)
+
+    def readSource(source: tuple[Path, str, str]) -> dict | None:
+        """한 listed finance source에서 valuation 행 하나를 계산한다."""
+
+        fp, cik, ticker = source
         try:
             facts = pl.read_parquet(fp, columns=["namespace", "tag", "val", "fp", "form", "filed", "end"])
-        except (OSError, pl.exceptions.PolarsError):
-            continue
+        except (OSError, pl.exceptions.PolarsError) as exc:
+            raise RuntimeError(f"EDGAR listed valuation 원천 읽기 실패: cik={cik}, path={fp}") from exc
         if facts.is_empty():
-            continue
-        row = computeValuationRow(facts, str(ticker).upper(), prices.get(str(ticker).upper()), asOf=asOf)
-        if row is not None:
-            rows.append(row)
+            return None
+        return computeValuationRow(facts, ticker, prices.get(ticker), asOf=asOf)
 
-    schema = {
-        "stockCode": pl.Utf8,
-        "marketCap": pl.Float64,
-        "per": pl.Float64,
-        "pbr": pl.Float64,
-        "current": pl.Float64,
-        "dividendYield": pl.Float64,
-        "snapshotAt": pl.Utf8,
-    }
-    out = pl.DataFrame(rows, schema=schema) if rows else pl.DataFrame(schema=schema)
+    rows: list[dict] = []
+    with ThreadPoolExecutor(
+        max_workers=EDGAR_PREBUILD_READ_WORKERS,
+        thread_name_prefix="edgar-valuation",
+    ) as executor:
+        for index, row in enumerate(executor.map(readSource, sources), start=1):
+            if row is not None:
+                rows.append(row)
+            if verbose and index % 500 == 0:
+                _log.info(f"  {index}/{len(sources)} listed CIK, {len(rows)} valuation rows")
+
+    if not rows:
+        raise ValueError("EDGAR valuation 산출물이 비어 있습니다")
+    out = pl.DataFrame(rows, schema=VALUATION_SCHEMA, strict=False).sort("stockCode")
+    if out["stockCode"].n_unique() != out.height:
+        raise ValueError("EDGAR valuation stockCode가 중복됩니다")
     outPath = outDir / "valuation.parquet"
-    out.write_parquet(str(outPath), compression="zstd")
+    _writeParquetAtomic(out, outPath)
     if verbose:
         _log.info(f"[edgarValuation] 완료: {out.height}종목 → {outPath}")
     return outPath

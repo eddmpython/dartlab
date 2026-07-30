@@ -20,11 +20,17 @@ reportSource 가 market 분기로 KR(dart/scan/report)과 분리 소비. DART �
 
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import polars as pl
 
 from dartlab.core.logger import getLogger
+from dartlab.scan.builders.edgar.helpers import (
+    EDGAR_PREBUILD_READ_WORKERS,
+    _writeParquetAtomic,
+    edgarListedFinanceSources,
+)
 
 _log = getLogger(__name__)
 
@@ -405,32 +411,47 @@ def buildEdgarReport(*, verbose: bool = False) -> list[Path]:
     if not parquets:
         raise FileNotFoundError("EDGAR finance parquet 없음")
 
-    try:
-        from dartlab.scan.builders.edgar.helpers import edgarCikToTicker
+    from dartlab.scan.builders.edgar.helpers import edgarCikToTicker
 
-        cikToTicker = edgarCikToTicker()  # 대표 보통주 티커 우선(finance·valuation 과 동일 키)
-    except (OSError, ValueError, KeyError):
-        cikToTicker = {}
+    cikToTicker = edgarCikToTicker()  # 대표 보통주 티커 우선(finance·valuation 과 동일 키)
+
+    sources = edgarListedFinanceSources(edgarDir, cikToTicker)
+
+    def readSource(source: tuple[Path, str, str]) -> tuple[list[dict], list[dict], list[dict], list[dict]]:
+        """한 listed finance source에서 report 4종 행을 추출한다."""
+
+        fp, cik, ticker = source
+        try:
+            facts = pl.read_parquet(fp, columns=_READ_COLS)
+        except (OSError, pl.exceptions.PolarsError) as exc:
+            raise RuntimeError(f"EDGAR listed report 원천 읽기 실패: cik={cik}, path={fp}") from exc
+        if facts.is_empty():
+            return [], [], [], []
+        return (
+            shareholderReturnRows(facts, ticker),
+            debtMaturityRows(facts, ticker),
+            execCompRows(facts, ticker),
+            capitalChangesRows(facts, ticker),
+        )
 
     srRows: list[dict] = []
     dmRows: list[dict] = []
     ecRows: list[dict] = []
     ccRows: list[dict] = []
-    for fp in parquets:
-        ticker = cikToTicker.get(fp.stem.zfill(10))
-        if not ticker:
-            continue
-        try:
-            facts = pl.read_parquet(fp, columns=_READ_COLS)
-        except (OSError, pl.exceptions.PolarsError):
-            continue
-        if facts.is_empty():
-            continue
-        tk = str(ticker).upper()
-        srRows.extend(shareholderReturnRows(facts, tk))
-        dmRows.extend(debtMaturityRows(facts, tk))
-        ecRows.extend(execCompRows(facts, tk))
-        ccRows.extend(capitalChangesRows(facts, tk))
+    with ThreadPoolExecutor(
+        max_workers=EDGAR_PREBUILD_READ_WORKERS,
+        thread_name_prefix="edgar-report",
+    ) as executor:
+        for index, (shareholder, debt, compensation, capital) in enumerate(
+            executor.map(readSource, sources),
+            start=1,
+        ):
+            srRows.extend(shareholder)
+            dmRows.extend(debt)
+            ecRows.extend(compensation)
+            ccRows.extend(capital)
+            if verbose and index % 500 == 0:
+                _log.info(f"  {index}/{len(sources)} listed CIK report")
 
     outputs: list[Path] = []
     for rows, schema, name in (
@@ -442,7 +463,7 @@ def buildEdgarReport(*, verbose: bool = False) -> list[Path]:
         out = pl.DataFrame(rows, schema=schema) if rows else pl.DataFrame(schema=schema)
         out = out.sort(["stockCode", "year"])
         outPath = outDir / f"{name}.parquet"
-        out.write_parquet(str(outPath), compression="zstd")
+        _writeParquetAtomic(out, outPath)
         outputs.append(outPath)
         if verbose:
             _log.info(f"[edgarReport] {name}: {out.height}행 ({out['stockCode'].n_unique()}종목) → {outPath}")

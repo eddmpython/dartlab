@@ -6,7 +6,74 @@ providers/edgar/finance/scanAccount.py를 활용하여 전종목 XBRL 데이터�
 
 from __future__ import annotations
 
+import os
+import tempfile
+from collections.abc import Mapping
+from pathlib import Path
+
 import polars as pl
+import pyarrow.parquet as pq
+
+EDGAR_PREBUILD_READ_WORKERS = 12
+
+
+def edgarListedFinanceSources(
+    financeDir: Path,
+    cikToTicker: Mapping[str, str],
+) -> list[tuple[Path, str, str]]:
+    """finance directory에서 listed CIK source만 결정적 순서로 고른다."""
+
+    return [
+        (path, path.stem.zfill(10), cikToTicker[path.stem.zfill(10)])
+        for path in sorted(financeDir.glob("*.parquet"))
+        if path.stem.zfill(10) in cikToTicker
+    ]
+
+
+def _writeParquetAtomic(frame: pl.DataFrame, outputPath: Path) -> None:
+    """EDGAR prebuild frame을 footer 검증 후 같은 volume에서 원자 교체한다."""
+
+    outputPath.parent.mkdir(parents=True, exist_ok=True)
+    descriptor, temporaryName = tempfile.mkstemp(
+        prefix=f".{outputPath.stem}-",
+        suffix=".tmp.parquet",
+        dir=outputPath.parent,
+    )
+    os.close(descriptor)
+    temporary = Path(temporaryName)
+    try:
+        frame.write_parquet(temporary, compression="zstd")
+        parquet = pq.ParquetFile(temporary, memory_map=False, pre_buffer=False)
+        try:
+            actualRows = parquet.metadata.num_rows
+            actualSchema = parquet.schema_arrow
+        finally:
+            parquet.close()
+        expectedSchema = frame.to_arrow().schema
+        if actualRows != frame.height or not actualSchema.equals(expectedSchema):
+            raise RuntimeError(
+                "EDGAR prebuild 임시 artifact 검증 실패: "
+                f"path={outputPath}, rows={actualRows}/{frame.height}, "
+                f"schemaEqual={actualSchema.equals(expectedSchema)}"
+            )
+        with temporary.open("r+b") as written:
+            os.fsync(written.fileno())
+        os.replace(temporary, outputPath)
+        if os.name != "nt":
+            directoryDescriptor = os.open(outputPath.parent, os.O_RDONLY)
+            try:
+                os.fsync(directoryDescriptor)
+            finally:
+                os.close(directoryDescriptor)
+    except BaseException as primaryError:
+        try:
+            temporary.unlink(missing_ok=True)
+        except BaseException as cleanupError:
+            raise BaseExceptionGroup(
+                "EDGAR prebuild write와 temporary cleanup이 함께 실패했습니다",
+                [primaryError, cleanupError],
+            ) from primaryError
+        raise
 
 
 def edgarCikToTicker(univ: pl.DataFrame | None = None) -> dict[str, str]:
@@ -42,12 +109,33 @@ def edgarCikToTicker(univ: pl.DataFrame | None = None) -> dict[str, str]:
     if univ is None:
         from dartlab.core.dataLoader import loadEdgarListedUniverse
 
-        univ = loadEdgarListedUniverse()
+        univ = loadEdgarListedUniverse(localOnly=True)
+    required = {"cik", "ticker"}
+    missing = sorted(required - set(univ.columns))
+    if missing:
+        raise ValueError(f"EDGAR listed universe identity columns 누락: {missing}")
+    if "is_exchange_listed" in univ.columns:
+        univ = univ.filter(pl.col("is_exchange_listed") == True)  # noqa: E712
+    if "is_otc" in univ.columns:
+        univ = univ.filter(pl.col("is_otc") != True)  # noqa: E712
+    if univ.is_empty():
+        raise ValueError("EDGAR listed universe identity가 비어 있습니다")
+
     out: dict[str, str] = {}
+    cikByTicker: dict[str, str] = {}
     for c, t in zip(univ["cik"].to_list(), univ["ticker"].to_list()):
-        if not t:
-            continue
-        out.setdefault(str(c).zfill(10), str(t))  # 첫(=대표 보통주) 티커 우선
+        cik = str(c or "").strip().zfill(10)
+        ticker = str(t or "").strip().upper()
+        if len(cik) != 10 or not cik.isascii() or not cik.isdigit():
+            raise ValueError(f"EDGAR listed universe CIK가 유효하지 않습니다: {c!r}")
+        if not ticker or ticker.isdigit():
+            raise ValueError(f"EDGAR listed universe ticker가 유효하지 않습니다: {t!r}")
+        owner = cikByTicker.setdefault(ticker, cik)
+        if owner != cik:
+            raise ValueError(f"EDGAR listed universe ticker가 여러 CIK에 연결됩니다: {ticker}={owner},{cik}")
+        out.setdefault(cik, ticker)  # 첫(=대표 보통주) 티커 우선
+    if not out:
+        raise ValueError("EDGAR listed universe canonical identity가 비어 있습니다")
     return out
 
 

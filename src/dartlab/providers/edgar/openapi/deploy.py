@@ -5,7 +5,7 @@ SEC 자체 벌크(`companyfacts.zip` daily + 분기 `{Y}q{Q}.zip`) 가 원본이
 사용자 PC 에서 자동 다운로드·변환하므로 HF 미러링은 낭비 + rate limit 원인.
 
 HF 에 올리는 것은 **dartlab 파생물** 만:
-- `scan` → edgar/scan  (buildEdgarFinance() 프리빌드, 재계산 비용 큼)
+- `scan` → edgar/scan + US terminal aggregate (검증된 cohort 단일 CAS commit)
 - `docs` → edgar/docs  (submissions API HTML 섹션 파싱 결과, PR-E7 안전 게이트 통과 후 폐기 대상)
 - `sections` → edgar/sections  (period-sharded SSOT, plan delegated-prancing-tower PR-E3)
 
@@ -20,8 +20,11 @@ HF 에 올리는 것은 **dartlab 파생물** 만:
 
 from __future__ import annotations
 
+import hashlib
+import json
 import logging
 import os
+import string
 from pathlib import Path
 
 from dartlab.core.dataConfig import DATA_RELEASES, HF_REPO
@@ -44,6 +47,51 @@ _CATEGORY_MAP = {
 
 # 업로드 명시 차단 목록 (원본이 SEC 벌크, HF 미러링 정책상 제외)
 _BULK_ORIGIN_CATEGORIES = {"finance", "meta"}
+_SCAN_MANIFEST_NAME = "prebuild-manifest.json"
+_SCAN_MANIFEST_KIND = "dartlab.edgar.scan.prebuild"
+_SCAN_MANIFEST_ARTIFACT_COUNT = 8
+
+
+def _validateScanManifest(scanDir: Path, parquets: list[Path]) -> Path:
+    """scan validator가 봉인한 manifest와 로컬 artifact digest 일치를 검증한다."""
+
+    manifestPath = scanDir / _SCAN_MANIFEST_NAME
+    if not manifestPath.is_file():
+        raise FileNotFoundError(f"EDGAR scan prebuild manifest 누락: {manifestPath}")
+    payload = json.loads(manifestPath.read_text(encoding="utf-8"))
+    artifacts = payload.get("artifacts")
+    if (
+        payload.get("kind") != _SCAN_MANIFEST_KIND
+        or payload.get("schemaVersion") != 1
+        or not isinstance(artifacts, list)
+        or len(artifacts) != _SCAN_MANIFEST_ARTIFACT_COUNT
+    ):
+        raise ValueError(f"EDGAR scan prebuild manifest 계약 불일치: {manifestPath}")
+    available = {path.relative_to(scanDir).as_posix(): path for path in parquets}
+    declared: set[str] = set()
+    for artifact in artifacts:
+        relative = artifact.get("path") if isinstance(artifact, dict) else None
+        if (
+            not isinstance(relative, str)
+            or not relative
+            or "\\" in relative
+            or Path(relative).is_absolute()
+            or ".." in Path(relative).parts
+            or relative in declared
+        ):
+            raise ValueError(f"EDGAR scan prebuild manifest path 위반: {relative!r}")
+        declared.add(relative)
+        path = available.get(relative)
+        expectedDigest = artifact.get("sha256")
+        if path is None or not isinstance(expectedDigest, str) or len(expectedDigest) != 64:
+            raise ValueError(f"EDGAR scan prebuild manifest artifact 위반: {relative}")
+        if any(character not in string.hexdigits for character in expectedDigest):
+            raise ValueError(f"EDGAR scan prebuild manifest digest 형식 위반: {relative}")
+        with path.open("rb") as source:
+            actualDigest = hashlib.file_digest(source, "sha256").hexdigest()
+        if path.stat().st_size != artifact.get("bytes") or actualDigest != expectedDigest.lower():
+            raise ValueError(f"EDGAR scan prebuild artifact digest 불일치: {relative}")
+    return manifestPath
 
 
 def deployEdgarToHF(
@@ -53,28 +101,31 @@ def deployEdgarToHF(
     dryRun: bool = False,
     commitMessage: str | None = None,
 ) -> dict[str, int]:
-    """EDGAR 데이터를 HuggingFace datasets repo 에 `upload_folder` 로 업로드.
+    """EDGAR 파생 데이터를 HuggingFace datasets repo에 category 단위로 배포한다.
 
-    각 카테고리는 **단일 커밋** 으로 업로드된다 (HF rate limit 회피).
+    scan은 prebuild 계약 검증 후 terminal aggregate와 함께 단일 CAS commit으로
+    발행한다. 나머지 카테고리는 단일 upload_folder commit으로 발행한다.
 
     Parameters
     ----------
     categories : list
-        업로드할 카테고리 — "finance" | "meta" | "scan" | "docs".
-        None 이면 ["finance", "meta", "scan", "docs"] 전체.
+        업로드할 카테고리: "scan" | "docs" | "sections" | "panel".
+        None 이면 ["scan", "docs", "sections"].
     token : str
         HuggingFace API 토큰 (없으면 HF_TOKEN 환경변수).
     dryRun : bool
         True 면 업로드하지 않고 파일 개수만 반환.
     commitMessage : str
-        커밋 메시지 prefix. 없으면 기본값 "sync: edgar {cat}".
+        커밋 메시지. 없으면 한국어 category별 기본값.
 
     Returns
     -------
     dict : {"finance": N, ...} 업로드한 카테고리별 파일 수.
 
     Raises:
-        ValueError: HF_TOKEN 부재 + dryRun=False.
+        ValueError: HF_TOKEN 부재, scan 계약 위반.
+        FileNotFoundError: 배포 입력 또는 scan terminal aggregate 누락.
+        Exception: HF 조회와 배포 실패를 원인 그대로 전파.
 
     Example:
         >>> deployEdgarToHF(categories=["scan"], dryRun=True)
@@ -119,7 +170,9 @@ def deployEdgarToHF(
         TargetMarkets:
             - US (EDGAR) HF 배포.
     """
-    from huggingface_hub import HfApi
+    from huggingface_hub import CommitOperationAdd, HfApi
+
+    from dartlab.core.hfRetry import retryHfCall
 
     hfToken = token or os.getenv("HF_TOKEN")
     if not hfToken and not dryRun:
@@ -166,16 +219,23 @@ def deployEdgarToHF(
 
         localDir = _getDataRoot() / config["dir"]
         if not localDir.exists():
-            _log.info(f"[deploy] {localDir} 없음. 스킵.")
-            result[cat] = 0
-            continue
+            if dryRun:
+                _log.info(f"[deploy] {localDir} 없음. 스킵.")
+                result[cat] = 0
+                continue
+            raise FileNotFoundError(f"EDGAR 배포 디렉토리 없음: category={cat}, path={localDir}")
 
         # scan/meta 는 하위 폴더 구조가 있음 (scan/finance.parquet, meta/sub/*.parquet)
         parquets = sorted(localDir.rglob("*.parquet"))
         if not parquets:
-            _log.info(f"[deploy] {localDir}에 parquet 없음. 스킵.")
-            result[cat] = 0
-            continue
+            if dryRun:
+                _log.info(f"[deploy] {localDir}에 parquet 없음. 스킵.")
+                result[cat] = 0
+                continue
+            raise FileNotFoundError(f"EDGAR 배포 parquet 없음: category={cat}, path={localDir}")
+        temporaryArtifacts = [str(path) for path in parquets if cat == "scan" and path.name.startswith((".", "_"))]
+        if temporaryArtifacts:
+            raise RuntimeError(f"EDGAR 배포 임시 artifact 잔존: {temporaryArtifacts}")
 
         hfDir = config["dir"]
         nFiles = len(parquets)
@@ -185,11 +245,49 @@ def deployEdgarToHF(
             result[cat] = nFiles
             continue
 
-        msg = commitMessage or f"sync: edgar {cat} ({nFiles} files)"
-        _log.info(f"[deploy] {cat}: {nFiles}개 파일 upload_folder → {HF_REPO}/{hfDir}/")
-
-        try:
-            api.upload_folder(
+        assert api is not None
+        msg = commitMessage or f"갱신: EDGAR {cat} ({nFiles}개 파일)"
+        if cat == "scan":
+            manifestPath = _validateScanManifest(localDir, parquets)
+            dataRoot = _getDataRoot()
+            aggregates = (
+                (dataRoot.parent / "landing/static/dashboards/finance-us.json", "landing/dashboards/finance-us.json"),
+                (dataRoot.parent / "landing/static/map/search-index-us.json", "landing/map/search-index-us.json"),
+            )
+            missingAggregates = [str(path) for path, _ in aggregates if not path.is_file()]
+            if missingAggregates:
+                raise FileNotFoundError(f"EDGAR scan cohort aggregate 누락: {missingAggregates}")
+            operations = [
+                CommitOperationAdd(
+                    path_in_repo=f"{hfDir}/{path.relative_to(localDir).as_posix()}",
+                    path_or_fileobj=str(path),
+                )
+                for path in parquets
+            ]
+            operations.append(
+                CommitOperationAdd(
+                    path_in_repo=f"{hfDir}/{manifestPath.name}",
+                    path_or_fileobj=str(manifestPath),
+                )
+            )
+            operations.extend(
+                CommitOperationAdd(path_in_repo=repoPath, path_or_fileobj=str(path)) for path, repoPath in aggregates
+            )
+            parentCommit = retryHfCall(api.repo_info, repo_id=HF_REPO, repo_type="dataset").sha
+            retryHfCall(
+                api.create_commit,
+                repo_id=HF_REPO,
+                repo_type="dataset",
+                operations=operations,
+                commit_message=msg,
+                parent_commit=parentCommit,
+            )
+            result[cat] = len(operations)
+            _log.info(f"[deploy] {cat}: {len(operations)}개 cohort 파일 업로드 완료 (단일 커밋)")
+        else:
+            _log.info(f"[deploy] {cat}: {nFiles}개 파일 upload_folder → {HF_REPO}/{hfDir}/")
+            retryHfCall(
+                api.upload_folder,
                 folder_path=str(localDir),
                 path_in_repo=hfDir,
                 repo_id=HF_REPO,
@@ -199,8 +297,5 @@ def deployEdgarToHF(
             )
             result[cat] = nFiles
             _log.info(f"[deploy] {cat}: {nFiles} 업로드 완료 (단일 커밋)")
-        except (OSError, ValueError, RuntimeError) as exc:
-            _log.error("[deploy] %s 실패: %s", cat, exc)
-            result[cat] = 0
 
     return result

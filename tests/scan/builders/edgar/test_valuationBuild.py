@@ -4,6 +4,9 @@ marketCap/per/pbr 계산이 KR valuation.parquet 동형 행을 내는지. 합성
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 import polars as pl
 import pytest
 
@@ -107,3 +110,39 @@ def test_valuation_negative_eps_no_per():
     assert row["per"] is None  # 적자 → PER 무의미
     assert row["marketCap"] == 40_000_000.0
     assert row["pbr"] == 10.0
+
+
+def test_price_snapshot_is_fail_closed_and_preserves_source_timestamp(tmp_path: Path, monkeypatch):
+    """가격 snapshot이 비거나 builtAt이 없으면 실패하고, 정상 입력은 source 시각을 그대로 쓴다."""
+    import huggingface_hub
+
+    from dartlab.scan.builders.edgar.valuationBuild import _loadPriceSnapshot
+
+    snapshot = tmp_path / "prices.json"
+    snapshot.write_text(
+        json.dumps({"builtAt": "2026-07-30T00:00:01+00:00", "data": {"aapl": {"currentPrice": 200}}}),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(huggingface_hub, "hf_hub_download", lambda *args, **kwargs: str(snapshot))
+    prices, builtAt = _loadPriceSnapshot()
+    assert prices == {"AAPL": 200.0}
+    assert builtAt == "2026-07-30T00:00:01+00:00"
+
+    snapshot.write_text(json.dumps({"builtAt": builtAt, "data": {}}), encoding="utf-8")
+    with pytest.raises(ValueError, match="비어 있습니다"):
+        _loadPriceSnapshot()
+
+    snapshot.write_text(
+        json.dumps(
+            {
+                "builtAt": builtAt,
+                "data": {
+                    "ZERO": {"currentPrice": 0},
+                    "VALID": {"currentPrice": 1.5},
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    prices, _ = _loadPriceSnapshot()
+    assert prices == {"VALID": 1.5}

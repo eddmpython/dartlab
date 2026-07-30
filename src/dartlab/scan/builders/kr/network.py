@@ -55,6 +55,23 @@ class AffiliateDocsBuildError(RuntimeError):
         super().__init__(f"affiliate docs build failed: code={code}, source={source}: {cause}")
 
 
+def panelContentRequiresSerialRead(source: Path) -> bool:
+    """Parquet footer만 읽어 contentRaw가 전용 serial 구간을 요구하는지 판정한다."""
+
+    with pq.ParquetFile(source, memory_map=False, pre_buffer=False) as parquet:
+        if "contentRaw" not in parquet.schema_arrow.names:
+            raise ValueError(f"panel contentRaw 컬럼 누락: {source}")
+        contentIndex = parquet.schema_arrow.names.index("contentRaw")
+        largestContentChunk = max(
+            (
+                parquet.metadata.row_group(index).column(contentIndex).total_uncompressed_size
+                for index in range(parquet.num_row_groups)
+            ),
+            default=0,
+        )
+    return largestContentChunk > _SERIAL_ARROW_CONTENT_BYTES
+
+
 @dataclass(frozen=True)
 class _AffiliateReadResult:
     rows: frozenset[tuple[str, str, str, str]]
@@ -193,11 +210,9 @@ def _readSelectedContentsDuckDb(
                 """
                 SELECT file_row_number, contentRaw
                 FROM read_parquet(?, file_row_number = true)
-                WHERE contains(sectionLeaf, '계열회사')
-                  AND period IS NOT NULL
-                  AND period <> ''
+                WHERE file_row_number IN (SELECT unnest(?))
                 """,
-                [str(source)],
+                [str(source), sorted(selectedIndexes)],
             ).fetchall()
         except duckdb.Error as queryError:
             if connection is not None:
@@ -242,8 +257,10 @@ def _readSelectedContents(
         parquet.metadata.row_group(index).column(contentIndex).dictionary_page_offset is not None
         for index in range(parquet.num_row_groups)
     )
+    dictionaryGuard = _ARROW_CONTENT_LOCK if largestContentChunk > _SERIAL_ARROW_CONTENT_BYTES else nullcontext()
     try:
-        return _readDictionarySelectedContents(source, parquet, selectedIndexes)
+        with dictionaryGuard:
+            return _readDictionarySelectedContents(source, parquet, selectedIndexes)
     except _UnsupportedContentLayout:
         if largestContentChunk > _MAX_ARROW_CONTENT_BYTES and hasDictionaryChunk:
             return _readSelectedContentsDuckDb(source, selectedIndexes)
