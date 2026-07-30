@@ -59,10 +59,12 @@ Guard는 현재 레이어의 source를 동결한 뒤 한 번 실행한다. Guard
   데이터 계약·오류 투명성·SSOT·속도·메모리 기준으로 전수 대조한다. 네 형제 간
   cross import 없이 결함 수정과 집중 회귀를 끝내고 source 동결 뒤 공식 Guard, 원장,
   커밋, push까지 닫는다.
-- 다음 첫 행동: scan 공통 I/O와 남은 KR 재무 축 체크포인트를 push한 뒤 공개
-  `network` 축의 panel 전수 순회와 이차 복잡도 병목을 제거한다. 이어 US audit,
-  EDGAR prebuild, universe와 dispatcher를 포함한 scan의 남은 공개 계약을 닫고
-  frame, synth, reference 순서로 계속한다.
+- 최근 완료한 체크포인트: **L1.5 universe 공개 계약** (2026-07-31). scanClass facade가
+  발행된 `universe` 계약을 미구현해 raw TypeError를 내던 것을 entity-set(시장·종목)
+  선택자로 정직하게 구현하고 spec을 정합시켰다.
+- 다음 첫 행동: scan network·US audit·EDGAR prebuild·universe 체크포인트가 모두
+  닫혔으므로 **L1.5 dispatcher** 체크포인트를 같은 방식으로 연다. 이어 KR report
+  structure, 그다음 frame, synth, reference 순서로 계속한다.
 - 금지: axis나 파일 하나만 끝내고 완료 보고, L2 이상 수정 선행,
   중간 source에서 공식 Guard 반복
 
@@ -1833,3 +1835,60 @@ Bash 실행은 현재 Windows에 WSL 배포판이 없어 시작할 수 없었으
 
 다음 체크포인트는 L1.5 universe다. 이후 dispatcher, KR report structure, frame,
 synth, reference 순서로 하나씩 닫는다. L2 이상은 L1.5 전체 완료 전 착수하지 않는다.
+
+### L1.5 universe 공개 계약 체크포인트: 완료 (2026-07-31)
+
+범위는 scan 공개 facade `scan/scanClass.py`의 유니버스 선택 계약과 그 실제 호출자
+(dartlab.scan · Company.scan · engines.scan spec을 읽는 AI agent)다. engines.scan
+spec은 `inputs`·`requiredEvidence`·`## universe default`에서 `universe` 인자를
+발행한다: 미지정이면 KR 전종목, `universe="US"`/`market="US"`는 미국, 종목 한정은
+`{"stockCodes":[...]}`. 그런데 `scanClass.__call__`의 시그니처에는 `universe`
+파라미터가 아예 없었다. `market`만 검증하고 `universe`는 `**kwargs`로 축 함수에
+그대로 전달됐다.
+
+제품 결함은 실호출로 재현했다. 전 축 함수 중 `universe`를 받는 것은 0개이고
+`**kwargs`도 0개라, spec대로 `scan("ratio","roe",universe="KR")`를 부르면 사용자와
+agent는 내부 함수명이 노출된 raw `TypeError: scanAccount() got an unexpected
+keyword argument 'universe'`를 봤다. profitability·governance·account·ratio 넷 모두
+같은 방식으로 죽었다. 대조군 `market=`는 정상적으로 명시 ValueError를 냈다. 즉
+계약이 반쪽만 구현돼, 발행된 spec을 그대로 따르는 경로가 내부 오류로 깨졌다.
+
+근본 원인은 유니버스 요청을 (시장, 종목 필터)로 해소하는 단일 소유자가 없었고
+`market` 처리만 facade에 인라인돼 있었다는 것이다. L1의 유니버스 SSOT
+`providers/universe.py::listedEquityUniverse`는 dataHub만 소비하고 scan은 참조하지
+않았다. 산업 분류는 별도 SSOT(`dartlab.listing` 업종, `screen`의 `by:"industry"`)가
+소유하므로 scan facade가 industryHint를 재구현하면 산업 분류 SSOT를 중복하게 된다.
+따라서 `universe`를 entity-set(시장·종목) 선택자로만 소유하도록 경계를 확정했다.
+
+수정은 facade 한 곳에 담았다. `_normalizeMarket`, `_normalizeStockCodes`,
+`_resolveRequestedUniverse`가 `universe`(문자열 시장 alias · `{"market"}` ·
+`{"stockCodes"}`)와 `market`를 하나의 (시장, 종목 필터)로 해소한다. 시장이 축의
+`universeMarkets`에 없으면 거부하고, `universe`와 `market`이 다른 시장을 지정하면
+충돌로 거부하며, `industryHint`는 industry 엔진·`screen by:"industry"`로 라우팅하는
+명시 ValueError로 돌린다. 미지원 키·타입·빈 종목목록도 조용히 흘리지 않고 그
+자리에서 막는다. 종목 필터는 결과 표의 `종목코드`/`stockCode`/`ticker`를 KR zero-pad와
+US 대문자 변이로 매칭한다. engines.scan spec의 `## universe default`와 산업 라우팅
+문구를 구현과 정확히 일치시켰다. `tests/scan/test_universeContract.py`에 계약 회귀
+26건(시장 alias·종목 정규화·충돌·미지원 거부·종목 필터·US dispatch 분기·TypeError
+비누출)을 추가했다.
+
+공개 행동·정확성·속도·메모리는 실데이터로 확정했다. 전종목 `scan("profitability")`는
+2,811행을 1.8737초, tracemalloc peak 0.38MB, RSS 증가 199.0MB로 반환했고,
+`universe={"stockCodes":["005930","000660"]}`는 정확히 2행(000660·005930)을 1.4931초에
+반환했다. 필터 결과는 전종목의 부분집합과 일치했고 ROE 값(24.5·9.7)이 필터 전후
+동일해 값 보존을 확인했다. 종목 필터는 축이 전종목을 적재한 뒤 좁히는 post-filter라
+전종목 default 동작과 같은 적재 비용을 갖는다(push-down은 없음).
+
+Guard와 회귀는 변경 파일 범위에서 전부 통과했다. 신규 계약 회귀
+`26 passed`, facade `market=`와 enrichment 인접 회귀(test_r27·test_consistency 포함)
+`56 passed`다. `scanClass.py` Ruff·formatter·compileall·Pyright `0 errors, 0 warnings`,
+`silentSubstitute --strict` 신규 위반 0, notebookContract(spec 코드펜스 AST) 신규
+위반 0이다. 어떤 축 함수도 `universe`를 받지 않아 facade 가로채기의 회귀 위험은 0으로
+확인했다.
+
+남은 부채는 다음 순서로 넘긴다. 종목 필터의 소스 push-down(전종목 적재 회피)과
+scan 유니버스를 L1 `listedEquityUniverse` SSOT로 직접 정합시키는 것은 dispatcher와
+KR report 체크포인트에서 이어서 본다. 흡수된 sub-spec 예제의 `account=`/`metric=`
+kwarg 표기와 scan 축 수 문서 표기(22 vs 27)는 이번 universe 계약 밖의 별도 문서
+정합 부채다. 공식 Guard는 L1.5 형제 전체 동결 뒤 한 번 실행하는 순서를 유지한다.
+다음 체크포인트는 L1.5 dispatcher다.

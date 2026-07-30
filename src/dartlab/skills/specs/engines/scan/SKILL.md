@@ -298,7 +298,7 @@ agent (ai/mcp/server) 가 본 엔진을 호출할 때는 `EngineCall(apiRef="sca
 "반도체", "2 차전지", "자동차" 같은 산업 keyword 가 질문에 있으면:
 
 1. **industry 엔진 우선** - `dartlab.industry("반도체")` 또는 `c.industry()` 가 산업 라이프사이클 단계 (도입·성장·성숙·재도약·쇠퇴) + 밸류체인 노드 + 동종 종목 list 반환.
-2. **scan 으로 횡단면 비교** - 같은 industryHint 안에서 `dartlab.scan(axis, universe={"industryHint": "반도체"})` 또는 결과 DataFrame 의 `industryName` 컬럼 필터.
+2. **scan 으로 횡단면 비교** - 결과 DataFrame 의 `industryName` 컬럼 필터 또는 `scan("screen", spec={"where": [...], "sort": {..., "by": "industry"}})` 로 업종 횡단. (scan `universe` 는 industryHint 를 받지 않는다. 산업 분류 SSOT 는 industry 엔진이 소유한다.)
 3. 답변에는 산업 라이프사이클 단계 + 공정/세부 분류 (전공정 FAB · 후공정 패키징 · 테스트 · 설계 · 소재 · 장비) 별 ranking 둘 다.
 
 단일 종목 답변에 부착되는 `industryBadge` (Company.panel 응답) 는 같은 산업 종목 peers list 를 자동 포함 - 별도 industry 호출 없이 peer 후보 즉시 사용 가능.
@@ -306,9 +306,10 @@ agent (ai/mcp/server) 가 본 엔진을 호출할 때는 `EngineCall(apiRef="sca
 ## universe default
 
 - `universe` 미지정 → KR 전종목 (KOSPI + KOSDAQ + KONEX 등 dartlab 수집 범위).
-- 미국 시장 한정 질문이면 `universe="US"` 또는 `market="US"`.
-- 산업 한정 → `universe={"industryHint": "반도체"}`.
-- 사용자 지정 종목 list → `universe={"stockCodes": ["005930", "000660"]}`.
+- 미국 시장 한정 질문이면 `universe="US"` 또는 `market="US"` (둘 다 주면 같은 시장이어야 하고 충돌 시 ValueError).
+- 사용자 지정 종목 list → `universe={"stockCodes": ["005930", "000660"]}` (전종목 결과를 해당 종목으로 필터).
+- 산업 한정은 `universe` 가 아니라 `dartlab.industry("반도체")` 또는 `scan("screen", ... by="industry")` 로 한다. scan `universe` 는 entity-set (시장·종목) 선택자이고 산업 분류는 소유하지 않는다.
+- `universe` 는 위 형태만 받는다. 미지원 형태·키는 조용히 무시하지 않고 ValueError 로 거부한다.
 
 기준일 (`datasetAsOf`) 은 결과 DataFrame 의 컬럼으로 반환. 답변에 그대로 인용 - 데이터 freshness 명시.
 

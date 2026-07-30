@@ -25,6 +25,93 @@ from dartlab.scan.router import (
     _resolveGroup,
 )
 
+_MARKET_ALIASES = {"KR": "KR", "DART": "KR", "US": "US", "EDGAR": "US"}
+
+
+def _normalizeMarket(value: Any) -> str:
+    """market/universe 문자열을 정규 시장 코드로 해소한다. 미지원 값은 loud 거부.
+
+    예전에는 알 수 없는 값이나 US 미지원 축도 KR 구현으로 조용히 떨어져 다른 시장
+    결과를 반환했다. 문자열이 아니거나 KR/US 로 해소되지 않으면 그 자리에서 막는다.
+    """
+    if not isinstance(value, str):
+        raise ValueError(f"market 은 문자열이어야 합니다: {value!r}")
+    normalized = _MARKET_ALIASES.get(value.strip().upper())
+    if normalized is None:
+        raise ValueError(f"지원하지 않는 market: {value!r}. KR 또는 US 만 사용하세요.")
+    return normalized
+
+
+def _normalizeStockCodes(value: Any) -> frozenset[str]:
+    """universe stockCodes 를 결과 필터용 식별자 집합으로 정규화한다.
+
+    KR 6 자리 숫자코드는 zero-pad, US ticker 는 대문자를 함께 담아 raw/정규 두 표기
+    어느 쪽으로 저장된 결과와도 일치시킨다. 빈 값이나 비문자열은 loud 거부.
+    """
+    if isinstance(value, str) or not isinstance(value, (list, tuple)):
+        raise ValueError(f"universe stockCodes 는 종목코드 문자열 list 여야 합니다: {value!r}")
+    variants: set[str] = set()
+    for code in value:
+        if not isinstance(code, str) or not code.strip():
+            raise ValueError("universe stockCodes 는 비어 있지 않은 문자열만 포함해야 합니다")
+        stripped = code.strip()
+        variants.add(stripped)
+        variants.add(stripped.upper())
+        if stripped.isdigit():
+            variants.add(stripped.zfill(6))
+    if not variants:
+        raise ValueError("universe stockCodes 가 비어 있습니다")
+    return frozenset(variants)
+
+
+def _resolveRequestedUniverse(
+    universe: str | dict[str, Any] | None,
+    marketKwarg: Any,
+) -> tuple[str | None, frozenset[str] | None]:
+    """공개 ``universe`` / ``market`` 인자를 (정규 market, stockCode 필터) 로 해소한다.
+
+    ``universe`` 는 발행된 engines.scan 계약의 entity-set 선택자다.
+
+    - ``str``: 시장 alias (``"KR"`` / ``"US"``).
+    - ``{"market": ...}``: 시장.
+    - ``{"stockCodes": [...]}``: 종목 한정 (전 시장 공통).
+
+    산업 범위(``industryHint``)는 산업 분류 SSOT 를 중복하지 않도록 scan facade 가
+    소유하지 않고 industry 엔진 / ``screen`` 의 ``by:"industry"`` 로 라우팅한다.
+    미지원 형태는 조용히 축 함수로 새어 raw ``TypeError`` 가 나던 예전 동작 대신
+    이 자리에서 명시적으로 거부한다.
+
+    Raises:
+        ValueError: universe 형태·키가 미지원이거나 market 과 시장이 충돌할 때.
+    """
+    marketFromUniverse: str | None = None
+    stockCodes: frozenset[str] | None = None
+    if universe is not None:
+        if isinstance(universe, str):
+            marketFromUniverse = _normalizeMarket(universe)
+        elif isinstance(universe, dict):
+            unknown = sorted(set(universe) - {"market", "stockCodes"})
+            if unknown:
+                if "industryHint" in unknown:
+                    raise ValueError(
+                        "scan universe 는 industryHint 를 지원하지 않습니다. 산업 횡단은 "
+                        "dartlab.industry(...) 또는 scan('screen', spec 의 by='industry') 를 사용하세요."
+                    )
+                raise ValueError(f"지원하지 않는 universe 키: {unknown}. 가용: market, stockCodes")
+            if "market" in universe:
+                marketFromUniverse = _normalizeMarket(universe["market"])
+            if "stockCodes" in universe:
+                stockCodes = _normalizeStockCodes(universe["stockCodes"])
+        else:
+            raise ValueError(f"universe 는 str 또는 dict 여야 합니다: {type(universe).__name__}")
+
+    marketFromKwarg = _normalizeMarket(marketKwarg) if marketKwarg is not None else None
+    if marketFromUniverse is not None and marketFromKwarg is not None and marketFromUniverse != marketFromKwarg:
+        raise ValueError(
+            f"universe 와 market 이 서로 다른 시장을 지정했습니다: {marketFromUniverse} vs {marketFromKwarg}"
+        )
+    return (marketFromUniverse or marketFromKwarg), stockCodes
+
 
 class Scan:
     """시장 전체 횡단분석 -- 22축, 전부 Polars DataFrame.
@@ -77,8 +164,11 @@ class Scan:
         - gather: 주가/수급 데이터 (모멘텀 보완)
 
     Args:
-        axis: 축 이름. None이면 22축 가이드 반환.
+        axis: 축 이름. None이면 축 가이드 반환.
         target: 축별 대상 (종목코드, 항목, 비율명 등).
+        universe: entity-set 선택자. 문자열 시장 alias ("KR"/"US"),
+            {"market": ...}, {"stockCodes": [...]}. 미지정이면 KR 전종목.
+            산업 범위는 dartlab.industry 또는 screen by:"industry" 소유.
         **kwargs: 축별 옵션 (freq, fsPref, market 등).
 
     Returns
@@ -104,6 +194,7 @@ class Scan:
         target: str | None = None,
         *,
         freq: str = "Q",
+        universe: str | dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> pl.DataFrame | Any:
         """축(axis)별 전종목 횡단분석.
@@ -254,22 +345,17 @@ class Scan:
         if callKwargs.get("asOf") is not None:
             raise ValueError(f"scan 축 '{resolved}'은(는) asOf 시점 고정을 지원하지 않습니다.")
 
-        # 시장은 registry 계약에 있는 값만 받는다. 예전에는 알 수 없는 값이나
-        # US 미지원 축도 KR 구현으로 조용히 떨어져 다른 시장 결과를 반환했다.
+        # 시장·유니버스는 registry 계약에 있는 값만 받는다. universe 는 발행된
+        # engines.scan 계약의 entity-set 선택자(market · stockCodes)다. 예전에는
+        # scanClass 가 universe 를 받지 않아 값이 축 함수로 새어 raw TypeError 가
+        # 났고, 미지원 시장은 KR 구현으로 조용히 떨어졌다.
         market = callKwargs.pop("market", None)
-        normalizedMarket: str | None = None
-        if market is not None:
-            if not isinstance(market, str):
-                raise ValueError(f"market 은 문자열이어야 합니다: {market!r}")
-            marketAliases = {"KR": "KR", "DART": "KR", "US": "US", "EDGAR": "US"}
-            normalizedMarket = marketAliases.get(market.strip().upper())
-            if normalizedMarket is None:
-                raise ValueError(f"지원하지 않는 market: {market!r}. KR 또는 US 만 사용하세요.")
-            if normalizedMarket not in entry.universeMarkets:
-                supported = ", ".join(entry.universeMarkets) or "없음"
-                raise ValueError(
-                    f"scan 축 '{resolved}'은(는) market={normalizedMarket}을 지원하지 않습니다. 지원: {supported}"
-                )
+        normalizedMarket, universeCodes = _resolveRequestedUniverse(universe, market)
+        if normalizedMarket is not None and normalizedMarket not in entry.universeMarkets:
+            supported = ", ".join(entry.universeMarkets) or "없음"
+            raise ValueError(
+                f"scan 축 '{resolved}'은(는) market={normalizedMarket}을 지원하지 않습니다. 지원: {supported}"
+            )
 
         # EDGAR market 디스패치 — XBRL 기반 축은 EDGAR 전용 구현으로 분기
         if normalizedMarket == "US":
@@ -298,6 +384,19 @@ class Scan:
             }
             hint = _MISSING_HINTS.get(resolved, f"'{target}'에 해당 데이터 없음")
             return pl.DataFrame({"info": [hint]})
+
+        # universe stockCodes 필터. 전종목 결과를 요청한 종목 집합으로 좁힌다.
+        if universeCodes is not None:
+            if not isinstance(result, pl.DataFrame):
+                raise ValueError(
+                    f"scan 축 '{resolved}'은(는) 표 형태 결과가 아니라 universe stockCodes 를 적용할 수 없습니다."
+                )
+            codeCol = next((c for c in ("종목코드", "stockCode", "ticker") if c in result.columns), None)
+            if codeCol is None:
+                raise ValueError(
+                    f"scan 축 '{resolved}' 결과에 종목 식별 컬럼이 없어 universe stockCodes 를 적용할 수 없습니다."
+                )
+            result = result.filter(pl.col(codeCol).cast(pl.Utf8).is_in(list(universeCodes)))
 
         # 최종 사용자 반환: 한글 컬럼 + 종목명
         if isinstance(result, pl.DataFrame) and "stockCode" in result.columns:
