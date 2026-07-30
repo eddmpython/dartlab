@@ -8,6 +8,7 @@ from pathlib import Path
 import polars as pl
 
 from dartlab.scan.builders.kr.common import financeDir
+from dartlab.scan.builders.kr.corpProfile import _loadFiscalMonthMap
 
 
 def _fiscalMonthMap() -> dict[str, int]:
@@ -117,30 +118,7 @@ def _loadCorpProfileMap() -> dict[str, int]:
     SeeAlso:
         ``.github/scripts/meta/buildCorpProfile.py``.
     """
-    from dartlab.core.dataLoader import _dataDir
-
-    profilePath = Path(_dataDir("scan")) / "corpProfile.parquet"
-    if not profilePath.exists():
-        return {}
-
-    try:
-        df = pl.scan_parquet(str(profilePath)).select(["stockCode", "acc_mt"]).collect(engine="streaming")
-    except (pl.exceptions.PolarsError, OSError):
-        return {}
-
-    result: dict[str, int] = {}
-    for row in df.iter_rows(named=True):
-        code = row.get("stockCode")
-        accMt = row.get("acc_mt")
-        if not code or not accMt:
-            continue
-        try:
-            month = int(str(accMt).replace("월", "").strip())
-        except (ValueError, AttributeError):
-            continue
-        if 1 <= month <= 12:
-            result[code] = month
-    return result
+    return _loadFiscalMonthMap()
 
 
 def _estimateFiscalMonthFromAnnualFiling(pf: Path) -> int | None:

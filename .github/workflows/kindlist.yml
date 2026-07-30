@@ -151,7 +151,7 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
 
-      # ── corpProfile (DART companyInfo prefetch — acc_mt SSOT) ─────────────
+      # ── corpProfile (DART companyInfo prefetch — fiscal + legal identity SSOT)
       # dartlab 는 상단 'Install dependencies' 에서 이미 설치됨(gather SSOT 공용).
       - name: Resume corpProfile from HF (incremental)
         run: |
@@ -191,7 +191,7 @@ jobs:
               repo_type='dataset',
               path_or_fileobj='data/dart/scan/corpProfile.parquet',
               path_in_repo='dart/scan/corpProfile.parquet',
-              commit_message='auto-update corpProfile (acc_mt SSOT)',
+              commit_message='auto-update corpProfile (fiscal and legal identity SSOT)',
           )
           print('corpProfile HuggingFace 업로드 완료')
           "

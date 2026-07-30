@@ -1,9 +1,8 @@
-"""DART corp_profile prefetch — 결산월(acc_mt) 권위 SSOT 빌드.
+"""DART corpProfile의 결산월과 법인 identity SSOT를 발행한다.
 
-OpenDART ``companyInfo()`` 의 ``acc_mt`` (결산월) 를 corp_code 전종목에 대해 prefetch
-하여 ``data/dart/scan/corpProfile.parquet`` 으로 저장. ``_fiscalMonthMap()`` 가 1순위로
-사용하여 listing (KIND) 누락 + raw rcept_no 추정 한계 (사업보고서 없는 신규 상장사
-12 fallback) 를 해소한다.
+OpenDART ``companyInfo()`` 의 ``acc_mt``와 ``jurir_no``를 상장 corp_code 전종목에
+대해 prefetch하여 ``data/dart/scan/corpProfile.parquet`` 으로 저장한다. 결산월은
+calendarization 기준이고 법인등록번호는 network affiliate identity의 exact 기준이다.
 
 책임 위치: **sync (meta) 단계** — 외부 API 호출이므로 prebuild 안에 박으면 안 된다.
 ``kindlist.yml`` 의 corp_profile step 으로 매일 cron 갱신, HF dataset ``dart/scan/`` 에
@@ -23,25 +22,36 @@ from __future__ import annotations
 import argparse
 import os
 import sys
+import tempfile
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
+from typing import Any
 
 import polars as pl
 
-from dartlab.core.dartClient import DartClient
+from dartlab.core.dartClient import DartClient, resolveDartKeys
 from dartlab.core.dataLoader import _dataDir
 from dartlab.gather.dart.corpCode import loadCorpCodes
 from dartlab.gather.dart.disclosure import companyInfo
+from dartlab.scan.builders.kr.corpProfile import (
+    CORP_PROFILE_SCHEMA,
+    CORP_PROFILE_SCHEMA_VERSION,
+    normalizeCorpProfileRow,
+    normalizeJurirNo,
+)
 
 
-def _resolveApiKey() -> str:
-    """DART OpenAPI 키 환경변수에서 추출."""
-    for key in ("OPEN_DART_KEY", "DART_API_KEY"):
-        value = os.environ.get(key)
-        if value:
-            return value
-    raise RuntimeError("OPEN_DART_KEY 또는 DART_API_KEY 환경변수 필요")
+def _resolveApiKeys() -> list[str]:
+    """DART OpenAPI 키를 공통 credential provider에서 추출한다."""
+
+    keys = resolveDartKeys()
+    if keys:
+        return keys
+    legacyKey = os.environ.get("OPEN_DART_KEY", "")
+    if legacyKey:
+        return [legacyKey]
+    raise RuntimeError("DART_API_KEY(S) 또는 OPEN_DART_KEY 환경변수 필요")
 
 
 def _atomicWriteParquet(combined: dict[str, dict], outPath: Path) -> None:
@@ -50,13 +60,43 @@ def _atomicWriteParquet(combined: dict[str, dict], outPath: Path) -> None:
     중간 저장과 최종 저장 모두 호출. 도중 실패해도 기존 파일 보존 (PolarsError 가
     write 중 났을 때 partial file 이 ``corpProfile.parquet`` 을 덮어쓰지 않게).
     """
-    df = pl.DataFrame(list(combined.values()))
-    tmp = outPath.with_suffix(outPath.suffix + ".tmp")
-    df.write_parquet(str(tmp), compression="zstd")
-    tmp.replace(outPath)
+    normalizedRows = sorted(
+        (normalizeCorpProfileRow(row) for row in combined.values()),
+        key=lambda row: str(row["corp_code"]),
+    )
+    df = pl.DataFrame(normalizedRows, schema=CORP_PROFILE_SCHEMA)
+    outPath.parent.mkdir(parents=True, exist_ok=True)
+    descriptor, temporaryName = tempfile.mkstemp(
+        prefix=f".{outPath.stem}-",
+        suffix=".tmp.parquet",
+        dir=outPath.parent,
+    )
+    os.close(descriptor)
+    temporary = Path(temporaryName)
+    try:
+        df.write_parquet(temporary, compression="zstd")
+        written = pl.read_parquet(temporary)
+        if written.schema != CORP_PROFILE_SCHEMA or written.height != df.height:
+            raise RuntimeError(
+                "corpProfile 임시 artifact 검증 실패: "
+                f"schema={written.schema == CORP_PROFILE_SCHEMA}, "
+                f"rows={written.height}/{df.height}"
+            )
+        with temporary.open("r+b") as handle:
+            os.fsync(handle.fileno())
+        os.replace(temporary, outPath)
+    except BaseException as primaryError:
+        try:
+            temporary.unlink(missing_ok=True)
+        except BaseException as cleanupError:
+            raise BaseExceptionGroup(
+                "corpProfile write와 temp cleanup이 함께 실패했습니다",
+                [primaryError, cleanupError],
+            ) from primaryError
+        raise
 
 
-def _fetchOne(client: DartClient, row: dict, *, retry: int = 5, delay: float = 0.5) -> dict | None:
+def _fetchOne(client: Any, row: dict, *, retry: int = 5, delay: float = 0.5) -> dict | None:
     """단일 corp_code 의 companyInfo() 호출 → dict 반환. 실패 시 None.
 
     DART OpenAPI 가 일시적 "Server disconnected" 다발 시 exponential backoff 로 재시도.
@@ -68,14 +108,21 @@ def _fetchOne(client: DartClient, row: dict, *, retry: int = 5, delay: float = 0
     for attempt in range(retry + 1):
         try:
             info = companyInfo(client, corpCode)
+            rawJurirNo = info.get("jurir_no", "")
+            jurirNo = normalizeJurirNo(rawJurirNo)
+            if rawJurirNo and jurirNo is None:
+                raise ValueError(f"invalid jurir_no: {rawJurirNo!r}")
             return {
                 "corp_code": corpCode,
                 "stockCode": stockCode,
                 "corp_name": corpName,
+                "jurir_no": jurirNo or "",
+                "bizr_no": info.get("bizr_no", ""),
                 "acc_mt": info.get("acc_mt", ""),
                 "induty_code": info.get("induty_code", ""),
                 "est_dt": info.get("est_dt", ""),
                 "corp_cls": info.get("corp_cls", ""),
+                "profileSchemaVersion": CORP_PROFILE_SCHEMA_VERSION,
             }
         except Exception as e:
             if attempt >= retry:
@@ -121,12 +168,12 @@ def buildCorpProfile(
         저장된 parquet 경로. API 키 없거나 결과 0 이면 None.
     """
     try:
-        apiKey = _resolveApiKey()
+        apiKeys = _resolveApiKeys()
     except RuntimeError as e:
         print(f"[corpProfile] {e} — 스킵")
         return None
 
-    client = DartClient(apiKey=apiKey)
+    client = DartClient(apiKeys=apiKeys)
 
     print("[corpProfile] corp_code master 로드 ...")
     master = loadCorpCodes(client)
@@ -149,14 +196,31 @@ def buildCorpProfile(
     if resume and outPath.exists():
         try:
             existDf = pl.read_parquet(str(outPath))
-            existing = {row["corp_code"]: row for row in existDf.to_dicts()}
+            existing = {
+                str(row.get("corp_code", "")): normalizeCorpProfileRow(row)
+                for row in existDf.to_dicts()
+                if row.get("corp_code")
+            }
             print(f"[corpProfile] resume: 기존 {len(existing)}개 skip, missing 만 호출")
         except (pl.exceptions.PolarsError, OSError) as e:
             print(f"[corpProfile] resume 실패 (재시작): {e}")
             existing = {}
 
     allRows = master.to_dicts()
-    rows = [r for r in allRows if r["corp_code"] not in existing]
+    masterCodes = {row["corp_code"] for row in allRows}
+    if limit == 0:
+        existing = {corpCode: row for corpCode, row in existing.items() if corpCode in masterCodes}
+    for masterRow in allRows:
+        prior = existing.get(masterRow["corp_code"])
+        if prior is not None:
+            prior["stockCode"] = str(masterRow.get("stock_code", "") or "")
+            prior["corp_name"] = str(masterRow.get("corp_name", "") or "")
+    rows = [
+        row
+        for row in allRows
+        if row["corp_code"] not in existing
+        or int(existing[row["corp_code"]].get("profileSchemaVersion", 1)) < CORP_PROFILE_SCHEMA_VERSION
+    ]
     print(f"[corpProfile] 호출 대상: {len(rows)} (skip {len(existing)})")
     results: list[dict] = []
     failed = 0
@@ -213,6 +277,12 @@ def buildCorpProfile(
     )
     print("[corpProfile] 상장사 결산월 분포:")
     print(accDist)
+    completed = df.filter(pl.col("profileSchemaVersion") >= CORP_PROFILE_SCHEMA_VERSION).height
+    legalIds = df.filter(pl.col("jurir_no").str.len_chars() == 13).height
+    print(
+        f"[corpProfile] profile v2 완료 {completed:,}/{df.height:,}, "
+        f"valid jurir_no {legalIds:,}, retry {df.height - completed:,}"
+    )
 
     return outPath
 

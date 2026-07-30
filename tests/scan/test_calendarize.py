@@ -243,3 +243,69 @@ def test_loadCorpProfileMap_handlesAccMtVariants(tmp_path, monkeypatch):
     monkeypatch.setattr("dartlab.core.dataLoader._dataDir", lambda _cat: tmp_path)
     result = _loadCorpProfileMap()
     assert result == {"100001": 12, "100002": 12, "100003": 6}  # invalid 는 skip
+
+
+@pytest.mark.unit
+def test_loadJurirStockMap_requires_completed_v2_profile(tmp_path):
+    """legacy profile은 legal identity ground truth로 사용하지 않는다."""
+    from dartlab.scan.builders.kr.corpProfile import (
+        CORP_PROFILE_SCHEMA,
+        CorpProfileIdentityError,
+        _loadJurirStockMap,
+    )
+
+    profile = tmp_path / "corpProfile.parquet"
+    pl.DataFrame(
+        {
+            "corp_code": ["A"],
+            "stockCode": ["100001"],
+            "corp_name": ["알파"],
+            "jurir_no": ["123456-1234567"],
+            "bizr_no": [""],
+            "acc_mt": ["12"],
+            "induty_code": [""],
+            "est_dt": [""],
+            "corp_cls": ["K"],
+            "profileSchemaVersion": [1],
+        },
+        schema=CORP_PROFILE_SCHEMA,
+    ).write_parquet(profile)
+
+    with pytest.raises(CorpProfileIdentityError, match="backfill 미완료"):
+        _loadJurirStockMap(profile)
+
+
+@pytest.mark.unit
+def test_loadJurirStockMap_normalizes_and_rejects_duplicate_identity(tmp_path):
+    """법인번호는 13자리로 정규화하고 서로 다른 종목의 중복은 실패한다."""
+    from dartlab.scan.builders.kr.corpProfile import (
+        CORP_PROFILE_SCHEMA,
+        CORP_PROFILE_SCHEMA_VERSION,
+        CorpProfileIdentityError,
+        _loadJurirStockMap,
+    )
+
+    profile = tmp_path / "corpProfile.parquet"
+    base = {
+        "corp_code": ["A"],
+        "stockCode": ["100001"],
+        "corp_name": ["알파"],
+        "jurir_no": ["123456-1234567"],
+        "bizr_no": [""],
+        "acc_mt": ["12"],
+        "induty_code": [""],
+        "est_dt": [""],
+        "corp_cls": ["K"],
+        "profileSchemaVersion": [CORP_PROFILE_SCHEMA_VERSION],
+    }
+    pl.DataFrame(base, schema=CORP_PROFILE_SCHEMA).write_parquet(profile)
+
+    assert _loadJurirStockMap(profile) == {"1234561234567": "100001"}
+
+    duplicate = {column: values * 2 for column, values in base.items()}
+    duplicate["corp_code"] = ["A", "B"]
+    duplicate["stockCode"] = ["100001", "100002"]
+    pl.DataFrame(duplicate, schema=CORP_PROFILE_SCHEMA).write_parquet(profile)
+
+    with pytest.raises(CorpProfileIdentityError, match="법인등록번호 충돌"):
+        _loadJurirStockMap(profile)
