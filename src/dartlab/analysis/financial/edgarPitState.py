@@ -1062,7 +1062,7 @@ def _compileQuarterWindow(pit: pl.DataFrame, fiscalThrough: str) -> tuple[Quarte
     if fiscalThrough not in candidates:
         raise EdgarStateError("TTM flow quarters must end at the stock fiscalThrough date")
 
-    def priorQuarter(currentEnd: str) -> str | None:
+    def _priorQuarter(currentEnd: str) -> str | None:
         """현재 분기 시작일과 연속되는 직전 공통 분기말을 찾는다.
 
         Args:
@@ -1075,7 +1075,7 @@ def _compileQuarterWindow(pit: pl.DataFrame, fiscalThrough: str) -> tuple[Quarte
             ValueError: 분기 날짜 문자열이 올바르지 않으면 발생한다.
 
         Example:
-            ``priorQuarter("20241231")`` 로 직전 공통 분기말을 찾는다.
+            ``_priorQuarter("20241231")`` 로 직전 공통 분기말을 찾는다.
         """
 
         currentStart = revenue[currentEnd].fiscalStart
@@ -1096,7 +1096,7 @@ def _compileQuarterWindow(pit: pl.DataFrame, fiscalThrough: str) -> tuple[Quarte
 
     commonEnds = [fiscalThrough]
     while len(commonEnds) < 4:
-        prior = priorQuarter(commonEnds[-1])
+        prior = _priorQuarter(commonEnds[-1])
         if prior is None:
             break
         commonEnds.append(prior)
@@ -1145,7 +1145,8 @@ def _compileRevenueQuarterWindow(
     if fiscalThrough not in candidates:
         raise EdgarStateError("revenue flow quarters must end at the requested fiscalThrough date")
 
-    def priorQuarter(currentEnd: str) -> str | None:
+    def _priorQuarter(currentEnd: str) -> str | None:
+        """연속되는 직전 매출 분기말을 찾는다. 없으면 ``None``."""
         currentStart = revenue[currentEnd].fiscalStart
         if currentStart is None:
             return None
@@ -1160,7 +1161,7 @@ def _compileRevenueQuarterWindow(
 
     commonEnds = [fiscalThrough]
     while len(commonEnds) < 4:
-        prior = priorQuarter(commonEnds[-1])
+        prior = _priorQuarter(commonEnds[-1])
         if prior is None:
             break
         commonEnds.append(prior)

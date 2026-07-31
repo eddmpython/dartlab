@@ -2398,6 +2398,24 @@ CI 는 `_attempts` 를 수집하지 않아 green 이지만 죽은 하네스다. 
 `FEATURE_NO_COHERENT_FOUR_QUARTER_WINDOW` 2,024 건과 `PIT_NO_FILING_BEFORE_CUTOFF`
 1,456 건인데 이는 성능이 아니라 커버리지 항목이라 이 체크포인트의 판정 밖이다.
 
+푸시 전 `tests/run.py preflight`(fast blocking 14 게이트) 전수에서 `lint` 와
+`test-coverage-gate` 두 건이 걸렸고 둘 다 닫았다. `lint` 는 `workspaceHygiene` 이
+`blog/09-investment-stories` 아래 빈 미디어 staging 디렉터리 두 개를 잡은 것이다.
+gitignore 대상이라 CI 는 보지 못하는 로컬 잔재였고, 안에 파일이 0 개인 것을 확인한 뒤
+빈 디렉터리에만 동작하는 `rmdir` 로 지웠다. `test-coverage-gate` 는 이 파일의 중첩
+클로저 `priorQuarter` 두 개를 테스트 없는 공개 함수로 잡은 것이다. 이 모듈의 형제
+헬퍼가 전부 언더스코어 접두인데 이 둘만 빠져 있었으므로 `_priorQuarter` 로 고쳤다.
+호출부는 같은 함수 안 두 곳뿐이고 모듈 밖 참조는 0 건이다.
+
+그 과정에서 게이트 결함을 하나 실측했다. `testCoverageGate._extractPublicFunctions` 의
+docstring 은 "top-level + class-level public def 목록" 이라고 명시하는데 구현은
+`ast.walk` 라 중첩 함수까지 센다. src/dartlab 전역에서 두 방식의 차이는 63 개 파일
+125 개이고, 표본은 `eagerSandbox.denyWriter`, `httpApi.authorize`,
+`transports.lifespan`, `setup.do_GET`, 채널 어댑터의 `onMessage` 처럼 전부 밖에서
+import 할 수 없는 내부 콜백이다. 구현을 docstring 계약에 맞추는 것이 옳지만, 차단
+게이트의 검출 표면을 무관한 체크포인트 안에서 125 건 줄이는 것은 정당해도 세탁과 같은
+모양이라 여기서 하지 않는다. 별건 항목으로 남긴다.
+
 **판정: L2 EDGAR full-state 컴파일 성능 체크포인트 완료.** L1.5 가 상위로 넘긴 성능
 차단이 풀렸고, 전수 감사가 처음으로 한도 안에서 완주해 fail-closed 게이트를 통과했다.
 다음 체크포인트는 L2 의 "남은 것" 목록 맨 앞인 팩터 형성 시점 look-ahead 다. 수익률
