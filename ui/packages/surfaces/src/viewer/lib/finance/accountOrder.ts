@@ -3946,7 +3946,7 @@ export const FINANCE_ACCOUNT_ID_ALIAS = {
 	"AdjustmentsForInterestExpenses": "finance_costs",
 	"CAPEX": "purchase_of_property_plant_and_equipment",
 	"CashAndCashEquivalents": "cash_and_cash_equivalents",
-	"Equity": "owners_of_parent_equity",
+	"Equity": "total_stockholders_equity",
 	"InterestExpense": "finance_costs",
 	"LongTermBorrowings": "longterm_borrowings",
 	"LongTermBorrowingsGross": "longterm_borrowings",
