@@ -184,6 +184,10 @@ class AccountMapper(BaseMapper):
     def korToSnakeId(self, korName: str) -> str | None:
         """한국어 계정명 → snakeId.
 
+        본 모듈의 SSOT 선언대로 매칭은 ``AccountNormalizer`` 한 곳만 소유한다. 예전에는
+        같은 사전을 raw dict 조회로 한 번 더 훑어, ``lookup`` 이 해소하는 한글명(공백·
+        괄호·하이픈 변형, synonym, "액" 접미 흡수)을 여기서는 ``None`` 으로 돌려줬다.
+
         Args:
             korName: Korean account name.
 
@@ -200,7 +204,9 @@ class AccountMapper(BaseMapper):
             >>> AccountMapper().korToSnakeId("__missing__") is None
             True
         """
-        return self._mappings().get(korName)
+        from dartlab.core.accounts import AccountNormalizer
+
+        return AccountNormalizer.get().normalize("", korName)
 
     def snakeIdToKor(self, snakeId: str) -> str | None:
         """snakeId → 한국어 계정명.

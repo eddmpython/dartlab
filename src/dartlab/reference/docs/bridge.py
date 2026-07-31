@@ -106,6 +106,11 @@ def getFinanceAmounts(company, period: str) -> dict[str, float]:
 
     sections 기간이 '2024'(연간)이면 finance에서 '2024Q4'를 찾고,
     '2024Q3'(분기)이면 그대로 찾는다.
+
+    Raises:
+        RuntimeError: 재무제표를 한 장도 읽지 못했거나 대조할 기간이 없을 때.
+            빈 dict 를 돌려주면 소비자가 만드는 matchRate 가 0.0 이 되어 "대조 불가"가
+            "하나도 안 맞음"이라는 다른 사실 주장으로 바뀌므로 구분해서 올린다.
     """
     result: dict[str, float] = {}
 
@@ -116,13 +121,19 @@ def getFinanceAmounts(company, period: str) -> dict[str, float]:
     # 예전에는 `company.finance` 에서 세 장을 꺼냈다. `finance` 는 표면에서 빠진 이름이라
     # 매 회전이 except 로 continue 했고, 이 함수가 어느 회사에서도 빈 dict 만 냈다. 그래서
     # 공시 본문 금액과 재무제표를 대조하는 검증이 통째로 무력했다. 공개 계약으로 부른다.
+    loaded = 0
+    periodMatched = 0
+    failures: list[str] = []
     for stmt_name in ("IS", "BS", "CF"):
         try:
             stmt = company.panel(stmt_name)
-        except (AttributeError, FileNotFoundError, KeyError, RuntimeError, TypeError, ValueError):
+        except (AttributeError, FileNotFoundError, KeyError, RuntimeError, TypeError, ValueError) as exc:
+            failures.append(f"{stmt_name}: {type(exc).__name__}")
             continue
         if stmt is None or getattr(stmt, "height", 0) == 0:
+            failures.append(f"{stmt_name}: 빈 재무제표")
             continue
+        loaded += 1
 
         target_period = None
         for cand in candidates:
@@ -131,6 +142,7 @@ def getFinanceAmounts(company, period: str) -> dict[str, float]:
                 break
         if target_period is None:
             continue
+        periodMatched += 1
 
         for row in stmt.iter_rows(named=True):
             account = row.get("항목") or row.get("account")
@@ -140,6 +152,15 @@ def getFinanceAmounts(company, period: str) -> dict[str, float]:
                     result[account] = float(val) / 100_000_000  # 원 → 억
                 except (ValueError, TypeError):
                     pass
+
+    # 재무를 한 장도 못 읽었거나 대조할 기간이 없으면 빈 dict 를 돌려주지 않는다.
+    # 소비자(server analysis API)는 이 결과로 matchRate 를 만들기 때문에, 빈 dict 는
+    # "공시 금액이 재무제표와 하나도 안 맞는다" 는 경보성 사실 주장(matchRate 0.0)이 된다.
+    # 대조 자체가 불가능한 것과 대조해서 안 맞는 것은 다른 답이다.
+    if loaded == 0:
+        raise RuntimeError(f"재무제표를 읽지 못해 본문 금액을 대조할 수 없습니다 ({'; '.join(failures)})")
+    if periodMatched == 0:
+        raise RuntimeError(f"재무제표에 기간 {period} 이(가) 없어 본문 금액을 대조할 수 없습니다")
 
     return result
 

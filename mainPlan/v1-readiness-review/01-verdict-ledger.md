@@ -2099,3 +2099,50 @@ production 호출자가 0 이라 이번 순서에서 다루지 않고 별도 항
 `riskPremiums.loadDamodaranERP` 의 `source` 가 항상 상수이고 문서가 약속한 parquet
 경로가 미구현인 것, 지원 국가 수 표기(90+ vs 실제 14)도 같은 항목이다.
 다음 체크포인트는 L1.5 reference 다.
+
+### L1.5 reference 대조 불가 표면화·매핑 SSOT 체크포인트: 완료 (2026-07-31)
+
+범위는 `reference/docs/bridge.py` 와 `reference/mappers/accountMapper.py`, 그리고
+실제 소비자인 server analysis API(`/api/company/{code}/topics/verify` 경로)와 매핑
+호출자다. `reference/mapping/*` 운영 CLI, `reference/render/*` 재수출, capability
+builder 는 전수 대조에서 이번 계약 밖이거나 이미 정직해 결함이 아니었다.
+
+제품 결함은 실패가 사실 주장으로 바뀌는 것이었다. `getFinanceAmounts` 는 IS·BS·CF 세 장을
+모두 못 읽어도 빈 dict 를 돌려줬고, 소비자 API 는 그 결과로
+`matchRate = matched / max(extracted, 1)` 을 계산해 `matchRate: 0.0` 을 응답했다.
+클라이언트에게 이 값은 "공시 본문 금액이 재무제표와 하나도 맞지 않는다" 는 경보성 결론이며,
+대조 자체가 불가능했던 상황과 구분되지 않는다. 하필 회계 신뢰성을 점검하려고 부르는
+자리다. 같은 파일 주석에 이 함수가 예전에 통째로 무력했던 사고가 이미 기록돼 있었다.
+
+두 번째는 매핑 SSOT 분기다. `accountMapper` 는 모듈 docstring 에서 "매칭 로직은
+`core.accounts.AccountNormalizer` 한 곳이 소유하며 같은 사전 위 두 매칭 분산은 SSOT
+위반" 이라고 선언해 놓고, `korToSnakeId` 가 그 normalizer 를 우회한 raw dict 조회였다.
+`lookup` 이 흡수하는 공백·괄호·하이픈 변형과 synonym 을 `korToSnakeId` 는 `None` 으로
+돌려줘 같은 한글명이 경로에 따라 다르게 해소됐다.
+
+근본 원인은 각각 "실패와 0 을 같은 모양으로 반환한 것" 과 "선언한 단일 소유자를 우회한
+두 번째 매칭 경로" 다.
+
+수정은 두 곳이다. `getFinanceAmounts` 는 재무를 한 장도 읽지 못했거나 대조할 기간이
+없으면 원인을 담은 `RuntimeError` 를 올린다. `RuntimeError` 는 server 의
+`HANDLED_API_ERRORS` 에 이미 포함돼 404 안내로 나가므로, 클라이언트는 "안 맞음" 대신
+"대조 불가" 를 받는다. `korToSnakeId` 는 `AccountNormalizer` 로 위임해 `lookup` 과 같은
+SSOT 를 쓴다.
+
+공개 행동 실측으로 확정했다. 재무 부재(FileNotFoundError) 주입에서 이제 빈 dict 대신
+"재무제표를 읽지 못해 본문 금액을 대조할 수 없습니다" 가 올라오고, 기간 불일치도 별도
+사유로 구분된다. 흡수 목록 밖 I/O 실패는 그대로 전파돼 소비자가 실패로 본다. 정상 경로는
+그대로 계정 금액(10억)을 돌려주고 연간 표기의 Q4 해소도 유지된다. 매핑은
+`"매출액"`·`"매출"`·`"영업이익"`·`"매출 액"` 네 표기에서 `korToSnakeId` 와
+`lookup.snakeId` 가 모두 일치했고, 공백이 낀 `"매출 액"` 은 수정 전 `None` 이었다.
+
+Guard와 회귀는 통과했다. 신규 bridge 회귀 `5 passed`, 매핑 호출자 회귀 `45 passed`,
+변경 2개 소스 Ruff·formatter·Pyright `0 errors, 0 warnings`,
+`bridge.py` `silentSubstitute --strict` 위반 0(기존 baseline 항목이 실제로 해소됐다).
+
+남은 부채는 다음 순서로 넘긴다. `bridge.py` 모듈 docstring 의 snake_case 예제 심볼
+(`extract_amounts_from_text` 등)은 실재 심볼과 달라 복사하면 ImportError 이고,
+`_parseNumber` 가 float 반환 계약에서 파싱 실패에 `0` 을 돌려주는 것(현재 소비자가
+`tv == 0` 을 건너뛰어 무해)도 문서·계약 정리 항목이다. capability builder 가 import 실패한
+axis registry 를 진단 없이 빠뜨리는 것은 baseline 에 있는 기존 부채다.
+이로써 L1.5 네 형제(scan·frame·synth·reference) 체크포인트를 모두 닫았다.
