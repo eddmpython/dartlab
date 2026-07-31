@@ -2551,6 +2551,23 @@ CI 에만 밀어 넣는 것은 이 원장이 요구하는 완료 정의에 맞�
 단독 실행에서 통과한다. CI 에서만 깨지므로 공유 상태나 실행 순서 의존이 의심되고, 원인을
 특정하기 전에는 닫힌 것으로 세지 않는다.
 
+두 수정을 올린 뒤 CI Full 의 실패는 5 건에서 3 건으로 줄었다. 남은 셋은 전부 CI 에서만
+깨지고 로컬 단독 실행에서는 통과한다. `test-full` 은 3.12 와 3.13 두 job 에서 같이
+실패하므로 파이썬 버전 문제가 아니라 실행 환경 쪽이다. 근거는 다음과 같다.
+
+- `test_ownerPaging.py::testOneQueryPagesWholeListedUniverseWithoutExternalSubjectLoop`
+  는 `ownerCalls == [f"T{index:03d}" for index in range(66)]` 를 단언하는데 기대 `T005`
+  자리에 `T006` 이 온다.
+- `test_ownerPaging.py::testRequireCompleteFailsBeforeOwnerButMixedUsesOuterChain` 은
+  같은 자리에 `T004` 가 온다.
+- `test_server.py::TestAiProfile::test_post_ai_profile_secret_updates_shared_secret` 은
+  200 이 아니라 500 을 받는다.
+
+앞의 둘은 한쪽이 앞서고 한쪽이 뒤서므로 단순 off-by-one 이 아니라 **subject 방출 순서가
+비결정적**이라는 뜻이다. 다중 코어 러너에서만 드러나는 것으로 보인다. 소유 레이어는
+L2.5 dataHub 이고, 공개 데이터 경로의 순서 보장이 없는 것인지 테스트가 순서를 과하게
+못박은 것인지는 실행으로 갈라야 한다. L2.5 체크포인트에서 다룬다.
+
 셋째 실패는 이 원장 작업이 만든 회귀다. 처음에는 직전 커밋에도 같은 실패가 있다는 이유로
 선재로 기록했는데, 비교 기준으로 잡은 커밋이 이미 이 세션의 L1.5 변경을 포함하고 있었다.
 비교 대상을 잘못 골랐다. `tests/scan/test_axes.py::test_debt_imports` 가
