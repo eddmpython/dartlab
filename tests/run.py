@@ -185,7 +185,9 @@ GATES: dict[str, Gate] = {
     "architecture-l0-l15": Gate(
         name="architecture-l0-l15",
         tier="fast",
-        deps=PYTEST_PARALLEL,
+        # cycleScan._findCycles 가 networkx 로 3+ 모듈 cycle 을 잡는다. lint 게이트에만
+        # 선언돼 있어 이 게이트와 test-fast 에서 ModuleNotFoundError 로 죽고 있었다.
+        deps=(*PYTEST_PARALLEL, "networkx"),
         install_pkg="editable",
         env={"DARTLAB_PROVIDER_SCOPE": "dart,edgar"},
         cmd="python -X utf8 tests/audit/dartlabGuard.py strict --scope l0-l15 --providers dart,edgar",
@@ -217,7 +219,9 @@ GATES: dict[str, Gate] = {
     "test-fast": Gate(
         name="test-fast",
         tier="fast",
-        deps=(*PYTEST_PARALLEL, *DEV_SCHEMA_SNAPSHOT, *MCP_PIN),
+        # networkx: tests/architecture/test_cycleScan.py 와 test_no_cycles.py 가
+        # cycleScan._findCycles 를 통해 요구한다.
+        deps=(*PYTEST_PARALLEL, *DEV_SCHEMA_SNAPSHOT, *MCP_PIN, "networkx"),
         install_pkg="non-editable",
         env={
             "DARTLAB_DATA_DIR": "${{ github.workspace }}/tests/fixtures",
@@ -366,7 +370,9 @@ GATES: dict[str, Gate] = {
         name="test-full",
         tier="full",
         matrix_param="python",
-        deps=(*PYTEST_PARALLEL, *DEV_SCHEMA_SNAPSHOT, *MCP_PIN),
+        # networkx: tests/architecture/test_cycleScan.py 와 test_no_cycles.py 가
+        # cycleScan._findCycles 를 통해 요구한다.
+        deps=(*PYTEST_PARALLEL, *DEV_SCHEMA_SNAPSHOT, *MCP_PIN, "networkx"),
         install_pkg="non-editable",
         env={
             "DARTLAB_DATA_DIR": "${{ github.workspace }}/tests/fixtures",
