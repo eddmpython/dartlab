@@ -2042,3 +2042,60 @@ Guard와 회귀는 변경 파일 범위에서 통과했다. frame 전체 회귀 
 매칭을 여전히 허용하는 것, 모듈 docstring의 존재하지 않는 심볼 예제,
 `frame/sector/`의 재수출 3중화, `select.py`의 float 반올림 임계는 이번 해소 계약 밖
 부채다. 다음 체크포인트는 L1.5 synth다.
+
+### L1.5 synth 추정 비발행 체크포인트: 완료 (2026-07-31)
+
+범위는 `synth/` 의 추정·역산 계산과 실제 소비자다. `eventStudy` 는
+`analysis/eventStudy/newsImpact` 와 `quant/signal/eventStudy` 가, `impliedERP` 는
+`analysis/financial/_proformaCore` 가 WACC 입력으로 소비한다. 전수 대조에서
+`distress/survival`, `dalio48Match`, `macroCompanyContext` 는 실패에 source 를 붙이거나
+예외를 올려 결함이 아니었다.
+
+제품 결함 두 건을 재현했다. 첫째, `eventStudy._marketModel` 이 추정 구간 20 관측 미만
+또는 특이행렬에서 `(alpha=0.0, beta=1.0, sigma=0.01)` 을 돌려줬다. `calcCAR` 은 이를
+추정 결과처럼 `alpha`·`beta`·`sigma` 로 보고하고, 고정 sigma 를 t 값의 분모로 써
+`isSignificant` 와 "유의 abnormal drift" 라는 결론까지 만들었다. 10일 추정 구간으로
+실호출하니 실제로 `sigma=0.01`, `tStat=-0.192`, 확신에 찬 판정 문장이 나왔고 `error`
+키는 없었다. 같은 모듈이 구간 초과·표본 부족에는 `{"error": ...}` 를 쓰므로 자기 관례도
+어긴 것이다. sigma 가 0.01 로 고정되면 11일 창에서 CAR 6.5% 이상이 전부 유의로 판정된다.
+
+둘째, `impliedERP` 는 Gordon 역산 ERP 를 발행하면서 분모로 시가총액이 아니라 자본총계
+합산(장부가)을 썼다. 즉 `earnings_yield` 가 E/P 가 아니라 aggregate ROE 였고, 지수
+레벨은 받아 놓고 산술에 쓰지 않으면서 `method="gordon_simple"` 라벨을 붙였다. 로컬
+캐시에 실제로 `impliedERP: 12.0`, `totalERP: 12.0` (클램프 상한) 이 남아 있었다. 성숙시장
+4.6% 대비 한국 ERP 12% 는 WACC 를 크게 밀어올려 모든 DCF 결과를 왜곡하며, 90일 동안
+`source="cache_quarterly"` 로 계속 서빙된다.
+
+근본 원인은 같다. 추정하지 못한 것을 추정값 모양으로 내보냈다. 시장모형은 표본이 없으면
+모수가 없고, Gordon 역산은 가격이 없으면 성립하지 않는다.
+
+수정도 같은 규칙을 따랐다. `_marketModel` 은 추정 불가에서 None 을 돌려주고 `calcCAR` 은
+모듈 관례대로 `{"error": ...}` 를 낸다. 호출자 `newsImpact` 는 이미 `if "error" in
+carResult` 를 검사하고 있어 계약이 그대로 맞물린다. `impliedERP` 는 L0-03 비정규 모델
+비발행 계약과 같은 규칙으로 역산을 발행하지 않는다. 잘못된 계산 경로와 그에만 쓰이던
+private 헬퍼를 제거해 347줄에서 101줄로 줄였고, 호환 키는 남기되 `impliedERP=None`,
+`method="none"`, `source="fallback_historical"`, `sampleCount=0` 으로 비발행을 키에
+드러낸다. 편향된 로컬 캐시 artifact 도 지웠다. 이 정리로 옛 `scan.io.parquet` 동적
+import 가 사라져 synth 의 L1.5 cross import 도 0 이 됐다.
+
+공개 행동 실측으로 효과를 확정했다. 추정 불가 구간의 `calcCAR` 은 이제
+`{"error": "market model not estimable (estimation obs=10, 최소 20 필요 또는 특이행렬)"}`
+만 반환하고 sigma·tStat·isSignificant·interpretation 키가 아예 없다. 추정 가능한 91일
+구간의 정상 경로는 `alpha=0.00333`, `beta=0.122`, `sigma=0.0199`, `tStat=-2.142` 로
+실제 추정치를 그대로 낸다. `calcImpliedERP("KR")` 의 `totalERP` 는 캐시가 내던 12.0 에서
+큐레이션 정적값 5.2 로 바뀌었고(`matureMarketERP` 4.6 + `countryRiskPremium` 0.6),
+`impliedERP` 는 None 이다. WACC 에 실려 있던 6.8%p 의 상방 편향이 사라졌다.
+
+Guard와 회귀는 통과했다. 신규 회귀 `7 passed`, synth 단위 전체 `48 passed`,
+변경 2개 소스 Ruff·formatter·Pyright `0 errors, 0 warnings`,
+`silentSubstitute --strict` 신규 위반 각각 0이다.
+
+남은 부채는 다음 순서로 넘긴다. implied ERP 재활성화에는 유니버스 시가총액 SSOT
+(가격 x 상장주식수) 가 필요하며 배당·자사주 yield 와 payout 을 갖춘 원식으로 복원해야
+한다. `damodaranL15._assumptions` 의 beta 1.0 · 세후 부채비용 4.5% · 성장 3% · 마진 10%
+같은 매직 상수는 산업 기본값 JSON 에 해당 필드가 없는 기본 경로에서 전부 발화하고
+`_costOfCapitalTable` 에 status 열이 없어 계산값과 구분되지 않는다. 다만 이 함수는
+production 호출자가 0 이라 이번 순서에서 다루지 않고 별도 항목으로 남긴다.
+`riskPremiums.loadDamodaranERP` 의 `source` 가 항상 상수이고 문서가 약속한 parquet
+경로가 미구현인 것, 지원 국가 수 표기(90+ vs 실제 14)도 같은 항목이다.
+다음 체크포인트는 L1.5 reference 다.
