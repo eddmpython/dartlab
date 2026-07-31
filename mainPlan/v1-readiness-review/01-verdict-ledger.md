@@ -49,24 +49,24 @@ Guard는 현재 레이어의 source를 동결한 뒤 한 번 실행한다. Guard
 
 ### 세션 인계
 
-- 현재 계층: **L1.5 scan, frame, synth, reference**
-- 최근 완료한 레이어: **L1 gather/providers 전체 완료**. 모든 gather Extract와
-  DART·EDGAR provider Transform/Load, panel, finance/report accessor, 공개 Company
-  호출자를 실제 데이터와 최종 Guard로 봉인했다.
-- 현재 작업 단위: **L1.5 네 형제 전체 마감**. scan 파일이나 axis 하나를 별도 완료
-  단위로 쪼개지 않는다.
-- L1.5 완료 조건: scan, frame, synth, reference의 전체 src와 실제 호출자를
-  데이터 계약·오류 투명성·SSOT·속도·메모리 기준으로 전수 대조한다. 네 형제 간
-  cross import 없이 결함 수정과 집중 회귀를 끝내고 source 동결 뒤 공식 Guard, 원장,
-  커밋, push까지 닫는다.
-- 최근 완료한 체크포인트: **L1.5 KR report 축 판정 정직성** (2026-07-31). audit·debt이 자료 부재를 "관찰" 판정으로 날조하던 것을 형제 축과 같은 "자료부족" gap 라벨로 통일. 직전 dispatcher 체크포인트: US audit 축이
-  형제 US 축과 다른 identity(CIK vs ticker)와 universe(전 parquet vs 상장 source)를
-  쓰던 것을 상장 source + ticker SSOT로 정합하고, edgarScan 미구현 축을 loud 예외로
-  돌렸다. 직전 universe 체크포인트(facade universe= 계약)도 완료.
-- 다음 첫 행동: scan 쪽 체크포인트(network·US audit·EDGAR prebuild·universe·
-  dispatcher·KR report 판정)가 모두 닫혔으므로 **L1.5 frame** 체크포인트를 같은
-  방식으로 연다. 그다음 synth, reference 순서로 계속한다.
-- 금지: axis나 파일 하나만 끝내고 완료 보고, L2 이상 수정 선행,
+- 현재 계층: **L2 analysis, macro, quant, industry, credit** (진입 대기)
+- 최근 완료한 레이어: **L1.5 scan/frame/synth/reference 전체 완료** (2026-07-31).
+  네 형제의 전체 src와 실제 호출자를 실데이터로 대조했고, cross import는 정적·동적
+  모두 0이다. 공식 Guard는 AST 룰 위반 0·신규 위반 0이며 전체 status fail의 유일한
+  원인은 `providers/` 소유의 기존 providerGate 부채다(이번 세션 미변경).
+  그 앞은 L0 core 완료, L1 gather/providers 완료.
+- 현재 작업 단위: **L2 다섯 엔진 전체 마감**. 파일이나 함수 하나를 별도 완료 단위로
+  쪼개지 않는다.
+- L2 완료 조건: analysis, macro, quant, industry, credit의 전체 src와 실제 호출자를
+  데이터 계약·오류 투명성·SSOT·속도·메모리 기준으로 전수 대조한다. 결함 수정과 집중
+  회귀를 끝내고 source 동결 뒤 공식 Guard, 원장, 커밋, push까지 닫는다.
+- 다음 첫 행동: L1.5 US coverage audit 체크포인트가 성능 차단으로 남긴
+  `analysis/financial/edgarPitState`부터 연다. 한 회사 반례에서 Polars collect 7,197회와
+  stock candidate 119회를 반복해 EDGAR full-state strict 전수가 15분 운영 한도를 넘긴다.
+  이어 2026-07-27 L2 판정이 남긴 항목(팩터 형성 시점 look-ahead, 백테스트 샤프의 비용
+  미반영, 과적합 확률 상수 1.0, Sortino 하방편차 정의, 스타일 전구간 분위수)을 같은
+  방식으로 닫는다.
+- 금지: 함수나 파일 하나만 끝내고 완료 보고, L3 이상 수정 선행,
   중간 source에서 공식 Guard 반복
 
 ## L1.5 scan, frame, synth, reference 순차 안정화 원장 (2026-07-30)
@@ -1271,10 +1271,10 @@ Q1(routing SSOT 통합), Q4(realData 30% 단축), Q6(외부 venv 종합 smoke)�
 
 | 계층 | 상태 |
 |---|---|
-| L0 core | 순차 안정화 진행 중. 미달 |
-| L1 gather, providers | L0 완료 전 재검토 대기 (과거 판정 미달) |
-| L1.5 scan, frame, synth, reference | L0 완료 전 재검토 대기 (과거 판정 미달) |
-| L2 analysis, macro, quant, industry, credit | L0 완료 전 재검토 대기 (과거 판정 미달) |
+| L0 core | 완료 (2026-07-29~30) |
+| L1 gather, providers | 완료 (2026-07-30) |
+| L1.5 scan, frame, synth, reference | 완료 (2026-07-31) |
+| L2 analysis, macro, quant, industry, credit | 순차 안정화 진입 대기 (과거 판정 미달) |
 | L2.5 dataHub | L0 완료 전 재검토 대기 (과거 판정 미달) |
 | L3 story, simulate | L0 완료 전 재검토 대기 (과거 판정 미달) |
 | L4 소비자, ai, mcp | L0 완료 전 재검토 대기 (과거 판정 미달) |
@@ -2146,3 +2146,73 @@ Guard와 회귀는 통과했다. 신규 bridge 회귀 `5 passed`, 매핑 호출�
 `tv == 0` 을 건너뛰어 무해)도 문서·계약 정리 항목이다. capability builder 가 import 실패한
 axis registry 를 진단 없이 빠뜨리는 것은 baseline 에 있는 기존 부채다.
 이로써 L1.5 네 형제(scan·frame·synth·reference) 체크포인트를 모두 닫았다.
+
+## L1.5 scan, frame, synth, reference 전체 마감 (2026-07-31)
+
+**상태: 완료.** 위 체크포인트(scan 의미 계약·재무 one-pass·EDGAR 계정 batch·공통 I/O·
+network·US coverage audit·EDGAR prebuild·universe·dispatcher·KR report 판정 정직성,
+그리고 frame·synth·reference)의 증거를 합쳐 L1.5 를 하나의 레이어로 닫는다. 파일이나
+axis 하나는 이 판정의 증거일 뿐 별도 완료 단위가 아니다.
+
+1. **범위와 실제 호출자.** 네 형제의 전체 src 와 실제 호출자를 대조했다. scan 은 공개
+   27 축 facade 와 KR/US dispatch, prebuild 소유자까지, frame 은 자연어 종목 해소와
+   보고서 인벤토리 및 그 소비자 `simulate.profile`, synth 는 event study 와 위험
+   프리미엄을 쓰는 `analysis.eventStudy`·`analysis.financial._proformaCore`,
+   reference 는 문서-재무 대조 bridge 와 그 소비자 server analysis API, 매핑 SSOT 와
+   그 호출자다.
+2. **제품 결함 재현.** 계층을 관통하는 한 가지 결함이 반복됐다. 모르는 것을 그럴듯한
+   값으로 바꿔 내보내는 것이다. audit 은 감사의견 결측 23 종목에 "관찰" 판정을 줬고,
+   debt 은 ICR 결측에 신호가 없어도 "관찰" 을 줬다. frame 은 검증 없이 대문자 토큰을
+   회사로 확정해 `"ROE 계산법"` 을 종목 질의로 바꾸고 `"SK 하이닉스"` 를 `SK` 로 잡았다.
+   synth 는 추정 불가 구간에서 `sigma=0.01` 을 지어내 유의성 판정을 만들고, 장부가를
+   분모로 쓴 implied ERP 12.0% 를 캐시에 남겨 WACC 로 흘려보냈다. reference 는 재무를
+   한 장도 못 읽어도 빈 dict 를 돌려줘 API 가 `matchRate: 0.0` 이라는 경보성 결론을
+   서빙했다. US audit 축은 형제 축과 다른 identity(CIK vs ticker)와 universe(전 17,367
+   parquet vs 상장 5,662)를 썼고, scan facade 는 발행된 `universe` 계약을 미구현해
+   내부 함수명이 드러난 raw TypeError 를 냈다.
+3. **근본 원인과 SSOT.** 판정 가능 여부를 가르지 않고 합성 점수를 격자에 밀어 넣은 것,
+   실재 확인 없이 식별자를 주장한 것, 실패와 0 을 같은 모양으로 반환한 것이 뿌리다.
+   축별 판정은 형제 축의 정직 gap 라벨("자료부족"·"미확인")로, US 종목 정체성은 상장
+   ticker SSOT 로, 유니버스 선택은 facade 의 entity-set 계약으로, 계정 매칭은
+   `AccountNormalizer` 한 곳으로 소유를 고정했다.
+4. **수정과 테스트.** 여섯 체크포인트에서 9 개 소스를 고쳤고 신규 회귀 60 건을 세웠다
+   (universe 26 · dispatcher 3 · KR report 11 · frame 10 · synth 7 · reference 5).
+   audit 회귀는 등급 규칙을 테스트에 복제하지 않고 합성 source 로 실제 `scanAudit` 을
+   호출한다. implied ERP 는 L0-03 비정규 모델 비발행 계약과 같은 규칙으로 잘못된 계산
+   경로와 전용 헬퍼를 제거해 347 줄에서 101 줄로 줄였다.
+5. **공개 행동, 정확성, 속도, 메모리.** 실데이터 전종목 호출로 확정했다. report 6 축은
+   governance 2,872 · workforce 2,781 · capital 2,942 · debt 2,832 · audit 2,932 ·
+   insider 2,608 행을 낸다. audit 은 "관찰" 955 에서 930, debt 은 369 에서 359 로 줄고
+   각각 "자료부족" 26 과 10 이 생겼으며, 26 은 의견 결측 23 과 각주 마커 3 의 합과 정확히
+   일치한다. debt ICR 결측 63 의 최종 내역은 자료 전무 null 44 · 판정 불가 10 · 관측된
+   단기채무로 정당하게 상향된 "주의" 9 다. profitability 전종목은 2,811 행 1.8737 초,
+   RSS 증가 199.0MB 이고 `universe={"stockCodes": [...]}` 는 정확히 2 행을 값 보존한 채
+   돌려준다. US audit 대상은 17,367 에서 상장 5,662 로 좁아져 앞선 US coverage
+   체크포인트의 unique source 5,662 와 일치한다. frame 은 `"SK 하이닉스 실적"` 을
+   `000660` + `"실적"`, `"LG 화학 주가"` 를 `051910` + `"주가"` 로 해소하고 재무 약어
+   다섯은 모두 회사 확정을 포기한다. synth 는 추정 불가 구간에서 error 만 내고 추정
+   가능 구간은 `sigma=0.0199` 같은 실제 추정치를 유지하며, KR ERP 는 12.0 에서 큐레이션
+   5.2 로 내려와 WACC 의 6.8%p 상방 편향이 사라졌다. 축 실행 시간(debt 6.48 초,
+   audit 6.21 초)과 메모리는 수정 전후 변화가 없다.
+6. **Guard와 회귀.** 네 형제 단위 회귀 `574 passed`. L1.5 cross import 는 정적·동적 모두
+   0 이고(`test_l15_no_cross_import` 2 passed), 남은 문자열 매칭은 docstring 참조와
+   `importlib.resources` 데이터 파일 접근뿐이다. `l15DynamicImport` 부채 원장의 마지막
+   항목이던 `impliedERP -> scan.io.parquet` 은 이번 비발행 정리로 사라져 원장을 0 으로
+   갱신했다. source 동결 뒤 공식 Guard
+   `strict --scope l0-l15 --providers dart,edgar` 는 1,786 파일에서 **AST 룰 위반 0,
+   baseline 대비 신규 위반 0, stale 0** 이고 외부 게이트 cycleScan · architecturePytest ·
+   folderMirror · gatherGate · publicApiSmoke 가 통과했다. **다만 전체 status 는 fail 이다.**
+   원인은 providerGate 의 룰 3(LoC)·룰 6(docstring) 기존 부채 하나뿐이며, 이는
+   `providers/` 소유(`company.py`·`dataDispatcher.py`·`scanAccount.py`)로 직전 EDGAR
+   prebuild 체크포인트가 이미 같은 내용으로 기록했다. 이번 세션의 diff 는 `providers/`
+   파일을 한 개도 건드리지 않았다(변경 20 파일 전수 확인).
+7. **남은 부채와 판정.** L1.5 공개 데이터 흐름에서 재현된 P0/P1 결함과 침묵 실패는 0 이다.
+   남는 것은 각 체크포인트에 기록한 후속 항목이다. `"AI 반도체"` 는 `AI` 가 실재 상장
+   ticker 라 남는 문서화된 모호성이고, `_statementUnits` 의 재무 5 표 상존 주장은 실데이터
+   두 회사에서 반증하지 못해 미검증으로 남긴다. implied ERP 재활성화에는 유니버스
+   시가총액 SSOT 가 필요하고, `damodaranL15._assumptions` 의 매직 상수군은 production
+   호출자 0 이라 별도 항목이다. `report/fields.py` 1,369 줄 분할, US/KR audit·valuation
+   축의 반환 스키마 통일, `bridge.py` docstring 심볼 드리프트도 남는다. providerGate 의
+   `providers/` 크기·docstring 부채는 소유 레이어인 L1 이 이미 기록한 항목이라 이 판정을
+   막지 않는다. 따라서 **L1.5 scan/frame/synth/reference 를 완료 판정하고 L2
+   analysis/macro/quant/industry/credit 로 이동한다.**
