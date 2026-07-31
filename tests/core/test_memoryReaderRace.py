@@ -108,6 +108,10 @@ def testCtypesArgumentErrorDoesNotEscapeMemoryObservation(monkeypatch: pytest.Mo
 
     monkeypatch.setattr(memoryMetrics.sys, "platform", "win32")
     monkeypatch.setattr(memoryMetrics, "_winMemoryReader", (lambda: None, brokenReader, _Counters))
+    # procfs fallback 도 함께 막는다. 이걸 빼면 Linux 에서는 fallback 이 실제 RSS 를
+    # 정상 반환해(제품 동작이 옳다) 이 단정이 그 머신에서만 깨졌다. 검증 대상은
+    # "ctypes 오류가 호출자로 새지 않는다" 이므로 두 경로를 모두 측정 불가로 둔다.
+    monkeypatch.setattr(memoryMetrics, "_procStatusKb", lambda field: -1.0)
 
     assert memory.getMemoryMb() == -1.0
     assert memory.getPeakRssMb() == -1.0
