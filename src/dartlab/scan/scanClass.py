@@ -113,6 +113,48 @@ def _resolveRequestedUniverse(
     return (marketFromUniverse or marketFromKwarg), stockCodes
 
 
+_MISSING_HINTS = {
+    "liquidity": "금융업(은행/보험/증권)은 유동자산/유동부채 계정이 없어 유동성 분석 불가",
+    "debt": "해당 종목에 사채/부채 데이터 없음",
+    "audit": "해당 종목에 감사의견 데이터 없음",
+}
+
+
+def _narrowToTarget(result: Any, resolved: str, entry: _AxisEntry, target: str | None) -> tuple[Any, bool]:
+    """targetParam 없는 축의 결과를 요청 종목 하나로 좁힌다.
+
+    Returns:
+        ``(결과, 사유안내여부)``. 좁힌 뒤 행이 없으면 사유 한 줄짜리 안내 표와
+        ``True`` 를 돌려주고, 호출자는 그대로 반환한다.
+    """
+    if not target or entry.targetParam is not None or not isinstance(result, pl.DataFrame):
+        return result, False
+
+    for col in ("종목코드", "stockCode"):
+        if col in result.columns:
+            result = result.filter(pl.col(col) == target)
+            break
+
+    if result.height == 0:
+        hint = _MISSING_HINTS.get(resolved, f"'{target}'에 해당 데이터 없음")
+        return pl.DataFrame({"info": [hint]}), True
+    return result, False
+
+
+def _applyUniverseCodes(result: Any, resolved: str, universeCodes: frozenset[str] | None) -> Any:
+    """universe stockCodes 로 전종목 결과를 요청한 종목 집합으로 좁힌다."""
+    if universeCodes is None:
+        return result
+    if not isinstance(result, pl.DataFrame):
+        raise ValueError(f"scan 축 '{resolved}'은(는) 표 형태 결과가 아니라 universe stockCodes 를 적용할 수 없습니다.")
+    codeCol = next((c for c in ("종목코드", "stockCode", "ticker") if c in result.columns), None)
+    if codeCol is None:
+        raise ValueError(
+            f"scan 축 '{resolved}' 결과에 종목 식별 컬럼이 없어 universe stockCodes 를 적용할 수 없습니다."
+        )
+    return result.filter(pl.col(codeCol).cast(pl.Utf8).is_in(list(universeCodes)))
+
+
 class Scan:
     """시장 전체 횡단분석 -- 22축, 전부 Polars DataFrame.
 
@@ -368,35 +410,10 @@ class Scan:
             fn = getattr(mod, entry.fn)
             result = fn(**callKwargs)
 
-        # stockCode 필터 (target이 있고 targetParam이 None인 축)
-        if target and entry.targetParam is None and isinstance(result, pl.DataFrame):
-            for col in ("종목코드", "stockCode"):
-                if col in result.columns:
-                    result = result.filter(pl.col(col) == target)
-                    break
-
-        # 종목 필터 후 빈 결과면 사유 안내
-        if target and isinstance(result, pl.DataFrame) and result.height == 0 and entry.targetParam is None:
-            _MISSING_HINTS = {
-                "liquidity": "금융업(은행/보험/증권)은 유동자산/유동부채 계정이 없어 유동성 분석 불가",
-                "debt": "해당 종목에 사채/부채 데이터 없음",
-                "audit": "해당 종목에 감사의견 데이터 없음",
-            }
-            hint = _MISSING_HINTS.get(resolved, f"'{target}'에 해당 데이터 없음")
-            return pl.DataFrame({"info": [hint]})
-
-        # universe stockCodes 필터. 전종목 결과를 요청한 종목 집합으로 좁힌다.
-        if universeCodes is not None:
-            if not isinstance(result, pl.DataFrame):
-                raise ValueError(
-                    f"scan 축 '{resolved}'은(는) 표 형태 결과가 아니라 universe stockCodes 를 적용할 수 없습니다."
-                )
-            codeCol = next((c for c in ("종목코드", "stockCode", "ticker") if c in result.columns), None)
-            if codeCol is None:
-                raise ValueError(
-                    f"scan 축 '{resolved}' 결과에 종목 식별 컬럼이 없어 universe stockCodes 를 적용할 수 없습니다."
-                )
-            result = result.filter(pl.col(codeCol).cast(pl.Utf8).is_in(list(universeCodes)))
+        result, isMissingHint = _narrowToTarget(result, resolved, entry, target)
+        if isMissingHint:
+            return result
+        result = _applyUniverseCodes(result, resolved, universeCodes)
 
         # 최종 사용자 반환: 한글 컬럼 + 종목명
         if isinstance(result, pl.DataFrame) and "stockCode" in result.columns:

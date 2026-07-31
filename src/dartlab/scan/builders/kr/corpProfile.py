@@ -8,6 +8,10 @@ from typing import Any
 
 import polars as pl
 
+from dartlab.core.logger import getLogger
+
+_log = getLogger(__name__)
+
 CORP_PROFILE_SCHEMA_VERSION = 2
 CORP_PROFILE_SCHEMA = {
     "corp_code": pl.Utf8,
@@ -72,6 +76,7 @@ def normalizeCorpProfileRow(row: dict[str, Any]) -> dict[str, str | int]:
     try:
         version = int(versionValue or 1)
     except (TypeError, ValueError):
+        _log.warning("corpProfile schema version 해석 실패로 1 로 정규화: %r", versionValue)
         version = 1
     normalized: dict[str, str | int] = {}
     for column in CORP_PROFILE_SCHEMA:
@@ -95,7 +100,8 @@ def _loadFiscalMonthMap() -> dict[str, int]:
         return {}
     try:
         frame = pl.scan_parquet(profilePath).select("stockCode", "acc_mt").collect(engine="streaming")
-    except (pl.exceptions.PolarsError, OSError):
+    except (pl.exceptions.PolarsError, OSError) as exc:
+        _log.warning("corpProfile 결산월 보강 생략. profile 읽기 실패 %s: %s", profilePath, exc)
         return {}
 
     result: dict[str, int] = {}
@@ -104,7 +110,8 @@ def _loadFiscalMonthMap() -> dict[str, int]:
             continue
         try:
             month = int(str(accMt).replace("월", "").strip())
-        except (TypeError, ValueError, AttributeError):
+        except (TypeError, ValueError, AttributeError) as exc:
+            _log.debug("corpProfile 결산월 해석 실패로 %s 제외: %r (%s)", stockCode, accMt, exc)
             continue
         if 1 <= month <= 12:
             result[stockCode] = month

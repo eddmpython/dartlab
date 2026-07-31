@@ -67,36 +67,6 @@ def _classifyPattern(
     return "불규칙"
 
 
-def _gradeDividend(pattern: str, dpsGrowth: float | None) -> str:
-    """배당 패턴 → 등급 변환.
-
-    Parameters
-    ----------
-    pattern : str
-        ``_classifyPattern`` 이 반환한 패턴명.
-    dpsGrowth : float | None
-        DPS 전기 대비 성장률 (%).
-
-    Returns
-    -------
-    str
-        등급. 다음 중 하나: 우수 / 양호 / 보통 / 주의 / 위험 / 무배당.
-    """
-    if pattern == "무배당":
-        return "무배당"
-    if pattern in ("연속증가",):
-        return "우수"
-    if pattern in ("안정", "증가"):
-        return "양호"
-    if pattern == "시작":
-        return "양호"
-    if pattern in ("감소", "연속감소"):
-        return "주의"
-    if pattern == "중단":
-        return "위험"
-    return "보통"
-
-
 def scanDividendTrend(*, verbose: bool = True) -> pl.DataFrame:
     """전종목 배당 추이 스캔 — DPS 3개년 + 패턴 + 등급.
 

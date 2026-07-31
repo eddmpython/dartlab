@@ -11,6 +11,10 @@ import io
 import zipfile
 from typing import TYPE_CHECKING, Literal, TypeAlias
 
+from dartlab.core.logger import getLogger
+
+_log = getLogger(__name__)
+
 if TYPE_CHECKING:
     from dartlab.gather.dart.client import DartClient
 
@@ -77,6 +81,7 @@ def parseDocumentResponse(raw: bytes | None) -> DocumentResult:
             - KR (DART).
     """
     if not raw:
+        _log.debug("document.xml 응답이 비어 error 로 판정")
         return (None, "error")
 
     if raw[:4] == b"PK\x03\x04":
@@ -84,10 +89,12 @@ def parseDocumentResponse(raw: bytes | None) -> DocumentResult:
             with zipfile.ZipFile(io.BytesIO(raw)) as archive:
                 names = archive.namelist()
                 if not names:
+                    _log.debug("document.xml ZIP 에 항목이 없어 error 로 판정")
                     return (None, "error")
                 largest = max(names, key=lambda name: archive.getinfo(name).file_size)
                 content = archive.read(largest)
-        except zipfile.BadZipFile:
+        except zipfile.BadZipFile as exc:
+            _log.debug("document.xml ZIP 손상으로 error 판정: %s", exc)
             return (None, "error")
 
         rawContent: str | None = None
@@ -95,17 +102,20 @@ def parseDocumentResponse(raw: bytes | None) -> DocumentResult:
             try:
                 rawContent = content.decode(encoding)
                 break
-            except (UnicodeDecodeError, LookupError):
+            except (UnicodeDecodeError, LookupError) as exc:
+                _log.debug("document.xml %s 디코딩 실패, 다음 인코딩 시도: %s", encoding, exc)
                 continue
         if rawContent is None:
             rawContent = content.decode("utf-8", errors="replace")
         if not rawContent.strip():
+            _log.debug("document.xml 본문이 공백만 남아 error 로 판정")
             return (None, "error")
         return (rawContent, "ok")
 
     statusText = raw[:300].decode("utf-8", errors="replace")
     if any(status in statusText for status in _NO_BODY_STATUSES):
         return (None, "no_body")
+    _log.debug("document.xml 이 ZIP 도 알려진 상태코드도 아니라 error 로 판정: %.80s", statusText)
     return (None, "error")
 
 
