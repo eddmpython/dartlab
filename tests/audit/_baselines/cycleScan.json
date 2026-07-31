@@ -1,7 +1,7 @@
 {
   "_note": "양방향 cycle 부채 원장. 여기 적힌 것 밖의 새 2-cycle 은 차단된다. 항목을 지우려면 한쪽 import 를 하위 계층으로 강등하거나 위임으로 끊는다.",
-  "longerCycleCount": 737,
-  "measuredAt": "2026-07-26T20:02:42.851117+00:00",
+  "longerCycleCount": 1251,
+  "measuredAt": "2026-07-31T05:15:03.499778+00:00",
   "twoCycles": [
     "dartlab.ai <-> dartlab.skills",
     "dartlab.analysis <-> dartlab.providers",
@@ -10,6 +10,7 @@
     "dartlab.frame <-> dartlab.providers",
     "dartlab.industry <-> dartlab.providers",
     "dartlab.providers <-> dartlab.quant",
+    "dartlab.providers <-> dartlab.scan",
     "dartlab.providers <-> dartlab.story",
     "dartlab.providers <-> dartlab.viz",
     "dartlab.story <-> dartlab.viz"

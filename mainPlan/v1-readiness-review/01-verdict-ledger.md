@@ -2265,3 +2265,50 @@ cycleScan·architecturePytest·folderMirror·gatherGate·providerGate·publicApi
 기존 부채로 이번 분할이 늘리지 않았다. Guard known debt 47 건(active 9 + 보호된 Company
 facade 38)도 그대로다. `api.py` 365 LoC 와 `pipeline.py` 483 LoC 는 임계 800 아래라
 추가 분할 대상이 아니다.
+
+### cycle 부채 원장 재측정 (2026-07-31)
+
+lint 게이트가 `providers <-> scan` 2-cycle 을 baseline 밖 신규로 차단했다. 전문 검토
+둘을 서로 다른 렌즈(설계 실현성 / 적대적 반증)로 독립 수행하고 직접 재검증했다.
+결론은 갈리지 않았다. **이것은 코드 회귀가 아니라 미완 커밋이다.**
+
+근거는 계측기 대조다. `providers/` 에는 정적 `from dartlab.scan` 이 0 건이고 상향 간선
+10 개가 전부 `importlib.import_module("literal")` 동적 호출이다. `d8909662d` 이전의
+cycleScan 추출기는 `ast.Import` 와 `ast.ImportFrom` 두 종류만 처리했으므로 이 간선을
+볼 수 없었다. 그 커밋이 추출기를 Guard indexer 로 교체하며 리터럴 동적 import 를
+해석하기 시작했고, 같은 커밋에서 `cycleScan.json` 은 재측정하지 않았다. baseline 의
+`measuredAt` 은 2026-07-26 으로 검출기 교체 이전이다. 옛 추출기를 현재 트리에 다시
+돌리면 정확히 기존 10 항목이 나온다. 델타 전부가 계측기 변경이다. 같은 파일의 유일한
+선례 `238d294ae` 도 패키지 탐색을 넓히면서 같은 커밋에서 원장을 5 에서 10 으로
+재측정했다. "검출 해상도가 바뀌면 같은 커밋에서 원장을 재측정한다" 가 이 파일의 규약이다.
+
+의존 역전(composition registry)은 기각했다. 첫째, 게이트를 고치지 못한다. 상향 간선은
+`scanAggregator.py` 5 건이 아니라 4 개 파일 10 건이고, `dart/company.py`(2),
+`edgar/company.py`(1), `dart/finance/scanAccount.py`(2) 가 남으면 간선이 그대로다.
+게다가 `_SCAN_AXES` 는 `ast.Dict` 라 indexer 가 아예 보지 못해, 그 4 축을 걷어내도
+게이트 결과는 변하지 않는다. 역으로 리터럴을 dict 뒤로 숨기면 통과하는데 그건 import
+우회다. 둘째, 남은 3 파일은 `dartlabGuard.json` 의 `protectedCompanyFacadeDebt` 이고
+그 `_note` 가 "사용자 호출 표면을 보존하려고 남긴 것이라 정리 대상이 아니고 신규
+증가만 차단한다" 고 명시한다. scan 만 골라 역전시키는 것은 기록된 운영자 결정을 재논의
+없이 뒤집는 일이다. 셋째, 대상 5 개 공개 Company 메서드는 경로 전체가 None 관용이라
+seam 오배선이 전 종목 무데이터로 조용히 degrade 한다. 실제로 같은 파일에서 그 사고가
+한 번 있었고 post-mortem 주석이 남아 있다. `productSmoke` 와 `publicApiCoverage` 에
+governance/network/workforce/capital/debt 언급이 0 건이라 실데이터로 잡을 그물도 없다.
+
+조치는 손수 편집이 아니라 `cycleScan.py --update-baseline` 재측정이다. 손수 한 줄을
+끼워 넣으면 `longerCycleCount` 가 어떤 계측기도 낸 적 없는 값으로 남아 그것이 진짜
+staleness 가 된다. 재측정 결과는 2-cycle 10 -> 11, longer 737 -> 1251,
+`measuredAt` 2026-07-31 이다. `--strict-toplevel` 기준 top-level cycle 은 여전히 0 이라
+런타임 import cycle 은 없다. per-file 상향 회귀는 `architecture.lazyUpperImport` 가
+계속 막는다.
+
+남은 부채. `Company` facade 가 L1 에 주차된 채 상위 11 개(analysis·ai·credit·frame·
+industry·macro·quant·scan·simulate·story·synth)를 lazy 로 끄는 것이 병이고 scan 은
+증상이다. 별도 프로젝트로 올린다. 그 앞 1 단계 후보는 `scan/io/` 1,974 LoC 가
+`scan/io/parquet.py:133` 의 `SCAN_API_TYPES` 한 줄만 위를 보는 구조라, 그 선언을 io 로
+내리면 `scan/io/` 가 providers 와 scan 이 아래로 읽는 artifact 계층이 되고 10 건 중
+3 건이 계층 정정만으로 사라진다는 것이다. 이것만으로 cycle 은 끊기지 않으므로 해결책이
+아니라 순서상 1 단계로 기록한다. `scanAggregator.py:238` 이 `scan.io.parquet.loadListing`
+을 거쳐 다시 `providers.dart.company.Company.listing()` 으로 되돌아오는 4-hop 왕복도
+같은 계층 호출로 바꿀 위생 항목이다. 규약 보완으로 "검출기 해상도 변경 시 같은 커밋에서
+원장 재측정" 을 명문화할 자리도 남긴다.
