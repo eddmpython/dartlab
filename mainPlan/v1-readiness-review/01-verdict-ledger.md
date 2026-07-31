@@ -2514,15 +2514,29 @@ Beneish 결측 다수 기본값, Track B 유동성 가중 0, 감사의견 키워
 blocking) 가 아예 실행하지 않는 구간이라는 것이다. preflight 를 통과했다는 사실이 CI 가
 녹색이라는 뜻이 아니다.
 
-첫째 실패의 원인은 fail-closed 게이트가 추적되지 않는 산출물에 의존하는 것이다.
-`realdata-plan` 이
-`CorpProfileIdentityError: corpProfile identity artifact 부재: tests/fixtures/dart/scan/corpProfile.parquet`
-로 죽는데, `.gitignore:169` 가 `tests/fixtures/dart/scan/` 을 통째로 무시한다. 주석은 그
-디렉터리를 "HF dataset 자동 다운로드 캐시, git 추적 X" 로 규정한다. 파일은 로컬에 80KB 로
-존재하지만 git 에 없으므로 CI 는 가질 수 없다. `11927a04e` 가 그 캐시 산출물에 fail-closed
-의존을 걸면서 CI 에서의 부재를 다루지 않았다. 캐시를 추적 대상으로 올릴지, 게이트가 부재를
-회수 가능한 상태로 다룰지는 레포 데이터 전략 결정이라 별건으로 남긴다. 부재를 조용히
-통과시키는 쪽은 답이 아니다.
+첫째 실패의 원인은 fixture 빌드 순서에 한 단계가 빠진 것이다. 처음에는 `.gitignore:169`
+가 `tests/fixtures/dart/scan/` 을 무시하니 추적되지 않은 산출물에 의존하는 문제로 읽었는데,
+전체 스택을 받아 보니 그 디렉터리는 추적 대상이 아니라 CI 가 직접 굽는 곳이었다. 데이터
+전략 결정이 아니라 순서 결함이다.
+
+`realdata-plan` 은 `planRealdata.py` 로 실행할 realData 파일을 고른 뒤, 하나라도 있으면
+`prepareRealdataScanCache.py` 로 fixture 를 굽는다. 그 스크립트는 changes, finance,
+finance-lite, report, sharesOutstanding, affiliateDocs 를 각각 존재 여부로 가드하며 굽는데
+`corpProfile.parquet` 을 굽는 블록이 없다. 그런데 `buildAffiliateDocs` 가
+`scan/builders/kr/network.py:574` 에서 `_loadJurirStockMap()` 을 부르고 그것이
+`corpProfile.py:126` 에서 `corpProfile.parquet` 부재로 `CorpProfileIdentityError` 를
+던진다. `11927a04e` 가 affiliateDocs 에 corpProfile identity 의존을 추가하면서 준비
+스크립트에 대응 빌드 단계를 넣지 않은 것이다. 로컬에는 그 파일이 80KB 로 남아 있어
+증상이 보이지 않았다.
+
+빌더는 `.github/scripts/meta/buildCorpProfile.py` 의 `buildCorpProfile()` 이고
+`scan/builders/kr/core.py:140` 이 "호출 직전에 실행 권장" 이라고 이미 적어 두었다. 고칠
+자리는 `prepareRealdataScanCache.py` 의 affiliateDocs 블록 앞에 형제들과 같은 존재 가드로
+corpProfile 빌드를 넣는 것이다. **이번에 고치지 않는다.** 이 경로는 DART API 로 전종목을
+굽는 CI 전용 실행이라 로컬에서 동등 조건으로 돌려 증명할 수 없고, 증명하지 못한 수정을
+CI 에만 밀어 넣는 것은 이 원장이 요구하는 완료 정의에 맞지 않는다. 진단과 고칠 자리를
+남기고 실행 증명이 가능한 조건에서 닫는다. 이 실패가 `realdata-suite` 를 통째로
+`skipped` 로 만들고 있어 realData 회귀가 며칠째 돌지 않은 상태다.
 
 둘째 실패는 낡은 테스트다. `tests/server/test_server.py::TestAsk::test_topic_summary_uses_core_stream_path`
 가 로컬에서도 `404: topic 'businessOverview' 데이터 없음` 으로 재현된다. 프로덕션
