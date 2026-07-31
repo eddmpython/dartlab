@@ -414,3 +414,106 @@ def testStockCandidateTraversalPrefersTheFilingThatAlsoHasFlow() -> None:
 
     assert compiled.fiscalThrough == "20241231"
     assert {item.accession for item in compiled.evidence if item.kind == "stock"} == {"fixed"}
+
+
+def makeStockOnlyCandidates(accessionCount: int) -> pl.DataFrame:
+    """흐름 없는 대차 접수를 여러 개 얹어 후보 순회를 강제한다.
+
+    ``makeFiling`` 의 대차 행만 복제해 접수, 접수일, 기간말만 바꾼다. 흐름이 없으므로
+    어떤 추가 접수도 상태를 세우지 못하고, 컴파일러는 원본 접수까지 전부 훑는다.
+    """
+
+    base = makeFiling()
+    stockRows = base.filter(pl.col("start").is_null())
+    frames = [base]
+    for index in range(accessionCount):
+        endDate = date(2025, 3, 31) + timedelta(days=91 * index)
+        frames.append(
+            stockRows.with_columns(
+                pl.lit(f"extra{index}").alias("accn"),
+                pl.lit((endDate + timedelta(days=30)).isoformat()).alias("filed"),
+                pl.lit(endDate.isoformat()).alias("end"),
+            )
+        )
+    return pl.concat(frames)
+
+
+def testStockCandidateWalkDoesNotReenterPolarsPerCandidate() -> None:
+    """후보 접수가 늘어도 대차 선택이 Polars plan 을 다시 만들지 않아야 한다.
+
+    ``testQuarterEvidenceUsesOneIndexedPolarsFilterPass`` 가 흐름 경로에 세운 규칙과
+    같다. 접수 하나의 대차 행은 수십 줄이라, 태그마다 ``filter`` 를 부르면 비용이
+    데이터가 아니라 Polars 호출 고정비로 결정되고 후보 수에 곱해진다.
+    """
+
+    def walk(accessionCount: int) -> tuple[int, int]:
+        """후보를 전부 소진하며 Polars ``filter`` 호출 수와 후보 수를 잰다."""
+        pit = owner._normalize(makeStockOnlyCandidates(accessionCount), "20400101")
+        originalFilter = pl.DataFrame.filter
+        calls = 0
+
+        def countedFilter(frame, *predicates, **constraints):
+            """DataFrame.filter 호출을 세고 원본으로 위임한다."""
+            nonlocal calls
+            calls += 1
+            return originalFilter(frame, *predicates, **constraints)
+
+        pl.DataFrame.filter = countedFilter
+        try:
+            candidates = list(owner._stockCandidates(pit))
+        finally:
+            pl.DataFrame.filter = originalFilter
+        return calls, len(candidates)
+
+    fewCalls, fewCandidates = walk(4)
+    manyCalls, manyCandidates = walk(40)
+
+    assert (fewCandidates, manyCandidates) == (5, 41)
+    assert fewCalls == manyCalls == 1
+
+
+def testManyStockCandidatesStillSelectTheFilingThatHasFlow() -> None:
+    """색인 경로도 흐름 있는 접수를 그대로 고르고 값을 바꾸지 않는다."""
+
+    compiled = owner.compileEdgarFinancialState(
+        makeStockOnlyCandidates(40),
+        knowledgeAsOf="20400101",
+    )
+    reference = owner.compileEdgarFinancialState(makeFiling(), knowledgeAsOf="20250228")
+
+    assert compiled.fiscalThrough == "20241231"
+    assert {item.accession for item in compiled.evidence if item.kind == "stock"} == {"fixed"}
+    assert compiled.state == reference.state
+    assert compiled.warnings == ("latestIncompleteFiling:20341218",)
+
+
+def testFlowCompilerRunsOncePerFiscalEndNotPerAccession() -> None:
+    """같은 기간말을 공유하는 접수가 여럿이어도 흐름 컴파일은 기간말당 한 번이다.
+
+    후보는 접수 단위라 정정 공시가 쌓이면 같은 기간말이 반복된다. 흐름 컴파일은
+    ``pit`` 과 기간말만 읽으므로 접수마다 다시 부르면 같은 결과를 다시 계산한다.
+    """
+
+    base = makeFiling()
+    stockRows = base.filter(pl.col("start").is_null())
+    restatements = [
+        stockRows.with_columns(
+            pl.lit(f"restated{index}").alias("accn"),
+            pl.lit(f"2025-0{index + 2}-15").alias("filed"),
+        )
+        for index in range(3)
+    ]
+    pit = owner._normalize(pl.concat([base, *restatements]), "20250601")
+    requested: list[str] = []
+
+    def countingCompiler(_pit: pl.DataFrame, fiscalThrough: str) -> tuple[()]:
+        """호출된 기간말을 기록하고 흐름 결손으로 실패한다."""
+        requested.append(fiscalThrough)
+        raise owner.EdgarStateError("no flow for this fiscal end")
+
+    assert len(list(owner._stockCandidates(pit))) == 4
+
+    with pytest.raises(owner.EdgarStateError, match="no flow for this fiscal end"):
+        owner._compileStockWithFlow(pit, countingCompiler)
+
+    assert requested == ["20241231"]

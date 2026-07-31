@@ -338,19 +338,85 @@ def _rawEvidence(conceptId: str, row: dict, *, kind: str) -> FactEvidence:
     )
 
 
-def _pick(group: pl.DataFrame, conceptId: str, tags: tuple[str, ...], *, kind: str) -> FactEvidence | None:
+def _pick(rowsByTag: dict[str, list[dict]], conceptId: str, tags: tuple[str, ...], *, kind: str) -> FactEvidence | None:
+    """한 접수의 태그 색인에서 우선순위가 가장 높은 관측을 고른다.
+
+    ``_quarterEvidence`` 와 같은 규약이다. Polars 는 색인을 만들 때 한 번만 지나가고,
+    태그 선택은 파이썬 dict 조회로 끝낸다. 접수 하나의 대차 행은 수십 줄이라 태그마다
+    ``filter`` 를 부르면 실제 연산이 아니라 Polars 호출 고정비가 비용의 전부가 된다.
+
+    Args:
+        rowsByTag: 한 접수의 행을 태그별로 묶은 색인. 값은 원본 프레임 순서를 지킨다.
+        conceptId: 생성할 evidence 의 개념 id.
+        tags: 우선순위 순 태그 목록. 먼저 매칭되는 태그를 채택한다.
+        kind: 생성할 evidence 종류.
+
+    Returns:
+        채택한 단일 관측. 어떤 태그도 없으면 ``None``.
+
+    Raises:
+        EdgarStateError: 통화가 USD 하나로 닫히지 않거나 한 접수 안에 값이 두 개일 때.
+
+    Example:
+        ``_pick(rowsByTag, "totalAssets", ("Assets",), kind="stock")``.
+
+    Guide:
+        색인은 ``__end``, ``accn``, ``__filed`` 세 값이 같은 행만 담으므로 접수 하나다.
+
+    Requires:
+        ``_normalize`` 를 통과한 행이어야 한다. ``__value`` 는 결측도 비유한도 아니다.
+
+    AIContext:
+        같은 접수에서 같은 태그가 서로 다른 값을 들고 있으면 고르지 않고 실패한다.
+        조용히 하나를 택하면 어느 값이 쓰였는지 evidence 로 되짚을 수 없다.
+    """
+
     for tag in tags:
-        rows = group.filter(pl.col("tag") == tag)
-        if rows.height == 0:
+        rows = rowsByTag.get(tag)
+        if not rows:
             continue
-        units = set(rows["unit"].drop_nulls().cast(pl.Utf8).to_list())
+        units = {str(row["unit"]) for row in rows if row["unit"] is not None}
         if units != {"USD"}:
             raise EdgarStateError(f"unit conflict for {conceptId}: {sorted(units)}")
-        values = set(float(value) for value in rows["__value"].to_list())
+        values = {float(row["__value"]) for row in rows}
         if len(values) != 1:
             raise EdgarStateError(f"conflicting values for {conceptId} in one accession")
-        return _rawEvidence(conceptId, rows.sort("__filed", descending=True).row(0, named=True), kind=kind)
+        # 색인 한 칸은 ``__filed`` 가 같은 접수 하나라 최신 선택은 첫 행이다.
+        return _rawEvidence(conceptId, rows[0], kind=kind)
     return None
+
+
+def _indexStockRows(stock: pl.DataFrame) -> dict[tuple[str, str, str], dict[str, list[dict]]]:
+    """stock 행을 접수별, 태그별로 한 번에 색인한다.
+
+    Args:
+        stock: 기간 시작이 없는 대차 관측만 남긴 정규화 프레임.
+
+    Returns:
+        ``(fiscalEnd, accession, filedAt)`` 을 키로, 태그별 행 목록을 값으로 갖는 색인.
+        각 목록은 원본 프레임 순서를 지킨다.
+
+    Raises:
+        없음. 순수 재배치다.
+
+    Example:
+        ``groups[("20241231", "0000036270-25-000030", "20250221")]["Assets"]``.
+
+    Guide:
+        후보 순회 전에 한 번만 부른다. 후보마다 부르면 이 함수의 목적이 사라진다.
+
+    Requires:
+        ``__end``, ``accn``, ``__filed``, ``tag`` 열이 있어야 한다.
+
+    AIContext:
+        후보 수와 태그 수의 곱만큼 Polars 에 재진입하던 경로를 한 번의 순회로 바꾼다.
+    """
+
+    grouped: dict[tuple[str, str, str], dict[str, list[dict]]] = {}
+    for row in stock.iter_rows(named=True):
+        key = (str(row["__end"]), str(row["accn"]), str(row["__filed"]))
+        grouped.setdefault(key, {}).setdefault(str(row["tag"]), []).append(row)
+    return grouped
 
 
 def _combinedEquity(parent: FactEvidence, noncontrolling: FactEvidence) -> FactEvidence:
@@ -412,18 +478,18 @@ def _stockCandidates(
         if candidates.height == 0:
             raise EdgarStateError(f"requested fiscalThrough is unavailable: {target}")
     firstConflict: EdgarStateError | None = None
+    groups = _indexStockRows(stock)
     for candidate in candidates.iter_rows(named=True):
-        group = stock.filter(
-            (pl.col("__end") == candidate["__end"])
-            & (pl.col("accn") == candidate["accn"])
-            & (pl.col("__filed") == candidate["__filed"])
+        rowsByTag = groups.get(
+            (str(candidate["__end"]), str(candidate["accn"]), str(candidate["__filed"])),
+            {},
         )
         try:
-            picked = _stockConceptEvidence(group)
+            picked = _stockConceptEvidence(rowsByTag)
             if picked is None:
                 continue
             evidence, imputed = picked
-            evidence["totalDebt"] = _stockDebtEvidence(group, candidate, evidence, imputed)
+            evidence["totalDebt"] = _stockDebtEvidence(rowsByTag, candidate, evidence, imputed)
             values = {conceptId: item.value for conceptId, item in evidence.items()}
             for conceptId in imputed:
                 values.setdefault(conceptId, 0.0)
@@ -443,7 +509,7 @@ def _stockCandidates(
         raise firstConflict
 
 
-def _stockConceptEvidence(group: pl.DataFrame) -> tuple[dict[str, FactEvidence], list[str]] | None:
+def _stockConceptEvidence(rowsByTag: dict[str, list[dict]]) -> tuple[dict[str, FactEvidence], list[str]] | None:
     """한 접수의 대차 개념을 골라 evidence 와 imputed 목록을 만든다.
 
     반환 ``None`` 은 앵커 개념(자산·부채·자본)이 없어 이 후보로는 상태를 세울 수 없다는 뜻이다.
@@ -452,7 +518,7 @@ def _stockConceptEvidence(group: pl.DataFrame) -> tuple[dict[str, FactEvidence],
     evidence: dict[str, FactEvidence] = {}
     imputed: list[str] = []
     for conceptId, tags in _STOCK_TAGS.items():
-        selected = _pick(group, conceptId, tags, kind="stock")
+        selected = _pick(rowsByTag, conceptId, tags, kind="stock")
         if selected is None:
             if conceptId in _STOCK_ANCHOR_CONCEPTS:
                 return None
@@ -467,7 +533,7 @@ def _stockConceptEvidence(group: pl.DataFrame) -> tuple[dict[str, FactEvidence],
     if equity.tag == "StockholdersEquity":
         # 지배주주 자본만 태깅됐다면 비지배지분을 더해야 항등식이 닫힌다.
         # 더하지 않으면 비지배지분이 있는 회사가 구조적으로 항등식 검사에 걸린다.
-        noncontrolling = _pick(group, "noncontrollingInterest", _NONCONTROLLING_INTEREST_TAGS, kind="stock")
+        noncontrolling = _pick(rowsByTag, "noncontrollingInterest", _NONCONTROLLING_INTEREST_TAGS, kind="stock")
         if noncontrolling is not None:
             evidence["noncontrollingInterest"] = noncontrolling
             evidence["equityIncludingNci"] = _combinedEquity(equity, noncontrolling)
@@ -475,7 +541,7 @@ def _stockConceptEvidence(group: pl.DataFrame) -> tuple[dict[str, FactEvidence],
 
 
 def _stockDebtEvidence(
-    group: pl.DataFrame,
+    rowsByTag: dict[str, list[dict]],
     candidate: dict,
     evidence: dict[str, FactEvidence],
     imputed: list[str],
@@ -485,10 +551,10 @@ def _stockDebtEvidence(
     term debt 는 유동+비유동 우선, 없으면 보고 총액, 둘 다 없으면 0 이다. 단기 조달은
     term debt 와 겹치지 않으므로 항상 더한다.
     """
-    current = _pick(group, "currentTermDebt", _DEBT_CURRENT_TERM, kind="stock")
-    shortFunding = _pick(group, "shortTermFunding", _DEBT_SHORT_FUNDING, kind="stock")
-    noncurrent = _pick(group, "interestBearingDebtNoncurrent", _DEBT_NONCURRENT, kind="stock")
-    total = _pick(group, "reportedTotalDebt", _DEBT_TOTAL, kind="stock")
+    current = _pick(rowsByTag, "currentTermDebt", _DEBT_CURRENT_TERM, kind="stock")
+    shortFunding = _pick(rowsByTag, "shortTermFunding", _DEBT_SHORT_FUNDING, kind="stock")
+    noncurrent = _pick(rowsByTag, "interestBearingDebtNoncurrent", _DEBT_NONCURRENT, kind="stock")
+    total = _pick(rowsByTag, "reportedTotalDebt", _DEBT_TOTAL, kind="stock")
     termComponents: tuple[FactEvidence, ...]
     if current is not None and noncurrent is not None:
         termDebt = current.value + noncurrent.value
@@ -581,15 +647,24 @@ def _compileStockWithFlow(
         검증을 낮추지 않고 후보 탐색 범위만 넓힌다. 각 후보의 계약 검사는 그대로다.
     """
 
+    # 후보는 접수 단위라서 같은 회계 기간말을 여러 접수가 공유한다. 흐름 컴파일은
+    # ``pit`` 과 기간말만 읽는 순수 함수이므로 기간말이 같으면 결과도 오류도 같다.
+    # 기간말별로 한 번만 부르지 않으면 같은 계산을 접수 수만큼 되풀이한다.
+    compiled: dict[str, _FlowResult | EdgarStateError] = {}
     firstFlowError: EdgarStateError | None = None
     for candidate in _stockCandidates(pit, requestedFiscalThrough=requestedFiscalThrough):
-        try:
-            flows = flowCompiler(pit, candidate[2])
-        except EdgarStateError as error:
+        fiscalThrough = candidate[2]
+        if fiscalThrough not in compiled:
+            try:
+                compiled[fiscalThrough] = flowCompiler(pit, fiscalThrough)
+            except EdgarStateError as error:
+                compiled[fiscalThrough] = error
+        outcome = compiled[fiscalThrough]
+        if isinstance(outcome, EdgarStateError):
             if firstFlowError is None:
-                firstFlowError = error
+                firstFlowError = outcome
             continue
-        return candidate, flows
+        return candidate, outcome
     if firstFlowError is not None:
         raise firstFlowError
     raise EdgarStateError("no single accession contains a coherent stock state")

@@ -2312,3 +2312,94 @@ industry·macro·quant·scan·simulate·story·synth)를 lazy 로 끄는 것이 
 을 거쳐 다시 `providers.dart.company.Company.listing()` 으로 되돌아오는 4-hop 왕복도
 같은 계층 호출로 바꿀 위생 항목이다. 규약 보완으로 "검출기 해상도 변경 시 같은 커밋에서
 원장 재측정" 을 명문화할 자리도 남긴다.
+
+## L2 진입 (2026-07-31)
+
+L1.5 네 형제를 닫았으므로 하단 우선 순서에 따라 L2 로 올라간다. 첫 항목은 L1.5 US
+coverage audit 체크포인트가 성능 차단으로 상위 owner 에 넘긴 `analysis/financial/edgarPitState`
+다. 그때 "하위 순서를 깨고 지금 상위 compiler 를 수정하지 않는다" 로 미뤄둔 바로 그 항목이다.
+
+### L2 체크포인트: EDGAR full-state 컴파일 성능 (2026-07-31)
+
+범위는 `analysis/financial/edgarPitState.py` 와 실제 호출자다. 위로는
+`analysis/financial/filingFeatures.py` 의 세 feature 어댑터와 그 진입점
+`analysis/financial/dataAssets.edgarFinancialFeatures`, 옆으로는 `simulate/edgarPitState.py`
+호환 shim 과 `simulate/filingStateAdapters.py` 가 붙어 있다. 공개 계약 표면은 컴파일러
+네 개(`compileEdgarFinancialState`, `compileEdgarQuarterlyFinancialState`,
+`compileEdgarQuarterlyFlowState`, `compileEdgarQuarterlyRevenueState`)다.
+
+제품 결함은 게이트가 아니라 실호출로 재현했다. 상장 universe 앞 288 사에 full-state
+strict 를 실제로 걸어 263.4 초, 회사당 평균 914.6ms 였다. 전수 외삽은 86 분으로 15 분
+운영 한도의 5.7 배다. 최악 반례 MTB(CIK 0000036270)는 19,408ms 였고, 더 중요한 것은
+가장 느린 15 사 중 14 사가 그 시간을 다 쓰고 결국 `EdgarStateError` 로 끝났다는 점이다.
+MTB 를 cProfile 로 갈라 보니 2.149 초 중 `_stockCandidates` 가 1.533 초(71%)였고
+`PyLazyFrame.collect` 6,769 회가 tottime 1.014 초(47%)였다. Polars `filter` 는 4,232 회,
+`_pick` 은 2,790 회, stock 후보는 140 개였다.
+
+근본 원인은 후보가 140 개인 것이 아니라 후보마다 Polars 에 다시 들어가는 것이다.
+`_pick` 이 태그 하나당 `group.filter(pl.col("tag") == tag)` 를 불러 후보 수와 태그 수의
+곱만큼 lazy plan 을 새로 만들었다. 대상 group 은 접수 하나의 대차 행이라 수십 줄이고,
+따라서 비용은 데이터가 아니라 Polars 호출 고정비가 전부였다. 결정적인 것은 같은 파일의
+흐름 경로가 이미 올바른 규약을 쓰고 있었다는 점이다. `_quarterEvidence` 는 `filter` 한 번
+뒤 `iter_rows` 로 파이썬 dict 버킷을 만들고, 기존 회귀
+`testQuarterEvidenceUsesOneIndexedPolarsFilterPass` 가 "기간과 태그마다 Polars plan 을
+다시 만들지 않아야 한다" 를 못 박아 두었다. stock 경로만 그 불변식을 채택하지 않았다.
+새 규칙을 세우는 것이 아니라 이미 있는 불변식을 미채택 경로로 넓히는 일이라 SSOT 가
+하나로 닫힌다. 두 번째 원인은 그 위층에 있었다. 후보는 접수 단위인데 고유 회계 기간말은
+140 개 중 37 개뿐이고, `flowCompiler` 는 `(pit, fiscalThrough)` 의 순수 함수라서 같은
+기간말에 같은 결과와 같은 오류를 되풀이 계산하고 있었다.
+
+수정은 두 자리다. `_indexStockRows` 가 stock 프레임을 한 번 순회해
+`(fiscalEnd, accession, filedAt)` 별 태그 색인을 만들고, `_pick` 은 dict 조회로 바뀌었다.
+단위 충돌과 값 충돌 검증은 그대로 두었다. 색인 한 칸은 `__filed` 가 같은 접수 하나라
+기존의 `sort("__filed", descending=True).row(0)` 은 첫 행 선택과 같다.
+`_compileStockWithFlow` 는 기간말별로 흐름 컴파일 결과를 성공이든 `EdgarStateError` 든
+한 번만 계산해 재사용한다. 오류 우선순위는 후보 순서를 그대로 따르므로 `firstFlowError`
+의미가 바뀌지 않는다. 회귀 3 건을 신설했다.
+`testStockCandidateWalkDoesNotReenterPolarsPerCandidate` 는 후보 수가 늘어도 Polars 진입이
+1 회인지 보고, `testFlowCompilerRunsOncePerFiscalEndNotPerAccession` 은 같은 기간말을
+공유하는 접수 4 개에서 흐름 컴파일이 1 회인지 본다.
+`testManyStockCandidatesStillSelectTheFilingThatHasFlow` 는 색인 경로도 흐름 있는 접수를
+그대로 고르고 값을 바꾸지 않는지 본다. 앞의 두 가드는 수정 전 코드에 같은 fixture 로
+걸어 실제로 깨지는 것을 확인했다. 후보 5 개와 41 개에서 filter 가 91 회와 739 회로
+후보에 비례했고, 흐름 컴파일은 4 회였다. 통과만 하는 테스트를 가드로 세지 않는다.
+
+공개 행동 동등성은 실데이터로 증명했다. 수정 전 모듈을 git 에서 꺼내 같은 회사 facts 에
+돌리고 공개 컴파일러 네 개의 `stateHash` 와 오류 문자열을 전부 대조했다. 400 사 x 4
+컴파일러 = 1,548 건 비교에서 불일치 0 건이고, stock 수정만 넣은 1 차와 두 수정을 합친
+2 차 모두 0 건이다. 같은 표본의 소요는 1 차 609.0 초 -> 179.5 초, 2 차 447.7 초 ->
+107.7 초로 4.16 배다. 그리고 L1.5 가 한도 초과로 중단했던 그 실행을 완주시켰다. 감사
+하네스 `edgarCoverageAudit` full-state strict 전수는 7,683 ticker / 6,069 unique CIK 에서
+**238.578 초**로 끝났다. 15 분 한도의 27% 다. 성공 2,420 건(31.4981%)으로 full audit
+하한 30% 를 넘겼고, unique source 5,662/6,069(93.2938%) missing 407 로 하한 90% 를
+넘겼다. p50 46.530ms, p95 715.439ms, max 1,832.702ms 다. loader 0, network 0, listing
+digest 는 시작과 끝이 같고, `entityRefIdentityMatches` 는 true 다. `passedSafetyGate` 는
+true, `coverageGate.failures` 는 빈 목록이다. source coverage 5,662/6,069 와 missing 407
+은 L1.5 가 flow-only 와 revenue-only 에서 기록한 값과 정확히 같아, universe 와 원천이
+그대로임을 교차 확인해 준다.
+
+Guard 와 회귀는 통과했다. 대상 회귀 `54 passed`(계약 21 + simulate 9 + filingFeatures 13 +
+attempts flow prototype 3 + filingStateAdapters 8), `tests/analysis` unit `649 passed`,
+Guard `quick` `status: pass`(7 규칙, 외부 게이트 architecturePytest PASS, known debt 47 건
+불변). folderSize 는 baseline 안 통과로 over_split 20 / under_split 47 그대로,
+silentSubstitute 신규 0, Ruff 와 formatter 통과다.
+
+남은 부채는 넷이다. 첫째, `edgarPitState.py` 가 1,458 -> 1,533 LoC 로 늘었다. libSize
+baseline 등재분이라 게이트는 통과하지만 임계 800 을 넘는 부채는 그대로이고 증가분은
+9 섹션 docstring 이다. scanAccount 와 같은 책임별 분할 후보로 남긴다. 둘째, 같은 파일
+Pyright 4 건(840, 896, 903 의 `_q4From*` 에서 `fiscalStart` 가 `str | None` 로 좁혀지지
+않는 것)은 이번에 만지지 않은 줄의 선재 부채다. 런타임은 호출 전에 `None` 을 걸러내고
+`typecheck` 게이트는 `blocking=False` 라, 비차단 린터를 만족시키려고 assert 를 얹는 것은
+게이트 수리이지 제품 진보가 아니라고 판단해 손대지 않았다. 셋째,
+`tests/_attempts/dataWorkbenchEdgarScale/testAudit.py` 가 `dartlab.dataHub.ownerPaging` 을
+import 하는데 그 모듈은 `dataHub/paging/owner` 로 재편돼 collection 단계에서 죽는다.
+CI 는 `_attempts` 를 수집하지 않아 green 이지만 죽은 하네스다. 넷째, full-state 성공률
+31.4981% 는 하한 30% 바로 위라 여유가 얇다. 최대 실패군은
+`FEATURE_NO_COHERENT_FOUR_QUARTER_WINDOW` 2,024 건과 `PIT_NO_FILING_BEFORE_CUTOFF`
+1,456 건인데 이는 성능이 아니라 커버리지 항목이라 이 체크포인트의 판정 밖이다.
+
+**판정: L2 EDGAR full-state 컴파일 성능 체크포인트 완료.** L1.5 가 상위로 넘긴 성능
+차단이 풀렸고, 전수 감사가 처음으로 한도 안에서 완주해 fail-closed 게이트를 통과했다.
+다음 체크포인트는 L2 의 "남은 것" 목록 맨 앞인 팩터 형성 시점 look-ahead 다. 수익률
+구간이 정렬 정보보다 앞서는 문제라 발표된 모든 팩터 수치의 의미를 바꾸고, 같은 목록의
+스타일 전구간 분위수와 함께 별도 설계가 필요하다고 이미 기록돼 있다.
