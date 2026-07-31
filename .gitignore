@@ -65,14 +65,11 @@ node_modules/
 
 # UI build artifacts
 ui/build/
-ui/web/build/
 src/dartlab/ui/build/
 ui/node_modules/
-ui/web/node_modules/
 
 # Playwright before/after 검증 산출물 (UI 변경 시각 비교용, 커밋 X)
 ui/screenshots/
-ui/web/screenshots/
 ui/.svelte-kit/
 
 # Playwright local artifacts (repo-root)
@@ -176,6 +173,4 @@ unsloth_compiled_cache/
 tests/audit/_camelcaseIndex.json
 
 # 구 Svelte UI 백업 (2026-05-16 React 재구축 시) - 참고용 로컬 보존
-ui/web.backup/
 .venv-ci/
-ui/web/test-results/
