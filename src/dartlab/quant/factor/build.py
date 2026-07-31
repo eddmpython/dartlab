@@ -1,4 +1,4 @@
-"""횡단면 팩터 시계열 빌드 — 진짜 시총 기반 SMB/HML/RMW/CMA (Fama-French 표준).
+"""횡단면 팩터 시계열 빌드. 진짜 시총 기반 SMB/HML/RMW/CMA (Fama-French 표준).
 
 KR (2026-04-24 Phase B0 정정): KRX OpenAPI ``MKTCAP`` 컬럼 직접 사용 → 진짜 시총 기반
 SMB (small-minus-big), HML (high-BM-minus-low-BM, BM = equity/marketCap). audit (2026-04-06)
@@ -13,10 +13,10 @@ US (EDGAR): 시총 데이터 미수집 → fallback book-equity proxy 유지.
 - CMA = conservative (low asset growth) 종목 평균 - aggressive 종목 평균 (Fama-French 2015)
 
 데이터 흐름 (KR):
-1. `_build_universe_metrics` — DART finance.parquet 단년도 펀더멘털 + KRX 연도말 시총 (`marketCapAll`)
-2. `_quintile_portfolios` — 5분위 상위/하위 (각 ~20%)
-3. `_portfolio_returns` — 동일가중 일별 log return
-4. `buildFactors` — SMB/HML/RMW/CMA 시계열
+1. `_build_universe_metrics`: DART finance.parquet 단년도 펀더멘털 + KRX 연도말 시총 (`marketCapAll`)
+2. `_quintile_portfolios`: 5분위 상위/하위 (각 ~20%)
+3. `_portfolio_returns`: 동일가중 일별 log return
+4. `buildFactors`: SMB/HML/RMW/CMA 시계열
 
 빌드된 시계열은 캐시되며, factor.py 의 decomposeFactor 가 회귀 입력으로 사용한다.
 calcFactorTearSheet 도 이걸 IC/ICIR/분위 평가에 사용.
@@ -44,6 +44,12 @@ log = logging.getLogger(__name__)
 _FACTOR_CACHE: dict[tuple[str, str], dict] = {}
 _PORTFOLIO_CACHE: dict[tuple[str, str, int], np.ndarray] = {}
 
+# 팩터 형성 시점 규약. 같은 패키지의 `_factorIC.calcFactorIC` 와 같은 규약이다.
+# FY Y-1 재무는 Y 년 3 월경 공시되므로, 그 정보로 가른 포트폴리오에 귀속시킬 수 있는
+# 수익률은 4 월 1 일부터다. 연초부터 담으면 정렬 정보보다 앞선 수익률이 섞인다.
+_RETURN_WINDOW_START = "04-01"
+_RETURN_WINDOW_END = "12-31"
+
 
 def _latestYear(snap: pl.DataFrame, minCount: int = 1000) -> str | None:
     """충분한 universe를 가진 가장 최근 연도."""
@@ -70,7 +76,7 @@ def _fetchYearEndMarketcaps(market: str, year: str, *, asof: str | None = None) 
         asof: Sprint 4 PIT 컷오프 (default None → 기존 동작). bitemporal HF 활성 후 의미 있음.
 
     Returns:
-        {stockCode: marketCap (원)} — 연도말 마지막 거래일 기준.
+        {stockCode: marketCap (원)}. 연도말 마지막 거래일 기준.
     """
     if market != "KR":
         return {}
@@ -85,7 +91,7 @@ def _fetchYearEndMarketcaps(market: str, year: str, *, asof: str | None = None) 
             asof=asof,
         )
         if long_df is None or long_df.is_empty():
-            log.info("factorBuild: 연도말 시총 부재 (year=%s) — book proxy fallback", year)
+            log.info("factorBuild: 연도말 시총 부재 (year=%s), book proxy fallback", year)
             return {}
         # 종목별 마지막 일자 시총 (descending sort 후 첫 row keep)
         latest = (
@@ -107,9 +113,9 @@ def _buildUniverseMetrics(market: str, year: str) -> dict[str, dict[str, float]]
     Returns:
         {stockCode: {bookEquity, marketCap, totalAssets, netIncome, roe, bookRatio,
                      bookToMarket, assetGrowth}}
-        - marketCap: KRX MKTCAP (KR), None (US — 미수집)
+        - marketCap: KRX MKTCAP (KR), None (US 미수집)
         - bookToMarket: equity / marketCap (진짜 BM, 시총 있을 때만)
-        - bookRatio: equity / assets (자본구조 — fallback 용)
+        - bookRatio: equity / assets (자본구조, fallback 용)
     """
     lf = loadScanParquet("finance", market)
     if lf is None:
@@ -198,8 +204,12 @@ def _quintilePortfolios(metrics: dict[str, dict[str, float]], key: str, reverse:
 def _portfolioReturns(codes: list[str], market: str, year: str, maxN: int = 30) -> np.ndarray | None:
     """종목 리스트의 동일가중 평균 일별 log return 시계열.
 
+    ``year`` 는 수익률 연도다. 구간은 ``_RETURN_WINDOW_START`` 부터라서 형성 시점보다
+    앞선 수익률이 섞이지 않는다. 연초부터 담으면 아직 공시되지 않은 재무로 가른
+    포트폴리오에 그 이전 수익률을 귀속시키게 된다.
+
     KR (Phase B0 정정): `_hfBulk.loadFiltered` 직접 사용 (Yahoo 우회 + 빠름).
-    한 번에 종목 리스트 long fetch 후 group_by — 메모리 안전 + 1 query.
+    한 번에 종목 리스트 long fetch 후 group_by. 메모리 안전 + 1 query.
 
     US: 기존 fetchOhlcv (Yahoo) 유지.
 
@@ -218,7 +228,11 @@ def _portfolioReturns(codes: list[str], market: str, year: str, maxN: int = 30) 
             from dartlab.gather.bulkData.hfBulk import loadFiltered
 
             target_codes = codes[:maxN]
-            long_df = loadFiltered(start=f"{year}-01-01", end=f"{year}-12-31", adjustment="raw")
+            long_df = loadFiltered(
+                start=f"{year}-{_RETURN_WINDOW_START}",
+                end=f"{year}-{_RETURN_WINDOW_END}",
+                adjustment="raw",
+            )
             if long_df is None or long_df.is_empty():
                 _PORTFOLIO_CACHE[key] = None
                 return None
@@ -270,7 +284,7 @@ def buildFactors(market: str = "KR") -> dict | None:
         market: ``"KR"`` 만 지원 (US 추후 추가).
 
     Returns:
-        dict — year/universe/smb/hml/rmw/cma (np.ndarray)/notes. 데이터 부재 시 None.
+        dict. year/universe/smb/hml/rmw/cma (np.ndarray)/notes. 데이터 부재 시 None.
 
     Guide:
         Fama-French 1992/2015 표준 5 분위 형성. universe < 100 시 None. proxy 한계 (size 는
@@ -286,7 +300,7 @@ def buildFactors(market: str = "KR") -> dict | None:
         finance.parquet KR + 종목 100+ + 일별 가격 데이터.
 
     Raises:
-        없음 — 부재 시 None.
+        없음. 부재 시 None.
 
     Example:
         >>> f = buildFactors("KR")
@@ -312,11 +326,19 @@ def buildFactors(market: str = "KR") -> dict | None:
     if year is None:
         return None
 
-    metrics = _buildUniverseMetrics(market, year)
+    # look-ahead 차단: 정렬 정보가 수익률 구간보다 앞서야 한다. 전년도 재무와 전년 말
+    # 시총으로 5분위를 가르고, 그 재무가 공시된 뒤인 당해 4 월부터의 수익률만 귀속한다.
+    try:
+        fundYear = str(int(str(year)) - 1)
+    except ValueError:
+        return None
+    retYear = str(year)
+
+    metrics = _buildUniverseMetrics(market, fundYear)
     if len(metrics) < 100:
         return None
 
-    # 5분위 포트폴리오 — 시총 있으면 진짜 SMB/HML, 없으면 book proxy fallback
+    # 5분위 포트폴리오. 시총 있으면 진짜 SMB/HML, 없으면 book proxy fallback
     has_mcap = sum(1 for m in metrics.values() if m.get("marketCap") is not None) >= 100
     if has_mcap:
         small, big = _quintilePortfolios(metrics, "marketCap", reverse=False)
@@ -333,14 +355,14 @@ def buildFactors(market: str = "KR") -> dict | None:
     # CMA = conservative(low growth) - aggressive(high growth)
 
     # 시계열
-    s_ret = _portfolioReturns(small, market, year)
-    b_ret = _portfolioReturns(big, market, year)
-    h_ret = _portfolioReturns(high_bm, market, year)
-    l_ret = _portfolioReturns(low_bm, market, year)
-    hr_ret = _portfolioReturns(high_roe, market, year)
-    lr_ret = _portfolioReturns(low_roe, market, year)
-    cn_ret = _portfolioReturns(low_ag, market, year)
-    ag_ret = _portfolioReturns(high_ag, market, year)
+    s_ret = _portfolioReturns(small, market, retYear)
+    b_ret = _portfolioReturns(big, market, retYear)
+    h_ret = _portfolioReturns(high_bm, market, retYear)
+    l_ret = _portfolioReturns(low_bm, market, retYear)
+    hr_ret = _portfolioReturns(high_roe, market, retYear)
+    lr_ret = _portfolioReturns(low_roe, market, retYear)
+    cn_ret = _portfolioReturns(low_ag, market, retYear)
+    ag_ret = _portfolioReturns(high_ag, market, retYear)
 
     if any(x is None for x in [s_ret, b_ret, h_ret, l_ret]):
         return None
@@ -358,11 +380,17 @@ def buildFactors(market: str = "KR") -> dict | None:
     rmw = (hr_ret[-ml:] - lr_ret[-ml:]) if (hr_ret is not None and lr_ret is not None) else None
     cma = (cn_ret[-ml:] - ag_ret[-ml:]) if (cn_ret is not None and ag_ret is not None) else None
 
-    notes = f"SIZE = {size_source}, BM = {bm_source}. " + (
-        "진짜 Fama-French 표준 (KRX 시총 직접)." if has_mcap else "fallback proxy (시총 미수집)."
+    notes = (
+        f"SIZE = {size_source}, BM = {bm_source}. "
+        + ("진짜 Fama-French 표준 (KRX 시총 직접). " if has_mcap else "fallback proxy (시총 미수집). ")
+        + f"형성 {fundYear} 회계연도말 재무와 시총, 수익률 "
+        + f"{retYear}-{_RETURN_WINDOW_START}~{_RETURN_WINDOW_END}."
     )
     result = {
-        "year": str(year),
+        "year": retYear,
+        "fundYear": fundYear,
+        "retYear": retYear,
+        "returnWindow": f"{retYear}-{_RETURN_WINDOW_START}~{retYear}-{_RETURN_WINDOW_END}",
         "market": market,
         "universe": len(metrics),
         "n_obs": int(ml),
@@ -383,4 +411,4 @@ def buildFactors(market: str = "KR") -> dict | None:
     return result
 
 
-# 0.10 BC 깸 — snake_case alias 제거.
+# 0.10 BC 깸. snake_case alias 제거.

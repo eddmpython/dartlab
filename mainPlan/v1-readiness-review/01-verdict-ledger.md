@@ -2421,3 +2421,82 @@ import 할 수 없는 내부 콜백이다. 구현을 docstring 계약에 맞추�
 다음 체크포인트는 L2 의 "남은 것" 목록 맨 앞인 팩터 형성 시점 look-ahead 다. 수익률
 구간이 정렬 정보보다 앞서는 문제라 발표된 모든 팩터 수치의 의미를 바꾸고, 같은 목록의
 스타일 전구간 분위수와 함께 별도 설계가 필요하다고 이미 기록돼 있다.
+
+### L2 체크포인트: 팩터 형성 시점 look-ahead (2026-08-01)
+
+범위는 `quant/factor/build.py` 의 `buildFactors` 와 그 소비자다. 소비자는 같은 패키지의
+`calc.decomposeFactor`(종목 FF5 loadings), `_calcTearsheet.calcFactorTearSheet` 와
+`calcFactorTearSheetAll`, `calcMultiFactorRisk` 세 곳이고 story 6막-3 시장분석 섹션이
+`factorTearSheetBlock` 으로 자동 호출한다. 시점 계약을 검사하는 테스트는 착수 시점에
+0 건이었다. `tests/quant/test_grinoldAbsorption.py` 가 유일하게 이름이 걸리는 파일인데
+실제로는 상관계수와 IR 같은 순수 수학 헬퍼만 본다.
+
+제품 결함은 코드 직독과 실데이터 양쪽에서 확인했다. `buildFactors` 는
+`_latestYear` 로 얻은 Y 년 재무로 `_buildUniverseMetrics(market, Y)` 를 부르고, 그
+안에서 `_fetchYearEndMarketcaps(market, Y)` 가 Y 년 12 월 25 일부터 31 일 사이의 시총을
+읽는다. 그 두 값으로 5분위를 가른 뒤 `_portfolioReturns` 가
+`loadFiltered(start=f"{Y}-01-01", end=f"{Y}-12-31")` 로 Y 년 1 월부터의 수익률을
+붙인다. 정렬 정보는 Y 년 12 월 말 시점이고 재무는 Y+1 년 3 월경에야 공시되는데, 그
+정보로 가른 포트폴리오에 12 개월 앞선 수익률을 귀속시킨 것이다. KR 실데이터에서
+`_latestYear` 는 2025 였고 현행 산출은 SMB 연환산 -63.82%(Sharpe -1.943),
+HML +97.45%(2.827), RMW +34.54%(1.254), CMA -32.77%(-1.160) 였다. SMB 의 -63.82% 는
+전형적인 인공물이다. 연말 시총으로 소형 분위를 가르면 그 해에 하락한 종목이 소형에
+담기므로, 결과로 정렬해 놓고 그 결과를 프리미엄이라 부르게 된다.
+
+근본 원인은 규약 부재가 아니라 미채택이다. 같은 패키지의 `_factorIC.calcFactorIC` 는
+`fund_year = Y-1`, 수익률 `{Y}-04-01` 부터 `{Y}-12-31` 을 쓰고 "전년 12 월말 데이터는
+당해년도 Q1 이후 공시되므로 실전 예측 가능" 이라는 주석까지 달아 두었다. 두 함수가 같은
+패키지에서 정반대로 동작했고 `build` 쪽만 그 규약을 따르지 않았다. 직전 체크포인트의
+edgarPitState 와 구조가 같다. 새 규칙을 세우는 것이 아니라 이미 문서화된 규약을 미채택
+경로로 넓히는 일이라 SSOT 가 하나로 닫힌다.
+
+수정은 세 자리다. 모듈 상수 `_RETURN_WINDOW_START = "04-01"` 과
+`_RETURN_WINDOW_END = "12-31"` 로 형성 규약을 한 자리에 못 박고 근거를 주석으로 남겼다.
+`_portfolioReturns` 의 가격 조회 구간을 연초가 아니라 그 상수로 바꿨다. `buildFactors` 는
+`fundYear = Y-1` 로 5분위를 가르고 `retYear = Y` 로 수익률을 붙인다. 시총은
+`_buildUniverseMetrics(market, fundYear)` 를 타고 자동으로 Y-1 년 말이 되므로 형성
+시점에 이미 알려진 값이다. 결과 dict 에는 `fundYear`, `retYear`, `returnWindow` 를
+추가해 소비자가 시점 계약을 눈으로 확인할 수 있게 했고 `notes` 에도 실었다. 소비자가
+읽는 `year` 는 팩터 시계열이 덮는 연도라는 뜻이 유지되도록 `retYear` 를 넣었다.
+
+회귀는 `tests/quant/factor/test_factorFormationTiming.py` 3 건을 신설했다. 첫째는
+`buildFactors` 가 펀더멘털을 Y-1 로, 수익률을 Y 로 요청하는지 실제 배선에서 본다.
+둘째는 `_portfolioReturns` 가 가격을 `2025-04-01` 부터 요청하고 `2025-01-01` 이
+아닌지 본다. 셋째는 형성 규약이 형제 IC 경로와 어긋나지 않는지 본다. 세 가드를
+수정 전 코드에 같은 fixture 로 걸어 실제로 깨지는 것을 확인했다. 수정 전은 펀더멘털을
+2025 로 요청했고 `fundYear` 와 `returnWindow` 필드가 아예 없었다.
+
+공개 행동 변화는 실데이터로 측정했다. 같은 KR universe 에서 수정 전후는 다음과 같다.
+
+| 팩터 | 수정 전 연환산 | 수정 전 Sharpe | 수정 후 연환산 | 수정 후 Sharpe |
+|---|---|---|---|---|
+| SMB | -63.82% | -1.943 | -19.24% | -0.748 |
+| HML | +97.45% | 2.827 | +16.78% | 0.902 |
+| RMW | +34.54% | 1.254 | -7.76% | -0.487 |
+| CMA | -32.77% | -1.160 | +14.92% | 0.571 |
+
+RMW 와 CMA 는 부호가 뒤집히고 HML 은 80.7%p 내려간다. Sharpe 절대값은 1.2~2.8 대에서
+0.5~0.9 대로 내려앉는다. 발표되던 FF5 프리미엄이 상당 부분 look-ahead 인공물이었다는
+뜻이다. 수정 후 산출은 `fundYear=2024`, `retYear=2025`,
+`returnWindow=2025-04-01~2025-12-31`, universe 1966, n_obs 138,
+`sizeSource=KRX_MKTCAP`, `isRealFamaFrench=true` 다. n_obs 가 240 대에서 138 로 줄어든
+것은 구간을 9 개월로 좁힌 결과라 의도한 변화다.
+
+Guard 와 회귀는 통과했다. 신규 3 건 포함 `tests/quant` unit `235 passed`, 변경 모듈
+Ruff 와 formatter 통과다.
+
+남은 부채는 넷이다. 첫째, 시총이 형성 시점(4 월) 값이 아니라 Y-1 년 말 값이다. Fama-French
+원전은 size 에 6 월말 ME 를 쓰므로, 형성일 시총으로 올리는 것이 더 정확하다. 형성 시점에
+알려진 값이라 look-ahead 는 아니고 정밀도 항목이다. 둘째, 단년도 한 창만 만들기 때문에
+다년 패널이 없고 n_obs 138 로 통계적 신뢰구간이 넓다. 셋째, `_FACTOR_CACHE` 키가
+`(market, "latest")` 라 연도를 담지 않아 원천이 갱신돼도 같은 프로세스 안에서는 옛 결과가
+남는다. 선재 항목이다. 넷째, 측정 중 `loadData(2024, govPrices)` 가 8,039MB 를 잡아
+2,000MB 한도를 크게 넘긴 것을 관측했다. 소유가 L1 gather 라 이 체크포인트 밖이다.
+
+**판정: L2 팩터 형성 시점 look-ahead 체크포인트 완료.** L2 "남은 것" 목록에서 이 항목과
+"발표된 모든 수치의 의미를 바꾼다" 는 단서를 지운다. 남은 것은 백테스트 샤프의 비용
+미반영, 과적합 확률 상수 1.0, Sortino 하방편차 정의, 스타일 규칙의 전구간 분위수,
+CPCV 이음매 수익률, 실패 fold 를 샤프 0 으로 세는 것, Altman 자동 모드 모델 혼용,
+Beneish 결측 다수 기본값, Track B 유동성 가중 0, 감사의견 키워드 부재 추정이다.
+다음 체크포인트는 백테스트 샤프의 비용 미반영이다. 엔진이 스스로 물린다고 밝힌 비용을
+성과에 반영하지 않는 문제라 같은 "측정 계층을 믿을 수 없다" 계열의 뿌리다.
