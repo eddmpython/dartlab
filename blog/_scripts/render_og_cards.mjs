@@ -11,8 +11,6 @@
 //   manifest = [{ slug, name, line, bg, out }]  (bg = file:// 또는 https:// · out = 출력 JPEG 절대경로)
 //   전부 렌더 성공하면 exit 0. 개별 실패는 stderr 경고 후 계속(그 카드만 산출 없음).
 
-import { fileURLToPath, pathToFileURL } from 'node:url';
-import { dirname, resolve } from 'node:path';
 import { readFileSync } from 'node:fs';
 
 const [manifestPath, avatarPath] = process.argv.slice(2);
@@ -21,13 +19,23 @@ if (!manifestPath || !avatarPath) {
 	process.exit(2);
 }
 
-// playwright-core 는 ui/web 에 있다(리포 상대경로 · 머신 무관). blog/_scripts → ../../ui/web.
-const here = dirname(fileURLToPath(import.meta.url));
-const PW = pathToFileURL(resolve(here, '../../ui/web/node_modules/playwright-core/index.js')).href;
-const pwMod = await import(PW);
-const chromium = pwMod.chromium ?? pwMod.default?.chromium;
+// playwright-core 는 Node 표준 해소로 찾는다. 예전에는 ui/web/node_modules 를 상대경로로
+// 직접 가리켰는데, 그 React 앱이 회수(3b0685fc9)되면서 경로가 통째로 사라져 이 렌더러가
+// 조용히 불능이 됐다. 어디에 설치하든 표준 해소가 찾도록 두고, 없으면 설치 방법을 알린다.
+let chromium;
+try {
+	const pwMod = await import('playwright-core');
+	chromium = pwMod.chromium ?? pwMod.default?.chromium;
+} catch (err) {
+	console.error(
+		'playwright-core 를 찾지 못했습니다. OG 카드 렌더러는 이 의존이 있어야 동작합니다.\n' +
+			'  설치: npm i -D playwright-core (리포 루트 또는 blog/)\n' +
+			`  원인: ${err?.message ?? err}`,
+	);
+	process.exit(3);
+}
 if (!chromium) {
-	console.error('playwright chromium unavailable');
+	console.error('playwright-core 는 있으나 chromium export 가 없습니다. 버전을 확인하세요.');
 	process.exit(3);
 }
 
