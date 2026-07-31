@@ -7,6 +7,9 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
+# 오류 계약은 패키지 공개 표면이고, 내부 심볼 patch 는 소유 모듈(api)에 한다.
+import dartlab.providers.edgar.finance.scanAccount as scanErrors
+
 
 def test_imports():
     try:
@@ -41,7 +44,7 @@ def syntheticScan(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     """filename CIK와 production 분기 규칙을 담은 작은 runtime source를 만든다."""
     import dartlab.core.dataLoader as dataLoader
     import dartlab.core.edgarClient as edgarClient
-    import dartlab.providers.edgar.finance.scanAccount as scanModule
+    import dartlab.providers.edgar.finance.scanAccount.api as scanModule
 
     edgarDir = tmp_path / "edgar"
     edgarDir.mkdir()
@@ -236,7 +239,7 @@ def test_scan_accounts_batch_failure_uses_single_account_fallback(
     calls: list[tuple[str, str]] = []
 
     def failBatch(*_args, **_kwargs):
-        raise syntheticScan.EdgarScanExecutionError(
+        raise scanErrors.EdgarScanExecutionError(
             "duckdb_batch_query",
             "forced batch failure",
         )
@@ -340,7 +343,7 @@ def test_scan_account_duckdb_failure_uses_file_loop(
     """DuckDB import 또는 실행 실패 시 기존 file-loop 결과를 반환한다."""
 
     def failDuckDb(*_args, **_kwargs):
-        raise syntheticScan.EdgarScanExecutionError("duckdb_query", "forced DuckDB failure")
+        raise scanErrors.EdgarScanExecutionError("duckdb_query", "forced DuckDB failure")
 
     monkeypatch.setattr(syntheticScan, "_scanAccountDuckDb", failDuckDb)
     caplog.set_level("WARNING")
@@ -356,7 +359,7 @@ def test_scan_account_duckdb_failure_uses_file_loop(
 
 
 def test_tag_keys_include_ifrs_concepts() -> None:
-    from dartlab.providers.edgar.finance.scanAccount import _buildEdgarTagKeys
+    from dartlab.providers.edgar.finance.scanAccount.taxonomy import _buildEdgarTagKeys
 
     sales = _buildEdgarTagKeys("sales")
     profit = _buildEdgarTagKeys("net_profit")
@@ -375,14 +378,14 @@ def test_listed_corrupt_shard_raises_with_duckdb_and_file_provenance(
     damaged = edgarDir / "0000000002.parquet"
     damaged.write_bytes(b"listed corrupt parquet")
 
-    with pytest.raises(syntheticScan.EdgarScanExecutionError) as excInfo:
+    with pytest.raises(scanErrors.EdgarScanExecutionError) as excInfo:
         syntheticScan.scanAccount("sales", freq="Q")
 
     error = excInfo.value
     assert error.stage == "fallback"
-    assert isinstance(error.primaryError, syntheticScan.EdgarScanExecutionError)
+    assert isinstance(error.primaryError, scanErrors.EdgarScanExecutionError)
     assert error.primaryError.stage == "duckdb_query"
-    assert isinstance(error.__cause__, syntheticScan.EdgarScanStorageError)
+    assert isinstance(error.__cause__, scanErrors.EdgarScanStorageError)
     assert error.__cause__.source == str(damaged)
 
 
@@ -394,7 +397,7 @@ def test_ticker_mapping_failure_is_not_empty_data(syntheticScan, monkeypatch: py
 
     monkeypatch.setattr(edgarClient, "loadTickers", _failTickerLoad)
 
-    with pytest.raises(syntheticScan.EdgarScanMappingError, match="ticker universe load failed") as excInfo:
+    with pytest.raises(scanErrors.EdgarScanMappingError, match="ticker universe load failed") as excInfo:
         syntheticScan.scanAccount("sales", freq="Y")
 
     assert isinstance(excInfo.value.__cause__, OSError)
@@ -403,7 +406,7 @@ def test_ticker_mapping_failure_is_not_empty_data(syntheticScan, monkeypatch: py
 def test_no_local_shards_is_normal_empty_data(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     import dartlab.core.dataLoader as dataLoader
     import dartlab.core.edgarClient as edgarClient
-    import dartlab.providers.edgar.finance.scanAccount as scanModule
+    import dartlab.providers.edgar.finance.scanAccount.api as scanModule
 
     monkeypatch.setattr(dataLoader, "_dataDir", lambda _name: tmp_path)
     monkeypatch.setattr(edgarClient, "loadTickers", lambda: pytest.fail("empty source must not load ticker universe"))
@@ -416,7 +419,7 @@ def test_no_local_shards_is_normal_empty_data(tmp_path: Path, monkeypatch: pytes
 def test_ifrs_instant_account_uses_fy_as_q4(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     import dartlab.core.dataLoader as dataLoader
     import dartlab.core.edgarClient as edgarClient
-    import dartlab.providers.edgar.finance.scanAccount as scanModule
+    import dartlab.providers.edgar.finance.scanAccount.api as scanModule
 
     edgarDir = tmp_path / "edgar"
     edgarDir.mkdir()

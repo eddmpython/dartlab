@@ -2216,3 +2216,52 @@ axis 하나는 이 판정의 증거일 뿐 별도 완료 단위가 아니다.
    `providers/` 크기·docstring 부채는 소유 레이어인 L1 이 이미 기록한 항목이라 이 판정을
    막지 않는다. 따라서 **L1.5 scan/frame/synth/reference 를 완료 판정하고 L2
    analysis/macro/quant/industry/credit 로 이동한다.**
+
+### L1 재개방 체크포인트: EDGAR scanAccount 분할 (2026-07-31)
+
+범위는 `providers/edgar/finance/scanAccount.py` 1,272 LoC 단일 모듈과 실제 호출자
+(`scan/router.py` 의 US account·ratio dispatch, `scan/builders/edgar/helpers.py` 의
+batch 계정 수집)다. L1.5 마감 뒤 CI 를 끝까지 확인하는 과정에서 드러났고, 소유가
+L1 providers 라 원장의 재개방 패턴(L1 panel 체크포인트와 같은 방식)으로 닫는다.
+
+제품 결함은 구조 규칙 위반이고 게이트 두 곳이 동시에 막혀 있었다. folderSize 룰 3 의
+임계는 800 LoC 인데 이 파일은 1,272 였고 baseline 에도 없었다. LoC 변천을 실측하니
+`1537cea4f` 780 -> `bb7f06aa8` 1,272 로, 직전 세션의 EDGAR 계정 batch 작업이 임계를
+넘기며 분할도 baseline 갱신도 하지 않은 회귀였다. 이 하나가 lint 게이트의 folderSize
+와 architecture-l0-l15 의 providerGate 룰 3 을 함께 실패시켜, CI 가 오래 빨간 마지막
+이유였다. baseline 등재로 통과시키는 길은 택하지 않았다. 레포 규약이 baseline 을
+줄어드는 방향으로만 갱신하기 때문이고, 회귀를 부채로 세탁하는 것이기 때문이다.
+
+근본 원인은 한 모듈이 SQL, 오류 계약, 이름 해소, 실행, 공개 호출 다섯 책임을 함께
+들고 있었다는 것이다. 감사가 지시한 대로 책임별 소유자를 갈랐다.
+
+수정은 코드를 바꾸지 않고 옮기는 분할이다. `scanAccount/` 패키지로 `sql`(274) ·
+`types`(73) · `taxonomy`(154+) · `pipeline`(483) · `api`(365) 를 두고 `__init__` 은
+공개 계약(`scanAccount`·`scanAccounts`·`scanRatio` + 오류 4종)만 재수출하는 thin
+모듈로 뒀다. 모듈 경로 `dartlab.providers.edgar.finance.scanAccount` 는 그대로라
+호출자와 monkeypatch 경로가 깨지지 않는다. 다만 내부 심볼을 패키지 루트에서 patch
+하던 기존 테스트는 소유 모듈(`api`)을 가리키게 고쳤다. 재수출로 import 만 통과시키면
+patch 가 실제로는 먹지 않아 거짓 통과가 되기 때문이다. 룰 7 이 요구하는 미러 5개를
+baseline 갱신이 아니라 실제 테스트로 채웠다(신규 33 건). 분할로 경로가 바뀌며 baseline
+키가 어긋난 `prioritized()` 는 경로만 옮기지 않고 4 섹션 docstring 을 실제로 채웠다.
+
+공개 행동 동등성은 분할 전 실측을 baseline 으로 잡아 대조했다. 공개 3 함수의 시그니처가
+문자열 단위로 같고, 오류 4 종의 MRO 가 같다. 옮긴 순수 함수도 같은 출력을 낸다:
+`_buildEdgarTagKeys("sales")` 의 usGaap 109 개 · ifrsFull 6 개 · common 5 개가 분할 전과
+일치하고 tagKeys digest 는 `a887d7d38f483b44` 다. 패키지 top-level 노출은 42 개에서
+13 개(공개 7 + 서브모듈 5 + annotations)로 좁아졌는데, 줄어든 29 개는 전부 소유 모듈로
+옮겨간 private 이다.
+
+Guard와 회귀는 전부 통과했다. 신규 미러 `33 passed`, 기존 scanAccount 회귀와 scan
+helper `20 passed`(분할 전과 같은 수), EDGAR·scan 집중 회귀 `858 passed`. 변경 패키지
+Pyright `0 errors, 0 warnings`, Ruff·formatter 통과, folderSize 는 baseline 안 통과로
+under_split 48 -> 47, stale_references 잔존 0, silentSubstitute 신규 0 이다.
+**providerGate 는 11/11 로 처음 전부 통과했고, 공식 Guard
+`strict --scope l0-l15 --providers dart,edgar` 가 `status: pass`(7/7 규칙, 외부 게이트
+cycleScan·architecturePytest·folderMirror·gatherGate·providerGate·publicApiSmoke 6/6)
+로 돌아섰다.** 이 세션에서 Guard 가 pass 로 찍힌 것은 처음이다.
+
+남은 부채는 다음과 같다. folderSize 의 over_split 20 · under_split 47 은 baseline 안의
+기존 부채로 이번 분할이 늘리지 않았다. Guard known debt 47 건(active 9 + 보호된 Company
+facade 38)도 그대로다. `api.py` 365 LoC 와 `pipeline.py` 483 LoC 는 임계 800 아래라
+추가 분할 대상이 아니다.
