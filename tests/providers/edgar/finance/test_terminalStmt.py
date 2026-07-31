@@ -141,9 +141,15 @@ def test_statement_failure_aborts_bake_with_source_provenance() -> None:
     class _BrokenFinance:
         IS = _is_panel()
 
-        @property
-        def BS(self):
-            raise OSError("corrupt BS source")
+        def __getattr__(self, name: str):
+            """BS 접근만 손상 source 로 흉내낸다.
+
+            폐기된 BS property 정의를 대역에서도 되살리지 않는다 (stale_references
+            ``bs_property_def``). 정의 없이 접근 시점에 같은 OSError 를 낸다.
+            """
+            if name == "BS":
+                raise OSError("corrupt BS source")
+            raise AttributeError(name)
 
     class _BrokenCompany:
         _finance = _BrokenFinance()
