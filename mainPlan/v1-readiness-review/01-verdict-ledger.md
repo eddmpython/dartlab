@@ -59,12 +59,13 @@ Guard는 현재 레이어의 source를 동결한 뒤 한 번 실행한다. Guard
   데이터 계약·오류 투명성·SSOT·속도·메모리 기준으로 전수 대조한다. 네 형제 간
   cross import 없이 결함 수정과 집중 회귀를 끝내고 source 동결 뒤 공식 Guard, 원장,
   커밋, push까지 닫는다.
-- 최근 완료한 체크포인트: **L1.5 universe 공개 계약** (2026-07-31). scanClass facade가
-  발행된 `universe` 계약을 미구현해 raw TypeError를 내던 것을 entity-set(시장·종목)
-  선택자로 정직하게 구현하고 spec을 정합시켰다.
-- 다음 첫 행동: scan network·US audit·EDGAR prebuild·universe 체크포인트가 모두
-  닫혔으므로 **L1.5 dispatcher** 체크포인트를 같은 방식으로 연다. 이어 KR report
-  structure, 그다음 frame, synth, reference 순서로 계속한다.
+- 최근 완료한 체크포인트: **L1.5 dispatcher 시장 분기** (2026-07-31). US audit 축이
+  형제 US 축과 다른 identity(CIK vs ticker)와 universe(전 parquet vs 상장 source)를
+  쓰던 것을 상장 source + ticker SSOT로 정합하고, edgarScan 미구현 축을 loud 예외로
+  돌렸다. 직전 universe 체크포인트(facade universe= 계약)도 완료.
+- 다음 첫 행동: scan network·US audit·EDGAR prebuild·universe·dispatcher 체크포인트가
+  닫혔으므로 **L1.5 KR report 구조** 체크포인트를 같은 방식으로 연다. 그다음 frame,
+  synth, reference 순서로 계속한다.
 - 금지: axis나 파일 하나만 끝내고 완료 보고, L2 이상 수정 선행,
   중간 source에서 공식 Guard 반복
 
@@ -1892,3 +1893,53 @@ KR report 체크포인트에서 이어서 본다. 흡수된 sub-spec 예제의 `
 kwarg 표기와 scan 축 수 문서 표기(22 vs 27)는 이번 universe 계약 밖의 별도 문서
 정합 부채다. 공식 Guard는 L1.5 형제 전체 동결 뒤 한 번 실행하는 순서를 유지한다.
 다음 체크포인트는 L1.5 dispatcher다.
+
+### L1.5 dispatcher 시장 분기 체크포인트: 완료 (2026-07-31)
+
+범위는 scan 공개 facade의 KR/US 시장 dispatch(`scan/router.py::_edgarDispatch`,
+`scan/builders/edgar/scan.py::edgarScan`, `scan/builders/edgar/helpers.py`)와 그
+실제 호출자(dartlab.scan market="US", Company.scan)다. `_EDGAR_UNIVERSE_AXES`(13)와
+`edgarScan._DISPATCH`(XBRL 11 + account/ratio 별도)의 1:1 주장은 실호출로 검증한
+결과 정확히 맞아 그 부분은 결함이 아니었다.
+
+제품 결함은 US 시장 안 축 간 identity 분열이었다. 형제 US 축(profitability/growth/...)
+은 `scanAccount` 경유로 `stockCode=대표 ticker`와 상장 universe(`cikToTicker.values()`)를
+쓰는데, audit 축만 `scanEdgarRawTags`가 `edgarDir.glob("*.parquet")`로 finance
+디렉터리를 전부 훑고 raw 10자리 CIK를 stockCode로 emit했다. 실데이터에서 전자는
+5,662 상장 source, 후자는 17,367 전 parquet(비상장·미매핑 11,705 포함)로 대상이
+달랐고, 종목 식별자가 CIK와 ticker로 갈려 audit 결과는 다른 US 축과 stockCode로
+join되지 않았고 universe stockCodes(ticker) 필터에도 걸리지 않았다. 또 `edgarScan`은
+`_DISPATCH`에 없는 축을 값처럼 보이는 `{"info": [...]}` 1행 DataFrame으로 돌려주며
+docstring에 그것을 "silent fail 회피"라고 잘못 적어, 미구현을 성공한 결과처럼 위장했다.
+
+근본 원인은 US 축의 상장 universe와 ticker 정체성 SSOT(`edgarCikToTicker`,
+`edgarListedFinanceSources`)를 audit 경로가 우회한 것과, 미구현 dispatch를 예외가
+아니라 데이터 모양으로 표현한 것이다. audit도 형제와 같은 identity SSOT를 쓰게 하고,
+미구현 dispatch는 loud 예외로 돌리는 것으로 경계를 확정했다.
+
+수정은 두 곳이다. `scanEdgarRawTags`가 전 parquet glob 대신 `edgarCikToTicker` +
+`edgarListedFinanceSources`로 상장 source만 순회하고 `stockCode=대표 ticker`를
+emit한다. `edgarScan`은 미구현 축에 대해 info DataFrame 대신
+`ValueError(가용 축 목록 포함)`를 던지고 docstring의 Returns·Raises·Capabilities·
+Guide·How를 실제 동작에 맞췄다. `tests/scan/test_dispatcherContract.py`에 회귀 3건
+(미구현 축 loud 거부, 구현 축 정상 dispatch, 합성 parquet 기반 ticker identity +
+상장 universe 필터)을 추가했다.
+
+공개 행동·정확성·속도·메모리는 실데이터로 확정했다. audit 스캔 대상이 전 parquet
+17,367에서 상장 source 5,662로 좁아졌고(비상장·미매핑 11,705 제외) 해소는 0.107초다.
+이 5,662는 앞선 US coverage audit 체크포인트의 unique source 5,662와 정확히 일치해
+audit 축이 EDGAR 상장 source SSOT에 정합됐음을 보인다. identity 표본은
+CIK 0000001750 -> ticker "AIR", 0000001800 -> "ABT", 0000002098 -> "ACU"로
+raw CIK가 아니라 형제 축과 같은 대표 ticker다. 합성 parquet 회귀에서 값 보존과
+비상장 제외를 함께 확인했다.
+
+Guard와 회귀는 변경 파일 범위에서 전부 통과했다. dispatcher 회귀와 기존 edgar scan
+helper 회귀 `6 passed`, `helpers.py`·`scan.py` Ruff·formatter·compileall·Pyright
+`0 errors, 0 warnings`, `silentSubstitute --strict` 신규 위반 0(scanEdgarRawTags의
+per-file skip은 기존 baseline 내)이다.
+
+남은 부채는 다음 순서로 넘긴다. audit 축의 반환 스키마(AuditFees 등)는 여전히 KR audit
+(opinion/auditor)과 달라 cross-market union 스키마 통일은 별도 사안이다. US valuation
+축도 grade 없이 KR valuation과 컬럼이 달라 같은 스키마 부채를 공유한다. 전 상장 audit
+스캔의 전수 실측은 다른 US 전수 경로와 같은 heaviness라 상장 source 축소 실측으로
+갈음했다. 다음 체크포인트는 L1.5 KR report 구조다.

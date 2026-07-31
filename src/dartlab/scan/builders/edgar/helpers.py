@@ -356,9 +356,9 @@ def scanEdgarRawTags(tags: list[str], *, annual: bool = True) -> pl.DataFrame:
     Returns
     -------
     pl.DataFrame
-        stockCode : str — CIK
-        corpName : str — 회사명
-        {tag} : float — 각 태그의 최신 연도 값 (USD)
+        stockCode : str, 대표 ticker (형제 US scan 축과 동일 정체성)
+        corpName : str, 회사명
+        {tag} : float, 각 태그의 최신 연도 값 (USD)
 
     Raises
     ------
@@ -405,9 +405,14 @@ def scanEdgarRawTags(tags: list[str], *, annual: bool = True) -> pl.DataFrame:
     if not edgarDir.exists():
         return pl.DataFrame()
 
+    # 형제 US scan 축과 같은 상장 universe와 ticker 정체성을 쓴다. 예전에는 finance
+    # 디렉터리를 전부 glob 하고 raw CIK를 stockCode로 emit해, audit 축만 비상장을
+    # 포함하고 다른 US 축과 stockCode(ticker)로 join되지 않았다.
+    cikToTicker = edgarCikToTicker()
+    sources = edgarListedFinanceSources(edgarDir, cikToTicker)
+
     records = []
-    for fp in edgarDir.glob("*.parquet"):
-        cik = fp.stem
+    for fp, _cik, ticker in sources:
         try:
             df = (
                 pl.scan_parquet(fp)
@@ -424,7 +429,7 @@ def scanEdgarRawTags(tags: list[str], *, annual: bool = True) -> pl.DataFrame:
             latest = df.filter(pl.col("fy") == latestFy)
 
             record = {
-                "stockCode": cik,
+                "stockCode": ticker,
                 "corpName": latest["entityName"][0] if latest.height > 0 else "",
             }
             for tag in tags:

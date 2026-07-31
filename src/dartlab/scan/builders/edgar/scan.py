@@ -33,10 +33,12 @@ def edgarScan(axis: str, **kwargs) -> pl.DataFrame:
     Returns
     -------
     pl.DataFrame
-        축별 전종목 스캔 결과. 미구현 축이면 info 컬럼 1행 DataFrame.
+        축별 전종목 스캔 결과 DataFrame.
 
     Raises
     ------
+    ValueError
+        ``_DISPATCH`` 에 없는 미구현 축을 요청했을 때.
     KeyError
         하위 헬퍼 (scanEdgarAccounts) 가 발생시키는 예외 전파.
 
@@ -50,7 +52,7 @@ def edgarScan(axis: str, **kwargs) -> pl.DataFrame:
         - 11 axis (profitability/growth/quality/liquidity/efficiency/cashflow/dividendTrend/
           capital/debt/valuation/audit) 디스패치. 각 축 함수는 ``scanEdgarAccounts`` 로 종목별
           계정 단면 추출 후 ``safeDiv``/``pct``/등급 분기.
-        - 미구현 axis 는 info 컬럼 1 행 DataFrame fallback (silent fail 회피).
+        - 미구현 axis 는 값처럼 보이는 DataFrame 을 만들지 않고 ValueError 로 거부한다.
 
     AIContext:
         ``dartlab.scan.router._edgarDispatch`` 의 호출 진입점. AI agent 가
@@ -60,13 +62,13 @@ def edgarScan(axis: str, **kwargs) -> pl.DataFrame:
 
     Guide:
         - axis 이름은 DART 와 동일 — 'profitability', 'growth' 등 11 축 SSOT.
-        - 미구현 축은 fallback dict — production 사용 전 ``_DISPATCH`` 키 확인 권장.
+        - 미구현 축은 ValueError. production 사용 전 ``_DISPATCH`` 키 확인 권장.
 
     When:
         scan router 가 market="us" 분기 시. DART scan 과 같은 정공법으로 동일 사용 패턴.
 
     How:
-        ``_DISPATCH.get(axis)`` → 미존재 시 info fallback → 존재 시 ``fn(**kwargs)`` 호출.
+        ``_DISPATCH.get(axis)`` 로 조회해 미존재면 ValueError, 존재하면 ``fn(**kwargs)`` 호출.
         각 ``_scan*`` 함수 내부는 동일 패턴: scanEdgarAccounts → 비율 계산 → 등급 분기 → sort.
 
     Requires:
@@ -80,7 +82,8 @@ def edgarScan(axis: str, **kwargs) -> pl.DataFrame:
     """
     fn = _DISPATCH.get(axis)
     if fn is None:
-        return pl.DataFrame({"info": [f"EDGAR scan '{axis}' 미구현"]})
+        available = ", ".join(sorted(_DISPATCH))
+        raise ValueError(f"EDGAR scan 축 '{axis}'은(는) 구현되지 않았습니다. 가용: {available}")
     return fn(**kwargs)
 
 
