@@ -60,6 +60,27 @@ _KR_PARTICLES = re.compile(
 )
 
 
+def _listedUsTickers() -> frozenset[str]:
+    """US 상장 ticker 집합을 로컬 snapshot 에서 한 번만 읽어 캐시한다.
+
+    자연어에서 뽑은 대문자 토큰을 ticker 라고 주장하기 전에 실재를 확인하는 용도다.
+    해소 경로는 네트워크를 켜지 않으므로 로컬 snapshot 이 없으면 빈 집합을 돌려주고,
+    호출자는 ticker 주장을 포기한다 (없는 근거로 회사를 확정하지 않는다).
+    """
+    cached = getattr(_listedUsTickers, "_cache", None)
+    if cached is not None:
+        return cached
+    try:
+        from dartlab.core.dataLoader import loadEdgarTargetUniverse
+
+        frame = loadEdgarTargetUniverse("all", localOnly=True)
+        tickers = frozenset(frame["ticker"].cast(str).str.to_uppercase().to_list())
+    except _RESOLVE_ERRORS:
+        tickers = frozenset()
+    _listedUsTickers._cache = tickers  # type: ignore[attr-defined]
+    return tickers
+
+
 def stripParticles(text: str) -> str:
     """한국어 조사를 제거한다. 예: '하이닉스의' → '하이닉스'."""
     return _KR_PARTICLES.sub("", text)
@@ -248,9 +269,12 @@ def resolveStockCodeFromText(text: str) -> tuple[str | None, str]:
     if code_match:
         return code_match.group(1), code_match.group(2).strip()
 
-    # 2) US ticker 패턴 (대문자 1~5글자 + 공백 + 나머지)
+    # 2) US ticker 패턴 (대문자 1~5글자 + 공백 + 나머지).
+    # 실재하는 상장 ticker 일 때만 회사로 확정한다. 예전에는 검증 없이 아무 대문자
+    # 토큰이나 ticker 로 주장해 "ROE 계산법", "DCF 설명해줘", "SK 하이닉스 실적",
+    # "LG 화학 주가" 가 엉뚱한 회사 질의로 바뀌었다.
     ticker_match = re.match(r"^([A-Z]{1,5})\s+(.+)$", text)
-    if ticker_match:
+    if ticker_match and ticker_match.group(1) in _listedUsTickers():
         return ticker_match.group(1), ticker_match.group(2).strip()
 
     # 3) 약칭/회사명 (단어 조합, 긴 것 우선) — alias 우선, 매칭 1 개면 채택
@@ -261,13 +285,18 @@ def resolveStockCodeFromText(text: str) -> tuple[str | None, str]:
             remaining_parts = words[:i] + words[i + length :]
             remaining = " ".join(remaining_parts).strip()
 
+            # 상장명은 공백이 없고("SK하이닉스") 사용자는 공백을 넣어 친다("SK 하이닉스").
+            # 공백 제거 변형을 함께 시도하지 않으면 긴 후보가 통째로 실패하고, 뒤에서
+            # 짧은 첫 단어("SK")가 다른 회사로 먼저 잡힌다.
+            compact = candidate.replace(" ", "")
             stripped = stripParticles(candidate)
-            for term in dict.fromkeys([stripped, candidate]):
+            terms = dict.fromkeys(t for t in (stripped, candidate, stripParticles(compact), compact) if t)
+            for term in terms:
                 alias = COMMON_ALIASES.get(term)
                 if alias:
                     return alias, remaining if remaining else candidate
 
-            for term in dict.fromkeys([stripped, candidate]):
+            for term in terms:
                 candidates = collectCandidates(term, strict=True)
                 if candidates:
                     break

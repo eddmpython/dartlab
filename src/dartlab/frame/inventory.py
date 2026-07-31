@@ -116,7 +116,13 @@ def reportInventory(code: str, *, marketNs: str = "kr", board: Any = None) -> di
         - core.extractionCatalog(의미 태깅), providers.dart.panel(정규화 열거 원천).
     """
     units: list[dict] = []
-    empty = {"code": code, "units": units, "summary": {"total": 0, "byKind": {}}}
+    # 성공 경로와 같은 summary 키를 낸다. 예전에는 빈 경로만 cataloguedUnits·
+    # rawOnlyUnits 를 빠뜨려 소비자가 두 shape 를 따로 다뤄야 했다.
+    empty = {
+        "code": code,
+        "units": units,
+        "summary": {"total": 0, "byKind": {}, "cataloguedUnits": 0, "rawOnlyUnits": 0},
+    }
     if board is None:
         board = _loadBoard(code, marketNs)
     if board is None or getattr(board, "height", 0) == 0 or "disclosureKey" not in board.columns:
@@ -151,7 +157,12 @@ def reportInventory(code: str, *, marketNs: str = "kr", board: Any = None) -> di
 
 
 def _loadBoard(code: str, marketNs: str):
-    """Panel wide(정규화 뷰) 1회 로드. 부재/실패 시 None."""
+    """Panel wide(정규화 뷰) 1회 로드. 자료 부재는 None, 자원 실패는 전파.
+
+    ``MemoryError`` 를 삼키면 OOM 이 "이 회사는 단위가 0개"라는 사실 주장으로 바뀐다.
+    호출자(``simulate.profile``)가 실패를 잡으려고 둔 예외 분기도 도달하지 못했다.
+    자료가 실제로 없는 경우만 None 이고, 자원·환경 실패는 그대로 올린다.
+    """
     try:
         if marketNs == "us":
             from dartlab.providers.edgar.panel import Panel
@@ -159,7 +170,7 @@ def _loadBoard(code: str, marketNs: str):
             from dartlab.providers.dart.panel import Panel
 
         board = Panel(code, marketNs=marketNs)
-    except (FileNotFoundError, OSError, ValueError, MemoryError):
+    except (FileNotFoundError, ValueError):
         return None
     return board
 
