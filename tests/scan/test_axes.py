@@ -63,7 +63,9 @@ def test_debt_imports():
     assert classifyRisk(5, 30) == "안전"
     assert classifyRisk(2, 30) == "관찰"
     assert classifyRisk(None, 60) == "주의"
-    assert classifyRisk(None, 30) == "관찰"
+    # ICR 결측이고 단기 리파이낸싱 상향 신호도 없으면 판정하지 않는다. 예전에는 이 자리에서
+    # "관찰" 을 냈는데, 그것은 측정하지 못한 것을 등급으로 바꿔 내보내는 조작이었다.
+    assert classifyRisk(None, 30) == "자료부족"
 
 
 def test_helpers_parse_num():

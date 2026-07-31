@@ -2550,3 +2550,17 @@ CI 에만 밀어 넣는 것은 이 원장이 요구하는 완료 정의에 맞�
 같은 job 의 `TestAiProfile::test_post_ai_profile_secret_updates_shared_secret` 는 로컬
 단독 실행에서 통과한다. CI 에서만 깨지므로 공유 상태나 실행 순서 의존이 의심되고, 원인을
 특정하기 전에는 닫힌 것으로 세지 않는다.
+
+셋째 실패는 이 원장 작업이 만든 회귀다. 처음에는 직전 커밋에도 같은 실패가 있다는 이유로
+선재로 기록했는데, 비교 기준으로 잡은 커밋이 이미 이 세션의 L1.5 변경을 포함하고 있었다.
+비교 대상을 잘못 골랐다. `tests/scan/test_axes.py::test_debt_imports` 가
+`classifyRisk(None, 30) == "관찰"` 을 단언하는데, 이는 `61fde4d96` 이 닫은 결함 그 자체다.
+ICR 이 결측이고 단기 리파이낸싱 상향 신호도 없는데 "관찰" 등급을 내던 것을 `자료부족` 으로
+바꾼 것이 그 체크포인트의 수정이었고, 프로덕션만 고치고 이 단언을 함께 옮기지 않았다.
+테스트를 새 계약으로 옮기고 왜 그런지 주석을 달았다. `tests/scan/test_axes.py` 는 `7 passed`
+다. 이 회귀를 여태 못 본 구조적 이유는 `test-full` 이 marker 없이 `tests/` 전체를 돌리는데
+push 전 `preflight` 는 `test-fast` 의 `-m unit` 만 돌린다는 것이다. 이 단언은 unit 이
+아니어서 preflight 를 그대로 통과했다. 앞으로 이 원장 작업에서 공개 판정 문자열을 바꿀
+때는 marker 없이 해당 엔진 테스트 디렉터리를 함께 돌린다. 이번에 그 방식으로
+scan, frame, synth, reference 를 다시 훑어 `634 passed` 로 다른 잔여 단언이 없음을
+확인했다.
