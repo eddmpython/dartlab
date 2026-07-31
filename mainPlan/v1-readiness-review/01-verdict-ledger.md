@@ -59,13 +59,13 @@ Guard는 현재 레이어의 source를 동결한 뒤 한 번 실행한다. Guard
   데이터 계약·오류 투명성·SSOT·속도·메모리 기준으로 전수 대조한다. 네 형제 간
   cross import 없이 결함 수정과 집중 회귀를 끝내고 source 동결 뒤 공식 Guard, 원장,
   커밋, push까지 닫는다.
-- 최근 완료한 체크포인트: **L1.5 dispatcher 시장 분기** (2026-07-31). US audit 축이
+- 최근 완료한 체크포인트: **L1.5 KR report 축 판정 정직성** (2026-07-31). audit·debt이 자료 부재를 "관찰" 판정으로 날조하던 것을 형제 축과 같은 "자료부족" gap 라벨로 통일. 직전 dispatcher 체크포인트: US audit 축이
   형제 US 축과 다른 identity(CIK vs ticker)와 universe(전 parquet vs 상장 source)를
   쓰던 것을 상장 source + ticker SSOT로 정합하고, edgarScan 미구현 축을 loud 예외로
   돌렸다. 직전 universe 체크포인트(facade universe= 계약)도 완료.
-- 다음 첫 행동: scan network·US audit·EDGAR prebuild·universe·dispatcher 체크포인트가
-  닫혔으므로 **L1.5 KR report 구조** 체크포인트를 같은 방식으로 연다. 그다음 frame,
-  synth, reference 순서로 계속한다.
+- 다음 첫 행동: scan 쪽 체크포인트(network·US audit·EDGAR prebuild·universe·
+  dispatcher·KR report 판정)가 모두 닫혔으므로 **L1.5 frame** 체크포인트를 같은
+  방식으로 연다. 그다음 synth, reference 순서로 계속한다.
 - 금지: axis나 파일 하나만 끝내고 완료 보고, L2 이상 수정 선행,
   중간 source에서 공식 Guard 반복
 
@@ -1943,3 +1943,51 @@ per-file skip은 기존 baseline 내)이다.
 축도 grade 없이 KR valuation과 컬럼이 달라 같은 스키마 부채를 공유한다. 전 상장 audit
 스캔의 전수 실측은 다른 US 전수 경로와 같은 heaviness라 상장 source 축소 실측으로
 갈음했다. 다음 체크포인트는 L1.5 KR report 구조다.
+
+### L1.5 KR report 축 판정 정직성 체크포인트: 완료 (2026-07-31)
+
+범위는 report 기반 KR scan 6축(governance·workforce·capital·debt·audit·insider)과
+그 판정 산출부(`scan/audit.py`, `scan/debt/risk.py`, `scan/debt/__init__.py`),
+prebuild 소유자(`scan/builders/kr/report/build.py`)다. 빌더는 카탈로그 구동
+apiType 24종 도출과 배치 merge가 이미 정갈해 결함이 아니었고, 결함은 등급 산출부에
+있었다. 6축 전수를 실데이터로 호출해 governance 2,872행, workforce 2,781,
+capital 2,942, debt 2,832, audit 2,932, insider 2,608을 먼저 확인했다.
+
+제품 결함은 자료 부재가 실질 리스크 판정으로 둔갑하는 것이었고 두 축에서 재현했다.
+audit은 감사의견이 결측인 23종목 전부에 위험등급 "관찰"을 줬다. 원인은
+`_OPINION_RISK.get(opinion, 1) if opinion else 1`로, 의견 부재와 표준 범주 밖
+문자열이 모두 위험점수 1을 받는 것이다. 실데이터에는 `(*2)`, `주1)`, `(주1)` 같은
+각주 마커가 감사의견으로 들어온 3종목이 있어 이들도 같은 경로로 "관찰"이 됐다.
+debt은 `classifyRisk`가 ICR 결측일 때 상향 신호가 하나도 없어도 "관찰"을 반환해,
+아무 자료가 없는 종목이 리스크 판정을 받았다. 형제 축 insider는 같은 상황에서
+최대주주지분 결측 242종목에 정직하게 "미확인"을 주고, cashflow·growth는 "자료부족"을
+쓴다. 즉 정직 gap 라벨이 이미 scan의 확립된 관례이고 audit·debt만 이탈해 있었다.
+
+근본 원인은 등급의 몸통이 되는 입력(감사의견·ICR)이 없을 때도 합성 점수를 만들어
+4단계 판정 격자에 밀어 넣은 것이다. 판정 가능 여부를 먼저 가르고, 불가하면 형제 축과
+같은 정직 gap 라벨을 내는 것으로 정책을 통일했다.
+
+수정은 두 곳이다. audit은 `_OPINION_RISK.get(opinion)`이 None이면 종합 점수를
+만들지 않고 "자료부족"을 낸다. debt `classifyRisk`는 ICR 결측일 때 관측된 단기
+리파이낸싱 사실(단기비중 50% 이상 또는 단기채무 존재)로만 "주의"로 상향하고, 그 신호도
+없으면 "자료부족"을 낸다. 두 docstring의 반환 계약도 실제 동작에 맞췄다.
+`tests/scan/test_reportGradeHonesty.py`에 회귀 11건을 추가했고, audit 쪽은 등급 규칙을
+테스트에 복제하지 않고 합성 source를 monkeypatch해 실제 `scanAudit`을 호출한다.
+
+공개 행동·정확성 실측은 수정 전후 전종목 분포로 확정했다. audit은 "관찰" 955에서
+930, "주의" 4에서 3으로 줄고 "자료부족" 26이 생겼다. 26은 의견 결측 23과 각주 마커 3의
+합과 정확히 일치한다. debt은 "관찰" 369에서 359로 줄고 "자료부족" 10이 생겼다.
+ICR 결측 63종목의 최종 내역은 부채 자료 자체가 없어 null인 44, 판정 불가 "자료부족" 10,
+관측된 단기채무로 정당하게 상향된 "주의" 9다. 정상 등급 경로의 분포(안전 1,911·
+고위험 62, debt 주의 1,504·안전 736·고위험 179)는 그대로다. 축 실행 시간은 debt
+6.48초, audit 6.21초로 변화가 없고 새 적재나 캐시도 없다.
+
+Guard와 회귀는 변경 파일 범위에서 전부 통과했다. 신규 회귀 `11 passed`, 변경 3개
+소스의 Ruff·formatter·compileall·Pyright `0 errors, 0 warnings`,
+`silentSubstitute --strict` 신규 위반 각각 0이다.
+
+남은 부채는 다음 순서로 넘긴다. `_normalizeOpinion`이 표준 범주 밖 문자열을 원본 그대로
+돌려주는 것은 문서화된 동작이라 유지했고(사용자가 원본을 보는 편이 정직하다), 각주 마커가
+감사의견 컬럼에 들어오는 것 자체는 report 원천 파싱 소유자의 부채로 남긴다.
+`report/fields.py` 1,369줄의 분할과 governance 등급 산출의 결측 정책은 이번 판정
+정직성 범위 밖이다. 다음 체크포인트는 L1.5 frame이다.

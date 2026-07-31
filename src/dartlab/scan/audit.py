@@ -99,7 +99,8 @@ def scanAudit(*, verbose: bool = True) -> pl.DataFrame:
         auditor : str — 감사인명
         auditorChanged : bool — 직전 연도 대비 감사인 변경 여부
         hasSpecialMatter : bool — 감사보고서 특기사항 존재 여부
-        riskLevel : str — 종합 리스크 등급 (안전/관찰/주의/고위험)
+        riskLevel : str, 종합 리스크 등급 (안전/관찰/주의/고위험).
+            감사의견을 읽지 못한 종목은 판정 대신 ``"자료부족"``.
 
     Raises
     ------
@@ -207,22 +208,28 @@ def scanAudit(*, verbose: bool = True) -> pl.DataFrame:
             specialMatter and str(specialMatter).strip() not in ("", "-", "해당사항없음", "해당없음", "해당사항 없음")
         )
 
-        # 종합 리스크 레벨
-        opinionRisk = _OPINION_RISK.get(opinion, 1) if opinion else 1
-        riskScore = opinionRisk
-        if auditorChanged:
-            riskScore += 1
-        if hasSpecialMatter:
-            riskScore += 1
-
-        if riskScore >= 3:
-            riskLevel = "고위험"
-        elif riskScore >= 2:
-            riskLevel = "주의"
-        elif riskScore >= 1:
-            riskLevel = "관찰"
+        # 종합 리스크 레벨. 감사의견을 읽지 못하면 종합 판정을 만들지 않는다.
+        # 예전에는 의견 부재와 표준 범주 밖 문자열(각주 마커 등)이 모두 위험점수 1을
+        # 받아 "관찰"이라는 실질 판정으로 나갔다. 자료 부재는 판정이 아니므로 형제 축
+        # (insider·cashflow·growth)과 같은 정직 gap 라벨로 남긴다.
+        opinionRisk = _OPINION_RISK.get(opinion) if opinion else None
+        if opinionRisk is None:
+            riskLevel = "자료부족"
         else:
-            riskLevel = "안전"
+            riskScore = opinionRisk
+            if auditorChanged:
+                riskScore += 1
+            if hasSpecialMatter:
+                riskScore += 1
+
+            if riskScore >= 3:
+                riskLevel = "고위험"
+            elif riskScore >= 2:
+                riskLevel = "주의"
+            elif riskScore >= 1:
+                riskLevel = "관찰"
+            else:
+                riskLevel = "안전"
 
         rows.append(
             {

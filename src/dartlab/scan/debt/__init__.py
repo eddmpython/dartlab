@@ -36,7 +36,8 @@ def scanDebt(*, verbose: bool = True) -> pl.DataFrame:
         단기채무합계 : float — 단기사채 + CP
         총부채 / 부채비율 : float — finance BS 기준
         ICR : float — 영업이익 / 이자비용
-        위험등급 : str — 안전/관찰/주의/고위험
+        위험등급 : str, 안전/관찰/주의/고위험.
+            ICR 결측이고 상향 신호도 없으면 "자료부족", 부채 자료가 아예 없으면 null.
 
     Raises
     ------

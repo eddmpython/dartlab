@@ -226,6 +226,8 @@ def classifyRisk(
         - 주의:   단기비중 >= 50% OR ICR < 1 OR 단기채무 존재
         - 관찰:   ICR < 3
         - 안전:   그 외
+        - 자료부족: ICR 결측이고 단기 리파이낸싱 상향 신호도 관측되지 않음.
+          자료 부재를 판정으로 바꾸지 않는다.
 
     Capabilities:
         - scanIcr: finance IS 의 영업이익 / 이자비용 → ICR (배). 종목별 latest 단면.
@@ -262,13 +264,17 @@ def classifyRisk(
     >>> classifyRisk(icr=5.0, shortRatio=10)
     '안전'
     """
+    # 결측 단기비중은 상향 신호 판정에만 쓰이므로 "고비중 근거 없음"으로만 읽는다.
+    # 이 대체는 위험을 낮추는 방향이 아니라 없는 위험을 만들지 않는 방향이다.
     sr = shortRatio if shortRatio is not None else 0
     hasShortDebt = shortDebtTotal is not None and shortDebtTotal > 0
 
     if icr is None:
+        # 등급의 몸통인 ICR이 없으면 관측된 단기 리파이낸싱 사실로만 상향한다.
+        # 예전에는 아무 신호가 없어도 "관찰"을 돌려줘 무자료가 실질 판정이 됐다.
         if sr >= 50 or hasShortDebt:
             return "주의"
-        return "관찰"
+        return "자료부족"
     if (sr >= 50 and icr < 1) or (icr < 1 and hasShortDebt):
         return "고위험"
     if sr >= 50 or icr < 1 or hasShortDebt:
