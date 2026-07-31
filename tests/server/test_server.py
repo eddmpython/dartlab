@@ -772,7 +772,8 @@ class TestAsk:
             corpName = "테스트기업"
             stockCode = "000000"
 
-            def show(self, topic):
+            def panel(self, topic):
+                """공개 계약은 ``panel`` 이다. ``show`` 폴백은 걷어냈으므로 대역도 따른다."""
                 if topic == "businessOverview":
                     return pl.DataFrame({"topic": ["businessOverview"]})
                 return None

@@ -2500,3 +2500,39 @@ CPCV 이음매 수익률, 실패 fold 를 샤프 0 으로 세는 것, Altman 자
 Beneish 결측 다수 기본값, Track B 유동성 가중 0, 감사의견 키워드 부재 추정이다.
 다음 체크포인트는 백테스트 샤프의 비용 미반영이다. 엔진이 스스로 물린다고 밝힌 비용을
 성과에 반영하지 않는 문제라 같은 "측정 계층을 믿을 수 없다" 계열의 뿌리다.
+
+### CI Full 적색 진단과 앞선 보고 정정 (2026-08-01)
+
+앞서 이 원장과 보고에서 CI 를 "17/17 전부 success" 로 적은 것은 **CI Fast 한 워크플로만**
+본 것이다. 같은 커밋에서 **CI Full 은 계속 실패하고 있었다.** `gh run list` 의 job 목록을
+전체 그림으로 읽은 오독이고, 레포 건강 상태를 실제보다 좋게 기록했으므로 여기서 정정한다.
+
+이력은 명확하다. `ea7b9c3b3`, `e1c757d86`, `3fdf4f227`, `deec5089b`, `523a66623` 의 CI Full
+이 전부 failure 이고 실패 job 도 `realdata-plan` 과 `gate (test-full, 3.12/3.13)` 로 같다.
+직전 커밋들에서 이미 같은 모양이므로 이번 L2 작업이 만든 것은 아니다. 놓친 구조적 이유는
+`test-full` 과 `realdata-plan` 이 tier `full` 이라 push 전 검증인 `preflight`(tier fast
+blocking) 가 아예 실행하지 않는 구간이라는 것이다. preflight 를 통과했다는 사실이 CI 가
+녹색이라는 뜻이 아니다.
+
+첫째 실패의 원인은 fail-closed 게이트가 추적되지 않는 산출물에 의존하는 것이다.
+`realdata-plan` 이
+`CorpProfileIdentityError: corpProfile identity artifact 부재: tests/fixtures/dart/scan/corpProfile.parquet`
+로 죽는데, `.gitignore:169` 가 `tests/fixtures/dart/scan/` 을 통째로 무시한다. 주석은 그
+디렉터리를 "HF dataset 자동 다운로드 캐시, git 추적 X" 로 규정한다. 파일은 로컬에 80KB 로
+존재하지만 git 에 없으므로 CI 는 가질 수 없다. `11927a04e` 가 그 캐시 산출물에 fail-closed
+의존을 걸면서 CI 에서의 부재를 다루지 않았다. 캐시를 추적 대상으로 올릴지, 게이트가 부재를
+회수 가능한 상태로 다룰지는 레포 데이터 전략 결정이라 별건으로 남긴다. 부재를 조용히
+통과시키는 쪽은 답이 아니다.
+
+둘째 실패는 낡은 테스트다. `tests/server/test_server.py::TestAsk::test_topic_summary_uses_core_stream_path`
+가 로컬에서도 `404: topic 'businessOverview' 데이터 없음` 으로 재현된다. 프로덕션
+`server/api/company.apiCompanyTopicSummary` 는 `company.panel(topic)` 만 부르고 `show`
+폴백을 걷어냈는데, 주석이 "`show` 는 공개 계약에서 빠진 이름" 이라고 근거까지 적어 두었다.
+그런데 테스트의 `DummyCompany` 는 `show` 만 정의해 `panel` 호출이 `AttributeError` 로
+떨어지고 그것이 `overview = None` 으로 삼켜져 404 가 된다. 프로덕션이 옳고 테스트가 옛
+계약을 모델링하고 있었다. `c99bd92d4` 가 서버를 `panel` 로 옮기며 대역을 갱신하지 않은
+것이다. 대역을 `panel` 로 고쳐 `tests/server/test_server.py` 는 `51 passed` 다.
+
+같은 job 의 `TestAiProfile::test_post_ai_profile_secret_updates_shared_secret` 는 로컬
+단독 실행에서 통과한다. CI 에서만 깨지므로 공유 상태나 실행 순서 의존이 의심되고, 원인을
+특정하기 전에는 닫힌 것으로 세지 않는다.
