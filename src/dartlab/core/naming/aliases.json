@@ -69,10 +69,11 @@
       "scope": [
         "arg"
       ],
-      "note": "결과 개수 한도. None 이면 전수. 두 곳은 예외다. simulate 는 `topK` 가 매개변수가 아니라 도메인 어휘라서 출력 스키마 키(`topK`)와 컬럼(`topKProb`), 함수명(`hardenedTopK`)이 모두 그 단어로 서 있다. facade `search` 의 `topK` 는 이미 `limit` 이 정본이고 문서에 호환 alias 로 적힌 뒤 곧바로 `limit` 으로 강제 변환된다. 둘 다 이름을 바꾸면 계약이 깨지거나 호환 장치 자체가 사라진다.",
+      "note": "결과 개수 한도. None 이면 전수. 두 곳은 예외다. simulate 는 `topK` 가 매개변수가 아니라 도메인 어휘라서 출력 스키마 키(`topK`)와 컬럼(`topKProb`), 함수명(`hardenedTopK`)이 모두 그 단어로 서 있다. facade `search` 의 `topK` 는 이미 `limit` 이 정본이고 문서에 호환 alias 로 적힌 뒤 곧바로 `limit` 으로 강제 변환된다. 둘 다 이름을 바꾸면 계약이 깨지거나 호환 장치 자체가 사라진다. parquetContent 는 세 번째 예외다. RLE/bit-packed 해독기의 `count` 는 해독할 값의 개수이고 `size` 는 정확히 읽어야 할 byte 수라, 둘 다 결과 개수 한도가 아니다. `limit` 으로 바꾸면 상한이라는 거짓 의미가 생긴다.",
       "scopeExclude": [
-        "src/dartlab/simulate/",
-        "src/dartlab/__init__.py"
+        "src/dartlab/__init__.py",
+        "src/dartlab/scan/builders/kr/parquetContent.py",
+        "src/dartlab/simulate/"
       ]
     },
     "verboseFlag": {
