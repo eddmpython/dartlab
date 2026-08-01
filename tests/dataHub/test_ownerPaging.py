@@ -743,11 +743,14 @@ def testRequireCompleteFailsBeforeOwnerButMixedUsesOuterChain(monkeypatch: pytes
     )
 
     assert mixed.status == "partial"
-    assert not mixed.gaps
+    assert [gap.code for gap in mixed.gaps] == ["FEATURE_OBSERVATION_CONDITIONAL"] * 64
+    assert {gap.requestId for gap in mixed.gaps} == {"features"}
     assert [partition.requestId for partition in mixed.partitions] == ["features"] * 64 + ["locator"]
     assert mixed.continuation is not None
     resumed = cast(DataResult, cast(Any, data)("query", query={"continuation": mixed.continuation}))
     assert resumed.status == "ok"
+    assert [gap.code for gap in resumed.gaps] == ["FEATURE_OBSERVATION_CONDITIONAL"] * 3
+    assert "64회" in resumed.gaps[0].message
     assert [partition.requestId for partition in resumed.partitions] == ["features"] * 2
     assert ownerCalls == [f"T{index:03d}" for index in range(66)]
 
@@ -830,7 +833,7 @@ def testMixedOuterResumeRejectsOwnerSourceDriftWithoutRerunningAnyLane(
         ),
     )
     token = first.continuation
-    assert first.gaps == (), (
+    assert [gap.code for gap in first.gaps] == ["FEATURE_OBSERVATION_CONDITIONAL"] * 64, (
         first.gaps,
         first.coverage,
         [partition.requestId for partition in first.partitions],
@@ -860,6 +863,8 @@ def testMixedOuterResumeRejectsOwnerSourceDriftWithoutRerunningAnyLane(
     )
     recovered = cast(DataResult, cast(Any, data)("query", query={"continuation": token}))
     assert recovered.status == "ok", (recovered.gaps, recovered.continuation, recovered.coverage)
+    assert [gap.code for gap in recovered.gaps] == ["FEATURE_OBSERVATION_CONDITIONAL"] * 3
+    assert "64회" in recovered.gaps[0].message
     assert len(ownerCalls) == ownerCount + 2
     assert len(locatorCalls) == locatorCount
 
@@ -912,7 +917,8 @@ def testExplicitSubjectKeepsExistingEagerSubjectFanoutPath(monkeypatch: pytest.M
         ),
     )
 
-    assert result.status == "ok"
+    assert result.status == "partial"
+    assert [gap.code for gap in result.gaps] == ["FEATURE_OBSERVATION_CONDITIONAL"]
     assert result.continuation is None
     assert calls == [
         {

@@ -46,7 +46,18 @@ def _resultFromComposite(
         childResults.append((row["requestIndex"], result))
     childResults.sort(key=lambda item: item[0])
     partitions = tuple(partition for _requestIndex, result in childResults for partition in result.partitions)
-    gaps = tuple(gap for _requestIndex, result in childResults for gap in result.gaps)
+    currentGaps = tuple(gap for _requestIndex, result in childResults for gap in result.gaps)
+    historicalGaps = tuple(
+        DataGap(
+            str(code),
+            f"이전 composite page에서 {count}회 발생했습니다",
+            str(lane["assetId"]),
+            requestId=str(lane["requestId"]),
+        )
+        for lane in lanes
+        for code, count in sorted(lane["gapCounts"].items())
+    )
+    gaps = historicalGaps + currentGaps
     assets = tuple(dict.fromkeys(AssetRef(str(lane["assetId"]), str(lane["assetVersionId"])) for lane in lanes))
     lineageRefs = tuple(dict.fromkeys(ref for partition in partitions for ref in partition.lineageRefs))
     receipts = tuple(

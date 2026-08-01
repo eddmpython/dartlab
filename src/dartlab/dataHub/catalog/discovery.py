@@ -348,6 +348,7 @@ def _declaredAssets(provider: Mapping[str, Any]) -> Iterable[DataAssetDescriptor
             validTimeParam=executorParams["validTimeParam"],
             knowledgeTimeParam=executorParams["knowledgeTimeParam"],
         )
+        visibility = str(spec.get("visibility", "LOCAL"))
         yield DataAssetDescriptor(
             assetId=assetId,
             assetVersionId=f"asset:{_digest(payload)}",
@@ -357,9 +358,9 @@ def _declaredAssets(provider: Mapping[str, Any]) -> Iterable[DataAssetDescriptor
             label=str(spec.get("label", assetId)),
             description=str(spec.get("description", spec.get("label", assetId))),
             sourceRef=f"python:{executor['module']}:{executor['attribute']}",
-            queryable=True,
+            queryable=visibility != "PRIVATE",
             hidden=bool(spec.get("hidden", False)),
-            visibility=str(spec.get("visibility", "LOCAL")),
+            visibility=visibility,
             licenseRef=str(spec["licenseRef"]) if spec.get("licenseRef") else None,
             temporalSupport=tuple(str(item) for item in spec.get("temporalSupport", ("latest",))),
             executorKind="callable",

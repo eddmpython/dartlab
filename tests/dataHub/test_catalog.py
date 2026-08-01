@@ -127,6 +127,28 @@ def testPrivateResourceIsCataloguedButNotQueryable():
     assert not asset.queryable
 
 
+def testPrivateDeclaredCallableIsAlwaysCatalogOnly(monkeypatch):
+    import dartlab.dataHub.catalog.discovery as discovery
+
+    provider = {
+        "owner": "fixture",
+        "layer": "L2",
+        "assets": (
+            {
+                "assetId": "fixture.secret",
+                "visibility": "PRIVATE",
+                "executor": {"module": "fixture.owner", "attribute": "secret"},
+            },
+        ),
+    }
+    monkeypatch.setattr(discovery.importlib, "import_module", lambda _name: SimpleNamespace())
+    monkeypatch.setattr(discovery, "_sourceDigest", lambda _module: "a" * 64)
+
+    asset = tuple(discovery._declaredAssets(provider))[0]
+    assert asset.visibility == "PRIVATE"
+    assert not asset.queryable
+
+
 def testDartAndEdgarResourcesDeclareTheirUniverseMarkets():
     import dartlab
 

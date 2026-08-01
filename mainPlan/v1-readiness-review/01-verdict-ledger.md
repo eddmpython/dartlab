@@ -3046,3 +3046,67 @@ source와 실제 호출자의 최종 순회, source freeze, 공식 Guard다.
 **판정: L2 다섯 엔진은 현재 보유한 원천과 방법론으로 증명 가능한 범위에서 원장과
 일치한다.** 미지원 기능을 수치로 가장하지 않는 발행 경계까지 포함해 L2를 완료하고,
 다음 계층인 L2.5 dataHub로 이동한다.
+
+### L2.5 최종 판정: Data Workbench 계약, PIT, 페이징, 원격 실행 동결 (2026-08-01)
+
+**상태: L2.5 전체 완료.** 시점·빈티지, 페이징·materialization, 공개 소비자·원격
+제어면을 나눈 세 전문 검토와 master의 전체 호출자 대조를 결합했다. 기존 구현은 owner가
+스스로 적은 exact 선언을 그대로 신뢰했고, native projection으로 PIT 검사를 우회할 수
+있었으며, durable job의 요청과 worker 결과가 같은 논리 쿼리인지 완료 시 다시 증명하지
+않았다. 값과 artifact의 크기, 타입, 수명주기 경계도 여러 계층에 흩어져 있었다.
+
+1. **범위와 실제 호출자.** `dataHub`의 catalog·query 공개 진입점, descriptor와 query
+   dataclass, universe resolver, feature observation/PIT projection, eager·owner·resource·
+   composite paging, continuation CAS와 materialization, sync·async remote client, FastAPI
+   control plane, worker lease·heartbeat·completion, analysis simulation input bridge를 함께
+   대조했다. PRIVATE callable과 L3·L4 소비자가 catalog 능력을 해석하는 경로도 포함했다.
+2. **제품 결함 재현.** 문자열을 tuple 필드로 넣으면 문자 단위 selector가 됐고 bool이
+   숫자 budget으로 통과했다. native projection이 `knownAt` 요청의 관측시점 증명을 건너뛰고,
+   owner가 반환한 단일 feature entity를 요청 subject로 다시 붙일 수 있었다. vintage provider
+   불일치와 self-declared `asKnown/asOfExact`도 exact로 승격됐다. universe ID 정규화 전
+   중복 검사와 public/source 역충돌 누락, locator의 payload read와 source pin 부재,
+   nested DataFrame의 `repr` byte 계산, 누적 page gap 유실을 재현했다. 원격면은 oversized
+   body 후검사, 외부 평문 HTTP, 논리 쿼리 기본값 차이, job 간 결과 바꿔치기, CAS GC와 새
+   참조의 race, 결정적 terminal 오류의 재시도 덮어쓰기가 가능했다.
+3. **단일 SSOT와 발행 경계.** query dataclass가 sequence·bool·projection·visibility의
+   strict 계약을 소유한다. remote policy는 request 1MiB, 결과 payload 12,517,376 bytes,
+   wire 16MiB와 외부 HTTPS를 한 곳에서 정의한다. durable query는 canonical default를
+   채운 `refresh` materialization만 허용하고 continuation·reuse·offline은 계획 부재로
+   차단한다. 제출 시 catalog snapshot, ordered AssetRef, contract hash, 요청·해결 수와
+   logical query digest를 예상 결과 계약으로 봉인한다. exact PIT는 검증된 admission
+   receipt가 없는 한 발행하지 않고 conditional coverage로 남긴다.
+4. **수정과 fail-closed 범위.** sequence scalar와 잘못된 중첩 query를 입구에서 거절하고
+   PRIVATE callable은 catalog-only로 고정했다. observation PIT는 FactorProjection과
+   관측 envelope를 강제하고 native 우회, subject relabel, provider가 다른 vintage를
+   차단했다. canonical universe ID를 먼저 만들고 market별 source alias 정책을 명시했다.
+   resource locator는 manifest cache 경계에서 description만 읽어 full source pin과 schema를
+   반환하며 payload는 읽지 않는다. 새 native value codec은 mapping·sequence·bytes·scalar와
+   중첩 Polars DataFrame을 Arrow로 왕복하고 cycle, 지원하지 않는 객체, logical byte 초과를
+   typed gap으로 닫는다. composite는 이전 page gap count를 마지막 page까지 보존한다.
+   simulation input bridge는 owner 오류와 결손을 삼키지 않는다.
+5. **원격 내구성과 무결성.** job envelope v2가 canonical query와 예상 결과 계약을 CAS에
+   함께 저장한다. completion은 lease, request digest, catalog/asset/contract identity,
+   partition content hash·schema·row count, result snapshot과 materialization receipt query
+   digest를 다시 확인하고 continuation이 남은 결과를 거절한다. HTTP body와 client stream은
+   decode 전에 상한을 적용하며 worker는 413/422를 non-retryable terminal 오류로 기록한다.
+   SQLite writer lock 안의 artifact tombstone으로 GC와 새 submit/read의 re-reference race를
+   닫고, terminal error code를 보존한다.
+6. **회귀와 Guard.** `tests/dataHub` 42개 파일을 각각 독립 pytest process로 전수 실행해
+   `581 passed, 4 skipped`, analysis bridge `5 passed`가 통과했다. 변경 Python은 Ruff
+   format/check, Pyright `0 errors, 0 warnings`, compileall, diff whitespace와 U+2013/U+2014
+   검사가 통과했다. public API coverage는 `dartlab=34`, `api=6`, `scanAxes=27`,
+   `company=9`, `scenarios=43`이다. source 동결 뒤 공식 strict Guard는 1,796파일,
+   7/7 규칙과 cycleScan, architecturePytest, folderMirror, gatherGate, providerGate,
+   publicApiSmoke를 모두 통과했다.
+7. **남은 부채와 판정.** self-declared vintage를 exact로 승격하지 않으므로 서명된 admission
+   receipt 검증 rail이 생기기 전 feature PIT는 conditional이다. 로컬 runtime의 일반 eager
+   owner는 기존 thread 동시성을 유지해 비협조 callable을 강제 종료하지 못한다. pageable,
+   mixed, materialization과 durable worker의 일반 eager 경로는 fresh child process와
+   zero-live supervisor를 사용한다. hard cancellation이 필요한 외부 실행은 durable 경로를
+   사용하며, 로컬 in-process timeout의 process 전환은 결과 bundle 상한과 monkeypatch 없는
+   import 재구성 계약을 함께 바꾸는 후속 기능 부채로 남긴다. 이 제한은 exact나 완료를
+   가장하지 않고 typed gap과 운영 경로 구분으로 격리했다.
+
+**판정: L2.5 dataHub는 현재 지원하는 catalog, query, PIT, paging, materialization과 remote
+worker 범위에서 요청·결과·원천 identity를 검증하고, 증명하지 못한 exact와 completion을
+발행하지 않는다.** L2.5를 완료하고 다음 계층인 L3 story·simulate로 이동한다.

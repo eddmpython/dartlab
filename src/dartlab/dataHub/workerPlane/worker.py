@@ -10,6 +10,7 @@ from typing import Any, Callable
 import httpx
 
 from dartlab.dataHub.cancellation import CancellationToken, activeCancellation
+from dartlab.dataHub.controlPlane.policy import validateRemoteBaseUrl
 from dartlab.dataHub.entry import dataHub
 from dartlab.dataHub.telemetry import dataHubLogger, recordFailure
 from dartlab.dataHub.transport import encodeDataResult
@@ -49,7 +50,7 @@ class DataHubWorker:
         self.leaseSeconds = float(leaseSeconds)
         self._queryRunner = queryRunner
         self._client = httpx.Client(
-            base_url=baseUrl.rstrip("/"),
+            base_url=validateRemoteBaseUrl(baseUrl),
             headers={"Authorization": f"Bearer {token}"},
             timeout=requestTimeoutSeconds,
             transport=transport,
@@ -90,15 +91,23 @@ class DataHubWorker:
                     cancelToken.cancel()
                 return
 
-    def _fail(self, jobId: str, leaseEpoch: int) -> None:
+    def _fail(
+        self,
+        jobId: str,
+        leaseEpoch: int,
+        *,
+        errorCode: str = "DATA_HUB_WORKER_FAILED",
+        retryable: bool = True,
+    ) -> None:
         try:
             self._client.post(
                 f"/api/dataHub/v1/workers/jobs/{jobId}/fail",
                 json={
                     "workerId": self.workerId,
                     "leaseEpoch": leaseEpoch,
-                    "errorCode": "DATA_HUB_WORKER_FAILED",
+                    "errorCode": errorCode,
                     "retryDelaySeconds": min(60, 2**leaseEpoch),
+                    "retryable": retryable,
                 },
             )
         except httpx.HTTPError:
@@ -129,6 +138,9 @@ class DataHubWorker:
         ):
             raise RuntimeError("DataHub lease 응답이 유효하지 않습니다")
         jobId = job["jobId"]
+        requestDigest = job.get("requestDigest")
+        if not isinstance(requestDigest, str):
+            raise RuntimeError("DataHub lease request digest가 유효하지 않습니다")
         stop = threading.Event()
         lost = threading.Event()
         cancelToken = CancellationToken("leaseLost")
@@ -150,11 +162,21 @@ class DataHubWorker:
             complete = self._client.post(
                 f"/api/dataHub/v1/workers/jobs/{jobId}/complete",
                 params={"leaseEpoch": leaseEpoch},
-                headers={"X-DataHub-Worker": self.workerId},
+                headers={
+                    "X-DataHub-Worker": self.workerId,
+                    "X-DataHub-Request-Digest": requestDigest,
+                },
                 content=payload,
             )
             if complete.status_code == 409:
                 return WorkerRun(claimed=True, jobId=jobId, completed=False, leaseLost=True)
+            if complete.status_code in {413, 422}:
+                try:
+                    code = complete.json()["detail"]["code"]
+                except (ValueError, KeyError, TypeError):
+                    code = "DATA_HUB_WORKER_FAILED"
+                self._fail(jobId, leaseEpoch, errorCode=code, retryable=False)
+                return WorkerRun(claimed=True, jobId=jobId, completed=False, leaseLost=False)
             complete.raise_for_status()
             return WorkerRun(claimed=True, jobId=jobId, completed=True, leaseLost=False)
         except Exception:

@@ -76,7 +76,7 @@ def testContentHashNormalizesMappingOrderAndArrowChunks() -> None:
     assert contentHash(first) == contentHash(chunked)
 
 
-def testOpaqueNativeResultFailsClosedWithoutFakeContentSnapshot(monkeypatch) -> None:
+def testOpaqueNativeResultFailsClosedWithTypedGap(monkeypatch) -> None:
     import dartlab
 
     class Opaque:
@@ -86,12 +86,10 @@ def testOpaqueNativeResultFailsClosedWithoutFakeContentSnapshot(monkeypatch) -> 
     monkeypatch.setattr(dartlab, "scan", lambda *args, **kwargs: Opaque())
     result = dartlab.dataHub("query", "scan.governance", query={"projection": {"kind": "native"}})
 
-    assert result.status == "ok"
-    assert result.partitions[0].contentHash is None
+    assert result.status == "failed"
+    assert result.partitions == ()
     assert result.dataSnapshotId is None
-    assertion = next(row for row in result.partitions[0].qualityAssertions if row.assertionId == "contentSealed")
-    assert assertion.success is False
-    assert assertion.severity == "warning"
+    assert [gap.code for gap in result.gaps] == ["PROJECTION_VALUE_UNSUPPORTED"]
 
 
 def testCanonicalFactorPitRequiresObservedRowTiming() -> None:

@@ -13,7 +13,7 @@ from dartlab.dataHub.feature.registry import (
     StateVariableSpec,
     buildStateVariableRegistry,
 )
-from dartlab.dataHub.identity.vintage import canonicalPayloadHash, isExactAsKnown, validateVintageRef
+from dartlab.dataHub.identity.vintage import canonicalPayloadHash, validateVintageRef
 
 FEATURE_OBSERVATION_INPUT_SCHEMA = "feature-observation-input-v1"
 FEATURE_OBSERVATION_SET_SCHEMA = "feature-observation-set-v1"
@@ -346,17 +346,10 @@ def _eligible(observation: VariableObservation, query: FeatureReadQuery) -> bool
 
 
 def _selectionExact(observation: VariableObservation, *, knownAt: str | None) -> bool:
-    return (
-        knownAt is not None
-        and _dateText(observation.availableAt, "availableAt") != knownAt
-        and isExactAsKnown(observation.vintage)
-        and observation.evidenceRole
-        in {
-            "observed",
-            "deterministicDerived",
-            "admittedEstimate",
-        }
-    )
+    del observation, knownAt
+    # VintageRef의 revisionPolicy와 coverage는 owner가 제공한 선언이다. 서명된 admission
+    # receipt를 이 계층이 검증하기 전에는 그 선언만으로 exact 보장을 발급하지 않는다.
+    return False
 
 
 def _validateSelectedValue(

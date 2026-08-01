@@ -285,8 +285,11 @@ def _uncoveredMarkets(
     selectorCodes = tuple(dict.fromkeys(gap.code for gap in selectorGaps))
     resolverCodes = tuple(dict.fromkeys(gap.code for gap in resolvedUniverse.gaps)) if resolvedUniverse else ()
     universeByMarket = resolvedUniverse.byMarket() if resolvedUniverse is not None else {}
+    universe = activeQuery.universe
+    if universe is None:
+        return []
     rows: list[UniverseCoverage] = []
-    for market in activeQuery.universe.markets:
+    for market in universe.markets:
         if market in plannedMarkets:
             continue
         codes = selectorCodes or resolverCodes or ("UNIVERSE_UNSUPPORTED",)
@@ -461,9 +464,12 @@ def executeDataQuery(assetIds: Sequence[str], query: DataQuery) -> DataResult:
                     abandonWindow = True
                     break
                 except Exception as exc:
+                    code = getattr(exc, "code", "ASSET_EXECUTION_FAILED")
+                    if code not in {"PROJECTION_VALUE_UNSUPPORTED", "PROJECTION_BYTE_BUDGET"}:
+                        code = "ASSET_EXECUTION_FAILED"
                     gaps.append(
                         DataGap(
-                            "ASSET_EXECUTION_FAILED",
+                            code,
                             f"{type(exc).__name__}: {exc}",
                             task.descriptor.assetId,
                             task.selector.get("subject"),
@@ -553,9 +559,12 @@ def executeDataQuery(assetIds: Sequence[str], query: DataQuery) -> DataResult:
                                 )
                             )
                 except Exception as exc:
+                    code = getattr(exc, "code", "ASSET_EXECUTION_FAILED")
+                    if code not in {"PROJECTION_VALUE_UNSUPPORTED", "PROJECTION_BYTE_BUDGET"}:
+                        code = "ASSET_EXECUTION_FAILED"
                     gaps.append(
                         DataGap(
-                            "ASSET_EXECUTION_FAILED",
+                            code,
                             f"{type(exc).__name__}: {exc}",
                             task.descriptor.assetId,
                             task.selector.get("subject"),

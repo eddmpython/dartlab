@@ -6,8 +6,12 @@ from pathlib import Path
 
 import pytest
 
+from dartlab.dataHub.contracts import Coverage, DataGap, DataResult
 from dartlab.dataHub.controlPlane import DataHubControlError
 from dartlab.dataHub.controlPlane.ledger import DataHubJobLedger
+from dartlab.dataHub.controlPlane.resultContract import buildExpectedResultContract
+from dartlab.dataHub.entry import _dataQuery
+from dartlab.dataHub.transport import encodeDataResult
 
 pytestmark = pytest.mark.unit
 
@@ -23,6 +27,23 @@ class FakeClock:
         self.value += seconds
 
 
+def _failedResult(query) -> DataResult:
+    parsed = _dataQuery(query)
+    assert parsed is not None
+    expected = buildExpectedResultContract(parsed)
+    return DataResult(
+        status="failed",
+        partitions=(),
+        assets=expected.assets,
+        snapshotId=expected.catalogSnapshotId,
+        contractHash=expected.contractHash,
+        coverage=Coverage(expected.requestedAssets, expected.resolvedAssets, 0, 1),
+        gaps=(DataGap("FIXTURE_NO_DATA", "fixture"),),
+        lineageRefs=(),
+        executionReceipts=(),
+    )
+
+
 def testSubmitIsIdempotentAndDefaultsToDurableRefresh(tmp_path: Path) -> None:
     ledger = DataHubJobLedger(tmp_path / "control")
     query = {"requests": [{"assetId": "resource.finance"}]}
@@ -34,7 +55,7 @@ def testSubmitIsIdempotentAndDefaultsToDurableRefresh(tmp_path: Path) -> None:
     assert repeated == first
     assert lease is not None
     assert lease.job.jobId == first.jobId
-    assert lease.request["materialization"] == {"mode": "refresh"}
+    assert lease.request["materialization"] == {"mode": "refresh", "receipt": None}
     with pytest.raises(DataHubControlError) as conflict:
         ledger.submit(
             {"requests": [{"assetId": "resource.edgar"}]},
@@ -89,8 +110,14 @@ def testCompleteReadCancelAndBoundedMaintenance(tmp_path: Path) -> None:
     completed = ledger.submit({"requests": [{"assetId": "resource.finance"}]})
     lease = ledger.claim("worker-a")
     assert lease is not None
-    resultPayload = b'{"wire":"result"}'
-    ready = ledger.complete(completed.jobId, "worker-a", lease.leaseEpoch, resultPayload)
+    resultPayload = encodeDataResult(_failedResult(lease.request))
+    ready = ledger.complete(
+        completed.jobId,
+        "worker-a",
+        lease.leaseEpoch,
+        resultPayload,
+        requestDigest=lease.job.requestDigest,
+    )
     assert ready.state == "succeeded"
     assert ledger.readResult(completed.jobId) == resultPayload
 
@@ -126,3 +153,61 @@ def testSubmitRejectsBudgetThatCannotFitTheResultWire(tmp_path):
         "budget": {"maxBytes": 4 * 1024 * 1024},
     }
     assert ledger.submit(fits).jobId
+
+
+def testDurableQueryCanonicalizesDefaultsAndNullContinuation(tmp_path):
+    ledger = DataHubJobLedger(tmp_path / "jobs")
+    omitted = ledger.submit(
+        {"requests": [{"assetId": "analysis.simulationInputs"}]},
+        idempotencyKey="canonical",
+    )
+    explicit = ledger.submit(
+        {
+            "subjects": [],
+            "measures": [],
+            "requests": [{"assetId": "analysis.simulationInputs"}],
+            "continuation": None,
+            "budget": {"maxBytes": 12_517_376},
+        },
+        idempotencyKey="canonical",
+    )
+    lease = ledger.claim("worker")
+
+    assert explicit == omitted
+    assert lease is not None
+    assert lease.request["continuation"] is None
+    assert lease.request["materialization"] == {"mode": "refresh", "receipt": None}
+    assert lease.request["budget"]["maxBytes"] == 12_517_376
+
+
+def testMaintenanceCannotDeleteNewlyRereferencedCas(tmp_path):
+    clock = FakeClock()
+    ledger = DataHubJobLedger(tmp_path / "jobs", clock=clock)
+    old = ledger.submit({"requests": [{"assetId": "analysis.simulationInputs"}]})
+    ledger.cancel(old.jobId)
+    clock.advance(100)
+    deleting = threading.Event()
+    release = threading.Event()
+    originalDelete = ledger.artifacts.deleteBytes
+
+    def blockedDelete(digest):
+        deleting.set()
+        assert release.wait(5)
+        return originalDelete(digest)
+
+    ledger.artifacts.deleteBytes = blockedDelete
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        maintenance = executor.submit(ledger.maintain, maximum=1, retentionSeconds=10)
+        assert deleting.wait(5)
+        submitted = executor.submit(
+            ledger.submit,
+            {"requests": [{"assetId": "analysis.simulationInputs"}]},
+        )
+        assert not submitted.done()
+        release.set()
+        maintenance.result(timeout=10)
+        new = submitted.result(timeout=10)
+
+    lease = ledger.claim("worker")
+    assert lease is not None
+    assert lease.job.jobId == new.jobId

@@ -13,12 +13,27 @@ if TYPE_CHECKING:
     import pyarrow as pa
 
 
+def _requireStringTuple(value: Any, name: str) -> None:
+    """Public sequence field가 string을 문자 단위 sequence로 오인하지 않게 한다."""
+
+    if not isinstance(value, tuple):
+        raise TypeError(f"{name}은 string tuple이어야 합니다")
+    if any(type(item) is not str or not item.strip() for item in value):
+        raise ValueError(f"{name}에는 비어 있지 않은 string만 사용할 수 있습니다")
+
+
 @dataclass(frozen=True, slots=True)
 class TimeContext:
     """Data query의 valid time과 knowledge cutoff."""
 
     validAt: str | None = None
     knownAt: str | None = None
+
+    def __post_init__(self) -> None:
+        for name in ("validAt", "knownAt"):
+            value = getattr(self, name)
+            if value is not None and (type(value) is not str or not value.strip()):
+                raise ValueError(f"{name}은 비어 있지 않은 string이어야 합니다")
 
 
 @dataclass(frozen=True, slots=True)
@@ -47,12 +62,20 @@ class NativeProjection:
 
     kind: Literal["native"] = "native"
 
+    def __post_init__(self) -> None:
+        if self.kind != "native":
+            raise ValueError("NativeProjection.kind가 유효하지 않습니다")
+
 
 @dataclass(frozen=True, slots=True)
 class RecordsProjection:
     """Scalar와 text leaf를 tagged knowledge record로 투영한다."""
 
     kind: Literal["records"] = "records"
+
+    def __post_init__(self) -> None:
+        if self.kind != "records":
+            raise ValueError("RecordsProjection.kind가 유효하지 않습니다")
 
 
 @dataclass(frozen=True, slots=True)
@@ -64,6 +87,15 @@ class FactorProjection:
     frequency: str | None = None
     kind: Literal["factor"] = "factor"
 
+    def __post_init__(self) -> None:
+        _requireStringTuple(self.measures, "FactorProjection.measures")
+        if self.unit is not None and (type(self.unit) is not str or not self.unit.strip()):
+            raise ValueError("FactorProjection.unit은 비어 있지 않은 string이어야 합니다")
+        if self.frequency is not None and (type(self.frequency) is not str or not self.frequency.strip()):
+            raise ValueError("FactorProjection.frequency는 비어 있지 않은 string이어야 합니다")
+        if self.kind != "factor":
+            raise ValueError("FactorProjection.kind가 유효하지 않습니다")
+
 
 @dataclass(frozen=True, slots=True)
 class GraphProjection:
@@ -73,12 +105,24 @@ class GraphProjection:
     scope: str = "data"
     kind: Literal["graph"] = "graph"
 
+    def __post_init__(self) -> None:
+        if type(self.depth) is not int or self.depth <= 0:
+            raise ValueError("GraphProjection.depth는 양의 int여야 합니다")
+        if type(self.scope) is not str or not self.scope.strip():
+            raise ValueError("GraphProjection.scope는 비어 있지 않은 string이어야 합니다")
+        if self.kind != "graph":
+            raise ValueError("GraphProjection.kind가 유효하지 않습니다")
+
 
 @dataclass(frozen=True, slots=True)
 class NarrativeProjection:
     """문서와 narrative text를 evidence-bearing record로 투영한다."""
 
     kind: Literal["narrative"] = "narrative"
+
+    def __post_init__(self) -> None:
+        if self.kind != "narrative":
+            raise ValueError("NarrativeProjection.kind가 유효하지 않습니다")
 
 
 @dataclass(frozen=True, slots=True)
@@ -87,6 +131,12 @@ class ResourceProjection:
 
     includePayload: bool = False
     kind: Literal["resource"] = "resource"
+
+    def __post_init__(self) -> None:
+        if type(self.includePayload) is not bool:
+            raise TypeError("ResourceProjection.includePayload는 bool이어야 합니다")
+        if self.kind != "resource":
+            raise ValueError("ResourceProjection.kind가 유효하지 않습니다")
 
 
 Projection = (
@@ -109,6 +159,10 @@ class UniverseSelection:
     asOf: str | None = None
 
     def __post_init__(self) -> None:
+        _requireStringTuple(self.markets, "UniverseSelection.markets")
+        _requireStringTuple(self.explicitIds, "UniverseSelection.explicitIds")
+        if self.asOf is not None and (type(self.asOf) is not str or not self.asOf.strip()):
+            raise ValueError("UniverseSelection.asOf는 비어 있지 않은 string이어야 합니다")
         if self.membership not in {"listed", "allKnown", "explicit"}:
             raise ValueError("universe membership이 유효하지 않습니다")
         markets = tuple(sorted({str(market).strip().upper() for market in self.markets if str(market).strip()}))
@@ -149,10 +203,26 @@ class DataRequest:
     params: Mapping[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
-        if not self.assetId:
+        if type(self.assetId) is not str or not self.assetId.strip():
             raise ValueError("assetId가 비었습니다")
-        if self.requestId == "":
+        if self.requestId is not None and (type(self.requestId) is not str or not self.requestId.strip()):
             raise ValueError("requestId는 비어 있을 수 없습니다")
+        if self.projection is not None and not isinstance(
+            self.projection,
+            (
+                NativeProjection,
+                RecordsProjection,
+                FactorProjection,
+                GraphProjection,
+                NarrativeProjection,
+                ResourceProjection,
+            ),
+        ):
+            raise TypeError("DataRequest.projection이 유효하지 않습니다")
+        _requireStringTuple(self.subjects, "DataRequest.subjects")
+        _requireStringTuple(self.measures, "DataRequest.measures")
+        if not isinstance(self.params, Mapping):
+            raise TypeError("DataRequest.params는 mapping이어야 합니다")
         if self.subjects and self.universe is not None:
             raise ValueError("DataRequest는 subjects와 universe를 동시에 사용할 수 없습니다")
 
@@ -167,6 +237,14 @@ class CatalogQuery:
     search: str | None = None
     includeHidden: bool = True
     includeOutOfScope: bool = True
+
+    def __post_init__(self) -> None:
+        for name in ("layers", "owners", "kinds"):
+            _requireStringTuple(getattr(self, name), f"CatalogQuery.{name}")
+        if self.search is not None and type(self.search) is not str:
+            raise TypeError("CatalogQuery.search는 string이어야 합니다")
+        if type(self.includeHidden) is not bool or type(self.includeOutOfScope) is not bool:
+            raise TypeError("CatalogQuery include flag는 bool이어야 합니다")
 
 
 @dataclass(frozen=True, slots=True)
@@ -187,6 +265,26 @@ class DataQuery:
     continuation: str | None = field(default=None, repr=False)
 
     def __post_init__(self) -> None:
+        _requireStringTuple(self.subjects, "DataQuery.subjects")
+        _requireStringTuple(self.measures, "DataQuery.measures")
+        if not isinstance(self.requests, tuple) or any(not isinstance(item, DataRequest) for item in self.requests):
+            raise TypeError("DataQuery.requests는 DataRequest tuple이어야 합니다")
+        if not isinstance(
+            self.projection,
+            (
+                NativeProjection,
+                RecordsProjection,
+                FactorProjection,
+                GraphProjection,
+                NarrativeProjection,
+                ResourceProjection,
+            ),
+        ):
+            raise TypeError("DataQuery.projection이 유효하지 않습니다")
+        if not isinstance(self.params, Mapping):
+            raise TypeError("DataQuery.params는 mapping이어야 합니다")
+        if not isinstance(self.budget, QueryBudget):
+            raise TypeError("budget은 QueryBudget이어야 합니다")
         if not isinstance(self.materialization, MaterializationDirective):
             raise TypeError("materialization은 MaterializationDirective여야 합니다")
         if self.continuation is not None:
@@ -221,6 +319,8 @@ class DataQuery:
             raise ValueError("requestId는 query 안에서 고유해야 합니다")
         if self.completeness not in {"allowPartial", "requireComplete"}:
             raise ValueError("completeness가 유효하지 않습니다")
+        if self.lineage not in {"summary", "full"}:
+            raise ValueError("lineage가 유효하지 않습니다")
 
 
 @dataclass(frozen=True, slots=True)
@@ -272,6 +372,14 @@ class DataAssetDescriptor:
     marketParam: str | None = None
     marketUnits: tuple[tuple[str, str], ...] = ()
     metadata: tuple[tuple[str, Any], ...] = ()
+
+    def __post_init__(self) -> None:
+        if self.visibility not in {"PUBLIC", "LOCAL", "PRIVATE"}:
+            raise ValueError("asset visibility가 유효하지 않습니다")
+        if type(self.queryable) is not bool or type(self.hidden) is not bool:
+            raise TypeError("asset queryable과 hidden은 bool이어야 합니다")
+        if self.visibility == "PRIVATE" and self.queryable:
+            raise ValueError("PRIVATE asset은 queryable일 수 없습니다")
 
 
 @dataclass(frozen=True, slots=True)

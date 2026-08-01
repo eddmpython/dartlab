@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import socket
 import time
+from types import SimpleNamespace
 
 from dartlab.dataHub.contracts import (
     Coverage,
@@ -75,6 +76,17 @@ def testMixedInitialSealsGeneralEagerAndResumeTouchesOnlyLocator(
     monkeypatch,
 ) -> None:
     monkeypatch.setenv("DARTLAB_HOME", str(tmp_path))
+    monkeypatch.setattr(
+        "dartlab.providers.resourceStream.workbench.describeResource",
+        lambda resourceId, category, _cachePath: SimpleNamespace(
+            resourceId=resourceId,
+            category=category,
+            sourcePin="resource-source-full:" + "1" * 64,
+            shardCount=1,
+            totalBytes=1,
+            schemaFields=(("value", "Int64"),),
+        ),
+    )
     eagerDescriptor = _eagerDescriptor()
     locatorDescriptor = _locatorDescriptor()
     budget = QueryBudget(
@@ -159,6 +171,7 @@ def testMixedInitialSealsGeneralEagerAndResumeTouchesOnlyLocator(
     assert resumed.continuation is None
     assert [partition.requestId for partition in resumed.partitions] == ["locator"]
     assert resumed.partitions[0].data["payload"] is None
+    assert resumed.partitions[0].data["sourcePin"] == "resource-source-full:" + "1" * 64
 
 
 def testInitialPlanPreservesOfflineFailureCodeAndIssuesNoToken(

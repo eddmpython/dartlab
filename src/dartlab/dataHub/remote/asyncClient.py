@@ -11,9 +11,10 @@ import httpx
 from dartlab.dataHub.contracts import DataResult
 from dartlab.dataHub.controlPlane.contracts import DataHubJob
 from dartlab.dataHub.controlPlane.errors import DataHubControlError
+from dartlab.dataHub.controlPlane.policy import MAX_RESULT_WIRE_BYTES, validateRemoteBaseUrl
 from dartlab.dataHub.transport import decodeDataResult
 
-from .client import _jobFromTree, _raise
+from .client import _jobFromTree, _preflightSubmit, _raise
 
 
 class AsyncDataHubClient:
@@ -27,12 +28,10 @@ class AsyncDataHubClient:
         timeoutSeconds: float = 30,
         transport: httpx.AsyncBaseTransport | None = None,
     ):
-        if not isinstance(baseUrl, str) or not baseUrl.startswith(("http://", "https://")):
-            raise ValueError("baseUrl은 http 또는 https URL이어야 합니다")
         if not isinstance(token, str) or len(token) < 32:
             raise ValueError("token은 32자 이상이어야 합니다")
         self._client = httpx.AsyncClient(
-            base_url=baseUrl.rstrip("/"),
+            base_url=validateRemoteBaseUrl(baseUrl),
             headers={"Authorization": f"Bearer {token}"},
             timeout=timeoutSeconds,
             transport=transport,
@@ -74,6 +73,7 @@ class AsyncDataHubClient:
     ) -> DataHubJob:
         """Query를 비동기 durable job으로 제출한다."""
 
+        _preflightSubmit(query, idempotencyKey, priority, maxAttempts)
         response = await self._client.post(
             "/api/dataHub/v1/jobs",
             json={
@@ -115,9 +115,23 @@ class AsyncDataHubClient:
     async def result(self, jobId: str) -> DataResult:
         """성공한 job의 DataResult를 비동기로 읽는다."""
 
-        response = await self._client.get(f"/api/dataHub/v1/jobs/{jobId}/result")
-        self._raise(response)
-        return decodeDataResult(response.content)
+        async with self._client.stream("GET", f"/api/dataHub/v1/jobs/{jobId}/result") as response:
+            contentLength = response.headers.get("content-length")
+            if contentLength is not None:
+                try:
+                    if int(contentLength) > MAX_RESULT_WIRE_BYTES:
+                        raise DataHubControlError("DATA_HUB_PAYLOAD_BUDGET")
+                except ValueError:
+                    raise DataHubControlError("DATA_HUB_CORRUPT") from None
+            body = bytearray()
+            async for chunk in response.aiter_bytes():
+                if len(body) + len(chunk) > MAX_RESULT_WIRE_BYTES:
+                    raise DataHubControlError("DATA_HUB_PAYLOAD_BUDGET")
+                body.extend(chunk)
+            payload = bytes(body)
+            response._content = payload
+            self._raise(response)
+        return decodeDataResult(payload)
 
     async def cancel(self, jobId: str) -> DataHubJob:
         """Job을 비동기로 취소한다."""

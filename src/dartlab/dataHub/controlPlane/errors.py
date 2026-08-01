@@ -14,6 +14,9 @@ ERROR_MESSAGES = {
     "DATA_HUB_AUTH_REQUIRED": "DataHub 원격 인증이 필요합니다",
     "DATA_HUB_PAYLOAD_BUDGET": "DataHub payload 예산을 초과했습니다",
     "DATA_HUB_CORRUPT": "DataHub durable state 검증에 실패했습니다",
+    "DATA_HUB_PLAN_MISSING": "DataHub job의 실행 계획 증거가 없습니다",
+    "DATA_HUB_RESULT_UNBOUND": "DataHub 결과가 제출 query와 결박되지 않았습니다",
+    "DATA_HUB_RESULT_INCOMPLETE": "DataHub 원격 결과가 단일 durable page로 완결되지 않았습니다",
 }
 
 

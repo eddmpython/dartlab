@@ -4,7 +4,15 @@ from __future__ import annotations
 
 import pytest
 
-from dartlab.dataHub import DataQuery, DataRequest, QueryBudget, TimeContext
+from dartlab.dataHub import (
+    CatalogQuery,
+    DataQuery,
+    DataRequest,
+    FactorProjection,
+    QueryBudget,
+    ResourceProjection,
+    TimeContext,
+)
 
 
 def testBudgetRejectsNonPositiveLimits():
@@ -56,3 +64,24 @@ def testContinuationIsOpaqueAndCannotOverrideStoredQuery():
         DataQuery(continuation=token, measures=("sales",))
     with pytest.raises(ValueError, match="비었습니다"):
         DataQuery(continuation="")
+
+
+@pytest.mark.parametrize(
+    ("constructor", "field"),
+    (
+        (lambda: DataQuery(subjects="AAPL"), "DataQuery.subjects"),
+        (lambda: DataRequest("scan.ratio", measures="roe"), "DataRequest.measures"),
+        (lambda: FactorProjection(measures="roe"), "FactorProjection.measures"),
+        (lambda: CatalogQuery(owners="scan"), "CatalogQuery.owners"),
+    ),
+)
+def testPublicSequenceContractsRejectScalarStrings(constructor, field):
+    with pytest.raises(TypeError, match=field):
+        constructor()
+
+
+def testProjectionAndQueryLiteralContractsFailClosed():
+    with pytest.raises(TypeError, match="includePayload"):
+        ResourceProjection(includePayload="false")
+    with pytest.raises(ValueError, match="lineage"):
+        DataQuery(lineage="everything")

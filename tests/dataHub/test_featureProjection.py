@@ -11,6 +11,7 @@ from dartlab.dataHub.contracts import (
     DataAssetDescriptor,
     DataQuery,
     FactorProjection,
+    NativeProjection,
     TimeContext,
 )
 from dartlab.dataHub.execution import _temporalGap
@@ -129,6 +130,13 @@ def testDeclaredObservationPitBypassesGenericMetadataBlockOnly() -> None:
     assert missingCutoff is not None
     assert missingCutoff.code == "FEATURE_KNOWN_AT_REQUIRED"
 
+    nativeGap = _temporalGap(
+        _descriptor(),
+        DataQuery(subjects=("AAPL",), projection=NativeProjection(), time=TimeContext(knownAt="20250201")),
+    )
+    assert nativeGap is not None
+    assert nativeGap.code == "FEATURE_PIT_PROJECTION_REQUIRED"
+
 
 def testFactorProjectionUsesActualObservationKnowledgeTimeAndRevision() -> None:
     query = DataQuery(
@@ -145,7 +153,7 @@ def testFactorProjectionUsesActualObservationKnowledgeTimeAndRevision() -> None:
         requestId="aaplRevenue",
     )
 
-    assert gaps == ()
+    assert [gap.code for gap in gaps] == ["FEATURE_OBSERVATION_CONDITIONAL"]
     assert partition is not None
     assert partition.temporalStatus == "POINT_IN_TIME"
     assert partition.contentHash is not None
@@ -233,7 +241,7 @@ def testCanonicalObservationMarketCannotCrossDescriptorMarket() -> None:
     assert [gap.code for gap in gaps] == ["FEATURE_MARKET_MISMATCH"]
 
 
-@pytest.mark.parametrize("subject", ("aapl", "Apple Inc."))
+@pytest.mark.parametrize("subject", ("AAPL", "aapl"))
 def testSubjectFanoutUsesTheSingleCanonicalOwnerEntity(subject: str) -> None:
     partition, gaps = projectOutput(
         _dataset(entityId="US:AAPL"),
@@ -247,6 +255,37 @@ def testSubjectFanoutUsesTheSingleCanonicalOwnerEntity(subject: str) -> None:
         receiptRef="data-request:" + "f" * 64,
     )
 
-    assert gaps == ()
+    assert [gap.code for gap in gaps] == ["FEATURE_OBSERVATION_CONDITIONAL"]
     assert partition is not None
     assert partition.data["entityId"].unique().to_list() == ["US:AAPL"]
+
+
+def testSubjectFanoutCannotRelabelTheOnlyOwnerEntityAsTheRequestedCompany() -> None:
+    partition, gaps = projectOutput(
+        _dataset(entityId="US:MSFT"),
+        _descriptor(),
+        DataQuery(
+            subjects=("AAPL",),
+            projection=FactorProjection(measures=("financial.revenue",)),
+            time=TimeContext(knownAt="20250201"),
+        ),
+        selector={"subject": "AAPL"},
+        receiptRef="data-request:" + "1" * 64,
+    )
+
+    assert partition is None
+    assert [gap.code for gap in gaps] == ["FEATURE_OBSERVATION_MISSING"]
+    assert gaps[0].subject == "US:AAPL"
+
+
+def testNativeProjectionCannotClaimPointInTimeFromAnUnverifiedFeatureMapping() -> None:
+    partition, gaps = projectOutput(
+        {"entityId": "US:AAPL", "value": 100.0},
+        _descriptor(),
+        DataQuery(subjects=("AAPL",), time=TimeContext(knownAt="20250201")),
+        selector={"subject": "AAPL"},
+        receiptRef="data-request:" + "2" * 64,
+    )
+
+    assert partition is None
+    assert [gap.code for gap in gaps] == ["FEATURE_PIT_PROJECTION_REQUIRED"]

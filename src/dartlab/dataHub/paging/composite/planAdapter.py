@@ -180,11 +180,16 @@ class CompositePlanAdapterMixin:
         if safeLocator:
             eagerMode = "locator"
             codePin = canonicalDigest({"descriptor": descriptorValue})
+            locator = execution._resourceCall(descriptor, query, selectors[0])
+            sourcePin = locator.get("sourcePin") if isinstance(locator, Mapping) else None
+            if type(sourcePin) is not str or not sourcePin.startswith("resource-source-full:"):
+                raise ContinuationError("CONTINUATION_SOURCE_STALE")
             sourceDigest = canonicalDigest(
                 {
                     "assetId": descriptor.assetId,
                     "assetVersionId": descriptor.assetVersionId,
                     "sourceRef": descriptor.sourceRef,
+                    "sourcePin": sourcePin,
                     "universeSnapshotId": universeSnapshotId,
                 }
             )

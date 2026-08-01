@@ -7,9 +7,15 @@ from typing import Any, Mapping
 
 import httpx
 
+from dartlab.dataHub.continuation import canonicalJsonBytes
 from dartlab.dataHub.contracts import DataResult
 from dartlab.dataHub.controlPlane.contracts import DataHubJob
 from dartlab.dataHub.controlPlane.errors import DataHubControlError
+from dartlab.dataHub.controlPlane.policy import (
+    MAX_REQUEST_BYTES,
+    MAX_RESULT_WIRE_BYTES,
+    validateRemoteBaseUrl,
+)
 from dartlab.dataHub.transport import decodeDataResult
 
 
@@ -45,6 +51,38 @@ def _jobFromTree(value: Any) -> DataHubJob:
         raise DataHubControlError("DATA_HUB_CORRUPT") from None
 
 
+def _preflightSubmit(query: Mapping[str, Any], idempotencyKey: str | None, priority: int, maxAttempts: int) -> None:
+    try:
+        payload = canonicalJsonBytes(
+            {
+                "query": dict(query),
+                "idempotencyKey": idempotencyKey,
+                "priority": priority,
+                "maxAttempts": maxAttempts,
+            }
+        )
+    except (TypeError, ValueError):
+        raise DataHubControlError("DATA_HUB_INVALID") from None
+    if len(payload) > MAX_REQUEST_BYTES:
+        raise DataHubControlError("DATA_HUB_PAYLOAD_BUDGET")
+
+
+def _boundedResponse(response: httpx.Response, *, maximum: int) -> bytes:
+    contentLength = response.headers.get("content-length")
+    if contentLength is not None:
+        try:
+            if int(contentLength) > maximum:
+                raise DataHubControlError("DATA_HUB_PAYLOAD_BUDGET")
+        except ValueError:
+            raise DataHubControlError("DATA_HUB_CORRUPT") from None
+    payload = bytearray()
+    for chunk in response.iter_bytes():
+        if len(payload) + len(chunk) > maximum:
+            raise DataHubControlError("DATA_HUB_PAYLOAD_BUDGET")
+        payload.extend(chunk)
+    return bytes(payload)
+
+
 class DataHubClient:
     """Local DataHub와 같은 catalog, query 의미를 쓰는 원격 client."""
 
@@ -56,11 +94,9 @@ class DataHubClient:
         timeoutSeconds: float = 30,
         transport: httpx.BaseTransport | None = None,
     ):
-        if not isinstance(baseUrl, str) or not baseUrl.startswith(("http://", "https://")):
-            raise ValueError("baseUrl은 http 또는 https URL이어야 합니다")
         if not isinstance(token, str) or len(token) < 32:
             raise ValueError("token은 32자 이상이어야 합니다")
-        self.baseUrl = baseUrl.rstrip("/")
+        self.baseUrl = validateRemoteBaseUrl(baseUrl)
         self._client = httpx.Client(
             base_url=self.baseUrl,
             headers={"Authorization": f"Bearer {token}"},
@@ -101,6 +137,7 @@ class DataHubClient:
     ) -> DataHubJob:
         """Query를 비동기 durable job으로 제출한다."""
 
+        _preflightSubmit(query, idempotencyKey, priority, maxAttempts)
         response = self._client.post(
             "/api/dataHub/v1/jobs",
             json={
@@ -149,9 +186,11 @@ class DataHubClient:
     def result(self, jobId: str) -> DataResult:
         """성공한 job의 무손실 DataResult를 복원한다."""
 
-        response = self._client.get(f"/api/dataHub/v1/jobs/{jobId}/result")
-        self._raise(response)
-        return decodeDataResult(response.content)
+        with self._client.stream("GET", f"/api/dataHub/v1/jobs/{jobId}/result") as response:
+            payload = _boundedResponse(response, maximum=MAX_RESULT_WIRE_BYTES)
+            response._content = payload
+            self._raise(response)
+        return decodeDataResult(payload)
 
     def wait(
         self,

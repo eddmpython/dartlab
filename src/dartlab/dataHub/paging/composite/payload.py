@@ -46,6 +46,7 @@ from dartlab.dataHub.paging.composite.state import (
 )
 from dartlab.dataHub.paging.runtime import MAX_PAGE_BYTES
 from dartlab.dataHub.telemetry import dataHubLogger, recordFailure
+from dartlab.dataHub.transport.valueCodec import ValueCodecError, decodeValueTree, encodeValueTree
 
 _log = dataHubLogger(__name__)
 
@@ -269,11 +270,29 @@ def _partitionData(partition: DataPartition) -> tuple[str, bytes]:
     if type(data) is bytes:
         return "bytes", data
     if isinstance(data, Mapping):
-        return "mapping", canonicalJsonBytes(_strictTree(data))
+        try:
+            return "valueTree", encodeValueTree(data)
+        except ValueCodecError as error:
+            code = (
+                "CONTINUATION_BYTE_BUDGET" if error.code == "PROJECTION_BYTE_BUDGET" else "CONTINUATION_PAYLOAD_INVALID"
+            )
+            raise ContinuationError(code) from None
     if isinstance(data, tuple):
-        return "tuple", canonicalJsonBytes(_strictTree(data))
+        try:
+            return "valueTree", encodeValueTree(data)
+        except ValueCodecError as error:
+            code = (
+                "CONTINUATION_BYTE_BUDGET" if error.code == "PROJECTION_BYTE_BUDGET" else "CONTINUATION_PAYLOAD_INVALID"
+            )
+            raise ContinuationError(code) from None
     if isinstance(data, list):
-        return "list", canonicalJsonBytes(_strictTree(data))
+        try:
+            return "valueTree", encodeValueTree(data)
+        except ValueCodecError as error:
+            code = (
+                "CONTINUATION_BYTE_BUDGET" if error.code == "PROJECTION_BYTE_BUDGET" else "CONTINUATION_PAYLOAD_INVALID"
+            )
+            raise ContinuationError(code) from None
     try:
         return "arrow", _arrowPayload(partition.toArrow())
     except (TypeError, ValueError):
@@ -389,6 +408,11 @@ def _decodePartitionData(kind: str, payload: bytes) -> Any:
         return pl.from_arrow(table)
     if kind == "bytes":
         return payload
+    if kind == "valueTree":
+        try:
+            return decodeValueTree(payload)
+        except ValueCodecError:
+            raise ContinuationError("CONTINUATION_CORRUPT") from None
     value = _jsonLoad(payload)
     if kind == "scalar" and isinstance(value, dict) and set(value) == {"type", "value"}:
         scalarType = value["type"]

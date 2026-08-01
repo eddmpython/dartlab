@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import polars as pl
+import pytest
 
 
 def testJsonMappingQueryBuildsTypedFactorProjection(monkeypatch):
@@ -100,3 +101,30 @@ def testEngineCallCanExecuteMixedDataRequests(monkeypatch):
     ]
     assert payload["partitions"][0]["data"]["rows"][0]["measureId"] == "roe"
     assert payload["dataSnapshotId"].startswith("data-content-snapshot:")
+
+
+@pytest.mark.parametrize(
+    "query",
+    (
+        {"subjects": "005930"},
+        {"projection": {"kind": "factor", "measures": "roe"}},
+        {"universe": {"markets": "KR"}},
+        {"requests": "scan.ratio"},
+    ),
+)
+def testJsonMappingRejectsScalarStringsForSequenceFields(query):
+    import dartlab
+
+    with pytest.raises(TypeError, match="sequence"):
+        dartlab.dataHub("query", "scan.ratio", query=query)
+
+
+def testJsonMappingRejectsStringThatPretendsToBeBoolean():
+    import dartlab
+
+    with pytest.raises(TypeError, match="includePayload"):
+        dartlab.dataHub(
+            "query",
+            "resource.finance",
+            query={"projection": {"kind": "resource", "includePayload": "false"}},
+        )

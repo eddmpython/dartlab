@@ -36,6 +36,11 @@ class ResolvedMarket:
     sourceEntityIds: tuple[tuple[str, str], ...] = ()
     entityParams: tuple[tuple[str, tuple[tuple[str, str], ...]], ...] = ()
 
+    def __post_init__(self) -> None:
+        entities = tuple(entity for entity, _ in self.sourceEntityIds)
+        if len(entities) != len(set(entities)):
+            raise ValueError("universe public identity에는 source identity가 하나만 있어야 합니다")
+
     def sourceIdByEntity(self) -> dict[str, str]:
         """공개 entity ID를 owner 원천 식별자로 연결한다.
 
@@ -150,7 +155,7 @@ def _callResolver(spec: Mapping[str, Any], selection: UniverseSelection, market:
 
 def _entityParamsFromFrame(
     normalized, paramColumns: tuple[str, ...], market: str
-) -> tuple[tuple[tuple[str, tuple[tuple[str, str], ...]], ...] | None, DataGap | None]:
+) -> tuple[tuple[tuple[str, tuple[tuple[str, str], ...]], ...], DataGap | None]:
     """entity 별 파라미터를 모은다. 같은 entity 가 서로 다른 값을 들고 오면 gap.
 
     한 종목이 두 벌의 파라미터를 갖는 것은 universe 정의 자체가 어긋난 것이라 부분 성공으로
@@ -166,7 +171,7 @@ def _entityParamsFromFrame(
         )
         previous = paramsByEntity.get(entityId)
         if previous is not None and previous != params:
-            return None, DataGap(
+            return (), DataGap(
                 "UNIVERSE_RESOLUTION_FAILED",
                 f"{market} entity parameter가 충돌합니다: {entityId}",
                 systemic=True,
@@ -175,7 +180,7 @@ def _entityParamsFromFrame(
     return tuple(sorted(paramsByEntity.items())), None
 
 
-def _readMembershipFrame(frame, market: str):
+def _readMembershipFrame(frame, market: str, *, allowSourceAliases: bool = False):
     """resolver 프레임에서 식별자, 원천 식별자, entity 파라미터를 꺼낸다.
 
     프레임을 읽는 일과 그 결과로 무엇을 고를지 정하는 일을 나눈다. 앞은 자료 모양을 알고
@@ -185,7 +190,12 @@ def _readMembershipFrame(frame, market: str):
     Returns:
         ``(ids, sourceIds, entityParams, gap)``. gap 이 있으면 앞 셋은 쓰지 않는다.
     """
-    normalized = frame.with_columns(pl.col("entityId").cast(pl.Utf8))
+    entityExpression = pl.col("entityId").cast(pl.Utf8).str.strip_chars()
+    if market == "US":
+        entityExpression = entityExpression.str.to_uppercase()
+    elif market == "KR":
+        entityExpression = entityExpression.str.pad_start(6, "0")
+    normalized = frame.with_columns(entityExpression.alias("entityId"))
     ids = tuple(sorted({str(value) for value in normalized["entityId"].drop_nulls().to_list() if str(value)}))
     sourceIds: tuple[tuple[str, str], ...] = ()
     if "sourceEntityId" in normalized.columns:
@@ -198,6 +208,19 @@ def _readMembershipFrame(frame, market: str):
                 }
             )
         )
+        entities = tuple(entity for entity, _ in sourceIds)
+        sources = tuple(source for _, source in sourceIds)
+        if len(entities) != len(set(entities)) or not allowSourceAliases and len(sources) != len(set(sources)):
+            return (
+                (),
+                (),
+                (),
+                DataGap(
+                    "UNIVERSE_SOURCE_ID_AMBIGUOUS",
+                    f"{market} universe의 public/source identity가 일대일이 아닙니다",
+                    systemic=True,
+                ),
+            )
     paramColumns = tuple(sorted(column for column in normalized.columns if column.startswith("param_")))
     entityParams: tuple[tuple[str, tuple[tuple[str, str], ...]], ...] = ()
     if paramColumns:
@@ -225,7 +248,12 @@ def _loadMembership(selection: UniverseSelection, market: str) -> tuple[Resolved
         if frame.height and "provider" in frame.columns
         else str(spec.get("provider") or "unknown")
     )
-    ids, sourceIds, entityParams, paramGap = _readMembershipFrame(frame, market)
+    aliasMarkets = {str(value).upper() for value in spec.get("sourceAliasMarkets", ())}
+    ids, sourceIds, entityParams, paramGap = _readMembershipFrame(
+        frame,
+        market,
+        allowSourceAliases=market in aliasMarkets,
+    )
     if paramGap is not None:
         return None, paramGap
     explicit = tuple(value.split(":", 1)[1] for value in selection.explicitIds if value.startswith(f"{market}:"))

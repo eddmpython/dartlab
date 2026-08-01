@@ -10,6 +10,7 @@ DATA_PRODUCT_DESCRIPTOR = {
             "universeKind": "listedEquity",
             "markets": ("KR", "US"),
             "memberships": ("listed",),
+            "sourceAliasMarkets": ("US",),
             "module": "dartlab.providers.universe",
             "attribute": "listedEquityUniverse",
         },

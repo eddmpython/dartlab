@@ -10,7 +10,7 @@ import polars as pl
 import pytest
 
 from dartlab.dataHub import DataQuery, FactorProjection, QueryBudget, UniverseSelection
-from dartlab.dataHub.catalog.universe import resolveUniverse
+from dartlab.dataHub.catalog.universe import _readMembershipFrame, resolveUniverse
 
 
 def _installUniverseFixtures(monkeypatch) -> None:
@@ -81,6 +81,18 @@ def testResolvedUniverseKeepsOwnerSourceIdentityWithoutChangingPublicEntity(monk
         "AAPL": "0000320193",
         "MSFT": "0000789019",
     }
+
+
+def testUniverseRejectsAmbiguousPublicAndSourceIdentity():
+    publicConflict = pl.DataFrame({"entityId": ["aapl", "AAPL"], "sourceEntityId": ["1", "2"]})
+    _, _, _, publicGap = _readMembershipFrame(publicConflict, "US")
+    assert publicGap is not None
+    assert publicGap.code == "UNIVERSE_SOURCE_ID_AMBIGUOUS"
+
+    sourceConflict = pl.DataFrame({"entityId": ["AAPL", "MSFT"], "sourceEntityId": ["1", "1"]})
+    _, _, _, sourceGap = _readMembershipFrame(sourceConflict, "US")
+    assert sourceGap is not None
+    assert sourceGap.code == "UNIVERSE_SOURCE_ID_AMBIGUOUS"
 
 
 def testResolvedKrUniverseBindsPerEntityFiscalYearEndMonth(monkeypatch):

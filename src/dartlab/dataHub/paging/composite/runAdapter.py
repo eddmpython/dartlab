@@ -196,11 +196,20 @@ class CompositeRunAdapterMixin:
             requireDeadline(deadline)
             if universe.gaps or universe.snapshotId != private["universeSnapshotId"]:
                 raise ContinuationError("CONTINUATION_SOURCE_STALE")
+        locator = importlib.import_module("dartlab.dataHub.execution")._resourceCall(
+            current,
+            query,
+            private["selectors"][0],
+        )
+        sourcePin = locator.get("sourcePin") if isinstance(locator, Mapping) else None
+        if type(sourcePin) is not str or not sourcePin.startswith("resource-source-full:"):
+            raise ContinuationError("CONTINUATION_SOURCE_STALE")
         currentSource = canonicalDigest(
             {
                 "assetId": current.assetId,
                 "assetVersionId": current.assetVersionId,
                 "sourceRef": current.sourceRef,
+                "sourcePin": sourcePin,
                 "universeSnapshotId": private["universeSnapshotId"],
             }
         )

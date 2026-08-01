@@ -414,7 +414,8 @@ def testFailureAdvancesCursorAndCumulativeGapCoverage(tmp_path, monkeypatch):
         _adapters=adapters,
     )
     assert final.status == "partial"
-    assert final.gaps == ()
+    assert [gap.code for gap in final.gaps] == ["SYNTHETIC_GAP"]
+    assert final.gaps[0].requestId == "request0"
     assert final.coverage.succeededPartitions == 1
     assert final.coverage.failedPartitions == 1
     assert final.partitions[0].toPolars()["entityId"].to_list() == ["A"]

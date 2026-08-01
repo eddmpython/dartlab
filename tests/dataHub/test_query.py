@@ -5,6 +5,7 @@ from __future__ import annotations
 import time
 from collections import Counter
 from threading import Lock
+from types import SimpleNamespace
 
 import polars as pl
 
@@ -275,12 +276,25 @@ def testRequiredSelectorFailsBeforeOwnerExecution(monkeypatch):
     assert result.gaps[0].requestId == "quant.momentum"
 
 
-def testEveryQueryableAssetRoutesThroughOneMixedQuery(monkeypatch):
+def testEveryGenericQueryableAssetRoutesThroughOneMixedQuery(monkeypatch):
     import dartlab
     from dartlab.analysis.financial import dataAssets
 
     catalog = dartlab.dataHub("catalog")
-    assets = tuple(asset for asset in catalog.assets if asset.queryable)
+    monkeypatch.setattr(
+        "dartlab.providers.resourceStream.workbench.describeResource",
+        lambda resourceId, category, _cachePath: SimpleNamespace(
+            resourceId=resourceId,
+            category=category,
+            sourcePin="resource-source-full:" + "1" * 64,
+            shardCount=1,
+            totalBytes=1,
+            schemaFields=(("value", "Int64"),),
+        ),
+    )
+    assets = tuple(
+        asset for asset in catalog.assets if asset.queryable and dict(asset.metadata).get("observationPIT") is not True
+    )
     engineCalls = []
 
     def fakeEngine(owner):
@@ -334,29 +348,21 @@ def testEveryQueryableAssetRoutesThroughOneMixedQuery(monkeypatch):
         "query",
         query=DataQuery(
             requests=tuple(requests),
-            budget=QueryBudget(maxAssets=len(requests), maxRows=1_000),
+            budget=QueryBudget(maxAssets=len(requests), maxRows=1_000, timeoutMs=120_000),
             completeness="requireComplete",
         ),
     )
 
     assert result.status == "ok", result.gaps
     assert not result.gaps
-    assert len(result.partitions) == len(assets) == 172
+    assert len(result.partitions) == len(assets) == 170
     assert {partition.requestId for partition in result.partitions} == {asset.assetId for asset in assets}
     assert Counter(owner for owner, *_ in engineCalls) == Counter(
         asset.owner for asset in assets if asset.executorKind == "engineAxis"
     )
     assert simulationCalls == [{"subject": "probe"}]
-    assert featureCalls == [
-        {
-            "knownAt": "20250201",
-            "measures": (),
-            "subject": "probe",
-        }
-    ]
-    # DART owner 도 measure pushdown 을 선언하므로 measure 인자가 함께 내려간다.
-    # 요청을 좁히지 않은 질의는 빈 tuple 이고 owner 는 전체를 계산한다. EDGAR 와 같은 계약이다.
-    assert dartFeatureCalls == [{"knownAt": "20250201", "subject": "probe", "measures": ()}]
+    assert featureCalls == []
+    assert dartFeatureCalls == []
 
 
 def testMaxConcurrencyAcceleratesMixedQueryAndKeepsResultOrder(monkeypatch):

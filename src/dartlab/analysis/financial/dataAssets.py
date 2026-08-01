@@ -104,20 +104,21 @@ def simulationInputs(
 
         companyFactory = getattr(dartlab, "Company")
         company = companyFactory(subject)
+    if asOf is not None:
+        _periodKey(asOf)
     resolvedCompany: Any = company
-    try:
-        quarterly = resolvedCompany._buildFinanceSeries(freq="Q")
-    except (ValueError, KeyError, AttributeError):
-        quarterly = None
-    rawSeries = quarterly[0] if isinstance(quarterly, tuple) and len(quarterly) >= 2 else None
-    periods = list(quarterly[1]) if isinstance(quarterly, tuple) and len(quarterly) >= 2 else []
-    if rawSeries:
-        series, effectiveAsOf, latestAsOf, requestedAsOf = sliceFinanceSeries(rawSeries, periods, asOf)
-    else:
-        requestedAsOf = str(asOf) if asOf is not None else "latest"
-        effectiveAsOf = requestedAsOf
-        latestAsOf = "latest"
-        series = None
+    quarterly = resolvedCompany._buildFinanceSeries(freq="Q")
+    if not isinstance(quarterly, tuple) or len(quarterly) < 2:
+        raise ValueError("분기 재무 owner 결과가 (series, periods) 계약을 지키지 않았습니다")
+    rawSeries, rawPeriods = quarterly[:2]
+    if not isinstance(rawSeries, dict) or not rawSeries:
+        raise ValueError("분기 재무 series가 비었습니다")
+    if not isinstance(rawPeriods, Sequence) or isinstance(rawPeriods, (str, bytes)):
+        raise ValueError("분기 재무 periods가 sequence가 아닙니다")
+    periods = list(rawPeriods)
+    if not periods or any(type(period) is not str for period in periods):
+        raise ValueError("분기 재무 periods가 비었거나 유효하지 않습니다")
+    series, effectiveAsOf, latestAsOf, requestedAsOf = sliceFinanceSeries(rawSeries, periods, asOf)
     return {
         "series": series,
         "asOf": effectiveAsOf,

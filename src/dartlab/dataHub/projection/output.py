@@ -23,6 +23,7 @@ from dartlab.dataHub.contracts import (
 )
 from dartlab.dataHub.identity.contentSeal import contentHash, executionReceipt
 from dartlab.dataHub.projection.evidence import lineageFacet, narrativeFrame, qualityAssertions
+from dartlab.dataHub.transport.valueCodec import ValueCodecError, encodedValueSize, encodeValueTree
 
 _RECEIPT_PLACEHOLDER = f"data-execution:{'0' * 64}"
 
@@ -72,23 +73,30 @@ def _truncate(value: Any, maxRows: int) -> tuple[Any, bool]:
 def _bounded(value: Any, maxRows: int, maxBytes: int) -> tuple[Any, bool]:
     value, truncated = _truncate(value, maxRows)
     if isinstance(value, pl.DataFrame):
-        while value.height > 1 and value.estimated_size() > maxBytes:
+        while value.height > 1 and encodedValueSize(value) > maxBytes:
             value = value.head(max(1, value.height // 2))
             truncated = True
-        if value.estimated_size() > maxBytes:
-            raise ValueError("projection output이 maxBytes를 초과했습니다")
+        if encodedValueSize(value) > maxBytes:
+            raise ValueCodecError("PROJECTION_BYTE_BUDGET")
         return value, truncated
-    encoded = repr(value).encode("utf-8")
-    if len(encoded) <= maxBytes:
+    try:
+        encodeValueTree(value, maxBytes=maxBytes)
         return value, truncated
+    except ValueCodecError as error:
+        if error.code != "PROJECTION_BYTE_BUDGET":
+            raise
     if isinstance(value, (list, tuple)):
         candidate = value
-        while len(candidate) > 1 and len(repr(candidate).encode("utf-8")) > maxBytes:
+        while len(candidate) > 1:
+            try:
+                encodeValueTree(candidate, maxBytes=maxBytes)
+                return candidate, True
+            except ValueCodecError as error:
+                if error.code != "PROJECTION_BYTE_BUDGET":
+                    raise
             candidate = candidate[: max(1, len(candidate) // 2)]
             truncated = True
-        if len(repr(candidate).encode("utf-8")) <= maxBytes:
-            return candidate, truncated
-    raise ValueError("projection output이 maxBytes를 초과했습니다")
+    raise ValueCodecError("PROJECTION_BYTE_BUDGET")
 
 
 def _records(value: Any, *, path: str = "$") -> list[dict[str, Any]]:
@@ -313,13 +321,6 @@ def _resolveEntityIds(
                 descriptor.assetId,
                 requested,
             )
-        # owner 가 종목마다 따로 도는 모드에서 결과가 한 종목뿐이면 그것이 곧 요청한 종목이다.
-        # 표기가 달라 매칭에 실패했을 뿐이라 그 하나를 집는다.
-        if not matches and descriptor.executionMode == "subjectFanout" and len(availableEntities) == 1:
-            ownerEntity = availableEntities[0]
-            ownerMarket, separator, _ownerId = ownerEntity.partition(":")
-            if separator and (requestedMarket is None or ownerMarket == requestedMarket):
-                matches = (ownerEntity,)
         entityIds.extend(matches or (canonical,))
     return entityIds, None
 
@@ -522,6 +523,20 @@ def projectOutput(
     projection = query.projection
     data = raw
     gaps: tuple[DataGap, ...] = ()
+    if (
+        query.time is not None
+        and query.time.knownAt is not None
+        and dict(descriptor.metadata).get("observationPIT") is True
+        and not isinstance(projection, FactorProjection)
+    ):
+        return None, (
+            DataGap(
+                "FEATURE_PIT_PROJECTION_REQUIRED",
+                "observationPIT asset은 검증된 관측 envelope를 보존하는 FactorProjection이 필요합니다",
+                descriptor.assetId,
+                selector.get("subject"),
+            ),
+        )
     locatorOnly = isinstance(projection, ResourceProjection) and not projection.includePayload
     if _isEmpty(raw) and not locatorOnly:
         return None, (DataGap("NO_DATA", "owner가 물질화할 데이터를 반환하지 않았습니다", descriptor.assetId),)
@@ -557,9 +572,17 @@ def projectOutput(
         if data.is_empty():
             return None, (DataGap("PROJECTION_INCOMPATIBLE", "narrative text가 없습니다", descriptor.assetId),)
     elif isinstance(projection, ResourceProjection):
+        sourcePin = raw.get("sourcePin") if locatorOnly and isinstance(raw, Mapping) else None
+        if locatorOnly and (type(sourcePin) is not str or not sourcePin.startswith("resource-source-full:")):
+            return None, (
+                DataGap(
+                    "RESOURCE_SOURCE_UNVERIFIED", "resource locator의 full source pin이 없습니다", descriptor.assetId
+                ),
+            )
         data = {
             "assetId": descriptor.assetId,
-            "sourceRef": descriptor.sourceRef,
+            "sourceRef": f"{descriptor.sourceRef}#{sourcePin}" if sourcePin is not None else descriptor.sourceRef,
+            "sourcePin": sourcePin,
             "assetVersionId": descriptor.assetVersionId,
             "visibility": descriptor.visibility,
             "licenseRef": descriptor.licenseRef,
@@ -580,14 +603,9 @@ def projectOutput(
         statuses = tuple(data["temporalStatus"].drop_nulls().unique().to_list())
         if len(statuses) == 1:
             temporalStatus = str(statuses[0])
-    estimatedSize = getattr(data, "estimated_size", None)
-    if callable(estimatedSize):
-        observedSize = estimatedSize()
-        if type(observedSize) is not int:
-            raise TypeError("projection output byte estimate가 int가 아닙니다")
-        outputBytes = observedSize
-    else:
-        outputBytes = len(repr(data).encode("utf-8"))
+    from dartlab.dataHub.transport.valueCodec import encodedValueSize
+
+    outputBytes = encodedValueSize(data)
     assertions = qualityAssertions(
         descriptor,
         query,

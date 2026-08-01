@@ -44,6 +44,17 @@ _AXIS_REGISTRY = {
 }
 
 
+def _tupleField(payload: dict[str, Any], key: str) -> None:
+    """JSON array만 tuple field로 바꾸고 scalar string의 문자 분해를 막는다."""
+
+    if key not in payload:
+        return
+    value = payload[key]
+    if isinstance(value, (str, bytes)) or not isinstance(value, Sequence):
+        raise TypeError(f"{key}는 sequence여야 합니다")
+    payload[key] = tuple(value)
+
+
 def _projectionFromMapping(value: Any):
     if not isinstance(value, Mapping):
         return value
@@ -60,8 +71,7 @@ def _projectionFromMapping(value: Any):
     constructor = constructors.get(kind)
     if constructor is None:
         raise ValueError(f"알 수 없는 projection kind: {kind}")
-    if "measures" in payload:
-        payload["measures"] = tuple(payload["measures"])
+    _tupleField(payload, "measures")
     return constructor(**payload)
 
 
@@ -72,8 +82,7 @@ def _catalogQuery(value: Any) -> CatalogQuery | None:
         raise TypeError("catalog axis는 CatalogQuery 또는 mapping을 요구합니다")
     payload = dict(value)
     for key in ("layers", "owners", "kinds"):
-        if key in payload:
-            payload[key] = tuple(payload[key])
+        _tupleField(payload, key)
     return CatalogQuery(**payload)
 
 
@@ -84,8 +93,7 @@ def _dataRequestFromMapping(value: Any) -> DataRequest:
         raise TypeError("requests 항목은 DataRequest 또는 mapping이어야 합니다")
     payload = dict(value)
     for key in ("subjects", "measures"):
-        if key in payload:
-            payload[key] = tuple(payload[key])
+        _tupleField(payload, key)
     if "projection" in payload:
         payload["projection"] = _projectionFromMapping(payload["projection"])
     if isinstance(payload.get("time"), Mapping):
@@ -93,8 +101,7 @@ def _dataRequestFromMapping(value: Any) -> DataRequest:
     if isinstance(payload.get("universe"), Mapping):
         universe = dict(payload["universe"])
         for key in ("markets", "explicitIds"):
-            if key in universe:
-                universe[key] = tuple(universe[key])
+            _tupleField(universe, key)
         payload["universe"] = UniverseSelection(**universe)
     return DataRequest(**payload)
 
@@ -106,8 +113,7 @@ def _dataQuery(value: Any) -> DataQuery | None:
         raise TypeError("query axis는 DataQuery 또는 mapping을 요구합니다")
     payload = dict(value)
     for key in ("subjects", "measures"):
-        if key in payload:
-            payload[key] = tuple(payload[key])
+        _tupleField(payload, key)
     if "projection" in payload:
         payload["projection"] = _projectionFromMapping(payload["projection"])
     if isinstance(payload.get("time"), Mapping):
@@ -115,12 +121,12 @@ def _dataQuery(value: Any) -> DataQuery | None:
     if isinstance(payload.get("universe"), Mapping):
         universe = dict(payload["universe"])
         for key in ("markets", "explicitIds"):
-            if key in universe:
-                universe[key] = tuple(universe[key])
+            _tupleField(universe, key)
         payload["universe"] = UniverseSelection(**universe)
     if isinstance(payload.get("budget"), Mapping):
         payload["budget"] = QueryBudget(**dict(payload["budget"]))
     if "requests" in payload:
+        _tupleField(payload, "requests")
         payload["requests"] = tuple(_dataRequestFromMapping(item) for item in payload["requests"])
     if "materialization" in payload:
         payload["materialization"] = parseMaterializationDirective(payload["materialization"])

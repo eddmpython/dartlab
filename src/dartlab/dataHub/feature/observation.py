@@ -153,6 +153,8 @@ def validateVariableObservation(observation: VariableObservation) -> VariableObs
         raise FeatureObservationError("variable observation time order is invalid")
     if observation.vintage.availableAt != availableAt or observation.vintage.knowledgeAsOf != knowledgeAsOf:
         raise FeatureObservationError("variable observation vintage cutoff mismatch")
+    if observation.vintage.provider != observation.providerId:
+        raise FeatureObservationError("variable observation vintage provider mismatch")
     return observation
 
 

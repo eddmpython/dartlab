@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import hmac
 import json
 import math
 import re
@@ -15,14 +16,20 @@ from typing import Any, Callable, Iterator, Mapping
 
 from dartlab.dataHub.continuation import ArtifactStore, canonicalJsonBytes
 from dartlab.dataHub.continuation.privateStorage import securePrivatePath
+from dartlab.dataHub.transport import decodeDataResult
 
 from .contracts import DataHubJob, DataHubLease, DataHubMaintenanceReport
 from .errors import DataHubControlError
+from .policy import MAX_REQUEST_BYTES, MAX_RESULT_WIRE_BYTES
+from .queryContract import normalizeDurableQuery
+from .resultContract import (
+    ExpectedResultContract,
+    buildExpectedResultContract,
+    verifyCompletionResult,
+)
 
 _JOB_ID = re.compile(r"^[0-9a-f]{32}$")
 _ERROR_CODE = re.compile(r"^[A-Z][A-Z0-9_]{2,127}$")
-_MAX_REQUEST_BYTES = 1024 * 1024
-_MAX_RESULT_BYTES = 16 * 1024 * 1024
 
 
 def _identityDigest(value: str) -> str:
@@ -40,69 +47,29 @@ def _requirePositiveSeconds(value: float, *, maximum: float) -> float:
     return normalized
 
 
-def _durableQuery(query: Mapping[str, Any]) -> dict[str, Any]:
-    """비동기 query를 기본 immutable refresh 정책으로 정규화한다."""
+def _decodeJobEnvelope(payload: bytes) -> tuple[int, dict[str, Any], ExpectedResultContract | None]:
+    """CAS request envelope를 strict versioned contract로 복원한다."""
 
-    if not isinstance(query, Mapping):
-        raise DataHubControlError("DATA_HUB_INVALID")
-    payload = dict(query)
-    if "continuation" not in payload:
-        materialization = payload.get("materialization")
-        if materialization is None or materialization == "runtime":
-            payload["materialization"] = {"mode": "refresh"}
-        elif isinstance(materialization, Mapping) and materialization.get("mode", "runtime") == "runtime":
-            payload["materialization"] = {"mode": "refresh"}
-    return payload
-
-
-# wire codec 이 Arrow payload 를 base64 로 감싸므로 결과는 원시 대비 약 4/3 로 커진다.
-# 여유를 조금 두고 계산한 원시 상한이다.
-_MAX_RAW_RESULT_BYTES = (_MAX_RESULT_BYTES * 3) // 4 - 64 * 1024
-
-
-def _requireResultBudgetFits(query: Any) -> None:
-    """결과가 wire 상한을 넘길 예산이면 제출 시점에 거부한다.
-
-    Capabilities:
-        6 시간짜리 계산을 세 번 반복한 뒤에야 예산 오류로 죽는 낭비를 막는다.
-
-    Args:
-        query: 제출한 query mapping.
-
-    Raises:
-        DataHubControlError: query byte 예산이 wire 상한을 넘길 때
-            ``DATA_HUB_PAYLOAD_BUDGET``.
-
-    Example:
-        ``_requireResultBudgetFits(query)``.
-
-    Guide:
-        page 예산과 결과 상한은 서로 다른 계층이라 자동으로 맞춰지지 않는다.
-
-    When:
-        job 을 ledger 에 넣기 직전에 검사한다.
-
-    How:
-        base64 팽창을 반영한 원시 상한과 query 의 `maxBytes` 를 비교한다.
-
-    See Also:
-        ``dartlab.dataHub.transport.resultCodec``.
-
-    Requires:
-        예산을 명시하지 않은 query 는 기본값이 상한 안이므로 통과시킨다.
-
-    AI Context:
-        worker 재시도는 결정적 예산 위반을 고쳐주지 못한다. 제출에서 막아야 한다.
-    """
-
-    if not isinstance(query, dict):
-        return
-    budget = query.get("budget")
-    if not isinstance(budget, dict):
-        return
-    maxBytes = budget.get("maxBytes")
-    if type(maxBytes) is int and maxBytes > _MAX_RAW_RESULT_BYTES:
-        raise DataHubControlError("DATA_HUB_PAYLOAD_BUDGET")
+    try:
+        tree = json.loads(payload)
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        raise DataHubControlError("DATA_HUB_CORRUPT") from None
+    if not isinstance(tree, dict) or type(tree.get("formatVersion")) is not int:
+        raise DataHubControlError("DATA_HUB_CORRUPT")
+    version = tree["formatVersion"]
+    if version == 1:
+        if set(tree) != {"formatVersion", "query"} or not isinstance(tree["query"], dict):
+            raise DataHubControlError("DATA_HUB_CORRUPT")
+        return version, tree["query"], None
+    if version != 2 or set(tree) != {"formatVersion", "query", "expectedResult"}:
+        raise DataHubControlError("DATA_HUB_CORRUPT")
+    if not isinstance(tree["query"], dict):
+        raise DataHubControlError("DATA_HUB_CORRUPT")
+    try:
+        expected = ExpectedResultContract.fromTree(tree["expectedResult"])
+    except (TypeError, ValueError):
+        raise DataHubControlError("DATA_HUB_CORRUPT") from None
+    return version, tree["query"], expected
 
 
 class DataHubJobLedger:
@@ -188,6 +155,9 @@ class DataHubJobLedger:
                 ON data_hub_jobs(state, available_at, priority DESC, created_at, job_id);
                 CREATE INDEX IF NOT EXISTS data_hub_jobs_updated
                 ON data_hub_jobs(state, updated_at);
+                CREATE TABLE IF NOT EXISTS data_hub_artifact_gc (
+                    digest TEXT PRIMARY KEY
+                );
                 """
             )
         securePrivatePath(self.databasePath)
@@ -229,15 +199,17 @@ class DataHubJobLedger:
             raise DataHubControlError("DATA_HUB_INVALID")
         if type(maxAttempts) is not int or not 1 <= maxAttempts <= 10:
             raise DataHubControlError("DATA_HUB_INVALID")
+        normalizedQuery, queryTree = normalizeDurableQuery(query)
+        expected = buildExpectedResultContract(normalizedQuery)
         requestPayload = canonicalJsonBytes(
             {
-                "formatVersion": 1,
-                "query": _durableQuery(query),
+                "formatVersion": 2,
+                "query": queryTree,
+                "expectedResult": expected.asTree(),
             }
         )
-        if len(requestPayload) > _MAX_REQUEST_BYTES:
+        if len(requestPayload) > MAX_REQUEST_BYTES:
             raise DataHubControlError("DATA_HUB_PAYLOAD_BUDGET")
-        _requireResultBudgetFits(query)
         requestDigest = hashlib.sha256(requestPayload).hexdigest()
         idempotencyDigest = _identityDigest(idempotencyKey) if idempotencyKey is not None else None
         now = self._clock()
@@ -254,6 +226,7 @@ class DataHubJobLedger:
             committedDigest = self.artifacts.putBytes(requestPayload)
             if committedDigest != requestDigest:
                 raise DataHubControlError("DATA_HUB_CORRUPT")
+            connection.execute("DELETE FROM data_hub_artifact_gc WHERE digest=?", (requestDigest,))
             jobId = uuid.uuid4().hex
             connection.execute(
                 """
@@ -376,23 +349,18 @@ class DataHubJobLedger:
             raise DataHubControlError("DATA_HUB_CORRUPT")
         requestPayload = self.artifacts.readBytes(
             claimed["request_digest"],
-            maxBytes=_MAX_REQUEST_BYTES,
+            maxBytes=MAX_REQUEST_BYTES,
             budgetCode="CONTINUATION_STATE_BUDGET",
         )
-        try:
-            tree = json.loads(requestPayload)
-        except (UnicodeDecodeError, json.JSONDecodeError):
-            raise DataHubControlError("DATA_HUB_CORRUPT") from None
-        if not isinstance(tree, dict) or set(tree) != {"formatVersion", "query"} or tree["formatVersion"] != 1:
-            raise DataHubControlError("DATA_HUB_CORRUPT")
-        if not isinstance(tree["query"], dict):
-            raise DataHubControlError("DATA_HUB_CORRUPT")
+        version, requestQuery, expected = _decodeJobEnvelope(requestPayload)
+        if version != 2 or expected is None:
+            raise DataHubControlError("DATA_HUB_PLAN_MISSING")
         return DataHubLease(
             job=self._job(claimed),
             workerDigest=workerDigest,
             leaseEpoch=leaseEpoch,
             leaseExpiresAt=leaseExpiresAt,
-            request=tree["query"],
+            request=requestQuery,
         )
 
     def _leaseRow(
@@ -456,23 +424,38 @@ class DataHubJobLedger:
         workerId: str,
         leaseEpoch: int,
         resultPayload: bytes,
+        *,
+        requestDigest: str,
     ) -> DataHubJob:
         """유효 lease의 wire result를 CAS에 기록하고 성공 전이한다."""
 
         if not isinstance(resultPayload, bytes):
             raise DataHubControlError("DATA_HUB_INVALID")
-        if len(resultPayload) > _MAX_RESULT_BYTES:
+        if len(resultPayload) > MAX_RESULT_WIRE_BYTES:
             raise DataHubControlError("DATA_HUB_PAYLOAD_BUDGET")
+        result = decodeDataResult(resultPayload)
         now = self._clock()
         with self._connection(immediate=True) as connection:
-            self._leaseRow(
+            current = self._leaseRow(
                 connection,
                 jobId=jobId,
                 workerId=workerId,
                 leaseEpoch=leaseEpoch,
                 now=now,
             )
+            if not isinstance(requestDigest, str) or not hmac.compare_digest(current["request_digest"], requestDigest):
+                raise DataHubControlError("DATA_HUB_RESULT_UNBOUND")
+            requestPayload = self.artifacts.readBytes(
+                current["request_digest"],
+                maxBytes=MAX_REQUEST_BYTES,
+                budgetCode="CONTINUATION_STATE_BUDGET",
+            )
+            version, _requestQuery, expected = _decodeJobEnvelope(requestPayload)
+            if version != 2 or expected is None:
+                raise DataHubControlError("DATA_HUB_PLAN_MISSING")
+            verifyCompletionResult(result, expected)
             resultDigest = self.artifacts.putBytes(resultPayload)
+            connection.execute("DELETE FROM data_hub_artifact_gc WHERE digest=?", (resultDigest,))
             connection.execute(
                 """
                 UPDATE data_hub_jobs
@@ -495,10 +478,13 @@ class DataHubJobLedger:
         *,
         errorCode: str,
         retryDelaySeconds: float = 0,
+        retryable: bool = True,
     ) -> DataHubJob:
         """Worker 실패를 retry 또는 terminal 실패로 전이한다."""
 
         if not isinstance(errorCode, str) or _ERROR_CODE.fullmatch(errorCode) is None:
+            raise DataHubControlError("DATA_HUB_INVALID")
+        if type(retryable) is not bool:
             raise DataHubControlError("DATA_HUB_INVALID")
         delay = _requirePositiveSeconds(retryDelaySeconds, maximum=86400) if retryDelaySeconds else 0.0
         now = self._clock()
@@ -510,9 +496,9 @@ class DataHubJobLedger:
                 leaseEpoch=leaseEpoch,
                 now=now,
             )
-            terminal = current["attempt_count"] >= current["max_attempts"]
+            terminal = not retryable or current["attempt_count"] >= current["max_attempts"]
             state = "failed" if terminal else "queued"
-            finalCode = "DATA_HUB_ATTEMPTS_EXHAUSTED" if terminal else errorCode
+            finalCode = errorCode if not retryable else "DATA_HUB_ATTEMPTS_EXHAUSTED" if terminal else errorCode
             connection.execute(
                 """
                 UPDATE data_hub_jobs
@@ -555,19 +541,19 @@ class DataHubJobLedger:
         """성공한 job의 검증된 wire result bytes를 읽는다."""
 
         self._validateJobId(jobId)
-        with self._connection() as connection:
+        with self._connection(immediate=True) as connection:
             row = connection.execute("SELECT * FROM data_hub_jobs WHERE job_id=?", (jobId,)).fetchone()
-        if row is None:
-            raise DataHubControlError("DATA_HUB_NOT_FOUND")
-        if row["state"] == "cancelled":
-            raise DataHubControlError("DATA_HUB_CANCELLED")
-        if row["state"] != "succeeded" or row["result_digest"] is None:
-            raise DataHubControlError("DATA_HUB_NOT_READY")
-        return self.artifacts.readBytes(
-            row["result_digest"],
-            maxBytes=_MAX_RESULT_BYTES,
-            budgetCode="CONTINUATION_STATE_BUDGET",
-        )
+            if row is None:
+                raise DataHubControlError("DATA_HUB_NOT_FOUND")
+            if row["state"] == "cancelled":
+                raise DataHubControlError("DATA_HUB_CANCELLED")
+            if row["state"] != "succeeded" or row["result_digest"] is None:
+                raise DataHubControlError("DATA_HUB_NOT_READY")
+            return self.artifacts.readBytes(
+                row["result_digest"],
+                maxBytes=MAX_RESULT_WIRE_BYTES,
+                budgetCode="CONTINUATION_STATE_BUDGET",
+            )
 
     def maintain(
         self,
@@ -581,7 +567,6 @@ class DataHubJobLedger:
             raise DataHubControlError("DATA_HUB_INVALID")
         retention = _requirePositiveSeconds(retentionSeconds, maximum=365 * 24 * 60 * 60)
         now = self._clock()
-        deleteDigests: list[str] = []
         with self._connection(immediate=True) as connection:
             requeued, failed = self._expireLeases(connection, now=now, maximum=maximum)
             rows = connection.execute(
@@ -608,12 +593,33 @@ class DataHubJobLedger:
                         (digest, digest),
                     ).fetchone()
                     if referenced is None:
-                        deleteDigests.append(digest)
+                        connection.execute(
+                            "INSERT OR IGNORE INTO data_hub_artifact_gc(digest) VALUES (?)",
+                            (digest,),
+                        )
         artifactsDeleted = 0
-        for digest in dict.fromkeys(deleteDigests):
-            deleted, _freed = self.artifacts.deleteBytes(digest)
-            if deleted:
-                artifactsDeleted += 1
+        with self._connection(immediate=True) as connection:
+            tombstones = connection.execute(
+                "SELECT digest FROM data_hub_artifact_gc ORDER BY digest LIMIT ?",
+                (maximum * 2,),
+            ).fetchall()
+            for tombstone in tombstones:
+                digest = tombstone["digest"]
+                referenced = connection.execute(
+                    """
+                    SELECT 1 FROM data_hub_jobs
+                    WHERE request_digest=? OR result_digest=?
+                    LIMIT 1
+                    """,
+                    (digest, digest),
+                ).fetchone()
+                if referenced is not None:
+                    connection.execute("DELETE FROM data_hub_artifact_gc WHERE digest=?", (digest,))
+                    continue
+                deleted, _freed = self.artifacts.deleteBytes(digest)
+                if deleted:
+                    artifactsDeleted += 1
+                connection.execute("DELETE FROM data_hub_artifact_gc WHERE digest=?", (digest,))
         return DataHubMaintenanceReport(
             leasesRequeued=requeued,
             leasesFailed=failed,

@@ -21,6 +21,7 @@ from dartlab.dataHub.contracts import (
     projectionKind,
 )
 from dartlab.dataHub.identity.digestInput import digestInputBytes
+from dartlab.dataHub.transport.valueCodec import encodedValueSize
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -100,6 +101,12 @@ def _temporalGap(descriptor: DataAssetDescriptor, query: DataQuery) -> DataGap |
             descriptor.assetId,
         )
     observationPit = metadata.get("observationPIT") is True
+    if query.time.knownAt is not None and observationPit and not isinstance(query.projection, FactorProjection):
+        return DataGap(
+            "FEATURE_PIT_PROJECTION_REQUIRED",
+            "observationPIT asset은 검증된 관측 envelope를 보존하는 FactorProjection이 필요합니다",
+            descriptor.assetId,
+        )
     if query.time.knownAt is not None and (
         isinstance(query.projection, NarrativeProjection)
         or (isinstance(query.projection, FactorProjection) and not observationPit)
@@ -216,7 +223,22 @@ def _engineCall(descriptor: DataAssetDescriptor, query: DataQuery, selector: Map
 def _resourceCall(descriptor: DataAssetDescriptor, query: DataQuery, selector: Mapping[str, str]) -> Any:
     projection = query.projection
     if isinstance(projection, ResourceProjection) and not projection.includePayload:
-        return None
+        from dartlab.dataHub.paging.runtime import manifestCachePath
+        from dartlab.providers.resourceStream.workbench import describeResource
+
+        category = descriptor.executorAxis
+        if not category:
+            raise ValueError("resource locator category가 없습니다")
+        cachePath = manifestCachePath(descriptor.assetId, category)
+        description = describeResource(descriptor.assetId, category, cachePath)
+        return {
+            "resourceId": description.resourceId,
+            "category": description.category,
+            "sourcePin": description.sourcePin,
+            "shardCount": description.shardCount,
+            "totalBytes": description.totalBytes,
+            "schemaFields": description.schemaFields,
+        }
     shardKind = str(dict(descriptor.metadata).get("shardKind", "bulk"))
     if shardKind not in {"company", "series"}:
         raise ValueError(f"RESOURCE_PAYLOAD_UNBOUNDED: shardKind={shardKind}")
@@ -275,13 +297,7 @@ def _execute(descriptor: DataAssetDescriptor, query: DataQuery, selector: Mappin
 
 
 def _outputBytes(value: Any) -> int:
-    estimatedSize = getattr(value, "estimated_size", None)
-    if callable(estimatedSize):
-        observedSize = estimatedSize()
-        if type(observedSize) is not int:
-            raise TypeError("owner output byte estimate가 int가 아닙니다")
-        return observedSize
-    return len(repr(value).encode("utf-8"))
+    return encodedValueSize(value)
 
 
 def _universeCoverage(

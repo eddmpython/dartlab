@@ -119,3 +119,10 @@ def testCompileValidationKeepsStateCompilerErrorBoundary() -> None:
     tampered = replace(_observation(), value=101.0)
     with pytest.raises(compatibility.StateCompilerError, match="content hash mismatch"):
         _buildBatch(tampered)
+
+
+def testObservationProviderMustMatchVintageProvider() -> None:
+    forged = _observation(vintage=replace(_values()["vintage"], provider="dart"))
+
+    with pytest.raises(canonical.FeatureObservationError, match="provider mismatch"):
+        canonical.validateVariableObservation(forged)

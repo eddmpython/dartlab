@@ -262,6 +262,19 @@ def testExactRequirementAndPointInTimeCutoffFailClosed() -> None:
     assert notExact.value.code == "FEATURE_EXACT_REQUIRED"
 
     exact = buildFeatureObservationSet(_registry(), (_observation(),))
+    with pytest.raises(FeatureQueryError) as selfDeclaredExact:
+        readFeatures(
+            exact,
+            FeatureReadQuery(
+                featureIds=("financial.revenue",),
+                entityIds=("US:AAPL",),
+                knownAt="20250201",
+                mode="pointInTime",
+                requireExact=True,
+            ),
+        )
+    assert selfDeclaredExact.value.code == "FEATURE_EXACT_REQUIRED"
+
     with pytest.raises(FeatureQueryError) as missingScope:
         readFeatures(
             exact,
@@ -310,6 +323,21 @@ def testBoundsStalenessAndDatePrecisionUseTheSameSimulatorSemantics() -> None:
     )
     assert sameDay.selections[0].exactAsKnown is False
     assert sameDay.exactAsKnown is False
+
+    knowledgeSameDay = buildFeatureObservationSet(
+        _registry(),
+        (_observation(availableAt="20250114", knowledgeAsOf="20250115"),),
+    )
+    sameKnowledgeDay = readFeatures(
+        knowledgeSameDay,
+        FeatureReadQuery(
+            featureIds=("financial.revenue",),
+            knownAt="20250115",
+            mode="pointInTime",
+        ),
+    )
+    assert sameKnowledgeDay.selections[0].exactAsKnown is False
+    assert sameKnowledgeDay.exactAsKnown is False
 
 
 def testUnknownSourceDuplicatePrimaryKeyAndDatasetDriftFailClosed() -> None:
