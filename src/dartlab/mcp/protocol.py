@@ -348,23 +348,23 @@ def boundMcpPayload(payload: dict[str, Any], *, maxBytes: int | None = None) -> 
     preview를 단계적으로 줄이고 ``payloadBudget.gap`` 으로 손실을 공개한다.
     """
     requestedLimit = mcpMaxPayloadBytes() if maxBytes is None else int(maxBytes)
-    limit = max(_MCP_MIN_MAX_PAYLOAD_BYTES, requestedLimit)
+    maxPayloadBytes = max(_MCP_MIN_MAX_PAYLOAD_BYTES, requestedLimit)
     originalBytes = _mcpPayloadSize(payload)
-    if originalBytes <= limit:
+    if originalBytes <= maxPayloadBytes:
         return payload
 
     levels = ((32, 4000, 12), (12, 1200, 10), (4, 400, 8), (1, 160, 6))
-    for limit, maxString, maxDepth in levels:
+    for itemLimit, maxString, maxDepth in levels:
         candidate = _compactMcpValue(
             payload,
-            limit=limit,
+            limit=itemLimit,
             maxString=maxString,
             maxDepth=maxDepth,
         )
         if not isinstance(candidate, dict):
             candidate = {"data": candidate}
         candidate["payloadBudget"] = {
-            "maxBytes": limit,
+            "maxBytes": maxPayloadBytes,
             "originalBytes": originalBytes,
             "truncated": True,
             "gap": {
@@ -377,7 +377,7 @@ def boundMcpPayload(payload: dict[str, Any], *, maxBytes: int | None = None) -> 
         candidate["payloadBudget"]["returnedBytes"] = returnedBytes
         returnedBytes = _mcpPayloadSize(candidate)
         candidate["payloadBudget"]["returnedBytes"] = returnedBytes
-        if returnedBytes <= limit:
+        if returnedBytes <= maxPayloadBytes:
             return candidate
 
     # 최소 상한(4 KiB)에서도 항상 직렬화 가능한 마지막 봉투를 보장한다.
@@ -388,7 +388,7 @@ def boundMcpPayload(payload: dict[str, Any], *, maxBytes: int | None = None) -> 
         "data": {},
         "error": payload.get("error"),
         "payloadBudget": {
-            "maxBytes": limit,
+            "maxBytes": maxPayloadBytes,
             "originalBytes": originalBytes,
             "truncated": True,
             "gap": {
