@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import polars as pl
 
+from dartlab.providers._common.auditOpinion import auditOpinionStatus, normalizeAuditOpinion
 from dartlab.scan.io.parquet import scanParquets
 
 _OPINION_RISK = {
@@ -34,31 +35,12 @@ def _normalizeOpinion(raw: str | None) -> str | None:
         - ``None`` — 감사의견 대상 아님 (해당없음, 반기검토 등)
         - 원본 문자열 — 위 범주에 해당하지 않는 기타 의견
     """
-    if not raw:
-        return None
-    s = raw.strip().replace(" ", "").replace("\n", "")
-    if not s or s == "-":
-        return None
-    # "적정" 계열
-    if s in ("적정", "적정의견"):
-        return "적정의견"
-    if "적정" in s and "부적정" not in s and "한정" not in s:
-        return "적정의견"
-    # "한정" 계열
-    if "한정" in s:
-        return "한정의견"
-    # "부적정" 계열
-    if "부적정" in s:
-        return "부적정의견"
-    # "의견거절" 계열
-    if "의견거절" in s or "거절" in s:
-        return "의견거절"
-    # 기타 (해당사항없음, 검토 등)
-    if "해당" in s or "없음" in s or "예외" in s:
-        return None  # 감사의견 대상 아님
-    if "검토" in s:
-        return None  # 반기검토는 감사의견 아님
-    return raw.strip()
+    normalized = normalizeAuditOpinion(raw)
+    if normalized is not None:
+        return normalized
+    if auditOpinionStatus(raw) == "ambiguous":
+        return str(raw).strip()
+    return None
 
 
 def _sortedYears(years: list) -> list[str]:

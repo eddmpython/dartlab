@@ -10,7 +10,7 @@ _CONFIG 그룹:
 - 시계열 안정화 가중치
 - 축1 압축 · OFS 블렌딩
 
-_WEIGHTS — 기업 유형별 7축 가중치 (default/captive/holding/financial)
+_WEIGHTS — 기업 유형별 7축 가중치 (default/captive/holding)
 _CHS_PD_BRACKETS — CHS PD → 점수 매핑 테이블
 """
 
@@ -49,7 +49,6 @@ _WEIGHTS = {
     "default": [0.25, 0.20, 0.15, 0.15, 0.10, 0.10, 0.05],
     "captive": [0.30, 0.15, 0.15, 0.15, 0.10, 0.10, 0.05],
     "holding": [0.15, 0.25, 0.15, 0.15, 0.15, 0.10, 0.05],
-    "financial": [0.35, 0.35, 0.15, 0.00, 0.15],
 }
 
 _CHS_PD_BRACKETS = [

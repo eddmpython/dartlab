@@ -40,7 +40,8 @@ def extractRaw(
     Returns:
         pl.DataFrame — 정제된 raw 데이터. 데이터 없음 (parquet 결락/필터 결과 empty/year null
         전부) → None. column 은 apiType 마다 상이 (DART API 원본 키), 공통 보존은
-        ``year`` (Int32) · ``quarterNum`` (Int32) · ``stockCode`` · ``apiType`` · ``stlm_dt``.
+        ``year`` (Int32) · ``quarterNum`` (Int32) · ``stockCode`` · ``apiType`` · ``stlm_dt``
+        · ``rcept_no``. 접수번호는 공시 판정 provenance 로 보존한다.
 
     Example:
         >>> from dartlab.providers.dart.report.extract import extractRaw
@@ -81,7 +82,7 @@ def extractRaw(
             - year 추출 실패 (4 자리 패턴 미매칭) → 해당 row 자동 drop, 일부만 남을 수 있음.
         OutputSchema:
             - row: apiType × stockCode × year × quarter 조합당 1 (또는 sub-key 별 N — apiType 마다 상이).
-            - column: apiType 마다 가변. 공통 보존은 KEEP_META_COLS 5 + ``quarterNum`` 1.
+            - column: apiType 마다 가변. 공통 보존은 KEEP_META_COLS + ``quarterNum`` 1.
             - 정렬: ``year`` 오름차순 → ``quarterNum`` 오름차순.
         Prerequisites:
             - gather report category 가 stockCode 에 대해 1 회 이상 수집됨.

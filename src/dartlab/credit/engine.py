@@ -233,7 +233,7 @@ def evaluateCompany(
             - ``chsAdjustment``/``notchAdjustment`` (dict|None)
             - ``divergenceExplanation`` (list[str])
             - ``methodologyVersion`` (str)
-            - ``axes`` (list[dict]): 7 (또는 5) 축 상세
+            - ``axes`` (list[dict]): 비금융 7 축 점수 또는 금융 비채점 회계 프록시 진단
             - ``metricsHistory`` (detail=True): 기간별 시계열
             - ``narratives`` (detail=True): 서사 dict
 
@@ -250,8 +250,8 @@ def evaluateCompany(
         3-Track 분류:
         - Track A (일반): 7 축 (repayment/leverage/liquidity/cashFlow/
           businessStability/reliability/disclosureRisk)
-        - Track B (금융): 5 축 (capitalAdequacy/profitability/assetQuality/
-          liquidity/businessStability) - 7 축 framework 미적용
+        - Track B (금융): 유형별 규제지표 calibration 전까지 accounting proxy
+          ``diagnostic_only``. grade/PD/outlook 비발행
         - Track C (지주): 7 축 + 가중치 차별화 + 별도재무 블렌딩
 
     When:
@@ -259,8 +259,8 @@ def evaluateCompany(
         위임.
 
     How:
-        ``_getSectorInfo`` / ``_isFinancial`` 분기 → ``calcAllMetrics`` 축별 metric → 가중평균
-        → CHS PD 보정 → Notch 7 룰 → 20 단계 grade 변환 → dict.
+        ``_getSectorInfo`` / ``_isFinancial`` 분기. 비금융은 ``calcAllMetrics`` 축별 metric →
+        가중평균 → CHS/Notch → 20 단계 grade. 금융은 공통기간 회계 프록시와 coverage gap만 반환.
 
     See Also:
         - ``credit`` (top-level): stockCode 진입점
@@ -278,8 +278,8 @@ def evaluateCompany(
 
     LLM Specifications:
         AntiPatterns:
-            - Track B 금융사 결과의 ``eCR`` 가 None 이라 "데이터 누락" 으로
-              해석 금지 - Track B 는 eCR 미적용이 정상.
+            - Track B 금융사의 ``grade``/``pdEstimate``/``eCR`` None을 누락 오류로
+              해석 금지. 유형별 규제지표 calibration 전 의도적 비발행이다.
             - basePeriod 미지정 시 최신이 partial quarter 인 경우 자동
               skip (R25-1) - currentScore 와 score 차이 발생 가능, 정상.
         OutputSchema:
@@ -311,7 +311,13 @@ def evaluateCompany(
     isFinancialCo = _isFinancial(company)
 
     if isFinancialCo:
-        financialResult = _evaluateFinancial(company, detail=detail, basePeriod=basePeriod, sector=sector)
+        financialResult = _evaluateFinancial(
+            company,
+            detail=detail,
+            basePeriod=basePeriod,
+            sector=sector,
+            industryGroup=industryGroup,
+        )
         if financialResult is not None and requestedOverrides:
             financialResult["appliedOverrides"] = {}
             financialResult["ignoredOverrides"] = {
@@ -528,6 +534,7 @@ def evaluateCompany(
         result["reliability"] = metrics.get("reliability")
         result["disclosureRisk"] = metrics.get("disclosureRisk")
         result["auditOpinion"] = metrics.get("auditOpinion")
+        result["auditOpinionEvidence"] = metrics.get("auditOpinionEvidence")
         result["borrowingsDetail"] = metrics.get("borrowingsDetail")
         result["provisionsDetail"] = metrics.get("provisionsDetail")
 

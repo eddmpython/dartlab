@@ -66,9 +66,9 @@ def creditScorecard(
     """단일 종목 dCR + 7 축 신용 분석.
 
     Capabilities:
-        credit.engine.evaluateCompany(detail=True) wrap. dCR 등급 (20 단계 AAA~D) +
-        1Y PD + 7 축 점수 + 전망. includeFactors=True 시 Altman 적용성 점수와
-        Beneish 비발행 상태를 동행한다.
+        credit.engine.evaluateCompany(detail=True) wrap. 비금융은 dCR 등급 (20 단계 AAA~D) +
+        1Y PD + 7 축 점수 + 전망. 금융은 유형별 calibration 전 회계 프록시 진단과
+        비발행 사유를 반환한다. includeFactors=True 시 Altman 적용성 점수와 Beneish 비발행 상태를 동행한다.
 
     Parameters
     ----------
@@ -178,7 +178,8 @@ def creditScorecard(
         )
 
     layout = _compileScorecardLayout(result)
-    confidence = baseScore("ratio")
+    gradePublished = layout["headline"].get("grade") is not None
+    confidence = baseScore("ratio") if gradePublished else 0
     corpName = str(getattr(company, "corpName", None) or "")
 
     factor_data: dict[str, Any] | None = None
@@ -212,8 +213,12 @@ def creditScorecard(
         "sections": layout["sections"],
         "adjustments": layout["adjustments"],
         "confidence": confidence,
-        "confidenceMethod": "ratio",
+        "confidenceMethod": "ratio" if gradePublished else "blocked",
         "basePeriod": basePeriod,
+        "assessmentStatus": result.get("assessmentStatus") or ("usable" if gradePublished else "blocked"),
+        "blockedReason": result.get("blockedReason"),
+        "coverage": result.get("coverage"),
+        "auditOpinionEvidence": result.get("auditOpinionEvidence"),
     }
     if factor_data is not None:
         payload["factors"] = factor_data
@@ -241,7 +246,7 @@ def creditScorecard(
         Ref(
             id=f"credit:{stockCode}:axes",
             kind="tableRef",
-            title=f"{corpName or stockCode} 신용 7 축",
+            title=f"{corpName or stockCode} " + ("신용 7 축" if gradePublished else "신용 진단"),
             source="creditScorecard",
             payload=payload,
         )
@@ -249,11 +254,13 @@ def creditScorecard(
 
     headline = layout["headline"]
     parts = [f"{corpName or stockCode} 신용"]
+    if not gradePublished:
+        parts.append("등급·PD 비발행")
     if headline.get("grade"):
         parts.append(f"grade={headline['grade']}")
     if headline.get("pdEstimate") is not None:
         parts.append(f"PD={headline['pdEstimate']:.2f}%")
-    if headline.get("outlook"):
+    if headline.get("outlook") and headline.get("outlook") != "N/A":
         parts.append(f"전망={headline['outlook']}")
     summary = " · ".join(parts)
 

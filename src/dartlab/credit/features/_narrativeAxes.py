@@ -435,7 +435,7 @@ def narrateReliability(
 
     if auditOpinion:
         if "적정" in auditOpinion and "부적정" not in auditOpinion and "한정" not in auditOpinion:
-            details.append("감사의견은 적정으로 재무제표 신뢰성에 문제가 없다.")
+            details.append("구조화 공시에서 적정의견이 명시적으로 관측되었다.")
         elif "한정" in auditOpinion:
             details.append("감사의견이 한정으로 재무제표 일부 항목에 대한 신뢰성 우려가 있다.")
         elif "부적정" in auditOpinion or "의견거절" in auditOpinion:

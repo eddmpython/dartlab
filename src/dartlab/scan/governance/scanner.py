@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import polars as pl
 
+from dartlab.providers._common.auditOpinion import normalizeAuditOpinion
 from dartlab.scan.io.parquet import (
     findLatestYear,
     parseNumStr,
@@ -416,7 +417,7 @@ def scanAuditOpinion() -> dict[str, str]:
                 continue
             worst, worst_op = 0, None
             for row in valid_rows.iter_rows(named=True):
-                op = row.get("adt_opinion")
+                op = normalizeAuditOpinion(row.get("adt_opinion"))
                 if op:
                     r = opinion_rank.get(op, 0)
                     if r > worst:

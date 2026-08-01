@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from dartlab.analysis.financial._seriesMath import _latestNotNone
 from dartlab.analysis.financial.insight.types import Flag
+from dartlab.providers._common.auditOpinion import normalizeAuditOpinion
 
 _BIG4_KEYWORDS = ["삼일", "PwC", "삼정", "KPMG", "한영", "EY", "안진", "Deloitte"]
 
@@ -72,13 +73,14 @@ def _auditOpinionSignal(audit, details: list[str], risks: list[Flag]) -> tuple[i
     if not (audit is not None and audit.opinions):
         return 0, 0
     latest = _latestNotNone(audit.opinions)
-    if latest is None:
-        return 0, 2
-    if "적정" in str(latest):
-        details.append("감사의견: 적정")
+    normalized = normalizeAuditOpinion(latest)
+    if normalized is None:
+        return 0, 0
+    if normalized == "적정의견":
+        details.append("감사의견: 적정의견 명시 관측")
         return 2, 2
-    details.append(f"감사의견: {latest}")
-    risks.append(Flag("danger", "audit", f"감사의견 비적정: {latest}"))
+    details.append(f"감사의견: {normalized}")
+    risks.append(Flag("danger", "audit", f"감사의견 비적정: {normalized}"))
     return -2, 2
 
 

@@ -255,18 +255,33 @@ def pivotAudit(stockCode: str, *, baseDf: pl.DataFrame | None = None) -> AuditRe
     if df is None:
         return None
 
-    yearly = df.unique(["year"], keep="last").sort("year")
+    # 한 접수본에 당기/전기/전전기 비교 행이 함께 온다. 결산일에서 만든
+    # ``year`` 는 세 행에 같으므로 입력 순서가 아니라 당기 행과 최신 정정
+    # 접수번호를 우선해 회계연도별 한 행을 고른다.
+    if "bsns_year" in df.columns:
+        df = df.with_columns(
+            pl.col("bsns_year").cast(pl.Utf8).str.contains("당기").fill_null(False).alias("_isCurrent")
+        )
+    else:
+        df = df.with_columns(pl.lit(False).alias("_isCurrent"))
+    sortCols = ["year", "_isCurrent"]
+    if "rcept_no" in df.columns:
+        sortCols.append("rcept_no")
+    yearly = df.sort(sortCols).unique(["year"], keep="last").sort("year")
     years = yearly["year"].to_list()
     opinions: list[Optional[str]] = []
     auditors: list[Optional[str]] = []
+    rceptNos: list[Optional[str]] = []
 
     for row in yearly.iter_rows(named=True):
         opinions.append(row.get("adt_opinion"))
         auditors.append(row.get("adtor"))
+        rceptNos.append(row.get("rcept_no"))
 
     return AuditResult(
         years=years,
         opinions=opinions,
         auditors=auditors,
-        df=df,
+        df=df.drop("_isCurrent"),
+        rceptNos=rceptNos,
     )

@@ -2,11 +2,24 @@
 
 from __future__ import annotations
 
+import math
+
 from dartlab.core.utils.helpers import annualColsFromPeriods, toDictBySnakeId
 from dartlab.credit.scoring._metricsArithmetic import _cv, _div, _getRatios, _isQuarterlyFallback, _ttmSum
 
 _toDict = toDictBySnakeId
 _annualCols = annualColsFromPeriods
+
+
+def _positiveFinite(value) -> bool:
+    """양의 유한 숫자인지 확인한다."""
+    if value is None or isinstance(value, bool):
+        return False
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return False
+    return math.isfinite(number) and number > 0
 
 
 # ═══════════════════════════════════════════════════════════
@@ -148,11 +161,11 @@ def calcSeparateMetrics(company) -> dict | None:
 
 
 def calcFinancialMetrics(company, *, basePeriod: str | None = None) -> dict | None:
-    """금융업(은행/보험/증권) 전용 5축 지표 산출.
+    """금융업 회계 프록시 시계열을 산출한다.
 
     Capabilities:
-        은행/보험/증권 회사용 5 축 지표 (자기자본비율, ROA, NIM proxy, 충당금비율, cash-to-asset)
-        시계열 산출. 일반기업 D-EBITDA/FFO-Debt 미적용 Track B 핵심 함수.
+        은행/보험/증권 공통 재무제표의 장부자본, ROA, 금융수익, 대손상각비,
+        현금성자산 프록시 시계열. 규제자본·NIM·LCR/NSFR 등으로 해석하지 않는다.
 
     일반기업용 D/EBITDA, FFO/Debt 대신
     자본비율, ROA, NIM 대리, 충당금 비율 등 금융업 핵심 지표 사용.
@@ -176,12 +189,12 @@ def calcFinancialMetrics(company, *, basePeriod: str | None = None) -> dict | No
             ocf : float | None — 영업활동현금흐름 (원)
             equityRatio : float | None — 자기자본비율 (%)
             roa : float | None — 총자산이익률 (%)
-            nimProxy : float | None — NIM 대리 (이자수익/자산) (%)
+            incomeToAsset : float | None — 금융수익/기말총자산 (%)
             provisionRatio : float | None — 충당금비율 (대손상각비/자산) (%)
             cashToAsset : float | None — 현금/자산 비율 (%)
             currentRatio : float | None — 유동비율 (%)
-        businessStability : dict — 사업 안정성
-            revenueCV : float | None — 영업이익 변동계수 (%)
+        businessStability : dict — 규모·변동성 진단
+            operatingIncomeCV : float | None — 영업이익 변동계수 (%)
             roaCV : float | None — ROA 변동계수 (%)
             totalAssets : float | None — 최신 자산총계 (원)
         track : str — "B" (금융업 트랙 식별자)
@@ -196,8 +209,8 @@ def calcFinancialMetrics(company, *, basePeriod: str | None = None) -> dict | No
         9.8
 
     Guide:
-        BIS 자기자본비율 7~15% 정상. ROA 0.3~1.5% 정상. NIM proxy 1~3%. ``financialTrackBThresholds``
-        가 본 함수 산출 metric 에 매핑.
+        반환값은 ``diagnostic_only`` 회계 프록시의 원천이다. BIS/K-ICS/NCR 또는
+        금융 하위유형별 funding/liquidity 지표로 대체해 등급에 사용하면 안 된다.
 
     When:
         ``evaluateCompany`` 가 회사 sector 가 FINANCIALS 일 때 본 함수로 분기.
@@ -226,16 +239,13 @@ def calcFinancialMetrics(company, *, basePeriod: str | None = None) -> dict | No
         return None
     bsData, bsPeriods = bsParsed
 
-    isResult = company.select(
-        "IS",
-        ["이자수익", "금융이익", "금융비용", "4.금융비용", "당기순이익", "대손상각비", "영업이익"],
-    )
+    isResult = company.select("IS", ["이자수익", "금융이익", "당기순이익", "대손상각비", "영업이익"])
     isParsed = _toDict(isResult)
     if isParsed is None:
         return None
     isData, _ = isParsed
 
-    cfResult = company.select("CF", ["영업활동현금흐름", "4.금융비용", "금융비용"])
+    cfResult = company.select("CF", ["영업활동현금흐름"])
     cfParsed = _toDict(cfResult)
     cfData = cfParsed[0] if cfParsed else {}
 
@@ -247,8 +257,7 @@ def calcFinancialMetrics(company, *, basePeriod: str | None = None) -> dict | No
     _allP = set(bsPeriods)
 
     # 금융업: 금융이익(순영업수익)을 우선. 이자수익은 부수 항목일 수 있음
-    intIncome = isData.get("금융이익", {}) or isData.get("이자수익", {})
-    intExpense = isData.get("금융비용", {}) or isData.get("4.금융비용", {})
+    financialIncome = isData.get("금융이익", {}) or isData.get("이자수익", {})
     ni = isData.get("당기순이익", {})
     provision = isData.get("대손상각비", {})
     oi = isData.get("영업이익", {})
@@ -258,7 +267,6 @@ def calcFinancialMetrics(company, *, basePeriod: str | None = None) -> dict | No
     ca = bsData.get("유동자산", {})
     cl = bsData.get("유동부채", {})
     ocf = cfData.get("영업활동현금흐름", {})
-    cfFinCost = cfData.get("4.금융비용", {}) or cfData.get("금융비용", {})
 
     history = []
     roaList = []
@@ -272,21 +280,19 @@ def calcFinancialMetrics(company, *, basePeriod: str | None = None) -> dict | No
         curLiab = cl.get(col)
 
         if _qMode:
-            intInc = _ttmSum(intIncome, col, _allP)
-            _ttmSum(intExpense, col, _allP) or _ttmSum(cfFinCost, col, _allP)
+            incomeValue = _ttmSum(financialIncome, col, _allP)
             netIncome = _ttmSum(ni, col, _allP)
             provCharge = _ttmSum(provision, col, _allP)
             opIncome = _ttmSum(oi, col, _allP)
             ocfVal = _ttmSum(ocf, col, _allP)
         else:
-            intInc = intIncome.get(col)
-            intExpense.get(col) or cfFinCost.get(col)
+            incomeValue = financialIncome.get(col)
             netIncome = ni.get(col)
             provCharge = provision.get(col)
             opIncome = oi.get(col)
             ocfVal = ocf.get(col)
 
-        if totalAssets is None or totalAssets == 0:
+        if not _positiveFinite(totalAssets):
             continue
 
         # 축1: 자본적정성
@@ -294,11 +300,12 @@ def calcFinancialMetrics(company, *, basePeriod: str | None = None) -> dict | No
 
         # 축2: 수익성
         roa = _div(netIncome, totalAssets, pct=True)
-        # NIM 대리: 이자수익/자산 (금융비용 차감 방식은 계정 불일치로 불안정)
-        nim = _div(intInc, totalAssets, pct=True) if intInc else None
+        # 금융수익/기말총자산 회계 프록시. 순이자마진(NIM)이 아니다.
+        incomeToAsset = _div(incomeValue, totalAssets, pct=True) if incomeValue is not None else None
 
         # 축3: 자산건전성
-        provRatio = _div(abs(provCharge) if provCharge else None, totalAssets, pct=True)
+        # 0은 관측 0이며, 환입(음수)은 비용으로 뒤집지 않고 signed 상태를 보존한다.
+        provRatio = _div(provCharge, totalAssets, pct=True) if provCharge is not None else None
 
         # 축4: 유동성
         cashToAsset = _div(cashVal, totalAssets, pct=True)
@@ -319,7 +326,7 @@ def calcFinancialMetrics(company, *, basePeriod: str | None = None) -> dict | No
                 "equityRatio": equityRatio,
                 # 축2
                 "roa": roa,
-                "nimProxy": nim,
+                "incomeToAsset": incomeToAsset,
                 # 축3
                 "provisionRatio": provRatio,
                 # 축4
@@ -333,7 +340,7 @@ def calcFinancialMetrics(company, *, basePeriod: str | None = None) -> dict | No
 
     # 축5: 사업안정성 (기존 로직 재사용)
     bizStability = {
-        "revenueCV": _cv([r for r in revList if r is not None]),
+        "operatingIncomeCV": _cv([r for r in revList if r is not None]),
         "roaCV": _cv([r for r in roaList if r is not None]),
         "totalAssets": history[0].get("totalAssets"),
     }

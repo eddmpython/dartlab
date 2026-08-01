@@ -60,9 +60,9 @@ Guard는 현재 레이어의 source를 동결한 뒤 한 번 실행한다. Guard
 - L2 완료 조건: analysis, macro, quant, industry, credit의 전체 src와 실제 호출자를
   데이터 계약·오류 투명성·SSOT·속도·메모리 기준으로 전수 대조한다. 결함 수정과 집중
   회귀를 끝내고 source 동결 뒤 공식 Guard, 원장, 커밋, push까지 닫는다.
-- 다음 첫 행동: Track B 유동성 가중 0과 감사의견 부재 추정을 닫는다. 이어
-  analysis, macro, quant, industry,
-  credit 전체 src와 호출자에서 새 부채가 없는지 source freeze 전 최종 순회한다. EDGAR
+- 다음 첫 행동: analysis, macro, quant, industry, credit 전체 src와 호출자에서 새 부채가
+  없는지 source freeze 전 최종 순회한다. Track B 공통등급 비발행과 감사의견 구조화 원장은
+  아래 체크포인트에서 닫혔다. EDGAR
   full-state 성능, 팩터 형성 시점, 백테스트 순수익·sizing·다중자산 원장, PBO, Sortino,
   삼양식품 dFV 드리프트, 스타일 형성 시점, CPCV와 walk-forward 검증 원장은 아래
   체크포인트에서 이미 닫혔다.
@@ -2917,3 +2917,76 @@ fixed-at-entry 단일자산과 초기 동일자본 strategy sleeve로 공개 범
 증명할 수 없는 점수를 전 경로에서 비발행한다.** 기능을 가장한 대체값을 없앤 축소가
 이번 완료 범위다. L2 전체는 진행 중이며 다음 체크포인트는 Track B 유동성 가중 0과
 감사의견 키워드 부재 추정이다.
+
+### L2 체크포인트: 금융 Track B 비발행과 감사의견 구조화 원장 (2026-08-01)
+
+**상태: 체크포인트 완료. L2 전체는 진행 중.** 금융 방법론과 감사의견 결측을 나눈 두
+전문 검토는 기존 Track B가 유동성만 0%인 것이 아니라 은행·보험·증권에 같은 회계
+프록시와 임계값을 적용해 공통 등급과 PD를 만든다는 데 합의했다. 감사의견도 감사 섹션에
+텍스트가 있고 부정 키워드가 없다는 이유만으로 적정을 추론했고, 금융 분기는 명시적
+비적정 의견조차 소비하지 않았다. 유동성에 임의 가중치를 붙이는 대신 현재 증명할 수 없는
+금융 공통등급 전체와 키워드 부재 추론을 비발행으로 닫았다.
+
+1. **범위와 실제 호출자.** 금융 분기 판별, Track B metric과 5축 engine, 가중치·시계열·
+   CHS·notch, public credit product, Story CreditView, AI badge·scorecard, source Skill을
+   함께 대조했다. 감사의견은 DART report extract/pivot, scan audit/governance, credit
+   reliability와 narrative, quant governance, analysis trend·grading·anomaly, story table,
+   AI refs까지 구조화 원천에서 최종 문장까지 추적했다.
+2. **제품 결함 재현.** 금융 가중치는 자본 35%, 수익 35%, 자산건전성 15%, 유동성 0%,
+   사업안정성 15%라 유동성 점수가 0이든 90이든 등급이 같았다. 더 심각하게는 2026
+   BS-only 행을 최신으로 골라 수익성이 모두 결측인데도, 총자산 100조원 초과라는 이유로
+   자산건전성을 12점으로 대체하고 규모 0점을 더해 높은 등급을 냈다. contribution 합과
+   재정규화 currentScore도 일치하지 않았다. 회계 자기자본/총자산을 BIS 자본비율처럼,
+   금융이익/자산을 NIM처럼 설명했고 보험·증권에도 같은 기준을 적용했다. 감사 fetcher는
+   모든 기간의 panel 본문을 합쳐 부정 키워드가 없으면 `적정`을 반환했으며 `basePeriod`와
+   접수번호를 버렸다. quant는 빈 값·각주·미인식 문자열에도 audit 70점을 줬고 `부적정`의
+   `적정` 부분문자열을 먼저 읽을 수 있었다.
+3. **단일 방법론과 원천 SSOT.** 금융업은 은행/보험/증권/금융지주/기타금융 하위유형별
+   규제자본·자산위험·funding/liquidity와 동일 시점 원장이 생기기 전 공통 dCR 등급을
+   발행하지 않는다. 장부자본, ROA, 금융수익, 대손상각비, 현금성자산은
+   `diagnostic_only` 회계 프록시다. 은행 유동성은 최소 LCR·NSFR과 조달구조, 보험은
+   K-ICS·ALM/해지·담보유출, 증권은 NCR·haircut·채무보증·단기조달을 분리해야 한다.
+   감사의견은 DART 구조화 `adt_opinion`의 명시 네 범주만 관측이며 감사 섹션 존재,
+   부정 키워드 부재, 감사인 이름은 의견이 아니다. 회계연도, 감사인, 접수번호와
+   `observed/missing/ambiguous/unsupported` 상태를 함께 보존한다.
+4. **수정과 fail-closed 범위.** Track B의 공통 가중치와 점수·시계열 smoothing·CHS·notch를
+   제거했다. 출력은 `assessmentStatus="diagnostic_only"`, `grade/score/pdEstimate=None`,
+   `investmentGrade=None`, `outlook="N/A"`이고 product는 `blocked`다. 모든 프록시 축의
+   score·weight·contribution은 None이며 값·단위·상태·proxy 여부만 공개한다. BS와 최소
+   수익성 입력이 함께 있는 최신 공통기간을 골라 `requestedAsOf`, `assessmentAsOf`,
+   `freshnessGap`을 남긴다. 총자산 규모 12/20/25와 유동성 25 대체를 제거하고 0 대손비용은
+   관측 0, 환입은 signed 값으로 보존한다. 금융수익/자산은 NIM 이름을 쓰지 않는다. 향후
+   grade는 하위유형 확정, critical 4축 전부 관측, coverage 85% 이상에서만 열 수 있고 PD는
+   유형별 out-of-time calibration 전까지 계속 None이다. 감사 공통 정규화는 부정 범주를
+   먼저 판정하고 DART annual 당기행·최신 정정 접수본을 고른다. credit `basePeriod`,
+   analysis trend, story gap, quant score와 AI badge까지 같은 상태를 전달한다.
+5. **공개 행동, 정확성, 속도, 메모리.** 105560 은행/지주 후보, 032830 보험, 006800
+   기타금융 후보 모두 요청 최신 2026에서 BS·IS 공통 2025로 내려가 freshness gap을
+   공개했고 grade·PD None, grade coverage 0%, product blocked를 냈다. 관측 회계 프록시는
+   각각 8개 중 6/5/5개였지만 규제 핵심축 coverage로 승격하지 않았다. 감사의견은 세 회사
+   모두 구조화 observed였고 보험 표본은 평가기간 2025보다 최신 관측 감사연도가 2024라
+   그대로 드러났다. 세 진단과 전종목 audit 결합은 32.623초, RSS 증가 216.758MiB,
+   최종 RSS 325.539MiB였다. 전종목 audit 2,932행은 안전 1,910, 관찰 928, 주의 3,
+   고위험 62, 자료부족 29이며 opinion 자체 결측은 기존 원장에서 지목한 23사와 일치했다.
+   삼성전자 구조화 evidence는 2025 적정의견, 접수번호 20260310002820이며
+   `basePeriod=2024`에서는 2024 의견과 접수번호 20250311001085만 반환했다.
+6. **회귀와 Guard.** 명시 네 범주와 영문 표기, 부적정/적정·unqualified/qualified
+   부분문자열 순서, 검토·결측·각주, 회계연도 경계, 당기행·최신 정정, provenance,
+   BS-only 공통기간, 총자산-only AA 금지, 0 대손비용, 금융 product·AI badge 차단,
+   quant 기본 70 제거, analysis denominator·anomaly, story gap 라벨을 신규 30건으로
+   고정했다. credit 전체 `288 passed`, provider·scan·analysis·story·AI 묶음
+   `284 passed`, quant unit `350 passed, 118 deselected`가 통과했다. 변경 Python Ruff와
+   diffCheck가 통과했다. Guard quick는 1,792파일, 규칙 실패 0, architecturePytest와
+   providerGate PASS다. 공식 Guard는 L2 source freeze 뒤 한 번만 실행한다.
+7. **남은 부채와 판정.** 금융 dCR을 다시 열려면 유형별 규제 원천 owner, 동일시점 패널,
+   non-compensatory capital/liquidity gate, 역사 rating/default 코호트, 단조성·Brier·
+   calibration curve와 out-of-time 검증이 필요하다. US 감사의견은 정식 opinion paragraph
+   parser가 없어 unsupported로 남기고 감사인·감사보수로 추론하지 않는다. structured
+   접수번호는 credit·analysis까지 보존했지만 감사 결론의 AI grounding을 강제하는 전용
+   Ref 정책은 L4 소비자 전체 감사에서 다시 닫아야 한다. generated Skill artifact의 선재
+   drift도 source spec과 분리한 잔여 부채다.
+
+**판정: 금융업은 증명되지 않은 공통 등급과 PD를 발행하지 않고 회계 프록시 진단으로
+축소했으며, 감사의견은 명시 구조화 범주와 기간·접수번호가 있는 경우만 판정한다.** 기능
+축소가 정확성 회복의 정공법이다. L2 전체는 아직 진행 중이며 다음 단계는 다섯 엔진 전체
+source와 실제 호출자의 최종 순회, source freeze, 공식 Guard다.

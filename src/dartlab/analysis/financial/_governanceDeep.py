@@ -9,6 +9,7 @@ from __future__ import annotations
 from dartlab.core.memory import memoizedCalc
 from dartlab.core.polarsUtil import isEmptyDf
 from dartlab.core.utils.helpers import MAX_RATIO_YEARS, annualColsFromPeriods, toDictBySnakeId
+from dartlab.providers._common.auditOpinion import normalizeAuditOpinion
 
 CEO_TURNOVER_WINDOW_YEARS = 5
 RELATED_PARTY_PARSER_UNIT = 1_000_000
@@ -239,8 +240,9 @@ def calcGovernanceFlags(company, *, basePeriod: str | None = None) -> list[tuple
     if audit and audit["history"]:
         latest = audit["history"][-1]
         opinion = latest.get("opinion")
-        if opinion and opinion != "적정의견" and opinion != "적정":
-            flags.append((f"최근 감사의견: {opinion}", "warning"))
+        normalized = normalizeAuditOpinion(opinion)
+        if normalized and normalized != "적정의견":
+            flags.append((f"최근 감사의견: {normalized}", "warning"))
 
         # 감사인 변경
         changes = [h for h in audit["history"] if h.get("auditorChanged")]

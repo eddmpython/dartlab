@@ -28,11 +28,11 @@ def getDcrBadge(company: Any) -> dict[str, Any] | None:
         pdEstimate (float | None) — 1 년 부도확률 (%).
         outlook (str) — "안정적"/"긍정적"/"부정적".
         investmentGrade (bool).
-        axes (list[dict]) — 7 (또는 5) 축 점수 상세. 각 항목: name/weight/score.
+        axes (list[dict]) — 발행 가능한 비금융 7 축 점수 상세. 각 항목: name/weight/score.
         confidence (int) — 0-100.
         confidenceMethod (str) — "ratio".
 
-    실패 시 None — 데이터 부족·BS/IS/CF 미존재. engineCall 은 None 이면 dcrBadge 생략.
+    실패 또는 금융 ``diagnostic_only`` 시 None. engineCall 은 None 이면 dcrBadge 생략.
     """
     if company is None:
         return None
@@ -44,7 +44,7 @@ def getDcrBadge(company: Any) -> dict[str, Any] | None:
         result = evaluateCompany(company, detail=False)
     except Exception:
         return None
-    if not isinstance(result, dict):
+    if not isinstance(result, dict) or not result.get("grade"):
         return None
     axes_raw = result.get("axes") or []
     axes: list[dict[str, Any]] = []

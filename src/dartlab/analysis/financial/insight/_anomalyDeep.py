@@ -15,6 +15,7 @@ import math
 from dartlab.analysis.financial._seriesMath import _latestNotNone
 from dartlab.analysis.financial.insight.types import Anomaly, AuditDataForAnomaly
 from dartlab.core.utils.extract import getAnnualValues
+from dartlab.providers._common.auditOpinion import normalizeAuditOpinion
 
 _BIG4_KEYWORDS = ["삼일", "PwC", "삼정", "KPMG", "한영", "EY", "안진", "Deloitte"]
 
@@ -405,9 +406,10 @@ def _auditOpinionFlag(opinions: list) -> Anomaly | None:
     if not opinions:
         return None
     latest = _latestNotNone(opinions)
-    if latest is None or "적정" in str(latest):
+    normalized = normalizeAuditOpinion(latest)
+    if normalized is None or normalized == "적정의견":
         return None
-    return Anomaly("danger", "audit", f"감사의견 비적정: {latest} (ISA 705)", 1.0)
+    return Anomaly("danger", "audit", f"감사의견 비적정: {normalized} (ISA 705)", 1.0)
 
 
 def _kamSurgeFlag(kamCounts: list) -> Anomaly | None:

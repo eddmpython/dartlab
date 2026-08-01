@@ -231,68 +231,113 @@ def _fetchDisclosureRisk(company) -> dict | None:
     return None
 
 
-def _fetchAuditOpinion(company) -> str | None:
-    """감사의견 추출 — 적정/한정/부적정/의견거절.
+def _yearOf(value) -> int | None:
+    """기간 값에서 네 자리 회계연도를 읽는다."""
+    import re
 
-    [성능] panel 공통파서 감사 섹션 텍스트 스캔이 단일 종목만 처리해 빠르므로 1순위.
-    company.governance() 호출은 전종목 scan(12s+)을 트리거하므로 마지막 fallback으로만.
+    match = re.search(r"(?:19|20)\d{2}", str(value or ""))
+    return int(match.group()) if match else None
+
+
+def _fetchAuditOpinionEvidence(company, *, basePeriod: str | None = None) -> dict:
+    """DART 구조화 원천에서 최신 연간 감사의견과 provenance 를 가져온다.
+
+    감사 섹션의 존재나 부정 키워드의 부재로 적정을 추론하지 않는다. 구조화
+    ``adt_opinion`` 에 네 표준 범주가 명시된 경우만 ``observed`` 이다.
     """
-    # 1순위: panel 공통파서 — 감사보고서/감사의견 섹션 텍스트 키워드 스캔 (단일 종목, 빠름)
+    from dartlab.providers._common.auditOpinion import auditOpinionStatus, normalizeAuditOpinion
+
+    market = str(getattr(company, "market", "KR") or "KR").upper()
+    if market not in ("KR", "KOSPI", "KOSDAQ", "KONEX"):
+        return {
+            "status": "unsupported",
+            "opinion": None,
+            "rawOpinion": None,
+            "assuranceBasis": None,
+            "fiscalPeriod": None,
+            "filedAt": None,
+            "auditor": None,
+            "source": {"market": market, "method": None, "rceptNo": None},
+        }
+
     try:
-        import polars as pl
+        import warnings
 
-        from dartlab.providers.dart.panel.text import panelTextRows
+        report = getattr(company, "_report", None)
+        if report is None:
+            raise AttributeError("report accessor 없음")
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            result = getattr(report, "audit", None)
+        if result is None:
+            raise AttributeError("audit result 없음")
 
-        _code = getattr(company, "stockCode", None)
-        _texts = panelTextRows(_code) if _code else None
-        if _texts is not None and not _texts.is_empty():
-            _sub = _texts.filter(pl.col("sectionLeaf").str.contains("감사의견|감사보고서|외부감사"))
-            text = " ".join(c for c in _sub["contentRaw"].to_list() if c)
-            if text:
-                if "부적정" in text:
-                    return "부적정"
-                if "의견거절" in text:
-                    return "의견거절"
-                if "한정의견" in text or "한정 의견" in text:
-                    return "한정"
-                # 감사 섹션이 존재하고 명시적 위반 키워드 없으면 적정
-                return "적정"
-    except (AttributeError, ValueError, KeyError, TypeError):
-        pass
+        years = list(getattr(result, "years", []) or [])
+        opinions = list(getattr(result, "opinions", []) or [])
+        auditors = list(getattr(result, "auditors", []) or [])
+        rceptNos = list(getattr(result, "rceptNos", []) or [])
+        cutoff = _yearOf(basePeriod)
+        candidates = []
+        for i, raw in enumerate(opinions):
+            year = _yearOf(years[i]) if i < len(years) else None
+            if cutoff is not None and (year is None or year > cutoff):
+                continue
+            rceptNo = rceptNos[i] if i < len(rceptNos) else None
+            candidates.append(
+                {
+                    "year": year,
+                    "raw": raw,
+                    "opinion": normalizeAuditOpinion(raw),
+                    "status": auditOpinionStatus(raw),
+                    "auditor": auditors[i] if i < len(auditors) else None,
+                    "rceptNo": rceptNo,
+                }
+            )
 
-    # 2순위: scorer 직접 호출 (있으면)
-    try:
-        import importlib
+        observed = [row for row in candidates if row["opinion"] is not None]
+        selected = max(observed, key=lambda row: (row["year"] or -1, str(row["rceptNo"] or ""))) if observed else None
+        if selected is None:
+            selected = (
+                max(candidates, key=lambda row: (row["year"] or -1, str(row["rceptNo"] or ""))) if candidates else None
+            )
+        if selected is None:
+            raise AttributeError("audit opinion row 없음")
 
-        _extractAuditOpinion = importlib.import_module("dartlab.scan.governance.scorer")._extractAuditOpinion
+        rceptNo = selected["rceptNo"]
+        filedAt = str(rceptNo)[:8] if rceptNo and len(str(rceptNo)) >= 8 else None
+        return {
+            "status": "observed" if selected["opinion"] is not None else selected["status"],
+            "opinion": selected["opinion"],
+            "rawOpinion": selected["raw"],
+            "assuranceBasis": "audit" if selected["opinion"] is not None else None,
+            "fiscalPeriod": str(selected["year"]) if selected["year"] is not None else None,
+            "filedAt": filedAt,
+            "auditor": selected["auditor"],
+            "source": {"market": "KR", "method": "structured", "rceptNo": rceptNo},
+        }
+    except (AttributeError, ValueError, KeyError, TypeError, IndexError):
+        return {
+            "status": "missing",
+            "opinion": None,
+            "rawOpinion": None,
+            "assuranceBasis": None,
+            "fiscalPeriod": None,
+            "filedAt": None,
+            "auditor": None,
+            "source": {"market": "KR", "method": "structured", "rceptNo": None},
+        }
 
-        result = _extractAuditOpinion(company)
-        if result:
-            return result
-    except (ImportError, AttributeError):
-        pass
 
-    # 마지막 fallback: governance() — 전종목 scan을 트리거하므로 매우 느림
-    # 위 두 경로가 모두 실패한 경우만 사용
-    try:
-        gov = getattr(company, "governance", None)
-        if gov is not None and callable(gov):
-            govResult = gov()
-            if govResult is not None and hasattr(govResult, "to_dicts"):
-                rows = govResult.to_dicts()
-                if rows:
-                    opinion = rows[0].get("auditOpinion") or rows[0].get("감사의견")
-                    if opinion:
-                        return opinion
-    except (AttributeError, ValueError, KeyError, TypeError):
-        pass
-
-    return None
+def _fetchAuditOpinion(company, *, basePeriod: str | None = None) -> str | None:
+    """명시적으로 관측된 구조화 감사의견만 반환한다."""
+    evidence = _fetchAuditOpinionEvidence(company, basePeriod=basePeriod)
+    return evidence.get("opinion") if evidence.get("status") == "observed" else None
 
 
 __all__ = [
     "_calcSegmentHHI",
     "_fetchAuditOpinion",
+    "_fetchAuditOpinionEvidence",
     "_fetchDisclosureRisk",
     "_fetchNotes",
     "_fetchProfile",

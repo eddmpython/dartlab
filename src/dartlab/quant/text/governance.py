@@ -11,6 +11,7 @@ import logging
 import polars as pl
 
 from dartlab.core.market import resolveMarket
+from dartlab.providers._common.auditOpinion import normalizeAuditOpinion
 from dartlab.quant.screen.dataAccess import loadScanParquet
 
 log = logging.getLogger(__name__)
@@ -40,6 +41,38 @@ def _safeFloat(val) -> float | None:
         return float(s) if s and s != "-" else None
     except (ValueError, TypeError):
         return None
+
+
+def _latestAuditOpinion(df: pl.DataFrame | None) -> dict | None:
+    """정렬되지 않은 scan 행에서 최신 연간 구조화 감사의견을 고른다."""
+    if df is None or df.is_empty() or "adt_opinion" not in df.columns:
+        return None
+    rows = df.to_dicts()
+    if "quarter" in df.columns:
+        q4 = [row for row in rows if str(row.get("quarter") or "") == "4분기"]
+        if q4:
+            rows = q4
+    current = [row for row in rows if "당기" in str(row.get("bsns_year") or "")]
+    if current:
+        rows = current
+
+    observed = []
+    for row in rows:
+        opinion = normalizeAuditOpinion(row.get("adt_opinion"))
+        if opinion is None:
+            continue
+        observed.append((str(row.get("stlm_dt") or ""), str(row.get("rcept_no") or ""), row, opinion))
+    if not observed:
+        return None
+    _, _, row, opinion = max(observed, key=lambda item: (item[0], item[1]))
+    return {
+        "status": "observed",
+        "opinion": opinion,
+        "rawOpinion": row.get("adt_opinion"),
+        "fiscalPeriod": row.get("stlm_dt") or row.get("year"),
+        "rceptNo": row.get("rcept_no"),
+        "source": "DART.adt_opinion",
+    }
 
 
 def calcGovernanceQuant(stockCode: str, *, market: str = "auto", **kwargs) -> dict:
@@ -131,23 +164,19 @@ def calcGovernanceQuant(stockCode: str, *, market: str = "auto", **kwargs) -> di
                     break
 
     # 2) auditOpinion — 감사의견 품질
-    ao = _filterStock(loadScanParquet("auditOpinion", market), stockCode)
-    if ao is not None:
+    ao = _filterStock(loadScanParquet("auditOpinion", market), stockCode) if market == "KR" else None
+    auditEvidence = _latestAuditOpinion(ao)
+    if auditEvidence is not None:
         available.append("auditOpinion")
-        for col in ao.columns:
-            if "의견" in col or "opinion" in col.lower():
-                opinions = ao.get_column(col).to_list()
-                latest = str(opinions[-1]) if opinions else ""
-                if "적정" in latest or "unqualified" in latest.lower():
-                    sub_scores["audit"] = 100
-                elif "한정" in latest or "qualified" in latest.lower():
-                    sub_scores["audit"] = 40
-                elif "부적정" in latest or "거절" in latest:
-                    sub_scores["audit"] = 0
-                else:
-                    sub_scores["audit"] = 70
-                result["auditOpinion"] = latest[:20]
-                break
+        latest = auditEvidence["opinion"]
+        if latest == "적정의견":
+            sub_scores["audit"] = 100
+        elif latest == "한정의견":
+            sub_scores["audit"] = 40
+        elif latest in ("부적정의견", "의견거절"):
+            sub_scores["audit"] = 0
+        result["auditOpinion"] = latest
+        result["auditOpinionEvidence"] = auditEvidence
 
     # 3) executive — 이사회 구성
     ex = _filterStock(loadScanParquet("executive", market), stockCode)

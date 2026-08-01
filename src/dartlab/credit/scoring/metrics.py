@@ -38,7 +38,7 @@ from dartlab.credit.scoring._metricsArithmetic import (
 )
 from dartlab.credit.scoring._metricsFetchers import (
     _calcSegmentHHI,
-    _fetchAuditOpinion,
+    _fetchAuditOpinionEvidence,
     _fetchDisclosureRisk,
     _fetchNotes,
     _fetchProfile,
@@ -415,7 +415,8 @@ def calcAllMetrics(company, *, basePeriod: str | None = None) -> dict | None:
     disclosureRisk = _fetchDisclosureRisk(company)
 
     # ── 감사의견 ──
-    auditOpinion = _fetchAuditOpinion(company)
+    auditOpinionEvidence = _fetchAuditOpinionEvidence(company, basePeriod=basePeriod)
+    auditOpinion = auditOpinionEvidence.get("opinion") if auditOpinionEvidence.get("status") == "observed" else None
 
     # ── 기업 프로필 + 부문 구성 + 업종 순위 ──
     profile = _fetchProfile(company)
@@ -434,6 +435,7 @@ def calcAllMetrics(company, *, basePeriod: str | None = None) -> dict | None:
         "reliability": reliabilityData,
         "disclosureRisk": disclosureRisk,
         "auditOpinion": auditOpinion,
+        "auditOpinionEvidence": auditOpinionEvidence,
         "borrowingsDetail": borrowingsDetail,
         "provisionsDetail": provisionsDetail,
         "segmentsDetail": segmentsDetail,

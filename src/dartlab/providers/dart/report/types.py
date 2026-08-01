@@ -137,7 +137,6 @@ def _seriesToWide(
 
 META_DROP_COLS = frozenset(
     {
-        "rcept_no",
         "corp_cls",
         "corp_code",
         "corp_name",
@@ -150,6 +149,7 @@ META_DROP_COLS = frozenset(
 
 KEEP_META_COLS = frozenset(
     {
+        "rcept_no",
         "stockCode",
         "year",
         "quarter",
@@ -409,6 +409,7 @@ class AuditResult:
     opinions: list[Optional[str]]
     auditors: list[Optional[str]]
     df: pl.DataFrame
+    rceptNos: list[Optional[str]] = field(default_factory=list)
 
     @property
     def nYears(self) -> int:

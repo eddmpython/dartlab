@@ -86,7 +86,10 @@ def auditOpinionTrendBlock(data: dict) -> list:
         return []
     rows = []
     for h in history:
-        row: dict = {"연도": h["year"], "감사의견": h.get("opinion", "")}
+        opinion = h.get("opinion")
+        if opinion is None:
+            opinion = "판정불가" if h.get("status") == "ambiguous" else "자료부족"
+        row: dict = {"연도": h["year"], "감사의견": opinion}
         auditor = h.get("auditor", "")
         if auditor:
             row["감사인"] = auditor

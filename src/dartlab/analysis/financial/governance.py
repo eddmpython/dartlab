@@ -17,6 +17,7 @@ from dartlab.core.market import isKrStockCode
 from dartlab.core.memory import memoizedCalc
 from dartlab.core.polarsUtil import isEmptyDf
 from dartlab.core.utils.helpers import MAX_RATIO_YEARS, annualColsFromPeriods, toDictBySnakeId
+from dartlab.providers._common.auditOpinion import auditOpinionStatus, normalizeAuditOpinion
 
 # ── docs 농장 은퇴 → providers.dart.panel.text 기반 정성 표 재건 (드롭 아님, SSOT) ──
 
@@ -61,7 +62,7 @@ def calcOwnershipTrend(company, *, basePeriod: str | None = None) -> dict | None
 
     Args:
         company: 분석 대상 기업.
-        basePeriod: 기준 기간 (현재 미사용).
+        basePeriod: 기준 기간. 지정 연도 이후 감사의견은 노출하지 않는다.
 
     Returns:
         dict | None: history (연도별 ratio/change %p) + latestHolders (상위
@@ -228,22 +229,42 @@ def calcAuditOpinionTrend(company, *, basePeriod: str | None = None) -> dict | N
     if result is None:
         return None
 
-    years = result.years[-MAX_RATIO_YEARS:]
-    opinions = result.opinions[-MAX_RATIO_YEARS:]
-    auditors = result.auditors[-MAX_RATIO_YEARS:]
+    cutoffMatch = re.search(r"(?:19|20)\d{2}", str(basePeriod or ""))
+    cutoff = int(cutoffMatch.group()) if cutoffMatch else None
+    rceptNos = list(getattr(result, "rceptNos", []) or [])
+    rows = []
+    for i, year in enumerate(result.years):
+        yearMatch = re.search(r"(?:19|20)\d{2}", str(year or ""))
+        yearNum = int(yearMatch.group()) if yearMatch else None
+        if cutoff is not None and (yearNum is None or yearNum > cutoff):
+            continue
+        rawOpinion = result.opinions[i] if i < len(result.opinions) else None
+        rows.append(
+            {
+                "year": year,
+                "rawOpinion": rawOpinion,
+                "opinion": normalizeAuditOpinion(rawOpinion),
+                "status": auditOpinionStatus(rawOpinion),
+                "auditor": result.auditors[i] if i < len(result.auditors) else None,
+                "rceptNo": rceptNos[i] if i < len(rceptNos) else None,
+            }
+        )
+    rows = rows[-MAX_RATIO_YEARS:]
 
     history = []
-    for i, y in enumerate(years):
-        opinion = opinions[i] if i < len(opinions) else None
-        auditor = auditors[i] if i < len(auditors) else None
-        prevAuditor = auditors[i - 1] if i > 0 and (i - 1) < len(auditors) else None
+    for i, row in enumerate(rows):
+        auditor = row["auditor"]
+        prevAuditor = rows[i - 1]["auditor"] if i > 0 else None
         auditorChanged = auditor is not None and prevAuditor is not None and auditor != prevAuditor
         history.append(
             {
-                "year": y,
-                "opinion": opinion,
+                "year": row["year"],
+                "opinion": row["opinion"],
+                "rawOpinion": row["rawOpinion"],
+                "status": row["status"],
                 "auditor": auditor,
                 "auditorChanged": auditorChanged,
+                "source": {"market": "KR", "method": "structured", "rceptNo": row["rceptNo"]},
             }
         )
 

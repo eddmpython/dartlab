@@ -5,7 +5,7 @@ kind: curated
 scope: builtin
 status: observed
 category: engines
-purpose: Credit (dCR) 엔진은 단일 기업의 신용 위험을 7 축 (채무상환·자본구조·유동성·현금흐름·사업안정성·재무신뢰성·공시리스크) 으로 평가해 종합 등급 (dCR-AA+ ~ dCR-D) 을 산출한다. 트리거 — '신용 분석', '부도 위험', '신용등급', 'dCR'.
+purpose: Credit (dCR) 엔진은 단일 비금융 기업의 신용 위험을 7 축 (채무상환·자본구조·유동성·현금흐름·사업안정성·재무신뢰성·공시리스크) 으로 평가해 종합 등급 (dCR-AA+ ~ dCR-D) 을 산출한다. 금융업은 유형별 규제지표 calibration 전까지 회계 프록시 진단만 제공하고 등급·PD를 발행하지 않는다. 트리거 — '신용 분석', '부도 위험', '신용등급', 'dCR'.
 whenToUse:
   - Credit
   - credit
@@ -450,7 +450,8 @@ dCR 의 등급-부도확률 (PD) 매핑은 KIS (한국기업평가) 1998-2024 �
     │
     ├── 재무제표 원본 (BS/IS/CF) ← company.select()
     ├── 주석 상세 (차입금/충당부채/리스/부문/원가) ← company.notes
-    ├── 사업보고서 텍스트 (사업내용/감사의견/우발부채) ← company.panel()
+    ├── 구조화 감사의견 (adt_opinion + 회계연도 + 접수번호) ← company._report.audit
+    ├── 사업보고서 텍스트 (사업내용/우발부채) ← company.panel()
     ├── 시장 데이터 (주가/변동성/시가총액) ← gather
     ├── 거시지표 (금리/스프레드/환율) ← gather.macro
     └── 횡단 비교 (업종 내 순위) ← scan
@@ -471,8 +472,10 @@ dCR 의 등급-부도확률 (PD) 매핑은 KIS (한국기업평가) 1998-2024 �
     │
     ├── 3-Track 분기 (v4.0)
     │   ├── Track A — 일반기업 (7 축) — isFinancial=False, isHolding=False
-    │   ├── Track B — 금융업 (5 축) — isFinancial=True
-    │   │   └── 자본적정성 (35%) / 수익성 (35%) / 자산건전성 (15%) / 유동성 (0%) / 사업안정성 (15%)
+    │   ├── Track B — 금융업 회계 프록시 진단 — isFinancial=True
+    │   │   ├── 장부자본·ROA·금융수익·대손상각비·현금성자산 관측값만 공개
+    │   │   ├── 유동성은 LCR/NSFR·ALM·haircut·우발유출을 대체하지 않는 비채점 진단
+    │   │   └── 은행/보험/증권/금융지주/기타금융 유형별 calibration 전 grade·PD·outlook 비발행
     │   └── Track C — 지주사 (7 축 재가중) — isHolding=True
     │       └── 채무상환 (15%) / 자본구조 (25%) / 나머지 동일
     │
@@ -581,6 +584,15 @@ audit 단계 8:
 
 **방법론 버전 관리** — v1.0 → v1.1 → ... 버전별 영향 받는 기업 수 + 등급 변동 통계 공개. 이전 버전으로도 재현 가능하도록 버전별 파라미터 보존.
 
+### 금융업 발행 경계
+
+- 공통 재무제표의 장부자본/총자산은 CET1·K-ICS·NCR이 아니며 금융업 공통 자본적정성 점수로 쓰지 않는다.
+- 현금/총자산과 일반 유동비율은 은행 LCR·NSFR, 보험 ALM/유동성 스트레스, 증권 haircut·채무보증 조정 유동성을 대체하지 않는다.
+- BS만 있는 더 최신 기간 대신 BS·IS가 함께 있는 최신 공통기간을 진단 기준으로 쓰고 `requestedAsOf`/`assessmentAsOf`/`freshnessGap`을 공개한다.
+- 결측 자산건전성·유동성을 총자산 규모나 중립값으로 대체하지 않는다. 관측 0과 결측 `None`을 구분한다.
+- 금융업 결과는 `assessmentStatus="diagnostic_only"`, `grade=None`, `pdEstimate=None`, `outlook="N/A"`이다.
+- 향후 금융 등급 발행은 하위유형 확정, 유형별 규제지표의 핵심 4축 전부 관측, 총 관측 coverage 85% 이상, 동일 시점 정렬을 모두 충족해야 한다. PD는 별도 out-of-time calibration 전까지 비발행한다.
+
 ## 대표 반환 형태
 
 ### 보고서 구조 (12 섹션, v5.0)
@@ -591,7 +603,7 @@ audit 단계 8:
 | 2. 기업 개요 | 업종 · 주요사업 · 부문구성 · 시장지위 | calcCompanyProfile + segments + rank |
 | 3. 재무 하이라이트 | 매출/이익/EBITDA 전년비 + 추세 + 차입금 구성 | metricsHistory + narrative |
 | 4. 등급 근거 | AI 해석 (산업 맥락 + 인과 체인) | AI ask() |
-| 5. 7/5 축 상세 | 축별 서사 + 지표 테이블 | narrative + scoreMetric |
+| 5. 7 축/금융 진단 상세 | 비금융 축별 서사 또는 금융 비채점 회계 프록시 | narrative + diagnostic metrics |
 | 6. 재무 요약 5 개년 | 핵심 지표 시계열 | metricsHistory |
 | 7. 등급 전망 | 상향/하향 트리거 자동 생성 | 조건부 로직 |
 | 8. 신평사 대조 | 동의/비동의 + notch 차이 | audit.py |
@@ -613,7 +625,7 @@ audit 단계 8:
 3. 재무 하이라이트 (6 지표 + YoY)
 4. 사업 분석 (기업 개요 + 부문별 매출 + HHI)
 5. 등급 근거 상세 (인과 서사 + Mermaid 흐름도 + 강점/약점)
-6. 재무 분석 (7/5 축 게이지 + 서사)
+6. 재무 분석 (비금융 7 축 게이지 또는 금융 비채점 진단)
 7. 5 개년 재무 시계열
 8+. 등급 전망 / 신평사 대조 / 등급 괴리 / Notch / 별도재무 / 면책
 ```
@@ -685,7 +697,8 @@ data/credit/              # 내부 데이터 (git 미추적)
 |------|------|------------------|
 | `company.select("BS/IS/CF")` | 재무제표 원본 | 7 축 지표 산출 |
 | `company.notes.*` | 주석 12 항목 | 차입금만기 / 충당부채 / 부문 / 리스 |
-| `company.panel(topic)` | 사업보고서 텍스트 | 감사의견 / 우발부채 / 사업내용 |
+| `company._report.audit` | DART 구조화 감사 API | 명시 감사의견 / 감사인 / 접수번호 |
+| `company.panel(topic)` | 사업보고서 텍스트 | 우발부채 / 사업내용 |
 | `company.finance.ratios` | 부실 모델 점수 | Z-Score / O-Score / Beneish 참조 |
 | `company.sector` | 업종 분류 | 기준표 선택 |
 | `gather.price` | 주가/변동성 | CHS 모델 · 시가총액 |
