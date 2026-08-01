@@ -206,7 +206,7 @@ def distressBlock(data: dict) -> list:
         HeadingBlock(
             _meta("distressIndicators").label,
             level=2,
-            helper="Altman Z > 2.99 안전, Piotroski F ≥ 7 건전",
+            helper="Altman 계열은 표시된 모델명과 고유 임계값으로 판정, Piotroski F ≥ 7 건전",
         )
     )
     blocks.append(MetricBlock(metrics))
@@ -341,7 +341,7 @@ def coverageTrendBlock(data: dict) -> list:
 
 def distressScoreBlock(data: dict) -> list:
     """calcDistressScore 결과 → Z-Score 시계열 + 등급."""
-    if not data:
+    if not data or data.get("status") != "ok":
         return []
 
     blocks: list = []
@@ -349,7 +349,7 @@ def distressScoreBlock(data: dict) -> list:
         HeadingBlock(
             _meta("distressScore").label,
             level=2,
-            helper="Z > 2.99 안전, 1.81~2.99 회색, < 1.81 위험",
+            helper="비금융 Z'' > 2.6 안전, 1.1~2.6 회색, < 1.1 위험",
         )
     )
 
@@ -368,8 +368,8 @@ def distressScoreBlock(data: dict) -> list:
         blocks.append(MetricBlock(metrics))
 
     cols = _timelineTable(
-        [(_extractSeries(data, "altmanZScore"), "{:.2f}")],
-        ["Altman Z-Score"],
+        [(_extractSeries(data, "zScore"), "{:.2f}")],
+        ["Altman Z''-Score"],
     )
     if cols is not None:
         blocks.append(TableBlock("Z-Score 추이", pl.DataFrame(cols)))

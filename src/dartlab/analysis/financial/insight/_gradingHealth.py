@@ -205,17 +205,17 @@ def _distressModelSignal(ratios: RatioResult, details: list[str], risks: list[Fl
             risks.append(Flag("warning", "distress", f"O-Score P(부도) {ratios.ohlsonProbability:.1f}%"))
             score -= 1
 
-    # Altman Z''-Score (금융업 포함 범용)
+    # Altman Z''-Score (비금융사 범용)
     if ratios.altmanZppScore is not None:
         if ratios.altmanZppScore < 1.1:
             details.append(f"Z''-Score {ratios.altmanZppScore:.2f}. 부실 영역")
             risks.append(Flag("danger", "distress", f"Z'' {ratios.altmanZppScore:.2f} (부실)"))
             score -= 2
-        elif ratios.altmanZppScore < 2.6:
+        elif ratios.altmanZppScore <= 2.6:
             details.append(f"Z''-Score {ratios.altmanZppScore:.2f}. 회색 영역")
             risks.append(Flag("warning", "distress", f"Z'' {ratios.altmanZppScore:.2f} (회색)"))
             score -= 1
-        elif ratios.altmanZppScore > 5:
+        else:
             details.append(f"Z''-Score {ratios.altmanZppScore:.2f}. 안전")
             score += 1
 
@@ -256,7 +256,7 @@ def analyzeHealth(ratios: RatioResult, isFinancial: bool = False, currency: str 
         ('A', '재무건전성 우수 — 부채비율 80%, 유동비율 250%')
 
     Guide:
-        Altman Z''-Score: > 2.9 = safe, 1.23~2.9 = grey, < 1.23 = distress.
+        Altman Z''-Score: > 2.6 = safe, 1.1~2.6 = grey, < 1.1 = distress.
         Piotroski F-Score: 9 = 최고, 0~3 = 부실. Ohlson O-Score 0.5 이상 =
         부도 확률 50%+. 본 함수는 3 모델 합산 + 부채비율 정성 평가.
 

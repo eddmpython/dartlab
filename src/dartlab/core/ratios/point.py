@@ -655,9 +655,11 @@ def _calcPiotroski(
 
 
 def _calcAltmanZ(r: RatioResult) -> None:
-    """Altman Z (1968 제조업 상장) or Z' (1983 비상장, 장부가).
+    """Altman Z (1968 제조업 상장)만 계산한다.
 
-    marketCap 유무로 분기. Z'': Z''-Score 함수 별도.
+    시가총액 결손은 비상장 기업이라는 provenance가 아니다. listed Company의 데이터
+    결손을 이유로 Z' 계수로 전환하지 않으며, 장부가 기반 Z'가 필요하면 private-company
+    적용성 계약을 가진 별도 필드가 먼저 정의되어야 한다. Z''는 별도 필드다.
     """
     if not (
         r.totalAssets
@@ -669,7 +671,8 @@ def _calcAltmanZ(r: RatioResult) -> None:
         and r.retainedEarnings is not None
         and r.operatingIncomeTTM is not None
         and r.revenueTTM is not None
-        and (r.marketCap is not None or r.totalEquity is not None)
+        and r.marketCap is not None
+        and r.marketCap > 0
     ):
         return
     wc = r.currentAssets - r.currentLiabilities
@@ -677,17 +680,9 @@ def _calcAltmanZ(r: RatioResult) -> None:
     b = r.retainedEarnings / r.totalAssets
     c = r.operatingIncomeTTM / r.totalAssets
     e = r.revenueTTM / r.totalAssets
-    if r.marketCap is not None:
-        d = r.marketCap / r.totalLiabilities
-        z = 1.2 * a + 1.4 * b + 3.3 * c + 0.6 * d + 1.0 * e
-        r.altmanZScore = _safeRound(z, 2)
-    else:
-        totalEquity = r.totalEquity
-        if totalEquity is None:
-            return
-        dPrime = totalEquity / r.totalLiabilities
-        zPrime = 0.717 * a + 0.847 * b + 3.107 * c + 0.420 * dPrime + 0.998 * e
-        r.altmanZScore = _safeRound(zPrime, 2)
+    d = r.marketCap / r.totalLiabilities
+    z = 1.2 * a + 1.4 * b + 3.3 * c + 0.6 * d + 1.0 * e
+    r.altmanZScore = _safeRound(z, 2)
 
 
 def _calcSloanAccrual(r: RatioResult) -> None:
@@ -702,7 +697,7 @@ def _calcSloanAccrual(r: RatioResult) -> None:
 
 
 def _calcAltmanZpp(r: RatioResult) -> None:
-    """Altman Z'' (1995 비제조업/신흥시장). Sales/TA 제거 . 금융/서비스업도 적용."""
+    """Altman Z'' 비금융 모형의 수치 구성. 업종 적용성 판단은 상위 소비면이 맡는다."""
     if not (
         r.totalAssets
         and r.totalAssets > 0

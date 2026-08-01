@@ -145,7 +145,7 @@ python 직접 데이터 조회는 본 skill 이 아니라 [engines.company](/ski
 
 - **radar 5 축**: 수익성·성장성·안정성·효율성·현금흐름. grade A-F → 1-5 스케일 매핑.
 - **Altman Z** (제조업): `1.2A + 1.4B + 3.3C + 0.6D + 1.0E`. 항 정의는 `finance.bs.totals` 기반.
-- **Beneish M**: 5-var simplified (DSRI · GMI · AQI).
+- **Beneish M**: 원식 계정 계약 미충족으로 현재 비발행. simplified/proxy 점수 금지.
 - **Ecosystem HHI + Top-N**: `ecosystem.links` 필터에서 매출 비중 집계.
 
 ## 대표 반환 형태
@@ -159,7 +159,7 @@ landing/static/company/{code}/finance.json
 landing/static/company/{code}/grades.json
   radar : dict[axis, score]      # 1-5
   altmanZ : float
-  beneishM : float
+  beneishM : null   # canonical 공급자 입력 계약 전까지 비발행
   dataAsOf : str
 ```
 

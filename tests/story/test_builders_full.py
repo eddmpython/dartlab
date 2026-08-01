@@ -826,11 +826,13 @@ class TestAdditionalBuilders:
         from dartlab.story.builders import distressScoreBlock
 
         data = {
+            "status": "ok",
             "latestScore": 3.5,
             "zone": "안전",
+            "diagnosticMeta": {"model": "Z''-Score"},
             "history": [
-                {"period": "2022", "altmanZScore": 3.2},
-                {"period": "2023", "altmanZScore": 3.5},
+                {"period": "2022", "zScore": 3.2},
+                {"period": "2023", "zScore": 3.5},
             ],
         }
         blocks = distressScoreBlock(data)

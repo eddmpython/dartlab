@@ -374,7 +374,7 @@ _SPECS: dict[str, ToolSpec] = {
     ),
     "CreditScorecard": ToolSpec(
         "CreditScorecard",
-        "단일 종목 dCR 신용등급 + 1Y PD + 7 축 분석 (채무상환/자본구조/유동성/현금흐름/사업안정성/재무신뢰성/공시리스크). includeFactors=True 시 Altman Z + Beneish M 동행. '신용등급', '회사채 등급', '재무 안정성' 류 질문에 본 도구 1 회 호출.",
+        "단일 종목 dCR 신용등급 + 1Y PD + 7 축 분석. includeFactors=True 시 Altman 적용성 점수와 Beneish 비발행 상태를 동행한다. 역사적 basePeriod에는 최신 횡단 factor를 섞지 않는다.",
         {
             "type": "object",
             "properties": {
@@ -385,7 +385,7 @@ _SPECS: dict[str, ToolSpec] = {
                 },
                 "includeFactors": {
                     "type": "boolean",
-                    "description": "Altman Z + Beneish M 동행 (기본 False). 분식회계/distress 의도 시 True.",
+                    "description": "Altman 적용성 원장 + Beneish available 상태 동행 (기본 False).",
                 },
             },
             "required": ["stockCode"],

@@ -539,12 +539,15 @@ def narrateLeverage(data: dict) -> str | None:
 
 def narrateDistress(data: dict) -> str | None:
     """부실 판별 해석."""
+    if data.get("status") != "ok":
+        return None
     latest = data.get("latestScore")
     zone = data.get("zone", "")
     if latest is None:
         return None
     desc = _Z_SCORE_LABELS.get(zone, "판정 불가")
-    return f"Altman Z-Score {latest:.2f} — {zone} 구간. {desc}."
+    model = (data.get("diagnosticMeta") or {}).get("model") or "Altman Z''-Score"
+    return f"Altman {model} {latest:.2f} — {zone} 구간. {desc}."
 
 
 def narrateROIC(data: dict) -> str | None:
@@ -1179,16 +1182,17 @@ def narrateStoryPrecedents(data: dict | None) -> str | None:
 
 def narrateAltman(data: dict | None) -> str | None:
     """calcAltman 결과 → 자연어 (Z-Score 부실 진단)."""
-    if not data:
+    if not data or data.get("status") != "ok":
         return None
     zones = data.get("zones") or {}
     distress = zones.get("distress", {})
     safe = zones.get("safe", {})
     universe = data.get("universe", 0)
-    variant = data.get("variant", "z")
+    methodology = data.get("methodology") or {}
+    model_name = methodology.get("modelName") or data.get("variant", "z").upper()
     return (
         f"{universe}개 종목 중 부실위험 {distress.get('pct', 0)}% ({distress.get('count', 0)}사), "
-        f"안전 {safe.get('pct', 0)}%. Altman {variant.upper()} 모형."
+        f"안전 {safe.get('pct', 0)}%. {model_name} 모형."
     )
 
 
@@ -1208,7 +1212,7 @@ def narratePiotroski(data: dict | None) -> str | None:
 
 def narrateBeneish(data: dict | None) -> str | None:
     """calcBeneish 결과 → 자연어 (M-Score 이익조작 감지)."""
-    if not data:
+    if not data or data.get("status") != "ok":
         return None
     flags = data.get("flags") or {}
     red = flags.get("redFlag", {})

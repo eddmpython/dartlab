@@ -36,7 +36,6 @@ _COMPLETE_SERIES = {
 
 _COMPOSITE_FIELDS = (
     "piotroskiFScore",
-    "altmanZScore",
     "altmanZppScore",
     "springateSScore",
     "zmijewskiXScore",
@@ -47,6 +46,8 @@ def test_complete_inputs_produce_composite_scores():
     result = calcRatios(_COMPLETE_SERIES, annual=True)
 
     assert all(getattr(result, field) is not None for field in _COMPOSITE_FIELDS)
+    assert result.altmanZScore is None
+    assert calcRatios(_COMPLETE_SERIES, annual=True, marketCap=300.0).altmanZScore is not None
 
 
 def test_missing_income_does_not_become_zero_valued_composite_inputs():
@@ -74,7 +75,8 @@ def test_each_required_signal_is_present_before_publishing_score():
     result = calcRatios(missingOperatingCashflow, annual=True)
 
     assert result.piotroskiFScore is None
-    assert result.altmanZScore is not None
+    assert result.altmanZScore is None
+    assert result.altmanZppScore is not None
 
 
 def test_ratio_series_keeps_incomplete_scores_as_none():
@@ -93,4 +95,5 @@ def test_ratio_series_publishes_score_only_after_comparison_period_exists():
 
     assert result.piotroskiFScore[0] is None
     assert all(score is not None for score in result.piotroskiFScore[1:])
-    assert all(score is not None for score in result.altmanZScore)
+    assert result.altmanZScore == [None, None, None]
+    assert all(score is not None for score in result.altmanZppScore)

@@ -111,7 +111,7 @@ DISTRESS_SCORECARD = {
         {
             "name": "정량 분석",
             "weight": "0.30 (Merton 있을 때) / 0.40 (없을 때)",
-            "models": ["ohlsonOScore", "altmanZppScore", "altmanZScore"],
+            "models": ["ohlsonOScore", "altmanFamily(zpp preferred, else z)"],
         },
         {"name": "시장 기반", "weight": "0.20 (Merton 있을 때) / 0 (없을 때)", "models": ["mertonD2D"]},
         {

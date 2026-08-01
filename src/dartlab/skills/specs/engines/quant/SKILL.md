@@ -186,9 +186,9 @@ product{conclusion, confidence, evidence, gaps, scenarios, falsifiers, payload}
 | ranking | 순위 | 횡단면 | `dartlab.quant("순위")` |
 | pairs | 페어 | 횡단면 | `dartlab.quant("페어")` |
 | screen | 스크린 | 횡단면 | `dartlab.quant("스크린")` |
-| altman | Altman Z | 펀더멘털 | `dartlab.quant("altman")` |
+| altman | Altman Z/Z'' + 적용성 원장 | 펀더멘털 | `dartlab.quant("altman")` |
 | piotroski | Piotroski F | 펀더멘털 | `dartlab.quant("piotroski")` |
-| beneish | Beneish M | 펀더멘털 | `dartlab.quant("beneish")` |
+| beneish | Beneish M 비발행 계약 | 펀더멘털 | `dartlab.quant("beneish")` |
 | accruals | Sloan Accrual | 펀더멘털 | `dartlab.quant("accruals")` |
 | qfactor | q-factor | 펀더멘털 | `dartlab.quant("qfactor")` |
 | qmj | QMJ | 펀더멘털 | `dartlab.quant("qmj")` |
@@ -213,11 +213,11 @@ product{conclusion, confidence, evidence, gaps, scenarios, falsifiers, payload}
 | --- | --- |
 | accruals | Sloan accruals 한 지표로 분식 단정 X (Beneish + 정합성 동반); (NI−CFO)/TA 분기 vs 연결 vs 별도 scope 혼용 X |
 | allocation | ERC 가중치 윈도우 (60D vs 252D) 명시; covariance shrinkage (ledoit-wolf) 방법 명시 |
-| altman | Altman Z 임계 (제조 1.81/2.99) 비제조 적용 X (Z'/Z'' 별도); 단일 분기 Z 만으로 부도 단정 X (4 분기 시계열) |
+| altman | auto는 비금융사 Z'' 한 모델(1.1/2.6); 명시 Z는 제조업+동일 회계연도 시총 필수; 시총 결손을 Z'로 대체 X; `methodology`·`coverage` 없이 인용 X |
 | bab | BAB 레버리지 가정 미명시 수익률 인용 X; 252D beta 가 미래 beta 일치 가정 X |
 | backtest | in-sample 결과를 OOS 약속으로 X (ruleFactory walk-forward 또는 외부 holdout 필요); 고정 Rule cpcv stress를 OOS로 부르지 않기; look-ahead bias 점검 없이 verdict X |
 | benchmark | 벤치마크 (KOSPI/KRX300/섹터) 명시 없이 outperformance X; 시총가중 vs 동일가중 차이 무시 X |
-| beneish | M > -1.78 한 신호로 분식 단정 X (accruals + 정합성 + 감사 동반); 1990 미국 threshold 를 KR 직접 적용 X |
+| beneish | 현재 canonical LTD/current maturities/tax payable/순수 감가상각 계약이 없어 structured unavailable만 반환; proxy M·clean/red flag를 계산하거나 인용 X |
 | beta | benchmarkMode (market/sector/style/auto) 명시; 회귀 기간 (3y/5y/10y) 명시 |
 | chartPatterns | 차트 패턴 → 자동 매매 신호 단정 X (거래량/시장환경 동반); 목표가 패턴만으로 단언 X (fundamental anchor) |
 | damodaranValuation | 적자 회사에 PER 기반 보정 없이 DCF 단정 X |

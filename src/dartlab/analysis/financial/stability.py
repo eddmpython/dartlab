@@ -247,7 +247,7 @@ def calcCoverageTrend(company, *, basePeriod: str | None = None) -> dict | None:
 
     SeeAlso:
         - ``calcLeverageTrend``: 부채/자본 구조
-        - ``calcDistressScore``: Altman Z (IC 직접 변수 아님, EBIT/TA)
+        - ``calcDistressScore``: 비금융 Altman Z'' (IC 직접 변수 아님, 영업이익/TA proxy)
         - ``credit.scoring.metrics.calcAllMetrics``: 7 축 종합 진단
 
     Requires:
@@ -607,13 +607,13 @@ def calcStabilityFlags(company, *, basePeriod: str | None = None) -> dict:
             elif ic < 3 and not (isNetCash and source == "금융비용"):
                 flags.append(f"이자보상배율 {ic:.1f}배 -- 이자 부담 과다")
 
-    # Altman Z-Score (제조업 기반 모형, 금융/지주사는 구조적 왜곡)
+    # Altman Z''-Score (비금융사 한정, 금융/지주사는 구조적 왜곡)
     if not isFinancial:
         distress = calcDistressScore(company, basePeriod=basePeriod)
-        if distress and distress.get("latestScore") is not None:
+        if distress and distress.get("status") == "ok" and distress.get("latestScore") is not None:
             z = distress["latestScore"]
-            if z < 1.81:
-                msg = f"Altman Z-Score {z:.2f} -- 부실 위험 구간"
+            if z < 1.1:
+                msg = f"Altman Z''-Score {z:.2f} -- 부실 위험 구간"
                 flags.append(msg)
                 meta = distress.get("diagnosticMeta", {})
                 enriched.append(
@@ -623,7 +623,7 @@ def calcStabilityFlags(company, *, basePeriod: str | None = None) -> dict:
                         "precision": meta.get("precision"),
                         "baseRate": meta.get("marketNote", ""),
                         "reference": meta.get("reference", ""),
-                        "sectorNote": "금융업/지주회사 부채 구조 왜곡으로 Z-Score 부적합" if isFinancial else "",
+                        "sectorNote": "금융업/지주회사 부채 구조 왜곡으로 Z''-Score 부적합" if isFinancial else "",
                     }
                 )
 

@@ -130,7 +130,7 @@ _BLOCKS: list[BlockMeta] = [
     # ── 안정성 ──
     BlockMeta("leverageTrend", "레버리지 추이", "안정성", "부채비율, 차입금의존도 시계열"),
     BlockMeta("coverageTrend", "이자보상 추이", "안정성", "이자보상배율 시계열"),
-    BlockMeta("distressScore", "부실 판별", "안정성", "Altman Z-Score 시계열과 종합 등급"),
+    BlockMeta("distressScore", "부실 판별", "안정성", "비금융 Altman Z'' 시계열과 구간 판정"),
     BlockMeta("marketRisk", "시장 리스크", "안정성", "베타, 변동성(ATR), 상대강도 — 시장 관점 리스크"),
     BlockMeta("scenarioSensitivity", "시나리오 민감도", "안정성", "OPM/매출/금리 shock별 핵심 지표 변화"),
     BlockMeta("criticalAssumptions", "핵심 가정", "안정성", "현 판단을 지탱하는 핵심 가정 + 위반 시 영향"),
@@ -146,7 +146,7 @@ _BLOCKS: list[BlockMeta] = [
     # ── 3-1 이익품질 ──
     BlockMeta("accrualAnalysis", "발생액 분석", "이익품질", "Sloan 발생액비율, 영업CF/순이익 시계열"),
     BlockMeta("earningsPersistence", "이익 지속성", "이익품질", "영업외손익 비중, 이익 변동성"),
-    BlockMeta("beneishMScore", "Beneish M-Score", "이익품질", "이익 조작 가능성 8변수 모델"),
+    BlockMeta("beneishMScore", "Beneish M-Score (비발행)", "이익품질", "canonical 입력 계약 대기"),
     BlockMeta("richardsonAccrual", "Richardson 3계층 발생액", "이익품질", "WCACC/LTOACC/FINACC 분해 + 신뢰도"),
     BlockMeta("nonOperatingBreakdown", "영업외손익 분해", "이익품질", "금융/지분법/기타 항목별 영업외 추적"),
     BlockMeta("earningsQualityFlags", "이익품질 플래그", "이익품질", "이익 품질 경고 신호"),
@@ -280,15 +280,15 @@ _BLOCKS: list[BlockMeta] = [
     # 6막 분산 — 부실(자금조달) / 이익품질(이익품질) / 종합 (종합평가) / 가격기반 (시장분석)
     BlockMeta(
         "altmanFactor",
-        "Altman Z-Score 분포",
+        "Altman Z/Z'' 적용성 분포",
         "자금조달",
-        "Altman 1968/1995 — 전종목 부실확률 safe/grey/distress 3 zone + top safe/distress 10",
+        "비금융 적격 universe의 단일 모형 판별 점수 + 제외 사유와 방법론 원장",
     ),
     BlockMeta(
         "beneishFactor",
-        "Beneish M-Score 분포",
+        "Beneish M-Score 비발행 계약",
         "이익품질",
-        "Beneish 1999 — 8변수 이익 조작 감지, red flag (M > -1.78) 종목 비율 + top 의심 10",
+        "원식 계정 의미와 공시 as-of가 보장될 때까지 structured unavailable",
     ),
     BlockMeta(
         "accrualsFactor",

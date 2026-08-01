@@ -106,7 +106,7 @@ class DistressResult:
     """부실 예측 종합 스코어카드.
 
     5축 가중 평균 (100점 만점, 0=안전 100=위험):
-    - 정량 분석 (30%): O-Score, Z''-Score, Z-Score  [Merton 있을 때, 없으면 40%]
+    - 정량 분석 (30%): O-Score + 적용 가능한 Altman 계열 한 변형  [Merton 있을 때, 없으면 40%]
     - 시장 기반 (20%): Merton D2D + PD               [Merton 없으면 0%]
     - 이익 품질 (15%): Beneish M-Score, Sloan Accrual, Piotroski F-Score  [없으면 20%]
     - 추세 분석 (25%): 연속적자, ICR<1, CCC 확대 등    [없으면 30%]

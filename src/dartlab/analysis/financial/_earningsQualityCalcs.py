@@ -13,6 +13,35 @@ from dartlab.core.utils.safe import get as _get
 _getF = _getF2 = _getF3 = _getF4 = _get
 _MAX_YEARS = 8
 
+_BENEISH_MISSING_CANONICAL_INPUTS = [
+    "gross_property_plant_equipment",
+    "pure_depreciation_expense",
+    "long_term_debt",
+    "current_maturities_of_long_term_debt",
+    "income_tax_payable",
+    "cash_and_cash_equivalents",
+]
+
+
+def _beneishUnavailable() -> dict:
+    """공통 공급자 계약으로 원식을 재현할 수 없다는 구조화 결과."""
+    return {
+        "status": "unavailable",
+        "available": False,
+        "mScore": None,
+        "zone": "unavailable",
+        "components": {},
+        "interpretation": "Beneish 원식 입력의 공급자 공통 의미가 없어 판정하지 않습니다.",
+        "reasonCode": "canonical_inputs_unavailable",
+        "missingCanonicalInputs": list(_BENEISH_MISSING_CANONICAL_INPUTS),
+        "requirements": {
+            "basis": "two_audited_annual_periods_same_scope",
+            "companyType": "nonfinancial",
+            "asOfRequired": True,
+            "canonicalFormulaOracleRequired": True,
+        },
+    }
+
 
 # memoizedCalc 를 붙이면 안 된다. 그 래퍼는 첫 인자가 Company 인 계산기 전용이라
 # `wrapper(company, *, basePeriod, overrides)` 로 서명이 바뀐다. 이 함수는 키워드 전용
@@ -39,124 +68,21 @@ def calcBeneishMScore(
     depreciationT: float,
     depreciationT1: float,
 ) -> dict:
-    """Beneish M-Score (1999). 분식 의심 8 변수 모델.
+    """Beneish M-Score 호환 슬롯의 명시적 비발행 결과.
 
     공식: M = -4.84 + 0.92×DSRI + 0.528×GMI + 0.404×AQI + 0.892×SGI
               + 0.115×DEPI - 0.172×SGAI + 4.679×TATA - 0.327×LVGI
 
-    M > -1.78 → 분식 위험 (high_risk)
-    M > -2.22 → watch zone
-    M ≤ -2.22 → low_risk
-
-    Returns
-    -------
-    dict
-        mScore : float
-        zone : "low_risk" | "watch" | "high_risk"
-        components : dict. 8 변수
-
-    Capabilities:
-        - 8 변수 (DSRI/GMI/AQI/SGI/DEPI/SGAI/TATA/LVGI) Beneish 공식 직접 계산
-        - zone 분류 (low/watch/high) + interpretation 문장
-
-    Guide:
-        Beneish 1999 분식 진단 표준. M > -1.78 = 분식 의심. K-IFRS 환경 false positive 잦음.
-
-    When:
-        Earnings quality 1 회 진단 + AI 분식 의심 답변.
-
-    How:
-        8 변수 산출 → 가중 합산 → zone 분류.
-
-    Requires:
-        IS/BS/CF 2 년 (T, T-1).
-
-    Raises:
-        없음. invalid input 시 skip.
-
-    Example:
-        >>> calcBeneishMScore(salesT=100, ...)["zone"]
-        'low_risk'
-
-    See Also:
-        - calcSloanAccruals : 단순 발생액
-        - _earningsQualityDeep.calcBeneishTimeline : 시계열
-
-    AIContext:
-        "분식 의심" 답변 시 mScore + zone + components 인용.
+    기존 키워드 서명은 호출 호환성을 위해 유지한다. 그러나 이 서명에는 원식 TATA와
+    LVGI를 재현할 current maturities, income-tax payable, LTD가 없고 공급자 공통
+    depreciation 의미도 보장되지 않는다. 따라서 proxy 점수나 zone을 발행하지 않는다.
     """
-    if salesT <= 0 or salesT1 <= 0 or totalAssetsT <= 0 or totalAssetsT1 <= 0:
-        return {"mScore": None, "zone": "skip", "components": {}}
-
-    try:
-        # DSRI: Days Sales in Receivables Index
-        dsri = (receivablesT / salesT) / (receivablesT1 / salesT1) if salesT1 > 0 else 1
-        # GMI: Gross Margin Index (전기/당기)
-        gm_t = (salesT - cogsT) / salesT
-        gm_t1 = (salesT1 - cogsT1) / salesT1
-        gmi = gm_t1 / gm_t if gm_t > 0 else 1
-        # AQI: Asset Quality Index (비현금성 자산 비중)
-        non_cur_t = totalAssetsT - grossPropertyT
-        non_cur_t1 = totalAssetsT1 - grossPropertyT1
-        aqi = (non_cur_t / totalAssetsT) / (non_cur_t1 / totalAssetsT1) if totalAssetsT1 > 0 else 1
-        # SGI: Sales Growth Index
-        sgi = salesT / salesT1
-        # DEPI: Depreciation Index
-        depT = depreciationT / (depreciationT + grossPropertyT) if (depreciationT + grossPropertyT) > 0 else 0.05
-        dep_t1 = depreciationT1 / (depreciationT1 + grossPropertyT1) if (depreciationT1 + grossPropertyT1) > 0 else 0.05
-        depi = dep_t1 / depT if depT > 0 else 1
-        # SGAI: SGA Index
-        sgai = (sgaT / salesT) / (sgaT1 / salesT1) if salesT1 > 0 else 1
-        # TATA: Total Accruals to Total Assets
-        accruals = netIncomeT - ocfT
-        tata = accruals / totalAssetsT if totalAssetsT > 0 else 0
-        # LVGI: Leverage Index
-        lvgi = leverageT / leverageT1 if leverageT1 > 0 else 1
-    except (ZeroDivisionError, TypeError, ValueError):
-        return {"mScore": None, "zone": "skip", "components": {}}
-
-    m_score = (
-        -4.84
-        + 0.92 * dsri
-        + 0.528 * gmi
-        + 0.404 * aqi
-        + 0.892 * sgi
-        + 0.115 * depi
-        - 0.172 * sgai
-        + 4.679 * tata
-        - 0.327 * lvgi
-    )
-
-    if m_score > -1.78:
-        zone = "high_risk"
-    elif m_score > -2.22:
-        zone = "watch"
-    else:
-        zone = "low_risk"
-
-    return {
-        "mScore": round(m_score, 3),
-        "zone": zone,
-        "components": {
-            "DSRI": round(dsri, 3),
-            "GMI": round(gmi, 3),
-            "AQI": round(aqi, 3),
-            "SGI": round(sgi, 3),
-            "DEPI": round(depi, 3),
-            "SGAI": round(sgai, 3),
-            "TATA": round(tata, 4),
-            "LVGI": round(lvgi, 3),
-        },
-        "interpretation": _beneishInterpretation(zone),
-    }
+    return _beneishUnavailable()
 
 
 def _beneishInterpretation(zone: str) -> str:
-    return {
-        "low_risk": "Beneish M ≤ -2.22. 분식 위험 낮음",
-        "watch": "Beneish M -2.22~-1.78. 회색지대, 추가 검토 권장",
-        "high_risk": "Beneish M > -1.78. 분식 의심, 감사보고서 정밀 검토 필수",
-    }.get(zone, "판정 불가")
+    _ = zone
+    return "Beneish 원식 입력 계약이 없어 판정하지 않습니다."
 
 
 def calcSloanAccruals(

@@ -200,7 +200,10 @@ _AXES_A: dict[str, _AxisEntry] = {
                 "이익 지속성",
             ),
             _CalcEntry(
-                "calcBeneishTimeline", "dartlab.analysis.financial.earningsQuality", "beneishMScore", "Beneish M-Score"
+                "calcBeneishTimeline",
+                "dartlab.analysis.financial.earningsQuality",
+                "beneishMScore",
+                "Beneish M-Score 비발행 계약",
             ),
             _CalcEntry(
                 "calcEarningsQualityFlags",
@@ -212,7 +215,7 @@ _AXES_A: dict[str, _AxisEntry] = {
                 "calcQualityAnomalies",
                 "dartlab.analysis.financial.earningsQuality",
                 "qualityAnomalies",
-                "Phase 7 - Damodaran Ch.4 회계 품질 이상치 (Beneish + Sloan + 5 카테고리 + 감사보고서 docs)",
+                "Phase 7 - 회계 품질 이상치 (Sloan + 5 카테고리 + 감사보고서 docs; Beneish 비발행)",
             ),
             _CalcEntry(
                 "calcRichardsonAccrual",

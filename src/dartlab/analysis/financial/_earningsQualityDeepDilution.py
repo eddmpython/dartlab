@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
+from dartlab.analysis.financial._earningsQualityCalcs import _beneishUnavailable
 from dartlab.analysis.financial._earningsQualityDeepProxies import (
     _calcEarningsQualityFlagsBase,
-    calcBeneishMScore,
     detectAuditFlags,
 )
 from dartlab.core.memory import memoizedCalc
@@ -192,7 +192,7 @@ def _qualityInputs(isData: dict, bsData: dict, cfData: dict, t: str, t1: str) ->
 
 
 def _beneishFromInputs(v: dict[str, float | None]):
-    """8 개 필수 계정이 모두 있을 때만 Beneish M-Score 산출.
+    """옛 proxy 입력을 점수로 바꾸지 않고 비발행 사유를 반환한다.
 
     Parameters
     ----------
@@ -201,41 +201,11 @@ def _beneishFromInputs(v: dict[str, float | None]):
 
     Returns
     -------
-    Any | None
-        calcBeneishMScore 결과. 입력 부족 시 None.
+    dict
+        canonical 입력 계약이 없다는 구조화 결과.
     """
-    required = (
-        v["salesT"],
-        v["salesT1"],
-        v["cogsT"],
-        v["cogsT1"],
-        v["sgaT"],
-        v["sgaT1"],
-        v["assetsT"],
-        v["assetsT1"],
-    )
-    if not all(x is not None for x in required):
-        return None
-    return calcBeneishMScore(
-        salesT=v["salesT"],
-        salesT1=v["salesT1"],
-        receivablesT=v["receivablesT"] or 0,
-        receivablesT1=v["receivablesT1"] or 0,
-        cogsT=v["cogsT"],
-        cogsT1=v["cogsT1"],
-        sgaT=v["sgaT"],
-        sgaT1=v["sgaT1"],
-        grossPropertyT=v["ppeT"] or 0,
-        grossPropertyT1=v["ppeT1"] or 0,
-        totalAssetsT=v["assetsT"],
-        totalAssetsT1=v["assetsT1"],
-        netIncomeT=v["niT"] or 0,
-        ocfT=v["ocfT"] or 0,
-        leverageT=(v["liabilitiesT"] / v["assetsT"]) if v["assetsT"] else 0,
-        leverageT1=(v["liabilitiesT1"] / v["assetsT1"]) if v["assetsT1"] else 0,
-        depreciationT=0,
-        depreciationT1=0,
-    )
+    _ = v
+    return _beneishUnavailable()
 
 
 def _collectAuditFlags(company) -> list[dict]:

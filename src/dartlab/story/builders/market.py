@@ -515,14 +515,22 @@ def factorICBlock(data) -> list:
 
 def altmanFactorBlock(data) -> list:
     """calcAltmanFactor → safe/grey/distress 3 zone + top 10."""
-    if not data:
+    if not data or data.get("status") != "ok":
         return []
     zones = data.get("zones", {})
+    methodology = data.get("methodology") or {}
+    thresholds = methodology.get("thresholds") or {}
+    modelName = methodology.get("modelName") or f"Altman {data.get('variant', '').upper()}"
+    distress_below = thresholds.get("distressBelow")
+    safe_above = thresholds.get("safeAbove")
     metrics = [
-        ("safe zone (Z > 2.99)", f"{zones.get('safe', {}).get('count', 0)}사 ({zones.get('safe', {}).get('pct', 0)}%)"),
+        (
+            f"safe zone (score > {safe_above})",
+            f"{zones.get('safe', {}).get('count', 0)}사 ({zones.get('safe', {}).get('pct', 0)}%)",
+        ),
         ("grey zone", f"{zones.get('grey', {}).get('count', 0)}사 ({zones.get('grey', {}).get('pct', 0)}%)"),
         (
-            "distress zone (Z < 1.81)",
+            f"distress zone (score < {distress_below})",
             f"{zones.get('distress', {}).get('count', 0)}사 ({zones.get('distress', {}).get('pct', 0)}%)",
         ),
     ]
@@ -530,7 +538,7 @@ def altmanFactorBlock(data) -> list:
         HeadingBlock(
             _meta("altmanFactor").label,
             level=2,
-            helper=f"Altman Z-Score ({data.get('year')}, {data.get('universe')}종목, variant={data.get('variant')}). {data.get('interpretation', '')}",
+            helper=f"{modelName} ({data.get('year')}, {data.get('universe')}종목, variant={data.get('variant')}). {data.get('interpretation', '')}",
         ),
         MetricBlock(metrics),
     ]

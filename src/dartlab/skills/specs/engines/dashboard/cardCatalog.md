@@ -166,8 +166,8 @@ catalog entry 의 `dataSpec.adapter` 가 builder dispatch 의 key.
 | `flagsTopList` | module + fn | items (label/value/delta) |
 | `peerComparison` | (analysisCall: peerBenchmark) | rows (self/peerMedian/p25/p75/percentile) |
 | `peerScatter` | (analysisCall: peerBenchmark.scatter) | points (x, y, label, self) |
-| `distressGauge` | (계산: Altman Z') | value + bands |
-| `beneishGauge` | (계산: Beneish M-Score) | value + bands |
+| `distressGauge` | analysis `calcDistressScore`의 비금융 Z'' | value + bands |
+| `beneishGauge` | canonical 입력 계약 복구 전 비발행 | 빈 결과 |
 | `lifeCyclePhase` | (계산: CF 부호 + 매출 성장) | phases + current + confidence |
 | `cashflowSankey` (deprecated) | norm | nodes + links |
 | `capitalAllocationBars` (신설) | norm | stacked series over time |

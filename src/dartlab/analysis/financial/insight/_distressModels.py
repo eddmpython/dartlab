@@ -61,12 +61,10 @@ def _interpretAltmanZpp(score: float) -> ModelScore:
         zone : str — 'safe' | 'gray' | 'distress'
         interpretation : str — 해석 텍스트
     """
-    if score > 5.0:
+    if score > 2.6:
         zone, interp = "safe", "비제조업/신흥시장 기준 안전 영역."
-    elif score > 2.6:
+    elif score >= 1.1:
         zone, interp = "gray", "회색 영역. 추가 모니터링 권고."
-    elif score > 1.1:
-        zone, interp = "distress", "부실 위험 영역. 재무 점검 필요."
     else:
         zone, interp = "distress", "부실 영역. 즉각적 대응 필요."
     return ModelScore(
@@ -95,9 +93,9 @@ def _interpretAltmanZ(score: float) -> ModelScore:
         zone : str — 'safe' | 'gray' | 'distress'
         interpretation : str — 해석 텍스트
     """
-    if score > 3.0:
+    if score > 2.99:
         zone, interp = "safe", "제조업 기준 안전 영역."
-    elif score > 1.8:
+    elif score >= 1.81:
         zone, interp = "gray", "회색 영역. 추가 모니터링 권고."
     else:
         zone, interp = "distress", "부실 영역. 부도 위험 높음."
@@ -107,7 +105,7 @@ def _interpretAltmanZ(score: float) -> ModelScore:
         displayValue=f"Z = {score:.2f}",
         zone=zone,
         interpretation=interp,
-        reference="Altman (1968), 제조업 5변수, 학술 적중률 95%",
+        reference="Altman (1968), 상장 제조업 5변수 판별모형",
     )
 
 
@@ -244,9 +242,9 @@ def _normalizeZpp(z: float) -> float:
     """
     if z < 1.1:
         return 100
-    if z > 5.0:
+    if z > 2.6:
         return 0
-    return (1 - (z - 1.1) / 3.9) * 100
+    return (1 - (z - 1.1) / 1.5) * 100
 
 
 def _normalizeZ(z: float) -> float:
@@ -262,11 +260,11 @@ def _normalizeZ(z: float) -> float:
     float
         normalized : float — 정규화 점수 (0~100) (점)
     """
-    if z < 1.8:
+    if z < 1.81:
         return 100
-    if z > 3.0:
+    if z > 2.99:
         return 0
-    return (1 - (z - 1.8) / 1.2) * 100
+    return (1 - (z - 1.81) / 1.18) * 100
 
 
 def _normalizeBeneish(m: float) -> float:

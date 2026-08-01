@@ -60,8 +60,8 @@ Guard는 현재 레이어의 source를 동결한 뒤 한 번 실행한다. Guard
 - L2 완료 조건: analysis, macro, quant, industry, credit의 전체 src와 실제 호출자를
   데이터 계약·오류 투명성·SSOT·속도·메모리 기준으로 전수 대조한다. 결함 수정과 집중
   회귀를 끝내고 source 동결 뒤 공식 Guard, 원장, 커밋, push까지 닫는다.
-- 다음 첫 행동: Altman 자동 모드의 모델 혼용과 Beneish 결측 기본값을 판정한다. 이어
-  Track B 유동성 가중 0과 감사의견 부재 추정을 닫고 analysis, macro, quant, industry,
+- 다음 첫 행동: Track B 유동성 가중 0과 감사의견 부재 추정을 닫는다. 이어
+  analysis, macro, quant, industry,
   credit 전체 src와 호출자에서 새 부채가 없는지 source freeze 전 최종 순회한다. EDGAR
   full-state 성능, 팩터 형성 시점, 백테스트 순수익·sizing·다중자산 원장, PBO, Sortino,
   삼양식품 dFV 드리프트, 스타일 형성 시점, CPCV와 walk-forward 검증 원장은 아래
@@ -2848,3 +2848,72 @@ fixed-at-entry 단일자산과 초기 동일자본 strategy sleeve로 공개 범
 **판정: 공개가 실제로 증명할 수 있는 sizing과 다중자산 범위는 원장과 일치한다.** 미래를
 보는 가중치와 가짜 risk-parity를 차단한 것은 기능 완성 주장이 아니라 정직한 축소다. L2
 전체는 진행 중이며 다음 체크포인트는 Altman과 Beneish 점수의 모델·결측 계약이다.
+
+### L2 체크포인트: Altman 적용성·기간 원장과 Beneish 결측 비발행 (2026-08-01)
+
+**상태: 체크포인트 완료. L2 전체는 진행 중.** 모델 방법론과 결측 의미를 나눈 두 독립
+전문 검토는 기존 Altman `auto`가 종목마다 Z/Z'을 바꾸면서 단일 모델명과 임계값을 붙인
+것, Beneish가 정통 입력이 없는 상태에서 0과 중립값으로 8변수 점수를 만든 것이 모두
+판정 원장을 깨는 결함이라고 합의했다. 구현 추적에서는 analysis·core·story·viz가 같은
+모델을 별도 공식과 다른 임계값으로 다시 계산하는 소비자 우회도 확인했다.
+
+1. **범위와 실제 호출자.** quant의 `calcAltmanFactor`, `calcBeneishFactor`, 최신 완결연도
+   선택과 KRX 연말 시가총액, core ratio의 Z/Z'', analysis의 단일회사 시계열·안정성
+   플래그·앙상블·insight, story block/narration, dashboard trend/gauge/decomposition,
+   AI credit scorecard와 registry·Skill 원문까지 한 흐름으로 대조했다. historical
+   `basePeriod` 요청에 최신 횡단 factor를 붙이는 경로도 같은 시점 계약으로 포함했다.
+2. **제품 결함 재현.** 수정 전 KR 전종목 `auto`는 Z와 Z'을 결측에 따라 섞은
+   `2,090`개 점수를 한 임계로 분류했고, 명시 Z와 Z''의 universe도 각각 `2,118`과
+   `2,090`으로 달랐다. Beneish는 `1,845`개 점수와 red flag `261`개(`14.1%`)를
+   발행했지만 PPE, 장기부채·유동성 장기부채, 미지급법인세, 순수 감가상각의 canonical
+   의미가 없었다. analysis Beneish는 결측을 중립값과 0으로 바꾸고, dashboard Altman은
+   Z'을 별도 계산하면서 유동자산·부채 등 결측을 0으로 바꿨다. 부실 앙상블은 같은
+   Altman family의 Z와 Z''를 독립된 두 표로 셌다. 단일회사 Altman은 현재 시가총액을
+   모든 과거 기간에 붙이고, Z''의 장부자본/부채 항에 매출/자산을 넣었다. 최종 실데이터
+   교차검사에서는 BS Q1만으로 합성된 `2026`을 최신 연간으로 골라 IS 결손을 내는 기간
+   불일치도 추가 재현했다.
+3. **단일 방법론·기간 SSOT.** 전종목 `auto`는 적격 비금융사 전체에 동일한 Z''만 쓴다.
+   원본 Z는 제조업과 같은 회계연도 말 시가총액이 확인된 명시 `variant="z"`에서만
+   허용하고 Z' fallback은 없다. 임계는 Z가 `<1.81 / 1.81~2.99 / >2.99`, Z''가
+   `<1.1 / 1.1~2.6 / >2.6`이며 경계값은 회색이다. 필수 입력 결손과 실제 0·음수
+   자기자본/이익잉여금/영업이익을 구분한다. EBIT 대신 영업이익 proxy를 쓴 사실,
+   annual consolidated 기간, model coefficients, point-in-time이 아님을 결과에 남긴다.
+   단일회사 시계열은 BS와 IS에 공통으로 존재하는 최신 완결 연도만 선택해 Q1 BS를
+   full year로 오인하지 않는다. Altman family는 모든 투표와 축에서 한 표만 쓴다.
+4. **수정과 fail-closed 범위.** `_latestYear`는 long-form 행 수가 아니라 연도별 고유
+   종목 수를 센다. market `auto`는 종목코드가 있으면 KR/US를 판별하고 전종목 기본은
+   KR이다. 적용성·제외 사유·필드별 결손·coverage 합계를 구조화했다. core의 시총 결손
+   Z' fallback을 제거하고 Z와 Z'' series slot을 분리했다. analysis는 Z'' 원식
+   `6.56X1 + 3.26X2 + 6.72X3 + 1.05X4`을 중간 반올림 없이 계산하고 금융업·결손을
+   구조화 비발행한다. story·viz는 이 결과만 소비하며 dashboard ratio DSL의 잘못된
+   별도 공식을 제거했다. Beneish는 공급자 공통 canonical 입력과 as-of 계약이 생길
+   때까지 quant·analysis·story·viz·AI 전 경로에서 `canonical_inputs_unavailable`로
+   점수, flag, clean 판정을 발행하지 않는다. 역사적 credit 요청에는 최신 factor를
+   섞지 않고 `historical_factor_asof_unsupported`를 남긴다.
+5. **실제 공개 행동, 정확성, 속도, 메모리.** 최종 KR 2025 `auto -> zpp`는 후보
+   `2,282 = 계산 1,799 + 제외 483`으로 coverage 항등식이 닫혔다. 제외는 회사유형
+   부재 131, 금융업 133, 필수입력 결손 219다. 구간은 안전 1,035(`57.5%`), 회색
+   282(`15.7%`), 위험 482(`26.8%`)다. 삼성전자는 시장 `KR`, Z'' `7.97`, 안전이며
+   Beneish는 `canonical_inputs_unavailable`, score `None`이다. 세 호출 결합은
+   `21.663초`, tracemalloc peak `2.162MiB`였다. `Company("005930")` 단일 분석도
+   BS/IS 공통 완결연도 `2025`, 같은 Z'' `7.97`, 안전, period policy
+   `latest_common_complete_annual`을 반환했다.
+6. **회귀와 Guard.** 원식 oracle, 두 모델 경계, 결손·음수 관측, 업종 적용성, uniform
+   auto, Z' fallback 금지, US 추론, 고유종목 연도, Beneish 모든 도달경로, historical
+   factor, story 임계, core series, analysis 플래그·앙상블, dashboard SSOT를 회귀로
+   고정했다. 단계별로 impacted `360 passed`, quant unit `344 passed, 118 deselected`,
+   core unit `732 passed, 10 skipped, 154 deselected`, 최종 모델 묶음 `134 passed`,
+   story·viz 소비면 `341 passed`, 최신 기간·소비면 묶음 `232 passed`가 통과했다.
+   변경 Python 44파일의 Ruff check/format, `git diff --check`가 통과했다. Guard quick는
+   1,791파일, 규칙 실패 0, architecturePytest PASS다.
+7. **남은 부채와 판정.** 정통 Beneish 재활성화에는 DART/EDGAR 공통 의미의 PPE,
+   장기부채와 유동성 장기부채, 미지급법인세, 순수 감가상각을 동일 기간·공시가용일로
+   제공하는 입력 owner와 동결 oracle이 필요하다. EBIT 원계정과 완전한 공시가용일
+   point-in-time도 후속 기능 부채이며 현재 결과는 proxy와 `pointInTime=false`로
+   정직하게 제한한다. 광범위 generated Skill artifact에는 이번 source spec과 무관한
+   선재 drift가 있어 source 동결 전 artifact sync 소유 범위에서 별도 판정한다.
+
+**판정: Altman은 모델·적용성·임계·기간·소비자 원장이 하나로 수렴했고, Beneish는
+증명할 수 없는 점수를 전 경로에서 비발행한다.** 기능을 가장한 대체값을 없앤 축소가
+이번 완료 범위다. L2 전체는 진행 중이며 다음 체크포인트는 Track B 유동성 가중 0과
+감사의견 키워드 부재 추정이다.

@@ -85,6 +85,7 @@ RATIO_CATEGORIES: list[tuple[str, list[str]]] = [
             "dpo",
             "piotroskiFScore",
             "altmanZScore",
+            "altmanZppScore",
         ],
     ),
     (

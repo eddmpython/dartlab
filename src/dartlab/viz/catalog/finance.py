@@ -1217,48 +1217,39 @@ FINANCE_CARDS: dict[str, CatalogEntry] = {
         "help": "(순이익 − 영업CF) / 자산. 양수 ↑ 는 회계이익이 현금 동반 안 됨 — 매출채권·재고 누적으로 이익 과대 의심 (Sloan 1996). +10% 이상 위험.",
     },
     # ─────────────────────────────────────────────────────────────
-    # 21. Altman Z' — 부실 위험 5요소 정량. 1.81 위험 / 2.99 안전.
-    #     Z' = 1.2 (WC/A) + 1.4 (RE/A) + 3.3 (OP/A) + 0.6 (E/L) + 1.0 (Rev/A)
+    # 21. Altman Z'' — analysis 단일 원장의 비금융사 부실 위험 4요소.
     # ─────────────────────────────────────────────────────────────
     "altmanZ": {
         "kind": "trend",
-        "title": "Altman Z' (부실 위험)",
+        "title": "Altman Z'' (부실 위험)",
         "topic": "ratios",
         "tab": "financial",
         "subCategory": "credit",
         "seriesPlan": [
             {
                 "key": "z",
-                "label": "Z'",
+                "label": "Z''",
                 "color": COLORS[2],
                 "intent": "primary",
                 "unit": "배",
                 "type": "line",
-                "ratio": {
-                    "num": {
-                        # 1.2 (currentAssets − currentLiabilities) + 1.4 retainedEarnings
-                        # + 3.3 operatingIncome + 1.0 revenue 를 자산으로 나눈 후
-                        # + 0.6 (equity / liabilities). 단순화로 자산 분모 통일.
-                        "currentAssets": 1.2,
-                        "currentLiabilities": -1.2,
-                        "retainedEarnings": 1.4,
-                        "operatingIncome": 3.3,
-                        "revenue": 1.0,
-                    },
-                    "den": {"assets": 1},
-                    "scale": 1,
+                "analysisCall": {
+                    "module": "financial._stabilityDistress",
+                    "fn": "calcDistressScore",
+                    "outputKey": "history.zScore",
+                    "outputType": "timeseries",
                 },
             },
         ],
         "options": {
             "unit": "배",
             "refLines": [
-                {"value": 1.81, "label": "1.81 위험", "intent": "negative"},
-                {"value": 2.99, "label": "2.99 안전", "intent": "positive"},
+                {"value": 1.1, "label": "1.1 위험 경계", "intent": "negative"},
+                {"value": 2.6, "label": "2.6 안전 경계", "intent": "positive"},
             ],
         },
         "layout": {"colSpan": 3, "rowSpan": 3},
-        "help": "Z' < 1.81 = 부실 위험, > 2.99 = 안전, 사이 = 회색. 단순화: equity/liabilities 비중 별도 카드(stabilityRatio). 5 요소 가중합 추세로 신용 등급 변화 사전 감지.",
+        "help": "비금융사 Z'' < 1.1 = 부실 위험, > 2.6 = 안전, 사이는 회색. 필수 계정이 없으면 점수를 발행하지 않으며 EBIT은 영업이익 proxy다.",
     },
     # ─────────────────────────────────────────────────────────────
     # 22. 자본배분 — CapEx + 배당 + R&D stacked bar.
@@ -1541,12 +1532,11 @@ FINANCE_CARDS: dict[str, CatalogEntry] = {
         "help": "영업이익 + 영업외손익 − 법인세 = 순이익. 영업외 (금융수익 − 금융비용) 가 큰 비중이면 본업 외 변동성. 법인세율 (= 법인세/세전이익) 안정성도 확인.",
     },
     # ─────────────────────────────────────────────────────────────
-    # 29. Beneish M-Score 시계열 — 8 변수 정통 분식 의심.
-    #     calcBeneishTimeline analysisCall. 임계 −1.78 = 의심.
+    # 29. Beneish 호환 카드. canonical 공급자 입력 계약 전까지 history가 비어 있다.
     # ─────────────────────────────────────────────────────────────
     "beneishMTimeline": {
         "kind": "trend",
-        "title": "Beneish M (8변수)",
+        "title": "Beneish M (현재 비발행)",
         "topic": "ratios",
         "tab": "financial",
         "subCategory": "quality",
@@ -1567,13 +1557,10 @@ FINANCE_CARDS: dict[str, CatalogEntry] = {
             },
         ],
         "options": {
-            "refLines": [
-                {"value": -1.78, "label": "−1.78 (의심)", "intent": "negative"},
-                {"value": -2.22, "label": "−2.22 (정상)", "intent": "positive"},
-            ],
+            "refLines": [],
         },
         "layout": {"colSpan": 3, "rowSpan": 3},
-        "help": "Beneish 1999 정통 8 변수 (DSRI/GMI/AQI/SGI/DEPI/SGAI/TATA/LVGI) 합산. M > −1.78 = 회계조작 의심. K-IFRS 환경 false positive 잦음 — 추세 변동 함께 인용.",
+        "help": "원식 LTD/current maturities/tax payable/순수 감가상각의 공급자 공통 의미가 없어 현재 점수를 발행하지 않는다.",
     },
     # ─────────────────────────────────────────────────────────────
     # 30. Penman ROE 분해 — ROCE = RNOA + FLEV × SPREAD.
@@ -1691,12 +1678,12 @@ FINANCE_CARDS: dict[str, CatalogEntry] = {
         "help": "DOL = 영업이익 변화율 / 매출 변화율. DOL > 3 = 고정비 부담 큼 (제조업). DOL < 1.5 = 변동비 중심 (서비스). 안전마진 = (매출 − BEP)/매출. > 50% 안정.",
     },
     # ─────────────────────────────────────────────────────────────
-    # 36. Distress 5 모델 ensemble — Altman Z·Z''·Ohlson·Springate·Zmijewski.
+    # 36. Distress ensemble — Altman 계열 한 표 + 적용 가능한 독립 모형.
     #     adapter distressEnsembleGauge → calcDistressEnsemble.
     # ─────────────────────────────────────────────────────────────
     "distressEnsemble": {
         "kind": "gauge",
-        "title": "부도 위험 (5 모델)",
+        "title": "부도 위험 (적용 모델)",
         "topic": "ratios",
         "tab": "financial",
         "subCategory": "credit",
@@ -1704,7 +1691,7 @@ FINANCE_CARDS: dict[str, CatalogEntry] = {
         "dataSpec": {"adapter": "distressEnsembleGauge"},
         "options": {},
         "layout": {"colSpan": 3, "rowSpan": 3},
-        "help": "Altman Z·Z''·Ohlson O·Springate S·Zmijewski X 5 모델 다수결. 단일 모델 편향 제거. 일치도 < 60% = 신뢰 어려움 (모델 간 불일치).",
+        "help": "Altman Z/Z''는 같은 계열이라 한 표만 집계하고 Ohlson·Springate·Zmijewski 중 산출 가능한 모델과 다수결한다. 일치도 < 60%는 모델 간 불일치다.",
     },
     # ─────────────────────────────────────────────────────────────
     # HERO. Snowflake 5-axis 정통 점수 radar (Simply Wall St 패턴).

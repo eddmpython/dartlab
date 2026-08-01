@@ -288,48 +288,28 @@ def buildTopListFromFlags(flags: Any) -> list[dict[str, Any]]:
 
 
 def buildDistressGauge(company: Any) -> dict[str, Any]:
-    """Altman Z' (private firm) gauge — norm 만으로 직접 계산.
-
-    Z' = 0.717·X1 + 0.847·X2 + 3.107·X3 + 0.420·X4 + 0.998·X5
-      X1 = (currentAssets - currentLiabilities) / assets   (운전자본/자산)
-      X2 = retainedEarnings / assets                       (잉여금/자산)
-      X3 = operatingIncome / assets                        (영업이익/자산, EBIT proxy)
-      X4 = equity / liabilities                            (장부자기자본/부채)
-      X5 = revenue / assets                                (자산회전율)
-
-    임계: Z' ≥ 2.9 안전 / 1.23~2.9 주의 / < 1.23 위험.
-    """
-    norm, periods = _normAndPeriods(company, 4)
-    if not periods:
+    """analysis의 단일 Z'' 원장에서 최신 점수와 임계값을 가져온다."""
+    res = _safeCall("dartlab.analysis.financial._stabilityDistress", "calcDistressScore", company)
+    if not isinstance(res, dict) or res.get("status") != "ok":
         return {}
-    p = periods[-1]
-    ca = _toFloat(extractSeries(norm, "currentAssets", [p])[0]) or 0.0
-    cl = _toFloat(extractSeries(norm, "currentLiabilities", [p])[0]) or 0.0
-    ta = _toFloat(extractSeries(norm, "assets", [p])[0]) or 0.0
-    re = _toFloat(extractSeries(norm, "retainedEarnings", [p])[0]) or 0.0
-    oi = _toFloat(extractSeries(norm, "operatingIncome", [p])[0]) or 0.0
-    eq = _toFloat(extractSeries(norm, "equity", [p])[0]) or 0.0
-    tl = _toFloat(extractSeries(norm, "liabilities", [p])[0]) or 0.0
-    rv = _toFloat(extractSeries(norm, "revenue", [p])[0]) or 0.0
-    if ta <= 0 or tl <= 0:
+    z = _toFloat(res.get("latestScore"))
+    history = res.get("history") or []
+    period = history[0].get("period") if history and isinstance(history[0], dict) else None
+    if z is None:
         return {}
-    x1 = (ca - cl) / ta
-    x2 = re / ta
-    x3 = oi / ta
-    x4 = eq / tl
-    x5 = rv / ta
-    z = 0.717 * x1 + 0.847 * x2 + 3.107 * x3 + 0.420 * x4 + 0.998 * x5
+    minValue = min(-5.0, float(int(z) - 1))
+    maxValue = max(10.0, float(int(z) + 2))
     return {
         "value": round(z, 2),
-        "minValue": 0.0,
-        "maxValue": 6.0,
+        "minValue": minValue,
+        "maxValue": maxValue,
         "bands": [
-            {"fromValue": 0.0, "toValue": 1.23, "label": "위험", "intent": "negative"},
-            {"fromValue": 1.23, "toValue": 2.9, "label": "주의", "intent": "accent"},
-            {"fromValue": 2.9, "toValue": 6.0, "label": "안전", "intent": "positive"},
+            {"fromValue": minValue, "toValue": 1.1, "label": "위험", "intent": "negative"},
+            {"fromValue": 1.1, "toValue": 2.6, "label": "주의", "intent": "accent"},
+            {"fromValue": 2.6, "toValue": maxValue, "label": "안전", "intent": "positive"},
         ],
         "unit": "",
-        "subtitle": f"Altman Z' (private firm) · {p} · ≥2.9 안전 / 1.23~2.9 주의 / <1.23 위험",
+        "subtitle": f"Altman Z'' (비금융) · {period or '최신'} · >2.6 안전 / 1.1~2.6 회색 / <1.1 위험",
     }
 
 
@@ -379,7 +359,7 @@ def buildScenarioSensitivity(company: Any) -> dict[str, Any]:
 
 
 def buildDistressDecomp(company: Any) -> dict[str, Any]:
-    """Altman Z' 5 인자 분해 — distress gauge 의 "왜?" topList (P-DASH-V1 D13).
+    """단일 분석 원장의 Altman Z'' 4 인자 분해.
 
     각 인자 X1~X5 의 값 + 계수 가중 기여도 (점수에 얼마나 기여했는지).
     높은 절대 기여 인자가 분석 핵심.
@@ -388,32 +368,21 @@ def buildDistressDecomp(company: Any) -> dict[str, Any]:
         {items: [{label, value(인자값), unit, delta(가중 기여)}, ...]}
         기여도 절대값 내림차순 정렬.
     """
-    norm, periods = _normAndPeriods(company, 4)
-    if not periods:
+    res = _safeCall("dartlab.analysis.financial._stabilityDistress", "calcDistressScore", company)
+    if not isinstance(res, dict) or res.get("status") != "ok":
         return {}
-    p = periods[-1]
-    ca = _toFloat(extractSeries(norm, "currentAssets", [p])[0]) or 0.0
-    cl = _toFloat(extractSeries(norm, "currentLiabilities", [p])[0]) or 0.0
-    ta = _toFloat(extractSeries(norm, "assets", [p])[0]) or 0.0
-    re = _toFloat(extractSeries(norm, "retainedEarnings", [p])[0]) or 0.0
-    oi = _toFloat(extractSeries(norm, "operatingIncome", [p])[0]) or 0.0
-    eq = _toFloat(extractSeries(norm, "equity", [p])[0]) or 0.0
-    tl = _toFloat(extractSeries(norm, "liabilities", [p])[0]) or 0.0
-    rv = _toFloat(extractSeries(norm, "revenue", [p])[0]) or 0.0
-    if ta <= 0 or tl <= 0:
+    history = res.get("history") or []
+    latest = next((row for row in history if isinstance(row, dict) and row.get("zScore") is not None), None)
+    if latest is None:
         return {}
-    x1 = (ca - cl) / ta
-    x2 = re / ta
-    x3 = oi / ta
-    x4 = eq / tl
-    x5 = rv / ta
     factors = [
-        ("X1 운전자본/자산", x1, 0.717),
-        ("X2 잉여금/자산", x2, 0.847),
-        ("X3 영업이익/자산", x3, 3.107),
-        ("X4 자기자본/부채", x4, 0.420),
-        ("X5 자산회전율", x5, 0.998),
+        ("X1 운전자본/자산", _toFloat(latest.get("x1_wcTa")), 6.56),
+        ("X2 이익잉여금/자산", _toFloat(latest.get("x2_reTa")), 3.26),
+        ("X3 영업이익/자산", _toFloat(latest.get("x3_ebitTa")), 6.72),
+        ("X4 장부자본/부채", _toFloat(latest.get("x4_bveTl")), 1.05),
     ]
+    if any(value is None for _label, value, _coef in factors):
+        return {}
     items = [
         {
             "label": label,
@@ -423,30 +392,16 @@ def buildDistressDecomp(company: Any) -> dict[str, Any]:
             "description": f"× {coef} = {val * coef:.2f}",
         }
         for label, val, coef in factors
+        if val is not None
     ]
     items.sort(key=lambda x: abs(x.get("delta") or 0.0), reverse=True)
     return {"items": items, "direction": "desc"}
 
 
 def buildBeneishGauge(company: Any) -> dict[str, Any]:
-    """earningsQuality.calcBeneishMScore → gauge. -2.22 임계 (이상 = 위험)."""
-    res = _safeCall("dartlab.analysis.financial.earningsQuality", "calcBeneishMScore", company)
-    if not res:
-        return {}
-    score = _toFloat(_drill(res, "mScore") or _drill(res, "score") or _drill(res, "value"))
-    if score is None:
-        return {}
-    return {
-        "value": score,
-        "minValue": -6.0,
-        "maxValue": 1.0,
-        "bands": [
-            {"fromValue": -6.0, "toValue": -2.22, "label": "정상", "intent": "positive"},
-            {"fromValue": -2.22, "toValue": 1.0, "label": "분식 의심", "intent": "negative"},
-        ],
-        "unit": "",
-        "subtitle": "Beneish M-Score (> -2.22 분식 의심)",
-    }
+    """Canonical 입력 계약이 복구될 때까지 Beneish gauge를 발행하지 않는다."""
+    _ = company
+    return {}
 
 
 # ─────────────────────────────────────────────────────────────
@@ -999,7 +954,7 @@ def buildScoreBadge(company: Any) -> dict[str, Any]:
 # ─────────────────────────────────────────────────────────────
 # 정통 깊이 강화 adapter 6 (2026-05-19) — analysis 엔진 시계열 wrapping.
 # Penman ROE 분해 / ROIC-WACC spread / 세그먼트 매출 / 세그먼트 집중도 /
-# Operating Leverage·Breakeven / Distress 5 모델 ensemble.
+# Operating Leverage·Breakeven / Distress 모델 ensemble.
 # ─────────────────────────────────────────────────────────────
 
 
@@ -1307,7 +1262,7 @@ def buildDolBreakeven(company: Any) -> dict[str, Any]:
 
 
 def buildDistressEnsembleGauge(company: Any) -> dict[str, Any]:
-    """calcDistressEnsemble → 5 모델 (Altman Z·Z''·Ohlson·Springate·Zmijewski) 다수결 gauge.
+    """calcDistressEnsemble → Altman 계열 한 표 + 적용 가능 모델 다수결 gauge.
 
     agreement (다수파 일치도, %) 를 gauge value 로. ensemble label ("안전"|"주의"|"위험")
     + 모델별 verdict 카운트는 subtitle.
@@ -1337,7 +1292,7 @@ def buildDistressEnsembleGauge(company: Any) -> dict[str, Any]:
             {"fromValue": 60.0, "toValue": 100.0, "label": "안전", "intent": "positive"},
         ],
         "unit": "%",
-        "subtitle": f"5 모델 다수결 — {ensemble} · 안전 {safeCount}/{total} · 위험 {dangerCount}/{total} · 일치도 {agreement:.0f}%",
+        "subtitle": f"적용 모델 {total}개 다수결 — {ensemble} · 안전 {safeCount}/{total} · 위험 {dangerCount}/{total} · 일치도 {agreement:.0f}%",
     }
 
 

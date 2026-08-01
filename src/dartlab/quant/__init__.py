@@ -184,7 +184,7 @@ class Quant:
                 volatility(변동성): realized, garch, regime
                 benchmark(벤치마크): benchmarkUsed, benchmarkStack, 기간 수익률 (%)
                 simulation(시뮬레이션): paths, expectedReturn, var (%)
-                altman: zScore, zone (safe/grey/distress)
+                altman: score, zone, methodology, coverage (safe/grey/distress)
                 piotroski: fScore (0~9점)
         pl.DataFrame
             axis=None: 가이드 — 축 목록 + 설명 + 예시.
@@ -240,7 +240,8 @@ class Quant:
                 - axis="판단": dict — signal / confidence / indicators
                 - axis="모멘텀": dict — returns / rsi / macd / moving_averages
                 - axis="베타": dict — beta / benchmarkUsed / benchmarkStack
-                - axis="altman": dict — zScore / zone (safe / grey / distress)
+                - axis="altman": dict — score / zone / methodology / coverage
+                - axis="beneish": dict — 현재 status="unavailable" + 재활성화 입력 계약
                 - axis="piotroski": dict — fScore (0~9)
                 - axis 미지정: 가이드 DataFrame
             Prerequisites:

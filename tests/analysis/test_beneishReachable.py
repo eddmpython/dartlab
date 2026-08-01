@@ -1,15 +1,11 @@
-"""Beneish M-Score 가 호출 즉시 죽던 것에 대한 회귀.
+"""Beneish 호환 계산기가 proxy 점수를 발행하지 않는 회귀.
 
 `@memoizedCalc` 가 붙어 있었다. 그 래퍼는 첫 인자가 Company 인 계산기 전용이라 서명을
 `wrapper(company, *, basePeriod, overrides)` 로 바꾼다. 그런데 이 함수는 키워드 전용 순수
 계산기라, 붙는 순간 모든 호출이 `TypeError: unexpected keyword argument 'salesT'` 로 죽었다.
 
-더 나쁜 것은 언제 죽느냐다. 이 계산은 여덟 계정이 전부 있을 때만 불린다. 자료가 갖춰진
-회사일수록 확실히 터졌고, 자료가 없는 회사에서는 애초에 호출되지 않아 조용했다. 그래서
-"분식 회계 탐지" 라는 기능이 정상 데이터에서만 작동하지 않는 상태로 남아 있었다.
-
-예외는 `calcQualityAnomalies` 밖으로 그대로 새어 나갔다. 그 함수의 except 절이
-`TypeError` 를 잡지 않기 때문이다.
+호출 가능성 회귀는 유지하되, 현재 서명만으로는 Beneish 원식 TATA/LVGI와 순수
+감가상각을 재현할 수 없으므로 숫자와 판정을 발행하지 않는 계약을 고정한다.
 """
 
 from __future__ import annotations
@@ -45,22 +41,27 @@ _SOUND_INPUT = {
 }
 
 
-def testSoundInputProducesAScore() -> None:
-    """결함의 핵심이다. 자료가 갖춰진 정상 경로가 예외 없이 값을 내야 한다."""
+def testLegacyInputReturnsStructuredUnavailable() -> None:
+    """옛 proxy 입력이 그럴듯한 점수나 clean 판정으로 바뀌면 안 된다."""
 
     result = calcBeneishMScore(**_SOUND_INPUT)
 
     assert isinstance(result, dict)
-    assert isinstance(result.get("mScore"), float)
+    assert result["status"] == "unavailable"
+    assert result["mScore"] is None
+    assert result["zone"] == "unavailable"
+    assert result["components"] == {}
+    assert result["reasonCode"] == "canonical_inputs_unavailable"
 
 
-def testVerdictFollowsTheThreshold() -> None:
-    """M-Score 는 -2.22 를 기준으로 갈린다. 값과 판정이 따로 놀면 안 된다."""
+def testUnavailableNamesCanonicalGaps() -> None:
+    """재활성화에 필요한 원식 계정이 기계 판독 가능해야 한다."""
 
     result = calcBeneishMScore(**_SOUND_INPUT)
 
-    assert result["mScore"] < -2.22
-    assert "낮음" in result["interpretation"]
+    assert "long_term_debt" in result["missingCanonicalInputs"]
+    assert "pure_depreciation_expense" in result["missingCanonicalInputs"]
+    assert result["requirements"]["asOfRequired"] is True
 
 
 def testNoCompanyMemoizationDecorator() -> None:

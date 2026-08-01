@@ -371,9 +371,13 @@ def calcCapitalFlags(company, *, basePeriod: str | None = None) -> list[tuple[st
         else:
             flags.append((f"유동성 위기 (유동비율 {cr:.0f}%)", "warning"))
 
-    az = getattr(ratios, "altmanZScore", None) or getattr(ratios, "altmanZppScore", None)
-    if not isFinancial and az is not None and az < 1.81:
-        flags.append((f"Altman Z 부실 경계 ({az:.2f})", "warning"))
+    z = getattr(ratios, "altmanZScore", None)
+    zpp = getattr(ratios, "altmanZppScore", None)
+    if not isFinancial and zpp is not None:
+        if zpp < 1.1:
+            flags.append((f"Altman Z'' 부실 경계 ({zpp:.2f})", "warning"))
+    elif not isFinancial and z is not None and z < 1.81:
+        flags.append((f"Altman Z 부실 경계 ({z:.2f})", "warning"))
 
     pf = getattr(ratios, "piotroskiFScore", None)
     if pf is not None and pf < 3:

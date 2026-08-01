@@ -67,7 +67,8 @@ def creditScorecard(
 
     Capabilities:
         credit.engine.evaluateCompany(detail=True) wrap. dCR 등급 (20 단계 AAA~D) +
-        1Y PD + 7 축 점수 + 전망. includeFactors=True 시 Altman Z / Beneish M 동행.
+        1Y PD + 7 축 점수 + 전망. includeFactors=True 시 Altman 적용성 점수와
+        Beneish 비발행 상태를 동행한다.
 
     Parameters
     ----------
@@ -76,7 +77,7 @@ def creditScorecard(
     basePeriod : str | None
         평가 기준 분기 ('2024Q4'/'2023' 등). None 시 최신.
     includeFactors : bool
-        Altman Z + Beneish M 동행 여부 (기본 False — 호출 비용 절감).
+        Altman/Beneish factor 상태 동행 여부 (기본 False — 호출 비용 절감).
 
     Returns
     -------
@@ -106,8 +107,8 @@ def creditScorecard(
     SeeAlso
     -------
         - credit.engine.evaluateCompany : 본 도구가 호출
-        - quant.alphas.altman.calcAltmanFactor : factor ranking
-        - quant.alphas.beneish.calcBeneishFactor : 수익질
+        - quant.alphas.altman.calcAltmanFactor : 적용 가능한 단일 모형 factor ranking
+        - quant.alphas.beneish.calcBeneishFactor : canonical 입력 비발행 상태
         - DCFValuation : 가치평가
 
     Requires
@@ -117,7 +118,7 @@ def creditScorecard(
     AIContext
     ---------
         "신용등급", "회사채 등급", "재무 안정성", "AAA 인가" 류 질문에 본 도구 호출.
-        includeFactors True 면 Altman/Beneish 동행 (분식회계 의심 + distress 신호).
+        includeFactors True 면 Altman 방법론/coverage와 Beneish available 상태 동행.
 
     LLM Specifications
     ------------------
@@ -183,19 +184,26 @@ def creditScorecard(
     factor_data: dict[str, Any] | None = None
     if includeFactors:
         factor_data = {}
-        market = detectMarket(stockCode)
-        try:
-            from dartlab.quant.alphas.altman import calcAltmanFactor
+        if basePeriod is not None:
+            # 횡단 factor는 아직 fiscal/as-of 조회를 지원하지 않는다. 역사적 scorecard에
+            # 최신 점수를 섞으면 period mismatch이므로 명시적으로 비발행한다.
+            factor_data["status"] = "unavailable"
+            factor_data["reasonCode"] = "historical_factor_asof_unsupported"
+            factor_data["basePeriod"] = basePeriod
+        else:
+            market = detectMarket(stockCode)
+            try:
+                from dartlab.quant.alphas.altman import calcAltmanFactor
 
-            factor_data["altman"] = calcAltmanFactor(market=market, variant="auto", stockCode=stockCode)
-        except Exception as exc:  # noqa: BLE001
-            factor_data["altman"] = {"error": f"{type(exc).__name__}: {exc}"}
-        try:
-            from dartlab.quant.alphas.beneish import calcBeneishFactor
+                factor_data["altman"] = calcAltmanFactor(market=market, variant="auto", stockCode=stockCode)
+            except Exception as exc:  # noqa: BLE001
+                factor_data["altman"] = {"error": f"{type(exc).__name__}: {exc}"}
+            try:
+                from dartlab.quant.alphas.beneish import calcBeneishFactor
 
-            factor_data["beneish"] = calcBeneishFactor(market=market, stockCode=stockCode)
-        except Exception as exc:  # noqa: BLE001
-            factor_data["beneish"] = {"error": f"{type(exc).__name__}: {exc}"}
+                factor_data["beneish"] = calcBeneishFactor(market=market, stockCode=stockCode)
+            except Exception as exc:  # noqa: BLE001
+                factor_data["beneish"] = {"error": f"{type(exc).__name__}: {exc}"}
 
     payload: dict[str, Any] = {
         "stockCode": stockCode,

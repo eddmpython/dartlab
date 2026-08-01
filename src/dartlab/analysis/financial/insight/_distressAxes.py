@@ -29,7 +29,7 @@ from dartlab.analysis.financial.ratios import RatioResult
 
 
 def _quantAxis(ratios: RatioResult, useMerton: bool) -> tuple[DistressAxis, list[ModelScore]]:
-    """정량 축 (O-Score, Z''-Score, Z-Score).
+    """정량 축 (O-Score, 적용 가능한 Altman family 한 모델).
 
     Parameters
     ----------
@@ -50,11 +50,13 @@ def _quantAxis(ratios: RatioResult, useMerton: bool) -> tuple[DistressAxis, list
         models.append(_interpretOhlson(ratios.ohlsonProbability))
         norms.append(_normalizeOhlson(ratios.ohlsonProbability))
 
+    # Z와 Z''는 서로 독립적인 예측 모델이 아니라 같은 Altman family의 적용 변형이다.
+    # 둘을 동시에 평균/투표하면 동일 재무 신호를 두 번 세므로 broad nonfinancial Z''를
+    # 우선하고, Z''가 없을 때만 명시 Z를 사용한다.
     if ratios.altmanZppScore is not None:
         models.append(_interpretAltmanZpp(ratios.altmanZppScore))
         norms.append(_normalizeZpp(ratios.altmanZppScore))
-
-    if ratios.altmanZScore is not None:
+    elif ratios.altmanZScore is not None:
         models.append(_interpretAltmanZ(ratios.altmanZScore))
         norms.append(_normalizeZ(ratios.altmanZScore))
 

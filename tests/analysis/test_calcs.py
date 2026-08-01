@@ -19,8 +19,9 @@ pytestmark = pytest.mark.requires_data
 class _SelectResult:
     """company.select() 반환값 모의 — .df 속성만 있으면 된다."""
 
-    def __init__(self, df: pl.DataFrame):
+    def __init__(self, df: pl.DataFrame, topic: str | None = None):
         self._df = df
+        self.topic = topic
 
     @property
     def df(self) -> pl.DataFrame:
@@ -187,7 +188,7 @@ class MockCompany:
         if not filtered:
             return None
         df = _make_is_df(filtered)
-        return _SelectResult(df)
+        return _SelectResult(df, stmt)
 
 
 class _MockNotes:
@@ -445,6 +446,8 @@ class TestCalcDistressScore:
 
         result = calcDistressScore(company_with_ratios)
         assert result is not None
+        assert result["status"] == "ok"
+        assert result["diagnosticMeta"]["variant"] == "zpp"
         assert "history" in result
 
     def test_zscore_components(self, company_with_ratios):
@@ -452,10 +455,49 @@ class TestCalcDistressScore:
 
         result = calcDistressScore(company_with_ratios)
         row = result["history"][0]
-        assert "zScore" in row or "x1" in row  # 구조에 따라 키 다름
+        assert row["zModel"] == "Z''-Score"
+        assert row["x1_wcTa"] == pytest.approx(0.1)
+        assert row["x4_bveTl"] == pytest.approx(1.5)
+        assert row["zScore"] == pytest.approx(4.2, abs=0.01)
         # x1 = (유동자산 - 유동부채) / 자산총계 = (150000-100000)/500000 = 0.1
-        if "x1" in row:
-            assert abs(row["x1"] - 0.1) < 0.01
+
+    def test_missing_component_is_not_replaced_with_zero(self):
+        from dartlab.analysis.financial.stability import calcDistressScore
+
+        company = MockCompany(bs_data={"자산총계": [500_000] * 6, "부채총계": [200_000] * 6})
+        result = calcDistressScore(company)
+
+        assert result is not None
+        assert result["status"] == "unavailable"
+        assert result["latestScore"] is None
+        assert "currentAssets" in result["history"][0]["missingInputs"]
+
+    def test_uses_latest_common_complete_annual_period(self):
+        from dartlab.analysis.financial.stability import calcDistressScore
+
+        class QuarterlyCompany(MockCompany):
+            def select(self, stmt: str, accounts: list[str], **_kwargs):
+                source = self._bs if stmt == "BS" else self._is if stmt == "IS" else None
+                if source is None:
+                    return None
+                rows = []
+                for name, values in source.items():
+                    if name not in accounts:
+                        continue
+                    value = values[0]
+                    row = {"snakeId": _krToSnakeId().get(name, name), "항목": name, "2026Q1": value}
+                    for quarter in range(1, 5):
+                        row[f"2025Q{quarter}"] = value
+                    rows.append(row)
+                return _SelectResult(pl.DataFrame(rows), stmt)
+
+        result = calcDistressScore(QuarterlyCompany())
+
+        assert result is not None
+        assert result["status"] == "ok"
+        assert result["history"][0]["period"] == "2025"
+        assert result["diagnosticMeta"]["selectedPeriod"] == "2025"
+        assert result["diagnosticMeta"]["periodPolicy"] == "latest_common_complete_annual"
 
 
 # ═══════════════════════════════════════════════════════════

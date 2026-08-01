@@ -89,3 +89,25 @@ def test_compileScorecardLayout_empty_axes() -> None:
     assert layout["headline"]["grade"] == "dCR-B"
     assert layout["sections"] == []
     assert layout["adjustments"]["chs"] is None
+
+
+def test_historical_scorecard_does_not_mix_latest_factors(monkeypatch: pytest.MonkeyPatch) -> None:
+    """역사적 평가에 최신 Altman/Beneish 횡단면을 붙이지 않는다."""
+    import importlib
+    from types import SimpleNamespace
+
+    from dartlab.ai.tools.creditScorecard import creditScorecard
+
+    company = SimpleNamespace(stockCode="005930", corpName="테스트")
+    monkeypatch.setattr("dartlab.ai.tools.creditScorecard.resolveCompanyOrNone", lambda _code: company)
+    credit_engine = importlib.import_module("dartlab.credit.engine")
+    monkeypatch.setattr(credit_engine, "evaluateCompany", lambda _company, **_kwargs: {"grade": "dCR-A", "axes": []})
+
+    result = creditScorecard("005930", basePeriod="2023", includeFactors=True)
+
+    assert result.ok is True
+    assert result.data["factors"] == {
+        "status": "unavailable",
+        "reasonCode": "historical_factor_asof_unsupported",
+        "basePeriod": "2023",
+    }

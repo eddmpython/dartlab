@@ -338,7 +338,8 @@ def calcAnomalyScore(company, *, basePeriod: str | None = None) -> dict | None:
             score += accScore
             components["accrualRatio"] = accScore
 
-        # 5. Beneish M-Score (0~15점)
+        # 5. Beneish M-Score 호환 슬롯. 현재 canonical 입력 계약이 없어 map이 비며,
+        # 점수를 종합 anomaly에 가산하지 않는다.
         ben = beneishMap.get(period, {})
         ms = ben.get("mScore")
         if ms is not None and ms > -2.22:

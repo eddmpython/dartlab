@@ -4,7 +4,7 @@
 실험 084_distressModels Phase 1-4 + 085_mertonEngine 검증 결과 기반.
 
 축 구성 (100점 만점, 0=안전 100=위험):
-- 정량 분석 (30%): O-Score, Z''-Score, Z-Score  [Merton 없으면 40%]
+- 정량 분석 (30%): O-Score + 적용 가능한 Altman 계열 한 변형  [Merton 없으면 40%]
 - 시장 기반 (20%): Merton D2D + PD              [Merton 없으면 0%]
 - 이익 품질 (15%): Beneish M-Score, Sloan Accrual, Piotroski F-Score  [없으면 20%]
 - 추세 분석 (25%): anomaly에서 탐지된 시계열 패턴  [없으면 30%]
@@ -223,7 +223,7 @@ def calcDistress(
     """부실 예측 종합 스코어카드 계산.
 
     Capabilities:
-        - Altman Z/Z'' · Ohlson O · Springate · Zmijewski · Merton 5 모델 통합 점수 +
+        - Altman 계열 한 변형 · Ohlson O · Springate · Zmijewski · Merton 통합 점수 +
           zone (safe/grey/distress) + 학술 근거 + 해석 텍스트 생성.
 
     각 모델의 원시 값 → zone 판정 → 해석 텍스트 → 학술 참조를 포함한

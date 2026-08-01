@@ -345,19 +345,26 @@ def calcDistressIndicators(company, *, basePeriod: str | None = None) -> dict | 
     isFinancial = _isFinancialCompany(company)
     metrics = []
 
-    # Altman Z-Score: 비금융 제조업용 모형 — 금융업에는 적용 불가
+    # Altman family: 범용 비금융 Z''를 우선하고, 없을 때만 원본 Z를 쓴다.
     if not isFinancial:
-        az = getattr(ratios, "altmanZScore", None)
-        if az is None:
-            az = getattr(ratios, "altmanZppScore", None)
-        if az is not None:
-            if az > 2.99:
+        z = getattr(ratios, "altmanZScore", None)
+        zpp = getattr(ratios, "altmanZppScore", None)
+        if zpp is not None:
+            if zpp > 2.6:
                 quality = "안전"
-            elif az > 1.81:
+            elif zpp >= 1.1:
                 quality = "회색지대"
             else:
                 quality = "부실 위험"
-            metrics.append(("Altman Z", f"{az:.2f} — {quality}"))
+            metrics.append(("Altman Z''", f"{zpp:.2f} — {quality}"))
+        elif z is not None:
+            if z > 2.99:
+                quality = "안전"
+            elif z >= 1.81:
+                quality = "회색지대"
+            else:
+                quality = "부실 위험"
+            metrics.append(("Altman Z", f"{z:.2f} — {quality}"))
 
     op = getattr(ratios, "ohlsonProbability", None)
     if op is not None:

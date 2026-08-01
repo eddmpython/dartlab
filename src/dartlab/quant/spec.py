@@ -254,10 +254,10 @@ SPEC = {
         # ── Sprint 2 신규 9 alpha (2026-04-25) ─────────────────
         "altman": {
             "label": "Altman Z",
-            "description": "전종목 Z-Score 부실확률 (1968 5변수 / 1995 Z'' 4변수)",
-            "when": "시장 부실위험 분포 + topSafe/topDistress 종목 식별",
-            "key_output": "scores, zones(safe/grey/distress), topSafe, topDistress",
-            "method": "Altman(1968), Altman-Hotchkiss(2006)",
+            "description": "비금융 전종목 Z'' 판별 점수; 명시 Z는 제조업+연도말 시총 필수",
+            "when": "적용 가능 종목의 부실위험 점수 분포와 coverage 확인",
+            "key_output": "scores, zones, methodology, coverage.excludedByReason",
+            "method": "Altman Z/Z''; auto는 Z'' 단일 모델",
         },
         "piotroski": {
             "label": "Piotroski F",
@@ -267,11 +267,11 @@ SPEC = {
             "method": "Piotroski(2000)",
         },
         "beneish": {
-            "label": "Beneish M",
-            "description": "8변수 이익조작 감지 (DSRI/GMI/AQI/SGI/DEPI/SGAI/TATA/LVGI)",
-            "when": "red flag (M > -1.78) 의심 종목 + clean 종목 식별",
-            "key_output": "scores, flags(redFlag/clean), topFlag, topClean",
-            "method": "Beneish(1999)",
+            "label": "Beneish M (비발행)",
+            "description": "canonical 계정 계약 미충족으로 proxy 점수를 발행하지 않음",
+            "when": "현재는 재활성화 요구 입력과 비발행 사유 확인",
+            "key_output": "status, reasonCode, missingCanonicalInputs, requirements",
+            "method": "Beneish(1999) 원식 입력 계약 대기",
         },
         "accruals": {
             "label": "Sloan Accrual",

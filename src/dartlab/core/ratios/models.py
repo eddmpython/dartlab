@@ -438,6 +438,7 @@ class RatioSeriesResult:
     dpo: list[float | None] = field(default_factory=list)
     piotroskiFScore: list[int | None] = field(default_factory=list)
     altmanZScore: list[float | None] = field(default_factory=list)
+    altmanZppScore: list[float | None] = field(default_factory=list)
     beneishMScore: list[float | None] = field(default_factory=list)
     sloanAccrualRatio: list[float | None] = field(default_factory=list)
 

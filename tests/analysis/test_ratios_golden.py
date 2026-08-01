@@ -392,30 +392,22 @@ class TestComposite:
         assert r.piotroskiMaxScore == 9
 
     def test_altman_z_score(self):
-        """Altman Z'-Score: marketCap=None → 비상장 모델 (1983).
-
-        WC = 50000-30000 = 20000
-        A = WC/TA = 20000/200000 = 0.1
-        B = RE/TA = 60000/200000 = 0.3
-        C = EBIT/TA = 20000/200000 = 0.1
-        D' = Equity/TL = 120000/80000 = 1.5
-        E = Sales/TA = 100000/200000 = 0.5
-        Z' = 0.717×0.1 + 0.847×0.3 + 3.107×0.1 + 0.420×1.5 + 0.998×0.5
-           = 0.0717 + 0.2541 + 0.3107 + 0.63 + 0.499 = 1.77
-        """
+        """시총 결손을 private-company Z'로 침묵 전환하지 않는다."""
         r = _calc()
-        assert r.altmanZScore == pytest.approx(1.77, abs=0.1)
+        assert r.altmanZScore is None
+        assert r.altmanZppScore is not None
 
     def test_altman_z_score_with_market_cap_uses_original_model(self):
         """marketCap 제공 시 원본 Altman Z (상장기업 모델) 사용."""
         r = _calc(marketCap=300_000)
         assert r.altmanZScore == pytest.approx(3.62, abs=0.1)
 
-    def test_ratio_series_uses_z_prime_coefficients(self):
+    def test_ratio_series_does_not_publish_z_without_market_cap(self):
         from dartlab.analysis.financial.ratios import calcRatioSeries
 
         rs = calcRatioSeries(_SERIES_ANNUAL, ["2022", "2023", "2024"], annual=True, yoyLag=1)
-        assert rs.altmanZScore[-1] == pytest.approx(1.77, abs=0.1)
+        assert rs.altmanZScore == [None, None, None]
+        assert rs.altmanZppScore[-1] is not None
 
 
 # ══════════════════════════════════════

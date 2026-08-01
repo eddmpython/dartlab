@@ -568,7 +568,7 @@ def piotroskiFactorBlock(data) -> list:
 
 def beneishFactorBlock(data) -> list:
     """calcBeneishFactor → red flag 비율 + top 의심 10."""
-    if not data:
+    if not data or data.get("status") != "ok":
         return []
     flags = data.get("flags", {})
     metrics = [

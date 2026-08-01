@@ -1,20 +1,16 @@
 ---
 id: recipes.meta.screen.distressEarlyWarning
-title: Distress Early Warning — Altman Z″<1.8 ∧ Beneish M>-1.78
+title: Distress Early Warning — Altman 적용성 확인 + 회계 포렌식
 category: recipes
 kind: recipe
 scope: builtin
-status: drafted
-purpose: 부실 가능성 조기 경보 스크린 — Altman Z″ (manufacturing free) < 1.8 (distress zone) 동시 Beneish M-score > -1.78 (manipulation 의심) 두 강건 신호 동시 충족 종목. Altman 1968 + Beneish 1999 정통 결합. 트리거 — '부실 경보', 'distress', 'Altman Beneish', '회계 조작 의심', '신용 위험 스크린'.
+status: blocked
+purpose: Altman Z'' 부실위험 판별 점수와 회계 포렌식을 결합하는 조기경보 절차. Beneish 원식 입력 계약이 복구되기 전에는 M-score 교집합 스크린을 실행하지 않는다.
 whenToUse:
   - 부실 경보
   - distress early warning
   - Altman Beneish
   - 회계 조작 의심
-  - 신용 위험 스크린
-  - manipulation 의심
-  - Z-score
-  - M-score
 linkedSkills:
   - engines.scan
   - engines.quant
@@ -30,138 +26,67 @@ requiredEvidence:
   - dateRef
   - executionRef
   - sourceRef
-visualRefs:
-  - engines.viz.tableBackedChart
-  - engines.viz.peerMatrix
-visualGuidance:
-  - "Altman Z × Beneish M 2 차원 산점도 — engines.viz.peerMatrix, quadrant 3 (low Z × high M) red zone."
 gap:
   primary:
     - quant
     - credit
-testUniverse:
-  market: KR
-  stockCodes:
-    - "005930"
-    - "000660"
-    - "035720"
-    - "207940"
-    - "035420"
-  asOfPolicy: latest
 falsifier:
-  description: KOSPI200 universe 에서 동시 충족 0 건 = 본 강건 신호의 baseline rate (~5-15%) 과 모순 — 데이터 수집 실패 의심.
+  description: Beneish 결과 status가 ok가 아니면 두 점수의 교집합이나 red-flag 비율을 발행하지 않는다.
   pythonCheck: |
-    assert n_distress >= 3
+    assert beneish["status"] == "ok", beneish["reasonCode"]
 expectedNovelty:
-  - altmanZ
-  - beneishM
-  - distressZone
+  - altmanZpp
+  - modelCoverage
 forbidden:
-  - distress zone 진입 = 부도 예측 X (Altman 정확도 ~80% 1 년 전, 95% 2 년 전). 결과는 priority 정렬용 universe.
-  - Beneish M > -1.78 = 회계 조작 *의심* 이지 확정 X — 추가 forensics 분석 강행.
-  - 금융주 Altman 정의 차이 — 산업 분리 (Altman Z″ 가 manufacturing free, 그래도 금융주는 별 모델 필요).
+  - Altman 점수를 부도확률로 표현 X.
+  - 금융사 또는 company type 결측 종목을 Altman universe에 포함 X.
+  - Beneish unavailable을 clean, 0점, 0%로 표현 X.
+  - proxy 계정으로 Beneish 1999 원식이라고 주장 X.
 failureModes:
-  - 신규 상장 종목 (3 년 미만) Beneish lookback 부족.
-  - 한국 산업 base rate 보정 미적용 (US 기반 모델 그대로 사용 시 industry false-positive).
-  - 분기 보고서 reporting lag (Q4 결산 발표 ~3 월) 동안 stale.
-examples:
-  - KOSPI200 distress 의심 universe (분기 1 회)
-  - Altman Z″ < 1.8 + Beneish M > -1.78 + Piotroski F ≤ 3 triple 강화
-lastUpdated: '2026-05-28'
+  - 회사 유형 분류 부재 시 Altman 적용 불가.
+  - 연간 연결 필수 계정 결손 시 Altman 적용 불가.
+  - Beneish canonical 계정 계약 미구현.
+lastUpdated: '2026-08-01'
 runtimeCompatibility:
   server:
-    status: supported
+    status: blocked
   localPython:
-    status: supported
+    status: blocked
   mcp:
-    status: supported
+    status: blocked
   webAi:
-    status: limited
+    status: blocked
   pyodide:
-    status: limited
+    status: blocked
 ---
 
-## 공개 호출 방식
+## 현재 공개 호출 계약
 
 ```python
 import dartlab
-import polars as pl
 
-# 1. Altman Z″ (전 종목)
 altman = dartlab.quant("altman", market="KR")
-# → DataFrame: stockCode · zScore · zone (distress/grey/safe)
+assert altman["status"] == "ok"
+assert altman["variant"] == "zpp"
 
-# 2. Beneish M-score
 beneish = dartlab.quant("beneish", market="KR")
-# → DataFrame: stockCode · mScore · manipulator (likely/unlikely)
-
-# 3. 동시 충족 join
-df = (
-    altman.join(beneish, on="stockCode", how="inner")
-    .filter((pl.col("zScore") < 1.8) & (pl.col("mScore") > -1.78))
-    .sort("zScore")
-)
-
-emit_result(
-    table=df,
-    values={"n_distress": len(df)},
-    date="2026-05-28",
-    sources=["dartlab://quant/altman", "dartlab://quant/beneish"],
-)
+if beneish["status"] != "ok":
+    raise RuntimeError(beneish["reasonCode"])
 ```
 
-## 호출 동작
+Altman 기본 호출은 비금융 적격 종목에 Z'' 한 모델만 적용한다. 반환된
+`methodology.thresholds`, `coverage.excludedByReason`, `pointInTime`을 점수와 함께
+인용한다. `variant="z"`는 제조업 상장사와 같은 회계연도 말 시가총액이 있을 때만
+계산하며, 시총 결손을 Z'로 바꾸지 않는다.
 
-### 1. 결론 도출
+Beneish 축은 현재 `canonical_inputs_unavailable`을 반환한다. LTD, current maturities,
+income-tax payable, 순수 감가상각 등 원식 계정의 공급자 공통 의미와 공시 as-of가
+보장되기 전에는 M-score, clean/red-flag, 교집합 universe를 만들지 않는다.
 
-부실 + 회계 조작 의심 동시 충족 universe — 위험 신호 priority 정렬용. 부도 예측 아닌 *주의 priority*.
+## 재활성화 게이트
 
-### 2. 핵심 근거 수집
-
-- `dartlab.quant("altman")` — 5 비율 가중 Z″ (manufacturing free 변형)
-- `dartlab.quant("beneish")` — 8 비율 가중 M-score (1999 정통)
-
-### 3. 메커니즘 분석
-
-```
-2 강건 신호 동시 충족
-   Altman Z″ < 1.8  (distress zone, 1~2 년 부도 ~80% precision)
-   Beneish M > -1.78 (manipulator 의심, 0.6~0.8 precision)
-   ↓
-inner join → red zone universe
-   ↓
-zScore 오름차순 정렬 (가장 위험 먼저)
-   ↓
-운영자 review → forensics deep dive 종목 선정
-```
-
-### 4. 반례·한계
-
-- Altman zone 진입 ≠ 부도 확정 (정확도 80% 1 년 전).
-- Beneish 는 manipulation *의심* 이지 확정 X — manipulator-likely 가 실제 manipulator 비율 ~60-80%.
-- 산업 base 차이 (heavy capex 산업 Z 낮음, asset-light 산업 Z 높음).
-- 금융주 별 모델 필요 (CAMELS 또는 Mohanram G-score).
-
-### 5. 후속 모니터링
-
-- distress universe → `recipes.fundamental.quality.forensics.deepDive` forensics 27 종 deep dive.
-- accruals 추가 → `recipes.fundamental.quality.forensics.accountingPolicyChange` 결합.
-- credit 측 검증 → `engines.credit` dCR rating + `recipes.fundamental.credit.distressCandidateScreen` triple.
-
-## 대표 반환 형태
-
-`pl.DataFrame` — 컬럼:
-- `stockCode : str` · `corpName : str`
-- `zScore : float` — Altman Z″
-- `zone : str` — distress / grey / safe
-- `mScore : float` — Beneish M
-- `manipulator : str` — likely / unlikely
-- `sector : str` (선택)
-
-## 연계 절차
-
-1. 본 recipe → distress + manipulation 의심 universe.
-2. 통과 종목 → `recipes.fundamental.quality.forensics.deepDive` 또는 `recipes.fundamental.credit.distressCandidateScreen` triple.
-3. 회계 forensics 추가 → `recipes.fundamental.quality.forensics.accountingPolicyChange` / `bigBathDetection` / `revenueToCashBridge`.
-4. credit 측 dCR rating 결합 → `recipes.fundamental.credit.creditQuantConsensus` 4-source 합의.
-5. 분기 재실행 → universe 변동 trace (악화 진행 종목 priority 상향).
+1. 두 감사 연간 기간의 동일 연결 범위와 비금융 적용성을 확인한다.
+2. 원식 계정의 XBRL/DART source, 단위, 보고기간, filed-at provenance를 보존한다.
+3. 독립 oracle로 8개 성분과 최종 점수를 검증한다.
+4. KR 표본의 임계 적용 한계를 공개하고 `분식 확정`, `회계 투명`을 사용하지 않는다.
+5. 위 조건이 모두 통과한 뒤 recipe status와 runtimeCompatibility를 supported로 바꾼다.
