@@ -83,6 +83,7 @@ def multiStageDcf(
             - ``presentValues`` (list[float]): 연도별 PV
             - ``terminalValue`` (float): Gordon TV
             - ``terminalValuePV`` (float): TV 의 현재가치
+            - ``netDebt``/``shares`` (float)
             - ``enterpriseValue``/``equityValue``/``perShareValue`` (float)
             - ``warnings`` (list[str])
 
@@ -235,6 +236,8 @@ def multiStageDcf(
         "pvExplicit": pv_explicit,
         "terminalValue": terminal_value,
         "pvTerminal": pv_terminal,
+        "netDebt": netDebt,
+        "shares": shares,
         "enterpriseValue": enterprise_value,
         "equityValue": equity_value,
         "perShare": per_share,

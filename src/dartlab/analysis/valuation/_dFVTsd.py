@@ -27,12 +27,12 @@ def _lazy(name):
     return getattr(importlib.import_module("dartlab.analysis.valuation.dFV"), name)
 
 
-def _inferShares(company):
+def _inferShares(company, basePeriod: str | None = None):
     """dFV._inferShares lazy proxy. 본체로 위임."""
-    return _lazy("_inferShares")(company)
+    return _lazy("_inferShares")(company, basePeriod=basePeriod)
 
 
-def _tsdResolveWacc(company: Any, overrides: dict) -> float:
+def _tsdResolveWacc(company: Any, overrides: dict, basePeriod: str | None = None) -> float:
     """WACC 해결: override chain (forced/implied/bottomUp/country) → roic fallback → 9.0.
 
     Returns
@@ -76,7 +76,7 @@ def _tsdResolveWacc(company: Any, overrides: dict) -> float:
             pass
 
     try:
-        roic = calcRoicTimeline(company)
+        roic = calcRoicTimeline(company, basePeriod=basePeriod)
         if roic and roic.get("history"):
             v = roic["history"][0].get("waccEstimate")
             if v is not None:
@@ -87,7 +87,7 @@ def _tsdResolveWacc(company: Any, overrides: dict) -> float:
     return 9.0
 
 
-def _tsdResolveHighGrowth(company: Any) -> float:
+def _tsdResolveHighGrowth(company: Any, basePeriod: str | None = None) -> float:
     """매출 CAGR 기반 고성장률. 기본 8.0%, clamp [-5%, 25%].
 
     Returns
@@ -101,7 +101,7 @@ def _tsdResolveHighGrowth(company: Any) -> float:
         return 8.0
     highG: float | None = None
     try:
-        g = calcGrowthTrend(company)
+        g = calcGrowthTrend(company, basePeriod=basePeriod)
         if g:
             highG = (g.get("cagr") or {}).get("revenue")
     except (AttributeError, ValueError, TypeError):
@@ -174,16 +174,10 @@ def _tsdResolveTerminalGrowth(lifePhase: str | None, company: Any, overrides: di
     return float(applyOverride(tg_default, "terminalGrowth", overrides))
 
 
-def _tsdExtractBaseFcf(company: Any) -> float | None:
-    """최근 5개년 양수 FCF (ocf - |capex|) 중앙값 (mid-cycle) 추출.
-
-    Returns
-    -------
-    float | None
-        positives 리스트 의 median. 양수 FCF 하나도 없으면 None.
-    """
+def _tsdExtractBaseFcfInput(company: Any, basePeriod: str | None = None) -> dict | None:
+    """기간 제한을 적용한 mid-cycle FCF 입력과 사용 기간을 반환한다."""
     try:
-        from dartlab.core.utils.helpers import toDictBySnakeId
+        from dartlab.core.utils.helpers import annualColsFromPeriods, toDictBySnakeId
     except ImportError:
         return None
     try:
@@ -194,22 +188,43 @@ def _tsdExtractBaseFcf(company: Any) -> float | None:
         data, periods = parsed
         ocf_row = data.get("operating_cashflow") or {}
         capex_row = data.get("purchase_of_property_plant_and_equipment") or {}
-        annual_years = [p for p in periods if p.isdigit() and len(p) == 4][:5]
-        fcf_history: list[float] = []
-        for y in annual_years:
-            o = ocf_row.get(y)
-            cx = capex_row.get(y)
-            if o:
-                fcf_history.append(float(o) - abs(float(cx or 0)))
-        positives = sorted([f for f in fcf_history if f > 0])
+        annual_years = annualColsFromPeriods(periods, basePeriod=basePeriod, maxYears=5)
+        fcf_history: list[tuple[str, float]] = []
+        for year in annual_years:
+            ocf = ocf_row.get(year)
+            capex = capex_row.get(year)
+            if ocf:
+                fcf_history.append((year, float(ocf) - abs(float(capex or 0))))
+        positives = sorted(value for _, value in fcf_history if value > 0)
         if positives:
-            return positives[len(positives) // 2]
+            return {
+                "value": positives[len(positives) // 2],
+                "periods": [period for period, _ in fcf_history],
+                "source": "CF.operatingCashflow-capex.medianPositive",
+            }
     except (AttributeError, KeyError, TypeError, ValueError):
         pass
     return None
 
 
-def _tsdMaybeNormalizeFcf(baseFcf: float, lifePhase: str | None, company: Any) -> float:
+def _tsdExtractBaseFcf(company: Any, basePeriod: str | None = None) -> float | None:
+    """최근 5개년 양수 FCF (ocf - |capex|) 중앙값 (mid-cycle) 추출.
+
+    Returns
+    -------
+    float | None
+        positives 리스트 의 median. 양수 FCF 하나도 없으면 None.
+    """
+    resolved = _tsdExtractBaseFcfInput(company, basePeriod=basePeriod)
+    return resolved["value"] if resolved else None
+
+
+def _tsdMaybeNormalizeFcf(
+    baseFcf: float,
+    lifePhase: str | None,
+    company: Any,
+    basePeriod: str | None = None,
+) -> float:
     """Phase 5 G16: 사이클/회복/적자 이력 기업은 Normalized FCF 로 교체 (Damodaran Ch.22).
 
     Returns
@@ -220,13 +235,13 @@ def _tsdMaybeNormalizeFcf(baseFcf: float, lifePhase: str | None, company: Any) -
     try:
         from dartlab.analysis.financial.investmentAnalysis import calcRoicTimeline
         from dartlab.analysis.financial.normalized import calcNormalizedFcf, needsNormalized
-        from dartlab.core.utils.helpers import toDictBySnakeId
+        from dartlab.core.utils.helpers import annualColsFromPeriods, toDictBySnakeId
     except ImportError:
         return baseFcf
 
     roic_history_data: list[dict] = []
     try:
-        roic = calcRoicTimeline(company)
+        roic = calcRoicTimeline(company, basePeriod=basePeriod)
         if roic and roic.get("history"):
             roic_history_data = roic["history"]
     except (AttributeError, ValueError, TypeError):
@@ -244,7 +259,7 @@ def _tsdMaybeNormalizeFcf(baseFcf: float, lifePhase: str | None, company: Any) -
             is_data, is_periods = is_parsed
             rev_row = is_data.get("sales") or {}
             op_row = is_data.get("operating_profit") or {}
-            annual_ys = [p for p in is_periods if p.isdigit() and len(p) == 4][:5]
+            annual_ys = annualColsFromPeriods(is_periods, basePeriod=basePeriod, maxYears=5)
             for y in annual_ys:
                 rv = rev_row.get(y)
                 op = op_row.get(y)
@@ -263,16 +278,11 @@ def _tsdMaybeNormalizeFcf(baseFcf: float, lifePhase: str | None, company: Any) -
     return baseFcf
 
 
-def _tsdExtractNetDebtShares(company: Any) -> tuple[float, float] | None:
-    """순차입금 (단기+장기+사채 - 현금) + 발행주식수 추출.
-
-    Returns
-    -------
-    (net_debt, shares) | None
-        BS periods 없거나 예외 시 None.
-    """
+def _tsdExtractNetDebtSharesInput(company: Any, basePeriod: str | None = None) -> dict | None:
+    """기간 제한을 적용한 순차입금과 주식수 입력을 반환한다."""
     try:
-        from dartlab.core.utils.helpers import toDictBySnakeId
+        from dartlab.analysis.valuation._valuationInputAccess import _inferSharesInput
+        from dartlab.core.utils.helpers import annualColsFromPeriods, toDictBySnakeId
     except ImportError:
         return None
     try:
@@ -281,26 +291,50 @@ def _tsdExtractNetDebtShares(company: Any) -> tuple[float, float] | None:
         if not parsed:
             return None
         data, periods = parsed
-        if not periods:
+        annual_periods = annualColsFromPeriods(periods, basePeriod=basePeriod, maxYears=1)
+        if not annual_periods:
             return None
-        latest = periods[0]
-
+        balance_period = annual_periods[0]
         net_debt = (
-            _balanceValue(data, latest, "shortterm_borrowings", "short_term_borrowings", "short_term_debt")
-            + _balanceValue(data, latest, "longterm_borrowings", "long_term_borrowings", "long_term_debt")
-            + _balanceValue(data, latest, "debentures", "corporate_bonds", "사채")
-            - _balanceValue(data, latest, "cash_and_cash_equivalents", "cash_and_equivalents")
+            _balanceValue(data, balance_period, "shortterm_borrowings", "short_term_borrowings", "short_term_debt")
+            + _balanceValue(data, balance_period, "longterm_borrowings", "long_term_borrowings", "long_term_debt")
+            + _balanceValue(data, balance_period, "debentures", "corporate_bonds", "사채")
+            - _balanceValue(data, balance_period, "cash_and_cash_equivalents", "cash_and_equivalents")
         )
-        shares = _inferShares(company)
-        return net_debt, shares
+        shares = _inferSharesInput(company, basePeriod=basePeriod)
+        if not shares:
+            return None
+        return {
+            "netDebt": net_debt,
+            "shares": shares["value"],
+            "balancePeriod": balance_period,
+            "sharesPeriod": shares.get("period"),
+            "sharesSource": shares.get("source"),
+        }
     except (AttributeError, KeyError, TypeError, ValueError):
         return None
+
+
+def _tsdExtractNetDebtShares(company: Any, basePeriod: str | None = None) -> tuple[float, float] | None:
+    """순차입금 (단기+장기+사채 - 현금) + 발행주식수 추출.
+
+    Returns
+    -------
+    (net_debt, shares) | None
+        BS periods 없거나 예외 시 None.
+    """
+    resolved = _tsdExtractNetDebtSharesInput(company, basePeriod=basePeriod)
+    if not resolved:
+        return None
+    return resolved["netDebt"], resolved["shares"]
 
 
 __all__ = [
     "_tsdBuildPhases",
     "_tsdExtractBaseFcf",
+    "_tsdExtractBaseFcfInput",
     "_tsdExtractNetDebtShares",
+    "_tsdExtractNetDebtSharesInput",
     "_tsdMaybeNormalizeFcf",
     "_tsdResolveHighGrowth",
     "_tsdResolveTerminalGrowth",

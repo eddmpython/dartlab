@@ -112,6 +112,8 @@ def _dfvCheckRelativeExtreme(
     primaryValue: float,
     secondaryKeys: list,
     allMethods: dict,
+    *,
+    basePeriod: str | None = None,
 ) -> tuple[str, float]:
     """primary=relative 가 현재가 ±150% 이탈 시 secondary 중 현재가 근접 모델로 교체.
 
@@ -126,7 +128,7 @@ def _dfvCheckRelativeExtreme(
         import importlib
 
         _getCurrentPrice = importlib.import_module("dartlab.analysis.valuation.dFV")._getCurrentPrice
-        cp = _getCurrentPrice(company)
+        cp = _getCurrentPrice(company, basePeriod=basePeriod)
         if not (cp and cp > 0):
             return primaryKey, primaryValue
         ratio = primaryValue / cp
@@ -165,13 +167,21 @@ def _dfvApplyTwoStage(out: dict, twoStageDetail: dict | None) -> None:
         "growthYears": twoStageDetail.get("growthYears"),
         "growthRates": twoStageDetail.get("growthRates"),
         "terminalGrowthRate": twoStageDetail.get("terminalGrowthRate"),
+        "baseFcf": twoStageDetail.get("baseFcf"),
+        "wacc": twoStageDetail.get("wacc"),
+        "netDebt": twoStageDetail.get("netDebt"),
+        "shares": twoStageDetail.get("shares"),
         "pvExplicit": twoStageDetail.get("pvExplicit"),
         "pvTerminal": twoStageDetail.get("pvTerminal"),
+        "enterpriseValue": twoStageDetail.get("enterpriseValue"),
+        "equityValue": twoStageDetail.get("equityValue"),
+        "perShare": twoStageDetail.get("perShare"),
         "tvShare": twoStageDetail.get("tvShare"),
         "phases": twoStageDetail.get("phases") or [],
         "marginPath": twoStageDetail.get("marginPath"),
         "reinvestmentPath": twoStageDetail.get("reinvestmentPath"),
         "warnings": twoStageDetail.get("warnings") or [],
+        "assumptions": twoStageDetail.get("assumptions") or {},
     }
 
 

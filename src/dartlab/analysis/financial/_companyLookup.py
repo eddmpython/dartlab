@@ -18,6 +18,7 @@
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 
@@ -43,7 +44,62 @@ def _getSectorParams(company: Any):
         return None
 
 
-def _getSharesOutstanding(company: Any) -> int | None:
+def _periodEndDate(basePeriod: str) -> str | None:
+    """재무 기간 라벨을 비교 가능한 기간 말일로 바꾼다."""
+    annual = re.fullmatch(r"(\d{4})", basePeriod)
+    if annual:
+        return f"{annual.group(1)}-12-31"
+    quarter = re.fullmatch(r"(\d{4})Q([1-4])", basePeriod)
+    if not quarter:
+        return None
+    month_day = {"1": "03-31", "2": "06-30", "3": "09-30", "4": "12-31"}
+    return f"{quarter.group(1)}-{month_day[quarter.group(2)]}"
+
+
+def _getSharesOutstandingInput(company: Any, basePeriod: str | None = None) -> dict | None:
+    """공시된 보통주 수와 실제 선택한 보고 기간을 함께 얻는다."""
+    try:
+        import polars as pl
+
+        report = getattr(company, "_report", None)
+        df = report.extract("stockTotal") if report is not None else None
+        if df is not None and len(df) > 0 and "se" in df.columns and "istc_totqy" in df.columns:
+            common = df.filter(pl.col("se") == "보통주")
+            period_end = _periodEndDate(basePeriod) if basePeriod else None
+            if basePeriod is not None and period_end is None:
+                return None
+            if period_end and "stlm_dt" in common.columns:
+                common = common.filter(pl.col("stlm_dt") <= period_end)
+            if len(common) > 0:
+                if "stlm_dt" in common.columns:
+                    common = common.sort("stlm_dt", descending=True)
+                value = common["istc_totqy"][0]
+                if value is not None and float(value) > 0:
+                    period = common["stlm_dt"][0] if "stlm_dt" in common.columns else None
+                    return {
+                        "value": int(float(value)),
+                        "period": period,
+                        "source": "report.stockTotal",
+                    }
+    except (AttributeError, KeyError, IndexError, OSError, RuntimeError, TypeError, ValueError):
+        pass
+
+    # 과거 기준 계산에서 최신 profile 값으로 조용히 대체하면 미래 정보가 섞인다.
+    if basePeriod is not None:
+        return None
+    accessor = getattr(company, "_profileAccessor", None)
+    if accessor is None:
+        return None
+    try:
+        value = accessor.sharesOutstanding
+    except (AttributeError, KeyError, OSError, RuntimeError, TypeError, ValueError):
+        return None
+    if not value:
+        return None
+    return {"value": int(value), "period": None, "source": "profile.latest"}
+
+
+def _getSharesOutstanding(company: Any, basePeriod: str | None = None) -> int | None:
     """공시된 발행주식수를 얻는다. 못 얻으면 None.
 
     주당 지표를 내는 자리 넷(애널리스트·밸류에이션 입력·매출 예측 입력·현금흐름 가치평가
@@ -60,11 +116,5 @@ def _getSharesOutstanding(company: Any) -> int | None:
     Returns:
         발행주식수 (유통 보통주). 보고서가 없거나 값이 비면 None.
     """
-    accessor = getattr(company, "_profileAccessor", None)
-    if accessor is None:
-        return None
-    try:
-        value = accessor.sharesOutstanding
-    except (AttributeError, KeyError, OSError, RuntimeError, TypeError, ValueError):
-        return None
-    return int(value) if value else None
+    resolved = _getSharesOutstandingInput(company, basePeriod=basePeriod)
+    return resolved["value"] if resolved else None

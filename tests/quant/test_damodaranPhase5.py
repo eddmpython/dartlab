@@ -68,19 +68,23 @@ def test_needsNormalized_roic_loss_history():
 
 @pytest.mark.integration
 @pytest.mark.requires_data
-def test_yangyang_dFV_highGrowth_realistic():
-    """삼양식품 dFV 1,150K~1,550K (현재가 1,281K 근처)."""
+def test_yangyang_dFV_highGrowth_driver_path():
+    """삼양식품 라이브 계산은 재투자 기반 8년 성장 경로를 사용한다."""
     import dartlab
     from dartlab.analysis.valuation.dFV import calcDFV
 
     c = dartlab.Company("003230")
     r = calcDFV(c)
-    assert 1_150_000 < r["dFV"] < 1_550_000, f"삼양 dFV={r['dFV']:,}"
-    # primary=dcf2stage 유지
+    assert r is not None
+    assert r["dFV"] > 0
     assert r["primaryModel"] == "dcf2stage"
-    # twoStage phase 가 3개 (10년 확장)
     ts = r.get("twoStage", {})
-    assert len(ts.get("growthYears", [])) == 3
+    drivers = r.get("reinvestmentCheck") or {}
+    growth_years = ts.get("growthYears") or []
+    growth_rates = ts.get("growthRates") or []
+    assert drivers.get("growthRates") == growth_rates
+    assert len(growth_rates) == 8
+    assert growth_years == [1] * len(growth_rates)
 
 
 # ── G16 dFV 통합 — 한전 ─────────────────────────────────

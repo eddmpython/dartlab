@@ -60,11 +60,10 @@ Guard는 현재 레이어의 source를 동결한 뒤 한 번 실행한다. Guard
 - L2 완료 조건: analysis, macro, quant, industry, credit의 전체 src와 실제 호출자를
   데이터 계약·오류 투명성·SSOT·속도·메모리 기준으로 전수 대조한다. 결함 수정과 집중
   회귀를 끝내고 source 동결 뒤 공식 Guard, 원장, 커밋, push까지 닫는다.
-- 다음 첫 행동: marker 없는 quant 실데이터 회귀에서 새로 드러난 삼양식품 dFV 범위
-  드리프트를 L2 analysis 책임으로 먼저 판정한다. 라이브 입력 변화로 낡은 고정 범위가
-  깨진 것인지 valuation 계산이 퇴행한 것인지 시점 고정 반례로 가른다. 그다음 quant 스타일
-  규칙의 전구간 분위수 look-ahead를 닫는다. EDGAR full-state 성능, 팩터 형성 시점,
-  백테스트 순수익 원장, PBO, Sortino는 아래 체크포인트와 `9c3825d07`에서 이미 닫혔다.
+- 다음 첫 행동: quant 스타일 규칙의 전구간 분위수 look-ahead를 형성 시점 정보만 쓰는
+  규칙으로 바꾼다. 그다음 CPCV 이음매 수익률과 실패 fold의 Sharpe 0 대체를 닫는다.
+  EDGAR full-state 성능, 팩터 형성 시점, 백테스트 순수익 원장, PBO, Sortino,
+  삼양식품 dFV 실데이터 범위 드리프트는 아래 체크포인트에서 이미 닫혔다.
 - 금지: 함수나 파일 하나만 끝내고 완료 보고, L3 이상 수정 선행,
   중간 source에서 공식 Guard 반복
 
@@ -2658,3 +2657,58 @@ Altman 자동 모드 모델 혼용, Beneish 결측 다수 기본값, Track B 유
 **판정: L2 백테스트 체결 원장과 순수익 지표 체크포인트 완료. L2 레이어는 진행 중이다.**
 다음은 새로 드러난 삼양식품 dFV 드리프트를 시점 고정 입력으로 판정한 뒤 스타일 전구간
 분위수 look-ahead로 간다. 이 체크포인트 완료를 L2 전체 완료로 보고하지 않는다.
+
+### L2 체크포인트: dFV 재무 기간 원장과 라이브 회귀 계약 (2026-08-01)
+
+**상태: 체크포인트 완료. L2 전체는 진행 중.** marker 없는 quant 실데이터 실행에서
+삼양식품 dFV가 기존 하한보다 낮아진 현상을 analysis valuation 책임으로 추적했다. 코드와
+방법론을 나눈 두 독립 전문 검토도 파일 수정이나 테스트 실행 없이 같은 결론을 냈다. 현재
+1,086,062원만으로 산식 퇴행을 입증할 수 없고, 과거 라이브 값에 맞춘 절대가격 테스트는
+결정론적 회귀가 아니다. 동시에 `basePeriod`가 성장 드라이버에만 일부 전달되던 것은 실제
+제품 결함이다.
+
+1. **범위와 실제 호출자.** `calcDFV`, multi-stage DCF, WACC와 성장률 resolver, 기준 FCF,
+   정상화 FCF, 순차입금, 발행주식수, 현재가, `twoStage` 공개 결과와 Phase 4, Phase 5,
+   valuation backtest 테스트를 한 흐름으로 대조했다. 과거 1,383,000원 주변 범위는 라이브
+   Company와 최신 시장 입력을 쓰면서 데이터 snapshot, WACC, ERP, 주식수를 고정하지
+   않았다. Phase 5의 성장 phase 3개 단언도 재투자 드라이버 도입 뒤 정상인 8년 경로와
+   맞지 않았다.
+2. **제품 결함과 근본 원인.** `basePeriod`는 `buildReinvestmentPath`에만 전달됐다.
+   `_tsdResolveWacc`, 매출 성장 fallback, FCF와 정상화 이력, 순차입금, 주식수는 최신값을
+   다시 읽었다. 현재가격도 기준 기간과 무관하게 최신 종가를 읽었고, 결과에는 실제 WACC,
+   FCF, 순차입금, 주식수, 선택 기간과 ERP vintage가 없었다. 반대로 실패한 라이브 범위는
+   2026년 4월 관측값을 당시 시장가격과 비교해 만든 값이라 입력 변화와 코드 회귀를 가를
+   수 없었다.
+3. **단일 입력 원장.** 보고서 `stockTotal`에서 기준 기간 말일까지 공시된 보통주 수와
+   실제 보고 기간을 함께 고른다. 과거 값이 없으면 최신 profile이나 시가총액 역산으로
+   조용히 대체하지 않는다. FCF와 BS는 `annualColsFromPeriods` 한 정책으로 제한하고,
+   WACC와 fallback 성장, 정상화 이력에도 같은 `basePeriod`를 전달한다. 기준 기간 가격이
+   로컬 가격 창에 없으면 최신값으로 fall-forward하지 않고 None을 낸다.
+4. **실제 적용 가정과 산식 투명성.** Quality-Adjusted WACC를 보고용으로만 계산하던
+   경로를 실제 two-stage DCF 입력에 연결했다. `twoStage`는 baseFcf, WACC, netDebt,
+   shares, EV, equity value, perShare와 `assumptions`를 공개한다. 원장에는 FCF 기간과 원천,
+   BS 기간, 주식수 기간과 원천, ERP 기준일과 원천이 들어간다. `basePeriod`는 재무 기간
+   제한이고 공시 가용일과 시장 입력 vintage를 고정하는 완전한 as-of 계약은 아니라는
+   경고도 결과와 문서에 명시했다.
+5. **테스트 계약 교정.** 동결 리터럴 DCF의 정확값과 EV, equity, 주당가치 항등식,
+   미래 CF 행 불변성, 기간 일치 순차입금과 주식수, WACC 기간 전달, 가격 fall-forward
+   금지를 단위 테스트 7건으로 고정했다. 삼양식품 라이브 테스트 2건은 특정 가격 범위를
+   버리고 실제 입력 원장, 항등식, Quality WACC 일치, 8년 재투자 성장 경로를 검사한다.
+   최신 가격과 최신 WACC로 과거 예측 적중률을 주장하던 테스트는 재무 기간 provenance
+   canary로 바꾸고, 진짜 성과 게이트는 시장 snapshot 계약이 생긴 뒤 동결 fixture로
+   복구한다고 명시했다.
+6. **공개 행동 실측.** `calcDFV(Company("003230"), basePeriod="2024")`는 dFV 943,648원,
+   primary `dcf2stage`, 실제 WACC와 공개 Quality WACC 모두 5.24%, FCF 기간
+   2024~2020, BS 기간 2024, 주식수 기간 2024-12-31, ERP 기준일 2024-07-01을 냈다.
+   현재가는 기준 기간 가격이 로컬 창에 없어 None으로 정직하게 남았다. EV 항등식 오차는
+   0, 시간 13.31초, RSS 증가는 257.99MiB, 최종 RSS는 367.12MiB다.
+7. **회귀와 Guard.** 기간 계약 7건, 수정한 라이브 2건, valuation uplift 12건,
+   Phase 3~5 unit 묶음 30건이 통과했다. Phase 4와 Phase 5 전체 결합 실행은 14건 통과
+   뒤 RSS 1,922MB에서 저장소의 1,500MB 안전장치가 종료했으며 남은 2건은 별도 unit
+   실행에서 이미 통과했다. quant unit 전체는 256 passed, 118 deselected다. Guard quick는
+   1,791파일, 규칙 실패 0, diffCheck PASS다.
+
+**판정: dFV 고정가격 실패는 낡은 라이브 가드였고 부분적 재무 기간 전달은 제품 결함이었다.**
+두 문제를 범위 조정 없이 분리해 닫았다. 완전한 공시 가용일과 시장 snapshot as-of는 이번
+기존 `basePeriod` 계약으로 위장하지 않고 L2 잔여 부채로 보존한다. L2 전체는 아직 완료가
+아니며 다음 체크포인트는 quant 스타일 규칙의 전구간 분위수 look-ahead다.

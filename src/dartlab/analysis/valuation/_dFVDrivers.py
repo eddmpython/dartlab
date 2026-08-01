@@ -99,7 +99,7 @@ def buildReinvestmentPath(
         {"growthRates": [...], "reinvestRate": 0.42, "fundamentalGrowth": 6.3, ...}
 
     Guide:
-        성장률 clamp [-5, 25]. ROIC_0 ≤ 0 또는 재투자율 추정 불가 시 None —
+        성장률 clamp [-5, 18]. ROIC_0 ≤ 0 또는 재투자율 추정 불가 시 None.
         끄지 말고 호출부가 매출 CAGR 폴백(가정 명시). terminal 무료성장은
         성장이 ROIC 에 묶여 자동 차단(초과수익 fade).
 

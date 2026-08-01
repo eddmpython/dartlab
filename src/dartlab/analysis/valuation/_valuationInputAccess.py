@@ -16,16 +16,20 @@ from __future__ import annotations
 from typing import Any
 
 
-def _inferShares(company: Any) -> int | None:
-    """기존 calcDcf 결과의 equityValue / perShareValue 로 주식수 역산.
+def _inferSharesInput(company: Any, basePeriod: str | None = None) -> dict | None:
+    """공시 주식수를 우선하고 최신 계산에서만 DCF 역산을 허용한다."""
+    try:
+        from dartlab.analysis.financial._companyLookup import _getSharesOutstandingInput
 
-    BS 에 outstanding_shares 가 없는 경우 대응 (KRX 메타 의존 회피).
+        reported = _getSharesOutstandingInput(company, basePeriod=basePeriod)
+        if reported:
+            return reported
+    except (ImportError, AttributeError, ValueError, TypeError):
+        pass
 
-    Returns
-    -------
-    int | None
-        추정 발행주식수. 역산 실패 시 None.
-    """
+    # 과거 기준 계산은 최신 시가총액이나 최신 profile 주식수로 대체하지 않는다.
+    if basePeriod is not None:
+        return None
     try:
         from dartlab.analysis.financial.valuation import calcDcf
 
@@ -34,10 +38,25 @@ def _inferShares(company: Any) -> int | None:
             eq = r.get("equityValue")
             ps = r.get("perShareValue")
             if eq and ps and ps > 0:
-                return int(eq / ps)
+                return {"value": int(eq / ps), "period": None, "source": "calcDcf.latest"}
     except (ImportError, AttributeError, ValueError, TypeError):
         pass
     return None
+
+
+def _inferShares(company: Any, basePeriod: str | None = None) -> int | None:
+    """공시 주식수를 얻고 최신 계산에 한해 calcDcf 역산으로 보완한다.
+
+    ``basePeriod`` 가 있으면 그 기간까지 공시된 값만 허용한다. 과거 값이 없을 때
+    최신 시가총액 기반 주식수로 대체하지 않는다.
+
+    Returns
+    -------
+    int | None
+        발행주식수. 기간 일치 값을 얻지 못하면 None.
+    """
+    resolved = _inferSharesInput(company, basePeriod=basePeriod)
+    return resolved["value"] if resolved else None
 
 
 def _getCurrentPriceLight(company: Any) -> float | None:

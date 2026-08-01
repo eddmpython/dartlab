@@ -21,7 +21,6 @@ from dartlab.analysis.valuation._dFVCalcs import (
     _calcOpinion,
     _calcTwoStageDcf,
     _collectAllValues,
-    _getBaseWACC,
     _getCurrentPrice,
     _inferShares,
     _triangulate,
@@ -70,7 +69,8 @@ def calcDFV(
     Args:
         company: Company 객체. ``finance``, ``stockCode``, ``currency``,
             ``benchmark`` (선택) 속성 필요.
-        basePeriod: 기준 기간 (예 ``"2024Q4"``). ``None`` 이면 최신.
+        basePeriod: 재무 기준 기간 (예 ``"2024Q4"``). ``None`` 이면 최신.
+            공시 가용일과 시장 입력 vintage를 고정하는 as-of 계약은 아니다.
         overrides: AI/사용자 가정 override dict. 지원 키:
             - ``wacc`` (float): 강제 WACC
             - ``terminalGrowth`` (float): 영구성장률 강제
@@ -91,6 +91,7 @@ def calcDFV(
             - ``triangulation`` (dict): 삼각검증 결과 (3 방법론 일치도)
             - ``dividendFloor`` (dict|None): DDM 하한
             - ``qualityWACC`` (dict): WACC 조정 상세
+            - ``twoStage.assumptions`` (dict): 실제 DCF 입력과 재무 기간 provenance
             - ``allMethods`` (dict): 모든 방법론 적정가 (참고용)
             - ``overrideApplied`` (dict|None): 적용된 override
             - ``survival`` (dict|None): 부도확률 기반 going-concern 가중
@@ -170,7 +171,14 @@ def calcDFV(
     survival_adj = bool(models.get("survivalAdj", False))
     lifePhase = models.get("lifeCyclePhase")
 
-    # 2. 모든 방법론 적정가 수집 (+ liquidation 자산별 + dcf2stage 실로직)
+    # 2. 실제 DCF 에 적용할 Quality-Adjusted WACC 를 먼저 확정한다.
+    baseWacc = _tsdResolveWacc(company, ov, basePeriod=basePeriod)
+    from dartlab.analysis.valuation.qualityWACC import calcQualityWACC
+
+    qw = calcQualityWACC(company, baseWacc, basePeriod=basePeriod)
+    adjusted_wacc = qw["adjustedWACC"]
+
+    # 3. 모든 방법론 적정가 수집 (+ liquidation 자산별 + dcf2stage 실로직)
     allMethods = _collectAllValues(company, basePeriod)
 
     # 2a. Liquidation — 자산별 회수율 (Damodaran Dark Side Ch.9)
@@ -179,7 +187,13 @@ def calcDFV(
         allMethods["liquidation"] = liquidationDetail["perShare"]
 
     # 2b. Two-Stage DCF — 고성장 n년 명시적 + terminal 수렴 (Damodaran Ch.12)
-    twoStageDetail = _calcTwoStageDcf(company, lifePhase, ov, basePeriod=basePeriod)
+    twoStageDetail = _calcTwoStageDcf(
+        company,
+        lifePhase,
+        ov,
+        basePeriod=basePeriod,
+        wacc=adjusted_wacc,
+    )
     if twoStageDetail and twoStageDetail.get("perShare"):
         allMethods["dcf2stage"] = twoStageDetail["perShare"]
 
@@ -191,14 +205,6 @@ def calcDFV(
 
     # Phase 12 A1: Smart Primary Selector — override 가 있고 현재 primary 가 무감각이면 자동 전환
     primaryKey, _primary_switch_reason = _selectPrimaryWithOverrides(primaryKey, allMethods, ov)
-
-    # 3. Quality-Adjusted WACC
-    baseWacc = _getBaseWACC(company)
-    baseWacc = applyOverride(baseWacc, "wacc", ov)
-    from dartlab.analysis.valuation.qualityWACC import calcQualityWACC
-
-    qw = calcQualityWACC(company, baseWacc, basePeriod=basePeriod)
-    adjusted_wacc = qw["adjustedWACC"]
 
     # 4. Primary 모델 값 = dFV (Base)
     primaryValue = allMethods.get(primaryKey)
@@ -219,7 +225,14 @@ def calcDFV(
     if primaryValue is None or primaryValue <= 0:
         return None
 
-    primaryKey, primaryValue = _dfvCheckRelativeExtreme(company, primaryKey, primaryValue, secondaryKeys, allMethods)
+    primaryKey, primaryValue = _dfvCheckRelativeExtreme(
+        company,
+        primaryKey,
+        primaryValue,
+        secondaryKeys,
+        allMethods,
+        basePeriod=basePeriod,
+    )
 
     # 5. Bull/Base/Bear 시나리오 — DCF primary 면 드라이버(g·WACC) 교란(±12% 산술밴드 폐기),
     #    비-DCF primary 는 ±12% 근사 fallback (P1a de-gate).
@@ -256,7 +269,7 @@ def calcDFV(
             adjusted_primary = survival["adjustedValue"]
 
     # 9. 현재가 + upside (survival 반영한 adjusted_primary 기준)
-    currentPrice = _getCurrentPrice(company)
+    currentPrice = _getCurrentPrice(company, basePeriod=basePeriod)
     upside = (adjusted_primary - currentPrice) / currentPrice * 100 if currentPrice and currentPrice > 0 else None
 
     # 10. 신뢰도 + 의견
@@ -288,7 +301,7 @@ def calcDFV(
         try:
             from dartlab.analysis.valuation._dFVDrivers import reverseDcfExhibit
 
-            _sh = _inferShares(company)
+            _sh = _inferShares(company, basePeriod=basePeriod)
             if currentPrice and _sh and _sh > 0:
                 rdcf = reverseDcfExhibit(
                     company,

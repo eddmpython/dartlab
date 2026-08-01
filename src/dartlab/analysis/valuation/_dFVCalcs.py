@@ -16,8 +16,8 @@ from typing import Any
 
 from dartlab.analysis.valuation._dFVTsd import (
     _tsdBuildPhases,
-    _tsdExtractBaseFcf,
-    _tsdExtractNetDebtShares,
+    _tsdExtractBaseFcfInput,
+    _tsdExtractNetDebtSharesInput,
     _tsdMaybeNormalizeFcf,
     _tsdResolveHighGrowth,
     _tsdResolveTerminalGrowth,
@@ -110,8 +110,8 @@ def _triangulate(primaryKey: str, primaryValue: float, secondaryKeys: list[str],
     return {"checks": checks, "confidence": confidence}
 
 
-def _getCurrentPrice(company: Any) -> float | None:
-    """현재 주가 추출. currentPrice 속성 우선, 없으면 gather 경유.
+def _getCurrentPrice(company: Any, basePeriod: str | None = None) -> float | None:
+    """현재 또는 기준 기간 말일까지의 마지막 종가를 추출한다.
 
     Returns
     -------
@@ -132,6 +132,20 @@ def _getCurrentPrice(company: Any) -> float | None:
         return None
     if rows is None or getattr(rows, "height", 0) == 0 or "close" not in getattr(rows, "columns", []):
         return None
+    if basePeriod is not None:
+        try:
+            from datetime import date
+
+            from dartlab.analysis.financial._companyLookup import _periodEndDate
+
+            period_end = _periodEndDate(basePeriod)
+            if period_end is None or "date" not in rows.columns:
+                return None
+            rows = rows.filter(rows["date"] <= date.fromisoformat(period_end))
+            if rows.height == 0:
+                return None
+        except (ImportError, AttributeError, TypeError, ValueError):
+            return None
     last = rows["close"][-1]
     return float(last) if last is not None else None
 
@@ -238,7 +252,11 @@ def _calcLiquidationDetail(company: Any, overrides: dict) -> dict | None:
 
 
 def _calcTwoStageDcf(
-    company: Any, lifePhase: str | None, overrides: dict, basePeriod: str | None = None
+    company: Any,
+    lifePhase: str | None,
+    overrides: dict,
+    basePeriod: str | None = None,
+    wacc: float | None = None,
 ) -> dict | None:
     """Damodaran Multi-stage DCF (Ch.12). lifeCycle 별 phase 자동 구성.
 
@@ -257,7 +275,7 @@ def _calcTwoStageDcf(
     except ImportError:
         return None
 
-    wacc = _tsdResolveWacc(company, overrides)
+    wacc = wacc if wacc is not None else _tsdResolveWacc(company, overrides, basePeriod=basePeriod)
     terminal_g = _tsdResolveTerminalGrowth(lifePhase, company, overrides)
 
     margin_path = applyOverride(None, "marginPath", overrides)
@@ -278,18 +296,20 @@ def _calcTwoStageDcf(
         rates_vec = drivers["growthRates"]
         years_vec = [1] * len(rates_vec)
     else:
-        highG = _tsdResolveHighGrowth(company)
+        highG = _tsdResolveHighGrowth(company, basePeriod=basePeriod)
         years_vec, rates_vec = _tsdBuildPhases(lifePhase, highG, overrides)
 
-    baseFcf = _tsdExtractBaseFcf(company)
-    if not baseFcf or baseFcf <= 0:
+    fcf_input = _tsdExtractBaseFcfInput(company, basePeriod=basePeriod)
+    if not fcf_input or fcf_input["value"] <= 0:
         return None
-    baseFcf = _tsdMaybeNormalizeFcf(baseFcf, lifePhase, company)
+    raw_base_fcf = fcf_input["value"]
+    baseFcf = _tsdMaybeNormalizeFcf(raw_base_fcf, lifePhase, company, basePeriod=basePeriod)
 
-    nd_shares = _tsdExtractNetDebtShares(company)
-    if nd_shares is None:
+    balance_input = _tsdExtractNetDebtSharesInput(company, basePeriod=basePeriod)
+    if balance_input is None:
         return None
-    net_debt, shares = nd_shares
+    net_debt = balance_input["netDebt"]
+    shares = balance_input["shares"]
 
     result = multiStageDcf(
         baseFcf=baseFcf,
@@ -304,6 +324,42 @@ def _calcTwoStageDcf(
     )
     if result is None:
         return None
+    result["netDebt"] = net_debt
+    result["shares"] = shares
+    erp_meta: dict = {}
+    try:
+        from dartlab.synth.riskPremiums import loadDamodaranERP
+
+        erp = loadDamodaranERP(
+            countryCode=applyOverride(None, "countryCode", overrides),
+            currency=getattr(company, "currency", None),
+        )
+        erp_meta = {
+            "erpAsOf": erp.get("asOfDate"),
+            "erpSource": erp.get("source"),
+            "countryCode": erp.get("countryCode"),
+        }
+    except (ImportError, AttributeError, TypeError, ValueError):
+        pass
+    result["assumptions"] = {
+        "periodContract": "financialPeriod",
+        "financialBasePeriod": basePeriod,
+        "baseFcf": baseFcf,
+        "rawBaseFcf": raw_base_fcf,
+        "fcfPeriods": fcf_input["periods"],
+        "fcfSource": fcf_input["source"],
+        "balancePeriod": balance_input["balancePeriod"],
+        "netDebt": net_debt,
+        "shares": shares,
+        "sharesPeriod": balance_input["sharesPeriod"],
+        "sharesSource": balance_input["sharesSource"],
+        "wacc": wacc,
+        "waccSource": "qualityAdjusted",
+        "terminalGrowthRate": result["terminalGrowthRate"],
+        **erp_meta,
+    }
+    if basePeriod is not None:
+        result["warnings"].append("basePeriod는 재무 기간을 제한하며 공시 가용일과 시장 입력 빈티지는 별도 계약이다")
     # 드라이버 시나리오(±12% 산술밴드 폐기) + 펀더멘털 진단 부착. 펀더멘털 path 일 때만
     # (phase 폴백은 per-year 가 아니라 buildDriverScenarios 가정 위반).
     if drivers:

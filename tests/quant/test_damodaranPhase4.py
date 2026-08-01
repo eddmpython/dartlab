@@ -73,20 +73,26 @@ def test_dFV_samsung_within_realistic_range():
 
 @pytest.mark.integration
 @pytest.mark.requires_data
-def test_dFV_yangyang_regression_within_3pct():
-    """삼양식품 회귀 — Phase 5 G17 (highGrowth 10년 확장) 후 기준 1,383K ±10%.
-
-    Phase 3: 1,055K → Phase 5 의도된 상향 (highGrowth phases [5,3,2] 확장).
-    """
+def test_dFV_yangyang_live_ledger_is_internally_consistent():
+    """삼양식품 라이브 값은 특정 가격이 아니라 실제 DCF 원장 정합성을 지킨다."""
     from dartlab.analysis.valuation.dFV import calcDFV
     from dartlab.providers.dart.company import Company
 
     c = Company("003230")
     r = calcDFV(c)
     assert r is not None
-    dfv = r["dFV"]
-    # Phase 5 기준 1,383K ±10%
-    assert 1_245_000 < dfv < 1_525_000, f"regression: {dfv:,}"
+    ts = r.get("twoStage") or {}
+    assumptions = ts.get("assumptions") or {}
+    assert r["dFV"] > 0
+    assert r["primaryModel"] == "dcf2stage"
+    assert ts["wacc"] == r["qualityWACC"]["adjustedWACC"]
+    assert assumptions["fcfPeriods"]
+    assert assumptions["balancePeriod"]
+    assert assumptions["sharesSource"]
+    assert ts["pvExplicit"] + ts["pvTerminal"] == pytest.approx(ts["enterpriseValue"])
+    assert ts["enterpriseValue"] - ts["netDebt"] == pytest.approx(ts["equityValue"])
+    assert ts["equityValue"] / ts["shares"] == pytest.approx(ts["perShare"])
+    assert r["allMethods"]["dcf2stage"] == round(ts["perShare"])
 
 
 # ── G13 override chain 전파 ────────────────────────────
