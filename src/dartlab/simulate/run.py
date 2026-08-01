@@ -17,7 +17,7 @@ field None and downgrades the node's quality status to ``partial`` - never silen
 Born-clean (§10): imports forward only - L2.5 `registry`/`sheet` (which themselves import L0/L1.5/
 L2). The legacy `analysis/forecast/simulation.py` flow is never touched.
 
-Layer: L2.5.
+Layer: L3.
 """
 
 from __future__ import annotations
@@ -60,6 +60,62 @@ class NodeAudit:
 
 
 @dataclass(frozen=True)
+class DataGapEvidence:
+    """Data Workbench gap을 문자열로 축약하지 않고 보존한 입력 근거."""
+
+    code: str
+    message: str
+    assetId: str | None = None
+    subject: str | None = None
+    systemic: bool = False
+    requestId: str | None = None
+
+
+@dataclass(frozen=True)
+class DataPartitionEvidence:
+    """시뮬레이션 입력 partition의 selector, 시점, content seal."""
+
+    assetId: str
+    assetVersionId: str
+    requestId: str | None
+    selector: tuple[tuple[str, str], ...]
+    temporalStatus: str
+    contentHash: str | None
+    truncated: bool
+
+
+@dataclass(frozen=True)
+class DataQualityEvidence:
+    """Data Workbench quality assertion의 결과와 severity."""
+
+    assertionId: str
+    success: bool | None
+    severity: str
+    assetId: str
+
+
+@dataclass(frozen=True)
+class DataEvidence:
+    """Data Workbench 결과 envelope에서 계산 입력과 관련된 근거를 무손실 투영한다."""
+
+    status: str
+    requestedAssets: int
+    resolvedAssets: int
+    succeededPartitions: int
+    failedPartitions: int
+    assets: tuple[tuple[str, str], ...]
+    gaps: tuple[DataGapEvidence, ...]
+    partitions: tuple[DataPartitionEvidence, ...]
+    qualityAssertions: tuple[DataQualityEvidence, ...]
+    catalogSnapshotId: str
+    dataSnapshotId: str
+    contractHash: str
+    lineageRefs: tuple[str, ...]
+    executionReceipts: tuple[str, ...]
+    materializationReceiptJson: str | None
+
+
+@dataclass(frozen=True)
 class SimulationResult:
     """One deterministic scenario run's result - values + ref/quality/provenance per node (§3).
 
@@ -86,13 +142,15 @@ class SimulationResult:
         quality       : overall ``"ok"`` if every node is ok, else ``"partial"``.
         assumptions   : explicit defaults used by the run.
         warnings      : data limitations and honest-gap reasons.
+        dataInputGaps : Data Workbench가 입력과 함께 반환한 completeness/PIT gap.
+        dataEvidence  : coverage, asset version, partition seal, quality, receipt 전체 입력 envelope.
     """
 
     scenarioName: str
     horizon: int
-    revenuePath: tuple[float, ...] | None
+    revenuePath: tuple[float | None, ...] | None
     marginPath: tuple[float, ...] | None
-    fcfPath: tuple[float, ...] | None
+    fcfPath: tuple[float | None, ...] | None
     proformaYears: int
     terminalRevenue: float | None
     dcfPerShare: float | None
@@ -107,9 +165,37 @@ class SimulationResult:
     lensProducts: dict[str, dict[str, Any]] = field(default_factory=dict)
     assumptionLedger: tuple[dict[str, Any], ...] = field(default_factory=tuple)
     dataSnapshotId: str = ""
+    dataCatalogSnapshotId: str = ""
     dataContractHash: str = ""
     dataLineageRefs: tuple[str, ...] = field(default_factory=tuple)
     dataExecutionReceipts: tuple[str, ...] = field(default_factory=tuple)
+    dataInputGaps: tuple[str, ...] = field(default_factory=tuple)
+    dataEvidence: DataEvidence | None = None
+
+
+def _dataEvidence(snapshot: dict) -> DataEvidence | None:
+    raw = snapshot.get("dataEvidence")
+    if not isinstance(raw, dict):
+        return None
+    rawCoverage = raw.get("coverage")
+    coverage = rawCoverage if isinstance(rawCoverage, dict) else {}
+    return DataEvidence(
+        status=str(raw.get("status", "unknown")),
+        requestedAssets=int(coverage.get("requestedAssets", 0)),
+        resolvedAssets=int(coverage.get("resolvedAssets", 0)),
+        succeededPartitions=int(coverage.get("succeededPartitions", 0)),
+        failedPartitions=int(coverage.get("failedPartitions", 0)),
+        assets=tuple((str(row[0]), str(row[1])) for row in raw.get("assets", ())),
+        gaps=tuple(DataGapEvidence(**row) for row in raw.get("gaps", ())),
+        partitions=tuple(DataPartitionEvidence(**row) for row in raw.get("partitions", ())),
+        qualityAssertions=tuple(DataQualityEvidence(**row) for row in raw.get("qualityAssertions", ())),
+        catalogSnapshotId=str(raw.get("catalogSnapshotId", "")),
+        dataSnapshotId=str(raw.get("dataSnapshotId", "")),
+        contractHash=str(raw.get("contractHash", "")),
+        lineageRefs=tuple(raw.get("lineageRefs", ())),
+        executionReceipts=tuple(raw.get("executionReceipts", ())),
+        materializationReceiptJson=raw.get("materializationReceiptJson"),
+    )
 
 
 def _audit(driverId: str, nv: NodeValue) -> NodeAudit:
@@ -237,13 +323,26 @@ def runScenario(
     }
     assumptions = tuple(snapshot.get("assumptions", ()))
     snapshotWarnings = tuple(snapshot.get("warnings", ()))
+    dataInputGaps = tuple(snapshot.get("dataInputGaps", ()))
+    dataEvidence = _dataEvidence(snapshot)
+    dataEvidencePartial = dataEvidence is not None and (
+        dataEvidence.status != "ok"
+        or dataEvidence.failedPartitions > 0
+        or any(assertion.success is not True for assertion in dataEvidence.qualityAssertions)
+        or any(partition.truncated for partition in dataEvidence.partitions)
+    )
     quality = (
         "ok"
-        if all(a.status == "ok" for a in nodes.values()) and not assumptions and not snapshotWarnings
+        if all(a.status == "ok" for a in nodes.values())
+        and not assumptions
+        and not snapshotWarnings
+        and not dataInputGaps
+        and not dataEvidencePartial
         else "partial"
     )
 
     warnings: list[str] = list(snapshotWarnings)
+    warnings.extend(f"data input gap - {gap}" for gap in dataInputGaps)
     if snapshot.get("baseRevenue") is None:
         warnings.append("base revenue absent - scenario path unavailable (honest-gap)")
     if snapshot.get("shares") in (None, 0):
@@ -274,9 +373,12 @@ def runScenario(
         lensProducts=products,
         assumptionLedger=assumptionLedger,
         dataSnapshotId=str(snapshot.get("dataSnapshotId", "")),
+        dataCatalogSnapshotId=str(snapshot.get("dataCatalogSnapshotId", "")),
         dataContractHash=str(snapshot.get("dataContractHash", "")),
         dataLineageRefs=tuple(snapshot.get("dataLineageRefs", ())),
         dataExecutionReceipts=tuple(snapshot.get("dataExecutionReceipts", ())),
+        dataInputGaps=dataInputGaps,
+        dataEvidence=dataEvidence,
     )
 
 
@@ -336,7 +438,7 @@ def _marginPathFromSnapshot(snapshot: dict, scenario: str, horizon: int) -> tupl
     from dartlab.synth.scenario import getPresetScenarios
 
     baseRevenue = snapshot.get("baseRevenue")
-    if baseRevenue is None:
+    if baseRevenue is None or snapshot.get("parameterVintageStatus", "available") != "available":
         return None
     baseMargin = snapshot["baseMargin"] if snapshot.get("baseMargin") is not None else 10.0
     presets = getPresetScenarios("KR")

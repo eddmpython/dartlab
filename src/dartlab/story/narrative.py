@@ -34,11 +34,15 @@ def _toDict(selectResult) -> tuple[dict[str, dict], list[str]] | None:
     return toDictBySnakeId(selectResult)
 
 
-def _annualCols(periods: list[str], maxYears: int = _MAX_YEARS) -> list[str]:
-    cols = sorted([c for c in periods if "Q" not in c], reverse=True)
-    if cols:
-        return cols[:maxYears]
-    return sorted([c for c in periods if c.endswith("Q4")], reverse=True)[:maxYears]
+def _annualCols(
+    periods: list[str],
+    maxYears: int = _MAX_YEARS,
+    *,
+    basePeriod: str | None = None,
+) -> list[str]:
+    from dartlab.core.utils.helpers import annualColsFromPeriods
+
+    return annualColsFromPeriods(periods, basePeriod=basePeriod, maxYears=maxYears)
 
 
 def _get(row: dict, col: str) -> float:
@@ -71,7 +75,7 @@ def _collectFlags(blockMap, *keys: str) -> list[str]:
 # ── 패턴 1: 매출 하락 → 마진 압박 → 현금 악화 ──
 
 
-def _detectRevenueDeclineChain(company, blockMap) -> NarrativeThread | None:
+def _detectRevenueDeclineChain(company, blockMap, *, basePeriod: str | None = None) -> NarrativeThread | None:
     isResult = company.select("IS", ["매출액", "영업이익", "당기순이익"])
     cfResult = company.select("CF", ["영업활동현금흐름"])
 
@@ -87,7 +91,7 @@ def _detectRevenueDeclineChain(company, blockMap) -> NarrativeThread | None:
     opRow = isData.get("영업이익", {})
     ocfRow = cfData.get("영업활동현금흐름", {})
 
-    yCols = _annualCols(isPeriods)
+    yCols = _annualCols(isPeriods, basePeriod=basePeriod)
     if len(yCols) < 2:
         return None
 
@@ -133,7 +137,7 @@ def _detectRevenueDeclineChain(company, blockMap) -> NarrativeThread | None:
 # ── 패턴 2: 차입 증가 → 이자부담 → 수익성 악화 ──
 
 
-def _detectDebtBurdenChain(company, blockMap) -> NarrativeThread | None:
+def _detectDebtBurdenChain(company, blockMap, *, basePeriod: str | None = None) -> NarrativeThread | None:
     bsResult = company.select("BS", ["부채총계", "자본총계"])
     isResult = company.select("IS", ["영업이익", "이자비용"])
 
@@ -150,7 +154,7 @@ def _detectDebtBurdenChain(company, blockMap) -> NarrativeThread | None:
     opRow = isData.get("영업이익", {})
     intRow = isData.get("이자비용", {})
 
-    yCols = _annualCols(bsPeriods)
+    yCols = _annualCols(bsPeriods, basePeriod=basePeriod)
     if len(yCols) < 2:
         return None
 
@@ -202,7 +206,7 @@ def _detectDebtBurdenChain(company, blockMap) -> NarrativeThread | None:
 # ── 패턴 3: 운전자본 팽창 → 현금 고갈 → 유동성 위기 ──
 
 
-def _detectWorkingCapitalStrain(company, blockMap) -> NarrativeThread | None:
+def _detectWorkingCapitalStrain(company, blockMap, *, basePeriod: str | None = None) -> NarrativeThread | None:
     bsResult = company.select("BS", ["매출채권및기타채권", "재고자산", "매입채무", "유동자산", "유동부채"])
     isResult = company.select("IS", ["매출액", "당기순이익"])
     cfResult = company.select("CF", ["영업활동현금흐름"])
@@ -226,7 +230,7 @@ def _detectWorkingCapitalStrain(company, blockMap) -> NarrativeThread | None:
     niRow = isData.get("당기순이익", {})
     ocfRow = cfData.get("영업활동현금흐름", {})
 
-    yCols = _annualCols(bsPeriods)
+    yCols = _annualCols(bsPeriods, basePeriod=basePeriod)
     if len(yCols) < 2:
         return None
 
@@ -254,13 +258,14 @@ def _detectWorkingCapitalStrain(company, blockMap) -> NarrativeThread | None:
         return None
 
     # 순현금 상태이면 "유동성 위기" 서사 억제
-    try:
-        ratios = company._finance.ratios
-        nd = getattr(ratios, "netDebt", None)
-        if nd is not None and nd < 0:
-            return None  # 순현금이면 유동성 위기 아님
-    except (AttributeError, ValueError):
-        pass
+    if basePeriod is None:
+        try:
+            ratios = company._finance.ratios
+            nd = getattr(ratios, "netDebt", None)
+            if nd is not None and nd < 0:
+                return None  # 순현금이면 유동성 위기 아님
+        except (AttributeError, ValueError):
+            pass
 
     ocfNiRatio = ocf0 / ni0 * 100
 
@@ -287,7 +292,7 @@ def _detectWorkingCapitalStrain(company, blockMap) -> NarrativeThread | None:
 # ── 패턴 4: 과잉투자 → ROIC 하락 → EVA 음수 ──
 
 
-def _detectOverinvestment(company, blockMap) -> NarrativeThread | None:
+def _detectOverinvestment(company, blockMap, *, basePeriod: str | None = None) -> NarrativeThread | None:
     cfResult = company.select("CF", ["유형자산의취득"])
     isResult = company.select("IS", ["영업이익", "감가상각비", "법인세비용", "법인세차감전순이익", "세전이익"])
     bsResult = company.select("BS", ["자산총계", "자본총계", "부채총계"])
@@ -310,7 +315,7 @@ def _detectOverinvestment(company, blockMap) -> NarrativeThread | None:
     taRow = bsData.get("자산총계", {})
     eqRow = bsData.get("자본총계", {})
 
-    yCols = _annualCols(cfPeriods)
+    yCols = _annualCols(cfPeriods, basePeriod=basePeriod)
     if len(yCols) < 2:
         return None
 
@@ -332,7 +337,6 @@ def _detectOverinvestment(company, blockMap) -> NarrativeThread | None:
     # ROIC 추정: NOPAT / 투하자본
     effTaxRate = tax / pt if pt > 0 else 0.25
     nopat = op * (1 - min(max(effTaxRate, 0), 0.5))
-    eq + (_get(bsData.get("부채총계", {}), col0) - _get(bsData.get("자본총계", {}), col0) * 0)
     # 간이 투하자본 = 자산총계 (현금 차감 없는 단순화)
     roic = nopat / ta * 100 if ta > 0 else None
 
@@ -369,7 +373,7 @@ def _detectOverinvestment(company, blockMap) -> NarrativeThread | None:
 # ── 패턴 5: 이익 조작 징후 복합 ──
 
 
-def _detectEarningsManipulation(company, blockMap) -> NarrativeThread | None:
+def _detectEarningsManipulation(company, blockMap, *, basePeriod: str | None = None) -> NarrativeThread | None:
     isResult = company.select("IS", ["당기순이익", "매출액"])
     cfResult = company.select("CF", ["영업활동현금흐름"])
     bsResult = company.select("BS", ["자산총계", "매출채권및기타채권"])
@@ -389,7 +393,7 @@ def _detectEarningsManipulation(company, blockMap) -> NarrativeThread | None:
     ocfRow = cfData.get("영업활동현금흐름", {})
     taRow = bsData.get("자산총계", {})
 
-    yCols = _annualCols(isPeriods)
+    yCols = _annualCols(isPeriods, basePeriod=basePeriod)
     if not yCols:
         return None
 
@@ -422,7 +426,7 @@ def _detectEarningsManipulation(company, blockMap) -> NarrativeThread | None:
 
     beneish = None
     try:
-        beneish = calcBeneishTimeline(company)
+        beneish = calcBeneishTimeline(company, basePeriod=basePeriod)
     except (KeyError, ValueError, TypeError, AttributeError):
         pass
 
@@ -456,7 +460,7 @@ def _detectEarningsManipulation(company, blockMap) -> NarrativeThread | None:
 # ── 패턴 6: 성장 + 수익성 동반 개선 (긍정) ──
 
 
-def _detectGrowthProfitability(company, blockMap) -> NarrativeThread | None:
+def _detectGrowthProfitability(company, blockMap, *, basePeriod: str | None = None) -> NarrativeThread | None:
     isResult = company.select("IS", ["매출액", "영업이익", "당기순이익"])
     cfResult = company.select("CF", ["영업활동현금흐름", "유형자산의취득"])
 
@@ -473,7 +477,7 @@ def _detectGrowthProfitability(company, blockMap) -> NarrativeThread | None:
     ocfRow = cfData.get("영업활동현금흐름", {})
     capexRow = cfData.get("유형자산의취득", {})
 
-    yCols = _annualCols(isPeriods)
+    yCols = _annualCols(isPeriods, basePeriod=basePeriod)
     if len(yCols) < 2:
         return None
 
@@ -521,7 +525,7 @@ def _detectGrowthProfitability(company, blockMap) -> NarrativeThread | None:
 # ── 패턴 7: 구조적 효율화 (긍정) ──
 
 
-def _detectStructuralEfficiency(company, blockMap) -> NarrativeThread | None:
+def _detectStructuralEfficiency(company, blockMap, *, basePeriod: str | None = None) -> NarrativeThread | None:
     isResult = company.select("IS", ["매출액", "매출원가", "판매비와관리비", "영업이익"])
     bsResult = company.select("BS", ["자산총계", "자본총계"])
 
@@ -540,7 +544,7 @@ def _detectStructuralEfficiency(company, blockMap) -> NarrativeThread | None:
     taRow = bsData.get("자산총계", {})
     eqRow = bsData.get("자본총계", {})
 
-    yCols = _annualCols(isPeriods)
+    yCols = _annualCols(isPeriods, basePeriod=basePeriod)
     if len(yCols) < 2:
         return None
 
@@ -607,17 +611,28 @@ _DETECTORS: list[tuple] = [
 ]
 
 
-def detectThreads(company, blockMap, sections: set[str] | None = None) -> list[NarrativeThread]:
+def detectThreads(
+    company,
+    blockMap,
+    sections: set[str] | None = None,
+    *,
+    basePeriod: str | None = None,
+) -> list[NarrativeThread]:
     """7가지 인과 패턴을 감지하여 NarrativeThread 리스트 반환.
 
     sections가 지정되면 관련 섹션이 겹치는 detector만 실행.
     """
+    # 기존 detector는 L3에서 ratio, ROIC, EVA, ROE를 직접 계산하고 값 단위 ref를
+    # 보존하지 않는다. 검증된 하위 엔진 Narrative Product가 연결되기 전에는 서사를
+    # 만들지 않는다. missing evidence를 최신 숫자나 자체 임계값으로 대체하지 않는다.
+    if not getattr(blockMap, "verifiedNarrativeInputs", None):
+        return []
     threads = []
     for detect, involved in _DETECTORS:
         if sections is not None and not (sections & involved):
             continue
         try:
-            thread = detect(company, blockMap)
+            thread = detect(company, blockMap, basePeriod=basePeriod)
             if thread is not None:
                 threads.append(thread)
         except (KeyError, ValueError, TypeError, AttributeError, ArithmeticError, IndexError):
@@ -625,13 +640,17 @@ def detectThreads(company, blockMap, sections: set[str] | None = None) -> list[N
     return threads
 
 
-def buildActTransitions(company) -> dict[str, str]:
+def buildActTransitions(company, *, basePeriod: str | None = None) -> dict[str, str]:
     """6막 전환 시점의 인과 문장 생성.
 
     각 막의 핵심 숫자를 뽑아서 다음 막으로 연결하는 한 문장.
     반환: {"1→2": "...", "2→3": "...", "3→4": "...", "4→5": "...", "5→6": "..."}
     """
     transitions = {}
+
+    # ratios facade는 현재 최신값만 제공한다. 과거 보고서에 최신 숫자를 섞지 않는다.
+    if basePeriod is not None:
+        return transitions
 
     try:
         ratios = company._finance.ratios

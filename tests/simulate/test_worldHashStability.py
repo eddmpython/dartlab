@@ -14,13 +14,23 @@ marshal 하는데, 그 안에 파일 이름과 첫 줄 번호가 들어간다. �
 
 from __future__ import annotations
 
+import os
 import pathlib
 import subprocess
 import sys
+from dataclasses import replace
 
 import pytest
 
-from dartlab.simulate.worldTypes import LawSpec, _canonical, _noOpLaw, _stableHash
+from dartlab.simulate.world import (
+    ActionSpec,
+    LawSpec,
+    StrategySpec,
+    VariableSpec,
+    WorldModel,
+    executableHashFor,
+)
+from dartlab.simulate.worldTypes import SimulationSpecError, _canonical, _noOpLaw, _stableHash
 
 pytestmark = [pytest.mark.unit]
 
@@ -29,6 +39,74 @@ _HASH_SNIPPET = (
     "from dartlab.simulate.worldTypes import LawSpec,_canonical,_stableHash;"
     "print(_stableHash(_canonical(LawSpec(lawId='x',outputs=()))))"
 )
+
+
+class _MutableLawState:
+    def __init__(self, multiplier: float) -> None:
+        self.multiplier = multiplier
+
+
+_MUTABLE_LAW_STATE = _MutableLawState(1.0)
+
+
+def _contractLaw(ctx):
+    return {"result": ctx.actions["invest"] - ctx.actionCost}
+
+
+def _statefulContractLaw(ctx):
+    return {"result": _MUTABLE_LAW_STATE.multiplier * ctx.actions["invest"] - ctx.actionCost}
+
+
+def _contractModel(
+    *,
+    variable: VariableSpec | None = None,
+    action: ActionSpec | None = None,
+    law: LawSpec | None = None,
+) -> WorldModel:
+    return WorldModel(
+        modelId="hash-contract",
+        version="1",
+        variables=(variable or VariableSpec("result", "currency", "metric", lower=-100.0, upper=100.0),),
+        actions=(
+            action
+            or ActionSpec(
+                "invest",
+                "currency",
+                0.0,
+                10.0,
+                leadSteps=1,
+                costPerUnit=0.25,
+                effectEvidence="accountingIdentity",
+                provenance="experiment:v1",
+            ),
+        ),
+        laws=(
+            law
+            or LawSpec(
+                "resultLaw",
+                outputs=("result",),
+                actionInputs=("invest",),
+                usesActionCost=True,
+                evidenceKind="accountingIdentity",
+                provenance="identity:v1",
+                parameters={"scale": 1.0},
+                fn=_contractLaw,
+            ),
+        ),
+        stepFrequency="month",
+        stepSpan=1,
+    )
+
+
+def _contractStrategy() -> StrategySpec:
+    return StrategySpec(
+        "baseline",
+        ({"invest": 1.0},),
+        refs=("policy://baseline",),
+        isBaseline=True,
+        policyVersion="1",
+        policyProvenance="approved:v1",
+    )
 
 
 def _hashInSubprocess() -> str:
@@ -50,7 +128,11 @@ def testDefaultLawSealIsPositionFree() -> None:
 
     sealed = _canonical(_noOpLaw)
 
-    assert sealed == {"callable": "dartlab.simulate.worldTypes._noOpLaw", "codeHash": "noOpLaw"}
+    assert sealed == {
+        "type": "callable",
+        "name": "dartlab.simulate.worldTypes._noOpLaw",
+        "codeHash": "noOpLaw",
+    }
 
 
 def testDefaultLawReturnsNothing() -> None:
@@ -86,3 +168,152 @@ def testRealLawsAreStillHashedByCode() -> None:
         return {"y": 2.0}
 
     assert _stableHash(_canonical(lawA)) != _stableHash(_canonical(lawB))
+
+
+@pytest.mark.parametrize(
+    ("left", "right"),
+    [
+        (None, "None"),
+        (True, 1),
+        ((1,), [1]),
+        (["a,b", "c"], ["a", "b,c"]),
+        ({"a:b": "c"}, {"a": "b:c"}),
+    ],
+)
+def testCanonicalEncodingPreservesTypesAndValueBoundaries(left, right) -> None:
+    assert _stableHash({"value": left}) != _stableHash({"value": right})
+
+
+def testCanonicalEncodingIsStableAcrossHashSeeds() -> None:
+    snippet = (
+        "from dartlab.simulate.worldTypes import _stableHash;"
+        "keys={'alpha','beta','gamma'};"
+        "print(_stableHash({'mapping':{key:len(key) for key in keys},'set':keys}))"
+    )
+    digests = []
+    for seed in ("1", "2"):
+        result = subprocess.run(
+            [sys.executable, "-X", "utf8", "-c", snippet],
+            capture_output=True,
+            text=True,
+            check=True,
+            env={**os.environ, "PYTHONHASHSEED": seed},
+        )
+        digests.append(result.stdout.strip())
+
+    assert digests[0] == digests[1]
+
+
+@pytest.mark.parametrize(
+    "changed",
+    [
+        VariableSpec("result", "won", "metric", lower=-100.0, upper=100.0),
+        VariableSpec("result", "currency", "metric", lower=-99.0, upper=100.0),
+        VariableSpec("result", "currency", "metric", lower=-100.0, upper=99.0),
+        VariableSpec("result", "currency", "metric", frequency="monthEnd"),
+        VariableSpec("result", "currency", "metric", timing="flow"),
+        VariableSpec("result", "currency", "metric", transformId="log-v1"),
+        VariableSpec("result", "currency", "metric", evidenceRole="observed"),
+    ],
+)
+def testExecutableHashSealsVariableMeaning(changed: VariableSpec) -> None:
+    strategy = _contractStrategy()
+
+    assert executableHashFor(_contractModel(), (strategy,)) != executableHashFor(
+        _contractModel(variable=changed), (strategy,)
+    )
+
+
+@pytest.mark.parametrize(
+    "fieldAndValue",
+    [
+        ("unit", "won"),
+        ("lower", 0.5),
+        ("upper", 9.0),
+        ("leadSteps", 2),
+        ("costPerUnit", 0.5),
+        ("effectEvidence", "explicitAssumption"),
+        ("provenance", "experiment:v2"),
+    ],
+)
+def testExecutableHashSealsActionMeaning(fieldAndValue: tuple[str, object]) -> None:
+    fieldName, value = fieldAndValue
+    model = _contractModel()
+    changed = replace(model.actions[0], **{fieldName: value})
+    strategy = _contractStrategy()
+
+    assert executableHashFor(model, (strategy,)) != executableHashFor(_contractModel(action=changed), (strategy,))
+
+
+@pytest.mark.parametrize(
+    "fieldAndValue",
+    [
+        ("provenance", "identity:v2"),
+        ("version", "2"),
+        ("status", "partial"),
+        ("parameters", {"scale": 2.0}),
+        ("usesActionCost", False),
+    ],
+)
+def testExecutableHashSealsLawMeaning(fieldAndValue: tuple[str, object]) -> None:
+    fieldName, value = fieldAndValue
+    model = _contractModel()
+    changed = replace(model.laws[0], **{fieldName: value})
+    if fieldName == "usesActionCost":
+        changedAction = replace(model.actions[0], costPerUnit=0.0)
+        baseline = _contractModel(action=changedAction)
+        changedModel = _contractModel(action=changedAction, law=changed)
+    else:
+        baseline = model
+        changedModel = _contractModel(law=changed)
+    strategy = _contractStrategy()
+
+    assert executableHashFor(baseline, (strategy,)) != executableHashFor(changedModel, (strategy,))
+
+
+@pytest.mark.parametrize(
+    "fieldAndValue",
+    [
+        ("actionsByStep", ({"invest": 2.0},)),
+        ("refs", ("policy://replacement",)),
+        ("isBaseline", False),
+        ("policyVersion", "2"),
+        ("policyProvenance", "approved:v2"),
+    ],
+)
+def testExecutableHashSealsStaticPolicyMeaning(fieldAndValue: tuple[str, object]) -> None:
+    model = _contractModel()
+    strategy = _contractStrategy()
+    fieldName, value = fieldAndValue
+    changed = replace(strategy, **{fieldName: value})
+
+    assert executableHashFor(model, (strategy,)) != executableHashFor(model, (changed,))
+
+
+def testExecutableHashTracksMutableCustomGlobalState() -> None:
+    law = replace(_contractModel().laws[0], fn=_statefulContractLaw)
+    model = _contractModel(law=law)
+    strategy = _contractStrategy()
+    original = _MUTABLE_LAW_STATE.multiplier
+
+    try:
+        before = executableHashFor(model, (strategy,))
+        _MUTABLE_LAW_STATE.multiplier = 2.0
+        after = executableHashFor(model, (strategy,))
+    finally:
+        _MUTABLE_LAW_STATE.multiplier = original
+
+    assert before != after
+
+
+def testCanonicalEncodingFailsClosedForCyclicState() -> None:
+    cyclic: list[object] = []
+    cyclic.append(cyclic)
+
+    with pytest.raises(SimulationSpecError, match="cyclic canonical value"):
+        _canonical(cyclic)
+
+
+def testCanonicalEncodingFailsClosedForOpaqueState() -> None:
+    with pytest.raises(SimulationSpecError, match="canonical state is unsupported"):
+        _canonical(object())

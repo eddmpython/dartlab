@@ -180,6 +180,7 @@ class DataHub:
         *,
         assets: str | Sequence[str] | None = None,
         query: CatalogQuery | DataQuery | None = None,
+        _runtimeBindings: Mapping[str, Mapping[str, Any]] | None = None,
         **kwargs: Any,
     ):
         """Data Workbench의 catalog 또는 query axis를 실행한다.
@@ -232,7 +233,7 @@ class DataHub:
             assetIds = (assetValue,) if isinstance(assetValue, str) else tuple(assetValue or ())
             if activeQuery.continuation is not None and assetIds:
                 raise ValueError("continuation query는 target 또는 assets override를 허용하지 않습니다")
-            return executeDataQuery(assetIds, activeQuery)
+            return executeDataQuery(assetIds, activeQuery, runtimeBindings=_runtimeBindings)
         raise KeyError("dataHub axis는 'catalog' 또는 'query'여야 합니다")
 
 

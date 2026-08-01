@@ -1,4 +1,4 @@
-"""Callable `simulate` wrapper over `Company.simulate` (L2.5).
+"""Callable `simulate` wrapper over `Company.simulate` (L3).
 
 `dartlab.simulate(code, scenario=..., horizon=..., asOf=...)` is the callable entry for
 the deterministic scenario-simulator core. It resolves the code to a `Company`, guards the
@@ -10,7 +10,7 @@ This is the deterministic subset only (`scenario` + `horizon` + `asOf`). The ful
 Company surface attaches representative lens products as explicit context while keeping the
 DriverSheet deterministic. Multi-driver overrides and Play replay remain separate work.
 
-Layer: L2.5. Imports forward only - constructs the root `Company` facade (L1) and calls the L2.5
+Layer: L3. Imports forward only - constructs the root `Company` facade (L1) and calls the L3
 `run` driver. The legacy `analysis/forecast/simulation.py` flow is never touched (born-clean).
 """
 
@@ -105,7 +105,7 @@ def simulate(
     """
     import dartlab
 
-    company = dartlab.Company(code)
+    company = getattr(dartlab, "Company")(code)
     # KR 전용 가드 - 매크로 프리셋이 KR 기준이라 비-KR(US → EDGAR)은 차단한다. DART/EDGAR Company
     # 둘 다 .stockCode 를 노출하므로(EDGAR 는 ticker 를 stockCode 로 미러) market 을 식별자로 쓴다.
     market = getattr(company, "market", None)

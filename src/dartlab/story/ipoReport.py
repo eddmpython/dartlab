@@ -217,11 +217,14 @@ def renderIpoReport(
 
     # 6. 리스크
     risk = parsed.get("risk", {})
+    riskCount = risk.get("count")
+    riskSections = risk.get("sections") or []
+    riskSummary = f"{riskCount}개 ({', '.join(riskSections[:4])})" if riskCount is not None else "-"
     sections.append(
         {
             "title": "투자위험",
             "badge": None,
-            "rows": [("위험 섹션", f"{risk.get('count', 0)}개 ({', '.join(risk.get('sections', [])[:4])})")],
+            "rows": [("위험 섹션", riskSummary)],
         }
     )
 
@@ -261,8 +264,8 @@ def renderIpoReport(
             lines.append(f"- {label}: {value}")
         lines.append("")
     lines.append(
-        "모든 수치는 접수번호 원문에서 직접 추출, 원문 자체 관계식으로 자기검증(〔검증〕 배지). "
-        "implied 멀티플·할인율은 비교군 기준 좌표 — 고/저평가 단정 아님."
+        "수치는 접수번호 원문에서 추출하며, 관계식 검증이 완료된 항목만 〔검증〕 배지로 표시. "
+        "implied 멀티플·할인율은 비교군 기준 좌표이며 고/저평가 단정 아님."
     )
 
     return {"title": f"{name} 공모분석", "summary": summary, "sections": sections, "markdown": "\n".join(lines)}

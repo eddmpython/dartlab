@@ -10,6 +10,7 @@ from __future__ import annotations
 import logging
 from collections.abc import Callable
 
+from dartlab.story.blocks import Block
 from dartlab.story.layout import StoryLayout
 from dartlab.story.section import Section
 from dartlab.story.templates import TEMPLATE_ORDER, TEMPLATES
@@ -18,9 +19,21 @@ from dartlab.story.utils import isTerminal
 try:
     import polars as _pl_lib
 
-    _POLARS_ERR: type = _pl_lib.exceptions.PolarsError
+    _POLARS_ERR: type[Exception] = _pl_lib.exceptions.PolarsError
 except ImportError:
     _POLARS_ERR = RuntimeError
+
+_SAFE_BUILD_ERRORS: tuple[type[Exception], ...] = (
+    KeyError,
+    ValueError,
+    TypeError,
+    AttributeError,
+    ArithmeticError,
+    ImportError,
+    RuntimeError,
+    IndexError,
+    _POLARS_ERR,
+)
 
 _LOG = logging.getLogger("dartlab.story")
 
@@ -72,17 +85,7 @@ def _makeSafeCall(failures: list[dict]):
     def _safeCall(fn: Callable):
         try:
             return fn()
-        except (
-            KeyError,
-            ValueError,
-            TypeError,
-            AttributeError,
-            ArithmeticError,
-            ImportError,
-            RuntimeError,
-            IndexError,
-            _POLARS_ERR,
-        ) as exc:
+        except _SAFE_BUILD_ERRORS as exc:
             name = getattr(fn, "__name__", "?")
             _LOG.debug("story block build 실패: %s - %s: %s", name, type(exc).__name__, exc)
             failures.append(
@@ -130,10 +133,10 @@ def _setupCurrency(company) -> None:
     _currency = getattr(company, "currency", "KRW")
     _storyCurrency.set(_currency)
     try:
-        from dartlab.analysis.financial.capital import _analysis_currency
+        from dartlab.analysis.financial import capital as capital_module
 
-        _analysis_currency.set(_currency)
-    except ImportError:
+        getattr(capital_module, "_analysis_currency").set(_currency)
+    except (ImportError, AttributeError):
         pass
 
 
@@ -263,7 +266,9 @@ def _buildCapitalBlocks(company, keys, basePeriod, safe: Callable, need: Callabl
     )
 
     if need("fundingSources"):
-        out["fundingSources"] = safe(lambda: fundingSourcesBlock(calcFundingSources(company, basePeriod=basePeriod)))
+        out["fundingSources"] = safe(
+            lambda: fundingSourcesBlock(calcFundingSources(company, basePeriod=basePeriod) or {})
+        )
     if need("capitalOverview"):
         out["capitalOverview"] = safe(lambda: capitalOverviewBlock(calcCapitalOverview(company, basePeriod=basePeriod)))
     if need("capitalTimeline"):
@@ -577,7 +582,9 @@ def _buildEarningsQualityBlocks(company, keys, basePeriod, safe: Callable, need:
     )
 
     if need("accrualAnalysis"):
-        out["accrualAnalysis"] = safe(lambda: accrualAnalysisBlock(calcAccrualAnalysis(company, basePeriod=basePeriod)))
+        out["accrualAnalysis"] = safe(
+            lambda: accrualAnalysisBlock(calcAccrualAnalysis(company, basePeriod=basePeriod) or {})
+        )
     if need("earningsPersistence"):
         out["earningsPersistence"] = safe(
             lambda: earningsPersistenceBlock(calcEarningsPersistence(company, basePeriod=basePeriod))
@@ -963,7 +970,9 @@ def _buildValuationBlocks(company, keys, basePeriod, safe: Callable, need: Calla
             from dartlab.analysis.financial.lifeCycle import calcLifeCycle
             from dartlab.story.builders import lifeCycleStageBlock
 
-            out["lifeCycleStage"] = safe(lambda: lifeCycleStageBlock(calcLifeCycle(company, basePeriod=basePeriod)))
+            out["lifeCycleStage"] = safe(
+                lambda: lifeCycleStageBlock(calcLifeCycle(company, basePeriod=basePeriod) or {})
+            )
         if need("valuationSins"):
             from dartlab.analysis.financial.storyValidation import calcValuationSins
             from dartlab.story.builders import valuationSinsBlock
@@ -1303,7 +1312,8 @@ def _buildQuantTechnicalBlocks(company, keys, basePeriod, safe: Callable, need: 
     from dartlab.quant.alphas.piotroski import calcPiotroskiFactor
     from dartlab.quant.alphas.qFactor import calcQFactor
     from dartlab.quant.alphas.qmj import calcQMJ
-    from dartlab.quant.factor.calc import calcFactorICAll, calcFactorTearSheetAll, calcMultiFactorRisk
+    from dartlab.quant.factor._factorIC import calcFactorICAll
+    from dartlab.quant.factor.calc import calcFactorTearSheetAll, calcMultiFactorRisk
     from dartlab.story.narrate import (
         narrateAccruals,
         narrateAltman,
@@ -1609,12 +1619,32 @@ def buildStory(
 
     # ── thesis 타입: 서사 주도 특수 경로 (블록화 예외) ──
     if reportType.key == "thesis":
-        from dartlab.story.builders import thesisReportBlocks
-
         corpName = getattr(company, "corpName", "")
         stockCode = getattr(company, "stockCode", "")
         story = Story(stockCode=stockCode, corpName=corpName, layout=ly)
-        thesis_blocks = thesisReportBlocks(company, hypothesis)
+        if basePeriod is not None:
+            from dartlab.story.blocks import FlagBlock, HeadingBlock, TextBlock
+
+            thesis_blocks: list[Block] = [HeadingBlock("논제 검증", level=2)]
+            if hypothesis:
+                thesis_blocks.append(TextBlock(f"가설: {hypothesis}"))
+            thesis_blocks.append(
+                FlagBlock(
+                    flags=["과거 시점에 고정된 AI 논제 검증 경로가 없어 서사 판정을 차단했습니다."],
+                    kind="warning",
+                )
+            )
+            blockBuildFailures.append(
+                {
+                    "code": "HISTORICAL_THESIS_UNSUPPORTED",
+                    "status": "unsupported",
+                    "reason": f"{basePeriod} 시점에 고정된 AI 근거 계약이 없습니다.",
+                }
+            )
+        else:
+            from dartlab.story.builders import thesisReportBlocks
+
+            thesis_blocks = thesisReportBlocks(company, hypothesis)
         story.sections = [Section(key="thesisReport", partId="T", title="논제 검증", blocks=thesis_blocks)]
         return _attachLensProducts(story)
 
@@ -1725,7 +1755,7 @@ def buildStory(
             templateKeys = list(TEMPLATE_ORDER)
 
         # 필요한 블록 keys만 산출 → 선택적 빌드
-        if section and templateKeys:
+        if templateKeys and set(templateKeys) != set(TEMPLATE_ORDER):
             neededKeys: set[str] | None = set()
             for tk in templateKeys:
                 neededKeys.update(TEMPLATES[tk]["keys"])
@@ -1742,7 +1772,7 @@ def buildStory(
 
                 live.update(Spinner("dots", text=f"{tmplKey} 조립 중..."))
 
-            sectionBlocks = []
+            sectionBlocks: list[Block] = []
             for blockKey in tmpl["keys"]:
                 blockList = b.get(blockKey)
                 if blockList:
@@ -1773,7 +1803,15 @@ def buildStory(
         from dartlab.story.narrative import buildCirculationSummary, detectThreads
 
         _sectionSet = set(templateKeys) if section is not None else None
-        threads = detectThreads(company, b, sections=_sectionSet)
+        threads = detectThreads(company, b, sections=_sectionSet, basePeriod=basePeriod)
+        if not getattr(b, "verifiedNarrativeInputs", None):
+            blockBuildFailures.append(
+                {
+                    "code": "NARRATIVE_VALUE_PROVENANCE_UNAVAILABLE",
+                    "status": "unsupported",
+                    "reason": "값 단위 ref를 가진 하위 엔진 Narrative Product가 없어 인과 서사를 차단했습니다.",
+                }
+            )
         for thread in threads:
             for sec in story.sections:
                 if sec.key in thread.involvedSections:
@@ -1783,7 +1821,15 @@ def buildStory(
         # ── 6막 전환 인과 문장 ──
         from dartlab.story.narrative import buildActTransitions
 
-        story.actTransitions = buildActTransitions(company)
+        story.actTransitions = buildActTransitions(company, basePeriod=basePeriod)
+        if basePeriod is not None:
+            blockBuildFailures.append(
+                {
+                    "code": "HISTORICAL_ACT_TRANSITIONS_UNSUPPORTED",
+                    "status": "unsupported",
+                    "reason": "과거 시점 ratio 계약이 없어 최신 비율 기반 막 전환 문장을 차단했습니다.",
+                }
+            )
 
         # ── 요약 카드 생성 ──
         from dartlab.story.summary import buildSectionSummary, buildSummaryCard

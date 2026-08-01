@@ -35,7 +35,11 @@ from dartlab.simulate.vintage import (
     validateVintageRef,
     worldStatePayloadHash,
 )
-from dartlab.simulate.worldContracts import _pathSetContentHash, _validateLawCertificate
+from dartlab.simulate.worldContracts import (
+    _pathSetContentHash,
+    _validateActionEvidenceReceipt,
+    _validateLawCertificate,
+)
 from dartlab.simulate.worldModel import WorldModel
 from dartlab.simulate.worldTypes import (
     PATH_VALIDATION_SET,
@@ -258,6 +262,7 @@ def _validateInitialStateAdmission(
     except (OSError, RuntimeError, ValueError) as error:
         raise SimulationSpecError(f"initial-state admission verification failed: {error}") from error
     receiptIssuedAt = _comparableDate(initialReceipt.issuedAt)
+    decisionDate = _comparableDate(decisionAsOf)
     if (
         initialReceipt.status != "admitted"
         or initialReceipt.artifactHash != initialSubjectHash
@@ -265,7 +270,8 @@ def _validateInitialStateAdmission(
         != (INITIAL_STATE_RULE_ID, INITIAL_STATE_RULE_VERSION, INITIAL_STATE_RULE_HASH)
         or initialReceipt.parentReceiptIds != (pointInTimeReceipt.receiptId,)
         or receiptIssuedAt is None
-        or receiptIssuedAt > _comparableDate(decisionAsOf)
+        or decisionDate is None
+        or receiptIssuedAt > decisionDate
         or artifactPath(admissionVerifier.artifactRoot, initialSubjectHash).read_bytes() != initialArtifact
     ):
         raise SimulationSpecError("initial-state admission lineage mismatch")
@@ -384,7 +390,7 @@ def _checkLawAdmissionHorizon(model: WorldModel, horizon: int, initialKnowledgeD
     for law in model.laws:
         certificate = law.certificate
         if law.evidenceKind in {"measuredAssociation", "identifiedIntervention"}:
-            _validateLawCertificate(law)
+            _validateLawCertificate(law, model.admissionVerifier)
         if certificate is not None and certificate.status == "admitted" and certificate.maxAdmittedStep < horizon:
             raise SimulationSpecError(f"law exceeds admitted horizon: {law.lawId}")
         if certificate is not None and certificate.status == "admitted":
@@ -392,6 +398,23 @@ def _checkLawAdmissionHorizon(model: WorldModel, horizon: int, initialKnowledgeD
                 raise SimulationSpecError("certified laws need an initial-state knowledge cutoff")
             if certificate.knowledgeAsOf > initialKnowledgeDate:
                 raise SimulationSpecError(f"law certificate is newer than initial state: {law.lawId}")
+    for action in model.actions:
+        if action.effectEvidence != "identifiedIntervention":
+            continue
+        if model.admissionVerifier is None:
+            raise SimulationSpecError(f"identified action needs an admission verifier: {action.actionId}")
+        receipt = _validateActionEvidenceReceipt(
+            action,
+            model.admissionVerifier,
+            frequency=model.stepFrequency,
+            stepSpan=model.stepSpan,
+        )
+        if receipt.maxAdmittedStep < horizon:
+            raise SimulationSpecError(f"action exceeds admitted horizon: {action.actionId}")
+        if initialKnowledgeDate is None:
+            raise SimulationSpecError("identified actions need an initial-state knowledge cutoff")
+        if receipt.knowledgeAsOf > initialKnowledgeDate:
+            raise SimulationSpecError(f"action evidence is newer than initial state: {action.actionId}")
 
 
 def _checkRunIdentity(paths: tuple[ScenarioPath, ...], strategies: tuple[StrategySpec, ...]) -> None:
@@ -416,7 +439,9 @@ def _checkParameterDrawProvenance(
         return
     if None in parameterReceipts or len(parameterReceipts) != 1 or len(parameterPaths) != len(paths):
         raise SimulationSpecError("parameter draw paths must share one provenance receipt")
-    receipt = next(iter(parameterReceipts))
+    receipt = next((item for item in parameterReceipts if item is not None), None)
+    if receipt is None:
+        raise SimulationSpecError("parameter draw provenance receipt is unavailable")
     validateParameterDrawSetReceipt(paths, receipt, decisionAsOf=decisionDate)
     expectedUnits = {
         name: unit
@@ -649,6 +674,8 @@ def _checkPathSetAdmission(
         return
     knowledgeCutoff = _checkAdmittedPathAgreement(paths)
     contentHash = _checkAdmittedPathBinding(paths)
+    if admissionVerifier is None:
+        raise SimulationSpecError("admitted paths need a runtime admission verifier")
     receiptId, vintage = _checkAdmittedPathSignatures(paths, admissionVerifier)
     _verifyPathSetAdmission(
         model,

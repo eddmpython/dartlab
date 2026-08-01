@@ -119,8 +119,13 @@ def simulationInputs(
     if not periods or any(type(period) is not str for period in periods):
         raise ValueError("분기 재무 periods가 비었거나 유효하지 않습니다")
     series, effectiveAsOf, latestAsOf, requestedAsOf = sliceFinanceSeries(rawSeries, periods, asOf)
+    from dartlab.analysis.financial._companyLookup import _getSharesOutstandingInput
+
+    sharesEvidence = _getSharesOutstandingInput(resolvedCompany, basePeriod=asOf)
     return {
         "series": series,
+        "shares": sharesEvidence["value"] if sharesEvidence is not None else None,
+        "sharesEvidence": sharesEvidence,
         "asOf": effectiveAsOf,
         "latestAsOf": latestAsOf,
         "requestedAsOf": requestedAsOf,

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Literal, Mapping
@@ -20,6 +21,27 @@ def _requireStringTuple(value: Any, name: str) -> None:
         raise TypeError(f"{name}은 string tuple이어야 합니다")
     if any(type(item) is not str or not item.strip() for item in value):
         raise ValueError(f"{name}에는 비어 있지 않은 string만 사용할 수 있습니다")
+
+
+def _requireJsonTree(value: Any, name: str) -> None:
+    """Query identity에 들어가는 값은 주소 repr이 필요 없는 JSON tree로 제한한다."""
+    if value is None or type(value) in {str, int, bool}:
+        return
+    if type(value) is float:
+        if not math.isfinite(value):
+            raise ValueError(f"{name}에는 finite float만 사용할 수 있습니다")
+        return
+    if isinstance(value, Mapping):
+        for key, item in value.items():
+            if type(key) is not str:
+                raise TypeError(f"{name}의 key는 string이어야 합니다")
+            _requireJsonTree(item, f"{name}.{key}")
+        return
+    if isinstance(value, (list, tuple)):
+        for index, item in enumerate(value):
+            _requireJsonTree(item, f"{name}[{index}]")
+        return
+    raise TypeError(f"{name}에는 JSON-safe 값만 사용할 수 있습니다")
 
 
 @dataclass(frozen=True, slots=True)
@@ -223,6 +245,7 @@ class DataRequest:
         _requireStringTuple(self.measures, "DataRequest.measures")
         if not isinstance(self.params, Mapping):
             raise TypeError("DataRequest.params는 mapping이어야 합니다")
+        _requireJsonTree(self.params, "DataRequest.params")
         if self.subjects and self.universe is not None:
             raise ValueError("DataRequest는 subjects와 universe를 동시에 사용할 수 없습니다")
 
@@ -283,6 +306,7 @@ class DataQuery:
             raise TypeError("DataQuery.projection이 유효하지 않습니다")
         if not isinstance(self.params, Mapping):
             raise TypeError("DataQuery.params는 mapping이어야 합니다")
+        _requireJsonTree(self.params, "DataQuery.params")
         if not isinstance(self.budget, QueryBudget):
             raise TypeError("budget은 QueryBudget이어야 합니다")
         if not isinstance(self.materialization, MaterializationDirective):

@@ -140,6 +140,7 @@ def bridgeFinancialPaths(
         (),
         (law,),
         stepFrequency="year",
+        admissionVerifier=admissionVerifier,
     )
     horizon = len(paths[0].steps)
     strategy = StrategySpec("bridge", ({},) * horizon, isBaseline=True)

@@ -87,9 +87,15 @@ def testWeeklyMacroPathCannotEnterAnnualFinancialBridge():
         bridgeFinancialPaths((_path(frequency="week"),), _law())
 
 
-def testBridgeRejectsLawNewerThanSourceDecision():
-    with pytest.raises(SimulationSpecError, match="newer than initial state"):
-        bridgeFinancialPaths((_path(knowledgeAsOf="20200101"),), _law(evidenceKind="measuredAssociation"))
+def testUnsignedLawCutoffCannotOpenBridgeAdmission():
+    result = bridgeFinancialPaths(
+        (_path(knowledgeAsOf="20200101"),),
+        _law(evidenceKind="measuredAssociation"),
+    )
+
+    assert result.paths[0].validationStatus == "retrospectiveOnly"
+    assert result.paths[0].certificateId == ""
+    assert result.audit.warnings == ("bridgeEvidence:measuredAssociation",)
 
 
 def testBridgedPathRunsThroughFinancialStateAndClosesAccounting():

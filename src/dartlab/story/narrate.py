@@ -725,9 +725,9 @@ def narrateMacroEnvironment(summary: dict) -> str | None:
     if not summary:
         return None
     overall_label = summary.get("overallLabel", "")
-    score = summary.get("score", 0)
+    score = summary.get("score")
     reasons = summary.get("reasons", [])
-    if not overall_label:
+    if not overall_label or score is None:
         return None
 
     if score >= 1.0:
@@ -861,8 +861,8 @@ def narrateSectorContext(sector: str, kpis: dict | None) -> str | None:
                 )
         elif sector == "construction":
             cm = kpis.get("contractMix", {})
-            if cm.get("contractRatio"):
-                parts.append(f"매출 구성: 도급 {cm['contractRatio']:.0f}% / 자체개발 {cm.get('selfDevRatio', 0):.0f}%")
+            if cm.get("contractRatio") is not None and cm.get("selfDevRatio") is not None:
+                parts.append(f"매출 구성: 도급 {cm['contractRatio']:.0f}% / 자체개발 {cm['selfDevRatio']:.0f}%")
             pf = kpis.get("pfExposure", {})
             if pf.get("pfRelatedItems"):
                 parts.append(f"PF 관련 충당부채 항목: {pf['pfRelatedItems']}건 감지")
@@ -930,15 +930,17 @@ def narrateGradeUpgrade(data: dict) -> str | None:
 def narrateTechnicalAction(data: dict) -> str | None:
     """기술적 행동 목표 → 자연어."""
     verdict = data.get("technicalVerdict", "")
-    current = data.get("currentPrice", 0)
+    current = data.get("currentPrice")
     targets = data.get("targets", [])
 
     if not current:
         return None
 
     parts = [f"현재가 {current:,}원, 기술적 판정 **{verdict}**."]
-    if data.get("support"):
-        parts.append(f"지지선 {data['support']:,}원, 저항선 {data.get('resistance', 0):,}원.")
+    support = data.get("support")
+    resistance = data.get("resistance")
+    if support is not None and resistance is not None:
+        parts.append(f"지지선 {support:,}원, 저항선 {resistance:,}원.")
     if targets:
         t = targets[0]
         parts.append(f"{t['signal']} 시 {t['triggerPrice']:,}원에서 {t['action']} ({t['confidence']}).")
@@ -1010,14 +1012,15 @@ def narrateDFV(data: dict) -> str | None:
 
     # Quality WACC
     qw = data.get("qualityWACC", {})
-    spread = qw.get("totalSpread", 0)
-    if spread != 0:
-        parts.append(f"Quality WACC 가감 {spread:+.1f}%p ({qw.get('adjustedWACC', 0):.1f}%).")
+    spread = qw.get("totalSpread")
+    adjustedWacc = qw.get("adjustedWACC")
+    if spread is not None and adjustedWacc is not None and spread != 0:
+        parts.append(f"Quality WACC 가감 {spread:+.1f}%p ({adjustedWacc:.1f}%).")
 
     # 시나리오
     sc = data.get("scenarios", {})
-    if sc:
-        parts.append(f"시나리오: Bull {sc.get('bull', 0):,} / Bear {sc.get('bear', 0):,}.")
+    if sc.get("bull") is not None and sc.get("bear") is not None:
+        parts.append(f"시나리오: Bull {sc['bull']:,} / Bear {sc['bear']:,}.")
 
     # Survival 가중 (Dark Side)
     surv = data.get("survival")
@@ -1165,8 +1168,10 @@ def narrateStoryPrecedents(data: dict | None) -> str | None:
     """calcStoryPrecedents 결과 → 자연어 (Possible Test)."""
     if not data:
         return None
-    count = data.get("count", 0)
+    count = data.get("count")
     confidence = data.get("confidence", "low")
+    if count is None:
+        return None
     if count == 0:
         return "유사 경로 선례 없음 — 새 서사. Damodaran 'Possible Test' 통과 실패."
     precedents = data.get("precedents") or []
@@ -1187,12 +1192,14 @@ def narrateAltman(data: dict | None) -> str | None:
     zones = data.get("zones") or {}
     distress = zones.get("distress", {})
     safe = zones.get("safe", {})
-    universe = data.get("universe", 0)
+    universe = data.get("universe")
     methodology = data.get("methodology") or {}
     model_name = methodology.get("modelName") or data.get("variant", "z").upper()
+    if universe is None or distress.get("pct") is None or distress.get("count") is None or safe.get("pct") is None:
+        return None
     return (
-        f"{universe}개 종목 중 부실위험 {distress.get('pct', 0)}% ({distress.get('count', 0)}사), "
-        f"안전 {safe.get('pct', 0)}%. {model_name} 모형."
+        f"{universe}개 종목 중 부실위험 {distress['pct']}% ({distress['count']}사), "
+        f"안전 {safe['pct']}%. {model_name} 모형."
     )
 
 
@@ -1203,10 +1210,12 @@ def narratePiotroski(data: dict | None) -> str | None:
     grades = data.get("grades") or {}
     strong = grades.get("strong", {})
     weak = grades.get("weak", {})
-    universe = data.get("universe", 0)
+    universe = data.get("universe")
+    if universe is None or strong.get("pct") is None or strong.get("count") is None or weak.get("pct") is None:
+        return None
     return (
-        f"{universe}개 종목 중 strong (F≥7) {strong.get('pct', 0)}% ({strong.get('count', 0)}사), "
-        f"weak (F≤3) {weak.get('pct', 0)}%. Piotroski 9점 재무건강."
+        f"{universe}개 종목 중 strong (F≥7) {strong['pct']}% ({strong['count']}사), "
+        f"weak (F≤3) {weak['pct']}%. Piotroski 9점 재무건강."
     )
 
 
@@ -1216,10 +1225,11 @@ def narrateBeneish(data: dict | None) -> str | None:
         return None
     flags = data.get("flags") or {}
     red = flags.get("redFlag", {})
-    universe = data.get("universe", 0)
+    universe = data.get("universe")
+    if universe is None or red.get("pct") is None or red.get("count") is None:
+        return None
     return (
-        f"{universe}개 종목 중 red flag (M > -1.78) {red.get('pct', 0)}% ({red.get('count', 0)}사). "
-        "Beneish 8변수 이익조작 감지 모형."
+        f"{universe}개 종목 중 red flag (M > -1.78) {red['pct']}% ({red['count']}사). Beneish 8변수 이익조작 감지 모형."
     )
 
 
@@ -1230,10 +1240,12 @@ def narrateAccruals(data: dict | None) -> str | None:
     groups = data.get("groups") or {}
     high = groups.get("high", {})
     low = groups.get("low", {})
-    universe = data.get("universe", 0)
+    universe = data.get("universe")
+    if universe is None or high.get("pct") is None or low.get("pct") is None:
+        return None
     return (
-        f"{universe}개 종목 중 high accrual (>+5%) {high.get('pct', 0)}% (reversal risk), "
-        f"low (<-5%) {low.get('pct', 0)}% (cash quality premium 후보). Sloan 1996."
+        f"{universe}개 종목 중 high accrual (>+5%) {high['pct']}% (reversal risk), "
+        f"low (<-5%) {low['pct']}% (cash quality premium 후보). Sloan 1996."
     )
 
 

@@ -7,11 +7,13 @@
 
 from __future__ import annotations
 
+import re
+from calendar import monthrange
 from collections.abc import Iterable
 from typing import Any
 
 from dartlab.story.lensTensions import classifyLensTensions
-from dartlab.synth.lensContract import validatePublicLensBundle
+from dartlab.synth.lensContract import validateLensProduct, validatePublicLensBundle
 
 _ENGINE_ORDER = ("analysis", "credit", "industry", "quant", "macro")
 
@@ -71,7 +73,24 @@ def collectLensProducts(
         if isinstance(result, dict):
             results[engine] = result
         if isinstance(product, dict) and product.get("identity", {}).get("engine") == engine:
+            try:
+                validateLensProduct(product, legacy=result)
+            except (TypeError, ValueError) as exc:
+                gaps.append(
+                    {
+                        "engine": engine,
+                        "status": "blocked",
+                        "reason": f"대표 제품 계약 검증 실패: {str(exc)[:180]}",
+                    }
+                )
+                continue
             products[engine] = product
+            for productGap in product.get("gaps", []):
+                if not isinstance(productGap, dict):
+                    continue
+                gap = dict(productGap)
+                gap["engine"] = engine
+                gaps.append(gap)
             continue
 
         gaps.append(
@@ -128,23 +147,32 @@ def publicLensBundle(bundle: dict[str, Any] | None) -> dict[str, Any] | None:
     return publicBundle
 
 
+def isLensProductPromotable(product: Any) -> bool:
+    """공개 계약상 usable인 제품만 판단으로 승격할 수 있다."""
+    return isinstance(product, dict) and product.get("status") == "usable"
+
+
 def lensSummary(products: dict[str, Any] | None) -> list[dict[str, Any]]:
-    """렌더러용으로 각 product의 직접 필드만 투영한다."""
+    """렌더러용 직접 필드를 투영하되 usable이 아닌 판단은 봉인한다."""
     rows = []
     source = products if isinstance(products, dict) else {}
     for engine in _ENGINE_ORDER:
         product = source.get(engine)
         if not isinstance(product, dict):
             continue
-        conclusion = product.get("conclusion") if isinstance(product.get("conclusion"), dict) else {}
-        confidence = product.get("confidence") if isinstance(product.get("confidence"), dict) else {}
-        time = product.get("time") if isinstance(product.get("time"), dict) else {}
+        rawConclusion = product.get("conclusion")
+        rawConfidence = product.get("confidence")
+        rawTime = product.get("time")
+        conclusion = rawConclusion if isinstance(rawConclusion, dict) else {}
+        confidence = rawConfidence if isinstance(rawConfidence, dict) else {}
+        time = rawTime if isinstance(rawTime, dict) else {}
+        usable = isLensProductPromotable(product)
         rows.append(
             {
                 "engine": engine,
                 "status": product.get("status"),
-                "label": conclusion.get("label"),
-                "summary": conclusion.get("summary"),
+                "label": conclusion.get("label") if usable else None,
+                "summary": conclusion.get("summary") if usable else None,
                 "confidenceLevel": confidence.get("level"),
                 "confidenceScore": confidence.get("score"),
                 "asOf": time.get("asOf"),
@@ -189,7 +217,7 @@ def _callEngine(company: Any, engine: str, *, basePeriod: str | None) -> dict[st
         elif engine == "industry":
             industry = getattr(company, "industry", None)
             if callable(industry):
-                result = industry()
+                result = industry(basePeriod=basePeriod) if basePeriod is not None else industry()
             else:
                 from dartlab.industry.product import blockedIndustryResult
 
@@ -198,9 +226,23 @@ def _callEngine(company: Any, engine: str, *, basePeriod: str | None) -> dict[st
                     reason="이 시장에는 검증된 산업 가치사슬 taxonomy와 관계 manifest가 아직 없습니다.",
                 )
         elif engine == "quant":
-            result = company.quant("괴리")
+            asOf = _basePeriodAsOf(basePeriod)
+            if basePeriod is not None and asOf is None:
+                return {
+                    "state": "blocked",
+                    "reason": f"quant 렌즈가 해석할 수 없는 basePeriod입니다: {basePeriod}",
+                    "result": None,
+                }
+            result = company.quant("괴리", **({"asOf": asOf} if asOf else {}))
         elif engine == "macro":
-            result = company.macro("전파")
+            asOf = _basePeriodAsOf(basePeriod)
+            if basePeriod is not None and asOf is None:
+                return {
+                    "state": "blocked",
+                    "reason": f"macro 렌즈가 해석할 수 없는 basePeriod입니다: {basePeriod}",
+                    "result": None,
+                }
+            result = company.macro("전파", **({"asOf": asOf} if asOf else {}))
         else:
             raise ValueError(f"지원하지 않는 lens engine: {engine}")
     except Exception as exc:  # noqa: BLE001, 한 렌즈 실패가 Story 전체를 막지 않는다.
@@ -213,4 +255,33 @@ def _callEngine(company: Any, engine: str, *, basePeriod: str | None) -> dict[st
     return {"state": "ok", "reason": "", "result": result}
 
 
-__all__ = ["collectLensProducts", "enginesForReportType", "lensSummary", "publicLensBundle"]
+def _basePeriodAsOf(basePeriod: str | None) -> str | None:
+    """재무 기간을 시장·거시 엔진이 받는 ISO cutoff로 보수적으로 바꾼다."""
+    if basePeriod is None:
+        return None
+    value = str(basePeriod).strip()
+    if re.fullmatch(r"\d{4}-\d{2}-\d{2}", value):
+        return value
+    annual = re.fullmatch(r"(\d{4})", value)
+    if annual:
+        return f"{annual.group(1)}-12-31"
+    quarter = re.fullmatch(r"(\d{4})Q([1-4])", value, flags=re.IGNORECASE)
+    if quarter:
+        year = int(quarter.group(1))
+        month = int(quarter.group(2)) * 3
+        return f"{year:04d}-{month:02d}-{monthrange(year, month)[1]:02d}"
+    monthly = re.fullmatch(r"(\d{4})-(\d{2})", value)
+    if monthly:
+        year, month = int(monthly.group(1)), int(monthly.group(2))
+        if 1 <= month <= 12:
+            return f"{year:04d}-{month:02d}-{monthrange(year, month)[1]:02d}"
+    return None
+
+
+__all__ = [
+    "collectLensProducts",
+    "enginesForReportType",
+    "isLensProductPromotable",
+    "lensSummary",
+    "publicLensBundle",
+]

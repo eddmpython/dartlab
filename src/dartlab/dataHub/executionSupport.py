@@ -261,13 +261,19 @@ def _requestedMeasures(query: DataQuery) -> tuple[str, ...]:
     return tuple(query.measures or projectionMeasures)
 
 
-def _callableCall(descriptor: DataAssetDescriptor, query: DataQuery, selector: Mapping[str, str]) -> Any:
+def _callableCall(
+    descriptor: DataAssetDescriptor,
+    query: DataQuery,
+    selector: Mapping[str, str],
+    runtimeParams: Mapping[str, Any] | None = None,
+) -> Any:
     """Owner-declared callable을 descriptor에 적힌 인자 계약으로 실행한다."""
     if descriptor.executorModule is None or descriptor.executorAttribute is None:
         raise ValueError("callable executor 경로가 없습니다")
     module = importlib.import_module(descriptor.executorModule)
     executor = getattr(module, descriptor.executorAttribute)
     kwargs = dict(query.params)
+    kwargs.update(runtimeParams or {})
     if descriptor.measureParam:
         if descriptor.measureParam in kwargs:
             raise ValueError(f"{descriptor.measureParam}은 factor projection이 소유합니다")
@@ -286,13 +292,18 @@ def _callableCall(descriptor: DataAssetDescriptor, query: DataQuery, selector: M
     return executor(**kwargs)
 
 
-def _execute(descriptor: DataAssetDescriptor, query: DataQuery, selector: Mapping[str, str]) -> Any:
+def _execute(
+    descriptor: DataAssetDescriptor,
+    query: DataQuery,
+    selector: Mapping[str, str],
+    runtimeParams: Mapping[str, Any] | None = None,
+) -> Any:
     if descriptor.executorKind == "engineAxis":
         return _engineCall(descriptor, query, selector)
     if descriptor.executorKind == "resource":
         return _resourceCall(descriptor, query, selector)
     if descriptor.executorKind == "callable":
-        return _callableCall(descriptor, query, selector)
+        return _callableCall(descriptor, query, selector, runtimeParams)
     raise ValueError("catalog-only asset은 materialize할 수 없습니다")
 
 

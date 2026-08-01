@@ -265,6 +265,7 @@ def issueRevenue(
     baseDir: Path | None = None,
     resultByCode: dict | None = None,
     annualByCode: dict[str, dict[int, float]] | None = None,
+    asOf: str | None = None,
 ) -> tuple[list[ExpectationSpec], dict[str, str]]:
     """Issue annual revenue quantile expectations per company and seal them (KR).
 
@@ -284,6 +285,8 @@ def issueRevenue(
     Returns:
         (sealed rows, skipped census {code: reason}). Skips are returned, never silent.
     """
+    if not live and (asOf is None or resultByCode is None or annualByCode is None):
+        raise ValueError("revenue backfill은 asOf와 PIT-sealed resultByCode/annualByCode가 필요합니다")
     issuedAt = _nowUtc()
     existing = _existingKeys(baseDir)
     rows: list[ExpectationSpec] = []
@@ -297,7 +300,7 @@ def issueRevenue(
                 import dartlab
                 from dartlab.analysis.financial._forecastCalcsInputs import _runForecastRevenue
 
-                with dartlab.Company(code) as company:  # 힙 가드: with = OomTripwire + cleanupCache
+                with getattr(dartlab, "Company")(code) as company:  # 힙 가드: with = OomTripwire + cleanupCache
                     annual = _annualRevenueMap(company)
                     result = _runForecastRevenue(company)
             if result is None or not getattr(result, "projected", None):
@@ -345,7 +348,7 @@ def issueRevenue(
                         targetPeriod=targetPeriod,
                         issuedAt=issuedAt,
                         issuedLive=live,
-                        asOf=issuedAt[:10],
+                        asOf=asOf or issuedAt[:10],
                         engine=_ENGINE_REVENUE,
                         engineVersion=str(getattr(result, "method", "") or "ensemble"),
                         kind="quantiles",
@@ -386,6 +389,7 @@ def issueEarnings(
     proformaFn=None,
     seriesByCode: dict | None = None,
     annualByCode: dict[str, dict[int, float]] | None = None,
+    asOf: str | None = None,
 ) -> tuple[list[ExpectationSpec], dict[str, str]]:
     """Derive OP/NI expectations from sealed revenue quantile paths via the proforma leaf.
 
@@ -406,6 +410,8 @@ def issueEarnings(
     Returns:
         (sealed rows, skipped census).
     """
+    if not live and (asOf is None or seriesByCode is None or annualByCode is None):
+        raise ValueError("earnings backfill은 asOf와 PIT-sealed seriesByCode/annualByCode가 필요합니다")
     issuedAt = _nowUtc()
     existing = _existingKeys(baseDir)
     exps = readExpectations(baseDir=baseDir)
@@ -446,16 +452,25 @@ def issueEarnings(
             else:
                 import dartlab
 
-                with dartlab.Company(code) as company:  # 힙 가드: with = OomTripwire + cleanupCache
+                with getattr(dartlab, "Company")(code) as company:  # 힙 가드: with = OomTripwire + cleanupCache
                     ts = company._buildFinanceSeries(freq="Q")
                     series = ts[0] if isinstance(ts, tuple) else ts
                     annual = _annualMetricMap(company, "IS", "sales")
+            if not isinstance(series, dict) or not series:
+                skipped[code] = "분기 재무 시계열 없음"
+                continue
             if not annual:
                 skipped[code] = "연간 매출 이력 없음"
                 continue
             baseFY = max(annual)
             baseRev = annual[baseFY]
             maxH = max(h for h in horizons if h in revByH)
+            if any(revByH[h]["targetPeriod"] != f"FY{baseFY + h}" for h in revByH):
+                skipped[code] = "매출 기대 targetPeriod와 PIT baseFY 불일치"
+                continue
+            if not live and any(str(row.get("asOf", "")) != asOf for row in revByH.values()):
+                skipped[code] = "매출 기대 asOf와 earnings backfill asOf 불일치"
+                continue
             import json as _json
 
             # 봉인된 절대 매출레벨 경로 (D2 앵커): proforma 가 이 레벨을 매출로 직접 사용해
@@ -468,10 +483,6 @@ def issueEarnings(
                         break
                     levels.append(float(_json.loads(revByH[h]["quantiles"])[str(q)]))
                 levelByQ[q] = levels
-            if proformaFn is None:
-                from dartlab.analysis.financial.proforma import buildProforma as proformaLeaf
-            else:
-                proformaLeaf = None
             pfByQ = {}
             for q, levels in levelByQ.items():
                 if proformaFn is not None:
@@ -481,7 +492,9 @@ def issueEarnings(
                         prev = lv
                     pfByQ[q] = proformaFn(series, growth, f"expGrid_p{q}")
                 else:
-                    pfByQ[q] = proformaLeaf(
+                    from dartlab.analysis.financial.proforma import buildProforma
+
+                    pfByQ[q] = buildProforma(
                         series,
                         revenueGrowthPath=[0.0] * len(levels),
                         revenueLevelPath=levels,
@@ -497,7 +510,9 @@ def issueEarnings(
                     if (parentId, pfTarget, q) in pfExisting:
                         continue
                     pfYear = pfByQ[q].projections[h - 1]
+                    bsBalancedRaw = getattr(pfYear, "bs_balanced", None)
                     for stmt, account in _PF_ACCOUNTS:
+                        accountValue = getattr(pfYear, account, None)
                         pfRows.append(
                             {
                                 "parentId": parentId,
@@ -508,8 +523,8 @@ def issueEarnings(
                                 "quantile": q,
                                 "statement": stmt,
                                 "account": account,
-                                "value": float(getattr(pfYear, account, 0.0) or 0.0),
-                                "bsBalanced": bool(getattr(pfYear, "bs_balanced", True)),
+                                "value": float(accountValue) if accountValue is not None else None,
+                                "bsBalanced": bool(bsBalancedRaw) if bsBalancedRaw is not None else None,
                             }
                         )
             for metric, pfAttr in _EARNINGS_METRICS:
@@ -540,7 +555,7 @@ def issueEarnings(
                             targetPeriod=targetPeriod,
                             issuedAt=issuedAt,
                             issuedLive=live,
-                            asOf=issuedAt[:10],
+                            asOf=str(revByH[h].get("asOf") or asOf or issuedAt[:10]),
                             engine=_ENGINE_EARNINGS,
                             engineVersion="proforma-cascade",
                             kind="quantiles",
@@ -674,7 +689,7 @@ def issueQuarterlyIs(
 
                 seasonYears = [str(baseFy - i) for i in range(3) if baseFy - i >= 2019]
                 targetFys = {str(int(revByH[hy]["targetPeriod"][2:])) for hy in hs}
-                with dartlab.Company(code) as company:  # 힙 가드: with = OomTripwire + cleanupCache
+                with getattr(dartlab, "Company")(code) as company:  # 힙 가드: with = OomTripwire + cleanupCache
                     ts = company._buildFinanceSeries(freq="Q")
                     series = ts[0] if isinstance(ts, tuple) else ts
                     periods = ts[1] if isinstance(ts, tuple) else []
@@ -861,7 +876,7 @@ def issuePriceDirection(
                 import dartlab
                 from dartlab.analysis.forecast.simulation import monteCarloForecast
 
-                with dartlab.Company(code) as company:  # 힙 가드: with = OomTripwire + cleanupCache
+                with getattr(dartlab, "Company")(code) as company:  # 힙 가드: with = OomTripwire + cleanupCache
                     ts = company._buildFinanceSeries(freq="Q")
                     series = ts[0] if isinstance(ts, tuple) else ts
                 mc = monteCarloForecast(series)
@@ -1070,7 +1085,7 @@ def _fillQuarterCache(qtrCache: dict, code: str, metric: str, year: str, cacheKe
     import dartlab
 
     try:
-        with dartlab.Company(code) as company:  # 힙 가드: with = OomTripwire + cleanupCache
+        with getattr(dartlab, "Company")(code) as company:  # 힙 가드: with = OomTripwire + cleanupCache
             ts = company._buildFinanceSeries(freq="Q")
             qSeries = ts[0] if isinstance(ts, tuple) else ts
             qPeriods = ts[1] if isinstance(ts, tuple) else []
@@ -1100,7 +1115,7 @@ def _fillAnnualCache(
     import dartlab
 
     try:
-        with dartlab.Company(code) as company:  # 힙 가드: with = OomTripwire + cleanupCache
+        with getattr(dartlab, "Company")(code) as company:  # 힙 가드: with = OomTripwire + cleanupCache
             for metricName, (section, key) in _METRIC_KEYS.items():  # 한 번 로드에 3 metric 전부
                 fundCache[f"{code}.{metricName}"] = _annualMetricMap(company, section, key)
     except (ValueError, KeyError, AttributeError, TypeError) as exc:
@@ -1179,7 +1194,10 @@ def scoreDue(
                 continue
         else:
             continue  # 미지원 domain 은 채점 보류 (원장에 그대로 남는다)
-        scores.append(scoreExpectation(specFromRow(row), actual, scoredAt=scoredAt, actualAsOf=scoredAt[:10]))
+        if isinstance(actual, bool) or (actual is not None and not isinstance(actual, (float, int, str))):
+            raise TypeError(f"채점 actual 타입이 유효하지 않습니다: {type(actual).__name__}")
+        normalizedActual = float(actual) if isinstance(actual, int) else actual
+        scores.append(scoreExpectation(specFromRow(row), normalizedActual, scoredAt=scoredAt, actualAsOf=scoredAt[:10]))
     appendScores(scores, baseDir=baseDir)
     return scores
 

@@ -449,6 +449,83 @@ def test_render_html_detail_false():
     assert "요약" in html
 
 
+def test_render_html_escapes_all_story_strings_and_chart_attribute():
+    import html as html_lib
+    import json
+    import re
+    from types import SimpleNamespace
+
+    from dartlab.story import Story
+    from dartlab.story.blocks import ChartBlock, FlagBlock, HeadingBlock, MetricBlock, TableBlock, TextBlock
+    from dartlab.story.formats import renderHtml
+    from dartlab.story.narrative import NarrativeThread
+    from dartlab.story.section import Section
+    from dartlab.story.summary import SummaryCard
+
+    payload = "'><img src=x onerror=alert(1)>"
+
+    class UnsafeFrame:
+        columns = [payload]
+
+        @staticmethod
+        def iter_rows():
+            return iter([[payload]])
+
+        @staticmethod
+        def _repr_html_():
+            return payload
+
+    section = Section(
+        key="unsafe",
+        partId="1",
+        title=payload,
+        blocks=[
+            HeadingBlock(payload),
+            TextBlock(payload),
+            MetricBlock([(payload, payload)]),
+            TableBlock(payload, UnsafeFrame()),
+            ChartBlock({"title": payload, "payload": payload}),
+            FlagBlock([payload]),
+        ],
+        threads=[NarrativeThread(threadId="x", title=payload, story=payload)],
+    )
+    story = Story(
+        stockCode=payload,
+        corpName=payload,
+        sections=[section],
+        summaryCard=SummaryCard(
+            conclusion=payload,
+            strengths=[payload],
+            warnings=[payload],
+            grades={payload: payload},
+        ),
+    )
+    story.circulationSummary = payload
+    story.lensGaps = [{"engine": "analysis", "status": "blocked", "reason": payload, "sourceRef": payload}]
+
+    rendered = renderHtml(story)
+
+    assert payload not in rendered
+    assert "&lt;img src=x onerror=alert(1)&gt;" in rendered
+    attribute = re.search(r"data-spec='([^']+)'", rendered)
+    assert attribute is not None
+    decoded = json.loads(html_lib.unescape(attribute.group(1)))
+    assert decoded["title"] == payload
+    assert story._repr_html_() == rendered
+
+    compact = SimpleNamespace(
+        corpName=payload,
+        stockCode=payload,
+        summaryCard=None,
+        circulationSummary="",
+        lensGaps=[],
+        sections=[SimpleNamespace(title=payload, summary=payload)],
+        layout=_FakeLayout(detail=False),
+    )
+    compactHtml = renderHtml(compact)
+    assert payload not in compactHtml
+
+
 # ── renderJson ──
 
 
@@ -540,3 +617,14 @@ def test_render_json_with_chart_block():
     assert chart["type"] == "chart"
     assert chart["spec"]["title"] == "차트"
     assert chart["caption"] == "설명"
+
+
+def test_render_json_rejects_opaque_object_repr_fallback():
+    from dartlab.story.blocks import ChartBlock
+    from dartlab.story.formats import renderJson
+
+    section = _FakeSection(blocks=[ChartBlock(spec={"opaque": object()})])
+    story = _FakeReview(sections=[section])
+
+    with pytest.raises(TypeError, match="cannot encode"):
+        renderJson(story)

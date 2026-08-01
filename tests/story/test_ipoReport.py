@@ -76,6 +76,9 @@ def test_render_never_raises_on_empty():
     assert r["title"] == "빈회사 공모분석"
     assert isinstance(r["markdown"], str) and "빈회사 공모분석" in r["markdown"]
     assert r["summary"]["priceBand"] is None and r["summary"]["identities"] == {}
+    assert "위험 섹션: -" in r["markdown"]
+    assert "위험 섹션: 0개" not in r["markdown"]
+    assert "관계식 검증이 완료된 항목만" in r["markdown"]
 
 
 def test_render_summary_typed_values():

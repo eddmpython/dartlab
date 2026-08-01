@@ -38,9 +38,9 @@ _SEMI = SectorElasticity(1.8, 0.8, 50, 0, "high")
 # computeInputsHash — determinism + normalization
 # ──────────────────────────────────────────────────────────────────────
 @pytest.mark.unit
-def test_inputsHash_is_16_hex() -> None:
+def test_inputsHash_is_64_hex() -> None:
     h = computeInputsHash((), "macro.path", {"gdp": [1.5, 2.0, 2.2]})
-    assert len(h) == 16
+    assert len(h) == 64
     assert all(c in "0123456789abcdef" for c in h)
 
 
@@ -75,6 +75,25 @@ def test_inputsHash_sensitive_to_fn_and_inputs() -> None:
     base = computeInputsHash((), "fnA", {"x": 1.0})
     assert base != computeInputsHash((), "fnB", {"x": 1.0})
     assert base != computeInputsHash((), "fnA", {"x": 2.0})
+
+
+@pytest.mark.parametrize(
+    ("left", "right"),
+    [
+        (["a,b", "c"], ["a", "b,c"]),
+        ({"a:b": "c"}, {"a": "b:c"}),
+        (None, "None"),
+        ([1, 2], (1, 2)),
+        (True, 1),
+    ],
+)
+def test_inputsHash_preserves_types_and_container_boundaries(left, right) -> None:
+    assert computeInputsHash((), "fn", left) != computeInputsHash((), "fn", right)
+
+
+def test_inputsHash_rejects_unstable_object_fallback() -> None:
+    with pytest.raises(TypeError, match="cannot encode"):
+        computeInputsHash((), "fn", object())
 
 
 # ──────────────────────────────────────────────────────────────────────

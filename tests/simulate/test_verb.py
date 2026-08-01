@@ -44,6 +44,21 @@ def test_company_simulate_method_exists() -> None:
 
 
 @pytest.mark.unit
+def test_company_simulate_rejects_invalid_scenario_before_lens_fanout(monkeypatch) -> None:
+    from types import SimpleNamespace
+
+    from dartlab.providers.dart.company import Company
+
+    def unexpectedFanout(*args, **kwargs):
+        raise AssertionError("lens fanout ran before scenario validation")
+
+    monkeypatch.setattr("dartlab.story.lensProducts.collectLensProducts", unexpectedFanout)
+
+    with pytest.raises(ValueError, match="scenario"):
+        Company.simulate(SimpleNamespace(), scenario="unknown", horizon=3)
+
+
+@pytest.mark.unit
 def test_simulate_guards_non_kr(monkeypatch: pytest.MonkeyPatch) -> None:
     """KR 외 시장(US → EDGAR)은 매크로 프리셋 부재로 ValueError (네트워크 없이 fake company)."""
     import dartlab

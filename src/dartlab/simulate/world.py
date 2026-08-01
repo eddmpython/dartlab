@@ -35,16 +35,21 @@ from dartlab.simulate.vintage import (
     worldStatePayloadHash,
 )
 from dartlab.simulate.worldContracts import (
+    ACTION_EVIDENCE_RECEIPT_KIND,
+    LAW_EVIDENCE_RECEIPT_KIND,
     _lawCertificatePayload,
     _lawContractPayload,
     _pathSetContentHash,
     _pathSetPayload,
     _validateLawCertificate,
+    actionEvidenceAdmissionArtifact,
+    bindActionEvidenceReceipt,
     bindAdmittedPathContent,
     bindPathAdmissionReceipt,
     constraintContractHash,
     dataVintageHashFor,
     issueLawCertificate,
+    lawEvidenceAdmissionArtifact,
     objectiveContractHash,
     pathSetAdmissionArtifact,
     pathSetAdmissionSubjectHash,
@@ -117,17 +122,17 @@ if TYPE_CHECKING:
 
 
 def executableHashFor(model: WorldModel, strategies: tuple[StrategySpec, ...]) -> str:
-    """Return the executable hash used by policy admission and runtime.
+    """Return the complete executable contract hash used by policy admission and runtime.
 
     Args:
         model: Compiled variable, action, and transition-law contract.
         strategies: Static schedules or versioned closed-loop policies.
 
     Returns:
-        SHA-256 digest of law and policy executable identities.
+        SHA-256 digest of variables, actions, laws, strategies, and their executable state.
 
     Raises:
-        SimulationSpecError: Raised later by model construction for malformed inputs.
+        SimulationSpecError: Callable state is cyclic or lacks a deterministic encoding.
 
     Example:
         ``digest = executableHashFor(model, strategies)``
@@ -135,14 +140,17 @@ def executableHashFor(model: WorldModel, strategies: tuple[StrategySpec, ...]) -
 
     return _stableHash(
         {
-            "modelId": model.modelId,
-            "modelVersion": model.version,
-            "laws": tuple((law.lawId, law.version, law.fn) for law in model.laws),
-            "policies": tuple(
-                (strategy.strategyId, strategy.policyVersion, strategy.policyFn)
-                for strategy in strategies
-                if strategy.policyFn is not None
-            ),
+            "protocol": "world-executable-v2",
+            "model": {
+                "modelId": model.modelId,
+                "modelVersion": model.version,
+                "stepFrequency": model.stepFrequency,
+                "stepSpan": model.stepSpan,
+                "variables": model.variables,
+                "actions": model.actions,
+                "laws": model.laws,
+            },
+            "strategies": tuple(strategies),
         }
     )
 
@@ -195,6 +203,8 @@ def _verifyCurrentStateAdmission(
         expectedSubjectHash=initialSubjectHash,
         expectedKind="initialState",
     )
+    initialIssuedAt = _comparableDate(initialReceipt.issuedAt)
+    pointInTimeIssuedAt = _comparableDate(pointInTimeReceipt.issuedAt)
     if (
         initialReceipt.status != "admitted"
         or initialReceipt.artifactHash != initialSubjectHash
@@ -204,8 +214,10 @@ def _verifyCurrentStateAdmission(
         or initial.vintage.artifactHash != initial.stateManifestHash
         or initial.vintage.contractHash != initial.stateCompilationContractHash
         or pointInTimeReceipt.knowledgeAsOf != initial.knowledgeAsOf
-        or _comparableDate(initialReceipt.issuedAt) > decisionAsOf
-        or _comparableDate(pointInTimeReceipt.issuedAt) > decisionAsOf
+        or initialIssuedAt is None
+        or pointInTimeIssuedAt is None
+        or initialIssuedAt > decisionAsOf
+        or pointInTimeIssuedAt > decisionAsOf
         or artifactPath(admissionVerifier.artifactRoot, initialSubjectHash).read_bytes() != initialArtifact
     ):
         raise SimulationSpecError("current initial-state admission lineage mismatch")
@@ -570,7 +582,18 @@ def simulateWorld(
     )
     dataVintageHash = dataVintageHashFor(initial, paths)
     traceRoot = _stableHash({"traceCount": traceCount, "traceChain": traceChainDigest})
-    status = "partial" if issues.unqualifiedLaws else "ok"
+    hasQualificationGap = any(
+        (
+            issues.unqualifiedLaws,
+            issues.assumedLaws,
+            issues.assumedActions,
+            issues.assumedActionLaws,
+            issues.pathAdmissionIssues,
+            issues.parameterProvenanceIssues,
+            policyAdmissionIssues,
+        )
+    )
+    status = "partial" if hasQualificationGap else "ok"
     resultPayload = {
         "status": status,
         "decisionStatus": decisionStatus,

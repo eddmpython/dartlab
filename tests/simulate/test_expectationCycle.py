@@ -13,6 +13,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+import pytest
+
 from dartlab.simulate.expectationCycle import buildScorecard, issueMacro, scoreDue
 
 
@@ -200,6 +202,15 @@ def test_issue_earnings_cascade_and_lineage(tmp_path):
     assert rows2 == []
 
 
+def test_backfill_rejects_live_company_reads_without_pit_inputs(tmp_path):
+    from dartlab.simulate.expectationCycle import issueEarnings, issueRevenue
+
+    with pytest.raises(ValueError, match="PIT-sealed"):
+        issueRevenue(["005930"], live=False, baseDir=tmp_path)
+    with pytest.raises(ValueError, match="PIT-sealed"):
+        issueEarnings(["005930"], live=False, baseDir=tmp_path)
+
+
 def test_issue_earnings_seals_structured_proforma(tmp_path):
     from dartlab.simulate.expectationCycle import _PF_ACCOUNTS, issueEarnings
     from dartlab.simulate.expectationLedger import readProforma
@@ -220,6 +231,9 @@ def test_issue_earnings_seals_structured_proforma(tmp_path):
     row = pf.row(0, named=True)
     assert row["parentId"].startswith("revenue.005930.revenue.")
     assert set(pf.get_column("statement").unique().to_list()) == {"IS", "BS", "CF"}
+    absent = pf.filter(~pf.get_column("account").is_in(["operating_income", "net_income"]))
+    assert absent.get_column("value").null_count() == absent.height
+    assert pf.get_column("bsBalanced").null_count() == pf.height
     # 자체 존재키 idempotency: 재실행해도 계정 행 불변
     issueEarnings(
         ["005930"],

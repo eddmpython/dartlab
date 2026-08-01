@@ -85,3 +85,19 @@ def testProjectionAndQueryLiteralContractsFailClosed():
         ResourceProjection(includePayload="false")
     with pytest.raises(ValueError, match="lineage"):
         DataQuery(lineage="everything")
+
+
+@pytest.mark.parametrize(
+    "params",
+    (
+        {"company": object()},
+        {"score": float("nan")},
+        {"score": float("inf")},
+        {1: "non-string-key"},
+    ),
+)
+def testQueryIdentityParamsRejectNonJsonOrNonFiniteValues(params):
+    with pytest.raises((TypeError, ValueError), match="params"):
+        DataQuery(params=params)
+    with pytest.raises((TypeError, ValueError), match="params"):
+        DataRequest("scan.ratio", params=params)

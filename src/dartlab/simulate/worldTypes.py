@@ -14,8 +14,9 @@ import json
 import marshal
 import math
 from dataclasses import dataclass, field, fields
+from enum import Enum
 from hashlib import sha256
-from types import MappingProxyType
+from types import MappingProxyType, ModuleType
 from typing import Callable, Mapping
 
 from dartlab.simulate.parameterDraws import ParameterDrawSetReceipt
@@ -30,7 +31,7 @@ EVIDENCE_SET = {
 }
 WEIGHT_KIND_SET = {"unweighted", "empirical", "resampled", "calibrated", "subjective"}
 PATH_VALIDATION_SET = {"unvalidated", "retrospectiveOnly", "admitted", "rejected"}
-LAW_CERTIFICATE_STATUS_SET = {"retrospectiveOnly", "admitted", "rejected"}
+LAW_CERTIFICATE_STATUS_SET = {"documented", "retrospectiveOnly", "admitted", "rejected"}
 
 
 class SimulationSpecError(ValueError):
@@ -133,6 +134,7 @@ class LawCertificate:
     maxAdmittedStep: int
     status: str
     rules: str
+    evidenceReceiptId: str = ""
 
 
 def _noOpLaw(_state) -> dict:
@@ -373,58 +375,227 @@ def _comparableDate(value: str) -> str | None:
     return text if len(text) == 8 and text.isdigit() else None
 
 
+def _typeName(value: object) -> str:
+    """Return a stable qualified type name without using an object's repr."""
+
+    return f"{type(value).__module__}.{type(value).__qualname__}"
+
+
+def _callableName(value: object) -> str:
+    """Return a stable callable identity for functions, methods, and builtins."""
+
+    return f"{getattr(value, '__module__', '')}.{getattr(value, '__qualname__', type(value).__qualname__)}"
+
+
+def _canonicalSortKey(value: object) -> str:
+    """Serialize an already canonical value for deterministic mapping/set ordering."""
+
+    return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False)
+
+
 def _canonical(value):
-    if value is _noOpLaw:
-        # 기본 법칙은 소스 위치와 무관한 고정 표식으로 봉인한다. 코드 객체를 해싱하면
-        # 파일을 옮기거나 줄만 밀려도 재현성 해시가 달라진다.
-        return {"callable": "dartlab.simulate.worldTypes._noOpLaw", "codeHash": "noOpLaw"}
-    if callable(value):
-        code = getattr(value, "__code__", None)
-        closure = getattr(value, "__closure__", None) or ()
-        closureNames = tuple(getattr(code, "co_freevars", ()))
-        captured = {name: _canonical(cell.cell_contents) for name, cell in zip(closureNames, closure, strict=True)}
-        referencedGlobals = {}
-        globalScope = getattr(value, "__globals__", {})
-        for name in sorted(set(getattr(code, "co_names", ()))):
-            if name not in globalScope:
-                continue
-            item = globalScope[name]
-            if isinstance(item, (str, int, float, bool, bytes, tuple, list, dict)) or item is None:
-                referencedGlobals[name] = _canonical(item)
-            elif callable(item) and item is not value:
-                itemCode = getattr(item, "__code__", None)
-                referencedGlobals[name] = {
-                    "callable": f"{getattr(item, '__module__', '')}.{getattr(item, '__qualname__', '')}",
-                    "codeHash": sha256(marshal.dumps(itemCode)).hexdigest() if itemCode is not None else "",
-                }
-            else:
-                referencedGlobals[name] = {"objectType": f"{type(item).__module__}.{type(item).__qualname__}"}
-        return {
-            "callable": f"{getattr(value, '__module__', '')}.{getattr(value, '__qualname__', '')}",
-            "codeHash": sha256(marshal.dumps(code)).hexdigest() if code is not None else "",
-            "defaults": _canonical(getattr(value, "__defaults__", None)),
-            "kwdefaults": _canonical(getattr(value, "__kwdefaults__", None)),
-            "closure": captured,
-            "referencedGlobals": referencedGlobals,
-        }
-    if hasattr(value, "__dataclass_fields__"):
-        return {item.name: _canonical(getattr(value, item.name)) for item in fields(value)}
-    if isinstance(value, Mapping):
-        return {str(k): _canonical(v) for k, v in sorted(value.items(), key=lambda item: str(item[0]))}
-    if isinstance(value, (tuple, list)):
-        return [_canonical(v) for v in value]
+    """Return the schema-preserving JSON form used by signed admission artifacts.
+
+    Admission artifacts expose domain field names such as ``paths`` and therefore cannot use the
+    tagged envelope used internally by ``_stableHash``. Callable and opaque-object values still
+    use the strict tagged encoder because they have no plain JSON representation.
+    """
+
+    return _artifactCanonicalValue(value, active=set())
+
+
+def _artifactCanonicalValue(value, *, active: set[int]):
+    if isinstance(value, Enum):
+        return _artifactCanonicalValue(value.value, active=active)
     if isinstance(value, (str, int, float, bool)) or value is None:
         return value
     if isinstance(value, bytes):
         return {"bytesHash": sha256(value).hexdigest()}
-    if hasattr(value, "__dict__"):
+    if callable(value):
+        return _canonicalValue(value, active=active)
+
+    marker = id(value)
+    if marker in active:
+        raise SimulationSpecError(f"cyclic canonical value: {_typeName(value)}")
+    active.add(marker)
+    try:
+        if hasattr(value, "__dataclass_fields__"):
+            return {
+                item.name: _artifactCanonicalValue(getattr(value, item.name), active=active)
+                for item in fields(value)
+                if item.metadata.get("canonical", True)
+            }
+        if isinstance(value, Mapping):
+            if any(not isinstance(key, str) for key in value):
+                raise SimulationSpecError("canonical artifact mapping keys must be strings")
+            return {key: _artifactCanonicalValue(value[key], active=active) for key in sorted(value)}
+        if isinstance(value, (tuple, list)):
+            return [_artifactCanonicalValue(item, active=active) for item in value]
+        if isinstance(value, (set, frozenset)):
+            items = [_artifactCanonicalValue(item, active=active) for item in value]
+            items.sort(key=_canonicalSortKey)
+            return items
+        if hasattr(value, "__dict__"):
+            return {
+                "objectType": _typeName(value),
+                "state": _artifactCanonicalValue(vars(value), active=active),
+            }
+        raise SimulationSpecError(f"canonical state is unsupported: {_typeName(value)}")
+    finally:
+        active.remove(marker)
+
+
+def _canonicalValue(value, *, active: set[int]):  # noqa: C901 - canonical type dispatch is intentionally centralized.
+    """Encode a value with explicit type tags for deterministic contract hashing.
+
+    Mutable containers and custom object state are traversed rather than reduced to a type name.
+    Cycles in data state and objects with no stable serializable state fail closed. Recursive
+    callable references use an explicit qualified-name marker because function recursion is a
+    legitimate executable shape.
+    """
+    if value is None:
+        return {"type": "none"}
+    if isinstance(value, Enum):
         return {
-            "objectType": f"{type(value).__module__}.{type(value).__qualname__}",
-            "state": _canonical(vars(value)),
+            "type": "enum",
+            "enumType": _typeName(value),
+            "name": value.name,
+            "value": _canonicalValue(value.value, active=active),
         }
-    return {"objectType": f"{type(value).__module__}.{type(value).__qualname__}"}
+    if isinstance(value, bool):
+        return {"type": "bool", "value": value}
+    if isinstance(value, int):
+        return {"type": "int", "value": str(value)}
+    if isinstance(value, float):
+        if math.isnan(value):
+            encoded = "nan"
+        elif math.isinf(value):
+            encoded = "inf" if value > 0 else "-inf"
+        else:
+            encoded = value.hex()
+        return {"type": "float", "value": encoded}
+    if isinstance(value, str):
+        return {"type": "str", "value": value}
+    if isinstance(value, bytes):
+        return {"type": "bytes", "sha256": sha256(value).hexdigest(), "length": len(value)}
+    if isinstance(value, ModuleType):
+        version = getattr(value, "__version__", None)
+        return {
+            "type": "module",
+            "name": str(getattr(value, "__name__", "")),
+            "version": _canonicalValue(version, active=active),
+        }
+    if isinstance(value, type):
+        return {"type": "class", "name": f"{value.__module__}.{value.__qualname__}"}
+
+    marker = id(value)
+    if callable(value):
+        if marker in active:
+            return {"type": "callableReference", "name": _callableName(value)}
+        active.add(marker)
+        try:
+            if value is _noOpLaw:
+                # 기본 법칙은 소스 위치와 무관한 고정 표식으로 봉인한다. 코드 객체를 해싱하면
+                # 파일을 옮기거나 줄만 밀려도 재현성 해시가 달라진다.
+                return {
+                    "type": "callable",
+                    "name": "dartlab.simulate.worldTypes._noOpLaw",
+                    "codeHash": "noOpLaw",
+                }
+            code = getattr(value, "__code__", None)
+            closure = getattr(value, "__closure__", None) or ()
+            closureNames = tuple(getattr(code, "co_freevars", ()))
+            captured = []
+            for name, cell in zip(closureNames, closure, strict=True):
+                try:
+                    item = cell.cell_contents
+                except ValueError as error:
+                    raise SimulationSpecError(
+                        f"callable closure cell is empty: {_callableName(value)}.{name}"
+                    ) from error
+                captured.append({"name": name, "value": _canonicalValue(item, active=active)})
+            referencedGlobals = []
+            globalScope = getattr(value, "__globals__", {})
+            for name in sorted(set(getattr(code, "co_names", ()))):
+                if name not in globalScope:
+                    continue
+                referencedGlobals.append({"name": name, "value": _canonicalValue(globalScope[name], active=active)})
+            boundSelf = getattr(value, "__self__", None)
+            callableState = vars(value) if hasattr(value, "__dict__") else {}
+            return {
+                "type": "callable",
+                "name": _callableName(value),
+                "callableType": _typeName(value),
+                "codeHash": sha256(marshal.dumps(code)).hexdigest() if code is not None else "",
+                "defaults": _canonicalValue(getattr(value, "__defaults__", None), active=active),
+                "kwdefaults": _canonicalValue(getattr(value, "__kwdefaults__", None), active=active),
+                "closure": captured,
+                "referencedGlobals": referencedGlobals,
+                "boundSelf": _canonicalValue(boundSelf, active=active),
+                "state": _canonicalValue(callableState, active=active),
+            }
+        finally:
+            active.remove(marker)
+
+    if marker in active:
+        raise SimulationSpecError(f"cyclic canonical value: {_typeName(value)}")
+    active.add(marker)
+    try:
+        if hasattr(value, "__dataclass_fields__"):
+            return {
+                "type": "dataclass",
+                "class": _typeName(value),
+                "fields": [
+                    {"name": item.name, "value": _canonicalValue(getattr(value, item.name), active=active)}
+                    for item in fields(value)
+                    if item.metadata.get("canonical", True)
+                ],
+            }
+        if isinstance(value, Mapping):
+            items = [
+                {
+                    "key": _canonicalValue(key, active=active),
+                    "value": _canonicalValue(item, active=active),
+                }
+                for key, item in value.items()
+            ]
+            items.sort(key=_canonicalSortKey)
+            return {"type": "mapping", "items": items}
+        if isinstance(value, tuple):
+            return {"type": "tuple", "items": [_canonicalValue(item, active=active) for item in value]}
+        if isinstance(value, list):
+            return {"type": "list", "items": [_canonicalValue(item, active=active) for item in value]}
+        if isinstance(value, (set, frozenset)):
+            items = [_canonicalValue(item, active=active) for item in value]
+            items.sort(key=_canonicalSortKey)
+            return {"type": "frozenset" if isinstance(value, frozenset) else "set", "items": items}
+        if hasattr(value, "__dict__"):
+            return {
+                "type": "object",
+                "class": _typeName(value),
+                "state": _canonicalValue(vars(value), active=active),
+            }
+        slots = getattr(type(value), "__slots__", ())
+        if isinstance(slots, str):
+            slots = (slots,)
+        if slots:
+            state = {name: getattr(value, name) for name in slots if hasattr(value, name)}
+            return {
+                "type": "slottedObject",
+                "class": _typeName(value),
+                "state": _canonicalValue(state, active=active),
+            }
+        raise SimulationSpecError(f"canonical state is unsupported: {_typeName(value)}")
+    finally:
+        active.remove(marker)
 
 
 def _stableHash(payload: Mapping) -> str:
-    raw = json.dumps(_canonical(payload), ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    raw = json.dumps(
+        _canonicalValue(payload, active=set()),
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+        allow_nan=False,
+    )
     return sha256(raw.encode("utf-8")).hexdigest()

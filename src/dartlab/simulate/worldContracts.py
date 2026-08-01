@@ -14,8 +14,14 @@ from dataclasses import replace
 from hashlib import sha256
 from typing import Mapping
 
+from dartlab.simulate.admissionRegistry import (
+    AdmissionRegistryError,
+    AdmissionVerifier,
+    artifactPath,
+)
 from dartlab.simulate.worldTypes import (
     LAW_CERTIFICATE_STATUS_SET,
+    ActionSpec,
     ConstraintSpec,
     LawCertificate,
     LawSpec,
@@ -30,6 +36,15 @@ from dartlab.simulate.worldTypes import (
     _stableHash,
     _validDigest,
 )
+
+LAW_EVIDENCE_RECEIPT_KIND = "lawEvidence"
+ACTION_EVIDENCE_RECEIPT_KIND = "actionEvidence"
+_EVIDENCE_SOURCE_RECEIPT_KINDS = {
+    "dataVintage",
+    "providerObservationBatch",
+    "pointInTimeState",
+    "initialState",
+}
 
 
 def strategyContractHash(strategy: StrategySpec) -> str:
@@ -256,6 +271,151 @@ def bindPathAdmissionReceipt(paths: tuple[ScenarioPath, ...], receiptId: str) ->
     return tuple(replace(path, admissionReceiptId=receiptId) for path in paths)
 
 
+def _admissionArtifactBytes(payload: Mapping[str, object]) -> bytes:
+    return json.dumps(
+        _canonical(payload),
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+
+
+def _receiptArtifactPayload(admissionVerifier: AdmissionVerifier, artifactHash: str) -> dict:
+    try:
+        payload = json.loads(artifactPath(admissionVerifier.artifactRoot, artifactHash).read_text(encoding="utf-8"))
+    except (OSError, TypeError, UnicodeError, json.JSONDecodeError, AdmissionRegistryError) as error:
+        raise SimulationSpecError("evidence admission artifact is malformed") from error
+    if not isinstance(payload, dict):
+        raise SimulationSpecError("evidence admission artifact is malformed")
+    return payload
+
+
+def _verifyEvidenceSources(receipt, admissionVerifier: AdmissionVerifier) -> None:
+    if not receipt.parentReceiptIds:
+        raise SimulationSpecError("evidence admission needs source receipts")
+    cutoff = _comparableDate(receipt.knowledgeAsOf)
+    if cutoff is None:
+        raise SimulationSpecError("evidence admission knowledge cutoff is invalid")
+    try:
+        parents = tuple(admissionVerifier.verify(receiptId) for receiptId in receipt.parentReceiptIds)
+    except AdmissionRegistryError as error:
+        raise SimulationSpecError("evidence source receipt verification failed") from error
+    if any(parent.status not in {"verifiedVintage", "admitted", "policyAdmitted"} for parent in parents):
+        raise SimulationSpecError("evidence source receipt is not admitted")
+    sources = tuple(parent for parent in parents if parent.kind in _EVIDENCE_SOURCE_RECEIPT_KINDS)
+    if not sources:
+        raise SimulationSpecError("evidence admission needs a typed source receipt")
+    sourceCutoffs = tuple(_comparableDate(source.knowledgeAsOf) for source in sources)
+    if any(sourceCutoff is None or sourceCutoff > cutoff for sourceCutoff in sourceCutoffs):
+        raise SimulationSpecError("evidence source is newer than its knowledge cutoff")
+
+
+def _actionEvidencePayload(
+    action: ActionSpec,
+    *,
+    knowledgeAsOf: str,
+    frequency: str,
+    stepSpan: int,
+    maxAdmittedStep: int,
+) -> dict:
+    return {
+        "protocol": "action-evidence-v1",
+        "action": {
+            "actionId": action.actionId,
+            "unit": action.unit,
+            "lower": action.lower,
+            "upper": action.upper,
+            "leadSteps": action.leadSteps,
+            "costPerUnit": action.costPerUnit,
+            "effectEvidence": action.effectEvidence,
+            "provenance": action.provenance,
+        },
+        "knowledgeAsOf": knowledgeAsOf,
+        "frequency": frequency,
+        "stepSpan": stepSpan,
+        "maxAdmittedStep": maxAdmittedStep,
+    }
+
+
+def actionEvidenceAdmissionArtifact(
+    action: ActionSpec,
+    *,
+    knowledgeAsOf: str,
+    frequency: str,
+    stepSpan: int = 1,
+    maxAdmittedStep: int,
+) -> bytes:
+    """Return the exact artifact a typed identified-action receipt must sign."""
+
+    cutoff = _comparableDate(knowledgeAsOf)
+    if (
+        action.effectEvidence != "identifiedIntervention"
+        or action.certificateId
+        or cutoff is None
+        or not frequency
+        or stepSpan < 1
+        or maxAdmittedStep < 1
+    ):
+        raise SimulationSpecError("identified action evidence artifact contract is invalid")
+    return _admissionArtifactBytes(
+        _actionEvidencePayload(
+            action,
+            knowledgeAsOf=cutoff,
+            frequency=frequency,
+            stepSpan=stepSpan,
+            maxAdmittedStep=maxAdmittedStep,
+        )
+    )
+
+
+def bindActionEvidenceReceipt(
+    action: ActionSpec,
+    receiptId: str,
+    admissionVerifier: AdmissionVerifier,
+) -> ActionSpec:
+    """Bind an identified action only after verifying its typed signed receipt and sources."""
+
+    if action.effectEvidence != "identifiedIntervention" or action.certificateId or not _validDigest(receiptId):
+        raise SimulationSpecError("identified action receipt binding is invalid")
+    try:
+        receipt = admissionVerifier.verify(receiptId, expectedKind=ACTION_EVIDENCE_RECEIPT_KIND)
+    except AdmissionRegistryError as error:
+        raise SimulationSpecError("identified action receipt verification failed") from error
+    if receipt.status != "admitted" or receipt.artifactHash != receipt.subjectHash:
+        raise SimulationSpecError("identified action receipt is not admitted")
+    _verifyEvidenceSources(receipt, admissionVerifier)
+    expected = _actionEvidencePayload(
+        action,
+        knowledgeAsOf=receipt.knowledgeAsOf,
+        frequency=receipt.frequency,
+        stepSpan=receipt.stepSpan,
+        maxAdmittedStep=receipt.maxAdmittedStep,
+    )
+    if _receiptArtifactPayload(admissionVerifier, receipt.artifactHash) != _canonical(expected):
+        raise SimulationSpecError("identified action receipt contract mismatch")
+    return replace(action, certificateId=receipt.receiptId)
+
+
+def _validateActionEvidenceReceipt(
+    action: ActionSpec,
+    admissionVerifier: AdmissionVerifier,
+    *,
+    frequency: str,
+    stepSpan: int,
+):
+    unbound = replace(action, certificateId="")
+    rebound = bindActionEvidenceReceipt(unbound, action.certificateId, admissionVerifier)
+    try:
+        receipt = admissionVerifier.verify(action.certificateId, expectedKind=ACTION_EVIDENCE_RECEIPT_KIND)
+    except AdmissionRegistryError as error:
+        raise SimulationSpecError("identified action receipt verification failed") from error
+    if receipt.frequency != frequency or receipt.stepSpan != stepSpan or receipt.maxAdmittedStep < 1:
+        raise SimulationSpecError(f"action evidence step contract mismatch: {action.actionId}")
+    if rebound != action:
+        raise SimulationSpecError(f"action evidence binding mismatch: {action.actionId}")
+    return receipt
+
+
 def _lawContractPayload(law: LawSpec) -> dict:
     return {
         "outputs": law.outputs,
@@ -285,6 +445,7 @@ def _lawCertificatePayload(certificate: LawCertificate) -> dict:
         "maxAdmittedStep": certificate.maxAdmittedStep,
         "status": certificate.status,
         "rules": certificate.rules,
+        "evidenceReceiptId": certificate.evidenceReceiptId,
     }
 
 
@@ -296,12 +457,21 @@ def _normalizeEvidenceRows(evidenceRows: tuple[Mapping[str, object], ...]) -> li
     for row in evidenceRows:
         if not required.issubset(row):
             raise SimulationSpecError("law evidence row is incomplete")
-        step = int(row["step"])
+        rawStep = row["step"]
+        rawEstimate = row["estimate"]
+        rawThreshold = row["threshold"]
+        if isinstance(rawStep, bool) or not isinstance(rawStep, (int, str)):
+            raise SimulationSpecError("law evidence row step is invalid")
+        if isinstance(rawEstimate, bool) or not isinstance(rawEstimate, (int, float, str)):
+            raise SimulationSpecError("law evidence row estimate is invalid")
+        if isinstance(rawThreshold, bool) or not isinstance(rawThreshold, (int, float, str)):
+            raise SimulationSpecError("law evidence row threshold is invalid")
+        step = int(rawStep)
         operator = str(row["operator"])
         if step < 1 or not str(row["metric"]) or operator not in {"gt", "ge", "lt", "le"}:
             raise SimulationSpecError("law evidence row is invalid")
-        estimate = float(row["estimate"])
-        threshold = float(row["threshold"])
+        estimate = float(rawEstimate)
+        threshold = float(rawThreshold)
         if not math.isfinite(estimate) or not math.isfinite(threshold):
             raise SimulationSpecError("law evidence row is not finite")
         passed = {
@@ -337,6 +507,115 @@ def _admittedEvidenceHorizon(normalized: list[dict]) -> int:
     return maxAdmittedStep
 
 
+def _lawEvidencePayload(
+    law: LawSpec,
+    normalized: list[dict],
+    *,
+    knowledgeAsOf: str,
+    historyStatus: str,
+    frequency: str,
+    stepSpan: int,
+    rules: str,
+) -> dict:
+    return {
+        "protocol": "law-evidence-v1",
+        "lawId": law.lawId,
+        "lawVersion": law.version,
+        "evidenceKind": law.evidenceKind,
+        "contractHash": _stableHash(_lawContractPayload(law)),
+        "parameterHash": _stableHash({"parameters": law.parameters}),
+        "executableHash": _stableHash({"fn": law.fn}),
+        "rows": normalized,
+        "knowledgeAsOf": knowledgeAsOf,
+        "historyStatus": historyStatus,
+        "frequency": frequency,
+        "stepSpan": stepSpan,
+        "maxAdmittedStep": _admittedEvidenceHorizon(normalized),
+        "rules": rules,
+    }
+
+
+def lawEvidenceAdmissionArtifact(
+    law: LawSpec,
+    *,
+    evidenceRows: tuple[Mapping[str, object], ...],
+    knowledgeAsOf: str,
+    historyStatus: str,
+    frequency: str,
+    stepSpan: int = 1,
+    rules: str,
+) -> bytes:
+    """Return the exact artifact a typed transition-law evidence receipt must sign."""
+
+    if law.evidenceKind not in {"measuredAssociation", "identifiedIntervention"}:
+        raise SimulationSpecError("only measured or identified laws can have evidence artifacts")
+    cutoff = _comparableDate(knowledgeAsOf)
+    if cutoff is None or not rules or not frequency or stepSpan < 1:
+        raise SimulationSpecError("law evidence artifact contract is invalid")
+    normalized = _normalizeEvidenceRows(evidenceRows)
+    return _admissionArtifactBytes(
+        _lawEvidencePayload(
+            law,
+            normalized,
+            knowledgeAsOf=cutoff,
+            historyStatus=historyStatus,
+            frequency=frequency,
+            stepSpan=stepSpan,
+            rules=rules,
+        )
+    )
+
+
+def _verifyLawEvidenceReceipt(
+    law: LawSpec,
+    certificate: LawCertificate,
+    admissionVerifier: AdmissionVerifier,
+) -> None:
+    try:
+        receipt = admissionVerifier.verify(
+            certificate.evidenceReceiptId,
+            expectedKind=LAW_EVIDENCE_RECEIPT_KIND,
+        )
+    except AdmissionRegistryError as error:
+        raise SimulationSpecError(f"law evidence receipt verification failed: {law.lawId}") from error
+    if receipt.artifactHash != receipt.subjectHash:
+        raise SimulationSpecError(f"law evidence receipt artifact mismatch: {law.lawId}")
+    _verifyEvidenceSources(receipt, admissionVerifier)
+    payload = _receiptArtifactPayload(admissionVerifier, receipt.artifactHash)
+    rows = payload.get("rows")
+    if not isinstance(rows, list) or any(not isinstance(row, Mapping) for row in rows):
+        raise SimulationSpecError(f"law evidence rows are malformed: {law.lawId}")
+    normalized = _normalizeEvidenceRows(tuple(rows))
+    expectedPayload = _lawEvidencePayload(
+        law,
+        normalized,
+        knowledgeAsOf=certificate.knowledgeAsOf,
+        historyStatus=certificate.historyStatus,
+        frequency=certificate.frequency,
+        stepSpan=certificate.stepSpan,
+        rules=certificate.rules,
+    )
+    if payload != _canonical(expectedPayload):
+        raise SimulationSpecError(f"law evidence receipt contract mismatch: {law.lawId}")
+    expectedStatus = (
+        "rejected"
+        if certificate.maxAdmittedStep < 1
+        else "admitted"
+        if certificate.historyStatus == "asKnown"
+        else "retrospectiveOnly"
+    )
+    if (
+        receipt.status != expectedStatus
+        or certificate.status != expectedStatus
+        or receipt.knowledgeAsOf != certificate.knowledgeAsOf
+        or receipt.frequency != certificate.frequency
+        or receipt.stepSpan != certificate.stepSpan
+        or receipt.maxAdmittedStep != certificate.maxAdmittedStep
+        or certificate.evidenceHash != _stableHash({"rows": normalized})
+    ):
+        raise SimulationSpecError(f"law evidence receipt binding mismatch: {law.lawId}")
+
+
 def issueLawCertificate(
     law: LawSpec,
     *,
@@ -346,8 +625,10 @@ def issueLawCertificate(
     frequency: str,
     stepSpan: int = 1,
     rules: str,
+    evidenceReceiptId: str = "",
+    admissionVerifier: AdmissionVerifier | None = None,
 ) -> LawCertificate:
-    """검증 행의 연속 통과 지평을 계산하고 법칙 실행물 전체에 바인딩한다.
+    """검증 행의 연속 통과 지평과 typed evidence receipt를 법칙 실행물에 바인딩한다.
 
     Args:
         law: 인증할 transition law 명세.
@@ -357,9 +638,12 @@ def issueLawCertificate(
         frequency: 법칙과 증거의 시간 격자.
         stepSpan: 한 step이 차지하는 격자 길이.
         rules: 인증 규칙 설명 또는 식별자.
+        evidenceReceiptId: Exact signed ``lawEvidence`` receipt identifier.
+        admissionVerifier: Trust-anchor-backed verifier for the receipt and source lineage.
 
     Returns:
-        법칙 실행물, 파라미터, 증거, 지평을 묶은 인증서.
+        법칙 실행물, 파라미터, 증거, receipt, 지평을 묶은 인증서. Raw rows without a
+        verified receipt remain ``documented`` and cannot admit an active empirical law.
 
     Raises:
         SimulationSpecError: 법칙 종류, cutoff, 증거 행, 지평 계약이 유효하지 않은 경우.
@@ -377,6 +661,8 @@ def issueLawCertificate(
     maxAdmittedStep = _admittedEvidenceHorizon(normalized)
     if maxAdmittedStep < 1:
         status = "rejected"
+    elif not evidenceReceiptId:
+        status = "documented"
     elif historyStatus == "asKnown":
         status = "admitted"
     else:
@@ -397,14 +683,22 @@ def issueLawCertificate(
         maxAdmittedStep=maxAdmittedStep,
         status=status,
         rules=rules,
+        evidenceReceiptId=evidenceReceiptId,
     )
+    if evidenceReceiptId:
+        if admissionVerifier is None:
+            raise SimulationSpecError("law evidence receipt needs an admission verifier")
+        _verifyLawEvidenceReceipt(law, provisional, admissionVerifier)
     return LawCertificate(
         certificateId=_stableHash(_lawCertificatePayload(provisional)),
         **{name: getattr(provisional, name) for name in provisional.__dataclass_fields__ if name != "certificateId"},
     )
 
 
-def _validateLawCertificate(law: LawSpec) -> None:
+def _validateLawCertificate(
+    law: LawSpec,
+    admissionVerifier: AdmissionVerifier | None = None,
+) -> None:
     certificate = law.certificate
     if certificate is None:
         raise SimulationSpecError(f"empirical law needs a certificate: {law.lawId}")
@@ -423,10 +717,13 @@ def _validateLawCertificate(law: LawSpec) -> None:
     }
     if any(getattr(certificate, name) != value for name, value in expected.items()):
         raise SimulationSpecError(f"law certificate binding mismatch: {law.lawId}")
+    if certificate.status in {"admitted", "retrospectiveOnly"}:
+        if not _validDigest(certificate.evidenceReceiptId):
+            raise SimulationSpecError(f"law certificate needs an evidence receipt: {law.lawId}")
+        if admissionVerifier is not None:
+            _verifyLawEvidenceReceipt(law, certificate, admissionVerifier)
     if law.status == "active" and certificate.status != "admitted":
         raise SimulationSpecError(f"active law needs admitted evidence: {law.lawId}")
-    if law.evidenceKind == "identifiedIntervention" and certificate.status != "admitted":
-        raise SimulationSpecError(f"identified law needs admitted evidence: {law.lawId}")
     if certificate.status == "retrospectiveOnly" and law.status != "partial":
         raise SimulationSpecError(f"retrospective law must be partial: {law.lawId}")
     if certificate.status == "rejected" and law.status != "blocked":

@@ -116,8 +116,10 @@ def dcfValuationBlock(data: dict) -> list:
         metrics.append(("현재가", f"{data['currentPrice']:,.0f}"))
     if data.get("marginOfSafety") is not None:
         metrics.append(("안전마진", f"{data['marginOfSafety']:.1f}%"))
-    metrics.append(("할인율", f"{data.get('discountRate', 0):.1f}%"))
-    metrics.append(("영구성장률", f"{data.get('terminalGrowth', 0):.1f}%"))
+    if data.get("discountRate") is not None:
+        metrics.append(("할인율", f"{data['discountRate']:.1f}%"))
+    if data.get("terminalGrowth") is not None:
+        metrics.append(("영구성장률", f"{data['terminalGrowth']:.1f}%"))
     if metrics:
         blocks.append(MetricBlock(metrics))
 
@@ -177,7 +179,8 @@ def residualIncomeBlock(data: dict) -> list:
     metrics: list[tuple[str, str]] = []
     if data.get("bps"):
         metrics.append(("BPS", f"{data['bps']:,.0f}원"))
-    metrics.append(("자기자본비용", f"{data.get('coe', 0):.1f}%"))
+    if data.get("coe") is not None:
+        metrics.append(("자기자본비용", f"{data['coe']:.1f}%"))
     if data.get("intrinsicValue") is not None:
         metrics.append(("적정가", f"{data['intrinsicValue']:,.0f}원"))
     if data.get("upside") is not None:
@@ -198,7 +201,9 @@ def priceTargetBlock(data: dict) -> list:
             helper="5개 거시 시나리오 x DCF + Monte Carlo 분포",
         ),
     ]
-    metrics: list[tuple[str, str]] = [("가중 목표가", f"{data.get('weightedTarget', 0):,.0f}원")]
+    metrics: list[tuple[str, str]] = []
+    if data.get("weightedTarget") is not None:
+        metrics.append(("가중 목표가", f"{data['weightedTarget']:,.0f}원"))
     if data.get("currentPrice"):
         metrics.append(("현재가", f"{data['currentPrice']:,.0f}원"))
     if data.get("upside") is not None:
@@ -240,15 +245,18 @@ def reverseImpliedBlock(data: dict) -> list:
             helper="현재 시가총액이 내재하는 매출 성장률 -- 시장 기대와 엔진 예측 비교",
         ),
     ]
-    metrics: list[tuple[str, str]] = [
-        ("내재성장률", f"{data.get('impliedGrowthRate', 0):.1f}%"),
-        ("최근 매출", f"{data.get('latestRevenue', 0) / 1e8:,.0f}억"),
-        ("가정 WACC", f"{data.get('assumedWacc', 0):.1f}%"),
-    ]
+    metrics: list[tuple[str, str]] = []
+    if data.get("impliedGrowthRate") is not None:
+        metrics.append(("내재성장률", f"{data['impliedGrowthRate']:.1f}%"))
+    if data.get("latestRevenue") is not None:
+        metrics.append(("최근 매출", f"{data['latestRevenue'] / 1e8:,.0f}억"))
+    if data.get("assumedWacc") is not None:
+        metrics.append(("가정 WACC", f"{data['assumedWacc']:.1f}%"))
     signal = data.get("signal")
     if signal:
         metrics.append(("신호", signal))
-    blocks.append(MetricBlock(metrics))
+    if metrics:
+        blocks.append(MetricBlock(metrics))
     return blocks
 
 
@@ -291,10 +299,8 @@ def dFVBlock(data: dict | None) -> list:
     if primaryModel:
         metrics.append(("Primary 모델", str(primaryModel).upper()))
     sc = data.get("scenarios", {})
-    if sc:
-        metrics.append(
-            ("시나리오", f"Bull {sc.get('bull', 0):,} / Base {sc.get('base', 0):,} / Bear {sc.get('bear', 0):,}")
-        )
+    if sc and all(sc.get(key) is not None for key in ("bull", "base", "bear")):
+        metrics.append(("시나리오", f"Bull {sc['bull']:,} / Base {sc['base']:,} / Bear {sc['bear']:,}"))
     if metrics:
         blocks.append(MetricBlock(metrics))
 
@@ -477,7 +483,6 @@ def valuationSynthesisBlock(data: dict, priceTargetData: dict | None = None) -> 
     if priceTargetData:
         synthFair = data.get("weightedFairValue")
         ptFair = priceTargetData.get("weightedTarget")
-        data.get("currentPrice") or priceTargetData.get("currentPrice")
         if synthFair and ptFair and synthFair > 0 and ptFair > 0:
             divergence = abs(ptFair - synthFair) / synthFair * 100
             ratio = ptFair / synthFair
@@ -635,7 +640,7 @@ def lifeCycleStageBlock(data: dict) -> list:
         metrics.append(("전환 신호", f"{inflection['towards']} (score {inflection.get('score', 0):.2f})"))
     metrics.append(("권고 모델", data.get("modelHint", "dcf")))
 
-    blocks = [
+    blocks: list = [
         HeadingBlock(
             _meta("lifeCycleStage").label,
             level=2,
@@ -660,7 +665,7 @@ def valuationSinsBlock(data: dict) -> list:
     narration = narrateValuationSins(data)
     flags = data.get("flags") or []
 
-    blocks = [
+    blocks: list = [
         HeadingBlock(
             _meta("valuationSins").label,
             level=2,
@@ -671,12 +676,12 @@ def valuationSinsBlock(data: dict) -> list:
         blocks.append(TextBlock(narration, indent="h2"))
 
     if flags:
-        flag_items: list[tuple[str, str]] = []
+        flag_items: list[str] = []
         for f in flags:
             severity = f.get("severity", "info")
             key = f.get("key", "")
             reason = f.get("reason", "")
-            flag_items.append((severity, f"[{key}] {reason}"))
+            flag_items.append(f"{severity}: [{key}] {reason}")
         blocks.append(FlagBlock(flag_items))
 
     return blocks

@@ -16,7 +16,7 @@ from dartlab.story.blocks import (
     TableBlock,
     TextBlock,
 )
-from dartlab.story.catalog import getBlockMeta as _meta
+from dartlab.story.catalog import BlockMeta, getBlockMeta
 from dartlab.story.narrate import (
     narrateCashFlow,
     narrateCashQuality,
@@ -33,6 +33,17 @@ from dartlab.story.narrate import (
     narrateValuation,
     narrateValuationSins,
 )
+
+
+def _meta(key: str) -> BlockMeta:
+    """등록된 Story block metadata를 반환하고 catalog drift는 즉시 드러낸다."""
+
+    meta = getBlockMeta(key)
+    if meta is None:
+        raise KeyError(f"등록되지 않은 Story block key: {key}")
+    return meta
+
+
 from dartlab.story.utils import unifyTableScale
 
 # ── notes enrichment 렌더링 ──

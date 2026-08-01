@@ -2101,9 +2101,11 @@ class Company:
             TargetMarkets:
                 - KR (getPresetScenarios("KR") + KR elasticity).
         """
+        from dartlab.simulate.registry import validateScenarioSpec
         from dartlab.simulate.run import runScenario
         from dartlab.story.lensProducts import collectLensProducts
 
+        validateScenarioSpec(scenario, horizon)
         lensBundle = collectLensProducts(
             self,
             engines=("analysis", "credit", "quant", "macro"),
@@ -2981,6 +2983,7 @@ class Company:
         helper: bool | None = None,
         *,
         type: str | None = None,
+        reportType: str | None = None,
         template: str | None = None,
         detail: bool | None = None,
         basePeriod: str | None = None,
@@ -3008,6 +3011,8 @@ class Company:
             section: 섹션명 ("수익구조" 등). None이면 전체.
             layout: StoryLayout 커스텀. None이면 기본.
             helper: True면 해석 힌트 텍스트 포함. None이면 자동.
+            type: 보고서 타입. ``reportType``과 같은 값의 하위 호환 이름.
+            reportType: 공식 보고서 타입 이름. ``type``과 함께 주면 같은 값이어야 함.
             preset: 프리셋명 ("executive"/"audit"/"credit"/"growth"/"valuation"). None이면 전체.
             template: 스토리 템플릿 ("성장"/"자본집약"/"지주" 등). "auto"면 자동 판별.
             detail: True면 전체 블록, False면 섹션 요약만. None이면 preset 기본값 또는 True.
@@ -3064,6 +3069,11 @@ class Company:
         import importlib
 
         buildStory = importlib.import_module("dartlab.story.registry").buildStory
+
+        if reportType is not None:
+            if type is not None and type != reportType:
+                raise ValueError("story(type=...)와 story(reportType=...)는 같은 값이어야 합니다.")
+            type = reportType
 
         return buildStory(
             self,

@@ -3,11 +3,23 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from hashlib import sha256
 
 import pytest
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
+from dartlab.simulate.admissionRegistry import (
+    AdmissionVerifier,
+    TrustedIssuer,
+    initializeAdmissionRegistry,
+    issueAdmissionReceipt,
+    putAdmissionArtifact,
+)
 from dartlab.simulate.vintage import VintageRef
 from dartlab.simulate.world import (
+    ACTION_EVIDENCE_RECEIPT_KIND,
+    LAW_EVIDENCE_RECEIPT_KIND,
     ActionSpec,
     ConstraintSpec,
     LawCertificate,
@@ -20,19 +32,141 @@ from dartlab.simulate.world import (
     VariableSpec,
     WorldModel,
     WorldState,
+    actionEvidenceAdmissionArtifact,
+    bindActionEvidenceReceipt,
     bindAdmittedPathContent,
+    executableHashFor,
     issueLawCertificate,
+    lawEvidenceAdmissionArtifact,
     simulateWorld,
 )
+from dartlab.simulate.worldContracts import _lawCertificatePayload
+from dartlab.simulate.worldTypes import _stableHash
 
 _SYNTHETIC_CERTIFICATE = "a" * 64
 _GLOBAL_MULTIPLIER = 1.0
+_TEST_ADMISSION = None
+
+
+@pytest.fixture(autouse=True)
+def _signedEvidenceTrust(tmp_path):
+    global _TEST_ADMISSION
+
+    database = tmp_path / "evidence-admission.sqlite"
+    artifacts = tmp_path / "evidence-artifacts"
+    initializeAdmissionRegistry(database)
+    private = Ed25519PrivateKey.from_private_bytes(bytes(range(32)))
+    privateBytes = private.private_bytes_raw()
+    public = private.public_key().public_bytes(serialization.Encoding.Raw, serialization.PublicFormat.Raw)
+    trusted = {"test-key": TrustedIssuer("test-issuer", "test-key", public)}
+    verifier = AdmissionVerifier(database, artifacts, trusted)
+    sourceArtifactHash = putAdmissionArtifact(artifacts, b"synthetic evidence source known 2019-01-01")
+    source = issueAdmissionReceipt(
+        database,
+        artifacts,
+        privateKey=privateBytes,
+        kind="dataVintage",
+        subjectHash=sourceArtifactHash,
+        artifactHash=sourceArtifactHash,
+        parentReceiptIds=(),
+        ruleId="synthetic-source-v1",
+        ruleVersion="1",
+        ruleHash=sha256(b"synthetic-source-v1").hexdigest(),
+        issuerId="test-issuer",
+        issuerKeyId="test-key",
+        issuerExecutableHash=sha256(b"synthetic-evidence-issuer-v1").hexdigest(),
+        knowledgeAsOf="20190101",
+        revisionPolicy="asKnown",
+        coverage="asOfExact",
+        frequency="step",
+        stepSpan=1,
+        maxAdmittedStep=8,
+        status="verifiedVintage",
+        issuedAt="20190101T000000Z",
+        trustedIssuers=trusted,
+    )
+    _TEST_ADMISSION = {
+        "database": database,
+        "artifacts": artifacts,
+        "private": privateBytes,
+        "trusted": trusted,
+        "verifier": verifier,
+        "source": source,
+        "receipts": {},
+    }
+    yield
+    _TEST_ADMISSION = None
+
+
+def _testVerifier() -> AdmissionVerifier:
+    assert _TEST_ADMISSION is not None
+    return _TEST_ADMISSION["verifier"]
+
+
+def _issueEvidenceReceipt(
+    *,
+    kind: str,
+    content: bytes,
+    knowledgeAsOf: str,
+    status: str,
+    maxAdmittedStep: int,
+    parentReceiptIds: tuple[str, ...] | None = None,
+    issuedAt: str = "20250101T000000Z",
+):
+    assert _TEST_ADMISSION is not None
+    artifactHash = putAdmissionArtifact(_TEST_ADMISSION["artifacts"], content)
+    parents = (_TEST_ADMISSION["source"].receiptId,) if parentReceiptIds is None else parentReceiptIds
+    key = (kind, artifactHash, knowledgeAsOf, status, maxAdmittedStep, parents, issuedAt)
+    cached = _TEST_ADMISSION["receipts"].get(key)
+    if cached is not None:
+        return cached
+    receipt = issueAdmissionReceipt(
+        _TEST_ADMISSION["database"],
+        _TEST_ADMISSION["artifacts"],
+        privateKey=_TEST_ADMISSION["private"],
+        kind=kind,
+        subjectHash=artifactHash,
+        artifactHash=artifactHash,
+        parentReceiptIds=parents,
+        ruleId=f"synthetic-{kind}-v1",
+        ruleVersion="1",
+        ruleHash=sha256(f"synthetic-{kind}-v1".encode()).hexdigest(),
+        issuerId="test-issuer",
+        issuerKeyId="test-key",
+        issuerExecutableHash=sha256(b"synthetic-evidence-issuer-v1").hexdigest(),
+        knowledgeAsOf=knowledgeAsOf,
+        revisionPolicy="asKnown" if status == "admitted" else "revisedHistory",
+        coverage="asOfExact",
+        frequency="step",
+        stepSpan=1,
+        maxAdmittedStep=maxAdmittedStep,
+        status=status,
+        issuedAt=issuedAt,
+        trustedIssuers=_TEST_ADMISSION["trusted"],
+    )
+    _TEST_ADMISSION["receipts"][key] = receipt
+    return receipt
 
 
 def _certifyLaw(law: LawSpec, *, steps: int = 8, historyStatus: str = "asKnown") -> LawSpec:
     evidence = tuple(
         {"step": step, "metric": "syntheticOos", "estimate": 1.0, "threshold": 0.0, "operator": "gt"}
         for step in range(1, steps + 1)
+    )
+    artifact = lawEvidenceAdmissionArtifact(
+        law,
+        evidenceRows=evidence,
+        knowledgeAsOf="20250101",
+        historyStatus=historyStatus,
+        frequency="step",
+        rules="synthetic known data generating process",
+    )
+    receipt = _issueEvidenceReceipt(
+        kind=LAW_EVIDENCE_RECEIPT_KIND,
+        content=artifact,
+        knowledgeAsOf="20250101",
+        status="admitted" if historyStatus == "asKnown" else "retrospectiveOnly",
+        maxAdmittedStep=steps,
     )
     certificate = issueLawCertificate(
         law,
@@ -41,6 +175,8 @@ def _certifyLaw(law: LawSpec, *, steps: int = 8, historyStatus: str = "asKnown")
         historyStatus=historyStatus,
         frequency="step",
         rules="synthetic known data generating process",
+        evidenceReceiptId=receipt.receiptId,
+        admissionVerifier=_testVerifier(),
     )
     return replace(law, certificate=certificate)
 
@@ -58,19 +194,32 @@ def _model(*, actionEvidence: str = "identifiedIntervention", lawEvidence: str =
         VariableSpec("interest", "currency", "state", lower=0),
         VariableSpec("netCash", "currency", "metric"),
     )
-    actions = (
-        ActionSpec(
-            "capexCut",
-            "ratio",
-            0.0,
-            1.0,
-            leadSteps=1,
-            costPerUnit=0.25,
-            effectEvidence=actionEvidence,
-            provenance="synthetic-randomized-policy",
-            certificateId=_SYNTHETIC_CERTIFICATE if actionEvidence == "identifiedIntervention" else "",
-        ),
+    action = ActionSpec(
+        "capexCut",
+        "ratio",
+        0.0,
+        1.0,
+        leadSteps=1,
+        costPerUnit=0.25,
+        effectEvidence=actionEvidence,
+        provenance="synthetic-randomized-policy",
     )
+    if actionEvidence == "identifiedIntervention":
+        artifact = actionEvidenceAdmissionArtifact(
+            action,
+            knowledgeAsOf="20250101",
+            frequency="step",
+            maxAdmittedStep=8,
+        )
+        receipt = _issueEvidenceReceipt(
+            kind=ACTION_EVIDENCE_RECEIPT_KIND,
+            content=artifact,
+            knowledgeAsOf="20250101",
+            status="admitted",
+            maxAdmittedStep=8,
+        )
+        action = bindActionEvidenceReceipt(action, receipt.receiptId, _testVerifier())
+    actions = (action,)
 
     def capacity(ctx):
         capex = 2.0 * (1.0 - ctx.actions["capexCut"])
@@ -135,7 +284,14 @@ def _model(*, actionEvidence: str = "identifiedIntervention", lawEvidence: str =
         _certifyLaw(law) if law.evidenceKind in {"measuredAssociation", "identifiedIntervention"} else law
         for law in laws
     )
-    return WorldModel("synthetic-company", "1", variables, actions, laws)
+    return WorldModel(
+        "synthetic-company",
+        "1",
+        variables,
+        actions,
+        laws,
+        admissionVerifier=_testVerifier(),
+    )
 
 
 def _state(cash: float = 8.0, debt: float = 2.0):
@@ -250,6 +406,7 @@ def testUnvalidatedInterventionCannotProduceRecommendation():
         model=model,
     )
     assert run.decisionStatus == "conditionalOnly"
+    assert run.status == "partial"
     assert run.recommendation is None
     assert any("conditional assumptions" in warning for warning in run.warnings)
 
@@ -259,7 +416,14 @@ def testUnvalidatedWorldLawCannotProduceRecommendation():
     laws = tuple(
         replace(law, evidenceKind="explicitAssumption") if law.lawId == "profitIdentity" else law for law in model.laws
     )
-    assumed = WorldModel(model.modelId, model.version, model.variables, model.actions, laws)
+    assumed = WorldModel(
+        model.modelId,
+        model.version,
+        model.variables,
+        model.actions,
+        laws,
+        admissionVerifier=model.admissionVerifier,
+    )
     run = _run(
         _path("long", (5.0,) * 4),
         _strategy("noop", (0.0,) * 4),
@@ -267,6 +431,7 @@ def testUnvalidatedWorldLawCannotProduceRecommendation():
         model=assumed,
     )
     assert run.decisionStatus == "conditionalOnly"
+    assert run.status == "partial"
     assert run.recommendation is None
 
 
@@ -283,7 +448,14 @@ def testSameInputsHaveSameHashAndCommonWorldPaths():
 def testPartialLawCapsRunQuality():
     model = _model()
     laws = tuple(replace(law, status="partial") if law.lawId == "capacityRollForward" else law for law in model.laws)
-    partial = WorldModel(model.modelId, model.version, model.variables, model.actions, laws)
+    partial = WorldModel(
+        model.modelId,
+        model.version,
+        model.variables,
+        model.actions,
+        laws,
+        admissionVerifier=model.admissionVerifier,
+    )
     run = _run(_path("base", (10.0,) * 4), _strategy("noop", (0.0,) * 4), model=partial)
     assert run.status == "partial"
     assert run.decisionStatus == "conditionalOnly"
@@ -295,7 +467,14 @@ def testLawContextExposesOnlyDeclaredInputsAndNoIssuedActionBackdoor():
     hiddenShockLaws = tuple(
         replace(law, shockInputs=()) if law.lawId == "revenueIdentity" else law for law in model.laws
     )
-    hiddenShock = WorldModel(model.modelId, model.version, model.variables, model.actions, hiddenShockLaws)
+    hiddenShock = WorldModel(
+        model.modelId,
+        model.version,
+        model.variables,
+        model.actions,
+        hiddenShockLaws,
+        admissionVerifier=model.admissionVerifier,
+    )
     with pytest.raises(KeyError, match="demand"):
         _run(_path("base", (10.0,) * 4), _strategy("noop", (0.0,) * 4), model=hiddenShock)
 
@@ -306,7 +485,14 @@ def testLawContextExposesOnlyDeclaredInputsAndNoIssuedActionBackdoor():
         _certifyLaw(replace(law, fn=issuedReader, certificate=None)) if law.lawId == "capacityRollForward" else law
         for law in model.laws
     )
-    leadBypass = WorldModel(model.modelId, model.version, model.variables, model.actions, leadBypassLaws)
+    leadBypass = WorldModel(
+        model.modelId,
+        model.version,
+        model.variables,
+        model.actions,
+        leadBypassLaws,
+        admissionVerifier=model.admissionVerifier,
+    )
     with pytest.raises(KeyError, match="capexCut"):
         _run(_path("base", (10.0,) * 4), _strategy("noop", (1.0,) * 4), model=leadBypass)
 
@@ -321,7 +507,14 @@ def testExecutableParametersAndResultHaveIndependentDigests():
         replace(law, fn=changedProfit, parameters={"fixedCost": 2.0}) if law.lawId == "profitIdentity" else law
         for law in model.laws
     )
-    changed = WorldModel(model.modelId, model.version, model.variables, model.actions, changedLaws)
+    changed = WorldModel(
+        model.modelId,
+        model.version,
+        model.variables,
+        model.actions,
+        changedLaws,
+        admissionVerifier=model.admissionVerifier,
+    )
     path = _path("base", (10.0,) * 4)
     strategy = _strategy("noop", (0.0,) * 4)
     first = _run(path, strategy, model=model)
@@ -383,7 +576,14 @@ def testLawCertificateBindsContractParametersAndExecutable():
     changed = replace(firstLaw, parameters={"capacityPerCapex": 3.0})
     laws = tuple(changed if law.lawId == changed.lawId else law for law in first.laws)
     with pytest.raises(SimulationSpecError, match="binding"):
-        WorldModel(first.modelId, first.version, first.variables, first.actions, laws)
+        WorldModel(
+            first.modelId,
+            first.version,
+            first.variables,
+            first.actions,
+            laws,
+            admissionVerifier=first.admissionVerifier,
+        )
 
 
 def testArbitraryLawCertificateDigestIsRejected():
@@ -409,7 +609,395 @@ def testArbitraryLawCertificateDigestIsRejected():
     )
     laws = tuple(replace(law, certificate=fake) if item.lawId == law.lawId else item for item in model.laws)
     with pytest.raises(SimulationSpecError, match="digest"):
-        WorldModel(model.modelId, model.version, model.variables, model.actions, laws)
+        WorldModel(
+            model.modelId,
+            model.version,
+            model.variables,
+            model.actions,
+            laws,
+            admissionVerifier=model.admissionVerifier,
+        )
+
+
+def testPassingRawLawEvidenceCannotSelfAdmit() -> None:
+    model = _model()
+    law = next(item for item in model.laws if item.lawId == "capacityRollForward")
+    unsigned = issueLawCertificate(
+        replace(law, certificate=None),
+        evidenceRows=({"step": 1, "metric": "syntheticOos", "estimate": 1.0, "threshold": 0.0, "operator": "gt"},),
+        knowledgeAsOf="20250101",
+        historyStatus="asKnown",
+        frequency="step",
+        rules="unsigned caller rows",
+    )
+    assert unsigned.status == "documented"
+    assert unsigned.evidenceReceiptId == ""
+    laws = tuple(replace(law, certificate=unsigned) if item.lawId == law.lawId else item for item in model.laws)
+    downgraded = WorldModel(
+        model.modelId,
+        model.version,
+        model.variables,
+        model.actions,
+        laws,
+        admissionVerifier=model.admissionVerifier,
+    )
+
+    assert next(item for item in downgraded.laws if item.lawId == law.lawId).status == "partial"
+    run = _run(_path("unsigned", (10.0,)), _strategy("noop", (0.0,)), model=downgraded)
+    assert run.status == "partial"
+    assert run.recommendation is None
+
+
+def testRejectedRawEvidenceDowngradesLawToBlocked() -> None:
+    model = _model(lawEvidence="measuredAssociation")
+    law = next(item for item in model.laws if item.lawId == "capacityRollForward")
+    rejected = issueLawCertificate(
+        replace(law, certificate=None),
+        evidenceRows=({"step": 1, "metric": "syntheticOos", "estimate": -1.0, "threshold": 0.0, "operator": "gt"},),
+        knowledgeAsOf="20250101",
+        historyStatus="asKnown",
+        frequency="step",
+        rules="failed caller rows",
+    )
+    assert rejected.status == "rejected"
+    laws = tuple(replace(law, certificate=rejected) if item.lawId == law.lawId else item for item in model.laws)
+    downgraded = WorldModel(
+        model.modelId,
+        model.version,
+        model.variables,
+        model.actions,
+        laws,
+        admissionVerifier=model.admissionVerifier,
+    )
+
+    assert next(item for item in downgraded.laws if item.lawId == law.lawId).status == "blocked"
+
+
+def testSelfConsistentArbitraryLawReceiptDigestIsRejected() -> None:
+    model = _model()
+    law = next(item for item in model.laws if item.lawId == "capacityRollForward")
+    assert law.certificate is not None
+    forged = replace(law.certificate, certificateId="", evidenceReceiptId="f" * 64)
+    forged = replace(forged, certificateId=_stableHash(_lawCertificatePayload(forged)))
+    laws = tuple(replace(law, certificate=forged) if item.lawId == law.lawId else item for item in model.laws)
+
+    with pytest.raises(SimulationSpecError, match="receipt verification failed"):
+        WorldModel(
+            model.modelId,
+            model.version,
+            model.variables,
+            model.actions,
+            laws,
+            admissionVerifier=model.admissionVerifier,
+        )
+
+
+def testArbitraryIdentifiedActionDigestIsNotAReceipt() -> None:
+    model = _model()
+    forgedAction = replace(model.actions[0], certificateId="f" * 64)
+
+    with pytest.raises(SimulationSpecError, match="action receipt verification failed"):
+        WorldModel(
+            model.modelId,
+            model.version,
+            model.variables,
+            (forgedAction,),
+            model.laws,
+            admissionVerifier=model.admissionVerifier,
+        )
+
+
+def testIdentifiedActionReceiptRequiresAnAdmittedSourceParent() -> None:
+    model = _model()
+    action = replace(model.actions[0], certificateId="")
+    artifact = actionEvidenceAdmissionArtifact(
+        action,
+        knowledgeAsOf="20250101",
+        frequency="step",
+        maxAdmittedStep=8,
+    )
+    receipt = _issueEvidenceReceipt(
+        kind=ACTION_EVIDENCE_RECEIPT_KIND,
+        content=artifact,
+        knowledgeAsOf="20250101",
+        status="admitted",
+        maxAdmittedStep=8,
+        parentReceiptIds=(),
+    )
+
+    with pytest.raises(SimulationSpecError, match="source receipts"):
+        bindActionEvidenceReceipt(action, receipt.receiptId, _testVerifier())
+
+
+def testIdentifiedActionReceiptBindsKnowledgeCutoff() -> None:
+    model = _model()
+    action = replace(model.actions[0], certificateId="")
+    artifact = actionEvidenceAdmissionArtifact(
+        action,
+        knowledgeAsOf="20240101",
+        frequency="step",
+        maxAdmittedStep=8,
+    )
+    receipt = _issueEvidenceReceipt(
+        kind=ACTION_EVIDENCE_RECEIPT_KIND,
+        content=artifact,
+        knowledgeAsOf="20250101",
+        status="admitted",
+        maxAdmittedStep=8,
+    )
+
+    with pytest.raises(SimulationSpecError, match="contract mismatch"):
+        bindActionEvidenceReceipt(action, receipt.receiptId, _testVerifier())
+
+
+def testIdentifiedActionReceiptCutoffIsSealedInExecutableHash() -> None:
+    model = _model()
+    action = replace(model.actions[0], certificateId="")
+    artifact = actionEvidenceAdmissionArtifact(
+        action,
+        knowledgeAsOf="20240101",
+        frequency="step",
+        maxAdmittedStep=8,
+    )
+    receipt = _issueEvidenceReceipt(
+        kind=ACTION_EVIDENCE_RECEIPT_KIND,
+        content=artifact,
+        knowledgeAsOf="20240101",
+        status="admitted",
+        maxAdmittedStep=8,
+    )
+    rebound = bindActionEvidenceReceipt(action, receipt.receiptId, _testVerifier())
+    changed = WorldModel(
+        model.modelId,
+        model.version,
+        model.variables,
+        (rebound,),
+        model.laws,
+        admissionVerifier=model.admissionVerifier,
+    )
+
+    assert executableHashFor(model, ()) != executableHashFor(changed, ())
+
+
+def testIdentifiedActionCannotRunPastAdmittedHorizon() -> None:
+    model = _model()
+    action = replace(model.actions[0], certificateId="")
+    artifact = actionEvidenceAdmissionArtifact(
+        action,
+        knowledgeAsOf="20250101",
+        frequency="step",
+        maxAdmittedStep=1,
+    )
+    receipt = _issueEvidenceReceipt(
+        kind=ACTION_EVIDENCE_RECEIPT_KIND,
+        content=artifact,
+        knowledgeAsOf="20250101",
+        status="admitted",
+        maxAdmittedStep=1,
+    )
+    rebound = bindActionEvidenceReceipt(action, receipt.receiptId, _testVerifier())
+    limited = WorldModel(
+        model.modelId,
+        model.version,
+        model.variables,
+        (rebound,),
+        model.laws,
+        admissionVerifier=model.admissionVerifier,
+    )
+
+    with pytest.raises(SimulationSpecError, match="action exceeds admitted horizon"):
+        _run(_path("too-long-action", (10.0, 10.0)), _strategy("noop", (0.0, 0.0)), model=limited)
+
+
+def testFutureActionEvidenceCannotEnterPastInitialState() -> None:
+    model = _model()
+    action = replace(model.actions[0], certificateId="")
+    artifact = actionEvidenceAdmissionArtifact(
+        action,
+        knowledgeAsOf="20260101",
+        frequency="step",
+        maxAdmittedStep=8,
+    )
+    receipt = _issueEvidenceReceipt(
+        kind=ACTION_EVIDENCE_RECEIPT_KIND,
+        content=artifact,
+        knowledgeAsOf="20260101",
+        status="admitted",
+        maxAdmittedStep=8,
+        issuedAt="20260101T000000Z",
+    )
+    rebound = bindActionEvidenceReceipt(action, receipt.receiptId, _testVerifier())
+    futureActionModel = WorldModel(
+        model.modelId,
+        model.version,
+        model.variables,
+        (rebound,),
+        model.laws,
+        admissionVerifier=model.admissionVerifier,
+    )
+    state = WorldState(
+        {"capacity": 10.0, "cash": 8.0, "debt": 2.0},
+        asOf="20250101",
+        knowledgeAsOf="20250101",
+    )
+
+    with pytest.raises(SimulationSpecError, match="action evidence is newer than initial state"):
+        _run(
+            _path("past-action", (10.0,)),
+            _strategy("noop", (0.0,)),
+            model=futureActionModel,
+            state=state,
+        )
+
+
+def testEmpiricalModelCannotReuseSignedClaimsWithoutVerifier() -> None:
+    model = _model()
+
+    with pytest.raises(SimulationSpecError, match="admission verifier"):
+        WorldModel(model.modelId, model.version, model.variables, model.actions, model.laws)
+
+
+def testLawEvidenceReceiptRequiresAnAdmittedSourceParent() -> None:
+    model = _model()
+    law = replace(next(item for item in model.laws if item.lawId == "capacityRollForward"), certificate=None)
+    rows = ({"step": 1, "metric": "syntheticOos", "estimate": 1.0, "threshold": 0.0, "operator": "gt"},)
+    artifact = lawEvidenceAdmissionArtifact(
+        law,
+        evidenceRows=rows,
+        knowledgeAsOf="20250101",
+        historyStatus="asKnown",
+        frequency="step",
+        rules="missing source parent",
+    )
+    receipt = _issueEvidenceReceipt(
+        kind=LAW_EVIDENCE_RECEIPT_KIND,
+        content=artifact,
+        knowledgeAsOf="20250101",
+        status="admitted",
+        maxAdmittedStep=1,
+        parentReceiptIds=(),
+    )
+
+    with pytest.raises(SimulationSpecError, match="source receipts"):
+        issueLawCertificate(
+            law,
+            evidenceRows=rows,
+            knowledgeAsOf="20250101",
+            historyStatus="asKnown",
+            frequency="step",
+            rules="missing source parent",
+            evidenceReceiptId=receipt.receiptId,
+            admissionVerifier=_testVerifier(),
+        )
+
+
+def testLawEvidenceReceiptRejectsAnUntypedAdmittedParent() -> None:
+    model = _model()
+    law = replace(next(item for item in model.laws if item.lawId == "capacityRollForward"), certificate=None)
+    rows = ({"step": 1, "metric": "syntheticOos", "estimate": 1.0, "threshold": 0.0, "operator": "gt"},)
+    unrelatedParent = _issueEvidenceReceipt(
+        kind="modelExecutable",
+        content=b"unrelated admitted model",
+        knowledgeAsOf="20240101",
+        status="admitted",
+        maxAdmittedStep=1,
+        parentReceiptIds=(),
+    )
+    artifact = lawEvidenceAdmissionArtifact(
+        law,
+        evidenceRows=rows,
+        knowledgeAsOf="20250101",
+        historyStatus="asKnown",
+        frequency="step",
+        rules="typed source parent",
+    )
+    receipt = _issueEvidenceReceipt(
+        kind=LAW_EVIDENCE_RECEIPT_KIND,
+        content=artifact,
+        knowledgeAsOf="20250101",
+        status="admitted",
+        maxAdmittedStep=1,
+        parentReceiptIds=(unrelatedParent.receiptId,),
+    )
+
+    with pytest.raises(SimulationSpecError, match="typed source receipt"):
+        issueLawCertificate(
+            law,
+            evidenceRows=rows,
+            knowledgeAsOf="20250101",
+            historyStatus="asKnown",
+            frequency="step",
+            rules="typed source parent",
+            evidenceReceiptId=receipt.receiptId,
+            admissionVerifier=_testVerifier(),
+        )
+
+
+def testLawEvidenceReceiptBindsKnowledgeCutoff() -> None:
+    model = _model()
+    law = replace(next(item for item in model.laws if item.lawId == "capacityRollForward"), certificate=None)
+    rows = ({"step": 1, "metric": "syntheticOos", "estimate": 1.0, "threshold": 0.0, "operator": "gt"},)
+    artifact = lawEvidenceAdmissionArtifact(
+        law,
+        evidenceRows=rows,
+        knowledgeAsOf="20240101",
+        historyStatus="asKnown",
+        frequency="step",
+        rules="cutoff-bound evidence",
+    )
+    receipt = _issueEvidenceReceipt(
+        kind=LAW_EVIDENCE_RECEIPT_KIND,
+        content=artifact,
+        knowledgeAsOf="20250101",
+        status="admitted",
+        maxAdmittedStep=1,
+    )
+
+    with pytest.raises(SimulationSpecError, match="receipt binding mismatch"):
+        issueLawCertificate(
+            law,
+            evidenceRows=rows,
+            knowledgeAsOf="20240101",
+            historyStatus="asKnown",
+            frequency="step",
+            rules="cutoff-bound evidence",
+            evidenceReceiptId=receipt.receiptId,
+            admissionVerifier=_testVerifier(),
+        )
+
+
+def testLawEvidenceReceiptRequiresATrustedIssuerSignature() -> None:
+    assert _TEST_ADMISSION is not None
+    model = _model()
+    law = replace(next(item for item in model.laws if item.lawId == "capacityRollForward"), certificate=None)
+    certificate = next(item for item in model.laws if item.lawId == "capacityRollForward").certificate
+    assert certificate is not None
+    untrustedVerifier = AdmissionVerifier(
+        _TEST_ADMISSION["database"],
+        _TEST_ADMISSION["artifacts"],
+        {},
+    )
+
+    with pytest.raises(SimulationSpecError, match="receipt verification failed"):
+        issueLawCertificate(
+            law,
+            evidenceRows=tuple(
+                {
+                    "step": step,
+                    "metric": "syntheticOos",
+                    "estimate": 1.0,
+                    "threshold": 0.0,
+                    "operator": "gt",
+                }
+                for step in range(1, 9)
+            ),
+            knowledgeAsOf="20250101",
+            historyStatus="asKnown",
+            frequency="step",
+            rules="synthetic known data generating process",
+            evidenceReceiptId=certificate.evidenceReceiptId,
+            admissionVerifier=untrustedVerifier,
+        )
 
 
 def testLawCannotRunPastAdmittedHorizon():
@@ -426,7 +1014,14 @@ def testRevisedHistoryCertificateCannotMakeAnActiveLaw():
     assert retrospective.certificate.status == "retrospectiveOnly"
     laws = tuple(retrospective if item.lawId == law.lawId else item for item in model.laws)
     with pytest.raises(SimulationSpecError, match="active law needs admitted evidence"):
-        WorldModel(model.modelId, model.version, model.variables, model.actions, laws)
+        WorldModel(
+            model.modelId,
+            model.version,
+            model.variables,
+            model.actions,
+            laws,
+            admissionVerifier=model.admissionVerifier,
+        )
 
 
 def testLawCertificateEvaluatorDoesNotTrustCallerPassedClaim():
@@ -483,7 +1078,14 @@ def testReferencedMutableGlobalChangesCertificateBinding():
 
     law = _certifyLaw(replace(original, fn=globalLaw, certificate=None))
     laws = tuple(law if item.lawId == law.lawId else item for item in model.laws)
-    certifiedModel = WorldModel(model.modelId, model.version, model.variables, model.actions, laws)
+    certifiedModel = WorldModel(
+        model.modelId,
+        model.version,
+        model.variables,
+        model.actions,
+        laws,
+        admissionVerifier=model.admissionVerifier,
+    )
     try:
         _GLOBAL_MULTIPLIER = 2.0
         with pytest.raises(SimulationSpecError, match="binding"):
@@ -529,6 +1131,7 @@ def testLawCertificateCannotMoveAcrossTimeGrid():
             model.actions,
             model.laws,
             stepFrequency="year",
+            admissionVerifier=model.admissionVerifier,
         )
 
 

@@ -30,6 +30,7 @@ from dartlab.simulate.world import (
     issueLawCertificate,
     simulateWorld,
 )
+from dartlab.simulate.worldContracts import lawEvidenceAdmissionArtifact
 
 if TYPE_CHECKING:
     from dartlab.simulate.admissionRegistry import AdmissionVerifier
@@ -595,6 +596,33 @@ def _operatingLawSpec(
     )
 
 
+def operatingLawEvidenceAdmissionArtifact(
+    inputs: OperatingWorldInputs,
+    *,
+    evidenceRows: tuple[Mapping[str, object], ...],
+    knowledgeAsOf: str,
+    historyStatus: str = "asKnown",
+    frequency: str | None = None,
+    stepSpan: int | None = None,
+    rules: str = "operating-law-oos-evidence",
+    evidenceKind: str = "measuredAssociation",
+) -> bytes:
+    """Return the exact typed evidence artifact for an operating transition law."""
+
+    if evidenceKind not in {"measuredAssociation", "identifiedIntervention"}:
+        raise SimulationSpecError("operating law certificate evidence kind is invalid")
+    law = _operatingLawSpec(inputs, evidenceKind=evidenceKind, certificate=None)
+    return lawEvidenceAdmissionArtifact(
+        law,
+        evidenceRows=evidenceRows,
+        knowledgeAsOf=knowledgeAsOf,
+        historyStatus=historyStatus,
+        frequency=frequency or inputs.stepFrequency,
+        stepSpan=inputs.stepSpan if stepSpan is None else stepSpan,
+        rules=rules,
+    )
+
+
 def issueOperatingLawCertificate(
     inputs: OperatingWorldInputs,
     *,
@@ -605,6 +633,8 @@ def issueOperatingLawCertificate(
     stepSpan: int | None = None,
     rules: str = "operating-law-oos-evidence",
     evidenceKind: str = "measuredAssociation",
+    evidenceReceiptId: str = "",
+    admissionVerifier: "AdmissionVerifier | None" = None,
 ) -> LawCertificate:
     """Issue a certificate for the operating transition law parameters.
 
@@ -617,6 +647,8 @@ def issueOperatingLawCertificate(
         stepSpan: Optional step span. Defaults to the input step span.
         rules: Rule label for the evidence package.
         evidenceKind: Empirical law evidence kind to certify.
+        evidenceReceiptId: Signed ``lawEvidence`` receipt identifier.
+        admissionVerifier: Verifier carrying the trusted issuer allowlist and artifact root.
 
     Returns:
         ``LawCertificate`` for a measured or identified operating law.
@@ -639,10 +671,18 @@ def issueOperatingLawCertificate(
         frequency=frequency or inputs.stepFrequency,
         stepSpan=inputs.stepSpan if stepSpan is None else stepSpan,
         rules=rules,
+        evidenceReceiptId=evidenceReceiptId,
+        admissionVerifier=admissionVerifier,
     )
 
 
-def _buildOperatingWorld(inputs: OperatingWorldInputs, *, maxFinancing: float, maxInvestment: float) -> WorldModel:
+def _buildOperatingWorld(
+    inputs: OperatingWorldInputs,
+    *,
+    maxFinancing: float,
+    maxInvestment: float,
+    admissionVerifier: "AdmissionVerifier | None" = None,
+) -> WorldModel:
     if maxFinancing < 0 or maxInvestment < 0:
         raise ValueError("operating financing and investment limits must be nonnegative")
     _validateOperatingLawEvidence(inputs)
@@ -744,6 +784,7 @@ def _buildOperatingWorld(inputs: OperatingWorldInputs, *, maxFinancing: float, m
         (law,),
         stepFrequency=inputs.stepFrequency,
         stepSpan=inputs.stepSpan,
+        admissionVerifier=admissionVerifier,
     )
 
 
@@ -909,7 +950,12 @@ def runOperatingStrategies(
         ``run = runOperatingStrategies(inputs, (path,), (baseline, invest), debtLimit=1000, maxFinancing=500, maxInvestment=500)``
     """
 
-    model = _buildOperatingWorld(inputs, maxFinancing=maxFinancing, maxInvestment=maxInvestment)
+    model = _buildOperatingWorld(
+        inputs,
+        maxFinancing=maxFinancing,
+        maxInvestment=maxInvestment,
+        admissionVerifier=admissionVerifier,
+    )
     initial = _initialStateFromInputs(inputs)
     constraints = (
         ConstraintSpec("cash", "ge", 0.0),

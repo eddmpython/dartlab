@@ -136,8 +136,9 @@ def breakdownBlock(data: dict, sub: str) -> list:
     if not items:
         return []
 
-    meta = _meta(sub)
-    title = meta.label if meta else f"{sub}별 매출"
+    catalogKey = {"productBreakdown": "product", "regionBreakdown": "region"}.get(sub, sub)
+    meta = _meta(catalogKey)
+    title = meta.label
 
     rows = []
     for item in items:

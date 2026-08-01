@@ -49,21 +49,20 @@ Guard는 현재 레이어의 source를 동결한 뒤 한 번 실행한다. Guard
 
 ### 세션 인계
 
-- 현재 계층: **L2.5 dataHub** (진입 대기)
-- 최근 완료한 레이어: **L2 analysis/macro/quant/industry/credit 전체 완료** (2026-08-01).
-  다섯 엔진의 전체 source와 실제 호출자를 데이터 계약, 결측, 시점, 오류 투명성,
-  발행 경계 기준으로 대조했다. 공식 strict Guard는 1,792파일, 7개 규칙과 6개 외부
-  게이트 모두 통과했다. 그 앞은 L0 core, L1 gather/providers,
-  L1.5 scan/frame/synth/reference 완료다.
-- 현재 작업 단위: **L2.5 dataHub 전체 안정화**. 파일이나 함수 하나를 별도 완료 단위로
+- 현재 계층: **L4 소비자·AI·MCP** (진입 대기)
+- 최근 완료한 레이어: **L3 story·simulate 전체 완료** (2026-08-01). Story 381개,
+  simulate 509개, L3 bridge 뒤 DataHub 606개와 architecture 계약이 통과했다. 공식 strict
+  Guard는 1,796파일, 7개 규칙과 6개 외부 게이트 모두 통과했다. 그 앞은 L0 core,
+  L1 gather/providers, L1.5 scan/frame/synth/reference, L2 다섯 엔진, L2.5 dataHub 완료다.
+- 현재 작업 단위: **L4 공개 소비자 전체 안정화**. 파일이나 함수 하나를 별도 완료 단위로
   쪼개지 않는다.
-- L2.5 완료 조건: dataHub의 catalog와 query 공개 축, factor와 narrative projection,
-  로컬·원격 materialization, PIT envelope, receipt와 cache, 실제 L2·L3 소비자를
-  전수 대조한다. 결함 수정과 집중 회귀를 끝내고 source 동결 뒤 공식 Guard, 원장,
-  커밋, push까지 닫는다.
-- 다음 첫 행동: `src/dartlab/dataHub` 전체 source와 catalog/query 호출자, operation
-  계약을 읽고 상태·시점·오류·재현성 경계를 정적 census로 만든다.
-- 금지: 함수나 파일 하나만 끝내고 완료 보고, L3 이상 수정 선행,
+- L4 완료 조건: AI tool dispatch와 serialization, public capability catalog, Web/API/MCP와
+  브라우저 소비자가 L0-L3의 status·gap·provenance·asOf를 보존하는지 전수 대조한다.
+  실행 allowlist, payload budget, async 경계, 공개 API drift와 release gate를 닫고 source
+  동결 뒤 공식 Guard, 원장, 커밋, push까지 완료한다.
+- 다음 첫 행동: `src/dartlab/ai`, Web/API/MCP 진입점과 capability catalog의 실제 호출
+  그래프를 만들고 실행 권한·직렬화·상태 손실을 제품 경로에서 재현한다.
+- 금지: 함수나 파일 하나만 끝내고 완료 보고, 하위 상태를 성공으로 승격,
   중간 source에서 공식 Guard 반복
 
 ## L1.5 scan, frame, synth, reference 순차 안정화 원장 (2026-07-30)
@@ -3110,3 +3109,59 @@ source와 실제 호출자의 최종 순회, source freeze, 공식 Guard다.
 **판정: L2.5 dataHub는 현재 지원하는 catalog, query, PIT, paging, materialization과 remote
 worker 범위에서 요청·결과·원천 identity를 검증하고, 증명하지 못한 exact와 completion을
 발행하지 않는다.** L2.5를 완료하고 다음 계층인 L3 story·simulate로 이동한다.
+
+### L3 최종 판정: Story 증거 계약과 simulate 실행 무결성 동결 (2026-08-01)
+
+**상태: L3 전체 완료.** Story와 simulate를 각각
+표현 조합과 상태 전이 실행이라는 책임으로 분리해 보되, 두 경로가 공유하는 시점, 근거,
+결측, 해시, 외부 데이터 admission 경계를 함께 대조했다. 검증되지 않은 값과 실행물을
+부분 성공으로 승격하는 대신 구조화 gap과 blocked 상태로 닫았다.
+
+1. **범위와 실제 호출자.** Story의 Company 진입점, report type, block builder, narrative,
+   lens product, HTML·Markdown·JSON emitter, IPO와 전문 report 소비자를 확인했다. simulate는
+   Company 진입점, DataHub simulation input bridge, scenario와 expectation cycle, world model,
+   law·action·path admission, executable hash, run result와 evidence projection을 대조했다.
+   DART와 EDGAR Company facade, architecture layer test, L2.5 DataHub 소비자까지 포함했다.
+2. **제품 결함 재현.** Story는 HTML에 원문 문자열을 그대로 넣고 opaque 객체를 문자열로
+   JSON 변환했으며, 결측 forecast·asset·valuation·risk를 0처럼 표현했다. lens status와
+   gap을 잃고 `basePeriod` 요청에도 최신 macro·quant·industry·thesis를 섞을 수 있었다.
+   simulate는 query identity 안에 runtime Company를 넣고 구조화 DataEvidence를 축약했으며,
+   WACC·순차입금·FCF 결측을 현재값 또는 압축 배열로 바꿨다. admission은 raw law row와
+   식별 action을 서명 없이 신뢰했고 executable hash가 callable closure·global·전략과
+   변수·행동 계약 전체를 봉인하지 않았다.
+3. **단일 SSOT와 발행 경계.** Story는 `basePeriod`, canonical lens `status=usable`,
+   `lensGaps`, Block metadata와 strict JSON tree가 발행 경계다. 검증된 narrative 입력이
+   없으면 자체 수치 claim을 만들지 않는다. simulate는 canonical DataQuery와 private runtime
+   binding을 분리하고 DataEvidence, partition content seal, catalog·data snapshot, lineage를
+   결과까지 보존한다. identified law·action과 admitted path는 신뢰 issuer가 서명한 receipt,
+   cutoff·frequency·horizon·semantics 일치가 필요하며 실행 identity는 256-bit canonical hash다.
+4. **수정과 fail-closed 범위.** 모든 Story 출력에서 외부 문자열을 escape하고 JSON은
+   dataclass·날짜·Decimal·Enum·Path를 포함한 명시 타입만 직렬화한다. 결측은 0 대신 `-`,
+   None, gap으로 남기고 lens 미완전 결론을 차단했다. report 선택에 필요한 block만 계산한다.
+   Company `story(reportType=)` 별칭과 충돌 검사를 DART·EDGAR에 맞췄다. simulate는 strict query
+   params, 단일 subject runtime binding, share·net debt 근거, WACC와 FCF 유효성, snapshot 포함
+   input hash를 강제한다. world receipt 검증과 executable hash v2는 mutable closure·global,
+   callable code/default, law·action·strategy·variable 전체를 봉인하고 opaque·cycle을 거절한다.
+5. **실제 공개 행동, 정확성, 속도, 메모리.** Story의 HTML과 JSON은 원문 삽입과 opaque
+   fallback 없이 렌더링되고 lens gap을 세 형식에서 유지한다. 과거 industry와 historical
+   thesis처럼 현재 원천으로 증명하지 못하는 경로는 최신 결론 대신 unsupported를 낸다.
+   selective report build로 불필요한 100개 이상 block 전수 계산을 피한다. simulate 결과는
+   revenue와 FCF의 내부 결측 위치를 보존하고, 실패 assertion·gap·truncation이 하나라도 있으면
+   quality를 partial로 내린다. DataHub stress audit 21개는 188.82초에 통과해 장기 경로도
+   timeout 우회 없이 확인했다.
+6. **회귀와 Guard.** Story 20개 파일을 독립 pytest process로 실행해 `381 passed`,
+   simulate 41개 파일은 `509 passed`, L3 bridge 변경 뒤 DataHub는 `606 passed, 4 skipped`,
+   architecture import-direction은 `1 passed`다. 변경 Python 전체 Ruff format/check,
+   Pyright `0 errors, 0 warnings`, compileall, diff whitespace와 U+2013/U+2014 검사가 통과했다.
+   source 동결 뒤 공식 strict Guard는 1,796파일, 7/7 규칙과 cycleScan,
+   architecturePytest, folderMirror, gatherGate, providerGate, publicApiSmoke를 모두 통과했다.
+7. **남은 부채와 판정.** Story Block은 현재 block 단위 근거와 gap은 보존하지만 모든 표시값에
+   개별 ref·source·date·status를 붙이는 value-level provenance 모델은 아직 없다. `basePeriod`는
+   재무기간이지 모든 외부 원천의 완전한 knownAt cutoff가 아니므로 역사 industry·thesis는
+   지원하지 않는다. 기존 signed receipt가 없는 simulate 자산은 admitted로 승격되지 않는다.
+   이 제한은 현재 결과에 숨지 않고 partial·unsupported·blocked로 격리했으며 L4 소비자는
+   이 상태를 삭제하거나 완전 성공으로 바꾸지 않아야 한다.
+
+**판정: L3 Story와 simulate는 증명되지 않은 값, 과거시점 결론, 실행 admission을 성공으로
+승격하지 않고 구조화 결손과 차단 상태를 보존한다.** L3를 완료하고 L4 소비자·AI·MCP로
+이동한다.

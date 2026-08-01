@@ -11,7 +11,7 @@ from dartlab.story.lensProducts import lensSummary
 
 def _product() -> dict:
     return {
-        "status": "ok",
+        "status": "usable",
         "conclusion": {"label": "양호", "summary": "현금흐름이 이익을 따라간다"},
         "confidence": {"level": "high", "score": 0.82},
         "time": {"asOf": "2026-07-28", "dataAsOf": "2026-03-31", "period": "2026Q1"},
@@ -24,7 +24,7 @@ class TestLensSummary:
         assert len(rows) == 1
         row = rows[0]
         assert row["engine"] == "analysis"
-        assert row["status"] == "ok"
+        assert row["status"] == "usable"
         assert row["label"] == "양호"
         assert row["summary"] == "현금흐름이 이익을 따라간다"
         assert row["confidenceLevel"] == "high"
@@ -39,6 +39,13 @@ class TestLensSummary:
         assert rows[0]["label"] is None
         assert rows[0]["confidenceScore"] is None
         assert rows[0]["asOf"] is None
+
+    def test_non_usable_product_cannot_promote_a_conclusion(self):
+        product = _product()
+        product["status"] = "partial"
+        rows = lensSummary({"analysis": product})
+        assert rows[0]["label"] is None
+        assert rows[0]["summary"] is None
 
     def test_non_dict_input_is_empty(self):
         assert lensSummary(None) == []

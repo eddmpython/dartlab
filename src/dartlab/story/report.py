@@ -65,7 +65,9 @@ def _mapBlock(block: Any) -> dict | None:
         return {"type": "flags", "kind": kind, "flags": flags}
     if cls == "TableBlock":
         df = getattr(block, "df", None)
-        rows = df.to_dicts() if hasattr(df, "to_dicts") else []
+        to_dicts = getattr(df, "to_dicts", None)
+        raw_rows = to_dicts() if callable(to_dicts) else []
+        rows = raw_rows if isinstance(raw_rows, list) and all(isinstance(row, dict) for row in raw_rows) else []
         data = [{str(k): _fmtCell(v) for k, v in row.items()} for row in rows]
         return {"type": "table", "label": getattr(block, "label", "") or None, "data": data}
     if cls == "ChartBlock":
@@ -161,14 +163,21 @@ def _creditView(result: dict[str, Any] | None) -> dict | None:
     """
     if not isinstance(result, dict) or not result.get("grade"):
         return None
-    product = result.get("product") if isinstance(result.get("product"), dict) else {}
-    confidence = product.get("confidence") if isinstance(product.get("confidence"), dict) else {}
+    raw_product = result.get("product")
+    product: dict[str, Any] = raw_product if isinstance(raw_product, dict) else {}
+    from dartlab.story.lensProducts import isLensProductPromotable
+
+    if not isLensProductPromotable(product):
+        return None
+    raw_confidence = product.get("confidence")
+    confidence: dict[str, Any] = raw_confidence if isinstance(raw_confidence, dict) else {}
     axes = [
         {"name": str(a.get("name") or a.get("label") or ""), "weight": a.get("weight"), "score": a.get("score")}
         for a in (result.get("axes") or [])
         if isinstance(a, dict)
     ]
     return {
+        "status": "usable",
         "grade": result.get("grade"),
         "gradeRaw": result.get("gradeRaw"),
         "score": result.get("score"),
@@ -190,7 +199,7 @@ def _headlineKpis(card: Any, view: dict | None, credit: dict | None = None) -> l
         kpis.append({"label": str(label), "value": str(value)})
     if view and view.get("intrinsic"):
         kpis.append({"label": "내재가치", "value": f"{view['intrinsic']:,}원"})
-    if credit and credit.get("gradeRaw"):
+    if credit and credit.get("status") == "usable" and credit.get("gradeRaw"):
         kpis.append({"label": "신용등급", "value": str(credit["gradeRaw"])})
     return kpis
 
@@ -241,7 +250,8 @@ def buildReportModel(company: Any, perspective: str = "full", *, basePeriod: str
     card = getattr(story, "summaryCard", None)
     bundle = getattr(story, "_lensBundle", {})
     lensProducts = getattr(story, "lensProducts", {})
-    lensResults = bundle.get("results") if isinstance(bundle, dict) and isinstance(bundle.get("results"), dict) else {}
+    raw_lens_results = bundle.get("results") if isinstance(bundle, dict) else None
+    lensResults: dict[str, Any] = raw_lens_results if isinstance(raw_lens_results, dict) else {}
 
     dfv = None
     try:
@@ -339,13 +349,15 @@ def buildReportModel(company: Any, perspective: str = "full", *, basePeriod: str
         "closing": [],
         "provenance": {
             "engines": engines,
-            "note": "self-calc 0. 숫자와 렌즈 결론은 각 엔진 산출이며 Story는 엮기만 합니다.",
+            "status": "partial",
+            "note": "엔진별 근거는 보존하지만 기존 일반 블록의 값 단위 ref는 아직 완전하지 않습니다.",
         },
         "assumptionsNote": "WACC 는 CAPM 추정(점추정), 성장은 재투자율×ROIC 펀더멘털 path. 가정 명시.",
-        "qualityLabel": "conditional",
+        "qualityLabel": "partial",
         "focusQuestions": [],
         "schemaVersion": 2,
         "lensSummary": lensRows,
+        "gaps": list(getattr(story, "lensGaps", [])),
     }
     publicBundle = publicLensBundle(bundle)
     if publicBundle is not None:

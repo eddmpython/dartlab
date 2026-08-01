@@ -11,9 +11,10 @@
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
-from dartlab.simulate.worldContracts import _validateLawCertificate
+from dartlab.simulate.admissionRegistry import AdmissionVerifier
+from dartlab.simulate.worldContracts import _validateActionEvidenceReceipt, _validateLawCertificate
 from dartlab.simulate.worldTypes import (
     EVIDENCE_SET,
     ROLE_SET,
@@ -64,7 +65,24 @@ def _validateVariableContracts(variables: tuple[VariableSpec, ...]) -> None:
             raise SimulationSpecError(f"invalid bounds: {variable.variableId}")
 
 
-def _validateActionContracts(actions: tuple[ActionSpec, ...]) -> None:
+def _downgradeNonAdmittedLaws(laws: tuple[LawSpec, ...]) -> tuple[LawSpec, ...]:
+    """Keep unsigned or rejected empirical claims executable only as non-admitted laws."""
+
+    statusByCertificate = {"documented": "partial", "rejected": "blocked"}
+    return tuple(
+        replace(law, status=statusByCertificate[law.certificate.status])
+        if law.certificate is not None and law.certificate.status in statusByCertificate
+        else law
+        for law in laws
+    )
+
+
+def _validateActionContracts(
+    actions: tuple[ActionSpec, ...],
+    admissionVerifier: AdmissionVerifier | None,
+    stepFrequency: str,
+    stepSpan: int,
+) -> None:
     """행동 하나가 홀로 만족해야 할 근거, 범위, 비용, 인증 계약을 검사한다."""
 
     for action in actions:
@@ -78,11 +96,28 @@ def _validateActionContracts(actions: tuple[ActionSpec, ...]) -> None:
             or action.costPerUnit < 0
         ):
             raise SimulationSpecError(f"invalid action contract: {action.actionId}")
-        if action.effectEvidence == "identifiedIntervention" and not _validDigest(action.certificateId):
-            raise SimulationSpecError(f"identified action needs a certificate: {action.actionId}")
+        if action.effectEvidence == "identifiedIntervention":
+            if not _validDigest(action.certificateId):
+                raise SimulationSpecError(f"identified action needs an evidence receipt: {action.actionId}")
+            if admissionVerifier is None:
+                raise SimulationSpecError(f"identified action needs an admission verifier: {action.actionId}")
+            _validateActionEvidenceReceipt(
+                action,
+                admissionVerifier,
+                frequency=stepFrequency,
+                stepSpan=stepSpan,
+            )
+        elif action.certificateId:
+            raise SimulationSpecError(f"non-identified action cannot carry an evidence receipt: {action.actionId}")
 
 
-def _validateLawIdentity(law: LawSpec, byId: dict[str, LawSpec], stepFrequency: str, stepSpan: int) -> None:
+def _validateLawIdentity(
+    law: LawSpec,
+    byId: dict[str, LawSpec],
+    stepFrequency: str,
+    stepSpan: int,
+    admissionVerifier: AdmissionVerifier | None,
+) -> None:
     """법칙의 식별자, 근거 종류, 상태, 인증서 결속을 모델 격자와 함께 검사한다."""
 
     if law.lawId in byId:
@@ -91,7 +126,13 @@ def _validateLawIdentity(law: LawSpec, byId: dict[str, LawSpec], stepFrequency: 
     if law.evidenceKind not in EVIDENCE_SET or law.status not in {"active", "partial", "blocked"}:
         raise SimulationSpecError(f"invalid law certificate: {law.lawId}")
     if law.evidenceKind in {"measuredAssociation", "identifiedIntervention"}:
-        _validateLawCertificate(law)
+        if (
+            law.certificate is not None
+            and law.certificate.status in {"admitted", "retrospectiveOnly"}
+            and admissionVerifier is None
+        ):
+            raise SimulationSpecError(f"empirical law needs an admission verifier: {law.lawId}")
+        _validateLawCertificate(law, admissionVerifier)
         if law.certificate is not None and (
             law.certificate.frequency != stepFrequency or law.certificate.stepSpan != stepSpan
         ):
@@ -155,6 +196,7 @@ def _validateLawContracts(
     actions: dict[str, ActionSpec],
     stepFrequency: str,
     stepSpan: int,
+    admissionVerifier: AdmissionVerifier | None,
 ) -> tuple[dict[str, str], dict[str, LawSpec]]:
     """법칙을 선언 순서대로 검사하며 생산자 표와 법칙 색인을 함께 세운다."""
 
@@ -162,7 +204,7 @@ def _validateLawContracts(
     byId: dict[str, LawSpec] = {}
     parameterUnitByName: dict[str, str] = {}
     for law in laws:
-        _validateLawIdentity(law, byId, stepFrequency, stepSpan)
+        _validateLawIdentity(law, byId, stepFrequency, stepSpan, admissionVerifier)
         _validateLawInputContracts(law, parameterUnitByName)
         _validateLawReferences(law, variables, actions)
         _registerLawOutputs(law, variables, producer)
@@ -218,19 +260,32 @@ class WorldModel:
     laws: tuple[LawSpec, ...]
     stepFrequency: str = "step"
     stepSpan: int = 1
+    admissionVerifier: AdmissionVerifier | None = field(
+        default=None,
+        repr=False,
+        compare=False,
+        metadata={"canonical": False},
+    )
     _orderedLaws: tuple[LawSpec, ...] = field(init=False, repr=False, compare=False)
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "variables", tuple(self.variables))
         object.__setattr__(self, "actions", tuple(self.actions))
-        object.__setattr__(self, "laws", tuple(self.laws))
+        object.__setattr__(self, "laws", _downgradeNonAdmittedLaws(tuple(self.laws)))
         if not self.stepFrequency or self.stepSpan < 1:
             raise SimulationSpecError("invalid model step contract")
         variables = _indexVariables(self.variables)
         actions = _indexActions(self.actions)
         _validateVariableContracts(self.variables)
-        _validateActionContracts(self.actions)
-        producer, byId = _validateLawContracts(self.laws, variables, actions, self.stepFrequency, self.stepSpan)
+        _validateActionContracts(self.actions, self.admissionVerifier, self.stepFrequency, self.stepSpan)
+        producer, byId = _validateLawContracts(
+            self.laws,
+            variables,
+            actions,
+            self.stepFrequency,
+            self.stepSpan,
+            self.admissionVerifier,
+        )
         if any(a.costPerUnit > 0 for a in self.actions) and not any(law.usesActionCost for law in self.laws):
             raise SimulationSpecError("action cost has no consuming law")
         dependencies = _lawDependencies(self.laws, producer)

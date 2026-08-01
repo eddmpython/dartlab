@@ -1,6 +1,6 @@
 """Driver sheet structures + topological deterministic executor (L2.5 born-clean core).
 
-The L2.5 simulate engine builds a driver DAG whose only owned math is the macro→fundamentals
+The L3 simulate engine builds a driver DAG whose only owned math is the macro→fundamentals
 edge transfer (see `simulate/transfer.py`); every other node is a thin call into an L2 leaf.
 This module holds the structural foundation per
 `mainPlan/scenario-simulator/01-engine-architecture.md` §5/§6:
@@ -18,12 +18,14 @@ point, not a runtime branch. The lens path is a later phase.
 
 Naming follows §5: DriverNode / DriverSheet (NOT *Graph / *Loop / *Kernel / *Dag).
 
-Layer: L2.5. Imports nothing above L0 — this file is pure stdlib (no dartlab import).
+Layer: L3. Imports nothing above L0; this file is pure stdlib (no dartlab import).
 """
 
 from __future__ import annotations
 
 import hashlib
+import json
+import math
 from collections.abc import Callable
 from dataclasses import dataclass, field
 
@@ -42,7 +44,7 @@ class NodeValue:
     provenance : human-auditable formula tag, e.g.
                  "transfer:rev×(1+βgdp...)" | "preset:baseline" | "proforma:cashplug".
     refs       : grounding ref addresses (deterministic = leaf ref; lens = cited ref).
-    inputsHash : blake2b 16-hex over parents' inputsHash + fn key + normalized frozen inputs.
+    inputsHash : blake2b-256 over parents' inputsHash + fn key + typed canonical frozen inputs.
     asOf       : data vintage used to compute this value.
     latestAsOf : latest available vintage (for downstream staleness judgement).
     """
@@ -129,24 +131,40 @@ class DriverSheet:
 # ──────────────────────────────────────────────────────────────────────
 
 
-def _normalize(obj: object) -> str:
-    """Float-round(1e-9) normalization to kill float non-determinism / cross-runtime drift."""
+def _normalize(obj: object) -> object:
+    """타입과 컨테이너 경계를 보존하는 canonical hash payload를 만든다."""
+    if obj is None:
+        return {"type": "none"}
+    if isinstance(obj, bool):
+        return {"type": "bool", "value": obj}
+    if isinstance(obj, int):
+        return {"type": "int", "value": str(obj)}
     if isinstance(obj, float):
-        return f"{round(obj, 9):.9f}"
-    if isinstance(obj, (list, tuple)):
-        return "[" + ",".join(_normalize(x) for x in obj) + "]"
+        if not math.isfinite(obj):
+            raise ValueError("inputsHash cannot encode a non-finite float")
+        return {"type": "float", "value": f"{round(obj, 9):.9f}"}
+    if isinstance(obj, str):
+        return {"type": "str", "value": obj}
+    if isinstance(obj, bytes):
+        return {"type": "bytes", "value": obj.hex()}
+    if isinstance(obj, list):
+        return {"type": "list", "items": [_normalize(value) for value in obj]}
+    if isinstance(obj, tuple):
+        return {"type": "tuple", "items": [_normalize(value) for value in obj]}
     if isinstance(obj, dict):
-        return "{" + ",".join(f"{k}:{_normalize(v)}" for k, v in sorted(obj.items())) + "}"
-    return str(obj)
+        pairs = [(_normalize(key), _normalize(value)) for key, value in obj.items()]
+        pairs.sort(key=lambda pair: json.dumps(pair[0], sort_keys=True, separators=(",", ":")))
+        return {"type": "dict", "items": pairs}
+    raise TypeError(f"inputsHash cannot encode {type(obj).__module__}.{type(obj).__qualname__}")
 
 
 def computeInputsHash(parentHashes: tuple[str, ...], fn: str, frozenInputs: object) -> str:
-    """Deterministic memoization key: blake2b(sorted parents + fn + normalized inputs) -> 16 hex.
+    """Deterministic memoization key over typed canonical inputs.
 
     Capabilities:
         Produces the stable content hash that addresses a node's computed value. Two evaluations
         with the same parent hashes, fn key, and (float-normalized) frozen inputs yield the same
-        16-hex digest, which is the basis of deterministic re-run and future memoization.
+        64-hex digest, which is the basis of deterministic re-run and future memoization.
 
     Args:
         parentHashes: the inputsHash of every upstream dependency (order-independent — sorted
@@ -156,15 +174,16 @@ def computeInputsHash(parentHashes: tuple[str, ...], fn: str, frozenInputs: obje
             (floats rounded to 1e-9, dicts key-sorted) before hashing.
 
     Returns:
-        str: a 16-character hex digest (blake2b, digest_size=8).
+        str: a 64-character hex digest (blake2b-256).
 
     Raises:
-        None — pure function; any object is reduced to a string by `_normalize`.
+        TypeError: if an unsupported object would require an unstable repr fallback.
+        ValueError: if a non-finite float is present.
 
     Example:
         >>> h = computeInputsHash((), "macro.path", {"gdp": [1.5, 2.0, 2.2]})
         >>> len(h)
-        16
+        64
 
     Guide:
         Float normalization is what makes the hash portable across runtimes and stable across
@@ -184,14 +203,19 @@ def computeInputsHash(parentHashes: tuple[str, ...], fn: str, frozenInputs: obje
         AntiPatterns:
             - Hashing un-normalized floats — breaks cross-runtime determinism.
             - Treating the digest as a value rather than an address.
-        OutputSchema: ``str`` of length 16 (hex).
+        OutputSchema: ``str`` of length 64 (hex).
         Prerequisites: ``frozenInputs`` must be composed of str/float/int/list/tuple/dict.
         Freshness: pure function — no data vintage.
-        Dataflow: parentHashes + fn + normalize(frozenInputs) -> blake2b -> 16 hex.
+        Dataflow: parentHashes + fn + normalize(frozenInputs) -> blake2b-256 -> 64 hex.
         TargetMarkets: market-neutral (pure utility).
     """
-    payload = "|".join(sorted(parentHashes)) + "||" + fn + "||" + _normalize(frozenInputs)
-    return hashlib.blake2b(payload.encode("utf-8"), digest_size=8).hexdigest()
+    payload = json.dumps(
+        {"parents": sorted(parentHashes), "fn": fn, "inputs": _normalize(frozenInputs)},
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    return hashlib.blake2b(payload.encode("utf-8"), digest_size=32).hexdigest()
 
 
 # ──────────────────────────────────────────────────────────────────────
@@ -360,7 +384,13 @@ def evaluateSheet(sheet: DriverSheet) -> dict[str, NodeValue]:
         depValues = {dep: out[dep] for dep in node.deps}
         value, vector, provenance, refs, frozenInputs, asOf, latestAsOf = fn(node, sheet, depValues)
         parentHashes = tuple(out[dep].inputsHash for dep in node.deps)
-        hashInputs = {"frozenInputs": frozenInputs, "asOf": asOf, "latestAsOf": latestAsOf}
+        hashInputs = {
+            "frozenInputs": frozenInputs,
+            "asOf": asOf,
+            "latestAsOf": latestAsOf,
+            "dataSnapshotId": sheet.snapshot.get("dataSnapshotId", ""),
+            "dataContractHash": sheet.snapshot.get("dataContractHash", ""),
+        }
         ih = computeInputsHash(parentHashes, node.fn, hashInputs)
         nv = NodeValue(
             value=value,

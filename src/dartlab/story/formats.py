@@ -3,7 +3,93 @@
 from __future__ import annotations
 
 import json
+import re
+from dataclasses import asdict, is_dataclass
+from datetime import date, datetime
+from decimal import Decimal
+from enum import Enum
+from html import escape
+from pathlib import Path
 from typing import Any
+
+
+def _htmlText(value: Any) -> str:
+    """사용자·공시 유래 값을 HTML text/attribute에 안전하게 넣는다."""
+    return escape(str(value), quote=True)
+
+
+def _jsonDefault(value: Any) -> Any:
+    """주소가 섞인 repr fallback 없이 알려진 안정 타입만 JSON으로 바꾼다."""
+    if is_dataclass(value) and not isinstance(value, type):
+        return asdict(value)
+    if isinstance(value, (date, datetime)):
+        return value.isoformat()
+    if isinstance(value, Decimal):
+        return str(value)
+    if isinstance(value, Enum):
+        return value.value
+    if isinstance(value, Path):
+        return str(value)
+    raise TypeError(f"story JSON cannot encode {type(value).__module__}.{type(value).__qualname__}")
+
+
+def _htmlLines(value: Any) -> str:
+    """개행은 보존하되 각 줄은 독립적으로 escape한다."""
+    return "<br/>".join(_htmlText(line) for line in str(value).splitlines())
+
+
+def _safeChartKey(title: Any) -> str:
+    """차트 파일명에는 경로 구분자나 HTML 문자를 허용하지 않는다."""
+    key = re.sub(r"[^\w.-]+", "_", str(title), flags=re.UNICODE).strip("._")
+    return key[:30] or "chart"
+
+
+def _safeTableHtml(df: Any) -> str:
+    """DataFrame의 자체 HTML을 신뢰하지 않고 셀 단위로 escape한다."""
+    columns = [str(column) for column in (getattr(df, "columns", None) or [])]
+    rows: list[list[Any]] = []
+    if hasattr(df, "iter_rows"):
+        try:
+            rows = [list(row) for row in df.iter_rows()]
+        except (AttributeError, TypeError, ValueError):
+            rows = []
+    elif hasattr(df, "to_dicts"):
+        try:
+            dictRows = df.to_dicts()
+            if not columns and dictRows:
+                columns = [str(column) for column in dictRows[0]]
+            rows = [[row.get(column) for column in columns] for row in dictRows]
+        except (AttributeError, TypeError, ValueError):
+            rows = []
+
+    if not columns:
+        return ""
+    head = "".join(f"<th>{_htmlText(column)}</th>" for column in columns)
+    body = "".join(
+        "<tr>" + "".join(f"<td>{_htmlText('' if value is None else value)}</td>" for value in row) + "</tr>"
+        for row in rows
+    )
+    return f"<table><thead><tr>{head}</tr></thead><tbody>{body}</tbody></table>"
+
+
+def _storyLensGaps(story: Any) -> list[dict[str, Any]]:
+    gaps = getattr(story, "lensGaps", None)
+    return [gap for gap in gaps if isinstance(gap, dict)] if isinstance(gaps, list) else []
+
+
+def _htmlRenderLensGaps(story: Any) -> str | None:
+    gaps = _storyLensGaps(story)
+    if not gaps:
+        return None
+    items = []
+    for gap in gaps:
+        owner = gap.get("engine") or gap.get("code") or gap.get("id") or gap.get("builder") or "story"
+        status = gap.get("status") or gap.get("error") or "unknown"
+        reason = gap.get("reason") or gap.get("message") or "상세 사유 없음"
+        sourceRef = gap.get("sourceRef")
+        source = f" <code>{_htmlText(sourceRef)}</code>" if sourceRef else ""
+        items.append(f"<li><strong>{_htmlText(owner)} [{_htmlText(status)}]</strong>: {_htmlText(reason)}{source}</li>")
+    return "<section class='dl-lens-gaps'><h3>분석 한계</h3><ul>" + "".join(items) + "</ul></section>"
 
 
 def renderHtml(story, *, chartDir: str | None = None) -> str:
@@ -19,21 +105,22 @@ def renderHtml(story, *, chartDir: str | None = None) -> str:
 
     parts: list[str] = []
     parts.append(
-        f"<h2 style='font-family:Pretendard,-apple-system,sans-serif'>{story.corpName} ({story.stockCode})</h2>"
+        f"<h2 style='font-family:Pretendard,-apple-system,sans-serif'>"
+        f"{_htmlText(story.corpName)} ({_htmlText(story.stockCode)})</h2>"
     )
 
     if story.summaryCard:
         card = story.summaryCard
         cardParts = []
         if card.conclusion:
-            cardParts.append(f"<strong>{card.conclusion}</strong>")
+            cardParts.append(f"<strong>{_htmlText(card.conclusion)}</strong>")
         if card.grades:
             gradeStr = " | ".join(f"{k} {v}" for k, v in card.grades.items())
-            cardParts.append(f"<span style='color:#888'>{gradeStr}</span>")
+            cardParts.append(f"<span style='color:#888'>{_htmlText(gradeStr)}</span>")
         for s in card.strengths:
-            cardParts.append(f"<span style='color:#2e7d32'>+ {s}</span>")
+            cardParts.append(f"<span style='color:#2e7d32'>+ {_htmlText(s)}</span>")
         for w in card.warnings:
-            cardParts.append(f"<span style='color:#f9a825'>- {w}</span>")
+            cardParts.append(f"<span style='color:#f9a825'>- {_htmlText(w)}</span>")
         parts.append(
             "<div style='border:2px solid #333;padding:12px;margin:8px 0;border-radius:4px'>"
             + "<br/>".join(cardParts)
@@ -44,16 +131,20 @@ def renderHtml(story, *, chartDir: str | None = None) -> str:
         parts.append(
             f"<div style='border:1px solid #ddd;padding:12px;margin:8px 0;border-radius:4px'>"
             f"<strong>재무 순환 서사</strong><br/>"
-            f"{'<br/>'.join(story.circulationSummary.split(chr(10)))}</div>"
+            f"{_htmlLines(story.circulationSummary)}</div>"
         )
+
+    lensGaps = _htmlRenderLensGaps(story)
+    if lensGaps:
+        parts.append(lensGaps)
 
     detailMode = getattr(story.layout, "detail", True)
 
     for section in story.sections:
         if not detailMode:
-            parts.append(f"<h3>{section.title}</h3>")
+            parts.append(f"<h3>{_htmlText(section.title)}</h3>")
             if section.summary:
-                parts.append(f"<p style='color:#888'>{section.summary}</p>")
+                parts.append(f"<p style='color:#888'>{_htmlText(section.summary)}</p>")
             continue
         if section.threads:
             for t in section.threads:
@@ -61,45 +152,51 @@ def renderHtml(story, *, chartDir: str | None = None) -> str:
                 color = colorMap.get(t.severity, "#757575")
                 parts.append(
                     f"<div style='border-left:3px solid {color};padding:4px 12px;margin:4px 0'>"
-                    f"<strong style='color:{color}'>>> {t.title}</strong></div>"
+                    f"<strong style='color:{color}'>&gt;&gt; {_htmlText(t.title)}</strong></div>"
                 )
         for block in section.blocks:
             if isinstance(block, HeadingBlock):
-                parts.append(f"<{block.htmlTag}>{block.title}</{block.htmlTag}>")
+                parts.append(f"<{block.htmlTag}>{_htmlText(block.title)}</{block.htmlTag}>")
             elif isinstance(block, TextBlock):
-                parts.append(f"<p>{block.text}</p>")
+                parts.append(f"<p>{_htmlLines(block.text)}</p>")
             elif isinstance(block, MetricBlock):
-                rows = "".join(f"<tr><td>{label}</td><td>{value}</td></tr>" for label, value in block.metrics)
+                rows = "".join(
+                    f"<tr><td>{_htmlText(label)}</td><td>{_htmlText(value)}</td></tr>" for label, value in block.metrics
+                )
                 parts.append(f"<table>{rows}</table>")
             elif isinstance(block, TableBlock):
-                if hasattr(block.df, "_repr_html_"):
-                    parts.append(block.df._repr_html_())
+                table = _safeTableHtml(block.df)
+                if table:
+                    parts.append(table)
             elif isinstance(block, ChartBlock):
                 title = block.spec.get("title", "") if isinstance(block.spec, dict) else ""
                 rendered_chart = False
                 if chartDir and isinstance(block.spec, dict):
                     from dartlab.viz.spec import VizSpec
 
-                    key = title.replace(" ", "_")[:30] or "chart"
+                    key = _safeChartKey(title)
                     img_path = f"{chartDir}/chart-{key}.svg"
                     try:
                         vs = VizSpec.fromDict(block.spec)
                         if vs.toImage(img_path):
-                            parts.append(f"<img src='assets/chart-{key}.svg' alt='{title}' style='max-width:100%'>")
+                            parts.append(
+                                f"<img src='assets/chart-{_htmlText(key)}.svg' "
+                                f"alt='{_htmlText(title)}' style='max-width:100%'>"
+                            )
                             rendered_chart = True
                     except (ImportError, ValueError, OSError, TypeError):
                         pass
                 if not rendered_chart:
-                    spec_json = json.dumps(block.spec, ensure_ascii=False, default=str)
+                    spec_json = json.dumps(block.spec, ensure_ascii=False, default=_jsonDefault)
                     parts.append(
-                        f"<div class='dl-chart' data-spec='{spec_json}'>"
-                        f"<p style='color:#888;font-size:0.85em'>[chart: {title}]</p></div>"
+                        f"<div class='dl-chart' data-spec='{_htmlText(spec_json)}'>"
+                        f"<p style='color:#888;font-size:0.85em'>[chart: {_htmlText(title)}]</p></div>"
                     )
             elif isinstance(block, FlagBlock):
                 for f in block.flags:
-                    parts.append(f"<p>{block.icon} {f}</p>")
+                    parts.append(f"<p>{_htmlText(block.icon)} {_htmlText(f)}</p>")
             elif hasattr(block, "render"):
-                parts.append(block.render("html"))
+                parts.append(f"<pre>{_htmlText(block.render('html'))}</pre>")
 
     return "<div style='display:flex;flex-direction:column;gap:16px'>" + "".join(parts) + "</div>"
 
@@ -181,6 +278,24 @@ def _mdRenderLensProducts(story) -> str | None:
         )
     lines.append("")
     lines.append("렌즈별 판단은 독립 결과이며 통합 점수나 단일 등급으로 합산하지 않습니다.")
+    return "\n".join(lines)
+
+
+def _mdRenderLensGaps(story) -> str | None:
+    """렌즈와 블록 조립 결손을 공개 출력에서 숨기지 않는다."""
+    gaps = _storyLensGaps(story)
+    if not gaps:
+        return None
+    lines = ["### 분석 한계", ""]
+    for gap in gaps:
+        owner = str(gap.get("engine") or gap.get("code") or gap.get("id") or gap.get("builder") or "story").replace(
+            "\n", " "
+        )
+        status = str(gap.get("status") or gap.get("error") or "unknown").replace("\n", " ")
+        reason = str(gap.get("reason") or gap.get("message") or "상세 사유 없음").replace("\n", " ")
+        sourceRef = gap.get("sourceRef")
+        source = f" (`{str(sourceRef).replace(chr(10), ' ')}`)" if sourceRef else ""
+        lines.append(f"- **{owner} [{status}]**: {reason}{source}")
     return "\n".join(lines)
 
 
@@ -389,6 +504,10 @@ def renderMarkdown(story, *, chartDir: str | None = None) -> str:
     if lensProducts:
         parts.append(lensProducts)
 
+    lensGaps = _mdRenderLensGaps(story)
+    if lensGaps:
+        parts.append(lensGaps)
+
     parts.extend(_mdRenderTemplateHeader(story, templateName, tmplInfo))
 
     if story.circulationSummary:
@@ -482,8 +601,9 @@ def renderJson(story) -> str:
                     }
                 )
             elif isinstance(block, TableBlock):
-                if hasattr(block.df, "to_dicts"):
-                    items.append({"type": "table", "label": block.label, "data": block.df.to_dicts()})
+                toDicts = getattr(block.df, "to_dicts", None)
+                if callable(toDicts):
+                    items.append({"type": "table", "label": block.label, "data": toDicts()})
             elif isinstance(block, ChartBlock):
                 items.append({"type": "chart", "spec": block.spec, "caption": block.caption})
             elif isinstance(block, FlagBlock):
@@ -525,6 +645,9 @@ def renderJson(story) -> str:
         "reportType": getattr(story, "reportType", None),
         "sections": sections,
     }
+    lensGaps = _storyLensGaps(story)
+    if lensGaps:
+        result["lensGaps"] = lensGaps
     from dartlab.story.lensProducts import publicLensBundle
 
     publicBundle = publicLensBundle(getattr(story, "_lensBundle", None))
@@ -544,7 +667,7 @@ def renderJson(story) -> str:
     return json.dumps(
         result,
         ensure_ascii=False,
-        default=str,
+        default=_jsonDefault,
     )
 
 

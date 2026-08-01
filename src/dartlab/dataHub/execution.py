@@ -5,7 +5,7 @@ from __future__ import annotations
 import dataclasses
 import hashlib
 import time
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import TimeoutError as FutureTimeoutError
 
@@ -306,7 +306,12 @@ def _uncoveredMarkets(
     return rows
 
 
-def executeDataQuery(assetIds: Sequence[str], query: DataQuery) -> DataResult:
+def executeDataQuery(
+    assetIds: Sequence[str],
+    query: DataQuery,
+    *,
+    runtimeBindings: Mapping[str, Mapping[str, object]] | None = None,
+) -> DataResult:
     """Asset IDs를 resolve, validate, execute, project해 하나의 DataResult로 반환한다.
 
     Capabilities:
@@ -326,6 +331,18 @@ def executeDataQuery(assetIds: Sequence[str], query: DataQuery) -> DataResult:
     startedAt = time.perf_counter()
     deadline = startedAt + query.budget.timeoutMs / 1000
     materialization = query.materialization
+    runtimeBindings = runtimeBindings or {}
+    if runtimeBindings and (query.continuation is not None or materialization.mode != "runtime"):
+        raise ValueError("runtime binding은 새 runtime query에서만 사용할 수 있습니다")
+    if runtimeBindings:
+        if set(runtimeBindings) != {"analysis.simulationInputs"}:
+            raise ValueError("runtime binding은 simulation input asset에만 허용됩니다")
+        binding = runtimeBindings["analysis.simulationInputs"]
+        if set(binding) != {"company"} or len(query.subjects) != 1:
+            raise ValueError("simulation runtime binding은 단일 subject Company만 허용합니다")
+        companySubject = str(getattr(binding["company"], "stockCode", ""))
+        if not companySubject or companySubject != query.subjects[0]:
+            raise ValueError("runtime binding Company와 query subject가 일치하지 않습니다")
     query = dataclasses.replace(
         query,
         materialization=MaterializationDirective(),
@@ -384,6 +401,8 @@ def executeDataQuery(assetIds: Sequence[str], query: DataQuery) -> DataResult:
     ownerPaging = tuple(isPageableOwner(descriptor, activeQuery) for _, descriptor, activeQuery in resolved)
     pagingEntry = _pageableEntryPoint(resourcePaging, ownerPaging)
     if pagingEntry is not None:
+        if runtimeBindings:
+            raise ValueError("pageable query는 process-local runtime binding을 지원하지 않습니다")
         _, contractHash = _resolvedIdentity(resolved, query)
         return pagingEntry(
             assetIds,
@@ -410,7 +429,16 @@ def executeDataQuery(assetIds: Sequence[str], query: DataQuery) -> DataResult:
         if stopExecution:
             break
         executor = ThreadPoolExecutor(max_workers=len(window), thread_name_prefix="dartlab-data")
-        futures = tuple(executor.submit(_execute, task.descriptor, task.query, task.selector) for task in window)
+        futures = tuple(
+            executor.submit(
+                _execute,
+                task.descriptor,
+                task.query,
+                task.selector,
+                runtimeBindings.get(task.descriptor.assetId),
+            )
+            for task in window
+        )
         abandonWindow = False
         try:
             for task, future in zip(window, futures, strict=True):

@@ -329,17 +329,23 @@ def historicalRatiosBlock(data: dict) -> list:
         ),
     ]
 
-    metrics = [
-        ("매출총이익률", f"{data.get('grossMargin', 0):.1f}%"),
-        ("판관비율", f"{data.get('sgaRatio', 0):.1f}%"),
-        ("유효세율", f"{data.get('effectiveTaxRate', 0):.1f}%"),
-        ("CAPEX/매출", f"{data.get('capexToRevenue', 0):.1f}%"),
-        ("NWC/매출", f"{data.get('nwcToRevenue', 0):.1f}%"),
-        ("배당성향", f"{data.get('dividendPayout', 0):.1f}%"),
-        ("사용 연수", f"{data.get('yearsUsed', 0)}년"),
-        ("신뢰도", data.get("confidence", "")),
-    ]
-    blocks.append(MetricBlock(metrics))
+    metrics = []
+    for label, key, suffix in (
+        ("매출총이익률", "grossMargin", "%"),
+        ("판관비율", "sgaRatio", "%"),
+        ("유효세율", "effectiveTaxRate", "%"),
+        ("CAPEX/매출", "capexToRevenue", "%"),
+        ("NWC/매출", "nwcToRevenue", "%"),
+        ("배당성향", "dividendPayout", "%"),
+    ):
+        if data.get(key) is not None:
+            metrics.append((label, f"{data[key]:.1f}{suffix}"))
+    if data.get("yearsUsed") is not None:
+        metrics.append(("사용 연수", f"{data['yearsUsed']}년"))
+    if data.get("confidence"):
+        metrics.append(("신뢰도", data["confidence"]))
+    if metrics:
+        blocks.append(MetricBlock(metrics))
 
     for w in data.get("warnings", []):
         blocks.append(TextBlock(f"-- {w}", style="dim"))

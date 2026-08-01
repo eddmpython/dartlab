@@ -9,6 +9,7 @@ from dartlab.story import Story
 from dartlab.story.lensProducts import (
     collectLensProducts,
     enginesForReportType,
+    lensSummary,
     publicLensBundle,
 )
 
@@ -132,6 +133,104 @@ def test_market_without_industry_facade_gets_honest_blocked_product() -> None:
     assert product["gaps"]
 
 
+def test_partial_product_keeps_gap_but_does_not_publish_conclusion() -> None:
+    company = _FakeCompany()
+    product = _product("credit")
+    product["status"] = "partial"
+    product["gaps"] = [
+        {
+            "id": "credit.coverage",
+            "status": "partial",
+            "reason": "신용 근거 일부 결손",
+            "sourceRef": "fixture://credit/coverage",
+        }
+    ]
+    company.credit = lambda *args, **kwargs: {
+        "product": product,
+        "grade": "dCR-AA",
+        "gradeRaw": "AA",
+    }
+
+    bundle = collectLensProducts(company, engines=("credit",))
+    rows = lensSummary(bundle["products"])
+
+    assert bundle["products"]["credit"]["status"] == "partial"
+    assert bundle["gaps"] == [
+        {
+            "id": "credit.coverage",
+            "status": "partial",
+            "reason": "신용 근거 일부 결손",
+            "sourceRef": "fixture://credit/coverage",
+            "engine": "credit",
+        }
+    ]
+    assert rows[0]["status"] == "partial"
+    assert rows[0]["label"] is None and rows[0]["summary"] is None
+
+
+def test_unsupported_top_level_product_is_rejected_as_contract_gap() -> None:
+    company = _FakeCompany()
+    product = _product("quant")
+    product["status"] = "unsupported"
+    product["gaps"] = [{"id": "quant.axis", "status": "unsupported", "reason": "축 미지원"}]
+    company.quant = lambda *args, **kwargs: {"product": product}
+
+    bundle = collectLensProducts(company, engines=("quant",))
+
+    assert bundle["products"] == {}
+    assert bundle["gaps"][0]["status"] == "blocked"
+    assert "계약 검증 실패" in bundle["gaps"][0]["reason"]
+
+
+def test_base_period_is_forwarded_to_supported_lenses() -> None:
+    company = _FakeCompany()
+    received: dict[str, dict] = {}
+
+    def analysis(*args, **kwargs):
+        received["analysis"] = kwargs
+        return {"product": _product("analysis")}
+
+    def credit(*args, **kwargs):
+        received["credit"] = kwargs
+        return {"product": _product("credit")}
+
+    def industry(**kwargs):
+        received["industry"] = kwargs
+        return {"product": _product("industry")}
+
+    def quant(*args, **kwargs):
+        received["quant"] = kwargs
+        return {"product": _product("quant")}
+
+    def macro(*args, **kwargs):
+        received["macro"] = kwargs
+        return {"product": _product("macro")}
+
+    company.analysis = analysis
+    company.credit = credit
+    company.industry = industry
+    company.quant = quant
+    company.macro = macro
+
+    collectLensProducts(company, basePeriod="2024Q2")
+
+    assert received["analysis"]["basePeriod"] == "2024Q2"
+    assert received["credit"]["basePeriod"] == "2024Q2"
+    assert received["industry"]["basePeriod"] == "2024Q2"
+    assert received["quant"]["asOf"] == "2024-06-30"
+    assert received["macro"]["asOf"] == "2024-06-30"
+
+
+def test_historical_industry_without_cutoff_contract_is_a_gap() -> None:
+    company = _FakeCompany()
+
+    bundle = collectLensProducts(company, engines=("industry",), basePeriod="2024")
+
+    assert bundle["products"] == {}
+    assert bundle["gaps"][0]["engine"] == "industry"
+    assert bundle["gaps"][0]["status"] == "blocked"
+
+
 def test_public_bundle_and_story_json_exclude_legacy_results() -> None:
     bundle = collectLensProducts(_FakeCompany(), engines=("analysis",))
     public = publicLensBundle(bundle)
@@ -147,6 +246,26 @@ def test_public_bundle_and_story_json_exclude_legacy_results() -> None:
     assert rendered["reportType"] == "audit"
     assert rendered["lensProducts"]["noComposite"] is True
     assert "results" not in rendered["lensProducts"]
+
+
+def test_story_gaps_are_visible_in_all_public_formats() -> None:
+    story = Story(stockCode="005930", corpName="삼성전자", reportType="audit")
+    story.lensGaps = [
+        {
+            "code": "BLOCK_BUILD_FAILED",
+            "builder": "revenue",
+            "error": "ValueError",
+            "message": "공시 표 결손",
+        }
+    ]
+
+    markdown = story.render("markdown")
+    html = story.render("html")
+    rendered = json.loads(story.render("json"))
+
+    assert "BLOCK_BUILD_FAILED" in markdown
+    assert "BLOCK_BUILD_FAILED" in html
+    assert rendered["lensGaps"] == story.lensGaps
 
 
 def test_public_bundle_recomputes_canonical_tensions_from_products() -> None:

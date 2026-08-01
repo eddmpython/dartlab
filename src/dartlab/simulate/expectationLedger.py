@@ -5,7 +5,7 @@ Rows are ExpectationSpec (sealed at issuance, immutable) and ExpectationScore (a
 actuals arrive; re-scoring appends a new row, never rewrites). There are deliberately no
 update or delete functions: a wrong issuance is history too, annotated only via warnings.
 
-Layer: L2.5 simulate owns the ledger because it is the sole writer (the collector calls L2
+Layer: L3 simulate owns the ledger because it is the sole writer (the collector calls L2
 engine verbs and seals their output; L2 engines never import this module, which the
 downward-only import contract enforces).
 
@@ -29,7 +29,7 @@ _JSON_FIELDS = {"quantiles", "direction", "baselines", "sourceRefs", "warnings",
 
 # Explicit column schemas: dtype inference on an all-None column (e.g. `error` in a clean
 # month) would freeze the shard as Null and break later appends of real values.
-_EXPECTATION_SCHEMA: dict[str, pl.DataType] = {
+_EXPECTATION_SCHEMA = {
     "expectationId": pl.Utf8,
     "domain": pl.Utf8,
     "variable": pl.Utf8,
@@ -50,7 +50,7 @@ _EXPECTATION_SCHEMA: dict[str, pl.DataType] = {
     "warnings": pl.Utf8,
     "schemaVersion": pl.Int64,
 }
-_SCORE_SCHEMA: dict[str, pl.DataType] = {
+_SCORE_SCHEMA = {
     "expectationId": pl.Utf8,
     "scoredAt": pl.Utf8,
     "actual": pl.Utf8,
@@ -67,7 +67,7 @@ _SCORE_SCHEMA: dict[str, pl.DataType] = {
 }
 # 추정 3표 구조화 봉인: 요약 숫자가 아니라 계정 단위(IS/BS/CF x 분위 x 연도)로 남긴다.
 # parentId = 모체 매출 기대 행(expectationId) : 전개는 proforma 결정론이라 계보로 재현 가능.
-_PROFORMA_SCHEMA: dict[str, pl.DataType] = {
+_PROFORMA_SCHEMA = {
     "parentId": pl.Utf8,
     "code": pl.Utf8,
     "issuedAt": pl.Utf8,

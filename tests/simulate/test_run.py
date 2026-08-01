@@ -158,6 +158,47 @@ def test_dcf_node_honest_gap_when_net_debt_absent() -> None:
     assert "netDebt_absent" in dcf.provenance
 
 
+@pytest.mark.unit
+def test_dcf_node_blocks_incomplete_fcf_without_time_compaction() -> None:
+    from dartlab.simulate.registry import _fnDcf
+    from dartlab.simulate.sheet import DriverSheet, NodeValue
+
+    snapshot = _snapshot(baseRevenue=300.0)
+    sheet = DriverSheet(snapshot=snapshot)
+    partial = NodeValue(
+        value=100.0,
+        vector=(100.0, None, 100.0),
+        provenance="test",
+        refs=(),
+        inputsHash="a" * 64,
+        asOf="2024Q4",
+        latestAsOf="2024Q4",
+    )
+
+    value, vector, provenance, *_ = _fnDcf(object(), sheet, {"proforma": partial})
+
+    assert value is None
+    assert vector is None
+    assert provenance == "dcf:gap(fcfPath_incomplete)"
+
+
+@pytest.mark.unit
+def test_dcf_node_blocks_invalid_terminal_growth_contract() -> None:
+    from dartlab.simulate.registry import _fnDcf
+    from dartlab.simulate.sheet import DriverSheet, NodeValue
+
+    snapshot = _snapshot(baseRevenue=300.0)
+    snapshot.update(baseWacc=3.0, terminalGrowth=3.0)
+    sheet = DriverSheet(snapshot=snapshot)
+    complete = NodeValue(100.0, (100.0, 100.0), "test", (), "a" * 64, "2024Q4", "2024Q4")
+
+    value, vector, provenance, *_ = _fnDcf(object(), sheet, {"proforma": complete})
+
+    assert value is None
+    assert vector is None
+    assert provenance == "dcf:gap(terminalGrowth_not_below_wacc)"
+
+
 # ──────────────────────────────────────────────────────────────────────
 # honest-gap: absent base revenue cascades to None (never 0)
 # ──────────────────────────────────────────────────────────────────────
@@ -204,6 +245,20 @@ def test_synthetic_rerun_byte_identical() -> None:
 
 
 @pytest.mark.unit
+def test_finance_series_content_changes_proforma_and_dcf_hashes() -> None:
+    first = _snapshot(baseRevenue=300.0)
+    changed = _snapshot(baseRevenue=300.0)
+    changed["series"]["CF"]["purchase_of_property_plant_and_equipment"] = [-200.0] * 4
+
+    out1 = evaluateSheet(buildScenarioSheet(first, scenario="baseline", horizon=3))
+    out2 = evaluateSheet(buildScenarioSheet(changed, scenario="baseline", horizon=3))
+
+    assert out1["proforma@baseline#all"].vector != out2["proforma@baseline#all"].vector
+    assert out1["proforma@baseline#all"].inputsHash != out2["proforma@baseline#all"].inputsHash
+    assert out1["dcf@baseline#all"].inputsHash != out2["dcf@baseline#all"].inputsHash
+
+
+@pytest.mark.unit
 def test_inputs_hash_includes_data_vintage() -> None:
     latest = _snapshot(baseRevenue=300.0)
     historical = dict(latest)
@@ -231,6 +286,113 @@ def test_run_scenario_surfaces_assumptions_and_warnings(monkeypatch) -> None:
     assert result.assumptions == ("baseWacc10Pct",)
     assert "periodScopedPitOnly" in result.warnings
     assert result.requestedAsOf == "2023-Q4"
+
+
+@pytest.mark.unit
+def test_run_scenario_preserves_data_input_gaps_and_downgrades_quality(monkeypatch) -> None:
+    from dartlab.simulate.run import runScenario
+
+    snapshot = _snapshot(baseRevenue=300.0)
+    snapshot["dataInputGaps"] = ("FEATURE_OBSERVATION_CONDITIONAL:unsigned exact history",)
+    monkeypatch.setattr("dartlab.simulate.run.buildSnapshot", lambda company, asOf=None: snapshot)
+
+    result = runScenario(object(), scenario="baseline", horizon=3)
+
+    assert result.quality == "partial"
+    assert result.dataInputGaps == ("FEATURE_OBSERVATION_CONDITIONAL:unsigned exact history",)
+    assert any("FEATURE_OBSERVATION_CONDITIONAL" in warning for warning in result.warnings)
+
+
+@pytest.mark.unit
+def test_run_scenario_surfaces_structured_data_evidence(monkeypatch) -> None:
+    from dartlab.simulate.run import runScenario
+
+    snapshot = _snapshot(baseRevenue=300.0)
+    snapshot["dataEvidence"] = {
+        "status": "partial",
+        "coverage": {
+            "requestedAssets": 1,
+            "resolvedAssets": 1,
+            "succeededPartitions": 1,
+            "failedPartitions": 0,
+        },
+        "assets": (("analysis.simulationInputs", "asset-version:test"),),
+        "gaps": (
+            {
+                "code": "FEATURE_OBSERVATION_CONDITIONAL",
+                "message": "unsigned history",
+                "assetId": "analysis.simulationInputs",
+                "subject": "000001",
+                "systemic": False,
+                "requestId": None,
+            },
+        ),
+        "partitions": (
+            {
+                "assetId": "analysis.simulationInputs",
+                "assetVersionId": "asset-version:test",
+                "requestId": None,
+                "selector": (("subject", "000001"),),
+                "temporalStatus": "validAt",
+                "contentHash": "p" * 64,
+                "truncated": False,
+            },
+        ),
+        "qualityAssertions": (),
+        "catalogSnapshotId": "data-snapshot:test",
+        "dataSnapshotId": "data-content-snapshot:test",
+        "contractHash": "c" * 64,
+        "lineageRefs": ("lineage:test",),
+        "executionReceipts": ("data-execution:test",),
+        "materializationReceiptJson": None,
+    }
+    monkeypatch.setattr("dartlab.simulate.run.buildSnapshot", lambda company, asOf=None: snapshot)
+
+    result = runScenario(object(), scenario="baseline", horizon=3)
+
+    assert result.quality == "partial"
+    assert result.dataEvidence is not None
+    assert result.dataEvidence.status == "partial"
+    assert result.dataEvidence.gaps[0].code == "FEATURE_OBSERVATION_CONDITIONAL"
+    assert result.dataEvidence.partitions[0].contentHash == "p" * 64
+
+
+@pytest.mark.unit
+def test_run_scenario_treats_unresolved_quality_assertion_as_partial(monkeypatch) -> None:
+    from dartlab.simulate.run import runScenario
+
+    snapshot = _snapshot(baseRevenue=300.0)
+    snapshot["dataEvidence"] = {
+        "status": "ok",
+        "coverage": {
+            "requestedAssets": 1,
+            "resolvedAssets": 1,
+            "succeededPartitions": 1,
+            "failedPartitions": 0,
+        },
+        "assets": (),
+        "gaps": (),
+        "partitions": (),
+        "qualityAssertions": (
+            {
+                "assertionId": "input.complete",
+                "success": None,
+                "severity": "error",
+                "assetId": "analysis.simulationInputs",
+            },
+        ),
+        "catalogSnapshotId": "data-snapshot:test",
+        "dataSnapshotId": "data-content-snapshot:test",
+        "contractHash": "c" * 64,
+        "lineageRefs": (),
+        "executionReceipts": (),
+        "materializationReceiptJson": None,
+    }
+    monkeypatch.setattr("dartlab.simulate.run.buildSnapshot", lambda company, asOf=None: snapshot)
+
+    result = runScenario(object(), scenario="baseline", horizon=3)
+
+    assert result.quality == "partial"
 
 
 @pytest.mark.unit
@@ -290,6 +452,7 @@ def test_snapshot_asof_slices_quarterly_series_and_keeps_latest_separate(monkeyp
     """asOf 는 라벨이 아니라 분기 시리즈 절단이며 latestAsOf 와 분리된다."""
 
     class _FakeCompany:
+        stockCode = "000001"
         sectorParams = None
 
         def _buildFinanceSeries(self, *, freq="Q"):
@@ -308,7 +471,6 @@ def test_snapshot_asof_slices_quarterly_series_and_keeps_latest_separate(monkeyp
             }
             return series, periods
 
-    monkeypatch.setattr("dartlab.simulate.registry._getSeriesAndShares", lambda company: (None, 100, "KRW"))
     monkeypatch.setattr("dartlab.simulate.registry._resolveSectorKey", lambda company: "반도체")
 
     snap = buildSnapshot(_FakeCompany(), asOf="2019Q4")
@@ -319,21 +481,46 @@ def test_snapshot_asof_slices_quarterly_series_and_keeps_latest_separate(monkeyp
     assert snap["series"]["IS"]["sales"] == [10.0, 20.0, 30.0, 40.0]
     assert snap["baseRevenue"] == 100.0
     assert snap["baseMargin"] == 10.0
-    assert snap["netDebt"] == 1.0
+    assert snap["netDebt"] is None
+    assert "netDebtUnavailable" in snap["warnings"]
     # 역사 시점의 발행주식수 vintage 가 없으므로 현재 shares 를 섞지 않고 결손으로 둔다.
     assert snap["shares"] is None
     assert "historicalSharesUnavailable" in snap["warnings"]
+    assert snap["parameterVintageStatus"] == "unavailable"
+    assert "historicalSimulationParametersUnavailable" in snap["warnings"]
+
+
+@pytest.mark.unit
+def test_historical_run_blocks_current_parameter_leak(monkeypatch) -> None:
+    from dartlab.simulate.run import runScenario
+
+    snapshot = _snapshot(baseRevenue=300.0)
+    snapshot.update(
+        asOf="2023-Q4",
+        latestAsOf="2024-Q4",
+        requestedAsOf="2023-Q4",
+        parameterVintageStatus="unavailable",
+        warnings=("historicalSimulationParametersUnavailable",),
+    )
+    monkeypatch.setattr("dartlab.simulate.run.buildSnapshot", lambda company, asOf=None: snapshot)
+
+    result = runScenario(object(), scenario="baseline", horizon=3, asOf="2023Q4")
+
+    assert result.quality == "partial"
+    assert result.revenuePath is None
+    assert result.marginPath is None
+    assert "historical_parameter_vintage_absent" in result.nodes[DRIVER_REV].provenance
 
 
 @pytest.mark.unit
 def test_snapshot_rejects_asof_outside_available_periods(monkeypatch) -> None:
     class _FakeCompany:
+        stockCode = "000001"
         sectorParams = None
 
         def _buildFinanceSeries(self, *, freq="Q"):
             return {"IS": {"sales": [1.0]}, "BS": {}, "CF": {}}, ["2020-Q1"]
 
-    monkeypatch.setattr("dartlab.simulate.registry._getSeriesAndShares", lambda company: (None, 100, "KRW"))
     monkeypatch.setattr("dartlab.simulate.registry._resolveSectorKey", lambda company: None)
 
     with pytest.raises(ValueError, match="asOf"):

@@ -32,11 +32,14 @@ def proFormaHighlightsBlock(data: dict) -> list:
     ]
 
     # WACC + 성장률
-    metrics = [("WACC", f"{data.get('wacc', 0):.1f}%")]
+    metrics = []
+    if data.get("wacc") is not None:
+        metrics.append(("WACC", f"{data['wacc']:.1f}%"))
     grPath = data.get("revenueGrowthPath", [])
     if grPath:
         metrics.append(("성장률 경로", " -> ".join(f"{g:+.1f}%" for g in grPath)))
-    blocks.append(MetricBlock(metrics))
+    if metrics:
+        blocks.append(MetricBlock(metrics))
 
     # 전망 테이블
     rows = []
@@ -78,8 +81,8 @@ def scenarioImpactBlock(data: dict) -> list:
         rows.append(
             {
                 "시나리오": sc.get("label", name),
-                "매출변화": f"{sc.get('revenueChangePct', 0):+.1f}%",
-                "마진변화": f"{sc.get('marginChangeBps', 0):+.0f}bps",
+                "매출변화": (f"{sc['revenueChangePct']:+.1f}%" if sc.get("revenueChangePct") is not None else "-"),
+                "마진변화": (f"{sc['marginChangeBps']:+.0f}bps" if sc.get("marginChangeBps") is not None else "-"),
             }
         )
     blocks.append(TableBlock("[추정] 매크로 시나리오 영향", pl.DataFrame(rows)))
@@ -157,18 +160,25 @@ def creditScenarioBlock(base: dict | None, scenario: dict | None, overrides: dic
     ]
 
     base_grade = base.get("grade", "-")
-    base_score = base.get("score", 0)
+    base_score = base.get("score")
     sc_grade = scenario.get("grade", "-")
-    sc_score = scenario.get("score", 0)
+    sc_score = scenario.get("score")
 
     metrics: list[tuple[str, str]] = [
-        ("기본 등급", f"{base_grade} (점수 {base_score:.1f})"),
-        ("시나리오 등급", f"{sc_grade} (점수 {sc_score:.1f})"),
+        ("기본 등급", f"{base_grade} (점수 {base_score:.1f})" if base_score is not None else str(base_grade)),
+        (
+            "시나리오 등급",
+            f"{sc_grade} (점수 {sc_score:.1f})" if sc_score is not None else str(sc_grade),
+        ),
     ]
     if overrides:
         for k, v in overrides.items():
             metrics.append((f"가정: {k}", str(v)))
     blocks.append(MetricBlock(metrics))
+
+    if base_score is None or sc_score is None:
+        blocks.append(TextBlock("점수 근거가 없어 시나리오 등급 차이를 계산하지 않았습니다.", style="dim"))
+        return blocks
 
     diff = sc_score - base_score
     if abs(diff) < 0.3:

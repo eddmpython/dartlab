@@ -96,7 +96,7 @@ def test_credit_view_maps_badge():
         "outlook": "안정적",
         "investmentGrade": True,
         "axes": [{"name": "레버리지", "weight": 0.25, "score": 82}, "junk"],
-        "product": {"confidence": {"score": 91, "method": "coverage"}},
+        "product": {"status": "usable", "confidence": {"score": 91, "method": "coverage"}},
     }
     cv = _creditView(result)
     assert cv["grade"] == "dCR-AA+" and cv["gradeRaw"] == "AA+"
@@ -109,12 +109,15 @@ def test_credit_view_maps_badge():
 def test_credit_view_none_on_no_grade():
     assert _creditView(None) is None, "평가 None 이면 None"
     assert _creditView({"grade": None}) is None, "grade 없으면 None (graceful skip)"
+    assert _creditView({"grade": "dCR-AA", "product": {"status": "partial"}}) is None
+    assert _creditView({"grade": "dCR-AA", "product": {"status": "blocked"}}) is None
 
 
 def test_headline_includes_credit_grade():
-    kpis = _headlineKpis(None, None, {"gradeRaw": "AA+"})
+    kpis = _headlineKpis(None, None, {"status": "usable", "gradeRaw": "AA+"})
     assert {"label": "신용등급", "value": "AA+"} in kpis
     assert _headlineKpis(None, None, None) == [], "credit None 이면 신용 KPI 미추가"
+    assert _headlineKpis(None, None, {"status": "partial", "gradeRaw": "AA+"}) == []
 
 
 def test_build_report_model_emits_credit_section(monkeypatch):
@@ -144,7 +147,7 @@ def test_build_report_model_emits_credit_section(monkeypatch):
         "outlook": "안정적",
         "investmentGrade": True,
         "axes": [],
-        "product": {"confidence": {"score": 90, "method": "coverage"}},
+        "product": {"status": "usable", "confidence": {"score": 90, "method": "coverage"}},
     }
     story._lensBundle = {"results": {"credit": result}, "products": {}, "gaps": [], "noComposite": True}
     monkeypatch.setattr(_registry, "buildStory", lambda c, **k: story)
@@ -159,3 +162,38 @@ def test_build_report_model_emits_credit_section(monkeypatch):
     assert blk["type"] == "creditPanel" and blk["view"]["gradeRaw"] == "AA+"
     assert {"label": "신용등급", "value": "AA+"} in model["headlineKpis"]
     assert model["provenance"]["engines"].get("credit"), "provenance 에 credit 엔진 집계"
+
+
+def test_build_report_model_does_not_promote_partial_lens(monkeypatch):
+    import types
+
+    from dartlab.analysis.valuation import dFV as _dfv
+    from dartlab.story import registry as _registry
+    from dartlab.story import thesis as _thesis
+    from dartlab.story.report import buildReportModel
+
+    product = {
+        "status": "partial",
+        "conclusion": {"label": "AA", "summary": "부분 근거 신용 판단"},
+        "confidence": {},
+        "time": {},
+        "gaps": [{"status": "partial"}],
+    }
+    result = {"grade": "dCR-AA", "gradeRaw": "AA", "product": product}
+    story = types.SimpleNamespace(
+        sections=[types.SimpleNamespace(key="earnings", title="수익체력", blocks=[TextBlock(text="요약")])],
+        summaryCard=types.SimpleNamespace(grades={}, conclusion=""),
+        stockCode="005930",
+        corpName="삼성전자",
+        lensProducts={"credit": product},
+        _lensBundle={"results": {"credit": result}},
+    )
+    monkeypatch.setattr(_registry, "buildStory", lambda c, **k: story)
+    monkeypatch.setattr(_dfv, "calcDFV", lambda c, **k: None)
+    monkeypatch.setattr(_thesis, "buildThesis", lambda *a, **k: None)
+
+    model = buildReportModel(object(), "credit")
+
+    assert all(section["sourceEngine"] != "credit" for section in model["sections"])
+    assert all(kpi["label"] != "신용등급" for kpi in model["headlineKpis"])
+    assert all(finding["key"] != "lens.credit" for finding in model["keyFindings"])

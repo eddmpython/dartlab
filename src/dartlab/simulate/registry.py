@@ -1,4 +1,4 @@
-"""Deterministic driver node definitions for the L2.5 scenario engine (born-clean).
+"""Deterministic driver node definitions for the L3 scenario engine.
 
 Per `mainPlan/scenario-simulator/01-engine-architecture.md` §5 (the node table) and §6 (the
 executor contract), this module holds the deterministic (lens=None) driver nodes and the function
@@ -32,17 +32,15 @@ L0 (`core.utils.extract`), L1.5 (`synth.scenario`), and L2 leafs
 series / shares accessors). The FCFF discount in the `dcf` node is a faithful port of the legacy
 terminal-value formula, re-derived here so the `dcf` node reflects THIS scenario's proforma FCF.
 
-Layer: L2.5. Forward imports: L0 (core), L1.5 (synth), L2 (analysis.financial).
+Layer: L3. Forward imports: L0 (core), L1.5 (synth), L2 (analysis.financial/dataHub).
 """
 
 from __future__ import annotations
 
+import json
 from typing import Any
 
-from dartlab.analysis.financial._valuationInputs import (
-    _getSeriesAndShares,
-    _resolveSectorKey,
-)
+from dartlab.analysis.financial._valuationInputs import _resolveSectorKey
 from dartlab.analysis.financial.dataAssets import _periodKey
 from dartlab.analysis.financial.proforma import buildProforma
 from dartlab.core.utils.extract import getLatest, getTTM
@@ -83,7 +81,7 @@ def _baseMetrics(series: dict) -> dict[str, float | None]:
 
     Args:
         series: a finance series dict (``{sjDiv: {account: [..]}}``) as built by
-            ``Company._buildFinanceSeries`` / ``_getSeriesAndShares``.
+            ``analysis.simulationInputs`` Data Workbench asset.
 
     Returns:
         dict[str, float | None]: ``{"revenue", "margin", "netDebt"}``. Values are None when
@@ -107,10 +105,10 @@ def _baseMetrics(series: dict) -> dict[str, float | None]:
     stb = getLatest(series, "BS", "shortterm_borrowings")
     ltb = getLatest(series, "BS", "longterm_borrowings")
     bonds = getLatest(series, "BS", "debentures")
-    debtInputs = (cash, stb, ltb, bonds)
-    netDebt = (
-        None if all(v is None for v in debtInputs) else (stb or 0.0) + (ltb or 0.0) + (bonds or 0.0) - (cash or 0.0)
-    )
+    if cash is None or stb is None or ltb is None or bonds is None:
+        netDebt = None
+    else:
+        netDebt = stb + ltb + bonds - cash
 
     return {"revenue": rev, "margin": margin, "netDebt": netDebt}
 
@@ -158,19 +156,87 @@ def _workbenchFinanceInputs(company: Any, asOf: str | None) -> tuple[dict, dict[
 
     subject = str(getattr(company, "stockCode", None) or "bound-company")
     time = TimeContext(validAt=asOf) if asOf is not None else None
-    dataCall = getattr(dartlab, "data")
+    dataCall = getattr(dartlab, "dataHub")
     result = dataCall(
         "query",
         "analysis.simulationInputs",
         query=DataQuery(
             subjects=(subject,),
             time=time,
-            params={"company": company},
             completeness="requireComplete",
         ),
+        _runtimeBindings={"analysis.simulationInputs": {"company": company}},
     )
+    dataInputGaps = tuple(f"{gap.code}:{gap.message}" for gap in result.gaps)
+    coverage = getattr(result, "coverage", None)
+    dataEvidence = {
+        "status": str(getattr(result, "status", "unknown")),
+        "coverage": {
+            "requestedAssets": int(getattr(coverage, "requestedAssets", 0)),
+            "resolvedAssets": int(getattr(coverage, "resolvedAssets", 0)),
+            "succeededPartitions": int(getattr(coverage, "succeededPartitions", 0)),
+            "failedPartitions": int(getattr(coverage, "failedPartitions", 0)),
+        },
+        "assets": tuple((str(asset.assetId), str(asset.assetVersionId)) for asset in getattr(result, "assets", ())),
+        "gaps": tuple(
+            {
+                "code": str(gap.code),
+                "message": str(gap.message),
+                "assetId": gap.assetId,
+                "subject": gap.subject,
+                "systemic": bool(gap.systemic),
+                "requestId": gap.requestId,
+            }
+            for gap in result.gaps
+        ),
+        "partitions": tuple(
+            {
+                "assetId": str(partition.asset.assetId),
+                "assetVersionId": str(partition.asset.assetVersionId),
+                "requestId": partition.requestId,
+                "selector": tuple(partition.selector),
+                "temporalStatus": str(partition.temporalStatus),
+                "contentHash": partition.contentHash,
+                "truncated": bool(partition.truncated),
+            }
+            for partition in result.partitions
+        ),
+        "qualityAssertions": tuple(
+            {
+                "assertionId": str(assertion.assertionId),
+                "success": assertion.success,
+                "severity": str(assertion.severity),
+                "assetId": str(assertion.assetId),
+            }
+            for assertion in getattr(result, "qualityAssertions", ())
+        ),
+        "catalogSnapshotId": str(result.snapshotId),
+        "dataSnapshotId": str(result.dataSnapshotId or ""),
+        "contractHash": str(result.contractHash),
+        "lineageRefs": tuple(result.lineageRefs),
+        "executionReceipts": tuple(result.executionReceipts),
+        "materializationReceiptJson": (
+            json.dumps(result.materializationReceipt, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+            if getattr(result, "materializationReceipt", None) is not None
+            else None
+        ),
+    }
     if result.partitions:
-        payload = result.partitions[0].data
+        if len(result.partitions) != 1:
+            raise RuntimeError("simulation input 결과의 partition 수가 1이 아닙니다")
+        partition = result.partitions[0]
+        if partition.asset.assetId != "analysis.simulationInputs":
+            raise RuntimeError("simulation input 결과가 요청 asset과 일치하지 않습니다")
+        if partition.truncated or not partition.contentHash:
+            raise RuntimeError("simulation input partition이 완전한 content seal을 갖지 못했습니다")
+        if coverage is None or (
+            coverage.requestedAssets != 1
+            or coverage.resolvedAssets != 1
+            or coverage.succeededPartitions != 1
+            or coverage.failedPartitions != 0
+        ):
+            raise RuntimeError("simulation input 결과의 coverage 계약이 완전하지 않습니다")
+        payload = partition.data
         if isinstance(payload, dict):
             if result.dataSnapshotId is None:
                 raise RuntimeError("simulation input 결과가 content-sealed snapshot이 아닙니다")
@@ -180,6 +246,8 @@ def _workbenchFinanceInputs(company: Any, asOf: str | None) -> tuple[dict, dict[
                 "dataContractHash": result.contractHash,
                 "dataLineageRefs": result.lineageRefs,
                 "dataExecutionReceipts": result.executionReceipts,
+                "dataInputGaps": dataInputGaps,
+                "dataEvidence": dataEvidence,
             }
             return payload, metadata
     for gap in result.gaps:
@@ -197,7 +265,8 @@ def _workbenchFinanceInputs(company: Any, asOf: str | None) -> tuple[dict, dict[
         "dataContractHash": result.contractHash,
         "dataLineageRefs": result.lineageRefs,
         "dataExecutionReceipts": result.executionReceipts,
-        "dataInputGaps": tuple(f"{gap.code}:{gap.message}" for gap in result.gaps),
+        "dataInputGaps": dataInputGaps,
+        "dataEvidence": dataEvidence,
     }
 
 
@@ -212,7 +281,7 @@ def buildSnapshot(company: Any, *, asOf: str | None = None) -> dict:
 
     Args:
         company: a `Company` (DART/EDGAR) instance. Read forward via the L2
-            `_getSeriesAndShares` / `_resolveSectorKey` accessors and `sectorParams`.
+            Data Workbench simulation input asset, `_resolveSectorKey`, and `sectorParams`.
         asOf: an explicit data-vintage label to stamp on every node. When None, falls back to the
             company's latest finance period (or ``"latest"`` if unavailable).
 
@@ -224,7 +293,8 @@ def buildSnapshot(company: Any, *, asOf: str | None = None) -> dict:
         (honest-gap), never 0.
 
     Raises:
-        None. Every accessor is failure-tolerant; absence becomes a None field, not an error.
+        ValueError: 요청 시점이 가용 재무 범위를 벗어나거나 owner 입력 계약이 잘못된 경우.
+        RuntimeError: Data Workbench 결과가 완전한 단일 partition/content seal 계약을 어긴 경우.
 
     Example:
         >>> snap = buildSnapshot(Company("005930"))  # doctest: +SKIP
@@ -238,7 +308,7 @@ def buildSnapshot(company: Any, *, asOf: str | None = None) -> dict:
 
     SeeAlso:
         - ``buildScenarioSheet``: wires a `DriverSheet` over this snapshot.
-        - ``dartlab.analysis.financial._valuationInputs._getSeriesAndShares``: series + shares.
+        - ``dartlab.analysis.financial.dataAssets.simulationInputs``: series + shares.
         - ``dartlab.synth.scenario.getElasticity``: sector-key -> elasticity.
 
     Requires:
@@ -261,26 +331,30 @@ def buildSnapshot(company: Any, *, asOf: str | None = None) -> dict:
     # proforma와 TTM 추출기는 분기 시리즈를 소비한다. 과거 구현은 연간 시리즈에 getTTM을 적용해
     # 최근 4개 연도를 합산하는 오류가 있었다. shares 조회의 기존 fallback만 재사용하고, 계산
     # 시리즈는 반드시 Q 경로에서 한 번 읽어 asOf 절단한다.
-    _annualSeries, shares, _currency = _getSeriesAndShares(company)
     workbenchInput, workbenchMetadata = _workbenchFinanceInputs(company, asOf)
     series = workbenchInput["series"]
+    shares = workbenchInput.get("shares")
     effectiveAsOf = workbenchInput["asOf"]
     latestAsOf = workbenchInput["latestAsOf"]
     requestedAsOf = workbenchInput["requestedAsOf"]
     base = _baseMetrics(series) if series else {"revenue": None, "margin": None, "netDebt": None}
 
-    sectorKey = _resolveSectorKey(company)
+    parameterVintageAvailable = effectiveAsOf == latestAsOf
+    sectorKey = _resolveSectorKey(company) if parameterVintageAvailable else None
     elasticity = getElasticity(sectorKey) if sectorKey else DEFAULT_ELASTICITY
     assumptions: list[str] = []
     warnings: list[str] = []
     if sectorKey is None:
         assumptions.append("defaultSectorElasticity")
+    if not parameterVintageAvailable:
+        warnings.append("historicalSimulationParametersUnavailable")
 
     sectorParams = None
-    try:
-        sectorParams = getattr(company, "sectorParams", None)
-    except (AttributeError, ValueError):
-        sectorParams = None
+    if parameterVintageAvailable:
+        try:
+            sectorParams = getattr(company, "sectorParams", None)
+        except (AttributeError, ValueError):
+            sectorParams = None
     rawWacc = getattr(sectorParams, "discountRate", None)
     if rawWacc is None:
         assumptions.append("baseWacc10Pct")
@@ -296,10 +370,7 @@ def buildSnapshot(company: Any, *, asOf: str | None = None) -> dict:
     if base["netDebt"] is None:
         warnings.append("netDebtUnavailable")
 
-    # 현재 shares 를 역사 replay 에 섞으면 look-ahead 다. 발행주식수 vintage 원천이 생기기 전에는
-    # 역사 시점 per-share DCF 를 기권하고 enterprise value 까지만 계산한다.
-    if effectiveAsOf != latestAsOf and shares is not None:
-        shares = None
+    if effectiveAsOf != latestAsOf and shares is None:
         warnings.append("historicalSharesUnavailable")
     if asOf is not None:
         warnings.append("periodScopedPitOnly")
@@ -319,6 +390,7 @@ def buildSnapshot(company: Any, *, asOf: str | None = None) -> dict:
         "requestedAsOf": requestedAsOf,
         "assumptions": tuple(assumptions),
         "warnings": tuple(warnings),
+        "parameterVintageStatus": "available" if parameterVintageAvailable else "unavailable",
         **workbenchMetadata,
     }
 
@@ -421,6 +493,17 @@ def _fnRevPath(node: DriverNode, sheet: DriverSheet, depValues: dict):
     macroNv = next(iter(depValues.values()))
     macroFrozen = _macroFrozen(macroNv, snap["horizon"])
     baseRevenue = snap["baseRevenue"]
+    if snap.get("parameterVintageStatus", "available") != "available":
+        frozen = {"gap": "historical_parameter_vintage_absent"}
+        return (
+            None,
+            None,
+            "transfer:gap(historical_parameter_vintage_absent)",
+            (),
+            frozen,
+            snap["asOf"],
+            snap["latestAsOf"],
+        )
     if baseRevenue is None:
         # honest-gap: no base revenue -> no scenario path.
         frozen = {"gap": "baseRevenue_absent"}
@@ -494,7 +577,11 @@ def _fnProforma(node: DriverNode, sheet: DriverSheet, depValues: dict):
         return None, None, "proforma:gap(no_projections)", (), frozen, snap["asOf"], snap["latestAsOf"]
 
     fcf = tuple(round(y.fcf, 2) for y in proj)
-    frozen = {"growthPath": [round(g, 9) for g in growthPath], "wacc": round(pf.wacc, 9)}
+    frozen = {
+        "growthPath": [round(g, 9) for g in growthPath],
+        "wacc": round(pf.wacc, 9),
+        "series": series,
+    }
     prov = f"proforma:cashplug,wacc={pf.wacc:.2f},years={len(proj)}"
     refs = ("analysis.financial.proforma:buildProforma",)
     return round(proj[-1].revenue, 2), fcf, prov, refs, frozen, snap["asOf"], snap["latestAsOf"]
@@ -537,14 +624,26 @@ def _fnDcf(node: DriverNode, sheet: DriverSheet, depValues: dict):
         frozen = {"gap": "fcfPath_absent"}
         return None, None, "dcf:gap(fcfPath_absent)", (), frozen, snap["asOf"], snap["latestAsOf"]
 
-    fcfPath = [float(x) for x in pfNv.vector if x is not None]
+    if any(value is None for value in pfNv.vector):
+        frozen = {"gap": "fcfPath_incomplete"}
+        return None, None, "dcf:gap(fcfPath_incomplete)", (), frozen, snap["asOf"], snap["latestAsOf"]
+    fcfPath = [float(x) for x in pfNv.vector]
     horizon = len(fcfPath)
     # WACC: snapshot base WACC (the leaf's per-run WACC is not surfaced on a NodeValue; the base
     # WACC is the deterministic, snapshot-frozen discount rate for the scenario).
     wacc = float(snap["baseWacc"])
     terminalGrowth = float(snap["terminalGrowth"])
     if wacc <= terminalGrowth:
-        terminalGrowth = max(wacc - 2.0, 0.5)
+        frozen = {"gap": "terminalGrowth_not_below_wacc", "wacc": wacc, "terminalGrowth": terminalGrowth}
+        return (
+            None,
+            None,
+            "dcf:gap(terminalGrowth_not_below_wacc)",
+            (),
+            frozen,
+            snap["asOf"],
+            snap["latestAsOf"],
+        )
 
     pvSum = sum(fcf / (1 + wacc / 100) ** (yr + 1) for yr, fcf in enumerate(fcfPath))
     terminalFcf = fcfPath[-1] if fcfPath else 0.0

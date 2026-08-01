@@ -211,6 +211,7 @@ class Story:
     actTransitions: dict = field(default_factory=dict)  # 6막 전환 인과 문장
     summaryCard: SummaryCard | None = None  # 최상단 요약 카드
     template: str | None = None  # 스토리 템플릿 (사이클/성장/지주 등)
+    templates: list[str] = field(default_factory=list)  # 복수 자동 감지 템플릿
     reportType: str | None = None  # 보고서 관점
     lensProducts: dict = field(default_factory=dict)  # 엔진별 Lens Product 원문
     lensGaps: list[dict] = field(default_factory=list)  # 대표 축 호출 또는 계약 결손
@@ -230,6 +231,8 @@ class Story:
         reportType: str | None = None,
         lensProducts: dict | None = None,
         lensGaps: list[dict] | None = None,
+        template: str | None = None,
+        templates: list[str] | None = None,
     ):
         """리스트 전달 시 자유 조립, 아니면 일반 생성."""
         if isinstance(itemsOrStockCode, list):
@@ -283,6 +286,10 @@ class Story:
             self.lensProducts = lensProducts or {}
             self.lensGaps = lensGaps or []
             self._lensBundle = {}
+
+        self.actTransitions = {}
+        self.template = template
+        self.templates = list(templates or [])
 
     def render(self, fmt: str = "rich") -> str:
         """통합 렌더러 - rich/html/markdown/json 4종 출력.
@@ -349,11 +356,7 @@ class Story:
 
     def _repr_html_(self) -> str:
         """Jupyter / Colab / Marimo HTML 렌더링."""
-        from rich.console import Console
-
-        console = Console(record=True, force_jupyter=True, width=120)
-        renderStory(console, self)
-        return console.export_html(inline_styles=True)
+        return self.toHtml()
 
     def _renderRich(self) -> str:
         """Rich Console capture → 텍스트."""

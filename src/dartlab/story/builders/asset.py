@@ -42,7 +42,7 @@ def assetStructureBlock(data: dict) -> list:
     rows = ["총자산", "영업자산", "비영업자산", "순영업자산(NOA)", "순운전자본", "고정영업자산"]
     cols = {"": rows}
     for h in history:
-        ta = h.get("totalAssets", 0)
+        ta = h.get("totalAssets")
         cols[h["period"]] = [
             _fmtAmtShort(ta),
             f"{_fmtAmtShort(h['opAssets'])} ({h['opAssetsPct']:.0f}%)",
@@ -57,15 +57,17 @@ def assetStructureBlock(data: dict) -> list:
     detailRows = ["매출채권", "재고자산", "유형자산", "무형자산+영업권", "건설중인자산", "현금성자산", "투자자산"]
     detailCols = {"": detailRows}
     for h in history:
-        intGw = h.get("intangibles", 0) + h.get("goodwill", 0)
+        intangibles = h.get("intangibles")
+        goodwill = h.get("goodwill")
+        intGw = intangibles + goodwill if intangibles is not None and goodwill is not None else None
         detailCols[h["period"]] = [
-            _fmtAmtShort(h.get("receivables", 0)),
-            _fmtAmtShort(h.get("inventory", 0)),
-            _fmtAmtShort(h.get("ppe", 0)),
+            _fmtAmtShort(h.get("receivables")),
+            _fmtAmtShort(h.get("inventory")),
+            _fmtAmtShort(h.get("ppe")),
             _fmtAmtShort(intGw),
-            _fmtAmtShort(h.get("cip", 0)),
-            _fmtAmtShort(h.get("cash", 0)),
-            _fmtAmtShort(h.get("investments", 0)),
+            _fmtAmtShort(h.get("cip")),
+            _fmtAmtShort(h.get("cash")),
+            _fmtAmtShort(h.get("investments")),
         ]
     blocks.append(TableBlock("자산 구성 상세 추이", pl.DataFrame(detailCols)))
 
@@ -108,8 +110,8 @@ def capexBlock(data: dict) -> list:
     ratio = latest.get("capexToDepRatio")
     if ratio is not None:
         metrics.append(("CAPEX/감가상각", f"{ratio:.1f}배"))
-    cip = latest.get("cip", 0)
-    if cip > 0:
+    cip = latest.get("cip")
+    if cip is not None and cip > 0:
         metrics.append(("건설중인자산", f"{_fmtAmtShort(cip)} ({latest['cipPct']:.0f}%)"))
     blocks.append(MetricBlock(metrics))
 

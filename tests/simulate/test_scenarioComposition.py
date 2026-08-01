@@ -44,6 +44,7 @@ from dartlab.simulate.operatingWorld import (
     issueOperatingLawCertificate,
     operatingInputsFromCompiledState,
     operatingInputsFromPrimitives,
+    operatingLawEvidenceAdmissionArtifact,
     runOperatingStrategies,
 )
 from dartlab.simulate.policyEvaluation import (
@@ -113,6 +114,11 @@ from dartlab.simulate.stateSupport import (
 from dartlab.simulate.stateVariables import StateVariableSpec, buildStateVariableRegistry
 from dartlab.simulate.vintage import VintageRef, canonicalPayloadBytes, canonicalPayloadHash
 from dartlab.simulate.world import (
+    ACTION_EVIDENCE_RECEIPT_KIND,
+    LAW_EVIDENCE_RECEIPT_KIND,
+    ActionSpec,
+    actionEvidenceAdmissionArtifact,
+    bindActionEvidenceReceipt,
     bindAdmittedPathContent,
     bindPathAdmissionReceipt,
     constraintContractHash,
@@ -335,6 +341,8 @@ def _issueOperatingCompiledState(
 
 
 def _certifiedOperatingInputs(context, *, decisionAsOf: str = "20210104"):
+    database, artifacts, private, trusted = context
+    verifier = AdmissionVerifier(database, artifacts, trusted)
     compiled = _issueOperatingCompiledState(context, decisionAsOf=decisionAsOf)
     inputs = operatingInputsFromCompiledState(
         compiled,
@@ -342,25 +350,108 @@ def _certifiedOperatingInputs(context, *, decisionAsOf: str = "20210104"):
         capacityUnitsPerCurrency=1.0,
         taxRate=0.0,
     )
+    evidenceRows = (
+        {"step": 1, "metric": "operatingProfit", "estimate": 1.0, "threshold": 0.0, "operator": "ge"},
+        {"step": 2, "metric": "operatingProfit", "estimate": 1.0, "threshold": 0.0, "operator": "ge"},
+    )
+    sourceReceipt = _issueTestReceipt(
+        context,
+        kind="dataVintage",
+        content=canonicalPayloadBytes({"source": "operating intervention study", "through": "20191231"}),
+        status="verifiedVintage",
+        knowledgeAsOf="20191231",
+        issuedAt="20191231T000000Z",
+        frequency="quarter",
+        maxAdmittedStep=2,
+    )
+    lawArtifact = operatingLawEvidenceAdmissionArtifact(
+        inputs,
+        evidenceRows=evidenceRows,
+        knowledgeAsOf="20191231",
+        historyStatus="asKnown",
+        frequency="quarter",
+        rules="operating-law-oos-evidence",
+        evidenceKind="identifiedIntervention",
+    )
+    lawReceipt = _issueTestReceipt(
+        context,
+        kind=LAW_EVIDENCE_RECEIPT_KIND,
+        content=lawArtifact,
+        parentReceiptIds=(sourceReceipt.receiptId,),
+        status="admitted",
+        knowledgeAsOf="20191231",
+        issuedAt="20200101T000000Z",
+        frequency="quarter",
+        maxAdmittedStep=2,
+    )
     certificate = issueOperatingLawCertificate(
         inputs,
-        evidenceRows=(
-            {"step": 1, "metric": "operatingProfit", "estimate": 1.0, "threshold": 0.0, "operator": "ge"},
-            {"step": 2, "metric": "operatingProfit", "estimate": 1.0, "threshold": 0.0, "operator": "ge"},
-        ),
+        evidenceRows=evidenceRows,
         knowledgeAsOf="20191231",
         evidenceKind="identifiedIntervention",
+        evidenceReceiptId=lawReceipt.receiptId,
+        admissionVerifier=verifier,
+    )
+
+    def actionReceiptId(action: ActionSpec) -> str:
+        artifact = actionEvidenceAdmissionArtifact(
+            action,
+            knowledgeAsOf="20191231",
+            frequency="quarter",
+            maxAdmittedStep=2,
+        )
+        receipt = _issueTestReceipt(
+            context,
+            kind=ACTION_EVIDENCE_RECEIPT_KIND,
+            content=artifact,
+            parentReceiptIds=(sourceReceipt.receiptId,),
+            status="admitted",
+            knowledgeAsOf="20191231",
+            issuedAt="20200101T000000Z",
+            frequency="quarter",
+            maxAdmittedStep=2,
+        )
+        return bindActionEvidenceReceipt(action, receipt.receiptId, verifier).certificateId
+
+    priceChangeCertificateId = actionReceiptId(
+        ActionSpec(
+            "priceChange",
+            "ratioChangePerStep",
+            -0.9,
+            10.0,
+            0,
+            0.0,
+            "identifiedIntervention",
+            "operating:price",
+        )
+    )
+    capacityInvestmentCertificateId = actionReceiptId(
+        ActionSpec(
+            "capacityInvestment",
+            "currency",
+            0.0,
+            200.0,
+            1,
+            1.0,
+            "identifiedIntervention",
+            "operating:capacity",
+        )
     )
     inputs = replace(
         inputs,
         operatingLawEvidenceKind="identifiedIntervention",
         operatingLawCertificate=certificate,
         priceChangeEvidenceKind="identifiedIntervention",
-        priceChangeCertificateId="3" * 64,
+        priceChangeCertificateId=priceChangeCertificateId,
         capacityInvestmentEvidenceKind="identifiedIntervention",
-        capacityInvestmentCertificateId="4" * 64,
+        capacityInvestmentCertificateId=capacityInvestmentCertificateId,
     )
-    model = _buildOperatingWorld(inputs, maxFinancing=200.0, maxInvestment=200.0)
+    model = _buildOperatingWorld(
+        inputs,
+        maxFinancing=200.0,
+        maxInvestment=200.0,
+        admissionVerifier=verifier,
+    )
     initial = _initialStateFromInputs(inputs)
     receipt = _issueTestReceipt(
         context,
