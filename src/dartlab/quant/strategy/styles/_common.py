@@ -123,7 +123,7 @@ def safeQuantile(arr: np.ndarray, q: float) -> float:
         float — 분위값 또는 NaN.
 
     Guide:
-        Strategy 임계값 계산용. 표본 ≥ 10 보장 + NaN drop.
+        단일 현재 snapshot 요약용. 시계열 신호 임계값에는 ``rollingQuantile``을 사용한다.
 
     When:
         Strategy 임계 → entry 분위 cut + AI 분위 답변.
@@ -152,6 +152,60 @@ def safeQuantile(arr: np.ndarray, q: float) -> float:
     if len(a) < 10:
         return float("nan")
     return float(np.quantile(a, q))
+
+
+def rollingQuantile(
+    arr: np.ndarray,
+    q: float,
+    *,
+    window: int,
+    minPeriods: int,
+) -> np.ndarray:
+    """각 봉 직전까지의 rolling history로 분위 임계값을 만든다.
+
+    현재 봉 값은 비교 대상이고 임계값 표본에는 들어가지 않는다. 따라서 결과 ``i``는
+    ``arr[max(0, i-window):i]``만 사용하며, 미래 tail을 붙여도 기존 prefix가 변하지 않는다.
+    """
+    values = np.asarray(arr, dtype=np.float64)
+    result = np.full(len(values), np.nan, dtype=np.float64)
+    if not 0.0 <= q <= 1.0:
+        raise ValueError(f"q must be between 0 and 1: {q}")
+    if window <= 0 or minPeriods <= 0:
+        raise ValueError("window and minPeriods must be positive")
+    if minPeriods > window:
+        raise ValueError("minPeriods must not exceed window")
+    for idx in range(len(values)):
+        history = values[max(0, idx - window) : idx]
+        valid = history[~np.isnan(history)]
+        if len(valid) >= minPeriods:
+            result[idx] = float(np.quantile(valid, q))
+    return result
+
+
+def rollingZScore(
+    arr: np.ndarray,
+    *,
+    window: int,
+    minPeriods: int,
+) -> np.ndarray:
+    """현재 값을 직전 rolling history의 평균과 표준편차로 표준화한다."""
+    values = np.asarray(arr, dtype=np.float64)
+    result = np.full(len(values), np.nan, dtype=np.float64)
+    if window <= 0 or minPeriods <= 1:
+        raise ValueError("window must be positive and minPeriods must be greater than 1")
+    if minPeriods > window:
+        raise ValueError("minPeriods must not exceed window")
+    for idx, value in enumerate(values):
+        if np.isnan(value):
+            continue
+        history = values[max(0, idx - window) : idx]
+        valid = history[~np.isnan(history)]
+        if len(valid) < minPeriods:
+            continue
+        sigma = float(np.std(valid, ddof=1))
+        if sigma > 0:
+            result[idx] = (value - float(np.mean(valid))) / sigma
+    return result
 
 
 # 0.10 BC 깸 — snake_case alias 제거.

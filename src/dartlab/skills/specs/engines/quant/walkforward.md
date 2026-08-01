@@ -4,7 +4,7 @@ title: Quant Walk-forward Validation
 category: engines
 kind: curated
 status: observed
-purpose: 전략 walk-forward — train/test window 슬라이딩, in-sample overfitting 회피.
+purpose: ruleFactory refit walk-forward와 고정 룰 temporal stress를 구분한다.
 sourceRefs:
   - dartlab://skills/engines.quant.walkforward
 knowledgeRefs:
@@ -28,7 +28,7 @@ whenToUse:
 
 ## 엔진 역할
 
-quant 엔진의 워크포워드 축 응용 skill — Lopez de Prado 슬라이딩 OOS Sharpe + DSR + PBO. strategy 그룹. SSOT 는 `_AXIS_REGISTRY` (`src/dartlab/quant/__init__.py`).
+quant 엔진의 워크포워드 축 응용 skill이다. ruleFactory 경로만 train-only refit OOS로 인증하고, 고정 Rule 또는 style 경로는 temporal stress로 표시한다. 단일 candidate API이므로 PBO는 산출하지 않는다. SSOT는 `_AXIS_REGISTRY` (`src/dartlab/quant/__init__.py`)다.
 
 ## 공개 호출 방식
 
@@ -36,32 +36,33 @@ quant 엔진의 워크포워드 축 응용 skill — Lopez de Prado 슬라이딩
 import dartlab
 
 # 1. 문자열 호출
-result = dartlab.quant("walkforward", "005930")
+result = dartlab.quant("walkforward", "005930", style="trendFollow")
 
 # 2. accessor 호출 (동등)
-result = dartlab.quant.walkforward("005930")
+result = dartlab.quant.walkforward("005930", style="trendFollow")
 ```
 
 ## 호출 동작
 
-종목 005930 의 가격 · 재무 · 시계열 snapshot 을 읽어 워크포워드 축 계산을 수행한다. Lopez de Prado 슬라이딩 OOS Sharpe + DSR + PBO. 결손 / 비교 불가 케이스는 결과 dict 또는 DataFrame 의 `flags` / null 로 표현하며 0 으로 채우지 않는다. 자세한 동작은 base SKILL `engines.quant` + `_AXIS_REGISTRY['walkforward'].fn` 함수 docstring 참조.
+종목 005930의 가격 시계열을 읽어 비중복 train/test 경로를 만든다. `step == test`만 허용하며 fold별 신호를 시간순으로 연결한 뒤 한 번의 체결 원장으로 계산한다. 고정 Rule은 `oos=False`, ruleFactory는 `oos=True`다. DSR은 실제 `nTrials`를 명시한 경우에만 계산하고 PBO는 `None`이다.
 
-### rule_factory 옵션 (forecast OOS 검증)
+### ruleFactory 옵션 (forecast OOS 검증)
 
-기본 호출은 정적 Rule 슬라이스 — 같은 entry/exit 시계열을 IS/OOS 에 그대로 적용. forecast 모델처럼 *IS fit + OOS predict* 패턴은 ``walkForward(close, rule=None, rule_factory=...)`` 로 호출.
+기본 style 호출은 정적 Rule temporal stress다. forecast 모델처럼 *IS fit + OOS predict* 패턴은 `walkForward(close, rule=None, ruleFactory=...)` 또는 공개 `ruleFactory=` 인자로 호출한다.
 
 ```python
 from dartlab.quant.benchmark.forecast import forecastRuleFactory
 from dartlab.quant.strategy.backtest import walkForward
 
 factory = forecastRuleFactory(threshold=0.002, models=["ar1"])
-bt = walkForward(close, rule=None, rule_factory=factory, train=120, test=20, step=20)
-bt.cpcv["refit_count"]   # fold 마다 재학습 횟수 (= n_folds)
-bt.cpcv["is_sharpes"]    # IS 학습 fold 별 Sharpe
-bt.cpcv["oos_sharpes"]   # OOS 검증 fold 별 Sharpe
+bt = walkForward(close, rule=None, ruleFactory=factory, train=120, test=30, step=30, nTrials=4)
+bt.validation["refit_count"]   # fold마다 재학습 횟수
+bt.validation["oos_sharpes"]   # 단일 OOS 원장의 fold 구간 Sharpe
+bt.validation["n_trials"]      # DSR에 사용한 실제 탐색 횟수
+bt.pbo                           # None, 단일 candidate라 판정 불가
 ```
 
-`rule_factory(is_close, oos_len) -> Rule` 시그니처. 반환 Rule 의 length 는 정확히 `train + test`. 어긋나면 `BacktestResult(status="error", reason="length 불일치")`.
+`ruleFactory(is_close, oos_len) -> Rule` 시그니처다. 반환 Rule 길이는 정확히 `train + test`여야 한다. test 영역의 첫 forecast는 첫 OOS 시가에 체결되고 마지막 forecast도 마지막 OOS 시가에 도달한다. 배경 호환을 위해 `cpcv`가 `validation`의 alias로 유지된다.
 
 ## 대표 반환 형태
 

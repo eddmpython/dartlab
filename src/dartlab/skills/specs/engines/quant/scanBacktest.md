@@ -95,7 +95,7 @@ BacktestResult(
     sharpe=float,                 # Sharpe ratio
     sortino=float,
     mdd=float,                    # 최대낙폭 (음수)
-    dsr=float,                    # Probabilistic Sharpe Ratio (Lopez de Prado)
+    dsr=float | None,             # nTrials 명시 시 Deflated Sharpe Ratio
     pbo=float | None,
     style=str,                    # "style:trendFollow" 또는 "signalFn"
     scanContext=dict,             # universe 출처 추적 — 본 helper 신규 필드
@@ -126,7 +126,7 @@ BacktestResult(
 - target: universe 종목 리스트 (BacktestResult.trades 의 stock_code 컬럼 or scanContext)
 - period: BacktestResult.period
 - benchmark: signalFn 또는 style 명시
-- metric: sharpe / mdd / dsr (cpcv 있으면 PBO 도)
+- metric: sharpe / mdd / dsr, PBO는 다중 trial 비교가 가능할 때만
 - 가정: fee_bps, slip_bps, weighting
 - scanContext.scanResultHash: universe 출처
 

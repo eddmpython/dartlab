@@ -101,6 +101,7 @@ def ohlcvToArrays(df) -> dict:
     """Polars OHLCV DataFrame → numpy 배열 dict.
 
     Capabilities:
+        - date 오름차순 정렬로 시계열 형성 순서 보장
         - open/high/low/close/volume 컬럼을 float64 numpy 변환
         - date 컬럼은 list 로 보존 (날짜 객체 형식 유지)
 
@@ -117,7 +118,7 @@ def ohlcvToArrays(df) -> dict:
         Numpy 기반 indicator 계산 + AI technical 답변.
 
     How:
-        ``isEmptyDf`` skip → 각 컬럼 ``to_numpy().astype(np.float64)``.
+        ``isEmptyDf`` skip → date 정렬 → 각 컬럼 ``to_numpy().astype(np.float64)``.
 
     Requires:
         df 가 polars DataFrame.
@@ -141,6 +142,9 @@ def ohlcvToArrays(df) -> dict:
 
     if isEmptyDf(df):
         return {}
+
+    if "date" in df.columns:
+        df = df.sort("date")
 
     result = {}
     for col in ("open", "high", "low", "close", "volume"):

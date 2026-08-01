@@ -60,10 +60,12 @@ Guard는 현재 레이어의 source를 동결한 뒤 한 번 실행한다. Guard
 - L2 완료 조건: analysis, macro, quant, industry, credit의 전체 src와 실제 호출자를
   데이터 계약·오류 투명성·SSOT·속도·메모리 기준으로 전수 대조한다. 결함 수정과 집중
   회귀를 끝내고 source 동결 뒤 공식 Guard, 원장, 커밋, push까지 닫는다.
-- 다음 첫 행동: quant 스타일 규칙의 전구간 분위수 look-ahead를 형성 시점 정보만 쓰는
-  규칙으로 바꾼다. 그다음 CPCV 이음매 수익률과 실패 fold의 Sharpe 0 대체를 닫는다.
-  EDGAR full-state 성능, 팩터 형성 시점, 백테스트 순수익 원장, PBO, Sortino,
-  삼양식품 dFV 실데이터 범위 드리프트는 아래 체크포인트에서 이미 닫혔다.
+- 다음 첫 행동: `Rule.sizing`이 적용된다고 선언하면서 체결 원장이 전혀 읽지 않는 문제와
+  다중자산 가중치가 전 기간 변동성을 미리 읽는 문제를 닫는다. 이어 vector 입력 검증을
+  보강하고 Altman 자동 모드, Beneish 결측 기본값, Track B 유동성 가중, 감사의견 부재
+  추정을 순서대로 판정한다. EDGAR full-state 성능, 팩터 형성 시점, 백테스트 순수익 원장,
+  PBO, Sortino, 삼양식품 dFV 드리프트, 스타일 형성 시점, CPCV와 walk-forward 검증 원장은
+  아래 체크포인트에서 이미 닫혔다.
 - 금지: 함수나 파일 하나만 끝내고 완료 보고, L3 이상 수정 선행,
   중간 source에서 공식 Guard 반복
 
@@ -2712,3 +2714,72 @@ Altman 자동 모드 모델 혼용, Beneish 결측 다수 기본값, Track B 유
 두 문제를 범위 조정 없이 분리해 닫았다. 완전한 공시 가용일과 시장 snapshot as-of는 이번
 기존 `basePeriod` 계약으로 위장하지 않고 L2 잔여 부채로 보존한다. L2 전체는 아직 완료가
 아니며 다음 체크포인트는 quant 스타일 규칙의 전구간 분위수 look-ahead다.
+
+### L2 체크포인트: 스타일 형성 시점과 검증 경로 원장 (2026-08-01)
+
+**상태: 체크포인트 완료. L2 전체는 진행 중.** 스타일 신호의 미래참조를 고치면서 인접한
+CPCV와 walk-forward를 실제 거래 원장까지 추적했다. 방법론과 구현을 나눈 두 전문 검토는
+독립적으로 기존 CPCV가 조합별 수익률을 이어 붙인 가짜 단일 경로이고, walk-forward는
+fold마다 강제청산과 재진입을 만들어 비용과 수익률을 왜곡하며, 고정 Rule을 OOS라고 부르는
+것도 잘못이라는 데 합의했다. 두 검토의 공통 결론인 형성 시점 불변성, 한 번의 연속 체결
+원장, 재학습 provenance를 수정 기준으로 삼았다.
+
+1. **범위와 실제 호출자.** `meanReversion`, `lowVolDefensive`, 공통 rolling 통계와 OHLCV
+   배열 정렬, `vectorBacktest`, `cpcv`, `walkForward`, forecast factory, public strategy와
+   walkforward, scanBacktest, multiAsset, registry와 quant Skill 계약을 함께 대조했다.
+   결과 객체의 returns, equity, positions, trades, period, DSR, PBO, OOS 표기가 story와
+   narrative까지 그대로 전달되는 것도 확인했다.
+2. **제품 결함 재현.** mean-reversion의 변동성 70분위와 low-vol의 변동성 분위 및 MDD
+   평균·표준편차가 미래 tail까지 포함해 과거 신호를 바꿨고, 입력 OHLCV 순서도 보장되지
+   않았다. CPCV는 test fold 수익률을 시간 순서와 무관하게 concatenate하여 fold 이음매를
+   새 수익률로 만들고 한 관측을 여러 조합에 중복 복리했다. 실패 fold는 Sharpe 0으로
+   삼켰으며 train과 embargo를 실제 학습에 쓰지 않으면서 OOS라고 표시했다. walk-forward는
+   `step != test`에서 중복·공백을 허용하고, 각 fold를 별도 백테스트해 포지션을 청산했으며,
+   첫 OOS 신호를 한 봉 늦게 체결하고 마지막 신호는 버렸다. 고정 Rule도 refit OOS로
+   표시했고 fold 수를 DSR의 전략 탐색 횟수로 대용했으며 단일 후보에서 PBO를 산출하는
+   것처럼 보이게 했다.
+3. **단일 SSOT.** 모든 시계열 임계값은 현재 봉을 제외한 `[t-window, t)` 형성 표본만 읽고,
+   future tail을 붙여도 기존 prefix 신호가 변하지 않아야 한다. 성과 SSOT는 fold별 지표
+   평균이 아니라 원래 시간 순서에서 한 번만 실행한 returns, equity, positions, trades다.
+   OOS는 각 fold의 train 구간만 받은 `ruleFactory`가 실제로 재적합된 경우에만 true다.
+   DSR의 `nTrials`는 fold·path·자산 수가 아니라 외부의 실제 전략 또는 파라미터 탐색
+   횟수이며, 모르면 None이다. 단일 후보에는 PBO를 만들 수 없으므로 None과 이유를 남긴다.
+4. **수정과 테스트.** 공통 `rollingQuantile`과 `rollingZScore`를 추가하고 두 스타일을
+   직전 표본으로 옮겼다. low-vol은 252일 MDD를 만든 뒤 최소 252개의 과거 분포가 있어야
+   형성된다. 날짜는 OHLCV 배열 변환 전에 정렬한다. 스타일 prefix 불변성과 역순 입력을
+   7건으로 고정했다. CPCV는 조합의 group-path 배치를 전부 검증하되 고정 Rule만 받는 현재
+   API의 한계를 정직하게 `fixed_rule_path_stress`, `oos=false`, `train_used=false`,
+   `embargo_effective=false`로 공개한다. 각 path는 원본 전 기간을 한 번 실행하며 경로 실패,
+   누락, 중복을 fail-closed한다. 구조·항등식 회귀 10건을 추가했다. walk-forward는
+   `step == test`인 단일 연속 경로만 허용하고 factory가 train close만 받아 fold별 Rule을
+   만든 뒤 OOS 신호를 합쳐 한 번 체결한다. 첫 OOS 신호는 같은 날 open, 마지막 신호는
+   마지막 날 open에 실행되고 refit 경계 포지션은 유지된다. 고정 Rule은 rolling stress,
+   factory만 OOS이며 16건의 경계·실패·기간·공개 배선 테스트를 추가했다.
+5. **공개 행동, 정확성, 속도, 메모리.** 삼성전자 2014년 이후 trend-follow 고정 Rule의
+   CPCV는 15 folds와 5 paths를 만들었고 대표 path의 2,997 returns, 176 trades,
+   Sharpe 0.2089908, MDD -0.4452508, DSR 0.0129487, 최종 equity 1.2968134가 직접
+   백테스트와 정확히 같았다. 경로는 모두 동일하므로 성능 개선 주장 대신 temporal stress
+   구조로만 표기한다. walk-forward는 train 252, test·step 63, `nTrials=3`에서 실제 기간
+   2015-05-21~2026-06-10과 2,709 returns를 냈다. 고정 trend stress는 168 trades,
+   Sharpe 0.3553179, MDD -0.4452508, DSR 0.0496531, equity 1.7223293, 43 folds,
+   `oos=false`다. AR(1) factory는 5 trades, Sharpe 0.5580707, MDD -0.4895571,
+   DSR 0.1641747, equity 3.3524791, refit 43회, `oos=true`다. 둘 다 PBO는 None이고
+   tail 36개를 평가 구간 밖으로 정직하게 남겼다. 결합 실측은 약 1.71초와 RSS 증가
+   18.43MiB였다. 스타일 공개 실행은 mean-reversion 2,997 returns·78 trades·Sharpe
+   -2.3119176·equity 0.8455225, low-vol 13 trades·Sharpe 0.5946516·equity 2.110335를
+   냈고 결합 RSS 증가는 20.14MiB였다.
+6. **회귀와 Guard.** 신규 스타일 7건, CPCV 10건, walk-forward 16건을 포함한 focused
+   회귀 104건이 통과했다. quant unit 전체는 `290 passed, 118 deselected`, Skill unit은
+   `43 passed, 17 deselected, 1 xfailed`다. 변경 Python Ruff format과 check, diffCheck가
+   통과했다. Guard quick는 1,791파일, 규칙 실패 0, diffCheck PASS다.
+7. **남은 부채와 판정.** 현재 CPCV 공개형은 재학습 factory가 없어 진짜 refit CPCV를
+   제공하지 않는다. 이를 가짜 OOS로 포장하지 않고 고정 Rule stress로 축소했다. 완전한
+   CPCV 학습 API는 후속 기능 부채다. 이번 대조에서 `Rule.sizing`이 적용된다고 선언됐지만
+   core 체결이 읽지 않는 문제, multiAsset의 inverse-vol과 risk-parity가 전 기간 변동성을
+   미리 읽는 문제, risk-parity 명칭과 실제 inverse-vol 구현 불일치, vector 가격·길이·비용
+   입력 검증 부족도 새로 확인했다. dFV의 완전한 as-of, Altman, Beneish, Track B, 감사의견,
+   광범위 artifact sync의 선재 드리프트도 남아 있다.
+
+**판정: 스타일 형성 시점과 현재 검증 API가 주장하는 범위의 원장은 정합해졌다.** 고정 Rule
+CPCV를 진짜 OOS로 과장하지 않는 축소 판정까지가 이번 완료 범위다. L2 전체는 진행 중이며,
+다음 체크포인트는 무시되는 sizing과 다중자산 가중치의 미래참조다.

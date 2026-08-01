@@ -215,7 +215,7 @@ product{conclusion, confidence, evidence, gaps, scenarios, falsifiers, payload}
 | allocation | ERC 가중치 윈도우 (60D vs 252D) 명시; covariance shrinkage (ledoit-wolf) 방법 명시 |
 | altman | Altman Z 임계 (제조 1.81/2.99) 비제조 적용 X (Z'/Z'' 별도); 단일 분기 Z 만으로 부도 단정 X (4 분기 시계열) |
 | bab | BAB 레버리지 가정 미명시 수익률 인용 X; 252D beta 가 미래 beta 일치 가정 X |
-| backtest | in-sample 결과를 OOS 약속으로 X (walk-forward/cpcv 동반); look-ahead bias 점검 없이 verdict X |
+| backtest | in-sample 결과를 OOS 약속으로 X (ruleFactory walk-forward 또는 외부 holdout 필요); 고정 Rule cpcv stress를 OOS로 부르지 않기; look-ahead bias 점검 없이 verdict X |
 | benchmark | 벤치마크 (KOSPI/KRX300/섹터) 명시 없이 outperformance X; 시총가중 vs 동일가중 차이 무시 X |
 | beneish | M > -1.78 한 신호로 분식 단정 X (accruals + 정합성 + 감사 동반); 1990 미국 threshold 를 KR 직접 적용 X |
 | beta | benchmarkMode (market/sector/style/auto) 명시; 회귀 기간 (3y/5y/10y) 명시 |
@@ -250,7 +250,7 @@ product{conclusion, confidence, evidence, gaps, scenarios, falsifiers, payload}
 | signalReview | 백테스트 가정 (수수료/슬리피지/리밸런싱) 없이 성과 X |
 | signals | 골든크로스/RSI/MACD/볼린저 단일 신호 X (다지표 confirm); 표준 파라미터 (RSI 14/MACD 12-26-9) 명시 |
 | strategy | 사용자 룰 in-sample 결과 OOS 단정 X; sizing/stop 파라미터 (벤치 fix vs ATR) 명시 |
-| style | 8 스타일 프리셋 결과 절대 점수 단정 X (KR reproducibility); 스타일 명시 |
+| style | 8 스타일 프리셋 결과 절대 점수 단정 X (KR reproducibility); meanReversion은 직전 252일/최소 60일, lowVolDefensive는 직전 최대 5년/최소 1년 형성 표본만 사용; 스타일 명시 |
 | surprise | Bernard-Thomas PEAD 미국 결과 KR 동일 가정 X; YoY NI z-score 분모 (sigma) 정의 명시 |
 | tailrisk | CVaR/MDD 한 지표 단정 X (다지표 결합); VaR/CVaR 신뢰수준 (95%/99%) 명시 |
 | toneChange | 공시 톤 변화 한 신호로 가격 인과 단정 X; NLP 모델/사전 (한국어 LM) 명시 |
@@ -417,7 +417,7 @@ forecast 결과를 인용할 때 다음을 함께 명시:
 
 ## walkForward 결합 (forecastRuleFactory)
 
-forecast 모델을 walk-forward 로 OOS 검증하려면 `forecastRuleFactory` 를 `walkForward(rule_factory=...)` 에 전달:
+forecast 모델을 walk-forward로 OOS 검증하려면 `forecastRuleFactory`를 `walkForward(ruleFactory=...)`에 전달:
 
 ```python
 from dartlab.quant.benchmark.forecast import forecastRuleFactory
@@ -425,10 +425,10 @@ from dartlab.quant.strategy.backtest import walkForward
 
 # Loose mode (default) - point only
 factory = forecastRuleFactory(threshold=0.0005, models=["ar1"])
-bt = walkForward(close, rule=None, rule_factory=factory, train=180, test=30, step=30)
-# bt.cpcv["refit_count"] = fold 마다 재학습 횟수
-# bt.pbo                 = None (refit path 에서는 IS region all-False 설계라 PBO 무의미 → 자동 None)
-# bt.dsr                 = OOS Deflated Sharpe Ratio (Lopez de Prado)
+bt = walkForward(close, rule=None, ruleFactory=factory, train=180, test=30, step=30, nTrials=4)
+# bt.validation["refit_count"] = fold마다 재학습 횟수
+# bt.pbo                         = None (단일 candidate라 판정 불가)
+# bt.dsr                         = 명시한 nTrials로 계산한 OOS Deflated Sharpe Ratio
 ```
 
 ### Entry / Exit 룰
@@ -656,7 +656,7 @@ BacktestResult(
     sharpe=float,                 # Sharpe ratio
     sortino=float,
     mdd=float,                    # 최대낙폭 (음수)
-    dsr=float,                    # Probabilistic Sharpe Ratio (Lopez de Prado)
+    dsr=float | None,             # nTrials 명시 시 Deflated Sharpe Ratio
     pbo=float | None,
     style=str,                    # "style:trendFollow" 또는 "signalFn"
     scanContext=dict,             # universe 출처 추적 - 본 helper 신규 필드
@@ -687,7 +687,7 @@ BacktestResult(
 - target: universe 종목 리스트 (BacktestResult.trades 의 stock_code 컬럼 or scanContext)
 - period: BacktestResult.period
 - benchmark: signalFn 또는 style 명시
-- metric: sharpe / mdd / dsr (cpcv 있으면 PBO 도)
+- metric: sharpe / mdd / dsr, walk-forward PBO는 다중 trial 비교가 가능할 때만
 - 가정: fee_bps, slip_bps, weighting
 - scanContext.scanResultHash: universe 출처
 
@@ -712,7 +712,7 @@ BacktestResult(
 
 ## 엔진 역할
 
-quant 엔진의 워크포워드 축 응용 skill - Lopez de Prado 슬라이딩 OOS Sharpe + DSR + PBO. strategy 그룹. SSOT 는 `_AXIS_REGISTRY` (`src/dartlab/quant/__init__.py`).
+quant 엔진의 워크포워드 축 응용 skill이다. ruleFactory 경로만 train-only refit OOS로 인증하고, 고정 Rule 또는 style 경로는 temporal stress로 표시한다. 단일 candidate API이므로 PBO는 산출하지 않는다. SSOT는 `_AXIS_REGISTRY` (`src/dartlab/quant/__init__.py`)다.
 
 ## 공개 호출 방식
 
@@ -720,32 +720,33 @@ quant 엔진의 워크포워드 축 응용 skill - Lopez de Prado 슬라이딩 O
 import dartlab
 
 # 1. 문자열 호출
-result = dartlab.quant("walkforward", "005930")
+result = dartlab.quant("walkforward", "005930", style="trendFollow")
 
 # 2. accessor 호출 (동등)
-result = dartlab.quant.walkforward("005930")
+result = dartlab.quant.walkforward("005930", style="trendFollow")
 ```
 
 ## 호출 동작
 
-종목 005930 의 가격 · 재무 · 시계열 snapshot 을 읽어 워크포워드 축 계산을 수행한다. Lopez de Prado 슬라이딩 OOS Sharpe + DSR + PBO. 결손 / 비교 불가 케이스는 결과 dict 또는 DataFrame 의 `flags` / null 로 표현하며 0 으로 채우지 않는다. 자세한 동작은 base SKILL `engines.quant` + `_AXIS_REGISTRY['walkforward'].fn` 함수 docstring 참조.
+종목 005930의 가격 시계열을 읽어 비중복 train/test 경로를 만든다. `step == test`만 허용하며 fold별 신호를 시간순으로 연결한 뒤 한 번의 체결 원장으로 계산한다. 고정 Rule은 `oos=False`, ruleFactory는 `oos=True`다. DSR은 실제 `nTrials`를 명시한 경우에만 계산하고 PBO는 `None`이다.
 
-### rule_factory 옵션 (forecast OOS 검증)
+### ruleFactory 옵션 (forecast OOS 검증)
 
-기본 호출은 정적 Rule 슬라이스 - 같은 entry/exit 시계열을 IS/OOS 에 그대로 적용. forecast 모델처럼 *IS fit + OOS predict* 패턴은 ``walkForward(close, rule=None, rule_factory=...)`` 로 호출.
+기본 style 호출은 정적 Rule temporal stress다. forecast 모델처럼 *IS fit + OOS predict* 패턴은 `walkForward(close, rule=None, ruleFactory=...)` 또는 공개 `ruleFactory=` 인자로 호출한다.
 
 ```python
 from dartlab.quant.benchmark.forecast import forecastRuleFactory
 from dartlab.quant.strategy.backtest import walkForward
 
 factory = forecastRuleFactory(threshold=0.002, models=["ar1"])
-bt = walkForward(close, rule=None, rule_factory=factory, train=120, test=20, step=20)
-bt.cpcv["refit_count"]   # fold 마다 재학습 횟수 (= n_folds)
-bt.cpcv["is_sharpes"]    # IS 학습 fold 별 Sharpe
-bt.cpcv["oos_sharpes"]   # OOS 검증 fold 별 Sharpe
+bt = walkForward(close, rule=None, ruleFactory=factory, train=120, test=30, step=30, nTrials=4)
+bt.validation["refit_count"]   # fold마다 재학습 횟수
+bt.validation["oos_sharpes"]   # 단일 OOS 원장의 fold 구간 Sharpe
+bt.validation["n_trials"]      # DSR에 사용한 실제 탐색 횟수
+bt.pbo                           # None, 단일 candidate라 판정 불가
 ```
 
-`rule_factory(is_close, oos_len) -> Rule` 시그니처. 반환 Rule 의 length 는 정확히 `train + test`. 어긋나면 `BacktestResult(status="error", reason="length 불일치")`.
+`ruleFactory(is_close, oos_len) -> Rule` 시그니처다. 반환 Rule 길이는 정확히 `train + test`여야 한다. test 영역의 첫 forecast는 첫 OOS 시가에 체결되고 마지막 forecast도 마지막 OOS 시가에 도달한다. 배경 호환을 위해 `cpcv`가 `validation`의 alias로 유지된다.
 
 ## 대표 반환 형태
 

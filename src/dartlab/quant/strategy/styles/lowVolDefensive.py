@@ -41,7 +41,11 @@ from dartlab.quant.risk.tailrisk import _tailriskSeries
 from dartlab.quant.risk.volatility import _volatilitySeries
 from dartlab.quant.strategy.rule import Rule
 from dartlab.quant.strategy.signal import Signal
-from dartlab.quant.strategy.styles._common import getArrays
+from dartlab.quant.strategy.styles._common import getArrays, rollingQuantile, rollingZScore
+
+_HISTORY_WINDOW = 252 * 5
+_MIN_HISTORY = 252
+_MIN_CLOSE = 252 + _MIN_HISTORY + 1
 
 
 def build(
@@ -58,11 +62,11 @@ def build(
     KR 시장에 물리적으로 도달 불가능 (KOSPI 대형주도 1년 내 거의 항상 10%+ 낙폭).
     Frazzini-Pedersen 2014 BAB 의 cross-section 정의를 단일 종목에 적용 불가.
 
-    대신 self-history z-score: 자기 자신의 5년 rolling MDD 분포 vs 현재 시점.
+    대신 self-history z-score: 직전 최대 5년 rolling MDD 분포 vs 현재 시점.
     `mdd_z = (mdd_t - μ) / σ` — z > 0.5 = 평소보다 안정적, z < -0.5 = 평소보다 위험.
 
     Capabilities:
-        - 변동성 < 40 분위 + 자기 history MDD z-score ≥ 0 진입 → 안정 시점 매수
+        - 직전 최대 5년 변동성 < 40 분위 + 자기 history MDD z-score ≥ 0 진입
         - 변동성 > 70 분위 또는 MDD z < -1.0 청산
 
     Args:
@@ -86,7 +90,7 @@ def build(
         ``_volatilitySeries`` + ``_tailriskSeries`` → 분위 + z-score → Signal.
 
     Requires:
-        close ≥ 252 봉 (1 년 vol/MDD).
+        close ≥ 505 봉 (252일 MDD + 최소 252개 과거 분포 + 현재 봉).
 
     Raises:
         없음.
@@ -104,7 +108,7 @@ def build(
     """
     arr = getArrays(company)
     close = arr.get("close")
-    if close is None or len(close) < 252:
+    if close is None or len(close) < _MIN_CLOSE:
         n = len(close) if close is not None else 0
         return Rule(
             entry_expr=np.zeros(max(n, 1), dtype=np.bool_),
@@ -127,24 +131,25 @@ def build(
             meta={"style": "lowVolDefensive", "error": "no vol/mdd data"},
         )
 
-    q_low = float(np.quantile(valid_vol, volLowQ))
-    q_high = float(np.quantile(valid_vol, volHighQ))
+    q_low = rollingQuantile(realized, volLowQ, window=_HISTORY_WINDOW, minPeriods=_MIN_HISTORY)
+    q_high = rollingQuantile(realized, volHighQ, window=_HISTORY_WINDOW, minPeriods=_MIN_HISTORY)
 
     # MDD self-history z-score (Phase 4 R2)
-    mdd_mu = float(np.mean(valid_mdd))
-    mdd_sigma = float(np.std(valid_mdd, ddof=1))
-    if mdd_sigma <= 0:
-        mdd_sigma = 1.0
-    mdd_z = (mdd_series - mdd_mu) / mdd_sigma
+    mdd_z = rollingZScore(mdd_series, window=_HISTORY_WINDOW, minPeriods=_MIN_HISTORY)
+    formation_ready = np.arange(len(close)) >= _MIN_CLOSE - 1
 
     s = Signal()
-    s.add("vol_low", (realized < q_low) & ~np.isnan(realized))
-    s.add("vol_high", (realized > q_high) & ~np.isnan(realized))
-    s.add("mdd_safer", (mdd_z > mddZEntry) & ~np.isnan(mdd_z))
-    s.add("mdd_riskier", (mdd_z < mddZExit) & ~np.isnan(mdd_z))
+    s.add("vol_low", formation_ready & (realized < q_low) & ~np.isnan(realized) & ~np.isnan(q_low))
+    s.add("vol_high", formation_ready & (realized > q_high) & ~np.isnan(realized) & ~np.isnan(q_high))
+    s.add("mdd_safer", formation_ready & (mdd_z > mddZEntry) & ~np.isnan(mdd_z))
+    s.add("mdd_riskier", formation_ready & (mdd_z < mddZExit) & ~np.isnan(mdd_z))
 
     return Rule(
         entry_expr=s.vol_low & s.mdd_safer,
         exit_expr=s.vol_high | s.mdd_riskier,
-        meta={"style": "lowVolDefensive", "definition": "BAB_self_zscore"},
+        meta={
+            "style": "lowVolDefensive",
+            "definition": "BAB_self_zscore",
+            "formation": "prior_up_to_5y_min_1y",
+        },
     )

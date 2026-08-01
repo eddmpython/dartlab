@@ -135,6 +135,7 @@ def runScanBacktest(
     weighting: str = "equal",
     feeBps: float = DEFAULT_FEE_BPS,
     slipBps: float = DEFAULT_SLIP_BPS,
+    nTrials: int | None = None,
 ) -> BacktestResult:
     """scan 결과 universe + signalFn (또는 style) → multi-asset backtest 폐쇄 루프.
 
@@ -155,6 +156,8 @@ def runScanBacktest(
         "equal" / "inv_vol" / "risk_parity" — multiAssetBacktest 인자.
     fee_bps, slip_bps : float
         거래비용 (단위 bp). default 15 / 5.
+    nTrials : int | None
+        실제 전략/파라미터 탐색 횟수. 생략하면 DSR 미산출.
 
     Returns
     -------
@@ -187,7 +190,7 @@ def runScanBacktest(
     --------
     - end-to-end (2026-05-09 dogfood): scan("valuation") 2535 종목 → top 5 → trendFollow
       style → status=ok, scanContext={universeCol="종목코드", scanResultHash="8f077b62024493f9"}
-    - 인기 5 종목 + SMA momentum signalFn → sharpe=+2.45, dsr=+0.84, trades=34 (합리적)
+    - 인기 5 종목 + SMA momentum signalFn에서 nTrials 명시 시 DSR까지 산출
     - 결정성: 같은 universe 두 번 호출 → scanResultHash + sharpe 모두 일치
     - universeCol 자동 감지: stockCode / 종목코드 / stock_code 모두 지원
 
@@ -251,6 +254,7 @@ def runScanBacktest(
         feeBps=feeBps,
         slipBps=slipBps,
         style=signal_source,
+        nTrials=nTrials,
     )
 
     scan_ctx: dict[str, Any] = {

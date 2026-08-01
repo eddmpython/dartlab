@@ -10,7 +10,7 @@ numpy/polars 만 사용. vectorbt/zipline/backtrader 의존 0.
 
 출력: BacktestResult dataclass — equity/returns/trades/sharpe/sortino/mdd/dsr/.../
 
-walkForward + cpcv 로 OOS Sharpe + DSR + PBO 산출 가능.
+walkForward ruleFactory 경로는 OOS 지표를, 고정 룰 cpcv 경로는 temporal stress를 산출한다.
 """
 
 from __future__ import annotations
@@ -63,14 +63,15 @@ class BacktestResult:
     exposure: float = 0.0
 
     # Overfitting guards
-    dsr: float = 0.0
+    dsr: float | None = None
     pbo: float | None = None
 
     # 메타
     style: str | None = None
     period: tuple[date | None, date | None] = (None, None)
     oos: bool = False
-    cpcv: dict | None = None
+    validation: dict | None = None
+    cpcv: dict | None = None  # legacy alias for validation/portfolio diagnostics
     scanContext: dict | None = None  # scanBacktest 호출 시 universe 출처 추적
 
     # NotApplicable sentinel (KR-only style on US)
@@ -80,9 +81,10 @@ class BacktestResult:
     def __repr__(self) -> str:
         if self.status != "ok":
             return f"BacktestResult(status={self.status!r}, reason={self.reason!r})"
+        dsr_text = "n/a" if self.dsr is None else f"{self.dsr:.2f}"
         return (
             f"BacktestResult(style={self.style}, sharpe={self.sharpe:+.2f}, "
-            f"mdd={self.mdd * 100:+.1f}%, dsr={self.dsr:.2f}, "
+            f"mdd={self.mdd * 100:+.1f}%, dsr={dsr_text}, "
             f"trades={self.trades.height if self.trades is not None else 0}, "
             f"oos={self.oos})"
         )
@@ -120,7 +122,7 @@ def vectorBacktest(
     impactBpsPerPct: float = DEFAULT_IMPACT_BPS_PER_PCT,
     capitalPctOfAdv: float = 0.0,
     style: str | None = None,
-    nTrials: int = 1,
+    nTrials: int | None = None,
     execMode: str = "next_open",
 ) -> BacktestResult:
     """단일 룰 백테스트 — long-only, 정밀 체결 모델.
@@ -148,7 +150,7 @@ def vectorBacktest(
         impactBpsPerPct: 1% ADV 진입 시 추가 bps.
         capitalPctOfAdv: 진입 자본의 거래량 대비 비율.
         style: 스타일 식별자.
-        nTrials: DSR 정정용 시도 횟수.
+        nTrials: DSR 정정용 실제 전략/파라미터 탐색 횟수. None이면 DSR 미산출.
         execMode: ``"next_open"`` | ``"close"``.
 
     Returns:
@@ -176,16 +178,16 @@ def vectorBacktest(
 
     See Also:
         - walkForward : OOS sliding
-        - cpcv : Combinatorial Purged CV
+        - cpcv : 고정 룰 CPCV path 구조 temporal stress
 
     AIContext:
         "이 룰 백테스트 결과" 답변 시 sharpe + mdd + trades 인용.
     """
     n = len(close)
-    if n < 30 or len(rule) != n:
+    if n < 30 or len(rule) != n or (nTrials is not None and nTrials < 1):
         return BacktestResult(
             status="error",
-            reason=f"length mismatch or too short: close={n}, rule={len(rule)}",
+            reason=f"invalid backtest input: close={n}, rule={len(rule)}, nTrials={nTrials}",
             style=style,
         )
 
@@ -320,7 +322,7 @@ def vectorBacktest(
     # full-notional long-only 한 번의 왕복은 진입 1 + 청산 1 = 총 회전 2 이다.
     to = float(2 * len(trades))
     expo = exposure(pos.astype(np.float64))
-    ds = dsr(sh, daily_ret, nTrials=nTrials)
+    ds = None if nTrials is None else dsr(sh, daily_ret, nTrials=nTrials)
 
     period = (None, None)
     if dates and len(dates) >= 2:

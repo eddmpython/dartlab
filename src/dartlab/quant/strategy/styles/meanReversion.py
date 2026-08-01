@@ -40,7 +40,7 @@ import numpy as np
 from dartlab.quant.risk.volatility import _volatilitySeries
 from dartlab.quant.strategy.rule import Rule
 from dartlab.quant.strategy.signal import Signal
-from dartlab.quant.strategy.styles._common import getArrays
+from dartlab.quant.strategy.styles._common import getArrays, rollingQuantile
 from dartlab.synth.indicators import vrsi
 
 
@@ -48,14 +48,14 @@ def _residualZScore(close: np.ndarray, window: int = 60) -> np.ndarray:
     """log(close) 의 rolling residual z-score — Avellaneda-Lee OU 정상화 form.
 
     학술 (Avellaneda & Lee 2008):
-        log price → rolling mean 제거 (de-trend) → std 정규화
+        log price → 직전 rolling mean 제거 (de-trend) → std 정규화
         z < -s_bo (entry threshold), z > -s_so (exit threshold)
     """
     n = len(close)
     z = np.full(n, np.nan, dtype=np.float64)
     log_p = np.log(np.maximum(close, 1e-9))
     for i in range(window, n):
-        win = log_p[i - window + 1 : i + 1]
+        win = log_p[i - window : i]
         mu = float(np.mean(win))
         sd = float(np.std(win, ddof=1))
         if sd > 0:
@@ -75,7 +75,7 @@ def build(
     """평균회귀 룰 빌드 — Avellaneda-Lee 2008 statistical arbitrage 정의.
 
     학술 정의:
-        z(t) = (log(close) - rolling_mean(60)) / rolling_std(60)
+        z(t) = (log(close[t]) - prior_rolling_mean(60)) / prior_rolling_std(60)
         Entry: z < -1.25 (1.25σ 하방 이탈) + 변동성 정상 + RSI 확인
         Exit:  z > -0.5 (평균 회복 진행)
 
@@ -104,7 +104,7 @@ def build(
         Mean-reversion + AI 평균회귀 답변.
 
     How:
-        z-score + RSI + vol q70 필터 → entry → recovery exit.
+        z-score + RSI + 직전 252일 vol q70 필터 → entry → recovery exit.
 
     Requires:
         close ≥ zWindow + 20.
@@ -137,16 +137,20 @@ def build(
     rsi = vrsi(close, period=14)
     vol_series = _volatilitySeries(close)
     realized = vol_series["realized_vol"]
-    vol_q70 = float(np.nanquantile(realized, 0.70)) if not np.all(np.isnan(realized)) else float("inf")
+    vol_q70 = rollingQuantile(realized, 0.70, window=252, minPeriods=60)
 
     s = Signal()
     s.add("z_low", (z < zEntry) & ~np.isnan(z))
     s.add("z_recover", (z > zExit) & ~np.isnan(z))
     s.add("rsi_oversold", (rsi < rsiConfirm) & ~np.isnan(rsi))
-    s.add("vol_normal", (realized < vol_q70) & ~np.isnan(realized))
+    s.add("vol_normal", (realized < vol_q70) & ~np.isnan(realized) & ~np.isnan(vol_q70))
 
     return Rule(
         entry_expr=s.z_low & s.rsi_oversold & s.vol_normal,
         exit_expr=s.z_recover,
-        meta={"style": "meanReversion", "definition": "Avellaneda-Lee_2008"},
+        meta={
+            "style": "meanReversion",
+            "definition": "Avellaneda-Lee_2008",
+            "formation": "prior_252d_min_60d",
+        },
     ).withStop("atr", k=atrK, period=14)

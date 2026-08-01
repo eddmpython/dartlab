@@ -7,7 +7,7 @@ Quant 클래스의 `_AXIS_REGISTRY` 가 lazy import 하는 진입 모듈. analys
     backtest     — style 또는 Rule 백테스트 (cpcv 옵션)
     style        — 8 프리셋 백테스트 (name="all" → 8개)
     entry        — 현재 시점 진입 진단
-    walkforward  — Lopez 슬라이딩 window OOS Sharpe + DSR + PBO
+    walkforward: ruleFactory refit OOS 또는 고정 룰 temporal stress
 """
 
 from __future__ import annotations
@@ -175,6 +175,7 @@ def runStrategy(
             dates=arr.get("date"),
             feeBps=kwargs.get("feeBps", DEFAULT_FEE_BPS),
             slipBps=kwargs.get("slipBps", DEFAULT_SLIP_BPS),
+            nTrials=kwargs.get("nTrials"),
         )
     return vectorBacktest(
         close,
@@ -186,6 +187,7 @@ def runStrategy(
         dates=arr.get("date"),
         feeBps=kwargs.get("feeBps", DEFAULT_FEE_BPS),
         slipBps=kwargs.get("slipBps", DEFAULT_SLIP_BPS),
+        nTrials=kwargs.get("nTrials"),
     )
 
 
@@ -208,7 +210,7 @@ def runBacktest(
     style : str | Rule | None
         8 프리셋 스타일명 또는 사용자 Rule 객체.
     cpcv : bool
-        True 면 Combinatorial Purged Cross-Validation 실행.
+        True 면 고정 룰 CPCV path 구조 기반 temporal stress 실행.
     n_splits : int
         CPCV fold 수.
     n_test : int
@@ -218,6 +220,7 @@ def runBacktest(
     **kwargs
         start : str — OHLCV 시작일 (예: "2014-01-01").
         feeBps, slipBps : float — 왕복 거래비용 (bps).
+        nTrials : int | None. 실제 전략/파라미터 탐색 횟수. 생략하면 DSR 미산출.
 
     Returns
     -------
@@ -227,9 +230,9 @@ def runBacktest(
         style : str | None — 스타일명
         sharpe : float — Sharpe 비율 (배)
         mdd : float — 최대 낙폭 (%)
-        dsr : float — Deflated Sharpe Ratio (배)
+        dsr : float | None. nTrials 명시 시 Deflated Sharpe Ratio
         trades : pl.DataFrame | None — 개별 거래 내역
-        oos : bool — Out-of-Sample 여부
+        oos : bool. 고정 룰 CPCV stress는 False
 
     Examples
     --------
@@ -237,10 +240,11 @@ def runBacktest(
 
     Capabilities:
         - 8 프리셋 스타일 또는 사용자 Rule 으로 단일 백테스트
-        - KR-only 스타일 (flowFollow/seasonalKR) 시장 사전 체크 + cpcv 옵션
+        - KR-only 스타일 (flowFollow/seasonalKR) 시장 사전 체크 + 고정 룰 path stress
 
     Guide:
-        Quant strategy 표준 진입. ``cpcv=True`` 면 Combinatorial Purged CV (과적합 검정).
+        Quant strategy 표준 진입. ``cpcv=True``는 fold 재학습 없는 고정 룰 stress이므로
+        OOS 또는 과적합 검정으로 해석하지 않는다.
 
     When:
         Quant strategy 백테스트 + AI 스타일 추천 답변.
@@ -306,9 +310,11 @@ def runBacktest(
             open_=arr.get("open"),
             high=arr.get("high"),
             low=arr.get("low"),
+            dates=arr.get("date"),
             style=styleName,
             feeBps=kwargs.get("feeBps", DEFAULT_FEE_BPS),
             slipBps=kwargs.get("slipBps", DEFAULT_SLIP_BPS),
+            nTrials=kwargs.get("nTrials"),
         )
     return vectorBacktest(
         close,
@@ -321,6 +327,7 @@ def runBacktest(
         style=styleName,
         feeBps=kwargs.get("feeBps", DEFAULT_FEE_BPS),
         slipBps=kwargs.get("slipBps", DEFAULT_SLIP_BPS),
+        nTrials=kwargs.get("nTrials"),
     )
 
 
@@ -576,6 +583,7 @@ def runMultiAsset(
         style=key,
         feeBps=kwargs.get("feeBps", DEFAULT_FEE_BPS),
         slipBps=kwargs.get("slipBps", DEFAULT_SLIP_BPS),
+        nTrials=kwargs.get("nTrials"),
     )
 
 
@@ -587,13 +595,14 @@ def runWalkforward(
     train: int = 252,
     test: int = 63,
     step: int = 63,
+    ruleFactory=None,
     **kwargs,
 ) -> BacktestResult:
-    """Lopez 슬라이딩 window Out-of-Sample 검증.
+    """비중복 walk-forward refit 또는 고정 룰 temporal stress.
 
-    학술 근거: Lopez de Prado (2018) — Advances in Financial ML.
-    train 윈도우로 규칙을 학습하고 test 윈도우에서 OOS 성과를 측정,
-    step 간격으로 슬라이딩하여 DSR·PBO 등 과적합 보정 지표를 산출한다.
+    학술 근거: Lopez de Prado (2018), Advances in Financial ML.
+    ``ruleFactory``가 train window마다 재학습할 때만 OOS로 인증한다. 이미 만든
+    ``rule`` 또는 ``style`` 경로는 고정 룰 temporal stress이며 OOS가 아니다.
 
     Parameters
     ----------
@@ -608,10 +617,13 @@ def runWalkforward(
     test : int
         테스트 윈도우 크기 (일, 기본 63).
     step : int
-        슬라이딩 간격 (일, 기본 63).
+        슬라이딩 간격. 단일 연속 원장을 위해 test와 같아야 한다.
+    ruleFactory : Callable | None
+        train close와 test 길이를 받아 Rule을 만드는 재학습 factory.
     **kwargs
         start : str — OHLCV 시작일 (예: "2014-01-01").
-        feeBps, slipBps : float — 왕복 거래비용 (bps).
+        feeBps, slipBps : float. 왕복 거래비용 (bps).
+        nTrials : int | None. 실제 전략/파라미터 탐색 횟수.
 
     Returns
     -------
@@ -619,29 +631,29 @@ def runWalkforward(
         status : str — "ok" | "error"
         reason : str | None — 에러 사유
         style : str | None — 스타일명
-        sharpe : float — OOS Sharpe 비율 (배)
-        mdd : float — OOS 최대 낙폭 (%)
-        dsr : float — Deflated Sharpe Ratio (배)
-        trades : pl.DataFrame | None — OOS 거래 내역
-        oos : bool — True (항상 OOS)
+        sharpe : float. 검증 경로 Sharpe 비율
+        mdd : float. 최대 낙폭
+        dsr : float | None. nTrials 명시 시 Deflated Sharpe Ratio
+        trades : pl.DataFrame | None. 검증 경로 거래 내역
+        oos : bool. ruleFactory 경로만 True
 
     Examples
     --------
     >>> c.quant("walkforward", style="trendFollow")
 
     Capabilities:
-        - Lopez de Prado 2018 sliding window OOS 검증 → DSR/PBO 과적합 보정 지표
-        - rule 또는 style 분기 → walkForward core 위임
+        - ruleFactory 기반 train-only refit OOS 경로와 단일 체결 원장
+        - rule 또는 style은 고정 룰 rolling stress로 명시
 
     Guide:
-        train 윈도우로 학습 + test 윈도우 OOS 측정 + step 슬라이딩. ``train=252``, ``test=63``
-        표준 (1년 학습 + 분기 테스트).
+        ``train=252``, ``test=step=63``이 기본이다. 단일 candidate API이므로 PBO는
+        산출하지 않으며, DSR은 실제 nTrials를 제공할 때만 산출한다.
 
     When:
-        과적합 검정 + AI 견고성 답변.
+        재학습 OOS 검증 또는 고정 룰 시간구간 stress.
 
     How:
-        ``_arrays`` → close ≥ train+test 확인 → rule 분기 → walkForward 위임.
+        ``_arrays`` → rule/style/factory 배타 검증 → walkForward 위임.
 
     Requires:
         OHLCV ≥ train + test 봉 (기본 315 봉).
@@ -654,10 +666,12 @@ def runWalkforward(
         - strategy.backtest.walkForward : core engine
 
     AIContext:
-        "OOS 검정 결과" 답변 시 OOS sharpe + dsr 인용.
+        evaluation_mode, oos, 기간, nTrials를 성과와 함께 인용.
     """
-    if rule is None and style is None:
-        return BacktestResult(status="error", reason="rule= or style= required", style=None)
+    if ruleFactory is not None and (rule is not None or style is not None):
+        return BacktestResult(status="error", reason="ruleFactory는 rule/style과 배타적", style=None)
+    if ruleFactory is None and rule is None and style is None:
+        return BacktestResult(status="error", reason="rule, style, ruleFactory 중 하나 필요", style=None)
 
     arr = _arrays(stockCode, start=kwargs.get("start"))
     close = arr.get("close")
@@ -666,11 +680,11 @@ def runWalkforward(
             status="error",
             reason=f"insufficient OHLCV for train+test: {stockCode}",
             style=None,
-            oos=True,
+            oos=ruleFactory is not None,
         )
 
-    if rule is None:
-        result = _buildRuleFromStyle(style, stockCode)
+    if rule is None and ruleFactory is None:
+        result = _buildRuleFromStyle(style, stockCode, start=kwargs.get("start"))
         if isinstance(result, BacktestResult):
             return result
         rule = result
@@ -685,7 +699,9 @@ def runWalkforward(
         high=arr.get("high"),
         low=arr.get("low"),
         dates=arr.get("date"),
-        style=rule.meta.get("style") if rule.meta else None,
+        style=rule.meta.get("style") if rule is not None and rule.meta else None,
         feeBps=kwargs.get("feeBps", DEFAULT_FEE_BPS),
         slipBps=kwargs.get("slipBps", DEFAULT_SLIP_BPS),
+        ruleFactory=ruleFactory,
+        nTrials=kwargs.get("nTrials"),
     )

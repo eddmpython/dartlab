@@ -26,7 +26,14 @@ def _setup(n: int = 300) -> tuple[np.ndarray, Rule]:
 
 def _run(feeBps: float):
     close, rule = _setup()
-    return vectorBacktest(close=close, rule=rule, feeBps=feeBps, slipBps=0.0, execMode="close")
+    return vectorBacktest(
+        close=close,
+        rule=rule,
+        feeBps=feeBps,
+        slipBps=0.0,
+        execMode="close",
+        nTrials=1,
+    )
 
 
 def _rule(n: int, entries: list[int], exits: list[int], *, stop: dict | None = None) -> Rule:
@@ -222,6 +229,16 @@ def testReportedMetricsAreRecomputedFromTheReturnedNetSeries() -> None:
     assert result.mdd == pytest.approx(mdd(result.equity))
     assert result.dsr == pytest.approx(dsr(result.sharpe, result.returns, nTrials=1))
     _assertLedgerIdentity(result)
+
+
+def testDsrIsUnavailableWithoutSelectionTrialProvenance() -> None:
+    """실제 탐색 횟수를 모르면 단일 trial로 가정해 DSR을 만들지 않는다."""
+    close, rule = _setup()
+
+    result = vectorBacktest(close, rule, feeBps=0.0, slipBps=0.0)
+
+    assert result.status == "ok"
+    assert result.dsr is None
 
 
 def testPublicBacktestAxisPassesCostAssumptionsToTheCore(monkeypatch) -> None:

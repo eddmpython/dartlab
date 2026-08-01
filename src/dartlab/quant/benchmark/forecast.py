@@ -490,9 +490,9 @@ def forecastRuleFactory(
     alpha: float = 0.10,
     requireConfidence: bool = False,
 ) -> Callable[..., Any]:
-    """forecast 모델 기반 walkForward rule_factory 생성.
+    """forecast 모델 기반 walkForward ruleFactory 생성.
 
-    walkForward(close, rule_factory=forecastRuleFactory(threshold=0.0005), ...) 형태로
+    walkForward(close, ruleFactory=forecastRuleFactory(threshold=0.0005), ...) 형태로
     사용. fold 마다 IS 구간만 보고 forecast fit, OOS 일수만큼 점추정 + interval 산출,
     threshold 룰로 entry/exit boolean 변환.
 
@@ -542,8 +542,8 @@ def forecastRuleFactory(
     >>> from dartlab.quant.benchmark.forecast import forecastRuleFactory
     >>> from dartlab.quant.strategy.backtest import walkForward
     >>> factory = forecastRuleFactory(threshold=0.0005, models=["ar1"])
-    >>> bt = walkForward(close, rule=None, rule_factory=factory, train=180, test=30, step=30)
-    >>> bt.cpcv["refit_count"]   # fold 별 재학습 횟수
+    >>> bt = walkForward(close, rule=None, ruleFactory=factory, train=180, test=30, step=30)
+    >>> bt.validation["refit_count"]   # fold 별 재학습 횟수
 
     Capabilities:
         - forecast 모델 (naive/ar1/etsHolt/theta) 기반 OOS prediction → entry/exit Rule 변환

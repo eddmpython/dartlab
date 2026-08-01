@@ -432,7 +432,7 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
         module="dartlab.quant.screen.axStrategy",
         fn="runWalkforward",
         label="워크포워드",
-        description="Lopez de Prado 슬라이딩 OOS Sharpe + DSR + PBO",
+        description="ruleFactory refit OOS 또는 고정 룰 temporal stress",
         example='quant("walkforward", "005930", style="meanReversion")',
         group="strategy",
     ),

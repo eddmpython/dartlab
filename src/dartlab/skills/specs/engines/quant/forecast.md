@@ -129,7 +129,7 @@ forecast 결과를 인용할 때 다음을 함께 명시:
 
 ## walkForward 결합 (forecastRuleFactory)
 
-forecast 모델을 walk-forward 로 OOS 검증하려면 `forecastRuleFactory` 를 `walkForward(rule_factory=...)` 에 전달:
+forecast 모델을 walk-forward로 OOS 검증하려면 `forecastRuleFactory`를 `walkForward(ruleFactory=...)`에 전달:
 
 ```python
 from dartlab.quant.benchmark.forecast import forecastRuleFactory
@@ -137,10 +137,10 @@ from dartlab.quant.strategy.backtest import walkForward
 
 # Loose mode (default) — point only
 factory = forecastRuleFactory(threshold=0.0005, models=["ar1"])
-bt = walkForward(close, rule=None, rule_factory=factory, train=180, test=30, step=30)
-# bt.cpcv["refit_count"] = fold 마다 재학습 횟수
-# bt.pbo                 = None (refit path 에서는 IS region all-False 설계라 PBO 무의미 → 자동 None)
-# bt.dsr                 = OOS Deflated Sharpe Ratio (Lopez de Prado)
+bt = walkForward(close, rule=None, ruleFactory=factory, train=180, test=30, step=30, nTrials=4)
+# bt.validation["refit_count"] = fold마다 재학습 횟수
+# bt.pbo                         = None (단일 candidate라 판정 불가)
+# bt.dsr                         = 명시한 nTrials로 계산한 OOS Deflated Sharpe Ratio
 ```
 
 ### Entry / Exit 룰

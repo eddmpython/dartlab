@@ -371,7 +371,7 @@ def calcStrategySnapshot(company) -> dict | None:
         snap[key] = {
             "sharpe": float(bt.sharpe),
             "mdd": float(bt.mdd),
-            "dsr": float(bt.dsr),
+            "dsr": float(bt.dsr) if bt.dsr is not None else None,
             "trades": int(bt.trades.height) if bt.trades is not None else 0,
             "entry_today": bool(ev.active) if ev else False,
             "exit_today": bool(ev.exit_today) if ev else False,

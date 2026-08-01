@@ -7,7 +7,8 @@
     Signal — key→numpy array 컨테이너 (getattr 접근)
     Rule   — entry/exit boolean expression + sizing/stop 명시 주입
     BacktestResult — equity/returns/trades + sharpe/sortino/mdd/dsr/pbo
-    walkForward / cpcv — Lopez de Prado purged k-fold
+    walkForward: refit 가능한 OOS 검증
+    cpcv: 고정 룰 CPCV path 구조 temporal stress (OOS 아님)
 
 사용 예:
     >>> import dartlab
@@ -17,7 +18,7 @@
     >>> sig_df = c.quant("신호", series=True)
     >>> s.add("rsi_oversold", sig_df["rsiSignal"] == 1)
     >>> rule = Rule.entry(s.rsi_oversold).exit(...)
-    >>> bt = c.quant("backtest", rule=rule)
+    >>> bt = c.quant("backtest", rule=rule, nTrials=1)
     >>> print(f"Sharpe={bt.sharpe:.2f} DSR={bt.dsr:.2f}")
 """
 

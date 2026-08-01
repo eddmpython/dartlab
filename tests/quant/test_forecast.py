@@ -467,6 +467,8 @@ class TestForecastRuleFactory:
         bt = walkForward(close, rule, train=200, test=50, step=50)
         # 정적 rule path 도 ok 상태
         assert bt.status == "ok"
+        assert bt.oos is False
+        assert bt.cpcv.get("evaluation_mode") == "fixed_rule_rolling_stress"
         assert bt.cpcv.get("refit_count", 0) == 0
 
     def test_walk_forward_missing_both_returns_error(self):
