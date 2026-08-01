@@ -45,6 +45,25 @@ export function hfUrl(path: string): string {
 	return `${HF_RESOLVE}/${path.replace(/^\/+/, '')}`;
 }
 
+// HTTP 상태를 실어 나르는 읽기 실패. 호출측이 "미존재(404)"와 "일시 장애(5xx/네트워크)"를
+// 구분해야 안내 문구가 갈린다 (404 를 "로드 실패" 로 뭉뚱그리면 우리 버그로 읽힌다).
+// message 포맷은 기존 그대로 유지 (로그·기존 문자열 소비처 하위호환).
+export class HfReadError extends Error {
+	readonly status: number;
+	readonly path: string;
+	constructor(path: string, status: number, phase: string) {
+		super(`${path} ${phase}: ${status}`);
+		this.name = 'HfReadError';
+		this.status = status;
+		this.path = path;
+	}
+}
+
+/** 미존재(404) 읽기 실패인지. 다른 에러·타입은 모두 false. */
+export function isHfNotFound(e: unknown): boolean {
+	return e instanceof HfReadError && e.status === 404;
+}
+
 // 동일 파일의 HEAD(범위 probe)는 세션 내 1 회만 · 반복 readParquetRows·lazy 좌측 팬의
 // 불필요한 RTT 제거. 파일은 세션 중 불변이므로 ref(size/etag) 캐시 안전.
 // 커스텀 fetchFn(측정/프록시 주입)은 캐시하지 않음.
@@ -66,7 +85,7 @@ async function headHfObjectFresh(path: string, fetchFn: FetchLike): Promise<HfOb
 	// range probe·세션은 HF 직결(hfRangeUrl) · 프록시 206 은 엣지캐시 불가라 7~9배 느림(origin.ts 참조).
 	const url = hfRangeUrl(path);
 	const resp = await fetchResilient(fetchFn, url, { headers: { Range: 'bytes=0-0' } });
-	if (!resp.ok && resp.status !== 206) throw new Error(`${path} range probe 실패: ${resp.status}`);
+	if (!resp.ok && resp.status !== 206) throw new HfReadError(path, resp.status, 'range probe 실패');
 	const linkedSize = Number(resp.headers.get('x-linked-size'));
 	const contentLength = Number(resp.headers.get('content-length'));
 	const contentRange = resp.headers.get('content-range');
@@ -159,7 +178,7 @@ export async function openHfParquet(
 		const wholeUrl = hfUrl(path);
 		const t0 = performance.now();
 		const resp = await fetchResilient(fetchFn, wholeUrl);
-		if (!resp.ok && resp.status !== 206) throw new Error(`${path} 전체 읽기 실패: ${resp.status}`);
+		if (!resp.ok && resp.status !== 206) throw new HfReadError(path, resp.status, '전체 읽기 실패');
 		const buf = await resp.arrayBuffer();
 		requests.push({ url: wholeUrl, range: null, status: resp.status, bytes: buf.byteLength, durationMs: performance.now() - t0 });
 		const file: AsyncBuffer = { byteLength: buf.byteLength, slice: (start: number, end?: number) => buf.slice(start, end ?? buf.byteLength) };
@@ -216,7 +235,7 @@ export async function readParquetWholeFile<T extends Record<string, unknown> = R
 		fetchResilient(fetchFn, hfUrl(path))
 	]);
 	if (resp.status === 404) return null;
-	if (!resp.ok && resp.status !== 206) throw new Error(`${path} 전체 읽기 실패: ${resp.status}`);
+	if (!resp.ok && resp.status !== 206) throw new HfReadError(path, resp.status, '전체 읽기 실패');
 	const buf = await resp.arrayBuffer();
 	const file: AsyncBuffer = { byteLength: buf.byteLength, slice: (start: number, end?: number) => buf.slice(start, end ?? buf.byteLength) };
 	return (await parquetReadObjects({ file, compressors, columns: options.columns })) as T[];

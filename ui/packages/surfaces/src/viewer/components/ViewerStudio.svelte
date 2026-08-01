@@ -5,6 +5,7 @@
 	// 라우팅 의존 0 · 회사 이동·비교 변경은 전부 onNavigate 콜백으로 위임(라우트=goto, 터미널=내부 state).
 	import { onMount, untrack, type Snippet } from 'svelte';
 	import { Maximize2, Minimize2, Columns3, MessageSquare, Bug, Table2, X, Plus, Search, FileSpreadsheet } from 'lucide-svelte';
+	import { isHfNotFound } from '@dartlab/ui-runtime/data/parquet/hfRange';
 	import { loadPanelBundle } from '../lib/panelLoad';
 	import PanelTocTree from './PanelTocTree.svelte';
 	import PanelMatrix from './PanelMatrix.svelte';
@@ -65,6 +66,9 @@
 
 	let bundle = $state<PanelBundle | null>(null);
 	let errorMsg = $state<string | null>(null);
+	// 'absent' = panel 자체가 없음(404). 정기보고서를 제출하지 않는 종목(집합투자기구 등)이 여기 걸린다.
+	// 'failed' = 네트워크·파싱 등 진짜 실패. 둘을 같은 "로드 실패" 로 뭉치면 원천 부재를 우리 버그로 읽는다.
+	let errorKind = $state<'absent' | 'failed' | null>(null);
 	let loading = $state(true);
 	let swapping = $state(false); // 회사 전환 중 · 옛 화면 유지 + 미세 인디케이터(soft swap, 전체화면 스피너 회피)
 	let activeSectionKey = $state<string | undefined>(undefined);
@@ -118,6 +122,7 @@
 			/* localStorage 불가 무시 */
 		}
 		errorMsg = null;
+		errorKind = null;
 		// 첫 로드(bundle 없음)=전체화면 로딩 / 회사 전환(bundle 있음)=미세 swap 인디케이터. untrack 으로 bundle 을
 		// effect 의존성에서 제외(여기서 bundle 을 set 하므로 그냥 읽으면 자기재발화).
 		if (untrack(() => bundle) === null) loading = true;
@@ -130,10 +135,20 @@
 				windowEnd = 0;
 				activeBlock = null;
 				activeSectionKey = b.toc.chapters[0]?.sections[0]?.sectionKey;
-				if (!b.periods.length) errorMsg = '이 종목의 panel 데이터가 없습니다 (HF 업로드 대기 중일 수 있음).';
+				if (!b.periods.length) {
+					errorKind = 'absent';
+					errorMsg = '공시 본문이 없습니다.';
+				}
 			})
 			.catch((e) => {
 				if (cancelled) return;
+				// 404 = panel 미존재. 원천에 정기보고서가 없는 종목이라 재시도해도 달라지지 않는다.
+				if (isHfNotFound(e)) {
+					errorKind = 'absent';
+					errorMsg = '공시 본문이 없습니다.';
+					return;
+				}
+				errorKind = 'failed';
 				errorMsg = `로드 실패: ${e instanceof Error ? e.message : String(e)}`;
 			})
 			.finally(() => {
@@ -534,7 +549,16 @@
 				<source srcset="{basePath}/avatar-curious.webp" type="image/webp" />
 				<img class="state-avatar" src="{basePath}/avatar-curious.png" alt="" width="72" height="72" />
 			</picture>
-			<p>{errorMsg}</p>
+			<p>{corpName || code} {errorMsg}</p>
+			{#if errorKind === 'absent'}
+				<p class="state-sub">
+					공시뷰어는 DART 정기보고서(사업·반기·분기) 본문을 읽습니다. 펀드형 상장사(집합투자기구)는 정기보고서
+					제출 대상이 아니라 본문이 존재하지 않습니다.
+				</p>
+				{#if repoUrl}
+					<a class="state-link" href="{repoUrl}/issues" target="_blank" rel="noreferrer noopener">수집 누락 제보</a>
+				{/if}
+			{/if}
 		</div>
 	{:else if bundle}
 		<div class="studio" class:ask-open={askOpen} class:export-open={exportOpen} class:swapping>
@@ -919,6 +943,21 @@
 		color: #cbd5e1;
 		font-size: 13px;
 		margin: 0;
+	}
+	.state-sub {
+		max-width: 46ch;
+		color: #94a3b8 !important;
+		font-size: 12px !important;
+		line-height: 1.65;
+	}
+	.state-link {
+		color: var(--amber);
+		font-size: 12px;
+		text-decoration: none;
+		border-bottom: 1px solid rgba(var(--amber-rgb), 0.4);
+	}
+	.state-link:hover {
+		border-bottom-color: var(--amber);
 	}
 	.spinner {
 		width: 28px;
