@@ -1812,15 +1812,6 @@
       "limitations": []
     },
     {
-      "id": "recipes.meta.screen.distressEarlyWarning",
-      "title": "Distress Early Warning — Altman Z″<1.8 ∧ Beneish M>-1.78",
-      "category": "recipes",
-      "status": "limited",
-      "dataSources": [],
-      "requiredSetup": [],
-      "limitations": []
-    },
-    {
       "id": "recipes.meta.screen.insiderClusterScreen",
       "title": "Insider Cluster Screen — 180 일 ≥ 3 명 매수",
       "category": "recipes",

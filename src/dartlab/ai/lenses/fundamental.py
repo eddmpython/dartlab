@@ -13,7 +13,7 @@ FUNDAMENTAL_LENS = Lens(
     capabilityHints=[
         "Company.panel",
         "Company.analysis",
-        "Company.ratios",
-        "Company.financials",
+        "Company.trace",
+        "Company.select",
     ],
 )

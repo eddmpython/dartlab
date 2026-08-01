@@ -91,7 +91,7 @@
 	async function onOauthLogin(key: string): Promise<void> {
 		busy[key] = 'oauth';
 		try {
-			const r = await fetch('/api/oauth/authorize');
+			const r = await fetch('/api/oauth/authorize', { method: 'POST' });
 			if (!r.ok) throw new Error(`HTTP ${r.status}`);
 			const { authUrl } = (await r.json()) as { authUrl: string };
 			window.open(authUrl, '_blank', 'noopener,noreferrer');

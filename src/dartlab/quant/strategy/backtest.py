@@ -17,6 +17,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import date
+from typing import Any, cast
 
 import numpy as np
 import polars as pl
@@ -107,6 +108,37 @@ class BacktestResult:
 
 
 # ── 핵심 백테스트 ───────────────────────────────────────────────────────────
+
+
+def _dateValidationError(dates: list, expectedLength: int) -> str | None:
+    """백테스트 날짜축을 단일 종류의 엄격한 오름차순으로 검증한다."""
+    if len(dates) != expectedLength:
+        return f"invalid dates: expected {expectedLength} values"
+
+    dateKeys: list[tuple[str, str | float]] = []
+    for value in dates:
+        if isinstance(value, date):
+            dateKeys.append(("date", value.isoformat()))
+        elif isinstance(value, np.datetime64):
+            dateKeys.append(("date", np.datetime_as_string(value)))
+        elif isinstance(value, str):
+            dateKeys.append(("text", value))
+        elif isinstance(value, (int, float)) and not isinstance(value, bool) and np.isfinite(value):
+            dateKeys.append(("number", float(value)))
+        else:
+            return "invalid dates: strict ascending order required"
+
+    if not dateKeys or any(key[0] != dateKeys[0][0] for key in dateKeys):
+        return "invalid dates: strict ascending order required"
+    if dateKeys[0][0] == "number":
+        numericValues = [float(key[1]) for key in dateKeys]
+        strictlyIncreasing = all(numericValues[idx] < numericValues[idx + 1] for idx in range(expectedLength - 1))
+    else:
+        textValues = [str(key[1]) for key in dateKeys]
+        strictlyIncreasing = all(textValues[idx] < textValues[idx + 1] for idx in range(expectedLength - 1))
+    if not strictlyIncreasing:
+        return "invalid dates: strict ascending order required"
+    return None
 
 
 def vectorBacktest(
@@ -242,25 +274,8 @@ def vectorBacktest(
         return BacktestResult(status="error", reason="invalid OHLC: low above open/close", style=style)
     if high is not None and low is not None and np.any(high < low):
         return BacktestResult(status="error", reason="invalid OHLC: high below low", style=style)
-    if dates is not None:
-        if len(dates) != n:
-            return BacktestResult(status="error", reason=f"invalid dates: expected {n} values", style=style)
-        dateKeys: list[tuple[str, object] | None] = []
-        for value in dates:
-            if isinstance(value, date):
-                dateKeys.append(("date", value.isoformat()))
-            elif isinstance(value, np.datetime64):
-                dateKeys.append(("date", np.datetime_as_string(value)))
-            elif isinstance(value, str):
-                dateKeys.append(("text", value))
-            elif isinstance(value, (int, float)) and not isinstance(value, bool) and np.isfinite(value):
-                dateKeys.append(("number", float(value)))
-            else:
-                dateKeys.append(None)
-        sameKind = bool(dateKeys) and all(key is not None and key[0] == dateKeys[0][0] for key in dateKeys)
-        strictly_increasing = bool(sameKind and all(dateKeys[idx][1] < dateKeys[idx + 1][1] for idx in range(n - 1)))
-        if not strictly_increasing:
-            return BacktestResult(status="error", reason="invalid dates: strict ascending order required", style=style)
+    if dates is not None and (dateError := _dateValidationError(dates, n)) is not None:
+        return BacktestResult(status="error", reason=dateError, style=style)
     try:
         costs = np.asarray([feeBps, slipBps, impactBpsPerPct, capitalPctOfAdv], dtype=np.float64)
     except (TypeError, ValueError):
@@ -294,11 +309,11 @@ def vectorBacktest(
     base_cost = (feeBps + slipBps) / 1e4 / 2.0  # 한쪽
 
     # ADV impact (거래량 비례)
-    def _impactCost(size: float) -> float:
+    def _impactCost(exposure: float) -> float:
         """명시한 ADV 대비 전액 주문 비율을 실제 position size로 축소한다."""
         if capitalPctOfAdv <= 0:
             return 0.0
-        return (capitalPctOfAdv * size * impactBpsPerPct) / 1e4 / 2.0
+        return (capitalPctOfAdv * exposure * impactBpsPerPct) / 1e4 / 2.0
 
     def _exitExposure(rawPrice: float) -> float:
         """진입 후 가격 drift를 반영한 청산 직전 gross exposure."""
@@ -550,8 +565,9 @@ def _buildSizingSeries(close: np.ndarray, sizingSpec: dict | None) -> tuple[np.n
     if key == "equal":
         return sizes, None
     if key == "fixed":
+        rawWeight = kwargs.get("weight")
         try:
-            weight = float(kwargs.get("weight"))
+            weight = float(cast(Any, rawWeight))
         except (TypeError, ValueError):
             return sizes, "invalid fixed sizing: weight required"
         if not 0.0 <= weight <= 1.0:
@@ -563,9 +579,9 @@ def _buildSizingSeries(close: np.ndarray, sizingSpec: dict | None) -> tuple[np.n
         win_loss = kwargs.get("winLossRatio", kwargs.get("b"))
         fraction = kwargs.get("fraction", kwargs.get("k", 1.0))
         try:
-            win_prob = float(win_prob)
-            win_loss = float(win_loss)
-            fraction = float(fraction)
+            win_prob = float(cast(Any, win_prob))
+            win_loss = float(cast(Any, win_loss))
+            fraction = float(cast(Any, fraction))
         except (TypeError, ValueError):
             return sizes, "invalid kelly sizing: winProb and winLossRatio required"
         if not (0.0 < win_prob < 1.0) or win_loss <= 0 or not (0.0 <= fraction <= 1.0):
@@ -589,10 +605,10 @@ def _buildSizingSeries(close: np.ndarray, sizingSpec: dict | None) -> tuple[np.n
     min_periods = kwargs.get("minPeriods", kwargs.get("min_periods", 30))
     max_leverage = kwargs.get("maxLeverage", kwargs.get("max_leverage", 1.0))
     try:
-        target = float(target)
-        window = int(window)
-        min_periods = int(min_periods)
-        max_leverage = float(max_leverage)
+        target = float(cast(Any, target))
+        window = int(cast(Any, window))
+        min_periods = int(cast(Any, min_periods))
+        max_leverage = float(cast(Any, max_leverage))
     except (TypeError, ValueError):
         return sizes, f"invalid {key} sizing parameters"
     if target <= 0 or window < 2 or min_periods < 2 or min_periods > window or not 0 < max_leverage <= 1:

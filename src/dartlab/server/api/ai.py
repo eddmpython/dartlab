@@ -4,7 +4,7 @@ import asyncio
 import json
 import logging
 import os
-from typing import Any
+from typing import Any, cast
 
 from fastapi import APIRouter, HTTPException, Query, Request
 from sse_starlette.sse import EventSourceResponse
@@ -137,7 +137,7 @@ def apiStatus(
             info["model"] = model
             info["checked"] = checked
         else:
-            # probe 안 했으면 secretConfigured 로 fallback — UI 가 null 을 "검증 실패" 로 잘못
+            # probe 안 했으면 secretConfigured 로 fallback. UI 가 null 을 "검증 실패" 로 잘못
             # 해석해서 "설정 필요" 표시하던 문제 차단. probe 결과는 별도로 (백그라운드 또는
             # Settings 패널 진입 시) 갱신.
             info["available"] = info["secretConfigured"]
@@ -413,7 +413,7 @@ async def apiAiProfileEvents(request: Request):
 
 @router.get("/api/models/{provider}")
 def apiModels(provider: str):
-    """Provider별 사용 가능한 모델 목록 — SDK/API 자동 조회, 실패시 fallback."""
+    """Provider별 사용 가능한 모델 목록. SDK/API 자동 조회, 실패시 fallback."""
     from dartlab.ai.providers import createProvider
     from dartlab.ai.settings.types import LLMConfig
 
@@ -431,7 +431,7 @@ def apiModels(provider: str):
         try:
             from dartlab.ai.providers.oauthCodex import availableModels
 
-            # cache 우선 — 비어 있으면 정적 fallback 즉시 반환 + background thread 에서 warm.
+            # cache 우선. 비어 있으면 정적 fallback 즉시 반환 + background thread 에서 warm.
             # 이전: cold 1 회 ~43s (DNS/TLS cold + remote /codex/models fetch) 동안 UI 가
             # "설정 필요" 표시. allow_fetch=False 로 fallback 도 cold HTTP 안 트리거.
             cached = availableModels(allowFetch=False)
@@ -450,7 +450,7 @@ def apiModels(provider: str):
     if provider == "ollama":
         try:
             config = LLMConfig(provider="ollama")
-            prov = createProvider(config)
+            prov = cast(Any, createProvider(config))
             installed = prov.getInstalledModels()
             return {"models": installed, "recommendations": OLLAMA_MODEL_GUIDE}
         except _HANDLED_API_ERRORS:
@@ -513,9 +513,9 @@ def apiCodexLogout():
     return {"ok": True}
 
 
-@router.get("/api/oauth/authorize")
+@router.post("/api/oauth/authorize")
 def apiOauthAuthorize():
-    """ChatGPT OAuth 인증 시작 — 브라우저 로그인 URL 반환 + 로컬 콜백 서버 시작."""
+    """ChatGPT OAuth 인증 시작. 브라우저 로그인 URL 반환 + 로컬 콜백 서버 시작."""
     from dartlab.ai.providers.support.oauthToken import OAUTH_REDIRECT_PORT, buildAuthUrl
 
     auth_url, verifier, state = buildAuthUrl()
@@ -560,10 +560,10 @@ def _startOauthCallbackServer(port: int):
     from urllib.parse import parse_qs, urlparse
 
     class CallbackHandler(BaseHTTPRequestHandler):
-        """CallbackHandler — TODO 한국어 클래스 설명."""
+        """ChatGPT OAuth callback을 한 번 처리한다."""
 
         def do_GET(self):
-            """do_GET — TODO 한국어 동작 설명."""
+            """OAuth query를 검증하고 token 교환 결과를 브라우저에 표시한다."""
             parsed = urlparse(self.path)
             if parsed.path != "/auth/callback":
                 self.send_response(404)
@@ -628,7 +628,7 @@ def _startOauthCallbackServer(port: int):
             self.wfile.write(markup.encode("utf-8"))
 
         def logMessage(self, fmt, *args):
-            """logMessage — TODO 한국어 동작 설명."""
+            """기본 HTTP server 접근 로그를 출력하지 않는다."""
             pass
 
     def _runServer():
@@ -644,28 +644,33 @@ def _startOauthCallbackServer(port: int):
 @router.post("/api/ollama/pull")
 async def apiOllamaPull(req: dict):
     """Ollama 모델 다운로드 (SSE 스트리밍 진행률)."""
-    model_name = req.get("model")
-    if not model_name:
+    modelName = str(req.get("model") or "").strip()
+    if not modelName:
         raise HTTPException(400, "model name required")
+    if len(modelName) > 256 or any(ord(char) < 32 for char in modelName):
+        raise HTTPException(400, "model name is invalid")
 
     async def _streamPull():
         import httpx
 
         try:
-            with httpx.Client(timeout=600) as client:
-                with client.stream(
+            async with httpx.AsyncClient(timeout=600) as client:
+                async with client.stream(
                     "POST",
                     "http://localhost:11434/api/pull",
-                    json={"model": model_name, "stream": True},
+                    json={"model": modelName, "stream": True},
                 ) as resp:
-                    for line in resp.iter_lines():
+                    resp.raise_for_status()
+                    async for line in resp.aiter_lines():
                         if line:
+                            if len(line.encode("utf-8")) > 65_536:
+                                raise RuntimeError("Ollama progress event exceeds 65536 bytes")
                             yield {
                                 "event": "progress",
                                 "data": line,
                             }
             yield {"event": "done", "data": "{}"}
-        except _HANDLED_API_ERRORS as exc:
+        except (httpx.HTTPError, *_HANDLED_API_ERRORS) as exc:
             yield {"event": "error", "data": json.dumps({"error": _guideDetail(exc)}, ensure_ascii=False)}
 
     return EventSourceResponse(_streamPull(), media_type="text/event-stream")

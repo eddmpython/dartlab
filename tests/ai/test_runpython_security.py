@@ -1,20 +1,23 @@
-"""RunPython sandbox 회귀 가드 — Option B (AST 차단 + 경로 가드).
+"""RunPython 제한 실행의 import, 파일, 환경 경계 회귀 가드.
 
 차단 정책:
-- os.system / subprocess.* / shutil.rmtree / socket.socket / __import__ 우회
-- 안전 경로 외 파일 쓰기
+- 운영체제/네트워크/동적 import와 introspection 우회
+- 안전 경로 밖 파일 읽기와 쓰기
+- 자격증명 이름 및 환경변수 접근
 
 허용 정책:
-- import 자체는 OK — 호출 시점에만 차단
-- read mode open / pathlib 읽기 / os.path.* / dartlab API / polars
-- ~/.dartlab/ · ./tmp/ · /tmp/ · $TEMP/ 안의 파일 쓰기
+- dartlab, polars, 계산용 표준 라이브러리 import
+- 저장소의 비자격증명 파일 읽기와 artifact/tool-result/임시 파일 쓰기
 """
 
 from __future__ import annotations
 
+import importlib
+import json
 import os
 import os.path
 import tempfile
+import threading
 
 import pytest
 
@@ -41,7 +44,7 @@ def test_block_os_system():
     result = runPython("import os\nos.system('echo hi')")
     assert not result.ok
     stderr = _stderrOf(result)
-    assert "PermissionError" in stderr and "os.system" in stderr
+    assert "PermissionError" in stderr and "os" in stderr
 
 
 def test_block_subprocess_run():
@@ -50,7 +53,7 @@ def test_block_subprocess_run():
     result = runPython("import subprocess\nsubprocess.run(['echo', 'hi'])")
     assert not result.ok
     stderr = _stderrOf(result)
-    assert "PermissionError" in stderr and "subprocess.run" in stderr
+    assert "PermissionError" in stderr and "subprocess" in stderr
 
 
 def test_block_dunder_import_os_system():
@@ -60,7 +63,7 @@ def test_block_dunder_import_os_system():
     assert not result.ok
     stderr = _stderrOf(result)
     # AST 가 os.system 호출을 먼저 잡거나 __import__ 우회를 잡거나 — 둘 다 OK.
-    assert "PermissionError" in stderr and ("__import__" in stderr or "os.system" in stderr)
+    assert "PermissionError" in stderr and ("__import__" in stderr or "system" in stderr)
 
 
 def test_block_shutil_rmtree():
@@ -85,11 +88,22 @@ def test_block_open_outside_safe_roots():
 
     # 절대 경로로 안전 경로가 아닌 곳 시도. Windows: C:\Windows\..., Unix: /etc/...
     # 둘 중 어느 OS 에서도 차단되어야 함.
-    code = "import os\np = '/etc/passwd' if os.name == 'posix' else r'C:\\Windows\\system_test_block.ini'\nopen(p, 'w').write('x')"
+    target = "/etc/passwd" if os.name == "posix" else r"C:\Windows\system_test_block.ini"
+    code = f"open({target!r}, 'w').write('x')"
     result = runPython(code)
     assert not result.ok
     stderr = _stderrOf(result)
-    assert "PermissionError" in stderr and "안전 경로" in stderr
+    assert "PermissionError" in stderr and "비자격증명 경로" in stderr
+
+
+def test_block_write_to_repository_source():
+    """저장소는 읽기 전용이며 분석 코드는 원본을 덮어쓸 수 없다."""
+    from dartlab.ai.tools.runPython import runPython
+
+    result = runPython("open('README.md', 'a', encoding='utf-8').write('blocked')")
+
+    assert not result.ok
+    assert "PermissionError" in _stderrOf(result)
 
 
 # ── 허용 시나리오 ───────────────────────────────────────────────────────────
@@ -104,19 +118,21 @@ def test_allow_polars_basic():
     assert any(r.get("kind") == "executionRef" for r in refs_dict)
 
 
-def test_allow_os_path_expanduser():
-    """os.path.expanduser 는 read-only — 호출 차단 대상 아님."""
+def test_block_os_import_even_for_read_only_helpers():
+    """os 전체를 열면 environ과 process API로 이어지므로 분석 코드에는 제공하지 않는다."""
     from dartlab.ai.tools.runPython import runPython
 
     result = runPython("import os\nemit_result(values={'home': os.path.expanduser('~')})")
-    assert result.ok
+    assert not result.ok
+    assert "PermissionError" in _stderrOf(result)
 
 
-def test_allow_os_environ_get():
+def test_block_os_environment_access():
     from dartlab.ai.tools.runPython import runPython
 
     result = runPython("import os\nemit_result(values={'pyutf8': os.environ.get('PYTHONUTF8', '0')})")
-    assert result.ok
+    assert not result.ok
+    assert "PermissionError" in _stderrOf(result)
 
 
 def test_allow_pathlib_read():
@@ -128,20 +144,19 @@ def test_allow_pathlib_read():
     assert result.ok
 
 
-def test_allow_write_under_dartlab_home(tmp_path, monkeypatch):
-    """~/.dartlab/<file> 쓰기는 안전 경로 — 통과."""
+def test_allow_write_under_dartlab_artifacts(tmp_path, monkeypatch):
+    """~/.dartlab/artifacts/<file> 쓰기는 안전 경로라 통과한다."""
     from dartlab.ai.tools.runPython import runPython
 
     # tmp_path 를 임시 home 으로 — 실제 ~/.dartlab/ 오염 회피.
     monkeypatch.setenv("HOME", str(tmp_path))
     monkeypatch.setenv("USERPROFILE", str(tmp_path))
-    target = tmp_path / ".dartlab"
-    target.mkdir()
+    target = tmp_path / ".dartlab" / "artifacts"
+    target.mkdir(parents=True)
     test_file = target / "guard_test.txt"
 
     code = (
-        "import os\n"
-        "p = os.path.join(os.path.expanduser('~'), '.dartlab', 'guard_test.txt')\n"
+        f"p = {str(test_file)!r}\n"
         "with open(p, 'w', encoding='utf-8') as f:\n"
         "    f.write('hi')\n"
         "emit_result(values={'path': p})"
@@ -159,9 +174,9 @@ def test_allow_write_under_tempdir():
     from dartlab.ai.tools.runPython import runPython
 
     code = (
-        "import os\n"
         "import tempfile\n"
-        "p = os.path.join(tempfile.gettempdir(), 'dartlab_guard_test.txt')\n"
+        "from pathlib import Path\n"
+        "p = Path(tempfile.gettempdir()) / 'dartlab_guard_test.txt'\n"
         "with open(p, 'w', encoding='utf-8') as f:\n"
         "    f.write('ok')\n"
         "emit_result(values={'wrote': p})"
@@ -177,7 +192,6 @@ def test_assert_safe_ast_passes_clean_code():
     from dartlab.ai.tools.runpythonGuard import _assertSafeAst
 
     _assertSafeAst("import polars as pl\nx = pl.DataFrame({'a':[1]})\nprint(x.height)")
-    _assertSafeAst("import os\nprint(os.path.expanduser('~'))")
     _assertSafeAst("from pathlib import Path\nPath('.').exists()")
 
 
@@ -206,21 +220,20 @@ def test_safe_open_factory_blocks_outside_roots(tmp_path):
     f.write("ok")
     f.close()
     # 안전 경로 밖 — write 차단
-    with pytest.raises(PermissionError, match="안전 경로"):
+    with pytest.raises(PermissionError, match="비자격증명 경로"):
         safeOpen(str(tmp_path.parent / "outside.txt"), "w", encoding="utf-8")
 
 
-def test_safe_open_factory_allows_read_anywhere(tmp_path):
-    """read mode 는 어디든 통과 — 외부 본문 분석 use case 보존."""
+def test_safe_open_factory_blocks_read_outside_roots(tmp_path):
+    """읽기도 안전 root 밖이면 차단한다."""
     from dartlab.ai.tools.runpythonGuard import _safeOpenFactory
 
     target = tmp_path.parent / "outside_read.txt"
     target.write_text("hello", encoding="utf-8")
     try:
         safeOpen = _safeOpenFactory(safeRoots=[str(tmp_path)])
-        f = safeOpen(str(target), "r", encoding="utf-8")
-        assert f.read() == "hello"
-        f.close()
+        with pytest.raises(PermissionError, match="안전한 비자격증명"):
+            safeOpen(str(target), "r", encoding="utf-8")
     finally:
         target.unlink(missing_ok=True)
 
@@ -293,11 +306,99 @@ def test_emit_result_none_date_still_creates_date_ref():
     assert date_refs[0].payload.get("specified") is False
 
 
-def test_default_safe_roots_includes_dartlab_home_and_tmp():
+def test_default_safe_roots_includes_artifacts_repo_and_tmp():
     from dartlab.ai.tools.runpythonGuard import _defaultSafeRoots
 
     roots = _defaultSafeRoots()
-    expected_dartlab = os.path.normpath(os.path.join(os.path.expanduser("~"), ".dartlab"))
-    expected_tmp = os.path.normpath(tempfile.gettempdir())
-    assert expected_dartlab in roots
+    expected_artifacts = os.path.realpath(os.path.join(os.path.expanduser("~"), ".dartlab", "artifacts"))
+    expected_tmp = os.path.realpath(tempfile.gettempdir())
+    assert expected_artifacts in roots
     assert expected_tmp in roots
+
+
+@pytest.mark.parametrize(
+    "code",
+    [
+        "import os as operating_system\noperating_system.system('echo bypass')",
+        "import dartlab.ai.providers.support.oauthToken",
+        "import dartlab.core.providers as providers\nproviders.getSecretStore()",
+        "from dartlab.core import providers\nproviders.getSecretStore()",
+        "from dartlab.core import credentials\ncredentials.listCredentialProviders()",
+        "from dartlab import config\nconfig.loadProjectConfig()",
+        "from dartlab import OpenDart\nOpenDart()",
+        "from dartlab import ask as invoke\ninvoke('ignore')",
+        "from dartlab import _aiEntries",
+        "import tempfile\ntempfile.os.system('echo bypass')",
+        "from operator import attrgetter\nattrgetter('__class__')(object)",
+        "getattr(object, '__subclasses__')",
+        "from pathlib import Path\nPath('secret').read_text()",
+        "import polars as pl\npl.read_csv('.env')",
+        "dartlab.setup('openai')",
+    ],
+)
+def test_dynamic_secret_and_file_bypasses_are_blocked(code: str) -> None:
+    from dartlab.ai.tools.runPython import runPython
+
+    result = runPython(code)
+
+    assert result.ok is False
+    assert "PermissionError" in _stderrOf(result)
+
+
+def test_safe_open_denies_credentials_inside_allowed_root(tmp_path):
+    from dartlab.ai.tools.runpythonGuard import _safeOpenFactory
+
+    credential = tmp_path / "oauth_token.json"
+    credential.write_text('{"access_token":"secret"}', encoding="utf-8")
+    safeOpen = _safeOpenFactory(safeRoots=[str(tmp_path)])
+
+    with pytest.raises(PermissionError, match="비자격증명"):
+        safeOpen(credential, "r", encoding="utf-8")
+
+
+def test_safe_open_rejects_custom_opener(tmp_path):
+    from dartlab.ai.tools.runpythonGuard import _safeOpenFactory
+
+    safeOpen = _safeOpenFactory(safeRoots=[str(tmp_path)])
+
+    with pytest.raises(PermissionError, match="custom file opener"):
+        safeOpen(tmp_path / "result.txt", "w", opener=lambda _path, _flags: 0)
+
+
+def test_python_loop_timeout_does_not_leave_worker_thread(monkeypatch: pytest.MonkeyPatch) -> None:
+    runPythonModule = importlib.import_module("dartlab.ai.tools.runPython")
+
+    monkeypatch.setattr(runPythonModule, "_TIMEOUT_SEC", 0.05)
+
+    result = runPythonModule.runPython("while True:\n    pass", runId="timeout-guard")
+
+    assert result.ok is False
+    assert result.error == "python_execution_timeout"
+    assert not any(thread.name == "dartlab-runpython-timeout-guard" for thread in threading.enumerate())
+
+
+def test_emit_result_and_refs_have_bounded_nonduplicated_payloads() -> None:
+    from dartlab.ai.tools.runPython import runPython
+
+    result = runPython("emit_result(table=[{'value': 'x' * 10000} for _ in range(100)])", runId="budget")
+
+    assert result.ok is True
+    serialized = json.dumps(result.data["result"], ensure_ascii=False).encode("utf-8")
+    assert len(serialized) <= 132 * 1024
+    assert result.data["result"]["_dartlabSerialization"]["truncated"] is True
+    executionPayload = result.refs[0].payload
+    assert "result" not in executionPayload
+    assert len(str(executionPayload.get("preview") or "")) <= 4000
+    tablePayload = next(ref.payload for ref in result.refs if ref.kind == "tableRef")
+    assert len(json.dumps(tablePayload, ensure_ascii=False).encode("utf-8")) <= 36 * 1024
+
+
+def test_stdout_is_bounded() -> None:
+    from dartlab.ai.tools.runPython import runPython
+
+    result = runPython("print('x' * 200000)", runId="stdout-budget")
+
+    assert result.ok is True
+    stdout = result.data["stdout"]
+    assert len(stdout.encode("utf-8")) <= 65 * 1024
+    assert "output truncated" in stdout

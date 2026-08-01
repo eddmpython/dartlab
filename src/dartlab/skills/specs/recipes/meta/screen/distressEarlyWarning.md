@@ -4,7 +4,7 @@ title: Distress Early Warning — Altman 적용성 확인 + 회계 포렌식
 category: recipes
 kind: recipe
 scope: builtin
-status: blocked
+status: drafted
 purpose: Altman Z'' 부실위험 판별 점수와 회계 포렌식을 결합하는 조기경보 절차. Beneish 원식 입력 계약이 복구되기 전에는 M-score 교집합 스크린을 실행하지 않는다.
 whenToUse:
   - 부실 경보
@@ -49,18 +49,18 @@ failureModes:
 lastUpdated: '2026-08-01'
 runtimeCompatibility:
   server:
-    status: blocked
+    status: unsupported
   localPython:
-    status: blocked
+    status: unsupported
   mcp:
-    status: blocked
+    status: unsupported
   webAi:
-    status: blocked
+    status: unsupported
   pyodide:
-    status: blocked
+    status: unsupported
 ---
 
-## 현재 공개 호출 계약
+## 공개 호출 방식
 
 ```python
 import dartlab
@@ -90,3 +90,9 @@ income-tax payable, 순수 감가상각 등 원식 계정의 공급자 공통 �
 3. 독립 oracle로 8개 성분과 최종 점수를 검증한다.
 4. KR 표본의 임계 적용 한계를 공개하고 `분식 확정`, `회계 투명`을 사용하지 않는다.
 5. 위 조건이 모두 통과한 뒤 recipe status와 runtimeCompatibility를 supported로 바꾼다.
+
+## 연계 절차
+
+1. 현재는 `dartlab.quant("altman", market="KR")`의 Z'' 결과와 적용성 근거만 개별 검토한다.
+2. Beneish 결과가 `canonical_inputs_unavailable`이면 교집합 스크린을 중단하고 gap을 그대로 보고한다.
+3. 재활성화 게이트가 모두 충족된 변경에서 독립 oracle과 공개 소비자 회귀 테스트를 함께 통과시킨다.

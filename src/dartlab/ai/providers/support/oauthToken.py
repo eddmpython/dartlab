@@ -41,15 +41,20 @@ def _tokenCandidates() -> list[Path]:
     ]
 
 
+def _removeLegacyTokenFiles() -> None:
+    for path in _tokenCandidates():
+        with suppress(OSError):
+            path.unlink(missing_ok=True)
+
+
 def _saveToken(data: dict[str, Any]) -> None:
     expires_in = data.get("expires_in")
     if isinstance(expires_in, (int, float)):
         data["expires_at"] = time.time() + float(expires_in)
     getSecretStore().setJson(_TOKEN_SECRET_NAME, data)
-    TOKEN_PATH.parent.mkdir(parents=True, exist_ok=True)
-    tmp = TOKEN_PATH.with_suffix(TOKEN_PATH.suffix + ".tmp")
-    tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
-    tmp.replace(TOKEN_PATH)
+    # SecretStore commit 뒤에 남아 있는 구버전 평문 토큰만 정리한다. 새 토큰을 다시
+    # 파일로 쓰면 Read 도구나 로컬 백업을 통해 access/refresh token 이 노출된다.
+    _removeLegacyTokenFiles()
 
 
 def loadToken() -> dict[str, Any] | None:
@@ -59,6 +64,7 @@ def loadToken() -> dict[str, Any] | None:
         return {"access_token": env_token, "source": "env"}
     data = getSecretStore().getJson(_TOKEN_SECRET_NAME)
     if isinstance(data, dict):
+        _removeLegacyTokenFiles()
         return data
     for path in _tokenCandidates():
         if not path.exists():
@@ -78,12 +84,7 @@ def loadToken() -> dict[str, Any] | None:
 def revokeToken() -> None:
     """secret store + legacy 파일 모두 삭제 (재로그인 필요 상태로 복원)."""
     getSecretStore().delete(_TOKEN_SECRET_NAME)
-    for path in _tokenCandidates():
-        try:
-            if path.exists():
-                path.unlink()
-        except OSError:
-            pass
+    _removeLegacyTokenFiles()
 
 
 def getAccountId() -> str | None:

@@ -123,8 +123,10 @@ def Company(stockCode: str) -> CompanyProtocol:
 
     # canHandle 체인: priority 순으로 시도
     firstError: Exception | None = None
+    matchedProvider = False
     for cls in _PROVIDERS:
         if hasattr(cls, "canHandle") and cls.canHandle(normalized):
+            matchedProvider = True
             try:
                 return cls(normalized)
             except (ValueError, FileNotFoundError) as e:
@@ -134,16 +136,19 @@ def Company(stockCode: str) -> CompanyProtocol:
                 firstError = firstError or e
                 continue
 
-    # fallback: DART (한글도 아니고 ticker도 아닌 회사명 검색 시도)
-    for cls in _PROVIDERS:
-        try:
-            return cls(normalized)
-        except (ValueError, FileNotFoundError) as e:
-            firstError = firstError or e
-            continue
-        except OSError as e:
-            firstError = firstError or e
-            continue
+    # 어떤 provider도 형식을 인식하지 못한 회사명만 fallback 탐색한다. 이미 canHandle=True로
+    # 시도한 입력을 전 provider에 다시 보내면 동일 원격 조회가 두 번 실행되고, 숫자 입력은
+    # DART와 EDGAR를 각각 중복 호출해 실패 latency가 배가된다.
+    if not matchedProvider:
+        for cls in _PROVIDERS:
+            try:
+                return cls(normalized)
+            except (ValueError, FileNotFoundError) as e:
+                firstError = firstError or e
+                continue
+            except OSError as e:
+                firstError = firstError or e
+                continue
 
     # 유사 종목 top-3 제안 (KRX listing 기반 fuzzy — 초성·편집거리·substring 지원)
     hint = ""

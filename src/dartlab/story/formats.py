@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import re
 from dataclasses import asdict, is_dataclass
 from datetime import date, datetime
@@ -11,6 +12,8 @@ from enum import Enum
 from html import escape
 from pathlib import Path
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 
 def _htmlText(value: Any) -> str:
@@ -52,6 +55,7 @@ def _safeTableHtml(df: Any) -> str:
         try:
             rows = [list(row) for row in df.iter_rows()]
         except (AttributeError, TypeError, ValueError):
+            logger.warning("story table row iteration failed", exc_info=True)
             rows = []
     elif hasattr(df, "to_dicts"):
         try:
@@ -60,6 +64,7 @@ def _safeTableHtml(df: Any) -> str:
                 columns = [str(column) for column in dictRows[0]]
             rows = [[row.get(column) for column in columns] for row in dictRows]
         except (AttributeError, TypeError, ValueError):
+            logger.warning("story table dictionary conversion failed", exc_info=True)
             rows = []
 
     if not columns:

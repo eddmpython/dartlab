@@ -25,14 +25,16 @@ codex mcp add dartlab -- dartlab mcp
 | `ask` | 자연어 질문 → AI 워크벤치 답변 + ref |
 | `ReadSkill` | Skill OS 257 노드 검색 |
 | `ReadCapability` | dartlab 공개 API docstring 검색 |
-| `EngineCall` | 단일 capability 1회 호출 (apiRef + args) |
+| `EngineCall` | `engineCallable=true`인 단일 capability 1회 호출 (apiRef + args) |
 | `RunPython` | Polars 다단 계산 (ref 발급) |
 | `CompileVisual` | 차트 spec codegen → visualRef |
 | `SaveArtifact` | 큰 표/차트 별도 저장 → artifactRef |
-| `GroundingCheck` / `LookAheadGuard` | evidence flow 가드 |
-| (자동 생성, 후속) `ListPlugins` | 외부 plugin 목록 (T5-5) |
+| `PeerCompareN` / `DCFValuation` 등 | registry의 canonical 분석 primitive |
 
-총 ~32 tool 수동 등록. `ai/tools/_autogen.py` (T11-1) 로 120+ 자동 변환 후속.
+전체 이름과 JSON schema의 정본은 `tools/list`다. 광고 목록은
+`mcp.protocol.mcpAdvertisedToolNames()`가 `ai.tools.registry.CANONICAL_V2`를 추종하며,
+같은 목록이 `tools/call` 실행 allowlist다. 목록 밖 legacy alias와 workbench 내부 도구는
+`tool_not_advertised`로 거부한다.
 
 ---
 

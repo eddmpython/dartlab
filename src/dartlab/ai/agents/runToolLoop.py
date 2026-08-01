@@ -17,13 +17,28 @@ block 종류:
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Protocol
 
 from dartlab.ai.contracts import Ref
-from dartlab.ai.providers.base import LLMEvent, LLMProvider, Msg
+from dartlab.ai.providers.base import LLMEvent, Msg
+from dartlab.ai.toolAdmission import executeAllowedTool
 from dartlab.ai.tools.types import ToolSpec
+
+
+class ToolLoopProvider(Protocol):
+    """중립 tool loop가 소비하는 provider의 최소 streaming 계약."""
+
+    def complete(
+        self,
+        messages: list[Msg],
+        tools: list[ToolSpec],
+        *,
+        stream: bool,
+    ) -> Iterable[LLMEvent]:
+        """중립 메시지와 도구 계약으로 모델 이벤트를 생성한다."""
+        ...
 
 
 @dataclass
@@ -38,7 +53,7 @@ class AgentResult:
 
 
 def runToolLoop(
-    provider: LLMProvider,
+    provider: ToolLoopProvider,
     *,
     system: str,
     messages: list[Msg],
@@ -60,6 +75,7 @@ def runToolLoop(
 
     result = AgentResult()
     refs: list[Ref] = []
+    allowed_tool_names = frozenset(tool.name for tool in tools)
 
     for step in range(maxSteps):
         result.steps = step + 1
@@ -101,7 +117,12 @@ def runToolLoop(
         # Execute each tool and collect tool_result blocks
         tool_results: list[dict[str, Any]] = []
         for tu in tool_uses:
-            outcome = executeTool(tu["name"], tu["input"])
+            outcome = executeAllowedTool(
+                executeTool,
+                tu["name"],
+                tu["input"],
+                allowed_tool_names,
+            )
             ok = bool(outcome.get("ok", True))
             for ref_dict in outcome.get("refs") or []:
                 refs.append(_refFromDict(ref_dict))

@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import heapq
+import json
 import logging
 import math
 import os
 import re
+from collections.abc import Mapping
 from contextlib import contextmanager, redirect_stderr, redirect_stdout
 from dataclasses import fields, is_dataclass
 from datetime import date, datetime
@@ -16,6 +19,14 @@ import polars as pl
 
 from dartlab.ai.contracts import Ref
 from dartlab.core.confidence import baseScore as _baseScore
+from dartlab.reference.capability import execution as _capabilityExecution
+from dartlab.reference.capability.execution import (
+    CANONICAL_AXIS_ENGINES as _AXIS_ENGINES,
+)
+from dartlab.reference.capability.execution import (
+    CANONICAL_COMPANY_CAPABILITY_REFS as _CANONICAL_COMPANY_CAPABILITY_REFS,
+)
+from dartlab.reference.capability.execution import isEngineCallableRef
 
 from .creditBadge import getDcrBadge
 from .filingDeepLink import attachDocRef, buildPeriodToFiling
@@ -23,10 +34,17 @@ from .formatting import formatMoney, formatPercent
 from .industryContext import getIndustryBadge
 from .types import ToolResult
 
+_CANONICAL_TOP_LEVEL_CAPABILITY_REFS = _capabilityExecution.CANONICAL_TOP_LEVEL_CAPABILITY_REFS
+
 _FILING_DIRECT_CONFIDENCE = _baseScore("filing_direct")
 
 _JSON_PREVIEW_ROWS = 20
-_JSON_MAX_DEPTH = 50
+_JSON_PREVIEW_BYTES = 4_000
+_JSON_MAX_BYTES = 128 * 1024
+_JSON_METADATA_RESERVE = 2_048
+_JSON_MAX_DEPTH = 20
+_JSON_MAX_CONTAINER_ITEMS = 200
+_JSON_MAX_STRING_BYTES = 16 * 1024
 
 _AUTO_GATHER_ENABLED = os.environ.get("DARTLAB_AUTO_GATHER", "1") not in {"0", "false", "False"}
 
@@ -62,6 +80,8 @@ def engineCall(plan: dict[str, Any] | None = None, **kwargs: Any) -> ToolResult:
     call_plan["apiRef"] = apiRef
     if not _capabilityExists(apiRef):
         return ToolResult(False, f"generated spec에 없는 API입니다: {apiRef}", error="unknown_api_ref")
+    if not _isCanonicalExecutableApiRef(apiRef):
+        return ToolResult(False, f"실행 계약에 없는 API입니다: {apiRef}", error="non_public_api_ref")
 
     if apiRef == "Company.panel":
         return _companyShow(call_plan)
@@ -71,6 +91,8 @@ def engineCall(plan: dict[str, Any] | None = None, **kwargs: Any) -> ToolResult:
         return _scan(call_plan)
     if apiRef == "capabilities":
         return _capabilities(call_plan)
+    if apiRef.startswith("dataHub."):
+        return _dataHubAxisCall(apiRef.split(".", 1)[1], call_plan)
     # gather 표준 {engine}.{axis} 일반 디스패치 (gather.price·industry.theme·credit.grade·quant.모멘텀).
     head = apiRef.split(".", 1)[0]
     if "." in apiRef and head in _AXIS_ENGINES:
@@ -78,8 +100,28 @@ def engineCall(plan: dict[str, Any] | None = None, **kwargs: Any) -> ToolResult:
     return _genericPublicCall(apiRef, call_plan)
 
 
-# gather 표준 axis-dispatch 엔진 (scan 은 위 전용 핸들러). credit/analysis 는 함수형이나 axis-first 동일.
-_AXIS_ENGINES = frozenset({"gather", "macro", "industry", "quant", "credit", "analysis"})
+def _isCanonicalExecutableApiRef(apiRef: str) -> bool:
+    """발견 catalog와 독립된 실제 실행 allowlist를 검사한다."""
+    return isEngineCallableRef(apiRef)
+
+
+def _dataHubAxisCall(axis: str, plan: dict[str, Any]) -> ToolResult:
+    """Canonical ``dataHub.catalog`` 및 ``dataHub.query``를 public facade로 위임한다."""
+
+    import dartlab
+
+    args = list(plan.get("args") or [])
+    target = plan.get("target")
+    if target is None and args:
+        target = args.pop(0)
+    if args:
+        return ToolResult(False, "dataHub axis는 positional target을 하나만 받습니다.", error="invalid_args")
+    dataHub = getattr(dartlab, "dataHub", None)
+    if dataHub is None or not callable(dataHub):
+        return ToolResult(False, "dataHub facade를 찾지 못했습니다.", error="unknown_engine")
+    with _quietExecutionNoise():
+        result = dataHub(axis, target, **dict(plan.get("kwargs") or {}))
+    return _resultToRefs(f"dataHub.{axis}", result, target=str(plan.get("target") or ""))
 
 
 def _axisEngineCall(engine: str, axis: str, plan: dict[str, Any]) -> ToolResult:
@@ -358,7 +400,11 @@ def _buildCreditRef(stockCode: str, companyName: str, company: Any) -> Ref | Non
 
 def _findWeakestAxis(axes: list[dict[str, Any]]) -> dict[str, Any] | None:
     """7축 중 score 가장 높은 (= 가장 약한) 축 1개 추출. None 점수 제외."""
-    scored = [(a.get("name"), a.get("score"), a.get("weight")) for a in axes if a.get("score") is not None]
+    scored: list[tuple[Any, float, Any]] = []
+    for axis in axes:
+        score = axis.get("score")
+        if isinstance(score, (int, float)) and not isinstance(score, bool):
+            scored.append((axis.get("name"), float(score), axis.get("weight")))
     if not scored:
         return None
     name, score, weight = max(scored, key=lambda x: x[1])
@@ -474,8 +520,11 @@ def _scan(plan: dict[str, Any]) -> ToolResult:
     # 회귀 가드: CAPABILITIES 에는 `scan.industry` 등이 있지만 underlying `dartlab.scan(axis)` 가
     # 다른 axis 어휘를 쓰면 ValueError → uncaught traceback 노출. try/except 로 친절한 에러.
     try:
+        scan = getattr(dartlab, "scan", None)
+        if scan is None or not callable(scan):
+            return ToolResult(False, "dartlab.scan facade를 찾지 못했습니다.", error="unknown_engine")
         with _quietExecutionNoise():
-            result = dartlab.scan(axis, target, **callKwargs)
+            result = scan(axis, target, **callKwargs)
     except (ValueError, KeyError, TypeError) as exc:
         return ToolResult(False, f"dartlab.scan('{axis}') 실행 실패: {exc}", error="invalid_scan_axis")
     if isinstance(result, dict):
@@ -611,6 +660,8 @@ def _publicCapabilitySummary(value: Any) -> str:
 
 
 def _genericPublicCall(apiRef: str, plan: dict[str, Any]) -> ToolResult:
+    if not _isCanonicalExecutableApiRef(apiRef):
+        return ToolResult(False, f"실행 계약에 없는 API입니다: {apiRef}", error="non_public_api_ref")
     if apiRef.startswith("Company."):
         return _genericCompanyMethod(
             apiRef.split(".", 1)[1],
@@ -633,6 +684,9 @@ def _genericPublicCall(apiRef: str, plan: dict[str, Any]) -> ToolResult:
 
 
 def _genericCompanyMethod(method: str, target: str, args: list[Any], kwargs: dict[str, Any]) -> ToolResult:
+    apiRef = f"Company.{method}"
+    if apiRef not in _CANONICAL_COMPANY_CAPABILITY_REFS:
+        return ToolResult(False, f"실행 계약에 없는 API입니다: {apiRef}", error="non_public_api_ref")
     company = _resolveCompany(target)
     if company is None:
         return ToolResult(False, "종목을 먼저 특정해야 Company API를 호출할 수 있습니다.", error="company_not_resolved")
@@ -648,12 +702,13 @@ def _genericCompanyMethod(method: str, target: str, args: list[Any], kwargs: dic
 
 def _resultToRefs(apiRef: str, result: Any, *, target: str = "") -> ToolResult:
     if isinstance(result, pl.DataFrame):
+        payload = _jsonableResult(result)
         table_ref = Ref(
             id=f"table:{apiRef}:{target or 'result'}",
             kind="tableRef",
             title=f"{apiRef} result",
             source=apiRef,
-            payload={"rowCount": result.height, "columns": list(result.columns), "rows": result.head(20).to_dicts()},
+            payload=payload,
         )
         return ToolResult(
             True,
@@ -661,46 +716,150 @@ def _resultToRefs(apiRef: str, result: Any, *, target: str = "") -> ToolResult:
             refs=[table_ref],
             data={"rowCount": result.height, "columns": list(result.columns)},
         )
-    if isinstance(result, dict | list | tuple) or is_dataclass(result):
+    if isinstance(result, Mapping | list | tuple | set | frozenset) or is_dataclass(result):
         payload = _jsonableResult(result)
+        executionContract = _executionContractFields(payload)
         refs = [
             Ref(
                 id=f"execution:{apiRef}:{target or 'result'}",
                 kind="executionRef",
                 title=f"{apiRef} result",
                 source=apiRef,
-                payload={"result": payload, "preview": str(payload)[:4000]},
+                # 전체 result 는 ToolResult.data 가 정본이다. ref 안에 다시 복제하면 MCP
+                # structuredContent 크기가 정확히 두 배가 되므로 감사용 계약 필드와 preview만 둔다.
+                payload={**executionContract, "preview": _jsonPreview(payload)},
             )
         ]
         refs.extend(_lensRefs(apiRef, payload, target=target))
         return ToolResult(True, f"{apiRef} 실행 완료", refs=refs, data={"result": payload})
+    payload = _jsonableResult(result)
     ref = Ref(
         id=f"execution:{apiRef}:{target or 'result'}",
         kind="executionRef",
         title=f"{apiRef} result",
         source=apiRef,
-        payload={"preview": str(result)[:4000]},
+        payload={"preview": _jsonPreview(payload)},
     )
-    return ToolResult(True, f"{apiRef} 실행 완료", refs=[ref], data={"result": str(result)})
+    return ToolResult(True, f"{apiRef} 실행 완료", refs=[ref], data={"result": payload})
 
 
-def _jsonableResult(value: Any, _depth: int = 0) -> Any:
-    """ToolResult payload를 bounded JSON-safe 구조로 변환한다.
+_JSON_OMIT = object()
+_EVIDENCE_FIELDS = (
+    "schemaVersion",
+    "status",
+    "quality",
+    "gaps",
+    "coverage",
+    "universeCoverage",
+    "assets",
+    "qualityAssertions",
+    "asOf",
+    "latestAsOf",
+    "requestedAsOf",
+    "dataAsOf",
+    "period",
+    "knowledgeBoundary",
+    "snapshotId",
+    "dataSnapshotId",
+    "dataCatalogSnapshotId",
+    "universeSnapshotId",
+    "contractHash",
+    "dataContractHash",
+    "provenance",
+    "lineageRefs",
+    "dataLineageRefs",
+    "sourceRefs",
+    "evidenceRefs",
+    "executionReceipts",
+    "dataExecutionReceipts",
+    "materializationReceipt",
+    "materializationReceiptJson",
+    "continuation",
+    "dataInputGaps",
+    "dataEvidence",
+    "nodes",
+    "asset",
+    "requestId",
+    "projectionKind",
+    "selector",
+    "temporalStatus",
+    "rowCount",
+    "truncated",
+    "lineage",
+    "contentHash",
+)
+_EVIDENCE_PRIORITY = {
+    key: index for index, key in enumerate((*_EVIDENCE_FIELDS, "product", "products", "lensProducts", "partitions"))
+}
+_PARTITION_EVIDENCE_FIELDS = (
+    "asset",
+    "requestId",
+    "projectionKind",
+    "selector",
+    "temporalStatus",
+    "rowCount",
+    "truncated",
+    "lineageRefs",
+    "lineage",
+    "qualityAssertions",
+    "contentHash",
+)
 
-    DataFrame과 Series는 전체 값을 문자열로 만들지 않는다. 실제 크기와 제한된 preview를
-    함께 보존해 query의 ``truncated``와 ``continuation`` 의미를 덮어쓰지 않는다.
+
+class _JsonBudget:
+    def __init__(self, maxBytes: int) -> None:
+        self.maxBytes = maxBytes
+        self.remaining = max(0, maxBytes - _JSON_METADATA_RESERVE)
+        self.reasons: set[str] = set()
+        self.omittedItems = 0
+
+    def charge(self, byteCount: int) -> bool:
+        """직렬화 예산에서 바이트를 차감하고 허용 여부를 반환한다."""
+        if byteCount > self.remaining:
+            self.reasons.add("maxBytes")
+            return False
+        self.remaining -= byteCount
+        return True
+
+    def note(self, reason: str, omittedItems: int = 0) -> None:
+        """잘림 사유와 생략 항목 수를 누적한다."""
+        self.reasons.add(reason)
+        self.omittedItems += max(0, omittedItems)
+
+
+def _jsonableResult(value: Any, _depth: int = 0, *, maxBytes: int = _JSON_MAX_BYTES) -> Any:
+    """결과를 deterministic, bounded JSON tree로 변환한다.
+
+    전역 byte, 깊이, 컨테이너 길이, 문자열 길이 상한을 동시에 적용한다. 감사 계약 필드는
+    큰 data field보다 먼저 직렬화하며 unsupported 객체를 주소 문자열로 바꾸지 않는다.
     """
-    if _depth > _JSON_MAX_DEPTH:
-        return {"_type": type(value).__name__, "previewTruncated": True, "reason": "maxDepth"}
-    if value is None or isinstance(value, str | int | bool):
-        return value
+
+    budget = _JsonBudget(maxBytes)
+    payload = _serializeJsonTree(value, budget, _depth, set())
+    if payload is _JSON_OMIT:
+        payload = {"_type": type(value).__qualname__, "serializationError": "maxBytes"}
+        budget.note("maxBytes", 1)
+    return _attachSerializationMetadata(payload, budget)
+
+
+def _serializeJsonTree(value: Any, budget: _JsonBudget, depth: int, active: set[int]) -> Any:
+    if depth > _JSON_MAX_DEPTH:
+        budget.note("maxDepth", 1)
+        return _serializedMarker(value, "maxDepth", budget)
+    if value is None or isinstance(value, bool | int):
+        return value if budget.charge(_jsonSize(value)) else _JSON_OMIT
+    if isinstance(value, str):
+        return _boundedString(value, budget)
     if isinstance(value, float):
-        return value if math.isfinite(value) else None
+        if not math.isfinite(value):
+            budget.note("nonFiniteFloat")
+            return None if budget.charge(4) else _JSON_OMIT
+        return value if budget.charge(_jsonSize(value)) else _JSON_OMIT
     if isinstance(value, datetime | date):
-        return value.isoformat()
+        return _boundedString(value.isoformat(), budget)
     if isinstance(value, pl.DataFrame):
         preview = value.head(_JSON_PREVIEW_ROWS)
-        return {
+        frame = {
             "_type": "DataFrame",
             "rowCount": value.height,
             "previewRowCount": preview.height,
@@ -708,38 +867,269 @@ def _jsonableResult(value: Any, _depth: int = 0) -> Any:
             "schema": [
                 {"name": name, "dtype": str(dtype)} for name, dtype in zip(value.columns, value.dtypes, strict=True)
             ],
-            "rows": [_jsonableResult(row, _depth + 1) for row in preview.to_dicts()],
+            "rows": preview.to_dicts(),
             "previewTruncated": value.height > preview.height,
         }
+        return _serializeJsonTree(frame, budget, depth, active)
     if isinstance(value, pl.Series):
         preview = value.head(_JSON_PREVIEW_ROWS)
-        return {
+        series = {
             "_type": "Series",
             "name": value.name,
             "dtype": str(value.dtype),
             "length": value.len(),
             "previewLength": preview.len(),
-            "values": [_jsonableResult(item, _depth + 1) for item in preview.to_list()],
+            "values": preview.to_list(),
             "previewTruncated": value.len() > preview.len(),
         }
-    if isinstance(value, dict):
-        return {str(k): _jsonableResult(v, _depth + 1) for k, v in value.items()}
-    if isinstance(value, list | tuple | set | frozenset):
-        items = sorted(value, key=str) if isinstance(value, set | frozenset) else value
-        return [_jsonableResult(item, _depth + 1) for item in items]
+        return _serializeJsonTree(series, budget, depth, active)
+
+    identity = id(value)
+    if identity in active:
+        budget.note("cycle", 1)
+        return _serializedMarker(value, "cycle", budget)
+    if isinstance(value, Mapping):
+        active.add(identity)
+        try:
+            items, preOmitted = _boundedMappingItems(value)
+            return _serializeMapping(items, budget, depth, active, preOmitted=preOmitted)
+        finally:
+            active.remove(identity)
     if is_dataclass(value) and not isinstance(value, type):
-        return {field.name: _jsonableResult(getattr(value, field.name), _depth + 1) for field in fields(value)}
-    return str(value)
+        active.add(identity)
+        try:
+            items = [(field.name, getattr(value, field.name)) for field in fields(value)]
+            return _serializeMapping(items, budget, depth, active)
+        finally:
+            active.remove(identity)
+    if isinstance(value, list | tuple):
+        active.add(identity)
+        try:
+            return _serializeSequence(value, budget, depth, active)
+        finally:
+            active.remove(identity)
+    if isinstance(value, set | frozenset):
+        if not all(item is None or isinstance(item, str | int | float | bool | datetime | date) for item in value):
+            budget.note("unsupportedUnorderedContainer", len(value))
+            return _serializedMarker(value, "unsupportedUnorderedContainer", budget)
+        ordered = heapq.nsmallest(_JSON_MAX_CONTAINER_ITEMS, value, key=_stableScalarKey)
+        if len(value) > len(ordered):
+            budget.note("maxContainerItems", len(value) - len(ordered))
+        active.add(identity)
+        try:
+            return _serializeSequence(ordered, budget, depth, active)
+        finally:
+            active.remove(identity)
+    budget.note("unsupportedType", 1)
+    return _serializedMarker(value, "unsupportedType", budget)
+
+
+def _serializeMapping(
+    items: list[tuple[Any, Any]],
+    budget: _JsonBudget,
+    depth: int,
+    active: set[int],
+    *,
+    preOmitted: int = 0,
+) -> dict[str, Any] | object:
+    if not budget.charge(2):
+        return _JSON_OMIT
+    if preOmitted:
+        budget.note("maxContainerItems", preOmitted)
+    indexed = list(enumerate(items))
+    indexed.sort(key=lambda row: (_fieldPriority(row[1][0]), row[0]))
+    output: dict[str, Any] = {}
+    accepted = 0
+    for position, (_, (key, item)) in enumerate(indexed):
+        if accepted >= _JSON_MAX_CONTAINER_ITEMS:
+            budget.note("maxContainerItems", len(indexed) - position)
+            break
+        if not isinstance(key, str):
+            budget.note("nonStringMappingKey", 1)
+            continue
+        before = budget.remaining
+        separatorBytes = 1 if output else 0
+        if not budget.charge(separatorBytes + _jsonSize(key) + 1):
+            budget.omittedItems += len(indexed) - position
+            break
+        child = _serializeJsonTree(item, budget, depth + 1, active)
+        if child is _JSON_OMIT:
+            budget.remaining = before
+            budget.omittedItems += len(indexed) - position
+            break
+        output[key] = child
+        accepted += 1
+    return output
+
+
+def _boundedMappingItems(value: Mapping[Any, Any]) -> tuple[list[tuple[Any, Any]], int]:
+    """감사 필드를 우선 보존하면서 큰 mapping 전체 복제를 피한다."""
+
+    items: list[tuple[Any, Any]] = []
+    seen: set[Any] = set()
+    for key in _EVIDENCE_PRIORITY:
+        if key in value:
+            items.append((key, value[key]))
+            seen.add(key)
+            if len(items) >= _JSON_MAX_CONTAINER_ITEMS:
+                break
+    if len(items) < _JSON_MAX_CONTAINER_ITEMS:
+        for key, item in value.items():
+            if key in seen:
+                continue
+            items.append((key, item))
+            seen.add(key)
+            if len(items) >= _JSON_MAX_CONTAINER_ITEMS:
+                break
+    try:
+        omitted = max(0, len(value) - len(items))
+    except TypeError:
+        omitted = 1 if len(items) >= _JSON_MAX_CONTAINER_ITEMS else 0
+    return items, omitted
+
+
+def _serializeSequence(
+    values: list[Any] | tuple[Any, ...], budget: _JsonBudget, depth: int, active: set[int]
+) -> list[Any] | object:
+    if not budget.charge(2):
+        return _JSON_OMIT
+    output: list[Any] = []
+    for index, item in enumerate(values):
+        if index >= _JSON_MAX_CONTAINER_ITEMS:
+            budget.note("maxContainerItems", len(values) - index)
+            break
+        before = budget.remaining
+        if output and not budget.charge(1):
+            budget.omittedItems += len(values) - index
+            break
+        child = _serializeJsonTree(item, budget, depth + 1, active)
+        if child is _JSON_OMIT:
+            budget.remaining = before
+            budget.omittedItems += len(values) - index
+            break
+        output.append(child)
+    return output
+
+
+def _boundedString(value: str, budget: _JsonBudget) -> str | object:
+    encodedSize = _jsonSize(value)
+    allowed = min(_JSON_MAX_STRING_BYTES, budget.remaining)
+    if encodedSize <= allowed:
+        budget.charge(encodedSize)
+        return value
+    budget.note("maxStringBytes", 1)
+    suffix = "..."
+    low = 0
+    high = len(value)
+    best: str | None = None
+    while low <= high:
+        middle = (low + high) // 2
+        candidate = value[:middle] + suffix
+        size = _jsonSize(candidate)
+        if size <= allowed:
+            best = candidate
+            low = middle + 1
+        else:
+            high = middle - 1
+    if best is None or not budget.charge(_jsonSize(best)):
+        return _JSON_OMIT
+    return best
+
+
+def _serializedMarker(value: Any, reason: str, budget: _JsonBudget) -> dict[str, Any] | object:
+    marker = {
+        "_type": f"{type(value).__module__}.{type(value).__qualname__}",
+        "serializationError": reason,
+    }
+    return marker if budget.charge(_jsonSize(marker)) else _JSON_OMIT
+
+
+def _attachSerializationMetadata(payload: Any, budget: _JsonBudget) -> Any:
+    if not budget.reasons:
+        return payload
+    metadata = {
+        "truncated": True,
+        "reasons": sorted(budget.reasons),
+        "omittedItems": budget.omittedItems,
+        "maxBytes": budget.maxBytes,
+        "maxDepth": _JSON_MAX_DEPTH,
+        "maxContainerItems": _JSON_MAX_CONTAINER_ITEMS,
+        "maxStringBytes": _JSON_MAX_STRING_BYTES,
+    }
+    marker = {"_dartlabSerialization": metadata}
+    if isinstance(payload, dict):
+        payload = dict(payload)
+        payload["_dartlabSerialization"] = metadata
+        return payload
+    if isinstance(payload, list):
+        payload = list(payload)
+        payload.append(marker)
+        return payload
+    return {"value": payload, **marker}
+
+
+def _fieldPriority(key: Any) -> int:
+    if not isinstance(key, str):
+        return len(_EVIDENCE_PRIORITY) + 100
+    if key == "data" or key in {"rows", "values", "payload"}:
+        return len(_EVIDENCE_PRIORITY) + 100
+    return _EVIDENCE_PRIORITY.get(key, len(_EVIDENCE_PRIORITY) + 10)
+
+
+def _stableScalarKey(value: Any) -> tuple[str, str]:
+    if isinstance(value, datetime | date):
+        normalized: Any = value.isoformat()
+    elif isinstance(value, float) and not math.isfinite(value):
+        normalized = None
+    else:
+        normalized = value
+    return type(value).__qualname__, json.dumps(normalized, ensure_ascii=False, sort_keys=True)
+
+
+def _jsonSize(value: Any) -> int:
+    return len(json.dumps(value, ensure_ascii=False, separators=(",", ":"), sort_keys=True).encode("utf-8"))
+
+
+def _jsonPreview(payload: Any) -> str:
+    encoded = json.dumps(payload, ensure_ascii=False, separators=(",", ":"), sort_keys=True).encode("utf-8")
+    return encoded[:_JSON_PREVIEW_BYTES].decode("utf-8", errors="ignore")
+
+
+def _executionContractFields(payload: Any) -> dict[str, Any]:
+    """실행 ref가 payload 예산과 무관하게 보존해야 하는 감사 필드를 고른다."""
+    if not isinstance(payload, dict):
+        return {}
+    contract: dict[str, Any] = {}
+    for key in _EVIDENCE_FIELDS:
+        if key in payload:
+            contract[key] = payload[key]
+    partitions = payload.get("partitions")
+    if isinstance(partitions, list):
+        contract["partitionEvidence"] = [
+            {key: partition[key] for key in _PARTITION_EVIDENCE_FIELDS if key in partition}
+            for partition in partitions
+            if isinstance(partition, dict)
+        ]
+    if "_dartlabSerialization" in payload:
+        contract["serialization"] = payload["_dartlabSerialization"]
+    return _jsonableResult(contract, maxBytes=32 * 1024)
 
 
 def _lensRefs(apiRef: str, payload: Any, *, target: str) -> list[Ref]:
     """Lens Product의 직접 결론과 시간 경계를 근거 ref로 만든다."""
     refs: list[Ref] = []
     for engine, product in _findLensProducts(payload):
-        identity = product.get("identity") if isinstance(product.get("identity"), dict) else {}
-        conclusion = product.get("conclusion") if isinstance(product.get("conclusion"), dict) else {}
-        confidence = product.get("confidence") if isinstance(product.get("confidence"), dict) else {}
-        time = product.get("time") if isinstance(product.get("time"), dict) else {}
+        identityValue = product.get("identity")
+        conclusionValue = product.get("conclusion")
+        confidenceValue = product.get("confidence")
+        timeValue = product.get("time")
+        identity: dict[str, Any] = identityValue if isinstance(identityValue, dict) else {}
+        conclusion: dict[str, Any] = conclusionValue if isinstance(conclusionValue, dict) else {}
+        confidence: dict[str, Any] = confidenceValue if isinstance(confidenceValue, dict) else {}
+        time: dict[str, Any] = timeValue if isinstance(timeValue, dict) else {}
+        evidence = [row for row in (product.get("evidence") or []) if isinstance(row, dict)]
+        evidenceRefs = [str(row["id"]) for row in evidence if row.get("id")]
+        sourceRefs = list(dict.fromkeys(str(row["sourceRef"]) for row in evidence if row.get("sourceRef")))
         refTarget = str(identity.get("target") or target or "result")
         axis = str(identity.get("axis") or "representative")
         stem = _refStem(refTarget, engine, axis)
@@ -759,6 +1149,9 @@ def _lensRefs(apiRef: str, payload: Any, *, target: str) -> list[Ref]:
                     "confidence": confidence.get("score"),
                     "confidenceLevel": confidence.get("level"),
                     "confidenceMethod": confidence.get("method"),
+                    "gaps": _jsonableResult(product.get("gaps") or []),
+                    "evidenceRefs": evidenceRefs,
+                    "provenance": sourceRefs,
                 },
             )
         )
@@ -792,13 +1185,15 @@ def _findLensProducts(payload: Any) -> list[tuple[str, dict[str, Any]]]:
         value = payload.get(key)
         if not isinstance(value, dict):
             continue
-        productMap = value.get("products") if isinstance(value.get("products"), dict) else value
+        nestedProducts = value.get("products")
+        productMap: dict[str, Any] = nestedProducts if isinstance(nestedProducts, dict) else value
         candidates.extend(row for row in productMap.values() if isinstance(row, dict))
 
     rows: list[tuple[str, dict[str, Any]]] = []
     seen: set[tuple[str, str, str]] = set()
     for product in candidates:
-        identity = product.get("identity") if isinstance(product.get("identity"), dict) else {}
+        identityValue = product.get("identity")
+        identity: dict[str, Any] = identityValue if isinstance(identityValue, dict) else {}
         engine = str(identity.get("engine") or "")
         if engine not in {"analysis", "credit", "industry", "quant", "macro"}:
             continue
@@ -821,8 +1216,11 @@ def _resolveCompany(target: str):
         import dartlab
 
         try:
+            companyFactory = getattr(dartlab, "Company", None)
+            if companyFactory is None or not callable(companyFactory):
+                raise TypeError("Company facade unavailable")
             with _quietExecutionNoise():
-                return dartlab.Company(target)
+                return companyFactory(target)
         except (OSError, RuntimeError, TypeError, ValueError):
             pass
         from dartlab.company import resolveFromText

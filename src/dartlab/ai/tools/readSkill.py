@@ -55,7 +55,10 @@ def _inlineCapabilities(capabilityRefs: list[str], *, isTopRank: bool) -> dict[s
         entry = CAPABILITIES.get(ref)
         if not isinstance(entry, dict):
             continue
-        trimmed: dict[str, str] = {}
+        trimmed: dict[str, object] = {
+            "engineCallable": bool(entry.get("engineCallable", False)),
+            "executionGuide": str(entry.get("executionGuide") or ""),
+        }
         for field, cap in field_caps.items():
             value = entry.get(field)
             if not value:

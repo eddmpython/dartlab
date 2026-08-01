@@ -107,8 +107,9 @@ def test_calcPercentileRanks_empty_returns_empty() -> None:
     assert _calcPercentileRanks([{"stockCode": "A", "roe": None}], "roe") == {}
 
 
-def test_peerCompareN_max_slots_truncate() -> None:
+def test_peerCompareN_max_slots_truncate(monkeypatch: pytest.MonkeyPatch) -> None:
     """N > 12 → 앞 12 개로 자름. company_not_resolved error 가 N 만큼 row 누적 (12 개 보존 검증)."""
+    monkeypatch.setattr("dartlab.ai.tools.peerCompareN.resolveCompanyOrNone", lambda _code: None)
     codes = [f"99999{i:01d}" for i in range(15)]  # 모두 잘못된 코드 → company_not_resolved row
     result = executeTool("PeerCompareN", {"stockCodes": codes})
     assert result["ok"] is True

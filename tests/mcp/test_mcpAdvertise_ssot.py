@@ -86,3 +86,20 @@ def test_advertisedTools_no_duplicates() -> None:
 
     names = [t["name"] for t in advertisedTools()]
     assert len(names) == len(set(names))
+
+
+def test_advertised_registry_tools_all_have_executors() -> None:
+    """ask 외 tools/list 항목은 같은 AI registry에 executor가 반드시 존재한다."""
+    from dartlab.ai.tools.registry import _TOOLS
+    from dartlab.mcp.protocol import mcpAdvertisedToolNames
+
+    assert set(mcpAdvertisedToolNames()[1:]) <= set(_TOOLS)
+
+
+def test_advertisedTools_fails_closed_when_spec_is_missing(monkeypatch) -> None:
+    """광고 이름의 schema 누락을 조용히 숨기지 않는다."""
+    from dartlab.mcp import protocol
+
+    monkeypatch.setattr(protocol, "mcpAdvertisedToolNames", lambda: ("ask", "MissingTool"))
+    with pytest.raises(KeyError, match="MissingTool"):
+        protocol.advertisedTools()

@@ -25,6 +25,10 @@ from dartlab.reference.capability.builder import (
     loadAnalysisGraph,
     loadCapabilities,
 )
+from dartlab.reference.capability.execution import (
+    CANONICAL_COMPANY_CAPABILITY_REFS,
+    isEngineCallableRef,
+)
 
 try:
     from dartlab.core.di import setCapabilityCatalogProvider
@@ -33,4 +37,10 @@ try:
 except Exception:
     pass
 
-__all__ = ["loadCapabilities", "loadAnalysisGraph", "buildCapabilities"]
+__all__ = [
+    "CANONICAL_COMPANY_CAPABILITY_REFS",
+    "buildCapabilities",
+    "isEngineCallableRef",
+    "loadAnalysisGraph",
+    "loadCapabilities",
+]

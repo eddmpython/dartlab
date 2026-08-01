@@ -1,4 +1,4 @@
-"""Room 협업 세션 API — SSE fan-out + POST-back."""
+"""Room 협업 세션 API: SSE fan-out + POST-back."""
 
 from __future__ import annotations
 
@@ -56,7 +56,7 @@ def _requireFull(member: RoomMember) -> None:
 
 @router.post("/api/room/join")
 async def roomJoin(req: RoomJoinRequest):
-    """룸 참여 — member_id + 현재 상태 반환."""
+    """룸 참여. 비공개 member token + 현재 상태 반환."""
     room = _getRoom()
     member = await room.join(req.name)
     if member is None:
@@ -100,7 +100,7 @@ async def roomState():
 
 @router.get("/api/room/stream")
 async def roomStream(request: Request):
-    """SSE 스트림 — 브로드캐스트 수신."""
+    """SSE 스트림. 브로드캐스트 수신."""
     room = _getRoom()
     memberId = request.query_params.get("member", "")
     member = room.getMember(memberId)
@@ -117,7 +117,7 @@ async def roomStream(request: Request):
                         "data": json.dumps(msg["data"], ensure_ascii=False),
                     }
                 except TimeoutError:
-                    # keepalive — SSE comment
+                    # keepalive SSE comment
                     yield {"comment": "keepalive"}
         except asyncio.CancelledError:
             return
@@ -141,21 +141,23 @@ async def roomAsk(req: RoomAskRequest, request: Request):
         await room.broadcast(
             "ask_start",
             {
-                "memberId": member.memberId,
+                "memberId": member.publicId,
                 "name": member.name,
                 "question": req.question,
                 "company": req.company,
             },
         )
 
-        # 스트리밍 인프라 — AI가 종목을 자율 판단
+        # 스트리밍 인프라. AI가 종목을 자율 판단
         from ..models import AskRequest
         from ..streaming import streamAsk
 
-        ask_req = AskRequest(
-            company=req.company,
-            question=req.question,
-            stream=True,
+        ask_req = AskRequest.model_validate(
+            {
+                "company": req.company,
+                "question": req.question,
+                "stream": True,
+            }
         )
 
         async for sse_event in streamAsk(ask_req):
@@ -189,7 +191,7 @@ async def roomNavigate(req: RoomNavigateRequest, request: Request):
     await room.broadcast(
         "navigate",
         {
-            "memberId": member.memberId,
+            "memberId": member.publicId,
             "name": member.name,
             **nav_update,
         },
@@ -220,7 +222,7 @@ async def roomReact(req: RoomReactRequest, request: Request):
     await room.broadcast(
         "react",
         {
-            "memberId": member.memberId,
+            "memberId": member.publicId,
             "name": member.name,
             "emoji": req.emoji,
             "targetEvent": req.targetEvent,

@@ -677,7 +677,7 @@ c.panel("매출")                          c.panel("revenue")
 
 > 루프·도구 표면 개요: [상단 통합 아키텍처](#통합-아키텍처--전문-금융-ai-플랫폼)
 
-[MCP](https://modelcontextprotocol.io/) 서버 내장. **canonical 6 도구 + ask** 메타로 외부 LLM 이 dartlab 라이브러리를 RunPython 안에서 직접 호출하는 패턴 (도구 표면을 좁혀 토큰 비용 ↓, 도구 선택 정확도 ↑).
+[MCP](https://modelcontextprotocol.io/) 서버 내장. 외부 LLM은 `tools/list`가 광고하는 canonical 도구만 호출하며, 단일 공개 API는 `EngineCall`, 여러 결과의 결합·가공만 `RunPython`을 사용합니다.
 
 ### Claude Desktop / Claude Code / Cursor (stdio, 권장)
 
@@ -742,22 +742,22 @@ HuggingFace Spaces 호스팅. DART API 키 불필요. **Claude Desktop 데스크
 
 ### 도구 표면
 
-실제 `tools/list` 표면은 아래 11 개입니다. Skill 본문 전체 조회는 별도 advertised tool 이 아니라 `ReadSkill` 결과와 `dartlab://skills/{id}` resource 경로로 처리합니다.
+실제 이름·스키마·실행 권한의 정본은 서버의 `tools/list`입니다. 아래는 역할별 요약이며, 목록에 없는 legacy alias나 AI 내부 도구는 직접 호출해도 `tool_not_advertised`로 거부됩니다.
 
 | 도구 | 역할 |
 |------|------|
 | **ask** | dartlab chat-native 루프: LLM 자율 도구 호출 + Ref 검산 일괄 |
-| **ReadSkill** | 공식 Skill OS 검색 + frontmatter + 본문 preview |
+| **ReadSkill / GetSkillBody / ReadSkillMarket** | 공식 Skill OS 검색·본문 조회·외부 마켓 보완 |
 | **ReadCapability** | dartlab 공개 API/docstring 검색 |
+| **EngineCall** | capability 결과 중 `engineCallable=true`인 단일 공개 API 호출 |
 | **RunPython** | dartlab + Polars 코드 실행 → executionRef/valueRef/tableRef |
-| **WebSearch** | 외부 최신 정보 → webRef (untrusted 마커 자동 적용) |
-| **SaveArtifact** | 큰 표·차트 별도 저장 → artifactRef |
-| **CompileVisual** | 차트 spec codegen → visualRef |
-| **LookAheadGuard** | 답변 전 누락된 다음 질문·검산 포인트 점검 |
-| **GroundingCheck** | 숫자·날짜·출처 grounding 검산 |
-| **RequestUserInput** | MCP elicit 지원 클라이언트에서 사용자 입력 요청 |
+| **Read / WebSearch / ExternalReachDoctor** | 로컬 문서·외부 최신 정보·연결 상태 확인 |
+| **SaveArtifact / CompileVisual / CreateUserSkill** | 산출물·시각화·사용자 스킬 작성 |
+| **PeerCompareN / DCFValuation / CompileFinancialDashboard** | 비교·가치평가·재무 대시보드 |
+| **RegressionForecast / SensitivityAnalysis / CreditScorecard** | 예측·민감도·신용 분석 |
+| **ScenarioCompareN / ScenarioOverlay / SearchPastSessions** | 시나리오·과거 세션 조회 |
 
-> 옛 33 generated 도구 (`companyAnalysis`/`companyStory`/`marketScan` 등) 는 0.10 부터 폐기: 모두 `RunPython` 안에서 `dartlab.Company / dartlab.scan / dartlab.macro` 직접 호출. 마이그레이션은 [CHANGELOG](https://github.com/eddmpython/dartlab/releases) 참조.
+> 옛 generated 도구(`companyAnalysis`/`companyStory`/`marketScan` 등)는 0.10부터 폐기됐습니다. 단일 호출은 `EngineCall({"apiRef": ..., "args": {...}})`, 다단 결합·가공만 `RunPython`으로 옮기세요. 마이그레이션은 [CHANGELOG](https://github.com/eddmpython/dartlab/releases) 참조.
 
 ## Skill OS 와 Skill Market
 

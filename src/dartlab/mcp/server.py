@@ -4,12 +4,14 @@ from __future__ import annotations
 
 import logging
 import sys
-from typing import Any
+from typing import Any, cast
 
 from dartlab.mcp.protocol import (
     MCP_INSTRUCTIONS,
     advertisedTools,
+    boundMcpPayload,
     executeWorkspaceAgentTool,
+    isMcpAdvertisedTool,
     recipeSkillsForPrompts,
     resourcePayload,
 )
@@ -196,7 +198,7 @@ def createServer():
 
     def _importMcp():
         from mcp.server import Server
-        from mcp.server.lowlevel.server import ReadResourceContents
+        from mcp.server.lowlevel.helper_types import ReadResourceContents
         from mcp.types import (
             GetPromptResult,
             Prompt,
@@ -270,7 +272,7 @@ def createServer():
     app = Server("dartlab", instructions=MCP_INSTRUCTIONS)
     mcpLog.info("MCP 서버 초기화 완료")
 
-    def toAnnotations(specAnnotations: dict[str, bool]) -> ToolAnnotations | None:
+    def toAnnotations(specAnnotations: dict[str, bool]) -> Any:
         """dict hint 를 MCP ToolAnnotations 객체로 변환한다.
 
         Args:
@@ -287,10 +289,10 @@ def createServer():
         """
         if not specAnnotations:
             return None
-        return ToolAnnotations(**specAnnotations)
+        return ToolAnnotations(**cast(Any, specAnnotations))
 
     @app.list_tools()
-    async def listTools() -> list[Tool]:
+    async def listTools() -> list[Any]:
         """tools/list 요청에 대해 advertise 된 tool list 를 반환한다.
 
         Returns:
@@ -302,7 +304,7 @@ def createServer():
         Raises:
             RuntimeError: 등록된 registry spec 이 MCP Tool 로 변환될 수 없을 때.
         """
-        tools: list[Tool] = []
+        tools: list[Any] = []
         for toolSpec in advertisedTools():
             tools.append(
                 Tool(
@@ -348,8 +350,8 @@ def createServer():
         except (LookupError, RuntimeError):
             pass
 
-        if name == "RequestUserInput" and session is not None:
-            return await handleRequestUserInput(arguments, session)
+        if name == "RequestUserInput" and session is not None and isMcpAdvertisedTool(name):
+            return boundMcpPayload(await handleRequestUserInput(arguments, session))
 
         if progressToken is None or session is None:
             return executeWorkspaceAgentTool(name, arguments)
@@ -357,7 +359,7 @@ def createServer():
         return await runWithProgress(name, arguments, progressToken, session)
 
     @app.list_resources()
-    async def listResources() -> list[Resource]:
+    async def listResources() -> list[Any]:
         """resources/list 요청에 대해 dartlab resource 목록을 반환한다.
 
         Returns:
@@ -371,31 +373,31 @@ def createServer():
         """
         return [
             Resource(
-                uri="dartlab://info",
+                uri=cast(Any, "dartlab://info"),
                 name="DartLab",
                 description="Ask Workbench Kernel 상태와 DartLab 런타임 정보",
                 mimeType="application/json",
             ),
             Resource(
-                uri="dartlab://ask-workbench",
+                uri=cast(Any, "dartlab://ask-workbench"),
                 name="Ask Workbench",
                 description="표준 MCP 도구, 런타임 데이터셋, 검산 경계 요약",
                 mimeType="application/json",
             ),
             Resource(
-                uri="dartlab://datasets",
+                uri=cast(Any, "dartlab://datasets"),
                 name="Runtime Dataset Catalog",
                 description="접근 가능한 런타임 데이터셋 id, 경로, 최신 관측일 요약",
                 mimeType="application/json",
             ),
             Resource(
-                uri="dartlab://reference",
+                uri=cast(Any, "dartlab://reference"),
                 name="DartLab Reference",
                 description="Ask Workbench 설계와 공개 참조 검색 표면",
                 mimeType="application/json",
             ),
             Resource(
-                uri="dartlab://skills",
+                uri=cast(Any, "dartlab://skills"),
                 name="DartLab Skills",
                 description="DartLab Skill OS 목록. AI, MCP, story, UI, audit가 같은 resolver를 사용",
                 mimeType="application/json",
@@ -403,7 +405,7 @@ def createServer():
         ]
 
     @app.read_resource()
-    async def readResource(uri: str) -> list[ReadResourceContents]:
+    async def readResource(uri: Any) -> list[Any]:
         """resources/read 요청의 uri 본문을 읽는다.
 
         Args:
@@ -422,7 +424,7 @@ def createServer():
         return [ReadResourceContents(content=content, mime_type=mimeType)]
 
     @app.list_prompts()
-    async def listPrompts() -> list[Prompt]:
+    async def listPrompts() -> list[Any]:
         """prompts/list 요청에 대해 recipe skill 기반 prompt 목록을 반환한다.
 
         Returns:
@@ -434,7 +436,7 @@ def createServer():
         Raises:
             RuntimeError: skill frontmatter 가 Prompt schema 로 변환될 수 없을 때.
         """
-        prompts: list[Prompt] = []
+        prompts: list[Any] = []
         for spec in recipeSkillsForPrompts():
             args = [
                 PromptArgument(name=f"input{idx + 1}", description=text, required=False)
@@ -480,7 +482,7 @@ def createServer():
         mcpLog.info("logger level set to %s (Python %d) by client", level, pyLevel)
 
     @app.get_prompt()
-    async def getPrompt(name: str, arguments: dict[str, str] | None = None) -> GetPromptResult:
+    async def getPrompt(name: str, arguments: dict[str, str] | None = None) -> Any:
         """prompts/get 요청으로 recipe prompt 본문을 반환한다.
 
         Args:

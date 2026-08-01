@@ -231,6 +231,9 @@ def formatSearchResults(results: list[tuple[str, dict, float]]) -> str:
         lines.append(f"### `{key}`")
         if summary := entry.get("summary"):
             lines.append(f"  {summary}")
+        if "engineCallable" in entry:
+            boundary = "EngineCall 가능" if entry.get("engineCallable") else "공개 참조 전용"
+            lines.append(f"  **Execution:** {boundary}")
         if guide := entry.get("guide"):
             lines.append(f"  **Guide:** {guide}")
         if seeAlso := entry.get("seeAlso"):

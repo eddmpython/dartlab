@@ -70,7 +70,7 @@ examples:
 source:
   type: curated_markdown
   owner: dartlab
-lastUpdated: "2026-05-06"
+lastUpdated: "2026-08-01"
 testUniverse:
   market: KR
   stockCodes:
@@ -150,6 +150,7 @@ Breaking 변경 허용. 프로덕션 비권장.
 |---|---|
 | `export.*` | Excel export |
 | `engines.ai.tools.*` | LLM tool calling |
+| `Company.causalWeights()` / `valuationImpact()` / `storyTree()` / `narrativeDiff()` | Phase 10 실험의 Python 하위호환 표면. capability/EngineCall에는 노출하지 않으며 새 코드는 `Company.story`·`Company.reportModel`·`Company.simulate`의 안정 계약을 사용 |
 
 ### Tier 4: Alpha
 

@@ -1,167 +1,406 @@
-"""RunPython sandbox 최소 차단 + 경로 가드 (Option B).
+"""RunPython 제한 실행의 AST, import, 파일 경계.
 
-dartlab 의 *단일 사용자 로컬 신뢰* stance 와 정합. 외부 클라이언트가 attach 한 상태에서
-의도적/실수로 destructive 호출 시도해도 *명시적 거부 + 안내* 로 보호.
-
-차단 대상:
-- `os.system` / `os.popen` / `os.exec*` / `os.spawn*` / `os.kill` 호출
-- `subprocess.run` / `Popen` / `call` / `check_call` / `check_output` / `getoutput` / `getstatusoutput`
-- `shutil.rmtree` / `shutil.move`
-- `socket.socket` (raw socket 생성)
-- `__import__("os" | "subprocess" | "shutil" | "socket")` 우회
-- `from os import system` 등 destructive 항목 직접 import
-- `open(path, mode)` 의 path 가 안전 경로 외 + mode 가 write/append/exec → 차단
-
-허용:
-- `os.path.*`, `os.environ.*`, `os.getcwd()` 등 read-only os 사용 (호출 attr 만 차단)
-- `pathlib.Path` 읽기
-- 안전 경로 (~/.dartlab/, ./tmp/, /tmp/, $TEMP/) 안의 파일 쓰기
-- import 자체는 허용 — 호출 시점에 차단
+RunPython은 Python 언어 전체를 보안 sandbox로 만들지 않는다. 이 모듈은 분석에
+필요하지 않은 동적 실행, 운영체제, 네트워크, 자격증명, 임의 파일 접근 경로를
+fail-closed로 제거하고 신뢰된 분석 코드만 좁은 표면에서 실행하게 한다.
 """
 
 from __future__ import annotations
 
 import ast
+import builtins
+import logging
 import os
 import os.path
 import tempfile
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
-_BLOCKED_ATTR_CALLS: dict[str, set[str]] = {
-    "os": {
-        "system",
-        "popen",
+logger = logging.getLogger(__name__)
+
+_ALLOWED_IMPORT_TARGETS = frozenset(
+    {
+        "collections",
+        "dartlab",
+        "datetime",
+        "decimal",
+        "fractions",
+        "functools",
+        "itertools",
+        "json",
+        "math",
+        "operator",
+        "pathlib",
+        "polars",
+        "re",
+        "statistics",
+        "tempfile",
+        "time",
+    }
+)
+_BLOCKED_DARTLAB_IMPORT_PREFIXES = (
+    "dartlab.Fred",
+    "dartlab.OpenDart",
+    "dartlab.OpenEdgar",
+    "dartlab.ai",
+    "dartlab.ask",
+    "dartlab.channel",
+    "dartlab.cli",
+    "dartlab.collect",
+    "dartlab.collectAll",
+    "dartlab.config",
+    "dartlab.core.credentialLifecycle",
+    "dartlab.core.credentials",
+    "dartlab.core.env",
+    "dartlab.core.providers",
+    "dartlab.gather.credentials",
+    "dartlab.gather.dart.keys",
+    "dartlab.mcp",
+    "dartlab.server",
+    "dartlab.setup",
+)
+_BLOCKED_IMPORT_MEMBERS = frozenset(
+    {
+        "operator.attrgetter",
+        "operator.methodcaller",
+        "tempfile.NamedTemporaryFile",
+        "tempfile.SpooledTemporaryFile",
+        "tempfile.TemporaryDirectory",
+        "tempfile.TemporaryFile",
+        "tempfile.mkdtemp",
+        "tempfile.mkstemp",
+        "tempfile.mktemp",
+    }
+)
+_BLOCKED_DYNAMIC_CALLS = frozenset(
+    {
+        "__import__",
+        "breakpoint",
+        "compile",
+        "delattr",
+        "dir",
+        "eval",
+        "exec",
+        "getattr",
+        "globals",
+        "input",
+        "locals",
+        "setattr",
+        "vars",
+    }
+)
+_BLOCKED_ANY_ATTRIBUTES = frozenset(
+    {
+        "ask",
+        "chmod",
+        "chdir",
+        "collect",
+        "collectAll",
+        "config",
+        "credentialLifecycle",
+        "credentials",
+        "dataDir",
+        "environb",
+        "environ",
         "execv",
         "execve",
         "execvp",
         "execvpe",
+        "fork",
+        "forkpty",
+        "getcwd",
+        "getCredentialProvider",
+        "getenv",
+        "getSecretStore",
+        "glob",
+        "hardlink_to",
+        "iterdir",
+        "import_module",
+        "lchmod",
+        "listCredentialProviders",
+        "listdir",
+        "kill",
+        "mkdir",
+        "mkdtemp",
+        "mktemp",
+        "mkstemp",
+        "methodcaller",
+        "modules",
+        "NamedTemporaryFile",
+        "open",
+        "owner",
+        "popen",
+        "prefetch",
+        "providers",
+        "putenv",
+        "readlink",
+        "reloadPlugins",
+        "rename",
+        "replace",
+        "rglob",
+        "rmdir",
+        "samefile",
+        "scandir",
+        "secretStore",
+        "spawnl",
+        "spawnle",
+        "spawnlp",
+        "spawnlpe",
         "spawnv",
         "spawnve",
         "spawnvp",
         "spawnvpe",
-        "kill",
-        "remove",
+        "stat",
+        "setup",
+        "SpooledTemporaryFile",
+        "symlink_to",
+        "system",
+        "TemporaryDirectory",
+        "TemporaryFile",
+        "touch",
         "unlink",
-        "rmdir",
-        "removedirs",
-    },
-    "subprocess": {
-        "run",
-        "Popen",
-        "call",
-        "check_call",
-        "check_output",
-        "getoutput",
-        "getstatusoutput",
-    },
-    "shutil": {"rmtree", "move", "copytree"},
-    "socket": {"socket", "create_connection", "create_server"},
-}
-
-_BLOCKED_IMPORT_TARGETS: set[str] = set(_BLOCKED_ATTR_CALLS.keys())
+        "unsetenv",
+        "walk",
+        "attrgetter",
+        "apiKey",
+        "accessToken",
+        "access_token",
+        "refreshToken",
+        "refresh_token",
+    }
+)
+_BLOCKED_ATTRIBUTE_PREFIXES = ("read_", "scan_", "sink_", "write_")
 
 
 def _assertSafeAst(code: str) -> None:
-    """exec 직전 AST 검사. 차단 대상 발견 시 PermissionError raise.
-
-    차단은 *호출 시점* 기준 — `import os` 자체는 허용, `os.system(...)` 호출 시점에 거부.
-    덕분에 `os.path.expanduser` 같은 read-only 사용은 그대로 작동.
-    """
+    """실행 직전 AST에서 import, 동적 호출, 파일/환경 우회를 거절한다."""
     try:
         tree = ast.parse(code)
     except SyntaxError:
-        # 정상 SyntaxError 는 exec 가 다시 raise 하도록 그대로 통과.
         return
 
     for node in ast.walk(tree):
-        # ① os.system(...) / subprocess.run(...) / shutil.rmtree(...) / socket.socket(...)
-        if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute):
-            attr = node.func.attr
-            value = node.func.value
-            if isinstance(value, ast.Name):
-                module = value.id
-                blocked = _BLOCKED_ATTR_CALLS.get(module)
-                if blocked and attr in blocked:
-                    raise PermissionError(
-                        f"RunPython: '{module}.{attr}(...)' 호출 차단. 외부 클라이언트 안전을 위해 "
-                        f"destructive / shell 호출 비허용. 분석은 dartlab API · polars · pathlib (읽기) "
-                        f"· ~/.dartlab/ · /tmp/ 안의 안전 쓰기로."
-                    )
-
-        # ② __import__("os") / __import__("subprocess") 우회
-        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == "__import__":
-            if (
-                node.args
-                and isinstance(node.args[0], ast.Constant)
-                and isinstance(node.args[0].value, str)
-                and node.args[0].value in _BLOCKED_IMPORT_TARGETS
-            ):
-                raise PermissionError(
-                    f"RunPython: __import__('{node.args[0].value}') 우회 차단. "
-                    f"호출 가능 attr 만 거부 — import 자체는 허용되지만 dangerous 호출은 막음."
-                )
-
-        # ③ from os import system / from subprocess import run 등 destructive 항목 직접 import
-        if isinstance(node, ast.ImportFrom) and node.module in _BLOCKED_ATTR_CALLS:
-            blocked = _BLOCKED_ATTR_CALLS[node.module]
+        if isinstance(node, ast.Import):
             for alias in node.names:
-                if alias.name == "*" or alias.name in blocked:
-                    raise PermissionError(
-                        f"RunPython: 'from {node.module} import {alias.name}' 차단. dangerous 항목 직접 import 비허용."
-                    )
+                _assertAllowedImport(alias.name)
+        elif isinstance(node, ast.ImportFrom):
+            moduleName = str(node.module or "")
+            _assertAllowedImport(moduleName)
+            if any(alias.name == "*" for alias in node.names):
+                raise PermissionError("RunPython: wildcard import는 허용되지 않습니다.")
+            for alias in node.names:
+                if alias.name.startswith("_"):
+                    raise PermissionError("RunPython: private symbol import는 허용되지 않습니다.")
+                _assertAllowedImport(f"{moduleName}.{alias.name}")
+
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Name) and node.id == "__builtins__":
+            raise PermissionError("RunPython: __builtins__ 직접 접근은 허용되지 않습니다.")
+
+        if isinstance(node, ast.Attribute):
+            attr = node.attr
+            if attr.startswith("_"):
+                raise PermissionError(f"RunPython: private/dunder attribute '{attr}' 접근은 허용되지 않습니다.")
+            if attr in _BLOCKED_ANY_ATTRIBUTES or attr.startswith(_BLOCKED_ATTRIBUTE_PREFIXES):
+                raise PermissionError(f"RunPython: 파일, 환경, 동적 실행 attribute '{attr}' 접근은 허용되지 않습니다.")
+
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id in _BLOCKED_DYNAMIC_CALLS:
+            raise PermissionError(f"RunPython: 동적 실행 함수 '{node.func.id}' 호출은 허용되지 않습니다.")
+
+
+def _assertAllowedImport(name: str) -> None:
+    root = name.split(".", 1)[0]
+    if root not in _ALLOWED_IMPORT_TARGETS:
+        raise PermissionError(f"RunPython: '{root}' 모듈 import는 허용되지 않습니다.")
+    if any(part.startswith("_") for part in name.split(".")):
+        raise PermissionError(f"RunPython: private 모듈 '{name}' import는 허용되지 않습니다.")
+    if name in _BLOCKED_IMPORT_MEMBERS:
+        raise PermissionError(f"RunPython: 파일 또는 동적 attribute helper '{name}' import는 허용되지 않습니다.")
+    if any(name == prefix or name.startswith(prefix + ".") for prefix in _BLOCKED_DARTLAB_IMPORT_PREFIXES):
+        raise PermissionError(f"RunPython: 민감한 DartLab 모듈 '{name}' import는 허용되지 않습니다.")
 
 
 def _defaultSafeRoots() -> list[str]:
-    """파일 쓰기 허용 prefix — ~/.dartlab/, ./tmp/, /tmp/, $TEMP/."""
+    """파일 읽기 허용 root: 저장소, artifact, tool result, 임시 디렉터리."""
     home = os.path.expanduser("~")
+    repoRoot = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
     roots: list[str] = [
-        os.path.join(home, ".dartlab"),
+        repoRoot,
+        os.path.join(home, "dartlab-artifacts"),
+        os.path.join(home, ".dartlab", "artifacts"),
+        os.path.join(home, ".dartlab", "ask_artifacts"),
+        os.path.join(home, ".dartlab", "tool-results"),
         os.path.abspath("./tmp"),
         tempfile.gettempdir(),
     ]
     if os.path.exists("/tmp"):
         roots.append("/tmp")
-    # normpath 로 OS 별 separator 통일.
-    return [os.path.normpath(r) for r in roots]
+    return [os.path.realpath(os.path.normpath(root)) for root in roots]
 
 
-_WRITE_MODE_CHARS = ("w", "a", "x", "+")
+def _defaultWriteRoots() -> list[str]:
+    """파일 쓰기 허용 root: 산출물과 임시 디렉터리. 저장소 원본은 제외한다."""
+    home = os.path.expanduser("~")
+    repoRoot = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
+    roots = [
+        os.path.join(home, "dartlab-artifacts"),
+        os.path.join(home, ".dartlab", "artifacts"),
+        os.path.join(home, ".dartlab", "ask_artifacts"),
+        os.path.join(home, ".dartlab", "tool-results"),
+        os.path.join(repoRoot, "tmp"),
+        os.path.abspath("./tmp"),
+        tempfile.gettempdir(),
+    ]
+    if os.path.exists("/tmp"):
+        roots.append("/tmp")
+    return [os.path.realpath(os.path.normpath(root)) for root in roots]
 
 
-def _safeOpenFactory(safeRoots: list[str] | None = None) -> Callable[..., Any]:
-    """write/append/create mode 의 path 를 안전 경로로 제한하는 open wrapper.
+_DENIED_NAMES = frozenset(
+    {
+        ".netrc",
+        ".npmrc",
+        "credentials.json",
+        "id_ed25519",
+        "id_rsa",
+        "oauth.json",
+        "oauth_token.json",
+        "secrets.json",
+    }
+)
+_DENIED_SUFFIXES = (".key", ".p12", ".pem", ".pfx")
+_DENIED_PARTS = frozenset({".aws", ".git", ".ssh", "node_modules"})
 
-    read mode (`r`, `rb`) 는 그대로 통과 — 외부 본문 파일 분석 등 정상 use case 보존.
-    `+` 도 write 권한 포함이라 검증 대상.
-    """
-    roots = [os.path.normpath(r) for r in (safeRoots or _defaultSafeRoots())]
-    real_open = open  # 캡처 — 안에서 builtin 의존 안 하도록.
+
+def _isDeniedPath(path: str) -> bool:
+    normalized = os.path.normpath(path)
+    name = os.path.basename(normalized).lower()
+    if name in _DENIED_NAMES or name == ".env" or name.startswith(".env."):
+        return True
+    if name.endswith(_DENIED_SUFFIXES):
+        return True
+    return bool(_DENIED_PARTS.intersection(part.lower() for part in normalized.split(os.sep)))
+
+
+def _safeOpenFactory(
+    safeRoots: list[str] | None = None,
+    writeRoots: list[str] | None = None,
+) -> Callable[..., Any]:
+    """built-in open을 읽기 root, 더 좁은 쓰기 root, 자격증명 denylist로 제한한다."""
+    roots = [os.path.realpath(os.path.normpath(root)) for root in (safeRoots or _defaultSafeRoots())]
+    writable = [
+        os.path.realpath(os.path.normpath(root))
+        for root in (writeRoots if writeRoots is not None else (safeRoots or _defaultWriteRoots()))
+    ]
+    realOpen = open
 
     def safeOpen(file: Any, mode: str = "r", *args: Any, **kwargs: Any) -> Any:
-        """write/append/+ 모드 시 safeRoots 안의 경로만 허용 (read 모드는 통과)."""
-        if any(ch in mode for ch in _WRITE_MODE_CHARS):
-            try:
-                path_str = os.fspath(file)
-            except TypeError:
-                # file descriptor (int) 등 — 검증 못 하지만 user 공격 surface 좁음.
-                return real_open(file, mode, *args, **kwargs)
-            absPath = os.path.normpath(os.path.abspath(path_str))
-            if not _isUnderSafeRoots(absPath, roots):
-                raise PermissionError(
-                    f"RunPython: 파일 쓰기는 안전 경로만 허용 ({', '.join(roots)}). "
-                    f"시도된 경로: {absPath}. 결과 저장은 SaveArtifact 도구 사용 권장."
-                )
-        return real_open(file, mode, *args, **kwargs)
+        try:
+            pathString = os.fspath(file)
+        except TypeError as exc:
+            raise PermissionError("RunPython: file descriptor 직접 open은 허용되지 않습니다.") from exc
+        absolutePath = os.path.realpath(os.path.abspath(pathString))
+        isWrite = any(flag in mode for flag in ("w", "a", "x", "+"))
+        allowedRoots = writable if isWrite else roots
+        if kwargs.get("opener") is not None:
+            raise PermissionError("RunPython: custom file opener는 허용되지 않습니다.")
+        if _isDeniedPath(absolutePath) or not _isUnderSafeRoots(absolutePath, allowedRoots):
+            raise PermissionError(
+                f"RunPython: 파일 접근은 안전한 비자격증명 경로만 허용 ({', '.join(allowedRoots)}). "
+                f"시도된 경로: {absolutePath}. 문서 읽기는 Read, 결과 저장은 SaveArtifact를 사용하세요."
+            )
+        return realOpen(file, mode, *args, **kwargs)
 
     return safeOpen
 
 
-def _isUnderSafeRoots(absPath: str, roots: list[str]) -> bool:
-    """abs_path 가 roots 중 하나의 직속/하위 인가."""
+def _isUnderSafeRoots(absolutePath: str, roots: list[str]) -> bool:
+    """해석된 절대 경로가 root와 같거나 그 하위인지 판정한다."""
     for root in roots:
-        if absPath == root:
-            return True
-        # path separator 추가해서 prefix-match — 'C:\\Users\\ab' 가 'C:\\Users\\a' 의 하위로 false 매칭 방지.
-        if absPath.startswith(root + os.sep):
-            return True
+        try:
+            if os.path.commonpath((absolutePath, root)) == root:
+                return True
+        except ValueError:
+            logger.debug("RunPython safe-root comparison rejected incompatible paths", exc_info=True)
+            continue
     return False
+
+
+def _safeImport(
+    name: str,
+    globalVars: dict[str, Any] | None = None,
+    localVars: dict[str, Any] | None = None,
+    fromlist: tuple[str, ...] = (),
+    level: int = 0,
+) -> Any:
+    """사용자 코드의 import를 계산용 모듈 allowlist로 제한한다."""
+    _assertAllowedImport(name)
+    return builtins.__import__(name, globalVars, localVars, fromlist, level)
+
+
+def _safeBuiltins() -> dict[str, Any]:
+    """분석 코드에 필요한 비동적 built-in만 제공한다."""
+    names = {
+        "ArithmeticError",
+        "AssertionError",
+        "AttributeError",
+        "Exception",
+        "IndexError",
+        "KeyError",
+        "LookupError",
+        "RuntimeError",
+        "StopIteration",
+        "TypeError",
+        "ValueError",
+        "ZeroDivisionError",
+        "__build_class__",
+        "abs",
+        "all",
+        "any",
+        "bool",
+        "bytes",
+        "callable",
+        "chr",
+        "complex",
+        "dict",
+        "divmod",
+        "enumerate",
+        "filter",
+        "float",
+        "format",
+        "frozenset",
+        "hasattr",
+        "hex",
+        "int",
+        "isinstance",
+        "issubclass",
+        "iter",
+        "len",
+        "list",
+        "map",
+        "max",
+        "min",
+        "next",
+        "object",
+        "oct",
+        "ord",
+        "pow",
+        "print",
+        "range",
+        "repr",
+        "reversed",
+        "round",
+        "set",
+        "slice",
+        "sorted",
+        "str",
+        "sum",
+        "super",
+        "tuple",
+        "type",
+        "zip",
+    }
+    safe = {name: getattr(builtins, name) for name in names}
+    safe["__import__"] = _safeImport
+    safe["open"] = _safeOpenFactory()
+    return safe

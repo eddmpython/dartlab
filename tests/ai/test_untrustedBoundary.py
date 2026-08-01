@@ -163,7 +163,17 @@ def testSkillMarketFunctionRejectsAUrlArgument() -> None:
     assert "url" not in inspect.signature(readSkillMarket).parameters
 
 
-@pytest.mark.parametrize("target", [".env", ".env.local", "~/.dartlab/secrets.json", ".git/config"])
+@pytest.mark.parametrize(
+    "target",
+    [
+        ".env",
+        ".env.local",
+        "~/.dartlab/secrets.json",
+        "~/.dartlab/oauth_token.json",
+        "~/.dartlab/oauth.json",
+        ".git/config",
+    ],
+)
 def testCredentialFilesAreRefused(target: str) -> None:
     """안전 경로 안에 있다는 것이 읽어도 된다는 뜻은 아니다."""
 
@@ -186,12 +196,32 @@ def testOrdinaryFilesAreNotDenied(name: str) -> None:
     assert _isDeniedPath(pathlib.Path(name)) is False
 
 
-@pytest.mark.parametrize("name", [".env", ".env.local", ".env.production", "secrets.json", "server.pem", "id_rsa"])
+@pytest.mark.parametrize(
+    "name",
+    [
+        ".env",
+        ".env.local",
+        ".env.production",
+        "secrets.json",
+        "oauth_token.json",
+        "oauth.json",
+        "server.pem",
+        "id_rsa",
+    ],
+)
 def testCredentialNamesAreDeniedRegardlessOfLocation(name: str) -> None:
     """이름만으로 거절한다. 어느 경로에 있든 같은 판정이어야 한다."""
     from dartlab.ai.tools.readFile import _isDeniedPath
 
     assert _isDeniedPath(pathlib.Path(name)) is True
+
+
+@pytest.mark.parametrize("name", ["chat.db", "ai_profile.json", "channel.json", "devtunnel-state.json"])
+def testPrivateDartlabStateIsOutsideReadRoots(name: str) -> None:
+    """자격증명이 아닌 로컬 상태도 모델의 문서 읽기 범위에는 들어오지 않는다."""
+    from dartlab.ai.tools.readFile import _isUnderSafeRoot
+
+    assert _isUnderSafeRoot(pathlib.Path.home() / ".dartlab" / name) is False
 
 
 def _refs() -> list[Ref]:

@@ -1203,10 +1203,10 @@ class Company:
 
         return Macro()(axis, target, market="US", overrides=overrides, company=self, **kwargs)
 
-    # ── Phase 10 H2: story 2차 가공 직접 노출 ──
+    # ── Phase 10 H2 하위호환: canonical surface는 story/reportModel/simulate ──
 
     def causalWeights(self) -> list[dict]:
-        """6막 인과 가중치 (Phase 9 B2).
+        """[하위호환·실험] 6막 인과 가중치 - capability/EngineCall 비노출.
 
         Returns:
             인과 weight dict 리스트.
@@ -1258,7 +1258,7 @@ class Company:
         return buildCausalWeights(self, {})
 
     def valuationImpact(self) -> dict:
-        """인과 체인 → DCF override 힌트 (Phase 9 B3).
+        """[하위호환·실험] 인과 체인 DCF 힌트 - capability/EngineCall 비노출.
 
         Returns:
             DCF override dict (revenueGrowth, margin, wacc 등).
@@ -1309,7 +1309,7 @@ class Company:
         return _narrative.buildValuationImpact(_narrative.buildCausalWeights(self, {}))
 
     def storyTree(self, *, basePeriod: str | None = None) -> dict:
-        """3 trajectory DCF (Phase 10 G2).
+        """[하위호환·실험] 3 trajectory DCF - capability/EngineCall 비노출.
 
         Args:
             basePeriod: 기준 fiscal period. None 이면 최신.
@@ -1365,7 +1365,7 @@ class Company:
         return buildStoryTree(self, basePeriod=basePeriod)
 
     def narrativeDiff(self, *, claims: list[str] | None = None) -> list[dict]:
-        """claim 제거 시 dFV 변화 (Phase 10 G3).
+        """[하위호환·실험] claim 제거 dFV 변화 - capability/EngineCall 비노출.
 
         Args:
             claims: 영향 분석 대상 claim 리스트. None 이면 전체.

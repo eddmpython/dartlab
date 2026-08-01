@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import re
 from typing import Any
 
@@ -54,14 +55,14 @@ def apiSearch(q: str = Query(..., min_length=1)):
 
     try:
         # 1. 회사명 substring (dartlab.searchName)
-        df = dartlab.searchName(q)
-        name_rows = df.to_dicts() if len(df) > 0 else []
+        df: Any = dartlab.searchName(q)
+        name_rows = df.to_dicts() if df is not None and len(df) > 0 else []
 
         # 2. 주요제품 substring - KIND listing parquet 의 `주요제품` 컬럼.
         #    회사명 매칭에 못 잡힌 회사만 추가 (dedup by 종목코드).
         product_rows: list[dict] = []
         try:
-            listing_df = dartlab.listing()
+            listing_df = getattr(dartlab, "listing")()
             if not isEmptyDf(listing_df) and "주요제품" in listing_df.columns:
                 mask = pl.col("주요제품").cast(pl.Utf8).str.contains(q, literal=True)
                 product_rows = listing_df.filter(mask).head(40).to_dicts()
@@ -192,7 +193,7 @@ def _findCorpMeta(stockCode: str) -> dict[str, str]:
     code_pad = str(stockCode).zfill(6)
     out = {"corpName": "", "sector": "", "market": ""}
     try:
-        df = dartlab.searchName(str(stockCode))
+        df: Any = dartlab.searchName(str(stockCode))
         if not isEmptyDf(df):
             rows = df.to_dicts()
             hit = None
@@ -211,7 +212,7 @@ def _findCorpMeta(stockCode: str) -> dict[str, str]:
         pass
     # fallback - listing() 전수에서 종목코드 직접 매칭.
     try:
-        df = dartlab.listing()
+        df = getattr(dartlab, "listing")()
         if isEmptyDf(df):
             return out
         rows = df.to_dicts()
@@ -412,7 +413,7 @@ def apiCompanyIndex(code: str, request: Request, response: Response):
 def apiCompanyInit(
     code: str,
     request: Request,
-    response: Response = None,
+    response: Response,
 ):
     """SPA 초기 로드 번들 - panel toc + 첫 절(sectionLeaf) full-period grid.
 
@@ -456,7 +457,7 @@ def apiCompanyInit(
 def apiCompanyToc(
     code: str,
     request: Request,
-    response: Response = None,
+    response: Response,
 ):
     """목차(TOC) - panel 의 chapter > sectionLeaf > blockLeaf 트리.
 
@@ -475,6 +476,7 @@ def apiCompanyToc(
 def apiCompanyPanel(
     code: str,
     request: Request,
+    response: Response,
     section: str | None = Query(
         None, description="sectionKey ({chapter}␟{sectionLeaf}) - 한 절 grid. 생략 시 전체 격자."
     ),
@@ -482,7 +484,6 @@ def apiCompanyPanel(
         None, description="comma-separated 표시 기간 (최신좌측). 생략 시 전체 기간 (full-period)."
     ),
     block: str | None = Query(None, description="blockLeaf - 그 항목 행만 (주석 등 세분 단위). 생략 시 절 전체."),
-    response: Response = None,
 ):
     """panel 의 한 절(section)/항목(block) grid - 항목 × 기간 wide (viewer 본문).
 
@@ -512,9 +513,9 @@ def apiViewerDoc(
     code: str,
     topic: str,
     request: Request,
+    response: Response,
     base: str | None = Query(None),
     compare: str | None = Query(None),
-    response: Response = None,
 ):
     """panel text 기반 신구대조 뷰어 - viewer() dict 반환."""
     try:
@@ -529,6 +530,9 @@ def apiViewerDoc(
                 reverse=True,
             )
             base = periods[0] if periods else None
+
+        if base is None:
+            raise HTTPException(status_code=404, detail="비교할 기준 기간 없음")
 
         from dartlab.reference.docs.viewer import viewer
 
@@ -572,14 +576,17 @@ async def apiParseRawTable(code: str, topic: str, blockIdx: int):
         from dartlab.providers.dart.tableAI import parseRawMarkdownBlock
         from dartlab.providers.dart.viewer import viewerBlocks
 
-        company = getCompany(code)
-        blocks = viewerBlocks(company, topic)
-        target = None
-        for block in blocks:
-            if block.block == blockIdx and block.kind == "raw_markdown":
-                target = block
-                break
-        if target is None:
+        def _resolveTarget():
+            company = getCompany(code)
+            blocks = viewerBlocks(company, topic)
+            target = next(
+                (block for block in blocks if block.block == blockIdx and block.kind == "raw_markdown"),
+                None,
+            )
+            return company, target
+
+        company, target = await asyncio.to_thread(_resolveTarget)
+        if target is None or target.rawMarkdown is None:
             raise HTTPException(status_code=404, detail="raw_markdown 블록이 아님")
 
         result = await parseRawMarkdownBlock(target.rawMarkdown, topic)
@@ -637,7 +644,7 @@ async def apiCompanyTopicSummary(
 ):
     """topic 데이터를 LLM으로 요약하여 SSE 스트리밍 반환."""
     try:
-        company = get_company(code)
+        company = await asyncio.to_thread(get_company, code)
     except HANDLED_API_ERRORS as exc:
         raise HTTPException(status_code=404, detail=guideDetail(exc)) from exc
 
@@ -645,7 +652,7 @@ async def apiCompanyTopicSummary(
     # 빠진 이름이라 부르면 AttributeError 로 떨어지고, 그것도 여기서 삼켜져 결과가 늘
     # 같았다. 있어 보이기만 하는 폴백이라 걷어낸다.
     try:
-        overview = company.panel(topic)
+        overview = await asyncio.to_thread(company.panel, topic)
     except (AttributeError, KeyError, TypeError, ValueError):
         overview = None
     if overview is None:

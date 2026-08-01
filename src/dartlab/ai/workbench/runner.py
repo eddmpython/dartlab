@@ -19,7 +19,8 @@ from typing import Any
 from dartlab.ai.contracts import Ref, TraceEvent
 from dartlab.ai.providers import ProviderTurn, WorkbenchProvider
 from dartlab.ai.providers.base import RateLimitError
-from dartlab.ai.tools.formatting import wrapExternalInResult
+from dartlab.ai.toolAdmission import executeAllowedTool
+from dartlab.ai.tools.formatting import EXTERNAL_END, EXTERNAL_START, wrapExternalInResult
 from dartlab.ai.tools.registry import _SPECS as TOOL_SPECS
 from dartlab.ai.tools.registry import executeTool
 
@@ -28,6 +29,22 @@ from .state import WorkbenchState
 _MAX_TOOL_RESULT_CHARS = int(os.environ.get("DARTLAB_TOOL_RESULT_MAX_CHARS", "8000"))
 _MAX_MESSAGES_CHARS = int(os.environ.get("DARTLAB_MESSAGES_MAX_CHARS", "120000"))
 _RATE_LIMIT_RETRY_DELAY_SEC = float(os.environ.get("DARTLAB_RATE_LIMIT_RETRY_SEC", "2"))
+
+
+def _boundedToolContent(content: str) -> str:
+    """도구 결과를 상한 안에 두고 외부 본문 marker 쌍은 절단 뒤에도 닫는다."""
+
+    if len(content) <= _MAX_TOOL_RESULT_CHARS:
+        return content
+    suffix = f"\n...(truncated, full {len(content)} chars)"
+    if EXTERNAL_START not in content:
+        return content[: max(0, _MAX_TOOL_RESULT_CHARS - len(suffix))] + suffix
+
+    prefix = f"{EXTERNAL_START}\n"
+    closing = f"\n{EXTERNAL_END}{suffix}"
+    body_budget = max(0, _MAX_TOOL_RESULT_CHARS - len(prefix) - len(closing))
+    preview = content.replace(EXTERNAL_START, "").replace(EXTERNAL_END, "")[:body_budget]
+    return prefix + preview + closing
 
 
 def runLLMPass(
@@ -55,6 +72,7 @@ def runLLMPass(
         provider = _resolveProviderForRole(provider, role)
 
     tool_specs_objs = [TOOL_SPECS[name] for name in allowedTools if name in TOOL_SPECS]
+    allowed_tool_names = frozenset(spec.name for spec in tool_specs_objs)
     tools_payload = [_toolToOpenAIFormat(spec) for spec in tool_specs_objs]
     messages: list[dict[str, Any]] = [
         {"role": "system", "content": systemPrompt},
@@ -119,7 +137,12 @@ def runLLMPass(
 
         for call in turn.toolCalls:
             tool_start = time.monotonic()
-            result = executeTool(call.name, call.args or {})
+            result = executeAllowedTool(
+                executeTool,
+                call.name,
+                call.args or {},
+                allowed_tool_names,
+            )
             tool_duration_ms = int((time.monotonic() - tool_start) * 1000)
 
             state.toolCalls.append(
@@ -150,8 +173,7 @@ def runLLMPass(
             # 상세: runtime.workbenchEvidenceFlow "외부 본문 처리".
             wrapped = wrapExternalInResult(result)
             content = json.dumps(wrapped, ensure_ascii=False, default=str)
-            if len(content) > _MAX_TOOL_RESULT_CHARS:
-                content = content[:_MAX_TOOL_RESULT_CHARS] + f"\n...(truncated, full {len(content)} chars)"
+            content = _boundedToolContent(content)
             messages.append(
                 {
                     "role": "tool",

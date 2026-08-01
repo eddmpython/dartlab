@@ -32,6 +32,7 @@ from typing import Any
 
 from .contracts import TraceEvent
 from .providers import streamProvider
+from .toolAdmission import executeAllowedTool
 from .tools.formatting import wrapExternalInResult
 from .tools.registry import executeTool, isToolReadOnly, toolSpecs
 from .toolStorage import buildPersistedContent, exceedsSizeCap, persistLargeResult
@@ -222,6 +223,11 @@ def _runAgentImpl(
         # PR-O2 — turn timing. stream 진입/종료 ms 분리 측정.
         turn_start_ms = time.monotonic()
         stream_first_chunk_ms: float | None = None
+        advertised_tool_names = frozenset(
+            tool.get("function", {}).get("name")
+            for tool in tools
+            if isinstance(tool, dict) and isinstance(tool.get("function"), dict)
+        )
 
         # lazy 소비 — provider 가 토큰 yield 하는 즉시 SSE chunk emit (typing 효과).
         # 회귀 가드: list(streamProvider(...)) 로 한 번에 모은 뒤 풀면 LLM 응답 끝까지 블록 →
@@ -334,7 +340,11 @@ def _runAgentImpl(
                 # 각 도구가 자체 캐시/IO 만 건드리고 agent.py 의 mutable state 는 메인 thread 만 변경.
                 with ThreadPoolExecutor(max_workers=_PARALLEL_READ_WORKERS) as ex:
                     fut_to_meta = {
-                        ex.submit(executeTool, tc.name, tc.args): (tc, cache_key) for tc, cache_key in fresh_read
+                        ex.submit(executeAllowedTool, executeTool, tc.name, tc.args, advertised_tool_names): (
+                            tc,
+                            cache_key,
+                        )
+                        for tc, cache_key in fresh_read
                     }
                     for fut in as_completed(fut_to_meta):
                         tc, cache_key = fut_to_meta[fut]
@@ -348,7 +358,16 @@ def _runAgentImpl(
                     "tool_start",
                     {"id": tc.id, "tool": tc.name, "input": tc.args, "summary": f"{tc.name} 호출"},
                 )
-                resultDict = _runOrFallback(lambda tc=tc: executeTool(tc.name, tc.args), tc.name, parallel=False)
+                resultDict = _runOrFallback(
+                    lambda tc=tc: executeAllowedTool(
+                        executeTool,
+                        tc.name,
+                        tc.args,
+                        advertised_tool_names,
+                    ),
+                    tc.name,
+                    parallel=False,
+                )
                 tracker.recordResult(cache_key, tc.name, resultDict)
                 yield from _finalizeResult(tc, resultDict, refs, artifacts, messages)
 
@@ -501,8 +520,10 @@ def _finalize(
             if chunk.text:
                 text_added += chunk.text
                 yield TraceEvent("chunk", {"text": chunk.text})
-        if final_chunk and not text_added and getattr(final_chunk, "turn", None) and final_chunk.turn.content:
-            for piece in _chunks(final_chunk.turn.content, size=64):
+        final_turn = getattr(final_chunk, "turn", None)
+        final_content = getattr(final_turn, "content", "")
+        if not text_added and final_content:
+            for piece in _chunks(final_content, size=64):
                 yield TraceEvent("chunk", {"text": piece})
     except Exception as exc:  # noqa: BLE001
         logger.exception("finalize round failed (reason=%s)", reason)
@@ -958,13 +979,14 @@ def _wireChatNativeMemory(
     for raw in refs:
         if not isinstance(raw, dict):
             continue
+        raw_payload = raw.get("payload")
         ref_objects.append(
             Ref(
                 id=str(raw.get("id") or ""),
                 kind=str(raw.get("kind") or ""),
                 title=str(raw.get("title") or ""),
                 source=str(raw.get("source") or ""),
-                payload=raw.get("payload") if isinstance(raw.get("payload"), dict) else {},
+                payload=raw_payload if isinstance(raw_payload, dict) else {},
             )
         )
 

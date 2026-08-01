@@ -61,24 +61,62 @@ def test_mcp_canonical_tools_execute():
     assert any(ref["kind"] == "executionRef" for ref in executed["refs"])
 
 
-def test_mcp_legacy_snake_alias_dispatch():
-    """0.10 부터 _executeCompatAskTool 6 alias (snake_case + camelCase) 가 PascalCase canonical 로 정렬."""
+def test_mcp_non_advertised_legacy_alias_is_blocked():
+    """tools/list 밖 alias는 내부 registry 호환 여부와 무관하게 MCP에서 실행하지 않는다."""
     from dartlab.mcp import _executeWorkspaceAgentTool
 
-    # skill_search alias → ReadSkill 로 정규화
     via_alias = _executeWorkspaceAgentTool("skill_search", {"query": "테스트 규칙", "limit": 3})
-    direct = _executeWorkspaceAgentTool("ReadSkill", {"query": "테스트 규칙", "limit": 3})
-    assert {ref["id"] for ref in via_alias["refs"]} == {ref["id"] for ref in direct["refs"]}
+    assert via_alias["ok"] is False
+    assert via_alias["error"] == "tool_not_advertised"
+    assert "ReadSkill" in via_alias["data"]["advertisedTools"]
 
 
-def test_mcp_unknown_tool_message():
-    """0.10 에서 폐기된 옛 33 generated 도구 호출 시 마이그레이션 안내 포함 메시지 반환."""
+def test_mcp_unknown_tool_is_blocked_by_advertise_ssot():
+    """폐기된 generated 도구도 광고 SSOT 밖에서는 동일한 오류 계약으로 거부한다."""
     from dartlab.mcp import _executeWorkspaceAgentTool
 
     payload = _executeWorkspaceAgentTool("companyInsights", {"stockCode": "005930"})
     assert payload["ok"] is False
-    assert "RunPython" in payload["error"]
-    assert "0.10" in payload["error"]
+    assert payload["error"] == "tool_not_advertised"
+    assert payload["refs"] == []
+
+
+def test_mcp_hidden_canonical_registry_tool_is_not_callable():
+    """AI 내부 canonical 도구라도 tools/list 밖이면 MCP call 권한이 아니다."""
+    from dartlab.mcp import _executeWorkspaceAgentTool
+
+    payload = _executeWorkspaceAgentTool("EvidenceGate", {"skillId": "x", "refs": []})
+    assert payload["ok"] is False
+    assert payload["error"] == "tool_not_advertised"
+
+
+def test_mcp_payload_budget_preserves_contract_fields():
+    import json
+
+    from dartlab.mcp.protocol import boundMcpPayload
+
+    payload = {
+        "ok": True,
+        "summary": "큰 결과",
+        "refs": [],
+        "data": {
+            "status": "partial",
+            "gaps": [{"id": "missing.price", "status": "missing", "reason": "가격 없음"}],
+            "provenance": ["source:filing"],
+            "asOf": "2025-12-31",
+            "blob": "x" * 100_000,
+        },
+        "error": None,
+    }
+
+    bounded = boundMcpPayload(payload, maxBytes=4096)
+
+    assert len(json.dumps(bounded, ensure_ascii=False).encode("utf-8")) <= 4096
+    assert bounded["data"]["status"] == "partial"
+    assert bounded["data"]["gaps"][0]["id"] == "missing.price"
+    assert bounded["data"]["provenance"] == ["source:filing"]
+    assert bounded["data"]["asOf"] == "2025-12-31"
+    assert bounded["payloadBudget"]["gap"]["status"] == "partial"
 
 
 def test_mcp_advertised_tools_carry_annotations():

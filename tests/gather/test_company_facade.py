@@ -223,6 +223,35 @@ def test_company_all_providers_fail_raises():
         mod._PROVIDERS.extend(old_providers)
 
 
+def test_company_does_not_retry_matched_providers_in_fallback():
+    """형식 매칭 provider가 모두 실패해도 같은 생성자를 두 번 호출하지 않는다."""
+    import dartlab.company as mod
+
+    matched = MagicMock()
+    matched.canHandle.return_value = True
+    matched.side_effect = ValueError("no data")
+
+    unmatched = MagicMock()
+    unmatched.canHandle.return_value = False
+
+    old_discovered = mod._DISCOVERED
+    old_providers = list(mod._PROVIDERS)
+    try:
+        mod._DISCOVERED = True
+        mod._PROVIDERS.clear()
+        mod._PROVIDERS.extend([matched, unmatched])
+
+        with pytest.raises(ValueError, match="찾을 수 없습니다"):
+            mod.Company("005930")
+
+        matched.assert_called_once_with("005930")
+        unmatched.assert_not_called()
+    finally:
+        mod._DISCOVERED = old_discovered
+        mod._PROVIDERS.clear()
+        mod._PROVIDERS.extend(old_providers)
+
+
 def test_company_oserror_continues_to_next():
     """OSError도 다음 provider로 넘어간다."""
     import dartlab.company as mod

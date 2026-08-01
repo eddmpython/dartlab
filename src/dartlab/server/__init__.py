@@ -1,4 +1,4 @@
-"""DartLab Web Server — FastAPI + SSE 스트리밍.
+"""DartLab Web Server: FastAPI + SSE 스트리밍.
 
 dartlab ai 명령으로 실행:
     dartlab ai              # http://localhost:8400
@@ -11,6 +11,7 @@ import asyncio
 import logging
 import os
 from contextlib import asynccontextmanager, suppress
+from typing import Any, cast
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -36,7 +37,8 @@ from .api import (
     room_router,
 )
 from .embed import router as embed_router
-from .runtime import ensurePort, runServer  # noqa: F401 — re-exported
+from .runtime import ensurePort, runServer  # noqa: F401, re-exported
+from .security import AdminBoundaryMiddleware, RequestBudgetMiddleware
 from .services.aiProfile import shouldPreloadOllama as _should_preload_ollama
 from .web import registerSpa
 
@@ -53,7 +55,7 @@ async def _preloadOllamaOnce() -> None:
         from dartlab.ai.providers import createProvider
 
         config = getConfig("ollama")
-        provider = createProvider(config)
+        provider = cast(Any, createProvider(config))
     except (ImportError, OSError, RuntimeError, ValueError) as exc:
         logger.debug("Ollama preload 준비 실패", exc_info=exc)
         return
@@ -78,7 +80,7 @@ async def _prewarmOauthCodexModels() -> None:
     가 ~40s 블락하던 문제. lifespan 에서 background 로 미리 깨워두면 사용자 첫
     호출은 cache hit. 실패해도 무관 (UI 는 fallback 사용).
     """
-    await asyncio.sleep(1)  # uvicorn startup 완료 후 시작 — 첫 화면 fetch 와 race 안 함.
+    await asyncio.sleep(1)  # uvicorn startup 완료 후 시작. 첫 화면 fetch 와 race 안 함.
     try:
         from dartlab.ai.providers.oauthCodex import availableModels
 
@@ -104,10 +106,10 @@ async def _prewarmVizCatalog() -> None:
 async def lifespan(_: FastAPI):
     """앱 수명주기 관리 -- Ollama preload, oauth-codex models prewarm, 룸 생성/정리."""
     # oauth-codex `/codex/models` cold HTTP ~43s 가 UI 의 "설정 필요" 1 분 체류 원인.
-    # background thread 로 미리 깨움 — 사용자 첫 호출은 cache hit (즉시 응답).
+    # background thread 로 미리 깨움. 사용자 첫 호출은 cache hit (즉시 응답).
     # 회귀 가드: 과거 secret_store prewarm 은 잘못된 DPAPI 가설 기반이라 제거됨.
     # 이번 prewarm 은 측정 기반 (cold availableModels() = 43s 검증).
-    # prewarm task 는 default OFF — 회귀: 첫 catalog 응답 후 prewarm task 가 main
+    # prewarm task 는 default OFF. 회귀: 첫 catalog 응답 후 prewarm task 가 main
     # event loop 점거 → 모든 후속 API hang → 사용자 화면 무한 spinner. 정공 fix 가
     # 들어오기 전까지 opt-in (DARTLAB_PREWARM=1) 으로만 활성.
     _doPrewarm = os.environ.get("DARTLAB_PREWARM", "").strip().lower() in {"1", "true", "yes"}
@@ -151,7 +153,7 @@ async def lifespan(_: FastAPI):
 
 
 # dartlab logger 초기화 후 tool 진행 라인을 SSE 로 흘리기 위한 capture 설치.
-# idempotent — 여러 worker / reload 시 안전.
+# idempotent. 여러 worker / reload 시 안전.
 _bootstrapLogger()
 installProgressCapture()
 
@@ -165,9 +167,8 @@ def _corsOrigins() -> list[str]:
         if raw == "*":
             return ["*"]
         return [item.strip() for item in raw.split(",") if item.strip()]
-    # devtunnel 모드 등 외부 접근 시 CORS가 막혀서 fetch hang — 터널 모드면 전체 허용
-    if os.environ.get("DARTLAB_CHANNEL") == "1" or os.environ.get("DARTLAB_TUNNEL") == "1":
-        return ["*"]
+    # 터널과 배포 UI도 같은 서버 origin을 쓰므로 CORS wildcard가 필요하지 않다.
+    # 분리 배포한 frontend만 DARTLAB_CORS_ORIGINS로 정확한 origin을 명시한다.
     return [
         "http://127.0.0.1:8400",
         "http://localhost:8400",
@@ -181,7 +182,7 @@ class _SecurityHeadersMiddleware:
 
     회귀 가드: 옛 BaseHTTPMiddleware 구현이 StreamingResponse 의 chunk 를 buffer
     → /api/viz/layout-stream NDJSON 첫 chunk 가 *모든* 카드 build 완료 후 도착
-    → 사용자 화면 cold start 1~3 분 무한 spinner. pure ASGI 로 재작성 — http.response.start
+    → 사용자 화면 cold start 1~3 분 무한 spinner. pure ASGI 로 재작성. http.response.start
     message 만 가로채 헤더 추가, body chunk 는 그대로 통과 (streaming 보존).
     """
 
@@ -211,11 +212,13 @@ class _SecurityHeadersMiddleware:
 
 
 app.add_middleware(_SecurityHeadersMiddleware)
+app.add_middleware(RequestBudgetMiddleware)
+app.add_middleware(AdminBoundaryMiddleware)
 app.add_middleware(GZipMiddleware, minimum_size=500)
 
 _origins = _corsOrigins()
 if _origins == ["*"]:
-    logger.warning("CORS allow_origins='*' — 프로덕션에서는 명시적 origin을 설정하세요")
+    logger.warning("CORS allow_origins='*'. 프로덕션에서는 명시적 origin을 설정하세요")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_origins,
@@ -246,6 +249,6 @@ if os.environ.get("SPACE_ID") or os.environ.get("DARTLAB_MCP_HTTP") == "1":
         app.mount("/mcp", _mcp_sse)
         logger.info("MCP SSE 엔드포인트 활성화: /mcp/sse")
     except ImportError:
-        logger.info("MCP SDK 미설치 — MCP SSE 비활성")
+        logger.info("MCP SDK 미설치. MCP SSE 비활성")
 
 registerSpa(app)

@@ -5,7 +5,7 @@
 - CallToolResult.structuredContent — RunPython 의 ref dict 직접 노출
 - prompts/list + prompts/get — Skill OS recipe 카테고리 노출
 - logging/setLevel — 클라이언트가 dartlab logger 동적 레벨 조정
-- alias 회귀 가드 — skill_search → ReadSkill 정규화 여전히 작동
+- advertise 경계: alias/내부 도구 직접 호출 거부
 """
 
 from __future__ import annotations
@@ -66,9 +66,9 @@ async def _run_probe() -> dict:
             run_result = await session.call_tool("RunPython", {"code": "emit_result(values={'sanity': 1})"})
             out["structured_content"] = run_result.structuredContent
 
-            # 3. alias 회귀 가드
+            # 3. tools/list 밖 legacy alias 거부
             alias_result = await session.call_tool("skill_search", {"query": "테스트"})
-            out["alias_dispatch_ok"] = alias_result.structuredContent is not None and not alias_result.isError
+            out["alias_error"] = (alias_result.structuredContent or {}).get("error")
 
             # 4. prompts/list — recipe 카테고리 노출
             prompts = await session.list_prompts()
@@ -89,24 +89,20 @@ async def _run_probe() -> dict:
             except Exception as exc:
                 out["set_level_error"] = str(exc)
 
-            # 7. 분석 추론 도구 3 종 (S3) — registry SSOT 경유 호출.
+            # 7. AI 내부 도구는 registry 에 있어도 MCP advertise 밖이면 실행 차단.
             grounding = await session.call_tool(
                 "GroundingCheck",
                 {"answer": "삼성전자 ROE 는 12.3% 수준이다.", "refs": []},
             )
             sc = grounding.structuredContent or {}
-            out["grounding_dispatch_ok"] = bool(sc)
-            # materialNumber 는 ToolResult.data 안 — structuredContent.data.materialNumber.
-            out["grounding_material_number"] = (sc.get("data") or {}).get("materialNumber")
+            out["grounding_error"] = sc.get("error")
 
-            # 7b. RequestUserInput (S4) — 표준 ClientSession 은 elicit handler 없음 →
-            # 서버가 fallback dict 반환해야 함. dispatch 자체 회귀 가드.
+            # 7b. RequestUserInput 도 tools/list 밖이면 elicit 전에 차단.
             elicit = await session.call_tool(
                 "RequestUserInput",
                 {"message": "회사 선택", "fields": [{"name": "company", "enum": ["005930"]}]},
             )
             elicit_sc = elicit.structuredContent or {}
-            out["elicit_dispatch_returned"] = bool(elicit_sc)
             out["elicit_error_kind"] = elicit_sc.get("error")
 
             # 8. progress notification — 2.5 s sleep + progress_callback 으로 progress emit 카운트.
@@ -127,10 +123,6 @@ async def _run_probe() -> dict:
     return out
 
 
-@pytest.mark.xfail(
-    reason="recipes.meta.report.dailyMorningNote 옛 expected — skill artifact cleanup 별 트랙 (sections refactor 외)",
-    strict=False,
-)
 def test_mcp_strong_annotations_and_structured_and_prompts():
     """0.11 — ToolAnnotations + structuredContent + prompts + setLevel 모두 e2e 동작."""
     _ensure_proactor_loop()
@@ -152,8 +144,8 @@ def test_mcp_strong_annotations_and_structured_and_prompts():
     refs = sc.get("refs") or []
     assert any(r.get("kind") == "executionRef" for r in refs), "executionRef 가 dict 로 노출되어야 함"
 
-    # ── alias 회귀 가드 ──
-    assert out["alias_dispatch_ok"], "skill_search alias 가 ReadSkill 로 정규화 안 됨"
+    # ── advertise 경계 ──
+    assert out["alias_error"] == "tool_not_advertised"
 
     # ── prompts ──
     assert len(out["prompts"]) >= 10, f"recipe 카테고리 prompts ≥ 10 노출 (실제 {len(out['prompts'])})"
@@ -166,22 +158,14 @@ def test_mcp_strong_annotations_and_structured_and_prompts():
     # ── logging/setLevel ──
     assert out.get("set_level_ok") is True, f"setLevel 실패: {out.get('set_level_error')}"
 
-    # ── 분석 추론 도구 2 종 (S3) ──
-    assert "LookAheadGuard" in ann, "LookAheadGuard 가 tools/list 에 노출"
-    assert "GroundingCheck" in ann, "GroundingCheck 가 tools/list 에 노출"
-    assert ann["LookAheadGuard"]["readOnly"] is True, "LookAheadGuard 는 read tool"
-    assert out.get("grounding_dispatch_ok"), "GroundingCheck 호출 ok + structuredContent"
-    assert out.get("grounding_material_number") is True, "12.3% 수치는 material number 분류"
+    # ── AI 내부 도구는 MCP 외부에 노출하지 않음 ──
+    assert "LookAheadGuard" not in ann
+    assert "GroundingCheck" not in ann
+    assert out.get("grounding_error") == "tool_not_advertised"
 
-    # ── RequestUserInput (S4) — elicit dispatch ──
-    assert "RequestUserInput" in ann, "RequestUserInput 가 tools/list 에 노출"
-    assert out.get("elicit_dispatch_returned"), "RequestUserInput 호출이 응답 반환 (handler dispatch ok)"
-    # 표준 ClientSession 은 elicit handler 없음 → 서버가 fallback 반환.
-    assert out.get("elicit_error_kind") in {
-        "elicit_unsupported_or_failed",
-        "elicit_decline",
-        "elicit_cancel",
-    }, f"elicit fallback 또는 사용자 거부 기대 (실제 {out.get('elicit_error_kind')})"
+    # ── RequestUserInput 도 동일 SSOT 경계 ──
+    assert "RequestUserInput" not in ann
+    assert out.get("elicit_error_kind") == "tool_not_advertised"
 
     # ── progress notification ──
     # 2.5 s sleep + 임계 1 s + 간격 0.4 s → 약 4 회 emit 기대 (1.2/1.6/2.0/2.4 s 부근).

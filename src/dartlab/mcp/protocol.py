@@ -15,7 +15,7 @@ DartLab MCP의 기본 표면은 ask가 실행하는 Ask Workbench와 그 아래 
 ## 핵심 데이터 작업대 도구 (advertised 전체는 tools/list 참조)
 - ask: DartLab 공식 답변 진입점. 기본은 chat-native 자율 도구 호출이고, mode="analyze" 를 명시하면 작업대 경로로 간다.
 - ReadSkill: Skill OS 검색 + frontmatter (whenToUse, capabilityRefs, requiredEvidence) + 본문.
-- ReadCapability: dartlab 공개 API/docstring 검색.
+- ReadCapability: dartlab 공개 API/docstring 검색. 결과의 `engineCallable=true`인 apiRef만 EngineCall에 사용.
 - EngineCall: 단일 capability 1 회 호출 (Company.panel, scan, macro 등). JSON `{apiRef, args}` 양식.
   allowlist 된 capabilities 만 실행되어 RunPython 보다 안전·간단. 결과는 자동 tableRef/valueRef
   발급. 단일 호출 시 본 도구 우선, RunPython 은 다단 가공·계산만.
@@ -36,7 +36,8 @@ DartLab MCP의 기본 표면은 ask가 실행하는 Ask Workbench와 그 아래 
 1. **첫 진입 권장** — 작업 모호하거나 처음 만나는 도메인이면 `ReadSkill(query="start.dartlabSkillOs")` 먼저 호출.
    분류 노드가 5 카테고리 (start/runtime/operation/engines/recipes) 와 작업 결을 먼저 매핑한다.
 2. ask로 전체 답변 루프 실행 (단순 질문은 이걸로 끝).
-3. 작업대 직접 사용 시: ReadSkill 로 절차 → ReadCapability 로 API → RunPython 으로 실행 → 답변 + ref.
+3. 작업대 직접 사용 시: ReadSkill 로 절차 → ReadCapability 로 API와 `engineCallable` 확인 →
+   단일 호출은 EngineCall, 다단 결합·가공만 RunPython → 답변 + ref.
 4. 데이터셋 스키마·기간·행 수·최신 기준시점이 필요하면 RunPython 안에서 dartlab.* 직접 호출로 확인한다.
 5. 후보·상위·랭킹 답변은 bullet 나열로 끝내지 않고 입력/유니버스, 필터, 계산식/지표, 결과와 evidence table을 함께 낸다.
 
@@ -90,6 +91,11 @@ def mcpAdvertisedToolNames() -> tuple[str, ...]:
     return ("ask", *CANONICAL_V2)
 
 
+def isMcpAdvertisedTool(name: str) -> bool:
+    """MCP ``tools/call`` 에서 실행 가능한 이름인지 advertise SSOT로 판정한다."""
+    return str(name) in mcpAdvertisedToolNames()
+
+
 def askWorkbenchToolSpecs() -> list[dict[str, Any]]:
     """Ask Workbench registry 에서 MCP 노출 도구 spec 을 만든다.
 
@@ -118,9 +124,13 @@ def askWorkbenchToolSpecs() -> list[dict[str, Any]]:
         "idempotentHint": False,
         "openWorldHint": False,
     }
-    # PR-M1 — mcpAdvertisedToolNames SSOT 추종. registry 에 누락된 이름은 silently skip.
+    # 광고와 실행 schema 사이 drift 는 서버 시작 전에 즉시 드러나야 한다. 누락을
+    # silently skip 하면 tools/list 와 call allowlist 가 서로 다른 표면이 된다.
     advertised = mcpAdvertisedToolNames()
-    return [specs[name] for name in advertised if name in specs]
+    missing = [name for name in advertised if name not in specs]
+    if missing:
+        raise KeyError(f"MCP advertised tool spec 누락: {missing}")
+    return [specs[name] for name in advertised]
 
 
 def executeAskWorkbenchTool(name: str, args: dict[str, Any]) -> dict[str, Any]:
@@ -246,7 +256,150 @@ def executeWorkspaceAgentTool(name: str, args: dict[str, Any]) -> dict[str, Any]
     Raises:
         RuntimeError: 하위 tool 실행 중 예외가 전파될 때.
     """
-    return executeAskWorkbenchTool(name, args)
+    if not isMcpAdvertisedTool(name):
+        return boundMcpPayload(
+            {
+                "ok": False,
+                "summary": f"MCP tools/list 에 advertise 되지 않은 도구는 실행할 수 없습니다: {name}",
+                "refs": [],
+                "data": {"advertisedTools": list(mcpAdvertisedToolNames())},
+                "error": "tool_not_advertised",
+            }
+        )
+    return boundMcpPayload(executeAskWorkbenchTool(name, args))
+
+
+_MCP_DEFAULT_MAX_PAYLOAD_BYTES = 256 * 1024
+_MCP_MIN_MAX_PAYLOAD_BYTES = 4 * 1024
+_MCP_CONTRACT_KEYS = (
+    "ok",
+    "summary",
+    "error",
+    "status",
+    "quality",
+    "gaps",
+    "coverage",
+    "universeCoverage",
+    "provenance",
+    "lineageRefs",
+    "sourceRefs",
+    "evidenceRefs",
+    "executionReceipts",
+    "asOf",
+    "latestAsOf",
+    "requestedAsOf",
+    "dataAsOf",
+    "period",
+    "knowledgeBoundary",
+    "snapshotId",
+    "dataSnapshotId",
+    "contractHash",
+    "dataContractHash",
+    "continuation",
+    "nodes",
+    "refs",
+    "data",
+)
+
+
+def mcpMaxPayloadBytes() -> int:
+    """MCP structured payload 상한을 반환한다."""
+    import os
+
+    raw = os.environ.get("DARTLAB_MCP_MAX_PAYLOAD_BYTES")
+    try:
+        return max(_MCP_MIN_MAX_PAYLOAD_BYTES, int(raw)) if raw else _MCP_DEFAULT_MAX_PAYLOAD_BYTES
+    except (TypeError, ValueError):
+        return _MCP_DEFAULT_MAX_PAYLOAD_BYTES
+
+
+def _mcpPayloadSize(payload: Any) -> int:
+    return len(json.dumps(payload, ensure_ascii=False, default=str, separators=(",", ":")).encode("utf-8"))
+
+
+def _compactMcpValue(value: Any, *, limit: int, maxString: int, maxDepth: int, depth: int = 0) -> Any:
+    """계약 키를 먼저 보존하며 JSON payload를 결정론적으로 축약한다."""
+    if depth >= maxDepth:
+        return {"previewTruncated": True, "reason": "mcp_max_depth"}
+    if isinstance(value, str):
+        if len(value) <= maxString:
+            return value
+        return value[: max(0, maxString - 3)].rstrip() + "..."
+    if isinstance(value, dict):
+        priority = [key for key in _MCP_CONTRACT_KEYS if key in value]
+        remaining = [key for key in value if key not in priority]
+        selected = [*priority, *remaining[:limit]]
+        return {
+            str(key): _compactMcpValue(value[key], limit=limit, maxString=maxString, maxDepth=maxDepth, depth=depth + 1)
+            for key in selected
+        }
+    if isinstance(value, list | tuple):
+        return [
+            _compactMcpValue(item, limit=limit, maxString=maxString, maxDepth=maxDepth, depth=depth + 1)
+            for item in value[:limit]
+        ]
+    return value
+
+
+def boundMcpPayload(payload: dict[str, Any], *, maxBytes: int | None = None) -> dict[str, Any]:
+    """MCP payload를 명시적 예산 안에 두고 status/gap/provenance/time 계약을 보존한다.
+
+    작은 결과는 byte-for-byte 동일한 dict를 반환한다. 상한을 넘을 때만 collection/string
+    preview를 단계적으로 줄이고 ``payloadBudget.gap`` 으로 손실을 공개한다.
+    """
+    requestedLimit = mcpMaxPayloadBytes() if maxBytes is None else int(maxBytes)
+    limit = max(_MCP_MIN_MAX_PAYLOAD_BYTES, requestedLimit)
+    originalBytes = _mcpPayloadSize(payload)
+    if originalBytes <= limit:
+        return payload
+
+    levels = ((32, 4000, 12), (12, 1200, 10), (4, 400, 8), (1, 160, 6))
+    for limit, maxString, maxDepth in levels:
+        candidate = _compactMcpValue(
+            payload,
+            limit=limit,
+            maxString=maxString,
+            maxDepth=maxDepth,
+        )
+        if not isinstance(candidate, dict):
+            candidate = {"data": candidate}
+        candidate["payloadBudget"] = {
+            "maxBytes": limit,
+            "originalBytes": originalBytes,
+            "truncated": True,
+            "gap": {
+                "id": "mcp.payload.truncated",
+                "status": "partial",
+                "reason": "structuredContent가 MCP payload 예산을 초과해 preview로 축약되었습니다.",
+            },
+        }
+        returnedBytes = _mcpPayloadSize(candidate)
+        candidate["payloadBudget"]["returnedBytes"] = returnedBytes
+        returnedBytes = _mcpPayloadSize(candidate)
+        candidate["payloadBudget"]["returnedBytes"] = returnedBytes
+        if returnedBytes <= limit:
+            return candidate
+
+    # 최소 상한(4 KiB)에서도 항상 직렬화 가능한 마지막 봉투를 보장한다.
+    fallback = {
+        "ok": bool(payload.get("ok", False)),
+        "summary": _compactMcpValue(str(payload.get("summary") or ""), limit=1, maxString=160, maxDepth=2),
+        "refs": [],
+        "data": {},
+        "error": payload.get("error"),
+        "payloadBudget": {
+            "maxBytes": limit,
+            "originalBytes": originalBytes,
+            "truncated": True,
+            "gap": {
+                "id": "mcp.payload.truncated",
+                "status": "partial",
+                "reason": "structuredContent가 MCP payload 예산을 초과해 최소 봉투만 반환되었습니다.",
+            },
+        },
+    }
+    fallback["payloadBudget"]["returnedBytes"] = _mcpPayloadSize(fallback)
+    return fallback
 
 
 def recipeSkillsForPrompts() -> list[Any]:

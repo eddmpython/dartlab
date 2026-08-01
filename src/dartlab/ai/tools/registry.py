@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 import inspect
-from typing import Any, Callable
+from typing import Any, Callable, cast
 
 from .compileFinancialDashboard import compileFinancialDashboard
 from .compileVisual import compileVisual
@@ -93,7 +93,7 @@ _SPECS: dict[str, ToolSpec] = {
     ),
     "ReadCapability": ToolSpec(
         "ReadCapability",
-        "DartLab 공개 API/docstring 카탈로그 검색. 어떤 capability(EngineCall 의 apiRef) 가 있는지 확인할 때.",
+        "DartLab 공개 API/docstring 카탈로그 검색. 결과의 engineCallable=true인 apiRef만 EngineCall로 실행하고, false는 문서 참조로만 사용.",
         {
             "type": "object",
             "properties": {"query": {"type": "string"}, "limit": {"type": "integer"}},
@@ -107,13 +107,13 @@ _SPECS: dict[str, ToolSpec] = {
     # ── 데이터 호출 — 실행 도구 ──
     "EngineCall": ToolSpec(
         "EngineCall",
-        "DartLab 공개 capability 1 회 호출 (Company.panel, scan, ratio, macro 등). 정형 ref 반환. **dartlab 데이터는 무조건 이것 우선** — RunPython 으로 dartlab API 를 단일 호출하는 패턴 금지. RunPython 은 EngineCall 결과의 다단 결합·랭킹·Polars 가공이 필요할 때만. **args 는 항상 dict 로 필수** — `{}` 라도 명시 (인자 0 개 capability 일 때만 빈 dict).",
+        "Skill OS가 선언한 DartLab canonical capabilityRef 1 회 호출 (Company.panel, scan, gather.price, dataHub.query 등). 정형 ref 반환. capability 검색 결과라도 실행 계약 밖의 Company 하위 멤버는 거부한다. **dartlab 데이터는 무조건 이것 우선**. RunPython 으로 dartlab API 를 단일 호출하는 패턴 금지. RunPython 은 EngineCall 결과의 다단 결합·랭킹·Polars 가공이 필요할 때만. **args 는 항상 dict 로 필수**. `{}` 라도 명시 (인자 0 개 capability 일 때만 빈 dict).",
         {
             "type": "object",
             "properties": {
                 "apiRef": {
                     "type": "string",
-                    "description": "API 이름만. **인자는 절대 합쳐 쓰지 마라** (X: 'Company.panel TSLA IS freq=Q'). 예: 'Company.panel', 'scan', 'macro.kospi', 'dartlab.scan'",
+                    "description": "canonical capabilityRef만. **인자는 절대 합쳐 쓰지 마라** (X: 'Company.panel TSLA IS freq=Q'). 예: 'Company.panel', 'scan', 'gather.price', 'dataHub.query'",
                 },
                 "args": {
                     "type": "object",
@@ -811,18 +811,19 @@ def toolSpecs(provider: Any = None) -> list[dict[str, Any]]:
         return [spec.toDict() for spec in _SPECS.values()]
 
     if isinstance(provider, str):
-        from dartlab.ai.providers.catalog import PROVIDER_CLASSES
+        from dartlab.ai.providers.catalog import availableProviders, createProvider
+        from dartlab.ai.settings.types import LLMConfig
 
-        cls = PROVIDER_CLASSES.get(provider)
-        if cls is None:
+        if provider not in availableProviders():
             raise ValueError(f"Unknown provider: {provider!r}")
-        from dartlab.ai.providers.base import ProviderConfig
-
-        provider_inst = cls(config=ProviderConfig(provider=provider))
+        provider_inst = createProvider(LLMConfig(provider=provider))
     else:
         provider_inst = provider
 
-    return [provider_inst.toolSchema(spec) for spec in _SPECS.values()]
+    schemaBuilder = getattr(provider_inst, "toolSchema", None)
+    if not callable(schemaBuilder):
+        raise ValueError(f"Provider does not expose tool schema conversion: {provider!r}")
+    return [cast(dict[str, Any], schemaBuilder(spec)) for spec in _SPECS.values()]
 
 
 def listToolNames() -> tuple[str, ...]:

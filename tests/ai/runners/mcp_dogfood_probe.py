@@ -1,4 +1,4 @@
-"""dartlab MCP 도그푸드 probe — 외부 클라이언트 입장에서 11 canonical 도구 직접 사용.
+"""dartlab MCP 도그푸드 probe: 외부 클라이언트의 advertise/실행 경계 검증.
 
 실행 ::
     uv run python -X utf8 tests/ai/runners/mcp_dogfood_probe.py
@@ -13,10 +13,10 @@ LookAheadGuard 의 Company(market=...) 같은 외부 의존 회귀를 못 잡는
   3. RunPython sanity
   4. RunPython 실제 dartlab.Company.panel 호출
   5. S2 sandbox os.system 차단
-  6. S3 GroundingCheck 답변 검증
-  7. S3 LookAheadGuard 실호출 (asOf 강제)
-  7b. LookAheadGuard asOf 누락 거부
-  8. S4 RequestUserInput fallback
+  6. 비광고 GroundingCheck 실행 차단
+  7. 비광고 LookAheadGuard 실행 차단
+  7b. 비광고 호출은 인자와 무관하게 동일 차단
+  8. 비광고 RequestUserInput elicit 전 차단
   9. S1 progress notification (1 s 임계 + 0.5 s 간격)
   10. prompts/list
 
@@ -146,41 +146,39 @@ async def main():
             else:
                 note("FAIL", f"sandbox 차단 안 됨: ok={sc.get('ok')}")
 
-            # ── 6. S3 GroundingCheck — 실 답변 검산 ──────────────────────
-            print("\n## 6. GroundingCheck — 답변 검증")
+            # 6. 내부 GroundingCheck: advertise 밖 실행 차단
+            print("\n## 6. GroundingCheck: 비광고 실행 차단")
             sample = "삼성전자 ROE 는 12.3% 다. 3 분기 연속 OPM > 15% 유지."
             res = await s.call_tool("GroundingCheck", {"answer": sample, "refs": []})
             sc = res.structuredContent or {}
-            data = sc.get("data") or {}
-            print(f"  materialNumber={data.get('materialNumber')}, grounded={data.get('grounded')}")
-            if data.get("materialNumber") is True and data.get("grounded") is False:
-                note("OK", "수치 claim 잡고 ref 없음 → grounded=False (정확)")
+            if sc.get("error") == "tool_not_advertised":
+                note("OK", "tools/list 밖 GroundingCheck 직접 호출 차단")
+            else:
+                note("FAIL", f"비광고 도구가 실행됨: {_short(sc)}")
 
-            # ── 7. S3 LookAheadGuard — asOf 강제 ──────────────────────
-            print("\n## 7. LookAheadGuard — asOf 강제 (실호출)")
+            # 7. 내부 LookAheadGuard: advertise 밖 실행 차단
+            print("\n## 7. LookAheadGuard: 비광고 실행 차단")
             try:
                 res = await s.call_tool(
                     "LookAheadGuard",
                     {"stockCode": "005930", "asOf": "2024Q4", "topic": "BS"},
                 )
                 sc = res.structuredContent or {}
-                if sc.get("ok"):
-                    rows = sc.get("data", {}).get("rowCount", 0)
-                    note("OK", f"asOf=2024Q4 BS load 성공 — {rows} rows")
+                if sc.get("error") == "tool_not_advertised":
+                    note("OK", "tools/list 밖 LookAheadGuard 직접 호출 차단")
                 else:
-                    # 실 데이터 없거나 provider 미설정이면 graceful fail.
-                    note("MEH", f"호출 자체 dispatch ok 하지만 결과 fail: {_short(sc.get('summary'))}")
+                    note("FAIL", f"비광고 도구가 실행됨: {_short(sc)}")
             except Exception as e:
                 note("FAIL", f"LookAheadGuard exception: {e}")
 
-            print("\n## 7b. LookAheadGuard — asOf 누락 거부 검증")
+            print("\n## 7b. LookAheadGuard: 인자와 무관한 동일 경계")
             res = await s.call_tool("LookAheadGuard", {"stockCode": "005930", "asOf": ""})
             sc = res.structuredContent or {}
-            if not sc.get("ok") and sc.get("error") == "lookahead_guard_missing_asof":
-                note("OK", "asOf 누락을 명시 에러 코드로 거부")
+            if not sc.get("ok") and sc.get("error") == "tool_not_advertised":
+                note("OK", "비광고 호출은 asOf 검증 전에 동일하게 차단")
 
-            # ── 8. S4 RequestUserInput — fallback ───────────────────────
-            print("\n## 8. RequestUserInput — 표준 ClientSession 의 fallback")
+            # 8. 내부 RequestUserInput: elicit 전 실행 차단
+            print("\n## 8. RequestUserInput: 비광고 실행 차단")
             res = await s.call_tool(
                 "RequestUserInput",
                 {
@@ -190,10 +188,10 @@ async def main():
             )
             sc = res.structuredContent or {}
             err = sc.get("error")
-            if err in {"elicit_unsupported_or_failed", "elicit_decline", "elicit_cancel"}:
-                note("OK", f"클라이언트 elicit 미지원 → server 가 fallback 깔끔히 반환 ({err})")
+            if err == "tool_not_advertised":
+                note("OK", "tools/list 밖 RequestUserInput은 elicit 전에 차단")
             else:
-                note("MEH", f"unexpected: {err}")
+                note("FAIL", f"비광고 도구가 실행됨: {err}")
 
             # ── 10. S1 progress — 2 s sleep RunPython ────────────────────
             print("\n## 9. S1 progress — 2 s sleep RunPython")

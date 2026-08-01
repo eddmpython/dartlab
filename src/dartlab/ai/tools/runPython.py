@@ -1,8 +1,9 @@
 """Constrained Python execution tool for DartLab analysis.
 
 안전 장치:
-- 실행 시간 한도: env DARTLAB_RUNPYTHON_TIMEOUT_SEC (기본 60). 별 thread 에서 실행하고
-  한도 초과면 결과 무시 (interpreter 강제 중단은 하지 않으므로 background 누수는 가능).
+- 실행 시간 한도: env DARTLAB_RUNPYTHON_TIMEOUT_SEC (기본 60). 별 thread에서 실행하고
+  사용자 Python bytecode는 trace deadline으로 중단한다. 네이티브 확장 호출은 반환을 강제할 수 없다.
+- import, built-in, 파일, 환경 접근은 runpythonGuard의 fail-closed allowlist를 적용한다.
 - emit_result 누락 안내: emitted 가 비면 GATE 가 차단할 것이라는 hint 메시지.
 """
 
@@ -12,6 +13,7 @@ import json
 import logging
 import os
 import re
+import sys
 import textwrap
 import threading
 import time
@@ -22,13 +24,18 @@ from typing import Any
 
 from dartlab.ai.contracts import Ref
 
+from .engineCall import _jsonableResult
 from .formatting import shortText
-from .runpythonGuard import _assertSafeAst, _safeOpenFactory
+from .runpythonGuard import _assertSafeAst, _safeBuiltins
 from .types import ToolResult
 
 logger = logging.getLogger(__name__)
 
 _TIMEOUT_SEC = float(os.environ.get("DARTLAB_RUNPYTHON_TIMEOUT_SEC", "60"))
+_OUTPUT_STREAM_BYTES = 64 * 1024
+_TABLE_REF_BYTES = 32 * 1024
+_VALUE_REF_BYTES = 4 * 1024
+_REF_ITEM_CAP = 50
 
 
 _BLOCK_KEYWORDS = (
@@ -44,6 +51,37 @@ _BLOCK_KEYWORDS = (
     "finally:",
     "with ",
 )
+
+
+class _BoundedStringIO(StringIO):
+    """stdout/stderr가 메모리를 무제한 점유하지 않도록 UTF-8 byte 상한을 둔다."""
+
+    def __init__(self, maxBytes: int) -> None:
+        super().__init__()
+        self.maxBytes = maxBytes
+        self.usedBytes = 0
+        self.truncated = False
+
+    def write(self, value: str) -> int:
+        """출력 예산 안에서 문자열을 기록하고 원래 길이를 반환한다."""
+        text = str(value)
+        encoded = text.encode("utf-8")
+        remaining = max(0, self.maxBytes - self.usedBytes)
+        if len(encoded) <= remaining:
+            self.usedBytes += len(encoded)
+            super().write(text)
+            return len(text)
+        if remaining:
+            fragment = encoded[:remaining].decode("utf-8", errors="ignore")
+            self.usedBytes += len(fragment.encode("utf-8"))
+            super().write(fragment)
+        self.truncated = True
+        return len(text)
+
+    def getvalue(self) -> str:
+        """누적 출력과 필요한 경우 잘림 표지를 반환한다."""
+        value = super().getvalue()
+        return value + ("\n...[output truncated]" if self.truncated else "")
 
 
 def _tryUnindentFallback(code: str) -> str | None:
@@ -109,40 +147,26 @@ def _diagnoseErrorHint(tracebackText: str) -> str:
 
 def runPython(code: str, *, runId: str | None = None) -> ToolResult:
     """sandboxed Python 실행 — stdout/stderr 캡처 + emit_result 결과 수집."""
-    stdout = StringIO()
-    stderr = StringIO()
+    stdout = _BoundedStringIO(_OUTPUT_STREAM_BYTES)
+    stderr = _BoundedStringIO(_OUTPUT_STREAM_BYTES)
     emitted: dict[str, Any] = {}
 
-    def _coerceValue(value: Any) -> Any:
-        """JSON 가능한 형태로 재귀 변환. polars DataFrame/Series, dict, list 안까지 walk."""
-        try:
-            import polars as _pl
-
-            if isinstance(value, _pl.DataFrame):
-                return [{k: _coerceValue(v) for k, v in row.items()} for row in value.to_dicts()]
-            if isinstance(value, _pl.Series):
-                return [_coerceValue(v) for v in value.to_list()]
-        except ImportError:
-            pass
-        if isinstance(value, dict):
-            return {k: _coerceValue(v) for k, v in value.items()}
-        if isinstance(value, (list, tuple)):
-            return [_coerceValue(v) for v in value]
-        return value
-
     def emitResult(*args: Any, **kwargs: Any) -> None:
-        """Result emitter — keyword args 권장. positional dict 도 dict 로 unpack 해서 받음."""
-        payload: dict[str, Any] = {}
+        """Result emitter. 전체 payload를 EngineCall과 같은 128KiB 예산으로 제한한다."""
+        rawPayload: dict[str, Any] = {}
         for arg in args:
-            arg = _coerceValue(arg)
             if isinstance(arg, dict):
-                payload.update(arg)
+                rawPayload.update(arg)
             else:
-                payload.setdefault("values", {})
-                if isinstance(payload["values"], dict):
-                    payload["values"][f"value_{len(payload['values'])}"] = arg
+                rawPayload.setdefault("values", {})
+                if isinstance(rawPayload["values"], dict):
+                    rawPayload["values"][f"value_{len(rawPayload['values'])}"] = arg
         for k, v in kwargs.items():
-            payload[k] = _coerceValue(v)
+            rawPayload[k] = v
+        payload = _jsonableResult(rawPayload)
+        if not isinstance(payload, dict):
+            payload = {"result": payload}
+        emitted.clear()
         emitted.update(payload)
         print("DARTLAB_RESULT_JSON=" + json.dumps(payload, ensure_ascii=False, default=str))
 
@@ -150,10 +174,18 @@ def runPython(code: str, *, runId: str | None = None) -> ToolResult:
     # 차단 호출 (os.system / subprocess.run 등) 은 exec 직전 AST 검사로 거부.
     globals_dict: dict[str, Any] = {
         "emit_result": emitResult,
-        "__builtins__": __builtins__,
-        "open": _safeOpenFactory(),
+        "__builtins__": _safeBuiltins(),
     }
     container: dict[str, Any] = {}
+    deadline = time.monotonic() + _TIMEOUT_SEC
+
+    def _timeoutTrace(frame: Any, _event: str, _arg: Any) -> Any:
+        """사용자 Python loop가 timeout 뒤 daemon thread로 남지 않게 중단한다."""
+        if frame.f_code.co_filename != "<string>":
+            return None
+        if time.monotonic() >= deadline:
+            raise TimeoutError(f"RunPython execution exceeded {_TIMEOUT_SEC:.0f}s")
+        return _timeoutTrace
 
     def _runner() -> None:
         try:
@@ -183,22 +215,37 @@ def runPython(code: str, *, runId: str | None = None) -> ToolResult:
             # AST sandbox guard — destructive shell/import 호출 거부.
             _assertSafeAst(normalized_code)
             with redirect_stdout(stdout), redirect_stderr(stderr):
+                sys.settrace(_timeoutTrace)
                 try:
-                    exec(normalized_code, globals_dict, globals_dict)  # noqa: S102
-                except IndentationError:
-                    fallback = _tryUnindentFallback(normalized_code)
-                    if fallback is None:
-                        raise
-                    _assertSafeAst(fallback)
-                    exec(fallback, globals_dict, globals_dict)  # noqa: S102
+                    try:
+                        exec(normalized_code, globals_dict, globals_dict)  # noqa: S102
+                    except IndentationError:
+                        fallback = _tryUnindentFallback(normalized_code)
+                        if fallback is None:
+                            raise
+                        _assertSafeAst(fallback)
+                        exec(fallback, globals_dict, globals_dict)  # noqa: S102
+                finally:
+                    sys.settrace(None)
+        except TimeoutError:
+            logger.warning("run_python timed out (runId=%s)", runId or "local", exc_info=True)
+            container["timeout"] = True
         except Exception:  # noqa: BLE001
+            logger.debug("run_python captured execution failure", exc_info=True)
             container["error"] = traceback.format_exc()
 
     start = time.monotonic()
-    thread = threading.Thread(target=_runner, daemon=True)
+    threadName = f"dartlab-runpython-{runId or 'local'}"
+    thread = threading.Thread(target=_runner, daemon=True, name=threadName)
     thread.start()
     thread.join(timeout=_TIMEOUT_SEC)
-    if thread.is_alive():
+    timedOut = thread.is_alive()
+    if timedOut:
+        # Python bytecode loop는 trace deadline에서 곧 종료된다. 짧게 회수해 timeout
+        # 반환 뒤 CPU를 계속 점유하는 daemon thread를 남기지 않는다. 네이티브 확장
+        # 내부에서 멈춘 경우에는 이 대기 뒤에도 timeout으로 fail-closed 반환한다.
+        thread.join(timeout=0.2)
+    if timedOut or container.get("timeout") is True:
         duration = int((time.monotonic() - start) * 1000)
         return ToolResult(
             False,
@@ -274,7 +321,7 @@ def runPython(code: str, *, runId: str | None = None) -> ToolResult:
                 "durationMs": duration,
                 "stdout": shortText(stdout.getvalue(), limit=4000),
                 "stderr": shortText(stderr.getvalue(), limit=4000),
-                "result": emitted,
+                "preview": shortText(json.dumps(emitted, ensure_ascii=False, default=str), limit=4000),
             },
         )
     ]
@@ -289,20 +336,26 @@ def runPython(code: str, *, runId: str | None = None) -> ToolResult:
                 kind="tableRef",
                 title="python table result",
                 source=refs[0].id,
-                payload={"rows": table_value},
+                payload={"rows": _jsonableResult(table_value, maxBytes=_TABLE_REF_BYTES)},
             )
         )
     values_raw = emitted.get("values")
     if isinstance(values_raw, dict) and values_raw:
         values = values_raw
-        for key, value in values.items():
+        unitsRaw = emitted.get("units")
+        units = unitsRaw if isinstance(unitsRaw, dict) else {}
+        for key, value in list(values.items())[:_REF_ITEM_CAP]:
             refs.append(
                 Ref(
                     id=f"value:{runId or 'local'}:{key}",
                     kind="valueRef",
                     title=str(key),
                     source=refs[0].id,
-                    payload={"key": key, "value": value, "unit": (emitted.get("units") or {}).get(key)},
+                    payload={
+                        "key": key,
+                        "value": _jsonableResult(value, maxBytes=_VALUE_REF_BYTES),
+                        "unit": units.get(key),
+                    },
                 )
             )
     # date= 키가 명시적으로 emit 됐다면 (None 이라도) dateRef 를 항상 만든다 —
@@ -338,7 +391,7 @@ def runPython(code: str, *, runId: str | None = None) -> ToolResult:
                 sources_iter.append(wrapped)
     else:
         sources_iter = []
-    for idx, source_payload in enumerate(sources_iter):
+    for idx, source_payload in enumerate(sources_iter[:_REF_ITEM_CAP]):
         source_id = str(source_payload.get("id") or f"source_{idx}")
         safe_id = re.sub(r"[^A-Za-z0-9_.:-]+", "_", source_id)[:96]
         refs.append(

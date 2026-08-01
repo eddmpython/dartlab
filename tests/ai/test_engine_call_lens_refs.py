@@ -26,9 +26,16 @@ def _product(engine: str = "analysis") -> dict:
         "conclusion": {"label": "현금창출력 양호", "summary": "영업현금흐름 근거가 확인됩니다."},
         "confidence": {"level": "high", "score": 90.0, "method": "coverage"},
         "drivers": [],
-        "evidence": [],
+        "evidence": [
+            {
+                "id": "evidence:cashflow",
+                "kind": "value",
+                "sourceRef": "table:005930:CF:2025",
+                "status": "observed",
+            }
+        ],
         "assumptions": [],
-        "gaps": [],
+        "gaps": [{"id": "missing.price", "status": "missing", "reason": "가격 기준점 없음"}],
         "scenarios": [],
         "falsifiers": [],
         "payload": {},
@@ -44,7 +51,12 @@ def test_result_to_refs_emits_lens_value_and_date_refs() -> None:
     date = next(ref for ref in result.refs if ref.kind == "dateRef")
     assert value.payload["label"] == "현금창출력 양호"
     assert value.payload["confidence"] == 90.0
+    assert value.payload["gaps"][0]["id"] == "missing.price"
+    assert value.payload["evidenceRefs"] == ["evidence:cashflow"]
+    assert value.payload["provenance"] == ["table:005930:CF:2025"]
     assert date.payload["dataAsOf"] == "2025-12-31"
+    execution = next(ref for ref in result.refs if ref.kind == "executionRef")
+    assert "result" not in execution.payload
 
 
 def test_dataclass_result_is_structured_and_surfaces_nested_lens_products() -> None:

@@ -1,7 +1,7 @@
 """Read tool — 안전 경로 안의 텍스트 파일을 읽어 docRef 를 만든다.
 
 사용자 artifact / project 내 보고서 / skill body / blog md 같은 파일을 LLM 이
-직접 읽고 인용할 때 사용한다. dartlab repo 와 사용자 홈의 artifacts 디렉토리만 허용.
+직접 읽고 인용할 때 사용한다. dartlab repo 와 사용자 홈의 artifact 디렉토리만 허용.
 """
 
 from __future__ import annotations
@@ -17,7 +17,9 @@ _HOME = Path.home()
 _SAFE_ROOTS: tuple[Path, ...] = (
     _REPO_ROOT,
     _HOME / "dartlab-artifacts",
-    _HOME / ".dartlab",
+    _HOME / ".dartlab" / "artifacts",
+    _HOME / ".dartlab" / "ask_artifacts",
+    _HOME / ".dartlab" / "tool-results",
 )
 _MAX_BYTES = 200_000  # 200 KB
 _MAX_LINES = 4000
@@ -26,7 +28,18 @@ _MAX_LINES = 4000
 # 예전에는 `.env` 와 `secrets.json` 이 그대로 읽혔다. 열일곱 개 서비스 자격증명이 한 번의
 # 도구 호출로 나왔다. 도구가 코드 실행을 이미 준다는 것은 이 구멍을 정당화하지 않는다.
 # 외부 본문으로 도구 선택을 흔들 수 있는 통로가 같은 도구 묶음 안에 있기 때문이다.
-_DENIED_NAMES = frozenset({"secrets.json", "credentials.json", "id_rsa", "id_ed25519", ".npmrc", ".netrc"})
+_DENIED_NAMES = frozenset(
+    {
+        "secrets.json",
+        "credentials.json",
+        "oauth_token.json",
+        "oauth.json",
+        "id_rsa",
+        "id_ed25519",
+        ".npmrc",
+        ".netrc",
+    }
+)
 _DENIED_SUFFIXES = (".pem", ".key", ".p12", ".pfx")
 _DENIED_PARTS = frozenset({".git", ".ssh", ".aws", "node_modules"})
 

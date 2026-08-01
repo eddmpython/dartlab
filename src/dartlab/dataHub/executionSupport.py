@@ -5,8 +5,8 @@ from __future__ import annotations
 import dataclasses
 import hashlib
 import importlib
-from collections.abc import Mapping, Sequence
-from typing import Any
+from collections.abc import Callable, Mapping, Sequence
+from typing import Any, cast
 
 from dartlab.dataHub.catalog.universe import ResolvedMarket, entityIds
 from dartlab.dataHub.contracts import (
@@ -224,11 +224,15 @@ def _resourceCall(descriptor: DataAssetDescriptor, query: DataQuery, selector: M
     projection = query.projection
     if isinstance(projection, ResourceProjection) and not projection.includePayload:
         from dartlab.dataHub.paging.runtime import manifestCachePath
-        from dartlab.providers.resourceStream.workbench import describeResource
 
         category = descriptor.executorAxis
         if not category:
             raise ValueError("resource locator category가 없습니다")
+        ownerModule = importlib.import_module("dartlab.providers.resourceStream.workbench")
+        describeResource = getattr(ownerModule, "describeResource", None)
+        if not callable(describeResource):
+            raise RuntimeError("resource owner description 경계가 유효하지 않습니다")
+        describeResource = cast(Callable[..., Any], describeResource)
         cachePath = manifestCachePath(descriptor.assetId, category)
         description = describeResource(descriptor.assetId, category, cachePath)
         return {

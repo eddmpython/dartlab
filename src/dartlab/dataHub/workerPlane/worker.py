@@ -174,6 +174,11 @@ class DataHubWorker:
                 try:
                     code = complete.json()["detail"]["code"]
                 except (ValueError, KeyError, TypeError):
+                    recordFailure(
+                        _log,
+                        "DATA_HUB_WORKER_RESPONSE_CODE_INVALID",
+                        context={"jobId": jobId, "workerId": self.workerId},
+                    )
                     code = "DATA_HUB_WORKER_FAILED"
                 self._fail(jobId, leaseEpoch, errorCode=code, retryable=False)
                 return WorkerRun(claimed=True, jobId=jobId, completed=False, leaseLost=False)

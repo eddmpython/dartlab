@@ -5135,10 +5135,10 @@ class Company:
 
         return Macro()(axis, target, market="KR", overrides=overrides, company=self, **kwargs)
 
-    # ── Phase 10 H2: story 2차 가공 직접 노출 (AI tool 자동 수집 대상) ──
+    # ── Phase 10 H2 하위호환: canonical surface는 story/reportModel/simulate ──
 
     def causalWeights(self) -> list[dict]:
-        """6막 인과 가중치 - 수익구조→수익성→현금흐름→자금조달→자산배치→가치평가 amplify/dampen/neutral.
+        """[하위호환·실험] 6막 인과 가중치 - capability/EngineCall 비노출.
 
         Guide:
             - "인과 체인" → c.causalWeights()
@@ -5191,7 +5191,7 @@ class Company:
         return buildCausalWeights(self, {})
 
     def valuationImpact(self) -> dict:
-        """인과 체인에서 DCF override 힌트 - narrative → 숫자 피드백.
+        """[하위호환·실험] 인과 체인 DCF 힌트 - capability/EngineCall 비노출.
 
         Guide:
             - "WACC 조정 어떻게" → c.valuationImpact()['waccAdj']
@@ -5244,7 +5244,7 @@ class Company:
         return buildValuationImpact(chains)
 
     def storyTree(self, *, basePeriod: str | None = None) -> dict:
-        """Damodaran 3P - possible(낙관)/plausible(중도)/probable(보수) 3 DCF + 민감도.
+        """[하위호환·실험] Damodaran 3P tree - capability/EngineCall 비노출.
 
         Guide:
             - "3 시나리오 가치" → c.storyTree()
@@ -5293,7 +5293,7 @@ class Company:
         return buildStoryTree(self, basePeriod=basePeriod)
 
     def narrativeDiff(self, *, claims: list[str] | None = None) -> list[dict]:
-        """각 claim 제거 시 dFV 변화 - Thought Anchors 기반 정량 기여도.
+        """[하위호환·실험] claim 제거 dFV 변화 - capability/EngineCall 비노출.
 
         Guide:
             - "가치 기여도" → c.narrativeDiff()

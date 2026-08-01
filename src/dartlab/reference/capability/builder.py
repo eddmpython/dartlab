@@ -143,6 +143,16 @@ def _applyAiContractMetadata(entries: dict[str, dict[str, Any]]) -> None:
             entries[key].setdefault(field, value)
 
 
+def _applyExecutionMetadata(entries: dict[str, dict[str, Any]]) -> None:
+    """검색 가능 capability와 EngineCall 실행 권한을 각 entry에 명시한다."""
+    from dartlab.reference.capability.execution import executionGuide, isEngineCallableRef
+
+    for apiRef, entry in entries.items():
+        engineCallable = isEngineCallableRef(apiRef)
+        entry["engineCallable"] = engineCallable
+        entry["executionGuide"] = executionGuide(apiRef, engineCallable=engineCallable)
+
+
 def _buildAnalysisGraph(entries: dict[str, dict[str, Any]]) -> dict[str, Any]:
     """CAPABILITIES entries를 Analysis Graph JSON payload로 컴파일."""
     import hashlib
@@ -413,6 +423,13 @@ def _mergeQuestionTriggers(left: dict[str, Any], right: dict[str, Any]) -> dict[
 
 _ENTRY_SECTION_KEYS = ("capabilities", "requires", "aicontext", "guide", "seealso", "returns", "args", "example")
 
+# Provider 라우팅용 static/class method 는 root ``dartlab.Company`` factory 의 구현
+# 세부사항이다. 또한 Phase 10 때 실험적으로 붙었던 아래 4개 서사 helper 는 현재
+# 안정 public surface(``Company.story`` / ``Company.reportModel`` / ``Company.simulate``)
+# 밖의 하위호환 메서드다. Python 직접 호출은 깨지지 않게 남기되 capability 검색과
+# EngineCall allowlist 에서는 제외한다.
+_COMPATIBILITY_ONLY_COMPANY_MEMBERS = frozenset({"causalWeights", "valuationImpact", "storyTree", "narrativeDiff"})
+
 
 def _entryFromDoc(doc: str, kind: str) -> dict[str, Any]:
     """docstring 하나를 카탈로그 entry 로 조립한다.
@@ -477,17 +494,12 @@ def _companyMemberDoc(companyClass: Any, memberName: str) -> tuple[str, str] | N
     property 는 fget 의 docstring 이 빈약할 때 `_{name}Impl` 쪽을 쓴다. 9 섹션 규칙이
     구현 함수에 붙어 있는 경우가 있어서다.
     """
+    static = inspect.getattr_static(companyClass, memberName, None)
+    if static is None or isinstance(static, (staticmethod, classmethod)):
+        return None
     obj = getattr(companyClass, memberName, None)
     if obj is None:
         return None
-    # ⚠ `getattr` 로 꺼낸 값으로 검사한다. 클래스에서 꺼내면 staticmethod 는 맨 함수로,
-    # classmethod 는 바인딩된 메서드로 나와서 이 검사는 사실상 걸러 내지 못한다.
-    # `getattr_static` 으로 바꾸면 정확히 걸러지지만 그러면 카탈로그에서 일곱 항목
-    # (canHandle, codeName, listing, priority, resolve, search, status) 이 사라진다.
-    # 그 판단은 카탈로그 등재 정책이지 리팩터가 할 일이 아니라 원래 의미를 그대로 둔다.
-    if isinstance(obj, (staticmethod, classmethod)):
-        return None
-    static = inspect.getattr_static(companyClass, memberName)
     if isinstance(static, property):
         doc = inspect.getdoc(static.fget) if static.fget else None
         implDoc = inspect.getdoc(getattr(companyClass, f"_{memberName}Impl", None))
@@ -526,7 +538,7 @@ def buildCapabilities() -> dict[str, Any]:
 
     # 2) Company 공개 메서드/프로퍼티
     for memberName in sorted(dir(DartCompany)):
-        if memberName.startswith("_"):
+        if memberName.startswith("_") or memberName in _COMPATIBILITY_ONLY_COMPANY_MEMBERS:
             continue
         resolved = _companyMemberDoc(DartCompany, memberName)
         if resolved is None:
@@ -540,6 +552,7 @@ def buildCapabilities() -> dict[str, Any]:
     _injectAxisRegistriesLive(entries)
 
     _applyAiContractMetadata(entries)
+    _applyExecutionMetadata(entries)
     return entries
 
 

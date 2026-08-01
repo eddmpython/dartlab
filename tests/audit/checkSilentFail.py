@@ -93,6 +93,9 @@ _ALLOWLIST_FILES: frozenset[str] = frozenset(
         # industry build pipeline — 단계별 중간 산출물 (없으면 이전 단계 재실행)
         "industry/build/delta.py",
         "industry/build/enrichCompany.py",
+        # 연간 finance parquet은 단계별 빌드 산출물. 부재 시 관측 연도 0으로 상위
+        # attachFinancials가 안전하게 종료하며, 번들 리소스 누락과 의미가 다르다.
+        "industry/build/financials.py",
         "industry/build/pipeline.py",
         "industry/build/stage3_docs.py",
         "industry/build/stage4_review.py",
@@ -142,6 +145,13 @@ _ALLOWLIST_FILES: frozenset[str] = frozenset(
         # pipeline changed 매니페스트 / hash 스냅샷 — 옵셔널 산출물. 부재 = "변경 없음"/"첫 실행" 정상.
         "pipeline/changed.py",
         "pipeline/hashing.py",
+        # HF panel 404는 해당 종목 보유 rcept 0을 뜻하는 reconcile 신호다.
+        # 빈 set이 신규 종목과 과거 누락분을 heal 대상으로 올리는 공개 계약이다.
+        "pipeline/stages/dartZip.py",
+        # KRX 업종과 발행주식수는 factor 적용성 보강 데이터다. 부재 시 Altman은
+        # company_type_missing, Piotroski는 F7 미관측으로 명시하고 점수를 발행하지 않는다.
+        "quant/alphas/altman.py",
+        "quant/alphas/piotroski.py",
     }
 )
 

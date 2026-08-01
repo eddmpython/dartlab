@@ -24,7 +24,10 @@ outputs:
   - verification gate
 capabilityRefs: []
 toolRefs:
-  - search_reference
+  - ReadSkill
+  - ReadCapability
+  - EngineCall
+  - RunPython
 knowledgeRefs:
   - start.dartlabSkillOs
 sourceRefs:
@@ -73,7 +76,7 @@ source:
   type: absorbed_skills
   absorbedKey: mcp
   format: markdown
-lastUpdated: '2026-05-03'
+lastUpdated: '2026-08-01'
 testUniverse:
   market: KR
   stockCodes:
@@ -107,9 +110,9 @@ dartlab 엔진/Skill OS 가 진화해도 MCP 표면이 자동으로 따라가도
 
 | 채널 | 어떻게 자동인가 |
 |---|---|
-| `RunPython` | 모든 새 dartlab 공개 API 즉시 호출 가능. 새 엔진/메서드 추가 시 별도 도구 정의 불필요. 가장 보편적 흡수 채널 |
-| `EngineCall` | allowlist 없는 generic dispatch — capability 등재된 모든 `dartlab.*` verb·`Company.*` 메서드를 `{apiRef, args}` 로 즉시 호출 (`_genericPublicCall` 이 `getattr(dartlab, verb)`). 새 verb 추가 시 손코딩 도구 불필요 (RunPython 보다 안전·간단) |
-| `ReadCapability` | `reference/capability.loadCapabilities()` 의 라이브 카탈로그(docstring 소스, 캐시) 색인 |
+| `EngineCall` | capability 카탈로그에 등재된 canonical `dartlab.*` verb·`Company.*` 메서드를 `{apiRef, args}` 로 호출. provider static/class method와 하위호환 helper는 카탈로그에서 제외 |
+| `RunPython` | EngineCall 결과의 다단 결합·랭킹·Polars 가공 채널. 단일 dartlab 공개 API 호출을 우회하는 용도가 아님 |
+| `ReadCapability` | `reference/capability.loadCapabilities()` 라이브 카탈로그 색인. `engineCallable=true`만 EngineCall 실행 권한이고 false는 공개 문서 참조 전용 |
 | `ReadSkill` | `skills/specs/**` 의 모든 skill markdown 자동 색인 (process-lifetime 캐시) |
 | `prompts/list` & `prompts/get` | Skill OS 의 `kind: recipe` 카테고리를 prompt 로 자동 노출. arguments 는 skill `inputs` frontmatter 에서 derive |
 | `dartlab://skills/{id}` resources | Skill OS 에서 런타임 derive |
@@ -135,12 +138,12 @@ dartlab 엔진/Skill OS 가 진화해도 MCP 표면이 자동으로 따라가도
 
 | 위치 | 언제 |
 |---|---|
-| `ai/tools/registry._SPECS` | canonical tool 추가/제거 (현재 15: 메타 3 · 데이터 3 · 외부 2 · 출력 2 · 분석 추론 3 · elicit 1 · elevate 1) |
+| `ai/tools/registry._SPECS` / `CANONICAL_V2` | AI tool 정의와 MCP에 공개할 canonical 부분집합 추가/제거 |
 | `ai/tools/types.ToolSpec` 의 4 hint | 새 도구의 readOnly/destructive/idempotent/openWorld 분류 |
-| `mcp/__init__._MCP_WORKSPACE_AGENT_TOOL_NAMES` | MCP 외부 노출 도구 (canonical 의 부분집합) — 현재 11 (canonical 10 + ask) |
-| `ai/tools/registry._LEGACY_NAME_MAP` | snake_case alias 추가/제거 |
+| `mcp/protocol.mcpAdvertisedToolNames` | `ask + CANONICAL_V2` 광고·실행 allowlist. schema 누락은 fail-closed |
+| `ai/tools/registry._LEGACY_NAME_MAP` | Python 내부 호환 alias. MCP 실행 권한은 부여하지 않음 |
 | `dartlab/__init__._LAZY_ATTRS` (PEP 562) | 새 top-level `dartlab.X` 모듈 추가 시 등록 |
-| `ai/tools/runPython_guard._BLOCKED_ATTR_CALLS` | RunPython 의 차단 호출 목록 — 새 dangerous attr 추가 시 |
+| `ai/tools/runpythonGuard` import/attribute/path allowlist | RunPython 분석 표면을 추가하거나 차단할 때 |
 
 ### Silent drift — 조용히 깨질 수 있는 채널 (가드 1 종)
 
@@ -151,10 +154,10 @@ dartlab 엔진/Skill OS 가 진화해도 MCP 표면이 자동으로 따라가도
 
 엔진 surface 가 큰 폭으로 바뀔 때 (새 엔진 추가 / 기존 엔진 폐기 / 새 Skill OS 카테고리 도입 / capability docstring 표준 개편) 다음을 확인한다.
 
-1. `bash tests/test-lock.sh tests/test_mcp.py tests/test_mcp_strong.py -v` — 흡수 표면 회귀.
+1. `DARTLAB_TEST_LOCKED=1 pytest tests/mcp/test_mcp.py -q`와 관련 파일별 pytest: 흡수 표면 회귀.
 2. 새 카테고리가 들어왔다면 `_recipeSkillsForPrompts()` 의 `kind` 필터 확장 여부 결정.
 3. 새 top-level 모듈이라면 `dartlab/__init__._LAZY_ATTRS` 등록 + RunPython 안에서 import 가능한지 확인.
 4. capability 추가/변경 = docstring 만 작성. 카탈로그는 `loadCapabilities()` 가 docstring 소스에서 **라이브 빌드**(첫 조회 1 회 캐시)라 재생성·커밋 단계 없음 — 사본이 없어 drift 불가. (옛 `_generated.py` 커밋 + 재생성 단계 + `--check` 게이트는 폐기.)
 5. canonical tool 추가/제거 시 `ToolSpec` 의 4 hint 채움 + `tests/test_mcp.py::test_mcp_advertised_tools_carry_annotations` 갱신.
-6. **도그푸드 verification** — `uv run python -X utf8 tests/ai/runners/mcp_dogfood_probe.py` 실행. 11 항목 OK 출력 확인. 단위 테스트가 dispatch / 거부 경로 위주라 실 호출 happy path 회귀를 못 잡는 발견 (2026-05-09 LookAheadGuard `Company(market=...)` 회귀) — 큰 변화 후엔 도그푸드 필수.
+6. **도그푸드 verification**: `uv run python -X utf8 tests/ai/runners/mcp_dogfood_probe.py` 실행. advertised happy path와 non-advertised fail-closed 경계를 함께 확인한다.
 

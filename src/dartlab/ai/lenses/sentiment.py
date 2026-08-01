@@ -14,6 +14,6 @@ SENTIMENT_LENS = Lens(
         "gather.news",
         "gather.flow",
         "gather.revenueConsensus",
-        "Company.disclosure",
+        "Company.filings",
     ],
 )

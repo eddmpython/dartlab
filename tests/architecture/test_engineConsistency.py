@@ -103,13 +103,14 @@ def test_macro_company_bound_market_routing():
 
 @pytest.mark.unit
 def test_phase10_h2_review_secondary_on_company():
-    """Phase 10 H2 — story 2차 가공 메서드가 Company 에 노출 (DART+EDGAR)."""
+    """Phase 10 H2 helper는 Python 하위호환만 유지하고 canonical capability에는 싣지 않는다."""
     import dartlab
+    from dartlab.reference.capability import buildCapabilities
 
     c = dartlab.Company("005930")
     for name in ("causalWeights", "valuationImpact", "storyTree", "narrativeDiff"):
-        assert hasattr(c, name), f"Company.{name} missing (Phase 10 H2)"
-        assert callable(getattr(c, name)), f"Company.{name} not callable"
+        assert callable(getattr(c, name)), f"Company.{name} compatibility method missing"
+        assert f"Company.{name}" not in buildCapabilities()
 
 
 @pytest.mark.unit

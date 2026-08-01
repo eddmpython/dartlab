@@ -1,4 +1,4 @@
-"""협업 세션 — SSE fan-out 기반 실시간 브로드캐스트.
+"""협업 세션: SSE fan-out 기반 실시간 브로드캐스트.
 
 dartlab share 실행 시 단일 룸을 생성하고,
 여러 클라이언트가 같은 분석 세션을 실시간으로 공유한다.
@@ -30,6 +30,7 @@ class RoomMember:
     """룸 참여자."""
 
     memberId: str
+    publicId: str
     name: str
     role: str  # "host" | "viewer"
     accessLevel: str  # "full" | "readonly"
@@ -38,7 +39,7 @@ class RoomMember:
 
     def info(self) -> dict:
         """멤버 정보를 직렬화 가능한 dict로 반환한다."""
-        return {"memberId": self.memberId, "name": self.name, "role": self.role}
+        return {"memberId": self.publicId, "name": self.name, "role": self.role}
 
 
 @dataclass
@@ -80,7 +81,8 @@ class Room:
     @staticmethod
     def _createMember(name: str, *, role: str = "viewer", accessLevel: str = "readonly") -> RoomMember:
         return RoomMember(
-            memberId=secrets.token_hex(4),
+            memberId=secrets.token_urlsafe(32),
+            publicId=secrets.token_hex(4),
             name=name,
             role=role,
             accessLevel=accessLevel,
@@ -103,7 +105,7 @@ class Room:
         async with self._lock:
             member = self.members.pop(memberId, None)
         if member:
-            await self.broadcast("member_leave", {"memberId": memberId, "name": member.name})
+            await self.broadcast("member_leave", {"memberId": member.publicId, "name": member.name})
             logger.info("[ROOM] %s 퇴장 (%s)", member.name, memberId[:4])
 
     def heartbeat(self, memberId: str) -> bool:
@@ -135,7 +137,7 @@ class Room:
         member = self.members.get(memberId)
         if not member:
             return None
-        msg = ChatMessage(memberId=memberId, name=member.name, text=text)
+        msg = ChatMessage(memberId=member.publicId, name=member.name, text=text)
         self.chat_history.append(msg)
         if len(self.chat_history) > MAX_CHAT_HISTORY:
             self.chat_history = self.chat_history[-MAX_CHAT_HISTORY:]
