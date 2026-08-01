@@ -361,7 +361,9 @@ def runDartZip(
     #    before 모두 정상, archiveDartOriginals signature 무변경). 회사 1건 신규 공시 → 그 zip 만 파싱.
     zipsBefore = set(docsBase.glob("*/*.zip"))
     try:
-        stats = archiveDartOriginals(start, end, scope="periodic", showProgress=False)
+        # corpClasses 는 상장 3시장 전부(Y 유가·K 코스닥·N 코넥스). 기본값 ("Y","K") 는 코넥스를
+        # 잘라내 코넥스 신규 정기보고서가 forward 로는 영원히 안 들어온다(reconcile 85일 윈도에만 의존).
+        stats = archiveDartOriginals(start, end, scope="periodic", corpClasses=("Y", "K", "N"), showProgress=False)
         changed = list(stats.get("changedCodes") or [])
         res.changedFiles = changed
         res.report.ok = 1
@@ -458,7 +460,8 @@ def _panelRceptsFromHf(repo: str, relDir: str, code: str, *, token: str | None) 
         token: HF 토큰.
 
     Returns:
-        보유 rcept 집합. panel 미존재(404)·일시 실패면 ``None`` (탐지 대상 제외 = 안전 skip).
+        보유 rcept 집합. panel 미존재(404)는 **빈 set** (보유 0 = 윈도 rcept 전부 누락으로
+        판정되어 heal 대상), 일시 실패는 ``None`` (탐지 대상 제외 = 안전 skip).
 
     Raises:
         없음 (모든 예외 None 으로 격리 — 한 종목 실패가 reconcile 전체를 막지 않음).
@@ -476,7 +479,11 @@ def _panelRceptsFromHf(repo: str, relDir: str, code: str, *, token: str | None) 
         with fs.open(path, "rb") as fh:
             tbl = pq.read_table(fh, columns=["rceptNo"])
     except FileNotFoundError:
-        return None  # 신규 종목 — panel 미존재(파일집합 reconcile 영역, 본 rcept reconcile 대상 아님)
+        # panel 미존재 = 보유 rcept 0. None(=skip) 으로 두면 "panel 이 한 번도 없던 종목" 은
+        # 영구히 heal 대상 밖이라 신규 상장·과거 누락분이 절대 복구되지 않는다(실측: 178600·185190).
+        # 빈 set 이면 윈도 rcept 전부가 누락으로 잡히고, len(have)=0 이 truncation 의심에도 걸려
+        # 전이력까지 회복된다.
+        return set()
     # 일시 실패는 skip 후 다음 run 회복
     except Exception as exc:  # noqa: BLE001
         print(f"[pipeline] dartZip panel rcept 조회 실패: {type(exc).__name__}: {exc}", flush=True)
@@ -624,7 +631,7 @@ def runPanelRceptReconcile(
             sc = futs[fut]
             have = fut.result()
             if have is None:
-                newOrFlaky += 1  # panel 미존재(신규) — 파일집합 reconcile 영역
+                newOrFlaky += 1  # 조회 일시 실패 · 다음 run 재시도(미존재는 빈 set 으로 heal 대상)
                 continue
             panelHave[sc] = have
 
@@ -647,7 +654,7 @@ def runPanelRceptReconcile(
     res.report.ok = 1
     missRcepts = sum(len(v) for v in missingByCode.values())
     print(
-        f"[pipeline] panelRceptReconcile {start}~{end}: 후보 {len(cand)}종목 · panel미존재/실패 {newOrFlaky} · "
+        f"[pipeline] panelRceptReconcile {start}~{end}: 후보 {len(cand)}종목 · 조회실패 {newOrFlaky} · "
         f"truncation의심 {len(suspects)}(회복 {truncated}) · 누락 {len(missingByCode)}종목 {missRcepts}rcept",
         flush=True,
     )

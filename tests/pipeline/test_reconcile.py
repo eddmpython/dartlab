@@ -301,17 +301,38 @@ def test_panel_rcept_reconcile_no_missing_skips_heal(monkeypatch) -> None:
     assert res.report.ok == 1
 
 
-def test_panel_rcept_reconcile_skips_panel_absent(monkeypatch) -> None:
-    """panel 미존재(404→None) 종목은 rcept reconcile 대상 아님(파일집합 reconcile 영역)."""
+def test_panel_rcept_reconcile_skips_lookup_failure(monkeypatch) -> None:
+    """panel rcept 조회 *일시 실패*(None)는 skip. 다음 run 재시도(성급한 재빌드 차단)."""
     from dartlab.gather.dart import disclosure
     from dartlab.pipeline.stages import dartZip
 
     monkeypatch.setattr(disclosure, "listFilings", _stubFilings([("000Z", "20260513000001", "분기보고서 (2026.03)")]))
-    calls = _wireReconcile(monkeypatch, panelHave={"000Z": None}, built=[])  # panel 없음
+    calls = _wireReconcile(monkeypatch, panelHave={"000Z": None}, built=[])  # 조회 실패
 
     res = dartZip.runPanelRceptReconcile(upload=True)
 
     assert res.changedFiles == [] and calls["fetch"] == [] and calls["build"] is None
+    assert res.report.ok == 1
+
+
+def test_panel_rcept_reconcile_heals_panel_absent(monkeypatch) -> None:
+    """panel 미존재(404 는 빈 set)는 heal 대상. 윈도 rcept 전부 fetch + 빌드.
+
+    회귀 가드: 옛 구현은 미존재를 None(skip)으로 두어 "panel 이 한 번도 없던 종목" 이
+    영구히 복구되지 않았다 (실측 178600 대동고려삼, 185190 수프로. 코넥스 신규 정기보고서).
+    """
+    from dartlab.gather.dart import disclosure
+    from dartlab.pipeline.stages import dartZip
+
+    monkeypatch.setattr(disclosure, "listFilings", _stubFilings([("000Z", "20260513000001", "분기보고서 (2026.03)")]))
+    calls = _wireReconcile(monkeypatch, panelHave={"000Z": set()}, built=["000Z"])  # panel 미존재
+
+    res = dartZip.runPanelRceptReconcile(upload=True)
+
+    assert calls["fetch"] == [("000Z", "20260513000001")]
+    assert calls["build"] == {"changed": ["000Z"], "newZips": ["000Z"]}
+    assert res.changedFiles == ["000Z"]
+    assert calls["panelUpload"] == ("panel", ["000Z.parquet"])
     assert res.report.ok == 1
 
 
