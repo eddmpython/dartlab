@@ -20,7 +20,7 @@ def sharpe(returns: np.ndarray, rf: float = 0.0) -> float:
     Parameters
     ----------
     returns : np.ndarray
-        일별 log return 시계열.
+        일별 단순 수익률 시계열.
     rf : float
         연간 무위험 이자율. 기본 0.
 
@@ -41,7 +41,7 @@ def sharpe(returns: np.ndarray, rf: float = 0.0) -> float:
         백테스트 metrics + AI 전략 평가 진입점.
 
     How:
-        ddof=1 std + 252 거래일 가정. log return 입력 가정.
+        ddof=1 std + 252 거래일 가정. 단순 수익률 입력 가정.
 
     Requires:
         returns ≥ 2 + std > 0.
@@ -77,7 +77,7 @@ def sortino(returns: np.ndarray, rf: float = 0.0) -> float:
     Parameters
     ----------
     returns : np.ndarray
-        일별 log return 시계열.
+        일별 단순 수익률 시계열.
     rf : float
         연간 무위험 이자율. 기본 0.
 

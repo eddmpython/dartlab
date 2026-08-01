@@ -476,6 +476,8 @@ def cpcv(
     high: np.ndarray | None = None,
     low: np.ndarray | None = None,
     style: str | None = None,
+    feeBps: float = DEFAULT_FEE_BPS,
+    slipBps: float = DEFAULT_SLIP_BPS,
 ) -> "BacktestResult":
     """Combinatorial Purged Cross-Validation 백테스트 (Lopez AFML).
 
@@ -493,6 +495,8 @@ def cpcv(
         embargo: test 양 끝 purge 관측치. 기본 ``5``.
         open_/high/low: 보조 OHLC.
         style: 메타.
+        feeBps: 왕복 수수료 bps.
+        slipBps: 왕복 슬리피지 bps.
 
     Returns:
         BacktestResult — ``oos=True``, ``cpcv`` 메타 채워짐.
@@ -546,6 +550,8 @@ def cpcv(
             open_=open_[test_idx] if open_ is not None else None,
             high=high[test_idx] if high is not None else None,
             low=low[test_idx] if low is not None else None,
+            feeBps=feeBps,
+            slipBps=slipBps,
         )
         fold_sharpes.append(sub_bt.sharpe)
         fold_returns.append(sub_bt.returns)

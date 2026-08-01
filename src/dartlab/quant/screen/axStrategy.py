@@ -21,6 +21,8 @@ from dartlab.core.market import resolveMarket
 from dartlab.core.polarsUtil import isEmptyDf
 from dartlab.quant.screen.dataAccess import fetchOhlcv, ohlcvToArrays
 from dartlab.quant.strategy.backtest import (
+    DEFAULT_FEE_BPS,
+    DEFAULT_SLIP_BPS,
     BacktestResult,
     multiAssetBacktest,
     vectorBacktest,
@@ -122,7 +124,7 @@ def runStrategy(
         train: walkForward train 윈도우 (일). 기본 ``252``.
         test: walkForward test 윈도우. 기본 ``63``.
         step: 슬라이딩 간격. 기본 ``63``.
-        **kwargs: ``start`` 등 OHLCV 추가 인자.
+        **kwargs: ``start``, ``feeBps``, ``slipBps`` 등 실행 인자.
 
     Returns:
         BacktestResult — vectorBacktest 또는 walkForward 결과.
@@ -171,6 +173,8 @@ def runStrategy(
             high=arr.get("high"),
             low=arr.get("low"),
             dates=arr.get("date"),
+            feeBps=kwargs.get("feeBps", DEFAULT_FEE_BPS),
+            slipBps=kwargs.get("slipBps", DEFAULT_SLIP_BPS),
         )
     return vectorBacktest(
         close,
@@ -178,7 +182,10 @@ def runStrategy(
         open_=arr.get("open"),
         high=arr.get("high"),
         low=arr.get("low"),
+        volume=arr.get("volume"),
         dates=arr.get("date"),
+        feeBps=kwargs.get("feeBps", DEFAULT_FEE_BPS),
+        slipBps=kwargs.get("slipBps", DEFAULT_SLIP_BPS),
     )
 
 
@@ -210,6 +217,7 @@ def runBacktest(
         CPCV 엠바고 기간 (일).
     **kwargs
         start : str — OHLCV 시작일 (예: "2014-01-01").
+        feeBps, slipBps : float — 왕복 거래비용 (bps).
 
     Returns
     -------
@@ -299,6 +307,8 @@ def runBacktest(
             high=arr.get("high"),
             low=arr.get("low"),
             style=styleName,
+            feeBps=kwargs.get("feeBps", DEFAULT_FEE_BPS),
+            slipBps=kwargs.get("slipBps", DEFAULT_SLIP_BPS),
         )
     return vectorBacktest(
         close,
@@ -306,8 +316,11 @@ def runBacktest(
         open_=arr.get("open"),
         high=arr.get("high"),
         low=arr.get("low"),
+        volume=arr.get("volume"),
         dates=arr.get("date"),
         style=styleName,
+        feeBps=kwargs.get("feeBps", DEFAULT_FEE_BPS),
+        slipBps=kwargs.get("slipBps", DEFAULT_SLIP_BPS),
     )
 
 
@@ -329,7 +342,7 @@ def runStyle(
     Args:
         stockCode: 종목코드. None 이면 카탈로그.
         name: 스타일 명 또는 ``"all"``.
-        **kwargs: ``start`` 등.
+        **kwargs: ``start``, ``feeBps``, ``slipBps`` 등 실행 인자.
 
     Returns:
         dict[str, BacktestResult] (name="all") 또는 BacktestResult (단일) 또는 pl.DataFrame (카탈로그).
@@ -366,15 +379,13 @@ def runStyle(
         return pl.DataFrame(listStyles())
 
     name = name or "all"
-    start = kwargs.get("start")
-
     if name == "all":
         results = {}
         for key in STYLE_REGISTRY().keys():
-            results[key] = runBacktest(stockCode, style=key, start=start)
+            results[key] = runBacktest(stockCode, style=key, **kwargs)
         return results
 
-    return runBacktest(stockCode, style=name, start=start)
+    return runBacktest(stockCode, style=name, **kwargs)
 
 
 def runEntry(
@@ -394,7 +405,7 @@ def runEntry(
     Args:
         stockCode: 종목코드.
         style: ``"all"`` 또는 스타일 명.
-        **kwargs: ``start`` 등.
+        **kwargs: ``feeBps``, ``slipBps`` 등 실행 인자.
 
     Returns:
         dict[str, EntryVerdict] — keys = 스타일 명, value = active/exit_today/stop_level.
@@ -563,6 +574,8 @@ def runMultiAsset(
         reg[key],
         weighting=weighting,
         style=key,
+        feeBps=kwargs.get("feeBps", DEFAULT_FEE_BPS),
+        slipBps=kwargs.get("slipBps", DEFAULT_SLIP_BPS),
     )
 
 
@@ -598,6 +611,7 @@ def runWalkforward(
         슬라이딩 간격 (일, 기본 63).
     **kwargs
         start : str — OHLCV 시작일 (예: "2014-01-01").
+        feeBps, slipBps : float — 왕복 거래비용 (bps).
 
     Returns
     -------
@@ -672,4 +686,6 @@ def runWalkforward(
         low=arr.get("low"),
         dates=arr.get("date"),
         style=rule.meta.get("style") if rule.meta else None,
+        feeBps=kwargs.get("feeBps", DEFAULT_FEE_BPS),
+        slipBps=kwargs.get("slipBps", DEFAULT_SLIP_BPS),
     )

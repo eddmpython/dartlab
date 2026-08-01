@@ -49,7 +49,7 @@ Guard는 현재 레이어의 source를 동결한 뒤 한 번 실행한다. Guard
 
 ### 세션 인계
 
-- 현재 계층: **L2 analysis, macro, quant, industry, credit** (진입 대기)
+- 현재 계층: **L2 analysis, macro, quant, industry, credit** (진행 중)
 - 최근 완료한 레이어: **L1.5 scan/frame/synth/reference 전체 완료** (2026-07-31).
   네 형제의 전체 src와 실제 호출자를 실데이터로 대조했고, cross import는 정적·동적
   모두 0이다. 공식 Guard는 AST 룰 위반 0·신규 위반 0이며 전체 status fail의 유일한
@@ -60,12 +60,11 @@ Guard는 현재 레이어의 source를 동결한 뒤 한 번 실행한다. Guard
 - L2 완료 조건: analysis, macro, quant, industry, credit의 전체 src와 실제 호출자를
   데이터 계약·오류 투명성·SSOT·속도·메모리 기준으로 전수 대조한다. 결함 수정과 집중
   회귀를 끝내고 source 동결 뒤 공식 Guard, 원장, 커밋, push까지 닫는다.
-- 다음 첫 행동: L1.5 US coverage audit 체크포인트가 성능 차단으로 남긴
-  `analysis/financial/edgarPitState`부터 연다. 한 회사 반례에서 Polars collect 7,197회와
-  stock candidate 119회를 반복해 EDGAR full-state strict 전수가 15분 운영 한도를 넘긴다.
-  이어 2026-07-27 L2 판정이 남긴 항목(팩터 형성 시점 look-ahead, 백테스트 샤프의 비용
-  미반영, 과적합 확률 상수 1.0, Sortino 하방편차 정의, 스타일 전구간 분위수)을 같은
-  방식으로 닫는다.
+- 다음 첫 행동: marker 없는 quant 실데이터 회귀에서 새로 드러난 삼양식품 dFV 범위
+  드리프트를 L2 analysis 책임으로 먼저 판정한다. 라이브 입력 변화로 낡은 고정 범위가
+  깨진 것인지 valuation 계산이 퇴행한 것인지 시점 고정 반례로 가른다. 그다음 quant 스타일
+  규칙의 전구간 분위수 look-ahead를 닫는다. EDGAR full-state 성능, 팩터 형성 시점,
+  백테스트 순수익 원장, PBO, Sortino는 아래 체크포인트와 `9c3825d07`에서 이미 닫혔다.
 - 금지: 함수나 파일 하나만 끝내고 완료 보고, L3 이상 수정 선행,
   중간 source에서 공식 Guard 반복
 
@@ -2581,3 +2580,81 @@ push 전 `preflight` 는 `test-fast` 의 `-m unit` 만 돌린다는 것이다. �
 때는 marker 없이 해당 엔진 테스트 디렉터리를 함께 돌린다. 이번에 그 방식으로
 scan, frame, synth, reference 를 다시 훑어 `634 passed` 로 다른 잔여 단언이 없음을
 확인했다.
+
+### L2 체크포인트: 백테스트 체결 원장과 순수익 지표 (2026-08-01)
+
+범위는 `quant/strategy/backtest.py`의 `vectorBacktest`와 고급 소비자 `walkForward`,
+`multiAssetBacktest`, `cpcv`다. 공개 호출자는 `quant/screen/axStrategy.py`의 strategy,
+backtest, style, walkforward, multi 다섯 축과 `scanBacktest`이며, 이 반환값을 story와 viz가
+Sharpe, MDD, equity, rolling Sharpe, 스타일 비교에 그대로 쓴다. DART와 EDGAR Company의
+quant facade도 kwargs를 같은 공개 축으로 전달한다. 따라서 단일 백테스트의 수익률 원장
+결함은 모든 상위 전략 결과로 전파되는 범위였다.
+
+제품 결함은 직전 `2899f9ec3` 수정 뒤에도 남아 있었다. 그 수정은 종가 수익률에서 거래별
+`cost_bps` 절반을 진입봉과 청산봉에 빼 비용 민감도만 만들었다. 고정 가격 100,
+`feeBps=1000`, close 체결 한 번의 왕복에서 `equity[-1]`와 `prod(1+returns)`는 0.9025였지만
+실제 유효 체결가 거래의 `1+pnl`은 `95/105=0.9047619`였다. 한 결과 객체 안에 서로 다른
+두 복리 원장이 있었다. 진입과 청산 비용이 달라도 청산 비용만 두 배로 `cost_bps`에 적었고,
+next-open 진입 전의 overnight gap은 수익으로 먹는 반면 next-open 청산 gap은 버렸다.
+intrabar stop은 stop 가격으로 거래를 닫고도 equity에는 당일 종가까지의 움직임을 넣었으며,
+`_gapCost(t)`는 close 체결과 당일 stop에도 다음 날 시가를 읽어 임의의 50% 추가 비용을
+붙였다. 공개 다섯 축은 `feeBps`, `slipBps` kwargs도 받아 놓고 core에 전달하지 않았다.
+
+근본 원인은 비용 공식을 덜 정교하게 근사한 것이 아니라 SSOT가 둘인 것이었다. 거래표는
+실제 유효 진입가와 청산가를 썼고, 대표 지표는 position 기반 종가 수익률에 비용을 사후
+차감했다. 수정 후 단일 SSOT는 거래별 `entry_idx`, `exit_idx`, `entry_price`, `exit_price`다.
+진입 EOD는 `close/entry_price`, 보유 중간은 종가 비율, 청산 EOD는
+`exit_price/previous_close`, 같은 봉 진입과 청산은 `exit_price/entry_price`로 wealth를
+재생한다. `returns=eod_growth-1`, `equity=cumprod(eod_growth)`이며 모든 표준 지표는 이
+순수익 series만 읽는다. 거래 비용을 turnover나 `cost_bps`에서 다시 추정하지 않는다.
+
+수정은 공개 형태를 늘리지 않았다. 실제 진입 side와 청산 side 비용을 각각 보존해
+`cost_bps`에는 합을 기록했고, next-open gap은 실제 시가 체결가 자체로 반영해 임의의
+`_gapCost`를 제거했다. long stop이 시가에서 관통되면 `min(stop, open)`으로 실제 가능한
+가격을 쓴다. 강제청산 뒤 EOD position은 0이며 full-notional long-only 한 번의 왕복
+turnover는 진입 1과 청산 1을 합한 2다. strategy, backtest, style, walkforward, multi와
+CPCV fold에 공개 비용 kwargs를 연결했고 직접 백테스트에는 volume도 전달했다. Sharpe와
+Sortino 입력 문서도 실제 계약인 일별 단순 수익률로 바로잡았다.
+
+회귀는 기존 비용 단조성 5건을 버리지 않고 정확한 회계 항등식 중심으로 9건을 더했다.
+고정 가격 정확 왕복, 두 거래 복리, next-open 진입과 청산 gap, same-bar entry/stop,
+gap-through stop, force close, turnover, 반환 series에서 지표 재계산, 공개 다섯 축 비용
+배선을 검증한다. 파일에 `unit` marker도 추가해 CI Fast가 더 이상 이 회귀를 누락하지
+않는다. 최종 focused 결과는 `14 passed`, 인접 strategy/scan/engine 묶음은 `82 passed`,
+quant unit 전체는 `249 passed, 118 deselected`다. 변경 파일 Ruff format과 check도
+통과했다.
+
+실제 공개 행동은 다음처럼 측정했다.
+
+| 호출 | 봉 | 거래 | 최종 equity | 거래 복리 | 항등식 오차 | 시간 | RSS 증가 |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| `dartlab.quant("backtest", "005930", style="trendFollow", start="2020-01-01")` | 1,615 | 79 | 1.2727795357 | 1.2727795357 | 1.78e-15 | 2.29초 | 14.38MiB |
+
+반환 일별 수익률 복리도 최종 equity와 완전히 같았다. status는 ok, Sharpe 0.2800, MDD
+-40.65%였으며 측정 프로세스 최종 RSS는 123.04MiB다. 공개 형태와 story/viz 소비 형태는
+그대로이고 숫자의 근거만 실제 체결 원장으로 통일됐다.
+
+Guard quick는 1,791파일, 규칙 실패 0, diffCheck PASS로 통과했다. 공식 preflight는 첫
+시도에서 Windows의 `bash.exe`가 비활성 WSL 런처를 가리켜 실행 전 실패했다. Git for
+Windows bash를 우선해 다시 실행하자 공식 러너가 14개 fast blocking gate를 시작했지만
+통합 출력을 내기 전 604초 timeout됐다. timeout 뒤 남은 preflight와 wheel 설치 자식
+프로세스는 이번 세션이 시작한 PID만 확인해 종료했고 잔류 0을 재확인했다. 따라서 focused,
+quant unit, Ruff, Guard quick는 통과 증거지만 공식 preflight 통과로 기록하지 않는다.
+
+marker 없는 quant 비-unit 118건을 한 프로세스로 돌린 시도는 43건 통과 뒤 RSS 1,944MB가
+저장소 한도 1,500MB를 넘어 안전 종료됐다. 종료 전에 보인 두 실패를 파일별 새 프로세스로
+재현하니 둘 다 이번 strategy 변경과 무관한 동일한 실데이터 범위 드리프트였다.
+`test_dFV_yangyang_regression_within_3pct`와 `test_yangyang_dFV_highGrowth_realistic`가 각각
+하한 1,245,000과 1,150,000을 요구하지만 최신 산출은 모두 1,086,062다. 실패를 낡은
+테스트로 단정하지 않고 L2 analysis의 새 미해결 항목으로 올린다.
+
+`9c3825d07`은 같은 L2 목록의 PBO 상수 1.0과 Sortino 하방편차를 이미 함께 수정했고,
+`tests/quant/test_strategyMetricsHonesty.py` 9건과 이번 인접 회귀에서 다시 통과했다. 따라서
+남은 목록에서 백테스트 비용, PBO, Sortino를 지운다. 남은 것은 새 dFV 드리프트 판정,
+스타일 규칙의 전구간 분위수, CPCV 이음매 수익률, 실패 fold를 Sharpe 0으로 세는 것,
+Altman 자동 모드 모델 혼용, Beneish 결측 다수 기본값, Track B 유동성 가중 0, 감사의견
+키워드 부재 추정이다.
+
+**판정: L2 백테스트 체결 원장과 순수익 지표 체크포인트 완료. L2 레이어는 진행 중이다.**
+다음은 새로 드러난 삼양식품 dFV 드리프트를 시점 고정 입력으로 판정한 뒤 스타일 전구간
+분위수 look-ahead로 간다. 이 체크포인트 완료를 L2 전체 완료로 보고하지 않는다.

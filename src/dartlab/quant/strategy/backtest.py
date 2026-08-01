@@ -31,7 +31,6 @@ from .metrics import (
     profitFactor,
     sharpe,
     sortino,
-    turnover,
     winrate,
 )
 from .rule import Rule
@@ -41,8 +40,6 @@ DEFAULT_FEE_BPS = 15.0  # 양방향 합산 (진입 + 청산)
 DEFAULT_SLIP_BPS = 5.0
 # ADV 비례 슬리피지: 거래량의 X% 이상 진입 시 추가 충격 비용 (bp/% impact)
 DEFAULT_IMPACT_BPS_PER_PCT = 2.0
-# 갭 임계: open[t+1]/close[t] 가 이 비율 초과 시 갭 위험 알림 (slippage 가중)
-GAP_THRESHOLD_PCT = 0.03
 
 
 @dataclass(frozen=True)
@@ -131,13 +128,13 @@ def vectorBacktest(
     체결 모델 (정밀화 v2):
     - **next_open**: entry[t] True → t+1 시가 체결 (default)
     - **close**: entry[t] True → t 종가 체결 (테스트/sanity)
-    - **gap 처리**: open[t+1]/close[t] 변동률 ≥ GAP_THRESHOLD_PCT 면 추가 슬리피지
+    - **gap 처리**: next-open 체결가 자체로 전일 종가 대비 갭을 반영
     - **ADV impact**: capital_pct_of_adv > 0 시 거래량 비율에 비례한 충격 비용
     - **intrabar stop**: stop level 이 [low[t], high[t]] 안에 있으면 stop 가격 정확 체결
     - **last bar 청산**: 열린 포지션은 close[-1] 강제 마감
 
     Capabilities:
-        - long-only 정밀 체결 + 갭 처리 + ADV impact + intrabar stop + last-bar 강제 청산
+        - long-only 정밀 체결 + 실제 갭 체결 + ADV impact + intrabar stop + last-bar 강제 청산
         - DSR 정정 (multiple trials) + Sharpe/MDD/turnover/exposure 메타
 
     Args:
@@ -165,7 +162,7 @@ def vectorBacktest(
         Strategy 평가 + AI 백테스트 결과 답변.
 
     How:
-        next_open/close 체결 분기 → gap/impact 비용 → intrabar stop → equity 시계열.
+        next_open/close 체결 분기 → 체결별 비용 → intrabar stop → EOD equity 시계열.
 
     Requires:
         close 길이 ≥ 30 + rule 길이 일치.
@@ -208,20 +205,10 @@ def vectorBacktest(
         # capital_pct_of_adv = 우리 진입 자본 / 평균 일거래량 (%)
         return (capitalPctOfAdv * impactBpsPerPct) / 1e4 / 2.0
 
-    # gap 가중 (open[t+1] vs close[t])
-    def _gapCost(tIdx: int) -> float:
-        if open_ is None or tIdx + 1 >= n:
-            return 0.0
-        gap_pct = abs(open_[tIdx + 1] - close[tIdx]) / max(close[tIdx], 1e-9)
-        if gap_pct >= GAP_THRESHOLD_PCT:
-            return gap_pct * 0.5  # 갭의 50% 추가 슬리피지
-        return 0.0
-
-    # 포지션 시계열
-    pos = np.zeros(n, dtype=np.int8)
     in_pos = False
     entry_idx = -1
     entry_price = 0.0
+    entry_cost = 0.0
     trades: list[dict] = []
 
     # stop 시계열 (옵션)
@@ -249,15 +236,15 @@ def vectorBacktest(
 
             if should_exit:
                 if stop_hit_intrabar and stop_price_used is not None:
-                    # intrabar stop: 정확한 stop 가격 (다음 봉 아님)
-                    exit_raw = stop_price_used
+                    # 시가가 stop 을 관통한 long 포지션은 stop 보다 유리하게 팔 수 없다.
+                    exit_raw = min(stop_price_used, float(open_[t])) if open_ is not None else stop_price_used
                     exit_t = t
                 else:
                     # next-bar 시가 체결 (또는 close 모드)
                     exit_raw = exec_price[t + 1] if execMode != "close" else close[t]
                     exit_t = t + 1 if execMode != "close" else t
-                cost = base_cost + _impactCost(t) + _gapCost(t)
-                exit_price = exit_raw * (1 - cost)
+                exit_cost = base_cost + _impactCost(t)
+                exit_price = exit_raw * (1 - exit_cost)
                 pnl = (exit_price - entry_price) / entry_price
                 trades.append(
                     {
@@ -268,28 +255,24 @@ def vectorBacktest(
                         "pnl": pnl,
                         "bars_held": exit_t - entry_idx,
                         "exit_reason": "stop" if stop_hit_intrabar else "signal",
-                        "cost_bps": cost * 1e4 * 2,
+                        "cost_bps": (entry_cost + exit_cost) * 1e4,
                     }
                 )
                 in_pos = False
-                pos[t + 1] = 0
                 continue
 
         # 진입 조건 체크 (현금 상태에서만)
         if not in_pos and bool(rule.entry_expr[t]):
             entry_raw = exec_price[t + 1] if execMode != "close" else close[t]
-            cost = base_cost + _impactCost(t) + _gapCost(t)
-            entry_price = entry_raw * (1 + cost)
+            entry_cost = base_cost + _impactCost(t)
+            entry_price = entry_raw * (1 + entry_cost)
             entry_idx = t + 1 if execMode != "close" else t
             in_pos = True
-            pos[t + 1] = 1
-        else:
-            pos[t + 1] = pos[t]
 
     # 마지막 봉 청산 (열린 포지션 강제 마감)
     if in_pos:
-        cost = base_cost + _impactCost(n - 1)
-        exit_price = close[-1] * (1 - cost)
+        exit_cost = base_cost + _impactCost(n - 1)
+        exit_price = close[-1] * (1 - exit_cost)
         pnl = (exit_price - entry_price) / entry_price
         trades.append(
             {
@@ -300,28 +283,13 @@ def vectorBacktest(
                 "pnl": pnl,
                 "bars_held": n - 1 - entry_idx,
                 "exit_reason": "force_close",
-                "cost_bps": cost * 1e4 * 2,
+                "cost_bps": (entry_cost + exit_cost) * 1e4,
             }
         )
 
-    # 일별 수익률 (포지션 기반). 체결 비용을 진입과 청산 봉에 실어 준다.
-    #
-    # 예전에는 종가만으로 만들어서 수수료, 슬리피지, 갭, 물량 충격이 하나도 반영되지
-    # 않았다. 그 비용은 거래 손익에만 붙었기 때문에, 수수료를 0 에서 1000bp 로 올려도
-    # 샤프와 최대낙폭이 글자 하나 바뀌지 않았다. 모듈 docstring 이 "수수료 15bp,
-    # 슬리피지 5bp" 를 물린다고 밝히는데 정작 대표 지표가 그것을 모르는 셈이었다.
-    daily_ret = np.zeros(n, dtype=np.float64)
-    for i in range(1, n):
-        if pos[i] == 1:
-            daily_ret[i] = (close[i] - close[i - 1]) / close[i - 1]
-    for trade in trades:
-        # `cost_bps` 는 왕복 기준이라 절반씩 진입 봉과 청산 봉에 나눠 붙인다.
-        oneWay = float(trade.get("cost_bps", 0.0)) / 2.0 / 1e4
-        for barKey in ("entry_idx", "exit_idx"):
-            bar = int(trade.get(barKey, -1))
-            if 0 <= bar < n:
-                daily_ret[bar] -= oneWay
-    equity = np.cumprod(1.0 + daily_ret)
+    # 거래별 유효 체결가를 단일 원장으로 삼아 EOD wealth 를 재생한다. 비용을 종가
+    # 수익률에서 다시 추정하지 않아 trade pnl, returns, equity 가 같은 복리 항등식을 쓴다.
+    daily_ret, equity, pos = _replayTrades(close, trades)
 
     # trades DataFrame
     trades_df = (
@@ -349,7 +317,8 @@ def vectorBacktest(
     wr = winrate(pnls)
     pf = profitFactor(pnls)
     ex = expectancy(pnls)
-    to = turnover(pos.astype(np.float64))
+    # full-notional long-only 한 번의 왕복은 진입 1 + 청산 1 = 총 회전 2 이다.
+    to = float(2 * len(trades))
     expo = exposure(pos.astype(np.float64))
     ds = dsr(sh, daily_ret, nTrials=nTrials)
 
@@ -375,6 +344,33 @@ def vectorBacktest(
         period=period,
         oos=False,
     )
+
+
+def _replayTrades(close: np.ndarray, trades: list[dict]) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """유효 체결가 원장에서 일별 단순 수익률, EOD equity, EOD position 을 재생한다."""
+    n = len(close)
+    growth = np.ones(n, dtype=np.float64)
+    positions = np.zeros(n, dtype=np.int8)
+
+    for trade in trades:
+        entry = int(trade["entry_idx"])
+        exit_ = int(trade["exit_idx"])
+        entry_price = float(trade["entry_price"])
+        exit_price = float(trade["exit_price"])
+
+        if entry == exit_:
+            growth[entry] *= exit_price / entry_price
+            continue
+
+        growth[entry] *= float(close[entry]) / entry_price
+        positions[entry:exit_] = 1
+        for bar in range(entry + 1, exit_):
+            growth[bar] *= float(close[bar]) / float(close[bar - 1])
+        growth[exit_] *= exit_price / float(close[exit_ - 1])
+
+    returns = growth - 1.0
+    equity = np.cumprod(growth)
+    return returns, equity, positions
 
 
 def _buildStopSeries(close, high, low, stopSpec) -> np.ndarray:
