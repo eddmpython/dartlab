@@ -116,11 +116,14 @@ class HistoricalContext:
     historicalEvents: list[HistoricalEvent] | None = None
     suggestedScenario: str | None = None
     suggestedScenarioReason: str | None = None
-    riskLevel: str = "low"
-    riskLabel: str = "양호"
-    opportunityLevel: str = "neutral"
-    opportunityLabel: str = "중립"
+    riskLevel: str | None = None
+    riskLabel: str | None = None
+    opportunityLevel: str | None = None
+    opportunityLabel: str | None = None
     description: str = ""
+    status: str = "unavailable"
+    observedInputs: int = 0
+    totalInputs: int = 8
 
 
 __all__ = [

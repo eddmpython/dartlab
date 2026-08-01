@@ -24,13 +24,16 @@ from dataclasses import dataclass
 class CreditGapResult:
     """Credit-to-GDP Gap (BIS 방법)."""
 
-    gap: float
-    trend: float
-    actual: float
-    zone: str
+    gap: float | None
+    trend: float | None
+    actual: float | None
+    zone: str | None
     zoneLabel: str
-    ccybBuffer: float
+    ccybBuffer: float | None
     description: str
+    status: str = "usable"
+    observedInputs: int = 1
+    totalInputs: int = 1
 
 
 @dataclass(frozen=True)
@@ -56,24 +59,30 @@ class GHSResult:
 class RecessionDashboard:
     """침체 확률 종합 대시보드."""
 
-    composite: float
-    zone: str
+    composite: float | None
+    zone: str | None
     zoneLabel: str
     components: dict[str, float | None]
     historicalMatch: str | None
     description: str
     historicalFacts: dict | None = None
+    status: str = "usable"
+    observedInputs: int = 0
+    totalInputs: int = 5
 
 
 @dataclass(frozen=True)
 class MinskyPhaseResult:
     """Minsky 금융 불안정 순환 5단계 판별."""
 
-    phase: str
-    phaseLabel: str
+    phase: str | None
+    phaseLabel: str | None
     confidence: str
     signals: list[str]
     description: str
+    status: str = "usable"
+    observedInputs: int = 0
+    totalInputs: int = 6
 
 
 @dataclass(frozen=True)
@@ -119,14 +128,17 @@ class DalioPhaseResult:
     - regimeVariant: deflationary | inflationary — 환율/기축통화/외화부채 기반
     """
 
-    phase: str
-    phaseLabel: str
+    phase: str | None
+    phaseLabel: str | None
     signals: list[str]
     description: str
     subPhase: str | None = None
     subPhaseLabel: str | None = None
     regimeVariant: str | None = None
     regimeVariantLabel: str | None = None
+    status: str = "usable"
+    observedInputs: int = 0
+    totalInputs: int = 4
 
 
 @dataclass(frozen=True)
@@ -137,8 +149,11 @@ class DalioPolicyLeverResult:
     fiscal: str
     credit: str
     fx: str
-    exhaustionScore: int
+    exhaustionScore: int | None
     signals: list[str]
+    status: str = "usable"
+    observedInputs: int = 0
+    totalInputs: int = 4
 
 
 __all__ = [

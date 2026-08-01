@@ -287,9 +287,11 @@ def calcEarningsQualityFlags(company, *, basePeriod: str | None = None) -> dict:
     """
     flags: list[str] = []
     enriched: list[dict] = []
+    observedComponents: list[str] = []
 
     accrual = calcAccrualAnalysis(company, basePeriod=basePeriod)
     if accrual and accrual["history"]:
+        observedComponents.append("accrual")
         h0 = accrual["history"][0]
         sar = h0.get("sloanAccrualRatio")
         if sar is not None and sar > ACCRUAL_RATIO_WARNING:
@@ -300,6 +302,8 @@ def calcEarningsQualityFlags(company, *, basePeriod: str | None = None) -> dict:
 
     persistence = calcEarningsPersistence(company, basePeriod=basePeriod)
     if persistence:
+        if persistence.get("history") or persistence.get("earningsVolatility") is not None:
+            observedComponents.append("persistence")
         if persistence["history"]:
             h0 = persistence["history"][0]
             nonOpRatio = h0.get("nonOpRatio")
@@ -318,6 +322,7 @@ def calcEarningsQualityFlags(company, *, basePeriod: str | None = None) -> dict:
 
     beneish = _calcBeneishTimeline(company, basePeriod=basePeriod)
     if beneish and beneish["history"]:
+        observedComponents.append("beneish")
         h0 = beneish["history"][0]
         ms = h0.get("mScore")
         if ms is not None and ms > -1.78:
@@ -335,7 +340,24 @@ def calcEarningsQualityFlags(company, *, basePeriod: str | None = None) -> dict:
                 }
             )
 
-    return {"flags": flags, "enrichedFlags": enriched}
+    expectedComponents = 3
+    observedCount = len(set(observedComponents))
+    coverageStatus = "observed" if observedCount == expectedComponents else "partial" if observedCount else "missing"
+    return {
+        "flags": flags,
+        "enrichedFlags": enriched,
+        "coverage": {
+            "status": coverageStatus,
+            "observed": observedCount,
+            "expected": expectedComponents,
+            "components": sorted(set(observedComponents)),
+            "reason": (
+                None
+                if coverageStatus == "observed"
+                else f"이익품질 하위 계산 근거 {observedCount}/{expectedComponents}개만 관측"
+            ),
+        },
+    }
 
 
 # ── Richardson 3계층 발생액 분해 ──

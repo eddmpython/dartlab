@@ -317,3 +317,44 @@ def test_group_accessor_wrong_group_axis_raises():
     a = Analysis()
     with pytest.raises(AttributeError, match="속하지 않습니다"):
         _ = a.financial.valuation
+
+
+def test_run_surfaces_calc_errors_and_mixed_block_periods(monkeypatch):
+    from types import SimpleNamespace
+
+    import dartlab.analysis.financial as financial
+    from dartlab.analysis.financial import Analysis
+    from dartlab.analysis.financial._registry import _AxisEntry, _CalcEntry
+
+    def older(company):
+        return {"history": [{"period": "2024"}]}
+
+    def newer(company):
+        return {"period": "2025"}
+
+    def broken(company):
+        raise ValueError("synthetic failure")
+
+    module = SimpleNamespace(older=older, newer=newer, broken=broken)
+    monkeypatch.setattr(financial.importlib, "import_module", lambda name: module)
+    entry = _AxisEntry(
+        section="테스트",
+        partId="test",
+        description="",
+        example="",
+        calcs=(
+            _CalcEntry("older", "synthetic", "older", "older"),
+            _CalcEntry("newer", "synthetic", "newer", "newer"),
+            _CalcEntry("broken", "synthetic", "broken", "broken"),
+        ),
+    )
+
+    result = Analysis()._run(SimpleNamespace(), entry)
+
+    assert result["assessmentStatus"] == "partial"
+    assert result["calculationErrors"] == {"broken": "ValueError"}
+    assert result["coverage"]["observedBlocks"] == 2
+    assert result["dataAsOf"]["latestPeriod"] == "2025"
+    assert result["dataAsOf"]["earliestPeriod"] == "2024"
+    assert result["dataAsOf"]["blockLatestPeriods"] == {"older": "2024", "newer": "2025"}
+    assert result["dataAsOf"]["mixedPeriods"] is True

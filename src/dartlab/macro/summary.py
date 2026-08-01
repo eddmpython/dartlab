@@ -28,6 +28,8 @@ def _gcAfterAxis() -> None:
 
 
 def _scoreCycle(cycle: dict) -> tuple[float, list[str]]:
+    if cycle.get("status") != "observed":
+        return 0.0, []
     phase = cycle.get("phase", "")
     label = cycle.get("phaseLabel", "")
     if phase in ("recovery", "expansion"):
@@ -40,7 +42,10 @@ def _scoreCycle(cycle: dict) -> tuple[float, list[str]]:
 
 
 def _scoreRates(rates: dict) -> tuple[float, list[str]]:
-    direction = rates.get("outlook", {}).get("direction", "")
+    outlook = rates.get("outlook", {})
+    if outlook.get("status") != "observed":
+        return 0.0, []
+    direction = outlook.get("direction", "")
     if direction == "cut":
         return 0.5, ["금리 인하 기대 — 유동성 우호적"]
     if direction == "hike":
@@ -52,7 +57,9 @@ def _scoreSentiment(sentiment: dict) -> tuple[float, list[str]]:
     fg = sentiment.get("fearGreed")
     if fg is None:
         return 0.0, []
-    fg_score = fg.get("score", 50)
+    fg_score = fg.get("score")
+    if fg_score is None:
+        return 0.0, []
     if fg_score < 25:
         return -0.5, [f"시장 심리 극단공포 ({fg_score:.0f})"]
     if fg_score > 75:
@@ -73,7 +80,10 @@ def _scoreNarrative(narrative: dict | None) -> tuple[float, list[str]]:
     """
     if not narrative or not isinstance(narrative, dict):
         return 0.0, []
-    s = float(narrative.get("score", 0.0))
+    raw_score = narrative.get("score")
+    if raw_score is None:
+        return 0.0, []
+    s = float(raw_score)
     label = narrative.get("label", "중립")
     if s <= -2:
         return -0.7, [f"narrative 극단 비관 ({label})"]
@@ -87,12 +97,34 @@ def _scoreNarrative(narrative: dict | None) -> tuple[float, list[str]]:
 
 
 def _scoreLiquidity(liquidity: dict) -> tuple[float, list[str]]:
+    if liquidity.get("status") != "observed":
+        return 0.0, []
     regime = liquidity.get("regime", "")
     if regime == "abundant":
         return 0.5, ["유동성 풍부"]
     if regime == "tight":
         return -0.5, ["유동성 긴축"]
     return 0.0, []
+
+
+def _coreCoverage(
+    cycle: dict,
+    rates: dict,
+    assets: dict,
+    sentiment: dict,
+    liquidity: dict,
+) -> tuple[dict[str, bool], list[str]]:
+    """종합 결론에 필요한 5개 독립 축의 실제 관측 여부를 계산한다."""
+    coverage = {
+        "cycle": cycle.get("status") == "observed" and cycle.get("phase") is not None,
+        "rates": rates.get("outlook", {}).get("status") == "observed"
+        and rates.get("outlook", {}).get("direction") is not None,
+        "assets": bool(assets.get("assets")),
+        "sentiment": any(sentiment.get(key) is not None for key in ("fearGreed", "vixRegime", "macroUncertainty")),
+        "liquidity": liquidity.get("status") == "observed" and liquidity.get("regime") is not None,
+    }
+    gaps = [axis for axis, observed in coverage.items() if not observed]
+    return coverage, gaps
 
 
 def _scoreForecast(forecastResult: dict | None) -> tuple[float, list[str]]:
@@ -329,7 +361,8 @@ def analyzeSummary(*, market: str = "US", asOf: str | None = None, overrides: di
               ``{total, active, bullish, bearish, signals}``
 
     Raises:
-        없음 — 각 축 호출 실패는 None 으로 흡수, overall 계산 계속.
+        없음. 보조 축 실패는 흡수한다. 핵심 5축 중 하나라도 근거가 없으면
+        status="blocked"로 반환하고 overall/score/allocation/strategies를 발행하지 않는다.
 
     Example:
         >>> from dartlab.macro import Macro
@@ -396,8 +429,8 @@ def analyzeSummary(*, market: str = "US", asOf: str | None = None, overrides: di
     from dartlab.macro.cycles.sentiment import calcSentiment
     from dartlab.macro.rates.rates import analyzeRates
 
-    # as_of/overrides를 전체 축에 전파
-    _ax = {"market": market, "as_of": asOf, "overrides": overrides}
+    # 기준일과 내부 시나리오 지표 치환을 전체 축에 동일하게 전파한다.
+    _ax = {"market": market, "asOf": asOf, "overrides": overrides}
 
     cycle = analyzeCycle(**_ax)
     _gcAfterAxis()
@@ -475,6 +508,9 @@ def analyzeSummary(*, market: str = "US", asOf: str | None = None, overrides: di
     except (KeyError, ValueError, TypeError, AttributeError, ImportError):
         narrativeResult = None
 
+    core_coverage, core_gaps = _coreCoverage(cycle, rates, assets, sentiment, liquidity)
+    conclusion_eligible = not core_gaps
+
     score = 0.0
     reasons: list[str] = []
     contributions: dict[str, float] = {}
@@ -492,12 +528,16 @@ def analyzeSummary(*, market: str = "US", asOf: str | None = None, overrides: di
         ("corporate", *_scoreCorporate(corporateResult)),
         ("narrative", *_scoreNarrative(narrativeResult)),
     ):
-        score += contrib
-        contributions[axisName] = contrib
-        reasons.extend(axReasons)
+        if conclusion_eligible:
+            score += contrib
+            contributions[axisName] = contrib
+            reasons.extend(axReasons)
 
     # 종합 판정
-    if score >= 1.0:
+    if not conclusion_eligible:
+        overall = None
+        overallLabel = "판정불가"
+    elif score >= 1.0:
         overall = "favorable"
         overallLabel = "우호적"
     elif score <= -1.0:
@@ -507,26 +547,37 @@ def analyzeSummary(*, market: str = "US", asOf: str | None = None, overrides: di
         overall = "neutral"
         overallLabel = "중립"
 
-    allocation_result = _buildAllocation(overall, cycle, sentiment, liquidity, crisisResult)
-    strategies_result = _buildStrategiesDashboard(
-        cycle,
-        rates,
-        assets,
-        sentiment,
-        liquidity,
-        forecastResult,
-        crisisResult,
-        inventoryResult,
-        tradeResult,
-        corporateResult,
-    )
+    allocation_result = None
+    strategies_result = None
+    if conclusion_eligible:
+        allocation_result = _buildAllocation(overall, cycle, sentiment, liquidity, crisisResult)
+        strategies_result = _buildStrategiesDashboard(
+            cycle,
+            rates,
+            assets,
+            sentiment,
+            liquidity,
+            forecastResult,
+            crisisResult,
+            inventoryResult,
+            tradeResult,
+            corporateResult,
+        )
     _addGrowthAtRisk(forecastResult, liquidity, asOf)
 
     return {
         "market": market.upper(),
+        "status": "usable" if conclusion_eligible else "blocked",
+        "blockedReason": (None if conclusion_eligible else f"핵심 매크로 근거 부족: {', '.join(core_gaps)}"),
+        "coverage": {
+            "observed": sum(core_coverage.values()),
+            "required": len(core_coverage),
+            "axes": core_coverage,
+            "gaps": core_gaps,
+        },
         "overall": overall,
         "overallLabel": overallLabel,
-        "score": round(score, 1),
+        "score": round(score, 1) if conclusion_eligible else None,
         "contributions": {k: round(v, 2) for k, v in contributions.items() if v != 0},
         "reasons": reasons,
         "cycle": cycle,

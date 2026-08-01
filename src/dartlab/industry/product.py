@@ -68,6 +68,8 @@ def blockedIndustryResult(company: Any, *, reason: str) -> dict[str, Any]:
         "confidence": 0.0,
         "source": None,
         "updatedAt": None,
+        "mappingUpdatedAt": None,
+        "financialPeriod": None,
         "peers": [],
         "stockCode": str(getattr(company, "stockCode", "") or getattr(company, "ticker", "") or "unknown"),
         "market": str(getattr(company, "market", "") or "unknown").upper(),
@@ -91,7 +93,10 @@ def buildIndustryProduct(company: Any, result: dict[str, Any]) -> dict[str, Any]
     )
     market = str(getattr(company, "market", "") or result.get("market") or "unknown").upper()
     today = date.today().isoformat()
-    updatedAt = result.get("updatedAt") if isinstance(result.get("updatedAt"), str) else None
+    mappingUpdatedAt = result.get("mappingUpdatedAt") or result.get("updatedAt")
+    mappingUpdatedAt = mappingUpdatedAt if isinstance(mappingUpdatedAt, str) else None
+    financialPeriod = result.get("financialPeriod")
+    financialPeriod = financialPeriod if isinstance(financialPeriod, str) else None
 
     blocks = {
         "position": bool(result.get("industry") and result.get("stage")),
@@ -181,14 +186,18 @@ def buildIndustryProduct(company: Any, result: dict[str, Any]) -> dict[str, Any]
     evidence = _evidence(target, result, blocks)
     assumptions = _assumptions(result)
     falsifiers = _falsifiers(result)
-    dataAsOf = {"sourceDataAsOf": updatedAt, "retrievedAt": today}
+    dataAsOf = {
+        "mappingUpdatedAt": mappingUpdatedAt,
+        "financialPeriod": financialPeriod,
+        "retrievedAt": today,
+    }
     claims = _industryClaims(
         drivers,
         evidence,
         falsifiers,
         asOf=today,
         dataAsOf=dataAsOf,
-        period=updatedAt,
+        period=financialPeriod,
     )
     blockRefs = [
         key
@@ -208,7 +217,7 @@ def buildIndustryProduct(company: Any, result: dict[str, Any]) -> dict[str, Any]
         "time": {
             "asOf": today,
             "dataAsOf": dataAsOf,
-            "period": updatedAt,
+            "period": financialPeriod,
             "knowledgeBoundary": today,
         },
         "status": status,
@@ -385,7 +394,7 @@ def _evidence(target: str, result: dict[str, Any], blocks: dict[str, bool]) -> l
                 "kind": "industryNode",
                 "sourceRef": f"dartlab://industry/{target}/position",
                 "status": "observed",
-                "observedAt": result.get("updatedAt"),
+                "observedAt": result.get("mappingUpdatedAt") or result.get("updatedAt"),
                 "detail": f"source={result.get('source')}, confidence={result.get('confidence')}",
             }
         )

@@ -212,17 +212,17 @@ class TestWeightedScore:
         result = weightedScore(axes)
         assert result == 30.0
 
-    def test_all_none_returns_neutral(self):
+    def test_all_none_returns_none(self):
         axes = [
             {"name": "a", "score": None, "weight": 1},
             {"name": "b", "score": None, "weight": 1},
         ]
         result = weightedScore(axes)
-        assert result == 50.0
+        assert result is None
 
-    def test_empty_list_returns_neutral(self):
+    def test_empty_list_returns_none(self):
         result = weightedScore([])
-        assert result == 50.0
+        assert result is None
 
 
 # ═══════════════════════════════════════════════════════════

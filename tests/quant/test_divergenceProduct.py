@@ -63,6 +63,7 @@ def testDivergenceProductDoesNotHideMissingEvidence() -> None:
     )
 
     product = result["product"]
+    assert result["technicalScore"] is None
     assert result["classification"] == "inconclusive"
     assert product["status"] == "blocked"
     assert product["confidence"]["level"] == "blocked"
@@ -89,6 +90,21 @@ def testInconclusiveClassificationCannotHaveHighConfidence() -> None:
     assert result["classification"] == "inconclusive"
     assert result["product"]["confidence"]["level"] == "medium"
     assert result["product"]["confidence"]["score"] == 65.0
+
+
+def testMissingTechnicalScoreIsNotReportedAsNeutralZero() -> None:
+    from dartlab.quant.product import buildDivergenceResult
+
+    result = buildDivergenceResult(
+        "005930",
+        "KR",
+        technical={"verdict": "판정 보류"},
+        earnings=None,
+        expectation=None,
+        priceAsOf=None,
+    )
+
+    assert result["technicalScore"] is None
 
 
 def testPublicDivergenceCombinesDisclosureExpectationAndPrice(monkeypatch) -> None:

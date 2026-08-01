@@ -107,7 +107,7 @@ SPEC = {
         "simulate": "simulateMacro() — BVAR 변수 팬(분위 경로)+IRF+국면 forward. macro('시뮬레이션')",
         "scenario": "overrides 파라미터 — 전체 14축 시나리오 시뮬레이션",
         "backtest": "as_of 파라미터 — 전체 14축 과거 시점 재현",
-        "walkForward": "walkForwardBacktest() — NBER 침체 기준 precision/recall",
+        "walkForward": "walkForwardBacktest(). 빈티지/공표일 미확보로 성과지표 발행 차단",
         "allocation": "regimeToAllocation() — regime×phase → 주식/채권/금/현금 %",
         "strategies40": "evaluateStrategies() — 40개 투자전략 활성/방향/강도/신뢰도",
     },

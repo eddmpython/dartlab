@@ -190,6 +190,9 @@ def _impliedEvEbitda(
     if not (ebitda > 0):
         return None
     nd = _getNetDebt(series)
+    if nd is None:
+        warnings.append("차입금 또는 현금 근거가 없어 EV/EBITDA 주주가치 발행 차단")
+        return None
     impliedEv = ebitda * sp.evEbitdaMultiple
     impliedEq = impliedEv - nd
     if impliedEq > 0:

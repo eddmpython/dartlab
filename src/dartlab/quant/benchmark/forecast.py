@@ -1,4 +1,4 @@
-"""시계열 수익률 예측 — Naive · AR(1) · ETS-Holt · Theta 4 모델 + Conformal interval.
+"""시계열 수익률 예측. 4개 모델 + held-out empirical prediction band.
 
 학술 근거:
 - Holt (1957): exponential smoothing with trend
@@ -10,7 +10,7 @@
 - numpy only (scipy / statsmodels / arch / pmdarima / sklearn 사용 금지 — base install SSOT 보존).
 - 모든 모델은 log-return 시계열 (Δlog close) 에서 fit.
 - pointForecast 는 일별 log-return. cumLogReturn → exp() → priceTarget.
-- Conformal interval: split conformal, calib = 마지막 calibFraction (default 20%).
+- Prediction band: 마지막 calibFraction의 expanding-window 1-step 잔차 분위수.
 """
 
 from __future__ import annotations
@@ -231,14 +231,14 @@ _MODEL_FNS = {
 }
 
 
-# ── Conformal interval ───────────────────────────────────
+# ── 경험적 잔차 분위수 ───────────────────────────────────
 
 
 def _conformalHalfWidth(residuals: np.ndarray, alpha: float = 0.10) -> float:
-    """|residual| 의 (1-alpha) 분위수 → conformal half-width.
+    """|residual|의 유한표본 보정 분위수. 이름은 하위 호환용이다.
 
-    inductive (split) conformal — calib residuals 의 절댓값 분포에서 quantile 을 취해
-    [point - q, point + q] 로 (1-alpha) coverage 를 *분포 가정 없이* 보장한다.
+    분위수 계산 자체는 conformal score 공식을 따른다. 다만 coverage 보장은 caller가
+    별도 학습/calibration 분리와 exchangeability 전제를 충족할 때만 성립한다.
     """
     abs_res = np.abs(residuals)
     abs_res = abs_res[np.isfinite(abs_res)]
@@ -249,6 +249,24 @@ def _conformalHalfWidth(residuals: np.ndarray, alpha: float = 0.10) -> float:
     q_idx = int(np.ceil((1.0 - alpha) * (n + 1))) - 1
     q_idx = max(0, min(q_idx, n - 1))
     return float(sorted_abs[q_idx])
+
+
+def _heldoutResiduals(
+    y: np.ndarray,
+    modelsUsed: list[str],
+    calibFraction: float,
+) -> tuple[np.ndarray, int]:
+    """마지막 calibration 구간의 expanding-window 1-step OOS 잔차."""
+    n = len(y)
+    calibK = max(int(n * calibFraction), 5)
+    calibK = min(calibK, n - 5)
+    trainEnd = n - calibK
+    residuals: list[float] = []
+    for idx in range(trainEnd, n):
+        history = y[:idx]
+        predictions = [float(_MODEL_FNS[model](history, 1)[0][0]) for model in modelsUsed]
+        residuals.append(float(y[idx]) - float(np.mean(predictions)))
+    return np.asarray(residuals), calibK
 
 
 # ── Model dispatch ────────────────────────────────────────
@@ -287,11 +305,12 @@ def forecastReturns(
     alpha: float = 0.10,
     **kwargs,
 ) -> dict:
-    """일별 수익률 예측 + Conformal prediction interval.
+    """일별 수익률 예측 + held-out empirical prediction band.
 
     가격 → log-return Δlog(close) 시계열에 4 개 모델 (Naive · AR(1) · ETS-Holt · Theta)
     중 하나를 자동 선택 (또는 명시 ensemble) 해 fit. 마지막 ``calibFraction`` 만큼을
-    calibration split 으로 사용해 분포 가정 없는 conformal half-width 를 산출한다.
+    expanding-window calibration 구간으로 사용해 1-step 경험적 잔차 폭을 산출한다.
+    이는 유한표본 coverage가 보장되는 conformal interval이 아니다.
 
     Parameters
     ----------
@@ -307,7 +326,7 @@ def forecastReturns(
     calibFraction : float
         residual quantile 산출에 쓰일 calibration split 비율 (기본 0.2).
     alpha : float
-        prediction interval 유의수준 (기본 0.10 → 90% coverage).
+        경험적 잔차 분위수의 꼬리 비율 (기본 0.10 → 명목 90% 분위수).
     **kwargs
         ``fetchOhlcv`` 전달 인자 (``start``, ``end`` 등).
 
@@ -316,14 +335,13 @@ def forecastReturns(
     dict
         stockCode, market, lastClose, lastDate,
         modelChosen, modelsConsidered, horizon, nObs, calibSize,
-        pAdfStationary, conformalHalfWidth (단위: 일별 log-return),
+        pAdfStationary, conformalHalfWidth (BC 필드, 경험적 폭; 단위: 일별 log-return),
         forecastTable (list[dict] — horizon 행), summary (사람-읽는 한 줄).
         실패 시: ``{"error": ...}``.
 
     When
     ----
-    AI 가 종목의 단기 (1~20 일) 수익률 점추정과 분포 가정 없는 신뢰 구간을 함께 원할 때.
-    예: "이 종목 다음 5 일 예상 수익률은?" — point + 90% interval + 가격 타깃.
+    AI 가 종목의 단기 (1~20 일) 수익률 점추정과 경험적 불확실성 범위를 함께 원할 때.
 
     How
     ---
@@ -354,30 +372,31 @@ def forecastReturns(
     Notes
     -----
     - log-return 시계열에 fit. pointForecast 단위는 *일별 log-return*. 누적은 cumLogReturn.
-    - 가격 타깃은 ``last_close * exp(cumLogReturn)``. priceLower/Upper 는 누적 conformal 구간.
-    - Calibration 은 in-sample 1-step 예측의 마지막 ``int(n * calibFraction)`` 점을 사용
-      (split conformal 단순화 — 정식 split 은 별도 fit/calib 파티션 필요).
+    - 가격 타깃은 ``last_close * exp(cumLogReturn)``. priceLower/Upper 는
+      1-step 경험적 폭을 sqrt(h)로 확대한 heuristic 누적 밴드다.
+    - Calibration 은 마지막 ``int(n * calibFraction)`` 점을 expanding-window
+      1-step out-of-sample 예측으로 평가한다.
     - 의존성 0 (numpy 만). statsmodels / scipy / sklearn import 금지.
 
     Capabilities:
         가격 시계열 → log-return → 4 모델 (Naive/AR1/ETS-Holt/Theta) 자동 선택 또는
-        ensemble → conformal half-width → horizon 별 point + 90% interval +
+        ensemble → held-out residual half-width → horizon 별 point + 경험적 밴드 +
         가격 타깃 단일 dict.
 
     Guide:
-        horizon ≤ 5 (단기) 권장. 누적 90% interval 은 horizon 에 따라 빠르게
-        넓어짐 — 20+ 일은 신뢰 낮음.
+        horizon ≤ 5 (단기) 권장. 누적 밴드는 coverage 보장이 없는 sqrt(h)
+        근사이므로 20+ 일에는 결론으로 사용하지 않는다.
 
     Requires:
         OHLCV ≥ 30 일.
 
     AIContext:
         modelChosen + forecastTable[0].pointForecast + summary 인용으로 "다음
-        5 일 ETS 예측 +1.2% (90% CI -3% ~ +5%)" 답변.
+        5 일 ETS 예측 +1.2% (held-out 잔차 기반 경험적 범위)" 답변.
 
     See Also:
         - calcMomentum : 가격 모멘텀 (point estimate 비교)
-        - calcVolatility : 변동성 (conformal width 검증)
+        - calcVolatility : 변동성 (경험적 밴드 폭 교차검증)
     """
     market = resolveMarket(stockCode, market)
     ohlcv = fetchOhlcv(stockCode, **kwargs)
@@ -402,8 +421,22 @@ def forecastReturns(
     n = int(len(log_ret))
     p_adf = _pAdfStationary(log_ret)
 
+    if not 0 < alpha < 1:
+        return {"error": "alpha는 0과 1 사이여야 합니다.", "stockCode": stockCode, "market": market}
+    if not 0 < calibFraction < 1:
+        return {
+            "error": "calibFraction은 0과 1 사이여야 합니다.",
+            "stockCode": stockCode,
+            "market": market,
+        }
+
+    horizon = max(1, int(horizon))
+    calib_k = max(int(n * calibFraction), 5)
+    calib_k = min(calib_k, n - 5)
+    train_end = n - calib_k
+
     if models is None:
-        chosen = _pickModel(log_ret)
+        chosen = _pickModel(log_ret[:train_end])
         models_used: list[str] = [chosen]
     else:
         invalid = [m for m in models if m not in _VALID_MODELS]
@@ -416,21 +449,14 @@ def forecastReturns(
         models_used = list(models)
         chosen = "+".join(models_used) if len(models_used) > 1 else models_used[0]
 
-    horizon = max(1, int(horizon))
-    calib_k = max(int(n * calibFraction), 5)
-    calib_k = min(calib_k, n - 5) if n > 10 else calib_k
-
     forecasts_per_model: list[np.ndarray] = []
-    residuals_calib: list[np.ndarray] = []
     for m in models_used:
-        fcst, inSample = _MODEL_FNS[m](log_ret, horizon)
-        resid = log_ret[-calib_k:] - inSample[-calib_k:]
+        fcst, _ = _MODEL_FNS[m](log_ret, horizon)
         forecasts_per_model.append(fcst)
-        residuals_calib.append(resid)
 
     point_forecasts = np.mean(np.stack(forecasts_per_model), axis=0)
-    residuals_pooled = np.concatenate(residuals_calib)
-    half_width = _conformalHalfWidth(residuals_pooled, alpha=alpha)
+    calibration_residuals, calib_k = _heldoutResiduals(log_ret, models_used, calibFraction)
+    half_width = _conformalHalfWidth(calibration_residuals, alpha=alpha)
 
     cum_log = np.cumsum(point_forecasts)
 
@@ -438,7 +464,7 @@ def forecastReturns(
     for h in range(horizon):
         point = float(point_forecasts[h])
         cum = float(cum_log[h])
-        # 누적 conformal 폭은 sqrt(h+1) 스케일링 (Bonferroni-free 가법형 — IID 잔차 가정)
+        # 누적 폭은 1-step 경험적 폭의 sqrt(h+1) heuristic이며 coverage 보장이 없다.
         cum_q = half_width * float(np.sqrt(h + 1))
         forecast_table.append(
             {
@@ -457,9 +483,11 @@ def forecastReturns(
 
     cum_h = float(cum_log[-1])
     cum_q_h = half_width * float(np.sqrt(horizon))
+    nominal_level = (1.0 - alpha) * 100
     summary = (
         f"{chosen}: {cum_h * 100:+.2f}% over {horizon}d "
-        f"([{(cum_h - cum_q_h) * 100:+.2f}%, {(cum_h + cum_q_h) * 100:+.2f}%] 90% CI)"
+        f"([{(cum_h - cum_q_h) * 100:+.2f}%, {(cum_h + cum_q_h) * 100:+.2f}%] "
+        f"{nominal_level:.0f}% empirical band; cumulative sqrt(h) heuristic)"
     )
 
     return {
@@ -474,6 +502,10 @@ def forecastReturns(
         "calibSize": int(calib_k),
         "pAdfStationary": round(p_adf, 4),
         "conformalHalfWidth": round(half_width, 6),
+        "intervalMethod": "expandingWindowHeldoutResidualQuantile",
+        "nominalLevel": round(1.0 - alpha, 4),
+        "coverageGuaranteed": False,
+        "cumulativeBandMethod": "sqrtHHeuristic",
         "forecastTable": forecast_table,
         "summary": summary,
     }
@@ -504,7 +536,7 @@ def forecastRuleFactory(
         entry = pointForecast > threshold AND (point - halfWidth) > -threshold
         exit  = pointForecast < -threshold OR (point + halfWidth) < -2*threshold
 
-    일별 log-return 의 conformal half-width 는 일별 σ (~0.5~2%) 와 동급이라 strict 모드에서
+    일별 log-return 의 경험적 half-width 는 일별 σ (~0.5~2%) 와 동급이라 strict 모드에서
     `lower > -threshold` 조건이 사실상 영원히 False — entry 0. cycle 1 회귀 결과 (2026-05-09):
     합성 strong trend (drift +0.3%/day) 에서도 strict 모드 entry 0 건. 따라서 default 는
     loose (point only). strict 는 누적 horizon 시그널 검증할 때만 사용.
@@ -516,7 +548,7 @@ def forecastRuleFactory(
     threshold : float
         일별 log-return entry 임계 (기본 0.0005 = +0.05%/day ≈ 연 13%).
     calibFraction : float
-        Conformal calib split 비율.
+        held-out calibration 구간 비율.
     alpha : float
         Prediction interval 유의수준 (default 0.10 → 90%).
     requireConfidence : bool
@@ -534,7 +566,7 @@ def forecastRuleFactory(
       mdd=-1.8%, active 98% (정적 SMA20/60 cross +5.2 대비 우월, cycle 2 dogfood, 2026-05-09)
     - 005930 KR 4 년 (n=1062): loose threshold=0.0005 → sharpe=+1.12 vs 정적 SMA cross +0.62
     - Sideways (drift=0): threshold=0.002 → active=0% (false positive 차단)
-    - strict mode (requireConfidence=True): 일별 conformal width 가 일별 σ 와 동급이라
+    - strict mode (requireConfidence=True): 일별 경험적 width 가 일별 σ 와 동급이라
       `lower > -threshold` 가 영원히 False — 일별 단위에서는 entry 0 (예상된 동작)
 
     Examples
@@ -547,11 +579,11 @@ def forecastRuleFactory(
 
     Capabilities:
         - forecast 모델 (naive/ar1/etsHolt/theta) 기반 OOS prediction → entry/exit Rule 변환
-        - loose / strict (conformal interval) 2 모드
+        - loose / strict (held-out empirical band) 2 모드
 
     Guide:
         walkForward 와 결합한 dynamic Rule. IS 구간에서 모델 fit + OOS 시 forecast. strict
-        는 일별 단위에서 entry 0 흔함 (conformal width 가 σ 와 동급) → loose 권장.
+        는 일별 단위에서 entry 0 흔함 (empirical width 가 σ 와 동급) → loose 권장.
 
     When:
         Forecast-based strategy + AI 예측 기반 진입 답변.
@@ -583,19 +615,19 @@ def forecastRuleFactory(
         if n_is < 30:
             return Rule(entry_expr=entry, exit_expr=exit_)
         log_ret = np.diff(np.log(isClose))
-        models_used = list(models) if models is not None else [_pickModel(log_ret)]
+        calib_k = max(int(len(log_ret) * calibFraction), 5)
+        calib_k = min(calib_k, len(log_ret) - 5)
+        train_end = len(log_ret) - calib_k
+        models_used = list(models) if models is not None else [_pickModel(log_ret[:train_end])]
 
         forecasts_per: list[np.ndarray] = []
-        residuals_per: list[np.ndarray] = []
-        calib_k = max(int(len(log_ret) * calibFraction), 5)
         for m in models_used:
-            fcst, inSample = _MODEL_FNS[m](log_ret, oosLen)
+            fcst, _ = _MODEL_FNS[m](log_ret, oosLen)
             forecasts_per.append(fcst)
-            residuals_per.append(log_ret[-calib_k:] - inSample[-calib_k:])
 
         point_forecasts = np.mean(np.stack(forecasts_per), axis=0)
-        residuals_pooled = np.concatenate(residuals_per)
-        half_width = _conformalHalfWidth(residuals_pooled, alpha=alpha)
+        residuals_heldout, _ = _heldoutResiduals(log_ret, models_used, calibFraction)
+        half_width = _conformalHalfWidth(residuals_heldout, alpha=alpha)
 
         for h in range(int(oosLen)):
             point = float(point_forecasts[h])

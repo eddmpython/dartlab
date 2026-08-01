@@ -376,8 +376,8 @@ class Macro:
         AntiPatterns:
             - axis 영문 추측 (cycle/crisis) - 한국어 키만 매핑
             - market 미지정 시 default "US" - KR 의도면 명시 필수
-            - overrides 키 임의 추가 - 유효 키 4 종 (cyclePhase/rateScenario/
-              fxScenario/liquidityScenario) 외 ValueError
+            - 공개 facade의 overrides는 계산 경로가 검증되지 않아 현재 차단한다.
+              조건 비교는 ``macro("시나리오", ...)`` 축을 사용한다.
         OutputSchema:
             - axis=None: ``pl.DataFrame(columns=[axis, label, description, example, group])``
             - axis="사이클": ``{phase, label, confidence, indicators}``
@@ -416,8 +416,8 @@ class Macro:
         market : str
             ``"US"`` | ``"KR"``.
         overrides : dict | None
-            AI/사용자가 매크로 시나리오 강제. 키: cyclePhase/rateScenario/
-            fxScenario/liquidityScenario. 상세: ``core/overrides.py``.
+            예약 인자. 공개 facade에서는 아직 계산 경로가 검증되지 않아
+            비어 있지 않은 값은 ValueError로 차단한다.
         **kwargs
             축별 추가 파라미터.
 
@@ -471,7 +471,7 @@ class Macro:
             AntiPatterns:
                 - axis 추측 (한글 - 사이클 / 위기 / 시나리오 / 유동성 / 심리 / 금리 / 종합 등)
                 - market 미지정 시 default "US" - KR 분석 의도면 명시 필수
-                - overrides 키 추측 (cyclePhase / rateScenario / fxScenario / liquidityScenario)
+                - 공개 facade에 overrides 전달. 검증된 시나리오 축을 사용
             OutputSchema:
                 - axis="사이클": dict - phase / label / confidence / indicators
                 - axis="시나리오": dict - historical analogue + projection
@@ -502,15 +502,17 @@ class Macro:
             )
 
         clean = validateOverrides(overrides, engine="macro")
+        if clean:
+            raise ValueError(
+                "macro 공개 overrides는 하위 계산 경로와의 연결이 검증되지 않아 차단되었습니다. "
+                "조건 비교는 dartlab.macro('시나리오', ...)를 사용하세요."
+            )
         merged: dict = {**clean, **kwargs}
 
         key = _resolve(axis)
         company = merged.pop("company", None)
-        fallbackKwargs = dict(kwargs)
-        fallbackKwargs.pop("company", None)
         if key == "transmission" and company is not None:
             _bindCompanyTransmissionContext(merged, company)
-            _bindCompanyTransmissionContext(fallbackKwargs, company)
         entry = _AXIS_REGISTRY[key]
         mod = importlib.import_module(entry.module)
         fn = getattr(mod, entry.fn)
@@ -525,17 +527,10 @@ class Macro:
             and p.name != "market"
         ]
         effective_target = target if (target is not None and targetParameters) else None
-        try:
-            if effective_target is not None:
-                result = fn(effective_target, market=market, **merged)
-            else:
-                result = fn(market=market, **merged)
-        except TypeError:
-            # 축 함수가 override 키 수용 전 - 키 제거 후 재시도
-            if effective_target is not None:
-                result = fn(effective_target, market=market, **fallbackKwargs)
-            else:
-                result = fn(market=market, **fallbackKwargs)
+        if effective_target is not None:
+            result = fn(effective_target, market=market, **merged)
+        else:
+            result = fn(market=market, **merged)
 
         # assumptions 투명화 - 4 엔진 공통 utility (phase → cyclePhase alias 자동)
         if isinstance(result, dict):

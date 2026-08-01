@@ -217,13 +217,16 @@ def analyzeCycle(*, market: str = "US", asOf: str | None = None, overrides: dict
 
     # 시계열 이력 구축 — 전환 시퀀스 순서 검증용
     history = _buildSignalHistory(market, asOf)
-    transition = detectTransitionSequence(cycle.phase, indicators, history=history)
+    transition = detectTransitionSequence(cycle.phase, indicators, history=history) if cycle.phase is not None else None
 
     result: dict = {
         "market": market.upper(),
         "phase": cycle.phase,
         "phaseLabel": cycle.label,
         "confidence": cycle.confidence,
+        "status": cycle.status,
+        "observedInputs": cycle.observedInputs,
+        "totalInputs": cycle.totalInputs,
         "signals": list(cycle.signals),
         "sectorStrategy": cycle.sectorStrategy,
         "transition": None,
@@ -279,5 +282,7 @@ def analyzeCycle(*, market: str = "US", asOf: str | None = None, overrides: dict
                 result["quadrant"] = classifyQuadrant(growthSignal, inflationSignal)
     except (KeyError, ValueError, TypeError, AttributeError):
         pass
+
+    result.setdefault("quadrant", None)
 
     return result

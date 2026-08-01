@@ -24,10 +24,13 @@ from dartlab.macro.seriesFetch import (
 class LiquidityRegime:
     """유동성 환경 판정 결과."""
 
-    regime: str  # "abundant" | "normal" | "tight"
+    regime: str | None  # "abundant" | "normal" | "tight"
     regimeLabel: str  # "풍부" | "정상" | "긴축"
-    score: float  # -3 ~ +3 (양수=풍부, 음수=긴축)
+    score: float | None  # -3 ~ +3 (양수=풍부, 음수=긴축)
     signals: tuple[str, ...]
+    status: str = "observed"
+    observedInputs: int = 0
+    totalInputs: int = 5
 
 
 def classifyLiquidityRegime(
@@ -96,6 +99,17 @@ def classifyLiquidityRegime(
     """
     signals: list[str] = []
     score = 0.0
+    observed_inputs = sum(value is not None for value in (m2Yoy, fedBsChangePct, hySpread, igSpread, rrpChangePct))
+
+    if observed_inputs < 2:
+        return LiquidityRegime(
+            regime=None,
+            regimeLabel="판정불가",
+            score=None,
+            signals=(f"유동성 판정 근거 부족 ({observed_inputs}/5)",),
+            status="unavailable",
+            observedInputs=observed_inputs,
+        )
 
     # M2 통화량
     if m2Yoy is not None:
@@ -159,6 +173,8 @@ def classifyLiquidityRegime(
         regimeLabel=label,
         score=round(score, 1),
         signals=tuple(signals),
+        status="observed",
+        observedInputs=observed_inputs,
     )
 
 
@@ -355,6 +371,9 @@ def calcLiquidity(*, market: str = "US", asOf: str | None = None, overrides: dic
         "regimeLabel": regime.regimeLabel,
         "score": regime.score,
         "signals": list(regime.signals),
+        "status": regime.status,
+        "observedInputs": regime.observedInputs,
+        "totalInputs": regime.totalInputs,
     }
 
     # NFCI + 자체 FCI

@@ -29,7 +29,10 @@ def _componentValue(functionName: str) -> Any:
         "calcDebtMaturity": {"history": [{"period": "2025", "shortTermRatio": 30.0}]},
         "calcValuationSynthesis": {"verdict": "저평가", "weightedFairValue": 100.0},
         "calcSensitivity": {"baseValue": 100.0},
-        "calcEarningsQualityFlags": {"flags": []},
+        "calcEarningsQualityFlags": {
+            "flags": [],
+            "coverage": {"status": "observed", "observed": 3, "expected": 3},
+        },
         "calcCrossStatementFlags": ["매출채권 확인"],
         "calcScenarioSensitivity": {"shocks": {"opm_minus_5pp": {"opm": 13.0}}},
     }
@@ -49,7 +52,7 @@ def testRepresentativeBuildsFourDecisionDomains(monkeypatch: pytest.MonkeyPatch)
     assert result["coverage"]["observedRequiredDomains"] == 4
     assert result["assessment"]["label"] == "재무 기반 우수"
     assert result["assessment"]["positiveDrivers"]
-    assert result["blocks"]["quality"]["earningsQualityFlags"] == {"flags": []}
+    assert result["blocks"]["quality"]["earningsQualityFlags"]["flags"] == []
 
 
 def testRepresentativeUsesMinimumSufficientAnalysisPath() -> None:

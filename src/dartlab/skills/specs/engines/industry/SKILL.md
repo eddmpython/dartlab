@@ -82,7 +82,7 @@ procedure:
   - 산업 목록 확인은 `dartlab.industry()` (가이드 DataFrame).
   - 산업 ID 정한 뒤 `dartlab.industry("semiconductor")` 로 공정·종목 확인.
   - 단일 기업 위치는 `dartlab.Company(code).industry()` — chainId·stage·confidence·peers dict.
-  - 공정 매출 집계는 `dartlab.industry(industryId, summary=True, year="2024")`.
+  - 공정 매출 집계는 `dartlab.industry(industryId, summary=True)`; `year` 생략 시 실제 관측된 최근 연간 사업연도.
   - peer 그룹을 다른 엔진에 전달할 때는 종목코드 list 만 추출 (전체 dict 통째 전달 금지).
 linkedSkills:
   - engines.company
@@ -123,8 +123,8 @@ nodes = dartlab.industry("semiconductor")
 # 3. 공정 단계 필터
 fab_only = dartlab.industry("semiconductor", stage="fab")
 
-# 4. 공정별 매출/영업이익 집계 (year 기준)
-summary = dartlab.industry("semiconductor", summary=True, year="2024")
+# 4. 공정별 매출/영업이익 집계 (최근 관측 연간 사업연도)
+summary = dartlab.industry("semiconductor", summary=True)
 # → DataFrame: stage · 공정명 · 매출(조) · 영업이익(조) · 기업수 · 영업이익률(%) · coverageRatio
 
 # 5. 연도별 공정 매출 추이
@@ -149,9 +149,9 @@ position = c.industry()
 
 `dartlab.industry(industryId)` → 해당 산업의 공정·종목 DataFrame. `stage` 로 특정 공정만 필터.
 
-`summary=True` → year 기준 공정별 매출/영업이익 집계. `timeline=True` → 연도별 공정 매출 시계열. `lifecycle=True` → 산업 라이프사이클 phase 시계열 (Vernon 3-phase + 쇠퇴 — 도입 ≥30% / 성장 10~30% / 성숙 0~10% / 쇠퇴 0% 미만 YoY). `concentration=True` → 산업 매출 시장구조 집중도 (HHI/CR3 + 상위 5사). `dynamics=True` → 이익 풀 동학(아래). `polarization=True` → 산업 양극화 교차검증(아래). 동시 사용 X — 우선순위 summary > timeline > lifecycle > concentration > dynamics > polarization.
+`summary=True` → `year` 기준 공정별 매출/영업이익 집계. `year=None`이면 finance 원장의 최근 연간 사업연도를 선택한다. `timeline=True` → 연도별 공정 매출 시계열. `lifecycle=True` → 산업 라이프사이클 phase 시계열 (Vernon 3-phase + 쇠퇴. 도입 ≥30% / 성장 10~30% / 성숙 0~10% / 쇠퇴 0% 미만 YoY). `concentration=True` → 산업 매출 시장구조 집중도 (HHI/CR3 + 상위 5사). `dynamics=True` → 이익 풀 동학(아래). `polarization=True` → 산업 양극화 교차검증(아래). 동시 사용 X. 우선순위 summary > timeline > lifecycle > concentration > dynamics > polarization.
 
-`concentration=True` 해석 한계: 값은 **상장사 매출 기준** 상대 집중도다 — 비상장·해외 매출 제외라 *절대 시장점유율이 아니다*. HHI 라벨("분산/중간/집중")은 DOJ 척도 차용일 뿐 시장 획정(market definition)을 거치지 않았으니 반독점 판정 어휘로 인용 금지. `calcSectorMetrics`(회사가 분포 어디 위치)와 직교 — 이건 *산업 자체가 과점이냐 분산이냐*. 회사 단위 공급망 집중도(고객/거래처 HHI)는 `recipes.industry.supplyChainConcentration` 별도.
+`concentration=True` 해석 한계: 값은 **동일 회계연도 상장사 매출 기준** 상대 집중도다. 서로 다른 연도는 혼합하지 않으며 동일연도 표본 3사·커버리지 60% 미만이면 `unavailable`, 60~80%면 `partial`이다. 반환의 `상태·회계연도·커버리지(%)·제한사유`를 HHI와 함께 인용한다. 비상장·해외 매출 제외라 *절대 시장점유율이 아니다*. HHI 라벨("분산/중간/집중")은 DOJ 척도 차용일 뿐 시장 획정(market definition)을 거치지 않았으니 반독점 판정 어휘로 인용 금지. `calcSectorMetrics`(회사가 분포 어디 위치)와 직교한다. 이건 *산업 자체가 과점이냐 분산이냐*를 본다. 회사 단위 공급망 집중도(고객/거래처 HHI)는 `recipes.industry.supplyChainConcentration` 별도다.
 
 `dynamics=True` → 이익 풀 동학: 공정별 첫/끝해 영업이익 **levels(조)** + **argmax 리더 교체** 판정(끝해 1위 ≠ 첫해 1위 = **이동형**, 같으면 **집중형**) + **적자전환** 플래그(첫해>0·끝해<0). 해석 한계: **share(%) 미사용**(총합 zero-crossing 시 점유율 폭발 — 반도체 2023 -800%), levels만. **생존편향**(현 멤버십을 과거 연도에 소급 — 복원 불가)을 `생존편향주의` 컬럼으로 1급 표기. 4년 윈도라 "추세" 아닌 *방향 신호*. KO는 대부분 단일 stage 지배(집중형)·진짜 이동형은 희귀 — workhorse는 적자전환+levels이지 migration 라벨 아님. 미래 리더 예측·동학 점수화·이익흐름 Sankey 금지(folk통계/인과 함의).
 

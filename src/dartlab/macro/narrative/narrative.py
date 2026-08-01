@@ -75,8 +75,8 @@ def analyzeNarrative(
         - lookback 30 일 news headline pulse 계산
         - 평균 sentiment + topic 분포 + regime shift (7d vs 30d) + similar past period
         - 결과 dict 표준 — score(-4~+4) + label + topicPulse top5 + regimeShift + contributions
-        - asOf PIT-safe (Sprint 4 applyAsOf 위임 → look-ahead bias 0)
-        - archive 0 일 또는 enrichment 미실행 시 graceful empty 결과
+        - asOf 관측/수집일 cutoff (원천 revision vintage를 재현하는 PIT 계약은 아님)
+        - archive 0 일 또는 enrichment 미실행 시 unavailable 결과
 
     AIContext:
         analyzeSummary 11 → 12 축 통합 단일 진입점. scenarios.runScenario 의
@@ -118,7 +118,7 @@ def analyzeNarrative(
 
     Requires:
         Phase A archive (newsHeadlines) + Phase B enrichment (narrativePulse).
-        archive 미존재 시 score=0 + label="중립" + empty pulse 반환.
+        archive 미존재 시 status="unavailable" + score/label=None + empty pulse 반환.
 
     See Also:
         ``dartlab.synth.narrativePulse.buildNarrativePulse``: 입력 SSOT.
@@ -135,7 +135,7 @@ def analyzeNarrative(
     """
     from dartlab.synth.narrativePulse import buildNarrativePulse
 
-    # asOf 가 명시되면 PIT 필터, 명시 안 됐으면 today + no PIT (당일 captured_at 보존).
+    # asOf 가 명시되면 관측/수집일 cutoff. 원천 revision vintage를 재현하는 PIT 필터는 아니다.
     asof_explicit = asOf is not None
     asof_date = _date.fromisoformat(asOf) if isinstance(asOf, str) else (asOf or _date.today())
     start = (asof_date - timedelta(days=lookbackDays)).isoformat()
@@ -145,12 +145,14 @@ def analyzeNarrative(
         "market": market.upper(),
         "asOf": end,
         "lookbackDays": lookbackDays,
-        "score": 0.0,
-        "label": "중립",
+        "score": None,
+        "label": None,
         "topicPulse": [],
-        "regimeShift": {"sentiment_7d": 0.0, "sentiment_30d": 0.0, "delta": 0.0, "label": "안정"},
+        "regimeShift": {"sentiment_7d": None, "sentiment_30d": None, "delta": None, "label": None},
         "similarPastPeriods": [],
-        "contributions": {"regimeShift": 0.0, "topicTone": 0.0, "volumeAnomaly": 0.0},
+        "contributions": {"regimeShift": None, "topicTone": None, "volumeAnomaly": None},
+        "status": "unavailable",
+        "observationCount": 0,
     }
 
     try:
@@ -235,4 +237,6 @@ def analyzeNarrative(
             "topicTone": tone_contrib,
             "volumeAnomaly": volume_contrib,
         },
+        "status": "usable",
+        "observationCount": total_volume,
     }

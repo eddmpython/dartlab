@@ -78,7 +78,8 @@ def buildThesis(company: Any, card: Any, view: dict | None, *, basePeriod: str |
         company: dartlab Company 인스턴스.
         card: story SummaryCard (conclusion/strengths/warnings).
         view: 계약 ValuationView dict 또는 None (intrinsic·current).
-        basePeriod: point-in-time 기준 분기 (None=최신).
+        basePeriod: 재무기간 cutoff (None=최신). 공시 가용일·시장데이터 vintage를
+            고정하는 point-in-time 계약은 아님.
 
     Returns:
         dict | None: 계약 Thesis (central·pillars·bearCase·triggers·call). 재료 전무 시 None.

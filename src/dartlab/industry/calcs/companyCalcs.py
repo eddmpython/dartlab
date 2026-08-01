@@ -6,6 +6,7 @@ story(L3)가 블록으로 소비한다. 해석/서사는 하지 않는다.
 
 from __future__ import annotations
 
+import math
 from typing import Any
 
 from dartlab.core.logger import getLogger
@@ -124,6 +125,8 @@ def calcChainPosition(company: Any) -> dict | None:
         "confidence": myNode.confidence,
         "source": myNode.source,
         "updatedAt": myNode.updatedAt,
+        "mappingUpdatedAt": myNode.updatedAt,
+        "financialPeriod": myNode.revenuePeriod,
         "peers": peers[:10],
     }
 
@@ -189,7 +192,7 @@ def _percentile(value: float, dist: dict) -> float | None:
     float | None
         0~100 사이 백분위. dist 없으면 None.
     """
-    if not dist:
+    if not dist or not math.isfinite(value):
         return None
     quantiles = [
         (10, dist["p10"]),
@@ -199,16 +202,21 @@ def _percentile(value: float, dist: dict) -> float | None:
         (90, dist["p90"]),
     ]
     if value <= quantiles[0][1]:
-        return max(0, 10 * value / (quantiles[0][1] or 1))
+        lowerSpan = max(abs(dist["p25"] - dist["p10"]), 1e-12)
+        percentile = 10 - 15 * (dist["p10"] - value) / lowerSpan
+        return min(10.0, max(0.0, percentile))
     if value >= quantiles[-1][1]:
-        return min(100, 90 + 10 * (value - quantiles[-1][1]) / max(1, abs(quantiles[-1][1] - quantiles[2][1])))
+        upperSpan = max(abs(dist["p90"] - dist["p75"]), 1e-12)
+        percentile = 90 + 15 * (value - dist["p90"]) / upperSpan
+        return min(100.0, max(90.0, percentile))
     for i in range(len(quantiles) - 1):
         a_q, a_v = quantiles[i]
         b_q, b_v = quantiles[i + 1]
         if a_v <= value <= b_v:
             span = b_v - a_v or 1
-            return a_q + (value - a_v) / span * (b_q - a_q)
-    return 50.0
+            percentile = a_q + (value - a_v) / span * (b_q - a_q)
+            return min(100.0, max(0.0, percentile))
+    return None
 
 
 def calcSectorMetrics(company: Any) -> dict | None:

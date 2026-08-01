@@ -25,9 +25,9 @@ class DCFResult:
 
     fcfHistorical: list[Optional[float]]
     fcfProjections: list[float]
-    terminalValue: float
-    enterpriseValue: float
-    equityValue: float
+    terminalValue: Optional[float]
+    enterpriseValue: Optional[float]
+    equityValue: Optional[float]
     perShareValue: Optional[float]
     discountRate: float
     growthRateInitial: float
@@ -39,6 +39,8 @@ class DCFResult:
     assumptions: dict[str, str] = field(default_factory=dict)
     warnings: list[str] = field(default_factory=list)
     currency: str = "KRW"
+    status: str = "usable"
+    blockedReason: str | None = None
 
     DISCLAIMER: str = "본 분석은 투자 참고용이며 투자 권유가 아닙니다."
 
@@ -49,9 +51,13 @@ class DCFResult:
             f"  할인율: {self.discountRate:.1f}%",
             f"  초기 성장률: {self.growthRateInitial:.1f}%",
             f"  영구 성장률: {self.terminalGrowth:.1f}%",
-            f"  기업가치: {fmtBig(self.enterpriseValue, c)}",
-            f"  주주가치: {fmtBig(self.equityValue, c)}",
         ]
+        if self.enterpriseValue is not None:
+            lines.append(f"  기업가치: {fmtBig(self.enterpriseValue, c)}")
+        else:
+            lines.append("  기업가치: 미산출")
+        if self.equityValue is not None:
+            lines.append(f"  주주가치: {fmtBig(self.equityValue, c)}")
         if self.perShareValue is not None:
             lines.append(f"  주당 내재가치: {fmtPrice(self.perShareValue, c)}")
         if self.marginOfSafety is not None:
@@ -61,6 +67,8 @@ class DCFResult:
         if self.warnings:
             for w in self.warnings:
                 lines.append(f"  ⚠ {w}")
+        if self.blockedReason and self.blockedReason not in self.warnings:
+            lines.append(f"  ⚠ {self.blockedReason}")
         lines.append(f"  ※ {self.DISCLAIMER}")
         return "\n".join(lines)
 

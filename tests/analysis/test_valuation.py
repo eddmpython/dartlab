@@ -138,6 +138,8 @@ class TestDCF:
         assert result.perShareValue is not None
         assert result.perShareValue > 0
         assert result.marginOfSafety is not None
+        assert result.marginOfSafety == pytest.approx((result.perShareValue - 50_000) / 50_000 * 100)
+        assert result.status == "usable"
         assert len(result.fcfProjections) == 5
         assert result.discountRate == 10.0
 
@@ -153,7 +155,42 @@ class TestDCF:
 
         result = dcf_valuation({"IS": {}, "BS": {}, "CF": {}}, sectorParams=sectorParams)
         assert len(result.warnings) > 0
-        assert result.enterpriseValue == 0
+        assert result.enterpriseValue is None
+        assert result.equityValue is None
+        assert result.status == "unavailable"
+
+    def test_dcf_missing_capex_does_not_treat_it_as_zero(self, sectorParams):
+        from dartlab.analysis.valuation.dcf import dcfValuation as dcf_valuation
+
+        series = _make_series(
+            revenue=[1e9, 1.1e9, 1.2e9],
+            operating_profit=[1e8, 1.1e8, 1.2e8],
+            net_profit=[8e7, 9e7, 1e8],
+            operating_cashflow=[1.2e8, 1.3e8, 1.4e8],
+            total_assets=[2e9, 2.1e9, 2.2e9],
+            total_equity=[1e9, 1.1e9, 1.2e9],
+        )
+
+        result = dcf_valuation(series, shares=1_000_000, sectorParams=sectorParams)
+
+        assert result.status == "unavailable"
+        assert result.enterpriseValue is None
+        assert result.perShareValue is None
+        assert any("CAPEX" in warning for warning in result.warnings)
+
+    def test_dcf_missing_net_debt_blocks_equity_value(self, sectorParams):
+        from copy import deepcopy
+
+        from dartlab.analysis.valuation.dcf import dcfValuation as dcf_valuation
+
+        series = deepcopy(HEALTHY_SERIES)
+        series["BS"].pop("cash_and_cash_equivalents", None)
+        result = dcf_valuation(series, shares=1_000_000, sectorParams=sectorParams)
+
+        assert result.enterpriseValue is not None
+        assert result.equityValue is None
+        assert result.perShareValue is None
+        assert result.status == "partial"
 
     def test_dcf_repr(self, sectorParams):
         from dartlab.analysis.valuation.dcf import dcfValuation as dcf_valuation
@@ -235,6 +272,18 @@ class TestRelativeValuation:
             shares=1_000_000,
         )
         assert result.currentMultiples["PER"] is None  # 시가총액 없으면 현재 PER 없음
+
+    def test_relative_missing_net_debt_blocks_ev_ebitda_value(self, sectorParams):
+        from copy import deepcopy
+
+        from dartlab.analysis.valuation.dcf import relativeValuation as relative_valuation
+
+        series = deepcopy(HEALTHY_SERIES)
+        series["BS"].pop("cash_and_cash_equivalents", None)
+        result = relative_valuation(series, sectorParams=sectorParams, shares=1_000_000)
+
+        assert result.impliedValues["EV/EBITDA"] is None
+        assert any("EV/EBITDA" in warning for warning in result.warnings)
 
 
 # ══════════════════════════════════════

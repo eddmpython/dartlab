@@ -245,10 +245,20 @@ def vectorBacktest(
     if dates is not None:
         if len(dates) != n:
             return BacktestResult(status="error", reason=f"invalid dates: expected {n} values", style=style)
-        try:
-            strictly_increasing = all(dates[idx] < dates[idx + 1] for idx in range(n - 1))
-        except TypeError:
-            strictly_increasing = False
+        dateKeys: list[tuple[str, object] | None] = []
+        for value in dates:
+            if isinstance(value, date):
+                dateKeys.append(("date", value.isoformat()))
+            elif isinstance(value, np.datetime64):
+                dateKeys.append(("date", np.datetime_as_string(value)))
+            elif isinstance(value, str):
+                dateKeys.append(("text", value))
+            elif isinstance(value, (int, float)) and not isinstance(value, bool) and np.isfinite(value):
+                dateKeys.append(("number", float(value)))
+            else:
+                dateKeys.append(None)
+        sameKind = bool(dateKeys) and all(key is not None and key[0] == dateKeys[0][0] for key in dateKeys)
+        strictly_increasing = bool(sameKind and all(dateKeys[idx][1] < dateKeys[idx + 1][1] for idx in range(n - 1)))
         if not strictly_increasing:
             return BacktestResult(status="error", reason="invalid dates: strict ascending order required", style=style)
     try:

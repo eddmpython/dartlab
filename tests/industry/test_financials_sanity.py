@@ -107,6 +107,28 @@ class TestSanityGuard:
         assert out.row(0, named=True)["revenue"] is None
 
 
+def test_attachFinancialsDefaultUsesObservedYears(monkeypatch):
+    from types import SimpleNamespace
+
+    from dartlab.industry.build import financials
+
+    requested: list[str] = []
+
+    monkeypatch.setattr(financials, "_availableAnnualYears", lambda *, limit=None: ["2027", "2026"][:limit])
+
+    def fakeExtract(year: str):
+        requested.append(year)
+        return pl.DataFrame({"stockCode": ["005930"], "revenue": [float(year)]})
+
+    monkeypatch.setattr(financials, "_extractYearly", fakeExtract)
+    node = SimpleNamespace(stockCode="005930", revenue=None, revenuePeriod=None)
+    financials.attachFinancials([node])
+
+    assert requested == ["2027", "2026"]
+    assert node.revenue == 2027.0
+    assert node.revenuePeriod == "2027"
+
+
 class TestProfitPoolDerived:
     """buildIndustrySummary 의 profit-pool 파생 컬럼 (영업이익률·coverageRatio) 단언.
 
@@ -212,10 +234,24 @@ class TestConcentrationVerb:
     """
 
     @staticmethod
-    def _node(stockCode: str, corpName: str, stage: str, revenue, industry="synthIndustry"):
+    def _node(
+        stockCode: str,
+        corpName: str,
+        stage: str,
+        revenue,
+        industry="synthIndustry",
+        revenuePeriod="2025",
+    ):
         from types import SimpleNamespace
 
-        return SimpleNamespace(stockCode=stockCode, corpName=corpName, industry=industry, stage=stage, revenue=revenue)
+        return SimpleNamespace(
+            stockCode=stockCode,
+            corpName=corpName,
+            industry=industry,
+            stage=stage,
+            revenue=revenue,
+            revenuePeriod=revenuePeriod,
+        )
 
     def _run(self, monkeypatch, nodes):
         from dartlab.industry import Industry
@@ -243,6 +279,9 @@ class TestConcentrationVerb:
         assert rows[0]["상위3비중(%)"] == 100.0
         assert rows[0]["기업수"] == 3
         assert rows[0]["총매출(조)"] == 100.0
+        assert rows[0]["상태"] == "usable"
+        assert rows[0]["회계연도"] == "2025"
+        assert rows[0]["커버리지(%)"] == 100.0
 
     def test_only_top5_rows(self, monkeypatch):
         """7사여도 상위 5사만 행으로 반환 (calcIndustryConcentration topN=5)."""
@@ -250,13 +289,26 @@ class TestConcentrationVerb:
         out = self._run(monkeypatch, nodes)
         assert out.height == 5
 
-    def test_empty_industry_returns_typed_empty(self, monkeypatch):
-        """매출 양수 회사 없으면 빈 DataFrame(스키마 보존) — 0 채움/예외 금지."""
+    def test_empty_industry_returns_structured_unavailable(self, monkeypatch):
+        """매출 양수 회사 없으면 unavailable 한 행으로 사유를 보존한다."""
         nodes = [self._node("z", "Z사", "fab", None)]
         out = self._run(monkeypatch, nodes)
-        assert out.height == 0
-        assert "매출비중(%)" in out.columns
-        assert "HHI" in out.columns
+        assert out.height == 1
+        assert out["상태"][0] == "unavailable"
+        assert out["HHI"][0] is None
+        assert out["제한사유"][0]
+
+    def test_mixed_fiscal_years_are_not_combined(self, monkeypatch):
+        nodes = [
+            self._node("a", "A사", "fab", 60e12, revenuePeriod="2025"),
+            self._node("b", "B사", "fab", 30e12, revenuePeriod="2024"),
+            self._node("c", "C사", "fab", 10e12, revenuePeriod="2023"),
+        ]
+        out = self._run(monkeypatch, nodes)
+        assert out.height == 1
+        assert out["상태"][0] == "unavailable"
+        assert out["HHI"][0] is None
+        assert out["기업수"][0] == 1
 
 
 class TestProfitPoolDynamics:

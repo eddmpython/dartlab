@@ -4,7 +4,7 @@ title: Quant Forecast — 가격 예측
 category: engines
 kind: curated
 status: observed
-purpose: ARIMA/Prophet/RandomWalk 기반 1~30 일 forecast — horizon 명시 + 신뢰구간.
+purpose: Naive/AR(1)/ETS-Holt/Theta 기반 1~30 일 forecast. horizon 명시 + 경험적 예측밴드.
 sourceRefs:
   - dartlab://skills/engines.quant.forecast
 knowledgeRefs:
@@ -23,12 +23,12 @@ runtimeCompatibility:
 whenToUse:
   - short-term price forecast
   - horizon 1~30 days
-  - ARIMA / Prophet / RandomWalk 합성
+  - Naive / AR(1) / ETS-Holt / Theta 합성
 ---
 
 ## 엔진 역할
 
-`forecast` 축은 종목의 일별 수익률 시계열에 4 개의 numpy-only 모델 (Naive · AR(1) · ETS-Holt · Theta) 중 하나를 자동 선택해 fit 하고, horizon-step 후 점예측 + 90% Conformal prediction interval 을 산출한다. 모든 통계는 분포 가정 없는 split conformal 방식으로 보정된다.
+`forecast` 축은 종목의 일별 수익률 시계열에 4 개의 numpy-only 모델 (Naive · AR(1) · ETS-Holt · Theta) 중 하나를 자동 선택해 fit 하고, horizon-step 후 점예측과 held-out one-step residual 분위수 기반 경험적 예측밴드를 산출한다. calibration residual은 expanding-window OOS 방식이지만, 누적 밴드는 `sqrt(h)` 휴리스틱이므로 유한표본 coverage를 보장하는 conformal interval이 아니다.
 
 ## 공개 호출 방식
 
@@ -58,7 +58,7 @@ r = c.quant("예측", horizon=5)
 3. log-return 시계열 변환 + ADF p-value 계산
 4. `_pickModel` 로 모델 선택 (아래 룰)
 5. fit + horizon-step forecast 생성
-6. 90% conformal calib 로 prediction interval 보정
+6. expanding-window held-out residual 분위수로 명목 90% 경험적 밴드 산출
 7. `forecastTable` + `summary` dict 반환
 
 ## 모델 dispatch 룰 (`_pickModel`)
@@ -85,9 +85,13 @@ stationary 라 theta 의 가정 (trend + 평균회귀 분해) 이 잘 맞지 않
   "modelsConsidered": ["etsHolt"],
   "horizon": 5,
   "nObs": 1006,                     # log-return 시계열 길이
-  "calibSize": 201,                 # conformal calib split 크기
+  "calibSize": 201,                 # held-out one-step residual 개수
   "pAdfStationary": 0.4231,         # ADF p-value (dispatch 근거)
-  "conformalHalfWidth": 0.018562,   # 일별 log-return 단위 90% half-width
+  "conformalHalfWidth": 0.018562,   # BC 필드: 일별 log-return 경험적 half-width
+  "intervalMethod": "expandingWindowHeldoutResidualQuantile",
+  "nominalLevel": 90.0,
+  "coverageGuaranteed": false,
+  "cumulativeBandMethod": "sqrtHHeuristic",
   "forecastTable": [
     {
       "horizon": 1,
@@ -103,7 +107,7 @@ stationary 라 theta 의 가정 (trend + 평균회귀 분해) 이 잘 맞지 않
     },
     ...
   ],
-  "summary": "etsHolt: +0.60% over 5d ([-3.55%, +4.75%] 90% CI)"
+  "summary": "etsHolt: +0.60% over 5d ([-3.55%, +4.75%] 90% empirical band; cumulative sqrt(h) heuristic)"
 }
 ```
 
@@ -112,7 +116,7 @@ stationary 라 theta 의 가정 (trend + 평균회귀 분해) 이 잘 맞지 않
 forecast 결과를 인용할 때 다음을 함께 명시:
 - target: `stockCode`
 - period: `lastDate` 와 `nObs`
-- metric: `modelChosen`, `conformalHalfWidth`
+- metric: `modelChosen`, `intervalMethod`, `nominalLevel`, `coverageGuaranteed`, `conformalHalfWidth`
 - value: `forecastTable[h]` 의 점예측 + interval 쌍 (점예측만 X)
 - dateRef: `lastDate` (전일 종가 기준)
 - executionRef: 호출 캡처
@@ -122,7 +126,7 @@ forecast 결과를 인용할 때 다음을 함께 명시:
 - 합성 uptrend (drift +0.0008/day, n=250) → ADF p > 0.05 → etsHolt 선택, cumLogReturn[5] > 0
 - 합성 sideways (OU ρ=0.7) → ADF p < 0.05 → ar1 선택, |pointForecast| 작음
 - 합성 downtrend → cumLogReturn[5] < 0
-- 모든 horizon 에서 lowerBound < pointForecast < upperBound 단조 보장 (conformalHalfWidth ≥ 0)
+- 모든 horizon 에서 lowerBound < pointForecast < upperBound 순서 보장 (경험적 half-width ≥ 0)
 - NaN/inf 출력 없음 — 데이터 부족 시 명시 error dict
 - Cycle 1 회귀 (2026-05-09): 005930 실데이터에서 theta 가 +1.8%/day 비현실 점추정 →
   dispatch 룰을 ar1 로 변경. theta 는 명시 호출 시에만 사용 가능하도록 가드.
@@ -157,7 +161,7 @@ entry = pointForecast > threshold AND (point - halfWidth) > -threshold
 exit  = pointForecast < -threshold OR (point + halfWidth) < -2*threshold
 ```
 
-일별 log-return 의 conformal half-width 는 일별 σ (~0.5~2%) 와 동급이라 strict 모드의 `lower > -threshold` 가 사실상 영원히 False — entry 0. 일별 단위에서 strict 는 권장 안 함. 누적 horizon 시그널 검증할 때만.
+일별 log-return 의 경험적 half-width 는 일별 σ (~0.5~2%) 와 동급이라 strict 모드의 `lower > -threshold` 가 사실상 영원히 False다. entry 0이며 일별 단위에서 strict 는 권장 안 함. 누적 horizon 시그널 검증할 때만 쓴다.
 
 ### 검증된 성능 (2026-05-09 dogfood)
 
@@ -171,7 +175,8 @@ exit  = pointForecast < -threshold OR (point + halfWidth) < -2*threshold
 
 - AutoARIMA / TBATS / SARIMA / GARCH-fit 가격 예측은 본 축 범위 밖 (base install SSOT 보존)
 - 변동성 예측은 별도 축 `volatility` 의 `forecast=True` 옵션 사용
-- 1 일~수십일 이내 단기 forecast 만 의미 있음. 장기 (>60 일) 점예측은 conformal width 가 비대해짐
+- 1 일~수십일 이내 단기 forecast 만 의미 있음. 장기 (>60 일) 누적 밴드는 `sqrt(h)` 휴리스틱 오차가 커짐
+- `nominalLevel`은 경험적 분위수의 명목 수준이며 실제 coverage 보장이 아니다
 - pointForecast 는 *기댓값* 이 아니라 *모델 점추정* — 시장 변동성·뉴스·이벤트 충격 미반영
 
 ## 기본 검증

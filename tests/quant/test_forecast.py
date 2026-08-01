@@ -329,7 +329,9 @@ class TestForecastReturns:
         patch_fetch_ohlcv(_uptrend_close(n=250))
         r = forecastReturns("TEST11", market="KR", horizon=5)
         assert "%" in r["summary"]
-        assert "90% CI" in r["summary"]
+        assert "90% empirical band" in r["summary"]
+        assert r["coverageGuaranteed"] is False
+        assert r["intervalMethod"] == "expandingWindowHeldoutResidualQuantile"
 
 
 # ═══════════════════════════════════════════════════════════

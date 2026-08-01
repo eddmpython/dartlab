@@ -223,7 +223,7 @@ class TestWeightedScore:
         from dartlab.credit.scoring.creditScorecard import weightedScore
 
         axes = [{"score": None, "weight": 0.5}]
-        assert weightedScore(axes) == 50.0  # 중립
+        assert weightedScore(axes) is None
 
 
 class TestMapTo20Grade:

@@ -17,6 +17,7 @@ from dartlab.analysis.financial._valuationDeepProxies import (
     calcReverseImplied,
     computePriceTarget,
 )
+from dartlab.analysis.financial._valuationInputs import _historicalValuationBlock
 from dartlab.core.memory import memoizedCalc
 
 
@@ -70,6 +71,10 @@ def calcPriceTarget(company: Any, *, basePeriod: str | None = None) -> dict | No
     AIContext:
         "목표 주가" 답변 시 weightedTarget + signal + confidence 인용.
     """
+    historicalBlock = _historicalValuationBlock(basePeriod, "priceTarget")
+    if historicalBlock is not None:
+        return historicalBlock
+
     series, shares, currency = _getSeriesAndShares(company)
     price = _fetchPriceContext(company)
     currentPrice = price["currentPrice"] if price else None
@@ -319,6 +324,10 @@ def calcValuationSynthesis(company: Any, *, basePeriod: str | None = None) -> di
     AIContext:
         "이 종목 적정가" 답변 시 weightedFairValue + verdict 인용.
     """
+    historicalBlock = _historicalValuationBlock(basePeriod, "valuationSynthesis")
+    if historicalBlock is not None:
+        return historicalBlock
+
     from dartlab.analysis.valuation.dcf import fullValuation
 
     series, shares, currency = _getSeriesAndShares(company)

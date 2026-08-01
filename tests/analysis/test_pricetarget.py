@@ -124,8 +124,8 @@ class TestDCFFromProforma:
     def test_no_shares(self):
         pf = buildProforma(SERIES, revenueGrowthPath=[5.0])
         ev, eq, per_share = _dcfFromProforma(pf, wacc=10.0, shares=None)
-        # shares 없으면 per_share = equity_value
-        assert per_share == eq
+        assert eq > 0
+        assert per_share is None
 
     @pytest.mark.unit
     def test_empty_proforma(self):
@@ -258,7 +258,9 @@ class TestComputePriceTarget:
     def test_no_current_price(self):
         result = computePriceTarget(SERIES, mcIterations=100, mcSeed=1)
         assert result.upsidePct is None
-        assert result.signal == "hold"
+        assert result.signal is None
+        assert result.status == "blocked"
+        assert result.weighted_target is None
 
     @pytest.mark.unit
     def test_non_semiconductor_redistributes(self):
@@ -307,7 +309,7 @@ class TestComputePriceTarget:
     @pytest.mark.unit
     def test_confidence(self):
         result = computePriceTarget(SERIES, mcIterations=100, mcSeed=1)
-        assert result.confidence in ("high", "medium", "low")
+        assert result.confidence == "unavailable"
 
 
 # ── v2: Multi-Noise MC ───────────────────────────────────

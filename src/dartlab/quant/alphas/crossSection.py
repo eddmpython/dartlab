@@ -29,10 +29,30 @@ def percentileRank(values: list[float]) -> list[float]:
         ``percentileRank([10.0, 30.0, 20.0])`` 은 ``[0.0, 1.0, 0.5]``.
     """
     arr = np.asarray(values, dtype=np.float64)
-    order = arr.argsort()
-    ranks = np.empty_like(order, dtype=np.float64)
-    ranks[order] = np.arange(len(arr))
-    return list(ranks / max(len(arr) - 1, 1))
+    ranks = np.full(len(arr), np.nan, dtype=np.float64)
+    finiteIndices = np.flatnonzero(np.isfinite(arr))
+    if finiteIndices.size == 0:
+        return list(ranks)
+    if finiteIndices.size == 1:
+        ranks[finiteIndices[0]] = 0.0
+        return list(ranks)
+
+    finiteValues = arr[finiteIndices]
+    order = np.argsort(finiteValues, kind="mergesort")
+    sortedValues = finiteValues[order]
+    sortedRanks = np.empty(finiteIndices.size, dtype=np.float64)
+    start = 0
+    while start < finiteIndices.size:
+        end = start + 1
+        while end < finiteIndices.size and sortedValues[end] == sortedValues[start]:
+            end += 1
+        averageRank = (start + end - 1) / 2.0
+        sortedRanks[start:end] = averageRank
+        start = end
+    finiteRanks = np.empty(finiteIndices.size, dtype=np.float64)
+    finiteRanks[order] = sortedRanks / (finiteIndices.size - 1)
+    ranks[finiteIndices] = finiteRanks
+    return list(ranks)
 
 
 __all__ = ["percentileRank"]

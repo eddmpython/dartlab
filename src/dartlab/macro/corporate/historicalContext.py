@@ -411,6 +411,9 @@ def buildHistoricalContext(
     indpro = data.get("indpro")
     vixD = data.get("vix")
     nfciD = data.get("nfci")
+    observedInputs = sum(bool(series) for series in (hy, spread3m, spread2y, ur, cpiRaw, indpro, vixD, nfciD))
+    if observedInputs == 0:
+        return HistoricalContext(description="역사적 맥락 시계열 데이터 부족")
 
     hyD3 = _deltaN(hy, 3) if hy else {}
     urD6 = _deltaN(ur, 6) if ur else {}
@@ -424,17 +427,20 @@ def buildHistoricalContext(
     event_data = dict(swData)
     if data.get("fedfunds"):
         event_data["fedfunds"] = data["fedfunds"]
-    events = matchHistoricalEvents(event_data) if event_data else []
+    aggregateEligible = observedInputs >= 4
+    events = matchHistoricalEvents(event_data) if aggregateEligible and event_data else []
 
-    riskScore = _computeRiskScore(signals)
-    level, label = _riskLevelFromScore(riskScore)
+    if aggregateEligible:
+        riskScore = _computeRiskScore(signals)
+        level, label = _riskLevelFromScore(riskScore)
+        opp_score = _computeOpportunityScore(signals)
+        opp_level, oppLabel = _opportunityLevelFromScore(opp_score)
+        desc_parts = _buildDescriptionParts(riskScore, label, oppLabel, signals, events)
+    else:
+        level = label = opp_level = oppLabel = None
+        desc_parts = [f"역사적 맥락 핵심 시계열 {observedInputs}/8개만 관측되어 종합 판정을 보류합니다"]
 
-    opp_score = _computeOpportunityScore(signals)
-    opp_level, oppLabel = _opportunityLevelFromScore(opp_score)
-
-    desc_parts = _buildDescriptionParts(riskScore, label, oppLabel, signals, events)
-
-    suggested_scenario, suggested_reason = _findSuggestedScenario(events)
+    suggested_scenario, suggested_reason = _findSuggestedScenario(events) if aggregateEligible else (None, None)
     if suggested_scenario:
         desc_parts.append(f"다음 장 주의: {suggested_scenario} ({suggested_reason})")
 
@@ -467,4 +473,7 @@ def buildHistoricalContext(
         opportunityLevel=opp_level,
         opportunityLabel=oppLabel,
         description=". ".join(desc_parts),
+        status="usable" if observedInputs == 8 else "partial",
+        observedInputs=observedInputs,
+        totalInputs=8,
     )

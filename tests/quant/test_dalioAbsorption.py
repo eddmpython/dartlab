@@ -44,13 +44,24 @@ def test_dalioDebtCyclePhase_1975_reflationary():
 
 
 @pytest.mark.unit
-def test_dalioDebtCyclePhase_missing_inputs_default():
+def test_dalioDebtCyclePhase_missing_inputs_unavailable():
     from dartlab.credit.monitoring.crisisDetector import dalioDebtCyclePhase
 
-    # 결측 → earlyBoom 기본값 (예외 금지)
     r = dalioDebtCyclePhase()
-    assert r.phase == "earlyBoom"
+    assert r.phase is None
+    assert r.status == "unavailable"
     assert isinstance(r.signals, list)
+
+
+@pytest.mark.unit
+def test_dalioPolicyLeverStatus_missing_is_not_spare():
+    from dartlab.credit.monitoring.crisisDetector import dalioPolicyLeverStatus
+
+    r = dalioPolicyLeverStatus(policyRate=5.0)
+    assert r.monetary == "spare"
+    assert r.fiscal == "unknown"
+    assert r.exhaustionScore is None
+    assert r.status == "partial"
 
 
 # ── L0 — dalioPolicyLeverStatus 소진도 ───────────────────────

@@ -82,8 +82,14 @@ def calcRepresentativeAnalysis(company: Any, *, basePeriod: str | None = None) -
     for domain in _REQUIRED_DOMAINS:
         rows = [row for row in coverageRows if row["domain"] == domain and row["required"]]
         observed = sum(row["status"] == "observed" for row in rows)
+        if observed == len(rows) and rows:
+            domainStatus = "observed"
+        elif observed > 0:
+            domainStatus = "partial"
+        else:
+            domainStatus = "missing"
         domainCoverage[domain] = {
-            "status": "observed" if observed > 0 else "missing",
+            "status": domainStatus,
             "observed": observed,
             "expected": len(rows),
         }
@@ -253,6 +259,12 @@ def _componentState(blockKey: str, value: Any, failure: str | None) -> tuple[str
         return "missing", f"계산이 완료되지 않았습니다 ({failure})."
     if value is None or value == {} or value == []:
         return "missing", "가용 데이터가 없어 계산 결과가 비었습니다."
+    if blockKey == "earningsQualityFlags" and isinstance(value, dict):
+        qualityCoverage = value.get("coverage")
+        if not isinstance(qualityCoverage, dict):
+            return "partial", "이익품질 하위 계산의 근거 coverage가 없어 무경고를 관측으로 볼 수 없습니다."
+        if qualityCoverage.get("status") != "observed":
+            return "partial", str(qualityCoverage.get("reason") or "이익품질 하위 계산 근거가 불완전합니다.")
     if blockKey in {"cashFlowOverview", "cashQuality"} and _looksLikeCashZeroFill(value):
         return "partial", "이익 또는 매출은 존재하지만 현금흐름이 전 기간 0이라 결손 가능성이 있습니다."
     return "observed", "계산 근거를 확보했습니다."

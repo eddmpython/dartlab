@@ -302,6 +302,7 @@ def calcHoldingDFV(company: Any, *, basePeriod: str | None = None, overrides: di
     return {
         "dFV": round(per_share),
         "scenarios": {"bull": round(bull), "base": round(per_share), "bear": round(bear)},
+        "scenarioMethod": {"method": "arithmeticPercentBand", "percent": 15.0},
         "currentPrice": round(currentPrice) if currentPrice else None,
         "upside": round(upside, 1) if upside is not None else None,
         "opinion": _opinion(upside),

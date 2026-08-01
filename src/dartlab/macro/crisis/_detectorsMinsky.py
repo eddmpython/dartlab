@@ -102,6 +102,20 @@ def minskyPhase(
     """
     signals: list[str] = []
     scores = {"displacement": 0, "boom": 0, "overtrading": 0, "discredit": 0, "revulsion": 0}
+    observedInputs = sum(
+        value is not None for value in (creditGap, assetReturn3y, hySpread, vix, ponziRatio, dxyChange)
+    )
+    if observedInputs == 0:
+        return MinskyPhaseResult(
+            phase=None,
+            phaseLabel=None,
+            confidence="unavailable",
+            signals=[],
+            description="Minsky 순환 판정 입력 데이터 부족",
+            status="unavailable",
+            observedInputs=0,
+            totalInputs=6,
+        )
 
     if creditGap is not None:
         if creditGap > 10:
@@ -167,9 +181,19 @@ def minskyPhase(
         confidence = "high"
     elif best_score >= 2:
         confidence = "medium"
-    else:
+    elif best_score == 1:
         confidence = "low"
-        best = "displacement"  # 판별 불가 시 초기 단계
+    else:
+        return MinskyPhaseResult(
+            phase=None,
+            phaseLabel=None,
+            confidence="inconclusive",
+            signals=signals,
+            description="관측 지표가 임계 신호를 만들지 않아 Minsky 단계를 판정할 수 없습니다.",
+            status="partial" if observedInputs < 2 else "inconclusive",
+            observedInputs=observedInputs,
+            totalInputs=6,
+        )
 
     return MinskyPhaseResult(
         phase=best,
@@ -177,6 +201,9 @@ def minskyPhase(
         confidence=confidence,
         signals=signals,
         description=f"Minsky 순환: {labels[best]} ({confidence})",
+        status="usable" if observedInputs >= 2 else "partial",
+        observedInputs=observedInputs,
+        totalInputs=6,
     )
 
 

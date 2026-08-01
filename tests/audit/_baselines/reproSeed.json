@@ -6,13 +6,6 @@
       "text": "time.sleep(delay * random.uniform(0.75, 1.25))"
     }
   ],
-  "src/dartlab/analysis/valuation/pricetarget.py": [
-    {
-      "line": 318,
-      "pattern": "stdlib random",
-      "text": "z = [random.gauss(0, 1) for _ in range(5)]"
-    }
-  ],
   "src/dartlab/gather/domains/naverGlobal.py": [
     {
       "line": 60,
@@ -22,69 +15,69 @@
   ],
   "src/dartlab/gather/infra/http.py": [
     {
-      "line": 261,
+      "line": 279,
       "pattern": "stdlib random",
       "text": "\"User-Agent\": random.choice(_USER_AGENTS),"
     },
     {
-      "line": 390,
+      "line": 566,
       "pattern": "stdlib random",
       "text": "jitter = random.uniform(policy.jitter_min, policy.jitter_max)"
     },
     {
-      "line": 396,
+      "line": 572,
       "pattern": "stdlib random",
       "text": "req_headers = {\"User-Agent\": random.choice(_USER_AGENTS)}"
     },
     {
-      "line": 408,
+      "line": 584,
       "pattern": "stdlib random",
       "text": "wait = base * (attempt + 1) + random.uniform(0.5, 2.0)"
     },
     {
-      "line": 413,
+      "line": 589,
       "pattern": "stdlib random",
       "text": "wait = 2**attempt + random.uniform(0.1, 0.5)"
     },
     {
-      "line": 423,
+      "line": 599,
       "pattern": "stdlib random",
       "text": "await asyncio.sleep(2**attempt + random.uniform(0.1, 0.5))"
     },
     {
-      "line": 495,
+      "line": 676,
       "pattern": "stdlib random",
       "text": "jitter = random.uniform(policy.jitter_min, policy.jitter_max)"
     },
     {
-      "line": 501,
+      "line": 682,
       "pattern": "stdlib random",
       "text": "req_headers = {\"User-Agent\": random.choice(_USER_AGENTS)}"
     },
     {
-      "line": 514,
+      "line": 695,
       "pattern": "stdlib random",
       "text": "wait = base * (attempt + 1) + random.uniform(0.5, 2.0)"
     },
     {
-      "line": 519,
+      "line": 700,
       "pattern": "stdlib random",
       "text": "wait = 2**attempt + random.uniform(0.1, 0.5)"
     },
     {
-      "line": 529,
+      "line": 710,
       "pattern": "stdlib random",
       "text": "await asyncio.sleep(2**attempt + random.uniform(0.1, 0.5))"
     }
   ],
   "src/dartlab/quant/strategy/rule.py": [
     {
-      "line": 269,
+      "line": 271,
       "pattern": "numpy random",
       "text": "np.random.seed(42)"
     },
     {
-      "line": 270,
+      "line": 272,
       "pattern": "stdlib random",
       "text": "rand_idx = np.random.randint(0, n - forward, size=max(len(valid_entries), 100))"
     }
@@ -105,12 +98,12 @@
   ],
   "tests/analysis/test_insight_pipeline.py": [
     {
-      "line": 278,
+      "line": 321,
       "pattern": "stdlib random",
       "text": "daily_returns = [random.gauss(0, 0.02) for _ in range(200)]"
     },
     {
-      "line": 358,
+      "line": 401,
       "pattern": "stdlib random",
       "text": "returns = [random.gauss(0, daily_sigma) for _ in range(252)]"
     }

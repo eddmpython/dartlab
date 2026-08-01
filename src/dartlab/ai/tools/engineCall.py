@@ -91,6 +91,24 @@ def _axisEngineCall(engine: str, axis: str, plan: dict[str, Any]) -> ToolResult:
         return ToolResult(False, f"axis-engine 을 찾지 못했습니다: {engine}", error="unknown_engine")
     target = plan.get("target") or plan.get("stockCode") or None
     kwargs = dict(plan.get("kwargs") or {})
+    if engine == "analysis":
+        if not target and not kwargs.get("stockCode") and kwargs.get("company") is None:
+            return ToolResult(
+                False,
+                "analysis 축 실행에는 stockCode 또는 company가 필요합니다.",
+                error="company_not_resolved",
+            )
+        if target:
+            kwargs.setdefault("stockCode", target)
+        with _quietExecutionNoise():
+            result = fn(axis, **kwargs)
+        if isinstance(result, pl.DataFrame):
+            return ToolResult(
+                False,
+                "analysis 계산 결과 대신 항목 목록이 반환되어 실행을 차단했습니다.",
+                error="analysis_not_executed",
+            )
+        return _resultToRefs(f"{engine}.{axis}", result, target=str(target or ""))
     with _quietExecutionNoise():
         result = fn(axis, target, **kwargs)
     return _resultToRefs(f"{engine}.{axis}", result, target=str(target or ""))

@@ -29,14 +29,20 @@ import logging
 import polars as pl
 
 from dartlab.quant.factor.build import _latestYear
-from dartlab.quant.screen.dataAccess import extractAccount, loadScanParquet
+from dartlab.quant.screen.dataAccess import extractAccount, loadScanParquet, loadSharesOutstanding
 from dartlab.synth.rowAccess import safeDiv
 from dartlab.synth.scanBridge import extractAnnualConsolidated, isEdgarSchema
 
 log = logging.getLogger(__name__)
 
 
-def _scoreOne(cur: pl.DataFrame, prev: pl.DataFrame | None) -> dict | None:
+def _scoreOne(
+    cur: pl.DataFrame,
+    prev: pl.DataFrame | None,
+    *,
+    sharesCur: float | None = None,
+    sharesPrev: float | None = None,
+) -> dict | None:
     """단일 종목의 9 신호 평가 → dict(components, total)."""
     ta = extractAccount(cur, "total_assets")
     if not ta or ta <= 0:
@@ -48,9 +54,8 @@ def _scoreOne(cur: pl.DataFrame, prev: pl.DataFrame | None) -> dict | None:
     cl = extractAccount(cur, "current_liabilities")
     gp = extractAccount(cur, "gross_profit")
     sales = extractAccount(cur, "sales")
-    eq = extractAccount(cur, "total_equity")
 
-    components: dict[str, bool] = {}
+    components: dict[str, bool | None] = {}
     roa = safeDiv(ni, ta)
     components["roaPositive"] = bool(roa is not None and roa > 0)
     components["ocfPositive"] = bool(ocf is not None and ocf > 0)
@@ -64,7 +69,6 @@ def _scoreOne(cur: pl.DataFrame, prev: pl.DataFrame | None) -> dict | None:
     cl_prev = None
     gp_prev = None
     sales_prev = None
-    eq_prev = None
     if prev is not None and not prev.is_empty():
         ta_prev = extractAccount(prev, "total_assets")
         ni_prev = extractAccount(prev, "net_income")
@@ -74,7 +78,6 @@ def _scoreOne(cur: pl.DataFrame, prev: pl.DataFrame | None) -> dict | None:
         cl_prev = extractAccount(prev, "current_liabilities")
         gp_prev = extractAccount(prev, "gross_profit")
         sales_prev = extractAccount(prev, "sales")
-        eq_prev = extractAccount(prev, "total_equity")
 
     roa_prev = safeDiv(ni_prev, ta_prev)
     components["roaIncreasing"] = bool(roa is not None and roa_prev is not None and roa > roa_prev)
@@ -89,14 +92,11 @@ def _scoreOne(cur: pl.DataFrame, prev: pl.DataFrame | None) -> dict | None:
     cr_prev = safeDiv(ca_prev, cl_prev)
     components["currentRatioUp"] = bool(cr_cur is not None and cr_prev is not None and cr_cur > cr_prev)
 
-    # no new shares: 자본 대비 자산 비율 지속 (equity dilution proxy)
-    # 실제 issued_shares 없음 → equity가 자산 대비 떨어지지 않으면 pass (보수적)
-    e2a_cur = safeDiv(eq, ta)
-    e2a_prev = safeDiv(eq_prev, ta_prev)
-    if e2a_cur is not None and e2a_prev is not None:
-        components["noNewShares"] = bool(e2a_cur >= e2a_prev * 0.95)
+    # F7: 발행주식수의 전년 대비 증가 여부. 자본/자산 비율은 발행 여부가 아니므로 사용하지 않는다.
+    if sharesCur is not None and sharesPrev is not None and sharesCur > 0 and sharesPrev > 0:
+        components["noNewShares"] = bool(sharesCur <= sharesPrev * 1.001)
     else:
-        components["noNewShares"] = True  # 데이터 없으면 보수적 pass
+        components["noNewShares"] = None
 
     # gross margin
     gm_cur = safeDiv(gp, sales)
@@ -108,8 +108,43 @@ def _scoreOne(cur: pl.DataFrame, prev: pl.DataFrame | None) -> dict | None:
     at_prev = safeDiv(sales_prev, ta_prev)
     components["assetTurnoverUp"] = bool(at_cur is not None and at_prev is not None and at_cur > at_prev)
 
-    total = sum(1 for v in components.values() if v)
-    return {"total": total, "components": components}
+    observed = sum(value is not None for value in components.values())
+    partialTotal = sum(1 for value in components.values() if value is True)
+    return {
+        "total": partialTotal if observed == 9 else None,
+        "partialTotal": partialTotal,
+        "components": components,
+        "coverage": {"observed": observed, "expected": 9, "scoreEligible": observed == 9},
+    }
+
+
+def _sharesByYear(market: str) -> dict[tuple[str, str], float]:
+    """발행주식수 원장에서 (종목, 연도)별 최신 보통주+우선주 합계를 만든다."""
+    try:
+        sharesLf = loadSharesOutstanding(market)
+        if sharesLf is None:
+            return {}
+        sharesDf = sharesLf.collect(engine="streaming")
+    except (OSError, ValueError, KeyError, AttributeError):
+        return {}
+
+    result: dict[tuple[str, str], tuple[str, float]] = {}
+    for row in sharesDf.to_dicts():
+        code = str(row.get("stockCode") or "")
+        if market.upper() == "KR" and code.isdigit():
+            code = code.zfill(6)
+        period = str(row.get("period_end") or "")[:10]
+        if not code or len(period) < 4:
+            continue
+        values = [row.get("common"), row.get("preferred")]
+        numeric = [float(value) for value in values if isinstance(value, int | float) and value >= 0]
+        if not numeric:
+            continue
+        key = (code, period[:4])
+        total = sum(numeric)
+        if key not in result or period > result[key][0]:
+            result[key] = (period, total)
+    return {key: value for key, (_, value) in result.items()}
 
 
 def calcPiotroskiFactor(
@@ -177,8 +212,9 @@ def calcPiotroskiFactor(
         18.3 % 강건
 
     Notes:
-        - F7 (noNewShares): DART 에 issued_shares 원장 없어 equity/asset 유지로 근사.
-        - 전년도 데이터 없는 종목은 F3/F5/F6/F7/F8/F9 자동 실패 (보수적).
+        - F7 (noNewShares): sharesOutstanding 원장의 전년 대비 주식수 변화 proxy.
+          원장 결손이면 실패 0점이 아니라 None이며 9점 총점·등급을 발행하지 않는다.
+        - 전년도 비교가 없는 신호는 None으로 coverage에서 제외한다.
         - 2년 연속 동일 F ≥ 8 stream = hedge fund 장기 롱 후보.
     """
     try:
@@ -205,9 +241,16 @@ def calcPiotroskiFactor(
     prev = snap.filter(pl.col(yearCol) == prev_year_val)
     if cur.is_empty():
         return None
+    if stockCode:
+        cur = cur.filter(pl.col("stockCode") == stockCode)
+        prev = prev.filter(pl.col("stockCode") == stockCode)
+
+    sharesByYear = _sharesByYear(market)
 
     scores: dict[str, int] = {}
+    partialScores: dict[str, int] = {}
     components: dict[str, dict] = {}
+    coverageByStock: dict[str, dict] = {}
     # 성능 fix (G5): partition_by 한 번 호출 → O(n) lookup
     cur_parts = cur.partition_by("stockCode", as_dict=True)
     prev_parts = prev.partition_by("stockCode", as_dict=True)
@@ -216,14 +259,37 @@ def calcPiotroskiFactor(
         if not isinstance(code, str):
             continue
         s_prev = prev_parts.get(code_key)
-        res = _scoreOne(s_cur, s_prev if s_prev is not None and not s_prev.is_empty() else None)
+        res = _scoreOne(
+            s_cur,
+            s_prev if s_prev is not None and not s_prev.is_empty() else None,
+            sharesCur=sharesByYear.get((code, str(year))),
+            sharesPrev=sharesByYear.get((code, str(prev_year_val))),
+        )
         if res is None:
             continue
-        scores[code] = res["total"]
+        partialScores[code] = res["partialTotal"]
+        if res["total"] is not None:
+            scores[code] = res["total"]
         components[code] = res["components"]
+        coverageByStock[code] = res["coverage"]
 
     if not scores:
-        return None
+        return {
+            "status": "unavailable",
+            "blockedReason": "F7 발행주식수 또는 다른 필수 신호가 없어 canonical 9점 F-Score를 발행할 수 없습니다.",
+            "market": market,
+            "year": str(year),
+            "prevYear": str(prev_year_val),
+            "universe": len(partialScores),
+            "scores": {},
+            "partialScores": partialScores,
+            "components": components,
+            "coverage": coverageByStock,
+            "grades": None,
+            "topStrong": [],
+            "topWeak": [],
+            "signalAvg": {},
+        }
 
     grades_count = {"strong": 0, "moderate": 0, "weak": 0}
     for f in scores.values():
@@ -255,7 +321,8 @@ def calcPiotroskiFactor(
     ]
     signalAvg = {}
     for k in signal_keys:
-        passed = sum(1 for c in components.values() if c.get(k))
+        eligibleComponents = [components[code] for code in scores if code in components]
+        passed = sum(1 for component in eligibleComponents if component.get(k) is True)
         signalAvg[k] = round(100 * passed / total, 1)
 
     # 단일 종목 분기 (Step 6)
@@ -266,10 +333,17 @@ def calcPiotroskiFactor(
                 "stockCode": stockCode,
                 "market": market,
                 "year": str(year),
-                "error": f"{stockCode} 데이터 없음 (universe {total}개 중 미포함)",
+                "status": "unavailable",
+                "blockedReason": "9개 신호 coverage가 불완전해 canonical F-Score를 발행할 수 없습니다.",
+                "score": None,
+                "grade": None,
+                "partialScore": partialScores.get(stockCode),
+                "components": components.get(stockCode, {}),
+                "coverage": coverageByStock.get(stockCode),
             }
         grade = "strong" if f >= 7 else ("moderate" if f >= 4 else "weak")
         return {
+            "status": "usable",
             "stockCode": stockCode,
             "market": market,
             "year": str(year),
@@ -277,6 +351,7 @@ def calcPiotroskiFactor(
             "score": f,
             "grade": grade,
             "components": components.get(stockCode, {}),
+            "coverage": coverageByStock.get(stockCode),
             "universe": total,
             "interpretation": (
                 f"{stockCode} Piotroski F={f}/9 ({grade}) — "
@@ -285,12 +360,16 @@ def calcPiotroskiFactor(
         }
 
     return {
+        "status": "usable" if len(scores) == len(partialScores) else "partial",
         "market": market,
         "year": str(year),
         "prevYear": str(prev_year_val),
         "universe": total,
         "scores": scores,
+        "partialScores": partialScores,
         "components": components,
+        "coverage": coverageByStock,
+        "excludedForCoverage": len(partialScores) - len(scores),
         "grades": grades,
         "topStrong": topStrong,
         "topWeak": topWeak,
@@ -338,13 +417,16 @@ def calcPiotroskiSeries(*, market: str = "KR") -> pl.DataFrame | None:
     for k, g in snap.partition_by(yearCol, as_dict=True).items():
         key = k[0] if isinstance(k, tuple) else k
         byYear[str(key)] = g
+    sharesByYear = _sharesByYear(market)
 
     out: list[dict] = []
     for yStr in sorted(byYear):
         cur = byYear[yStr]
         try:
-            prev = byYear.get(str(int(yStr) - 1))
+            prevYearStr = str(int(yStr) - 1)
+            prev = byYear.get(prevYearStr)
         except ValueError:
+            prevYearStr = ""
             prev = None
         curParts = cur.partition_by("stockCode", as_dict=True)
         prevParts = prev.partition_by("stockCode", as_dict=True) if prev is not None else {}
@@ -353,8 +435,13 @@ def calcPiotroskiSeries(*, market: str = "KR") -> pl.DataFrame | None:
             if not isinstance(code, str):
                 continue
             sPrev = prevParts.get(ck)
-            res = _scoreOne(sCur, sPrev if sPrev is not None and not sPrev.is_empty() else None)
-            if res is None:
+            res = _scoreOne(
+                sCur,
+                sPrev if sPrev is not None and not sPrev.is_empty() else None,
+                sharesCur=sharesByYear.get((code, yStr)),
+                sharesPrev=sharesByYear.get((code, prevYearStr)),
+            )
+            if res is None or res["total"] is None:
                 continue
             out.append({"stockCode": code, "bsns_year": yStr, "piotroski": int(res["total"])})
     if not out:

@@ -139,7 +139,7 @@ def dalioDebtCyclePhase(
         sub-phase → fx/reserve 기반 regimeVariant.
 
     Requires:
-        gdpGrowth + creditGap + realRate 중 최소 1 개.
+        gdpGrowth + creditGap + realRate + debtServiceYoY 중 최소 3 개.
 
     AIContext:
         phase + signals + description 함께 인용. beautifulDeleveraging 결과
@@ -155,7 +155,7 @@ def dalioDebtCyclePhase(
             DalioPhaseResult ``{phase, phaseLabel, signals, subPhase,
             regimeVariant, description}``.
         Prerequisites:
-            gdpGrowth + creditGap + realRate (1 개 이상). 결측 시 earlyBoom 기본.
+            핵심 입력 4 개 중 3 개 이상. 미달하면 status="unavailable"이며 phase는 None.
         Freshness:
             BIS 분기, 실질금리 일/월.
         Dataflow:
@@ -165,38 +165,42 @@ def dalioDebtCyclePhase(
     """
     signals: list[str] = []
 
-    # 입력 결측 → earlyBoom 기본값
-    if gdpGrowth is None and creditGap is None and realRate is None:
+    coreInputs = (gdpGrowth, creditGap, realRate, debtServiceYoY)
+    observedInputs = sum(value is not None for value in coreInputs)
+    if observedInputs < 3:
         return DalioPhaseResult(
-            phase="earlyBoom",
-            phaseLabel=_DALIO_PHASE_LABELS["earlyBoom"],
-            signals=["데이터 부족 — 기본값"],
-            description="입력 부족으로 기본값(초기 확장기) 반환",
+            phase=None,
+            phaseLabel=None,
+            signals=[],
+            description="핵심 입력 4개 중 3개 미만이라 Dalio 부채사이클을 판정할 수 없습니다.",
+            status="unavailable",
+            observedInputs=observedInputs,
+            totalInputs=4,
         )
 
-    g = gdpGrowth if gdpGrowth is not None else 0.0
-    cg = creditGap if creditGap is not None else 0.0
-    rr = realRate if realRate is not None else 0.0
-    ds = debtServiceYoY if debtServiceYoY is not None else 0.0
+    g = gdpGrowth
+    cg = creditGap
+    rr = realRate
+    ds = debtServiceYoY
 
     # 1. 디플레이션 공황
-    if g < -1.0 and cg < 0:
+    if g is not None and cg is not None and g < -1.0 and cg < 0:
         signals.append(f"GDP 성장 {g:+.1f}% + 신용갭 {cg:+.1f}%p 음전환")
         phase = "deflationaryDepression"
     # 2. Reflationary
-    elif rr < -2.0 and g >= -2.0:
+    elif rr is not None and g is not None and rr < -2.0 and g >= -2.0:
         signals.append(f"실질금리 {rr:+.1f}% 깊은 마이너스 + 성장 회복 중")
         phase = "reflationary"
     # 3. Top Bubble
-    elif cg >= 8.0 and g > 0 and rr < 2.0:
+    elif cg is not None and g is not None and rr is not None and cg >= 8.0 and g > 0 and rr < 2.0:
         signals.append(f"신용갭 {cg:+.1f}%p 과열 + 성장 {g:+.1f}% + 실질금리 {rr:+.1f}%")
         phase = "topBubble"
     # 4. Late Boom
-    elif cg >= 2.0 and ds > 0 and g > 0:
+    elif cg is not None and ds is not None and g is not None and cg >= 2.0 and ds > 0 and g > 0:
         signals.append(f"신용갭 {cg:+.1f}%p 상승 + 부채서비스 {ds:+.1f}%p 악화")
         phase = "lateBoom"
     # 5. Beautiful Deleveraging
-    elif ds < 0 and g > 0:
+    elif ds is not None and g is not None and ds < 0 and g > 0:
         signals.append(f"부채서비스 {ds:+.1f}%p 개선 + 성장 {g:+.1f}% 양호")
         phase = "beautifulDeleveraging"
     # 6. Early Boom (기본)
@@ -217,7 +221,7 @@ def dalioDebtCyclePhase(
         subPhase = _beautifulDeleveragingSubPhase(
             realRate=realRate,
             m2GrowthYoy=m2GrowthYoy,
-            debtServiceYoY=ds,
+            debtServiceYoY=debtServiceYoY,
             npl=npl,
             hySpread=hySpread,
             fiscalDeficitPctGdp=fiscalDeficitPctGdp,
@@ -246,6 +250,9 @@ def dalioDebtCyclePhase(
         subPhaseLabel=subPhaseLab,
         regimeVariant=variant,
         regimeVariantLabel=variantLab,
+        status="usable",
+        observedInputs=observedInputs,
+        totalInputs=4,
     )
 
 
@@ -306,7 +313,7 @@ def dalioPolicyLeverStatus(
         라벨 → score 합산 → status.
 
     Requires:
-        없음 — 4 레버 모두 옵션. 입력 없으면 모두 spare.
+        개별 상태는 입력된 레버만 판정. 종합 소진 점수는 4 레버가 모두 필요.
 
     AIContext:
         status="depleted" 결과는 정책 결정자 향 (정부 대응 한계 시점). 개별
@@ -315,13 +322,12 @@ def dalioPolicyLeverStatus(
     LLM Specifications:
         AntiPatterns:
             - 단일 레버 (policyRate 만) 보고 status 단정 — 4 레버 합산.
-            - fxFlexibility 결측 시 자동 spare 처리 — 의도된 default 이나
-              실제 peg/관리 통화이면 maxed 명시 권장.
+            - 결측 레버를 spare 로 간주해 종합 점수를 발행.
         OutputSchema:
             DalioPolicyLeverResult ``{monetary, fiscal, credit, fx, totalScore,
             available, status, description}``.
         Prerequisites:
-            적어도 1 레버 입력 권장 (그 외 spare default).
+            개별 레버 판정은 해당 입력, 종합 점수는 4개 모두 필요. 결측은 unknown.
         Freshness:
             정책금리 일, 공공부채 분기 (IMF/한국은행), creditGap 분기.
         Dataflow:
@@ -332,7 +338,7 @@ def dalioPolicyLeverStatus(
 
     def _ratePhase(v: float | None) -> str:
         if v is None:
-            return "spare"
+            return "unknown"
         if v <= 0.5:
             return "maxed"
         if v <= 2.0:
@@ -341,7 +347,7 @@ def dalioPolicyLeverStatus(
 
     def _debtPhase(v: float | None) -> str:
         if v is None:
-            return "spare"
+            return "unknown"
         if v >= 120:
             return "maxed"
         if v >= 80:
@@ -350,7 +356,7 @@ def dalioPolicyLeverStatus(
 
     def _creditPhase(v: float | None) -> str:
         if v is None:
-            return "spare"
+            return "unknown"
         if v >= 8:
             return "maxed"
         if v >= 2:
@@ -359,7 +365,7 @@ def dalioPolicyLeverStatus(
 
     def _fxPhase(v: str | None) -> str:
         if v is None:
-            return "spare"
+            return "unknown"
         if v == "pegged":
             return "maxed"
         if v == "managed":
@@ -380,8 +386,9 @@ def dalioPolicyLeverStatus(
     if fxFlexibility is not None:
         signals.append(f"환율 체제 {fxFlexibility} — fx 레버 {fx}")
 
+    observedInputs = sum(value is not None for value in (policyRate, publicDebtToGdp, creditGap, fxFlexibility))
     scoreMap = {"maxed": 3, "partial": 2, "spare": 1}
-    score = scoreMap[monetary] + scoreMap[fiscal] + scoreMap[credit] + scoreMap[fx]
+    score = scoreMap[monetary] + scoreMap[fiscal] + scoreMap[credit] + scoreMap[fx] if observedInputs == 4 else None
     return DalioPolicyLeverResult(
         monetary=monetary,
         fiscal=fiscal,
@@ -389,6 +396,9 @@ def dalioPolicyLeverStatus(
         fx=fx,
         exhaustionScore=score,
         signals=signals,
+        status="usable" if observedInputs == 4 else ("partial" if observedInputs else "unavailable"),
+        observedInputs=observedInputs,
+        totalInputs=4,
     )
 
 

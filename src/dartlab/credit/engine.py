@@ -468,7 +468,136 @@ def evaluateCompany(
         weight = a.get("weight", 0)
         a["contribution"] = round(score * weight, 2) if score is not None else None
 
+    observed_axes = [a for a in axes if a["score"] is not None]
+    core_axes = axes[:4]
+    observed_core_axes = [a for a in core_axes if a["score"] is not None]
+    observed_core_metrics = sum(
+        1
+        for axis in core_axes
+        for metric in axis["metrics"]
+        if (metric.get("score") if isinstance(metric, dict) else metric[1]) is not None
+    )
+    expected_core_metrics = sum(len(axis["metrics"]) for axis in core_axes)
+    observed_weight = sum(a["weight"] for a in observed_axes)
+    grade_eligible = len(observed_core_axes) == 4 and observed_core_metrics >= 8
+    coverage = {
+        "observedAxes": len(observed_axes),
+        "totalAxes": len(axes),
+        "observedCoreAxes": len(observed_core_axes),
+        "requiredCoreAxes": 4,
+        "observedCoreMetrics": observed_core_metrics,
+        "minimumCoreMetrics": 8,
+        "expectedCoreMetrics": expected_core_metrics,
+        "observedWeightPct": round(observed_weight * 100, 1),
+        "gradeEligible": grade_eligible,
+    }
+
+    normalized_axes = [
+        {
+            "name": a["name"],
+            "score": a["score"],
+            "weight": round(a["weight"] * 100),
+            "contribution": a.get("contribution"),
+            "metrics": _normalizeMetricsForOutput(a["metrics"]),
+        }
+        for a in axes
+    ]
+
+    if not grade_eligible:
+        blocked_reason = (
+            "일반기업 dCR 발행에 필요한 핵심 4축과 최소 8개 핵심 지표가 "
+            f"충족되지 않았습니다 (핵심축 {len(observed_core_axes)}/4, "
+            f"핵심지표 {observed_core_metrics}/{expected_core_metrics})."
+        )
+        result = {
+            "assessmentStatus": "blocked",
+            "blockedReason": blocked_reason,
+            "coverage": coverage,
+            "grade": None,
+            "gradeRaw": None,
+            "gradeDescription": "자료부족",
+            "gradeCategory": None,
+            "investmentGrade": None,
+            "score": None,
+            "healthScore": None,
+            "currentScore": None,
+            "pdEstimate": None,
+            "eCR": None,
+            "outlook": "N/A",
+            "sector": sectorLabel,
+            "captiveFinance": captive,
+            "holding": holding,
+            "latestPeriod": latest.get("period"),
+            "chsAdjustment": None,
+            "notchAdjustment": None,
+            "divergenceExplanation": None,
+            "methodologyVersion": "v4.0",
+            "_scoreMeaning": _CREDIT_SCORE_LEGEND,
+            "axes": normalized_axes,
+        }
+        if requestedOverrides:
+            result["appliedOverrides"] = appliedOverrides
+            result["ignoredOverrides"] = ignoredOverrides
+            result["scenarioMetrics"] = latest
+            result["scenarioAdjustments"] = scenarioAdjustments
+        if detail:
+            result["metricsHistory"] = metrics["history"]
+            result["businessStability"] = metrics.get("businessStability")
+            result["reliability"] = metrics.get("reliability")
+            result["disclosureRisk"] = metrics.get("disclosureRisk")
+            result["auditOpinion"] = metrics.get("auditOpinion")
+            result["auditOpinionEvidence"] = metrics.get("auditOpinionEvidence")
+        return result
+
     currentScore = weightedScore([{"score": a["score"], "weight": a["weight"]} for a in axes])
+
+    if basePeriod is not None:
+        blocked_reason = (
+            "과거 재무기간에 대응하는 공시 가용일·시장가격·변동성·규모 notch의 "
+            "point-in-time 입력이 고정되지 않아 dCR 등급과 PD를 발행할 수 없습니다."
+        )
+        result = {
+            "assessmentStatus": "diagnostic_only",
+            "blockedReason": blocked_reason,
+            "basePeriod": basePeriod,
+            "pointInTime": False,
+            "coverage": coverage,
+            "grade": None,
+            "gradeRaw": None,
+            "gradeDescription": "과거등급 미산출",
+            "gradeCategory": None,
+            "investmentGrade": None,
+            "score": None,
+            "healthScore": None,
+            "currentScore": None,
+            "diagnosticFinancialScore": currentScore,
+            "pdEstimate": None,
+            "eCR": None,
+            "outlook": "N/A",
+            "sector": sectorLabel,
+            "captiveFinance": captive,
+            "holding": holding,
+            "latestPeriod": latest.get("period"),
+            "chsAdjustment": None,
+            "notchAdjustment": None,
+            "divergenceExplanation": None,
+            "methodologyVersion": "v4.0",
+            "_scoreMeaning": _CREDIT_SCORE_LEGEND,
+            "axes": normalized_axes,
+        }
+        if requestedOverrides:
+            result["appliedOverrides"] = appliedOverrides
+            result["ignoredOverrides"] = ignoredOverrides
+            result["scenarioMetrics"] = latest
+            result["scenarioAdjustments"] = scenarioAdjustments
+        if detail:
+            result["metricsHistory"] = metrics["history"]
+            result["businessStability"] = metrics.get("businessStability")
+            result["reliability"] = metrics.get("reliability")
+            result["disclosureRisk"] = metrics.get("disclosureRisk")
+            result["auditOpinion"] = metrics.get("auditOpinion")
+            result["auditOpinionEvidence"] = metrics.get("auditOpinionEvidence")
+        return result
 
     historicalScores = _calcHistoricalScores(metrics, thresholds)
     overall = _applyTimeSeriesSmoothing(currentScore, historicalScores)
@@ -490,6 +619,9 @@ def evaluateCompany(
     outlook = creditOutlook(allScores)
 
     result = {
+        "assessmentStatus": "usable",
+        "blockedReason": None,
+        "coverage": coverage,
         "grade": f"dCR-{grade}",
         "gradeRaw": grade,
         "gradeDescription": gradeDesc,
@@ -510,16 +642,7 @@ def evaluateCompany(
         "divergenceExplanation": divExpl,
         "methodologyVersion": "v4.0",
         "_scoreMeaning": _CREDIT_SCORE_LEGEND,
-        "axes": [
-            {
-                "name": a["name"],
-                "score": a["score"],
-                "weight": round(a["weight"] * 100),
-                "contribution": a.get("contribution"),
-                "metrics": _normalizeMetricsForOutput(a["metrics"]),
-            }
-            for a in axes
-        ],
+        "axes": normalized_axes,
     }
 
     if requestedOverrides:

@@ -8,6 +8,7 @@ from dartlab.analysis.financial._valuationInputs import (
     _fetchPriceContext,
     _getSectorParams,
     _getSeriesAndShares,
+    _historicalValuationBlock,
 )
 from dartlab.core.memory import memoizedCalc
 
@@ -77,6 +78,10 @@ def calcDcf(
     AIContext:
         "DCF 적정가" 답변 시 perShareValue + marginOfSafety 인용.
     """
+    historicalBlock = _historicalValuationBlock(basePeriod, "dcf")
+    if historicalBlock is not None:
+        return historicalBlock
+
     from dartlab.analysis.valuation.dcf import dcfValuation
     from dartlab.synth.overrides import applyOverride
 
@@ -197,6 +202,10 @@ def calcDdm(company: Any, *, basePeriod: str | None = None) -> dict | None:
     AIContext:
         "DDM 적정가" 답변 시 intrinsicValue + modelUsed 인용.
     """
+    historicalBlock = _historicalValuationBlock(basePeriod, "ddm")
+    if historicalBlock is not None:
+        return historicalBlock
+
     from dartlab.analysis.financial.capitalAllocation import calcDividendPolicy
     from dartlab.analysis.valuation.dcf import ddmValuation
 
@@ -295,6 +304,10 @@ def calcRelativeValuation(company: Any, *, basePeriod: str | None = None) -> dic
     AIContext:
         "업종 대비 valuation" 답변 시 premiumDiscount + consensusValue 인용.
     """
+    historicalBlock = _historicalValuationBlock(basePeriod, "relative")
+    if historicalBlock is not None:
+        return historicalBlock
+
     from dartlab.analysis.valuation.dcf import relativeValuation
 
     series, shares, currency = _getSeriesAndShares(company)
@@ -366,6 +379,10 @@ def calcSensitivity(company: Any, *, basePeriod: str | None = None) -> dict | No
     AIContext:
         "가정 민감도" 답변 시 grid range 인용.
     """
+    historicalBlock = _historicalValuationBlock(basePeriod, "sensitivity")
+    if historicalBlock is not None:
+        return historicalBlock
+
     from dartlab.analysis.valuation.dcf import sensitivityAnalysis
 
     series, shares, currency = _getSeriesAndShares(company)

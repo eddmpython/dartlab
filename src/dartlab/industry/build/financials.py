@@ -90,6 +90,32 @@ def _extractYearly(year: str) -> pl.DataFrame:
     return _applySanityGuard(result, year=year)
 
 
+def _availableAnnualYears(*, limit: int | None = None) -> list[str]:
+    """finance.parquet에서 실제 관측된 연간 사업연도를 최신순으로 반환한다."""
+    path = _finPath()
+    if not path.exists():
+        return []
+    query = (
+        pl.scan_parquet(str(path))
+        .filter(pl.col("reprt_nm") == "4분기")
+        .filter(pl.col("account_id_std").is_in(list(_ACCOUNTS)))
+        .select(pl.col("bsns_year").cast(pl.Utf8).alias("year"))
+        .drop_nulls()
+        .unique()
+        .sort("year", descending=True)
+    )
+    if limit is not None:
+        query = query.limit(limit)
+    observed = query.collect(engine="streaming")
+    return observed.get_column("year").to_list() if observed.height else []
+
+
+def _latestAvailableAnnualYear() -> str | None:
+    """finance.parquet에서 실제 관측된 가장 최근 연간 사업연도를 반환한다."""
+    years = _availableAnnualYears(limit=1)
+    return years[0] if years else None
+
+
 def _applySanityGuard(result: pl.DataFrame, *, year: str) -> pl.DataFrame:
     """단위 오류 outlier 제거 + 경고 로깅.
 
@@ -146,7 +172,7 @@ def attachFinancials(
     nodes : list[IndustryNode]
         기존 노드 리스트.
     years : list[str] | None
-        시도할 연도 목록 (내림차순). None이면 2025→2024→2023.
+        시도할 연도 목록 (내림차순). None이면 실제 관측 최신 3개 연도.
 
     Returns
     -------
@@ -188,7 +214,7 @@ def attachFinancials(
         cite.
     """
     if years is None:
-        years = ["2025", "2024", "2023"]
+        years = _availableAnnualYears(limit=3)
 
     # 최신 연도부터 merge
 
@@ -200,7 +226,7 @@ def attachFinancials(
         for row in fin.iter_rows(named=True):
             code = row["stockCode"]
             if code not in allFin:  # 최신 연도 우선
-                allFin[code] = row
+                allFin[code] = {**row, "revenuePeriod": year}
 
     if not allFin:
         return nodes
@@ -211,8 +237,10 @@ def attachFinancials(
         data = finMap.get(node.stockCode)
         if data:
             node.revenue = data.get("revenue")
+            node.revenuePeriod = data.get("revenuePeriod")
 
-    logger.info("재무 데이터 %d사 join (year=%s)", len(finMap), year)
+    joinedPeriods = sorted({str(row.get("revenuePeriod")) for row in finMap.values()}, reverse=True)
+    logger.info("재무 데이터 %d사 join (periods=%s)", len(finMap), ",".join(joinedPeriods))
     return nodes
 
 
@@ -220,7 +248,7 @@ def buildIndustrySummary(
     nodes: list[IndustryNode],
     industryId: str,
     *,
-    year: str = "2024",
+    year: str | None = None,
 ) -> pl.DataFrame:
     """산업별/공정별 재무 집계.
 
@@ -234,8 +262,8 @@ def buildIndustrySummary(
         IndustryNode 리스트 (stage 필드 채워진 상태).
     industryId : str
         대상 산업 ID.
-    year : str
-        집계 연도 (예: "2024").
+    year : str | None
+        집계 연도 (예: "2024"). None이면 finance.parquet의 최근 연간 사업연도.
 
     Returns
     -------
@@ -283,7 +311,10 @@ def buildIndustrySummary(
         "이 산업의 공정별 시장 규모" 류 답변 데이터. 매출(조) 단독보다 영업이익률 (영업이익/매출)
         파생 인용 권장.
     """
-    fin = _extractYearly(year)
+    resolvedYear = year or _latestAvailableAnnualYear()
+    if resolvedYear is None:
+        return pl.DataFrame()
+    fin = _extractYearly(resolvedYear)
     if fin.height == 0:
         return pl.DataFrame()
 
@@ -366,7 +397,7 @@ def buildTimelineSummary(
     industryId : str
         대상 산업 ID.
     years : list[str] | None
-        대상 연도 리스트. None 이면 2021~2025.
+        대상 연도 리스트. None 이면 실제 관측 최신 5개 연도.
 
     Returns
     -------
@@ -403,7 +434,7 @@ def buildTimelineSummary(
         과 동반 인용 권장.
     """
     if years is None:
-        years = ["2021", "2022", "2023", "2024", "2025"]
+        years = list(reversed(_availableAnnualYears(limit=5)))
 
     frames: list[pl.DataFrame] = []
     for year in years:

@@ -38,3 +38,35 @@ def test_engine_call_dispatches_axis_uniformly():
 
     r3 = engineCall({"apiRef": "gather.price", "args": {"target": "005930"}})
     assert r3.ok  # 옛날엔 unsupported 였던 gather.{axis} 가 이제 실행
+
+
+def test_analysis_axis_passes_target_as_stockcode_keyword(monkeypatch):
+    import dartlab
+    from dartlab.ai.tools.engineCall import _axisEngineCall
+
+    captured = {}
+
+    def fakeAnalysis(axis, **kwargs):
+        captured["axis"] = axis
+        captured["kwargs"] = kwargs
+        return {"status": "usable", "value": 1}
+
+    monkeypatch.setattr(dartlab, "analysis", fakeAnalysis)
+    result = _axisEngineCall("analysis", "profitability", {"target": "005930"})
+
+    assert result.ok is True
+    assert captured == {"axis": "profitability", "kwargs": {"stockCode": "005930"}}
+
+
+def test_analysis_axis_rejects_calc_list_instead_of_claiming_execution(monkeypatch):
+    import polars as pl
+
+    import dartlab
+    from dartlab.ai.tools.engineCall import _axisEngineCall
+
+    monkeypatch.setattr(dartlab, "analysis", lambda axis, **kwargs: pl.DataFrame({"항목": [axis]}))
+
+    result = _axisEngineCall("analysis", "profitability", {"target": "005930"})
+
+    assert result.ok is False
+    assert result.error == "analysis_not_executed"

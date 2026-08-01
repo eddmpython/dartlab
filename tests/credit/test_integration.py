@@ -161,6 +161,38 @@ def test_missing_axis_contribution_remains_none(mock_company):
             assert axis["contribution"] is None
 
 
+def test_sparse_track_a_is_blocked_without_grade(monkeypatch):
+    """핵심 한 축만 관측된 일반기업을 중립점 재분배로 등급화하지 않는다."""
+    from types import SimpleNamespace
+
+    from dartlab.credit import engine
+
+    sparseMetrics = {
+        "history": [
+            {
+                "period": "2025",
+                "ebitda": 100.0,
+                "ebitdaInterestCoverage": 3.0,
+            }
+        ],
+        "businessStability": {},
+        "reliability": {},
+        "auditOpinion": None,
+        "disclosureRisk": None,
+    }
+    monkeypatch.setattr(engine, "calcAllMetrics", lambda company, basePeriod=None: sparseMetrics)
+    monkeypatch.setattr(engine, "_isCaptiveByOFS", lambda company, borrowing: False)
+
+    result = engine.evaluateCompany(SimpleNamespace(market="KR", corpName="희소기업", stockCode="000001"))
+
+    assert result is not None
+    assert result["assessmentStatus"] == "blocked"
+    assert result["coverage"]["gradeEligible"] is False
+    assert result["grade"] is None
+    assert result["pdEstimate"] is None
+    assert result["investmentGrade"] is None
+
+
 # ── 등급 유효성 ──
 
 

@@ -27,6 +27,8 @@ def _result() -> dict:
         "confidence": 0.9,
         "source": "manual",
         "updatedAt": "2026-04-14",
+        "mappingUpdatedAt": "2026-04-14",
+        "financialPeriod": "2025",
         "peers": [{"stockCode": "000660", "corpName": "SK하이닉스", "confidence": 0.9}],
         "sectorMetrics": {
             "peerCount": 25,
@@ -63,7 +65,8 @@ def testIndustryProductUsesExistingPositionAndNativeBlocks() -> None:
 
     assert product["status"] == "usable"
     assert product["identity"]["axis"] == "회사위치"
-    assert product["time"]["dataAsOf"]["sourceDataAsOf"] == "2026-04-14"
+    assert product["time"]["dataAsOf"]["mappingUpdatedAt"] == "2026-04-14"
+    assert product["time"]["dataAsOf"]["financialPeriod"] == "2025"
     assert product["conclusion"]["label"] == "반도체 · 전공정"
     assert "최근 유효연도 리더" in product["conclusion"]["summary"]
     assert product["payload"]["coverage"]["observedBlocks"] == 6
@@ -78,7 +81,7 @@ def testIndustryProductUsesExistingPositionAndNativeBlocks() -> None:
             "horizon": "currentCycle",
             "asOf": product["time"]["asOf"],
             "dataAsOf": product["time"]["dataAsOf"],
-            "period": "2026-04-14",
+            "period": "2025",
             "status": "derived",
             "sourceRef": "dartlab://industry/005930/sectorCycle",
             "evidenceRefs": ["industry.sectorCycle"],

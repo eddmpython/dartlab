@@ -33,11 +33,14 @@ PHASE_LABELS = {
 class CyclePhase:
     """경제 사이클 판별 결과."""
 
-    phase: str
+    phase: str | None
     label: str
     confidence: str
     signals: tuple[str, ...]
     sectorStrategy: dict[str, str] = field(default_factory=dict)
+    status: str = "observed"
+    observedInputs: int = 0
+    totalInputs: int = 8
 
     def __repr__(self) -> str:
         return f"{self.label} ({self.confidence}) — {', '.join(self.signals[:3])}"

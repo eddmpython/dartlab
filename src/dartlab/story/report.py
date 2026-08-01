@@ -32,6 +32,10 @@ _MODEL_MAP = {
     "ddm": "DDM",
     "rim": "RIM",
     "relative": "relative",
+    "relativeSurvival": "relative",
+    "liquidation": "liquidation",
+    "bankExcessReturn": "excessReturn",
+    "sotp": "SOTP",
 }
 
 
@@ -92,7 +96,7 @@ def _valuationView(dfv: dict) -> dict | None:
             "verdict": rd.get("verdict", ""),
         }
     return {
-        "model": _MODEL_MAP.get(dfv.get("primaryModel", ""), "DCF"),
+        "model": _MODEL_MAP.get(dfv.get("primaryModel", ""), dfv.get("primaryModel") or "unknown"),
         "intrinsic": intrinsic,
         "current": current,
         "wacc": (dfv.get("qualityWACC") or {}).get("adjustedWACC"),
@@ -131,10 +135,20 @@ def _scenarioSet(dfv: dict) -> dict | None:
         )
     if not legs:
         return None
+    scenarioMethod = dfv.get("scenarioMethod") or {}
+    method = scenarioMethod.get("method")
+    if method == "driverSensitivity":
+        note = "성장률·WACC 드라이버 민감도 기반 3개 시나리오."
+    elif method == "arithmeticPercentBand":
+        pct = scenarioMethod.get("percent")
+        pctText = f"±{pct:g}%" if isinstance(pct, int | float) else "고정 비율"
+        note = f"모델 드라이버 시나리오가 없어 base 가치에 {pctText} 산술 밴드를 적용한 근사치."
+    else:
+        note = "시나리오 생성 방법 메타데이터가 없어 성장·마진·WACC 교란으로 해석할 수 없음."
     return {
         "current": current,
         "legs": legs,
-        "note": "드라이버(성장·마진·WACC) 교란 기반 3 시나리오 - 단순 ±% 밴드 아님. 가정은 밸류에이션 엔진 산출.",
+        "note": note,
     }
 
 
@@ -200,7 +214,8 @@ def buildReportModel(company: Any, perspective: str = "full", *, basePeriod: str
     Args:
         company: dartlab Company 인스턴스 (dart/edgar).
         perspective: 리포트 관점 (full/valuation/credit/earnings/growth/... 기본 full).
-        basePeriod: point-in-time 기준 분기 (look-ahead 차단용, None=최신).
+        basePeriod: 재무기간 cutoff (None=최신). 공시 가용일·시장데이터 vintage까지
+            고정하는 point-in-time 계약은 아니며, 해당 근거가 필요한 평가는 차단된다.
 
     Returns:
         dict: contracts/reportModel.ts ReportModel conform (schemaVersion=2). 데이터 부족 시

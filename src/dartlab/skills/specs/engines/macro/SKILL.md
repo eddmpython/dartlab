@@ -171,14 +171,14 @@ Company-bound `c.macro()`는 회사의 market을 참조해 기업 단위 민감�
 | crisis | 위기 | 제4막 | `dartlab.macro("crisis")` | Credit-to-GDP gap 한 지표로 위기임박 단정 X (Minsky + GHS 동반); 역사적 위기 (1997/2008) 와 현 환경 제도/정책 차이 무시 X; 위기신호와 실제 발생 12~24m lag |
 | assets | 자산 | 제5막 | `dartlab.macro("assets")` | 5 대 자산 (주식·채권·원자재·통화·부동산) 분류 명시; Cu/Au 비율 단일값으로 cycle 단정 X; BEI 4 분면 단순 인과 X |
 | sentiment | 심리 | 제5막 | `dartlab.macro("sentiment")` | VIX 단일값으로 *공포* 단정 X (15-/15-25/25+ 구간); 시장 vs 회사별 sentiment 혼동 X; VIX 와 JLN 동치 처리 X |
-| narrative | 내러티브 | 제5막 | `dartlab.macro("내러티브")` | news headline 30 일 sentiment + topic pulse + regime shift; 단일 헤드라인으로 시장심리 단정 X (archive 기준일 명시); sentiment(VIX) 축과 중복 인용 X |
+| narrative | 내러티브 | 제5막 | `dartlab.macro("내러티브")` | news headline 30 일 sentiment + topic pulse + regime shift; archive 부재 시 unavailable이며 중립으로 대체 X; `asOf`는 관측/수집일 cutoff이지 원천 revision PIT 보장 아님; sentiment(VIX) 축과 중복 인용 X |
 | forecast | 예측 | 제6막 | `dartlab.macro("forecast")` | 침체확률 한 모델 (Cleveland Fed) 단독 인용 X (Sahm/GaR 교차); LEI/Sahm 미국 지표 KR 직접 적용 X (KR composite leading 분리); GaR 분포 신뢰구간 명시 |
 | scenario | 시나리오 | 제6막 | `dartlab.macro("scenario", "2008 금융위기")` | preset (146 종 - 1997 IMF, 2008 GFC, Fed DFAST) 그대로 인용; 임의 가정은 답변 한계로 표기; analysis("macro","매크로민감도") 와 결합해 정량 임팩트 |
 | simulate | 전망시뮬 | 제6막 | `dartlab.macro("시뮬레이션", market="US")` | BVAR 변수 팬(분위 경로)·충격반응 IRF·국면 forward 를 *확률 시뮬* 로 - 점추정 단정 X (분위 경로/신뢰구간 명시); 과거 BVAR 적합 기반이라 구조변화 시 한계 명시; KR/US 시장 분리 |
 | summary | 종합 | 종합 | `dartlab.macro("summary")` | 6 막 점수 + 주요 신호 + 자산배분 힌트 형태; 단일 axis 결과만으로 summary 추정 X |
 | marketReview | 시장 회고 | 제5막 | `dartlab.macro("marketReview", market="KR")` | 일별/주별 시장 변동 회고 - *예측* 으로 사용 X. 회고 + 원인 + 한계만 |
 
-**공통 forbidden** (모든 축): 기준일/source 없는 macro 숫자 인용 X · 기업 재무 분석을 macro 로 대체 X · macro 결과를 analysis 내부 계산처럼 섞지 X.
+**공통 forbidden** (모든 축): 기준일/source 없는 macro 숫자 인용 X · 기업 재무 분석을 macro 로 대체 X · macro 결과를 analysis 내부 계산처럼 섞지 X · `asOf`를 실시간 vintage 재현으로 표현 X. 현재 `asOf`는 관측일 cutoff에 최신 가용 revision을 적용하며 당시 발표본(vintage)·release lag를 복원하지 않는다. vintage 원장 전에는 macro backtest precision/recall·성과를 발행하지 않는다.
 
 ## 대표 반환 형태
 

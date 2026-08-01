@@ -297,17 +297,17 @@ def _computeDelta(baseline: dict, scenario: dict) -> dict:
     }
 
     # sentiment
-    b_fg = ((baseline.get("sentiment") or {}).get("fearGreed") or {}).get("score", 50)
-    s_fg = ((scenario.get("sentiment") or {}).get("fearGreed") or {}).get("score", 50)
+    b_fg = ((baseline.get("sentiment") or {}).get("fearGreed") or {}).get("score")
+    s_fg = ((scenario.get("sentiment") or {}).get("fearGreed") or {}).get("score")
     delta["fear_greed"] = {
-        "baseline": round(b_fg, 1) if b_fg else None,
-        "scenario": round(s_fg, 1) if s_fg else None,
-        "change": round(s_fg - b_fg, 1) if b_fg and s_fg else None,
+        "baseline": round(b_fg, 1) if b_fg is not None else None,
+        "scenario": round(s_fg, 1) if s_fg is not None else None,
+        "change": round(s_fg - b_fg, 1) if b_fg is not None and s_fg is not None else None,
     }
 
     # historicalContext risk
-    b_risk = ((baseline.get("crisis") or {}).get("historicalContext") or {}).get("riskLevel", "low")
-    s_risk = ((scenario.get("crisis") or {}).get("historicalContext") or {}).get("riskLevel", "low")
+    b_risk = ((baseline.get("crisis") or {}).get("historicalContext") or {}).get("riskLevel")
+    s_risk = ((scenario.get("crisis") or {}).get("historicalContext") or {}).get("riskLevel")
     delta["historical_risk"] = {
         "baseline": b_risk,
         "scenario": s_risk,

@@ -37,6 +37,9 @@ class TestCreditToGDPGap:
 
         r = creditToGDPGap([])
         assert r is not None
+        assert r.status == "unavailable"
+        assert r.gap is None
+        assert r.zone is None
 
     def test_extremeBuildup(self):
         from dartlab.macro.crisis.detectors import creditToGDPGap
@@ -105,7 +108,8 @@ class TestMinskyPhase:
         from dartlab.macro.crisis.detectors import minskyPhase
 
         r = minskyPhase()
-        assert r is not None
+        assert r.status == "unavailable"
+        assert r.phase is None
 
 
 class TestRecessionDashboard:
@@ -120,7 +124,9 @@ class TestRecessionDashboard:
         from dartlab.macro.crisis.detectors import recessionDashboard
 
         r = recessionDashboard()
-        assert r is not None
+        assert r.status == "unavailable"
+        assert r.composite is None
+        assert r.zone is None
 
 
 # ══════════════════════════════════════
@@ -560,3 +566,49 @@ def test_historicalContextEntries():
     )
 
     assert buildHistoricalContext is not None
+
+
+def test_historicalContextMissingnessDoesNotBecomeLowRisk():
+    from dartlab.macro.corporate.historicalContext import buildHistoricalContext
+
+    empty = buildHistoricalContext({})
+    assert empty.status == "unavailable"
+    assert empty.riskLevel is None
+    assert empty.opportunityLevel is None
+
+    sparse = buildHistoricalContext({"hy_spread": {"2025-01": 3.0, "2025-02": 3.2}})
+    assert sparse.status == "partial"
+    assert sparse.riskLevel is None
+    assert sparse.suggestedScenario is None
+
+
+def test_crisisDalioExplicitZeroOverridesFetchedValues():
+    from dartlab.macro.crisis._crisisDetectors import _crisisDalioDebtCycle
+
+    data = {
+        "total_debt_to_gdp": 250.0,
+        "debt_service_yoy": 3.0,
+        "real_rate": 5.0,
+        "gdp_growth": 4.0,
+        "fed_funds": 5.0,
+        "public_debt_to_gdp": 150.0,
+    }
+    debt, policy = _crisisDalioDebtCycle(
+        data,
+        0.0,
+        {
+            "totalDebtToGdp": 0.0,
+            "debtServiceYoY": 0.0,
+            "realRate": 0.0,
+            "gdpGrowth": 0.0,
+            "policyRate": 0.0,
+            "publicDebtToGdp": 0.0,
+            "fxFlexibility": "flexible",
+        },
+    )
+
+    assert debt is not None
+    assert "총부채/GDP 0%" in debt["signals"]
+    assert policy is not None
+    assert policy["monetary"] == "maxed"
+    assert policy["fiscal"] == "spare"

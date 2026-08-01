@@ -137,7 +137,7 @@ class Industry:
         target: str | None = None,
         *,
         stage: str | None = None,
-        year: str = "2024",
+        year: str | None = None,
         stockCode: str | None = None,
         grade: bool = False,
         discover: bool = False,
@@ -166,8 +166,8 @@ class Industry:
             축 대상 — industryId(대부분) / themeId(theme) / stockCode(edges·theme). 옛 형식에선 stage.
         stage : str | None
             특정 공정만 필터 (산업지도 축).
-        year : str
-            재무 데이터 기준 연도 (summary 축).
+        year : str | None
+            재무 데이터 기준 연도 (summary 축). None이면 실제 관측된 최근 연간 사업연도.
         stockCode : str | None
             edges/theme 축의 종목 대상.
         grade, discover : bool
@@ -262,7 +262,7 @@ class Industry:
         target: str | None,
         *,
         stage: str | None = None,
-        year: str = "2024",
+        year: str | None = None,
         stockCode: str | None = None,
         grade: bool = False,
         discover: bool = False,
@@ -346,7 +346,7 @@ class Industry:
         )
         return df.sort("매출(억)", descending=True, nulls_last=True)
 
-    def _summary(self, industryId: str, *, year: str = "2024") -> pl.DataFrame:
+    def _summary(self, industryId: str, *, year: str | None = None) -> pl.DataFrame:
         """공정별 매출/이익 집계."""
         from dartlab.industry.build.financials import buildIndustrySummary
         from dartlab.industry.build.pipeline import loadNodes
@@ -371,7 +371,8 @@ class Industry:
 
         ``calcs.concentration.calcIndustryConcentration`` (dict) 를 표면 계약(DataFrame)으로
         감싼다. 행 = 상위 5사(매출비중% 포함), 컬럼에 산업 집계(HHI·HHI라벨·CR3·기업수·총매출)를
-        반복 첨부. **상장사 매출 기준** — 비상장·해외 매출 제외라 절대 점유율이 아닌 상대 집중도.
+        반복 첨부. **동일 회계연도 상장사 매출 기준**. 비상장·해외 매출 제외라 절대 점유율이
+        아닌 상대 집중도이며 상태·회계연도·커버리지를 함께 확인해야 한다.
         """
         from dartlab.industry.build.pipeline import loadNodes
         from dartlab.industry.calcs.concentration import calcIndustryConcentration
@@ -388,10 +389,34 @@ class Industry:
             "상위3비중(%)": pl.Float64,
             "기업수": pl.Int64,
             "총매출(조)": pl.Float64,
+            "상태": pl.Utf8,
+            "회계연도": pl.Utf8,
+            "커버리지(%)": pl.Float64,
+            "제한사유": pl.Utf8,
         }
         topN = r.get("topN") or []
         if not topN:
-            return pl.DataFrame(schema=schema)
+            return pl.DataFrame(
+                [
+                    {
+                        "종목코드": None,
+                        "종목명": None,
+                        "공정": None,
+                        "매출(억)": None,
+                        "매출비중(%)": None,
+                        "HHI": r.get("hhi"),
+                        "HHI라벨": r.get("hhiRisk"),
+                        "상위3비중(%)": r.get("top3Ratio"),
+                        "기업수": r.get("companyCount"),
+                        "총매출(조)": None,
+                        "상태": r.get("status"),
+                        "회계연도": r.get("fiscalYear"),
+                        "커버리지(%)": (r.get("coverage") or {}).get("pct"),
+                        "제한사유": r.get("blockedReason"),
+                    }
+                ],
+                schema=schema,
+            )
 
         totalRev = r.get("totalRevenue") or 0
         rows = []
@@ -409,6 +434,10 @@ class Industry:
                     "상위3비중(%)": r.get("top3Ratio"),
                     "기업수": r.get("companyCount"),
                     "총매출(조)": round(totalRev / 1e12, 2) if totalRev else None,
+                    "상태": r.get("status"),
+                    "회계연도": r.get("fiscalYear"),
+                    "커버리지(%)": (r.get("coverage") or {}).get("pct"),
+                    "제한사유": r.get("blockedReason"),
                 }
             )
         return pl.DataFrame(rows, schema=schema)

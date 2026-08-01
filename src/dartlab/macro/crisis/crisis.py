@@ -316,6 +316,9 @@ def analyzeCrisis(*, market: str = "US", asOf: str | None = None, overrides: dic
         "historicalMatch": dashboard.historicalMatch,
         "historicalFacts": result.get("historicalContext"),
         "description": dashboard.description,
+        "status": dashboard.status,
+        "observedInputs": dashboard.observedInputs,
+        "totalInputs": dashboard.totalInputs,
     }
 
     result["minskyPhase"] = _crisisMinsky(data, creditGapVal, hyCurrent, vix, dxyCurrent)

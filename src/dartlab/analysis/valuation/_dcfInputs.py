@@ -23,18 +23,20 @@ def _getFcfFromSeries(series: dict, annual: bool = False) -> Optional[float]:
     flow = getLatest if annual else getTTM
     ocf = flow(series, "CF", "operating_cashflow")
     capex = flow(series, "CF", "purchase_of_property_plant_and_equipment")
-    if ocf is None:
+    if ocf is None or capex is None:
         return None
-    return ocf - abs(capex or 0)
+    return ocf - abs(capex)
 
 
-def _getNetDebt(series: dict) -> float:
+def _getNetDebt(series: dict) -> float | None:
     """순차입금 = 총차입금 - 현금."""
-    stb = getLatest(series, "BS", "shortterm_borrowings") or 0
-    ltb = getLatest(series, "BS", "longterm_borrowings") or 0
-    bonds = getLatest(series, "BS", "debentures") or 0
-    cash = getLatest(series, "BS", "cash_and_cash_equivalents") or 0
-    return stb + ltb + bonds - cash
+    stb = getLatest(series, "BS", "shortterm_borrowings")
+    ltb = getLatest(series, "BS", "longterm_borrowings")
+    bonds = getLatest(series, "BS", "debentures")
+    cash = getLatest(series, "BS", "cash_and_cash_equivalents")
+    if cash is None or all(value is None for value in (stb, ltb, bonds)):
+        return None
+    return (stb or 0) + (ltb or 0) + (bonds or 0) - cash
 
 
 def _fcfHistory(series: dict) -> list[Optional[float]]:
@@ -49,8 +51,10 @@ def _fcfHistory(series: dict) -> list[Optional[float]]:
         c = capexVals[i] if i < len(capexVals) else None
         if o is None:
             result.append(None)
+        elif c is None:
+            result.append(None)
         else:
-            result.append(o - abs(c or 0))
+            result.append(o - abs(c))
     return result
 
 
@@ -111,6 +115,11 @@ def _resolveBaseFcf(series: dict, warnings: list[str]) -> tuple[float | None, li
     """기준 FCF 결정: series → mid-cycle → OCF fallback → normalized earnings."""
     fcfCurrent = _getFcfFromSeries(series)
     fcfHist = _fcfHistory(series)
+    capexCurrent = getTTM(series, "CF", "purchase_of_property_plant_and_equipment")
+    capexHistory = getAnnualValues(series, "CF", "purchase_of_property_plant_and_equipment")
+    if capexCurrent is None and not any(value is not None for value in capexHistory):
+        warnings.append("CAPEX 근거가 없어 FCF 및 DCF 발행 차단")
+        return None, fcfHist
     fcfCurrent = _normalizeBaseFcf(series, fcfCurrent, fcfHist, warnings)
     if fcfCurrent is None or fcfCurrent <= 0:
         fcfCurrent = _fallbackOcfBasedFcf(series, warnings)

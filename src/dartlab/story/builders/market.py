@@ -313,8 +313,9 @@ def fundamentalDivergenceBlock(data: dict) -> list:
     if fg:
         metrics.append(("재무 등급", fg))
     if tv:
-        ts = data.get("technicalScore", 0)
-        metrics.append(("기술적 판단", f"{tv} (score {ts:+d})"))
+        ts = data.get("technicalScore")
+        scoreText = f" (score {ts:+g})" if isinstance(ts, (int, float)) and not isinstance(ts, bool) else ""
+        metrics.append(("기술적 판단", f"{tv}{scoreText}"))
     if div:
         metrics.append(("교차검증", div))
 

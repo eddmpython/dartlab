@@ -56,7 +56,7 @@ def creditScoreBlock(data: dict) -> list:
     if not data:
         return []
 
-    grade = data.get("grade", "?")
+    grade = data.get("grade")
     desc = data.get("gradeDescription", "")
     score = data.get("score")
     pd_est = data.get("pdEstimate")
@@ -68,20 +68,27 @@ def creditScoreBlock(data: dict) -> list:
     # 종합 점수는 반대로 0/100 이 되어 가장 나쁜 회사로 보인다. 둘 다 안 적는 게 맞다.
     pdText = "미산출" if pd_est is None else f"{pd_est:.2f}%"
     scoreText = "미산출" if score is None else f"{score:.1f}/100"
-    inv = "투자적격" if data.get("investmentGrade") else "투기등급"
+    investment_grade = data.get("investmentGrade")
+    if investment_grade is True:
+        inv = "투자적격"
+    elif investment_grade is False:
+        inv = "투기등급"
+    else:
+        inv = "등급 미판정"
+    gradeText = "미산출" if grade is None else f"{grade} ({desc})"
 
     blocks: list = []
     blocks.append(
         HeadingBlock(
             _meta("creditScore").label,
             level=2,
-            helper=f"등급 {grade} ({desc}) | {inv} | PD {pdText}",
+            helper=f"등급 {gradeText} | {inv} | PD {pdText}",
         )
     )
     blocks.append(
         MetricBlock(
             [
-                ("신용등급", f"{grade} ({desc})"),
+                ("신용등급", gradeText),
                 ("종합 점수", scoreText),
                 ("부도확률(1Y)", pdText),
                 ("현금흐름등급", ecr),

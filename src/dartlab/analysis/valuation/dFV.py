@@ -153,6 +153,27 @@ def calcDFV(
             qualityWACC 조정 → applySurvivalWeight → triangulate → opinion.
         TargetMarkets: KR (DART), US (EDGAR).
     """
+    if basePeriod is not None:
+        reason = (
+            "과거 재무기간에 대응하는 공시 가용일·주가·시가총액·주식수·모델선택 "
+            "vintage가 완전히 고정되지 않아 dFV와 의견을 발행할 수 없습니다."
+        )
+        return {
+            "status": "blocked",
+            "assessmentStatus": "blocked",
+            "basePeriod": basePeriod,
+            "blockedReason": reason,
+            "pointInTime": False,
+            "dFV": None,
+            "scenarios": None,
+            "currentPrice": None,
+            "upside": None,
+            "opinion": None,
+            "confidence": "unavailable",
+            "primaryModel": None,
+            "allMethods": {},
+        }
+
     from dartlab.synth.overrides import applyOverride
 
     ov = overrides or {}
@@ -240,10 +261,12 @@ def calcDFV(
     if driver_scen and driver_scen.get("bull") and driver_scen.get("bear"):
         bull = driver_scen["bull"]
         bear = driver_scen["bear"]
+        scenarioMethod = {"method": "driverSensitivity", "drivers": ["growth", "wacc"]}
     else:
         wacc_effect = 0.12  # WACC 1%p 변화 ≈ 적정가 ±12% (비-DCF primary 경험칙)
         bull = primaryValue * (1 + wacc_effect)
         bear = primaryValue * (1 - wacc_effect)
+        scenarioMethod = {"method": "arithmeticPercentBand", "percent": 12.0}
 
     # 6. 삼각검증
     triangulation = _triangulate(primaryKey, primaryValue, secondaryKeys, allMethods)
@@ -282,6 +305,7 @@ def calcDFV(
     out = {
         "dFV": round(adjusted_primary),
         "scenarios": {"bull": round(bull), "base": round(adjusted_primary), "bear": round(bear)},
+        "scenarioMethod": scenarioMethod,
         "currentPrice": round(currentPrice) if currentPrice else None,
         "upside": round(upside, 1) if upside is not None else None,
         "opinion": opinion,

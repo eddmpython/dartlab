@@ -83,7 +83,8 @@ def buildReinvestmentPath(
         waccPct: 회사 WACC(%). None 이면 calcRoicTimeline 의 waccEstimate → 9.0.
         years: 명시 성장구간 연수(기본 8).
         fadeExponent: ROIC 수렴 곡률. >1 느린수렴(해자), <1 빠른수렴, 1 선형.
-        basePeriod: 기준 기간(예 "2024Q4"). None=최신. point-in-time 백테스트(look-ahead 제거)용.
+        basePeriod: 재무 기준 기간(예 "2024Q4"). None=최신. 공시 가용일·시장데이터
+            vintage를 고정하는 point-in-time 백테스트 계약은 아님.
 
     Returns:
         dict | None:

@@ -49,23 +49,20 @@ Guard는 현재 레이어의 source를 동결한 뒤 한 번 실행한다. Guard
 
 ### 세션 인계
 
-- 현재 계층: **L2 analysis, macro, quant, industry, credit** (진행 중)
-- 최근 완료한 레이어: **L1.5 scan/frame/synth/reference 전체 완료** (2026-07-31).
-  네 형제의 전체 src와 실제 호출자를 실데이터로 대조했고, cross import는 정적·동적
-  모두 0이다. 공식 Guard는 AST 룰 위반 0·신규 위반 0이며 전체 status fail의 유일한
-  원인은 `providers/` 소유의 기존 providerGate 부채다(이번 세션 미변경).
-  그 앞은 L0 core 완료, L1 gather/providers 완료.
-- 현재 작업 단위: **L2 다섯 엔진 전체 마감**. 파일이나 함수 하나를 별도 완료 단위로
+- 현재 계층: **L2.5 dataHub** (진입 대기)
+- 최근 완료한 레이어: **L2 analysis/macro/quant/industry/credit 전체 완료** (2026-08-01).
+  다섯 엔진의 전체 source와 실제 호출자를 데이터 계약, 결측, 시점, 오류 투명성,
+  발행 경계 기준으로 대조했다. 공식 strict Guard는 1,792파일, 7개 규칙과 6개 외부
+  게이트 모두 통과했다. 그 앞은 L0 core, L1 gather/providers,
+  L1.5 scan/frame/synth/reference 완료다.
+- 현재 작업 단위: **L2.5 dataHub 전체 안정화**. 파일이나 함수 하나를 별도 완료 단위로
   쪼개지 않는다.
-- L2 완료 조건: analysis, macro, quant, industry, credit의 전체 src와 실제 호출자를
-  데이터 계약·오류 투명성·SSOT·속도·메모리 기준으로 전수 대조한다. 결함 수정과 집중
-  회귀를 끝내고 source 동결 뒤 공식 Guard, 원장, 커밋, push까지 닫는다.
-- 다음 첫 행동: analysis, macro, quant, industry, credit 전체 src와 호출자에서 새 부채가
-  없는지 source freeze 전 최종 순회한다. Track B 공통등급 비발행과 감사의견 구조화 원장은
-  아래 체크포인트에서 닫혔다. EDGAR
-  full-state 성능, 팩터 형성 시점, 백테스트 순수익·sizing·다중자산 원장, PBO, Sortino,
-  삼양식품 dFV 드리프트, 스타일 형성 시점, CPCV와 walk-forward 검증 원장은 아래
-  체크포인트에서 이미 닫혔다.
+- L2.5 완료 조건: dataHub의 catalog와 query 공개 축, factor와 narrative projection,
+  로컬·원격 materialization, PIT envelope, receipt와 cache, 실제 L2·L3 소비자를
+  전수 대조한다. 결함 수정과 집중 회귀를 끝내고 source 동결 뒤 공식 Guard, 원장,
+  커밋, push까지 닫는다.
+- 다음 첫 행동: `src/dartlab/dataHub` 전체 source와 catalog/query 호출자, operation
+  계약을 읽고 상태·시점·오류·재현성 경계를 정적 census로 만든다.
 - 금지: 함수나 파일 하나만 끝내고 완료 보고, L3 이상 수정 선행,
   중간 source에서 공식 Guard 반복
 
@@ -2990,3 +2987,62 @@ fixed-at-entry 단일자산과 초기 동일자본 strategy sleeve로 공개 범
 축소했으며, 감사의견은 명시 구조화 범주와 기간·접수번호가 있는 경우만 판정한다.** 기능
 축소가 정확성 회복의 정공법이다. L2 전체는 아직 진행 중이며 다음 단계는 다섯 엔진 전체
 source와 실제 호출자의 최종 순회, source freeze, 공식 Guard다.
+
+### L2 최종 판정: 다섯 엔진 source와 실제 호출자 동결 (2026-08-01)
+
+**상태: L2 전체 완료.** 거시·산업·퀀트 방법론을 나눈 세 전문 검토와 master의 공개
+호출자 전수 대조를 결합했다. 최종 순회에서 공통적으로 확인된 문제는 자료 부재를
+중립·안전·저위험으로 바꾸는 것, 관측일 cutoff를 PIT로 부르는 것, 평가 입력과 표시
+기간을 섞는 것, 검증되지 않은 통계 명칭과 성과를 발행하는 것이었다. 작은 보정값을
+추가하는 대신 근거가 닫히지 않은 결과를 `partial`, `unavailable`, `blocked`로
+축소하고 모든 소비자가 같은 상태를 전달하게 했다.
+
+1. **범위와 실제 호출자.** analysis의 대표 재무·가치평가·예측 파사드와 Story,
+   macro의 15개 공개 축과 summary·scenario, quant의 factor·forecast·strategy·product,
+   industry의 mapping·재무 attach·집중도·product, credit의 Track A/B·product·Story,
+   AI engine call을 source부터 공개 dict와 문장까지 대조했다. source Skill 원문도 실제
+   런타임 계약과 함께 확인했다.
+2. **제품 결함 재현.** 매크로는 잘못된 `as_of`를 삼키고 최신 revision을 과거 성과처럼
+   썼으며 자료가 없어도 확장·저위험·정책여유를 냈다. 산업은 서로 다른 연도의 매출을
+   합산하고 percentile을 100 밖으로 내며 mapping 갱신일을 재무 기준일처럼 표시했다.
+   퀀트는 Piotroski 주식수 신호가 잘못됐고 동률 rank, 결측 기술점수, 예측밴드 명칭과
+   날짜 대체가 실제 방법론과 달랐다. credit Track A는 핵심축 결손에도 등급을 냈고
+   Story는 미평가 금융사를 투기등급으로 바꿨다. DCF와 상대가치는 CAPEX·순차입금·주식수
+   결손을 0 또는 숫자로 간주했고, 역사 요청에는 최신 가격과 모델선택이 섞였다.
+3. **단일 SSOT와 발행 경계.** 관측 0과 결측 None을 전 경로에서 분리한다. macro
+   `asOf`는 관측일 cutoff이며 vintage가 없으면 성과를 발행하지 않는다. 산업 집중도는
+   공통 재무연도, 최소 표본 3개와 60% coverage가 필요하다. 예측밴드는 expanding-window
+   held-out 잔차의 경험적 분위수이며 누적 `sqrt(h)` 휴리스틱이라 coverage 보장을 하지
+   않는다. Track A 등급은 네 핵심축과 8개 핵심 지표가 필요하다. 가치평가는 CAPEX,
+   현금과 차입금, 주식수가 확인된 단계까지만 EV, 지분가치, 주당가치를 각각 발행한다.
+   과거 재무기간만으로 완전한 PIT 평가를 가장하지 않는다.
+4. **수정과 회귀 계약.** 매크로 no-input 판정과 crisis 기본값을 제거하고 explicit zero와
+   snake/camel 입력을 보존했다. 가짜 macro performance backtest는 차단했다. 산업 기본
+   연도는 실제 연간 자료에서 동적으로 고르고 집중도에 상태·coverage·공통연도를 붙였다.
+   Piotroski 주식수 원장, tie-aware percentile, 결측 technical score, 날짜 검증을 고쳤다.
+   예측 결과에 `intervalMethod`, `nominalLevel`, `coverageGuaranteed=false`를 공개했다.
+   credit 등급 gate와 Story tri-state를 연결했다. DCF·상대가치·price target·dFV는
+   입력 단계별 비발행과 차단 이유를 보존했다. analysis 파사드는 계산 오류, 기간 범위,
+   mixed-period와 coverage를 숨기지 않는다. AI와 Story도 이 상태를 그대로 표시한다.
+5. **실제 공개 행동, 정확성, 속도, 메모리.** 실기업 가치평가 sanity 10개가 통과했고,
+   순차입금 근거가 없는 상대가치는 충돌 대신 EV/EBITDA 주주가치를 비발행했다. 전 테스트
+   묶음은 누적 RSS가 큰 analysis와 quant를 파일·노드별 독립 프로세스로 실행해 실제
+   회귀와 메모리 안전장치를 구분했다. 이는 제품 결과를 바꾸는 우회가 아니라 같은 수집
+   노드를 격리 실행한 검증 방식이다.
+6. **Guard와 회귀.** analysis 884개 노드를 분할 전수 통과했고 macro 157, credit 289,
+   industry 118, quant 463, Story 356, AI 인접 호출 35개가 통과했다. 변경 Python Ruff와
+   compileall, diffCheck, public API coverage 149/149, valuation publish lint가 통과했다.
+   silent substitute 부채는 230개로 기준선을 축소했고 repro seed 부채는 10파일 30항목으로
+   줄였다. source 동결 뒤 실행한 공식 strict Guard는 1,792파일, 규칙 실패 0이며
+   cycleScan, architecturePytest, folderMirror, gatherGate, providerGate, publicApiSmoke가
+   모두 통과했다.
+7. **남은 부채와 판정.** macro vintage와 release-lag 저장소가 없어 진짜 PIT 성과
+   backtest는 미지원이다. 금융 dCR과 Beneish는 필요한 canonical·규제 원천이 생길 때까지
+   비발행한다. 동적 risk parity, causal volatility allocation, 역사적 투자 가능 universe도
+   아직 지원하지 않는다. 이들은 현재 결과를 과장하지 않도록 명시적 미지원으로 격리됐고
+   L2 계약 회귀는 닫혔다. generated Skill artifact의 선재 drift는 source spec과 분리된
+   후속 artifact 소유 범위다.
+
+**판정: L2 다섯 엔진은 현재 보유한 원천과 방법론으로 증명 가능한 범위에서 원장과
+일치한다.** 미지원 기능을 수치로 가장하지 않는 발행 경계까지 포함해 L2를 완료하고,
+다음 계층인 L2.5 dataHub로 이동한다.

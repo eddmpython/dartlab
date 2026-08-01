@@ -443,16 +443,18 @@ def dcfValuation(
         return DCFResult(
             fcfHistorical=fcfHist,
             fcfProjections=[],
-            terminalValue=0,
-            enterpriseValue=0,
-            equityValue=0,
+            terminalValue=None,
+            enterpriseValue=None,
+            equityValue=None,
             perShareValue=None,
             discountRate=wacc,
             growthRateInitial=0,
             terminalGrowth=tg,
             marginOfSafety=None,
-            warnings=["FCF 및 영업CF 데이터 부족으로 DCF 적용 불가"],
+            warnings=warnings + ["FCF 데이터 부족으로 DCF 적용 불가"],
             currency=currency,
+            status="unavailable",
+            blockedReason="FCF를 산출할 CAPEX·영업현금흐름 근거가 충분하지 않습니다.",
         )
 
     revCagr = getRevenueGrowth3Y(series)
@@ -471,22 +473,27 @@ def dcfValuation(
     ev = pvFcfs + pvTv
 
     netDebt = _getNetDebt(series)
-    eqValue = ev - netDebt
-    perShare = eqValue / shares if shares and shares > 0 else None
+    eqValue = ev - netDebt if netDebt is not None else None
+    if netDebt is None:
+        warnings.append("차입금 또는 현금 근거가 없어 주주가치·주당가치 발행 차단")
+    perShare = eqValue / shares if eqValue is not None and shares and shares > 0 else None
     mos = None
     if perShare is not None and currentPrice is not None and currentPrice > 0:
-        mos = (perShare - currentPrice) / perShare * 100
+        mos = (perShare - currentPrice) / currentPrice * 100
 
-    exitTv, exitEv, exitPerShare, exitMult = _computeExitMultipleTv(
-        series, sectorParams, initialGrowth, tg, projectionYears, wacc, pvFcfs, netDebt, shares
-    )
+    if netDebt is None:
+        exitTv, exitEv, exitPerShare, exitMult = None, None, None, None
+    else:
+        exitTv, exitEv, exitPerShare, exitMult = _computeExitMultipleTv(
+            series, sectorParams, initialGrowth, tg, projectionYears, wacc, pvFcfs, netDebt, shares
+        )
 
     assumptions = {
         "할인율": f"{wacc:.1f}%",
         "초기성장률": f"{initialGrowth:.1f}%",
         "영구성장률": f"{tg:.1f}%",
         "예측기간": f"{projectionYears}년",
-        "순차입금": fmtBig(netDebt, currency),
+        "순차입금": fmtBig(netDebt, currency) if netDebt is not None else "미확인",
         "기준FCF": fmtBig(fcfCurrent, currency),
     }
     if exitMult:
@@ -509,6 +516,8 @@ def dcfValuation(
         assumptions=assumptions,
         warnings=warnings,
         currency=currency,
+        status="usable" if netDebt is not None else "partial",
+        blockedReason=None if netDebt is not None else "순차입금 근거가 없어 주주가치·주당가치를 발행하지 않습니다.",
     )
 
 

@@ -78,11 +78,11 @@ def recentTimeseries(df, months: int = 6, valueCol: str = "value") -> list[dict]
 
 
 def applyAsOf(df, asOf: str | None) -> "pl.DataFrame | None":
-    """as_of 날짜까지만 필터링 — 백테스트용.
+    """관측일 기준 cutoff 필터. 빈티지·공표시점 보장은 하지 않는다.
 
     Capabilities:
-        as_of 이후 데이터를 차단해 look-ahead bias 없는 백테스트 입력 생성. 백테스트 / 시점 고정
-        분석의 표준 필터.
+        최신 수정치 시계열에서 관측일이 as_of 이후인 행을 제거한다. 이 함수만으로는
+        데이터 빈티지나 공표 지연을 재현할 수 없으므로 point-in-time 백테스트에 사용할 수 없다.
 
     Parameters
     ----------
@@ -97,7 +97,8 @@ def applyAsOf(df, asOf: str | None) -> "pl.DataFrame | None":
         as_of 이하 행만 남긴 DataFrame. df가 None이면 None.
 
     Raises:
-        없음 — 파싱 실패 시 입력 그대로 반환.
+        ValueError: asOf가 YYYY-MM-DD 형식이 아닐 때.
+        TypeError: asOf가 문자열이 아닐 때.
 
     Example:
         >>> from dartlab.macro.seriesFetch import applyAsOf
@@ -107,7 +108,7 @@ def applyAsOf(df, asOf: str | None) -> "pl.DataFrame | None":
         ``getGather(asOf)`` 가 본 함수를 자동 적용. 직접 호출은 드물다.
 
     When:
-        백테스트 / 시점 고정 시뮬레이션. 일반 호출에는 ``getGather`` 사용.
+        최신 수정치 자료의 관측일 cutoff가 필요할 때. 성과 백테스트에는 사용 금지.
 
     How:
         asOf 파싱 → df.filter(date <= cutoff).
@@ -121,13 +122,17 @@ def applyAsOf(df, asOf: str | None) -> "pl.DataFrame | None":
     AIContext:
         AI 직접 호출 없음 (백테스트 내부 헬퍼).
     """
-    if asOf is None or df is None or len(df) == 0:
+    if asOf is None:
         return df
+    if not isinstance(asOf, str):
+        raise TypeError("asOf는 YYYY-MM-DD 형식의 문자열이어야 합니다.")
     try:
-        cutoff = datetime.strptime(asOf, "%Y-%m-%d").date() if isinstance(asOf, str) else asOf
-        return df.filter(df["date"] <= cutoff)
-    except (ValueError, TypeError):
+        cutoff = datetime.strptime(asOf, "%Y-%m-%d").date()
+    except ValueError as exc:
+        raise ValueError("asOf는 유효한 YYYY-MM-DD 형식이어야 합니다.") from exc
+    if df is None or len(df) == 0:
         return df
+    return df.filter(df["date"] <= cutoff)
 
 
 def applyOverrides(data: dict, overrides: dict | None) -> dict:
@@ -197,7 +202,8 @@ def getGather(asOf: str | None = None) -> "Any":
     Parameters
     ----------
     as_of : str | None
-        백테스트 기준 날짜 ("YYYY-MM-DD"). None이면 원본 gather.
+        관측일 cutoff 날짜 ("YYYY-MM-DD"). None이면 원본 gather. 최신 수정치에
+        적용되므로 빈티지·공표시점 기준의 point-in-time 데이터가 아니다.
 
     Returns
     -------
@@ -213,7 +219,7 @@ def getGather(asOf: str | None = None) -> "Any":
         >>> g.macro("UNRATE")
 
     Guide:
-        백테스트는 asOf 명시 — production 답변은 None.
+        asOf는 시점 표시용 관측일 cutoff다. 성과 백테스트의 PIT 근거로 사용하지 않는다.
 
     When:
         모든 L2 macro 모듈의 _fetch_* 함수에서 진입점. AI 직접 호출 드물다.

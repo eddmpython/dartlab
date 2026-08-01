@@ -130,13 +130,16 @@ def creditToGDPGap(creditGDPSeries: list[float]) -> CreditGapResult:
     """
     if len(creditGDPSeries) < 4:
         return CreditGapResult(
-            gap=0.0,
-            trend=0.0,
-            actual=0.0,
-            zone="normal",
+            gap=None,
+            trend=None,
+            actual=None,
+            zone=None,
             zoneLabel="데이터부족",
-            ccybBuffer=0.0,
+            ccybBuffer=None,
             description="Credit-to-GDP 시계열 데이터 부족",
+            status="unavailable",
+            observedInputs=len(creditGDPSeries),
+            totalInputs=4,
         )
 
     trend_series = _oneSidedHpTrend(creditGDPSeries, lamb=400_000.0)
@@ -421,6 +424,20 @@ def recessionDashboard(
             각 지표 → 확률 매핑 → 가중평균 → zone 분류 → 역사 패턴 매칭.
         TargetMarkets: US (Cleveland Fed + ISM + LEI). KR 미적용 (지표 부재).
     """
+    observedInputs = sum(value is not None for value in (probitProb, leiSignal, ismLevel, creditGap, hySpread))
+    if observedInputs == 0:
+        return RecessionDashboard(
+            composite=None,
+            zone=None,
+            zoneLabel="데이터부족",
+            components={},
+            historicalMatch=None,
+            description="침체 대시보드 입력 데이터 부족",
+            status="unavailable",
+            observedInputs=0,
+            totalInputs=5,
+        )
+
     signals: dict[str, float | None] = {}
     weights: list[tuple[float, float]] = []  # (weight, probability)
 
@@ -512,6 +529,9 @@ def recessionDashboard(
         components=signals,
         historicalMatch=historical if historical != "normal" else None,
         description=desc,
+        status="usable" if observedInputs >= 3 else "partial",
+        observedInputs=observedInputs,
+        totalInputs=5,
     )
 
 

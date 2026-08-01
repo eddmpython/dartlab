@@ -264,6 +264,16 @@ def dFVBlock(data: dict | None) -> list:
 
     blocks: list = [HeadingBlock(_meta("dFV").label, level=2, helper="dartlab 적정주가 — DCF Anchor + 삼각검증")]
 
+    status = data.get("assessmentStatus") or data.get("status")
+    if status == "blocked":
+        reason = data.get("blockedReason") or "입력 근거가 부족해 가치평가 발행이 차단되었습니다."
+        blocks.append(TextBlock(f"**가치평가 차단**: {reason}"))
+        metrics = [("평가 상태", "blocked")]
+        if data.get("basePeriod") is not None:
+            metrics.append(("요청 기준기간", str(data["basePeriod"])))
+        blocks.append(MetricBlock(metrics))
+        return blocks
+
     narration = narrateDFV(data)
     if narration:
         blocks.append(TextBlock(narration))
@@ -277,7 +287,9 @@ def dFVBlock(data: dict | None) -> list:
         metrics.append(("업사이드", f"{data['upside']:+.1f}%"))
     metrics.append(("투자 의견", data.get("opinion", "")))
     metrics.append(("신뢰도", data.get("confidence", "")))
-    metrics.append(("Primary 모델", data.get("primaryModel", "").upper()))
+    primaryModel = data.get("primaryModel")
+    if primaryModel:
+        metrics.append(("Primary 모델", str(primaryModel).upper()))
     sc = data.get("scenarios", {})
     if sc:
         metrics.append(

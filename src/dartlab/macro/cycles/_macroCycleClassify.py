@@ -84,7 +84,7 @@ def classifyCycle(indicators: dict[str, float | None]) -> CyclePhase:
     Guide:
         4 국면 정의: contraction (침체, HY 급등+VIX>30), recovery (회복, HY
         하락+CLI 반등), expansion (확장, HY 안정+CLI 양수), slowdown (둔화,
-        Term spread 역전+CPI 가속). 점수 모두 0 이면 ``"expansion"`` 기본값.
+        Term spread 역전+CPI 가속). 독립 입력이 2개 미만이면 국면을 발행하지 않는다.
 
     See Also:
         - ``interpretAssets``: 사이클 → 자산 추천
@@ -111,7 +111,7 @@ def classifyCycle(indicators: dict[str, float | None]) -> CyclePhase:
         OutputSchema:
             CyclePhase ``{phase, phaseLabel, confidence, signals, scores}``.
         Prerequisites:
-            최소 1 개 지표 값 (None 아님). 모두 None 이면 기본 expansion.
+            최소 2 개 지표 값 (None 아님). 미달이면 status="unavailable".
         Freshness:
             지표별 갱신 주기 (HY/VIX 일, CLI 월, CPI/BEI 월).
         Dataflow:
@@ -130,6 +130,18 @@ def classifyCycle(indicators: dict[str, float | None]) -> CyclePhase:
     cli_mom = indicators.get("cli_mom")
     cpiYoy = indicators.get("cpi_yoy")
     bei10y = indicators.get("bei_10y")
+    observed_inputs = sum(value is not None for value in (hy, hy_chg, ts, vix, goldYoy, cli_mom, cpiYoy, bei10y))
+
+    if observed_inputs < 2:
+        return CyclePhase(
+            phase=None,
+            label="판정불가",
+            confidence="unavailable",
+            signals=(f"사이클 판정 근거 부족 ({observed_inputs}/8)",),
+            sectorStrategy={},
+            status="unavailable",
+            observedInputs=observed_inputs,
+        )
 
     # 1. 하이일드 스프레드 — 레벨 + 변화 속도
     if hy is not None:
@@ -240,11 +252,13 @@ def classifyCycle(indicators: dict[str, float | None]) -> CyclePhase:
 
     if total == 0:
         return CyclePhase(
-            "expansion",
-            "확장",
-            "low",
-            ("신호 데이터 부족",),
-            CYCLE_SECTOR_MAP["expansion"],
+            phase=None,
+            label="판정불가",
+            confidence="unavailable",
+            signals=(f"임계값을 충족한 사이클 신호 없음 ({observed_inputs}/8)",),
+            sectorStrategy={},
+            status="inconclusive",
+            observedInputs=observed_inputs,
         )
 
     ratio = max_score / total if total > 0 else 0
@@ -261,6 +275,8 @@ def classifyCycle(indicators: dict[str, float | None]) -> CyclePhase:
         confidence=confidence,
         signals=tuple(signals),
         sectorStrategy=CYCLE_SECTOR_MAP[phase],
+        status="observed",
+        observedInputs=observed_inputs,
     )
 
 

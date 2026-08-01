@@ -80,7 +80,7 @@ _AXIS_REGISTRY: dict[str, _AxisEntry] = {
         module="dartlab.quant.benchmark.forecast",
         fn="forecastReturns",
         label="예측",
-        description="일별 수익률 horizon-step 예측 + 90% Conformal interval (Naive·AR(1)·ETS-Holt·Theta 자동 dispatch)",
+        description="일별 수익률 horizon-step 예측 + held-out 1-step 잔차 기반 경험적 밴드 (누적은 sqrt(h) heuristic, coverage 보장 없음)",
         example='quant("예측", "005930", horizon=5)',
         group="technical",
     ),

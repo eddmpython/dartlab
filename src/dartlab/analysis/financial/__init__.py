@@ -438,6 +438,7 @@ class Analysis:
         _warmupFinanceAccessors(company)
         results: dict[str, Any] = {}
         appliedOverrides: dict[str, Any] = {}
+        calculationErrors: dict[str, str] = {}
         for calc in entry.calcs:
             try:
                 mod = importlib.import_module(calc.module)
@@ -458,8 +459,35 @@ class Analysis:
                 ImportError,
                 RuntimeError,
                 OSError,
-            ):
+            ) as exc:
                 results[calc.blockKey] = None
+                calculationErrors[calc.blockKey] = type(exc).__name__
+
+        usableBlocks = [
+            calc.blockKey
+            for calc in entry.calcs
+            if results.get(calc.blockKey) is not None
+            and not (
+                isinstance(results.get(calc.blockKey), dict)
+                and results[calc.blockKey].get("status") in {"blocked", "unavailable"}
+            )
+        ]
+        expectedBlocks = [calc.blockKey for calc in entry.calcs]
+        if len(usableBlocks) == len(expectedBlocks):
+            assessmentStatus = "usable"
+        elif usableBlocks:
+            assessmentStatus = "partial"
+        else:
+            assessmentStatus = "blocked"
+        results["assessmentStatus"] = assessmentStatus
+        results["coverage"] = {
+            "observedBlocks": len(usableBlocks),
+            "totalBlocks": len(expectedBlocks),
+            "usableBlockKeys": usableBlocks,
+            "missingBlockKeys": [key for key in expectedBlocks if key not in usableBlocks],
+        }
+        if calculationErrors:
+            results["calculationErrors"] = calculationErrors
 
         # 엔진 투명성 - 4 엔진 공통 utility (core/overrides.py)
         from dartlab.synth.overrides import buildAssumptions
@@ -473,25 +501,40 @@ class Analysis:
             from dartlab.core.utils.period import resolveLatestPeriod
 
             periods_pool: set[str] = set()
+            blockPeriods: dict[str, list[str]] = {}
+            blockLatestPeriods: dict[str, str] = {}
 
-            def _collectPeriods(value: Any) -> None:
+            def _collectPeriods(value: Any, target: set[str]) -> None:
                 if isinstance(value, dict):
                     period = value.get("period")
                     if isinstance(period, str) and period:
-                        periods_pool.add(period)
+                        target.add(period)
                     for child in value.values():
-                        _collectPeriods(child)
+                        _collectPeriods(child, target)
                 elif isinstance(value, list):
                     for child in value:
-                        _collectPeriods(child)
+                        _collectPeriods(child, target)
 
-            _collectPeriods(results)
+            for calc in entry.calcs:
+                found: set[str] = set()
+                _collectPeriods(results.get(calc.blockKey), found)
+                if found:
+                    blockPeriods[calc.blockKey] = sorted(found)
+                    blockLatest = resolveLatestPeriod(list(found))
+                    if blockLatest:
+                        blockLatestPeriods[calc.blockKey] = blockLatest
+                    periods_pool.update(found)
             latest = resolveLatestPeriod(list(periods_pool)) if periods_pool else None
             if latest or basePeriod:
                 import datetime as _dt
 
                 results["dataAsOf"] = {
                     "latestPeriod": latest or basePeriod,
+                    "earliestPeriod": min(periods_pool) if periods_pool else basePeriod,
+                    "periods": sorted(periods_pool),
+                    "blockPeriods": blockPeriods,
+                    "blockLatestPeriods": blockLatestPeriods,
+                    "mixedPeriods": len(set(blockLatestPeriods.values())) > 1,
                     "retrievedAt": _dt.datetime.now().date().isoformat(),
                 }
         except (ImportError, AttributeError, KeyError, TypeError):

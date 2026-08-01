@@ -1,7 +1,7 @@
 """dartlab 독립 신용분석 엔진 (dCR).
 
-공시 데이터만으로 재현 가능한 독립 신용등급을 산출한다.
-7축 정량 스코어링 + 업종별 차등 + 시계열 안정화 → dCR-AAA ~ dCR-D.
+한국 비금융 일반기업은 필수 근거 coverage를 충족할 때 독립 신용등급을 산출한다.
+금융회사는 규제지표 진단만 제공하며 등급·PD를 발행하지 않고, 해외 시장은 calibration 전까지 차단한다.
 
 사용법::
 
@@ -153,7 +153,7 @@ def guide() -> "pl.DataFrame":
         로그 출력. 신규 사용자 self-discovery 진입점.
 
     공시 재무제표만으로 독립 신용등급(dCR)을 산출하는 엔진의 축 카탈로그.
-    외부 API 키 불필요 - DART/EDGAR 재무 데이터 기반.
+    외부 API 키 불필요. KR DART 일반기업만 등급 calibration을 지원한다.
 
     Returns
     -------
@@ -221,8 +221,9 @@ def guide() -> "pl.DataFrame":
         "  사업안정성 · 재무신뢰성 · 공시리스크",
         "",
         "━━━ 데이터 ━━━",
-        "  재무제표: DART/EDGAR 공시 (API 키 불필요)",
-        "  등급 범위: dCR-AAA ~ dCR-D",
+        "  재무제표: KR DART 공시 (API 키 불필요)",
+        "  등급: KR 비금융 일반기업 + 필수 coverage 충족 시 dCR-AAA ~ dCR-D",
+        "  금융/해외: 진단 또는 calibration 미지원 차단",
         "",
     ]
     _log.info("\n".join(_lines))
@@ -254,6 +255,7 @@ def _filterAxis(result: dict, axis: str) -> dict | None:
         )
 
     fullName = _CREDIT_AXES[resolved]
+    assessment_status = result.get("assessmentStatus")
     for a in result.get("axes", []):
         if a.get("name") == fullName:
             return {
@@ -263,9 +265,26 @@ def _filterAxis(result: dict, axis: str) -> dict | None:
                 "metrics": a.get("metrics", []),
                 "grade": result.get("grade"),
                 "overallScore": result.get("score"),
+                "assessmentStatus": assessment_status,
+                "blockedReason": result.get("blockedReason"),
+                "coverage": result.get("coverage"),
                 # R22-1: 단일 축 추출에도 score 의미 안내 전달
                 "_scoreMeaning": result.get("_scoreMeaning"),
             }
+    if assessment_status in {"blocked", "diagnostic_only"}:
+        return {
+            "axis": fullName,
+            "score": None,
+            "weight": None,
+            "metrics": [],
+            "grade": None,
+            "overallScore": None,
+            "assessmentStatus": assessment_status,
+            "blockedReason": result.get("blockedReason")
+            or "해당 회사 유형에는 이 표준 dCR 축의 검증된 calibration이 없습니다.",
+            "coverage": result.get("coverage"),
+            "_scoreMeaning": result.get("_scoreMeaning"),
+        }
     return None
 
 
@@ -279,9 +298,9 @@ def credit(
     id-first ``credit("005930", "채무상환")`` 은 자동 swap + DeprecationWarning 으로 흡수.
 
     Capabilities:
-        DART/EDGAR 공시 재무제표만으로 dCR 독립 신용등급을 산출하는 단일 진입점. 무인자 호출 시
-        가이드, stockCode 만 호출 시 종합 등급, axis 지정 시 해당 축만 반환. 79 개사 검증 대기업
-        87% / 중대형 82% 정확도. 외부 API 키 불필요.
+        DART 재무제표를 사용하는 한국 비금융 일반기업 dCR 진입점. 필수 핵심 4축과 최소
+        지표 coverage를 충족할 때만 등급·PD를 발행한다. 금융회사는 규제지표 진단만,
+        해외 회사는 calibration 미지원 차단 결과를 반환한다.
 
     AIContext:
         AI 가 회사 부도 위험 / 재무 건전성 평가 진입점. axes 7 개 score 와 grade 종합 인용.
@@ -334,11 +353,11 @@ def credit(
 
     Notes
     -----
-    3-Track 모델(일반/금융/지주) + Notch Adjustment + CHS 시장 보정.
-    79개사 검증: 대기업 87%, 중대형 82%. DART 공시 기반, API 키 불필요.
+    일반기업·지주사의 KR calibration에만 dCR 등급을 발행한다. 금융회사는
+    유형별 규제 calibration 전까지 diagnostic_only이며 등급·PD가 None이다.
 
     Requires:
-        - L1 raw: DART 정기보고서 (자동 다운로드) 또는 EDGAR 10-K/10-Q
+        - L1 raw: DART 정기보고서 (KR 등급 발행 경로)
         - L1.5 frame: 재무제표 가공 frame
 
     Guide
@@ -348,7 +367,7 @@ def credit(
     How: credit 단독으로 종합 등급 확인 → analysis(안정성, 현금흐름) 와 함께 심층 진단.
         story credit 타입이 credit + analysis(안정성) + analysis(현금흐름) + analysis(자금조달) 순서로 조합.
     Verified:
-        - credit 단독 → dCR 등급 + 7축 위험점수 + PD 추정 (observed via ai-ask, 2026-04-25 - 정식 Phase P 판정 아님)
+        - KR 비금융 일반기업 + 필수 coverage 충족 시 dCR 등급 + 7축 위험점수 + PD 추정
         - credit + analysis(안정성,현금흐름) → 부도 위험 종합 진단 (observed via ai-ask, 2026-04-25 - 정식 Phase P 판정 아님)
 
     See Also
@@ -361,6 +380,7 @@ def credit(
             - axis 영문 ("repayment") 사용 시 한글 alias 함께 - 한글 우선 권장
             - 종합 score 단독 인용 (grade + 7 축 dict 함께)
             - "부도 위험 높음" 단정 X (등급 + outlook + 시계열 함께)
+            - assessmentStatus가 blocked/diagnostic_only인데 grade 또는 PD 추론
         OutputSchema:
             - grade : str - dCR 등급 (dCR-AAA ~ dCR-D)
             - score : float - 위험 점수 (0~100, 0 = 최우량)
@@ -369,7 +389,7 @@ def credit(
             - eCR : str | None - 현금흐름등급
             - outlook : str - 안정적 / 긍정적 / 부정적
         Prerequisites:
-            - finance + report 데이터 (자동 다운로드)
+            - KR 비금융 일반기업 + 핵심 4축 + 최소 8개 핵심 지표
         Freshness:
             정기보고서 마감 후 30~45 일.
         Dataflow:
@@ -437,9 +457,9 @@ def creditCompany(
     """Company 객체로 신용등급 산출 (Company-bound용).
 
     Capabilities:
-        ``credit()`` 의 Company-bound 변형. DartCompany / EdgarCompany 인스턴스를 받아 동일
-        7 축 + 종합 등급 산출. ``overrides`` 지원 - AI / 사용자가 시나리오 가정 (예: 부채비율
-        150% 가정) 을 주입해 stress / what-if 분석 가능.
+        ``credit()`` 의 Company-bound 변형. KR 비금융 일반기업은 필수 coverage 충족 시
+        7축 + 종합 등급을 산출한다. 금융회사는 진단만, 해외 시장은 calibration 미지원으로
+        차단한다. ``overrides``는 지원되는 일반기업 지표의 stress 분석에만 적용된다.
 
     Parameters
     ----------

@@ -10,6 +10,25 @@ from dartlab.analysis.financial._companyLookup import _getSectorParams, _getShar
 log = logging.getLogger(__name__)
 
 
+def _historicalValuationBlock(basePeriod: str | None, method: str) -> dict | None:
+    """시장·공시 vintage가 없는 과거 가치평가 결론을 공통 차단한다."""
+    if basePeriod is None:
+        return None
+    reason = (
+        "과거 재무기간에 대응하는 공시 가용일·주가·시가총액·주식수 vintage가 "
+        "완전히 고정되지 않아 가치와 투자 신호를 발행할 수 없습니다."
+    )
+    return {
+        "status": "blocked",
+        "assessmentStatus": "blocked",
+        "method": method,
+        "basePeriod": basePeriod,
+        "blockedReason": reason,
+        "pointInTime": False,
+        "value": None,
+    }
+
+
 _IG_TO_SECTOR_KEY: dict[str, str] = {
     "SEMICONDUCTOR": "반도체",
     "AUTO": "자동차",

@@ -170,6 +170,9 @@ def _crisisHistoricalContext(market: str, asOf: str | None) -> dict | None:
             "suggestedScenario": hc.suggestedScenario,
             "suggestedScenarioReason": hc.suggestedScenarioReason,
             "description": hc.description,
+            "status": hc.status,
+            "observedInputs": hc.observedInputs,
+            "totalInputs": hc.totalInputs,
         }
     except (ImportError, KeyError, ValueError, TypeError) as e:
         log.debug("역사적 맥락 계산 실패: %s", e)
@@ -196,6 +199,9 @@ def _crisisMinsky(data: dict, creditGapVal, hyCurrent, vix, dxyCurrent) -> dict 
             "confidence": mk.confidence,
             "signals": mk.signals,
             "description": mk.description,
+            "status": mk.status,
+            "observedInputs": mk.observedInputs,
+            "totalInputs": mk.totalInputs,
         }
     except (KeyError, ValueError, TypeError, AttributeError):
         return None
@@ -247,7 +253,7 @@ def _crisisRRTypes(data: dict, hyCurrent, market: str, kwargs: dict) -> tuple[di
             hySpread=hyCurrent,
             npl=data.get("npl"),
             fxDepreciationYoy=kwargs.get("fxDepreciationYoy"),
-            inflationYoy=data.get("us_cpi_yoy") or data.get("cpi_yoy"),
+            inflationYoy=(data.get("us_cpi_yoy") if data.get("us_cpi_yoy") is not None else data.get("cpi_yoy")),
             sovereignSpread=kwargs.get("sovereignSpread"),
             gdpGrowth=data.get("gdp_growth"),
         )
@@ -271,23 +277,31 @@ def _crisisRRTypes(data: dict, hyCurrent, market: str, kwargs: dict) -> tuple[di
 
 def _crisisDalioDebtCycle(data: dict, creditGapVal, kwargs: dict) -> tuple[dict | None, dict | None]:
     """Dalio Part 1 — 6 phase + 4 lever 소진도. 반환: (debtCyclePhase, policyLeverStatus)."""
+
+    def _input(name: str, dataName: str):
+        override = kwargs.get(name)
+        return override if override is not None else data.get(dataName)
+
     try:
         dp = dalioDebtCyclePhase(
-            totalDebtToGdp=kwargs.get("totalDebtToGdp") or data.get("total_debt_to_gdp"),
-            debtServiceYoY=kwargs.get("debtServiceYoY") or data.get("debt_service_yoy"),
+            totalDebtToGdp=_input("totalDebtToGdp", "total_debt_to_gdp"),
+            debtServiceYoY=_input("debtServiceYoY", "debt_service_yoy"),
             creditGap=creditGapVal,
-            realRate=kwargs.get("realRate") or data.get("real_rate"),
-            gdpGrowth=kwargs.get("gdpGrowth") or data.get("gdp_growth"),
+            realRate=_input("realRate", "real_rate"),
+            gdpGrowth=_input("gdpGrowth", "gdp_growth"),
         )
         dp_dict = {
             "phase": dp.phase,
             "phaseLabel": dp.phaseLabel,
             "signals": list(dp.signals),
             "description": dp.description,
+            "status": dp.status,
+            "observedInputs": dp.observedInputs,
+            "totalInputs": dp.totalInputs,
         }
         pl = dalioPolicyLeverStatus(
-            policyRate=kwargs.get("policyRate") or data.get("fed_funds"),
-            publicDebtToGdp=kwargs.get("publicDebtToGdp") or data.get("public_debt_to_gdp"),
+            policyRate=_input("policyRate", "fed_funds"),
+            publicDebtToGdp=_input("publicDebtToGdp", "public_debt_to_gdp"),
             creditGap=creditGapVal,
             fxFlexibility=kwargs.get("fxFlexibility"),
         )
@@ -298,6 +312,9 @@ def _crisisDalioDebtCycle(data: dict, creditGapVal, kwargs: dict) -> tuple[dict 
             "fx": pl.fx,
             "exhaustionScore": pl.exhaustionScore,
             "signals": list(pl.signals),
+            "status": pl.status,
+            "observedInputs": pl.observedInputs,
+            "totalInputs": pl.totalInputs,
         }
         return dp_dict, pl_dict
     except (KeyError, ValueError, TypeError, AttributeError):

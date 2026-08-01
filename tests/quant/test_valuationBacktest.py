@@ -14,22 +14,16 @@ import pytest
 pytestmark = [pytest.mark.integration, pytest.mark.requires_data]
 
 
-def test_financial_base_period_live_provenance_has_no_future_annual_rows():
-    """기준 연도 이후의 연간 FCF와 BS가 twoStage 입력에 포함되지 않는다."""
+def test_financial_base_period_is_blocked_until_full_point_in_time_inputs_exist():
+    """시장·공시 vintage가 없으면 과거 dFV 성과를 발행하지 않는다."""
     import dartlab
     from dartlab.analysis.valuation.dFV import calcDFV
 
     result = calcDFV(dartlab.Company("003230"), basePeriod="2024")
 
     assert result is not None
-    two_stage = result.get("twoStage") or {}
-    assumptions = two_stage.get("assumptions") or {}
-    assert assumptions["periodContract"] == "financialPeriod"
-    assert assumptions["financialBasePeriod"] == "2024"
-    assert assumptions["fcfPeriods"]
-    assert all(int(period[:4]) <= 2024 for period in assumptions["fcfPeriods"])
-    assert int(assumptions["balancePeriod"][:4]) <= 2024
-    assert assumptions["sharesPeriod"] <= "2024-12-31"
-    assert assumptions["erpAsOf"]
-    assert assumptions["erpSource"]
-    assert any("시장 입력 빈티지" in warning for warning in two_stage["warnings"])
+    assert result["status"] == "blocked"
+    assert result["pointInTime"] is False
+    assert result["dFV"] is None
+    assert result["opinion"] is None
+    assert "vintage" in result["blockedReason"]

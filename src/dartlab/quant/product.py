@@ -38,7 +38,7 @@ def buildDivergenceResult(
         "asOf": decisionDate,
         "financialGrade": None,
         "technicalVerdict": price.get("verdict"),
-        "technicalScore": technical.get("score", 0) if isinstance(technical, dict) else 0,
+        "technicalScore": _number(technical.get("score")) if isinstance(technical, dict) else None,
         "divergence": legacyLabel,
         "diagnosis": diagnosis,
         "matrix": f"{fundamental.get('direction', 'unknown')}_{price.get('direction', 'unknown')}",

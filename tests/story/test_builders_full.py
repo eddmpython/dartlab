@@ -789,6 +789,24 @@ class TestAdditionalBuilders:
         assert isinstance(heading, block_types["HeadingBlock"])
         assert "AA-" in heading.helper
 
+    def test_creditScoreBlock_unknown_grade_is_not_speculative(self, block_types):
+        from dartlab.story.builders import creditScoreBlock
+
+        blocks = creditScoreBlock(
+            {
+                "assessmentStatus": "diagnostic_only",
+                "grade": None,
+                "score": None,
+                "pdEstimate": None,
+                "investmentGrade": None,
+                "axes": [],
+            }
+        )
+
+        assert isinstance(blocks[0], block_types["HeadingBlock"])
+        assert "등급 미판정" in blocks[0].helper
+        assert "투기등급" not in blocks[0].helper
+
     def test_creditHistoryBlock(self, block_types):
         from dartlab.story.builders import creditHistoryBlock
 

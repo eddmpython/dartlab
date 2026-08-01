@@ -345,7 +345,8 @@ def calcIndustryConcentration(
     industryId : str
         산업 ID (taxonomy key).
     nodes : list[Any]
-        전체 IndustryNode 리스트 (`industry`, `revenue`, `stockCode`, `corpName`, `stage` 속성).
+        전체 IndustryNode 리스트 (`industry`, `revenue`, `revenuePeriod`, `stockCode`,
+        `corpName`, `stage` 속성).
 
     Returns
     -------
@@ -356,7 +357,8 @@ def calcIndustryConcentration(
         hhiRisk : str — "분산" | "중간" | "집중" | "데이터 부족"
         top3Ratio : float — 상위 3 사 매출 비중 (%)
         topN : list[dict] — 상위 5 사 `[{stockCode, corpName, stage, revenue}, ...]`
-        매출 양수 회사 없으면 모든 수치 0, topN 빈 리스트.
+        서로 다른 회계연도 매출은 혼합하지 않는다. 같은 회계연도 표본이 3사 미만이거나 전체
+        매출 관측 노드의 60% 미만이면 수치를 공개하지 않고 unavailable 상태를 반환한다.
 
     Raises
     ------
@@ -400,16 +402,42 @@ def calcIndustryConcentration(
         - ``dartlab.industry.calcs.concentration.calcSupplyInsights`` : 회사 단위 집중도
         - ``dartlab.industry.calcs.companyCalcs.calcSectorMetrics`` : 분포 + 백분위
     """
-    members = [n for n in nodes if n.industry == industryId and n.revenue and n.revenue > 0]
-    if not members:
+    allMembers = [n for n in nodes if n.industry == industryId and n.revenue and n.revenue > 0]
+    byPeriod: dict[str, list[Any]] = {}
+    for member in allMembers:
+        period = getattr(member, "revenuePeriod", None)
+        if period:
+            byPeriod.setdefault(str(period), []).append(member)
+
+    totalObserved = len(allMembers)
+    candidatePeriod: str | None = None
+    members: list[Any] = []
+    for period in sorted(byPeriod, reverse=True):
+        periodMembers = byPeriod[period]
+        coveragePct = len(periodMembers) / totalObserved * 100 if totalObserved else 0.0
+        if len(periodMembers) >= 3 and coveragePct >= 60:
+            candidatePeriod = period
+            members = periodMembers
+            break
+
+    if candidatePeriod is None:
+        bestPeriod, bestMembers = max(byPeriod.items(), key=lambda item: (len(item[1]), item[0]), default=(None, []))
+        observed = len(bestMembers)
+        coveragePct = round(observed / totalObserved * 100, 1) if totalObserved else 0.0
         return {
-            "companyCount": 0,
-            "totalRevenue": 0,
-            "hhi": 0,
-            "top3Ratio": 0,
+            "status": "unavailable",
+            "blockedReason": "동일 회계연도 매출 표본이 3사 이상이면서 전체 관측치의 60% 이상인 연도가 없습니다.",
+            "fiscalYear": bestPeriod,
+            "coverage": {"observed": observed, "total": totalObserved, "pct": coveragePct},
+            "companyCount": observed,
+            "totalRevenue": None,
+            "hhi": None,
+            "hhiRisk": "데이터 부족",
+            "top3Ratio": None,
             "topN": [],
         }
 
+    coveragePct = round(len(members) / totalObserved * 100, 1)
     revenues = sorted([n.revenue for n in members], reverse=True)
     totalRev = sum(revenues)
     hhi = calcHHI(revenues)
@@ -423,6 +451,10 @@ def calcIndustryConcentration(
     ]
 
     return {
+        "status": "usable" if coveragePct >= 80 else "partial",
+        "blockedReason": None if coveragePct >= 80 else "동일 회계연도 매출 커버리지가 80% 미만입니다.",
+        "fiscalYear": candidatePeriod,
+        "coverage": {"observed": len(members), "total": totalObserved, "pct": coveragePct},
         "companyCount": len(members),
         "totalRevenue": totalRev,
         "hhi": hhi,

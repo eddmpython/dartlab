@@ -75,7 +75,7 @@ class ScenarioPriceTarget:
     proforma: ProFormaResult
     enterprise_value: float
     equity_value: float
-    per_share_value: float
+    per_share_value: float | None
     wacc_used: float
     terminalGrowth: float
     implied_per: float | None
@@ -86,22 +86,27 @@ class PriceTargetResult:
     """확률 가중 주가 목표가 전체 결과."""
 
     scenarios: list[ScenarioPriceTarget]
-    weighted_target: float
+    weighted_target: float | None
     percentiles: dict[str, float]  # p10, p25, p50, p75, p90
-    expected_value: float
+    expected_value: float | None
     currentPrice: float | None
     upsidePct: float | None
     probability_above_current: float | None
-    signal: str  # strong_buy / buy / hold / sell / strong_sell
+    signal: str | None  # strong_buy / buy / hold / sell / strong_sell
     confidence: str  # high / medium / low
     wacc_details: dict[str, float]
     warnings: list[str] = field(default_factory=list)
+    status: str = "usable"
+    blockedReason: str | None = None
 
     DISCLAIMER: str = "본 분석은 투자 참고용이며 투자 권유가 아닙니다."
 
     def __repr__(self) -> str:
         lines = ["[확률 가중 주가 목표가]"]
-        lines.append(f"  가중 목표가: {self.weighted_target:,.0f}원")
+        if self.weighted_target is not None:
+            lines.append(f"  가중 목표가: {self.weighted_target:,.0f}원")
+        else:
+            lines.append("  가중 목표가: 미산출")
         if self.currentPrice:
             lines.append(f"  현재가: {self.currentPrice:,.0f}원")
             if self.upsidePct is not None:
@@ -250,9 +255,9 @@ def _dcfFromProforma(
     if shares and shares > 0:
         per_share = equity_value / shares
     else:
-        per_share = equity_value  # 주식수 없으면 총 equity 반환
+        per_share = None
 
-    return enterprise_value, equity_value, max(per_share, 0)
+    return enterprise_value, equity_value, max(per_share, 0) if per_share is not None else None
 
 
 def _monteCarloPriceDistribution(
@@ -274,6 +279,9 @@ def _monteCarloPriceDistribution(
     Returns:
         (percentiles, probability_above_current, all_values)
     """
+    if shares is None or shares <= 0:
+        return {}, None, []
+
     # 로컬 RNG 인스턴스 — 전역 random 상태 미오염 (동일 seed → 동일 시퀀스, 동작 무변경).
     rng = random.Random(seed)
 
@@ -385,7 +393,7 @@ def _monteCarloPriceDistribution(
 
         ev = fcf_pv + pv_tv
         eq = ev - base["total_debt"] + base["cash"]
-        per_share = eq / shares if shares and shares > 0 else eq
+        per_share = eq / shares
         values.append(max(per_share, 0))
 
     if not values:
@@ -540,6 +548,10 @@ def computePriceTarget(
         시나리오 기반 목표주가 답변 시 target + p10/p90 + signal 함께 인용.
     """
     warnings: list[str] = []
+    blocked_reason = None
+    if shares is None or shares <= 0:
+        blocked_reason = "발행주식수 근거가 없어 총 주주가치를 주당 목표가로 변환할 수 없습니다."
+        warnings.append(blocked_reason)
     probs = scenarioProbabilities or dict(SCENARIO_PROBABILITIES)
     elasticity = getElasticity(sectorKey)
 
@@ -613,7 +625,8 @@ def computePriceTarget(
         )
 
     # 가중 목표가
-    weighted_target = sum(s.per_share_value * s.probability for s in scenario_targets)
+    per_share_targets = [s for s in scenario_targets if s.per_share_value is not None]
+    weighted_target = sum(s.per_share_value * s.probability for s in per_share_targets) if per_share_targets else None
 
     # Monte Carlo 분포
     percentiles, _, mc_values = _monteCarloPriceDistribution(
@@ -631,7 +644,7 @@ def computePriceTarget(
     # upside
     upsidePct: float | None = None
     prob_above: float | None = None
-    if currentPrice and currentPrice > 0:
+    if weighted_target is not None and currentPrice and currentPrice > 0:
         upsidePct = (weighted_target / currentPrice - 1) * 100
         if mc_values:
             above_count = sum(1 for v in mc_values if v > currentPrice)
@@ -641,11 +654,11 @@ def computePriceTarget(
     expected_value = sum(mc_values) / len(mc_values) if mc_values else weighted_target
 
     # signal
-    signal = _classifySignal(upsidePct, percentiles, currentPrice)
+    signal = _classifySignal(upsidePct, percentiles, currentPrice) if weighted_target is not None else None
 
     # 신뢰도
     ratios = extractHistoricalRatios(series)
-    confidence = ratios.confidence
+    confidence = ratios.confidence if weighted_target is not None else "unavailable"
 
     return PriceTargetResult(
         scenarios=scenario_targets,
@@ -659,4 +672,6 @@ def computePriceTarget(
         confidence=confidence,
         wacc_details=wacc_details,
         warnings=warnings,
+        status="usable" if weighted_target is not None else "blocked",
+        blockedReason=blocked_reason,
     )

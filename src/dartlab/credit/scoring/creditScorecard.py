@@ -95,7 +95,7 @@ def scoreMetric(
     return bps[-1][1]
 
 
-def weightedScore(axes: list[dict]) -> float:
+def weightedScore(axes: list[dict]) -> float | None:
     """7 축 결과 list → 가중평균 종합 신용 위험 점수.
 
     Capabilities:
@@ -108,8 +108,7 @@ def weightedScore(axes: list[dict]) -> float:
             형태 리스트. score=None 인 축은 가중치 재분배로 제외.
 
     Returns:
-        float: 0~100 점 가중평균. 모든 score=None 또는 totalWeight=0 시
-            중립값 ``50.0``.
+        float | None: 0~100 점 가중평균. 모든 score=None 또는 totalWeight=0 시 None.
 
     Raises:
         없음. score/weight 가 dict 에 없으면 KeyError 가능.
@@ -142,8 +141,7 @@ def weightedScore(axes: list[dict]) -> float:
 
     AIContext:
         score=None 축이 절반 이상이면 결과 신뢰도 낮음 — 호출자는 valid 축
-        개수를 함께 확인. 50.0 fallback 은 데이터 부족 신호이지 실제 중립
-        등급이 아니다.
+        개수를 함께 확인. 관측 축이 없으면 실제 중립 점수로 대체하지 않고 None을 반환한다.
 
     LLM Specifications:
         AntiPatterns:
@@ -162,11 +160,11 @@ def weightedScore(axes: list[dict]) -> float:
     """
     valid = [(a["score"], a["weight"]) for a in axes if a.get("score") is not None]
     if not valid:
-        return 50.0  # 데이터 없으면 중립
+        return None
 
     totalWeight = sum(w for _, w in valid)
     if totalWeight <= 0:
-        return 50.0
+        return None
 
     return round(sum(s * w for s, w in valid) / totalWeight, 2)
 

@@ -12,7 +12,7 @@ pytestmark = pytest.mark.unit
 
 
 def test_analyze_narrative_smoke_empty_archive(monkeypatch) -> None:
-    """archive 0 일 (또는 enrichment 미실행) → score 0 + label 중립 + 빈 topicPulse.
+    """archive 0 일 (또는 enrichment 미실행) → unavailable + 빈 topicPulse.
 
     unit 결정성 — buildNarrativePulse 를 빈 결과로 mock 해 archive 부재 경로를 강제한다
     (실 archive auto-download 시 비결정적 score 회귀 가드).
@@ -25,8 +25,10 @@ def test_analyze_narrative_smoke_empty_archive(monkeypatch) -> None:
     )
     r = analyzeNarrative(market="KR", lookbackDays=7)
     assert r["market"] == "KR"
-    assert r["score"] == 0.0
-    assert r["label"] == "중립"
+    assert r["score"] is None
+    assert r["label"] is None
+    assert r["status"] == "unavailable"
+    assert r["observationCount"] == 0
     assert r["topicPulse"] == []
     assert "regimeShift" in r
     assert "similarPastPeriods" in r
@@ -58,6 +60,8 @@ def test_analyze_narrative_with_pulse(monkeypatch: pytest.MonkeyPatch) -> None:
 
     r = narr_mod.analyzeNarrative(market="KR", asOf="2026-05-28", lookbackDays=30)
     assert r["score"] != 0.0
+    assert r["status"] == "usable"
+    assert r["observationCount"] == 140
     assert len(r["topicPulse"]) == 2
     top_labels = {t["topic_label"] for t in r["topicPulse"]}
     assert top_labels == {"반도체", "금리우려"}
@@ -154,3 +158,12 @@ def test_scenarios_delta_with_narrative() -> None:
     assert ns["similar_period_cited"] == "2022-Q3"
     assert ns["scenario_score_from_similar"] == -1.5
     assert ns["topic_pulse_top1"] == "금리우려"
+
+
+def test_scenarios_delta_keeps_missing_inputs_missing() -> None:
+    from dartlab.macro.scenarios.engine import _computeDelta
+
+    delta = _computeDelta({"score": 0}, {"score": 0})
+
+    assert delta["fear_greed"] == {"baseline": None, "scenario": None, "change": None}
+    assert delta["historical_risk"] == {"baseline": None, "scenario": None, "changed": False}

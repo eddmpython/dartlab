@@ -236,6 +236,17 @@ def test_ohlc_validation_tolerates_sub_basis_point_adjusted_price_rounding():
     assert result.status == "ok"
 
 
+def test_incomparable_dates_are_rejected_without_substitution():
+    close = np.linspace(100.0, 110.0, 40)
+    dates = [date(2026, 1, 1) + timedelta(days=i) for i in range(40)]
+    dates[10] = {"date": "invalid"}
+
+    result = vectorBacktest(close, _rule(len(close)), dates=dates)
+
+    assert result.status == "error"
+    assert "dates" in (result.reason or "")
+
+
 def test_stop_contract_requires_intrabar_high_and_low_inputs():
     close = np.linspace(100.0, 110.0, 40)
     rule = _rule(len(close))

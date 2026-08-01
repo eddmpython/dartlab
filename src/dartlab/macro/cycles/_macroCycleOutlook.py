@@ -83,11 +83,27 @@ def rateOutlook(indicators: dict[str, float | None]) -> dict:
             direction 분류 + confidence.
         TargetMarkets: US (Fed funds + CPI + payrolls), KR (BOK base + KOSIS).
     """
-    ff = indicators.get("fed_funds") or indicators.get("base_rate")
+    ff = indicators.get("fed_funds")
+    if ff is None:
+        ff = indicators.get("base_rate")
     cpi = indicators.get("cpi_yoy")
     core_cpi = indicators.get("core_cpi_yoy")
     unemp = indicators.get("unemployment")
     payrolls = indicators.get("payrolls_change")
+    observed_inputs = sum(value is not None for value in (ff, cpi, core_cpi, unemp, payrolls))
+
+    if observed_inputs < 2:
+        return {
+            "currentRate": ff,
+            "direction": None,
+            "directionLabel": "판정불가",
+            "confidence": "unavailable",
+            "reasoning": [f"정책금리 방향 판정 근거 부족 ({observed_inputs}/5)"],
+            "biasScore": None,
+            "status": "unavailable",
+            "observedInputs": observed_inputs,
+            "totalInputs": 5,
+        }
 
     reasoning: list[str] = []
     bias = 0  # 양수 = 인상 방향, 음수 = 인하 방향
@@ -142,6 +158,9 @@ def rateOutlook(indicators: dict[str, float | None]) -> dict:
         "confidence": confidence,
         "reasoning": reasoning,
         "biasScore": bias,
+        "status": "observed",
+        "observedInputs": observed_inputs,
+        "totalInputs": 5,
     }
 
 
