@@ -98,10 +98,15 @@ def _ruleFromSignalFn(signalFn: Callable[[np.ndarray], np.ndarray]) -> Callable[
         code = getattr(companyStub, "stockCode", None)
         if code is None:
             return _empty(0)
-        ohlcv = fetchOhlcv(code)
-        if isEmptyDf(ohlcv):
-            return _empty(0)
-        arr = ohlcvToArrays(ohlcv)
+        arr = getattr(companyStub, "_quant_arrays", None)
+        if not isinstance(arr, dict) or not arr:
+            ohlcv = fetchOhlcv(
+                code,
+                **({"start": companyStub._strategy_start} if getattr(companyStub, "_strategy_start", None) else {}),
+            )
+            if isEmptyDf(ohlcv):
+                return _empty(0)
+            arr = ohlcvToArrays(ohlcv)
         close = arr.get("close")
         if close is None or len(close) < 30:
             return _empty(0)
@@ -153,7 +158,7 @@ def runScanBacktest(
     topN : int
         scanResult 의 상위 N 종목만 universe 로 사용 (사용자 사전 sort 가정).
     weighting : str
-        "equal" / "inv_vol" / "risk_parity" — multiAssetBacktest 인자.
+        현재 ``"equal"``만 지원. 초기 동일자본 strategy sleeve, cross-sleeve 리밸런싱 없음.
     fee_bps, slip_bps : float
         거래비용 (단위 bp). default 15 / 5.
     nTrials : int | None

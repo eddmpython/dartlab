@@ -57,6 +57,9 @@ def getArrays(company, *, start: str | None = None) -> dict:
     code = getattr(company, "stockCode", None)
     if not code:
         return {}
+    cached = getattr(company, "_quant_arrays", None)
+    if isinstance(cached, dict) and cached:
+        return cached
     # company 객체에 _strategy_start 속성 있으면 그것도 사용 (옵션)
     s = start or getattr(company, "_strategy_start", None)
     df = fetchOhlcv(code, **({"start": s} if s else {}))

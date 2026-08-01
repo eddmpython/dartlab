@@ -22,6 +22,7 @@ from dartlab.core.polarsUtil import isEmptyDf
 from dartlab.quant.screen.dataAccess import fetchOhlcv, ohlcvToArrays
 from dartlab.quant.strategy.backtest import (
     DEFAULT_FEE_BPS,
+    DEFAULT_IMPACT_BPS_PER_PCT,
     DEFAULT_SLIP_BPS,
     BacktestResult,
     multiAssetBacktest,
@@ -124,7 +125,8 @@ def runStrategy(
         train: walkForward train 윈도우 (일). 기본 ``252``.
         test: walkForward test 윈도우. 기본 ``63``.
         step: 슬라이딩 간격. 기본 ``63``.
-        **kwargs: ``start``, ``feeBps``, ``slipBps`` 등 실행 인자.
+        **kwargs: ``start``, ``feeBps``, ``slipBps``, ``impactBpsPerPct``,
+            ``capitalPctOfAdv``, ``execMode``, ``nTrials`` 실행 인자.
 
     Returns:
         BacktestResult — vectorBacktest 또는 walkForward 결과.
@@ -187,7 +189,10 @@ def runStrategy(
         dates=arr.get("date"),
         feeBps=kwargs.get("feeBps", DEFAULT_FEE_BPS),
         slipBps=kwargs.get("slipBps", DEFAULT_SLIP_BPS),
+        impactBpsPerPct=kwargs.get("impactBpsPerPct", DEFAULT_IMPACT_BPS_PER_PCT),
+        capitalPctOfAdv=kwargs.get("capitalPctOfAdv", 0.0),
         nTrials=kwargs.get("nTrials"),
+        execMode=kwargs.get("execMode", "next_open"),
     )
 
 
@@ -220,6 +225,8 @@ def runBacktest(
     **kwargs
         start : str — OHLCV 시작일 (예: "2014-01-01").
         feeBps, slipBps : float — 왕복 거래비용 (bps).
+        impactBpsPerPct, capitalPctOfAdv : float - 주문 규모 impact 가정.
+        execMode : str - ``next_open`` 또는 ``close``.
         nTrials : int | None. 실제 전략/파라미터 탐색 횟수. 생략하면 DSR 미산출.
 
     Returns
@@ -310,11 +317,15 @@ def runBacktest(
             open_=arr.get("open"),
             high=arr.get("high"),
             low=arr.get("low"),
+            volume=arr.get("volume"),
             dates=arr.get("date"),
             style=styleName,
             feeBps=kwargs.get("feeBps", DEFAULT_FEE_BPS),
             slipBps=kwargs.get("slipBps", DEFAULT_SLIP_BPS),
+            impactBpsPerPct=kwargs.get("impactBpsPerPct", DEFAULT_IMPACT_BPS_PER_PCT),
+            capitalPctOfAdv=kwargs.get("capitalPctOfAdv", 0.0),
             nTrials=kwargs.get("nTrials"),
+            execMode=kwargs.get("execMode", "next_open"),
         )
     return vectorBacktest(
         close,
@@ -327,7 +338,10 @@ def runBacktest(
         style=styleName,
         feeBps=kwargs.get("feeBps", DEFAULT_FEE_BPS),
         slipBps=kwargs.get("slipBps", DEFAULT_SLIP_BPS),
+        impactBpsPerPct=kwargs.get("impactBpsPerPct", DEFAULT_IMPACT_BPS_PER_PCT),
+        capitalPctOfAdv=kwargs.get("capitalPctOfAdv", 0.0),
         nTrials=kwargs.get("nTrials"),
+        execMode=kwargs.get("execMode", "next_open"),
     )
 
 
@@ -527,14 +541,14 @@ def runMultiAsset(
     """`c.quant("multi", ["005930","000660",...], style="trendFollow")` — 멀티 종목 포트폴리오.
 
     Capabilities:
-        - 단일 스타일 + 다종목 + 가중 방식 (equal/inv_vol/risk_parity) 으로 포트폴리오 백테스트
+        - 단일 스타일 + 다종목 초기 동일자본 strategy sleeve 포트폴리오 백테스트
         - multiAssetBacktest 위임 → BacktestResult 동일 인터페이스
 
     Args:
         stockCodes: 종목 코드 리스트.
         style: 8 프리셋 스타일 이름.
-        weighting: ``"equal"`` | ``"inv_vol"`` | ``"risk_parity"``.
-        **kwargs: ``start`` 등.
+        weighting: 현재 ``"equal"``만 지원. 다른 방식은 causal allocator 전까지 error.
+        **kwargs: ``start``, ``feeBps``, ``slipBps``, ``nTrials``.
 
     Returns:
         BacktestResult — 포트폴리오 단일 결과.
@@ -580,6 +594,7 @@ def runMultiAsset(
         list(stockCodes),
         reg[key],
         weighting=weighting,
+        start=kwargs.get("start"),
         style=key,
         feeBps=kwargs.get("feeBps", DEFAULT_FEE_BPS),
         slipBps=kwargs.get("slipBps", DEFAULT_SLIP_BPS),

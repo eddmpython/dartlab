@@ -233,7 +233,7 @@ product{conclusion, confidence, evidence, gaps, scenarios, falsifiers, payload}
 | liquidity | Amihud 비유동성 한 지표로 시장 충격 단정 X; Roll 스프레드 가정 위배 시점 명시 |
 | meanvar | Markowitz MV 입력 추정 윈도우 명시; sample mean 노이즈를 진짜 결과로 단정 X |
 | momentum | 단일 lookback 만으로 *추세* 단정 X (다중 cross-check); ADTV 낮은 종목 신뢰도 명시 |
-| multi | 가중 (equal/inv_vol/risk_parity) 명시; 리밸런싱 주기 (monthly/quarterly) 명시 |
+| multi | 현재 equal 초기자본 strategy sleeve만 지원; 동일 시장·기간 경계와 내부 결측 stale NAV 정책, point-in-time universe 부재 명시; inv_vol/risk_parity 성과 인용 X |
 | pairs | 공적분 → 영구 관계 단정 X (구조 변화 시 재검증); spread mean reversion 가정 명시 |
 | pattern | 캔들스틱 한 봉으로 추세 단정 X (거래량/다음 봉 confirmation); 지지/저항 자동 탐지 단언 X (zigzag 파라미터 의존) |
 | piotroski | F-score 8+ 만으로 *우량* 단정 X (시총/산업 분기); 단일 분기 만으로 X (4+ 분기 시계열) |
@@ -627,7 +627,7 @@ result = dl.quant.scanBacktest(top, signalFn=momentum_signal, topN=20)
 3. universeCol 자동 감지 (`stockCode` → `종목코드` → `stock_code` → `corp_code`)
 4. scanResult.head(topN) 로 universe 추출 - 사용자가 사전 sort/filter 책임
 5. signalFn 우선, fallback 으로 style → STYLE_REGISTRY 의 build 함수
-6. multiAssetBacktest 호출 (weighting=equal/inv_vol/risk_parity)
+6. multiAssetBacktest 호출 (현재 weighting=equal만 허용, 초기자본 sleeve 간 리밸런싱 없음)
 7. BacktestResult.scanContext 에 universe 출처 SHA-1 + signalSource 기록 후 dataclasses.replace
 
 ## signalFn / style 우선순위
@@ -652,12 +652,16 @@ result = dl.quant.scanBacktest(top, signalFn=momentum_signal, topN=20)
 BacktestResult(
     equity=np.ndarray,            # 누적 자산 시계열
     returns=np.ndarray,           # 일별 포트폴리오 수익률
-    trades=pl.DataFrame | None,   # 종목별 trade 이력 (stock_code 컬럼 포함)
+    positions=np.ndarray,         # sleeve drift를 반영한 실제 총 long exposure
+    trades=pl.DataFrame | None,   # 종목별 sleeve trade 이력 (stock_code 컬럼 포함)
     sharpe=float,                 # Sharpe ratio
     sortino=float,
     mdd=float,                    # 최대낙폭 (음수)
     dsr=float | None,             # nTrials 명시 시 Deflated Sharpe Ratio
     pbo=float | None,
+    exposure=float,               # 포지션이 0이 아닌 일수 비율
+    averageExposure=float,        # 평균 실제 gross capital exposure
+    validation=dict,              # calendar gap·초기/최종 sleeve weight·PIT 한계
     style=str,                    # "style:trendFollow" 또는 "signalFn"
     scanContext=dict,             # universe 출처 추적 - 본 helper 신규 필드
     status="ok" | "error",
@@ -701,7 +705,10 @@ BacktestResult(
 ## 한계 및 비목표
 
 - universe 의 등급/sort 자동 추출 X - 사용자가 사전에 ``scanResult.filter(...).sort(...).head(N)`` 책임
-- multi-period 백테스트 (월별 리밸런싱) 는 본 helper 범위 밖 - ``multiAssetBacktest`` 가 정적 가중치만 지원
+- inv_vol/risk_parity와 multi-period 리밸런싱은 causal formation·체결비용 원장이 없어 error
+- 현재 equal은 초기 동일자본 strategy sleeve를 끝까지 보유하며 cross-sleeve 리밸런싱을 하지 않음
+- 같은 시장·시작일·종료일을 요구하고 내부 결측 거래일은 stale sleeve NAV/position으로 보존해 validation.calendar_gaps에 기록
+- 최신 scan universe를 과거에 소급하므로 point-in-time universe 성과가 아니며 validation.universe_point_in_time=False
 - forecast 모델의 fold 마다 재학습 (walk-forward refit) 은 후속 PR
 
 ## 기본 검증

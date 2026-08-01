@@ -60,12 +60,12 @@ Guard는 현재 레이어의 source를 동결한 뒤 한 번 실행한다. Guard
 - L2 완료 조건: analysis, macro, quant, industry, credit의 전체 src와 실제 호출자를
   데이터 계약·오류 투명성·SSOT·속도·메모리 기준으로 전수 대조한다. 결함 수정과 집중
   회귀를 끝내고 source 동결 뒤 공식 Guard, 원장, 커밋, push까지 닫는다.
-- 다음 첫 행동: `Rule.sizing`이 적용된다고 선언하면서 체결 원장이 전혀 읽지 않는 문제와
-  다중자산 가중치가 전 기간 변동성을 미리 읽는 문제를 닫는다. 이어 vector 입력 검증을
-  보강하고 Altman 자동 모드, Beneish 결측 기본값, Track B 유동성 가중, 감사의견 부재
-  추정을 순서대로 판정한다. EDGAR full-state 성능, 팩터 형성 시점, 백테스트 순수익 원장,
-  PBO, Sortino, 삼양식품 dFV 드리프트, 스타일 형성 시점, CPCV와 walk-forward 검증 원장은
-  아래 체크포인트에서 이미 닫혔다.
+- 다음 첫 행동: Altman 자동 모드의 모델 혼용과 Beneish 결측 기본값을 판정한다. 이어
+  Track B 유동성 가중 0과 감사의견 부재 추정을 닫고 analysis, macro, quant, industry,
+  credit 전체 src와 호출자에서 새 부채가 없는지 source freeze 전 최종 순회한다. EDGAR
+  full-state 성능, 팩터 형성 시점, 백테스트 순수익·sizing·다중자산 원장, PBO, Sortino,
+  삼양식품 dFV 드리프트, 스타일 형성 시점, CPCV와 walk-forward 검증 원장은 아래
+  체크포인트에서 이미 닫혔다.
 - 금지: 함수나 파일 하나만 끝내고 완료 보고, L3 이상 수정 선행,
   중간 source에서 공식 Guard 반복
 
@@ -2783,3 +2783,68 @@ fold마다 강제청산과 재진입을 만들어 비용과 수익률을 왜곡�
 **판정: 스타일 형성 시점과 현재 검증 API가 주장하는 범위의 원장은 정합해졌다.** 고정 Rule
 CPCV를 진짜 OOS로 과장하지 않는 축소 판정까지가 이번 완료 범위다. L2 전체는 진행 중이며,
 다음 체크포인트는 무시되는 sizing과 다중자산 가중치의 미래참조다.
+
+### L2 체크포인트: 포지션 sizing과 다중자산 sleeve 원장 (2026-08-01)
+
+**상태: 체크포인트 완료. L2 전체는 진행 중.** 구현과 방법론을 나눈 두 전문 검토는
+`Rule.sizing`이 저장만 되고 체결에는 전혀 쓰이지 않으며, multi의 inverse-vol은 평가기간
+전체를 미리 읽고 risk-parity는 실제 ERC가 아니라 같은 inverse-vol 코드라는 데 독립적으로
+합의했다. 날짜가 아닌 꼬리 행 정렬, 누락 종목의 조용한 제외, 비용 없는 일일 리밸런싱도
+공통 결함으로 확인했다. 완전하지 않은 동적 allocator를 유지하는 대신 정확히 증명 가능한
+fixed-at-entry 단일자산과 초기 동일자본 strategy sleeve로 공개 범위를 축소했다.
+
+1. **범위와 실제 호출자.** `Rule.withSizing`, `vectorBacktest`의 신호·체결·trade·returns·
+   equity·positions·turnover·exposure, walk-forward와 CPCV 전달, strategy/backtest/style
+   공개 축을 대조했다. 다중자산은 `multiAssetBacktest`, public multi, scanBacktest의
+   style·signalFn builder, OHLCV snapshot·날짜·시장·가중·종목 제외·DSR까지 한 흐름으로
+   추적했다. registry와 quant Skill의 공개 설명도 같은 계약으로 옮겼다.
+2. **제품 결함 재현.** 50% sizing과 알 수 없는 sizing이 모두 100% 진입과 완전히 같은
+   결과를 냈다. close와 OHLCV의 차원·길이·NaN·음수, 날짜 중복·역순, 음수 비용, 오타
+   execMode를 검증하지 않아 정상 결과나 예외가 섞였다. stop에 high/low가 없어도 조용히
+   무시했다. multi는 날짜가 달라도 마지막 N행을 같은 날로 합쳤고, 전체 평가 수익률로
+   inverse-vol을 계산해 과거에 소급했다. risk-parity도 covariance 없이 동일 결과였으며,
+   `sum(fixedWeight * dailyReturn)`은 정적 가중이 아니라 비용 없는 매일 리밸런싱이었다.
+   `start`는 공개 multi에서 버려졌고 실패 종목은 survivor universe에서 조용히 사라졌다.
+3. **단일 SSOT.** 단일자산은 진입 직전 equity를 `cash + units * effectivePrice`로 나눠
+   거래 종료까지 units를 고정한다. 매 EOD `equity = cash + units * close`, positions는
+   실제 gross capital exposure, returns는 equity 변화, trade pnl은 해당 거래의 portfolio
+   wealth 변화다. 따라서 최종 equity는 일별 returns 복리와 비중 반영 trade pnl 복리에
+   동시에 일치한다. `exposure`는 기존 호환 의미인 time-in-market으로 유지하고 실제 평균
+   비중은 `averageExposure`로 분리했다. multi는 각 strategy를 최초 1/N 자본의 독립 sleeve로
+   두고 `portfolioEquity = sum(initialWeight * sleeveEquity)`로만 합친다. cross-sleeve
+   리밸런싱은 없다.
+4. **수정과 fail-closed 범위.** equal, fixed, 외부 확률·손익비를 받은 Kelly,
+   `vol_target_at_entry`와 `risk_budget_at_entry`를 지원한다. 뒤의 둘은 신호 종가까지의
+   trailing 변동성으로 한 거래의 고정 비중만 정하며, 동적 의미의 `vol_target` 이름은
+   거절한다. 레버리지·금융비용 원장이 없으므로 모든 비중은 1 이하다. walk-forward는
+   형성 history를 OOS path에 보존하지 못하므로 두 데이터 의존 sizing을 거절한다. 가격,
+   OHLCV, 날짜, 비용, nTrials, execMode와 stop 입력은 core가 검증한다. 조정주가 원천의
+   1원 단위 반올림은 1bp 이내에서만 허용한다. multi는 중복 종목, 혼합 시장, 다른 시작·
+   종료일, 요청 종목 하나의 실패도 전체 error다. 같은 시장·기간 내부 결측일은 stale sleeve
+   NAV와 직전 position으로 union calendar에 보존하고 날짜를 validation에 남긴다.
+   inverse-vol과 risk-parity는 causal formation·리밸런싱·비용 원장이 생길 때까지 error다.
+5. **공개 행동, 정확성, 속도, 메모리.** 삼성전자 2014년 이후 같은 trend-follow Rule에서
+   전액은 2,997 returns, 176 trades, equity 1.2968134, Sharpe 0.2089908, MDD -0.4452508,
+   turnover 351.8242, time-in-market와 평균 노출 모두 0.30197이었다. 50% fixed는 같은 거래와
+   기간에서 equity 1.2825088, Sharpe 0.2479181, MDD -0.2475672, turnover 176.0125,
+   time-in-market 0.30197, 평균 노출 0.15598이었다. 두 결과 모두 일별 복리와 trade 복리
+   오차가 부동소수점 수준이다. 삼성전자·SK하이닉스 초기 동일자본 공개 multi는 3,000
+   returns, 389 sleeve trades, equity 1.5652987, Sharpe 0.2840916, MDD -0.5419945,
+   DSR 0.0246743, 평균 노출 0.30956을 냈다. 삼성전자 거래정지 3일은 stale gap으로 기록됐고
+   최종 sleeve weight는 0.41424와 0.58576이었다. sizing 두 호출은 1.36초·RSS 17.89MiB,
+   multi는 1.10초·RSS 12.67MiB, 최종 RSS 139.29MiB였다.
+6. **회귀와 Guard.** sizing·입력·복리·impact 26건과 다중자산 날짜·실패·sleeve 10건을
+   신설했고 비용·walk-forward 인접 계약을 보강했다. focused 100건, quant unit 전체
+   `329 passed, 118 deselected`가 통과했다. Skill unit은 `43 passed, 17 deselected,
+   1 xfailed`이며 변경 Python Ruff format과 check도 통과했다. Guard quick는 1,791파일,
+   규칙 실패 0, diffCheck PASS다.
+7. **남은 부채와 판정.** 일반 동적 volatility targeting과 causal inverse-vol/ERC는 기능을
+   가장하지 않고 명시적 미지원으로 남겼다. 이를 다시 열려면 formation window, execution
+   lag, rebalance 주기, 자산별 holdings와 portfolio-level 비용 원장이 함께 필요하다. 최신
+   scan universe를 과거에 소급하므로 `universe_point_in_time=false`이며 역사적 투자 가능
+   universe 성과로 부를 수 없다. dFV 완전 as-of, Altman, Beneish, Track B, 감사의견과
+   광범위 artifact sync의 선재 드리프트도 남아 있다.
+
+**판정: 공개가 실제로 증명할 수 있는 sizing과 다중자산 범위는 원장과 일치한다.** 미래를
+보는 가중치와 가짜 risk-parity를 차단한 것은 기능 완성 주장이 아니라 정직한 축소다. L2
+전체는 진행 중이며 다음 체크포인트는 Altman과 Beneish 점수의 모델·결측 계약이다.

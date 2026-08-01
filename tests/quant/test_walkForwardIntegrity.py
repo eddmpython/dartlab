@@ -105,7 +105,7 @@ def test_refit_boundary_carries_position_and_cost_ledger():
     assert result.cpcv["refit_count"] == 2
     assert result.trades is not None
     assert result.trades.height == 1
-    assert result.turnover == pytest.approx(2.0)
+    assert result.turnover == pytest.approx(100.0 / 100.1 + 1.0)
     assert result.trades["entry_idx"][0] == 0
     assert result.trades["exit_idx"][0] == 119
     assert result.trades["cost_bps"][0] == pytest.approx(20.0)
@@ -304,3 +304,57 @@ def test_public_walkforward_uses_same_start_for_prices_and_style(monkeypatch):
         ("arrays", "TEST", "2020-01-01"),
         ("style", "TEST", "2020-01-01"),
     ]
+
+
+def test_fixed_fractional_sizing_survives_the_single_walk_forward_execution_path():
+    from dartlab.quant.strategy._backtestAdvanced import walkForward
+
+    n = 180
+    close = np.linspace(100.0, 150.0, n)
+    entries = np.zeros(n, dtype=np.bool_)
+    exits = np.zeros(n, dtype=np.bool_)
+    entries[59] = True
+    exits[150] = True
+    rule = Rule(
+        entries,
+        exits,
+        sizing={"method": "fixed", "kwargs": {"weight": 0.5}},
+    )
+
+    result = walkForward(
+        close,
+        rule,
+        train=60,
+        test=30,
+        step=30,
+        feeBps=0.0,
+        slipBps=0.0,
+    )
+
+    assert result.status == "ok"
+    assert result.trades["size"][0] == pytest.approx(0.5)
+    assert 0.0 < result.averageExposure < result.exposure
+
+
+def test_data_dependent_entry_sizing_is_rejected_when_walk_forward_drops_formation_history():
+    from dartlab.quant.strategy._backtestAdvanced import walkForward
+
+    n = 180
+    close = np.linspace(100.0, 150.0, n)
+    entries = np.zeros(n, dtype=np.bool_)
+    exits = np.zeros(n, dtype=np.bool_)
+    entries[70] = True
+    exits[100] = True
+    rule = Rule(
+        entries,
+        exits,
+        sizing={
+            "method": "vol_target_at_entry",
+            "kwargs": {"window": 60, "minPeriods": 30, "targetVol": 0.1},
+        },
+    )
+
+    result = walkForward(close, rule, train=60, test=30, step=30)
+
+    assert result.status == "error"
+    assert "formation history" in (result.reason or "")

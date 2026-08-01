@@ -93,7 +93,7 @@ def walkForward(
         train: in-sample window. 기본 ``252``.
         test: out-of-sample window. 기본 ``63``.
         step: 다음 fold 시작 간격. 기본 ``63``.
-        open_/high/low: 보조 OHLC.
+        open_/high/low/volume: 체결과 stop, impact 검증용 시장 시계열.
         dates: 날짜.
         style: 스타일 이름 메타.
         feeBps: 수수료. 기본 5.
@@ -251,6 +251,14 @@ def walkForward(
             path_sizing = fold_rule.sizing
             path_stop = fold_rule.stop
             path_meta = fold_rule.meta
+            sizing_method = str((path_sizing or {}).get("method", "")).strip().lower()
+            if sizing_method in {"vol_target_at_entry", "risk_budget_at_entry"}:
+                return _BacktestResult(
+                    status="error",
+                    reason=f"walk-forward does not preserve formation history for sizing method: {sizing_method}",
+                    style=style,
+                    oos=is_oos,
+                )
         elif fold_rule.sizing != path_sizing or fold_rule.stop != path_stop:
             return _BacktestResult(
                 status="error",
@@ -400,6 +408,7 @@ def walkForward(
         sortino=oos_sortino,
         mdd=oos_mdd,
         exposure=exposure(oos_positions),
+        averageExposure=float(np.mean(np.abs(oos_positions))) if len(oos_positions) else 0.0,
         dsr=oos_dsr,
         style=style,
         period=period,
@@ -415,6 +424,7 @@ def multiAssetBacktest(
     ruleBuilder,
     *,
     weighting: str = "equal",
+    start: str | None = None,
     feeBps: float = DEFAULT_FEE_BPS,
     slipBps: float = DEFAULT_SLIP_BPS,
     style: str | None = None,
@@ -422,16 +432,18 @@ def multiAssetBacktest(
 ) -> "BacktestResult":
     """멀티 종목 포트폴리오 백테스트.
 
-    각 종목별 단일 백테스트 → 일별 수익률 → 가중 결합.
+    각 종목별 단일 백테스트를 같은 시장·같은 기간의 초기 동일자본 sleeve로 결합한다.
+    내부 결측 거래일은 거래정지 가능한 stale NAV로 명시 보존한다.
 
     Capabilities:
-        - 종목별 단일 백테스트 → 일별 returns 매트릭스 → 3 가중방식 (equal/inv_vol/risk_parity) 결합
+        - 종목별 단일 백테스트 → 시장·기간 경계 검증 → union calendar 초기자본 sleeve 결합
         - 포트 sharpe/mdd/dsr 산출 + 종목별 contribution
 
     Args:
         stockCodes: 종목 리스트 (예: ``['005930', '000660', ...]``).
         ruleBuilder: ``callable(company) -> Rule`` (스타일 build 함수).
-        weighting: ``"equal"`` | ``"inv_vol"`` | ``"risk_parity"``.
+        weighting: 현재 ``"equal"``만 지원. inv_vol/risk_parity는 causal allocator 전까지 거절.
+        start: 모든 종목 fetch와 built-in style Rule이 공유하는 시작일.
         feeBps: 수수료 bps. 기본 5.
         slipBps: 슬리피지 bps. 기본 5.
         style: 메타 스타일명.
@@ -441,14 +453,13 @@ def multiAssetBacktest(
         BacktestResult — 가중 결합 결과.
 
     Guide:
-        분산 효과 + correlation diversification 측정. inv_vol/risk_parity 가 equal 보다
-        리스크 분산 균등.
+        초기 동일자본을 독립 strategy sleeve에 배분하고 sleeve 간 리밸런싱 없이 합산한다.
 
     When:
         멀티 종목 포트 평가 + AI 분산 효과 답변.
 
     How:
-        각 종목 단일 backtest → 종목별 returns → weighting 적용 → 포트 returns → 통계.
+        종목별 동일 날짜 backtest → ``sum(initialWeight * sleeveEquity)`` → 포트 통계.
 
     Requires:
         stockCodes ≥ 1 + 종목별 OHLCV 가용.
@@ -458,42 +469,73 @@ def multiAssetBacktest(
 
     See Also:
         - vectorBacktest : 단일 종목
-        - portfolio.allocateERC : risk parity weights
+        - portfolio.allocateERC : 별도 현재시점 risk parity 진단
 
     AIContext:
         "다종목 분산 시 성과" 답변 시 포트 sharpe + weights 인용.
     """
     from dataclasses import dataclass
 
+    from dartlab.core.market import detectMarket
     from dartlab.quant.screen.dataAccess import fetchOhlcv, ohlcvToArrays
 
-    if not stockCodes:
-        return _BacktestResult(status="error", reason="empty stock_codes", style=style)
-    if nTrials is not None and nTrials < 1:
+    if isinstance(stockCodes, (str, bytes)):
+        return _BacktestResult(status="error", reason="stockCodes must be a sequence, not a string", style=style)
+    normalized_codes = [str(code).strip() for code in stockCodes]
+    if not normalized_codes or any(not code for code in normalized_codes):
+        return _BacktestResult(status="error", reason="empty stockCodes", style=style)
+    if len(set(normalized_codes)) != len(normalized_codes):
+        return _BacktestResult(status="error", reason="duplicate stockCodes are not allowed", style=style)
+    if weighting != "equal":
+        return _BacktestResult(
+            status="error",
+            reason=f"unsupported weighting: {weighting}; causal allocator ledger required",
+            style=style,
+        )
+    if nTrials is not None and (not isinstance(nTrials, int) or isinstance(nTrials, bool) or nTrials < 1):
         return _BacktestResult(status="error", reason=f"invalid nTrials: {nTrials}", style=style)
+    markets = {detectMarket(code) for code in normalized_codes}
+    if len(markets) != 1:
+        return _BacktestResult(status="error", reason="mixed-market portfolio is not supported", style=style)
 
     @dataclass
     class _Stub:
         stockCode: str
+        _strategy_start: str | None
+        _quant_arrays: dict
 
     # 1) 종목별 백테스트
     individual: dict[str, BacktestResult] = {}
-    return_series: dict[str, np.ndarray] = {}
-    min_len = float("inf")
+    failed_assets: list[dict[str, str]] = []
+    calendars_by_code: dict[str, list] = {}
 
-    for code in stockCodes:
-        ohlcv = fetchOhlcv(code)
+    for code in normalized_codes:
+        ohlcv = fetchOhlcv(code, **({"start": start} if start else {}))
         if isEmptyDf(ohlcv):
+            failed_assets.append({"stockCode": code, "reason": "OHLCV unavailable"})
             continue
         arr = ohlcvToArrays(ohlcv)
-        if "close" not in arr or len(arr["close"]) < 60:
+        dates_for_asset = arr.get("date")
+        if "close" not in arr or len(arr["close"]) < 60 or dates_for_asset is None:
+            failed_assets.append({"stockCode": code, "reason": "dated OHLCV shorter than 60"})
             continue
-        rule = ruleBuilder(_Stub(stockCode=code))
+        if len(dates_for_asset) != len(arr["close"]) or len(set(dates_for_asset)) != len(dates_for_asset):
+            failed_assets.append({"stockCode": code, "reason": "invalid or duplicate dates"})
+            continue
+        calendars_by_code[code] = list(dates_for_asset)
+        try:
+            rule = ruleBuilder(_Stub(stockCode=code, _strategy_start=start, _quant_arrays=arr))
+        except Exception as exc:  # noqa: BLE001
+            failed_assets.append({"stockCode": code, "reason": f"ruleBuilder failed: {type(exc).__name__}"})
+            continue
         if hasattr(rule, "status") and rule.status == "not_applicable":
+            failed_assets.append({"stockCode": code, "reason": "rule not applicable"})
             continue
         if not isinstance(rule, Rule):
+            failed_assets.append({"stockCode": code, "reason": "ruleBuilder did not return Rule"})
             continue
         if len(rule) != len(arr["close"]):
+            failed_assets.append({"stockCode": code, "reason": "Rule length mismatch"})
             continue
         bt = _vectorBacktest(
             arr["close"],
@@ -502,45 +544,79 @@ def multiAssetBacktest(
             high=arr.get("high"),
             low=arr.get("low"),
             volume=arr.get("volume"),
+            dates=dates_for_asset,
             feeBps=feeBps,
             slipBps=slipBps,
         )
         if bt.status != "ok":
+            failed_assets.append({"stockCode": code, "reason": bt.reason or "backtest failed"})
             continue
         individual[code] = bt
-        return_series[code] = bt.returns
-        min_len = min(min_len, len(bt.returns))
 
-    if not individual:
-        return _BacktestResult(status="error", reason="no valid backtests", style=style)
+    if failed_assets or len(individual) != len(normalized_codes):
+        validation = {
+            "mode": "initial_equal_strategy_sleeves",
+            "requested_assets": normalized_codes,
+            "included_assets": list(individual),
+            "failed_assets": failed_assets,
+        }
+        return _BacktestResult(
+            status="error",
+            reason=f"{len(failed_assets)} requested assets failed validation",
+            style=style,
+            validation=validation,
+            cpcv=validation,
+        )
 
-    # 2) 길이 정렬 (가장 짧은 종목 기준)
-    min_len = int(min_len)
-    aligned = np.zeros((len(return_series), min_len), dtype=np.float64)
-    codes_ordered = list(return_series.keys())
-    for i, code in enumerate(codes_ordered):
-        r = return_series[code]
-        aligned[i] = r[-min_len:]
+    bounds = {(dates[0], dates[-1]) for dates in calendars_by_code.values()}
+    if len(bounds) != 1:
+        failed_assets = [
+            {"stockCode": code, "reason": f"calendar bounds {dates[0]}..{dates[-1]}"}
+            for code, dates in calendars_by_code.items()
+        ]
+        validation = {
+            "mode": "initial_equal_strategy_sleeves",
+            "requested_assets": normalized_codes,
+            "included_assets": list(individual),
+            "failed_assets": failed_assets,
+        }
+        return _BacktestResult(
+            status="error",
+            reason="trading calendar bounds mismatch",
+            style=style,
+            validation=validation,
+            cpcv=validation,
+        )
 
-    # 3) 가중치 계산
+    # 2) 초기 동일자본 sleeve. 일별 고정가중 수익률 합은 비용 없는 daily rebalance이므로
+    # 쓰지 않고, 독립 sleeve NAV를 최초 가중치로 합산한다. 같은 시작/종료일 사이의
+    # 내부 결측 거래일은 거래정지 가능한 stale NAV와 직전 position으로 보존한다.
+    codes_ordered = normalized_codes
     n_assets = len(codes_ordered)
-    if weighting == "equal":
-        weights = np.full(n_assets, 1.0 / n_assets, dtype=np.float64)
-    elif weighting == "inv_vol":
-        vols = np.array([np.std(aligned[i]) for i in range(n_assets)])
-        inv = 1.0 / np.maximum(vols, 1e-9)
-        weights = inv / inv.sum()
-    elif weighting == "risk_parity":
-        # ERC 단순화: inv vol 기반 (full ERC 는 portfolio.py 호출)
-        vols = np.array([np.std(aligned[i]) for i in range(n_assets)])
-        inv = 1.0 / np.maximum(vols, 1e-9)
-        weights = inv / inv.sum()
-    else:
-        return _BacktestResult(status="error", reason=f"unknown weighting: {weighting}", style=style)
-
-    # 4) 포트폴리오 일별 수익률
-    portfolio_ret = (weights[:, None] * aligned).sum(axis=0)
-    equity = np.cumprod(1.0 + portfolio_ret)
+    weights = np.full(n_assets, 1.0 / n_assets, dtype=np.float64)
+    calendar = sorted({day for dates in calendars_by_code.values() for day in dates})
+    calendar_index = {day: idx for idx, day in enumerate(calendar)}
+    sleeve_equity = np.full((n_assets, len(calendar)), np.nan, dtype=np.float64)
+    sleeve_positions = np.full((n_assets, len(calendar)), np.nan, dtype=np.float64)
+    calendar_gaps: dict[str, dict[str, object]] = {}
+    for asset_idx, code in enumerate(codes_ordered):
+        dates_for_asset = calendars_by_code[code]
+        observed = {calendar_index[day] for day in dates_for_asset}
+        for local_idx, day in enumerate(dates_for_asset):
+            master_idx = calendar_index[day]
+            sleeve_equity[asset_idx, master_idx] = individual[code].equity[local_idx]
+            sleeve_positions[asset_idx, master_idx] = individual[code].positions[local_idx]
+        missing = [calendar[idx] for idx in range(len(calendar)) if idx not in observed]
+        for master_idx in range(1, len(calendar)):
+            if np.isnan(sleeve_equity[asset_idx, master_idx]):
+                sleeve_equity[asset_idx, master_idx] = sleeve_equity[asset_idx, master_idx - 1]
+                sleeve_positions[asset_idx, master_idx] = sleeve_positions[asset_idx, master_idx - 1]
+        calendar_gaps[code] = {"count": len(missing), "dates": [str(day) for day in missing[:20]]}
+    equity = weights @ sleeve_equity
+    portfolio_ret = equity / np.r_[1.0, equity[:-1]] - 1.0
+    sleeve_capital = weights[:, None] * sleeve_equity
+    realized_sleeve_weights = sleeve_capital / equity[None, :]
+    portfolio_positions = (realized_sleeve_weights * sleeve_positions).sum(axis=0)
 
     # 5) 메트릭
     sh = sharpe(portfolio_ret)
@@ -548,18 +624,66 @@ def multiAssetBacktest(
     md = mdd(equity)
     ds = None if nTrials is None else dsr(sh, portfolio_ret, nTrials=nTrials)
 
-    # 모든 trades 합산
+    # 모든 trades는 직접 주식 portfolio 체결이 아니라 독립 strategy sleeve의 하위 원장이다.
     all_trades_list = []
-    for code, bt in individual.items():
+    for asset_idx, code in enumerate(codes_ordered):
+        bt = individual[code]
         if bt.trades is not None and bt.trades.height > 0:
-            tdf = bt.trades.with_columns(pl.lit(code).alias("stock_code"))
+            dates_for_asset = calendars_by_code[code]
+            portfolio_entry_idx = [calendar_index[dates_for_asset[int(idx)]] for idx in bt.trades["entry_idx"]]
+            portfolio_exit_idx = [calendar_index[dates_for_asset[int(idx)]] for idx in bt.trades["exit_idx"]]
+            tdf = bt.trades.with_columns(
+                pl.lit(code).alias("stock_code"),
+                pl.lit(float(weights[asset_idx])).alias("initial_sleeve_weight"),
+                pl.Series("portfolio_entry_idx", portfolio_entry_idx, dtype=pl.Int64),
+                pl.Series("portfolio_exit_idx", portfolio_exit_idx, dtype=pl.Int64),
+            )
             all_trades_list.append(tdf)
     all_trades = pl.concat(all_trades_list) if all_trades_list else None
+
+    portfolio_turnover = 0.0
+    for asset_idx, code in enumerate(codes_ordered):
+        bt = individual[code]
+        if bt.trades is None:
+            continue
+        for trade in bt.trades.to_dicts():
+            local_entry_idx = int(trade["entry_idx"])
+            local_exit_idx = int(trade["exit_idx"])
+            dates_for_asset = calendars_by_code[code]
+            entry_idx = calendar_index[dates_for_asset[local_entry_idx]]
+            exit_idx = calendar_index[dates_for_asset[local_exit_idx]]
+            size = float(trade.get("size", 1.0))
+            sleeve_before = float(bt.equity[local_entry_idx - 1]) if local_entry_idx > 0 else 1.0
+            portfolio_before = float(equity[entry_idx - 1]) if entry_idx > 0 else 1.0
+            units = sleeve_before * size / float(trade["entry_price"])
+            entry_notional = float(weights[asset_idx]) * units * float(trade.get("entry_raw", trade["entry_price"]))
+            portfolio_turnover += entry_notional / portfolio_before
+            exit_notional = float(weights[asset_idx]) * units * float(trade.get("exit_raw", trade["exit_price"]))
+            portfolio_before_exit = float(equity[exit_idx - 1]) if exit_idx > 0 else 1.0
+            portfolio_turnover += exit_notional / portfolio_before_exit
+
+    validation = {
+        "mode": "initial_equal_strategy_sleeves",
+        "ledger_kind": "strategy_sleeve",
+        "interpretation": "initial capital allocation without cross-sleeve rebalancing",
+        "requested_assets": normalized_codes,
+        "included_assets": codes_ordered,
+        "failed_assets": [],
+        "market": next(iter(markets)),
+        "calendar_policy": "same_bounds_union_with_stale_internal_gaps",
+        "calendar_gaps": calendar_gaps,
+        "start": start,
+        "n_trials": nTrials,
+        "initial_weights": {code: float(weights[idx]) for idx, code in enumerate(codes_ordered)},
+        "terminal_weights": {code: float(realized_sleeve_weights[idx, -1]) for idx, code in enumerate(codes_ordered)},
+        "individual_sharpes": {code: float(individual[code].sharpe) for code in codes_ordered},
+        "universe_point_in_time": False,
+    }
 
     return _BacktestResult(
         equity=equity,
         returns=portfolio_ret,
-        positions=np.array([], dtype=np.float64),
+        positions=portfolio_positions,
         trades=all_trades,
         sharpe=sh,
         sortino=so,
@@ -576,17 +700,15 @@ def multiAssetBacktest(
         )
         if individual
         else 0.0,
+        turnover=float(portfolio_turnover),
+        exposure=exposure(portfolio_positions),
+        averageExposure=float(np.mean(np.abs(portfolio_positions))) if len(portfolio_positions) else 0.0,
         dsr=ds,
         style=f"{style}_x{n_assets}" if style else f"multi_x{n_assets}",
+        period=(calendar[0], calendar[-1]),
         oos=False,
-        cpcv={
-            "n_assets": n_assets,
-            "n_trials": nTrials,
-            "codes": codes_ordered,
-            "weighting": weighting,
-            "weights": weights.tolist(),
-            "individual_sharpes": {c: float(individual[c].sharpe) for c in codes_ordered},
-        },
+        validation=validation,
+        cpcv=validation,
     )
 
 
@@ -600,11 +722,15 @@ def cpcv(
     open_: np.ndarray | None = None,
     high: np.ndarray | None = None,
     low: np.ndarray | None = None,
+    volume: np.ndarray | None = None,
     dates: list | None = None,
     style: str | None = None,
     feeBps: float = DEFAULT_FEE_BPS,
     slipBps: float = DEFAULT_SLIP_BPS,
+    impactBpsPerPct: float = 2.0,
+    capitalPctOfAdv: float = 0.0,
     nTrials: int | None = None,
+    execMode: str = "next_open",
 ) -> "BacktestResult":
     """고정 룰의 CPCV 경로 구조를 이용한 조합 스트레스 백테스트.
 
@@ -631,7 +757,10 @@ def cpcv(
         style: 메타.
         feeBps: 왕복 수수료 bps.
         slipBps: 왕복 슬리피지 bps.
+        impactBpsPerPct: 전액 주문이 ADV 1%일 때의 추가 impact bps.
+        capitalPctOfAdv: 전액 주문 자본의 ADV 대비 비율(%).
         nTrials: DSR의 실제 전략/파라미터 탐색 횟수. None이면 DSR 미산출.
+        execMode: ``next_open`` 또는 ``close``.
 
     Returns:
         BacktestResult. 고정 룰이므로 ``oos=False``이며 path 분포는 ``cpcv``에 기록.
@@ -667,7 +796,8 @@ def cpcv(
     """
     close = np.asarray(close, dtype=np.float64)
     n = len(close)
-    aligned = [array for array in (open_, high, low) if array is not None]
+    aligned = [array for array in (open_, high, low, volume) if array is not None]
+    valid_trials = nTrials is None or (isinstance(nTrials, int) and not isinstance(nTrials, bool) and nTrials >= 1)
     if (
         n < 30
         or len(rule) != n
@@ -676,7 +806,7 @@ def cpcv(
         or nTest < 1
         or nTest >= nSplits
         or n < nSplits * 2
-        or (nTrials is not None and nTrials < 1)
+        or not valid_trials
     ):
         return _BacktestResult(
             status="error",
@@ -757,11 +887,15 @@ def cpcv(
             open_=open_,
             high=high,
             low=low,
+            volume=volume,
             dates=dates,
             feeBps=feeBps,
             slipBps=slipBps,
+            impactBpsPerPct=impactBpsPerPct,
+            capitalPctOfAdv=capitalPctOfAdv,
             style=style,
             nTrials=nTrials,
+            execMode=execMode,
         )
         if path_result.status != "ok" or len(path_result.returns) != n:
             failed_paths.append(

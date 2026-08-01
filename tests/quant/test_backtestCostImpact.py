@@ -113,7 +113,8 @@ def testConstantPriceRoundTripUsesExactEffectiveFills() -> None:
     assert result.equity[-1] == pytest.approx(expected)
     assert result.trades is not None
     assert result.trades["cost_bps"][0] == pytest.approx(1000.0)
-    assert result.turnover == pytest.approx(2.0)
+    # turnover는 비용을 제외한 실제 거래 명목 / 체결 직전 NAV다.
+    assert result.turnover == pytest.approx(100.0 / 105.0 + 1.0)
     _assertLedgerIdentity(result)
 
 
@@ -130,7 +131,7 @@ def testMultipleRoundTripsCompoundFromTheTradeLedger() -> None:
 
     expectedTradeFactor = (1.0 - 0.05) / (1.0 + 0.05)
     assert result.equity[-1] == pytest.approx(expectedTradeFactor**2)
-    assert result.turnover == pytest.approx(4.0)
+    assert result.turnover == pytest.approx(2.0 * (100.0 / 105.0 + 1.0))
     _assertLedgerIdentity(result)
 
 
@@ -314,3 +315,53 @@ def testEveryPublicStrategyVariantForwardsCostAssumptions(monkeypatch) -> None:
         ("multi", 71.0, 9.0),
         ("style", 71.0, 9.0),
     ]
+
+
+def testPublicSinglePathAndCpcvForwardExecutionAndImpactAssumptions(monkeypatch) -> None:
+    from dartlab.quant.screen import axStrategy
+    from dartlab.quant.strategy.backtest import BacktestResult
+
+    n = 80
+    close = np.full(n, 100.0)
+    arrays = {
+        "close": close,
+        "open": close,
+        "high": close,
+        "low": close,
+        "volume": np.full(n, 1_000_000.0),
+    }
+    rule = _rule(n, [1], [60])
+    calls = []
+
+    def capture(*args, **kwargs):
+        calls.append(kwargs)
+        return BacktestResult()
+
+    monkeypatch.setattr(axStrategy, "_arrays", lambda stockCode, start=None: arrays)
+    monkeypatch.setattr(axStrategy, "vectorBacktest", capture)
+    axStrategy.runStrategy(
+        "TEST",
+        rule=rule,
+        impactBpsPerPct=7.0,
+        capitalPctOfAdv=2.5,
+        execMode="close",
+    )
+
+    monkeypatch.setattr(axStrategy, "cpcv_fn", capture)
+    axStrategy.runBacktest(
+        "TEST",
+        style=rule,
+        cpcv=True,
+        impactBpsPerPct=8.0,
+        capitalPctOfAdv=3.5,
+        execMode="close",
+    )
+
+    assert calls[0]["volume"] is arrays["volume"]
+    assert calls[0]["impactBpsPerPct"] == 7.0
+    assert calls[0]["capitalPctOfAdv"] == 2.5
+    assert calls[0]["execMode"] == "close"
+    assert calls[1]["volume"] is arrays["volume"]
+    assert calls[1]["impactBpsPerPct"] == 8.0
+    assert calls[1]["capitalPctOfAdv"] == 3.5
+    assert calls[1]["execMode"] == "close"

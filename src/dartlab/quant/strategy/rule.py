@@ -8,8 +8,8 @@ dartlab Strategy DSL 의 핵심 객체. 가중치 필드 없음 — 사용자가
     >>> rule = (
     ...     Rule.entry(rsi_oversold & regime_bull)
     ...         .exit(rsi_overbought)
-    ...         .with_sizing("kelly", k=0.25)
-    ...         .with_stop("atr", k=3.0)
+    ...         .withSizing("kelly", winProb=0.55, winLossRatio=2.0, fraction=0.25)
+    ...         .withStop("atr", k=3.0)
     ... )
 """
 
@@ -78,15 +78,17 @@ class Rule:
         return _RuleBuilder(entry=expr)
 
     def withSizing(self, method: str, **kwargs) -> "Rule":
-        """포지션 사이징 명시 — kelly / vol_target / risk_budget / equal.
+        """진입 시 고정 포지션 사이징 - equal / fixed / kelly / vol_target_at_entry.
 
         명시 안 하면 equal 1.0 (전 자본 진입).
 
         Example:
-            >>> rule.withSizing("kelly", b=2.0, p=0.55)
+            >>> rule.withSizing("fixed", weight=0.5)
 
         Requires:
-            method 가 sizing 메서드 키.
+            method와 인자는 vectorBacktest가 검증한다. 동적 vol targeting은 아직 지원하지
+            않으며 ``vol_target_at_entry``는 신호 확정 시점의 trailing 변동성으로 거래
+            전체의 고정 size를 정한다.
 
         Raises:
             없음.
