@@ -33,7 +33,12 @@ _CAP_FIELD_CAPS = {
 _CAP_FIELD_CAPS_OTHERS = {"summary": 200, "args": 400}
 
 
-def _inlineCapabilities(capabilityRefs: list[str], *, isTopRank: bool) -> dict[str, dict]:
+def _inlineCapabilities(
+    capabilityRefs: list[str],
+    *,
+    isTopRank: bool,
+    capabilityLimit: int | None = None,
+) -> dict[str, dict]:
     """spec.capabilityRefs id 마다 CAPABILITIES payload fetch → trimmed dict.
 
     top-1 후보: 모든 capabilityRefs 의 6 필드 (summary/args/example/guide/capabilities/returns).
@@ -51,14 +56,20 @@ def _inlineCapabilities(capabilityRefs: list[str], *, isTopRank: bool) -> dict[s
         return {}
     field_caps = _CAP_FIELD_CAPS if isTopRank else _CAP_FIELD_CAPS_OTHERS
     out: dict[str, dict] = {}
-    for ref in capabilityRefs[:5]:  # cap at 5 refs per skill
+    boundedLimit = capabilityLimit if capabilityLimit is not None else (10 if isTopRank else 5)
+    for ref in capabilityRefs[: max(1, min(int(boundedLimit), 12))]:
         entry = CAPABILITIES.get(ref)
         if not isinstance(entry, dict):
             continue
         trimmed: dict[str, object] = {
             "engineCallable": bool(entry.get("engineCallable", False)),
             "executionGuide": str(entry.get("executionGuide") or ""),
+            "replacementRefs": list(entry.get("replacementRefs") or ())[:5],
         }
+        if isTopRank and isinstance(entry.get("declared"), dict):
+            trimmed["declared"] = dict(entry["declared"])
+        if isTopRank and isinstance(entry.get("execution"), dict):
+            trimmed["execution"] = dict(entry["execution"])
         for field, cap in field_caps.items():
             value = entry.get(field)
             if not value:
@@ -136,9 +147,12 @@ def readSkill(
     LLM 자율 chat-native 경로는 default 로 두고, 특정 skill 본문이 필요하면
     `get_skill_body` 도구로 두 번째 호출.
     """
+    from dartlab.reference.capability.analysisGraph import coveragePacketForQuestion
     from dartlab.skills import describeSkill, getSkill, searchSkills
 
     matches = searchSkills(query or "", limit=max(1, int(limit or 8)), includeUser=includeUser)
+    coverage = coveragePacketForQuestion(query or "")
+    coverageRefs = [str(ref) for ref in coverage.get("candidateCapabilityRefs") or []]
     refs: list[Ref] = []
     rows: list[dict] = []
 
@@ -155,16 +169,25 @@ def readSkill(
         spec = match.skill
         body = _loadBody(spec.id)
 
-        payload = spec.toDict()
-        payload["score"] = match.score
-        payload["reasons"] = list(match.reasons)
-        body_preview = _extractProcedureSections(body, cap=_BODY_PREVIEW_CHARS) if body else ""
+        previewCap = _BODY_PREVIEW_CHARS if rank == 0 else 1_000
+        body_preview = _extractProcedureSections(body, cap=previewCap) if body else ""
+        payload = {
+            "status": spec.status,
+            "id": spec.id,
+            "title": spec.title,
+            "purpose": spec.purpose[:800],
+            "kind": spec.kind,
+            "scope": spec.scope,
+            "score": match.score,
+            "capabilityRefs": list(spec.capabilityRefs)[:12],
+            "requiredEvidence": list(spec.requiredEvidence)[:16],
+        }
         if includeBody:
             payload["body"] = body
             payload["bodyPreview"] = body_preview
         else:
             payload["bodyPreview"] = body_preview
-            payload["bodyTruncated"] = bool(body) and len(body) > _BODY_PREVIEW_CHARS
+            payload["bodyTruncated"] = bool(body) and len(body) > previewCap
         refs.append(
             Ref(
                 id=f"skill:{spec.id}",
@@ -207,15 +230,17 @@ def readSkill(
                         "whenToUse": list(linked_spec.whenToUse),
                         "capabilityRefs": list(linked_spec.capabilityRefs),
                         "requiredEvidence": list(linked_spec.requiredEvidence),
-                        "bodyPreview": _extractProcedureSections(linked_body, cap=2000) if linked_body else "",
-                        "bodyTruncated": bool(linked_body) and len(linked_body) > 2000,
+                        "bodyPreview": _extractProcedureSections(linked_body, cap=1_200) if linked_body else "",
+                        "bodyTruncated": bool(linked_body) and len(linked_body) > 1_200,
                     }
                 )
 
         # capability auto-inline — capabilityRefs id 마다 CAPABILITIES payload 자동 fetch.
         # top-1 후보: 6 필드 (summary/args/example/guide/capabilities/returns).
         # 그 외: summary + args 만. → ReadCapability 자동 동행 회귀 해소.
-        capability_details = _inlineCapabilities(list(spec.capabilityRefs), isTopRank=(rank == 0))
+        explicitRefs = list(spec.capabilityRefs)
+        combinedRefs = list(dict.fromkeys([*explicitRefs, *(coverageRefs if rank == 0 else [])]))
+        capability_details = _inlineCapabilities(combinedRefs, isTopRank=True) if rank == 0 else {}
 
         rows.append(
             {
@@ -226,17 +251,18 @@ def readSkill(
                 "status": spec.status,
                 "trustTier": "localUserDraft" if spec.scope == "user" else "builtin",
                 "score": match.score,
-                "purpose": spec.purpose,
-                "whenToUse": list(spec.whenToUse),
-                "capabilityRefs": list(spec.capabilityRefs),
+                "purpose": spec.purpose[:1_200],
+                "whenToUse": list(spec.whenToUse)[:16],
+                "capabilityRefs": list(spec.capabilityRefs)[:12],
+                "coverageCapabilityRefs": coverageRefs if rank == 0 else [],
                 "capabilityDetails": capability_details,
-                "requiredEvidence": list(spec.requiredEvidence),
-                "expectedOutputs": list(spec.expectedOutputs),
-                "visualGuidance": list(spec.visualGuidance),
-                "visualRefs": list(spec.visualRefs),
+                "requiredEvidence": list(spec.requiredEvidence)[:16],
+                "expectedOutputs": list(spec.expectedOutputs)[:12],
+                "visualGuidance": list(spec.visualGuidance)[:8],
+                "visualRefs": list(spec.visualRefs)[:8],
                 "nextSkills": next_skills,
                 "bodyPreview": body_preview,
-                "bodyTruncated": bool(body) and len(body) > _BODY_PREVIEW_CHARS,
+                "bodyTruncated": bool(body) and len(body) > previewCap,
                 "chainInline": chain_inline,  # top-1 만 채워짐. 나머지는 빈 list.
             }
         )
@@ -245,7 +271,7 @@ def readSkill(
         summary=f"Skill OS 후보 {len(refs)}개"
         + (f" (+ chain {len(rows[0]['chainInline'])})" if rows and rows[0].get("chainInline") else ""),
         refs=refs,
-        data={"skills": rows},
+        data={"skills": rows, "coverage": coverage},
     )
 
 

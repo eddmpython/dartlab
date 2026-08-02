@@ -48,6 +48,13 @@ def _latestValueFromShow(table: pl.DataFrame, snakeId: str) -> float | None:
         return None
 
 
+def _latestPeriodFromShow(table: pl.DataFrame | None) -> str | None:
+    """Company.panel 표에서 최신 공개 기간을 반환한다."""
+    if not isinstance(table, pl.DataFrame) or table.is_empty():
+        return None
+    return next((str(column) for column in table.columns if str(column)[:4].isdigit()), None)
+
+
 def _safe(fn, default=None):
     try:
         return fn()
@@ -65,6 +72,10 @@ def companyMetrics(company: Any) -> dict[str, Any]:
         return metrics
     is_df = _safe(lambda: company.panel("IS"))
     bs_df = _safe(lambda: company.panel("BS"))
+    metrics["sourcePeriods"] = {
+        "IS": _latestPeriodFromShow(is_df),
+        "BS": _latestPeriodFromShow(bs_df),
+    }
     is_metrics = ("revenue", "operatingProfit", "netIncome")
     bs_metrics = ("totalAssets", "totalEquity", "totalLiabilities")
     for key in is_metrics:

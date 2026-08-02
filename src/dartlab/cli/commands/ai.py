@@ -140,9 +140,12 @@ def _npmWorkspaceRoot(uiSource: Path) -> Path:
     """Svelte 앱에서 가장 가까운 npm workspaces 루트를 찾는다."""
     for candidate in (uiSource, *uiSource.parents):
         packagePath = candidate / "package.json"
+        if not packagePath.is_file():
+            continue
         try:
             package = json.loads(packagePath.read_text(encoding="utf-8"))
-        except (OSError, TypeError, ValueError, json.JSONDecodeError):
+        except (OSError, TypeError, ValueError, json.JSONDecodeError) as exc:
+            printWarning(f"npm workspace 탐색에서 {packagePath} 읽기 실패: {type(exc).__name__}")
             continue
         if isinstance(package, dict) and package.get("workspaces"):
             return candidate

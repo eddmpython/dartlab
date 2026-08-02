@@ -63,7 +63,7 @@ linkedSkills:
 source:
   type: curated_markdown
   owner: dartlab
-lastUpdated: '2026-08-02'
+lastUpdated: '2026-08-03'
 testUniverse:
   market: KR
   stockCodes:
@@ -107,3 +107,5 @@ DartLab local UI
 5. UI 타입검사와 build가 통과한다.
 6. exact evidence 확인 전 Product Outcome이 verified로 올라가지 않는다.
 7. 서버 종료, cancel, session eviction 뒤 child process가 남지 않는다.
+8. 질문별 information coverage와 실제 사용 capability가 `runtimeCoverage`로 구분돼 공개된다.
+9. 정량·비교·문서 답변은 인용 문자열 존재가 아니라 evidence payload의 값·기간·대상·주장을 통과해야 한다.

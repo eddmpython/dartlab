@@ -67,15 +67,20 @@ class _OutcomeTracker:
     registeredRefIds: set[str] = field(default_factory=set)
     registeredRefs: dict[str, dict[str, Any]] = field(default_factory=dict)
     toolNames: dict[str, str] = field(default_factory=dict)
+    readSkillCalls: int = 0
+    coverageContract: dict[str, Any] = field(default_factory=dict)
 
     @classmethod
     def start(cls, question: str) -> _OutcomeTracker:
         """결과 원장 오류가 실제 에이전트 턴을 막지 않는 tracker를 만든다."""
+        from dartlab.reference.capability.analysisGraph import coveragePacketForQuestion
+
+        coverage = coveragePacketForQuestion(question)
         try:
-            return cls(startOutcome(feature="ask").outcomeId, question)
+            return cls(startOutcome(feature="ask").outcomeId, question, coverageContract=coverage)
         except Exception:  # noqa: BLE001
             logger.exception("product outcome 시작 기록 실패")
-            return cls(None, question)
+            return cls(None, question, coverageContract=coverage)
 
     def enrich(self, event: AgentEvent) -> dict[str, Any]:
         """tool 상관관계와 evidence receipt를 반영한 공개 payload를 만든다."""
@@ -87,6 +92,13 @@ class _OutcomeTracker:
                 self.toolNames[toolId] = toolName
         elif event.kind == "toolCompleted":
             self._groundToolResult(payload, toolId=toolId)
+        elif event.kind == "turnCompleted":
+            payload["runtimeCoverage"] = {
+                "readSkillCalls": self.readSkillCalls,
+                "contractIds": list(self.coverageContract.get("contractIds") or ()),
+                "requiredEvidence": list(self.coverageContract.get("requiredEvidence") or ()),
+                "candidateCapabilityRefs": list(self.coverageContract.get("candidateCapabilityRefs") or ()),
+            }
         if self.outcomeId:
             payload["outcomeId"] = self.outcomeId
         return payload
@@ -96,6 +108,8 @@ class _OutcomeTracker:
         toolName = _toolName(payload) or self.toolNames.get(toolId, "")
         if toolName:
             payload["toolName"] = toolName
+        if _canonicalToolName(toolName) == "ReadSkill" and not _toolFailed(payload):
+            self.readSkillCalls += 1
         refDetails = _evidenceDetails(payload)
         refIds = [str(item["id"]) for item in refDetails]
         if not self._canGround(toolName, refIds, payload):
@@ -160,6 +174,7 @@ class _OutcomeTracker:
             list(self.registeredRefs.values()),
             completionSucceeded=self.completed and self.completionSucceeded,
             failed=self.failed,
+            readSkillCalls=self.readSkillCalls,
         )
         return report.passed
 
@@ -578,6 +593,7 @@ def _canonicalToolName(name: str) -> str:
     aliases = {
         "engine_call": "EngineCall",
         "inspect_dataset": "InspectDataset",
+        "read_skill": "ReadSkill",
         "run_python": "RunPython",
     }
     return aliases.get(value, value)
@@ -665,7 +681,7 @@ def _evidenceDetails(payload: dict[str, Any]) -> list[dict[str, Any]]:
                     "title": str(value.get("title") or refId)[:500],
                     "source": str(value.get("source") or "")[:1000],
                     "sourceType": str(value.get("sourceType") or "internal")[:100],
-                    "payload": _publicEvidencePayload(value.get("payload")),
+                    "payload": _publicEvidencePayload(value.get("payload"), kind=kind),
                 },
             )
         for key, item in value.items():
@@ -675,14 +691,74 @@ def _evidenceDetails(payload: dict[str, Any]) -> list[dict[str, Any]]:
     return list(found.values())
 
 
-def _publicEvidencePayload(value: Any) -> dict[str, Any]:
-    """근거 드로어에 필요한 값만 크기 제한해 공개한다."""
+def _publicEvidencePayload(value: Any, *, kind: str = "") -> dict[str, Any]:
+    """근거 종류별 검증 필드를 bounded projection으로 공개한다."""
     if not isinstance(value, dict):
         return {}
-    allowed = ("stockCode", "period", "metric", "value", "unit", "dataAsOf", "page")
+    common = {
+        "stockCode",
+        "target",
+        "period",
+        "periods",
+        "metric",
+        "metrics",
+        "value",
+        "unit",
+        "currency",
+        "dataAsOf",
+        "asOf",
+        "page",
+        "apiRef",
+        "status",
+        "specified",
+        "complete",
+        "rowCount",
+        "statement",
+        "sourcePeriods",
+        "provenance",
+    }
+    byKind = {
+        "tableRef": {"rows", "columns", "missingCells", "filter", "formula", "universe", "datasetAsOf"},
+        "docRef": {"rceptNo", "filedAt", "section", "sections", "reportType", "excerpt", "fields", "url"},
+        "executionRef": {"stockCodes", "targets", "missingCells", "coverage", "gaps", "receipt"},
+        "datasetRef": {"columns", "universe", "datasetAsOf", "filter", "formula"},
+        "valueRef": {"rank", "basis", "label", "axis"},
+        "dateRef": {"knowledgeBoundary", "requestedAsOf"},
+    }
+    allowed = common | byKind.get(kind, set())
     result: dict[str, Any] = {}
-    for key in allowed:
-        item = value.get(key)
-        if isinstance(item, (str, int, float, bool)) or item is None:
-            result[key] = item
+    for key in sorted(allowed):
+        if key not in value:
+            continue
+        projected = _boundedEvidenceValue(value[key])
+        if projected is not _EVIDENCE_OMIT:
+            result[key] = projected
     return result
+
+
+_EVIDENCE_OMIT = object()
+
+
+def _boundedEvidenceValue(value: Any, *, depth: int = 0) -> Any:
+    """근거 상세 drawer에 필요한 구조를 크기와 깊이 제한 안에서 보존한다."""
+    if depth > 4:
+        return _EVIDENCE_OMIT
+    if value is None or isinstance(value, (bool, int, float)):
+        return value
+    if isinstance(value, str):
+        return value[:2_000]
+    if isinstance(value, list | tuple):
+        rows = []
+        for item in value[:40]:
+            projected = _boundedEvidenceValue(item, depth=depth + 1)
+            if projected is not _EVIDENCE_OMIT:
+                rows.append(projected)
+        return rows
+    if isinstance(value, dict):
+        result: dict[str, Any] = {}
+        for key, item in list(value.items())[:40]:
+            projected = _boundedEvidenceValue(item, depth=depth + 1)
+            if projected is not _EVIDENCE_OMIT:
+                result[str(key)] = projected
+        return result
+    return _EVIDENCE_OMIT

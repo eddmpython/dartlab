@@ -604,6 +604,7 @@ def _publicResponseMeta(meta: dict[str, Any]) -> dict[str, Any]:
         "activityCount",
         "responseStatus",
         "answerQuality",
+        "runtimeCoverage",
     }
     return {key: meta.get(key) for key in allowed if key in meta}
 

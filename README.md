@@ -655,6 +655,8 @@ dartlab.ask("삼성전자 분석", runtimeId="claude")
 
 지원 runtime은 `codex`, `claude`, `cline`이다. DartLab은 provider API key, OAuth token, 모델 다운로드를 관리하지 않는다. CLI 설치와 DartLab MCP 연결이 모두 확인된 `groundedReady` runtime만 실행되며, 미연결 runtime은 비근거 답변을 만들지 않고 연결 계획을 안내한다. 설치와 MCP 설정은 `dartlab agent`가 exact argv와 SHA-256 digest를 먼저 보여 주고, 사용자가 같은 digest를 명시했을 때만 실행한다.
 
+질문은 Skill OS의 241개 공개 capability를 질문별 `informationCoverage`로 좁힌다. 실행 가능한 182개는 구조화된 실행 계약을 사용하고 reference-only 경로는 canonical replacement로 연결한다. 답변은 표·문서·값·기준일의 exact ref payload와 값·기간·대상·문서 주장이 일치할 때만 공개된다. 로컬 GUI는 답변이 실제 사용한 근거, 보조 근거, 미충족 근거, artifact와 실행 영수증을 분리해서 보여 준다.
+
 ### Channel: 외부에서 내 PC dartlab 접근
 
 > 설계: [runtime.channel](https://eddmpython.github.io/dartlab/skills)
@@ -997,9 +999,9 @@ c.panel("IS")                   # 손익계산서, 분기 기본
 | 다섯 분석 렌즈 | analysis·credit·industry·quant·macro가 conclusion·drivers·evidence·confidence·gaps·falsifiers·asOf 공통 문법의 product 외피로 돌고, 단일 종합점수를 만들지 않으며 결손을 usable·partial·blocked로 그대로 노출한다. credit은 79개사 실측 검증(대기업 87%, 전체 70%)이 있다. 렌즈 결론의 실사용 반복 검증과 v5.0 재측정은 남았다. | 각 렌즈가 실제 질문에서 반복 검증된 근거 충족도로 답한다. |
 | 리포트·스토리 | `c.story()` 6막 서사와 `Company.reportModel` 공개 계약, 프로 리포트 emitter까지 완결됐고 발간 파이프라인으로 기업이야기 10편이 블로그에 실발간됐다. 랜딩이 같은 모델을 소비하는 단계는 운영자 결정 대기다. | 회사 하나의 전체 이야기가 리포트로 나오고 모든 표면이 같은 모델을 소비한다. |
 | 시뮬레이션 | `dartlab.simulate` 결정론 드라이버 DAG 코어가 계약 엔진으로 돌고 가정 원장을 남긴다. 거시 시뮬레이션 엔진은 완결됐다(회사단 거시 재무 브리지는 데이터 벽으로 미빌드 확정). Play UI·fan 차트와 시나리오 실사용 여정은 미완이다. | 시나리오가 재현 가능하게 돌고 결과를 터미널에서 만진다. |
-| AI 워크벤치 (ask) | `dartlab.ask`가 chat-native 자율 tool calling으로 돌고 답변 속 숫자·표는 실행 근거 ref로 검산 가능하다. 외부 본문(DART·EDGAR·웹)은 직렬화 단에서 untrusted 마커로 격리돼 본문 안 지시가 동작을 바꾸지 못한다. 답변에서 근거 확인까지의 완결 루프 계측(북극성 분자)은 아직 없다. | 질문 하나가 검증 완료 분석 루프 한 건으로 끝난다. |
+| AI 워크벤치 (ask) | `dartlab.ask`가 chat-native 자율 tool calling으로 돌고, 241개 capability의 질문별 coverage와 182개 실행 계약을 사용한다. 숫자·기간·비교축·감사 주장은 exact ref payload로 검산되고 불일치는 공개 전에 실패한다. GUI는 사용 근거와 보조 근거, 결손, artifact, 사용자 exact 확인을 분리한다. 전역 주간 북극성 분자는 아직 미측정이다. | 질문 하나가 검증 완료 분석 루프 한 건으로 끝난다. |
 | MCP 서버 | `tools/list`가 광고하는 canonical 도구만 실행되고, 단일 호출은 EngineCall allowlist, 다단 가공만 RunPython으로 분리된다. 옛 generated 도구 33종은 0.10에서 폐기됐고 agent와 MCP의 도구 목록 드리프트는 단일 SSOT로 기계 대조된다. stdio와 원격 SSE 둘 다 산다. 외부 LLM 실사용의 반복 검증은 남았다. | 외부 LLM이 같은 계약·같은 근거 문법으로 DartLab을 쓴다. |
-| Agent Runtime (Bring Your Agent) | 설치된 CLI를 쓰는 runtime이 구현됐다. Claude와 Codex 실제 ask가 ReadSkill·EngineCall을 호출해 exact ref 답변을 반환했고, local GUI SSE도 같은 계약을 완주했다. Cline embedded는 현재 ACP가 session MCP를 노출하지 않아 fail-closed다. 점수는 주간 review 전까지 유지한다. | 사용자의 설치된 agent가 DartLab 작업대에서 검증 루프를 반복 완주한다. |
+| Agent Runtime (Bring Your Agent) | 설치된 CLI를 쓰는 runtime이 구현됐다. Claude와 Codex 실제 ask가 ReadSkill·EngineCall을 호출해 정량·기업 비교·감사 문서 질문의 exact ref 답변을 반환했고, local GUI SSE도 같은 계약을 완주했다. 역사 시점 입력이 부족한 기업 시뮬레이션은 숫자를 만들지 않고 `partial`과 결손을 반환한다. Cline embedded는 현재 ACP가 session MCP를 노출하지 않아 fail-closed다. 점수는 주간 review 전까지 유지한다. | 사용자의 설치된 agent가 DartLab 작업대에서 검증 루프를 반복 완주한다. |
 | 터미널 | 공개 터미널이 전 상장사를 커버하고 재무·주가·공시·신용·산업·매크로를 한 화면에 올린다. 모든 데이터 호출은 단일 진입점 공통배선으로 잠겨 있고 가드가 상주한다. 로컬 앱은 공개 바닥의 상위집합이다. 스크리너 재구축은 구현 완료 후 눈검수 대기다. 화면 안 근거 확인 여정의 반복 검증은 남았다. | 전문가 계기판에서 질문과 근거 확인이 화면 안에서 끝난다. |
 | 노트북·브라우저 (Pyodide) | 설치 없이 xlwings Lite·JupyterLite·marimo·Colab WASM에서 Company·panel·analysis·credit·story·macro가 실행되고 엑셀 수식으로도 닿는다. scan 프리빌드 용량과 gather CORS는 브라우저 경계로 남는다. Colab·marimo 노트북 9종이 계약 문법으로 산다. 교육 SSOT는 블로그 연재다. | 실데이터 실습이 설치 없이 교육 서사와 이어진다. |
 | 북극성 측정 (productOutcome) | 로컬 상태 원장, bounded evidence resolve, exact ref hash 검증이 구현됐다. 실제 local GUI operator journey에서 2026Q1 삼성전자 매출 값 근거를 열어 `verified=1` 전이를 확인했다. 이는 로컬 실증이며 주간 cohort가 없어 전역 값은 계속 미측정이다. 점수는 주간 review 전까지 유지한다. | verified 루프가 자동 계수되고 주간 리뷰가 이 표를 재판정한다. |

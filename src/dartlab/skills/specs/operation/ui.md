@@ -75,7 +75,7 @@ source:
   type: absorbed_skills
   absorbedKey: ui
   format: markdown
-lastUpdated: '2026-05-03'
+lastUpdated: '2026-08-03'
 testUniverse:
   market: KR
   stockCodes:
@@ -109,6 +109,10 @@ testUniverse:
 - 진행 중에는 최근 6개 activity만 보이고, 완료 후에는 `명령어 N개 실행` 한 줄로 접는다.
 - 빈 chunk, 검색-only, tool 실패 은폐, 정형 ref 없는 계산 답변은 성공 outcome으로 release하지 않는다.
 - `RUN_FINISHED.responseMeta.answerQuality`가 있으면 채팅 답변에 검증 배지, 정량/문서 계약, 점수를 표시한다. 품질 게이트 실패 턴의 부분 답변은 렌더하지 않고 공개 실패 사유를 표시한다.
+- 답변 본문에서 실제 사용한 ref와 coverage가 제안했지만 사용하지 않은 보조 ref를 분리한다. 사용 근거는 답변 citation에서 exact match로 강조하고, 보조 근거를 답변이 인용한 것처럼 표시하지 않는다.
+- Evidence 패널은 선택한 ref의 bounded payload와 실행 영수증을 drawer에서 열고, `outcomeId`와 exact ref receipt가 일치한 확인만 사용자 검증으로 표시한다. 자동 답변 품질과 사용자 근거 확인은 서로 다른 상태다.
+- `RUN_FINISHED.responseMeta.runtimeCoverage`는 사용 capability, 보조 capability, 충족·미충족 근거, 결손을 표시한다. artifact와 `VIEW_SPEC`은 같은 결과 작업대에서 열되 raw tool payload를 채팅 본문으로 올리지 않는다.
+- Runtime Center dialog는 focus trap, focus restore, background inert, Escape close와 모바일 44px touch target을 제공한다.
 - evidence chip을 렌더한 것만으로 verified를 기록하지 않는다. 사용자가 exact ref의 `근거 확인`을 실행하고 같은 outcome receipt가 200으로 검증된 뒤에만 Product Outcome을 승격한다.
 - `/ask`와 `/chat`은 같은 실제 Agent Runtime 채팅 표면으로 수렴한다. placeholder 또는 terminal redirect를 공식 Ask 경로로 두지 않는다.
 

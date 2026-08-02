@@ -101,7 +101,7 @@ export interface AiStreamToolResult {
 
 export interface AiStreamActivity {
 	type: 'ACTIVITY_DELTA';
-	status: 'done' | 'running';
+	status: 'done' | 'running' | 'error';
 	summary: string;
 	refs: string[];
 	passLabel?: string;
@@ -122,6 +122,7 @@ export interface AiStreamRunFinished {
 	runId: string;
 	status: 'ok' | 'failed';
 	refs: string[];
+	artifacts?: Record<string, unknown>[];
 	suggestedQuestions: string[];
 	responseMeta?: {
 		responseStatus?: string;
@@ -131,6 +132,15 @@ export interface AiStreamRunFinished {
 			score: number;
 			issues: string[];
 			citedRefIds: string[];
+			contractIds: string[];
+			requiredEvidence: string[];
+			readSkillCalls: number | null;
+		};
+		runtimeCoverage?: {
+			readSkillCalls: number;
+			contractIds: string[];
+			requiredEvidence: string[];
+			candidateCapabilityRefs: string[];
 		};
 	};
 }

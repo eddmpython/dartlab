@@ -114,3 +114,55 @@ def test_peerCompareN_max_slots_truncate(monkeypatch: pytest.MonkeyPatch) -> Non
     result = executeTool("PeerCompareN", {"stockCodes": codes})
     assert result["ok"] is True
     assert len(result["data"]["rows"]) == 12  # 앞 12 개만
+
+
+def test_peerCompareNEmitsPerTargetValueDateAndExecutionEvidence(monkeypatch: pytest.MonkeyPatch) -> None:
+    class FakeCompany:
+        def __init__(self, stockCode: str):
+            self.stockCode = stockCode
+            self.corpName = stockCode
+
+    monkeypatch.setattr("dartlab.ai.tools.peerCompareN.resolveCompanyOrNone", lambda code: FakeCompany(code))
+    monkeypatch.setattr(
+        "dartlab.ai.tools.peerCompareN.companyMetrics",
+        lambda company: {
+            "revenue": 100.0 if company.stockCode == "A" else 200.0,
+            "sourcePeriods": {"IS": "2025Q4", "BS": "2025Q4"},
+        },
+    )
+    monkeypatch.setattr("dartlab.ai.tools.peerCompareN.getDcrBadge", lambda _company: None)
+    monkeypatch.setattr("dartlab.ai.tools.peerCompareN.getIndustryBadge", lambda _company: None)
+
+    result = executeTool("PeerCompareN", {"stockCodes": ["A", "B"], "metrics": ["revenue"]})
+    kinds = [ref["kind"] for ref in result["refs"]]
+
+    assert result["ok"] is True
+    assert result["data"]["complete"] is True
+    assert kinds.count("valueRef") == 2
+    assert kinds.count("dateRef") == 4
+    assert kinds.count("executionRef") == 1
+
+
+def test_peerCompareNMarksMissingCellsAsIncomplete(monkeypatch: pytest.MonkeyPatch) -> None:
+    class FakeCompany:
+        corpName = "회사"
+
+        def __init__(self, stockCode: str):
+            self.stockCode = stockCode
+
+    monkeypatch.setattr("dartlab.ai.tools.peerCompareN.resolveCompanyOrNone", lambda code: FakeCompany(code))
+    monkeypatch.setattr(
+        "dartlab.ai.tools.peerCompareN.companyMetrics",
+        lambda _company: {"revenue": None, "sourcePeriods": {"IS": "2025Q4", "BS": "2025Q4"}},
+    )
+    monkeypatch.setattr("dartlab.ai.tools.peerCompareN.getDcrBadge", lambda _company: None)
+    monkeypatch.setattr("dartlab.ai.tools.peerCompareN.getIndustryBadge", lambda _company: None)
+
+    result = executeTool("PeerCompareN", {"stockCodes": ["A", "B"], "metrics": ["revenue"]})
+
+    assert result["ok"] is True
+    assert result["data"]["complete"] is False
+    assert result["data"]["missingCells"] == [
+        {"stockCode": "A", "metric": "revenue"},
+        {"stockCode": "B", "metric": "revenue"},
+    ]

@@ -18,6 +18,7 @@ from dartlab.ai.runtime.drivers.claudeStreamJson import _claudeToolArgs
 from dartlab.ai.runtime.drivers.codexAppServer import CodexAppServerDriver
 from dartlab.ai.runtime.eventBuffer import EventBuffer
 from dartlab.ai.runtime.eventProjection import EventProjector
+from dartlab.ai.runtime.evidenceStore import EvidenceStore
 from dartlab.ai.runtime.installManager import buildInstallPlan, executeInstallPlan
 from dartlab.ai.runtime.mcpBootstrap import _clineMcpConfigured, buildMcpConnectPlan
 from dartlab.ai.runtime.processSupervisor import ProcessSupervisor
@@ -93,6 +94,23 @@ def testTurnQuestionPromotesExplicitPeriodToStructuredContext():
 
     assert '"period":"2024"' in question
     assert '"stockCode":"005930"' in question
+    assert '"informationCoverage"' in question
+    assert '"Company.panel"' in question
+
+
+def testTurnQuestionIncludesCoverageWithoutScreenContext():
+    question = buildTurnQuestion("ROE가 높은 종목을 스크리닝해줘")
+
+    assert '"informationCoverage"' in question
+    assert '"scan"' in question
+
+
+def testAnalysisCapsuleExplainsCoverageAsCompletionContract(tmp_path):
+    capsule = buildAnalysisCapsule(cwd=tmp_path, mcpConnected=True)
+
+    assert "informationCoverage" in capsule
+    assert "강제 실행 순서가 아니라" in capsule
+    assert "requiredEvidence가 빠지면" in capsule
 
 
 def testCodexUsesThreadInstructionsAndReadOnlyTurn(monkeypatch, tmp_path):
@@ -411,6 +429,20 @@ def testSessionStorePersistsOnlySessionMapping(tmp_path):
     store.save(value)
     assert store.get("s") == value
     assert store.list(limit=1) == [value]
+
+
+def testEvidenceStorePersistsBoundedExactPayloadAndRejectsOversize(tmp_path):
+    store = EvidenceStore(tmp_path / "evidence.sqlite3")
+    detail = {"id": "table:bounded", "kind": "tableRef", "payload": {"excerpt": "x" * 20_000}}
+
+    store.save("outcome", detail)
+
+    assert store.get("outcome", "table:bounded") == detail
+    with pytest.raises(ValueError, match="64 KiB"):
+        store.save(
+            "outcome",
+            {"id": "table:oversize", "kind": "tableRef", "payload": {"excerpt": "x" * 70_000}},
+        )
 
 
 def testTypeScriptContractIsGeneratedFromPythonSource():

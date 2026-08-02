@@ -6,7 +6,7 @@
 	import { page } from '$app/state';
 	import { isKrStockCode, normalizeKrCode } from '@dartlab/ui-contracts';
 	import { getLocalRuntime } from '$lib/runtime/localRuntime';
-	import { ChatStore } from '$lib/chat/chatStore.svelte';
+	import { ChatStore, type ChatMessage } from '$lib/chat/chatStore.svelte';
 	import Sidebar from '$lib/chat/Sidebar.svelte';
 	import Composer from '$lib/chat/Composer.svelte';
 	import Markdown from '$lib/chat/Markdown.svelte';
@@ -23,6 +23,11 @@
 	let scroller: HTMLDivElement | null = $state(null);
 	let sidebarOpen = $state(true);
 	let runtimeOpen = $state(false);
+	let runtimeTrigger: HTMLButtonElement | null = $state(null);
+	let runtimeDialog: HTMLDivElement | null = $state(null);
+	let focusReturnTarget: HTMLElement | null = null;
+	type EvidenceHandle = { openRef: (refId: string) => Promise<void> };
+	let evidencePanels: Record<string, EvidenceHandle | undefined> = {};
 
 	const suggestions = [
 		'삼성전자 005930 최근 5년 매출과 영업이익 추이',
@@ -82,6 +87,126 @@
 		window.open(DARTLAB_BRAND_LINKS.coffee, '_blank', 'noopener');
 	}
 
+	function openRuntimeCenter(): void {
+		focusReturnTarget = document.activeElement instanceof HTMLElement ? document.activeElement : runtimeTrigger;
+		runtimeOpen = true;
+		void tick().then(() => {
+			const first = runtimeDialog?.querySelector<HTMLElement>(
+				'button:not(:disabled), a[href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])'
+			);
+			(first ?? runtimeDialog)?.focus();
+		});
+	}
+
+	function closeRuntimeCenter(): void {
+		if (!runtimeOpen) return;
+		runtimeOpen = false;
+		void tick().then(() => focusReturnTarget?.focus());
+	}
+
+	function trapRuntimeFocus(event: KeyboardEvent): void {
+		if (event.key === 'Escape') {
+			event.preventDefault();
+			closeRuntimeCenter();
+			return;
+		}
+		if (event.key !== 'Tab' || !runtimeDialog) return;
+		const focusable = Array.from(
+			runtimeDialog.querySelectorAll<HTMLElement>(
+				'button:not(:disabled), a[href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])'
+			)
+		);
+		if (!focusable.length) {
+			event.preventDefault();
+			runtimeDialog.focus();
+			return;
+		}
+		const first = focusable[0];
+		const last = focusable.at(-1) as HTMLElement;
+		const activeElement = document.activeElement;
+		if (event.shiftKey && (activeElement === first || !runtimeDialog.contains(activeElement))) {
+			event.preventDefault();
+			last.focus();
+		} else if (!event.shiftKey && activeElement === last) {
+			event.preventDefault();
+			first.focus();
+		}
+	}
+
+	function markEvidenceVerified(message: ChatMessage, refId: string): void {
+		if (!message.verifiedRefIds.includes(refId)) message.verifiedRefIds.push(refId);
+	}
+
+	const ISSUE_LABELS: Record<string, string> = {
+		runtime_not_completed: '런타임 완료 실패',
+		read_skill_missing: 'Skill OS 계약 미확인',
+		read_skill_repeated: 'Skill OS 반복 조회',
+		empty_answer: '최종 답변 없음',
+		source_ref_missing: '표·문서 출처 누락',
+		document_ref_missing: '공시 원문 누락',
+		date_ref_missing: '기준시점 누락',
+		value_ref_missing: '수치 근거 누락',
+		value_binding_mismatch: '답변 수치와 근거 불일치',
+		date_binding_mismatch: '답변 시점과 근거 불일치',
+		period_coverage_incomplete: '요구 기간 일부 누락',
+		comparison_target_incomplete: '비교 대상 일부 누락',
+		target_evidence_mismatch: '질문 대상과 근거 불일치',
+		metric_evidence_mismatch: '질문 지표와 근거 불일치',
+		evidence_payload_empty: '근거 내용 비어 있음',
+		table_evidence_empty: '표 내용 비어 있음',
+		value_evidence_unavailable: '값을 확인할 수 없음',
+		date_evidence_unavailable: '기준일을 확인할 수 없음'
+	};
+
+	const EVIDENCE_LABELS: Record<string, string> = {
+		tableRef: '표',
+		docRef: '문서',
+		valueRef: '값',
+		dateRef: '기준시점',
+		skillRef: 'Skill OS',
+		executionRef: '실행 기록',
+		sourceRef: '원천 출처'
+	};
+
+	function issueLabel(issue: string): string {
+		return ISSUE_LABELS[issue] ?? issue;
+	}
+
+	function evidenceLabel(kind: string): string {
+		return EVIDENCE_LABELS[kind] ?? kind;
+	}
+
+	function viewSpecSummary(spec: unknown): string {
+		if (!spec || typeof spec !== 'object') return '시각 결과 준비됨';
+		const value = spec as Record<string, unknown>;
+		const widgets = Array.isArray(value.widgets) ? value.widgets.length : 0;
+		const charts = Array.isArray(value.charts) ? value.charts.length : 0;
+		if (widgets || charts) return `위젯 ${widgets} · 차트 ${charts}`;
+		return typeof value.component === 'string' ? value.component : '시각 결과 준비됨';
+	}
+
+	function artifactTitle(data: Record<string, unknown>): string {
+		for (const key of ['title', 'name', 'filename', 'label', 'kind']) {
+			if (typeof data[key] === 'string' && data[key]) return String(data[key]);
+		}
+		return '분석 산출물';
+	}
+
+	function artifactHref(data: Record<string, unknown>): string | null {
+		for (const key of ['url', 'href', 'downloadUrl']) {
+			const value = data[key];
+			if (typeof value !== 'string' || !value) continue;
+			if (value.startsWith('/')) return value;
+			try {
+				const url = new URL(value);
+				if (url.protocol === 'http:' || url.protocol === 'https:') return url.href;
+			} catch {
+				// 공개 URL이 아니면 채팅에서 링크하지 않는다.
+			}
+		}
+		return null;
+	}
+
 	let copiedId = $state<string | null>(null);
 	async function copyMsg(id: string, text: string): Promise<void> {
 		try {
@@ -100,7 +225,7 @@
 	<title>챗 · dartlab local</title>
 </svelte:head>
 
-<div class="shell">
+<div class="shell" inert={runtimeOpen}>
 	{#if sidebarOpen}
 		<button class="sideveil" aria-label="사이드바 닫기" onclick={() => (sidebarOpen = false)}></button>
 		<Sidebar {store} />
@@ -108,7 +233,7 @@
 
 	<main class="main">
 		<div class="topstrip">
-			<button class="ghost" onclick={() => (sidebarOpen = !sidebarOpen)} aria-label="사이드바 토글" title="사이드바">
+			<button class="ghost" onclick={() => (sidebarOpen = !sidebarOpen)} aria-label="사이드바 토글" aria-expanded={sidebarOpen} title="사이드바">
 				<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M9 4v16" /></svg>
 			</button>
 			<div class="spacer"></div>
@@ -116,7 +241,16 @@
 			<a class="ghost" href={`${base}/terminal/${recent}`} title="터미널로" aria-label="터미널로">
 				<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17l6-6-6-6M12 19h8" /></svg>
 			</a>
-			<button class="ghost" onclick={() => (runtimeOpen = true)} title="Agent Runtime Center" aria-label="Agent Runtime Center">
+			<button
+				class="ghost"
+				bind:this={runtimeTrigger}
+				onclick={openRuntimeCenter}
+				title="Agent Runtime Center"
+				aria-label="Agent Runtime Center"
+				aria-haspopup="dialog"
+				aria-expanded={runtimeOpen}
+				aria-controls="runtime-center-dialog"
+			>
 				<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>
 			</button>
 			<div class="dlTerm chatSns" style="display:contents">
@@ -157,6 +291,22 @@
 									{#if m.streaming && !m.text}
 										<div class="runstate" role="status" aria-label="근거를 확인하는 중"><span></span></div>
 									{/if}
+									{#if m.activities.length}
+										<details class="activityLog" open={m.streaming}>
+											<summary>
+												{m.streaming ? `분석 진행 · 최근 ${m.activities.length}개` : `명령어 ${m.activityCount}개 실행`}
+											</summary>
+											<div class="activityItems" aria-live={m.streaming ? 'polite' : 'off'}>
+												{#each m.activities as activity (activity.id)}
+													<div class="activityItem" class:error={activity.status === 'error'}>
+														<span class:running={activity.status === 'running'}></span>
+														<strong>{activity.passLabel ?? '실행'}</strong>
+														<p>{activity.summary}</p>
+													</div>
+												{/each}
+											</div>
+										</details>
+									{/if}
 									{#if m.tools.length}
 										<div class="workbench">
 											{#each m.tools as t (t.id)}
@@ -180,7 +330,7 @@
 									{/if}
 
 									{#if m.text}
-										<Markdown text={m.text} />
+										<Markdown text={m.text} onrefclick={(refId) => evidencePanels[m.id]?.openRef(refId)} />
 										{#if m.streaming}<span class="caret"></span>{/if}
 									{/if}
 
@@ -189,11 +339,58 @@
 									{/if}
 
 									{#if m.refs.length}
-										<Evidence refs={m.refs} />
+										<Evidence
+											bind:this={evidencePanels[m.id]}
+											refs={m.refs}
+											citedRefIds={m.quality?.citedRefIds ?? null}
+											verifiedRefIds={m.verifiedRefIds}
+											onverified={(refId) => markEvidenceVerified(m, refId)}
+										/>
 									{/if}
-									{#if m.quality?.passed}
-										<div class="qualityBadge" title="인용, 값, 기준시점 결합을 통과한 답변">
-											검증 통과 · {m.quality.contract === 'quantitative' ? '수치' : '공시'} · {m.quality.score}
+									{#if m.quality}
+										<div class="qualityPanel" class:passed={m.quality.passed} role="status">
+											<header>
+												<strong>자동 답변 품질 검증</strong>
+												<span>{m.quality.passed ? '통과' : '차단'} · {m.quality.contract === 'quantitative' ? '정량' : '문서'} · {m.quality.score}점</span>
+											</header>
+											<div class="coverageSummary">
+												<span>답변 인용 {m.quality.citedRefIds.length}개</span>
+												<span>Skill OS 조회 {m.runtimeCoverage?.readSkillCalls ?? m.quality.readSkillCalls ?? 0}회</span>
+												{#if m.quality.contractIds.length}<span title={m.quality.contractIds.join('\n')}>적용 계약 {m.quality.contractIds.length}개</span>{/if}
+											</div>
+											{#if m.quality.requiredEvidence.length}
+												<div class="requirements" aria-label="요구 근거">
+													{#each m.quality.requiredEvidence as requirement (requirement)}
+														<span>{evidenceLabel(requirement)}</span>
+													{/each}
+												</div>
+											{/if}
+											{#if m.quality.issues.length}
+												<ul class="qualityIssues">
+													{#each m.quality.issues as issue (issue)}<li>{issueLabel(issue)}</li>{/each}
+												</ul>
+											{/if}
+										</div>
+									{/if}
+
+									{#if m.viewSpecs.length || m.artifacts.length}
+										<div class="outputs" aria-label="분석 결과와 산출물">
+											{#each m.viewSpecs as view (view.id)}
+												<article class="outputCard">
+													<span class="outputKind">시각 결과</span>
+													<strong>{view.title}</strong>
+													<small>{viewSpecSummary(view.spec)}{view.source ? ` · ${view.source}` : ''}</small>
+												</article>
+											{/each}
+											{#each m.artifacts as artifact (artifact.id)}
+												<article class="outputCard">
+													<span class="outputKind">산출물</span>
+													<strong>{artifactTitle(artifact.data)}</strong>
+													{#if artifactHref(artifact.data)}
+														<a href={artifactHref(artifact.data) ?? undefined} target="_blank" rel="noopener">열기</a>
+													{:else}<small>런타임 세션에 보존됨</small>{/if}
+												</article>
+											{/each}
 										</div>
 									{/if}
 
@@ -240,16 +437,24 @@
 	</main>
 </div>
 
-<svelte:window onkeydown={(e) => { if (e.key === 'Escape' && runtimeOpen) runtimeOpen = false; }} />
-
 {#if runtimeOpen}
 	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-	<div class="povl" role="presentation" onclick={() => (runtimeOpen = false)}>
+	<div class="povl" role="presentation" onclick={closeRuntimeCenter}>
 		<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-		<div class="pmodal" role="dialog" aria-modal="true" aria-label="Agent Runtime Center" tabindex="-1" onclick={(e) => e.stopPropagation()}>
+		<div
+			id="runtime-center-dialog"
+			class="pmodal"
+			bind:this={runtimeDialog}
+			role="dialog"
+			aria-modal="true"
+			aria-labelledby="runtime-center-title"
+			tabindex="-1"
+			onkeydown={trapRuntimeFocus}
+			onclick={(e) => e.stopPropagation()}
+		>
 			<header class="pmhead">
-				<h2>Agent Runtime Center</h2>
-				<button class="pmx" onclick={() => (runtimeOpen = false)} aria-label="닫기">✕</button>
+				<h2 id="runtime-center-title">Agent Runtime Center</h2>
+				<button class="pmx" onclick={closeRuntimeCenter} aria-label="닫기">✕</button>
 			</header>
 			<p class="pmsub">설치된 CLI를 선택하고 DartLab MCP 연결을 확인하세요.</p>
 			<div class="pmbody">
@@ -282,7 +487,7 @@
 	.spacer {
 		flex: 1;
 	}
-	.runtimeBadge, .qualityBadge {
+	.runtimeBadge {
 		display: inline-flex;
 		align-items: center;
 		border: 1px solid color-mix(in srgb, #70d6a5 35%, transparent);
@@ -293,13 +498,12 @@
 		font-size: .68rem;
 		white-space: nowrap;
 	}
-	.qualityBadge { width: fit-content; margin-top: .65rem; }
 	.ghost {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		width: 2rem;
-		height: 2rem;
+		width: 2.75rem;
+		height: 2.75rem;
 		border: none;
 		border-radius: 7px;
 		background: none;
@@ -432,6 +636,16 @@
 		flex-direction: column;
 		gap: 0.4rem;
 	}
+	.activityLog { border: 1px solid var(--dl-line, #2a2c33); border-radius: 9px; overflow: hidden; background: color-mix(in srgb, var(--dl-bg-raised, #16171a) 45%, transparent); }
+	.activityLog summary { min-height: 2.75rem; display: flex; align-items: center; padding: .45rem .65rem; color: var(--dl-ink-dim, #9aa0aa); font-size: .75rem; cursor: pointer; }
+	.activityItems { display: grid; gap: .3rem; padding: .15rem .65rem .65rem; border-top: 1px solid var(--dl-line, #2a2c33); }
+	.activityItem { display: grid; grid-template-columns: auto auto minmax(0, 1fr); gap: .4rem; align-items: baseline; padding-top: .4rem; color: var(--dl-ink-dim, #9aa0aa); font-size: .72rem; }
+	.activityItem > span { width: .45rem; height: .45rem; border-radius: 50%; background: #70d6a5; }
+	.activityItem > span.running { background: var(--dl-info, #6ab0ff); animation: pulse 1s ease-in-out infinite; }
+	.activityItem.error > span { background: var(--dl-bad, #ff6b6b); }
+	.activityItem strong { color: var(--dl-ink-mute, #6b7280); font-size: .65rem; }
+	.activityItem p { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+	@keyframes pulse { 50% { opacity: .3; } }
 	.runstate { min-height: 1.25rem; display: flex; align-items: center; }
 	.runstate span { width: .9rem; height: .9rem; border: 2px solid var(--dl-line, #2a2c33); border-top-color: var(--dl-accent, #ff5a36); border-radius: 50%; animation: spin .8s linear infinite; }
 	@keyframes spin { to { transform: rotate(360deg); } }
@@ -459,6 +673,22 @@
 		font-size: 0.85rem;
 		color: var(--dl-bad, #ff6b6b);
 	}
+	.qualityPanel { display: grid; gap: .55rem; padding: .7rem .8rem; border: 1px solid color-mix(in srgb, var(--dl-bad, #ff6b6b) 45%, var(--dl-line, #2a2c33)); border-radius: 9px; background: color-mix(in srgb, var(--dl-bad, #ff6b6b) 6%, transparent); }
+	.qualityPanel.passed { border-color: color-mix(in srgb, #70d6a5 35%, var(--dl-line, #2a2c33)); background: color-mix(in srgb, #70d6a5 6%, transparent); }
+	.qualityPanel header { display: flex; flex-wrap: wrap; align-items: center; gap: .45rem .75rem; }
+	.qualityPanel header strong { color: var(--dl-ink, #e7e7ea); font-size: .78rem; }
+	.qualityPanel header span { color: var(--dl-bad, #ff8c8c); font-size: .72rem; }
+	.qualityPanel.passed header span { color: #70d6a5; }
+	.coverageSummary, .requirements { display: flex; flex-wrap: wrap; gap: .35rem; }
+	.coverageSummary span, .requirements span { padding: .18rem .42rem; border-radius: 5px; background: var(--dl-bg-raised, #16171a); color: var(--dl-ink-dim, #9aa0aa); font-size: .66rem; }
+	.requirements span { border: 1px solid var(--dl-line, #2a2c33); }
+	.qualityIssues { margin: 0; padding-left: 1.1rem; color: var(--dl-bad, #ff8c8c); font-size: .72rem; line-height: 1.5; }
+	.outputs { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: .45rem; }
+	.outputCard { min-width: 0; display: grid; gap: .25rem; padding: .7rem; border: 1px solid var(--dl-line, #2a2c33); border-radius: 9px; background: var(--dl-bg-raised, #16171a); }
+	.outputCard .outputKind { width: fit-content; padding: .1rem .35rem; border-radius: 4px; background: color-mix(in srgb, var(--dl-info, #6ab0ff) 12%, transparent); color: var(--dl-info, #6ab0ff); font-size: .64rem; }
+	.outputCard strong { color: var(--dl-ink, #e7e7ea); font-size: .78rem; overflow-wrap: anywhere; }
+	.outputCard small { color: var(--dl-ink-mute, #6b7280); font-size: .68rem; overflow-wrap: anywhere; }
+	.outputCard a { width: fit-content; min-height: 2.75rem; display: inline-flex; align-items: center; color: var(--dl-info, #6ab0ff); font-size: .72rem; }
 	.suggest {
 		display: flex;
 		flex-wrap: wrap;
@@ -546,8 +776,8 @@
 	}
 	.pmx {
 		margin-left: auto;
-		width: 1.9rem;
-		height: 1.9rem;
+		width: 2.75rem;
+		height: 2.75rem;
 		border: none;
 		border-radius: 7px;
 		background: none;
@@ -589,5 +819,11 @@
 		.col { padding-inline: 0.85rem; }
 		.user .bubble { max-width: 88%; }
 		.chatSns { display: none !important; }
+		.povl { padding: 0; align-items: stretch; }
+		.pmodal { max-width: none; max-height: 100dvh; border-radius: 0; border-block: 0; }
+		.pmhead { padding: .75rem .85rem .35rem; }
+		.pmsub { padding: 0 .85rem .65rem; }
+		.pmbody { padding: 0 .85rem .85rem; }
+		.outputs { grid-template-columns: 1fr; }
 	}
 </style>

@@ -129,13 +129,61 @@ def scenarioOverlay(scenarioName: str, stockCode: str = "", severity: str = "", 
         "confidence": confidence,
         "confidenceMethod": "scenario",
     }
-    ref = Ref(
+    executionRef = Ref(
         id=f"scenario:{scenarioName}:{stockCode or 'macro'}",
         kind="executionRef",
         title=f"{preset.get('description') or scenarioName}",
         source="scenarioOverlay",
         payload=payload,
     )
+    rows = [
+        {"metric": metric, "value": value}
+        for metric, value in {**overrides, **estimates}.items()
+        if isinstance(value, (int, float)) and not isinstance(value, bool)
+    ]
+    refs: list[Ref] = [
+        executionRef,
+        Ref(
+            id=f"scenario:{scenarioName}:{stockCode or 'macro'}:table",
+            kind="tableRef",
+            title=f"{preset.get('description') or scenarioName} 입력과 영향",
+            source=executionRef.id,
+            payload={
+                "stockCode": stockCode,
+                "period": preset.get("period"),
+                "rows": rows,
+                "complete": bool(rows),
+                "assumptions": overrides,
+            },
+        ),
+    ]
+    refs.extend(
+        Ref(
+            id=f"scenario:{scenarioName}:{stockCode or 'macro'}:value:{metric}",
+            kind="valueRef",
+            title=f"{scenarioName} {metric}",
+            source=refs[1].id,
+            payload={
+                "stockCode": stockCode,
+                "period": preset.get("period"),
+                "metric": metric,
+                "value": value,
+                "scenario": scenarioName,
+            },
+        )
+        for metric, value in {**overrides, **estimates}.items()
+        if isinstance(value, (int, float)) and not isinstance(value, bool)
+    )
+    if preset.get("period"):
+        refs.append(
+            Ref(
+                id=f"scenario:{scenarioName}:{stockCode or 'macro'}:date",
+                kind="dateRef",
+                title=f"{scenarioName} 기준 기간",
+                source=executionRef.id,
+                payload={"stockCode": stockCode, "period": preset.get("period")},
+            )
+        )
     parts = [f"scenario={scenarioName}"]
     if sectorKey:
         parts.append(f"sector={sectorKey}")
@@ -143,7 +191,7 @@ def scenarioOverlay(scenarioName: str, stockCode: str = "", severity: str = "", 
         parts.append(f"매출영향={estimates['revenueImpactPct']:+.1f}%")
     if estimates.get("marginImpactBps") is not None:
         parts.append(f"마진={estimates['marginImpactBps']:+.0f}bps")
-    return ToolResult(True, " · ".join(parts), refs=[ref], data=payload)
+    return ToolResult(True, " · ".join(parts), refs=refs, data=payload)
 
 
 __all__ = ["scenarioOverlay"]

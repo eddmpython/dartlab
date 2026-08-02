@@ -18,9 +18,18 @@ def readCapability(query: str, *, limit: int = 8) -> ToolResult:
     refs: list[Ref] = []
     rows: list[dict] = []
     for apiRef, entry, score in results:
-        payload = dict(entry)
-        payload["apiRef"] = apiRef
-        payload["score"] = score
+        payload = {
+            "apiRef": apiRef,
+            "summary": str(entry.get("summary") or "")[:400],
+            "engineCallable": bool(entry.get("engineCallable", False)),
+            "executionGuide": str(entry.get("executionGuide") or "")[:800],
+            "replacementRefs": list(entry.get("replacementRefs") or ())[:8],
+            "declared": dict(entry.get("declared") or {}),
+            "execution": dict(entry.get("execution") or {}),
+            "args": str(entry.get("args") or "")[:800],
+            "example": str(entry.get("example") or "")[:600],
+            "score": score,
+        }
         refs.append(
             Ref(
                 id=f"api:{apiRef}",
@@ -33,11 +42,15 @@ def readCapability(query: str, *, limit: int = 8) -> ToolResult:
         rows.append(
             {
                 "apiRef": apiRef,
-                "summary": entry.get("summary") or "",
-                "guide": entry.get("guide") or "",
-                "llmSpecs": entry.get("llmSpecs") or {},
+                "summary": str(entry.get("summary") or "")[:400],
+                "guide": str(entry.get("guide") or "")[:800],
+                "args": str(entry.get("args") or "")[:800],
+                "example": str(entry.get("example") or "")[:600],
                 "engineCallable": bool(entry.get("engineCallable", False)),
-                "executionGuide": entry.get("executionGuide") or "",
+                "executionGuide": str(entry.get("executionGuide") or "")[:800],
+                "replacementRefs": list(entry.get("replacementRefs") or ())[:8],
+                "declared": dict(entry.get("declared") or {}),
+                "execution": dict(entry.get("execution") or {}),
                 "score": score,
             }
         )

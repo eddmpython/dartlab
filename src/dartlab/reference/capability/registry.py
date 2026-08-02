@@ -9,6 +9,8 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
+from .execution import ENGINE_QUESTION_CONTRACTS
+
 
 class CapabilityKind:
     """AI capability 종류 상수."""
@@ -404,6 +406,7 @@ def buildCapabilitySummary(specs: list[CapabilitySpec] | None = None) -> dict[st
 ANALYSIS_CONTRACTS: dict[str, dict[str, Any]] = {
     "gather.krx": {
         "contractId": "gather.krx.close",
+        "capabilityRefs": ["gather.krx"],
         "tool": "gather",
         "questionTypes": ["recent_price_mover"],
         "questionTriggers": {
@@ -453,6 +456,7 @@ ANALYSIS_CONTRACTS: dict[str, dict[str, Any]] = {
     },
     "gather.macro": {
         "contractId": "macro.recent",
+        "capabilityRefs": ["gather.macro", "macro"],
         "tool": "gather",
         "questionTypes": ["macro_recent"],
         "questionTriggers": {
@@ -479,6 +483,7 @@ ANALYSIS_CONTRACTS: dict[str, dict[str, Any]] = {
         "kind": "ai_contract",
         "summary": "시장/업종/스크리닝 질문 scan primary evidence 계약",
         "contractId": "scan.market_screen",
+        "capabilityRefs": ["scan"],
         "tool": "scan",
         "questionTypes": ["market_scan"],
         "questionTriggers": {
@@ -488,10 +493,6 @@ ANALYSIS_CONTRACTS: dict[str, dict[str, Any]] = {
                 "screening",
                 "profitable stocks",
                 "profitability",
-                "industry",
-                "sector",
-                "업종",
-                "산업",
                 "스크리닝",
                 "종목 발굴",
                 "좋은 종목",
@@ -518,12 +519,13 @@ ANALYSIS_CONTRACTS: dict[str, dict[str, Any]] = {
                 "primaryEvidence": True,
             }
         ],
-        "priority": 92,
+        "priority": 110,
     },
     "scan.industry": {
         "kind": "ai_contract",
         "summary": "산업 taxonomy universe를 먼저 고정한 뒤 scan으로 같은 축 수익성 evidence를 만든다",
         "contractId": "scan.industry_screen",
+        "capabilityRefs": ["industry", "scan"],
         "tool": "scan",
         "questionTypes": ["industry_scan"],
         "questionTriggers": {
@@ -567,10 +569,11 @@ ANALYSIS_CONTRACTS: dict[str, dict[str, Any]] = {
             },
         ],
         "acceptanceCriteria": {"industryUniverse": True, "primaryCsv": True, "visual": True},
-        "priority": 97,
+        "priority": 108,
     },
     "Company.analysis": {
         "contractId": "company.analysis",
+        "capabilityRefs": ["Company.analysis", "Company.panel"],
         "tool": "analysis",
         "questionTypes": ["company_compare", "cashflow"],
         "toolMatch": [{"tool": "analysis"}],
@@ -589,8 +592,9 @@ ANALYSIS_CONTRACTS: dict[str, dict[str, Any]] = {
         "kind": "ai_contract",
         "summary": "회사 비교 동일 축 evidence 계약",
         "contractId": "comparison.same_axis",
+        "capabilityRefs": ["Company.panel", "Company.analysis", "Company.credit", "scan"],
         "questionTypes": ["company_compare"],
-        "questionTriggers": {"any": ["비교", "대비", "vs", " versus ", "둘 중", "어느 쪽", "누가", "경쟁력"]},
+        "questionTriggers": {"any": ["비교", "대비", "vs", " versus ", "둘 중", "어느 쪽", "누가"]},
         "toolNames": [
             "searchCompany",
             "analysis",
@@ -635,9 +639,25 @@ ANALYSIS_CONTRACTS: dict[str, dict[str, Any]] = {
         "kind": "ai_contract",
         "summary": "공시 중요도 분석 근거 깊이 계약",
         "contractId": "disclosure.importance",
+        "capabilityRefs": ["Company.filings", "Company.panel", "search"],
         "tool": "disclosure",
         "questionTypes": ["disclosure_importance"],
-        "questionTriggers": {"any": ["공시", "filing", "dart", "보고서"]},
+        "questionTriggers": {
+            "any": [
+                "공시",
+                "filing",
+                "dart",
+                "보고서",
+                "감사의견",
+                "핵심감사",
+                "감사사항",
+                "주석",
+                "리스 약정",
+                "우발채무",
+                "소송 내용",
+                "risk factor",
+            ]
+        },
         "toolMatch": [
             {"tool": "disclosure"},
             {"tool": "filings"},
@@ -645,7 +665,7 @@ ANALYSIS_CONTRACTS: dict[str, dict[str, Any]] = {
             {"tool": "search"},
         ],
         "toolNames": ["disclosure", "liveFilings", "filings", "readFiling", "search", "capabilities"],
-        "requiredEvidence": ["filedAt", "title", "formType", "basis"],
+        "requiredEvidence": ["docRef", "filedAt", "title", "formType", "basis"],
         "evidenceSchema": {
             "targetKeys": ["stockCode", "corpCode"],
             "metricKeys": ["formType", "reportName", "title"],
@@ -661,12 +681,13 @@ ANALYSIS_CONTRACTS: dict[str, dict[str, Any]] = {
             "sections_false",
             "max_chars_4000",
         ],
-        "priority": 80,
+        "priority": 106,
     },
     "aiContract.cashflow.primary": {
         "kind": "ai_contract",
         "summary": "현금흐름 질문 primary evidence 계약",
         "contractId": "cashflow.primary",
+        "capabilityRefs": ["Company.panel", "Company.analysis", "Company.credit"],
         "questionTypes": ["cashflow"],
         "questionTriggers": {"any": ["현금흐름", "cashflow", "cash flow", "fcf", "ocf"]},
         "toolNames": ["analysis", "show", "credit", "capabilities"],
@@ -692,6 +713,7 @@ ANALYSIS_CONTRACTS: dict[str, dict[str, Any]] = {
         "kind": "ai_contract",
         "summary": "capabilities key 오염 방지 계약",
         "contractId": "capabilities.valid_key",
+        "capabilityRefs": ["capabilities"],
         "tool": "capabilities",
         "questionTypes": ["meta_help"],
         "questionTriggers": {"any": ["뭐 할 수", "어떻게 써", "사용법", "help", "capabilities"]},
@@ -701,6 +723,7 @@ ANALYSIS_CONTRACTS: dict[str, dict[str, Any]] = {
         "toolArgPolicy": ["reject_polluted_capabilities_key"],
         "priority": 70,
     },
+    **ENGINE_QUESTION_CONTRACTS,
 }
 
 

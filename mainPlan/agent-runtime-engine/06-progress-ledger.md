@@ -145,3 +145,43 @@ Claude와 Codex, local GUI의 verified analysis loop는 production 진입 가능
 ### Exit decision
 
 `improve`. 지원 protocol의 정량·문서 질의, GUI streaming, 품질 commit, exact evidence verify, cancel, timeout, restart recovery가 production 경로에서 실증됐다. 모든 질문의 정답을 보장한다는 의미의 절대적 "완벽"은 선언하지 않으며, 미지원 protocol은 계속 fail-closed다. 다음 운영 과제는 질문군별 golden set과 주간 verified/retained cohort를 누적해 품질 하락을 자동 탐지하는 것이다.
+
+## 2026-08-03 capability 전수 연결과 실제 질문 재검증
+
+상태: agent가 일부 하드코딩된 도구만 추측하던 경로를 질문별 capability coverage, 구조화된 실행 계약, exact evidence 검산으로 교체했다. 실행 가능한 정보와 참고 전용 정보를 구분하며, 데이터가 부족한 경우에는 완성된 숫자를 꾸미지 않고 결손을 공개한다.
+
+### 전수 연결
+
+- 공개 capability 241개를 전수 분류했다. 182개는 실행 가능하고 모두 `engineCallContract`를 가지며, 59개 reference-only 계약은 실제 호출 가능한 canonical replacement를 선언한다.
+- 실행 capability 182개 중 159개는 Skill OS example까지 보유한다. example이 없는 계약도 args와 반환 증거가 구조화돼 모델이 임의 호출 문법을 만들지 않는다.
+- `ReadSkill` 1회가 질문별 우선·보조 capability, evidence·freshness·comparison 정책과 예상 결손을 `informationCoverage`로 반환한다. coverage는 모델의 고정 실행 graph가 아니라 탐색 범위와 완료 조건이다.
+- `EngineCall`은 표·문서·값·기준일·실행 ref를 공통 반환한다. DataFrame 전체 복제를 제거하고 bounded preview와 exact ref를 사용해 disclosure `ReadSkill` payload를 약 387 KiB에서 40 KiB 이하로, 감사 panel 실행 payload를 약 338 KiB에서 14 KiB 이하로 줄였다.
+- 중앙 품질 게이트는 ref ID 존재만 보지 않는다. 정량 단위와 반올림, 질문 대상·지표·기간·비교축, 감사의견 등급과 핵심감사사항을 인용 payload에 직접 결합한다. 빈 표, unavailable 근거, 더 긴 위조 ref, 잘못된 target/metric은 실패한다.
+- turn 결과는 사용 capability와 보조 capability, 충족·미충족 evidence, gaps를 `runtimeCoverage`로 남긴다. 이것은 모든 capability를 실행했다는 표시가 아니라 질문에 필요한 정보 경계를 설명하는 실행 영수증이다.
+
+### 로컬 GUI
+
+- 답변 citation을 Evidence drawer의 exact ref에 연결하고, 답변이 사용한 근거와 coverage의 보조 근거를 분리했다.
+- 자동 답변 품질과 사용자의 exact 근거 확인을 별도 상태로 표시한다. exact `(outcomeId, refId)` receipt가 성공한 경우에만 사용자 확인으로 승격한다.
+- 최근 activity, 사용·보조 capability, evidence 결손, artifact와 `VIEW_SPEC`을 한 작업대에서 확인한다. raw tool payload는 채팅 본문에 노출하지 않는다.
+- Runtime Center에 focus trap·restore, background inert, Escape close, 모바일 reflow와 44px touch target을 적용했다.
+
+### 실제 질문 결과
+
+- 단일 정량: Codex 실제 CLI로 `삼성전자 2024년 연간 매출액은?`을 실행해 300,870,903,000,000원과 FY table/value/date exact ref를 반환하고 품질 게이트를 통과했다.
+- 기업 비교: 삼성전자와 SK하이닉스의 2024년 매출·영업이익 비교 답변을 실제 생성했다. 한국어 조 단위 반올림을 원시 값과 precision-aware 검산해 현재 품질 게이트 100점을 확인했다.
+- 문서 감사: 삼성전자 2024 감사보고서의 감사인, 감사의견, 핵심감사사항, 강조사항을 실제 CLI로 조회했다. 공시·감사 문서 payload의 구조화 필드와 답변 주장을 직접 대조해 통과했다.
+- 기업 시뮬레이션: 2024년 시점 baseline 요청은 실행됐지만 역사적 시뮬레이션 입력과 point-in-time 시장 데이터가 부족해 `quality=partial`, `historicalSimulationParametersUnavailable`, `periodScopedPitOnly`를 반환했다. 매출·마진·FCF·DCF 값을 발명하지 않은 것이 현재의 올바른 제품 동작이다.
+- Runtime probe에서 Claude와 Codex는 `groundedReady=true`다. Cline 3.0.49는 공식 설정이 있어도 ACP session이 DartLab tool을 노출하지 않아 `groundedReady=false`와 차단 사유를 유지한다.
+
+### 최종 검증
+
+- AI runtime, exact answer quality, EngineCall evidence, capability coverage, peer 비교, CLI 회귀 148건 중 147건 통과, 기존 skip 1건이다.
+- Ruff format/check, repository lint 전체, complexity quality gate, Skill schema 4개, Skill artifact 6종 동기화가 통과했다. 신규 E/F 복잡도와 folder-size 부채는 0이다.
+- 로컬 UI `svelte-check`는 오류 0, production build는 성공했다. 기존 공유 terminal surface의 접근성 경고 49건은 이번 변경에서 늘리지 않았다.
+- 최신 sdist와 wheel을 만들고 격리 설치 검증을 통과했다. wheel은 번들 리소스 15개, 총 2,395개 파일, UI 117개 파일을 포함하며 public API·capability index·scan guide·Company fixture smoke 4개가 통과했다.
+- fast preflight 14개 blocking gate를 끝까지 실행했다. 이번 변경에서 발견된 lint·quality 실패는 수정 후 각각 단독 전체 게이트를 통과했다. 남은 `test-fast` 실패는 EDGAR loader, DART old-note, quant benchmark, search fusion, story integration 등 기존 AI 범위 밖 데이터 회귀군이며, 이번 변경 파일의 집중 회귀에서는 재현되지 않았다.
+
+### 판정
+
+`improve`. DartLab의 모든 정보를 매 턴 무차별 주입하는 방식이 아니라, 전체 capability 카탈로그를 SSOT로 삼고 질문별 필요한 정보·실제 사용 정보·미충족 정보를 검산 가능한 형태로 연결했다. 정량·비교·감사 질문은 실제 설치형 runtime에서 완주했다. 데이터가 없는 시뮬레이션과 embedded tool이 없는 Cline은 정직하게 partial 또는 unavailable이며, 이 경계를 숨기지 않는 것이 품질 계약이다.

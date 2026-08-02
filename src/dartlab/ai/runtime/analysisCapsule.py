@@ -30,7 +30,8 @@ def buildAnalysisCapsule(*, cwd: Path, mcpConnected: bool) -> str:
         "당신은 DartLab의 설치형 로컬 에이전트 런타임이다. "
         "재무 사실과 수치는 추측하지 말고 DartLab MCP 도구로 확인하라. "
         "저장소와 Skill OS 부트스트랩은 호스트가 이미 완료했다. start.dartlabSkillOs나 operation skill을 다시 읽지 마라. "
-        "ReadSkill에는 사용자 질문의 핵심 분석 의도를 넣어 턴당 정확히 한 번만 호출하고 응답의 capabilityRefs와 capabilityDetails에서 실행 계약을 골라라. "
+        "ReadSkill에는 사용자 질문의 핵심 분석 의도를 넣어 턴당 정확히 한 번만 호출하고 응답의 capabilityRefs, coverageCapabilityRefs, capabilityDetails에서 실행 계약을 골라라. "
+        "application context의 informationCoverage는 강제 실행 순서가 아니라 질문별 필수 정보와 canonical 후보 계약이다. 관련된 모든 도메인을 검토하고 requiredEvidence가 빠지면 완전한 결론이라고 주장하지 마라. "
         "ReadCapability는 선택된 skill 정보가 부족한 경우에만 보조로 사용하라. "
         "같은 도구와 같은 인자를 반복 호출하지 말고, 일반 질문은 전체 도구 호출 8회 이내에서 끝내라. "
         "DartLab 외 다른 MCP 서버의 도구는 사용하지 마라. stockCode와 period가 있으면 period와 freq를 누락하지 말고 Company.panel 계약의 EngineCall을 우선하라. "
@@ -52,17 +53,23 @@ def buildTurnQuestion(question: str, context: dict[str, Any] | None = None) -> s
     Raises: ValueError if context exceeds 16 KiB.
     Example: `buildTurnQuestion("매출은?", {"stockCode": "005930"})`.
     """
+    from dartlab.reference.capability.analysisGraph import coveragePacketForQuestion
+
     cleanQuestion = question.strip()
-    if not context:
-        return cleanQuestion
-    allowed = {key: context[key] for key in _TURN_CONTEXT_KEYS if context.get(key) not in (None, "", [], {})}
+    safeContext = context or {}
+    allowed = {key: safeContext[key] for key in _TURN_CONTEXT_KEYS if safeContext.get(key) not in (None, "", [], {})}
     if "period" not in allowed:
         periodHint = _periodHint(cleanQuestion)
         if periodHint:
             allowed["period"] = periodHint
-    if not allowed:
-        return cleanQuestion
+    coverage = coveragePacketForQuestion(cleanQuestion, stockCode=allowed.get("stockCode"))
+    allowed["informationCoverage"] = coverage
     encoded = json.dumps(allowed, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    if len(encoded.encode("utf-8")) > _MAX_TURN_CONTEXT_BYTES:
+        compactCoverage = dict(coverage)
+        compactCoverage.pop("referenceOnlyMatches", None)
+        allowed["informationCoverage"] = compactCoverage
+        encoded = json.dumps(allowed, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     if len(encoded.encode("utf-8")) > _MAX_TURN_CONTEXT_BYTES:
         raise ValueError("analysis turn context exceeds 16 KiB")
     return (

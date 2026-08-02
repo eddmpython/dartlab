@@ -9,6 +9,8 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
+_MAX_EVIDENCE_BYTES = 64 * 1024
+
 
 class EvidenceStore:
     """서버 재시작 뒤에도 사용자가 본 근거를 다시 확인할 수 있게 한다."""
@@ -46,8 +48,8 @@ class EvidenceStore:
         if not outcomeId or not refId:
             return
         encoded = json.dumps(detail, ensure_ascii=False, separators=(",", ":"), default=str)
-        if len(encoded.encode("utf-8")) > 16_384:
-            raise ValueError("evidence projection exceeds 16 KiB")
+        if len(encoded.encode("utf-8")) > _MAX_EVIDENCE_BYTES:
+            raise ValueError("evidence projection exceeds 64 KiB")
         with self._connect() as database:
             database.execute(
                 """

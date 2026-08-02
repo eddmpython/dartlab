@@ -19,6 +19,7 @@ from dartlab.ai.contracts import Ref
 from dartlab.core.confidence import baseScore
 from dartlab.core.market import detectMarket
 
+from .companyMetrics import companyMetrics
 from .companyResolve import resolveCompanyOrNone
 from .types import ToolResult
 
@@ -237,6 +238,8 @@ def dcfValuationTool(
     sp = _resolveSectorParams(company)
     shares = _resolveShares(company)
     currentPrice = _resolveCurrentPrice(company)
+    sourcePeriods = companyMetrics(company).get("sourcePeriods") or {}
+    sourcePeriod = sourcePeriods.get("IS") or sourcePeriods.get("BS")
 
     waccBase = float(wacc) if wacc is not None else float(getattr(sp, "discountRate", 10.0))
     sectorGrowth = float(getattr(sp, "growthRate", 3.0))
@@ -305,6 +308,8 @@ def dcfValuationTool(
         "confidence": confidence,
         "confidenceMethod": "dcf",
         "unit": unit,
+        "period": sourcePeriod,
+        "sourcePeriods": sourcePeriods,
     }
 
     refs: list[Ref] = []
@@ -325,6 +330,7 @@ def dcfValuationTool(
                     "confidence": confidence,
                     "axis": "valuation",
                     "scenario": name,
+                    "period": sourcePeriod,
                     "discountRate": s["discountRate"],
                     "terminalGrowth": s["terminalGrowth"],
                 },
@@ -340,6 +346,7 @@ def dcfValuationTool(
             payload=payload,
         )
     )
+    refs.extend(_dcfPeriodExecutionRefs(stockCode, corpName, sourcePeriod))
 
     perBase = results.get("base", {}).get("perShareValue")
     perBear = results.get("bear", {}).get("perShareValue")
@@ -354,6 +361,31 @@ def dcfValuationTool(
         parts.append(f"MoS={mosBase:+.1f}%")
 
     return ToolResult(True, " · ".join(parts), refs=refs, data=payload)
+
+
+def _dcfPeriodExecutionRefs(stockCode: str, corpName: str, period: Any) -> list[Ref]:
+    """DCF 산출물의 기준시점과 실행 영수증을 공통 형식으로 만든다."""
+    refs: list[Ref] = []
+    if period:
+        refs.append(
+            Ref(
+                id=f"dcf:{stockCode}:date:{period}",
+                kind="dateRef",
+                title=f"{corpName or stockCode} DCF 기준시점",
+                source=f"dcf:{stockCode}:matrix",
+                payload={"stockCode": stockCode, "period": period},
+            )
+        )
+    refs.append(
+        Ref(
+            id=f"dcf:{stockCode}:execution",
+            kind="executionRef",
+            title=f"{corpName or stockCode} DCF 실행 영수증",
+            source="dcfValuation",
+            payload={"stockCode": stockCode, "period": period, "status": "complete"},
+        )
+    )
+    return refs
 
 
 __all__ = ["dcfValuationTool"]

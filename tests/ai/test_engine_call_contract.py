@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib
 import json
 
+import polars as pl
 import pytest
 
 import dartlab
@@ -16,6 +17,7 @@ from dartlab.ai.tools.engineCall import (
     engineCall,
 )
 from dartlab.ai.tools.registry import toolSpecs
+from dartlab.reference.capability import loadCapabilities
 
 pytestmark = pytest.mark.unit
 engineCallModule = importlib.import_module("dartlab.ai.tools.engineCall")
@@ -152,6 +154,129 @@ def test_existing_formal_top_level_and_axis_capabilities_remain_executable(apiRe
     assert _isCanonicalExecutableApiRef(apiRef)
 
 
+@pytest.mark.parametrize("apiRef", ["scan.market", "scan.industry"])
+def test_reference_only_scan_contract_is_not_dispatched_as_axis(apiRef: str) -> None:
+    capability = loadCapabilities()[apiRef]
+
+    assert capability["kind"] == "ai_contract"
+    assert capability["engineCallable"] is False
+    result = engineCall({"apiRef": apiRef, "args": {}})
+    assert result.ok is False
+    assert result.error == "non_public_api_ref"
+
+
+@pytest.mark.parametrize(
+    ("args", "expected"),
+    [
+        ({"key": "analysis"}, {"key": "analysis", "search": None}),
+        ({"path": "analysis"}, {"key": "analysis", "search": None}),
+        ({"search": "재무건전성"}, {"key": None, "search": "재무건전성"}),
+    ],
+)
+def test_capabilities_dispatch_preserves_documented_dict_args(
+    args: dict[str, str], expected: dict[str, str | None], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    captured: dict[str, str | None] = {}
+
+    def fakeCapabilities(key=None, *, search=None):
+        captured.update({"key": key, "search": search})
+        return {"summary": "상세", "requires": ""}
+
+    monkeypatch.setattr(engineCallModule, "_capabilityExists", lambda apiRef: apiRef == "capabilities")
+    monkeypatch.setattr(dartlab, "capabilities", fakeCapabilities)
+
+    result = engineCall({"apiRef": "capabilities", "args": args})
+
+    assert result.ok is True
+    assert captured == expected
+    assert result.data["result"] == {"summary": "상세", "requires": ""}
+
+
+def test_capabilities_rejects_key_and_search_together(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(engineCallModule, "_capabilityExists", lambda apiRef: apiRef == "capabilities")
+
+    result = engineCall({"apiRef": "capabilities", "args": {"key": "analysis", "search": "재무건전성"}})
+
+    assert result.ok is False
+    assert result.error == "invalid_args"
+
+
+def test_companyPanelDocumentTopicFiltersPeriodAndEmitsExactDocumentEvidence(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class FakeCompany:
+        stockCode = "005930"
+        receivedTopic = ""
+
+        def panel(self, topic: str):
+            type(self).receivedTopic = topic
+            return pl.DataFrame(
+                {
+                    "rcept_no": ["20250311001085", "20240312000001"],
+                    "period": ["2024Q4", "2023Q4"],
+                    "adt_opinion": ["적정의견", "적정의견"],
+                    "core_adt_matter": ["재고자산 평가", "매출 인식"],
+                }
+            )
+
+    monkeypatch.setattr(engineCallModule, "_resolveCompany", lambda _target: FakeCompany())
+
+    result = engineCall(
+        {
+            "apiRef": "Company.panel",
+            "args": {"stockCode": "005930", "topic": "감사", "period": "2024"},
+        }
+    )
+
+    assert result.ok is True
+    assert FakeCompany.receivedTopic == "auditOpinion"
+    assert result.data["rowCount"] == 1
+    assert result.data["tableRef"] == "table:Company.panel:005930"
+    assert "result" not in result.data
+    document = next(ref for ref in result.refs if ref.kind == "docRef")
+    assert document.payload["rceptNo"] == "20250311001085"
+    assert document.payload["filedAt"] == "2025-03-11"
+    assert document.payload["section"] == "auditOpinion"
+    assert "재고자산 평가" in document.payload["excerpt"]
+    assert any(ref.kind == "dateRef" and ref.payload["period"] == "2024Q4" for ref in result.refs)
+
+
+@pytest.mark.parametrize(
+    ("apiRef", "args", "attribute", "expected"),
+    [
+        ("codeToName", {"stockCode": "005930"}, "stockCode", "005930"),
+        ("simulate", {"target": "005930"}, "code", "005930"),
+    ],
+)
+def test_generic_public_call_forwards_reserved_target_argument(
+    apiRef: str,
+    args: dict[str, str],
+    attribute: str,
+    expected: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, str] = {}
+
+    if apiRef == "codeToName":
+
+        def fakeCallable(stockCode: str):
+            captured["stockCode"] = stockCode
+            return "삼성전자"
+
+    else:
+
+        def fakeCallable(code: str):
+            captured["code"] = code
+            return {"status": "complete"}
+
+    monkeypatch.setattr(dartlab, apiRef, fakeCallable)
+
+    result = engineCall({"apiRef": apiRef, "args": args})
+
+    assert result.ok is True
+    assert captured[attribute] == expected
+
+
 def test_data_hub_axis_dispatch_preserves_public_facade(monkeypatch: pytest.MonkeyPatch) -> None:
     captured: dict[str, object] = {}
 
@@ -284,3 +409,31 @@ def test_execution_ref_keeps_status_gap_provenance_and_time_without_result_dupli
     assert execution.payload["dataExecutionReceipts"] == ["receipt:one"]
     assert execution.payload["nodes"]["dcf"]["provenance"] == "dcf:v1"
     assert len(execution.payload["preview"].encode("utf-8")) <= 4_000
+
+
+def test_partial_simulation_preserves_honest_warning_without_invented_path_values() -> None:
+    result = _resultToRefs(
+        "simulate",
+        {
+            "stockCode": "005930",
+            "scenarioName": "baseline",
+            "quality": "partial",
+            "requestedAsOf": "2024-Q4",
+            "warnings": ["historicalSimulationParametersUnavailable"],
+            "revenuePath": None,
+            "marginPath": None,
+            "fcfPath": None,
+            "dcfPerShare": None,
+        },
+        target="005930",
+    )
+
+    execution = next(ref for ref in result.refs if ref.kind == "executionRef")
+    table = next(ref for ref in result.refs if ref.kind == "tableRef")
+
+    assert execution.id == "execution:simulate:005930"
+    assert execution.payload["warnings"] == ["historicalSimulationParametersUnavailable"]
+    assert table.payload["complete"] is False
+    assert table.payload["rows"] == []
+    assert table.payload["gaps"] == ["historicalSimulationParametersUnavailable"]
+    assert not any(ref.kind == "valueRef" and "value" in ref.payload for ref in result.refs)

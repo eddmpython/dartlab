@@ -87,3 +87,14 @@
 ### 판정
 
 `improve`. 단순 evidence chip이 아니라 답변 품질 commit과 exact ref 확인이 한 제품 여정에서 연결됐다. 다음 주기에는 질문 유형별 golden set의 품질 점수, 응답 시간, verified 전환을 같은 evidence registry에 등록한다.
+
+## 2026-08-03 질문별 정보 커버리지와 golden ask 확대
+
+- Skill OS 공개 capability 241개를 실행 가능 182개와 reference-only 59개로 전수 분류하고, 질문별 `informationCoverage`와 canonical replacement를 연결했다.
+- 실제 설치형 runtime으로 단일 정량, 기업 비교, 감사 문서 질문을 실행했다. exact 값·기간·대상·문서 주장 검산을 통과했고, 역사 시점 데이터가 부족한 기업 시뮬레이션은 `partial`과 결손을 반환했다.
+- GUI가 답변 사용 근거와 보조 근거, 자동 품질과 사용자 exact 확인을 분리한다. 이번 실행에서는 사용자를 대신해 새 verification을 만들지 않았으므로 북극성 분자를 추가하지 않는다.
+- 기존 로컬 verified 실증은 유지하지만 전역 주간 cohort authority는 아직 없다. 전역 `weeklyVerifiedAnalysisLoops`는 계속 **미측정**이고 점수표도 주간 review 전까지 올리지 않는다.
+
+### 판정
+
+`improve`. 질문군과 실패 경계의 실측 폭은 넓어졌지만 모델 답변이나 테스트 통과를 verified 사용자 결과로 과장하지 않는다.

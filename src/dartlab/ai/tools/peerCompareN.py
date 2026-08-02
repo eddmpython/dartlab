@@ -48,6 +48,7 @@ _LOWER_IS_BETTER: set[str] = {
     "totalLiabilities",
     "debtRatio",
 }
+_INCOME_METRICS = frozenset({"revenue", "operatingProfit", "netIncome"})
 
 
 def _calcPercentileRanks(rows: list[dict[str, Any]], metric: str) -> dict[str, float]:
@@ -207,19 +208,115 @@ def peerCompareN(
         "confidence": confidence,
         "confidenceMethod": "ratio",
     }
+    missingCells = _peerMissingCells(rows, requested_metrics)
+    payload["missingCells"] = missingCells
+    payload["complete"] = not missingCells and len(rows) == len(codes)
     title = f"{len(codes)} 종목 peer 비교"
-    ref = Ref(
+    refs = _peerEvidenceRefs(codes, rows, requested_metrics, payload, title)
+    return ToolResult(
+        True,
+        f"{len(codes)} 종목 peer 비교 + percentile rank — {', '.join(r.get('corpName') or r['stockCode'] for r in rows[:5])}",
+        refs=refs,
+        data=payload,
+    )
+
+
+def _peerMissingCells(rows: list[dict[str, Any]], metrics: list[str]) -> list[dict[str, str]]:
+    """요청한 비교축에서 값이 비어 있는 종목·지표 쌍을 반환한다."""
+    return [
+        {"stockCode": str(row.get("stockCode") or ""), "metric": metric}
+        for row in rows
+        for metric in metrics
+        if row.get(metric) is None
+    ]
+
+
+def _peerEvidenceRefs(
+    codes: list[str],
+    rows: list[dict[str, Any]],
+    metrics: list[str],
+    payload: dict[str, Any],
+    title: str,
+) -> list[Ref]:
+    """peer 표, 값, 기간, 실행 영수증을 하나의 ref 묶음으로 만든다."""
+    tableRef = Ref(
         id=f"peer:{':'.join(codes)}",
         kind="tableRef",
         title=title,
         source="peerCompareN",
         payload=payload,
     )
-    return ToolResult(
-        True,
-        f"{len(codes)} 종목 peer 비교 + percentile rank — {', '.join(r.get('corpName') or r['stockCode'] for r in rows[:5])}",
-        refs=[ref],
-        data=payload,
+    refs: list[Ref] = [tableRef]
+    for row in rows:
+        refs.extend(_peerRowValueRefs(row, metrics, tableRef))
+        refs.extend(_peerRowDateRefs(row, tableRef))
+    refs.append(_peerExecutionRef(codes, metrics, payload))
+    return refs
+
+
+def _peerRowValueRefs(row: dict[str, Any], metrics: list[str], tableRef: Ref) -> list[Ref]:
+    """peer 한 행의 scalar 비교 지표를 value ref로 만든다."""
+    stockCode = str(row.get("stockCode") or "")
+    sourcePeriods = row.get("sourcePeriods") if isinstance(row.get("sourcePeriods"), dict) else {}
+    refs: list[Ref] = []
+    for metric in metrics:
+        value = row.get(metric)
+        if not isinstance(value, (int, float)) or isinstance(value, bool):
+            continue
+        statement = "IS" if metric in _INCOME_METRICS else "BS"
+        period = sourcePeriods.get(statement)
+        refs.append(
+            Ref(
+                id=f"value:peer:{stockCode}:{period or 'unknown'}:{metric}",
+                kind="valueRef",
+                title=f"{row.get('corpName') or stockCode} {metric}",
+                source=tableRef.id,
+                payload={
+                    "stockCode": stockCode,
+                    "metric": metric,
+                    "value": value,
+                    "period": period,
+                    "statement": statement,
+                },
+            )
+        )
+    return refs
+
+
+def _peerRowDateRefs(row: dict[str, Any], tableRef: Ref) -> list[Ref]:
+    """peer 한 행의 재무제표별 기준시점을 date ref로 만든다."""
+    stockCode = str(row.get("stockCode") or "")
+    sourcePeriods = row.get("sourcePeriods") if isinstance(row.get("sourcePeriods"), dict) else {}
+    refs: list[Ref] = []
+    for statement, period in sourcePeriods.items():
+        if not period:
+            continue
+        refs.append(
+            Ref(
+                id=f"date:peer:{stockCode}:{statement}:{period}",
+                kind="dateRef",
+                title=f"{row.get('corpName') or stockCode} {statement} 기준시점",
+                source=tableRef.id,
+                payload={"stockCode": stockCode, "period": period, "statement": statement},
+            )
+        )
+    return refs
+
+
+def _peerExecutionRef(codes: list[str], metrics: list[str], payload: dict[str, Any]) -> Ref:
+    """peer 비교의 대상·지표·결손을 실행 영수증으로 만든다."""
+    return Ref(
+        id=f"execution:PeerCompareN:{':'.join(codes)}",
+        kind="executionRef",
+        title="PeerCompareN 실행 영수증",
+        source="PeerCompareN",
+        payload={
+            "apiRef": "PeerCompareN",
+            "stockCodes": codes,
+            "metrics": list(metrics),
+            "complete": payload["complete"],
+            "missingCells": payload["missingCells"],
+        },
     )
 
 

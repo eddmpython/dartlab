@@ -244,6 +244,7 @@ def regressionForecast(
                     "value": forecast_value,
                     "unit": "%",
                     "year": year_resolved,
+                    "period": str(year_resolved),
                     "confidence": confidence,
                     "modelKind": modelKind,
                     "rSquared": payload["modelMeta"]["rSquared"],
@@ -258,6 +259,24 @@ def regressionForecast(
             source="regressionForecast",
             payload=payload,
         )
+    )
+    refs.extend(
+        [
+            Ref(
+                id=f"forecast:{stockCode}:{year_resolved}:date",
+                kind="dateRef",
+                title=f"{corpName or stockCode} 예측 대상 기간",
+                source=f"forecast:{stockCode}:{year_resolved}:meta",
+                payload={"stockCode": stockCode, "period": str(year_resolved)},
+            ),
+            Ref(
+                id=f"forecast:{stockCode}:{year_resolved}:execution",
+                kind="executionRef",
+                title=f"{corpName or stockCode} 회귀 예측 실행 영수증",
+                source="regressionForecast",
+                payload={"stockCode": stockCode, "period": str(year_resolved), "status": "complete"},
+            ),
+        ]
     )
 
     summary = (

@@ -161,7 +161,7 @@
 	dt { width: 6.5rem; }
 	dd { margin: 0; font-size: .8rem; overflow-wrap: anywhere; }
 	.actions { flex-wrap: wrap; }
-	button, a { border: 0; border-radius: 8px; padding: .45rem .7rem; background: var(--dl-accent, #ff5a36); color: white; font-size: .76rem; cursor: pointer; text-decoration: none; }
+	button, a { min-height: 2.75rem; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 8px; padding: .55rem .8rem; background: var(--dl-accent, #ff5a36); color: white; font-size: .78rem; cursor: pointer; text-decoration: none; text-align: center; }
 	button.secondary { background: transparent; border: 1px solid var(--dl-line, #2a2c33); color: var(--dl-ink-dim, #9aa0aa); }
 	button:disabled { opacity: .45; cursor: default; }
 	.plan { display: grid; gap: .65rem; padding: 1rem; border: 1px solid var(--dl-accent, #ff5a36); border-radius: 12px; }
@@ -173,4 +173,17 @@
 	.empty { color: var(--dl-ink-dim, #9aa0aa); padding: 1rem 0; }
 	.spinner { display: block; width: 1.4rem; height: 1.4rem; border: 2px solid var(--dl-line, #2a2c33); border-top-color: var(--dl-accent, #ff5a36); border-radius: 50%; animation: spin .8s linear infinite; }
 	@keyframes spin { to { transform: rotate(360deg); } }
+	@media (max-width: 520px) {
+		header { flex-wrap: wrap; }
+		header > button { width: 100%; }
+		article { padding: .85rem; }
+		.title { align-items: flex-start; gap: .45rem; }
+		.state { max-width: 45%; text-align: center; overflow-wrap: anywhere; }
+		dl div { display: grid; grid-template-columns: 5.25rem minmax(0, 1fr); align-items: baseline; }
+		dt { width: auto; }
+		.actions { display: grid; grid-template-columns: 1fr; }
+		.actions > button, .actions > a { width: 100%; }
+		.plan { min-width: 0; padding: .8rem; }
+		code { max-width: 100%; }
+	}
 </style>

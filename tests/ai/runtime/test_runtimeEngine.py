@@ -45,14 +45,27 @@ class FakeDriver:
         yield handle.projector.event(
             "toolCompleted",
             turnId=turnId,
+            payload={"tool": "ReadSkill", "result": {"ok": True, "skills": [{"id": "engines.company"}]}},
+        )
+        yield handle.projector.event(
+            "toolCompleted",
+            turnId=turnId,
             payload={
                 "tool": "EngineCall",
                 "result": {
                     "ok": True,
                     "refs": [
-                        {"id": "table:exact", "kind": "tableRef"},
-                        {"id": "value:exact", "kind": "valueRef"},
-                        {"id": "date:exact", "kind": "dateRef"},
+                        {
+                            "id": "table:exact",
+                            "kind": "tableRef",
+                            "payload": {"rowCount": 1, "rows": [{"metric": "answer", "value": 1}]},
+                        },
+                        {
+                            "id": "value:exact",
+                            "kind": "valueRef",
+                            "payload": {"metric": "answer", "value": 1},
+                        },
+                        {"id": "date:exact", "kind": "dateRef", "payload": {"period": "2026Q1"}},
                     ],
                 },
             },
@@ -60,7 +73,7 @@ class FakeDriver:
         yield handle.projector.event(
             "messageDelta",
             turnId=turnId,
-            payload={"text": "근거 답변 table:exact value:exact date:exact"},
+            payload={"text": "2026년 1분기 값은 1이다. table:exact value:exact date:exact"},
         )
         yield handle.projector.event("turnCompleted", turnId=turnId, payload={"status": "completed"})
 
@@ -108,18 +121,19 @@ def testRuntimeEngineStreamsAndAdvancesOutcome(tmp_path, monkeypatch):
         "sessionStarted",
         "turnStarted",
         "toolCompleted",
+        "toolCompleted",
         "messageDelta",
         "turnCompleted",
     ]
     outcomeId = str(events[-1].payload["outcomeId"])
-    assert events[2].payload["refDetails"] == [
+    assert events[3].payload["refDetails"] == [
         {
             "id": "table:exact",
             "kind": "tableRef",
             "title": "table:exact",
             "source": "",
             "sourceType": "internal",
-            "payload": {},
+            "payload": {"rowCount": 1, "rows": [{"metric": "answer", "value": 1}]},
             "outcomeId": outcomeId,
         },
         {
@@ -128,7 +142,7 @@ def testRuntimeEngineStreamsAndAdvancesOutcome(tmp_path, monkeypatch):
             "title": "value:exact",
             "source": "",
             "sourceType": "internal",
-            "payload": {},
+            "payload": {"metric": "answer", "value": 1},
             "outcomeId": outcomeId,
         },
         {
@@ -137,7 +151,7 @@ def testRuntimeEngineStreamsAndAdvancesOutcome(tmp_path, monkeypatch):
             "title": "date:exact",
             "source": "",
             "sourceType": "internal",
-            "payload": {},
+            "payload": {"period": "2026Q1"},
             "outcomeId": outcomeId,
         },
     ]
@@ -171,13 +185,13 @@ def testRuntimeContextIsBoundedAndTranscriptFree(tmp_path, monkeypatch):
             "이 회사 매출은?",
             runtimeId="fake",
             cwd=tmp_path,
-            context={"stockCode": "005930", "history": [{"content": "민감"}]},
+            context={"stockCode": "005930", "history": [{"content": "TRANSCRIPT_SECRET_8C1A"}]},
         )
     )
     managed = engine.sessionManager.get(engine.sessionStore.list(limit=1)[0].sessionId)
     assert managed is not None
     assert '"stockCode":"005930"' in managed.handle.metadata["question"]
-    assert "민감" not in managed.handle.metadata["question"]
+    assert "TRANSCRIPT_SECRET_8C1A" not in managed.handle.metadata["question"]
 
 
 def testSameSessionRejectsConcurrentTurn(tmp_path, monkeypatch):
@@ -309,12 +323,16 @@ def testRuntimeAnswerCommitRejectsUncitedOrIncompleteEvidence():
     from dartlab.ai.agent import _runtimeAnswerCommitted
 
     refs = [
-        {"id": "table:exact", "kind": "tableRef"},
-        {"id": "value:exact", "kind": "valueRef"},
-        {"id": "date:exact", "kind": "dateRef"},
+        {
+            "id": "table:exact",
+            "kind": "tableRef",
+            "payload": {"rowCount": 1, "rows": [{"metric": "sales", "value": 1}]},
+        },
+        {"id": "value:exact", "kind": "valueRef", "payload": {"metric": "sales", "value": 1}},
+        {"id": "date:exact", "kind": "dateRef", "payload": {"period": "2026Q1"}},
     ]
     assert _runtimeAnswerCommitted(
-        "매출은 1원이다. table:exact value:exact date:exact",
+        "2026년 1분기 매출은 1원이다. table:exact value:exact date:exact",
         refs,
         {"status": "completed"},
         failed=False,
@@ -326,3 +344,22 @@ def testRuntimeAnswerCommitRejectsUncitedOrIncompleteEvidence():
         {"status": "interrupted"},
         failed=False,
     )
+
+
+def testDocumentEvidenceProjectionKeepsAuditableClaimFields():
+    from dartlab.ai.runtime.engine import _publicEvidencePayload
+
+    payload = _publicEvidencePayload(
+        {
+            "period": "2024Q4",
+            "rceptNo": "20250311001085",
+            "fields": {
+                "adt_opinion": "적정의견",
+                "core_adt_matter": "건설중인자산의 감가상각개시시점 평가",
+            },
+        },
+        kind="docRef",
+    )
+
+    assert payload["fields"]["adt_opinion"] == "적정의견"
+    assert "감가상각개시시점" in payload["fields"]["core_adt_matter"]

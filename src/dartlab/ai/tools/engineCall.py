@@ -50,6 +50,12 @@ _AUTO_GATHER_ENABLED = os.environ.get("DARTLAB_AUTO_GATHER", "1") not in {"0", "
 
 _PERIOD_RE = re.compile(r"^\d{4}(?:Q[1-4])?$")
 _STMT_LABELS = {"BS": "재무상태표", "IS": "손익계산서", "CF": "현금흐름표"}
+_PANEL_TOPIC_ALIASES = {
+    "감사": "auditOpinion",
+    "감사의견": "auditOpinion",
+    "핵심감사": "auditOpinion",
+    "핵심감사사항": "auditOpinion",
+}
 # 컬럼 alias SSOT 는 dartlab.ai.tools.columnAlias 에 있다. 여기서는 priority list 만
 # 호환 dict 로 변환해 사용 - IS/CF/BS 5+ 표준 컬럼 + 한국어 label.
 from dartlab.synth.rowAccess import toFloat
@@ -270,8 +276,7 @@ def _companyShow(plan: dict[str, Any]) -> ToolResult:
     target = str(plan.get("target") or plan.get("stockCode") or "").strip()
     topic = _resolveTopic(plan)
     if topic not in _STMT_LABELS:
-        # 공개 show 은퇴 - docs/report 토픽은 panel facade 로 (finance/report 주입 + raw 검색).
-        return _genericCompanyMethod("panel", target, [topic], {})
+        return _companyPanelTopic(target, topic, period=str(plan.get("period") or ""))
     company = _resolveCompany(target or str(plan.get("question") or ""))
     if company is None:
         return ToolResult(
@@ -311,6 +316,43 @@ def _companyShow(plan: dict[str, Any]) -> ToolResult:
     summaryMsg = _showSummaryMessage(companyName, stockCode, topic, summary, autoGatherUsed)
     data = _buildShowData(company, companyName, stockCode, topic, summary, autoGatherUsed)
     return ToolResult(True, summaryMsg, refs=refs, data=data)
+
+
+def _companyPanelTopic(target: str, topic: str, *, period: str = "") -> ToolResult:
+    """재무제표 밖 Company.panel topic을 기간 필터와 정형 근거로 반환한다."""
+    topic = _PANEL_TOPIC_ALIASES.get(topic, topic)
+    company = _resolveCompany(target)
+    if company is None:
+        return ToolResult(
+            False, "종목을 먼저 특정해야 Company.panel을 호출할 수 있습니다.", error="company_not_resolved"
+        )
+    with _quietExecutionNoise():
+        result = company.panel(topic)
+    if isinstance(result, pl.DataFrame) and period.strip():
+        result = _filterPanelPeriod(result, period)
+        if result.is_empty():
+            return ToolResult(
+                False, f"Company.panel('{topic}')에서 요청 기간 {period}를 찾지 못했습니다.", error="period_not_found"
+            )
+    return _resultToRefs(
+        "Company.panel",
+        result,
+        target=str(getattr(company, "stockCode", None) or target),
+    )
+
+
+def _filterPanelPeriod(frame: pl.DataFrame, period: str) -> pl.DataFrame:
+    """long 또는 wide panel 표를 요청 연도/분기로 bounded 필터한다."""
+    normalized = period.strip().upper().replace("FY", "").replace("-", "")
+    if not normalized:
+        return frame
+    if "period" in frame.columns:
+        return frame.filter(pl.col("period").cast(pl.String).str.to_uppercase().str.starts_with(normalized))
+    periodColumns = [column for column in frame.columns if str(column).upper().startswith(normalized)]
+    if not periodColumns:
+        return frame.head(0)
+    identityColumns = [column for column in frame.columns if not _PERIOD_RE.match(str(column))]
+    return frame.select([*identityColumns, *periodColumns])
 
 
 def _resolveTopic(plan: dict[str, Any]) -> str:
@@ -381,7 +423,22 @@ def _buildShowRefs(stockCode: str, companyName: str, topic: str, summary: dict[s
         source=f"Company({stockCode}).panel('{topic}')",
         payload=enrich(summary),
     )
-    refs: list[Ref] = [tableRef]
+    refs: list[Ref] = [
+        tableRef,
+        Ref(
+            id=f"execution:Company.panel:{stockCode}:{topic}:{latestPeriod}",
+            kind="executionRef",
+            title=f"{companyName or stockCode} Company.panel 실행 영수증",
+            source="Company.panel",
+            payload={
+                "apiRef": "Company.panel",
+                "stockCode": stockCode,
+                "period": latestPeriod,
+                "metric": topic,
+                "status": "complete",
+            },
+        ),
+    ]
     refs.extend(
         Ref(
             id=f"value:{stockCode}:{topic}:{latestPeriod}:{row['snakeId']}",
@@ -633,17 +690,26 @@ def _capabilities(plan: dict[str, Any]) -> ToolResult:
     import dartlab
 
     args = list(plan.get("args") or [])
-    path = str(plan.get("path") or (args[0] if args else "") or "").strip()
-    data = dartlab.capabilities(path) if path else dartlab.capabilities()
-    markdown = _capabilitiesMarkdown(data, path=path)
+    key = str(plan.get("key") or plan.get("path") or (args[0] if args else "") or "").strip()
+    search = str(plan.get("search") or "").strip()
+    if key and search:
+        return ToolResult(False, "capabilities key와 search는 동시에 사용할 수 없습니다.", error="invalid_args")
+    if search:
+        data = dartlab.capabilities(search=search)
+    elif key:
+        data = dartlab.capabilities(key)
+    else:
+        data = dartlab.capabilities()
+    markdown = _capabilitiesMarkdown(data, path=key or search)
+    payload = _jsonableResult(data)
     ref = Ref(
-        id=f"api:dartlab.capabilities:{path or 'root'}",
+        id=f"api:dartlab.capabilities:{key or search or 'root'}",
         kind="apiRef",
         title="dartlab.capabilities",
         source="dartlab.capabilities",
-        payload={"path": path, "preview": str(data)[:4000]},
+        payload={"key": key, "search": search, "preview": _jsonPreview(payload)},
     )
-    return ToolResult(True, "capabilities 조회 완료", refs=[ref], data={"result": str(data), "markdown": markdown})
+    return ToolResult(True, "capabilities 조회 완료", refs=[ref], data={"result": payload, "markdown": markdown})
 
 
 def _capabilitiesMarkdown(data: Any, *, path: str = "") -> str:
@@ -693,9 +759,35 @@ def _publicCapabilityKey(key: str) -> bool:
 
 
 def _publicCapabilitySummary(value: Any) -> str:
-    text = str(value or "").splitlines()[0]
+    lines = str(value or "").splitlines()
+    text = lines[0] if lines else ""
     text = text.replace(" - 내부 구현", "").replace("(내부 구현)", "").replace("**", "")
     return text[:180]
+
+
+def _publicTargetParameter(method: str, func: Any) -> str | None:
+    """공개 callable의 canonical target 인자명을 코드 계약에서 찾는다."""
+    import importlib
+    import inspect
+
+    callableTarget = func
+    try:
+        import dartlab
+
+        aliases = getattr(dartlab, "_ENGINE_ALIASES", {})
+        canonical = aliases.get(method, method)
+        contract = getattr(dartlab, "_CONTRACT_ENGINES", {}).get(canonical)
+        if contract:
+            modulePath, symbol, _patchTargets = contract
+            declared = getattr(importlib.import_module(modulePath), symbol)
+            callableTarget = declared.__call__ if inspect.isclass(declared) else declared
+        parameters = inspect.signature(callableTarget).parameters
+    except (ImportError, TypeError, ValueError, AttributeError):
+        return None
+    for candidate in ("stockCode", "target", "code"):
+        if candidate in parameters:
+            return candidate
+    return None
 
 
 def _genericPublicCall(apiRef: str, plan: dict[str, Any]) -> ToolResult:
@@ -717,8 +809,15 @@ def _genericPublicCall(apiRef: str, plan: dict[str, Any]) -> ToolResult:
         func = getattr(dartlab, method)
         if not callable(func):
             return ToolResult(False, f"호출 가능한 API가 아닙니다: {apiRef}", error="not_callable")
-        result = func(*list(plan.get("args") or []), **dict(plan.get("kwargs") or {}))
-        return _resultToRefs(apiRef, result)
+        args = list(plan.get("args") or [])
+        kwargs = dict(plan.get("kwargs") or {})
+        target = plan.get("target") or plan.get("stockCode")
+        if target is not None and not args:
+            targetParameter = _publicTargetParameter(method, func)
+            if targetParameter:
+                kwargs.setdefault(targetParameter, target)
+        result = func(*args, **kwargs)
+        return _resultToRefs(apiRef, result, target=str(target or ""))
     return ToolResult(False, f"지원하지 않는 apiRef입니다: {apiRef}", error="unsupported_api_ref")
 
 
@@ -749,11 +848,29 @@ def _resultToRefs(apiRef: str, result: Any, *, target: str = "") -> ToolResult:
             source=apiRef,
             payload=payload,
         )
+        executionRef = Ref(
+            id=f"execution:{apiRef}:{target or 'result'}",
+            kind="executionRef",
+            title=f"{apiRef} 실행 영수증",
+            source=apiRef,
+            payload={
+                "apiRef": apiRef,
+                "target": target or None,
+                "rowCount": result.height,
+                "status": "complete",
+            },
+        )
+        extraRefs = _dataFrameEvidenceRefs(apiRef, payload, target=target, tableRef=table_ref)
         return ToolResult(
             True,
             f"{apiRef} 실행 완료",
-            refs=[table_ref],
-            data={"rowCount": result.height, "columns": list(result.columns)},
+            refs=[table_ref, executionRef, *extraRefs],
+            data={
+                "tableRef": table_ref.id,
+                "rowCount": result.height,
+                "columns": list(result.columns),
+                "previewTruncated": bool(payload.get("previewTruncated")) if isinstance(payload, dict) else False,
+            },
         )
     if isinstance(result, Mapping | list | tuple | set | frozenset) or is_dataclass(result):
         payload = _jsonableResult(result)
@@ -770,6 +887,7 @@ def _resultToRefs(apiRef: str, result: Any, *, target: str = "") -> ToolResult:
             )
         ]
         refs.extend(_lensRefs(apiRef, payload, target=target))
+        refs.extend(_simulationRefs(apiRef, payload, target=target))
         return ToolResult(True, f"{apiRef} 실행 완료", refs=refs, data={"result": payload})
     payload = _jsonableResult(result)
     ref = Ref(
@@ -780,6 +898,329 @@ def _resultToRefs(apiRef: str, result: Any, *, target: str = "") -> ToolResult:
         payload={"preview": _jsonPreview(payload)},
     )
     return ToolResult(True, f"{apiRef} 실행 완료", refs=[ref], data={"result": payload})
+
+
+def _dataFrameEvidenceRefs(apiRef: str, payload: Any, *, target: str, tableRef: Ref) -> list[Ref]:
+    """DataFrame preview에서 문서, 값, 기간 근거를 bounded 개수로 분리한다."""
+    if not isinstance(payload, dict):
+        return []
+    rows = payload.get("rows")
+    if not isinstance(rows, list):
+        return []
+    refs: list[Ref] = []
+    valueCount = 0
+    seenDates: set[tuple[str, str]] = set()
+    for rowIndex, rawRow in enumerate(rows[:20]):
+        if not isinstance(rawRow, dict):
+            continue
+        rowRefs, valueCount = _dataFrameRowEvidenceRefs(
+            apiRef,
+            rawRow,
+            rowIndex=rowIndex,
+            target=target,
+            tableRef=tableRef,
+            seenDates=seenDates,
+            valueCount=valueCount,
+        )
+        refs.extend(rowRefs)
+    return refs
+
+
+def _dataFrameRowEvidenceRefs(
+    apiRef: str,
+    row: dict[str, Any],
+    *,
+    rowIndex: int,
+    target: str,
+    tableRef: Ref,
+    seenDates: set[tuple[str, str]],
+    valueCount: int,
+) -> tuple[list[Ref], int]:
+    """DataFrame 한 행을 독립된 doc/date/value ref로 투영한다."""
+    stockCode = str(row.get("stockCode") or row.get("code") or target or "")
+    period = str(row.get("period") or row.get("year") or "")
+    dataAsOf = str(row.get("rceptDate") or row.get("rceptDt") or row.get("filedAt") or "")
+    documentRef, dataAsOf = _dataFrameDocumentRef(
+        apiRef,
+        row,
+        rowIndex=rowIndex,
+        stockCode=stockCode,
+        period=period,
+        dataAsOf=dataAsOf,
+        target=target,
+    )
+    refs = [documentRef] if documentRef is not None else []
+    dateRef = _dataFrameDateRef(
+        apiRef,
+        rowIndex=rowIndex,
+        stockCode=stockCode,
+        period=period,
+        dataAsOf=dataAsOf,
+        target=target,
+        tableRef=tableRef,
+        seenDates=seenDates,
+    )
+    if dateRef is not None:
+        refs.append(dateRef)
+    valueRefs = _dataFrameValueRefs(
+        apiRef,
+        row,
+        rowIndex=rowIndex,
+        stockCode=stockCode,
+        period=period,
+        target=target,
+        tableRef=tableRef,
+        remaining=max(0, 24 - valueCount),
+    )
+    refs.extend(valueRefs)
+    return refs, valueCount + len(valueRefs)
+
+
+def _dataFrameDocumentRef(
+    apiRef: str,
+    row: dict[str, Any],
+    *,
+    rowIndex: int,
+    stockCode: str,
+    period: str,
+    dataAsOf: str,
+    target: str,
+) -> tuple[Ref | None, str]:
+    """공시 접수번호가 있는 행만 bounded 문서 근거로 만든다."""
+    rceptNo = str(row.get("rceptNo") or row.get("rcept_no") or "")
+    if not rceptNo:
+        return None, dataAsOf
+    inferredSection = "auditOpinion" if {"core_adt_matter", "adt_opinion"} & set(row) else "filing"
+    section = str(row.get("section") or row.get("sectionLeaf") or row.get("reportType") or inferredSection)
+    if not dataAsOf and re.fullmatch(r"20\d{6}\d{6}", rceptNo):
+        dataAsOf = f"{rceptNo[:4]}-{rceptNo[4:6]}-{rceptNo[6:8]}"
+    excerpt, documentFields = _rowDocumentPayload(row)
+    return (
+        Ref(
+            id=f"doc:{_refStem(stockCode, rceptNo, section, str(rowIndex))}",
+            kind="docRef",
+            title=f"{stockCode or target} {section}",
+            source=str(row.get("dartUrl") or row.get("url") or apiRef),
+            payload={
+                "stockCode": stockCode,
+                "period": period or None,
+                "dataAsOf": dataAsOf or None,
+                "rceptNo": rceptNo,
+                "filedAt": dataAsOf or None,
+                "section": section,
+                "reportType": row.get("reportType"),
+                "excerpt": excerpt,
+                "fields": documentFields,
+            },
+        ),
+        dataAsOf,
+    )
+
+
+def _rowDocumentPayload(row: dict[str, Any]) -> tuple[str, dict[str, str]]:
+    """감사 claim 검산에 필요한 문서 필드만 크기 제한해 보존한다."""
+    excerptKeys = ("core_adt_matter", "adt_opinion", "content", "text", "summary")
+    fieldKeys = (
+        "adt_opinion",
+        "core_adt_matter",
+        "emphs_matter",
+        "adt_reprt_spcmnt_matter",
+        "content",
+        "summary",
+    )
+    excerpt = next((str(row[key]) for key in excerptKeys if row.get(key) not in (None, "")), "")
+    fields = {key: str(row[key])[:2_000] for key in fieldKeys if row.get(key) not in (None, "")}
+    return excerpt[:2_000], fields
+
+
+def _dataFrameDateRef(
+    apiRef: str,
+    *,
+    rowIndex: int,
+    stockCode: str,
+    period: str,
+    dataAsOf: str,
+    target: str,
+    tableRef: Ref,
+    seenDates: set[tuple[str, str]],
+) -> Ref | None:
+    """중복되지 않은 기간/접수일을 date ref로 만든다."""
+    dateKey = (period, dataAsOf)
+    if not (period or dataAsOf) or dateKey in seenDates:
+        return None
+    seenDates.add(dateKey)
+    return Ref(
+        id=f"date:{_refStem(apiRef, stockCode or target, period or dataAsOf, str(rowIndex))}",
+        kind="dateRef",
+        title=f"{apiRef} 기준시점",
+        source=tableRef.id,
+        payload={"stockCode": stockCode, "period": period or None, "dataAsOf": dataAsOf or None},
+    )
+
+
+def _dataFrameValueRefs(
+    apiRef: str,
+    row: dict[str, Any],
+    *,
+    rowIndex: int,
+    stockCode: str,
+    period: str,
+    target: str,
+    tableRef: Ref,
+    remaining: int,
+) -> list[Ref]:
+    """한 행의 scalar 값을 전역 budget 안에서 value ref로 만든다."""
+    refs: list[Ref] = []
+    for metric, value in row.items():
+        if len(refs) >= remaining:
+            break
+        if not isinstance(value, (int, float)) or isinstance(value, bool):
+            continue
+        refs.append(
+            Ref(
+                id=f"value:{_refStem(apiRef, stockCode or target, period or str(rowIndex), str(metric))}",
+                kind="valueRef",
+                title=f"{metric} {period or ''}".strip(),
+                source=tableRef.id,
+                payload={
+                    "stockCode": stockCode,
+                    "period": period or None,
+                    "metric": str(metric),
+                    "value": value,
+                },
+            )
+        )
+    return refs
+
+
+def _simulationRefs(apiRef: str, payload: Any, *, target: str) -> list[Ref]:
+    """SimulationResult의 경로, 값, 기준시점을 직접 인용 가능한 근거로 분리한다."""
+    if apiRef not in {"simulate", "Company.simulate"} or not isinstance(payload, dict):
+        return []
+    pathKeys = ("revenuePath", "marginPath", "fcfPath")
+    paths = {key: payload.get(key) for key in pathKeys if isinstance(payload.get(key), list)}
+    period = str(payload.get("requestedAsOf") or payload.get("asOf") or payload.get("latestAsOf") or "")
+    stockCode = str(payload.get("stockCode") or target or "")
+    horizon = max((len(values) for values in paths.values()), default=0)
+    rows = [
+        {"step": step + 1, **{key: values[step] if step < len(values) else None for key, values in paths.items()}}
+        for step in range(horizon)
+    ]
+    complete = str(payload.get("quality") or "").casefold() == "ok" and all(
+        value is not None for values in paths.values() for value in values
+    )
+    tableRef = _simulationTableRef(apiRef, payload, target, stockCode, period, rows, complete)
+    refs = [tableRef]
+    refs.extend(_simulationPathValueRefs(apiRef, payload, paths, stockCode, period, tableRef))
+    refs.extend(_simulationScalarValueRefs(apiRef, payload, stockCode, period, tableRef))
+    dateRef = _simulationDateRef(apiRef, stockCode, period, tableRef)
+    if dateRef is not None:
+        refs.append(dateRef)
+    return refs
+
+
+def _simulationTableRef(
+    apiRef: str,
+    payload: dict[str, Any],
+    target: str,
+    stockCode: str,
+    period: str,
+    rows: list[dict[str, Any]],
+    complete: bool,
+) -> Ref:
+    """시뮬레이션 경로와 결손을 한 bounded table ref에 보존한다."""
+    scenario = payload.get("scenarioName") or "scenario"
+    return Ref(
+        id=f"table:{_refStem(apiRef, stockCode or 'result', scenario)}",
+        kind="tableRef",
+        title=f"{stockCode or target} {scenario} 경로",
+        source=f"execution:{apiRef}:{target or 'result'}",
+        payload={
+            "stockCode": stockCode,
+            "period": period or None,
+            "rows": rows,
+            "complete": complete,
+            "status": payload.get("quality"),
+            "gaps": payload.get("dataInputGaps") or payload.get("warnings") or [],
+        },
+    )
+
+
+def _simulationPathValueRefs(
+    apiRef: str,
+    payload: dict[str, Any],
+    paths: dict[str, list[Any]],
+    stockCode: str,
+    period: str,
+    tableRef: Ref,
+) -> list[Ref]:
+    """시뮬레이션의 기간별 경로 값을 value ref로 만든다."""
+    refs: list[Ref] = []
+    for metric, values in paths.items():
+        for step, value in enumerate(values[:8], start=1):
+            if not isinstance(value, (int, float)) or isinstance(value, bool):
+                continue
+            refs.append(
+                Ref(
+                    id=f"value:{_refStem(apiRef, stockCode or 'result', period or 'latest', metric, str(step))}",
+                    kind="valueRef",
+                    title=f"{metric} {step}",
+                    source=tableRef.id,
+                    payload={
+                        "stockCode": stockCode,
+                        "period": period or None,
+                        "metric": metric,
+                        "value": value,
+                        "scenario": payload.get("scenarioName"),
+                        "step": step,
+                    },
+                )
+            )
+    return refs
+
+
+def _simulationScalarValueRefs(
+    apiRef: str,
+    payload: dict[str, Any],
+    stockCode: str,
+    period: str,
+    tableRef: Ref,
+) -> list[Ref]:
+    """DCF 등 시뮬레이션 scalar 결과를 value ref로 만든다."""
+    refs: list[Ref] = []
+    for metric in ("dcfPerShare", "enterpriseValue", "terminalRevenue"):
+        value = payload.get(metric)
+        if not isinstance(value, (int, float)) or isinstance(value, bool):
+            continue
+        refs.append(
+            Ref(
+                id=f"value:{_refStem(apiRef, stockCode or 'result', period or 'latest', metric)}",
+                kind="valueRef",
+                title=metric,
+                source=tableRef.id,
+                payload={
+                    "stockCode": stockCode,
+                    "period": period or None,
+                    "metric": metric,
+                    "value": value,
+                    "scenario": payload.get("scenarioName"),
+                },
+            )
+        )
+    return refs
+
+
+def _simulationDateRef(apiRef: str, stockCode: str, period: str, tableRef: Ref) -> Ref | None:
+    """시뮬레이션 기준시점이 있을 때만 date ref를 만든다."""
+    if not period:
+        return None
+    return Ref(
+        id=f"date:{_refStem(apiRef, stockCode or 'result', period)}",
+        kind="dateRef",
+        title=f"{apiRef} 기준시점",
+        source=tableRef.id,
+        payload={"stockCode": stockCode, "period": period},
+    )
 
 
 _JSON_OMIT = object()
@@ -815,6 +1256,7 @@ _EVIDENCE_FIELDS = (
     "materializationReceiptJson",
     "continuation",
     "dataInputGaps",
+    "warnings",
     "dataEvidence",
     "nodes",
     "asset",

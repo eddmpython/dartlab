@@ -18,7 +18,7 @@ def test_axis_engines_registered_uniformly():
     caps = loadCapabilities()
     for ref in (
         "gather.price",
-        "scan.market",
+        "scan.growth",
         "industry.theme",
         "industry.summary",
         "credit.grade",

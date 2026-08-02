@@ -24,6 +24,44 @@ export interface ToolBlock {
 	error: string | null;
 }
 
+export interface ChatActivity {
+	id: string;
+	status: 'running' | 'done' | 'error';
+	summary: string;
+	refs: string[];
+	passLabel?: string;
+}
+
+export interface ChatViewSpec {
+	id: string;
+	title: string;
+	source: string;
+	spec: unknown;
+}
+
+export interface ChatArtifact {
+	id: string;
+	data: Record<string, unknown>;
+}
+
+export interface ChatRuntimeCoverage {
+	readSkillCalls: number;
+	contractIds: string[];
+	requiredEvidence: string[];
+	candidateCapabilityRefs: string[];
+}
+
+export interface ChatAnswerQuality {
+	passed: boolean;
+	contract: 'quantitative' | 'documentary';
+	score: number;
+	issues: string[];
+	citedRefIds: string[];
+	contractIds: string[];
+	requiredEvidence: string[];
+	readSkillCalls: number | null;
+}
+
 export interface ChatMessage {
 	id: string;
 	role: 'user' | 'assistant';
@@ -33,6 +71,11 @@ export interface ChatMessage {
 	refs: EvidenceRef[];
 	/** 작업대. 자율 도구 호출 카드 (근거를 만드는 과정). */
 	tools: ToolBlock[];
+	activities: ChatActivity[];
+	activityCount: number;
+	viewSpecs: ChatViewSpec[];
+	artifacts: ChatArtifact[];
+	verifiedRefIds: string[];
 	approvals: Array<{
 		id: string;
 		sessionId: string;
@@ -42,7 +85,8 @@ export interface ChatMessage {
 	suggested: string[];
 	error: string | null;
 	streaming: boolean;
-	quality: { passed: boolean; contract: 'quantitative' | 'documentary'; score: number } | null;
+	quality: ChatAnswerQuality | null;
+	runtimeCoverage: ChatRuntimeCoverage | null;
 }
 
 export interface Conversation {
@@ -173,11 +217,17 @@ export class ChatStore {
 			thinking: '',
 			refs: [],
 			tools: [],
+			activities: [],
+			activityCount: 0,
+			viewSpecs: [],
+			artifacts: [],
+			verifiedRefIds: [],
 			approvals: [],
 			suggested: [],
 			error: null,
 			streaming: false,
-			quality: null
+			quality: null,
+			runtimeCoverage: null
 		});
 		conv.messages.push({
 			id: this.#uid('a'),
@@ -186,11 +236,17 @@ export class ChatStore {
 			thinking: '',
 			refs: [],
 			tools: [],
+			activities: [],
+			activityCount: 0,
+			viewSpecs: [],
+			artifacts: [],
+			verifiedRefIds: [],
 			approvals: [],
 			suggested: [],
 			error: null,
 			streaming: true,
-			quality: null
+			quality: null,
+			runtimeCoverage: null
 		});
 		conv.updatedAt = Date.now();
 		const idx = conv.messages.length - 1;
@@ -304,15 +360,57 @@ export class ChatStore {
 						}
 					}
 				}
+				this.#appendArtifacts(m, ev.artifacts);
+				break;
+			}
+			case 'ACTIVITY_DELTA':
+				m.activityCount += 1;
+				m.activities = [
+					...m.activities,
+					{
+						id: this.#uid('activity'),
+						status: ev.status,
+						summary: ev.summary,
+						refs: ev.refs ?? [],
+						passLabel: ev.passLabel
+					}
+				].slice(-6);
+				break;
+			case 'VIEW_SPEC': {
+				const id = ev.id || `${ev.runId}:${ev.messageId}:${m.viewSpecs.length + 1}`;
+				if (!m.viewSpecs.some((item) => item.id === id)) {
+					m.viewSpecs.push({
+						id,
+						title: ev.title || '시각 분석',
+						source: ev.source || '',
+						spec: ev.spec
+					});
+				}
 				break;
 			}
 			case 'RUN_FINISHED':
 				m.suggested = ev.suggestedQuestions ?? [];
+				this.#appendArtifacts(m, ev.artifacts);
 				if (ev.responseMeta?.answerQuality) {
+					const quality = ev.responseMeta.answerQuality;
 					m.quality = {
-						passed: ev.responseMeta.answerQuality.passed,
-						contract: ev.responseMeta.answerQuality.contract,
-						score: ev.responseMeta.answerQuality.score
+						passed: quality.passed,
+						contract: quality.contract,
+						score: quality.score,
+						issues: quality.issues ?? [],
+						citedRefIds: quality.citedRefIds ?? [],
+						contractIds: quality.contractIds ?? [],
+						requiredEvidence: quality.requiredEvidence ?? [],
+						readSkillCalls: quality.readSkillCalls ?? null
+					};
+				}
+				if (ev.responseMeta?.runtimeCoverage) {
+					const coverage = ev.responseMeta.runtimeCoverage;
+					m.runtimeCoverage = {
+						readSkillCalls: coverage.readSkillCalls,
+						contractIds: coverage.contractIds ?? [],
+						requiredEvidence: coverage.requiredEvidence ?? [],
+						candidateCapabilityRefs: coverage.candidateCapabilityRefs ?? []
 					};
 				}
 				break;
@@ -327,7 +425,18 @@ export class ChatStore {
 					status: 'pending'
 				});
 				break;
-			// 기타 allowlist 이벤트(START/END/SNAPSHOT/DELTA/VIEW_SPEC 등)는 챗 렌더 무관이라 드롭.
+			// 기타 allowlist 이벤트(START/END/SNAPSHOT/DELTA)는 챗 렌더 무관이라 드롭.
+		}
+	}
+
+	#appendArtifacts(message: ChatMessage, artifacts: Record<string, unknown>[] | undefined): void {
+		for (const artifact of artifacts ?? []) {
+			if (!artifact || typeof artifact !== 'object') continue;
+			const candidate = artifact.id ?? artifact.url ?? artifact.href ?? artifact.path ?? artifact.filename;
+			const id = typeof candidate === 'string' && candidate ? candidate : this.#uid('artifact');
+			if (!message.artifacts.some((item) => item.id === id)) {
+				message.artifacts.push({ id, data: artifact });
+			}
 		}
 	}
 

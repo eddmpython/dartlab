@@ -45,7 +45,7 @@ _AXIS_IGNORE_FIELDS: frozenset[str] = frozenset(
     {
         "label",  # summary 로 이미 투영
         "description",  # capabilities 로 이미 투영
-        "example",  # 사람용 예시. 기계 판정에 무관
+        "example",  # top-level example 필드로 별도 투영
         "module",  # 구현 위치 (선언이 아님)
         "fn",  # 구현 위치 (선언이 아님)
         "listModule",  # 구현 위치 (선언이 아님)
@@ -128,6 +128,9 @@ def _injectAxisRegistriesLive(entries: dict[str, dict[str, Any]]) -> None:
             axisEntry["summary"] = str(label or description or axisName)
             if description:
                 axisEntry["capabilities"] = str(description)
+            example = getattr(entry, "example", None)
+            if example:
+                axisEntry["example"] = _jsonSafeDeclaredValue(example)
             if declared := _declaredAxisFields(entry):
                 axisEntry["declared"] = declared
             entries[f"{prefix}.{axisName}"] = axisEntry
@@ -145,12 +148,24 @@ def _applyAiContractMetadata(entries: dict[str, dict[str, Any]]) -> None:
 
 def _applyExecutionMetadata(entries: dict[str, dict[str, Any]]) -> None:
     """검색 가능 capability와 EngineCall 실행 권한을 각 entry에 명시한다."""
-    from dartlab.reference.capability.execution import executionGuide, isEngineCallableRef
+    from dartlab.reference.capability.execution import (
+        canonicalReplacementRefs,
+        engineCallContract,
+        executionGuide,
+        isEngineCallableRef,
+    )
 
     for apiRef, entry in entries.items():
         engineCallable = isEngineCallableRef(apiRef)
+        replacementRefs = canonicalReplacementRefs(apiRef, entry)
         entry["engineCallable"] = engineCallable
-        entry["executionGuide"] = executionGuide(apiRef, engineCallable=engineCallable)
+        entry["replacementRefs"] = list(replacementRefs)
+        entry["execution"] = engineCallContract(apiRef, entry)
+        entry["executionGuide"] = executionGuide(
+            apiRef,
+            engineCallable=engineCallable,
+            replacementRefs=replacementRefs,
+        )
 
 
 def _buildAnalysisGraph(entries: dict[str, dict[str, Any]]) -> dict[str, Any]:

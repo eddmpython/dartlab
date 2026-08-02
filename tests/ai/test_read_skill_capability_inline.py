@@ -19,6 +19,8 @@ top-1 후보는 6 필드 (summary/args/example/guide/capabilities/returns),
 
 from __future__ import annotations
 
+import json
+
 import pytest
 
 from dartlab.ai.tools.registry import executeTool
@@ -109,3 +111,35 @@ def test_readskill_capability_inline_known_ref_returns_fields() -> None:
     payload = out["Company.panel"]
     # 핵심 필드 중 적어도 하나는 inline (전부 빈 capability 는 비현실적)
     assert any(k in payload for k in ("summary", "args", "guide", "example")), f"핵심 필드 0 — {list(payload.keys())}"
+
+
+def test_readskill_topCandidateInlinesQuestionCoverageCapabilities() -> None:
+    """명시 skill ref 밖의 질문 facet도 top 후보 한 번에 실행 계약으로 제공한다."""
+    result = executeTool(
+        "ReadSkill",
+        {
+            "query": "삼성전자 산업 경쟁력과 금리 환율 영향을 반영해 가치평가해줘",
+            "limit": 3,
+            "includeUser": False,
+        },
+    )
+
+    coverage = result["data"]["coverage"]
+    top = result["data"]["skills"][0]
+    assert {"analysis.가치평가", "industry", "macro"}.issubset(coverage["candidateCapabilityRefs"])
+    assert top["coverageCapabilityRefs"] == coverage["candidateCapabilityRefs"]
+    assert {"analysis.가치평가", "industry", "macro"}.issubset(top["capabilityDetails"])
+    assert all(detail.get("execution") for detail in top["capabilityDetails"].values() if detail["engineCallable"])
+
+
+def test_readskill_disclosure_payload_stays_within_runtime_budget() -> None:
+    result = executeTool(
+        "ReadSkill",
+        {
+            "query": "삼성전자 2024년 감사의견과 핵심감사사항을 공시 원문 근거와 함께 확인",
+            "limit": 5,
+            "includeUser": False,
+        },
+    )
+
+    assert len(json.dumps(result, ensure_ascii=False, default=str).encode("utf-8")) < 64 * 1024

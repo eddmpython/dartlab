@@ -17,6 +17,7 @@ from dartlab.ai.contracts import Ref
 from dartlab.core.confidence import baseScore
 from dartlab.core.market import detectMarket
 
+from .companyMetrics import companyMetrics
 from .companyResolve import resolveCompanyOrNone
 from .dcfValuationTool import _resolveSectorParams, _resolveSeries, _resolveShares
 from .types import ToolResult
@@ -133,6 +134,8 @@ def sensitivityAnalysis(
 
     sp = _resolveSectorParams(company)
     shares = _resolveShares(company)
+    sourcePeriods = companyMetrics(company).get("sourcePeriods") or {}
+    sourcePeriod = sourcePeriods.get("IS") or sourcePeriods.get("BS")
 
     # baseFcf + netDebt 추출 (DCF 와 동일 SSOT).
     warnings_acc: list[str] = []
@@ -214,6 +217,8 @@ def sensitivityAnalysis(
         "warnings": warnings_acc,
         "confidence": confidence,
         "confidenceMethod": "forecast",
+        "period": sourcePeriod,
+        "sourcePeriods": sourcePeriods,
     }
 
     refs: list[Ref] = [
@@ -226,6 +231,56 @@ def sensitivityAnalysis(
         )
     ]
     valid_cells = [c for row in matrix for c in row if c is not None]
+    if valid_cells:
+        refs.extend(
+            [
+                Ref(
+                    id=f"sensitivity:{stockCode}:min",
+                    kind="valueRef",
+                    title=f"{corpName or stockCode} 민감도 최솟값",
+                    source=f"sensitivity:{stockCode}:matrix",
+                    payload={
+                        "stockCode": stockCode,
+                        "period": sourcePeriod,
+                        "metric": "sensitivityMin",
+                        "value": min(valid_cells),
+                        "unit": unit,
+                    },
+                ),
+                Ref(
+                    id=f"sensitivity:{stockCode}:max",
+                    kind="valueRef",
+                    title=f"{corpName or stockCode} 민감도 최댓값",
+                    source=f"sensitivity:{stockCode}:matrix",
+                    payload={
+                        "stockCode": stockCode,
+                        "period": sourcePeriod,
+                        "metric": "sensitivityMax",
+                        "value": max(valid_cells),
+                        "unit": unit,
+                    },
+                ),
+            ]
+        )
+    if sourcePeriod:
+        refs.append(
+            Ref(
+                id=f"sensitivity:{stockCode}:date:{sourcePeriod}",
+                kind="dateRef",
+                title=f"{corpName or stockCode} 민감도 기준시점",
+                source=f"sensitivity:{stockCode}:matrix",
+                payload={"stockCode": stockCode, "period": sourcePeriod},
+            )
+        )
+    refs.append(
+        Ref(
+            id=f"sensitivity:{stockCode}:execution",
+            kind="executionRef",
+            title=f"{corpName or stockCode} 민감도 실행 영수증",
+            source="sensitivityAnalysis",
+            payload={"stockCode": stockCode, "period": sourcePeriod, "status": "complete"},
+        )
+    )
     summary_parts = [f"{corpName or stockCode} 민감도 {waccSteps}x{growthSteps}"]
     if valid_cells:
         summary_parts.append(f"range={min(valid_cells):,.0f}~{max(valid_cells):,.0f}")

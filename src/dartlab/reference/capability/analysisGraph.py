@@ -39,6 +39,7 @@ class CapabilityContract:
     contractId: str
     tool: str | None = None
     questionTypes: tuple[str, ...] = ()
+    capabilityRefs: tuple[str, ...] = ()
     requiredEvidence: tuple[str, ...] = ()
     evidenceSchema: dict[str, Any] = field(default_factory=dict)
     freshness: dict[str, Any] = field(default_factory=dict)
@@ -60,6 +61,7 @@ class CapabilityContract:
             "contractId": self.contractId,
             "tool": self.tool,
             "questionTypes": list(self.questionTypes),
+            "capabilityRefs": list(self.capabilityRefs),
             "requiredEvidence": list(self.requiredEvidence),
             "evidenceSchema": dict(self.evidenceSchema),
             "freshness": dict(self.freshness),
@@ -243,6 +245,79 @@ def understandingPacketForQuestion(
             "toolArgPolicy": _unique(v for c in contracts for v in c.get("toolArgPolicy") or []),
             "processMaps": [_compactProcessMap(p) for p in processMaps],
             "graph": route.get("graph"),
+        }
+    )
+
+
+def coveragePacketForQuestion(
+    question: str | None,
+    *,
+    stockCode: str | None = None,
+    limit: int = 12,
+) -> dict[str, Any]:
+    """질문에 필요한 정보 계약과 실행 가능한 capability 후보를 bounded 형태로 반환한다.
+
+    이 패킷은 실행 순서를 정하는 planner가 아니다. Analysis Graph의 선언 계약을
+    우선하고 capability 자연어 검색으로 미선언 축을 보완해 설치형 런타임이 DartLab
+    정보 표면을 빠뜨리지 않고 자율적으로 선택하게 한다.
+    """
+    from dartlab.reference.capability import loadCapabilities
+    from dartlab.reference.capability.search import searchCapabilities
+
+    boundedLimit = max(1, min(int(limit or 12), 20))
+    contracts = contractsForQuestion(question)
+    catalog = loadCapabilities()
+
+    declaredRefs = _unique(ref for contract in contracts for ref in contract.capabilityRefs)
+    semanticMatches = searchCapabilities(question or "", limit=40, minScore=0.0)
+    semanticRefs = [
+        apiRef
+        for apiRef, entry, _score in semanticMatches
+        if isinstance(entry, dict) and bool(entry.get("engineCallable"))
+    ]
+    candidateRefs = [
+        apiRef
+        for apiRef in _unique([*declaredRefs, *semanticRefs])
+        if isinstance(catalog.get(apiRef), dict) and bool(catalog[apiRef].get("engineCallable"))
+    ][:boundedLimit]
+
+    referenceOnlyMatches: list[dict[str, Any]] = []
+    for apiRef, entry, score in semanticMatches:
+        if not isinstance(entry, dict) or bool(entry.get("engineCallable")):
+            continue
+        referenceOnlyMatches.append(
+            _dropEmpty(
+                {
+                    "apiRef": apiRef,
+                    "score": round(float(score), 4),
+                    "summary": str(entry.get("summary") or "")[:240],
+                    "executionGuide": str(entry.get("executionGuide") or "")[:320],
+                    "replacementRefs": list(entry.get("replacementRefs") or ())[:5],
+                }
+            )
+        )
+        if len(referenceOnlyMatches) >= 5:
+            break
+
+    callableCount = sum(
+        1 for entry in catalog.values() if isinstance(entry, dict) and bool(entry.get("engineCallable"))
+    )
+    return _dropEmpty(
+        {
+            "contractIds": [contract.contractId for contract in contracts],
+            "questionTypes": _unique(v for contract in contracts for v in contract.questionTypes),
+            "requiredEvidence": _unique(v for contract in contracts for v in contract.requiredEvidence),
+            "candidateCapabilityRefs": candidateRefs,
+            "referenceOnlyMatches": referenceOnlyMatches,
+            "freshness": _mergeDicts(contract.freshness for contract in contracts),
+            "comparisonCompleteness": _mergeDicts(contract.comparisonCompleteness for contract in contracts),
+            "toolArgPolicy": _unique(v for contract in contracts for v in contract.toolArgPolicy),
+            "stockCode": stockCode,
+            "catalog": {
+                "total": len(catalog),
+                "engineCallable": callableCount,
+                "referenceOnly": len(catalog) - callableCount,
+            },
         }
     )
 
@@ -500,6 +575,7 @@ def _contractFromGraph(contractId: str, entry: dict[str, Any]) -> CapabilityCont
         contractId=str(entry.get("contractId") or contractId),
         tool=entry.get("tool"),
         questionTypes=tuple(str(v) for v in entry.get("questionTypes") or ()),
+        capabilityRefs=tuple(str(v) for v in entry.get("capabilityRefs") or ()),
         requiredEvidence=tuple(str(v) for v in entry.get("requiredEvidence") or ()),
         evidenceSchema=dict(entry.get("evidenceSchema") or {}),
         freshness=dict(entry.get("freshness") or {}),

@@ -4,7 +4,13 @@
 	import DOMPurify from 'dompurify';
 	import { marked } from 'marked';
 
-	let { text }: { text: string } = $props();
+	let {
+		text,
+		onrefclick = () => undefined
+	}: {
+		text: string;
+		onrefclick?: (refId: string) => void;
+	} = $props();
 
 	marked.setOptions({ gfm: true, breaks: false });
 
@@ -69,25 +75,39 @@
 		return t.replace(
 			/<(tableRef|valueRef|dateRef|docRef|webRef|skillRef|sessionRef|artifactRef|visualRef|verifyRef):([^<>\s"']+)>/g,
 			(_m, kind: string, id: string) =>
-				`<span class="refchip" title="${id}">${REF_LABEL[kind] ?? kind}</span>`
+				`<button type="button" class="refchip" value="${encodeURIComponent(id)}" aria-label="${REF_LABEL[kind] ?? kind} 근거 열기">${REF_LABEL[kind] ?? kind}</button>`
 		);
+	}
+
+	function handleRefClick(event: MouseEvent): void {
+		const target = event.target;
+		if (!(target instanceof Element)) return;
+		const button = target.closest<HTMLButtonElement>('button.refchip[value]');
+		if (!button) return;
+		try {
+			onrefclick(decodeURIComponent(button.value));
+		} catch {
+			// 손상된 모델 citation은 동작시키지 않는다.
+		}
 	}
 
 	const html = $derived.by(() => {
 		const cleaned = renderRefChips(fixCjkBold(normalizeBold(stripRawCallIds(stripThinking(text ?? '')))));
 		return DOMPurify.sanitize(marked.parse(cleaned) as string, {
 			ALLOWED_TAGS: [
-				'p', 'br', 'strong', 'em', 'del', 'blockquote', 'hr', 'ul', 'ol', 'li',
+				'p', 'br', 'strong', 'em', 'del', 'blockquote', 'hr', 'ul', 'ol', 'li', 'button',
 				'h1', 'h2', 'h3', 'h4', 'code', 'pre', 'a', 'span', 'table', 'thead',
 				'tbody', 'tr', 'th', 'td'
 			],
-			ALLOWED_ATTR: ['href', 'target', 'rel', 'class', 'title'],
+			ALLOWED_ATTR: ['href', 'target', 'rel', 'class', 'title', 'type', 'value', 'aria-label'],
 			ALLOW_DATA_ATTR: false
 		}) as unknown as string;
 	});
 </script>
 
-<div class="md">{@html html}</div>
+<!-- generated citation은 실제 button이며 이 div는 click delegation만 담당한다. -->
+<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+<div class="md" role="presentation" onclick={handleRefClick}>{@html html}</div>
 
 <style>
 	.md {
@@ -233,6 +253,13 @@
 		font-size: 0.68em;
 		line-height: 1.5;
 		vertical-align: 0.08em;
-		cursor: help;
+		font: inherit;
+		cursor: pointer;
+	}
+	.md :global(.refchip:hover),
+	.md :global(.refchip:focus-visible) {
+		border-color: var(--dl-info, #6ab0ff);
+		color: var(--dl-info, #6ab0ff);
+		outline: none;
 	}
 </style>

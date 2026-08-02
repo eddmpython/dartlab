@@ -17,6 +17,7 @@ from dartlab.ai.contracts import Ref
 from dartlab.core.confidence import baseScore
 from dartlab.core.market import detectMarket
 
+from .companyMetrics import companyMetrics
 from .companyResolve import resolveCompanyOrNone
 from .types import ToolResult
 
@@ -181,6 +182,8 @@ def creditScorecard(
     gradePublished = layout["headline"].get("grade") is not None
     confidence = baseScore("ratio") if gradePublished else 0
     corpName = str(getattr(company, "corpName", None) or "")
+    sourcePeriods = companyMetrics(company).get("sourcePeriods") or {}
+    resolvedPeriod = basePeriod or result.get("basePeriod") or result.get("period") or sourcePeriods.get("BS")
 
     factor_data: dict[str, Any] | None = None
     if includeFactors:
@@ -214,7 +217,9 @@ def creditScorecard(
         "adjustments": layout["adjustments"],
         "confidence": confidence,
         "confidenceMethod": "ratio" if gradePublished else "blocked",
-        "basePeriod": basePeriod,
+        "basePeriod": resolvedPeriod,
+        "period": resolvedPeriod,
+        "sourcePeriods": sourcePeriods,
         "assessmentStatus": result.get("assessmentStatus") or ("usable" if gradePublished else "blocked"),
         "blockedReason": result.get("blockedReason"),
         "coverage": result.get("coverage"),
@@ -236,6 +241,7 @@ def creditScorecard(
                     "metric": "creditGrade",
                     "value": layout["headline"]["grade"],
                     "axis": "credit",
+                    "period": resolvedPeriod,
                     "confidence": confidence,
                     "pdEstimate": layout["headline"].get("pdEstimate"),
                     "outlook": layout["headline"].get("outlook"),
@@ -251,6 +257,7 @@ def creditScorecard(
             payload=payload,
         )
     )
+    refs.extend(_creditPeriodExecutionRefs(stockCode, corpName, resolvedPeriod, payload["assessmentStatus"]))
 
     headline = layout["headline"]
     parts = [f"{corpName or stockCode} 신용"]
@@ -265,6 +272,36 @@ def creditScorecard(
     summary = " · ".join(parts)
 
     return ToolResult(True, summary, refs=refs, data=payload)
+
+
+def _creditPeriodExecutionRefs(
+    stockCode: str,
+    corpName: str,
+    period: Any,
+    status: str,
+) -> list[Ref]:
+    """신용 산출물의 기준시점과 실행 영수증을 공통 형식으로 만든다."""
+    refs: list[Ref] = []
+    if period:
+        refs.append(
+            Ref(
+                id=f"credit:{stockCode}:date:{period}",
+                kind="dateRef",
+                title=f"{corpName or stockCode} 신용 기준시점",
+                source=f"credit:{stockCode}:axes",
+                payload={"stockCode": stockCode, "period": str(period)},
+            )
+        )
+    refs.append(
+        Ref(
+            id=f"credit:{stockCode}:execution",
+            kind="executionRef",
+            title=f"{corpName or stockCode} 신용 실행 영수증",
+            source="creditScorecard",
+            payload={"stockCode": stockCode, "period": period, "status": status},
+        )
+    )
+    return refs
 
 
 __all__ = ["creditScorecard"]

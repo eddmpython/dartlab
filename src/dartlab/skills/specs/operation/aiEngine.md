@@ -88,7 +88,7 @@ linkedSkills:
 source:
   type: manual_skill
   format: markdown
-lastUpdated: '2026-08-02'
+lastUpdated: '2026-08-03'
 testUniverse:
   market: KR
   stockCodes:
@@ -142,7 +142,7 @@ DartLab은 모델 provider가 아니다. 사용자가 이미 로그인한 agent 
 - application context는 종목, 기간, 보고 모드, include/exclude, bounded dashboard snapshot만 16 KiB 이하로 전달한다. 대화 transcript는 CLI native session이 소유한다.
 - native 성공, DartLab grounding tool 성공, 본문에 인용된 표 또는 문서, 값, 기준일 exact ref가 모두 있어야 공개 답변을 커밋한다.
 - 정량 답변은 ref ID 인용만으로 충분하지 않다. 인용한 value/date payload의 실제 값과 기간이 답변 산문에 함께 결합돼야 한다. 문서형 질문은 값 ref를 강제하지 않고 문서와 기준시점 결합을 요구한다.
-- evidence는 transcript 없이 16 KiB 이하 공개 projection만 bounded SQLite에 저장하며 exact outcome/ref 조합으로만 재시작 복구한다.
+- evidence는 transcript 없이 ref별 64 KiB 이하 공개 projection만 bounded SQLite에 저장하며 exact outcome/ref 조합으로만 재시작 복구한다. 상한을 넘는 원본 표와 문서는 table/doc/value/date ref 및 bounded preview로 축약한다.
 - 같은 세션의 동시 턴은 거부하고 활성 세션은 LRU 퇴거하지 않는다.
 - 총 턴 제한은 기본 300초이고 `DARTLAB_AGENT_TURN_TIMEOUT_SECONDS`로 30~900초 범위에서만 조정한다. 제한 초과와 SSE 소비자 이탈은 native cancel/interrupt를 실행한다.
 
@@ -162,9 +162,13 @@ DartLab은 모델 provider가 아니다. 사용자가 이미 로그인한 agent 
 - MCP tools/list는 `ai.tools.registry.CANONICAL_V2`에서만 파생한다.
 - `ask`는 광고하지 않는다. agent가 MCP ask를 통해 agent를 재귀 실행하면 안 된다.
 - 호스트가 Skill OS bootstrap을 완료했으므로 runtime은 `start.dartlabSkillOs`와 operation skill을 다시 읽지 않는다.
-- 권장 순서는 `사용자 의도의 ReadSkill 1회 -> capabilityDetails의 EngineCall -> ref가 있는 답변`이다. ReadCapability는 capabilityDetails가 부족한 경우에만, RunPython은 실제 다단 가공이 필요한 경우에만 쓴다.
+- capability registry는 공개 계약 241개를 분류하고, 그중 실행 가능한 182개에는 구조화된 `engineCallContract`를 둔다. reference-only 59개는 실행 가능한 canonical replacement를 선언하며 runtime이 존재하지 않는 도구를 호출하게 하지 않는다.
+- `ReadSkill`은 질문별 `informationCoverage`를 반환한다. 여기에는 우선 capability, 보조 capability, 필요한 근거 종류, 비교축, 최신성 정책, 결손이 포함되며 실행 순서를 고정하지 않는다.
+- 권장 순서는 `사용자 의도의 ReadSkill 정확히 1회 -> capabilityDetails의 EngineCall -> ref가 있는 답변`이다. ReadCapability는 capabilityDetails가 부족한 경우에만, RunPython은 실제 다단 가공이 필요한 경우에만 쓴다.
 - 같은 도구와 인자를 반복하지 않고 일반 질문은 8회 이내에서 끝낸다. 필요한 table/doc, value, date ref가 확보되면 즉시 최종 답변을 작성한다.
 - 질문에 명시된 연도/분기는 bounded period hint로 전달한다. `Company.panel`의 `period=YYYY`, `freq=Y`는 IS/CF 네 분기를 FY로 합산해 FY table/value/date ref를 직접 반환한다.
+- 정량 답변은 한국어 조·억·만·원 단위를 precision-aware 방식으로 원시 값과 검산한다. 비교 질문은 대상·지표·기간의 같은 축을, 감사 질문은 감사의견 등급과 핵심감사사항을 인용 doc payload와 직접 대조한다.
+- `turnCompleted`는 사용한 capability, 지원 capability, 충족·미충족 근거와 결손을 `runtimeCoverage`로 공개한다. coverage는 실행 영수증이지 성공을 가장하는 완료율이 아니다.
 - Skill 읽기나 모델 산문은 북극성 `grounded`가 아니다. 실제 계산 도구가 성공하고 정형 ref가 있어야 한다.
 
 ## Product Outcome 연결
@@ -182,6 +186,7 @@ DartLab은 모델 provider가 아니다. 사용자가 이미 로그인한 agent 
 
 - `tests/ai/runtime/`: manifest, protocol projection, supervisor, session, engine vertical slice.
 - `tests/ai/runtime/test_answerQuality.py`: 질문 유형, exact 값·기간 binding, ref 문자열 위조 거부.
+- `tests/reference/capability/test_informationCoverage.py`: 질문별 coverage, 실행 계약, reference-only replacement.
 - `tests/ai/test_engine_call_auto_gather.py`: 명시 FY 집계와 period-bound value/date ref.
 - `tests/productOutcome/`: 단조 전이, duplicate receipt, privacy schema.
 - `tests/mcp/`: registry와 tools/list drift, 재귀 ask 부재.

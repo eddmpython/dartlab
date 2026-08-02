@@ -44,7 +44,7 @@ def test_engine_call_internal_helper_blocks_unknown_api():
     assert result.error == "unknown_api_ref"
 
 
-def test_legacy_runtime_tool_loop_is_not_importable():
+def test_installable_runtime_package_is_importable():
     import importlib.util
 
-    assert importlib.util.find_spec("dartlab.ai.runtime") is None
+    assert importlib.util.find_spec("dartlab.ai.runtime") is not None

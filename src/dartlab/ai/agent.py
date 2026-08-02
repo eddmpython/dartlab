@@ -1270,12 +1270,15 @@ def _runtimeAnswerQuality(
     from .runtime.answerQuality import evaluateAnswerQuality
     from .runtime.engine import _turnCompletedSuccessfully
 
+    runtimeCoverage = completionPayload.get("runtimeCoverage")
+    readSkillCalls = runtimeCoverage.get("readSkillCalls") if isinstance(runtimeCoverage, dict) else None
     return evaluateAnswerQuality(
         question,
         answer,
         refs,
         completionSucceeded=_turnCompletedSuccessfully(completionPayload),
         failed=failed,
+        readSkillCalls=int(readSkillCalls) if isinstance(readSkillCalls, int) else None,
     )
 
 
@@ -1299,6 +1302,9 @@ def _runtimeDoneData(
             "outcomeId": outcomeId,
             "verificationStatus": "evidenceCommitted" if answerCommitted else "rejected",
             "answerQuality": qualityReport,
+            "runtimeCoverage": (
+                event.payload.get("runtimeCoverage") if isinstance(event.payload.get("runtimeCoverage"), dict) else {}
+            ),
             "failureReason": None if answerCommitted else _qualityFailureReason(qualityReport),
         },
     }
@@ -1308,12 +1314,24 @@ def _qualityFailureReason(report: dict[str, Any]) -> str:
     """내부 issue code를 사용자가 이해할 수 있는 차단 사유로 바꾼다."""
     labels = {
         "runtime_not_completed": "런타임이 정상 완료되지 않았습니다",
+        "read_skill_missing": "질문에 맞는 Skill OS 계약을 읽지 않았습니다",
+        "read_skill_repeated": "Skill OS 검색을 한 턴에 반복해 실행했습니다",
         "empty_answer": "최종 답변이 비어 있습니다",
         "source_ref_missing": "표 또는 공시 근거가 답변에 인용되지 않았습니다",
+        "document_ref_missing": "문서 질문에 필요한 공시 원문 근거가 인용되지 않았습니다",
+        "document_claim_mismatch": "답변의 문서 결론이 인용한 공시 원문과 일치하지 않습니다",
         "date_ref_missing": "기준시점 근거가 답변에 인용되지 않았습니다",
         "value_ref_missing": "수치 근거가 답변에 인용되지 않았습니다",
         "value_binding_mismatch": "답변 수치가 인용한 근거 값과 일치하지 않습니다",
         "date_binding_mismatch": "답변 기준시점이 인용한 근거와 일치하지 않습니다",
+        "evidence_payload_empty": "인용 근거의 상세 데이터가 비어 있습니다",
+        "table_evidence_empty": "인용한 표 근거에 실제 데이터가 없습니다",
+        "value_evidence_unavailable": "인용한 수치 근거를 사용할 수 없습니다",
+        "date_evidence_unavailable": "인용한 기준시점 근거를 사용할 수 없습니다",
+        "target_evidence_mismatch": "질문의 분석 대상과 인용 근거의 대상이 일치하지 않습니다",
+        "metric_evidence_mismatch": "질문의 지표와 인용 근거의 지표가 일치하지 않습니다",
+        "period_coverage_incomplete": "질문이 요구한 모든 기간의 근거가 인용되지 않았습니다",
+        "comparison_target_incomplete": "비교 대상 중 일부의 동일 기준 근거가 누락되었습니다",
     }
     issues = report.get("issues") if isinstance(report.get("issues"), (list, tuple)) else []
     return "; ".join(labels.get(str(issue), str(issue)) for issue in issues) or "답변 품질 게이트를 통과하지 못했습니다"
