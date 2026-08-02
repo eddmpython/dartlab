@@ -80,6 +80,41 @@ def test_agent_gateway_public_events_hide_internal_kernel_names(monkeypatch) -> 
     assert any(_payload(event).get("toolName") == "RunPython" for event in events)
 
 
+def test_agent_gateway_uses_unique_turn_ids_and_keeps_structured_context(monkeypatch) -> None:
+    import dartlab.server.agentGateway as agent_gateway
+
+    received = []
+
+    def fake_runtime(question: str, **kwargs):
+        received.append(kwargs)
+        yield TraceEvent(
+            "done",
+            {"refs": [], "responseMeta": {"finalEvent": "runtime_error", "failureReason": "missing evidence"}},
+        )
+
+    monkeypatch.setattr(agent_gateway, "runRuntimeAgent", fake_runtime)
+    req = AgentRunRequest(
+        threadId="stable-session",
+        messages=[AgentRunMessage(role="user", content="이 회사 매출은?")],
+        workspaceContext={"stockCode": "005930", "period": "2026Q1", "reportMode": True},
+    )
+
+    async def collect():
+        first = [event async for event in agent_gateway.streamAgentRun(req)]
+        second = [event async for event in agent_gateway.streamAgentRun(req)]
+        return first, second
+
+    first, second = asyncio.run(collect())
+    firstState = _payload(first[0])
+    secondState = _payload(second[0])
+    assert firstState["runId"] != secondState["runId"]
+    assert firstState["threadId"] == "stable-session"
+    assert received[0]["sessionId"] == "stable-session"
+    assert received[0]["stockCode"] == "005930"
+    assert received[0]["period"] == "2026Q1"
+    assert received[0]["reportMode"] is True
+
+
 def test_agent_gateway_failure_reason_is_public(monkeypatch) -> None:
     import dartlab.server.agentGateway as agent_gateway
 

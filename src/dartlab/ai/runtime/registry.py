@@ -42,5 +42,7 @@ def loadRuntimeRegistry(root: Path | None = None) -> dict[str, RuntimeDescriptor
             launchArgs=tuple(str(item) for item in value["launchArgs"]),
             installArgs=tuple(str(item) for item in value["installArgs"]),
             officialUrl=str(value["officialUrl"]),
+            windowsLaunch=tuple(str(item) for item in value.get("windowsLaunch", ())),
+            embeddedGrounding=bool(value.get("embeddedGrounding", True)),
         )
     return descriptors

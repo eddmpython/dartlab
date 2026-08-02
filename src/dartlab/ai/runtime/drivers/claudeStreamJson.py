@@ -11,7 +11,7 @@ from ..contracts import AgentEvent, ProcessSpec, RuntimeDescriptor
 from ..eventProjection import EventProjector
 from ..mcpBootstrap import claudeReadOnlyMcpTools
 from ..processSupervisor import ProcessClosedError, ProcessSupervisor
-from .base import DriverHandle
+from .base import DriverHandle, runtimeLaunchArgv
 
 
 def _claudeToolArgs() -> tuple[str, ...]:
@@ -37,6 +37,7 @@ class ClaudeStreamJsonDriver:
         sessionId: str,
         cwd: Path,
         nativeSessionId: str | None = None,
+        instructions: str = "",
     ) -> DriverHandle:
         """Sig: open(descriptor, executable, sessionId, cwd, nativeSessionId=None) -> DriverHandle.
 
@@ -69,8 +70,7 @@ class ClaudeStreamJsonDriver:
         hasRun = bool(handle.metadata.get("hasRun"))
         sessionArgs = ("--resume", handle.nativeSessionId) if hasRun else ("--session-id", handle.nativeSessionId)
         argv = (
-            handle.executable,
-            *handle.descriptor.launchArgs,
+            *runtimeLaunchArgv(handle.descriptor, handle.executable),
             "--verbose",
             *_claudeToolArgs(),
             "--append-system-prompt",

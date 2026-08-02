@@ -100,12 +100,15 @@ testUniverse:
 - 분석형 질문도 별도 고정 Graph나 Loop로 우회하지 않고 같은 Agent Runtime에 analysis capsule을 전달한다.
 - 채팅 본문은 최종 답변, 짧은 activity 로그, 실제 코드/시각화 실행 카드, 실패 notice, source 요약만 렌더한다.
 - raw prompt, raw tool args/result JSON, 내부 trace JSON, `Agent Trace`, `투명성` 박스는 채팅 본문에 렌더하지 않는다.
+- raw thinking과 대화 본문은 browser localStorage에 저장하지 않는다. localStorage에는 opaque session ID와 시간, 고정 여부 같은 content-free metadata만 둔다.
+- 모델 Markdown은 정규 HTML parser 뒤 DOMPurify allowlist를 통과해야 하며 regex sanitizer를 보안 경계로 쓰지 않는다.
 - Evidence 패널은 source refs, datasets, raw tool input/output, verification, artifact를 분리해서 보관한다.
 - 서버 SSE의 `activity` 이벤트가 사용자용 진행 표면의 정규 계약이다. legacy `reference`, `inspect`, `execute`, `verify`, `tool_*` 이벤트는 activity/message parts로 변환만 하고 직접 카드로 노출하지 않는다.
 - 내부 tool id는 채팅 본문에 snake_case로 노출하지 않는다. 기본 표시명은 `replaceAll("_", " ")`를 적용하고, activity 문구는 `search reference 실행함`, `read context 실행함`, `inspect dataset 실행함`, `run python 실행함`, `compile visual 실행함`, `verify 실행함` 형식을 사용한다.
 - 진행 중에는 최근 6개 activity만 보이고, 완료 후에는 `명령어 N개 실행` 한 줄로 접는다.
 - 빈 chunk, 검색-only, tool 실패 은폐, 정형 ref 없는 계산 답변은 성공 outcome으로 release하지 않는다.
 - evidence chip을 렌더한 것만으로 verified를 기록하지 않는다. 사용자가 exact ref의 `근거 확인`을 실행하고 같은 outcome receipt가 200으로 검증된 뒤에만 Product Outcome을 승격한다.
+- `/ask`와 `/chat`은 같은 실제 Agent Runtime 채팅 표면으로 수렴한다. placeholder 또는 terminal redirect를 공식 Ask 경로로 두지 않는다.
 
 ## UI 런타임 데이터층 — 단일 작업대 SSOT + 공통배선
 

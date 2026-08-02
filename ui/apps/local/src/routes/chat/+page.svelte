@@ -3,6 +3,8 @@
 	// Svelte 로 옮긴 것. AiPort.streamAsk(mode:'chat') 한 포트로 대화(터미널 모드와 같은 Ask engine 계약).
 	import { onMount, tick } from 'svelte';
 	import { base } from '$app/paths';
+	import { page } from '$app/state';
+	import { isKrStockCode, normalizeKrCode } from '@dartlab/ui-contracts';
 	import { getLocalRuntime } from '$lib/runtime/localRuntime';
 	import { ChatStore } from '$lib/chat/chatStore.svelte';
 	import Sidebar from '$lib/chat/Sidebar.svelte';
@@ -10,7 +12,6 @@
 	import Markdown from '$lib/chat/Markdown.svelte';
 	import ToolCard from '$lib/chat/ToolCard.svelte';
 	import Evidence from '$lib/chat/Evidence.svelte';
-	import ThinkingPanel from '$lib/chat/ThinkingPanel.svelte';
 	import RuntimeCenter from '$lib/chat/RuntimeCenter.svelte';
 	import '@dartlab/ui-surfaces/terminal/terminal.css';
 	import { BrandSocial, DARTLAB_BRAND_LINKS, LAST_SYM_KEY } from '@dartlab/ui-surfaces/terminal';
@@ -38,6 +39,9 @@
 		// 챗은 터미널과 같은 다크 계기판 · 라이트 잔상 제거(공용 SNS 아이콘 가시성 보장).
 		if (typeof document !== 'undefined') document.documentElement.removeAttribute('data-theme');
 		void store.loadCapabilities();
+		const contextCode = normalizeKrCode(page.url.searchParams.get('code') ?? '');
+		if (isKrStockCode(contextCode)) store.setContextCode(contextCode);
+		if (window.matchMedia('(max-width: 720px)').matches) sidebarOpen = false;
 	});
 
 	const active = $derived(store.active);
@@ -51,7 +55,6 @@
 	$effect(() => {
 		messages.length;
 		messages.at(-1)?.text;
-		messages.at(-1)?.thinking;
 		messages.at(-1)?.tools.length;
 		if (!scroller) return;
 		const el = scroller;
@@ -99,6 +102,7 @@
 
 <div class="shell">
 	{#if sidebarOpen}
+		<button class="sideveil" aria-label="사이드바 닫기" onclick={() => (sidebarOpen = false)}></button>
 		<Sidebar {store} />
 	{/if}
 
@@ -149,10 +153,9 @@
 							<div class="turn assistant">
 								<img class="msgava" src="{base}/avatar.png" alt="DartLab" width="30" height="30" />
 								<div class="body">
-									{#if m.thinking || (m.streaming && !m.text)}
-										<ThinkingPanel thinking={m.thinking} active={m.streaming && !m.text} />
+									{#if m.streaming && !m.text}
+										<div class="runstate" role="status" aria-label="근거를 확인하는 중"><span></span></div>
 									{/if}
-
 									{#if m.tools.length}
 										<div class="workbench">
 											{#each m.tools as t (t.id)}
@@ -224,6 +227,7 @@
 					busy={store.busy}
 					placeholder="질문을 입력하세요…  (Enter 전송 · Shift+Enter 줄바꿈)"
 					onsend={submit}
+					onstop={() => store.cancel()}
 				/>
 			</div>
 		</div>
@@ -410,6 +414,10 @@
 		flex-direction: column;
 		gap: 0.4rem;
 	}
+	.runstate { min-height: 1.25rem; display: flex; align-items: center; }
+	.runstate span { width: .9rem; height: .9rem; border: 2px solid var(--dl-line, #2a2c33); border-top-color: var(--dl-accent, #ff5a36); border-radius: 50%; animation: spin .8s linear infinite; }
+	@keyframes spin { to { transform: rotate(360deg); } }
+	.sideveil { display: none; }
 	.approvals { display: grid; gap: .4rem; }
 	.approval { display: flex; align-items: center; gap: .5rem; padding: .65rem; border: 1px solid var(--dl-warn, #f4b740); border-radius: 8px; font-size: .78rem; }
 	.approval span { flex: 1; }
@@ -543,5 +551,24 @@
 		overflow-y: auto;
 		padding: 0 1.25rem 1.25rem;
 		scrollbar-width: thin;
+	}
+	@media (max-width: 720px) {
+		.shell :global(.sidebar) {
+			position: fixed;
+			inset: 0 auto 0 0;
+			z-index: 70;
+			box-shadow: 18px 0 45px rgba(0, 0, 0, 0.45);
+		}
+		.sideveil {
+			display: block;
+			position: fixed;
+			inset: 0;
+			z-index: 60;
+			border: 0;
+			background: rgba(0, 0, 0, 0.55);
+		}
+		.col { padding-inline: 0.85rem; }
+		.user .bubble { max-width: 88%; }
+		.chatSns { display: none !important; }
 	}
 </style>

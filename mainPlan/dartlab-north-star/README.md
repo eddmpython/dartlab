@@ -1,6 +1,6 @@
 # DartLab North Star Operating System
 
-상태: 상세 설계 v1. 축별 점수표는 루트 README `## 북극성`에 라이브(2026-08-02, 원장 결정 4 번복). 측정 바닥(Phase 0) 구현은 미착수.
+상태: local semantic measurement foundation과 첫 verified operator journey 구현 완료. 축별 점수표는 루트 README `## 북극성`에 라이브(2026-08-02, 원장 결정 4 번복).
 
 범위: DartLab 전체 제품이 기능 수, 모델 호출 수, 페이지뷰가 아니라 검증 가능한 사용자 분석 결과를 기준으로 우선순위를 정하도록 북극성, 결과 수명주기, 증거 레지스트리, scorecard, 주간 운영 주기를 세운다.
 

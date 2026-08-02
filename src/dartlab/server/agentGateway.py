@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import uuid
 from collections.abc import AsyncIterator
 from typing import Any
 
@@ -60,8 +61,8 @@ async def streamAgentRun(req: AgentRunRequest) -> AsyncIterator[dict[str, str]]:
     해당 CLI가 소유한다. DartLab은 MCP와 분석 capsule만 제공한다.
     """
     question = _lastUserMessage(req)
-    runId = req.threadId or "dartlab-thread"
-    messageId = f"msg-{runId}"
+    runId = uuid.uuid4().hex
+    messageId = f"msg-{uuid.uuid4().hex}"
     text_started = False
 
     kernelKwargs = _kernelKwargs(req)
@@ -73,6 +74,7 @@ async def streamAgentRun(req: AgentRunRequest) -> AsyncIterator[dict[str, str]]:
             "agentId": req.agentId or "dartlab-agent-runtime",
             "status": "running",
             "mode": "agent-runtime",
+            "threadId": req.threadId,
         },
     )
     runtimeKwargs = {**kernelKwargs, "sessionId": req.threadId} if req.threadId else kernelKwargs
@@ -339,6 +341,17 @@ def _kernelKwargs(req: AgentRunRequest) -> dict[str, Any]:
         hint = company.get("stockCode") or company.get("corpName") or company.get("company")
         if hint:
             kwargs["stockCode"] = hint
+    elif isinstance(context, dict) and context.get("stockCode"):
+        kwargs["stockCode"] = context["stockCode"]
+    if isinstance(context, dict):
+        for sourceKey, targetKey in (
+            ("period", "period"),
+            ("reportMode", "reportMode"),
+            ("include", "include"),
+            ("exclude", "exclude"),
+        ):
+            if context.get(sourceKey) not in (None, "", [], {}):
+                kwargs[targetKey] = context[sourceKey]
     # Dashboard snapshot artifact (Phase 8 — "보면서 질문" bridge).
     # 사용자가 dashboard 에서 "AI 에게 첨부" 누르면 frontend 가 보내는 dict.
     snapshot = context.get("dashboardSnapshot") if isinstance(context, dict) else None

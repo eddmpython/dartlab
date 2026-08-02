@@ -1,6 +1,7 @@
 <script lang="ts">
 	// marked(gfm) 로 마크다운을 렌더한다. 옛 ui/web MarkdownText(react-markdown+remark-gfm) 대응.
 	// 표·헤딩·리스트·코드·인용을 제대로 그려서 "raw 파이프 표" 쓰레기 상태를 없앤다.
+	import DOMPurify from 'dompurify';
 	import { marked } from 'marked';
 
 	let { text }: { text: string } = $props();
@@ -72,20 +73,17 @@
 		);
 	}
 
-	// {@html} 최소 방어. 본문은 자체 Ask 엔진 산출이고 외부 본문은 엔진이 이미 마커로 감싸지만,
-	// 로컬 표면이라도 script/iframe/on* 핸들러/javascript: 는 걷어낸다.
-	function sanitize(html: string): string {
-		return html
-			.replace(/<script[\s\S]*?<\/script>/gi, '')
-			.replace(/<iframe[\s\S]*?<\/iframe>/gi, '')
-			.replace(/\son[a-z]+\s*=\s*"[^"]*"/gi, '')
-			.replace(/\son[a-z]+\s*=\s*'[^']*'/gi, '')
-			.replace(/javascript:/gi, '');
-	}
-
 	const html = $derived.by(() => {
 		const cleaned = renderRefChips(fixCjkBold(normalizeBold(stripRawCallIds(stripThinking(text ?? '')))));
-		return sanitize(marked.parse(cleaned) as string);
+		return DOMPurify.sanitize(marked.parse(cleaned) as string, {
+			ALLOWED_TAGS: [
+				'p', 'br', 'strong', 'em', 'del', 'blockquote', 'hr', 'ul', 'ol', 'li',
+				'h1', 'h2', 'h3', 'h4', 'code', 'pre', 'a', 'span', 'table', 'thead',
+				'tbody', 'tr', 'th', 'td'
+			],
+			ALLOWED_ATTR: ['href', 'target', 'rel', 'class', 'title'],
+			ALLOW_DATA_ATTR: false
+		}) as unknown as string;
 	});
 </script>
 

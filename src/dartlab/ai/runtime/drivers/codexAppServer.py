@@ -10,7 +10,7 @@ from typing import Any
 from ..contracts import AgentEvent, ProcessSpec, RuntimeDescriptor
 from ..eventProjection import EventProjector
 from ..processSupervisor import JsonRpcChannel, ProcessSupervisor
-from .base import DriverHandle
+from .base import DriverHandle, runtimeLaunchArgv
 
 
 class CodexAppServerDriver:
@@ -23,6 +23,7 @@ class CodexAppServerDriver:
         sessionId: str,
         cwd: Path,
         nativeSessionId: str | None = None,
+        instructions: str = "",
     ) -> DriverHandle:
         """Sig: open(descriptor, executable, sessionId, cwd, nativeSessionId=None) -> DriverHandle.
 
@@ -31,28 +32,37 @@ class CodexAppServerDriver:
         Raises: transport or JSON-RPC errors when initialization fails.
         Example: 엔진의 `openSession`에서 호출한다.
         """
-        supervisor = ProcessSupervisor(ProcessSpec((executable, *descriptor.launchArgs), cwd))
+        supervisor = ProcessSupervisor(ProcessSpec(runtimeLaunchArgv(descriptor, executable), cwd))
         supervisor.start()
-        channel = JsonRpcChannel(supervisor)
-        channel.request(
-            "initialize",
-            {"clientInfo": {"name": "dartlab", "version": "1"}, "capabilities": {}},
-            timeout=15,
-        )
-        channel.notify("initialized", {})
-        if nativeSessionId:
-            result = channel.request("thread/resume", {"threadId": nativeSessionId}, timeout=30)
-        else:
-            result = channel.request(
-                "thread/start",
-                {
-                    "cwd": str(cwd.resolve()),
-                    "approvalPolicy": "on-request",
-                    "sandbox": "workspace-write",
-                    "ephemeral": False,
-                },
-                timeout=30,
+        try:
+            channel = JsonRpcChannel(supervisor)
+            channel.request(
+                "initialize",
+                {"clientInfo": {"name": "dartlab", "version": "1"}, "capabilities": {}},
+                timeout=15,
             )
+            channel.notify("initialized", {})
+            threadParams = {
+                "cwd": str(cwd.resolve()),
+                "approvalPolicy": "never",
+                "sandbox": "read-only",
+                "developerInstructions": instructions,
+            }
+            if nativeSessionId:
+                result = channel.request(
+                    "thread/resume",
+                    {**threadParams, "threadId": nativeSessionId},
+                    timeout=30,
+                )
+            else:
+                result = channel.request(
+                    "thread/start",
+                    {**threadParams, "ephemeral": False},
+                    timeout=30,
+                )
+        except Exception:
+            supervisor.stop()
+            raise
         thread = result.get("thread") if isinstance(result.get("thread"), dict) else {}
         resolvedNativeId = str(thread.get("id") or result.get("threadId") or nativeSessionId or "")
         if not resolvedNativeId:
@@ -84,7 +94,8 @@ class CodexAppServerDriver:
             {
                 "threadId": handle.nativeSessionId,
                 "input": [{"type": "text", "text": question}],
-                "developerInstructions": instructions,
+                "approvalPolicy": "never",
+                "sandboxPolicy": {"type": "readOnly", "networkAccess": False},
             },
             timeout=30,
         )
@@ -118,7 +129,7 @@ class CodexAppServerDriver:
         Example: `driver.cancel(handle)`.
         """
         if handle.channel and handle.activeTurnId:
-            handle.channel.notify(
+            handle.channel.startRequest(
                 "turn/interrupt",
                 {"threadId": handle.nativeSessionId, "turnId": handle.activeTurnId},
             )

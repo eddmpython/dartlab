@@ -25,8 +25,9 @@ class FakeDriver:
         sessionId: str,
         cwd: Path,
         nativeSessionId: str | None = None,
+        instructions: str = "",
     ) -> DriverHandle:
-        return DriverHandle(
+        handle = DriverHandle(
             descriptor,
             executable,
             sessionId,
@@ -34,8 +35,11 @@ class FakeDriver:
             cwd,
             EventProjector(descriptor.runtimeId, sessionId),
         )
+        handle.metadata["instructions"] = instructions
+        return handle
 
     def streamTurn(self, handle: DriverHandle, question: str, *, instructions: str) -> Iterator[AgentEvent]:
+        handle.metadata["question"] = question
         turnId = "turn-1"
         yield handle.projector.event("turnStarted", turnId=turnId)
         yield handle.projector.event(
@@ -43,11 +47,22 @@ class FakeDriver:
             turnId=turnId,
             payload={
                 "tool": "EngineCall",
-                "result": {"ok": True, "refs": [{"id": "tableRef:exact", "kind": "tableRef"}]},
+                "result": {
+                    "ok": True,
+                    "refs": [
+                        {"id": "table:exact", "kind": "tableRef"},
+                        {"id": "value:exact", "kind": "valueRef"},
+                        {"id": "date:exact", "kind": "dateRef"},
+                    ],
+                },
             },
         )
-        yield handle.projector.event("messageDelta", turnId=turnId, payload={"text": "근거 답변"})
-        yield handle.projector.event("turnCompleted", turnId=turnId)
+        yield handle.projector.event(
+            "messageDelta",
+            turnId=turnId,
+            payload={"text": "근거 답변 table:exact value:exact date:exact"},
+        )
+        yield handle.projector.event("turnCompleted", turnId=turnId, payload={"status": "completed"})
 
     def cancel(self, handle: DriverHandle) -> None:
         return None
@@ -99,17 +114,68 @@ def testRuntimeEngineStreamsAndAdvancesOutcome(tmp_path, monkeypatch):
     outcomeId = str(events[-1].payload["outcomeId"])
     assert events[2].payload["refDetails"] == [
         {
-            "id": "tableRef:exact",
+            "id": "table:exact",
             "kind": "tableRef",
-            "title": "tableRef:exact",
+            "title": "table:exact",
             "source": "",
             "sourceType": "internal",
+            "payload": {},
             "outcomeId": outcomeId,
-        }
+        },
+        {
+            "id": "value:exact",
+            "kind": "valueRef",
+            "title": "value:exact",
+            "source": "",
+            "sourceType": "internal",
+            "payload": {},
+            "outcomeId": outcomeId,
+        },
+        {
+            "id": "date:exact",
+            "kind": "dateRef",
+            "title": "date:exact",
+            "source": "",
+            "sourceType": "internal",
+            "payload": {},
+            "outcomeId": outcomeId,
+        },
     ]
+    assert engine.resolveEvidence(outcomeId, "table:exact")["kind"] == "tableRef"
     store = OutcomeStore(tmp_path / "outcomes.sqlite3")
     assert store.get(outcomeId).state == "delivered"
-    assert store.verifyEvidence(outcomeId, "tableRef:exact").state == "verified"
+    assert store.verifyEvidence(outcomeId, "table:exact").state == "verified"
+
+
+def testRuntimeContextIsBoundedAndTranscriptFree(tmp_path, monkeypatch):
+    descriptor = RuntimeDescriptor(
+        "fake", "Fake", "fake", "ndjson", ("fake",), ("--version",), (), (), "https://example.invalid"
+    )
+    monkeypatch.setattr(
+        runtimeEngineModule, "probeRuntime", lambda value: RuntimeProbe("fake", "ready", sysExecutable())
+    )
+    monkeypatch.setattr(
+        runtimeEngineModule,
+        "probeMcpConnection",
+        lambda runtimeId, **_kwargs: {"connected": True, "mode": "test"},
+    )
+    engine = AgentRuntimeEngine(SessionStore(tmp_path / "sessions.sqlite3"), SessionManager())
+    engine.registry = {"fake": descriptor}
+    driver = FakeDriver()
+    engine.drivers = {"fake": driver}
+
+    list(
+        engine.stream(
+            "이 회사 매출은?",
+            runtimeId="fake",
+            cwd=tmp_path,
+            context={"stockCode": "005930", "history": [{"content": "민감"}]},
+        )
+    )
+    managed = engine.sessionManager.get(engine.sessionStore.list(limit=1)[0].sessionId)
+    assert managed is not None
+    assert '"stockCode":"005930"' in managed.handle.metadata["question"]
+    assert "민감" not in managed.handle.metadata["question"]
 
 
 def testStoredSessionKeepsItsOriginalWorkspace(tmp_path, monkeypatch):
@@ -177,7 +243,58 @@ def testRuntimeSelectionFailsClosedWhenMcpIsDisconnected(tmp_path, monkeypatch):
         engine.selectRuntime("fake")
 
 
+def testRuntimeSelectionFailsClosedWithoutEmbeddedGrounding(tmp_path, monkeypatch):
+    descriptor = RuntimeDescriptor(
+        "fake",
+        "Fake",
+        "fake",
+        "acp-v1",
+        ("fake",),
+        ("--version",),
+        ("--acp",),
+        (),
+        "https://example.invalid",
+        embeddedGrounding=False,
+    )
+    monkeypatch.setattr(
+        runtimeEngineModule, "probeRuntime", lambda value: RuntimeProbe("fake", "ready", sysExecutable())
+    )
+    monkeypatch.setattr(
+        runtimeEngineModule,
+        "probeMcpConnection",
+        lambda runtimeId, **_kwargs: {"connected": True, "mode": "test"},
+    )
+    engine = AgentRuntimeEngine(SessionStore(tmp_path / "sessions.sqlite3"), SessionManager())
+    engine.registry = {"fake": descriptor}
+
+    with pytest.raises(RuntimeError, match="embedded DartLab MCP"):
+        engine.selectRuntime("fake")
+
+
 def sysExecutable() -> str:
     import sys
 
     return sys.executable
+
+
+def testRuntimeAnswerCommitRejectsUncitedOrIncompleteEvidence():
+    from dartlab.ai.agent import _runtimeAnswerCommitted
+
+    refs = [
+        {"id": "table:exact", "kind": "tableRef"},
+        {"id": "value:exact", "kind": "valueRef"},
+        {"id": "date:exact", "kind": "dateRef"},
+    ]
+    assert _runtimeAnswerCommitted(
+        "매출은 1원이다. table:exact value:exact date:exact",
+        refs,
+        {"status": "completed"},
+        failed=False,
+    )
+    assert not _runtimeAnswerCommitted("매출은 1원이다.", refs, {"status": "completed"}, failed=False)
+    assert not _runtimeAnswerCommitted(
+        "table:exact value:exact date:exact",
+        refs,
+        {"status": "interrupted"},
+        failed=False,
+    )

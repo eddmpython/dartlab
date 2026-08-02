@@ -254,6 +254,13 @@ def test_ai_no_build():
     assert rc == 0
 
 
+def test_ai_dev_selects_platform_npm_shim():
+    from dartlab.cli.commands.ai import _npmCommand
+
+    assert _npmCommand(platform="nt") == "npm.cmd"
+    assert _npmCommand(platform="posix") == "npm"
+
+
 # ── 14. share (reset 모드) ──
 
 

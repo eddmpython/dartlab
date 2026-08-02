@@ -7,10 +7,12 @@
 	let { refs }: { refs: EvidenceRef[] } = $props();
 	let open = $state(false);
 	let receipts = $state<Record<string, 'busy' | 'verified' | 'error'>>({});
+	let resolved = $state<Record<string, EvidenceRef>>({});
 
 	const KIND_LABEL: Record<string, string> = {
 		tableRef: '표',
 		valueRef: '값',
+		dateRef: '기준일',
 		webRef: '웹',
 		artifactRef: '산출물',
 		visualRef: '차트',
@@ -30,7 +32,8 @@
 	];
 
 	function summarize(ref: EvidenceRef): string {
-		const p = ref.payload as Record<string, unknown> | undefined;
+		const actual = resolved[ref.id] ?? ref;
+		const p = actual.payload as Record<string, unknown> | undefined;
 		if (!p || typeof p !== 'object') return '';
 		const parts: string[] = [];
 		for (const [k, prefix] of PAYLOAD_KEYS) {
@@ -53,7 +56,8 @@
 		if (!ref.outcomeId || receipts[ref.id] === 'busy' || receipts[ref.id] === 'verified') return;
 		receipts[ref.id] = 'busy';
 		try {
-			await verifyOutcomeEvidence(ref.outcomeId, ref.id);
+			const value = await verifyOutcomeEvidence(ref.outcomeId, ref.id);
+			resolved[ref.id] = { ...ref, ...value.evidence };
 			receipts[ref.id] = 'verified';
 		} catch {
 			receipts[ref.id] = 'error';

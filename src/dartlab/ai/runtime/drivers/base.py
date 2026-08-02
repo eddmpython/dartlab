@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+import shutil
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -10,6 +12,33 @@ from typing import Any, Protocol
 from ..contracts import AgentEvent, RuntimeDescriptor
 from ..eventProjection import EventProjector
 from ..processSupervisor import JsonRpcChannel, ProcessSupervisor
+
+
+def runtimeLaunchArgv(descriptor: RuntimeDescriptor, executable: str) -> tuple[str, ...]:
+    """Windows npm shim을 거치지 않는 매니페스트 선언형 실행 argv를 만든다."""
+    if os.name != "nt" or not descriptor.windowsLaunch:
+        return (executable, *descriptor.launchArgs)
+
+    shimDir = Path(executable).resolve().parent
+    prefix: list[str] = []
+    for token in descriptor.windowsLaunch:
+        if token == "node":
+            node = shutil.which("node")
+            if node is None:
+                raise FileNotFoundError("Windows 런타임 실행에 필요한 node를 찾을 수 없습니다")
+            prefix.append(node)
+            continue
+        if "{shimDir}" not in token:
+            raise ValueError(f"허용되지 않은 windowsLaunch 토큰: {token}")
+        target = Path(token.replace("{shimDir}", str(shimDir))).resolve()
+        try:
+            target.relative_to(shimDir)
+        except ValueError as exc:
+            raise ValueError("windowsLaunch 경로가 npm shim 디렉터리를 벗어났습니다") from exc
+        if not target.is_file():
+            raise FileNotFoundError(f"Windows 런타임 실행 파일을 찾을 수 없습니다: {target}")
+        prefix.append(str(target))
+    return (*prefix, *descriptor.launchArgs)
 
 
 @dataclass
@@ -39,6 +68,7 @@ class AgentRuntimeDriver(Protocol):
         sessionId: str,
         cwd: Path,
         nativeSessionId: str | None = None,
+        instructions: str = "",
     ) -> DriverHandle:
         """네이티브 런타임 세션을 열거나 저장된 세션을 재개한다."""
         ...

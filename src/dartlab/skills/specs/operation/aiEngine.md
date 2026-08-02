@@ -75,7 +75,7 @@ examples:
   - dartlab agent connect codex
 procedure:
   - Runtime manifest에서 실행 파일 후보와 protocol driver를 읽는다.
-  - 15초 TTL probe로 설치·버전과 DartLab MCP 연결을 확인하고 둘 다 준비된 groundedReady runtime만 선택한다.
+  - 15초 TTL probe로 설치·버전, DartLab MCP 연결, embedded grounding capability를 확인하고 셋 다 준비된 groundedReady runtime만 선택한다.
   - native session을 열거나 저장된 opaque session mapping으로 재개한다.
   - 짧은 analysis capsule과 MCP 도구를 agent에 제공한다.
   - native event를 AgentEvent로 투영하고 AG-UI allowlist로 공개한다.
@@ -130,13 +130,15 @@ DartLab은 모델 provider가 아니다. 사용자가 이미 로그인한 agent 
 
 ## 안정 계약
 
-- manifest가 runtime ID, executable 후보, version args, launch args, install args, 공식 문서를 선언한다.
+- manifest가 runtime ID, executable 후보, version args, launch args, Windows native launch, install args, embedded grounding 지원, 공식 문서를 선언한다.
 - process 실행은 argv 배열과 `shell=False`만 사용한다.
 - stdout/stderr frame은 각각 1 MiB와 256 KiB 한도를 적용한다.
 - 세션 event ring은 256건 또는 4 MiB로 제한하고 sequence 이후 replay를 지원한다.
 - hot session은 최대 4개이며 퇴거·서버 종료 시 child process를 닫는다.
 - DartLab DB에는 session ID, runtime ID, native session ID, cwd mapping만 저장한다. transcript는 저장하지 않는다.
 - 알 수 없는 native event는 버리지 않고 `native` event로 보존한다.
+- application context는 종목, 기간, 보고 모드, include/exclude, bounded dashboard snapshot만 16 KiB 이하로 전달한다. 대화 transcript는 CLI native session이 소유한다.
+- native 성공, DartLab grounding tool 성공, 본문에 인용된 표 또는 문서, 값, 기준일 exact ref가 모두 있어야 공개 답변을 커밋한다.
 
 ## 권한과 설치
 
@@ -146,6 +148,7 @@ DartLab은 모델 provider가 아니다. 사용자가 이미 로그인한 agent 
 - Codex와 ACP의 native approval request는 UI로 전달한다.
 - Claude print mode는 MCP 지연 검색용 `ToolSearch` 하나와 registry가 read-only로 판정한 DartLab MCP 도구만 노출·허용하며 write 권한을 확대하지 않는다.
 - Codex, Claude, Cline의 MCP 연결은 각 공식 CLI 계획과 exact digest 승인 뒤에만 적용한다. 설치만 된 runtime은 실행 가능 상태가 아니다.
+- 전역 MCP 설정 파일이 있어도 embedded protocol이 MCP tool을 실제 노출하지 않으면 groundedReady가 아니다. Cline 3.0.49 ACP는 이 조건을 만족하지 않아 fail-closed다.
 - agent 인증은 해당 CLI의 공식 로그인 명령에서만 수행한다.
 
 ## MCP 계약
@@ -163,6 +166,7 @@ DartLab은 모델 provider가 아니다. 사용자가 이미 로그인한 agent 
 - canonical 실행 도구가 정형 ref를 반환해야 `scoped`, `grounded`가 된다.
 - 성공 turn과 근거가 함께 있어야 `delivered`다.
 - 사용자가 같은 outcome의 exact ref를 열어 서버의 opaque hash receipt가 일치해야 `verified`다.
+- 근거 확인 API는 active runtime의 bounded evidence journal에서 exact ref detail을 먼저 resolve한 뒤 hash receipt를 검증한다.
 - tool call, 텍스트 생성, evidence chip 렌더만으로 verified를 자동 기록하지 않는다.
 
 ## 검증

@@ -1104,16 +1104,33 @@ def runRuntimeAgent(question: str, **kwargs: Any) -> Iterator[TraceEvent]:
     from .runtime import getRuntimeEngine
 
     engine = getRuntimeEngine()
-    runtimeId = kwargs.get("runtimeId") or kwargs.get("provider")
-    if runtimeId not in {None, "codex", "claude", "cline"}:
-        runtimeId = None
+    runtimeId = _runtimeId(kwargs)
     sessionId = kwargs.get("sessionId") or kwargs.get("threadId")
     cwdValue = kwargs.get("cwd")
     cwd = Path(cwdValue) if cwdValue else None
-    emittedText = False
+    turnContext = {
+        "stockCode": kwargs.get("stockCode"),
+        "period": kwargs.get("period"),
+        "reportMode": kwargs.get("reportMode") or kwargs.get("report_mode"),
+        "include": kwargs.get("include"),
+        "exclude": kwargs.get("exclude"),
+        "dashboardSnapshot": kwargs.get("dashboardSnapshot"),
+    }
+    answerParts: list[str] = []
+    evidenceRefs: list[dict[str, Any]] = []
+    outcomeId: str | None = None
+    failed = False
     terminalSeen = False
     try:
-        for event in engine.stream(question, runtimeId=runtimeId, sessionId=sessionId, cwd=cwd):
+        for event in engine.stream(
+            question,
+            runtimeId=runtimeId,
+            sessionId=sessionId,
+            cwd=cwd,
+            context=turnContext,
+        ):
+            if event.payload.get("outcomeId"):
+                outcomeId = str(event.payload["outcomeId"])
             if event.kind in {"sessionStarted", "sessionResumed"}:
                 yield TraceEvent(
                     "runtime_session",
@@ -1131,8 +1148,7 @@ def runRuntimeAgent(question: str, **kwargs: Any) -> Iterator[TraceEvent]:
             elif event.kind == "messageDelta":
                 text = str(event.payload.get("text") or "")
                 if text:
-                    emittedText = True
-                    yield TraceEvent("chunk", {"text": text})
+                    answerParts.append(text)
             elif event.kind == "reasoningDelta":
                 text = str(event.payload.get("text") or "")
                 if text:
@@ -1140,6 +1156,7 @@ def runRuntimeAgent(question: str, **kwargs: Any) -> Iterator[TraceEvent]:
             elif event.kind == "toolStarted":
                 yield TraceEvent("tool_start", _runtimeToolData(event.payload, status="running"))
             elif event.kind == "toolCompleted":
+                _appendRuntimeEvidenceRefs(evidenceRefs, event.payload.get("refDetails"))
                 yield TraceEvent("tool_result", _runtimeToolData(event.payload, status="done"))
             elif event.kind == "approvalRequested":
                 yield TraceEvent(
@@ -1156,21 +1173,28 @@ def runRuntimeAgent(question: str, **kwargs: Any) -> Iterator[TraceEvent]:
             elif event.kind == "eventGap":
                 yield TraceEvent("event_gap", event.payload)
             elif event.kind == "runtimeError":
+                failed = True
                 yield TraceEvent("error", {"error": str(event.payload.get("error") or "runtime_error")})
             elif event.kind == "turnCompleted":
                 terminalSeen = True
+                answer = "".join(answerParts)
+                committed = _runtimeAnswerCommitted(answer, evidenceRefs, event.payload, failed=failed)
+                if committed:
+                    yield TraceEvent("chunk", {"text": answer})
+                else:
+                    failed = True
+                    yield TraceEvent(
+                        "error",
+                        {"error": "runtime answer did not satisfy the DartLab evidence commit contract"},
+                    )
                 yield TraceEvent(
                     "done",
-                    {
-                        "refs": [],
-                        "artifacts": [],
-                        "responseMeta": {
-                            "finalEvent": "answer" if emittedText else "runtime_error",
-                            "responseStatus": "ok" if emittedText else "failed",
-                            "runtimeId": event.runtimeId,
-                            "sessionId": event.sessionId,
-                        },
-                    },
+                    _runtimeDoneData(
+                        event,
+                        answerCommitted=committed,
+                        refs=evidenceRefs,
+                        outcomeId=outcomeId,
+                    ),
                 )
         if not terminalSeen:
             yield TraceEvent(
@@ -1179,9 +1203,9 @@ def runRuntimeAgent(question: str, **kwargs: Any) -> Iterator[TraceEvent]:
                     "refs": [],
                     "artifacts": [],
                     "responseMeta": {
-                        "finalEvent": "answer" if emittedText else "runtime_error",
-                        "responseStatus": "ok" if emittedText else "failed",
-                        "failureReason": None if emittedText else "runtime ended without a completed turn",
+                        "finalEvent": "runtime_error",
+                        "responseStatus": "failed",
+                        "failureReason": "runtime ended without a completed turn",
                     },
                 },
             )
@@ -1199,6 +1223,66 @@ def runRuntimeAgent(question: str, **kwargs: Any) -> Iterator[TraceEvent]:
                 },
             },
         )
+
+
+def _runtimeId(kwargs: dict[str, Any]) -> str | None:
+    """공개 allowlist에 있는 runtime 선택값만 반환한다."""
+    candidate = kwargs.get("runtimeId") or kwargs.get("provider")
+    return str(candidate) if candidate in {"codex", "claude", "cline"} else None
+
+
+def _appendRuntimeEvidenceRefs(target: list[dict[str, Any]], value: Any) -> None:
+    """exact ref ID를 기준으로 공개 evidence projection을 중복 없이 누적한다."""
+    seen = {str(item.get("id")) for item in target if item.get("id")}
+    for ref in value if isinstance(value, list) else []:
+        if not isinstance(ref, dict) or not ref.get("id"):
+            continue
+        refId = str(ref["id"])
+        if refId in seen:
+            continue
+        seen.add(refId)
+        target.append(ref)
+
+
+def _runtimeAnswerCommitted(
+    answer: str,
+    refs: list[dict[str, Any]],
+    completionPayload: dict[str, Any],
+    *,
+    failed: bool,
+) -> bool:
+    """정상 종료와 본문 exact evidence 인용을 함께 만족한 답변만 공개한다."""
+    from .runtime.engine import _turnCompletedSuccessfully
+
+    if failed or not answer.strip() or not _turnCompletedSuccessfully(completionPayload):
+        return False
+    citedKinds = {str(ref.get("kind") or "") for ref in refs if str(ref.get("id") or "") in answer}
+    return bool("valueRef" in citedKinds and "dateRef" in citedKinds and {"tableRef", "docRef"} & citedKinds)
+
+
+def _runtimeDoneData(
+    event: Any,
+    *,
+    answerCommitted: bool,
+    refs: list[dict[str, Any]],
+    outcomeId: str | None,
+) -> dict[str, Any]:
+    """공개 adapter와 Outcome 원장이 같은 완료 근거를 보도록 종료 payload를 만든다."""
+    return {
+        "refs": refs if answerCommitted else [],
+        "artifacts": [],
+        "responseMeta": {
+            "finalEvent": "answer" if answerCommitted else "runtime_error",
+            "responseStatus": "ok" if answerCommitted else "failed",
+            "runtimeId": event.runtimeId,
+            "sessionId": event.sessionId,
+            "outcomeId": outcomeId,
+            "verificationStatus": "evidenceCommitted" if answerCommitted else "rejected",
+            "failureReason": None
+            if answerCommitted
+            else "answer lacks cited table or document, value, and date evidence",
+        },
+    }
 
 
 def _runtimeToolData(payload: dict[str, Any], *, status: str) -> dict[str, Any]:

@@ -83,7 +83,9 @@
 
 	{#if error}<div class="error">{error}</div>{/if}
 	{#if loading}
-		<div class="empty">설치된 에이전트를 확인하는 중입니다.</div>
+		<div class="empty" role="status" aria-label="설치된 에이전트를 확인하는 중">
+			<span class="spinner" aria-hidden="true"></span>
+		</div>
 	{:else}
 		<div class="grid">
 			{#each runtimes as runtime (runtime.runtimeId)}
@@ -93,11 +95,14 @@
 							<strong>{runtime.displayName}</strong>
 							<span>{runtime.protocol}</span>
 						</div>
-						<span class:ready={runtime.groundedReady} class="state">{runtime.groundedReady ? '사용 가능' : runtime.state}</span>
+						<span class:ready={runtime.groundedReady} class="state">
+							{runtime.groundedReady ? '사용 가능' : runtime.state === 'ready' && !runtime.embeddedGrounding ? '임베디드 미지원' : runtime.state}
+						</span>
 					</div>
 					<dl>
 						<div><dt>버전</dt><dd>{runtime.version ?? '미설치'}</dd></div>
 						<div><dt>DartLab MCP</dt><dd>{runtime.mcp?.connected ? '연결됨' : '미연결'}</dd></div>
+						<div><dt>로컬 채팅</dt><dd>{runtime.embeddedGrounding ? '지원' : '현재 버전 미지원'}</dd></div>
 						<div><dt>인증</dt><dd>CLI가 직접 관리</dd></div>
 					</dl>
 					<div class="actions">
@@ -158,4 +163,6 @@
 	code { display: block; padding: .75rem; border-radius: 8px; background: #090a0c; overflow-x: auto; white-space: pre; font-size: .75rem; }
 	.error { color: #ff8c8c; padding: .65rem; border: 1px solid #713b3b; border-radius: 8px; }
 	.empty { color: var(--dl-ink-dim, #9aa0aa); padding: 1rem 0; }
+	.spinner { display: block; width: 1.4rem; height: 1.4rem; border: 2px solid var(--dl-line, #2a2c33); border-top-color: var(--dl-accent, #ff5a36); border-radius: 50%; animation: spin .8s linear infinite; }
+	@keyframes spin { to { transform: rotate(360deg); } }
 </style>

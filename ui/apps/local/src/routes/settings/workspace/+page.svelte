@@ -16,7 +16,7 @@
 		conn = 'checking';
 		try {
 			const runtimes = await listAgentRuntimes(false);
-			const ready = runtimes.filter((item) => item.state === 'ready');
+			const ready = runtimes.filter((item) => item.groundedReady);
 			runtimeCount = ready.length;
 			const preferred = localStorage.getItem('dartlab-agent-runtime');
 			const selected = ready.find((item) => item.runtimeId === preferred) ?? ready[0] ?? null;

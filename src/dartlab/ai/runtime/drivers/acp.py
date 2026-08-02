@@ -11,7 +11,7 @@ from ..contracts import AgentEvent, ProcessSpec, RuntimeDescriptor
 from ..eventProjection import EventProjector
 from ..mcpBootstrap import embeddedMcpServerSpec
 from ..processSupervisor import JsonRpcChannel, ProcessSupervisor
-from .base import DriverHandle
+from .base import DriverHandle, runtimeLaunchArgv
 
 
 class AcpDriver:
@@ -24,6 +24,7 @@ class AcpDriver:
         sessionId: str,
         cwd: Path,
         nativeSessionId: str | None = None,
+        instructions: str = "",
     ) -> DriverHandle:
         """Sig: open(descriptor, executable, sessionId, cwd, nativeSessionId=None) -> DriverHandle.
 
@@ -32,26 +33,34 @@ class AcpDriver:
         Raises: transport or JSON-RPC errors on handshake failure.
         Example: 엔진의 `openSession`에서 호출한다.
         """
-        supervisor = ProcessSupervisor(ProcessSpec((executable, *descriptor.launchArgs), cwd))
+        supervisor = ProcessSupervisor(ProcessSpec(runtimeLaunchArgv(descriptor, executable), cwd))
         supervisor.start()
-        channel = JsonRpcChannel(supervisor)
-        channel.request(
-            "initialize",
-            {
-                "protocolVersion": 1,
-                "clientCapabilities": {"fs": {"readTextFile": False, "writeTextFile": False}},
-                "clientInfo": {"name": "dartlab", "version": "1"},
-            },
-            timeout=20,
-        )
-        sessionParams = {
-            "cwd": str(cwd.resolve()),
-            "mcpServers": [embeddedMcpServerSpec()],
-        }
-        if nativeSessionId:
-            result = channel.request("session/load", {**sessionParams, "sessionId": nativeSessionId}, timeout=30)
-        else:
-            result = channel.request("session/new", sessionParams, timeout=30)
+        try:
+            channel = JsonRpcChannel(supervisor)
+            channel.request(
+                "initialize",
+                {
+                    "protocolVersion": 1,
+                    "clientCapabilities": {"fs": {"readTextFile": False, "writeTextFile": False}},
+                    "clientInfo": {"name": "dartlab", "version": "1"},
+                },
+                timeout=20,
+            )
+            sessionParams = {
+                "cwd": str(cwd.resolve()),
+                "mcpServers": [embeddedMcpServerSpec()],
+            }
+            if nativeSessionId:
+                result = channel.request(
+                    "session/load",
+                    {**sessionParams, "sessionId": nativeSessionId},
+                    timeout=30,
+                )
+            else:
+                result = channel.request("session/new", sessionParams, timeout=30)
+        except Exception:
+            supervisor.stop()
+            raise
         resolvedNativeId = str(result.get("sessionId") or nativeSessionId or "")
         if not resolvedNativeId:
             supervisor.stop()

@@ -34,6 +34,7 @@
 		tier = 'public',
 		header,
 		onNavigate,
+		onAsk,
 		onclose
 	}: {
 		code: string;
@@ -44,6 +45,7 @@
 		tier?: 'public' | 'local'; // export tier 라벨(03 §7) · public=[설치 ↗] hint / local=완전판. ExportDrawer 로 전달.
 		header?: Snippet; // 비embedded·비fullscreen 표준 헤더 · 셸 주입(landing=사이트 Header). 미주입=헤더 없음(터미널 오버레이).
 		onNavigate: (code: string, vs: string[]) => void | Promise<void>;
+		onAsk?: (code: string) => void | Promise<void>; // local 셸은 공용 Agent Runtime chat으로 연결한다.
 		onclose?: () => void; // embedded 전용 · 헤더 우측 닫기 버튼
 	} = $props();
 	const vsCodes = $derived(vs ?? []);
@@ -280,6 +282,10 @@
 		if (exportOpen) askOpen = false;
 	}
 	function openAsk() {
+		if (onAsk) {
+			void onAsk(code);
+			return;
+		}
 		askOpen = !askOpen;
 		if (askOpen) exportOpen = false;
 	}

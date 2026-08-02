@@ -6,14 +6,16 @@ import json
 import logging
 import os
 import uuid
+from collections import OrderedDict
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 from pathlib import Path
+from threading import RLock
 from typing import Any
 
 from dartlab.productOutcome import advanceOutcome, registerOutcomeEvidence, startOutcome
 
-from .analysisCapsule import buildAnalysisCapsule
+from .analysisCapsule import buildAnalysisCapsule, buildTurnQuestion
 from .contracts import AgentEvent, RuntimeSession, nowIso
 from .discovery import probeAllRuntimes, probeRuntime
 from .drivers import AcpDriver, ClaudeStreamJsonDriver, CodexAppServerDriver
@@ -54,10 +56,12 @@ class _OutcomeTracker:
     outcomeId: str | None
     scoped: bool = False
     grounded: bool = False
-    delivered: bool = False
+    answerText: str = ""
     completed: bool = False
+    completionSucceeded: bool = False
     failed: bool = False
     registeredRefIds: set[str] = field(default_factory=set)
+    registeredRefs: dict[str, str] = field(default_factory=dict)
     toolNames: dict[str, str] = field(default_factory=dict)
 
     @classmethod
@@ -101,6 +105,7 @@ class _OutcomeTracker:
                 self.grounded = True
             registerOutcomeEvidence(str(self.outcomeId), refIds)
             self.registeredRefIds.update(refIds)
+            self.registeredRefs.update({str(item["id"]): str(item.get("kind") or "") for item in refDetails})
             payload["evidenceRefs"] = refIds
             payload["refDetails"] = [{**item, "outcomeId": self.outcomeId} for item in refDetails]
         except Exception:  # noqa: BLE001
@@ -118,9 +123,10 @@ class _OutcomeTracker:
     def observe(self, event: AgentEvent) -> None:
         """전달, 완료, 실패 표식만 누적한다."""
         if event.kind == "messageDelta" and event.payload.get("text"):
-            self.delivered = True
+            self.answerText += str(event.payload["text"])
         elif event.kind == "turnCompleted":
             self.completed = True
+            self.completionSucceeded = _turnCompletedSuccessfully(event.payload)
         elif event.kind == "runtimeError":
             self.failed = True
 
@@ -129,9 +135,11 @@ class _OutcomeTracker:
         if not (
             self.outcomeId
             and self.grounded
-            and self.delivered
+            and self.answerText.strip()
             and self.completed
+            and self.completionSucceeded
             and self.registeredRefIds
+            and self._hasCitedRequiredEvidence()
             and not self.failed
         ):
             return
@@ -139,6 +147,11 @@ class _OutcomeTracker:
             advanceOutcome(self.outcomeId, "delivered")
         except Exception:  # noqa: BLE001
             logger.exception("product outcome 전달 기록 실패")
+
+    def _hasCitedRequiredEvidence(self) -> bool:
+        """답변 본문에 표 또는 문서, 값, 기준시점 ref가 실제로 인용됐는지 확인한다."""
+        citedKinds = {kind for refId, kind in self.registeredRefs.items() if refId in self.answerText}
+        return bool("valueRef" in citedKinds and "dateRef" in citedKinds and {"tableRef", "docRef"} & citedKinds)
 
 
 def _runtimeStorePath() -> Path:
@@ -177,6 +190,8 @@ class AgentRuntimeEngine:
             "claudeStreamJson": ClaudeStreamJsonDriver(),
             "acp": AcpDriver(),
         }
+        self._evidenceJournal: OrderedDict[tuple[str, str], dict[str, Any]] = OrderedDict()
+        self._evidenceLock = RLock()
 
     def status(self, *, refresh: bool = False) -> dict[str, Any]:
         """Sig: status(*, refresh=False) -> dict[str, Any].
@@ -196,7 +211,9 @@ class AgentRuntimeEngine:
                     **descriptor.toDict(),
                     **probe.toDict(),
                     "mcp": mcp,
-                    "groundedReady": probe.state == "ready" and bool(mcp.get("connected")),
+                    "groundedReady": (
+                        probe.state == "ready" and descriptor.embeddedGrounding and bool(mcp.get("connected"))
+                    ),
                 }
             )
         return {"runtimes": runtimes, "sessions": self.sessionManager.status()}
@@ -214,6 +231,10 @@ class AgentRuntimeEngine:
                 raise KeyError(preferredRuntimeId)
             if probeRuntime(self.registry[preferredRuntimeId]).state != "ready":
                 raise RuntimeUnavailableError(f"{preferredRuntimeId} CLI를 사용할 수 없습니다")
+            if not self.registry[preferredRuntimeId].embeddedGrounding:
+                raise RuntimeUnavailableError(
+                    f"{preferredRuntimeId}의 현재 ACP 구현은 embedded DartLab MCP를 노출하지 않습니다"
+                )
             if not probeMcpConnection(preferredRuntimeId).get("connected"):
                 raise RuntimeUnavailableError(
                     f"{preferredRuntimeId}에 DartLab MCP가 연결되지 않았습니다. "
@@ -221,7 +242,11 @@ class AgentRuntimeEngine:
                 )
             return preferredRuntimeId
         for runtimeId, descriptor in self.registry.items():
-            if probeRuntime(descriptor).state == "ready" and probeMcpConnection(runtimeId).get("connected"):
+            if (
+                descriptor.embeddedGrounding
+                and probeRuntime(descriptor).state == "ready"
+                and probeMcpConnection(runtimeId).get("connected")
+            ):
                 return runtimeId
         raise RuntimeUnavailableError(
             "DartLab MCP까지 준비된 로컬 에이전트를 찾지 못했습니다. "
@@ -275,12 +300,14 @@ class AgentRuntimeEngine:
         if probe.executable is None:
             raise RuntimeUnavailableError(f"{resolvedRuntimeId} 실행 파일을 찾지 못했습니다")
         driver = self.drivers[descriptor.driver]
+        instructions = buildAnalysisCapsule(cwd=resolvedCwd, mcpConnected=True)
         handle = driver.open(
             descriptor,
             probe.executable,
             resolvedSessionId,
             resolvedCwd,
             existing.nativeSessionId if existing else None,
+            instructions=instructions,
         )
         managed = ManagedSession(driver, handle, EventBuffer())
         self.sessionManager.put(resolvedSessionId, managed)
@@ -314,7 +341,13 @@ class AgentRuntimeEngine:
             raise RuntimeError("세션을 재개하지 못했습니다")
         return resumed
 
-    def streamTurn(self, sessionId: str, question: str) -> Iterator[AgentEvent]:
+    def streamTurn(
+        self,
+        sessionId: str,
+        question: str,
+        *,
+        context: dict[str, Any] | None = None,
+    ) -> Iterator[AgentEvent]:
         """Sig: streamTurn(sessionId, question) -> Iterator[AgentEvent].
 
         Args: 열린 sessionId와 사용자 질문이다.
@@ -328,9 +361,11 @@ class AgentRuntimeEngine:
         tracker = _OutcomeTracker.start()
         mcp = probeMcpConnection(managed.handle.descriptor.runtimeId)
         instructions = buildAnalysisCapsule(cwd=managed.handle.cwd, mcpConnected=bool(mcp.get("connected")))
+        turnQuestion = buildTurnQuestion(question, context)
         try:
-            for event in managed.driver.streamTurn(managed.handle, question, instructions=instructions):
+            for event in managed.driver.streamTurn(managed.handle, turnQuestion, instructions=instructions):
                 payload = tracker.enrich(event)
+                self._rememberEvidence(payload)
                 publicEvent = AgentEvent(
                     event.schemaVersion,
                     event.sessionId,
@@ -356,6 +391,32 @@ class AgentRuntimeEngine:
             managed.buffer.append(errorEvent)
             yield errorEvent
 
+    def _rememberEvidence(self, payload: dict[str, Any]) -> None:
+        """한 프로세스 수명 동안 exact ref의 작은 공개 projection을 bounded 보관한다."""
+        outcomeId = str(payload.get("outcomeId") or "")
+        details = payload.get("refDetails")
+        if not outcomeId or not isinstance(details, list):
+            return
+        with self._evidenceLock:
+            for item in details[:100]:
+                if not isinstance(item, dict) or not item.get("id"):
+                    continue
+                key = (outcomeId, str(item["id"]))
+                self._evidenceJournal[key] = dict(item)
+                self._evidenceJournal.move_to_end(key)
+            while len(self._evidenceJournal) > 512:
+                self._evidenceJournal.popitem(last=False)
+
+    def resolveEvidence(self, outcomeId: str, refId: str) -> dict[str, Any]:
+        """현재 엔진이 실제 도구 완료에서 관측한 exact evidence만 해석한다."""
+        key = (outcomeId, refId)
+        with self._evidenceLock:
+            detail = self._evidenceJournal.get(key)
+            if detail is None:
+                raise KeyError("evidence detail not found in the active runtime")
+            self._evidenceJournal.move_to_end(key)
+            return dict(detail)
+
     def stream(
         self,
         question: str,
@@ -363,6 +424,7 @@ class AgentRuntimeEngine:
         runtimeId: str | None = None,
         sessionId: str | None = None,
         cwd: Path | None = None,
+        context: dict[str, Any] | None = None,
     ) -> Iterator[AgentEvent]:
         """Sig: stream(question, *, runtimeId=None, sessionId=None, cwd=None) -> Iterator[AgentEvent].
 
@@ -379,7 +441,7 @@ class AgentRuntimeEngine:
         )
         managed.buffer.append(started)
         yield started
-        yield from self.streamTurn(session.sessionId, question)
+        yield from self.streamTurn(session.sessionId, question, context=context)
 
     def replay(self, sessionId: str, *, afterSequence: int = 0) -> list[AgentEvent]:
         """Sig: replay(sessionId, *, afterSequence=0) -> list[AgentEvent].
@@ -506,6 +568,18 @@ def _containsFalseOk(value: Any, *, depth: int = 0) -> bool:
     return False
 
 
+def _turnCompletedSuccessfully(payload: dict[str, Any]) -> bool:
+    """Sig: _turnCompletedSuccessfully(payload) -> bool.
+
+    Args: runtime별 terminal turn payload다.
+    Returns: failed, interrupted, cancelled가 아닌 정상 완료면 True다.
+    Example: `_turnCompletedSuccessfully({"status": "completed"})`.
+    """
+    turn = payload.get("turn") if isinstance(payload.get("turn"), dict) else {}
+    status = str(payload.get("status") or turn.get("status") or payload.get("stopReason") or "completed").lower()
+    return status not in {"failed", "error", "interrupted", "cancelled", "canceled", "refused"}
+
+
 def _evidenceDetails(payload: dict[str, Any]) -> list[dict[str, Any]]:
     """Sig: _evidenceDetails(payload) -> list[dict[str, Any]].
 
@@ -544,6 +618,7 @@ def _evidenceDetails(payload: dict[str, Any]) -> list[dict[str, Any]]:
                     "title": str(value.get("title") or refId)[:500],
                     "source": str(value.get("source") or "")[:1000],
                     "sourceType": str(value.get("sourceType") or "internal")[:100],
+                    "payload": _publicEvidencePayload(value.get("payload")),
                 },
             )
         for key, item in value.items():
@@ -551,3 +626,16 @@ def _evidenceDetails(payload: dict[str, Any]) -> list[dict[str, Any]]:
 
     visit(payload)
     return list(found.values())
+
+
+def _publicEvidencePayload(value: Any) -> dict[str, Any]:
+    """근거 드로어에 필요한 값만 크기 제한해 공개한다."""
+    if not isinstance(value, dict):
+        return {}
+    allowed = ("stockCode", "period", "metric", "value", "unit", "dataAsOf", "page")
+    result: dict[str, Any] = {}
+    for key in allowed:
+        item = value.get(key)
+        if isinstance(item, (str, int, float, bool)) or item is None:
+            result[key] = item
+    return result

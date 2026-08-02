@@ -42,13 +42,10 @@ def ask(question: str, **kwargs: Any) -> Any:
     gen = _ask(question, stream=True, **kwargs)
     # auto-stream — text consume 후 None 반환
     text_chunks = []
-    try:
-        for chunk in gen:
-            print(chunk, end="", flush=True)
-            text_chunks.append(chunk)
-        print()
-    except Exception:  # noqa: BLE001
-        pass
+    for chunk in gen:
+        print(chunk, end="", flush=True)
+        text_chunks.append(chunk)
+    print()
     return "".join(text_chunks) or None
 
 

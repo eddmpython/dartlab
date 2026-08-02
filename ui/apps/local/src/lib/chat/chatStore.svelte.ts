@@ -5,7 +5,7 @@
 // Svelte 5 주의: $state 배열의 원소는 프록시다. 대화·메시지 변형은 항상 스토어의 conversations 프록시를
 // 거친 참조(this.active, conv.messages[idx])로 해야 반응한다. 배열 재할당(new/delete/clearAll)만 = 로 교체.
 import { isKrStockCode, type AiCapabilities, type AiPort, type AiStreamEvent, type EvidenceRef } from '@dartlab/ui-contracts';
-import { resolveAgentApproval } from '$lib/runtime/agentRuntimeApi';
+import { cancelAgentSession, deleteAgentSession, resolveAgentApproval } from '$lib/runtime/agentRuntimeApi';
 
 /**
  * 작업대 블록. LLM 이 자율 호출한 도구 한 건 (입력 args + 결과 표/마크다운/stdout).
@@ -125,6 +125,7 @@ export class ChatStore {
 	}
 
 	deleteConversation(id: string): void {
+		void deleteAgentSession(id).catch(() => undefined);
 		this.conversations = this.conversations.filter((c) => c.id !== id);
 		if (this.activeId === id) this.activeId = this.conversations[0]?.id ?? null;
 		this.#persist();
@@ -149,6 +150,9 @@ export class ChatStore {
 	}
 
 	clearAll(): void {
+		for (const conversation of this.conversations) {
+			void deleteAgentSession(conversation.id).catch(() => undefined);
+		}
 		this.conversations = [];
 		this.activeId = null;
 		this.#persist();
@@ -160,13 +164,7 @@ export class ChatStore {
 		this.busy = true;
 
 		const conv = this.#ensureActive();
-		if (conv.messages.length === 0) conv.title = text.slice(0, 24);
-		// 이전 턴들(현재 질문 제외)을 히스토리로. 후속 질문("그럼 영업이익률은?")의 맥락 유지.
-		// 로컬 모델 컨텍스트 창 보호를 위해 최근 12 턴으로 제한.
-		const history = conv.messages
-			.filter((m) => m.text && !m.error)
-			.slice(-12)
-			.map((m) => ({ role: m.role, content: m.text }));
+		if (conv.messages.length === 0) conv.title = this.#generatedTitle(conv.createdAt);
 		conv.messages.push({
 			id: this.#uid('u'),
 			role: 'user',
@@ -213,7 +211,6 @@ export class ChatStore {
 				runtimeId: this.capabilities?.runtimeId,
 				sessionId: conv.id,
 				code: isKrStockCode(code) ? code : undefined,
-				history
 			})) {
 				this.#apply(conv, idx, ev);
 			}
@@ -224,6 +221,24 @@ export class ChatStore {
 			conv.updatedAt = Date.now();
 			this.busy = false;
 			this.#persist();
+		}
+	}
+
+	setContextCode(code: string): void {
+		const conversation = this.#ensureActive();
+		conversation.code = isKrStockCode(code) ? code : '';
+	}
+
+	async cancel(): Promise<void> {
+		const conversation = this.active;
+		if (!conversation || !this.busy) return;
+		try {
+			await cancelAgentSession(conversation.id);
+		} catch (error) {
+			const message = conversation.messages.at(-1);
+			if (message?.role === 'assistant') {
+				message.error = error instanceof Error ? error.message : String(error);
+			}
 		}
 	}
 
@@ -252,14 +267,14 @@ export class ChatStore {
 				m.text += ev.delta;
 				break;
 			case 'THINKING_DELTA':
-				m.thinking += ev.delta;
+				// 원시 추론은 제품 UI와 브라우저 저장소에 노출하지 않는다.
 				break;
 			case 'TOOL_CALL_START':
-				// 작업대 카드 신설 (진행중). args 를 보존해 펼쳤을 때 입력을 보여준다.
+				// 채팅에는 실행 상태만 보이고 원시 인자와 결과 payload는 보존하지 않는다.
 				m.tools.push({
 					id: ev.toolCallId,
 					name: ev.toolName,
-					args: ev.args ?? {},
+					args: {},
 					status: 'running',
 					summary: '',
 					markdown: null,
@@ -275,14 +290,6 @@ export class ChatStore {
 					t.status = ev.status === 'error' ? 'error' : 'done';
 					if (ev.summary) t.summary = ev.summary;
 					if (ev.error) t.error = ev.error;
-					const r = ev.result;
-					if (r) {
-						if (typeof r.markdown === 'string' && r.markdown.trim()) t.markdown = r.markdown;
-						if (typeof r.stdout === 'string' && r.stdout.trim()) t.stdout = r.stdout;
-						if (Array.isArray(r.tableHead)) t.tableHead = r.tableHead;
-						if (typeof r.tableRows === 'number') t.tableRows = r.tableRows;
-						else if (Array.isArray(r.tableRows)) t.tableRows = r.tableRows.length;
-					}
 				}
 				// 근거는 id 중복 제거해 누적 (같은 ref 가 여러 도구 결과에 반복 등장).
 				if (ev.refDetails?.length) {
@@ -319,34 +326,27 @@ export class ChatStore {
 		return `${p}-${Date.now().toString(36)}-${this.#seq}`;
 	}
 
+	#generatedTitle(createdAt: number): string {
+		return `대화 ${new Date(createdAt).toLocaleString('ko-KR', {
+			month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
+		})}`;
+	}
+
 	#load(): void {
 		if (typeof localStorage === 'undefined') return;
 		try {
 			const raw = localStorage.getItem(LS_KEY);
 			if (!raw) return;
 			const data = JSON.parse(raw) as { conversations?: Conversation[]; activeId?: string | null };
-			// 재시작 후 stale streaming/running 은 정리한다(결과가 다시 오지 않으므로).
+			// 브라우저에는 내용 없는 세션 메타만 복원한다. 대화 본문은 CLI 네이티브 세션이 소유한다.
 			this.conversations = (data.conversations ?? []).map((c) => ({
 				id: c.id,
-				title: c.title ?? '새 대화',
-				code: c.code ?? '',
+				title: this.#generatedTitle(c.createdAt ?? Date.now()),
+				code: '',
 				createdAt: c.createdAt ?? Date.now(),
 				updatedAt: c.updatedAt ?? Date.now(),
 				pinnedAt: c.pinnedAt ?? null,
-				messages: (c.messages ?? []).map((m) => ({
-					...m,
-					streaming: false,
-					thinking: m.thinking ?? '',
-					approvals: (m.approvals ?? []).map((approval) => ({
-						...approval,
-						status: approval.status === 'pending' ? ('error' as const) : approval.status
-					})),
-					// 재시작 후 진행중이던 도구 카드는 완료 처리 (결과가 다시 오지 않으므로).
-					tools: (m.tools ?? []).map((t) => ({
-						...t,
-						status: t.status === 'running' ? ('done' as const) : t.status
-					}))
-				}))
+				messages: []
 			}));
 			this.activeId = data.activeId ?? this.conversations[0]?.id ?? null;
 		} catch {
@@ -358,8 +358,10 @@ export class ChatStore {
 		if (typeof localStorage === 'undefined') return;
 		try {
 			const conversations = this.conversations.map((c) => ({
-				...c,
-				messages: c.messages.map((m) => ({ ...m, streaming: false }))
+				id: c.id,
+				createdAt: c.createdAt,
+				updatedAt: c.updatedAt,
+				pinnedAt: c.pinnedAt
 			}));
 			localStorage.setItem(LS_KEY, JSON.stringify({ conversations, activeId: this.activeId }));
 		} catch {

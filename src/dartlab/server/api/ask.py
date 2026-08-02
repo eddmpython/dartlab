@@ -71,16 +71,16 @@ async def _streamPublicAsk(req: AskRequest):
             "corpName": company.corpName,
             "company": company.company,
         }
-    # 다중 턴 컨텍스트 — 직전 history 를 user message 앞에 prepend.
-    # HistoryMessage(role, text) → AgentRunMessage(role, content). max_length=50 은 AskRequest 가 강제.
-    messages: list[AgentRunMessage] = []
-    for h in req.history or []:
-        if not h.text:
-            continue
-        if h.role not in ("user", "assistant", "system"):
-            continue
-        messages.append(AgentRunMessage(role=h.role, content=h.text))
-    messages.append(AgentRunMessage(role="user", content=req.question))
+    if req.viewContext and req.viewContext.period:
+        context["period"] = req.viewContext.period
+    if req.include:
+        context["include"] = req.include
+    if req.exclude:
+        context["exclude"] = req.exclude
+    if req.reportMode:
+        context["reportMode"] = True
+    # 대화 전문은 DartLab이 재주입하지 않는다. sessionId에 연결된 CLI native session이 소유한다.
+    messages = [AgentRunMessage(role="user", content=req.question)]
     agent_req = AgentRunRequest(
         threadId=req.sessionId,
         messages=messages,

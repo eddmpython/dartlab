@@ -190,9 +190,11 @@ def productOutcomes():
 
 @router.post("/product-outcomes/{outcomeId}/verify")
 def verifyProductOutcome(outcomeId: str, req: EvidenceVerifyRequest):
-    """같은 outcome에서 발급된 exact evidence를 연 경우에만 verified로 전이한다."""
+    """exact evidence를 실제 해석한 뒤 같은 outcome receipt를 verified로 전이한다."""
     try:
-        return verifyOutcomeEvidence(outcomeId, req.refId).toDict()
+        evidence = getRuntimeEngine().resolveEvidence(outcomeId, req.refId)
+        receipt = verifyOutcomeEvidence(outcomeId, req.refId).toDict()
+        return {"evidence": evidence, "receipt": receipt}
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except ValueError as exc:

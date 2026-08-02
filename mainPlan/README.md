@@ -70,7 +70,7 @@
 
 | 폴더 | 상태 | 한 줄 |
 |---|---|---|
-| [agent-runtime-engine](agent-runtime-engine/) | ⚪ | 설치된 Codex·Claude Code·ACP agent를 사용하는 local Bring Your Agent runtime. 직접 모델 OAuth/API와 provider hardcoding을 제거하는 상세 설계, 구현 0. |
+| [agent-runtime-engine](agent-runtime-engine/) | 🟢 | 설치된 agent CLI를 사용하는 local Bring Your Agent runtime. Claude와 Codex grounded ask, local GUI SSE, exact evidence resolve와 verified 전이를 실증했다. Cline embedded는 upstream ACP가 session MCP를 노출할 때까지 fail-closed. |
 | [ai-workbench-connector](ai-workbench-connector/) | ⚪ | 외부 AI 가 호출하는 remote evidence workbench connector. local MCP tool identity는 agent-runtime-engine과 정합하되 remote auth/CF 경계는 별도. |
 | [first-party-ai](first-party-ai/) | ⚪ | public deterministic/on-device compose 중심으로 재정합 필요. local advanced provider와 direct edge model 전제는 agent-runtime-engine 결정 뒤 재검. |
 

@@ -8,6 +8,7 @@ import pytest
 
 from dartlab.ai.runtime.contracts import ProcessSpec, RuntimeDescriptor, RuntimeProbe
 from dartlab.ai.runtime.drivers.claudeStreamJson import _claudeToolArgs
+from dartlab.ai.runtime.drivers.codexAppServer import CodexAppServerDriver
 from dartlab.ai.runtime.eventBuffer import EventBuffer
 from dartlab.ai.runtime.eventProjection import EventProjector
 from dartlab.ai.runtime.installManager import buildInstallPlan, executeInstallPlan
@@ -35,6 +36,99 @@ def testRuntimeRegistryHasThreeNativeDrivers():
     assert set(registry) == {"codex", "claude", "cline"}
     assert {item.driver for item in registry.values()} == {"codexAppServer", "claudeStreamJson", "acp"}
     assert all("model" not in item.toDict() for item in registry.values())
+    assert loadRuntimeRegistry()["cline"].launchArgs == ("--acp", "--auto-approve", "false")
+    assert loadRuntimeRegistry()["cline"].embeddedGrounding is False
+    assert loadRuntimeRegistry()["codex"].embeddedGrounding is True
+
+
+def testCodexUsesThreadInstructionsAndReadOnlyTurn(monkeypatch, tmp_path):
+    calls: list[tuple[str, dict]] = []
+
+    class FakeSupervisor:
+        def __init__(self, _spec):
+            self.stopped = False
+
+        def start(self):
+            return None
+
+        def stop(self):
+            self.stopped = True
+
+    class FakeChannel:
+        def __init__(self, _supervisor):
+            self.messages = [{"method": "turn/completed", "params": {"turn": {"status": "completed"}}}]
+
+        def request(self, method, params, *, timeout):
+            calls.append((method, params))
+            if method == "thread/start":
+                return {"thread": {"id": "thread-1"}}
+            if method == "turn/start":
+                return {"turn": {"id": "turn-1"}}
+            return {}
+
+        def notify(self, method, params):
+            calls.append((method, params))
+
+        def nextMessage(self, *, timeout):
+            return self.messages.pop(0)
+
+    monkeypatch.setattr("dartlab.ai.runtime.drivers.codexAppServer.ProcessSupervisor", FakeSupervisor)
+    monkeypatch.setattr("dartlab.ai.runtime.drivers.codexAppServer.JsonRpcChannel", FakeChannel)
+    descriptor = RuntimeDescriptor(
+        "codex",
+        "Codex",
+        "codexAppServer",
+        "jsonrpc-ndjson",
+        ("codex",),
+        ("--version",),
+        ("app-server",),
+        (),
+        "https://example.invalid",
+    )
+    driver = CodexAppServerDriver()
+    handle = driver.open(descriptor, "codex", "session-1", tmp_path, instructions="DartLab capsule")
+
+    list(driver.streamTurn(handle, "질문", instructions="DartLab capsule"))
+
+    threadParams = next(params for method, params in calls if method == "thread/start")
+    turnParams = next(params for method, params in calls if method == "turn/start")
+    assert threadParams["developerInstructions"] == "DartLab capsule"
+    assert threadParams["sandbox"] == "read-only"
+    assert threadParams["approvalPolicy"] == "never"
+    assert "developerInstructions" not in turnParams
+    assert turnParams["sandboxPolicy"] == {"type": "readOnly", "networkAccess": False}
+
+
+def testCodexHandshakeFailureStopsChild(monkeypatch, tmp_path):
+    holder = {}
+
+    class FakeSupervisor:
+        def __init__(self, _spec):
+            self.stopped = False
+            holder["supervisor"] = self
+
+        def start(self):
+            return None
+
+        def stop(self):
+            self.stopped = True
+
+    class FailingChannel:
+        def __init__(self, _supervisor):
+            pass
+
+        def request(self, method, params, *, timeout):
+            raise RuntimeError("handshake failed")
+
+    monkeypatch.setattr("dartlab.ai.runtime.drivers.codexAppServer.ProcessSupervisor", FakeSupervisor)
+    monkeypatch.setattr("dartlab.ai.runtime.drivers.codexAppServer.JsonRpcChannel", FailingChannel)
+    descriptor = RuntimeDescriptor(
+        "codex", "Codex", "codexAppServer", "jsonrpc", ("codex",), (), ("app-server",), (), "https://example.invalid"
+    )
+
+    with pytest.raises(RuntimeError, match="handshake failed"):
+        CodexAppServerDriver().open(descriptor, "codex", "session-1", tmp_path, instructions="capsule")
+    assert holder["supervisor"].stopped is True
 
 
 def testEventProjectionKeepsStableSemanticKinds():
@@ -79,6 +173,30 @@ def testProcessSupervisorUsesNdjsonWithoutShell(tmp_path):
     try:
         supervisor.sendJson({"hello": "dartlab"})
         assert supervisor.readJson(timeout=5) == {"hello": "dartlab"}
+    finally:
+        supervisor.stop()
+
+
+def testJsonRpcStartRequestUsesAnIdWithoutWaiting(tmp_path):
+    from dartlab.ai.runtime.processSupervisor import JsonRpcChannel
+
+    script = tmp_path / "echoRequest.py"
+    script.write_text(
+        "import json, sys\nfor line in sys.stdin:\n print(json.dumps(json.loads(line)), flush=True)\n",
+        encoding="utf-8",
+    )
+    supervisor = ProcessSupervisor(ProcessSpec((sys.executable, "-u", str(script)), tmp_path))
+    supervisor.start()
+    try:
+        channel = JsonRpcChannel(supervisor)
+        requestId = channel.startRequest("turn/interrupt", {"turnId": "turn-1"})
+        message = supervisor.readJson(timeout=5)
+        assert message == {
+            "jsonrpc": "2.0",
+            "id": requestId,
+            "method": "turn/interrupt",
+            "params": {"turnId": "turn-1"},
+        }
     finally:
         supervisor.stop()
 

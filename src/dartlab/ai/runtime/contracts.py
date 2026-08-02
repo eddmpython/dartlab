@@ -49,6 +49,8 @@ class RuntimeDescriptor:
     launchArgs: tuple[str, ...]
     installArgs: tuple[str, ...]
     officialUrl: str
+    windowsLaunch: tuple[str, ...] = ()
+    embeddedGrounding: bool = True
 
     def toDict(self) -> dict[str, Any]:
         """Sig: toDict() -> dict[str, Any].

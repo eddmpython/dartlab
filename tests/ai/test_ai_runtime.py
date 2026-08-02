@@ -53,6 +53,20 @@ def test_public_ask_stream_prints_and_returns_text(monkeypatch, capsys):
     assert "DartLab runtime 응답" in capsys.readouterr().out
 
 
+def test_public_ask_stream_does_not_swallow_runtime_failure(monkeypatch):
+    import dartlab
+    from dartlab.ai import kernel
+
+    def failingEvents(_question: str, **_kwargs):
+        raise RuntimeError("runtime failed")
+        yield
+
+    monkeypatch.setattr(kernel, "runRuntimeAgent", failingEvents)
+
+    with pytest.raises(RuntimeError, match="runtime failed"):
+        dartlab.ask("실패를 숨기지 마", stream=True)
+
+
 def test_internal_events_are_reserved_for_adapters(monkeypatch):
     from dartlab.ai import kernel
 

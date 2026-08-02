@@ -63,3 +63,15 @@
 ### Exit decision
 
 아직 없음. Phase 0 완료 후 `expand`, `improve`, `repair`, `revert` 중 하나를 기록한다.
+
+## 2026-08-02 첫 local verified analysis loop
+
+- local GUI와 동일한 `/api/agent/runs`에서 실제 삼성전자 질문이 DartLab MCP의 ReadSkill과 EngineCall을 거쳐 grounded 답변으로 완료됐다.
+- 사용자 근거 확인 동작과 동일한 API가 active runtime evidence journal에서 exact value ref를 먼저 resolve했다. 확인된 값은 2026Q1 매출액 133,873,444,000,000원이다.
+- exact ref hash가 같은 outcome에 등록된 것을 확인한 뒤 상태가 `delivered`에서 `verified`로 단조 전이했다.
+- 로컬 snapshot에서 `verified=1`을 확인했다. 이는 개발 환경의 실제 operator journey 1건이며 전역 주간 cohort나 제품 성장 실적으로 승격하지 않는다.
+- 질문, 답변, provider, model, transcript는 product outcome SQLite에 저장하지 않았다. 브라우저 localStorage도 content-free session metadata만 저장한다.
+
+### 판정
+
+`improve`. semantic foundation은 실제 verified 전이까지 동작한다. 다음 단계는 4개 주간 evidence window와 자동 증거 registry이며, 그 전까지 전역 북극성 값은 계속 `미측정`이다.

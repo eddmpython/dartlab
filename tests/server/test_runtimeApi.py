@@ -19,6 +19,7 @@ def testRuntimeInstallEndpointReturnsPlanWithoutExecuting():
 
 def testProductOutcomeVerifyEndpointRequiresExactRegisteredRef(tmp_path, monkeypatch):
     import dartlab.productOutcome as outcomeService
+    import dartlab.server.api.runtime as runtimeApi
     from dartlab.productOutcome import advanceOutcome, registerOutcomeEvidence, startOutcome
     from dartlab.server.api.runtime import EvidenceVerifyRequest, verifyProductOutcome
 
@@ -29,8 +30,17 @@ def testProductOutcomeVerifyEndpointRequiresExactRegisteredRef(tmp_path, monkeyp
         advanceOutcome(outcome.outcomeId, state)
     registerOutcomeEvidence(outcome.outcomeId, ["tableRef:exact"])
     advanceOutcome(outcome.outcomeId, "delivered")
+    monkeypatch.setattr(
+        runtimeApi,
+        "getRuntimeEngine",
+        lambda: type(
+            "Engine",
+            (),
+            {"resolveEvidence": lambda self, outcomeId, refId: {"id": refId, "kind": "tableRef"}},
+        )(),
+    )
 
     receipt = verifyProductOutcome(outcome.outcomeId, EvidenceVerifyRequest(refId="tableRef:exact"))
 
-    assert receipt["state"] == "verified"
-    assert set(receipt) == {"outcomeId", "feature", "state", "createdAt", "updatedAt"}
+    assert receipt["receipt"]["state"] == "verified"
+    assert receipt["evidence"] == {"id": "tableRef:exact", "kind": "tableRef"}

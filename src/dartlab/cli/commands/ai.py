@@ -32,6 +32,11 @@ def _devUiPort() -> int:
     return 5174
 
 
+def _npmCommand(*, platform: str | None = None) -> str:
+    """Windows의 npm.cmd와 POSIX의 npm을 shell 없이 선택한다."""
+    return "npm.cmd" if (platform or os.name) == "nt" else "npm"
+
+
 def run(args) -> int:
     """FastAPI 서버 + SPA를 시작하고 브라우저를 연다."""
     port = args.port
@@ -104,12 +109,12 @@ def _runDevMode(url: str) -> None:
     ui_src = resolveUiSourceDir()
     if not (ui_src / "node_modules").exists():
         print("npm install 실행 중...")
-        result = subprocess.run(["npm", "install"], cwd=str(ui_src), timeout=300)  # noqa: S603, S607
+        result = subprocess.run([_npmCommand(), "install"], cwd=str(ui_src), timeout=300)  # noqa: S603, S607
         if result.returncode != 0:
             raise CLIError("UI 의존성 설치에 실패했습니다.")
 
     def _vite() -> None:
-        result = subprocess.run(["npm", "run", "dev"], cwd=str(ui_src))  # noqa: S603, S607
+        result = subprocess.run([_npmCommand(), "run", "dev"], cwd=str(ui_src))  # noqa: S603, S607
         if result.returncode != 0:
             printWarning("Svelte dev 서버가 비정상 종료되었습니다.")
 

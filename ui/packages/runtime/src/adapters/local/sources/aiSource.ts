@@ -24,6 +24,7 @@ interface StatusProbe {
 		state: string;
 		version?: string | null;
 		mcp?: { connected?: boolean };
+		groundedReady?: boolean;
 	}>;
 }
 
@@ -45,8 +46,8 @@ export function localAiPort(api: LocalApi): AiPort {
 			const status = await api.getJson<StatusProbe>('/api/agent/runtimes');
 			const runtimes = status?.runtimes ?? [];
 			const preferred = typeof localStorage !== 'undefined' ? localStorage.getItem('dartlab-agent-runtime') : null;
-			const selected = runtimes.find((item) => item.runtimeId === preferred && item.state === 'ready')
-				?? runtimes.find((item) => item.state === 'ready')
+			const selected = runtimes.find((item) => item.runtimeId === preferred && item.groundedReady === true)
+				?? runtimes.find((item) => item.groundedReady === true)
 				?? null;
 			if (selected) {
 				return {

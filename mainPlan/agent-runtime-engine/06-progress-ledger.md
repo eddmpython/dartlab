@@ -86,3 +86,31 @@
 ### Exit decision
 
 Agent Runtime vertical slice와 Claude grounded delivery는 production 진입 가능하다. Cline·Codex는 공식 MCP 연결 후 같은 operator journey를 통과하기 전까지 fail-closed 상태다. root score 상향과 initiative 완료 이동은 실제 사용자가 UI에서 exact evidence를 연 verified operator journey 뒤에만 한다.
+
+## 2026-08-02 답변 품질과 GUI 종단간 강화
+
+상태: Claude와 Codex는 실제 grounded ask를 완주했고, local GUI 경로에서 exact evidence 확인과 `verified` 전이를 실증했다. Cline은 upstream ACP가 session MCP를 노출하지 않는 사실을 재확인해 embedded 실행을 계속 fail-closed로 둔다.
+
+### 추가 구현
+
+- runtime 턴 컨텍스트는 `stockCode`, `period`, `reportMode`, `include`, `exclude`, `dashboardSnapshot`만 16 KiB 이하로 전달한다. transcript는 DartLab이 재주입하거나 브라우저에 저장하지 않고 CLI native session이 소유한다.
+- 공개 답변은 native turn 성공, DartLab grounding tool 성공, 본문에 인용된 표 또는 문서, 값, 기준일 exact ref가 모두 있을 때만 커밋한다. 실패한 턴의 부분 답변은 공개하지 않는다.
+- Windows npm shim의 한글 인자 손상을 피하도록 manifest가 native 실행 진입점을 선언한다. Claude는 native executable, Codex와 Cline은 Node 진입점을 shell 없이 실행한다.
+- Codex instruction은 thread start 또는 resume의 `developerInstructions`로 전달하고 turn은 read-only sandbox와 approval never를 고정한다. interrupt는 request ID가 있는 JSON-RPC 요청이다.
+- Cline은 auto approve를 끄고, ACP가 embedded MCP를 실제 제공하지 않는 현 버전은 global 설정 존재만으로 `groundedReady`가 되지 않는다.
+- local chat은 DOMPurify allowlist, content-free session metadata, raw thinking 및 tool payload 비노출, 실제 cancel과 session delete, 모바일 sidebar overlay를 적용했다.
+- 근거 확인은 active runtime의 bounded evidence journal에서 exact detail을 먼저 resolve한 뒤 product outcome receipt를 `verified`로 전이한다.
+- `/ask`는 placeholder를 제거하고 실제 `/chat`으로 연결한다. `dartlab ai --dev`는 Windows에서 `npm.cmd`를 선택한다.
+
+### 실증 결과
+
+- Claude 실제 ask: 삼성전자 2026Q1 매출액 133,873,444,000,000원, table, value, date ref 인용, exit 0.
+- Codex 실제 ask: 같은 값과 세 exact ref를 한 문단으로 반환, exit 0.
+- local GUI와 같은 `/api/agent/runs` SSE: HTTP 200, unique run과 message ID, grounded 답변, `RUN_FINISHED status=ok` 확인.
+- 같은 GUI outcome에서 `value:005930:IS:2026Q1:sales`를 resolve해 값 133,873,444,000,000원을 반환하고 `verified` 상태 1건을 기록했다.
+- Cline ACP는 일반 응답과 permission round-trip은 동작하지만 session MCP가 tool catalog에 없어 DartLab refs를 만들지 못했다. 설치 및 설정 성공을 제품 성공으로 오인하지 않고 `groundedReady=false`를 유지한다.
+- targeted Python 회귀 52건, Ruff, Svelte check 오류 0, local production build 성공. 내장 브라우저 인스턴스가 없어 시각 클릭 자동화는 수행하지 못했으며 HTTP, 타입, 빌드 경로로 대체 검증했다.
+
+### Exit decision
+
+Claude와 Codex, local GUI의 verified analysis loop는 production 진입 가능하다. Cline embedded는 upstream capability proof 전까지 명시적으로 unavailable이며, 이 제한은 runtime 전체의 Claude 또는 Codex 사용을 막지 않는다. root 점수는 계약대로 즉시 올리지 않고 주간 outcome review에서 재판정한다.

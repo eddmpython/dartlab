@@ -212,6 +212,19 @@ class JsonRpcChannel:
                 result = message.get("result")
                 return result if isinstance(result, dict) else {"value": result}
 
+    def startRequest(self, method: str, params: dict[str, Any]) -> int:
+        """Sig: startRequest(method, params) -> int.
+
+        Args: JSON-RPC method와 params다.
+        Returns: 응답을 event loop가 소비할 비동기 request ID다.
+        Example: `requestId = channel.startRequest("turn/interrupt", params)`.
+        """
+        with self._lock:
+            self._requestId += 1
+            requestId = self._requestId
+            self.supervisor.sendJson({"jsonrpc": "2.0", "id": requestId, "method": method, "params": params})
+            return requestId
+
     def notify(self, method: str, params: dict[str, Any] | None = None) -> None:
         """Sig: notify(method, params=None) -> None.
 

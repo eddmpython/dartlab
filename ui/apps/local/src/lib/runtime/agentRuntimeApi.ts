@@ -7,6 +7,7 @@ export interface AgentRuntimeInfo extends RuntimeProbe {
 	officialUrl: string;
 	mcp: { connected: boolean; mode?: string; detail?: string | null };
 	groundedReady: boolean;
+	embeddedGrounding: boolean;
 }
 
 export interface RuntimePlan {
@@ -53,7 +54,18 @@ export function resolveAgentApproval(sessionId: string, approvalId: string, allo
 	});
 }
 
-export function verifyOutcomeEvidence(outcomeId: string, refId: string): Promise<ProductOutcomeReceipt> {
+export function cancelAgentSession(sessionId: string): Promise<{ ok: boolean }> {
+	return requestJson(`/api/agent/sessions/${encodeURIComponent(sessionId)}/cancel`, { method: 'POST' });
+}
+
+export function deleteAgentSession(sessionId: string): Promise<{ ok: boolean }> {
+	return requestJson(`/api/agent/sessions/${encodeURIComponent(sessionId)}`, { method: 'DELETE' });
+}
+
+export function verifyOutcomeEvidence(outcomeId: string, refId: string): Promise<{
+	evidence: { id: string; title?: string; source?: string; payload?: Record<string, unknown> };
+	receipt: ProductOutcomeReceipt;
+}> {
 	return requestJson(`/api/agent/product-outcomes/${encodeURIComponent(outcomeId)}/verify`, {
 		method: 'POST',
 		body: JSON.stringify({ refId })
