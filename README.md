@@ -44,24 +44,52 @@
 
 북극성은 주간 검증 완료 분석 루프(`weeklyVerifiedAnalysisLoops`) 하나만 센다. 실제 질문이 DartLab 정식 엔진을 거쳐 근거 있는 결과가 되고, 사용자가 그 결과의 정확한 evidence 또는 artifact를 직접 확인했을 때만 한 건이다. 모델 응답, tool call 수, 페이지뷰, 테스트 통과 수는 세지 않는다. 현재 전역 값은 **미측정**이며, 권위 있는 측정이 서기 전에는 성장 목표를 만들지 않는다.
 
-아래 점수는 축별 성숙도다. 10점은 실사용 환경에서 완결 여정이 반복 검증된 상태다. 점수의 근거는 실제로 도는 게이트와 실측 여정이며, 자동으로 실행되지 않는 경로는 구현돼 있어도 점수로 세지 않는다. 현재 총점은 **67.5/120, 평균 5.6/10**이다.
+점수는 축별 성숙도이며, 여덟 능력 차원 점수의 산술평균이다. 각 차원 10점은 실사용 환경에서 그 능력이 반복 검증된 상태다. 점수의 근거는 실제로 도는 게이트와 실측 여정이며, 자동으로 실행되지 않는 경로는 구현돼 있어도 점수로 세지 않는다. 차원 정의·앵커·축별 채점 근거의 정본은 [채점 기준](mainPlan/dartlab-north-star/05-score-rubric.md)이다. 현재 총점은 **72.0/120, 평균 6.0/10**이다.
 
-| 축 | 현재 점수 | 현 상태 | 도달할 상태 |
-|---|---:|---|---|
-| Python 공개 계약 | 8.0/10 | 9개 계약 엔진(gather·scan·analysis·macro·quant·industry·credit·dataHub·simulate)과 `Company`·`story` 파사드가 `dartlab.{engine}("{axis}", ...)` 한 문법으로 돌고, L0~L4 전 계층 안정화 판정이 끝났다. 노트북·블로그·Skill OS 코드펜스의 계약 위반은 AST 가드가 기계 차단하고, 공개 API manifest 대조와 product smoke가 CI에서 돈다. 실사용자 여정의 반복 계측은 남았다. | 어떤 진입 표면에서든 같은 문법과 같은 근거 문법으로 공개 계약이 호출된다. |
-| 데이터 인프라 (HF SSOT) | 8.0/10 | DART 공시 원문 섹션·XBRL 재무·정형 항목·전종목 스캔 프리빌드·가격·거시가 HuggingFace 공개 데이터셋으로 서고, 런타임은 별도 빌드 없이 SSOT를 직독해 로컬 캐시로 돈다. API 키 0으로 첫 결과가 난다. 수집은 온라인, 프리빌드는 오프라인 전용으로 분리되고 offline 가드 3종이 CI에서 강제된다. 전체 공시 목록은 월별 parquet로 백필된다. 신선도 완결 여정의 자동 계측은 남았다. | 전 상장사·전 기간이 공개 SSOT에서 재현 가능하게 열리고 신선도가 계측된다. |
-| 미국 (EDGAR) | 5.5/10 | `Company("AAPL")`가 SEC 원본 제출물의 XBRL을 자급 파싱해 한국과 같은 인터페이스(panel·주석 12토픽·ratios·filings)로 열린다. 가치사슬 taxonomy는 한국 한정이라 EDGAR industry는 가짜 매핑 대신 blocked 결손을 반환한다. 터미널 도달 배선은 재정렬 중이고 가격·지수 구조만 확정됐다. | 미국 종목이 한국과 같은 터미널·렌즈 여정으로 열린다. |
-| 다섯 분석 렌즈 | 7.0/10 | analysis·credit·industry·quant·macro가 conclusion·drivers·evidence·confidence·gaps·falsifiers·asOf 공통 문법의 product 외피로 돌고, 단일 종합점수를 만들지 않으며 결손을 usable·partial·blocked로 그대로 노출한다. credit은 79개사 실측 검증(대기업 87%, 전체 70%)이 있다. 렌즈 결론의 실사용 반복 검증과 v5.0 재측정은 남았다. | 각 렌즈가 실제 질문에서 반복 검증된 근거 충족도로 답한다. |
-| 리포트·스토리 | 6.5/10 | `c.story()` 6막 서사와 `Company.reportModel` 공개 계약, 프로 리포트 emitter까지 완결됐고 발간 파이프라인으로 기업이야기 10편이 블로그에 실발간됐다. 랜딩이 같은 모델을 소비하는 단계는 운영자 결정 대기다. | 회사 하나의 전체 이야기가 리포트로 나오고 모든 표면이 같은 모델을 소비한다. |
-| 시뮬레이션 | 5.0/10 | `dartlab.simulate` 결정론 드라이버 DAG 코어가 계약 엔진으로 돌고 가정 원장을 남긴다. 거시 시뮬레이션 엔진은 완결됐다(회사단 거시 재무 브리지는 데이터 벽으로 미빌드 확정). Play UI·fan 차트와 시나리오 실사용 여정은 미완이다. | 시나리오가 재현 가능하게 돌고 결과를 터미널에서 만진다. |
-| AI 워크벤치 (ask) | 7.0/10 | `dartlab.ask`가 chat-native 자율 tool calling으로 돌고 답변 속 숫자·표는 실행 근거 ref로 검산 가능하다. 외부 본문(DART·EDGAR·웹)은 직렬화 단에서 untrusted 마커로 격리돼 본문 안 지시가 동작을 바꾸지 못한다. 답변에서 근거 확인까지의 완결 루프 계측(북극성 분자)은 아직 없다. | 질문 하나가 검증 완료 분석 루프 한 건으로 끝난다. |
-| MCP 서버 | 7.0/10 | `tools/list`가 광고하는 canonical 도구만 실행되고, 단일 호출은 EngineCall allowlist, 다단 가공만 RunPython으로 분리된다. 옛 generated 도구 33종은 0.10에서 폐기됐고 agent와 MCP의 도구 목록 드리프트는 단일 SSOT로 기계 대조된다. stdio와 원격 SSE 둘 다 산다. 외부 LLM 실사용의 반복 검증은 남았다. | 외부 LLM이 같은 계약·같은 근거 문법으로 DartLab을 쓴다. |
-| Agent Runtime (Bring Your Agent) | 0.5/10 | 설치된 Codex·Claude Code·ACP agent를 그대로 쓰는 로컬 런타임의 상세 설계가 서고 모듈 골격 착수 단계다. 자동으로 도는 경로가 아직 없어 점수로 세지 않는다. | 사용자의 설치된 agent가 DartLab 작업대에서 검증 루프를 완주한다. |
-| 터미널 | 6.5/10 | 공개 터미널이 전 상장사를 커버하고 재무·주가·공시·신용·산업·매크로를 한 화면에 올린다. 모든 데이터 호출은 단일 진입점 공통배선으로 잠겨 있고 가드가 상주한다. 로컬 앱은 공개 바닥의 상위집합이다. 스크리너 재구축은 구현 완료 후 눈검수 대기다. 화면 안 근거 확인 여정의 반복 검증은 남았다. | 전문가 계기판에서 질문과 근거 확인이 화면 안에서 끝난다. |
-| 노트북·브라우저 (Pyodide) | 6.0/10 | 설치 없이 xlwings Lite·JupyterLite·marimo·Colab WASM에서 Company·panel·analysis·credit·story·macro가 실행되고 엑셀 수식으로도 닿는다. scan 프리빌드 용량과 gather CORS는 브라우저 경계로 남는다. Colab·marimo 노트북 9종이 계약 문법으로 산다. 교육 SSOT는 블로그 연재다. | 실데이터 실습이 설치 없이 교육 서사와 이어진다. |
-| 북극성 측정 (productOutcome) | 0.5/10 | 결과 수명주기(started, scoped, grounded, delivered, verified, retained)와 goal ID, 주간 운영 주기의 계약 설계 v1이 섰고 모듈 골격 착수 단계다. 실패 가능한 증거 audit와 scorecard는 아직 없어 전역 값은 미측정이다. | verified 루프가 자동 계수되고 주간 리뷰가 이 표를 재판정한다. |
+| 차원 | 10점의 의미 |
+|---|---|
+| 근거 | 모든 결과가 출처와 기준시점을 달고, 검산 여정이 반복 검증된다 |
+| 커버리지 | 목표 유니버스(전 상장사·전 기간·전 표면)를 빠짐없이 커버한다 |
+| 검증강도 | 핵심 행동 전부가 실패 가능한 자동 게이트로 단언된다 |
+| 직관성 | 배울 것 없이 첫 결과까지 한 줄, 이름과 문법이 자명하다 |
+| 속도 | 첫 결과와 재호출이 체감 즉시이고 실측치가 있다 |
+| 효율성 | 중복 빌드 0, 사본 0, 자원 예산 준수로 같은 결과를 더 싸게 낸다 |
+| 안정성 | 회귀 가드가 상주하고 실패는 정직한 상태로 강등된다 |
+| 혁신성 | 기존 대안이 주지 못하는 능력을 실측으로 증명한다 |
 
-결과 수명주기, goal ID, 주간 운영 주기의 전체 계약은 [mainPlan/dartlab-north-star](mainPlan/dartlab-north-star/)에 있다. 점수 재판정은 주간 outcome review에서만 하며, 근거 없는 상향은 무효다.
+| 축 | 근거 | 커버리지 | 검증강도 | 직관성 | 속도 | 효율성 | 안정성 | 혁신성 | 종합 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| Python 공개 계약 | 8.5 | 8.0 | 8.5 | 8.0 | 7.0 | 7.0 | 8.0 | 8.5 | **7.9** |
+| 데이터 인프라 (HF SSOT) | 8.5 | 8.0 | 8.0 | 8.5 | 7.5 | 8.5 | 8.0 | 7.5 | **8.1** |
+| 미국 (EDGAR) | 7.0 | 4.5 | 5.0 | 7.0 | 5.5 | 6.0 | 5.5 | 6.5 | **5.9** |
+| 다섯 분석 렌즈 | 8.0 | 7.0 | 6.5 | 7.5 | 6.5 | 7.0 | 7.0 | 8.0 | **7.2** |
+| 리포트·스토리 | 7.5 | 6.0 | 6.0 | 7.0 | 6.0 | 6.5 | 6.5 | 7.5 | **6.6** |
+| 시뮬레이션 | 6.0 | 4.5 | 5.5 | 5.0 | 5.5 | 5.5 | 5.0 | 6.0 | **5.4** |
+| AI 워크벤치 (ask) | 8.0 | 7.0 | 6.5 | 8.0 | 6.0 | 6.5 | 7.0 | 8.0 | **7.1** |
+| MCP 서버 | 7.5 | 7.0 | 7.5 | 7.0 | 6.0 | 7.0 | 7.0 | 7.0 | **7.0** |
+| Agent Runtime (Bring Your Agent) | 2.0 | 1.5 | 1.0 | 1.5 | 1.0 | 1.5 | 1.0 | 2.5 | **1.5** |
+| 터미널 | 7.0 | 7.5 | 6.5 | 7.0 | 6.5 | 7.5 | 6.5 | 7.0 | **6.9** |
+| 노트북·브라우저 (Pyodide) | 6.5 | 5.5 | 6.0 | 7.5 | 5.5 | 6.5 | 6.0 | 7.5 | **6.4** |
+| 북극성 측정 (productOutcome) | 3.0 | 1.5 | 1.0 | 2.0 | 2.0 | 2.5 | 1.5 | 2.5 | **2.0** |
+
+| 축 | 현 상태 | 도달할 상태 |
+|---|---|---|
+| Python 공개 계약 | 9개 계약 엔진(gather·scan·analysis·macro·quant·industry·credit·dataHub·simulate)과 `Company`·`story` 파사드가 `dartlab.{engine}("{axis}", ...)` 한 문법으로 돌고, L0~L4 전 계층 안정화 판정이 끝났다. 노트북·블로그·Skill OS 코드펜스의 계약 위반은 AST 가드가 기계 차단하고, 공개 API manifest 대조와 product smoke가 CI에서 돈다. 실사용자 여정의 반복 계측은 남았다. | 어떤 진입 표면에서든 같은 문법과 같은 근거 문법으로 공개 계약이 호출된다. |
+| 데이터 인프라 (HF SSOT) | DART 공시 원문 섹션·XBRL 재무·정형 항목·전종목 스캔 프리빌드·가격·거시가 HuggingFace 공개 데이터셋으로 서고, 런타임은 별도 빌드 없이 SSOT를 직독해 로컬 캐시로 돈다. API 키 0으로 첫 결과가 난다. 수집은 온라인, 프리빌드는 오프라인 전용으로 분리되고 offline 가드 3종이 CI에서 강제된다. 전체 공시 목록은 월별 parquet로 백필된다. 신선도 완결 여정의 자동 계측은 남았다. | 전 상장사·전 기간이 공개 SSOT에서 재현 가능하게 열리고 신선도가 계측된다. |
+| 미국 (EDGAR) | `Company("AAPL")`가 SEC 원본 제출물의 XBRL을 자급 파싱해 한국과 같은 인터페이스(panel·주석 12토픽·ratios·filings)로 열린다. 가치사슬 taxonomy는 한국 한정이라 EDGAR industry는 가짜 매핑 대신 blocked 결손을 반환한다. 터미널 도달 배선은 재정렬 중이고 가격·지수 구조만 확정됐다. | 미국 종목이 한국과 같은 터미널·렌즈 여정으로 열린다. |
+| 다섯 분석 렌즈 | analysis·credit·industry·quant·macro가 conclusion·drivers·evidence·confidence·gaps·falsifiers·asOf 공통 문법의 product 외피로 돌고, 단일 종합점수를 만들지 않으며 결손을 usable·partial·blocked로 그대로 노출한다. credit은 79개사 실측 검증(대기업 87%, 전체 70%)이 있다. 렌즈 결론의 실사용 반복 검증과 v5.0 재측정은 남았다. | 각 렌즈가 실제 질문에서 반복 검증된 근거 충족도로 답한다. |
+| 리포트·스토리 | `c.story()` 6막 서사와 `Company.reportModel` 공개 계약, 프로 리포트 emitter까지 완결됐고 발간 파이프라인으로 기업이야기 10편이 블로그에 실발간됐다. 랜딩이 같은 모델을 소비하는 단계는 운영자 결정 대기다. | 회사 하나의 전체 이야기가 리포트로 나오고 모든 표면이 같은 모델을 소비한다. |
+| 시뮬레이션 | `dartlab.simulate` 결정론 드라이버 DAG 코어가 계약 엔진으로 돌고 가정 원장을 남긴다. 거시 시뮬레이션 엔진은 완결됐다(회사단 거시 재무 브리지는 데이터 벽으로 미빌드 확정). Play UI·fan 차트와 시나리오 실사용 여정은 미완이다. | 시나리오가 재현 가능하게 돌고 결과를 터미널에서 만진다. |
+| AI 워크벤치 (ask) | `dartlab.ask`가 chat-native 자율 tool calling으로 돌고 답변 속 숫자·표는 실행 근거 ref로 검산 가능하다. 외부 본문(DART·EDGAR·웹)은 직렬화 단에서 untrusted 마커로 격리돼 본문 안 지시가 동작을 바꾸지 못한다. 답변에서 근거 확인까지의 완결 루프 계측(북극성 분자)은 아직 없다. | 질문 하나가 검증 완료 분석 루프 한 건으로 끝난다. |
+| MCP 서버 | `tools/list`가 광고하는 canonical 도구만 실행되고, 단일 호출은 EngineCall allowlist, 다단 가공만 RunPython으로 분리된다. 옛 generated 도구 33종은 0.10에서 폐기됐고 agent와 MCP의 도구 목록 드리프트는 단일 SSOT로 기계 대조된다. stdio와 원격 SSE 둘 다 산다. 외부 LLM 실사용의 반복 검증은 남았다. | 외부 LLM이 같은 계약·같은 근거 문법으로 DartLab을 쓴다. |
+| Agent Runtime (Bring Your Agent) | 설치된 Codex·Claude Code·ACP agent를 그대로 쓰는 로컬 런타임의 상세 설계가 서고 구현이 진행 중이다. 실제 Claude CLI가 ReadSkill·EngineCall을 호출해 grounded·delivered까지 전진하는 운영자 실행 1회를 통과했다. 자동으로 도는 게이트는 아직 없다. | 사용자의 설치된 agent가 DartLab 작업대에서 검증 루프를 완주한다. |
+| 터미널 | 공개 터미널이 전 상장사를 커버하고 재무·주가·공시·신용·산업·매크로를 한 화면에 올린다. 모든 데이터 호출은 단일 진입점 공통배선으로 잠겨 있고 가드가 상주한다. 로컬 앱은 공개 바닥의 상위집합이다. 스크리너 재구축은 구현 완료 후 눈검수 대기다. 화면 안 근거 확인 여정의 반복 검증은 남았다. | 전문가 계기판에서 질문과 근거 확인이 화면 안에서 끝난다. |
+| 노트북·브라우저 (Pyodide) | 설치 없이 xlwings Lite·JupyterLite·marimo·Colab WASM에서 Company·panel·analysis·credit·story·macro가 실행되고 엑셀 수식으로도 닿는다. scan 프리빌드 용량과 gather CORS는 브라우저 경계로 남는다. Colab·marimo 노트북 9종이 계약 문법으로 산다. 교육 SSOT는 블로그 연재다. | 실데이터 실습이 설치 없이 교육 서사와 이어진다. |
+| 북극성 측정 (productOutcome) | 결과 수명주기(started, scoped, grounded, delivered, verified, retained)와 goal ID, 주간 운영 주기의 계약 설계 v1 위에 로컬 상태 원장(단조 전이·evidence hash) 구현이 진행 중이다. 질문·답변·모델명은 저장하지 않고, verified는 사용자가 근거 확인으로 exact ref hash를 대조할 때만 발생한다. 운영자 실행에서 delivered까지 실측됐고 verified는 과장하지 않았다. CI에서 자동으로 도는 게이트는 아직 없어 전역 값은 미측정이다. | verified 루프가 자동 계수되고 주간 리뷰가 이 표를 재판정한다. |
+
+결과 수명주기, goal ID, 주간 운영 주기의 전체 계약은 [mainPlan/dartlab-north-star](mainPlan/dartlab-north-star/)에 있다. 점수 재판정은 주간 outcome review에서만 하며, 근거 없는 상향은 무효다. 실측·게이트와 연결되지 않은 차원 점수는 재판정에서 우선 하향 대상이다.
+
+> 2026-08-02 점수표 고정 이후 Agent Runtime production vertical slice와 local Product Outcome 원장이 구현됐다. 위 점수는 즉시 올리지 않았으며, exact evidence를 확인한 operator journey를 주간 outcome review에서 검증한 뒤 재판정한다. 구현 근거는 [Agent Runtime 진행 원장](mainPlan/agent-runtime-engine/06-progress-ledger.md)과 [북극성 진행 원장](mainPlan/dartlab-north-star/04-progress-ledger.md)에 기록한다.
 
 ## 터미널: 블룸버그식에 도전하다
 
@@ -102,7 +130,7 @@ DartLab은 **AI / Python / CLI** 세 길을 같은 데이터·같은 엔진 위�
 
 ## AI로 바로 사용
 
-기업 이름이나 종목코드를 넣고 자연어로 물어보면, DartLab AI는 내부에서 `Company`, `analysis`, `credit`, `scan`, `macro` 같은 도구를 직접 실행한다. 답변만 만드는 것이 아니라 어떤 데이터와 계산을 썼는지 추적 가능한 ref를 함께 남긴다.
+기업 이름이나 종목코드를 넣고 자연어로 물어보면, PC에 설치된 Codex CLI, Claude Code, Cline 중 하나가 DartLab MCP의 `Company`, `analysis`, `credit`, `scan`, `macro` 도구를 실행한다. 로그인·모델·대화 원문은 해당 agent CLI가 소유하고 DartLab은 계산 결과와 추적 가능한 ref만 연결한다.
 
 <p>
   <a href="https://github.com/eddmpython/dartlab-desktop/releases/latest/download/DartLab.exe">
@@ -117,7 +145,20 @@ DartLab은 **AI / Python / CLI** 세 길을 같은 데이터·같은 엔진 위�
 import dartlab
 
 dartlab.ask("삼성전자 재무건전성 분석해줘")
-# AI가 필요한 데이터를 직접 조회하고, 계산 결과와 근거 ref를 함께 반환
+# 설치된 agent가 DartLab MCP로 계산하고 근거 ref를 함께 반환
+```
+
+```bash
+# 셋 중 이미 쓰는 agent 하나를 설치하고 해당 CLI에서 로그인
+npm install -g @openai/codex
+codex login
+
+# DartLab이 설치·버전·MCP 상태를 확인
+dartlab agent status --refresh
+
+# 명령을 먼저 검토하고, 출력된 digest를 붙였을 때만 MCP 설정 실행
+dartlab agent connect codex
+dartlab agent connect codex --approve-digest <출력된-digest>
 ```
 
 AI 경로의 장점:
@@ -125,7 +166,8 @@ AI 경로의 장점:
 - **분석 흐름을 직접 설계**: 질문에 맞춰 공시, 재무제표, 신용, 매크로, peer 비교 도구를 조합한다.
 - **숫자 검산 가능**: 답변 속 숫자와 표는 실행 결과 ref에 연결된다.
 - **공시 본문은 데이터로만 처리**: DART/EDGAR/웹 본문 안의 지시는 따르지 않고 분석 근거로만 쓴다.
-- **외부 LLM 연동 가능**: MCP로 Claude Code, Codex CLI, Cursor 같은 도구에서 같은 표면을 호출한다.
+- **내 계정 그대로 사용**: DartLab에 모델 API key나 OAuth token을 입력하지 않는다.
+- **복구 동작이 한곳에 있음**: 로컬 UI의 Runtime Center가 탐지, 설치 계획, MCP 연결, runtime 선택을 담당한다.
 
 ```bash
 claude mcp add dartlab -- dartlab mcp
@@ -655,16 +697,16 @@ dartlab.search("대표이사 변경", corp="005930")       # 종목 필터
 dartlab.search("회사가 돈을 빌렸다")                 # 자연어도 동작
 ```
 
-### AI: skills 기반 분석 작업대
+### AI: 설치형 Agent Runtime
 
 > 설계: [operation.opsAsSkills](https://eddmpython.github.io/dartlab/skills) · 루프 개요: [상단 통합 아키텍처](#통합-아키텍처--전문-금융-ai-플랫폼)
 
 ```python
 dartlab.ask("삼성전자 재무건전성 분석해줘")
-dartlab.ask("삼성전자 분석", provider="gemini")  # 무료 provider 사용 가능
+dartlab.ask("삼성전자 분석", runtimeId="claude")
 ```
 
-Provider: `gemini`(무료), `groq`(무료), `cerebras`(무료), `oauth-codex`(ChatGPT 구독), `openai`, `ollama`(로컬) 등. Rate limit 시 자동 대체.
+지원 runtime은 `codex`, `claude`, `cline`이다. DartLab은 provider API key, OAuth token, 모델 다운로드를 관리하지 않는다. 설치와 MCP 설정은 `dartlab agent`가 exact argv와 SHA-256 digest를 먼저 보여 주고, 사용자가 같은 digest를 명시했을 때만 실행한다.
 
 ### Channel: 외부에서 내 PC dartlab 접근
 
@@ -869,7 +911,7 @@ c.panel("IS")
 | 기능 | Pyodide | 비고 |
 |---|:---:|---|
 | `Company()` · `c.panel()` · `analysis` · `story` · `credit` | ✅ | HF parquet 자동 다운로드 |
-| `dartlab.ask()` | ✅ | API 키 설정 필요 (gemini·openai CORS OK) |
+| `dartlab.ask()` | ❌ | 설치형 agent CLI와 로컬 process가 필요 |
 | `dartlab.scan()` | ❌ | 사전 빌드 parquet 271MB (브라우저 비현실적) |
 | `dartlab.gather()` | ❌ | Naver·Yahoo·Google News CORS 차단 |
 
@@ -934,10 +976,10 @@ e.filings("AAPL", forms=["10-K", "10-Q"])
 
 | 결정 | 의미 | 이유 |
 |---|---|---|
-| **단일 base install: `[extras]` 분리 없음** | `pip install dartlab` 한 번에 분석·서버·MCP·viz·AI provider 가 함께 들어온다 | 분석 도구에 "이것도 설치하세요" 가 누적되면 첫 사용까지 마찰이 늘어난다. 단일 진입 SSOT 가 우선. wheel 크기·cold start 비용은 PEP 562 lazy load 와 pyodide 분기로 흡수한다. |
+| **단일 base install: `[extras]` 분리 없음** | `pip install dartlab` 한 번에 분석·서버·MCP·viz·Agent Runtime 호스트가 함께 들어온다 | 분석 도구에 "이것도 설치하세요" 가 누적되면 첫 사용까지 마찰이 늘어난다. 모델 실행은 사용자의 설치형 agent가 맡고 DartLab wheel은 runtime adapter와 금융 능력만 제공한다. |
 | **사전 구축 데이터, API 키 0 으로 시작** | `Company("005930")` 호출 시 HuggingFace 에서 자동 다운로드 → 로컬 캐시. DART API 키는 *재수집* 만 필요 | "키 만들고 환경변수 세팅" 단계를 1순위 사용 경로에서 제거. 키 발급은 `dartlab collect` 같은 raw 재수집 흐름에서만 등장. |
 | **공시 본문은 데이터, 지시 아님** | 외부 본문은 직렬화 시 `[EXTERNAL CONTENT START - untrusted ...]` 마커로 자동 감쌈 | DART/EDGAR/뉴스 본문 안의 "이전 지시 무시" 같은 패턴이 AI 동작을 바꾸지 못하도록 직렬화 단에서 강제. 마커 안 숫자·날짜·고유명사는 1차 출처 재검증 후 인용. |
-| **AI 엔진 = chat-native + LLM 자율 tool calling** | `BRIEF/WORK/CRITIQUE/COMPOSE/GATE/HARVEST` 식 고정 노드 그래프 없음. 본체는 `ai/agent.py`, 능력은 `ai/tools/` | 0.7.15 에서 15,420 줄 삭제로 회귀 차단. graph 식 강박은 verify 강제·workbench 본체화 회귀를 부르고 LLM 자율성을 잠근다. |
+| **AI 엔진 = Bring Your Agent Runtime** | Codex app-server, Claude stream-json, ACP를 provider-neutral `AgentEvent`로 정규화한다. 고정 graph 없이 agent가 Skill OS와 MCP 도구를 자율 사용한다. | 인증·모델·native session은 CLI에 두고 DartLab은 금융 capability, 근거, 권한·process 경계에 집중한다. |
 | **내부 단방향 import** | 제품 설명과 별개로 코드 폴더는 단방향 의존을 유지한다 | 자세한 레이어와 기여 규율은 [ARCHITECTURE.md](ARCHITECTURE.md)에 둔다. `import-linter`와 `dartlabGuard.py strict --scope l0-l15`가 PR 게이트다. |
 | **테스트 직렬화 강제 (Polars OOM 가드)** | `pytest -v` 전체 호출 금지. `tests/test-lock.sh tests/ -m "<marker>"` 경유 | Company 1개 ≈ 200~500 MB Rust 힙은 `gc.collect()` 회수 불가. CI 와 로컬을 같은 lock wrapper 명령으로 통일. |
 | **메시지 한국어 우선, API 영어** | `Company`, `pastInsight`, `analysis` 등 symbol 은 영어. CLI 에러·진행 메시지는 한국어 | classifier 에 `Natural Language :: Korean / English` 둘 다 선언. PyPI 영어 사용자 대상 영문 진입은 [README_EN.md](README_EN.md) 와 영문 docstring 으로 별도 트랙. |

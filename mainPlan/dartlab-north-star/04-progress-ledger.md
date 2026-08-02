@@ -1,5 +1,14 @@
 # 04. Progress Ledger
 
+## 2026-08-02 점수제 세분화: 8차원 능력 매트릭스
+
+운영자 지시(혁신성·효율성·직관성·속도 등 다양한 능력으로 철저히 세분화)로 축별 단일 성숙도 점수를 8차원 평균으로 분해했다.
+
+1. 차원 = 근거·커버리지·검증강도·직관성·속도·효율성·안정성·혁신성. 정의·앵커·축별 채점 근거는 [05-score-rubric.md](05-score-rubric.md)가 정본이며, 근거 줄 없이 숫자만 바꾸는 diff는 무효다.
+2. 축 종합 = 8차원 산술평균(0.1 단위). 총점 67.5 → 72.0/120(평균 6.0). 상승분은 분해 재캘리브레이션과 local semantic foundation 실측(운영자 실행 delivered 통과) 반영분이며 성장 실적이 아니다.
+3. 채점 규율 유지: 자동으로 돌지 않는 경로는 세지 않는다. 운영자 수동 실행은 현 상태 서술에만 남기고 검증강도로 세지 않는다. 실측·게이트와 연결되지 않은 차원 점수는 주간 재판정에서 우선 하향 대상.
+4. 설계·문서만 있는 축은 차원 무관 0.5~2.5 밴드 상한(Agent Runtime 1.5, 북극성 측정 2.0이 해당).
+
 ## 2026-08-02 결정 4 번복: 축별 점수표 도입 (루트 README)
 
 상태: 점수표 라이브. 운영자 지시로 xlpod README식 축별 점수표를 도입했다. 자리는 mainPlan이 아니라 **루트 README `## 북극성`** (운영자 확정).
@@ -30,6 +39,19 @@
 4. 수기 10점 maturity table은 도입하지 않는다.
 5. remote aggregate는 admission authority와 opt-in 전까지 범위 밖이다.
 6. 첫 실제 소비자는 `agent-runtime-engine`이다.
+
+## 2026-08-02 local semantic foundation
+
+- `src/dartlab/productOutcome`에 SQLite 상태 원장과 단조 전이를 구현했다.
+- 저장 필드는 opaque outcome ID, feature, state, created/updated 시각과 SHA-256 evidence hash뿐이다.
+- 질문, 답변, provider, model, token, 원본 ref, 파일 경로는 저장하지 않는다.
+- Agent Runtime은 실제 grounding tool이 정형 ref를 반환한 경우에만 scoped·grounded로 전진하고, 성공 turn과 근거가 함께 있을 때 delivered로 끝난다.
+- UI evidence chip 렌더는 completion이 아니다. 사용자가 `근거 확인`을 눌러 같은 outcome의 exact ref hash가 일치할 때만 verified가 된다.
+- duplicate verification receipt는 idempotent하며 다른 outcome/ref 조합은 거부한다.
+- 로컬 `/api/agent/product-outcomes` snapshot은 phone-home 없이 상태 집계만 반환한다.
+- 실제 Claude CLI가 ReadSkill과 EngineCall을 호출해 grounded·delivered까지 전진하는 운영자 실행을 통과했다. UI의 exact evidence 확인은 대신 누르지 않았으므로 verified로 과장하지 않는다.
+
+전역 북극성 값은 계속 `미측정`이다. remote aggregation, 4주 baseline, retained 28일 판정, root score 재판정은 아직 권위가 없으므로 만들지 않았다.
 
 ### NEXT
 

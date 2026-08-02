@@ -36,6 +36,7 @@
 3. [02-evidence-and-operating-cycle.md](02-evidence-and-operating-cycle.md): 증거 레지스트리, CI 등록, outcome brief, 주간 운영.
 4. [03-implementation-plan.md](03-implementation-plan.md): 영향 파일, 심볼, 단계, 테스트, 롤백, 개발자와 PM 평가.
 5. [04-progress-ledger.md](04-progress-ledger.md): 결정 원장, baseline, 구현 재개 지점.
+6. [05-score-rubric.md](05-score-rubric.md): 8차원 능력 채점 기준(정의·앵커·축별 근거). 루트 README 점수표의 채점 정본.
 
 ## 다른 mainPlan과의 관계
 
