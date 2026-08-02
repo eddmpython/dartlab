@@ -2,7 +2,7 @@
   "meta": {
     "entrySkillId": "start.dartlabSkillOs",
     "canonicalSurface": "DartLab Skill OS",
-    "skillCount": 288,
+    "skillCount": 289,
     "categories": [
       {
         "id": "start",
@@ -26,7 +26,7 @@
         "id": "engines",
         "title": "Engines",
         "description": "엔진별 기본 사용법과 그 엔진이 소유한 응용 실행 스킬.",
-        "count": 66
+        "count": 67
       },
       {
         "id": "recipes",
@@ -1111,6 +1111,28 @@
         "engines.company"
       ],
       "bodyPreview": "## 엔진 역할\n\n`search` 엔진의 *DART 공시 검색 패턴* SSOT sub-spec. base SKILL `engines.search` 가 BETA 엔진 자체 동작을 정의한다면, 본 sub-spec 은 *언제 어느 진입점을 쓰는지* 분기 룰 단일화. AI 답변 회귀 (`search 단일 종목 호출 사고`) 차단의 1 차 게이트.\n\n## 공개 호출 방식\n\n```python\nimport dartlab\n\n# === 경로 A: 단일 종목 공시 (Company-bound) ===\nc = dartlab.Company(\"005930\")\n\n# A1. 전체 시계열\ndisclosures = c.filings()\n# → DataFrame: rcept_dt · rcept_no · report_nm · ...\n\n# A2. 라이브 (DART API 직접, 최신성 보장)\nrecent = c.filings()\n# → 최근 N 건 (인덱스 stale 우회)\n\n# A3. 특정 공시 본문 (섹션 검색)\nbody = c.panel(\"사업의 내용\")\n\n# === 경로 B: 횡단 키워드 검색 (search 엔진) ===\n\n# B1. 제목 검색 (auto 가 자동 분기)\nresult = "
+    },
+    {
+      "id": "engines.simulate",
+      "title": "Simulate",
+      "category": "engines",
+      "purpose": "Simulate 엔진은 회사 재무와 매크로 프리셋을 결정론 드라이버 시트로 연결해 시나리오별 매출, 마진, FCF, DCF 경로와 근거 감사를 만든다. 트리거 - '시나리오', '스트레스 테스트', '금리 충격', 'what if'.",
+      "whenToUse": [
+        "시나리오",
+        "스트레스 테스트",
+        "충격 분석",
+        "adverse scenario",
+        "what if",
+        "매출 경로",
+        "조건부 DCF"
+      ],
+      "nextSkills": [
+        "engines.macro",
+        "engines.analysis",
+        "engines.company",
+        "engines.quant"
+      ],
+      "bodyPreview": "## 엔진 역할\n\n`simulate`는 회사 원자료와 매크로 시나리오를 `macro.path -> rev.path -> proforma -> dcf` 결정론 드라이버 시트로 연결하는 L3 엔진이다. 난수를 쓰지 않으며 같은 target, scenario, asOf는 같은 노드별 `inputsHash`를 만든다. 결과는 미래 확정치가 아니라 입력 가정에 조건부인 변환 결과다.\n\n## 공개 호출 방식\n\n```python\nimport dartlab\n\nbaseline = dartlab.simulate(\n    \"005930\",\n    scenario=\"baseline\",\n    horizon=3,\n    asOf=\"2024\",\n)\nadverse = dartlab.simulate(\n    \"005930\",\n    scenario=\"adverse\",\n    horizon=3,\n    asOf=\"2024\",\n)\n\nc = dartlab.Company(\"005930\")\ncompany_result = c.simulate(scenario=\"adverse\", horizon=3, asOf=\"2024\")\n```\n\n설치형 AI 런타임은 다음 canonical 계약을 쓴다.\n\n```js"
     },
     {
       "id": "engines.story",

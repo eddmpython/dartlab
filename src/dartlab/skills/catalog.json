@@ -2,7 +2,7 @@
   "meta": {
     "entrySkillId": "start.dartlabSkillOs",
     "canonicalSurface": "DartLab Skill OS",
-    "skillCount": 288,
+    "skillCount": 289,
     "categories": [
       {
         "id": "start",
@@ -26,7 +26,7 @@
         "id": "engines",
         "title": "Engines",
         "description": "엔진별 기본 사용법과 그 엔진이 소유한 응용 실행 스킬.",
-        "count": 66
+        "count": 67
       },
       {
         "id": "recipes",
@@ -4990,6 +4990,125 @@
       }
     },
     {
+      "id": "engines.simulate",
+      "bodyPreview": "## 엔진 역할\n\n`simulate`는 회사 원자료와 매크로 시나리오를 `macro.path -> rev.path -> proforma -> dcf` 결정론 드라이버 시트로 연결하는 L3 엔진이다. 난수를 쓰지 않으며 같은 target, scenario, asOf는 같은 노드별 `inputsHash`를 만든다. 결과는 미래 확정치가 아니라 입력 가정에 조건부인 변환 결과다.\n\n## 공개 호출 방식\n\n```python\nimport dartlab\n\nbaseline = dartlab.simulate(\n    \"005930\",\n    scenario=\"baseline\",\n    horizon=3,\n    asOf=\"2024\",\n)\nadverse = dartlab.simulate(\n    \"005930\",\n    scenario=\"adverse\",\n    horizon=3,\n    asOf=\"2024\",\n)\n\nc = dartlab.Company(\"005930\")\ncompany_result = c.simulate(scenario=\"adverse\", horizon=3, asOf=\"2024\")\n```\n\n설치형 AI 런타임은 다음 canonical 계약을 쓴다.\n\n```json\n{\n  \"apiRef\": \"simulate\",\n  \"args\": {\n    \"target\": \"005930\",\n    \"scenario\": \"adverse\",\n    \"horizon\": 3,\n    \"asOf\": \"2024\"\n  }\n}\n```\n\n## 호출 동작\n\n1. target을 KR Company로 해소하고 지원하지 않는 시장과 시나리오를 차단한다.\n2. 회사 snapshot과 매크로 preset을 같은 asOf 경계에 고정한다.\n3. DriverSheet를 위상 순서로 평가해 매출, 마진, proforma, FCF, DCF 노드를 계산한다.\n4. 각 노드에 provenance, refs, inputsHash, 품질 상태와 gap을 남긴다.\n5. base와 stress 비교는 target, horizon, asOf를 동일하게 유지하고 scenario만 변경한다.\n\n`partial`은 실패 값을 0으로 채운 상태가 아니다. 필요한 leaf가 없어서 해당 값이 `None`인 정직한 결손 상태다.\n\n## 대표 반환 형태\n\n```text\nSimulationResult\n  scenarioName: str\n  horizon: int\n  latestAsOf: str | None\n  revenuePath: list[float | None]\n  marginPath: list[float | None]\n  fcfPath: list[float | None]\n  dcfPerShare: float | None\n  quality: ok | partial\n  gaps: list\n  audit: list[NodeAudit]\n  assumptionLedger: dict\n  lensProducts: dict\n```\n\n답변은 시나리오 이름과 가정, 기준 기간, 조건부 값, 노드 근거를 함께 제시한다. `dcfP",
+      "title": "Simulate",
+      "category": "engines",
+      "categoryTitle": "Engines",
+      "kind": "curated",
+      "status": "observed",
+      "purpose": "Simulate 엔진은 회사 재무와 매크로 프리셋을 결정론 드라이버 시트로 연결해 시나리오별 매출, 마진, FCF, DCF 경로와 근거 감사를 만든다. 트리거 - '시나리오', '스트레스 테스트', '금리 충격', 'what if'.",
+      "whenToUse": [
+        "시나리오",
+        "스트레스 테스트",
+        "충격 분석",
+        "adverse scenario",
+        "what if",
+        "매출 경로",
+        "조건부 DCF"
+      ],
+      "inputs": [
+        "stockCode 또는 회사명",
+        "scenario",
+        "horizon",
+        "asOf"
+      ],
+      "requiredInputs": [],
+      "outputs": [
+        "SimulationResult",
+        "scenarioName",
+        "revenuePath",
+        "marginPath",
+        "fcfPath",
+        "dcfPerShare",
+        "node audit와 inputsHash",
+        "quality와 data gaps"
+      ],
+      "apiRefs": [
+        "simulate",
+        "Company.simulate"
+      ],
+      "toolRefs": [],
+      "datasetRefs": [],
+      "knowledgeRefs": [
+        "start.dartlabSkillOs",
+        "engines.company",
+        "engines.macro",
+        "engines.analysis"
+      ],
+      "linkedSkills": [
+        "engines.macro",
+        "engines.analysis",
+        "engines.company",
+        "engines.quant"
+      ],
+      "requires": [],
+      "alternatives": [],
+      "succeededBy": [],
+      "deprecatedBy": [],
+      "sourceRefs": [
+        "dartlab://skills/engines.simulate"
+      ],
+      "procedure": [
+        "ReadSkill 결과의 simulate 또는 Company.simulate 실행 계약을 선택한다.",
+        "단일 회사는 EngineCall의 simulate apiRef에 target, scenario, horizon, asOf를 전달한다.",
+        "결과의 quality, gaps, latestAsOf, assumptionLedger, node audit를 먼저 확인한다.",
+        "비교 질문은 같은 target과 asOf를 유지하고 scenario만 바꿔 각각 실행한다.",
+        "값과 기간마다 valueRef, dateRef, executionRef를 답변 문장에 직접 연결한다."
+      ],
+      "recipeSteps": [],
+      "requiredEvidence": [
+        "target",
+        "scenario",
+        "assumptions",
+        "period",
+        "dateRef",
+        "valueRef",
+        "executionRef",
+        "provenance"
+      ],
+      "expectedOutputs": [
+        "선택한 시나리오와 horizon",
+        "기준 재무 기간과 데이터 품질",
+        "base와 stress의 조건부 경로 차이",
+        "노드별 provenance와 gap"
+      ],
+      "visualGuidance": [],
+      "failureModes": [
+        "dcfPerShare를 목표주가나 미래 보장으로 표현함",
+        "partial 상태의 None을 0으로 바꿈",
+        "서로 다른 asOf 실행의 inputsHash를 직접 비교함",
+        "시나리오 가정과 실제 관측값을 구분하지 않음"
+      ],
+      "forbidden": [
+        "조건부 시뮬레이션을 예측 확정값으로 표현하지 않는다.",
+        "partial과 data gap을 숨기거나 0으로 대체하지 않는다.",
+        "시나리오, horizon, asOf, provenance 없는 수치를 답변하지 않는다."
+      ],
+      "examples": [
+        "삼성전자 baseline과 adverse 시나리오 비교",
+        "금리 충격이 매출과 FCF 경로에 미치는 영향",
+        "2024년 기준 3년 조건부 DCF 스트레스 테스트"
+      ],
+      "runtimeCompatibility": {
+        "server": {
+          "status": "supported"
+        },
+        "localPython": {
+          "status": "supported"
+        },
+        "mcp": {
+          "status": "supported"
+        },
+        "webAi": {
+          "status": "supported"
+        },
+        "pyodide": {
+          "status": "limited"
+        }
+      }
+    },
+    {
       "id": "engines.story",
       "bodyPreview": "## 엔진 역할\n\n`story` 는 *해석하지 않고 다양한 관점의 근거를 배치* 하는 **L3 조합기**다. 분석엔진 X. L2 5 분석엔진 - analysis (재무 인과) · credit (신용 위험) · macro (시장 환경) · quant (정량 신호) · industry (밸류체인 위치) - 와 L1.5 scan (횡단 비교) 결과를 블록 단위로 조합해 6 막 구조 보고서를 만든다.\n\n### story 가 L3 조합기인 이유 - 순환참조 방지\n\nL2 5 분석엔진은 도메인 격리 (analysis ⊥ credit ⊥ macro ⊥ quant ⊥ industry) 가 import 단방향으로 강제돼 있다. L2 끼리 직접 import 하면 순환참조가 생긴다. 이 결합 책임을 story 가 단독으로 짊어져 6 막 보고서로 직조한다 - 자체 숫자 계산 0, 모든 숫자는 하위 엔진 결과 ref 에 묶이고, story 자체는 *thesis · evidence · risk · limit* 의 문장 골격만 제공.\n\n이 구조 덕분에 새 L2 분석엔진을 추가해도 기존 L2 엔진은 수정 0 - story 의 블록 등록만 늘어난다.\n\n## 공개 호출 방식\n\n```python\nimport dartlab\n\n# 1. Company-bound - 가장 단순한 진입점\nc = dartlab.Company(\"005930\")\nstory = c.story()                          # 자동 reportType + 기업유형 감지\nprint(story.render(\"markdown\"))\n\n# 2. reportType 명시\ncredit_report = c.story(reportType=\"credit\")\nvaluation = c.story(reportType=\"valuation\")\nexec_brief = c.story(reportType=\"executive\")\n\n# 3. 단일 섹션\nrevenue = c.story(\"수익구조\")               # 수익구조 블록만\n\n# 4. 자유 조립 (블록 단위)\nfrom dartlab.story import blocks, Story\nb = blocks(c)\ncustom = Story([b[\"growth\"], b[\"marginTrend\"], b[\"cashFlowOverview\"]])\n\n# 5. 출력 형식 변환\nprint(custom.toMarkdown())\nprint(custom.toHtml())\nprint(custom.render(\"rich\"))               # 터미널 색상\nprint(custom.render(\"json\"))               # AI 소비용\n```\n\n## 강행 호출 룰 (agent 답변 품질 회귀 차단)\n\nstory 는 L3 조합기 - *자체 계산 0*. 모든 숫자는 하위 엔진 (analysis/credit/macro/quant/industry/scan) ref 인용으로 들어와야 함.\n\n1. **story 본문 안 모든 숫자에 하위 엔진 ref inline 표기 필수** ",
       "title": "Story (보고서 빌더)",
@@ -6747,7 +6866,7 @@
     },
     {
       "id": "operation.aiProductReplatform",
-      "bodyPreview": "## 확정 제품 경계\n\n```text\nDartLab local UI\n  -> /api/ask 또는 /api/agent/runs\n  -> Agent Gateway\n  -> Agent Runtime Engine\n  -> 사용자 설치형 agent CLI\n  -> DartLab MCP와 정식 데이터 엔진\n```\n\n- 공개 답변 진입점은 `dartlab.ask`와 `/api/ask`다.\n- UI는 공통 `AiPort`와 local API adapter만 사용한다.\n- provider별 로그인, model catalog, transcript는 CLI가 소유한다.\n- Runtime Center는 상태, 설치 계획, MCP 연결 계획, runtime 선택을 한곳에서 제공한다.\n- runtime이 없으면 heuristic 답변을 만들지 않고 단일 recovery action을 보여 준다.\n\n## 호환 경로\n\n- `/api/provider/validate`, profile secret, OAuth authorize/logout, Ollama pull은 410과 Runtime Center 안내를 반환한다.\n- `/settings/providers`는 삭제된 설정 양식을 렌더하지 않고 Runtime Center로 안내한다.\n- `provider` request 필드는 한 전환 기간 runtimeId alias로만 받으며 direct provider 이름은 거부하거나 무시한다.\n- DART, EDGAR, FRED 같은 데이터 provider는 이 마이그레이션 대상이 아니다.\n\n## 공개 이벤트\n\n허용 표면은 `TEXT_MESSAGE_*`, `THINKING_DELTA`, `TOOL_CALL_*`, `STATE_*`, `ACTIVITY_*`, `VIEW_SPEC`, `APPROVAL_REQUESTED`, `RUN_FINISHED`, `RUN_ERROR`다. native event와 raw stderr는 adapter 안에 머문다.\n\n## 완료 조건\n\n1. 기본·분석 모드가 모두 Agent Runtime을 사용한다.\n2. 세 runtime manifest와 driver가 실제 CLI handshake를 통과한다.\n3. install과 MCP 설정이 digest 승인 전에는 실행되지 않는다.\n4. MCP tools/list에 ask가 없고 canonical registry와 일치한다.\n5. UI 타입검사와 build가 통과한다.\n6. exact evidence 확인 전 Product Outcome이 verified로 올라가지 않는다.\n7. 서버 종료, cancel, session eviction 뒤 child process가 남지 않는다.",
+      "bodyPreview": "## 확정 제품 경계\n\n```text\nDartLab local UI\n  -> /api/ask 또는 /api/agent/runs\n  -> Agent Gateway\n  -> Agent Runtime Engine\n  -> 사용자 설치형 agent CLI\n  -> DartLab MCP와 정식 데이터 엔진\n```\n\n- 공개 답변 진입점은 `dartlab.ask`와 `/api/ask`다.\n- UI는 공통 `AiPort`와 local API adapter만 사용한다.\n- provider별 로그인, model catalog, transcript는 CLI가 소유한다.\n- Runtime Center는 상태, 설치 계획, MCP 연결 계획, runtime 선택을 한곳에서 제공한다.\n- runtime이 없으면 heuristic 답변을 만들지 않고 단일 recovery action을 보여 준다.\n\n## 호환 경로\n\n- `/api/provider/validate`, profile secret, OAuth authorize/logout, Ollama pull은 410과 Runtime Center 안내를 반환한다.\n- `/settings/providers`는 삭제된 설정 양식을 렌더하지 않고 Runtime Center로 안내한다.\n- `provider` request 필드는 한 전환 기간 runtimeId alias로만 받으며 direct provider 이름은 거부하거나 무시한다.\n- DART, EDGAR, FRED 같은 데이터 provider는 이 마이그레이션 대상이 아니다.\n\n## 공개 이벤트\n\n허용 표면은 `TEXT_MESSAGE_*`, `THINKING_DELTA`, `TOOL_CALL_*`, `STATE_*`, `ACTIVITY_*`, `VIEW_SPEC`, `APPROVAL_REQUESTED`, `RUN_FINISHED`, `RUN_ERROR`다. native event와 raw stderr는 adapter 안에 머문다.\n\n## 완료 조건\n\n1. 기본·분석 모드가 모두 Agent Runtime을 사용한다.\n2. 세 runtime manifest와 driver가 실제 CLI handshake를 통과한다.\n3. install과 MCP 설정이 digest 승인 전에는 실행되지 않는다.\n4. MCP tools/list에 ask가 없고 canonical registry와 일치한다.\n5. UI 타입검사와 build가 통과한다.\n6. exact evidence 확인 전 Product Outcome이 verified로 올라가지 않는다.\n7. 서버 종료, cancel, session eviction 뒤 child process가 남지 않는다.\n8. 질문별 information coverage와 실제 사용 capability가 `runtimeCoverage`로 구분돼 공개된다.\n9. 정량·비교·문서 답변은 인용 문자열 존재가 아니라 evidence payload의 값·기간·대상·주장을 통과해야 한다.",
       "title": "AI 제품 전환 — Agent Runtime 표면",
       "category": "operation",
       "categoryTitle": "Operation",

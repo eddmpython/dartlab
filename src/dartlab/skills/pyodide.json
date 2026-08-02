@@ -474,6 +474,15 @@
       "limitations": []
     },
     {
+      "id": "engines.simulate",
+      "title": "Simulate",
+      "category": "engines",
+      "status": "limited",
+      "dataSources": [],
+      "requiredSetup": [],
+      "limitations": []
+    },
+    {
       "id": "engines.story",
       "title": "Story (보고서 빌더)",
       "category": "engines",

@@ -5,7 +5,7 @@
       "title": "Analysis",
       "category": "engines",
       "purpose": "Analysis 엔진은 단일 기업의 재무제표, 가치평가, 지배구조, 전망, 기업 단위 매크로 민감도를 22개 분석 축으로 읽는 실행 스킬이다. 트리거 — '재무 분석', '가치평가', '지배구조 점검', '전망'.",
-      "inDegree": 31,
+      "inDegree": 33,
       "outDegree": 7,
       "cluster": "analysis",
       "isEntry": false,
@@ -31,7 +31,7 @@
       "title": "Company",
       "category": "engines",
       "purpose": "Company 엔진은 종목코드 하나를 target으로 고정하고 재무, 공시, 검색, 분석, 신용, 수집, 퀀트, 매크로, 스토리, 산업 연결을 제공하는 facade 실행 스킬이다. 트리거 - '회사 분석', '단일 기업', '005930', 'Company.panel'.",
-      "inDegree": 151,
+      "inDegree": 153,
       "outDegree": 12,
       "cluster": "company",
       "isEntry": false,
@@ -382,7 +382,7 @@
       "title": "Macro",
       "category": "engines",
       "purpose": "Macro 엔진은 경기, 정책, 유동성, 위기, 자산, 심리, 예측, 전파 경로를 6막 구조로 읽는 시장 레벨 분석 스킬이다. 트리거 - '매크로', '거시', '금리', '환율', '전파'.",
-      "inDegree": 44,
+      "inDegree": 46,
       "outDegree": 5,
       "cluster": "macro",
       "isEntry": false,
@@ -538,7 +538,7 @@
       "title": "Quant",
       "category": "engines",
       "purpose": "Quant 엔진은 가격, 기술적 신호, 팩터, 리스크, 텍스트/공시, 횡단면 랭킹, 포트폴리오, 백테스트를 46개 축으로 실행하는 정량 분석 스킬이다. 트리거 - '퀀트', '팩터', '백테스트', '모멘텀', '기술적 신호'.",
-      "inDegree": 32,
+      "inDegree": 33,
       "outDegree": 5,
       "cluster": "quant",
       "isEntry": false,
@@ -671,6 +671,19 @@
       "inDegree": 0,
       "outDegree": 4,
       "cluster": "search",
+      "isEntry": false,
+      "isLeaf": false,
+      "isOrphan": true,
+      "audiences": []
+    },
+    {
+      "id": "engines.simulate",
+      "title": "Simulate",
+      "category": "engines",
+      "purpose": "Simulate 엔진은 회사 재무와 매크로 프리셋을 결정론 드라이버 시트로 연결해 시나리오별 매출, 마진, FCF, DCF 경로와 근거 감사를 만든다. 트리거 - '시나리오', '스트레스 테스트', '금리 충격', 'what if'.",
+      "inDegree": 0,
+      "outDegree": 8,
+      "cluster": "simulate",
       "isEntry": false,
       "isLeaf": false,
       "isOrphan": true,
@@ -3793,7 +3806,7 @@
       "title": "DartLab Skill OS 최초 진입",
       "category": "start",
       "purpose": "사람과 LLM 이 DartLab 을 처음 볼 때 Skills 카탈로그 하나에서 분석 · 엔진 능력 · 운영 규칙 · 확장 절차를 찾는 공식 시작점이다. 외부 API 문서나 흩어진 ops 폴더 대신 skill 검색 → frontmatter 확인 → 본문 절차 → 검증 게이트 순서를 따른다.",
-      "inDegree": 45,
+      "inDegree": 46,
       "outDegree": 7,
       "cluster": "start",
       "isEntry": true,
@@ -4882,6 +4895,46 @@
     {
       "src": "engines.search.disclosureSearch",
       "dst": "engines.company",
+      "kind": "knowledge"
+    },
+    {
+      "src": "engines.simulate",
+      "dst": "engines.macro",
+      "kind": "linkedRecipe"
+    },
+    {
+      "src": "engines.simulate",
+      "dst": "engines.analysis",
+      "kind": "linkedRecipe"
+    },
+    {
+      "src": "engines.simulate",
+      "dst": "engines.company",
+      "kind": "linkedRecipe"
+    },
+    {
+      "src": "engines.simulate",
+      "dst": "engines.quant",
+      "kind": "linkedRecipe"
+    },
+    {
+      "src": "engines.simulate",
+      "dst": "start.dartlabSkillOs",
+      "kind": "knowledge"
+    },
+    {
+      "src": "engines.simulate",
+      "dst": "engines.company",
+      "kind": "knowledge"
+    },
+    {
+      "src": "engines.simulate",
+      "dst": "engines.macro",
+      "kind": "knowledge"
+    },
+    {
+      "src": "engines.simulate",
+      "dst": "engines.analysis",
       "kind": "knowledge"
     },
     {
@@ -9586,6 +9639,7 @@
     "engines.scan.krxIndexStrength",
     "engines.scan.undervaluedQuality",
     "engines.search.disclosureSearch",
+    "engines.simulate",
     "engines.story.companyCausal",
     "engines.story.dartlabStory",
     "engines.viz.tableBackedChart",
@@ -9725,6 +9779,7 @@
     "engines.scan.undervaluedQuality",
     "engines.search",
     "engines.search.disclosureSearch",
+    "engines.simulate",
     "engines.story.companyCausal",
     "engines.story.dartlabStory",
     "engines.viz",
