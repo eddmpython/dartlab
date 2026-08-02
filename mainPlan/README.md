@@ -20,7 +20,7 @@
 
 | 폴더 | 상태 | 한 줄 |
 |---|---|---|
-| [dartlab-north-star](dartlab-north-star/) | ⚪ | 북극성 `Weekly Verified Analysis Loops`와 outcome lifecycle, 실행 증거 registry, scorecard, 주간 제품 운영 주기를 세운다. 현재 값은 `미측정`, Phase 0 착수 대기. |
+| [dartlab-north-star](dartlab-north-star/) | 🟢 | 북극성 `Weekly Verified Analysis Loops`와 outcome lifecycle, 실행 증거 registry, scorecard, 주간 제품 운영 주기를 세운다. **축별 점수표는 루트 README `## 북극성`이 정본**(2026-08-02 원장 결정 4 번복). 현재 전역 값은 `미측정`, 측정 바닥(Phase 0) 구현 대기. |
 
 ## 1. 분석 리포트 · 서사 엔진
 

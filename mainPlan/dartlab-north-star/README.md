@@ -1,6 +1,6 @@
 # DartLab North Star Operating System
 
-상태: 상세 설계 v1, 구현 0 (2026-08-02)
+상태: 상세 설계 v1. 축별 점수표는 루트 README `## 북극성`에 라이브(2026-08-02, 원장 결정 4 번복). 측정 바닥(Phase 0) 구현은 미착수.
 
 범위: DartLab 전체 제품이 기능 수, 모델 호출 수, 페이지뷰가 아니라 검증 가능한 사용자 분석 결과를 기준으로 우선순위를 정하도록 북극성, 결과 수명주기, 증거 레지스트리, scorecard, 주간 운영 주기를 세운다.
 
@@ -25,8 +25,9 @@
 | semantic authority와 count authority 분리 | 로컬 outcome state와 집계 cohort 분리 |
 | expand, improve, repair, revert 판정 | DartLab 주간 outcome review 판정 |
 | 숫자 없는 상태에서 목표 발명 금지 | 현재 baseline `미측정`, 4주 권위 자료 전 목표 0 |
+| README 축별 점수표와 총점 | 루트 README `## 북극성` 점수표 (2026-08-02 운영자 결정으로 도입, 원장 결정 4 번복) |
 
-흡수하지 않는 것은 수기 10점 성숙도 표, workbook 고유 상태명, 계정 기반 D1 admission이다. DartLab에는 별도 제품 문법과 프라이버시 경계가 필요하다.
+축별 점수표의 규율은 xlpod와 같다: 점수 근거는 실제로 도는 게이트와 실측 여정뿐이며, 자동으로 실행되지 않는 경로는 구현돼 있어도 점수로 세지 않는다. 재판정은 주간 outcome review에서만 한다. 흡수하지 않는 것은 workbook 고유 상태명과 계정 기반 D1 admission이다. DartLab에는 별도 제품 문법과 프라이버시 경계가 필요하다.
 
 ## 문서 지도
 
