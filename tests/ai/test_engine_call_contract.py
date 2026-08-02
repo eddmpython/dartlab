@@ -72,6 +72,20 @@ def test_engine_call_tool_spec_requires_canonical_capability_ref() -> None:
     assert "canonical capabilityRef" in spec["inputSchema"]["properties"]["apiRef"]["description"]
 
 
+def test_company_panel_suppresses_protocol_corrupting_stdout(monkeypatch, capsys) -> None:
+    expected = engineCallModule.ToolResult(True, "ok")
+
+    def noisyCompanyShow(_plan):
+        print("library diagnostic must not reach MCP stdout")
+        return expected
+
+    monkeypatch.setattr(engineCallModule, "_capabilityExists", lambda candidate: candidate == "Company.panel")
+    monkeypatch.setattr(engineCallModule, "_companyShow", noisyCompanyShow)
+
+    assert engineCall({"apiRef": "Company.panel", "args": {"stockCode": "005930"}}) is expected
+    assert capsys.readouterr().out == ""
+
+
 def test_top_level_execution_allowlist_excludes_stateful_and_open_world_apis() -> None:
     expected = {
         "analysis",

@@ -97,6 +97,7 @@ testUniverse:
 - 허용 public event는 `TEXT_MESSAGE_*`, `TOOL_CALL_*`, `STATE_*`, `ACTIVITY_*`, `RUN_FINISHED`, `RUN_ERROR`다. 이 목록 밖 이벤트가 채팅 UI로 직접 들어오면 계약 위반이다.
 - local chat과 terminal ask는 공통 `AiPort`를 통해 `/api/ask` 또는 Agent Gateway를 사용한다. provider별 transport를 UI에 만들지 않는다.
 - Runtime Center는 `/api/agent/*` adapter 하나로 설치 상태, MCP 상태, 명시적 digest 승인, runtime 선택을 제공한다. provider API key와 OAuth 입력란은 두지 않는다.
+- Runtime Center의 action은 서버가 `canInstall` 또는 `canConnect`를 명시한 경우에만 보인다. 근거 protocol 미지원 상태는 `blockingReason`과 `recommendedAction`을 표시하고 성공할 수 없는 버튼을 만들지 않는다.
 - 분석형 질문도 별도 고정 Graph나 Loop로 우회하지 않고 같은 Agent Runtime에 analysis capsule을 전달한다.
 - 채팅 본문은 최종 답변, 짧은 activity 로그, 실제 코드/시각화 실행 카드, 실패 notice, source 요약만 렌더한다.
 - raw prompt, raw tool args/result JSON, 내부 trace JSON, `Agent Trace`, `투명성` 박스는 채팅 본문에 렌더하지 않는다.
@@ -107,6 +108,7 @@ testUniverse:
 - 내부 tool id는 채팅 본문에 snake_case로 노출하지 않는다. 기본 표시명은 `replaceAll("_", " ")`를 적용하고, activity 문구는 `search reference 실행함`, `read context 실행함`, `inspect dataset 실행함`, `run python 실행함`, `compile visual 실행함`, `verify 실행함` 형식을 사용한다.
 - 진행 중에는 최근 6개 activity만 보이고, 완료 후에는 `명령어 N개 실행` 한 줄로 접는다.
 - 빈 chunk, 검색-only, tool 실패 은폐, 정형 ref 없는 계산 답변은 성공 outcome으로 release하지 않는다.
+- `RUN_FINISHED.responseMeta.answerQuality`가 있으면 채팅 답변에 검증 배지, 정량/문서 계약, 점수를 표시한다. 품질 게이트 실패 턴의 부분 답변은 렌더하지 않고 공개 실패 사유를 표시한다.
 - evidence chip을 렌더한 것만으로 verified를 기록하지 않는다. 사용자가 exact ref의 `근거 확인`을 실행하고 같은 outcome receipt가 200으로 검증된 뒤에만 Product Outcome을 승격한다.
 - `/ask`와 `/chat`은 같은 실제 Agent Runtime 채팅 표면으로 수렴한다. placeholder 또는 terminal redirect를 공식 Ask 경로로 두지 않는다.
 

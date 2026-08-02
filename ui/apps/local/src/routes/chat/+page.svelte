@@ -112,6 +112,7 @@
 				<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M9 4v16" /></svg>
 			</button>
 			<div class="spacer"></div>
+			{#if cap?.providerLabel}<span class="runtimeBadge">{cap.providerLabel} · 근거 게이트</span>{/if}
 			<a class="ghost" href={`${base}/terminal/${recent}`} title="터미널로" aria-label="터미널로">
 				<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17l6-6-6-6M12 19h8" /></svg>
 			</a>
@@ -189,6 +190,11 @@
 
 									{#if m.refs.length}
 										<Evidence refs={m.refs} />
+									{/if}
+									{#if m.quality?.passed}
+										<div class="qualityBadge" title="인용, 값, 기준시점 결합을 통과한 답변">
+											검증 통과 · {m.quality.contract === 'quantitative' ? '수치' : '공시'} · {m.quality.score}
+										</div>
 									{/if}
 
 									{#if m.suggested.length}
@@ -276,6 +282,18 @@
 	.spacer {
 		flex: 1;
 	}
+	.runtimeBadge, .qualityBadge {
+		display: inline-flex;
+		align-items: center;
+		border: 1px solid color-mix(in srgb, #70d6a5 35%, transparent);
+		border-radius: 999px;
+		padding: .24rem .55rem;
+		color: #8de2b9;
+		background: color-mix(in srgb, #70d6a5 8%, transparent);
+		font-size: .68rem;
+		white-space: nowrap;
+	}
+	.qualityBadge { width: fit-content; margin-top: .65rem; }
 	.ghost {
 		display: inline-flex;
 		align-items: center;
@@ -553,6 +571,7 @@
 		scrollbar-width: thin;
 	}
 	@media (max-width: 720px) {
+		.runtimeBadge { display: none; }
 		.shell :global(.sidebar) {
 			position: fixed;
 			inset: 0 auto 0 0;

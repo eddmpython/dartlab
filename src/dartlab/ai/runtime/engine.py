@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import sqlite3
 import uuid
 from collections import OrderedDict
 from collections.abc import Iterator
@@ -16,11 +17,13 @@ from typing import Any
 from dartlab.productOutcome import advanceOutcome, registerOutcomeEvidence, startOutcome
 
 from .analysisCapsule import buildAnalysisCapsule, buildTurnQuestion
+from .answerQuality import evaluateAnswerQuality
 from .contracts import AgentEvent, RuntimeSession, nowIso
 from .discovery import probeAllRuntimes, probeRuntime
 from .drivers import AcpDriver, ClaudeStreamJsonDriver, CodexAppServerDriver
 from .drivers.base import AgentRuntimeDriver
 from .eventBuffer import EventBuffer
+from .evidenceStore import EvidenceStore
 from .mcpBootstrap import probeMcpConnection
 from .registry import loadRuntimeRegistry
 from .sessionManager import ManagedSession, SessionManager
@@ -54,6 +57,7 @@ class _OutcomeTracker:
     """한 runtime turn의 content-free 결과 전이만 추적한다."""
 
     outcomeId: str | None
+    question: str
     scoped: bool = False
     grounded: bool = False
     answerText: str = ""
@@ -61,17 +65,17 @@ class _OutcomeTracker:
     completionSucceeded: bool = False
     failed: bool = False
     registeredRefIds: set[str] = field(default_factory=set)
-    registeredRefs: dict[str, str] = field(default_factory=dict)
+    registeredRefs: dict[str, dict[str, Any]] = field(default_factory=dict)
     toolNames: dict[str, str] = field(default_factory=dict)
 
     @classmethod
-    def start(cls) -> _OutcomeTracker:
+    def start(cls, question: str) -> _OutcomeTracker:
         """결과 원장 오류가 실제 에이전트 턴을 막지 않는 tracker를 만든다."""
         try:
-            return cls(startOutcome(feature="ask").outcomeId)
+            return cls(startOutcome(feature="ask").outcomeId, question)
         except Exception:  # noqa: BLE001
             logger.exception("product outcome 시작 기록 실패")
-            return cls(None)
+            return cls(None, question)
 
     def enrich(self, event: AgentEvent) -> dict[str, Any]:
         """tool 상관관계와 evidence receipt를 반영한 공개 payload를 만든다."""
@@ -105,7 +109,7 @@ class _OutcomeTracker:
                 self.grounded = True
             registerOutcomeEvidence(str(self.outcomeId), refIds)
             self.registeredRefIds.update(refIds)
-            self.registeredRefs.update({str(item["id"]): str(item.get("kind") or "") for item in refDetails})
+            self.registeredRefs.update({str(item["id"]): dict(item) for item in refDetails})
             payload["evidenceRefs"] = refIds
             payload["refDetails"] = [{**item, "outcomeId": self.outcomeId} for item in refDetails]
         except Exception:  # noqa: BLE001
@@ -139,7 +143,7 @@ class _OutcomeTracker:
             and self.completed
             and self.completionSucceeded
             and self.registeredRefIds
-            and self._hasCitedRequiredEvidence()
+            and self._qualityPassed()
             and not self.failed
         ):
             return
@@ -148,10 +152,16 @@ class _OutcomeTracker:
         except Exception:  # noqa: BLE001
             logger.exception("product outcome 전달 기록 실패")
 
-    def _hasCitedRequiredEvidence(self) -> bool:
-        """답변 본문에 표 또는 문서, 값, 기준시점 ref가 실제로 인용됐는지 확인한다."""
-        citedKinds = {kind for refId, kind in self.registeredRefs.items() if refId in self.answerText}
-        return bool("valueRef" in citedKinds and "dateRef" in citedKinds and {"tableRef", "docRef"} & citedKinds)
+    def _qualityPassed(self) -> bool:
+        """질문 유형별 evidence와 값·시점 binding이 모두 통과했는지 확인한다."""
+        report = evaluateAnswerQuality(
+            self.question,
+            self.answerText,
+            list(self.registeredRefs.values()),
+            completionSucceeded=self.completed and self.completionSucceeded,
+            failed=self.failed,
+        )
+        return report.passed
 
 
 def _runtimeStorePath() -> Path:
@@ -181,10 +191,16 @@ class AgentRuntimeEngine:
         Dataflow=CLI native to semantic event; TargetMarkets=all.
     """
 
-    def __init__(self, sessionStore: SessionStore | None = None, sessionManager: SessionManager | None = None):
+    def __init__(
+        self,
+        sessionStore: SessionStore | None = None,
+        sessionManager: SessionManager | None = None,
+        evidenceStore: EvidenceStore | None = None,
+    ):
         self.registry = loadRuntimeRegistry()
         self.sessionStore = sessionStore or SessionStore(_runtimeStorePath())
         self.sessionManager = sessionManager or SessionManager()
+        self.evidenceStore = evidenceStore or EvidenceStore(self.sessionStore.path)
         self.drivers: dict[str, AgentRuntimeDriver] = {
             "codexAppServer": CodexAppServerDriver(),
             "claudeStreamJson": ClaudeStreamJsonDriver(),
@@ -206,14 +222,29 @@ class AgentRuntimeEngine:
             mcp = (
                 probeMcpConnection(probe.runtimeId, refresh=refresh) if probe.state == "ready" else {"connected": False}
             )
+            groundedReady = probe.state == "ready" and descriptor.embeddedGrounding and bool(mcp.get("connected"))
+            if not descriptor.embeddedGrounding:
+                blockingReason = "현재 CLI 프로토콜이 DartLab 근거 도구를 세션에 노출하지 않습니다"
+                recommendedAction = "공식 프로토콜 지원을 기다리거나 다른 런타임을 선택하세요"
+            elif probe.state != "ready":
+                blockingReason = "CLI가 설치되지 않았거나 실행할 수 없습니다"
+                recommendedAction = "검증된 설치 계획을 확인하세요"
+            elif not mcp.get("connected"):
+                blockingReason = "DartLab MCP 연결이 확인되지 않았습니다"
+                recommendedAction = "검증된 MCP 연결 계획을 확인하세요"
+            else:
+                blockingReason = None
+                recommendedAction = None
             runtimes.append(
                 {
                     **descriptor.toDict(),
                     **probe.toDict(),
                     "mcp": mcp,
-                    "groundedReady": (
-                        probe.state == "ready" and descriptor.embeddedGrounding and bool(mcp.get("connected"))
-                    ),
+                    "groundedReady": groundedReady,
+                    "canInstall": descriptor.embeddedGrounding and probe.state != "ready",
+                    "canConnect": descriptor.embeddedGrounding and probe.state == "ready" and not mcp.get("connected"),
+                    "blockingReason": blockingReason,
+                    "recommendedAction": recommendedAction,
                 }
             )
         return {"runtimes": runtimes, "sessions": self.sessionManager.status()}
@@ -358,38 +389,43 @@ class AgentRuntimeEngine:
         if not question.strip():
             raise ValueError("question은 비어 있을 수 없습니다")
         managed = self._managed(sessionId)
-        tracker = _OutcomeTracker.start()
-        mcp = probeMcpConnection(managed.handle.descriptor.runtimeId)
-        instructions = buildAnalysisCapsule(cwd=managed.handle.cwd, mcpConnected=bool(mcp.get("connected")))
-        turnQuestion = buildTurnQuestion(question, context)
+        if not managed.turnLock.acquire(blocking=False):
+            raise RuntimeError("같은 세션에서 이미 다른 턴이 실행 중입니다")
         try:
-            for event in managed.driver.streamTurn(managed.handle, turnQuestion, instructions=instructions):
-                payload = tracker.enrich(event)
-                self._rememberEvidence(payload)
-                publicEvent = AgentEvent(
-                    event.schemaVersion,
-                    event.sessionId,
-                    event.turnId,
-                    event.eventId,
-                    event.sequence,
-                    event.runtimeId,
-                    event.kind,
-                    event.timestamp,
-                    payload,
-                    event.nativeType,
+            tracker = _OutcomeTracker.start(question)
+            mcp = probeMcpConnection(managed.handle.descriptor.runtimeId)
+            instructions = buildAnalysisCapsule(cwd=managed.handle.cwd, mcpConnected=bool(mcp.get("connected")))
+            turnQuestion = buildTurnQuestion(question, context)
+            try:
+                for event in managed.driver.streamTurn(managed.handle, turnQuestion, instructions=instructions):
+                    payload = tracker.enrich(event)
+                    self._rememberEvidence(payload)
+                    publicEvent = AgentEvent(
+                        event.schemaVersion,
+                        event.sessionId,
+                        event.turnId,
+                        event.eventId,
+                        event.sequence,
+                        event.runtimeId,
+                        event.kind,
+                        event.timestamp,
+                        payload,
+                        event.nativeType,
+                    )
+                    managed.buffer.append(publicEvent)
+                    tracker.observe(event)
+                    yield publicEvent
+                tracker.finalize()
+                self.sessionStore.touch(sessionId, managed.handle.nativeSessionId)
+            except Exception as exc:  # noqa: BLE001
+                turnId = managed.handle.activeTurnId or uuid.uuid4().hex
+                errorEvent = managed.handle.projector.event(
+                    "runtimeError", turnId=turnId, payload={"error": str(exc), "outcomeId": tracker.outcomeId}
                 )
-                managed.buffer.append(publicEvent)
-                tracker.observe(event)
-                yield publicEvent
-            tracker.finalize()
-            self.sessionStore.touch(sessionId, managed.handle.nativeSessionId)
-        except Exception as exc:  # noqa: BLE001
-            turnId = managed.handle.activeTurnId or uuid.uuid4().hex
-            errorEvent = managed.handle.projector.event(
-                "runtimeError", turnId=turnId, payload={"error": str(exc), "outcomeId": tracker.outcomeId}
-            )
-            managed.buffer.append(errorEvent)
-            yield errorEvent
+                managed.buffer.append(errorEvent)
+                yield errorEvent
+        finally:
+            managed.turnLock.release()
 
     def _rememberEvidence(self, payload: dict[str, Any]) -> None:
         """한 프로세스 수명 동안 exact ref의 작은 공개 projection을 bounded 보관한다."""
@@ -404,6 +440,10 @@ class AgentRuntimeEngine:
                 key = (outcomeId, str(item["id"]))
                 self._evidenceJournal[key] = dict(item)
                 self._evidenceJournal.move_to_end(key)
+                try:
+                    self.evidenceStore.save(outcomeId, dict(item))
+                except (OSError, ValueError, sqlite3.Error):
+                    logger.exception("runtime evidence projection 저장 실패")
             while len(self._evidenceJournal) > 512:
                 self._evidenceJournal.popitem(last=False)
 
@@ -413,7 +453,14 @@ class AgentRuntimeEngine:
         with self._evidenceLock:
             detail = self._evidenceJournal.get(key)
             if detail is None:
-                raise KeyError("evidence detail not found in the active runtime")
+                try:
+                    detail = self.evidenceStore.get(outcomeId, refId)
+                except (OSError, ValueError, sqlite3.Error):
+                    logger.exception("runtime evidence projection 조회 실패")
+                    detail = None
+                if detail is None:
+                    raise KeyError("evidence detail not found for the exact outcome")
+                self._evidenceJournal[key] = dict(detail)
             self._evidenceJournal.move_to_end(key)
             return dict(detail)
 

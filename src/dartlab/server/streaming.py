@@ -655,6 +655,9 @@ async def _syncGenToAsync(genFn, *args, **kwargs):
         cancelled.set()
         raise
     finally:
+        # async generator aclose처럼 CancelledError를 거치지 않는 소비자 이탈도
+        # producer가 다음 프레임에서 즉시 멈추도록 보장한다.
+        cancelled.set()
         _releaseRuntimeHeap()
 
 

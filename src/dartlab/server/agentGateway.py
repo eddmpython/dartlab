@@ -64,6 +64,7 @@ async def streamAgentRun(req: AgentRunRequest) -> AsyncIterator[dict[str, str]]:
     runId = uuid.uuid4().hex
     messageId = f"msg-{uuid.uuid4().hex}"
     text_started = False
+    completed = False
 
     kernelKwargs = _kernelKwargs(req)
     agentMetrics.record("agent-runtime")
@@ -89,12 +90,21 @@ async def streamAgentRun(req: AgentRunRequest) -> AsyncIterator[dict[str, str]]:
                 yield public
         if text_started:
             yield _event("TEXT_MESSAGE_END", {"messageId": messageId})
+        completed = True
     except Exception as exc:  # noqa: BLE001
         logger.exception("agent run failed (runId=%s)", runId)
         yield _event(
             "RUN_ERROR",
             {"runId": runId, "message": _publicFailure(str(exc)), "code": "agent_run_failed"},
         )
+    finally:
+        if not completed and req.threadId:
+            try:
+                from dartlab.ai.runtime import getRuntimeEngine
+
+                getRuntimeEngine().cancel(req.threadId)
+            except Exception:  # noqa: BLE001
+                logger.debug("이미 종료된 agent runtime session 취소 생략", exc_info=True)
 
 
 def _graphNodeEvents(data: dict, *, runId: str) -> list[dict[str, str]]:
@@ -587,7 +597,14 @@ def _publicResultPayload(data: dict[str, Any]) -> dict[str, Any] | None:
 
 
 def _publicResponseMeta(meta: dict[str, Any]) -> dict[str, Any]:
-    allowed = {"refCount", "verificationOk", "artifactCount", "activityCount", "responseStatus"}
+    allowed = {
+        "refCount",
+        "verificationOk",
+        "artifactCount",
+        "activityCount",
+        "responseStatus",
+        "answerQuality",
+    }
     return {key: meta.get(key) for key in allowed if key in meta}
 
 

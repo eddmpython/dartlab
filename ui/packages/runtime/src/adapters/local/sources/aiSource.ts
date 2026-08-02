@@ -55,7 +55,7 @@ export function localAiPort(api: LocalApi): AiPort {
 					streaming: true,
 					toolCalling: selected.mcp?.connected === true,
 					localWorkspace: true,
-					deterministicAnswers: true,
+					deterministicAnswers: false,
 					providerLabel: selected.displayName,
 					modelLabel: selected.version ?? undefined,
 					runtimeId: selected.runtimeId

@@ -142,6 +142,8 @@ def testRuntimeEngineStreamsAndAdvancesOutcome(tmp_path, monkeypatch):
         },
     ]
     assert engine.resolveEvidence(outcomeId, "table:exact")["kind"] == "tableRef"
+    restarted = AgentRuntimeEngine(SessionStore(tmp_path / "sessions.sqlite3"), SessionManager())
+    assert restarted.resolveEvidence(outcomeId, "table:exact")["kind"] == "tableRef"
     store = OutcomeStore(tmp_path / "outcomes.sqlite3")
     assert store.get(outcomeId).state == "delivered"
     assert store.verifyEvidence(outcomeId, "table:exact").state == "verified"
@@ -176,6 +178,32 @@ def testRuntimeContextIsBoundedAndTranscriptFree(tmp_path, monkeypatch):
     assert managed is not None
     assert '"stockCode":"005930"' in managed.handle.metadata["question"]
     assert "민감" not in managed.handle.metadata["question"]
+
+
+def testSameSessionRejectsConcurrentTurn(tmp_path, monkeypatch):
+    descriptor = RuntimeDescriptor(
+        "fake", "Fake", "fake", "ndjson", ("fake",), ("--version",), (), (), "https://example.invalid"
+    )
+    monkeypatch.setattr(
+        runtimeEngineModule, "probeRuntime", lambda value: RuntimeProbe("fake", "ready", sysExecutable())
+    )
+    monkeypatch.setattr(
+        runtimeEngineModule,
+        "probeMcpConnection",
+        lambda runtimeId, **_kwargs: {"connected": True, "mode": "test"},
+    )
+    engine = AgentRuntimeEngine(SessionStore(tmp_path / "sessions.sqlite3"), SessionManager())
+    engine.registry = {"fake": descriptor}
+    engine.drivers = {"fake": FakeDriver()}
+    session = engine.openSession(runtimeId="fake", cwd=tmp_path)
+    managed = engine.sessionManager.get(session.sessionId)
+    assert managed is not None
+    assert managed.turnLock.acquire(blocking=False)
+    try:
+        with pytest.raises(RuntimeError, match="이미 다른 턴"):
+            list(engine.streamTurn(session.sessionId, "동시 질문"))
+    finally:
+        managed.turnLock.release()
 
 
 def testStoredSessionKeepsItsOriginalWorkspace(tmp_path, monkeypatch):

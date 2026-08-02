@@ -13,6 +13,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 
 from .discovery import discoverExecutable
+from .drivers.base import runtimeExecutableArgv
 from .registry import loadRuntimeRegistry
 
 _MCP_PROBE_TTL_SECONDS = 15.0
@@ -74,16 +75,17 @@ def buildMcpConnectPlan(runtimeId: str) -> McpConnectPlan:
     Example: `plan = buildMcpConnectPlan("codex")`.
     """
     descriptor = loadRuntimeRegistry()[runtimeId]
+    if not descriptor.embeddedGrounding:
+        raise ValueError(f"{runtimeId}의 현재 프로토콜은 DartLab MCP 도구를 런타임 세션에 노출하지 않습니다")
     executable = discoverExecutable(descriptor)
     if executable is None:
         raise FileNotFoundError(runtimeId)
     serverArgs = (sys.executable, "-X", "utf8", "-m", "dartlab.mcp")
+    launch = runtimeExecutableArgv(descriptor, executable)
     if runtimeId == "codex":
-        argv = (executable, "mcp", "add", "dartlab", "--", *serverArgs)
+        argv = (*launch, "mcp", "add", "dartlab", "--", *serverArgs)
     elif runtimeId == "claude":
-        argv = (executable, "mcp", "add", "--scope", "user", "dartlab", "--", *serverArgs)
-    elif runtimeId == "cline":
-        argv = (executable, "mcp", "install", "dartlab", "--yes", "--json", "--", *serverArgs)
+        argv = (*launch, "mcp", "add", "--scope", "user", "dartlab", "--", *serverArgs)
     else:
         raise ValueError(f"{runtimeId}의 MCP 연결 방식을 지원하지 않습니다")
     canonical = json.dumps({"runtimeId": runtimeId, "argv": argv}, ensure_ascii=False, separators=(",", ":"))
@@ -152,7 +154,7 @@ def probeMcpConnection(runtimeId: str, *, refresh: bool = False) -> dict[str, ob
             _MCP_CACHE[runtimeId] = (time.monotonic(), result)
         return dict(result)
     completed = subprocess.run(
-        [executable, "mcp", "get", "dartlab"],
+        [*runtimeExecutableArgv(descriptor, executable), "mcp", "get", "dartlab"],
         capture_output=True,
         text=True,
         encoding="utf-8",

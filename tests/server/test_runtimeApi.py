@@ -13,7 +13,8 @@ def testRuntimeInstallEndpointReturnsPlanWithoutExecuting():
     value = planRuntimeInstall("codex")
 
     assert value["runtimeId"] == "codex"
-    assert value["argv"][:3] == ("npm", "install", "-g")
+    assert value["argv"][0].casefold().endswith(("npm", "npm.cmd"))
+    assert value["argv"][1:3] == ("install", "-g")
     assert len(value["digest"]) == 64
 
 

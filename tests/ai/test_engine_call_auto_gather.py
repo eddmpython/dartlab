@@ -87,3 +87,38 @@ def test_auto_gather_disabled_via_env_var(monkeypatch: pytest.MonkeyPatch) -> No
     assert result.ok is False
     assert result.error == "empty_result"
     assert company.update_called is False
+
+
+@pytest.mark.unit
+def test_requested_annual_period_binds_value_and_date_refs() -> None:
+    """YYYY 요청은 해당 연도 Q4 누적값을 value/date ref의 기준시점으로 사용한다."""
+
+    class _IncomeCompany(_MockCompany):
+        def panel(self, topic: str) -> pl.DataFrame:
+            return pl.DataFrame(
+                {
+                    "snakeId": ["revenue"],
+                    "항목": ["매출액"],
+                    "2025Q4": [400_000_000_000],
+                    "2024Q1": [70_000_000_000],
+                    "2024Q2": [80_000_000_000],
+                    "2024Q3": [90_000_000_000],
+                    "2024Q4": [60_000_000_000],
+                }
+            )
+
+    company = _IncomeCompany()
+    with (
+        patch("dartlab.ai.tools.engineCall._resolveCompany", return_value=company),
+        patch("dartlab.ai.tools.engineCall.buildPeriodToFiling", return_value={}),
+        patch("dartlab.ai.tools.engineCall.getDcrBadge", return_value=None),
+        patch("dartlab.ai.tools.engineCall.getIndustryBadge", return_value=None),
+    ):
+        result = _companyShow({"target": "005930", "topic": "IS", "period": "2024", "freq": "Y"})
+
+    assert result.ok is True
+    valueRef = next(ref for ref in result.refs if ref.kind == "valueRef")
+    dateRef = next(ref for ref in result.refs if ref.kind == "dateRef")
+    assert valueRef.payload["period"] == "2024FY"
+    assert valueRef.payload["value"] == 300_000_000_000
+    assert dateRef.payload["period"] == "2024FY"

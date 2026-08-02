@@ -123,6 +123,16 @@ export interface AiStreamRunFinished {
 	status: 'ok' | 'failed';
 	refs: string[];
 	suggestedQuestions: string[];
+	responseMeta?: {
+		responseStatus?: string;
+		answerQuality?: {
+			passed: boolean;
+			contract: 'quantitative' | 'documentary';
+			score: number;
+			issues: string[];
+			citedRefIds: string[];
+		};
+	};
 }
 
 export interface AiStreamRunError {

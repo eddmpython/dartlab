@@ -261,6 +261,19 @@ def test_ai_dev_selects_platform_npm_shim():
     assert _npmCommand(platform="posix") == "npm"
 
 
+def test_ai_dev_finds_npm_workspace_root(tmp_path):
+    import json
+
+    from dartlab.cli.commands.ai import _npmWorkspaceRoot
+
+    app = tmp_path / "ui" / "apps" / "local"
+    app.mkdir(parents=True)
+    (tmp_path / "package.json").write_text(json.dumps({"workspaces": ["ui/apps/*"]}), encoding="utf-8")
+    (app / "package.json").write_text(json.dumps({"name": "local"}), encoding="utf-8")
+
+    assert _npmWorkspaceRoot(app) == tmp_path
+
+
 # ── 14. share (reset 모드) ──
 
 

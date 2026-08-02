@@ -75,7 +75,7 @@
 <section class="runtimeCenter">
 	<header>
 		<div>
-			<h2>Agent Runtime Center</h2>
+			<h2>에이전트 런타임 센터</h2>
 			<p>로그인과 모델은 설치된 CLI가 소유하고, DartLab은 재무 도구와 근거를 연결합니다.</p>
 		</div>
 		<button class="secondary" onclick={() => load(true)} disabled={loading}>다시 확인</button>
@@ -105,15 +105,21 @@
 						<div><dt>로컬 채팅</dt><dd>{runtime.embeddedGrounding ? '지원' : '현재 버전 미지원'}</dd></div>
 						<div><dt>인증</dt><dd>CLI가 직접 관리</dd></div>
 					</dl>
+					{#if runtime.blockingReason}
+						<div class="blockedNote">
+							<strong>{runtime.blockingReason}</strong>
+							{#if runtime.recommendedAction}<span>{runtime.recommendedAction}</span>{/if}
+						</div>
+					{/if}
 					<div class="actions">
 						{#if runtime.state === 'ready'}
 							<button onclick={() => selectRuntime(runtime.runtimeId)} disabled={!runtime.groundedReady || selected === runtime.runtimeId}>
 								{selected === runtime.runtimeId ? '사용 중' : '이 런타임 사용'}
 							</button>
-							{#if !runtime.mcp?.connected}
+							{#if runtime.canConnect}
 								<button class="secondary" onclick={() => makePlan('mcp', runtime.runtimeId)} disabled={busy !== null}>MCP 연결</button>
 							{/if}
-						{:else}
+						{:else if runtime.canInstall}
 							<button onclick={() => makePlan('install', runtime.runtimeId)} disabled={busy !== null}>설치 계획</button>
 						{/if}
 						<a href={runtime.officialUrl} target="_blank" rel="noreferrer">공식 문서</a>
@@ -162,6 +168,8 @@
 	.plan h3 { margin: 0; font-size: .95rem; }
 	code { display: block; padding: .75rem; border-radius: 8px; background: #090a0c; overflow-x: auto; white-space: pre; font-size: .75rem; }
 	.error { color: #ff8c8c; padding: .65rem; border: 1px solid #713b3b; border-radius: 8px; }
+	.blockedNote { display: grid; gap: .25rem; margin: -.15rem 0 .8rem; padding: .65rem .75rem; border-radius: 8px; background: color-mix(in srgb, #f1b85b 9%, transparent); color: #e7c786; font-size: .75rem; line-height: 1.45; }
+	.blockedNote span { color: var(--dl-ink-dim, #9aa0aa); }
 	.empty { color: var(--dl-ink-dim, #9aa0aa); padding: 1rem 0; }
 	.spinner { display: block; width: 1.4rem; height: 1.4rem; border: 2px solid var(--dl-line, #2a2c33); border-top-color: var(--dl-accent, #ff5a36); border-radius: 50%; animation: spin .8s linear infinite; }
 	@keyframes spin { to { transform: rotate(360deg); } }

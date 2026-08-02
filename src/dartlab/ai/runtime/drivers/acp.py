@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import time
 import uuid
 from collections.abc import Iterator
+from contextlib import suppress
 from pathlib import Path
 from typing import Any
 
@@ -11,7 +13,7 @@ from ..contracts import AgentEvent, ProcessSpec, RuntimeDescriptor
 from ..eventProjection import EventProjector
 from ..mcpBootstrap import embeddedMcpServerSpec
 from ..processSupervisor import JsonRpcChannel, ProcessSupervisor
-from .base import DriverHandle, runtimeLaunchArgv
+from .base import DriverHandle, remainingTurnSeconds, runtimeLaunchArgv, runtimeTurnTimeoutSeconds
 
 
 class AcpDriver:
@@ -104,9 +106,15 @@ class AcpDriver:
             }
         )
         yield handle.projector.event("turnStarted", turnId=turnId)
+        timeoutSeconds = runtimeTurnTimeoutSeconds()
+        deadline = time.monotonic() + timeoutSeconds
+        completed = False
         try:
             while True:
-                message = handle.channel.nextMessage(timeout=300)
+                try:
+                    message = handle.channel.nextMessage(timeout=remainingTurnSeconds(deadline, timeoutSeconds))
+                except TimeoutError as exc:
+                    raise TimeoutError(f"에이전트 턴이 {timeoutSeconds:g}초 제한을 초과했습니다") from exc
                 nativeType = str(message.get("method") or message.get("type") or "native")
                 if "id" in message and nativeType in {"session/request_permission", "session/requestPermission"}:
                     approvalId = str(message["id"])
@@ -130,8 +138,12 @@ class AcpDriver:
                     else:
                         result = message.get("result") if isinstance(message.get("result"), dict) else {}
                         yield handle.projector.event("turnCompleted", turnId=turnId, payload=result)
+                    completed = True
                     return
         finally:
+            if not completed and handle.activeTurnId:
+                with suppress(Exception):
+                    self.cancel(handle)
             handle.activeTurnId = None
 
     def cancel(self, handle: DriverHandle) -> None:

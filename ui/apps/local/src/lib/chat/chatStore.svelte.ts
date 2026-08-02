@@ -42,6 +42,7 @@ export interface ChatMessage {
 	suggested: string[];
 	error: string | null;
 	streaming: boolean;
+	quality: { passed: boolean; contract: 'quantitative' | 'documentary'; score: number } | null;
 }
 
 export interface Conversation {
@@ -175,7 +176,8 @@ export class ChatStore {
 			approvals: [],
 			suggested: [],
 			error: null,
-			streaming: false
+			streaming: false,
+			quality: null
 		});
 		conv.messages.push({
 			id: this.#uid('a'),
@@ -187,7 +189,8 @@ export class ChatStore {
 			approvals: [],
 			suggested: [],
 			error: null,
-			streaming: true
+			streaming: true,
+			quality: null
 		});
 		conv.updatedAt = Date.now();
 		const idx = conv.messages.length - 1;
@@ -195,7 +198,7 @@ export class ChatStore {
 		// 지원 CLI가 없으면 heuristic 폴백 대신 설치 경로를 정직하게 안내한다.
 		if (this.capabilitiesLoaded && !this.connected) {
 			conv.messages[idx].text =
-				'사용 가능한 agent CLI가 없습니다. 우측 상단 Runtime Center에서 Codex, Claude Code, Cline 중 하나의 설치 계획을 확인하세요.';
+				'사용 가능한 근거 기반 agent CLI가 없습니다. 우측 상단 런타임 센터에서 지원 런타임의 설치와 연결 상태를 확인하세요.';
 			conv.messages[idx].streaming = false;
 			conv.updatedAt = Date.now();
 			this.busy = false;
@@ -305,6 +308,13 @@ export class ChatStore {
 			}
 			case 'RUN_FINISHED':
 				m.suggested = ev.suggestedQuestions ?? [];
+				if (ev.responseMeta?.answerQuality) {
+					m.quality = {
+						passed: ev.responseMeta.answerQuality.passed,
+						contract: ev.responseMeta.answerQuality.contract,
+						score: ev.responseMeta.answerQuality.score
+					};
+				}
 				break;
 			case 'RUN_ERROR':
 				m.error = ev.message;

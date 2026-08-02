@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 import uuid
 from collections.abc import Iterator
 from pathlib import Path
@@ -11,7 +12,7 @@ from ..contracts import AgentEvent, ProcessSpec, RuntimeDescriptor
 from ..eventProjection import EventProjector
 from ..mcpBootstrap import claudeReadOnlyMcpTools
 from ..processSupervisor import ProcessClosedError, ProcessSupervisor
-from .base import DriverHandle, runtimeLaunchArgv
+from .base import DriverHandle, remainingTurnSeconds, runtimeLaunchArgv, runtimeTurnTimeoutSeconds
 
 
 def _claudeToolArgs() -> tuple[str, ...]:
@@ -82,11 +83,16 @@ class ClaudeStreamJsonDriver:
         handle.supervisor = supervisor
         supervisor.start()
         completed = False
+        timeoutSeconds = runtimeTurnTimeoutSeconds()
+        deadline = time.monotonic() + timeoutSeconds
         try:
             yield handle.projector.event("turnStarted", turnId=turnId)
             while True:
                 try:
-                    message = supervisor.readJson(timeout=300)
+                    message = supervisor.readJson(timeout=remainingTurnSeconds(deadline, timeoutSeconds))
+                except TimeoutError as exc:
+                    self.cancel(handle)
+                    raise TimeoutError(f"에이전트 턴이 {timeoutSeconds:g}초 제한을 초과했습니다") from exc
                 except ProcessClosedError:
                     break
                 for event in handle.projector.project(message, turnId=turnId):

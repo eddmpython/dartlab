@@ -117,7 +117,7 @@ _SPECS: dict[str, ToolSpec] = {
                 },
                 "args": {
                     "type": "object",
-                    "description": "인자 dict — **항상 필수, 빈 dict {} 라도 명시**. Company.panel → {'stockCode': '005930', 'topic': 'IS'} (stockCode 필수). scan → {'axis': 'growth'}. macro → {}. **stockCode·target·topic·axis 같은 키를 plan root 가 아닌 *args 안에* 넣어라**.",
+                    "description": "인자 dict. **항상 필수, 빈 dict {} 라도 명시**. Company.panel → {'stockCode': '005930', 'topic': 'IS', 'period': '2024', 'freq': 'Y'} (stockCode 필수, YYYY+Y는 IS/CF 분기를 FY로 직접 합산하므로 RunPython 재계산 금지). scan → {'axis': 'growth'}. macro → {}. **stockCode·target·topic·period·freq·axis 같은 키를 plan root 가 아닌 *args 안에* 넣어라**.",
                     "additionalProperties": True,
                 },
             },

@@ -1178,7 +1178,8 @@ def runRuntimeAgent(question: str, **kwargs: Any) -> Iterator[TraceEvent]:
             elif event.kind == "turnCompleted":
                 terminalSeen = True
                 answer = "".join(answerParts)
-                committed = _runtimeAnswerCommitted(answer, evidenceRefs, event.payload, failed=failed)
+                quality = _runtimeAnswerQuality(question, answer, evidenceRefs, event.payload, failed=failed)
+                committed = quality.passed
                 if committed:
                     yield TraceEvent("chunk", {"text": answer})
                 else:
@@ -1194,6 +1195,7 @@ def runRuntimeAgent(question: str, **kwargs: Any) -> Iterator[TraceEvent]:
                         answerCommitted=committed,
                         refs=evidenceRefs,
                         outcomeId=outcomeId,
+                        qualityReport=quality.toDict(),
                     ),
                 )
         if not terminalSeen:
@@ -1250,14 +1252,31 @@ def _runtimeAnswerCommitted(
     completionPayload: dict[str, Any],
     *,
     failed: bool,
+    question: str = "",
 ) -> bool:
     """정상 종료와 본문 exact evidence 인용을 함께 만족한 답변만 공개한다."""
+    return _runtimeAnswerQuality(question, answer, refs, completionPayload, failed=failed).passed
+
+
+def _runtimeAnswerQuality(
+    question: str,
+    answer: str,
+    refs: list[dict[str, Any]],
+    completionPayload: dict[str, Any],
+    *,
+    failed: bool,
+):
+    """런타임 종료 payload를 중앙 답변 품질 게이트 입력으로 변환한다."""
+    from .runtime.answerQuality import evaluateAnswerQuality
     from .runtime.engine import _turnCompletedSuccessfully
 
-    if failed or not answer.strip() or not _turnCompletedSuccessfully(completionPayload):
-        return False
-    citedKinds = {str(ref.get("kind") or "") for ref in refs if str(ref.get("id") or "") in answer}
-    return bool("valueRef" in citedKinds and "dateRef" in citedKinds and {"tableRef", "docRef"} & citedKinds)
+    return evaluateAnswerQuality(
+        question,
+        answer,
+        refs,
+        completionSucceeded=_turnCompletedSuccessfully(completionPayload),
+        failed=failed,
+    )
 
 
 def _runtimeDoneData(
@@ -1266,6 +1285,7 @@ def _runtimeDoneData(
     answerCommitted: bool,
     refs: list[dict[str, Any]],
     outcomeId: str | None,
+    qualityReport: dict[str, Any],
 ) -> dict[str, Any]:
     """공개 adapter와 Outcome 원장이 같은 완료 근거를 보도록 종료 payload를 만든다."""
     return {
@@ -1278,11 +1298,25 @@ def _runtimeDoneData(
             "sessionId": event.sessionId,
             "outcomeId": outcomeId,
             "verificationStatus": "evidenceCommitted" if answerCommitted else "rejected",
-            "failureReason": None
-            if answerCommitted
-            else "answer lacks cited table or document, value, and date evidence",
+            "answerQuality": qualityReport,
+            "failureReason": None if answerCommitted else _qualityFailureReason(qualityReport),
         },
     }
+
+
+def _qualityFailureReason(report: dict[str, Any]) -> str:
+    """내부 issue code를 사용자가 이해할 수 있는 차단 사유로 바꾼다."""
+    labels = {
+        "runtime_not_completed": "런타임이 정상 완료되지 않았습니다",
+        "empty_answer": "최종 답변이 비어 있습니다",
+        "source_ref_missing": "표 또는 공시 근거가 답변에 인용되지 않았습니다",
+        "date_ref_missing": "기준시점 근거가 답변에 인용되지 않았습니다",
+        "value_ref_missing": "수치 근거가 답변에 인용되지 않았습니다",
+        "value_binding_mismatch": "답변 수치가 인용한 근거 값과 일치하지 않습니다",
+        "date_binding_mismatch": "답변 기준시점이 인용한 근거와 일치하지 않습니다",
+    }
+    issues = report.get("issues") if isinstance(report.get("issues"), (list, tuple)) else []
+    return "; ".join(labels.get(str(issue), str(issue)) for issue in issues) or "답변 품질 게이트를 통과하지 못했습니다"
 
 
 def _runtimeToolData(payload: dict[str, Any], *, status: str) -> dict[str, Any]:

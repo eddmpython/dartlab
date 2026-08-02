@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import threading
 from collections import OrderedDict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 from .drivers.base import AgentRuntimeDriver, DriverHandle
@@ -18,6 +18,7 @@ class ManagedSession:
     driver: AgentRuntimeDriver
     handle: DriverHandle
     buffer: EventBuffer
+    turnLock: threading.Lock = field(default_factory=threading.Lock)
 
 
 class SessionManager:
@@ -41,7 +42,19 @@ class SessionManager:
                 old.driver.close(old.handle)
             self._sessions[sessionId] = managed
             while len(self._sessions) > self.maxHotSessions:
-                _, evicted = self._sessions.popitem(last=False)
+                evictId = next(
+                    (
+                        candidateId
+                        for candidateId, candidate in self._sessions.items()
+                        if candidateId != sessionId and candidate.handle.activeTurnId is None
+                    ),
+                    None,
+                )
+                if evictId is None:
+                    self._sessions.pop(sessionId, None)
+                    managed.driver.close(managed.handle)
+                    raise RuntimeError("모든 hot session이 실행 중이라 새 세션을 열 수 없습니다")
+                evicted = self._sessions.pop(evictId)
                 evicted.driver.close(evicted.handle)
         return managed
 

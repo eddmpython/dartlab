@@ -6,7 +6,14 @@ from pathlib import Path
 
 import pytest
 
+from dartlab.ai.runtime.analysisCapsule import buildAnalysisCapsule, buildTurnQuestion
 from dartlab.ai.runtime.contracts import ProcessSpec, RuntimeDescriptor, RuntimeProbe
+from dartlab.ai.runtime.drivers.base import (
+    remainingTurnSeconds,
+    runtimeExecutableArgv,
+    runtimeLaunchArgv,
+    runtimeTurnTimeoutSeconds,
+)
 from dartlab.ai.runtime.drivers.claudeStreamJson import _claudeToolArgs
 from dartlab.ai.runtime.drivers.codexAppServer import CodexAppServerDriver
 from dartlab.ai.runtime.eventBuffer import EventBuffer
@@ -39,6 +46,53 @@ def testRuntimeRegistryHasThreeNativeDrivers():
     assert loadRuntimeRegistry()["cline"].launchArgs == ("--acp", "--auto-approve", "false")
     assert loadRuntimeRegistry()["cline"].embeddedGrounding is False
     assert loadRuntimeRegistry()["codex"].embeddedGrounding is True
+
+
+def testRuntimeExecutablePrefixDoesNotIncludeDefaultLaunchArgs(monkeypatch):
+    descriptor = RuntimeDescriptor(
+        "fake", "Fake", "fake", "jsonrpc", ("fake",), (), ("app-server",), (), "https://example.invalid"
+    )
+    monkeypatch.setattr("dartlab.ai.runtime.drivers.base.os.name", "posix")
+
+    assert runtimeExecutableArgv(descriptor, "/bin/fake") == ("/bin/fake",)
+    assert runtimeLaunchArgv(descriptor, "/bin/fake") == ("/bin/fake", "app-server")
+
+
+def testRuntimeTurnTimeoutIsBoundedAndInvalidValuesUseDefault(monkeypatch):
+    monkeypatch.setenv("DARTLAB_AGENT_TURN_TIMEOUT_SECONDS", "5")
+    assert runtimeTurnTimeoutSeconds() == 30
+    monkeypatch.setenv("DARTLAB_AGENT_TURN_TIMEOUT_SECONDS", "1200")
+    assert runtimeTurnTimeoutSeconds() == 900
+    monkeypatch.setenv("DARTLAB_AGENT_TURN_TIMEOUT_SECONDS", "invalid")
+    assert runtimeTurnTimeoutSeconds() == 300
+    monkeypatch.setenv("DARTLAB_AGENT_TURN_TIMEOUT_SECONDS", "nan")
+    assert runtimeTurnTimeoutSeconds() == 300
+
+
+def testExpiredTurnDeadlineFailsClosed():
+    with pytest.raises(TimeoutError, match="300초 제한"):
+        remainingTurnSeconds(0, 300)
+
+
+def testAnalysisCapsuleHasFiniteToolRoutingContract(tmp_path):
+    capsule = buildAnalysisCapsule(cwd=tmp_path, mcpConnected=True)
+
+    assert "턴당 정확히 한 번" in capsule
+    assert "전체 도구 호출 8회 이내" in capsule
+    assert "DartLab 외 다른 MCP 서버의 도구는 사용하지 마라" in capsule
+    assert "필요한 근거가 확보되면 더 탐색하지 말고 즉시 답변" in capsule
+    assert "start.dartlabSkillOs" in capsule
+    assert "period와 freq를 누락하지 말고" in capsule
+
+
+def testTurnQuestionPromotesExplicitPeriodToStructuredContext():
+    question = buildTurnQuestion(
+        "삼성전자 2024년 연간 매출액은?",
+        {"stockCode": "005930"},
+    )
+
+    assert '"period":"2024"' in question
+    assert '"stockCode":"005930"' in question
 
 
 def testCodexUsesThreadInstructionsAndReadOnlyTurn(monkeypatch, tmp_path):
@@ -131,6 +185,116 @@ def testCodexHandshakeFailureStopsChild(monkeypatch, tmp_path):
     assert holder["supervisor"].stopped is True
 
 
+def testCodexTurnTimeoutInterruptsNativeTurn(monkeypatch, tmp_path):
+    interrupted: list[tuple[str, dict]] = []
+
+    class FakeSupervisor:
+        def __init__(self, _spec):
+            pass
+
+        def start(self):
+            return None
+
+        def stop(self):
+            return None
+
+    class TimeoutChannel:
+        def __init__(self, _supervisor):
+            pass
+
+        def request(self, method, params, *, timeout):
+            if method == "thread/start":
+                return {"thread": {"id": "thread-1"}}
+            if method == "turn/start":
+                return {"turn": {"id": "turn-1"}}
+            return {}
+
+        def notify(self, method, params):
+            return None
+
+        def nextMessage(self, *, timeout):
+            raise TimeoutError("deadline")
+
+        def startRequest(self, method, params):
+            interrupted.append((method, params))
+            return 3
+
+    monkeypatch.setattr("dartlab.ai.runtime.drivers.codexAppServer.ProcessSupervisor", FakeSupervisor)
+    monkeypatch.setattr("dartlab.ai.runtime.drivers.codexAppServer.JsonRpcChannel", TimeoutChannel)
+    descriptor = RuntimeDescriptor(
+        "codex", "Codex", "codexAppServer", "jsonrpc", ("codex",), (), ("app-server",), (), "https://example.invalid"
+    )
+    driver = CodexAppServerDriver()
+    handle = driver.open(descriptor, "codex", "session-1", tmp_path, instructions="capsule")
+
+    with pytest.raises(TimeoutError, match="300초 제한"):
+        list(driver.streamTurn(handle, "질문", instructions="capsule"))
+
+    assert interrupted == [("turn/interrupt", {"threadId": "thread-1", "turnId": "turn-1"})]
+    assert handle.activeTurnId is None
+
+
+def testCodexConsumerDisconnectInterruptsNativeTurn(monkeypatch, tmp_path):
+    interrupted: list[tuple[str, dict]] = []
+
+    class FakeSupervisor:
+        def __init__(self, _spec):
+            pass
+
+        def start(self):
+            return None
+
+        def stop(self):
+            return None
+
+    class StreamingChannel:
+        def __init__(self, _supervisor):
+            pass
+
+        def request(self, method, params, *, timeout):
+            if method == "thread/start":
+                return {"thread": {"id": "thread-1"}}
+            if method == "turn/start":
+                return {"turn": {"id": "turn-1"}}
+            return {}
+
+        def notify(self, method, params):
+            return None
+
+        def nextMessage(self, *, timeout):
+            return {
+                "method": "item/started",
+                "params": {"item": {"id": "tool-1", "type": "mcpToolCall", "name": "ReadSkill"}},
+            }
+
+        def startRequest(self, method, params):
+            interrupted.append((method, params))
+            return 4
+
+    monkeypatch.setattr("dartlab.ai.runtime.drivers.codexAppServer.ProcessSupervisor", FakeSupervisor)
+    monkeypatch.setattr("dartlab.ai.runtime.drivers.codexAppServer.JsonRpcChannel", StreamingChannel)
+    descriptor = RuntimeDescriptor(
+        "codex",
+        "Codex",
+        "codexAppServer",
+        "jsonrpc",
+        ("codex",),
+        (),
+        ("app-server",),
+        (),
+        "https://example.invalid",
+    )
+    driver = CodexAppServerDriver()
+    handle = driver.open(descriptor, "codex", "session-1", tmp_path, instructions="capsule")
+    stream = driver.streamTurn(handle, "질문", instructions="capsule")
+
+    assert next(stream).kind == "toolStarted"
+    stream.close()
+
+    assert interrupted == [("turn/interrupt", {"threadId": "thread-1", "turnId": "turn-1"})]
+    assert handle.activeTurnId is None
+
+
 def testEventProjectionKeepsStableSemanticKinds():
     projector = EventProjector("codex", "session-1")
     first = projector.project({"method": "item/agentMessage/delta", "params": {"delta": "안녕"}}, turnId="turn-1")[0]
@@ -207,13 +371,24 @@ def testInstallPlanRequiresExactDigest():
         executeInstallPlan(plan, approvedDigest="wrong")
 
 
-def testClineMcpPlanUsesOfficialNonInteractiveInstaller(monkeypatch):
+def testClineMcpPlanFailsClosedWhileAcpDoesNotExposeEmbeddedTools(monkeypatch):
     monkeypatch.setattr("dartlab.ai.runtime.mcpBootstrap.discoverExecutable", lambda _descriptor: "cline")
 
-    plan = buildMcpConnectPlan("cline")
+    with pytest.raises(ValueError, match="MCP 도구를 런타임 세션에 노출하지 않습니다"):
+        buildMcpConnectPlan("cline")
 
-    assert plan.argv[:7] == ("cline", "mcp", "install", "dartlab", "--yes", "--json", "--")
-    assert plan.argv[-2:] == ("-m", "dartlab.mcp")
+
+def testCodexMcpPlanUsesExecutablePrefixWithoutAppServer(monkeypatch):
+    monkeypatch.setattr("dartlab.ai.runtime.mcpBootstrap.discoverExecutable", lambda _descriptor: "codex")
+    monkeypatch.setattr(
+        "dartlab.ai.runtime.mcpBootstrap.runtimeExecutableArgv",
+        lambda _descriptor, _executable: ("native-codex",),
+    )
+
+    plan = buildMcpConnectPlan("codex")
+
+    assert plan.argv[:5] == ("native-codex", "mcp", "add", "dartlab", "--")
+    assert "app-server" not in plan.argv
 
 
 def testClineMcpProbeUsesOfficialSettingsFile(tmp_path):

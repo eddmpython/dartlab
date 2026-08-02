@@ -84,7 +84,10 @@ def engineCall(plan: dict[str, Any] | None = None, **kwargs: Any) -> ToolResult:
         return ToolResult(False, f"실행 계약에 없는 API입니다: {apiRef}", error="non_public_api_ref")
 
     if apiRef == "Company.panel":
-        return _companyShow(call_plan)
+        # stdio MCP stdout은 프로토콜 프레임 전용이다. Company 하위 badge/filing
+        # 로더의 진단 출력까지 전체 호출 경계에서 흡수해 전송 손상을 막는다.
+        with _quietExecutionNoise():
+            return _companyShow(call_plan)
     if apiRef == "scan" or apiRef.startswith("scan."):
         if apiRef.startswith("scan.") and not call_plan.get("axis"):
             call_plan["axis"] = apiRef.split(".", 1)[1]
@@ -286,7 +289,20 @@ def _companyShow(plan: dict[str, Any]) -> ToolResult:
         if autoGatherUsed:
             msg += " (자동 update 후에도 빈 결과 - 미공시 분기 또는 폐상장 가능성)."
         return ToolResult(False, msg, error="empty_result")
-    summary = _summarizeStatement(topic, table)
+    requestedPeriod, annualYear = _requestedStatementPeriod(plan, table, topic)
+    if str(plan.get("period") or "").strip() and requestedPeriod is None and annualYear is None:
+        available = [str(column) for column in table.columns if _PERIOD_RE.match(str(column))]
+        return ToolResult(
+            False,
+            f"요청 기간 {plan.get('period')}을 찾지 못했습니다. 사용 가능 기간: {', '.join(available[:12])}",
+            error="period_not_found",
+        )
+    summary = _summarizeStatement(
+        topic,
+        table,
+        selectedPeriod=requestedPeriod,
+        annualYear=annualYear,
+    )
     if not summary:
         return ToolResult(
             False, f"{companyName or stockCode} {topic} 표를 요약하지 못했습니다.", error="unreadable_table"
@@ -303,6 +319,29 @@ def _resolveTopic(plan: dict[str, Any]) -> str:
     kwargs = dict(plan.get("kwargs") or {})
     raw = str(plan.get("topic") or (args[0] if args else "") or kwargs.get("topic") or "").strip() or "BS"
     return _normalizeStatement(raw)
+
+
+def _requestedStatementPeriod(
+    plan: dict[str, Any],
+    table: pl.DataFrame,
+    statement: str,
+) -> tuple[str | None, str | None]:
+    """명시 기간을 검증하고 flow 계정의 연간 합산 연도를 별도로 반환한다."""
+    raw = str(plan.get("period") or "").strip().upper().replace("-", "")
+    if not raw:
+        return None, None
+    if raw.startswith("FY") and len(raw) == 6:
+        raw = raw[2:]
+    columns = {str(column) for column in table.columns}
+    if raw in columns:
+        return raw, None
+    if re.fullmatch(r"\d{4}", raw):
+        quarters = [f"{raw}Q{quarter}" for quarter in range(1, 5)]
+        if statement in {"IS", "CF"} and all(period in columns for period in quarters):
+            return None, raw
+        if f"{raw}Q4" in columns:
+            return f"{raw}Q4", None
+    return None, None
 
 
 def _fetchTableWithAutoGather(company: Any, topic: str) -> tuple[pl.DataFrame | None, bool]:
@@ -1245,14 +1284,41 @@ def _normalizeStatement(value: str) -> str:
     return str(value or "").strip()
 
 
-def _summarizeStatement(statement: str, table: pl.DataFrame) -> dict[str, Any] | None:
+def _summarizeStatement(
+    statement: str,
+    table: pl.DataFrame,
+    *,
+    selectedPeriod: str | None = None,
+    annualYear: str | None = None,
+) -> dict[str, Any] | None:
     periods = [col for col in table.columns if _PERIOD_RE.match(str(col))]
     if not periods:
         return None
     priorityRows = _findPriorityRows(statement, table, periods)
     if not priorityRows:
         return None
-    latest = periods[0]
+    if annualYear:
+        annualPeriod = f"{annualYear}FY"
+        quarters = [f"{annualYear}Q{quarter}" for quarter in range(1, 5)]
+        annualRows: list[dict[str, Any]] = []
+        for row in priorityRows:
+            values = [row["values"].get(period) for period in quarters]
+            if any(value is None for value in values):
+                continue
+            annualRows.append(
+                {
+                    "snakeId": row["snakeId"],
+                    "item": row["item"],
+                    "values": {annualPeriod: sum(values)},
+                }
+            )
+        if not annualRows:
+            return None
+        priorityRows = annualRows
+        periods = [annualPeriod]
+        latest = annualPeriod
+    else:
+        latest = selectedPeriod or periods[0]
     return {
         "statement": statement,
         "label": _STMT_LABELS[statement],

@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import json
 import os
 import subprocess
 import webbrowser
+from pathlib import Path
 
 from dartlab.cli.services.errors import CLIError
 from dartlab.cli.services.output import printWarning
@@ -107,14 +109,21 @@ def _runDevMode(url: str) -> None:
     import threading
 
     ui_src = resolveUiSourceDir()
-    if not (ui_src / "node_modules").exists():
+    workspaceRoot = _npmWorkspaceRoot(ui_src)
+    viteBin = workspaceRoot / "node_modules" / ".bin" / ("vite.cmd" if os.name == "nt" else "vite")
+    if not viteBin.is_file():
         print("npm install 실행 중...")
-        result = subprocess.run([_npmCommand(), "install"], cwd=str(ui_src), timeout=300)  # noqa: S603, S607
+        result = subprocess.run(  # noqa: S603, S607
+            [_npmCommand(), "install"], cwd=str(workspaceRoot), timeout=300
+        )
         if result.returncode != 0:
             raise CLIError("UI 의존성 설치에 실패했습니다.")
 
     def _vite() -> None:
-        result = subprocess.run([_npmCommand(), "run", "dev"], cwd=str(ui_src))  # noqa: S603, S607
+        command = [_npmCommand(), "run", "dev"]
+        if workspaceRoot != ui_src:
+            command.extend(["--workspace", "@dartlab/ui-local"])
+        result = subprocess.run(command, cwd=str(workspaceRoot))  # noqa: S603, S607
         if result.returncode != 0:
             printWarning("Svelte dev 서버가 비정상 종료되었습니다.")
 
@@ -125,6 +134,19 @@ def _runDevMode(url: str) -> None:
     print()
 
     threading.Thread(target=_vite, daemon=True).start()
+
+
+def _npmWorkspaceRoot(uiSource: Path) -> Path:
+    """Svelte 앱에서 가장 가까운 npm workspaces 루트를 찾는다."""
+    for candidate in (uiSource, *uiSource.parents):
+        packagePath = candidate / "package.json"
+        try:
+            package = json.loads(packagePath.read_text(encoding="utf-8"))
+        except (OSError, TypeError, ValueError, json.JSONDecodeError):
+            continue
+        if isinstance(package, dict) and package.get("workspaces"):
+            return candidate
+    return uiSource
 
 
 def _checkBuiltUi() -> bool:

@@ -8,6 +8,10 @@ export interface AgentRuntimeInfo extends RuntimeProbe {
 	mcp: { connected: boolean; mode?: string; detail?: string | null };
 	groundedReady: boolean;
 	embeddedGrounding: boolean;
+	canInstall: boolean;
+	canConnect: boolean;
+	blockingReason?: string | null;
+	recommendedAction?: string | null;
 }
 
 export interface RuntimePlan {

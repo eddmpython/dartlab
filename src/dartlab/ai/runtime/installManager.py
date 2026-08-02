@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
+import shutil
 import subprocess
 from dataclasses import asdict, dataclass
 
@@ -39,13 +41,14 @@ def buildInstallPlan(runtimeId: str) -> InstallPlan:
     Example: `plan = buildInstallPlan("cline")`.
     """
     descriptor: RuntimeDescriptor = loadRuntimeRegistry()[runtimeId]
+    installArgs = _platformInstallArgs(descriptor.installArgs)
     canonical = json.dumps(
-        {"runtimeId": runtimeId, "argv": descriptor.installArgs, "officialUrl": descriptor.officialUrl},
+        {"runtimeId": runtimeId, "argv": installArgs, "officialUrl": descriptor.officialUrl},
         separators=(",", ":"),
         ensure_ascii=False,
     )
     digest = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
-    return InstallPlan(runtimeId, descriptor.installArgs, descriptor.officialUrl, digest)
+    return InstallPlan(runtimeId, installArgs, descriptor.officialUrl, digest)
 
 
 def executeInstallPlan(plan: InstallPlan, *, approvedDigest: str) -> subprocess.CompletedProcess[str]:
@@ -69,3 +72,10 @@ def executeInstallPlan(plan: InstallPlan, *, approvedDigest: str) -> subprocess.
         shell=False,
         check=True,
     )
+
+
+def _platformInstallArgs(argv: tuple[str, ...]) -> tuple[str, ...]:
+    """Windows에서 npm batch launcher를 CreateProcess가 확실히 실행할 수 있게 한다."""
+    if os.name == "nt" and argv and argv[0].casefold() == "npm":
+        return (shutil.which("npm.cmd") or "npm.cmd", *argv[1:])
+    return argv

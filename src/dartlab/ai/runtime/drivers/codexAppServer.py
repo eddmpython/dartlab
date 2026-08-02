@@ -2,15 +2,17 @@
 
 from __future__ import annotations
 
+import time
 import uuid
 from collections.abc import Iterator
+from contextlib import suppress
 from pathlib import Path
 from typing import Any
 
 from ..contracts import AgentEvent, ProcessSpec, RuntimeDescriptor
 from ..eventProjection import EventProjector
 from ..processSupervisor import JsonRpcChannel, ProcessSupervisor
-from .base import DriverHandle, runtimeLaunchArgv
+from .base import DriverHandle, remainingTurnSeconds, runtimeLaunchArgv, runtimeTurnTimeoutSeconds
 
 
 class CodexAppServerDriver:
@@ -89,6 +91,8 @@ class CodexAppServerDriver:
         """
         if handle.activeTurnId is not None or handle.channel is None:
             raise RuntimeError("세션에 이미 활성 턴이 있거나 채널이 닫혔습니다")
+        timeoutSeconds = runtimeTurnTimeoutSeconds()
+        deadline = time.monotonic() + timeoutSeconds
         result = handle.channel.request(
             "turn/start",
             {
@@ -97,14 +101,18 @@ class CodexAppServerDriver:
                 "approvalPolicy": "never",
                 "sandboxPolicy": {"type": "readOnly", "networkAccess": False},
             },
-            timeout=30,
+            timeout=min(30.0, remainingTurnSeconds(deadline, timeoutSeconds)),
         )
         turn = result.get("turn") if isinstance(result.get("turn"), dict) else {}
         turnId = str(turn.get("id") or result.get("turnId") or uuid.uuid4().hex)
         handle.activeTurnId = turnId
+        completed = False
         try:
             while True:
-                message = handle.channel.nextMessage(timeout=300)
+                try:
+                    message = handle.channel.nextMessage(timeout=remainingTurnSeconds(deadline, timeoutSeconds))
+                except TimeoutError as exc:
+                    raise TimeoutError(f"에이전트 턴이 {timeoutSeconds:g}초 제한을 초과했습니다") from exc
                 nativeType = str(message.get("method") or message.get("type") or "native")
                 if "id" in message and nativeType.endswith("/requestApproval"):
                     approvalId = str(message.get("id"))
@@ -117,8 +125,12 @@ class CodexAppServerDriver:
                         )
                     yield event
                 if nativeType == "turn/completed":
+                    completed = True
                     return
         finally:
+            if not completed and handle.activeTurnId:
+                with suppress(Exception):
+                    self.cancel(handle)
             handle.activeTurnId = None
 
     def cancel(self, handle: DriverHandle) -> None:
