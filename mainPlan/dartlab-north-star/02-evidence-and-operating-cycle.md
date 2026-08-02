@@ -37,7 +37,7 @@ registry gate는 다음을 전부 검사한다.
 - 루트 `README.md`: 북극성 한 문장, 현재 authority 상태, scorecard 실행 포인터.
 - `operation.productDirection`: lifecycle, goal, measure, target, guardrail, disqualifier.
 - `operation.productCycle`: outcome brief, ready, done, weekly review, release review.
-- `src/dartlab/productOutcome/`: executable semantic authority.
+- `src/dartlab/productOutcome.py`: executable semantic authority.
 - `tests/audit/northStarEvidence.py`: executable evidence authority.
 - `mainPlan/README.md`: 활성 이니셔티브와 primary goal만 표시.
 

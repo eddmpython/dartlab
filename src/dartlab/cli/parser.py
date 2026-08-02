@@ -19,6 +19,7 @@ COMMAND_SPECS = (
     CommandSpec("modules", "dartlab.cli.commands.modules", "사용 가능한 데이터 모듈 목록"),
     # 에이전트 / 내보내기
     CommandSpec("ask", "dartlab.cli.commands.ask", "자연어 원스톱 분석"),
+    CommandSpec("agent", "dartlab.cli.commands.agent", "설치형 agent runtime 관리"),
     CommandSpec("report", "dartlab.cli.commands.report", "Markdown 분석 보고서 생성"),
     CommandSpec("excel", "dartlab.cli.commands.excel", "기업 데이터 Excel 내보내기"),
     # 분석
@@ -30,8 +31,8 @@ COMMAND_SPECS = (
     # 서버 / 설정
     CommandSpec("ai", "dartlab.cli.commands.ai", "분석 웹 인터페이스 실행"),
     CommandSpec("channel", "dartlab.cli.commands.channel", "외부 공유 채널 (DevTunnels 기본, 모바일 호환)"),
-    CommandSpec("status", "dartlab.cli.commands.status", "모델 연결 상태 확인"),
-    CommandSpec("setup", "dartlab.cli.commands.setup", "모델 provider/API 키 설정"),
+    CommandSpec("status", "dartlab.cli.commands.status", "agent runtime 연결 상태 확인"),
+    CommandSpec("setup", "dartlab.cli.commands.setup", "agent runtime/DART 데이터 키 설정"),
     # MCP
     CommandSpec("mcp", "dartlab.cli.commands.mcp", "MCP 서버 실행 (stdio)"),
     # 플러그인

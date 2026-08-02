@@ -7,10 +7,9 @@ import logging
 from collections.abc import AsyncIterator
 from typing import Any
 
-from dartlab.ai.agent import runAgent
+from dartlab.ai.agent import runRuntimeAgent
 from dartlab.ai.contracts import TraceEvent
 from dartlab.ai.tools.registry import _LEGACY_NAME_MAP, CANONICAL_TOOL_NAMES
-from dartlab.ai.workbench import WorkbenchLoop
 
 from . import agentMetrics
 from .models import AgentRunRequest
@@ -48,6 +47,7 @@ _ALLOWED_EVENTS = {
     "ACTIVITY_SNAPSHOT",
     "ACTIVITY_DELTA",
     "VIEW_SPEC",
+    "APPROVAL_REQUESTED",
     "RUN_FINISHED",
     "RUN_ERROR",
 }
@@ -56,11 +56,8 @@ _ALLOWED_EVENTS = {
 async def streamAgentRun(req: AgentRunRequest) -> AsyncIterator[dict[str, str]]:
     """Stream one DartLab run using the public AG-UI event contract.
 
-    분기:
-    - 명시적 mode="analyze" / "research" / 종목 컨텍스트 / 분석 키워드 → WorkbenchLoop (5 패스)
-    - 그 외 (메타 / chitchat / 일반 대화) → runAgent (LLM 자율 + tool calling)
-
-    회귀 방지: memory/feedback_no_graph_regression.md — runAgent 가 본체. WorkbenchLoop 는 옵션.
+    모든 모드는 사용자의 설치형 agent CLI를 사용하며 인증, 모델, transcript는
+    해당 CLI가 소유한다. DartLab은 MCP와 분석 capsule만 제공한다.
     """
     question = _lastUserMessage(req)
     runId = req.threadId or "dartlab-thread"
@@ -68,54 +65,18 @@ async def streamAgentRun(req: AgentRunRequest) -> AsyncIterator[dict[str, str]]:
     text_started = False
 
     kernelKwargs = _kernelKwargs(req)
-    use_workbench = _shouldUseWorkbench(req, question, kernelKwargs)
-
-    if use_workbench:
-        graph = WorkbenchLoop()
-        agentMetrics.record("workbench")
-        yield _event(
-            "STATE_SNAPSHOT",
-            {
-                "runId": runId,
-                "agentId": req.agentId or "dartlab-research",
-                "status": "running",
-                "graph": {"name": "DartLabWorkbench", "nodes": list(graph.nodes)},
-                "mode": "workbench",
-            },
-        )
-        yield _activity("계획을 세우고 필요한 근거를 확인합니다.", status="done")
-        producer = lambda: graph.stream(question, **kernelKwargs)  # noqa: E731
-    else:
-        provider_obj = _resolveProvider(kernelKwargs)
-        if provider_obj is None or not _isLLMProvider(provider_obj):
-            # provider 미해결 — workbench 휴리스틱 fallback
-            graph = WorkbenchLoop()
-            agentMetrics.record("workbench-heuristic")
-            yield _event(
-                "STATE_SNAPSHOT",
-                {
-                    "runId": runId,
-                    "agentId": req.agentId or "dartlab-research",
-                    "status": "running",
-                    "graph": {"name": "DartLabWorkbench", "nodes": list(graph.nodes)},
-                    "mode": "workbench-heuristic",
-                },
-            )
-            producer = lambda: graph.stream(question, **kernelKwargs)  # noqa: E731
-        else:
-            agentMetrics.record("agent")
-            yield _event(
-                "STATE_SNAPSHOT",
-                {
-                    "runId": runId,
-                    "agentId": req.agentId or "dartlab-agent",
-                    "status": "running",
-                    "graph": {"name": "DartLabAgent", "nodes": ["agent"]},
-                    "mode": "agent",
-                },
-            )
-            agent_kwargs = {**kernelKwargs, "provider": provider_obj}
-            producer = lambda: runAgent(question, **agent_kwargs)  # noqa: E731
+    agentMetrics.record("agent-runtime")
+    yield _event(
+        "STATE_SNAPSHOT",
+        {
+            "runId": runId,
+            "agentId": req.agentId or "dartlab-agent-runtime",
+            "status": "running",
+            "mode": "agent-runtime",
+        },
+    )
+    runtimeKwargs = {**kernelKwargs, "sessionId": req.threadId} if req.threadId else kernelKwargs
+    producer = lambda: runRuntimeAgent(question, **runtimeKwargs)  # noqa: E731
 
     try:
         async for internal in _syncGenToAsync(producer):
@@ -132,53 +93,6 @@ async def streamAgentRun(req: AgentRunRequest) -> AsyncIterator[dict[str, str]]:
             "RUN_ERROR",
             {"runId": runId, "message": _publicFailure(str(exc)), "code": "agent_run_failed"},
         )
-
-
-def _shouldUseWorkbench(req: AgentRunRequest, question: str, kernelKwargs: dict[str, Any]) -> bool:
-    """명시적 분석 모드 → workbench. 그 외 → agent (모델이 자율로 run_workbench 호출 가능).
-
-    P-revised: intent regex 키워드 / 종목코드 자동 추출로 암묵 elevate 안 한다.
-    feedback_no_graph_regression.md SSOT — 정당 활성 경로 2 가지: (1) 사용자 명시 모드,
-    (2) 모델 자율 run_workbench 도구 호출 (agent.runAgent 안에서).
-    """
-    context = req.workspaceContext if isinstance(req.workspaceContext, dict) else {}
-    if isinstance(context, dict):
-        mode = str(context.get("mode") or context.get("dialogueMode") or "").lower()
-        if mode in {"analyze", "analysis", "research", "workbench"}:
-            return True
-    return False
-
-
-def _resolveProvider(kernelKwargs: dict[str, Any]) -> Any:
-    try:
-        from dartlab.ai.providers import createProvider
-
-        return createProvider(
-            provider=kernelKwargs.get("provider"),
-            model=kernelKwargs.get("model"),
-        )
-    except Exception:  # noqa: BLE001
-        logger.exception("provider resolve failed (provider=%s)", kernelKwargs.get("provider"))
-        return None
-
-
-def _isLLMProvider(obj: Any) -> bool:
-    """provider 가 LLM 어댑터인지 — workbench/loop 의 _isLLMProvider 와 동일 룰."""
-    if obj is None or not callable(getattr(obj, "generate", None)):
-        return False
-    config = getattr(obj, "config", None)
-    providerId = (getattr(config, "provider", None) or "").lower()
-    # 리터럴 목록을 두면 새 provider 를 등록해도 여기서만 조용히 탈락한다 (anthropic 사고).
-    # kernel.py / workbench/loop.py 와 같은 SSOT (wiredProviderIds) 를 쓴다.
-    from dartlab.ai.settings.providerCatalog import wiredProviderIds
-
-    if providerId not in wiredProviderIds():
-        return False
-    try:
-        return bool(obj.checkAvailable())
-    except Exception:  # noqa: BLE001
-        logger.exception("provider check_available failed (provider=%s)", providerId)
-        return False
 
 
 def _graphNodeEvents(data: dict, *, runId: str) -> list[dict[str, str]]:
@@ -367,15 +281,44 @@ def _publicEvents(event: TraceEvent, *, runId: str, messageId: str) -> list[dict
         return _doneEvents(data, runId=runId)
     if kind == "error":
         return [_event("RUN_ERROR", {"runId": runId, "message": _publicFailure(str(data.get("error") or ""))})]
+    if kind == "runtime_session":
+        return [
+            _event(
+                "STATE_DELTA",
+                {
+                    "runId": runId,
+                    "status": "running",
+                    "sessionId": data.get("sessionId"),
+                    "runtimeId": data.get("runtimeId"),
+                    "resumed": bool(data.get("resumed")),
+                },
+            )
+        ]
+    if kind == "runtime_turn":
+        return [_activity("로컬 에이전트가 분석을 시작했습니다.", status="running")]
+    if kind == "approval_requested":
+        return [
+            _event(
+                "APPROVAL_REQUESTED",
+                {
+                    "runId": runId,
+                    "sessionId": data.get("sessionId"),
+                    "turnId": data.get("turnId"),
+                    "approvalId": data.get("approvalId"),
+                    "request": data.get("request") or {},
+                },
+            )
+        ]
+    if kind == "event_gap":
+        return [_activity("재연결 구간의 일부 이벤트를 재생할 수 없습니다.", status="error")]
     return []
 
 
 def _kernelKwargs(req: AgentRunRequest) -> dict[str, Any]:
     context = req.workspaceContext or {}
     kwargs: dict[str, Any] = {
-        "provider": req.provider,
+        "runtimeId": req.runtimeId or req.provider,
         "role": req.role,
-        "model": req.model,
     }
     # history: 마지막 user message (= 현재 question) 제외, 이전 대화만.
     messages = list(req.messages or [])
@@ -556,6 +499,8 @@ def _publicRefDetails(refs: Any) -> list[dict[str, Any]]:
             "source": str(ref.get("source") or ""),
             "sourceType": str(ref.get("sourceType") or "internal"),
         }
+        if ref.get("outcomeId"):
+            item["outcomeId"] = str(ref["outcomeId"])
         payload = ref.get("payload")
         if isinstance(payload, dict) and payload:
             # body / markdown / text 류 텍스트 키 절단. 그 외는 그대로 통과 (작은 dict 가정).

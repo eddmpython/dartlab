@@ -22,10 +22,8 @@ def configureParser(subparsers) -> None:
         help="질문 (종목명 포함). 예: 삼성전자 재무건전성 분석해줘",
     )
     parser.add_argument("--company", "-c", default=None, help="종목 명시 (종목코드 또는 회사명)")
-    parser.add_argument("--provider", "-p", default=None, help="호환 옵션: provider 선택은 제품 설정에서 관리")
-    parser.add_argument("--model", "-m", default=None, help="호환 옵션: 모델 선택은 제품 설정에서 관리")
-    parser.add_argument("--base-url", default=None, help="호환 옵션")
-    parser.add_argument("--api-key", default=None, help="호환 옵션")
+    parser.add_argument("--runtime", "-r", choices=["codex", "claude", "cline"], default=None)
+    parser.add_argument("--session", default=None, help="재개할 DartLab agent session ID")
     parser.add_argument("--include", "-i", nargs="+", default=None, help="포함할 topic (BS IS CF dividend ...)")
     parser.add_argument("--exclude", "-e", nargs="+", default=None, help="제외할 topic")
     parser.add_argument("--stream", "-s", action="store_true", default=True, help="스트리밍 출력 (기본값)")
@@ -57,8 +55,8 @@ def run(args) -> int:
     if company is not None:
         console.print(f"\n  [bold {CLR}]{company.corpName}[/] ({company.stockCode})")
     else:
-        console.print(f"\n  [bold {CLR}]Free analysis[/] [dim](LLM will search for companies)[/]")
-    console.print(f"  [{CLR_MUTED}]entry: dartlab.ask[/]")
+        console.print(f"\n  [bold {CLR}]Agent runtime analysis[/] [dim](DartLab MCP grounded)[/]")
+    console.print(f"  [{CLR_MUTED}]entry: dartlab.ask · auth/model owned by local CLI[/]")
     console.print()
 
     # ── 히스토리 연속 ──
@@ -72,6 +70,8 @@ def run(args) -> int:
 
     events = _askEvents(
         question,
+        runtimeId=args.runtime,
+        sessionId=args.session or (str(sessionId) if sessionId is not None else None),
         include=args.include,
         exclude=args.exclude,
         history=history,
@@ -95,7 +95,14 @@ def run(args) -> int:
             transient=True,
         ) as live:
             for ev in events:
-                if ev.kind == "chunk":
+                if ev.kind == "runtime_session":
+                    sessionId = ev.data.get("sessionId") or sessionId
+                    runtimeId = ev.data.get("runtimeId") or "agent"
+                    resumed = " resumed" if ev.data.get("resumed") else ""
+                    toolLines.append(f"> runtime: {runtimeId}{resumed} | session={sessionId}")
+                    live.update(Markdown("\n".join(toolLines)))
+
+                elif ev.kind == "chunk":
                     buffer += ev.data["text"]
                     live.update(Markdown(buffer))
 
@@ -202,9 +209,6 @@ def run(args) -> int:
     console.print(Text("  " + "  |  ".join(footerParts), style="dim"))
 
     # ── 히스토리 저장 ──
-    if company is not None and buffer:
-        _saveHistory(company.stockCode, sessionId, question, buffer)
-
     return 0
 
 
@@ -314,31 +318,17 @@ def _shortPreview(value: object, limit: int) -> str:
 
 
 def _loadHistory(stockCode: str, console):
-    """이전 대화 세션 로드."""
+    """transcript를 복제하지 않고 가장 최근 agent 세션 ID만 재개한다."""
     try:
-        from dartlab.cli.services.history import getLatestSession, getMessages
+        from dartlab.ai.runtime import getRuntimeEngine
 
-        sessionId = getLatestSession(stockCode)
-        if sessionId:
-            history = getMessages(sessionId)
-            console.print(f"  [{CLR_MUTED}]Resuming session ({len(history)} messages)[/]\n")
-            return sessionId, history
+        sessions = getRuntimeEngine().sessionStore.list(limit=1)
+        if sessions:
+            console.print(f"  [{CLR_MUTED}]Resuming agent session {sessions[0].sessionId}[/]\n")
+            return sessions[0].sessionId, None
     except (OSError, ImportError):
         pass
     return None, None
-
-
-def _saveHistory(stockCode: str, sessionId, question: str, answer: str) -> None:
-    """대화 히스토리 SQLite 저장."""
-    try:
-        from dartlab.cli.services.history import addMessage, createSession
-
-        if sessionId is None:
-            sessionId = createSession(stockCode)
-        addMessage(sessionId, "user", question)
-        addMessage(sessionId, "assistant", answer)
-    except (OSError, ImportError):
-        pass
 
 
 def _printErrorWithHint(errorMsg: str, console, *, guideMsg: str | None = None) -> None:
@@ -356,13 +346,13 @@ def _printErrorWithHint(errorMsg: str, console, *, guideMsg: str | None = None) 
     # 폴백: 키워드 기반 힌트
     msg = errorMsg.lower()
     if any(w in msg for w in ("api key", "auth", "401", "403", "invalid key", "unauthorized")):
-        console.print(f"  [{CLR_MUTED}]hint: run `dartlab setup` to configure your API key[/]")
+        console.print(f"  [{CLR_MUTED}]hint: run the selected agent CLI and complete its login[/]")
     elif any(w in msg for w in ("connection", "timeout", "network", "refused", "resolve")):
-        console.print(f"  [{CLR_MUTED}]hint: check network or try --provider <other>[/]")
+        console.print(f"  [{CLR_MUTED}]hint: run `dartlab agent status --refresh`[/]")
     elif any(w in msg for w in ("context", "token", "too long", "limit")):
         console.print(f"  [{CLR_MUTED}]hint: try --exclude <topic> to reduce context size[/]")
-    elif "provider" in msg or "no provider" in msg:
-        console.print(f"  [{CLR_MUTED}]hint: run `dartlab setup` or pass --provider <name>[/]")
+    elif "runtime" in msg or "agent cli" in msg:
+        console.print(f"  [{CLR_MUTED}]hint: run `dartlab agent install <runtime>`[/]")
 
 
 def _renderToolData(resultText: str, console) -> None:

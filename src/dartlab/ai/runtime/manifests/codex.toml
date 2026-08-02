@@ -1,0 +1,9 @@
+runtimeId = "codex"
+displayName = "Codex CLI"
+driver = "codexAppServer"
+protocol = "jsonrpc-ndjson"
+executableCandidates = ["codex"]
+versionArgs = ["--version"]
+launchArgs = ["app-server"]
+installArgs = ["npm", "install", "-g", "@openai/codex"]
+officialUrl = "https://developers.openai.com/codex/cli/"

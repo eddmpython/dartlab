@@ -2,7 +2,7 @@
   "meta": {
     "entrySkillId": "start.dartlabSkillOs",
     "canonicalSurface": "DartLab Skill OS",
-    "skillCount": 286,
+    "skillCount": 288,
     "categories": [
       {
         "id": "start",
@@ -20,7 +20,7 @@
         "id": "operation",
         "title": "Operation",
         "description": "ops 원문을 skill 절차로 묶어 테스트, 문서, 릴리즈, 확장 규칙을 찾는 운영 지도.",
-        "count": 36
+        "count": 38
       },
       {
         "id": "engines",
@@ -1401,37 +1401,39 @@
     },
     {
       "id": "operation.aiEngine",
-      "title": "aiEngine — dartlab.ai 내부 SSOT (7 원칙 · 도구 · provider)",
+      "title": "AI Engine — Bring Your Agent Runtime",
       "category": "operation",
-      "purpose": "aiEngine 은 dartlab.ai 의 정점 SSOT — 3 층 능력 모델 (Capability/Skill/Tool) · 5 패스 workbench (BRIEF→WORK→CRITIQUE→COMPOSE→GATE→HARVEST) · canonical 도구 세트 (PascalCase) · 9 종 provider 카탈로그 · MCP 표면 매핑 · 회귀 가드. P1 lock 완료 (2026-05-05) 이후 변경은 SSOT 갱신 PR 의무. 트리거 — 'ai engine', 'workbench', 'ReadSkill', 'RunWorkbench', 'provider catalog'.",
+      "purpose": "설치된 Codex CLI, Claude Code, ACP 호환 agent가 인증·모델·세션을 소유하고 DartLab은 Skill OS·MCP·금융 엔진·근거 계약을 제공하는 AI 실행 SSOT다.",
       "whenToUse": [
-        "dartlab.ai 내부 구조 이해",
-        "workbench 5 패스 (BRIEF → WORK → CRITIQUE → COMPOSE → GATE → HARVEST)",
-        "canonical 도구 화이트리스트",
-        "provider 카탈로그 (oauth-codex / openai / gemini / groq / cerebras / mistral / custom / ollama / codex)",
-        "chat-native HARVEST bridge",
-        "MCP 표면 매핑",
-        "회귀 가드 (test_no_core_import / test_tool_whitelist / test_ref_gate ...)"
+        "dartlab.ask 또는 /api/ask 실행 경계를 변경할 때",
+        "Codex, Claude Code, Cline runtime driver를 추가하거나 수정할 때",
+        "Runtime Center의 탐지, 설치, MCP 연결, 승인 UX를 변경할 때",
+        "AgentEvent와 AG-UI projection을 변경할 때"
       ],
       "nextSkills": [
-        "engines.company",
-        "operation.philosophy"
+        "operation.productDirection",
+        "operation.productCycle",
+        "runtime.mcp",
+        "operation.ui"
       ],
-      "bodyPreview": "## 엔진 역할\n\n`src/dartlab/ai/` 의 정점 단일 진실 출처. 코드와 충돌 시 lock 후에는 SSOT 가 정답.\n\nP1 lock 완료 (2026-05-05). mock provider e2e 통과 (`tests/ai/test_workbench_loop.py`). 이후 변경은 SSOT 갱신 PR 의무.\n\n## 공개 호출 방식\n\n```python\nimport dartlab\n\n# 진입점 — chat-native\nresult = dartlab.ask(\"삼성전자 ROE 추세 분석\", mode=None)\n\n# 진입점 — workbench (mode=analyze)\nresult = dartlab.ask(\"삼성전자 종합 신용 분석\", mode=\"analyze\")\n\n# MCP 표면\n# ask · run_python · read_skill · read_capability ·\n# web_search · external_reach_doctor · save_artifact · create_user_skill · compile_visual · run_workbench\n```\n\nLLM 이 자율적으로 canonical 도구를 호출한다. 깊은 분석은 LLM 이 `RunWo"
+      "bodyPreview": "## 제품 경계\n\n```text\ndartlab.ask / /api/ask / DartLab UI\n  -> Agent Runtime Engine\n  -> Codex app-server | Claude stream-json | ACP v1\n  -> 사용자의 agent 계정, 모델, native session\n  -> DartLab MCP\n  -> Skill OS / Company / scan / analysis / macro / quant / evidence\n```\n\nDartLab은 모델 provider가 아니다. 사용자가 이미 로그인한 agent CLI를 실행하고, 그 agent가 DartLab MCP로 공시·재무·시장 능력을 사용하게 한다. runtrol은 별도 레포의 설계 참고이며 runtime dependency, daemon, shared package가 아니다.\n\n## 코드 SSOT\n\n| 책임 | 정본 |\n|---|---|\n| 공개 진입점 | `dartlab.ask`, `/api/ask` |\n| 런타임 조정 | `src/dartlab/ai/runtime/engine.py` |\n| runtime 목록·실행 argv | `src/dartlab/ai/run"
     },
     {
       "id": "operation.aiProductReplatform",
-      "title": "DartLab AI 제품 바탕 교체",
+      "title": "AI 제품 전환 — Agent Runtime 표면",
       "category": "operation",
-      "purpose": "기존 DartLab web chat과 AI 엔진을 백업으로 분리하고, LibreChat UI 바탕과 AG-UI 공개 이벤트, LangGraph/Dexter식 금융 research loop로 제품 경계를 재설계하는 공식 전환 계약이다.",
+      "purpose": "옛 direct provider와 고정 research graph 제품 계약을 설치형 Agent Runtime, AG-UI, Runtime Center, Product Outcome 계약으로 전환하는 마이그레이션 기준이다.",
       "whenToUse": [
-        "AI 채팅 표면을 구현할 때",
-        "Agent Gateway 이벤트 계약을 바꿀 때",
-        "Research Graph 노드와 검증 게이트를 바꿀 때",
-        "LibreChat-derived UI를 DartLab shell에 연결할 때"
+        "기존 provider 설정 API와 UI를 제거할 때",
+        "/api/ask 또는 Agent Gateway 공개 이벤트를 바꿀 때",
+        "채팅 UI를 Runtime Center와 연결할 때"
       ],
-      "nextSkills": [],
-      "bodyPreview": "## 확정 방향\n\n- DartLab 제품은 유지한다. 교체 대상은 기존 `ui/web` 채팅 표면과 기존 `src/dartlab/ai` 엔진 구현이다.\n- 기존 구현은 백업으로 분리한다.\n  - UI 백업: `ui/web_legacy_backup_20260504`\n  - AI 백업: `src/dartlab/ai_legacy_backup_20260504`\n- 새 UI 바탕은 LibreChat repository를 `ui/web`에 vendoring한다. DartLab은 LibreChat 서버/auth/provider stack을 그대로 운영하지 않고, client data model과 ChatGPT-like surface를 DartLab shell에 붙인다.\n- 공개 AI 답변 진입점은 `dartlab.ask(...)`와 `/api/ask`다. UI도 `/api/ask` stream을 사용한다.\n- 새 production 엔진 경계는 `DartLabResearchGraph`다. `runAsk`는 public export로 유지하지 않는다.\n\n## 외부 기준\n\n- LibreChat은 self-hosted ChatGPT-like 제품 바탕, agents, tool"
+      "nextSkills": [
+        "operation.aiEngine",
+        "operation.ui",
+        "operation.productDirection"
+      ],
+      "bodyPreview": "## 확정 제품 경계\n\n```text\nDartLab local UI\n  -> /api/ask 또는 /api/agent/runs\n  -> Agent Gateway\n  -> Agent Runtime Engine\n  -> 사용자 설치형 agent CLI\n  -> DartLab MCP와 정식 데이터 엔진\n```\n\n- 공개 답변 진입점은 `dartlab.ask`와 `/api/ask`다.\n- UI는 공통 `AiPort`와 local API adapter만 사용한다.\n- provider별 로그인, model catalog, transcript는 CLI가 소유한다.\n- Runtime Center는 상태, 설치 계획, MCP 연결 계획, runtime 선택을 한곳에서 제공한다.\n- runtime이 없으면 heuristic 답변을 만들지 않고 단일 recovery action을 보여 준다.\n\n## 호환 경로\n\n- `/api/provider/validate`, profile secret, OAuth authorize/logout, Ollama pull은 410과 Runtime Center 안내를 반환한다.\n- `/settings/providers`는 삭제된 설정 양식을 렌더하지"
     },
     {
       "id": "operation.apiContract",
@@ -1825,6 +1827,38 @@
       "bodyPreview": "dartlab 의 존재 이유 · 설계 원칙 · 검증 게이트를 한 문서에 묶는다. 새 기능 · 변경 · 분석 시작 전 본 사상 게이트를 통과시킨다.\n\n## 1. 사상 한 줄 — AI ↔ 사람 상호 의존, 엔진이 다리\n\n사람이 엔진 코드와 블로그로 자산을 만든다. 그 자산은 자동으로 AI 의 skill 이 된다 — 공개 함수 docstring 이 곧 AI tool schema, skill 본문이 사용 절차. AI 가 실행 중 발견한 반복 패턴 · 반례 · 새 조합은 엔진 docstring 또는 블로그 frontmatter 로 사람 자산에 환류한다.\n\n**엔진이 다리** — 한 파일이 사람의 분석엔진이자 AI 의 skill 본문.\n\n## 2. 존재 이유 — 비교 가능성\n\ndartlab 은 **4 가지 비교 가능성** 을 늘리는 데 존재한다.\n\n| 비교 축 | 의미 | 엔진 |\n|---|---|---|\n| **회사간** | 같은 시점에 다른 기업을 비교 | `engines.company`, `engines.scan` |\n| **기간간** | 같은 회사를 다른 시점으로 비교 | `Company.panel`, `Company.diff` |\n| **시장간** | 한국 D"
     },
     {
+      "id": "operation.productCycle",
+      "title": "제품 운영 주기 — Outcome Review",
+      "category": "operation",
+      "purpose": "북극성 goal, 실행 증거, root scorecard, mainPlan 상태를 한 주기에서 정합시키는 운영 계약이다.",
+      "whenToUse": [
+        "mainPlan 진행 상태를 바꿀 때",
+        "북극성 축 점수를 재판정할 때",
+        "release acceptance와 operator journey를 기록할 때"
+      ],
+      "nextSkills": [
+        "operation.productDirection",
+        "operation.testing"
+      ],
+      "bodyPreview": "## 주기\n\n1. 이번 주 실제 사용자 outcome과 operator journey를 모은다.\n2. 각 initiative의 primary goal과 disqualifier를 대조한다.\n3. contracts, integration, UI, security, performance gate가 실제 runner에서 도는지 확인한다.\n4. outcome이 없거나 권위가 부족하면 `noData` 또는 `미측정`을 유지한다.\n5. root README 점수는 반복 검증이 늘거나 줄었을 때만 재판정한다.\n6. mainPlan ledger에 결정, 근거, 남은 위험, 다음 exit를 기록한다.\n\n## Release 질문\n\n- 실제 질문에서 시작했는가.\n- 정식 엔진 결과와 source identity가 있는가.\n- 사용자가 exact evidence를 열 수 있는가.\n- 실패, 취소, reconnect가 child process나 원장을 손상시키지 않는가.\n- runtime을 바꿔도 같은 capability와 evidence 문법인가.\n\n하나라도 아니면 기능 구현은 존재할 수 있어도 verified outcome 완료로 세지 않는다."
+    },
+    {
+      "id": "operation.productDirection",
+      "title": "제품 방향 — Weekly Verified Analysis Loops",
+      "category": "operation",
+      "purpose": "기능 수나 모델 호출 수가 아니라 사용자가 정확한 근거를 확인한 분석 결과를 DartLab의 북극성으로 삼는 제품 방향 계약이다.",
+      "whenToUse": [
+        "mainPlan initiative의 primary goal을 정할 때",
+        "AI, UI, Python, CLI 기능의 제품 완료를 판정할 때",
+        "북극성 지표 또는 scorecard를 변경할 때"
+      ],
+      "nextSkills": [
+        "operation.productCycle",
+        "operation.aiEngine"
+      ],
+      "bodyPreview": "## 북극성\n\n`weeklyVerifiedAnalysisLoops`는 실제 질문이 정식 DartLab 엔진의 non-empty 계산과 source identity를 거쳐 전달되고, 사용자가 같은 outcome의 exact evidence 또는 artifact를 직접 확인한 distinct 건수다.\n\n상태는 `started -> scoped -> grounded -> delivered -> verified -> retained` 순서로만 전이한다. 분자는 verified이며 retained는 후행 품질 지표다.\n\n## Goal ID\n\n- `completeVerifiedAnalysisLoop`\n- `startFromRealQuestion`\n- `reachFirstEvidence`\n- `verifyAnalysisResult`\n- `retainAnalysisOutcome`\n- `protectResearchTrust`\n- `keepAnalysisResponsive`\n- `keepCapabilityParity`\n\n모든 initiative는 primary goal을 정확히 하나 고른다. 모델 응답, 설치 성공, MCP 등록, artifact 생성만으로 완료를 선언하지 않"
+    },
+    {
       "id": "operation.recipePromote",
       "title": "Recipe 6-stage lifecycle + status 승급 CLI",
       "category": "operation",
@@ -1978,7 +2012,7 @@
         "UI 빌드 경로 해석 우선순위"
       ],
       "nextSkills": [],
-      "bodyPreview": "## Skill OS 흡수 규칙\n\n- 이 skill이 공식 진입점이다. 삭제된 운영 문서 경로를 다시 안내하지 않는다.\n- 공개 호출 방식과 대표 반환 형태는 skill에서 확인하고, 세부 필드는 capability/docstring으로 검산한다.\n- 분석이나 변경 결과는 ref, 실행 로그, 테스트 결과로 검증한다.\n\n## AI 채팅 UI 계약\n\n- AI 제품 바탕 교체의 상세 SSOT는 `operation.aiProductReplatform`이다. `operation.ui`는 UI 표현 계층 규칙만 보완한다.\n- 공식 제품 경로는 `DartLab App → /api/ask stream → DartLabResearchGraph → Skill OS/Data/Verifier/Evidence`다.\n- UI 표면은 LibreChat식 conversation/message parts 모델을 따른다. DartLab 브랜드, workspace, evidence, artifact viewer는 유지하되 채팅 본문은 message parts만 렌더한다.\n- UI와 엔진 사이의 공개 stream은 AG-UI compatible event allowlist만 허용한다. 내부 "
+      "bodyPreview": "## Skill OS 흡수 규칙\n\n- 이 skill이 공식 진입점이다. 삭제된 운영 문서 경로를 다시 안내하지 않는다.\n- 공개 호출 방식과 대표 반환 형태는 skill에서 확인하고, 세부 필드는 capability/docstring으로 검산한다.\n- 분석이나 변경 결과는 ref, 실행 로그, 테스트 결과로 검증한다.\n\n## AI 채팅 UI 계약\n\n- AI 제품 바탕 교체의 상세 SSOT는 `operation.aiProductReplatform`이다. `operation.ui`는 UI 표현 계층 규칙만 보완한다.\n- 공식 제품 경로는 `DartLab App → /api/ask stream → Agent Gateway → Agent Runtime → 설치형 agent CLI → DartLab MCP`다.\n- UI 표면은 LibreChat식 conversation/message parts 모델을 따른다. DartLab 브랜드, workspace, evidence, artifact viewer는 유지하되 채팅 본문은 message parts만 렌더한다.\n- UI와 엔진 사이의 공개 stream은 AG-UI compatible event allowlist만 허용한다"
     },
     {
       "id": "recipes.fundamental.credit.creditRatingMigration",

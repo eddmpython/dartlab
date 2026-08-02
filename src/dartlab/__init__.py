@@ -553,59 +553,21 @@ def checkFreshness(stockCode: str, *, forceCheck: bool = False):
 
 
 def setup(provider: str | None = None):
-    """키 설정 단일 진입점 — AI provider(추론) + 데이터 provider(수집) 한 곳.
+    """설치형 agent runtime 또는 데이터 수집 자격증명의 설정 경로를 안내한다.
 
-    Capabilities:
-        - 인자 없이: AI provider 현황 + 데이터 provider 자격증명 현황을 한 화면에 표시
-        - AI provider 설정 — ChatGPT OAuth, OpenAI/Gemini/Groq/Cerebras/Mistral 키,
-          Ollama 로컬 LLM 안내 (키 → .env 저장)
-        - 데이터 provider 설정 — DART·FRED·ECOS·공공데이터포털(dataGoKr)·KRX·HF 등
-          발급/설정 안내 (이름으로 라우팅). 저장은 setCredential(암호화) 또는 .env
-        - SSOT — AI 키는 core/providers 레지스트리, 데이터 키는
-          core/providers/dataCredentials 레지스트리. 본 함수는 두 레지스트리를 읽는
-          단일 진입점일 뿐 키 정보를 복제하지 않는다.
-
-    Requires:
-        없음
-
-    AIContext:
-        - AI 분석 기능 사용 전 provider 설정 상태 확인
-        - 미설정 provider 감지 시 setup() 안내로 연결
-        - 설정 완료 여부를 프로그래밍 방식으로 체크 가능
-
-    Guide:
-        - "AI 설정 어떻게 해?" -> setup()으로 전체 현황 확인
-        - "ChatGPT 연결하고 싶어" -> setup("chatgpt")
-        - "OpenAI 키 등록" -> setup("openai")
-        - "Ollama 어떻게 써?" -> setup("ollama")
-
-    SeeAlso:
-        - ask: AI 질문 (setup 완료 후 사용)
-        - chat: AI 대화 (setup 완료 후 사용)
-        - llm.configure: 프로그래밍 방식 provider 설정
-
-    Args:
-        provider: provider명 또는 alias. None이면 AI+데이터 전체 현황 표시.
-            AI — "chatgpt", "openai", "gemini", "groq", "cerebras", "mistral",
-            "ollama", "codex", "custom".
-            데이터 — "dart", "fred", "ecos", "dataGoKr", "krx", "hf", "openfigi".
-
-    Returns:
-        None (터미널/노트북에 안내 출력).
-
-    Example::
-
-        import dartlab
-        dartlab.setup()              # AI + 데이터 키 전체 현황 (한 화면)
-        dartlab.setup("chatgpt")     # ChatGPT OAuth 브라우저 로그인
-        dartlab.setup("openai")      # OpenAI API 키 설정
-        dartlab.setup("fred")        # FRED(데이터) 키 발급/설정 안내
-        dartlab.setup("dataGoKr")    # 공공데이터포털 키 안내 (주가·관세·연금 공통)
+    Capabilities: agent CLI 탐지 상태와 데이터 provider 자격증명 안내를 결합한다.
+    Args: provider는 codex, claude, cline 또는 데이터 provider ID다.
+    Returns: None. 상태와 다음 명령을 표준 출력에 표시한다.
+    Example: `dartlab.setup("cline")`.
+    Guide: AI 역할은 모델 키를 받지 않고 사용자의 CLI 로그인 흐름을 존중하는 것이다.
+    SeeAlso: `dartlab agent status`, `dartlab ask`.
+    Requires: agent 설치에는 Node.js/npm이 필요할 수 있다.
+    AIContext: 모델 API 키와 OAuth 토큰을 DartLab에 입력하지 않는다.
+    LLM Specifications: AntiPatterns=direct key capture; OutputSchema=console guidance;
+        Prerequisites=local shell; Freshness=runtime probe; Dataflow=manifest to plan;
+        TargetMarkets=all.
     """
-    from dartlab.ai.settings.aiSetup import (
-        providersStatus,
-        resolveAlias,
-    )
+    from dartlab.ai.runtime import getRuntimeEngine
     from dartlab.gather.credentials import (
         allSpecs,
         formatStatus,
@@ -614,8 +576,11 @@ def setup(provider: str | None = None):
     )
 
     if provider is None:
-        # 단일 진입점 — 추론용 AI provider 키 + 수집용 데이터 provider 키를 한 화면에.
-        print(providersStatus())
+        status = getRuntimeEngine().status(refresh=False)
+        print("\n[ 설치형 agent runtime ]")
+        for item in status["runtimes"]:
+            print(f"  {item['runtimeId']}: {item['state']} ({item.get('version') or '-'})")
+        print("  상세: dartlab agent status\n")
         print(formatStatus())
         return
 
@@ -627,53 +592,13 @@ def setup(provider: str | None = None):
             print("\n" + missingKeyMessage(provider) + "\n")
         return
 
-    # AI provider 경로.
-    provider = resolveAlias(provider)
-    if provider == "oauth-codex":
-        _setupOauthInteractive()
-    else:
-        _setupApikeyInteractive(provider)
-
-
-def _setupOauthInteractive():
-    """노트북/CLI에서 ChatGPT OAuth 브라우저 로그인."""
-    try:
-        from dartlab.ai.providers.support.oauthToken import isAuthenticated
-
-        if isAuthenticated():
-            print("\n  ✓ ChatGPT OAuth 이미 인증되어 있습니다.")
-            print('  재인증: dartlab.setup("chatgpt")  # 재실행하면 갱신\n')
-            return
-    except ImportError:
-        pass
-
-    try:
-        from dartlab.cli.commands.setup import _doOauthLogin
-
-        _doOauthLogin()
-    except ImportError:
-        print("\n  ChatGPT OAuth 브라우저 로그인:")
-        print("  CLI에서 실행: dartlab setup oauth-codex\n")
-
-
-def _setupApikeyInteractive(provider: str):
-    """API 키 기반 provider 인터랙티브 설정."""
-    from dartlab.ai.settings.providerCatalog import _PROVIDERS
-
-    spec = _PROVIDERS.get(provider)
-    if spec is None or not spec.env_key:
-        from dartlab.ai.settings.aiSetup import providerGuide
-
-        print(providerGuide(provider))
-        return
-
-    from dartlab.core.env import promptAndSave
-
-    promptAndSave(
-        spec.env_key,
-        label=spec.label,
-        guide=spec.signupUrl or spec.description,
-    )
+    if provider not in {"codex", "claude", "cline"}:
+        raise ValueError(f"알 수 없는 runtime 또는 데이터 provider: {provider}")
+    print(f"\n  {provider} 상태: dartlab agent status {provider}")
+    print(f"  설치 계획: dartlab agent install {provider}")
+    if provider != "cline":
+        print(f"  MCP 연결 계획: dartlab agent connect {provider}")
+    print("  인증은 설치 후 해당 CLI에서 직접 완료하세요.\n")
 
 
 def _autoStream(gen) -> str:

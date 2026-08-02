@@ -34,6 +34,8 @@ class CopilotRequest(BaseModel):
     rceptNo: str | None = None
     extra: dict[str, Any] = Field(default_factory=dict)
     stream: bool = True
+    runtimeId: str | None = None
+    sessionId: str | None = None
     provider: str | None = None
     role: str | None = None
     model: str | None = None
@@ -80,7 +82,9 @@ async def _streamPublicAsk(req: AskRequest):
         messages.append(AgentRunMessage(role=h.role, content=h.text))
     messages.append(AgentRunMessage(role="user", content=req.question))
     agent_req = AgentRunRequest(
+        threadId=req.sessionId,
         messages=messages,
+        runtimeId=req.runtimeId,
         provider=req.provider,
         role=req.role,
         model=req.model,
@@ -150,7 +154,9 @@ async def _streamCompanyCopilot(stockCode: str, req: CopilotRequest):
         },
     }
     agent_req = AgentRunRequest(
+        threadId=req.sessionId,
         messages=[AgentRunMessage(role="user", content=augmented_q)],
+        runtimeId=req.runtimeId,
         provider=req.provider,
         role=req.role,
         model=req.model,

@@ -11,7 +11,7 @@ import asyncio
 import logging
 import os
 from contextlib import asynccontextmanager, suppress
-from typing import Any, cast
+from typing import Any
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -35,58 +35,14 @@ from .api import (
     macro_router,
     price_events_router,
     room_router,
+    runtime_router,
 )
 from .embed import router as embed_router
 from .runtime import ensurePort, runServer  # noqa: F401, re-exported
 from .security import AdminBoundaryMiddleware, RequestBudgetMiddleware
-from .services.aiProfile import shouldPreloadOllama as _should_preload_ollama
 from .web import registerSpa
 
 logger = logging.getLogger(__name__)
-
-
-async def _preloadOllamaOnce() -> None:
-    """서버 시작 직후 Ollama 모델을 미리 깨워 cold start를 줄인다."""
-
-    await asyncio.sleep(2)
-
-    try:
-        from dartlab.ai import getConfig
-        from dartlab.ai.providers import createProvider
-
-        config = getConfig("ollama")
-        provider = cast(Any, createProvider(config))
-    except (ImportError, OSError, RuntimeError, ValueError) as exc:
-        logger.debug("Ollama preload 준비 실패", exc_info=exc)
-        return
-
-    if not hasattr(provider, "preload"):
-        return
-
-    try:
-        if provider.checkAvailable():
-            ok = await asyncio.to_thread(provider.preload)
-            if ok:
-                logger.info("Ollama 모델 preload 완료: %s", provider.resolvedModel)
-    except (ConnectionError, OSError, RuntimeError, TimeoutError, ValueError) as exc:
-        logger.debug("Ollama preload 실행 실패", exc_info=exc)
-
-
-async def _prewarmOauthCodexModels() -> None:
-    """OAuth codex backend `/codex/models` cold call (~43s) 을 startup 으로 흡수.
-
-    UI 가 startup 직후 `/api/models/oauth-codex` 또는 settings 패널에서 호출하면
-    cache 가 비어있어 cold HTTP 1 회 (DNS/TLS cold + token validate + remote fetch)
-    가 ~40s 블락하던 문제. lifespan 에서 background 로 미리 깨워두면 사용자 첫
-    호출은 cache hit. 실패해도 무관 (UI 는 fallback 사용).
-    """
-    await asyncio.sleep(1)  # uvicorn startup 완료 후 시작. 첫 화면 fetch 와 race 안 함.
-    try:
-        from dartlab.ai.providers.oauthCodex import availableModels
-
-        await asyncio.to_thread(availableModels)
-    except (ImportError, OSError, RuntimeError, ValueError) as exc:
-        logger.debug("oauth-codex models prewarm 실패", exc_info=exc)
 
 
 async def _prewarmVizCatalog() -> None:
@@ -104,18 +60,9 @@ async def _prewarmVizCatalog() -> None:
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    """앱 수명주기 관리 -- Ollama preload, oauth-codex models prewarm, 룸 생성/정리."""
-    # oauth-codex `/codex/models` cold HTTP ~43s 가 UI 의 "설정 필요" 1 분 체류 원인.
-    # background thread 로 미리 깨움. 사용자 첫 호출은 cache hit (즉시 응답).
-    # 회귀 가드: 과거 secret_store prewarm 은 잘못된 DPAPI 가설 기반이라 제거됨.
-    # 이번 prewarm 은 측정 기반 (cold availableModels() = 43s 검증).
-    # prewarm task 는 default OFF. 회귀: 첫 catalog 응답 후 prewarm task 가 main
-    # event loop 점거 → 모든 후속 API hang → 사용자 화면 무한 spinner. 정공 fix 가
-    # 들어오기 전까지 opt-in (DARTLAB_PREWARM=1) 으로만 활성.
+    """앱 수명주기 관리 -- 데이터 시각화 prewarm, 런타임과 룸 생성/정리."""
     _doPrewarm = os.environ.get("DARTLAB_PREWARM", "").strip().lower() in {"1", "true", "yes"}
-    models_prewarm_task = asyncio.create_task(_prewarmOauthCodexModels()) if _doPrewarm else None
     viz_prewarm_task = asyncio.create_task(_prewarmVizCatalog()) if _doPrewarm else None
-    preload_task = asyncio.create_task(_preloadOllamaOnce()) if (_doPrewarm and _should_preload_ollama()) else None
 
     # 채널 모드: 협업 룸 자동 생성 + 백그라운드 정리
     from .room import roomManager
@@ -134,17 +81,9 @@ async def lifespan(_: FastAPI):
         channelRuntime.shutdownAll()
         roomManager.stopBackgroundCleanup()
         roomManager.destroyRoom()
+        from dartlab.ai.runtime import getRuntimeEngine
 
-        if preload_task is not None and not preload_task.done():
-            preload_task.cancel()
-        with suppress(asyncio.CancelledError):
-            if preload_task is not None:
-                await preload_task
-        if models_prewarm_task is not None and not models_prewarm_task.done():
-            models_prewarm_task.cancel()
-        with suppress(asyncio.CancelledError):
-            if models_prewarm_task is not None:
-                await models_prewarm_task
+        getRuntimeEngine().close()
         if viz_prewarm_task is not None and not viz_prewarm_task.done():
             viz_prewarm_task.cancel()
         with suppress(asyncio.CancelledError):
@@ -237,6 +176,7 @@ app.include_router(dl_router)
 app.include_router(macro_router)
 app.include_router(price_events_router)
 app.include_router(room_router)
+app.include_router(runtime_router)
 app.include_router(dart_router)
 app.include_router(embed_router)
 

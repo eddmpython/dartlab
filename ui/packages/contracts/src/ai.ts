@@ -14,6 +14,7 @@ export interface AiCapabilities {
 	providerLabel?: string;
 	modelLabel?: string;
 	upgradeHint?: string; // advanced 미만 tier 에서 로컬 업그레이드 안내 문구
+	runtimeId?: string;
 }
 
 export type AiModeId = 'chat' | 'terminal';
@@ -42,6 +43,7 @@ export type AgUiEventType =
 	| 'ACTIVITY_SNAPSHOT' // reserved
 	| 'ACTIVITY_DELTA'
 	| 'VIEW_SPEC'
+	| 'APPROVAL_REQUESTED'
 	| 'RUN_FINISHED'
 	| 'RUN_ERROR';
 
@@ -130,6 +132,15 @@ export interface AiStreamRunError {
 	code?: string;
 }
 
+export interface AiStreamApprovalRequested {
+	type: 'APPROVAL_REQUESTED';
+	runId: string;
+	sessionId: string;
+	turnId: string;
+	approvalId: string;
+	request: Record<string, unknown>;
+}
+
 /** 기타 allowlist 이벤트(START/END/SNAPSHOT/DELTA 등)는 렌더 무관. surface 는 드롭. */
 export interface AiStreamOther {
 	type: Exclude<
@@ -140,6 +151,7 @@ export interface AiStreamOther {
 		| 'TOOL_CALL_RESULT'
 		| 'ACTIVITY_DELTA'
 		| 'VIEW_SPEC'
+		| 'APPROVAL_REQUESTED'
 		| 'RUN_FINISHED'
 		| 'RUN_ERROR'
 	>;
@@ -155,6 +167,7 @@ export type AiStreamEvent =
 	| AiStreamViewSpec
 	| AiStreamRunFinished
 	| AiStreamRunError
+	| AiStreamApprovalRequested
 	| AiStreamOther;
 
 /** 대화 히스토리 한 턴 (다중턴 컨텍스트 전달용). */
@@ -170,6 +183,9 @@ export interface AiAskInput {
 	evidence?: EvidenceSelection[];
 	/** 이전 대화 턴들 (현재 prompt 제외). 게이트웨이가 LLM history 로 전달해 후속 질문 맥락 유지. */
 	history?: AiHistoryTurn[];
+	/** 설치형 agent runtime과 네이티브 transcript 세션 선택. */
+	runtimeId?: string;
+	sessionId?: string;
 }
 
 export interface AiAskResult {

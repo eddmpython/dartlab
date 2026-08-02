@@ -74,7 +74,6 @@ def _patch_dartlab(monkeypatch, company=None):
         "dartlab.cli.commands.sections",
         "dartlab.cli.commands.show",
         "dartlab.cli.commands.statement",
-        "dartlab.cli.commands.status",
     ]
     import sys
 
@@ -109,11 +108,24 @@ def test_search_no_result(monkeypatch, mock_output):
 
 
 def test_status_runs(monkeypatch):
-    _patch_dartlab(monkeypatch)
-    from dartlab.cli.commands.status import run
+    import dartlab.cli.commands.status as status_command
 
-    rc = run(_ns(provider="openai", cost=False))
+    engine = MagicMock()
+    engine.status.return_value = {
+        "runtimes": [
+            {
+                "runtimeId": "codex",
+                "state": "ready",
+                "version": "codex-cli test",
+                "mcp": {"connected": True},
+            }
+        ]
+    }
+    monkeypatch.setattr(status_command, "getRuntimeEngine", lambda: engine)
+
+    rc = status_command.run(_ns(runtime=None, refresh=False))
     assert rc == 0
+    engine.status.assert_called_once_with(refresh=False)
 
 
 # ── 3. modules ──
@@ -131,7 +143,7 @@ def test_modules_list():
 def test_setup_no_provider(capsys):
     from dartlab.cli.commands.setup import run
 
-    rc = run(_ns(provider=None))
+    rc = run(_ns(target=None))
     assert rc == 0
     out = capsys.readouterr().out
     assert "데이터 수집" in out or "AI 분석" in out or "dart-key" in out
@@ -378,15 +390,20 @@ def test_statement_usesPanelContract(monkeypatch, capsys):
     assert "매출액" in capsys.readouterr().out
 
 
-def test_providerStatus_returnsAvailabilityAndModel():
-    """provider 상태가 가용 여부와 모델을 돌려준다.
+def test_runtimeStatus_filtersSelectedRuntime(monkeypatch, capsys):
+    """status는 direct provider 대신 선택한 설치형 runtime만 표시한다."""
+    import dartlab.cli.commands.status as status_command
 
-    예전에는 `dartlab.llm.status` 를 불렀는데 그 이름이 표면에서 빠져 `dartlab status`
-    가 첫 provider 에서 AttributeError 로 죽었다. 표 머리만 찍히고 본문이 없었다.
-    """
-    from dartlab.cli.commands.status import _providerStatus
+    engine = MagicMock()
+    engine.status.return_value = {
+        "runtimes": [
+            {"runtimeId": "codex", "state": "ready", "version": "0.1", "mcp": {"connected": True}},
+            {"runtimeId": "cline", "state": "missing", "version": None, "mcp": {"connected": False}},
+        ]
+    }
+    monkeypatch.setattr(status_command, "getRuntimeEngine", lambda: engine)
 
-    st = _providerStatus("openai")
-
-    assert set(st) >= {"available", "model"}
-    assert isinstance(st["available"], bool)
+    assert status_command.run(_ns(runtime="cline", refresh=True)) == 0
+    output = capsys.readouterr().out
+    assert "cline" in output
+    assert "codex" not in output

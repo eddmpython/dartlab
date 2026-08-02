@@ -627,7 +627,7 @@
     },
     {
       "id": "operation.aiEngine",
-      "title": "aiEngine — dartlab.ai 내부 SSOT (7 원칙 · 도구 · provider)",
+      "title": "AI Engine — Bring Your Agent Runtime",
       "category": "operation",
       "status": "limited",
       "dataSources": [],
@@ -636,7 +636,7 @@
     },
     {
       "id": "operation.aiProductReplatform",
-      "title": "DartLab AI 제품 바탕 교체",
+      "title": "AI 제품 전환 — Agent Runtime 표면",
       "category": "operation",
       "status": "limited",
       "dataSources": [],
@@ -810,6 +810,24 @@
       "title": "Philosophy — dartlab 사상 SSOT",
       "category": "operation",
       "status": "supported",
+      "dataSources": [],
+      "requiredSetup": [],
+      "limitations": []
+    },
+    {
+      "id": "operation.productCycle",
+      "title": "제품 운영 주기 — Outcome Review",
+      "category": "operation",
+      "status": "limited",
+      "dataSources": [],
+      "requiredSetup": [],
+      "limitations": []
+    },
+    {
+      "id": "operation.productDirection",
+      "title": "제품 방향 — Weekly Verified Analysis Loops",
+      "category": "operation",
+      "status": "limited",
       "dataSources": [],
       "requiredSetup": [],
       "limitations": []

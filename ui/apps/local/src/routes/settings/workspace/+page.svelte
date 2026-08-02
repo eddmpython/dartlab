@@ -1,39 +1,33 @@
 <script lang="ts">
 	import { base } from '$app/paths';
 	import { getLocalRuntime } from '$lib/runtime/localRuntime';
+	import { listAgentRuntimes } from '$lib/runtime/agentRuntimeApi';
 
 	// Workspace 상태 — 발명 기능이 아니라 *기존 상태*를 표면화한다(덕지덕지 회피): 로컬 서버(/api) 연결 상태,
-	// 활성 공급자/모델, 런타임 env(시장·로케일·빌드·readonly). 공급자 선택/키는 settings/providers 소관.
-	interface ProviderInfo {
-		selected?: boolean;
-		available?: boolean;
-		label?: string;
-		model?: string;
-	}
+	// 설치형 agent runtime과 로컬 앱 환경을 한 화면에서 확인한다.
 
 	const env = getLocalRuntime().env;
 
 	let conn = $state<'checking' | 'ok' | 'down'>('checking');
 	let active = $state<{ key: string; label: string; model: string } | null>(null);
-	let providerCount = $state(0);
+	let runtimeCount = $state(0);
 
 	async function probe(): Promise<void> {
 		conn = 'checking';
 		try {
-			const r = await fetch('/api/status');
-			if (!r.ok) throw new Error(`HTTP ${r.status}`);
-			const data = (await r.json()) as { providers?: Record<string, ProviderInfo> };
-			const entries = Object.entries(data.providers ?? {});
-			providerCount = entries.length;
-			const sel = entries.find(([, p]) => p.selected);
-			active = sel
-				? { key: sel[0], label: sel[1].label || sel[0], model: sel[1].model || '—' }
+			const runtimes = await listAgentRuntimes(false);
+			const ready = runtimes.filter((item) => item.state === 'ready');
+			runtimeCount = ready.length;
+			const preferred = localStorage.getItem('dartlab-agent-runtime');
+			const selected = ready.find((item) => item.runtimeId === preferred) ?? ready[0] ?? null;
+			active = selected
+				? { key: selected.runtimeId, label: selected.displayName, model: selected.version || 'CLI 관리' }
 				: null;
 			conn = 'ok';
 		} catch {
 			conn = 'down';
 			active = null;
-			providerCount = 0;
+			runtimeCount = 0;
 		}
 	}
 
@@ -57,7 +51,7 @@
 <section>
 	<a class="back" href={base || '/'}>← local</a>
 	<h1>Workspace</h1>
-	<p>로컬 서버 연결과 활성 분석 컨텍스트 상태. 공급자 선택·키 설정은 <a href={`${base}/settings/providers`}>providers</a>.</p>
+	<p>로컬 서버와 설치형 agent 상태. 선택·설치·MCP 연결은 <a href={`${base}/settings/runtimes`}>Runtime Center</a>.</p>
 
 	<div class="block">
 		<div class="row">
@@ -69,15 +63,15 @@
 			</span>
 		</div>
 		<div class="row">
-			<span class="k">활성 공급자</span>
+			<span class="k">활성 agent</span>
 			<span class="v">
 				{#if conn !== 'ok'}—
 				{:else if active}{active.label} · <code>{active.model}</code>
-				{:else}미선택 — <a href={`${base}/settings/providers`}>providers 에서 선택</a> (deterministic tier){/if}
+				{:else}미설치 — <a href={`${base}/settings/runtimes`}>Runtime Center에서 설치</a>{/if}
 			</span>
 		</div>
 		{#if conn === 'ok'}
-			<div class="row"><span class="k">가용 공급자</span><span class="v">{providerCount}개</span></div>
+			<div class="row"><span class="k">가용 runtime</span><span class="v">{runtimeCount}개</span></div>
 		{/if}
 	</div>
 

@@ -1,0 +1,9 @@
+runtimeId = "claude"
+displayName = "Claude Code"
+driver = "claudeStreamJson"
+protocol = "stream-json"
+executableCandidates = ["claude"]
+versionArgs = ["--version"]
+launchArgs = ["--print", "--output-format", "stream-json", "--include-partial-messages"]
+installArgs = ["npm", "install", "-g", "@anthropic-ai/claude-code"]
+officialUrl = "https://docs.anthropic.com/en/docs/claude-code/overview"

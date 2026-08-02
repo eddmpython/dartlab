@@ -18,7 +18,7 @@
 
 ### Semantic authority
 
-`src/dartlab/productOutcome/`가 한 분석 loop의 의미를 판정한다.
+`src/dartlab/productOutcome.py`가 한 분석 loop의 의미를 판정한다.
 
 - state transition 유효성
 - canonical subject 존재

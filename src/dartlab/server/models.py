@@ -54,6 +54,8 @@ class AskRequest(BaseModel):
 
     company: str | None = Field(None, max_length=100)
     question: str = Field(..., min_length=1, max_length=5000)
+    runtimeId: str | None = Field(None, max_length=50)
+    sessionId: str | None = Field(None, max_length=120)
     provider: str | None = Field(None, max_length=50)
     role: str | None = Field(None, max_length=50)
     model: str | None = Field(None, max_length=100)
@@ -83,6 +85,7 @@ class AgentRunRequest(BaseModel):
     threadId: str | None = Field(None, max_length=120)
     messages: list[AgentRunMessage] = Field(default_factory=list, max_length=80)
     agentId: str | None = Field("dartlab-research", max_length=100)
+    runtimeId: str | None = Field(None, max_length=50)
     model: str | None = Field(None, max_length=100)
     provider: str | None = Field(None, max_length=50)
     role: str | None = Field(None, max_length=50)

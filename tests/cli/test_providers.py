@@ -37,19 +37,11 @@ def test_create_provider_chatgpt_alias_blocked():
         createProvider(provider="chatgpt")
 
 
-def test_configure_role_binding_changes_resolved_config():
-    from dartlab.ai import configure, getConfig
+def test_direct_provider_configuration_is_rejected():
+    from dartlab.ai import configure
 
-    configure(provider="ollama", model="base")
-    configure(provider="ollama", model="summary-model", role="summary")
-
-    analysis = getConfig()
-    summary = getConfig(role="summary")
-
-    assert analysis.provider == "ollama"
-    assert analysis.model == "base"
-    assert summary.provider == "ollama"
-    assert summary.model == "summary-model"
+    with pytest.raises(ValueError, match="agent runtime"):
+        configure(provider="ollama", model="base")
 
 
 def test_provider_config_round_trip_preserves_model():

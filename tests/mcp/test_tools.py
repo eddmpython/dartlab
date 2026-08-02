@@ -102,7 +102,7 @@ def test_cli_mcp_config_claude_desktop(capsys):
 def test_mcp_instructions_contains_key_info():
     from dartlab.mcp import _MCP_INSTRUCTIONS
 
-    assert "Ask Workbench" in _MCP_INSTRUCTIONS
+    assert "설치형 agent CLI" in _MCP_INSTRUCTIONS
     assert "RunPython" in _MCP_INSTRUCTIONS
     assert "ReadSkill" in _MCP_INSTRUCTIONS
 

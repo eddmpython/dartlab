@@ -1,40 +1,64 @@
-"""AI runtime 재정비 후 남은 공식 런타임 계약 테스트."""
+"""설치형 agent runtime이 DartLab AI의 단일 실행 경계인지 검증한다."""
 
 from __future__ import annotations
-
-import importlib.util
 
 import pytest
 
 pytestmark = pytest.mark.unit
 
 
-def test_legacy_ai_runtime_package_is_removed():
-    assert importlib.util.find_spec("dartlab.ai.runtime") is None
+def _fakeEvents(_question: str, **_kwargs):
+    """Sig: _fakeEvents(question, **kwargs) -> Iterator[TraceEvent].
+
+    Args: 테스트 질문과 무시하는 런타임 선택값이다.
+    Returns: 공개 ask 변환을 검증할 결정론적 이벤트다.
+    Example: `events = list(_fakeEvents("질문"))`.
+    """
+    from dartlab.ai.contracts import TraceEvent
+
+    yield TraceEvent("runtime_session", {"sessionId": "s1", "runtimeId": "codex", "resumed": False})
+    yield TraceEvent("chunk", {"text": "DartLab runtime 응답"})
+    yield TraceEvent(
+        "done",
+        {"responseMeta": {"finalEvent": "answer", "responseStatus": "ok", "runtimeId": "codex"}},
+    )
 
 
-def test_public_ask_non_stream_returns_text():
+def test_agent_runtime_registry_is_manifest_driven():
+    from dartlab.ai.runtime.registry import loadRuntimeRegistry
+
+    registry = loadRuntimeRegistry()
+
+    assert set(registry) == {"codex", "claude", "cline"}
+    assert {item.driver for item in registry.values()} == {"codexAppServer", "claudeStreamJson", "acp"}
+    assert all(item.installArgs for item in registry.values())
+
+
+def test_public_ask_non_stream_returns_runtime_text(monkeypatch):
     import dartlab
+    from dartlab.ai import kernel
 
-    answer = dartlab.ask("너 뭐 할 수 있니", stream=False)
+    monkeypatch.setattr(kernel, "runRuntimeAgent", _fakeEvents)
 
-    assert isinstance(answer, str)
-    assert answer.strip()
+    assert dartlab.ask("너 뭐 할 수 있니", stream=False) == "DartLab runtime 응답"
 
 
-def test_public_ask_stream_returns_text_chunks():
+def test_public_ask_stream_prints_and_returns_text(monkeypatch, capsys):
     import dartlab
+    from dartlab.ai import kernel
 
-    chunks = list(dartlab.ask("너 뭐 할 수 있니", stream=True))
+    monkeypatch.setattr(kernel, "runRuntimeAgent", _fakeEvents)
 
-    assert chunks
-    assert all(isinstance(chunk, str) for chunk in chunks)
+    assert dartlab.ask("너 뭐 할 수 있니", stream=True) == "DartLab runtime 응답"
+    assert "DartLab runtime 응답" in capsys.readouterr().out
 
 
-def test_internal_events_are_reserved_for_adapters():
-    from dartlab.ai.kernel import ask
+def test_internal_events_are_reserved_for_adapters(monkeypatch):
+    from dartlab.ai import kernel
 
-    events = list(ask("너 뭐 할 수 있니", events=True))
+    monkeypatch.setattr(kernel, "runRuntimeAgent", _fakeEvents)
 
-    assert events
+    events = list(kernel.ask("너 뭐 할 수 있니", events=True))
+
+    assert events[0].kind == "runtime_session"
     assert events[-1].kind == "done"

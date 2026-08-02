@@ -7,13 +7,12 @@ from pathlib import Path
 from typing import Any
 
 MCP_INSTRUCTIONS = """\
-DartLab MCP의 기본 표면은 ask가 실행하는 Ask Workbench와 그 아래 데이터·분석 작업대 도구다
-(advertise 되는 전체 도구 목록·갯수는 tools/list 가 정본 — 본 문서는 핵심만 안내). 목적은 LLM이 DartLab을
-프롬프트 지식으로 외우게 하는 것이 아니라, 질문마다 먼저 skill을 고르고, capability docstring에서 호출 가능한 API를
-확인한 뒤 RunPython으로 실행하고 ref 검증 후 답하게 하는 것이다.
+DartLab MCP는 설치형 agent CLI에 Skill OS, 데이터, 분석 도구를 제공한다. tools/list가
+광고하는 목록이 유일한 정본이다. 모델 호출과 전체 답변 loop는 agent CLI가 소유하므로
+재귀 호출을 만드는 ask 도구는 광고하지 않는다. 목적은 agent가 DartLab을 프롬프트 지식으로
+외우는 대신 skill과 capability 계약을 찾고 실제 엔진 결과와 ref를 근거로 답하게 하는 것이다.
 
 ## 핵심 데이터 작업대 도구 (advertised 전체는 tools/list 참조)
-- ask: DartLab 공식 답변 진입점. 기본은 chat-native 자율 도구 호출이고, mode="analyze" 를 명시하면 작업대 경로로 간다.
 - ReadSkill: Skill OS 검색 + frontmatter (whenToUse, capabilityRefs, requiredEvidence) + 본문.
 - ReadCapability: dartlab 공개 API/docstring 검색. 결과의 `engineCallable=true`인 apiRef만 EngineCall에 사용.
 - EngineCall: 단일 capability 1 회 호출 (Company.panel, scan, macro 등). JSON `{apiRef, args}` 양식.
@@ -35,11 +34,10 @@ DartLab MCP의 기본 표면은 ask가 실행하는 Ask Workbench와 그 아래 
 ## 기본 흐름
 1. **첫 진입 권장** — 작업 모호하거나 처음 만나는 도메인이면 `ReadSkill(query="start.dartlabSkillOs")` 먼저 호출.
    분류 노드가 5 카테고리 (start/runtime/operation/engines/recipes) 와 작업 결을 먼저 매핑한다.
-2. ask로 전체 답변 루프 실행 (단순 질문은 이걸로 끝).
-3. 작업대 직접 사용 시: ReadSkill 로 절차 → ReadCapability 로 API와 `engineCallable` 확인 →
+2. ReadSkill 로 절차 → ReadCapability 로 API와 `engineCallable` 확인 →
    단일 호출은 EngineCall, 다단 결합·가공만 RunPython → 답변 + ref.
-4. 데이터셋 스키마·기간·행 수·최신 기준시점이 필요하면 RunPython 안에서 dartlab.* 직접 호출로 확인한다.
-5. 후보·상위·랭킹 답변은 bullet 나열로 끝내지 않고 입력/유니버스, 필터, 계산식/지표, 결과와 evidence table을 함께 낸다.
+3. 데이터셋 스키마·기간·행 수·최신 기준시점이 필요하면 RunPython 안에서 dartlab.* 직접 호출로 확인한다.
+4. 후보·상위·랭킹 답변은 bullet 나열로 끝내지 않고 입력/유니버스, 필터, 계산식/지표, 결과와 evidence table을 함께 낸다.
 
 ## 0.10 BREAKING — 옛 33 generated 도구 제거
 companyStory / companyAnalysis / companyValuation / companyForecast / companyShow / companyTopics /
@@ -73,22 +71,14 @@ RunPython 안에서 직접 호출하는 패턴으로 통합되었다. DARTLAB_MC
 
 
 def mcpAdvertisedToolNames() -> tuple[str, ...]:
-    """MCP tools/list 에 advertise 할 도구 이름 SSOT — registry 변경 자동 추종.
+    """MCP tools/list 에 advertise 할 분석 도구 이름 SSOT.
 
-    마스터 플랜 v2 트랙 7 PR-M1 — 옛 정적 12-tuple 상수(LookAheadGuard / RequestUserInput stub 포함)는
-    ``CANONICAL_V2`` (21 종 정제 production-grade) 와 deviation 발생해 **폐기**(debt-honesty P2-6 —
-    ask_kernel_status leak 경로 제거). 본 함수가 ``"ask" + CANONICAL_V2`` 를 SSOT 로 노출 → 신규 도구
-    추가 시 advertise 도 자동 sync.
-
-    Returns:
-        tuple[str, ...]: ``("ask",) + CANONICAL_V2`` 합 (= 22 종).
-
-    Example:
-        ``names = mcpAdvertisedToolNames()``  # → ("ask", "ReadSkill", ..., "SearchPastSessions")
+    `ask`는 제외한다. 설치형 에이전트가 다시 DartLab AI를 호출하면 재귀 런타임이 되므로
+    MCP는 데이터, Skill OS, 실행 도구만 제공한다.
     """
     from dartlab.ai.tools.registry import CANONICAL_V2
 
-    return ("ask", *CANONICAL_V2)
+    return tuple(CANONICAL_V2)
 
 
 def isMcpAdvertisedTool(name: str) -> bool:
@@ -111,19 +101,6 @@ def askWorkbenchToolSpecs() -> list[dict[str, Any]]:
     from dartlab.ai.tools.registry import toolSpecs as aiToolSpecs
 
     specs = {spec["name"]: spec for spec in aiToolSpecs()}
-    specs["ask"] = {
-        "name": "ask",
-        "description": "DartLab 공식 AI 답변 진입점. Skill OS, generated spec, tools, ref 검증 루프를 통해 답변한다.",
-        "inputSchema": {
-            "type": "object",
-            "properties": {"question": {"type": "string"}, "stockCode": {"type": "string"}},
-            "required": ["question"],
-        },
-        "readOnlyHint": False,
-        "destructiveHint": False,
-        "idempotentHint": False,
-        "openWorldHint": False,
-    }
     # 광고와 실행 schema 사이 drift 는 서버 시작 전에 즉시 드러나야 한다. 누락을
     # silently skip 하면 tools/list 와 call allowlist 가 서로 다른 표면이 된다.
     advertised = mcpAdvertisedToolNames()
@@ -153,18 +130,6 @@ def executeAskWorkbenchTool(name: str, args: dict[str, Any]) -> dict[str, Any]:
     from dartlab.ai.tools.registry import CANONICAL_TOOL_NAMES as aiToolNames
     from dartlab.ai.tools.registry import executeTool as executeAiTool
 
-    if name == "ask":
-        from dartlab.ai.kernel import AskFailedError, ask
-
-        question = str(args.get("question") or "")
-        kwargs = {key: value for key, value in args.items() if key != "question"}
-        # ok 를 리터럴로 박아 두면 완전 실패한 실행도 성공으로 나간다. 대표 진입점이라
-        # 클라이언트는 이 한 값을 보고 답의 유무를 판단한다.
-        try:
-            answer = ask(question, stream=False, **kwargs)
-        except AskFailedError as exc:
-            return {"ok": False, "answer": "", "error": str(exc)}
-        return {"ok": True, "answer": answer}
     # 외부 본문에 untrusted 마커를 씌우는 것은 MCP 쪽에도 필요하다. 예전에는 이 경로가
     # 통째로 빠져 있어서, MCP 클라이언트는 웹 검색 본문과 스킬 마켓 본문을 마커 없이 받았다.
     # external ref 가 없으면 원본을 그대로 돌려주므로 나머지 도구에는 영향이 없다.
@@ -196,8 +161,8 @@ def executeCompatAskTool(name: str, args: dict[str, Any]) -> dict[str, Any]:
         # RequestUserInput) 제거. 'passes'(5-pass GRAPH_NODES) 노출도 제거 — chat-native 정체성상
         # 고정 노드 그래프를 외부 resource 로 광고하지 않는다 (debt-honesty P2-6 / SD-2).
         return {
-            "name": "Ask Workbench",
-            "entry": "ask",
+            "name": "DartLab Agent Tools",
+            "entry": "agent-cli",
             "tools": list(mcpAdvertisedToolNames()),
         }
     if name == "search_reference":
@@ -480,7 +445,7 @@ def resourcePayload(uriStr: str) -> tuple[str, str]:
             ),
             "application/json",
         )
-    if uriStr == "dartlab://ask-workbench":
+    if uriStr in {"dartlab://agent-runtime", "dartlab://ask-workbench"}:
         return (
             json.dumps(executeAskWorkbenchTool("ask_kernel_status", {}), ensure_ascii=False, indent=2),
             "application/json",
@@ -497,7 +462,7 @@ def resourcePayload(uriStr: str) -> tuple[str, str]:
     if uriStr == "dartlab://reference":
         return (
             json.dumps(
-                executeAskWorkbenchTool("search_reference", {"query": "DartLab Ask Workbench", "limit": 5}),
+                executeAskWorkbenchTool("search_reference", {"query": "DartLab Agent Runtime", "limit": 5}),
                 ensure_ascii=False,
                 indent=2,
             ),

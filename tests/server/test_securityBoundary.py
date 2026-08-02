@@ -286,48 +286,13 @@ def test_serverSerializerFailsClosedOnCycle() -> None:
     assert "cyclicPayload" in result["serialization"]["reasons"]
 
 
-def test_ollamaPullUsesAsyncHttpStream(monkeypatch) -> None:
-    import httpx
+def test_ollamaPullIsRemovedFromProductRuntime() -> None:
+    from fastapi import HTTPException
 
     from dartlab.server.api.ai import apiOllamaPull
 
-    calls: list[dict] = []
+    with pytest.raises(HTTPException) as caught:
+        apiOllamaPull({"model": "qwen3"})
 
-    class _Response:
-        async def __aenter__(self):
-            return self
-
-        async def __aexit__(self, *_args):
-            return None
-
-        def raise_for_status(self):
-            return None
-
-        async def aiter_lines(self):
-            yield '{"status":"pulling"}'
-
-    class _Client:
-        def __init__(self, **kwargs):
-            calls.append(kwargs)
-
-        async def __aenter__(self):
-            return self
-
-        async def __aexit__(self, *_args):
-            return None
-
-        def stream(self, method: str, url: str, **kwargs):
-            calls.append({"method": method, "url": url, **kwargs})
-            return _Response()
-
-    monkeypatch.setattr(httpx, "AsyncClient", _Client)
-
-    async def _collect():
-        response = await apiOllamaPull({"model": "qwen3"})
-        return [event async for event in response.body_iterator]
-
-    events = asyncio.run(_collect())
-
-    assert calls[0]["timeout"] == 600
-    assert calls[1]["json"] == {"model": "qwen3", "stream": True}
-    assert [event["event"] for event in events] == ["progress", "done"]
+    assert caught.value.status_code == 410
+    assert "설치형 agent CLI" in str(caught.value.detail)

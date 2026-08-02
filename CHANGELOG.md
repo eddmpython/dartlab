@@ -13,12 +13,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Bring Your Agent Runtime.** 로컬에 설치된 Codex CLI, Claude Code, Cline을 각각 app-server JSON-RPC, stream-json, ACP v1로 연결한다. 인증·모델·native transcript는 CLI가 소유하고 DartLab은 MCP, Skill OS, 금융 엔진, ref를 제공한다. Runtime Center와 `dartlab agent`는 탐지·설치·MCP 연결 계획을 보여 주며 SHA-256 digest를 명시적으로 승인하기 전에는 설정을 바꾸지 않는다.
+- **Product Outcome local 원장.** `started → scoped → grounded → delivered → verified → retained` 전이를 SQLite에 저장한다. exact evidence 확인 receipt가 같은 outcome의 opaque hash와 일치할 때만 verified가 되며 질문·답변·provider·model·token·원본 ref·파일 경로는 저장하지 않는다.
 - **`dartlab.data` 데이터 작업대.** 축은 `catalog` 와 `query` 둘이다. `catalog` 는 지금 무엇을 어디까지 읽을 수 있는지(자산, 커버리지, 공백, 스냅샷 ID)를 돌려주고, `query` 는 전종목 시점 고정 질의를 돌려준다. 세대는 불변이고, 큰 결과는 이어읽기로 나눠 받으며, 무거운 실행은 별도 프로세스로 격리된다. factor, graph, narrative, resource 는 별도 축이 아니라 `query` 의 투영이다.
 - **`dartlab.macro("simulate")` 완결.** 거시 시뮬레이션의 신용 축과 국면 경로까지 배선을 마쳤다. BVAR 팬 차트, 충격반응, 시나리오 조건부 경로.
 - **전종목 원천 스트리밍.** DART 와 EDGAR 원천을 샤드 커서로 이어 읽는다. 중간에 끊겨도 이어서 재개한다.
 
 ### Changed
 
+- **AI production 경로를 direct provider에서 Agent Runtime으로 전환.** `dartlab.ask`, `/api/ask`, Agent Gateway, 로컬 UI가 같은 runtime SSOT를 사용한다. provider secret/OAuth/Ollama pull API는 410 migration 안내를 반환하고 MCP tools/list에서는 runtime 재귀를 만들던 `ask`를 제거했다.
 - **재무비율 계산을 하나의 L0 공식으로 통합.** DART와 EDGAR의 단일 시점·시계열 계산이 같은 공식을 사용하고, 연간·분기·YTD 비교 간격과 통화를 호출자가 명시한다. 수익성과 운전자본 비율은 기초·기말 평균잔액을 사용한다.
 - **DART raw 스키마 소유권 정리.** 실제 생산자인 `gather/dart`가 finance·report 계약 둘만 소유하며, 검증을 켠 상태의 오류는 호출자에게 그대로 전달한다.
 - **시뮬레이터 입력을 데이터 작업대 스냅샷으로 전환.** 시뮬레이션이 읽는 자료가 시점 고정 스냅샷이 되어 같은 입력이 항상 같은 결과를 낸다.

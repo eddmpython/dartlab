@@ -1,107 +1,82 @@
-"""DartLab AI public entry points."""
+"""DartLab 설치형 agent runtime 공개 표면."""
 
 from __future__ import annotations
 
-from typing import Any
-
-from dartlab.ai.settings.types import LLMConfig
+from dataclasses import dataclass
 
 from .kernel import ask
 
-ProviderConfig = LLMConfig
 
-_CONFIG = LLMConfig()
-_ROLE_CONFIGS: dict[str, LLMConfig] = {}
+@dataclass(frozen=True)
+class RuntimeConfig:
+    """프로세스 안에서 선호하는 설치형 agent runtime."""
+
+    runtimeId: str | None = None
+
+    @property
+    def provider(self) -> str | None:
+        """Sig: provider() -> str | None.
+
+        Args: 없음.
+        Returns: 호환 이름으로 runtimeId를 반환한다.
+        Example: `config.provider == config.runtimeId`.
+        """
+        return self.runtimeId
 
 
-def configure(provider: str = "dartlab", **kwargs: Any) -> ProviderConfig:
-    """Configure provider settings for compatibility callers."""
+ProviderConfig = RuntimeConfig
+_CONFIG = RuntimeConfig()
 
+
+def configure(runtimeId: str | None = None, **kwargs) -> RuntimeConfig:
+    """Sig: configure(runtimeId=None, **kwargs) -> RuntimeConfig.
+
+    Args: runtimeId 또는 호환 provider 값은 codex, claude, cline 중 하나다.
+    Returns: 프로세스 선호 RuntimeConfig다.
+    Raises: ValueError if a direct-model provider is requested.
+    Example: `dartlab.llm.configure(runtimeId="cline")`.
+    """
     global _CONFIG
-    role = kwargs.pop("role", None)
-    values = {"provider": provider, **{k: v for k, v in kwargs.items() if k in ProviderConfig.__dataclass_fields__}}
-    config = ProviderConfig(**values)
-    if role:
-        _ROLE_CONFIGS[str(role)] = config
-    else:
-        _CONFIG = config
-    try:
-        from dartlab.ai.settings import getProfileManager, getProviderSpec, normalizeProvider, normalizeRole
-
-        normalized = normalizeProvider(provider) or provider
-        if getProviderSpec(normalized) is not None:
-            getProfileManager().update(
-                provider=normalized,
-                role=normalizeRole(str(role)) if role else None,
-                model=config.model,
-                baseUrl=config.baseUrl,
-                temperature=config.temperature,
-                maxTokens=config.maxTokens,
-                systemPrompt=config.systemPrompt,
-                updatedBy="compat",
-            )
-    except (OSError, RuntimeError, ValueError):
-        pass
-    return config
+    selected = runtimeId or kwargs.get("provider")
+    if selected not in {None, "codex", "claude", "cline"}:
+        raise ValueError("DartLab은 direct-model provider를 지원하지 않습니다. 설치형 agent runtime을 선택하세요")
+    _CONFIG = RuntimeConfig(selected)
+    return _CONFIG
 
 
-def getConfig(provider: str | None = None, role: str | None = None, **kwargs: Any) -> ProviderConfig:
-    """Return provider settings without owning the AI workbench loop."""
+def getConfig(runtimeId: str | None = None, **kwargs) -> RuntimeConfig:
+    """Sig: getConfig(runtimeId=None, **kwargs) -> RuntimeConfig.
 
-    base = (_ROLE_CONFIGS.get(str(role)) if role else None) or _CONFIG
-    resolved: dict[str, Any] = {}
-    if provider is not None or base.provider != "dartlab":
-        try:
-            from dartlab.ai.settings import getProfileManager
-
-            resolved = getProfileManager().resolve(provider, role=role)
-        except (OSError, RuntimeError, ValueError):
-            resolved = {}
-    resolved_provider = provider or resolved.get("provider") or base.provider
-    # 모델 우선순위:
-    #   1. 호출자 explicit kwarg (아래 for-loop 에서 마지막 덮어씀)
-    #   2. configure() 로 저장한 base.model — 사용자 명시 선택, 보존
-    #   3. OpenAI family + base.model 미설정 → latest_openai_model()
-    #   4. profile_manager 저장 model (server 자동 저장)
-    profile_model = resolved.get("model")
-    if base.model:
-        resolvedModel = base.model
-    else:
-        try:
-            from dartlab.ai.settings.modelResolver import isOpenaiFamilyProvider, latestOpenaiModel
-
-            if isOpenaiFamilyProvider(resolved_provider):
-                resolvedModel = latestOpenaiModel()
-            else:
-                resolvedModel = profile_model
-        except (ImportError, OSError, RuntimeError, ValueError):
-            resolvedModel = profile_model
-    values = {
-        "provider": resolved_provider,
-        "model": resolvedModel,
-        "apiKey": resolved.get("api_key") or resolved.get("apiKey") or base.apiKey,
-        "baseUrl": resolved.get("base_url") or resolved.get("baseUrl") or base.baseUrl,
-        "temperature": resolved.get("temperature") if resolved.get("temperature") is not None else base.temperature,
-        "maxTokens": resolved.get("max_tokens") if resolved.get("maxTokens") is not None else base.maxTokens,
-        "systemPrompt": resolved.get("system_prompt") or resolved.get("systemPrompt") or base.systemPrompt,
-    }
-    for key, value in kwargs.items():
-        if key in values and value is not None:
-            values[key] = value
-    return ProviderConfig(**values)
+    Args: 선택적 runtimeId 또는 호환 provider 값이다.
+    Returns: 명시 값 또는 현재 프로세스 선호 설정이다.
+    Raises: ValueError if an unknown runtime is requested.
+    Example: `config = getConfig()`.
+    """
+    selected = runtimeId or kwargs.get("provider")
+    if selected:
+        return configure(selected)
+    return _CONFIG
 
 
 def templates(name: str | None = None):
-    """Return available analysis templates."""
+    """Sig: templates(name=None) -> dict[str, str] | str | None.
 
-    items = {"dartlab-research": "Skill OS 근거 기반 DartLab research graph"}
+    Args: 선택적 template 이름이다.
+    Returns: 런타임 분석 template 설명이다.
+    Example: `templates("dartlab-agent-runtime")`.
+    """
+    items = {"dartlab-agent-runtime": "설치형 agent CLI와 DartLab MCP를 결합한 근거 기반 분석"}
     return items.get(name) if name else items
 
 
 def saveTemplate(name: str, *, content: str | None = None, file: str | None = None) -> dict[str, str | None]:
-    """Acknowledge template save requests until the new template store lands."""
+    """Sig: saveTemplate(name, *, content=None, file=None) -> dict[str, str | None].
 
+    Args: 이름과 선택적 내용 또는 파일이다.
+    Returns: 호환 확인 payload다.
+    Example: `saveTemplate("mine", content="...")`.
+    """
     return {"name": name, "content": content, "file": file}
 
 
-__all__ = ["ask", "configure", "getConfig", "templates", "saveTemplate"]
+__all__ = ["ProviderConfig", "RuntimeConfig", "ask", "configure", "getConfig", "saveTemplate", "templates"]

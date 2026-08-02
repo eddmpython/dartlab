@@ -31,12 +31,10 @@ from pathlib import Path
 from typing import Any
 
 from .contracts import TraceEvent
-from .providers import streamProvider
 from .toolAdmission import executeAllowedTool
 from .tools.formatting import wrapExternalInResult
 from .tools.registry import CANONICAL_V2, executeTool, isToolReadOnly, toolSpecs
 from .toolStorage import buildPersistedContent, exceedsSizeCap, persistLargeResult
-from .workbench.prompts import DARTLAB_CHAT_SYSTEM
 
 logger = logging.getLogger(__name__)
 
@@ -124,6 +122,8 @@ def _runAgentImpl(
     # 금융 primitive 8 종의 라우팅 힌트가 프로덕션에서 100% 죽어 있었다.
     # 시스템 프롬프트의 static 매핑 표를 dynamic inline 으로 대체한 뒤라 순증 소실이었다.
     intentKwargs = {**_unused, "question": str(question or "").strip()}
+    from .workbench.prompts import DARTLAB_CHAT_SYSTEM
+
     systemPrompt = _injectPastContextIfAvailable(DARTLAB_CHAT_SYSTEM, intentKwargs, history=history)
     messages: list[dict[str, Any]] = [{"role": "system", "content": systemPrompt}]
     for entry in history:
@@ -194,6 +194,8 @@ def _runAgentImpl(
         # UI 가 "분석중..." 만 길게 보이다 한 방에 답이 나타남. iterator 그대로 돌려야 한다.
         final_chunk = None
         try:
+            from .providers import streamProvider
+
             for chunk in streamProvider(provider, messages, tools):
                 if chunk.final:
                     final_chunk = chunk
@@ -473,6 +475,8 @@ def _finalize(
     text_added = ""
     try:
         final_chunk = None
+        from .providers import streamProvider
+
         for chunk in streamProvider(provider, messages, []):
             if chunk.final:
                 final_chunk = chunk
@@ -1089,4 +1093,148 @@ def _wrapWithAuditDump(*, question: str, provider: Any, rawIter: Iterator[TraceE
             logger.exception("ai trace dump failed")
 
 
-__all__ = ["runAgent"]
+def runRuntimeAgent(question: str, **kwargs: Any) -> Iterator[TraceEvent]:
+    """Sig: runRuntimeAgent(question, **kwargs) -> Iterator[TraceEvent].
+
+    Args: question과 runtimeId, sessionId, cwd 같은 런타임 선택값이다.
+    Returns: 기존 DartLab TraceEvent 계약으로 투영한 로컬 CLI 이벤트다.
+    Raises: 런타임 오류는 `error`와 실패 `done` 이벤트로 변환한다.
+    Example: `events = runRuntimeAgent("삼성전자 영업이익률")`.
+    """
+    from .runtime import getRuntimeEngine
+
+    engine = getRuntimeEngine()
+    runtimeId = kwargs.get("runtimeId") or kwargs.get("provider")
+    if runtimeId not in {None, "codex", "claude", "cline"}:
+        runtimeId = None
+    sessionId = kwargs.get("sessionId") or kwargs.get("threadId")
+    cwdValue = kwargs.get("cwd")
+    cwd = Path(cwdValue) if cwdValue else None
+    emittedText = False
+    terminalSeen = False
+    try:
+        for event in engine.stream(question, runtimeId=runtimeId, sessionId=sessionId, cwd=cwd):
+            if event.kind in {"sessionStarted", "sessionResumed"}:
+                yield TraceEvent(
+                    "runtime_session",
+                    {
+                        "sessionId": event.sessionId,
+                        "runtimeId": event.runtimeId,
+                        "resumed": event.kind == "sessionResumed",
+                    },
+                )
+            elif event.kind == "turnStarted":
+                yield TraceEvent(
+                    "runtime_turn",
+                    {"sessionId": event.sessionId, "turnId": event.turnId, "runtimeId": event.runtimeId},
+                )
+            elif event.kind == "messageDelta":
+                text = str(event.payload.get("text") or "")
+                if text:
+                    emittedText = True
+                    yield TraceEvent("chunk", {"text": text})
+            elif event.kind == "reasoningDelta":
+                text = str(event.payload.get("text") or "")
+                if text:
+                    yield TraceEvent("thinking", {"text": text})
+            elif event.kind == "toolStarted":
+                yield TraceEvent("tool_start", _runtimeToolData(event.payload, status="running"))
+            elif event.kind == "toolCompleted":
+                yield TraceEvent("tool_result", _runtimeToolData(event.payload, status="done"))
+            elif event.kind == "approvalRequested":
+                yield TraceEvent(
+                    "approval_requested",
+                    {
+                        "sessionId": event.sessionId,
+                        "turnId": event.turnId,
+                        "approvalId": event.payload.get("approvalId"),
+                        "request": event.payload,
+                    },
+                )
+            elif event.kind == "artifactProduced":
+                yield TraceEvent("view_spec", event.payload)
+            elif event.kind == "eventGap":
+                yield TraceEvent("event_gap", event.payload)
+            elif event.kind == "runtimeError":
+                yield TraceEvent("error", {"error": str(event.payload.get("error") or "runtime_error")})
+            elif event.kind == "turnCompleted":
+                terminalSeen = True
+                yield TraceEvent(
+                    "done",
+                    {
+                        "refs": [],
+                        "artifacts": [],
+                        "responseMeta": {
+                            "finalEvent": "answer" if emittedText else "runtime_error",
+                            "responseStatus": "ok" if emittedText else "failed",
+                            "runtimeId": event.runtimeId,
+                            "sessionId": event.sessionId,
+                        },
+                    },
+                )
+        if not terminalSeen:
+            yield TraceEvent(
+                "done",
+                {
+                    "refs": [],
+                    "artifacts": [],
+                    "responseMeta": {
+                        "finalEvent": "answer" if emittedText else "runtime_error",
+                        "responseStatus": "ok" if emittedText else "failed",
+                        "failureReason": None if emittedText else "runtime ended without a completed turn",
+                    },
+                },
+            )
+    except Exception as exc:  # noqa: BLE001
+        yield TraceEvent("error", {"error": str(exc)})
+        yield TraceEvent(
+            "done",
+            {
+                "refs": [],
+                "artifacts": [],
+                "responseMeta": {
+                    "finalEvent": "runtime_error",
+                    "responseStatus": "failed",
+                    "failureReason": str(exc),
+                },
+            },
+        )
+
+
+def _runtimeToolData(payload: dict[str, Any], *, status: str) -> dict[str, Any]:
+    """Sig: _runtimeToolData(payload, *, status) -> dict[str, Any].
+
+    Args: 네이티브 tool payload와 공개 상태다.
+    Returns: Agent Gateway가 이미 이해하는 tool event data다.
+    Example: `_runtimeToolData({"item": {"name": "ReadSkill"}}, status="done")`.
+    """
+    item = payload.get("item") if isinstance(payload.get("item"), dict) else payload
+    name = str(
+        payload.get("toolName")
+        or item.get("tool")
+        or item.get("name")
+        or item.get("title")
+        or item.get("type")
+        or "AgentTool"
+    )
+    toolId = str(
+        item.get("id") or item.get("toolCallId") or item.get("tool_call_id") or item.get("tool_use_id") or name
+    )
+    inputValue = item.get("arguments") or item.get("input") or item.get("rawInput") or {}
+    outputValue = item.get("result") or item.get("output") or item.get("content") or {}
+    return {
+        "id": toolId,
+        "name": name,
+        "input": inputValue if isinstance(inputValue, dict) else {"value": inputValue},
+        "status": "error" if item.get("status") in {"failed", "error"} else status,
+        "summary": str(item.get("title") or item.get("status") or name),
+        "outputSummary": str(item.get("status") or ""),
+        "data": outputValue if isinstance(outputValue, dict) else {"value": outputValue},
+        "evidenceRefs": [str(value) for value in payload.get("evidenceRefs") or []],
+        "refDetails": [value for value in payload.get("refDetails") or [] if isinstance(value, dict)],
+        "artifacts": [],
+        "outcomeId": payload.get("outcomeId"),
+    }
+
+
+__all__ = ["runAgent", "runRuntimeAgent"]

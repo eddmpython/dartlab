@@ -16,7 +16,7 @@
 1. 결정 4(수기 10점 maturity table 미도입)를 번복한다. 기각 사유였던 "수기"는 규율로 막는다: 점수 근거는 실제로 도는 게이트와 실측 여정뿐이며, 자동으로 실행되지 않는 경로는 구현돼 있어도 점수로 세지 않는다.
 2. 초기 12축 점수(총 67.5/120)는 캘리브레이션이다. 재판정은 주간 outcome review에서만 하고, 근거 없는 상향은 무효다.
 3. 북극성 전역 값(주간 검증 완료 분석 루프)은 여전히 `미측정`이다. 점수표는 축 성숙도이지 북극성 분자가 아니다.
-4. 관찰: `src/dartlab/productOutcome/` 모듈 골격(contracts·store·service)이 작업 트리에 착수돼 "구현 0" 표기는 더 이상 정확하지 않다. 해당 작업 커밋 시 본 원장을 갱신한다.
+4. 관찰: `src/dartlab/productOutcome.py` 결과 원장이 작업 트리에 착수돼 "구현 0" 표기는 더 이상 정확하지 않다. 해당 작업 커밋 시 본 원장을 갱신한다.
 
 ## 2026-08-02 계획 수립
 
@@ -42,7 +42,7 @@
 
 ## 2026-08-02 local semantic foundation
 
-- `src/dartlab/productOutcome`에 SQLite 상태 원장과 단조 전이를 구현했다.
+- `src/dartlab/productOutcome.py`에 SQLite 상태 원장과 단조 전이를 구현했다.
 - 저장 필드는 opaque outcome ID, feature, state, created/updated 시각과 SHA-256 evidence hash뿐이다.
 - 질문, 답변, provider, model, token, 원본 ref, 파일 경로는 저장하지 않는다.
 - Agent Runtime은 실제 grounding tool이 정형 ref를 반환한 경우에만 scoped·grounded로 전진하고, 성공 turn과 근거가 함께 있을 때 delivered로 끝난다.

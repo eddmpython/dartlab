@@ -39,39 +39,28 @@ def test_display_name_uses_registry_legacy_map() -> None:
 def test_agent_gateway_public_events_hide_internal_kernel_names(monkeypatch) -> None:
     import dartlab.server.agentGateway as agent_gateway
 
-    class FakeGraph:
-        nodes = (
-            "route_intent",
-            "select_skill",
-            "plan_evidence",
-            "execute_tool",
-            "observe_result",
-            "verify_claims",
-            "compose_answer",
-            "repair_or_fail",
+    def fake_runtime(question: str, **kwargs):
+        assert question == "너 뭐 할 수 있니"
+        assert kwargs["runtimeId"] == "codex"
+        yield TraceEvent("plan", {"selectedSkillIds": ["start.useSkillsCatalog"]})
+        yield TraceEvent("reference", {"refs": [{"id": "skill:start"}], "source": "search_reference"})
+        yield TraceEvent("tool_start", {"name": "search_reference", "id": "hidden-search"})
+        yield TraceEvent("tool_start", {"name": "run_python", "id": "code-1"})
+        yield TraceEvent("tool_result", {"name": "run_python", "id": "code-1", "outputSummary": "계산 완료"})
+        yield TraceEvent("chunk", {"text": "DartLab은 재무/공시/시장 데이터를 근거로 분석합니다."})
+        yield TraceEvent("answer", {"evidenceRefs": ["skill:start"]})
+        yield TraceEvent(
+            "done",
+            {
+                "refs": [{"id": "skill:start"}],
+                "responseMeta": {"finalEvent": "answer", "refCount": 1, "verificationOk": True},
+            },
         )
 
-        def stream(self, question: str, **kwargs):
-            assert question == "너 뭐 할 수 있니"
-            yield TraceEvent("plan", {"selectedSkillIds": ["start.useSkillsCatalog"]})
-            yield TraceEvent("reference", {"refs": [{"id": "skill:start"}], "source": "search_reference"})
-            yield TraceEvent("tool_start", {"name": "search_reference", "id": "hidden-search"})
-            yield TraceEvent("tool_start", {"name": "run_python", "id": "code-1"})
-            yield TraceEvent("tool_result", {"name": "run_python", "id": "code-1", "outputSummary": "계산 완료"})
-            yield TraceEvent("chunk", {"text": "DartLab은 재무/공시/시장 데이터를 근거로 분석합니다."})
-            yield TraceEvent("answer", {"evidenceRefs": ["skill:start"]})
-            yield TraceEvent(
-                "done",
-                {
-                    "refs": [{"id": "skill:start"}],
-                    "responseMeta": {"finalEvent": "answer", "refCount": 1, "verificationOk": True},
-                },
-            )
-
-    monkeypatch.setattr(agent_gateway, "WorkbenchLoop", FakeGraph)
-    # workspaceContext.mode="analyze" → workbench 분기 (FakeGraph) 강제. chat 분기 (runAgent) 우회.
+    monkeypatch.setattr(agent_gateway, "runRuntimeAgent", fake_runtime)
     req = AgentRunRequest(
         messages=[AgentRunMessage(role="user", content="너 뭐 할 수 있니")],
+        runtimeId="codex",
         workspaceContext={"mode": "analyze"},
     )
 
@@ -94,13 +83,10 @@ def test_agent_gateway_public_events_hide_internal_kernel_names(monkeypatch) -> 
 def test_agent_gateway_failure_reason_is_public(monkeypatch) -> None:
     import dartlab.server.agentGateway as agent_gateway
 
-    class FakeGraph:
-        nodes = ("route_intent", "repair_or_fail")
+    def fake_runtime(question: str, **kwargs):
+        yield TraceEvent("unable", {"reason": "prose_without_finalize"})
 
-        def stream(self, question: str, **kwargs):
-            yield TraceEvent("unable", {"reason": "prose_without_finalize"})
-
-    monkeypatch.setattr(agent_gateway, "WorkbenchLoop", FakeGraph)
+    monkeypatch.setattr(agent_gateway, "runRuntimeAgent", fake_runtime)
     req = AgentRunRequest(
         messages=[AgentRunMessage(role="user", content="질문")],
         workspaceContext={"mode": "analyze"},
@@ -120,23 +106,20 @@ def test_agent_gateway_failure_reason_is_public(monkeypatch) -> None:
 def test_agent_gateway_failed_done_emits_public_error_without_internal_meta(monkeypatch) -> None:
     import dartlab.server.agentGateway as agent_gateway
 
-    class FakeGraph:
-        nodes = ("route_intent", "repair_or_fail")
-
-        def stream(self, question: str, **kwargs):
-            yield TraceEvent(
-                "done",
-                {
-                    "refs": [],
-                    "responseMeta": {
-                        "finalEvent": "prose_without_finalize",
-                        "failureReason": "prose_without_finalize",
-                        "refCount": 0,
-                    },
+    def fake_runtime(question: str, **kwargs):
+        yield TraceEvent(
+            "done",
+            {
+                "refs": [],
+                "responseMeta": {
+                    "finalEvent": "prose_without_finalize",
+                    "failureReason": "prose_without_finalize",
+                    "refCount": 0,
                 },
-            )
+            },
+        )
 
-    monkeypatch.setattr(agent_gateway, "WorkbenchLoop", FakeGraph)
+    monkeypatch.setattr(agent_gateway, "runRuntimeAgent", fake_runtime)
     req = AgentRunRequest(
         messages=[AgentRunMessage(role="user", content="질문")],
         workspaceContext={"mode": "analyze"},
@@ -178,12 +161,18 @@ def test_agent_runs_endpoint_streams_only_public_events(monkeypatch) -> None:
     assert "search_reference" not in body
 
 
-def test_api_ask_stream_uses_public_agent_events() -> None:
-    from dartlab.server.api.ask import _streamPublicAsk
+def test_api_ask_stream_uses_public_agent_events(monkeypatch) -> None:
+    import dartlab.server.api.ask as ask_api
     from dartlab.server.models import AskRequest
 
+    async def fake_stream(req):
+        yield {"event": "TEXT_MESSAGE_CONTENT", "data": json.dumps({"delta": "답변"})}
+        yield {"event": "RUN_FINISHED", "data": json.dumps({"status": "ok"})}
+
+    monkeypatch.setattr(ask_api, "streamAgentRun", fake_stream)
+
     async def collect():
-        return [event async for event in _streamPublicAsk(AskRequest(question="너 뭐 할 수 있니", stream=True))]
+        return [event async for event in ask_api._streamPublicAsk(AskRequest(question="너 뭐 할 수 있니", stream=True))]
 
     events = asyncio.run(collect())
     body = "\n".join(event["event"] for event in events)

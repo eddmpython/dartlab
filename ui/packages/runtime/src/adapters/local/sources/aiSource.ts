@@ -18,16 +18,13 @@ import type {
 import type { LocalApi } from '../api/localApi';
 
 interface StatusProbe {
-	providers?: Record<
-		string,
-		{
-			available?: boolean | null;
-			secretConfigured?: boolean;
-			selected?: boolean;
-			label?: string;
-			model?: string;
-		}
-	>;
+	runtimes?: Array<{
+		runtimeId: string;
+		displayName: string;
+		state: string;
+		version?: string | null;
+		mcp?: { connected?: boolean };
+	}>;
 }
 
 async function collectAsk(api: LocalApi, input: AiAskInput): Promise<AiAskResult> {
@@ -45,32 +42,31 @@ export function localAiPort(api: LocalApi): AiPort {
 	let mode: AiModeId = 'terminal';
 	return {
 		async capabilities(): Promise<AiCapabilities> {
-			const status = await api.getJson<StatusProbe>('/api/status');
-			const providers = status?.providers ?? {};
-			// 연결상태는 *선택된* provider 의 실제 available 로만 판정한다. secretConfigured 만 보면
-			// 세션만료·미로그인 provider 를 advanced 로 오보한다(게이트웨이는 LLM 없는 heuristic 으로 도는데 UI 만 연결된 척).
-			const selected = Object.values(providers).find((p) => p?.selected) ?? null;
-			const connected = selected?.available === true;
-			if (connected) {
+			const status = await api.getJson<StatusProbe>('/api/agent/runtimes');
+			const runtimes = status?.runtimes ?? [];
+			const preferred = typeof localStorage !== 'undefined' ? localStorage.getItem('dartlab-agent-runtime') : null;
+			const selected = runtimes.find((item) => item.runtimeId === preferred && item.state === 'ready')
+				?? runtimes.find((item) => item.state === 'ready')
+				?? null;
+			if (selected) {
 				return {
 					tier: 'advanced',
 					streaming: true,
-					toolCalling: true,
+					toolCalling: selected.mcp?.connected === true,
 					localWorkspace: true,
 					deterministicAnswers: true,
-					providerLabel: selected?.label ?? 'local',
-					modelLabel: selected?.model
+					providerLabel: selected.displayName,
+					modelLabel: selected.version ?? undefined,
+					runtimeId: selected.runtimeId
 				};
 			}
-			// LLM 미연결(선택 provider 사용불가·미선택). heuristic 폴백은 신뢰 낮으므로 미연결로 안내한다.
 			return {
 				tier: 'deterministic',
 				streaming: true,
 				toolCalling: false,
 				localWorkspace: true,
 				deterministicAnswers: false,
-				providerLabel: selected?.label,
-				upgradeHint: 'AI 공급자가 연결되어 있지 않습니다. 설정에서 공급자(예 Ollama·Gemini)를 연결하세요.'
+				upgradeHint: '지원하는 agent CLI가 없습니다. Runtime Center에서 설치 계획을 확인하세요.'
 			};
 		},
 		ask(input) {

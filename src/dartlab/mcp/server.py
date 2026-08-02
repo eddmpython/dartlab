@@ -363,7 +363,7 @@ def createServer():
         """resources/list 요청에 대해 dartlab resource 목록을 반환한다.
 
         Returns:
-            list[Resource]: info, ask-workbench, datasets, reference, skills resource.
+            list[Resource]: info, agent-runtime, datasets, reference, skills resource.
 
         Example:
             `resources = await listResources()`
@@ -375,13 +375,13 @@ def createServer():
             Resource(
                 uri=cast(Any, "dartlab://info"),
                 name="DartLab",
-                description="Ask Workbench Kernel 상태와 DartLab 런타임 정보",
+                description="DartLab 설치형 agent runtime과 도구 정보",
                 mimeType="application/json",
             ),
             Resource(
-                uri=cast(Any, "dartlab://ask-workbench"),
-                name="Ask Workbench",
-                description="표준 MCP 도구, 런타임 데이터셋, 검산 경계 요약",
+                uri=cast(Any, "dartlab://agent-runtime"),
+                name="Agent Runtime",
+                description="설치형 agent가 사용할 표준 MCP 도구와 검산 경계",
                 mimeType="application/json",
             ),
             Resource(
@@ -393,7 +393,7 @@ def createServer():
             Resource(
                 uri=cast(Any, "dartlab://reference"),
                 name="DartLab Reference",
-                description="Ask Workbench 설계와 공개 참조 검색 표면",
+                description="Agent Runtime과 DartLab 공개 참조 검색 표면",
                 mimeType="application/json",
             ),
             Resource(

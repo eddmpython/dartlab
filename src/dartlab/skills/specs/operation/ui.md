@@ -91,19 +91,21 @@ testUniverse:
 ## AI 채팅 UI 계약
 
 - AI 제품 바탕 교체의 상세 SSOT는 `operation.aiProductReplatform`이다. `operation.ui`는 UI 표현 계층 규칙만 보완한다.
-- 공식 제품 경로는 `DartLab App → /api/ask stream → DartLabResearchGraph → Skill OS/Data/Verifier/Evidence`다.
+- 공식 제품 경로는 `DartLab App → /api/ask stream → Agent Gateway → Agent Runtime → 설치형 agent CLI → DartLab MCP`다.
 - UI 표면은 LibreChat식 conversation/message parts 모델을 따른다. DartLab 브랜드, workspace, evidence, artifact viewer는 유지하되 채팅 본문은 message parts만 렌더한다.
 - UI와 엔진 사이의 공개 stream은 AG-UI compatible event allowlist만 허용한다. 내부 kernel trace는 Agent Gateway에서 public event로 변환하고, raw trace는 Evidence/journal에만 저장한다.
 - 허용 public event는 `TEXT_MESSAGE_*`, `TOOL_CALL_*`, `STATE_*`, `ACTIVITY_*`, `RUN_FINISHED`, `RUN_ERROR`다. 이 목록 밖 이벤트가 채팅 UI로 직접 들어오면 계약 위반이다.
-- 새 web chat product path도 `/api/ask` stream을 사용한다. 별도 agent transport를 UI 공식 진입점으로 두지 않는다.
-- AI 실행 루프의 공식 교체 지점은 `DartLabResearchGraph`다. 현재 호환 구현이 내부 Ask Workbench를 호출하더라도 제품 경계명과 node 계약은 `route_intent → select_skill → plan_evidence → execute_tool → observe_result → verify_claims → compose_answer → repair_or_fail`로 고정한다.
+- local chat과 terminal ask는 공통 `AiPort`를 통해 `/api/ask` 또는 Agent Gateway를 사용한다. provider별 transport를 UI에 만들지 않는다.
+- Runtime Center는 `/api/agent/*` adapter 하나로 설치 상태, MCP 상태, 명시적 digest 승인, runtime 선택을 제공한다. provider API key와 OAuth 입력란은 두지 않는다.
+- 분석형 질문도 별도 고정 Graph나 Loop로 우회하지 않고 같은 Agent Runtime에 analysis capsule을 전달한다.
 - 채팅 본문은 최종 답변, 짧은 activity 로그, 실제 코드/시각화 실행 카드, 실패 notice, source 요약만 렌더한다.
 - raw prompt, raw tool args/result JSON, 내부 trace JSON, `Agent Trace`, `투명성` 박스는 채팅 본문에 렌더하지 않는다.
 - Evidence 패널은 source refs, datasets, raw tool input/output, verification, artifact를 분리해서 보관한다.
 - 서버 SSE의 `activity` 이벤트가 사용자용 진행 표면의 정규 계약이다. legacy `reference`, `inspect`, `execute`, `verify`, `tool_*` 이벤트는 activity/message parts로 변환만 하고 직접 카드로 노출하지 않는다.
 - 내부 tool id는 채팅 본문에 snake_case로 노출하지 않는다. 기본 표시명은 `replaceAll("_", " ")`를 적용하고, activity 문구는 `search reference 실행함`, `read context 실행함`, `inspect dataset 실행함`, `run python 실행함`, `compile visual 실행함`, `verify 실행함` 형식을 사용한다.
 - 진행 중에는 최근 6개 activity만 보이고, 완료 후에는 `명령어 N개 실행` 한 줄로 접는다.
-- 분석형 질문의 제품 순서는 `plan → search/read → inspect/run → verify → answer`다. 빈 chunk, 검색-only, tool 실패 은폐, 검증 실패는 성공 응답으로 release하지 않는다.
+- 빈 chunk, 검색-only, tool 실패 은폐, 정형 ref 없는 계산 답변은 성공 outcome으로 release하지 않는다.
+- evidence chip을 렌더한 것만으로 verified를 기록하지 않는다. 사용자가 exact ref의 `근거 확인`을 실행하고 같은 outcome receipt가 200으로 검증된 뒤에만 Product Outcome을 승격한다.
 
 ## UI 런타임 데이터층 — 단일 작업대 SSOT + 공통배선
 

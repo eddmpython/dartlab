@@ -10,15 +10,14 @@ import pytest
 pytestmark = pytest.mark.unit
 
 
-def test_mcpAdvertisedToolNames_returns_ask_plus_canonical_v2() -> None:
-    """ask + CANONICAL_V2 = 23 종 (PR-M1 목표 21+ ask)."""
+def test_mcpAdvertisedToolNames_returns_canonical_v2_without_recursive_ask() -> None:
+    """설치형 CLI가 호출할 canonical 도구만 광고하고 재귀 ask는 제외한다."""
     from dartlab.ai.tools.registry import CANONICAL_V2
     from dartlab.mcp.protocol import mcpAdvertisedToolNames
 
     names = mcpAdvertisedToolNames()
-    assert names[0] == "ask"
-    assert len(names) == 1 + len(CANONICAL_V2)
-    assert names[1:] == CANONICAL_V2
+    assert names == CANONICAL_V2
+    assert "ask" not in names
 
 
 def test_mcpAdvertisedToolNames_expands_beyond_legacy() -> None:
@@ -89,17 +88,17 @@ def test_advertisedTools_no_duplicates() -> None:
 
 
 def test_advertised_registry_tools_all_have_executors() -> None:
-    """ask 외 tools/list 항목은 같은 AI registry에 executor가 반드시 존재한다."""
+    """tools/list 항목은 같은 AI registry에 executor가 반드시 존재한다."""
     from dartlab.ai.tools.registry import _TOOLS
     from dartlab.mcp.protocol import mcpAdvertisedToolNames
 
-    assert set(mcpAdvertisedToolNames()[1:]) <= set(_TOOLS)
+    assert set(mcpAdvertisedToolNames()) <= set(_TOOLS)
 
 
 def test_advertisedTools_fails_closed_when_spec_is_missing(monkeypatch) -> None:
     """광고 이름의 schema 누락을 조용히 숨기지 않는다."""
     from dartlab.mcp import protocol
 
-    monkeypatch.setattr(protocol, "mcpAdvertisedToolNames", lambda: ("ask", "MissingTool"))
+    monkeypatch.setattr(protocol, "mcpAdvertisedToolNames", lambda: ("MissingTool",))
     with pytest.raises(KeyError, match="MissingTool"):
         protocol.advertisedTools()

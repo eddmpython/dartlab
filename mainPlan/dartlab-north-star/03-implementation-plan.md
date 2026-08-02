@@ -13,7 +13,7 @@ Exit: gate가 실제 결함을 잡고, goal vocabulary가 한 곳에서만 정�
 
 ### Phase 1. Local semantic authority
 
-1. `src/dartlab/productOutcome/contracts.py`에 frozen contract를 둔다.
+1. `src/dartlab/productOutcome.py`에 frozen contract와 저장소를 둔다.
 2. `stateMachine.py`가 단조 전이와 completion 조건을 판정한다.
 3. `store.py`가 SQLite transaction과 migration을 소유한다.
 4. `recorder.py`가 local UI, CLI, MCP host의 명시적 boundary event만 받는다.
@@ -55,12 +55,7 @@ Exit: surface별 완료 의미가 다르지 않고 capability parity gate가 gre
 
 ### 신규
 
-- `src/dartlab/productOutcome/__init__.py`
-- `src/dartlab/productOutcome/contracts.py`
-- `src/dartlab/productOutcome/stateMachine.py`
-- `src/dartlab/productOutcome/store.py`
-- `src/dartlab/productOutcome/recorder.py`
-- `src/dartlab/productOutcome/scorecard.py`
+- `src/dartlab/productOutcome.py`
 - `tests/audit/northStarEvidence.py`
 - `tests/audit/testNorthStarEvidence.py`
 - `tests/productOutcome/testStateMachine.py`

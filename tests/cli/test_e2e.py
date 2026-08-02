@@ -61,7 +61,7 @@ def test_cli_setup_contract():
     assert result.returncode == 0
     assert "데이터 수집" in result.stdout
     assert "dartlab ask" in result.stdout
-    assert "provider/model 설정은 제품 설정 영역에서 관리됩니다" in result.stdout
+    assert "dartlab agent status" in result.stdout
     assert "claude-code" not in result.stdout
     assert "Error" not in result.stderr and "Traceback" not in result.stderr
 

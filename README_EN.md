@@ -129,10 +129,10 @@ us.show("ratios")
 
 # Ask in natural language
 dartlab.ask("Analyze Samsung Electronics financial health")
-# → AI executes code and analyzes: "Operating margin rebounded from 8.6% to 21.4%..."
+# → your installed agent uses DartLab MCP and returns evidence-backed analysis
 ```
 
-No API key needed. Data auto-downloads from [HuggingFace](https://huggingface.co/datasets/eddmpython/dartlab-data) on first use, then loads instantly from local cache.
+No data API key is needed. Data auto-downloads from [HuggingFace](https://huggingface.co/datasets/eddmpython/dartlab-data) on first use. AI questions use a locally installed Codex CLI, Claude Code, or Cline account; DartLab never asks for the model API key or OAuth token.
 
 ## DataHub: One Data Entry Point Across Every Layer
 
@@ -451,18 +451,18 @@ dartlab.search("대표이사 변경", corp="005930")       # filter by company
 dartlab.search("회사가 돈을 빌렸다")                 # natural language works too
 ```
 
-### AI - Skills-Based Workbench
+### AI - Bring Your Agent Runtime
 
 > Design: [operation.opsAsSkills](/skills)
 
-The AI searches skills and capabilities, executes DartLab APIs, and verifies final answers against result refs. Quality is judged through direct server-side audit, not by a blanket claim.
+Your installed agent searches skills and capabilities through DartLab MCP, executes DartLab APIs, and ties answers to result refs. Authentication, model selection, native sessions, and transcripts remain owned by the agent CLI.
 
 ```python
 dartlab.ask("Analyze Samsung Electronics financial health")
-dartlab.ask("Samsung analysis", provider="gemini")  # free providers available
+dartlab.ask("Samsung analysis", runtimeId="claude")
 ```
 
-Providers: `gemini` (free), `groq` (free), `cerebras` (free), `oauth-codex` (ChatGPT subscription), `openai`, `ollama` (local), and more. Auto-fallback across providers when rate-limited.
+Supported runtimes are `codex`, `claude`, and `cline`. Use `dartlab agent status --refresh` to inspect them. Install and MCP connection commands print an exact argv and SHA-256 digest first; nothing is changed until you repeat the command with `--approve-digest`.
 
 ### Channel - Use your PC dartlab from anywhere
 
@@ -717,7 +717,7 @@ Or add `dartlab` as a single line to the `requirements.txt` tab in the xlwings L
 | Feature | Pyodide | Note |
 |---|:---:|---|
 | `Company()` · `c.show()` · `analysis` · `story` · `credit` | ✅ | HF parquet auto-download |
-| `dartlab.ask()` | ✅ | Needs API key (gemini·openai CORS-friendly) |
+| `dartlab.ask()` | ❌ | Requires a local agent CLI and process access |
 | `dartlab.scan()` | ❌ | Pre-built parquet 271MB (not practical in browser) |
 | `dartlab.gather()` | ❌ | Naver·Yahoo·Google News block CORS |
 
@@ -778,10 +778,10 @@ Conscious decisions that differ from other financial libraries - surface them up
 
 | Decision | What it means | Why |
 |---|---|---|
-| **Single base install - no `[extras]`** | `pip install dartlab` ships analysis · server · MCP · viz · AI providers together | "Install this extra first" steps compound and raise the time-to-first-result. A single SSOT entry point matters more than wheel size. Cold start and footprint are absorbed by PEP 562 lazy loading and a pyodide branch. |
+| **Single base install - no `[extras]`** | `pip install dartlab` ships analysis · server · MCP · viz · the Agent Runtime host together | Model execution stays in the user's agent CLI; the DartLab wheel ships only runtime adapters and financial capabilities. |
 | **Prebuilt data, zero API keys to start** | `Company("005930")` auto-downloads from HuggingFace into a local cache; DART API keys are only needed for *recollection* | Key provisioning is moved off the first-use path. Keys appear only in `dartlab collect` style raw-recollection flows. |
 | **External content is data, not instructions** | Serialized external bodies are wrapped with an `[EXTERNAL CONTENT START - untrusted ...]` marker | "Ignore previous instructions" patterns inside DART/EDGAR/news bodies cannot steer the agent. Numbers, dates, and proper nouns inside the marker must be re-verified against primary sources before citing. |
-| **AI engine = chat-native + autonomous tool calling** | No `BRIEF/WORK/CRITIQUE/COMPOSE/GATE/HARVEST` fixed-node graph. Core is `ai/agent.py`; capabilities live in `ai/tools/` | Graph-style obsession invites verify-forcing and workbench coupling regressions and locks LLM autonomy. The 0.7.15 release removed 15,420 lines for this reason. |
+| **AI engine = Bring Your Agent Runtime** | Codex app-server, Claude stream-json, and ACP are normalized into provider-neutral `AgentEvent` records. No fixed graph is forced. | Authentication, models, and native sessions stay in the CLI while DartLab focuses on financial capabilities, evidence, permissions, and process safety. |
 | **L0~L4 one-way imports (no L1.5 cross-import)** | core ← gather/providers ← scan/frame/synth/reference ← 5 analysis engines ← story ← ai/mcp | `import-linter` plus `dartlabGuard.py strict --scope l0-l15` gate every PR. New contributors can decide where to add code from a single picture. |
 | **Serialized tests (Polars OOM guard)** | `pytest -v` against the whole suite is forbidden; use `tests/test-lock.sh tests/ -m "<marker>"` | One Company is 200-500 MB of native Polars heap that `gc.collect()` cannot reclaim. Local and CI share the exact same lock wrapper command. |
 | **Korean-first messages, English API surface** | Symbols (`Company`, `pastInsight`, `analysis`) are English. CLI errors and progress messages are Korean | `Natural Language :: Korean / English` are both declared. English users get a separate track via this `README_EN.md` and English docstrings. |

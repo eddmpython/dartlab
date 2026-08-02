@@ -4,7 +4,7 @@
 
 범위: DartLab 전체 제품이 기능 수, 모델 호출 수, 페이지뷰가 아니라 검증 가능한 사용자 분석 결과를 기준으로 우선순위를 정하도록 북극성, 결과 수명주기, 증거 레지스트리, scorecard, 주간 운영 주기를 세운다.
 
-이 폴더는 이니셔티브 계획이다. 구현이 끝나면 영구 계약은 `README.md`, Skill OS, `src/dartlab/productOutcome/`, `tests/audit/northStarEvidence.py`로 승격하고 본 폴더는 `mainPlan/_done/`으로 이동한다.
+이 폴더는 이니셔티브 계획이다. 구현이 끝나면 영구 계약은 `README.md`, Skill OS, `src/dartlab/productOutcome.py`, `tests/audit/northStarEvidence.py`로 승격하고 본 폴더는 `mainPlan/_done/`으로 이동한다.
 
 ## 한 줄 결정
 

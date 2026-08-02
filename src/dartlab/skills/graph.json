@@ -31,7 +31,7 @@
       "title": "Company",
       "category": "engines",
       "purpose": "Company 엔진은 종목코드 하나를 target으로 고정하고 재무, 공시, 검색, 분석, 신용, 수집, 퀀트, 매크로, 스토리, 산업 연결을 제공하는 facade 실행 스킬이다. 트리거 - '회사 분석', '단일 기업', '005930', 'Company.panel'.",
-      "inDegree": 153,
+      "inDegree": 151,
       "outDegree": 12,
       "cluster": "company",
       "isEntry": false,
@@ -886,24 +886,24 @@
     },
     {
       "id": "operation.aiEngine",
-      "title": "aiEngine — dartlab.ai 내부 SSOT (7 원칙 · 도구 · provider)",
+      "title": "AI Engine — Bring Your Agent Runtime",
       "category": "operation",
-      "purpose": "aiEngine 은 dartlab.ai 의 정점 SSOT — 3 층 능력 모델 (Capability/Skill/Tool) · 5 패스 workbench (BRIEF→WORK→CRITIQUE→COMPOSE→GATE→HARVEST) · canonical 도구 세트 (PascalCase) · 9 종 provider 카탈로그 · MCP 표면 매핑 · 회귀 가드. P1 lock 완료 (2026-05-05) 이후 변경은 SSOT 갱신 PR 의무. 트리거 — 'ai engine', 'workbench', 'ReadSkill', 'RunWorkbench', 'provider catalog'.",
-      "inDegree": 0,
-      "outDegree": 5,
+      "purpose": "설치된 Codex CLI, Claude Code, ACP 호환 agent가 인증·모델·세션을 소유하고 DartLab은 Skill OS·MCP·금융 엔진·근거 계약을 제공하는 AI 실행 SSOT다.",
+      "inDegree": 4,
+      "outDegree": 8,
       "cluster": "operation",
       "isEntry": false,
       "isLeaf": false,
-      "isOrphan": true,
+      "isOrphan": false,
       "audiences": []
     },
     {
       "id": "operation.aiProductReplatform",
-      "title": "DartLab AI 제품 바탕 교체",
+      "title": "AI 제품 전환 — Agent Runtime 표면",
       "category": "operation",
-      "purpose": "기존 DartLab web chat과 AI 엔진을 백업으로 분리하고, LibreChat UI 바탕과 AG-UI 공개 이벤트, LangGraph/Dexter식 금융 research loop로 제품 경계를 재설계하는 공식 전환 계약이다.",
+      "purpose": "옛 direct provider와 고정 research graph 제품 계약을 설치형 Agent Runtime, AG-UI, Runtime Center, Product Outcome 계약으로 전환하는 마이그레이션 기준이다.",
       "inDegree": 2,
-      "outDegree": 1,
+      "outDegree": 6,
       "cluster": "operation",
       "isEntry": false,
       "isLeaf": false,
@@ -928,7 +928,7 @@
       "title": "dartlab 아키텍처 — 전체 청사진",
       "category": "operation",
       "purpose": "dartlab 아키텍처 — 전체 청사진 운영 규칙을 Skill OS에서 확인하고 변경 전후 검증 게이트로 사용한다.",
-      "inDegree": 16,
+      "inDegree": 17,
       "outDegree": 1,
       "cluster": "operation",
       "isEntry": false,
@@ -954,7 +954,7 @@
       "title": "코드 규칙",
       "category": "operation",
       "purpose": "코드 규칙 운영 규칙을 Skill OS에서 확인하고 변경 전후 검증 게이트로 사용한다.",
-      "inDegree": 14,
+      "inDegree": 13,
       "outDegree": 1,
       "cluster": "operation",
       "isEntry": false,
@@ -1201,8 +1201,34 @@
       "title": "Philosophy — dartlab 사상 SSOT",
       "category": "operation",
       "purpose": "dartlab 의 존재 이유와 설계 원칙을 한 문서에 묶는 사상 정점 SSOT. 4 가지 비교 가능성 · 6 막 인과 · Company 편의성 3 원칙 · simple > complex · SSOT · 사람↔엔진↔AI 환류 흐름.",
-      "inDegree": 6,
+      "inDegree": 4,
       "outDegree": 5,
+      "cluster": "operation",
+      "isEntry": false,
+      "isLeaf": false,
+      "isOrphan": false,
+      "audiences": []
+    },
+    {
+      "id": "operation.productCycle",
+      "title": "제품 운영 주기 — Outcome Review",
+      "category": "operation",
+      "purpose": "북극성 goal, 실행 증거, root scorecard, mainPlan 상태를 한 주기에서 정합시키는 운영 계약이다.",
+      "inDegree": 4,
+      "outDegree": 4,
+      "cluster": "operation",
+      "isEntry": false,
+      "isLeaf": false,
+      "isOrphan": false,
+      "audiences": []
+    },
+    {
+      "id": "operation.productDirection",
+      "title": "제품 방향 — Weekly Verified Analysis Loops",
+      "category": "operation",
+      "purpose": "기능 수나 모델 호출 수가 아니라 사용자가 정확한 근거를 확인한 분석 결과를 DartLab의 북극성으로 삼는 제품 방향 계약이다.",
+      "inDegree": 6,
+      "outDegree": 4,
       "cluster": "operation",
       "isEntry": false,
       "isLeaf": false,
@@ -1309,7 +1335,7 @@
       "title": "dartlab 테스트 · CI 운영 규칙",
       "category": "operation",
       "purpose": "dartlab 테스트 · CI 운영 규칙 운영 규칙을 Skill OS에서 확인하고 변경 전후 검증 게이트로 사용한다.",
-      "inDegree": 6,
+      "inDegree": 9,
       "outDegree": 1,
       "cluster": "operation",
       "isEntry": false,
@@ -1322,7 +1348,7 @@
       "title": "UI 엔진 (L4 표현 계층)",
       "category": "operation",
       "purpose": "UI 엔진 (L4 표현 계층) 운영 규칙을 Skill OS에서 확인하고 변경 전후 검증 게이트로 사용한다.",
-      "inDegree": 3,
+      "inDegree": 5,
       "outDegree": 3,
       "cluster": "operation",
       "isEntry": false,
@@ -3568,7 +3594,7 @@
       "title": "MCP",
       "category": "runtime",
       "purpose": "MCP 실행 환경의 제약, 시작 절차, 검증 기준을 Skill OS에서 확인한다.",
-      "inDegree": 2,
+      "inDegree": 3,
       "outDegree": 1,
       "cluster": "runtime",
       "isEntry": false,
@@ -5180,33 +5206,73 @@
     },
     {
       "src": "operation.aiEngine",
-      "dst": "engines.company",
+      "dst": "operation.productDirection",
       "kind": "linkedRecipe"
     },
     {
       "src": "operation.aiEngine",
-      "dst": "operation.philosophy",
+      "dst": "operation.productCycle",
       "kind": "linkedRecipe"
     },
     {
       "src": "operation.aiEngine",
-      "dst": "engines.company",
+      "dst": "runtime.mcp",
+      "kind": "linkedRecipe"
+    },
+    {
+      "src": "operation.aiEngine",
+      "dst": "operation.ui",
+      "kind": "linkedRecipe"
+    },
+    {
+      "src": "operation.aiEngine",
+      "dst": "operation.productDirection",
       "kind": "knowledge"
     },
     {
       "src": "operation.aiEngine",
-      "dst": "operation.philosophy",
+      "dst": "operation.productCycle",
       "kind": "knowledge"
     },
     {
       "src": "operation.aiEngine",
-      "dst": "operation.code",
+      "dst": "operation.architecture",
+      "kind": "knowledge"
+    },
+    {
+      "src": "operation.aiEngine",
+      "dst": "operation.testing",
+      "kind": "knowledge"
+    },
+    {
+      "src": "operation.aiProductReplatform",
+      "dst": "operation.aiEngine",
+      "kind": "linkedRecipe"
+    },
+    {
+      "src": "operation.aiProductReplatform",
+      "dst": "operation.ui",
+      "kind": "linkedRecipe"
+    },
+    {
+      "src": "operation.aiProductReplatform",
+      "dst": "operation.productDirection",
+      "kind": "linkedRecipe"
+    },
+    {
+      "src": "operation.aiProductReplatform",
+      "dst": "operation.aiEngine",
       "kind": "knowledge"
     },
     {
       "src": "operation.aiProductReplatform",
       "dst": "operation.ui",
-      "kind": "source"
+      "kind": "knowledge"
+    },
+    {
+      "src": "operation.aiProductReplatform",
+      "dst": "operation.productDirection",
+      "kind": "knowledge"
     },
     {
       "src": "operation.apiContract",
@@ -5417,6 +5483,46 @@
       "src": "operation.philosophy",
       "dst": "operation.apiContract",
       "kind": "linkedRecipe"
+    },
+    {
+      "src": "operation.productCycle",
+      "dst": "operation.productDirection",
+      "kind": "linkedRecipe"
+    },
+    {
+      "src": "operation.productCycle",
+      "dst": "operation.testing",
+      "kind": "linkedRecipe"
+    },
+    {
+      "src": "operation.productCycle",
+      "dst": "operation.productDirection",
+      "kind": "knowledge"
+    },
+    {
+      "src": "operation.productCycle",
+      "dst": "operation.testing",
+      "kind": "knowledge"
+    },
+    {
+      "src": "operation.productDirection",
+      "dst": "operation.productCycle",
+      "kind": "linkedRecipe"
+    },
+    {
+      "src": "operation.productDirection",
+      "dst": "operation.aiEngine",
+      "kind": "linkedRecipe"
+    },
+    {
+      "src": "operation.productDirection",
+      "dst": "operation.productCycle",
+      "kind": "knowledge"
+    },
+    {
+      "src": "operation.productDirection",
+      "dst": "operation.aiEngine",
+      "kind": "knowledge"
     },
     {
       "src": "operation.recipePromote",
@@ -9413,6 +9519,11 @@
       "recipes.news.untrustedToneAudit"
     ],
     [
+      "operation.aiEngine",
+      "operation.productCycle",
+      "operation.productDirection"
+    ],
+    [
       "recipes.fundamental.quality.forensics.accountTraceLedger",
       "recipes.fundamental.quality.forensics.crossSectionAnomalyRank",
       "recipes.fundamental.quality.forensics.dataCoverageAudit",
@@ -9480,7 +9591,6 @@
     "engines.viz.tableBackedChart",
     "operation.agentAudit",
     "operation.agentBoundaries",
-    "operation.aiEngine",
     "operation.cliMaintenance",
     "operation.content",
     "operation.dataDownloadCenter",
@@ -9652,6 +9762,8 @@
     "operation.opsAsSkills",
     "operation.performanceProfile",
     "operation.philosophy",
+    "operation.productCycle",
+    "operation.productDirection",
     "operation.recipePromote",
     "operation.refactorChecklist",
     "operation.sixActsAnalysis",

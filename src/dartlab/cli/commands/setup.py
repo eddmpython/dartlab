@@ -1,359 +1,51 @@
-"""`dartlab setup` command."""
+"""`dartlab setup` 데이터 키와 agent runtime 안내."""
 
 from __future__ import annotations
 
-import logging
-
-from dartlab.cli.context import CLI_PROVIDERS
-
-log = logging.getLogger(__name__)
-
-_SETUP_CHOICES = [*CLI_PROVIDERS, "dart-key"]
-
 
 def configureParser(subparsers) -> None:
-    """setup 서브커맨드 등록 — LLM provider/API 키 설정."""
-    parser = subparsers.add_parser("setup", help="LLM provider 및 API 키 설정 안내")
-    parser.add_argument(
-        "provider", nargs="?", default=None, choices=_SETUP_CHOICES, help="설정할 provider 또는 dart-key"
-    )
-    parser.add_argument("--login", action="store_true", help="oauth-codex 브라우저 로그인 강제 실행")
+    """setup 서브커맨드에 runtime 또는 DART 데이터 키 대상을 등록한다."""
+    parser = subparsers.add_parser("setup", help="설치형 agent CLI 또는 DART 데이터 키 설정")
+    parser.add_argument("target", nargs="?", choices=["codex", "claude", "cline", "dart-key"], default=None)
     parser.set_defaults(handler=run)
 
 
 def run(args) -> int:
-    """provider별 설정 안내를 출력하고 인터랙티브 설정을 진행한다."""
-    if args.provider is None:
-        print("\n[ 데이터 수집 ]\n")
-        print("  dartlab setup dart-key     DART OpenAPI 키 설정 (공시 데이터 직접 수집)\n")
-        print("[ 분석 엔진 ]\n")
-        print('  dartlab ask "질문"        Skill/Capability 기반 Workbench 실행')
-        print("  provider/model 설정은 제품 설정 영역에서 관리됩니다.\n")
-        return 0
-
-    if args.provider == "dart-key":
+    """선택 대상의 안전한 다음 명령을 출력하거나 DART 키를 입력받는다."""
+    if args.target == "dart-key":
         return _setupDartKey()
-
-    if args.provider == "oauth-codex" and getattr(args, "login", False):
-        handler = _doOauthLogin
-    else:
-        handler = {
-            "oauth-codex": _setupOauthCodex,
-            "codex": _setupCodex,
-            "ollama": _setupOllama,
-            "openai": _setupOpenai,
-            "custom": _setupCustom,
-            "gemini": lambda: _setupApiKeyProvider("gemini"),
-            "groq": lambda: _setupApiKeyProvider("groq"),
-            "cerebras": lambda: _setupApiKeyProvider("cerebras"),
-            "mistral": lambda: _setupApiKeyProvider("mistral"),
-        }.get(args.provider)
-    if handler:
-        handler()
-    else:
-        print(f"\n  알 수 없는 provider: {args.provider}\n")
+    if args.target:
+        print(f"\n  {args.target} 설치·연결은 Runtime Center가 관리합니다.")
+        print(f"  상태: dartlab agent status {args.target}")
+        print(f"  설치 계획: dartlab agent install {args.target}")
+        if args.target != "cline":
+            print(f"  MCP 연결 계획: dartlab agent connect {args.target}")
+        print("  로그인은 설치 후 해당 CLI를 직접 실행하세요. DartLab은 인증 정보를 저장하지 않습니다.\n")
+        return 0
+    print("\n[ 분석 런타임 ]\n")
+    print("  dartlab agent status          설치된 CLI 자동 탐지")
+    print("  dartlab agent install codex   설치 계획과 digest 출력")
+    print("  dartlab agent connect codex   DartLab MCP 연결 계획 출력\n")
+    print('  dartlab ask --runtime codex "삼성전자 분석"   선택한 로컬 CLI로 근거 분석\n')
+    print("[ 데이터 수집 ]\n")
+    print("  dartlab setup dart-key        OpenDART 데이터 API 키 설정\n")
     return 0
-
-
-def _setupApiKeyProvider(providerId: str) -> None:
-    """ProviderSpec 기반 범용 API 키 설정 안내."""
-    from dartlab.ai.settings.providerCatalog import getProviderSpec
-
-    spec = getProviderSpec(providerId)
-    if spec is None:
-        print(f"\n  알 수 없는 provider: {providerId}\n")
-        return
-
-    print(f"\n[ {spec.label} 설정 ]\n")
-    if spec.freeTierHint:
-        print(f"  {spec.freeTierHint}\n")
-
-    print("  1. API 키 발급")
-    if spec.signupUrl:
-        print(f"     {spec.signupUrl}\n")
-    else:
-        print("     provider 공식 사이트에서 발급\n")
-
-    print("  2. 환경변수 설정")
-    if spec.env_key:
-        print(f"     export {spec.env_key}=your-key-here\n")
-        print("     PowerShell:")
-        print(f"     $env:{spec.env_key} = 'your-key-here'\n")
-    else:
-        print("     API 키를 환경변수로 설정하세요\n")
-
-    print("     또는 Python에서:")
-    print(f'     dartlab.llm.configure(provider="{providerId}", api_key="your-key-here")\n')
-
-    print("  3. 확인")
-    print(f"     dartlab status -p {providerId}\n")
-
-    print("  4. 사용")
-    print(f'     dartlab ask 005930 "재무 건전성 분석" -p {providerId}')
-    print()
-
-
-def _setupOauthCodex() -> None:
-    print("\n[ provider 설정 ]\n")
-    print("  provider 연결은 현재 Workbench 외부 제품 설정 영역에서 관리됩니다.")
-    print("  공식 답변 진입점은 dartlab.ask(...) 와 /api/ask 입니다.\n")
-
-
-def _doOauthLogin() -> None:
-    """브라우저에서 ChatGPT OAuth 로그인 실행."""
-    import sys
-    import threading
-    import time
-    import webbrowser
-    from http.server import BaseHTTPRequestHandler, HTTPServer
-    from urllib.parse import parse_qs, urlparse
-
-    try:
-        from dartlab.ai.providers.support.oauthToken import (
-            OAUTH_REDIRECT_PORT,
-            buildAuthUrl,
-            exchangeCode,
-        )
-    except ImportError:
-        print("  OAuth 모듈을 불러올 수 없습니다.")
-        print("  pip install --upgrade dartlab\n")
-        return
-
-    auth_url, verifier, state = buildAuthUrl()
-    result: dict = {"done": False, "error": None}
-
-    class CallbackHandler(BaseHTTPRequestHandler):
-        """CallbackHandler — TODO 한국어 클래스 설명."""
-
-        def do_GET(self):
-            """do_GET — TODO 한국어 동작 설명."""
-            parsed = urlparse(self.path)
-            if parsed.path != "/auth/callback":
-                self.send_response(404)
-                self.end_headers()
-                return
-
-            params = parse_qs(parsed.query)
-            code = (params.get("code") or [None])[0]
-            cb_state = (params.get("state") or [None])[0]
-            error = (params.get("error") or [None])[0]
-
-            if error:
-                result["error"] = error
-                result["done"] = True
-                self._respond("인증 실패", f"오류: {error}")
-                return
-            if cb_state != state:
-                result["error"] = "state_mismatch"
-                result["done"] = True
-                self._respond("인증 실패", "보안 검증 실패")
-                return
-            if not code:
-                result["error"] = "no_code"
-                result["done"] = True
-                self._respond("인증 실패", "인증 코드 없음")
-                return
-
-            try:
-                exchangeCode(code, verifier)
-                result["done"] = True
-                self._respond("인증 성공", "DartLab 인증이 완료되었습니다. 이 창을 닫아주세요.")
-            except (ConnectionError, OSError, RuntimeError, ValueError) as exc:
-                result["error"] = str(exc)
-                result["done"] = True
-                self._respond("인증 실패", f"토큰 교환 실패: {exc}")
-
-        def _respond(self, title: str, message: str):
-            markup = (
-                f"<!DOCTYPE html><html><head><meta charset='utf-8'><title>{title}</title>"
-                "<style>body{font-family:system-ui;display:flex;align-items:center;"
-                "justify-content:center;min-height:100vh;margin:0;background:#050811;color:#e5e5e5}"
-                "div{text-align:center;padding:2rem}h1{font-size:1.5rem;margin-bottom:1rem}"
-                "</style></head><body>"
-                f"<div><h1>{title}</h1><p>{message}</p></div>"
-                "<script>setTimeout(()=>window.close(),3000)</script>"
-                "</body></html>"
-            )
-            self.send_response(200)
-            self.send_header("Content-Type", "text/html; charset=utf-8")
-            self.end_headers()
-            self.wfile.write(markup.encode("utf-8"))
-
-        def logMessage(self, fmt, *args):
-            """logMessage — TODO 한국어 동작 설명."""
-            pass
-
-    server = HTTPServer(("127.0.0.1", OAUTH_REDIRECT_PORT), CallbackHandler)
-    server.timeout = 120
-
-    def serve():
-        """serve — TODO 한국어 동작 설명."""
-        server.handle_request()
-        server.server_close()
-
-    thread = threading.Thread(target=serve, daemon=True)
-    thread.start()
-
-    print("  브라우저에서 ChatGPT 로그인 페이지를 엽니다...")
-    print("  (120초 안에 로그인을 완료하세요)\n")
-    print("  브라우저가 자동으로 열리지 않으면 아래 URL을 직접 여세요:")
-    print(f"  {auth_url}\n")
-    try:
-        webbrowser.open(auth_url)
-    except OSError as e:
-        log.debug("browser open: %s", e)
-
-    # 완료 대기
-    for _ in range(120):
-        if result["done"]:
-            break
-        time.sleep(1)
-        sys.stdout.write(".")
-        sys.stdout.flush()
-    print()
-
-    if result.get("error"):
-        print(f"\n  ✗ 인증 실패: {result['error']}\n")
-    elif result["done"]:
-        print("\n  ✓ ChatGPT OAuth 인증 완료!\n")
-        print("  확인:")
-        print("     dartlab status -p oauth-codex\n")
-        print("  사용:")
-        print('     dartlab ask 005930 "재무 건전성 분석"\n')
-    else:
-        print("\n  ✗ 시간 초과 — 120초 안에 로그인하지 못했습니다.\n")
-        print("  아래 URL을 브라우저에 직접 붙여넣어 보세요:")
-        print(f"  {auth_url}\n")
-        print("  또는 다시 시도: dartlab.setup('chatgpt')\n")
-
-
-def _setupCodex(info: dict | None = None) -> None:
-    info = info or {"installed": False}
-    print("\n[ Codex CLI 설정 — ChatGPT Plus/Pro 구독 ]\n")
-
-    if info["installed"]:
-        print(f"  1. 설치  ✓  ({info.get('version', 'installed')})")
-    else:
-        print("  1. 설치")
-        print("     npm install -g @openai/codex\n")
-        print("     Node.js가 필요합니다: https://nodejs.org/\n")
-
-    print("  2. 인증")
-    if info["installed"]:
-        print("     터미널에서 codex 를 실행하면 브라우저가 열립니다.")
-        print("     ChatGPT 계정으로 로그인하세요.\n")
-    else:
-        print("     설치 후 codex 를 실행하면 브라우저에서 로그인됩니다.\n")
-
-    print("  3. 확인")
-    print("     dartlab status -p codex\n")
-
-    print("  4. 사용")
-    print('     dartlab ask 005930 "재무 건전성 분석" -p codex')
-    print()
-
-
-def _setupOllama() -> None:
-    print("\n[ Ollama 설정 — 로컬 LLM ]\n")
-
-    print("  1. 설치")
-    print("     https://ollama.com/download\n")
-
-    print("  2. 모델 다운로드")
-    print("     ollama pull llama3.2\n")
-
-    print("  3. 서버 시작")
-    print("     ollama serve\n")
-
-    print("  4. 확인")
-    print("     dartlab status -p ollama\n")
-
-    print("  5. 사용")
-    print('     dartlab ask 005930 "재무 건전성 분석" -p ollama')
-    print()
-
-
-def _setupOpenai() -> None:
-    print("\n[ OpenAI API 설정 — 최신 GPT 모델 ]\n")
-
-    print("  1. API 키 발급")
-    print("     https://platform.openai.com/api-keys\n")
-
-    print("  2. 환경변수 설정")
-    print("     export OPENAI_API_KEY=sk-...\n")
-    print("     PowerShell:")
-    print("     $env:OPENAI_API_KEY = 'sk-...'\n")
-
-    print("  3. 확인")
-    print("     dartlab status -p openai\n")
-
-    print("  4. 사용")
-    print('     dartlab ask 005930 "재무 건전성 분석" -p openai')
-    print('     dartlab ask 005930 "분석" -p openai')
-    print()
-
-
-def _setupCustom() -> None:
-    print("\n[ Custom OpenAI-Compatible API 설정 ]\n")
-    print("  vLLM, Together, Groq 등 OpenAI 호환 API를 사용합니다.\n")
-
-    print("  사용 예시:")
-    print('     dartlab ask 005930 "분석" -p custom \\')
-    print("       --base-url http://localhost:8000/v1 \\")
-    print("       --api-key YOUR_KEY \\")
-    print("       -m my-model\n")
-
-    print("  환경변수로 기본값 설정:")
-    print("     export CUSTOM_BASE_URL=http://localhost:8000/v1")
-    print("     export CUSTOM_API_KEY=YOUR_KEY")
-    print()
-
-
-# ── DART API 키 설정 ──────────────────────────────────
 
 
 def _setupDartKey() -> int:
-    """DART OpenAPI 키 설정 — 대화형 입력 → .env 저장."""
+    """OpenDART 데이터 API 키를 대화형으로 프로젝트 환경에 저장한다."""
     from dartlab.core.dartClient import hasDartApiKey
 
-    print("\n[ DART OpenAPI 키 설정 ]\n")
-    print("  DART 전자공시 데이터를 직접 수집하려면 OpenAPI 키가 필요합니다.")
-    print("  GitHub Release에 포함되지 않은 종목도 키만 있으면 수집할 수 있습니다.\n")
-    print("  키 발급: https://opendart.fss.or.kr → 인증키 신청 (무료)\n")
-
     if hasDartApiKey():
-        print("  ✓ DART API 키가 이미 설정되어 있습니다.\n")
-        print("  수집 명령:")
-        print("    dartlab collect 005930              단일 종목 (최근 8분기)")
-        print("    dartlab collect 005930 -q 20        단일 종목 (20분기)")
-        print("    dartlab collect --auto              미수집 전체")
-        print("    dartlab collect --stats             수집 현황\n")
-        print("  참고: docs 수집은 DART 서버 부하 방지를 위해 섹션당 5~10초 간격으로")
-        print("        크롤링하므로 종목당 2~10분이 소요됩니다.\n")
+        print("\n  DART API 키가 이미 설정되어 있습니다.\n")
         return 0
-
-    print("  키를 입력하면 프로젝트 루트의 .env 파일에 저장됩니다.")
-    print("  .env 파일은 .gitignore에 포함되어 있어 git에 공유되지 않습니다.\n")
-
-    key = input("  DART API KEY: ").strip()
-    if not key:
+    print("\n  OpenDART 키 발급: https://opendart.fss.or.kr")
+    apiKey = input("  DART API KEY: ").strip()
+    if not apiKey:
         print("\n  취소됨.\n")
         return 1
-
-    _saveDartKeyToDotenv(key)
-
-    print("\n  ✓ .env에 DART_API_KEY 저장 완료")
-    print("    (이 키는 git에 공유되지 않습니다)\n")
-    print("  수집 시작:")
-    print("    dartlab collect 005930")
-    print("    dartlab collect --auto\n")
-    print("  참고: docs 수집은 DART 서버 부하 방지를 위해 섹션당 5~10초 간격으로")
-    print("        크롤링하므로 종목당 2~10분이 소요됩니다.\n")
-    return 0
-
-
-def _saveDartKeyToDotenv(key: str) -> None:
-    """프로젝트 루트의 .env에 DART_API_KEY 추가/갱신."""
     from dartlab.gather.dart.keys import saveDartKeyToDotenv
 
-    saveDartKeyToDotenv(key)
+    saveDartKeyToDotenv(apiKey)
+    print("\n  DART_API_KEY 저장 완료. 이 키는 모델 인증과 무관합니다.\n")
+    return 0

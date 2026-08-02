@@ -121,12 +121,14 @@ include = [
     "src/dartlab/**/*.yaml",
     "src/dartlab/**/*.yml",
     "src/dartlab/**/*.json",
+    "src/dartlab/**/*.toml",
     "src/dartlab/**/*.parquet",
     "src/dartlab/**/py.typed",
 ]
 artifacts = [
     "src/dartlab/ui/build/**",
     "src/dartlab/**/*.json",
+    "src/dartlab/**/*.toml",
     "src/dartlab/**/*.parquet",
     "src/dartlab/py.typed",
 ]

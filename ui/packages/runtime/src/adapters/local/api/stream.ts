@@ -8,6 +8,8 @@ function buildRequestBody(input: AiAskInput): string {
 	// history(이전 턴들) + 현재 prompt. 게이트웨이가 마지막 user 를 question, 나머지를 LLM history 로 분리.
 	const messages = [...(input.history ?? []), { role: 'user', content: input.prompt }];
 	return JSON.stringify({
+		threadId: input.sessionId,
+		runtimeId: input.runtimeId,
 		messages,
 		agentId: 'dartlab-research',
 		stream: true,

@@ -11,7 +11,7 @@
 	import ToolCard from '$lib/chat/ToolCard.svelte';
 	import Evidence from '$lib/chat/Evidence.svelte';
 	import ThinkingPanel from '$lib/chat/ThinkingPanel.svelte';
-	import ProviderSettings from '$lib/chat/ProviderSettings.svelte';
+	import RuntimeCenter from '$lib/chat/RuntimeCenter.svelte';
 	import '@dartlab/ui-surfaces/terminal/terminal.css';
 	import { BrandSocial, DARTLAB_BRAND_LINKS, LAST_SYM_KEY } from '@dartlab/ui-surfaces/terminal';
 
@@ -21,7 +21,7 @@
 	let draft = $state('');
 	let scroller: HTMLDivElement | null = $state(null);
 	let sidebarOpen = $state(true);
-	let providerOpen = $state(false);
+	let runtimeOpen = $state(false);
 
 	const suggestions = [
 		'삼성전자 005930 최근 5년 매출과 영업이익 추이',
@@ -44,7 +44,7 @@
 	const messages = $derived(active?.messages ?? []);
 	const hasMessages = $derived(messages.length > 0);
 	const cap = $derived(store.capabilities);
-	// 연결 = 선택된 LLM 공급자가 실제 사용가능(advanced/onDevice). 아니면 미연결 안내.
+	// 연결 = 설치형 agent CLI가 실제 사용 가능. 아니면 Runtime Center 안내.
 	const connected = $derived(cap?.tier === 'advanced' || cap?.tier === 'onDevice');
 
 	// 스트리밍·새 메시지마다 하단 고정. 사용자가 위로 스크롤했으면(200px 밖) 건드리지 않는다.
@@ -111,7 +111,7 @@
 			<a class="ghost" href={`${base}/terminal/${recent}`} title="터미널로" aria-label="터미널로">
 				<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17l6-6-6-6M12 19h8" /></svg>
 			</a>
-			<button class="ghost" onclick={() => (providerOpen = true)} title="공급자 설정" aria-label="공급자 설정">
+			<button class="ghost" onclick={() => (runtimeOpen = true)} title="Agent Runtime Center" aria-label="Agent Runtime Center">
 				<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>
 			</button>
 			<div class="dlTerm chatSns" style="display:contents">
@@ -121,8 +121,8 @@
 
 		{#if store.capabilitiesLoaded && !connected}
 			<div class="notice">
-				<span>AI 공급자가 연결되어 있지 않습니다. 연결 전에는 답변하지 않습니다.</span>
-				<a href={`${base}/settings/providers`}>공급자 연결 →</a>
+				<span>사용 가능한 agent CLI가 없습니다. 설치 전에는 답변하지 않습니다.</span>
+				<a href={`${base}/settings/runtimes`}>Runtime Center →</a>
 			</div>
 		{/if}
 
@@ -157,6 +157,20 @@
 										<div class="workbench">
 											{#each m.tools as t (t.id)}
 												<ToolCard tool={t} />
+											{/each}
+										</div>
+									{/if}
+
+									{#if m.approvals.length}
+										<div class="approvals">
+											{#each m.approvals as approval (approval.id)}
+												<div class="approval">
+													<span>{approval.summary}</span>
+													{#if approval.status === 'pending'}
+														<button onclick={() => store.resolveApproval(m, approval.id, true)}>허용</button>
+														<button class="deny" onclick={() => store.resolveApproval(m, approval.id, false)}>거부</button>
+													{:else}<small>{approval.status}</small>{/if}
+												</div>
 											{/each}
 										</div>
 									{/if}
@@ -216,20 +230,20 @@
 	</main>
 </div>
 
-<svelte:window onkeydown={(e) => { if (e.key === 'Escape' && providerOpen) providerOpen = false; }} />
+<svelte:window onkeydown={(e) => { if (e.key === 'Escape' && runtimeOpen) runtimeOpen = false; }} />
 
-{#if providerOpen}
+{#if runtimeOpen}
 	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-	<div class="povl" onclick={() => (providerOpen = false)}>
+	<div class="povl" role="presentation" onclick={() => (runtimeOpen = false)}>
 		<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-		<div class="pmodal" role="dialog" aria-modal="true" aria-label="공급자 설정" onclick={(e) => e.stopPropagation()}>
+		<div class="pmodal" role="dialog" aria-modal="true" aria-label="Agent Runtime Center" tabindex="-1" onclick={(e) => e.stopPropagation()}>
 			<header class="pmhead">
-				<h2>AI 공급자</h2>
-				<button class="pmx" onclick={() => (providerOpen = false)} aria-label="닫기">✕</button>
+				<h2>Agent Runtime Center</h2>
+				<button class="pmx" onclick={() => (runtimeOpen = false)} aria-label="닫기">✕</button>
 			</header>
-			<p class="pmsub">분석에 사용할 공급자를 선택하세요. 챗 답변(LLM)의 전제입니다.</p>
+			<p class="pmsub">설치된 CLI를 선택하고 DartLab MCP 연결을 확인하세요.</p>
 			<div class="pmbody">
-				<ProviderSettings onChange={() => store.loadCapabilities()} />
+				<RuntimeCenter onChange={() => store.loadCapabilities()} />
 			</div>
 		</div>
 	</div>
@@ -396,6 +410,11 @@
 		flex-direction: column;
 		gap: 0.4rem;
 	}
+	.approvals { display: grid; gap: .4rem; }
+	.approval { display: flex; align-items: center; gap: .5rem; padding: .65rem; border: 1px solid var(--dl-warn, #f4b740); border-radius: 8px; font-size: .78rem; }
+	.approval span { flex: 1; }
+	.approval button { border: 0; border-radius: 6px; padding: .3rem .55rem; background: var(--dl-accent, #ff5a36); color: white; cursor: pointer; }
+	.approval button.deny { background: transparent; border: 1px solid var(--dl-line, #2a2c33); color: var(--dl-ink-dim, #9aa0aa); }
 	.caret {
 		display: inline-block;
 		width: 0.5rem;

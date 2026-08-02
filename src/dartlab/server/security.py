@@ -24,6 +24,8 @@ _ADMIN_ROUTES = {
     ("POST", "/api/channel/stop"),
     ("POST", "/api/ollama/pull"),
     ("POST", "/api/export/templates"),
+    ("POST", "/api/agent/runtimes/install/apply"),
+    ("POST", "/api/agent/runtimes/mcp/apply"),
 }
 
 _EXECUTION_ROUTES = {
@@ -149,6 +151,10 @@ def _routeScope(method: str, path: str) -> str | None:
     if method == "DELETE" and path.startswith("/api/export/templates/"):
         return "admin"
     if (method, path) in _EXECUTION_ROUTES:
+        return "execution"
+    if path.startswith("/api/agent/runtimes/") and path.endswith(("/install/plan", "/mcp/plan")):
+        return "admin"
+    if path.startswith("/api/agent/"):
         return "execution"
     if path == "/mcp" or path.startswith("/mcp/"):
         return "execution"

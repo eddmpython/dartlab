@@ -27,11 +27,11 @@ def test_build_parser_registers_all_commands():
 def test_parse_ask_options():
     parser = buildParser()
 
-    args = parser.parse_args(["ask", "005930", "분석", "--provider", "codex", "--include", "BS", "IS", "--stream"])
+    args = parser.parse_args(["ask", "005930", "분석", "--runtime", "codex", "--include", "BS", "IS", "--stream"])
 
     assert args.command == "ask"
     assert args.query == ["005930", "분석"]
-    assert args.provider == "codex"
+    assert args.runtime == "codex"
     assert args.include == ["BS", "IS"]
     assert args.stream is True
 
@@ -64,7 +64,7 @@ def test_main_invalid_command_returns_usage_code(capsys):
 
 
 def test_ask_proceeds_without_company(capsys):
-    # --company 플래그 없으면 free analysis 경로 (company=None) 로 진행
+    # --company 플래그가 없어도 설치형 agent runtime 경로로 진행한다.
     from dartlab.ai.contracts import TraceEvent
 
     def _fake_analyze(*a, **kw):
@@ -79,7 +79,8 @@ def test_ask_proceeds_without_company(capsys):
 
     captured = capsys.readouterr()
     assert result == 0
-    assert "Free analysis" in captured.out
+    assert "Agent runtime analysis" in captured.out
+    assert "auth/model owned by local CLI" in captured.out
 
 
 def test_excel_returns_non_zero_on_company_error(capsys):

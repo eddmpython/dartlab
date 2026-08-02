@@ -1,56 +1,50 @@
 ---
 id: operation.aiEngine
-title: aiEngine — dartlab.ai 내부 SSOT (7 원칙 · 도구 · provider)
+title: AI Engine — Bring Your Agent Runtime
 kind: curated
 scope: builtin
 status: observed
 category: operation
-purpose: aiEngine 은 dartlab.ai 의 정점 SSOT — 3 층 능력 모델 (Capability/Skill/Tool) · 5 패스 workbench (BRIEF→WORK→CRITIQUE→COMPOSE→GATE→HARVEST) · canonical 도구 세트 (PascalCase) · 9 종 provider 카탈로그 · MCP 표면 매핑 · 회귀 가드. P1 lock 완료 (2026-05-05) 이후 변경은 SSOT 갱신 PR 의무. 트리거 — 'ai engine', 'workbench', 'ReadSkill', 'RunWorkbench', 'provider catalog'.
+purpose: 설치된 Codex CLI, Claude Code, ACP 호환 agent가 인증·모델·세션을 소유하고 DartLab은 Skill OS·MCP·금융 엔진·근거 계약을 제공하는 AI 실행 SSOT다.
 whenToUse:
-  - dartlab.ai 내부 구조 이해
-  - workbench 5 패스 (BRIEF → WORK → CRITIQUE → COMPOSE → GATE → HARVEST)
-  - canonical 도구 화이트리스트
-  - provider 카탈로그 (oauth-codex / openai / gemini / groq / cerebras / mistral / custom / ollama / codex)
-  - chat-native HARVEST bridge
-  - MCP 표면 매핑
-  - 회귀 가드 (test_no_core_import / test_tool_whitelist / test_ref_gate ...)
+  - dartlab.ask 또는 /api/ask 실행 경계를 변경할 때
+  - Codex, Claude Code, Cline runtime driver를 추가하거나 수정할 때
+  - Runtime Center의 탐지, 설치, MCP 연결, 승인 UX를 변경할 때
+  - AgentEvent와 AG-UI projection을 변경할 때
 inputs:
-  - 사용자 질문 (chat-native 또는 mode=analyze)
-  - 명시적 RunWorkbench tool 호출 (chat-native → 5 패스 elevate)
+  - 사용자 질문
+  - 선택적 runtimeId와 sessionId
+  - workspace context
 outputs:
-  - 답안 + ref 묶음 (dataRef · executionRef · valueRef · dateRef · visualRef · webRef · artifactRef · docRef)
-  - decisions.jsonl (BM25 recall) + skill_stats.jsonl
+  - provider-neutral AgentEvent stream
+  - AG-UI public stream
+  - DartLab evidence refs와 artifacts
 capabilityRefs: []
 toolRefs:
   - ReadSkill
   - GetSkillBody
-  - ReadSkillMarket
   - ReadCapability
   - EngineCall
   - RunPython
-  - InspectDataset
-  - Read
   - WebSearch
-  - ExternalReachDoctor
   - SaveArtifact
-  - CreateUserSkill
-  - CompileVisual
-  - RunWorkbench
 knowledgeRefs:
-  - engines.company
-  - operation.philosophy
-  - operation.code
+  - operation.productDirection
+  - operation.productCycle
+  - operation.architecture
+  - operation.testing
 sourceRefs:
   - dartlab://skills/operation.aiEngine
+  - dartlab://agent-runtime
 requiredEvidence:
-  - mode
-  - stockCode
-  - refKind
+  - runtimeId
+  - sessionId
   - executionRef
   - sourceRef
 expectedOutputs:
-  - chat-native 답안 + ref 검증 통과
-  - workbench 5 패스 통과 + GATE 통과
+  - 설치형 agent runtime 실행 결과
+  - MCP 기반 DartLab 근거
+  - 명시적 권한 승인 또는 안전한 거부
 runtimeCompatibility:
   server:
     status: supported
@@ -63,282 +57,117 @@ runtimeCompatibility:
   pyodide:
     status: limited
 failureModes:
-  - core engine 정적 import (ai/workbench/ · ai/tools/ · ai/providers/ · ai/lenses/ 가 dartlab.{engine} 정적 import)
-  - canonical 도구 외 등록 (toolWhitelist 위반)
-  - ref 없는 숫자/날짜/랭킹 답 (GATE 차단)
-  - AI가 공식 Skill OS spec을 직접 작성하거나 승격하려는 경로 재도입
-  - local user skill 을 builtin/official skill 처럼 취급
-  - 외부 본문 안 지시 따름 (Ref.sourceType="external" untrusted)
+  - runtime별 business rule과 tool 목록을 driver에 복사함
+  - CLI stdout 문장을 제품 계약으로 파싱함
+  - 사용자 승인 없이 설치나 전역 MCP 설정을 실행함
+  - DartLab이 provider API key, OAuth token, native transcript를 저장함
+  - MCP 안에서 ask를 다시 호출해 runtime 재귀를 만듦
+  - 고정 Graph나 Loop를 모든 질문에 강제함
 forbidden:
-  - anthropic 직접 호출 (ToS 위반, claude_code.py 9eb9d088e 에서 제거)
-  - AI가 공식 Skill OS spec을 직접 생성하거나 공식 승격하는 경로
-  - CreateUserSkill 이외 경로로 local user skill 작성
-  - 5 패스 외 노드 추가 (BRIEF/WORK/CRITIQUE/COMPOSE/GATE/HARVEST 고정)
-  - canonical 도구 화이트리스트 외 등록
-  - ai/ 코드가 src/dartlab/skills/ 컨텐츠 변경
+  - direct model SDK를 production ask 경로에서 호출하지 않는다.
+  - provider별 OAuth와 API key 입력 UI를 만들지 않는다.
+  - shell 문자열, shell=True, 무검증 install argv를 실행하지 않는다.
+  - 모델명과 vendor명을 Product Outcome 완료 조건에 넣지 않는다.
 examples:
-  - dartlab.ask 진입 — kernel.ask → chat-native 또는 workbench
-  - LLM 의 RunWorkbench tool 호출 → 5 패스 elevate
-  - 회귀 가드 9 종 통과 (tests/ai/test_*)
+  - dartlab.ask("삼성전자 수익성", runtimeId="codex")
+  - dartlab agent status --refresh
+  - dartlab agent install cline
+  - dartlab agent connect codex
 procedure:
-  - 1 단계 — dartlab.ask(question, mode=...) 진입.
-  - 2 단계 — chat-native LLM 이 canonical 도구 세트를 자율 호출.
-  - 3 단계 — 깊은 분석 필요 시 LLM 이 RunWorkbench tool 호출 → 5 패스 elevate.
-  - 4 단계 — GATE 가 ref 검증 (미달 시 차단/회귀).
-  - 5 단계 — HARVEST 가 decisions.jsonl + skill_stats.jsonl 작성.
+  - Runtime manifest에서 실행 파일 후보와 protocol driver를 읽는다.
+  - 15초 TTL probe로 설치·버전을 확인하고 사용자가 고른 ready runtime을 선택한다.
+  - native session을 열거나 저장된 opaque session mapping으로 재개한다.
+  - 짧은 analysis capsule과 MCP 도구를 agent에 제공한다.
+  - native event를 AgentEvent로 투영하고 AG-UI allowlist로 공개한다.
+  - install과 MCP connect는 계획 argv와 SHA-256 digest를 먼저 보여주고 동일 digest 승인 뒤에만 실행한다.
 linkedSkills:
-  - engines.company
-  - operation.philosophy
+  - operation.productDirection
+  - operation.productCycle
+  - runtime.mcp
+  - operation.ui
 source:
   type: manual_skill
   format: markdown
-lastUpdated: '2026-06-23'
+lastUpdated: '2026-08-02'
 testUniverse:
   market: KR
   stockCodes:
     - "005930"
 ---
 
-## 엔진 역할
+## 제품 경계
 
-`src/dartlab/ai/` 의 정점 단일 진실 출처. 코드와 충돌 시 lock 후에는 SSOT 가 정답.
-
-P1 lock 완료 (2026-05-05). mock provider e2e 통과 (`tests/ai/test_workbench_loop.py`). 이후 변경은 SSOT 갱신 PR 의무.
-
-## 공개 호출 방식
-
-```python
-import dartlab
-
-# 진입점 — chat-native
-result = dartlab.ask("삼성전자 ROE 추세 분석", mode=None)
-
-# 진입점 — workbench (mode=analyze)
-result = dartlab.ask("삼성전자 종합 신용 분석", mode="analyze")
-
-# MCP 표면
-# ask · run_python · read_skill · read_capability ·
-# web_search · external_reach_doctor · save_artifact · create_user_skill · compile_visual · run_workbench
+```text
+dartlab.ask / /api/ask / DartLab UI
+  -> Agent Runtime Engine
+  -> Codex app-server | Claude stream-json | ACP v1
+  -> 사용자의 agent 계정, 모델, native session
+  -> DartLab MCP
+  -> Skill OS / Company / scan / analysis / macro / quant / evidence
 ```
 
-LLM 이 자율적으로 canonical 도구를 호출한다. 깊은 분석은 LLM 이 `RunWorkbench` meta-tool 로 elevate 한다.
+DartLab은 모델 provider가 아니다. 사용자가 이미 로그인한 agent CLI를 실행하고, 그 agent가 DartLab MCP로 공시·재무·시장 능력을 사용하게 한다. runtrol은 별도 레포의 설계 참고이며 runtime dependency, daemon, shared package가 아니다.
 
-## 호출 동작
+## 코드 SSOT
 
-### 1. 3 층 능력 모델 — 모두 dartlab 전역 자산, AI 는 소비자
-
-| 층 | 위치 | 표현 | 누가 쓰나 |
-|---|---|---|---|
-| **L1 Capability** | `src/dartlab/<engine>/` | Python 함수·클래스 + docstring | 사람·AI·MCP·UI |
-| **L2 Skill** | `src/dartlab/skills/specs/<engine>/<id>.md` | markdown spec + frontmatter | 사람·AI·MCP·UI·audit |
-| **L3 Tool** | `src/dartlab/ai/tools/` | canonical tool whitelist (LLM 이 손에 쥠) | AI 전용 |
-
-- L1·L2 는 본 SSOT 의 범위 밖. 본 SSOT 는 L3 와 작업대 (workbench) 만 정의.
-- L2 는 AI 안에 두지 않는다. `dartlab.skills.*` 가 단일 SSOT 인프라 (SkillSpec / searchSkills / compiler). AI 는 공식 Skill OS 의 *read-only 소비자* 이며 spec 작성자나 승격자가 아니다. 예외적으로 `CreateUserSkill` 은 사용자 요청 시 `.dartlab/skills` local user draft 만 작성하고, 공식 skill 은 운영자 검토를 거친 `kind: curated` 자산으로 관리한다.
-
-### 2. 작업대 5 패스
-
-```
-BRIEF → WORK → CRITIQUE → COMPOSE → GATE → HARVEST
-```
-
-각 패스는 LLM 호출 가능한 별도 단계. system prompt 는 패스별 분리 (`workbench/prompts.py`). 같은 분석가 정체성 (외부 목소리) + 다른 인지 단계 (내부 작업).
-
-- **BRIEF** — 질문 해석, `ReadSkill` / `GetSkillBody` / `ReadCapability` / `recall(memory)` 로 작업 계획 수립
-- **WORK** — `RunPython` / `EngineCall` / `InspectDataset` / `WebSearch` / `ExternalReachDoctor` / `SaveArtifact` 반복 실행
-- **CRITIQUE** — 반대가설 강제, 누락 lens 점검 → 필요 시 WORK 회귀
-- **COMPOSE** — 답안 + ref 묶음
-- **GATE** — ref 검증 — 미달 시 차단/회귀
-- **HARVEST** — 세션 종료 시 memory wiring (`recordSkillUsage` + `remember`)
-
-### 3. canonical 도구 세트 (PascalCase)
-
-| Tool (PascalCase) | Python identifier (camel) | 카테고리 | 책임 | 권장 순서 |
-|---|---|---|---|---|
-| `ReadSkill` | `readSkill` | data | Skill OS 후보 검색 — frontmatter + bodyPreview (1500 자). `includeBody=True` fallback 옵션 | 1 (분석 의도 시작점) |
-| `GetSkillBody` | `getSkillBody` | data | 단일 skillId raw markdown 본문 fetch | 1.5 |
-| `ReadCapability` | `readCapability` | data | dartlab 공개 API/docstring 카탈로그 검색 | 2 |
-| `EngineCall` | `engineCall` | data | 단일 capability 1 회 호출 → 정형 ref | 3 (단일) |
-| `RunPython` | `runPython` | data | dartlab + Polars 임의 코드 실행 | 3 (다단) |
-| `InspectDataset` | `inspectDataset` | data | dataset schema/최신/샘플 빠른 확인 | 보조 |
-| `Read` | `readFile` | data | 안전 경로 안 텍스트 파일 → docRef | 보조 |
-| `WebSearch` | `webSearch` | data | 외부 최신 정보 → webRef | 외부 한정 |
-| `ExternalReachDoctor` | `externalReachDoctor` | data | 외부 lookup backend 상태표. 설치·로그인·쿠키 저장 없음 | WebSearch 실패 후 |
-| `SaveArtifact` | `saveArtifact` | data | 큰 표 / 차트 / 긴 텍스트 → artifactRef | 산출 |
-| `CreateUserSkill` | `createUserSkill` | write | `.dartlab/skills` local user draft 작성. 공식 specs/ 미변경 | 사용자 요청 시 |
-| `CompileVisual` | `compileVisual` | data | 차트 spec codegen → visualRef | 시각화 |
-| `RunWorkbench` | `runWorkbench` | meta | chat-native LLM 이 5 패스 elevate | meta |
-
-- 추가는 SSOT 갱신 PR 의무. registry 화이트리스트 강제 — 외 등록 거부 (`registerTool` plugin 도구만 허용, `CANONICAL_TOOL_NAMES` 보호).
-- **이름 컨벤션** — API name (registry key, MCP tool name) = snake_case. Python 식별자·파일명 = camelCase. `toolSpecs(provider)` 가 변환.
-- **삭제됨 (P-revised)** — AI가 직접 공식 Skill OS spec을 만들고 승격하는 도구 경로. 대신 실행 결과와 사용자 피드백을 ref·메모리 (`decisions.jsonl` recall) 로 남기고 운영자 검토 후 공식 자산에 반영한다. local user draft 는 `CreateUserSkill` 의 `.dartlab/skills` 경로로만 허용한다.
-
-### 4. Provider 카탈로그 (`provider_catalog.py` 단일 출처)
-
-```python
-class WorkbenchProvider(Protocol):
-    config: ProviderConfig
-    def generate(self, messages: list[dict], tools: list[dict]) -> ProviderTurn: ...
-```
-
-dartlab 정식 9 종:
-- **oauth-codex** — ChatGPT OAuth (1 순위, API 키 불필요)
-- **openai** — OpenAI API key
-- **gemini** — Google Gemini API key
-- **groq / cerebras / mistral** — 각자 API key (OpenAI 호환)
-- **custom** — OpenAI 호환 임의 엔드포인트
-- **ollama** — 로컬 (무인증)
-- **codex** — Codex CLI (코딩 전용)
-
-**Anthropic 직접 호출 금지** — ToS 위반 우려로 과거 `claude_code.py` 가 `9eb9d088e` 에서 제거. 새 anthropic provider 추가 안 함.
-
-`OpenAICompatibleProvider` 가 openai/oauth-codex/groq/cerebras/mistral/custom/ollama 모두 처리. `OAuthCodexProvider` 는 ChatGPT OAuth backend 의 SSE 응답을 별도 처리.
-
-**이벤트 타입** — `provider.generate()` 동기 호출, 결과 `ProviderTurn(content, tool_calls, raw)`. `workbench/runner.py` 가 `TraceEvent` (kind ∈ `{"llm_text", "llm_tool_use", "tool_result", "pass_enter", "pass_exit", "llm_stop", "llm_error"}`) 로 정규화.
-
-### 5. 모든 답은 ref 에 닿는다
-
-`Ref` (contracts.py:15) — `kind ∈ {dataRef, executionRef, valueRef, dateRef, visualRef, webRef, artifactRef, docRef}`. GATE 가 ref 없는 숫자·날짜·랭킹 답을 차단.
-
-### 6. 컨텍스트 layers — answer-time 자동 주입
-
-`runAgent` 진입 직후 base system prompt 끝에 다음 블록을 순서대로 부착 (각 블록은 데이터 없으면 *섹션 헤더 자체 부재* — 환각 가드).
-
-| Layer | 모듈 | 데이터 소스 | 캐시 | 효과 |
-|---|---|---|---|---|
-| L2 dashboard snapshot | `_formatDashboardSnapshotBlock` | kwargs `dashboardSnapshot` dict | (요청별) | UI 뷰 → agent 시야 동기화 |
-| L3 운영자 톤 | `memory/synthesizer.buildToneBlock` | `~/.claude/projects/.../memory/feedback_*.md` (auto-discover, feedback 최다 디렉토리) | `~/.dartlab/ai_memory/feedbackTone.cache.md`, 7 일 TTL + memory mtime 검사 | 답변 톤 일관성 — 톱 토큰 6 + 톱 링크 4 |
-| L4 dialectic user context | `memory/dialectic.buildUserContextBlock` | `sessionIndex.db` user role text 전체 + 현재 `history` | `~/.dartlab/ai_memory/userProfile.cache.json`, 7 일 TTL (intent 는 in-memory) | 누적 종목·테마 + 본 세션 의도 6 분류 |
-| L5 사용자 피드백 시그널 | `memory/dialectic.buildFeedbackSignalsBlock` | `sessionIndex.db` 최근 user 발화 (≤40 chars + 부정/긍정 키워드) | `~/.dartlab/ai_memory/feedbackSignals.cache.json`, 7 일 TTL | *부정 발화 회피 + 긍정 발화 강화* — LLM 이 원문 맥락 추론하여 회귀 패턴 자가 차단 |
-
-설계 원칙:
-- **결정론 통계만** — LLM 분류 호출 0. 모든 layer 가 SQL/regex/키워드 매칭.
-- **원문 인용 우선** — feedbackSignals 는 *분류 라벨 없이* 발화 원문 그대로. 해석은 답변 LLM 에 위임.
-- **회귀 가드** — layer 별 graceful skip (Exception → 빈 블록). 한 layer 실패가 답변 흐름 중단 X.
-- **순서** — snapshot → 톤 (메모리 합성) → dialectic (사용자 통계) → 시그널 (가장 최근 학습 신호, 컨텍스트 끝에 박혀 LLM 우선 활용).
-
-답변 품질 영향 검증: `tests/_attempts/oauth_dialectic_ab_probe.py` (dialectic 효과 측정) + `tests/_attempts/oauth_feedback_signals_ab_probe.py` (시그널 효과 측정). dialectic ON 일 때 모호 질문에 *누적 통계 기반 default 가정* + top 5 종목 정확 인용, signals ON 일 때 *사용자 특정 부정 패턴* 정확 진단.
-
-### 7. SSOT 우선
-
-- 코드와 SSOT 충돌 시 (lock 이후) SSOT 가 정답. 코드를 SSOT 에 맞춘다.
-- 새 기능은 SSOT 갱신이 선행.
-- 단, SSOT 자체 작성 순서 — P0 초안 → P1 minimal slice 동작 확인 → lock 커밋. 코드 안 보고 추상만 적힌 SSOT 를 정점으로 잠그지 않는다.
-
-## 대표 반환 형태
-
-### 폴더 규칙
-
-```
-src/dartlab/ai/
-├── __init__.py                ← ask() re-export only
-├── kernel.py                  ← ask() 진입
-├── contracts.py               ← Ref, TraceEvent, ToolResult, Msg
-├── trace.py
-├── providers/                 ← 정식 — provider_catalog.py 카탈로그 9 종
-│   ├── __init__.py            ← ProviderConfig, ProviderTurn, ToolCall, WorkbenchProvider, OpenAICompatibleProvider, ...
-│   ├── oauth_codex.py         ← OAuthCodexProvider (ChatGPT OAuth, 1 순위)
-│   ├── codex.py               ← CodexProvider stub
-│   └── support/
-│       ├── __init__.py
-│       └── oauth_token.py     ← PKCE / refresh / revoke
-├── tools/                     ← canonical tool whitelist
-│   ├── registry.py            ← toolSpecs(provider), 화이트리스트 강제
-│   └── runPython.py / readSkill.py / readCapability.py / webSearch.py / externalReachDoctor.py / saveArtifact.py / createUserSkill.py / compileVisual.py / runWorkbench.py
-├── workbench/                 ← 5 패스 (LLM 자율 elevate 전용)
-│   ├── loop.py                ← orchestration
-│   ├── state.py / prompts.py
-│   └── brief.py / work.py / critique.py / compose.py / gate.py / harvest.py
-├── memory/                    ← recall + skill stats + wiring
-│   └── decisions.py / stats.py / wiring.py
-├── lenses/                    ← P5 (옵션)
-│   └── fundamental.py / macro.py / technical.py / sentiment.py
-└── settings/                  ← 기존 유지
-```
-
-### 경계 강제 (테스트로 잠금)
-
-- `ai/workbench/` · `ai/tools/` · `ai/providers/` · `ai/lenses/` 는 `dartlab.{analysis,company,scan,quant,gather,macro,industry,review,credit,viz,...}` 등 core engine 을 **정적 import 하지 않는다**. (현재 코드도 위반 0 — 본 규칙은 회귀 가드.)
-- `ai/tools/{readSkill,readCapability}.py` 만 `dartlab.skills.*` (메타) 와 `dartlab.reference.capability.*` 의 docstring 을 read-only 접근. 데이터 호출은 안 한다.
-- `ai/` 코드는 `src/dartlab/skills/` 의 컨텐츠를 일체 변경하지 않는다. `CreateUserSkill` 은 `.dartlab/skills` local user draft 만 작성한다. 개선 후보는 ref와 메모리로 남기고, 공식 Skill OS 변경은 운영자 검토를 거친다.
-
-### 코드 컨벤션
-
-- 한 폴더 한 책임. 파일 하나 = 함수/클래스 그룹 하나.
-- Python 식별자·파일명 = camelCase. 외부 노출 API name = snake_case. CLAUDE.md camelCase 규칙은 식별자 한정.
-- UTF-8, 코드 주석 최소.
-
-### MCP 표면 매핑
-
-P-revised 후 노출 (MCP 서버 instructions 동시 갱신):
-
-| MCP tool | 매핑 |
+| 책임 | 정본 |
 |---|---|
-| `ask` | `kernel.ask` 진입 |
-| `run_python` | `runPython` (legacy `engine_call` 통합) |
-| `read_skill` | `readSkill` (legacy `skill_search` / `read` 통합) |
-| `read_capability` | `readCapability` (legacy `generated_spec_search` 통합) |
-| `web_search` | `webSearch` |
-| `external_reach_doctor` | `externalReachDoctor` |
-| `save_artifact` | `saveArtifact` |
-| `create_user_skill` | `createUserSkill` |
-| `compile_visual` | `compileVisual` |
-| `run_workbench` | `runWorkbench` (meta-tool, 5 패스 elevate) |
+| 공개 진입점 | `dartlab.ask`, `/api/ask` |
+| 런타임 조정 | `src/dartlab/ai/runtime/engine.py` |
+| runtime 목록·실행 argv | `src/dartlab/ai/runtime/manifests/*.toml` |
+| Codex protocol | `drivers/codexAppServer.py` |
+| Claude protocol | `drivers/claudeStreamJson.py` |
+| ACP protocol | `drivers/acp.py` |
+| process 수명주기 | `processSupervisor.py` |
+| 이벤트 계약 | `contracts.AgentEvent`, `schema.py` |
+| MCP 연결 계획 | `mcpBootstrap.py` |
+| 설치 계획 | `installManager.py` |
+| 세션 mapping | `sessionStore.py` |
+| UI 관리 표면 | `/api/agent/*`, Runtime Center |
+| 북극성 결과 원장 | `src/dartlab/productOutcome.py` |
 
-**삭제됨** — AI 직접 공식 spec 작성 경로. `verify_answer` (GATE 통합). `read` / `write` (직접 file I/O 비권장).
+`agent.py`는 runtime event를 기존 `TraceEvent` adapter로 투영한다. 새 실행 의미는 runtime package가 정본이며 provider별 조건문을 gateway와 UI에 추가하지 않는다.
 
-### 정체성 — 외부 단일 / 내부 분업
+## 안정 계약
 
-- **외부 (사용자가 듣는 목소리)** — 단일 분석가 ("DartLab 분석가").
-- **내부 (인지 작업)** — 분업 가능. 단일이 default. 질문 난이도 임계 넘으면 lens 패널 자동 활성 (P5 — fundamental / macro / technical / sentiment).
+- manifest가 runtime ID, executable 후보, version args, launch args, install args, 공식 문서를 선언한다.
+- process 실행은 argv 배열과 `shell=False`만 사용한다.
+- stdout/stderr frame은 각각 1 MiB와 256 KiB 한도를 적용한다.
+- 세션 event ring은 256건 또는 4 MiB로 제한하고 sequence 이후 replay를 지원한다.
+- hot session은 최대 4개이며 퇴거·서버 종료 시 child process를 닫는다.
+- DartLab DB에는 session ID, runtime ID, native session ID, cwd mapping만 저장한다. transcript는 저장하지 않는다.
+- 알 수 없는 native event는 버리지 않고 `native` event로 보존한다.
 
-## 회귀 가드 (테스트로 강제)
+## 권한과 설치
 
-- `tests/ai/test_no_core_import.py` — 정적 import 금지 (`ai/workbench/` · `ai/providers/` · `ai/lenses/` 가 `dartlab.<engine>` 정적 import 시 실패)
-- `tests/ai/test_tool_whitelist.py` — registry 가 canonical 도구 보호를 강제. 삭제된 spec 제안 도구 / `skill_search` / `generated_spec_search` / `engine_call` / `verify_answer` / `read` / `write` 등록 시 실패
-- `tests/ai/test_ref_gate.py` — 숫자·날짜·랭킹 답 ref 없으면 GATE 차단. ref token 형식 `<refKind:id>` 단일
-- `tests/ai/test_providers.py` — 어댑터 schema 변환 단위 테스트
-- `tests/ai/test_lookahead_filter.py` — `Company.panel(asOf=...)` 가 미래 fiscal period / 가격 컬럼 drop
-- `tests/ai/test_runworkbench_dispatch.py` — chat-native LLM 의 `runWorkbench` tool 호출 시 workbench 5 패스 활성. mode != "analyze" AND tool 미호출 시 workbench 활성 0
-- `tests/ai/test_chat_native_harvest.py` — `agent.py` 종료 시 `decisions.jsonl` + `skill_stats.jsonl` 작성
-- `tests/ai/test_provider_whitelist_single_source.py` — `_isLLMProvider` 가 `wired_provider_ids()` 만 사용. hardcoded provider set 0 건 (provider_catalog.py 외)
-- `tests/ai/test_safe_stockcode.py` — path traversal 시도 (`..` · `/` · all-dot · 길이 초과) 거부
+- 탐지는 자동이지만 설치와 전역 MCP 설정은 자동 실행하지 않는다.
+- Runtime Center와 CLI는 먼저 exact argv, 공식 문서 URL, digest를 표시한다.
+- apply 요청의 digest와 현재 manifest로 다시 계산한 계획이 모두 일치해야 실행한다.
+- Codex와 ACP의 native approval request는 UI로 전달한다.
+- Claude print mode는 registry가 read-only로 판정한 DartLab MCP 도구만 자동 허용하며 write 권한을 확대하지 않는다.
+- agent 인증은 해당 CLI의 공식 로그인 명령에서만 수행한다.
 
-**삭제된 가드** — `test_skill_spec_integrity.py` (AI 직접 spec 작성 경로 제거) · `test_no_external_skill_writes.py` (ai/ 가 spec 작성 안 함) · `test_golden_baseline.py` (heuristic 시대 골든 셋, P-revised 후 폐기) · `test_outcome_log.py` (outcome ground truth loop 폐기, 2026-06-23).
+## MCP 계약
 
-### 회귀 가드 보조 스크립트
+- MCP tools/list는 `ai.tools.registry.CANONICAL_V2`에서만 파생한다.
+- `ask`는 광고하지 않는다. agent가 MCP ask를 통해 agent를 재귀 실행하면 안 된다.
+- 권장 순서는 `ReadSkill -> ReadCapability -> EngineCall 또는 RunPython -> ref가 있는 답변`이다.
+- Skill 읽기나 모델 산문은 북극성 `grounded`가 아니다. 실제 계산 도구가 성공하고 정형 ref가 있어야 한다.
 
-| 스크립트 | 역할 |
-|---|---|
-| `tests/audit/checkAgentBoundary.py` | graph 강박 회귀 패턴 lint — `ai/agent.py` 외 새 `*Loop`/`*Graph` 클래스, 5 패스 패턴 모듈, "graph 강제"/"verify 강제"/"회귀 가드" 자기 인식 단어 등장 감지. 룰 SSOT [memory/feedback_no_graph_regression.md](file://C:/Users/MSI/.claude/projects/c--Users-MSI-OneDrive-Desktop-sideProject-dartlab/memory/feedback_no_graph_regression.md). 경고 모드 default, `--strict` 시 violation 시 exit 1. CI/pre-commit 추적용 |
-| `tests/ai/runners/captureGoldenBaseline.py` | 휴리스틱 `ask()` 의 출력을 baseline.json 캡처 — P1 5 패스 LLM path 와 비교 기준. 안전 question 만 사용 (Company/scan 호출 안 함, OOM 방지) |
-| `tests/ai/runners/runGoldenTrace.py` | 15 케이스 실 LLM (OAuth Codex) 1 회 호출 → taxonomy 분류 결과 `tests/ai/golden/baseline_v{N}.json` freeze. **비용 발생 — 수동 트리거 (CI 자동 실행 X)**. OAuth Codex 토큰 (`~/.dartlab/oauth_token.json` 또는 `DARTLAB_OAUTH_TOKEN`) 필수 |
+## Product Outcome 연결
 
-## SSOT 갱신 PR 룰 (P6)
+상태는 `started -> scoped -> grounded -> delivered -> verified -> retained` 순서다.
 
-본 SSOT 가 lock 된 이후 다음 변경은 SSOT 갱신 PR 의무:
+- 질문 시작으로 `started`를 발급한다.
+- canonical 실행 도구가 정형 ref를 반환해야 `scoped`, `grounded`가 된다.
+- 성공 turn과 근거가 함께 있어야 `delivered`다.
+- 사용자가 같은 outcome의 exact ref를 열어 서버의 opaque hash receipt가 일치해야 `verified`다.
+- tool call, 텍스트 생성, evidence chip 렌더만으로 verified를 자동 기록하지 않는다.
 
-1. 신규 도구 추가/제거 — canonical 도구 화이트리스트 변경.
-2. 신규 패스 추가/순서 변경 — `BRIEF→WORK→CRITIQUE→COMPOSE→GATE→HARVEST` 외.
-3. 신규 provider 어댑터 추가 — `provider_catalog.py` `_PROVIDERS` 변경.
-4. ref kind 추가 — `Ref.kind` 값 집합 변경.
-5. 폴더 경계 변경 — `ai/{workbench,tools,providers,lenses,memory}` import 정책.
+## 검증
 
-**PR 체크리스트**:
-- [ ] SSOT 해당 섹션 갱신
-- [ ] 회귀 가드 테스트 추가 또는 갱신 (`tests/ai/test_*.py`)
-- [ ] 변경 이력 1 줄 추가
-- [ ] 코드 ↔ SSOT 정합성 lint (별도 도구 P6.1)
-
-## 변경 이력
-
-- 2026-05-05 — P0 초안 작성.
-- 2026-05-05 — P1 lock (5 패스 모듈 + 5 어댑터 + dual-surface providers + V2 6 종 도구 + 회귀 가드 5 종). mock provider e2e 통과.
-- 2026-05-05 — P2~P5 backbone (readSkill 통합 / HARVEST 개선 후보 수집 / status 승격 + 운영자 confirm 게이트 / memory recall + lens 4 종).
-- 2026-05-05 — P6 부분 (SSOT PR 룰 + tool 실행 timing telemetry).
-- 2026-05-06 — provider 시스템 정정 (anthropic/xai 삭제, google→gemini rename, OpenAICompatibleProvider/OAuthCodexProvider 복원, runner.py / brief.py / work.py / critique.py / compose.py / harvest.py 를 `generate()/ProviderTurn` 시스템으로 재작성).
-- 2026-05-07 — P-revised (AI 직접 spec 작성 경로 제거, outcome ground truth loop 도입 — TauricResearch/TradingAgents v0.2.4 흡수, `runWorkbench` meta-tool, `intent.py` keyword routing 폐기, chat-native HARVEST bridge, 2-tier provider role routing, lookahead bias 가드, canonical 도구 정합).
-- 2026-05-12 — `src/dartlab/ai/SSOT.md` → 본 sub-spec 통합 (Skill OS 운영 SSOT 승격).
-- 2026-05-17 — `CreateUserSkill` 추가. 공식 Skill OS 작성 금지는 유지하고 `.dartlab/skills` local user draft 작성 경로만 허용.
-- 2026-06-16 — `ExternalReachDoctor` 추가. 외부 lookup backend 상태 진단만 수행하며 설치·로그인·쿠키 저장은 금지.
-- 2026-06-23 — outcome ground truth loop 폐기. 채점 (pending → resolved + reflection) 이 누적 실측 미작동 (pending 26 / resolved 0) 으로 확인 → `outcome_log` · `outcome_resolver` · per-stockCode markdown · past_context 회고 주입 · `OutcomeLog` MCP 도구 제거. `decisions.jsonl` recall + skill_stats 는 유지.
+- `tests/ai/runtime/`: manifest, protocol projection, supervisor, session, engine vertical slice.
+- `tests/productOutcome/`: 단조 전이, duplicate receipt, privacy schema.
+- `tests/mcp/`: registry와 tools/list drift, 재귀 ask 부재.
+- UI는 `npm run check`와 `npm run build`를 모두 통과해야 한다.
+- 최종 release 전 실제 설치 계정으로 Codex, Claude, ACP handshake를 각각 확인하고 child process가 남지 않았는지 점검한다.

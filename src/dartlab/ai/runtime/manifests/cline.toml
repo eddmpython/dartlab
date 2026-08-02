@@ -1,0 +1,9 @@
+runtimeId = "cline"
+displayName = "Cline CLI"
+driver = "acp"
+protocol = "acp-v1"
+executableCandidates = ["cline"]
+versionArgs = ["--version"]
+launchArgs = ["--acp"]
+installArgs = ["npm", "install", "-g", "cline"]
+officialUrl = "https://docs.cline.bot/cline-cli/overview"

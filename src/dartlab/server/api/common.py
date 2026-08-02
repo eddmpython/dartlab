@@ -11,8 +11,6 @@ from typing import Any
 
 from fastapi import Request, Response
 
-from dartlab.ai.settings import normalizeProvider
-
 HANDLED_API_ERRORS = (
     AttributeError,
     FileNotFoundError,
@@ -188,8 +186,13 @@ def guideDetail(exc: BaseException, *, feature: str | None = None) -> str:
 
 
 def normalizeProviderName(provider: str | None) -> str | None:
-    """Provider 이름을 정규화한다."""
-    return normalizeProvider(provider)
+    """호환 provider 입력 중 설치형 runtime ID만 통과시킨다.
+
+    direct-model provider 이름은 더 이상 서버 실행 설정이 아니므로 None으로
+    정규화한다. 이 함수는 옛 company summary query 호환에만 남아 있다.
+    """
+    lowered = str(provider or "").strip().lower()
+    return lowered if lowered in {"codex", "claude", "cline"} else None
 
 
 def serializePayload(payload: Any, *, maxRows: int = 200) -> dict[str, Any]:

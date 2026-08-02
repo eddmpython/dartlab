@@ -5,6 +5,7 @@
 // Svelte 5 주의: $state 배열의 원소는 프록시다. 대화·메시지 변형은 항상 스토어의 conversations 프록시를
 // 거친 참조(this.active, conv.messages[idx])로 해야 반응한다. 배열 재할당(new/delete/clearAll)만 = 로 교체.
 import { isKrStockCode, type AiCapabilities, type AiPort, type AiStreamEvent, type EvidenceRef } from '@dartlab/ui-contracts';
+import { resolveAgentApproval } from '$lib/runtime/agentRuntimeApi';
 
 /**
  * 작업대 블록. LLM 이 자율 호출한 도구 한 건 (입력 args + 결과 표/마크다운/stdout).
@@ -32,6 +33,12 @@ export interface ChatMessage {
 	refs: EvidenceRef[];
 	/** 작업대. 자율 도구 호출 카드 (근거를 만드는 과정). */
 	tools: ToolBlock[];
+	approvals: Array<{
+		id: string;
+		sessionId: string;
+		summary: string;
+		status: 'pending' | 'approved' | 'denied' | 'error';
+	}>;
 	suggested: string[];
 	error: string | null;
 	streaming: boolean;
@@ -70,7 +77,7 @@ export class ChatStore {
 		return this.conversations.find((c) => c.id === this.activeId) ?? null;
 	}
 
-	/** LLM 공급자가 실제 연결(사용가능)됐는가. capabilities tier 로 판정. */
+	/** 설치형 agent runtime이 실제 사용 가능한가. */
 	get connected(): boolean {
 		return this.capabilities?.tier === 'advanced' || this.capabilities?.tier === 'onDevice';
 	}
@@ -167,6 +174,7 @@ export class ChatStore {
 			thinking: '',
 			refs: [],
 			tools: [],
+			approvals: [],
 			suggested: [],
 			error: null,
 			streaming: false
@@ -178,6 +186,7 @@ export class ChatStore {
 			thinking: '',
 			refs: [],
 			tools: [],
+			approvals: [],
 			suggested: [],
 			error: null,
 			streaming: true
@@ -185,10 +194,10 @@ export class ChatStore {
 		conv.updatedAt = Date.now();
 		const idx = conv.messages.length - 1;
 
-		// 미연결(선택 LLM 공급자 사용불가) 이면 heuristic 폴백의 오답 대신 명확한 안내로 답한다.
+		// 지원 CLI가 없으면 heuristic 폴백 대신 설치 경로를 정직하게 안내한다.
 		if (this.capabilitiesLoaded && !this.connected) {
 			conv.messages[idx].text =
-				'AI 공급자가 연결되어 있지 않습니다. 우측 상단 톱니(공급자 설정)에서 Ollama(로컬) 또는 Gemini 를 연결하면 답변합니다.';
+				'사용 가능한 agent CLI가 없습니다. 우측 상단 Runtime Center에서 Codex, Claude Code, Cline 중 하나의 설치 계획을 확인하세요.';
 			conv.messages[idx].streaming = false;
 			conv.updatedAt = Date.now();
 			this.busy = false;
@@ -201,6 +210,8 @@ export class ChatStore {
 			for await (const ev of this.#ai.streamAsk({
 				prompt: text,
 				mode: 'chat',
+				runtimeId: this.capabilities?.runtimeId,
+				sessionId: conv.id,
 				code: isKrStockCode(code) ? code : undefined,
 				history
 			})) {
@@ -214,6 +225,18 @@ export class ChatStore {
 			this.busy = false;
 			this.#persist();
 		}
+	}
+
+	async resolveApproval(message: ChatMessage, approvalId: string, allow: boolean): Promise<void> {
+		const approval = message.approvals.find((item) => item.id === approvalId);
+		if (!approval || approval.status !== 'pending') return;
+		try {
+			await resolveAgentApproval(approval.sessionId, approval.id, allow);
+			approval.status = allow ? 'approved' : 'denied';
+		} catch {
+			approval.status = 'error';
+		}
+		this.#persist();
 	}
 
 	#ensureActive(): Conversation {
@@ -279,6 +302,14 @@ export class ChatStore {
 			case 'RUN_ERROR':
 				m.error = ev.message;
 				break;
+			case 'APPROVAL_REQUESTED':
+				m.approvals.push({
+					id: ev.approvalId,
+					sessionId: ev.sessionId,
+					summary: typeof ev.request?.reason === 'string' ? ev.request.reason : '에이전트가 추가 권한을 요청했습니다.',
+					status: 'pending'
+				});
+				break;
 			// 기타 allowlist 이벤트(START/END/SNAPSHOT/DELTA/VIEW_SPEC 등)는 챗 렌더 무관이라 드롭.
 		}
 	}
@@ -306,6 +337,10 @@ export class ChatStore {
 					...m,
 					streaming: false,
 					thinking: m.thinking ?? '',
+					approvals: (m.approvals ?? []).map((approval) => ({
+						...approval,
+						status: approval.status === 'pending' ? ('error' as const) : approval.status
+					})),
 					// 재시작 후 진행중이던 도구 카드는 완료 처리 (결과가 다시 오지 않으므로).
 					tools: (m.tools ?? []).map((t) => ({
 						...t,

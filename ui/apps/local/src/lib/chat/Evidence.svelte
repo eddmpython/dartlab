@@ -2,9 +2,11 @@
 	// 근거. Ask 엔진이 답변을 뒷받침하려고 확보한 ref (표/값/문서/웹) 를 각주처럼 표시한다.
 	// 접힌 상태는 "근거 N" 요약, 펼치면 출처와 핵심 payload 를 보여준다 (ChatGPT/Claude 인용 벤치마크).
 	import type { EvidenceRef } from '@dartlab/ui-contracts';
+	import { verifyOutcomeEvidence } from '$lib/runtime/agentRuntimeApi';
 
 	let { refs }: { refs: EvidenceRef[] } = $props();
 	let open = $state(false);
+	let receipts = $state<Record<string, 'busy' | 'verified' | 'error'>>({});
 
 	const KIND_LABEL: Record<string, string> = {
 		tableRef: '표',
@@ -46,6 +48,17 @@
 			return url;
 		}
 	}
+
+	async function verify(ref: EvidenceRef): Promise<void> {
+		if (!ref.outcomeId || receipts[ref.id] === 'busy' || receipts[ref.id] === 'verified') return;
+		receipts[ref.id] = 'busy';
+		try {
+			await verifyOutcomeEvidence(ref.outcomeId, ref.id);
+			receipts[ref.id] = 'verified';
+		} catch {
+			receipts[ref.id] = 'error';
+		}
+	}
 </script>
 
 <div class="ev">
@@ -70,6 +83,11 @@
 							<span class="src">{r.source}</span>
 						{/if}
 					</div>
+					{#if r.outcomeId}
+						<button class="verify" onclick={() => verify(r)} disabled={receipts[r.id] === 'busy' || receipts[r.id] === 'verified'}>
+							{receipts[r.id] === 'verified' ? '확인됨' : receipts[r.id] === 'busy' ? '확인 중' : receipts[r.id] === 'error' ? '다시 확인' : '근거 확인'}
+						</button>
+					{/if}
 				</li>
 			{/each}
 		</ol>
@@ -147,12 +165,24 @@
 		align-self: center;
 	}
 	.meta {
+		flex: 1;
 		min-width: 0;
 		display: flex;
 		flex-wrap: wrap;
 		align-items: baseline;
 		gap: 0.2rem 0.5rem;
 	}
+	.verify {
+		flex-shrink: 0;
+		border: 1px solid var(--dl-line, #2a2c33);
+		border-radius: 5px;
+		padding: 0.2rem 0.4rem;
+		background: transparent;
+		color: var(--dl-info, #6ab0ff);
+		font-size: 0.68rem;
+		cursor: pointer;
+	}
+	.verify:disabled { color: var(--dl-ink-mute, #6b7280); cursor: default; }
 	.title {
 		color: var(--dl-ink, #e7e7ea);
 		overflow: hidden;

@@ -802,28 +802,10 @@ _LEGACY_NAME_MAP = {
 
 
 def toolSpecs(provider: Any = None) -> list[dict[str, Any]]:
-    """Tool 명세 목록.
-
-    provider=None: 기존 generic dict (호환).
-    provider=LLMProvider 인스턴스 또는 provider id 문자열: 해당 provider 의 schema 형식.
-    """
-    if provider is None:
-        return [spec.toDict() for spec in _SPECS.values()]
-
-    if isinstance(provider, str):
-        from dartlab.ai.providers.catalog import availableProviders, createProvider
-        from dartlab.ai.settings.types import LLMConfig
-
-        if provider not in availableProviders():
-            raise ValueError(f"Unknown provider: {provider!r}")
-        provider_inst = createProvider(LLMConfig(provider=provider))
-    else:
-        provider_inst = provider
-
-    schemaBuilder = getattr(provider_inst, "toolSchema", None)
-    if not callable(schemaBuilder):
-        raise ValueError(f"Provider does not expose tool schema conversion: {provider!r}")
-    return [cast(dict[str, Any], schemaBuilder(spec)) for spec in _SPECS.values()]
+    """설치형 에이전트와 MCP가 공유하는 provider 중립 JSON Schema 목록."""
+    if provider is not None:
+        raise ValueError("provider별 schema 변환은 제거되었습니다. generic MCP schema를 사용하세요")
+    return [spec.toDict() for spec in _SPECS.values()]
 
 
 def listToolNames() -> tuple[str, ...]:
