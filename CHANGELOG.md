@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - **AI production 경로를 direct provider에서 Agent Runtime으로 전환.** `dartlab.ask`, `/api/ask`, Agent Gateway, 로컬 UI가 같은 runtime SSOT를 사용한다. provider secret/OAuth/Ollama pull API는 410 migration 안내를 반환하고 MCP tools/list에서는 runtime 재귀를 만들던 `ask`를 제거했다.
+- **Agent Runtime 준비 상태를 fail-closed로 강화.** CLI와 DartLab MCP가 모두 확인된 `groundedReady` runtime만 선택한다. Claude는 MCP 검색용 `ToolSearch`와 읽기 전용 DartLab MCP만 노출하고, Cline도 공식 CLI 연결 계획과 digest 승인 경로를 사용한다.
 - **재무비율 계산을 하나의 L0 공식으로 통합.** DART와 EDGAR의 단일 시점·시계열 계산이 같은 공식을 사용하고, 연간·분기·YTD 비교 간격과 통화를 호출자가 명시한다. 수익성과 운전자본 비율은 기초·기말 평균잔액을 사용한다.
 - **DART raw 스키마 소유권 정리.** 실제 생산자인 `gather/dart`가 finance·report 계약 둘만 소유하며, 검증을 켠 상태의 오류는 호출자에게 그대로 전달한다.
 - **시뮬레이터 입력을 데이터 작업대 스냅샷으로 전환.** 시뮬레이션이 읽는 자료가 시점 고정 스냅샷이 되어 같은 입력이 항상 같은 결과를 낸다.

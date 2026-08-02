@@ -14,6 +14,19 @@ from ..processSupervisor import ProcessClosedError, ProcessSupervisor
 from .base import DriverHandle
 
 
+def _claudeToolArgs() -> tuple[str, ...]:
+    """MCP 검색 관문과 읽기 전용 DartLab MCP 도구만 허용한다."""
+    return (
+        "--tools",
+        "ToolSearch",
+        "--disable-slash-commands",
+        "--permission-mode",
+        "dontAsk",
+        "--allowedTools",
+        ",".join(("ToolSearch", *claudeReadOnlyMcpTools())),
+    )
+
+
 class ClaudeStreamJsonDriver:
     """Claude CLI가 소유한 세션을 턴별 stream-json 프로세스로 연결한다."""
 
@@ -59,10 +72,7 @@ class ClaudeStreamJsonDriver:
             handle.executable,
             *handle.descriptor.launchArgs,
             "--verbose",
-            "--permission-mode",
-            "dontAsk",
-            "--allowedTools",
-            ",".join(claudeReadOnlyMcpTools()),
+            *_claudeToolArgs(),
             "--append-system-prompt",
             instructions,
             *sessionArgs,

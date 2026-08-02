@@ -56,7 +56,7 @@
 - `ProcessSupervisor`: shell 없는 argv 실행, Windows Job/POSIX process group 정리, frame·stderr·timeout 상한.
 - native driver 3종: Codex app-server JSON-RPC, Claude stream-json, ACP v1.
 - `analysisCapsule`: Skill OS 탐색, EngineCall/RunPython, ref, untrusted content 지침.
-- MCP bootstrap: Cline ACP embedded MCP, Codex·Claude 공식 CLI 연결 계획과 digest 승인.
+- MCP bootstrap: Codex·Claude·Cline 공식 CLI 연결 계획과 digest 승인. Cline ACP 3.0.49가 session/new의 embedded MCP를 무시하는 실제 동작은 전역 공식 설정 경로로 격리했다.
 - Runtime Center API·CLI·Svelte UI: probe, install plan/apply, MCP plan/apply, runtime 선택, session, model, approval.
 - `/api/ask`, Agent Gateway, `dartlab.ask` 기본과 분석 모드를 모두 runtime 경로로 전환.
 - provider validate/secret/OAuth/Ollama pull 제품 API는 410 migration 경계로 전환.
@@ -67,9 +67,11 @@
 
 - throwaway attempts 9건 통과 후 `tests/ai/runtime`, `tests/productOutcome`로 승격.
 - Codex 0.146.0: initialize, thread/start, model/list 실제 handshake 통과.
-- Cline 3.0.49: ACP initialize, session/new, embedded DartLab MCP 실제 handshake 통과.
-- Claude Code 2.1.220: 실제 public `dartlab ask --runtime claude` 턴에서 `ReadSkill`과 `EngineCall(Company.panel)`을 호출해 `table:005930:IS:2026Q1`, `value:005930:IS:2026Q1:sales` 근거 답변까지 완주했다. read-only MCP allowlist와 `dontAsk` permission mode가 이 실행에서 동작했다.
-- Runtime Center status 실측에서 Claude·Cline MCP 연결, Codex 미연결 상태를 구분해 반환했다. Codex 연결은 digest 승인 UI/CLI로만 수행한다.
+- Cline 3.0.49: ACP initialize와 session/new는 통과했지만 session/new의 embedded MCP가 실제 도구 목록에 반영되지 않았고 provider/model CLI 플래그도 ACP에서 무시됐다. 일반 headless Cline 응답은 통과했으나 DartLab 근거 경로는 미연결로 판정하고 실행을 차단한다.
+- Claude Code 2.1.220: 실제 public `dartlab ask --runtime claude` 턴에서 `ToolSearch`, `ReadSkill`, `EngineCall(Company.panel)`만 호출해 `table:005930:IS:2026Q1`, `value:005930:IS:2026Q1:sales`, `date:005930:IS:2026Q1` 근거 답변까지 완주했다. Bash, PowerShell, 파일 수정, 외부 웹 호출은 0회였다.
+- Runtime Center status 실측에서 Claude만 `groundedReady=true`, Cline·Codex는 설치됐어도 MCP 미연결인 `groundedReady=false`로 반환했다. 두 미연결 runtime의 public ask는 모델 호출 전에 실패하고 exact digest 연결 계획을 안내한다.
+- Cline과 Codex의 환경별 exact argv·digest 연결 계획이 생성됐으며 아직 사용자의 동일 digest 적용 승인을 받지 않아 실행하지 않았다.
+- 보안·준비 상태 회귀 24건, UI `svelte-check`, production build가 통과했다. 기존 접근성·chunk size 경고는 남지만 새 Runtime Center 오류는 없다.
 - UI `svelte-check`: 오류 0. production build 성공.
 - runtime, outcome, gateway, CLI, security, MCP, Skill OS 핵심 계약 126건 통과, 1건 기존 skip.
 - 저장소 quality gate, changed camelCase/docstring, folder-size, init-thin, agent-boundary, public API audit 통과.
@@ -83,4 +85,4 @@
 
 ### Exit decision
 
-Agent Runtime vertical slice는 production 진입 가능. 실제 CLI의 grounded delivery까지 실증했다. root score 상향과 initiative 완료 이동은 실제 사용자가 UI에서 exact evidence를 연 verified operator journey 뒤에만 한다.
+Agent Runtime vertical slice와 Claude grounded delivery는 production 진입 가능하다. Cline·Codex는 공식 MCP 연결 후 같은 operator journey를 통과하기 전까지 fail-closed 상태다. root score 상향과 initiative 완료 이동은 실제 사용자가 UI에서 exact evidence를 연 verified operator journey 뒤에만 한다.

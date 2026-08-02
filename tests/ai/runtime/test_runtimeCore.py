@@ -7,13 +7,27 @@ from pathlib import Path
 import pytest
 
 from dartlab.ai.runtime.contracts import ProcessSpec, RuntimeDescriptor, RuntimeProbe
+from dartlab.ai.runtime.drivers.claudeStreamJson import _claudeToolArgs
 from dartlab.ai.runtime.eventBuffer import EventBuffer
 from dartlab.ai.runtime.eventProjection import EventProjector
 from dartlab.ai.runtime.installManager import buildInstallPlan, executeInstallPlan
+from dartlab.ai.runtime.mcpBootstrap import _clineMcpConfigured, buildMcpConnectPlan
 from dartlab.ai.runtime.processSupervisor import ProcessSupervisor
 from dartlab.ai.runtime.registry import loadRuntimeRegistry
 from dartlab.ai.runtime.schema import generateTypeScriptContracts
 from dartlab.ai.runtime.sessionStore import SessionStore
+
+
+def testClaudeRuntimeExposesOnlyToolSearchAndReadOnlyMcp():
+    args = _claudeToolArgs()
+    assert args[:2] == ("--tools", "ToolSearch")
+    assert "--disable-slash-commands" in args
+    allowed = args[args.index("--allowedTools") + 1]
+    assert allowed.startswith("ToolSearch,")
+    assert "mcp__dartlab__ReadSkill" in allowed
+    assert "mcp__dartlab__EngineCall" in allowed
+    assert "Bash" not in allowed
+    assert "PowerShell" not in allowed
 
 
 def testRuntimeRegistryHasThreeNativeDrivers():
@@ -73,6 +87,27 @@ def testInstallPlanRequiresExactDigest():
     plan = buildInstallPlan("cline")
     with pytest.raises(PermissionError):
         executeInstallPlan(plan, approvedDigest="wrong")
+
+
+def testClineMcpPlanUsesOfficialNonInteractiveInstaller(monkeypatch):
+    monkeypatch.setattr("dartlab.ai.runtime.mcpBootstrap.discoverExecutable", lambda _descriptor: "cline")
+
+    plan = buildMcpConnectPlan("cline")
+
+    assert plan.argv[:7] == ("cline", "mcp", "install", "dartlab", "--yes", "--json", "--")
+    assert plan.argv[-2:] == ("-m", "dartlab.mcp")
+
+
+def testClineMcpProbeUsesOfficialSettingsFile(tmp_path):
+    settings = tmp_path / "data" / "settings"
+    settings.mkdir(parents=True)
+    (settings / "cline_mcp_settings.json").write_text(
+        json.dumps({"mcpServers": {"dartlab": {"transport": {"type": "stdio"}}}}),
+        encoding="utf-8",
+    )
+
+    assert _clineMcpConfigured(tmp_path)
+    assert not _clineMcpConfigured(tmp_path / "missing")
 
 
 def testSessionStorePersistsOnlySessionMapping(tmp_path):

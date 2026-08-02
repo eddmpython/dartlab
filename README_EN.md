@@ -462,7 +462,7 @@ dartlab.ask("Analyze Samsung Electronics financial health")
 dartlab.ask("Samsung analysis", runtimeId="claude")
 ```
 
-Supported runtimes are `codex`, `claude`, and `cline`. Use `dartlab agent status --refresh` to inspect them. Install and MCP connection commands print an exact argv and SHA-256 digest first; nothing is changed until you repeat the command with `--approve-digest`.
+Supported runtimes are `codex`, `claude`, and `cline`. Use `dartlab agent status --refresh` to inspect them. Only a `groundedReady` runtime with both its CLI and DartLab MCP connection available can run; a disconnected runtime fails closed instead of producing an ungrounded answer. Install and MCP connection commands print an exact argv and SHA-256 digest first; nothing is changed until you repeat the command with `--approve-digest`.
 
 ### Channel - Use your PC dartlab from anywhere
 

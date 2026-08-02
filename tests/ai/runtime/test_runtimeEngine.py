@@ -131,6 +131,11 @@ def testStoredSessionKeepsItsOriginalWorkspace(tmp_path, monkeypatch):
     monkeypatch.setattr(
         runtimeEngineModule, "probeRuntime", lambda value: RuntimeProbe("fake", "ready", sysExecutable())
     )
+    monkeypatch.setattr(
+        runtimeEngineModule,
+        "probeMcpConnection",
+        lambda runtimeId, **_kwargs: {"connected": True, "mode": "test"},
+    )
     engine = AgentRuntimeEngine(SessionStore(tmp_path / "sessions.sqlite3"), SessionManager())
     engine.registry = {"fake": descriptor}
     engine.drivers = {"fake": FakeDriver()}
@@ -143,6 +148,33 @@ def testStoredSessionKeepsItsOriginalWorkspace(tmp_path, monkeypatch):
     engine.sessionManager.close(session.sessionId)
     with pytest.raises(ValueError, match="작업공간"):
         engine.openSession(sessionId=session.sessionId, cwd=changed)
+
+
+def testRuntimeSelectionFailsClosedWhenMcpIsDisconnected(tmp_path, monkeypatch):
+    descriptor = RuntimeDescriptor(
+        "fake",
+        "Fake",
+        "fake",
+        "ndjson",
+        ("fake",),
+        ("--version",),
+        (),
+        (),
+        "https://example.invalid",
+    )
+    monkeypatch.setattr(
+        runtimeEngineModule, "probeRuntime", lambda value: RuntimeProbe("fake", "ready", sysExecutable())
+    )
+    monkeypatch.setattr(
+        runtimeEngineModule,
+        "probeMcpConnection",
+        lambda runtimeId, **_kwargs: {"connected": False, "mode": "test"},
+    )
+    engine = AgentRuntimeEngine(SessionStore(tmp_path / "sessions.sqlite3"), SessionManager())
+    engine.registry = {"fake": descriptor}
+
+    with pytest.raises(RuntimeError, match="DartLab MCP가 연결되지 않았습니다"):
+        engine.selectRuntime("fake")
 
 
 def sysExecutable() -> str:

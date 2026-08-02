@@ -6688,7 +6688,7 @@
       ],
       "procedure": [
         "Runtime manifest에서 실행 파일 후보와 protocol driver를 읽는다.",
-        "15초 TTL probe로 설치·버전을 확인하고 사용자가 고른 ready runtime을 선택한다.",
+        "15초 TTL probe로 설치·버전과 DartLab MCP 연결을 확인하고 둘 다 준비된 groundedReady runtime만 선택한다.",
         "native session을 열거나 저장된 opaque session mapping으로 재개한다.",
         "짧은 analysis capsule과 MCP 도구를 agent에 제공한다.",
         "native event를 AgentEvent로 투영하고 AG-UI allowlist로 공개한다.",

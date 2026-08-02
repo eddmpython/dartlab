@@ -6,6 +6,7 @@ export interface AgentRuntimeInfo extends RuntimeProbe {
 	protocol: string;
 	officialUrl: string;
 	mcp: { connected: boolean; mode?: string; detail?: string | null };
+	groundedReady: boolean;
 }
 
 export interface RuntimePlan {

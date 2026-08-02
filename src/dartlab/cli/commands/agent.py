@@ -20,7 +20,7 @@ def configureParser(subparsers) -> None:
     install.add_argument("runtimeId", choices=["codex", "claude", "cline"])
     install.add_argument("--approve-digest", default=None)
     connect = actions.add_parser("connect", help="DartLab MCP 연결 계획")
-    connect.add_argument("runtimeId", choices=["codex", "claude"])
+    connect.add_argument("runtimeId", choices=["codex", "claude", "cline"])
     connect.add_argument("--approve-digest", default=None)
     sessions = actions.add_parser("sessions", help="저장된 세션 매핑")
     sessions.add_argument("--limit", type=int, default=20)

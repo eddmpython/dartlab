@@ -653,7 +653,7 @@ dartlab.ask("삼성전자 재무건전성 분석해줘")
 dartlab.ask("삼성전자 분석", runtimeId="claude")
 ```
 
-지원 runtime은 `codex`, `claude`, `cline`이다. DartLab은 provider API key, OAuth token, 모델 다운로드를 관리하지 않는다. 설치와 MCP 설정은 `dartlab agent`가 exact argv와 SHA-256 digest를 먼저 보여 주고, 사용자가 같은 digest를 명시했을 때만 실행한다.
+지원 runtime은 `codex`, `claude`, `cline`이다. DartLab은 provider API key, OAuth token, 모델 다운로드를 관리하지 않는다. CLI 설치와 DartLab MCP 연결이 모두 확인된 `groundedReady` runtime만 실행되며, 미연결 runtime은 비근거 답변을 만들지 않고 연결 계획을 안내한다. 설치와 MCP 설정은 `dartlab agent`가 exact argv와 SHA-256 digest를 먼저 보여 주고, 사용자가 같은 digest를 명시했을 때만 실행한다.
 
 ### Channel: 외부에서 내 PC dartlab 접근
 

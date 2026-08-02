@@ -191,7 +191,14 @@ class AgentRuntimeEngine:
             mcp = (
                 probeMcpConnection(probe.runtimeId, refresh=refresh) if probe.state == "ready" else {"connected": False}
             )
-            runtimes.append({**descriptor.toDict(), **probe.toDict(), "mcp": mcp})
+            runtimes.append(
+                {
+                    **descriptor.toDict(),
+                    **probe.toDict(),
+                    "mcp": mcp,
+                    "groundedReady": probe.state == "ready" and bool(mcp.get("connected")),
+                }
+            )
         return {"runtimes": runtimes, "sessions": self.sessionManager.status()}
 
     def selectRuntime(self, preferredRuntimeId: str | None = None) -> str:
@@ -207,12 +214,18 @@ class AgentRuntimeEngine:
                 raise KeyError(preferredRuntimeId)
             if probeRuntime(self.registry[preferredRuntimeId]).state != "ready":
                 raise RuntimeUnavailableError(f"{preferredRuntimeId} CLI를 사용할 수 없습니다")
+            if not probeMcpConnection(preferredRuntimeId).get("connected"):
+                raise RuntimeUnavailableError(
+                    f"{preferredRuntimeId}에 DartLab MCP가 연결되지 않았습니다. "
+                    f"`dartlab agent connect {preferredRuntimeId}`로 승인 계획을 확인하세요"
+                )
             return preferredRuntimeId
         for runtimeId, descriptor in self.registry.items():
-            if probeRuntime(descriptor).state == "ready":
+            if probeRuntime(descriptor).state == "ready" and probeMcpConnection(runtimeId).get("connected"):
                 return runtimeId
         raise RuntimeUnavailableError(
-            "지원하는 로컬 에이전트 CLI를 찾지 못했습니다. `dartlab agent setup`을 실행하세요"
+            "DartLab MCP까지 준비된 로컬 에이전트를 찾지 못했습니다. "
+            "`dartlab agent status --refresh`에서 설치와 연결 상태를 확인하세요"
         )
 
     def openSession(

@@ -10,6 +10,7 @@ import sys
 import threading
 import time
 from dataclasses import asdict, dataclass
+from pathlib import Path
 
 from .discovery import discoverExecutable
 from .registry import loadRuntimeRegistry
@@ -81,8 +82,10 @@ def buildMcpConnectPlan(runtimeId: str) -> McpConnectPlan:
         argv = (executable, "mcp", "add", "dartlab", "--", *serverArgs)
     elif runtimeId == "claude":
         argv = (executable, "mcp", "add", "--scope", "user", "dartlab", "--", *serverArgs)
+    elif runtimeId == "cline":
+        argv = (executable, "mcp", "install", "dartlab", "--yes", "--json", "--", *serverArgs)
     else:
-        raise ValueError(f"{runtimeId}는 ACP 세션에 MCP를 내장하므로 전역 설정이 필요하지 않습니다")
+        raise ValueError(f"{runtimeId}의 MCP 연결 방식을 지원하지 않습니다")
     canonical = json.dumps({"runtimeId": runtimeId, "argv": argv}, ensure_ascii=False, separators=(",", ":"))
     digest = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
     return McpConnectPlan(runtimeId, argv, digest)
@@ -122,8 +125,6 @@ def probeMcpConnection(runtimeId: str, *, refresh: bool = False) -> dict[str, ob
     Returns: connected, mode, detail을 가진 상태다.
     Example: `probeMcpConnection("cline")`.
     """
-    if runtimeId == "cline":
-        return {"connected": True, "mode": "embedded-acp", "detail": None}
     if not refresh:
         with _MCP_CACHE_LOCK:
             cached = _MCP_CACHE.get(runtimeId)
@@ -136,6 +137,16 @@ def probeMcpConnection(runtimeId: str, *, refresh: bool = False) -> dict[str, ob
             "connected": False,
             "mode": "global-cli",
             "detail": "runtime_missing",
+        }
+        with _MCP_CACHE_LOCK:
+            _MCP_CACHE[runtimeId] = (time.monotonic(), result)
+        return dict(result)
+    if runtimeId == "cline":
+        connected = _clineMcpConfigured()
+        result = {
+            "connected": connected,
+            "mode": "global-cli",
+            "detail": "official_settings" if connected else "not_configured",
         }
         with _MCP_CACHE_LOCK:
             _MCP_CACHE[runtimeId] = (time.monotonic(), result)
@@ -159,3 +170,14 @@ def probeMcpConnection(runtimeId: str, *, refresh: bool = False) -> dict[str, ob
     with _MCP_CACHE_LOCK:
         _MCP_CACHE[runtimeId] = (time.monotonic(), result)
     return dict(result)
+
+
+def _clineMcpConfigured(configRoot: Path | None = None) -> bool:
+    """Cline 공식 설정에서 DartLab MCP 항목의 존재만 확인한다."""
+    root = configRoot or Path.home() / ".cline"
+    try:
+        value = json.loads((root / "data" / "settings" / "cline_mcp_settings.json").read_text(encoding="utf-8"))
+    except (OSError, TypeError, ValueError, json.JSONDecodeError):
+        return False
+    servers = value.get("mcpServers") if isinstance(value, dict) else None
+    return isinstance(servers, dict) and isinstance(servers.get("dartlab"), dict)

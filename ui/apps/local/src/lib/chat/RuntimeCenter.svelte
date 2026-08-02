@@ -25,7 +25,10 @@
 		error = null;
 		try {
 			runtimes = await listAgentRuntimes(refresh);
-			selected = localStorage.getItem('dartlab-agent-runtime') ?? runtimes.find((item) => item.state === 'ready')?.runtimeId ?? '';
+			const stored = localStorage.getItem('dartlab-agent-runtime');
+			selected = runtimes.some((item) => item.runtimeId === stored && item.groundedReady)
+				? (stored ?? '')
+				: (runtimes.find((item) => item.groundedReady)?.runtimeId ?? '');
 		} catch (reason) {
 			error = reason instanceof Error ? reason.message : String(reason);
 		} finally {
@@ -90,7 +93,7 @@
 							<strong>{runtime.displayName}</strong>
 							<span>{runtime.protocol}</span>
 						</div>
-						<span class:ready={runtime.state === 'ready'} class="state">{runtime.state}</span>
+						<span class:ready={runtime.groundedReady} class="state">{runtime.groundedReady ? '사용 가능' : runtime.state}</span>
 					</div>
 					<dl>
 						<div><dt>버전</dt><dd>{runtime.version ?? '미설치'}</dd></div>
@@ -99,10 +102,10 @@
 					</dl>
 					<div class="actions">
 						{#if runtime.state === 'ready'}
-							<button onclick={() => selectRuntime(runtime.runtimeId)} disabled={selected === runtime.runtimeId}>
+							<button onclick={() => selectRuntime(runtime.runtimeId)} disabled={!runtime.groundedReady || selected === runtime.runtimeId}>
 								{selected === runtime.runtimeId ? '사용 중' : '이 런타임 사용'}
 							</button>
-							{#if !runtime.mcp?.connected && runtime.runtimeId !== 'cline'}
+							{#if !runtime.mcp?.connected}
 								<button class="secondary" onclick={() => makePlan('mcp', runtime.runtimeId)} disabled={busy !== null}>MCP 연결</button>
 							{/if}
 						{:else}
