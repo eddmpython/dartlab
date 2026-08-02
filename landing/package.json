@@ -64,7 +64,7 @@
 		"layerchart": "^1.0.13",
 		"lucide-svelte": "^1.0.1",
 		"marked": "^18.0.5",
-		"pyproc": "0.0.10",
+		"pyproc": "0.0.11",
 		"tailwind-merge": "^3.6.0",
 		"unist-util-visit": "^5.1.0"
 	}

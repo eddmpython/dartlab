@@ -102,7 +102,7 @@ _dl_app = _w.buildBrowserApi()
 
 	const report = {
 		ok: true,
-		pyproc: '0.0.10',
+		pyproc: pyprocVersion,
 		pyodide: PYODIDE_VERSION,
 		dartlab: DARTLAB_VERSION,
 		history: { branchParent: branchNode.parent, restored: 1 },
