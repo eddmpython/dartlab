@@ -64,9 +64,9 @@ node_modules/
 .wrangler/
 
 # UI build artifacts
-ui/build/
-src/dartlab/ui/build/
-ui/node_modules/
+/ui/build/
+/src/dartlab/ui/build/
+/ui/node_modules/
 
 # Playwright before/after 검증 산출물 (UI 변경 시각 비교용, 커밋 X)
 ui/screenshots/
