@@ -78,6 +78,18 @@ def test_no_violation_when_with_company_used():
     assert violations == []
 
 
+def test_no_violation_when_lazy_company_context_used():
+    """lazy 공개 진입점의 context manager 도 __exit__ cleanup 으로 인정."""
+    src = """
+    def update(codes):
+        for code in codes:
+            with getattr(dartlab, "Company")(code) as company:
+                company._buildFinanceSeries(freq="Q")
+    """
+    violations = _runVisitor(src)
+    assert violations == []
+
+
 def test_no_violation_when_loop_var_not_company_hint():
     """변수명 hint 없음 (예: `for i in range(10):`) → 검출 안 함."""
     src = """

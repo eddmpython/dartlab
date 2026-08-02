@@ -709,7 +709,8 @@ def test_dartzip_full_rebuild_flag_routes_build(monkeypatch, tmp_path) -> None:
 
     monkeypatch.setattr(cfg, "dataDir", str(tmp_path))
 
-    def fakeArchive(start, end, *, scope, showProgress):
+    def fakeArchive(start, end, *, scope, corpClasses, showProgress):
+        assert corpClasses == ("Y", "K", "N")
         d = tmp_path / "original" / "dart" / "docs" / "AAA"
         d.mkdir(parents=True, exist_ok=True)
         (d / "20250101000001.zip").write_bytes(b"PK\x03\x04")  # 신규 zip → newZipsByCode 차분 포착

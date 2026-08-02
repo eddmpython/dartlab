@@ -44,4 +44,6 @@ def testSimulationInputsReturnsCoherentBoundedSeries():
         "asOf": "2024-Q3",
         "latestAsOf": "2024-Q4",
         "requestedAsOf": "2024-Q3",
+        "shares": None,
+        "sharesEvidence": None,
     }

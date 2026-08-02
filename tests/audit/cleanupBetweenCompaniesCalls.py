@@ -91,6 +91,15 @@ class _AuditVisitor(ast.NodeVisitor):
                             return True
                         if isinstance(f, ast.Attribute) and f.attr == "Company":
                             return True
+                        if (
+                            isinstance(f, ast.Call)
+                            and isinstance(f.func, ast.Name)
+                            and f.func.id == "getattr"
+                            and len(f.args) >= 2
+                            and isinstance(f.args[1], ast.Constant)
+                            and f.args[1].value == "Company"
+                        ):
+                            return True
         return False
 
 
