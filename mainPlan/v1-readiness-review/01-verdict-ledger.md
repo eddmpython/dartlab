@@ -49,12 +49,13 @@ Guard는 현재 레이어의 source를 동결한 뒤 한 번 실행한다. Guard
 
 ### 세션 인계
 
-- 현재 계층: **L4 소비자·AI·MCP** (진입 대기)
+- 현재 계층: **L4 소비자·AI·MCP** (진행 중)
 - 최근 완료한 레이어: **L3 story·simulate 전체 완료** (2026-08-01). Story 381개,
   simulate 509개, L3 bridge 뒤 DataHub 606개와 architecture 계약이 통과했다. 공식 strict
   Guard는 1,796파일, 7개 규칙과 6개 외부 게이트 모두 통과했다. 그 앞은 L0 core,
   L1 gather/providers, L1.5 scan/frame/synth/reference, L2 다섯 엔진, L2.5 dataHub 완료다.
 - 현재 작업 단위: **L4 공개 소비자 전체 안정화**. 파일이나 함수 하나를 별도 완료 단위로
+- 현재 작업 단위: **L4 툴 레지스트리 단일 SSOT 확립** (첫 응집 변경). agent.py와 MCP가 서로 다른 툴 목록을 사용하는 드리프트를 CANONICAL_V2 단일 원장으로 통일한다. agent의 고아 툴 4종(EvidenceGate, GroundingCheck, PickStoryTemplate, RunWorkbench)은 CANONICAL_V2에 없고 LLM에 노출되며 실행 가능하다. 반대로 V2의 ExternalReachDoctor, ReadSkillMarket, ScenarioOverlay는 agent 경로에서 보이지 않는다. registry의 고아 툴 10종도 _SPECS와 _TOOLS에서 제거한다.
   쪼개지 않는다.
 - L4 완료 조건: AI tool dispatch와 serialization, public capability catalog, Web/API/MCP와
   브라우저 소비자가 L0-L3의 status·gap·provenance·asOf를 보존하는지 전수 대조한다.

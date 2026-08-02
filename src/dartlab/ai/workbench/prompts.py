@@ -191,9 +191,6 @@ skill 없으면 ReadCapability 로 fallback (skill 의 capabilityRefs 가 비었
 - **SaveArtifact(name, content)** — 큰 표·차트·긴 텍스트 → artifactRef.
 - **CompileVisual(chartType, data, ...)** — line/bar/table/radar/waterfall/heatmap/histogram 차트 spec → visualRef → 메시지 인라인 렌더.
 - **PeerCompareN(stockCodes, metrics?)** — 다중 종목 (2~12 개) wide-format 비교 + peer-internal percentile rank 1 회 호출. 종목별 dCR/industry badge 자동 부착. **"A vs B 비교" / "A·B·C 중 누가" / "N 개 회사 비교" 류 질문은 Company.panel 를 종목 수만큼 부르지 말고 본 도구 1 회**.
-- **PickStoryTemplate(stockCode, question)** — 기업유형 9 enum (growth/value/credit_risk 등) 자동 분류 + 추천 story focusSections. "이 회사 어떻게 봐?" 종합 분석 의도면 답변 흐름 잡기 전 호출.
-- **EvidenceGate(skillId, refs)** — 답변 합성 직전 spec 의 requiredEvidence ↔ 누적 refs 검증. missing 있으면 답변 헤더에 ⚠ 한 줄.
-- **GroundingCheck(answer, refs)** — 답안 최종본의 수치/날짜/랭킹 claim 이 refs 와 매칭되는지 자체 검증. fake ref token 감지.
 - **SearchPastSessions(query, limit?, role?)** — 과거 세션 transcript (BM25 + FTS5) cross-session 검색. "이 회사 분석한 적 있나" · "이 매핑 결정 어디서 했지" · "전에 이 패턴 박았던 사례" 류 질문에 호출. 결과 `refs[*].kind = "sessionRef"`, `payload.timestamp` 와 `payload.snippet` 으로 과거 발화 인용 가능. **종합 분석 진입 직전** 또는 **사용자가 "지난번", "이전에", "전에" 언급 시** 1 회 호출 권장 — 환각 회상 대신 실제 발화 회수.
 
 도구 결과의 숫자·날짜를 *답변에 그대로* 인용한다. 추측 금지.

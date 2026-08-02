@@ -34,7 +34,7 @@ from .contracts import TraceEvent
 from .providers import streamProvider
 from .toolAdmission import executeAllowedTool
 from .tools.formatting import wrapExternalInResult
-from .tools.registry import executeTool, isToolReadOnly, toolSpecs
+from .tools.registry import CANONICAL_V2, executeTool, isToolReadOnly, toolSpecs
 from .toolStorage import buildPersistedContent, exceedsSizeCap, persistLargeResult
 from .workbench.prompts import DARTLAB_CHAT_SYSTEM
 
@@ -72,50 +72,10 @@ def _lazyToolSpecEnabled() -> bool:
     return os.getenv("DARTLAB_LAZY_TOOL_SPEC", "1").lower() in ("1", "true", "yes")
 
 
-# LLM 노출 도구 set — PascalCase (Claude 도구 체계 호환). Skill 우선 → Capability → 실행 → 시각화.
-# EngineCall = 단일 capability 1 회. RunPython = 다단 계산. Read = 파일 직접 인용.
-# RunWorkbench 는 5 패스 elevate 명시 경로 — feedback_no_graph_regression.md 정당 활성 경로 (2).
-_DEFAULT_TOOL_NAMES: tuple[str, ...] = (
-    "ReadSkill",
-    "GetSkillBody",
-    "ReadCapability",
-    "EngineCall",
-    "RunPython",
-    "Read",
-    "WebSearch",
-    "SaveArtifact",
-    "CreateUserSkill",
-    "CompileVisual",
-    # 마스터 플랜 트랙 1 PR-1 — Damodaran DCF wrap (bear/base/bull 3 시나리오).
-    # 직전 회귀: LLM 이 매번 RunPython 으로 ad-hoc DCF 코드 작성 → token 30% 낭비.
-    # default 노출 누락 시 LLM 호출 0 회 회귀 (2026-05-17 default 미노출 패턴).
-    "DCFValuation",
-    # 마스터 플랜 트랙 1 PR-2 — N(2~12) 종목 단일 비교 도구 + percentile rank.
-    # 옛 max 3 한계 확장 + peer-internal ranking. 2~3 종목 비교도 본 도구가 흡수.
-    "PeerCompareN",
-    # 마스터 플랜 트랙 1 PR-5 — N(2~5) macro 시나리오 baseline 대비 동시 비교.
-    # ScenarioOverlay 1 회 + RunPython loop 우회 → 1 회 호출.
-    "ScenarioCompareN",
-    # 마스터 플랜 트랙 1 PR-6 — dCR 신용등급 + 1Y PD + 7 축 분석.
-    # credit.engine.evaluateCompany wrap, RunPython 으로 ad-hoc credit 계산 우회.
-    "CreditScorecard",
-    # 마스터 플랜 트랙 1 PR-4 — DCF parameter grid (WACC × growth) 민감도 매트릭스.
-    # multiStageDcf 반복 호출 grid loop wrap.
-    "SensitivityAnalysis",
-    # 마스터 플랜 트랙 1 PR-3 — 단일 종목 한 화면 dashboard (3 template).
-    # companyMetrics + CompileVisual + RunPython 다단 우회 회귀 차단.
-    "CompileFinancialDashboard",
-    # 마스터 플랜 트랙 1 PR-7 — 매출 성장률 회귀 예측 (cross/panel cache load).
-    # crossRegression.fit* + loadModel/loadPanelModel wrap.
-    "RegressionForecast",
-    "PickStoryTemplate",
-    "EvidenceGate",
-    "GroundingCheck",
-    "RunWorkbench",
-    # 과거 세션 transcript cross-session 검색 — "이 회사 분석한 적 있나" / "이 매핑 결정
-    # 어디서 했지" 류 질문에서 LLM 자율 호출. BM25 + FTS5 (sessionIndex.db ~/.dartlab/).
-    "SearchPastSessions",
-)
+# LLM 노출 도구 set — registry CANONICAL_V2 SSOT (agent-MCP 드리프트 회귀 가드).
+# 이전에는 agent.py가 자체 하드코딩 목록을 유지해 CANONICAL_V2와 불일치했다.
+# 외부에서 toolNames= 인자로 재정의 가능.
+_DEFAULT_TOOL_NAMES: tuple[str, ...] = CANONICAL_V2
 
 
 def runAgent(
