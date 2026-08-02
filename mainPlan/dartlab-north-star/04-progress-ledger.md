@@ -75,3 +75,15 @@
 ### 판정
 
 `improve`. semantic foundation은 실제 verified 전이까지 동작한다. 다음 단계는 4개 주간 evidence window와 자동 증거 registry이며, 그 전까지 전역 북극성 값은 계속 `미측정`이다.
+
+## 2026-08-02 FY 정량 GUI verified loop 재검증
+
+- local GUI의 UTF-8 `/api/agent/runs`에서 2024년 연간 매출액 질문이 `ReadSkill -> EngineCall`로 완료됐다.
+- 엔진이 IS 분기 4개를 FY로 합산해 300,870,903,000,000원을 반환했고 답변은 FY table/value/date exact ref를 함께 인용했다.
+- 중앙 정량 품질 게이트는 값·기간 payload와 답변 산문의 결합을 검사해 100점으로 통과시켰다.
+- 같은 outcome에서 `value:005930:IS:2024FY:sales`를 다시 열어 period, value, hash receipt 일치를 확인한 뒤 상태가 `verified`로 전이했다.
+- 이 기록은 로컬 개발 환경의 추가 실증이며 전역 주간 분자나 성장 실적으로 합산하지 않는다. 주간 cohort authority와 4개 완전한 evidence window가 생기기 전까지 전역 북극성 값은 계속 `미측정`이다.
+
+### 판정
+
+`improve`. 단순 evidence chip이 아니라 답변 품질 commit과 exact ref 확인이 한 제품 여정에서 연결됐다. 다음 주기에는 질문 유형별 golden set의 품질 점수, 응답 시간, verified 전환을 같은 evidence registry에 등록한다.

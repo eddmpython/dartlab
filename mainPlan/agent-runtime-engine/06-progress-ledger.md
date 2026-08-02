@@ -114,3 +114,34 @@ Agent Runtime vertical slice와 Claude grounded delivery는 production 진입 �
 ### Exit decision
 
 Claude와 Codex, local GUI의 verified analysis loop는 production 진입 가능하다. Cline embedded는 upstream capability proof 전까지 명시적으로 unavailable이며, 이 제한은 runtime 전체의 Claude 또는 Codex 사용을 막지 않는다. root 점수는 계약대로 즉시 올리지 않고 주간 outcome review에서 재판정한다.
+
+## 2026-08-02 완전성 강화와 실가동 재검증
+
+상태: 답변 공개, 근거 복구, 총 실행시간, 연결 이탈, 동시성, FY 계산, Runtime Center의 실패 계약을 하나의 production 경계로 묶었다. "주요 구현"이 아니라 실제 질문이 정확한 근거와 함께 끝나거나 명시적으로 실패하는지를 완료 기준으로 삼는다.
+
+### 강화한 실행 계약
+
+- 중앙 `answerQuality`가 질문을 정량·문서 계약으로 분류한다. 정량 답변은 표/문서, 값, 기준시점 ref의 본문 인용뿐 아니라 인용 ref payload의 실제 값과 기간이 산문에 함께 결합돼야 공개된다. ref ID 문자열만 복사한 답변은 통과하지 못한다.
+- 공개 답변은 native 정상 완료와 품질 게이트 통과 전까지 버퍼에 보류한다. 실패·중단·제한 초과 턴의 부분 산문은 UI에 공개하지 않는다.
+- evidence는 transcript 없이 16 KiB 이하 공개 projection만 SQLite에 bounded 저장한다. 서버 재시작 뒤에도 exact `(outcomeId, refId)`만 복구하며 다른 outcome의 ref는 해석하지 않는다.
+- 같은 세션의 동시 턴은 non-blocking lock으로 거부한다. hot-session LRU는 활성 턴을 퇴거하지 않고, 모두 활성 상태면 새 세션을 실패 폐쇄형으로 거부한다.
+- 세 native driver는 프레임마다 갱신되지 않는 총 턴 deadline을 공유한다. 기본 300초, 환경 설정 범위 30~900초이며 초과 시 native interrupt/cancel과 공개 실패 이벤트를 남긴다.
+- SSE 소비자 이탈과 async generator close도 native cancel로 연결한다. 실제 연결 종료 뒤 세션이 거짓 idle로 남거나 child turn이 계속 도는 경로를 차단했다.
+- 분석 캡슐은 호스트가 완료한 bootstrap을 반복하지 않고, 사용자 의도의 `ReadSkill` 1회, 일반 질문 도구 8회 이내, 동일 인자 반복 금지, DartLab 외 MCP 금지, 근거 충족 즉시 종료를 선언한다.
+- 질문에 명시된 첫 연도·분기를 bounded application context의 `period` 힌트로 승격한다. `Company.panel(period=YYYY, freq=Y)`는 IS/CF 네 분기를 FY로 직접 합산하고 FY table/value/date ref를 반환하므로 모델의 수기 재계산이 필요 없다.
+- Runtime Center는 `groundedReady`, `canInstall`, `canConnect`, `blockingReason`, `recommendedAction`을 서버 정본 그대로 표시한다. protocol이 DartLab 근거 도구를 노출하지 않는 runtime에는 성공할 수 없는 설치·연결 동작을 제안하지 않는다.
+- `dartlab ai --dev`는 UI app이 아니라 npm workspace root에서 의존성과 Vite binary를 찾고 workspace 명령으로 기동한다. 실제 5174/8400 동시 listen을 재검증했다.
+
+### 실제 제품 여정
+
+- 정량 CLI 질의: 2024년 매출액과 영업이익의 전년 비교를 실제 설치형 runtime에서 6개 도구로 완주했고 exact 값·표·기간 근거를 반환했다.
+- 문서 CLI 질의: 2024 감사인과 별도/연결 감사의견을 실제 설치형 runtime에서 공시 문서·보고일·감사보고서 기준일 근거로 완주했다.
+- UTF-8 local GUI SSE 질의: 삼성전자 2024년 연간 매출액 질문이 61.6초, 의미 도구 `ReadSkill -> EngineCall` 2회로 끝났다. 답변은 300,870,903,000,000원, `table:005930:IS:2024FY`, `value:005930:IS:2024FY:sales`, `date:005930:IS:2024FY`를 인용했고 정량 품질 100점이었다.
+- 같은 GUI outcome의 exact value ref를 verification API로 다시 열어 `period=2024FY`, `value=300870903000000`, outcome state `verified`를 확인했다.
+- 장기 실행 GUI 턴을 실제 cancel API로 중단했을 때 native terminal status가 `interrupted`, `activeTurnId=null`로 끝났다. 별도 연결 이탈 회귀도 native interrupt 1회를 보장한다.
+- 의도적으로 끝나지 않는 턴은 302.9초에 "300초 제한 초과"로 실패했고 답변과 refs를 공개하지 않았다. 이 실측으로 무한 연장 결함을 회귀 자산으로 전환했다.
+- `/chat`은 HTTP 200으로 기동했고, 준비된 runtime은 `groundedReady=true`, protocol 근거 미지원 runtime은 `groundedReady=false`와 차단 사유를 반환했다.
+
+### Exit decision
+
+`improve`. 지원 protocol의 정량·문서 질의, GUI streaming, 품질 commit, exact evidence verify, cancel, timeout, restart recovery가 production 경로에서 실증됐다. 모든 질문의 정답을 보장한다는 의미의 절대적 "완벽"은 선언하지 않으며, 미지원 protocol은 계속 fail-closed다. 다음 운영 과제는 질문군별 golden set과 주간 verified/retained cohort를 누적해 품질 하락을 자동 탐지하는 것이다.
