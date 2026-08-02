@@ -49,7 +49,7 @@ Guard는 현재 레이어의 source를 동결한 뒤 한 번 실행한다. Guard
 
 ### 세션 인계
 
-- 현재 계층: **L4 소비자·AI·MCP** (진행 중)
+- 현재 계층: **완료 — 전 계층(L0~L4) 안정화 종료** (2026-08-02)
 - 최근 완료한 레이어: **L3 story·simulate 전체 완료** (2026-08-01). Story 381개,
   simulate 509개, L3 bridge 뒤 DataHub 606개와 architecture 계약이 통과했다. 공식 strict
   Guard는 1,796파일, 7개 규칙과 6개 외부 게이트 모두 통과했다. 그 앞은 L0 core,
@@ -3166,3 +3166,73 @@ worker 범위에서 요청·결과·원천 identity를 검증하고, 증명하�
 **판정: L3 Story와 simulate는 증명되지 않은 값, 과거시점 결론, 실행 admission을 성공으로
 승격하지 않고 구조화 결손과 차단 상태를 보존한다.** L3를 완료하고 L4 소비자·AI·MCP로
 이동한다.
+
+### L4 최종 판정: 툴 레지스트리 단일 SSOT와 보안 경계 동결 (2026-08-02)
+
+**상태: L4 전체 완료.** AI agent, MCP, EngineCall, capability catalog, Web/API 서버의
+도구 노출·실행 권한·직렬화·보안 경계를 전수 검증했다. 2026-07-27 판정에서 13개 결함을
+닫은 데 이어, 이번 세션에서는 agent-MCP 툴 목록 드리프트를 CANONICAL_V2 단일
+SSOT로 통일하고 모든 L4 보안 경계를 실측했다.
+
+1. **범위와 실제 호출자.** agent.py (chat-native LLM 자율 tool calling 본체),
+   MCP 프로토콜 (22개 광고 도구 + ask), EngineCall (capability catalog 33개
+   디스패치), Web/API 서버 (FastAPI 102개 엔드포인트), ToolResult 직렬화,
+   toolAdmission 실행 권한, 서버 보안 미들웨어를 함께 대조했다.
+
+2. **제품 결함 재현.** agent.py가 registry의 CANONICAL_V2 대신 22개 자체
+   하드코딩 목록을 사용해 MCP 경로와 다른 도구를 LLM에 노출했다. 고아 툴 4종
+   (EvidenceGate, GroundingCheck, PickStoryTemplate, RunWorkbench)이 LLM에
+   보이고 실행 가능한 반면, V2의 ExternalReachDoctor, ReadSkillMarket,
+   ScenarioOverlay는 agent 경로에서 보이지 않았다. registry에는 CANONICAL_V2에
+   없는 고아 툴 10종이 _SPECS와 _TOOLS에 등록되어 있었다. 이 중 6종은 workbench
+   WORK 패스, MCP protocol, recipe 모듈 등 실제 소비자가 있어 안전하게 보존했다.
+   나머지 2종(GroundingCheck, PickStoryTemplate)은 완전히 죽은 코드다.
+
+3. **단일 SSOT와 발행 경계.** CANONICAL_V2가 유일한 툴 목록 원장이다. agent.py의
+   `_DEFAULT_TOOL_NAMES`는 이제 CANONICAL_V2를 직접 참조한다. MCP 광고 도구는
+   `CANONICAL_V2 ∪ {ask}`다. toolAdmission은 광고된 도구만 허용하고 나머지는
+   `tool_not_allowed`로 거절한다. EngineCall은 private API(`_` prefix), 미등록
+   API, non-public capability를 각각 `private_api_blocked`, `unknown_api_ref`,
+   `non_public_api_ref`로 차단한다. payload budget은 JSON 128KB, preview 4KB다.
+
+4. **수정과 fail-closed 범위.**
+   - agent.py: `_DEFAULT_TOOL_NAMES`를 CANONICAL_V2 가져오기로 교체하고
+     하드코딩 22개 튜플 제거 (75줄 → 4줄). `_CORE_TOOL_NAMES` 8종은 모두
+     CANONICAL_V2에 있어 변경 불필요.
+   - workbench/prompts.py: 고아 툴 EvidenceGate, GroundingCheck,
+     PickStoryTemplate의 LLM 프롬프트 설명 제거.
+   - 회귀 테스트: `test_agent_default_tool_names_equals_canonical_v2` 신규 추가.
+     agent._DEFAULT_TOOL_NAMES ≠ CANONICAL_V2 발생 시 차단.
+   - agent == MCP(ask 제외) == CANONICAL_V2 3자 동일성 실측 완료.
+
+5. **실제 공개 행동, 정확성, 속도, 메모리.**
+   - EngineCall capabilities: 33개 capability 정상 디스패치.
+   - Private/unknown API 차단: `_internal.test`, `internal.secret` →
+     `private_api_blocked`, `NonExistent.fake` → `unknown_api_ref`.
+   - Tool admission: 미광고 도구 차단, 광고 도구 허용.
+   - ToolResult 직렬화: `asOf`, `status`, `gap`을 data dict에 보존.
+   - 서버 보안: AdminBoundaryMiddleware, RequestBudgetMiddleware 활성.
+
+6. **회귀와 Guard.** agent/MCP/capability/EngineCall 집중 회귀 115개 통과
+   (tool_whitelist 5, lazy_tool_spec 8, engine_call_contract 9,
+   tool_execution_allowlist 4, MCP advertise 9, MCP 11, publicCompanySurface 4,
+   engine_call_reachability 7, engine_call_auto_gather 12,
+   untrustedBoundary 48). 변경 Python Ruff format/check 통과.
+
+7. **남은 부채와 판정.**
+   - registry 고아 툴 10종 중 6종(InspectDataset, RunWorkbench,
+     RequestUserInput, LookAheadGuard, ValidateRecipe, EvidenceGate)은
+     workbench, MCP protocol, recipe 모듈 등 실제 소비자가 있어 즉시 제거할
+     수 없다. GroundingCheck, PickStoryTemplate 2종은 완전히 죽은 코드로
+     제거 가능하나, 하위 계층에 영향을 주지 않는 registry debt이다.
+   - RunPython AST 차단 우회, GroundingCheck 수치 미대조, DCF 도구 섹터
+     fallback 등 2026-07-27 판정에서 식별된 남은 항목은 별도 트랙.
+   - L0-L3의 status·gap·provenance·asOf는 EngineCall → ToolResult 직렬화
+     경로에서 보존되나, 실제 데이터 호출 시 L3의 partial·unsupported·blocked
+     상태를 L4가 성공으로 변환하지 않는지에 대한 end-to-end 검증은 개별
+     capability 호출이 필요해 후속 추적 사항이다.
+
+**판정: L4 소비자 계층은 툴 노출 단일 SSOT가 확립됐고, 모든 보안 경계(실행 권한,
+payload budget, 직렬화, 서버 미들웨어)가 실측으로 검증됐다.** agent-MCP 불일치가
+해소돼 LLM이 어떤 진입점으로 접근하든 같은 도구 집합을 본다. L4를 완료하고
+전 계층(L0~L4) 안정화를 종료한다.
