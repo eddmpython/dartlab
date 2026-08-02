@@ -16,6 +16,12 @@
 
 이유: 완료를 `_done` 으로 매듭짓지 않으면 다음 세션이 끝난 PRD 를 활성으로 착각해 재착수하고, 활성 목록이 부풀어 진짜 남은 일이 안 보인다. 규약 SSOT = memory `feedback_mainplan_operation`.
 
+## 0. 제품 방향 · 북극성 운영
+
+| 폴더 | 상태 | 한 줄 |
+|---|---|---|
+| [dartlab-north-star](dartlab-north-star/) | ⚪ | 북극성 `Weekly Verified Analysis Loops`와 outcome lifecycle, 실행 증거 registry, scorecard, 주간 제품 운영 주기를 세운다. 현재 값은 `미측정`, Phase 0 착수 대기. |
+
 ## 1. 분석 리포트 · 서사 엔진
 
 회사 단위 전문 리포트와 서사 조립.
@@ -64,8 +70,9 @@
 
 | 폴더 | 상태 | 한 줄 |
 |---|---|---|
-| [ai-workbench-connector](ai-workbench-connector/) | ⚪ | 외부 AI 가 호출하는 evidence workbench connector(MCP-first·CF Worker). 구현 착수 PRD, 코드 0. |
-| [first-party-ai](first-party-ai/) | ⚪ | dartlab 자신이 글쓰고 분석하는 1급 AI 레인. 비전 PRD, 구현 0. |
+| [agent-runtime-engine](agent-runtime-engine/) | ⚪ | 설치된 Codex·Claude Code·ACP agent를 사용하는 local Bring Your Agent runtime. 직접 모델 OAuth/API와 provider hardcoding을 제거하는 상세 설계, 구현 0. |
+| [ai-workbench-connector](ai-workbench-connector/) | ⚪ | 외부 AI 가 호출하는 remote evidence workbench connector. local MCP tool identity는 agent-runtime-engine과 정합하되 remote auth/CF 경계는 별도. |
+| [first-party-ai](first-party-ai/) | ⚪ | public deterministic/on-device compose 중심으로 재정합 필요. local advanced provider와 direct edge model 전제는 agent-runtime-engine 결정 뒤 재검. |
 
 ## 8. 인프라 · 기술 연구
 
@@ -87,4 +94,4 @@
 
 ## 정리 관찰 (후속 판단 필요)
 
-- **미착수 설계 백로그**: `ai-workbench-connector` · `first-party-ai` · `financial-statement-lab` · `tutorial-guide` · `brokerage-research-index`는 "착수 = 운영자 go"인 설계 항목이다. 활성 구현과 구분한다.
+- **미착수 설계 백로그**: `dartlab-north-star` · `agent-runtime-engine` · `ai-workbench-connector` · `first-party-ai` · `financial-statement-lab` · `tutorial-guide` · `brokerage-research-index`는 "착수 = 운영자 go"인 설계 항목이다. 활성 구현과 구분한다.

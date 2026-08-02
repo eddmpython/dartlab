@@ -1,5 +1,7 @@
 # DartLab AI Workbench Connector PRD Index
 
+> 2026-08-02 경계 포인터: 본 계획은 remote public evidence connector를 소유한다. installed local agent의 discovery, auth, session, MCP bootstrap은 [agent-runtime-engine](../agent-runtime-engine/)이 소유한다. canonical evidence와 tool identity는 `src/dartlab` 정본을 함께 소비하고 별도 schema를 만들지 않는다.
+
 상태: 비전 + 구현 착수 PRD v0.2 (2026-06-17, 제품 전략 · Cloudflare/MCP 아키텍처 · 보안/프라이버시 · AI 생태계 상호운용성 4 렌즈 토론 후 작성, 구현 계약 보강)
 범위: DartLab 을 특정 챗봇에 종속된 기능이 아니라, 외부 AI 들이 공시 · 재무 · 워치리스트 · viewer/terminal 상태를 안전하게 조회하는 **AI-native evidence workbench layer** 로 만든다. ChatGPT 는 1차 배포 채널이지만 제품 코어가 아니다.
 
@@ -39,15 +41,15 @@ ChatGPT / Claude / Gemini / 임의 에이전트
 
 ## 문서 지도
 
-1. [00-product-vision.md](00-product-vision.md) — 제품 정의, 사용자, 차별화, 성공/실패 기준, 왜 챗봇이 아닌 connector 인가.
-2. [01-ecosystem-interop.md](01-ecosystem-interop.md) — MCP-first/OpenAPI-compatible 근거, ChatGPT/Claude/Gemini/agent framework 별 adapter 원칙.
-3. [02-neutral-tool-contract.md](02-neutral-tool-contract.md) — Canonical Tool Contract, Evidence Pack envelope, resources/prompts, tool 목록과 금지 tool.
-4. [03-cloudflare-worker-architecture.md](03-cloudflare-worker-architecture.md) — `infra/workers/dartlabConnector` 배치, endpoint, data plane, 기존 Worker 재사용, deployment 원칙.
-5. [04-state-and-deeplink.md](04-state-and-deeplink.md) — public/private state, viewer/terminal link, stateId 스키마, TTL/권한/재현성.
-6. [05-auth-privacy-security.md](05-auth-privacy-security.md) — OAuth scope, secret 관리, prompt injection, rate limit, 투자 조언 리스크, logging.
-7. [06-evaluation-phasing-kill-list.md](06-evaluation-phasing-kill-list.md) — 수용 기준, eval, Phase, KILL/DEFER, 출시 차단 게이트.
-8. [07-progress-ledger.md](07-progress-ledger.md) — 토론 수렴 기록, 결정 원장, NEXT.
-9. [08-implementation-plan.md](08-implementation-plan.md) — tool 별 AC, data source map, endpoint/schema, OAuth gate, eval fixture, rollout.
+1. [00-product-vision.md](00-product-vision.md): 제품 정의, 사용자, 차별화, 성공/실패 기준, 왜 챗봇이 아닌 connector 인가.
+2. [01-ecosystem-interop.md](01-ecosystem-interop.md): MCP-first/OpenAPI-compatible 근거, ChatGPT/Claude/Gemini/agent framework 별 adapter 원칙.
+3. [02-neutral-tool-contract.md](02-neutral-tool-contract.md): Canonical Tool Contract, Evidence Pack envelope, resources/prompts, tool 목록과 금지 tool.
+4. [03-cloudflare-worker-architecture.md](03-cloudflare-worker-architecture.md): `infra/workers/dartlabConnector` 배치, endpoint, data plane, 기존 Worker 재사용, deployment 원칙.
+5. [04-state-and-deeplink.md](04-state-and-deeplink.md): public/private state, viewer/terminal link, stateId 스키마, TTL/권한/재현성.
+6. [05-auth-privacy-security.md](05-auth-privacy-security.md): OAuth scope, secret 관리, prompt injection, rate limit, 투자 조언 리스크, logging.
+7. [06-evaluation-phasing-kill-list.md](06-evaluation-phasing-kill-list.md): 수용 기준, eval, Phase, KILL/DEFER, 출시 차단 게이트.
+8. [07-progress-ledger.md](07-progress-ledger.md): 토론 수렴 기록, 결정 원장, NEXT.
+9. [08-implementation-plan.md](08-implementation-plan.md): tool 별 AC, data source map, endpoint/schema, OAuth gate, eval fixture, rollout.
 
 ---
 
