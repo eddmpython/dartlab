@@ -3323,3 +3323,32 @@ rSquared 가 1.0 이 된다(입구 가드 `minOrigins < max(2, width)` 는 등�
 fail-closed 를 실측으로 통과했다. 미도달 39k LoC 의 처분(공개 계약으로 배선 / 삭제 /
 명시적 비계약 격리)은 범위·존립 결정이므로 운영자 판단 대기다.** 처분이 정해지기 전까지
 이 스택의 결함 9건은 수리 대상이 아니라 처분 대상의 속성으로 기록한다.
+
+### ai/mcp 엔진 판정 (2026-08-04)
+
+L4 최종 판정(8/2)이 후속으로 미룬 항목과 스테일 기재를 실측으로 정리했다.
+
+1. **하위 상태 보존 end-to-end (판정 7의 미검증 완료 조건).** 실 capability 호출로 실측했다.
+   `EngineCall(Company.simulate, 005930, adverse)` 는 ToolResult.data 에 quality `ok`,
+   asOf `2026-Q1`, 노드별 status·asOf·provenance, dataInputGaps 를 전부 보존한다.
+   결측 소형주 032680 은 quality `partial`, warnings `['netDebtUnavailable']`, 노드 status
+   `{ok, partial}`, dcfPerShare `None` 그대로 나온다. **L4 는 하위 partial 을 성공으로
+   승격하지 않는다.** 판정 7의 후속 추적 사항이 닫혔다.
+2. **3자 동일성 실측과 숫자 정정.** `CANONICAL_V2` = MCP 광고 = agent 기본 = **21개**로
+   집합까지 동일하다. L4 판정문 1의 "22개 광고 도구", 판정 2의 "EngineCall 33개" 등
+   개수 기재는 오기다(capability 디스패치 실측 수와 별개).
+3. **경계 결함 발견·수정.** `_scan` 은 ValueError/KeyError/TypeError 를 typed
+   `invalid_scan_axis` 로 바꾸는데 dataHub 축과 `{engine}.{axis}` 일반 디스패치는 같은
+   가드가 없었다. 실측 재현: `EngineCall(dataHub.query, kwargs={assetId})` 가 TypeError 를
+   uncaught 로 전파했다(agent 는 `_runOrFallback` 의 bare `TypeError` 라벨, MCP 는 protocol
+   error). 같은 경계 계약(`invalid_args`)으로 통일하고 회귀 2건을 동행했다(`016c4b4d9`).
+4. **07-27 잔여 목록 정리.** RunPython AST 여덟 우회는 이미 `runpythonGuard` 가 import
+   allowlist + fail-closed 로 전환돼 스테일(운영자 결정이 이미 실행됨). DCF 도구의 무언
+   섹터 기본값(할인율 10%, 성장 3%, 라벨 '기타' 충돌)은 `sectorParamsSource`
+   (company|default) 표기와 기본값 경고로 닫았고 005930 실측은 source=company·label
+   반도체다(`cf394a9e4`). GroundingCheck 수치 미대조는 CANONICAL_V2 밖 죽은 코드의
+   속성이라 제거 부채로 남는다.
+
+**판정: ai/mcp 는 툴 노출 단일 SSOT(21개 3자 동일), 하위 상태 무승격 보존, typed 오류
+경계까지 실측으로 확인됐다.** 남은 부채는 registry 죽은 툴 2종(GroundingCheck·
+PickStoryTemplate) 제거와 realdata-plan corpProfile 준비 누락(별건)이다.
