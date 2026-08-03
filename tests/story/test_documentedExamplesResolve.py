@@ -52,7 +52,12 @@ def testDashboardGetsMoreThanOneLens() -> None:
 def testInvestmentReportUsesEveryDecisionLens() -> None:
     assert enginesForReportType("investment") == ("analysis", "industry", "macro")
     assert len(reportTypes.REPORT_TYPES["investment"].focusQuestions) >= 5
-    assert reportTypes.REPORT_TYPES["investment"].sectionOrder == ("종합평가", "수익구조", "현금흐름")
+    assert reportTypes.REPORT_TYPES["investment"].sectionOrder == (
+        "종합평가",
+        "수익구조",
+        "현금흐름",
+        "storyValidation",
+    )
 
 
 def testNarrowReportTypesStayNarrow() -> None:

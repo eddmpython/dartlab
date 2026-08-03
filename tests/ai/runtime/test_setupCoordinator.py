@@ -8,7 +8,7 @@ import pytest
 
 from dartlab.ai.runtime.installManager import InstallPlan
 from dartlab.ai.runtime.mcpBootstrap import McpConnectPlan
-from dartlab.ai.runtime.setupCoordinator import prepareRuntime, previewRuntimeSetup
+from dartlab.ai.runtime.setupCoordinator import PrerequisitePlan, prepareRuntime, previewRuntimeSetup
 
 pytestmark = pytest.mark.unit
 
@@ -140,9 +140,13 @@ def test_setup_plan_includes_node_prerequisite_in_same_approval(monkeypatch) -> 
     calls: list[str] = []
     _patchSetup(monkeypatch, engine, calls)
     monkeypatch.setattr(
-        setup.shutil,
-        "which",
-        lambda executable: "C:\\Windows\\winget.exe" if executable == "winget" else None,
+        setup,
+        "_buildPrerequisitePlan",
+        lambda _plan: PrerequisitePlan(
+            "nodejs",
+            "Node.js LTS",
+            ("winget", "install", "--id", "OpenJS.NodeJS.LTS"),
+        ),
     )
 
     plan = previewRuntimeSetup("codex", engine=engine)
