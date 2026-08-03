@@ -137,7 +137,7 @@ self.addEventListener('fetch', (event) => {
 	const url = new URL(req.url);
 
 	// browser-as-server: /pyapi/* 는 브라우저 안 dartlab FastAPI 로. 컨트롤 페이지의 pyodide 워커가
-	// 서빙한다(mainPlan/browser-as-server-ssot). GET/POST 모두. 캐시하지 않는다(라이브 계산).
+	// 서빙한다. GET/POST 모두 캐시하지 않는 라이브 계산이다.
 	const pyapiPrefix = `${base}/pyapi/`;
 	if (url.pathname.startsWith(pyapiPrefix)) {
 		const apiPath = url.pathname.slice(base.length) + url.search;
@@ -203,7 +203,7 @@ self.addEventListener('fetch', (event) => {
 });
 
 // ── Web Push 수신 3 리스너 (P1) · 기존 셸 캐시 동작과 독립 ──────────────
-// 설계: mainPlan/watcher-notify-platform/07-p1-client-receiving.md
+// 현재 운영 계약: operation.notifyPipeline.
 const ICON = `${import.meta.env.BASE_URL}icon-192.png`; // BASE_URL='/dartlab/' (절대경로 404 가드)
 
 interface PushPayload {

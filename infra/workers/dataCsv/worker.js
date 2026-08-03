@@ -2,7 +2,7 @@
 //
 // 목적: 구글시트 `=IMPORTDATA(".../v1/dart/finance/005930.csv")` · 엑셀 Power Query(데이터→웹에서)가
 // dartlab 공동작업대(HF parquet SSOT)를 **런타임 소스로 라이브** 사용. CSV 사본을 HF 에 굽지 않는다
-// (no-build, SSOT 직독). mainPlan/data-download-center 01·03·04 계약 구현.
+// no-build 원칙으로 공개 parquet SSOT를 직독한다.
 //
 // ── 호스트 = Cloudflare Worker (PRD 03·05·06). 메모리 실측 게이트 ──────────────────────────
 // 디코드 메모리는 parquet 압축해제 비용. 실측: gov/prices/company 70MB · dart/finance 119MB ·

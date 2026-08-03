@@ -19,6 +19,7 @@ COMMAND_SPECS = (
     CommandSpec("modules", "dartlab.cli.commands.modules", "사용 가능한 데이터 모듈 목록"),
     # 에이전트 / 내보내기
     CommandSpec("ask", "dartlab.cli.commands.ask", "자연어 원스톱 분석"),
+    CommandSpec("invest", "dartlab.cli.commands.invest", "투자 의사결정 브리프"),
     CommandSpec("agent", "dartlab.cli.commands.agent", "설치형 agent runtime 관리"),
     CommandSpec("report", "dartlab.cli.commands.report", "Markdown 분석 보고서 생성"),
     CommandSpec("excel", "dartlab.cli.commands.excel", "기업 데이터 Excel 내보내기"),
@@ -60,6 +61,7 @@ HELP_EPILOG = """\
     modules      사용 가능한 데이터 모듈 목록
 
   분석 / 보고서
+    invest       투자논지·하방·밸류에이션·촉매를 한 번에 분석
     story        기업 분석 스토리 (사람이 읽는 보고서) — 자연어 라우팅의 기본 진입점
     ask          자연어 원스톱 분석 (에이전트가 도구 호출)
     report       Markdown 분석 보고서 생성
@@ -76,8 +78,8 @@ HELP_EPILOG = """\
     plugin       플러그인 관리 (list/create)
 
   설정
-    setup        모델 provider/API 키 설정
-    status       모델 연결 상태 확인
+    setup        설치·공식 로그인·DartLab 연결을 한 번에 완료
+    status       투자 분석 준비 상태 확인
 
 자동 라우팅
   종목코드(6 자리 숫자) 또는 한글 회사명을 첫 인자로 주면 `story` 로 자동 라우팅:
@@ -85,9 +87,10 @@ HELP_EPILOG = """\
     dartlab 삼성전자             == dartlab story 삼성전자
     dartlab 005930 자산구조      == dartlab story 005930 자산구조
 
-30 초 quickstart (키 0, 환경변수 0)
+한 번 준비 후 투자 브리프
   pip install dartlab
-  dartlab 005930
+  dartlab setup
+  dartlab invest 005930
 
 문서 · Skill OS
   https://eddmpython.github.io/dartlab/         문서

@@ -1,6 +1,6 @@
-"""거시 시뮬레이션 엔진 자료형 — frozen dataclass SSOT.
+"""거시 시뮬레이션 엔진 자료형. frozen dataclass SSOT.
 
-mainPlan/macro-simulation-engine/02·03 박제. BVAR 적합·시뮬 결과 컨테이너.
+BVAR 적합과 시뮬레이션 결과 컨테이너다.
 """
 
 from __future__ import annotations

@@ -59,6 +59,9 @@ dependencies = [
     "lxml; sys_platform == 'emscripten'",
     "polars>=1.0.0,<2; sys_platform != 'emscripten'",
     "polars; sys_platform == 'emscripten'",
+    # Windows는 시스템 IANA timezone DB를 제공하지 않는다. Polars가 UTC datetime을
+    # Python 값으로 내보낼 때 clean wheel 환경에서도 ZoneInfo("UTC")가 동작해야 한다.
+    "tzdata>=2025.2; sys_platform == 'win32'",
     # M6: cross-company × multi-table aggregation 의 OOC god mode - Polars
     # LazyFrame ↔ DuckDB relation Arrow zero-copy. 환경변수
     # DARTLAB_CROSS_SCAN_ENGINE=duckdb 또는 large dataset 검출 시 자동 fallback.

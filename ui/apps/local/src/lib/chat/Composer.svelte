@@ -54,6 +54,7 @@
 
 <form
 	class="composer"
+	data-qa="chat-composer"
 	onsubmit={(e) => {
 		e.preventDefault();
 		submit();
@@ -69,15 +70,18 @@
 		oncompositionstart={() => (composing = true)}
 		oncompositionend={() => (composing = false)}
 		{autofocus}
+		data-qa="chat-input"
+		data-qa-fill="true"
+		data-qa-value="safe"
 	></textarea><!-- svelte-ignore a11y_autofocus -->
 	{#if busy}
-		<button type="button" class="btn stop" onclick={() => onstop?.()} aria-label="중단 (ESC)">
+		<button type="button" class="btn stop" data-qa="chat-stop" onclick={() => onstop?.()} aria-label="중단 (ESC)">
 			<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
 				<rect x="6" y="6" width="12" height="12" rx="2" />
 			</svg>
 		</button>
 	{:else}
-		<button type="submit" class="btn send" disabled={!value.trim()} aria-label="전송 (Enter)">
+		<button type="submit" class="btn send" data-qa="chat-send" disabled={!value.trim()} aria-label="전송 (Enter)">
 			<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
 				<path d="M12 19V5" />
 				<path d="M5 12l7-7 7 7" />

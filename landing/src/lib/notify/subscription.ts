@@ -1,5 +1,5 @@
 // Web Push 구독 공유 모듈 · service-worker 와 NotifyOptIn 이 함께 import(직렬화 형태·URL·토픽 1 SSOT).
-// 허브 계약: mainPlan/watcher-notify-platform/06-p1-hub-worker.md §2.
+// 허브 계약: operation.notifyPipeline.
 
 const HUB_BASE = (import.meta.env.VITE_PUSHHUB_URL ?? '').replace(/\/+$/, '');
 export const SUBSCRIBE_URL = HUB_BASE + '/subscribe';

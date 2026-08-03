@@ -1,4 +1,4 @@
-// 오리진 레지스트리 · 데이터 워크벤치 SSOT 의 "어디서 가져오나" 단일 표. (mainPlan/data-workbench-ssot 02·03)
+// 오리진 레지스트리. 데이터 작업대의 "어디서 가져오나" 단일 표.
 // P1: HF 계열(hf·hfRange) 만 등록 · 기존 origin.ts(HF URL SSOT)를 흡수.
 // P2: news·naver 워커 등록 · newsSource/naverPriceSource 가 각자 복제하던 env 게이트 + dev 프록시 URL
 //   조립을 여기로 흡수. 미배선(localApi·duckdbHf)은 후속 wave. 미등록 호출은 명시 throw(배선순서 가드).
@@ -22,7 +22,7 @@ const MARKET_FILINGS_PROXY = ((viteEnv?.VITE_DARTLAB_MARKET_FILINGS_PROXY as str
 const IPO_FILINGS_PROXY = ((viteEnv?.VITE_DARTLAB_IPO_FILINGS_PROXY as string | undefined) ?? '').replace(/\/+$/, '');
 const NAVER_PROXY = ((viteEnv?.VITE_DARTLAB_NAVER_PROXY as string | undefined) ?? '').replace(/\/+$/, '');
 //   csvWorker = CF 워커 /v1/{dir}/{id}.{csv|tsv} 라우트(라이브 데이터 API, parquet→CSV/TSV 온더플라이).
-//     미설정 → Tier2 비활성, 데이터센터는 Tier1 다운로드만 노출(dev=퍼블릭 기준 무중단). mainPlan/data-download-center 03.
+//     미설정 → Tier2 비활성, 데이터센터는 Tier1 다운로드만 노출(dev=퍼블릭 기준 무중단).
 const CSV_PROXY = ((viteEnv?.VITE_DARTLAB_CSV_PROXY as string | undefined) ?? '').replace(/\/+$/, '');
 const naverDev = Boolean(viteEnv?.DEV);
 // gov 주가 dev 라이브 fill 게이트(naverDev 동형) · dev 만 /__gov 미들웨어 존재, 프로덕션은 읽기 전용.

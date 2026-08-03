@@ -83,7 +83,7 @@ flowchart LR
 4. `--apply --delete-legacy`를 실행한다. 스크립트가 두 manifest의 모든 객체 경로와 원격 실재를 검사하고, 공개 `/cards`, `/blog`, `/terminal` 번들이 새 manifest를 참조하며 옛 index·바이너리 경로를 참조하지 않는지 확인한 뒤에만 삭제한다.
 5. 같은 명령을 다시 실행해 `레거시 0개` 정규 상태가 멱등하게 통과하는지 확인한다. HF 최상위에는 `.gitattributes`, `objects`, `manifests`만 허용한다.
 
-전환 게이트가 하나라도 실패하면 삭제는 0건이어야 한다. 구조 계약과 완료 기준은 [`mainPlan/content-asset-ssot/00-prd.md`](../mainPlan/content-asset-ssot/00-prd.md), 실행기 목록은 [`blog/_scripts/README.md`](_scripts/README.md)가 정본이다.
+전환 게이트가 하나라도 실패하면 삭제는 0건이어야 한다. 구조 계약과 완료 기준은 Skill OS `operation.content`, 실행기 목록은 [`blog/_scripts/README.md`](_scripts/README.md)가 정본이다.
 
 - 이미지 규격표:
 

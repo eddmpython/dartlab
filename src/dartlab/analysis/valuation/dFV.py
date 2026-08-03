@@ -261,7 +261,11 @@ def calcDFV(
     if driver_scen and driver_scen.get("bull") and driver_scen.get("bear"):
         bull = driver_scen["bull"]
         bear = driver_scen["bear"]
-        scenarioMethod = {"method": "driverSensitivity", "drivers": ["growth", "wacc"]}
+        scenarioMethod = {
+            "method": "driverSensitivity",
+            "driverNames": ["growth", "wacc"],
+            "drivers": driver_scen.get("drivers") or {},
+        }
     else:
         wacc_effect = 0.12  # WACC 1%p 변화 ≈ 적정가 ±12% (비-DCF primary 경험칙)
         bull = primaryValue * (1 + wacc_effect)

@@ -1,9 +1,9 @@
-"""ReportType — 보고서 뼈대 단일축 정의.
+"""ReportType 보고서 뼈대 단일축 정의.
 
 기존 perspective(순서 재배치) + preset(섹션 부분집합) + emphasize(강조)를
 하나의 ReportType으로 통합. 사용자는 c.story(type="credit") 처럼 한 축만 지정.
 
-STORY_TEMPLATES (기업유형 7개)는 독립 차원 — 자동 감지 보조로 유지.
+STORY_TEMPLATES (기업유형 7개)는 독립 차원이며 자동 감지 보조로 유지한다.
 """
 
 from __future__ import annotations
@@ -15,7 +15,7 @@ from dartlab.story.templates import TEMPLATE_ORDER
 
 @dataclass(frozen=True)
 class ReportType:
-    """ReportType — TODO 한국어 클래스 설명."""
+    """보고서별 섹션 순서와 강조 블록 및 검증 질문을 정의한다."""
 
     key: str
     label: str
@@ -29,17 +29,50 @@ class ReportType:
 # ── 11 ReportType 정의 ──
 
 REPORT_TYPES: dict[str, ReportType] = {
+    "investment": ReportType(
+        key="investment",
+        label="투자 의사결정 브리프",
+        description="논지·반대논지·실적 변곡·가격 비대칭·무효화 조건을 한 번에 점검",
+        sectionOrder=(
+            "종합평가",
+            "수익구조",
+            "현금흐름",
+            "storyValidation",
+        ),
+        emphasize=frozenset(
+            {
+                "scorecard",
+                "growthTrend",
+                "marginTrend",
+                "cashQuality",
+                "roicTimeline",
+                "valuationSynthesis",
+                "plausibilityBand",
+                "revenueForecast",
+                "macroCycle",
+            }
+        ),
+        focusQuestions=(
+            "이 기업의 검증 가능한 중심 투자논지는 무엇인가?",
+            "가장 강한 반대논지와 논지 훼손 조건은 무엇인가?",
+            "실적은 어디서 변곡했고 그 원인은 무엇인가?",
+            "현재 가격은 어떤 성장을 이미 반영하는가?",
+            "bear/base/bull의 하방과 상방은 비대칭적인가?",
+            "다음 촉매와 확인해야 할 tripwire는 무엇인가?",
+        ),
+        detail=True,
+    ),
     "full": ReportType(
         key="full",
         label="전체 6막",
-        description="바텀업 인과 서사 — 기본 보고서",
+        description="바텀업 인과 서사 기본 보고서",
         sectionOrder=tuple(TEMPLATE_ORDER),
         detail=True,
     ),
     "executive": ReportType(
         key="executive",
         label="경영 요약",
-        description="의사결정자용 3분컷 — 결론/수익/현금/가치",
+        description="의사결정자용 3분컷: 결론/수익/현금/가치",
         sectionOrder=("종합평가", "수익구조", "현금흐름", "가치평가", "storyValidation"),
         emphasize=frozenset({"scorecard", "valuationSynthesis", "cashFlowOverview"}),
         focusQuestions=(
@@ -53,7 +86,7 @@ REPORT_TYPES: dict[str, ReportType] = {
     "credit": ReportType(
         key="credit",
         label="신용분석",
-        description="채권/여신 심사 — 안정성/현금/자금조달/7축등급",
+        description="채권/여신 심사: 안정성/현금/자금조달/7축등급",
         sectionOrder=("안정성", "현금흐름", "자금조달", "효율성", "신용평가", "storyValidation"),
         emphasize=frozenset(
             {"leverageTrend", "distressScore", "coverageTrend", "cashFlowOverview", "creditScore", "creditNarrative"}
@@ -69,7 +102,7 @@ REPORT_TYPES: dict[str, ReportType] = {
     "valuation": ReportType(
         key="valuation",
         label="가치평가 집중",
-        description="가치투자자용 — DCF/상대가치/매출전망",
+        description="가치투자자용: DCF/상대가치/매출전망",
         sectionOrder=("가치평가", "수익성", "성장성", "매출전망", "자본배분", "안정성", "storyValidation"),
         emphasize=frozenset({"valuationSynthesis", "dcfValuation", "relativeValuation", "revenueForecast"}),
         focusQuestions=(
@@ -83,7 +116,7 @@ REPORT_TYPES: dict[str, ReportType] = {
     "growth": ReportType(
         key="growth",
         label="성장 스토리",
-        description="성장투자자용 — CAGR/마진확장/투자효율",
+        description="성장투자자용: CAGR/마진확장/투자효율",
         sectionOrder=("수익구조", "성장성", "매출전망", "수익성", "투자효율", "효율성", "자본배분", "storyValidation"),
         emphasize=frozenset({"growthTrend", "cagrComparison", "revenueForecast", "roicTree", "reinvestment"}),
         focusQuestions=(
@@ -97,7 +130,7 @@ REPORT_TYPES: dict[str, ReportType] = {
     "crisis": ReportType(
         key="crisis",
         label="위기 진단",
-        description="위험 진단 — 부실/레버리지/유동성/턴어라운드",
+        description="위험 진단: 부실/레버리지/유동성/턴어라운드",
         sectionOrder=(
             "매크로",
             "안정성",
@@ -122,7 +155,7 @@ REPORT_TYPES: dict[str, ReportType] = {
     "audit": ReportType(
         key="audit",
         label="감사 관점",
-        description="감사/포렌식 — 이익품질/재무정합성/공시변화",
+        description="감사/포렌식: 이익품질/재무정합성/공시변화",
         sectionOrder=("이익품질", "재무정합성", "안정성", "지배구조", "공시변화", "storyValidation"),
         emphasize=frozenset(
             {"cashQuality", "accrualAnalysis", "fundamentalDivergence", "governanceSummary", "disclosureChange"}
@@ -139,7 +172,7 @@ REPORT_TYPES: dict[str, ReportType] = {
     "dividend": ReportType(
         key="dividend",
         label="배당·주주환원",
-        description="인컴 투자자용 — 배당지속성/FCF커버리지/총환원",
+        description="인컴 투자자용: 배당지속성/FCF커버리지/총환원",
         sectionOrder=("수익구조", "현금흐름", "자본배분", "자금조달", "안정성", "storyValidation"),
         emphasize=frozenset(
             {
@@ -162,7 +195,7 @@ REPORT_TYPES: dict[str, ReportType] = {
     "governance": ReportType(
         key="governance",
         label="경영진·지배구조",
-        description="거버넌스 리스크 — 임원보수/외부이사 독립성/지분구조",
+        description="거버넌스 리스크: 임원보수/외부이사 독립성/지분구조",
         sectionOrder=("지배구조", "자본배분", "공시변화", "종합평가", "storyValidation"),
         emphasize=frozenset(
             {
@@ -184,7 +217,7 @@ REPORT_TYPES: dict[str, ReportType] = {
     "macro": ReportType(
         key="macro",
         label="매크로 사이클 위치",
-        description="탑다운 투자자용 — 사이클 + 역사적 팩트로 이 기업의 위치",
+        description="탑다운 투자자용: 사이클 + 역사적 팩트로 이 기업의 위치",
         sectionOrder=("매크로", "시장분석", "매출전망", "가치평가", "storyValidation"),
         emphasize=frozenset(
             {
@@ -219,7 +252,7 @@ REPORT_TYPES: dict[str, ReportType] = {
     "dashboard": ReportType(
         key="dashboard",
         label="질문형 대시보드",
-        description="질문 중심 회사 스냅샷 — 재무제표·정기보고서·원문 근거 집약",
+        description="질문 중심 회사 스냅샷: 재무제표·정기보고서·원문 근거 집약",
         sectionOrder=(
             "종합평가",
             "수익구조",
@@ -263,6 +296,10 @@ REPORT_TYPES: dict[str, ReportType] = {
 # ── 한글/영문 alias ──
 
 _ALIASES: dict[str, str] = {
+    "투자": "investment",
+    "투자분석": "investment",
+    "investment": "investment",
+    "invest": "investment",
     # 기존 perspective 한글
     "바텀업": "full",
     "bottomup": "full",

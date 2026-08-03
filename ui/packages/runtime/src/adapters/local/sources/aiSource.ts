@@ -18,6 +18,7 @@ import type {
 import type { LocalApi } from '../api/localApi';
 
 interface StatusProbe {
+	defaultRuntimeId?: string | null;
 	runtimes?: Array<{
 		runtimeId: string;
 		displayName: string;
@@ -45,10 +46,9 @@ export function localAiPort(api: LocalApi): AiPort {
 		async capabilities(): Promise<AiCapabilities> {
 			const status = await api.getJson<StatusProbe>('/api/agent/runtimes');
 			const runtimes = status?.runtimes ?? [];
-			const preferred = typeof localStorage !== 'undefined' ? localStorage.getItem('dartlab-agent-runtime') : null;
-			const selected = runtimes.find((item) => item.runtimeId === preferred && item.groundedReady === true)
-				?? runtimes.find((item) => item.groundedReady === true)
-				?? null;
+			const selected = runtimes.find(
+				(item) => item.runtimeId === status?.defaultRuntimeId && item.groundedReady === true
+			) ?? null;
 			if (selected) {
 				return {
 					tier: 'advanced',

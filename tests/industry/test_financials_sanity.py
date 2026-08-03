@@ -132,7 +132,7 @@ def test_attachFinancialsDefaultUsesObservedYears(monkeypatch):
 class TestProfitPoolDerived:
     """buildIndustrySummary 의 profit-pool 파생 컬럼 (영업이익률·coverageRatio) 단언.
 
-    엔진 파생 = dual-source SSOT 캐논 (mainPlan/industry-analysis-lab/07 §구멍1).
+    엔진 파생 값이 dual-source SSOT 캐논이다.
     parquet 무의존 — ``_extractYearly`` monkeypatch + 합성 노드.
     """
 
@@ -229,7 +229,7 @@ class TestConcentrationVerb:
     """Industry()(id, concentration=True) 어댑터 — calcs.concentration dict → DataFrame.
 
     묻어둔 calcIndustryConcentration(테스트만 호출)을 런타임 verb 모드로 노출
-    (mainPlan/industry-analysis-lab/07 §구멍 — 집중도 함수 런타임 노출 thesis).
+    집중도 함수를 런타임에 노출하는 계약을 검증한다.
     parquet 무의존 — loadNodes monkeypatch + 합성 노드. **상장사 매출 기준** 상대 집중도.
     """
 

@@ -5,7 +5,7 @@
 
 <svelte:head><title>Agent Runtime Center · DartLab</title></svelte:head>
 
-<main>
+<main data-qa="runtime-settings">
 	<RuntimeCenter />
 </main>
 

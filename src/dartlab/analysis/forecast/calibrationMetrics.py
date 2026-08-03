@@ -1,7 +1,6 @@
 """calibrationMetrics 호환 경로.
 
-계산 SSOT 는 ``dartlab.synth.calibrationMetrics`` 에 있다 (2026-07-03 승격,
-mainPlan/expectation-grid/00 §9 A3). 기존 호출부 identity 보존용 re-export.
+계산 SSOT는 ``dartlab.synth.calibrationMetrics``에 있다. 기존 호출부 identity 보존용 re-export다.
 """
 
 from __future__ import annotations

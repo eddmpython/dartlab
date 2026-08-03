@@ -4,8 +4,25 @@
 	import '@dartlab/ui-design/styles/v2-tokens.css';
 	import '@dartlab/ui-design/styles/tokens.css';
 	import '@dartlab/ui-design/styles/typography.css';
+	import { onMount } from 'svelte';
+	import { startUiQaBridge } from '$lib/qa/uiQaBridge';
 
 	let { children } = $props();
+
+	onMount(() => {
+		// UI 검수 제어면은 `dartlab ai --dev`에서만 켠다. 설치형/배포 빌드에는 세션이나 polling이 없다.
+		if (!import.meta.env.DEV) return;
+		let stop: (() => void) | null = null;
+		let disposed = false;
+		void startUiQaBridge().then((cleanup) => {
+			if (disposed) cleanup();
+			else stop = cleanup;
+		});
+		return () => {
+			disposed = true;
+			stop?.();
+		};
+	});
 </script>
 
 {@render children()}

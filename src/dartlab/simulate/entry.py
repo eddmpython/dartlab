@@ -5,8 +5,7 @@ the deterministic scenario-simulator core. It resolves the code to a `Company`, 
 KR-only macro presets, and delegates to the internal `simulate.run.runScenario` driver - mirroring
 how `dartlab.compare` wraps `panel.compare` (top-level verb, outside the Company facade).
 
-This is the deterministic subset only (`scenario` + `horizon` + `asOf`). The full
-`mainPlan/scenario-simulator/01` signature also carries `drivers` / `lens` / `mode`. The current
+This is the deterministic subset only (`scenario` + `horizon` + `asOf`). The current
 Company surface attaches representative lens products as explicit context while keeping the
 DriverSheet deterministic. Multi-driver overrides and Play replay remain separate work.
 

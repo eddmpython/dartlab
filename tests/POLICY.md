@@ -197,7 +197,7 @@ $env:DARTLAB_TEST_LOCKED="1"; uv run python -X utf8 -m pytest tests/cli/test_out
 | `architecture-l0-l15` | fast | ✅ | - | 20m |
 | `typecheck` | fast | — | - | 20m |
 | `smoke` | fast | ✅ | - | 20m |
-| `test-fast` | fast | ✅ | - | 30m |
+| `test-fast` | fast | ✅ | - | 60m |
 | `wheel-smoke` | fast | ✅ | - | 20m |
 | `quality-gate` | fast | ✅ | - | 20m |
 | `security` | fast | — | - | 20m |

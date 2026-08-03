@@ -106,7 +106,7 @@ Play/일시정지/속도(400/150ms)/스크럽(t 드래그)/⏮ = 기존 replay �
 
 ### 1.2 cross-panel 하이라이트 버스 (R20 — 단일 highlightId, 인과 단정 금지)
 
-운영자 "과거 근거 + 미래 예측 근거 나열·연결"(§6)의 *연결* 채널. **단일 `highlightId` bus** = nodeId 3중 좌표(`driverId@scenarioId#periodKey`, 01 §5·§6.1 `f"{driverId}@{scenarioId}#{periodKey}"`) **재사용**(새 식별자 신설 0). suite/02(전 11)의 점 클릭→우측 공시행 스크롤+하이라이트 동기 패턴(`_done/terminal-chart-suite/02-disclosure-event-rail.md:20·:86(click→scroll+focus)·:360-362(hover preview)` — 코드 진화 시 라인 drift 회피 위해 절-이름(requestDisclosureFocus/scrollIntoView/.focused pulse) 기준)과 동형 — 거기에 sim 3면(DriverGraph 엣지·fan band 선·ReportDock 행)을 얹는다.
+운영자 "과거 근거 + 미래 예측 근거 나열·연결"(§6)의 *연결* 채널. **단일 `highlightId` bus**는 nodeId 3중 좌표(`driverId@scenarioId#periodKey`, 01 §5·§6.1 `f"{driverId}@{scenarioId}#{periodKey}"`)를 재사용한다. 현재 공시 이벤트 레일의 점 클릭, 스크롤, focus pulse 동기 패턴과 같은 문법으로 sim 3면(DriverGraph 엣지·fan band 선·ReportDock 행)을 연결한다.
 
 **양방향 매핑(점등 = 연결 표시지 인과 화살표 아님):**
 

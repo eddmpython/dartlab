@@ -127,7 +127,7 @@ census, catalog, identity, provenance, query는 원천에서 런타임 계산하
 
 ### 6.1 형제 계획 경계
 
-`mainPlan/_done/dartlab-lens-product-architecture/`는 기존 제품 렌즈와 대표 workflow를 다루는 완료된 별도 사용자 작업이다. 본 계획은 그 파일을 수정하거나 흡수하지 않는다. 현재 운영자 지시에 따라 Universe 데이터 엔진의 독립 attempts는 설계하되, 기존 렌즈·route·UI의 공개 순서와 결합 여부는 U8 이후 다시 결정한다.
+기존 제품 렌즈와 대표 workflow의 현재 계약은 Skill OS의 각 lens engine과 공개 route 구현이 소유한다. 본 계획은 그 계약을 수정하거나 흡수하지 않는다. Universe 데이터 엔진의 독립 attempts는 설계하되, 기존 렌즈·route·UI의 공개 순서와 결합 여부는 U8 이후 다시 결정한다.
 
 ## 7. 데이터 엔진 완성의 제품 판정
 

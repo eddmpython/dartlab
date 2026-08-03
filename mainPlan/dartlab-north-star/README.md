@@ -4,7 +4,7 @@
 
 범위: DartLab 전체 제품이 기능 수, 모델 호출 수, 페이지뷰가 아니라 검증 가능한 사용자 분석 결과를 기준으로 우선순위를 정하도록 북극성, 결과 수명주기, 증거 레지스트리, scorecard, 주간 운영 주기를 세운다.
 
-이 폴더는 이니셔티브 계획이다. 구현이 끝나면 영구 계약은 `README.md`, Skill OS, `src/dartlab/productOutcome.py`, `tests/audit/northStarEvidence.py`로 승격하고 본 폴더는 `mainPlan/_done/`으로 이동한다.
+이 폴더는 이니셔티브 계획이다. 구현이 끝나면 영구 계약은 `README.md`, handbook, Skill OS, `src/dartlab/productOutcome.py`, `tests/audit/northStarEvidence.py`로 승격하고 이 폴더를 삭제한다.
 
 ## 한 줄 결정
 
@@ -40,7 +40,7 @@
 
 ## 다른 mainPlan과의 관계
 
-- `agent-runtime-engine`: 첫 번째 실제 소비자다. primary goal은 `completeVerifiedAnalysisLoop`다.
+- 현재 Agent Runtime은 첫 번째 실제 소비자다. primary goal은 `completeVerifiedAnalysisLoop`다.
 - `ai-workbench-connector`: 외부 AI가 evidence를 조회하는 경로다. 원격 tool call 수는 분자가 아니며 evidence 확인까지 이어져야 한다.
 - `first-party-ai`: 모델 tier나 생성량이 아니라 동일 verified analysis loop로 평가한다.
 - 데이터, 검색, terminal, report 이니셔티브도 기능별 score를 만들지 않고 아래 goal ID 중 하나를 고른다.
@@ -50,7 +50,7 @@
 ```text
 North Star Phase 0
   outcome contract + evidence registry + local scorecard
-      -> agent-runtime-engine attempt
+      -> Agent Runtime 실행
       -> first verified analysis vertical slice
       -> four complete evidence windows
       -> numeric target review

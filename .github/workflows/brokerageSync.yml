@@ -8,7 +8,7 @@ name: Brokerage Research Sync
 #   - 서버렌더 5개사(미래에셋·NH·유안타·한양·부국) 작동. SPA 4개사(안티봇)는 deferred.
 #   - 헬스 게이트(PRD 03 §4): 수율 0행/카테고리 0행/완전성<90% 깨짐 감지 → Step Summary 표 +
 #     깨짐이면 exit 1 → 이 워크플로 RED → GitHub 가 운영자에게 자동 알림(데이터는 알림 전 push 보존).
-# 상세: mainPlan/brokerage-research-index/03-operations-automation.md
+# 증권사 리서치 메타데이터 동기화 workflow.
 # ──────────────────────────────────────────────────────────────
 
 on:

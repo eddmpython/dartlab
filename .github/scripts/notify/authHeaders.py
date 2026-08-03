@@ -1,7 +1,7 @@
 """발송 인증 헤더 — Bearer + 결정적 nonce. HMAC 서명층 제거(품질점검: SIGN_KEY·SEND_TOKEN 동일 secrets → 독립 신뢰축 0).
 
 nonce = sha1(topic:slug) 결정적 → 같은 발행 재push 는 허브에서 409(멱등). topic 다르면(blog vs card) 다른 nonce.
-설계: mainPlan/watcher-notify-platform/06-p1-hub-worker.md §2 · 08-p1-publish-ops-test.md §1.
+pushHub 요청 인증 헤더의 단일 구현이다.
 """
 
 from __future__ import annotations

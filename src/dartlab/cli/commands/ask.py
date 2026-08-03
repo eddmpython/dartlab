@@ -31,6 +31,7 @@ def configureParser(subparsers) -> None:
     parser.add_argument("--continue", dest="cont", action="store_true", help="이전 대화 이어가기")
     parser.add_argument("--pattern", default=None, help="분석 패턴 (financial, risk, valuation)")
     parser.add_argument("--report", action="store_true", help="전문 분석보고서 모드 (7섹션 구조화 보고서)")
+    parser.add_argument("--investment", action="store_true", help="9차원 투자 의사결정 브리프 모드")
     parser.set_defaults(handler=run)
 
 
@@ -75,7 +76,7 @@ def run(args) -> int:
         include=args.include,
         exclude=args.exclude,
         history=history,
-        report_mode=args.report,
+        report_mode="investment" if getattr(args, "investment", False) else args.report,
         stockCode=getattr(company, "stockCode", None) if company is not None else None,
     )
 
@@ -355,7 +356,9 @@ def _printErrorWithHint(errorMsg: str, console, *, guideMsg: str | None = None) 
     msg = errorMsg.lower()
     if any(w in msg for w in ("api key", "auth", "401", "403", "invalid key", "unauthorized")):
         console.print(f"  [{CLR_MUTED}]hint: run the selected agent CLI and complete its login[/]")
-    elif any(w in msg for w in ("connection", "timeout", "network", "refused", "resolve")):
+    elif any(w in msg for w in ("timeout", "시간 초과", "초 제한")):
+        console.print(f"  [{CLR_MUTED}]hint: retry the question; deep investment analysis may take several minutes[/]")
+    elif any(w in msg for w in ("connection", "network", "refused", "resolve")):
         console.print(f"  [{CLR_MUTED}]hint: run `dartlab agent status --refresh`[/]")
     elif any(w in msg for w in ("context", "token", "too long", "limit")):
         console.print(f"  [{CLR_MUTED}]hint: try --exclude <topic> to reduce context size[/]")

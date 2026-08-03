@@ -5,9 +5,9 @@ kind: curated
 scope: builtin
 status: observed
 category: operation
-purpose: 북극성 goal, 실행 증거, root scorecard, mainPlan 상태를 한 주기에서 정합시키는 운영 계약이다.
+purpose: 북극성 goal, 실행 증거, root scorecard, handbook의 현재 제품 계약을 한 주기에서 정합시키는 운영 계약이다.
 whenToUse:
-  - mainPlan 진행 상태를 바꿀 때
+  - 임시 initiative를 완료하고 handbook으로 승격할 때
   - 북극성 축 점수를 재판정할 때
   - release acceptance와 operator journey를 기록할 때
 inputs:
@@ -71,7 +71,7 @@ testUniverse:
 3. contracts, integration, UI, security, performance gate가 실제 runner에서 도는지 확인한다.
 4. outcome이 없거나 권위가 부족하면 `noData` 또는 `미측정`을 유지한다.
 5. root README 점수는 반복 검증이 늘거나 줄었을 때만 재판정한다.
-6. mainPlan ledger에 결정, 근거, 남은 위험, 다음 exit를 기록한다.
+6. 구현된 현재 계약은 코드에서 다시 확인해 handbook에 승격한다. 완료된 임시 initiative는 삭제한다.
 
 ## Release 질문
 

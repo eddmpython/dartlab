@@ -1,7 +1,7 @@
 # 01. 티어 아키텍처 — 4 티어 사다리와 AiPort 확장
 
 상태: 구현 계약 PRD v0.2 (R1 전문가평가 반영: 계약 census 실측·TierBackend 누수 해소·AiAskInput 비파괴 마이그레이션·멀티턴 슬롯)
-범위: `AiTier` 확장(`edge` 신설), `AiPort` 의 `compose` 동사 추가(비파괴), 공개 어댑터 배선, 런타임 티어 선택·우아한 강등, capabilities 계약. 기준 = `mainPlan/_done/ui-platform-refactor/02-runtime-ai-services.md` §4(개정 대상).
+범위: `AiTier` 확장(`edge` 신설), `AiPort`의 `compose` 동사 추가(비파괴), 공개 어댑터 배선, 런타임 티어 선택·우아한 강등, capabilities 계약. 현재 UI runtime 계약을 기준으로 개정한다.
 
 > ⚠ 본 문서의 모든 계약 인용은 `ui/packages/contracts/src/ai.ts` **실측**(2026-06)이다. R1 평가가 적발한 "계승 위장"(실은 breaking)을 제거하고, 실제 필드/메서드와 diff 를 명시한다.
 

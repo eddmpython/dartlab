@@ -23,7 +23,7 @@ Exit: fixture journey 한 건이 정확히 한 verified outcome을 만들고 dup
 
 ### Phase 2. First product slice
 
-첫 소비자는 `mainPlan/agent-runtime-engine`이다.
+첫 소비자는 현재 Agent Runtime이다.
 
 1. runtime session start에서 `started`.
 2. canonical subject resolution에서 `scoped`.

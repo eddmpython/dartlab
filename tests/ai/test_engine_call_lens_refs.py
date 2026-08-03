@@ -49,13 +49,15 @@ def test_result_to_refs_emits_lens_value_and_date_refs() -> None:
     assert kinds == ["executionRef", "valueRef", "dateRef"]
     value = next(ref for ref in result.refs if ref.kind == "valueRef")
     date = next(ref for ref in result.refs if ref.kind == "dateRef")
+    execution = next(ref for ref in result.refs if ref.kind == "executionRef")
+    assert value.payload["value"] == "현금창출력 양호"
     assert value.payload["label"] == "현금창출력 양호"
     assert value.payload["confidence"] == 90.0
     assert value.payload["gaps"][0]["id"] == "missing.price"
     assert value.payload["evidenceRefs"] == ["evidence:cashflow"]
     assert value.payload["provenance"] == ["table:005930:CF:2025"]
     assert date.payload["dataAsOf"] == "2025-12-31"
-    execution = next(ref for ref in result.refs if ref.kind == "executionRef")
+    assert execution.payload["target"] == "005930"
     assert "result" not in execution.payload
 
 
@@ -81,7 +83,7 @@ def test_dataclass_result_is_structured_and_surfaces_nested_lens_products() -> N
 
     assert isinstance(result.data["result"], dict)
     assert result.data["result"]["scenarioName"] == "baseline"
-    assert {ref.kind for ref in result.refs} == {"executionRef", "valueRef", "dateRef"}
+    assert {ref.kind for ref in result.refs} == {"executionRef", "valueRef", "dateRef", "tableRef"}
 
 
 def test_data_result_keeps_bounded_polars_structure_and_continuation() -> None:

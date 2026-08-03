@@ -6,6 +6,71 @@ import pytest
 pytestmark = pytest.mark.unit
 
 
+class _PassingQuality:
+    passed = True
+    issues: tuple[str, ...] = ()
+    score = 100
+    requiredClaimCells = 0
+    coveredClaimCells = 0
+
+    def toDict(self) -> dict[str, object]:
+        return {
+            "passed": self.passed,
+            "issues": list(self.issues),
+            "score": self.score,
+            "requiredClaimCells": self.requiredClaimCells,
+            "coveredClaimCells": self.coveredClaimCells,
+        }
+
+
+class _FakeRuntimeEngine:
+    def __init__(self, answer: str, refs: list[dict] | None = None):
+        self.answer = answer
+        self.refs = refs or []
+        self.calls: list[dict] = []
+
+    def stream(self, question: str, **kwargs):
+        from dartlab.ai.runtime.eventProjection import EventProjector
+
+        self.calls.append({"question": question, **kwargs})
+        projector = EventProjector("codex", "session-research")
+        turn_id = "turn-research"
+        yield projector.event("sessionStarted", turnId=turn_id)
+        yield projector.event("turnStarted", turnId=turn_id)
+        if self.refs:
+            yield projector.event(
+                "toolStarted",
+                turnId=turn_id,
+                payload={"canonicalName": "EngineCall", "toolCallId": "call-research"},
+            )
+            yield projector.event(
+                "toolCompleted",
+                turnId=turn_id,
+                payload={
+                    "canonicalName": "EngineCall",
+                    "toolCallId": "call-research",
+                    "refDetails": self.refs,
+                },
+            )
+        yield projector.event("messageDelta", turnId=turn_id, payload={"text": self.answer})
+        yield projector.event(
+            "turnCompleted",
+            turnId=turn_id,
+            payload={
+                "status": "completed",
+                "outcomeId": "outcome-research",
+                "runtimeCoverage": {"readSkillCalls": 1},
+            },
+        )
+
+
+def _installRuntime(monkeypatch: pytest.MonkeyPatch, answer: str, refs: list[dict] | None = None):
+    engine = _FakeRuntimeEngine(answer, refs)
+    monkeypatch.setattr("dartlab.ai.runtime.getRuntimeEngine", lambda: engine)
+    monkeypatch.setattr("dartlab.ai.agent._runtimeAnswerQuality", lambda *args, **kwargs: _PassingQuality())
+    return engine
+
+
 class _FakeCompany:
     stockCode = "005930"
     corpName = "삼성전자"
@@ -70,7 +135,7 @@ def _done(events) -> dict:
 
 @pytest.mark.skip(
     reason=(
-        "intent.py keyword routing 폐기 (SSOT P-revised, 2026-05-07) — kernel 은 "
+        "intent.py keyword routing 폐기 (SSOT P-revised, 2026-05-07): kernel 은 "
         "mode==analyze 또는 LLM tool 호출만 분기. 'unknown_api_ref' 결과는 "
         "verifyAnswer 가 financialStatement apiRef 를 capability catalog 에서 "
         "찾지 못함. RunPython 패턴 + mock provider 로 재작성 필요 (별도 PR)."
@@ -97,13 +162,14 @@ def test_ask_public_entry_financial_statement_uses_engine_call(monkeypatch) -> N
 
 
 def test_ask_public_entry_compares_two_financial_statements(monkeypatch) -> None:
-    import dartlab.ai.tools.engineCall as engine_call_mod
     from dartlab.ai.kernel import ask
 
-    def fake_resolve(target: str):
-        return _FakePeerCompany() if "하이닉스" in target else _FakeCompany()
-
-    monkeypatch.setattr(engine_call_mod, "_resolveCompany", fake_resolve)
+    answer_text = "삼성전자(005930)와 SK하이닉스(000660)의 자산총계를 비교하면 약 3.2배입니다."
+    refs = [
+        {"id": "value:005930:BS:assets", "kind": "valueRef", "title": "삼성전자 자산총계"},
+        {"id": "value:000660:BS:assets", "kind": "valueRef", "title": "SK하이닉스 자산총계"},
+    ]
+    engine = _installRuntime(monkeypatch, answer_text, refs)
 
     events = list(ask("삼성전자와 SK하이닉스 재무상태표 비교", events=True))
     answer = _answer(events)
@@ -113,32 +179,25 @@ def test_ask_public_entry_compares_two_financial_statements(monkeypatch) -> None
     assert "자산총계" in answer
     assert "약 3.2배" in answer
     assert done["responseMeta"]["responseStatus"] == "ok"
+    assert len(done["refs"]) == 2
+    assert engine.calls[0]["question"] == "삼성전자와 SK하이닉스 재무상태표 비교"
 
 
 def test_ask_growth_scan_returns_candidate_table(monkeypatch) -> None:
-    import dartlab.ai.workbench.heuristic as heuristic_mod
-    from dartlab.ai.contracts import Ref
     from dartlab.ai.kernel import ask
-    from dartlab.ai.tools.types import ToolResult
 
-    monkeypatch.setattr(
-        heuristic_mod,
-        "engineCall",
-        lambda plan: ToolResult(
-            True,
-            "growth scan 후보 1개",
-            refs=[Ref(id="table:scan:growth:top", kind="tableRef", title="growth top")],
-            data={
-                "markdown": '`dartlab.scan("growth")`로 2,116개 기업의 성장성 스캔을 확인했습니다.\n\n| 순위 | 기업 |\n|---:|---|\n| 1 | 하나투어(039130) |'
-            },
-        ),
-    )
+    answer_text = "성장성 스캔 결과입니다.\n\n| 순위 | 기업 |\n|---:|---|\n| 1 | 하나투어(039130) |"
+    table_ref = {"id": "table:scan:growth:top", "kind": "tableRef", "title": "growth top"}
+    _installRuntime(monkeypatch, answer_text, [table_ref])
 
     events = list(ask("요즘 성장하는 회사는?", events=True))
     answer = _answer(events)
+    done = _done(events)
 
     assert "성장성 스캔" in answer
     assert "하나투어(039130)" in answer
+    assert [ref["id"] for ref in done["refs"]] == ["table:scan:growth:top"]
+    assert [event.kind for event in events].count("tool_result") == 1
 
 
 def test_runask_is_not_public_kernel_entry() -> None:
@@ -148,12 +207,13 @@ def test_runask_is_not_public_kernel_entry() -> None:
 
 
 def test_ask_missing_company_returns_actionable_failure(monkeypatch) -> None:
-    import dartlab.ai.tools.engineCall as engine_call_mod
     from dartlab.ai.kernel import ask
 
-    monkeypatch.setattr(engine_call_mod, "_resolveCompany", lambda target: None)
+    actionable = "종목을 먼저 특정해 주세요. 예: 삼성전자 재무상태표 확인"
+    engine = _installRuntime(monkeypatch, actionable)
 
     answer = ask("재무상태표 확인", stream=False)
 
     assert "종목을 먼저 특정" in answer
     assert "삼성전자 재무상태표 확인" in answer
+    assert engine.calls[0]["context"]["stockCode"] is None

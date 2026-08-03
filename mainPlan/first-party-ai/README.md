@@ -1,6 +1,6 @@
 # DartLab First-Party AI: 자체 작성·분석 엔진 SSOT PRD Index
 
-> 2026-08-02 재정합 포인터: local `advanced` provider와 direct model credential 경계는 [agent-runtime-engine](../agent-runtime-engine/)이 대체한다. 본 계획의 public deterministic/on-device compose 후보는 유지하되 Cloudflare edge model 전제는 구현 착수 전에 다시 검증한다. 상세 경계의 정본은 [agent-runtime-engine/01-current-state-audit.md](../agent-runtime-engine/01-current-state-audit.md)다.
+> 2026-08-03 재정합 포인터: local `advanced` provider와 direct model credential 경계는 현재 [Agent Runtime 계약](../../docs/handbook/architecture/agentRuntime.md)이 대체한다. 본 계획의 public deterministic/on-device compose 후보는 유지하되 Cloudflare edge model 전제는 구현 착수 전에 다시 검증한다.
 
 상태: 비전 + 구현 착수 PRD v0.2 (2026-06-22, 데이터 작업대 SSOT 위에 *DartLab 자신이* 글을 쓰고 분석하는 1급 AI 레인을 공개/로컬 공통배선으로 정착. 5분야 전문가 R1 평가 반영: 계약 census 실측·TierBackend 누수 해소·verifyGrounded fact-typed·budget=Durable Object·관측성 신설)
 범위: 터미널·리포트·캐러셀(신규)·블로그·랜딩의 "AI 가 대신 써줄 수 있는 문구"와 "바로 묻는 분석"을, **하나의 AI 포트(`runtime.ai`)** 로 일원화한다. 퍼블릭에서는 Cloudflare Workers AI 무료티어(우리 워커·API 키 0)를 1차 경로로 쓰고, WebGPU 온디바이스로 폴백하며, 결정론 Q&A 가 바닥을 받친다. 로컬은 기존 ask 엔진(`advanced`)을 그대로 재사용한다.

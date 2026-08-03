@@ -104,6 +104,38 @@ def test_agent_gateway_public_events_hide_internal_kernel_names(monkeypatch) -> 
     assert any(_payload(event).get("toolName") == "RunPython" for event in events)
 
 
+def testAgentGatewayPublishesInvestmentConversationAndUsefulFollowups(monkeypatch) -> None:
+    import dartlab.server.agentGateway as agentGateway
+
+    def fakeRuntime(question: str, **kwargs):
+        yield TraceEvent("chunk", {"text": "검증된 투자 판단"})
+        yield TraceEvent(
+            "done",
+            {
+                "refs": [{"id": "table:005930:investment"}],
+                "responseMeta": {"finalEvent": "answer", "verificationOk": True},
+            },
+        )
+
+    monkeypatch.setattr(agentGateway, "runRuntimeAgent", fakeRuntime)
+    request = AgentRunRequest(
+        messages=[AgentRunMessage(role="user", content="삼성전자 005930 지금 투자할 만해?")],
+        runtimeId="codex",
+    )
+
+    async def collect():
+        return [event async for event in agentGateway.streamAgentRun(request)]
+
+    events = asyncio.run(collect())
+    state = next(_payload(event) for event in events if event["event"] == "STATE_DELTA")
+    finished = next(_payload(event) for event in events if event["event"] == "RUN_FINISHED")
+
+    assert state["analysisConversation"]["mode"] == "investmentDecision"
+    assert finished["responseMeta"]["analysisConversation"]["label"] == "투자 판단"
+    assert len(finished["suggestedQuestions"]) == 3
+    assert any("반대논지" in value for value in finished["suggestedQuestions"])
+
+
 def test_agent_gateway_uses_unique_turn_ids_and_keeps_structured_context(monkeypatch) -> None:
     import dartlab.server.agentGateway as agent_gateway
 

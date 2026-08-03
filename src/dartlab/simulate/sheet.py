@@ -2,10 +2,9 @@
 
 The L3 simulate engine builds a driver DAG whose only owned math is the macro→fundamentals
 edge transfer (see `simulate/transfer.py`); every other node is a thin call into an L2 leaf.
-This module holds the structural foundation per
-`mainPlan/scenario-simulator/01-engine-architecture.md` §5/§6:
+This module holds the structural foundation:
 
-- `NodeValue` / `DriverNode` / `DriverSheet` — the node contract (§6.1).
+- `NodeValue` / `DriverNode` / `DriverSheet`: the node contract.
 - `computeInputsHash` — the memoization-key SSOT (§6.1).
 - `buildOrder` — deterministic Kahn topological sort (§6.2).
 - `evaluateSheet` — the deterministic executor that resolves deps in topo order and fills each

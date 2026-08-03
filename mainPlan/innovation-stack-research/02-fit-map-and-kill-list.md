@@ -10,8 +10,8 @@ Mode: 조사 전용. 구현 없음.
 | `search-productization` | Lineage-as-Guard, CI Evidence Bus, Browser Parquet evidence inspect | `dartlab.search(...)` 공개 표면 유지. evidence card/sourceRef/query-log gold를 강화 |
 | `ai-workbench-connector` | MCP hardening, Structured Outputs, GenAI trace, Evidence Pack envelope | AI를 호스팅하지 않음. 외부 AI가 안전 조회하는 connector plane 유지 |
 | `polars-gpu-backend` | Polars GPU opt-in, DuckDB OOC 비교 baseline | GPU는 compute-bound opt-in. OOC는 DuckDB source scan으로 별도 검증 |
-| `_done/data-workbench-ssot` | Browser Parquet Workbench, origins registry 확장 | raw fetch 금지. `data/fetch`와 `data/origins` 아래로만 연결 |
-| `_done/ui-platform-refactor` | Playwright visual/aria, TanStack Virtual | shared runtime과 public/local parity 유지 |
+| 현재 data workbench 계약 | Browser Parquet Workbench, origins registry 확장 | raw fetch 금지. `data/fetch`와 `data/origins` 아래로만 연결 |
+| 현재 UI platform 계약 | Playwright visual/aria, TanStack Virtual | shared runtime과 public/local parity 유지 |
 | `terminal-improvement` | sourceRef/evidence command, CI proof view, workbench command palette | 터미널은 새 분석 엔진 소유자가 아니라 evidence/workflow 소비자 |
 | `table-export` | Evidence table export, sourceRef-bound export metadata | export artifact에 lineage/sourceRef metadata 포함 |
 
@@ -82,7 +82,7 @@ Code owner 후보:
 
 ### Browser Parquet Workbench
 
-Owner PRD: `_done/data-workbench-ssot` 유지보수 + UI workbench PRD
+Owner 계약: `docs/handbook/architecture/dataWorkbench.md` + Skill OS `operation.ui`
 Code owner 후보:
 
 - `ui/packages/runtime/src/data/fetch`

@@ -2,8 +2,7 @@
 
 도시에(periodic-report-dossier)는 "분포 사실, 판정 아님" 규율 위에 선다 — 우측 레일 자기이력
 문장·카드 가이드 어디에도 *회사별 매수/매도·우량/부실 처방 톤*을 금지한다(PRD 03 §4.2·07 §7
-NEVER-CLAIM, 08 §2 G3). 본 guard 가 그 grep 게이트이며, mainPlan/periodic-report-dossier
-Phase 1 push 게이트의 "NEVER-CLAIM grep green" 계약을 기계 강제한다.
+NEVER-CLAIM). 본 guard가 그 grep 계약을 기계 강제한다.
 
 ★스캔 표면 한정 (leaf CI red 회피):
     터미널 surface 의 사용자-facing `*.svelte` + 카드 해석 SSOT `cardGuide.ts` 뿐이다.

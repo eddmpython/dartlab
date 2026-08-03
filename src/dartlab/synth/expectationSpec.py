@@ -6,7 +6,7 @@ stdlib 만으로 제공한다. 시뮬레이터 검증 명세(scenario-simulator 
 L2 발행 엔진(macro·analysis·credit·quant)과 L2.5 수집자(simulate)가 함께 쓰는 공용 계산이라
 L1.5 synth 에 둔다 (선례 = ``synth.eventStudy``).
 
-원칙 (mainPlan/expectation-grid/00 §3):
+원칙:
 - 점 예측 금지: quantiles(구간) 또는 direction(확률)만 허용, 비단조 분위는 생성 시점 거부.
 - 발행 행 불변: frozen. 채점은 항상 별도 ExpectationScore 행 append.
 - 실패도 봉인: actual 조회 실패는 error 행으로 남긴다(생존 편향 차단).
@@ -244,7 +244,7 @@ def aggregateCalibration(scores: list[ExpectationScore], *, minN: int = 24) -> d
 
     Args:
         scores: 채점 행 목록 (error 행 포함 가능, 분모 정직성 위해 errorRows 로 별도 계수).
-        minN: 캘리브레이션 활성 최소 표본 (mainPlan/expectation-grid/02 §4).
+        minN: 캘리브레이션 활성 최소 표본.
 
     Returns:
         dict: n · verified · coverage90 · coverage50 · meanPit · meanCrps · meanSkill · errorRows.

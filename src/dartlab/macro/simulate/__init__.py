@@ -1,7 +1,7 @@
 """거시 forward 시뮬레이션 엔진 — BVAR 팬 + IRF + 국면경로.
 
 공개 진입 = simulateMacro(dartlab.macro.simulate). leaf 수학(BVAR·fan·IRF)은 순수 numpy,
-국면경로는 cycles.regimeSwitching 전이행렬 재사용. mainPlan/macro-simulation-engine/ SSOT.
+국면경로는 cycles.regimeSwitching 전이행렬을 재사용한다.
 """
 
 from __future__ import annotations

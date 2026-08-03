@@ -1121,6 +1121,7 @@ def runRuntimeAgent(question: str, **kwargs: Any) -> Iterator[TraceEvent]:
     outcomeId: str | None = None
     activeSessionId: str | None = None
     failed = False
+    runtimeErrorReason: str | None = None
     terminalEvent: Any | None = None
     repairAttempt = 0
     repairMode = "none"
@@ -1179,6 +1180,7 @@ def runRuntimeAgent(question: str, **kwargs: Any) -> Iterator[TraceEvent]:
                 yield TraceEvent("event_gap", event.payload)
             elif event.kind == "runtimeError":
                 failed = True
+                runtimeErrorReason = str(event.payload.get("error") or "") or None
             elif event.kind == "turnCompleted":
                 terminalEvent = event
         if terminalEvent is None:
@@ -1191,7 +1193,7 @@ def runRuntimeAgent(question: str, **kwargs: Any) -> Iterator[TraceEvent]:
                         "finalEvent": "runtime_error",
                         "responseStatus": "failed",
                         "candidateRefs": evidenceRefs,
-                        "failureReason": "runtime ended without a completed turn",
+                        "failureReason": runtimeErrorReason or "runtime ended without a completed turn",
                     },
                 },
             )
@@ -1699,6 +1701,15 @@ def _qualityFailureReason(report: dict[str, Any]) -> str:
     return "; ".join(labels.get(str(issue), str(issue)) for issue in issues) or "답변 품질 게이트를 통과하지 못했습니다"
 
 
+def _firstRuntimeValue(*candidates: tuple[dict[str, Any], str], default: Any = None) -> Any:
+    """네이티브 런타임 payload의 이름 변종에서 첫 유효값을 고른다."""
+    for source, key in candidates:
+        value = source.get(key)
+        if value:
+            return value
+    return default
+
+
 def _runtimeToolData(payload: dict[str, Any], *, status: str) -> dict[str, Any]:
     """Sig: _runtimeToolData(payload, *, status) -> dict[str, Any].
 
@@ -1708,25 +1719,39 @@ def _runtimeToolData(payload: dict[str, Any], *, status: str) -> dict[str, Any]:
     """
     item = payload.get("item") if isinstance(payload.get("item"), dict) else payload
     nativeName = str(
-        payload.get("nativeName")
-        or payload.get("toolName")
-        or item.get("tool")
-        or item.get("name")
-        or item.get("title")
-        or item.get("type")
-        or "AgentTool"
+        _firstRuntimeValue(
+            (payload, "nativeName"),
+            (payload, "toolName"),
+            (item, "tool"),
+            (item, "name"),
+            (item, "title"),
+            (item, "type"),
+            default="AgentTool",
+        )
     )
-    name = str(payload.get("canonicalName") or nativeName)
+    name = str(_firstRuntimeValue((payload, "canonicalName"), default=nativeName))
     toolId = str(
-        payload.get("toolCallId")
-        or item.get("id")
-        or item.get("toolCallId")
-        or item.get("tool_call_id")
-        or item.get("tool_use_id")
-        or name
+        _firstRuntimeValue(
+            (payload, "toolCallId"),
+            (item, "id"),
+            (item, "toolCallId"),
+            (item, "tool_call_id"),
+            (item, "tool_use_id"),
+            default=name,
+        )
     )
-    inputValue = item.get("arguments") or item.get("input") or item.get("rawInput") or {}
-    outputValue = item.get("result") or item.get("output") or item.get("content") or {}
+    inputValue = _firstRuntimeValue(
+        (item, "arguments"),
+        (item, "input"),
+        (item, "rawInput"),
+        default={},
+    )
+    outputValue = _firstRuntimeValue(
+        (item, "result"),
+        (item, "output"),
+        (item, "content"),
+        default={},
+    )
     return {
         "id": toolId,
         "name": name,
@@ -1734,7 +1759,7 @@ def _runtimeToolData(payload: dict[str, Any], *, status: str) -> dict[str, Any]:
         "canonicalName": name,
         "input": inputValue if isinstance(inputValue, dict) else {"value": inputValue},
         "status": "error" if item.get("status") in {"failed", "error"} else status,
-        "summary": str(item.get("title") or item.get("status") or name),
+        "summary": str(_firstRuntimeValue((item, "title"), (item, "status"), default=name)),
         "outputSummary": str(item.get("status") or ""),
         "data": outputValue if isinstance(outputValue, dict) else {"value": outputValue},
         "evidenceRefs": [str(value) for value in payload.get("evidenceRefs") or []],

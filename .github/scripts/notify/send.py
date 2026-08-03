@@ -7,7 +7,7 @@
 헬스게이트(brokerageSync 미러): 발송 POST 가 401/5xx/네트워크 실패면 비-0 exit → 워크플로 RED → 운영자
 자동알림(조용한 발송 실패 차단). 409(이미 발송)·sent==0(구독 0 no-op)은 정상 구분.
 사용: python send.py --before <sha> --sha <sha> [--dry-run]
-설계: mainPlan/watcher-notify-platform/08-p1-publish-ops-test.md §1·§2.
+현재 운영 계약은 Skill OS ``operation.notifyPipeline``이다.
 """
 
 from __future__ import annotations

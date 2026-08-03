@@ -1,4 +1,4 @@
-"""MCP 출시 자동 smoke — 마스터 플랜 v2 트랙 7 PR-M5.
+"""MCP 출시 자동 smoke의 마스터 플랜 v2 트랙 7 PR-M5 검증.
 
 stdio + Streamable HTTP 양쪽 통합 dispatch 검증. CI Fast 등록 (mcpDogfood marker) →
 배포 직전 release 가드. 외부 client (Cursor/Cline) 가 본 surface 호출 시 회귀 0 보장.
@@ -19,7 +19,7 @@ pytestmark = [pytest.mark.unit, pytest.mark.mcpDogfood]
 
 
 def _spawnStdioServer() -> subprocess.Popen:
-    """python -m dartlab.mcp stdio 서버 spawn — namespace collision 회피 cwd=tmp."""
+    """namespace collision을 피하도록 임시 경로에서 stdio 서버를 실행한다."""
     env = os.environ.copy()
     env["PYTHONUNBUFFERED"] = "1"
     env["PYTHONUTF8"] = "1"
@@ -42,7 +42,7 @@ def _sendJsonRpc(proc: subprocess.Popen, payload: dict) -> None:
 
 
 def _readJsonRpc(proc: subprocess.Popen, timeoutSec: float = 5.0) -> dict | None:
-    """stdout 한 줄 JSON-RPC 응답 — timeout 내 못 받으면 None."""
+    """제한 시간 안에 stdout의 한 줄 JSON-RPC 응답을 읽는다."""
     deadline = time.monotonic() + timeoutSec
     buf = b""
     while time.monotonic() < deadline:
@@ -60,7 +60,7 @@ def _readJsonRpc(proc: subprocess.Popen, timeoutSec: float = 5.0) -> dict | None
 
 
 def test_release_smoke_stdio_initialize_and_listTools() -> None:
-    """stdio 서버 initialize 왕복 + tools/list 22 개 advertise 검증."""
+    """stdio 서버 initialize 왕복과 tools/list canonical 도구 광고를 검증한다."""
     proc = _spawnStdioServer()
     try:
         # initialize
@@ -91,10 +91,11 @@ def test_release_smoke_stdio_initialize_and_listTools() -> None:
         assert tools_resp is not None
         tools = tools_resp.get("result", {}).get("tools") or []
         names = {t.get("name") for t in tools}
-        # CANONICAL_V2 (21) + ask = 22 — PR-M1 advertise SSOT 추종
-        assert len(names) >= 20, f"advertise tool 갯수 회귀 — {len(names)} (기대 ≥ 20)"
+        # CANONICAL_V2 21종을 따르며 답변 루프를 재귀 호출하는 ask는 제외한다.
+        assert len(names) >= 20, f"advertise tool 갯수 회귀: {len(names)} (기대 ≥ 20)"
         # 핵심 도구 sample
-        assert "ask" in names
+        assert "ask" not in names
+        assert "EngineCall" in names
         assert "DCFValuation" in names
         assert "ReadSkill" in names
     finally:
@@ -117,11 +118,11 @@ def test_release_smoke_streamable_http_app_factory() -> None:
 
 
 def test_release_smoke_advertise_count_meets_target() -> None:
-    """advertisedTools 의 갯수가 PR-M1 목표 ≥ 20 (23 종 — ask + CANONICAL_V2 22)."""
+    """advertisedTools의 갯수가 PR-M1 목표인 20종 이상인지 검증한다."""
     from dartlab.mcp.protocol import advertisedTools, mcpAdvertisedToolNames
 
     names = mcpAdvertisedToolNames()
-    assert len(names) >= 20, f"PR-M1 advertise SSOT 회귀 — {len(names)}"
+    assert len(names) >= 20, f"PR-M1 advertise SSOT 회귀: {len(names)}"
     tools = advertisedTools()
     assert len(tools) == len(names)
 

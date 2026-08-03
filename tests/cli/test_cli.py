@@ -83,6 +83,32 @@ def test_ask_proceeds_without_company(capsys):
     assert "auth/model owned by local CLI" in captured.out
 
 
+def test_ask_returns_non_zero_when_quality_done_is_rejected(capsys):
+    from dartlab.ai.contracts import TraceEvent
+
+    def _fake_analyze(*_args, **_kwargs):
+        yield TraceEvent(
+            "done",
+            {
+                "responseMeta": {
+                    "finalEvent": "runtime_error",
+                    "responseStatus": "failed",
+                    "failureReason": "근거 셀 검증 실패",
+                }
+            },
+        )
+
+    with (
+        patch("dartlab.cli.commands.ask.configureDartlab", return_value=MagicMock()),
+        patch("dartlab.ai.kernel._askEvents", side_effect=_fake_analyze),
+    ):
+        result = main(["ask", "bad", "question"])
+
+    captured = capsys.readouterr()
+    assert result == 1
+    assert "근거 셀 검증 실패" in captured.out
+
+
 def test_excel_returns_non_zero_on_company_error(capsys):
     mock_dartlab = MagicMock()
     mock_dartlab.Company.side_effect = OSError("missing data")

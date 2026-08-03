@@ -1,4 +1,4 @@
-"""Workspace 레거시는 artifact/evidence ref 계약으로 대체된다."""
+"""Workspace evidence ref와 공식 agent runtime 계약."""
 
 from __future__ import annotations
 
@@ -18,7 +18,10 @@ def test_tool_result_refs_are_evidence_surface():
     assert result.refs[0].payload == {"rows": []}
 
 
-def test_workspace_runtime_package_is_removed():
+def test_workspace_runtime_package_exposes_engine_entry():
     import importlib.util
 
-    assert importlib.util.find_spec("dartlab.ai.runtime") is None
+    from dartlab.ai.runtime import getRuntimeEngine
+
+    assert importlib.util.find_spec("dartlab.ai.runtime") is not None
+    assert callable(getRuntimeEngine)

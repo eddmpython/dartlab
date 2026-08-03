@@ -128,17 +128,16 @@ def test_openaiResponses_generate_usesSnakeCaseKwargs():
 # ════════════════════════════════════════
 
 
-def test_gatewayLlmGate_usesCatalogNotLiteralSet():
-    """서버 게이트가 리터럴 목록이 아니라 카탈로그 SSOT 를 보는지.
-
-    리터럴이면 새 provider 를 카탈로그에 등록해도 서버에서만 조용히 탈락한다.
-    kernel.py / workbench/loop.py 는 이미 wiredProviderIds() 를 쓰는데
-    agentGateway 만 리터럴 set 이었다.
-    """
+def test_gateway_uses_installed_agent_runtime_for_all_modes():
+    """서버가 provider 리터럴 게이트 없이 공식 설치형 런타임을 호출하는지."""
+    from dartlab.ai.agent import runRuntimeAgent
     from dartlab.server import agentGateway
 
-    source = inspect.getsource(agentGateway._isLLMProvider)
-    assert "wiredProviderIds" in source, "_isLLMProvider 가 provider 카탈로그 SSOT 를 쓰지 않는다"
+    source = inspect.getsource(agentGateway.streamAgentRun)
+
+    assert agentGateway.runRuntimeAgent is runRuntimeAgent
+    assert "runRuntimeAgent" in source
+    assert "_isLLMProvider" not in source
 
 
 def test_wiredProviderIds_matchesFactoryKeys():

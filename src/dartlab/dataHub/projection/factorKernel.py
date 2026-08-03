@@ -36,7 +36,6 @@ Raises:
     없음. 실패는 예외가 아니라 gap 행으로 방출한다 (결손 0 대체 금지).
 
 SeeAlso:
-    - mainPlan/scenario-simulator/18-workbench-mirror-design.md (설계·판정)
     - reference.capability.builder._injectAxisRegistriesLive (declared 원천)
     - tests/dataHub/test_factor_kernel.py (7 shape 접기 + gap 방출)
 

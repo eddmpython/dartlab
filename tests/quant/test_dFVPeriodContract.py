@@ -166,6 +166,24 @@ def test_historical_price_does_not_fall_forward_to_latest(monkeypatch):
     assert _getCurrentPrice(company, basePeriod="2024Q4") is None
 
 
+def test_latest_price_uses_single_company_snapshot(monkeypatch):
+    """최신 가치평가는 전 종목 가격 패널 대신 공유 단일 종목 스냅샷을 쓴다."""
+    from dartlab.analysis.financial import _valuationInputs
+    from dartlab.analysis.valuation._dFVCalcs import _getCurrentPrice
+
+    seen = []
+
+    def _snapshot(company):
+        seen.append(company.stockCode)
+        return {"currentPrice": 81200.0, "marketCap": 485_000_000_000_000}
+
+    monkeypatch.setattr(_valuationInputs, "_fetchPriceContext", _snapshot)
+    company = type("Company", (), {"stockCode": "005930"})()
+
+    assert _getCurrentPrice(company) == 81200.0
+    assert seen == ["005930"]
+
+
 def test_two_stage_exposes_actual_inputs_and_accounting_identities(monkeypatch):
     """twoStage 결과는 실제 사용 입력과 EV, equity, 주당가치 항등식을 노출한다."""
     from dartlab.analysis.valuation import _dFVCalcs

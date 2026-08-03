@@ -487,3 +487,158 @@ def testRunPythonLocalValuesCannotBecomeGroundingWithoutCanonicalLineage():
 
     assert report.passed is False
     assert "derived_evidence_lineage_missing" in report.issues
+
+
+def testLensAsOfDateIsConcreteAndBindsToAnswer():
+    refs = [
+        {
+            "id": "table:005930:analysis",
+            "kind": "tableRef",
+            "payload": {"stockCode": "005930", "rows": [{"axis": "quality", "value": "양호"}]},
+        },
+        {
+            "id": "value:005930:analysis:quality",
+            "kind": "valueRef",
+            "payload": {"stockCode": "005930", "metric": "quality", "value": "양호"},
+        },
+        {
+            "id": "date:005930:analysis:boundary",
+            "kind": "dateRef",
+            "payload": {"stockCode": "005930", "asOf": "2026-07-18", "knowledgeBoundary": "2026-07-18"},
+        },
+    ]
+    answer = (
+        "2026-07-18 기준 품질 판단은 양호다. "
+        "table:005930:analysis value:005930:analysis:quality date:005930:analysis:boundary"
+    )
+
+    report = evaluateAnswerQuality(
+        "005930의 투자 품질은?", answer, refs, completionSucceeded=True, failed=False, readSkillCalls=1
+    )
+
+    assert "date_evidence_unavailable" not in report.issues
+    assert "date_binding_mismatch" not in report.issues
+
+
+def testExplicitStockCodePreventsKoreanSentenceFromBecomingTargetLabel():
+    refs = _refs()
+    answer = (
+        "2026년 1분기 매출은 133,873,444,000,000원이다. "
+        "table:005930:IS:2026Q1 value:005930:IS:2026Q1:sales date:005930:IS:2026Q1"
+    )
+
+    report = evaluateAnswerQuality(
+        "삼성전자 005930 지금 투자할 만한지 핵심 논지와 반대논지를 같이 분석해줘",
+        answer,
+        refs,
+        completionSucceeded=True,
+        failed=False,
+        readSkillCalls=1,
+    )
+
+    assert "target_evidence_mismatch" not in report.issues
+
+
+def testCanonicalCompanyNamePreventsVerbPhraseFromBecomingTargetLabel():
+    refs = _refs()
+    refs[0]["title"] = "삼성전자 손익계산서 2026Q1"
+    answer = (
+        "2026년 1분기 매출은 133,873,444,000,000원이다. "
+        "table:005930:IS:2026Q1 value:005930:IS:2026Q1:sales date:005930:IS:2026Q1"
+    )
+
+    report = evaluateAnswerQuality(
+        "삼성전자 지금 투자할 만한지 핵심 논지와 반대논지를 같이 분석해줘",
+        answer,
+        refs,
+        completionSucceeded=True,
+        failed=False,
+        readSkillCalls=1,
+    )
+
+    assert "target_evidence_mismatch" not in report.issues
+
+
+def testQualitativeLensValueAllowsPunctuationAndLimitedWordingChange():
+    refs = [
+        {
+            "id": "table:005930:macro",
+            "kind": "tableRef",
+            "payload": {"stockCode": "005930", "rows": [{"axis": "macro", "value": "혼재"}]},
+        },
+        {
+            "id": "value:005930:macro:conclusion",
+            "kind": "valueRef",
+            "payload": {
+                "stockCode": "005930",
+                "label": "거시 전파 경로 혼재",
+                "value": "거시 전파 경로 혼재",
+            },
+        },
+        {
+            "id": "date:005930:macro:boundary",
+            "kind": "dateRef",
+            "payload": {"stockCode": "005930", "asOf": "2026-08-03"},
+        },
+    ]
+    answer = (
+        "2026-08-03 기준 거시 전파 평가는 혼재다. "
+        "table:005930:macro value:005930:macro:conclusion date:005930:macro:boundary"
+    )
+
+    report = evaluateAnswerQuality(
+        "005930 투자 판단", answer, refs, completionSucceeded=True, failed=False, readSkillCalls=1
+    )
+
+    assert "value_binding_mismatch" not in report.issues
+
+
+def testScenarioRangeBindsCanonicalMatrixWithoutRepeatingMiddleValue():
+    rows = [
+        {"scenario": "bear", "perShareValue": 18_835.3605},
+        {"scenario": "base", "perShareValue": 20_441.8777},
+        {"scenario": "bull", "perShareValue": 22_613.6481},
+    ]
+    refs = [
+        {
+            "id": "dcf:005930:matrix",
+            "kind": "tableRef",
+            "payload": {
+                "stockCode": "005930",
+                "period": "2026Q1",
+                "unit": "KRW",
+                "rowCount": 3,
+                "rows": rows,
+            },
+        },
+        *[
+            {
+                "id": f"dcf:005930:{row['scenario']}",
+                "kind": "valueRef",
+                "payload": {
+                    "stockCode": "005930",
+                    "period": "2026Q1",
+                    "axis": "valuation",
+                    "scenario": row["scenario"],
+                    "unit": "KRW",
+                    "value": row["perShareValue"],
+                },
+            }
+            for row in rows
+        ],
+        {
+            "id": "dcf:005930:date:2026Q1",
+            "kind": "dateRef",
+            "payload": {"stockCode": "005930", "period": "2026Q1"},
+        },
+    ]
+    answer = (
+        "2026년 1분기 DCF 범위는 18,835~22,614원이다. "
+        "dcf:005930:matrix dcf:005930:bear dcf:005930:base dcf:005930:bull dcf:005930:date:2026Q1"
+    )
+
+    report = evaluateAnswerQuality(
+        "005930 투자 판단", answer, refs, completionSucceeded=True, failed=False, readSkillCalls=1
+    )
+
+    assert report.passed is True

@@ -18,7 +18,7 @@ from dartlab.ai.runtime.drivers.base import (
     runtimeTurnTimeoutSeconds,
 )
 from dartlab.ai.runtime.drivers.claudeStreamJson import _claudeToolArgs
-from dartlab.ai.runtime.drivers.codexAppServer import CodexAppServerDriver
+from dartlab.ai.runtime.drivers.codexAppServer import CodexAppServerDriver, codexReasoningEffort
 from dartlab.ai.runtime.eventBuffer import EventBuffer
 from dartlab.ai.runtime.eventProjection import EventProjector
 from dartlab.ai.runtime.evidenceStore import EvidenceStore
@@ -188,9 +188,18 @@ def testRuntimeTurnTimeoutIsBoundedAndInvalidValuesUseDefault(monkeypatch):
     monkeypatch.setenv("DARTLAB_AGENT_TURN_TIMEOUT_SECONDS", "1200")
     assert runtimeTurnTimeoutSeconds() == 900
     monkeypatch.setenv("DARTLAB_AGENT_TURN_TIMEOUT_SECONDS", "invalid")
-    assert runtimeTurnTimeoutSeconds() == 300
+    assert runtimeTurnTimeoutSeconds() == 600
+
+
+def testCodexReasoningEffortBalancesLatencyAndAllowsExplicitOverride(monkeypatch):
+    monkeypatch.delenv("DARTLAB_CODEX_REASONING_EFFORT", raising=False)
+    assert codexReasoningEffort() == "high"
+    monkeypatch.setenv("DARTLAB_CODEX_REASONING_EFFORT", "xhigh")
+    assert codexReasoningEffort() == "xhigh"
+    monkeypatch.setenv("DARTLAB_CODEX_REASONING_EFFORT", "invalid")
+    assert codexReasoningEffort() == "high"
     monkeypatch.setenv("DARTLAB_AGENT_TURN_TIMEOUT_SECONDS", "nan")
-    assert runtimeTurnTimeoutSeconds() == 300
+    assert runtimeTurnTimeoutSeconds() == 600
 
 
 def testExpiredTurnDeadlineFailsClosed():
@@ -207,6 +216,10 @@ def testAnalysisCapsuleHasFiniteToolRoutingContract(tmp_path):
     assert "필요한 근거가 확보되면 더 탐색하지 말고 즉시 답변" in capsule
     assert "start.dartlabSkillOs" in capsule
     assert "period와 freq를 누락하지 말고" in capsule
+    assert "사용자가 실제로 판단하려는 결정" in capsule
+    assert "가설을 지지하는 자료만 모으지 말고" in capsule
+    assert "관측 사실과 해석을 구분" in capsule
+    assert "실제 사용하지 않은 valueRef나 dateRef" in capsule
 
 
 def testTurnQuestionPromotesExplicitPeriodToStructuredContext():
@@ -236,6 +249,8 @@ def testTurnQuestionIncludesDeterministicClaimCellContract():
     assert '"requiredCells":10' in question
     assert '"targetCount":1' in question
     assert '"unit":"fiscal_year"' in question
+    assert '"analysisConversation"' in question
+    assert '"mode":"performanceTrend"' in question
 
 
 def testRepairTurnReusesOriginalQuestionContract():
@@ -257,6 +272,27 @@ def testAnalysisCapsuleExplainsCoverageAsCompletionContract(tmp_path):
     assert "requiredEvidence가 빠지면" in capsule
     assert "claimCellContract" in capsule
     assert "requiredCells를 완료 조건" in capsule
+
+
+def testAnalysisCapsuleUsesInvestmentDecisionProductBeforeGapFilling(tmp_path):
+    capsule = buildAnalysisCapsule(cwd=tmp_path, mcpConnected=True)
+
+    assert "Company.reportModel을 perspective=investment로 먼저" in capsule
+    assert "investmentDecision 9차원" in capsule
+    assert "usable, partial, blocked, notObserved" in capsule
+    assert "개인화 매수·매도 지시" in capsule
+
+
+def testTurnQuestionCarriesInvestmentAcceptanceContract():
+    question = buildTurnQuestion(
+        "삼성전자 005930 지금 투자할 만한지 종합 분석해줘",
+        {"stockCode": "005930", "reportMode": "investment"},
+    )
+
+    assert '"reportMode":"investment"' in question
+    assert '"investment.decision_memo"' in question
+    assert '"minUsableDimensions":7' in question
+    assert '"monitoringTripwires"' in question
 
 
 def testCodexUsesThreadInstructionsAndReadOnlyTurn(monkeypatch, tmp_path):
@@ -314,6 +350,7 @@ def testCodexUsesThreadInstructionsAndReadOnlyTurn(monkeypatch, tmp_path):
     assert threadParams["sandbox"] == "read-only"
     assert threadParams["approvalPolicy"] == "never"
     assert "developerInstructions" not in turnParams
+    assert turnParams["effort"] == "high"
     assert turnParams["sandboxPolicy"] == {"type": "readOnly", "networkAccess": False}
 
 
@@ -391,7 +428,7 @@ def testCodexTurnTimeoutInterruptsNativeTurn(monkeypatch, tmp_path):
     driver = CodexAppServerDriver()
     handle = driver.open(descriptor, "codex", "session-1", tmp_path, instructions="capsule")
 
-    with pytest.raises(TimeoutError, match="300초 제한"):
+    with pytest.raises(TimeoutError, match="600초 제한"):
         list(driver.streamTurn(handle, "질문", instructions="capsule"))
 
     assert interrupted == [("turn/interrupt", {"threadId": "thread-1", "turnId": "turn-1"})]

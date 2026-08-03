@@ -2,7 +2,7 @@
 
 url 은 app-path(base 없음) — SW 가 한 곳에서 BASE_PATH(/dartlab) 접두([07 §1]). 라이브 라우트 SSOT:
 blog=/blog/{slug}, card=/cards?post={slug}(landing share.ts cardShareUrl 동형).
-설계: mainPlan/watcher-notify-platform/08-p1-publish-ops-test.md §1.
+현재 운영 계약은 Skill OS ``operation.notifyPipeline``이다.
 """
 
 from __future__ import annotations

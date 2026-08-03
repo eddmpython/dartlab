@@ -95,7 +95,7 @@ testUniverse:
 
 `search` 는 DART allFilings, DART panel, EDGAR panel, public news 를 sourceRef 보존 본문 인덱스로 검색하는 엔진이다. 외부 모델/서버·GPU·임베딩 0 — 음절 bigram BM25 numpy 역인덱스 + 큐레이션 동의어 + 결정론 라우터(router.json)만으로 통합 검색한다. scope="auto" 가 plain BM25 lane 과 확장 lane 을 RRF 융합해, 구어·약어 질의도 회수하되 확장이 틀려도 plain 순위가 보존된다(always-safe).
 
-제품화 계약은 `mainPlan/search-productization` 을 따른다. 결과 row 는 `source/sourceRef/dataAsOf/snippet/answerable/notAnswerableReason/fieldCards` 를 가져야 한다. graph catalog 가 배포된 환경에서는 optional `entityCards` 로 peer/stage/credit weak-axis 컨텍스트가 붙는다. 운영 산출물명은 contentIndex 와 동거하는 `entityGraphCatalog.parquet` 이고, explicit copy 또는 opt-in offline build 후 manifest required file 로 내려온 경우에만 runtime 이 붙인다. 뉴스와 공시는 같은 표면에 나오지만 source intent 는 hard isolation 이다. 신선도 — 본문 인덱스는 source catalog delta + monthly main compaction 기준이며, 최근 며칠은 `Company.filings()` 또는 source별 live path 병행 권장. canonical source catalog 는 monthly main full HF pull bootstrap 또는 previous-manifest drop guard 를 통과한 source-owner run 으로만 운영 증거가 된다.
+결과 row는 `source/sourceRef/dataAsOf/snippet/answerable/notAnswerableReason/fieldCards`를 가져야 한다. graph catalog가 배포된 환경에서는 optional `entityCards`로 peer/stage/credit weak-axis 컨텍스트가 붙는다. 운영 산출물명은 contentIndex와 동거하는 `entityGraphCatalog.parquet`이고, explicit copy 또는 opt-in offline build 후 manifest required file로 내려온 경우에만 runtime이 붙인다. 뉴스와 공시는 같은 표면에 나오지만 source intent는 hard isolation이다. 신선도는 본문 인덱스의 source catalog delta와 monthly main compaction을 기준으로 한다. 최근 며칠은 `Company.filings()` 또는 source별 live path 병행을 권장한다. canonical source catalog는 monthly main full HF pull bootstrap 또는 previous-manifest drop guard를 통과한 source-owner run으로만 운영 증거가 된다.
 
 단일 종목 공시는 `Company(code).filings()` 가 안정 진입점. search 는 *횡단 키워드 검색* — "어떤 회사가 유상증자했나" 같은 질문 한정.
 

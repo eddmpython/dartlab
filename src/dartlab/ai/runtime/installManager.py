@@ -5,7 +5,6 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-import shutil
 import subprocess
 from dataclasses import asdict, dataclass
 
@@ -75,7 +74,7 @@ def executeInstallPlan(plan: InstallPlan, *, approvedDigest: str) -> subprocess.
 
 
 def _platformInstallArgs(argv: tuple[str, ...]) -> tuple[str, ...]:
-    """Windows에서 npm batch launcher를 CreateProcess가 확실히 실행할 수 있게 한다."""
+    """Windows npm 계획을 설치 전후에도 같은 결정론적 argv로 유지한다."""
     if os.name == "nt" and argv and argv[0].casefold() == "npm":
-        return (shutil.which("npm.cmd") or "npm.cmd", *argv[1:])
+        return ("npm.cmd", *argv[1:])
     return argv

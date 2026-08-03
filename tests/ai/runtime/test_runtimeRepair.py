@@ -178,3 +178,24 @@ def testMissingEvidenceFallsBackToSameNativeSession(monkeypatch):
     done = next(event.data for event in events if event.kind == "done")
     assert done["responseMeta"]["finalEvent"] == "answer"
     assert done["responseMeta"]["repairMode"] == "native_session"
+
+
+def testRuntimeErrorReasonSurvivesWhenTurnNeverCompletes(monkeypatch):
+    projector = EventProjector("codex", "session-timeout")
+
+    class FakeEngine:
+        def stream(self, question, **kwargs):
+            yield projector.event("sessionStarted", turnId="", payload={"nativeSessionId": "native-timeout"})
+            yield projector.event("turnStarted", turnId="turn-timeout")
+            yield projector.event(
+                "runtimeError",
+                turnId="turn-timeout",
+                payload={"error": "에이전트 턴이 600초 제한을 초과했습니다"},
+            )
+
+    monkeypatch.setattr("dartlab.ai.runtime.getRuntimeEngine", lambda: FakeEngine())
+
+    events = list(runRuntimeAgent("005930 투자 판단", runtimeId="codex"))
+
+    done = next(event.data for event in events if event.kind == "done")
+    assert done["responseMeta"]["failureReason"] == "에이전트 턴이 600초 제한을 초과했습니다"

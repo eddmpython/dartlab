@@ -970,7 +970,7 @@ def _resultToRefs(apiRef: str, result: Any, *, target: str = "") -> ToolResult:
                 source=apiRef,
                 # 전체 result 는 ToolResult.data 가 정본이다. ref 안에 다시 복제하면 MCP
                 # structuredContent 크기가 정확히 두 배가 되므로 감사용 계약 필드와 preview만 둔다.
-                payload={**executionContract, "preview": _jsonPreview(payload)},
+                payload={**executionContract, "target": target or None, "preview": _jsonPreview(payload)},
             )
         ]
         refs.extend(_lensRefs(apiRef, payload, target=target))
@@ -1701,6 +1701,7 @@ def _lensRefs(apiRef: str, payload: Any, *, target: str) -> list[Ref]:
         refTarget = str(identity.get("target") or target or "result")
         axis = str(identity.get("axis") or "representative")
         stem = _refStem(refTarget, engine, axis)
+        conclusionValue = conclusion.get("label") or conclusion.get("summary")
         refs.append(
             Ref(
                 id=f"value:{stem}:conclusion",
@@ -1712,6 +1713,9 @@ def _lensRefs(apiRef: str, payload: Any, *, target: str) -> list[Ref]:
                     "target": refTarget,
                     "axis": axis,
                     "status": product.get("status"),
+                    # valueRef는 숫자만이 아니라 직접 관측된 정성 판단도 담는다. 품질
+                    # 게이트가 빈 값으로 폐기하지 않도록 대표 결론을 정본 value로 둔다.
+                    "value": conclusionValue,
                     "label": conclusion.get("label"),
                     "summary": conclusion.get("summary"),
                     "confidence": confidence.get("score"),

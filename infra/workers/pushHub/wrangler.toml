@@ -2,7 +2,7 @@ name = "dartlab-push-hub"
 main = "worker.js"
 compatibility_date = "2024-12-01"
 
-# 배포 절차 (mainPlan/watcher-notify-platform/08-p1-publish-ops-test.md §3):
+# 배포 절차는 README.md와 operation.notifyPipeline을 따른다.
 #   wrangler d1 create dartlab-push-hub          # → database_id 아래 기입
 #   wrangler d1 execute dartlab-push-hub --remote --file schema.sql
 #   wrangler secret put VAPID_PRIVATE_KEY        # pkcs8 base64url ([06] §4)

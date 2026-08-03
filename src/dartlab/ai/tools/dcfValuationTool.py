@@ -297,6 +297,10 @@ def dcfValuationTool(
         "corpName": corpName,
         "currentPrice": currentPrice,
         "scenarios": results,
+        # tableRef의 bounded evidence projection은 rows/rowCount를 보존한다. 시나리오
+        # dict만 두면 실제 계산 결과가 저장 경계에서 사라져 빈 표로 오판된다.
+        "rows": _scenarioRows(results),
+        "rowCount": len(results),
         "assumptions": {
             "waccBase": waccBase,
             "terminalGrowthRateBase": tgBase,
@@ -361,6 +365,11 @@ def dcfValuationTool(
         parts.append(f"MoS={mosBase:+.1f}%")
 
     return ToolResult(True, " · ".join(parts), refs=refs, data=payload)
+
+
+def _scenarioRows(results: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
+    """DCF 시나리오 결과를 canonical table rows로 안정적으로 투영한다."""
+    return [dict(results[name]) for name in ("bear", "base", "bull") if name in results]
 
 
 def _dcfPeriodExecutionRefs(stockCode: str, corpName: str, period: Any) -> list[Ref]:

@@ -54,7 +54,7 @@ lastUpdated: '2026-07-06'
 
 ## 역할
 
-공개 왓처-노티파이 파이프라인은 **감지할 만한 공시 이벤트를 cron 이 발굴해 Web Push 로 사용자에게 밀고, 클릭 시 터미널의 인사이트로 잇는다**. 감지 지능은 dartlab(gather·scan SSOT)에 살고, 허브(pushHub Worker)는 구독 보관 + VAPID 서명 + 발송만 한다(런타임-SSOT, `operation.architecture`). 이 문서는 그 파이프라인의 운영 계약이다. 상세 진행 원장·배포 런북은 `mainPlan/_done/watcher-notify-platform/05-progress-ledger.md`.
+공개 왓처-노티파이 파이프라인은 **감지할 만한 공시 이벤트를 cron이 발굴해 Web Push로 사용자에게 밀고, 클릭 시 터미널의 인사이트로 잇는다**. 감지 지능은 dartlab(gather·scan SSOT)에 살고, 허브(pushHub Worker)는 구독 보관, VAPID 서명, 발송만 한다(런타임 SSOT는 `operation.architecture`). 이 문서가 파이프라인의 현재 운영 계약이다.
 
 핵심 원칙: **왓치가 첫 관문**이다. cron 은 알림을 쏘기 전에 IPO 공모분석을 먼저 베이크해 HF 에 올려, 딥링크가 여는 리포트가 이미 존재하게 한다.
 

@@ -3,7 +3,7 @@
 구독 저장 + Web Push 발송만 하는 thin Cloudflare Worker. 감지 지능(무엇을 알릴지)은 dartlab(gather·scan
 SSOT)에 살고, 허브는 **구독 보관 + VAPID 서명 + push 발송**만 한다. 크롤·판정·LLM 0.
 
-설계 정본: [`mainPlan/watcher-notify-platform/`](../../../mainPlan/watcher-notify-platform/) (02 계약 · 06 허브 상세 · 08 운영).
+현재 운영 계약은 Skill OS `operation.notifyPipeline`이다.
 
 ## 라우트 3개
 

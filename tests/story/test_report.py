@@ -1,6 +1,6 @@
 """P2 리포트 emitter 게이트 - Story 블록 → 계약 ReportBlock 매핑 + pro 블록 합성 (offline).
 
-플랜 SSOT: mainPlan/professional-report-engine/03-report-engine-architecture.md §2.3.
+현재 계약: docs/handbook/architecture/analysisProducts.md.
 buildReportModel 은 self-calc 0 - 본 파일은 순수 매핑 헬퍼(_mapBlock·_valuationView·
 _scenarioSet·_buildThesis)를 합성 입력으로 검증. company 데이터 의존 end-to-end 는 CI.
 """
@@ -77,6 +77,27 @@ def test_scenario_set_legs_and_upside():
     assert [leg["key"] for leg in s["legs"]] == ["bear", "base", "bull"]
     base = next(leg for leg in s["legs"] if leg["key"] == "base")
     assert base["intrinsic"] == 196337 and base["upside"] == 96.3, "upside = (iv-cur)/cur×100"
+
+
+def test_scenario_set_preserves_driver_assumptions():
+    dfv = {
+        "scenarios": {"bear": 50000, "base": 80000, "bull": 100000},
+        "currentPrice": 70000,
+        "scenarioMethod": {
+            "method": "driverSensitivity",
+            "driverNames": ["growth", "wacc"],
+            "drivers": {
+                "bear": {"wacc": 9.7, "growthMult": 0.8},
+                "base": {"wacc": 8.7, "growthMult": 1.0},
+                "bull": {"wacc": 7.7, "growthMult": 1.2},
+            },
+        },
+    }
+
+    result = _scenarioSet(dfv)
+
+    assert result["legs"][0]["wacc"] == 9.7
+    assert result["legs"][0]["growth"] == 0.8
 
 
 def test_scenario_set_none_without_base():
@@ -197,3 +218,65 @@ def test_build_report_model_does_not_promote_partial_lens(monkeypatch):
     assert all(section["sourceEngine"] != "credit" for section in model["sections"])
     assert all(kpi["label"] != "신용등급" for kpi in model["headlineKpis"])
     assert all(finding["key"] != "lens.credit" for finding in model["keyFindings"])
+
+
+def test_investment_report_uses_decision_fast_path_without_generic_story(monkeypatch):
+    """투자 브리프는 범용 Story 블록 전체를 먼저 계산하지 않는다."""
+    from dartlab.analysis.valuation import dFV as _dfv
+    from dartlab.story import lensProducts as _lenses
+    from dartlab.story import registry as _registry
+    from dartlab.story import thesis as _thesis
+    from dartlab.story.report import buildReportModel
+
+    product = {
+        "status": "usable",
+        "identity": {"engine": "analysis"},
+        "time": {"asOf": "2026-08-03"},
+        "conclusion": {"summary": "실적 대표 판단"},
+        "claims": [
+            {
+                "id": "analysis.operatingIncomeCagr",
+                "label": "영업이익 CAGR",
+                "value": 12.0,
+                "unit": "%",
+                "status": "observed",
+            }
+        ],
+        "confidence": {},
+        "evidence": [],
+        "gaps": [],
+    }
+    bundle = {
+        "schemaVersion": 1,
+        "target": "005930",
+        "market": "KR",
+        "engines": ["analysis"],
+        "products": {"analysis": product},
+        "results": {},
+        "tensions": {"items": []},
+        "statusCounts": {"usable": 1},
+        "gaps": [],
+        "noComposite": True,
+    }
+    monkeypatch.setattr(_registry, "buildStory", lambda *_a, **_k: (_ for _ in ()).throw(AssertionError("generic")))
+    monkeypatch.setattr(_lenses, "collectLensProducts", lambda *_a, **_k: bundle)
+    monkeypatch.setattr(_lenses, "publicLensBundle", lambda value: value)
+    monkeypatch.setattr(_dfv, "calcDFV", lambda *_a, **_k: None)
+    monkeypatch.setattr(
+        _thesis,
+        "buildThesis",
+        lambda *_a, **_k: {
+            "central": "중심논지",
+            "bearCase": "반대논지",
+            "triggers": ["무효화 조건"],
+            "pillars": [],
+        },
+    )
+    company = type("Company", (), {"stockCode": "005930", "corpName": "삼성전자"})()
+
+    model = buildReportModel(company, "investment")
+
+    assert model["perspectiveKey"] == "investment"
+    assert model["investmentDecision"]["dimensions"]["thesis"]["claim"] == "중심논지"
+    assert model["sections"][0]["key"] == "investmentDecision"
+    assert buildReportModel(company, "투자")["perspectiveKey"] == "investment"

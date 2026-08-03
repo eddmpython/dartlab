@@ -231,4 +231,4 @@ Openverse/Commons 검색도 범용 업종어만 넣지 않는다. `queries` 는 
 | `blog/_scripts/migrate_carousels_to_blog.py` | 1회성 이관(sns/carousels → blog frontmatter, **완료**). 이후 sns 는 **유물**·재동기화 안 함 |
 | `blog/_scripts/test_carousel_contracts.py` | 발행/이관 테스트 |
 
-설계 SSOT: `mainPlan/blog-carousel-ssot/01-unified-slug-ssot.md`
+현재 slug 계약은 이 문서와 실행기 구현이 소유한다.

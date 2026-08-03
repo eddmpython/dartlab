@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import time
 import uuid
 from collections.abc import Iterator
@@ -13,6 +14,15 @@ from ..contracts import AgentEvent, ProcessSpec, RuntimeDescriptor
 from ..eventProjection import EventProjector
 from ..processSupervisor import JsonRpcChannel, ProcessSupervisor
 from .base import DriverHandle, remainingTurnSeconds, runtimeLaunchArgv, runtimeTurnTimeoutSeconds
+
+_DEFAULT_CODEX_REASONING_EFFORT = "high"
+_CODEX_REASONING_EFFORTS = frozenset({"low", "medium", "high", "xhigh", "max", "ultra"})
+
+
+def codexReasoningEffort() -> str:
+    """DartLab 분석 턴의 품질·지연 균형을 위한 Codex reasoning effort다."""
+    configured = os.environ.get("DARTLAB_CODEX_REASONING_EFFORT", _DEFAULT_CODEX_REASONING_EFFORT).strip().casefold()
+    return configured if configured in _CODEX_REASONING_EFFORTS else _DEFAULT_CODEX_REASONING_EFFORT
 
 
 class CodexAppServerDriver:
@@ -98,6 +108,7 @@ class CodexAppServerDriver:
             {
                 "threadId": handle.nativeSessionId,
                 "input": [{"type": "text", "text": question}],
+                "effort": codexReasoningEffort(),
                 "approvalPolicy": "never",
                 "sandboxPolicy": {"type": "readOnly", "networkAccess": False},
             },

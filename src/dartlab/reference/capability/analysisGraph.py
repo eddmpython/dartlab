@@ -249,6 +249,48 @@ def understandingPacketForQuestion(
     )
 
 
+def _candidateCapabilityRefs(
+    contracts: list[CapabilityContract],
+    catalog: dict[str, Any],
+    semanticMatches: list[tuple[str, dict[str, Any], float]],
+    limit: int,
+) -> list[str]:
+    """선언 계약과 의미 검색을 합쳐 실행 가능한 capability만 남긴다."""
+    declaredRefs = _unique(ref for contract in contracts for ref in contract.capabilityRefs)
+    semanticRefs = [
+        apiRef
+        for apiRef, entry, _score in semanticMatches
+        if isinstance(entry, dict) and bool(entry.get("engineCallable"))
+    ]
+    return [
+        apiRef
+        for apiRef in _unique([*declaredRefs, *semanticRefs])
+        if isinstance(catalog.get(apiRef), dict) and bool(catalog[apiRef].get("engineCallable"))
+    ][:limit]
+
+
+def _referenceOnlyCoverage(semanticMatches: list[tuple[str, dict[str, Any], float]]) -> list[dict[str, Any]]:
+    """의미상 맞지만 직접 실행할 수 없는 참조를 canonical 대체 안내와 함께 제한한다."""
+    matches: list[dict[str, Any]] = []
+    for apiRef, entry, score in semanticMatches:
+        if not isinstance(entry, dict) or bool(entry.get("engineCallable")):
+            continue
+        matches.append(
+            _dropEmpty(
+                {
+                    "apiRef": apiRef,
+                    "score": round(float(score), 4),
+                    "summary": str(entry.get("summary") or "")[:240],
+                    "executionGuide": str(entry.get("executionGuide") or "")[:320],
+                    "replacementRefs": list(entry.get("replacementRefs") or ())[:5],
+                }
+            )
+        )
+        if len(matches) >= 5:
+            break
+    return matches
+
+
 def coveragePacketForQuestion(
     question: str | None,
     *,
@@ -268,37 +310,9 @@ def coveragePacketForQuestion(
     contracts = contractsForQuestion(question)
     catalog = loadCapabilities()
 
-    declaredRefs = _unique(ref for contract in contracts for ref in contract.capabilityRefs)
     semanticMatches = searchCapabilities(question or "", limit=40, minScore=0.0)
-    semanticRefs = [
-        apiRef
-        for apiRef, entry, _score in semanticMatches
-        if isinstance(entry, dict) and bool(entry.get("engineCallable"))
-    ]
-    candidateRefs = [
-        apiRef
-        for apiRef in _unique([*declaredRefs, *semanticRefs])
-        if isinstance(catalog.get(apiRef), dict) and bool(catalog[apiRef].get("engineCallable"))
-    ][:boundedLimit]
-
-    referenceOnlyMatches: list[dict[str, Any]] = []
-    for apiRef, entry, score in semanticMatches:
-        if not isinstance(entry, dict) or bool(entry.get("engineCallable")):
-            continue
-        referenceOnlyMatches.append(
-            _dropEmpty(
-                {
-                    "apiRef": apiRef,
-                    "score": round(float(score), 4),
-                    "summary": str(entry.get("summary") or "")[:240],
-                    "executionGuide": str(entry.get("executionGuide") or "")[:320],
-                    "replacementRefs": list(entry.get("replacementRefs") or ())[:5],
-                }
-            )
-        )
-        if len(referenceOnlyMatches) >= 5:
-            break
-
+    candidateRefs = _candidateCapabilityRefs(contracts, catalog, semanticMatches, boundedLimit)
+    referenceOnlyMatches = _referenceOnlyCoverage(semanticMatches)
     callableCount = sum(
         1 for entry in catalog.values() if isinstance(entry, dict) and bool(entry.get("engineCallable"))
     )
@@ -312,6 +326,8 @@ def coveragePacketForQuestion(
             "freshness": _mergeDicts(contract.freshness for contract in contracts),
             "comparisonCompleteness": _mergeDicts(contract.comparisonCompleteness for contract in contracts),
             "toolArgPolicy": _unique(v for contract in contracts for v in contract.toolArgPolicy),
+            "acceptanceCriteria": _mergeDicts(contract.acceptanceCriteria for contract in contracts),
+            "failurePolicy": _mergeDicts(contract.failurePolicy for contract in contracts),
             "stockCode": stockCode,
             "catalog": {
                 "total": len(catalog),

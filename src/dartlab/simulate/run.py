@@ -1,7 +1,7 @@
-"""End-to-end deterministic scenario run (L2.5, internal) - `runScenario`.
+"""End-to-end deterministic scenario run (L2.5, internal). `runScenario`.
 
-Per `mainPlan/scenario-simulator/01-engine-architecture.md` §3, a simulate result is always a set
-of node values each carrying ``ref + quality gate status + provenance + asOf``. This module wires
+A simulate result is always a set of node values carrying
+``ref + quality gate status + provenance + asOf``. This module wires
 the born-clean foundation into one run:
 
     buildSnapshot(company)             # read base metrics ONCE (§13b-5)

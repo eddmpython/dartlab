@@ -11,6 +11,7 @@ from .macro import router as macro_router
 from .priceEvents import router as price_events_router
 from .room import router as room_router
 from .runtime import router as runtime_router
+from .uiQa import router as uiQa_router
 
 __all__ = [
     "ai_router",
@@ -26,4 +27,5 @@ __all__ = [
     "price_events_router",
     "room_router",
     "runtime_router",
+    "uiQa_router",
 ]

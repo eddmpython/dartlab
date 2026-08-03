@@ -9,7 +9,7 @@
   - newOrders = scan('orders') book-to-bill >= 1. 허브 /active set-diff 커서(topicActive)로 신규 진입만
                발화, 하락 후 재상승(재크로싱)은 재발화(01-arch §5 threshold_cross). slug=stockCode.
 
-설계: mainPlan/watcher-notify-platform/01-architecture.md §2·§5 · 04 §1 P2.
+현재 운영 계약은 Skill OS ``operation.notifyPipeline``이다.
 실행: uv run python -X utf8 .github/scripts/notify/watch.py [--topics newIpo,newOrders] [--dry-run]
 """
 

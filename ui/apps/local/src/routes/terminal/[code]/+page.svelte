@@ -19,12 +19,17 @@
 </svelte:head>
 
 {#if ready}
-	<TerminalSurface {eng} {runtime} hosts={localHosts} links={localLinks} initial={data.code} />
+	<div data-qa="terminal-surface">
+		<TerminalSurface {eng} {runtime} hosts={localHosts} links={localLinks} initial={data.code} />
+	</div>
 {:else}
-	<div class="loading">로컬 서버(/api) 연결 중 …</div>
+	<div class="loading" data-qa="terminal-loading">로컬 서버(/api) 연결 중 …</div>
 {/if}
 
 <style>
+	[data-qa='terminal-surface'] {
+		height: 100vh;
+	}
 	.loading {
 		height: 100vh;
 		display: flex;

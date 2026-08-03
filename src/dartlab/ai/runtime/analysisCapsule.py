@@ -32,9 +32,18 @@ def buildAnalysisCapsule(*, cwd: Path, mcpConnected: bool) -> str:
         "저장소와 Skill OS 부트스트랩은 호스트가 이미 완료했다. start.dartlabSkillOs나 operation skill을 다시 읽지 마라. "
         "ReadSkill에는 사용자 질문의 핵심 분석 의도를 넣어 턴당 정확히 한 번만 호출하고 응답의 capabilityRefs, coverageCapabilityRefs, capabilityDetails에서 실행 계약을 골라라. "
         "application context의 informationCoverage는 강제 실행 순서가 아니라 질문별 필수 정보와 canonical 후보 계약이다. 관련된 모든 도메인을 검토하고 requiredEvidence가 빠지면 완전한 결론이라고 주장하지 마라. "
+        "analysisConversation은 호스트가 coverage 계약에서 만든 대화 프레임이다. mode, decisionGoal, answerShape를 질문의 깊이와 최종 답변 구조에 반영하되 별도 고정 Graph나 도구 순서로 해석하지 마라. "
+        "BRIEF에서는 사용자가 실제로 판단하려는 결정, 이를 지지할 가설, 틀렸음을 보여 줄 반증 조건을 먼저 세워라. WORK에서는 가설을 지지하는 자료만 모으지 말고 같은 기간·대상 기준의 반대 근거와 비교 기준도 확인하라. "
+        "CRITIQUE에서는 가장 강한 대안 설명, 데이터 신선도, 누락된 비교축을 점검하라. COMPOSE에서는 관측 사실과 해석을 구분하고 결론, 중요한 이유, 반대 근거, 판단이 바뀌는 조건, 다음 확인 항목 순으로 답하라. "
+        "인용할 정성 valueRef의 대표 label과 dateRef의 period 또는 asOf는 본문에 명시하고, 본문에서 실제 사용하지 않은 valueRef나 dateRef를 근거 묶음에 덧붙이지 마라. "
+        "단순 수치 질문에는 요청한 표와 추세를 먼저 주고 투자 의미와 불확실성은 각각 한 문장 이내로 덧붙여 과잉 분석하지 마라. 비교 질문은 모든 대상을 같은 기간·지표·가정으로 맞추고 투자기간이나 목적에 따라 결론이 바뀌면 그 조건을 명시하라. "
         "claimCellContract가 있으면 requiredCells를 완료 조건으로 삼고 모든 target, metric, period 조합의 canonical valueRef를 확보한 뒤 답하라. "
         "ReadCapability는 선택된 skill 정보가 부족한 경우에만 보조로 사용하라. "
         "같은 도구와 같은 인자를 반복 호출하지 말고, 일반 질문은 전체 도구 호출 8회 이내에서 끝내라. "
+        "투자 분석, 투자할 만한지, 투자 포인트 같은 질문이나 reportMode=investment에서는 Company.reportModel을 perspective=investment로 먼저 한 번 호출하라. "
+        "그 결과의 investmentDecision 9차원을 정본으로 삼고 blocked 또는 partial인 차원만 최신 공시·시장·산업 도구로 보충하라. "
+        "최종 투자 브리프는 기준일과 decisionStatus, 중심논지, 실적 변곡, bear/base 가격 비대칭과 시장 내재 기대, 가장 강한 반대논지·리스크·tripwire, 촉매·다음 확인 시점을 먼저 제시하라. "
+        "각 차원을 usable, partial, blocked, notObserved로 구분하고 빈 항목을 일반론으로 채우지 마라. 개인화 매수·매도 지시와 보정되지 않은 시나리오 확률은 쓰지 마라. "
         "DartLab 외 다른 MCP 서버의 도구는 사용하지 마라. stockCode와 period가 있으면 period와 freq를 누락하지 말고 Company.panel 계약의 EngineCall을 우선하라. "
         "Company.panel이 요청 기간의 tableRef, valueRef, dateRef를 반환했으면 ReadCapability나 RunPython을 추가 호출하지 마라. "
         "단일 데이터 호출은 EngineCall을 사용하고 복합 분석은 광고된 읽기 전용 전용 도구만 사용하라. "
@@ -61,6 +70,7 @@ def buildTurnQuestion(
     Example: `buildTurnQuestion("매출은?", {"stockCode": "005930"})`.
     """
     from dartlab.ai.runtime.answerQuality import claimCellContractForQuestion
+    from dartlab.ai.runtime.conversationPolicy import buildConversationGuide
     from dartlab.reference.capability.analysisGraph import coveragePacketForQuestion
 
     cleanQuestion = question.strip()
@@ -73,6 +83,11 @@ def buildTurnQuestion(
             allowed["period"] = periodHint
     coverage = coveragePacketForQuestion(cleanContractQuestion, stockCode=allowed.get("stockCode"))
     allowed["informationCoverage"] = coverage
+    allowed["analysisConversation"] = buildConversationGuide(
+        cleanContractQuestion,
+        coverage=coverage,
+        stockCode=str(allowed.get("stockCode") or "") or None,
+    )
     comparison = coverage.get("comparisonCompleteness") or {}
     claimCellContract = claimCellContractForQuestion(cleanContractQuestion, comparison=comparison)
     if claimCellContract:

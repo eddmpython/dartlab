@@ -1226,7 +1226,7 @@
       "id": "operation.productCycle",
       "title": "제품 운영 주기 — Outcome Review",
       "category": "operation",
-      "purpose": "북극성 goal, 실행 증거, root scorecard, mainPlan 상태를 한 주기에서 정합시키는 운영 계약이다.",
+      "purpose": "북극성 goal, 실행 증거, root scorecard, handbook의 현재 제품 계약을 한 주기에서 정합시키는 운영 계약이다.",
       "inDegree": 4,
       "outDegree": 4,
       "cluster": "operation",

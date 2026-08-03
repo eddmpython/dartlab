@@ -1,4 +1,4 @@
-"""MCP 서버 기본 테스트 — canonical tool surface, resources, alias 6."""
+"""MCP 서버의 canonical tool surface, resources, alias 계약을 검증한다."""
 
 from __future__ import annotations
 
@@ -13,9 +13,18 @@ def test_mcp_tools_defined():
     from dartlab.mcp import _advertisedTools
 
     names = {tool["name"] for tool in _advertisedTools()}
-    # PascalCase canonical 6 종 + ask
-    expected = {"ask", "ReadSkill", "ReadCapability", "RunPython", "WebSearch", "SaveArtifact", "CompileVisual"}
+    # 설치형 에이전트가 답변 루프를 소유하므로 MCP는 재귀 ask 없이 분석 도구만 광고한다.
+    expected = {
+        "ReadSkill",
+        "ReadCapability",
+        "EngineCall",
+        "RunPython",
+        "WebSearch",
+        "SaveArtifact",
+        "CompileVisual",
+    }
     assert expected.issubset(names)
+    assert "ask" not in names
     # 0.10 제거된 옛 33 generated 도구 + Discovery + Analysis Graph 도구는 advertised 에서 빠짐.
     deprecated = {
         "skill_search",
@@ -120,17 +129,16 @@ def test_mcp_payload_budget_preserves_contract_fields():
 
 
 def test_mcp_advertised_tools_carry_annotations():
-    """0.11 — 모든 advertise 도구가 readOnly/destructive/idempotent/openWorld hint 를 노출.
+    """0.11의 모든 advertise 도구가 readOnly/destructive/idempotent/openWorld hint를 노출한다.
 
-    마스터 플랜 v2 트랙 7 PR-M1 — advertise SSOT 가 CANONICAL_V2 추종으로 전환되며 옛 workbench-
+    마스터 플랜 v2 트랙 7 PR-M1에서 advertise SSOT가 CANONICAL_V2 추종으로 전환되며 옛 workbench-
     internal 3 종 (LookAheadGuard / GroundingCheck / RequestUserInput) 은 advertise 에서 제외.
     """
     from dartlab.mcp import _advertisedTools
 
     tools = {t["name"]: t for t in _advertisedTools()}
-    # CANONICAL_V2 (21 종) + ask = 22 종 모두 annotations 키 보유 — 핵심 도구 sample 검증
+    # CANONICAL_V2 21종 모두 annotations 키를 보유하는지 핵심 도구 표본으로 검증한다.
     for name in (
-        "ask",
         "ReadSkill",
         "ReadCapability",
         "RunPython",
@@ -153,7 +161,7 @@ def test_mcp_advertised_tools_carry_annotations():
 
 
 def test_recipe_skills_all_exposed_as_prompts():
-    """엔진 흡수 contract — silent drift 가드.
+    """엔진 흡수 contract의 silent drift를 막는다.
 
     `list_prompts()` 는 `kind == "recipe"` 만 필터한다. 새 Skill OS 카테고리 (예: `playbook`,
     `scenario`) 가 도입되면 prompts 에서 조용히 누락 + 외부 LLM 이 알아챌 수 없음. 이 invariant
@@ -188,11 +196,11 @@ def test_mcp_skill_resources_are_readable():
 
 
 def test_mcp_logger_handler_no_duplicate():
-    """logger handler 가드 — stream identity 비교로 stderr handler 1 개만."""
+    """stream identity 비교로 stderr logger handler를 하나만 유지한다."""
     import logging
     import sys
 
-    import dartlab.mcp  # noqa: F401 — 모듈 로드
+    import dartlab.mcp  # noqa: F401, 모듈 로드
 
     log = logging.getLogger("dartlab.mcp")
     stderr_handlers = [

@@ -1,6 +1,6 @@
 """Expectation ledger : append-only parquet IO for issued expectations and their scores.
 
-The ledger is the verification spine of the simulate engine (mainPlan/expectation-grid).
+The ledger is the verification spine of the simulate engine.
 Rows are ExpectationSpec (sealed at issuance, immutable) and ExpectationScore (appended when
 actuals arrive; re-scoring appends a new row, never rewrites). There are deliberately no
 update or delete functions: a wrong issuance is history too, annotated only via warnings.

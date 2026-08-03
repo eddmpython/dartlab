@@ -56,12 +56,13 @@ def test_cli_version_contract():
 
 
 def test_cli_setup_contract():
-    result = _run_cli("setup")
+    result = _run_cli("setup", "--help")
 
     assert result.returncode == 0
-    assert "데이터 수집" in result.stdout
-    assert "dartlab ask" in result.stdout
-    assert "dartlab agent status" in result.stdout
+    assert "투자 분석" in result.stdout
+    assert "한 번에" in result.stdout
+    assert "dart-key" in result.stdout
+    assert "--yes" in result.stdout
     assert "claude-code" not in result.stdout
     assert "Error" not in result.stderr and "Traceback" not in result.stderr
 

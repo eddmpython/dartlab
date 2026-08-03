@@ -15,7 +15,7 @@ from ..contracts import AgentEvent, RuntimeDescriptor
 from ..eventProjection import EventProjector
 from ..processSupervisor import JsonRpcChannel, ProcessSupervisor
 
-_DEFAULT_TURN_TIMEOUT_SECONDS = 300.0
+_DEFAULT_TURN_TIMEOUT_SECONDS = 600.0
 _MIN_TURN_TIMEOUT_SECONDS = 30.0
 _MAX_TURN_TIMEOUT_SECONDS = 900.0
 

@@ -1,7 +1,6 @@
-"""The macro→fundamentals edge transfer — the only math the L2.5 driver DAG owns.
+"""The macro to fundamentals edge transfer, the only math the L2.5 driver DAG owns.
 
-Per `mainPlan/scenario-simulator/01-engine-architecture.md` §2/§4, a simulate node is either a
-thin call into an L2 leaf or this single owned edge: the linear map from a macro scenario
+A simulate node is either a thin call into an L2 leaf or this single owned edge: the linear map from a macro scenario
 (GDP / interest rate / FX) onto a company's revenue / margin / WACC, parameterized by a sector
 elasticity.
 

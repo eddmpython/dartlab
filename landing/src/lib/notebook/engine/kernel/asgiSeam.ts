@@ -1,7 +1,7 @@
 /// <reference lib="webworker" />
 // 커널 seam (ASGI arm). browser-as-server dispatch 를 손수(_dl_dispatch)와 pyproc(AsgiServer)
 // 두 impl 중 플래그로 고른다. pyproc가 기본이고 손수 구현은 안정화 기간의 자동 폴백이다.
-// mainPlan/pyproc-runtime-ssot P1. dartlab 라우팅(/pyapi 접두·query)·설치는 seam 위 워커 소유.
+// dartlab 라우팅(/pyapi 접두·query)과 설치는 seam 위 워커가 소유한다.
 import type { AsgiServer as PyprocAsgiServer, Runtime as PyprocRuntime } from 'pyproc';
 
 interface PyLike {

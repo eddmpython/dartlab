@@ -5,7 +5,7 @@
 // - 라우트 3개: POST/DELETE /subscribe(무인증 공개) · POST /send(러너 전용 Bearer+nonce).
 // - 개인조건·종목·user_id 컬럼 영구 0(endpoint+종목=재식별 surface). 개인화는 로컬 소유.
 // - 암호화 = 순수 WebCrypto(RFC 8291 aes128gcm + RFC 8292 VAPID ES256). npm 의존 0.
-// 설계 정본: mainPlan/watcher-notify-platform/06-p1-hub-worker.md
+// 현재 운영 계약: operation.notifyPipeline.
 
 // ── 상수 ───────────────────────────────────────────────────────────
 // 발행(blog·card) + 공개 왓처 토픽(IPO 신규상장·신규수주). 개인조건 0 — 전부 무차별 브로드캐스트.

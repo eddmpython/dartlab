@@ -137,6 +137,7 @@ GATES: dict[str, Gate] = {
             "python -X utf8 tests/audit/noScriptsDir.py && "
             "python -X utf8 blog/_scripts/blogMediaGate.py --ref HEAD && "
             "python -X utf8 tests/audit/workspaceHygiene.py && "
+            "python -X utf8 tests/audit/temporaryPlanBoundary.py && "
             "python -X utf8 tests/audit/checkSilentFail.py && "
             # checkSilentFail 은 "파일 부재 시 빈 값" 한 종류만 본다. 라이브러리에서
             # 실제로 지배적인 침묵은 광범위 catch 가 원인을 버리고 대체값을 돌려주는
@@ -237,7 +238,10 @@ GATES: dict[str, Gate] = {
             "MALLOC_CONF": "dirty_decay_ms:0,muzzy_decay_ms:0",
         },
         cmd=(
-            "pytest tests/ -n auto --dist loadfile --tb=short "
+            # DartLab import는 worker마다 Polars/Rust heap을 소유한다. auto는 운영자
+            # Windows에서 16 worker를 띄워 무관한 callable import를 동시 OOM으로
+            # 무너뜨렸다. CLAUDE.md 메모리 가드와 같은 상한을 CI 진입점에도 적용한다.
+            "pytest tests/ -n 2 --dist loadfile --tb=short "
             "-m 'unit and not requires_data' "
             "--ignore=tests/_attempts "
             "--ignore=tests/test_fixture_analysis_real.py "
@@ -246,7 +250,7 @@ GATES: dict[str, Gate] = {
             "--ignore=tests/realData "
             "--benchmark-disable --no-cov"
         ),
-        timeout_minutes=30,
+        timeout_minutes=60,
     ),
     "wheel-smoke": Gate(
         name="wheel-smoke",

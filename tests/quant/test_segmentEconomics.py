@@ -1,6 +1,6 @@
 """P1c 세그먼트 경제성 게이트 — peer-reconcile 부문마진 배분 (offline 결정론).
 
-플랜 SSOT: mainPlan/professional-report-engine/02c-segment-economics.md.
+segment economics의 현재 실행 계약을 검증한다.
 de-gate: 부문 OI 미공시 시 마진 스킵 → 연결 OI 를 peer 마진 구조로 배분(reconcile, Σ=OI_total).
 본 파일 = 순수 배분 수식 검증. company-level peer fetch 배선은 CI(data) — 02c §5.
 """

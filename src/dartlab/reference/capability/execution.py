@@ -178,6 +178,82 @@ def executionGuide(
 
 
 ENGINE_QUESTION_CONTRACTS: dict[str, dict[str, object]] = {
+    "Company.reportModel": {
+        "contractId": "investment.decision_memo",
+        "capabilityRefs": [
+            "Company.reportModel",
+            "Company.gather",
+            "Company.filings",
+            "Company.industry",
+            "Company.macro",
+            "Company.simulate",
+        ],
+        "tool": "EngineCall",
+        "questionTypes": ["investment_decision"],
+        "questionTriggers": {
+            "any": [
+                "투자 분석",
+                "종합 분석",
+                "투자할 만",
+                "투자 포인트",
+                "투자논지",
+                "투자 논지",
+                "투자 매력",
+                "살 만한",
+                "매수할 만",
+                "기업 분석 보고서",
+                "investment memo",
+                "investment analysis",
+                "investable",
+            ]
+        },
+        "toolNames": ["EngineCall", "DCFValuation", "SensitivityAnalysis", "ScenarioOverlay"],
+        "requiredEvidence": [
+            "target",
+            "asOf",
+            "investmentDimensions",
+            "assumptions",
+            "value",
+            "executionRef",
+        ],
+        "evidenceSchema": {
+            "targetKeys": ["stockCode", "target"],
+            "periodKeys": ["asOf", "period", "dataAsOf"],
+            "valueKeys": ["value", "intrinsic", "current", "upside"],
+            "basisKeys": ["decisionStatus", "evidenceStrength", "dimensions", "assumptions"],
+        },
+        "freshness": {"cadence": "filing_market_event_mixed", "discloseMixedAsOf": True},
+        "acceptanceCriteria": {
+            "requiredDimensions": [
+                "thesis",
+                "counterThesis",
+                "earningsInflection",
+                "industryMacroTransmission",
+                "valuation",
+                "scenarios",
+                "catalysts",
+                "risks",
+                "monitoringTripwires",
+            ],
+            "hardCoreDimensions": ["thesis", "counterThesis", "earningsInflection", "valuation", "risks"],
+            "minUsableDimensions": 7,
+            "statusVocabulary": ["usable", "partial", "blocked", "notObserved"],
+        },
+        "failurePolicy": {
+            "blockedHardCoreMeans": "insufficient",
+            "noGenericGapFilling": True,
+            "noScenarioProbabilitiesWithoutCalibration": True,
+            "noPersonalizedTradeInstruction": True,
+        },
+        "toolArgPolicy": [
+            "report_model_investment_first",
+            "fill_only_missing_decision_dimensions",
+            "catalyst_requires_event_timing_impact_and_invalidation",
+            "scenario_driver_differences_required",
+            "mixed_as_of_must_be_disclosed",
+        ],
+        "priority": 130,
+    },
     "Company.panel": {
         "contractId": "company.statement_fact",
         "capabilityRefs": ["Company.panel"],

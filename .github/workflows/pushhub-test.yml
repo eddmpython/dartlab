@@ -3,7 +3,7 @@ name: PushHub Test
 # 왓처·알림 플랫폼 P1 의 3 러너 중 2종 CI 강제(러너1 landing vitest 는 deploy-landing.yml build 전 step).
 #   러너2: pushHub Worker (vitest-pool-workers — 인증·nonce·구독검증·fan-out·purge)
 #   러너3: 발행 러너 py (detect·payload·nonce·sanitize)
-# 설계: mainPlan/watcher-notify-platform/08-p1-publish-ops-test.md §4.
+# 현재 운영 계약: operation.notifyPipeline.
 
 on:
   push:

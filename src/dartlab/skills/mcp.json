@@ -1088,7 +1088,7 @@
         "engines.company",
         "engines.scan"
       ],
-      "bodyPreview": "## 엔진 역할\n\n`search` 는 DART allFilings, DART panel, EDGAR panel, public news 를 sourceRef 보존 본문 인덱스로 검색하는 엔진이다. 외부 모델/서버·GPU·임베딩 0 — 음절 bigram BM25 numpy 역인덱스 + 큐레이션 동의어 + 결정론 라우터(router.json)만으로 통합 검색한다. scope=\"auto\" 가 plain BM25 lane 과 확장 lane 을 RRF 융합해, 구어·약어 질의도 회수하되 확장이 틀려도 plain 순위가 보존된다(always-safe).\n\n제품화 계약은 `mainPlan/search-productization` 을 따른다. 결과 row 는 `source/sourceRef/dataAsOf/snippet/answerable/notAnswerableReason/fieldCards` 를 가져야 한다. graph catalog 가 배포된 환경에서는 optional `entityCards` 로 peer/stage/credit weak-axis 컨텍스트가 붙는다. 운영 산출물명은 contentIndex 와 동거하는 `entityGraphCatalog.parquet` "
+      "bodyPreview": "## 엔진 역할\n\n`search` 는 DART allFilings, DART panel, EDGAR panel, public news 를 sourceRef 보존 본문 인덱스로 검색하는 엔진이다. 외부 모델/서버·GPU·임베딩 0 — 음절 bigram BM25 numpy 역인덱스 + 큐레이션 동의어 + 결정론 라우터(router.json)만으로 통합 검색한다. scope=\"auto\" 가 plain BM25 lane 과 확장 lane 을 RRF 융합해, 구어·약어 질의도 회수하되 확장이 틀려도 plain 순위가 보존된다(always-safe).\n\n결과 row 는 `source/sourceRef/dataAsOf/snippet/answerable/notAnswerableReason/fieldCards` 를 가져야 한다. graph catalog 가 배포된 환경에서는 optional `entityCards` 로 peer/stage/credit weak-axis 컨텍스트가 붙는다. 운영 산출물명은 contentIndex 와 동거하는 `entityGraphCatalog.parquet` "
     },
     {
       "id": "engines.search.disclosureSearch",
@@ -1772,7 +1772,7 @@
         "Web Push 운영"
       ],
       "nextSkills": [],
-      "bodyPreview": "## 역할\n\n공개 왓처-노티파이 파이프라인은 **감지할 만한 공시 이벤트를 cron 이 발굴해 Web Push 로 사용자에게 밀고, 클릭 시 터미널의 인사이트로 잇는다**. 감지 지능은 dartlab(gather·scan SSOT)에 살고, 허브(pushHub Worker)는 구독 보관 + VAPID 서명 + 발송만 한다(런타임-SSOT, `operation.architecture`). 이 문서는 그 파이프라인의 운영 계약이다. 상세 진행 원장·배포 런북은 `mainPlan/_done/watcher-notify-platform/05-progress-ledger.md`.\n\n핵심 원칙: **왓치가 첫 관문**이다. cron 은 알림을 쏘기 전에 IPO 공모분석을 먼저 베이크해 HF 에 올려, 딥링크가 여는 리포트가 이미 존재하게 한다.\n\n## 파이프라인 단계 (notify-watch.yml cron, 평일 17시 KST)\n\n```\n[1] Bake  buildIpoReports.py  발굴→파싱→ reports.parquet(라이브) + history.parquet(누적) → HF push\n[2] Watch watch.py            _baked_ipo_"
+      "bodyPreview": "## 역할\n\n공개 왓처-노티파이 파이프라인은 **감지할 만한 공시 이벤트를 cron이 발굴해 Web Push로 사용자에게 밀고, 클릭 시 터미널의 인사이트로 잇는다**. 감지 지능은 dartlab(gather·scan SSOT)에 살고, 허브(pushHub Worker)는 구독 보관, VAPID 서명, 발송만 한다(런타임 SSOT는 `operation.architecture`). 이 문서가 파이프라인의 현재 운영 계약이다.\n\n핵심 원칙: **왓치가 첫 관문**이다. cron 은 알림을 쏘기 전에 IPO 공모분석을 먼저 베이크해 HF 에 올려, 딥링크가 여는 리포트가 이미 존재하게 한다.\n\n## 파이프라인 단계 (notify-watch.yml cron, 평일 17시 KST)\n\n```\n[1] Bake  buildIpoReports.py  발굴→파싱→ reports.parquet(라이브) + history.parquet(누적) → HF push\n[2] Watch watch.py            _baked_ipo_"
     },
     {
       "id": "operation.observability",
@@ -1852,9 +1852,9 @@
       "id": "operation.productCycle",
       "title": "제품 운영 주기 — Outcome Review",
       "category": "operation",
-      "purpose": "북극성 goal, 실행 증거, root scorecard, mainPlan 상태를 한 주기에서 정합시키는 운영 계약이다.",
+      "purpose": "북극성 goal, 실행 증거, root scorecard, handbook의 현재 제품 계약을 한 주기에서 정합시키는 운영 계약이다.",
       "whenToUse": [
-        "mainPlan 진행 상태를 바꿀 때",
+        "임시 initiative를 완료하고 handbook으로 승격할 때",
         "북극성 축 점수를 재판정할 때",
         "release acceptance와 operator journey를 기록할 때"
       ],
@@ -1862,7 +1862,7 @@
         "operation.productDirection",
         "operation.testing"
       ],
-      "bodyPreview": "## 주기\n\n1. 이번 주 실제 사용자 outcome과 operator journey를 모은다.\n2. 각 initiative의 primary goal과 disqualifier를 대조한다.\n3. contracts, integration, UI, security, performance gate가 실제 runner에서 도는지 확인한다.\n4. outcome이 없거나 권위가 부족하면 `noData` 또는 `미측정`을 유지한다.\n5. root README 점수는 반복 검증이 늘거나 줄었을 때만 재판정한다.\n6. mainPlan ledger에 결정, 근거, 남은 위험, 다음 exit를 기록한다.\n\n## Release 질문\n\n- 실제 질문에서 시작했는가.\n- 정식 엔진 결과와 source identity가 있는가.\n- 사용자가 exact evidence를 열 수 있는가.\n- 실패, 취소, reconnect가 child process나 원장을 손상시키지 않는가.\n- runtime을 바꿔도 같은 capability와 evidence 문법인가.\n\n하나라도 아니면 기능 구현은 존재할 수 있어도 verified outcome 완료로 세지 않는다."
+      "bodyPreview": "## 주기\n\n1. 이번 주 실제 사용자 outcome과 operator journey를 모은다.\n2. 각 initiative의 primary goal과 disqualifier를 대조한다.\n3. contracts, integration, UI, security, performance gate가 실제 runner에서 도는지 확인한다.\n4. outcome이 없거나 권위가 부족하면 `noData` 또는 `미측정`을 유지한다.\n5. root README 점수는 반복 검증이 늘거나 줄었을 때만 재판정한다.\n6. 구현된 현재 계약은 코드에서 다시 확인해 handbook에 승격한다. 완료된 임시 initiative는 삭제한다.\n\n## Release 질문\n\n- 실제 질문에서 시작했는가.\n- 정식 엔진 결과와 source identity가 있는가.\n- 사용자가 exact evidence를 열 수 있는가.\n- 실패, 취소, reconnect가 child process나 원장을 손상시키지 않는가.\n- runtime을 바꿔도 같은 capability와 evidence 문법인가.\n\n하나라도 아니면 기능 구현은 존재할 수 있어도 verified outcome 완료로 세지 않는다."
     },
     {
       "id": "operation.productDirection",
@@ -1870,7 +1870,7 @@
       "category": "operation",
       "purpose": "기능 수나 모델 호출 수가 아니라 사용자가 정확한 근거를 확인한 분석 결과를 DartLab의 북극성으로 삼는 제품 방향 계약이다.",
       "whenToUse": [
-        "mainPlan initiative의 primary goal을 정할 때",
+        "임시 initiative의 primary goal을 정할 때",
         "AI, UI, Python, CLI 기능의 제품 완료를 판정할 때",
         "북극성 지표 또는 scorecard를 변경할 때"
       ],

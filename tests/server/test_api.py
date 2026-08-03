@@ -112,8 +112,9 @@ class TestNormalizeProviderName:
     def test_known_provider(self):
         from dartlab.server.api.common import normalizeProviderName
 
-        result = normalizeProviderName("gemini")
-        assert result is not None
+        assert normalizeProviderName("codex") == "codex"
+        assert normalizeProviderName("claude") == "claude"
+        assert normalizeProviderName("gemini") is None
 
 
 # ═══════════════════════════════════════════════════════════

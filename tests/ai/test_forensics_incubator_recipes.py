@@ -75,7 +75,7 @@ def testForensicsRecipeSpecsLoadAsObservedRecipes() -> None:
         assert spec.requiredEvidence
         assert spec.expectedOutputs
         # capabilityRefs 는 lint 가 빈 리스트를 허용 (registry.py::_validateCapabilityRefs).
-        # 선언된 경우만 L1.5 셋과 교집합 필수 — scan.{quality,audit,disclosureRisk} 는
+        # 선언된 경우만 L1.5 셋과 교집합 필수. scan.{quality,audit,disclosureRisk} 는
         # registry 에 없는 axis 이므로 빈 상태가 합법적.
         if spec.capabilityRefs:
             assert set(spec.capabilityRefs) & {
@@ -277,31 +277,77 @@ def testForensicsSynthBuildsDeepMemoFromL15Inputs() -> None:
 
 
 def testForensicsAskWorkbenchRunsL15Memo(monkeypatch: pytest.MonkeyPatch) -> None:
-    import dartlab
     from dartlab.ai.kernel import ask
+    from dartlab.ai.runtime.eventProjection import EventProjector
 
-    class FakeCompany:
-        market = "KR"
-        corpName = "Sample Manufacturing"
+    class PassingQuality:
+        passed = True
+        issues: tuple[str, ...] = ()
+        score = 100
+        requiredClaimCells = 0
+        coveredClaimCells = 0
 
-        def __init__(self, target: str):
-            self.target = target
+        def toDict(self) -> dict[str, object]:
+            return {
+                "passed": True,
+                "issues": [],
+                "score": 100,
+                "requiredClaimCells": 0,
+                "coveredClaimCells": 0,
+            }
 
-        def show(self, topic: str, freq: str | None = None) -> pl.DataFrame | str:
-            statements = _sampleStatements()
-            if topic in statements:
-                return statements[topic]
-            return "대손 allowance impairment 정정 restatement related party"
+    class FakeRuntimeEngine:
+        calls: list[dict] = []
 
-        def disclosure(self) -> pl.DataFrame:
-            return pl.DataFrame([{"rcept_dt": "20260501", "report_nm": "사업보고서 정정 공시"}])
+        def stream(self, question: str, **kwargs):
+            self.calls.append({"question": question, **kwargs})
+            projector = EventProjector("codex", "session-forensics")
+            turn_id = "turn-forensics"
+            yield projector.event("sessionStarted", turnId=turn_id)
+            yield projector.event("turnStarted", turnId=turn_id)
+            yield projector.event(
+                "toolStarted",
+                turnId=turn_id,
+                payload={"canonicalName": "ReadSkill", "toolCallId": "read-forensics"},
+            )
+            yield projector.event(
+                "toolCompleted",
+                turnId=turn_id,
+                payload={
+                    "canonicalName": "ReadSkill",
+                    "toolCallId": "read-forensics",
+                    "refDetails": [
+                        {
+                            "id": "skill:recipes.fundamental.quality.forensics.deepDive",
+                            "kind": "skillRef",
+                            "title": "포렌식 deep dive",
+                            "source": "ReadSkill",
+                        }
+                    ],
+                },
+            )
+            answer = (
+                "L1.5 포렌식 deep dive입니다. L2 분석엔진 없이 원표와 공시를 검토합니다.\n"
+                "왜 이렇게 봤나: 근거 연결 상태를 확인했습니다.\n"
+                "비어있는 근거: 추가 원문 확인이 필요합니다.\n"
+                "반증 우선순위: 현금흐름과 정정 공시를 먼저 확인합니다.\n"
+                "엔진 환류 후보: 검증된 신호만 후보로 남깁니다.\n"
+                "다음 확인: tableRef, valueRef, dateRef, sourceRef를 순서대로 점검합니다."
+            )
+            yield projector.event("messageDelta", turnId=turn_id, payload={"text": answer})
+            yield projector.event(
+                "turnCompleted",
+                turnId=turn_id,
+                payload={
+                    "status": "completed",
+                    "outcomeId": "outcome-forensics",
+                    "runtimeCoverage": {"readSkillCalls": 1},
+                },
+            )
 
-    def fake_scan(axis: str) -> pl.DataFrame:
-        return pl.DataFrame([{"stockCode": "SAMPLE", "corpName": "Sample Manufacturing", "axis": axis, "score": 2.0}])
-
-    monkeypatch.setattr(dartlab, "Company", FakeCompany, raising=False)
-    monkeypatch.setattr(dartlab, "scan", fake_scan, raising=False)
-    monkeypatch.setenv("DARTLAB_FORENSICS_SCAN", "1")
+    engine = FakeRuntimeEngine()
+    monkeypatch.setattr("dartlab.ai.runtime.getRuntimeEngine", lambda: engine)
+    monkeypatch.setattr("dartlab.ai.agent._runtimeAnswerQuality", lambda *args, **kwargs: PassingQuality())
 
     answer = ask(
         "Sample Manufacturing 포렌식 deep dive를 analysis 없이 L1.5 원표와 공시만으로 검증",
@@ -324,5 +370,6 @@ def testForensicsAskWorkbenchRunsL15Memo(monkeypatch: pytest.MonkeyPatch) -> Non
     assert "revenueCashDivergence" not in answer
     assert "open falsifier" not in answer
     assert "Deep Dive 단계" not in answer
+    assert engine.calls[0]["context"]["stockCode"] == "SAMPLE"
     for token in BANNED_L2_CALLS:
         assert token not in answer

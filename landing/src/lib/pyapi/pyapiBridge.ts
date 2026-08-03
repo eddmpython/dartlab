@@ -1,5 +1,5 @@
 /**
- * browser-as-server 페이지 브리지 (mainPlan/browser-as-server-ssot).
+ * browser-as-server 페이지 브리지.
  *
  * Service Worker 가 `/pyapi/*` fetch 를 가로채 컨트롤 페이지로 postMessage 하면, 이 브리지가
  * 그 요청을 pyodide 워커의 dartlab FastAPI(executionStore.serveApi)로 넘기고 응답을 MessageChannel

@@ -4,7 +4,7 @@ sync `def` 엔드포인트는 Starlette 가 `anyio.to_thread` 로 돌린다. pyo
 `RuntimeError: can't start new thread` 로 죽는다(실측). 그래서 `dartlab.webapi.browserApi` 의
 `@app.get`/`@app.post` 데코레이트 함수는 반드시 AsyncFunctionDef 여야 한다.
 
-dartlab 을 import 하지 않는다(AST 정적 검사만). 설계: mainPlan/browser-as-server-ssot/02 G1.
+dartlab을 import 하지 않는다. AST 정적 검사만 수행한다.
 
 실행: uv run python -X utf8 tests/audit/browserApiAsync.py
 """

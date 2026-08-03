@@ -321,7 +321,7 @@ DATA_RELEASES: dict[str, dict] = {
 }
 
 
-# ── 다운로드 센터 노출 카탈로그 (mainPlan/data-download-center) ──
+# 다운로드 센터 노출 카탈로그.
 # 보안 SSOT = 위 DATA_RELEASES 의 `public` 플래그. 노출 = public:True · flat(nested 아님) · 표형(tabular).
 # 새 public flat 카테고리는 자동 노출(추가 코드 0), 새 private 은 자동 차단(public:False).
 # nested(`{a}/{b}.parquet`)는 flat `/{dir}/{id}` URL 모델 밖이라 제외(news/public·edgar/sections).
@@ -367,7 +367,7 @@ def downloadCatalog() -> list[dict]:
         목록을 도출한다. 보안 경계 = `public` 플래그 단일 SSOT - public:False 는 자동 차단된다
         (private dir 6종이 공개 repo 와 same-repo 라 토큰 차단이 안 먹으므로 코드 게이트가 유일 방어).
     AIContext:
-        mainPlan/data-download-center 의 노출 화이트리스트 런타임 도출자. 새 public flat 카테고리는
+        다운로드 센터 노출 화이트리스트 런타임 도출자. 새 public flat 카테고리는
         추가 코드 0 으로 자동 노출, 새 private 은 자동 차단. TS 미러(downloadCatalog.ts)와 drift
         가드(tests/core/test_download_catalog.py)가 동기화를 강제한다.
     Guide:

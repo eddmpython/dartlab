@@ -6,6 +6,7 @@ import json
 import os
 import subprocess
 import webbrowser
+from ipaddress import ip_address
 from pathlib import Path
 
 from dartlab.cli.services.errors import CLIError
@@ -46,6 +47,7 @@ def run(args) -> int:
     url = f"http://localhost:{port}"
 
     if args.dev:
+        _configureDevUiQa(args.host)
         _runDevMode(url)
     else:
         if not _checkBuiltUi():
@@ -123,7 +125,10 @@ def _runDevMode(url: str) -> None:
         command = [_npmCommand(), "run", "dev"]
         if workspaceRoot != ui_src:
             command.extend(["--workspace", "@dartlab/ui-local"])
-        result = subprocess.run(command, cwd=str(workspaceRoot))  # noqa: S603, S607
+        viteEnvironment = os.environ.copy()
+        # --port로 API 포트를 바꿔도 Vite proxy와 UI 검수 브리지가 같은 서버를 바라본다.
+        viteEnvironment["DARTLAB_API_BASE"] = url
+        result = subprocess.run(command, cwd=str(workspaceRoot), env=viteEnvironment)  # noqa: S603, S607
         if result.returncode != 0:
             printWarning("Svelte dev 서버가 비정상 종료되었습니다.")
 
@@ -131,9 +136,24 @@ def _runDevMode(url: str) -> None:
     print("\n  DartLab AI (개발 모드)")
     print(f"  API:     {url}")
     print(f"  {ui_label}:  http://localhost:{_devUiPort()}")
+    print(f"  UI QA:   {'활성' if os.environ.get('DARTLAB_UI_QA') == '1' else '비활성 (loopback 전용)'}")
     print()
 
     threading.Thread(target=_vite, daemon=True).start()
+
+
+def _configureDevUiQa(host: str) -> bool:
+    """`dartlab ai --dev`의 loopback 실행에서만 검수 API를 자동 활성화한다."""
+    candidate = host.strip().strip("[]")
+    try:
+        loopback = ip_address(candidate).is_loopback
+    except ValueError:
+        loopback = candidate.lower() == "localhost"
+    if loopback:
+        os.environ["DARTLAB_UI_QA"] = "1"
+    else:
+        os.environ.pop("DARTLAB_UI_QA", None)
+    return loopback
 
 
 def _npmWorkspaceRoot(uiSource: Path) -> Path:

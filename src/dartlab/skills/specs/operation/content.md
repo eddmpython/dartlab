@@ -82,7 +82,7 @@ lastUpdated: 2026-07-17
 **데이터 유니버스 = DART(국내 상장) + EDGAR(미국 상장)를 함께 쓴다.** 파이프라인의 기본 유니버스는 양쪽 전 종목이고, 한 이야기가 두 시장을 동시에 근거로 삼을 수 있다(국내사만·미국사만 다루는 편도 나온다). 조인 키는 국내 stockCode, 미국 티커. 국내사와 미국사를 나란히 비교하거나(예: KAI vs 록히드마틴), 한 대상의 공급망이 두 시장에 걸칠 때(예: KF-21 은 KAI 기체가 DART, GE F414 엔진이 EDGAR) 두 공시 시스템의 evidence 를 한 StoryCore 에 함께 싣는다. EDGAR 회계연도·누적/TTM 라벨 함정은 2.6절 규율로 흡수한다.
 
 ### StoryCore. 공유 서사 코어 (개념 계약, 새 파일 아님)
-세 서피스는 이미 같은 코어를 **다른 필드명으로 3벌 들고 있다**(brief.json·cards.plan.json·sourceDoc, 그리고 카드 편집 story_brief.json). StoryCore 는 그 공유 코어의 **표준 어휘**다. 새 아티팩트 `storyBrief` 를 신설하지 않는다(그러면 5번째 이름이라 덕지덕지). 각 서피스의 기존 기획 아티팩트가 StoryCore 의 투영이고, 필드명만 아래로 통일한다. 물리 통합(단일 파일화)은 `mainPlan/content-asset-ssot` PRD 의 점진 경로(StoryManifest, P0~P4)로 승인 후 진행한다.
+세 서피스는 이미 같은 코어를 **다른 필드명으로 3벌 들고 있다**(brief.json·cards.plan.json·sourceDoc, 그리고 카드 편집 story_brief.json). StoryCore는 그 공유 코어의 **표준 어휘**다. 새 아티팩트 `storyBrief`를 신설하지 않는다(그러면 5번째 이름이라 덕지덕지). 각 서피스의 기존 기획 아티팩트가 StoryCore의 투영이고, 필드명만 아래로 통일한다. 물리 통합은 별도 구현 승인 전까지 하지 않는다.
 
 | StoryCore 표준 필드 | 뜻 | 현 서피스별 이름 |
 |---|---|---|

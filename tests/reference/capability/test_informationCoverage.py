@@ -52,3 +52,14 @@ def testEveryExecutableCapabilityCarriesStructuredEngineCallContract() -> None:
     assert all(entry.get("execution", {}).get("tool") == "EngineCall" for entry in executable.values())
     assert all(entry.get("execution", {}).get("apiRef") == apiRef for apiRef, entry in executable.items())
     assert sum(bool(entry.get("example")) for entry in executable.values()) >= 150
+
+
+def testBroadInvestmentIntentRoutesToNineDimensionDecisionMemo() -> None:
+    packet = coveragePacketForQuestion("삼성전자 005930 지금 투자할 만한지 종합 분석해줘")
+
+    assert packet["contractIds"][0] == "investment.decision_memo"
+    assert packet["candidateCapabilityRefs"][0] == "Company.reportModel"
+    assert packet["questionTypes"] == ["investment_decision"]
+    assert packet["acceptanceCriteria"]["minUsableDimensions"] == 7
+    assert len(packet["acceptanceCriteria"]["requiredDimensions"]) == 9
+    assert packet["failurePolicy"]["blockedHardCoreMeans"] == "insufficient"

@@ -18,7 +18,7 @@ pytestmark = pytest.mark.unit
 
 
 def _disableTty(monkeypatch):
-    """sys.stdin.isatty() 를 False 로 강제 — 서버·백그라운드 시나리오 시뮬."""
+    """sys.stdin.isatty() 를 False 로 강제해 서버와 백그라운드 시나리오를 시뮬레이션한다."""
 
     class _FakeStdin:
         def isatty(self):
@@ -68,8 +68,12 @@ def test_promptAndSave_returns_existing_env_value(monkeypatch):
     assert result == "already-set-value"
 
 
-def test_auth_guidance_no_longer_depends_on_ai_runtime_tool_loop():
-    """API 키 안내는 core.env에서 직접 보장하고 레거시 AI runtime에 의존하지 않는다."""
+def test_auth_guidance_remains_in_core_env_with_official_runtime_installed():
+    """공식 runtime 설치 여부와 무관하게 API 키 안내는 core.env가 소유한다."""
     import importlib.util
+    import inspect
 
-    assert importlib.util.find_spec("dartlab.ai.runtime") is None
+    import dartlab.core.env as env_module
+
+    assert importlib.util.find_spec("dartlab.ai.runtime") is not None
+    assert "dartlab.ai.runtime" not in inspect.getsource(env_module)

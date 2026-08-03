@@ -1,8 +1,7 @@
 """Deterministic driver node definitions for the L3 scenario engine.
 
-Per `mainPlan/scenario-simulator/01-engine-architecture.md` §5 (the node table) and §6 (the
-executor contract), this module holds the deterministic (lens=None) driver nodes and the function
-that builds a `DriverSheet` for one scenario. Each node is one of two kinds (§2):
+This module holds the deterministic (lens=None) driver nodes and the function that builds a
+`DriverSheet` for one scenario. Each node is one of two kinds:
 
 - a thin call into an L2 leaf (`proforma` -> `analysis.financial.proforma.buildProforma`), or
 - the single owned macro->fundamentals edge (`rev.path` -> `simulate.transfer`), plus the preset

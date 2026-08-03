@@ -38,4 +38,4 @@ DartLab의 혁신성은 "새 프레임워크를 붙이는 것"이 아니라, 공
 - 이 조사 문서는 구현 착수 지시가 아니다.
 - 구현 전에는 각 후보를 `tests/_attempts/<category>/` 또는 해당 mainPlan의 실험 트랙에서 먼저 검증한다.
 - 공개 API를 늘리기보다 기존 `dartlab.search(...)`, `EngineCall`, `RunPython`, UI `data/fetch`, `tests/run.py`를 먼저 확장한다.
-- 기존 완료 PRD와 충돌하면 `_done/data-workbench-ssot`, `_done/ui-platform-refactor`, `search-productization`, `ai-workbench-connector`, `polars-gpu-backend`의 경계를 우선한다.
+- 현재 계약과 충돌하면 handbook의 data workbench, Skill OS `operation.ui`, `engines.search`의 경계를 우선한다. 미래 initiative끼리는 owner가 명시된 계획의 경계를 따른다.

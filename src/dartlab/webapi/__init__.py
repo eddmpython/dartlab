@@ -7,8 +7,7 @@
 브라우저 wheel(fastapi 제외)에서 못 부른다. 여기는 fastapi 를 `buildBrowserApi()` 안에서 lazy
 import 하므로 wheel import 시점엔 fastapi 가 없어도 안전하다.
 
-설계: mainPlan/browser-as-server-ssot. 실행 SSOT 는 pyodide 커널 하나이고, 노트북 execute 와
-이 데이터 API 가 그 한 커널을 공유한다.
+실행 SSOT는 pyodide 커널 하나이고, 노트북 execute와 이 데이터 API가 그 한 커널을 공유한다.
 """
 
 from __future__ import annotations

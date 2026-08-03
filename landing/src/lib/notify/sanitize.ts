@@ -1,6 +1,6 @@
 // 알림 sink 정화 · SW 렌더 직전 방어심층(authoritative 정화는 발행 러너 .github/scripts/notify/sanitize.py).
 // 알림 body 는 OS 알림센터 + 화면에 렌더되는 sink. LLM wrap_external 부적용, 전용 정화.
-// 설계: mainPlan/watcher-notify-platform/02-hub-d1-receiving.md 6절.
+// push payload 신뢰 경계의 입력 정규화.
 
 // C0/C1 제어 + zero-width + RTL/LTR override·embedding·isolate(양방향 스푸핑) + BOM.
 // U+0009 ~ U+000D (tab·LF·VT·FF·CR) 는 보존 · 아래 정규식이 단일 공백으로 정규화(단어 붙음 방지).

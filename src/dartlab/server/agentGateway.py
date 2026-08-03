@@ -11,6 +11,7 @@ from typing import Any
 from dartlab.ai.agent import runRuntimeAgent
 from dartlab.ai.contracts import TraceEvent
 from dartlab.ai.runtime.contracts import PUBLIC_AGENT_EVENT_KINDS
+from dartlab.ai.runtime.conversationPolicy import buildConversationGuide, followUpQuestions
 from dartlab.ai.tools.registry import _LEGACY_NAME_MAP, CANONICAL_TOOL_NAMES
 
 from . import agentMetrics
@@ -51,6 +52,10 @@ async def streamAgentRun(req: AgentRunRequest) -> AsyncIterator[dict[str, str]]:
     error_sent = False
 
     kernelKwargs = _kernelKwargs(req)
+    conversationGuide = buildConversationGuide(
+        question,
+        stockCode=str(kernelKwargs.get("stockCode") or "") or None,
+    )
     agentMetrics.record("agent-runtime")
     yield _event(
         "STATE_SNAPSHOT",
@@ -62,12 +67,25 @@ async def streamAgentRun(req: AgentRunRequest) -> AsyncIterator[dict[str, str]]:
             "threadId": req.threadId,
         },
     )
+    yield _event(
+        "STATE_DELTA",
+        {
+            "runId": runId,
+            "status": "running",
+            "analysisConversation": conversationGuide,
+        },
+    )
     runtimeKwargs = {**kernelKwargs, "sessionId": req.threadId} if req.threadId else kernelKwargs
     producer = lambda: runRuntimeAgent(question, **runtimeKwargs)  # noqa: E731
 
     try:
         async for internal in _syncGenToAsync(producer):
-            for public in _publicEvents(internal, runId=runId, messageId=messageId):
+            for public in _publicEvents(
+                internal,
+                runId=runId,
+                messageId=messageId,
+                conversationGuide=conversationGuide,
+            ):
                 if public["event"] == "TEXT_MESSAGE_CONTENT" and not text_started:
                     text_started = True
                     yield _event("TEXT_MESSAGE_START", {"messageId": messageId, "role": "assistant"})
@@ -145,7 +163,13 @@ def _planEvents(data: dict) -> list[dict[str, str]]:
     """고른 분석 경로를 한 줄로. 스킬이 많아도 앞 셋만 보인다."""
     skills = data.get("selectedSkillIds") if isinstance(data.get("selectedSkillIds"), list) else []
     target = ", ".join(str(item) for item in skills[:3])
-    return [_activity(f"분석 경로를 정했습니다{': ' + target if target else ''}", refs=[], passLabel=_passLabel(data))]
+    return [
+        _activity(
+            f"분석 경로를 정했습니다{': ' + target if target else ''}",
+            refs=[],
+            passLabel=_passLabel(data) or "질문 구조화",
+        )
+    ]
 
 
 def _viewSpecEvents(data: dict, *, runId: str, messageId: str) -> list[dict[str, str]]:
@@ -173,13 +197,19 @@ def _referenceEvents(data: dict) -> list[dict[str, str]]:
     refs = data.get("refs") if isinstance(data.get("refs"), list) else []
     if not refs:
         return []
-    return [_activity(f"근거 {len(refs)}개를 확인했습니다.", refs=_refIds(refs), passLabel=_passLabel(data))]
+    return [
+        _activity(
+            f"근거 {len(refs)}개를 확인했습니다.",
+            refs=_refIds(refs),
+            passLabel=_passLabel(data) or "근거 수집",
+        )
+    ]
 
 
 def _verifyEvents(data: dict) -> list[dict[str, str]]:
     """검증 결과. 통과가 아니면 다시 검증한다고 알린다."""
     result = data.get("result") if isinstance(data.get("result"), dict) else {}
-    passLabel = _passLabel(data)
+    passLabel = _passLabel(data) or "답변 검산"
     if result.get("ok") is True:
         return [
             _activity(
@@ -209,7 +239,7 @@ def _toolStartEvents(data: dict, *, runId: str, messageId: str) -> list[dict[str
         "args": data.get("input") if isinstance(data.get("input"), dict) else {},
         "status": "running",
     }
-    passLabel = _passLabel(data)
+    passLabel = _passLabel(data) or _analysisStageForTool(tool)
     if passLabel:
         payload["passLabel"] = passLabel
     return [_event("TOOL_CALL_START", payload)]
@@ -249,19 +279,27 @@ def _toolResultEvents(data: dict, *, runId: str, messageId: str) -> list[dict[st
         "nativeToolName": str(data.get("nativeName") or tool),
         "status": status,
     }
-    passLabel = _passLabel(data)
+    passLabel = _passLabel(data) or _analysisStageForTool(tool)
     if passLabel:
         resultEvent["passLabel"] = passLabel
         endEvent["passLabel"] = passLabel
     return [_event("TOOL_CALL_RESULT", resultEvent), _event("TOOL_CALL_END", endEvent)]
 
 
-def _doneEvents(data: dict, *, runId: str) -> list[dict[str, str]]:
+def _doneEvents(
+    data: dict,
+    *,
+    runId: str,
+    conversationGuide: dict[str, Any] | None = None,
+) -> list[dict[str, str]]:
     """실행 종료. 실패면 사유를 먼저 내보내고 종료 이벤트를 뒤에 둔다.
 
     순서가 뜻을 만든다. UI 가 종료를 먼저 받으면 사유가 도착하기 전에 카드를 닫는다.
     """
     status = "ok" if (data.get("responseMeta") or {}).get("finalEvent") == "answer" else "failed"
+    responseMeta = _publicResponseMeta(data.get("responseMeta") or {})
+    if conversationGuide:
+        responseMeta["analysisConversation"] = dict(conversationGuide)
     finished = _event(
         "RUN_FINISHED",
         {
@@ -271,8 +309,10 @@ def _doneEvents(data: dict, *, runId: str) -> list[dict[str, str]]:
             "candidateRefs": _refIds(data.get("candidateRefs") if isinstance(data.get("candidateRefs"), list) else []),
             "candidateRefDetails": _publicRefDetails(data.get("candidateRefs")),
             "artifacts": [a for a in data.get("artifacts") or [] if isinstance(a, dict)],
-            "responseMeta": _publicResponseMeta(data.get("responseMeta") or {}),
-            "suggestedQuestions": _suggestFollowups(data) if status == "ok" else [],
+            "responseMeta": responseMeta,
+            "suggestedQuestions": _suggestFollowups(data, conversationGuide=conversationGuide)
+            if status == "ok"
+            else [],
         },
     )
     if status == "ok":
@@ -281,7 +321,13 @@ def _doneEvents(data: dict, *, runId: str) -> list[dict[str, str]]:
     return [_event("RUN_ERROR", {"runId": runId, "message": _publicFailure(reason)}), finished]
 
 
-def _publicEvents(event: TraceEvent, *, runId: str, messageId: str) -> list[dict[str, str]]:
+def _publicEvents(
+    event: TraceEvent,
+    *,
+    runId: str,
+    messageId: str,
+    conversationGuide: dict[str, Any] | None = None,
+) -> list[dict[str, str]]:
     kind = event.kind
     data = event.data
     if kind == "graph_node":
@@ -307,12 +353,18 @@ def _publicEvents(event: TraceEvent, *, runId: str, messageId: str) -> list[dict
         return [_event("THINKING_DELTA", {"messageId": messageId, "delta": text})] if text else []
     if kind == "answer":
         refs = [str(v) for v in data.get("evidenceRefs") or []]
-        return [_activity(f"근거 {len(refs)}개로 답변을 작성했습니다.", refs=refs, passLabel=_passLabel(data))]
+        return [
+            _activity(
+                f"근거 {len(refs)}개로 답변을 작성했습니다.",
+                refs=refs,
+                passLabel=_passLabel(data) or "결론",
+            )
+        ]
     if kind == "unable":
         message = str(data.get("message") or "") or _publicFailure(str(data.get("reason") or ""))
         return [_event("RUN_ERROR", {"runId": runId, "message": message})]
     if kind == "done":
-        return _doneEvents(data, runId=runId)
+        return _doneEvents(data, runId=runId, conversationGuide=conversationGuide)
     if kind == "error":
         return [_event("RUN_ERROR", {"runId": runId, "message": _publicFailure(str(data.get("error") or ""))})]
     if kind == "runtime_session":
@@ -329,7 +381,7 @@ def _publicEvents(event: TraceEvent, *, runId: str, messageId: str) -> list[dict
             )
         ]
     if kind == "runtime_turn":
-        return [_activity("로컬 에이전트가 분석을 시작했습니다.", status="running")]
+        return [_activity("질문을 투자 판단 구조로 정리하고 있습니다.", status="running", passLabel="질문 구조화")]
     if kind == "approval_requested":
         return [
             _event(
@@ -423,13 +475,22 @@ def _publicEventData(value):
     return value
 
 
-def _suggestFollowups(doneData: dict[str, Any]) -> list[str]:
+def _suggestFollowups(
+    doneData: dict[str, Any],
+    *,
+    conversationGuide: dict[str, Any] | None = None,
+) -> list[str]:
     """답변 종료 시점 follow-up 추천 — 종목/topic 컨텍스트 있을 때만.
 
     종목·topic 없는 일반 답변엔 generic 휴리스틱 박지 않는다 (답변과 무관한
     "표·차트로 정리" 같은 옛 fallback 이 어색했음). 향후 LLM 이 답변 끝에
     직접 followup 작성하는 구조로 발전 예정.
     """
+    if conversationGuide:
+        suggested = followUpQuestions(conversationGuide)
+        if suggested:
+            return suggested
+
     meta = doneData.get("responseMeta") if isinstance(doneData.get("responseMeta"), dict) else {}
     stock = meta.get("stockCode") or meta.get("company") or ""
     if stock:
@@ -511,6 +572,16 @@ def _canonicalToolName(tool: str) -> str:
 
 def _displayTool(tool: str) -> str:
     return _displayName(tool)
+
+
+def _analysisStageForTool(tool: str) -> str:
+    """공개 도구 이름을 투자자용 진행 단계로 바꾼다."""
+    canonical = _canonicalToolName(tool)
+    if canonical in {"ReadSkill", "ReadCapability", "Read"}:
+        return "질문 구조화"
+    if canonical == "Verify":
+        return "답변 검산"
+    return "근거 수집"
 
 
 def _refIds(refs: list[Any]) -> list[str]:

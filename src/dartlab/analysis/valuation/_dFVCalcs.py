@@ -124,6 +124,15 @@ def _getCurrentPrice(company: Any, basePeriod: str | None = None) -> float | Non
     code = getattr(company, "stockCode", "")
     if not code:
         return None
+    if basePeriod is None:
+        try:
+            from dartlab.analysis.financial._valuationInputs import _fetchPriceContext
+
+            price = _fetchPriceContext(company)
+            current = price.get("currentPrice") if price else None
+            return float(current) if current is not None else None
+        except (ImportError, AttributeError, ValueError, TypeError, KeyError, OSError, RuntimeError):
+            return None
     try:
         import dartlab
 
@@ -132,20 +141,19 @@ def _getCurrentPrice(company: Any, basePeriod: str | None = None) -> float | Non
         return None
     if rows is None or getattr(rows, "height", 0) == 0 or "close" not in getattr(rows, "columns", []):
         return None
-    if basePeriod is not None:
-        try:
-            from datetime import date
+    try:
+        from datetime import date
 
-            from dartlab.analysis.financial._companyLookup import _periodEndDate
+        from dartlab.analysis.financial._companyLookup import _periodEndDate
 
-            period_end = _periodEndDate(basePeriod)
-            if period_end is None or "date" not in rows.columns:
-                return None
-            rows = rows.filter(rows["date"] <= date.fromisoformat(period_end))
-            if rows.height == 0:
-                return None
-        except (ImportError, AttributeError, TypeError, ValueError):
+        period_end = _periodEndDate(basePeriod)
+        if period_end is None or "date" not in rows.columns:
             return None
+        rows = rows.filter(rows["date"] <= date.fromisoformat(period_end))
+        if rows.height == 0:
+            return None
+    except (ImportError, AttributeError, TypeError, ValueError):
+        return None
     last = rows["close"][-1]
     return float(last) if last is not None else None
 

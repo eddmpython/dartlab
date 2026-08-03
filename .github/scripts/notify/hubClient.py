@@ -2,7 +2,7 @@
 
 발송 1건 = topic 브로드캐스트 또는 endpoints 타겟. (topic,slug) 결정적 nonce 라 같은 매치 재발송은 409(멱등).
 분류: 401/5xx/네트워크 = problem(헬스게이트 RED), 409 = dup(이미 발송, 정상), 2xx = ok.
-설계: mainPlan/watcher-notify-platform/06-p1-hub-worker.md §2 · 08 §1·§2.
+현재 운영 계약은 Skill OS ``operation.notifyPipeline``이다.
 """
 
 from __future__ import annotations

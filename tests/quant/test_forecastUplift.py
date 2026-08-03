@@ -1,6 +1,6 @@
 """P1b 전망 격상 게이트 — 지수 fade + 영업레버리지 마진 (offline 결정론).
 
-플랜 SSOT: mainPlan/professional-report-engine/02b-forecast-uplift.md.
+forecast uplift의 현재 실행 계약을 검증한다.
 de-gate: ① cagr_decay 임의 선형감속 → 지수 fade g(t)=gT+(g0−gT)·exp(−λt)(경쟁수렴)
 ② 고정마진 → 영업레버리지 OPM(t)=base+β·(revGrowth−normal)(고정비 희석)·과거범위 캡.
 본 파일 = 순수 수식 검증(_forecastMetric.py 인라인 로직 동치). 통합(real series)은 CI.

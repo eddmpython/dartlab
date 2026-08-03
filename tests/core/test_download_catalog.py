@@ -1,4 +1,4 @@
-"""다운로드 센터 노출 카탈로그 drift·보안 가드 (mainPlan/data-download-center Phase 0).
+"""다운로드 센터 노출 카탈로그 drift와 보안 가드.
 
 Python `downloadCatalog()`(SSOT) 와 TS 미러(`downloadCatalog.ts`)의 dir↔shardKind 동기화 +
 보안(public:False 부재)을 강제한다. 새 public 카테고리 추가 시 TS 미러 누락이면 fail,

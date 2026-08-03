@@ -1,6 +1,6 @@
 """P1a 밸류에이션 격상 게이트 — G1 단위 정합 + DCF de-gate (offline 결정론).
 
-플랜 SSOT: mainPlan/professional-report-engine/02a-valuation-uplift.md §5.
+valuation uplift의 현재 실행 계약을 검증한다.
 본 파일 = 순수/offline 게이트(네트워크·Company 로드 불요). G2 백테스트(historical price)·
 full calcDFV sanity(credit/CHS)는 영속 이벤트루프 필요 → CI/통합에서 별도(requires_data).
 

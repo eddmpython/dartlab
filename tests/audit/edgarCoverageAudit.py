@@ -470,7 +470,7 @@ def _auditEdgarCoverage(
         True
 
     See Also:
-        `mainPlan/unified-data-workbench/04-verification-progress-ledger.md` 실측 원장.
+        `docs/handbook/architecture/dataWorkbench.md` 현재 데이터 작업대 계약.
     """
 
     listingPayload = _readBytes(listingPath)

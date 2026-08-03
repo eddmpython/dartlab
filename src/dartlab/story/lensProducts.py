@@ -18,6 +18,10 @@ from dartlab.synth.lensContract import validateLensProduct, validatePublicLensBu
 _ENGINE_ORDER = ("analysis", "credit", "industry", "quant", "macro")
 
 _REPORT_ENGINES: dict[str, tuple[str, ...]] = {
+    # 투자 메모의 9차원에 직접 쓰이는 렌즈만 선계산한다. 신용·퀀트는 질문이
+    # 해당 결손을 요구할 때 EngineCall로 보충하고, 첫 브리프의 cold-start에서
+    # 전 시장 가격 패널과 신용 모델을 무조건 적재하지 않는다.
+    "investment": ("analysis", "industry", "macro"),
     "full": _ENGINE_ORDER,
     "executive": _ENGINE_ORDER,
     "credit": ("analysis", "credit"),

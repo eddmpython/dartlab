@@ -26,6 +26,8 @@ _ADMIN_ROUTES = {
     ("POST", "/api/export/templates"),
     ("POST", "/api/agent/runtimes/install/apply"),
     ("POST", "/api/agent/runtimes/mcp/apply"),
+    ("POST", "/api/agent/runtimes/setup/plan"),
+    ("POST", "/api/agent/runtimes/setup/apply"),
 }
 
 _EXECUTION_ROUTES = {
@@ -144,6 +146,8 @@ def _isLocalTransport(scope) -> bool:
 
 
 def _routeScope(method: str, path: str) -> str | None:
+    if path == "/api/ui-qa" or path.startswith("/api/ui-qa/"):
+        return "admin"
     if (method, path) in _ADMIN_ROUTES:
         return "admin"
     if method == "POST" and path.startswith("/api/channels/") and path.endswith(("/start", "/stop")):

@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import types
 from unittest.mock import MagicMock, patch
 
@@ -140,13 +141,29 @@ def test_modules_list():
 # ── 4. setup (help 수준) ──
 
 
-def test_setup_no_provider(capsys):
+def test_setup_no_provider(monkeypatch):
+    calls = []
+    monkeypatch.setattr("dartlab.cli.commands.agent.runSetup", lambda target, yes: calls.append((target, yes)) or 0)
     from dartlab.cli.commands.setup import run
 
     rc = run(_ns(target=None))
     assert rc == 0
-    out = capsys.readouterr().out
-    assert "데이터 수집" in out or "AI 분석" in out or "dart-key" in out
+    assert calls == [(None, False)]
+
+
+def test_invest_command_requests_investment_report(monkeypatch):
+    received = []
+    monkeypatch.setattr("dartlab.cli.commands.ask.run", lambda args: received.append(args) or 0)
+    from dartlab.cli.commands.invest import run
+
+    rc = run(_ns(company="005930", focus=["HBM", "사이클"], runtime=None, expert=True))
+
+    assert rc == 0
+    assert received[0].company == "005930"
+    assert received[0].investment is True
+    assert received[0].report is True
+    assert "가장 강한 반대논지" in received[0].query[0]
+    assert "reverse DCF" in received[0].query[0]
 
 
 # ── 5. show (topic=None → index) ──
@@ -272,6 +289,17 @@ def test_ai_dev_finds_npm_workspace_root(tmp_path):
     (app / "package.json").write_text(json.dumps({"name": "local"}), encoding="utf-8")
 
     assert _npmWorkspaceRoot(app) == tmp_path
+
+
+def test_ai_dev_ui_qa_is_automatic_only_on_loopback(monkeypatch):
+    from dartlab.cli.commands.ai import _configureDevUiQa
+
+    monkeypatch.delenv("DARTLAB_UI_QA", raising=False)
+    assert _configureDevUiQa("127.0.0.1") is True
+    assert os.environ["DARTLAB_UI_QA"] == "1"
+
+    assert _configureDevUiQa("0.0.0.0") is False
+    assert "DARTLAB_UI_QA" not in os.environ
 
 
 # ── 14. share (reset 모드) ──

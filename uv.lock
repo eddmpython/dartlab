@@ -482,6 +482,7 @@ dependencies = [
     { name = "qrcode", marker = "sys_platform != 'emscripten'" },
     { name = "rich" },
     { name = "sse-starlette", marker = "sys_platform != 'emscripten'" },
+    { name = "tzdata", marker = "sys_platform == 'win32'" },
     { name = "uvicorn", extra = ["standard"], marker = "sys_platform != 'emscripten'" },
     { name = "zstandard", marker = "sys_platform != 'emscripten'" },
 ]
@@ -540,6 +541,7 @@ requires-dist = [
     { name = "rich", marker = "sys_platform != 'emscripten'", specifier = ">=14.3.3,<16" },
     { name = "rich", marker = "sys_platform == 'emscripten'" },
     { name = "sse-starlette", marker = "sys_platform != 'emscripten'", specifier = ">=2.0.0,<4" },
+    { name = "tzdata", marker = "sys_platform == 'win32'", specifier = ">=2025.2" },
     { name = "uvicorn", extras = ["standard"], marker = "sys_platform != 'emscripten'", specifier = ">=0.30.0,<1" },
     { name = "zstandard", marker = "sys_platform != 'emscripten'", specifier = ">=0.23,<1" },
 ]

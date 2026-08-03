@@ -4,7 +4,14 @@
 //
 // Svelte 5 주의: $state 배열의 원소는 프록시다. 대화·메시지 변형은 항상 스토어의 conversations 프록시를
 // 거친 참조(this.active, conv.messages[idx])로 해야 반응한다. 배열 재할당(new/delete/clearAll)만 = 로 교체.
-import { isKrStockCode, type AiCapabilities, type AiPort, type AiStreamEvent, type EvidenceRef } from '@dartlab/ui-contracts';
+import {
+	isKrStockCode,
+	type AiCapabilities,
+	type AiPort,
+	type AiStreamEvent,
+	type AnalysisConversationGuide,
+	type EvidenceRef
+} from '@dartlab/ui-contracts';
 import { cancelAgentSession, deleteAgentSession, resolveAgentApproval } from '$lib/runtime/agentRuntimeApi';
 
 /**
@@ -60,6 +67,8 @@ export interface ChatAnswerQuality {
 	contractIds: string[];
 	requiredEvidence: string[];
 	readSkillCalls: number | null;
+	requiredClaimCells: number;
+	coveredClaimCells: number;
 }
 
 export interface ChatMessage {
@@ -76,6 +85,9 @@ export interface ChatMessage {
 	viewSpecs: ChatViewSpec[];
 	artifacts: ChatArtifact[];
 	verifiedRefIds: string[];
+	candidateRefIds: string[];
+	verificationStatus: 'evidenceCommitted' | 'rejected' | null;
+	repairAttempt: number;
 	approvals: Array<{
 		id: string;
 		sessionId: string;
@@ -87,6 +99,7 @@ export interface ChatMessage {
 	streaming: boolean;
 	quality: ChatAnswerQuality | null;
 	runtimeCoverage: ChatRuntimeCoverage | null;
+	conversationGuide: AnalysisConversationGuide | null;
 }
 
 export interface Conversation {
@@ -99,6 +112,8 @@ export interface Conversation {
 	updatedAt: number;
 	/** 고정 timestamp. null 이면 미고정. */
 	pinnedAt: number | null;
+	/** 첫 전송 시 고정되며 기존 native session에서는 바뀌지 않는 런타임. */
+	runtimeId: string | null;
 }
 
 const LS_KEY = 'dartlab-local-chat';
@@ -156,7 +171,8 @@ export class ChatStore {
 			messages: [],
 			createdAt: now,
 			updatedAt: now,
-			pinnedAt: null
+			pinnedAt: null,
+			runtimeId: this.capabilities?.runtimeId ?? null
 		};
 		this.conversations = [c, ...this.conversations];
 		this.activeId = c.id;
@@ -222,12 +238,16 @@ export class ChatStore {
 			viewSpecs: [],
 			artifacts: [],
 			verifiedRefIds: [],
+			candidateRefIds: [],
+			verificationStatus: null,
+			repairAttempt: 0,
 			approvals: [],
 			suggested: [],
 			error: null,
 			streaming: false,
 			quality: null,
-			runtimeCoverage: null
+			runtimeCoverage: null,
+			conversationGuide: null
 		});
 		conv.messages.push({
 			id: this.#uid('a'),
@@ -241,12 +261,16 @@ export class ChatStore {
 			viewSpecs: [],
 			artifacts: [],
 			verifiedRefIds: [],
+			candidateRefIds: [],
+			verificationStatus: null,
+			repairAttempt: 0,
 			approvals: [],
 			suggested: [],
 			error: null,
 			streaming: true,
 			quality: null,
-			runtimeCoverage: null
+			runtimeCoverage: null,
+			conversationGuide: null
 		});
 		conv.updatedAt = Date.now();
 		const idx = conv.messages.length - 1;
@@ -263,11 +287,12 @@ export class ChatStore {
 		}
 
 		const code = conv.code.trim();
+		conv.runtimeId ??= this.capabilities?.runtimeId ?? null;
 		try {
 			for await (const ev of this.#ai.streamAsk({
 				prompt: text,
 				mode: 'chat',
-				runtimeId: this.capabilities?.runtimeId,
+				runtimeId: conv.runtimeId ?? undefined,
 				sessionId: conv.id,
 				code: isKrStockCode(code) ? code : undefined,
 			})) {
@@ -297,6 +322,20 @@ export class ChatStore {
 			const message = conversation.messages.at(-1);
 			if (message?.role === 'assistant') {
 				message.error = error instanceof Error ? error.message : String(error);
+			}
+		}
+	}
+
+	async retry(messageId: string): Promise<void> {
+		const conversation = this.active;
+		if (!conversation || this.busy) return;
+		const messageIndex = conversation.messages.findIndex((message) => message.id === messageId);
+		if (messageIndex < 0) return;
+		for (let index = messageIndex - 1; index >= 0; index -= 1) {
+			const message = conversation.messages[index];
+			if (message.role === 'user' && message.text.trim()) {
+				await this.send(message.text);
+				return;
 			}
 		}
 	}
@@ -390,6 +429,19 @@ export class ChatStore {
 			}
 			case 'RUN_FINISHED':
 				m.suggested = ev.suggestedQuestions ?? [];
+				m.conversationGuide = ev.responseMeta?.analysisConversation ?? m.conversationGuide;
+				m.candidateRefIds = ev.candidateRefs ?? [];
+				m.verificationStatus = ev.responseMeta?.verificationStatus ?? null;
+				m.repairAttempt = ev.responseMeta?.repairAttempt ?? 0;
+				if (ev.candidateRefDetails?.length) {
+					const seen = new Set(m.refs.map((ref) => ref.id));
+					for (const ref of ev.candidateRefDetails) {
+						if (ref.id && !seen.has(ref.id)) {
+							seen.add(ref.id);
+							m.refs.push(ref);
+						}
+					}
+				}
 				this.#appendArtifacts(m, ev.artifacts);
 				if (ev.responseMeta?.answerQuality) {
 					const quality = ev.responseMeta.answerQuality;
@@ -401,7 +453,9 @@ export class ChatStore {
 						citedRefIds: quality.citedRefIds ?? [],
 						contractIds: quality.contractIds ?? [],
 						requiredEvidence: quality.requiredEvidence ?? [],
-						readSkillCalls: quality.readSkillCalls ?? null
+						readSkillCalls: quality.readSkillCalls ?? null,
+						requiredClaimCells: quality.requiredClaimCells ?? 0,
+						coveredClaimCells: quality.coveredClaimCells ?? 0
 					};
 				}
 				if (ev.responseMeta?.runtimeCoverage) {
@@ -412,6 +466,19 @@ export class ChatStore {
 						requiredEvidence: coverage.requiredEvidence ?? [],
 						candidateCapabilityRefs: coverage.candidateCapabilityRefs ?? []
 					};
+				}
+				break;
+			case 'STATE_DELTA':
+				if (
+					'analysisConversation' in ev &&
+					ev.analysisConversation &&
+					typeof ev.analysisConversation === 'object'
+				) {
+					m.conversationGuide = ev.analysisConversation as AnalysisConversationGuide;
+				}
+				if ('runtimeId' in ev && typeof ev.runtimeId === 'string' && ev.runtimeId) {
+					if (conv.runtimeId === null) conv.runtimeId = ev.runtimeId;
+					else if (conv.runtimeId !== ev.runtimeId) m.error = '이 대화에 고정된 런타임과 서버 세션이 일치하지 않습니다.';
 				}
 				break;
 			case 'RUN_ERROR':
@@ -465,6 +532,7 @@ export class ChatStore {
 				createdAt: c.createdAt ?? Date.now(),
 				updatedAt: c.updatedAt ?? Date.now(),
 				pinnedAt: c.pinnedAt ?? null,
+				runtimeId: typeof c.runtimeId === 'string' ? c.runtimeId : null,
 				messages: []
 			}));
 			this.activeId = data.activeId ?? this.conversations[0]?.id ?? null;
@@ -480,7 +548,8 @@ export class ChatStore {
 				id: c.id,
 				createdAt: c.createdAt,
 				updatedAt: c.updatedAt,
-				pinnedAt: c.pinnedAt
+				pinnedAt: c.pinnedAt,
+				runtimeId: c.runtimeId
 			}));
 			localStorage.setItem(LS_KEY, JSON.stringify({ conversations, activeId: this.activeId }));
 		} catch {

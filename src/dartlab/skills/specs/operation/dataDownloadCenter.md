@@ -123,4 +123,4 @@ CF Worker 는 128MB 고정이라 큰 파일은 못 올린다. parquet footer 의
 - drift 가드: `tests/core/test_download_catalog.py::test_worker_allowlist_in_sync` (Python `downloadCatalog()` ↔ 워커 allowlist 동기 강제).
 - UI: svelte-check 0 에러 + Playwright(다운로드 실파일·라이브 API 헤더).
 - 워커: `infra/workers/dataCsv` esbuild dist → wrangler deploy(비대화식, `.env` 토큰). 로컬 증명은 `node dev.mjs`.
-- 상세 설계·결정 로그·완료 기록(현역 런북): `mainPlan/_done/data-download-center/`.
+- 현재 코드 소유 위치는 `docs/handbook/reference/contractOwners.md`에서 확인한다.

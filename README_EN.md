@@ -210,8 +210,8 @@ the owners or sources again. Remote multi-node serving and authentication remain
 the versioned `/api/dataHub/v1` contract through `DataHubClient` or
 `AsyncDataHubClient`, while pull workers consume the same durable job ledger.
 See [engines.dataHub](https://eddmpython.github.io/dartlab/skills/engines.dataHub)
-and the [design documents](mainPlan/unified-data-workbench/README.md) for the full
-contract.
+and the [data workbench contract](docs/handbook/architecture/dataWorkbench.md) for
+the full contract.
 
 ## Three Layers of Analysis
 
@@ -462,7 +462,12 @@ dartlab.ask("Analyze Samsung Electronics financial health")
 dartlab.ask("Samsung analysis", runtimeId="claude")
 ```
 
-Supported runtimes are `codex`, `claude`, and `cline`. Use `dartlab agent status --refresh` to inspect them. Only a `groundedReady` runtime with both its CLI and DartLab MCP connection available can run; a disconnected runtime fails closed instead of producing an ungrounded answer. Install and MCP connection commands print an exact argv and SHA-256 digest first; nothing is changed until you repeat the command with `--approve-digest`.
+```powershell
+dartlab setup codex --yes
+dartlab invest 005930 --runtime codex
+```
+
+Supported runtimes are `codex`, `claude`, and `cline`. `dartlab setup` completes installation, official login, DartLab MCP connection, and default runtime selection as one approved flow, skipping steps that are already complete. Use `dartlab agent status --refresh` to inspect them. Only a `groundedReady` runtime with both its CLI and DartLab MCP connection available can run; a disconnected runtime fails closed instead of producing an ungrounded answer. `dartlab invest` produces an evidence-bound decision brief with the core thesis, strongest counterthesis, valuation, scenarios, catalysts, risks, and monitoring tripwires.
 
 ### Channel - Use your PC dartlab from anywhere
 

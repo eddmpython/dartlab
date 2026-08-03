@@ -1,7 +1,6 @@
 # 카드·블로그 지식망 PRD — 진입점·회사 간 카드망·지식화
 
-> **관계**: 본 PRD 는 [content-asset-ssot](../content-asset-ssot/00-prd.md)(저장·발행 SSOT = story 단위)
-> **위에 얹는 연결·소비 레이어**다. content-asset-ssot 가 "어디에 저장·발행하나"라면, 본 문서는
+> **관계**: 현재 Skill OS `operation.content`가 소유하는 저장·발행 SSOT 위에 얹는 연결·소비 레이어다. 현재 계약이 "어디에 저장·발행하나"라면, 본 문서는
 > "쌓인 카드·블로그를 어떻게 **서로 잇고 터미널 종목검토로 들여보내고 지식으로 쓰나**"를 설계한다.
 > 데이터 백본은 이미 존재 — `CarouselContract.code`·`relatedNews[]`·`corpName`, 공유 소비 SSOT `PostModal.svelte`.
 
@@ -76,7 +75,7 @@
 ## 7. 판단
 
 데이터 백본(`code`·공유 `PostModal`)이 이미 있어 **①은 거의 CTA 한 줄**, ③은 손글 필드+chips 로 저비용.
-NER 자동추출 대신 손글 큐레이션으로 시작해 오매치 0·정직 유지. 저장 SSOT(story manifest)는 content-asset-ssot 가
+NER 자동추출 대신 손글 큐레이션으로 시작해 오매치 0·정직 유지. 저장 SSOT(story manifest)는 현재 콘텐츠 작업대가
 키우고, 본 PRD는 그 위 **연결망**만 얹는다. "굽지 않고 manifests/carousels.json과 KnowledgeDB 재사용" 원칙을 준수한다.
 UI 빌드는 푸시 게이트라 운영자 승인 후 한 편씩 완성한다.
 

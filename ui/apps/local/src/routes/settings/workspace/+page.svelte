@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { base } from '$app/paths';
 	import { getLocalRuntime } from '$lib/runtime/localRuntime';
-	import { listAgentRuntimes } from '$lib/runtime/agentRuntimeApi';
+	import { getAgentRuntimeStatus } from '$lib/runtime/agentRuntimeApi';
 
 	// Workspace 상태 — 발명 기능이 아니라 *기존 상태*를 표면화한다(덕지덕지 회피): 로컬 서버(/api) 연결 상태,
 	// 설치형 agent runtime과 로컬 앱 환경을 한 화면에서 확인한다.
@@ -15,11 +15,11 @@
 	async function probe(): Promise<void> {
 		conn = 'checking';
 		try {
-			const runtimes = await listAgentRuntimes(false);
+			const status = await getAgentRuntimeStatus(false);
+			const runtimes = status.runtimes;
 			const ready = runtimes.filter((item) => item.groundedReady);
 			runtimeCount = ready.length;
-			const preferred = localStorage.getItem('dartlab-agent-runtime');
-			const selected = ready.find((item) => item.runtimeId === preferred) ?? ready[0] ?? null;
+			const selected = ready.find((item) => item.runtimeId === status.defaultRuntimeId) ?? null;
 			active = selected
 				? { key: selected.runtimeId, label: selected.displayName, model: selected.version || 'CLI 관리' }
 				: null;

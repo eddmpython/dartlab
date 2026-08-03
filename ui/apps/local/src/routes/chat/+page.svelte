@@ -30,10 +30,10 @@
 	let evidencePanels: Record<string, EvidenceHandle | undefined> = {};
 
 	const suggestions = [
-		'삼성전자 005930 최근 5년 매출과 영업이익 추이',
-		'코스피에서 ROE 높고 부채비율 낮은 종목 찾아줘',
-		'테슬라 최근 분기 실적 정리',
-		'한국 매크로 지표 (환율 · 금리 · CPI)'
+		'삼성전자 005930, 현재 투자 논지와 가장 강한 반대논지를 같이 분석해줘',
+		'삼성전자와 SK하이닉스 중 어느 쪽이 나은지 성장·가치·리스크로 비교해줘',
+		'삼성전자 최근 5년 실적 변화가 일시적인지 구조적인지 검증해줘',
+		'코스피에서 ROE가 높고 부채가 낮은 후보를 찾고 함정까지 걸러줘'
 	];
 
 	// 터미널 토글 목적지 · surface 가 관리하는 최근 종목(LAST_SYM_KEY), 없으면 005930.
@@ -53,6 +53,13 @@
 	const messages = $derived(active?.messages ?? []);
 	const hasMessages = $derived(messages.length > 0);
 	const cap = $derived(store.capabilities);
+	const activeRuntimeLabel = $derived(
+		active?.runtimeId
+			? active.runtimeId === cap?.runtimeId
+				? cap.providerLabel ?? active.runtimeId
+				: active.runtimeId
+			: cap?.providerLabel
+	);
 	// 연결 = 설치형 agent CLI가 실제 사용 가능. 아니면 Runtime Center 안내.
 	const connected = $derived(cap?.tier === 'advanced' || cap?.tier === 'onDevice');
 
@@ -155,7 +162,9 @@
 		evidence_payload_empty: '근거 내용 비어 있음',
 		table_evidence_empty: '표 내용 비어 있음',
 		value_evidence_unavailable: '값을 확인할 수 없음',
-		date_evidence_unavailable: '기준일을 확인할 수 없음'
+		date_evidence_unavailable: '기준일을 확인할 수 없음',
+		claim_cell_coverage_incomplete: '대상·지표·기간 조합 근거 일부 누락',
+		derived_evidence_lineage_missing: '계산 결과의 원본 근거 계보 누락'
 	};
 
 	const EVIDENCE_LABELS: Record<string, string> = {
@@ -174,6 +183,24 @@
 
 	function evidenceLabel(kind: string): string {
 		return EVIDENCE_LABELS[kind] ?? kind;
+	}
+
+	const VISIBLE_TOOL_CARDS = new Set([
+		'RunPython',
+		'CompileVisual',
+		'CompileFinancialDashboard',
+		'DCFValuation',
+		'SensitivityAnalysis',
+		'ScenarioCompareN',
+		'ScenarioOverlay'
+	]);
+
+	function showToolCard(name: string): boolean {
+		return VISIBLE_TOOL_CARDS.has(name);
+	}
+
+	function visibleToolCount(message: ChatMessage): number {
+		return message.tools.filter((tool) => showToolCard(tool.name)).length;
 	}
 
 	function viewSpecSummary(spec: unknown): string {
@@ -225,24 +252,25 @@
 	<title>챗 · dartlab local</title>
 </svelte:head>
 
-<div class="shell" inert={runtimeOpen}>
+<div class="shell" data-qa="chat-shell" inert={runtimeOpen}>
 	{#if sidebarOpen}
-		<button class="sideveil" aria-label="사이드바 닫기" onclick={() => (sidebarOpen = false)}></button>
+		<button class="sideveil" data-qa="sidebar-veil" aria-label="사이드바 닫기" onclick={() => (sidebarOpen = false)}></button>
 		<Sidebar {store} />
 	{/if}
 
 	<main class="main">
 		<div class="topstrip">
-			<button class="ghost" onclick={() => (sidebarOpen = !sidebarOpen)} aria-label="사이드바 토글" aria-expanded={sidebarOpen} title="사이드바">
+			<button class="ghost" data-qa="sidebar-toggle" onclick={() => (sidebarOpen = !sidebarOpen)} aria-label="사이드바 토글" aria-expanded={sidebarOpen} title="사이드바">
 				<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M9 4v16" /></svg>
 			</button>
 			<div class="spacer"></div>
-			{#if cap?.providerLabel}<span class="runtimeBadge">{cap.providerLabel} · 근거 게이트</span>{/if}
-			<a class="ghost" href={`${base}/terminal/${recent}`} title="터미널로" aria-label="터미널로">
+			{#if activeRuntimeLabel}<span class="runtimeBadge">{activeRuntimeLabel} · 대화 고정 · 근거 게이트</span>{/if}
+			<a class="ghost" data-qa="terminal-link" href={`${base}/terminal/${recent}`} title="터미널로" aria-label="터미널로">
 				<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17l6-6-6-6M12 19h8" /></svg>
 			</a>
 			<button
 				class="ghost"
+				data-qa="runtime-center-open"
 				bind:this={runtimeTrigger}
 				onclick={openRuntimeCenter}
 				title="Agent Runtime Center"
@@ -260,21 +288,26 @@
 
 		{#if store.capabilitiesLoaded && !connected}
 			<div class="notice">
-				<span>사용 가능한 agent CLI가 없습니다. 설치 전에는 답변하지 않습니다.</span>
-				<a href={`${base}/settings/runtimes`}>Runtime Center →</a>
+				<span>투자 분석 런타임을 한 번 연결하면 이 대화에서 계속 사용할 수 있습니다.</span>
+				<button onclick={openRuntimeCenter}>설치·연결 시작</button>
 			</div>
 		{/if}
 
-		<div class="stream" bind:this={scroller}>
+		<div class="stream" data-qa="chat-stream" bind:this={scroller}>
 			<div class="col">
 				{#if !hasMessages}
-					<div class="welcome">
+					<div class="welcome" data-qa="chat-welcome">
 						<img class="ava" src="{base}/avatar.png" alt="DartLab" width="56" height="56" />
-						<h1>무엇을 도와드릴까요?</h1>
-						<p>회사·재무·공시·시장·거시 지표. 무엇이든 물어보세요. 근거 기반 Ask 엔진이 답합니다.</p>
+						<h1>투자 판단에 필요한 질문을 해보세요</h1>
+						<p>결론만 단정하지 않습니다. 핵심 논지와 반대 근거, 가격에 반영된 기대, 판단이 바뀌는 조건까지 같은 근거로 연결합니다.</p>
+						<div class="answerPromise" data-qa="analysis-promise" aria-label="DartLab 분석 방식">
+							<span><strong>1</strong> 판단할 질문을 구조화</span>
+							<span><strong>2</strong> 지지·반대 근거를 함께 검증</span>
+							<span><strong>3</strong> 다음 확인 항목까지 제시</span>
+						</div>
 						<div class="chips">
-							{#each suggestions as s (s)}
-								<button class="chip" onclick={() => ask(s)}>{s}</button>
+							{#each suggestions as s, index (s)}
+								<button class="chip" data-qa={`chat-suggestion-${index}`} onclick={() => ask(s)}>{s}</button>
 							{/each}
 						</div>
 					</div>
@@ -288,13 +321,28 @@
 							<div class="turn assistant">
 								<img class="msgava" src="{base}/avatar.png" alt="DartLab" width="30" height="30" />
 								<div class="body">
+									{#if m.conversationGuide}
+										<div
+											class="analysisFrame"
+											class:running={m.streaming}
+											data-qa={m.id === messages.at(-1)?.id ? 'analysis-conversation-frame' : undefined}
+										>
+											<span>{m.conversationGuide.label}</span>
+											<strong>{m.conversationGuide.decisionGoal}</strong>
+											{#if m.streaming}
+												<div class="analysisStages" aria-label="예정된 분석 단계">
+													{#each m.conversationGuide.stages as stage (stage)}<small>{stage}</small>{/each}
+												</div>
+											{/if}
+										</div>
+									{/if}
 									{#if m.streaming && !m.text}
 										<div class="runstate" role="status" aria-label="근거를 확인하는 중"><span></span></div>
 									{/if}
 									{#if m.activities.length}
 										<details class="activityLog" open={m.streaming}>
 											<summary>
-												{m.streaming ? `분석 진행 · 최근 ${m.activities.length}개` : `명령어 ${m.activityCount}개 실행`}
+											{m.streaming ? `분석 진행 · 최근 ${m.activities.length}건` : `분석 과정 ${m.activityCount}건`}
 											</summary>
 											<div class="activityItems" aria-live={m.streaming ? 'polite' : 'off'}>
 												{#each m.activities as activity (activity.id)}
@@ -307,9 +355,9 @@
 											</div>
 										</details>
 									{/if}
-									{#if m.tools.length}
+									{#if visibleToolCount(m)}
 										<div class="workbench">
-											{#each m.tools as t (t.id)}
+											{#each m.tools.filter((tool) => showToolCard(tool.name)) as t (t.id)}
 												<ToolCard tool={t} />
 											{/each}
 										</div>
@@ -335,7 +383,10 @@
 									{/if}
 
 									{#if m.error}
-										<div class="err">⚠ 응답 오류: {m.error}</div>
+										<div class="err">
+											<span>분석을 완료하지 못했습니다. {m.error}</span>
+											<button onclick={() => store.retry(m.id)} disabled={store.busy}>같은 질문 다시 시도</button>
+										</div>
 									{/if}
 
 									{#if m.refs.length}
@@ -343,19 +394,24 @@
 											bind:this={evidencePanels[m.id]}
 											refs={m.refs}
 											citedRefIds={m.quality?.citedRefIds ?? null}
+											candidateRefIds={m.candidateRefIds}
 											verifiedRefIds={m.verifiedRefIds}
 											onverified={(refId) => markEvidenceVerified(m, refId)}
 										/>
 									{/if}
 									{#if m.quality}
-										<div class="qualityPanel" class:passed={m.quality.passed} role="status">
-											<header>
-												<strong>자동 답변 품질 검증</strong>
-												<span>{m.quality.passed ? '통과' : '차단'} · {m.quality.contract === 'quantitative' ? '정량' : '문서'} · {m.quality.score}점</span>
-											</header>
+										<details class="qualityPanel" class:passed={m.quality.passed}>
+											<summary>
+												<strong>{m.quality.passed ? '근거 검산 완료' : '답변 공개 차단'}</strong>
+												<span>{m.quality.contract === 'quantitative' ? '수치·기간·대상 확인' : '문서·시점 확인'}</span>
+											</summary>
+											<div class="qualityDetails">
+												<small>자동 검산 점수 {m.quality.score}점</small>
 											<div class="coverageSummary">
 												<span>답변 인용 {m.quality.citedRefIds.length}개</span>
 												<span>Skill OS 조회 {m.runtimeCoverage?.readSkillCalls ?? m.quality.readSkillCalls ?? 0}회</span>
+												{#if m.quality.requiredClaimCells}<span>근거 셀 {m.quality.coveredClaimCells}/{m.quality.requiredClaimCells}</span>{/if}
+												{#if m.repairAttempt}<span>자동 교정 {m.repairAttempt}회</span>{/if}
 												{#if m.quality.contractIds.length}<span title={m.quality.contractIds.join('\n')}>적용 계약 {m.quality.contractIds.length}개</span>{/if}
 											</div>
 											{#if m.quality.requiredEvidence.length}
@@ -370,7 +426,8 @@
 													{#each m.quality.issues as issue (issue)}<li>{issueLabel(issue)}</li>{/each}
 												</ul>
 											{/if}
-										</div>
+											</div>
+										</details>
 									{/if}
 
 									{#if m.viewSpecs.length || m.artifacts.length}
@@ -396,6 +453,7 @@
 
 									{#if m.suggested.length}
 										<div class="suggest">
+											<strong>다음 분석</strong>
 											{#each m.suggested as s (s)}
 												<button class="sug" onclick={() => ask(s)} disabled={store.busy}>{s}</button>
 											{/each}
@@ -439,11 +497,12 @@
 
 {#if runtimeOpen}
 	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-	<div class="povl" role="presentation" onclick={closeRuntimeCenter}>
+	<div class="povl" data-qa="runtime-center-overlay" role="presentation" onclick={closeRuntimeCenter}>
 		<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
 		<div
 			id="runtime-center-dialog"
 			class="pmodal"
+			data-qa="runtime-center-dialog"
 			bind:this={runtimeDialog}
 			role="dialog"
 			aria-modal="true"
@@ -454,7 +513,7 @@
 		>
 			<header class="pmhead">
 				<h2 id="runtime-center-title">Agent Runtime Center</h2>
-				<button class="pmx" onclick={closeRuntimeCenter} aria-label="닫기">✕</button>
+				<button class="pmx" data-qa="runtime-center-close" onclick={closeRuntimeCenter} aria-label="닫기">✕</button>
 			</header>
 			<p class="pmsub">설치된 CLI를 선택하고 DartLab MCP 연결을 확인하세요.</p>
 			<div class="pmbody">
@@ -525,14 +584,18 @@
 		padding: 0.55rem 1rem;
 		border-bottom: 1px solid color-mix(in srgb, var(--dl-warn, #f4b740) 30%, var(--dl-line, #2a2c33));
 	}
-	.notice a {
+	.notice button {
+		min-height: 2.25rem;
+		border: 1px solid color-mix(in srgb, var(--dl-warn, #f4b740) 55%, transparent);
+		border-radius: 7px;
+		background: color-mix(in srgb, var(--dl-warn, #f4b740) 12%, transparent);
 		color: var(--dl-accent, #ff5a36);
-		text-decoration: none;
 		font-weight: 600;
 		white-space: nowrap;
+		cursor: pointer;
 	}
-	.notice a:hover {
-		text-decoration: underline;
+	.notice button:hover {
+		background: color-mix(in srgb, var(--dl-warn, #f4b740) 20%, transparent);
 	}
 	.stream {
 		flex: 1;
@@ -571,11 +634,31 @@
 		margin: 0;
 	}
 	.welcome p {
-		max-width: 30rem;
+		max-width: 34rem;
 		font-size: 0.88rem;
 		color: var(--dl-ink-dim, #9aa0aa);
 		margin: 0 0 1rem;
 	}
+	.answerPromise {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		width: min(100%, 36rem);
+		gap: .45rem;
+		margin-bottom: .85rem;
+	}
+	.answerPromise span {
+		display: flex;
+		align-items: center;
+		gap: .4rem;
+		padding: .55rem .65rem;
+		border: 1px solid var(--dl-line, #2a2c33);
+		border-radius: 9px;
+		background: color-mix(in srgb, var(--dl-bg-raised, #16171a) 65%, transparent);
+		color: var(--dl-ink-dim, #9aa0aa);
+		font-size: .7rem;
+		text-align: left;
+	}
+	.answerPromise strong { color: var(--dl-accent, #ff5a36); }
 	.chips {
 		display: flex;
 		flex-wrap: wrap;
@@ -583,12 +666,15 @@
 		gap: 0.5rem;
 	}
 	.chip {
-		padding: 0.5rem 0.9rem;
+		max-width: 21rem;
+		padding: 0.6rem 0.8rem;
 		border: 1px solid var(--dl-line, #2a2c33);
-		border-radius: 999px;
+		border-radius: 10px;
 		background: var(--dl-bg-raised, #16171a);
 		color: var(--dl-ink-dim, #9aa0aa);
 		font-size: 0.8rem;
+		line-height: 1.35;
+		text-align: left;
 		cursor: pointer;
 	}
 	.chip:hover {
@@ -636,6 +722,27 @@
 		flex-direction: column;
 		gap: 0.4rem;
 	}
+	.analysisFrame {
+		display: grid;
+		grid-template-columns: auto minmax(0, 1fr);
+		align-items: baseline;
+		gap: .35rem .65rem;
+		padding: .55rem .7rem;
+		border-left: 2px solid #70d6a5;
+		background: color-mix(in srgb, #70d6a5 5%, transparent);
+	}
+	.analysisFrame > span {
+		padding: .15rem .38rem;
+		border-radius: 999px;
+		background: color-mix(in srgb, #70d6a5 12%, transparent);
+		color: #8de2b9;
+		font-size: .65rem;
+		white-space: nowrap;
+	}
+	.analysisFrame > strong { color: var(--dl-ink, #e7e7ea); font-size: .76rem; line-height: 1.45; }
+	.analysisStages { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: .3rem; }
+	.analysisStages small { color: var(--dl-ink-mute, #6b7280); font-size: .64rem; }
+	.analysisStages small:not(:last-child)::after { content: '→'; margin-left: .3rem; color: var(--dl-line-strong, #3b3e46); }
 	.activityLog { border: 1px solid var(--dl-line, #2a2c33); border-radius: 9px; overflow: hidden; background: color-mix(in srgb, var(--dl-bg-raised, #16171a) 45%, transparent); }
 	.activityLog summary { min-height: 2.75rem; display: flex; align-items: center; padding: .45rem .65rem; color: var(--dl-ink-dim, #9aa0aa); font-size: .75rem; cursor: pointer; }
 	.activityItems { display: grid; gap: .3rem; padding: .15rem .65rem .65rem; border-top: 1px solid var(--dl-line, #2a2c33); }
@@ -670,15 +777,27 @@
 		}
 	}
 	.err {
-		font-size: 0.85rem;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: .75rem;
+		padding: .65rem .75rem;
+		border: 1px solid color-mix(in srgb, var(--dl-bad, #ff6b6b) 35%, transparent);
+		border-radius: 9px;
+		background: color-mix(in srgb, var(--dl-bad, #ff6b6b) 6%, transparent);
+		font-size: 0.8rem;
 		color: var(--dl-bad, #ff6b6b);
 	}
-	.qualityPanel { display: grid; gap: .55rem; padding: .7rem .8rem; border: 1px solid color-mix(in srgb, var(--dl-bad, #ff6b6b) 45%, var(--dl-line, #2a2c33)); border-radius: 9px; background: color-mix(in srgb, var(--dl-bad, #ff6b6b) 6%, transparent); }
+	.err button { min-height: 2.5rem; flex-shrink: 0; border: 1px solid currentColor; border-radius: 7px; background: transparent; color: inherit; cursor: pointer; }
+	.err button:disabled { opacity: .5; cursor: default; }
+	.qualityPanel { border: 1px solid color-mix(in srgb, var(--dl-bad, #ff6b6b) 45%, var(--dl-line, #2a2c33)); border-radius: 9px; background: color-mix(in srgb, var(--dl-bad, #ff6b6b) 6%, transparent); overflow: hidden; }
 	.qualityPanel.passed { border-color: color-mix(in srgb, #70d6a5 35%, var(--dl-line, #2a2c33)); background: color-mix(in srgb, #70d6a5 6%, transparent); }
-	.qualityPanel header { display: flex; flex-wrap: wrap; align-items: center; gap: .45rem .75rem; }
-	.qualityPanel header strong { color: var(--dl-ink, #e7e7ea); font-size: .78rem; }
-	.qualityPanel header span { color: var(--dl-bad, #ff8c8c); font-size: .72rem; }
-	.qualityPanel.passed header span { color: #70d6a5; }
+	.qualityPanel summary { min-height: 2.75rem; display: flex; flex-wrap: wrap; align-items: center; gap: .45rem .75rem; padding: .55rem .75rem; cursor: pointer; }
+	.qualityPanel summary strong { color: var(--dl-ink, #e7e7ea); font-size: .76rem; }
+	.qualityPanel summary span { color: var(--dl-bad, #ff8c8c); font-size: .7rem; }
+	.qualityPanel.passed summary span { color: #70d6a5; }
+	.qualityDetails { display: grid; gap: .5rem; padding: 0 .75rem .7rem; border-top: 1px solid var(--dl-line, #2a2c33); }
+	.qualityDetails > small { padding-top: .55rem; color: var(--dl-ink-mute, #6b7280); font-size: .66rem; }
 	.coverageSummary, .requirements { display: flex; flex-wrap: wrap; gap: .35rem; }
 	.coverageSummary span, .requirements span { padding: .18rem .42rem; border-radius: 5px; background: var(--dl-bg-raised, #16171a); color: var(--dl-ink-dim, #9aa0aa); font-size: .66rem; }
 	.requirements span { border: 1px solid var(--dl-line, #2a2c33); }
@@ -800,6 +919,7 @@
 		padding: 0 1.25rem 1.25rem;
 		scrollbar-width: thin;
 	}
+	.suggest > strong { width: 100%; color: var(--dl-ink-mute, #6b7280); font-size: .68rem; font-weight: 600; }
 	@media (max-width: 720px) {
 		.runtimeBadge { display: none; }
 		.shell :global(.sidebar) {
@@ -817,6 +937,11 @@
 			background: rgba(0, 0, 0, 0.55);
 		}
 		.col { padding-inline: 0.85rem; }
+		.answerPromise { grid-template-columns: 1fr; }
+		.answerPromise span { min-height: 2.75rem; }
+		.analysisFrame { grid-template-columns: 1fr; }
+		.analysisStages { display: none; }
+		.err { align-items: stretch; flex-direction: column; }
 		.user .bubble { max-width: 88%; }
 		.chatSns { display: none !important; }
 		.povl { padding: 0; align-items: stretch; }

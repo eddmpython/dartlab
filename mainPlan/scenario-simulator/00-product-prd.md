@@ -8,7 +8,7 @@
 > - **엔진 거처 = L2.5 독립 묶음 `simulate/`**(story 동급 L3 아님, 신규 L2 아님 — 01 §3). 본문 §7.2 "L2 엔진 간 직접 import 금지"는 유효하나, simulate는 L2.5라 analysis+macro+quant 동시 결합 합법(§7.2 #9 본문 이미 반영).
 > - **중심 산출물 = Play 미래 리플레이**(05). **가치평가(08)·신용(09 §4)은 simulate(mode) 뷰** — 같은 `SimulationResult`의 다른 읽기. 단일 목표가·rating 금지(reverseDCF 닻+조건부 범위). §5 주요 산출물(Environment/Assumption/Bridge/Price)은 이 단면의 화면 표면이다.
 > - **★KR 전용(구현 현실 — 비전 범위):** 현 verb는 `market != "KR"`면 `ValueError`(US ticker → EDGAR, 매크로 프리셋이 KR 기준). 본문 §2 비전("경제·시장 환경")이 시사하는 cross-market 도달은 **US 프리셋·US elasticity가 없어 아직 구조적으로 KR-only**다. US 해제는 07 로드맵에 명시 phase로 두기 전까지 비전 주장이지 가용 기능 아님(01 §3·§9).
-> - 현재/과거 차트 3 컴포넌트(지수·이벤트레일·백테스팅)는 **`../_done/terminal-chart-suite/`로 분리**(01/02/03, 시간축 절단면). 07 = suite ⟶ 시뮬 단방향 시퀀싱 브리지. 전체 정합화·부채 원장 = 09. 현재 상태·NEXT = 04.
+> - 현재/과거 차트 3 컴포넌트(지수·이벤트레일·백테스팅)는 현재 UI surface가 소유한다. 07은 그 surface와 시뮬레이션의 단방향 시퀀싱 브리지다. 전체 정합화와 부채 원장은 09, 현재 상태와 다음 작업은 04에 둔다.
 
 ---
 
@@ -440,4 +440,3 @@ Scenario tree, assumption ledger, bridge waterfall, replay panel, AI expert pane
 - 사용자에게 단일 예측값보다 가정과 범위가 먼저 보인다.
 - 모든 숫자에 source drill-down이 있다.
 - 반증 조건과 추적 지표가 남는다.
-

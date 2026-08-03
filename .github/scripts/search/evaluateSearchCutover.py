@@ -1,7 +1,7 @@
 """Evaluate search cutover state from a productization proof bundle.
 
 This script is intentionally non-mutating. It turns the evidence bundle into
-the operator-facing S0-S4 state from mainPlan/search-productization/13.
+the operator-facing S0-S4 cutover state.
 """
 
 from __future__ import annotations

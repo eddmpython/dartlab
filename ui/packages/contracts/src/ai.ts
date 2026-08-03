@@ -1,6 +1,7 @@
 // AI 계약. 3-티어 (02 §4) + AG-UI allowlist 16종 (emitter SSOT = server/agentGateway.py
 // `_ALLOWED_EVENTS`, 수신 SSOT = ui/web streamAsk.ts). allowlist 가 계약이고 emit 은 부분집합.
 import type { EvidenceRef, EvidenceSelection } from './evidence';
+import type { PublicAgentEventType } from './generated/agentRuntime';
 
 export type AiTier = 'advanced' | 'onDevice' | 'deterministic' | 'none';
 // none = test fake 초기화 전 전용 — public 은 항상 deterministic 이상, local 무provider 도 deterministic.
@@ -28,24 +29,7 @@ export interface AiMode {
 
 // AG-UI allowlist (16종. TOOL_CALL_ARGS·MESSAGES_SNAPSHOT·ACTIVITY_SNAPSHOT 은 reserved, 현재 미발행)
 
-export type AgUiEventType =
-	| 'TEXT_MESSAGE_START'
-	| 'TEXT_MESSAGE_CONTENT'
-	| 'TEXT_MESSAGE_END'
-	| 'THINKING_DELTA'
-	| 'TOOL_CALL_START'
-	| 'TOOL_CALL_ARGS' // reserved
-	| 'TOOL_CALL_RESULT'
-	| 'TOOL_CALL_END'
-	| 'STATE_SNAPSHOT'
-	| 'STATE_DELTA'
-	| 'MESSAGES_SNAPSHOT' // reserved
-	| 'ACTIVITY_SNAPSHOT' // reserved
-	| 'ACTIVITY_DELTA'
-	| 'VIEW_SPEC'
-	| 'APPROVAL_REQUESTED'
-	| 'RUN_FINISHED'
-	| 'RUN_ERROR';
+export type AgUiEventType = PublicAgentEventType;
 
 export interface ToolResultBody {
 	markdown?: string;
@@ -78,6 +62,7 @@ export interface AiStreamToolStart {
 	messageId: string;
 	toolCallId: string;
 	toolName: string;
+	nativeToolName?: string;
 	args: Record<string, unknown>;
 	status: 'running';
 	passLabel?: string;
@@ -89,6 +74,7 @@ export interface AiStreamToolResult {
 	messageId: string;
 	toolCallId: string;
 	toolName: string;
+	nativeToolName?: string;
 	status: 'done' | 'error';
 	summary: string;
 	refs: string[];
@@ -107,6 +93,22 @@ export interface AiStreamActivity {
 	passLabel?: string;
 }
 
+export type AnalysisConversationMode =
+	| 'investmentDecision'
+	| 'companyComparison'
+	| 'screening'
+	| 'disclosureReview'
+	| 'performanceTrend'
+	| 'research';
+
+export interface AnalysisConversationGuide {
+	mode: AnalysisConversationMode;
+	label: string;
+	decisionGoal: string;
+	answerShape: string[];
+	stages: string[];
+}
+
 export interface AiStreamViewSpec {
 	type: 'VIEW_SPEC';
 	runId: string;
@@ -122,10 +124,19 @@ export interface AiStreamRunFinished {
 	runId: string;
 	status: 'ok' | 'failed';
 	refs: string[];
+	candidateRefs?: string[];
+	candidateRefDetails?: EvidenceRef[];
 	artifacts?: Record<string, unknown>[];
 	suggestedQuestions: string[];
 	responseMeta?: {
 		responseStatus?: string;
+		runtimeId?: string;
+		sessionId?: string;
+		outcomeId?: string;
+		verificationStatus?: 'evidenceCommitted' | 'rejected';
+		repairAttempt?: number;
+		failureCode?: string | null;
+		analysisConversation?: AnalysisConversationGuide;
 		answerQuality?: {
 			passed: boolean;
 			contract: 'quantitative' | 'documentary';
@@ -135,6 +146,8 @@ export interface AiStreamRunFinished {
 			contractIds: string[];
 			requiredEvidence: string[];
 			readSkillCalls: number | null;
+			requiredClaimCells: number;
+			coveredClaimCells: number;
 		};
 		runtimeCoverage?: {
 			readSkillCalls: number;

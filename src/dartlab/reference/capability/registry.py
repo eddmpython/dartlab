@@ -594,7 +594,20 @@ ANALYSIS_CONTRACTS: dict[str, dict[str, Any]] = {
         "contractId": "comparison.same_axis",
         "capabilityRefs": ["Company.panel", "Company.analysis", "Company.credit", "scan"],
         "questionTypes": ["company_compare"],
-        "questionTriggers": {"any": ["비교", "대비", "vs", " versus ", "둘 중", "어느 쪽", "누가"]},
+        "questionTriggers": {
+            "any": [
+                "비교",
+                "대비",
+                "vs",
+                " versus ",
+                "둘 중",
+                "중 뭐가",
+                "더 나아",
+                "어느 쪽",
+                "누가",
+                "which is better",
+            ]
+        },
         "toolNames": [
             "searchCompany",
             "analysis",

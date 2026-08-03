@@ -2,7 +2,7 @@
 
 HF parquet(공동작업대 SSOT)를 요청 시점에 **CSV/TSV 로 온더플라이 디코드**한다. 구글시트
 `=IMPORTDATA(...)` · 엑셀 Power Query(데이터→웹에서)가 dartlab 데이터를 **런타임 소스로 라이브**
-사용한다. CSV 사본을 HF 에 굽지 않는다(no-build, SSOT 직독). 계약 = `mainPlan/data-download-center`
+사용한다. CSV 사본을 HF에 굽지 않는다(no-build, SSOT 직독). 현재 계약은 Skill OS `operation.dataDownloadCenter`다.
 01(API)·03(워커)·04(스프레드시트).
 
 ```

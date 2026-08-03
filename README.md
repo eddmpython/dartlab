@@ -319,7 +319,7 @@ Cold `refresh`는 terminal generation을 동기적으로 완성하므로 즉시 
 `DataHubClient` 또는 `AsyncDataHubClient`로 `/api/dataHub/v1` 계약을 호출하고,
 분산 노드는 pull worker로 같은 job ledger를 소비한다. 자세한 계약은
 [engines.dataHub](https://eddmpython.github.io/dartlab/skills/engines.dataHub)와
-[설계 문서](mainPlan/unified-data-workbench/README.md)에 있다.
+[데이터 작업대 계약](docs/handbook/architecture/dataWorkbench.md)에 있다.
 
 ## 공시에서 판단까지
 
@@ -653,7 +653,12 @@ dartlab.ask("삼성전자 재무건전성 분석해줘")
 dartlab.ask("삼성전자 분석", runtimeId="claude")
 ```
 
-지원 runtime은 `codex`, `claude`, `cline`이다. DartLab은 provider API key, OAuth token, 모델 다운로드를 관리하지 않는다. CLI 설치와 DartLab MCP 연결이 모두 확인된 `groundedReady` runtime만 실행되며, 미연결 runtime은 비근거 답변을 만들지 않고 연결 계획을 안내한다. 설치와 MCP 설정은 `dartlab agent`가 exact argv와 SHA-256 digest를 먼저 보여 주고, 사용자가 같은 digest를 명시했을 때만 실행한다.
+```powershell
+dartlab setup codex --yes
+dartlab invest 005930 --runtime codex
+```
+
+지원 runtime은 `codex`, `claude`, `cline`이다. `dartlab setup`은 설치, 공식 로그인, DartLab MCP 연결, 기본 runtime 선택을 한 번의 승인 흐름으로 완료하며 이미 끝난 단계는 반복하지 않는다. DartLab은 provider API key, OAuth token, 모델 다운로드를 관리하지 않는다. CLI 설치와 DartLab MCP 연결이 모두 확인된 `groundedReady` runtime만 실행되며, 미연결 runtime은 비근거 답변을 만들지 않고 연결 계획을 안내한다. 투자분석 전용 `dartlab invest`는 중심논지, 반대논지, 밸류에이션, 시나리오, 촉매, 리스크와 다음 점검 시점을 같은 근거 계약으로 분석한다.
 
 질문은 Skill OS의 241개 공개 capability를 질문별 `informationCoverage`로 좁힌다. 실행 가능한 182개는 구조화된 실행 계약을 사용하고 reference-only 경로는 canonical replacement로 연결한다. 답변은 표·문서·값·기준일의 exact ref payload와 값·기간·대상·문서 주장이 일치할 때만 공개된다. 로컬 GUI는 답변이 실제 사용한 근거, 보조 근거, 미충족 근거, artifact와 실행 영수증을 분리해서 보여 준다.
 
@@ -963,7 +968,7 @@ c.panel("IS")                   # 손익계산서, 분기 기본
 
 북극성은 주간 검증 완료 분석 루프(`weeklyVerifiedAnalysisLoops`) 하나만 센다. 실제 질문이 DartLab 정식 엔진을 거쳐 근거 있는 결과가 되고, 사용자가 그 결과의 정확한 evidence 또는 artifact를 직접 확인했을 때만 한 건이다. 모델 응답, tool call 수, 페이지뷰, 테스트 통과 수는 세지 않는다. 현재 전역 값은 **미측정**이며, 권위 있는 측정이 서기 전에는 성장 목표를 만들지 않는다.
 
-점수는 축별 성숙도이며, 여덟 능력 차원 점수의 산술평균이다. 각 차원 10점은 실사용 환경에서 그 능력이 반복 검증된 상태다. 점수의 근거는 실제로 도는 게이트와 실측 여정이며, 자동으로 실행되지 않는 경로는 구현돼 있어도 점수로 세지 않는다. 차원 정의·앵커·축별 채점 근거의 정본은 [채점 기준](mainPlan/dartlab-north-star/05-score-rubric.md)이다. 현재 총점은 **72.0/120, 평균 6.0/10**이다.
+점수는 축별 성숙도이며, 여덟 능력 차원 점수의 산술평균이다. 각 차원 10점은 실사용 환경에서 그 능력이 반복 검증된 상태다. 점수의 근거는 실제로 도는 게이트와 실측 여정이며, 자동으로 실행되지 않는 경로는 구현돼 있어도 점수로 세지 않는다. 차원 정의와 완료 판정의 정본은 [북극성 handbook](docs/handbook/product/northStar.md)이다. 현재 총점은 **72.0/120, 평균 6.0/10**이다.
 
 | 차원 | 10점의 의미 |
 |---|---|
@@ -1006,9 +1011,9 @@ c.panel("IS")                   # 손익계산서, 분기 기본
 | 노트북·브라우저 (Pyodide) | 설치 없이 xlwings Lite·JupyterLite·marimo·Colab WASM에서 Company·panel·analysis·credit·story·macro가 실행되고 엑셀 수식으로도 닿는다. scan 프리빌드 용량과 gather CORS는 브라우저 경계로 남는다. Colab·marimo 노트북 9종이 계약 문법으로 산다. 교육 SSOT는 블로그 연재다. | 실데이터 실습이 설치 없이 교육 서사와 이어진다. |
 | 북극성 측정 (productOutcome) | 로컬 상태 원장, bounded evidence resolve, exact ref hash 검증이 구현됐다. 실제 local GUI operator journey에서 2026Q1 삼성전자 매출 값 근거를 열어 `verified=1` 전이를 확인했다. 이는 로컬 실증이며 주간 cohort가 없어 전역 값은 계속 미측정이다. 점수는 주간 review 전까지 유지한다. | verified 루프가 자동 계수되고 주간 리뷰가 이 표를 재판정한다. |
 
-결과 수명주기, goal ID, 주간 운영 주기의 전체 계약은 [mainPlan/dartlab-north-star](mainPlan/dartlab-north-star/)에 있다. 점수 재판정은 주간 outcome review에서만 하며, 근거 없는 상향은 무효다. 실측·게이트와 연결되지 않은 차원 점수는 재판정에서 우선 하향 대상이다.
+결과 수명주기와 주간 운영 주기의 현재 계약은 [북극성 handbook](docs/handbook/product/northStar.md)에 있다. 점수 재판정은 주간 outcome review에서만 하며, 근거 없는 상향은 무효다. 실측과 게이트에 연결되지 않은 차원 점수는 재판정에서 우선 하향 대상이다.
 
-> 2026-08-02 점수표 고정 이후 Agent Runtime production vertical slice와 local Product Outcome 원장이 구현됐다. 위 점수는 즉시 올리지 않았으며, exact evidence를 확인한 operator journey를 주간 outcome review에서 검증한 뒤 재판정한다. 구현 근거는 [Agent Runtime 진행 원장](mainPlan/agent-runtime-engine/06-progress-ledger.md)과 [북극성 진행 원장](mainPlan/dartlab-north-star/04-progress-ledger.md)에 기록한다.
+> 2026-08-03 Agent Runtime 실질 Ask에서 삼성전자 최근 5개년 매출과 영업이익의 10개 claim cell을 모두 덮고 근거 commit을 확인했다. 이 단일 로컬 실행만으로 주간 점수를 올리지는 않는다. 현재 동작과 재검증 절차는 [Agent Runtime 운영](docs/handbook/operations/agentRuntime.md)에 기록한다.
 
 ## 라이선스
 

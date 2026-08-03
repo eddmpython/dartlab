@@ -967,7 +967,7 @@ opine 배선, LEVER_LEDGER 3종 harvestable 승격. **진짜 미보유는 Form-4
 | 09-architecture-consolidation | ✅ v0.3 | 부채 원장·앵커·신용 뷰·Phase 시퀀스·§10 4 fatal 빌드티켓(①✅ 빌드·배선) |
 | 05-play-future-replay | ✅ v0.3 | ★중심 산출물. fan-band None구간 끊기·byte-parity 범위 명시 |
 | 07-integration-roadmap | ✅ v0.3 | **cross-category 브리지로 전환**(차트 suite ⟶ 시뮬 단방향 시퀀싱·공유 DNA·미래마커 이관) |
-| → 06/10/11 **분리** | ✅ 이동 | **`../_done/terminal-chart-suite/`로 git mv**(06→01 차트·11→02 레일·10→03 백테스팅). 번호 공백(00-05/07-09) 유지=cross-ref 안정. 상세 = suite README·07 브리지·§4(14) |
+| → 06/10/11 **분리** | ✅ 이동 | 현재 UI surface가 차트, 이벤트 레일, 백테스팅을 소유한다. 번호 공백(00-05/07-09)은 cross-ref 안정을 위해 유지한다. |
 
 ---
 
@@ -986,7 +986,7 @@ mainPlan UI 플랫폼 리팩토링이 **이 세션 동안** 단계-4b~5-2b로 �
 
 ### ✅ 완료 (v0.2→v0.3)
 1. ~~05-play-future-replay.md~~ ✅ . ★중심 산출물 작성(v0.3 fan-band None구간 끊기 포함).
-2. ~~06-index-chart.md~~ ✅ . v0.3 전면 대체(subject 소유권 seam·IndexPort catalog/search/series·US 부재 가드). **→ 2026-06-14 `_done/terminal-chart-suite/01-price-index-chart.md`로 분리(§4 #14).**
+2. ~~06-index-chart.md~~ ✅ . v0.3 전면 대체(subject 소유권 seam·IndexPort catalog/search/series·US 부재 가드). 현재 UI surface가 소유한다.
 3. ~~07-integration-roadmap.md~~ ✅ . 시퀀스·의존성·Phase.
 4. ~~02 mode enum 통일~~ ✅ . 본문 §2.3·§3.1 → `replay/walkforward/whatif` SSOT 단일.
 5. ~~01 §1/§5/§6/§12/§13b 심화~~ ✅ . v0.3 워크플로(노드 3중좌표·NodeValue/실행기/gate·byte-parity·격자·N=3 #7).
@@ -1019,7 +1019,7 @@ mainPlan UI 플랫폼 리팩토링이 **이 세션 동안** 단계-4b~5-2b로 �
 11. ★**빌드티켓 천장(09 §10)** . fatal① T1 ✅·Phase 0 ✅. 잔여 천장 = fatal②(forwardTest recordForecast write·models HF)/fatal③(gate/ledger/admission/lens)/fatal④(US threading) = **SYSTEM(미빌드 코드) 천장이지 PLAN 결함 0** . 설계는 09 §10 에 파일·시그니처·테스트게이트·phase 까지 execution-ready 로 닫혀 있고, 미빌드는 *코드 부재*지 *설계 미결*이 아니다(채점규칙: 코드부재≠감점). ★**planScore SSOT = §0(세 축 planScore 95)가 정본**(2026-06-20 R12 봉합 . 직전 "planScore=100" 표기는 본 항 1곳에만 있던 SSOT 분열이라 §0 로 강등): 본 항은 그 95의 *빌드측 근거*다 . fatal①~④ = SYSTEM 천장, PLAN 결함 0(설계는 execution-ready). systemScore=빌드 진행률(현 fatal① 1/4). **한 문서 한 점수**(100 vs 95 모순 제거) . planScore 정본은 §0, 본 항은 systemScore 분리 근거. 두 축 혼동 금지.
 12. ★**타사 개념 흡수 토론 반영(2026-06-14, 경쟁 6서비스)** . 12 agent 토론+적대검증으로 흡수후보 9종 판정: 5종(A3·A6·A8·A9 already + A5 honesty 위반 reject)·4종 **absorb-as-defer**(새 기능 0, 한계 라벨/defer-게이트로만). PRD 반영 완료: A1 preset 출처 라벨+미검증 warning 시나리오-레벨 전파(02 §2.3, **졸업 AC**) / A2 임의충격 UX defer(02 §2B.3, 01 §4 already-have 명기) / A4 라이브 레버 = dirty recompute+S_T 격자 선결 defer(05 §4) / A6 fan band σ provenance 실선/점선 시각 규율(01 §5b·05 §3) / A7 공개 Brier 리더보드 write-end 후 defer(03 §9.3) / A5 점확률 발간 금지 가드(02 §2.3). 시그니처 판정=**conditional-signature(합의 61, KEEP 조건부)** . 00 §경쟁 지형·시그니처 박제. 잔여 졸업 AC = A1 warning 전파 실배선(write-end dead chain 동일 선결).
 13. ★**A4 라이브 레버 졸업 의존** . live 레버(드래그→즉시 재렌더)는 lens/drivers phase(`_dirtyClosure` dirty recompute 01 §6.2·§13b-1 + Sobol S_T 격자 OQ11) 의존으로 deferred. 그 전엔 landing=사전 동결 격자 lookup·격자 밖 토글="로컬 재계산 필요" 한계 라벨(05 §4).
-14. ★**차트 suite 분리 완료(2026-06-14, 운영자 go)** . 현재/과거 차트 3 컴포넌트(06 지수→01 차트·11 레일→02·10 백테스팅→03)를 **`mainPlan/_done/terminal-chart-suite/`로 git mv**(이력 보존). 절단면=**시간축**(현재/과거=suite, 미래=시뮬). **단방향 의존**(suite ⟶ 시뮬 05 Play, 역참조 0 . 시뮬-앵커 사상 동형). 07 = cross-category 브리지로 전환(시퀀스·공유 DNA·미래마커 이관). 시뮬 번호 공백(00-05/07-09) 유지=cross-ref churn 0. 갱신 동반: scenario-simulator README 문서지도·07·00:상태박스·05:37/48 형제참조·suite README 신설·terminal-chart-suite H1 renumber+참조규약. **이유=셋이 시뮬 미완 게이트(write-end·admission)에 인질로 안 잡히고 독립 출시 가능**(분리의 핵심 이득). 메모리 포인터 갱신 동반(시뮬+백테스팅+이벤트레일+terminal-improvement 경계). ⚠ `project_terminal_improvement` 경계 노트("지수/이벤트레일=scenario-simulator")가 stale→terminal-chart-suite로 정정 필요.
+14. ★**차트 suite 분리 완료(2026-06-14, 운영자 go)** . 현재/과거 차트 3 컴포넌트는 현재 UI surface가 소유한다. 절단면은 시간축이며 현재/과거 surface에서 미래 시뮬레이션으로만 의존한다. 07은 시퀀스, 공유 DNA, 미래마커 이관의 브리지다. 시뮬 번호 공백(00-05/07-09)은 cross-ref 안정을 위해 유지한다.
 
 ---
 

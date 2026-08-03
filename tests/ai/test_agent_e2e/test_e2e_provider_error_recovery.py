@@ -1,7 +1,7 @@
-"""E2E 시나리오 10 — provider stream error 후 refs 보존 partial 답안.
+"""E2E 시나리오 10: provider stream error 후 refs 보존 partial 답안.
 
-마스터 플랜 트랙 4 (cryptic-discovering-kettle.md). turn 1 에서 tool 호출 성공 → refs
-누적 → turn 2 streamProvider 가 RuntimeError → recoverable=True + done event 보존.
+마스터 플랜 트랙 4 (cryptic-discovering-kettle.md). turn 1 에서 tool 호출 성공 후 refs
+누적, turn 2 streamProvider 가 RuntimeError, recoverable=True + done event 보존.
 """
 
 from __future__ import annotations
@@ -41,7 +41,7 @@ def _collect(stream: Iterable[TraceEvent]) -> list[TraceEvent]:
 
 
 def test_provider_error_after_refs_finalizes(monkeypatch: pytest.MonkeyPatch) -> None:
-    """1 turn tool 성공 후 2 turn streamProvider 실패 → finalize 한 round 시도."""
+    """1 turn tool 성공 후 2 turn streamProvider 실패 시 finalize 한 round 시도."""
 
     def fake_execute(name: str, args: dict[str, Any]) -> dict[str, Any]:
         return {
@@ -68,7 +68,7 @@ def test_provider_error_after_refs_finalizes(monkeypatch: pytest.MonkeyPatch) ->
         raw=None,
     )
     # finalize 가 retry 한 round (turn.toolCalls=[] + content)
-    turn_finalize = ProviderTurn(content="부분 답안 — 진행 중 오류", toolCalls=[], raw=None)
+    turn_finalize = ProviderTurn(content="부분 답안: 진행 중 오류", toolCalls=[], raw=None)
     call_count = {"n": 0}
 
     def flaky_stream(
@@ -80,12 +80,12 @@ def test_provider_error_after_refs_finalizes(monkeypatch: pytest.MonkeyPatch) ->
             return
         if call_count["n"] == 2:
             raise RuntimeError("stream timeout")
-        # finalize 호출 — 정상 stream
+        # finalize 호출: 정상 stream
         for piece in turn_finalize.content or "":
             yield StreamChunk(text=piece)
         yield StreamChunk(text="", final=True, turn=turn_finalize)
 
-    monkeypatch.setattr("dartlab.ai.agent.streamProvider", flaky_stream)
+    monkeypatch.setattr("dartlab.ai.providers.streamProvider", flaky_stream)
 
     provider = _ScriptedProvider([])
     events = _collect(runAgent("provider error test", provider=provider, toolNames=("ReadSkill",)))

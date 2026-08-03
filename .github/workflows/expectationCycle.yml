@@ -6,7 +6,7 @@ name: Expectation Cycle
 # 원장 = HF expectations/ (append-only). 오케스트레이션 SSOT =
 # dartlab.simulate.expectationCycle (유일 기록자 = simulate).
 # 월 cron: KST 매월 6일 06:00 (ECOS/FRED 월초 발표·HF macro sync 반영 후).
-# 상세: mainPlan/expectation-grid/
+# 현재 계약: docs/handbook/architecture/analysisProducts.md.
 # ──────────────────────────────────────────────────────────────
 
 on:

@@ -58,6 +58,7 @@ ALLOWED_ROOT = frozenset(
         "SECURITY.md",
         "blog",
         "codecov.yml",
+        "docs",
         "infra",
         "landing",
         "mainPlan",

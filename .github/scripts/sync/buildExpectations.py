@@ -2,7 +2,7 @@
 
 사이클 오케스트레이션은 in-library SSOT ``dartlab.simulate.expectationCycle`` 이 소유한다
 (별도빌드 0 · 유일 기록자 = simulate). 본 스크립트는 CLI 계약(--cycle/--market/--push)만
-보존하는 진입점이다. 원장 = append-only (mainPlan/expectation-grid/01 §4).
+보존하는 진입점이다. 원장은 append-only다.
 """
 
 from __future__ import annotations

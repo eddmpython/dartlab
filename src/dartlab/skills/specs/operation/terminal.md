@@ -114,7 +114,7 @@ DartLab 터미널은 전문가가 하루 종일 들여다보는 *살아있는 �
 
 - **축·기간 없는 스파크라인 = 장식** (금지).
 - gauge·donut·단일 점수·출처 없는 heatmap·모델 분포 없는 fan chart = 근거를 숨기므로 금지.
-- 시각 문법 카탈로그·금지 목록의 상세는 대시보드 시각 패턴 조사(`mainPlan/macro-lens-dialog/08-dashboard-visual-patterns.md`)와 시각 리서치(`mainPlan/macro-lens/07-visual-research.md`)를 따른다. 카드 배치·bento·위계는 [operation.dashboardDesign](/skills/operation.dashboardDesign).
+- 시각 문법과 금지 목록, 카드 배치, bento, 위계는 [operation.dashboardDesign](/skills/operation.dashboardDesign)을 따른다.
 
 ## 완성 판정
 

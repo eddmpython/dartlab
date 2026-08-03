@@ -3,7 +3,7 @@
 사상: story 는 L3 조합기다. 숫자는 전부 L2 엔진(buildStory builders·analysis.valuation calcDFV)이
 계산하고, 본 모듈은 결과를 계약 블록으로 *엮기*만 한다(self-calc 0). thesis-led 아크 - 결론(thesis)을
 최상단에, 기존 분석 섹션을 본문에, de-gate 밸류에이션(내재가치 bridge·시나리오)을 pro 블록으로.
-SSOT: mainPlan/professional-report-engine/03-report-engine-architecture.md §2.3.
+현재 계약은 ``docs/handbook/architecture/analysisProducts.md``에 정리돼 있다.
 
 L계층: story=L3, valuation=L2 → L2 를 함수 내부 lazy import(import 방향 L2→L3 준수).
 """
@@ -13,6 +13,7 @@ from __future__ import annotations
 from typing import Any
 
 _PERSPECTIVE_LABELS = {
+    "investment": "투자 의사결정",
     "full": "종합",
     "valuation": "밸류에이션",
     "earnings": "수익체력",
@@ -119,25 +120,27 @@ def _scenarioSet(dfv: dict) -> dict | None:
     if not scen.get("base"):
         return None
     legs: list[dict] = []
+    scenarioMethod = dfv.get("scenarioMethod") or {}
+    drivers = scenarioMethod.get("drivers") if isinstance(scenarioMethod.get("drivers"), dict) else {}
     for key, label in (("bear", "약세"), ("base", "기본"), ("bull", "강세")):
         iv = scen.get(key)
         if iv is None:
             continue
+        legDrivers = drivers.get(key) if isinstance(drivers.get(key), dict) else {}
         upside = round((iv - current) / current * 100, 1) if current else None
         legs.append(
             {
                 "key": key,
                 "label": label,
-                "growth": None,
+                "growth": legDrivers.get("growthMult"),
                 "margin": None,
-                "wacc": None,
+                "wacc": legDrivers.get("wacc"),
                 "intrinsic": iv,
                 "upside": upside,
             }
         )
     if not legs:
         return None
-    scenarioMethod = dfv.get("scenarioMethod") or {}
     method = scenarioMethod.get("method")
     if method == "driverSensitivity":
         note = "성장률·WACC 드라이버 민감도 기반 3개 시나리오."
@@ -213,6 +216,206 @@ def _stockCode(company: Any) -> str:
     return ""
 
 
+def _buildInvestmentReportModel(company: Any, *, basePeriod: str | None = None) -> dict:
+    """범용 Story 문서 빌드를 우회하는 결정 중심 투자 브리프."""
+    from dartlab.story.investmentMemo import buildInvestmentDecision
+    from dartlab.story.lensProducts import (
+        collectLensProducts,
+        enginesForReportType,
+        lensSummary,
+        publicLensBundle,
+    )
+    from dartlab.story.reportTypes import REPORT_TYPES
+    from dartlab.story.thesis import buildThesis
+
+    code = _stockCode(company)
+    bundle = collectLensProducts(
+        company,
+        engines=enginesForReportType("investment"),
+        basePeriod=basePeriod,
+    )
+    publicBundle = publicLensBundle(bundle)
+    products = publicBundle.get("products") if isinstance(publicBundle, dict) else bundle.get("products", {})
+    tensions = publicBundle.get("tensions") if isinstance(publicBundle, dict) else bundle.get("tensions", {})
+    lensRows = lensSummary(products)
+
+    dfv = None
+    try:
+        from dartlab.analysis.valuation.dFV import calcDFV
+
+        dfv = calcDFV(company, basePeriod=basePeriod)
+    except Exception:  # noqa: BLE001 - 한 모델 실패를 전체 브리프 실패로 위장하지 않는다.
+        pass
+    view = _valuationView(dfv) if dfv else None
+    scenario = _scenarioSet(dfv) if dfv else None
+    thesis = buildThesis(company, None, view, basePeriod=basePeriod)
+    decision = buildInvestmentDecision(
+        thesis=thesis,
+        lensProducts=products,
+        lensTensions=tensions,
+        valuation=view,
+        scenarios=scenario,
+        asOf=basePeriod,
+        gaps=bundle.get("gaps") or [],
+    )
+
+    central = str((thesis or {}).get("central") or "")
+    findings: list[dict[str, str]] = []
+    if central:
+        findings.append({"key": "thesis", "finding": central, "sourceEngine": "story"})
+    for row in lensRows:
+        finding = row.get("summary") or row.get("label")
+        if finding:
+            findings.append(
+                {
+                    "key": f"lens.{row['engine']}",
+                    "finding": str(finding),
+                    "sourceEngine": str(row["engine"]),
+                }
+            )
+
+    sections: list[dict[str, Any]] = []
+    decisionBlocks = [
+        {"type": "text", "text": text} for text in (central, str((thesis or {}).get("bearCase") or "")) if text
+    ]
+    if decisionBlocks:
+        sections.append(
+            {
+                "key": "investmentDecision",
+                "title": "투자 판단과 반대논지",
+                "sourceEngine": "story",
+                "blocks": decisionBlocks,
+                "arcStep": 1,
+            }
+        )
+    proBlocks: list[dict[str, Any]] = []
+    if view:
+        proBlocks.append({"type": "valuationBridge", "view": view})
+    if scenario:
+        proBlocks.append({"type": "scenario", "set": scenario})
+    if proBlocks:
+        sections.append(
+            {
+                "key": "valuation",
+                "title": "가격에 반영된 기대와 시나리오",
+                "sourceEngine": "valuation",
+                "blocks": proBlocks,
+                "arcStep": 2,
+            }
+        )
+
+    engines = {
+        str(engine): {"label": str(engine), "sections": 0, "blocks": 0} for engine in bundle.get("engines") or []
+    }
+    engines["story"] = {"label": "story", "sections": int(bool(decisionBlocks)), "blocks": len(decisionBlocks)}
+    if proBlocks:
+        engines["valuation"] = {"label": "valuation", "sections": 1, "blocks": len(proBlocks)}
+
+    model: dict[str, Any] = {
+        "stockCode": code,
+        "corpName": str(getattr(company, "corpName", "") or ""),
+        "asOf": decision.get("asOf") or basePeriod or "",
+        "dataBasis": "DART/EDGAR 공시 + dartlab 분석 엔진",
+        "perspectiveKey": "investment",
+        "perspectiveLabel": _PERSPECTIVE_LABELS["investment"],
+        "conclusion": central,
+        "headlineKpis": _headlineKpis(None, view, None),
+        "narrativeOverview": central,
+        "keyFindings": findings,
+        "sections": sections,
+        "closing": [
+            {"label": "판단 상태", "engine": "story", "line": decision["decisionStatus"]},
+            {"label": "다음 확인", "engine": "story", "line": decision["summary"]["nextCheck"]},
+        ],
+        "provenance": {
+            "engines": engines,
+            "status": decision["decisionStatus"],
+            "note": "대표 렌즈와 구조화 가치평가를 한 번씩 조합한 투자 의사결정 브리프입니다.",
+        },
+        "assumptionsNote": "WACC·성장·시나리오 가정은 valuation 및 scenarios 세부 필드에 공개됩니다.",
+        "qualityLabel": decision["evidenceStrength"],
+        "focusQuestions": list(REPORT_TYPES["investment"].focusQuestions),
+        "schemaVersion": 2,
+        "lensSummary": lensRows,
+        "gaps": decision["gaps"],
+        "thesis": thesis,
+        "investmentDecision": decision,
+    }
+    if publicBundle is not None:
+        model["lensProducts"] = publicBundle
+    return model
+
+
+def _storyReportSections(story: Any, view: dict | None, scenario: dict | None, creditView: dict | None) -> list[dict]:
+    """Story 블록과 선택적 valuation, credit 제품을 계약 섹션으로 조립한다."""
+    sections: list[dict] = []
+    for section in story.sections:
+        blocks = [block for block in (_mapBlock(item) for item in getattr(section, "blocks", [])) if block]
+        if blocks:
+            sections.append(
+                {
+                    "key": getattr(section, "key", ""),
+                    "title": getattr(section, "title", ""),
+                    "sourceEngine": "story",
+                    "blocks": blocks,
+                }
+            )
+    proBlocks = ([{"type": "valuationBridge", "view": view}] if view else []) + (
+        [{"type": "scenario", "set": scenario}] if scenario else []
+    )
+    if proBlocks:
+        sections.append(
+            {
+                "key": "valuation",
+                "title": "밸류에이션 - 내재가치와 시나리오",
+                "sourceEngine": "valuation",
+                "blocks": proBlocks,
+                "arcStep": 7,
+            }
+        )
+    if creditView:
+        sections.append(
+            {
+                "key": "credit",
+                "title": "신용: dCR 등급과 부도확률",
+                "sourceEngine": "credit",
+                "blocks": [{"type": "creditPanel", "view": creditView}],
+                "arcStep": 8,
+            }
+        )
+    return sections
+
+
+def _storyReportFindings(card: Any, lensRows: list[dict[str, Any]]) -> tuple[str, list[dict[str, Any]]]:
+    """요약 결론과 렌즈별 발견을 동일 공개 구조로 정규화한다."""
+    conclusion = getattr(card, "conclusion", "") if card else ""
+    findings = [{"key": "thesis", "finding": conclusion, "sourceEngine": "story"}] if conclusion else []
+    for row in lensRows:
+        finding = row.get("summary") or row.get("label")
+        if finding:
+            findings.append(
+                {
+                    "key": f"lens.{row['engine']}",
+                    "finding": str(finding),
+                    "sourceEngine": row["engine"],
+                }
+            )
+    return conclusion, findings
+
+
+def _storyReportEngines(sections: list[dict], lensProducts: dict[str, Any]) -> dict[str, dict]:
+    """섹션과 렌즈 제품에서 provenance 엔진 사용량을 집계한다."""
+    engines: dict[str, dict] = {}
+    for section in sections:
+        engine = section["sourceEngine"]
+        slot = engines.setdefault(engine, {"label": engine, "sections": 0, "blocks": 0})
+        slot["sections"] += 1
+        slot["blocks"] += len(section["blocks"])
+    for engine in lensProducts:
+        engines.setdefault(engine, {"label": engine, "sections": 0, "blocks": 0})
+    return engines
+
+
 def buildReportModel(company: Any, perspective: str = "full", *, basePeriod: str | None = None) -> dict:
     """계약 ReportModel emitter - Story builders + de-gate 밸류에이션을 thesis-led 리포트로 조립.
 
@@ -238,6 +441,8 @@ def buildReportModel(company: Any, perspective: str = "full", *, basePeriod: str
         없음 - 데이터 부족·빌드 실패는 skipped dict 로 반환.
     """
     code = _stockCode(company)
+    if perspective in {"investment", "invest", "투자", "투자분석"}:
+        return _buildInvestmentReportModel(company, basePeriod=basePeriod)
     try:
         from dartlab.story.registry import buildStory
 
@@ -263,76 +468,17 @@ def buildReportModel(company: Any, perspective: str = "full", *, basePeriod: str
     view = _valuationView(dfv) if dfv else None
     scenario = _scenarioSet(dfv) if dfv else None
     creditView = _creditView(lensResults.get("credit"))
-
-    sections: list[dict] = []
-    for sec in story.sections:
-        blocks = [b for b in (_mapBlock(x) for x in getattr(sec, "blocks", [])) if b]
-        if not blocks:
-            continue
-        sections.append(
-            {
-                "key": getattr(sec, "key", ""),
-                "title": getattr(sec, "title", ""),
-                "sourceEngine": "story",
-                "blocks": blocks,
-            }
-        )
-
-    if view or scenario:
-        proBlocks: list[dict] = []
-        if view:
-            proBlocks.append({"type": "valuationBridge", "view": view})
-        if scenario:
-            proBlocks.append({"type": "scenario", "set": scenario})
-        sections.append(
-            {
-                "key": "valuation",
-                "title": "밸류에이션 - 내재가치와 시나리오",
-                "sourceEngine": "valuation",
-                "blocks": proBlocks,
-                "arcStep": 7,
-            }
-        )
-
-    if creditView:
-        sections.append(
-            {
-                "key": "credit",
-                "title": "신용: dCR 등급과 부도확률",
-                "sourceEngine": "credit",
-                "blocks": [{"type": "creditPanel", "view": creditView}],
-                "arcStep": 8,
-            }
-        )
+    sections = _storyReportSections(story, view, scenario, creditView)
 
     from dartlab.story.thesis import buildThesis
 
     thesis = buildThesis(company, card, view, basePeriod=basePeriod)
-    conclusion = getattr(card, "conclusion", "") if card else ""
-    findings = [{"key": "thesis", "finding": conclusion, "sourceEngine": "story"}] if conclusion else []
 
     from dartlab.story.lensProducts import lensSummary, publicLensBundle
 
     lensRows = lensSummary(lensProducts)
-    for row in lensRows:
-        finding = row.get("summary") or row.get("label")
-        if finding:
-            findings.append(
-                {
-                    "key": f"lens.{row['engine']}",
-                    "finding": str(finding),
-                    "sourceEngine": row["engine"],
-                }
-            )
-
-    engines: dict[str, dict] = {}
-    for sec in sections:
-        eng = sec["sourceEngine"]
-        slot = engines.setdefault(eng, {"label": eng, "sections": 0, "blocks": 0})
-        slot["sections"] += 1
-        slot["blocks"] += len(sec["blocks"])
-    for engine in lensProducts:
-        engines.setdefault(engine, {"label": engine, "sections": 0, "blocks": 0})
+    conclusion, findings = _storyReportFindings(card, lensRows)
+    engines = _storyReportEngines(sections, lensProducts)
 
     model: dict = {
         "stockCode": story.stockCode or code,

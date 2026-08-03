@@ -1,5 +1,5 @@
 // 전문 리포트 서사 문법 SSOT - Python story.buildReportModel 과 TS build.ts 가 둘 다 conform.
-// mainPlan/professional-report-engine/03-report-engine-architecture.md §1. 기존 report.ts(ReportPort)와 분리.
+// 분석 report model 계약. 기존 report.ts의 ReportPort와 역할을 분리한다.
 // 기존 8 블록(랜딩 model.ts) + 신규 10 블록(00-PRD §7). 신규는 전부 optional/graceful-skip - 구 렌더러 무회귀.
 import type { Num } from './runtime';
 import type { EvidenceRef } from './evidence';
@@ -102,6 +102,48 @@ export interface CreditView {
   confidenceMethod: string; // "ratio"
 }
 
+export type InvestmentDimensionStatus = 'usable' | 'partial' | 'blocked' | 'notObserved';
+export interface InvestmentDimension {
+  status: InvestmentDimensionStatus;
+  asOf: string;
+  claim: string;
+  evidenceRefs: string[];
+  gaps: string[];
+  details: Record<string, unknown>;
+}
+export interface InvestmentDecision {
+  schemaVersion: 1;
+  asOf: string;
+  decisionStatus: 'supported' | 'mixed' | 'insufficient';
+  evidenceStrength: 'strong' | 'moderate' | 'weak';
+  usableDimensionCount: number;
+  requiredDimensionCount: 9;
+  dimensions: {
+    thesis: InvestmentDimension;
+    counterThesis: InvestmentDimension;
+    earningsInflection: InvestmentDimension;
+    industryMacroTransmission: InvestmentDimension;
+    valuation: InvestmentDimension;
+    scenarios: InvestmentDimension;
+    catalysts: InvestmentDimension;
+    risks: InvestmentDimension;
+    monitoringTripwires: InvestmentDimension;
+  };
+  summary: {
+    thesis: string;
+    earningsInflection: string;
+    scenarioAsymmetry: Partial<Record<'bear' | 'base' | 'bull', { intrinsic: Num; upside: Num }>>;
+    counterThesis: string;
+    nextCheck: string;
+  };
+  gaps: Record<string, unknown>[];
+  policy: {
+    personalizedTradeInstruction: false;
+    scenarioProbabilitiesPublished: false;
+    statusVocabulary: InvestmentDimensionStatus[];
+  };
+}
+
 // ── ReportModel / Section / Overview (마이그레이션 안전 - 신규 전부 optional) ──
 export type ReportSourceEngine =
   | 'analysis' | 'credit' | 'quant' | 'industry' | 'macro' | 'story' | 'valuation' | 'forecast';
@@ -129,9 +171,9 @@ export interface ReportModel {
   keyFindings: { key: string; finding: string; sourceEngine: ReportSourceEngine }[];
   sections: ReportSection[];
   closing: { label: string; engine: ReportSourceEngine; line: string }[];
-  provenance: { engines: Record<string, { label: string; sections: number; blocks: number }>; note: string };
+  provenance: { engines: Record<string, { label: string; sections: number; blocks: number }>; status?: string; note: string };
   assumptionsNote: string;
-  qualityLabel: 'verified' | 'conditional';
+  qualityLabel: 'verified' | 'conditional' | 'partial' | 'strong' | 'moderate' | 'weak';
   focusQuestions: string[];
   pending?: boolean;
   // 신규 (전부 optional - 구 렌더러 무회귀)
@@ -139,6 +181,8 @@ export interface ReportModel {
   schemaVersion?: number; // 1=레거시, 2=pro 아크. 부재=1.
   lensProducts?: LensProductBundle; // 엔진별 독립 판단 원문. 통합 점수 없음.
   lensSummary?: LensSummaryRow[]; // 제품 직접 필드의 표시용 투영.
+  investmentDecision?: InvestmentDecision; // 투자 전용 9차원 판단·결손·정책 계약.
+  gaps?: Record<string, unknown>[];
 }
 
 export interface OverviewModel {

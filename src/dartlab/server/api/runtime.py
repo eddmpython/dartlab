@@ -13,6 +13,11 @@ from dartlab.ai.runtime.discovery import runtimeLoginArgv
 from dartlab.ai.runtime.installManager import buildInstallPlan, executeInstallPlan
 from dartlab.ai.runtime.mcpBootstrap import buildMcpConnectPlan, executeMcpConnectPlan
 from dartlab.ai.runtime.registry import loadRuntimeRegistry
+from dartlab.ai.runtime.setupCoordinator import (
+    executeVisibleLogin,
+    prepareRuntime,
+    previewRuntimeSetup,
+)
 from dartlab.productOutcome import outcomeSnapshot, verifyOutcomeEvidence
 
 router = APIRouter(prefix="/api/agent", tags=["agent-runtime"])
@@ -52,6 +57,13 @@ class RuntimeSelectionRequest(BaseModel):
     runtimeId: str = Field(..., min_length=1, max_length=50)
 
 
+class RuntimeSetupRequest(BaseModel):
+    """한 번 승인형 통합 setup 적용 요청."""
+
+    runtimeId: str | None = Field(None, max_length=50)
+    approved: bool = False
+
+
 @router.get("/runtimes")
 async def listRuntimes(refresh: bool = Query(False)):
     """설치형 런타임, 버전, MCP 연결 상태를 반환한다."""
@@ -81,6 +93,32 @@ def selectDefaultRuntime(req: RuntimeSelectionRequest):
         runtimeId = getRuntimeEngine().setDefaultRuntime(req.runtimeId)
         return {"ok": True, "defaultRuntimeId": runtimeId}
     except (KeyError, RuntimeError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/runtimes/setup/plan")
+def planRuntimeSetup(req: RuntimeSetupRequest):
+    """설치·공식 로그인·MCP·기본 선택을 합친 단일 계획을 반환한다."""
+    try:
+        return previewRuntimeSetup(req.runtimeId).toDict()
+    except (KeyError, ValueError, RuntimeError, FileNotFoundError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/runtimes/setup/apply")
+async def applyRuntimeSetup(req: RuntimeSetupRequest):
+    """한 번 승인 후 공식 로그인 창을 열고 남은 준비를 자동으로 재개한다."""
+    if not req.approved:
+        raise HTTPException(status_code=400, detail="통합 setup 계획의 명시적 승인이 필요합니다")
+    try:
+        result = await asyncio.to_thread(
+            prepareRuntime,
+            req.runtimeId,
+            approved=True,
+            loginExecutor=executeVisibleLogin,
+        )
+        return result.toDict()
+    except (KeyError, ValueError, RuntimeError, OSError) as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 

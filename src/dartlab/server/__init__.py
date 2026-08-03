@@ -36,6 +36,7 @@ from .api import (
     price_events_router,
     room_router,
     runtime_router,
+    uiQa_router,
 )
 from .embed import router as embed_router
 from .runtime import ensurePort, runServer  # noqa: F401, re-exported
@@ -177,6 +178,7 @@ app.include_router(macro_router)
 app.include_router(price_events_router)
 app.include_router(room_router)
 app.include_router(runtime_router)
+app.include_router(uiQa_router)
 app.include_router(dart_router)
 app.include_router(embed_router)
 

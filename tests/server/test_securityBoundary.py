@@ -158,10 +158,12 @@ def test_exposedFilesystemMutationsFailClosed(monkeypatch, method: str, path: st
 def test_oauthAuthorizeIsPostOnly() -> None:
     from dartlab.server import app
 
-    oauthRoutes = [route for route in app.routes if getattr(route, "path", None) == "/api/oauth/authorize"]
+    # FastAPI 0.137부터 include_router 결과가 _IncludedRouter로 지연 보관되어
+    # app.routes의 최상위 path만 훑으면 실제 공개 경로를 놓친다. OpenAPI는 구·신
+    # FastAPI 모두에서 최종 공개 HTTP method 계약을 평탄화한다.
+    oauthOperations = app.openapi()["paths"]["/api/oauth/authorize"]
 
-    assert len(oauthRoutes) == 1
-    assert oauthRoutes[0].methods == {"POST"}
+    assert set(oauthOperations) == {"post"}
 
 
 def test_publicNonSensitiveReadDoesNotRequireAdminToken(monkeypatch) -> None:

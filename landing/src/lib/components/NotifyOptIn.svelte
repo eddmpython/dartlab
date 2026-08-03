@@ -1,7 +1,7 @@
 <script lang="ts">
 	// 알림 켜기 · 2단 게이트(소프트 프롬프트 → 클릭 시에만 OS 권한). 콜드 자동 팝업 금지(1회 거부=영구 차단).
 	// iOS 16.4+ 는 홈화면 설치(standalone) 안에서만 푸시 가능 → 미설치 Safari 는 숨김(InstallPrompt 가 설치유도).
-	// 설계: mainPlan/watcher-notify-platform/07-p1-client-receiving.md §2.
+	// 현재 운영 계약: operation.notifyPipeline.
 	import { base } from '$app/paths';
 	import { onMount } from 'svelte';
 	import { isStandalone, isIosSafari } from '$lib/pwa/platform';

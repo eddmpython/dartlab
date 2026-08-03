@@ -379,6 +379,16 @@
 		align-items: center;
 		gap: 4px;
 	}
+	/* BrandSocial 은 다크 서피스 기준 밝은 기본색(#e2e8f0)을 갖고, 색만 `--brandSocial-*` 로 열어 둔다.
+	   노트북 에디터는 라이트 토글이 있어 라이트에서 SNS 아이콘이 흰 배경에 묻혔다(자기 핑크인 하트만 보임).
+	   터미널 topBar(terminal.css)·랜딩 헤더와 같은 방식으로 라이트에서만 색을 덮는다(다크 픽셀 무변경).
+	   값은 옆에 붙은 `.hdr-btn`(테마·설정) 과 같은 토큰이라 한 행이 같은 톤으로 읽힌다. */
+	:global(html[data-theme='light']) .top-right {
+		--brandSocial-fg: var(--nb-text-muted);
+		--brandSocial-fgHover: var(--nb-text);
+		--brandSocial-bgHover: var(--nb-card);
+		--brandSocial-count: var(--nb-text-muted);
+	}
 	.hdr-btn {
 		display: flex;
 		align-items: center;

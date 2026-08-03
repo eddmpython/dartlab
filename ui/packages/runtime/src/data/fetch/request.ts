@@ -1,4 +1,4 @@
-// fetch 코어 · 데이터 워크벤치 SSOT 의 단일 호출 진입점. (mainPlan/data-workbench-ssot 02)
+// fetch 코어. 데이터 작업대 SSOT의 단일 호출 진입점.
 // 오리진 해소 + RequestDedup(in-flight 공유) + RuntimeCache(TTL/LRU) + fetchResilient(backoff) 합성.
 // ★여기서 RuntimeCache·RequestDedup 를 *처음 인스턴스화*한다 · 그동안 export 만 되고 죽어있던 작업대를 실배선.
 // 어댑터당 1 인스턴스(createDataCore) · 전역 싱글턴 금지(04 KILL: 테스트 격리·soft-swap 오염 방지).

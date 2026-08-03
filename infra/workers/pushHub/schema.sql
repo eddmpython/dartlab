@@ -1,5 +1,5 @@
 -- dartlab Push Hub — D1 스키마 (2 구독 테이블 + nonce). 개인조건·user_id·종목 컬럼 영구 0.
--- 정본 = mainPlan/watcher-notify-platform/06-p1-hub-worker.md §6. migrations/0001_init.sql 과 동일 내용.
+-- 현재 스키마는 migrations/0001_init.sql과 동일하게 유지한다.
 CREATE TABLE IF NOT EXISTS subscriptions (
   endpoint TEXT PRIMARY KEY, p256dh TEXT NOT NULL, auth TEXT NOT NULL,
   uaClass TEXT NOT NULL DEFAULT 'other', createdAt TEXT NOT NULL, lastSeenAt TEXT NOT NULL);

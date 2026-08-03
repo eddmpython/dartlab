@@ -86,6 +86,22 @@ def test_dcfValuation_scenarioDict_helper_keys() -> None:
     }
 
 
+def test_dcfValuation_scenarioRows_areCanonicalTableContent() -> None:
+    """시나리오 매트릭스가 evidence projection 뒤에도 빈 표가 되지 않는다."""
+    from dartlab.ai.tools.dcfValuationTool import _scenarioRows
+
+    results = {
+        "bull": {"scenario": "bull", "perShareValue": 120_000.0},
+        "bear": {"scenario": "bear", "perShareValue": 60_000.0},
+        "base": {"scenario": "base", "perShareValue": 90_000.0},
+    }
+
+    rows = _scenarioRows(results)
+
+    assert [row["scenario"] for row in rows] == ["bear", "base", "bull"]
+    assert rows[1]["perShareValue"] == 90_000.0
+
+
 def test_dcfValuation_confidence_uses_forecast_method() -> None:
     """SSOT — DCF confidence 는 core/confidence.py 의 ``forecast`` (30) 사용.
 

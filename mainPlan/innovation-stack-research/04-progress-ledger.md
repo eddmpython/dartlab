@@ -9,7 +9,7 @@ Date: 2026-06-17 KST
 3. `mainPlan/search-productization`은 단순 검색 계획이 아니라 source manifest, evidence pack, query-log gold, canary, HF round-trip proof를 가진 운영형 검색 fabric으로 판정했다.
 4. `mainPlan/ai-workbench-connector`는 AI 호스팅이 아니라 external AI가 DartLab evidence를 안전 조회하는 connector plane으로 판정했다.
 5. `mainPlan/polars-gpu-backend`는 GPU 기본 도입이 아니라 opt-in 실측 PRD로 판정했다. DuckDB OOC와 GPU의 문제 영역을 분리했다.
-6. `_done/data-workbench-ssot`와 `_done/ui-platform-refactor`는 UI raw fetch/framework rewrite를 막는 완료 경계로 판정했다.
+6. 현재 data workbench와 UI platform 계약은 UI raw fetch와 framework rewrite를 막는 경계로 판정했다.
 7. `src/dartlab/scan/io/cross.py`를 확인해 현재 `DuckDbCrossScan`이 source-native OOC가 아님을 기록했다.
 8. `src/dartlab/providers/dart/search/*`를 확인해 vector DB 전면 교체가 부적합하다고 판정했다.
 9. `src/dartlab/ai/tools/registry.py`와 `src/dartlab/mcp/protocol.py`를 확인해 AI 본체 교체보다 tool/evidence contract 강화가 우선이라고 판정했다.

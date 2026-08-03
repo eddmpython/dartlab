@@ -276,7 +276,7 @@ def buildIndustrySummary(
         - ``coverageRatio``: opIncome 산출가능 회사 / stage 내 finance-join 회사수 (0~1).
           profit-pool 격자의 결손 노출용 — 0 채움 금지. ★dual-source SSOT: 본 엔진 파생이
           **캐논**, 브라우저 ``industries/{id}.json`` per-node 롤업은 표시용 (커버리지·분모
-          상이, ``mainPlan/industry-analysis-lab/07-implementation-plan.md`` §구멍1).
+          상이). 두 source의 값이 다르면 캐논 값을 유지하고 결손을 드러낸다.
 
     Raises:
         없음 — finance 데이터 없거나 매칭 0 면 빈 DataFrame.

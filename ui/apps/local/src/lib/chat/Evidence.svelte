@@ -2,16 +2,18 @@
 	import { tick } from 'svelte';
 	import type { EvidenceRef } from '@dartlab/ui-contracts';
 	import type { ProductOutcomeReceipt } from '$lib/generated/agentRuntime';
-	import { verifyOutcomeEvidence } from '$lib/runtime/agentRuntimeApi';
+	import { resolveOutcomeEvidence, verifyOutcomeEvidence } from '$lib/runtime/agentRuntimeApi';
 
 	let {
 		refs,
 		citedRefIds = null,
+		candidateRefIds = [],
 		verifiedRefIds = [],
 		onverified = () => undefined
 	}: {
 		refs: EvidenceRef[];
 		citedRefIds?: string[] | null;
+		candidateRefIds?: string[];
 		verifiedRefIds?: string[];
 		onverified?: (refId: string) => void;
 	} = $props();
@@ -19,12 +21,13 @@
 	let open = $state(false);
 	let selectedId = $state<string | null>(null);
 	let detailHeading: HTMLHeadingElement | null = $state(null);
-	let states = $state<Record<string, 'busy' | 'verified' | 'error'>>({});
+	let states = $state<Record<string, 'busy' | 'resolved' | 'verified' | 'error'>>({});
 	let errors = $state<Record<string, string>>({});
 	let resolved = $state<Record<string, EvidenceRef>>({});
 	let receiptDetails = $state<Record<string, ProductOutcomeReceipt>>({});
 
 	const cited = $derived(new Set(citedRefIds ?? []));
+	const candidates = $derived(new Set(candidateRefIds));
 	const verified = $derived(new Set(verifiedRefIds));
 	const hasCitationDecision = $derived(citedRefIds !== null);
 	const usedCount = $derived(refs.filter((ref) => cited.has(ref.id)).length);
@@ -103,16 +106,23 @@
 		return states[refId] === 'verified' || verified.has(refId);
 	}
 
-	async function resolveAndVerify(ref: EvidenceRef): Promise<void> {
+	async function resolveExact(ref: EvidenceRef): Promise<void> {
 		if (!ref.outcomeId || states[ref.id] === 'busy' || isVerified(ref.id)) return;
 		states[ref.id] = 'busy';
 		delete errors[ref.id];
 		try {
-			const value = await verifyOutcomeEvidence(ref.outcomeId, ref.id);
-			resolved[ref.id] = { ...ref, ...value.evidence };
-			receiptDetails[ref.id] = value.receipt;
-			states[ref.id] = 'verified';
-			onverified(ref.id);
+			const candidateOnly = candidates.has(ref.id) && !cited.has(ref.id);
+			if (candidateOnly) {
+				const value = await resolveOutcomeEvidence(ref.outcomeId, ref.id);
+				resolved[ref.id] = { ...ref, ...value.evidence };
+				states[ref.id] = 'resolved';
+			} else {
+				const value = await verifyOutcomeEvidence(ref.outcomeId, ref.id);
+				resolved[ref.id] = { ...ref, ...value.evidence };
+				receiptDetails[ref.id] = value.receipt;
+				states[ref.id] = 'verified';
+				onverified(ref.id);
+			}
 		} catch (reason) {
 			states[ref.id] = 'error';
 			errors[ref.id] = reason instanceof Error ? reason.message : String(reason);
@@ -122,7 +132,7 @@
 	async function showDetail(ref: EvidenceRef): Promise<void> {
 		open = true;
 		selectedId = ref.id;
-		await resolveAndVerify(ref);
+		await resolveExact(ref);
 		await tick();
 		detailHeading?.focus();
 	}
@@ -149,7 +159,7 @@
 					<span class="kind">{KIND_LABEL[ref.kind] ?? ref.kind}</span>
 					<div class="meta">
 						<span class="title">{ref.title || ref.id}</span>
-						<span class="useState">{hasCitationDecision ? (cited.has(ref.id) ? '답변에 사용' : '보조 근거') : '수집됨'}</span>
+						<span class="useState">{candidates.has(ref.id) && !cited.has(ref.id) ? '수집했으나 최종 채택되지 않음' : hasCitationDecision ? (cited.has(ref.id) ? '답변에 사용' : '보조 근거') : '수집됨'}</span>
 						{#if summarize(ref)}<span class="pay">{summarize(ref)}</span>{/if}
 						{#if ref.source && safeExternalUrl(ref.source)}
 							<a class="src" href={safeExternalUrl(ref.source) ?? undefined} target="_blank" rel="noopener">{host(ref.source)}</a>
@@ -158,7 +168,7 @@
 						{/if}
 					</div>
 					<button class="verify" onclick={() => showDetail(ref)} disabled={states[ref.id] === 'busy'}>
-						{states[ref.id] === 'busy' ? '확인 중' : isVerified(ref.id) ? '다시 열기' : states[ref.id] === 'error' ? '다시 확인' : '근거 열기'}
+						{states[ref.id] === 'busy' ? '확인 중' : isVerified(ref.id) || states[ref.id] === 'resolved' ? '다시 열기' : states[ref.id] === 'error' ? '다시 확인' : '근거 열기'}
 					</button>
 				</li>
 			{/each}
@@ -169,7 +179,7 @@
 				<header>
 					<div>
 						<h3 bind:this={detailHeading} tabindex="-1">{actual.title || actual.id}</h3>
-						<p>{isVerified(actual.id) ? '사용자가 연 exact evidence · receipt 확인 완료' : 'exact evidence 미리보기'}</p>
+						<p>{isVerified(actual.id) ? '사용자가 연 exact evidence · receipt 확인 완료' : candidates.has(actual.id) ? '수집했으나 최종 채택되지 않은 exact evidence' : 'exact evidence 미리보기'}</p>
 					</div>
 					<button class="close" onclick={() => (selectedId = null)} aria-label="근거 상세 닫기">✕</button>
 				</header>

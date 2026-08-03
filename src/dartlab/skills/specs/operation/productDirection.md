@@ -7,7 +7,7 @@ status: observed
 category: operation
 purpose: 기능 수나 모델 호출 수가 아니라 사용자가 정확한 근거를 확인한 분석 결과를 DartLab의 북극성으로 삼는 제품 방향 계약이다.
 whenToUse:
-  - mainPlan initiative의 primary goal을 정할 때
+  - 임시 initiative의 primary goal을 정할 때
   - AI, UI, Python, CLI 기능의 제품 완료를 판정할 때
   - 북극성 지표 또는 scorecard를 변경할 때
 inputs:

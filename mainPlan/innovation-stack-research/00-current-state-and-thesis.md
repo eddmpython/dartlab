@@ -111,8 +111,8 @@ data SSOT는 좋지만 사용자가 evidence card, sourceRef, query-log gold, li
 - `search-productization`
 - `ai-workbench-connector`
 - `polars-gpu-backend`
-- `_done/data-workbench-ssot`
-- `_done/ui-platform-refactor`
+- 현재 data workbench 계약
+- 현재 UI platform 계약
 - `terminal-improvement`
 
 따라서 이 조사는 새 메가 프로젝트가 아니라 우선순위와 흡수 지도를 제공한다. 실제 구현은 기존 소유 PRD 안으로 들어가야 한다.

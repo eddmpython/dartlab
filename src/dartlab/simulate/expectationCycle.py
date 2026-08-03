@@ -1,6 +1,6 @@
 """Expectation cycle : the sole collector/scorer sealing engine forecasts into the ledger.
 
-Roles (mainPlan/expectation-grid/01 §2.4):
+Roles:
 - ``issueMacro``  : call the L2 macro fan verb, seal quantile expectations plus point-in-time
   naive baselines (random-walk / persistence / seasonal-naive) into the ledger. Idempotent per
   (variable, horizon, targetPeriod, issuedLive): re-runs within the same month skip existing rows.
@@ -8,7 +8,7 @@ Roles (mainPlan/expectation-grid/01 §2.4):
   Not-yet-published actuals are skipped inside a grace window; past the grace window a missing
   actual is sealed as an error row (no silent survivorship).
 - ``buildScorecard`` : aggregate scores per (domain, variable, freq, horizon, issuedLive) with the
-  sample gates of mainPlan/expectation-grid/02 §4 (verified=False forces the "미검증" label).
+  sample gates (verified=False forces the "미검증" label).
 
 This module is the only writer of the ledger. L2 engines stay ledger-blind; the downward-only
 import contract makes that structural (L2 cannot import L2.5).
@@ -18,8 +18,10 @@ from __future__ import annotations
 
 import logging
 import statistics
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 
 from dartlab.simulate.expectationLedger import (
     appendExpectations,
@@ -257,6 +259,102 @@ def _annualRevenueMap(company) -> dict[int, float]:
     return _annualMetricMap(company, "IS", "sales")
 
 
+@dataclass
+class _RevenueIssueContext:
+    """한 revenue 발행 실행의 공통 상태."""
+
+    live: bool
+    horizons: tuple[int, ...]
+    issuedAt: str
+    asOf: str | None
+    existing: set[tuple]
+    rows: list[ExpectationSpec]
+
+
+def _loadRevenueForecast(
+    code: str,
+    resultByCode: dict | None,
+    annualByCode: dict[str, dict[int, float]] | None,
+) -> tuple[Any, dict[int, float]]:
+    """주입 결과 또는 Company 분석에서 매출 예측과 연간 이력을 함께 가져온다."""
+    if resultByCode is not None:
+        return resultByCode.get(code), (annualByCode or {}).get(code) or {}
+    import dartlab
+    from dartlab.analysis.financial._forecastCalcsInputs import _runForecastRevenue
+
+    with getattr(dartlab, "Company")(code) as company:
+        annual = _annualRevenueMap(company)
+        result = _runForecastRevenue(company)
+    return result, annual
+
+
+def _appendRevenueForecastRows(
+    code: str,
+    result: Any,
+    annual: dict[int, float],
+    scenarios: dict[str, list[float]],
+    context: _RevenueIssueContext,
+) -> bool:
+    """한 회사의 연간 시나리오를 중복 없는 quantile 기대 행으로 봉인한다."""
+    basePath = scenarios["base"]
+    bullPath = scenarios["bull"]
+    bearPath = scenarios["bear"]
+    baseYear = max(annual)
+    history = [annual[year] for year in sorted(annual)][-11:]
+    differences = [current - previous for previous, current in zip(history, history[1:])]
+    sigma = statistics.pstdev(differences) if len(differences) >= 3 else 0.0
+    lastRevenue = history[-1]
+    issuedAny = False
+    for horizon in context.horizons:
+        if horizon > len(basePath):
+            continue
+        targetPeriod = f"FY{baseYear + horizon}"
+        variable = f"{code}.revenue"
+        if (variable, horizon, targetPeriod, context.live) in context.existing:
+            continue
+        p25, p50, p75 = sorted([bearPath[horizon - 1], basePath[horizon - 1], bullPath[horizon - 1]])
+        quantiles = {
+            5: p50 - _TAIL_FACTOR * max(p50 - p25, 0.0),
+            25: p25,
+            50: p50,
+            75: p75,
+            95: p50 + _TAIL_FACTOR * max(p75 - p50, 0.0),
+        }
+        standardError = sigma * (horizon**0.5)
+        rowWarnings = ("scenarioQuantileApprox",) + (() if context.live else ("backfill",))
+        context.rows.append(
+            ExpectationSpec(
+                expectationId=buildExpectationId("revenue", variable, "Y", horizon, targetPeriod, context.issuedAt),
+                domain="revenue",
+                variable=variable,
+                unit="KRW",
+                freq="Y",
+                horizon=horizon,
+                targetPeriod=targetPeriod,
+                issuedAt=context.issuedAt,
+                issuedLive=context.live,
+                asOf=context.asOf or context.issuedAt[:10],
+                engine=_ENGINE_REVENUE,
+                engineVersion=str(getattr(result, "method", "") or "ensemble"),
+                kind="quantiles",
+                quantiles=quantiles,
+                baselines={
+                    "randomWalk": (
+                        {key: lastRevenue + zScore * standardError for key, zScore in _Z.items()}
+                        if standardError > 0
+                        else None
+                    ),
+                    "persistence": lastRevenue,
+                    "seasonalNaive": None,
+                },
+                sourceRefs=(f"dart://{code}", f"baseFY={baseYear}"),
+                warnings=rowWarnings,
+            )
+        )
+        issuedAny = True
+    return issuedAny
+
+
 def issueRevenue(
     codes: list[str],
     *,
@@ -290,19 +388,11 @@ def issueRevenue(
     issuedAt = _nowUtc()
     existing = _existingKeys(baseDir)
     rows: list[ExpectationSpec] = []
+    context = _RevenueIssueContext(live, horizons, issuedAt, asOf, existing, rows)
     skipped: dict[str, str] = {}
     for code in codes:
         try:
-            if resultByCode is not None:
-                result = resultByCode.get(code)
-                annual = (annualByCode or {}).get(code) or {}
-            else:
-                import dartlab
-                from dartlab.analysis.financial._forecastCalcsInputs import _runForecastRevenue
-
-                with getattr(dartlab, "Company")(code) as company:  # 힙 가드: with = OomTripwire + cleanupCache
-                    annual = _annualRevenueMap(company)
-                    result = _runForecastRevenue(company)
+            result, annual = _loadRevenueForecast(code, resultByCode, annualByCode)
             if result is None or not getattr(result, "projected", None):
                 skipped[code] = "예측 불가(projected 없음)"
                 continue
@@ -314,55 +404,7 @@ def issueRevenue(
             if not annual:
                 skipped[code] = "연간 실적 이력 없음"
                 continue
-            baseYear = max(annual)
-            hist = [annual[y] for y in sorted(annual)][-11:]
-            diffs = [b - a for a, b in zip(hist, hist[1:])]
-            sigma = statistics.pstdev(diffs) if len(diffs) >= 3 else 0.0
-            lastRev = hist[-1]
-            issuedAny = False
-            for h in horizons:
-                if h > len(basePath):
-                    continue
-                targetPeriod = f"FY{baseYear + h}"
-                variable = f"{code}.revenue"
-                if (variable, h, targetPeriod, live) in existing:
-                    continue
-                p25, p50, p75 = sorted([bearPath[h - 1], basePath[h - 1], bullPath[h - 1]])
-                quantiles = {
-                    5: p50 - _TAIL_FACTOR * max(p50 - p25, 0.0),
-                    25: p25,
-                    50: p50,
-                    75: p75,
-                    95: p50 + _TAIL_FACTOR * max(p75 - p50, 0.0),
-                }
-                se = sigma * (h**0.5)
-                rowWarnings = ("scenarioQuantileApprox",) + (() if live else ("backfill",))
-                rows.append(
-                    ExpectationSpec(
-                        expectationId=buildExpectationId("revenue", variable, "Y", h, targetPeriod, issuedAt),
-                        domain="revenue",
-                        variable=variable,
-                        unit="KRW",
-                        freq="Y",
-                        horizon=h,
-                        targetPeriod=targetPeriod,
-                        issuedAt=issuedAt,
-                        issuedLive=live,
-                        asOf=asOf or issuedAt[:10],
-                        engine=_ENGINE_REVENUE,
-                        engineVersion=str(getattr(result, "method", "") or "ensemble"),
-                        kind="quantiles",
-                        quantiles=quantiles,
-                        baselines={
-                            "randomWalk": {k: lastRev + z * se for k, z in _Z.items()} if se > 0 else None,
-                            "persistence": lastRev,
-                            "seasonalNaive": None,
-                        },
-                        sourceRefs=(f"dart://{code}", f"baseFY={baseYear}"),
-                        warnings=rowWarnings,
-                    )
-                )
-                issuedAny = True
+            issuedAny = _appendRevenueForecastRows(code, result, annual, scen, context)
             if issuedAny and resultByCode is None and live:
                 from dartlab.analysis.forecast.forwardTest import recordForecast
 
@@ -614,6 +656,147 @@ def _latestAnnualByH(exps, *, domain: str, variable: str, live: bool) -> dict[in
     return {r["horizon"]: r for r in cand if r["issuedAt"] == latest}
 
 
+@dataclass(frozen=True)
+class _QuarterlySourceRequest:
+    """한 회사의 분기 계절성과 공시완료 분기를 구하는 입력."""
+
+    code: str
+    baseFiscalYear: int
+    horizons: tuple[int, ...]
+    revenueByHorizon: dict[int, dict]
+    seasonalityByCode: dict[str, tuple[list[float], list[float]]] | None
+    publishedByCode: dict[str, set[str]] | None
+
+
+@dataclass(frozen=True)
+class _QuarterlyCodeInputs:
+    """한 회사의 분기 분해에 필요한 부모 기대와 계절성."""
+
+    code: str
+    revenueByHorizon: dict[int, dict]
+    operatingByHorizon: dict[int, dict]
+    revenueWeights: list[float]
+    operatingWeights: list[float]
+    published: set[str]
+
+
+@dataclass
+class _QuarterlyIssueContext:
+    """분기 기대와 proforma 행을 함께 봉인하는 공통 실행 상태."""
+
+    live: bool
+    issuedAt: str
+    nowYm: str
+    existing: set[tuple]
+    proformaExisting: set[tuple[str, str, int]]
+    rows: list[ExpectationSpec]
+    proformaRows: list[dict]
+
+
+def _quarterlySeasonality(request: _QuarterlySourceRequest) -> tuple[list[float], list[float], set[str]]:
+    """주입값 또는 Company 재무 시계열에서 계절성과 공시완료 분기를 구한다."""
+    if request.seasonalityByCode is not None:
+        revenueWeights, operatingWeights = request.seasonalityByCode[request.code]
+        return revenueWeights, operatingWeights, (request.publishedByCode or {}).get(request.code, set())
+    import dartlab
+
+    seasonYears = [
+        str(request.baseFiscalYear - offset) for offset in range(3) if request.baseFiscalYear - offset >= 2019
+    ]
+    targetFiscalYears = {
+        str(int(request.revenueByHorizon[horizon]["targetPeriod"][2:])) for horizon in request.horizons
+    }
+    with getattr(dartlab, "Company")(request.code) as company:
+        timeseries = company._buildFinanceSeries(freq="Q")
+        series = timeseries[0] if isinstance(timeseries, tuple) else timeseries
+        periods = timeseries[1] if isinstance(timeseries, tuple) else []
+    revenueWeights = _seriesSeasonality(series, periods, "sales", seasonYears)
+    operatingWeights = _seriesSeasonality(series, periods, "operating_profit", seasonYears)
+    published = {
+        period for year in targetFiscalYears for period in _seriesQuarterValues(series, periods, "sales", year)
+    }
+    return revenueWeights, operatingWeights, published
+
+
+def _appendQuarterlyHorizon(
+    horizon: int,
+    companyInputs: _QuarterlyCodeInputs,
+    context: _QuarterlyIssueContext,
+) -> None:
+    """한 연간 부모의 Q1~Q4 기대와 E-3 proforma 행을 함께 추가한다."""
+    import json as _json
+
+    revenueParent = companyInputs.revenueByHorizon[horizon]
+    fiscalYear = int(revenueParent["targetPeriod"][2:])
+    parentByMetric = {
+        "revenue": (revenueParent, companyInputs.revenueWeights),
+        "operatingProfit": (companyInputs.operatingByHorizon.get(horizon), companyInputs.operatingWeights),
+    }
+    revenueParentId = revenueParent["expectationId"]
+    for quarter in range(1, 5):
+        targetPeriod = f"{fiscalYear}Q{quarter}"
+        if context.live and targetPeriod in companyInputs.published:
+            continue
+        nowcast = context.live and _quarterEndYm(targetPeriod) < context.nowYm
+        for metric, domain, proformaAccount in _QTR_METRICS:
+            parent, weights = parentByMetric[metric]
+            if parent is None:
+                continue
+            variable = f"{companyInputs.code}.{metric}"
+            weight = weights[quarter - 1]
+            annualQuantiles = {int(key): float(value) for key, value in _json.loads(parent["quantiles"]).items()}
+            flat = all(abs(value - 0.25) < 1e-9 for value in weights)
+            if (variable, quarter, targetPeriod, context.live) not in context.existing:
+                context.rows.append(
+                    ExpectationSpec(
+                        expectationId=buildExpectationId(
+                            domain,
+                            variable,
+                            "Q",
+                            quarter,
+                            targetPeriod,
+                            context.issuedAt,
+                        ),
+                        domain=domain,
+                        variable=variable,
+                        unit="KRW",
+                        freq="Q",
+                        horizon=quarter,
+                        targetPeriod=targetPeriod,
+                        issuedAt=context.issuedAt,
+                        issuedLive=context.live,
+                        asOf=context.issuedAt[:10],
+                        engine=_ENGINE_SEASONAL,
+                        engineVersion="seasonalShares3y",
+                        kind="quantiles",
+                        quantiles={key: value * weight for key, value in annualQuantiles.items()},
+                        baselines={"persistence": None, "seasonalNaive": None, "randomWalk": None},
+                        sourceRefs=(parent["expectationId"], f"share={weight:.4f}"),
+                        warnings=("seasonalSplitOfAnnual", "scenarioQuantileApprox")
+                        + (("flatSeasonalityFallback",) if flat else ())
+                        + (("quarterEndedAtIssue",) if nowcast else ())
+                        + (() if context.live else ("backfill",)),
+                    )
+                )
+            for quantile in (25, 50, 75):
+                if (revenueParentId, targetPeriod, quantile) in context.proformaExisting:
+                    continue
+                context.proformaRows.append(
+                    {
+                        "parentId": revenueParentId,
+                        "code": companyInputs.code,
+                        "issuedAt": context.issuedAt,
+                        "issuedLive": context.live,
+                        "targetPeriod": targetPeriod,
+                        "quantile": quantile,
+                        "statement": "IS",
+                        "account": proformaAccount,
+                        "value": annualQuantiles[quantile] * weight,
+                        "bsBalanced": True,
+                    }
+                )
+
+
 def issueQuarterlyIs(
     codes: list[str],
     *,
@@ -652,8 +835,6 @@ def issueQuarterlyIs(
     Returns:
         (sealed rows, skipped census).
     """
-    import json as _json
-
     issuedAt = _nowUtc()
     nowYm = (now or issuedAt)[:7]
     existing = _existingKeys(baseDir)
@@ -669,6 +850,7 @@ def issueQuarterlyIs(
             for r in pfDf.select(["parentId", "targetPeriod", "quantile"]).unique().iter_rows(named=True)
         }
     )
+    context = _QuarterlyIssueContext(live, issuedAt, nowYm, existing, pfExisting, rows, pfRows)
     skipped: dict[str, str] = {}
     if exps is None:
         return rows, dict.fromkeys(codes, "원장 비어있음(선행 issueRevenue 필요)")
@@ -681,83 +863,18 @@ def issueQuarterlyIs(
                 continue
             opByH = _latestAnnualByH(exps, domain="earnings", variable=f"{code}.operatingProfit", live=live)
             baseFy = int(revByH[hs[0]]["targetPeriod"][2:]) - hs[0]  # "FY2026", h=1 -> 기준 2025
-            if seasonalityByCode is not None:
-                revW, oiW = seasonalityByCode[code]
-                published = (publishedByCode or {}).get(code, set())
-            else:
-                import dartlab
-
-                seasonYears = [str(baseFy - i) for i in range(3) if baseFy - i >= 2019]
-                targetFys = {str(int(revByH[hy]["targetPeriod"][2:])) for hy in hs}
-                with getattr(dartlab, "Company")(code) as company:  # 힙 가드: with = OomTripwire + cleanupCache
-                    ts = company._buildFinanceSeries(freq="Q")
-                    series = ts[0] if isinstance(ts, tuple) else ts
-                    periods = ts[1] if isinstance(ts, tuple) else []
-                revW = _seriesSeasonality(series, periods, "sales", seasonYears)
-                oiW = _seriesSeasonality(series, periods, "operating_profit", seasonYears)
-                # 공시완료 분기 = 매출 값이 이미 시계열에 있는 분기 (분기보고서는 매출·손익 동시 공시)
-                published = {k for y in targetFys for k in _seriesQuarterValues(series, periods, "sales", y)}
+            request = _QuarterlySourceRequest(
+                code,
+                baseFy,
+                tuple(hs),
+                revByH,
+                seasonalityByCode,
+                publishedByCode,
+            )
+            revW, oiW, published = _quarterlySeasonality(request)
+            companyInputs = _QuarterlyCodeInputs(code, revByH, opByH, revW, oiW, published)
             for hy in hs:
-                fy = int(revByH[hy]["targetPeriod"][2:])
-                parentByMetric = {"revenue": (revByH[hy], revW), "operatingProfit": (opByH.get(hy), oiW)}
-                revParentId = revByH[hy]["expectationId"]
-                for q in range(1, 5):
-                    targetPeriod = f"{fy}Q{q}"
-                    if live and targetPeriod in published:
-                        continue  # 실제값이 이미 SSOT 에 있음: 기대가 아니라 기록 (look-ahead 차단)
-                    # 분기말 경과·미공시 = nowcast: 봉인하되 성적표에서 일반 예측과 분리
-                    nowcast = live and _quarterEndYm(targetPeriod) < nowYm
-                    for metric, domain, pfAccount in _QTR_METRICS:
-                        parent, weights = parentByMetric[metric]
-                        if parent is None:
-                            continue  # 연간 부모 없음(예: 영업이익 미발행) -> 매출만 분해
-                        variable = f"{code}.{metric}"
-                        w = weights[q - 1]
-                        annualQ = {int(k): float(v) for k, v in _json.loads(parent["quantiles"]).items()}
-                        flat = all(abs(x - 0.25) < 1e-9 for x in weights)
-                        if (variable, q, targetPeriod, live) not in existing:
-                            rows.append(
-                                ExpectationSpec(
-                                    expectationId=buildExpectationId(domain, variable, "Q", q, targetPeriod, issuedAt),
-                                    domain=domain,
-                                    variable=variable,
-                                    unit="KRW",
-                                    freq="Q",
-                                    horizon=q,
-                                    targetPeriod=targetPeriod,
-                                    issuedAt=issuedAt,
-                                    issuedLive=live,
-                                    asOf=issuedAt[:10],
-                                    engine=_ENGINE_SEASONAL,
-                                    engineVersion="seasonalShares3y",
-                                    kind="quantiles",
-                                    quantiles={k: v * w for k, v in annualQ.items()},
-                                    baselines={"persistence": None, "seasonalNaive": None, "randomWalk": None},
-                                    sourceRefs=(parent["expectationId"], f"share={w:.4f}"),
-                                    warnings=("seasonalSplitOfAnnual", "scenarioQuantileApprox")
-                                    + (("flatSeasonalityFallback",) if flat else ())
-                                    + (("quarterEndedAtIssue",) if nowcast else ())
-                                    + (() if live else ("backfill",)),
-                                )
-                            )
-                        # E-3표 분기 행: 계보 앵커 = 해당 연도 매출 부모 (issueEarnings 관례 동일)
-                        for quantile in (25, 50, 75):
-                            if (revParentId, targetPeriod, quantile) in pfExisting:
-                                continue
-                            pfRows.append(
-                                {
-                                    "parentId": revParentId,
-                                    "code": code,
-                                    "issuedAt": issuedAt,
-                                    "issuedLive": live,
-                                    "targetPeriod": targetPeriod,
-                                    "quantile": quantile,
-                                    "statement": "IS",
-                                    "account": pfAccount,
-                                    "value": annualQ[quantile] * w,
-                                    "bsBalanced": True,
-                                }
-                            )
+                _appendQuarterlyHorizon(hy, companyInputs, context)
         except (ValueError, KeyError, AttributeError, TypeError, RuntimeError, OSError) as exc:
             skipped[code] = f"{type(exc).__name__}: {exc}"
     appendExpectations(rows, baseDir=baseDir)

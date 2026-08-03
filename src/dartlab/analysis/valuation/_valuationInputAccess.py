@@ -60,10 +60,10 @@ def _inferShares(company: Any, basePeriod: str | None = None) -> int | None:
 
 
 def _getCurrentPriceLight(company: Any) -> float | None:
-    """현재 주가 추출. gather price 축의 종가 마지막 값.
+    """현재 주가 추출. 단일 종목 스냅샷만 조회한다.
 
-    예전에는 ``company.currentPrice`` 를 먼저 봤는데 그 이름은 Company 표면에 없어 한 번도
-    타지 않았다. 실제로 값을 내던 것은 아래 gather 경로 하나뿐이라 그것만 남겼다.
+    전 종목 1년 가격 패널을 읽으면 투자 브리프 하나가 수 GB를 적재한다. 재무 가치평가가
+    공유하는 ``_priceContext``를 사용해 같은 Company 세션에서 단일 종목 API를 한 번만 호출한다.
 
     Returns
     -------
@@ -71,12 +71,11 @@ def _getCurrentPriceLight(company: Any) -> float | None:
         현재 주가 (원). 조회 실패 시 None.
     """
     try:
-        from dartlab.core.di import getMacroProvider
+        from dartlab.analysis.financial._valuationInputs import _fetchPriceContext
 
-        g = getMacroProvider().getDefaultGather()
-        p = g("price", getattr(company, "stockCode", ""))
-        if p is not None and hasattr(p, "height") and p.height > 0:
-            return float(p["close"][-1])
+        price = _fetchPriceContext(company)
+        if price and price.get("currentPrice") is not None:
+            return float(price["currentPrice"])
     except (ImportError, AttributeError, ValueError, TypeError, KeyError):
         pass
     return None

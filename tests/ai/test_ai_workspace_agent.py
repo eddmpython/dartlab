@@ -1,4 +1,4 @@
-"""Workspace agent 레거시는 ask/workbench 5 패스 루프로 통합한다."""
+"""Workspace agent 진입점과 설치형 런타임 연결 계약."""
 
 from __future__ import annotations
 
@@ -20,7 +20,11 @@ def test_workbench_is_the_workspace_agent_entry():
     )
 
 
-def test_workspace_agent_runtime_is_removed():
+def test_workspace_agent_uses_official_runtime():
     import importlib.util
+    import inspect
 
-    assert importlib.util.find_spec("dartlab.ai.runtime") is None
+    from dartlab.ai.kernel import _askEvents
+
+    assert importlib.util.find_spec("dartlab.ai.runtime") is not None
+    assert "runRuntimeAgent" in inspect.getsource(_askEvents)

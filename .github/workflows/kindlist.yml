@@ -82,7 +82,7 @@ jobs:
               commit_message='auto-update kindList',
           )
           # vintage 스냅샷: 내용 변경일에만 실행되는 스텝이라 변경분만 축적 (업종맵 과거 귀속의
-          # look-ahead 차단 자산. 소급 불가라 즉시 개시, mainPlan/scenario-simulator/15 §4)
+          # look-ahead 차단 자산. 소급 불가라 즉시 개시한다.
           stamp = datetime.now(timezone.utc).strftime('%Y%m%d')
           api.upload_file(
               repo_id='eddmpython/dartlab-data',

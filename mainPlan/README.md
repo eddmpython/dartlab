@@ -1,20 +1,10 @@
-# mainPlan 포트폴리오 인덱스
+# mainPlan
 
-> 프로젝트 PRD·상세·진행상태의 정본은 각 폴더 안 문서다. 본 파일은 카테고리별 지도일 뿐이다.
-> 끝난 PRD 는 `_done/` 로 격리한다(삭제 아님, 규약 = [_done/README.md](_done/README.md)).
-> 운영자가 폐기를 확정한 중복·보류 PRD는 삭제하고 본 인덱스에서도 제거한다.
-> 상태 범례: 🟢 활성 진행 · 🟡 부분완료·정체 · ⚪ 미착수 설계(운영자 go 대기) · 📎 참조·운영 문서
+앞으로 지을 임시 설계와 작업 순서다. 영구 문서나 현재 제품 계약의 정본이 아니다. 현재 동작의 정본은 [`docs/handbook/`](../docs/handbook/README.md)이다.
 
-## ★ 완료의 정의 (mainPlan 세션 강행)
+한 initiative는 폴더 하나다. 구현이 끝나면 코드와 실제 실행에서 확인한 현재 계약을 handbook의 product, architecture, reference, operations에 승격하고 해당 initiative 폴더를 삭제한다. `_done`으로 옮기지 않는다. 영구 자산은 mainPlan을 인용하지 않는다.
 
-**mainPlan 을 수행하는 세션은 "완료 = `_done` 처리까지"다.** 코드가 green 이고 배포됐어도, 문서가 `mainPlan/` 루트에 그대로 있으면 그 작업은 미완이다. 완료를 선언하기 전에 4매듭을 전부 짓는다.
-
-1. `git mv mainPlan/<plan> mainPlan/_done/<plan>` (rename, 내용 무손실. 파일명 프리픽스 금지).
-2. [_done/README.md](_done/README.md) 보관 목록에 한 줄(완료일 + as-built. 현역 런북 섞였으면 명시).
-3. 본 인덱스에서 해당 항목을 활성 카테고리에서 빼고 하단 "완료·격리"로 이동.
-4. `project_*` 메모리 + `MEMORY.md` §6.2 포인터를 ✅ 완료 + `_done/` 경로로 갱신.
-
-이유: 완료를 `_done` 으로 매듭짓지 않으면 다음 세션이 끝난 PRD 를 활성으로 착각해 재착수하고, 활성 목록이 부풀어 진짜 남은 일이 안 보인다. 규약 SSOT = memory `feedback_mainplan_operation`.
+상태 범례: 🟢 활성 구현 · 🟡 부분 구현 · ⚪ 미착수 임시 설계
 
 ## 0. 제품 방향 · 북극성 운영
 
@@ -56,23 +46,21 @@
 
 | 폴더 | 상태 | 한 줄 |
 |---|---|---|
-| [content-asset-ssot](content-asset-ssot/) | 📎 | 콘텐츠 자산 SSOT 3층(저작·`media/catalog.json`·HF 객체). **적용 완료·현재 운영 계약 문서**(cards-knowledge-network 가 의존). |
 | [cards-knowledge-network](cards-knowledge-network/) | 🟡 | 카드→터미널 진입 + 회사 간 카드망 + 카드 결론 지식화. 데이터 토대(cardType) 착수, UI 는 푸시 게이트. |
 
 ## 6. 터미널 · UI · 데이터 내보내기
 
 | 폴더 | 상태 | 한 줄 |
 |---|---|---|
-| [edgar-terminal-reach](edgar-terminal-reach/) | 🟡 | US(EDGAR) 종목 터미널 도달 배선 재정렬. 옛 `_done/edgar-parity-wiring` 대체 PRD. 가격·지수 구조 확정. |
+| [edgar-terminal-reach](edgar-terminal-reach/) | 🟡 | US(EDGAR) 종목 터미널 도달 배선 재정렬. 가격·지수 구조 확정. |
 | [tutorial-guide](tutorial-guide/) | ⚪ | 공유 투어 엔진(map·terminal). PRD 확정, 착수 = 운영자 go. |
 
 ## 7. AI 연결 · 1급 AI
 
 | 폴더 | 상태 | 한 줄 |
 |---|---|---|
-| [agent-runtime-engine](agent-runtime-engine/) | 🟢 | 설치된 agent CLI를 사용하는 local Bring Your Agent runtime. Claude와 Codex grounded ask, local GUI SSE, exact evidence resolve와 verified 전이를 실증했다. Cline embedded는 upstream ACP가 session MCP를 노출할 때까지 fail-closed. |
-| [ai-workbench-connector](ai-workbench-connector/) | ⚪ | 외부 AI 가 호출하는 remote evidence workbench connector. local MCP tool identity는 agent-runtime-engine과 정합하되 remote auth/CF 경계는 별도. |
-| [first-party-ai](first-party-ai/) | ⚪ | public deterministic/on-device compose 중심으로 재정합 필요. local advanced provider와 direct edge model 전제는 agent-runtime-engine 결정 뒤 재검. |
+| [ai-workbench-connector](ai-workbench-connector/) | ⚪ | 외부 AI가 호출하는 remote evidence workbench connector. local MCP tool identity는 현재 Agent Runtime 계약과 정합하되 remote auth/CF 경계는 별도. |
+| [first-party-ai](first-party-ai/) | ⚪ | public deterministic/on-device compose 중심으로 재정합 필요. local advanced runtime과 direct edge model 전제는 현재 Agent Runtime 계약 위에서 재검한다. |
 
 ## 8. 인프라 · 기술 연구
 
@@ -86,12 +74,6 @@
 |---|---|---|
 | [brokerage-research-index](brokerage-research-index/) | ⚪ | 증권사 리서치 링크 인덱스(메타만·본문 링크아웃). PRD 확정, `tests/_attempts/brokerageIndex` 졸업게이트 미착수. |
 
-## 완료·격리 (→ `_done/`)
-
-끝난 PRD 는 [_done/](_done/) 로 격리하고 [_done/README.md](_done/README.md) 보관 목록이 정본이다.
-최근 격리(2026-07-18): `dartlab-lens-product-architecture`(다섯 공개 렌즈 제품화) · `pyproc-runtime-ssot`(라이브 배포) · `macro-simulation-engine`(완결) · `terminal-data-download`(이미 ship).
-2026-07-21: `landing-mobile-optimization`(🔀 후속 UI 작업에 흡수·라이브).
-
 ## 정리 관찰 (후속 판단 필요)
 
-- **미착수 설계 백로그**: `dartlab-north-star` · `agent-runtime-engine` · `ai-workbench-connector` · `first-party-ai` · `financial-statement-lab` · `tutorial-guide` · `brokerage-research-index`는 "착수 = 운영자 go"인 설계 항목이다. 활성 구현과 구분한다.
+- **미착수 설계 백로그**: `dartlab-north-star` · `ai-workbench-connector` · `first-party-ai` · `financial-statement-lab` · `tutorial-guide` · `brokerage-research-index`는 "착수 = 운영자 go"인 설계 항목이다.

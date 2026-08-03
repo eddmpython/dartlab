@@ -1,6 +1,6 @@
 """P2 thesis 빌더 게이트 — ROIC−WACC 지속성 → 구조화 인과논거 (offline 결정론).
 
-플랜 SSOT: mainPlan/professional-report-engine/03-report-engine-architecture.md §2.2.
+현재 계약: docs/handbook/architecture/analysisProducts.md.
 정규식 산문 폐기 — 메커니즘 1문장(데이터 섞이면 조건부 정직). 본 파일 = 순수 합성 헬퍼
 (_spreadPersistence·_composeCentral·_composeTriggers) + company 실패 시 conclusion 폴백.
 calcRoicTimeline 의존 end-to-end 는 CI.
