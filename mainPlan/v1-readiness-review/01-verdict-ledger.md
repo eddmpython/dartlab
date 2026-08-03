@@ -3280,3 +3280,46 @@ CI 전용 경로라 로컬 증명 불가로 보류)은 그대로 남아 있는 �
 계층(L2.5) 테스트 계약을 바꿔놓고 그 계층 회귀를 돌리지 않아 카탈로그 불일치가
 이틀 묵었다. 둘째, "전 계층 안정화 종료"가 CI Full 적색과 공존했다. 완료 정의에
 master CI 전체 그린이 포함되지 않으면 선언과 레포 상태가 갈라진다.
+
+## 엔진별 안정화 원장 (2026-08-04 진입)
+
+계층 단위 완료 선언이 후반부(L2.5·L3·L4)에서 체크포인트 0으로 산문 판정만 남긴 것이
+확인됐다(운영자 지시로 원장 전수 재검토). 계층 안에 묻힌 엔진은 그 계층이 닫힐 때 같이
+닫힌 것으로 계상됐다. macro·industry 는 L2 최종 판정 산문에, simulate 는 L3 산문에
+묻혔다. 이제 완료 단위를 엔진으로 좁혀 엔진별로 실측 원장을 다시 세운다. 재검증 순서는
+증거 공백이 큰 순서다: **simulate → ai/mcp → macro → industry → dataHub**.
+quant·credit·analysis·scan·gather 는 체크포인트 실측이 남아 있어 재선언 대상이 아니다.
+
+### simulate 엔진 판정 (2026-08-04)
+
+**범위와 실제 호출자.** 공개 호출체는 둘뿐이다. `dartlab.simulate("005930", scenario=...)`
+(`simulate/entry.py`)와 `Company.simulate`(company.py:2104, 같은 `runScenario` 위임).
+전이 폐쇄를 AST 로 계산하면 공개 표면이 닿는 것은 86 모듈 중 6개
+(entry·registry·run·sheet·transfer·`__init__`), 41,115 LoC 중 2,057 LoC(5.0%)다.
+동적 import(importlib)는 0건, simulate 밖 소비자는 analysis.stepProjection(문서 언급),
+macro/simulate(별개 엔진), company, root facade 뿐이다.
+
+**공개 계약 실측 (실데이터 005930).**
+- baseline: quality `ok`, 4 노드 전부 `ok`, asOf 2026-Q1, warnings 0.
+  revenuePath 398.8조→413.2조→429.5조, DCF 63,565원/주 (sanity 타당 범위).
+- 결정론: 같은 호출 재실행에서 노드별 `inputsHash` byte 동일.
+- 시나리오 정합: adverse 매출 경로 말년이 baseline 보다 낮다(True).
+- fail-closed: 무효 scenario 는 유효값 목록과 함께 ValueError, horizon 초과는
+  가용 경로 연수와 함께 ValueError.
+
+**미도달 스택 80 모듈 39,058 LoC (95.0%).** 07-27 판정의 "95%가 어떤 공개 진입점에서도
+닿지 않는다"가 오늘도 그대로다. world 모델, driver calibration/receipt 계열, AdaHedge
+reading cycle(combine·runweek·board·readingScorecard), hindcast, admission, empiricalPaths
+전부가 여기다. L3 최종 판정(8/1)이 "world receipt 검증과 executable hash v2" 등 실행
+무결성을 봉인한 대상이 공개 표면 밖 코드였다. 07-27 이 남긴 simulate 결함 9건(AdaHedge
+만점, hStar 표본 무시, hindcast `fill_null(0.0)`, scorecard 역점수, 3주 면 t=867,
+목록 위치 수익률, 자유도 0 rSquared 1.0 등)은 모두 이 스택 안이며 닫힘 기록 없이
+남아 있다. 실측 표본: `driverCoefficientVectorFit.py:323` 은 지금도
+`max(len(rows) - width, 1)` 로 자유도 0 을 1 로 바꿔 표준오차를 발행하고 다음 줄
+rSquared 가 1.0 이 된다(입구 가드 `minOrigins < max(2, width)` 는 등호를 막지 않음).
+단 이 9건은 공개 표면에서 닿지 않으므로 사용자에게 나가는 오답이 아니라 잠복 부채다.
+
+**판정: simulate 공개 계약 표면(entry·run·sheet·registry·transfer)은 결정론·honest-gap·
+fail-closed 를 실측으로 통과했다. 미도달 39k LoC 의 처분(공개 계약으로 배선 / 삭제 /
+명시적 비계약 격리)은 범위·존립 결정이므로 운영자 판단 대기다.** 처분이 정해지기 전까지
+이 스택의 결함 9건은 수리 대상이 아니라 처분 대상의 속성으로 기록한다.
