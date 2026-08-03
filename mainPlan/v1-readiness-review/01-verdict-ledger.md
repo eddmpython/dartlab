@@ -3352,3 +3352,43 @@ L4 최종 판정(8/2)이 후속으로 미룬 항목과 스테일 기재를 실�
 **판정: ai/mcp 는 툴 노출 단일 SSOT(21개 3자 동일), 하위 상태 무승격 보존, typed 오류
 경계까지 실측으로 확인됐다.** 남은 부채는 registry 죽은 툴 2종(GroundingCheck·
 PickStoryTemplate) 제거와 realdata-plan corpProfile 준비 누락(별건)이다.
+
+### macro 엔진 판정 (2026-08-04)
+
+L2 최종 판정 산문이 주장한 수정 세 가지를 실측으로 대조했다.
+
+1. **무입력 중립 판정 제거: 실재.** crisis detectors 는 핵심 입력 미달 시
+   `status="unavailable"` 과 phase None 을 내며(Dalio 4중 3, Minsky 등), usable/partial/
+   unavailable 3단 상태가 코드에 있다.
+2. **가짜 performance backtest 차단: 실재.** `macroBacktest` 는 `asOfMode=
+   observationDateCutoff`, `vintageSafe=False` 를 구조로 노출하고 precision/recall 을
+   발행하지 않는다.
+3. **잘못된 asOf 삼킴 제거: 미완이었다.** 실측 재현: `dartlab.macro("금리",
+   asOf="9999-99")` 가 예외 없이 전체 dict 를 반환했다. per-series `applyAsOf` 의
+   ValueError 를 `fetchLatest` 류 fetch-miss 광역 catch 가 None 으로 삼켜 무효 asOf 가
+   "지표 전부 결측" 형태의 조용한 성공으로 진행된 것. 수정 주장이 backtest 경로에만
+   적용되고 일반 축 진입에는 없었다. `getGather` 경계에서 `_parseAsOf` SSOT 로 즉시
+   검증하게 고쳤고 e2e 재실측은 경계 ValueError 거절이다. 회귀 3건 동행.
+
+**판정: macro 는 상태 3단·비발행 경계가 실재하며, 남아 있던 asOf 삼킴 한 건을 실측으로
+찾아 닫았다.** vintage 저장소 부재로 진짜 PIT 성과 backtest 미지원은 명시적 미지원으로
+유지된다(기존 기록과 동일).
+
+### industry 엔진 판정 (2026-08-04)
+
+1. **집중도 게이트: 실재.** `concentration.py` 는 동일 회계연도 최소 3사 + 60% coverage
+   게이트, usable(80%+)/partial/unavailable 3단 상태, fiscalYear·coverage·제한사유를
+   함께 낸다. 실측: semiconductor 집중도는 조건 미달 시 `unavailable` + 사유 문장을
+   정확히 발행했다(수치 위장 없음). mapping 갱신일은 `mappingUpdatedAt` 로 재무 기준일과
+   분리 표기된다.
+2. **라우팅 결함 2건 실측·수정.** ① 가이드가 광고하는 한글 라벨(`집중도` 등)로 부르면
+   registry 미스로 backward-compat industryId 경로에 새서 **조용한 0행 DataFrame** 이
+   나갔다(macro 는 한국어 축을 해소하고 미지 축을 사용법과 함께 거절하는 것과 비대칭).
+   라벨→키 해소를 추가했다. ② 미지 첫 인자도 같은 경로로 조용히 성공했다. 미지
+   industryId 는 유효 축·산업 목록과 함께 ValueError 로 거절하고, 실재 산업의 노드
+   부재(자료 결측)는 기존 빈 스키마 반환을 유지한다. 옛 경로 동치 불변
+   (semiconductor 125행). 회귀 3건 동행.
+
+**판정: industry 는 집중도 비발행 게이트가 실측으로 확인됐고, 조용한 빈 결과를 내던
+라우팅 비대칭 2건을 닫았다.** 반도체 산업이 공통 회계연도 60% 표본을 못 채우는 것은
+게이트가 아니라 커버리지 계열의 별건 관찰로 남긴다.
