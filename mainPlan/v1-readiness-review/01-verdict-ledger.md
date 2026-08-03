@@ -3392,3 +3392,25 @@ L2 최종 판정 산문이 주장한 수정 세 가지를 실측으로 대조했
 **판정: industry 는 집중도 비발행 게이트가 실측으로 확인됐고, 조용한 빈 결과를 내던
 라우팅 비대칭 2건을 닫았다.** 반도체 산업이 공통 회계연도 60% 표본을 못 채우는 것은
 게이트가 아니라 커버리지 계열의 별건 관찰로 남긴다.
+
+### dataHub 엔진 재판정 (2026-08-04)
+
+L2.5 최종 판정(8/1)이 비워 둔 5번 칸(실제 공개 행동 실측)을 채우고, 그 판정 하루 뒤
+master 에서 난 계약 회귀 4건을 닫았다.
+
+1. **실제 공개 행동 실측.**
+   - `dataHub("catalog")`: status ok, asset 344, gaps 0.
+   - 실데이터 query: `dataHub("query", "scan.ratio", DataQuery(measures=("debtRatio",)))`
+     가 전상장 2,816행 partition 을 status ok 로 낸다.
+   - fail-closed 사슬 3단 실측: measures 누락은 `MISSING_SELECTOR` typed gap, 무효
+     measure 는 사용 가능 목록을 담은 `ASSET_EXECUTION_FAILED`, 유효 measure 는 ok.
+   - resource locator 는 hermetic 실측(임시 flat root)으로 payload 비열람 + description
+     발행을 확인했다.
+2. **8/2 계약 회귀 4건 폐쇄(앞의 CI 복구 절).** catalog 64→53 은 L4 봉인의 의도된 표면
+   축소를 테스트가 못 따라간 것, ownerPaging 2건은 "공개 계약 = partition 순서, owner
+   호출 기록 순서는 스케줄링" 판별로 닫았다(8/1 진단이 L2.5 로 미룬 미결 항목).
+   locator 1건은 CI 빈 dataDir 환경 의존이었다.
+
+**판정: dataHub 는 공개 catalog·query·locator 행동과 typed fail-closed 경계가 실데이터
+실측으로 확인됐다.** 남은 부채는 기존 기록(conditional PIT, 일반 eager owner 의 hard
+cancellation)과 동일하다.
