@@ -41,6 +41,7 @@ LAYER_OF: dict[str, float] = {
     "api": 4.0,
     "help": 4.0,
     "plugins": 4.0,
+    "productOutcome": 4.0,
     "skills": 4.0,
     "webapi": 4.0,
 }

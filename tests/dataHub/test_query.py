@@ -139,8 +139,19 @@ def testFactorProjectionRejectsUnknownUnit(monkeypatch):
     assert [gap.code for gap in result.gaps] == ["FACTOR_UNIT_REQUIRED"]
 
 
-def testResourceLocatorDoesNotLoadPayload(monkeypatch):
+def testResourceLocatorDoesNotLoadPayload(monkeypatch, tmp_path):
+    # 로컬 구운 데이터에 의존하면 CI(빈 dataDir)에서 RESOURCE_ROOT_EMPTY로 죽는다.
+    # locator 계약(=payload를 읽지 않고 description만 발행)은 임시 flat root 하나로 충분히
+    # 실측되므로 dataDir·DARTLAB_HOME을 격리해 hermetic하게 검증한다.
+    import polars as pl
+
     import dartlab
+
+    scanRoot = tmp_path / "data" / "dart" / "scan"
+    scanRoot.mkdir(parents=True)
+    pl.DataFrame({"stockCode": ["005930"], "value": [1.0]}).write_parquet(scanRoot / "seed.parquet")
+    monkeypatch.setattr("dartlab.config.dataDir", str(tmp_path / "data"))
+    monkeypatch.setenv("DARTLAB_HOME", str(tmp_path / "home"))
 
     def failIfLoaded(*args, **kwargs):
         raise AssertionError("locator projection이 resource payload를 읽음")

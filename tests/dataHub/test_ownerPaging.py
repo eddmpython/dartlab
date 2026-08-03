@@ -332,7 +332,10 @@ def testOneQueryPagesWholeListedUniverseWithoutExternalSubjectLoop(monkeypatch: 
     assert [partition.selector[-1][1] for page in pages for partition in page.partitions] == [
         f"T{index:03d}" for index in range(66)
     ]
-    assert ownerCalls == [f"T{index:03d}" for index in range(66)]
+    # 공개 계약은 partition 순서(위 단언)다. owner 호출 기록 순서는 maxConcurrency=4 창
+    # 안 스레드 스케줄링이라 비결정적이며(다중 코어 CI에서 실측), 계약은 66 subject가
+    # 각 1회 호출되는 것뿐이다.
+    assert sorted(ownerCalls) == [f"T{index:03d}" for index in range(66)]
     assert pages[0].continuation is not None
     assert pages[-1].continuation is None
     assert pages[-1].universeCoverage[0].status == "complete"
@@ -752,7 +755,8 @@ def testRequireCompleteFailsBeforeOwnerButMixedUsesOuterChain(monkeypatch: pytes
     assert [gap.code for gap in resumed.gaps] == ["FEATURE_OBSERVATION_CONDITIONAL"] * 3
     assert "64회" in resumed.gaps[0].message
     assert [partition.requestId for partition in resumed.partitions] == ["features"] * 2
-    assert ownerCalls == [f"T{index:03d}" for index in range(66)]
+    # 호출 기록 순서는 스케줄링 비결정(위 testOneQueryPages... 주석 참조). 계약 = 전 subject 1회.
+    assert sorted(ownerCalls) == [f"T{index:03d}" for index in range(66)]
 
 
 def testMixedOwnerAndMonkeypatchedEagerFailsCodePinBeforeAnyOwner(

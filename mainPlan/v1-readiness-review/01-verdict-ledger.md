@@ -3236,3 +3236,47 @@ SSOT로 통일하고 모든 L4 보안 경계를 실측했다.
 payload budget, 직렬화, 서버 미들웨어)가 실측으로 검증됐다.** agent-MCP 불일치가
 해소돼 LLM이 어떤 진입점으로 접근하든 같은 도구 집합을 본다. L4를 완료하고
 전 계층(L0~L4) 안정화를 종료한다.
+
+## master CI Full 적색 복구 (2026-08-04)
+
+전 계층 안정화 종료 선언(위 2026-08-02) 시점에도 master CI Full은 적색이었다.
+8/2~8/3 다섯 런이 연속 실패했고 실패 집합은 test_server 23, dataHub 4,
+architecture 1이다. 세 갈래 전부 로컬 실측으로 갈라 닫았다.
+
+1. **architecture 1건.** `ca459d310`(8/2)이 `src/dartlab/productOutcome.py`를 최상위에
+   신설하며 Guard `LAYER_OF`에 등재하지 않았다. stdlib만 import하고 소비자는
+   ai·server(L4)뿐이므로 4.0으로 등재했다. `test_import_direction` 4 passed.
+2. **dataHub 4건.**
+   - catalog 64→53: `b07fc16ee`(8/1 L4 봉인)가 capability builder에 staticmethod
+     제외와 호환 전용 4종 제외를 넣어 Company 카탈로그 표면을 의도적으로 줄였는데
+     L2.5 테스트의 64 단언을 갱신하지 않았다. 빠진 11 = 라우팅 protocol
+     staticmethod 7(canHandle·codeName·listing·priority·resolve·search·status,
+     전부 공개 계약 아님) + 호환 전용 4. 카탈로그가 옳고 테스트를 53으로 갱신했다.
+   - ownerPaging 2건: 8/1 진단이 "L2.5 체크포인트에서 다룬다"로 남긴 미결 항목인데
+     L2.5 최종 판정이 다루지 않은 채 완료를 선언했었다. 코드 직독으로 갈랐다.
+     공개 계약은 결과 partition 순서(`zip(windowFutures, window)` 제출 순서로
+     결정적, CI에서도 해당 단언은 통과)이고, owner 호출 기록 순서는
+     `maxConcurrency=4` 창 안 스레드 스케줄링이라 계약이 아니다. 테스트가 호출
+     순서를 과하게 못박은 것이므로 multiset 비교로 바꿨다.
+   - resourceLocator 1건: CI `DARTLAB_DATA_DIR=tests/fixtures`에서
+     `dart/scan/` 평면 parquet은 전부 gitignore(로컬 전용)라
+     `RESOURCE_ROOT_EMPTY`로 죽는다(빈 dataDir로 로컬 재현). 테스트를 tmp flat
+     root + dataDir·DARTLAB_HOME 격리로 hermetic하게 바꿨다. locator 계약
+     (payload 비열람, description만 발행)은 그대로 실측한다.
+3. **server 23건.** 설치형 agent runtime 전환(8/2~8/3 런타임 커밋들)이 direct-model
+   provider 표면을 의도적으로 제거했는데 테스트가 옛 계약을 단언하고 있었다.
+   500 두 곳도 제품 결함이 아니라 낡은 대역이었다. plain chat은 죽은 별칭
+   `collect_analysis_result`를 패치했지만 실경로는 `kernel.ask`라 실 CLI로
+   떨어진 것이고, dart-key validate는 dict 대역에 `toDict()`를 불러 터진 것이다.
+   status/configure/profile/models/logout/ask 전부 새 계약(runtimes 배열,
+   410 Gone, 모델 catalog 세션 이관, kernel.ask 경유)으로 갱신했다.
+   `tests/server/test_server.py` 68 passed.
+
+Gov Index Sync (Bulk) 단발 실패는 재실행으로 이미 success이며 이력 전체가
+그린이라 별도 조치가 없다. realdata-plan의 corpProfile 준비 누락(8/1 진단,
+CI 전용 경로라 로컬 증명 불가로 보류)은 그대로 남아 있는 별건이다.
+
+이 복구가 계층 완료 선언에 남기는 교훈은 두 가지다. 첫째, L4 봉인이 하위
+계층(L2.5) 테스트 계약을 바꿔놓고 그 계층 회귀를 돌리지 않아 카탈로그 불일치가
+이틀 묵었다. 둘째, "전 계층 안정화 종료"가 CI Full 적색과 공존했다. 완료 정의에
+master CI 전체 그린이 포함되지 않으면 선언과 레포 상태가 갈라진다.

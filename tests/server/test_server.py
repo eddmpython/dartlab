@@ -51,29 +51,23 @@ class TestStatus:
             assert "available" in prov_info
             assert "credentialSource" in prov_info
 
-    def test_status_ollama_detail(self, client):
-        """GET /api/status — ollama 상세 정보 포함."""
-        resp = client.get("/api/status")
-        data = resp.json()
-        assert "ollama" in data
-        assert "installed" in data["ollama"]
-        assert "running" in data["ollama"]
+    def test_status_runtimes_detail(self, client):
+        """GET /api/status: 설치형 runtime 목록과 readiness를 반환한다.
 
-    def test_status_codex_detail(self, client):
-        """GET /api/status — codex 상세 정보 포함."""
-        resp = client.get("/api/status")
+        direct provider 시절의 최상위 ollama/codex/oauthCodex 블록은 제거됐고
+        (agent-runtime 전환), 상태는 runtimes 배열이 소유한다.
+        """
+        resp = client.get("/api/status", params={"probe": 0})
+        assert resp.status_code == 200
         data = resp.json()
-        assert "codex" in data
-        assert "installed" in data["codex"]
-        assert "authenticated" in data["codex"]
-
-    def test_status_oauth_codex_detail(self, client):
-        """GET /api/status — oauth-codex 상세 정보 포함."""
-        resp = client.get("/api/status")
-        data = resp.json()
-        assert "oauthCodex" in data
-        assert "authenticated" in data["oauthCodex"]
-        assert "tokenStored" in data["oauthCodex"]
+        assert "ollama" not in data
+        assert "oauthCodex" not in data
+        runtimes = {item["runtimeId"]: item for item in data["runtimes"]}
+        assert {"claude", "codex"} <= set(runtimes)
+        for item in runtimes.values():
+            assert "state" in item
+            assert "readiness" in item
+        assert "defaultRuntimeId" in data
 
     def test_status_version_not_unknown(self, client):
         """GET /api/status — 버전이 'unknown'이 아님."""
@@ -81,91 +75,33 @@ class TestStatus:
         data = resp.json()
         assert data["version"] != "unknown"
 
-    def test_status_provider_probe_only_targets_selected_provider(self, client, monkeypatch):
-        """GET /api/status?provider=codex — 선택 provider만 probe."""
-        probed: list[str] = []
-        ollama_probe_flags: list[bool] = []
-
-        def _fake_probe(prov):
-            probed.append(prov)
-            return True, f"{prov}-model", True
-
-        def _fake_ollama_detail(*, probe):
-            ollama_probe_flags.append(probe)
-            return {"installed": False, "running": None, "gpu": None, "checked": probe}
-
-        monkeypatch.setattr("dartlab.server.api.ai.probe_provider_availability", _fake_probe)
-        monkeypatch.setattr("dartlab.server.api.ai.build_ollama_detail", _fake_ollama_detail)
-
-        resp = client.get("/api/status", params={"provider": "codex"})
+    def test_status_runtime_filter_returns_only_selected_runtime(self, client):
+        """GET /api/status?runtimeId=codex: 선택 runtime만 남긴다."""
+        resp = client.get("/api/status", params={"probe": 0, "runtimeId": "codex"})
         assert resp.status_code == 200
-        assert probed == ["codex"]
-        assert ollama_probe_flags == [False]
+        data = resp.json()
+        assert [item["runtimeId"] for item in data["runtimes"]] == ["codex"]
 
-    def test_status_probe_zero_skips_provider_checks(self, client, monkeypatch):
-        """GET /api/status?probe=0 — provider probe를 생략."""
-        monkeypatch.setattr(
-            "dartlab.server.api.ai.probe_provider_availability",
-            lambda prov: (_ for _ in ()).throw(AssertionError("provider probe should not run")),
-        )
+    def test_status_probe_zero_skips_cli_probe(self, client, monkeypatch):
+        """GET /api/status?probe=0: CLI refresh probe를 실행하지 않는다."""
+        refreshFlags: list[bool] = []
+
+        from dartlab.ai.runtime import getRuntimeEngine
+
+        engine = getRuntimeEngine()
+        realStatus = engine.status
+
+        def _recordingStatus(*, refresh):
+            refreshFlags.append(refresh)
+            return realStatus(refresh=False)
+
+        monkeypatch.setattr(engine, "status", _recordingStatus)
 
         resp = client.get("/api/status", params={"probe": 0})
         assert resp.status_code == 200
-        data = resp.json()
-        assert data["providers"]["codex"]["checked"] is False
-        assert data["providers"]["ollama"]["checked"] is False
-
-    def test_status_without_provider_probes_only_selected_provider(self, client, monkeypatch):
-        """GET /api/status — 명시하지 않으면 shared profile의 선택 provider만 probe."""
-        from dartlab.ai import configure as configure_global
-
-        configure_global(provider="openai", model="gpt-5.4")
-
-        probed: list[str] = []
-        ollama_probe_flags: list[bool] = []
-
-        def _fake_probe(prov):
-            probed.append(prov)
-            return True, f"{prov}-model", True
-
-        def _fake_ollama_detail(*, probe):
-            ollama_probe_flags.append(probe)
-            return {"installed": True, "running": True, "gpu": None, "checked": probe}
-
-        monkeypatch.setattr("dartlab.server.api.ai.probe_provider_availability", _fake_probe)
-        monkeypatch.setattr("dartlab.server.api.ai.build_ollama_detail", _fake_ollama_detail)
-
-        resp = client.get("/api/status")
-        assert resp.status_code == 200
-        data = resp.json()
-        assert probed == ["openai"]
-        assert ollama_probe_flags == [False]
-        assert data["providers"]["openai"]["checked"] is True
-        assert data["providers"]["ollama"]["checked"] is False
-
-    def test_should_preload_ollama_requires_selected_provider(self, monkeypatch):
-        """Ollama preload는 명시적 활성화 + 선택 provider가 ollama일 때만."""
-        from dartlab.ai import configure as configure_global
-        from dartlab.server import _should_preload_ollama
-
-        monkeypatch.setenv("DARTLAB_PRELOAD_OLLAMA", "1")
-
-        configure_global(provider="openai", model="gpt-5.4")
-        assert _should_preload_ollama() is False
-
-        configure_global(provider="ollama", model="qwen3")
-        assert _should_preload_ollama() is True
-
-    def test_should_preload_ollama_when_any_role_uses_ollama(self, monkeypatch):
-        """role binding 중 하나가 ollama면 preload 대상이다."""
-        from dartlab.ai import configure as configure_global
-        from dartlab.server import _should_preload_ollama
-
-        monkeypatch.setenv("DARTLAB_PRELOAD_OLLAMA", "1")
-
-        configure_global(provider="openai", model="gpt-5.4")
-        configure_global(provider="ollama", model="qwen3", role="summary")
-        assert _should_preload_ollama() is True
+        assert refreshFlags == [False]
+        # direct provider probe 표면은 제거됐고 providers 블록은 빈 호환 dict다.
+        assert resp.json()["providers"] == {}
 
     def test_suggest_endpoint_returns_questions_and_data_ready(self, client, monkeypatch):
         """GET /api/suggest — 추천 질문과 데이터 준비 상태를 함께 반환한다."""
@@ -185,100 +121,58 @@ class TestStatus:
 
 
 class TestConfigure:
-    def test_validate_provider_ollama(self, client):
-        """POST /api/provider/validate — provider 검증."""
-        resp = client.post(
-            "/api/provider/validate",
-            json={"provider": "ollama"},
-        )
-        assert resp.status_code == 200
-        data = resp.json()
-        assert data["ok"] is True
-        assert data["provider"] == "ollama"
-        assert "available" in data
+    """direct provider 설정 표면은 agent-runtime 전환으로 제거됐다(410 Gone).
 
-    def test_validate_provider_with_model(self, client):
-        """POST /api/provider/validate — model 지정."""
+    DartLab은 모델 키를 저장하지 않고, 모델·인증은 설치형 agent CLI가 소유한다.
+    """
+
+    def test_validate_provider_is_gone(self, client):
+        """POST /api/provider/validate: 410 + Runtime Center 안내."""
         resp = client.post(
             "/api/provider/validate",
             json={"provider": "ollama", "model": "qwen3"},
         )
-        assert resp.status_code == 200
-        assert resp.json()["ok"] is True
+        assert resp.status_code == 410
+        assert "/api/agent/runtimes" in resp.json()["detail"]
 
-    def test_validate_provider_does_not_mutate_global_config(self, client, monkeypatch):
-        from dartlab.ai import configure as configure_global
-        from dartlab.ai import getConfig
-
-        class DummyProvider:
-            def __init__(self, config):
-                self.resolvedModel = config.model or "dummy-model"
-
-            def checkAvailable(self):
-                return True
-
-        monkeypatch.setattr("dartlab.ai.providers.createProvider", lambda config: DummyProvider(config))
-        configure_global(provider="ollama", model="qwen3")
-        before = getConfig()
-
-        resp = client.post(
-            "/api/provider/validate",
-            json={"provider": "openai", "model": "gpt-5.4", "api_key": "sk-test"},
-        )
-        assert resp.status_code == 200
-        after = getConfig()
-        assert after.provider == before.provider
-        assert after.model == before.model
-
-    def test_configure_alias_still_works(self, client):
-        """POST /api/configure — 구버전 alias 유지."""
+    def test_configure_alias_is_gone(self, client):
+        """POST /api/configure: 구 alias도 같은 410 계약이다."""
         resp = client.post(
             "/api/configure",
             json={"provider": "ollama"},
         )
-        assert resp.status_code == 200
-        assert resp.json()["ok"] is True
+        assert resp.status_code == 410
+        assert "모델 키를 저장하지 않습니다" in resp.json()["detail"]
 
 
 class TestAiProfile:
-    def test_get_ai_profile(self, client):
+    """profile 표면은 조회 호환만 남기고 갱신·secret 저장은 제거됐다(410 Gone)."""
+
+    def test_get_ai_profile_reports_runtime_migration(self, client):
         resp = client.get("/api/ai/profile")
         assert resp.status_code == 200
         data = resp.json()
-        assert "defaultProvider" in data
-        assert "catalog" in data
-        assert "providers" in data
-        assert "roles" in data
-        assert isinstance(data["catalog"], list)
-        assert all(item["id"] != "claude" for item in data["catalog"])
-        assert "codex" in data["providers"]
+        assert data["mode"] == "agent-runtime"
+        assert data["deprecated"] is True
+        assert "runtimes" in data
+        assert "defaultProvider" not in data
 
-    def test_put_ai_profile_updates_shared_config(self, client):
-        from dartlab.ai import getConfig
-
+    def test_put_ai_profile_is_gone(self, client):
         resp = client.put(
             "/api/ai/profile",
             json={"provider": "openai", "model": "gpt-5.4"},
         )
-        assert resp.status_code == 200
-        config = getConfig()
-        assert config.provider == "openai"
-        # 사용자 명시 model 보존 — 최신 자동 강제 X (configure/PUT 으로 선택한 모델은 의도된 선택)
-        assert config.model == "gpt-5.4"
-        assert getConfig(provider="openai", model="gpt-5.4").model == "gpt-5.4"
+        assert resp.status_code == 410
+        assert "agent CLI" in resp.json()["detail"]
 
-    def test_post_ai_profile_secret_updates_shared_secret(self, client):
-        from dartlab.ai import getConfig
-
+    def test_post_ai_profile_secret_is_gone(self, client):
+        """DartLab은 모델 API 키와 OAuth 토큰을 저장하지 않는다."""
         resp = client.post(
             "/api/ai/profile/secrets",
             json={"provider": "openai", "api_key": "sk-test"},
         )
-        assert resp.status_code == 200
-        data = resp.json()
-        assert data["providers"]["openai"]["secretConfigured"] is True
-        config = getConfig("openai")
-        assert config.apiKey == "sk-test"
+        assert resp.status_code == 410
+        assert "저장하지 않습니다" in resp.json()["detail"]
 
 
 class TestOpenDartKey:
@@ -291,24 +185,13 @@ class TestOpenDartKey:
         assert "envPath" in data["openDart"]
 
     def test_validate_dart_key_endpoint(self, client, monkeypatch):
+        # 엔드포인트는 validateDartApiKey 결과 객체의 toDict()를 그대로 반환한다.
         monkeypatch.setattr(
             "dartlab.gather.dart.keys.validateDartApiKey",
-            lambda key: {"ok": True, "validatedKey": key[-4:]},
-        )
-        monkeypatch.setattr(
-            "dartlab.gather.dart.keys.getDartKeyStatus",
-            lambda startPath=None: type(
-                "Status",
+            lambda key: type(
+                "Validation",
                 (),
-                {
-                    "toDict": lambda self: {
-                        "configured": False,
-                        "source": "none",
-                        "keyCount": 0,
-                        "envPath": ".env",
-                        "writable": True,
-                    }
-                },
+                {"toDict": lambda self: {"ok": True, "validatedKey": key[-4:]}},
             )(),
         )
 
@@ -317,7 +200,6 @@ class TestOpenDartKey:
         data = resp.json()
         assert data["ok"] is True
         assert data["validatedKey"] == "-key"
-        assert "openDart" in data
 
     def test_save_dart_key_endpoint(self, client, monkeypatch):
         monkeypatch.setattr(
@@ -379,46 +261,19 @@ class TestOpenDartKey:
 
 
 class TestModels:
-    def test_static_providers(self, client):
-        """GET /api/models/{provider} — 정적 모델 목록."""
-        for prov in ("codex", "oauth-codex"):
-            resp = client.get(f"/api/models/{prov}")
+    """모델 catalog 소유권은 열린 세션의 CLI로 이관됐다.
+
+    /api/models/{runtimeId}는 어떤 ID든 빈 목록과 새 endpoint 안내만 반환한다.
+    """
+
+    def test_models_endpoint_delegates_to_session_cli(self, client):
+        for runtimeId in ("codex", "claude", "ollama", "nonexistent"):
+            resp = client.get(f"/api/models/{runtimeId}")
             assert resp.status_code == 200
             data = resp.json()
-            assert "models" in data
-            assert isinstance(data["models"], list)
-            assert len(data["models"]) > 0
-
-    def test_ollama_models(self, client):
-        """GET /api/models/ollama — Ollama 모델 목록 (형식 확인)."""
-        resp = client.get("/api/models/ollama")
-        assert resp.status_code == 200
-        data = resp.json()
-        assert "models" in data
-        assert isinstance(data["models"], list)
-        assert "recommendations" in data
-
-    def test_unknown_provider(self, client):
-        """GET /api/models/{unknown} — 빈 목록."""
-        resp = client.get("/api/models/nonexistent")
-        assert resp.status_code == 200
-        assert resp.json()["models"] == []
-
-    def test_openai_without_key(self, client):
-        """GET /api/models/openai — API 키 없으면 fallback 목록."""
-        resp = client.get("/api/models/openai")
-        assert resp.status_code == 200
-        data = resp.json()
-        assert "models" in data
-        assert len(data["models"]) > 0
-
-    def test_removed_provider_returns_empty_models(self, client):
-        """GET /api/models/claude — 제거된 provider는 빈 목록."""
-        resp = client.get("/api/models/claude")
-        assert resp.status_code == 200
-        data = resp.json()
-        assert "models" in data
-        assert data["models"] == []
+            assert data["models"] == []
+            assert data["runtimeId"] == runtimeId
+            assert "/api/agent/sessions" in data["detail"]
 
 
 class TestDataStats:
@@ -502,24 +357,25 @@ class TestTemplates:
 
 class TestOAuth:
     def test_oauth_status(self, client):
-        """GET /api/oauth/status — 상태 확인."""
+        """GET /api/oauth/status: agent CLI 소유를 알리는 호환 응답."""
         resp = client.get("/api/oauth/status")
         assert resp.status_code == 200
-        assert "done" in resp.json()
+        data = resp.json()
+        assert data["done"] is True
+        assert data["managedBy"] == "agent-cli"
 
-    def test_oauth_logout(self, client):
-        """POST /api/oauth/logout — 토큰 제거."""
+    def test_oauth_logout_is_gone(self, client):
+        """POST /api/oauth/logout: OAuth 토큰 저장소 제거로 410."""
         resp = client.post("/api/oauth/logout")
-        assert resp.status_code == 200
-        assert resp.json()["ok"] is True
+        assert resp.status_code == 410
 
 
 class TestCodexAuth:
-    def test_codex_logout(self, client):
-        """POST /api/codex/logout — Codex CLI 인증 제거."""
+    def test_codex_logout_is_gone(self, client):
+        """POST /api/codex/logout: CLI 인증은 각 agent CLI 공식 명령 소유라 410."""
         resp = client.post("/api/codex/logout")
-        assert resp.status_code == 200
-        assert resp.json()["ok"] is True
+        assert resp.status_code == 410
+        assert "공식 명령" in resp.json()["detail"]
 
 
 # ── 데이터 의존 테스트 ──
@@ -703,41 +559,43 @@ class TestAsk:
         if resp.status_code == 200:
             assert "answer" in resp.json()
 
-    def test_plain_chat_uses_core_analysis_path(self, client, monkeypatch):
+    def test_plain_chat_uses_agent_runtime_path(self, client, monkeypatch):
+        """비스트리밍 /api/ask는 설치형 agent runtime(kernel.ask)으로 답을 수집한다.
+
+        runtimeId는 반드시 그대로 넘어가야 한다. 예전 direct provider 시절 여기서
+        선택을 떨어뜨려 스트리밍 경로와 다른 모델로 답한 회귀(c81e64232)의
+        agent-runtime 버전 가드다.
+        """
         captured = {}
 
-        async def _fake_collect(question="", **kwargs):
+        def _fake_ask(question, **kwargs):
             captured["question"] = question
             captured["kwargs"] = kwargs
-            return {"answer": "core-answer", "artifacts": [{"format": "csv", "url": "/api/ask/artifacts/x/y.csv"}]}
+            return "core-answer"
 
-        monkeypatch.setattr("dartlab.server.services.aiAnalysis.collect_analysis_result", _fake_collect)
+        monkeypatch.setattr("dartlab.ai.kernel.ask", _fake_ask)
 
         resp = client.post(
             "/api/ask",
-            json={"question": "안녕하세요", "stream": False, "provider": "openai", "model": "gpt-5.4"},
+            json={"question": "안녕하세요", "stream": False, "runtimeId": "claude", "sessionId": "s-1"},
         )
         assert resp.status_code == 200
         assert resp.json()["answer"] == "core-answer"
-        assert resp.json()["artifacts"][0]["format"] == "csv"
+        assert resp.json()["sessionId"] == "s-1"
         assert captured["question"] == "안녕하세요"
-        # provider/model 은 반드시 그대로 넘어가야 한다. 예전엔 여기서 떨어뜨려
-        # 비스트리밍 /api/ask 가 프로필 기본값으로 돌았고, 같은 질문이 스트리밍
-        # 경로와 서로 다른 모델로 답했다(c81e64232). 모델 고정이 안 되면 품질
-        # 측정 자체가 성립하지 않는다.
-        assert captured["kwargs"]["provider"] == "openai"
-        assert captured["kwargs"]["model"] == "gpt-5.4"
-        assert captured["kwargs"]["use_tools"] is True
+        assert captured["kwargs"]["runtimeId"] == "claude"
+        assert captured["kwargs"]["sessionId"] == "s-1"
+        assert captured["kwargs"]["stream"] is False
 
     def test_plain_chat_passes_company_as_stock_code_hint(self, client, monkeypatch):
         captured = {}
 
-        async def _fake_collect(question="", **kwargs):
+        def _fake_ask(question, **kwargs):
             captured["question"] = question
             captured["kwargs"] = kwargs
-            return {"answer": "core-answer", "artifacts": []}
+            return "core-answer"
 
-        monkeypatch.setattr("dartlab.server.services.aiAnalysis.collect_analysis_result", _fake_collect)
+        monkeypatch.setattr("dartlab.ai.kernel.ask", _fake_ask)
 
         resp = client.post(
             "/api/ask",

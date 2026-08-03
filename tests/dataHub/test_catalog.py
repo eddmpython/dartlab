@@ -54,7 +54,10 @@ def testCatalogCoversEveryCurrentLowerLayerRegistryAndResource():
     assert dartFeatureMetadata["pageMaxEntities"] == 64
     assert sum(asset.kind == "resource" for asset in assets) == 42
     assert sum(asset.assetId.startswith("concept.") for asset in assets) == 88
-    assert sum(asset.assetId.startswith("providers.Company") for asset in assets) == 64
+    # 53 = Company 본체 1 + 공개 멤버 63 - 계약 외 11 (라우팅 protocol staticmethod 7
+    # + 호환 전용 4). capability builder 가 staticmethod/classmethod 와
+    # _COMPATIBILITY_ONLY_COMPANY_MEMBERS 를 카탈로그에서 제외한다.
+    assert sum(asset.assetId.startswith("providers.Company") for asset in assets) == 53
     assert {asset.owner for asset in assets if asset.assetId.startswith("owner.")} == {
         "analysis",
         "credit",
