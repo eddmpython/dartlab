@@ -33,24 +33,29 @@ _DEFAULT_SECTOR = {
 }
 
 
-def _resolveSectorParams(company: Any) -> Any:
-    """Company → SectorParams. 실패 시 기본값 (discountRate 10%, growthRate 3%)."""
+def _resolveSectorParams(company: Any) -> tuple[Any, str]:
+    """Company → (SectorParams, source). 실패 시 기본값 + source="default".
+
+    source 는 "company"(회사 섹터 해소) 또는 "default"(할인율 10%, 성장 3% 기본값).
+    예전에는 기본값 대체가 무언이었고 label "기타" 가 실재 섹터명과 겹쳐 소비자가
+    해소 실패를 알 수 없었다. 대체 여부를 값과 함께 반환해 결과에 표기한다.
+    """
     from dartlab.frame.sector import SectorParams
 
     if company is not None:
         try:
             sp = getattr(company, "sectorParams", None)
             if sp is not None:
-                return sp
+                return sp, "company"
         except Exception:  # noqa: BLE001
             pass
         try:
             sp = getattr(company, "sector", None)
             if sp is not None and hasattr(sp, "discountRate"):
-                return sp
+                return sp, "company"
         except Exception:  # noqa: BLE001
             pass
-    return SectorParams(**_DEFAULT_SECTOR)
+    return SectorParams(**_DEFAULT_SECTOR), "default"
 
 
 def _resolveSeries(company: Any) -> dict | None:
@@ -235,7 +240,7 @@ def dcfValuationTool(
             error="series_unavailable",
         )
 
-    sp = _resolveSectorParams(company)
+    sp, sectorParamsSource = _resolveSectorParams(company)
     shares = _resolveShares(company)
     currentPrice = _resolveCurrentPrice(company)
     sourcePeriods = companyMetrics(company).get("sourcePeriods") or {}
@@ -256,6 +261,10 @@ def dcfValuationTool(
 
     results: dict[str, dict[str, Any]] = {}
     warnings_acc: list[str] = []
+    if sectorParamsSource == "default":
+        warnings_acc.append(
+            "sector 파라미터 미해소: 기본값(할인율 10%, 성장 3%) 사용. sectorLabel '기타'는 대체 라벨이다."
+        )
     for name in ("bear", "base", "bull"):
         if name not in requested:
             continue
@@ -307,6 +316,7 @@ def dcfValuationTool(
             "projectionYears": projectionYears,
             "shares": shares,
             "sectorLabel": getattr(sp, "label", None),
+            "sectorParamsSource": sectorParamsSource,
         },
         "warnings": warnings_acc,
         "confidence": confidence,

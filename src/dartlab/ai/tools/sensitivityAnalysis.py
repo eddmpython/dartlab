@@ -132,13 +132,15 @@ def sensitivityAnalysis(
     if not series:
         return ToolResult(False, f"finance.timeseries 추출 실패: {stockCode}", error="series_unavailable")
 
-    sp = _resolveSectorParams(company)
+    sp, sectorParamsSource = _resolveSectorParams(company)
     shares = _resolveShares(company)
     sourcePeriods = companyMetrics(company).get("sourcePeriods") or {}
     sourcePeriod = sourcePeriods.get("IS") or sourcePeriods.get("BS")
 
     # baseFcf + netDebt 추출 (DCF 와 동일 SSOT).
     warnings_acc: list[str] = []
+    if sectorParamsSource == "default":
+        warnings_acc.append("sector 파라미터 미해소: 기본값(할인율 10%, 성장 3%) 사용.")
     try:
         baseFcf = _resolveBaseFcf(series, warnings_acc)
     except Exception as exc:  # noqa: BLE001
@@ -212,6 +214,7 @@ def sensitivityAnalysis(
             "netDebt": netDebt,
             "shares": shares,
             "projectionYears": projectionYears,
+            "sectorParamsSource": sectorParamsSource,
         },
         "unit": unit,
         "warnings": warnings_acc,
