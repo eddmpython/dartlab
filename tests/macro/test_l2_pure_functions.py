@@ -612,3 +612,30 @@ def test_crisisDalioExplicitZeroOverridesFetchedValues():
     assert policy is not None
     assert policy["monetary"] == "maxed"
     assert policy["fiscal"] == "spare"
+
+
+class TestGetGatherAsOfBoundary:
+    """getGather 경계의 asOf 즉시 검증 회귀.
+
+    예전에는 무효 asOf 가 per-series applyAsOf 에서야 ValueError 를 냈고
+    fetchLatest 류 fetch-miss catch 가 그것을 None 으로 삼켜, macro 축이
+    "지표 전부 결측" 형태의 조용한 성공으로 진행됐다(dartlab.macro("금리",
+    asOf="9999-99") 실측). 경계에서 즉시 거절해야 한다.
+    """
+
+    def test_invalid_asof_rejected_at_boundary(self):
+        from dartlab.macro.seriesFetch import getGather
+
+        with pytest.raises(ValueError, match="YYYY-MM-DD"):
+            getGather("9999-99")
+
+    def test_non_string_asof_rejected_at_boundary(self):
+        from dartlab.macro.seriesFetch import getGather
+
+        with pytest.raises(TypeError):
+            getGather(20260101)
+
+    def test_parse_asof_roundtrip(self):
+        from dartlab.macro.seriesFetch import _parseAsOf
+
+        assert _parseAsOf("2026-01-01").isoformat() == "2026-01-01"

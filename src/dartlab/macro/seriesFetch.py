@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -124,15 +124,20 @@ def applyAsOf(df, asOf: str | None) -> "pl.DataFrame | None":
     """
     if asOf is None:
         return df
-    if not isinstance(asOf, str):
-        raise TypeError("asOf는 YYYY-MM-DD 형식의 문자열이어야 합니다.")
-    try:
-        cutoff = datetime.strptime(asOf, "%Y-%m-%d").date()
-    except ValueError as exc:
-        raise ValueError("asOf는 유효한 YYYY-MM-DD 형식이어야 합니다.") from exc
+    cutoff = _parseAsOf(asOf)
     if df is None or len(df) == 0:
         return df
     return df.filter(df["date"] <= cutoff)
+
+
+def _parseAsOf(asOf: str) -> date:
+    """asOf 문자열을 검증하고 date 로 파싱한다. applyAsOf·getGather 공용 SSOT."""
+    if not isinstance(asOf, str):
+        raise TypeError("asOf는 YYYY-MM-DD 형식의 문자열이어야 합니다.")
+    try:
+        return datetime.strptime(asOf, "%Y-%m-%d").date()
+    except ValueError as exc:
+        raise ValueError("asOf는 유효한 YYYY-MM-DD 형식이어야 합니다.") from exc
 
 
 def applyOverrides(data: dict, overrides: dict | None) -> dict:
@@ -242,6 +247,10 @@ def getGather(asOf: str | None = None) -> "Any":
     g = getMacroProvider().getDefaultGather()
     if asOf is None:
         return g
+    # 경계에서 즉시 검증한다. 예전에는 per-series applyAsOf 시점에야 ValueError 가 났고
+    # fetchLatest 류의 광역 fetch-miss catch 가 그것을 None 으로 삼켜, 무효 asOf 가
+    # "지표 전부 결측" 형태의 조용한 성공으로 진행됐다.
+    _parseAsOf(asOf)
 
     _orig = g.macro
 
