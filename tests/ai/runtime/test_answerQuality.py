@@ -348,3 +348,113 @@ def testNamedQuestionTargetAcceptsMatchingEvidenceTitle():
 
 def testCoreAuditMatterUsesDocumentaryContract():
     assert classifyEvidenceContract("최신 사업보고서의 핵심감사사항은?") == "documentary"
+
+
+def _fiveYearMetricRefs(*, complete: bool) -> list[dict]:
+    refs: list[dict] = [
+        {
+            "id": "table:005930:IS:2021-2025",
+            "kind": "tableRef",
+            "payload": {"stockCode": "005930", "rowCount": 2, "periods": [f"{year}FY" for year in range(2021, 2026)]},
+        }
+    ]
+    for year in range(2021, 2026):
+        refs.append(
+            {
+                "id": f"date:005930:IS:{year}FY",
+                "kind": "dateRef",
+                "payload": {"stockCode": "005930", "period": f"{year}FY"},
+            }
+        )
+    cells = [(2025, "revenue", 500), (2025, "operating_profit", 50)]
+    if complete:
+        cells = [
+            (year, metric, year * 10 + offset)
+            for year in range(2021, 2026)
+            for metric, offset in (("revenue", 1), ("operating_profit", 2))
+        ]
+    for year, metric, value in cells:
+        refs.append(
+            {
+                "id": f"value:005930:IS:{year}FY:{metric}",
+                "kind": "valueRef",
+                "payload": {
+                    "stockCode": "005930",
+                    "canonicalMetricId": metric,
+                    "period": f"{year}FY",
+                    "value": value,
+                },
+            }
+        )
+    return refs
+
+
+def testRecentFiveYearsRequiresEveryMetricPeriodClaimCell():
+    refs = _fiveYearMetricRefs(complete=False)
+    citations = " ".join(ref["id"] for ref in refs)
+    answer = f"2021년, 2022년, 2023년, 2024년, 2025년 매출과 영업이익은 500원과 50원이다. {citations}"
+
+    report = evaluateAnswerQuality(
+        "삼성전자 005930 최근 5년 매출과 영업이익 추이",
+        answer,
+        refs,
+        completionSucceeded=True,
+        failed=False,
+        readSkillCalls=1,
+    )
+
+    assert report.passed is False
+    assert "claim_cell_coverage_incomplete" in report.issues
+    assert report.requiredClaimCells == 10
+    assert report.coveredClaimCells == 2
+
+
+def testRecentFiveYearsPassesWithCompleteMetricPeriodClaimCells():
+    refs = _fiveYearMetricRefs(complete=True)
+    values = " ".join(str(ref["payload"]["value"]) for ref in refs if ref["kind"] == "valueRef")
+    citations = " ".join(ref["id"] for ref in refs)
+    answer = f"2021년, 2022년, 2023년, 2024년, 2025년의 매출과 영업이익은 각각 {values}원이다. {citations}"
+
+    report = evaluateAnswerQuality(
+        "삼성전자 005930 최근 5년 매출과 영업이익 추이",
+        answer,
+        refs,
+        completionSucceeded=True,
+        failed=False,
+        readSkillCalls=1,
+    )
+
+    assert report.passed is True
+    assert report.requiredClaimCells == 10
+    assert report.coveredClaimCells == 10
+
+
+def testRunPythonLocalValuesCannotBecomeGroundingWithoutCanonicalLineage():
+    refs = [
+        {
+            "id": "table:local:python",
+            "kind": "tableRef",
+            "source": "execution:local:1",
+            "payload": {"rows": [{"metric": "revenue", "value": 999}]},
+        },
+        {
+            "id": "value:local:revenue",
+            "kind": "valueRef",
+            "source": "execution:local:1",
+            "payload": {"canonicalMetricId": "revenue", "period": "2025FY", "value": 999},
+        },
+        {
+            "id": "date:local:2025FY",
+            "kind": "dateRef",
+            "source": "execution:local:1",
+            "payload": {"period": "2025FY"},
+        },
+    ]
+    answer = "2025년 매출은 999원이다. table:local:python value:local:revenue date:local:2025FY"
+
+    report = evaluateAnswerQuality(
+        "2025년 매출은?", answer, refs, completionSucceeded=True, failed=False, readSkillCalls=1
+    )
+
+    assert report.passed is False
+    assert "derived_evidence_lineage_missing" in report.issues

@@ -38,7 +38,7 @@
 3. current value는 `미측정`이다.
 4. 수기 10점 maturity table은 도입하지 않는다.
 5. remote aggregate는 admission authority와 opt-in 전까지 범위 밖이다.
-6. 첫 실제 소비자는 `agent-runtime-engine`이다.
+6. 첫 실제 소비자는 현재 Agent Runtime이다.
 
 ## 2026-08-02 local semantic foundation
 
@@ -98,3 +98,14 @@
 ### 판정
 
 `improve`. 질문군과 실패 경계의 실측 폭은 넓어졌지만 모델 답변이나 테스트 통과를 verified 사용자 결과로 과장하지 않는다.
+
+## 2026-08-03 설치형 런타임 자동 교정과 실패 종료 강화
+
+- 최근 5개년 매출과 영업이익 질문에서 10개 대상·지표·기간 셀을 모두 요구하고, 불완전한 첫 답변은 같은 native session과 outcome에서 한 번만 자동 교정하도록 연결했다.
+- 후보 품질 실패와 최종 품질 판정을 별도 verify 이벤트로 남긴다. 실제품 재실행에서 최종 `verify: ok`와 종료코드 0을 확인했다.
+- 최종 품질이 거부된 실행은 Python ask에서 빈 문자열로, CLI에서 종료코드 0으로 위장하지 않는다.
+- 관련 AI runtime·capability·gateway·CLI 회귀 124개, Ruff, 신규 함수 coverage gate를 통과했다.
+
+### 판정
+
+`repair`. 근거가 부족한 답변의 공개와 실패 종료의 성공 위장을 차단했다. 이 실측은 제품 품질 근거지만 사용자의 exact evidence 확인 동작이 아니므로 북극성 분자에는 추가하지 않는다.

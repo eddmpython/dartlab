@@ -49,7 +49,7 @@ def embeddedMcpServerSpec() -> dict[str, object]:
     return {
         "name": "dartlab",
         "command": sys.executable,
-        "args": ["-X", "utf8", "-m", "dartlab.mcp"],
+        "args": ["-X", "utf8", "-m", "dartlab.mcp", "--profile", "agent"],
         "env": [{"name": "PYTHONUNBUFFERED", "value": "1"}],
     }
 
@@ -80,7 +80,7 @@ def buildMcpConnectPlan(runtimeId: str) -> McpConnectPlan:
     executable = discoverExecutable(descriptor)
     if executable is None:
         raise FileNotFoundError(runtimeId)
-    serverArgs = (sys.executable, "-X", "utf8", "-m", "dartlab.mcp")
+    serverArgs = (sys.executable, "-X", "utf8", "-m", "dartlab.mcp", "--profile", "agent")
     launch = runtimeExecutableArgv(descriptor, executable)
     if runtimeId == "codex":
         argv = (*launch, "mcp", "add", "dartlab", "--", *serverArgs)
@@ -164,14 +164,30 @@ def probeMcpConnection(runtimeId: str, *, refresh: bool = False) -> dict[str, ob
         check=False,
     )
     detail = (completed.stdout or completed.stderr).strip()
+    profileMatches = all(token in detail for token in ("dartlab.mcp", "--profile", "agent"))
+    if runtimeId == "claude" and completed.returncode == 0 and "Project config" in detail:
+        profileMatches = _claudeProjectMcpConfigured()
     result = {
-        "connected": completed.returncode == 0,
+        "connected": completed.returncode == 0 and profileMatches,
         "mode": "global-cli",
-        "detail": detail[:1000] or None,
+        "detail": (detail[:1000] or None) if profileMatches else "agent_profile_missing",
     }
     with _MCP_CACHE_LOCK:
         _MCP_CACHE[runtimeId] = (time.monotonic(), result)
     return dict(result)
+
+
+def _claudeProjectMcpConfigured(projectRoot: Path | None = None) -> bool:
+    """Claude project MCP 설정이 agent read-only profile을 명시하는지 확인한다."""
+    path = (projectRoot or Path.cwd()) / ".mcp.json"
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, TypeError, ValueError, json.JSONDecodeError):
+        return False
+    servers = value.get("mcpServers") if isinstance(value, dict) else None
+    server = servers.get("dartlab") if isinstance(servers, dict) else None
+    args = server.get("args") if isinstance(server, dict) else None
+    return isinstance(args, list) and all(token in args for token in ("dartlab.mcp", "--profile", "agent"))
 
 
 def _clineMcpConfigured(configRoot: Path | None = None) -> bool:

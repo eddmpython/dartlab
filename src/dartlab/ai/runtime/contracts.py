@@ -25,6 +25,26 @@ EventKind = Literal[
 
 RuntimeState = Literal["ready", "missing", "unavailable", "authRequired", "unknown"]
 
+PUBLIC_AGENT_EVENT_KINDS = (
+    "TEXT_MESSAGE_START",
+    "TEXT_MESSAGE_CONTENT",
+    "TEXT_MESSAGE_END",
+    "THINKING_DELTA",
+    "TOOL_CALL_START",
+    "TOOL_CALL_ARGS",
+    "TOOL_CALL_END",
+    "TOOL_CALL_RESULT",
+    "STATE_SNAPSHOT",
+    "STATE_DELTA",
+    "MESSAGES_SNAPSHOT",
+    "ACTIVITY_SNAPSHOT",
+    "ACTIVITY_DELTA",
+    "VIEW_SPEC",
+    "APPROVAL_REQUESTED",
+    "RUN_FINISHED",
+    "RUN_ERROR",
+)
+
 
 def nowIso() -> str:
     """Sig: nowIso() -> str.
@@ -51,6 +71,9 @@ class RuntimeDescriptor:
     officialUrl: str
     windowsLaunch: tuple[str, ...] = ()
     embeddedGrounding: bool = True
+    authProbeArgs: tuple[str, ...] = ()
+    authSuccessPattern: str | None = None
+    loginArgs: tuple[str, ...] = ()
 
     def toDict(self) -> dict[str, Any]:
         """Sig: toDict() -> dict[str, Any].

@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 
 from dartlab.productOutcome import OutcomeState
 
-from .contracts import EventKind, RuntimeState
+from .contracts import PUBLIC_AGENT_EVENT_KINDS, EventKind, RuntimeState
 
 
 class AgentEventModel(BaseModel):
@@ -71,10 +71,12 @@ def generateTypeScriptContracts() -> str:
     eventKinds = " | ".join(f"'{item}'" for item in get_args(EventKind))
     runtimeStates = " | ".join(f"'{item}'" for item in get_args(RuntimeState))
     outcomeStates = " | ".join(f"'{item}'" for item in get_args(OutcomeState))
+    publicEventKinds = " | ".join(f"'{item}'" for item in PUBLIC_AGENT_EVENT_KINDS)
     return f"""// Python src/dartlab/ai/runtime/schema.py에서 생성. 직접 수정하지 않는다.
 export type AgentEventKind = {eventKinds};
 export type RuntimeState = {runtimeStates};
 export type ProductOutcomeState = {outcomeStates};
+export type PublicAgentEventType = {publicEventKinds};
 
 export interface AgentEvent {{
   schemaVersion: string;

@@ -45,12 +45,7 @@ def ask(question: str, *, stream: bool = True, events: bool = False, **kwargs: A
 
 
 def _collectAnswer(events: Iterator[TraceEvent]) -> str:
-    """chunk 를 모으되, 한 글자도 못 만들고 끝난 실행은 조용히 빈 문자열로 돌려주지 않는다.
-
-    예전에는 chunk 만 걸러 이어 붙였다. provider 가 통째로 실패해 error 이벤트만 나온 실행도
-    빈 문자열을 돌려줬고, MCP 의 `ask` 는 그 위에 `ok: True` 를 고정으로 얹었다. 대표 진입점이
-    완전 실패를 성공이라 보고한 셈이다. 부분이라도 답이 나왔으면 그것은 그대로 돌려준다.
-    """
+    """검증 완료 chunk만 모으고 실패 종료를 빈 문자열이나 부분 성공으로 숨기지 않는다."""
     pieces: list[str] = []
     errors: list[str] = []
     for event in events:
@@ -60,10 +55,14 @@ def _collectAnswer(events: Iterator[TraceEvent]) -> str:
                 pieces.append(str(text))
         elif event.kind == "error":
             errors.append(str(event.data.get("error") or "unknown_error"))
-    if pieces:
-        return "".join(pieces)
+        elif event.kind == "done":
+            completionError = _doneFailure(event)
+            if completionError:
+                errors.append(completionError)
     if errors:
         raise AskFailedError(errors[-1])
+    if pieces:
+        return "".join(pieces)
     return ""
 
 
@@ -73,6 +72,24 @@ def _chunkIter(events: Iterator[TraceEvent]) -> Iterator[str]:
             text = event.data.get("text", "")
             if text:
                 yield str(text)
+        elif event.kind == "error":
+            raise AskFailedError(str(event.data.get("error") or "unknown_error"))
+        elif event.kind == "done":
+            completionError = _doneFailure(event)
+            if completionError:
+                raise AskFailedError(completionError)
+
+
+def _doneFailure(event: TraceEvent) -> str | None:
+    """실패 done 이벤트를 모든 ask 소비자가 공유하는 오류 문자열로 정규화한다."""
+    meta = event.data.get("responseMeta")
+    if not isinstance(meta, dict):
+        return None
+    finalEvent = str(meta.get("finalEvent") or "")
+    responseStatus = str(meta.get("responseStatus") or "")
+    if responseStatus != "failed" and finalEvent not in {"runtime_error", "failed", "unable"}:
+        return None
+    return str(meta.get("failureReason") or meta.get("failureCode") or "DartLab 답변 품질 검증에 실패했습니다")
 
 
 __all__ = ["AskFailedError", "ask", "createTask"]

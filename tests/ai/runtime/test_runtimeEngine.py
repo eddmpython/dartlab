@@ -313,6 +313,46 @@ def testRuntimeSelectionFailsClosedWithoutEmbeddedGrounding(tmp_path, monkeypatc
         engine.selectRuntime("fake")
 
 
+def testMultipleReadyRuntimesRequireServerOwnedSelection(tmp_path, monkeypatch):
+    descriptors = {
+        runtimeId: RuntimeDescriptor(
+            runtimeId,
+            runtimeId,
+            "fake",
+            "ndjson",
+            (runtimeId,),
+            ("--version",),
+            (),
+            (),
+            "https://example.invalid",
+        )
+        for runtimeId in ("one", "two")
+    }
+    monkeypatch.setattr(
+        runtimeEngineModule,
+        "probeRuntime",
+        lambda descriptor, **_kwargs: RuntimeProbe(descriptor.runtimeId, "ready", sysExecutable()),
+    )
+    monkeypatch.setattr(
+        runtimeEngineModule,
+        "probeRuntimeAuth",
+        lambda descriptor, **_kwargs: {"state": "unsupported", "authenticated": None},
+    )
+    monkeypatch.setattr(
+        runtimeEngineModule,
+        "probeMcpConnection",
+        lambda runtimeId, **_kwargs: {"connected": True, "mode": "test"},
+    )
+    engine = AgentRuntimeEngine(SessionStore(tmp_path / "sessions.sqlite3"), SessionManager())
+    engine.registry = descriptors
+
+    with pytest.raises(RuntimeError, match="여러 개"):
+        engine.selectRuntime()
+
+    assert engine.setDefaultRuntime("two") == "two"
+    assert engine.selectRuntime() == "two"
+
+
 def sysExecutable() -> str:
     import sys
 

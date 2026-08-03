@@ -19,7 +19,7 @@ from dartlab.productOutcome import advanceOutcome, registerOutcomeEvidence, star
 from .analysisCapsule import buildAnalysisCapsule, buildTurnQuestion
 from .answerQuality import evaluateAnswerQuality
 from .contracts import AgentEvent, RuntimeSession, nowIso
-from .discovery import probeAllRuntimes, probeRuntime
+from .discovery import probeAllRuntimes, probeRuntime, probeRuntimeAuth
 from .drivers import AcpDriver, ClaudeStreamJsonDriver, CodexAppServerDriver
 from .drivers.base import AgentRuntimeDriver
 from .eventBuffer import EventBuffer
@@ -30,6 +30,7 @@ from .sessionManager import ManagedSession, SessionManager
 from .sessionStore import SessionStore
 
 logger = logging.getLogger(__name__)
+_DEFAULT_RUNTIME_PREFERENCE = "defaultRuntimeId"
 
 _GROUNDING_TOOL_NAMES = frozenset(
     {
@@ -82,6 +83,30 @@ class _OutcomeTracker:
             logger.exception("product outcome 시작 기록 실패")
             return cls(None, question, coverageContract=coverage)
 
+    @classmethod
+    def resume(
+        cls,
+        question: str,
+        *,
+        outcomeId: str,
+        refs: list[dict[str, Any]],
+        readSkillCalls: int,
+    ) -> _OutcomeTracker:
+        """같은 native session의 교정 턴이 기존 outcome과 근거를 이어받게 한다."""
+        from dartlab.reference.capability.analysisGraph import coveragePacketForQuestion
+
+        registered = {str(ref["id"]): dict(ref) for ref in refs if isinstance(ref, dict) and ref.get("id")}
+        return cls(
+            outcomeId,
+            question,
+            scoped=bool(registered),
+            grounded=bool(registered),
+            registeredRefIds=set(registered),
+            registeredRefs=registered,
+            readSkillCalls=readSkillCalls,
+            coverageContract=coveragePacketForQuestion(question),
+        )
+
     def enrich(self, event: AgentEvent) -> dict[str, Any]:
         """tool 상관관계와 evidence receipt를 반영한 공개 payload를 만든다."""
         payload = dict(event.payload)
@@ -90,6 +115,11 @@ class _OutcomeTracker:
             toolName = _toolName(payload)
             if toolId and toolName:
                 self.toolNames[toolId] = toolName
+            if toolName:
+                payload["nativeName"] = toolName
+                payload["canonicalName"] = _canonicalToolName(toolName)
+            if toolId:
+                payload["toolCallId"] = toolId
         elif event.kind == "toolCompleted":
             self._groundToolResult(payload, toolId=toolId)
         elif event.kind == "turnCompleted":
@@ -108,6 +138,10 @@ class _OutcomeTracker:
         toolName = _toolName(payload) or self.toolNames.get(toolId, "")
         if toolName:
             payload["toolName"] = toolName
+            payload["nativeName"] = toolName
+            payload["canonicalName"] = _canonicalToolName(toolName)
+        if toolId:
+            payload["toolCallId"] = toolId
         if _canonicalToolName(toolName) == "ReadSkill" and not _toolFailed(payload):
             self.readSkillCalls += 1
         refDetails = _evidenceDetails(payload)
@@ -131,12 +165,10 @@ class _OutcomeTracker:
 
     def _canGround(self, toolName: str, refIds: list[str], payload: dict[str, Any]) -> bool:
         """현재 completion이 실제 DartLab grounding receipt인지 판정한다."""
-        return bool(
-            self.outcomeId
-            and _canonicalToolName(toolName) in _GROUNDING_TOOL_NAMES
-            and refIds
-            and not _toolFailed(payload)
-        )
+        canonical = _canonicalToolName(toolName)
+        if canonical == "RunPython" and not _runPythonEvidenceHasLineage(_evidenceDetails(payload)):
+            return False
+        return bool(self.outcomeId and canonical in _GROUNDING_TOOL_NAMES and refIds and not _toolFailed(payload))
 
     def observe(self, event: AgentEvent) -> None:
         """전달, 완료, 실패 표식만 누적한다."""
@@ -237,13 +269,26 @@ class AgentRuntimeEngine:
             mcp = (
                 probeMcpConnection(probe.runtimeId, refresh=refresh) if probe.state == "ready" else {"connected": False}
             )
-            groundedReady = probe.state == "ready" and descriptor.embeddedGrounding and bool(mcp.get("connected"))
+            auth = (
+                probeRuntimeAuth(descriptor, executable=probe.executable)
+                if probe.state == "ready"
+                else {"state": "missing", "authenticated": False, "checkedAt": probe.checkedAt}
+            )
+            groundedReady = (
+                probe.state == "ready"
+                and auth.get("state") in {"authenticated", "unsupported"}
+                and descriptor.embeddedGrounding
+                and bool(mcp.get("connected"))
+            )
             if not descriptor.embeddedGrounding:
                 blockingReason = "현재 CLI 프로토콜이 DartLab 근거 도구를 세션에 노출하지 않습니다"
                 recommendedAction = "공식 프로토콜 지원을 기다리거나 다른 런타임을 선택하세요"
             elif probe.state != "ready":
                 blockingReason = "CLI가 설치되지 않았거나 실행할 수 없습니다"
                 recommendedAction = "검증된 설치 계획을 확인하세요"
+            elif auth.get("state") not in {"authenticated", "unsupported"}:
+                blockingReason = "CLI 로그인이 확인되지 않았습니다"
+                recommendedAction = "공식 CLI 로그인 명령을 실행한 뒤 다시 확인하세요"
             elif not mcp.get("connected"):
                 blockingReason = "DartLab MCP 연결이 확인되지 않았습니다"
                 recommendedAction = "검증된 MCP 연결 계획을 확인하세요"
@@ -255,14 +300,52 @@ class AgentRuntimeEngine:
                     **descriptor.toDict(),
                     **probe.toDict(),
                     "mcp": mcp,
+                    "auth": auth,
                     "groundedReady": groundedReady,
                     "canInstall": descriptor.embeddedGrounding and probe.state != "ready",
                     "canConnect": descriptor.embeddedGrounding and probe.state == "ready" and not mcp.get("connected"),
+                    "canLogin": probe.state == "ready"
+                    and bool(descriptor.loginArgs)
+                    and auth.get("state") != "authenticated",
+                    "readiness": {
+                        "install": "ready" if probe.state == "ready" else probe.state,
+                        "auth": auth.get("state"),
+                        "protocol": "supported" if descriptor.embeddedGrounding else "unsupported",
+                        "grounding": "connected" if mcp.get("connected") else "disconnected",
+                        "ready": groundedReady,
+                    },
+                    "primaryAction": (
+                        "install"
+                        if probe.state != "ready"
+                        else "login"
+                        if auth.get("state") != "authenticated" and descriptor.loginArgs
+                        else "connect"
+                        if descriptor.embeddedGrounding and not mcp.get("connected")
+                        else "select"
+                        if groundedReady
+                        else "unsupported"
+                    ),
                     "blockingReason": blockingReason,
                     "recommendedAction": recommendedAction,
                 }
             )
-        return {"runtimes": runtimes, "sessions": self.sessionManager.status()}
+        defaultRuntimeId = self.sessionStore.getPreference(_DEFAULT_RUNTIME_PREFERENCE)
+        if defaultRuntimeId not in self.registry:
+            defaultRuntimeId = None
+        groundedIds = [str(item["runtimeId"]) for item in runtimes if item.get("groundedReady")]
+        if defaultRuntimeId is None and len(groundedIds) == 1:
+            defaultRuntimeId = groundedIds[0]
+        return {
+            "runtimes": runtimes,
+            "sessions": self.sessionManager.status(),
+            "defaultRuntimeId": defaultRuntimeId,
+        }
+
+    def setDefaultRuntime(self, runtimeId: str) -> str:
+        """준비가 끝난 런타임만 새 대화의 서버 기본값으로 저장한다."""
+        selected = self.selectRuntime(runtimeId)
+        self.sessionStore.setPreference(_DEFAULT_RUNTIME_PREFERENCE, selected)
+        return selected
 
     def selectRuntime(self, preferredRuntimeId: str | None = None) -> str:
         """Sig: selectRuntime(preferredRuntimeId=None) -> str.
@@ -277,6 +360,12 @@ class AgentRuntimeEngine:
                 raise KeyError(preferredRuntimeId)
             if probeRuntime(self.registry[preferredRuntimeId]).state != "ready":
                 raise RuntimeUnavailableError(f"{preferredRuntimeId} CLI를 사용할 수 없습니다")
+            probe = probeRuntime(self.registry[preferredRuntimeId])
+            if probeRuntimeAuth(self.registry[preferredRuntimeId], executable=probe.executable).get("state") not in {
+                "authenticated",
+                "unsupported",
+            }:
+                raise RuntimeUnavailableError(f"{preferredRuntimeId} CLI 로그인이 필요합니다")
             if not self.registry[preferredRuntimeId].embeddedGrounding:
                 raise RuntimeUnavailableError(
                     f"{preferredRuntimeId}의 현재 ACP 구현은 embedded DartLab MCP를 노출하지 않습니다"
@@ -287,13 +376,26 @@ class AgentRuntimeEngine:
                     f"`dartlab agent connect {preferredRuntimeId}`로 승인 계획을 확인하세요"
                 )
             return preferredRuntimeId
-        for runtimeId, descriptor in self.registry.items():
-            if (
-                descriptor.embeddedGrounding
-                and probeRuntime(descriptor).state == "ready"
-                and probeMcpConnection(runtimeId).get("connected")
-            ):
-                return runtimeId
+        stored = self.sessionStore.getPreference(_DEFAULT_RUNTIME_PREFERENCE)
+        if stored:
+            try:
+                return self.selectRuntime(stored)
+            except (KeyError, RuntimeUnavailableError):
+                pass
+        ready = [
+            runtimeId
+            for runtimeId, descriptor in self.registry.items()
+            if descriptor.embeddedGrounding
+            and probeRuntime(descriptor).state == "ready"
+            and probeRuntimeAuth(descriptor).get("state") in {"authenticated", "unsupported"}
+            and probeMcpConnection(runtimeId).get("connected")
+        ]
+        if len(ready) == 1:
+            return ready[0]
+        if len(ready) > 1:
+            raise RuntimeUnavailableError(
+                "사용 가능한 런타임이 여러 개입니다. Runtime Center에서 새 대화의 기본 런타임을 선택하세요"
+            )
         raise RuntimeUnavailableError(
             "DartLab MCP까지 준비된 로컬 에이전트를 찾지 못했습니다. "
             "`dartlab agent status --refresh`에서 설치와 연결 상태를 확인하세요"
@@ -393,6 +495,10 @@ class AgentRuntimeEngine:
         question: str,
         *,
         context: dict[str, Any] | None = None,
+        outcomeId: str | None = None,
+        priorRefs: list[dict[str, Any]] | None = None,
+        priorReadSkillCalls: int = 0,
+        qualityQuestion: str | None = None,
     ) -> Iterator[AgentEvent]:
         """Sig: streamTurn(sessionId, question) -> Iterator[AgentEvent].
 
@@ -407,7 +513,16 @@ class AgentRuntimeEngine:
         if not managed.turnLock.acquire(blocking=False):
             raise RuntimeError("같은 세션에서 이미 다른 턴이 실행 중입니다")
         try:
-            tracker = _OutcomeTracker.start(question)
+            tracker = (
+                _OutcomeTracker.resume(
+                    qualityQuestion or question,
+                    outcomeId=outcomeId,
+                    refs=priorRefs or [],
+                    readSkillCalls=priorReadSkillCalls,
+                )
+                if outcomeId
+                else _OutcomeTracker.start(qualityQuestion or question)
+            )
             mcp = probeMcpConnection(managed.handle.descriptor.runtimeId)
             instructions = buildAnalysisCapsule(cwd=managed.handle.cwd, mcpConnected=bool(mcp.get("connected")))
             turnQuestion = buildTurnQuestion(question, context)
@@ -599,6 +714,23 @@ def _canonicalToolName(name: str) -> str:
     return aliases.get(value, value)
 
 
+def _runPythonEvidenceHasLineage(refs: list[dict[str, Any]]) -> bool:
+    """RunPython 파생 근거가 canonical upstream ref를 모두 보존했는지 확인한다."""
+    derived = [ref for ref in refs if ref.get("kind") in {"tableRef", "valueRef", "dateRef"}]
+    if not derived:
+        return False
+    for ref in derived:
+        provenance = ref.get("payload", {}).get("provenance") if isinstance(ref.get("payload"), dict) else None
+        if not isinstance(provenance, list) or not any(
+            isinstance(item, str)
+            and item.startswith(("table:", "doc:", "value:", "date:", "dataset:"))
+            and ":local:" not in item
+            for item in provenance
+        ):
+            return False
+    return True
+
+
 def _toolFailed(payload: dict[str, Any]) -> bool:
     """Sig: _toolFailed(payload) -> bool.
 
@@ -701,6 +833,7 @@ def _publicEvidencePayload(value: Any, *, kind: str = "") -> dict[str, Any]:
         "period",
         "periods",
         "metric",
+        "canonicalMetricId",
         "metrics",
         "value",
         "unit",
@@ -716,6 +849,9 @@ def _publicEvidencePayload(value: Any, *, kind: str = "") -> dict[str, Any]:
         "statement",
         "sourcePeriods",
         "provenance",
+        "sourceRef",
+        "key",
+        "timeseries",
     }
     byKind = {
         "tableRef": {"rows", "columns", "missingCells", "filter", "formula", "universe", "datasetAsOf"},

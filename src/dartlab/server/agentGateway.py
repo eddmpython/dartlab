@@ -10,6 +10,7 @@ from typing import Any
 
 from dartlab.ai.agent import runRuntimeAgent
 from dartlab.ai.contracts import TraceEvent
+from dartlab.ai.runtime.contracts import PUBLIC_AGENT_EVENT_KINDS
 from dartlab.ai.tools.registry import _LEGACY_NAME_MAP, CANONICAL_TOOL_NAMES
 
 from . import agentMetrics
@@ -21,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 def _displayName(tool: str) -> str:
     """도구 이름을 UI 표시용으로 정규화 — registry _LEGACY_NAME_MAP SSOT 위 wrapping."""
-    canonical = _LEGACY_NAME_MAP.get(tool, tool)
+    canonical = _canonicalToolName(tool)
     if canonical in CANONICAL_TOOL_NAMES:
         return canonical
     if tool == "verify":  # Workbench GATE 패스의 별칭 — registry canonical 외 display only.
@@ -33,25 +34,7 @@ def _displayName(tool: str) -> str:
 # + snake_case legacy alias 가 동시에 화이트리스트에 들어간다.
 _PUBLIC_TOOL_NAMES = set(CANONICAL_TOOL_NAMES) | set(_LEGACY_NAME_MAP.keys()) | {"verify"}
 
-_ALLOWED_EVENTS = {
-    "TEXT_MESSAGE_START",
-    "TEXT_MESSAGE_CONTENT",
-    "TEXT_MESSAGE_END",
-    "THINKING_DELTA",
-    "TOOL_CALL_START",
-    "TOOL_CALL_ARGS",
-    "TOOL_CALL_END",
-    "TOOL_CALL_RESULT",
-    "STATE_SNAPSHOT",
-    "STATE_DELTA",
-    "MESSAGES_SNAPSHOT",
-    "ACTIVITY_SNAPSHOT",
-    "ACTIVITY_DELTA",
-    "VIEW_SPEC",
-    "APPROVAL_REQUESTED",
-    "RUN_FINISHED",
-    "RUN_ERROR",
-}
+_ALLOWED_EVENTS = set(PUBLIC_AGENT_EVENT_KINDS)
 
 
 async def streamAgentRun(req: AgentRunRequest) -> AsyncIterator[dict[str, str]]:
@@ -64,7 +47,8 @@ async def streamAgentRun(req: AgentRunRequest) -> AsyncIterator[dict[str, str]]:
     runId = uuid.uuid4().hex
     messageId = f"msg-{uuid.uuid4().hex}"
     text_started = False
-    completed = False
+    terminal_seen = False
+    error_sent = False
 
     kernelKwargs = _kernelKwargs(req)
     agentMetrics.record("agent-runtime")
@@ -87,18 +71,51 @@ async def streamAgentRun(req: AgentRunRequest) -> AsyncIterator[dict[str, str]]:
                 if public["event"] == "TEXT_MESSAGE_CONTENT" and not text_started:
                     text_started = True
                     yield _event("TEXT_MESSAGE_START", {"messageId": messageId, "role": "assistant"})
+                if public["event"] == "RUN_ERROR":
+                    if error_sent:
+                        continue
+                    error_sent = True
+                if public["event"] == "RUN_FINISHED":
+                    if text_started:
+                        yield _event("TEXT_MESSAGE_END", {"messageId": messageId})
+                        text_started = False
+                    terminal_seen = True
                 yield public
-        if text_started:
-            yield _event("TEXT_MESSAGE_END", {"messageId": messageId})
-        completed = True
+        if not terminal_seen:
+            if text_started:
+                yield _event("TEXT_MESSAGE_END", {"messageId": messageId})
+                text_started = False
+            if not error_sent:
+                error_sent = True
+                yield _event(
+                    "RUN_ERROR",
+                    {
+                        "runId": runId,
+                        "message": "에이전트 스트림이 완료 이벤트 없이 종료되었습니다.",
+                        "code": "stream_interrupted",
+                    },
+                )
+            yield _event(
+                "RUN_FINISHED",
+                {"runId": runId, "status": "failed", "refs": [], "suggestedQuestions": []},
+            )
+            terminal_seen = True
     except Exception as exc:  # noqa: BLE001
         logger.exception("agent run failed (runId=%s)", runId)
-        yield _event(
-            "RUN_ERROR",
-            {"runId": runId, "message": _publicFailure(str(exc)), "code": "agent_run_failed"},
-        )
+        if text_started:
+            yield _event("TEXT_MESSAGE_END", {"messageId": messageId})
+        if not error_sent:
+            yield _event(
+                "RUN_ERROR",
+                {"runId": runId, "message": _publicFailure(str(exc)), "code": "agent_run_failed"},
+            )
+        if not terminal_seen:
+            yield _event(
+                "RUN_FINISHED",
+                {"runId": runId, "status": "failed", "refs": [], "suggestedQuestions": []},
+            )
     finally:
-        if not completed and req.threadId:
+        if not terminal_seen and req.threadId:
             try:
                 from dartlab.ai.runtime import getRuntimeEngine
 
@@ -186,8 +203,9 @@ def _toolStartEvents(data: dict, *, runId: str, messageId: str) -> list[dict[str
     payload: dict[str, Any] = {
         "runId": runId,
         "messageId": messageId,
-        "toolCallId": str(data.get("id") or tool),
+        "toolCallId": str(data.get("toolCallId") or data.get("id") or tool),
         "toolName": _displayTool(tool),
+        "nativeToolName": str(data.get("nativeName") or tool),
         "args": data.get("input") if isinstance(data.get("input"), dict) else {},
         "status": "running",
     }
@@ -206,13 +224,14 @@ def _toolResultEvents(data: dict, *, runId: str, messageId: str) -> list[dict[st
     if tool not in _PUBLIC_TOOL_NAMES:
         return []
     status = "error" if data.get("status") == "error" else "done"
-    toolCallId = str(data.get("id") or tool)
+    toolCallId = str(data.get("toolCallId") or data.get("id") or tool)
     displayName = _displayTool(tool)
     resultEvent: dict[str, Any] = {
         "runId": runId,
         "messageId": messageId,
         "toolCallId": toolCallId,
         "toolName": displayName,
+        "nativeToolName": str(data.get("nativeName") or tool),
         "status": status,
         "summary": str(data.get("outputSummary") or data.get("summary") or ""),
         "refs": [str(v) for v in data.get("evidenceRefs") or []],
@@ -227,6 +246,7 @@ def _toolResultEvents(data: dict, *, runId: str, messageId: str) -> list[dict[st
         "messageId": messageId,
         "toolCallId": toolCallId,
         "toolName": displayName,
+        "nativeToolName": str(data.get("nativeName") or tool),
         "status": status,
     }
     passLabel = _passLabel(data)
@@ -248,6 +268,8 @@ def _doneEvents(data: dict, *, runId: str) -> list[dict[str, str]]:
             "runId": runId,
             "status": status,
             "refs": _refIds(data.get("refs") if isinstance(data.get("refs"), list) else []),
+            "candidateRefs": _refIds(data.get("candidateRefs") if isinstance(data.get("candidateRefs"), list) else []),
+            "candidateRefDetails": _publicRefDetails(data.get("candidateRefs")),
             "artifacts": [a for a in data.get("artifacts") or [] if isinstance(a, dict)],
             "responseMeta": _publicResponseMeta(data.get("responseMeta") or {}),
             "suggestedQuestions": _suggestFollowups(data) if status == "ok" else [],
@@ -477,7 +499,14 @@ def _viewSpec(
 
 
 def _toolName(data: dict[str, Any]) -> str:
-    return str(data.get("name") or data.get("tool") or "tool")
+    raw = str(data.get("canonicalName") or data.get("name") or data.get("tool") or "tool")
+    return _canonicalToolName(raw)
+
+
+def _canonicalToolName(tool: str) -> str:
+    """runtime별 MCP prefix와 legacy alias를 공개 canonical 이름으로 정규화한다."""
+    value = str(tool).rsplit("__", 1)[-1].rsplit("/", 1)[-1]
+    return _LEGACY_NAME_MAP.get(value, value)
 
 
 def _displayTool(tool: str) -> str:
@@ -605,6 +634,13 @@ def _publicResponseMeta(meta: dict[str, Any]) -> dict[str, Any]:
         "responseStatus",
         "answerQuality",
         "runtimeCoverage",
+        "runtimeId",
+        "sessionId",
+        "outcomeId",
+        "verificationStatus",
+        "repairAttempt",
+        "failureCode",
+        "initialQualityIssues",
     }
     return {key: meta.get(key) for key in allowed if key in meta}
 

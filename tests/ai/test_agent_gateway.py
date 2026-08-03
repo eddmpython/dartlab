@@ -36,6 +36,30 @@ def test_display_name_uses_registry_legacy_map() -> None:
     assert "verify" in _PUBLIC_TOOL_NAMES
 
 
+def testPrefixedNativeMcpToolIsProjectedAsCanonicalPublicTool() -> None:
+    from dartlab.server.agentGateway import _publicEvents
+
+    events = _publicEvents(
+        TraceEvent(
+            "tool_start",
+            {
+                "name": "mcp__dartlab__EngineCall",
+                "nativeName": "mcp__dartlab__EngineCall",
+                "canonicalName": "EngineCall",
+                "toolCallId": "call-1",
+                "input": {"apiRef": "Company.panel"},
+            },
+        ),
+        runId="run-1",
+        messageId="message-1",
+    )
+
+    assert len(events) == 1
+    payload = _payload(events[0])
+    assert payload["toolName"] == "EngineCall"
+    assert payload["toolCallId"] == "call-1"
+
+
 def test_agent_gateway_public_events_hide_internal_kernel_names(monkeypatch) -> None:
     import dartlab.server.agentGateway as agent_gateway
 

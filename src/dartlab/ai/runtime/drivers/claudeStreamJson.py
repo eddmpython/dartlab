@@ -16,15 +16,16 @@ from .base import DriverHandle, remainingTurnSeconds, runtimeLaunchArgv, runtime
 
 
 def _claudeToolArgs() -> tuple[str, ...]:
-    """MCP 검색 관문과 읽기 전용 DartLab MCP 도구만 허용한다."""
+    """읽기 전용 DartLab MCP 도구만 명시적으로 허용한다."""
+    allowed = ",".join(claudeReadOnlyMcpTools())
     return (
         "--tools",
-        "ToolSearch",
+        allowed,
         "--disable-slash-commands",
         "--permission-mode",
         "dontAsk",
         "--allowedTools",
-        ",".join(("ToolSearch", *claudeReadOnlyMcpTools())),
+        allowed,
     )
 
 

@@ -127,6 +127,8 @@ class AnswerQualityReport:
     contractIds: tuple[str, ...]
     requiredEvidence: tuple[str, ...]
     readSkillCalls: int | None
+    requiredClaimCells: int
+    coveredClaimCells: int
 
     def toDict(self) -> dict[str, Any]:
         """JSON 직렬화 가능한 공개 품질 요약을 반환한다."""
@@ -201,6 +203,8 @@ def evaluateAnswerQuality(
         )
     )
 
+    requiredClaimCells, coveredClaimCells = _claimCellCoverage(question, usableCited)
+
     uniqueIssues = tuple(dict.fromkeys(issues))
     score = max(0, 100 - 20 * len(uniqueIssues))
     return AnswerQualityReport(
@@ -212,6 +216,8 @@ def evaluateAnswerQuality(
         contractIds=contractIds,
         requiredEvidence=requiredEvidence,
         readSkillCalls=readSkillCalls,
+        requiredClaimCells=requiredClaimCells,
+        coveredClaimCells=coveredClaimCells,
     )
 
 
@@ -299,7 +305,72 @@ def _coverageContractIssues(
         issues.append("target_evidence_mismatch")
     if contract == "quantitative" and not _coversQuestionMetrics(question, cited):
         issues.append("metric_evidence_mismatch")
+    requiredCells, coveredCells = _claimCellCoverage(question, cited)
+    if contract == "quantitative" and requiredCells and coveredCells < requiredCells:
+        issues.append("claim_cell_coverage_incomplete")
     return issues
+
+
+def _claimCellCoverage(question: str, cited: list[dict[str, Any]]) -> tuple[int, int]:
+    """질문이 요구한 대상 x 지표 x 기간 셀을 valueRef 단위로 대조한다."""
+    metrics = [name for name, _aliases in _requestedMetrics(question)]
+    if not metrics:
+        return 0, 0
+    explicitPeriods = _questionPeriods(question)
+    recentMatch = re.search(r"최근\s*(\d{1,2})\s*(?:개\s*)?(분기|년|연도)", question.casefold())
+    if not explicitPeriods and recentMatch is None:
+        return 0, 0
+
+    requestedTargets = set(re.findall(r"(?<!\d)\d{6}(?!\d)", question))
+    targets: tuple[str | None, ...] = tuple(sorted(requestedTargets)) if requestedTargets else (None,)
+    valueRefs = [ref for ref in cited if ref.get("kind") == "valueRef"]
+
+    def _matchingPeriods(metric: str, target: str | None) -> set[str]:
+        """하나의 대상과 지표를 증명하는 canonical 기간 집합을 반환한다."""
+        periods: set[str] = set()
+        for ref in valueRefs:
+            if _metricId(ref) != metric:
+                continue
+            if target is not None and target not in _targetCodes(ref):
+                continue
+            periods.update(_evidencePeriods([ref]))
+        return periods
+
+    if explicitPeriods:
+        required = len(targets) * len(metrics) * len(explicitPeriods)
+        covered = sum(
+            1
+            for target in targets
+            for metric in metrics
+            for period in explicitPeriods
+            if period in _matchingPeriods(metric, target)
+        )
+        return required, covered
+
+    assert recentMatch is not None
+    requiredCount = int(recentMatch.group(1))
+    wantsQuarters = recentMatch.group(2) == "분기"
+    required = len(targets) * len(metrics) * requiredCount
+    covered = 0
+    for target in targets:
+        for metric in metrics:
+            periods = _matchingPeriods(metric, target)
+            relevant = {period for period in periods if ("Q" in period) == wantsQuarters}
+            covered += min(requiredCount, len(relevant))
+    return required, covered
+
+
+def _metricId(ref: dict[str, Any]) -> str | None:
+    """valueRef의 canonical metric ID를 반환하고 구형 ref는 alias로 보완한다."""
+    payload = _payload(ref)
+    canonical = payload.get("canonicalMetricId")
+    if isinstance(canonical, str) and canonical.strip():
+        return canonical.strip().casefold()
+    semantic = " ".join(_refSemanticParts(ref))
+    for name, _questionAliases, evidenceAliases in _METRIC_SPECS:
+        if _matchesAnyAlias(semantic, evidenceAliases):
+            return name
+    return None
 
 
 def _hasBoundValue(prose: str, cited: list[dict[str, Any]]) -> bool:
@@ -459,6 +530,9 @@ def _evidenceIssues(cited: list[dict[str, Any]]) -> list[str]:
         if not payload:
             issues.append("evidence_payload_empty")
             continue
+        if kind in {"tableRef", "valueRef", "dateRef"} and not _hasGroundedLineage(ref):
+            issues.append("derived_evidence_lineage_missing")
+            continue
         if kind == "tableRef" and not _hasTableContent(payload):
             issues.append("table_evidence_empty")
         elif kind == "valueRef" and not _isConcreteScalar(payload.get("value")):
@@ -475,6 +549,8 @@ def _isUsableEvidence(ref: dict[str, Any]) -> bool:
     payload = _payload(ref)
     if not payload:
         return False
+    if kind in {"tableRef", "valueRef", "dateRef"} and not _hasGroundedLineage(ref):
+        return False
     if kind == "tableRef":
         return _hasTableContent(payload)
     if kind == "valueRef":
@@ -482,6 +558,24 @@ def _isUsableEvidence(ref: dict[str, Any]) -> bool:
     if kind == "dateRef":
         return _hasConcreteDate(payload)
     return True
+
+
+def _hasGroundedLineage(ref: dict[str, Any]) -> bool:
+    """RunPython 실행에서 파생된 ref는 canonical upstream lineage가 있어야 한다."""
+    source = str(ref.get("source") or "").casefold()
+    refId = str(ref.get("id") or "").casefold()
+    isExecutionDerived = source.startswith("execution:") or ":local:" in refId or source == "run_python"
+    if not isExecutionDerived:
+        return True
+    provenance = _payload(ref).get("provenance")
+    if not isinstance(provenance, list):
+        return False
+    return any(
+        isinstance(item, str)
+        and item.startswith(("table:", "doc:", "value:", "date:", "dataset:"))
+        and ":local:" not in item
+        for item in provenance
+    )
 
 
 def _hasTableContent(payload: dict[str, Any]) -> bool:
@@ -596,8 +690,10 @@ def _coversQuestionMetrics(question: str, cited: list[dict[str, Any]]) -> bool:
     if not requested:
         return True
     valueRefs = [ref for ref in cited if ref.get("kind") == "valueRef"]
-    for _name, aliases in requested:
-        if not any(_matchesAnyAlias(" ".join(_refSemanticParts(ref)), aliases) for ref in valueRefs):
+    for name, aliases in requested:
+        if not any(
+            _metricId(ref) == name or _matchesAnyAlias(" ".join(_refSemanticParts(ref)), aliases) for ref in valueRefs
+        ):
             return False
     return True
 
@@ -635,7 +731,7 @@ def _matchesAnyAlias(value: str, aliases: tuple[str, ...]) -> bool:
 def _refSemanticParts(ref: dict[str, Any]) -> list[str]:
     parts = [str(ref.get(key) or "") for key in ("id", "title", "source")]
     payload = _payload(ref)
-    for key in ("metric", "key", "snakeId", "item", "label", "name"):
+    for key in ("canonicalMetricId", "metric", "key", "snakeId", "item", "label", "name"):
         value = payload.get(key)
         if isinstance(value, (str, int, float)) and not isinstance(value, bool):
             parts.append(str(value))
@@ -652,6 +748,10 @@ def _compactSemantic(value: str) -> str:
 
 def _questionPeriods(question: str) -> set[str]:
     periods: set[str] = set()
+    for periodRange in re.finditer(r"(?<!\d)(20\d{2})\s*(?:-|~|부터)\s*(20\d{2})(?!\d)", question):
+        start, end = (int(value) for value in periodRange.groups())
+        if start <= end and end - start < 20:
+            periods.update(str(year) for year in range(start, end + 1))
     for match in re.finditer(r"(?<!\d)(20\d{2})(?:\s*년)?(?:\s*(?:Q([1-4])|([1-4])\s*분기))?", question):
         year = match.group(1)
         quarter = match.group(2) or match.group(3)

@@ -1119,8 +1119,10 @@ def runRuntimeAgent(question: str, **kwargs: Any) -> Iterator[TraceEvent]:
     answerParts: list[str] = []
     evidenceRefs: list[dict[str, Any]] = []
     outcomeId: str | None = None
+    activeSessionId: str | None = None
     failed = False
-    terminalSeen = False
+    terminalEvent: Any | None = None
+    repairAttempt = 0
     try:
         for event in engine.stream(
             question,
@@ -1131,6 +1133,7 @@ def runRuntimeAgent(question: str, **kwargs: Any) -> Iterator[TraceEvent]:
         ):
             if event.payload.get("outcomeId"):
                 outcomeId = str(event.payload["outcomeId"])
+            activeSessionId = event.sessionId or activeSessionId
             if event.kind in {"sessionStarted", "sessionResumed"}:
                 yield TraceEvent(
                     "runtime_session",
@@ -1154,6 +1157,7 @@ def runRuntimeAgent(question: str, **kwargs: Any) -> Iterator[TraceEvent]:
                 if text:
                     yield TraceEvent("thinking", {"text": text})
             elif event.kind == "toolStarted":
+                answerParts.clear()
                 yield TraceEvent("tool_start", _runtimeToolData(event.payload, status="running"))
             elif event.kind == "toolCompleted":
                 _appendRuntimeEvidenceRefs(evidenceRefs, event.payload.get("refDetails"))
@@ -1174,31 +1178,9 @@ def runRuntimeAgent(question: str, **kwargs: Any) -> Iterator[TraceEvent]:
                 yield TraceEvent("event_gap", event.payload)
             elif event.kind == "runtimeError":
                 failed = True
-                yield TraceEvent("error", {"error": str(event.payload.get("error") or "runtime_error")})
             elif event.kind == "turnCompleted":
-                terminalSeen = True
-                answer = "".join(answerParts)
-                quality = _runtimeAnswerQuality(question, answer, evidenceRefs, event.payload, failed=failed)
-                committed = quality.passed
-                if committed:
-                    yield TraceEvent("chunk", {"text": answer})
-                else:
-                    failed = True
-                    yield TraceEvent(
-                        "error",
-                        {"error": "runtime answer did not satisfy the DartLab evidence commit contract"},
-                    )
-                yield TraceEvent(
-                    "done",
-                    _runtimeDoneData(
-                        event,
-                        answerCommitted=committed,
-                        refs=evidenceRefs,
-                        outcomeId=outcomeId,
-                        qualityReport=quality.toDict(),
-                    ),
-                )
-        if not terminalSeen:
+                terminalEvent = event
+        if terminalEvent is None:
             yield TraceEvent(
                 "done",
                 {
@@ -1207,12 +1189,120 @@ def runRuntimeAgent(question: str, **kwargs: Any) -> Iterator[TraceEvent]:
                     "responseMeta": {
                         "finalEvent": "runtime_error",
                         "responseStatus": "failed",
+                        "candidateRefs": evidenceRefs,
                         "failureReason": "runtime ended without a completed turn",
                     },
                 },
             )
+            return
+
+        answer = "".join(answerParts).strip()
+        quality = _runtimeAnswerQuality(question, answer, evidenceRefs, terminalEvent.payload, failed=failed)
+        firstIssues = tuple(quality.issues)
+        if (
+            not quality.passed
+            and not failed
+            and activeSessionId
+            and outcomeId
+            and answer
+            and "runtime_not_completed" not in quality.issues
+        ):
+            repairAttempt = 1
+            yield TraceEvent(
+                "verify",
+                _runtimeVerifyData(quality, stage="candidate", repairAttempt=repairAttempt),
+            )
+            repairParts: list[str] = []
+            repairFailed = False
+            repairTerminal: Any | None = None
+            readSkillCalls = _runtimeReadSkillCalls(terminalEvent.payload)
+            repairPrompt = _runtimeRepairPrompt(question, answer, evidenceRefs, quality.toDict())
+            for event in engine.streamTurn(
+                activeSessionId,
+                repairPrompt,
+                context=turnContext,
+                outcomeId=outcomeId,
+                priorRefs=evidenceRefs,
+                priorReadSkillCalls=readSkillCalls,
+                qualityQuestion=question,
+            ):
+                if event.kind == "turnStarted":
+                    yield TraceEvent(
+                        "runtime_turn",
+                        {
+                            "sessionId": event.sessionId,
+                            "turnId": event.turnId,
+                            "runtimeId": event.runtimeId,
+                            "repairAttempt": repairAttempt,
+                        },
+                    )
+                elif event.kind == "messageDelta":
+                    text = str(event.payload.get("text") or "")
+                    if text:
+                        repairParts.append(text)
+                elif event.kind == "reasoningDelta":
+                    text = str(event.payload.get("text") or "")
+                    if text:
+                        yield TraceEvent("thinking", {"text": text})
+                elif event.kind == "toolStarted":
+                    repairParts.clear()
+                    yield TraceEvent("tool_start", _runtimeToolData(event.payload, status="running"))
+                elif event.kind == "toolCompleted":
+                    _appendRuntimeEvidenceRefs(evidenceRefs, event.payload.get("refDetails"))
+                    yield TraceEvent("tool_result", _runtimeToolData(event.payload, status="done"))
+                elif event.kind == "approvalRequested":
+                    yield TraceEvent(
+                        "approval_requested",
+                        {
+                            "sessionId": event.sessionId,
+                            "turnId": event.turnId,
+                            "approvalId": event.payload.get("approvalId"),
+                            "request": event.payload,
+                        },
+                    )
+                elif event.kind == "artifactProduced":
+                    yield TraceEvent("view_spec", event.payload)
+                elif event.kind == "eventGap":
+                    yield TraceEvent("event_gap", event.payload)
+                elif event.kind == "runtimeError":
+                    repairFailed = True
+                elif event.kind == "turnCompleted":
+                    repairTerminal = event
+            if repairTerminal is not None:
+                repairedAnswer = "".join(repairParts).strip()
+                repairedQuality = _runtimeAnswerQuality(
+                    question,
+                    repairedAnswer,
+                    evidenceRefs,
+                    repairTerminal.payload,
+                    failed=repairFailed,
+                )
+                terminalEvent = repairTerminal
+                quality = repairedQuality
+                failed = repairFailed
+                if repairedAnswer:
+                    answer = repairedAnswer
+
+        committed = quality.passed and not failed
+        yield TraceEvent(
+            "verify",
+            _runtimeVerifyData(quality, stage="final", repairAttempt=repairAttempt),
+        )
+        if committed:
+            yield TraceEvent("chunk", {"text": answer})
+        yield TraceEvent(
+            "done",
+            _runtimeDoneData(
+                terminalEvent,
+                answerCommitted=committed,
+                refs=evidenceRefs,
+                outcomeId=outcomeId,
+                qualityReport=quality.toDict(),
+                repairAttempt=repairAttempt,
+                initialIssues=firstIssues,
+            ),
+        )
     except Exception as exc:  # noqa: BLE001
-        yield TraceEvent("error", {"error": str(exc)})
         yield TraceEvent(
             "done",
             {
@@ -1221,10 +1311,56 @@ def runRuntimeAgent(question: str, **kwargs: Any) -> Iterator[TraceEvent]:
                 "responseMeta": {
                     "finalEvent": "runtime_error",
                     "responseStatus": "failed",
+                    "candidateRefs": evidenceRefs,
                     "failureReason": str(exc),
                 },
             },
         )
+
+
+def _runtimeReadSkillCalls(completionPayload: dict[str, Any]) -> int:
+    """turn completion의 Skill OS 호출 수를 안전하게 읽는다."""
+    coverage = completionPayload.get("runtimeCoverage")
+    value = coverage.get("readSkillCalls") if isinstance(coverage, dict) else 0
+    return int(value) if isinstance(value, int) else 0
+
+
+def _runtimeVerifyData(report: Any, *, stage: str, repairAttempt: int) -> dict[str, Any]:
+    """후보와 최종 품질 판정을 같은 내부 verify 이벤트 계약으로 투영한다."""
+    return {
+        "result": {
+            "ok": bool(report.passed),
+            "issues": list(report.issues),
+            "score": int(report.score),
+            "requiredClaimCells": int(report.requiredClaimCells),
+            "coveredClaimCells": int(report.coveredClaimCells),
+        },
+        "pass": "gate",
+        "stage": stage,
+        "repairAttempt": repairAttempt,
+    }
+
+
+def _runtimeRepairPrompt(
+    question: str,
+    rejectedAnswer: str,
+    refs: list[dict[str, Any]],
+    qualityReport: dict[str, Any],
+) -> str:
+    """같은 native session에서 한 번만 실행할 근거 교정 요청을 만든다."""
+    evidence = json.dumps(refs[:100], ensure_ascii=False, default=str, separators=(",", ":"))[:40_000]
+    issues = ", ".join(str(issue) for issue in qualityReport.get("issues") or [])
+    return (
+        "DartLab 답변 품질 교정 턴이다. ReadSkill은 다시 호출하지 마라. "
+        "아래 canonical evidence만으로 해결되면 즉시 최종 답변만 다시 작성하라. "
+        "질문이 요구한 대상 x 지표 x 기간 셀이 부족하면 EngineCall 같은 읽기 전용 DartLab 도구로 "
+        "누락 셀만 보충한 뒤 답하라. 모든 수치와 기간을 본문에 쓰고 사용한 exact ref ID를 함께 인용하라. "
+        "근거에 없는 사실은 쓰지 마라.\n"
+        f"원 질문: {question}\n"
+        f"실패 코드: {issues}\n"
+        f"거부된 초안: {rejectedAnswer[:12_000]}\n"
+        f"현재 canonical evidence: {evidence}"
+    )
 
 
 def _runtimeId(kwargs: dict[str, Any]) -> str | None:
@@ -1289,10 +1425,13 @@ def _runtimeDoneData(
     refs: list[dict[str, Any]],
     outcomeId: str | None,
     qualityReport: dict[str, Any],
+    repairAttempt: int = 0,
+    initialIssues: tuple[str, ...] = (),
 ) -> dict[str, Any]:
     """공개 adapter와 Outcome 원장이 같은 완료 근거를 보도록 종료 payload를 만든다."""
     return {
         "refs": refs if answerCommitted else [],
+        "candidateRefs": [] if answerCommitted else refs,
         "artifacts": [],
         "responseMeta": {
             "finalEvent": "answer" if answerCommitted else "runtime_error",
@@ -1301,6 +1440,11 @@ def _runtimeDoneData(
             "sessionId": event.sessionId,
             "outcomeId": outcomeId,
             "verificationStatus": "evidenceCommitted" if answerCommitted else "rejected",
+            "repairAttempt": repairAttempt,
+            "failureCode": None
+            if answerCommitted
+            else next(iter(qualityReport.get("issues") or []), "quality_rejected"),
+            "initialQualityIssues": list(initialIssues),
             "answerQuality": qualityReport,
             "runtimeCoverage": (
                 event.payload.get("runtimeCoverage") if isinstance(event.payload.get("runtimeCoverage"), dict) else {}
@@ -1332,6 +1476,8 @@ def _qualityFailureReason(report: dict[str, Any]) -> str:
         "metric_evidence_mismatch": "질문의 지표와 인용 근거의 지표가 일치하지 않습니다",
         "period_coverage_incomplete": "질문이 요구한 모든 기간의 근거가 인용되지 않았습니다",
         "comparison_target_incomplete": "비교 대상 중 일부의 동일 기준 근거가 누락되었습니다",
+        "claim_cell_coverage_incomplete": "질문의 모든 대상, 지표, 기간 조합을 증명하는 근거가 부족합니다",
+        "derived_evidence_lineage_missing": "계산 결과가 원본 DartLab 근거 계보를 보존하지 않았습니다",
     }
     issues = report.get("issues") if isinstance(report.get("issues"), (list, tuple)) else []
     return "; ".join(labels.get(str(issue), str(issue)) for issue in issues) or "답변 품질 게이트를 통과하지 못했습니다"
@@ -1345,22 +1491,31 @@ def _runtimeToolData(payload: dict[str, Any], *, status: str) -> dict[str, Any]:
     Example: `_runtimeToolData({"item": {"name": "ReadSkill"}}, status="done")`.
     """
     item = payload.get("item") if isinstance(payload.get("item"), dict) else payload
-    name = str(
-        payload.get("toolName")
+    nativeName = str(
+        payload.get("nativeName")
+        or payload.get("toolName")
         or item.get("tool")
         or item.get("name")
         or item.get("title")
         or item.get("type")
         or "AgentTool"
     )
+    name = str(payload.get("canonicalName") or nativeName)
     toolId = str(
-        item.get("id") or item.get("toolCallId") or item.get("tool_call_id") or item.get("tool_use_id") or name
+        payload.get("toolCallId")
+        or item.get("id")
+        or item.get("toolCallId")
+        or item.get("tool_call_id")
+        or item.get("tool_use_id")
+        or name
     )
     inputValue = item.get("arguments") or item.get("input") or item.get("rawInput") or {}
     outputValue = item.get("result") or item.get("output") or item.get("content") or {}
     return {
         "id": toolId,
         "name": name,
+        "nativeName": nativeName,
+        "canonicalName": name,
         "input": inputValue if isinstance(inputValue, dict) else {"value": inputValue},
         "status": "error" if item.get("status") in {"failed", "error"} else status,
         "summary": str(item.get("title") or item.get("status") or name),

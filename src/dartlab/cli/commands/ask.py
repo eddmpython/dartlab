@@ -66,7 +66,7 @@ def run(args) -> int:
         sessionId, history = _loadHistory(company.stockCode, console)
 
     # ── ask 내부 이벤트 스트림 ──
-    from dartlab.ai.kernel import _askEvents
+    from dartlab.ai.kernel import _askEvents, _doneFailure
 
     events = _askEvents(
         question,
@@ -84,6 +84,7 @@ def run(args) -> int:
     toolPanels: list[str] = []
     toolCount = 0
     toolStartTime: float | None = None
+    finalFailure: str | None = None
     queryStart = time.monotonic()
 
     try:
@@ -182,6 +183,9 @@ def run(args) -> int:
                     _printErrorWithHint(errorMsg, console, guideMsg=guideMsg)
                     return 1
 
+                elif ev.kind == "done":
+                    finalFailure = _doneFailure(ev)
+
     except KeyboardInterrupt:
         console.print(f"\n  [{CLR_MUTED}]Interrupted[/]")
 
@@ -194,6 +198,10 @@ def run(args) -> int:
     if toolPanels:
         for panel in toolPanels:
             _renderToolData(panel, console)
+
+    if finalFailure:
+        _printErrorWithHint(finalFailure, console)
+        return 1
 
     # ── 최종 응답 ──
     if buffer:

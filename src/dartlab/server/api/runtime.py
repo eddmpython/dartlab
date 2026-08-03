@@ -9,8 +9,10 @@ from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from dartlab.ai.runtime import getRuntimeEngine
+from dartlab.ai.runtime.discovery import runtimeLoginArgv
 from dartlab.ai.runtime.installManager import buildInstallPlan, executeInstallPlan
 from dartlab.ai.runtime.mcpBootstrap import buildMcpConnectPlan, executeMcpConnectPlan
+from dartlab.ai.runtime.registry import loadRuntimeRegistry
 from dartlab.productOutcome import outcomeSnapshot, verifyOutcomeEvidence
 
 router = APIRouter(prefix="/api/agent", tags=["agent-runtime"])
@@ -44,6 +46,12 @@ class EvidenceVerifyRequest(BaseModel):
     refId: str = Field(..., min_length=1, max_length=1000)
 
 
+class RuntimeSelectionRequest(BaseModel):
+    """새 대화에 사용할 서버 기본 런타임 선택."""
+
+    runtimeId: str = Field(..., min_length=1, max_length=50)
+
+
 @router.get("/runtimes")
 async def listRuntimes(refresh: bool = Query(False)):
     """설치형 런타임, 버전, MCP 연결 상태를 반환한다."""
@@ -66,6 +74,16 @@ async def probeRuntime(runtimeId: str):
     return await getRuntime(runtimeId, refresh=True)
 
 
+@router.post("/runtimes/default")
+def selectDefaultRuntime(req: RuntimeSelectionRequest):
+    """준비 완료 런타임을 새 세션의 기본값으로 저장한다."""
+    try:
+        runtimeId = getRuntimeEngine().setDefaultRuntime(req.runtimeId)
+        return {"ok": True, "defaultRuntimeId": runtimeId}
+    except (KeyError, RuntimeError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
 @router.post("/runtimes/{runtimeId}/install/plan")
 def planRuntimeInstall(runtimeId: str):
     """실행하지 않고 설치 argv와 승인 digest를 만든다."""
@@ -73,6 +91,20 @@ def planRuntimeInstall(runtimeId: str):
         return buildInstallPlan(runtimeId).toDict()
     except KeyError as exc:
         raise HTTPException(status_code=404, detail="runtime not found") from exc
+
+
+@router.post("/runtimes/{runtimeId}/login/plan")
+def planRuntimeLogin(runtimeId: str):
+    """계정 정보를 읽지 않고 공식 CLI의 대화형 로그인 명령만 반환한다."""
+    try:
+        descriptor = loadRuntimeRegistry()[runtimeId]
+        return {
+            "runtimeId": runtimeId,
+            "argv": list(runtimeLoginArgv(runtimeId)),
+            "officialUrl": descriptor.officialUrl,
+        }
+    except (KeyError, ValueError, FileNotFoundError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @router.post("/runtimes/install/apply")
@@ -199,3 +231,12 @@ def verifyProductOutcome(outcomeId: str, req: EvidenceVerifyRequest):
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@router.get("/product-outcomes/{outcomeId}/evidence/{refId:path}")
+def resolveProductOutcomeEvidence(outcomeId: str, refId: str):
+    """outcome 상태를 전이하지 않고 exact evidence 상세만 반환한다."""
+    try:
+        return {"evidence": getRuntimeEngine().resolveEvidence(outcomeId, refId)}
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc

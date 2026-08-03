@@ -44,5 +44,8 @@ def loadRuntimeRegistry(root: Path | None = None) -> dict[str, RuntimeDescriptor
             officialUrl=str(value["officialUrl"]),
             windowsLaunch=tuple(str(item) for item in value.get("windowsLaunch", ())),
             embeddedGrounding=bool(value.get("embeddedGrounding", True)),
+            authProbeArgs=tuple(str(item) for item in value.get("authProbeArgs", ())),
+            authSuccessPattern=str(value["authSuccessPattern"]) if value.get("authSuccessPattern") else None,
+            loginArgs=tuple(str(item) for item in value.get("loginArgs", ())),
         )
     return descriptors

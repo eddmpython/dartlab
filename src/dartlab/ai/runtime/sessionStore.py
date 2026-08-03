@@ -29,6 +29,15 @@ class SessionStore:
                 )
                 """
             )
+            database.execute(
+                """
+                CREATE TABLE IF NOT EXISTS agent_preferences (
+                    preference_key TEXT PRIMARY KEY,
+                    preference_value TEXT NOT NULL,
+                    updated_at TEXT NOT NULL
+                )
+                """
+            )
 
     @contextmanager
     def _connect(self) -> Iterator[sqlite3.Connection]:
@@ -130,3 +139,26 @@ class SessionStore:
         """
         with self._connect() as database:
             database.execute("DELETE FROM agent_sessions WHERE session_id = ?", (sessionId,))
+
+    def getPreference(self, key: str) -> str | None:
+        """서버가 소유하는 로컬 런타임 선호값을 읽는다."""
+        with self._connect() as database:
+            row = database.execute(
+                "SELECT preference_value FROM agent_preferences WHERE preference_key = ?",
+                (key,),
+            ).fetchone()
+        return str(row[0]) if row else None
+
+    def setPreference(self, key: str, value: str) -> None:
+        """로컬 런타임 선호값을 원자적으로 저장한다."""
+        with self._connect() as database:
+            database.execute(
+                """
+                INSERT INTO agent_preferences(preference_key, preference_value, updated_at)
+                VALUES (?, ?, ?)
+                ON CONFLICT(preference_key) DO UPDATE SET
+                    preference_value=excluded.preference_value,
+                    updated_at=excluded.updated_at
+                """,
+                (key, value, nowIso()),
+            )

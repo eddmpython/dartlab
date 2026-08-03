@@ -122,3 +122,43 @@ def test_requested_annual_period_binds_value_and_date_refs() -> None:
     assert valueRef.payload["period"] == "2024FY"
     assert valueRef.payload["value"] == 300_000_000_000
     assert dateRef.payload["period"] == "2024FY"
+
+
+@pytest.mark.unit
+def test_requested_annual_range_builds_complete_metric_period_evidence() -> None:
+    """연도 range 요청은 지표 x 연도 claim cell을 모두 canonical valueRef로 만든다."""
+
+    class _IncomeCompany(_MockCompany):
+        def panel(self, topic: str) -> pl.DataFrame:
+            columns: dict[str, list[object]] = {
+                "snakeId": ["sales", "operating_profit"],
+                "항목": ["매출액", "영업이익"],
+            }
+            for year in range(2021, 2026):
+                for quarter in range(1, 5):
+                    columns[f"{year}Q{quarter}"] = [year * 100 + quarter, year * 10 + quarter]
+            return pl.DataFrame(columns)
+
+    company = _IncomeCompany()
+    with (
+        patch("dartlab.ai.tools.engineCall._resolveCompany", return_value=company),
+        patch("dartlab.ai.tools.engineCall.buildPeriodToFiling", return_value={}),
+        patch("dartlab.ai.tools.engineCall.getDcrBadge", return_value=None),
+        patch("dartlab.ai.tools.engineCall.getIndustryBadge", return_value=None),
+    ):
+        result = _companyShow({"target": "005930", "topic": "IS", "period": "2021-2025", "freq": "Y"})
+
+    assert result.ok is True
+    assert result.data is not None
+    assert result.data["summary"]["periods"] == ["2025FY", "2024FY", "2023FY", "2022FY", "2021FY"]
+    valueRefs = [ref for ref in result.refs if ref.kind == "valueRef"]
+    dateRefs = [ref for ref in result.refs if ref.kind == "dateRef"]
+    assert len(valueRefs) == 10
+    assert len(dateRefs) == 5
+    cells = {(ref.payload["canonicalMetricId"], ref.payload["period"]): ref.payload["value"] for ref in valueRefs}
+    assert cells[("revenue", "2025FY")] == sum(2025 * 100 + quarter for quarter in range(1, 5))
+    assert cells[("operating_profit", "2021FY")] == sum(2021 * 10 + quarter for quarter in range(1, 5))
+    assert all(ref.payload["unit"] == "KRW" for ref in valueRefs)
+    assert all(ref.payload["currency"] == "KRW" for ref in valueRefs)
+    assert all(ref.payload["basis"] == "fiscal_year" for ref in valueRefs)
+    assert all(ref.payload["provenance"] for ref in valueRefs)

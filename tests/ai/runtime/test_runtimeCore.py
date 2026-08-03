@@ -20,23 +20,37 @@ from dartlab.ai.runtime.eventBuffer import EventBuffer
 from dartlab.ai.runtime.eventProjection import EventProjector
 from dartlab.ai.runtime.evidenceStore import EvidenceStore
 from dartlab.ai.runtime.installManager import buildInstallPlan, executeInstallPlan
-from dartlab.ai.runtime.mcpBootstrap import _clineMcpConfigured, buildMcpConnectPlan
+from dartlab.ai.runtime.mcpBootstrap import _claudeProjectMcpConfigured, _clineMcpConfigured, buildMcpConnectPlan
 from dartlab.ai.runtime.processSupervisor import ProcessSupervisor
 from dartlab.ai.runtime.registry import loadRuntimeRegistry
 from dartlab.ai.runtime.schema import generateTypeScriptContracts
 from dartlab.ai.runtime.sessionStore import SessionStore
 
 
-def testClaudeRuntimeExposesOnlyToolSearchAndReadOnlyMcp():
+def testClaudeRuntimeExposesOnlyReadOnlyMcpWithoutSearchBypass():
     args = _claudeToolArgs()
-    assert args[:2] == ("--tools", "ToolSearch")
+    exposed = args[1]
+    assert args[0] == "--tools"
     assert "--disable-slash-commands" in args
     allowed = args[args.index("--allowedTools") + 1]
-    assert allowed.startswith("ToolSearch,")
+    assert exposed == allowed
     assert "mcp__dartlab__ReadSkill" in allowed
     assert "mcp__dartlab__EngineCall" in allowed
+    assert "ToolSearch" not in allowed
+    assert "RunPython" not in allowed
     assert "Bash" not in allowed
     assert "PowerShell" not in allowed
+
+
+def testAgentMcpProfileExcludesMutatingTools(monkeypatch):
+    from dartlab.mcp.protocol import mcpAdvertisedToolNames
+
+    monkeypatch.setenv("DARTLAB_MCP_PROFILE", "agent")
+    names = set(mcpAdvertisedToolNames())
+
+    assert {"ReadSkill", "ReadCapability", "EngineCall"} <= names
+    assert "RunPython" not in names
+    assert "SaveArtifact" not in names
 
 
 def testRuntimeRegistryHasThreeNativeDrivers():
@@ -47,6 +61,8 @@ def testRuntimeRegistryHasThreeNativeDrivers():
     assert loadRuntimeRegistry()["cline"].launchArgs == ("--acp", "--auto-approve", "false")
     assert loadRuntimeRegistry()["cline"].embeddedGrounding is False
     assert loadRuntimeRegistry()["codex"].embeddedGrounding is True
+    assert loadRuntimeRegistry()["codex"].authProbeArgs == ("login", "status")
+    assert loadRuntimeRegistry()["claude"].loginArgs == ("auth", "login")
 
 
 def testRuntimeExecutablePrefixDoesNotIncludeDefaultLaunchArgs(monkeypatch):
@@ -421,6 +437,25 @@ def testClineMcpProbeUsesOfficialSettingsFile(tmp_path):
     assert not _clineMcpConfigured(tmp_path / "missing")
 
 
+def testClaudeProjectMcpRequiresAgentProfile(tmp_path):
+    (tmp_path / ".mcp.json").write_text(
+        json.dumps(
+            {
+                "mcpServers": {
+                    "dartlab": {
+                        "command": "uv",
+                        "args": ["run", "python", "-m", "dartlab.mcp", "--profile", "agent"],
+                    }
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    assert _claudeProjectMcpConfigured(tmp_path) is True
+    assert _claudeProjectMcpConfigured(tmp_path / "missing") is False
+
+
 def testSessionStorePersistsOnlySessionMapping(tmp_path):
     from dartlab.ai.runtime.contracts import RuntimeSession
 
@@ -429,6 +464,33 @@ def testSessionStorePersistsOnlySessionMapping(tmp_path):
     store.save(value)
     assert store.get("s") == value
     assert store.list(limit=1) == [value]
+
+
+def testSessionStorePersistsServerOwnedDefaultRuntime(tmp_path):
+    store = SessionStore(tmp_path / "sessions.sqlite3")
+
+    assert store.getPreference("defaultRuntimeId") is None
+    store.setPreference("defaultRuntimeId", "codex")
+
+    assert store.getPreference("defaultRuntimeId") == "codex"
+
+
+def testRuntimeAuthProbeDoesNotExposeAccountOutput(monkeypatch):
+    from subprocess import CompletedProcess
+
+    from dartlab.ai.runtime.discovery import probeRuntimeAuth
+
+    descriptor = loadRuntimeRegistry()["claude"]
+    monkeypatch.setattr(
+        "dartlab.ai.runtime.discovery.subprocess.run",
+        lambda *args, **kwargs: CompletedProcess(args[0], 0, '{"loggedIn":true,"email":"private@example.com"}', ""),
+    )
+
+    result = probeRuntimeAuth(descriptor, executable="claude")
+
+    assert result["authenticated"] is True
+    assert "email" not in result
+    assert "detail" not in result
 
 
 def testEvidenceStorePersistsBoundedExactPayloadAndRejectsOversize(tmp_path):
@@ -446,8 +508,11 @@ def testEvidenceStorePersistsBoundedExactPayloadAndRejectsOversize(tmp_path):
 
 
 def testTypeScriptContractIsGeneratedFromPythonSource():
-    path = Path("ui/apps/local/src/lib/generated/agentRuntime.ts")
-    assert path.read_text(encoding="utf-8") == generateTypeScriptContracts()
+    paths = (
+        Path("ui/apps/local/src/lib/generated/agentRuntime.ts"),
+        Path("ui/packages/contracts/src/generated/agentRuntime.ts"),
+    )
+    assert all(path.read_text(encoding="utf-8") == generateTypeScriptContracts() for path in paths)
 
 
 def testEveryRuntimeManifestIsJsonSerializable():

@@ -8,3 +8,6 @@ launchArgs = ["app-server"]
 windowsLaunch = ["node", "{shimDir}/node_modules/@openai/codex/bin/codex.js"]
 installArgs = ["npm", "install", "-g", "@openai/codex"]
 officialUrl = "https://developers.openai.com/codex/cli/"
+authProbeArgs = ["login", "status"]
+authSuccessPattern = "(?i)logged in"
+loginArgs = ["login"]

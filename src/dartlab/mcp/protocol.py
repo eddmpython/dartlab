@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 from typing import Any
 
@@ -70,14 +71,19 @@ RunPython 안에서 직접 호출하는 패턴으로 통합되었다. DARTLAB_MC
 """
 
 
-def mcpAdvertisedToolNames() -> tuple[str, ...]:
+def mcpAdvertisedToolNames(profile: str | None = None) -> tuple[str, ...]:
     """MCP tools/list 에 advertise 할 분석 도구 이름 SSOT.
 
     `ask`는 제외한다. 설치형 에이전트가 다시 DartLab AI를 호출하면 재귀 런타임이 되므로
     MCP는 데이터, Skill OS, 실행 도구만 제공한다.
     """
-    from dartlab.ai.tools.registry import CANONICAL_V2
+    from dartlab.ai.tools.registry import CANONICAL_V2, isToolReadOnly
 
+    selected = str(profile or os.environ.get("DARTLAB_MCP_PROFILE") or "full").strip().casefold()
+    if selected == "agent":
+        return tuple(name for name in CANONICAL_V2 if isToolReadOnly(name))
+    if selected != "full":
+        raise ValueError(f"지원하지 않는 MCP profile: {selected}")
     return tuple(CANONICAL_V2)
 
 

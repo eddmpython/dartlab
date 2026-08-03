@@ -9,3 +9,5 @@ windowsLaunch = ["node", "{shimDir}/node_modules/cline/bin/cline"]
 embeddedGrounding = false
 installArgs = ["npm", "install", "-g", "cline"]
 officialUrl = "https://docs.cline.bot/cline-cli/overview"
+authProbeArgs = []
+loginArgs = []

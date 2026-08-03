@@ -8,3 +8,6 @@ launchArgs = ["--print", "--output-format", "stream-json", "--include-partial-me
 windowsLaunch = ["{shimDir}/node_modules/@anthropic-ai/claude-code/bin/claude.exe"]
 installArgs = ["npm", "install", "-g", "@anthropic-ai/claude-code"]
 officialUrl = "https://docs.anthropic.com/en/docs/claude-code/overview"
+authProbeArgs = ["auth", "status", "--json"]
+authSuccessPattern = '"loggedIn"\s*:\s*true'
+loginArgs = ["auth", "login"]

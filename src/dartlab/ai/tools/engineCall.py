@@ -294,8 +294,8 @@ def _companyShow(plan: dict[str, Any]) -> ToolResult:
         if autoGatherUsed:
             msg += " (자동 update 후에도 빈 결과 - 미공시 분기 또는 폐상장 가능성)."
         return ToolResult(False, msg, error="empty_result")
-    requestedPeriod, annualYear = _requestedStatementPeriod(plan, table, topic)
-    if str(plan.get("period") or "").strip() and requestedPeriod is None and annualYear is None:
+    requestedPeriod, annualYears = _requestedStatementPeriod(plan, table, topic)
+    if str(plan.get("period") or "").strip() and requestedPeriod is None and not annualYears:
         available = [str(column) for column in table.columns if _PERIOD_RE.match(str(column))]
         return ToolResult(
             False,
@@ -306,7 +306,7 @@ def _companyShow(plan: dict[str, Any]) -> ToolResult:
         topic,
         table,
         selectedPeriod=requestedPeriod,
-        annualYear=annualYear,
+        annualYears=annualYears,
     )
     if not summary:
         return ToolResult(
@@ -367,23 +367,47 @@ def _requestedStatementPeriod(
     plan: dict[str, Any],
     table: pl.DataFrame,
     statement: str,
-) -> tuple[str | None, str | None]:
-    """명시 기간을 검증하고 flow 계정의 연간 합산 연도를 별도로 반환한다."""
-    raw = str(plan.get("period") or "").strip().upper().replace("-", "")
+) -> tuple[str | None, tuple[str, ...]]:
+    """명시 기간을 검증하고 연간 projection 대상 연도를 반환한다."""
+    raw = str(plan.get("period") or "").strip().upper()
+    columns = {str(column) for column in table.columns}
     if not raw:
-        return None, None
+        limit = plan.get("limit")
+        freq = str(plan.get("freq") or "").strip().upper()
+        if isinstance(limit, int) and 1 <= limit <= 20 and freq in {"Y", "FY", "YEAR", "ANNUAL"}:
+            years = _completeStatementYears(columns, statement)
+            return None, tuple(years[:limit])
+        return None, ()
+    recent = re.fullmatch(r"RECENT\s*:?\s*(\d{1,2})\s*Y", raw)
+    if recent:
+        years = _completeStatementYears(columns, statement)
+        return None, tuple(years[: int(recent.group(1))])
+    periodRange = re.fullmatch(r"(20\d{2})\s*(?:-|~|TO|부터)\s*(20\d{2})", raw)
+    if periodRange:
+        start, end = (int(value) for value in periodRange.groups())
+        if start > end or end - start >= 20:
+            return None, ()
+        requested = tuple(str(year) for year in range(end, start - 1, -1))
+        complete = set(_completeStatementYears(columns, statement))
+        return (None, requested) if all(year in complete for year in requested) else (None, ())
     if raw.startswith("FY") and len(raw) == 6:
         raw = raw[2:]
-    columns = {str(column) for column in table.columns}
     if raw in columns:
-        return raw, None
+        return raw, ()
     if re.fullmatch(r"\d{4}", raw):
-        quarters = [f"{raw}Q{quarter}" for quarter in range(1, 5)]
-        if statement in {"IS", "CF"} and all(period in columns for period in quarters):
-            return None, raw
+        if raw in _completeStatementYears(columns, statement):
+            return None, (raw,)
         if f"{raw}Q4" in columns:
-            return f"{raw}Q4", None
-    return None, None
+            return f"{raw}Q4", ()
+    return None, ()
+
+
+def _completeStatementYears(columns: set[str], statement: str) -> list[str]:
+    """연간 projection이 가능한 회계연도를 최신순으로 반환한다."""
+    years = sorted({period[:4] for period in columns if re.fullmatch(r"20\d{2}Q[1-4]", period)}, reverse=True)
+    if statement in {"IS", "CF"}:
+        return [year for year in years if all(f"{year}Q{quarter}" in columns for quarter in range(1, 5))]
+    return [year for year in years if f"{year}Q4" in columns]
 
 
 def _fetchTableWithAutoGather(company: Any, topic: str) -> tuple[pl.DataFrame | None, bool]:
@@ -409,9 +433,9 @@ def _buildShowRefs(stockCode: str, companyName: str, topic: str, summary: dict[s
     filingMap = buildPeriodToFiling(company)
     latestPeriod = summary["latestPeriod"]
 
-    def enrich(base: dict[str, Any]) -> dict[str, Any]:
+    def enrich(base: dict[str, Any], period: str = latestPeriod) -> dict[str, Any]:
         """payload 에 docRef + confidence (filing_direct=95) + confidenceMethod 부착."""
-        out = attachDocRef(base, latestPeriod, filingMap)
+        out = attachDocRef(base, period, filingMap)
         out.setdefault("confidence", _FILING_DIRECT_CONFIDENCE)
         out.setdefault("confidenceMethod", "filing_direct")
         return out
@@ -421,7 +445,7 @@ def _buildShowRefs(stockCode: str, companyName: str, topic: str, summary: dict[s
         kind="tableRef",
         title=f"{companyName or stockCode} {_STMT_LABELS[topic]} {latestPeriod}",
         source=f"Company({stockCode}).panel('{topic}')",
-        payload=enrich(summary),
+        payload=enrich({**summary, "stockCode": stockCode}),
     )
     refs: list[Ref] = [
         tableRef,
@@ -439,32 +463,94 @@ def _buildShowRefs(stockCode: str, companyName: str, topic: str, summary: dict[s
             },
         ),
     ]
-    refs.extend(
-        Ref(
-            id=f"value:{stockCode}:{topic}:{latestPeriod}:{row['snakeId']}",
-            kind="valueRef",
-            title=f"{row['item']} {latestPeriod}",
-            source=tableRef.id,
-            payload={**enrich(row), "provenance": [tableRef.id]},
+    if summary.get("projection") == "annual":
+        for row in summary.get("timeseries") or []:
+            for period, value in (row.get("values") or {}).items():
+                metricId = str(row.get("snakeId") or "value")
+                refs.append(
+                    Ref(
+                        id=f"value:{stockCode}:{topic}:{period}:{metricId}",
+                        kind="valueRef",
+                        title=f"{row['item']} {period}",
+                        source=tableRef.id,
+                        payload={
+                            **enrich(
+                                {
+                                    "stockCode": stockCode,
+                                    "snakeId": metricId,
+                                    "canonicalMetricId": _canonicalStatementMetric(metricId),
+                                    "metric": _canonicalStatementMetric(metricId),
+                                    "item": row["item"],
+                                    "period": period,
+                                    "value": value,
+                                    "formatted": (row.get("formatted") or {}).get(period),
+                                    "unit": "KRW",
+                                    "currency": "KRW",
+                                    "basis": "fiscal_year",
+                                },
+                                period,
+                            ),
+                            "provenance": [tableRef.id],
+                        },
+                    )
+                )
+    else:
+        refs.extend(
+            Ref(
+                id=f"value:{stockCode}:{topic}:{latestPeriod}:{row['snakeId']}",
+                kind="valueRef",
+                title=f"{row['item']} {latestPeriod}",
+                source=tableRef.id,
+                payload={
+                    **enrich(
+                        {
+                            **row,
+                            "stockCode": stockCode,
+                            "canonicalMetricId": _canonicalStatementMetric(str(row["snakeId"])),
+                            "metric": _canonicalStatementMetric(str(row["snakeId"])),
+                        }
+                    ),
+                    "provenance": [tableRef.id],
+                },
+            )
+            for row in summary["rows"]
         )
-        for row in summary["rows"]
-    )
     creditRef = _buildCreditRef(stockCode, companyName, company)
     if creditRef is not None:
         refs.append(creditRef)
     industryRef = _buildIndustryRef(stockCode, companyName, company)
     if industryRef is not None:
         refs.append(industryRef)
-    refs.append(
-        Ref(
-            id=f"date:{stockCode}:{topic}:{latestPeriod}",
-            kind="dateRef",
-            title=f"{_STMT_LABELS[topic]} 기준시점",
-            source=tableRef.id,
-            payload={**enrich({"period": latestPeriod}), "provenance": [tableRef.id]},
+    for period in summary.get("periods") or [latestPeriod]:
+        refs.append(
+            Ref(
+                id=f"date:{stockCode}:{topic}:{period}",
+                kind="dateRef",
+                title=f"{_STMT_LABELS[topic]} {period} 기준시점",
+                source=tableRef.id,
+                payload={
+                    **enrich({"stockCode": stockCode, "period": period, "basis": "fiscal_year"}, period),
+                    "provenance": [tableRef.id],
+                },
+            )
         )
-    )
     return refs
+
+
+def _canonicalStatementMetric(snakeId: str) -> str:
+    """재무제표 snake ID를 품질 검증용 canonical metric으로 정규화한다."""
+    aliases = {
+        "sales": "revenue",
+        "revenue": "revenue",
+        "operating_income": "operating_profit",
+        "operating_profit": "operating_profit",
+        "net_income": "net_income",
+        "total_assets": "total_assets",
+        "total_liabilities": "total_liabilities",
+        "total_equity": "total_equity",
+        "operating_cash_flow": "operating_cash_flow",
+    }
+    return aliases.get(snakeId, snakeId)
 
 
 def _buildCreditRef(stockCode: str, companyName: str, company: Any) -> Ref | None:
@@ -543,7 +629,8 @@ def _showSummaryMessage(
 ) -> str:
     """tool result summary 문자열 - 기간 range + auto-gather 표기."""
     periods = summary.get("periods") or [summary["latestPeriod"]]
-    periodLabel = f"{periods[-1]}~{periods[0]} ({len(periods)} 분기)" if len(periods) > 1 else periods[0]
+    unit = "연도" if summary.get("projection") == "annual" else "분기"
+    periodLabel = f"{periods[-1]}~{periods[0]} ({len(periods)} {unit})" if len(periods) > 1 else periods[0]
     msg = f"{companyName or stockCode} {_STMT_LABELS[topic]} {periodLabel} 확인"
     if autoGatherUsed:
         msg += " (자동 update 후 재조회 성공)"
@@ -1731,7 +1818,7 @@ def _summarizeStatement(
     table: pl.DataFrame,
     *,
     selectedPeriod: str | None = None,
-    annualYear: str | None = None,
+    annualYears: tuple[str, ...] = (),
 ) -> dict[str, Any] | None:
     periods = [col for col in table.columns if _PERIOD_RE.match(str(col))]
     if not periods:
@@ -1739,26 +1826,37 @@ def _summarizeStatement(
     priorityRows = _findPriorityRows(statement, table, periods)
     if not priorityRows:
         return None
-    if annualYear:
-        annualPeriod = f"{annualYear}FY"
-        quarters = [f"{annualYear}Q{quarter}" for quarter in range(1, 5)]
+    projection = "period"
+    if annualYears:
+        annualPeriods = [f"{year}FY" for year in annualYears]
         annualRows: list[dict[str, Any]] = []
         for row in priorityRows:
-            values = [row["values"].get(period) for period in quarters]
-            if any(value is None for value in values):
+            annualValues: dict[str, Any] = {}
+            for year, annualPeriod in zip(annualYears, annualPeriods, strict=True):
+                if statement in {"IS", "CF"}:
+                    values = [row["values"].get(f"{year}Q{quarter}") for quarter in range(1, 5)]
+                    if any(value is None for value in values):
+                        continue
+                    annualValues[annualPeriod] = sum(values)
+                else:
+                    value = row["values"].get(f"{year}Q4")
+                    if value is not None:
+                        annualValues[annualPeriod] = value
+            if not annualValues:
                 continue
             annualRows.append(
                 {
                     "snakeId": row["snakeId"],
                     "item": row["item"],
-                    "values": {annualPeriod: sum(values)},
+                    "values": annualValues,
                 }
             )
         if not annualRows:
             return None
         priorityRows = annualRows
-        periods = [annualPeriod]
-        latest = annualPeriod
+        periods = annualPeriods
+        latest = annualPeriods[0]
+        projection = "annual"
     else:
         latest = selectedPeriod or periods[0]
     return {
@@ -1766,6 +1864,7 @@ def _summarizeStatement(
         "label": _STMT_LABELS[statement],
         "latestPeriod": latest,
         "periods": periods,
+        "projection": projection,
         "rowCount": table.height,
         "columnCount": len(table.columns),
         "rows": _projectLatest(priorityRows, latest),
@@ -1868,7 +1967,7 @@ def _statementMarkdown(companyName: str, stockCode: str, statement: str, summary
     timeseries = summary.get("timeseries") or []
     period_range = f"{periods[-1]}~{periods[0]}" if len(periods) > 1 else periods[0]
     lines = [
-        f"{display} {_STMT_LABELS[statement]} 시계열을 확인했습니다 ({period_range}, {len(periods)} 분기).",
+        f"{display} {_STMT_LABELS[statement]} 시계열을 확인했습니다 ({period_range}, {len(periods)} {'연도' if summary.get('projection') == 'annual' else '분기'}).",
         "",
         f"## {_STMT_LABELS[statement]} ({period_range})",
     ]
@@ -1882,7 +1981,10 @@ def _statementMarkdown(companyName: str, stockCode: str, statement: str, summary
             lines.append(f"| {row['item']} | " + " | ".join(cells) + " |")
         if len(periods) > 12:
             lines.append("")
-            lines.append(f"(직전 {len(header_periods)} 분기만 표기. 전체 {len(periods)} 분기는 timeseries 필드 참조)")
+            unit = "연도" if summary.get("projection") == "annual" else "분기"
+            lines.append(
+                f"(직전 {len(header_periods)} {unit}만 표기. 전체 {len(periods)} {unit}는 timeseries 필드 참조)"
+            )
     else:
         lines.append("| 항목 | 값 |")
         lines.append("|---|---:|")

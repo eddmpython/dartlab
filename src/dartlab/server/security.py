@@ -152,7 +152,7 @@ def _routeScope(method: str, path: str) -> str | None:
         return "admin"
     if (method, path) in _EXECUTION_ROUTES:
         return "execution"
-    if path.startswith("/api/agent/runtimes/") and path.endswith(("/install/plan", "/mcp/plan")):
+    if path.startswith("/api/agent/runtimes/") and path.endswith(("/install/plan", "/login/plan", "/mcp/plan")):
         return "admin"
     if path.startswith("/api/agent/"):
         return "execution"

@@ -67,6 +67,30 @@ def test_public_ask_stream_does_not_swallow_runtime_failure(monkeypatch):
         dartlab.ask("실패를 숨기지 마", stream=True)
 
 
+@pytest.mark.parametrize("stream", [False, True])
+def test_public_ask_rejects_failed_done_event(monkeypatch, stream):
+    import dartlab
+    from dartlab.ai import kernel
+    from dartlab.ai.contracts import TraceEvent
+
+    def rejectedEvents(_question: str, **_kwargs):
+        yield TraceEvent(
+            "done",
+            {
+                "responseMeta": {
+                    "finalEvent": "runtime_error",
+                    "responseStatus": "failed",
+                    "failureReason": "근거 셀 검증 실패",
+                }
+            },
+        )
+
+    monkeypatch.setattr(kernel, "runRuntimeAgent", rejectedEvents)
+
+    with pytest.raises(kernel.AskFailedError, match="근거 셀 검증 실패"):
+        dartlab.ask("실패 답변을 공개하지 마", stream=stream)
+
+
 def test_internal_events_are_reserved_for_adapters(monkeypatch):
     from dartlab.ai import kernel
 

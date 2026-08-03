@@ -110,3 +110,54 @@ def testReadSkillInlineCarriesExecutionBoundary() -> None:
     assert details["Company.diff"]["engineCallable"] is False
     assert "EngineCall" in str(details["Company.panel"]["executionGuide"])
     assert "참조 전용" in str(details["Company.diff"]["executionGuide"])
+
+
+def testCanonicalReplacementRefsPreferExecutableDeclaredPaths() -> None:
+    from dartlab.reference.capability.execution import canonicalReplacementRefs
+
+    assert canonicalReplacementRefs("Company.panel") == ("Company.panel",)
+    assert canonicalReplacementRefs("Company.disclosure") == ("Company.filings",)
+    assert canonicalReplacementRefs(
+        "Company.legacy",
+        {"capabilityRefs": ["Company.analysis", "Company.diff", "Company.analysis"]},
+    ) == ("Company.analysis",)
+    assert canonicalReplacementRefs("Company.unknown") == ("Company.panel",)
+    assert canonicalReplacementRefs("Unknown.reference") == ()
+
+
+def testEngineCallContractKeepsCanonicalTargetAndDeclaredOptions() -> None:
+    from dartlab.reference.capability.execution import engineCallContract
+
+    company = engineCallContract("Company.panel")
+    assert company["tool"] == "EngineCall"
+    assert company["argsContract"]["stockCode"]["required"] is True
+
+    axis = engineCallContract(
+        "analysis.가치평가",
+        {
+            "declared": {
+                "targetRequired": True,
+                "targetType": "stockCode",
+                "options": ["period", "method"],
+                "returnType": "dict",
+            },
+            "example": "dartlab.analysis('가치평가', stockCode='005930')",
+        },
+    )
+    assert axis["argsContract"]["target"] == {"required": True, "type": "stockCode"}
+    assert axis["optionNames"] == ["period", "method"]
+    assert axis["returnType"] == "dict"
+    assert "가치평가" in axis["nativeExample"]
+    assert engineCallContract("Company.diff") == {}
+
+
+def testLoadAnalysisGraphCompilesLiveCapabilityContracts() -> None:
+    from dartlab.reference.capability.builder import loadAnalysisGraph
+
+    graph = loadAnalysisGraph()
+
+    assert graph["graphVersion"] == 2
+    assert len(graph["sourceHash"]) == 16
+    assert "company.statement_fact" in graph["contracts"]
+    assert graph["routes"]
+    assert graph["processMaps"]

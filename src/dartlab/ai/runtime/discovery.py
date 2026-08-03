@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+import re
 import shutil
 import subprocess
 from pathlib import Path
 
-from .contracts import RuntimeDescriptor, RuntimeProbe
+from .contracts import RuntimeDescriptor, RuntimeProbe, nowIso
 from .probeCache import ProbeCache
 from .registry import loadRuntimeRegistry
 
@@ -71,3 +72,45 @@ def probeAllRuntimes(*, refresh: bool = False) -> list[RuntimeProbe]:
     Example: `ready = [p for p in probeAllRuntimes() if p.state == "ready"]`.
     """
     return [probeRuntime(item, refresh=refresh) for item in loadRuntimeRegistry().values()]
+
+
+def probeRuntimeAuth(descriptor: RuntimeDescriptor, *, executable: str | None = None) -> dict[str, object]:
+    """CLI 인증 여부만 판정하며 계정 식별자와 원문 출력은 반환하지 않는다."""
+    if not descriptor.authProbeArgs or not descriptor.authSuccessPattern:
+        return {"state": "unsupported", "authenticated": None, "checkedAt": nowIso()}
+    resolved = executable or discoverExecutable(descriptor)
+    if resolved is None:
+        return {"state": "missing", "authenticated": False, "checkedAt": nowIso()}
+    try:
+        completed = subprocess.run(
+            [resolved, *descriptor.authProbeArgs],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=8,
+            shell=False,
+            check=False,
+        )
+        output = f"{completed.stdout or ''}\n{completed.stderr or ''}"
+        authenticated = completed.returncode == 0 and re.search(descriptor.authSuccessPattern, output) is not None
+        return {
+            "state": "authenticated" if authenticated else "authRequired",
+            "authenticated": authenticated,
+            "checkedAt": nowIso(),
+        }
+    except (OSError, subprocess.SubprocessError):
+        return {"state": "unavailable", "authenticated": False, "checkedAt": nowIso()}
+
+
+def runtimeLoginArgv(runtimeId: str) -> tuple[str, ...]:
+    """매니페스트와 발견된 실행 파일에서 공식 대화형 로그인 argv를 만든다."""
+    from .drivers.base import runtimeExecutableArgv
+
+    descriptor = loadRuntimeRegistry()[runtimeId]
+    if not descriptor.loginArgs:
+        raise ValueError(f"{runtimeId}는 자동 안내 가능한 로그인 명령이 없습니다")
+    executable = discoverExecutable(descriptor)
+    if executable is None:
+        raise FileNotFoundError(runtimeId)
+    return (*runtimeExecutableArgv(descriptor, executable), *descriptor.loginArgs)

@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 
 
@@ -22,6 +23,12 @@ def _parseArgs(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--host", default="0.0.0.0", help="HTTP/SSE bind host.")
     parser.add_argument("--port", type=int, default=None, help="HTTP/SSE bind port (sse=8001 / http=8002 기본).")
     parser.add_argument("--json-response", action="store_true", help="Streamable HTTP 의 batch JSON 응답 모드.")
+    parser.add_argument(
+        "--profile",
+        choices=("full", "agent"),
+        default="full",
+        help="도구 노출 프로필. agent는 read-only 도구만 광고하고 실행한다.",
+    )
     return parser.parse_args(argv)
 
 
@@ -35,6 +42,7 @@ def main(argv: list[str] | None = None) -> None:
         None: 서버 event loop 가 종료될 때까지 block 한다.
     """
     args = _parseArgs(argv if argv is not None else sys.argv[1:])
+    os.environ["DARTLAB_MCP_PROFILE"] = args.profile
     if args.transport == "stdio":
         from dartlab.mcp import runStdio
 
