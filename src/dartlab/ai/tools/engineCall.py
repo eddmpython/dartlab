@@ -128,8 +128,13 @@ def _dataHubAxisCall(axis: str, plan: dict[str, Any]) -> ToolResult:
     dataHub = getattr(dartlab, "dataHub", None)
     if dataHub is None or not callable(dataHub):
         return ToolResult(False, "dataHub facade를 찾지 못했습니다.", error="unknown_engine")
-    with _quietExecutionNoise():
-        result = dataHub(axis, target, **dict(plan.get("kwargs") or {}))
+    # _scan 과 같은 경계 계약: 잘못된 kwargs(TypeError)나 무효 질의(ValueError)가
+    # uncaught traceback 으로 새지 않고 typed ToolResult 로 돌아온다.
+    try:
+        with _quietExecutionNoise():
+            result = dataHub(axis, target, **dict(plan.get("kwargs") or {}))
+    except (ValueError, KeyError, TypeError) as exc:
+        return ToolResult(False, f"dataHub('{axis}') 실행 실패: {exc}", error="invalid_args")
     return _resultToRefs(f"dataHub.{axis}", result, target=str(plan.get("target") or ""))
 
 
@@ -151,8 +156,11 @@ def _axisEngineCall(engine: str, axis: str, plan: dict[str, Any]) -> ToolResult:
             )
         if target:
             kwargs.setdefault("stockCode", target)
-        with _quietExecutionNoise():
-            result = fn(axis, **kwargs)
+        try:
+            with _quietExecutionNoise():
+                result = fn(axis, **kwargs)
+        except (ValueError, KeyError, TypeError) as exc:
+            return ToolResult(False, f"{engine}('{axis}') 실행 실패: {exc}", error="invalid_args")
         if isinstance(result, pl.DataFrame):
             return ToolResult(
                 False,
@@ -160,8 +168,12 @@ def _axisEngineCall(engine: str, axis: str, plan: dict[str, Any]) -> ToolResult:
                 error="analysis_not_executed",
             )
         return _resultToRefs(f"{engine}.{axis}", result, target=str(target or ""))
-    with _quietExecutionNoise():
-        result = fn(axis, target, **kwargs)
+    # _scan 과 같은 경계 계약: 무효 axis 어휘·kwargs 가 traceback 으로 새지 않는다.
+    try:
+        with _quietExecutionNoise():
+            result = fn(axis, target, **kwargs)
+    except (ValueError, KeyError, TypeError) as exc:
+        return ToolResult(False, f"{engine}('{axis}') 실행 실패: {exc}", error="invalid_args")
     return _resultToRefs(f"{engine}.{axis}", result, target=str(target or ""))
 
 

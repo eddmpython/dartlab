@@ -437,3 +437,37 @@ def test_partial_simulation_preserves_honest_warning_without_invented_path_value
     assert table.payload["rows"] == []
     assert table.payload["gaps"] == ["historicalSimulationParametersUnavailable"]
     assert not any(ref.kind == "valueRef" and "value" in ref.payload for ref in result.refs)
+
+
+def test_datahub_axis_invalid_kwargs_returns_typed_error_not_traceback() -> None:
+    """무효 kwargs(TypeError)가 uncaught 예외로 새지 않고 typed ToolResult 로 돌아온다.
+
+    _scan 과 같은 경계 계약이다. 실측 회귀: `dataHub.query` 에 DataQuery 가 받지 않는
+    `assetId` 를 주면 TypeError 가 engineCall 밖(agent _runOrFallback, MCP protocol
+    error)까지 그대로 전파됐다.
+    """
+    result = engineCall({"apiRef": "dataHub.query", "kwargs": {"assetId": "없는.asset"}})
+
+    assert result.ok is False
+    assert result.error == "invalid_args"
+    assert "dataHub('query')" in result.summary
+
+
+def test_axis_engine_invalid_kwargs_returns_typed_error_not_traceback(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """{engine}.{axis} 일반 디스패치도 같은 경계 계약을 지킨다.
+
+    엔진별 kwargs 관용도와 무관하게 경계 자체를 검증하려고 engine fn 이 TypeError 를
+    던지게 대역을 세운다.
+    """
+
+    def _raising(axis, target=None, **kwargs):
+        raise TypeError("unexpected keyword argument '없는인자'")
+
+    monkeypatch.setattr(dartlab, "macro", _raising)
+    result = engineCallModule._axisEngineCall("macro", "rates", {"kwargs": {"없는인자": 1}})
+
+    assert result.ok is False
+    assert result.error == "invalid_args"
+    assert "macro('rates')" in result.summary
