@@ -56,3 +56,28 @@ def test_old_stage_positional_preserved():
     if stage:
         filtered = ind("semiconductor", stage)  # 옛: (industryId, stage)
         assert filtered.height <= full.height
+
+
+def test_korean_axis_label_resolves_like_macro():
+    """가이드가 광고하는 한글 라벨(집중도 등)이 축으로 해소된다.
+
+    실측 회귀: industry("집중도", "semiconductor") 가 registry 미스로
+    backward-compat industryId 경로에 새서 조용한 빈 DataFrame 을 냈다.
+    """
+    from dartlab.industry import _AXIS_LABEL_TO_KEY
+
+    assert _AXIS_LABEL_TO_KEY["집중도"] == "concentration"
+    assert set(_AXIS_LABEL_TO_KEY.values()) == set(_AXIS_REGISTRY)
+
+
+@pytest.mark.requires_data
+def test_korean_label_and_english_key_dispatch_identically():
+    ind = Industry()
+    assert ind("집중도", "semiconductor").equals(ind("concentration", "semiconductor"))
+
+
+def test_unknown_first_arg_rejected_with_guidance():
+    """미지 축·industryId 는 조용한 빈 결과 대신 유효 목록과 함께 거절된다."""
+    ind = Industry()
+    with pytest.raises(ValueError, match="등록된 industryId"):
+        ind("없는축이름", "semiconductor")

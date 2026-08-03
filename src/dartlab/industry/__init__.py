@@ -123,6 +123,11 @@ _AXIS_REGISTRY: dict[str, IndustryAxisEntry] = {
     "theme": IndustryAxisEntry("테마", "횡단 투자 테마 — themeId→멤버 / stockCode→소속 테마.", "themeId|stockCode"),
 }
 
+# 한글 라벨 -> 축 키 (macro 의 한국어 축 해소와 동등). 예전에는 industry("집중도", ...) 처럼
+# 가이드가 광고하는 라벨로 부르면 registry 미스 -> backward-compat industryId 경로로 새서
+# 조용한 빈 DataFrame 이 나갔다.
+_AXIS_LABEL_TO_KEY: dict[str, str] = {entry.label: key for key, entry in _AXIS_REGISTRY.items()}
+
 
 class Industry:
     """산업 매퍼엔진 진입점.
@@ -243,6 +248,9 @@ class Industry:
         )
 
         # 신형(gather 표준): industry("summary","semiconductor") / industry("theme","secondaryBattery").
+        # 한글 라벨(집중도/집계/...)도 축으로 해소한다 (macro 동등).
+        if isinstance(axis, str):
+            axis = _AXIS_LABEL_TO_KEY.get(axis, axis)
         if industryId is None and axis is not None and axis in _AXIS_REGISTRY:
             return self._dispatch(
                 axis, target, stage=stage, year=year, stockCode=stockCode, grade=grade, discover=discover
@@ -308,6 +316,21 @@ class Industry:
         """nodes.json에서 해당 산업의 노드를 DataFrame으로 반환."""
         from dartlab.industry.build.pipeline import loadNodes
         from dartlab.industry.taxonomy import getIndustry
+
+        # 미지 industryId 는 조용한 빈 결과 대신 유효 목록과 함께 거절한다. 실측 재현:
+        # industry("없는축이름", "semiconductor") 가 0행 DataFrame 으로 조용히 성공했다.
+        # 실재 산업의 노드 부재(자료 결측)는 그대로 빈 스키마 반환을 유지한다.
+        if getIndustry(industryId) is None:
+            from dartlab.industry.taxonomy import listIndustries
+
+            validIds = ", ".join(sorted(e["industryId"] for e in listIndustries())[:20])
+            validAxes = ", ".join(f"{k}({v.label})" for k, v in _AXIS_REGISTRY.items())
+            raise ValueError(
+                f"'{industryId}' 는 등록된 industryId 도, 축도 아닙니다.\n"
+                f"  축: {validAxes}\n"
+                f"  industryId 예: {validIds}\n"
+                f"  사용법: dartlab.industry('집중도', 'semiconductor') 또는 dartlab.industry() 로 목록 조회"
+            )
 
         nodes = loadNodes()
         filtered = [n for n in nodes if n.industry == industryId]
