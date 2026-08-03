@@ -525,7 +525,7 @@ class AgentRuntimeEngine:
             )
             mcp = probeMcpConnection(managed.handle.descriptor.runtimeId)
             instructions = buildAnalysisCapsule(cwd=managed.handle.cwd, mcpConnected=bool(mcp.get("connected")))
-            turnQuestion = buildTurnQuestion(question, context)
+            turnQuestion = buildTurnQuestion(question, context, contractQuestion=qualityQuestion)
             try:
                 for event in managed.driver.streamTurn(managed.handle, turnQuestion, instructions=instructions):
                     payload = tracker.enrich(event)

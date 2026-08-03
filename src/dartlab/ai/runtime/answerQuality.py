@@ -221,6 +221,50 @@ def evaluateAnswerQuality(
     )
 
 
+def claimCellContractForQuestion(
+    question: str,
+    *,
+    comparison: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """질문의 대상 x 지표 x 기간 완결 조건을 런타임용 구조로 반환한다."""
+    metrics = [name for name, _aliases in _requestedMetrics(question)]
+    explicitPeriods = sorted(_questionPeriods(question))
+    recentMatch = re.search(r"최근\s*(\d{1,2})\s*(?:개\s*)?(분기|년|연도)", question.casefold())
+    if not metrics or (not explicitPeriods and recentMatch is None):
+        return {}
+
+    comparisonPolicy = comparison or {}
+    comparisonRequired = _requiresMultipleTargets(question, comparisonPolicy)
+    targetCodes = sorted(set(re.findall(r"(?<!\d)\d{6}(?!\d)", question)))
+    targetLabels = sorted(_questionTargetLabels(question)) if not targetCodes and comparisonRequired else []
+    requestedMinimum = max(1, int(comparisonPolicy.get("minTargets") or 1)) if comparisonRequired else 1
+    targetCount = max(len(targetCodes), len(targetLabels), requestedMinimum)
+    targets = targetCodes or targetLabels or [f"questionTarget:{index + 1}" for index in range(targetCount)]
+    if len(targets) < targetCount:
+        targets.extend(f"questionTarget:{index + 1}" for index in range(len(targets), targetCount))
+
+    if explicitPeriods:
+        periodContract: dict[str, Any] = {"kind": "explicit", "periods": explicitPeriods}
+        periodCount = len(explicitPeriods)
+    else:
+        assert recentMatch is not None
+        periodCount = int(recentMatch.group(1))
+        periodContract = {
+            "kind": "recent",
+            "count": periodCount,
+            "unit": "fiscal_quarter" if recentMatch.group(2) == "분기" else "fiscal_year",
+        }
+
+    return {
+        "targets": targets,
+        "targetCount": targetCount,
+        "metrics": metrics,
+        "period": periodContract,
+        "requiredCells": targetCount * len(metrics) * periodCount,
+        "completionRule": "every_target_metric_period_requires_canonical_value_ref",
+    }
+
+
 def _completionIssues(
     cleanAnswer: str,
     *,
@@ -699,7 +743,7 @@ def _coversQuestionMetrics(question: str, cited: list[dict[str, Any]]) -> bool:
 
 
 def _requestedMetrics(question: str) -> list[tuple[str, tuple[str, ...]]]:
-    requested: list[tuple[str, tuple[str, ...]]] = []
+    requested: list[tuple[int, str, tuple[str, ...]]] = []
     matchedSpecific: set[str] = set()
     for name, questionAliases, evidenceAliases in _METRIC_SPECS:
         if not _matchesAnyAlias(question, questionAliases):
@@ -708,9 +752,17 @@ def _requestedMetrics(question: str) -> list[tuple[str, tuple[str, ...]]]:
             continue
         if name == "operating_profit" and "operating_margin" in matchedSpecific:
             continue
-        requested.append((name, evidenceAliases))
+        requested.append((_firstAliasPosition(question, questionAliases), name, evidenceAliases))
         matchedSpecific.add(name)
-    return requested
+    return [(name, aliases) for _position, name, aliases in sorted(requested)]
+
+
+def _firstAliasPosition(value: str, aliases: tuple[str, ...]) -> int:
+    """질문에 먼저 등장한 metric 순서를 안정적인 표 순서로 보존한다."""
+    folded = value.casefold()
+    positions = [folded.find(alias.casefold()) for alias in aliases]
+    matched = [position for position in positions if position >= 0]
+    return min(matched) if matched else len(folded)
 
 
 def _matchesAnyAlias(value: str, aliases: tuple[str, ...]) -> bool:

@@ -1123,6 +1123,7 @@ def runRuntimeAgent(question: str, **kwargs: Any) -> Iterator[TraceEvent]:
     failed = False
     terminalEvent: Any | None = None
     repairAttempt = 0
+    repairMode = "none"
     try:
         for event in engine.stream(
             question,
@@ -1210,83 +1211,110 @@ def runRuntimeAgent(question: str, **kwargs: Any) -> Iterator[TraceEvent]:
             repairAttempt = 1
             yield TraceEvent(
                 "verify",
-                _runtimeVerifyData(quality, stage="candidate", repairAttempt=repairAttempt),
+                _runtimeVerifyData(
+                    quality,
+                    stage="candidate",
+                    repairAttempt=repairAttempt,
+                    repairMode="pending",
+                ),
             )
-            repairParts: list[str] = []
-            repairFailed = False
-            repairTerminal: Any | None = None
-            readSkillCalls = _runtimeReadSkillCalls(terminalEvent.payload)
-            repairPrompt = _runtimeRepairPrompt(question, answer, evidenceRefs, quality.toDict())
-            for event in engine.streamTurn(
-                activeSessionId,
-                repairPrompt,
-                context=turnContext,
-                outcomeId=outcomeId,
-                priorRefs=evidenceRefs,
-                priorReadSkillCalls=readSkillCalls,
-                qualityQuestion=question,
-            ):
-                if event.kind == "turnStarted":
-                    yield TraceEvent(
-                        "runtime_turn",
-                        {
-                            "sessionId": event.sessionId,
-                            "turnId": event.turnId,
-                            "runtimeId": event.runtimeId,
-                            "repairAttempt": repairAttempt,
-                        },
-                    )
-                elif event.kind == "messageDelta":
-                    text = str(event.payload.get("text") or "")
-                    if text:
-                        repairParts.append(text)
-                elif event.kind == "reasoningDelta":
-                    text = str(event.payload.get("text") or "")
-                    if text:
-                        yield TraceEvent("thinking", {"text": text})
-                elif event.kind == "toolStarted":
-                    repairParts.clear()
-                    yield TraceEvent("tool_start", _runtimeToolData(event.payload, status="running"))
-                elif event.kind == "toolCompleted":
-                    _appendRuntimeEvidenceRefs(evidenceRefs, event.payload.get("refDetails"))
-                    yield TraceEvent("tool_result", _runtimeToolData(event.payload, status="done"))
-                elif event.kind == "approvalRequested":
-                    yield TraceEvent(
-                        "approval_requested",
-                        {
-                            "sessionId": event.sessionId,
-                            "turnId": event.turnId,
-                            "approvalId": event.payload.get("approvalId"),
-                            "request": event.payload,
-                        },
-                    )
-                elif event.kind == "artifactProduced":
-                    yield TraceEvent("view_spec", event.payload)
-                elif event.kind == "eventGap":
-                    yield TraceEvent("event_gap", event.payload)
-                elif event.kind == "runtimeError":
-                    repairFailed = True
-                elif event.kind == "turnCompleted":
-                    repairTerminal = event
-            if repairTerminal is not None:
-                repairedAnswer = "".join(repairParts).strip()
-                repairedQuality = _runtimeAnswerQuality(
+            deterministicAnswer = _runtimeDeterministicEvidenceAnswer(question, evidenceRefs)
+            if deterministicAnswer:
+                deterministicQuality = _runtimeAnswerQuality(
                     question,
-                    repairedAnswer,
+                    deterministicAnswer,
                     evidenceRefs,
-                    repairTerminal.payload,
-                    failed=repairFailed,
+                    terminalEvent.payload,
+                    failed=False,
                 )
-                terminalEvent = repairTerminal
-                quality = repairedQuality
-                failed = repairFailed
-                if repairedAnswer:
-                    answer = repairedAnswer
+                if deterministicQuality.passed:
+                    answer = deterministicAnswer
+                    quality = deterministicQuality
+                    repairMode = "deterministic"
+
+            if not quality.passed:
+                repairMode = "native_session"
+                repairParts: list[str] = []
+                repairFailed = False
+                repairTerminal: Any | None = None
+                readSkillCalls = _runtimeReadSkillCalls(terminalEvent.payload)
+                repairPrompt = _runtimeRepairPrompt(question, answer, evidenceRefs, quality.toDict())
+                for event in engine.streamTurn(
+                    activeSessionId,
+                    repairPrompt,
+                    context=turnContext,
+                    outcomeId=outcomeId,
+                    priorRefs=evidenceRefs,
+                    priorReadSkillCalls=readSkillCalls,
+                    qualityQuestion=question,
+                ):
+                    if event.kind == "turnStarted":
+                        yield TraceEvent(
+                            "runtime_turn",
+                            {
+                                "sessionId": event.sessionId,
+                                "turnId": event.turnId,
+                                "runtimeId": event.runtimeId,
+                                "repairAttempt": repairAttempt,
+                                "repairMode": repairMode,
+                            },
+                        )
+                    elif event.kind == "messageDelta":
+                        text = str(event.payload.get("text") or "")
+                        if text:
+                            repairParts.append(text)
+                    elif event.kind == "reasoningDelta":
+                        text = str(event.payload.get("text") or "")
+                        if text:
+                            yield TraceEvent("thinking", {"text": text})
+                    elif event.kind == "toolStarted":
+                        repairParts.clear()
+                        yield TraceEvent("tool_start", _runtimeToolData(event.payload, status="running"))
+                    elif event.kind == "toolCompleted":
+                        _appendRuntimeEvidenceRefs(evidenceRefs, event.payload.get("refDetails"))
+                        yield TraceEvent("tool_result", _runtimeToolData(event.payload, status="done"))
+                    elif event.kind == "approvalRequested":
+                        yield TraceEvent(
+                            "approval_requested",
+                            {
+                                "sessionId": event.sessionId,
+                                "turnId": event.turnId,
+                                "approvalId": event.payload.get("approvalId"),
+                                "request": event.payload,
+                            },
+                        )
+                    elif event.kind == "artifactProduced":
+                        yield TraceEvent("view_spec", event.payload)
+                    elif event.kind == "eventGap":
+                        yield TraceEvent("event_gap", event.payload)
+                    elif event.kind == "runtimeError":
+                        repairFailed = True
+                    elif event.kind == "turnCompleted":
+                        repairTerminal = event
+                if repairTerminal is not None:
+                    repairedAnswer = "".join(repairParts).strip()
+                    repairedQuality = _runtimeAnswerQuality(
+                        question,
+                        repairedAnswer,
+                        evidenceRefs,
+                        repairTerminal.payload,
+                        failed=repairFailed,
+                    )
+                    terminalEvent = repairTerminal
+                    quality = repairedQuality
+                    failed = repairFailed
+                    if repairedAnswer:
+                        answer = repairedAnswer
 
         committed = quality.passed and not failed
         yield TraceEvent(
             "verify",
-            _runtimeVerifyData(quality, stage="final", repairAttempt=repairAttempt),
+            _runtimeVerifyData(
+                quality,
+                stage="final",
+                repairAttempt=repairAttempt,
+                repairMode=repairMode,
+            ),
         )
         if committed:
             yield TraceEvent("chunk", {"text": answer})
@@ -1299,6 +1327,7 @@ def runRuntimeAgent(question: str, **kwargs: Any) -> Iterator[TraceEvent]:
                 outcomeId=outcomeId,
                 qualityReport=quality.toDict(),
                 repairAttempt=repairAttempt,
+                repairMode=repairMode,
                 initialIssues=firstIssues,
             ),
         )
@@ -1325,7 +1354,13 @@ def _runtimeReadSkillCalls(completionPayload: dict[str, Any]) -> int:
     return int(value) if isinstance(value, int) else 0
 
 
-def _runtimeVerifyData(report: Any, *, stage: str, repairAttempt: int) -> dict[str, Any]:
+def _runtimeVerifyData(
+    report: Any,
+    *,
+    stage: str,
+    repairAttempt: int,
+    repairMode: str,
+) -> dict[str, Any]:
     """후보와 최종 품질 판정을 같은 내부 verify 이벤트 계약으로 투영한다."""
     return {
         "result": {
@@ -1338,6 +1373,7 @@ def _runtimeVerifyData(report: Any, *, stage: str, repairAttempt: int) -> dict[s
         "pass": "gate",
         "stage": stage,
         "repairAttempt": repairAttempt,
+        "repairMode": repairMode,
     }
 
 
@@ -1350,6 +1386,8 @@ def _runtimeRepairPrompt(
     """같은 native session에서 한 번만 실행할 근거 교정 요청을 만든다."""
     evidence = json.dumps(refs[:100], ensure_ascii=False, default=str, separators=(",", ":"))[:40_000]
     issues = ", ".join(str(issue) for issue in qualityReport.get("issues") or [])
+    requiredCells = int(qualityReport.get("requiredClaimCells") or 0)
+    coveredCells = int(qualityReport.get("coveredClaimCells") or 0)
     return (
         "DartLab 답변 품질 교정 턴이다. ReadSkill은 다시 호출하지 마라. "
         "아래 canonical evidence만으로 해결되면 즉시 최종 답변만 다시 작성하라. "
@@ -1358,9 +1396,185 @@ def _runtimeRepairPrompt(
         "근거에 없는 사실은 쓰지 마라.\n"
         f"원 질문: {question}\n"
         f"실패 코드: {issues}\n"
+        f"근거 셀 충족: {coveredCells}/{requiredCells}\n"
         f"거부된 초안: {rejectedAnswer[:12_000]}\n"
         f"현재 canonical evidence: {evidence}"
     )
+
+
+def _runtimeDeterministicEvidenceAnswer(question: str, refs: list[dict[str, Any]]) -> str | None:
+    """완결된 정량 evidence를 모델 재호출 없이 exact citation 표로 교정한다."""
+    from dartlab.ai.runtime.answerQuality import claimCellContractForQuestion
+    from dartlab.reference.capability.analysisGraph import coveragePacketForQuestion
+
+    coverage = coveragePacketForQuestion(question)
+    contract = claimCellContractForQuestion(
+        question,
+        comparison=coverage.get("comparisonCompleteness") or {},
+    )
+    metrics = tuple(str(value) for value in contract.get("metrics") or ())
+    requiredCells = int(contract.get("requiredCells") or 0)
+    targetCount = int(contract.get("targetCount") or 0)
+    if not metrics or requiredCells <= 0 or targetCount <= 0:
+        return None
+
+    values: dict[tuple[str, str, str], dict[str, Any]] = {}
+    for ref in refs:
+        if ref.get("kind") != "valueRef":
+            continue
+        payload = ref.get("payload") if isinstance(ref.get("payload"), dict) else {}
+        metric = str(payload.get("canonicalMetricId") or payload.get("metric") or "").casefold()
+        period = str(payload.get("period") or "").upper()
+        target = _runtimeEvidenceTarget(payload)
+        if metric not in metrics or not period or not target or payload.get("value") is None:
+            continue
+        values.setdefault((target, metric, period), ref)
+
+    requestedCodes = {
+        str(target) for target in contract.get("targets") or () if str(target).isdigit() and len(str(target)) == 6
+    }
+    availableTargets = sorted({target for target, _metric, _period in values})
+    if requestedCodes:
+        selectedTargets = sorted(requestedCodes)
+        if not requestedCodes.issubset(availableTargets):
+            return None
+    else:
+        if len(availableTargets) < targetCount:
+            return None
+        selectedTargets = availableTargets[:targetCount]
+
+    periodContract = contract.get("period") if isinstance(contract.get("period"), dict) else {}
+    selectedPeriods: dict[str, list[str]] = {}
+    for target in selectedTargets:
+        metricPeriods = [
+            {period for rowTarget, rowMetric, period in values if rowTarget == target and rowMetric == metric}
+            for metric in metrics
+        ]
+        commonPeriods = set.intersection(*metricPeriods) if metricPeriods and all(metricPeriods) else set()
+        if periodContract.get("kind") == "explicit":
+            expected = tuple(str(value).upper() for value in periodContract.get("periods") or ())
+            periods = []
+            for expectedPeriod in expected:
+                matches = [period for period in commonPeriods if _runtimePeriodMatches(period, expectedPeriod)]
+                if not matches:
+                    return None
+                periods.append(sorted(matches, key=_runtimePeriodSortKey)[-1])
+        else:
+            wantsQuarter = periodContract.get("unit") == "fiscal_quarter"
+            count = int(periodContract.get("count") or 0)
+            relevant = [period for period in commonPeriods if ("Q" in period) == wantsQuarter]
+            periods = sorted(relevant, key=_runtimePeriodSortKey)[-count:]
+            if count <= 0 or len(periods) != count:
+                return None
+        selectedPeriods[target] = periods
+
+    dates: dict[tuple[str, str], dict[str, Any]] = {}
+    fallbackDates: dict[str, dict[str, Any]] = {}
+    for ref in refs:
+        if ref.get("kind") != "dateRef":
+            continue
+        payload = ref.get("payload") if isinstance(ref.get("payload"), dict) else {}
+        period = str(payload.get("period") or "").upper()
+        if not period:
+            continue
+        target = _runtimeEvidenceTarget(payload)
+        if target:
+            dates.setdefault((target, period), ref)
+        fallbackDates.setdefault(period, ref)
+
+    tableRefs = [ref for ref in refs if ref.get("kind") == "tableRef" and ref.get("id")]
+    if not tableRefs:
+        return None
+
+    rows: list[str] = []
+    citedDates: set[str] = set()
+    for target in selectedTargets:
+        for period in selectedPeriods[target]:
+            dateRef = dates.get((target, period)) or fallbackDates.get(period)
+            if dateRef is None:
+                return None
+            dateId = str(dateRef["id"])
+            dateCitation = f" `{dateId}`" if dateId not in citedDates else ""
+            citedDates.add(dateId)
+            for metric in metrics:
+                valueRef = values.get((target, metric, period))
+                if valueRef is None:
+                    return None
+                payload = valueRef.get("payload") if isinstance(valueRef.get("payload"), dict) else {}
+                rows.append(
+                    "| "
+                    + " | ".join(
+                        (
+                            target,
+                            f"{period}{dateCitation}",
+                            _runtimeMetricLabel(metric),
+                            f"{_runtimeEvidenceValue(payload)} `{valueRef['id']}`",
+                        )
+                    )
+                    + " |"
+                )
+
+    if len(rows) != requiredCells:
+        return None
+    tableCitations = " ".join(f"`{ref['id']}`" for ref in tableRefs[:targetCount])
+    return (
+        "요청한 수치를 정식 근거에서 직접 정리했습니다.\n\n"
+        "| 대상 | 회계기간 | 지표 | 값 |\n"
+        "|---|---|---|---:|\n" + "\n".join(rows) + f"\n\n근거 표: {tableCitations}"
+    )
+
+
+def _runtimeEvidenceTarget(payload: dict[str, Any]) -> str:
+    """evidence payload에서 안정적인 대상 식별자를 고른다."""
+    for key in ("stockCode", "target", "code", "ticker", "corpCode"):
+        value = payload.get(key)
+        if isinstance(value, (str, int)) and str(value).strip():
+            return str(value).strip()
+    return ""
+
+
+def _runtimePeriodMatches(period: str, expected: str) -> bool:
+    """2024와 2024FY처럼 같은 회계기간 표기를 결합한다."""
+    return period == expected or (len(expected) == 4 and period.startswith(expected) and "Q" not in period)
+
+
+def _runtimePeriodSortKey(period: str) -> tuple[int, int]:
+    """연도와 분기를 시간순으로 정렬할 키를 반환한다."""
+    year = int(period[:4]) if len(period) >= 4 and period[:4].isdigit() else 0
+    quarter = int(period[-1]) if "Q" in period and period[-1:].isdigit() else 5
+    return year, quarter
+
+
+def _runtimeMetricLabel(metric: str) -> str:
+    """핵심 정량 metric ID를 사용자 표의 짧은 이름으로 바꾼다."""
+    return {
+        "revenue": "매출액",
+        "operating_profit": "영업이익",
+        "operating_margin": "영업이익률",
+        "revenue_growth": "매출성장률",
+        "net_income": "당기순이익",
+        "operating_cash_flow": "영업활동현금흐름",
+        "free_cash_flow": "잉여현금흐름",
+        "total_assets": "자산총계",
+        "total_liabilities": "부채총계",
+        "total_equity": "자본총계",
+    }.get(metric, metric)
+
+
+def _runtimeEvidenceValue(payload: dict[str, Any]) -> str:
+    """canonical scalar를 binding 가능한 손실 없는 표시값으로 렌더한다."""
+    formatted = payload.get("formatted")
+    if isinstance(formatted, str) and formatted.strip():
+        return formatted.strip()
+    value = payload.get("value")
+    if isinstance(value, float) and value.is_integer():
+        value = int(value)
+    rendered = f"{value:,}" if isinstance(value, (int, float)) and not isinstance(value, bool) else str(value)
+    unit = str(payload.get("unit") or "").strip()
+    currency = str(payload.get("currency") or "").upper()
+    if currency == "KRW" or unit.upper() == "KRW":
+        return f"{rendered}원"
+    return f"{rendered}{unit}" if unit and unit not in {"1", "ratio"} else rendered
 
 
 def _runtimeId(kwargs: dict[str, Any]) -> str | None:
@@ -1426,6 +1640,7 @@ def _runtimeDoneData(
     outcomeId: str | None,
     qualityReport: dict[str, Any],
     repairAttempt: int = 0,
+    repairMode: str = "none",
     initialIssues: tuple[str, ...] = (),
 ) -> dict[str, Any]:
     """공개 adapter와 Outcome 원장이 같은 완료 근거를 보도록 종료 payload를 만든다."""
@@ -1441,6 +1656,7 @@ def _runtimeDoneData(
             "outcomeId": outcomeId,
             "verificationStatus": "evidenceCommitted" if answerCommitted else "rejected",
             "repairAttempt": repairAttempt,
+            "repairMode": repairMode,
             "failureCode": None
             if answerCommitted
             else next(iter(qualityReport.get("issues") or []), "quality_rejected"),

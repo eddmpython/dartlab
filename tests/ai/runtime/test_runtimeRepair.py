@@ -33,7 +33,7 @@ def _refs() -> list[dict]:
     ]
 
 
-def testQualityFailureRepairsOnceInSameNativeSession(monkeypatch):
+def testCompleteQuantitativeEvidenceRepairsWithoutSecondNativeTurn(monkeypatch):
     projector = EventProjector("codex", "session-1")
     refs = _refs()
     repairCalls: list[dict] = []
@@ -72,7 +72,80 @@ def testQualityFailureRepairsOnceInSameNativeSession(monkeypatch):
 
         def streamTurn(self, sessionId, prompt, **kwargs):
             repairCalls.append({"sessionId": sessionId, "prompt": prompt, **kwargs})
+            raise AssertionError("완결된 정량 근거는 native session을 다시 호출하면 안 된다")
+
+    monkeypatch.setattr("dartlab.ai.runtime.getRuntimeEngine", lambda: FakeEngine())
+
+    events = list(runRuntimeAgent("삼성전자 005930의 2025년 매출은?", runtimeId="codex"))
+
+    assert repairCalls == []
+    answer = next(event.data["text"] for event in events if event.kind == "chunk")
+    assert "100" in answer
+    assert "value:005930:IS:2025FY:revenue" in answer
+    assert "date:005930:IS:2025FY" in answer
+    verifyEvents = [event.data for event in events if event.kind == "verify"]
+    assert [event["result"]["ok"] for event in verifyEvents] == [False, True]
+    assert [event["stage"] for event in verifyEvents] == ["candidate", "final"]
+    assert verifyEvents[-1]["repairMode"] == "deterministic"
+    assert verifyEvents[-1]["result"]["requiredClaimCells"] == 1
+    assert verifyEvents[-1]["result"]["coveredClaimCells"] == 1
+    done = next(event.data for event in events if event.kind == "done")
+    assert done["responseMeta"]["finalEvent"] == "answer"
+    assert done["responseMeta"]["repairAttempt"] == 1
+    assert done["responseMeta"]["repairMode"] == "deterministic"
+    assert done["candidateRefs"] == []
+
+
+def testMissingEvidenceFallsBackToSameNativeSession(monkeypatch):
+    projector = EventProjector("codex", "session-1")
+    refs = _refs()[1:]
+    tableRef = _refs()[0]
+    repairCalls: list[dict] = []
+
+    class FakeEngine:
+        def stream(self, question, **kwargs):
+            yield projector.event("sessionStarted", turnId="", payload={"nativeSessionId": "native-1"})
+            yield projector.event("turnStarted", turnId="turn-1")
+            yield projector.event(
+                "toolCompleted",
+                turnId="turn-1",
+                payload={
+                    "canonicalName": "EngineCall",
+                    "nativeName": "mcp__dartlab__EngineCall",
+                    "toolCallId": "call-1",
+                    "refDetails": refs,
+                    "outcomeId": "outcome-1",
+                },
+            )
+            yield projector.event(
+                "messageDelta",
+                turnId="turn-1",
+                payload={"text": "2025년 매출은 100원이다. value:005930:IS:2025FY:revenue date:005930:IS:2025FY"},
+            )
+            yield projector.event(
+                "turnCompleted",
+                turnId="turn-1",
+                payload={
+                    "status": "completed",
+                    "outcomeId": "outcome-1",
+                    "runtimeCoverage": {"readSkillCalls": 1},
+                },
+            )
+
+        def streamTurn(self, sessionId, prompt, **kwargs):
+            repairCalls.append({"sessionId": sessionId, "prompt": prompt, **kwargs})
             yield projector.event("turnStarted", turnId="turn-2")
+            yield projector.event(
+                "toolCompleted",
+                turnId="turn-2",
+                payload={
+                    "canonicalName": "EngineCall",
+                    "nativeName": "mcp__dartlab__EngineCall",
+                    "toolCallId": "call-2",
+                    "refDetails": [tableRef],
+                    "outcomeId": "outcome-1",
+                },
+            )
             yield projector.event(
                 "messageDelta",
                 turnId="turn-2",
@@ -98,15 +171,10 @@ def testQualityFailureRepairsOnceInSameNativeSession(monkeypatch):
     assert repairCalls[0]["sessionId"] == "session-1"
     assert repairCalls[0]["outcomeId"] == "outcome-1"
     assert repairCalls[0]["qualityQuestion"] == "삼성전자 005930의 2025년 매출은?"
-    assert [event.data["text"] for event in events if event.kind == "chunk"] == [
-        "2025년 매출은 100원이다. table:005930:IS:2025FY value:005930:IS:2025FY:revenue date:005930:IS:2025FY"
-    ]
+    assert "근거 셀 충족: 1/1" in repairCalls[0]["prompt"]
     verifyEvents = [event.data for event in events if event.kind == "verify"]
     assert [event["result"]["ok"] for event in verifyEvents] == [False, True]
-    assert [event["stage"] for event in verifyEvents] == ["candidate", "final"]
-    assert verifyEvents[-1]["result"]["requiredClaimCells"] == 1
-    assert verifyEvents[-1]["result"]["coveredClaimCells"] == 1
+    assert verifyEvents[-1]["repairMode"] == "native_session"
     done = next(event.data for event in events if event.kind == "done")
     assert done["responseMeta"]["finalEvent"] == "answer"
-    assert done["responseMeta"]["repairAttempt"] == 1
-    assert done["candidateRefs"] == []
+    assert done["responseMeta"]["repairMode"] == "native_session"

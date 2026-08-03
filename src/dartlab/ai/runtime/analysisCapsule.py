@@ -32,6 +32,7 @@ def buildAnalysisCapsule(*, cwd: Path, mcpConnected: bool) -> str:
         "저장소와 Skill OS 부트스트랩은 호스트가 이미 완료했다. start.dartlabSkillOs나 operation skill을 다시 읽지 마라. "
         "ReadSkill에는 사용자 질문의 핵심 분석 의도를 넣어 턴당 정확히 한 번만 호출하고 응답의 capabilityRefs, coverageCapabilityRefs, capabilityDetails에서 실행 계약을 골라라. "
         "application context의 informationCoverage는 강제 실행 순서가 아니라 질문별 필수 정보와 canonical 후보 계약이다. 관련된 모든 도메인을 검토하고 requiredEvidence가 빠지면 완전한 결론이라고 주장하지 마라. "
+        "claimCellContract가 있으면 requiredCells를 완료 조건으로 삼고 모든 target, metric, period 조합의 canonical valueRef를 확보한 뒤 답하라. "
         "ReadCapability는 선택된 skill 정보가 부족한 경우에만 보조로 사용하라. "
         "같은 도구와 같은 인자를 반복 호출하지 말고, 일반 질문은 전체 도구 호출 8회 이내에서 끝내라. "
         "DartLab 외 다른 MCP 서버의 도구는 사용하지 마라. stockCode와 period가 있으면 period와 freq를 누락하지 말고 Company.panel 계약의 EngineCall을 우선하라. "
@@ -46,25 +47,36 @@ def buildAnalysisCapsule(*, cwd: Path, mcpConnected: bool) -> str:
     )
 
 
-def buildTurnQuestion(question: str, context: dict[str, Any] | None = None) -> str:
+def buildTurnQuestion(
+    question: str,
+    context: dict[str, Any] | None = None,
+    *,
+    contractQuestion: str | None = None,
+) -> str:
     """Sig: buildTurnQuestion(question, context=None) -> str.
 
-    Args: 사용자 질문과 신뢰 가능한 로컬 화면 컨텍스트다.
+    Args: 사용자 질문, 신뢰 가능한 로컬 화면 컨텍스트와 계약 기준 원 질문이다.
     Returns: 대화 전문 없이 허용 필드만 포함한 bounded 질문이다.
     Raises: ValueError if context exceeds 16 KiB.
     Example: `buildTurnQuestion("매출은?", {"stockCode": "005930"})`.
     """
+    from dartlab.ai.runtime.answerQuality import claimCellContractForQuestion
     from dartlab.reference.capability.analysisGraph import coveragePacketForQuestion
 
     cleanQuestion = question.strip()
+    cleanContractQuestion = (contractQuestion or cleanQuestion).strip()
     safeContext = context or {}
     allowed = {key: safeContext[key] for key in _TURN_CONTEXT_KEYS if safeContext.get(key) not in (None, "", [], {})}
     if "period" not in allowed:
-        periodHint = _periodHint(cleanQuestion)
+        periodHint = _periodHint(cleanContractQuestion)
         if periodHint:
             allowed["period"] = periodHint
-    coverage = coveragePacketForQuestion(cleanQuestion, stockCode=allowed.get("stockCode"))
+    coverage = coveragePacketForQuestion(cleanContractQuestion, stockCode=allowed.get("stockCode"))
     allowed["informationCoverage"] = coverage
+    comparison = coverage.get("comparisonCompleteness") or {}
+    claimCellContract = claimCellContractForQuestion(cleanContractQuestion, comparison=comparison)
+    if claimCellContract:
+        allowed["claimCellContract"] = claimCellContract
     encoded = json.dumps(allowed, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     if len(encoded.encode("utf-8")) > _MAX_TURN_CONTEXT_BYTES:
         compactCoverage = dict(coverage)

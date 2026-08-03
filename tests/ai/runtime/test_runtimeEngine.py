@@ -194,6 +194,40 @@ def testRuntimeContextIsBoundedAndTranscriptFree(tmp_path, monkeypatch):
     assert "TRANSCRIPT_SECRET_8C1A" not in managed.handle.metadata["question"]
 
 
+def testRepairTurnUsesOriginalQuestionForCompletionContract(tmp_path, monkeypatch):
+    descriptor = RuntimeDescriptor(
+        "fake", "Fake", "fake", "ndjson", ("fake",), ("--version",), (), (), "https://example.invalid"
+    )
+    monkeypatch.setattr(
+        runtimeEngineModule, "probeRuntime", lambda value: RuntimeProbe("fake", "ready", sysExecutable())
+    )
+    monkeypatch.setattr(
+        runtimeEngineModule,
+        "probeMcpConnection",
+        lambda runtimeId, **_kwargs: {"connected": True, "mode": "test"},
+    )
+    engine = AgentRuntimeEngine(SessionStore(tmp_path / "sessions.sqlite3"), SessionManager())
+    engine.registry = {"fake": descriptor}
+    driver = FakeDriver()
+    engine.drivers = {"fake": driver}
+    session = engine.openSession(runtimeId="fake", cwd=tmp_path)
+
+    list(
+        engine.streamTurn(
+            session.sessionId,
+            "답변 품질을 다시 교정하라",
+            qualityQuestion="삼성전자 005930 최근 5년 매출과 영업이익 추이",
+        )
+    )
+
+    managed = engine.sessionManager.get(session.sessionId)
+    assert managed is not None
+    nativeQuestion = managed.handle.metadata["question"]
+    assert '"period":"recent:5Y"' in nativeQuestion
+    assert '"requiredCells":10' in nativeQuestion
+    assert nativeQuestion.endswith("[사용자 질문]\n답변 품질을 다시 교정하라")
+
+
 def testSameSessionRejectsConcurrentTurn(tmp_path, monkeypatch):
     descriptor = RuntimeDescriptor(
         "fake", "Fake", "fake", "ndjson", ("fake",), ("--version",), (), (), "https://example.invalid"

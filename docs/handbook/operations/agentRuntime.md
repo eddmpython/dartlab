@@ -24,9 +24,10 @@ uv run python -X utf8 -m dartlab ask --runtime codex "삼성전자 005930 최근
 - `requiredClaimCells`와 `coveredClaimCells`가 같음
 - 최종 답변이 인용한 ref가 committed evidence에 존재함
 - 첫 답변 보완이 필요했다면 같은 session과 outcome을 유지함
+- `repairMode=deterministic`이면 추가 네이티브 턴 없이 정식 근거로 교정됐는지 확인함
 - CLI 상태줄의 마지막 품질 판정이 `verify: ok`임
 
-2026-08-03 로컬 실질 실행에서는 Codex와 Claude Code의 설치, 인증, MCP 연결을 확인했다. Codex로 삼성전자 최근 5개년 매출과 영업이익 질문을 실행해 같은 세션의 자동 보완 뒤 10개 claim cell을 모두 덮고 품질 점수 100으로 근거를 commit했다. 이어서 최종 verify 이벤트와 실패 종료 전파를 보강한 뒤 같은 질문을 다시 실행해 `verify: ok`와 종료코드 0을 확인했다.
+2026-08-03 로컬 실질 실행에서는 Codex와 Claude Code의 설치, 인증, MCP 연결을 확인했다. Codex로 삼성전자 최근 5개년 매출과 영업이익 질문을 실행해 같은 세션의 자동 보완 뒤 10개 claim cell을 모두 덮고 품질 점수 100으로 근거를 commit했다. 이어서 질문 계약을 최초 턴에 주입한 실행은 추가 보완 없이 한 번에 통과했다. 결정론 교정까지 연결한 최종 실행에서는 후보 품질 실패 뒤 네이티브 턴을 추가하지 않고 10개 exact value ref 표를 구성해 80.9초, 의미 도구 3개, `verify: ok`, 종료코드 0으로 끝났다.
 
 ## 장애 복구
 

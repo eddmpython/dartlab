@@ -19,8 +19,10 @@ manifest와 discovery
 - `registry.py`와 `discovery.py`는 매니페스트를 읽어 설치와 인증 상태를 판정한다. 인증 명령의 원문 출력은 공개 상태에 포함하지 않는다.
 - `engine.py`는 기본 런타임 선택, 대화와 네이티브 세션 결속, 취소, 재개, 근거 수집을 소유한다.
 - driver는 Codex app server, Claude stream JSON, ACP 차이를 `AgentEvent`로 정규화한다.
-- `agent.py`는 답변 후보를 품질 판정 전까지 보류하고, 필요하면 같은 네이티브 세션과 outcome에서 한 번 보완한다.
+- `analysisCapsule.py`는 질문에서 대상, 지표, 기간을 분해한 `claimCellContract`를 application context에 넣는다. 최초 턴과 교정 턴은 같은 원 질문 계약을 사용한다.
+- `agent.py`는 답변 후보를 품질 판정 전까지 보류한다. 정량 근거 셀이 이미 완결됐으면 exact ref 표를 결정론적으로 재구성하고, 근거 자체가 부족할 때만 같은 네이티브 세션과 outcome에서 한 번 보완한다.
 - 후보 판정과 최종 판정은 각각 `verify` 이벤트로 남긴다. 최종 판정이 실패하면 답변 chunk를 공개하지 않고 실패 `done`으로 종료한다.
+- `verify`와 `done`의 `repairMode`는 `none`, `deterministic`, `native_session` 중 실제 사용 경로를 기록한다.
 - `agentGateway.py`는 공개 이벤트 allowlist만 SSE로 투영한다. 실행마다 `RUN_ERROR`는 최대 한 번, `RUN_FINISHED`는 정확히 한 번 발행한다.
 
 ## 도구와 권한
@@ -33,5 +35,5 @@ manifest와 discovery
 
 `EngineCall` 결과는 canonical tool name, tool call ID, source identity, 기간과 값을 보존한다. 연간 손익과 현금흐름은 분기 합계, 연간 재무상태는 4분기 말 snapshot으로 만든다. 로컬 계산 결과는 canonical upstream lineage가 있을 때만 최종 근거로 인정한다.
 
-품질 실패 시 첫 답변의 근거는 candidate로 격리한다. 보완 답변이 통과한 경우에만 최종 evidence store에 commit한다.
+품질 실패 시 첫 답변의 근거는 candidate로 격리한다. 결정론 교정 또는 네이티브 세션 보완 답변이 통과한 경우에만 최종 evidence store에 commit한다.
 Python ask와 CLI는 실패 `done`을 빈 문자열이나 종료코드 0으로 낮추지 않는다.

@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 import json
+import subprocess
 import sys
+from datetime import datetime
 from pathlib import Path
 
 import pytest
 
 from dartlab.ai.runtime.analysisCapsule import buildAnalysisCapsule, buildTurnQuestion
-from dartlab.ai.runtime.contracts import ProcessSpec, RuntimeDescriptor, RuntimeProbe
+from dartlab.ai.runtime.contracts import ProcessSpec, RuntimeDescriptor, RuntimeProbe, nowIso
+from dartlab.ai.runtime.discovery import probeAllRuntimes, runtimeLoginArgv
 from dartlab.ai.runtime.drivers.base import (
     remainingTurnSeconds,
     runtimeExecutableArgv,
@@ -20,10 +23,18 @@ from dartlab.ai.runtime.eventBuffer import EventBuffer
 from dartlab.ai.runtime.eventProjection import EventProjector
 from dartlab.ai.runtime.evidenceStore import EvidenceStore
 from dartlab.ai.runtime.installManager import buildInstallPlan, executeInstallPlan
-from dartlab.ai.runtime.mcpBootstrap import _claudeProjectMcpConfigured, _clineMcpConfigured, buildMcpConnectPlan
+from dartlab.ai.runtime.mcpBootstrap import (
+    McpConnectPlan,
+    _claudeProjectMcpConfigured,
+    _clineMcpConfigured,
+    buildMcpConnectPlan,
+    claudeReadOnlyMcpTools,
+    embeddedMcpServerSpec,
+    executeMcpConnectPlan,
+)
 from dartlab.ai.runtime.processSupervisor import ProcessSupervisor
-from dartlab.ai.runtime.registry import loadRuntimeRegistry
-from dartlab.ai.runtime.schema import generateTypeScriptContracts
+from dartlab.ai.runtime.registry import loadRuntimeRegistry, manifestRoot
+from dartlab.ai.runtime.schema import generateTypeScriptContracts, runtimeJsonSchemas
 from dartlab.ai.runtime.sessionStore import SessionStore
 
 
@@ -63,6 +74,102 @@ def testRuntimeRegistryHasThreeNativeDrivers():
     assert loadRuntimeRegistry()["codex"].embeddedGrounding is True
     assert loadRuntimeRegistry()["codex"].authProbeArgs == ("login", "status")
     assert loadRuntimeRegistry()["claude"].loginArgs == ("auth", "login")
+
+
+def testRuntimePublicContractHelpersAreDirectlyUsable(monkeypatch):
+    timestamp = nowIso()
+    assert datetime.fromisoformat(timestamp).utcoffset().total_seconds() == 0
+
+    root = manifestRoot()
+    assert root.is_dir()
+    assert {path.stem for path in root.glob("*.toml")} == {"codex", "claude", "cline"}
+
+    schemas = runtimeJsonSchemas()
+    assert set(schemas) == {"AgentEvent", "RuntimeProbe", "ProductOutcomeReceipt"}
+    assert schemas["AgentEvent"]["properties"]["sequence"]["minimum"] == 1
+
+    server = embeddedMcpServerSpec()
+    assert server["name"] == "dartlab"
+    assert server["args"][-2:] == ["--profile", "agent"]
+
+    tools = claudeReadOnlyMcpTools()
+    assert "mcp__dartlab__ReadSkill" in tools
+    assert "mcp__dartlab__EngineCall" in tools
+    assert "mcp__dartlab__RunPython" not in tools
+
+
+def testProbeAllRuntimesUsesRegistryOrderAndRefresh(monkeypatch):
+    descriptors = {
+        runtimeId: RuntimeDescriptor(
+            runtimeId,
+            runtimeId,
+            "fake",
+            "ndjson",
+            (runtimeId,),
+            ("--version",),
+            (),
+            (),
+            "https://example.invalid",
+        )
+        for runtimeId in ("one", "two")
+    }
+    calls: list[tuple[str, bool]] = []
+    monkeypatch.setattr("dartlab.ai.runtime.discovery.loadRuntimeRegistry", lambda: descriptors)
+    monkeypatch.setattr(
+        "dartlab.ai.runtime.discovery.probeRuntime",
+        lambda descriptor, refresh=False: (
+            calls.append((descriptor.runtimeId, refresh))
+            or RuntimeProbe(descriptor.runtimeId, "ready", f"/{descriptor.runtimeId}")
+        ),
+    )
+
+    probes = probeAllRuntimes(refresh=True)
+
+    assert [probe.runtimeId for probe in probes] == ["one", "two"]
+    assert calls == [("one", True), ("two", True)]
+
+
+def testRuntimeLoginArgvUsesOfficialManifestCommand(monkeypatch):
+    descriptor = RuntimeDescriptor(
+        "fake",
+        "Fake",
+        "fake",
+        "ndjson",
+        ("fake",),
+        ("--version",),
+        (),
+        (),
+        "https://example.invalid",
+        loginArgs=("auth", "login"),
+    )
+    monkeypatch.setattr("dartlab.ai.runtime.discovery.loadRuntimeRegistry", lambda: {"fake": descriptor})
+    monkeypatch.setattr("dartlab.ai.runtime.discovery.discoverExecutable", lambda _descriptor: "/bin/fake")
+    monkeypatch.setattr(
+        "dartlab.ai.runtime.drivers.base.runtimeExecutableArgv",
+        lambda _descriptor, executable: (executable,),
+    )
+
+    assert runtimeLoginArgv("fake") == ("/bin/fake", "auth", "login")
+
+
+def testExecuteMcpConnectPlanRequiresExactPlanAndRunsArgv(monkeypatch):
+    plan = McpConnectPlan("fake", ("fake", "mcp", "add"), "digest")
+    completed = subprocess.CompletedProcess(list(plan.argv), 0, "ok", "")
+    calls: list[dict] = []
+    monkeypatch.setattr("dartlab.ai.runtime.mcpBootstrap.buildMcpConnectPlan", lambda runtimeId: plan)
+
+    def fakeRun(argv, **kwargs):
+        calls.append({"argv": argv, **kwargs})
+        return completed
+
+    monkeypatch.setattr("dartlab.ai.runtime.mcpBootstrap.subprocess.run", fakeRun)
+
+    result = executeMcpConnectPlan(plan, approvedDigest="digest")
+
+    assert result is completed
+    assert calls[0]["argv"] == list(plan.argv)
+    assert calls[0]["shell"] is False
+    assert calls[0]["check"] is True
 
 
 def testRuntimeExecutablePrefixDoesNotIncludeDefaultLaunchArgs(monkeypatch):
@@ -121,12 +228,35 @@ def testTurnQuestionIncludesCoverageWithoutScreenContext():
     assert '"scan"' in question
 
 
+def testTurnQuestionIncludesDeterministicClaimCellContract():
+    question = buildTurnQuestion("삼성전자 005930 최근 5년 매출과 영업이익 추이")
+
+    assert '"claimCellContract"' in question
+    assert '"metrics":["revenue","operating_profit"]' in question
+    assert '"requiredCells":10' in question
+    assert '"targetCount":1' in question
+    assert '"unit":"fiscal_year"' in question
+
+
+def testRepairTurnReusesOriginalQuestionContract():
+    question = buildTurnQuestion(
+        "답변 품질을 다시 교정하라",
+        contractQuestion="삼성전자 005930 최근 5년 매출과 영업이익 추이",
+    )
+
+    assert '"period":"recent:5Y"' in question
+    assert '"requiredCells":10' in question
+    assert question.endswith("[사용자 질문]\n답변 품질을 다시 교정하라")
+
+
 def testAnalysisCapsuleExplainsCoverageAsCompletionContract(tmp_path):
     capsule = buildAnalysisCapsule(cwd=tmp_path, mcpConnected=True)
 
     assert "informationCoverage" in capsule
     assert "강제 실행 순서가 아니라" in capsule
     assert "requiredEvidence가 빠지면" in capsule
+    assert "claimCellContract" in capsule
+    assert "requiredCells를 완료 조건" in capsule
 
 
 def testCodexUsesThreadInstructionsAndReadOnlyTurn(monkeypatch, tmp_path):

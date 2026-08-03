@@ -1,6 +1,10 @@
 from __future__ import annotations
 
-from dartlab.ai.runtime.answerQuality import classifyEvidenceContract, evaluateAnswerQuality
+from dartlab.ai.runtime.answerQuality import (
+    claimCellContractForQuestion,
+    classifyEvidenceContract,
+    evaluateAnswerQuality,
+)
 
 
 def _refs() -> list[dict]:
@@ -407,6 +411,31 @@ def testRecentFiveYearsRequiresEveryMetricPeriodClaimCell():
     assert "claim_cell_coverage_incomplete" in report.issues
     assert report.requiredClaimCells == 10
     assert report.coveredClaimCells == 2
+
+
+def testClaimCellContractMakesRecentMetricMatrixExplicit():
+    contract = claimCellContractForQuestion("삼성전자 005930 최근 5년 매출과 영업이익 추이")
+
+    assert contract == {
+        "targets": ["005930"],
+        "targetCount": 1,
+        "metrics": ["revenue", "operating_profit"],
+        "period": {"kind": "recent", "count": 5, "unit": "fiscal_year"},
+        "requiredCells": 10,
+        "completionRule": "every_target_metric_period_requires_canonical_value_ref",
+    }
+
+
+def testClaimCellContractExpandsExplicitPeerComparisonMatrix():
+    contract = claimCellContractForQuestion(
+        "삼성전자와 SK하이닉스의 2024년 매출과 영업이익 비교",
+        comparison={"minTargets": 2},
+    )
+
+    assert contract["targetCount"] == 2
+    assert contract["targets"] == ["sk하이닉스", "삼성전자"]
+    assert contract["period"] == {"kind": "explicit", "periods": ["2024"]}
+    assert contract["requiredCells"] == 4
 
 
 def testRecentFiveYearsPassesWithCompleteMetricPeriodClaimCells():
