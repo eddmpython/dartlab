@@ -199,11 +199,46 @@ def _panelDir(code: str, marketNs: str = "kr") -> Path:
 _HF_PANEL_ATTEMPTED: set[str] = set()
 
 
+# 프로세스 내 freshness 재확인 간격. 오프라인 환경에서 TTL 만료 후 매 read 마다
+# HEAD 재시도로 지연이 반복되는 것을 막는다 (etag mtime 은 성공 시에만 갱신).
+_PANEL_FRESHNESS_RECHECK_SECONDS = 900.0
+_panelFreshnessCheckedAt: dict[str, float] = {}
+
+
+def _panelCategory(marketNs: str) -> str:
+    """marketNs -> DATA_RELEASES 카테고리 키."""
+    return "panel" if marketNs == "kr" else "edgarPanel"
+
+
+def _maybeRefreshPanelFlat(code: str, flat: Path, marketNs: str) -> None:
+    """TTL(12h) 게이트 후 flat panel artifact 를 ETag 재검증한다.
+
+    core.dataLoader canonical freshness 스택(`_shouldRefreshDart` 게이트 +
+    `_refreshFromHf` 재조달) 그대로 재사용. flat 은 정확히
+    ``{category dir}/{code}.parquet`` 이라 core 의 per-file URL 계약과 일치한다.
+    확인·재조달 실패는 core 쪽에서 로컬 유지로 강등된다 (여기서 예외 없음).
+    """
+    import time as _time
+
+    from dartlab.core.dataLoader import _refreshFromHf, _shouldRefreshDart
+
+    key = f"{marketNs}:{code}"
+    last = _panelFreshnessCheckedAt.get(key)
+    now = _time.monotonic()
+    if last is not None and now - last < _PANEL_FRESHNESS_RECHECK_SECONDS:
+        return
+    if not _shouldRefreshDart(flat, "auto"):
+        return
+    _panelFreshnessCheckedAt[key] = now
+    _refreshFromHf(code, flat, _panelCategory(marketNs))
+
+
 def ensurePanelFromHf(code: str, marketNs: str = "kr") -> bool:
     """panel.parquet 부재 시 HF lazy 다운로드 — 한 종목만, 1회 시도 (단일 artifact 자동로드).
 
-    sections ``_ensureFromHf`` 미러. 로컬 우선 — 파일 있으면 즉시 반환. offline/
-    ``DARTLAB_NO_HF_DOWNLOAD=1`` skip. KR(panel) + US(edgarPanel) 둘 다.
+    sections ``_ensureFromHf`` 미러. 로컬 우선: 파일 있으면 TTL(12h) 게이트 ETag
+    재검증(`_maybeRefreshPanelFlat`) 후 반환 (HF 주기 재빌드 추적, 실패 시 로컬 유지).
+    offline/``DARTLAB_NO_HF_DOWNLOAD=1`` skip. KR(panel) + US(edgarPanel) 둘 다.
     native is/bs/cf/ratios(셀)도 이 한 artifact 에서 파생되므로 panel.parquet 만 받으면 충분.
 
     Args:
@@ -227,10 +262,15 @@ def ensurePanelFromHf(code: str, marketNs: str = "kr") -> bool:
     if marketNs not in ("kr", "us"):
         raise ValueError(f"marketNs는 'kr' 또는 'us'여야 합니다: {marketNs!r}")
     code = code.upper() if marketNs == "us" else code  # EDGAR ticker 대소문자 무관 (build 가 upper 저장)
+    noDownload = _os.environ.get("DARTLAB_NO_HF_DOWNLOAD", "").strip() in ("1", "true", "True")
     flat = _panelDir(code, marketNs).parent / f"{code}.parquet"
-    if flat.exists():  # flat 파일만 — 옛 nested 폴더는 flat 다운로드를 막지 않음(stale 서빙 방지)
+    if flat.exists():  # flat 파일만. 옛 nested 폴더는 flat 다운로드를 막지 않음(stale 서빙 방지)
+        # HF panel 은 주기 재빌드된다. 존재 확인으로 끝내면 로컬이 영구 stale 로 굳으므로
+        # TTL 게이트 후 ETag 재검증 (core canonical 스택 재사용, 실패 시 로컬 유지).
+        if not _IS_PYODIDE and not noDownload:
+            _maybeRefreshPanelFlat(code, flat, marketNs)
         return True
-    if _os.environ.get("DARTLAB_NO_HF_DOWNLOAD", "").strip() in ("1", "true", "True"):
+    if noDownload:
         return False
     attemptKey = f"{marketNs}:{code}"
     if attemptKey in _HF_PANEL_ATTEMPTED:
@@ -277,6 +317,10 @@ def ensurePanelFromHf(code: str, marketNs: str = "kr") -> bool:
     # 옛 silent-empty(reader flat ↔ HF nested 불일치)의 근본. 다운로드 후 파일 존재를 확인해
     # 부재면 1회 가시 경고 + 영구 마킹(genuinely absent ≠ 일시 실패).
     if flat.exists():
+        from dartlab.core.dataLoader import _saveEtag
+
+        # freshness 재검증(_maybeRefreshPanelFlat)의 TTL 기준점이 될 ETag 사이드카 (best-effort).
+        _saveEtag(code, flat, category)
         return True
     _HF_PANEL_ATTEMPTED.add(attemptKey)
     _log.warning(

@@ -459,3 +459,118 @@ def test_readlong_preservesCacheForNonCorruptionArrowFailure(monkeypatch, tmp_pa
         R.readLong("005930")
 
     assert flat.exists()
+
+
+# ---------------------------------------------------------------------------
+# ensurePanelFromHf freshness 재검증 (TTL + ETag) — 영구 stale 차단 배선
+# ---------------------------------------------------------------------------
+
+
+def _panelFreshnessSandbox(monkeypatch, tmp_path, *, etagAgeHours=None):
+    """flat panel + (선택) 백데이트 etag 를 만들고 격리 상태를 리셋한다."""
+    import os
+    import time
+
+    import dartlab.config as cfg
+    from dartlab.providers.dart.panel import read as R
+
+    monkeypatch.setattr(cfg, "dataDir", str(tmp_path))
+    monkeypatch.setattr(R, "_HF_PANEL_ATTEMPTED", set())
+    monkeypatch.setattr(R, "_panelFreshnessCheckedAt", {}, raising=False)
+    monkeypatch.delenv("DARTLAB_NO_HF_DOWNLOAD", raising=False)
+    monkeypatch.delenv("DARTLAB_NO_REFRESH", raising=False)
+
+    flat = tmp_path / "dart" / "panel" / "005930.parquet"
+    flat.parent.mkdir(parents=True)
+    flat.write_bytes(b"parquet")
+    if etagAgeHours is not None:
+        etag = flat.with_suffix(".parquet.etag")
+        etag.write_text("local-etag", encoding="utf-8")
+        old = time.time() - etagAgeHours * 3600
+        os.utime(etag, (old, old))
+    return flat
+
+
+def test_ensure_panel_from_hf_refreshes_stale_flat(monkeypatch, tmp_path) -> None:
+    """flat 존재 + etag TTL(12h) 만료면 core _refreshFromHf 로 재검증 (영구 stale 차단)."""
+    import dartlab.core.dataLoader as dataLoader
+    from dartlab.providers.dart.panel import read as R
+
+    _panelFreshnessSandbox(monkeypatch, tmp_path, etagAgeHours=13)
+    refreshed: list[tuple[str, str]] = []
+    monkeypatch.setattr(dataLoader, "_refreshFromHf", lambda code, path, category: refreshed.append((code, category)))
+
+    assert R.ensurePanelFromHf("005930")
+    assert refreshed == [("005930", "panel")]
+
+
+def test_ensure_panel_from_hf_fresh_etag_skips_network(monkeypatch, tmp_path) -> None:
+    """etag 가 TTL 이내면 원격 확인 0회 즉시 반환."""
+    import dartlab.core.dataLoader as dataLoader
+    from dartlab.providers.dart.panel import read as R
+
+    _panelFreshnessSandbox(monkeypatch, tmp_path, etagAgeHours=1)
+
+    def _trap(*_a, **_k):
+        raise AssertionError("network refresh not expected within TTL")
+
+    monkeypatch.setattr(dataLoader, "_refreshFromHf", _trap)
+
+    assert R.ensurePanelFromHf("005930")
+
+
+def test_ensure_panel_from_hf_no_download_env_skips_refresh(monkeypatch, tmp_path) -> None:
+    """DARTLAB_NO_HF_DOWNLOAD=1 이면 TTL 만료여도 재검증 없이 로컬 사용."""
+    import dartlab.core.dataLoader as dataLoader
+    from dartlab.providers.dart.panel import read as R
+
+    _panelFreshnessSandbox(monkeypatch, tmp_path, etagAgeHours=48)
+    monkeypatch.setenv("DARTLAB_NO_HF_DOWNLOAD", "1")
+
+    def _trap(*_a, **_k):
+        raise AssertionError("refresh must be disabled by DARTLAB_NO_HF_DOWNLOAD")
+
+    monkeypatch.setattr(dataLoader, "_refreshFromHf", _trap)
+
+    assert R.ensurePanelFromHf("005930")
+
+
+def test_ensure_panel_from_hf_refresh_memo_limits_attempts(monkeypatch, tmp_path) -> None:
+    """확인 실패가 이어져도 프로세스 내 재시도는 memo 간격당 1회."""
+    import dartlab.core.dataLoader as dataLoader
+    from dartlab.providers.dart.panel import read as R
+
+    _panelFreshnessSandbox(monkeypatch, tmp_path, etagAgeHours=13)
+    calls: list[int] = []
+    # etag 를 갱신하지 않는 no-op refresh: 확인 실패(오프라인)와 동일한 사후 상태
+    monkeypatch.setattr(dataLoader, "_refreshFromHf", lambda *_a, **_k: calls.append(1))
+
+    assert R.ensurePanelFromHf("005930")
+    assert R.ensurePanelFromHf("005930")
+    assert len(calls) == 1
+
+
+def test_ensure_panel_from_hf_saves_etag_after_download(monkeypatch, tmp_path) -> None:
+    """콜드 다운로드 성공 시 freshness 기준점이 될 ETag 사이드카를 저장한다."""
+    import huggingface_hub
+
+    import dartlab.config as cfg
+    import dartlab.core.dataLoader as dataLoader
+    from dartlab.providers.dart.panel import read as R
+
+    monkeypatch.setattr(cfg, "dataDir", str(tmp_path))
+    monkeypatch.setattr(R, "_HF_PANEL_ATTEMPTED", set())
+    monkeypatch.delenv("DARTLAB_NO_HF_DOWNLOAD", raising=False)
+
+    flat = tmp_path / "dart" / "panel" / "005930.parquet"
+
+    def okDownload(**_k):
+        flat.parent.mkdir(parents=True, exist_ok=True)
+        flat.write_bytes(b"parquet")
+
+    monkeypatch.setattr(huggingface_hub, "snapshot_download", okDownload)
+    saved: list[tuple[str, str]] = []
+    monkeypatch.setattr(dataLoader, "_saveEtag", lambda code, dest, category: saved.append((code, category)))
+
+    assert R.ensurePanelFromHf("005930")
+    assert saved == [("005930", "panel")]
