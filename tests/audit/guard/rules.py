@@ -29,6 +29,29 @@ PROVIDER_COMPANY_FILES = {
     "src/dartlab/providers/dart/company.py": "dart",
     "src/dartlab/providers/edgar/company.py": "edgar",
 }
+# simulate 공개 계약 폐쇄 frozen manifest. `simulate/__init__.py` import 에서 자동 도출하지
+# 않는다: 자동이면 import 한 줄 추가로 폐쇄가 넓어져 가드 목적이 무효가 된다. 이 목록의
+# 변경 = 의도적 계약 검토다(FROZEN_PROVIDER_COMPANY_SURFACE 선례). 실측(2026-08-04):
+# 공개 표면 전이 폐쇄는 86모듈 중 이 6개뿐이고, 나머지는 scenario-simulator initiative
+# 자산이라 import 한 줄로 39k LoC 가 조용히 공개 표면이 되는 사고를 오늘은 아무 테스트도
+# 못 잡았다.
+SIMULATE_CONTRACT_CLOSURE = {
+    "dartlab.simulate",
+    "dartlab.simulate.entry",
+    "dartlab.simulate.registry",
+    "dartlab.simulate.run",
+    "dartlab.simulate.sheet",
+    "dartlab.simulate.transfer",
+}
+# 계약 밖 승인된 운영 표면: `.github/scripts/sync/buildExpectations.py` 월간 cron 이
+# 소비하는 기대격자 체인(handbook architecture/analysisProducts.md 가 제품 구조로 기술).
+# src 안 소비자는 없어야 하며, 이 목록은 cron 스크립트 쪽 import 와 함께 갱신한다.
+SIMULATE_OPERATIONAL_SURFACE = {
+    "dartlab.simulate.dataStore",
+    "dartlab.simulate.estimateStatements",
+    "dartlab.simulate.expectationCycle",
+    "dartlab.simulate.expectationLedger",
+}
 FROZEN_PROVIDER_COMPANY_SURFACE = {
     "dart": {
         "analysis",
@@ -457,6 +480,40 @@ def checkProviderCompanyFile(path: Path, providerName: str) -> list[Violation]:
                 baselineKey=f"api.companyFacadeFrozenSurface:removed:{path.as_posix()}:{methodName}",
             )
         )
+    return violations
+
+
+def checkSimulateContractClosure(records: list[ModuleRecord]) -> list[Violation]:
+    """simulate 공개 계약 폐쇄를 frozen manifest 로 고정한다.
+
+    검사 1(외부 유출): simulate 밖 src 모듈이 폐쇄·운영 manifest 밖의
+    ``dartlab.simulate.*`` 하위 모듈을 import 하면 위반. kind·phase 무관(lazy·동적 포함).
+    검사 2(폐쇄 고정점): 폐쇄 6모듈 자신이 manifest 밖 simulate 모듈을 import 해도 위반.
+    ``run.py`` 에 import 한 줄이 추가되는 순간 39k LoC 가 공개 전이 표면으로 소리 없이
+    승격되는 사고를 막는다. 승격·삭제는 manifest 수정(=의도적 계약 검토)으로만 가능하다.
+    """
+    allowed = SIMULATE_CONTRACT_CLOSURE | SIMULATE_OPERATIONAL_SURFACE
+    violations: list[Violation] = []
+    for record in records:
+        insideClosure = record.module in SIMULATE_CONTRACT_CLOSURE
+        outsideSimulate = record.topPackage != "simulate"
+        if not (insideClosure or outsideSimulate):
+            continue
+        for importRecord in record.imports:
+            module = importRecord.module
+            if not module.startswith("dartlab.simulate.") or module in allowed:
+                continue
+            kind = "closure-fixed-point" if insideClosure else "outside-leak"
+            violations.append(
+                makeViolation(
+                    "api.simulateContractClosure",
+                    record.path,
+                    importRecord.line,
+                    f"{record.module} imports non-contract {module}",
+                    importKind=kind,
+                    subject=module,
+                )
+            )
     return violations
 
 

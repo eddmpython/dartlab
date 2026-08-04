@@ -56,8 +56,11 @@ Guard는 현재 레이어의 source를 동결한 뒤 한 번 실행한다. Guard
   architecture 1). `479d1ab0f` 에서 CI Fast·Full·CodeQL 전부 그린 실측.
 - dependabot: #100(pyarrow)·#101(mcp) 머지, #94(pillow)·#95(dompurify)는 dependabot
   자체 판단으로 폐기(이미 최신). 사람 PR #72 는 후속 부재로 안내 코멘트 후 닫음.
-- 대기 중 운영자 결정: **simulate 미도달 39k LoC(80모듈, 95%) 처분** (배선/삭제/격리).
-  결함 9건은 이 스택 안의 잠복 부채로 재분류됨.
+- simulate 미도달 스택: **처분 결정 불요로 종결** (2026-08-04, 3-에이전트 토론 + 운영자
+  문답). 스택은 scenario-simulator initiative 건설 현장으로 존치, 존폐는 initiative
+  로드맵 시점의 결정. 계약 폐쇄는 frozen manifest 기계 가드로 동결
+  (`api.simulateContractClosure`). 결함 9건은 initiative 재개 게이트(수리 전 공개 배선
+  금지)로 결박된 잠복 부채.
 - 남은 부채(별건): realdata-plan corpProfile 준비 누락(CI 전용 경로), registry 죽은 툴
   2종(GroundingCheck·PickStoryTemplate), 반도체 집중도 공통 회계연도 60% 표본 미달 관찰.
 - 금지: 함수나 파일 하나만 끝내고 완료 보고, 하위 상태를 성공으로 승격,
@@ -3323,9 +3326,21 @@ rSquared 가 1.0 이 된다(입구 가드 `minOrigins < max(2, width)` 는 등�
 단 이 9건은 공개 표면에서 닿지 않으므로 사용자에게 나가는 오답이 아니라 잠복 부채다.
 
 **판정: simulate 공개 계약 표면(entry·run·sheet·registry·transfer)은 결정론·honest-gap·
-fail-closed 를 실측으로 통과했다. 미도달 39k LoC 의 처분(공개 계약으로 배선 / 삭제 /
-명시적 비계약 격리)은 범위·존립 결정이므로 운영자 판단 대기다.** 처분이 정해지기 전까지
+fail-closed 를 실측으로 통과했다.** 처분이 정해지기 전까지
 이 스택의 결함 9건은 수리 대상이 아니라 처분 대상의 속성으로 기록한다.
+
+**처분 종결 (2026-08-04 추기).** 3-에이전트 토론(계약 아키텍트·이니셔티브 심사역·유지비
+회의론자)과 운영자 문답으로 "처분"이라는 프레임 자체를 폐기했다. 결정할 것이 없다:
+스택은 활성 initiative(scenario-simulator)의 건설 현장이고 그 존폐는 initiative 로드맵
+시점의 결정이며, 라이브 기대격자 체인 4모듈은 expectation-grid 소속의 승인된 운영
+표면이다. 지금 실행할 유일한 것은 공개 호출계약의 기계 동결이었고 실장했다:
+`guard/rules.py` 의 frozen manifest 2개(`SIMULATE_CONTRACT_CLOSURE` 6모듈,
+`SIMULATE_OPERATIONAL_SURFACE` 4모듈)와 `checkSimulateContractClosure` 2중 검사
+(외부 유출 + 폐쇄 고정점, lazy·동적 포함), `tests/architecture/
+test_simulate_public_closure.py` 상주(운영 manifest ↔ cron 스크립트 import 양방향 대조
+포함). 위반 주입 음성 검증으로 가드가 실제로 잡음을 실측했다. 이제 승격·삭제는 manifest
+수정(=의도적 계약 검토)으로만 가능하다. 부대 규정: 이 스택의 pytest green 은 제품 검증으로
+계상하지 않는다. 결함 9건 수리는 initiative 재개 시 단계 0 이며 수리 전 공개 배선 금지.
 
 ### ai/mcp 엔진 판정 (2026-08-04)
 
