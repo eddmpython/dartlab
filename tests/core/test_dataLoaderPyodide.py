@@ -474,6 +474,7 @@ def test_projectionFallsBackToFullReadForRootlessPredicate() -> None:
 
 def test_loadDataPyodide_asOfRefreshesStaleEdgarSnapshot(tmp_path: Path, monkeypatch) -> None:
     """EDGAR snapshot이 asOf보다 오래되면 한 번 재조달하고 신선도를 다시 확인한다."""
+    monkeypatch.delenv("DARTLAB_NO_REFRESH", raising=False)  # asOf 재조달 검증: 전역 차단 해제
     from dartlab.core import dataLoaderPyodide
 
     path = tmp_path / "docs.parquet"
@@ -514,6 +515,7 @@ def test_loadDataPyodide_asOfRefreshesStaleEdgarSnapshot(tmp_path: Path, monkeyp
 
 def test_loadDataPyodide_removesCorruptAsOfReplacement(tmp_path: Path, monkeypatch) -> None:
     """asOf 재조달 결과가 손상이면 최종 cache에 고정하지 않는다."""
+    monkeypatch.delenv("DARTLAB_NO_REFRESH", raising=False)  # asOf 재조달 검증: 전역 차단 해제
     from dartlab.core import dataLoaderPyodide
 
     path = tmp_path / "docs.parquet"
