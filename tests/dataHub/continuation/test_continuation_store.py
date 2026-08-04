@@ -420,9 +420,15 @@ def testCallerWaitBudgetCapsSqliteLockWaitBeforeOwnerExecution(tmp_path):
 
 
 def testLeaseHeartbeatStaysActiveWhileCommitStagesArtifacts(tmp_path, monkeypatch):
+    # 계약: 스테이징이 lease 여러 주기보다 길어도 heartbeat 가 소유권을 유지해
+    # 두 번째 redeem 이 owner 를 다시 부르지 않는다. lease 0.2s(갱신 0.067s)로
+    # 압축했을 때 SQLite 경합·스케줄링 지연만으로 CI(3.13)와 로컬에서 두 방식으로
+    # 깨졌다(ownerCalls 2 / stageStarted 1s 초과). 제품 기본은 lease 30s·갱신 10s
+    # 라 재현 불가한 마진이므로, 의미(스테이징 2.5 lease 주기)는 유지하고 갱신
+    # 주기에 OS 여유를 준다.
     store = ContinuationStore(
         tmp_path / "control",
-        _policy(leaseSeconds=0.2, waitSeconds=3, pollSeconds=0.005),
+        _policy(leaseSeconds=0.6, waitSeconds=8, pollSeconds=0.02),
     )
     issued = store.issue(_state(), _pins())
     realStage = store._stageArtifact
@@ -436,7 +442,7 @@ def testLeaseHeartbeatStaysActiveWhileCommitStagesArtifacts(tmp_path, monkeypatc
         stageCalls += 1
         if stageCalls == 1:
             stageStarted.set()
-            time.sleep(0.7)
+            time.sleep(1.5)
         return realStage(payload, now=now)
 
     def owner(state: ContinuationQueryState) -> PageEnvelope:
@@ -448,9 +454,9 @@ def testLeaseHeartbeatStaysActiveWhileCommitStagesArtifacts(tmp_path, monkeypatc
     monkeypatch.setattr(store, "_stageArtifact", slowFirstStage)
     with ThreadPoolExecutor(max_workers=2) as pool:
         first = pool.submit(store.redeem, issued.token, _pins(), materialize=owner)
-        assert stageStarted.wait(timeout=1)
+        assert stageStarted.wait(timeout=5)
         second = pool.submit(store.redeem, issued.token, _pins(), materialize=owner)
-        pages = (first.result(timeout=3), second.result(timeout=3))
+        pages = (first.result(timeout=10), second.result(timeout=10))
 
     assert ownerCalls == 1
     assert pages[0].pageDigest == pages[1].pageDigest
