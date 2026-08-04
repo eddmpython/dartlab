@@ -3293,8 +3293,14 @@ quant·credit·analysis·scan·gather 는 체크포인트 실측이 남아 있�
 (`simulate/entry.py`)와 `Company.simulate`(company.py:2104, 같은 `runScenario` 위임).
 전이 폐쇄를 AST 로 계산하면 공개 표면이 닿는 것은 86 모듈 중 6개
 (entry·registry·run·sheet·transfer·`__init__`), 41,115 LoC 중 2,057 LoC(5.0%)다.
-동적 import(importlib)는 0건, simulate 밖 소비자는 analysis.stepProjection(문서 언급),
-macro/simulate(별개 엔진), company, root facade 뿐이다.
+동적 import(importlib)는 0건이다. (2026-08-04 정정: 이 판정의 "simulate 밖 소비자는
+analysis.stepProjection·macro/simulate·company·root facade 뿐"은 src/dartlab 만 grep 한
+누락 측정이었다. `.github/scripts/sync/buildExpectations.py` 가 expectationCycle·
+expectationLedger·estimateStatements 를 import 하고 `.github/workflows/expectationCycle.yml`
+월간 cron 이 이를 실행한다. 즉 "미도달 80모듈" 안에 라이브 운영 체인 4모듈
+(expectationCycle·expectationLedger·estimateStatements·dataStore)이 섞여 있으며, 이
+체인의 전이 폐쇄는 결함 9건 모듈과 교집합 0 임을 실측했다. handbook
+`architecture/analysisProducts.md` 는 expectation ledger 를 제품 구조로 기술한다.)
 
 **공개 계약 실측 (실데이터 005930).**
 - baseline: quality `ok`, 4 노드 전부 `ok`, asOf 2026-Q1, warnings 0.
