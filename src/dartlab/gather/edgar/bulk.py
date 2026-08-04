@@ -557,13 +557,16 @@ def ensureFinanceParquet(stockCode: str, path: Path, *, refresh: bool = False) -
 
     정책:
     - path 없으면: 벌크 다운로드 + 전체 변환 (최초 1회 5~15분)
-    - refresh=True + zip 갱신: 전체 재변환 (daily 갱신 반영)
-    - refresh=True + zip 미갱신: 아무것도 안 함 (낭비 방지)
+    - path 있으면: zip 이 stamp 보다 새로울 때만 재변환 (stamp 가드가 미갱신 시 no-op)
+
+    zip 은 TTL(24h)+ETag 로 이미 매 호출 자동 갱신된다. 과거엔 refresh=force_check
+    에서만 재변환해 "zip 은 매일 새로 받는데 per-CIK parquet 은 영구 stale" 인
+    비정합이 있었다. 이제 stamp 가드가 재변환 여부의 단일 판정자다.
 
     Args:
         stockCode: 종목 ticker.
         path: 결과 parquet 경로 (CIK 기반).
-        refresh: zip 갱신 시 재변환 여부.
+        refresh: 하위호환 인자. stamp 가드로 흡수되어 판정에 더 이상 쓰이지 않는다.
 
     Raises
     ------
@@ -573,13 +576,14 @@ def ensureFinanceParquet(stockCode: str, path: Path, *, refresh: bool = False) -
     Example:
         >>> ensureFinanceParquet("AAPL", Path("data/edgar/finance/0000320193.parquet"))
     """
+    del refresh  # stamp 가드로 흡수 (하위호환 시그니처 유지)
     zipPath = downloadCompanyfactsBulk(force=False)  # ETag + TTL 기반 재사용
     # convertBulkToParquets 자체가 zip mtime vs stamp 비교로 skip 가드.
     # 최초 로드 (path 없음) 는 stamp 가드 우회하기 위해 force=True.
     if not path.exists():
         convertBulkToParquets(zipPath=zipPath, force=True)
-    elif refresh:
-        convertBulkToParquets(zipPath=zipPath)  # stamp 비교 → 필요시만 재변환
+    else:
+        convertBulkToParquets(zipPath=zipPath)  # stamp 비교: zip 갱신 시에만 재변환
     if not path.exists():
         raise FileNotFoundError(
             f"{stockCode} (CIK={path.stem}) EDGAR finance parquet 생성 실패 — "

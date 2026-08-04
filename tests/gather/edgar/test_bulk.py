@@ -102,3 +102,46 @@ def test_convert_without_detect_changed_back_compat(tmp_path, monkeypatch) -> No
     assert r["changed"] == []
     assert (outDir / "0000320193.parquet").exists()
     assert not (outDir / "_factHash.json").exists()
+
+
+def test_ensure_finance_parquet_reconverts_when_local_exists(monkeypatch, tmp_path):
+    """path 존재 시에도 stamp 가드 변환을 항상 시도한다 (zip 만 새로 받고 parquet 은 stale 이던 비정합 차단)."""
+    from dartlab.gather.edgar import bulk as mod
+
+    zipPath = tmp_path / "companyfacts.zip"
+    zipPath.write_bytes(b"zip")
+    target = tmp_path / "0000320193.parquet"
+    target.write_bytes(b"parquet")
+
+    calls: list[dict] = []
+    monkeypatch.setattr(mod, "downloadCompanyfactsBulk", lambda *, force=False: zipPath)
+    monkeypatch.setattr(
+        mod,
+        "convertBulkToParquets",
+        lambda zipPath=None, **kwargs: calls.append({"zipPath": zipPath, **kwargs}),
+    )
+
+    mod.ensureFinanceParquet("AAPL", target)
+    assert len(calls) == 1
+    assert calls[0].get("force") is not True, "존재 경로는 stamp 가드 판정 (force 금지)"
+
+
+def test_ensure_finance_parquet_missing_forces_full_convert(monkeypatch, tmp_path):
+    """path 부재(최초)는 stamp 가드를 우회해 전체 변환을 강제한다."""
+    from dartlab.gather.edgar import bulk as mod
+
+    zipPath = tmp_path / "companyfacts.zip"
+    zipPath.write_bytes(b"zip")
+    target = tmp_path / "0000320193.parquet"
+
+    calls: list[dict] = []
+
+    def fakeConvert(zipPath=None, **kwargs):
+        calls.append({"zipPath": zipPath, **kwargs})
+        target.write_bytes(b"parquet")  # 변환이 대상 CIK parquet 을 생성
+
+    monkeypatch.setattr(mod, "downloadCompanyfactsBulk", lambda *, force=False: zipPath)
+    monkeypatch.setattr(mod, "convertBulkToParquets", fakeConvert)
+
+    mod.ensureFinanceParquet("AAPL", target)
+    assert calls and calls[0].get("force") is True
