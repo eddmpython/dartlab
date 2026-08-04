@@ -37,7 +37,7 @@ from __future__ import annotations
 
 import polars as pl
 
-from dartlab.scan.io.parquet import _downloadScanFile, _ensureScanData
+from dartlab.scan.io.parquet import _downloadScanFile, _ensureScanData, _maybeRefreshScanFile
 
 _FILE = "narrativeMetrics.parquet"
 _READ_SCHEMA = {
@@ -112,8 +112,11 @@ def scanNarrativeMetric(*, verbose: bool = True) -> pl.DataFrame:
     if not path.exists():
         try:
             _downloadScanFile(scanDir, _FILE)
-        except (OSError, RuntimeError, ValueError):
+        except (ExceptionGroup, OSError, RuntimeError, ValueError):
             return _emptyFrame()
+    else:
+        # HF 는 매일 갱신되므로 TTL 게이트 후 ETag 재검증 (실패 시 로컬 유지).
+        _maybeRefreshScanFile(scanDir, _FILE)
     if not path.exists():
         return _emptyFrame()
     return pl.read_parquet(str(path))

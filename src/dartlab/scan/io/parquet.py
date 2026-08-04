@@ -207,7 +207,95 @@ def _downloadScanFile(scanDir: Path, relativePath: str) -> None:
         if tmp.exists():
             tmp.unlink()
         raise RuntimeError(f"empty scan prebuild download: {rel}")
+    if rel.endswith(".parquet"):
+        from dartlab.core.dataLoaderNative import validateParquetArtifact
+
+        try:
+            # core.dataLoader._download 와 동일 계약: canonical 확정 전 무결성 검증.
+            # 실패 시 DataArtifactError(OSError) 로 전파되어 기존 로컬 파일이 유지된다.
+            validateParquetArtifact(tmp)
+        except OSError:
+            tmp.unlink(missing_ok=True)
+            raise
     tmp.replace(dest)
+    if rel.endswith(".parquet"):
+        from dartlab.core.dataLoader import _saveEtag
+
+        # freshness 재검증(_refreshScanFile)이 쓸 ETag 사이드카. 실패해도 경고만 (best-effort).
+        _saveEtag(rel[: -len(".parquet")], dest, "scan")
+
+
+# 프로세스 내 freshness 재확인 간격. 오프라인·프록시 차단 환경에서 TTL 만료 후
+# 매 scan 호출마다 HEAD 재시도로 지연이 반복되는 것을 막는다 (etag mtime 은 성공
+# 시에만 갱신되므로 세션 간 신선도 보장은 그대로 유지된다).
+_SCAN_FRESHNESS_RECHECK_SECONDS = 900.0
+_scanFreshnessCheckedAt: dict[str, float] = {}
+
+
+def _refreshScanFile(scanDir: Path, relativePath: str) -> None:
+    """존재하는 prebuild 하나를 ETag 로 재검증하고 원격이 최신이면 재다운로드한다.
+
+    core.dataLoader 의 canonical freshness 스택(`_checkRemoteFreshness`)을 그대로 쓴다.
+    확인 실패(None)와 다운로드 실패는 기존 로컬 파일 유지로 강등한다 (scan 은 매 호출
+    경로라 여기서 죽으면 로컬 자산이 있는데도 전 축이 멈춘다).
+    """
+
+    from dartlab.core.dataLoader import _checkRemoteFreshness
+
+    rel = relativePath.replace("\\", "/")
+    if not rel.endswith(".parquet"):
+        return
+    dest = scanDir / Path(rel)
+    stale = _checkRemoteFreshness(rel[: -len(".parquet")], dest, "scan")
+    if stale is None:
+        _log.warning("scan prebuild 신선도 확인 실패. 로컬 파일을 그대로 쓴다 (%s)", rel)
+        return
+    if stale is not True:
+        etagPath = dest.with_suffix(".parquet.etag")
+        if etagPath.exists():
+            # etag mtime = 마지막 확인 시각. fresh 확인도 TTL 리셋 (core refreshFromHf 와 동일).
+            etagPath.touch()
+        return
+    try:
+        _downloadScanFile(scanDir, rel)
+    except (ExceptionGroup, OSError, RuntimeError, ValueError) as exc:
+        _log.warning("scan prebuild 갱신 실패. 기존 파일을 유지한다 (%s): %s", rel, exc)
+
+
+def _maybeRefreshScanFile(scanDir: Path, relativePath: str) -> None:
+    """TTL(12h) 게이트를 통과했을 때만 단일 prebuild 의 원격 재검증을 수행한다.
+
+    게이트는 core `_shouldRefreshDart` 재사용: etag 사이드카 mtime 기준 12h,
+    사이드카 없는 구세대 파일은 mtime 84h 유예 후 1회 강제 재조달(자가 치유).
+    `DARTLAB_NO_REFRESH=1` 이면 core 게이트가 항상 False 를 돌려줘 network 0회.
+    """
+
+    import time
+
+    from dartlab.core.dataLoader import _shouldRefreshDart
+
+    rel = relativePath.replace("\\", "/")
+    dest = scanDir / Path(rel)
+    if not dest.exists():
+        return
+    last = _scanFreshnessCheckedAt.get(rel)
+    now = time.monotonic()
+    if last is not None and now - last < _SCAN_FRESHNESS_RECHECK_SECONDS:
+        return
+    if not _shouldRefreshDart(dest, "auto"):
+        return
+    _scanFreshnessCheckedAt[rel] = now
+    _refreshScanFile(scanDir, rel)
+
+
+def _refreshStaleScanFiles(scanDir: Path, *, requireReports: bool) -> None:
+    """필수 prebuild 전체를 TTL 게이트 후 ETag 재검증한다 (HF 일일 갱신 추적)."""
+
+    rels = list(_REQUIRED_SCAN_ROOT_FILES)
+    if requireReports:
+        rels.extend(f"report/{name}" for name in _REQUIRED_REPORT_FILES)
+    for rel in rels:
+        _maybeRefreshScanFile(scanDir, rel)
 
 
 def ensureScanArtifact(relativePath: str) -> Path:
@@ -216,6 +304,7 @@ def ensureScanArtifact(relativePath: str) -> Path:
     scanDir = _ensureScanData()
     destination = scanDir / relativePath
     if destination.exists() and destination.stat().st_size > 0:
+        _maybeRefreshScanFile(scanDir, relativePath)
         return destination
     try:
         _downloadScanFile(scanDir, relativePath)
@@ -375,9 +464,11 @@ def scanLatestAccountValues(
 def _ensureScanData(*, requireReports: bool = False) -> Path:
     """scan 프리빌드 디렉토리 확인.
 
-    일반 환경: 루트 필수 파일(finance/changes/sharesOutstanding) 이 모두 존재하고
-    있으면 즉시 반환. 하나라도 없으면 HF scan 카테고리에서 자동 다운로드한다.
-    report axis 호출자는 requireReports=True 로 report prebuild 까지 보장한다.
+    일반 환경: 루트 필수 파일(finance/changes/sharesOutstanding) 이 모두 존재하면
+    TTL(12h) 게이트 후 ETag 재검증(`_refreshStaleScanFiles`)만 수행하고 반환한다.
+    HF 는 매일 갱신되므로 존재 확인만으로 끝내면 로컬이 영구 stale 로 굳는다.
+    하나라도 없으면 HF scan 카테고리에서 자동 다운로드한다. report axis 호출자는
+    requireReports=True 로 report prebuild 까지 보장한다.
 
     Pyodide(브라우저): 경량본 `finance-lite.parquet` 1 개만 요구한다.
 
@@ -425,10 +516,12 @@ def _ensureScanData(*, requireReports: bool = False) -> Path:
         return scanDir
 
     if _scanDownloaded and not _missingScanFiles(scanDir, requireReports=requireReports):
+        _refreshStaleScanFiles(scanDir, requireReports=requireReports)
         return scanDir
 
     if not _missingScanFiles(scanDir, requireReports=requireReports):
         _scanDownloaded = True
+        _refreshStaleScanFiles(scanDir, requireReports=requireReports)
         return scanDir
 
     # 루트 필수 파일 누락 (신규 사용자 또는 과거 버그로 불완전 캐시)
@@ -989,11 +1082,13 @@ def loadValuationSnapshot() -> tuple[pl.DataFrame | None, datetime | None]:
         호출 컨텍스트 안에서.
 
     How:
-        ``_ensureScanData`` → valuation.parquet 존재 시 read → 필수 컬럼 + 빈 df 가드 →
+        ``_ensureScanData`` → 존재 시 TTL 게이트 ETag 재검증, 부재 시 HF snapshot
+        best-effort 다운로드 → read → 필수 컬럼 + 빈 df 가드 →
         snapshotAt datetime/string → datetime 변환 → tuple 반환.
 
     Requires:
-        - 로컬 ``data/dart/scan/valuation.parquet`` (``buildValuation`` cron 산출)
+        - ``data/dart/scan/valuation.parquet``. 로컬 부재 시 HF ``dart/scan/valuation.parquet``
+          (``buildValuation`` cron 산출, 매일 배포) 자동 다운로드 시도.
 
     SeeAlso:
         - :func:`dartlab.scan.builders.kr.core.buildValuation` — prebuild 빌더
@@ -1001,6 +1096,15 @@ def loadValuationSnapshot() -> tuple[pl.DataFrame | None, datetime | None]:
     """
     scanDir = _ensureScanData()
     path = scanDir / "valuation.parquet"
+    if path.exists():
+        _maybeRefreshScanFile(scanDir, "valuation.parquet")
+    else:
+        # 콜드스타트 배선: HF 에 매일 배포되는 snapshot 을 먼저 시도한다 (1초대).
+        # 실패해도 기존 계약 유지: (None, None) 반환으로 호출자가 실시간 수집 폴백.
+        try:
+            _downloadScanFile(scanDir, "valuation.parquet")
+        except (ExceptionGroup, OSError, RuntimeError, ValueError) as exc:
+            _log.warning("valuation prebuild 다운로드 실패. 실시간 수집 폴백 (%s)", exc)
     if not path.exists():
         return None, None
     try:

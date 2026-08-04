@@ -271,3 +271,185 @@ def test_prepareRealdataScanCache_preserves_existing_report_prebuilds(
 
     assert mod.main() == 0
     assert affiliate_rebuilds == [True]
+
+
+# ---------------------------------------------------------------------------
+# freshness 재검증 (TTL + ETag) — HF 일일 갱신 추적 배선
+# ---------------------------------------------------------------------------
+
+
+def _freshnessSandbox(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Path:
+    """freshness 테스트 공용 격리: scanDir + 세션 메모 리셋 + 실네트워크 차단."""
+    import dartlab.core.dataLoader as dataLoader
+    import dartlab.scan.io.parquet as parquet
+
+    scanDir = _patchScanRoot(monkeypatch, tmp_path)
+    scanDir.mkdir(parents=True, exist_ok=True)
+    monkeypatch.setattr(parquet, "_scanFreshnessCheckedAt", {}, raising=False)
+    monkeypatch.delenv("DARTLAB_NO_REFRESH", raising=False)
+
+    def _noNetwork(*_args, **_kwargs):
+        raise AssertionError("network call not expected in this test")
+
+    monkeypatch.setattr(dataLoader, "_checkRemoteFreshness", _noNetwork)
+    monkeypatch.setattr(parquet, "_downloadScanFile", _noNetwork)
+    return scanDir
+
+
+def _writeArtifact(scanDir: Path, rel: str, *, etagAgeHours: float | None) -> Path:
+    """rel parquet 더미 + (선택) 백데이트된 etag 사이드카를 만든다."""
+    import os
+    import time
+
+    dest = scanDir / rel
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_bytes(b"parquet")
+    if etagAgeHours is not None:
+        etag = dest.with_suffix(".parquet.etag")
+        etag.write_text("local-etag", encoding="utf-8")
+        old = time.time() - etagAgeHours * 3600
+        os.utime(etag, (old, old))
+    return dest
+
+
+def test_maybeRefresh_skips_within_ttl(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """etag 사이드카가 TTL(12h) 이내면 원격 확인 0회."""
+    import dartlab.scan.io.parquet as parquet
+
+    scanDir = _freshnessSandbox(monkeypatch, tmp_path)
+    _writeArtifact(scanDir, "finance.parquet", etagAgeHours=1)
+
+    parquet._maybeRefreshScanFile(scanDir, "finance.parquet")  # _noNetwork 트랩이 안 걸려야 통과
+
+
+def test_maybeRefresh_fresh_remote_touches_etag(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """TTL 만료 후 원격이 동일(fresh)하면 etag mtime 만 갱신하고 다운로드 없음."""
+    import dartlab.core.dataLoader as dataLoader
+    import dartlab.scan.io.parquet as parquet
+
+    scanDir = _freshnessSandbox(monkeypatch, tmp_path)
+    dest = _writeArtifact(scanDir, "finance.parquet", etagAgeHours=13)
+    etag = dest.with_suffix(".parquet.etag")
+    oldMtime = etag.stat().st_mtime
+
+    monkeypatch.setattr(dataLoader, "_checkRemoteFreshness", lambda *_a, **_k: False)
+
+    parquet._maybeRefreshScanFile(scanDir, "finance.parquet")
+    assert etag.stat().st_mtime > oldMtime, "fresh 판정 후 etag touch 로 TTL 리셋해야 함"
+
+
+def test_maybeRefresh_stale_redownloads(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """TTL 만료 + 원격 ETag 불일치(stale)면 재다운로드."""
+    import dartlab.core.dataLoader as dataLoader
+    import dartlab.scan.io.parquet as parquet
+
+    scanDir = _freshnessSandbox(monkeypatch, tmp_path)
+    _writeArtifact(scanDir, "finance.parquet", etagAgeHours=13)
+    downloaded: list[str] = []
+
+    monkeypatch.setattr(dataLoader, "_checkRemoteFreshness", lambda *_a, **_k: True)
+    monkeypatch.setattr(parquet, "_downloadScanFile", lambda _d, rel: downloaded.append(rel))
+
+    parquet._maybeRefreshScanFile(scanDir, "finance.parquet")
+    assert downloaded == ["finance.parquet"]
+
+
+def test_maybeRefresh_check_failure_keeps_local(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """신선도 확인 실패(None)면 다운로드 없이 로컬 유지."""
+    import dartlab.core.dataLoader as dataLoader
+    import dartlab.scan.io.parquet as parquet
+
+    scanDir = _freshnessSandbox(monkeypatch, tmp_path)
+    dest = _writeArtifact(scanDir, "finance.parquet", etagAgeHours=13)
+
+    monkeypatch.setattr(dataLoader, "_checkRemoteFreshness", lambda *_a, **_k: None)
+
+    parquet._maybeRefreshScanFile(scanDir, "finance.parquet")  # _downloadScanFile 트랩 미발동이 곧 검증
+    assert dest.read_bytes() == b"parquet"
+
+
+def test_maybeRefresh_respects_no_refresh_env(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """DARTLAB_NO_REFRESH=1 이면 TTL 만료여도 network 0회 (eager sandbox 계약)."""
+    import dartlab.scan.io.parquet as parquet
+
+    scanDir = _freshnessSandbox(monkeypatch, tmp_path)
+    _writeArtifact(scanDir, "finance.parquet", etagAgeHours=48)
+    monkeypatch.setenv("DARTLAB_NO_REFRESH", "1")
+
+    parquet._maybeRefreshScanFile(scanDir, "finance.parquet")  # _noNetwork 트랩 미발동이 곧 검증
+
+
+def test_maybeRefresh_session_memo_limits_attempts(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """같은 프로세스에서 재확인 시도는 memo 간격(15분) 내 1회로 제한."""
+    import dartlab.core.dataLoader as dataLoader
+    import dartlab.scan.io.parquet as parquet
+
+    scanDir = _freshnessSandbox(monkeypatch, tmp_path)
+    _writeArtifact(scanDir, "finance.parquet", etagAgeHours=13)
+    calls: list[int] = []
+
+    def _countCheck(*_a, **_k):
+        calls.append(1)
+        return None  # 확인 실패: etag mtime 미갱신 → memo 없으면 매번 재시도됐을 상황
+
+    monkeypatch.setattr(dataLoader, "_checkRemoteFreshness", _countCheck)
+
+    parquet._maybeRefreshScanFile(scanDir, "finance.parquet")
+    parquet._maybeRefreshScanFile(scanDir, "finance.parquet")
+    assert len(calls) == 1
+
+
+def test_ensureScanData_complete_runs_freshness_sweep(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """필수 파일이 모두 있어도 존재 확인으로 끝내지 않고 freshness 스윕을 태운다."""
+    import dartlab.scan.io.parquet as parquet
+
+    scanDir = _patchScanRoot(monkeypatch, tmp_path)
+    scanDir.mkdir(parents=True, exist_ok=True)
+    for name in parquet._REQUIRED_SCAN_ROOT_FILES:
+        (scanDir / name).write_bytes(b"parquet")
+    swept: list[str] = []
+    monkeypatch.setattr(parquet, "_maybeRefreshScanFile", lambda _d, rel: swept.append(rel))
+
+    assert parquet._ensureScanData() == scanDir
+    assert swept == list(parquet._REQUIRED_SCAN_ROOT_FILES)
+
+
+def test_downloadScanFile_validates_and_saves_etag(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """다운로드 후 canonical 계약(무결성 검증 + etag 사이드카)을 지킨다."""
+    import polars as pl
+
+    import dartlab.core.dataLoader as dataLoader
+    import dartlab.core.hfRetry as hfRetry
+    import dartlab.scan.io.parquet as parquet
+
+    scanDir = tmp_path / "scan"
+    scanDir.mkdir()
+    valid = tmp_path / "hub" / "finance.parquet"
+    valid.parent.mkdir()
+    pl.DataFrame({"stockCode": ["005930"]}).write_parquet(str(valid))
+
+    monkeypatch.setattr(hfRetry, "retryHfCall", lambda _fn, **_k: str(valid))
+    savedEtags: list[tuple[str, str]] = []
+    monkeypatch.setattr(dataLoader, "_saveEtag", lambda stem, dest, category: savedEtags.append((stem, category)))
+
+    parquet._downloadScanFile(scanDir, "finance.parquet")
+    assert (scanDir / "finance.parquet").exists()
+    assert savedEtags == [("finance", "scan")]
+
+
+def test_downloadScanFile_rejects_corrupt_payload(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """손상 payload 는 canonical 확정 전에 거부한다 (기존 파일 미교체)."""
+    import dartlab.core.hfRetry as hfRetry
+    import dartlab.scan.io.parquet as parquet
+
+    scanDir = tmp_path / "scan"
+    scanDir.mkdir()
+    corrupt = tmp_path / "hub" / "finance.parquet"
+    corrupt.parent.mkdir()
+    corrupt.write_bytes(b"not a parquet")
+
+    monkeypatch.setattr(hfRetry, "retryHfCall", lambda _fn, **_k: str(corrupt))
+
+    with pytest.raises(OSError):
+        parquet._downloadScanFile(scanDir, "finance.parquet")
+    assert not (scanDir / "finance.parquet").exists()

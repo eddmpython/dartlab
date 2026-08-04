@@ -57,8 +57,16 @@ def _isolateScanDir(monkeypatch, tmp_path):
     from dartlab.scan.io import parquet
 
     monkeypatch.setattr(parquet, "_ensureScanData", lambda: scanDir)
-    # 전역 플래그 리셋 (다른 테스트 간 간섭 방지)
+    # 전역 플래그·freshness 세션 메모 리셋 (다른 테스트 간 간섭 방지)
     monkeypatch.setattr(parquet, "_scanDownloaded", False, raising=False)
+    monkeypatch.setattr(parquet, "_scanFreshnessCheckedAt", {}, raising=False)
+
+    # 부재 시 콜드스타트 HF 다운로드 배선이 실네트워크를 타지 않게 기본 차단.
+    # (성공 경로는 개별 테스트가 쓰기 스텁으로 override)
+    def _failDownload(_scanDir, relativePath):
+        raise OSError(f"HF unavailable in unit test: {relativePath}")
+
+    monkeypatch.setattr(parquet, "_downloadScanFile", _failDownload)
     return scanDir
 
 
@@ -68,6 +76,24 @@ def test_loadValuationSnapshot_missing_returns_none(_isolateScanDir):
     frame, snapshotAt = loadValuationSnapshot()
     assert frame is None
     assert snapshotAt is None
+
+
+def test_loadValuationSnapshot_cold_start_downloads_from_hf(_isolateScanDir, monkeypatch):
+    """로컬 부재 시 HF snapshot 을 먼저 시도한다 (콜드스타트 배선)."""
+    from dartlab.scan.io import parquet
+
+    ts = datetime(2026, 4, 23, 19, 0, 0)
+
+    def _writeDownload(scanDir, relativePath):
+        assert relativePath == "valuation.parquet"
+        _writeMockParquet(scanDir / relativePath, ts)
+
+    monkeypatch.setattr(parquet, "_downloadScanFile", _writeDownload)
+
+    frame, snapshotAt = parquet.loadValuationSnapshot()
+    assert frame is not None
+    assert frame.height == 2
+    assert snapshotAt == ts
 
 
 def test_loadValuationSnapshot_reads_valid_parquet(_isolateScanDir):

@@ -46,7 +46,7 @@ from __future__ import annotations
 import polars as pl
 
 from dartlab.scan.builders.kr.notes import SCAN_NOTE_CONCEPTS
-from dartlab.scan.io.parquet import _downloadScanFile, _ensureScanData
+from dartlab.scan.io.parquet import _downloadScanFile, _ensureScanData, _maybeRefreshScanFile
 
 _NOTE_READ_SCHEMA = {
     "stockCode": pl.Utf8,
@@ -165,8 +165,11 @@ def scanNote(conceptId: str, *, freq: str = "Y") -> pl.DataFrame:
         # note 는 _REQUIRED 아님 (첫 베이크 전 404 로 타 축 깨짐 방지). 단일 best-effort.
         try:
             _downloadScanFile(scanDir, f"note/{bare}.parquet")
-        except (OSError, RuntimeError, ValueError):
+        except (ExceptionGroup, OSError, RuntimeError, ValueError):
             return _emptyFrame()
+    else:
+        # HF 는 매일 갱신되므로 TTL 게이트 후 ETag 재검증 (실패 시 로컬 유지).
+        _maybeRefreshScanFile(scanDir, f"note/{bare}.parquet")
     if not path.exists():
         return _emptyFrame()
 
