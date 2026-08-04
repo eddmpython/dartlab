@@ -151,3 +151,14 @@ def test_edgar_period_to_data_as_of_uses_quarter_end() -> None:
     assert periodToDataAsOf("2025Q4") == "20251231"
     assert periodToDataAsOf("2026Q1") == "20260331"
     assert periodToDataAsOf("bad") == ""
+
+
+def test_clear_delta_segment_removes_artifacts(monkeypatch, tmp_path) -> None:
+    """clearDeltaSegment: delta artifact 를 제거하고 캐시를 비운다."""
+    from dartlab.providers.dart.search import fieldIndex, fieldIndexRebuild
+
+    monkeypatch.setattr(fieldIndex, "_contentIndexDir", lambda tier=None: tmp_path)
+    (tmp_path / "delta.npz").write_bytes(b"\x00")
+
+    fieldIndexRebuild.clearDeltaSegment(tier="full")
+    assert not (tmp_path / "delta.npz").exists()

@@ -116,3 +116,37 @@ def test_scanFinanceParquets_existing_corrupt_prebuild_raises(
 
     with pytest.raises(parquetIo.ScanDataError, match="stage=finance_prebuild_read"):
         parquetIo.scanFinanceParquets("IS", {"Revenue"}, {"매출액"})
+
+
+def test_scan_latest_account_values_wide_latest_period(tmp_path) -> None:
+    """scanLatestAccountValues: 최신 연도만 남기고 spec 이름의 wide 컬럼으로 집계한다."""
+    import polars as pl
+
+    from dartlab.scan.io.parquet import ScanDataError, scanLatestAccountValues
+
+    path = tmp_path / "finance.parquet"
+    pl.DataFrame(
+        {
+            "stockCode": ["005930", "005930"],
+            "bsns_year": ["2024", "2025"],
+            "sj_div": ["IS", "IS"],
+            "fs_nm": ["연결재무제표", "연결재무제표"],
+            "account_id": ["ifrs-full_Revenue", "ifrs-full_Revenue"],
+            "account_nm": ["매출액", "매출액"],
+            "thstrm_amount": ["1,000", "2,000"],
+        }
+    ).write_parquet(str(path))
+
+    out = scanLatestAccountValues(path, {"revenue": ({"ifrs-full_Revenue"}, {"매출액"}, {"IS"})})
+    assert out.height == 1
+    row = out.to_dicts()[0]
+    assert row["bsns_year"] == "2025"
+    assert row["revenue"] == 2000.0
+
+    with pytest.raises(ValueError, match="accountSpecs"):
+        scanLatestAccountValues(path, {})
+
+    bad = tmp_path / "bad.parquet"
+    pl.DataFrame({"stockCode": ["005930"]}).write_parquet(str(bad))
+    with pytest.raises(ScanDataError, match="finance_schema"):
+        scanLatestAccountValues(bad, {"revenue": ({"x"}, {"y"}, None)})

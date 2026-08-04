@@ -574,3 +574,23 @@ def test_ensure_panel_from_hf_saves_etag_after_download(monkeypatch, tmp_path) -
 
     assert R.ensurePanelFromHf("005930")
     assert saved == [("005930", "panel")]
+
+
+def test_section_leaf_converge_expr_honest_passthrough() -> None:
+    """sectionLeafConvergeExpr: SPINE/era 미매칭 라벨은 예외 없이 원본 유지(honest)."""
+    import polars as pl
+
+    from dartlab.providers.dart.panel.read import sectionLeafConvergeExpr
+
+    expr = sectionLeafConvergeExpr()
+    assert isinstance(expr, pl.Expr)
+
+    frame = pl.DataFrame(
+        {
+            "chapter": ["I. 회사의 개요", None],
+            "sectionLeaf": ["임의의 미매칭 라벨", None],
+        }
+    ).with_columns(expr)
+    assert frame["sectionLeaf"][0] == "임의의 미매칭 라벨"
+    # null 입력은 core 정규화 과정에서 빈 문자열로 접힌다 (실측 계약)
+    assert frame["sectionLeaf"][1] in ("", None)

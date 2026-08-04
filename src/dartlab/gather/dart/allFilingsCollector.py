@@ -29,7 +29,6 @@ from __future__ import annotations
 
 import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from enum import Enum
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -40,6 +39,30 @@ from dartlab.core.dataConfig import DATA_RELEASES
 from dartlab.core.logger import getLogger
 from dartlab.core.memory import withMemoryBudget
 from dartlab.gather.dart.allFilingsDocument import collectOneRaw as _collectOneRaw
+
+# HF 폴백 상태·오류 타입은 allFilingsHf 로 분할 (룰 3 LoC). 기존 소비자
+# (allFilingsSync·tests)의 import 경로 보존을 위해 그대로 재수출한다.
+from dartlab.gather.dart.allFilingsHf import (
+    AllFilingsHfDownloadError as AllFilingsHfDownloadError,
+)
+from dartlab.gather.dart.allFilingsHf import (
+    AllFilingsHfError as AllFilingsHfError,
+)
+from dartlab.gather.dart.allFilingsHf import (
+    AllFilingsHfListingError as AllFilingsHfListingError,
+)
+from dartlab.gather.dart.allFilingsHf import (
+    AllFilingsHfUnavailableError as AllFilingsHfUnavailableError,
+)
+from dartlab.gather.dart.allFilingsHf import (
+    AllFilingsHfUploadError as AllFilingsHfUploadError,
+)
+from dartlab.gather.dart.allFilingsHf import (
+    HfFallbackStatus as HfFallbackStatus,
+)
+from dartlab.gather.dart.allFilingsHf import (
+    _maybeResyncFromHf as _maybeResyncFromHfImpl,
+)
 from dartlab.gather.dart.disclosure import listFilings
 
 if TYPE_CHECKING:
@@ -541,45 +564,8 @@ def pendingDates() -> list[str]:
 # HF 동기화 (push / lazy pull)
 # ═══════════════════════════════════════════
 
-# 다운로드 1 회 시도 가드 (period 또는 "_ALL_") — 실패 시 무한 retry 회피.
+# 다운로드 1 회 시도 가드 (period 또는 "_ALL_"): 실패 시 무한 retry 회피.
 _HF_DOWNLOAD_ATTEMPTED: set[str] = set()
-
-
-class HfFallbackStatus(str, Enum):
-    """allFilings HF fallback의 정상 결과."""
-
-    LOCAL = "local"
-    DOWNLOADED = "downloaded"
-    NOT_FOUND = "not_found"
-
-
-class AllFilingsHfError(RuntimeError):
-    """allFilings HF fallback 기반 오류."""
-
-    def __init__(self, message: str, *, period: str | None) -> None:
-        self.period = period
-        super().__init__(message)
-
-
-class AllFilingsHfUnavailableError(AllFilingsHfError):
-    """HF fallback을 현재 실행 환경에서 사용할 수 없음."""
-
-
-class AllFilingsHfDownloadError(AllFilingsHfError):
-    """HF fallback 원격 조회·다운로드가 실패함."""
-
-
-class AllFilingsHfListingError(AllFilingsHfError):
-    """HF 원격 artifact 목록 조회가 실패함."""
-
-
-class AllFilingsHfUploadError(AllFilingsHfError):
-    """HF artifact 업로드가 일부 또는 전부 실패함."""
-
-    def __init__(self, message: str, *, uploadedFiles: int, totalFiles: int) -> None:
-        self.uploadedFiles = uploadedFiles
-        self.totalFiles = totalFiles
-        super().__init__(message, period=None)
 
 
 def _bodyParquetFiles(outDir: Path) -> list[Path]:
@@ -683,44 +669,9 @@ def _ensureFromHf(period: str | None = None, *, refresh: bool = False) -> HfFall
     return HfFallbackStatus.NOT_FOUND
 
 
-# HF 재동기화 TTL. allFilings 는 HF 에 매일(당일분은 장중 증분) 갱신되므로 존재
-# 확인만으로 끝내면 로컬이 영구 stale 로 굳는다. 마커 파일 mtime 이 마지막 성공 시각.
-_RESYNC_TTL_HOURS = 12
-_RESYNC_RECHECK_SECONDS = 900.0  # 프로세스 내 재시도 간격 (오프라인 반복 지연 방지)
-_allFilingsResyncCheckedAt: dict[str, float] = {}
-
-
 def _maybeResyncFromHf(period: str | None) -> None:
-    """로컬 artifact 존재 시 TTL 게이트 후 HF 재동기화 (신규 일자·증분 catch-up).
-
-    조달이 아니라 갱신이므로 모든 실패는 로컬 유지로 강등한다. `DARTLAB_NO_HF_DOWNLOAD`
-    ·`DARTLAB_NO_REFRESH` 존중. snapshot_download 는 변경분만 받아 증분으로 동작한다.
-    """
-    import os as _os
-    import time as _time
-
-    if _os.environ.get("DARTLAB_NO_HF_DOWNLOAD", "").strip() in ("1", "true", "True"):
-        return
-    if _os.environ.get("DARTLAB_NO_REFRESH") == "1":
-        return
-    key = period or "_ALL_"
-    last = _allFilingsResyncCheckedAt.get(key)
-    now = _time.monotonic()
-    if last is not None and now - last < _RESYNC_RECHECK_SECONDS:
-        return
-    marker = _allFilingsDir() / f".hfSynced_{key}"
-    try:
-        if _time.time() - marker.stat().st_mtime < _RESYNC_TTL_HOURS * 3600:
-            return
-    except OSError:
-        pass  # 마커 없음: 구세대 로컬. 재동기화 필요.
-    _allFilingsResyncCheckedAt[key] = now
-    try:
-        _ensureFromHf(period, refresh=True)
-    except Exception as exc:  # noqa: BLE001 - 갱신 실패는 로컬 유지 (조달 계약과 다름)
-        _log.warning("allFilings HF 재동기화 실패. 로컬 유지 (%s): %s", key, exc)
-        return
-    marker.touch()
+    """HF 재동기화 게이트. 구현은 `allFilingsHf._maybeResyncFromHf` 에 DI 배선."""
+    _maybeResyncFromHfImpl(period, ensureFromHf=_ensureFromHf, allFilingsDir=_allFilingsDir)
 
 
 def loadDay(period: str) -> pl.DataFrame | None:
