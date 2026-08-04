@@ -18,6 +18,10 @@ def _patch(monkeypatch, tmp_path):
 
     monkeypatch.setattr(fieldIndex, "_contentIndexDir", lambda: tmp_path)
     monkeypatch.setattr(fieldIndexRebuild, "_HF_CONTENTINDEX_ATTEMPTED", False, raising=False)
+    monkeypatch.setattr(fieldIndexRebuild, "_contentIndexCheckedAt", {}, raising=False)
+    # 로컬 존재 경로의 TTL manifest 재확인이 단위 테스트에서 실네트워크를 타지 않게 차단.
+    # (재확인 경로 자체는 전용 테스트가 mock 으로 검증)
+    monkeypatch.setenv("DARTLAB_NO_REFRESH", "1")
     return fieldIndexRebuild
 
 
@@ -68,3 +72,47 @@ def test_prefetch_indexInfo_exported():
 
     assert callable(prefetch)
     assert callable(indexInfo)
+
+
+def test_ensure_content_index_local_ttl_recheck(tmp_path, monkeypatch):
+    """로컬 존재 + TTL 만료면 manifest 재확인을 수행한다 (영구 stale 차단)."""
+    (tmp_path / "main.postings.bin").write_bytes(b"\x00")
+    fir = _patch(monkeypatch, tmp_path)
+    monkeypatch.delenv("DARTLAB_NO_REFRESH", raising=False)
+    monkeypatch.delenv("DARTLAB_NO_HF_DOWNLOAD", raising=False)
+
+    calls: list[str | None] = []
+
+    def fakeActivate(*, tier=None, baseDir=None, **_k):
+        calls.append(tier)
+        return {"activated": True, "errors": [], "activeDir": str(baseDir)}
+
+    monkeypatch.setattr(
+        "dartlab.providers.dart.search.localUpdate.downloadAndActivateContentIndex",
+        fakeActivate,
+    )
+
+    assert fir.ensureContentIndex(tier="lite") is True
+    assert calls == ["lite"]
+    assert (tmp_path / ".hfCheckedAt").exists()
+
+    # 마커가 신선하므로 재호출 차단 (memo 를 비워도 TTL 게이트가 막는다)
+    monkeypatch.setattr(fir, "_contentIndexCheckedAt", {}, raising=False)
+    assert fir.ensureContentIndex(tier="lite") is True
+    assert calls == ["lite"]
+
+
+def test_ensure_content_index_recheck_failure_keeps_local(tmp_path, monkeypatch):
+    """재확인 실패는 로컬 인덱스 유지 + 마커 미갱신 (다음 TTL 에 재시도)."""
+    (tmp_path / "main.postings.bin").write_bytes(b"\x00")
+    fir = _patch(monkeypatch, tmp_path)
+    monkeypatch.delenv("DARTLAB_NO_REFRESH", raising=False)
+    monkeypatch.delenv("DARTLAB_NO_HF_DOWNLOAD", raising=False)
+
+    monkeypatch.setattr(
+        "dartlab.providers.dart.search.localUpdate.downloadAndActivateContentIndex",
+        lambda **_k: {"activated": False, "errors": ["download:OSError"], "activeDir": None},
+    )
+
+    assert fir.ensureContentIndex(tier="lite") is True  # 로컬 유지
+    assert not (tmp_path / ".hfCheckedAt").exists()

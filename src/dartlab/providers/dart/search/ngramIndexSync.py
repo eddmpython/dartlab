@@ -60,21 +60,63 @@ def pushStemIndex(*, token: str | None = None) -> str:
     return url
 
 
+# stemIndex freshness 재확인 간격. 로컬 npz 존재 시 pull 자체가 스킵되어
+# HF 재빌드를 영구히 못 따라가던 결함의 수리 지점. 마커 mtime = 마지막 동기화.
+_STEM_REFRESH_TTL_HOURS = 12
+_STEM_RECHECK_SECONDS = 900.0
+_stemResyncCheckedAt: dict[str, float] = {}
+
+
+def _stemRefreshDue(outDir: Path) -> bool:
+    """로컬 stemIndex 의 TTL 재동기화 필요 여부 (env·memo·마커 게이트)."""
+    import os
+    import time
+
+    if os.environ.get("DARTLAB_NO_HF_DOWNLOAD", "").strip() in ("1", "true", "True"):
+        return False
+    if os.environ.get("DARTLAB_NO_REFRESH") == "1":
+        return False
+    last = _stemResyncCheckedAt.get("stem")
+    now = time.monotonic()
+    if last is not None and now - last < _STEM_RECHECK_SECONDS:
+        return False
+    marker = outDir / ".hfSyncedAt"
+    try:
+        if time.time() - marker.stat().st_mtime < _STEM_REFRESH_TTL_HOURS * 3600:
+            return False
+    except OSError:
+        pass  # 마커 없음: 구세대 로컬. 재동기화 필요.
+    _stemResyncCheckedAt["stem"] = now
+    return True
+
+
+def _touchStemSyncMarker(outDir: Path) -> None:
+    """동기화 성공 시각 마커 갱신 (실패해도 다음 TTL 재확인으로 자연 복구)."""
+    try:
+        outDir.mkdir(parents=True, exist_ok=True)
+        (outDir / ".hfSyncedAt").touch()
+    except OSError:
+        pass
+
+
 def pullStemIndex(*, token: str | None = None, force: bool = False) -> Path:
     """HuggingFace에서 stemIndex 다운로드 → 즉시 검색 가능.
 
+    로컬 인덱스가 있어도 TTL(12h) 게이트 후 증분 재동기화한다 (HF 재빌드 추적).
+    재동기화 실패는 로컬 유지로 강등한다.
+
     Args:
-        token: 인자.
-        force: 인자.
+        token: HF 토큰 (private repo 접근 시).
+        force: True 면 로컬 존재·TTL 무시하고 즉시 pull.
 
     Raises:
-        없음.
+        OSError, RuntimeError, ValueError: 최초 조달(로컬 부재) 다운로드 실패 시.
 
     Example:
         >>> pullStemIndex(...)
 
     Returns:
-        Path — 저장 경로.
+        Path: 저장 경로.
     """
     from huggingface_hub import snapshot_download
 
@@ -84,6 +126,7 @@ def pullStemIndex(*, token: str | None = None, force: bool = False) -> Path:
     outDir = _stemIndexDir()
     hfDir = DATA_RELEASES["stemIndex"]["dir"]
 
+    refreshing = False
     if not force:
         npzPath = outDir / "stemIndex.npz"
         if npzPath.exists():
@@ -91,15 +134,18 @@ def pullStemIndex(*, token: str | None = None, force: bool = False) -> Path:
 
             stats = _ngramStats()
             if stats["documents"] > 0:
-                emit("stemindex:local", path=str(outDir))
-                return outDir
+                if not _stemRefreshDue(outDir):
+                    emit("stemindex:local", path=str(outDir))
+                    return outDir
+                # TTL 만료: 아래 pull 로 증분 재동기화. 실패는 로컬 유지로 강등.
+                refreshing = True
 
     emit("stemindex:hf_start", repo=HF_REPO)
     _log.info("[cyan]⬇ HF[/] stemIndex (%s/%s)", HF_REPO, hfDir)
     try:
         from dartlab.core.hfRetry import retryHfCall
 
-        retryHfCall(  # HF read SSOT(core.hfRetry) — 429/503/504 단일 백오프
+        retryHfCall(  # HF read SSOT(core.hfRetry): 429/503/504 단일 백오프
             snapshot_download,
             repo_id=HF_REPO,
             repo_type="dataset",
@@ -109,8 +155,12 @@ def pullStemIndex(*, token: str | None = None, force: bool = False) -> Path:
         )
     except (OSError, RuntimeError, ValueError) as e:
         emit("stemindex:hf_fail", error=str(e))
+        if refreshing:
+            _log.warning("stemIndex 재동기화 실패. 로컬 인덱스 유지: %s", e)
+            return outDir
         _log.warning("[red]✗[/] stemIndex 다운로드 실패: %s", e)
         raise
+    _touchStemSyncMarker(outDir)
     _log.info("[green]✓[/] stemIndex 다운로드 완료")
 
     global _cachedIndex, _cachedMeta

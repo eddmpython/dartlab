@@ -757,6 +757,57 @@ class ContentIndexFetchError(RuntimeError):
         super().__init__(f"content index fetch 실패: tier={tier}, error={type(cause).__name__}: {cause}")
 
 
+# contentIndex freshness 재확인 간격. HF 는 매일(KST 04:00) 증분 재빌드되는데
+# 존재 게이트가 downloadAndActivateContentIndex(manifest builtAt 비교) 재실행을
+# 막아 로컬 인덱스가 영구 stale 로 굳던 결함의 수리 지점.
+_CONTENTINDEX_REFRESH_TTL_HOURS = 12
+_CONTENTINDEX_RECHECK_SECONDS = 900.0
+_contentIndexCheckedAt: dict[str, float] = {}
+
+
+def _maybeRefreshContentIndex(base: Path, tier: str | None) -> None:
+    """활성 인덱스 존재 시 TTL 게이트 후 manifest 재확인·활성화를 수행한다.
+
+    `downloadAndActivateContentIndex` 는 예외를 던지지 않고 실패 시 기존 활성
+    인덱스를 보존하므로 (staged 활성화 + notNewer skip) 그대로 재사용한다.
+    `DARTLAB_NO_HF_DOWNLOAD`·`DARTLAB_NO_REFRESH`·pyodide 는 skip.
+    """
+    import os
+    import time
+
+    from dartlab.core.dataLoader import _IS_PYODIDE
+
+    if _IS_PYODIDE:
+        return
+    if os.environ.get("DARTLAB_NO_HF_DOWNLOAD", "").strip() in ("1", "true", "True"):
+        return
+    if os.environ.get("DARTLAB_NO_REFRESH") == "1":
+        return
+    last = _contentIndexCheckedAt.get("contentIndex")
+    now = time.monotonic()
+    if last is not None and now - last < _CONTENTINDEX_RECHECK_SECONDS:
+        return
+    marker = base / ".hfCheckedAt"
+    try:
+        if time.time() - marker.stat().st_mtime < _CONTENTINDEX_REFRESH_TTL_HOURS * 3600:
+            return
+    except OSError:
+        pass  # 마커 없음: 구세대 로컬. 재확인 필요.
+    _contentIndexCheckedAt["contentIndex"] = now
+    from dartlab.providers.dart.search.localUpdate import downloadAndActivateContentIndex
+
+    tier = (tier or os.environ.get("DARTLAB_SEARCH_TIER") or "lite").strip()
+    result = downloadAndActivateContentIndex(tier=tier, baseDir=base)
+    if result.get("errors"):
+        _log.warning("contentIndex 재확인 실패. 로컬 인덱스 유지 (%s)", result["errors"])
+        return
+    try:
+        marker.parent.mkdir(parents=True, exist_ok=True)
+        marker.touch()
+    except OSError:
+        pass  # 마커 실패는 다음 TTL 재확인으로 자연 복구
+
+
 def ensureContentIndex(tier: str | None = None) -> bool:
     """content 인덱스(main.*) 부재 시 HF lazy 다운로드 — 정상 부재와 실패를 분리한다.
 
@@ -788,9 +839,12 @@ def ensureContentIndex(tier: str | None = None) -> bool:
 
     base = _contentIndexDir()
     if resolveActiveIndexDir(base) is not None:
+        _maybeRefreshContentIndex(base, tier)
         return True
     if _hasMainPostings(base):
-        return True  # flat 로컬 존재(sidecar SSOT) — no-op
+        # flat 로컬 존재(sidecar SSOT). legacy flat 도 TTL 재확인으로 manifest 체계에 합류.
+        _maybeRefreshContentIndex(base, tier)
+        return True
     if os.environ.get("DARTLAB_NO_HF_DOWNLOAD", "").strip() in ("1", "true", "True"):
         return False
     if _HF_CONTENTINDEX_ATTEMPTED:
