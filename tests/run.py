@@ -599,6 +599,24 @@ def _shellInvocation(shellCmd: str) -> tuple[list[str] | str, dict[str, object]]
     return [[bash, "-c", shellCmd]], {}
 
 
+def _skipPkgInstall() -> bool:
+    """로컬 실행에서 dartlab 패키지 (재)설치 세그먼트를 생략할지 판정한다.
+
+    CI(GITHUB_ACTIONS)는 게이트마다 fresh runner 라 항상 설치한다 (스킵 불가).
+    로컬 공유 .venv 에서는 매 게이트의 `pip install -e .`/`pip install .` 이
+    (a) 이미 editable 로 준비된 환경을 반복 파괴·재구성하는 낭비이고
+    (b) 장시간 게이트(test-fast) 와 타 프로세스(uv sync 등)가 겹치면 import 가
+    도중에 걷어내지는 경합원이다 (2026-08-04 preflight 4회 오탐 실측).
+    preflight 가 로컬에서 DARTLAB_SKIP_PKG_INSTALL=1 을 기본 설정하며,
+    DARTLAB_GATE_INSTALL=1 로 언제든 원문 동작을 강제 복원할 수 있다.
+    """
+    if os.environ.get("GITHUB_ACTIONS") == "true":
+        return False
+    if os.environ.get("DARTLAB_GATE_INSTALL") == "1":
+        return False
+    return os.environ.get("DARTLAB_SKIP_PKG_INSTALL") == "1"
+
+
 def buildShellCommand(gate: Gate, mp: dict[str, str]) -> str:
     """deps + setup + cmd 를 단일 shell 명령으로 조합. CI 와 로컬 동일.
 
@@ -612,11 +630,13 @@ def buildShellCommand(gate: Gate, mp: dict[str, str]) -> str:
         deps_quoted = " ".join(shlex.quote(d) for d in gate.deps)
         parts.append(f"pip install {deps_quoted}")
 
-    # 2. package install — dartlab 은 single base install SSOT (extras 그룹 금지).
-    if gate.install_pkg == "editable":
-        parts.append("pip install -e .")
-    elif gate.install_pkg == "non-editable":
-        parts.append("pip install .")
+    # 2. package install. dartlab 은 single base install SSOT (extras 그룹 금지).
+    #    로컬 preflight 는 준비된 venv 를 신뢰하고 생략한다 (_skipPkgInstall docstring).
+    if not _skipPkgInstall():
+        if gate.install_pkg == "editable":
+            parts.append("pip install -e .")
+        elif gate.install_pkg == "non-editable":
+            parts.append("pip install .")
     # "none" → 설치 안 함
 
     # 3. setup (wheel build · venv 생성 등)
@@ -881,6 +901,9 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "tier":
         return runTier(args.name, blocking_only=args.blocking_only, dry_run=args.dry_run)
     if args.command == "preflight":
+        # 로컬 preflight 는 준비된 venv 를 신뢰: dartlab 재설치 세그먼트 기본 생략.
+        # CI(GITHUB_ACTIONS)는 _skipPkgInstall 이 무조건 False 라 영향 없음.
+        os.environ.setdefault("DARTLAB_SKIP_PKG_INSTALL", "1")
         return runTier("fast", blocking_only=True, dry_run=False)
     if args.command == "list":
         return cmdList()

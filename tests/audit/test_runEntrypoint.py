@@ -268,3 +268,49 @@ def testWheelSmokeVerifiesOnlyTheFreshlyBuiltWheel():
     assert "dist/wheelSmoke" in setup.split("&&")[0] or setup.startswith("rm"), "굽기 전에 폴더를 비우지 않는다"
     assert "head -n1" not in gate.cmd, "사전순 첫 파일을 집으면 낡은 산출물을 검사한다"
     assert "wc -l" in gate.cmd and "-eq 1" in gate.cmd, "wheel 이 정확히 하나인지 확인하지 않는다"
+
+
+@pytest.mark.unit
+def test_buildShellCommandSkipsPkgInstallLocallyWhenEnvSet(monkeypatch):
+    """로컬 skip env 가 켜지면 dartlab 재설치 세그먼트만 빠지고 deps 설치는 유지된다."""
+    from tests.run import GATES, buildShellCommand
+
+    monkeypatch.delenv("GITHUB_ACTIONS", raising=False)
+    monkeypatch.delenv("DARTLAB_GATE_INSTALL", raising=False)
+    monkeypatch.setenv("DARTLAB_SKIP_PKG_INSTALL", "1")
+
+    lint = buildShellCommand(GATES["lint"], {})
+    assert "pip install -e ." not in lint
+    assert "pip install --upgrade pip" in lint or "python -m pip install" in lint
+
+    testFast = buildShellCommand(GATES["test-fast"], {})
+    assert " && pip install . && " not in f" {testFast} "
+    assert "pytest tests/" in testFast
+
+
+@pytest.mark.unit
+def test_buildShellCommandNeverSkipsInstallOnCi(monkeypatch):
+    """CI(GITHUB_ACTIONS)에서는 skip env 가 있어도 설치 세그먼트가 반드시 유지된다."""
+    from tests.run import GATES, buildShellCommand
+
+    monkeypatch.setenv("GITHUB_ACTIONS", "true")
+    monkeypatch.setenv("DARTLAB_SKIP_PKG_INSTALL", "1")
+
+    lint = buildShellCommand(GATES["lint"], {})
+    assert "pip install -e ." in lint
+
+    testFast = buildShellCommand(GATES["test-fast"], {})
+    assert "pip install ." in testFast
+
+
+@pytest.mark.unit
+def test_buildShellCommandDefaultKeepsInstallWithoutEnv(monkeypatch):
+    """env 미설정(수동 gate/tier 호출)이면 종전 동작 그대로 설치한다."""
+    from tests.run import GATES, buildShellCommand
+
+    monkeypatch.delenv("GITHUB_ACTIONS", raising=False)
+    monkeypatch.delenv("DARTLAB_SKIP_PKG_INSTALL", raising=False)
+    monkeypatch.delenv("DARTLAB_GATE_INSTALL", raising=False)
+
+    lint = buildShellCommand(GATES["lint"], {})
+    assert "pip install -e ." in lint
