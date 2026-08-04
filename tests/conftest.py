@@ -30,8 +30,15 @@ from pathlib import Path
 
 import pytest
 
-from dartlab.core.dataLoader import _dataDir
-from dartlab.core.memory import PRESSURE_CRITICAL_MB, getMemoryMb
+# 테스트 전역 ambient refresh 차단. freshness 배선(scan·panel·allFilings·검색 인덱스)은
+# "로컬 존재 + etag/마커 없음" 을 stale 로 보고 원격 재확인을 시작하는데, 테스트가 만든
+# 로컬 artifact 가 그 조건과 정확히 일치해 CI 러너에서 실제 HF 다운로드·활성화가 돌았다
+# (2026-08-04 test_unified_fusion xdist 워커 크래시). refresh 동작 자체를 검증하는
+# 테스트는 monkeypatch.delenv("DARTLAB_NO_REFRESH") 로 명시적으로 다시 연다.
+os.environ.setdefault("DARTLAB_NO_REFRESH", "1")
+
+from dartlab.core.dataLoader import _dataDir  # noqa: E402
+from dartlab.core.memory import PRESSURE_CRITICAL_MB, getMemoryMb  # noqa: E402
 
 
 def pytest_configure(config):
