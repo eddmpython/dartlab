@@ -11,6 +11,33 @@ def _missingReportApiTypes(scan_dir: Path, required: tuple[str, ...]) -> tuple[s
     return tuple(Path(name).stem for name in required if not (report_dir / name).exists())
 
 
+def _ensureCorpProfile(scan_dir: Path) -> None:
+    """affiliateDocs 가 요구하는 corpProfile identity parquet 을 HF 에서 내려받는다.
+
+    책임 위치 SSOT(buildCorpProfile docstring): 외부 API 빌드는 sync(kindlist cron)
+    소유이고 prebuild 는 HF 에 매일 업로드된 parquet 을 다운로드만 한다. 실측
+    (2026-08-04): 이 준비 단계가 없어 CI 의 buildAffiliateDocs 가
+    CorpProfileIdentityError 로 죽고 realdata-suite 가 통째로 skipped 됐다
+    (11927a04e 가 corpProfile 의존을 추가하며 준비 단계를 넣지 않음). 다운로드
+    실패는 삼키지 않는다: 어차피 affiliateDocs 빌드가 같은 부재로 죽는다.
+    """
+    import shutil
+
+    from huggingface_hub import hf_hub_download
+
+    corp_profile = scan_dir / "corpProfile.parquet"
+    if corp_profile.exists():
+        print("[prepareRealdataScanCache] preserve existing corpProfile.parquet")
+        return
+    downloaded = hf_hub_download(
+        repo_id="eddmpython/dartlab-data",
+        repo_type="dataset",
+        filename="dart/scan/corpProfile.parquet",
+    )
+    shutil.copy(downloaded, corp_profile)
+    print("[prepareRealdataScanCache] corpProfile.parquet <- HF dataset")
+
+
 def main() -> int:
     from dartlab.scan.builders.kr.common import scanDir
     from dartlab.scan.builders.kr.core import (
