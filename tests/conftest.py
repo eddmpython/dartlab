@@ -326,7 +326,11 @@ class MockCompany:
         self.currency = currency
         self.notes = _MockNotesAccessor()
         self._finance = _MockFinanceAccessor()
-        self._cache: dict = {}
+        # _priceContext 시드: analysis 의 _fetchPriceContext 가 세션 캐시를 먼저 보므로
+        # None 시드가 실네트워크(gather.sources.price.fetch) 진입을 원천 차단한다.
+        # (2026-08-04 CI test-full 42분 스톨: mock 안 된 price fetch 가 CI 러너에서
+        # 43분 지연 후 job 타임아웃. 이슈 #105 근본 원인.)
+        self._cache: dict = {"_priceContext": None}
 
         # 합성 DataFrame 미리 생성
         self._is_df = _make_synthetic_df("IS", _IS_ACCOUNTS, _QUARTERLY_PERIODS, base_value=1_000_000)

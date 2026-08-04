@@ -555,3 +555,60 @@ class TestFmtHelpers:
 
         assert fmtPrice(50000, "KRW") == "50,000원"
         assert fmtPrice(150.5, "USD") == "$150.50"
+
+
+# ---------------------------------------------------------------------------
+# _fetchPriceContext 네트워크 격리·강등 계약 (이슈 #105: CI 42분 스톨 재발 방지)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.unit
+def test_fetch_price_context_cache_seed_short_circuits(monkeypatch):
+    """_cache 에 _priceContext 시드가 있으면 네트워크 진입 없이 즉시 반환한다."""
+    import dartlab.gather.sources.price as priceMod
+    from dartlab.analysis.financial._valuationInputs import _fetchPriceContext
+
+    def trap(*_a, **_k):
+        raise AssertionError("cache seed 가 있으면 fetch 호출 금지")
+
+    monkeypatch.setattr(priceMod, "fetch", trap)
+
+    class SeededCompany:
+        stockCode = "005930"
+        _cache = {"_priceContext": None}
+
+    assert _fetchPriceContext(SeededCompany()) is None
+
+
+@pytest.mark.unit
+def test_fetch_price_context_gather_error_degrades_to_none(monkeypatch):
+    """gather 커스텀 예외(GatherError 계열)도 None 강등으로 흡수한다 (스톨·전파 금지)."""
+    import dartlab.gather.sources.price as priceMod
+    from dartlab.analysis.financial._valuationInputs import _fetchPriceContext
+    from dartlab.gather.types import GatherError
+
+    def boom(*_a, **_k):
+        raise GatherError("all sources exhausted")
+
+    monkeypatch.setattr(priceMod, "fetch", boom)
+
+    class C:
+        stockCode = "005930"
+        _cache: dict = {}
+
+    company = C()
+    assert _fetchPriceContext(company) is None
+    assert company._cache["_priceContext"] is None, "실패 결과도 세션 캐시로 고정 (재시도 폭주 방지)"
+
+
+@pytest.mark.unit
+def test_mock_company_fixture_never_touches_network(monkeypatch, mock_company):
+    """conftest MockCompany 는 price 컨텍스트가 시드되어 실네트워크 진입이 불가능하다."""
+    import dartlab.gather.sources.price as priceMod
+    from dartlab.analysis.financial._valuationInputs import _fetchPriceContext
+
+    def trap(*_a, **_k):
+        raise AssertionError("MockCompany 경로에서 fetch 호출 금지")
+
+    monkeypatch.setattr(priceMod, "fetch", trap)
+    assert _fetchPriceContext(mock_company) is None

@@ -85,11 +85,18 @@ def _resolveSectorKey(company: Any) -> str | None:
         return None
 
 
+# price fetch 함수 레벨 상한. 하위 httpx timeout(10s)·소스 재시도와 무관하게
+# 이 함수가 스스로 걸 수 있는 최대 시간이다. 2026-08-04 CI test-full 에서
+# 상한 없는 이 호출이 러너 네트워크 지연으로 43분을 서서 job 이 타임아웃됐다
+# (이슈 #105). 가격 컨텍스트는 보조 입력이라 초과 시 None 강등이 맞다.
+_PRICE_FETCH_TIMEOUT_SEC = 20.0
+
+
 def _fetchPriceContext(company: Any) -> dict | None:
-    """gather.price에서 현재가/시총 가져오기 (sync).
+    """gather.price에서 현재가/시총 가져오기 (sync, 상한 20s).
 
     같은 company에 대해 세션 내 1회만 네트워크 호출.
-    실패 시 None 반환 -- 시가 의존 calc만 graceful skip.
+    실패·타임아웃 시 None 반환 -- 시가 의존 calc만 graceful skip.
     """
     cache = getattr(company, "_cache", None)
     _KEY = "_priceContext"
@@ -102,10 +109,18 @@ def _fetchPriceContext(company: Any) -> dict | None:
 
     result = None
     try:
+        from dartlab.gather.types import GatherError
+    except ImportError:  # gather 미탑재 환경: 가격 컨텍스트 자체가 불가
+        if cache is not None:
+            cache[_KEY] = None
+        return None
+    try:
+        import asyncio
+
         from dartlab.gather.infra.http import runAsync
         from dartlab.gather.sources.price import fetch
 
-        snapshot = runAsync(fetch(stockCode, market="KR"))
+        snapshot = runAsync(asyncio.wait_for(fetch(stockCode, market="KR"), timeout=_PRICE_FETCH_TIMEOUT_SEC))
         if snapshot is not None:
             result = {
                 "currentPrice": snapshot.current,
@@ -114,7 +129,8 @@ def _fetchPriceContext(company: Any) -> dict | None:
                 "pbr": snapshot.pbr,
                 "isStale": getattr(snapshot, "is_stale", False),
             }
-    except (ImportError, OSError, RuntimeError, AttributeError):
+    except (ImportError, OSError, RuntimeError, AttributeError, GatherError):
+        # TimeoutError 는 OSError 계열이라 상한 초과도 여기로 강등된다.
         log.debug("price fetch 실패: %s", stockCode)
 
     if cache is not None:
