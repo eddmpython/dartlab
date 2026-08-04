@@ -49,20 +49,17 @@ Guard는 현재 레이어의 source를 동결한 뒤 한 번 실행한다. Guard
 
 ### 세션 인계
 
-- 현재 계층: **완료 — 전 계층(L0~L4) 안정화 종료** (2026-08-02)
-- 최근 완료한 레이어: **L3 story·simulate 전체 완료** (2026-08-01). Story 381개,
-  simulate 509개, L3 bridge 뒤 DataHub 606개와 architecture 계약이 통과했다. 공식 strict
-  Guard는 1,796파일, 7개 규칙과 6개 외부 게이트 모두 통과했다. 그 앞은 L0 core,
-  L1 gather/providers, L1.5 scan/frame/synth/reference, L2 다섯 엔진, L2.5 dataHub 완료다.
-- 현재 작업 단위: **L4 공개 소비자 전체 안정화**. 파일이나 함수 하나를 별도 완료 단위로
-- 현재 작업 단위: **L4 툴 레지스트리 단일 SSOT 확립** (첫 응집 변경). agent.py와 MCP가 서로 다른 툴 목록을 사용하는 드리프트를 CANONICAL_V2 단일 원장으로 통일한다. agent의 고아 툴 4종(EvidenceGate, GroundingCheck, PickStoryTemplate, RunWorkbench)은 CANONICAL_V2에 없고 LLM에 노출되며 실행 가능하다. 반대로 V2의 ExternalReachDoctor, ReadSkillMarket, ScenarioOverlay는 agent 경로에서 보이지 않는다. registry의 고아 툴 10종도 _SPECS와 _TOOLS에서 제거한다.
-  쪼개지 않는다.
-- L4 완료 조건: AI tool dispatch와 serialization, public capability catalog, Web/API/MCP와
-  브라우저 소비자가 L0-L3의 status·gap·provenance·asOf를 보존하는지 전수 대조한다.
-  실행 allowlist, payload budget, async 경계, 공개 API drift와 release gate를 닫고 source
-  동결 뒤 공식 Guard, 원장, 커밋, push까지 완료한다.
-- 다음 첫 행동: `src/dartlab/ai`, Web/API/MCP 진입점과 capability catalog의 실제 호출
-  그래프를 만들고 실행 권한·직렬화·상태 손실을 제품 경로에서 재현한다.
+- 현재 단위: **엔진별 안정화 원장** (2026-08-04 진입, 계층 단위 선언의 증거 공백 보완).
+  재검증 순서 simulate → ai/mcp → macro → industry → dataHub 중 **다섯 엔진 전부 실측
+  판정 완료** (아래 "엔진별 안정화 원장" 절).
+- master CI: 8/2부터 이어진 CI Full 적색을 8/4 복구(28건: server 23 + dataHub 4 +
+  architecture 1). `479d1ab0f` 에서 CI Fast·Full·CodeQL 전부 그린 실측.
+- dependabot: #100(pyarrow)·#101(mcp) 머지, #94(pillow)·#95(dompurify)는 dependabot
+  자체 판단으로 폐기(이미 최신). 사람 PR #72 는 후속 부재로 안내 코멘트 후 닫음.
+- 대기 중 운영자 결정: **simulate 미도달 39k LoC(80모듈, 95%) 처분** (배선/삭제/격리).
+  결함 9건은 이 스택 안의 잠복 부채로 재분류됨.
+- 남은 부채(별건): realdata-plan corpProfile 준비 누락(CI 전용 경로), registry 죽은 툴
+  2종(GroundingCheck·PickStoryTemplate), 반도체 집중도 공통 회계연도 60% 표본 미달 관찰.
 - 금지: 함수나 파일 하나만 끝내고 완료 보고, 하위 상태를 성공으로 승격,
   중간 source에서 공식 Guard 반복
 
