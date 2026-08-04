@@ -376,15 +376,19 @@ GATES: dict[str, Gate] = {
         matrix_param="python",
         # networkx: tests/architecture/test_cycleScan.py 와 test_no_cycles.py 가
         # cycleScan._findCycles 를 통해 요구한다.
-        deps=(*PYTEST_PARALLEL, *DEV_SCHEMA_SNAPSHOT, *MCP_PIN, "networkx"),
+        deps=(*PYTEST_PARALLEL, *DEV_SCHEMA_SNAPSHOT, *MCP_PIN, "networkx", "pytest-timeout"),
         install_pkg="non-editable",
         env={
             "DARTLAB_DATA_DIR": "${{ github.workspace }}/tests/fixtures",
             "PYTEST_MEMORY_LIMIT_MB": "1900",
             "DARTLAB_TEST_LOCKED": "1",
         },
+        # --timeout=300: 테스트 하나가 서면 job 전체(60분)가 아니라 그 테스트만 5분에
+        # 죽는다. 실측(2026-08-04): analysis 통합 테스트 하나가 러너 네트워크 지연으로
+        # 42분을 서서 job 이 타임아웃 취소됐다. test-full 정상 테스트 최장은 수십 초라
+        # 300초는 검출 약화 없는 상한이다.
         cmd=(
-            "pytest tests/ -n 2 --dist loadfile --tb=short "
+            "pytest tests/ -n 2 --dist loadfile --tb=short --timeout=300 "
             "-m 'not requires_data and not heavy and not realData and not freshInstall' "
             "--ignore=tests/_attempts "
             "--ignore=tests/_fixtures/test_analysis_real.py "

@@ -9,9 +9,13 @@ on:
   workflow_dispatch: {}
   workflow_call: {}
 
+# cancel-in-progress: false = 진행 중 run 은 완주하고, 대기열의 낡은 run 만 최신으로
+# 교체된다(GitHub concurrency 기본 동작). 실측(2026-08-03~04): 연속 push·머지가 35분짜리
+# full run 을 반복 취소해 "완주 그린" 이 한 번도 안 나오는 구간이 생겼다. 취소는 빠른
+# 신호용 ci-fast 만 유지한다(그쪽은 최신 head 신호가 목적이라 취소가 맞다).
 concurrency:
   group: ci-full-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   gate:
