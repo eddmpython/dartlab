@@ -83,6 +83,10 @@ def main() -> int:
     else:
         print("[prepareRealdataScanCache] preserve existing sharesOutstanding.parquet")
 
+    # affiliateDocs 는 corpProfile identity 를 요구한다 (_ensureCorpProfile docstring).
+    # 함수만 있고 호출이 누락되어 CorpProfileIdentityError 로 죽던 배선을 연결한다.
+    _ensureCorpProfile(scan_dir)
+
     affiliate_docs = scan_dir / "network" / "affiliateDocs.parquet"
     if not isCurrentAffiliateDocsArtifact(affiliate_docs):
         buildAffiliateDocs(verbose=True)

@@ -171,9 +171,10 @@ def test_prepareRealdataScanCache_builds_from_fixture_sources(monkeypatch: pytes
     )
     monkeypatch.setattr(parquet, "_ensureScanData", lambda **_kwargs: pytest.fail("_ensureScanData must not be called"))
     monkeypatch.setattr(parquet, "_missingScanFiles", lambda *_args, **_kwargs: write_required_outputs() or [])
+    monkeypatch.setattr(mod, "_ensureCorpProfile", lambda _scanDir: calls.append("corp-profile"))
 
     assert mod.main() == 0
-    assert calls == ["changes", "finance", "finance-lite", "report", "shares", "affiliate-docs"]
+    assert calls == ["changes", "finance", "finance-lite", "report", "shares", "corp-profile", "affiliate-docs"]
 
 
 def test_prepareRealdataScanCache_preserves_existing_report_prebuilds(
@@ -198,6 +199,7 @@ def test_prepareRealdataScanCache_preserves_existing_report_prebuilds(
     for name in parquet._REQUIRED_SCAN_ROOT_FILES:
         (scan_dir / name).write_bytes(b"parquet")
     (scan_dir / "finance-lite.parquet").write_bytes(b"parquet")
+    (scan_dir / "corpProfile.parquet").write_bytes(b"parquet")  # 존재 시 다운로드 없이 보존
     affiliate_docs = scan_dir / "network" / "affiliateDocs.parquet"
     affiliate_docs.parent.mkdir(parents=True)
     import polars as pl
