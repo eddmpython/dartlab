@@ -82,13 +82,10 @@
 </script>
 
 <section class="runtimeCenter" data-qa="runtime-center">
-	<header>
-		<div>
-			<h2>에이전트 런타임 센터</h2>
-			<p>한 번 승인하면 설치, 공식 로그인, DartLab 연결과 기본 선택을 같은 흐름에서 끝냅니다.</p>
-		</div>
+	<!-- 제목은 모달 헤더가 소유한다. 여기는 도구줄 한 줄만. -->
+	<div class="toolbar">
 		<button class="secondary" data-qa="runtime-refresh" onclick={() => load(true)} disabled={loading}>다시 확인</button>
-	</header>
+	</div>
 
 	{#if error}<div class="error" data-qa="runtime-error">{error}</div>{/if}
 	{#if loading}
@@ -175,55 +172,54 @@
 </section>
 
 <style>
-	.runtimeCenter { display: grid; gap: 1rem; color: var(--dl-ink, #e7e7ea); }
-	header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
-	h2 { margin: 0; font-size: 1.1rem; }
-	p { margin: .35rem 0 0; color: var(--dl-ink-dim, #9aa0aa); font-size: .84rem; line-height: 1.5; }
-	.grid { display: grid; gap: .75rem; }
-	article { border: 1px solid var(--dl-line, #2a2c33); border-radius: 12px; padding: 1rem; background: var(--dl-bg-raised, #16171a); }
+	.runtimeCenter { display: grid; gap: .6rem; color: var(--dl-ink, #e7e7ea); }
+	.toolbar { display: flex; justify-content: flex-end; }
+	p { margin: 0; color: var(--dl-ink-dim, #9aa0aa); font-size: .78rem; line-height: 1.45; }
+	.grid { display: grid; gap: .5rem; }
+	article { border: 1px solid var(--dl-line, #2a2c33); border-radius: 10px; padding: .65rem .8rem; background: var(--dl-bg-raised, #16171a); display: grid; gap: .45rem; }
 	article.active { border-color: var(--dl-accent, #ff5a36); box-shadow: inset 3px 0 var(--dl-accent, #ff5a36); }
 	article.readyCard { background: color-mix(in srgb, #70d6a5 4%, var(--dl-bg-raised, #16171a)); }
-	.title, .actions, dl div { display: flex; align-items: center; gap: .6rem; }
+	.title, .actions, dl div { display: flex; align-items: center; gap: .5rem; }
 	.title { justify-content: space-between; }
-	.title div { display: grid; gap: .2rem; }
-	.title span, dt { color: var(--dl-ink-mute, #6b7280); font-size: .72rem; }
-	.state { padding: .18rem .5rem; border-radius: 999px; background: #2a2c33; }
+	.title div { display: flex; align-items: baseline; gap: .45rem; }
+	.title strong { font-size: .86rem; }
+	.title span, dt { color: var(--dl-ink-mute, #6b7280); font-size: .68rem; }
+	.state { padding: .12rem .45rem; border-radius: 999px; background: #2a2c33; white-space: nowrap; }
 	.state.ready { color: #70d6a5; background: color-mix(in srgb, #70d6a5 12%, transparent); }
-	dl { display: grid; gap: .35rem; margin: .8rem 0; }
-	.plainState { min-height: 2.5rem; }
-	.rail { display: grid; grid-template-columns: repeat(4, 1fr); gap: .35rem; margin: .8rem 0; padding: 0; list-style: none; }
-	.rail li { min-height: 2.2rem; display: grid; place-items: center; border: 1px solid var(--dl-line, #2a2c33); border-radius: 7px; color: var(--dl-ink-mute, #6b7280); font-size: .68rem; text-align: center; }
+	dl { display: grid; gap: .2rem; margin: .1rem 0 0; }
+	.plainState { font-size: .76rem; }
+	.rail { display: grid; grid-template-columns: repeat(4, 1fr); gap: .3rem; margin: 0; padding: 0; list-style: none; }
+	.rail li { min-height: 1.5rem; display: grid; place-items: center; border: 1px solid var(--dl-line, #2a2c33); border-radius: 6px; color: var(--dl-ink-mute, #6b7280); font-size: .64rem; text-align: center; }
 	.rail li.done { color: #70d6a5; border-color: color-mix(in srgb, #70d6a5 40%, var(--dl-line, #2a2c33)); background: color-mix(in srgb, #70d6a5 8%, transparent); }
-	dt { width: 6.5rem; }
-	dd { margin: 0; font-size: .8rem; overflow-wrap: anywhere; }
+	dt { width: 5.5rem; }
+	dd { margin: 0; font-size: .74rem; overflow-wrap: anywhere; }
 	.actions { flex-wrap: wrap; }
-	button, a { min-height: 2.75rem; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 8px; padding: .55rem .8rem; background: var(--dl-accent, #ff5a36); color: white; font-size: .78rem; cursor: pointer; text-decoration: none; text-align: center; }
+	button { min-height: 1.9rem; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 7px; padding: .3rem .7rem; background: var(--dl-accent, #ff5a36); color: white; font-size: .74rem; cursor: pointer; text-align: center; }
+	a { color: var(--dl-ink-dim, #9aa0aa); font-size: .72rem; text-decoration: underline; text-underline-offset: 2px; }
 	button.secondary { background: transparent; border: 1px solid var(--dl-line, #2a2c33); color: var(--dl-ink-dim, #9aa0aa); }
 	button:disabled { opacity: .45; cursor: default; }
-	.plan { display: grid; gap: .65rem; padding: 1rem; border: 1px solid var(--dl-accent, #ff5a36); border-radius: 12px; }
-	.plan h3 { margin: 0; font-size: .95rem; }
-	.plan ul { margin: 0; padding-left: 1.15rem; color: var(--dl-ink-dim, #9aa0aa); font-size: .8rem; line-height: 1.7; }
-	code { display: block; padding: .75rem; border-radius: 8px; background: #090a0c; overflow-x: auto; white-space: pre; font-size: .75rem; }
-	.error { color: #ff8c8c; padding: .65rem; border: 1px solid #713b3b; border-radius: 8px; }
-	.advanced { margin-top: .75rem; color: var(--dl-ink-mute, #6b7280); font-size: .75rem; }
-	.advanced summary { cursor: pointer; min-height: 2.25rem; display: flex; align-items: center; }
-	.result { display: grid; gap: .3rem; padding: .85rem 1rem; border: 1px solid #713b3b; border-radius: 10px; color: #ffb4b4; font-size: .8rem; }
+	.plan { display: grid; gap: .5rem; padding: .75rem .85rem; border: 1px solid var(--dl-accent, #ff5a36); border-radius: 10px; }
+	.plan h3 { margin: 0; font-size: .88rem; }
+	.plan ul { margin: 0; padding-left: 1.1rem; color: var(--dl-ink-dim, #9aa0aa); font-size: .76rem; line-height: 1.55; }
+	code { display: block; padding: .5rem .6rem; border-radius: 7px; background: #090a0c; overflow-x: auto; white-space: pre; font-size: .72rem; }
+	.error { color: #ff8c8c; padding: .5rem .6rem; border: 1px solid #713b3b; border-radius: 7px; font-size: .76rem; }
+	.advanced { color: var(--dl-ink-mute, #6b7280); font-size: .72rem; }
+	.advanced summary { cursor: pointer; min-height: 1.5rem; display: flex; align-items: center; }
+	.result { display: grid; gap: .25rem; padding: .55rem .7rem; border: 1px solid #713b3b; border-radius: 8px; color: #ffb4b4; font-size: .76rem; }
 	.result.success { border-color: color-mix(in srgb, #70d6a5 45%, transparent); color: #8be0b7; }
 	.result span { color: var(--dl-ink-dim, #9aa0aa); line-height: 1.5; }
 	.empty { color: var(--dl-ink-dim, #9aa0aa); padding: 1rem 0; }
 	.spinner { display: block; width: 1.4rem; height: 1.4rem; border: 2px solid var(--dl-line, #2a2c33); border-top-color: var(--dl-accent, #ff5a36); border-radius: 50%; animation: spin .8s linear infinite; }
 	@keyframes spin { to { transform: rotate(360deg); } }
 	@media (max-width: 520px) {
-		header { flex-wrap: wrap; }
-		header > button { width: 100%; }
-		article { padding: .85rem; }
-		.title { align-items: flex-start; gap: .45rem; }
+		article { padding: .6rem .7rem; }
+		.title { align-items: flex-start; gap: .4rem; }
 		.state { max-width: 45%; text-align: center; overflow-wrap: anywhere; }
 		dl div { display: grid; grid-template-columns: 5.25rem minmax(0, 1fr); align-items: baseline; }
 		dt { width: auto; }
 		.actions { display: grid; grid-template-columns: 1fr; }
-		.actions > button, .actions > a { width: 100%; }
-		.plan { min-width: 0; padding: .8rem; }
+		.actions > button { width: 100%; }
+		.plan { min-width: 0; padding: .7rem; }
 		code { max-width: 100%; }
 	}
 </style>
