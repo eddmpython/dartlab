@@ -16,11 +16,18 @@ from .base import DriverHandle, remainingTurnSeconds, runtimeLaunchArgv, runtime
 
 
 def _claudeToolArgs() -> tuple[str, ...]:
-    """읽기 전용 DartLab MCP 도구만 명시적으로 허용한다."""
+    """읽기 전용 DartLab MCP 도구만 명시적으로 허용한다.
+
+    `--tools` 는 쓰지 않는다. 실측(2026-08-04): spawn 시점에 MCP 서버가 `pending` 이라
+    MCP 도구명이 아직 존재하지 않는데 `--tools` 가 그 시점 집합을 하드 제한해 세션이
+    도구 0개로 시작했고(init tools []), 이후 MCP 가 붙어도 못 들어와 모델이 근거 도구
+    없이 기억으로 답했다(품질 게이트 전건 기각의 근본 원인). 샌드박스는
+    `--allowedTools`(read-only MCP 허용) + `--permission-mode dontAsk`(허용 외 도구
+    무프롬프트 거절) 조합으로 성립하며, 같은 조건 실측에서 모델이 dartlab 도구 18개를
+    보고 호출했다.
+    """
     allowed = ",".join(claudeReadOnlyMcpTools())
     return (
-        "--tools",
-        allowed,
         "--disable-slash-commands",
         "--permission-mode",
         "dontAsk",

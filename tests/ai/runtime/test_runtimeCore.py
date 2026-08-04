@@ -39,12 +39,17 @@ from dartlab.ai.runtime.sessionStore import SessionStore
 
 
 def testClaudeRuntimeExposesOnlyReadOnlyMcpWithoutSearchBypass():
+    """허용은 --allowedTools + dontAsk 조합만 쓴다.
+
+    `--tools` 는 금지: spawn 시점에 MCP 가 pending 이라 MCP 도구명이 아직 없어서
+    세션이 도구 0개로 시작하는 회귀를 실측했다(2026-08-04, 품질 게이트 전건 기각의
+    근본 원인). 허용 외 도구는 dontAsk 가 무프롬프트 거절한다.
+    """
     args = _claudeToolArgs()
-    exposed = args[1]
-    assert args[0] == "--tools"
+    assert "--tools" not in args
     assert "--disable-slash-commands" in args
+    assert args[args.index("--permission-mode") + 1] == "dontAsk"
     allowed = args[args.index("--allowedTools") + 1]
-    assert exposed == allowed
     assert "mcp__dartlab__ReadSkill" in allowed
     assert "mcp__dartlab__EngineCall" in allowed
     assert "ToolSearch" not in allowed
