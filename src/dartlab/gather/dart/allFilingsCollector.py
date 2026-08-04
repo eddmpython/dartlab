@@ -594,39 +594,45 @@ def _hasBodyArtifact(outDir: Path, period: str | None) -> bool:
     return bool(_bodyParquetFiles(outDir))
 
 
-def _ensureFromHf(period: str | None = None) -> HfFallbackStatus:
+def _ensureFromHf(period: str | None = None, *, refresh: bool = False) -> HfFallbackStatus:
     """artifact 부재 시 HF dataset 에서 lazy 다운로드.
 
-    panel sync `_ensureFromHf` 동일 패턴 — `huggingface_hub.snapshot_download`
+    panel sync `_ensureFromHf` 동일 패턴: `huggingface_hub.snapshot_download`
     로 `{HF_REPO}:dart/allFilings/` 의 parquet 받음.
 
     Args:
         period: 특정 일자만 (YYYYMMDD) 받기. None 이면 디렉토리 전체.
+        refresh: True 면 로컬 존재 여부와 무관하게 원격 재동기화를 수행한다
+            (HF 일일 갱신 catch-up). snapshot_download 가 변경분만 받으므로 증분.
+            NO_HF_DOWNLOAD 환경에서는 조달이 아니라 갱신이므로 조용히 LOCAL 반환.
 
     Returns:
-        HfFallbackStatus — 로컬 존재, 다운로드 완료, 원격 정상 부재.
+        HfFallbackStatus (로컬 존재 / 다운로드 완료 / 원격 정상 부재).
 
     Raises:
         AllFilingsHfUnavailableError: 환경 설정 또는 optional dependency 때문에 HF를
             사용할 수 없는 경우.
         AllFilingsHfDownloadError: 원격 조회·인증·다운로드가 실패한 경우.
 
-    환경변수 `DARTLAB_NO_HF_DOWNLOAD=1` 시 즉시 skip. 한 (period or "_ALL_") 1 회만 시도.
+    환경변수 `DARTLAB_NO_HF_DOWNLOAD=1` 시 즉시 skip. 한 (period or "_ALL_") 1 회만 시도
+    (refresh 경로는 attempted 마킹을 읽지도 쓰지도 않는다).
     """
     import os as _os
 
     outDir = _allFilingsDir()
-    if _hasBodyArtifact(outDir, period):
+    if not refresh and _hasBodyArtifact(outDir, period):
         return HfFallbackStatus.LOCAL
 
     if _os.environ.get("DARTLAB_NO_HF_DOWNLOAD", "").strip() in ("1", "true", "True"):
+        if refresh:
+            return HfFallbackStatus.LOCAL
         raise AllFilingsHfUnavailableError(
             "DARTLAB_NO_HF_DOWNLOAD 설정으로 allFilings HF fallback이 비활성화되었습니다",
             period=period,
         )
 
     key = period or "_ALL_"
-    if key in _HF_DOWNLOAD_ATTEMPTED:
+    if not refresh and key in _HF_DOWNLOAD_ATTEMPTED:
         return HfFallbackStatus.NOT_FOUND
 
     try:
@@ -661,7 +667,8 @@ def _ensureFromHf(period: str | None = None) -> HfFallbackStatus:
             period=period,
         ) from exc
     except EntryNotFoundError:
-        _HF_DOWNLOAD_ATTEMPTED.add(key)
+        if not refresh:
+            _HF_DOWNLOAD_ATTEMPTED.add(key)
         return HfFallbackStatus.NOT_FOUND
     except Exception as exc:  # noqa: BLE001
         raise AllFilingsHfDownloadError(
@@ -669,14 +676,58 @@ def _ensureFromHf(period: str | None = None) -> HfFallbackStatus:
             period=period,
         ) from exc
 
-    _HF_DOWNLOAD_ATTEMPTED.add(key)
+    if not refresh:
+        _HF_DOWNLOAD_ATTEMPTED.add(key)
     if _hasBodyArtifact(outDir, period):
         return HfFallbackStatus.DOWNLOADED
     return HfFallbackStatus.NOT_FOUND
 
 
+# HF 재동기화 TTL. allFilings 는 HF 에 매일(당일분은 장중 증분) 갱신되므로 존재
+# 확인만으로 끝내면 로컬이 영구 stale 로 굳는다. 마커 파일 mtime 이 마지막 성공 시각.
+_RESYNC_TTL_HOURS = 12
+_RESYNC_RECHECK_SECONDS = 900.0  # 프로세스 내 재시도 간격 (오프라인 반복 지연 방지)
+_allFilingsResyncCheckedAt: dict[str, float] = {}
+
+
+def _maybeResyncFromHf(period: str | None) -> None:
+    """로컬 artifact 존재 시 TTL 게이트 후 HF 재동기화 (신규 일자·증분 catch-up).
+
+    조달이 아니라 갱신이므로 모든 실패는 로컬 유지로 강등한다. `DARTLAB_NO_HF_DOWNLOAD`
+    ·`DARTLAB_NO_REFRESH` 존중. snapshot_download 는 변경분만 받아 증분으로 동작한다.
+    """
+    import os as _os
+    import time as _time
+
+    if _os.environ.get("DARTLAB_NO_HF_DOWNLOAD", "").strip() in ("1", "true", "True"):
+        return
+    if _os.environ.get("DARTLAB_NO_REFRESH") == "1":
+        return
+    key = period or "_ALL_"
+    last = _allFilingsResyncCheckedAt.get(key)
+    now = _time.monotonic()
+    if last is not None and now - last < _RESYNC_RECHECK_SECONDS:
+        return
+    marker = _allFilingsDir() / f".hfSynced_{key}"
+    try:
+        if _time.time() - marker.stat().st_mtime < _RESYNC_TTL_HOURS * 3600:
+            return
+    except OSError:
+        pass  # 마커 없음: 구세대 로컬. 재동기화 필요.
+    _allFilingsResyncCheckedAt[key] = now
+    try:
+        _ensureFromHf(period, refresh=True)
+    except Exception as exc:  # noqa: BLE001 - 갱신 실패는 로컬 유지 (조달 계약과 다름)
+        _log.warning("allFilings HF 재동기화 실패. 로컬 유지 (%s): %s", key, exc)
+        return
+    marker.touch()
+
+
 def loadDay(period: str) -> pl.DataFrame | None:
     """수집된 하루치 데이터 로드. 로컬 부재 시 HF 에서 lazy 다운로드.
+
+    로컬 존재 시에도 TTL(12h) 게이트 후 HF 재동기화를 수행한다 (당일분은 HF 에서
+    장중 증분으로 자라므로 존재 확인만으로 끝내면 stale 이 굳는다).
 
     Args:
         period: YYYYMMDD.
@@ -690,13 +741,15 @@ def loadDay(period: str) -> pl.DataFrame | None:
         >>> loadDay("20260527")  # doctest: +SKIP
 
     Returns:
-        pl.DataFrame 또는 None — 수집 결과.
+        pl.DataFrame 또는 None (수집 결과).
     """
     path = _allFilingsDir() / f"{period}.parquet"
     if not path.exists():
         status = _ensureFromHf(period)
         if status is HfFallbackStatus.NOT_FOUND:
             return None
+    else:
+        _maybeResyncFromHf(period)
     if not path.exists():
         raise AllFilingsHfDownloadError(
             f"HF 다운로드 완료 후 allFilings artifact가 없습니다: {period}",
@@ -708,6 +761,8 @@ def loadDay(period: str) -> pl.DataFrame | None:
 @withMemoryBudget(limitMb=500)
 def loadAll() -> pl.DataFrame:
     """원문 수집 완료된 전체 데이터 로드. 로컬 디렉토리 비어있으면 HF 에서 lazy 다운로드.
+
+    로컬 존재 시에도 TTL(12h) 게이트 후 디렉토리 재동기화로 신규 일자를 catch-up 한다.
 
     Args:
         (인자 자동 생성).
@@ -729,6 +784,11 @@ def loadAll() -> pl.DataFrame:
         status = _ensureFromHf()
         if status is HfFallbackStatus.NOT_FOUND:
             return pl.DataFrame()
+        files = _bodyParquetFiles(outDir)
+    else:
+        # 로컬에 파일이 하나라도 있으면 동기화가 영구히 꺼지던 결함 수정:
+        # TTL 게이트 후 디렉토리 재동기화로 신규 일자 catch-up (실패 시 로컬 유지).
+        _maybeResyncFromHf(None)
         files = _bodyParquetFiles(outDir)
     if not files:
         raise AllFilingsHfDownloadError(

@@ -598,3 +598,124 @@ def test_collect_meta_day_always_calls_list_filings(monkeypatch, tmp_path) -> No
     monkeypatch.setattr(mod, "listFilings", stubList)
     mod.collectMetaDay("20260527", client=_StubClient(), showProgress=False)
     assert callCount["n"] == 1, f"listFilings 호출 0 — skip 가드 잔존: {callCount}"
+
+
+# ---------------------------------------------------------------------------
+# freshness 재동기화 (TTL + 마커) — HF 일일 갱신 catch-up 배선
+# ---------------------------------------------------------------------------
+
+
+def test_ensure_from_hf_refresh_bypasses_local_short_circuit(monkeypatch, tmp_path) -> None:
+    """refresh=True 는 로컬 존재여도 원격 재동기화를 수행하고 attempted 마킹은 안 한다."""
+    import huggingface_hub
+
+    import dartlab.config as _cfg
+    from dartlab.core import hfRetry
+    from dartlab.gather.dart import allFilingsCollector as mod
+
+    monkeypatch.setattr(_cfg, "dataDir", str(tmp_path))
+    monkeypatch.delenv("DARTLAB_NO_HF_DOWNLOAD", raising=False)
+    mod._HF_DOWNLOAD_ATTEMPTED.clear()
+    outDir = mod._allFilingsDir()
+    (outDir / "20260527.parquet").write_bytes(b"stub")
+
+    calls = 0
+
+    def countDownload(*_args, **_kwargs):
+        nonlocal calls
+        calls += 1
+        return str(tmp_path)
+
+    monkeypatch.setattr(huggingface_hub, "snapshot_download", countDownload)
+    monkeypatch.setattr(hfRetry, "retryHfCall", lambda fn, *args, **kwargs: fn(*args, **kwargs))
+
+    assert mod._ensureFromHf("20260527", refresh=True) is mod.HfFallbackStatus.DOWNLOADED
+    assert calls == 1
+    assert "20260527" not in mod._HF_DOWNLOAD_ATTEMPTED
+
+
+def test_maybe_resync_ttl_marker_and_memo(monkeypatch, tmp_path) -> None:
+    """마커 부재 시 1회 재동기화 + 마커 생성. memo·마커 TTL 이 반복 호출을 차단한다."""
+    import dartlab.config as _cfg
+    from dartlab.gather.dart import allFilingsCollector as mod
+
+    monkeypatch.setattr(_cfg, "dataDir", str(tmp_path))
+    monkeypatch.delenv("DARTLAB_NO_HF_DOWNLOAD", raising=False)
+    monkeypatch.delenv("DARTLAB_NO_REFRESH", raising=False)
+    monkeypatch.setattr(mod, "_allFilingsResyncCheckedAt", {}, raising=False)
+    outDir = mod._allFilingsDir()
+    (outDir / "20260527.parquet").write_bytes(b"stub")
+
+    calls: list[str | None] = []
+
+    def fakeEnsure(period=None, *, refresh=False):
+        assert refresh is True
+        calls.append(period)
+        return mod.HfFallbackStatus.DOWNLOADED
+
+    monkeypatch.setattr(mod, "_ensureFromHf", fakeEnsure)
+
+    mod._maybeResyncFromHf("20260527")
+    assert calls == ["20260527"]
+    assert (outDir / ".hfSynced_20260527").exists()
+
+    # 마커가 신선하므로 재호출 차단 (memo 를 비워도 TTL 게이트가 막는다)
+    monkeypatch.setattr(mod, "_allFilingsResyncCheckedAt", {}, raising=False)
+    mod._maybeResyncFromHf("20260527")
+    assert calls == ["20260527"]
+
+
+def test_maybe_resync_respects_no_download_env(monkeypatch, tmp_path) -> None:
+    """DARTLAB_NO_HF_DOWNLOAD=1 이면 재동기화 자체를 하지 않는다."""
+    import dartlab.config as _cfg
+    from dartlab.gather.dart import allFilingsCollector as mod
+
+    monkeypatch.setattr(_cfg, "dataDir", str(tmp_path))
+    monkeypatch.setenv("DARTLAB_NO_HF_DOWNLOAD", "1")
+    monkeypatch.setattr(mod, "_allFilingsResyncCheckedAt", {}, raising=False)
+
+    def trap(*_a, **_k):
+        raise AssertionError("resync must be disabled by DARTLAB_NO_HF_DOWNLOAD")
+
+    monkeypatch.setattr(mod, "_ensureFromHf", trap)
+    mod._maybeResyncFromHf(None)
+
+
+def test_loadDay_local_exists_triggers_resync(monkeypatch, tmp_path) -> None:
+    """loadDay 는 로컬 존재 시에도 TTL 재동기화 경로를 태운다."""
+    import dartlab.config as _cfg
+    from dartlab.gather.dart import allFilingsCollector as mod
+
+    monkeypatch.setattr(_cfg, "dataDir", str(tmp_path))
+    outDir = mod._allFilingsDir()
+    pl.DataFrame({"rcept_no": ["R1"]}).write_parquet(outDir / "20260527.parquet")
+
+    resynced: list[str | None] = []
+    monkeypatch.setattr(mod, "_maybeResyncFromHf", lambda period: resynced.append(period))
+
+    frame = mod.loadDay("20260527")
+    assert frame is not None and frame.height == 1
+    assert resynced == ["20260527"]
+
+
+def test_loadAll_local_files_trigger_resync(monkeypatch, tmp_path) -> None:
+    """loadAll 은 로컬 파일이 있어도 재동기화로 신규 일자를 catch-up 한다."""
+    import dartlab.config as _cfg
+    from dartlab.gather.dart import allFilingsCollector as mod
+
+    monkeypatch.setattr(_cfg, "dataDir", str(tmp_path))
+    outDir = mod._allFilingsDir()
+    pl.DataFrame({"rcept_no": ["R1"]}).write_parquet(outDir / "20260526.parquet")
+
+    resynced: list[str | None] = []
+
+    def fakeResync(period):
+        resynced.append(period)
+        # 재동기화가 신규 일자를 내려받은 상황 재현
+        pl.DataFrame({"rcept_no": ["R2"]}).write_parquet(outDir / "20260527.parquet")
+
+    monkeypatch.setattr(mod, "_maybeResyncFromHf", fakeResync)
+
+    frame = mod.loadAll()
+    assert resynced == [None]
+    assert frame.height == 2, "재동기화로 받은 신규 일자가 결과에 포함되어야 함"
