@@ -75,7 +75,10 @@
 	// "사용한 exact ref ID 인용" 을 따라 코드스팬에 그대로 적은 원시 id 다. 후자를 그냥 두면
 	// 답변 끝에 `table:005930:IS:2025FY` 같은 긴 식별자가 여러 줄로 깔려 디버그 출력처럼 보인다.
 	// 둘 다 잡아 같은 자리에서 번호 각주로 접는다. 전체 식별자는 툴팁과 클릭에 남긴다.
-	const RAW_REF_KINDS = 'table|value|date|doc|web|execution|artifact|visual|skill|session|verify';
+	// 종류를 빠뜨리면 그 하나만 원시 식별자로 남아 오히려 더 눈에 띈다. 촬영에서
+	// industry 접두어가 그렇게 남는 것을 확인하고 채웠다.
+	const RAW_REF_KINDS =
+		'table|value|date|doc|web|execution|artifact|visual|skill|session|verify|industry|credit|source|outcome';
 
 	function chipHtml(label: string, id: string, title: string): string {
 		return (
