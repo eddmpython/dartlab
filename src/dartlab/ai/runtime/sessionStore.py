@@ -38,6 +38,16 @@ class SessionStore:
                 )
                 """
             )
+            database.execute(
+                """
+                CREATE TABLE IF NOT EXISTS agent_delivery (
+                    runtime_id TEXT PRIMARY KEY,
+                    delivery_state TEXT NOT NULL,
+                    detail TEXT NOT NULL,
+                    updated_at TEXT NOT NULL
+                )
+                """
+            )
 
     @contextmanager
     def _connect(self) -> Iterator[sqlite3.Connection]:
@@ -162,3 +172,59 @@ class SessionStore:
                 """,
                 (key, value, nowIso()),
             )
+
+    def recordDelivery(self, runtimeId: str, state: str, detail: str) -> None:
+        """Sig: recordDelivery(runtimeId, state, detail) -> None.
+
+        Args: 런타임 ID, 마지막 턴의 도달 판정, 사용자에게 보일 사유다.
+        Returns: None.
+        Example: `store.recordDelivery("codex", "blocked", "사용량 한도 소진")`.
+
+        설치·로그인·MCP 등록은 CLI 를 물어보면 알 수 있지만 "실제로 도구에 닿는가" 는
+        턴을 돌려 봐야만 안다. 매 조회마다 턴을 돌릴 수는 없으므로 마지막 실측 결과를
+        여기 남겨 두고 화면이 그것을 읽는다.
+        """
+        with self._connect() as database:
+            database.execute(
+                """
+                INSERT INTO agent_delivery(runtime_id, delivery_state, detail, updated_at)
+                VALUES (?, ?, ?, ?)
+                ON CONFLICT(runtime_id) DO UPDATE SET
+                    delivery_state=excluded.delivery_state,
+                    detail=excluded.detail,
+                    updated_at=excluded.updated_at
+                """,
+                (runtimeId, state, detail[:500], nowIso()),
+            )
+
+    def getDelivery(self, runtimeId: str) -> dict[str, str] | None:
+        """Sig: getDelivery(runtimeId) -> dict[str, str] | None.
+
+        Args: 런타임 ID다.
+        Returns: state, detail, updatedAt을 가진 마지막 도달 판정 또는 None이다.
+        Example: `record = store.getDelivery("codex")`.
+        """
+        with self._connect() as database:
+            row = database.execute(
+                "SELECT delivery_state, detail, updated_at FROM agent_delivery WHERE runtime_id = ?",
+                (runtimeId,),
+            ).fetchone()
+        if row is None:
+            return None
+        return {"state": str(row[0]), "detail": str(row[1]), "updatedAt": str(row[2])}
+
+    def clearDelivery(self, runtimeId: str | None = None) -> None:
+        """Sig: clearDelivery(runtimeId=None) -> None.
+
+        Args: runtimeId가 없으면 전체 도달 판정을 지운다.
+        Returns: None.
+        Example: `store.clearDelivery("codex")`.
+
+        사용자가 명시적으로 다시 확인을 눌렀을 때만 지운다. 지운 뒤 상태는 준비됨이
+        아니라 미상이다. 턴을 돌리지 않고 도달을 다시 증명할 방법은 없다.
+        """
+        with self._connect() as database:
+            if runtimeId is None:
+                database.execute("DELETE FROM agent_delivery")
+            else:
+                database.execute("DELETE FROM agent_delivery WHERE runtime_id = ?", (runtimeId,))

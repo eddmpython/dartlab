@@ -236,6 +236,9 @@ def _toolFailed(payload: dict[str, Any]) -> bool:
     status = str(item.get("status") or "").lower()
     if status in {"failed", "error", "cancelled", "canceled"} or item.get("is_error") is True:
         return True
+    # Codex mcpToolCall 은 실패를 별도 `error` 필드로 싣는다.
+    if item.get("error"):
+        return True
     return _containsFalseOk(item)
 
 

@@ -9,6 +9,7 @@ import uuid
 from collections import OrderedDict
 from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
+from functools import lru_cache
 from pathlib import Path
 from threading import RLock
 from typing import Any
@@ -42,6 +43,76 @@ _DEFAULT_RUNTIME_PREFERENCE = "defaultRuntimeId"
 _SEMANTIC_CACHE = SwrCache(600.0)
 _SEMANTIC_KEY = "investmentSemanticReadiness"
 _PENDING_STATES = {"unknown"}
+# 도달 실패 기록의 유효 기간. 사용량 한도나 계정 제한은 시간이 지나면 풀리므로 영구
+# 차단으로 굳히면 안 된다. 반대로 즉시 잊으면 화면이 다시 거짓 준비 완료를 말한다.
+_DELIVERY_BLOCK_TTL_SECONDS = 6 * 3600.0
+# 도달 판정 읽기 캐시. 값은 턴이 끝날 때와 다시 확인을 누를 때만 바뀌고 둘 다 여기서
+# 무효화한다. TTL 은 다른 프로세스가 쓴 값을 따라잡는 상한일 뿐이다. 캐시가 없으면 상태
+# 조회 한 번이 sqlite 연결 3 회가 되어 표시 경로가 30ms 를 더 쓴다(실측 2026-08-06).
+_DELIVERY_CACHE = SwrCache(5.0)
+
+
+def _deliveryRecord(store: Any, runtimeId: str) -> dict[str, Any]:
+    """마지막 턴이 실제로 DartLab 도구에 닿았는지의 캐시된 판정을 읽는다.
+
+    설치·로그인·MCP 등록은 CLI 에게 물어보면 알 수 있지만 도달 가능성은 아니다. 실측
+    2026-08-06: codex 는 세 항목 전부 통과하면서도 사용량 한도 소진으로 모델 토큰을 한 개도
+    만들지 못했고, 그 사이 화면은 근거 기반 분석 준비 완료를 표시했다. 여기서는 실호출을
+    새로 하지 않고 마지막 턴이 남긴 판정만 읽는다.
+    """
+    entry = _DELIVERY_CACHE.peek(runtimeId)
+    if entry is not None and entry.fresh:
+        return _agedDelivery(dict(entry.value))
+    try:
+        record = store.getDelivery(runtimeId) or {"state": "unknown"}
+    except (OSError, sqlite3.Error):
+        logger.exception("런타임 도달 판정 조회 실패")
+        return {"state": "unknown"}
+    _DELIVERY_CACHE.put(runtimeId, record)
+    return _agedDelivery(record)
+
+
+def _agedDelivery(record: dict[str, Any]) -> dict[str, Any]:
+    """유효 기간이 지난 실패 기록을 판정이 아닌 옛 기록으로 낮춘다."""
+    if record.get("state") == "blocked" and _isStaleIso(record.get("updatedAt"), _DELIVERY_BLOCK_TTL_SECONDS):
+        # 오래된 실패는 판정이 아니라 옛 기록이다. 다시 미상으로 돌린다.
+        return {"state": "unknown", "detail": record.get("detail"), "expired": True}
+    return dict(record)
+
+
+@lru_cache(maxsize=1)
+def _dartlabToolNames() -> frozenset[str]:
+    """DartLab MCP 가 광고하는 도구 이름 집합이다. 프로세스 수명 동안 바뀌지 않는다."""
+    from dartlab.ai.tools.registry import listToolNames
+
+    return frozenset(listToolNames())
+
+
+def _reachedDartlabTool(payload: dict[str, Any]) -> bool:
+    """이번 도구 호출이 런타임 내장 도구가 아니라 DartLab 도구였는지 판정한다."""
+    canonical = str(payload.get("canonicalName") or "")
+    if not canonical:
+        return False
+    if "dartlab" in str(payload.get("nativeName") or "").casefold():
+        return True
+    try:
+        return canonical in _dartlabToolNames()
+    except Exception:  # noqa: BLE001 - 카탈로그 조회 실패가 턴을 죽이면 안 된다.
+        logger.exception("DartLab 도구 목록 조회 실패")
+        return False
+
+
+def _isStaleIso(timestamp: Any, ttlSeconds: float) -> bool:
+    """ISO 시각이 주어진 유효 기간을 지났는지 판정한다."""
+    from datetime import datetime, timezone
+
+    try:
+        moment = datetime.fromisoformat(str(timestamp))
+    except (TypeError, ValueError):
+        return True
+    if moment.tzinfo is None:
+        moment = moment.replace(tzinfo=timezone.utc)
+    return (datetime.now(timezone.utc) - moment).total_seconds() > ttlSeconds
 
 
 class RuntimeUnavailableError(RuntimeError):
@@ -52,11 +123,18 @@ def _runtimeStorePath() -> Path:
     """Sig: _runtimeStorePath() -> Path.
 
     Args: 없음.
-    Returns: 런타임 세션 매핑 DB 경로다.
+    Returns: 런타임 세션 매핑과 도달 판정 DB 경로다.
     Example: `path = _runtimeStorePath()`.
+
+    형제 사용자 상태 저장소와 같은 `DARTLAB_HOME` 규약을 따른다. 여기만 사용자 home 을
+    직접 잡고 있어서 격리된 실행이 운영자의 실제 DB 를 건드렸다. 실측 2026-08-06:
+    격리 없이 도는 실행이 도달 판정 원장을 통째로 지워 화면이 다시 거짓 준비 완료로
+    돌아갔다.
     """
+    from dartlab.core.providers.secrets import dartlabHome
+
     configured = os.environ.get("DARTLAB_RUNTIME_DB")
-    return Path(configured) if configured else Path.home() / ".dartlab" / "agentRuntime.sqlite3"
+    return Path(configured) if configured else dartlabHome() / "agentRuntime.sqlite3"
 
 
 def _runtimeProbingStages(
@@ -95,6 +173,7 @@ def _runtimeGroundingState(
     auth: dict[str, Any],
     mcp: dict[str, Any],
     probing: dict[str, bool] | None = None,
+    delivery: dict[str, Any] | None = None,
 ) -> tuple[bool, str | None, str | None]:
     """런타임 probe를 준비 여부와 사용자 조치 문구로 정규화한다."""
     stages = probing or {}
@@ -104,6 +183,15 @@ def _runtimeGroundingState(
         and descriptor.embeddedGrounding
         and bool(mcp.get("connected"))
     )
+    if groundedReady and (delivery or {}).get("state") == "blocked":
+        # 설치·로그인·MCP 는 통과했는데 마지막 실제 턴이 런타임 층에서 죽었다. 이 상태를
+        # 준비 완료로 표시하면 사용자를 답이 나오지 않는 경로로 보낸다.
+        detail = str((delivery or {}).get("detail") or "").strip()
+        return (
+            False,
+            detail or "마지막 분석 턴이 런타임 오류로 끝났습니다",
+            "런타임 CLI 자체를 실행해 오류를 해소한 뒤 다시 확인을 눌러 주세요",
+        )
     if not descriptor.embeddedGrounding:
         return (
             groundedReady,
@@ -142,11 +230,16 @@ def _runtimePrimaryAction(
     mcp: dict[str, Any],
     groundedReady: bool,
     probing: dict[str, bool] | None = None,
+    delivery: dict[str, Any] | None = None,
 ) -> str:
     """현재 상태에서 Runtime Center가 실행할 단일 기본 동작을 고른다."""
     stages = probing or {}
     if stages.get("install"):
         return "probing"
+    if (delivery or {}).get("state") == "blocked":
+        # 설치·연결은 이미 됐으므로 다시 설치하거나 연결하라고 권하면 안 된다. 사용자가
+        # 런타임 쪽 문제를 푼 뒤 다시 확인하는 것이 유일한 진행 경로다.
+        return "recheck"
     if descriptor.embeddedGrounding and any(stages.get(key) for key in ("auth", "grounding", "contract")):
         return "probing"
     if _runtimeUndetermined(probe, auth, mcp):
@@ -169,12 +262,16 @@ def _runtimeStatusEntry(
     auth: dict[str, Any],
     mcp: dict[str, Any],
     semanticReadiness: dict[str, Any],
+    delivery: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """한 런타임의 기술 준비와 투자 계약 준비 상태를 공개 행으로 만든다."""
     probing = _runtimeProbingStages(probe, auth, mcp, semanticReadiness)
     pending = any(probing.values())
     undetermined = _runtimeUndetermined(probe, auth, mcp)
-    groundedReady, blockingReason, recommendedAction = _runtimeGroundingState(descriptor, probe, auth, mcp, probing)
+    delivery = delivery or {"state": "unknown"}
+    groundedReady, blockingReason, recommendedAction = _runtimeGroundingState(
+        descriptor, probe, auth, mcp, probing, delivery
+    )
     checks = semanticReadiness.get("checks", {})
     return {
         **descriptor.toDict(),
@@ -208,6 +305,10 @@ def _runtimeStatusEntry(
             and bool(descriptor.loginArgs)
             and auth.get("state") != "authenticated"
         ),
+        # 마지막 실제 턴이 DartLab 도구에 닿았는지의 판정이다. verified 는 닿았음,
+        # blocked 는 런타임 층에서 죽었음, unknown 은 아직 모름이다. 모르는 것은
+        # 준비됨으로도 미준비로도 적지 않는다.
+        "delivery": delivery,
         "readiness": {
             "install": "ready" if probe.state == "ready" else probe.state,
             "auth": auth.get("state"),
@@ -215,9 +316,11 @@ def _runtimeStatusEntry(
             "grounding": "probing"
             if probing["grounding"]
             else ("connected" if mcp.get("connected") else "disconnected"),
+            # 설치·로그인·MCP 와 달리 이 축만이 "질문하면 답이 나오는가" 를 말한다.
+            "delivery": delivery.get("state"),
             "ready": groundedReady,
         },
-        "primaryAction": _runtimePrimaryAction(descriptor, probe, auth, mcp, groundedReady, probing),
+        "primaryAction": _runtimePrimaryAction(descriptor, probe, auth, mcp, groundedReady, probing, delivery),
         "blockingReason": blockingReason,
         "recommendedAction": recommendedAction,
     }
@@ -336,6 +439,10 @@ class AgentRuntimeEngine:
         측정을 기다리는 blocking 경로를 쓴다.
         """
         semanticReadiness = _semanticReadiness(blocking=blocking or refresh)
+        if refresh:
+            # 다시 확인은 전 단계 재측정이다. 도달 판정만은 턴 없이 다시 잴 수 없으므로
+            # 준비됨으로 되돌리지 않고 미상으로 비운다.
+            self._clearDeliveryRecords()
         probes, mcpResults, authResults = (
             _measuredProbes(refresh=refresh) if blocking else _scheduledProbes(self.registry)
         )
@@ -346,7 +453,16 @@ class AgentRuntimeEngine:
             mcp = mcpResults.get(probe.runtimeId, {"connected": False}) if resolvable else {"connected": False}
             missingAuth = {"state": "missing", "authenticated": False, "checkedAt": probe.checkedAt}
             auth = authResults.get(probe.runtimeId, missingAuth) if resolvable else missingAuth
-            runtimes.append(_runtimeStatusEntry(self.registry[probe.runtimeId], probe, auth, mcp, semanticReadiness))
+            runtimes.append(
+                _runtimeStatusEntry(
+                    self.registry[probe.runtimeId],
+                    probe,
+                    auth,
+                    mcp,
+                    semanticReadiness,
+                    _deliveryRecord(self.sessionStore, probe.runtimeId),
+                )
+            )
         defaultRuntimeId = self.sessionStore.getPreference(_DEFAULT_RUNTIME_PREFERENCE)
         if defaultRuntimeId not in self.registry:
             defaultRuntimeId = None
@@ -396,6 +512,14 @@ class AgentRuntimeEngine:
                     f"{preferredRuntimeId}에 DartLab MCP가 연결되지 않았습니다. "
                     f"`dartlab agent connect {preferredRuntimeId}`로 승인 계획을 확인하세요"
                 )
+            delivery = _deliveryRecord(self.sessionStore, preferredRuntimeId)
+            if delivery.get("state") == "blocked":
+                # 마지막 턴이 런타임 층에서 죽은 경로로 사용자를 다시 보내면 같은 침묵이
+                # 반복된다. 여기서 실제 사유를 들고 멈추는 편이 정직하다.
+                raise RuntimeUnavailableError(
+                    f"{preferredRuntimeId}의 마지막 분석 턴이 런타임 오류로 끝났습니다: "
+                    f"{delivery.get('detail') or '사유 미상'}"
+                )
             return preferredRuntimeId
         stored = self.sessionStore.getPreference(_DEFAULT_RUNTIME_PREFERENCE)
         if stored:
@@ -410,6 +534,7 @@ class AgentRuntimeEngine:
             and probeRuntime(descriptor).state == "ready"
             and probeRuntimeAuth(descriptor).get("state") in {"authenticated", "unsupported"}
             and probeMcpConnection(runtimeId).get("connected")
+            and _deliveryRecord(self.sessionStore, runtimeId).get("state") != "blocked"
         ]
         if len(ready) == 1:
             return ready[0]
@@ -547,10 +672,17 @@ class AgentRuntimeEngine:
             mcp = probeMcpConnection(managed.handle.descriptor.runtimeId)
             instructions = buildAnalysisCapsule(cwd=managed.handle.cwd, mcpConnected=bool(mcp.get("connected")))
             turnQuestion = buildTurnQuestion(question, context, contractQuestion=qualityQuestion)
+            runtimeId = managed.handle.descriptor.runtimeId
+            toolReached = False
+            errorReason = ""
             try:
                 for event in managed.driver.streamTurn(managed.handle, turnQuestion, instructions=instructions):
                     payload = tracker.enrich(event)
                     self._rememberEvidence(payload)
+                    if event.kind == "toolStarted" and _reachedDartlabTool(payload):
+                        toolReached = True
+                    elif event.kind == "runtimeError":
+                        errorReason = str(payload.get("error") or "")
                     publicEvent = AgentEvent(
                         event.schemaVersion,
                         event.sessionId,
@@ -570,13 +702,43 @@ class AgentRuntimeEngine:
                 self.sessionStore.touch(sessionId, managed.handle.nativeSessionId)
             except Exception as exc:  # noqa: BLE001
                 turnId = managed.handle.activeTurnId or uuid.uuid4().hex
+                errorReason = errorReason or str(exc)
                 errorEvent = managed.handle.projector.event(
                     "runtimeError", turnId=turnId, payload={"error": str(exc), "outcomeId": tracker.outcomeId}
                 )
                 managed.buffer.append(errorEvent)
                 yield errorEvent
+            finally:
+                self._recordDelivery(runtimeId, toolReached=toolReached, errorReason=errorReason)
         finally:
             managed.turnLock.release()
+
+    def _recordDelivery(self, runtimeId: str, *, toolReached: bool, errorReason: str) -> None:
+        """이번 턴이 실제 도달을 증명했는지 또는 런타임 층에서 죽었는지만 남긴다.
+
+        도구에 닿았으면 그 런타임은 증명된 것이고 옛 실패 기록을 지운다. 도구를 하나도
+        부르지 못한 채 런타임 오류로 끝났으면 다음 조회가 그 사실을 알아야 한다. 도구는
+        못 불렀지만 오류도 없는 턴은 답변 품질 문제이지 도달 문제가 아니라 기록하지 않는다.
+        """
+        if not toolReached and not errorReason:
+            return
+        state = "verified" if toolReached else "blocked"
+        detail = "" if toolReached else errorReason
+        try:
+            self.sessionStore.recordDelivery(runtimeId, state, detail)
+        except (OSError, sqlite3.Error):
+            logger.exception("런타임 도달 판정 기록 실패")
+        finally:
+            _DELIVERY_CACHE.clear(runtimeId)
+
+    def _clearDeliveryRecords(self) -> None:
+        """사용자가 다시 확인을 눌렀을 때 도달 판정을 미상으로 되돌린다."""
+        try:
+            self.sessionStore.clearDelivery()
+        except (OSError, sqlite3.Error):
+            logger.exception("런타임 도달 판정 초기화 실패")
+        finally:
+            _DELIVERY_CACHE.clear()
 
     def _rememberEvidence(self, payload: dict[str, Any]) -> None:
         """한 프로세스 수명 동안 exact ref의 작은 공개 projection을 bounded 보관한다."""

@@ -89,6 +89,7 @@ class CodexAppServerDriver:
             projector=EventProjector(descriptor.runtimeId, sessionId),
             supervisor=supervisor,
             channel=channel,
+            metadata={"instructions": instructions},
         )
 
     def streamTurn(self, handle: DriverHandle, question: str, *, instructions: str) -> Iterator[AgentEvent]:
@@ -98,16 +99,25 @@ class CodexAppServerDriver:
         Returns: 턴 완료까지 실시간 정규 이벤트를 내는 iterator다.
         Raises: RuntimeError if another turn is active or transport fails.
         Example: `events = driver.streamTurn(handle, "질문", instructions=capsule)`.
+
+        Codex 는 형제 런타임의 턴별 system prompt 에 해당하는 표면이 없고 캡슐을
+        thread 수명 동안 `developerInstructions` 로 들고 있다. 그래서 보통은 다시 보낼
+        것이 없지만, 캡슐이 실제로 달라졌는데 조용히 버리면 턴이 옛 지침으로 돈다.
+        달라진 경우에만 데이터 블록으로 앞에 붙인다.
         """
         if handle.activeTurnId is not None or handle.channel is None:
             raise RuntimeError("세션에 이미 활성 턴이 있거나 채널이 닫혔습니다")
         timeoutSeconds = runtimeTurnTimeoutSeconds()
         deadline = time.monotonic() + timeoutSeconds
+        turnInput = [{"type": "text", "text": question}]
+        if instructions and instructions != handle.metadata.get("instructions"):
+            handle.metadata["instructions"] = instructions
+            turnInput.insert(0, {"type": "text", "text": f"[DartLab 런타임 지침 갱신]\n{instructions}"})
         result = handle.channel.request(
             "turn/start",
             {
                 "threadId": handle.nativeSessionId,
-                "input": [{"type": "text", "text": question}],
+                "input": turnInput,
                 "effort": codexReasoningEffort(),
                 "approvalPolicy": "never",
                 "sandboxPolicy": {"type": "readOnly", "networkAccess": False},

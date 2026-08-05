@@ -1236,7 +1236,10 @@ def runRuntimeAgent(question: str, **kwargs: Any) -> Iterator[TraceEvent]:
                 repairMode=repairMode,
             ),
         )
-        if committed:
+        # 런타임이 오류로 끝났어도 그때까지 쓴 본문은 버리지 않는다. 상한 초과 경로가
+        # 이미 같은 계약이다. 다만 완주한 답변과 같은 상태로 적지는 않아서, 뱃지는 실패로
+        # 남고 사유도 그대로 붙는다.
+        if committed or answer:
             yield TraceEvent("chunk", {"text": answer})
         yield TraceEvent(
             "done",
@@ -1544,6 +1547,9 @@ def _runtimeToolData(payload: dict[str, Any], *, status: str) -> dict[str, Any]:
         (item, "result"),
         (item, "output"),
         (item, "content"),
+        # Codex 는 MCP 도구를 namespace 로 묶어 노출하고 그 결과를 `contentItems` 로 준다.
+        # 이 키가 없으면 codex 도구 카드가 결과 없이 빈 채로 그려진다.
+        (item, "contentItems"),
         default={},
     )
     return {

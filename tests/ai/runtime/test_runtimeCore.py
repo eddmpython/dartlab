@@ -954,3 +954,146 @@ def testBackgroundProbeRetriesUndeterminedInsteadOfFreezingAFailure():
     )
     assert stuck == {"undetermined": True}
     assert len(attempts) == 3
+
+
+def testCodexRuntimeErrorSurfacesRealReasonExactlyOnce():
+    """Codex 실패는 사유와 함께 runtimeError 로 올라오고 중복 보고되지 않는다.
+
+    실측(2026-08-06): DartLab 이 연 codex 세션 19 건 전부가 사용량 한도 소진으로
+    죽었는데 `error` 알림도 `turn.error` 도 투영되지 않아 화면에는 사유 없는
+    "런타임이 정상 완료되지 않았습니다" 만 남았다. 사용자는 자기 계정 한도가 끝난
+    것을 알 방법이 없었다.
+    """
+    projector = EventProjector("codex", "session-1")
+    limitMessage = "You've hit your usage limit. Try again at Aug 8th."
+
+    reported = projector.project(
+        {
+            "method": "error",
+            "params": {
+                "error": {"message": limitMessage, "codexErrorInfo": "usageLimitExceeded"},
+                "willRetry": False,
+            },
+        },
+        turnId="turn-1",
+    )
+    assert [event.kind for event in reported] == ["runtimeError"]
+    assert reported[0].payload["error"] == limitMessage
+    assert reported[0].payload["errorCode"] == "usageLimitExceeded"
+
+    # 같은 실패를 turn/completed 가 다시 실어 보내도 두 번 올리지 않는다.
+    terminal = projector.project(
+        {
+            "method": "turn/completed",
+            "params": {"turn": {"status": "failed", "error": {"message": limitMessage}}},
+        },
+        turnId="turn-1",
+    )
+    assert [event.kind for event in terminal] == ["turnCompleted"]
+
+
+def testCodexFailedTurnWithoutErrorNotificationStillReportsReason():
+    """`error` 알림 없이 turn/completed 만 실패로 오는 경우도 사유를 잃지 않는다."""
+    projector = EventProjector("codex", "session-1")
+
+    events = projector.project(
+        {
+            "method": "turn/completed",
+            "params": {"turn": {"status": "failed", "error": {"message": "model stream disconnected"}}},
+        },
+        turnId="turn-1",
+    )
+
+    assert [event.kind for event in events] == ["runtimeError", "turnCompleted"]
+    assert events[0].payload["error"] == "model stream disconnected"
+
+
+def testCodexRetryableErrorIsNotReportedAsTurnFailure():
+    """재시도 예정 오류를 실패로 올리면 곧 회복될 턴의 답변이 미전달 처리된다."""
+    projector = EventProjector("codex", "session-1")
+
+    events = projector.project(
+        {"method": "error", "params": {"error": {"message": "transient"}, "willRetry": True}},
+        turnId="turn-1",
+    )
+
+    assert [event.kind for event in events] == []
+
+
+def testCodexNonToolItemsAreNotProjectedAsToolCalls():
+    """사용자 메시지와 사고 항목은 도구가 아니다.
+
+    실측(2026-08-06): `userMessage` 가 도구 호출로 기록돼 도달성 측정에 "도구 1 회" 로
+    잡혔지만 실제 DartLab 도구 도달은 0 이었다.
+    """
+    projector = EventProjector("codex", "session-1")
+
+    for itemType in ("userMessage", "agentMessage", "reasoning", "contextCompaction"):
+        started = projector.project(
+            {"method": "item/started", "params": {"item": {"type": itemType, "id": "x"}}}, turnId="turn-1"
+        )
+        assert started == [], f"{itemType} 은 도구가 아니다"
+
+    tool = projector.project(
+        {
+            "method": "item/started",
+            "params": {"item": {"type": "mcpToolCall", "id": "m", "server": "dartlab", "tool": "EngineCall"}},
+        },
+        turnId="turn-1",
+    )
+    assert [event.kind for event in tool] == ["toolStarted"]
+    assert tool[0].payload["item"]["tool"] == "EngineCall"
+
+
+def testCodexReasoningSummaryDeltaBecomesVisibleThinking():
+    """gpt-5 계열은 원문 대신 요약 reasoning 을 흘린다. 버리면 화면 사고 과정이 빈다."""
+    projector = EventProjector("codex", "session-1")
+
+    events = projector.project(
+        {"method": "item/reasoning/summaryTextDelta", "params": {"delta": "재무 표를 먼저 확인한다"}},
+        turnId="turn-1",
+    )
+
+    assert [event.kind for event in events] == ["reasoningDelta"]
+    assert events[0].payload["text"] == "재무 표를 먼저 확인한다"
+
+
+def testCodexMcpToolResultIsReadFromContentItems():
+    """Codex 는 namespace 로 묶은 MCP 결과를 contentItems 로 준다."""
+    from dartlab.ai.agent import _runtimeToolData
+
+    data = _runtimeToolData(
+        {"item": {"type": "dynamicToolCall", "id": "d", "tool": "EngineCall", "contentItems": {"ok": True}}},
+        status="done",
+    )
+
+    assert data["data"] == {"ok": True}
+
+
+def testRuntimeDeliveryRecordSurvivesRestartAndClears(tmp_path):
+    """도달 판정은 프로세스가 죽어도 남고 명시적 초기화로만 지워진다."""
+    store = SessionStore(tmp_path / "sessions.sqlite3")
+    store.recordDelivery("codex", "blocked", "사용량 한도 소진")
+
+    reopened = SessionStore(tmp_path / "sessions.sqlite3")
+    record = reopened.getDelivery("codex")
+    assert record is not None
+    assert record["state"] == "blocked"
+    assert record["detail"] == "사용량 한도 소진"
+
+    reopened.clearDelivery("codex")
+    assert reopened.getDelivery("codex") is None
+
+
+def testSameFailureInLaterTurnStillReportsReason():
+    """중복 억제는 한 턴 안에서만이다. 같은 사유로 두 턴이 연속 실패해도 둘 다 보고한다."""
+    projector = EventProjector("codex", "session-1")
+    failure = {"method": "error", "params": {"error": {"message": "한도 소진"}, "willRetry": False}}
+
+    first = projector.project(failure, turnId="turn-1")
+    repeatSameTurn = projector.project(failure, turnId="turn-1")
+    second = projector.project(failure, turnId="turn-2")
+
+    assert [event.kind for event in first] == ["runtimeError"]
+    assert repeatSameTurn == []
+    assert [event.kind for event in second] == ["runtimeError"]

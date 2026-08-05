@@ -437,3 +437,126 @@ def testDocumentEvidenceProjectionKeepsAuditableClaimFields():
 
     assert payload["fields"]["adt_opinion"] == "적정의견"
     assert "감가상각개시시점" in payload["fields"]["core_adt_matter"]
+
+
+def _readyProbeEngine(tmp_path, monkeypatch):
+    """설치·로그인·MCP 가 모두 통과한 가짜 런타임 하나를 가진 엔진을 만든다."""
+    descriptor = RuntimeDescriptor(
+        "fake",
+        "Fake",
+        "fake",
+        "ndjson",
+        ("fake",),
+        ("--version",),
+        (),
+        (),
+        "https://example.invalid",
+    )
+    monkeypatch.setattr(
+        runtimeEngineModule, "probeRuntime", lambda value, **_kwargs: RuntimeProbe("fake", "ready", "fake.exe")
+    )
+    monkeypatch.setattr(
+        runtimeEngineModule,
+        "probeAllRuntimes",
+        lambda **_kwargs: [RuntimeProbe("fake", "ready", "fake.exe")],
+    )
+    monkeypatch.setattr(runtimeEngineModule, "probeRuntimeAuth", lambda *args, **kwargs: {"state": "authenticated"})
+    monkeypatch.setattr(
+        runtimeEngineModule, "probeMcpConnection", lambda runtimeId, **_kwargs: {"connected": True, "mode": "test"}
+    )
+    monkeypatch.setattr(runtimeEngineModule, "_semanticReadiness", lambda **_kwargs: {"ready": True, "checks": {}})
+    runtimeEngineModule._DELIVERY_CACHE.clear()
+    engine = AgentRuntimeEngine(SessionStore(tmp_path / "sessions.sqlite3"), SessionManager())
+    engine.registry = {"fake": descriptor}
+    return engine
+
+
+def testBlockedDeliveryStopsFalseReadySignal(tmp_path, monkeypatch):
+    """설치·로그인·MCP 가 통과해도 마지막 턴이 런타임 층에서 죽었으면 준비 완료가 아니다.
+
+    실측(2026-08-06): codex 는 세 축 전부 통과하면서 사용량 한도 소진으로 도구 도달이
+    0/18 이었는데 화면은 groundedReady 와 investmentReady 를 모두 True 로 적었다.
+    """
+    engine = _readyProbeEngine(tmp_path, monkeypatch)
+
+    before = engine.status(blocking=False)["runtimes"][0]
+    assert before["groundedReady"] is True
+    assert before["readiness"]["delivery"] == "unknown", "재 본 적 없는 것은 모른다고 적는다"
+
+    engine._recordDelivery("fake", toolReached=False, errorReason="사용량 한도를 소진했습니다")
+    after = engine.status(blocking=False)["runtimes"][0]
+
+    assert after["groundedReady"] is False
+    assert after["investmentReady"] is False
+    assert after["readiness"]["delivery"] == "blocked"
+    assert after["blockingReason"] == "사용량 한도를 소진했습니다"
+    assert after["primaryAction"] == "recheck", "이미 설치·연결됐으니 재설치를 권하면 안 된다"
+
+    with pytest.raises(runtimeEngineModule.RuntimeUnavailableError, match="사용량 한도"):
+        engine.selectRuntime("fake")
+
+
+def testReachedToolClearsPreviousBlock(tmp_path, monkeypatch):
+    """도구에 실제로 닿은 턴은 옛 실패 기록을 지운다."""
+    engine = _readyProbeEngine(tmp_path, monkeypatch)
+    engine._recordDelivery("fake", toolReached=False, errorReason="일시 오류")
+    assert engine.status(blocking=False)["runtimes"][0]["groundedReady"] is False
+
+    engine._recordDelivery("fake", toolReached=True, errorReason="")
+    row = engine.status(blocking=False)["runtimes"][0]
+
+    assert row["groundedReady"] is True
+    assert row["readiness"]["delivery"] == "verified"
+    assert engine.selectRuntime("fake") == "fake"
+
+
+def testToollessButErrorFreeTurnDoesNotBlockRuntime(tmp_path, monkeypatch):
+    """도구를 안 부른 것은 답변 품질 문제이지 도달 문제가 아니다."""
+    engine = _readyProbeEngine(tmp_path, monkeypatch)
+
+    engine._recordDelivery("fake", toolReached=False, errorReason="")
+
+    assert engine.sessionStore.getDelivery("fake") is None
+    assert engine.status(blocking=False)["runtimes"][0]["groundedReady"] is True
+
+
+def testStaleBlockExpiresInsteadOfFreezingRuntimeForever(tmp_path, monkeypatch):
+    """사용량 한도는 시간이 지나면 풀린다. 실패 기록을 영구 차단으로 굳히지 않는다."""
+    engine = _readyProbeEngine(tmp_path, monkeypatch)
+    engine._recordDelivery("fake", toolReached=False, errorReason="한도 소진")
+    assert engine.status(blocking=False)["runtimes"][0]["groundedReady"] is False
+
+    monkeypatch.setattr(runtimeEngineModule, "_isStaleIso", lambda timestamp, ttlSeconds: True)
+    runtimeEngineModule._DELIVERY_CACHE.clear()
+    row = engine.status(blocking=False)["runtimes"][0]
+
+    assert row["groundedReady"] is True
+    assert row["readiness"]["delivery"] == "unknown", "지난 기록은 판정이 아니라 미상이다"
+
+
+def testExplicitRecheckResetsDeliveryToUnknownNotReady(tmp_path, monkeypatch):
+    """다시 확인은 도달을 증명하지 않는다. 준비됨이 아니라 미상으로 되돌린다."""
+    engine = _readyProbeEngine(tmp_path, monkeypatch)
+    engine._recordDelivery("fake", toolReached=True, errorReason="")
+    assert engine.status(blocking=False)["runtimes"][0]["readiness"]["delivery"] == "verified"
+
+    engine.status(refresh=True)
+
+    assert engine.status(blocking=False)["runtimes"][0]["readiness"]["delivery"] == "unknown"
+
+
+def testRuntimeStorePathFollowsIsolatedDartlabHome(monkeypatch, tmp_path):
+    """런타임 DB 는 형제 사용자 상태 저장소와 같은 격리 규약을 따른다.
+
+    실측(2026-08-06): 이 경로만 사용자 home 을 직접 잡고 있어서, 격리된 실행이
+    운영자의 실제 도달 판정 원장을 통째로 지웠다. 그러면 화면이 다시 거짓 준비 완료로
+    돌아간다.
+    """
+    from dartlab.ai.runtime.engine import _runtimeStorePath
+
+    monkeypatch.setenv("DARTLAB_HOME", str(tmp_path / "home"))
+    monkeypatch.delenv("DARTLAB_RUNTIME_DB", raising=False)
+    assert _runtimeStorePath().parent == tmp_path / "home"
+
+    monkeypatch.setenv("DARTLAB_RUNTIME_DB", str(tmp_path / "explicit.sqlite3"))
+    assert _runtimeStorePath() == tmp_path / "explicit.sqlite3", "명시 경로가 우선한다"

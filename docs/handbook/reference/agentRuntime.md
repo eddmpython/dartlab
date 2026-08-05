@@ -33,7 +33,17 @@ dartlab ask --runtime <runtimeId> "질문"
 
 ## 준비 상태
 
-한 런타임은 설치, 인증, embedded grounding protocol, DartLab MCP 연결을 모두 통과할 때만 `groundedReady=true`다. 상태 응답의 `readiness`는 `install`, `auth`, `protocol`, `grounding`, `ready`를 분리한다.
+한 런타임은 설치, 인증, embedded grounding protocol, DartLab MCP 연결을 모두 통과하고 마지막 실제 턴이 도구 도달에 실패하지 않았을 때만 `groundedReady=true`다. 상태 응답의 `readiness`는 `install`, `auth`, `protocol`, `grounding`, `delivery`, `ready`를 분리한다.
+
+앞의 네 축은 CLI 에게 물어보면 알 수 있지만 "질문하면 답이 나오는가" 는 알 수 없다. 설치와 로그인과 MCP 등록이 모두 정상이면서도 계정 사용량 한도로 모델이 한 토큰도 만들지 못하는 상태가 실재한다. `delivery` 축이 그 간극을 담당한다.
+
+| delivery | 뜻 | groundedReady |
+|---|---|---|
+| `verified` | 마지막 턴이 DartLab MCP 도구를 실제로 호출했다 | 다른 축이 통과하면 true |
+| `blocked` | 마지막 턴이 도구를 하나도 못 부른 채 런타임 오류로 끝났다. 사유는 `blockingReason` | false |
+| `unknown` | 아직 턴을 돌린 적이 없다. 준비됨으로도 미준비로도 단정하지 않는다 | 다른 축이 통과하면 true |
+
+판정은 턴이 끝날 때 기록되고 상태 조회는 그 기록만 읽으므로 조회에 실호출 비용이 없다. `blocked` 는 다음 성공 턴, 사용자의 명시적 다시 확인, 또는 6 시간 경과로 해제된다. 다시 확인은 도달을 증명하지 않으므로 `verified` 가 아니라 `unknown` 으로 되돌린다.
 
 ## 공개 스트림
 

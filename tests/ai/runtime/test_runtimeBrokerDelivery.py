@@ -195,3 +195,38 @@ def testRuntimeFailureReasonDoesNotDumpEveryQualityIssue():
 
     assert ";" not in reason
     assert reason == "런타임이 정상 완료되지 않았습니다"
+
+
+def testFailedTurnKeepsWrittenTextAndCarriesRuntimeReason(monkeypatch):
+    """런타임이 도중에 죽어도 그때까지 쓴 본문은 남고 실패 사유는 그대로 전달된다.
+
+    codex 는 실패를 `error` 알림으로 먼저 보내고 `turn/completed` 를 이어 보낸다. 사유를
+    올리면서 본문을 버리면 사용자가 읽던 분석이 사라지고, 본문만 남기고 사유를 버리면
+    미완성 답을 완주한 답으로 읽는다. 둘 다 남긴다.
+    """
+    projector = EventProjector("codex", "session-partial")
+
+    class FakeEngine:
+        def stream(self, question, **kwargs):
+            yield projector.event("sessionStarted", turnId="", payload={"nativeSessionId": "native-1"})
+            yield projector.event("turnStarted", turnId="turn-1")
+            yield projector.event("messageDelta", turnId="turn-1", payload={"text": "매출 추세를 보면"})
+            yield projector.event(
+                "runtimeError",
+                turnId="turn-1",
+                payload={"error": "사용량 한도를 소진했습니다", "errorCode": "usageLimitExceeded"},
+            )
+            yield projector.event(
+                "turnCompleted",
+                turnId="turn-1",
+                payload={"turn": {"status": "failed"}},
+            )
+
+    monkeypatch.setattr("dartlab.ai.runtime.getRuntimeEngine", lambda: FakeEngine())
+
+    events = list(runRuntimeAgent("005930 매출 알려줘", runtimeId="codex"))
+    meta = next(event.data for event in events if event.kind == "done")["responseMeta"]
+
+    assert any(event.kind == "chunk" and event.data.get("text") for event in events), "쓴 본문을 버리지 않는다"
+    assert meta["responseStatus"] == "failed"
+    assert meta["failureReason"] == "사용량 한도를 소진했습니다"

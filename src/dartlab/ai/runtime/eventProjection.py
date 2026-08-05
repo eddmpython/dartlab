@@ -7,6 +7,23 @@ from typing import Any
 
 from .contracts import AgentEvent, EventKind, nowIso
 
+# 도구가 아닌 Codex thread item. 이것들을 도구로 투영하면 화면 타임라인과 도달성 측정이
+# 동시에 오염된다. 실측 2026-08-06: `userMessage` 가 도구 호출로 기록돼 "도구 1 회 사용"
+# 처럼 보였지만 실제 DartLab 도구 도달은 0 이었다.
+_CODEX_NON_TOOL_ITEMS = frozenset(
+    {
+        "agentMessage",
+        "reasoning",
+        "userMessage",
+        "hookPrompt",
+        "contextCompaction",
+        "enteredReviewMode",
+        "exitedReviewMode",
+    }
+)
+# 실패로 끝난 네이티브 턴 상태.
+_FAILED_TURN_STATUSES = frozenset({"failed", "error", "interrupted", "cancelled", "canceled", "refused"})
+
 
 class EventProjector:
     """세션별 단조 sequence와 안정 event kind를 만든다."""
@@ -15,6 +32,11 @@ class EventProjector:
         self.runtimeId = runtimeId
         self.sessionId = sessionId
         self.sequence = 0
+        # 같은 실패를 `error` 알림과 `turn/completed` 가 함께 실어 보내므로 한 턴에 한
+        # 번만 올린다. 턴이 바뀌면 비운다. 같은 사유로 두 턴이 연속 실패하는 것은 흔한
+        # 일이라 세션 단위로 기억하면 두 번째 턴이 사유를 잃는다.
+        self._reportedErrors: set[str] = set()
+        self._errorTurnId = ""
 
     def event(
         self,
@@ -65,6 +87,11 @@ class EventProjector:
         Args: Codex app-server 메시지와 turnId다.
         Returns: Codex 의미 이벤트다.
         Example: 내부 Codex 드라이버가 호출한다.
+
+        Codex 는 실패를 `error` 알림과 `turn/completed` 의 `turn.error` 두 곳으로 보낸다.
+        둘 다 알아보지 못하면 턴이 사유 없이 끝난 것처럼 보인다. 실측 2026-08-06: 사용량
+        한도 소진으로 죽은 19 개 세션 전부가 `runtimeError` 없이 조용히 종료됐고 화면에는
+        "런타임이 정상 완료되지 않았습니다" 만 남았다.
         """
         nativeType = _nativeType(message)
         params = _dict(message.get("params"))
@@ -72,28 +99,53 @@ class EventProjector:
             "turn/started": "turnStarted",
             "item/agentMessage/delta": "messageDelta",
             "item/reasoning/textDelta": "reasoningDelta",
+            # gpt-5 계열은 원문 reasoning 대신 요약본을 흘린다. 이것을 버리면 화면의 사고
+            # 과정이 통째로 빈다.
+            "item/reasoning/summaryTextDelta": "reasoningDelta",
             "item/started": "toolStarted",
             "item/completed": "toolCompleted",
-            "turn/completed": "turnCompleted",
         }
         if nativeType.endswith("/requestApproval"):
             return [self.event("approvalRequested", turnId=turnId, payload=params, nativeType=nativeType)]
+        if nativeType == "error":
+            return self._codexErrorEvents(params, turnId=turnId, nativeType=nativeType)
+        if nativeType == "turn/completed":
+            turn = _dict(params.get("turn"))
+            events: list[AgentEvent] = []
+            if str(turn.get("status") or "").casefold() in _FAILED_TURN_STATUSES:
+                events += self._codexErrorEvents(turn, turnId=turnId, nativeType=nativeType)
+            events.append(self.event("turnCompleted", turnId=turnId, payload=params, nativeType=nativeType))
+            return events
         kind = mapping.get(nativeType, "native")
-        if kind == "messageDelta":
-            return [
-                self.event(kind, turnId=turnId, payload={"text": str(params.get("delta") or "")}, nativeType=nativeType)
-            ]
-        if kind == "reasoningDelta":
+        if kind in {"messageDelta", "reasoningDelta"}:
             return [
                 self.event(kind, turnId=turnId, payload={"text": str(params.get("delta") or "")}, nativeType=nativeType)
             ]
         if kind in {"toolStarted", "toolCompleted"}:
             item = _dict(params.get("item"))
-            itemType = str(item.get("type") or "")
-            if itemType in {"agentMessage", "reasoning"}:
+            if str(item.get("type") or "") in _CODEX_NON_TOOL_ITEMS:
                 return []
             return [self.event(kind, turnId=turnId, payload={"item": item}, nativeType=nativeType)]
         return [self.event(kind, turnId=turnId, payload=params, nativeType=nativeType)]
+
+    def _codexErrorEvents(self, source: dict[str, Any], *, turnId: str, nativeType: str) -> list[AgentEvent]:
+        """Codex 실패 payload를 사용자가 읽을 수 있는 runtimeError 하나로 만든다.
+
+        재시도 예정(`willRetry`)은 실패가 아니다. 이것을 실패로 올리면 곧 회복될 턴의
+        답변이 미전달 처리된다.
+        """
+        error = _dict(source.get("error"))
+        message = str(error.get("message") or "").strip()
+        if not message or source.get("willRetry") is True:
+            return []
+        if turnId != self._errorTurnId:
+            self._errorTurnId = turnId
+            self._reportedErrors.clear()
+        if message in self._reportedErrors:
+            return []
+        self._reportedErrors.add(message)
+        payload = {"error": message, "errorCode": str(error.get("codexErrorInfo") or "") or None}
+        return [self.event("runtimeError", turnId=turnId, payload=payload, nativeType=nativeType)]
 
     def _projectClaude(self, message: dict[str, Any], *, turnId: str) -> list[AgentEvent]:
         """Sig: _projectClaude(message, *, turnId) -> list[AgentEvent].
