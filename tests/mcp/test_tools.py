@@ -100,16 +100,22 @@ def test_cli_mcp_config_claude_desktop(capsys):
 
 
 def test_mcp_instructions_contains_key_info():
+    """지침은 정체성과 첫 진입 도구를 담는다.
+
+    옛 버전은 `RunPython` 이 담기는 것까지 고정했다. 그 도구는 실서비스 `agent` 프로필에서
+    광고되지 않으므로 그 단언이 오히려 드리프트를 붙잡아 두고 있었다. 프로필별 정합은
+    `test_brokerSurfaceCoherence.py` 가 전담한다.
+    """
     from dartlab.mcp import _MCP_INSTRUCTIONS
 
     assert "설치형 agent CLI" in _MCP_INSTRUCTIONS
-    assert "RunPython" in _MCP_INSTRUCTIONS
     assert "ReadSkill" in _MCP_INSTRUCTIONS
+    assert "EngineCall" in _MCP_INSTRUCTIONS
 
 
 def test_mcp_instructions_signals_breaking_change():
-    """0.10 BREAKING 마이그레이션 안내가 instructions 에 포함."""
+    """옛 generated 도구가 폐기되었다는 안내가 instructions 에 남아 있다."""
     from dartlab.mcp import _MCP_INSTRUCTIONS
 
-    assert "0.10" in _MCP_INSTRUCTIONS
-    assert "companyAnalysis" in _MCP_INSTRUCTIONS or "마이그레이션" in _MCP_INSTRUCTIONS
+    assert "companyAnalysis" in _MCP_INSTRUCTIONS
+    assert "폐기" in _MCP_INSTRUCTIONS

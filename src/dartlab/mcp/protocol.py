@@ -7,68 +7,99 @@ import os
 from pathlib import Path
 from typing import Any
 
-MCP_INSTRUCTIONS = """\
+_INSTRUCTION_PREAMBLE = """\
 DartLab MCP는 설치형 agent CLI에 Skill OS, 데이터, 분석 도구를 제공한다. tools/list가
 광고하는 목록이 유일한 정본이다. 모델 호출과 전체 답변 loop는 agent CLI가 소유하므로
 재귀 호출을 만드는 ask 도구는 광고하지 않는다. 목적은 agent가 DartLab을 프롬프트 지식으로
-외우는 대신 skill과 capability 계약을 찾고 실제 엔진 결과와 ref를 근거로 답하게 하는 것이다.
+외우는 대신 skill과 capability 계약을 찾고 실제 엔진 결과와 ref를 근거로 답하게 하는 것이다.\
+"""
 
-## 핵심 데이터 작업대 도구 (advertised 전체는 tools/list 참조)
-- ReadSkill: Skill OS 검색 + frontmatter (whenToUse, capabilityRefs, requiredEvidence) + 본문.
-- ReadCapability: dartlab 공개 API/docstring 검색. 결과의 `engineCallable=true`인 apiRef만 EngineCall에 사용.
-- EngineCall: 단일 capability 1 회 호출 (Company.panel, scan, macro 등). JSON `{apiRef, args}` 양식.
-  allowlist 된 capabilities 만 실행되어 RunPython 보다 안전·간단. 결과는 자동 tableRef/valueRef
-  발급. 단일 호출 시 본 도구 우선, RunPython 은 다단 가공·계산만.
-- RunPython: dartlab + Polars 코드 실행, ref 발급. 비교·집계·시계열 가공 같은 *다단 계산* 또는
-  EngineCall 카탈로그에 없는 호출에만 사용.
-- WebSearch: 외부 최신 정보 → webRef.
-- SaveArtifact: 큰 표·차트 별도 파일 저장 → artifactRef.
-- CompileVisual: 차트 spec codegen → visualRef (인라인 렌더).
-
-## 전용 분석 도구 (단일 호출이면 EngineCall 보다 직접적 — tools/list 가 전체 정본)
-- PeerCompareN: 동종 N 사(2~12) 재무·밸류 비교 표.
-- DCFValuation / SensitivityAnalysis: 현금흐름 가치평가 + 민감도 격자.
-- ScenarioOverlay / ScenarioCompareN: 시나리오 리플레이·비교.
-- CreditScorecard: 신용 스코어카드. RegressionForecast: 회귀 예측.
-- CompileFinancialDashboard: 재무 대시보드 컴파일. SearchPastSessions: 과거 세션 검색.
-
-## 기본 흐름
-1. **첫 진입 권장** — 작업 모호하거나 처음 만나는 도메인이면 `ReadSkill(query="start.dartlabSkillOs")` 먼저 호출.
-   분류 노드가 5 카테고리 (start/runtime/operation/engines/recipes) 와 작업 결을 먼저 매핑한다.
-2. ReadSkill 로 절차 → ReadCapability 로 API와 `engineCallable` 확인 →
-   단일 호출은 EngineCall, 다단 결합·가공만 RunPython → 답변 + ref.
-3. 데이터셋 스키마·기간·행 수·최신 기준시점이 필요하면 RunPython 안에서 dartlab.* 직접 호출로 확인한다.
-4. 후보·상위·랭킹 답변은 bullet 나열로 끝내지 않고 입력/유니버스, 필터, 계산식/지표, 결과와 evidence table을 함께 낸다.
-
-## 0.10 BREAKING — 옛 33 generated 도구 제거
-companyStory / companyAnalysis / companyValuation / companyForecast / companyShow / companyTopics /
-companyDiff / companyGovernance / companyAudit / companyProfile / companyCredit / companyGather /
-companyQuant / companyFilings / marketScan / macroAnalysis / gatherData / quantAnalysis /
-topdownScreen / dartlabSearch / dartlabListing / pastInsight / sectorInsights / industryMap /
-capabilities / listDartlabApi / searchDartlabApi / verifyDartlabApi / 그리고 Analysis Graph 도구
-(contextForQuestion / queryAnalysisGraph / impactForGraphNode / explainDartlabTool /
-planDartlabQuestion / validateDartlabPlan / listDartlabProcesses) 는 모두 EngineCall 또는
-RunPython 안에서 직접 호출하는 패턴으로 통합되었다. DARTLAB_MCP_COMPAT 환경변수도 폐기.
-마이그레이션 예 — 단일 capability 호출은 EngineCall 우선:
-
-    # 옛: companyAnalysis(stockCode="005930", axis="수익성")
-    EngineCall({"apiRef": "Company.analysis", "args": {"stockCode": "005930", "axis": "수익성"}})
-
-    # 다단 가공 (비교·계산·시계열) 만 RunPython
-    RunPython(code='''
-    a = dartlab.Company("005930").panel("IS")
-    b = dartlab.Company("000660").panel("IS")
-    print(a.join(b, on="period"))
-    ''')
-
+_INSTRUCTION_CLOSING = """\
 ## 경계
-- Company, gather, scan, macro, analysis, quant, viz는 generated MCP tool로 직접 우회하지 않는다.
-  RunPython 안에서 사용하는 DartLab 라이브러리다.
+- Company, gather, scan, macro, analysis, quant, viz는 개별 MCP 도구로 우회하지 않는다.
+  EngineCall 의 apiRef 로 지목하는 DartLab 라이브러리다.
 - Skills는 MCP 전용 규칙이 아니라 dartlab.skills 공용 runtime을 그대로 노출한다.
 - 삭제된 운영 문서 경로를 공식 진입점으로 안내하지 않는다. 모든 절차는 Skill OS에서 찾는다.
 - 도구로 확인되지 않은 수치, 날짜, 실행 성공 여부를 단정하지 않는다.
 - 후보·상위·랭킹 결과를 표 없이 종목명과 퍼센트만 나열하지 않는다.
+- 옛 generated 도구(companyAnalysis, marketScan, gatherData 등)와 DARTLAB_MCP_COMPAT 는 폐기되었다.
+  같은 일은 위 목록의 도구로 한다. 예: EngineCall({"apiRef": "Company.analysis",
+  "args": {"stockCode": "005930", "axis": "수익성"}}).\
 """
+
+# 광고되지 않는 도구를 지침이 가르치면 설치된 agent 는 없는 도구의 사용법을 배운다. 실측(2026-08-05):
+# 실서비스 agent 프로필이 18 개를 광고하는데 정적 지침은 RunPython 을 9 회, SaveArtifact 를 1 회
+# 가르치고 있었다. 그래서 도구 목록은 손으로 적지 않고 광고 SSOT 에서 생성한다.
+_MAX_TOOL_SUMMARY = 150
+
+
+def _toolSummaries() -> dict[str, str]:
+    """등록된 도구의 이름과 한 줄 설명을 registry SSOT 에서 가져온다."""
+    from dartlab.ai.tools.registry import toolSpecs
+
+    summaries: dict[str, str] = {}
+    for spec in toolSpecs():
+        name = str(spec.get("name") or "")
+        text = " ".join(str(spec.get("description") or "").split())
+        if name:
+            summaries[name] = text[:_MAX_TOOL_SUMMARY].rstrip()
+    return summaries
+
+
+def mcpInstructions(profile: str | None = None) -> str:
+    """해당 프로필이 실제로 광고하는 도구만 담은 MCP 지침을 만든다.
+
+    Args:
+        profile: `agent` 또는 `full`. 생략하면 DARTLAB_MCP_PROFILE 환경변수를 따른다.
+
+    Returns:
+        str: 광고 목록과 어긋나지 않는 지침 본문.
+
+    Example:
+        `text = mcpInstructions("agent")`
+    """
+    advertised = mcpAdvertisedToolNames(profile)
+    summaries = _toolSummaries()
+    catalog = "\n".join(f"- {name}: {summaries.get(name, '')}".rstrip() for name in advertised)
+    hasCompute = "RunPython" in advertised
+
+    flow = [
+        "## 기본 흐름",
+        '1. 작업이 모호하거나 처음 만나는 도메인이면 `ReadSkill(query="start.dartlabSkillOs")` 를 먼저 호출한다.'
+        " 분류 노드가 5 카테고리 (start/runtime/operation/engines/recipes) 와 작업 결을 매핑한다.",
+        "2. ReadSkill 로 절차를 찾고 ReadCapability 로 apiRef 와 `engineCallable` 을 확인한 뒤"
+        " EngineCall 로 실행하고 답변에 ref 를 남긴다.",
+    ]
+    if hasCompute:
+        flow.append(
+            "3. 비교·집계·시계열 가공처럼 여러 결과를 결합해야 하면 RunPython 을 쓴다."
+            " 데이터셋 스키마와 최신 기준시점도 RunPython 안에서 dartlab.* 직접 호출로 확인한다."
+        )
+    else:
+        flow.append(
+            "3. 임의 코드 실행 도구는 이 프로필에 없다. 여러 결과가 필요하면 EngineCall 을 나눠 부르고"
+            " 결합과 계산은 답변에서 직접 수행한다. 전용 분석 도구가 있으면 그쪽이 먼저다."
+        )
+    flow.append(
+        "4. 후보·상위·랭킹 답변은 bullet 나열로 끝내지 않고 입력/유니버스, 필터, 계산식/지표,"
+        " 결과와 evidence table 을 함께 낸다."
+    )
+
+    return "\n\n".join(
+        [
+            _INSTRUCTION_PREAMBLE,
+            f"## 광고 도구 {len(advertised)} 종 (이 목록이 전부다)\n{catalog}",
+            "\n".join(flow),
+            _INSTRUCTION_CLOSING,
+        ]
+    )
+
+
+def __getattr__(name: str) -> Any:
+    """`MCP_INSTRUCTIONS` 를 첫 참조 시점에 만든다. import 시 registry 순환을 피한다."""
+    if name == "MCP_INSTRUCTIONS":
+        return mcpInstructions()
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 def mcpAdvertisedToolNames(profile: str | None = None) -> tuple[str, ...]:

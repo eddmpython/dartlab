@@ -7,11 +7,11 @@ import sys
 from typing import Any, cast
 
 from dartlab.mcp.protocol import (
-    MCP_INSTRUCTIONS,
     advertisedTools,
     boundMcpPayload,
     executeWorkspaceAgentTool,
     isMcpAdvertisedTool,
+    mcpInstructions,
     recipeSkillsForPrompts,
     resourcePayload,
 )
@@ -269,7 +269,8 @@ def createServer():
         except ImportError as exc:
             raise ImportError("MCP SDK 필요: pip install --upgrade dartlab") from exc
 
-    app = Server("dartlab", instructions=MCP_INSTRUCTIONS)
+    # 지침은 이 프로세스가 실제로 광고하는 목록에서 만든다. 없는 도구를 가르치지 않기 위해서다.
+    app = Server("dartlab", instructions=mcpInstructions())
     mcpLog.info("MCP 서버 초기화 완료")
 
     def toAnnotations(specAnnotations: dict[str, bool]) -> Any:

@@ -107,7 +107,7 @@ _SPECS: dict[str, ToolSpec] = {
     # ── 데이터 호출 — 실행 도구 ──
     "EngineCall": ToolSpec(
         "EngineCall",
-        "Skill OS가 선언한 DartLab canonical capabilityRef 1 회 호출 (Company.panel, scan, gather.price, dataHub.query 등). 정형 ref 반환. capability 검색 결과라도 실행 계약 밖의 Company 하위 멤버는 거부한다. **dartlab 데이터는 무조건 이것 우선**. RunPython 으로 dartlab API 를 단일 호출하는 패턴 금지. RunPython 은 EngineCall 결과의 다단 결합·랭킹·Polars 가공이 필요할 때만. **args 는 항상 dict 로 필수**. `{}` 라도 명시 (인자 0 개 capability 일 때만 빈 dict).",
+        "Skill OS가 선언한 DartLab canonical capabilityRef 1 회 호출 (Company.panel, scan, gather.price, dataHub.query 등). 정형 ref 반환. capability 검색 결과라도 실행 계약 밖의 Company 하위 멤버는 거부한다. **dartlab 데이터는 무조건 이것 우선**. 임의 코드 실행으로 dartlab API 를 단일 호출하는 패턴 금지. 코드 실행은 EngineCall 결과의 다단 결합·랭킹·Polars 가공이 필요하고 그 도구가 실제로 광고돼 있을 때만. **args 는 항상 dict 로 필수**. `{}` 라도 명시 (인자 0 개 capability 일 때만 빈 dict).",
         {
             "type": "object",
             "properties": {
@@ -117,7 +117,7 @@ _SPECS: dict[str, ToolSpec] = {
                 },
                 "args": {
                     "type": "object",
-                    "description": "인자 dict. **항상 필수, 빈 dict {} 라도 명시**. Company.panel → {'stockCode': '005930', 'topic': 'IS', 'period': '2021~2025', 'freq': 'Y'} (stockCode 필수, YYYY 또는 연도 range + Y는 IS/CF 분기를 FY로 직접 합산하므로 RunPython 재계산 금지). 최근 N년은 period='recent:5Y' 또는 freq='Y', limit=5. scan → {'axis': 'growth'}. macro → {}. **stockCode·target·topic·period·freq·axis 같은 키를 plan root 가 아닌 *args 안에* 넣어라**.",
+                    "description": "인자 dict. **항상 필수, 빈 dict {} 라도 명시**. Company.panel → {'stockCode': '005930', 'topic': 'IS', 'period': '2021~2025', 'freq': 'Y'} (stockCode 필수, YYYY 또는 연도 range + Y는 IS/CF 분기를 FY로 직접 합산하므로 따로 재계산 금지). 최근 N년은 period='recent:5Y' 또는 freq='Y', limit=5. scan → {'axis': 'growth'}. macro → {}. **stockCode·target·topic·period·freq·axis 같은 키를 plan root 가 아닌 *args 안에* 넣어라**.",
                     "additionalProperties": True,
                 },
             },
@@ -181,7 +181,7 @@ _SPECS: dict[str, ToolSpec] = {
     ),
     "WebSearch": ToolSpec(
         "WebSearch",
-        "외부 최신 정보 (오늘 종가, 신규 공시, 컨센서스). dartlab 내부 데이터엔 EngineCall/RunPython.",
+        "외부 최신 정보 (오늘 종가, 신규 공시, 컨센서스). dartlab 내부 데이터엔 EngineCall.",
         {
             "type": "object",
             "properties": {"query": {"type": "string"}, "limit": {"type": "integer"}},
@@ -444,7 +444,7 @@ _SPECS: dict[str, ToolSpec] = {
     ),
     "DCFValuation": ToolSpec(
         "DCFValuation",
-        "단일 종목 Damodaran 2-stage DCF 내재가치 밴드 (bear/base/bull) 자동 계산. discountRate ± 100bps + terminalGrowth ± 50bps 표준 변형. '삼성전자 적정가격', 'AAPL 공정가치', 'DCF 평가' 류 질문에 본 도구 1 회 호출 — RunPython ad-hoc 회피 (token 30% 절감).",
+        "단일 종목 Damodaran 2-stage DCF 내재가치 밴드 (bear/base/bull) 자동 계산. discountRate ± 100bps + terminalGrowth ± 50bps 표준 변형. '삼성전자 적정가격', 'AAPL 공정가치', 'DCF 평가' 류 질문에 본 도구 1 회 호출. ad-hoc 재구현 회피 (token 30% 절감).",
         {
             "type": "object",
             "properties": {
