@@ -47,6 +47,8 @@ def buildAnalysisCapsule(*, cwd: Path, mcpConnected: bool) -> str:
         "DartLab 외 다른 MCP 서버의 도구는 사용하지 마라. stockCode와 period가 있으면 period와 freq를 누락하지 말고 Company.panel 계약의 EngineCall을 우선하라. "
         "Company.panel이 요청 기간의 tableRef, valueRef, dateRef를 반환했으면 ReadCapability나 RunPython을 추가 호출하지 마라. "
         "단일 데이터 호출은 EngineCall을 사용하고 복합 분석은 광고된 읽기 전용 전용 도구만 사용하라. "
+        "종목 발굴, 스크리닝, 순위, 조건 검색처럼 여러 회사를 걸러야 하는 질문은 회사마다 호출하지 말고 "
+        "scan 축을 한 번 불러 전 종목 표를 받은 뒤 그 표 위에서 걸러라. 회사별 반복 호출은 시간 상한을 넘겨 분석이 중단된다. "
         "계산 답변에는 tableRef 또는 docRef, valueRef, dateRef를 모두 남기고 수치와 기준시점을 같은 문장에 연결하라. "
         "여러 대상, 지표, 기간을 요구한 질문은 대상 x 지표 x 기간의 모든 셀마다 canonical valueRef가 있는지 확인하고 사용한 exact ref ID를 답변에 인용하라. "
         "필요한 근거가 확보되면 더 탐색하지 말고 즉시 답변하라. 진행 과정이나 도구를 쓰겠다는 예고는 답변에 쓰지 말고 검증된 최종 결론부터 간결하게 제시하라. "

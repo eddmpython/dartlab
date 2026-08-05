@@ -209,8 +209,11 @@
 </div>
 
 <style>
-	.ev { border: 1px solid var(--dl-line, #2a2c33); border-radius: 10px; background: color-mix(in srgb, var(--dl-bg-raised, #16171a) 45%, transparent); overflow: hidden; }
-	.evhead { display: flex; align-items: center; gap: .45rem; width: 100%; min-height: 2.75rem; padding: .5rem .7rem; border: 0; background: none; color: var(--dl-ink-dim, #9aa0aa); font-size: .78rem; font-weight: 600; text-align: left; cursor: pointer; }
+	/* 근거는 답변의 각주다. 본문과 같은 무게의 카드로 두면 결론이 안 보인다.
+	   접혀 있을 때는 테두리 없는 한 줄, 펼칠 때만 패널이 된다. */
+	.ev { border: 1px solid transparent; border-radius: 10px; background: none; overflow: hidden; }
+	.ev:has(.list) { border-color: var(--dl-line, #2a2c33); background: color-mix(in srgb, var(--dl-bg-raised, #16171a) 40%, transparent); }
+	.evhead { display: flex; align-items: center; gap: .45rem; width: 100%; min-height: 2rem; padding: .3rem .5rem; border: 0; border-radius: 8px; background: none; color: var(--dl-ink-mute, #6b7280); font-size: .76rem; font-weight: 500; text-align: left; cursor: pointer; }
 	.evhead:hover { background: color-mix(in srgb, var(--dl-bg-raised, #16171a) 70%, transparent); }
 	.verifiedCount { color: #70d6a5; font-size: .68rem; font-weight: 500; }
 	.chev { margin-left: auto; transition: transform .15s ease; }
@@ -226,7 +229,8 @@
 	.pay { color: var(--dl-ink-dim, #9aa0aa); font-family: var(--dl-font-mono, ui-monospace, monospace); font-size: .7rem; }
 	.src { color: var(--dl-ink-mute, #6b7280); font-size: .7rem; text-decoration: none; overflow-wrap: anywhere; }
 	a.src:hover { color: var(--dl-info, #6ab0ff); text-decoration: underline; }
-	.verify, .close { min-width: 2.75rem; min-height: 2.75rem; border: 1px solid var(--dl-line, #2a2c33); border-radius: 7px; padding: .35rem .6rem; background: transparent; color: var(--dl-info, #6ab0ff); font-size: .7rem; cursor: pointer; }
+	.verify, .close { min-width: 2rem; min-height: 1.85rem; border: 1px solid var(--dl-line, #2a2c33); border-radius: 7px; padding: .25rem .55rem; background: transparent; color: var(--dl-ink-dim, #9aa0aa); font-size: .7rem; cursor: pointer; }
+	.verify:hover, .close:hover { border-color: var(--dl-ink-mute, #6b7280); color: var(--dl-ink, #e7e7ea); }
 	.verify:disabled { color: var(--dl-ink-mute, #6b7280); cursor: wait; }
 	.detail { border-top: 1px solid var(--dl-line, #2a2c33); padding: .85rem; background: var(--dl-bg-raised, #16171a); display: grid; gap: .75rem; }
 	.detail header { display: flex; align-items: flex-start; gap: .75rem; }
