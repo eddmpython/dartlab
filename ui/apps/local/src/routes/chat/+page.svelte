@@ -304,6 +304,9 @@
 	 */
 	function trimTrailingActivity(message: ChatMessage, parts: MessagePart[]): MessagePart[] {
 		if (message.streaming) return parts;
+		// 본문이 없는 턴에서는 진행 문구가 화면에 남은 유일한 설명이다. 그걸 걷으면 빈 칸만
+		// 남는다. 답변이 실제로 있을 때만 꼬리를 정리한다.
+		if (!parts.some((part) => part.kind === 'text' && part.text.trim())) return parts;
 		let end = parts.length;
 		while (end > 0) {
 			const part = parts[end - 1];
