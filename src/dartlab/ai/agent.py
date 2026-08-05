@@ -1154,12 +1154,17 @@ def runRuntimeAgent(question: str, **kwargs: Any) -> Iterator[TraceEvent]:
                 text = str(event.payload.get("text") or "")
                 if text:
                     answerParts.append(text)
+                    # 과정 중계: 모델이 써 내려가는 문장을 실시간으로 흘린다. 예전에는
+                    # 모으기만 하고 게이트 통과 후에야 완성본을 냈다. 평균 4.5 분짜리
+                    # 분석이 빈 화면 뒤에서 도는 것이 GUI 체감 장애의 절반이었다.
+                    yield TraceEvent("delta", {"text": text})
             elif event.kind == "reasoningDelta":
                 text = str(event.payload.get("text") or "")
                 if text:
                     yield TraceEvent("thinking", {"text": text})
             elif event.kind == "toolStarted":
-                answerParts.clear()
+                # answerParts 를 비우지 않는다. 도구 호출 직전의 "먼저 재무를 보겠습니다"
+                # 같은 서술은 분석 과정의 일부이고, 지우면 타임라인의 서사가 끊긴다.
                 yield TraceEvent("tool_start", _runtimeToolData(event.payload, status="running"))
             elif event.kind == "toolCompleted":
                 _appendRuntimeEvidenceRefs(evidenceRefs, event.payload.get("refDetails"))
@@ -1184,15 +1189,20 @@ def runRuntimeAgent(question: str, **kwargs: Any) -> Iterator[TraceEvent]:
             elif event.kind == "turnCompleted":
                 terminalEvent = event
         if terminalEvent is None:
+            # 턴이 끝나지 않은 것은 진짜 실패다(뱃지 대상 아님). 다만 여기까지 모인
+            # 근거는 버리지 않고 그대로 전달해 사용자가 무엇까지 됐는지 본다.
             yield TraceEvent(
                 "done",
                 {
-                    "refs": [],
+                    "refs": evidenceRefs,
                     "artifacts": [],
                     "responseMeta": {
                         "finalEvent": "runtime_error",
                         "responseStatus": "failed",
-                        "candidateRefs": evidenceRefs,
+                        "verificationStatus": "failed",
+                        "evidenceCount": len(evidenceRefs),
+                        "verificationNotes": [],
+                        "candidateRefs": [],
                         "failureReason": runtimeErrorReason or "runtime ended without a completed turn",
                     },
                 },
@@ -1202,113 +1212,16 @@ def runRuntimeAgent(question: str, **kwargs: Any) -> Iterator[TraceEvent]:
         answer = "".join(answerParts).strip()
         quality = _runtimeAnswerQuality(question, answer, evidenceRefs, terminalEvent.payload, failed=failed)
         firstIssues = tuple(quality.issues)
-        if (
-            not quality.passed
-            and not failed
-            and activeSessionId
-            and outcomeId
-            and answer
-            and "runtime_not_completed" not in quality.issues
-        ):
-            repairAttempt = 1
-            yield TraceEvent(
-                "verify",
-                _runtimeVerifyData(
-                    quality,
-                    stage="candidate",
-                    repairAttempt=repairAttempt,
-                    repairMode="pending",
-                ),
-            )
-            deterministicAnswer = _runtimeDeterministicEvidenceAnswer(question, evidenceRefs)
-            if deterministicAnswer:
-                deterministicQuality = _runtimeAnswerQuality(
-                    question,
-                    deterministicAnswer,
-                    evidenceRefs,
-                    terminalEvent.payload,
-                    failed=False,
-                )
-                if deterministicQuality.passed:
-                    answer = deterministicAnswer
-                    quality = deterministicQuality
-                    repairMode = "deterministic"
 
-            if not quality.passed:
-                repairMode = "native_session"
-                repairParts: list[str] = []
-                repairFailed = False
-                repairTerminal: Any | None = None
-                readSkillCalls = _runtimeReadSkillCalls(terminalEvent.payload)
-                repairPrompt = _runtimeRepairPrompt(question, answer, evidenceRefs, quality.toDict())
-                for event in engine.streamTurn(
-                    activeSessionId,
-                    repairPrompt,
-                    context=turnContext,
-                    outcomeId=outcomeId,
-                    priorRefs=evidenceRefs,
-                    priorReadSkillCalls=readSkillCalls,
-                    qualityQuestion=question,
-                ):
-                    if event.kind == "turnStarted":
-                        yield TraceEvent(
-                            "runtime_turn",
-                            {
-                                "sessionId": event.sessionId,
-                                "turnId": event.turnId,
-                                "runtimeId": event.runtimeId,
-                                "repairAttempt": repairAttempt,
-                                "repairMode": repairMode,
-                            },
-                        )
-                    elif event.kind == "messageDelta":
-                        text = str(event.payload.get("text") or "")
-                        if text:
-                            repairParts.append(text)
-                    elif event.kind == "reasoningDelta":
-                        text = str(event.payload.get("text") or "")
-                        if text:
-                            yield TraceEvent("thinking", {"text": text})
-                    elif event.kind == "toolStarted":
-                        repairParts.clear()
-                        yield TraceEvent("tool_start", _runtimeToolData(event.payload, status="running"))
-                    elif event.kind == "toolCompleted":
-                        _appendRuntimeEvidenceRefs(evidenceRefs, event.payload.get("refDetails"))
-                        yield TraceEvent("tool_result", _runtimeToolData(event.payload, status="done"))
-                    elif event.kind == "approvalRequested":
-                        yield TraceEvent(
-                            "approval_requested",
-                            {
-                                "sessionId": event.sessionId,
-                                "turnId": event.turnId,
-                                "approvalId": event.payload.get("approvalId"),
-                                "request": event.payload,
-                            },
-                        )
-                    elif event.kind == "artifactProduced":
-                        yield TraceEvent("view_spec", event.payload)
-                    elif event.kind == "eventGap":
-                        yield TraceEvent("event_gap", event.payload)
-                    elif event.kind == "runtimeError":
-                        repairFailed = True
-                    elif event.kind == "turnCompleted":
-                        repairTerminal = event
-                if repairTerminal is not None:
-                    repairedAnswer = "".join(repairParts).strip()
-                    repairedQuality = _runtimeAnswerQuality(
-                        question,
-                        repairedAnswer,
-                        evidenceRefs,
-                        repairTerminal.payload,
-                        failed=repairFailed,
-                    )
-                    terminalEvent = repairTerminal
-                    quality = repairedQuality
-                    failed = repairFailed
-                    if repairedAnswer:
-                        answer = repairedAnswer
-
-        committed = quality.passed and not failed
+        # DartLab은 설치형 agent 를 통제하지 않고 중개한다. 품질 계약은 답을 삭제하는
+        # 게이트가 아니라 사용자에게 보이는 검증 뱃지다. 실측(2026-08-04 분석 배터리):
+        # 8 질문 중 6 건이 기각됐는데 사유가 전부 인용 서식·바인딩 형식이었고, 기각된
+        # 답들도 근거를 8~56 개 실제로 인용한 실분석이었다. 형식 불일치로 분석을 통째로
+        # 버리면 사용자는 답 대신 오류 목록만 본다. 결측을 0 으로 바꾸지 않는 것과 같은
+        # 원칙으로, 미검증을 오류로도 바꾸지 않고 미검증이라고 표시한다.
+        # 자동 repair 재주입도 제거했다. 그것은 중개가 아니라 모델 조련이고, 뱃지가
+        # 이미 정직하게 상태를 말한다.
+        committed = bool(answer) and not failed
         yield TraceEvent(
             "verify",
             _runtimeVerifyData(
@@ -1349,13 +1262,6 @@ def runRuntimeAgent(question: str, **kwargs: Any) -> Iterator[TraceEvent]:
         )
 
 
-def _runtimeReadSkillCalls(completionPayload: dict[str, Any]) -> int:
-    """turn completion의 Skill OS 호출 수를 안전하게 읽는다."""
-    coverage = completionPayload.get("runtimeCoverage")
-    value = coverage.get("readSkillCalls") if isinstance(coverage, dict) else 0
-    return int(value) if isinstance(value, int) else 0
-
-
 def _runtimeVerifyData(
     report: Any,
     *,
@@ -1377,162 +1283,6 @@ def _runtimeVerifyData(
         "repairAttempt": repairAttempt,
         "repairMode": repairMode,
     }
-
-
-def _runtimeRepairPrompt(
-    question: str,
-    rejectedAnswer: str,
-    refs: list[dict[str, Any]],
-    qualityReport: dict[str, Any],
-) -> str:
-    """같은 native session에서 한 번만 실행할 근거 교정 요청을 만든다."""
-    evidence = json.dumps(refs[:100], ensure_ascii=False, default=str, separators=(",", ":"))[:40_000]
-    issues = ", ".join(str(issue) for issue in qualityReport.get("issues") or [])
-    requiredCells = int(qualityReport.get("requiredClaimCells") or 0)
-    coveredCells = int(qualityReport.get("coveredClaimCells") or 0)
-    return (
-        "DartLab 답변 품질 교정 턴이다. ReadSkill은 다시 호출하지 마라. "
-        "아래 canonical evidence만으로 해결되면 즉시 최종 답변만 다시 작성하라. "
-        "질문이 요구한 대상 x 지표 x 기간 셀이 부족하면 EngineCall 같은 읽기 전용 DartLab 도구로 "
-        "누락 셀만 보충한 뒤 답하라. 모든 수치와 기간을 본문에 쓰고 사용한 exact ref ID를 함께 인용하라. "
-        "근거에 없는 사실은 쓰지 마라.\n"
-        f"원 질문: {question}\n"
-        f"실패 코드: {issues}\n"
-        f"근거 셀 충족: {coveredCells}/{requiredCells}\n"
-        f"거부된 초안: {rejectedAnswer[:12_000]}\n"
-        f"현재 canonical evidence: {evidence}"
-    )
-
-
-def _runtimeDeterministicEvidenceAnswer(question: str, refs: list[dict[str, Any]]) -> str | None:
-    """완결된 정량 evidence를 모델 재호출 없이 exact citation 표로 교정한다."""
-    from dartlab.ai.runtime.answerQuality import claimCellContractForQuestion
-    from dartlab.reference.capability.analysisGraph import coveragePacketForQuestion
-
-    coverage = coveragePacketForQuestion(question)
-    contract = claimCellContractForQuestion(
-        question,
-        comparison=coverage.get("comparisonCompleteness") or {},
-    )
-    metrics = tuple(str(value) for value in contract.get("metrics") or ())
-    requiredCells = int(contract.get("requiredCells") or 0)
-    targetCount = int(contract.get("targetCount") or 0)
-    if not metrics or requiredCells <= 0 or targetCount <= 0:
-        return None
-
-    values: dict[tuple[str, str, str], dict[str, Any]] = {}
-    for ref in refs:
-        if ref.get("kind") != "valueRef":
-            continue
-        payload = ref.get("payload") if isinstance(ref.get("payload"), dict) else {}
-        metric = str(payload.get("canonicalMetricId") or payload.get("metric") or "").casefold()
-        period = str(payload.get("period") or "").upper()
-        target = _runtimeEvidenceTarget(payload)
-        if metric not in metrics or not period or not target or payload.get("value") is None:
-            continue
-        values.setdefault((target, metric, period), ref)
-
-    requestedCodes = {
-        str(target) for target in contract.get("targets") or () if str(target).isdigit() and len(str(target)) == 6
-    }
-    availableTargets = sorted({target for target, _metric, _period in values})
-    if requestedCodes:
-        selectedTargets = sorted(requestedCodes)
-        if not requestedCodes.issubset(availableTargets):
-            return None
-    else:
-        if len(availableTargets) < targetCount:
-            return None
-        selectedTargets = availableTargets[:targetCount]
-
-    periodContract = contract.get("period") if isinstance(contract.get("period"), dict) else {}
-    selectedPeriods: dict[str, list[str]] = {}
-    for target in selectedTargets:
-        metricPeriods = [
-            {period for rowTarget, rowMetric, period in values if rowTarget == target and rowMetric == metric}
-            for metric in metrics
-        ]
-        commonPeriods = set.intersection(*metricPeriods) if metricPeriods and all(metricPeriods) else set()
-        if periodContract.get("kind") == "explicit":
-            expected = tuple(str(value).upper() for value in periodContract.get("periods") or ())
-            periods = []
-            for expectedPeriod in expected:
-                matches = [period for period in commonPeriods if _runtimePeriodMatches(period, expectedPeriod)]
-                if not matches:
-                    return None
-                periods.append(sorted(matches, key=_runtimePeriodSortKey)[-1])
-        else:
-            wantsQuarter = periodContract.get("unit") == "fiscal_quarter"
-            count = int(periodContract.get("count") or 0)
-            relevant = [period for period in commonPeriods if ("Q" in period) == wantsQuarter]
-            periods = sorted(relevant, key=_runtimePeriodSortKey)[-count:]
-            if count <= 0 or len(periods) != count:
-                return None
-        selectedPeriods[target] = periods
-
-    dates: dict[tuple[str, str], dict[str, Any]] = {}
-    fallbackDates: dict[str, dict[str, Any]] = {}
-    for ref in refs:
-        if ref.get("kind") != "dateRef":
-            continue
-        payload = ref.get("payload") if isinstance(ref.get("payload"), dict) else {}
-        period = str(payload.get("period") or "").upper()
-        if not period:
-            continue
-        target = _runtimeEvidenceTarget(payload)
-        if target:
-            dates.setdefault((target, period), ref)
-        fallbackDates.setdefault(period, ref)
-
-    tableRefs = [ref for ref in refs if ref.get("kind") == "tableRef" and ref.get("id")]
-    if not tableRefs:
-        return None
-
-    rows: list[str] = []
-    citedDates: set[str] = set()
-    for target in selectedTargets:
-        for period in selectedPeriods[target]:
-            dateRef = dates.get((target, period)) or fallbackDates.get(period)
-            if dateRef is None:
-                return None
-            dateId = str(dateRef["id"])
-            dateCitation = f" `{dateId}`" if dateId not in citedDates else ""
-            citedDates.add(dateId)
-            for metric in metrics:
-                valueRef = values.get((target, metric, period))
-                if valueRef is None:
-                    return None
-                payload = valueRef.get("payload") if isinstance(valueRef.get("payload"), dict) else {}
-                rows.append(
-                    "| "
-                    + " | ".join(
-                        (
-                            target,
-                            f"{period}{dateCitation}",
-                            _runtimeMetricLabel(metric),
-                            f"{_runtimeEvidenceValue(payload)} `{valueRef['id']}`",
-                        )
-                    )
-                    + " |"
-                )
-
-    if len(rows) != requiredCells:
-        return None
-    tableCitations = " ".join(f"`{ref['id']}`" for ref in tableRefs[:targetCount])
-    return (
-        "요청한 수치를 정식 근거에서 직접 정리했습니다.\n\n"
-        "| 대상 | 회계기간 | 지표 | 값 |\n"
-        "|---|---|---|---:|\n" + "\n".join(rows) + f"\n\n근거 표: {tableCitations}"
-    )
-
-
-def _runtimeEvidenceTarget(payload: dict[str, Any]) -> str:
-    """evidence payload에서 안정적인 대상 식별자를 고른다."""
-    for key in ("stockCode", "target", "code", "ticker", "corpCode"):
-        value = payload.get(key)
-        if isinstance(value, (str, int)) and str(value).strip():
-            return str(value).strip()
-    return ""
 
 
 def _runtimePeriodMatches(period: str, expected: str) -> bool:
@@ -1645,10 +1395,23 @@ def _runtimeDoneData(
     repairMode: str = "none",
     initialIssues: tuple[str, ...] = (),
 ) -> dict[str, Any]:
-    """공개 adapter와 Outcome 원장이 같은 완료 근거를 보도록 종료 payload를 만든다."""
+    """공개 adapter와 Outcome 원장이 같은 완료 근거를 보도록 종료 payload를 만든다.
+
+    ``answerCommitted`` 는 이제 "답변이 사용자에게 전달됐는가" 이고 품질 통과 여부가
+    아니다. 품질은 ``verificationStatus`` 3 상태로 표시한다: ``verified`` (근거 계약
+    충족), ``unverified`` (답은 있으나 계약 미충족, 사유는 ``verificationNotes``),
+    ``failed`` (런타임 실패나 빈 답변). UI 는 이것으로 뱃지를 그린다.
+    """
+    qualityPassed = bool(qualityReport.get("passed"))
+    if not answerCommitted:
+        verification = "failed"
+    elif qualityPassed:
+        verification = "verified"
+    else:
+        verification = "unverified"
     return {
-        "refs": refs if answerCommitted else [],
-        "candidateRefs": [] if answerCommitted else refs,
+        "refs": refs,
+        "candidateRefs": [],
         "artifacts": [],
         "responseMeta": {
             "finalEvent": "answer" if answerCommitted else "runtime_error",
@@ -1656,14 +1419,16 @@ def _runtimeDoneData(
             "runtimeId": event.runtimeId,
             "sessionId": event.sessionId,
             "outcomeId": outcomeId,
-            "verificationStatus": "evidenceCommitted" if answerCommitted else "rejected",
+            "verificationStatus": verification,
             "repairAttempt": repairAttempt,
             "repairMode": repairMode,
             "failureCode": None
             if answerCommitted
-            else next(iter(qualityReport.get("issues") or []), "quality_rejected"),
+            else next(iter(qualityReport.get("issues") or []), "runtime_not_completed"),
             "initialQualityIssues": list(initialIssues),
             "answerQuality": qualityReport,
+            "evidenceCount": len(refs),
+            "verificationNotes": [] if qualityPassed else _qualityNotes(qualityReport),
             "runtimeCoverage": (
                 event.payload.get("runtimeCoverage") if isinstance(event.payload.get("runtimeCoverage"), dict) else {}
             ),
@@ -1672,33 +1437,45 @@ def _runtimeDoneData(
     }
 
 
-def _qualityFailureReason(report: dict[str, Any]) -> str:
-    """내부 issue code를 사용자가 이해할 수 있는 차단 사유로 바꾼다."""
-    labels = {
-        "runtime_not_completed": "런타임이 정상 완료되지 않았습니다",
-        "read_skill_missing": "질문에 맞는 Skill OS 계약을 읽지 않았습니다",
-        "read_skill_repeated": "Skill OS 검색을 한 턴에 반복해 실행했습니다",
-        "empty_answer": "최종 답변이 비어 있습니다",
-        "source_ref_missing": "표 또는 공시 근거가 답변에 인용되지 않았습니다",
-        "document_ref_missing": "문서 질문에 필요한 공시 원문 근거가 인용되지 않았습니다",
-        "document_claim_mismatch": "답변의 문서 결론이 인용한 공시 원문과 일치하지 않습니다",
-        "date_ref_missing": "기준시점 근거가 답변에 인용되지 않았습니다",
-        "value_ref_missing": "수치 근거가 답변에 인용되지 않았습니다",
-        "value_binding_mismatch": "답변 수치가 인용한 근거 값과 일치하지 않습니다",
-        "date_binding_mismatch": "답변 기준시점이 인용한 근거와 일치하지 않습니다",
-        "evidence_payload_empty": "인용 근거의 상세 데이터가 비어 있습니다",
-        "table_evidence_empty": "인용한 표 근거에 실제 데이터가 없습니다",
-        "value_evidence_unavailable": "인용한 수치 근거를 사용할 수 없습니다",
-        "date_evidence_unavailable": "인용한 기준시점 근거를 사용할 수 없습니다",
-        "target_evidence_mismatch": "질문의 분석 대상과 인용 근거의 대상이 일치하지 않습니다",
-        "metric_evidence_mismatch": "질문의 지표와 인용 근거의 지표가 일치하지 않습니다",
-        "period_coverage_incomplete": "질문이 요구한 모든 기간의 근거가 인용되지 않았습니다",
-        "comparison_target_incomplete": "비교 대상 중 일부의 동일 기준 근거가 누락되었습니다",
-        "claim_cell_coverage_incomplete": "질문의 모든 대상, 지표, 기간 조합을 증명하는 근거가 부족합니다",
-        "derived_evidence_lineage_missing": "계산 결과가 원본 DartLab 근거 계보를 보존하지 않았습니다",
-    }
+# 근거 계약 미충족 사유의 사용자 문구. 차단 사유가 아니라 뱃지에 붙는 표시 문구다.
+_QUALITY_ISSUE_LABELS = {
+    "runtime_not_completed": "런타임이 정상 완료되지 않았습니다",
+    "read_skill_missing": "질문에 맞는 Skill OS 계약을 읽지 않았습니다",
+    "read_skill_repeated": "Skill OS 검색을 한 턴에 반복해 실행했습니다",
+    "empty_answer": "최종 답변이 비어 있습니다",
+    "source_ref_missing": "표 또는 공시 근거가 답변에 인용되지 않았습니다",
+    "document_ref_missing": "문서 질문에 필요한 공시 원문 근거가 인용되지 않았습니다",
+    "document_claim_mismatch": "답변의 문서 결론이 인용한 공시 원문과 일치하지 않습니다",
+    "date_ref_missing": "기준시점 근거가 답변에 인용되지 않았습니다",
+    "value_ref_missing": "수치 근거가 답변에 인용되지 않았습니다",
+    "value_binding_mismatch": "답변 수치가 인용한 근거 값과 일치하지 않습니다",
+    "date_binding_mismatch": "답변 기준시점이 인용한 근거와 일치하지 않습니다",
+    "evidence_payload_empty": "인용 근거의 상세 데이터가 비어 있습니다",
+    "table_evidence_empty": "인용한 표 근거에 실제 데이터가 없습니다",
+    "value_evidence_unavailable": "인용한 수치 근거를 사용할 수 없습니다",
+    "date_evidence_unavailable": "인용한 기준시점 근거를 사용할 수 없습니다",
+    "target_evidence_mismatch": "질문의 분석 대상과 인용 근거의 대상이 일치하지 않습니다",
+    "metric_evidence_mismatch": "질문의 지표와 인용 근거의 지표가 일치하지 않습니다",
+    "period_coverage_incomplete": "질문이 요구한 모든 기간의 근거가 인용되지 않았습니다",
+    "comparison_target_incomplete": "비교 대상 중 일부의 동일 기준 근거가 누락되었습니다",
+    "claim_cell_coverage_incomplete": "질문의 모든 대상, 지표, 기간 조합을 증명하는 근거가 부족합니다",
+    "derived_evidence_lineage_missing": "계산 결과가 원본 DartLab 근거 계보를 보존하지 않았습니다",
+}
+
+
+def _qualityNotes(report: dict[str, Any]) -> list[str]:
+    """미검증 사유를 뱃지용 한국어 문구 목록으로 만든다(차단 아님, 표시용)."""
     issues = report.get("issues") if isinstance(report.get("issues"), (list, tuple)) else []
-    return "; ".join(labels.get(str(issue), str(issue)) for issue in issues) or "답변 품질 게이트를 통과하지 못했습니다"
+    return [_QUALITY_ISSUE_LABELS.get(str(issue), str(issue)) for issue in issues]
+
+
+def _qualityFailureReason(report: dict[str, Any]) -> str:
+    """런타임 실패 사유를 한 문장으로 만든다(빈 답변·런타임 미완료 등 진짜 실패용)."""
+    issues = report.get("issues") if isinstance(report.get("issues"), (list, tuple)) else []
+    return (
+        "; ".join(_QUALITY_ISSUE_LABELS.get(str(issue), str(issue)) for issue in issues)
+        or "런타임이 답변을 내지 못했습니다"
+    )
 
 
 def _firstRuntimeValue(*candidates: tuple[dict[str, Any], str], default: Any = None) -> Any:

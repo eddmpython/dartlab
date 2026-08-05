@@ -67,11 +67,14 @@ def test_runtime_emits_ordered_public_progress_events(monkeypatch: pytest.Monkey
     events = list(_askEvents("너 뭐 할 수 있니"))
     kinds = [event.kind for event in events]
 
+    # delta 는 모델이 써 내려가는 과정의 실시간 중계다(2026-08-04 추가). 예전에는
+    # 본문을 모으기만 해서 사용자가 수 분간 빈 화면을 봤다.
     assert kinds == [
         "runtime_session",
         "runtime_turn",
         "tool_start",
         "tool_result",
+        "delta",
         "verify",
         "chunk",
         "done",
