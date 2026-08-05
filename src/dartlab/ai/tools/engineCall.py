@@ -784,7 +784,7 @@ def _buildShowData(
     sectorPosition = getSectorPosition(company)
     if sectorPosition:
         data["sectorPosition"] = sectorPosition
-    context = contextMarkdown(badge, industryBadge, sectorPosition)
+    context = contextMarkdown(badge, industryBadge, sectorPosition, summary)
     if context:
         body = str(data["markdown"])
         marker = "근거는 tableRef"

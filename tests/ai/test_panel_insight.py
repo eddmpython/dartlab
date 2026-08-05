@@ -9,6 +9,7 @@ from __future__ import annotations
 import pytest
 
 from dartlab.ai.tools.panelInsight import (
+    balanceTripwires,
     cashFlowAnchors,
     cashFlowPattern,
     contextMarkdown,
@@ -412,3 +413,118 @@ def testMissingValuesDoNotCrash() -> None:
     block = insightMarkdown(summary)
 
     assert "-" in block
+
+
+def _balanceSummary(**values: dict[str, float]) -> dict[str, object]:
+    """재무상태표 모양의 summary. 항목 이름은 재무제표 매핑의 정본 snakeId 다."""
+    periods = ["2025FY", "2024FY", "2023FY"]
+    labels = {
+        "total_assets": "자산총계",
+        "total_liabilities": "부채총계",
+        "total_stockholders_equity": "자본총계",
+        "current_assets": "유동자산",
+        "current_liabilities": "유동부채",
+    }
+    return {
+        "periods": periods,
+        "latestPeriod": periods[0],
+        "projection": "annual",
+        "timeseries": [
+            {"snakeId": key, "item": labels.get(key, key), "values": series, "formatted": {}}
+            for key, series in values.items()
+        ],
+        "rows": [],
+    }
+
+
+def _debtPosition(median: float) -> dict[str, object]:
+    return {"peerCount": 117, "debtRatioDistribution": {"n": 117, "median": median, "p10": 17.0}}
+
+
+def testDebtTripwireStatesHowMuchDebtWouldReachTheSectorMedian() -> None:
+    """반증 조건은 산술이다. 모델이 손으로 하게 두면 비싸서 그냥 빠진다."""
+    summary = _balanceSummary(
+        total_liabilities={"2025FY": 100e12, "2024FY": 90e12},
+        total_stockholders_equity={"2025FY": 400e12, "2024FY": 380e12},
+    )
+
+    notes = balanceTripwires(summary, _debtPosition(50.0))
+
+    # 부채비율 25.0% 에서 중앙값 50.0% 에 닿으려면 부채가 400조의 절반인 200조여야 한다.
+    assert any("100.0조원 늘어야" in note for note in notes)
+    assert any("현재 25.0%" in note for note in notes)
+
+
+def testDebtTripwireFlipsDirectionWhenAlreadyAboveMedian() -> None:
+    """중앙값 위에 있으면 얼마나 늘어야 하는지가 아니라 얼마나 줄어야 하는지가 질문이다."""
+    summary = _balanceSummary(
+        total_liabilities={"2025FY": 300e12},
+        total_stockholders_equity={"2025FY": 400e12},
+    )
+
+    notes = balanceTripwires(summary, _debtPosition(50.0))
+
+    assert any("줄어야" in note for note in notes)
+    assert not any("늘어야" in note for note in notes)
+
+
+def testLiquidityTripwireUsesTheHundredPercentDefinitionBoundary() -> None:
+    """유동비율 100% 는 임의 시나리오가 아니라 정의상 경계다."""
+    summary = _balanceSummary(
+        current_assets={"2025FY": 300e12},
+        current_liabilities={"2025FY": 120e12},
+    )
+
+    notes = balanceTripwires(summary, None)
+
+    assert any("180.0조원 늘면" in note and "유동비율 100%" in note for note in notes)
+
+
+def testLiquidityTripwireSaysSoWhenAlreadyBelowTheBoundary() -> None:
+    """이미 못 덮고 있으면 여유를 말할 것이 아니라 그 사실을 적어야 한다."""
+    summary = _balanceSummary(
+        current_assets={"2025FY": 80e12},
+        current_liabilities={"2025FY": 120e12},
+    )
+
+    notes = balanceTripwires(summary, None)
+
+    assert any("못 미칩니다" in note for note in notes)
+
+
+def testPaceNoteNamesTheDirectionItIsMoving() -> None:
+    """내려가는 지표에 상승이라고 적으면 정확히 반대로 읽힌다."""
+    summary = _balanceSummary(
+        total_liabilities={"2025FY": 100e12, "2024FY": 90e12},
+        total_stockholders_equity={"2025FY": 400e12, "2024FY": 400e12},
+        current_assets={"2025FY": 300e12, "2024FY": 320e12},
+        current_liabilities={"2025FY": 120e12, "2024FY": 120e12},
+    )
+
+    notes = balanceTripwires(summary, _debtPosition(50.0))
+    joined = "\n".join(notes)
+
+    assert "상승 폭" in joined
+    assert "하락 폭" in joined
+    assert "전망이 아닙니다" in joined
+    assert "년 뒤" in joined
+
+
+def testTripwiresAreEmptyForIncomeStatements() -> None:
+    """손익계산서에는 재무상태표 임계가 없다. 없는 것을 지어내지 않는다."""
+    summary = _summary(sales={"2025FY": 300e12}, operating_profit={"2025FY": 30e12})
+
+    assert balanceTripwires(summary, _debtPosition(50.0)) == []
+
+
+def testTripwiresReachTheContextBlock() -> None:
+    """계산만 되고 본문에 안 실리면 모델은 보지 못한다. payload 안에만 있던 실패의 반복이다."""
+    summary = _balanceSummary(
+        current_assets={"2025FY": 300e12},
+        current_liabilities={"2025FY": 120e12},
+    )
+
+    block = contextMarkdown(None, None, None, summary)
+
+    assert "판단이 뒤집히는 지점" in block
+    assert "유동비율 100%" in block
