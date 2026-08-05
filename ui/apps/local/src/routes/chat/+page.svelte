@@ -504,7 +504,7 @@
 				<Composer
 					bind:value={draft}
 					busy={store.busy}
-					placeholder="질문을 입력하세요…  (Enter 전송 · Shift+Enter 줄바꿈)"
+					placeholder="무엇이든 물어보세요"
 					onsend={submit}
 					onstop={() => store.cancel()}
 				/>
