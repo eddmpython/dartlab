@@ -83,23 +83,24 @@ class TestStatus:
         assert [item["runtimeId"] for item in data["runtimes"]] == ["codex"]
 
     def test_status_probe_zero_skips_cli_probe(self, client, monkeypatch):
-        """GET /api/status?probe=0: CLI refresh probe를 실행하지 않는다."""
-        refreshFlags: list[bool] = []
+        """GET /api/status?probe=0: CLI probe를 실행하지도, 기다리지도 않는다."""
+        calls: list[dict] = []
 
         from dartlab.ai.runtime import getRuntimeEngine
 
         engine = getRuntimeEngine()
         realStatus = engine.status
 
-        def _recordingStatus(*, refresh):
-            refreshFlags.append(refresh)
-            return realStatus(refresh=False)
+        def _recordingStatus(*, refresh, blocking=True):
+            calls.append({"refresh": refresh, "blocking": blocking})
+            return realStatus(refresh=False, blocking=False)
 
         monkeypatch.setattr(engine, "status", _recordingStatus)
 
         resp = client.get("/api/status", params={"probe": 0})
         assert resp.status_code == 200
-        assert refreshFlags == [False]
+        # 재측정을 안 하는 것만으로는 부족하다. 캐시가 비면 blocking 경로가 CLI 를 기다린다.
+        assert calls == [{"refresh": False, "blocking": False}]
         # direct provider probe 표면은 제거됐고 providers 블록은 빈 호환 dict다.
         assert resp.json()["providers"] == {}
 

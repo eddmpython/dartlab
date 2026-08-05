@@ -383,10 +383,50 @@ def executeScreenSpecDetailed(spec: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+# screen spec 이 실제로 해석하는 최상위 키다. 이 목록 밖의 키는 조용히 무시되는 대신
+# 즉시 거절된다. `_` 로 시작하는 키는 실행 중 붙이는 내부 캐시라 예외로 둔다.
+_SCREEN_SPEC_KEYS = frozenset(
+    {
+        "where",
+        "any",
+        "select",
+        "sort",
+        "limit",
+        "define",
+        "id",
+        "market",
+        "asOf",
+        "explain",
+        "schemaVersion",
+        "docsTopK",
+        "start",
+        "end",
+        "windowDays",
+        "indexName",
+    }
+)
+_SCREEN_CONDITION_KEYS = ("where", "any", "select")
+
+
 def _validateScreenScope(spec: dict[str, Any]) -> None:
-    """현재 screen이 실제로 지키는 시장과 시점 계약만 허용한다."""
+    """현재 screen이 실제로 지키는 시장, 시점, spec 키 계약만 허용한다.
+
+    옛 경로는 해석하지 않는 최상위 키를 조용히 버렸다. 그래서 조건을 ``all`` 이나
+    ``filters`` 처럼 다르게 적은 spec 이 오류 대신 "0 종목" 으로 돌아왔고, 호출자는
+    스크리닝 자체가 쓸모없다고 읽고 종목마다 개별 조회로 흩어졌다. 조건을 못 읽었으면
+    빈 결과가 아니라 못 읽었다고 말해야 한다.
+    """
     if not isinstance(spec, dict):
         raise ValueError("screen spec 은 dict 여야 합니다.")
+    unknown = sorted(
+        key for key in spec if isinstance(key, str) and not key.startswith("_") and key not in _SCREEN_SPEC_KEYS
+    )
+    if unknown:
+        raise ValueError(
+            f"screen spec 에 해석할 수 없는 키가 있습니다: {unknown}. "
+            f"사용 가능한 키: {sorted(_SCREEN_SPEC_KEYS)}. "
+            '조건은 where 에 넣습니다. 예: {"where": [{"field": "finance.ratio.roe", "op": ">=", "value": 15}]}'
+        )
     market = str(spec.get("market") or "KR").strip().upper()
     if market not in {"KR", "DART"}:
         raise ValueError("screen spec은 현재 KR 시장만 지원합니다. US 결과를 KR 데이터로 대체하지 않습니다.")
@@ -394,6 +434,12 @@ def _validateScreenScope(spec: dict[str, Any]) -> None:
         raise ValueError(
             "screen spec의 asOf 시점 고정은 아직 지원하지 않습니다. "
             "최신 prebuild를 사용하거나 시점 보존 데이터 경로를 먼저 제공하세요."
+        )
+    # 조건 부재는 가장 약한 신호라 맨 뒤에서 본다. 앞의 검사들이 더 구체적인 원인을 짚는다.
+    if not any(spec.get(key) for key in _SCREEN_CONDITION_KEYS):
+        raise ValueError(
+            "screen spec 에 조건이 없습니다. where(AND), any(OR), select 중 최소 하나를 채우세요. "
+            'dartlab.scan("fields", "키워드") 로 field 이름을 먼저 확인하면 됩니다.'
         )
 
 

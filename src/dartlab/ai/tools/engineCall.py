@@ -135,7 +135,111 @@ def _dataHubAxisCall(axis: str, plan: dict[str, Any]) -> ToolResult:
             result = dataHub(axis, target, **dict(plan.get("kwargs") or {}))
     except (ValueError, KeyError, TypeError) as exc:
         return ToolResult(False, f"dataHub('{axis}') 실행 실패: {exc}", error="invalid_args")
+    if axis == "catalog":
+        catalog = _dataHubCatalogResult(result)
+        if catalog is not None:
+            return catalog
     return _resultToRefs(f"dataHub.{axis}", result, target=str(plan.get("target") or ""))
+
+
+# 카탈로그 자산에서 사용자가 확인할 수 있는 열만 고른다. executorModule·subjectParam 같은
+# 실행 배선과 assetVersionId·metadata 는 내부 구현이라 공개 결과에 싣지 않는다.
+# 열 폭보다 목록 완전성을 택했다. 8 열(universeKind·temporalSupport 포함)이면 344 행이
+# 68,881 byte 라 예산을 넘어 32 행으로 잘리고, 6 열이면 52 KB 로 344 행이 전부 남는다.
+# "데이터셋 목록" 질문의 답은 열 넓이가 아니라 자산 전수다.
+_CATALOG_PUBLIC_COLUMNS = (
+    "assetId",
+    "owner",
+    "layer",
+    "kind",
+    "label",
+    "queryable",
+)
+
+
+def _dataHubCatalogResult(result: Any) -> ToolResult | None:
+    """dataHub.catalog 를 인용 가능한 표 근거로 투영한다.
+
+    카탈로그는 본질적으로 자산 표다. 옛 경로는 이것을 실행 영수증 하나로만 감싸고
+    자산 원본(실행 배선 필드 포함)을 통째로 실었다. 실측(2026-08-05): 그 결과가
+    175,841 byte 라 소비 CLI 가 tool result 를 통째로 거부했고, 그 턴은 2,345 자를
+    쓰고도 근거 0 건으로 끝났다. 공개 열만 남기면 344 행이 전부 살아남고 답변이
+    인용할 표 근거도 생긴다.
+    """
+    if not is_dataclass(result) or isinstance(result, type):
+        return None
+    payload = {field.name: getattr(result, field.name) for field in fields(result)}
+    assets = payload.get("assets")
+    if not isinstance(assets, (list, tuple)):
+        return None
+    rows = [_catalogRow(asset) for asset in assets]
+    rows = [row for row in rows if row]
+    if not rows:
+        return None
+    owners = sorted({str(row.get("owner") or "") for row in rows if row.get("owner")})
+    tableRef = Ref(
+        id="table:dataHub.catalog:assets",
+        kind="tableRef",
+        title=f"dataHub 데이터셋 카탈로그 {len(rows)}건",
+        source="dartlab.dataHub('catalog')",
+        payload={
+            "rowCount": len(rows),
+            "columns": list(_CATALOG_PUBLIC_COLUMNS),
+            "rows": rows[:_JSON_PREVIEW_ROWS],
+            "previewTruncated": len(rows) > _JSON_PREVIEW_ROWS,
+            "status": payload.get("status"),
+            "universe": owners,
+        },
+    )
+    executionRef = Ref(
+        id="execution:dataHub.catalog:result",
+        kind="executionRef",
+        title="dataHub.catalog 실행 영수증",
+        source="dataHub.catalog",
+        payload={
+            "apiRef": "dataHub.catalog",
+            "rowCount": len(rows),
+            "status": payload.get("status"),
+            "coverage": _jsonableResult(payload.get("coverage")),
+            "gaps": _jsonableResult(payload.get("gaps")),
+            "snapshotId": payload.get("snapshotId"),
+        },
+    )
+    return ToolResult(
+        True,
+        f"dataHub.catalog 실행 완료 (자산 {len(rows)}건, owner {len(owners)}종)",
+        refs=[tableRef, executionRef],
+        data={
+            "tableRef": tableRef.id,
+            "rowCount": len(rows),
+            "columns": list(_CATALOG_PUBLIC_COLUMNS),
+            "rows": rows,
+            "owners": owners,
+            "status": payload.get("status"),
+            # 카탈로그는 자산 정의 표라 자산별 최신 관측일을 싣지 않는다. 관측 시점은
+            # dataHub.query 로 자산을 실제 조회했을 때의 결과 계약이 소유한다.
+            "observedAsOfAvailable": False,
+        },
+    )
+
+
+def _catalogRow(asset: Any) -> dict[str, Any]:
+    """카탈로그 자산 하나를 공개 열만 남긴 표 행으로 만든다."""
+    if is_dataclass(asset) and not isinstance(asset, type):
+        source = {field.name: getattr(asset, field.name) for field in fields(asset)}
+    elif isinstance(asset, Mapping):
+        source = dict(asset)
+    else:
+        return {}
+    row: dict[str, Any] = {}
+    for column in _CATALOG_PUBLIC_COLUMNS:
+        value = source.get(column)
+        if isinstance(value, (list, tuple)):
+            value = [str(item) for item in value]
+        elif value is not None and not isinstance(value, (str, bool, int, float)):
+            value = str(value)
+        row[column] = value
+    return row if row.get("assetId") else {}
 
 
 def _axisEngineCall(engine: str, axis: str, plan: dict[str, Any]) -> ToolResult:
@@ -770,19 +874,55 @@ def _scan(plan: dict[str, Any]) -> ToolResult:
                 "markdown": _growthMarkdown(result.height, rows),
             },
         )
+    rows, rowsTruncated = _boundedFrameRows(result, maxBytes=_SCAN_ROWS_MAX_BYTES)
     table_ref = Ref(
         id=f"table:scan:{axis}:preview",
         kind="tableRef",
-        title=f"scan {axis} preview",
+        title=f"scan {axis} {result.height}행",
         source=f"dartlab.scan('{axis}')",
-        payload={"rowCount": result.height, "columns": list(result.columns), "rows": result.head(10).to_dicts()},
+        payload={
+            "rowCount": result.height,
+            "columns": list(result.columns),
+            "rows": rows[:10],
+            "returnedRowCount": len(rows),
+            "previewTruncated": rowsTruncated,
+        },
     )
     return ToolResult(
         True,
-        f"scan {axis} 실행 완료",
+        f"scan {axis} 실행 완료 ({result.height}행 중 {len(rows)}행 반환)",
         refs=[table_ref],
-        data={"rowCount": result.height, "columns": list(result.columns)},
+        data={
+            "rowCount": result.height,
+            "columns": list(result.columns),
+            # 옛 계약은 rowCount 와 columns 만 돌려줘 표 본문이 아예 없었다. 실측
+            # (2026-08-05 brokerReach): 스크리닝 질문이 scan 을 제대로 부르고도 결과
+            # 표를 못 받아 종목마다 다시 조회하다 도구 56 회, 358 초를 썼다. 표를
+            # 요구한 질문에 표를 주지 않으면 회사별 반복 호출은 막을 수 없다.
+            "rows": rows,
+            "returnedRowCount": len(rows),
+            "rowsTruncated": rowsTruncated,
+        },
     )
+
+
+# scan 표 본문에 허용하는 바이트다. MCP payload 예산(64 KiB) 안에서 ref 와 메타데이터
+# 자리를 남긴 값이다. 스크리닝 결과 수백 행은 통째로 들어가고, 전종목 wide 표처럼
+# 예산을 넘는 것만 잘리며 그 사실을 rowsTruncated 로 공개한다.
+_SCAN_ROWS_MAX_BYTES = 48 * 1024
+
+
+def _boundedFrameRows(frame: pl.DataFrame, *, maxBytes: int) -> tuple[list[dict[str, Any]], bool]:
+    """표 결과를 payload 예산이 허락하는 최대 행수까지 담고 잘렸는지 알려준다."""
+    rows: list[dict[str, Any]] = []
+    used = 0
+    for row in frame.iter_rows(named=True):
+        encoded = len(json.dumps(row, ensure_ascii=False, default=str, separators=(",", ":")).encode("utf-8"))
+        if rows and used + encoded > maxBytes:
+            return rows, True
+        used += encoded
+        rows.append(row)
+    return rows, False
 
 
 def _capabilities(plan: dict[str, Any]) -> ToolResult:

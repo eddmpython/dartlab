@@ -194,8 +194,8 @@ def executeCompatAskTool(name: str, args: dict[str, Any]) -> dict[str, Any]:
     from dartlab.ai.tools.registry import executeTool as executeAiTool
 
     if name == "ask_kernel_status":
-        # tools = advertised SSOT(mcpAdvertisedToolNames) — 옛 12-tuple leak(LookAheadGuard·
-        # RequestUserInput) 제거. 'passes'(5-pass GRAPH_NODES) 노출도 제거 — chat-native 정체성상
+        # tools = advertised SSOT(mcpAdvertisedToolNames). 옛 12-tuple leak(LookAheadGuard·
+        # RequestUserInput) 제거. 'passes'(5-pass GRAPH_NODES) 노출도 제거. chat-native 정체성상
         # 고정 노드 그래프를 외부 resource 로 광고하지 않는다 (debt-honesty P2-6 / SD-2).
         return {
             "name": "DartLab Agent Tools",
@@ -271,8 +271,18 @@ def executeWorkspaceAgentTool(name: str, args: dict[str, Any]) -> dict[str, Any]
     return boundMcpPayload(executeAskWorkbenchTool(name, args))
 
 
-_MCP_DEFAULT_MAX_PAYLOAD_BYTES = 256 * 1024
+# DartLab 은 모델 loop 를 소유하지 않고 설치형 CLI 에 중개한다. 그래서 payload 예산의
+# 기준은 우리가 감당할 수 있는 크기가 아니라 *소비하는 CLI 가 받아 주는* 크기다.
+# 실측(2026-08-05 brokerReach): dataHub.catalog 결과 175,841 byte 를 그대로 내보내자
+# CLI 가 tool result 를 통째로 거부하고 "exceeds maximum allowed tokens" 안내문으로
+# 갈아치웠다. 본문뿐 아니라 refs 까지 사라져 그 턴은 근거 0 건으로 끝났다. 우리 예산이
+# 소비자 상한보다 크면 초과분이 잘리는 게 아니라 결과 전체가 폐기된다.
+# 예산은 실제로 통과하고 있는 결과의 실측 크기 위에 여유를 두고 잡았다. 같은 배터리에서
+# 가장 큰 성공 결과가 Company.panel 31,285 byte(ref 45 개) 였으므로 64 KiB 는 2 배 여유다.
+_MCP_DEFAULT_MAX_PAYLOAD_BYTES = 64 * 1024
 _MCP_MIN_MAX_PAYLOAD_BYTES = 4 * 1024
+# 예산 초과로 본문을 줄일 때도 남겨 두는 ref 신원의 최대 개수다.
+_MCP_MAX_PRESERVED_REFS = 200
 _MCP_CONTRACT_KEYS = (
     "ok",
     "summary",
@@ -343,11 +353,50 @@ def _compactMcpValue(value: Any, *, limit: int, maxString: int, maxDepth: int, d
     return value
 
 
+def _refIdentities(refs: Any) -> list[dict[str, Any]]:
+    """본문을 줄여야 할 때도 인용 가능한 ref 신원만은 남긴다.
+
+    ref 는 이 제품의 근거 계약이고 신원(id, kind, title, source)은 payload 본문보다
+    두 자릿수 작다. 예산이 모자랄 때 먼저 버릴 것은 ref 가 아니라 ref 안의 본문이다.
+    """
+    if not isinstance(refs, list):
+        return []
+    identities: list[dict[str, Any]] = []
+    for ref in refs[:_MCP_MAX_PRESERVED_REFS]:
+        if not isinstance(ref, dict) or not ref.get("id"):
+            continue
+        identities.append(
+            {
+                "id": str(ref["id"])[:200],
+                "kind": str(ref.get("kind") or "evidenceRef")[:60],
+                "title": str(ref.get("title") or ref["id"])[:200],
+                "source": str(ref.get("source") or "")[:200],
+                "payloadTruncated": True,
+            }
+        )
+    return identities
+
+
+def _budgetReceipt(*, maxPayloadBytes: int, originalBytes: int, reason: str) -> dict[str, Any]:
+    """예산 초과로 무엇을 줄였는지 공개하는 영수증을 만든다."""
+    return {
+        "maxBytes": maxPayloadBytes,
+        "originalBytes": originalBytes,
+        "truncated": True,
+        "gap": {"id": "mcp.payload.truncated", "status": "partial", "reason": reason},
+    }
+
+
 def boundMcpPayload(payload: dict[str, Any], *, maxBytes: int | None = None) -> dict[str, Any]:
     """MCP payload를 명시적 예산 안에 두고 status/gap/provenance/time 계약을 보존한다.
 
     작은 결과는 byte-for-byte 동일한 dict를 반환한다. 상한을 넘을 때만 collection/string
     preview를 단계적으로 줄이고 ``payloadBudget.gap`` 으로 손실을 공개한다.
+
+    축약 순서는 본문 먼저, 근거 나중이다. 옛 경로는 ``refs`` 도 다른 list 와 똑같이
+    잘라서 마지막 봉투에서는 아예 빈 목록으로 만들었다. 그러면 성공한 엔진 호출이
+    사용자가 확인할 근거를 하나도 남기지 못한다. 그래서 본문을 최대로 줄여도 모자랄
+    때만 ref 를 신원 투영으로 낮추고, 목록 자체는 끝까지 비우지 않는다.
     """
     requestedLimit = mcpMaxPayloadBytes() if maxBytes is None else int(maxBytes)
     maxPayloadBytes = max(_MCP_MIN_MAX_PAYLOAD_BYTES, requestedLimit)
@@ -355,51 +404,47 @@ def boundMcpPayload(payload: dict[str, Any], *, maxBytes: int | None = None) -> 
     if originalBytes <= maxPayloadBytes:
         return payload
 
+    originalRefs = payload.get("refs") if isinstance(payload.get("refs"), list) else []
     levels = ((32, 4000, 12), (12, 1200, 10), (4, 400, 8), (1, 160, 6))
-    for itemLimit, maxString, maxDepth in levels:
-        candidate = _compactMcpValue(
-            payload,
-            limit=itemLimit,
-            maxString=maxString,
-            maxDepth=maxDepth,
-        )
-        if not isinstance(candidate, dict):
-            candidate = {"data": candidate}
-        candidate["payloadBudget"] = {
-            "maxBytes": maxPayloadBytes,
-            "originalBytes": originalBytes,
-            "truncated": True,
-            "gap": {
-                "id": "mcp.payload.truncated",
-                "status": "partial",
-                "reason": "structuredContent가 MCP payload 예산을 초과해 preview로 축약되었습니다.",
-            },
-        }
-        returnedBytes = _mcpPayloadSize(candidate)
-        candidate["payloadBudget"]["returnedBytes"] = returnedBytes
-        returnedBytes = _mcpPayloadSize(candidate)
-        candidate["payloadBudget"]["returnedBytes"] = returnedBytes
-        if returnedBytes <= maxPayloadBytes:
-            return candidate
+    reasons = {
+        "keep": "structuredContent 본문이 MCP payload 예산을 초과해 preview로 축약되었습니다. 근거 ref는 보존되었습니다.",
+        "identity": "structuredContent가 MCP payload 예산을 초과해 본문과 근거 payload를 축약했습니다. 인용용 ref 신원은 보존되었습니다.",
+    }
+    for refMode in ("keep", "identity"):
+        boundedRefs = list(originalRefs) if refMode == "keep" else _refIdentities(originalRefs)
+        for itemLimit, maxString, maxDepth in levels:
+            candidate = _compactMcpValue(payload, limit=itemLimit, maxString=maxString, maxDepth=maxDepth)
+            if not isinstance(candidate, dict):
+                candidate = {"data": candidate}
+            candidate["refs"] = boundedRefs
+            candidate["payloadBudget"] = _budgetReceipt(
+                maxPayloadBytes=maxPayloadBytes,
+                originalBytes=originalBytes,
+                reason=reasons[refMode],
+            )
+            returnedBytes = _mcpPayloadSize(candidate)
+            candidate["payloadBudget"]["returnedBytes"] = returnedBytes
+            if returnedBytes <= maxPayloadBytes:
+                return candidate
 
-    # 최소 상한(4 KiB)에서도 항상 직렬화 가능한 마지막 봉투를 보장한다.
-    fallback = {
+    # 최소 상한(4 KiB)에서도 항상 직렬화 가능한 마지막 봉투를 보장한다. 본문은 비우되
+    # 근거 신원은 예산이 허락하는 만큼 남겨 답변이 인용할 것을 잃지 않게 한다.
+    fallback: dict[str, Any] = {
         "ok": bool(payload.get("ok", False)),
         "summary": _compactMcpValue(str(payload.get("summary") or ""), limit=1, maxString=160, maxDepth=2),
         "refs": [],
         "data": {},
         "error": payload.get("error"),
-        "payloadBudget": {
-            "maxBytes": maxPayloadBytes,
-            "originalBytes": originalBytes,
-            "truncated": True,
-            "gap": {
-                "id": "mcp.payload.truncated",
-                "status": "partial",
-                "reason": "structuredContent가 MCP payload 예산을 초과해 최소 봉투만 반환되었습니다.",
-            },
-        },
+        "payloadBudget": _budgetReceipt(
+            maxPayloadBytes=maxPayloadBytes,
+            originalBytes=originalBytes,
+            reason="structuredContent가 MCP payload 예산을 초과해 본문 없이 근거 신원만 반환되었습니다.",
+        ),
     }
+    identities = _refIdentities(originalRefs)
+    while identities and _mcpPayloadSize({**fallback, "refs": identities}) > maxPayloadBytes:
+        identities = identities[: len(identities) // 2]
+    fallback["refs"] = identities
     fallback["payloadBudget"]["returnedBytes"] = _mcpPayloadSize(fallback)
     return fallback
 
