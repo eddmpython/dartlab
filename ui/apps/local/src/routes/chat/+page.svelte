@@ -8,6 +8,7 @@
 	import { getLocalRuntime } from '$lib/runtime/localRuntime';
 	import { ChatStore, messageText, type ChatMessage, type MessagePart, type ToolPart } from '$lib/chat/chatStore.svelte';
 	import { toolLabel } from '$lib/chat/toolLabels';
+	import { isNearBottom, shouldShowJumpToLatest } from '$lib/chat/chatScroll';
 	import Sidebar from '$lib/chat/Sidebar.svelte';
 	import Composer from '$lib/chat/Composer.svelte';
 	import Markdown from '$lib/chat/Markdown.svelte';
@@ -25,6 +26,9 @@
 
 	let draft = $state('');
 	let scroller: HTMLDivElement | null = $state(null);
+	// 사용자가 최신을 보고 있는가. 위로 올라가면 따라가기를 멈추고 알약을 띄운다.
+	let pinned = $state(true);
+	let showJump = $state(false);
 	let sidebarOpen = $state(true);
 	let runtimeOpen = $state(false);
 	let runtimeTrigger: HTMLButtonElement | null = $state(null);
@@ -67,24 +71,47 @@
 	// 연결 = 설치형 agent CLI가 실제 사용 가능. 아니면 Runtime Center 안내.
 	const connected = $derived(cap?.tier === 'advanced' || cap?.tier === 'onDevice');
 
-	// 스트리밍·새 메시지마다 하단 고정. 사용자가 위로 스크롤했으면(200px 밖) 건드리지 않는다.
-	// 시간축이라 마지막 part 의 길이·상태가 바뀔 때도 따라가야 한다.
+	// 하단 고정. 반응 의존성을 손으로 나열하지 않고 실제 크기 변화를 관찰한다.
+	// 표가 렌더되거나 도구 결과가 도착할 때도 높이는 늘어나는데, 그때는 메시지 수도
+	// 텍스트 길이도 변하지 않아 옛 방식은 그 경로를 통째로 놓쳤다.
+	$effect(() => {
+		const el = scroller;
+		if (!el || typeof ResizeObserver === 'undefined') return;
+		const follow = (): void => {
+			if (!pinned) return;
+			el.scrollTop = el.scrollHeight;
+		};
+		const observer = new ResizeObserver(follow);
+		observer.observe(el);
+		for (const child of Array.from(el.children)) observer.observe(child);
+		const onScroll = (): void => {
+			pinned = isNearBottom(el);
+			showJump = shouldShowJumpToLatest(el);
+		};
+		el.addEventListener('scroll', onScroll, { passive: true });
+		onScroll();
+		return () => {
+			observer.disconnect();
+			el.removeEventListener('scroll', onScroll);
+		};
+	});
+
+	/** 새 메시지가 열리면 다시 따라가기 시작한다. 사용자가 직접 보낸 턴은 늘 최신을 본다. */
 	$effect(() => {
 		messages.length;
-		const lastMessage = messages.at(-1);
-		lastMessage?.parts.length;
-		const tail = lastMessage?.parts.at(-1);
-		if (tail?.kind === 'text' || tail?.kind === 'thinking') tail.text.length;
-		else if (tail?.kind === 'tool') tail.status;
-		if (!scroller) return;
-		const el = scroller;
-		const dist = el.scrollHeight - el.scrollTop - el.clientHeight;
-		if (dist < 220) {
-			void tick().then(() => {
-				el.scrollTop = el.scrollHeight;
-			});
-		}
+		pinned = true;
+		showJump = false;
+		void tick().then(() => {
+			if (scroller) scroller.scrollTop = scroller.scrollHeight;
+		});
 	});
+
+	function jumpToLatest(): void {
+		if (!scroller) return;
+		pinned = true;
+		showJump = false;
+		scroller.scrollTo({ top: scroller.scrollHeight, behavior: 'smooth' });
+	}
 
 	async function submit(): Promise<void> {
 		const text = draft.trim();
@@ -541,6 +568,13 @@
 					{/each}
 				{/if}
 			</div>
+			{#if showJump}
+				<!-- 위로 올라간 사용자에게만. 바닥에 있는 사람에게 띄우면 화면만 가린다. -->
+				<button class="jump" type="button" data-qa="chat-jump-latest" onclick={jumpToLatest}>
+					<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M19 12l-7 7-7-7" /></svg>
+					최신으로
+				</button>
+			{/if}
 		</div>
 
 		<div class="dock">
@@ -664,9 +698,33 @@
 		background: color-mix(in srgb, var(--dl-warn, #f4b740) 20%, transparent);
 	}
 	.stream {
+		position: relative;
 		flex: 1;
 		overflow-y: auto;
 		scrollbar-width: thin;
+	}
+	/* 스크롤 컨테이너 기준으로 하단 중앙에 떠 있는다. 컴포저 바로 위 자리다. */
+	.jump {
+		position: sticky;
+		bottom: 0.75rem;
+		left: 50%;
+		z-index: 5;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+		transform: translateX(-50%);
+		padding: 0.3rem 0.7rem;
+		border: 1px solid var(--dl-line, #2a2c33);
+		border-radius: 999px;
+		background: var(--dl-bg-raised, #16171a);
+		color: var(--dl-ink-dim, #9aa0aa);
+		font-size: 0.72rem;
+		cursor: pointer;
+		box-shadow: 0 4px 14px rgb(0 0 0 / 45%);
+	}
+	.jump:hover {
+		color: var(--dl-ink, #e7e7ea);
+		border-color: var(--dl-line-strong, #3b3e46);
 	}
 	.col {
 		width: 100%;
