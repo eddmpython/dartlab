@@ -780,9 +780,13 @@ def _buildShowData(
         data["industryBadge"] = industryBadge
     # 두 뱃지는 오래전부터 payload 에 실려 있었지만 본문에 없어 답변에 한 번도 쓰이지
     # 않았다. 모델이 읽는 것은 markdown 이다. 수치 하나에 판단 기준이 생긴다.
+    # 맺음말 뒤에 붙이면 마무리 문장이 본문 중간에 끼므로 그 앞에 넣는다.
     context = contextMarkdown(badge, industryBadge)
     if context:
-        data["markdown"] = f"{data['markdown']}\n{context}"
+        body = str(data["markdown"])
+        marker = "근거는 tableRef"
+        index = body.rfind(marker)
+        data["markdown"] = f"{body[:index]}{context}\n{body[index:]}" if index >= 0 else f"{body}\n{context}"
     return data
 
 
