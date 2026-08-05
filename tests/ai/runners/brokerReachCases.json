@@ -1,0 +1,86 @@
+{
+  "schemaVersion": "dartlab.brokerReach.v1",
+  "note": "설치된 에이전트가 DartLab 표면에 실제로 닿는지 재는 케이스. 질문은 사용자가 쓸 법한 자연어여야 하고 도구 이름을 불러 주면 안 된다. 이름을 알려 주면 도달성이 아니라 받아쓰기를 재게 된다.",
+  "cases": [
+    {
+      "caseId": "scanScreening",
+      "question": "코스피에서 ROE가 15% 이상이고 부채비율이 100% 미만인 종목을 전부 골라서 표로 보여줘",
+      "expectTools": ["EngineCall"],
+      "expectApiRefPrefix": ["scan"],
+      "maxToolCalls": 8,
+      "note": "전 종목 스크리닝. 회사별 반복 호출로 빠지면 시간 상한을 넘긴다."
+    },
+    {
+      "caseId": "panelSingleFact",
+      "question": "삼성전자 005930의 2024년 매출액과 영업이익이 각각 얼마야",
+      "expectTools": ["EngineCall"],
+      "expectApiRefPrefix": ["Company.panel", "Company.gather", "gather"],
+      "maxToolCalls": 5,
+      "note": "단일 사실 조회. 과잉 탐색이면 계약 위반이다."
+    },
+    {
+      "caseId": "peerCompare",
+      "question": "삼성전자 005930, SK하이닉스 000660, DB하이텍 000990 세 곳의 최근 3개년 영업이익률과 PER을 같은 기준으로 비교해줘",
+      "expectTools": ["PeerCompareN"],
+      "expectApiRefPrefix": [],
+      "maxToolCalls": 6,
+      "note": "전용 비교 도구가 있는데 EngineCall 을 3 번 쪼개면 오사용이다."
+    },
+    {
+      "caseId": "creditScore",
+      "question": "현대차 005380의 신용등급이 어느 수준이고 그렇게 나온 근거가 뭐야",
+      "expectTools": ["CreditScorecard"],
+      "expectApiRefPrefix": ["Company.credit", "credit"],
+      "maxToolCalls": 6,
+      "note": "credit 엔진 도달."
+    },
+    {
+      "caseId": "valuation",
+      "question": "삼성전자 005930의 내재가치를 현금흐름 기준으로 계산하고 할인율이 바뀌면 얼마나 달라지는지 보여줘",
+      "expectTools": ["DCFValuation", "SensitivityAnalysis"],
+      "expectApiRefPrefix": [],
+      "maxToolCalls": 8,
+      "note": "가치평가 + 민감도. 둘 중 하나만 불러도 부분 도달로 기록한다."
+    },
+    {
+      "caseId": "macroTrend",
+      "question": "최근 3년 한국 기준금리와 원달러 환율 추이를 알려줘",
+      "expectTools": ["EngineCall"],
+      "expectApiRefPrefix": ["macro"],
+      "maxToolCalls": 5,
+      "note": "macro 엔진 도달."
+    },
+    {
+      "caseId": "industryPosition",
+      "question": "반도체 업종 안에서 삼성전자 005930이 어느 위치에 있는지 같은 업종 회사들과 견줘서 알려줘",
+      "expectTools": ["EngineCall", "PeerCompareN"],
+      "expectApiRefPrefix": ["industry", "Company.industry"],
+      "maxToolCalls": 8,
+      "note": "industry 엔진 도달."
+    },
+    {
+      "caseId": "dataHubCatalog",
+      "question": "지금 들고 있는 데이터셋 목록과 각각의 최신 관측일을 알려줘",
+      "expectTools": ["EngineCall"],
+      "expectApiRefPrefix": ["dataHub", "data"],
+      "maxToolCalls": 5,
+      "note": "dataHub 도달. ReadCapability 검색으로 발견되지 않는다는 보고가 있어 실측 대상이다."
+    },
+    {
+      "caseId": "scenarioStress",
+      "question": "금리가 100bp 오르는 상황을 가정하면 삼성전자 005930 실적이 어떻게 달라질지 보여줘",
+      "expectTools": ["ScenarioOverlay", "ScenarioCompareN"],
+      "expectApiRefPrefix": ["Company.simulate", "simulate"],
+      "maxToolCalls": 8,
+      "note": "시나리오 표면 도달."
+    },
+    {
+      "caseId": "skillFirst",
+      "question": "삼성전자 005930의 최근 5년 실적 변화가 일시적인지 구조적인지 검증해줘",
+      "expectTools": ["ReadSkill", "EngineCall"],
+      "expectApiRefPrefix": [],
+      "maxToolCalls": 10,
+      "note": "절차가 필요한 질문. ReadSkill 로 계약을 먼저 찾는지 본다."
+    }
+  ]
+}

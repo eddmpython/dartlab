@@ -49,7 +49,7 @@ _VISUAL_AUDIT_PLAN = {
                 {
                     "stepId": "empty",
                     "action": "snapshot",
-                    "assertQaIds": ["chat-welcome", "analysis-promise"],
+                    "assertQaIds": ["chat-welcome", "chat-composer", "chat-input", "sidebar-toggle"],
                     "screenshotLabel": "chat-investment-welcome",
                 },
                 {
