@@ -7,6 +7,7 @@ from typing import Any
 import pytest
 
 import dartlab.ai.runtime.engine as runtimeEngineModule
+import dartlab.ai.runtime.readiness as runtimeReadinessModule
 import dartlab.productOutcome as outcomeService
 from dartlab.ai.runtime.contracts import AgentEvent, RuntimeDescriptor, RuntimeProbe
 from dartlab.ai.runtime.drivers.base import DriverHandle
@@ -368,7 +369,7 @@ def testMultipleReadyRuntimesRequireServerOwnedSelection(tmp_path, monkeypatch):
         lambda descriptor, **_kwargs: RuntimeProbe(descriptor.runtimeId, "ready", sysExecutable()),
     )
     monkeypatch.setattr(
-        runtimeEngineModule,
+        runtimeReadinessModule,
         "probeRuntimeAuth",
         lambda descriptor, **_kwargs: {"state": "unsupported", "authenticated": None},
     )
@@ -452,20 +453,20 @@ def _readyProbeEngine(tmp_path, monkeypatch):
         (),
         "https://example.invalid",
     )
+    # 선택 경로(engine)와 상태 판정(readiness)이 각자 probe 를 부른다. 대역은 양쪽에 둔다.
+    for module in (runtimeEngineModule, runtimeReadinessModule):
+        monkeypatch.setattr(module, "probeRuntime", lambda value, **_kwargs: RuntimeProbe("fake", "ready", "fake.exe"))
+        monkeypatch.setattr(module, "probeRuntimeAuth", lambda *args, **kwargs: {"state": "authenticated"})
+        monkeypatch.setattr(
+            module, "probeMcpConnection", lambda runtimeId, **_kwargs: {"connected": True, "mode": "test"}
+        )
     monkeypatch.setattr(
-        runtimeEngineModule, "probeRuntime", lambda value, **_kwargs: RuntimeProbe("fake", "ready", "fake.exe")
-    )
-    monkeypatch.setattr(
-        runtimeEngineModule,
+        runtimeReadinessModule,
         "probeAllRuntimes",
         lambda **_kwargs: [RuntimeProbe("fake", "ready", "fake.exe")],
     )
-    monkeypatch.setattr(runtimeEngineModule, "probeRuntimeAuth", lambda *args, **kwargs: {"state": "authenticated"})
-    monkeypatch.setattr(
-        runtimeEngineModule, "probeMcpConnection", lambda runtimeId, **_kwargs: {"connected": True, "mode": "test"}
-    )
-    monkeypatch.setattr(runtimeEngineModule, "_semanticReadiness", lambda **_kwargs: {"ready": True, "checks": {}})
-    runtimeEngineModule._DELIVERY_CACHE.clear()
+    monkeypatch.setattr(runtimeReadinessModule, "_semanticReadiness", lambda **_kwargs: {"ready": True, "checks": {}})
+    runtimeReadinessModule._DELIVERY_CACHE.clear()
     engine = AgentRuntimeEngine(SessionStore(tmp_path / "sessions.sqlite3"), SessionManager())
     engine.registry = {"fake": descriptor}
     return engine
@@ -526,8 +527,8 @@ def testStaleBlockExpiresInsteadOfFreezingRuntimeForever(tmp_path, monkeypatch):
     engine._recordDelivery("fake", toolReached=False, errorReason="한도 소진")
     assert engine.status(blocking=False)["runtimes"][0]["groundedReady"] is False
 
-    monkeypatch.setattr(runtimeEngineModule, "_isStaleIso", lambda timestamp, ttlSeconds: True)
-    runtimeEngineModule._DELIVERY_CACHE.clear()
+    monkeypatch.setattr(runtimeReadinessModule, "_isStaleIso", lambda timestamp, ttlSeconds: True)
+    runtimeReadinessModule._DELIVERY_CACHE.clear()
     row = engine.status(blocking=False)["runtimes"][0]
 
     assert row["groundedReady"] is True

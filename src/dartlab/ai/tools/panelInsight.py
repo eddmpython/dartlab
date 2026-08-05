@@ -135,6 +135,92 @@ def _formatPercent(value: float | None, *, signed: bool = False) -> str:
     return f"{value:+.1f}%" if signed else f"{value:.1f}%"
 
 
+def _row(label: str, cells: list[str]) -> dict[str, Any] | None:
+    """모든 칸이 비었으면 행을 만들지 않는다. 하이픈만 있는 줄은 소음이다."""
+    return {"label": label, "cells": cells} if any(cell != "-" for cell in cells) else None
+
+
+def _ratioCells(numerator: dict[str, Any] | None, denominator: dict[str, Any] | None, periods: list[str]) -> list[str]:
+    """분자와 분모를 기간별로 나눈 백분율 칸. 어느 쪽이든 없으면 하이픈이다."""
+    if numerator is None or denominator is None:
+        return ["-"] * len(periods)
+    cells: list[str] = []
+    for period in periods:
+        top = _numeric(numerator.get("values"), period)
+        bottom = _numeric(denominator.get("values"), period)
+        cells.append("-" if top is None or not bottom else _formatPercent(top / bottom * 100))
+    return cells
+
+
+def _growthRows(indexed: dict[str, dict[str, Any]], periods: list[str]) -> list[dict[str, Any]]:
+    """대표 항목의 전기 대비 증감률. periods 는 최신이 앞이므로 다음 원소가 직전 기간이다."""
+    out: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for key in _GROWTH_ROWS:
+        row = indexed.get(key)
+        if row is None or row.get("item") in seen:
+            continue
+        values = row.get("values")
+        cells: list[str] = []
+        for index, period in enumerate(periods):
+            current = _numeric(values, period)
+            prior = _numeric(values, periods[index + 1]) if index + 1 < len(periods) else None
+            if current is None or prior is None or prior == 0:
+                cells.append("-")
+            else:
+                cells.append(_formatPercent((current - prior) / abs(prior) * 100, signed=True))
+        built = _row(f"{row.get('item')} 증감률", cells)
+        if built:
+            seen.add(str(row.get("item")))
+            out.append(built)
+    return out
+
+
+def _balanceRows(indexed: dict[str, dict[str, Any]], periods: list[str]) -> list[dict[str, Any]]:
+    """재무상태표 비율. 분모가 항목마다 달라 짝을 명시한다."""
+    balanced = _withDerivedEquity(indexed, periods)
+    out: list[dict[str, Any]] = []
+    for label, numeratorKeys, denominatorKeys in _BS_RATIOS:
+        cells = _ratioCells(_pick(balanced, numeratorKeys), _pick(balanced, denominatorKeys), periods)
+        built = _row(label, cells)
+        if built:
+            out.append(built)
+    return out
+
+
+def _cashRows(indexed: dict[str, dict[str, Any]], periods: list[str]) -> list[dict[str, Any]]:
+    """현금흐름표. 영업으로 번 현금이 설비투자를 덮는지가 첫 질문이다."""
+    operating = _pick(indexed, _OCF_KEYS)
+    capex = _pick(indexed, _CAPEX_KEYS)
+    if operating is None or capex is None:
+        return []
+    cells: list[str] = []
+    for period in periods:
+        flow = _numeric(operating.get("values"), period)
+        spend = _numeric(capex.get("values"), period)
+        # 취득액은 양수로 보고되므로 절대값을 뺀다.
+        cells.append("-" if flow is None or spend is None else _formatAmount(flow - abs(spend)))
+    built = _row("잉여현금흐름 (영업 - 설비투자)", cells)
+    return [built] if built else []
+
+
+def _marginRows(indexed: dict[str, dict[str, Any]], periods: list[str]) -> list[dict[str, Any]]:
+    """매출 대비 비율. 손익계산서에서만 성립한다."""
+    sales = _pick(indexed, _SALES_KEYS)
+    if sales is None:
+        return []
+    out: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for key, label in _RATIO_ROWS:
+        if label in seen:
+            continue
+        built = _row(label, _ratioCells(indexed.get(key), sales, periods))
+        if built:
+            seen.add(label)
+            out.append(built)
+    return out
+
+
 def derivedRows(summary: dict[str, Any]) -> list[dict[str, Any]]:
     """같은 표에서 바로 계산되는 비율과 증감률 행을 만든다.
 
@@ -153,80 +239,12 @@ def derivedRows(summary: dict[str, Any]) -> list[dict[str, Any]]:
         return []
 
     indexed = _seriesByKey(timeseries)
-    sales = _pick(indexed, _SALES_KEYS)
-    out: list[dict[str, Any]] = []
-
-    # 증감률. periods 는 최신이 앞이므로 다음 원소가 직전 기간이다.
-    seen: set[str] = set()
-    for key in _GROWTH_ROWS:
-        row = indexed.get(key)
-        if row is None or row.get("item") in seen:
-            continue
-        values = row.get("values")
-        cells: list[str] = []
-        for index, period in enumerate(periods):
-            current = _numeric(values, period)
-            prior = _numeric(values, periods[index + 1]) if index + 1 < len(periods) else None
-            if current is None or prior is None or prior == 0:
-                cells.append("-")
-            else:
-                cells.append(_formatPercent((current - prior) / abs(prior) * 100, signed=True))
-        if any(cell != "-" for cell in cells):
-            seen.add(str(row.get("item")))
-            out.append({"label": f"{row.get('item')} 증감률", "cells": cells})
-
-    # 재무상태표 비율. 분모가 항목마다 달라 짝을 명시한다.
-    balanced = _withDerivedEquity(indexed, periods)
-    for label, numeratorKeys, denominatorKeys in _BS_RATIOS:
-        numerator = _pick(balanced, numeratorKeys)
-        denominator = _pick(balanced, denominatorKeys)
-        if numerator is None or denominator is None:
-            continue
-        cells = []
-        for period in periods:
-            top = _numeric(numerator.get("values"), period)
-            bottom = _numeric(denominator.get("values"), period)
-            cells.append("-" if top is None or not bottom else _formatPercent(top / bottom * 100))
-        if any(cell != "-" for cell in cells):
-            out.append({"label": label, "cells": cells})
-
-    # 현금흐름표. 영업으로 번 현금이 설비투자를 덮는지가 첫 질문이다.
-    operating = _pick(indexed, _OCF_KEYS)
-    capex = _pick(indexed, _CAPEX_KEYS)
-    if operating is not None and capex is not None:
-        cells = []
-        for period in periods:
-            flow = _numeric(operating.get("values"), period)
-            spend = _numeric(capex.get("values"), period)
-            if flow is None or spend is None:
-                cells.append("-")
-            else:
-                # 취득액은 양수로 보고되므로 절대값을 뺀다.
-                cells.append(_formatAmount(flow - abs(spend)))
-        if any(cell != "-" for cell in cells):
-            out.append({"label": "잉여현금흐름 (영업 - 설비투자)", "cells": cells})
-
-    # 매출 대비 비율. 손익계산서에서만 성립한다.
-    if sales is not None:
-        salesValues = sales.get("values")
-        seenRatio: set[str] = set()
-        for key, label in _RATIO_ROWS:
-            row = indexed.get(key)
-            if row is None or label in seenRatio:
-                continue
-            values = row.get("values")
-            cells = []
-            for period in periods:
-                numerator = _numeric(values, period)
-                denominator = _numeric(salesValues, period)
-                if numerator is None or not denominator:
-                    cells.append("-")
-                else:
-                    cells.append(_formatPercent(numerator / denominator * 100))
-            if any(cell != "-" for cell in cells):
-                seenRatio.add(label)
-                out.append({"label": label, "cells": cells})
-    return out
+    return [
+        *_growthRows(indexed, periods),
+        *_balanceRows(indexed, periods),
+        *_cashRows(indexed, periods),
+        *_marginRows(indexed, periods),
+    ]
 
 
 def positionNotes(summary: dict[str, Any]) -> list[str]:

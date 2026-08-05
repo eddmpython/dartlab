@@ -826,7 +826,7 @@ def testNonBlockingProbeReportsUnknownAndSchedulesMeasurementInsteadOfWaiting():
 def testNonBlockingStatusAnswersWithoutRunningAnyCliAndNeverClaimsUnknownIsReady(monkeypatch):
     """비차단 상태 조회는 CLI 를 한 번도 띄우지 않고 준비 완료를 주장하지 않는다."""
     from dartlab.ai.runtime import discovery, mcpBootstrap
-    from dartlab.ai.runtime import engine as engineModule
+    from dartlab.ai.runtime import readiness as engineModule
     from dartlab.ai.runtime.engine import AgentRuntimeEngine
     from dartlab.ai.runtime.sessionManager import SessionManager
 
