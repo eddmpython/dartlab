@@ -9,6 +9,7 @@
 	import { ChatStore, messageText, type ChatMessage, type MessagePart, type ToolPart } from '$lib/chat/chatStore.svelte';
 	import { toolLabel } from '$lib/chat/toolLabels';
 	import { isNearBottom, shouldShowJumpToLatest } from '$lib/chat/chatScroll';
+	import { actionForEvent, shortcutLabel, SHORTCUTS, type ShortcutAction } from '$lib/chat/shortcuts';
 	import Sidebar from '$lib/chat/Sidebar.svelte';
 	import Composer from '$lib/chat/Composer.svelte';
 	import Markdown from '$lib/chat/Markdown.svelte';
@@ -29,6 +30,7 @@
 	// 사용자가 최신을 보고 있는가. 위로 올라가면 따라가기를 멈추고 알약을 띄운다.
 	let pinned = $state(true);
 	let showJump = $state(false);
+	let shortcutHelpOpen = $state(false);
 	let sidebarOpen = $state(true);
 	let runtimeOpen = $state(false);
 	let runtimeTrigger: HTMLButtonElement | null = $state(null);
@@ -125,6 +127,39 @@
 		pinned = true;
 		showJump = false;
 		scroller.scrollTo({ top: scroller.scrollHeight, behavior: 'smooth' });
+	}
+
+	/** data-qa 로 요소를 찾아 포커스. 컴포넌트마다 ref 를 뚫는 대신 이미 있는 계측 이름을 쓴다. */
+	function focusQa(qaId: string): void {
+		document.querySelector<HTMLElement>(`[data-qa="${qaId}"]`)?.focus();
+	}
+
+	function runShortcut(action: ShortcutAction): void {
+		if (action === 'newChat') {
+			store.newConversation();
+			void tick().then(() => focusQa('chat-input'));
+		} else if (action === 'focusComposer') {
+			focusQa('chat-input');
+		} else if (action === 'focusSearch') {
+			if (!sidebarOpen) sidebarOpen = true;
+			void tick().then(() => focusQa('sidebar-search'));
+		} else if (action === 'toggleSidebar') {
+			sidebarOpen = !sidebarOpen;
+		} else if (action === 'showHelp') {
+			shortcutHelpOpen = !shortcutHelpOpen;
+		}
+	}
+
+	function onWindowKeydown(event: KeyboardEvent): void {
+		if (event.key === 'Escape' && shortcutHelpOpen) {
+			shortcutHelpOpen = false;
+			return;
+		}
+		const action = actionForEvent(event);
+		if (!action) return;
+		// 조합키를 쓰므로 입력 중이어도 가로채도 된다. 맨 글자는 애초에 매칭되지 않는다.
+		event.preventDefault();
+		runShortcut(action);
 	}
 
 	/** 답변 하나의 머리를 화면 위로 올린다. 긴 답변을 처음부터 다시 읽는 길이다.
@@ -384,6 +419,25 @@
 <svelte:head>
 	<title>챗 · dartlab local</title>
 </svelte:head>
+
+<svelte:window onkeydown={onWindowKeydown} />
+
+{#if shortcutHelpOpen}
+	<!-- 라벨은 단축키 표에서 그대로 나온다. 손으로 적으면 실제 바인딩과 어긋난다. -->
+	<div class="keyhelp" role="dialog" aria-label="단축키" data-qa="shortcut-help">
+		<div class="keyhelpBox">
+			<header>
+				<strong>단축키</strong>
+				<button type="button" onclick={() => (shortcutHelpOpen = false)} aria-label="닫기">&#10005;</button>
+			</header>
+			<ul>
+				{#each SHORTCUTS as spec (spec.action)}
+					<li><span>{spec.label}</span><kbd>{shortcutLabel(spec)}</kbd></li>
+				{/each}
+			</ul>
+		</div>
+	</div>
+{/if}
 
 <div class="shell" data-qa="chat-shell" inert={runtimeOpen}>
 	{#if sidebarOpen}
@@ -1035,6 +1089,60 @@
 		color: var(--dl-ink-mute, #6b7280);
 		font-size: 0.72rem;
 		cursor: pointer;
+	}
+	/* 단축키 도움말. 설정 창과 같은 데스크탑 모달 규범을 따르되 목록 하나뿐이라 가볍게. */
+	.keyhelp {
+		position: fixed;
+		inset: 0;
+		z-index: 80;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: rgb(0 0 0 / 55%);
+	}
+	.keyhelpBox {
+		width: min(22rem, calc(100vw - 2rem));
+		border: 1px solid var(--dl-line, #2a2c33);
+		border-radius: 12px;
+		background: var(--dl-bg-raised, #16171a);
+		box-shadow: 0 18px 48px rgb(0 0 0 / 55%);
+	}
+	.keyhelpBox header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 0.7rem 0.9rem;
+		border-bottom: 1px solid var(--dl-line, #2a2c33);
+		font-size: 0.85rem;
+	}
+	.keyhelpBox header button {
+		border: none;
+		background: none;
+		color: var(--dl-ink-mute, #6b7280);
+		cursor: pointer;
+	}
+	.keyhelpBox ul {
+		margin: 0;
+		padding: 0.4rem 0.9rem 0.8rem;
+		list-style: none;
+	}
+	.keyhelpBox li {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		padding: 0.35rem 0;
+		font-size: 0.8rem;
+		color: var(--dl-ink-dim, #9aa0aa);
+	}
+	.keyhelpBox kbd {
+		padding: 0.1rem 0.4rem;
+		border: 1px solid var(--dl-line, #2a2c33);
+		border-radius: 5px;
+		background: var(--dl-bg, #0f0f10);
+		color: var(--dl-ink, #e7e7ea);
+		font-family: inherit;
+		font-size: 0.72rem;
 	}
 	.msgact:disabled {
 		opacity: 0.45;
