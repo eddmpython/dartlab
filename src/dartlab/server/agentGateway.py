@@ -668,7 +668,11 @@ def _publicResultPayload(data: dict[str, Any]) -> dict[str, Any] | None:
     out: dict[str, Any] = {}
     # markdown 1 차 표면 — 도구 작성자가 직접 채운 키 우선 통과.
     if isinstance(raw.get("markdown"), str) and raw["markdown"].strip():
-        out["markdown"] = raw["markdown"][: _RESULT_PREVIEW_CHARS * 4]
+        # 다른 미리보기와 달리 절단 사실을 알리지 않아 UI 가 잘린 결과를 완전한 결과로
+        # 보여주고 있었다. 같은 규약으로 맞춘다.
+        markdownLimit = _RESULT_PREVIEW_CHARS * 4
+        out["markdown"] = raw["markdown"][:markdownLimit]
+        out["markdownTruncated"] = len(raw["markdown"]) > markdownLimit
     # RunPython: stdout / stderr / values / table preview / durationMs
     if "stdout" in raw or "stderr" in raw or "result" in raw:
         stdout = str(raw.get("stdout") or "")

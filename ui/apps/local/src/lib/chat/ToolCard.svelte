@@ -14,16 +14,28 @@
 	const label = $derived(toolLabel(tool.name));
 	const elapsed = $derived(tool.status === 'running' ? '' : durationLabel(tool.durationMs));
 
-	// 입력 요약. RunPython 은 code, 그 외는 JSON 정렬본.
+	// 인자 표시 상한. 게이트웨이가 결과는 잘라 보내지만 인자는 상한 없이 통과시킨다.
+	// 산출물 본문을 인자에 싣는 도구가 있어 깊은 중첩이 오면 문자열이 수 MB 가 된다.
+	const ARG_LIMIT = 8000;
+
+	// 입력 요약. 코드를 인자로 받는 도구는 코드 그대로, 그 외는 JSON 정렬본.
 	const argCode = $derived.by(() => {
 		const a = tool.args ?? {};
-		if (typeof a.code === 'string' && a.code.trim()) return a.code;
+		if (typeof a.code === 'string' && a.code.trim()) return a.code.slice(0, ARG_LIMIT);
 		if (Object.keys(a).length === 0) return '';
 		try {
-			return JSON.stringify(a, null, 2);
+			return JSON.stringify(a, null, 2).slice(0, ARG_LIMIT);
 		} catch {
 			return '';
 		}
+	});
+	const argTruncated = $derived(argCode.length >= ARG_LIMIT);
+
+	// 게이트웨이가 잘랐다고 알려 준 항목 + 화면이 인자를 자른 경우를 한 줄로 모은다.
+	const cutNotice = $derived.by(() => {
+		const parts = [...(tool.truncated ?? [])];
+		if (argTruncated) parts.push('입력');
+		return parts.length ? `${parts.join(', ')} 일부만 표시됩니다` : '';
 	});
 
 	// 결과 평문. markdown 이 와도 해석하지 않고 원문 그대로 격리해 보여준다.
@@ -88,6 +100,10 @@
 
 	{#if open && hasBody}
 		<div class="body" data-qa={qaId ? `${qaId}-body` : undefined}>
+			{#if cutNotice}
+				<!-- 잘린 결과를 완전한 결과로 읽게 두지 않는다. 근거 제품에서 가장 나쁜 침묵이다. -->
+				<div class="cut" data-qa={qaId ? `${qaId}-truncated` : undefined}>{cutNotice}</div>
+			{/if}
 			{#if argCode}
 				<div class="seg">
 					<div class="segh">입력 · {tool.name}</div>
@@ -234,6 +250,14 @@
 		letter-spacing: 0.04em;
 		color: var(--dl-ink-mute, #6b7280);
 		margin-top: 0.4rem;
+	}
+	/* 절단 고지. 경고 색을 쓰되 판때기로 만들지 않는다. 실패가 아니라 사실 통지다. */
+	.cut {
+		font-size: 0.68rem;
+		color: var(--dl-warn, #f4b740);
+		padding: 0.3rem 0.5rem;
+		border-left: 2px solid var(--dl-warn, #f4b740);
+		background: color-mix(in srgb, #f4b740 7%, transparent);
 	}
 	.code {
 		margin: 0;

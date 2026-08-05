@@ -37,6 +37,7 @@ export type AgUiEventType = PublicAgentEventType;
  */
 export interface ToolResultBody {
 	markdown?: string;
+	markdownTruncated?: boolean;
 	stdout?: string;
 	stdoutTruncated?: boolean;
 	stderr?: string;

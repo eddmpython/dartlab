@@ -44,6 +44,11 @@ export interface ToolPart {
 	values: unknown;
 	tableHead: unknown[] | null;
 	tableRows: number | null;
+	/**
+	 * 게이트웨이가 미리보기로 잘랐다고 알려 준 항목들. 근거 제품에서 잘린 결과를 완전한
+	 * 결과처럼 보여주는 것은 조용히 틀린 화면이라 반드시 화면에 표시한다.
+	 */
+	truncated: string[];
 	error: string | null;
 	startedAt: number;
 	durationMs: number | null;
@@ -413,6 +418,7 @@ export class ChatStore {
 					values: null,
 					tableHead: null,
 					tableRows: null,
+					truncated: [],
 					error: null,
 					startedAt: Date.now(),
 					durationMs: null
@@ -433,6 +439,14 @@ export class ChatStore {
 						t.values = body.values ?? null;
 						t.tableHead = body.tableHead ?? null;
 						t.tableRows = body.tableRows ?? null;
+						// 게이트웨이가 미리보기로 잘랐다고 알려 주면 그대로 화면에 옮긴다.
+						// 버리면 사용자는 잘린 결과를 완전한 결과로 읽는다.
+						t.truncated = [
+							body.stdoutTruncated ? '표준출력' : '',
+							body.stderrTruncated ? '오류출력' : '',
+							body.bodyTruncated ? '본문' : '',
+							body.markdownTruncated ? '결과' : ''
+						].filter(Boolean);
 					}
 					t.durationMs = body?.durationMs ?? Date.now() - t.startedAt;
 				}
@@ -604,12 +618,15 @@ export class ChatStore {
 
 	/**
 	 * 결과가 붙을 도구 part 찾기. 게이트웨이가 id 없는 도구에 이름을 대신 쓰므로
-	 * toolCallId 가 재사용될 수 있다. 뒤에서부터 진행중인 것을 먼저 집는다.
+	 * toolCallId 가 재사용될 수 있다.
+	 *
+	 * 앞에서부터 진행중인 첫 번째를 집는다. 결과는 시작한 순서대로 돌아오므로 뒤에서부터
+	 * 집으면 같은 이름 도구 둘이 병렬로 열렸을 때 A 의 결과가 B 카드에, B 의 결과가 A
+	 * 카드에 붙는다. 인자와 결과가 뒤바뀐 화면은 조용히 틀리기 때문에 더 나쁘다.
 	 */
 	#findToolPart(message: ChatMessage, toolCallId: string): ToolPart | null {
 		let fallback: ToolPart | null = null;
-		for (let index = message.parts.length - 1; index >= 0; index -= 1) {
-			const part = message.parts[index];
+		for (const part of message.parts) {
 			if (part.kind !== 'tool' || part.toolCallId !== toolCallId) continue;
 			if (part.status === 'running') return part;
 			fallback ??= part;

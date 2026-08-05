@@ -25,6 +25,10 @@ const TOOL_LABELS: Record<string, string> = {
 	CreditScorecard: '신용 스코어카드',
 	RegressionForecast: '회귀 예측',
 	SearchPastSessions: '과거 세션 검색',
+	// 광고 목록에 있는데 표에 없어 영어 내부 id 가 그대로 화면에 뜨던 것들.
+	ReadSkillMarket: '스킬 마켓 검색',
+	ExternalReachDoctor: '외부 조사 점검',
+	CreateUserSkill: '사용자 스킬 작성',
 	Verify: '근거 검증',
 	verify: '근거 검증'
 };
