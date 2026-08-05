@@ -12,6 +12,7 @@
 	import Markdown from '$lib/chat/Markdown.svelte';
 	import ToolCard from '$lib/chat/ToolCard.svelte';
 	import Evidence from '$lib/chat/Evidence.svelte';
+	import VerificationBadge from '$lib/chat/VerificationBadge.svelte';
 	import RuntimeCenter from '$lib/chat/RuntimeCenter.svelte';
 	import '@dartlab/ui-surfaces/terminal/terminal.css';
 	import { BrandSocial, DARTLAB_BRAND_LINKS, LAST_SYM_KEY } from '@dartlab/ui-surfaces/terminal';
@@ -382,6 +383,14 @@
 										{#if m.streaming}<span class="caret"></span>{/if}
 									{/if}
 
+									{#if !m.streaming && m.verificationStatus}
+										<VerificationBadge
+											status={m.verificationStatus}
+											evidenceCount={m.evidenceCount}
+											notes={m.verificationNotes}
+										/>
+									{/if}
+
 									{#if m.error}
 										<div class="err">
 											<span>분석을 완료하지 못했습니다. {m.error}</span>
@@ -402,7 +411,7 @@
 									{#if m.quality}
 										<details class="qualityPanel" class:passed={m.quality.passed}>
 											<summary>
-												<strong>{m.quality.passed ? '근거 검산 완료' : '답변 공개 차단'}</strong>
+												<strong>{m.quality.passed ? '근거 검산 완료' : '근거 검산 상세'}</strong>
 												<span>{m.quality.contract === 'quantitative' ? '수치·기간·대상 확인' : '문서·시점 확인'}</span>
 											</summary>
 											<div class="qualityDetails">
@@ -411,7 +420,6 @@
 												<span>답변 인용 {m.quality.citedRefIds.length}개</span>
 												<span>Skill OS 조회 {m.runtimeCoverage?.readSkillCalls ?? m.quality.readSkillCalls ?? 0}회</span>
 												{#if m.quality.requiredClaimCells}<span>근거 셀 {m.quality.coveredClaimCells}/{m.quality.requiredClaimCells}</span>{/if}
-												{#if m.repairAttempt}<span>자동 교정 {m.repairAttempt}회</span>{/if}
 												{#if m.quality.contractIds.length}<span title={m.quality.contractIds.join('\n')}>적용 계약 {m.quality.contractIds.length}개</span>{/if}
 											</div>
 											{#if m.quality.requiredEvidence.length}

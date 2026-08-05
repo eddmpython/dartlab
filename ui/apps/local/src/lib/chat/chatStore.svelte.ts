@@ -86,7 +86,12 @@ export interface ChatMessage {
 	artifacts: ChatArtifact[];
 	verifiedRefIds: string[];
 	candidateRefIds: string[];
-	verificationStatus: 'evidenceCommitted' | 'rejected' | null;
+	// 중개 모델의 검증 뱃지. 답변은 항상 전달되고 이 값이 신뢰 수준을 표시한다.
+	// verified = 근거 계약 충족, unverified = 답은 왔으나 계약 미충족(사유는 notes),
+	// failed = 런타임 실패나 빈 답변.
+	verificationStatus: 'verified' | 'unverified' | 'failed' | null;
+	evidenceCount: number;
+	verificationNotes: string[];
 	repairAttempt: number;
 	approvals: Array<{
 		id: string;
@@ -240,6 +245,8 @@ export class ChatStore {
 			verifiedRefIds: [],
 			candidateRefIds: [],
 			verificationStatus: null,
+			evidenceCount: 0,
+			verificationNotes: [],
 			repairAttempt: 0,
 			approvals: [],
 			suggested: [],
@@ -263,6 +270,8 @@ export class ChatStore {
 			verifiedRefIds: [],
 			candidateRefIds: [],
 			verificationStatus: null,
+			evidenceCount: 0,
+			verificationNotes: [],
 			repairAttempt: 0,
 			approvals: [],
 			suggested: [],
@@ -432,6 +441,8 @@ export class ChatStore {
 				m.conversationGuide = ev.responseMeta?.analysisConversation ?? m.conversationGuide;
 				m.candidateRefIds = ev.candidateRefs ?? [];
 				m.verificationStatus = ev.responseMeta?.verificationStatus ?? null;
+				m.evidenceCount = ev.responseMeta?.evidenceCount ?? 0;
+				m.verificationNotes = ev.responseMeta?.verificationNotes ?? [];
 				m.repairAttempt = ev.responseMeta?.repairAttempt ?? 0;
 				if (ev.candidateRefDetails?.length) {
 					const seen = new Set(m.refs.map((ref) => ref.id));

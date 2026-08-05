@@ -285,3 +285,58 @@ def test_research_graph_emits_ordered_node_state(monkeypatch) -> None:
     # GATE 는 결과 + 실패 분기에서 두 번 발행될 수 있다.
     assert nodes[:4] == ["brief", "work", "compose", "gate"]
     assert events[-1].kind == "done"
+
+
+def test_delta_streams_and_final_chunk_does_not_duplicate() -> None:
+    """과정 중계: delta 는 실시간으로 흐르고, 같은 본문의 최종 chunk 는 중복 발행하지 않는다.
+
+    delta 를 이미 보낸 뒤 chunk 를 그대로 내보내면 화면에 본문이 두 번 그려진다.
+    """
+    from dartlab.server.agentGateway import _publicEvents
+
+    delta = _publicEvents(
+        TraceEvent("delta", {"text": "매출은"}),
+        runId="run-1",
+        messageId="msg-1",
+    )
+    assert [event["event"] for event in delta] == ["TEXT_MESSAGE_CONTENT"]
+    assert _payload(delta[0])["delta"] == "매출은"
+
+    # delta 를 흘린 뒤의 chunk 는 억제된다
+    assert (
+        _publicEvents(
+            TraceEvent("chunk", {"text": "매출은 398조다"}),
+            runId="run-1",
+            messageId="msg-1",
+            streamedDelta=True,
+        )
+        == []
+    )
+
+    # delta 가 없던 런타임(비스트리밍)에서는 chunk 가 본문을 낸다
+    fallback = _publicEvents(
+        TraceEvent("chunk", {"text": "매출은 398조다"}),
+        runId="run-1",
+        messageId="msg-1",
+        streamedDelta=False,
+    )
+    assert [event["event"] for event in fallback] == ["TEXT_MESSAGE_CONTENT"]
+
+
+def test_verification_badge_fields_reach_public_meta() -> None:
+    """검증 뱃지 3필드가 공개 responseMeta allowlist 를 통과한다."""
+    from dartlab.server.agentGateway import _publicResponseMeta
+
+    public = _publicResponseMeta(
+        {
+            "verificationStatus": "unverified",
+            "evidenceCount": 37,
+            "verificationNotes": ["기준시점 근거가 답변에 인용되지 않았습니다"],
+            "internalSecret": "노출 금지",
+        }
+    )
+
+    assert public["verificationStatus"] == "unverified"
+    assert public["evidenceCount"] == 37
+    assert public["verificationNotes"] == ["기준시점 근거가 답변에 인용되지 않았습니다"]
+    assert "internalSecret" not in public

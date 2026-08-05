@@ -78,13 +78,17 @@ async def streamAgentRun(req: AgentRunRequest) -> AsyncIterator[dict[str, str]]:
     runtimeKwargs = {**kernelKwargs, "sessionId": req.threadId} if req.threadId else kernelKwargs
     producer = lambda: runRuntimeAgent(question, **runtimeKwargs)  # noqa: E731
 
+    streamed_delta = False
     try:
         async for internal in _syncGenToAsync(producer):
+            if internal.kind == "delta" and str(internal.data.get("text") or ""):
+                streamed_delta = True
             for public in _publicEvents(
                 internal,
                 runId=runId,
                 messageId=messageId,
                 conversationGuide=conversationGuide,
+                streamedDelta=streamed_delta,
             ):
                 if public["event"] == "TEXT_MESSAGE_CONTENT" and not text_started:
                     text_started = True
@@ -327,6 +331,7 @@ def _publicEvents(
     runId: str,
     messageId: str,
     conversationGuide: dict[str, Any] | None = None,
+    streamedDelta: bool = False,
 ) -> list[dict[str, str]]:
     kind = event.kind
     data = event.data
@@ -344,9 +349,17 @@ def _publicEvents(
         return _referenceEvents(data)
     if kind == "verify":
         return _verifyEvents(data)
-    if kind == "chunk":
+    if kind == "delta":
+        # 과정 중계: 모델이 써 내려가는 본문을 실시간으로 흘린다. 최종 `chunk` 는
+        # 같은 본문의 완성본이라 그대로 내보내면 화면에 두 번 그려진다. 실시간 delta 를
+        # 이미 보냈다면 chunk 는 흘리지 않는다(아래 chunk 분기의 streamedDelta 확인).
         text = str(data.get("text") or "")
         return [_event("TEXT_MESSAGE_CONTENT", {"messageId": messageId, "delta": text})] if text else []
+    if kind == "chunk":
+        text = str(data.get("text") or "")
+        if not text or streamedDelta:
+            return []
+        return [_event("TEXT_MESSAGE_CONTENT", {"messageId": messageId, "delta": text})]
     if kind == "thinking":
         # 추론(사고) 델타. reasoning 모델(qwen3 등)의 사고 흐름을 답변과 분리 스트림.
         text = str(data.get("text") or "")
@@ -709,6 +722,10 @@ def _publicResponseMeta(meta: dict[str, Any]) -> dict[str, Any]:
         "sessionId",
         "outcomeId",
         "verificationStatus",
+        # 검증 뱃지 표시용. verificationStatus(verified/unverified/failed)와 함께
+        # UI 가 "근거 N개 인용 · 수치 대조 일치" 또는 미검증 사유를 그린다.
+        "evidenceCount",
+        "verificationNotes",
         "repairAttempt",
         "failureCode",
         "initialQualityIssues",
