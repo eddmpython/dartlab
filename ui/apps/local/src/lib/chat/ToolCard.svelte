@@ -187,7 +187,7 @@
 	.ico {
 		display: inline-flex;
 		flex-shrink: 0;
-		color: var(--dl-good, #4ade80);
+		color: var(--dl-good, #34d399);
 	}
 	.tool.err .ico {
 		color: var(--dl-bad, #ff6b6b);

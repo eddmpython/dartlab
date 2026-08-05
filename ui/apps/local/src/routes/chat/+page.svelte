@@ -6,12 +6,13 @@
 	import { page } from '$app/state';
 	import { isKrStockCode, normalizeKrCode } from '@dartlab/ui-contracts';
 	import { getLocalRuntime } from '$lib/runtime/localRuntime';
-	import { ChatStore, messageText, type ChatMessage, type MessagePart } from '$lib/chat/chatStore.svelte';
+	import { ChatStore, messageText, type ChatMessage, type MessagePart, type ToolPart } from '$lib/chat/chatStore.svelte';
 	import { toolLabel } from '$lib/chat/toolLabels';
 	import Sidebar from '$lib/chat/Sidebar.svelte';
 	import Composer from '$lib/chat/Composer.svelte';
 	import Markdown from '$lib/chat/Markdown.svelte';
 	import ToolCard from '$lib/chat/ToolCard.svelte';
+	import ToolRun from '$lib/chat/ToolRun.svelte';
 	import ThinkingPanel from '$lib/chat/ThinkingPanel.svelte';
 	import Evidence from '$lib/chat/Evidence.svelte';
 	import VerificationBadge from '$lib/chat/VerificationBadge.svelte';
@@ -201,15 +202,49 @@
 		return !HIDDEN_TOOL_CARDS.has(name);
 	}
 
-	/** 화면에 놓을 시간축. 내부 전용 도구만 빼고 도착 순서는 그대로 둔다. */
-	function timeline(message: ChatMessage): MessagePart[] {
+	/** 연속 도구 묶음을 접기 시작하는 길이. 둘까지는 접어도 얻는 것이 없다. */
+	const TOOL_RUN_FOLD_AT = 3;
+
+	type TimelineNode =
+		| { kind: 'single'; id: string; part: MessagePart }
+		| { kind: 'run'; id: string; tools: ToolPart[] };
+
+	/** 화면에 놓을 시간축. 내부 전용 도구만 빼고 도착 순서는 그대로 둔다.
+	 *
+	 * 연달아 붙은 도구는 하나의 묶음으로 접는다. 무거운 질문에서 도구가 14~56 회 도는 것을
+	 * 실측했는데, 그때 화면이 그만큼의 줄이 되어 본문이 밀려난다. 짧은 묶음은 접지 않는다.
+	 */
+	function timeline(message: ChatMessage): TimelineNode[] {
+		const shown = message.parts.filter((part) => part.kind !== 'tool' || showToolCard(part.name));
+		const nodes: TimelineNode[] = [];
+		let run: ToolPart[] = [];
+		const flush = (): void => {
+			if (!run.length) return;
+			if (run.length >= TOOL_RUN_FOLD_AT) nodes.push({ kind: 'run', id: `run-${run[0].id}`, tools: run });
+			else nodes.push(...run.map((tool) => ({ kind: 'single' as const, id: tool.id, part: tool })));
+			run = [];
+		};
+		for (const part of shown) {
+			if (part.kind === 'tool') run.push(part);
+			else {
+				flush();
+				nodes.push({ kind: 'single', id: part.id, part });
+			}
+		}
+		flush();
+		return nodes;
+	}
+
+	/** 진행 줄 판정은 묶기 전 원본 순서로 본다. 묶음은 표현일 뿐 상태가 아니다. */
+	function shownParts(message: ChatMessage): MessagePart[] {
 		return message.parts.filter((part) => part.kind !== 'tool' || showToolCard(part.name));
 	}
 
 	/** 검수 제어면이 잡을 이름. 마지막 답변에만 붙여 qa id 중복을 만들지 않는다. */
-	function partQaId(message: ChatMessage, part: MessagePart, index: number): string | null {
+	function partQaId(message: ChatMessage, node: TimelineNode, index: number): string | null {
 		if (message.id !== messages.at(-1)?.id) return null;
-		return `chat-part-${index}-${part.kind}`;
+		const kind = node.kind === 'run' ? 'toolrun' : node.part.kind;
+		return `chat-part-${index}-${kind}`;
 	}
 
 	/**
@@ -360,7 +395,8 @@
 								시간축 본문. 이벤트가 도착한 순서 그대로 렌더한다. 도구 요약을 본문 위에
 								몰아 두면 도구가 언제 불렸는지가 사라지므로 한 줄로 끼워 넣는다.
 							-->
-							{@const parts = timeline(m)}
+							{@const nodes = timeline(m)}
+							{@const parts = shownParts(m)}
 							{@const liveTool = liveToolId(m)}
 							<div class="turn assistant">
 								<img class="msgava" src="{base}/avatar.png" alt="DartLab" width="30" height="30" />
@@ -369,23 +405,31 @@
 									     청사진이라 모델이 실제로 밟는 경로와 무관하고, 화면에 미리 선언하면
 									     지키지 않는 약속이 된다. conversationGuide 는 런타임 캡슐에서 계속 쓰인다. -->
 
-									{#each parts as part, partIndex (part.id)}
-										{#if part.kind === 'text'}
-											<div class="textpart" data-qa={partQaId(m, part, partIndex) ?? undefined}>
+									{#each nodes as node, nodeIndex (node.id)}
+										{#if node.kind === 'run'}
+											<ToolRun
+												tools={node.tools}
+												qaId={partQaId(m, node, nodeIndex)}
+												liveToolId={liveTool}
+											/>
+										{:else if node.part.kind === 'text'}
+											{@const part = node.part}
+											<div class="textpart" data-qa={partQaId(m, node, nodeIndex) ?? undefined}>
 												<Markdown text={part.text} onrefclick={(refId) => evidencePanels[m.id]?.openRef(refId)} />
-												{#if m.streaming && partIndex === parts.length - 1}<span class="caret"></span>{/if}
+												{#if m.streaming && nodeIndex === nodes.length - 1}<span class="caret"></span>{/if}
 											</div>
-										{:else if part.kind === 'tool'}
-											<ToolCard tool={part} qaId={partQaId(m, part, partIndex)} live={part.id === liveTool} />
-										{:else if part.kind === 'thinking'}
-											<ThinkingPanel {part} qaId={partQaId(m, part, partIndex)} />
+										{:else if node.part.kind === 'tool'}
+											<ToolCard tool={node.part} qaId={partQaId(m, node, nodeIndex)} live={node.part.id === liveTool} />
+										{:else if node.part.kind === 'thinking'}
+											<ThinkingPanel part={node.part} qaId={partQaId(m, node, nodeIndex)} />
 										{:else}
-											{@const live = m.streaming && partIndex === parts.length - 1}
+											{@const part = node.part}
+											{@const live = m.streaming && nodeIndex === nodes.length - 1}
 											<div
 												class="actline"
 												class:err={part.status === 'error'}
 												class:live
-												data-qa={partQaId(m, part, partIndex) ?? undefined}
+												data-qa={partQaId(m, node, nodeIndex) ?? undefined}
 											>
 												{#if live}<span class="spin" aria-hidden="true"></span>{/if}
 												<span>{part.summary}</span>
@@ -589,7 +633,7 @@
 		width: .34rem;
 		height: .34rem;
 		border-radius: 50%;
-		background: #70d6a5;
+		background: var(--dl-good, #34d399);
 	}
 	.ghost:hover {
 		background: var(--dl-bg-raised, #16171a);
@@ -732,7 +776,7 @@
 	@keyframes spin { to { transform: rotate(360deg); } }
 	/* 상태 한 줄. 도구 카드보다 가벼운 배경 정보라 들여쓰기 없이 흐린 글씨만 쓴다. */
 	.actline { display: flex; align-items: center; gap: .45rem; font-size: .74rem; line-height: 1.6; color: var(--dl-ink-mute, #6b7280); overflow-wrap: anywhere; }
-	.actline.err { color: #ff8c8c; }
+	.actline.err { color: var(--dl-bad, #ef4444); }
 	/* 진행 중인 마지막 상태 줄이 스피너를 직접 단다. 별도 진행 줄을 더 그리면 같은 문장이
 	   두 번 나오고, 턴이 끝날 때 줄이 사라지며 레이아웃이 흔들린다. */
 	.actline.live { color: var(--dl-ink-dim, #9aa0aa); }

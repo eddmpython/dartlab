@@ -271,21 +271,21 @@
 	.grid { display: grid; gap: .5rem; }
 	article { border: 1px solid var(--dl-line, #2a2c33); border-radius: 10px; padding: .65rem .8rem; background: var(--dl-bg-raised, #16171a); display: grid; gap: .45rem; }
 	article.active { border-color: var(--dl-accent, #ff5a36); box-shadow: inset 3px 0 var(--dl-accent, #ff5a36); }
-	article.readyCard { background: color-mix(in srgb, #70d6a5 4%, var(--dl-bg-raised, #16171a)); }
+	article.readyCard { background: color-mix(in srgb, var(--dl-good, #34d399) 4%, var(--dl-bg-raised, #16171a)); }
 	.title, .actions, dl div { display: flex; align-items: center; gap: .5rem; }
 	.title { justify-content: space-between; }
 	.title div { display: flex; align-items: baseline; gap: .45rem; }
 	.title strong { font-size: .86rem; }
 	.title span, dt { color: var(--dl-ink-mute, #6b7280); font-size: .68rem; }
 	.state { padding: .12rem .45rem; border-radius: 999px; background: #2a2c33; white-space: nowrap; }
-	.state.ready { color: #70d6a5; background: color-mix(in srgb, #70d6a5 12%, transparent); }
+	.state.ready { color: var(--dl-good, #34d399); background: color-mix(in srgb, var(--dl-good, #34d399) 12%, transparent); }
 	.state.probing { color: var(--dl-ink-dim, #9aa0aa); background: color-mix(in srgb, #9aa0aa 12%, transparent); }
 	.state.undetermined { color: #e0c07a; background: color-mix(in srgb, #e0c07a 12%, transparent); }
 	dl { display: grid; gap: .2rem; margin: .1rem 0 0; }
 	.plainState { font-size: .76rem; }
 	.rail { display: grid; grid-template-columns: repeat(4, 1fr); gap: .3rem; margin: 0; padding: 0; list-style: none; }
 	.rail li { min-height: 1.5rem; display: flex; align-items: center; justify-content: center; gap: .22rem; padding: 0 .2rem; border: 1px solid var(--dl-line, #2a2c33); border-radius: 6px; color: var(--dl-ink-mute, #6b7280); font-size: .64rem; text-align: center; }
-	.rail li.done { color: #70d6a5; border-color: color-mix(in srgb, #70d6a5 40%, var(--dl-line, #2a2c33)); background: color-mix(in srgb, #70d6a5 8%, transparent); }
+	.rail li.done { color: var(--dl-good, #34d399); border-color: color-mix(in srgb, var(--dl-good, #34d399) 40%, var(--dl-line, #2a2c33)); background: color-mix(in srgb, var(--dl-good, #34d399) 8%, transparent); }
 	.rail li.probing { color: var(--dl-ink-dim, #9aa0aa); border-style: dashed; }
 	dt { width: 5.5rem; }
 	dd { margin: 0; font-size: .74rem; overflow-wrap: anywhere; }
@@ -298,11 +298,11 @@
 	.plan h3 { margin: 0; font-size: .88rem; }
 	.plan ul { margin: 0; padding-left: 1.1rem; color: var(--dl-ink-dim, #9aa0aa); font-size: .76rem; line-height: 1.55; }
 	code { display: block; padding: .5rem .6rem; border-radius: 7px; background: #090a0c; overflow-x: auto; white-space: pre; font-size: .72rem; }
-	.error { color: #ff8c8c; padding: .5rem .6rem; border: 1px solid #713b3b; border-radius: 7px; font-size: .76rem; }
+	.error { color: var(--dl-bad, #ef4444); padding: .5rem .6rem; border: 1px solid color-mix(in srgb, var(--dl-bad, #ef4444) 45%, transparent); border-radius: 7px; font-size: .76rem; }
 	.advanced { color: var(--dl-ink-mute, #6b7280); font-size: .72rem; }
 	.advanced summary { cursor: pointer; min-height: 1.5rem; display: flex; align-items: center; }
-	.result { display: grid; gap: .25rem; padding: .55rem .7rem; border: 1px solid #713b3b; border-radius: 8px; color: #ffb4b4; font-size: .76rem; }
-	.result.success { border-color: color-mix(in srgb, #70d6a5 45%, transparent); color: #8be0b7; }
+	.result { display: grid; gap: .25rem; padding: .55rem .7rem; border: 1px solid color-mix(in srgb, var(--dl-bad, #ef4444) 45%, transparent); border-radius: 8px; color: #ffb4b4; font-size: .76rem; }
+	.result.success { border-color: color-mix(in srgb, var(--dl-good, #34d399) 45%, transparent); color: var(--dl-good, #34d399); }
 	.result span { color: var(--dl-ink-dim, #9aa0aa); line-height: 1.5; }
 	.empty { display: flex; align-items: center; gap: .4rem; color: var(--dl-ink-dim, #9aa0aa); padding: .8rem 0; font-size: .76rem; }
 	.pulse { flex: none; width: .42rem; height: .42rem; border-radius: 50%; background: var(--dl-accent, #ff5a36); animation: pulse 1.1s ease-in-out infinite; }

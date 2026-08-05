@@ -226,12 +226,12 @@
 	.block { display: grid; gap: .5rem; }
 	h3 { margin: 0; font-size: .88rem; font-weight: 600; color: var(--dl-ink, #e7e7ea); }
 	p { margin: 0; color: var(--dl-ink-dim, #9aa0aa); font-size: .78rem; line-height: 1.55; }
-	p.ok { color: #70d6a5; }
-	p.bad { color: #ff8c8c; }
+	p.ok { color: var(--dl-good, #34d399); }
+	p.bad { color: var(--dl-bad, #ef4444); }
 	.statusLine { display: flex; align-items: center; gap: .4rem; font-size: .76rem; color: var(--dl-ink-dim, #9aa0aa); }
 	.statusLine .dot { width: .4rem; height: .4rem; border-radius: 50%; background: var(--dl-ink-mute, #6b7280); }
-	.statusLine.ok { color: #70d6a5; }
-	.statusLine.ok .dot { background: #70d6a5; }
+	.statusLine.ok { color: var(--dl-good, #34d399); }
+	.statusLine.ok .dot { background: var(--dl-good, #34d399); }
 	.keyRow { display: flex; gap: .4rem; flex-wrap: wrap; }
 	.keyRow input {
 		flex: 1 1 12rem;

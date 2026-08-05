@@ -53,9 +53,9 @@
 		color: var(--dl-ink-dim, #9aa0aa);
 	}
 	.dot { width: .4rem; height: .4rem; border-radius: 50%; background: currentColor; }
-	.verified { color: #70d6a5; border-color: color-mix(in srgb, #70d6a5 35%, transparent); }
-	.unverified { color: #d6b870; border-color: color-mix(in srgb, #d6b870 35%, transparent); }
-	.failed { color: #ff8c8c; border-color: color-mix(in srgb, #ff8c8c 35%, transparent); }
+	.verified { color: var(--dl-good, #34d399); border-color: color-mix(in srgb, var(--dl-good, #34d399) 35%, transparent); }
+	.unverified { color: var(--dl-warn, #fbbf24); border-color: color-mix(in srgb, var(--dl-warn, #fbbf24) 35%, transparent); }
+	.failed { color: var(--dl-bad, #ef4444); border-color: color-mix(in srgb, var(--dl-bad, #ef4444) 35%, transparent); }
 	button {
 		border: 0;
 		background: transparent;

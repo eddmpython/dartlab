@@ -99,7 +99,9 @@
 				(_m, kind: string, id: string) => chipHtml(REF_LABEL[kind] ?? kind, id, id)
 			)
 			.replace(
-				new RegExp('`(' + RAW_REF_KINDS + '):([A-Za-z0-9._:{}\\-,]+)`', 'g'),
+				// 기간 범위 ref 는 물결을 쓴다 (date:005930:IS:2023FY~2025FY). 빠뜨리면 그 하나만
+				// 접히지 않고 원시 식별자로 남아 오히려 더 눈에 띈다.
+				new RegExp('`(' + RAW_REF_KINDS + '):([A-Za-z0-9._:{}~\\-,]+)`', 'g'),
 				(_m, kind: string, rest: string) => {
 					const id = `${kind}:${rest}`;
 					return chipHtml(String(numberOf(id)), id, id);
