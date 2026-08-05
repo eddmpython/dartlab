@@ -295,6 +295,24 @@
 	/** 연속 도구 묶음을 접기 시작하는 길이. 둘까지는 접어도 얻는 것이 없다. */
 	const TOOL_RUN_FOLD_AT = 3;
 
+	/**
+	 * 끝난 턴의 꼬리에 남은 진행 문구를 걷는다.
+	 *
+	 * 실측(2026-08-06): 답변 본문과 검증 뱃지 사이에 "답변 초안을 다시 검증합니다" 가 끼어
+	 * 읽기 흐름을 끊었다. 뱃지가 그 검증의 결과를 이미 말하므로 과정 문구는 역할이 끝났다.
+	 * 오류로 끝난 줄은 결과 자체라 남긴다. 진행 중에는 아무 것도 걷지 않는다.
+	 */
+	function trimTrailingActivity(message: ChatMessage, parts: MessagePart[]): MessagePart[] {
+		if (message.streaming) return parts;
+		let end = parts.length;
+		while (end > 0) {
+			const part = parts[end - 1];
+			if (part.kind !== 'activity' || part.status === 'error') break;
+			end -= 1;
+		}
+		return end === parts.length ? parts : parts.slice(0, end);
+	}
+
 	type TimelineNode =
 		| { kind: 'single'; id: string; part: MessagePart }
 		| { kind: 'run'; id: string; tools: ToolPart[] };
@@ -305,7 +323,10 @@
 	 * 실측했는데, 그때 화면이 그만큼의 줄이 되어 본문이 밀려난다. 짧은 묶음은 접지 않는다.
 	 */
 	function timeline(message: ChatMessage): TimelineNode[] {
-		const shown = message.parts.filter((part) => part.kind !== 'tool' || showToolCard(part.name));
+		const shown = trimTrailingActivity(
+			message,
+			message.parts.filter((part) => part.kind !== 'tool' || showToolCard(part.name))
+		);
 		const nodes: TimelineNode[] = [];
 		let run: ToolPart[] = [];
 		const flush = (): void => {
