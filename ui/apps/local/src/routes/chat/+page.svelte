@@ -127,6 +127,20 @@
 		scroller.scrollTo({ top: scroller.scrollHeight, behavior: 'smooth' });
 	}
 
+	/** 답변 하나의 머리를 화면 위로 올린다. 긴 답변을 처음부터 다시 읽는 길이다.
+	 *
+	 * 하단 고정을 먼저 끊는다. 안 끊으면 스트리밍 중 높이 증가가 다시 바닥으로 끌어내려
+	 * 의도한 이동과 싸운다.
+	 */
+	function scrollTurnToTop(messageId: string): void {
+		if (!scroller) return;
+		pinned = false;
+		const turn = scroller.querySelector<HTMLElement>(`[data-msg="${CSS.escape(messageId)}"]`);
+		if (!turn) return;
+		const top = turn.getBoundingClientRect().top - scroller.getBoundingClientRect().top;
+		scroller.scrollTo({ top: scroller.scrollTop + top - 12, behavior: 'smooth' });
+	}
+
 	async function submit(): Promise<void> {
 		const text = draft.trim();
 		if (!text || store.busy) return;
@@ -445,7 +459,7 @@
 							{@const nodes = timeline(m)}
 							{@const parts = shownParts(m)}
 							{@const liveTool = liveToolId(m)}
-							<div class="turn assistant">
+							<div class="turn assistant" data-msg={m.id}>
 								<img class="msgava" src="{base}/avatar.png" alt="DartLab" width="30" height="30" />
 								<div class="body">
 									<!-- 예정 단계 목록과 서술성 부제는 그리지 않는다. 질문 문자열에서 분류한
@@ -571,6 +585,25 @@
 
 									{#if !m.streaming && messageText(m)}
 										<div class="msgacts">
+											<!-- 한 턴이 몇 분씩 걸리므로 다시 시도할 길과 처음부터 다시 읽을 길이
+											     성공한 답변에도 있어야 한다. 재생성이 오류 처리 전용이면 안 된다. -->
+											<button
+												class="msgact"
+												onclick={() => scrollTurnToTop(m.id)}
+												title="이 답변 처음으로"
+												aria-label="이 답변 처음으로"
+											>
+												<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7" /></svg>
+											</button>
+											<button
+												class="msgact"
+												onclick={() => void store.retry(m.id)}
+												disabled={store.busy}
+												title="다시 생성"
+											>
+												<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7M21 3v6h-6" /></svg>
+												다시 생성
+											</button>
 											<button class="msgact" onclick={() => copyMsg(m.id, messageText(m))} title="복사">
 												{#if copiedId === m.id}
 													<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
@@ -1003,7 +1036,11 @@
 		font-size: 0.72rem;
 		cursor: pointer;
 	}
-	.msgact:hover {
+	.msgact:disabled {
+		opacity: 0.45;
+		cursor: default;
+	}
+	.msgact:hover:not(:disabled) {
 		background: var(--dl-bg-raised, #16171a);
 		color: var(--dl-ink, #e7e7ea);
 	}
