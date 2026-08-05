@@ -38,6 +38,20 @@
 		return parts.length ? `${parts.join(', ')} 일부만 표시됩니다` : '';
 	});
 
+	// 한 줄 요약. 게이트웨이는 제목이 없으면 도구 이름으로 채우는데, 그러면 화면에
+	// "엔진 호출 EngineCall" 처럼 같은 말이 두 번 나온다. 그럴 때는 인자에서 실제로 무엇을
+	// 불렀는지를 뽑아 쓴다. 무엇을 했는지가 도구 이름보다 알고 싶은 것이다.
+	const summaryText = $derived.by(() => {
+		const given = (tool.summary ?? '').trim();
+		if (given && given !== tool.name && given !== label) return given;
+		const args = (tool.args ?? {}) as Record<string, unknown>;
+		for (const key of ['apiRef', 'query', 'skillId', 'path', 'stockCode', 'axis']) {
+			const value = args[key];
+			if (typeof value === 'string' && value.trim()) return value.trim().slice(0, 90);
+		}
+		return '';
+	});
+
 	// 결과 평문. markdown 이 와도 해석하지 않고 원문 그대로 격리해 보여준다.
 	const resultText = $derived.by(() => {
 		if (tool.markdown) return tool.markdown;
@@ -90,7 +104,7 @@
 			{/if}
 		</span>
 		<span class="name">{label}</span>
-		{#if tool.summary}<span class="sum">{tool.summary}</span>{/if}
+		{#if summaryText}<span class="sum">{summaryText}</span>{/if}
 		<span class="sp"></span>
 		{#if elapsed}<span class="dur">{elapsed}</span>{/if}
 		{#if hasBody}
