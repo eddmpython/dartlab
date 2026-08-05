@@ -15,29 +15,65 @@ import {
 import { cancelAgentSession, deleteAgentSession, resolveAgentApproval } from '$lib/runtime/agentRuntimeApi';
 
 /**
- * 작업대 블록. LLM 이 자율 호출한 도구 한 건 (입력 args + 결과 표/마크다운/stdout).
- * ChatGPT/Claude 의 tool-use 카드에 대응. 진행중 spinner, 완료 시 접힌 카드로 결과 확인.
+ * 답변 본문 한 문단. 도구가 끼어들면 그 뒤의 델타는 새 text part 로 열려서
+ * "문단 -> 도구 -> 문단" 인터리브가 도착 순서 그대로 남는다.
  */
-export interface ToolBlock {
+export interface TextPart {
+	kind: 'text';
 	id: string;
+	text: string;
+}
+
+/**
+ * 작업대 블록. LLM 이 자율 호출한 도구 한 건 (입력 args + 결과 표/마크다운/stdout).
+ * 진행중이면 같은 줄에서 spinner, 완료되면 같은 자리에서 접힌 결과 줄로 바뀐다.
+ */
+export interface ToolPart {
+	kind: 'tool';
+	id: string;
+	/** 게이트웨이가 START 와 RESULT 를 잇는 키. 같은 값이 재사용될 수 있어 id 와 분리한다. */
+	toolCallId: string;
 	name: string;
 	args: Record<string, unknown>;
 	status: 'running' | 'done' | 'error';
 	summary: string;
 	markdown: string | null;
 	stdout: string | null;
+	stderr: string | null;
+	body: string | null;
+	values: unknown;
 	tableHead: unknown[] | null;
 	tableRows: number | null;
 	error: string | null;
+	startedAt: number;
+	durationMs: number | null;
 }
 
-export interface ChatActivity {
+/** 추론 델타 누적. 도착한 자리에서 흐르고 끝나면 "N초 동안 생각함" 한 줄로 접힌다. */
+export interface ThinkingPart {
+	kind: 'thinking';
+	id: string;
+	text: string;
+	startedAt: number;
+	/** 다음 part 가 열리거나 턴이 끝날 때 확정. null 이면 아직 흐르는 중이다. */
+	endedAt: number | null;
+}
+
+/** 진행 상태 한 줄. 도구 카드보다 가벼운 배경 정보다. */
+export interface ActivityPart {
+	kind: 'activity';
 	id: string;
 	status: 'running' | 'done' | 'error';
 	summary: string;
 	refs: string[];
 	passLabel?: string;
 }
+
+/**
+ * 한 턴의 시간축. 이벤트가 도착한 순서 그대로 쌓이며 화면도 이 순서로 렌더한다.
+ * 문자열 하나로 합치면 도구가 언제 불렸는지가 사라지므로 합치지 않는다.
+ */
+export type MessagePart = TextPart | ToolPart | ThinkingPart | ActivityPart;
 
 export interface ChatViewSpec {
 	id: string;
@@ -74,14 +110,9 @@ export interface ChatAnswerQuality {
 export interface ChatMessage {
 	id: string;
 	role: 'user' | 'assistant';
-	text: string;
-	/** 추론(사고) 스트림. reasoning 모델의 사고 흐름 (접이식 추론 패널). */
-	thinking: string;
+	/** 시간축 본문. 텍스트·도구·사고·상태가 도착 순서대로 한 배열에 들어간다. */
+	parts: MessagePart[];
 	refs: EvidenceRef[];
-	/** 작업대. 자율 도구 호출 카드 (근거를 만드는 과정). */
-	tools: ToolBlock[];
-	activities: ChatActivity[];
-	activityCount: number;
 	viewSpecs: ChatViewSpec[];
 	artifacts: ChatArtifact[];
 	verifiedRefIds: string[];
@@ -119,6 +150,18 @@ export interface Conversation {
 	pinnedAt: number | null;
 	/** 첫 전송 시 고정되며 기존 native session에서는 바뀌지 않는 런타임. */
 	runtimeId: string | null;
+}
+
+/**
+ * 답변 본문만 이어붙인 평문. 복사·재시도처럼 시간축이 필요 없는 곳에서만 쓴다.
+ * 사고와 도구는 본문이 아니므로 빠진다.
+ */
+export function messageText(message: ChatMessage): string {
+	return message.parts
+		.filter((part): part is TextPart => part.kind === 'text')
+		.map((part) => part.text)
+		.join('\n\n')
+		.trim();
 }
 
 const LS_KEY = 'dartlab-local-chat';
@@ -231,63 +274,19 @@ export class ChatStore {
 
 		const conv = this.#ensureActive();
 		if (conv.messages.length === 0) conv.title = this.#generatedTitle(conv.createdAt);
-		conv.messages.push({
-			id: this.#uid('u'),
-			role: 'user',
-			text,
-			thinking: '',
-			refs: [],
-			tools: [],
-			activities: [],
-			activityCount: 0,
-			viewSpecs: [],
-			artifacts: [],
-			verifiedRefIds: [],
-			candidateRefIds: [],
-			verificationStatus: null,
-			evidenceCount: 0,
-			verificationNotes: [],
-			repairAttempt: 0,
-			approvals: [],
-			suggested: [],
-			error: null,
-			streaming: false,
-			quality: null,
-			runtimeCoverage: null,
-			conversationGuide: null
-		});
-		conv.messages.push({
-			id: this.#uid('a'),
-			role: 'assistant',
-			text: '',
-			thinking: '',
-			refs: [],
-			tools: [],
-			activities: [],
-			activityCount: 0,
-			viewSpecs: [],
-			artifacts: [],
-			verifiedRefIds: [],
-			candidateRefIds: [],
-			verificationStatus: null,
-			evidenceCount: 0,
-			verificationNotes: [],
-			repairAttempt: 0,
-			approvals: [],
-			suggested: [],
-			error: null,
-			streaming: true,
-			quality: null,
-			runtimeCoverage: null,
-			conversationGuide: null
-		});
+		conv.messages.push(this.#blankMessage('u', 'user', [{ kind: 'text', id: this.#uid('part'), text }]));
+		conv.messages.push(this.#blankMessage('a', 'assistant', []));
+		conv.messages[conv.messages.length - 1].streaming = true;
 		conv.updatedAt = Date.now();
 		const idx = conv.messages.length - 1;
 
 		// 지원 CLI가 없으면 heuristic 폴백 대신 설치 경로를 정직하게 안내한다.
 		if (this.capabilitiesLoaded && !this.connected) {
-			conv.messages[idx].text =
-				'사용 가능한 근거 기반 agent CLI가 없습니다. 우측 상단 런타임 센터에서 지원 런타임의 설치와 연결 상태를 확인하세요.';
+			conv.messages[idx].parts.push({
+				kind: 'text',
+				id: this.#uid('part'),
+				text: '사용 가능한 근거 기반 agent CLI가 없습니다. 우측 상단 런타임 센터에서 지원 런타임의 설치와 연결 상태를 확인하세요.'
+			});
 			conv.messages[idx].streaming = false;
 			conv.updatedAt = Date.now();
 			this.busy = false;
@@ -310,6 +309,8 @@ export class ChatStore {
 		} catch (e) {
 			conv.messages[idx].error = e instanceof Error ? e.message : String(e);
 		} finally {
+			// 스트림이 끊겨도 열려 있던 사고·도구는 닫아 준다. 안 닫으면 화면이 영원히 진행중으로 남는다.
+			this.#sealOpenParts(conv.messages[idx]);
 			conv.messages[idx].streaming = false;
 			conv.updatedAt = Date.now();
 			this.busy = false;
@@ -342,8 +343,9 @@ export class ChatStore {
 		if (messageIndex < 0) return;
 		for (let index = messageIndex - 1; index >= 0; index -= 1) {
 			const message = conversation.messages[index];
-			if (message.role === 'user' && message.text.trim()) {
-				await this.send(message.text);
+			const prompt = messageText(message);
+			if (message.role === 'user' && prompt) {
+				await this.send(prompt);
 				return;
 			}
 		}
@@ -370,33 +372,69 @@ export class ChatStore {
 		const m = conv.messages[idx];
 		if (!m) return;
 		switch (ev.type) {
-			case 'TEXT_MESSAGE_CONTENT':
-				m.text += ev.delta;
+			case 'TEXT_MESSAGE_CONTENT': {
+				// 마지막 part 가 본문이면 이어 쓰고, 도구·사고가 끼어든 뒤라면 새 문단을 연다.
+				const last = m.parts.at(-1);
+				if (last?.kind === 'text') last.text += ev.delta;
+				else {
+					this.#sealThinking(m);
+					m.parts.push({ kind: 'text', id: this.#uid('part'), text: ev.delta });
+				}
 				break;
-			case 'THINKING_DELTA':
-				// 원시 추론은 제품 UI와 브라우저 저장소에 노출하지 않는다.
+			}
+			case 'THINKING_DELTA': {
+				const last = m.parts.at(-1);
+				if (last?.kind === 'thinking' && last.endedAt === null) last.text += ev.delta;
+				else {
+					m.parts.push({
+						kind: 'thinking',
+						id: this.#uid('part'),
+						text: ev.delta,
+						startedAt: Date.now(),
+						endedAt: null
+					});
+				}
 				break;
+			}
 			case 'TOOL_CALL_START':
-				// 채팅에는 실행 상태만 보이고 원시 인자와 결과 payload는 보존하지 않는다.
-				m.tools.push({
-					id: ev.toolCallId,
+				this.#sealThinking(m);
+				m.parts.push({
+					kind: 'tool',
+					id: this.#uid('part'),
+					toolCallId: ev.toolCallId,
 					name: ev.toolName,
-					args: {},
+					args: ev.args ?? {},
 					status: 'running',
 					summary: '',
 					markdown: null,
 					stdout: null,
+					stderr: null,
+					body: null,
+					values: null,
 					tableHead: null,
 					tableRows: null,
-					error: null
+					error: null,
+					startedAt: Date.now(),
+					durationMs: null
 				});
 				break;
 			case 'TOOL_CALL_RESULT': {
-				const t = m.tools.find((x) => x.id === ev.toolCallId);
+				const t = this.#findToolPart(m, ev.toolCallId);
 				if (t) {
 					t.status = ev.status === 'error' ? 'error' : 'done';
 					if (ev.summary) t.summary = ev.summary;
 					if (ev.error) t.error = ev.error;
+					const body = ev.result;
+					if (body) {
+						t.markdown = body.markdown ?? null;
+						t.stdout = body.stdout ?? null;
+						t.stderr = body.stderr ?? null;
+						t.body = body.body ?? null;
+						t.values = body.values ?? null;
+						t.tableHead = body.tableHead ?? null;
+						t.tableRows = body.tableRows ?? null;
+					}
+					t.durationMs = body?.durationMs ?? Date.now() - t.startedAt;
 				}
 				// 근거는 id 중복 제거해 누적 (같은 ref 가 여러 도구 결과에 반복 등장).
 				if (ev.refDetails?.length) {
@@ -411,19 +449,25 @@ export class ChatStore {
 				this.#appendArtifacts(m, ev.artifacts);
 				break;
 			}
-			case 'ACTIVITY_DELTA':
-				m.activityCount += 1;
-				m.activities = [
-					...m.activities,
-					{
-						id: this.#uid('activity'),
-						status: ev.status,
-						summary: ev.summary,
-						refs: ev.refs ?? [],
-						passLabel: ev.passLabel
-					}
-				].slice(-6);
+			case 'ACTIVITY_DELTA': {
+				// 같은 문구가 연달아 오면 줄만 늘고 뜻은 그대로다. 마지막 줄을 갱신한다.
+				const last = m.parts.at(-1);
+				if (last?.kind === 'activity' && last.summary === ev.summary) {
+					last.status = ev.status;
+					last.refs = ev.refs ?? [];
+					break;
+				}
+				this.#sealThinking(m);
+				m.parts.push({
+					kind: 'activity',
+					id: this.#uid('part'),
+					status: ev.status,
+					summary: ev.summary,
+					refs: ev.refs ?? [],
+					passLabel: ev.passLabel
+				});
 				break;
+			}
 			case 'VIEW_SPEC': {
 				const id = ev.id || `${ev.runId}:${ev.messageId}:${m.viewSpecs.length + 1}`;
 				if (!m.viewSpecs.some((item) => item.id === id)) {
@@ -505,6 +549,72 @@ export class ChatStore {
 				break;
 			// 기타 allowlist 이벤트(START/END/SNAPSHOT/DELTA)는 챗 렌더 무관이라 드롭.
 		}
+	}
+
+	/** 빈 메시지 한 통. 필드가 많아 두 곳에 손으로 적으면 한쪽만 늘어난다. */
+	#blankMessage(prefix: string, role: 'user' | 'assistant', parts: MessagePart[]): ChatMessage {
+		return {
+			id: this.#uid(prefix),
+			role,
+			parts,
+			refs: [],
+			viewSpecs: [],
+			artifacts: [],
+			verifiedRefIds: [],
+			candidateRefIds: [],
+			verificationStatus: null,
+			evidenceCount: 0,
+			verificationNotes: [],
+			repairAttempt: 0,
+			approvals: [],
+			suggested: [],
+			error: null,
+			streaming: false,
+			quality: null,
+			runtimeCoverage: null,
+			conversationGuide: null
+		};
+	}
+
+	/**
+	 * 흐르던 사고를 닫는다. 다음 part 가 열리는 순간이 사고가 멈춘 순간이다.
+	 * 닫아야 화면이 "생각 중" 에서 "N초 동안 생각함" 으로 접힌다.
+	 */
+	#sealThinking(message: ChatMessage): void {
+		const now = Date.now();
+		for (const part of message.parts) {
+			if (part.kind === 'thinking' && part.endedAt === null) part.endedAt = now;
+		}
+	}
+
+	/**
+	 * 턴이 끝날 때만 부른다. 사고를 닫고, 결과를 못 받은 도구를 중단으로 확정한다.
+	 * 도구는 병렬로 열릴 수 있으므로 part 가 하나 열렸다고 해서 앞 도구를 닫지 않는다.
+	 */
+	#sealOpenParts(message: ChatMessage): void {
+		this.#sealThinking(message);
+		const now = Date.now();
+		for (const part of message.parts) {
+			if (part.kind !== 'tool' || part.status !== 'running') continue;
+			part.status = 'error';
+			part.error ||= '결과가 도착하기 전에 실행이 중단되었습니다.';
+			part.durationMs ??= now - part.startedAt;
+		}
+	}
+
+	/**
+	 * 결과가 붙을 도구 part 찾기. 게이트웨이가 id 없는 도구에 이름을 대신 쓰므로
+	 * toolCallId 가 재사용될 수 있다. 뒤에서부터 진행중인 것을 먼저 집는다.
+	 */
+	#findToolPart(message: ChatMessage, toolCallId: string): ToolPart | null {
+		let fallback: ToolPart | null = null;
+		for (let index = message.parts.length - 1; index >= 0; index -= 1) {
+			const part = message.parts[index];
+			if (part.kind !== 'tool' || part.toolCallId !== toolCallId) continue;
+			if (part.status === 'running') return part;
+			fallback ??= part;
+		}
+		return fallback;
 	}
 
 	#appendArtifacts(message: ChatMessage, artifacts: Record<string, unknown>[] | undefined): void {

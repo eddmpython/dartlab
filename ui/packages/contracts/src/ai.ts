@@ -4,14 +4,14 @@ import type { EvidenceRef, EvidenceSelection } from './evidence';
 import type { PublicAgentEventType } from './generated/agentRuntime';
 
 export type AiTier = 'advanced' | 'onDevice' | 'deterministic' | 'none';
-// none = test fake 초기화 전 전용 — public 은 항상 deterministic 이상, local 무provider 도 deterministic.
+// none = test fake 초기화 전 전용. public 은 항상 deterministic 이상이고 local 무provider 도 deterministic.
 
 export interface AiCapabilities {
 	tier: AiTier;
 	streaming: boolean;
 	toolCalling: boolean;
 	localWorkspace: boolean;
-	deterministicAnswers: boolean; // 결정론 Q&A — public 에서도 항상 true
+	deterministicAnswers: boolean; // 결정론 Q&A. public 에서도 항상 true
 	providerLabel?: string;
 	modelLabel?: string;
 	upgradeHint?: string; // advanced 미만 tier 에서 로컬 업그레이드 안내 문구
@@ -31,14 +31,24 @@ export interface AiMode {
 
 export type AgUiEventType = PublicAgentEventType;
 
+/**
+ * 도구 결과 본문. 게이트웨이 `_publicResultPayload` 가 만드는 정제 payload 와 키·타입이 같다.
+ * 원문 그대로가 아니라 미리보기라서 `*Truncated` 가 절단 여부를 따로 말한다.
+ */
 export interface ToolResultBody {
 	markdown?: string;
 	stdout?: string;
+	stdoutTruncated?: boolean;
 	stderr?: string;
+	stderrTruncated?: boolean;
 	values?: unknown;
-	tableHead?: string[];
-	tableRows?: unknown[][];
+	/** 표 미리보기. 헤더 포함 상위 10 행이고 각 행은 셀 배열이다. */
+	tableHead?: unknown[];
+	/** 표 전체 행 수. 미리보기 행 수가 아니다. */
+	tableRows?: number;
+	date?: unknown;
 	body?: string;
+	bodyTruncated?: boolean;
 	path?: string;
 	durationMs?: number;
 }
@@ -133,7 +143,10 @@ export interface AiStreamRunFinished {
 		runtimeId?: string;
 		sessionId?: string;
 		outcomeId?: string;
-		verificationStatus?: 'evidenceCommitted' | 'rejected';
+		// 검증 뱃지 3 상태. 엔진이 verified/unverified/failed 로 내보내고 게이트웨이가 그대로 통과시킨다.
+		verificationStatus?: 'verified' | 'unverified' | 'failed';
+		evidenceCount?: number;
+		verificationNotes?: string[];
 		repairAttempt?: number;
 		failureCode?: string | null;
 		analysisConversation?: AnalysisConversationGuide;

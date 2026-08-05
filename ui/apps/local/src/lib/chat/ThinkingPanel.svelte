@@ -1,30 +1,40 @@
 <script lang="ts">
-	// 추론 패널. reasoning 모델의 사고 흐름을 답변과 분리해 표시 (Claude/ChatGPT 벤치마크).
-	// 진행중(active): "생각 중" 라벨 + 사고 텍스트 끝부분이 흐릿하게 라이브로 흐른다.
-	// 완료: "추론 과정" 한 줄로 접힘, 클릭 시 전체 펼침. 테두리 없는 ghost 스타일 (chrome 최소).
-	let { thinking, active }: { thinking: string; active: boolean } = $props();
+	// 추론 패널. 데스크탑 챗 앱 규범대로 사고는 본문 위가 아니라 도착한 자리에서 흐른다.
+	// 흐르는 중(endedAt === null): 점 하나 + 끝부분 한 줄이 라이브로 지나간다.
+	// 끝나면: "N초 동안 생각함" 한 줄로 접히고, 펼치면 전문이 그대로 남는다.
+	// 라이브도 접힘도 한 줄 높이라 끝나는 순간 레이아웃이 흔들리지 않는다.
+	import type { ThinkingPart } from '$lib/chat/chatStore.svelte';
+	import { durationLabel } from '$lib/chat/toolLabels';
+
+	let { part, qaId = null }: { part: ThinkingPart; qaId?: string | null } = $props();
 	let open = $state(false);
 
-	// 진행중 라이브 프리뷰는 끝 220자만 (스크롤 없이 흐르는 느낌).
-	const tail = $derived(thinking.length > 220 ? thinking.slice(-220) : thinking);
+	const live = $derived(part.endedAt === null);
+	// 라이브 미리보기는 끝 220자만. 한 줄로 잘라 흐르는 느낌만 준다.
+	const tail = $derived(part.text.length > 220 ? part.text.slice(-220) : part.text);
+	const spent = $derived(durationLabel(part.endedAt === null ? null : part.endedAt - part.startedAt));
 </script>
 
-{#if active}
-	<div class="think live">
-		<span class="pulse"></span>
-		<div class="livebody">
-			<span class="label">생각 중</span>
-			{#if tail}<span class="tail">{tail}</span>{/if}
-		</div>
+{#if live}
+	<div class="think live" data-qa={qaId ?? undefined} role="status">
+		<span class="pulse" aria-hidden="true"></span>
+		<span class="label">생각 중</span>
+		{#if tail}<span class="tail">{tail}</span>{/if}
 	</div>
-{:else if thinking}
-	<div class="think">
-		<button class="toggle" onclick={() => (open = !open)} aria-expanded={open}>
-			<svg class="chev" class:open viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6" /></svg>
-			추론 과정
+{:else if part.text}
+	<div class="think" data-qa={qaId ?? undefined}>
+		<button
+			class="toggle"
+			type="button"
+			data-qa={qaId ? `${qaId}-toggle` : undefined}
+			onclick={() => (open = !open)}
+			aria-expanded={open}
+		>
+			<svg class="chev" class:open viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
+			{spent ? `${spent} 동안 생각함` : '생각 과정'}
 		</button>
 		{#if open}
-			<div class="full">{thinking}</div>
+			<div class="full" data-qa={qaId ? `${qaId}-full` : undefined}>{part.text}</div>
 		{/if}
 	</div>
 {/if}
@@ -36,14 +46,15 @@
 	}
 	.live {
 		display: flex;
-		align-items: flex-start;
+		align-items: center;
 		gap: 0.5rem;
+		min-width: 0;
+		line-height: 1.5;
 	}
 	.pulse {
 		flex-shrink: 0;
 		width: 0.5rem;
 		height: 0.5rem;
-		margin-top: 0.3rem;
 		border-radius: 50%;
 		background: var(--dl-info, #6ab0ff);
 		animation: pulse 1.4s ease-in-out infinite;
@@ -58,18 +69,19 @@
 			transform: scale(1);
 		}
 	}
-	.livebody {
-		min-width: 0;
-		line-height: 1.5;
-	}
 	.label {
+		flex-shrink: 0;
 		font-weight: 600;
 		color: var(--dl-ink-dim, #9aa0aa);
-		margin-right: 0.5rem;
 	}
+	/* 라이브 미리보기는 한 줄로 고정한다. 여러 줄로 자라면 접히는 순간 화면이 뛴다. */
 	.tail {
+		min-width: 0;
+		flex: 1;
 		opacity: 0.65;
-		word-break: break-word;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 	.toggle {
 		display: inline-flex;

@@ -1,48 +1,24 @@
 <script lang="ts">
-	// 작업대 카드. LLM 이 자율 호출한 도구 한 건을 ChatGPT/Claude 의 tool-use 블록처럼 표현한다.
-	// 진행중이면 spinner + 이름, 완료면 접힌 카드. 클릭하면 입력(args)과 결과(표/마크다운/stdout)를 펼친다.
-	import type { ToolBlock } from '$lib/chat/chatStore.svelte';
-	import Markdown from '$lib/chat/Markdown.svelte';
+	// 작업대 카드. LLM 이 자율 호출한 도구 한 건을 데스크탑 챗 앱의 tool-use 블록처럼 표현한다.
+	// 본문 흐름 안에 시간순으로 놓이며 접힌 상태는 이름 + 한 줄 요약, 펼치면 입력 인자와 결과다.
+	// 결과 본문은 외부 공시·웹 본문이 섞여 있으므로 HTML 로 렌더하지 않고 모노스페이스로 격리한다.
+	import type { ToolPart } from '$lib/chat/chatStore.svelte';
+	import { durationLabel, toolLabel } from '$lib/chat/toolLabels';
 
-	let { tool }: { tool: ToolBlock } = $props();
+	// live = 이 카드가 진행 표시를 맡는가. 엔진이 읽기 도구를 병렬로 돌리므로 running 이 여럿일 수 있고,
+	// 그때 스피너를 다 그리면 화면에서 여러 개가 동시에 돈다. 도는 것은 언제나 하나다.
+	let { tool, qaId = null, live = false }: { tool: ToolPart; qaId?: string | null; live?: boolean } =
+		$props();
 	let open = $state(false);
 
-	// 도구 표시명을 한국어 라벨로. 없으면 원본 이름 그대로.
-	const LABELS: Record<string, string> = {
-		RunPython: '코드 실행',
-		'run python': '코드 실행',
-		EngineCall: '엔진 호출',
-		'engine call': '엔진 호출',
-		ReadSkill: '스킬 조회',
-		'read skill': '스킬 조회',
-		GetSkillBody: '스킬 본문',
-		ReadCapability: 'API 조회',
-		'read capability': 'API 조회',
-		WebSearch: '웹 검색',
-		'web search': '웹 검색',
-		Read: '파일 인용',
-		SaveArtifact: '산출물 저장',
-		CompileVisual: '차트 생성',
-		CompileFinancialDashboard: '재무 대시보드',
-		PeerCompareN: '동종사 비교',
-		DCFValuation: 'DCF 가치평가',
-		SensitivityAnalysis: '민감도 분석',
-		ScenarioCompareN: '시나리오 비교',
-		CreditScorecard: '신용 스코어카드',
-		RegressionForecast: '회귀 예측',
-		SearchPastSessions: '과거 세션 검색',
-		Verify: '근거 검증',
-		verify: '근거 검증'
-	};
+	const label = $derived(toolLabel(tool.name));
+	const elapsed = $derived(tool.status === 'running' ? '' : durationLabel(tool.durationMs));
 
-	const label = $derived(LABELS[tool.name] ?? tool.name);
-
-	// 입력 요약. RunPython 은 code, EngineCall 은 apiRef, 그 외는 JSON.
+	// 입력 요약. RunPython 은 code, 그 외는 JSON 정렬본.
 	const argCode = $derived.by(() => {
 		const a = tool.args ?? {};
 		if (typeof a.code === 'string' && a.code.trim()) return a.code;
-		const keys = Object.keys(a);
-		if (keys.length === 0) return '';
+		if (Object.keys(a).length === 0) return '';
 		try {
 			return JSON.stringify(a, null, 2);
 		} catch {
@@ -50,8 +26,22 @@
 		}
 	});
 
+	// 결과 평문. markdown 이 와도 해석하지 않고 원문 그대로 격리해 보여준다.
+	const resultText = $derived.by(() => {
+		if (tool.markdown) return tool.markdown;
+		if (tool.stdout) return tool.stdout;
+		if (tool.body) return tool.body;
+		if (tool.values === null || tool.values === undefined) return '';
+		try {
+			return JSON.stringify(tool.values, null, 2);
+		} catch {
+			return String(tool.values);
+		}
+	});
+
+	const tableRowsPreview = $derived(tool.tableHead ?? []);
 	const hasBody = $derived(
-		!!(tool.markdown || tool.stdout || (tool.tableHead && tool.tableHead.length) || argCode || tool.error)
+		!!(argCode || tool.error || tool.stderr || resultText || tableRowsPreview.length)
 	);
 
 	function cell(v: unknown): string {
@@ -67,16 +57,20 @@
 	}
 </script>
 
-<div class="tool" class:err={tool.status === 'error'}>
+<div class="tool" class:err={tool.status === 'error'} data-qa={qaId ?? undefined}>
 	<button
 		class="head"
+		type="button"
+		data-qa={qaId ? `${qaId}-toggle` : undefined}
 		onclick={() => (open = !open)}
-		disabled={!hasBody && tool.status !== 'running'}
+		disabled={!hasBody}
 		aria-expanded={open}
 	>
-		<span class="ico" class:spin={tool.status === 'running'}>
-			{#if tool.status === 'running'}
+		<span class="ico" class:spin={tool.status === 'running' && live} class:wait={tool.status === 'running' && !live}>
+			{#if tool.status === 'running' && live}
 				<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.219-8.56" /></svg>
+			{:else if tool.status === 'running'}
+				<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="8" /></svg>
 			{:else if tool.status === 'error'}
 				<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
 			{:else}
@@ -86,13 +80,14 @@
 		<span class="name">{label}</span>
 		{#if tool.summary}<span class="sum">{tool.summary}</span>{/if}
 		<span class="sp"></span>
+		{#if elapsed}<span class="dur">{elapsed}</span>{/if}
 		{#if hasBody}
 			<svg class="chev" class:open viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>
 		{/if}
 	</button>
 
 	{#if open && hasBody}
-		<div class="body">
+		<div class="body" data-qa={qaId ? `${qaId}-body` : undefined}>
 			{#if argCode}
 				<div class="seg">
 					<div class="segh">입력 · {tool.name}</div>
@@ -105,18 +100,13 @@
 					<div class="errline">{tool.error}</div>
 				</div>
 			{/if}
-			{#if tool.markdown}
+			{#if tableRowsPreview.length}
 				<div class="seg">
-					<div class="segh">결과</div>
-					<Markdown text={tool.markdown} />
-				</div>
-			{:else if tool.tableHead && tool.tableHead.length}
-				<div class="seg">
-					<div class="segh">결과{tool.tableRows ? ` (총 ${tool.tableRows}행 중 ${tool.tableHead.length}행)` : ''}</div>
+					<div class="segh">결과{tool.tableRows ? ` (총 ${tool.tableRows}행 중 ${tableRowsPreview.length}행)` : ''}</div>
 					<div class="tblwrap">
 						<table>
 							<tbody>
-								{#each tool.tableHead as row, ri (ri)}
+								{#each tableRowsPreview as row, ri (ri)}
 									<tr>
 										{#if Array.isArray(row)}
 											{#each row as c, ci (ci)}<td>{cell(c)}</td>{/each}
@@ -129,10 +119,17 @@
 						</table>
 					</div>
 				</div>
-			{:else if tool.stdout}
+			{/if}
+			{#if resultText}
 				<div class="seg">
-					<div class="segh">출력</div>
-					<pre class="code"><code>{tool.stdout}</code></pre>
+					<div class="segh">결과</div>
+					<pre class="code"><code>{resultText}</code></pre>
+				</div>
+			{/if}
+			{#if tool.stderr}
+				<div class="seg">
+					<div class="segh">표준 오류</div>
+					<pre class="code"><code>{tool.stderr}</code></pre>
 				</div>
 			{/if}
 		</div>
@@ -140,7 +137,7 @@
 </div>
 
 <style>
-	/* StepTrail 안에서 한 줄로 쌓인다. 테두리 박스를 유지하면 도구 15회가 15개 박스가
+	/* 본문 흐름 안에 한 줄로 놓인다. 테두리 박스를 유지하면 도구 15회가 15개 박스가
 	   돼 본문을 밀어낸다(운영자 지적). 경계는 hover 와 왼쪽 가이드선으로만 준다. */
 	.tool {
 		border-left: 1px solid var(--dl-line, #2a2c33);
@@ -183,6 +180,10 @@
 		color: var(--dl-info, #6ab0ff);
 		animation: spin 0.9s linear infinite;
 	}
+	/* 병렬 실행 대기분. 도는 대신 자리만 지킨다. */
+	.ico.wait {
+		color: var(--dl-ink-mute, #6b7280);
+	}
 	@keyframes spin {
 		to {
 			transform: rotate(360deg);
@@ -201,6 +202,11 @@
 	}
 	.sp {
 		flex: 1;
+	}
+	.dur {
+		flex-shrink: 0;
+		font-variant-numeric: tabular-nums;
+		color: color-mix(in srgb, var(--dl-ink-mute, #6b7280) 70%, transparent);
 	}
 	.chev {
 		flex-shrink: 0;

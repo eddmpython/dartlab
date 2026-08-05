@@ -2,7 +2,7 @@
 	// 챗 사이드바. 브랜드 + 테마토글 + [새 대화] + 검색 + 대화이력(고정·이름변경·삭제) + 전체삭제.
 	// 옛 ui/web AppSidebar 의 AskNav 를 runes 로 옮긴 것.
 	import { base } from '$app/paths';
-	import type { ChatStore, Conversation } from './chatStore.svelte';
+	import { messageText, type ChatStore, type Conversation } from './chatStore.svelte';
 
 	let { store }: { store: ChatStore } = $props();
 
@@ -16,7 +16,7 @@
 		const list = store.sorted;
 		if (!needle) return list;
 		return list.filter((c) => {
-			const hay = (c.title + ' ' + c.messages.map((m) => m.text).join(' ')).toLowerCase();
+			const hay = (c.title + ' ' + c.messages.map(messageText).join(' ')).toLowerCase();
 			return hay.includes(needle);
 		});
 	});

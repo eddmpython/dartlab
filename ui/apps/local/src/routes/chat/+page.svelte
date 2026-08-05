@@ -6,11 +6,13 @@
 	import { page } from '$app/state';
 	import { isKrStockCode, normalizeKrCode } from '@dartlab/ui-contracts';
 	import { getLocalRuntime } from '$lib/runtime/localRuntime';
-	import { ChatStore, type ChatMessage } from '$lib/chat/chatStore.svelte';
+	import { ChatStore, messageText, type ChatMessage, type MessagePart } from '$lib/chat/chatStore.svelte';
+	import { toolLabel } from '$lib/chat/toolLabels';
 	import Sidebar from '$lib/chat/Sidebar.svelte';
 	import Composer from '$lib/chat/Composer.svelte';
 	import Markdown from '$lib/chat/Markdown.svelte';
-	import StepTrail from '$lib/chat/StepTrail.svelte';
+	import ToolCard from '$lib/chat/ToolCard.svelte';
+	import ThinkingPanel from '$lib/chat/ThinkingPanel.svelte';
 	import Evidence from '$lib/chat/Evidence.svelte';
 	import VerificationBadge from '$lib/chat/VerificationBadge.svelte';
 	import Settings from '$lib/chat/Settings.svelte';
@@ -65,10 +67,14 @@
 	const connected = $derived(cap?.tier === 'advanced' || cap?.tier === 'onDevice');
 
 	// 스트리밍·새 메시지마다 하단 고정. 사용자가 위로 스크롤했으면(200px 밖) 건드리지 않는다.
+	// 시간축이라 마지막 part 의 길이·상태가 바뀔 때도 따라가야 한다.
 	$effect(() => {
 		messages.length;
-		messages.at(-1)?.text;
-		messages.at(-1)?.tools.length;
+		const lastMessage = messages.at(-1);
+		lastMessage?.parts.length;
+		const tail = lastMessage?.parts.at(-1);
+		if (tail?.kind === 'text' || tail?.kind === 'thinking') tail.text.length;
+		else if (tail?.kind === 'tool') tail.status;
 		if (!scroller) return;
 		const el = scroller;
 		const dist = el.scrollHeight - el.scrollTop - el.clientHeight;
@@ -187,12 +193,53 @@
 	}
 
 	// 과정은 전부 보인다. 예전에는 7개 도구만 통과시켜 ReadSkill·EngineCall 같은 실제
-	// 분석 경로가 화면에서 통째로 빠졌다. StepTrail 이 접어서 보여주므로 노출해도
+	// 분석 경로가 화면에서 통째로 빠졌다. 도구는 접힌 한 줄로 놓이므로 노출해도
 	// 소음이 되지 않는다. 내부 전용 도구만 감춘다.
 	const HIDDEN_TOOL_CARDS = new Set(['RequestUserInput', 'LookAheadGuard', 'EvidenceGate']);
 
 	function showToolCard(name: string): boolean {
 		return !HIDDEN_TOOL_CARDS.has(name);
+	}
+
+	/** 화면에 놓을 시간축. 내부 전용 도구만 빼고 도착 순서는 그대로 둔다. */
+	function timeline(message: ChatMessage): MessagePart[] {
+		return message.parts.filter((part) => part.kind !== 'tool' || showToolCard(part.name));
+	}
+
+	/** 검수 제어면이 잡을 이름. 마지막 답변에만 붙여 qa id 중복을 만들지 않는다. */
+	function partQaId(message: ChatMessage, part: MessagePart, index: number): string | null {
+		if (message.id !== messages.at(-1)?.id) return null;
+		return `chat-part-${index}-${part.kind}`;
+	}
+
+	/**
+	 * 진행 표시는 화면에 하나뿐이다. 도구가 돌고 있으면 그 카드가 진행을 말하고,
+	 * 사고가 흐르고 있으면 사고 줄이 말하고, 본문을 쓰는 중이면 캐럿이 말한다.
+	 * 셋 다 아닐 때만 꼬리에 스피너 한 줄을 둔다.
+	 */
+	function showLiveRow(message: ChatMessage): boolean {
+		if (!message.streaming) return false;
+		if (message.parts.some((part) => part.kind === 'tool' && part.status === 'running')) return false;
+		const tail = message.parts.at(-1);
+		if (tail?.kind === 'thinking' && tail.endedAt === null) return false;
+		if (tail?.kind === 'text' && tail.text.trim()) return false;
+		return true;
+	}
+
+	/** 진행 표시를 맡은 도구 하나. 병렬 실행이면 먼저 시작한 것이 맡는다. */
+	function liveToolId(message: ChatMessage): string | null {
+		const running = message.parts.find((part) => part.kind === 'tool' && part.status === 'running');
+		return running?.id ?? null;
+	}
+
+	/** 진행 줄 문구. 마지막 상태 줄을 쓰고, 없으면 마지막 도구 이름을 쓴다. */
+	function liveLabel(message: ChatMessage): string {
+		for (let index = message.parts.length - 1; index >= 0; index -= 1) {
+			const part = message.parts[index];
+			if (part.kind === 'activity') return part.summary;
+			if (part.kind === 'tool') return toolLabel(part.name);
+		}
+		return '분석을 시작합니다';
 	}
 
 	function viewSpecSummary(spec: unknown): string {
@@ -302,9 +349,15 @@
 					{#each messages as m (m.id)}
 						{#if m.role === 'user'}
 							<div class="turn user">
-								<div class="bubble">{m.text}</div>
+								<div class="bubble">{messageText(m)}</div>
 							</div>
 						{:else}
+							<!--
+								시간축 본문. 이벤트가 도착한 순서 그대로 렌더한다. 도구 요약을 본문 위에
+								몰아 두면 도구가 언제 불렸는지가 사라지므로 한 줄로 끼워 넣는다.
+							-->
+							{@const parts = timeline(m)}
+							{@const liveTool = liveToolId(m)}
 							<div class="turn assistant">
 								<img class="msgava" src="{base}/avatar.png" alt="DartLab" width="30" height="30" />
 								<div class="body">
@@ -323,14 +376,37 @@
 											{/if}
 										</div>
 									{/if}
-									{#if m.streaming && !m.text && !m.tools.length}
-										<div class="runstate" role="status" aria-label="근거를 확인하는 중"><span></span></div>
+									{#each parts as part, partIndex (part.id)}
+										{#if part.kind === 'text'}
+											<div class="textpart" data-qa={partQaId(m, part, partIndex) ?? undefined}>
+												<Markdown text={part.text} onrefclick={(refId) => evidencePanels[m.id]?.openRef(refId)} />
+												{#if m.streaming && partIndex === parts.length - 1}<span class="caret"></span>{/if}
+											</div>
+										{:else if part.kind === 'tool'}
+											<ToolCard tool={part} qaId={partQaId(m, part, partIndex)} live={part.id === liveTool} />
+										{:else if part.kind === 'thinking'}
+											<ThinkingPanel {part} qaId={partQaId(m, part, partIndex)} />
+										{:else}
+											<div
+												class="actline"
+												class:err={part.status === 'error'}
+												data-qa={partQaId(m, part, partIndex) ?? undefined}
+											>
+												{part.summary}
+											</div>
+										{/if}
+									{/each}
+
+									{#if showLiveRow(m)}
+										<div
+											class="runstate"
+											role="status"
+											data-qa={m.id === messages.at(-1)?.id ? 'chat-live-status' : undefined}
+										>
+											<span class="spin" aria-hidden="true"></span>
+											<span class="now">{liveLabel(m)}</span>
+										</div>
 									{/if}
-									<StepTrail
-										tools={m.tools.filter((tool) => showToolCard(tool.name))}
-										activities={m.activities}
-										streaming={m.streaming}
-									/>
 
 									{#if m.approvals.length}
 										<div class="approvals">
@@ -344,11 +420,6 @@
 												</div>
 											{/each}
 										</div>
-									{/if}
-
-									{#if m.text}
-										<Markdown text={m.text} onrefclick={(refId) => evidencePanels[m.id]?.openRef(refId)} />
-										{#if m.streaming}<span class="caret"></span>{/if}
 									{/if}
 
 									<!-- 실패는 위 오류 블록이 이미 말한다. 뱃지가 같은 말을 반복하면 빨간 벽이 둘이 된다. -->
@@ -411,9 +482,9 @@
 										</div>
 									{/if}
 
-									{#if m.text && !m.streaming}
+									{#if !m.streaming && messageText(m)}
 										<div class="msgacts">
-											<button class="msgact" onclick={() => copyMsg(m.id, m.text)} title="복사">
+											<button class="msgact" onclick={() => copyMsg(m.id, messageText(m))} title="복사">
 												{#if copiedId === m.id}
 													<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
 													복사됨
@@ -678,9 +749,16 @@
 	.analysisStages small { color: var(--dl-ink-mute, #6b7280); font-size: .64rem; }
 	.analysisStages small:not(:last-child)::after { content: '→'; margin-left: .3rem; color: var(--dl-line-strong, #3b3e46); }
 	@keyframes pulse { 50% { opacity: .3; } }
-	.runstate { min-height: 1.25rem; display: flex; align-items: center; }
-	.runstate span { width: .9rem; height: .9rem; border: 2px solid var(--dl-line, #2a2c33); border-top-color: var(--dl-accent, #ff5a36); border-radius: 50%; animation: spin .8s linear infinite; }
+	/* 화면에 도는 스피너는 이 줄 하나뿐이다. 도구가 돌면 도구 카드가 대신 말하고
+	   이 줄은 그리지 않는다(showLiveRow). 높이를 한 줄로 고정해 사라질 때 덜 흔들린다. */
+	.runstate { min-height: 1.25rem; display: flex; align-items: center; gap: .45rem; font-size: .78rem; }
+	.runstate .spin { flex: none; width: .8rem; height: .8rem; border: 2px solid var(--dl-line, #2a2c33); border-top-color: var(--dl-accent, #ff5a36); border-radius: 50%; animation: spin .8s linear infinite; }
+	.runstate .now { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--dl-ink-dim, #9aa0aa); }
 	@keyframes spin { to { transform: rotate(360deg); } }
+	/* 상태 한 줄. 도구 카드보다 가벼운 배경 정보라 들여쓰기 없이 흐린 글씨만 쓴다. */
+	.actline { font-size: .74rem; line-height: 1.6; color: var(--dl-ink-mute, #6b7280); overflow-wrap: anywhere; }
+	.actline.err { color: #ff8c8c; }
+	.textpart { min-width: 0; }
 	.sideveil { display: none; }
 	.approvals { display: grid; gap: .4rem; }
 	.approval { display: flex; align-items: center; gap: .5rem; padding: .65rem; border: 1px solid var(--dl-warn, #f4b740); border-radius: 8px; font-size: .78rem; }
