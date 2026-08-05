@@ -292,11 +292,6 @@
 						<img class="ava" src="{base}/avatar.png" alt="DartLab" width="56" height="56" />
 						<h1>투자 판단에 필요한 질문을 해보세요</h1>
 						<p>결론만 단정하지 않습니다. 핵심 논지와 반대 근거, 가격에 반영된 기대, 판단이 바뀌는 조건까지 같은 근거로 연결합니다.</p>
-						<div class="answerPromise" data-qa="analysis-promise" aria-label="DartLab 분석 방식">
-							<span><strong>1</strong> 판단할 질문을 구조화</span>
-							<span><strong>2</strong> 지지·반대 근거를 함께 검증</span>
-							<span><strong>3</strong> 다음 확인 항목까지 제시</span>
-						</div>
 						<div class="chips">
 							{#each suggestions as s, index (s)}
 								<button class="chip" data-qa={`chat-suggestion-${index}`} onclick={() => ask(s)}>{s}</button>
@@ -356,7 +351,8 @@
 										{#if m.streaming}<span class="caret"></span>{/if}
 									{/if}
 
-									{#if !m.streaming && m.verificationStatus}
+									<!-- 실패는 위 오류 블록이 이미 말한다. 뱃지가 같은 말을 반복하면 빨간 벽이 둘이 된다. -->
+								{#if !m.streaming && m.verificationStatus && m.verificationStatus !== 'failed' && !m.error}
 										<VerificationBadge
 											status={m.verificationStatus}
 											evidenceCount={m.evidenceCount}
@@ -365,9 +361,12 @@
 									{/if}
 
 									{#if m.error}
-										<div class="err">
-											<span>분석을 완료하지 못했습니다. {m.error}</span>
-											<button onclick={() => store.retry(m.id)} disabled={store.busy}>같은 질문 다시 시도</button>
+										<div class="err" role="alert">
+											<div class="errText">
+												<strong>분석을 완료하지 못했습니다</strong>
+												<span>{m.error}</span>
+											</div>
+											<button onclick={() => store.retry(m.id)} disabled={store.busy}>다시 시도</button>
 										</div>
 									{/if}
 
@@ -595,26 +594,6 @@
 		color: var(--dl-ink-dim, #9aa0aa);
 		margin: 0 0 1rem;
 	}
-	.answerPromise {
-		display: grid;
-		grid-template-columns: repeat(3, minmax(0, 1fr));
-		width: min(100%, 36rem);
-		gap: .45rem;
-		margin-bottom: .85rem;
-	}
-	.answerPromise span {
-		display: flex;
-		align-items: center;
-		gap: .4rem;
-		padding: .55rem .65rem;
-		border: 1px solid var(--dl-line, #2a2c33);
-		border-radius: 9px;
-		background: color-mix(in srgb, var(--dl-bg-raised, #16171a) 65%, transparent);
-		color: var(--dl-ink-dim, #9aa0aa);
-		font-size: .7rem;
-		text-align: left;
-	}
-	.answerPromise strong { color: var(--dl-accent, #ff5a36); }
 	.chips {
 		display: flex;
 		flex-wrap: wrap;
@@ -722,19 +701,36 @@
 			opacity: 0;
 		}
 	}
+	/* 오류는 벽이 아니라 상태다. 데스크탑 앱은 실패를 붉은 판때기로 덮지 않고
+	   한 줄 제목 + 사유 + 행동 하나로 조용히 말한다(운영자 지적: 빨간 벽 2개). */
 	.err {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		gap: .75rem;
-		padding: .65rem .75rem;
-		border: 1px solid color-mix(in srgb, var(--dl-bad, #ff6b6b) 35%, transparent);
+		gap: .9rem;
+		padding: .7rem .85rem;
+		border: 1px solid var(--dl-line, #2a2c33);
+		border-left: 2px solid color-mix(in srgb, var(--dl-bad, #ff6b6b) 65%, transparent);
 		border-radius: 9px;
-		background: color-mix(in srgb, var(--dl-bad, #ff6b6b) 6%, transparent);
+		background: color-mix(in srgb, var(--dl-bg-raised, #16171a) 60%, transparent);
 		font-size: 0.8rem;
-		color: var(--dl-bad, #ff6b6b);
+		color: var(--dl-ink-dim, #9aa0aa);
 	}
-	.err button { min-height: 2.5rem; flex-shrink: 0; border: 1px solid currentColor; border-radius: 7px; background: transparent; color: inherit; cursor: pointer; }
+	.errText { display: grid; gap: .15rem; min-width: 0; }
+	.errText strong { color: var(--dl-ink, #e7e7ea); font-size: .82rem; font-weight: 600; }
+	.errText span { overflow-wrap: anywhere; }
+	.err button {
+		min-height: 2rem;
+		flex-shrink: 0;
+		padding: 0 .8rem;
+		border: 1px solid var(--dl-line, #2a2c33);
+		border-radius: 7px;
+		background: transparent;
+		color: var(--dl-ink-dim, #9aa0aa);
+		font-size: .76rem;
+		cursor: pointer;
+	}
+	.err button:hover:not(:disabled) { border-color: var(--dl-ink-mute, #6b7280); color: var(--dl-ink, #e7e7ea); }
 	.err button:disabled { opacity: .5; cursor: default; }
 	.outputs { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: .45rem; }
 	.outputCard { min-width: 0; display: grid; gap: .25rem; padding: .7rem; border: 1px solid var(--dl-line, #2a2c33); border-radius: 9px; background: var(--dl-bg-raised, #16171a); }
@@ -870,8 +866,6 @@
 			background: rgba(0, 0, 0, 0.55);
 		}
 		.col { padding-inline: 0.85rem; }
-		.answerPromise { grid-template-columns: 1fr; }
-		.answerPromise span { min-height: 2.75rem; }
 		.analysisFrame { grid-template-columns: 1fr; }
 		.analysisStages { display: none; }
 		.err { align-items: stretch; flex-direction: column; }

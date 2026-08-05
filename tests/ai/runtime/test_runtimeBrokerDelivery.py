@@ -134,3 +134,64 @@ def testRuntimeErrorReasonSurvivesWhenTurnNeverCompletes(monkeypatch):
     done = next(event.data for event in events if event.kind == "done")
     assert done["responseMeta"]["failureReason"] == "에이전트 턴이 600초 제한을 초과했습니다"
     assert done["responseMeta"]["verificationStatus"] == "failed"
+
+
+def testTimeoutKeepsPartialAnswerInsteadOfDiscardingIt(monkeypatch):
+    """턴이 끝나지 않아도 그때까지 쓴 본문과 근거는 전달한다.
+
+    실측 회귀(2026-08-05): 무거운 스크리닝 질문이 10분 상한을 치면 9분간 만든
+    분석이 통째로 사라지고 사용자는 빈 오류만 봤다.
+    """
+    projector = EventProjector("claude", "session-timeout-partial")
+
+    class FakeEngine:
+        def stream(self, question, **kwargs):
+            yield projector.event("sessionStarted", turnId="", payload={"nativeSessionId": "native-1"})
+            yield projector.event("turnStarted", turnId="turn-1")
+            yield projector.event(
+                "toolCompleted",
+                turnId="turn-1",
+                payload={"canonicalName": "EngineCall", "refDetails": _refs(), "outcomeId": "outcome-1"},
+            )
+            yield projector.event("messageDelta", turnId="turn-1", payload={"text": "여기까지 분석했다."})
+            yield projector.event(
+                "runtimeError",
+                turnId="turn-1",
+                payload={"error": "에이전트 턴이 600초 제한을 초과했습니다"},
+            )
+
+    monkeypatch.setattr("dartlab.ai.runtime.getRuntimeEngine", lambda: FakeEngine())
+
+    events = list(runRuntimeAgent("코스피 스크리닝", runtimeId="claude"))
+    done = next(event.data for event in events if event.kind == "done")
+    meta = done["responseMeta"]
+
+    assert any(event.kind == "chunk" and "여기까지" in str(event.data.get("text")) for event in events)
+    assert meta["responseStatus"] == "ok"
+    assert meta["verificationStatus"] == "unverified"
+    assert meta["verificationNotes"], "미완이라는 사실을 표시해야 한다"
+    assert done["refs"], "모인 근거도 버리지 않는다"
+
+
+def testRuntimeFailureReasonDoesNotDumpEveryQualityIssue():
+    """런타임 실패 사유는 근본 원인 하나다. 결과로 생긴 품질 이슈를 나열하지 않는다.
+
+    실측 회귀(2026-08-05): 세미콜론으로 이어붙인 내부 진단문 8개가 화면에 빨간 벽으로
+    나갔다("런타임이 정상 완료되지 않았습니다; 질문에 맞는 Skill OS 계약을 ...").
+    """
+    from dartlab.ai.agent import _qualityFailureReason
+
+    reason = _qualityFailureReason(
+        {
+            "issues": [
+                "runtime_not_completed",
+                "read_skill_missing",
+                "empty_answer",
+                "source_ref_missing",
+                "date_ref_missing",
+            ]
+        }
+    )
+
+    assert ";" not in reason
+    assert reason == "런타임이 정상 완료되지 않았습니다"

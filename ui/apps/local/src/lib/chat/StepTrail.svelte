@@ -61,7 +61,8 @@
 	});
 </script>
 
-{#if total || activities.length}
+<!-- 도구를 하나도 못 쓴 실패에서 "분석 0단계" 는 정보가 아니라 소음이다. -->
+{#if streaming || total}
 	<div class="trail" data-qa="step-trail">
 		{#if streaming}
 			<div class="live" role="status">

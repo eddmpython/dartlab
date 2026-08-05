@@ -1189,21 +1189,26 @@ def runRuntimeAgent(question: str, **kwargs: Any) -> Iterator[TraceEvent]:
             elif event.kind == "turnCompleted":
                 terminalEvent = event
         if terminalEvent is None:
-            # 턴이 끝나지 않은 것은 진짜 실패다(뱃지 대상 아님). 다만 여기까지 모인
-            # 근거는 버리지 않고 그대로 전달해 사용자가 무엇까지 됐는지 본다.
+            # 턴이 끝나지 않았어도 그때까지 쓴 본문과 근거는 버리지 않는다. 실측
+            # (2026-08-05): 무거운 스크리닝 질문이 10분 상한을 치면 9분간 만든 분석이
+            # 통째로 사라지고 사용자는 빈 오류만 봤다. 부분 결과를 미완 표시와 함께
+            # 전달하는 것이 정직하고 쓸모도 있다.
+            partial = "".join(answerParts).strip()
+            if partial:
+                yield TraceEvent("chunk", {"text": partial})
             yield TraceEvent(
                 "done",
                 {
                     "refs": evidenceRefs,
                     "artifacts": [],
                     "responseMeta": {
-                        "finalEvent": "runtime_error",
-                        "responseStatus": "failed",
-                        "verificationStatus": "failed",
+                        "finalEvent": "answer" if partial else "runtime_error",
+                        "responseStatus": "ok" if partial else "failed",
+                        "verificationStatus": "unverified" if partial else "failed",
                         "evidenceCount": len(evidenceRefs),
-                        "verificationNotes": [],
+                        "verificationNotes": ["런타임이 끝나기 전에 중단돼 분석이 미완입니다"] if partial else [],
                         "candidateRefs": [],
-                        "failureReason": runtimeErrorReason or "runtime ended without a completed turn",
+                        "failureReason": None if partial else (runtimeErrorReason or "런타임이 답변을 내지 못했습니다"),
                     },
                 },
             )
@@ -1244,6 +1249,7 @@ def runRuntimeAgent(question: str, **kwargs: Any) -> Iterator[TraceEvent]:
                 repairAttempt=repairAttempt,
                 repairMode=repairMode,
                 initialIssues=firstIssues,
+                runtimeErrorReason=runtimeErrorReason,
             ),
         )
     except Exception as exc:  # noqa: BLE001
@@ -1394,6 +1400,7 @@ def _runtimeDoneData(
     repairAttempt: int = 0,
     repairMode: str = "none",
     initialIssues: tuple[str, ...] = (),
+    runtimeErrorReason: str | None = None,
 ) -> dict[str, Any]:
     """공개 adapter와 Outcome 원장이 같은 완료 근거를 보도록 종료 payload를 만든다.
 
@@ -1432,7 +1439,9 @@ def _runtimeDoneData(
             "runtimeCoverage": (
                 event.payload.get("runtimeCoverage") if isinstance(event.payload.get("runtimeCoverage"), dict) else {}
             ),
-            "failureReason": None if answerCommitted else _qualityFailureReason(qualityReport),
+            # 런타임이 준 실제 사유(타임아웃 등)가 있으면 그것이 우선이다. 품질 이슈는
+            # 답이 없어서 생긴 결과라 근본 원인을 가린다.
+            "failureReason": None if answerCommitted else (runtimeErrorReason or _qualityFailureReason(qualityReport)),
         },
     }
 
@@ -1470,12 +1479,20 @@ def _qualityNotes(report: dict[str, Any]) -> list[str]:
 
 
 def _qualityFailureReason(report: dict[str, Any]) -> str:
-    """런타임 실패 사유를 한 문장으로 만든다(빈 답변·런타임 미완료 등 진짜 실패용)."""
-    issues = report.get("issues") if isinstance(report.get("issues"), (list, tuple)) else []
-    return (
-        "; ".join(_QUALITY_ISSUE_LABELS.get(str(issue), str(issue)) for issue in issues)
-        or "런타임이 답변을 내지 못했습니다"
-    )
+    """실패 사유를 한 문장으로 만든다.
+
+    런타임이 답을 못 낸 경우 나머지 품질 이슈는 전부 그 결과일 뿐이다(답이 없으니
+    인용도 기준시점도 당연히 없다). 실측(2026-08-05): 이것을 세미콜론으로 이어붙여
+    내부 진단문 8개가 사용자 화면에 빨간 벽으로 나갔다. 근본 사유 하나만 말한다.
+    """
+    issues = [str(issue) for issue in (report.get("issues") or []) if issue]
+    for root in ("runtime_not_completed", "empty_answer"):
+        if root in issues:
+            return _QUALITY_ISSUE_LABELS[root]
+    if not issues:
+        return "런타임이 답변을 내지 못했습니다"
+    first = _QUALITY_ISSUE_LABELS.get(issues[0], issues[0])
+    return first if len(issues) == 1 else f"{first} 외 {len(issues) - 1}건"
 
 
 def _firstRuntimeValue(*candidates: tuple[dict[str, Any], str], default: Any = None) -> Any:
