@@ -91,19 +91,23 @@
 </form>
 
 <style>
+	/* 떠 있는 입력 알약. 데스크탑 챗 앱 규범대로 깊이는 그림자로 주고 포커스는
+	   테두리 색이 아니라 은은한 링으로 알린다(액센트 테두리는 경고처럼 읽힌다). */
 	.composer {
 		display: flex;
 		align-items: flex-end;
 		gap: 0.5rem;
 		width: 100%;
-		padding: 0.5rem 0.5rem 0.5rem 0.9rem;
+		padding: 0.5rem 0.5rem 0.5rem 0.95rem;
 		border: 1px solid var(--dl-line, #2a2c33);
 		border-radius: 1.5rem;
 		background: var(--dl-bg-raised, #16171a);
-		transition: border-color 0.15s ease;
+		box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
+		transition: border-color 0.15s ease, box-shadow 0.15s ease;
 	}
 	.composer:focus-within {
-		border-color: var(--dl-accent, #ff5a36);
+		border-color: color-mix(in srgb, var(--dl-ink-dim, #9aa0aa) 45%, var(--dl-line, #2a2c33));
+		box-shadow: 0 6px 22px rgba(0, 0, 0, 0.34), 0 0 0 3px color-mix(in srgb, var(--dl-accent, #ff5a36) 14%, transparent);
 	}
 	textarea {
 		flex: 1;

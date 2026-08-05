@@ -21,6 +21,34 @@
 		});
 	});
 
+	// 데스크탑 챗 앱 규범: 대화를 시간대로 묶는다. 목록이 길어져도 최근 것을 먼저 찾는다.
+	// 고정 대화는 시간과 무관하게 맨 위 자기 그룹을 갖는다.
+	const groups = $derived.by(() => {
+		const now = new Date();
+		const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+		const startOfYesterday = startOfToday - 86_400_000;
+		const startOfWeek = startOfToday - 6 * 86_400_000;
+		const startOfMonth = startOfToday - 29 * 86_400_000;
+		const buckets: Array<{ key: string; label: string; items: Conversation[] }> = [
+			{ key: 'pinned', label: '고정', items: [] },
+			{ key: 'today', label: '오늘', items: [] },
+			{ key: 'yesterday', label: '어제', items: [] },
+			{ key: 'week', label: '지난 7일', items: [] },
+			{ key: 'month', label: '지난 30일', items: [] },
+			{ key: 'older', label: '이전', items: [] }
+		];
+		const at = (key: string) => buckets.find((bucket) => bucket.key === key)!.items;
+		for (const conversation of filtered) {
+			if (conversation.pinnedAt) at('pinned').push(conversation);
+			else if (conversation.updatedAt >= startOfToday) at('today').push(conversation);
+			else if (conversation.updatedAt >= startOfYesterday) at('yesterday').push(conversation);
+			else if (conversation.updatedAt >= startOfWeek) at('week').push(conversation);
+			else if (conversation.updatedAt >= startOfMonth) at('month').push(conversation);
+			else at('older').push(conversation);
+		}
+		return buckets.filter((bucket) => bucket.items.length > 0);
+	});
+
 	function startRename(c: Conversation): void {
 		menuId = null;
 		renamingId = c.id;
@@ -67,7 +95,9 @@
 		{#if filtered.length === 0}
 			<p class="empty">{q.trim() ? '검색 결과 없음' : '대화 없음'}</p>
 		{:else}
-			{#each filtered as c (c.id)}
+			{#each groups as group (group.key)}
+				<p class="groupLabel">{group.label}</p>
+			{#each group.items as c (c.id)}
 				<div class="row" class:active={c.id === store.activeId}>
 					{#if renamingId === c.id}
 						<!-- svelte-ignore a11y_autofocus -->
@@ -110,6 +140,7 @@
 						{/if}
 					{/if}
 				</div>
+			{/each}
 			{/each}
 		{/if}
 	</nav>
@@ -213,6 +244,18 @@
 		color: var(--dl-ink-mute, #6b7280);
 		padding: 0.5rem;
 		margin: 0;
+	}
+	/* 시간대 구분 라벨. 목록이 길어져도 최근 것을 눈으로 먼저 집는다. */
+	.groupLabel {
+		margin: 0.7rem 0 0.2rem;
+		padding: 0 0.45rem;
+		color: var(--dl-ink-mute, #6b7280);
+		font-size: 0.68rem;
+		font-weight: 600;
+		letter-spacing: 0.02em;
+	}
+	.groupLabel:first-child {
+		margin-top: 0.15rem;
 	}
 	.row {
 		position: relative;
