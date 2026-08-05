@@ -135,8 +135,11 @@ def testProbeAllRuntimesUsesRegistryOrderAndRefresh(monkeypatch):
 
     probes = probeAllRuntimes(refresh=True)
 
+    # 반환은 레지스트리 순서를 유지한다(화면 카드 순서가 실행 순서에 흔들리면 안 된다).
     assert [probe.runtimeId for probe in probes] == ["one", "two"]
-    assert calls == [("one", True), ("two", True)]
+    # probe 는 병렬 실행이라 호출 도착 순서는 보장하지 않는다. 계약은 "전부 1회씩, 요청한
+    # refresh 로" 다. 순서를 못박으면 스케줄링에 따라 깨지는 flaky 가 된다.
+    assert sorted(calls) == [("one", True), ("two", True)]
 
 
 def testRuntimeLoginArgvUsesOfficialManifestCommand(monkeypatch):
@@ -722,3 +725,48 @@ def testMcpProbeTimeoutDegradesInsteadOfCrashingStatus(monkeypatch: pytest.Monke
     assert "probe_unavailable" in str(result["detail"])
     # 실패도 캐시해 매 요청마다 느린 probe 를 재시도하지 않는다
     assert "claude" in mcpBootstrap._MCP_CACHE
+
+
+def testRuntimeAuthProbeUsesTtlCacheLikeSiblingProbes(monkeypatch: pytest.MonkeyPatch):
+    """인증 probe 도 형제 probe 와 같은 TTL 캐시를 쓴다.
+
+    실측 회귀(2026-08-04): 버전·MCP probe 는 캐시가 있는데 인증만 없어서 상태 조회마다
+    CLI 를 재실행했다(캐시 경로 상태 API 1.01초). 인증 상태는 사용자가 CLI 에서
+    로그인할 때만 바뀌므로 매번 부를 이유가 없다.
+    """
+    from dartlab.ai.runtime import discovery
+
+    descriptor = RuntimeDescriptor(
+        "fake",
+        "Fake",
+        "fake",
+        "ndjson",
+        ("fake",),
+        ("--version",),
+        (),
+        (),
+        "https://example.invalid",
+        authProbeArgs=("login", "status"),
+        authSuccessPattern="logged in",
+    )
+    runs: list[list[str]] = []
+
+    def fakeRun(argv, **kwargs):
+        runs.append(list(argv))
+        return subprocess.CompletedProcess(list(argv), 0, "logged in", "")
+
+    monkeypatch.setattr(discovery.subprocess, "run", fakeRun)
+    monkeypatch.setattr(discovery, "discoverExecutable", lambda _descriptor: "/bin/fake")
+    with discovery._AUTH_CACHE_LOCK:
+        discovery._AUTH_CACHE.clear()
+
+    first = discovery.probeRuntimeAuth(descriptor, refresh=True)
+    second = discovery.probeRuntimeAuth(descriptor)
+
+    assert first["state"] == "authenticated"
+    assert second == first
+    assert len(runs) == 1, "두 번째 조회는 캐시가 답해야 한다"
+
+    # refresh 는 캐시를 무시하고 다시 확인한다
+    discovery.probeRuntimeAuth(descriptor, refresh=True)
+    assert len(runs) == 2

@@ -8,6 +8,7 @@ import sqlite3
 import uuid
 from collections import OrderedDict
 from collections.abc import Iterator
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from threading import RLock
 from typing import Any
@@ -166,18 +167,29 @@ class AgentRuntimeEngine:
         from .setupCoordinator import investmentSemanticReadiness
 
         semanticReadiness = investmentSemanticReadiness()
-        runtimes = []
-        for probe in probeAllRuntimes(refresh=refresh):
+        probes = probeAllRuntimes(refresh=refresh)
+
+        def _entry(probe):
+            """런타임 하나의 MCP·인증 probe 를 함께 돌려 상태 항목을 만든다."""
             descriptor = self.registry[probe.runtimeId]
             mcp = (
                 probeMcpConnection(probe.runtimeId, refresh=refresh) if probe.state == "ready" else {"connected": False}
             )
             auth = (
-                probeRuntimeAuth(descriptor, executable=probe.executable)
+                probeRuntimeAuth(descriptor, executable=probe.executable, refresh=refresh)
                 if probe.state == "ready"
                 else {"state": "missing", "authenticated": False, "checkedAt": probe.checkedAt}
             )
-            runtimes.append(_runtimeStatusEntry(descriptor, probe, auth, mcp, semanticReadiness))
+            return _runtimeStatusEntry(descriptor, probe, auth, mcp, semanticReadiness)
+
+        # 런타임별 probe 는 서로 독립인 CLI 실행이다. 순차로 돌면 런타임 수 x (MCP + 인증)
+        # 만큼 상태 조회가 길어진다(실측 2026-08-04: refresh 11.9초). 순서는 probe 순서를
+        # 유지한다. 두 probe 캐시 모두 자체 lock 을 갖고 있어 동시 접근이 안전하다.
+        if len(probes) < 2:
+            runtimes = [_entry(probe) for probe in probes]
+        else:
+            with ThreadPoolExecutor(max_workers=len(probes), thread_name_prefix="dartlab-runtime-status") as pool:
+                runtimes = list(pool.map(_entry, probes))
         defaultRuntimeId = self.sessionStore.getPreference(_DEFAULT_RUNTIME_PREFERENCE)
         if defaultRuntimeId not in self.registry:
             defaultRuntimeId = None
