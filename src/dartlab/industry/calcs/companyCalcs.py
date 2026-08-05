@@ -10,8 +10,21 @@ import math
 from typing import Any
 
 from dartlab.core.logger import getLogger
+from dartlab.industry.calcs.sectorTables import sectorMetricTables
 
 _log = getLogger(__name__)
+
+# 업종 내 위치를 재는 축. (지표 이름, 분포 키, 백분위 키).
+# 분포 키와 백분위 키는 바깥에서 쓰는 정본 이름이라 바꾸지 않는다.
+_SECTOR_AXES: tuple[tuple[str, str, str], ...] = (
+    ("opMargin", "opmDistribution", "myOpmPercentile"),
+    ("revenueCagr", "cagrDistribution", "myCagrPercentile"),
+    ("roe", "roeDistribution", "myRoePercentile"),
+    # 재무 건전성 질문은 수익성 축으로 답할 수 없다. 실측(2026-08-06)에서 부채와 유동성을
+    # 물은 질문이 업종 기준을 하나도 못 받고 끝났다. 그 구멍을 여기서 막는다.
+    ("debtRatio", "debtRatioDistribution", "myDebtRatioPercentile"),
+    ("currentRatio", "currentRatioDistribution", "myCurrentRatioPercentile"),
+)
 
 
 def calcChainPosition(company: Any) -> dict | None:
@@ -220,12 +233,12 @@ def _percentile(value: float, dist: dict) -> float | None:
 
 
 def calcSectorMetrics(company: Any) -> dict | None:
-    """동종 산업 분포 + 백분위 - OPM/CAGR/ROE 3 축 (한국 시장).
+    """동종 산업 분포 + 백분위 - 수익성 3 축 + 건전성 2 축 (한국 시장).
 
     Capabilities:
-        scan.profitability + scan.growth 횡단면 데이터에서 동일 industry 의 모든 primary
-        회사를 모아 OPM/매출 CAGR/ROE 분포 (p10/p25/median/p75/p90/mean/std) 를 산출하고,
-        대상 회사의 분포 내 백분위를 반환. "업종 내 어느 위치냐" 질문의 단일 진입점.
+        scan 횡단면 데이터에서 동일 industry 의 모든 primary 회사를 모아 OPM/매출 CAGR/ROE/
+        부채비율/유동비율 분포 (p10/p25/median/p75/p90/mean/std) 를 산출하고, 대상 회사의
+        분포 내 백분위를 반환. "업종 내 어느 위치냐" 질문의 단일 진입점.
 
     Parameters
     ----------
@@ -241,9 +254,13 @@ def calcSectorMetrics(company: Any) -> dict | None:
         opmDistribution : dict - {n, p10, p25, median, p75, p90, mean, std} (%)
         cagrDistribution : dict - 동일 구조 (%, YoY 매출 CAGR)
         roeDistribution : dict - 동일 구조 (%)
+        debtRatioDistribution : dict - 동일 구조 (%, 총부채/자본)
+        currentRatioDistribution : dict - 동일 구조 (%, 유동자산/유동부채)
         myOpmPercentile : float | None - 대상 회사 OPM 백분위 (%)
         myCagrPercentile : float | None - CAGR 백분위 (%)
         myRoePercentile : float | None - ROE 백분위 (%)
+        myDebtRatioPercentile : float | None - 부채비율 백분위 (%, 낮을수록 안전)
+        myCurrentRatioPercentile : float | None - 유동비율 백분위 (%)
         scan 데이터 부재 회사는 분포 제외. 동종 3 사 미만이면 None.
 
     Raises
@@ -309,59 +326,27 @@ def calcSectorMetrics(company: Any) -> dict | None:
     if not ind:
         return None
 
-    # 같은 산업 primary 노드들의 scan 지표 수집
     try:
-        import importlib
-
-        scanGrowth = importlib.import_module("dartlab.scan.financial.growth").scanGrowth
-        import importlib
-
-        scanProfitability = importlib.import_module("dartlab.scan.financial.profitability").scanProfitability
-
-        prof = scanProfitability()
-        grow = scanGrowth()
+        tables = sectorMetricTables()
     except Exception as exc:
         _log.warning("섹터 지표 산출 실패로 None 반환: %s: %s", type(exc).__name__, exc)
         return None
 
-    # stockCode → 지표 매핑
-    profMap = {r["stockCode"]: r for r in prof.iter_rows(named=True)} if not prof.is_empty() else {}
-    growMap = {r["stockCode"]: r for r in grow.iter_rows(named=True)} if not grow.is_empty() else {}
-
     peerCodes = [n.stockCode for n in nodes if n.industry == myNode.industry and n.primary]
-
-    opms = [profMap[c]["opMargin"] for c in peerCodes if c in profMap and profMap[c].get("opMargin") is not None]
-    roes = [profMap[c]["roe"] for c in peerCodes if c in profMap and profMap[c].get("roe") is not None]
-    cagrs = [growMap[c]["revenueCagr"] for c in peerCodes if c in growMap and growMap[c].get("revenueCagr") is not None]
-
-    opmDist = _distribution(opms)
-    roeDist = _distribution(roes)
-    cagrDist = _distribution(cagrs)
-
-    if not opmDist and not roeDist and not cagrDist:
-        return None
-
-    # 내 위치
-    myProf = profMap.get(stockCode, {})
-    myGrow = growMap.get(stockCode, {})
-
-    return {
+    out: dict = {
         "industryId": myNode.industry,
         "industryName": ind.name,
         "peerCount": len(peerCodes),
-        "opmDistribution": opmDist,
-        "cagrDistribution": cagrDist,
-        "roeDistribution": roeDist,
-        "myOpmPercentile": _percentile(myProf.get("opMargin"), opmDist)
-        if myProf.get("opMargin") is not None and opmDist
-        else None,
-        "myCagrPercentile": _percentile(myGrow.get("revenueCagr"), cagrDist)
-        if myGrow.get("revenueCagr") is not None and cagrDist
-        else None,
-        "myRoePercentile": _percentile(myProf.get("roe"), roeDist)
-        if myProf.get("roe") is not None and roeDist
-        else None,
     }
+    found = False
+    for metric, distributionKey, percentileKey in _SECTOR_AXES:
+        values = tables.get(metric) or {}
+        distribution = _distribution([values[c] for c in peerCodes if c in values])
+        mine = values.get(stockCode)
+        out[distributionKey] = distribution
+        out[percentileKey] = _percentile(mine, distribution) if mine is not None and distribution else None
+        found = found or bool(distribution)
+    return out if found else None
 
 
 def calcSectorCycle(company: Any, *, sectorMetrics: dict | None = None) -> dict | None:

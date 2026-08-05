@@ -17,6 +17,7 @@ backend lifecycle 은 4 phase (도입·성장·성숙·쇠퇴) 만 emit. "재도
 from __future__ import annotations
 
 import logging
+import time
 from typing import Any
 
 from dartlab.ai.runtime.probeCache import SwrCache, backgroundRefresher
@@ -117,18 +118,23 @@ def getIndustryBadge(company: Any) -> dict[str, Any] | None:
     }
 
 
-# 업종 분포 계산은 횡단면 scan 을 두 번 돌아 5 초가 걸린다(실측 2026-08-06). 분포는 공시가
-# 갱신될 때만 바뀌므로 오래 들고 있어도 사실이 흐려지지 않는다. 한 번 재고 나면 같은 회사와
-# 같은 산업의 이어지는 질문은 공짜다.
+# 업종 분포는 시장 전체 횡단면을 다섯 번 읽어야 나온다. 분포는 공시가 갱신될 때만 바뀌므로
+# 오래 들고 있어도 사실이 흐려지지 않는다. 한 번 재고 나면 이어지는 질문은 공짜다.
 _SECTOR_CACHE = SwrCache(3600.0)
+# 첫 조회에서 기다려 줄 상한. 넘기면 앵커 없이 답을 내보내고 다음 조회에 붙인다.
+# 25 초는 실측(2026-08-06)에서 나왔다. 표를 처음 읽는 데 16 초가 들고, 느린 디스크를 감안해
+# 여유를 뒀다. 이 값을 무는 것은 프로세스에서 처음 묻는 회사 한 번뿐이다.
+_SECTOR_WAIT_SECONDS = 25.0
 
 
 def getSectorPosition(company: Any) -> dict[str, Any] | None:
     """수치 하나를 판단으로 바꾸는 업종 내 위치.
 
     "영업이익률 13.1%" 는 그 자체로 좋고 나쁨을 말하지 않는다. 같은 업종 회사들이 어디에
-    있는지를 알아야 판단이 된다. 분포와 백분위가 이미 계산되어 있었지만 답변 표면에 오지
-    않아 한 번도 쓰이지 않았다.
+    있는지를 알아야 판단이 된다. 다섯 축을 준다. 수익성 셋(영업이익률·ROE·매출 성장률) 과
+    건전성 둘(부채비율·유동비율) 이다. 건전성 축은 실측(2026-08-06) 에서 재무 건전성을 물은
+    질문이 업종 기준을 하나도 못 받고 끝난 것을 보고 뒤늦게 채운 것이다. 수익성 축만으로는
+    "부채비율 30% 가 높은 건가" 에 답할 수 없다.
 
     Args:
         company: Company 객체. 종목코드와 산업 매핑이 필요하다.
@@ -146,9 +152,10 @@ def getSectorPosition(company: Any) -> dict[str, Any] | None:
     if cached is not None:
         return cached.value or None
 
-    # 아직 없으면 기다리지 않고 뒤에서 잰다. 실측(2026-08-06) 첫 계산이 9.5 초인데, 그것을
-    # 임계 경로에 두면 모든 첫 조회가 그만큼 늦어진다. 분석 한 턴은 같은 회사를 여러 번
-    # 조회하므로 두 번째 호출부터는 붙는다. 아는 것을 즉시 주고 느린 것은 따라오게 한다.
+    # 첫 계산이 9.5 초다(실측 2026-08-06). 배경으로만 돌리면 판단 기준이 붙느냐가 그 턴에서
+    # 조회를 몇 번 했느냐에 좌우된다. 실측에서 조회 한 번짜리 질문은 앵커 없이 끝났다.
+    # 판단 기준이 운에 달리면 안 되므로 상한을 둔 대기로 기다린다. 상한을 넘기면 그냥 없이
+    # 간다. 늦는 것보다 없는 것이 낫고, 다음 조회에는 캐시가 채워져 있다.
     def _compute() -> dict[str, Any]:
         from dartlab.industry.calcs.companyCalcs import calcSectorMetrics
 
@@ -162,6 +169,13 @@ def getSectorPosition(company: Any) -> dict[str, Any] | None:
         return metrics or {}
 
     backgroundRefresher().submit(f"sectorPosition:{stockCode}", _compute)
+    # 이 회사의 값만 기다린다. 실행기 전체를 기다리면 남의 느린 probe 에 조회가 묶인다.
+    deadline = time.monotonic() + _SECTOR_WAIT_SECONDS
+    while time.monotonic() < deadline:
+        settled = _SECTOR_CACHE.peek(stockCode)
+        if settled is not None:
+            return settled.value or None
+        time.sleep(0.02)
     return None
 
 

@@ -557,10 +557,14 @@ def cashFlowAnchors(summary: dict[str, Any]) -> list[str]:
     return notes
 
 
-_SECTOR_AXES: tuple[tuple[str, str, str], ...] = (
-    ("영업이익률", "myOpmPercentile", "opmDistribution"),
-    ("ROE", "myRoePercentile", "roeDistribution"),
-    ("매출 성장률", "myCagrPercentile", "cagrDistribution"),
+# (표시 이름, 백분위 키, 분포 키, 높을수록 좋은가).
+# 방향을 표에 박아 둔다. 부채비율은 낮을수록 안전한데 "상위 몇 %" 로 적으면 정반대로 읽힌다.
+_SECTOR_AXES: tuple[tuple[str, str, str, bool], ...] = (
+    ("영업이익률", "myOpmPercentile", "opmDistribution", True),
+    ("ROE", "myRoePercentile", "roeDistribution", True),
+    ("매출 성장률", "myCagrPercentile", "cagrDistribution", True),
+    ("부채비율", "myDebtRatioPercentile", "debtRatioDistribution", False),
+    ("유동비율", "myCurrentRatioPercentile", "currentRatioDistribution", True),
 )
 
 
@@ -587,19 +591,24 @@ def sectorPositionLines(position: dict[str, Any] | None) -> list[str]:
     industry = str(position.get("industryName") or position.get("industryId") or "동종 업종")
     peerCount = position.get("peerCount")
     lines: list[str] = []
-    for label, percentileKey, distributionKey in _SECTOR_AXES:
+    for label, percentileKey, distributionKey, higherIsBetter in _SECTOR_AXES:
         percentile = position.get(percentileKey)
         distribution = position.get(distributionKey)
         if not isinstance(percentile, (int, float)) or not isinstance(distribution, dict):
             continue
         median = distribution.get("median")
-        top = distribution.get("p90")
         sampled = distribution.get("n") or peerCount
-        parts = [f"{label} 업종 상위 {100 - float(percentile):.0f}%"]
+        if higherIsBetter:
+            parts = [f"{label} 업종 상위 {100 - float(percentile):.0f}%"]
+            boundary, boundaryLabel = distribution.get("p90"), "상위 10% 경계"
+        else:
+            # 낮은 쪽에 있을수록 안전하다는 뜻을 문장 안에 넣는다. 숫자만 주면 뒤집혀 읽힌다.
+            parts = [f"{label} 업종 하위 {float(percentile):.0f}% (낮을수록 안전)"]
+            boundary, boundaryLabel = distribution.get("p10"), "가장 낮은 10% 경계"
         if isinstance(median, (int, float)):
             parts.append(f"중앙값 {float(median):.1f}%")
-        if isinstance(top, (int, float)):
-            parts.append(f"상위 10% 경계 {float(top):.1f}%")
+        if isinstance(boundary, (int, float)):
+            parts.append(f"{boundaryLabel} {float(boundary):.1f}%")
         lines.append(f"- {', '.join(parts)} ({industry} {sampled}사 기준).")
     return lines
 
