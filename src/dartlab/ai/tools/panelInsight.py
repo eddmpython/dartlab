@@ -93,6 +93,38 @@ def _pick(indexed: dict[str, dict[str, Any]], keys: tuple[str, ...]) -> dict[str
     return None
 
 
+def _withDerivedEquity(indexed: dict[str, dict[str, Any]], periods: list[str]) -> dict[str, dict[str, Any]]:
+    """자본 행이 표에 없으면 자산에서 부채를 빼서 채운다.
+
+    실측(2026-08-06): 재무상태표 요약은 대표 항목만 담아 `total_liabilities` 에서 끊긴다.
+    그래서 부채비율과 자기자본비율이 통째로 빠졌다. 재무상태표의 대표 지표인데 없는 것이다.
+    자본 = 자산 - 부채는 추정이 아니라 회계 항등식이므로 유도해도 사실이 흐려지지 않는다.
+    """
+    if _pick(indexed, ("total_stockholders_equity", "total_equity")) is not None:
+        return indexed
+    assets = indexed.get("total_assets")
+    liabilities = indexed.get("total_liabilities")
+    if assets is None or liabilities is None:
+        return indexed
+    values: dict[str, float] = {}
+    for period in periods:
+        top = _numeric(assets.get("values"), period)
+        bottom = _numeric(liabilities.get("values"), period)
+        if top is not None and bottom is not None:
+            values[period] = top - bottom
+    if not values:
+        return indexed
+    return {
+        **indexed,
+        "total_stockholders_equity": {
+            "snakeId": "total_stockholders_equity",
+            "item": "자본총계",
+            "values": values,
+            "formatted": {},
+        },
+    }
+
+
 def _formatPercent(value: float | None, *, signed: bool = False) -> str:
     """비율을 읽기 좋은 한 칸으로. 없으면 하이픈이다.
 
@@ -144,9 +176,10 @@ def derivedRows(summary: dict[str, Any]) -> list[dict[str, Any]]:
             out.append({"label": f"{row.get('item')} 증감률", "cells": cells})
 
     # 재무상태표 비율. 분모가 항목마다 달라 짝을 명시한다.
+    balanced = _withDerivedEquity(indexed, periods)
     for label, numeratorKeys, denominatorKeys in _BS_RATIOS:
-        numerator = _pick(indexed, numeratorKeys)
-        denominator = _pick(indexed, denominatorKeys)
+        numerator = _pick(balanced, numeratorKeys)
+        denominator = _pick(balanced, denominatorKeys)
         if numerator is None or denominator is None:
             continue
         cells = []

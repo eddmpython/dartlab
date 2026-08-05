@@ -192,6 +192,27 @@ def testBalanceSheetRatiosUseTheirOwnDenominators() -> None:
     assert debt["cells"] == ["50.0%", "60.0%", "70.0%"]
 
 
+def testEquityIsDerivedWhenTheTableStopsAtLiabilities() -> None:
+    """자본 행이 없으면 자산에서 부채를 빼서 채운다.
+
+    실측(2026-08-06): 재무상태표 요약이 대표 항목만 담아 부채총계에서 끊겨, 재무상태표의
+    대표 지표인 부채비율과 자기자본비율이 통째로 빠졌다. 자본 = 자산 - 부채는 추정이
+    아니라 회계 항등식이다.
+    """
+    summary = _statement(
+        total_assets={"2025FY": 130e12, "2024FY": 128e12, "2023FY": 125e12},
+        total_liabilities={"2025FY": 30e12, "2024FY": 28e12, "2023FY": 25e12},
+    )
+
+    rows = derivedRows(summary)
+    labels = {row["label"] for row in rows}
+
+    assert "부채비율" in labels
+    assert "자기자본비율" in labels
+    debt = next(row for row in rows if row["label"] == "부채비율")
+    assert debt["cells"][0] == "30.0%", "부채 30 을 자본 100 으로 나눈 값이어야 한다"
+
+
 def testFreeCashFlowSubtractsCapexAsMagnitude() -> None:
     """설비투자 취득액은 양수로 보고되므로 절대값을 뺀다. 부호를 그대로 더하면 두 배가 된다."""
     summary = _statement(
