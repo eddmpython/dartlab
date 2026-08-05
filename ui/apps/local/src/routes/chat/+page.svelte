@@ -217,12 +217,16 @@
 	 * 사고가 흐르고 있으면 사고 줄이 말하고, 본문을 쓰는 중이면 캐럿이 말한다.
 	 * 셋 다 아닐 때만 꼬리에 스피너 한 줄을 둔다.
 	 */
-	function showLiveRow(message: ChatMessage): boolean {
+	function showLiveRow(message: ChatMessage, shown: MessagePart[]): boolean {
 		if (!message.streaming) return false;
 		if (message.parts.some((part) => part.kind === 'tool' && part.status === 'running')) return false;
-		const tail = message.parts.at(-1);
+		const tail = shown.at(-1);
 		if (tail?.kind === 'thinking' && tail.endedAt === null) return false;
 		if (tail?.kind === 'text' && tail.text.trim()) return false;
+		// 꼬리가 상태 줄이면 그 줄이 직접 진행을 말한다. 따로 한 줄을 더 그리면 같은 문장이
+		// 화면에 두 번 나온다. 실측(2026-08-05): "질문을 투자 판단 구조로 정리하고 있습니다" 가
+		// 나란히 두 줄로 찍혔다.
+		if (tail?.kind === 'activity') return false;
 		return true;
 	}
 
@@ -361,21 +365,10 @@
 							<div class="turn assistant">
 								<img class="msgava" src="{base}/avatar.png" alt="DartLab" width="30" height="30" />
 								<div class="body">
-									{#if m.conversationGuide}
-										<div
-											class="analysisFrame"
-											class:running={m.streaming}
-											data-qa={m.id === messages.at(-1)?.id ? 'analysis-conversation-frame' : undefined}
-										>
-											<span>{m.conversationGuide.label}</span>
-											<strong>{m.conversationGuide.decisionGoal}</strong>
-											{#if m.streaming}
-												<div class="analysisStages" aria-label="예정된 분석 단계">
-													{#each m.conversationGuide.stages as stage (stage)}<small>{stage}</small>{/each}
-												</div>
-											{/if}
-										</div>
-									{/if}
+									<!-- 예정 단계 목록과 서술성 부제는 그리지 않는다. 질문 문자열에서 분류한
+									     청사진이라 모델이 실제로 밟는 경로와 무관하고, 화면에 미리 선언하면
+									     지키지 않는 약속이 된다. conversationGuide 는 런타임 캡슐에서 계속 쓰인다. -->
+
 									{#each parts as part, partIndex (part.id)}
 										{#if part.kind === 'text'}
 											<div class="textpart" data-qa={partQaId(m, part, partIndex) ?? undefined}>
@@ -387,17 +380,20 @@
 										{:else if part.kind === 'thinking'}
 											<ThinkingPanel {part} qaId={partQaId(m, part, partIndex)} />
 										{:else}
+											{@const live = m.streaming && partIndex === parts.length - 1}
 											<div
 												class="actline"
 												class:err={part.status === 'error'}
+												class:live
 												data-qa={partQaId(m, part, partIndex) ?? undefined}
 											>
-												{part.summary}
+												{#if live}<span class="spin" aria-hidden="true"></span>{/if}
+												<span>{part.summary}</span>
 											</div>
 										{/if}
 									{/each}
 
-									{#if showLiveRow(m)}
+									{#if showLiveRow(m, parts)}
 										<div
 											class="runstate"
 											role="status"
@@ -727,27 +723,6 @@
 		font-size: 0.95rem;
 		line-height: 1.72;
 	}
-	.analysisFrame {
-		display: grid;
-		grid-template-columns: auto minmax(0, 1fr);
-		align-items: baseline;
-		gap: .35rem .65rem;
-		padding: .55rem .7rem;
-		border-left: 2px solid #70d6a5;
-		background: color-mix(in srgb, #70d6a5 5%, transparent);
-	}
-	.analysisFrame > span {
-		padding: .15rem .38rem;
-		border-radius: 999px;
-		background: color-mix(in srgb, #70d6a5 12%, transparent);
-		color: #8de2b9;
-		font-size: .65rem;
-		white-space: nowrap;
-	}
-	.analysisFrame > strong { color: var(--dl-ink, #e7e7ea); font-size: .76rem; line-height: 1.45; }
-	.analysisStages { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: .3rem; }
-	.analysisStages small { color: var(--dl-ink-mute, #6b7280); font-size: .64rem; }
-	.analysisStages small:not(:last-child)::after { content: '→'; margin-left: .3rem; color: var(--dl-line-strong, #3b3e46); }
 	@keyframes pulse { 50% { opacity: .3; } }
 	/* 화면에 도는 스피너는 이 줄 하나뿐이다. 도구가 돌면 도구 카드가 대신 말하고
 	   이 줄은 그리지 않는다(showLiveRow). 높이를 한 줄로 고정해 사라질 때 덜 흔들린다. */
@@ -756,8 +731,12 @@
 	.runstate .now { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--dl-ink-dim, #9aa0aa); }
 	@keyframes spin { to { transform: rotate(360deg); } }
 	/* 상태 한 줄. 도구 카드보다 가벼운 배경 정보라 들여쓰기 없이 흐린 글씨만 쓴다. */
-	.actline { font-size: .74rem; line-height: 1.6; color: var(--dl-ink-mute, #6b7280); overflow-wrap: anywhere; }
+	.actline { display: flex; align-items: center; gap: .45rem; font-size: .74rem; line-height: 1.6; color: var(--dl-ink-mute, #6b7280); overflow-wrap: anywhere; }
 	.actline.err { color: #ff8c8c; }
+	/* 진행 중인 마지막 상태 줄이 스피너를 직접 단다. 별도 진행 줄을 더 그리면 같은 문장이
+	   두 번 나오고, 턴이 끝날 때 줄이 사라지며 레이아웃이 흔들린다. */
+	.actline.live { color: var(--dl-ink-dim, #9aa0aa); }
+	.actline.live .spin { flex: none; width: .8rem; height: .8rem; border: 2px solid var(--dl-line, #2a2c33); border-top-color: var(--dl-accent, #ff5a36); border-radius: 50%; animation: spin .8s linear infinite; }
 	.textpart { min-width: 0; }
 	.sideveil { display: none; }
 	.approvals { display: grid; gap: .4rem; }
@@ -944,8 +923,6 @@
 			background: rgba(0, 0, 0, 0.55);
 		}
 		.col { padding-inline: 0.85rem; }
-		.analysisFrame { grid-template-columns: 1fr; }
-		.analysisStages { display: none; }
 		.err { align-items: stretch; flex-direction: column; }
 		.user .bubble { max-width: 88%; }
 		.chatSns { display: none !important; }

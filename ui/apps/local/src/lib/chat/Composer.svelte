@@ -6,7 +6,9 @@
 	let {
 		value = $bindable(''),
 		busy = false,
-		placeholder = '질문을 입력하세요…  (Enter 전송 · Shift+Enter 줄바꿈)',
+		// 단축키 안내는 넣지 않는다. 입력칸은 무엇을 쓰는 곳인지만 말하면 되고,
+		// Enter 전송과 Shift+Enter 줄바꿈은 이미 보편 규범이라 배울 필요가 없다.
+		placeholder = '무엇이든 물어보세요',
 		autofocus = false,
 		onsend,
 		onstop
