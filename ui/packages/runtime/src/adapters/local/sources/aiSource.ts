@@ -46,9 +46,12 @@ export function localAiPort(api: LocalApi): AiPort {
 		async capabilities(): Promise<AiCapabilities> {
 			const status = await api.getJson<StatusProbe>('/api/agent/runtimes');
 			const runtimes = status?.runtimes ?? [];
-			const selected = runtimes.find(
-				(item) => item.runtimeId === status?.defaultRuntimeId && item.groundedReady === true
-			) ?? null;
+			// 기본값이 준비되지 않았다고 화면 전체를 막지 않는다. 서버는 실제로 도는 런타임으로
+			// 넘겨서 답을 만들어 내는데 화면만 기본값에 묶여 거부하면 사용자는 되는 제품을
+			// 못 쓴다. 기본값이 준비됐으면 그것을, 아니면 준비된 아무 것이나 고른다.
+			const ready = runtimes.filter((item) => item.groundedReady === true);
+			const selected =
+				ready.find((item) => item.runtimeId === status?.defaultRuntimeId) ?? ready[0] ?? null;
 			if (selected) {
 				return {
 					tier: 'advanced',

@@ -286,6 +286,10 @@ export class ChatStore {
 		const idx = conv.messages.length - 1;
 
 		// 지원 CLI가 없으면 heuristic 폴백 대신 설치 경로를 정직하게 안내한다.
+		// 다만 거부하기 전에 한 번 다시 확인한다. 이 판정은 화면을 연 순간 한 번 잡히는데,
+		// 서버가 설치 상태를 재는 동안 화면을 열면 그 세션은 새로고침 전까지 계속 거부한다.
+		// 앱을 열자마자 묻는 것이 가장 흔한 경로라 그 창에 걸리면 제품이 없는 것과 같다.
+		if (this.capabilitiesLoaded && !this.connected) await this.loadCapabilities();
 		if (this.capabilitiesLoaded && !this.connected) {
 			conv.messages[idx].parts.push({
 				kind: 'text',

@@ -19,7 +19,9 @@
 			const runtimes = status.runtimes;
 			const ready = runtimes.filter((item) => item.groundedReady);
 			runtimeCount = ready.length;
-			const selected = ready.find((item) => item.runtimeId === status.defaultRuntimeId) ?? null;
+			// 선호값이 지금 준비되지 않았어도 실제로 도는 것이 있으면 그것을 활성으로 보인다.
+			// 선호값만 보면 준비된 런타임이 있는데도 활성 없음으로 표시된다.
+			const selected = ready.find((item) => item.runtimeId === status.defaultRuntimeId) ?? ready[0] ?? null;
 			active = selected
 				? { key: selected.runtimeId, label: selected.displayName, model: selected.version || 'CLI 관리' }
 				: null;
