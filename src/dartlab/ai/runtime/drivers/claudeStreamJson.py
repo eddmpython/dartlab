@@ -14,25 +14,75 @@ from ..mcpBootstrap import claudeReadOnlyMcpTools
 from ..processSupervisor import ProcessClosedError, ProcessSupervisor
 from .base import DriverHandle, remainingTurnSeconds, runtimeLaunchArgv, runtimeTurnTimeoutSeconds
 
+# 세션이 노출하는 내장 도구 전수(2026-08-04 init tools 실측)에서, 로컬 실행·파일 변조·
+# 외부 부작용·하위 에이전트 스폰이 가능한 것을 차단한다. 중개 세션은 DartLab MCP 근거
+# 도구만 써야 한다. 실측: allowedTools 만으로는 못 막는다. dontAsk 는 "허용 외 거절" 이
+# 아니라 "묻지 않고 실행" 이라, ReadSkill 만 허용해도 모델이 Bash·PowerShell 을 프롬프트
+# 없이 실행했다(배터리 세션에서 echo PWNED 출력 재현). disallowedTools 로 완전 차단된다.
+#
+# ToolSearch 와 MCP 리소스 3종은 차단하지 않는다: DartLab MCP 도구는 세션에 deferred 로
+# 실려서 ToolSearch 가 스키마 로드 관문이다(배터리 8/8 세션이 ToolSearch 를 첫 도구로 사용).
+# 이들을 막으면 모델이 dartlab 도구에 아예 접근하지 못해 분석이 불가능해진다(실측: 차단 시
+# dartlab 도구 사용 0, 답변 실패). 셋 다 로컬 실행이 아니라 도구·리소스 발견 표면이라
+# 보안 위험이 없다.
+_CLAUDE_DENIED_BUILTINS = (
+    "Task",
+    "Artifact",
+    "Bash",
+    "BashOutput",
+    "KillShell",
+    "CronCreate",
+    "CronDelete",
+    "CronList",
+    "DesignSync",
+    "Edit",
+    "EnterWorktree",
+    "ExitWorktree",
+    "Glob",
+    "Grep",
+    "Monitor",
+    "NotebookEdit",
+    "PowerShell",
+    "PushNotification",
+    "Read",
+    "RemoteTrigger",
+    "ReportFindings",
+    "ScheduleWakeup",
+    "SendMessage",
+    "Skill",
+    "TaskOutput",
+    "TaskStop",
+    "TodoWrite",
+    "WebFetch",
+    "WebSearch",
+    "Workflow",
+    "Write",
+)
+
 
 def _claudeToolArgs() -> tuple[str, ...]:
-    """읽기 전용 DartLab MCP 도구만 명시적으로 허용한다.
+    """읽기 전용 DartLab MCP 도구만 노출하고 내장 실행 도구를 차단한다.
 
     `--tools` 는 쓰지 않는다. 실측(2026-08-04): spawn 시점에 MCP 서버가 `pending` 이라
     MCP 도구명이 아직 존재하지 않는데 `--tools` 가 그 시점 집합을 하드 제한해 세션이
     도구 0개로 시작했고(init tools []), 이후 MCP 가 붙어도 못 들어와 모델이 근거 도구
-    없이 기억으로 답했다(품질 게이트 전건 기각의 근본 원인). 샌드박스는
-    `--allowedTools`(read-only MCP 허용) + `--permission-mode dontAsk`(허용 외 도구
-    무프롬프트 거절) 조합으로 성립하며, 같은 조건 실측에서 모델이 dartlab 도구 18개를
-    보고 호출했다.
+    없이 기억으로 답했다.
+
+    허용은 `--allowedTools`(read-only MCP), 차단은 `--disallowedTools`(내장 실행 도구)로
+    나눈다. `dontAsk` 는 허용 목록 밖 도구를 거절하지 않고 무프롬프트 실행하므로,
+    `--allowedTools` 만으로는 Bash/PowerShell/파일 쓰기가 뚫린다. 차단은 disallow 가
+    소유한다. 실측: disallow 적용 시 "이 세션에는 Bash 도구가 없다" 로 완전 차단.
     """
     allowed = ",".join(claudeReadOnlyMcpTools())
+    denied = ",".join(_CLAUDE_DENIED_BUILTINS)
     return (
         "--disable-slash-commands",
         "--permission-mode",
         "dontAsk",
         "--allowedTools",
         allowed,
+        "--disallowedTools",
+        denied,
     )
 
 

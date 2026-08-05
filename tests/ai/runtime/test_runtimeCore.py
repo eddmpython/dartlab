@@ -38,12 +38,13 @@ from dartlab.ai.runtime.schema import generateTypeScriptContracts, runtimeJsonSc
 from dartlab.ai.runtime.sessionStore import SessionStore
 
 
-def testClaudeRuntimeExposesOnlyReadOnlyMcpWithoutSearchBypass():
-    """허용은 --allowedTools + dontAsk 조합만 쓴다.
+def testClaudeRuntimeAllowsReadOnlyMcpAndBlocksBuiltinExecution():
+    """허용은 --allowedTools(read-only MCP), 차단은 --disallowedTools(내장 실행)로 나눈다.
 
-    `--tools` 는 금지: spawn 시점에 MCP 가 pending 이라 MCP 도구명이 아직 없어서
-    세션이 도구 0개로 시작하는 회귀를 실측했다(2026-08-04, 품질 게이트 전건 기각의
-    근본 원인). 허용 외 도구는 dontAsk 가 무프롬프트 거절한다.
+    실측(2026-08-04): dontAsk 는 "허용 외 거절" 이 아니라 "묻지 않고 실행" 이라
+    allowedTools 만으로는 Bash·PowerShell 이 프롬프트 없이 실행됐다(주입 마커 출력 재현).
+    차단은 disallowedTools 가 소유한다. ToolSearch·MCP 리소스 도구는 dartlab MCP 도구가
+    deferred 라 발견 관문이라서 차단하지 않는다(막으면 분석 자체가 불가).
     """
     args = _claudeToolArgs()
     assert "--tools" not in args
@@ -52,10 +53,14 @@ def testClaudeRuntimeExposesOnlyReadOnlyMcpWithoutSearchBypass():
     allowed = args[args.index("--allowedTools") + 1]
     assert "mcp__dartlab__ReadSkill" in allowed
     assert "mcp__dartlab__EngineCall" in allowed
-    assert "ToolSearch" not in allowed
     assert "RunPython" not in allowed
-    assert "Bash" not in allowed
-    assert "PowerShell" not in allowed
+
+    denied = args[args.index("--disallowedTools") + 1].split(",")
+    # 로컬 실행·파일 변조·하위 스폰은 전부 차단
+    for blocked in ("Bash", "PowerShell", "Read", "Write", "Edit", "Grep", "Task", "Workflow"):
+        assert blocked in denied, f"{blocked} 미차단"
+    # dartlab 도구 발견 관문은 차단하지 않는다
+    assert "ToolSearch" not in denied
 
 
 def testAgentMcpProfileExcludesMutatingTools(monkeypatch):
