@@ -13,7 +13,7 @@
 	import StepTrail from '$lib/chat/StepTrail.svelte';
 	import Evidence from '$lib/chat/Evidence.svelte';
 	import VerificationBadge from '$lib/chat/VerificationBadge.svelte';
-	import RuntimeCenter from '$lib/chat/RuntimeCenter.svelte';
+	import Settings from '$lib/chat/Settings.svelte';
 	import '@dartlab/ui-surfaces/terminal/terminal.css';
 	import { BrandSocial, DARTLAB_BRAND_LINKS, LAST_SYM_KEY } from '@dartlab/ui-surfaces/terminal';
 
@@ -464,12 +464,13 @@
 			onclick={(e) => e.stopPropagation()}
 		>
 			<header class="pmhead">
-				<h2 id="runtime-center-title">Agent Runtime Center</h2>
-				<button class="pmx" data-qa="runtime-center-close" onclick={closeRuntimeCenter} aria-label="닫기">✕</button>
+				<h2 id="runtime-center-title">설정</h2>
+				<button class="pmx" data-qa="runtime-center-close" onclick={closeRuntimeCenter} aria-label="닫기">
+					<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
+				</button>
 			</header>
-			<p class="pmsub">설치된 CLI를 선택하고 DartLab MCP 연결을 확인하세요.</p>
 			<div class="pmbody">
-				<RuntimeCenter onChange={() => store.loadCapabilities()} />
+				<Settings onChange={() => store.loadCapabilities()} />
 			</div>
 		</div>
 	</div>
@@ -794,6 +795,7 @@
 		border-top: 1px solid var(--dl-line, #2a2c33);
 		padding: 0.75rem 0 1rem;
 	}
+	/* 설정 창. 데스크탑 앱 규범: 넓은 폭, 흐린 배경, 부드러운 깊이. */
 	.povl {
 		position: fixed;
 		inset: 0;
@@ -801,60 +803,58 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		background: rgba(0, 0, 0, 0.6);
-		padding: 1rem;
+		background: rgba(0, 0, 0, 0.55);
+		backdrop-filter: blur(3px);
+		padding: 1.25rem;
 	}
 	.pmodal {
 		width: 100%;
-		max-width: 34rem;
-		max-height: 85vh;
+		max-width: 46rem;
+		max-height: 86vh;
 		display: flex;
 		flex-direction: column;
 		background: var(--dl-bg-base, #0f0f10);
 		border: 1px solid var(--dl-line, #2a2c33);
 		border-radius: 14px;
-		box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+		box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55);
 		overflow: hidden;
 	}
 	.pmhead {
 		display: flex;
 		align-items: center;
-		padding: 1rem 1.25rem 0.4rem;
+		gap: .5rem;
+		padding: .85rem 1rem .85rem 1.25rem;
+		border-bottom: 1px solid var(--dl-line, #2a2c33);
 	}
 	.pmhead h2 {
-		font-size: 1.05rem;
+		font-size: .95rem;
 		font-weight: 600;
 		margin: 0;
+		letter-spacing: -0.01em;
 	}
 	.pmx {
 		margin-left: auto;
-		width: 2.75rem;
-		height: 2.75rem;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 1.9rem;
+		height: 1.9rem;
 		border: none;
 		border-radius: 7px;
 		background: none;
-		color: var(--dl-ink-dim, #9aa0aa);
-		font-size: 0.95rem;
+		color: var(--dl-ink-mute, #6b7280);
 		cursor: pointer;
 	}
 	.pmx:hover {
 		background: var(--dl-bg-raised, #16171a);
 		color: var(--dl-ink, #e7e7ea);
 	}
-	.pmsub {
-		font-size: 0.82rem;
-		color: var(--dl-ink-dim, #9aa0aa);
-		margin: 0;
-		padding: 0 1.25rem 0.75rem;
-	}
 	.pmbody {
-		overflow-y: auto;
-		padding: 0 1.25rem 1.25rem;
-		scrollbar-width: thin;
+		overflow: hidden;
+		padding: 1rem 1.25rem 1.25rem;
 	}
 	.suggest > strong { width: 100%; color: var(--dl-ink-mute, #6b7280); font-size: .68rem; font-weight: 600; }
 	@media (max-width: 720px) {
-		.runtimeBadge { display: none; }
 		.shell :global(.sidebar) {
 			position: fixed;
 			inset: 0 auto 0 0;
@@ -880,7 +880,6 @@
 		.povl { padding: 0; align-items: stretch; }
 		.pmodal { max-width: none; max-height: 100dvh; border-radius: 0; border-block: 0; }
 		.pmhead { padding: .75rem .85rem .35rem; }
-		.pmsub { padding: 0 .85rem .65rem; }
 		.pmbody { padding: 0 .85rem .85rem; }
 		.outputs { grid-template-columns: 1fr; }
 	}

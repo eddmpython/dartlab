@@ -154,3 +154,39 @@ export function resolveOutcomeEvidence(outcomeId: string, refId: string): Promis
 		`/api/agent/product-outcomes/${encodeURIComponent(outcomeId)}/evidence/${encodeURIComponent(refId)}`
 	);
 }
+
+export interface OpenDartStatus {
+	configured: boolean;
+	source: string;
+	keyCount: number;
+	envPath: string;
+	writable: boolean;
+}
+
+export interface DataStats {
+	[key: string]: unknown;
+}
+
+/** 설정 화면의 OpenDART 키 상태. /api/status 의 openDart 블록을 그대로 쓴다. */
+export async function getOpenDartStatus(): Promise<OpenDartStatus> {
+	const value = await requestJson<{ openDart: OpenDartStatus }>('/api/status?probe=0');
+	return value.openDart;
+}
+
+/** OpenDART 키 저장. 서버가 프로젝트 .env 에 기록한다. */
+export function saveDartKey(apiKey: string): Promise<{ ok: boolean; envPath: string; openDart: OpenDartStatus }> {
+	return requestJson('/api/openapi/dart-key', {
+		method: 'PUT',
+		body: JSON.stringify({ api_key: apiKey })
+	});
+}
+
+/** OpenDART 키 제거. */
+export function clearDartKey(): Promise<{ ok: boolean; envPath: string; openDart: OpenDartStatus }> {
+	return requestJson('/api/openapi/dart-key', { method: 'DELETE' });
+}
+
+/** 로컬 데이터 현황(종목 수, 용량 등). */
+export function getDataStats(): Promise<DataStats> {
+	return requestJson('/api/data/stats');
+}
